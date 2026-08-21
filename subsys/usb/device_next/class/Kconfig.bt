@@ -28,6 +28,19 @@ config USBD_BT_HCI_RX_THREAD_PRIORITY
 	help
 	  Bluetooth HCI USB Transport Layer RX thread priority.
 
+config USBD_BT_HCI_TX_STACK_SIZE
+	int "TX thread stack size"
+	default 512
+	help
+	  Bluetooth HCI USB Transport Layer TX thread stack size.
+
+config USBD_BT_HCI_OUT_BUF_COUNT
+	int "Number of buffers in the OUT pool"
+	range 1 $(UINT8_MAX)
+	default 3
+	help
+	  Number of UDC request buffers in the OUT pool.
+
 module = USBD_BT_HCI
 module-str = usbd bt hci
 source "subsys/logging/Kconfig.template.log_config"

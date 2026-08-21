@@ -61,20 +61,13 @@ LOG_MODULE_REGISTER(bt_hci, CONFIG_USBD_BT_HCI_LOG_LEVEL);
 #define BT_HCI_EP_INTERVAL_VOICE	3
 
 #define BT_HCI_CLASS_ENABLED		0
-#define BT_HCI_ACL_RX_ENGAGED		1
 
 static K_FIFO_DEFINE(bt_hci_rx_queue);
 static K_FIFO_DEFINE(bt_hci_tx_queue);
 
-/*
- * Transfers through three endpoints proceed in a synchronous manner,
- * with maximum packet size of max supported speed bulk endpoint.
- *
- * REVISE: global (bulk, interrupt, iso) specific pools would be more
- * RAM usage efficient.
- */
-UDC_BUF_POOL_DEFINE(bt_hci_ep_pool,
-		    3, USBD_MAX_BULK_MPS,
+/* This pool is used exclusively for the OUT transfers */
+UDC_BUF_POOL_DEFINE(bt_hci_out_ep_pool,
+		    CONFIG_USBD_BT_HCI_OUT_BUF_COUNT, USBD_MAX_BULK_MPS,
 		    sizeof(struct udc_buf_info), NULL);
 
 /*
@@ -169,20 +162,16 @@ static uint8_t bt_hci_get_bulk_out(struct usbd_class_data *const c_data)
 	return desc->if0_out_ep.bEndpointAddress;
 }
 
-struct net_buf *bt_hci_buf_alloc(const uint8_t ep)
+static size_t bt_hci_get_bulk_mps(struct usbd_class_data *const c_data)
 {
-	struct net_buf *buf = NULL;
-	struct udc_buf_info *bi;
+	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
 
-	buf = net_buf_alloc(&bt_hci_ep_pool, K_NO_WAIT);
-	if (!buf) {
-		return NULL;
+	if (USBD_SUPPORTS_HIGH_SPEED &&
+	    usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
+		return BT_HCI_EP_HS_MPS_ACL_DATA;
 	}
 
-	bi = udc_get_buf_info(buf);
-	bi->ep = ep;
-
-	return buf;
+	return BT_HCI_EP_FS_MPS_ACL_DATA;
 }
 
 static void bt_hci_tx_sync_in(struct usbd_class_data *const c_data,
@@ -264,31 +253,34 @@ static void bt_hci_rx_thread(void *a, void *b, void *c)
 static int bt_hci_acl_out_start(struct usbd_class_data *const c_data)
 {
 	struct bt_hci_data *hci_data = usbd_class_get_private(c_data);
+	struct udc_buf_info *bi;
 	struct net_buf *buf;
-	uint8_t ep;
 	int ret;
 
 	if (!atomic_test_bit(&hci_data->state, BT_HCI_CLASS_ENABLED)) {
 		return -EPERM;
 	}
 
-	if (atomic_test_and_set_bit(&hci_data->state, BT_HCI_ACL_RX_ENGAGED)) {
-		return -EBUSY;
+	while (true) {
+		buf = net_buf_alloc(&bt_hci_out_ep_pool, K_NO_WAIT);
+		if (!buf) {
+			return 0;
+		}
+
+		bi = udc_get_buf_info(buf);
+		bi->ep = bt_hci_get_bulk_out(c_data);
+
+		/* Shrink the buffer size if operating on a full speed bus */
+		buf->size = MIN(bt_hci_get_bulk_mps(c_data), buf->size);
+		ret = usbd_ep_enqueue(c_data, buf);
+		if (ret) {
+			LOG_ERR("Failed to enqueue net_buf for 0x%02x", bi->ep);
+			net_buf_unref(buf);
+			return ret;
+		}
 	}
 
-	ep = bt_hci_get_bulk_out(c_data);
-	buf = bt_hci_buf_alloc(ep);
-	if (buf == NULL) {
-		return -ENOMEM;
-	}
-
-	ret = usbd_ep_enqueue(c_data, buf);
-	if (ret) {
-		LOG_ERR("Failed to enqueue net_buf for 0x%02x", ep);
-		net_buf_unref(buf);
-	}
-
-	return  ret;
+	return 0;
 }
 
 static uint16_t hci_pkt_get_len(const uint8_t h4_type,
@@ -395,9 +387,7 @@ static int bt_hci_acl_out_cb(struct usbd_class_data *const c_data,
 	}
 
 restart_out_transfer:
-	/* TODO: add function to reset transfer buffer and allow to reuse it */
 	net_buf_unref(buf);
-	atomic_clear_bit(&hci_data->state, BT_HCI_ACL_RX_ENGAGED);
 
 	return bt_hci_acl_out_start(c_data);
 }
@@ -411,7 +401,7 @@ static int bt_hci_request(struct usbd_class_data *const c_data,
 
 	bi = udc_get_buf_info(buf);
 
-	if (bi->ep == bt_hci_get_bulk_out(c_data)) {
+	if (USB_EP_DIR_IS_OUT(bi->ep)) {
 		return bt_hci_acl_out_cb(c_data, buf, err);
 	}
 
