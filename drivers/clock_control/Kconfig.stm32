@@ -119,4 +119,23 @@ config CLOCK_STM32_MCO_HAS_ENABLE_BIT
 	help
 	  Hidden option indicating the series has a dedicated bit to enable MCO output
 
+config CLOCK_STM32_N6_PRESERVE_BOOT_CONFIG
+	bool "Preserve STM32N6 boot clock configuration"
+	depends on SOC_SERIES_STM32N6X
+	depends on BOOTLOADER_MCUBOOT
+	depends on DT_HAS_ST_STM32_XSPI_NOR_ENABLED || \
+		DT_HAS_ST_STM32_XSPI_PSRAM_ENABLED
+	help
+	  Preserve the retained clock configuration for STM32N6 applications
+	  chain-loaded by MCUboot. The application may execute from external XSPI
+	  NOR or PSRAM initialized by the bootloader.
+
+	  The bootloader is expected to have initialized the retained clock tree and
+	  external-memory controller. Application-domain oscillator, PLL,
+	  interconnect, prescaler, IC, and SYSCLK configuration is intentionally not
+	  repeated.
+
+	  The application's devicetree must describe the retained clock and
+	  external-memory hardware state.
+
 endif # CLOCK_CONTROL_STM32_CUBE
