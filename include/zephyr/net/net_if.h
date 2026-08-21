@@ -109,6 +109,13 @@ struct net_if_addr {
 			/** How many times we have done DAD */
 			uint8_t dad_count;
 
+			/** How many times the solicitation for the current
+			 *  round has failed to go out. Non-zero means nothing
+			 *  has been asked yet, so the address has not been
+			 *  checked and must not be used.
+			 */
+			uint8_t dad_tx_failures;
+
 			/** @rfc{7527,section-4} Enhanced DAD nonce payload (6 bytes). */
 			uint8_t dad_nonce[NET_IF_IPV6_DAD_NONCE_LEN];
 		};
