@@ -31,3 +31,11 @@ properties:
       Sources should be queried by the sensor API fuel gauge
       channels (SENSOR_CHAN_GAUGE_*), instead of the generic
       channels (SENSOR_CHAN_VOLTAGE, etc).
+
+  charger-status:
+    type: phandle
+    description: |
+      Charger device that exposes the `charger_status` property for charge
+      state detection. If the composite device is computing
+      *_STATE_OF_CHARGE_PCT from the measured voltage, the reported
+      percentage will be clamped based on the reported charging state.
