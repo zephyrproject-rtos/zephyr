@@ -197,6 +197,10 @@ Boards
   or :c:func:`spi_transceive_cb` without DMA) on an affected board must now explicitly enable
   :kconfig:option:`CONFIG_SPI_STM32_INTERRUPT` in their own configuration. (:github:`116218`)
 
+* The ``esp_threadbr_ethernet`` shield has been removed. Existing users should
+  build for ``esp_threadbr/esp32s3/procpu/ethernet`` instead of combining
+  ``esp_threadbr/esp32s3/procpu`` with ``SHIELD=esp_threadbr_ethernet``.
+
 Device Drivers and Devicetree
 *****************************
 

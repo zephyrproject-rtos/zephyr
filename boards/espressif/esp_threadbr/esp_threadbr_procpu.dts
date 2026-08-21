@@ -9,7 +9,6 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <espressif/partitions_0x0_amp.dtsi>
 #include "esp_threadbr-pinctrl.dtsi"
-#include "esp_threadbr_connector.dtsi"
 
 / {
 	model = "Espressif ESP Thread Border Router / ZigBee Gateway PROCPU";

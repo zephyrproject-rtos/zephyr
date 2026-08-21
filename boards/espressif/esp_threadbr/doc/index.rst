@@ -8,8 +8,8 @@ building Thread border router and ZigBee gateway applications.
 It bridges 802.15.4 mesh networks with IP networks via Wi-Fi or Ethernet.
 
 ESP32-S3 is used as the host SoC, and it provides the Wi-Fi backbone link.
-Combining the board with an optional :ref:`esp_threadbr_ethernet` shield
-adds an Ethernet link.
+The ``esp_threadbr/esp32s3/procpu/ethernet`` board target enables an
+Ethernet backbone link through the on-board expansion header.
 
 The board has an on-board IEEE 802.15.4 capable ESP32-H2 SoC used as a radio
 co-processor (RCP). It provides the 802.15.4 PHY and MAC for Thread/ZigBee.
@@ -59,6 +59,22 @@ Programming and Debugging
 
 .. include:: ../../common/board-variants.rst
    :start-after: espressif-board-variants
+
+.. _esp_threadbr_ethernet:
+
+Ethernet
+========
+
+Build for the ``esp_threadbr/esp32s3/procpu/ethernet`` board target to enable
+the W5500 SPI Ethernet controller connected through the ESP Thread BR Ethernet
+sub-board.
+
+For example:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/dhcpv4_client
+   :board: esp_threadbr/esp32s3/procpu/ethernet
+   :goals: build
 
 Debugging
 =========
