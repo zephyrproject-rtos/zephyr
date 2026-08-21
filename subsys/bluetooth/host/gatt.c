@@ -1081,6 +1081,19 @@ static void bt_gatt_pairing_complete(struct bt_conn *conn, bool bonded)
 		/* Store the ccc and cf data */
 		gatt_store_ccc(conn->id, &(conn->le.dst));
 		bt_gatt_store_cf(conn->id, &conn->le.dst);
+
+		if (IS_ENABLED(CONFIG_BT_GATT_SERVICE_CHANGED)) {
+			struct gatt_sc_cfg *cfg = find_sc_cfg(conn->id, &conn->le.dst);
+
+			/* A client may subscribe to Service Changed before it
+			 * bonds, in which case sc_save() created the entry but
+			 * had no bond to persist it against. Store it now that
+			 * there is one.
+			 */
+			if (cfg != NULL) {
+				sc_store(cfg);
+			}
+		}
 	}
 }
 #endif /* CONFIG_BT_SETTINGS && CONFIG_BT_SMP */
