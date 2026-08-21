@@ -832,15 +832,20 @@ int bt_bap_broadcast_source_create(struct bt_bap_broadcast_source_param *param,
 				return err;
 			}
 
-			/* Store the BIS specific codec configuration data in
-			 * the broadcast source. It is stored in the broadcast
-			 * source, instead of the stream object, as this is
-			 * only relevant for the broadcast source, and not used
-			 * for unicast or broadcast sink.
-			 */
-			(void)memcpy(source->stream_data[stream_count].data, stream_param->data,
-				     stream_param->data_len * sizeof(*stream_param->data));
-			source->stream_data[stream_count].data_len = stream_param->data_len;
+			if (stream_param->data != NULL) {
+				/* Store the BIS specific codec configuration data in
+				 * the broadcast source. It is stored in the broadcast
+				 * source, instead of the stream object, as this is
+				 * only relevant for the broadcast source, and not used
+				 * for unicast or broadcast sink.
+				 */
+				(void)memcpy(source->stream_data[stream_count].data,
+					     stream_param->data,
+					     stream_param->data_len * sizeof(*stream_param->data));
+				source->stream_data[stream_count].data_len = stream_param->data_len;
+			} else {
+				source->stream_data[stream_count].data_len = 0U;
+			}
 
 			sys_slist_append(&subgroup->streams, &stream->_node);
 			stream_count++;
@@ -956,8 +961,13 @@ static void broadcast_source_reconfig_update_subgroup(
 		 * for unicast or broadcast sink.
 		 */
 		stream_data = &source->stream_data[stream->ep->id];
-		(void)memcpy(stream_data->data, stream_param->data, stream_param->data_len);
-		stream_data->data_len = stream_param->data_len;
+
+		if (stream_param->data != NULL) {
+			(void)memcpy(stream_data->data, stream_param->data, stream_param->data_len);
+			stream_data->data_len = stream_param->data_len;
+		} else {
+			stream_data->data_len = 0U;
+		}
 	}
 
 	/* Apply the codec_cfg to all streams in the subgroup, and not just the ones in the
