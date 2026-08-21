@@ -440,9 +440,9 @@
 			#io-channel-cells = <1>;
 		};
 
-		mspi0: mspi@40020000 {
+		mspi0: mspi@50014000 {
 			compatible = "ambiq,mspi-controller";
-			reg = <0x40020000 0x400>;
+			reg = <0x50014000 0x400>, <0x51000000 0x0100000>;
 			clock-frequency = <48000000>;
 			interrupts = <20 0>;
 			#address-cells = <1>;
