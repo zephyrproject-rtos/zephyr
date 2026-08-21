@@ -1429,8 +1429,24 @@ static int mcux_lpuart_config_get(const struct device *dev, struct uart_config *
 static int mcux_lpuart_configure(const struct device *dev,
 				 const struct uart_config *cfg)
 {
-	/* Wait for Transmission Complete Flag */
-	while (!(get_base(dev)->STAT & LPUART_STAT_TC_MASK)) {
+	/* Wait for Transmission Complete Flag -- bounded. Under continuous
+	 * TX this flag may never set, and an unbounded wait parks the
+	 * calling thread for the full duration of the traffic (observed:
+	 * a 15 s stall per boot). On timeout, leave the peripheral
+	 * untouched and report busy so the caller can quiesce and retry;
+	 * proceeding would disable the receiver mid-frame and destroy the
+	 * byte being received.
+	 *
+	 * 300 ms covers this driver's worst-case 12-bit frame (start + 8
+	 * data + parity + 2 stop, 240 ms) at 50 baud, the slowest standard
+	 * rate, so a transmitter finishing its last frame never times out.
+	 * Slower rates are still configurable; for those the bound is an
+	 * intentional policy limit: fail fast with a retryable -EBUSY
+	 * rather than wait an arbitrary multiple of the frame time.
+	 */
+	if (!WAIT_FOR((get_base(dev)->STAT & LPUART_STAT_TC_MASK) != 0U,
+		      300U * USEC_PER_MSEC, k_busy_wait(100U))) {
+		return -EBUSY;
 	}
 
 	/* Disable Transmitter and Receiver */
