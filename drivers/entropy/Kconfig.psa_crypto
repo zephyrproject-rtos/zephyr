@@ -10,3 +10,77 @@ config ENTROPY_PSA_CRYPTO_RNG
 	default y
 	help
 	  Enable the PSA Crypto source Entropy driver.
+
+if ENTROPY_PSA_CRYPTO_RNG
+
+config ENTROPY_PSA_CRYPTO_RNG_ISR
+	bool "Get random bytes from an interrupt context"
+	depends on MULTITHREADING
+	help
+	  Implement .get_entropy_isr handler to allow interrupt context
+	  to get random bytes from a pool filled with regular PSA Crypto
+	  calls from a thread context.
+
+if ENTROPY_PSA_CRYPTO_RNG_ISR
+
+config ENTROPY_PSA_CRYPTO_RNG_ISR_BUFFER_SIZE
+	int "Size of the ISR random pool in bytes"
+	range 1 32767
+	default 32
+
+config ENTROPY_PSA_CRYPTO_RNG_ISR_REFILL_THRESHOLD
+	int "Byte size threshold for refilling the ISR random bytes pool"
+	range 0 ENTROPY_PSA_CRYPTO_RNG_ISR_BUFFER_SIZE
+	default ENTROPY_PSA_CRYPTO_RNG_ISR_BUFFER_SIZE
+	help
+	  A thread context is requested for filling the ISR random bytes
+	  pool when the number of available bytes is equal to or lower
+	  than this threshold.
+
+config ENTROPY_PSA_CRYPTO_RNG_ISR_NOREFILL_THRESHOLD
+	int "Byte size upper threshold when refilling the ISR pool"
+	range 0 ENTROPY_PSA_CRYPTO_RNG_ISR_BUFFER_SIZE
+	default 0
+	help
+	  When refilling ISR random bytes, ensure at least the number of
+	  available bytes in the ISR random pool reaches this threshold.
+	  Using a value lower than the buffer size prevents keeping the
+	  refill work relax its thread when an interrupt service
+	  consumes few bytes will that thread refill the ISR pool.
+
+config ENTROPY_PSA_CRYPTO_RNG_ISR_REFILL_SIZE
+	int "Chunk byte size for refilling ISR random bytes pool"
+	range 0 ENTROPY_PSA_CRYPTO_RNG_ISR_BUFFER_SIZE
+	default 0
+	help
+	  Bytes size of the buffer chunks used to refill the ISR
+	  random bytes pool. Bigger values may add latency to other
+	  PSA Crypto services.
+
+	  Special value 0 (default value) means the pool is refilled
+	  using the biggest possible chunks.
+
+config ENTROPY_PSA_CRYPTO_RNG_ISR_PRIVATE_WQ
+	bool "Use a private worqueue to refill the pool"
+	default y if BUILD_WITH_TFM
+	help
+	  When enabled, a private workqueue is use to run the work
+	  that refills the ISR random bytes pool. It can be used
+	  to specify the workqueue priority with
+	  ENTROPY_PSA_CRYPTO_RNG_ISR_PRIVATE_WQ_PRIO.
+
+	  When disabled, Zephyr system workqueue is used.
+
+config ENTROPY_PSA_CRYPTO_RNG_ISR_WQ_STACK_SIZE
+	int "Private workqueue stack byte size"
+	depends on ENTROPY_PSA_CRYPTO_RNG_ISR_PRIVATE_WQ
+	default 384
+
+config ENTROPY_PSA_CRYPTO_RNG_ISR_WQ_PRIO
+	int "Private workqueue priority"
+	depends on ENTROPY_PSA_CRYPTO_RNG_ISR_PRIVATE_WQ
+	default 1
+
+endif # ENTROPY_PSA_CRYPTO_RNG_ISR
+
+endif # ENTROPY_PSA_CRYPTO_RNG
