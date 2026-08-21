@@ -367,7 +367,7 @@ enum dup_action {
 	COPY,
 };
 
-static void dup_l2_table_if_needed(uint32_t *l1_table, uint32_t l1_pos, enum dup_action action);
+static bool dup_l2_table_if_needed(uint32_t *l1_table, uint32_t l1_pos, enum dup_action action);
 #endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_XTENSA_MMU_USE_DEFAULT_MAPPINGS
@@ -727,7 +727,9 @@ static bool l2_page_table_map(uint32_t *l1_table, void *vaddr, uintptr_t phys,
 	}
 #ifdef CONFIG_USERSPACE
 	else {
-		dup_l2_table_if_needed(l1_table, l1_pos, COPY);
+		if (!dup_l2_table_if_needed(l1_table, l1_pos, COPY)) {
+			return false;
+		}
 	}
 #endif
 
@@ -798,7 +800,7 @@ static inline bool __arch_mem_map(void *vaddr, uintptr_t paddr, uint32_t attrs, 
 	return ret;
 }
 
-void arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
+int arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 {
 	uint32_t va = (uint32_t)virt;
 	uint32_t pa = (uint32_t)phys;
@@ -806,11 +808,12 @@ void arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 	uint32_t attrs = 0;
 	k_spinlock_key_t key;
 	bool is_user;
+	int ret = 0;
 
 	if (size == 0) {
 		LOG_ERR("Cannot map physical memory at 0x%08X: invalid "
 			"zero size", (uint32_t)phys);
-		k_panic();
+		return -EINVAL;
 	}
 
 	switch (flags & K_MEM_CACHE_MASK) {
@@ -822,9 +825,10 @@ void arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 		attrs |= XTENSA_MMU_CACHED_WT;
 		break;
 	case K_MEM_CACHE_NONE:
-		__fallthrough;
-	default:
 		break;
+	default:
+		LOG_ERR("Unsupported cache mode 0x%x", (uint32_t)(flags & K_MEM_CACHE_MASK));
+		return -ENOTSUP;
 	}
 
 	if ((flags & K_MEM_PERM_RW) == K_MEM_PERM_RW) {
@@ -839,8 +843,15 @@ void arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 	key = k_spin_lock(&xtensa_mmu_lock);
 
 	while (rem_size > 0) {
-		if (!__arch_mem_map((void *)va, pa, attrs, is_user)) {
-			k_panic();
+		bool success = __arch_mem_map((void *)va, pa, attrs, is_user);
+
+		if (!success) {
+			/* Since some pages may have already been mapped in this loop.
+			 * We simply break out of this loop so TLB IPI can be sent,
+			 * and page tables flushed if cached.
+			 */
+			ret = -ENOMEM;
+			break;
 		}
 
 		rem_size -= (rem_size >= KB(4)) ? KB(4) : rem_size;
@@ -857,6 +868,8 @@ void arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 	}
 
 	k_spin_unlock(&xtensa_mmu_lock, key);
+
+	return ret;
 }
 
 /**
@@ -867,8 +880,12 @@ void arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
  *
  * @note If all L2 PTEs in the L2 table are illegal, the L2 table will be
  *       unmapped from L1 and is returned to the pool.
+ *
+ * @retval true Unmapping is successful, or the address was not mapped.
+ * @retval false Unmapping failed. Usually means there are no free L2 tables to be
+ *               allocated for copy-on-write of a shared L2 table.
  */
-static void l2_page_table_unmap(uint32_t *l1_table, void *vaddr)
+static bool l2_page_table_unmap(uint32_t *l1_table, void *vaddr)
 {
 	uint32_t l1_pos = XTENSA_MMU_L1_POS((uint32_t)vaddr);
 	uint32_t l2_pos = XTENSA_MMU_L2_POS((uint32_t)vaddr);
@@ -883,11 +900,13 @@ static void l2_page_table_unmap(uint32_t *l1_table, void *vaddr)
 		/* We shouldn't be unmapping an illegal entry.
 		 * Return true so that we can invalidate ITLB too.
 		 */
-		return;
+		return true;
 	}
 
 #ifdef CONFIG_USERSPACE
-	dup_l2_table_if_needed(l1_table, l1_pos, COPY);
+	if (!dup_l2_table_if_needed(l1_table, l1_pos, COPY)) {
+		return false;
+	}
 #endif
 
 	l2_table = (uint32_t *)PTE_PPN_GET(l1_table[l1_pos]);
@@ -935,6 +954,8 @@ end:
 	if (exec) {
 		xtensa_itlb_vaddr_invalidate(vaddr);
 	}
+
+	return true;
 }
 
 /**
@@ -945,46 +966,72 @@ end:
  * This should only be called by @ref arch_mem_unmap to remove the mapping in the L2 tables.
  *
  * @param[in] vaddr Virtual address to be unmapped.
+ *
+ * @retval true Memory unmapped.
+ * @retval false Unmapping failed.
  */
-static inline void __arch_mem_unmap(void *vaddr)
+static inline bool __arch_mem_unmap(void *vaddr)
 {
-	l2_page_table_unmap(xtensa_kernel_ptables, vaddr);
+	bool ret;
+
+	ret = l2_page_table_unmap(xtensa_kernel_ptables, vaddr);
+	if (!ret) {
+		LOG_ERR("Cannot unmap virtual address (%p)", vaddr);
+	}
 
 #ifdef CONFIG_USERSPACE
-	sys_snode_t *node;
-	struct arch_mem_domain *domain;
-	k_spinlock_key_t key;
+	if (ret) {
+		sys_snode_t *node;
+		struct arch_mem_domain *domain;
+		k_spinlock_key_t key;
 
-	key = k_spin_lock(&z_mem_domain_lock);
-	SYS_SLIST_FOR_EACH_NODE(&xtensa_domain_list, node) {
-		domain = CONTAINER_OF(node, struct arch_mem_domain, node);
+		key = k_spin_lock(&z_mem_domain_lock);
+		SYS_SLIST_FOR_EACH_NODE(&xtensa_domain_list, node) {
+			domain = CONTAINER_OF(node, struct arch_mem_domain, node);
 
-		(void)l2_page_table_unmap(domain->ptables, vaddr);
+			ret = l2_page_table_unmap(domain->ptables, vaddr);
+			if (!ret) {
+				LOG_ERR("Cannot unmap virtual address (%p) for domain %p",
+					vaddr, domain);
+
+				break;
+			}
+		}
+		k_spin_unlock(&z_mem_domain_lock, key);
 	}
-	k_spin_unlock(&z_mem_domain_lock, key);
 #endif /* CONFIG_USERSPACE */
+
+	return ret;
 }
 
-void arch_mem_unmap(void *addr, size_t size)
+int arch_mem_unmap(void *addr, size_t size)
 {
 	uint32_t va = (uint32_t)addr;
 	uint32_t rem_size = (uint32_t)size;
 	k_spinlock_key_t key;
+	int ret = 0;
 
 	if (addr == NULL) {
 		LOG_ERR("Cannot unmap NULL pointer");
-		return;
+		return -EINVAL;
 	}
 
 	if (size == 0) {
 		LOG_ERR("Cannot unmap virtual memory with zero size");
-		return;
+		return -EINVAL;
 	}
 
 	key = k_spin_lock(&xtensa_mmu_lock);
 
 	while (rem_size > 0) {
-		__arch_mem_unmap((void *)va);
+		if (!__arch_mem_unmap((void *)va)) {
+			/* Since some pages may have already been unmapped in this loop,
+			 * we simply break out of this loop so TLB IPI can be sent,
+			 * and page tables flushed if cached.
+			 */
+			ret = -ENOMEM;
+			break;
+		}
 
 		rem_size -= (rem_size >= KB(4)) ? KB(4) : rem_size;
 		va += KB(4);
@@ -999,6 +1046,8 @@ void arch_mem_unmap(void *addr, size_t size)
 	}
 
 	k_spin_unlock(&xtensa_mmu_lock, key);
+
+	return ret;
 }
 
 /* This should be implemented in the SoC layer.
@@ -1244,13 +1293,8 @@ static uint32_t *dup_l2_table(uint32_t *src_l2_table, enum dup_action action)
 
 	l2_table = alloc_l2_table();
 
-	/* Duplicating L2 tables is a must-have and must-success operation.
-	 * If we are running out of free L2 tables to be allocated, we cannot
-	 * continue.
-	 */
-	__ASSERT_NO_MSG(l2_table != NULL);
 	if (l2_table == NULL) {
-		arch_system_halt(K_ERR_KERNEL_PANIC);
+		return NULL;
 	}
 
 	switch (action) {
@@ -1370,8 +1414,11 @@ static uint32_t *dup_l1_table(void)
  * @param[in] action Action during duplication.
  *                   RESTORE to restore PTEs to the attributes stored in the backup bits.
  *                   COPY to copy PTEs from source without modifications.
+ *
+ * @retval true Duplication is done, or is not needed.
+ * @retval false Duplication failed. Usually means there are no free L2 tables to be allocated.
  */
-static void dup_l2_table_if_needed(uint32_t *l1_table, uint32_t l1_pos, enum dup_action action)
+static bool dup_l2_table_if_needed(uint32_t *l1_table, uint32_t l1_pos, enum dup_action action)
 {
 	uint32_t *l2_table, *src_l2_table;
 	k_spinlock_key_t key;
@@ -1382,10 +1429,15 @@ static void dup_l2_table_if_needed(uint32_t *l1_table, uint32_t l1_pos, enum dup
 	if (l2_page_tables_counter[l2_table_to_counter_pos(src_l2_table)] == 1) {
 		/* Only one user of L2 table, no need to duplicate. */
 		k_spin_unlock(&xtensa_counter_lock, key);
-		return;
+		return true;
 	}
 
 	l2_table = dup_l2_table(src_l2_table, action);
+	if (l2_table == NULL) {
+		k_spin_unlock(&xtensa_counter_lock, key);
+		LOG_ERR("Cannot duplicate L2 page table %p", src_l2_table);
+		return false;
+	}
 
 	/* The page table is using kernel ASID because we don't
 	 * user thread manipulate it.
@@ -1397,6 +1449,8 @@ static void dup_l2_table_if_needed(uint32_t *l1_table, uint32_t l1_pos, enum dup
 	k_spin_unlock(&xtensa_counter_lock, key);
 
 	sys_cache_data_flush_range((void *)l2_table, L2_PAGE_TABLE_SIZE);
+
+	return true;
 }
 
 int arch_mem_domain_init(struct k_mem_domain *domain)
@@ -1538,7 +1592,15 @@ static void region_map_update(uint32_t *l1_table, uintptr_t start,
 		}
 
 #ifdef CONFIG_USERSPACE
-		dup_l2_table_if_needed(l1_table, l1_pos, RESTORE);
+		if (!dup_l2_table_if_needed(l1_table, l1_pos, RESTORE)) {
+			/* There is no way to report the failure back to the caller,
+			 * and the memory domain would be left in an inconsistent
+			 * state with only part of the region updated. So forcibly
+			 * halt the system.
+			 */
+			LOG_ERR("Cannot update mapping of 0x%08x", page);
+			arch_system_halt(K_ERR_KERNEL_PANIC);
+		}
 #endif
 
 		l2_table = (uint32_t *)PTE_PPN_GET(l1_table[l1_pos]);

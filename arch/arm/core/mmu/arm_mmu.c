@@ -122,7 +122,7 @@ static const struct arm_mmu_flat_range mmu_zephyr_ranges[] = {
 #endif
 };
 
-static void arm_mmu_l2_map_page(uint32_t va, uint32_t pa,
+static bool arm_mmu_l2_map_page(uint32_t va, uint32_t pa,
 				struct arm_mmu_perms_attrs perms_attrs);
 
 /**
@@ -148,21 +148,25 @@ static void invalidate_tlb_all(void)
  * @param va 32-bit virtual address to be mapped.
  * @retval pointer to the L2 table now assigned to the 1 MB
  *         address range the target virtual address is in.
+ *         NULL if no free L2 page table is available.
  */
 static struct arm_mmu_l2_page_table *arm_mmu_assign_l2_table(uint32_t va)
 {
 	struct arm_mmu_l2_page_table *l2_page_table;
 
-	__ASSERT(arm_mmu_l2_tables_free > 0,
-		 "Cannot set up L2 page table for VA 0x%08X: "
-		 "no more free L2 page tables available\n",
-		 va);
-	__ASSERT(l2_page_tables_status[arm_mmu_l2_next_free_table].entries == 0,
-		 "Cannot set up L2 page table for VA 0x%08X: "
-		 "expected empty L2 table at index [%u], but the "
-		 "entries value is %u\n",
-		 va, arm_mmu_l2_next_free_table,
-		 l2_page_tables_status[arm_mmu_l2_next_free_table].entries);
+	if (arm_mmu_l2_tables_free == 0) {
+		LOG_ERR("Cannot set up L2 page table for VA 0x%08X: "
+			"no more free L2 page tables available", va);
+		return NULL;
+	}
+
+	if (l2_page_tables_status[arm_mmu_l2_next_free_table].entries != 0) {
+		LOG_ERR("Cannot set up L2 page table for VA 0x%08X: "
+			"expected empty L2 table at index [%u], but the "
+			"entries value is %u", va, arm_mmu_l2_next_free_table,
+			l2_page_tables_status[arm_mmu_l2_next_free_table].entries);
+		return NULL;
+	}
 
 	/*
 	 * Store in the status dataset of the L2 table to be returned
@@ -475,8 +479,11 @@ static void arm_mmu_l1_map_section(uint32_t va, uint32_t pa,
  * @param l2_page_table Pointer to an empty L2 page table allocated
  *                      for the purpose of replacing the L1 section
  *                      mapping.
+ *
+ * @retval true Remapping is successful.
+ * @retval false Remapping failed.
  */
-static void arm_mmu_remap_l1_section_to_l2_table(uint32_t va,
+static bool arm_mmu_remap_l1_section_to_l2_table(uint32_t va,
 						 struct arm_mmu_l2_page_table *l2_page_table)
 {
 	struct arm_mmu_perms_attrs perms_attrs = {0};
@@ -485,6 +492,7 @@ static void arm_mmu_remap_l1_section_to_l2_table(uint32_t va,
 	uint32_t rem_size = MB(1);
 	uint32_t reg_val;
 	int lock_key;
+	bool success = true;
 
 	/*
 	 * Extract the permissions and attributes from the current 1 MB section entry.
@@ -540,7 +548,10 @@ static void arm_mmu_remap_l1_section_to_l2_table(uint32_t va,
 	/* Align the target VA to the base address of the section we're converting */
 	va &= ~(MB(1) - 1);
 	while (rem_size > 0) {
-		arm_mmu_l2_map_page(va, va, perms_attrs);
+		if (!arm_mmu_l2_map_page(va, va, perms_attrs)) {
+			success = false;
+			break;
+		}
 		rem_size -= KB(4);
 		va += KB(4);
 	}
@@ -551,6 +562,8 @@ static void arm_mmu_remap_l1_section_to_l2_table(uint32_t va,
 	__set_SCTLR(reg_val);
 
 	arch_irq_unlock(lock_key);
+
+	return success;
 }
 
 /**
@@ -565,8 +578,12 @@ static void arm_mmu_remap_l1_section_to_l2_table(uint32_t va,
  * @param pa 32-bit physical address.
  * @param perms_attrs Permission and attribute bits in the format
  *                    used in the MMU's L2 page table entries.
+ *
+ * @retval true Mapping is successful.
+ * @retval false Mapping failed. Usually means there are no free L2 page
+ *               tables to be assigned.
  */
-static void arm_mmu_l2_map_page(uint32_t va, uint32_t pa,
+static bool arm_mmu_l2_map_page(uint32_t va, uint32_t pa,
 				struct arm_mmu_perms_attrs perms_attrs)
 {
 	struct arm_mmu_l2_page_table *l2_page_table = NULL;
@@ -584,9 +601,11 @@ static void arm_mmu_l2_map_page(uint32_t va, uint32_t pa,
 	if (l1_page_table.entries[l1_index].undefined.id == ARM_MMU_PTE_ID_INVALID ||
 	    (l1_page_table.entries[l1_index].undefined.id & ARM_MMU_PTE_ID_SECTION) != 0) {
 		l2_page_table = arm_mmu_assign_l2_table(pa);
-		__ASSERT(l2_page_table != NULL,
-			 "Unexpected L2 page table NULL pointer for VA 0x%08X",
-			 va);
+		if (l2_page_table == NULL) {
+			LOG_ERR("Cannot map virtual address 0x%08X: "
+				"no L2 page table available", va);
+			return false;
+		}
 	}
 
 	/*
@@ -651,7 +670,9 @@ static void arm_mmu_l2_map_page(uint32_t va, uint32_t pa,
 		 * first before the individual L2 entry for the page to be mapped is
 		 * accessed. A blank L2 PT has already been assigned above.
 		 */
-		arm_mmu_remap_l1_section_to_l2_table(va, l2_page_table);
+		if (!arm_mmu_remap_l1_section_to_l2_table(va, l2_page_table)) {
+			return false;
+		}
 	}
 
 	/*
@@ -680,6 +701,8 @@ static void arm_mmu_l2_map_page(uint32_t va, uint32_t pa,
 	l2_page_table->entries[l2_index].l2_page_4k.pa_base =
 		((pa >> ARM_MMU_PTE_L2_SMALL_PAGE_ADDR_SHIFT) &
 		ARM_MMU_PTE_L2_SMALL_PAGE_ADDR_MASK);
+
+	return true;
 }
 
 /**
@@ -688,8 +711,13 @@ static void arm_mmu_l2_map_page(uint32_t va, uint32_t pa,
  * address by clearing its respective L2 page table entry.
  *
  * @param va 32-bit virtual address to be unmapped.
+ *
+ * @retval true Unmapping is successful, or nothing was mapped at the
+ *              given virtual address.
+ * @retval false The page table entry to be cleared is of an unexpected
+ *               type.
  */
-static void arm_mmu_l2_unmap_page(uint32_t va)
+static bool arm_mmu_l2_unmap_page(uint32_t va)
 {
 	struct arm_mmu_l2_page_table *l2_page_table;
 	uint32_t l1_index = (va >> ARM_MMU_PTE_L1_INDEX_PA_SHIFT) &
@@ -704,7 +732,7 @@ static void arm_mmu_l2_unmap_page(uint32_t va)
 		 * a L2 PT exists, the corresponding PTE is blank - see explanation
 		 * below, the same applies here.
 		 */
-		return;
+		return true;
 	}
 
 	l2_page_table = (struct arm_mmu_l2_page_table *)
@@ -723,7 +751,7 @@ static void arm_mmu_l2_unmap_page(uint32_t va)
 		 * -> Just return, don't decrement the entry counter of the corresponding
 		 * L2 page table, as we're not actually clearing any PTEs.
 		 */
-		return;
+		return true;
 	}
 
 	if ((l2_page_table->entries[l2_index].undefined.id & ARM_MMU_PTE_ID_SMALL_PAGE) !=
@@ -731,12 +759,14 @@ static void arm_mmu_l2_unmap_page(uint32_t va)
 		LOG_ERR("Cannot unmap virtual memory at 0x%08X: invalid "
 			"page table entry type in level 2 page table at "
 			"L1 index [%u], L2 index [%u]", va, l1_index, l2_index);
-		return;
+		return false;
 	}
 
 	l2_page_table->entries[l2_index].word = 0;
 
 	arm_mmu_dec_l2_table_entries(l2_page_table);
+
+	return true;
 }
 
 /**
@@ -793,7 +823,11 @@ int z_arm_mmu_init(void)
 				rem_size -= MB(1);
 				pa += MB(1);
 			} else {
-				arm_mmu_l2_map_page(pa, pa, perms_attrs);
+				bool success = arm_mmu_l2_map_page(pa, pa, perms_attrs);
+
+				__ASSERT(success, "Cannot map PA 0x%08X at boot time", pa);
+				ARG_UNUSED(success);
+
 				rem_size -= (rem_size >= KB(4)) ? KB(4) : rem_size;
 				pa += KB(4);
 			}
@@ -824,7 +858,11 @@ int z_arm_mmu_init(void)
 				va += MB(1);
 				pa += MB(1);
 			} else {
-				arm_mmu_l2_map_page(va, pa, perms_attrs);
+				bool success = arm_mmu_l2_map_page(va, pa, perms_attrs);
+
+				__ASSERT(success, "Cannot map VA 0x%08X at boot time", va);
+				ARG_UNUSED(success);
+
 				rem_size -= (rem_size >= KB(4)) ? KB(4) : rem_size;
 				va += KB(4);
 				pa += KB(4);
@@ -899,7 +937,9 @@ int z_arm_mmu_init(void)
  * @param size Size (in bytes) of the memory area to map.
  * @param flags Memory attributes & permissions. Comp. K_MEM_...
  *              flags in kernel/mm.h.
- * @retval 0 on success, -EINVAL if an invalid parameter is detected.
+ * @retval 0 on success, -EINVAL if an invalid parameter is detected,
+ *         -ENOTSUP if the requested cache mode is not supported,
+ *         -ENOMEM if no page table could be allocated for the mapping.
  */
 static int __arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 {
@@ -922,7 +962,6 @@ static int __arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flag
 		conv_flags |= MT_NORMAL;
 		break;
 	case K_MEM_CACHE_NONE:
-	default:
 		conv_flags |= MT_DEVICE;
 		break;
 	case K_MEM_CACHE_WB:
@@ -942,7 +981,10 @@ static int __arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flag
 		conv_flags |= MATTR_CACHE_OUTER_WT_nWA;
 		conv_flags |= MATTR_CACHE_INNER_WT_nWA;
 		break;
-
+	default:
+		LOG_ERR("Cannot map physical memory at 0x%08X: unsupported "
+			"cache mode 0x%X", (uint32_t)phys, flags & K_MEM_CACHE_MASK);
+		return -ENOTSUP;
 	}
 
 	if (flags & K_MEM_PERM_RW) {
@@ -957,7 +999,14 @@ static int __arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flag
 	key = arch_irq_lock();
 
 	while (rem_size > 0) {
-		arm_mmu_l2_map_page(va, pa, perms_attrs);
+		if (!arm_mmu_l2_map_page(va, pa, perms_attrs)) {
+			/* Some pages may have already been mapped in this loop.
+			 * The caller is expected to unmap the entire range in
+			 * order to clean up the partial mapping.
+			 */
+			arch_irq_unlock(key);
+			return -ENOMEM;
+		}
 		rem_size -= (rem_size >= KB(4)) ? KB(4) : rem_size;
 		va += KB(4);
 		pa += KB(4);
@@ -973,24 +1022,32 @@ static int __arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flag
  * Maps memory according to the parameters provided by the caller
  * at run-time. This function wraps the ARMv7 MMU specific implementation
  * #__arch_mem_map() for the upper layers of the memory management.
- * If the map operation fails, a kernel panic will be triggered.
  *
  * @param virt 32-bit target virtual address.
  * @param phys 32-bit physical address.
  * @param size Size (in bytes) of the memory area to map.
  * @param flags Memory attributes & permissions. Comp. K_MEM_...
  *              flags in kernel/mm.h.
+ *
+ * @retval 0 On success
+ * @retval -EINVAL If invalid arguments are given (for example, a zero size)
+ * @retval -ENOTSUP If the requested cache mode is not supported
+ * @retval -ENOMEM If no page table could be allocated for the mapping
  */
-void arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
+int arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 {
 	int ret = __arch_mem_map(virt, phys, size, flags);
 
-	if (ret) {
+	if (ret != 0) {
 		LOG_ERR("__arch_mem_map() returned %d", ret);
-		k_panic();
-	} else {
-		invalidate_tlb_all();
 	}
+
+	/* Even a failed mapping may have modified the page tables before
+	 * bailing out, so the TLB has to be invalidated in any case.
+	 */
+	invalidate_tlb_all();
+
+	return ret;
 }
 
 /**
@@ -1000,7 +1057,9 @@ void arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
  *
  * @param addr 32-bit virtual address to unmap.
  * @param size Size (in bytes) of the memory area to unmap.
- * @retval 0 on success, -EINVAL if an invalid parameter is detected.
+ * @retval 0 on success, -EINVAL if an invalid parameter is detected,
+ *         -EFAULT if a page table entry of an unexpected type was
+ *         encountered.
  */
 static int __arch_mem_unmap(void *addr, size_t size)
 {
@@ -1022,7 +1081,10 @@ static int __arch_mem_unmap(void *addr, size_t size)
 	key = arch_irq_lock();
 
 	while (rem_size > 0) {
-		arm_mmu_l2_unmap_page(va);
+		if (!arm_mmu_l2_unmap_page(va)) {
+			arch_irq_unlock(key);
+			return -EFAULT;
+		}
 		rem_size -= (rem_size >= KB(4)) ? KB(4) : rem_size;
 		va += KB(4);
 	}
@@ -1040,16 +1102,27 @@ static int __arch_mem_unmap(void *addr, size_t size)
  *
  * @param addr 32-bit virtual address to unmap.
  * @param size Size (in bytes) of the memory area to unmap.
+ *
+ * @retval 0 On success
+ * @retval -EINVAL If invalid arguments are given (for example, a NULL
+ *                 address or zero size)
+ * @retval -EFAULT If a page table entry of an unexpected type was
+ *                 encountered
  */
-void arch_mem_unmap(void *addr, size_t size)
+int arch_mem_unmap(void *addr, size_t size)
 {
 	int ret = __arch_mem_unmap(addr, size);
 
-	if (ret) {
+	if (ret != 0) {
 		LOG_ERR("__arch_mem_unmap() returned %d", ret);
-	} else {
-		invalidate_tlb_all();
 	}
+
+	/* Even a failed unmap may have modified the page tables before
+	 * bailing out, so the TLB has to be invalidated in any case.
+	 */
+	invalidate_tlb_all();
+
+	return ret;
 }
 
 /**
