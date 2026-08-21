@@ -26,13 +26,7 @@ LOG_MODULE_REGISTER(adc_mspm0);
 #include "adc_context.h"
 
 #define ADC_MSPM0_CHANNEL_MAX            (32)
-#define ADC_MSPM0_CHANNEL_NO_INIT        (0xFF)
 #define ADC_MSPM0_NUM_SAMPLE_TIMERS      2
-#define ADC_MSPM0_MEM_CTL_STIME		 GENMASK(0, 0)
-#define ADC_MSPM0_MEM_CTL_REF		 GENMASK(2, 1)
-#define ADC_MSPM0_REF_VDD                0
-#define ADC_MSPM0_REF_INTERNAL           1
-#define ADC_MSPM0_REF_EXTERNAL           2
 #define ADC_MSPM0_MAX_OVERSAMPLING       7
 #define ADC_MSPM0_RESOLUTION_14          14
 #define ADC_MSPM0_RESOLUTION_12          12
@@ -189,11 +183,9 @@ struct adc_mspm0_regs {
 #define ADC12_MEMCTL_CHANSEL             GENMASK(4, 0)
 #define ADC12_MEMCTL_VRSEL               GENMASK(10, 8)
 #define ADC12_MEMCTL_VRSEL_VAL_VDDA      0U
-#define ADC12_MEMCTL_VRSEL_VAL_EXTREF    FIELD_PREP(ADC12_MEMCTL_VRSEL, 1)
-#define ADC12_MEMCTL_VRSEL_VAL_INTREF    FIELD_PREP(ADC12_MEMCTL_VRSEL, 2)
+#define ADC12_MEMCTL_VRSEL_VAL_EXTREF    1U
+#define ADC12_MEMCTL_VRSEL_VAL_INTREF    2U
 #define ADC12_MEMCTL_STIME               BIT(12)
-#define ADC12_MEMCTL_STIME_VAL_SCOMP0    0U
-#define ADC12_MEMCTL_STIME_VAL_SCOMP1    ADC12_MEMCTL_STIME
 #define ADC12_MEMCTL_AVGEN               BIT(16)
 #define ADC12_MEMCTL_AVGEN_VAL_DISABLE   0U
 #define ADC12_MEMCTL_AVGEN_VAL_ENABLE    ADC12_MEMCTL_AVGEN
@@ -236,13 +228,19 @@ enum mspm0_oversampling {
 	ADC_MSPM0_AVG_128X
 };
 
+struct adc_mspm0_channel_cfg {
+	uint8_t vrsel: 2; /* raw ADC12_MEMCTL_VRSEL index: 0=VDDA, 1=EXTREF, 2=INTREF */
+	uint8_t stime: 1; /* raw ADC12_MEMCTL_STIME index: 0=SCOMP0, 1=SCOMP1 */
+	bool configured: 1;
+} __packed;
+
 struct adc_mspm0_data {
 	struct adc_context ctx;
 	const struct device *dev;
 	uint16_t *buffer;
 	uint16_t *repeat_buffer;
 	uint16_t sample_time[ADC_MSPM0_NUM_SAMPLE_TIMERS];
-	uint8_t channel_mem_ctl[ADC_MSPM0_CHANNEL_MAX];
+	struct adc_mspm0_channel_cfg channel_cfg[ADC_MSPM0_CHANNEL_MAX];
 	uint8_t channel_eoc;
 #ifdef CONFIG_REGULATOR_MSPM0_VREF
 	uint8_t vref_flags;
@@ -402,15 +400,15 @@ static int adc_mspm0_channel_setup(const struct device *dev,
 	if (data->sample_time[ADC_MSPM0_SCOMP0] == UINT16_MAX) {
 		regs->scomp0 = sampling_time;
 		data->sample_time[ADC_MSPM0_SCOMP0] = sampling_time;
-		data->channel_mem_ctl[ch] = ADC_MSPM0_SCOMP0;
+		data->channel_cfg[ch].stime = ADC_MSPM0_SCOMP0;
 	} else if (data->sample_time[ADC_MSPM0_SCOMP0] == sampling_time) {
-		data->channel_mem_ctl[ch] = ADC_MSPM0_SCOMP0;
+		data->channel_cfg[ch].stime = ADC_MSPM0_SCOMP0;
 	} else if (data->sample_time[ADC_MSPM0_SCOMP1] == UINT16_MAX) {
 		regs->scomp1 = sampling_time;
 		data->sample_time[ADC_MSPM0_SCOMP1] = sampling_time;
-		data->channel_mem_ctl[ch] = ADC_MSPM0_SCOMP1;
+		data->channel_cfg[ch].stime = ADC_MSPM0_SCOMP1;
 	} else if (data->sample_time[ADC_MSPM0_SCOMP1] == sampling_time) {
-		data->channel_mem_ctl[ch] = ADC_MSPM0_SCOMP1;
+		data->channel_cfg[ch].stime = ADC_MSPM0_SCOMP1;
 	} else {
 		ret = -EINVAL;
 		goto unlock;
@@ -418,12 +416,11 @@ static int adc_mspm0_channel_setup(const struct device *dev,
 
 	switch (channel_cfg->reference) {
 	case ADC_REF_VDD_1:
-		data->channel_mem_ctl[ch] |= FIELD_PREP(ADC_MSPM0_MEM_CTL_REF, ADC_MSPM0_REF_VDD);
+		data->channel_cfg[ch].vrsel = ADC12_MEMCTL_VRSEL_VAL_VDDA;
 		break;
 #ifdef CONFIG_REGULATOR_MSPM0_VREF
 	case ADC_REF_INTERNAL:
-		data->channel_mem_ctl[ch] |= FIELD_PREP(ADC_MSPM0_MEM_CTL_REF,
-							ADC_MSPM0_REF_INTERNAL);
+		data->channel_cfg[ch].vrsel = ADC12_MEMCTL_VRSEL_VAL_INTREF;
 
 		if ((data->vref_flags & EXT_VREF) || !(config->vref_config)) {
 			ret = -EINVAL;
@@ -439,8 +436,7 @@ static int adc_mspm0_channel_setup(const struct device *dev,
 		}
 		break;
 	case ADC_REF_EXTERNAL0:
-		data->channel_mem_ctl[ch] |= FIELD_PREP(ADC_MSPM0_MEM_CTL_REF,
-							ADC_MSPM0_REF_EXTERNAL);
+		data->channel_cfg[ch].vrsel = ADC12_MEMCTL_VRSEL_VAL_EXTREF;
 
 		if ((data->vref_flags & INT_VREF) || !(config->vref_config)) {
 			ret = -EINVAL;
@@ -463,6 +459,8 @@ static int adc_mspm0_channel_setup(const struct device *dev,
 		goto unlock;
 	}
 
+	data->channel_cfg[ch].configured = true;
+
 unlock:
 	adc_context_release(&data->ctx, 0);
 	return ret;
@@ -482,7 +480,6 @@ static int adc_mspm0_config_sequence(const struct device *dev, const struct adc_
 	uint32_t stime;
 	uint8_t mem_ctl_count = 0;
 	uint8_t ch;
-	uint8_t ref_index;
 
 	switch (seq->resolution) {
 	case ADC_MSPM0_RESOLUTION_14:
@@ -548,33 +545,12 @@ static int adc_mspm0_config_sequence(const struct device *dev, const struct adc_
 
 	while (channels) {
 		ch = find_lsb_set(channels) - 1;
-		if ((ch >= config->num_channels) ||
-		    (data->channel_mem_ctl[ch] == ADC_MSPM0_CHANNEL_NO_INIT)) {
+		if ((ch >= config->num_channels) || !data->channel_cfg[ch].configured) {
 			return -EINVAL;
 		}
 
-		ref_index = FIELD_GET(ADC_MSPM0_MEM_CTL_REF, data->channel_mem_ctl[ch]);
-
-		switch (ref_index) {
-		case ADC_MSPM0_REF_VDD:
-			vrsel = ADC12_MEMCTL_VRSEL_VAL_VDDA;
-			break;
-#ifdef CONFIG_REGULATOR_MSPM0_VREF
-		case ADC_MSPM0_REF_INTERNAL:
-			vrsel = ADC12_MEMCTL_VRSEL_VAL_INTREF;
-			break;
-		case ADC_MSPM0_REF_EXTERNAL:
-			vrsel = ADC12_MEMCTL_VRSEL_VAL_EXTREF;
-			break;
-#endif
-		default:
-			LOG_ERR("Invalid reference index for channel %d", ch);
-			return -EINVAL;
-		}
-
-		stime = FIELD_GET(ADC_MSPM0_MEM_CTL_STIME, data->channel_mem_ctl[ch])
-				? ADC12_MEMCTL_STIME_VAL_SCOMP1
-				: ADC12_MEMCTL_STIME_VAL_SCOMP0;
+		vrsel = FIELD_PREP(ADC12_MEMCTL_VRSEL, data->channel_cfg[ch].vrsel);
+		stime = FIELD_PREP(ADC12_MEMCTL_STIME, data->channel_cfg[ch].stime);
 
 		if (mem_ctl_count < config->max_result) {
 			regs->memctl[mem_ctl_count] =
@@ -721,7 +697,7 @@ static int adc_mspm0_init(const struct device *dev)
 	data->sample_time[ADC_MSPM0_SCOMP1] = UINT16_MAX;
 
 	for (int i = 0; i < ADC_MSPM0_CHANNEL_MAX; i++) {
-		data->channel_mem_ctl[i] = ADC_MSPM0_CHANNEL_NO_INIT;
+		data->channel_cfg[i].configured = 0;
 	}
 	config->irq_cfg_func();
 
