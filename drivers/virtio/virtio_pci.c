@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/device.h>
+#include <zephyr/drivers/pcie/cap.h>
 #include <zephyr/drivers/pcie/pcie.h>
 #include <zephyr/kernel/mm.h>
 #include <zephyr/logging/log.h>
@@ -74,6 +75,7 @@ struct virtio_pci_common_cfg {
 #define VIRTIO_PCI_CAP_PCI_CFG 5
 #define VIRTIO_PCI_CAP_SHARED_MEMORY_CFG 8
 #define VIRTIO_PCI_CAP_VENDOR_CFG 9
+#define VIRTIO_PCI_BAR_MAX 5U
 
 #define CABABILITY_LIST_VALID_BIT 4
 #define STATUS_COMMAND_REG 0x1
@@ -142,15 +144,20 @@ static bool virtio_pci_read_cap(
 		for (int i = 0; i < sizeof(struct virtio_pci_cap) / sizeof(uint32_t); i++) {
 			((uint32_t *)&tmp)[i] = pcie_conf_read(bdf, cap_off + i);
 		}
-		if (tmp.cfg_type == cfg_type) {
-			if (tmp.cap_len < sizeof(struct virtio_pci_cap) ||
-			    tmp.cap_len > cap_struct_size) {
+		if (tmp.cap_vndr == PCI_CAP_ID_VNDR && tmp.cfg_type == cfg_type &&
+		    tmp.bar <= VIRTIO_PCI_BAR_MAX) {
+			/*
+			 * cap_len may include padding or fields unused by this driver.
+			 * Require the bytes we consume, then copy only that many.
+			 */
+			if (tmp.cap_len < cap_struct_size) {
 				LOG_ERR("invalid virtio pci cap_len %u for bdf 0x%x",
 					tmp.cap_len, bdf);
 				return false;
 			}
 			size_t extra_data_words =
-				(tmp.cap_len - sizeof(struct virtio_pci_cap)) / sizeof(uint32_t);
+				(cap_struct_size - sizeof(struct virtio_pci_cap)) /
+				sizeof(uint32_t);
 			size_t extra_data_offset =
 				cap_off + sizeof(struct virtio_pci_cap) / sizeof(uint32_t);
 			uint32_t *extra_data =
@@ -425,7 +432,7 @@ static int virtio_pci_init_common(const struct device *dev)
 
 	if (conf->pcie->bdf == PCIE_BDF_NONE) {
 		LOG_ERR("no virtio pci device with id 0x%x on the bus", conf->pcie->id);
-		return 1;
+		return -ENODEV;
 	}
 	LOG_INF(
 		"found virtio pci device with id 0x%x and bdf 0x%x", conf->pcie->id, conf->pcie->bdf
@@ -433,7 +440,7 @@ static int virtio_pci_init_common(const struct device *dev)
 
 	if (virtio_pci_read_cap(conf->pcie->bdf, VIRTIO_PCI_CAP_COMMON_CFG, &vpc, sizeof(vpc))) {
 		if (!virtio_pci_map_cap(conf->pcie->bdf, &vpc, (void **)&data->common_cfg)) {
-			return 1;
+			return -EINVAL;
 		}
 	} else {
 		LOG_ERR(
@@ -441,12 +448,12 @@ static int virtio_pci_init_common(const struct device *dev)
 			conf->pcie->id,
 			conf->pcie->bdf
 		);
-		return 1;
+		return -EINVAL;
 	}
 
 	if (virtio_pci_read_cap(conf->pcie->bdf, VIRTIO_PCI_CAP_ISR_CFG, &vpc, sizeof(vpc))) {
 		if (!virtio_pci_map_cap(conf->pcie->bdf, &vpc, (void **)&data->isr_status)) {
-			return 1;
+			return -EINVAL;
 		}
 	} else {
 		LOG_ERR(
@@ -454,14 +461,14 @@ static int virtio_pci_init_common(const struct device *dev)
 			conf->pcie->id,
 			conf->pcie->bdf
 		);
-		return 1;
+		return -EINVAL;
 	}
 
 	if (virtio_pci_read_cap(conf->pcie->bdf, VIRTIO_PCI_CAP_NOTIFY_CFG, &vpnc, sizeof(vpnc))) {
 		if (!virtio_pci_map_cap(
 				conf->pcie->bdf, (struct virtio_pci_cap *)&vpnc,
 				(void **)&data->notify_cfg)) {
-			return 1;
+			return -EINVAL;
 		}
 		data->notify_off_multiplier = sys_le32_to_cpu(vpnc.notify_off_multiplier);
 	} else {
@@ -470,7 +477,7 @@ static int virtio_pci_init_common(const struct device *dev)
 			conf->pcie->id,
 			conf->pcie->bdf
 		);
-		return 1;
+		return -EINVAL;
 	}
 
 	/*
@@ -483,7 +490,7 @@ static int virtio_pci_init_common(const struct device *dev)
 	if (virtio_pci_read_cap(conf->pcie->bdf, VIRTIO_PCI_CAP_DEVICE_CFG, &vpc, sizeof(vpc))) {
 		if (!virtio_pci_map_cap(
 				conf->pcie->bdf, &vpc, (void **)&data->device_specific_cfg)) {
-			return 1;
+			return -EINVAL;
 		}
 	} else {
 		data->device_specific_cfg = NULL;
@@ -536,7 +543,7 @@ static int virtio_pci_init_common(const struct device *dev)
 			conf->pcie->id,
 			conf->pcie->bdf
 		);
-		return 1;
+		return -EINVAL;
 	}
 
 	virtio_pci_write_driver_feature_bit(dev, VIRTIO_F_VERSION_1, 1);
