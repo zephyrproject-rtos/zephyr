@@ -206,36 +206,41 @@ static void show_capabilities(const struct shell *sh, pcie_bdf_t bdf)
 static void show_vc(const struct shell *sh, pcie_bdf_t bdf)
 {
 	uint32_t base;
+	uint32_t vc_count;
 	struct pcie_vc_regs regs;
 	struct pcie_vc_resource_regs res_regs[PCIE_VC_MAX_COUNT];
-	int idx;
+	uint32_t idx;
 
 	base = pcie_vc_cap_lookup(bdf, &regs);
 	if (base == 0) {
 		return;
 	}
 
+	vc_count = FIELD_GET(PCIE_VC_CAP1_EVCC_MASK, regs.cap_reg_1);
+
 	shell_fprintf(sh, SHELL_NORMAL,
 		      "    VC exposed : VC/LPVC count: %u/%u, "
 		      "PAT entry size 0x%x, VCA cap 0x%x, "
 		      "VCA table Offset 0x%x\n",
-		      regs.cap_reg_1.vc_count + 1,
-		      regs.cap_reg_1.lpvc_count,
-		      regs.cap_reg_1.pat_entry_size,
-		      regs.cap_reg_2.vca_cap,
-		      regs.cap_reg_2.vca_table_offset);
+		      vc_count + 1U,
+		      FIELD_GET(PCIE_VC_CAP1_LPEVCC_MASK, regs.cap_reg_1),
+		      FIELD_GET(PCIE_VC_CAP1_PAT_ENTRY_SIZE_MASK, regs.cap_reg_1),
+		      FIELD_GET(PCIE_VC_CAP2_VCA_CAP_MASK, regs.cap_reg_2),
+		      FIELD_GET(PCIE_VC_CAP2_VCA_TABLE_OFFSET_MASK, regs.cap_reg_2));
 
-	pcie_vc_load_resources_regs(bdf, base, res_regs,
-				    regs.cap_reg_1.vc_count + 1);
+	pcie_vc_load_resources_regs(bdf, base, res_regs, vc_count + 1U);
 
-	for (idx = 0; idx < regs.cap_reg_1.vc_count + 1; idx++) {
+	for (idx = 0; idx < vc_count + 1U; idx++) {
 		shell_fprintf(sh, SHELL_NORMAL,
-			      "        VC %d - PA Cap 0x%x, RST %u,"
+			      "        VC %u - PA Cap 0x%x, RST %u,"
 			      "Max TS %u PAT offset 0x%x\n",
-			      idx, res_regs[idx].cap_reg.pa_cap,
-			      res_regs[idx].cap_reg.rst,
-			      res_regs[idx].cap_reg.max_time_slots,
-			      res_regs[idx].cap_reg.pa_table_offset);
+			      idx,
+			      FIELD_GET(PCIE_VC_RES_CAP_PA_CAP_MASK, res_regs[idx].cap_reg),
+			      !!(res_regs[idx].cap_reg & PCIE_VC_RES_CAP_RST),
+			      FIELD_GET(PCIE_VC_RES_CAP_MAX_TIME_SLOTS_MASK,
+					res_regs[idx].cap_reg),
+			      FIELD_GET(PCIE_VC_RES_CAP_PA_TABLE_OFFSET_MASK,
+					res_regs[idx].cap_reg));
 	}
 }
 
