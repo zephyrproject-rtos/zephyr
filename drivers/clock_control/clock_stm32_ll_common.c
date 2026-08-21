@@ -21,6 +21,7 @@
 #include <stm32_hsem.h>
 
 #include "clock_stm32_ll_common.h"
+#include "clock_stm32_int_flash_latency.h"
 
 /* Macros to fill up prescaler values */
 #define hsi_divider(v) CONCAT(LL_RCC_HSI_DIV_, v)
@@ -1124,7 +1125,7 @@ int stm32_clock_control_init(const struct device *dev)
 
 	/* If HCLK increases, set flash latency before any clock setting */
 	if (old_flash_freq < new_flash_freq) {
-		LL_SetFlashLatency(new_flash_freq);
+		stm32_set_flash_latency(new_flash_freq);
 	}
 #endif /* FLASH_ACR_LATENCY */
 
@@ -1170,7 +1171,7 @@ int stm32_clock_control_init(const struct device *dev)
 #if defined(FLASH_ACR_LATENCY)
 	/* If HCLK not increased, set flash latency after all clock setting */
 	if (old_flash_freq >= new_flash_freq) {
-		LL_SetFlashLatency(new_flash_freq);
+		stm32_set_flash_latency(new_flash_freq);
 	}
 #endif /* FLASH_ACR_LATENCY */
 
