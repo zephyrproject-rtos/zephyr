@@ -22,6 +22,7 @@ class HardwareData:
     runner_params: str | None = None
     pre_script: str | None = None
     post_script: str | None = None
+    pre_flash_script: str | None = None
     post_flash_script: str | None = None
     script_param: str | None = None
     runner: str | None = None
