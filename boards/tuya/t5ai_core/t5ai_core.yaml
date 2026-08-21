@@ -1,0 +1,22 @@
+# Copyright (c) 2026 Embracecactus
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: t5ai_core/bk7258
+name: T5AI Core
+vendor: tuya
+type: mcu
+arch: arm
+ram: 128
+flash: 4032
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - clock_control
+  - pinctrl
+  - serial
+  - uart
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
