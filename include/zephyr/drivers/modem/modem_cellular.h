@@ -103,12 +103,17 @@ enum modem_cellular_event {
 	MODEM_CELLULAR_EVENT_PERIODIC_KICK,
 	MODEM_CELLULAR_EVENT_DIAL,
 	MODEM_CELLULAR_EVENT_HANGUP,
-};
+} __packed;
 
 struct modem_cellular_event_cb {
 	cellular_event_mask_t mask;
 	cellular_event_cb_t fn;
 	void *user_data;
+};
+
+struct modem_cellular_event_pkg {
+	uint8_t event;
+	const void *ptr;
 };
 
 /** @endcond */
@@ -192,8 +197,9 @@ struct modem_cellular_data {
 
 	/* Event dispatcher */
 	struct k_work event_dispatch_work;
-	uint8_t event_buf[8];
-	struct k_pipe event_pipe;
+	struct k_msgq event_queue;
+	struct modem_cellular_event_pkg event_buf[8];
+	const void *event_ptr;
 
 	struct k_mutex api_lock;
 	struct modem_cellular_event_cb cb;

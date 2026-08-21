@@ -15,8 +15,8 @@ static void test_event_dispatch_handler(struct k_work *item)
 	ARG_UNUSED(item);
 }
 
-static void test_event_cb(const struct device *dev, enum cellular_event event,
-			  const void *payload, void *user_data)
+static void test_event_cb(const struct device *dev, enum cellular_event event, const void *payload,
+			  void *user_data)
 {
 	ARG_UNUSED(dev);
 	ARG_UNUSED(payload);
@@ -42,7 +42,8 @@ static void test_feed_cxreg(char *prefix, char *stat)
 static void *test_suite_setup(void)
 {
 	k_work_init(&test_data.event_dispatch_work, test_event_dispatch_handler);
-	k_pipe_init(&test_data.event_pipe, test_data.event_buf, sizeof(test_data.event_buf));
+	k_msgq_init(&test_data.event_queue, (void *)test_data.event_buf,
+		    sizeof(test_data.event_buf[0]), ARRAY_SIZE(test_data.event_buf));
 
 	test_data.cb.fn = test_event_cb;
 	test_data.cb.mask = CELLULAR_EVENT_NETWORK_STATUS_CHANGED;
@@ -66,11 +67,9 @@ ZTEST(modem_cellular, test_c5greg_own_status)
 {
 	test_feed_cxreg("+C5GREG: ", "1");
 
-	zassert_equal(test_data.registration_status_5g,
-		      CELLULAR_REGISTRATION_REGISTERED_HOME,
+	zassert_equal(test_data.registration_status_5g, CELLULAR_REGISTRATION_REGISTERED_HOME,
 		      "+C5GREG did not update the 5G registration status");
-	zassert_equal(test_data.registration_status_lte,
-		      CELLULAR_REGISTRATION_NOT_REGISTERED,
+	zassert_equal(test_data.registration_status_lte, CELLULAR_REGISTRATION_NOT_REGISTERED,
 		      "+C5GREG overwrote the LTE registration status");
 }
 
@@ -92,10 +91,8 @@ ZTEST(modem_cellular, test_cereg_does_not_clear_5g_registration)
 	test_feed_cxreg("+C5GREG: ", "1");
 	test_feed_cxreg("+CEREG: ", "0");
 
-	zassert_equal(network_status_events, 0,
-		      "Modem deregistered while still registered on 5G");
-	zassert_equal(test_data.registration_status_5g,
-		      CELLULAR_REGISTRATION_REGISTERED_HOME,
+	zassert_equal(network_status_events, 0, "Modem deregistered while still registered on 5G");
+	zassert_equal(test_data.registration_status_5g, CELLULAR_REGISTRATION_REGISTERED_HOME,
 		      "+CEREG cleared the 5G registration status");
 }
 
