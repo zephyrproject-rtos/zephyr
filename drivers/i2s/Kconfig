@@ -13,6 +13,30 @@ menuconfig I2S
 
 if I2S
 
+config I2S_RTIO
+	bool "I2S RTIO API"
+	select EXPERIMENTAL
+	select RTIO
+	help
+	  API and implementations of I2S for RTIO
+
+if I2S_RTIO
+
+config I2S_RTIO_LEGACY
+	bool "Support legacy APIs for RTIO based I2S device drivers"
+	help
+	  Adds support for using legacy I2S APIs with RTIO based I2S device drivers.
+
+if I2S_RTIO_LEGACY
+
+config I2S_RTIO_LEGACY_MAX_BLOCK_COUNT
+	int "The maximum number of blocks in any memory slab provided to an I2S device"
+	default 16
+
+endif # I2S_RTIO_LEGACY
+
+endif # I2S_RTIO
+
 config I2S_INIT_PRIORITY
 	int "Init priority"
 	default KERNEL_INIT_PRIORITY_DEVICE
