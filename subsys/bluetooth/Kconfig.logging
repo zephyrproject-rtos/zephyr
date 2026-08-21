@@ -578,7 +578,27 @@ module-str = BT_OTS
 source "subsys/logging/Kconfig.template.log_config"
 endif # BT_OTS
 
+if BT_HIDS
+
+module = BT_HIDS
+module-str = HID Service
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # BT_HIDS
+
 endmenu # Services
+
+menu "Profiles"
+
+if BT_HOGP_DEVICE
+
+module = BT_HOGP_DEVICE
+module-str = HOGP Device
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # BT_HOGP_DEVICE
+
+endmenu # Profiles
 
 endmenu # Bluetooth logging
 

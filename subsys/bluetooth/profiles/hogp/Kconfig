@@ -1,0 +1,39 @@
+# Bluetooth HID over GATT Profile (HOGP)
+
+# Copyright (c) 2026 Xiaomi Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig BT_HOGP_DEVICE
+	bool "HID over GATT Profile Device (HOGP Device) [EXPERIMENTAL]"
+	depends on BT_PERIPHERAL
+	depends on BT_SMP
+	depends on BT_BONDABLE
+	select EXPERIMENTAL
+	select BT_HIDS
+	select BT_BAS
+	select BT_DIS
+	select BT_DIS_PNP
+	help
+	  Enable the HID Device role of the HID over GATT Profile.
+
+	  HOGP v1.1, Section 3, Table 3.1 makes the HID Service, the Battery
+	  Service and the Device Information Service mandatory for the HID
+	  Device role, and Section 3.3.2 makes the PnP ID characteristic of
+	  the Device Information Service mandatory, so these are selected
+	  here. The Scan Parameters Service is optional and is not selected.
+
+	  Section 7.1 requires the HID Device to be bondable, hence the
+	  dependency on BT_BONDABLE.
+
+if BT_HOGP_DEVICE
+
+config BT_HOGP_DEVICE_SECURITY_REQUEST
+	bool "Request security when a Host connects"
+	default y
+	help
+	  Use the Peripheral Security Request procedure to inform the HID Host
+	  of the security requirements of the HID Device, as recommended by
+	  HOGP v1.1, Section 7.1. Disable this if the application manages the
+	  security of the connection itself.
+
+endif # BT_HOGP_DEVICE

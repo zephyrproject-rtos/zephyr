@@ -74,6 +74,12 @@ tests:
       - CONFIG_BT_CHANNEL_SOUNDING_TEST=y
       - CONFIG_BT_LL_SW_SPLIT=n
     build_only: true
+  bluetooth.shell.hogp:
+    integration_platforms:
+      - native_sim
+    extra_configs:
+      - CONFIG_BT_HOGP_DEVICE=y
+    build_only: true
   bluetooth.shell.shell_br:
     extra_configs:
       - CONFIG_UART_NATIVE_PTY_0_ON_STDINOUT=y
