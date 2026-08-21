@@ -28,22 +28,22 @@ struct ifx_peri_clock_data {
 	uint8_t div_type;
 };
 
+#if defined(COMPONENT_CAT1B) || defined(COMPONENT_CAT1C) || defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
 static inline en_clk_dst_t peri_pclk_build_en_clk_dst(uint8_t output, uint8_t group,
 						      uint8_t instance)
 {
 	en_clk_dst_t clk_dst;
 
 	clk_dst = output;
-#if defined(COMPONENT_CAT1B) || defined(COMPONENT_CAT1C) || defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
 	/* These devices pack instance, group, and output together in the en_clk_dst_t.  Group and
 	 * Instance are used by the enable_divider and set_divider functions to determine which
 	 * clock is being referenced.
 	 */
 	clk_dst |= ((uint32_t)group << PERI_PCLK_GR_NUM_Pos);
 	clk_dst |= ((uint32_t)instance << PERI_PCLK_INST_NUM_Pos);
-#endif
 	return clk_dst;
 }
+#endif
 
 static int ifx_cat1_peri_clock_init(const struct device *dev)
 {
