@@ -443,6 +443,7 @@ NET_MGMT_REGISTER_EVENT_HANDLER(l4_events, L4_EVENT_MASK, l4_event_handler, NULL
 
 int main(void)
 {
+	bool valid_dns = false;
 	uint16_t *port;
 	int ret;
 
@@ -487,7 +488,9 @@ int main(void)
 	ret = sample_dns_request();
 	if (ret < 0) {
 		printk("DNS query failed\n");
-		return -1;
+		goto power_cycle;
+	} else {
+		valid_dns = true;
 	}
 
 	{
@@ -529,13 +532,15 @@ int main(void)
 		return -1;
 	}
 
-	printk("Restart modem\n");
+power_cycle:
+	printk("Shutting down modem\n");
 	ret = pm_device_action_run(modem, PM_DEVICE_ACTION_SUSPEND);
 	if (ret != 0) {
 		printk("Failed to power down modem\n");
 		return -1;
 	}
 
+	printk("Restarting modem\n");
 	pm_device_action_run(modem, PM_DEVICE_ACTION_RESUME);
 
 	printk("Waiting for L4 connected\n");
@@ -549,8 +554,11 @@ int main(void)
 	/* Wait a bit to avoid (unsuccessfully) trying to send the first echo packet too quickly. */
 	k_sleep(K_SECONDS(5));
 
-	ret = sample_echo_packet(net_sad(&sample_test_dns_addrinfo.ai_addr_storage),
-				 sample_test_dns_addrinfo.ai_addrlen, port);
+	if (valid_dns) {
+		/* Only run the second echo if the original DNS succeeded */
+		ret = sample_echo_packet(net_sad(&sample_test_dns_addrinfo.ai_addr_storage),
+					sample_test_dns_addrinfo.ai_addrlen, port);
+	}
 
 	if (ret < 0) {
 		printk("Failed to send echos after restart\n");
