@@ -19,8 +19,10 @@
  * GPU bit on the L1 controller and then walks the ARMC pending
  * registers to return the actual 32..127 peripheral IRQ.
  *
- * Single-core only (CORE_ID 0). SMP would extend this to per-core
- * mailbox IPIs and dynamic GPU-IRQ routing.
+ * In SMP builds the scheduler IPI rides each core's mailbox 0 (see
+ * the CONFIG_SMP block below); the intc drivers address per-core
+ * register banks through MPIDR. Peripheral and GPU interrupts stay
+ * routed to core 0.
  *
  * The intc drivers map their own MMIO via device_map() inside the
  * init helpers called below. Both run before any SYS_INIT priority
@@ -32,8 +34,13 @@
 
 #include <zephyr/arch/cpu.h>
 #include <zephyr/drivers/interrupt_controller/intc_bcm283x.h>
+#include <zephyr/irq.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/atomic.h>
+#ifdef CONFIG_FPU_SHARING
+#include <zephyr/kernel_structs.h>
+#include <kernel_arch_interface.h>
+#endif
 
 /*
  * Sources masked by z_soc_irq_get_active() for the duration of their ISR
@@ -43,13 +50,127 @@
  *
  * A bitmap rather than a single slot because the arm64 wrapper unmasks
  * IRQs globally around the ISR, so brackets nest.
+ *
+ * Per core, because the mailbox IRQs live in per-core registers
+ * (L1_MBOX_INT_CTRL is indexed by MPIDR) but share one Zephyr IRQ
+ * number. With a single shared record two cores taking the IPI at once
+ * both set the same bit, the first to reach the EOI clears it, and the
+ * second leaves its own mailbox masked for good, which costs that core
+ * every later scheduler IPI. Set and clear always run on the same core,
+ * so a core only ever touches its own slot.
  */
-static ATOMIC_DEFINE(bracketed_irqs, CONFIG_NUM_IRQS);
+static atomic_t bracketed_irqs[CONFIG_MP_MAX_NUM_CPUS]
+			      [ATOMIC_BITMAP_SIZE(CONFIG_NUM_IRQS)];
+
+/* Physical core id from MPIDR (flat single-cluster A53). */
+static ALWAYS_INLINE unsigned int this_core(void)
+{
+	uint64_t mpidr;
+
+	__asm__ volatile("mrs %0, mpidr_el1" : "=r"(mpidr));
+	return (unsigned int)(mpidr & 0xffU);
+}
+
+#ifdef CONFIG_SMP
+/* ----- Scheduler + FPU-flush IPIs over the BCM2836 mailbox 0 ----- */
+
+/*
+ * IPI types are bits within mailbox 0 (Linux keeps its IPIs there
+ * too). One mailbox means one MBOX_INT_CTRL enable covers every IPI
+ * type.
+ */
+#define MBOX0_IPI_SCHED BIT(0)
+#define MBOX0_IPI_FPU   BIT(1)
+
+extern void sched_ipi_handler(const void *unused);
+#ifdef CONFIG_FPU_SHARING
+extern void flush_fpu_ipi_handler(const void *unused);
+#endif
+
+static void mbox0_ipi_isr(const void *arg)
+{
+	ARG_UNUSED(arg);
+
+	uint32_t bits = bcm2836_l1_intc_mbox0_read_ack();
+
+	sched_ipi_handler(NULL);
+#ifdef CONFIG_FPU_SHARING
+	/*
+	 * FPU flush LAST: flush_fpu_ipi_handler() masks IRQs at DAIF
+	 * and deliberately leaves them masked (the exception return
+	 * restores the interrupted context's DAIF). Anything dispatched
+	 * after it would run with IRQs masked inside an isr_wrapper
+	 * that expects them unmasked for nesting.
+	 */
+	if ((bits & MBOX0_IPI_FPU) != 0U) {
+		flush_fpu_ipi_handler(NULL);
+	}
+#else
+	ARG_UNUSED(bits);
+#endif
+}
+
+/* Strong override of the __weak hook in arch/arm64/core/smp.c. */
+void soc_sched_ipi(uint64_t target_mpidr)
+{
+	bcm2836_l1_intc_mbox0_raise((unsigned int)(target_mpidr & 0xffU),
+				    MBOX0_IPI_SCHED);
+}
+
+#ifdef CONFIG_FPU_SHARING
+/* Strong override of the arch_flush_fpu_ipi() transport hook. */
+void soc_flush_fpu_ipi(uint64_t target_mpidr)
+{
+	bcm2836_l1_intc_mbox0_raise((unsigned int)(target_mpidr & 0xffU),
+				    MBOX0_IPI_FPU);
+}
+#endif
+
+/* Per-core: enable this core's mailbox-0 IRQ (ISR wired in z_soc_irq_init). */
+void soc_per_core_init_hook(void)
+{
+	irq_enable(BCM2836_L1_IRQ_MBOX0_BIT);
+}
+
+/*
+ * Strong override of the __weak arch_spin_relax() in kernel/idle.c.
+ * The default asserts !arch_cpu_irqs_are_enabled(), the right
+ * invariant for the in-tree callers, but the non-asserting variant
+ * the arm64 GIC build supplies under CONFIG_FPU_SHARING
+ * (arch/arm64/core/smp.c) is compiled out with a custom interrupt
+ * controller, and the assertion fires on bring-up paths that relax
+ * with IRQs unmasked.
+ *
+ * With FPU_SHARING this must also drain a pending FPU-flush IPI, for
+ * the same reason as the GIC variant: a cpu spinning with IRQs
+ * masked on a contended lock cannot take the mailbox IRQ, but the
+ * lock holder may be waiting for this cpu's FPU content to be
+ * flushed. Deadlock, unless the spin loop polls the mailbox.
+ * Clearing only the FPU bit leaves a concurrently-raised scheduler
+ * bit pending.
+ */
+void arch_spin_relax(void)
+{
+#ifdef CONFIG_FPU_SHARING
+	if ((bcm2836_l1_intc_mbox0_peek() & MBOX0_IPI_FPU) != 0U) {
+		bcm2836_l1_intc_mbox0_clear(MBOX0_IPI_FPU);
+		/* May not be in IRQ context: no arch_flush_local_fpu() here. */
+		arch_float_disable(_current_cpu->arch.fpu_owner);
+	}
+#endif
+	arch_nop();
+}
+#endif /* CONFIG_SMP */
 
 void z_soc_irq_init(void)
 {
 	bcm2836_l1_intc_init();
 	bcm2835_armctrl_ic_init();
+
+#ifdef CONFIG_SMP
+	/* Register the IPI handler (each core's mailbox 0). */
+	IRQ_CONNECT(BCM2836_L1_IRQ_MBOX0_BIT, 0, mbox0_ipi_isr, NULL, 0);
+#endif
 }
 
 void z_soc_irq_enable(unsigned int irq)
@@ -65,7 +186,7 @@ void z_soc_irq_disable(unsigned int irq)
 {
 	if (irq < CONFIG_NUM_IRQS) {
 		/* Whoever disables the source now owns its masked state. */
-		atomic_clear_bit(bracketed_irqs, irq);
+		atomic_clear_bit(bracketed_irqs[this_core()], irq);
 	}
 
 	if (BCM283X_IRQ_IS_L1(irq)) {
@@ -122,7 +243,7 @@ unsigned int z_soc_irq_get_active(void)
 	 */
 	if (irq < CONFIG_NUM_IRQS) {
 		z_soc_irq_disable(irq);
-		atomic_set_bit(bracketed_irqs, irq);
+		atomic_set_bit(bracketed_irqs[this_core()], irq);
 	}
 	return irq;
 }
@@ -138,7 +259,7 @@ void z_soc_irq_eoi(unsigned int irq)
 	 * gone and the source is left masked, as the ISR intended.
 	 */
 	if (irq < CONFIG_NUM_IRQS &&
-	    atomic_test_and_clear_bit(bracketed_irqs, irq)) {
+	    atomic_test_and_clear_bit(bracketed_irqs[this_core()], irq)) {
 		z_soc_irq_enable(irq);
 	}
 }
