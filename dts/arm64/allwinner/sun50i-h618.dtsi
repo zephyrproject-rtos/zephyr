@@ -71,6 +71,11 @@
 			status = "disabled";
 		};
 
+		pio: pinctrl@300b000 {
+			compatible = "allwinner,sun50i-h618-pinctrl";
+			reg = <0x0300b000 0x400>;
+		};
+
 		gpioa: gpio@300b000 {
 			compatible = "allwinner,sun50i-h618-gpio", "allwinner,sunxi-gpio";
 			reg = <0x0300b000 0x24>, <0x0300b000 0x400>;
