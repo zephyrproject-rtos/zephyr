@@ -1,0 +1,14 @@
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: skystar_stm32f407vet6
+name: JLC SkyStar STM32F407VET6
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 192
+flash: 512
+supported:
+  - gpio
+  - usb_device
