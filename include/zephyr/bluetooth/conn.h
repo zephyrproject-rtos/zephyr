@@ -2760,6 +2760,39 @@ void bt_le_oob_set_sc_flag(bool enable);
  */
 void bt_le_oob_set_legacy_flag(bool enable);
 
+#if defined(CONFIG_BT_CLASSIC)
+/** @brief Cross-Transport Key Derivation (CTKD) direction flags.
+ *
+ *  Used to select which CTKD directions are permitted at run time.
+ */
+enum bt_smp_ctkd_mode {
+	/** Derive a BR/EDR link key from the LE LTK. */
+	BT_SMP_CTKD_LE_TO_BR = BIT(0),
+
+	/** Derive the LE LTK from the BR/EDR link key. */
+	BT_SMP_CTKD_BR_TO_LE = BIT(1),
+};
+
+/** @brief Set the permitted Cross-Transport Key Derivation directions.
+ *
+ *  Selects which CTKD directions are allowed during Secure Connections
+ *  pairing. Both directions are permitted by default.
+ *
+ *  Disabling BT_SMP_CTKD_BR_TO_LE also stops the BR/EDR SMP fixed channel
+ *  from being advertised in the L2CAP information response, so that a peer
+ *  does not start a derivation that would be rejected.
+ *
+ *  @param ctkd_mode Bitmask of @ref bt_smp_ctkd_mode values.
+ */
+void bt_smp_set_ctkd_mode(uint8_t ctkd_mode);
+
+/** @brief Get the permitted Cross-Transport Key Derivation directions.
+ *
+ *  @return Bitmask of @ref bt_smp_ctkd_mode values.
+ */
+uint8_t bt_smp_get_ctkd_mode(void);
+#endif /* CONFIG_BT_CLASSIC */
+
 /** @brief Set OOB Temporary Key to be used for pairing
  *
  *  This function allows to set OOB data for the LE legacy pairing procedure.

@@ -212,3 +212,22 @@ static inline const char *bt_smp_err_to_str(uint8_t smp_err)
 	return "";
 }
 #endif
+
+#if defined(CONFIG_BT_CLASSIC)
+bool bt_smp_ctkd_br_to_le_enabled(void);
+bool bt_smp_ctkd_le_to_br_enabled(void);
+#else
+/* Callers guard the calls with IS_ENABLED(CONFIG_BT_CLASSIC), which keeps the
+ * call visible to the compiler, so a declaration is needed either way. There is
+ * nothing to restrict without BR/EDR.
+ */
+static inline bool bt_smp_ctkd_br_to_le_enabled(void)
+{
+	return true;
+}
+
+static inline bool bt_smp_ctkd_le_to_br_enabled(void)
+{
+	return true;
+}
+#endif
