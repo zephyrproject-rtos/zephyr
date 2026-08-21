@@ -21,22 +21,31 @@ LOG_MODULE_REGISTER(pcie);
 #include <zephyr/drivers/pcie/pcie.h>
 #include "ptm.h"
 
+static void pcie_ptm_control_enable(pcie_bdf_t bdf, uint32_t base, bool root)
+{
+	uint32_t ctrl;
+
+	ctrl = pcie_conf_read(bdf, base + PTM_CTRL_REG_OFFSET);
+	ctrl |= PTM_CTRL_ENABLE;
+	if (root) {
+		ctrl |= PTM_CTRL_ROOT;
+	}
+
+	pcie_conf_write(bdf, base + PTM_CTRL_REG_OFFSET, ctrl);
+}
+
 static int pcie_ptm_root_setup(const struct device *dev, uint32_t base)
 {
 	const struct pcie_ptm_root_config *config = dev->config;
-	union ptm_cap_reg cap;
-	union ptm_ctrl_reg ctrl;
+	uint32_t cap;
 
-	cap.raw = pcie_conf_read(config->pcie->bdf, base + PTM_CAP_REG_OFFSET);
-	if ((cap.root == 0) || ((cap.root == 1) && (cap.responder == 0))) {
+	cap = pcie_conf_read(config->pcie->bdf, base + PTM_CAP_REG_OFFSET);
+	if ((cap & PTM_CAP_ROOT) == 0 || (cap & PTM_CAP_RESPONDER) == 0) {
 		LOG_ERR("PTM root not supported on 0x%x", config->pcie->bdf);
 		return -ENOTSUP;
 	}
 
-	ctrl.ptm_enable = 1;
-	ctrl.root_select = 1;
-
-	pcie_conf_write(config->pcie->bdf, base + PTM_CTRL_REG_OFFSET, ctrl.raw);
+	pcie_ptm_control_enable(config->pcie->bdf, base, true);
 
 	LOG_DBG("PTM root 0x%x enabled", config->pcie->bdf);
 
@@ -72,8 +81,7 @@ DT_INST_FOREACH_STATUS_OKAY(PCIE_PTM_ROOT_INIT)
 bool pcie_ptm_enable(pcie_bdf_t bdf)
 {
 	uint32_t base;
-	union ptm_cap_reg cap;
-	union ptm_ctrl_reg ctrl;
+	uint32_t cap;
 
 	base = pcie_get_ext_cap(bdf, PCIE_EXT_CAP_ID_PTM);
 	if (base == 0) {
@@ -81,15 +89,13 @@ bool pcie_ptm_enable(pcie_bdf_t bdf)
 		return false;
 	}
 
-	cap.raw = pcie_conf_read(bdf, base + PTM_CAP_REG_OFFSET);
-	if (cap.requester == 0) {
+	cap = pcie_conf_read(bdf, base + PTM_CAP_REG_OFFSET);
+	if ((cap & PTM_CAP_REQUESTER) == 0) {
 		LOG_ERR("PTM requester not supported on 0x%x", bdf);
 		return false;
 	}
 
-	ctrl.ptm_enable = 1;
-
-	pcie_conf_write(bdf, base + PTM_CTRL_REG_OFFSET, ctrl.raw);
+	pcie_ptm_control_enable(bdf, base, false);
 
 	LOG_DBG("PTM requester 0x%x enabled", bdf);
 

@@ -10,32 +10,19 @@
 #include <zephyr/drivers/pcie/pcie.h>
 #include <zephyr/drivers/pcie/cap.h>
 
-#define PTM_CAP_REG_OFFSET 0x04U
+/* pcie_conf_read()/pcie_conf_write() use DWORD indices, not byte offsets. */
+#define PTM_REG_OFFSET(_offset) ((_offset) / sizeof(uint32_t))
 
-union ptm_cap_reg {
-	struct {
-		uint32_t requester               : 1;
-		uint32_t responder               : 1;
-		uint32_t root                    : 1;
-		uint32_t _reserved1              : 5;
-		uint32_t local_clock_granularity : 8;
-		uint32_t _reserved2              : 16;
-	};
-	uint32_t raw;
-};
+#define PTM_CAP_REG_OFFSET PTM_REG_OFFSET(0x04U)
+#define PTM_CAP_REQUESTER  BIT(0)
+#define PTM_CAP_RESPONDER  BIT(1)
+#define PTM_CAP_ROOT                    BIT(2)
+#define PTM_CAP_LOCAL_CLOCK_GRANULARITY GENMASK(15, 8)
 
-#define PTM_CTRL_REG_OFFSET 0x08U
-
-union ptm_ctrl_reg {
-	struct {
-		uint32_t ptm_enable            : 1;
-		uint32_t root_select           : 1;
-		uint32_t _reserved1            : 6;
-		uint32_t effective_granularity : 8;
-		uint32_t _reserved2            : 16;
-	};
-	uint32_t raw;
-};
+#define PTM_CTRL_REG_OFFSET PTM_REG_OFFSET(0x08U)
+#define PTM_CTRL_ENABLE     BIT(0)
+#define PTM_CTRL_ROOT                  BIT(1)
+#define PTM_CTRL_EFFECTIVE_GRANULARITY GENMASK(15, 8)
 
 struct pcie_ptm_root_config {
 	struct pcie_dev *pcie;
