@@ -8,6 +8,7 @@ menuconfig USB_DEVICE_STACK
 	select USB_DEVICE_DRIVER
 	select HWINFO
 	select DEPRECATED
+	select POLL
 	help
 	  Enable USB device stack.
 
