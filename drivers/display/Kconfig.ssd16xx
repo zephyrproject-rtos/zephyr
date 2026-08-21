@@ -16,3 +16,17 @@ config SSD16XX
 	select MIPI_DBI
 	help
 	  Enable driver for SSD16XX compatible controller.
+
+if SSD16XX
+
+config SSD16XX_PM_TIME_BEFORE_SUSPEND
+	int "Idle time before the panel is suspended (ms)"
+	depends on PM_DEVICE_RUNTIME
+	default 10000
+	help
+	  Delay between the last display access and the asynchronous runtime
+	  suspend that puts the panel into deep sleep. Leaving and re-entering
+	  deep sleep costs a full controller re-initialisation, so applications
+	  that refresh in bursts benefit from a delay that spans the burst.
+
+endif # SSD16XX
