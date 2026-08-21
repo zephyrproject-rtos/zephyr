@@ -424,14 +424,6 @@ endif()
 # Read out the list of 'Kconfig' sources that were used by the engine.
 file(STRINGS ${PARSED_KCONFIG_SOURCES_TXT} parsed_kconfig_sources_list ENCODING UTF-8)
 
-# Recalculate the Kconfig files' checksum, since the list of files may have
-# changed.
-set(merge_kconfig_checksum "")
-foreach(f ${parsed_kconfig_sources_list})
-  file(MD5 ${f} checksum)
-  string(APPEND merge_kconfig_checksum "${checksum}")
-endforeach()
-
 # Force CMAKE configure when the Kconfig sources or configuration files changes.
 set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
   ${merge_config_files}
@@ -440,6 +432,14 @@ set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
 )
 
 if(CREATE_NEW_DOTCONFIG)
+  # Recalculate the Kconfig files' checksum, since the list of files may have
+  # changed.
+  set(merge_kconfig_checksum "")
+  foreach(f ${parsed_kconfig_sources_list})
+    file(MD5 ${f} checksum)
+    string(APPEND merge_kconfig_checksum "${checksum}")
+  endforeach()
+
   # Write the new configuration fragment checksum. Only do this if kconfig.py
   # succeeds, to avoid marking zephyr/.config as up-to-date when it hasn't been
   # regenerated.
