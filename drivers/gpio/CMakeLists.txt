@@ -5,6 +5,7 @@ zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/gpio.h)
 zephyr_library()
 
 # zephyr-keep-sorted-start
+zephyr_library_include_directories_ifdef(CONFIG_GPIO_NPM10XX ${ZEPHYR_BASE}/drivers/mfd)
 zephyr_library_sources_ifdef(CONFIG_GPIO_AD559X gpio_ad559x.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_ADP5585 gpio_adp5585.c)
 zephyr_library_sources_ifdef(CONFIG_GPIO_ADS1X4S0X gpio_ads1x4s0x.c)
