@@ -33,4 +33,5 @@ supported:
   - crc
   - pwm
   - tsi
+  - usbd
 vendor: nxp
