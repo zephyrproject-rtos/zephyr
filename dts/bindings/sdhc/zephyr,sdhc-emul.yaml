@@ -1,0 +1,13 @@
+# Copyright 2026 Alif Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Zephyr SDHC emulator.
+
+  Software emulation of an SD host controller that supports SD, SDHC,
+  SDXC, eMMC, and SDIO card personalities.  Intended for native_sim
+  testing and CI pipelines.
+
+compatible: "zephyr,sdhc-emul"
+
+include: [sdhc.yaml, sdhc-emul-host.yaml, sdhc-emul-common.yaml]

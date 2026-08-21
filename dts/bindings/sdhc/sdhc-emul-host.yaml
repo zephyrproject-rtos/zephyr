@@ -1,0 +1,31 @@
+# Copyright 2026 Alif Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Common host-controller capability properties for the Zephyr SDHC
+  emulator bindings. Shared by "zephyr,sdhc-emul" (standalone) and
+  "zephyr,sdhc-emul-controller". Not a standalone binding.
+
+properties:
+  bus-width:
+    type: int
+    default: 4
+    enum: [1, 4, 8]
+    description: |
+      Widest data bus the emulated host controller supports.
+      1 = 1-bit only, 4 = SD 4-bit, 8 = eMMC 8-bit.
+
+  high-speed:
+    type: boolean
+    description: |
+      Host controller supports SD/eMMC high speed (up to 50 MHz) timing.
+
+  voltage-330:
+    type: boolean
+    description: |
+      Host controller can supply 3.3 V to the card.
+
+  voltage-180:
+    type: boolean
+    description: |
+      Host controller can supply 1.8 V signalling.
