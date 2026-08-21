@@ -630,6 +630,72 @@ etc.:
 
    ZTEST_RULE(fff_reset_rule, fff_reset_rule_before, NULL);
 
+.. _ztest_test_devices:
+
+Selecting the devices under test
+================================
+
+A test suite exercising a class of devices should not hardcode which instances
+to exercise, because that knowledge belongs to the board. The tree-wide
+convention is a phandle list on the ``/zephyr,user`` node, named after the
+device class, ``<device-class>-test-devs``:
+
+.. code-block:: devicetree
+
+   / {
+           zephyr,user {
+                   dma-test-devs = <&edma3>, <&edma4>;
+           };
+   };
+
+A board declares the list once, and every suite covering that device class
+picks it up. Adding a board to a suite, or covering a second instance of a
+peripheral on a board already covered, does not require changes to the test
+source.
+
+The test source refers to the list by its lowercase-and-underscores form and
+generates one test case per listed instance, using the helpers from
+:zephyr_file:`subsys/testsuite/include/zephyr/test_devices.h`:
+
+.. code-block:: C
+
+   #include <zephyr/test_devices.h>
+   #include <zephyr/ztest.h>
+
+   TEST_DEVS_REQUIRE(dma_test_devs);
+
+   static const struct device *const dma_devs[] = TEST_DEVS_ARRAY(dma_test_devs);
+
+   #define DEFINE_DMA_TESTS(idx, prop)                                                        \
+           ZTEST(dma_m2m, test_dma##idx##_m2m)                                                \
+           {                                                                                  \
+                   run_test(dma_devs[idx]);                                                   \
+           }
+
+   TEST_DEVS_FOR_EACH_IDX(dma_test_devs, DEFINE_DMA_TESTS)
+
+Generating one case per instance rather than looping inside a single case
+matters: a failure or skip on one instance does not mask or block the
+remaining ones, and the failing instance is identifiable from the test case
+name.
+
+Twister selects the boards that provide the list with:
+
+.. code-block:: yaml
+
+   filter: dt_node_has_prop("/zephyr,user", "dma-test-devs")
+
+:c:macro:`TEST_DEVS_REQUIRE` turns a board that does not provide the list into
+a readable build failure rather than an error from the devicetree macro
+expansion.
+
+The list is a statement about the board, not about the SoC: an instance being
+present on the SoC does not make it testable on a given board, because pin
+muxing, clocking and core or domain assignment all constrain which instances a
+board can actually exercise. Today each suite still carries its own per-board
+overlay, so a board covered by several suites of the same device class repeats
+the list once per suite.
+
 A custom ``test_main``
 ======================
 
@@ -935,6 +1001,14 @@ For example
     $ zephyr.exe -list
     $ zephyr.exe -test="fixture_tests::test_fixture_pointer,framework_tests::test_assert_mem_equal"
     $ zephyr.exe -test="framework_tests::*"
+
+
+.. _test-devices:
+
+Devices Under Test
+******************
+
+.. doxygengroup:: test_devices
 
 
 .. _fff-extensions:

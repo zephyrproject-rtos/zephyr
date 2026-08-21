@@ -28,6 +28,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/dma.h>
 #include <zephyr/pm/device.h>
+#include <zephyr/test_devices.h>
 #include <zephyr/ztest.h>
 
 /* in millisecond */
@@ -35,31 +36,15 @@
 
 #define TRANSFER_LOOPS (4)
 
-#define DMA_TEST_NODE      DT_PATH(zephyr_user)
-#define DMA_TEST_DEVS_PROP dma_test_devs
-
-#if DT_NODE_HAS_PROP(DMA_TEST_NODE, DMA_TEST_DEVS_PROP)
 /* Boards list the DMA controllers to test in a zephyr,user dma-test-devs
  * phandle list.
  */
-#define DMA_TEST_DEV_COUNT DT_PROP_LEN(DMA_TEST_NODE, DMA_TEST_DEVS_PROP)
-#define DMA_TEST_DEV_GET(idx, _)                                                                   \
-	DEVICE_DT_GET(DT_PHANDLE_BY_IDX(DMA_TEST_NODE, DMA_TEST_DEVS_PROP, idx))
-#define DMA_TEST_DEV0_NODE DT_PHANDLE_BY_IDX(DMA_TEST_NODE, DMA_TEST_DEVS_PROP, 0)
-#else
-/* Legacy boards use tst_dmaN devicetree labels and
- * CONFIG_DMA_LOOP_TRANSFER_NUMBER_OF_DMAS.
- */
-#define DMA_TEST_DEV_COUNT CONFIG_DMA_LOOP_TRANSFER_NUMBER_OF_DMAS
-#define DMA_TEST_DEV_GET(idx, _) DEVICE_DT_GET(DT_NODELABEL(tst_dma##idx))
-#define DMA_TEST_DEV0_NODE DT_NODELABEL(tst_dma0)
-#endif
+#define DMA_DATA_ALIGNMENT                                                                         \
+	DT_PROP_OR(TEST_DEVS_NODE_BY_IDX(dma_test_devs, 0), dma_buf_addr_alignment, 32)
 
-#define DMA_DATA_ALIGNMENT DT_PROP_OR(DMA_TEST_DEV0_NODE, dma_buf_addr_alignment, 32)
+TEST_DEVS_REQUIRE(dma_test_devs);
 
-static const struct device *const dma_test_devs[] = {
-	LISTIFY(DMA_TEST_DEV_COUNT, DMA_TEST_DEV_GET, (,))
-};
+static const struct device *const dma_test_devs[] = TEST_DEVS_ARRAY(dma_test_devs);
 
 /*
  * Place DMA buffers in non-cacheable memory when a D-cache is present, so that
@@ -565,7 +550,7 @@ static int test_loop_repeated_start_stop(const struct device *dma)
  * or skip on one controller does not prevent the remaining controllers from
  * running.
  */
-#define DEFINE_DMA_M2M_LOOP_TESTS(idx, _)                                                          \
+#define DEFINE_DMA_M2M_LOOP_TESTS(idx, prop)                                                       \
 	ZTEST(dma_m2m_loop, test_dma##idx##_m2m_loop)                                              \
 	{                                                                                          \
 		zassert_true(test_loop(dma_test_devs[idx]) == TC_PASS, "%s failed loop transfer",  \
@@ -582,4 +567,4 @@ static int test_loop_repeated_start_stop(const struct device *dma)
 			     "%s failed repeated start stop", dma_test_devs[idx]->name);           \
 	}
 
-LISTIFY(DMA_TEST_DEV_COUNT, DEFINE_DMA_M2M_LOOP_TESTS, ())
+TEST_DEVS_FOR_EACH_IDX(dma_test_devs, DEFINE_DMA_M2M_LOOP_TESTS)
