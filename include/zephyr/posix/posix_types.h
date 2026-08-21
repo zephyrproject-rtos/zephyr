@@ -142,7 +142,10 @@ typedef uint32_t pthread_rwlockattr_t;
 typedef uint32_t pthread_rwlock_t;
 
 struct pthread_once {
-	bool flag;
+	atomic_t state;
+#ifdef CONFIG_USERSPACE
+	struct k_futex futex;
+#endif
 };
 
 #if !defined(CONFIG_NEWLIB_LIBC)
