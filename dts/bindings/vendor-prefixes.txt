@@ -143,6 +143,7 @@ cellwise	CellWise Microelectronics Co., Ltd
 ceva	Ceva, Inc.
 checkpoint	Check Point Software Technologies Ltd.
 chefree	Chefree Technology Corp.
+cheyao	Icy Electronics
 chipidea	Chipidea, Inc
 chipone	ChipOne
 chipsemi	Chipsemi Corp.

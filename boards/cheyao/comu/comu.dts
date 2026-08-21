@@ -1,0 +1,144 @@
+/*
+ * SPDX-FileCopyrightText: Copyright Michael Hope <michaelh@juju.nz>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <wch/ch32v203/ch32v203f8u.dtsi>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include "comu-pinctrl.dtsi"
+
+/ {
+	model = "Cheyao Comu";
+	compatible = "cheyao,comu", "wch,ch32v203";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,console = &usart2;
+		zephyr,shell-uart = &usart2;
+		zephyr,code-partition = &slot0_partition;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_left: led_0 {
+			gpios = <&gpioa 4 GPIO_ACTIVE_LOW>;
+			label = "LED Left";
+		};
+
+		led_right: led_1 {
+			gpios = <&gpiob 11 GPIO_ACTIVE_LOW>;
+			label = "LED Right";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+		status = "disabled";
+
+		/* PA4 does not map to a timer channel */
+
+		pwm_led_right: pwm_led_1 {
+			pwms = <&pwm2 3 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+			label = "PWM LED Right";
+		};
+	};
+
+	aliases {
+		led0 = &led_left;
+		led1 = &led_right;
+		pwm-led0 = &pwm_led_right;
+		sw0 = &touch_l1;
+		sw1 = &touch_l2;
+		sw2 = &touch_r2;
+		sw3 = &touch_r1;
+	};
+};
+
+&flash0 {
+	partitions {
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			label = "boot";
+			reg = <0 DT_SIZE_K(2)>;
+		};
+
+		slot0_partition: partition@800 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-0";
+			reg = <0x800 DT_SIZE_K(62)>;
+		};
+	};
+};
+
+&clk_hsi {
+	status = "okay";
+};
+
+&pll {
+	clocks = <&clk_hsi>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+};
+
+&gpioa {
+	status = "okay";
+};
+
+&gpiob {
+	status = "okay";
+};
+
+&exti {
+	status = "okay";
+};
+
+&usart2 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&usart2_default>;
+	pinctrl-names = "default";
+};
+
+&tkey1 {
+	status = "okay";
+	pinctrl-0 = <&tkey1_default>;
+	pinctrl-names = "default";
+
+	touch_l1: touch_l1 {
+		status = "okay";
+		channel = <9>;
+		zephyr,code = <INPUT_KEY_0>;
+	};
+
+	touch_l2: touch_l2 {
+		status = "okay";
+		channel = <8>;
+		zephyr,code = <INPUT_KEY_1>;
+	};
+
+	touch_r2: touch_r2 {
+		status = "okay";
+		channel = <7>;
+		zephyr,code = <INPUT_KEY_2>;
+	};
+
+	touch_r1: touch_r1 {
+		status = "okay";
+		channel = <5>;
+		zephyr,code = <INPUT_KEY_3>;
+	};
+};
