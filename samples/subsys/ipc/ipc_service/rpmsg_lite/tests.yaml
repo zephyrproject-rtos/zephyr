@@ -39,4 +39,6 @@ tests:
     harness: remote
     extra_args:
       - remote_EXTRA_DTC_OVERLAY_FILE="boards/frdm_imxrt1186_mimxrt1186_cm7_hyperram.overlay"
+      - remote_EXTRA_CONF_FILE="boards/frdm_imxrt1186_mimxrt1186_cm7_hyperram.conf"
       - EXTRA_DTC_OVERLAY_FILE="boards/frdm_imxrt1186_mimxrt1186_cm33_hyperram.overlay"
+      - CONFIG_CM7_BOOT_FROM_FLASH=y
