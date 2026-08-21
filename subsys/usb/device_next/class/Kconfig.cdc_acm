@@ -33,8 +33,8 @@ config USBD_CDC_ACM_BUF_POOL
 	bool "Use dedicated buffer pool"
 	default y if !USBD_MAX_SPEED_FULL
 	help
-	  Use a dedicated buffer pool whose size is based on the number of CDC
-	  ACM instances and the size of the bulk endpoints. When disabled, the
+	  Use a dedicated TX buffer pool whose size is based on the number of CDC
+	  ACM instances and the size of the bulk IN endpoint. When disabled, the
 	  implementation uses the UDC driver's pool.
 
 config USBD_CDC_ACM_BUF_POOL_SIZE
@@ -45,7 +45,7 @@ config USBD_CDC_ACM_BUF_POOL_SIZE
 	help
 	  Size of each buffer in the CDC ACM buffer pool. This should
 	  be large enough to accommodate the maximum packet size for
-	  the endpoints.
+	  the IN endpoint.
 
 config USBD_CDC_ACM_TX_DELAY_MS
 	int
