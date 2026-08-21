@@ -83,7 +83,7 @@ import enum
 from pathlib import Path
 import re
 import shutil
-from typing import Callable, Optional, Dict, List
+from typing import Callable, Dict, List
 
 
 #
@@ -455,7 +455,7 @@ def adjust_content(content: List[str], board: str) -> List[DeviceConfiguration]:
 
 def match_and_store_pin(
     config: DeviceConfiguration, signals: Dict[str, str], line: str
-) -> Optional[str]:
+) -> str | None:
     """Match and store a pin mapping.
 
     Args:
@@ -488,7 +488,7 @@ def match_and_store_pin(
 #
 
 
-def process_uart(config: DeviceConfiguration, signals, line: str) -> Optional[str]:
+def process_uart(config: DeviceConfiguration, signals, line: str) -> str | None:
     """Process UART/UARTE devices."""
 
     # check if line specifies a pin
@@ -504,7 +504,7 @@ def process_uart(config: DeviceConfiguration, signals, line: str) -> Optional[st
     return line
 
 
-def process_spi(config: DeviceConfiguration, signals, line: str) -> Optional[str]:
+def process_spi(config: DeviceConfiguration, signals, line: str) -> str | None:
     """Process SPI devices."""
 
     # check if line specifies a pin
@@ -526,7 +526,7 @@ def process_spi(config: DeviceConfiguration, signals, line: str) -> Optional[str
     return line
 
 
-def process_pwm(config: DeviceConfiguration, signals, line: str) -> Optional[str]:
+def process_pwm(config: DeviceConfiguration, signals, line: str) -> str | None:
     """Process PWM devices."""
 
     # check if line specifies a pin
