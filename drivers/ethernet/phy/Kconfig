@@ -56,6 +56,16 @@ config PHY_GENERIC_FIXED_LINK
 	  when the ethernet driver requires a PHY but there is no interface to configure
 	  the PHY.
 
+config PHY_ADIN1140
+	bool "ADIN1140 PHY driver"
+	default y
+	depends on DT_HAS_ADI_ADIN1140_PHY_ENABLED
+	select MDIO
+	select ETH_PHY_API_PLCA
+	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_ADI_ADIN1100_PHY),reset-gpios)
+	help
+	  Enable ADIN1140 PHY driver.
+
 config PHY_ADIN2111
 	bool "ADIN2111 PHY driver"
 	default y

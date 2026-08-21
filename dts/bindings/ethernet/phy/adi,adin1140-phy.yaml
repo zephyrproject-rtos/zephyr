@@ -1,0 +1,35 @@
+# Copyright (c) 2024-2026 Analog Devices Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ADIN1140 PHY
+
+compatible: "adi,adin1140-phy"
+
+include:
+  - name: phy.yaml
+  - name: ethernet-phy-plca.yaml
+
+on-bus: mdio
+
+properties:
+  reg:
+    required: true
+    description: 5-bit physical/port address (PRTAD).
+  plca-enable:
+    type: boolean
+    description: Enable/Disable PLCA.
+  plca-node-id:
+    type: int
+    description: PLCA Node ID.
+  plca-node-count:
+    type: int
+    description: PLCA Node Count.
+  plca-burst-count:
+    type: int
+    description: PLCA Max Burst Count.
+  plca-burst-timer:
+    type: int
+    description: PLCA Burst Timer Value.
+  plca-to-timer:
+    type: int
+    description: PLCA TO Timer Value.
