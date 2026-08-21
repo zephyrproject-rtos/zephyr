@@ -14,6 +14,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
+#include <zephyr/irq.h>
 #include <zephyr/drivers/comparator.h>
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 
@@ -23,12 +24,10 @@ LOG_MODULE_REGISTER(ana_cmpr_esp32, CONFIG_COMPARATOR_LOG_LEVEL);
 struct ana_cmpr_esp32_config {
 	analog_cmpr_dev_t *hw;
 	uint8_t unit;
-	int irq_source;
-	uint8_t irq_priority;
-	uint32_t irq_flags;
 	ana_cmpr_ref_source_t ref_source;
 	ana_cmpr_ref_voltage_t ref_voltage;
 	uint32_t debounce_cycles;
+	void (*irq_configure)(void);
 };
 
 struct ana_cmpr_esp32_data {
@@ -154,7 +153,7 @@ static int ana_cmpr_esp32_trigger_is_pending(const struct device *dev)
 	return pending;
 }
 
-static void IRAM_ATTR ana_cmpr_esp32_isr(void *arg)
+static void IRAM_ATTR ana_cmpr_esp32_isr(const void *arg)
 {
 	const struct device *dev = arg;
 	const struct ana_cmpr_esp32_config *config = dev->config;
@@ -186,7 +185,6 @@ static void IRAM_ATTR ana_cmpr_esp32_isr(void *arg)
 static int ana_cmpr_esp32_init(const struct device *dev)
 {
 	const struct ana_cmpr_esp32_config *config = dev->config;
-	intr_handle_t irq_handle;
 	int ret;
 
 	/*
@@ -223,24 +221,7 @@ static int ana_cmpr_esp32_init(const struct device *dev)
 
 	analog_cmpr_ll_enable(config->hw, true);
 
-	/*
-	 * Some units share their interrupt source with other units (P4) or
-	 * with an unrelated peripheral (H2's gpio_esp32 driver). Register with
-	 * ESP_INTR_FLAG_SHARED and this unit's own status register/mask so the
-	 * interrupt controller dispatches to each handler independently -- see
-	 * shared_intr_isr() in intc_esp32.c.
-	 */
-	ret = esp_intr_alloc_intrstatus(
-		config->irq_source,
-		ESP_PRIO_TO_FLAGS(config->irq_priority) | ESP_INT_FLAGS_CHECK(config->irq_flags) |
-			ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_IRAM,
-		(uint32_t)(uintptr_t)analog_cmpr_ll_get_intr_status_reg(config->hw),
-		ANALOG_CMPR_LL_ALL_INTR_MASK(config->unit), ana_cmpr_esp32_isr, (void *)dev,
-		&irq_handle);
-	if (ret != 0) {
-		LOG_ERR("unit %d: failed to allocate IRQ (%d)", config->unit, ret);
-		return ret;
-	}
+	config->irq_configure();
 
 	return 0;
 }
@@ -253,26 +234,31 @@ static DEVICE_API(comparator, ana_cmpr_esp32_api) = {
 };
 
 /* clang-format off */
-
-#define ANA_CMPR_ESP32_DEVICE(inst)                                                              \
-	BUILD_ASSERT(DT_INST_PROP(inst, unit) < ANALOG_CMPR_LL_INST_NUM,                          \
-		     "invalid ana_cmpr unit index");                                              \
+#define ANA_CMPR_ESP32_DEVICE(inst)                                                                \
+	BUILD_ASSERT(DT_INST_PROP(inst, unit) < ANALOG_CMPR_LL_INST_NUM,                           \
+		     "invalid ana_cmpr unit index");                                               \
                                                                                                    \
-	static struct ana_cmpr_esp32_data ana_cmpr_esp32_data_##inst;                             \
+	static struct ana_cmpr_esp32_data ana_cmpr_esp32_data_##inst;                              \
                                                                                                    \
-	static const struct ana_cmpr_esp32_config ana_cmpr_esp32_config_##inst = {                \
+	static void ana_cmpr_esp32_##inst##_irq_configure(void)                                    \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN_BY_IDX(inst, 0), IRQ_DEFAULT_PRIORITY,                    \
+			    ana_cmpr_esp32_isr, DEVICE_DT_INST_GET(inst),                          \
+			    ESP_INTR_FLAG_IRAM);                                                   \
+		irq_enable(DT_INST_IRQN_BY_IDX(inst, 0));                                          \
+	}                                                                                          \
+                                                                                                   \
+	static const struct ana_cmpr_esp32_config ana_cmpr_esp32_config_##inst = {                 \
 		.hw = ANALOG_CMPR_LL_GET_HW(DT_INST_PROP(inst, unit)),                             \
 		.unit = DT_INST_PROP(inst, unit),                                                  \
-		.irq_source = DT_INST_IRQ_BY_IDX(inst, 0, irq),                                    \
-		.irq_priority = DT_INST_IRQ_BY_IDX(inst, 0, priority),                             \
-		.irq_flags = DT_INST_IRQ_BY_IDX(inst, 0, flags),                                   \
 		.ref_source = (ana_cmpr_ref_source_t)DT_INST_ENUM_IDX(inst, ref_source),           \
 		.ref_voltage = (ana_cmpr_ref_voltage_t)(DT_INST_PROP(inst, ref_voltage) / 10),     \
 		.debounce_cycles = DT_INST_PROP(inst, debounce_cycles),                            \
+		.irq_configure = ana_cmpr_esp32_##inst##_irq_configure,                            \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, ana_cmpr_esp32_init, NULL, &ana_cmpr_esp32_data_##inst,       \
-			      &ana_cmpr_esp32_config_##inst, POST_KERNEL,                         \
+	DEVICE_DT_INST_DEFINE(inst, ana_cmpr_esp32_init, NULL, &ana_cmpr_esp32_data_##inst,        \
+			      &ana_cmpr_esp32_config_##inst, POST_KERNEL,                          \
 			      CONFIG_COMPARATOR_INIT_PRIORITY, &ana_cmpr_esp32_api);
 
 /* clang-format on */
