@@ -343,7 +343,7 @@ endif()
 set(merge_config_files_checksum "")
 foreach(f ${config_checksum_files})
   file(MD5 ${f} checksum)
-  set(merge_config_files_checksum "${merge_config_files_checksum}${checksum}")
+  string(APPEND merge_config_files_checksum "${checksum}")
 endforeach()
 
 # Add to the checksum all the Kconfig files which were used last time
@@ -353,7 +353,7 @@ if(EXISTS ${PARSED_KCONFIG_SOURCES_TXT})
   foreach(f ${parsed_kconfig_sources_list})
     if(EXISTS ${f})
       file(MD5 ${f} checksum)
-      set(merge_kconfig_checksum "${merge_kconfig_checksum}${checksum}")
+      string(APPEND merge_kconfig_checksum "${checksum}")
     endif()
   endforeach()
 endif()
@@ -429,17 +429,15 @@ file(STRINGS ${PARSED_KCONFIG_SOURCES_TXT} parsed_kconfig_sources_list ENCODING 
 set(merge_kconfig_checksum "")
 foreach(f ${parsed_kconfig_sources_list})
   file(MD5 ${f} checksum)
-  set(merge_kconfig_checksum "${merge_kconfig_checksum}${checksum}")
+  string(APPEND merge_kconfig_checksum "${checksum}")
 endforeach()
 
 # Force CMAKE configure when the Kconfig sources or configuration files changes.
-foreach(kconfig_input
-    ${merge_config_files}
-    ${DOTCONFIG}
-    ${parsed_kconfig_sources_list}
-    )
-  set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS ${kconfig_input})
-endforeach()
+set_property(DIRECTORY APPEND PROPERTY CMAKE_CONFIGURE_DEPENDS
+  ${merge_config_files}
+  ${DOTCONFIG}
+  ${parsed_kconfig_sources_list}
+)
 
 if(CREATE_NEW_DOTCONFIG)
   # Write the new configuration fragment checksum. Only do this if kconfig.py
