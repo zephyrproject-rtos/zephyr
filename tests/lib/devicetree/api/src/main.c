@@ -573,6 +573,39 @@ ZTEST(devicetree_api, test_has_compat)
 	zassert_true(DT_INST_NODE_HAS_COMPAT(0, zephyr_model2));
 }
 
+ZTEST(devicetree_api, test_binding_compat)
+{
+	/* test_gpio_1 has compatible "vnd,gpio-device" with a matching binding */
+	const char *token = STRINGIFY(DT_BINDING_COMPAT_TOKEN(TEST_DEADBEEF));
+
+	zexpect_str_equal(token, "vnd_gpio_device");
+
+	const char *upper = STRINGIFY(DT_BINDING_COMPAT_UPPER_TOKEN(TEST_DEADBEEF));
+
+	zexpect_str_equal(upper, "VND_GPIO_DEVICE");
+
+	/* UNQUOTED contains a comma, so wrap in parentheses for STRINGIFY */
+	const char *unquoted = STRINGIFY((DT_BINDING_COMPAT_UNQUOTED(TEST_DEADBEEF)));
+
+	zexpect_str_equal(unquoted, "(vnd,gpio-device)");
+
+	/* TEST_ARRAYS has two compatibles: "vnd,array-holder" (has a binding)
+	 * and "vnd,undefined-compat" (no binding). Only the one with a
+	 * matching binding should be returned.
+	 */
+	const char *arrays_token = STRINGIFY(DT_BINDING_COMPAT_TOKEN(TEST_ARRAYS));
+
+	zexpect_str_equal(arrays_token, "vnd_array_holder");
+
+	const char *arrays_upper = STRINGIFY(DT_BINDING_COMPAT_UPPER_TOKEN(TEST_ARRAYS));
+
+	zexpect_str_equal(arrays_upper, "VND_ARRAY_HOLDER");
+
+	const char *arrays_unquoted = STRINGIFY((DT_BINDING_COMPAT_UNQUOTED(TEST_ARRAYS)));
+
+	zexpect_str_equal(arrays_unquoted, "(vnd,array-holder)");
+}
+
 ZTEST(devicetree_api, test_has_status)
 {
 	zassert_equal(DT_NODE_HAS_STATUS(DT_NODELABEL(test_gpio_1), okay),
