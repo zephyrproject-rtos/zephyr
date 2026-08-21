@@ -29,6 +29,7 @@ import socket
 import subprocess
 import sys
 import threading
+import time
 from dataclasses import dataclass, field
 from enum import Enum
 from functools import partial
@@ -1203,7 +1204,11 @@ class ZephyrBinaryRunner(abc.ABC):
                 while not stop_received.is_set():
                     data = os.read(stdin_fd, 2048)
                     if data and not stop_received.is_set():
-                        sock.sendall(data)
+                        # Send data byte-by-byte with a small delay in between to avoid
+                        # overhelming the JLinkGDBServer, otherwise data can be lost.
+                        for byte in data:
+                            sock.send(bytes([byte]))
+                            time.sleep(0.005)
             except OSError as e:
                 print('\n\nCommunication was closed, reason:', e)
                 stop_received.set()
