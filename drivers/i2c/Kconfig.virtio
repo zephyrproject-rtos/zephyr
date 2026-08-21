@@ -1,0 +1,31 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config I2C_VIRTIO
+	bool "VIRTIO I2C adapter driver"
+	default y
+	depends on DT_HAS_VIRTIO_I2C_ENABLED
+	select VIRTIO
+	help
+	  Enable driver for VIRTIO I2C adapter devices.
+
+	  Every transfer is a round trip to the virtio device, so the I2C API
+	  can only be used from a thread.
+
+if I2C_VIRTIO
+
+config I2C_VIRTIO_MAX_MSGS
+	int "Messages submitted per batch"
+	default 8
+	range 1 255
+	help
+	  How many messages of one i2c_transfer the driver queues before
+	  notifying the device. A transfer longer than this is split into
+	  several batches, which is correct but costs one extra round trip
+	  apiece, so the default is set well above the two messages a register
+	  read takes.
+
+	  Each slot costs a handful of bytes of RAM, and sizes the request
+	  virtqueue at three descriptors per message.
+
+endif # I2C_VIRTIO
