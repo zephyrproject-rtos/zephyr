@@ -465,9 +465,9 @@ int adxl367_set_fifo_sample_sets_nb(const struct device *dev,
 {
 	struct adxl367_data *data = dev->data;
 	int ret;
-	uint8_t fifo_samples_msb = sets_nb & BIT(9) ? 1U : 0U;
+	uint8_t fifo_samples_msb = sets_nb & BIT(8) ? 1U : 0U;
 
-	/* bit 9 goes to FIFO_SAMPLES from ADXL367_FIFO_CONTROL */
+	/* bit 8 goes to FIFO_SAMPLES from ADXL367_FIFO_CONTROL */
 	ret = data->hw_tf->write_reg_mask(dev, ADXL367_FIFO_CONTROL,
 					  ADXL367_FIFO_CONTROL_FIFO_SAMPLES_MSK,
 					  FIELD_PREP(ADXL367_FIFO_CONTROL_FIFO_SAMPLES_MSK,
@@ -808,8 +808,13 @@ static int adxl367_attr_set_thresh(const struct device *dev,
 	value = (int32_t) llvalue;
 
 	threshold.value = value;
-	threshold.enable = cfg->activity_th.enable;
-	threshold.referenced = cfg->activity_th.referenced;
+	if (attr == SENSOR_ATTR_UPPER_THRESH) {
+		threshold.enable = cfg->activity_th.enable;
+		threshold.referenced = cfg->activity_th.referenced;
+	} else {
+		threshold.enable = cfg->inactivity_th.enable;
+		threshold.referenced = cfg->inactivity_th.referenced;
+	}
 
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_X:
