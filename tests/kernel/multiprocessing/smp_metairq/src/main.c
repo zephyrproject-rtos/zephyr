@@ -107,6 +107,35 @@ static void helper_thread_entry(void *p1, void *p2, void *p3)
 	}
 }
 
+/**
+ * @brief Verify that a meta-IRQ thread does not migrate the thread it
+ *        preempted.
+ *
+ * @ingroup kernel_smp_tests
+ *
+ * @details
+ * A meta-IRQ thread preempts the thread running on the CPU that took the
+ * interrupt, and once it is done that thread must resume on the same CPU
+ * rather than being rescheduled elsewhere; migrating it would break code that
+ * relies on per-CPU state across the interrupt. Every other CPU is loaded with
+ * a preemptible helper thread so a migration would be visible as a change of
+ * CPU id.
+ *
+ * Test steps:
+ * - Create the meta-IRQ thread without starting it.
+ * - Create a preemptible helper thread on every other CPU.
+ * - Record the CPU id the test thread is executing on.
+ * - Raise an interrupt via irq_offload() so the meta-IRQ thread is scheduled
+ *   on this CPU and preempts the test thread.
+ * - Record the CPU id again once the test thread resumes and compare.
+ * - Abort the meta-IRQ thread and join all threads.
+ *
+ * Expected result:
+ * - The test thread resumes on the same CPU it was preempted on.
+ *
+ * @see irq_offload()
+ * @see K_HIGHEST_THREAD_PRIO
+ */
 ZTEST(smp_metairq, test_smp_metairq_no_migration)
 {
 	unsigned int i;
