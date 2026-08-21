@@ -28,6 +28,8 @@
 	status = "okay";
 	output-mode = "direct";
 	power = "ulp";
+	/* Reject glitches when the slow ULP comparator crosses local_vref. */
+	hysteresis;
 	intr-type = "both";
 	input-p = "gpio";
 	input-n = "local_vref";
