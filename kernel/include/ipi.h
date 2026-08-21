@@ -24,6 +24,10 @@ void z_sched_ipi(void);
 void flag_ipi(uint32_t ipi_mask);
 void signal_pending_ipi(void);
 atomic_val_t ipi_mask_create(struct k_thread *thread);
+#ifdef CONFIG_SCHED_IPI_SUPPORTED
+int z_ipi_work_submit(struct k_ipi_work *work, uint32_t cpu_bitmask,
+		      k_ipi_func_t func);
+#endif
 #else
 #define flag_ipi(ipi_mask) do { } while (false)
 #define signal_pending_ipi() do { } while (false)

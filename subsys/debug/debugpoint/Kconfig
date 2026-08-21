@@ -1,0 +1,21 @@
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+# SPDX-License-Identifier: Apache-2.0
+
+config DEBUGPOINT
+	bool
+	depends on ARCH_HAS_DEBUGPOINT
+	depends on MULTITHREADING
+	depends on !SMP || SCHED_IPI_SUPPORTED
+	depends on !SMP_BOOT_DELAY
+	help
+	  Internal hardware debugpoint framework.
+
+config DEBUGPOINT_MAX_SLOTS
+	int "Maximum number of logical debugpoints"
+	default 4
+	range 1 32
+	depends on DEBUGPOINT
+	help
+	  Maximum number of debugpoints tracked by the generic core.
+	  Backends may use this to size per-CPU state and may provide fewer
+	  usable hardware slots.
