@@ -1839,6 +1839,7 @@ New Samples
 * :zephyr:code-sample:`tmc6460`
 * :zephyr:code-sample:`tracing-pipeline`
 * :zephyr:code-sample:`tsn-switch`
+* :zephyr:code-sample:`usbtmc`
 * :zephyr:code-sample:`wifi-ble-provisioning`
 * :zephyr:code-sample:`wifi-mesh`
 * :zephyr:code-sample:`wifi-mesh-ip`
