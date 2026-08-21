@@ -349,7 +349,7 @@ static int gpio_sifive_init(const struct device *dev)
 	/* Setup IRQ handler for each gpio pin */
 	cfg->gpio_cfg_func();
 
-	return 0;
+	return gpio_common_init(dev);
 }
 
 static void gpio_sifive_cfg_0(void);

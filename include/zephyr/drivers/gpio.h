@@ -690,6 +690,22 @@ struct gpio_dt_spec {
  */
 #define GPIO_MAX_PINS_PER_PORT (sizeof(gpio_port_pins_t) * __CHAR_BIT__)
 
+/** GPIO hog specification structure */
+struct gpio_hog_dt_spec {
+	/** GPIO pin */
+	gpio_pin_t pin;
+	/** GPIO flags */
+	gpio_flags_t flags;
+};
+
+/** Container for GPIO hog information specified in devicetree. */
+struct gpio_hogs {
+	/** List of GPIO hogs to be configured at initialization. */
+	const struct gpio_hog_dt_spec *specs;
+	/** Number of GPIO hogs in the list. */
+	size_t num_specs;
+};
+
 /**
  * This structure is common to all GPIO drivers and is expected to be
  * the first element in the object pointed to by the config field
@@ -702,6 +718,10 @@ struct gpio_driver_config {
 	 * instance generation in the driver.
 	 */
 	gpio_port_pins_t port_pin_mask;
+#ifdef CONFIG_GPIO_HOGS
+	/** List of GPIO hogs to be configured at initialization. */
+	struct gpio_hogs gpio_hogs;
+#endif /* CONFIG_GPIO_HOGS */
 };
 
 /**

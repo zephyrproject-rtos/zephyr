@@ -396,12 +396,18 @@ static inline int gpio_siwx91x_init_port(const struct device *port)
 	const struct device *parent = port_cfg->parent;
 	__maybe_unused const struct gpio_siwx91x_common_config *cfg = parent->config;
 	struct gpio_siwx91x_common_data *data = parent->data;
+	int ret;
 
 	/* Register port as active */
 	__ASSERT(port_cfg->port < cfg->port_count, "Too many ports");
 	data->ports[port_cfg->port] = port;
 
-	return pm_device_driver_init(port, gpio_siwx91x_port_pm_action);
+	ret = pm_device_driver_init(port, gpio_siwx91x_port_pm_action);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return gpio_common_init(port);
 }
 
 static void gpio_siwx91x_isr(const struct device *parent)

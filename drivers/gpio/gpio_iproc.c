@@ -196,7 +196,7 @@ int gpio_iproc_init(const struct device *dev)
 
 	cfg->irq_config_func(dev);
 
-	return 0;
+	return gpio_common_init(dev);
 }
 
 #define GPIO_IPROC_INIT(n)                                                                         \

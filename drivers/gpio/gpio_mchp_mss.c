@@ -229,7 +229,7 @@ static int mss_gpio_init(const struct device *dev)
 	gpio->gpio_irq = 0xFFFFFFFFU;
 	/* Configure GPIO device */
 	cfg->gpio_cfg_func();
-	return 0;
+	return gpio_common_init(dev);
 }
 
 static void mss_gpio_irq_handler(const struct device *dev)

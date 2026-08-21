@@ -523,7 +523,7 @@ static int gpio_lpc11u6x_init(const struct device *dev)
 
 	/* Initialize shared resources only once. */
 	if (gpio_ready) {
-		return 0;
+		return gpio_common_init(dev);
 	}
 
 	if (!device_is_ready(config->shared->clock_dev)) {
@@ -562,7 +562,7 @@ static int gpio_lpc11u6x_init(const struct device *dev)
 #endif
 	gpio_ready = true;
 
-	return 0;
+	return gpio_common_init(dev);
 }
 
 #define GPIO_LPC11U6X_INIT(id)						\

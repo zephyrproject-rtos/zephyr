@@ -207,7 +207,7 @@ static int gpio_npm13xx_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	return 0;
+	return gpio_common_init(dev);
 }
 
 #define GPIO_NPM13XX_DEFINE(partno, n)                                                             \

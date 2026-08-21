@@ -301,7 +301,7 @@ static int gpio_b91_init(const struct device *dev)
 
 	cfg->pirq_connect();
 
-	return 0;
+	return gpio_common_init(dev);
 }
 
 /* API implementation: pin_configure */
