@@ -1,0 +1,22 @@
+.. _can_j1939:
+
+J1939 Protocol
+##############
+
+.. contents::
+    :local:
+    :depth: 2
+
+Overview
+********
+
+J1939 is a higher-layer protocol for CAN (Controller Area Network) defined
+by the Society of Automotive Engineers (SAE) in the standard SAE J1939. It
+is widely used in commercial vehicles and off-road machinery for communication
+and diagnostics.
+
+
+API Reference
+*************
+
+.. doxygengroup:: can_j1939
