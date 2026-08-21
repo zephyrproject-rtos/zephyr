@@ -142,6 +142,9 @@ extern const struct arm_mmu_config mmu_config;
 
 int z_arm_mmu_init(void);
 
+typedef void (*arm_mmu_region_func_t)(const struct arm_mmu_region *region);
+void z_arm_mmu_extra_regions(arm_mmu_region_func_t region_func);
+
 #endif /* _ASMLANGUAGE */
 
 #endif /* ZEPHYR_INCLUDE_ARCH_ARM_MMU_ARM_MMU_H_ */
