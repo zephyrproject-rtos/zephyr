@@ -1,0 +1,9 @@
+# Copyright (c) 2026 Realtek Semiconductor Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_QEMU_CORTEX_A53_AARCH32
+	bool
+	select SOC_FAMILY_ARM
+
+config SOC
+	default "qemu_cortex_a53_aarch32" if SOC_QEMU_CORTEX_A53_AARCH32
