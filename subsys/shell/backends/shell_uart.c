@@ -512,7 +512,8 @@ static int async_read(struct shell_uart_async *sh_uart,
 	buf_available = uart_async_rx_data_consume(async_rx, blen);
 #endif
 
-	if (!buf_available) {
+	/* Return if no free buffers available or UART is not waiting for new RX buffer. */
+	if (!buf_available || ((sh_uart->pending_rx_req == 0) && sh_uart->rx_enabled)) {
 		return 0;
 	}
 
