@@ -181,6 +181,26 @@ config DEBUG_COREDUMP_THREAD_SNAPSHOT_MAX
 	  every thread on a system with many threads; it costs N pointers of
 	  stack on the fatal path.
 
+config DEBUG_COREDUMP_SMP_FREEZE_CPUS
+	bool "Freeze other CPUs and capture their live registers"
+	default y
+	depends on SMP && ARCH_SUPPORTS_COREDUMP_SMP_FREEZE
+	depends on DEBUG_COREDUMP_MEMORY_DUMP_THREADS
+	help
+	  On SMP, a thread actively running on another CPU at panic time has
+	  a stale callee_saved context (only updated on its last voluntary
+	  context switch), so its true live registers are never captured by
+	  the normal per-thread dump. This sends an IPI to every other CPU,
+	  captures each one's live register state, and includes it in the
+	  coredump so GDB can show correct backtraces for those threads too.
+
+	  Each frozen CPU spins in its interrupt handler (holding whatever
+	  it held before being frozen, untouched) until the dump completes,
+	  then resumes exactly where it was interrupted via the normal
+	  exception return path. A CPU that doesn't respond within a bounded
+	  timeout (e.g. one that never booted, or is stuck with interrupts
+	  masked) is skipped and the dump proceeds without it.
+
 config DEBUG_COREDUMP_DUMP_THREAD_PRIV_STACK
 	bool "Dump privilege stack of user threads"
 	default y
