@@ -1,0 +1,216 @@
+/*
+ * Copyright (c) 2026 Qingsong Gou <gouqs@hotmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv8-m.dtsi>
+#include <freq.h>
+#include <mem.h>
+
+#include <zephyr/dt-bindings/clock/sf32lb58x-clocks.h>
+#include <zephyr/dt-bindings/pinctrl/sf32lb58x-pinctrl.h>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			compatible = "arm,cortex-m33";
+			reg = <0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			mpu: mpu@e000ed90 {
+				compatible = "arm,armv8m-mpu";
+				reg = <0xe000ed90 0x40>;
+			};
+		};
+	};
+
+	clocks {
+		lxt32: lxt32 {
+			compatible = "fixed-clock";
+			clock-frequency = <32768>;
+			#clock-cells = <0>;
+			status = "disabled";
+		};
+
+		lrc32: lrc32 {
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_K(32)>;
+			#clock-cells = <0>;
+		};
+
+		lrc10: lrc10 {
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_K(10)>;
+			#clock-cells = <0>;
+		};
+
+		hrc48: hrc48 {
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(48)>;
+			#clock-cells = <0>;
+		};
+
+		hxt48: hxt48 {
+			compatible = "sifli,sf32lb-hxt48";
+			clock-frequency = <DT_FREQ_M(48)>;
+			#clock-cells = <0>;
+			sifli,aon = <&aon>;
+			status = "disabled";
+		};
+	};
+
+	soc {
+		rcc: reset-clock-controller@40000000 {
+			compatible = "sifli,sf32lb-rcc";
+			reg = <0x40000000 0x1000>;
+
+			rcc_clk: clock-controller {
+				compatible = "sifli,sf32lb-rcc-clk";
+				clocks = <&lrc32>, <&lrc10>, <&hrc48>, <&hxt48>,
+					 <&lxt32>;
+				clock-names = "lrc32", "lrc10", "hrc48",
+					      "hxt48", "lxt32";
+				#clock-cells = <1>;
+				sifli,cfg = <&cfg>;
+				sifli,pmuc = <&pmuc>;
+
+				dll1: dll1 {
+					compatible = "sifli,sf32lb-dll";
+					status = "disabled";
+				};
+
+				dll2: dll2 {
+					compatible = "sifli,sf32lb-dll";
+					status = "disabled";
+				};
+			};
+
+			rcc_rst: reset-controller {
+				compatible = "sifli,sf32lb-rcc-rctl";
+				#reset-cells = <1>;
+			};
+		};
+
+		dmac: dma-controller@40001000 {
+			compatible = "sifli,sf32lb-dmac";
+			reg = <0x40001000 0x1000>;
+			clocks = <&rcc_clk SF32LB58X_CLOCK_DMAC1>;
+			interrupts = <50 0>, <51 0>, <52 0>, <53 0>,
+				     <54 0>, <55 0>, <56 0>, <57 0>;
+			dma-channels = <8>;
+			dma-requests = <64>;
+			#dma-cells = <3>;
+			status = "disabled";
+		};
+
+		pinctrl: pinctrl@40003000 {
+			compatible = "sifli,sf32lb52x-pinmux";
+			reg = <0x40003000 0xa0>, <0x400030a0 0x174>;
+			reg-names = "pad_sa", "pad_pa";
+			clocks = <&rcc_clk SF32LB58X_CLOCK_PINMUX1>;
+			#sifli,pinmux-cells = <2>;
+			sifli,cfg = <&cfg>;
+			status = "disabled";
+		};
+
+		mpi1: memory-controller@50041000 {
+			/*
+			 * configure compatible depending on memory type, choices:
+			 * - sifli,sf32lb-mpi-qspi-nor
+			 */
+			reg = <0x50041000 0x1000>, <0x10000000 DT_SIZE_M(32)>;
+			reg-names = "ctrl", "nor";
+			clocks = <&rcc_clk SF32LB58X_CLOCK_MPI1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		usart1: serial@40004000 {
+			compatible = "sifli,sf32lb-usart";
+			reg = <0x40004000 0x1000>;
+			clocks = <&rcc_clk SF32LB58X_CLOCK_USART1>;
+			interrupts = <59 0>;
+			status = "disabled";
+		};
+
+		usart2: serial@40005000 {
+			compatible = "sifli,sf32lb-usart";
+			reg = <0x40005000 0x1000>;
+			clocks = <&rcc_clk SF32LB58X_CLOCK_USART2>;
+			interrupts = <74 0>;
+			status = "disabled";
+		};
+
+		cfg: syscon@4000b000 {
+			compatible = "sifli,sf32lb-cfg", "syscon";
+			reg = <0x4000b000 0x1000>;
+		};
+
+		aon: syscon@40040000 {
+			compatible = "sifli,sf32lb-aon", "syscon";
+			reg = <0x40040000 0x1000>;
+		};
+
+		gpioa: gpio@40080000 {
+			compatible = "sifli,sf32lb-gpio-parent";
+			reg = <0x40080000 0x1000>;
+			ranges = <0x0 0x40080000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			clocks = <&rcc_clk SF32LB58X_CLOCK_GPIO1>;
+			interrupts = <84 0>;
+
+			/*
+			 * Split into 32 pin blocks due to Zephyr requiring GPIO
+			 * ports to have a maximum of 32 pins. This is a
+			 * Zephyrism, but it is what it is!
+			 */
+			gpioa_00_31: gpio@0 {
+				compatible = "sifli,sf32lb-gpio";
+				reg = <0x0 0x6c>;
+				#gpio-cells = <2>;
+				gpio-controller;
+				ngpios = <32>;
+				sifli,pinmuxs = <&pinctrl SF32LB_PORT_PA 0x0>;
+				status = "disabled";
+			};
+
+			gpioa_32_44: gpio@80 {
+				compatible = "sifli,sf32lb-gpio";
+				reg = <0x80 0x6c>;
+				#gpio-cells = <2>;
+				gpio-controller;
+				ngpios = <13>;
+				sifli,pinmuxs = <&pinctrl SF32LB_PORT_PA 0x80>;
+				status = "disabled";
+			};
+		};
+
+		mpi4: memory-controller@40084000 {
+			/*
+			 * configure compatible depending on memory type, choices:
+			 * - sifli,sf32lb-mpi-qspi-nor
+			 */
+			reg = <0x40084000 0x1000>, <0x18000000 DT_SIZE_M(224)>;
+			reg-names = "ctrl", "nor";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&rcc_clk SF32LB58X_CLOCK_MPI4>;
+			status = "disabled";
+		};
+
+		pmuc: syscon@5004a000 {
+			compatible = "sifli,sf32lb-pmuc", "syscon";
+			reg = <0x5004a000 0x1000>;
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <3>;
+};
