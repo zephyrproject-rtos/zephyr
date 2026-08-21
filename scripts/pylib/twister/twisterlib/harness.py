@@ -1032,6 +1032,8 @@ class Test(Harness):
     test_case_summary_pattern = re.compile(
         r".*- (PASS|FAIL|SKIP) - \[([^\.]*).(test_)?(\S*)\] duration = (\d*[.,]?\d*) seconds"
     )
+    # Secondary restart signal, used only when the banner is enabled.
+    test_boot_banner_pattern = re.compile(r"Booting Zephyr OS")
 
 
     def get_testcase(self, tc_name, phase, ts_name=None):
@@ -1068,7 +1070,33 @@ class Test(Harness):
         tc_id = self.instance.testsuite.compose_case_name(tc_name)
         return self.instance.get_case_or_create(tc_id)
 
+    def discard_stale_ztest_state(self, phase, reason):
+        """ Drop Ztest state left pending by an image that has restarted.
+
+            Such state is console output captured from a previously-programmed
+            image -- the default flash_before=False opens the serial port before
+            flashing -- or from a run interrupted by a reboot. Attributing it to
+            this run leaves phantom 'started' cases that never end.
+        """
+        logger.debug(f"{phase}: {reason}; discarding stale Ztest state"
+                     f" suites={self.started_suites} cases={self.started_cases}")
+        for tc in self.instance.testcases:
+            if tc.status == TwisterStatus.STARTED:
+                tc.status = TwisterStatus.NONE
+        self.started_suites = {}
+        self.started_cases = {}
+        self.detected_suite_names = []
+        self.testcase_output = ""
+        self._match = False
+        self.ztest = False
+
     def start_suite(self, suite_name, phase='TS_START'):
+        if self.started_suites.get(suite_name, {}).get('count', 0) > 0 \
+           and not self.expect_reboot:
+            # A suite cannot start while it is already running, so the image
+            # restarted. Ztest emits this marker itself, which makes it a more
+            # dependable restart signal than the optional boot banner.
+            self.discard_stale_ztest_state(phase, f"suite '{suite_name}' already STARTED")
         if suite_name not in self.detected_suite_names:
             self.detected_suite_names.append(suite_name)
         if self.trace and suite_name not in self.instance.testsuite.ztest_suite_names:
@@ -1077,11 +1105,7 @@ class Test(Harness):
             logger.debug(f"{phase}: unexpected Ztest suite '{suite_name}' is "
                          f"not present among: {self.instance.testsuite.ztest_suite_names}")
         if suite_name in self.started_suites:
-            if self.started_suites[suite_name]['count'] > 0 and not self.expect_reboot:
-                # Either the suite restarts itself or unexpected state transition.
-                logger.warning(f"{phase}: already STARTED '{suite_name}':"
-                               f"{self.started_suites[suite_name]}")
-            elif self.trace:
+            if self.trace:
                 logger.debug(f"{phase}: START suite '{suite_name}'")
             self.started_suites[suite_name]['count'] += 1
             self.started_suites[suite_name]['repeat'] += 1
@@ -1106,10 +1130,9 @@ class Test(Harness):
             logger.warning(f"{phase}: END suite '{suite_name}' without START detected")
 
     def start_case(self, tc_name, phase='TC_START'):
+        if self.started_cases.get(tc_name, {}).get('count', 0) > 0 and not self.expect_reboot:
+            self.discard_stale_ztest_state(phase, f"case '{tc_name}' already STARTED")
         if tc_name in self.started_cases:
-            if self.started_cases[tc_name]['count'] > 0 and not self.expect_reboot:
-                logger.warning(f"{phase}: already STARTED case "
-                               f"'{tc_name}':{self.started_cases[tc_name]}")
             self.started_cases[tc_name]['count'] += 1
         else:
             self.started_cases[tc_name] = { 'count': 1 }
@@ -1132,6 +1155,14 @@ class Test(Harness):
         testcase_match = None
         if self._match:
             self.testcase_output += line + "\n"
+        if (
+            not self.expect_reboot
+            and (self.started_suites or self.started_cases)
+            and self.test_boot_banner_pattern.search(line)
+        ):
+            # Catches a restart that does not re-emit a marker still pending,
+            # e.g. when the interrupted run had only partially printed one.
+            self.discard_stale_ztest_state('BANNER', 'boot banner while Ztest state pending')
         if test_suite_start_match := re.search(self.test_suite_start_pattern, line):
             self.start_suite(test_suite_start_match.group("suite_name"))
         elif test_suite_end_match := re.search(self.test_suite_end_pattern, line):
