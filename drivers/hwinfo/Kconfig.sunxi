@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright (c) 2026 Khai Do
+# SPDX-License-Identifier: Apache-2.0
+
+config HWINFO_SUNXI
+	bool "Allwinner sunXi hwinfo driver"
+	default y
+	select HWINFO_HAS_DRIVER
+	depends on SOC_SUN50I_H618
+	depends on $(dt_nodelabel_enabled,sid)
+	depends on OTP
+	help
+	  Enable Allwinner sunXi hwinfo driver.
