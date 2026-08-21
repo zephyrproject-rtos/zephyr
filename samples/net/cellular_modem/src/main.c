@@ -168,17 +168,9 @@ static int modem_cellular_find_apn(char *dst, size_t dst_sz, const char *key)
 	return -ENOENT;
 }
 
-static void modem_event_cb(const struct device *dev, enum cellular_event evt, const void *payload,
-			   void *user_data)
+static void auto_apn_modem_info_cb(const struct device *dev,
+				   const struct cellular_evt_modem_info *mi)
 {
-	ARG_UNUSED(user_data);
-
-	if (evt != CELLULAR_EVENT_MODEM_INFO_CHANGED) {
-		return;
-	}
-
-	const struct cellular_evt_modem_info *mi = payload;
-
 	if (!mi || mi->field != CELLULAR_MODEM_INFO_SIM_IMSI) {
 		return; /* not the IMSI notification */
 	}
@@ -227,6 +219,21 @@ static void modem_event_cb(const struct device *dev, enum cellular_event evt, co
 }
 
 #endif
+
+static void modem_event_cb(const struct device *dev, enum cellular_event evt, const void *payload,
+			   void *user_data)
+{
+	switch (evt) {
+	case CELLULAR_EVENT_MODEM_INFO_CHANGED:
+#ifdef CONFIG_SAMPLE_CELLULAR_MODEM_AUTO_APN
+		auto_apn_modem_info_cb(dev, payload);
+#endif
+		break;
+	default:
+		printk("Unhandled event: %d\n", evt);
+		break;
+	}
+}
 
 static void sample_dns_request_result(enum dns_resolve_status status, struct dns_addrinfo *info,
 				      void *user_data)
@@ -459,10 +466,11 @@ int main(void)
 	uint16_t *port;
 	int ret;
 
-#ifdef CONFIG_SAMPLE_CELLULAR_MODEM_AUTO_APN
-	/* subscribe before powering the modem so we catch the IMSI event */
-	cellular_set_callback(modem, CELLULAR_EVENT_MODEM_INFO_CHANGED, modem_event_cb, NULL);
-#endif
+	/* Subscribe before powering the modem so we catch all events */
+	ret = cellular_set_callback(modem, CELLULAR_EVENT_MODEM_INFO_CHANGED, modem_event_cb, NULL);
+	if (ret < 0) {
+		printk("Failed to subscribe to modem events (%d)\n", ret);
+	}
 
 	init_sample_test_packet();
 
