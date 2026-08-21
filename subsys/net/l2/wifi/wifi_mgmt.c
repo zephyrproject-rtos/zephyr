@@ -19,6 +19,7 @@ LOG_MODULE_REGISTER(net_wifi_mgmt, CONFIG_NET_L2_WIFI_MGMT_LOG_LEVEL);
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_log.h>
 #include <zephyr/net/wifi_mgmt.h>
+#include <zephyr/sys/__assert.h>
 #ifdef CONFIG_WIFI_NM
 #include <zephyr/net/wifi_nm.h>
 #endif /* CONFIG_WIFI_NM */
@@ -410,6 +411,77 @@ static const struct wifi_mgmt_ops *const get_wifi_api(struct net_if *iface)
 	return off_api ? off_api->wifi_mgmt_api : NULL;
 }
 
+#if defined(CONFIG_WIFI_MGMT_PMKSA_IMPORT) || defined(CONFIG_WIFI_MGMT_PMKSA_EXPORT)
+void wifi_pmksa_cache_entries_clear(struct wifi_pmksa_cache_entry *entries, size_t entry_count)
+{
+	volatile uint8_t *p;
+	size_t bytes;
+
+	if (entries == NULL || entry_count > SIZE_MAX / sizeof(*entries)) {
+		return;
+	}
+
+	p = (volatile uint8_t *)entries;
+	bytes = entry_count * sizeof(*entries);
+	while (bytes-- != 0U) {
+		*p++ = 0U;
+	}
+}
+
+#ifdef CONFIG_WIFI_MGMT_PMKSA_IMPORT
+static bool wifi_akm_suite_valid(enum wifi_akm_suite akm)
+{
+	switch (akm) {
+	case WIFI_AKM_SUITE_802_1X:
+	case WIFI_AKM_SUITE_PSK:
+	case WIFI_AKM_SUITE_FT_802_1X:
+	case WIFI_AKM_SUITE_FT_PSK:
+	case WIFI_AKM_SUITE_802_1X_SHA256:
+	case WIFI_AKM_SUITE_PSK_SHA256:
+	case WIFI_AKM_SUITE_SAE:
+	case WIFI_AKM_SUITE_FT_SAE:
+	case WIFI_AKM_SUITE_802_1X_SUITE_B:
+	case WIFI_AKM_SUITE_802_1X_SUITE_B_192:
+	case WIFI_AKM_SUITE_FT_802_1X_SHA384:
+	case WIFI_AKM_SUITE_FILS_SHA256:
+	case WIFI_AKM_SUITE_FILS_SHA384:
+	case WIFI_AKM_SUITE_FT_FILS_SHA256:
+	case WIFI_AKM_SUITE_FT_FILS_SHA384:
+	case WIFI_AKM_SUITE_OWE:
+	case WIFI_AKM_SUITE_802_1X_SHA384:
+	case WIFI_AKM_SUITE_SAE_EXT_KEY:
+	case WIFI_AKM_SUITE_FT_SAE_EXT_KEY:
+	case WIFI_AKM_SUITE_DPP:
+		return true;
+	default:
+		return false;
+	}
+}
+
+static int wifi_pmksa_cache_entry_validate(const struct wifi_pmksa_cache_entry *entry)
+{
+	struct net_eth_addr bssid;
+	struct net_eth_addr spa;
+
+	memcpy(bssid.addr, entry->bssid, sizeof(bssid.addr));
+	memcpy(spa.addr, entry->spa, sizeof(spa.addr));
+	if (!net_eth_is_addr_valid(&bssid) || !net_eth_is_addr_valid(&spa) ||
+	    entry->pmk_len < WIFI_PMKSA_PMK_MIN_LEN || entry->pmk_len > WIFI_PMKSA_PMK_MAX_LEN ||
+	    !wifi_akm_suite_valid(entry->akm) || entry->expiration_remaining_s == 0U ||
+	    entry->reauth_remaining_s > entry->expiration_remaining_s) {
+		return -EINVAL;
+	}
+
+	if (!entry->fils_cache_id_set &&
+	    (entry->fils_cache_id[0] != 0U || entry->fils_cache_id[1] != 0U)) {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_WIFI_MGMT_PMKSA_IMPORT */
+#endif /* CONFIG_WIFI_MGMT_PMKSA_IMPORT || CONFIG_WIFI_MGMT_PMKSA_EXPORT */
+
 static int wifi_connect(uint64_t mgmt_request, struct net_if *iface,
 			void *data, size_t len)
 {
@@ -418,6 +490,24 @@ static int wifi_connect(uint64_t mgmt_request, struct net_if *iface,
 	const struct device *dev = net_if_get_device(iface);
 
 	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_api(iface);
+
+#ifdef CONFIG_WIFI_MGMT_PMKSA_IMPORT
+	if (data == NULL || len != sizeof(*params)) {
+		return -EINVAL;
+	}
+
+	if ((params->pmksa_entries == NULL) != (params->pmksa_entry_count == 0U)) {
+		return -EINVAL;
+	}
+
+	for (size_t i = 0U; i < params->pmksa_entry_count; ++i) {
+		int ret = wifi_pmksa_cache_entry_validate(&params->pmksa_entries[i]);
+
+		if (ret != 0) {
+			return ret;
+		}
+	}
+#endif /* CONFIG_WIFI_MGMT_PMKSA_IMPORT */
 
 	if (wifi_mgmt_api == NULL || wifi_mgmt_api->connect == NULL) {
 		return -ENOTSUP;
@@ -628,6 +718,27 @@ void wifi_mgmt_raise_disconnect_result_event(struct net_if *iface, int status)
 					iface, &cnx_status,
 					sizeof(struct wifi_status));
 }
+
+#ifdef CONFIG_WIFI_MGMT_PMKSA_EXPORT
+void wifi_mgmt_raise_pmksa_cache_event(struct net_if *iface, uint64_t event, const uint8_t *bssid)
+{
+	struct wifi_pmksa_cache_event info;
+
+	__ASSERT(event == NET_EVENT_WIFI_PMKSA_CACHE_ADDED ||
+			 event == NET_EVENT_WIFI_PMKSA_CACHE_REMOVED,
+		 "Invalid PMKSA cache event");
+	__ASSERT(bssid != NULL, "PMKSA cache event requires a BSSID");
+
+	if ((event != NET_EVENT_WIFI_PMKSA_CACHE_ADDED &&
+	     event != NET_EVENT_WIFI_PMKSA_CACHE_REMOVED) ||
+	    bssid == NULL) {
+		return;
+	}
+
+	memcpy(info.bssid, bssid, sizeof(info.bssid));
+	net_mgmt_event_notify_with_info(event, iface, &info, sizeof(info));
+}
+#endif /* CONFIG_WIFI_MGMT_PMKSA_EXPORT */
 
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_ROAMING
 static int wifi_start_roaming(uint64_t mgmt_request, struct net_if *iface,
@@ -934,6 +1045,10 @@ static int wifi_iface_status(uint64_t mgmt_request, struct net_if *iface,
 	if (!data || len != sizeof(*status)) {
 		return -EINVAL;
 	}
+
+#ifdef CONFIG_WIFI_MGMT_PMKSA_IMPORT
+	status->pmksa_cache_usage = WIFI_PMKSA_CACHE_USAGE_NOT_ATTEMPTED;
+#endif /* CONFIG_WIFI_MGMT_PMKSA_IMPORT */
 
 	return wifi_mgmt_api->iface_status(dev, iface, status);
 }
@@ -1478,6 +1593,69 @@ static int wifi_pmksa_flush(uint64_t mgmt_request, struct net_if *iface,
 }
 
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_PMKSA_FLUSH, wifi_pmksa_flush);
+
+#ifdef CONFIG_WIFI_MGMT_PMKSA_EXPORT
+static int wifi_pmksa_get(uint64_t mgmt_request, struct net_if *iface, void *data, size_t len)
+{
+	const struct device *dev = net_if_get_device(iface);
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_api(iface);
+	struct wifi_pmksa_cache_query *query = data;
+	uint32_t index;
+	int ret;
+
+	if (query == NULL || len != sizeof(*query)) {
+		return -EINVAL;
+	}
+
+	index = query->index;
+	wifi_pmksa_cache_entries_clear(&query->entry, 1U);
+	query->entry_count = 0U;
+	query->index = index;
+
+	if (wifi_mgmt_api == NULL || wifi_mgmt_api->pmksa_get == NULL) {
+		return -ENOTSUP;
+	}
+
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
+	}
+
+	ret = wifi_mgmt_api->pmksa_get(dev, iface, query);
+	if (ret < 0) {
+		wifi_pmksa_cache_entries_clear(&query->entry, 1U);
+		query->entry_count = 0U;
+		query->index = index;
+	}
+
+	return ret;
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_PMKSA_GET, wifi_pmksa_get);
+#endif /* CONFIG_WIFI_MGMT_PMKSA_EXPORT */
+
+#ifdef CONFIG_WIFI_MGMT_PMKSA_IMPORT
+static int wifi_pmksa_flush_external(uint64_t mgmt_request, struct net_if *iface, void *data,
+				     size_t len)
+{
+	const struct device *dev = net_if_get_device(iface);
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_api(iface);
+
+	ARG_UNUSED(data);
+	ARG_UNUSED(len);
+
+	if (wifi_mgmt_api == NULL || wifi_mgmt_api->pmksa_flush_external == NULL) {
+		return -ENOTSUP;
+	}
+
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
+	}
+
+	return wifi_mgmt_api->pmksa_flush_external(dev, iface);
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_PMKSA_FLUSH_EXTERNAL, wifi_pmksa_flush_external);
+#endif /* CONFIG_WIFI_MGMT_PMKSA_IMPORT */
 
 static int wifi_config_params(uint64_t mgmt_request, struct net_if *iface,
 				 void *data, size_t len)
