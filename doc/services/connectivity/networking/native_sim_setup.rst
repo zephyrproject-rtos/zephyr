@@ -149,12 +149,18 @@ Setting interface name and IPv4 parameters from command line
 ************************************************************
 
 By default the Ethernet interface name used by native_sim is determined by
-:kconfig:option:`CONFIG_ETH_NATIVE_TAP_DRV_NAME`, but is also possible
-to set it from the command line using ``--eth-if=<interface_name>``.
+the ``host-interface`` property of the ``zephyr,native-tap`` devicetree node,
+but it is also possible to set it from the command line using
+``--eth-if=<interface_name>``.
 
 The same applies to the IPv4 address, gateway and netmask. They can be set
 from the command line using ``--ipv4-addr=<ip_address>``,
 ``--ipv4-gw=<gateway>`` and ``--ipv4-nm=<netmask>``.
+
+These options apply to the first interface. When multiple ``zephyr,native-tap``
+interfaces are defined, each additional interface has its own per-interface
+options prefixed with the devicetree node name, e.g. ``--<node>_eth-if`` and
+``--<node>_ipv4-addr``.
 
 Note that the configuration :kconfig:option:`CONFIG_NET_CONFIG_MY_IPV4_ADDR`
 and the command line arguments work in parallel. This means that if both are

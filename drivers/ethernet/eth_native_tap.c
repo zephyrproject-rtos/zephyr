@@ -42,7 +42,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include "eth_native_tap_priv.h"
 #include "nsi_host_trampolines.h"
-#include "eth.h"
+
+#define DT_DRV_COMPAT zephyr_native_tap
 
 #define NET_BUF_TIMEOUT K_MSEC(100)
 
@@ -56,6 +57,7 @@ struct eth_context {
 	uint8_t recv[NET_ETH_MTU + ETH_HDR_LEN];
 	uint8_t send[NET_ETH_MTU + ETH_HDR_LEN];
 	uint8_t mac_addr[6];
+	struct net_eth_mac_config mac_config;
 	struct net_if *iface;
 	const char *if_name;
 	k_tid_t rx_thread;
@@ -66,6 +68,15 @@ struct eth_context {
 	bool status;
 	bool promisc_mode;
 
+	/* Per-instance command line option overrides */
+	const char *eth_if_cmd_opt;
+	const char *mac_addr_cmd_opt;
+#ifdef CONFIG_NET_IPV4
+	const char *ipv4_addr_cmd_opt;
+	const char *ipv4_nm_cmd_opt;
+	const char *ipv4_gw_cmd_opt;
+#endif
+
 #if defined(CONFIG_NET_STATISTICS_ETHERNET)
 	struct net_stats_eth stats;
 #endif
@@ -74,6 +85,7 @@ struct eth_context {
 #endif
 };
 
+/* Unprefixed command line options, applied to the first interface only */
 static const char *if_name_cmd_opt;
 static const char *mac_addr_cmd_opt;
 #ifdef CONFIG_NET_IPV4
@@ -125,15 +137,10 @@ static inline bool queue_tx_timestamp(struct net_pkt *pkt)
 #endif
 }
 
-
-#define DEFINE_RX_THREAD(x, _)						\
-	K_KERNEL_STACK_DEFINE(rx_thread_stack_##x,			\
-			      CONFIG_ARCH_POSIX_RECOMMENDED_STACK_SIZE);\
-	static struct k_thread rx_thread_data_##x
-
-LISTIFY(CONFIG_ETH_NATIVE_TAP_INTERFACE_COUNT, DEFINE_RX_THREAD, (;), _);
-
 #if defined(CONFIG_NET_GPTP)
+BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == CONFIG_NET_GPTP_NUM_PORTS,
+	     "Number of network interfaces must match gPTP port count");
+
 static bool need_timestamping(struct gptp_hdr *hdr)
 {
 	switch (hdr->message_type) {
@@ -353,11 +360,15 @@ static void create_rx_handler(struct eth_context *ctx)
 static void eth_iface_init(struct net_if *iface)
 {
 	struct eth_context *ctx = net_if_get_device(iface)->data;
-#if !defined(CONFIG_ETH_NATIVE_TAP_RANDOM_MAC)
-	const char *mac_addr =
-		mac_addr_cmd_opt ? mac_addr_cmd_opt : CONFIG_ETH_NATIVE_TAP_MAC_ADDR;
-#endif
+	/* The unprefixed command line options apply to the first interface only */
+	static bool first_iface = true;
+	bool is_first;
+	const char *if_name_opt;
+	const char *mac_addr_opt;
 #ifdef CONFIG_NET_IPV4
+	const char *ipv4_addr_opt;
+	const char *ipv4_nm_opt;
+	const char *ipv4_gw_opt;
 	struct net_in_addr addr, netmask;
 #endif
 
@@ -371,43 +382,29 @@ static void eth_iface_init(struct net_if *iface)
 
 	ctx->init_done = true;
 
-#if defined(CONFIG_ETH_NATIVE_TAP_RANDOM_MAC)
-	/* 00-00-5E-00-53-xx Documentation RFC 7042 */
-	gen_random_mac(ctx->mac_addr, 0x00, 0x00, 0x5E);
+	is_first = first_iface;
+	first_iface = false;
 
-	ctx->mac_addr[3] = 0x00;
-	ctx->mac_addr[4] = 0x53;
-
-	/* The TUN/TAP setup script will by default set the MAC address of host
-	 * interface to 00:00:5E:00:53:FF so do not allow that.
-	 */
-	if (ctx->mac_addr[5] == 0xff) {
-		ctx->mac_addr[5] = 0x01;
+	if_name_opt = ctx->eth_if_cmd_opt;
+	if (if_name_opt == NULL && is_first) {
+		if_name_opt = if_name_cmd_opt;
 	}
-#else
-	/* Difficult to configure MAC addresses any sane way if we have more
-	 * than one network interface.
-	 */
-	BUILD_ASSERT(CONFIG_ETH_NATIVE_TAP_INTERFACE_COUNT == 1,
-		     "Cannot have static MAC if interface count > 1");
 
-	if (mac_addr[0] != 0) {
-		if (net_bytes_from_str(ctx->mac_addr, sizeof(ctx->mac_addr), mac_addr) < 0) {
-			LOG_ERR("Invalid MAC address %s", mac_addr);
+	mac_addr_opt = ctx->mac_addr_cmd_opt;
+	if (mac_addr_opt == NULL && is_first) {
+		mac_addr_opt = mac_addr_cmd_opt;
+	}
+
+	if (mac_addr_opt != NULL) {
+		if (net_bytes_from_str(ctx->mac_addr, sizeof(ctx->mac_addr), mac_addr_opt) < 0) {
+			LOG_ERR("Invalid MAC address %s", mac_addr_opt);
 		}
-	}
-#endif
-
-	/* If we have only one network interface, then use the name
-	 * defined in the Kconfig directly. This way there is no need to
-	 * change the documentation etc. and break things.
-	 */
-	if (CONFIG_ETH_NATIVE_TAP_INTERFACE_COUNT == 1) {
-		ctx->if_name = CONFIG_ETH_NATIVE_TAP_DRV_NAME;
+	} else {
+		(void)net_eth_mac_load(&ctx->mac_config, ctx->mac_addr);
 	}
 
-	if (if_name_cmd_opt != NULL) {
-		ctx->if_name = if_name_cmd_opt;
+	if (if_name_opt != NULL) {
+		ctx->if_name = if_name_opt;
 	}
 
 	LOG_DBG("Interface %p using \"%s\"", iface, ctx->if_name);
@@ -415,27 +412,42 @@ static void eth_iface_init(struct net_if *iface)
 	net_if_set_link_addr(iface, ctx->mac_addr, sizeof(ctx->mac_addr), NET_LINK_ETHERNET);
 
 #ifdef CONFIG_NET_IPV4
-	if (ipv4_addr_cmd_opt != NULL) {
-		if (net_addr_pton(NET_AF_INET, ipv4_addr_cmd_opt, &addr) == 0) {
-			net_if_ipv4_addr_add(iface, &addr, NET_ADDR_MANUAL, 0);
-
-			if (ipv4_nm_cmd_opt != NULL) {
-				if (net_addr_pton(NET_AF_INET, ipv4_nm_cmd_opt, &netmask) == 0) {
-					net_if_ipv4_set_netmask_by_addr(iface, &addr, &netmask);
-				} else {
-					LOG_ERR("Invalid netmask: %s", ipv4_nm_cmd_opt);
-				}
-			}
-		} else {
-			LOG_ERR("Invalid address: %s", ipv4_addr_cmd_opt);
+	ipv4_addr_opt = ctx->ipv4_addr_cmd_opt;
+	ipv4_nm_opt = ctx->ipv4_nm_cmd_opt;
+	ipv4_gw_opt = ctx->ipv4_gw_cmd_opt;
+	if (is_first) {
+		if (ipv4_addr_opt == NULL) {
+			ipv4_addr_opt = ipv4_addr_cmd_opt;
+		}
+		if (ipv4_nm_opt == NULL) {
+			ipv4_nm_opt = ipv4_nm_cmd_opt;
+		}
+		if (ipv4_gw_opt == NULL) {
+			ipv4_gw_opt = ipv4_gw_cmd_opt;
 		}
 	}
 
-	if (ipv4_gw_cmd_opt != NULL) {
-		if (net_addr_pton(NET_AF_INET, ipv4_gw_cmd_opt, &addr) == 0) {
+	if (ipv4_addr_opt != NULL) {
+		if (net_addr_pton(NET_AF_INET, ipv4_addr_opt, &addr) == 0) {
+			net_if_ipv4_addr_add(iface, &addr, NET_ADDR_MANUAL, 0);
+
+			if (ipv4_nm_opt != NULL) {
+				if (net_addr_pton(NET_AF_INET, ipv4_nm_opt, &netmask) == 0) {
+					net_if_ipv4_set_netmask_by_addr(iface, &addr, &netmask);
+				} else {
+					LOG_ERR("Invalid netmask: %s", ipv4_nm_opt);
+				}
+			}
+		} else {
+			LOG_ERR("Invalid address: %s", ipv4_addr_opt);
+		}
+	}
+
+	if (ipv4_gw_opt != NULL) {
+		if (net_addr_pton(NET_AF_INET, ipv4_gw_opt, &addr) == 0) {
 			net_if_ipv4_set_gw(iface, &addr);
 		} else {
-			LOG_ERR("Invalid gateway: %s", ipv4_gw_cmd_opt);
+			LOG_ERR("Invalid gateway: %s", ipv4_gw_opt);
 		}
 	}
 #endif
@@ -540,34 +552,88 @@ static const struct ethernet_api eth_if_api = {
 #endif
 };
 
-#define DEFINE_ETH_DEV_DATA(x, _)					     \
-	static struct eth_context eth_context_data_##x = {		     \
-		.if_name = CONFIG_ETH_NATIVE_TAP_DRV_NAME #x,		     \
-		.rx_thread = &rx_thread_data_##x,			     \
-		.rx_stack = rx_thread_stack_##x,			     \
-		.rx_stack_size = K_KERNEL_STACK_SIZEOF(rx_thread_stack_##x), \
-		IF_ENABLED(CONFIG_PTP_CLOCK_NATIVE, (			     \
-		.ptp_clock = DEVICE_DT_GET_ANY(zephyr_native_ptp_clock),     \
-		))							     \
-	}
+#define NATIVE_TAP_PTP_CLOCK(inst)                                                                 \
+	IF_ENABLED(CONFIG_PTP_CLOCK_NATIVE, (                                                      \
+		COND_CODE_1(DT_NODE_HAS_STATUS(DT_INST_CHILD(inst, ptp_clock), okay),              \
+			(.ptp_clock = DEVICE_DT_GET(DT_INST_CHILD(inst, ptp_clock)),),             \
+			())))
 
-LISTIFY(CONFIG_ETH_NATIVE_TAP_INTERFACE_COUNT, DEFINE_ETH_DEV_DATA, (;), _);
+#define NATIVE_TAP_INIT(inst)                                                                      \
+	K_KERNEL_STACK_DEFINE(rx_thread_stack_##inst, CONFIG_ARCH_POSIX_RECOMMENDED_STACK_SIZE);   \
+	static struct k_thread rx_thread_data_##inst;                                              \
+                                                                                                   \
+	static struct eth_context eth_context_data_##inst = {                                      \
+		.if_name = DT_INST_PROP_OR(inst, host_interface,                                   \
+					   DEVICE_DT_NAME(DT_DRV_INST(inst))),                     \
+		.mac_config = NET_ETH_MAC_DT_INST_CONFIG_INIT(inst),                               \
+		.rx_thread = &rx_thread_data_##inst,                                               \
+		.rx_stack = rx_thread_stack_##inst,                                                \
+		.rx_stack_size = K_KERNEL_STACK_SIZEOF(rx_thread_stack_##inst),                    \
+		NATIVE_TAP_PTP_CLOCK(inst)                                                         \
+	};                                                                                         \
+                                                                                                   \
+	ETH_NET_DEVICE_DT_INST_DEFINE(inst,                                                        \
+			    NULL,                                                                  \
+			    NULL,                                                                  \
+			    &eth_context_data_##inst,                                              \
+			    NULL,                                                                  \
+			    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,                                   \
+			    &eth_if_api,                                                           \
+			    NET_ETH_MTU);
 
-#define DEFINE_ETH_DEVICE(x, _)						\
-	ETH_NET_DEVICE_INIT(eth_native_tap_##x,				\
-			    CONFIG_ETH_NATIVE_TAP_DRV_NAME #x,		\
-			    NULL, NULL,	&eth_context_data_##x, NULL,	\
-			    CONFIG_KERNEL_INIT_PRIORITY_DEFAULT,	\
-			    &eth_if_api,				\
-			    NET_ETH_MTU)
+DT_INST_FOREACH_STATUS_OKAY(NATIVE_TAP_INIT)
 
-LISTIFY(CONFIG_ETH_NATIVE_TAP_INTERFACE_COUNT, DEFINE_ETH_DEVICE, (;), _);
+#define INST_NAME(inst) DEVICE_DT_NAME(DT_DRV_INST(inst))
 
-#if defined(CONFIG_NET_GPTP)
-BUILD_ASSERT(								\
-	CONFIG_ETH_NATIVE_TAP_INTERFACE_COUNT == CONFIG_NET_GPTP_NUM_PORTS, \
-	"Number of network interfaces must match gPTP port count");
+#ifdef CONFIG_NET_IPV4
+#define NATIVE_TAP_IPV4_COMMAND_LINE_OPTS(inst)                                                    \
+	{                                                                                          \
+		.is_mandatory = false,                                                             \
+		.option = INST_NAME(inst) "_ipv4-addr",                                            \
+		.name = "ipv4",                                                                    \
+		.type = 's',                                                                       \
+		.dest = (void *)&eth_context_data_##inst.ipv4_addr_cmd_opt,                        \
+		.descript = "IPv4 address for " INST_NAME(inst),                                   \
+	},                                                                                         \
+	{                                                                                          \
+		.is_mandatory = false,                                                             \
+		.option = INST_NAME(inst) "_ipv4-gw",                                              \
+		.name = "ipv4",                                                                    \
+		.type = 's',                                                                       \
+		.dest = (void *)&eth_context_data_##inst.ipv4_gw_cmd_opt,                          \
+		.descript = "IPv4 gateway for " INST_NAME(inst),                                   \
+	},                                                                                         \
+	{                                                                                          \
+		.is_mandatory = false,                                                             \
+		.option = INST_NAME(inst) "_ipv4-nm",                                              \
+		.name = "ipv4",                                                                    \
+		.type = 's',                                                                       \
+		.dest = (void *)&eth_context_data_##inst.ipv4_nm_cmd_opt,                          \
+		.descript = "IPv4 netmask for " INST_NAME(inst),                                   \
+	},
+#else
+#define NATIVE_TAP_IPV4_COMMAND_LINE_OPTS(inst)
 #endif
+
+#define NATIVE_TAP_COMMAND_LINE_OPTS(inst)                                                         \
+	{                                                                                          \
+		.is_mandatory = false,                                                             \
+		.option = INST_NAME(inst) "_eth-if",                                               \
+		.name = "name",                                                                    \
+		.type = 's',                                                                       \
+		.dest = (void *)&eth_context_data_##inst.eth_if_cmd_opt,                           \
+		.descript = "Name of the eth interface to use for "                                \
+			    INST_NAME(inst),                                                       \
+	},                                                                                         \
+	{                                                                                          \
+		.is_mandatory = false,                                                             \
+		.option = INST_NAME(inst) "_mac-addr",                                             \
+		.name = "mac",                                                                     \
+		.type = 's',                                                                       \
+		.dest = (void *)&eth_context_data_##inst.mac_addr_cmd_opt,                         \
+		.descript = "MAC address for " INST_NAME(inst),                                    \
+	},                                                                                         \
+	NATIVE_TAP_IPV4_COMMAND_LINE_OPTS(inst)
 
 static void add_native_tap_options(void)
 {
@@ -578,7 +644,7 @@ static void add_native_tap_options(void)
 			.name = "name",
 			.type = 's',
 			.dest = (void *)&if_name_cmd_opt,
-			.descript = "Name of the eth interface to use",
+			.descript = "Name of the eth interface to use (first interface)",
 		},
 		{
 			.is_mandatory = false,
@@ -586,7 +652,7 @@ static void add_native_tap_options(void)
 			.name = "mac",
 			.type = 's',
 			.dest = (void *)&mac_addr_cmd_opt,
-			.descript = "MAC address",
+			.descript = "MAC address (first interface)",
 		},
 #ifdef CONFIG_NET_IPV4
 		{
@@ -595,7 +661,7 @@ static void add_native_tap_options(void)
 			.name = "ipv4",
 			.type = 's',
 			.dest = (void *)&ipv4_addr_cmd_opt,
-			.descript = "IPv4 address",
+			.descript = "IPv4 address (first interface)",
 		},
 		{
 			.is_mandatory = false,
@@ -603,7 +669,7 @@ static void add_native_tap_options(void)
 			.name = "ipv4",
 			.type = 's',
 			.dest = (void *)&ipv4_gw_cmd_opt,
-			.descript = "IPv4 gateway",
+			.descript = "IPv4 gateway (first interface)",
 		},
 		{
 			.is_mandatory = false,
@@ -611,9 +677,10 @@ static void add_native_tap_options(void)
 			.name = "ipv4",
 			.type = 's',
 			.dest = (void *)&ipv4_nm_cmd_opt,
-			.descript = "IPv4 netmask",
+			.descript = "IPv4 netmask (first interface)",
 		},
 #endif
+		DT_INST_FOREACH_STATUS_OKAY(NATIVE_TAP_COMMAND_LINE_OPTS)
 		ARG_TABLE_ENDMARKER,
 	};
 
