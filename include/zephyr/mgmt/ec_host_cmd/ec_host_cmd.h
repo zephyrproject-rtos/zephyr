@@ -151,9 +151,8 @@ struct ec_host_cmd {
 	void *user_data;
 	/** Current state of the host command handler. */
 	enum ec_host_cmd_state state;
-#ifdef CONFIG_EC_HOST_CMD_DEDICATED_THREAD
-	struct k_thread thread;
-#endif /* CONFIG_EC_HOST_CMD_DEDICATED_THREAD */
+	/** Thread running the host command handler loop. */
+	k_tid_t thread;
 };
 
 /**
