@@ -1,0 +1,10 @@
+common:
+  harness: ztest
+  platform_allow:
+    - native_sim
+  tags:
+    - wifi
+    - hostap
+    - net
+tests:
+  net.wifi.hostap.cmd_wq: {}
