@@ -81,9 +81,25 @@ static int pwm_sam0_set_cycles(const struct device *dev, uint32_t channel,
 	regs->CCBUF[channel].reg = TCC_CCBUF_CCBUF(pulse_cycles);
 	regs->PERBUF.reg = TCC_PERBUF_PERBUF(period_cycles);
 #else
-	/* SAMD21 naming */
-	regs->CCB[channel].reg = TCC_CCB_CCB(pulse_cycles);
-	regs->PERB.reg = TCC_PERB_PERB(period_cycles);
+	/*
+	 * SAMD21 naming. Writing the buffered PER/CC while the counter runs
+	 * can lose the transfer: for a short window around each update
+	 * condition the buffer write does not reach PER/CC. The window is a
+	 * fixed duration, so the shorter the current period the more likely a
+	 * write lands in it, and at the init value of PER=1 the period is
+	 * stuck. Neither the update lock nor a forced update fully closes it.
+	 *
+	 * Disable the counter, write PER/CC directly, then re-enable. With the
+	 * counter stopped there is no update condition to race, so the write
+	 * always takes effect. This restarts the counter, so a period change
+	 * is not glitch-free.
+	 */
+	regs->CTRLA.bit.ENABLE = 0;
+	wait_synchronization(regs);
+	regs->CC[channel].reg = TCC_CC_CC(pulse_cycles);
+	regs->PER.reg = TCC_PER_PER(period_cycles);
+	regs->CTRLA.bit.ENABLE = 1;
+	wait_synchronization(regs);
 #endif
 
 	if (invert != inverted) {
