@@ -55,6 +55,14 @@
 #define EXTFLASH_ADDR	DT_REG_ADDR_BY_IDX(DT_PARENT(EXTFLASH_NODE), 1)
 #define EXTFLASH_SIZE	(DT_PROP(EXTFLASH_NODE, size) / 8)
 
+#elif defined(CONFIG_FLASH_STM32_NOR_MEMMAP) && DT_NODE_EXISTS(DT_INST(0, st_nor))
+/* On STM32 with MSPI, external flash mapping region is given by memmap-config DT property */
+
+#define EXTFLASH_NODE	DT_INST(0, st_nor)
+#define EXTFLASH_ADDR	(DT_REG_ADDR_BY_IDX(DT_PARENT(EXTFLASH_NODE), 1) + \
+			 DT_PROP_BY_IDX(EXTFLASH_NODE, memmap_config, 1))
+#define EXTFLASH_SIZE	DT_PROP_BY_IDX(EXTFLASH_NODE, memmap_config, 2)
+
 #elif defined(CONFIG_FLASH_MSPI_NOR) && defined(CONFIG_SOC_NRF54H20_CPUAPP)
 
 #define EXTFLASH_NODE	DT_INST(0, jedec_nor)
