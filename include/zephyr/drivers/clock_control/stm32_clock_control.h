@@ -57,6 +57,12 @@
 #include <zephyr/dt-bindings/clock/stm32g0_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32G4X)
 #include <zephyr/dt-bindings/clock/stm32g4_clock.h>
+#elif defined(CONFIG_SOC_SERIES_STM32H5X)
+#include <zephyr/dt-bindings/clock/stm32h5_clock.h>
+#elif defined(CONFIG_SOC_SERIES_STM32H7X)
+#include <zephyr/dt-bindings/clock/stm32h7_clock.h>
+#elif defined(CONFIG_SOC_SERIES_STM32H7RSX)
+#include <zephyr/dt-bindings/clock/stm32h7rs_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32L0X)
 #include <zephyr/dt-bindings/clock/stm32l0_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32L1X)
@@ -65,22 +71,12 @@
 #include <zephyr/dt-bindings/clock/stm32l4_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32L5X)
 #include <zephyr/dt-bindings/clock/stm32l5_clock.h>
-#elif defined(CONFIG_SOC_SERIES_STM32MP2X)
-#include <zephyr/dt-bindings/clock/stm32mp2_clock.h>
-#elif defined(CONFIG_SOC_SERIES_STM32WBX)
-#include <zephyr/dt-bindings/clock/stm32wb_clock.h>
-#elif defined(CONFIG_SOC_SERIES_STM32WB0X)
-#include <zephyr/dt-bindings/clock/stm32wb0_clock.h>
-#elif defined(CONFIG_SOC_SERIES_STM32WLX)
-#include <zephyr/dt-bindings/clock/stm32wl_clock.h>
-#elif defined(CONFIG_SOC_SERIES_STM32H5X)
-#include <zephyr/dt-bindings/clock/stm32h5_clock.h>
-#elif defined(CONFIG_SOC_SERIES_STM32H7X)
-#include <zephyr/dt-bindings/clock/stm32h7_clock.h>
-#elif defined(CONFIG_SOC_SERIES_STM32H7RSX)
-#include <zephyr/dt-bindings/clock/stm32h7rs_clock.h>
+#elif defined(CONFIG_SOC_SERIES_STM32MP1X)
+#include <zephyr/dt-bindings/clock/stm32mp1_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32MP13X)
 #include <zephyr/dt-bindings/clock/stm32mp13_clock.h>
+#elif defined(CONFIG_SOC_SERIES_STM32MP2X)
+#include <zephyr/dt-bindings/clock/stm32mp2_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32N6X)
 #include <zephyr/dt-bindings/clock/stm32n6_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32U0X)
@@ -89,10 +85,16 @@
 #include <zephyr/dt-bindings/clock/stm32u3_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32U5X)
 #include <zephyr/dt-bindings/clock/stm32u5_clock.h>
+#elif defined(CONFIG_SOC_SERIES_STM32WBX)
+#include <zephyr/dt-bindings/clock/stm32wb_clock.h>
+#elif defined(CONFIG_SOC_SERIES_STM32WB0X)
+#include <zephyr/dt-bindings/clock/stm32wb0_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32WBAX)
 #include <zephyr/dt-bindings/clock/stm32wba_clock.h>
+#elif defined(CONFIG_SOC_SERIES_STM32WLX)
+#include <zephyr/dt-bindings/clock/stm32wl_clock.h>
 #else
-#include <zephyr/dt-bindings/clock/stm32_clock.h>
+#error "Unsupported STM32 SoC series"
 #endif
 
 /** Common clock control device node for all STM32 chips */
