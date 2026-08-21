@@ -104,6 +104,23 @@ Removed APIs and options
       buffers unconditionally. Applications still setting these options can
       simply drop them.
 
+* Boards
+
+    * Dropped the following deprecated board aliases:
+
+      * ``arduino_uno_r4_minima``
+      * ``arduino_uno_r4_wifi``
+      * ``esp32c6_devkitc``
+      * ``esp32_devkitc_wroom/esp32/procpu``
+      * ``esp32_devkitc_wroom/esp32/appcpu``
+      * ``esp32_devkitc_wrover/esp32/procpu``
+      * ``esp32_devkitc_wrover/esp32/appcpu``
+      * ``neorv32``
+      * ``panb511evb``
+      * ``raytac_an54l15q_db/nrf54l15/cpuapp``
+      * ``scobc_module1``
+      * ``xiao_esp32c6``
+
 * Comparator
 
     * ``nxp,enable-output-pin``, ``nxp,use-unfiltered-output``, ``nxp,high-speed-mode``,
