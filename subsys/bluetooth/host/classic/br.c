@@ -986,6 +986,19 @@ int bt_br_init(void)
 		return err;
 	}
 
+	/* Set connection accept timeout */
+	buf = bt_hci_cmd_alloc(K_FOREVER);
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	net_buf_add_le16(buf, CONFIG_BT_CONN_ACCEPT_TIMEOUT);
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_CONN_ACCEPT_TIMEOUT, buf, NULL);
+	if (err) {
+		return err;
+	}
+
 	/* Enable BR/EDR SC if supported */
 	if (BT_FEAT_SC(bt_dev.features)) {
 		struct bt_hci_cp_write_sc_host_supp *sc_cp;
