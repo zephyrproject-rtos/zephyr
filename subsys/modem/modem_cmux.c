@@ -1356,10 +1356,11 @@ static bool is_valid_type(uint8_t type)
 	}
 }
 
-static void modem_cmux_process_received_byte(struct modem_cmux *cmux, int idx)
+static bool modem_cmux_process_received_byte(struct modem_cmux *cmux, int idx)
 {
 	uint8_t fcs;
 	uint8_t byte = cmux->config.receive_buf[idx];
+	bool frame_processed = false;
 
 	switch (cmux->receive_state) {
 	case MODEM_CMUX_RECEIVE_STATE_SOF:
@@ -1546,6 +1547,7 @@ static void modem_cmux_process_received_byte(struct modem_cmux *cmux, int idx)
 
 		/* Process frame */
 		modem_cmux_on_frame(cmux);
+		frame_processed = true;
 
 		/* Await start of next frame */
 		cmux->receive_state = MODEM_CMUX_RECEIVE_STATE_SOF;
@@ -1554,6 +1556,8 @@ static void modem_cmux_process_received_byte(struct modem_cmux *cmux, int idx)
 	default:
 		break;
 	}
+
+	return frame_processed;
 }
 
 /*
@@ -1593,6 +1597,7 @@ static void modem_cmux_receive_handler(struct k_work *item)
 {
 	struct k_work_delayable *dwork = k_work_delayable_from_work(item);
 	struct modem_cmux *cmux = CONTAINER_OF(dwork, struct modem_cmux, receive_work);
+	bool frame_processed = false;
 	int ret;
 
 	runtime_pm_keepalive(cmux);
@@ -1607,9 +1612,26 @@ static void modem_cmux_receive_handler(struct k_work *item)
 
 		cmux->receive_buf_len += ret;
 		for (int i = parsed; i < cmux->receive_buf_len; i++) {
-			modem_cmux_process_received_byte(cmux, i);
+			frame_processed |= modem_cmux_process_received_byte(cmux, i);
 		}
 		move_incomplete_frame(cmux);
+
+		if (frame_processed) {
+			/* Processing this buffer resulted in a CMUX frame, which must be processed
+			 * by the same workqueue we are running from. The frame will be pending on
+			 * the DLCI ring buffer.
+			 * If a second frame is pending in our receive pipe and we continue
+			 * processing CMUX bytes without giving the DLCI handler a chance to run,
+			 * we can end up dropping bytes due to a full DLCI ring buffer.
+			 * Therefore, reschedule this work with no delay so that we resume
+			 * processing our buffer after the DLCI channel has a chance to drain.
+			 * Ideally we would only do this if we knew there were more bytes to be
+			 * retrieved in `modem_pipe_receive`, but the API does not expose that
+			 * information.
+			 */
+			modem_work_reschedule(dwork, K_NO_WAIT);
+			break;
+		}
 	}
 	if (ret < 0) {
 		LOG_ERR("Pipe receiving error: %d", ret);
