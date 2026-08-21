@@ -1,0 +1,15 @@
+identifier: adafruit_qt_py_ch32v203
+name: Adafruit QT Py CH32V203
+type: mcu
+arch: riscv
+toolchain:
+  - cross-compile
+  - zephyr
+ram: 10
+flash: 224
+supported:
+  - gpio
+  - i2c
+  - spi
+  - uart
+  - watchdog
