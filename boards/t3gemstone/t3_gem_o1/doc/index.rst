@@ -50,8 +50,8 @@ IRQ and FIQ.
 
 Supported Features
 ******************
-The board configuration supports a console UART via the 40-pin GPIO header
-and a console over RPmsg.
+The board configuration supports a console UART via the 40-pin GPIO header,
+the MAIN domain GPIO controllers, and a console over RPmsg.
 
 .. zephyr:board-supported-hw::
 
