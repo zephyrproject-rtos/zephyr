@@ -665,6 +665,16 @@ config BT_PAGE_TIMEOUT
 	  This option sets the page timeout value. Value is selected as
 	  (N * 0.625) ms.
 
+config BT_CONN_ACCEPT_TIMEOUT
+	hex "Bluetooth Connection Accept Timeout"
+	default 0x1f40
+	range 0x00a0 0xb540
+	help
+	  This option sets the connection accept timeout value, that is how
+	  long the controller waits for the host to accept or reject an
+	  incoming connection before rejecting it itself. Value is selected
+	  as (N * 0.625) ms.
+
 config BT_COD
 	hex "Bluetooth Class of Device(CoD)"
 	default 0
