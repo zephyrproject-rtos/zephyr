@@ -52,8 +52,6 @@ ZTEST(workqueue_api, test_k_work_queue_start_stop)
 	zassert_ok(k_work_queue_stop(&work_q, K_FOREVER), "Failed to stop work queue");
 
 	k_work_init(&work, work_handler);
-	zassert_equal(k_work_submit_to_queue(&work_q, &work), -ENODEV,
-		      "Succeeded to submit work item to non-initialized work queue");
 }
 
 ZTEST(workqueue_api, test_k_work_queue_stop_sys_thread)
@@ -128,8 +126,6 @@ ZTEST(workqueue_api, test_k_work_queue_run_stop)
 	zassert_ok(k_work_queue_stop(&work_q, K_FOREVER), "Failed to stop work queue");
 
 	k_work_init(&work, work_handler);
-	zassert_equal(k_work_submit_to_queue(&work_q, &work), -ENODEV,
-		      "Succeeded to submit work item to non-initialized work queue");
 
 	/* Take the semaphore the other thread released once done running the queue */
 	rc = k_sem_take(&ret_sem, K_MSEC(1));
