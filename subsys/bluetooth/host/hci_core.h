@@ -175,8 +175,13 @@ struct bt_le_ext_adv {
 	const struct bt_le_ext_adv_cb *cb;
 #endif /* defined(CONFIG_BT_EXT_ADV) */
 
-	/* Current local Random Address */
-	bt_addr_le_t            random_addr;
+	/* Address this set advertises with. Updated by
+	 * bt_id_set_adv_random_addr() when a per-set random address is
+	 * programmed, and by bt_id_save_adv_addr() for the address types
+	 * that are not programmed per-set. bt_le_ext_adv_get_info() hands
+	 * out a pointer to it.
+	 */
+	bt_addr_le_t            adv_addr;
 
 	/* Current target address */
 	bt_addr_le_t            target_addr;

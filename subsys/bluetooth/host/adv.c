@@ -989,6 +989,8 @@ static int adv_start_legacy(struct bt_le_ext_adv *adv,
 		return err;
 	}
 
+	bt_id_save_adv_addr(adv, set_param.own_addr_type);
+
 	if (!dir_adv) {
 		err = le_adv_update(adv, ad, ad_len, sd, sd_len, false, scannable);
 		if (err) {
@@ -1187,8 +1189,15 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 
 	atomic_set_bit(adv->flags, BT_ADV_PARAMS_SET);
 
-	if (atomic_test_and_clear_bit(adv->flags, BT_ADV_RANDOM_ADDR_PENDING)) {
-		err = bt_id_set_adv_random_addr(adv, &adv->random_addr.a);
+	bt_id_save_adv_addr(adv, own_addr_type);
+
+	if (atomic_test_and_clear_bit(adv->flags, BT_ADV_RANDOM_ADDR_PENDING) &&
+	    adv->adv_addr.type == BT_ADDR_LE_RANDOM) {
+		/* The pending random address is held in adv_addr. If the own
+		 * address has since resolved to an identity address there is
+		 * nothing left to program.
+		 */
+		err = bt_id_set_adv_random_addr(adv, &adv->adv_addr.a);
 		if (err) {
 			return err;
 		}
@@ -1411,7 +1420,7 @@ int bt_le_ext_adv_get_info(const struct bt_le_ext_adv *adv,
 	info->id = adv->id;
 	info->sid = adv->sid;
 	info->tx_power = adv->tx_power;
-	info->addr = &adv->random_addr;
+	info->addr = &adv->adv_addr;
 
 	if (atomic_test_bit(adv->flags, BT_ADV_ENABLED)) {
 		info->ext_adv_state = BT_LE_EXT_ADV_STATE_ENABLED;
@@ -2191,11 +2200,11 @@ void bt_hci_le_adv_set_terminated(struct net_buf *buf)
 				conn->le.resp_addr.type = BT_ADDR_LE_RANDOM;
 				if (bt_addr_eq(&conn->le.resp_addr.a, BT_ADDR_ANY)) {
 					bt_addr_copy(&conn->le.resp_addr.a,
-						     &adv->random_addr.a);
+						     &adv->adv_addr.a);
 				}
 			} else if (adv->options & BT_LE_ADV_OPT_USE_NRPA) {
 				bt_addr_le_copy(&conn->le.resp_addr,
-						&adv->random_addr);
+						&adv->adv_addr);
 			} else {
 				bt_addr_le_copy(&conn->le.resp_addr,
 					&bt_dev.id_addr[conn->id]);
