@@ -139,29 +139,43 @@ static inline int mlx90394_update_register(const struct device *dev, const uint8
 					   const uint8_t new_val, uint8_t *old_value)
 {
 	const struct mlx90394_config *cfg = dev->config;
+	int rc;
 
-	if (new_val != *old_value) {
-		*old_value = new_val;
-		return i2c_reg_write_byte_dt(&cfg->i2c, reg_addr, new_val);
+	if (new_val == *old_value) {
+		return 0;
 	}
-	return 0;
+
+	rc = i2c_reg_write_byte_dt(&cfg->i2c, reg_addr, new_val);
+	if (rc == 0) {
+		*old_value = new_val;
+	}
+
+	return rc;
 }
 
-static inline int mlx90394_sync_config_val(const struct device *dev)
+static inline int mlx90394_sync_config_val(const struct device *dev,
+					   enum mlx90394_reg_config_val config_val)
 {
 	struct mlx90394_data *data = dev->data;
 	uint8_t updated_ctrl2;
+	int rc;
 
-	updated_ctrl2 = MLX90394_FIELD_MOD(MLX90394_CTRL2_CONFIG, data->config_val,
+	updated_ctrl2 = MLX90394_FIELD_MOD(MLX90394_CTRL2_CONFIG, config_val,
 					   data->ctrl_reg_values.ctrl2);
 
-	return mlx90394_update_register(dev, MLX90394_REG_CTRL2, updated_ctrl2,
-					&data->ctrl_reg_values.ctrl2);
+	rc = mlx90394_update_register(dev, MLX90394_REG_CTRL2, updated_ctrl2,
+				      &data->ctrl_reg_values.ctrl2);
+	if (rc == 0) {
+		data->config_val = config_val;
+	}
+
+	return rc;
 }
 
 static inline int mlx90394_fs_set(const struct device *dev, const struct sensor_value *val)
 {
 	struct mlx90394_data *data = dev->data;
+	enum mlx90394_reg_config_val config_val;
 
 	/*
 	 * in low current mode, only High Range is possible
@@ -176,12 +190,12 @@ static inline int mlx90394_fs_set(const struct device *dev, const struct sensor_
 	 * HIGH_RANGE
 	 */
 	if (val->val1 > MLX90394_ATTR_FS_LOW_G) {
-		data->config_val = MLX90394_CTRL2_CONFIG_HIGH_RANGE_LOW_NOISE;
+		config_val = MLX90394_CTRL2_CONFIG_HIGH_RANGE_LOW_NOISE;
 	} else {
-		data->config_val = MLX90394_CTRL2_CONFIG_HIGH_SENSITIVITY_LOW_NOISE;
+		config_val = MLX90394_CTRL2_CONFIG_HIGH_SENSITIVITY_LOW_NOISE;
 	}
 
-	return mlx90394_sync_config_val(dev);
+	return mlx90394_sync_config_val(dev, config_val);
 }
 
 static inline int mlx90394_fs_get(const struct device *dev, struct sensor_value *val)
@@ -205,16 +219,14 @@ static inline int mlx90394_low_noise_set(const struct device *dev, struct sensor
 	switch (data->config_val) {
 	case MLX90394_CTRL2_CONFIG_HIGH_RANGE_LOW_CURRENT: {
 		if (val->val1) {
-			data->config_val = MLX90394_CTRL2_CONFIG_HIGH_RANGE_LOW_NOISE;
-
-			return mlx90394_sync_config_val(dev);
+			return mlx90394_sync_config_val(
+				dev, MLX90394_CTRL2_CONFIG_HIGH_RANGE_LOW_NOISE);
 		}
 	} break;
 	case MLX90394_CTRL2_CONFIG_HIGH_RANGE_LOW_NOISE: {
 		if (val->val1 == 0) {
-			data->config_val = MLX90394_CTRL2_CONFIG_HIGH_RANGE_LOW_CURRENT;
-
-			return mlx90394_sync_config_val(dev);
+			return mlx90394_sync_config_val(
+				dev, MLX90394_CTRL2_CONFIG_HIGH_RANGE_LOW_CURRENT);
 		}
 	} break;
 	case MLX90394_CTRL2_CONFIG_HIGH_SENSITIVITY_LOW_NOISE: {
