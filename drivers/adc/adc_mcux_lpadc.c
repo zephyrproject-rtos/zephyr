@@ -90,7 +90,8 @@ struct mcux_lpadc_data {
 	uint16_t *buffer;
 	uint16_t *repeat_buffer;
 	uint32_t channels;
-	lpadc_conv_command_config_t cmd_config[CONFIG_LPADC_CHANNEL_COUNT];
+	/* Map each logical channel to its physical input configuration. */
+	lpadc_conv_command_config_t logic_to_physical[ADC_CMDL_COUNT];
 	/* OPAMP gain control context */
 	uint8_t current_gain_index;
 	int desired_gain_index;
@@ -108,7 +109,7 @@ struct mcux_lpadc_data {
 	struct dma_config dma_cfg;
 	struct dma_block_config dma_block;
 	/* Staging buffer for 32-bit RESFIFO words (max channels per round) */
-	uint32_t dma_results[CONFIG_LPADC_CHANNEL_COUNT];
+	uint32_t dma_results[ADC_CMDL_COUNT];
 #endif
 };
 
@@ -204,14 +205,12 @@ static int mcux_lpadc_channel_setup(const struct device *dev,
 	uint8_t channel_num;
 	int err;
 
-	/* User may configure maximum number of active channels */
-	if (channel_cfg->channel_id >= CONFIG_LPADC_CHANNEL_COUNT) {
+	if (channel_cfg->channel_id >= ADC_CMDL_COUNT) {
 		LOG_ERR("Channel %d is not valid", channel_cfg->channel_id);
 		return -EINVAL;
 	}
 
-	/* Select ADC CMD register to configure based off channel ID */
-	cmd = &data->cmd_config[channel_cfg->channel_id];
+	cmd = &data->logic_to_physical[channel_cfg->channel_id];
 
 	/* If bit 5 of input_positive is set, then channel side B is used */
 	channel_side = 0x20 & channel_cfg->input_positive;
@@ -313,6 +312,7 @@ static int mcux_lpadc_start_read(const struct device *dev,
 	struct mcux_lpadc_data *data = dev->data;
 	lpadc_hardware_average_mode_t hardware_average_mode;
 	uint8_t channel, last_enabled;
+	uint8_t channel_count = POPCOUNT(sequence->channels);
 	int ret;
 #if defined(FSL_FEATURE_LPADC_HAS_CMDL_MODE) && FSL_FEATURE_LPADC_HAS_CMDL_MODE
 	lpadc_conversion_resolution_mode_t resolution_mode;
@@ -369,8 +369,14 @@ static int mcux_lpadc_start_read(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	ret = adc_sequence_validate_buffer(sequence,
-					   POPCOUNT(sequence->channels), sizeof(uint16_t));
+	if (channel_count == 0U ||
+	    (sequence->channels & ~BIT_MASK(ADC_CMDL_COUNT)) != 0U) {
+		LOG_ERR("Invalid channel mask 0x%08x", sequence->channels);
+		return -EINVAL;
+	}
+
+	ret = adc_sequence_validate_buffer(sequence, channel_count,
+					   sizeof(uint16_t));
 	if (ret < 0) {
 		return ret;
 	}
@@ -379,36 +385,29 @@ static int mcux_lpadc_start_read(const struct device *dev,
 	 * Now, look at the selected channels to determine which ADC channels
 	 * we need to configure, and set those channels up.
 	 *
-	 * Since this ADC supports chaining channels in hardware, we will
-	 * start with the highest channel ID and work downwards, chaining
-	 * channels as we go.
+	 * Since this ADC supports chaining channels in hardware, start with
+	 * the highest logical channel and work downwards, chaining as we go.
 	 */
-	channel = CONFIG_LPADC_CHANNEL_COUNT;
-	last_enabled = 0;
-	while (channel-- > 0) {
+	channel = ADC_CMDL_COUNT;
+	last_enabled = 0U;
+	while (channel-- > 0U) {
 		if (sequence->channels & BIT(channel)) {
-			/* Setup this channel command */
+			lpadc_conv_command_config_t *physical_config =
+				&data->logic_to_physical[channel];
+
 #if defined(FSL_FEATURE_LPADC_HAS_CMDL_MODE) && FSL_FEATURE_LPADC_HAS_CMDL_MODE
-			data->cmd_config[channel].conversionResolutionMode =
+			physical_config->conversionResolutionMode =
 				resolution_mode;
 #endif
-			data->cmd_config[channel].hardwareAverageMode =
+			physical_config->hardwareAverageMode =
 				hardware_average_mode;
-			if (last_enabled) {
-				/* Chain channel */
-				data->cmd_config[channel].chainedNextCommandNumber =
-					last_enabled + 1;
-				LOG_DBG("Chaining channel %u to %u",
-					channel, last_enabled);
-			} else {
-				/* End of chain */
-				data->cmd_config[channel].chainedNextCommandNumber = 0;
-			}
+			physical_config->chainedNextCommandNumber =
+				(last_enabled == 0U) ? 0U : last_enabled + 1U;
 			last_enabled = channel;
 			LPADC_SetConvCommandConfig(config->base,
-				channel + 1, &data->cmd_config[channel]);
+				channel + 1U, physical_config);
 		}
-	};
+	}
 
 	data->buffer = sequence->buffer;
 
@@ -507,12 +506,10 @@ static void mcux_lpadc_start_channel(const struct device *dev)
 	const struct mcux_lpadc_config *config = dev->config;
 	struct mcux_lpadc_data *data = dev->data;
 	lpadc_conv_trigger_config_t trigger_config;
-	uint8_t first_channel;
-
-	first_channel = find_lsb_set(data->channels) - 1;
+	uint8_t first_channel = find_lsb_set(data->channels) - 1U;
 
 	LOG_DBG("Starting channel %d, input %d", first_channel,
-		data->cmd_config[first_channel].channelNumber);
+		data->logic_to_physical[first_channel].channelNumber);
 
 	/* Apply any pending OPAMP gain change synchronously at the start of
 	 * the next sampling round, so the adjustment takes effect immediately.
@@ -535,7 +532,7 @@ static void mcux_lpadc_start_channel(const struct device *dev)
 
 	LPADC_GetDefaultConvTriggerConfig(&trigger_config);
 
-	trigger_config.targetCommandId = first_channel + 1;
+	trigger_config.targetCommandId = first_channel + 1U;
 
 	/* configures trigger0. */
 	LPADC_SetConvTriggerConfig(config->base, 0, &trigger_config);
@@ -580,7 +577,7 @@ static void mcux_lpadc_dma_callback(const struct device *dma_dev, void *user_dat
 	uint32_t written = 0U;
 
 	for (uint8_t ch = 0U;
-		ch < CONFIG_LPADC_CHANNEL_COUNT && written < data->channels_count; ch++) {
+	     ch < ADC_CMDL_COUNT && written < data->channels_count; ch++) {
 		/* Skip channels not requested in this sequence. */
 		if (!(data->ctx.sequence.channels & BIT(ch))) {
 			continue;
@@ -592,7 +589,8 @@ static void mcux_lpadc_dma_callback(const struct device *dma_dev, void *user_dat
 		bool is_diff = false;
 
 #if defined(FSL_FEATURE_LPADC_HAS_B_SIDE_CHANNELS) && (FSL_FEATURE_LPADC_HAS_B_SIDE_CHANNELS)
-		lpadc_sample_channel_mode_t conv_mode = data->cmd_config[ch].sampleChannelMode;
+		lpadc_sample_channel_mode_t conv_mode =
+			data->logic_to_physical[ch].sampleChannelMode;
 #if defined(FSL_FEATURE_LPADC_HAS_CMDL_DIFF) && (FSL_FEATURE_LPADC_HAS_CMDL_DIFF)
 		is_diff = (conv_mode == kLPADC_SampleChannelDiffBothSideAB ||
 			   conv_mode == kLPADC_SampleChannelDiffBothSideBA);
@@ -743,7 +741,7 @@ static void mcux_lpadc_isr(const struct device *dev)
 	LPADC_GetConvResult(base, &conv_result);
 #endif /* FSL_FEATURE_LPADC_FIFO_COUNT */
 
-	channel = conv_result.commandIdSource - 1;
+	channel = conv_result.commandIdSource - 1U;
 	LOG_DBG("Finished channel %d. Raw result is 0x%04x",
 		channel, conv_result.convValue);
 	/*
@@ -755,7 +753,7 @@ static void mcux_lpadc_isr(const struct device *dev)
 	 * API should treat the value as signed if the channel is
 	 * in differential mode
 	 */
-	conv_mode = data->cmd_config[channel].sampleChannelMode;
+	conv_mode = data->logic_to_physical[channel].sampleChannelMode;
 	if (data->ctx.sequence.resolution < 15) {
 		result = ((conv_result.convValue >> 3) & 0xFFF);
 #if !(defined(FSL_FEATURE_LPADC_HAS_B_SIDE_CHANNELS) && \
