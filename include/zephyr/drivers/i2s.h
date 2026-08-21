@@ -287,6 +287,16 @@ enum i2s_trigger_cmd {
 	I2S_TRIGGER_PREPARE,
 };
 
+/** @struct tdm_config
+ * @brief TDM-specific configuration options.
+ */
+struct tdm_config {
+	/** Bitmask of channel slots to disable on the direction targeted by
+	 * i2s_configure(). Bits at or above i2s_config.channels return -EINVAL.
+	 */
+	uint32_t channel_disable_mask;
+};
+
 /** @struct i2s_config
  * @brief Interface configuration options.
  *
@@ -321,6 +331,8 @@ struct i2s_config {
 	 * is full or RX queue is empty, or 0, or SYS_FOREVER_MS.
 	 */
 	int32_t timeout;
+	/** TDM-specific configuration. */
+	struct tdm_config tdm;
 };
 
 /**
