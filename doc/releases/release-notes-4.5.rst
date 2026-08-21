@@ -416,6 +416,11 @@ New APIs and options
 
   * :c:struct:`sys_ringq` (see :ref:`fixed_size_ringq_api`)
 
+* USB
+
+  * Added support for the USB Test and Measurement Class (USBTMC) to the USB
+    device stack (see :ref:`usbd_usbtmc`).
+
 * Zbus
 
   * :kconfig:option:`CONFIG_ZBUS_RUNTIME_CHANNEL_REGISTRATION`

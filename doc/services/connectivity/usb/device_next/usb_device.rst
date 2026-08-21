@@ -219,3 +219,5 @@ instance (``n``) and is used as an argument to the :c:func:`usbd_register_class`
 +-----------------------------------+-------------------------+-------------------------+
 | USB Video Class (UVC)             | Video device            | :samp:`uvc_{n}`         |
 +-----------------------------------+-------------------------+-------------------------+
+| USB Test and Measurement (USBTMC) | :ref:`usbd_usbtmc`      | :samp:`usbtmc_{n}`      |
++-----------------------------------+-------------------------+-------------------------+
