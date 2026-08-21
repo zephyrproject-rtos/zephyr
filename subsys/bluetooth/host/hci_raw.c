@@ -55,10 +55,10 @@ NET_BUF_POOL_FIXED_DEFINE(hci_cmd_pool, BT_BUF_CMD_TX_COUNT,
 			  BT_BUF_CMD_SIZE(CONFIG_BT_BUF_CMD_TX_SIZE), 0, NULL);
 NET_BUF_POOL_FIXED_DEFINE(hci_acl_pool, CONFIG_BT_BUF_ACL_TX_COUNT,
 			  BT_BUF_ACL_SIZE(CONFIG_BT_BUF_ACL_TX_SIZE), 0, NULL);
-#if defined(CONFIG_BT_ISO)
+#if defined(CONFIG_BT_CTLR_ISO_TX_SDU_LEN_MAX)
 NET_BUF_POOL_FIXED_DEFINE(hci_iso_pool, CONFIG_BT_ISO_TX_BUF_COUNT,
-			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU), 0, NULL);
-#endif /* CONFIG_BT_ISO */
+			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_CTLR_ISO_TX_SDU_LEN_MAX), 0, NULL);
+#endif /* CONFIG_BT_CTLR_ISO_TX_SDU_LEN_MAX */
 
 #if DT_HAS_CHOSEN(zephyr_bt_hci)
 #define BT_HCI_NODE   DT_CHOSEN(zephyr_bt_hci)
@@ -119,11 +119,11 @@ struct net_buf *bt_buf_get_tx(enum bt_buf_type type, k_timeout_t timeout,
 	case BT_BUF_ACL_OUT:
 		pool = &hci_acl_pool;
 		break;
-#if defined(CONFIG_BT_ISO)
+#if defined(CONFIG_BT_CTLR_ISO_TX_SDU_LEN_MAX)
 	case BT_BUF_ISO_OUT:
 		pool = &hci_iso_pool;
 		break;
-#endif /* CONFIG_BT_ISO */
+#endif /* CONFIG_BT_CTLR_ISO_TX_SDU_LEN_MAX */
 	default:
 		LOG_ERR("Invalid tx type: %u", type);
 		return NULL;
