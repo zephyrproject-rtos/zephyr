@@ -648,7 +648,9 @@ static void oacp_ind_send(const struct bt_gatt_attr *oacp_attr,
 	oacp_res[oacp_res_len++] = oacp_proc.type;
 	oacp_res[oacp_res_len++] = oacp_status;
 
-	if (oacp_proc.type == BT_GATT_OTS_OACP_PROC_CHECKSUM_CALC) {
+	/* The Checksum Value field is only present when the procedure succeeded. */
+	if (oacp_proc.type == BT_GATT_OTS_OACP_PROC_CHECKSUM_CALC &&
+	    oacp_status == BT_GATT_OTS_OACP_RES_SUCCESS) {
 		sys_put_le32(net_buf_simple_pull_le32(resp_param), (oacp_res + oacp_res_len));
 		oacp_res_len += sizeof(uint32_t);
 	}
