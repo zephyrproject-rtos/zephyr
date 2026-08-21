@@ -1,4 +1,4 @@
-# Copyright 2025 NXP
+# Copyright 2025-2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 description: Glitchless clock switching Clock Generation module
@@ -64,6 +64,10 @@ properties:
   mux-2-dc-0-div:
     type: int
     description: MUX_2_DC_0 divider setting
+
+  mux-10-dc-0-div:
+    type: int
+    description: MUX_10_DC_0 divider setting
 
   "#clock-cells":
     type: int
