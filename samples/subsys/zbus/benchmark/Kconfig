@@ -22,6 +22,10 @@ config BM_MSG_SUBSCRIBERS
 	bool "Asynchronous using message subscribers"
 	select ZBUS_MSG_SUBSCRIBER
 
+config BM_ASYNC_LISTENERS
+	bool "Asynchronous using async listeners"
+	select ZBUS_ASYNC_LISTENER
+
 endchoice
 
 config BM_FAIRPLAY
