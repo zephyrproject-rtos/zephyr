@@ -97,11 +97,12 @@ void assert_post_action(const char *file, unsigned int line);
  * When the assert test mode is enabled, the default kernel fatal error handler
  * and the custom assert hook function may return in order to allow the test to
  * proceed.
+ * NOTE: this macro is INTERNAL and should not be used outside of this header!
  */
 #ifdef CONFIG_ASSERT_TEST
-#define __ASSERT_UNREACHABLE
+#define __ASSERT_AFTER_TRIGGER_UNREACHABILITY_MARKER
 #else
-#define __ASSERT_UNREACHABLE CODE_UNREACHABLE
+#define __ASSERT_AFTER_TRIGGER_UNREACHABILITY_MARKER CODE_UNREACHABLE
 #endif
 
 #ifdef __cplusplus
@@ -113,7 +114,7 @@ void assert_post_action(const char *file, unsigned int line);
 		if (unlikely(!(test))) {                                  \
 			__ASSERT_LOC(test);                               \
 			__ASSERT_POST_ACTION();                           \
-			__ASSERT_UNREACHABLE;                             \
+			__ASSERT_AFTER_TRIGGER_UNREACHABILITY_MARKER;     \
 		}                                                         \
 	} while (false)
 
@@ -123,7 +124,7 @@ void assert_post_action(const char *file, unsigned int line);
 			__ASSERT_LOC(test);                               \
 			__ASSERT_MSG_INFO(fmt, ##__VA_ARGS__);            \
 			__ASSERT_POST_ACTION();                           \
-			__ASSERT_UNREACHABLE;                             \
+			__ASSERT_AFTER_TRIGGER_UNREACHABILITY_MARKER;     \
 		}                                                         \
 	} while (false)
 
