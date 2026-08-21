@@ -1,0 +1,18 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Process Mission
+#
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.dma.emul_concurrent:
+    min_ram: 16
+    depends_on: dma
+    tags:
+      - drivers
+      - dma
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim
+      - native_sim/native/64
+    filter: dt_nodelabel_enabled("tst_dma0")
