@@ -59,9 +59,7 @@ struct can_esp32_twaifd_config {
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
 	const struct pinctrl_dev_config *pcfg;
-	int irq_source;
-	int irq_priority;
-	int irq_flags;
+	unsigned int irq;
 };
 
 struct can_esp32_twaifd_data {
@@ -74,7 +72,6 @@ struct can_esp32_twaifd_data {
 	uint32_t clock_source_hz;
 	uint8_t tx_buffer_count;
 	enum can_state state;
-	intr_handle_t intr_handle;
 };
 
 static int can_esp32_twaifd_get_core_clock(const struct device *dev, uint32_t *rate)
@@ -248,17 +245,7 @@ static int can_esp32_twaifd_start(const struct device *dev)
 	data->state = CAN_STATE_ERROR_ACTIVE;
 	k_mutex_unlock(&data->lock);
 
-	err = esp_intr_enable(data->intr_handle);
-	if (err != 0) {
-		LOG_ERR("failed to enable TWAI interrupt (err %d)", err);
-		k_mutex_lock(&data->lock, K_FOREVER);
-		twai_hal_stop(&data->hal);
-		k_mutex_unlock(&data->lock);
-		if (cfg->common.phy != NULL) {
-			(void)can_transceiver_disable(cfg->common.phy);
-		}
-		return err;
-	}
+	irq_enable(cfg->irq);
 
 	/*
 	 * Flip started last so send() cannot observe a startable controller
@@ -279,11 +266,7 @@ static int can_esp32_twaifd_stop(const struct device *dev)
 		return -EALREADY;
 	}
 
-	err = esp_intr_disable(data->intr_handle);
-	if (err != 0) {
-		LOG_ERR("failed to disable TWAI interrupt (err %d)", err);
-		return err;
-	}
+	irq_disable(cfg->irq);
 
 	k_mutex_lock(&data->lock, K_FOREVER);
 	twai_hal_stop(&data->hal);
@@ -660,7 +643,7 @@ static void IRAM_ATTR can_esp32_twaifd_update_state(const struct device *dev, ui
 	can_fire_state_change_callbacks(dev, new_state, err_cnt);
 }
 
-static void IRAM_ATTR can_esp32_twaifd_isr(void *arg)
+static void IRAM_ATTR can_esp32_twaifd_isr(const void *arg)
 {
 	const struct device *dev = arg;
 	struct can_esp32_twaifd_data *data = dev->data;
@@ -785,15 +768,7 @@ static int can_esp32_twaifd_init(const struct device *dev)
 	}
 #endif
 
-	err = esp_intr_alloc(cfg->irq_source,
-			     ESP_PRIO_TO_FLAGS(cfg->irq_priority) |
-				     ESP_INT_FLAGS_CHECK(cfg->irq_flags) | ESP_INTR_FLAG_IRAM |
-				     ESP_INTR_FLAG_INTRDISABLED,
-			     can_esp32_twaifd_isr, (void *)dev, &data->intr_handle);
-	if (err != 0) {
-		LOG_ERR("intr alloc failed (err %d)", err);
-		goto err_clock_off;
-	}
+	IRQ_CONNECT(cfg->irq, IRQ_DEFAULT_PRIORITY, can_esp32_twaifd_isr, dev, ESP_INTR_FLAG_IRAM);                                                   \
 
 	data->state = CAN_STATE_STOPPED;
 	return 0;
@@ -853,8 +828,7 @@ static DEVICE_API(can, can_esp32_twaifd_api) = {
 #endif
 };
 
-/*
- * Derive the hardware controller index (0 or 1) from the node's reg address
+/* Derive the hardware controller index (0 or 1) from the node's reg address
  * by matching it against DR_REG_TWAI0_BASE and DR_REG_TWAI1_BASE. The reg
  * address in devicetree is already the identity - no separate controller-id
  * property needed in the binding. Returns -1 if the address matches neither
@@ -877,9 +851,7 @@ static DEVICE_API(can, can_esp32_twaifd_api) = {
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst)),                             \
 		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(inst, offset),         \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
-		.irq_source = DT_INST_IRQ_BY_IDX(inst, 0, irq),                                    \
-		.irq_priority = DT_INST_IRQ_BY_IDX(inst, 0, priority),                             \
-		.irq_flags = DT_INST_IRQ_BY_IDX(inst, 0, flags),                                   \
+		.irq = DT_INST_IRQN_BY_IDX(inst, 0),                                               \
 	};                                                                                         \
                                                                                                    \
 	static struct can_esp32_twaifd_data can_esp32_twaifd_data_##inst;                          \
