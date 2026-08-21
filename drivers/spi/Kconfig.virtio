@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_VIRTIO
+	bool "VIRTIO SPI driver"
+	default y
+	depends on DT_HAS_VIRTIO_SPI_ENABLED
+	select VIRTIO
+	help
+	  Enable driver for VIRTIO SPI devices.
