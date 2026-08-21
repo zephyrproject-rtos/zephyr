@@ -89,9 +89,6 @@ static uint64_t *new_table(void)
 
 	MMU_LOG_ERR("CONFIG_MAX_XLAT_TABLES is too small");
 
-	/* Unfortunately many code paths are not ready for failure */
-	k_panic();
-
 	return NULL;
 }
 
@@ -411,11 +408,12 @@ move_on:
 	return 0;
 }
 
-static void del_mapping(uint64_t *table, uintptr_t virt, size_t size,
+static bool del_mapping(uint64_t *table, uintptr_t virt, size_t size,
 			unsigned int level)
 {
 	size_t step, level_size = 1ULL << LEVEL_TO_VA_SIZE_SHIFT(level);
 	uint64_t *pte, *subtable;
+	bool success = true;
 
 	for ( ; size; virt += step, size -= step) {
 		step = level_size - (virt & (level_size - 1));
@@ -430,12 +428,23 @@ static void del_mapping(uint64_t *table, uintptr_t virt, size_t size,
 
 		if (step != level_size && is_block_desc(*pte)) {
 			/* need to split this block mapping */
-			expand_to_table(pte, level);
+			if (!expand_to_table(pte, level)) {
+				/* Without the split, clearing this entry would
+				 * unmap the whole block, including memory
+				 * outside of the requested range. Leave it
+				 * alone and report the failure instead.
+				 */
+				MMU_LOG_ERR("cannot split block mapping at 0x%lx", virt);
+				success = false;
+				continue;
+			}
 		}
 
 		if (is_table_desc(*pte, level)) {
 			subtable = pte_desc_table(*pte);
-			del_mapping(subtable, virt, step, level + 1);
+			if (!del_mapping(subtable, virt, step, level + 1)) {
+				success = false;
+			}
 			if (!is_table_unused(subtable)) {
 				continue;
 			}
@@ -446,6 +455,8 @@ static void del_mapping(uint64_t *table, uintptr_t virt, size_t size,
 		*pte = 0;
 		table_usage(pte, -1);
 	}
+
+	return success;
 }
 
 #ifdef CONFIG_USERSPACE
@@ -619,7 +630,9 @@ static int globalize_table(uint64_t *dst_table, uint64_t *src_table, uintptr_t v
 		    is_table_desc(dst_table[i], level)) {
 			uint64_t *subtable = pte_desc_table(dst_table[i]);
 
-			del_mapping(subtable, virt, step, level + 1);
+			if (!del_mapping(subtable, virt, step, level + 1)) {
+				return -ENOMEM;
+			}
 			if (is_table_unused(subtable)) {
 				/* unreference the empty table */
 				dst_table[i] = 0;
@@ -854,18 +867,21 @@ static int add_map(struct arm_mmu_ptables *ptables, const char *name,
 	return ret;
 }
 
-static void remove_map(struct arm_mmu_ptables *ptables, const char *name,
-		       uintptr_t virt, size_t size)
+static int remove_map(struct arm_mmu_ptables *ptables, const char *name,
+		      uintptr_t virt, size_t size)
 {
 	k_spinlock_key_t key;
+	bool success;
 
 	MMU_DEBUG("unmmap [%s]: virt %lx size %lx\n", name, virt, size);
 	__ASSERT(((virt | size) & (CONFIG_MMU_PAGE_SIZE - 1)) == 0,
 		 "address/size are not page aligned\n");
 
 	key = k_spin_lock(&xlat_lock);
-	del_mapping(ptables->base_xlat_table, virt, size, BASE_XLAT_LEVEL);
+	success = del_mapping(ptables->base_xlat_table, virt, size, BASE_XLAT_LEVEL);
 	k_spin_unlock(&xlat_lock, key);
+
+	return success ? 0 : -ENOMEM;
 }
 
 static void invalidate_tlb_all(void)
@@ -1164,6 +1180,14 @@ void z_arm64_mm_init(bool is_primary_core)
 	 */
 	if (is_primary_core) {
 		kernel_ptables.base_xlat_table = new_table();
+		__ASSERT(kernel_ptables.base_xlat_table != NULL,
+			 "Cannot allocate base translation table\n");
+		if (kernel_ptables.base_xlat_table == NULL) {
+			/* Without the base translation table nothing can be
+			 * mapped, so there is no way to continue booting.
+			 */
+			arch_system_halt(K_ERR_KERNEL_PANIC);
+		}
 		setup_page_tables(&kernel_ptables);
 	}
 
@@ -1171,8 +1195,9 @@ void z_arm64_mm_init(bool is_primary_core)
 	enable_mmu_el1(&kernel_ptables, flags);
 }
 
-static void sync_domains(uintptr_t virt, size_t size, const char *name)
+static int sync_domains(uintptr_t virt, size_t size, const char *name)
 {
+	int result = 0;
 #ifdef CONFIG_USERSPACE
 	sys_snode_t *node;
 	struct arch_mem_domain *domain;
@@ -1187,10 +1212,17 @@ static void sync_domains(uintptr_t virt, size_t size, const char *name)
 		ret = globalize_page_range(domain_ptables, &kernel_ptables, virt, size, name, true);
 		if (ret) {
 			LOG_ERR("globalize_page_range() returned %d", ret);
+			/* Keep synchronizing the remaining domains so that
+			 * as few of them as possible are left inconsistent
+			 * with the kernel page tables, but remember that
+			 * this operation did not fully succeed.
+			 */
+			result = ret;
 		}
 	}
 	k_spin_unlock(&z_mem_domain_lock, key);
 #endif
+	return result;
 }
 
 static int __arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
@@ -1263,25 +1295,43 @@ static int __arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flag
 int arch_mem_map(void *virt, uintptr_t phys, size_t size, uint32_t flags)
 {
 	int ret = __arch_mem_map(virt, phys, size, flags);
+	int sync_ret;
 
-	if (ret) {
+	if (ret != 0) {
 		LOG_ERR("__arch_mem_map() returned %d", ret);
-		k_panic();
-	} else {
-		sync_domains((uintptr_t)virt, size, "mem_map");
-		invalidate_tlb_all();
 	}
+
+	/* Even a failed mapping may have modified the kernel page tables
+	 * before bailing out, so the memory domains have to be synchronized
+	 * and the TLB invalidated in any case.
+	 */
+	sync_ret = sync_domains((uintptr_t)virt, size, "mem_map");
+	if (ret == 0) {
+		ret = sync_ret;
+	}
+
+	invalidate_tlb_all();
 
 	return ret;
 }
 
 int arch_mem_unmap(void *addr, size_t size)
 {
-	remove_map(&kernel_ptables, "generic", (uintptr_t)addr, size);
-	sync_domains((uintptr_t)addr, size, "mem_unmap");
+	int ret = remove_map(&kernel_ptables, "generic", (uintptr_t)addr, size);
+	int sync_ret;
+
+	if (ret != 0) {
+		LOG_ERR("remove_map() returned %d", ret);
+	}
+
+	sync_ret = sync_domains((uintptr_t)addr, size, "mem_unmap");
+	if (ret == 0) {
+		ret = sync_ret;
+	}
+
 	invalidate_tlb_all();
 
-	return 0;
+	return ret;
 }
 
 int arch_page_phys_get(void *virt, uintptr_t *phys)
