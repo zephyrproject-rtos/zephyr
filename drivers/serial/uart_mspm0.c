@@ -15,6 +15,7 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/dt-bindings/uart/mspm0_uart.h>
+#include <zephyr/drivers/serial/uart_mspm0.h>
 #include <zephyr/irq.h>
 
 /* Driverlib includes */
@@ -439,6 +440,29 @@ static const DL_UART_TX_FIFO_LEVEL uart_mspm0_tx_fifo_level[] = {
 };
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
+#ifdef CONFIG_UART_MSPM0_DRV_CMD
+static int uart_mspm0_drv_cmd(const struct device *dev, uint32_t cmd, uint32_t p)
+{
+	const struct uart_mspm0_config *config = dev->config;
+	int ret;
+
+	switch (cmd) {
+	case UART_MSPM0_CMD_LIN_SEND_BREAK:
+		if (p) {
+			DL_UART_enableLINSendBreak(config->regs);
+		} else {
+			DL_UART_disableLINSendBreak(config->regs);
+		}
+		ret = 0;
+		break;
+	default:
+		ret = -ENOTSUP;
+		break;
+	}
+	return ret;
+}
+#endif /* CONFIG_UART_MSPM0_DRV_CMD */
+
 static int uart_mspm0_init(const struct device *dev)
 {
 	const struct uart_mspm0_config *config = dev->config;
@@ -500,6 +524,9 @@ static DEVICE_API(uart, uart_mspm0_driver_api) = {
 	.irq_err_enable = uart_mspm0_irq_error_enable,
 	.irq_err_disable = uart_mspm0_irq_error_disable,
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
+#ifdef CONFIG_UART_MSPM0_DRV_CMD
+	.drv_cmd = uart_mspm0_drv_cmd,
+#endif /* CONFIG_UART_MSPM0_DRV_CMD */
 };
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
