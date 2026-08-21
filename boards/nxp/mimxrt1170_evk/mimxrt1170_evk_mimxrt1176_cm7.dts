@@ -17,6 +17,7 @@
 		mipi-dsi = &mipi_dsi;
 		watchdog0 = &wdog1;
 		i2s-codec-tx = &sai1;
+		memc0 = &sdram0;
 	};
 
 	chosen {
@@ -32,12 +33,6 @@
 		zephyr,uart-mcumgr = &lpuart1;
 		zephyr,cpu1-region = &ocram;
 		zephyr,ipc = &mailbox_a;
-	};
-
-	sdram0: memory@80000000 {
-		/* Winbond W9825G6KH-5I */
-		device_type = "memory";
-		reg = <0x80000000 DT_SIZE_M(64)>;
 	};
 
 	/*
@@ -105,6 +100,43 @@ zephyr_mipi_dsi: &mipi_dsi {
 
 	can-transceiver {
 		max-bitrate = <5000000>;
+	};
+};
+
+/*
+ * SEMC is kept disabled by default: the ROM boot code (DCD/XMCD) already
+ * initializes the SDRAM and the kernel runs from it, so the memc driver
+ * (which software-resets SEMC on init) must not be enabled by default.
+ * Boards/applications that want the memc driver to own the controller must
+ * enable both &semc and &sdram0 and keep the active RAM outside SDRAM.
+ */
+&semc {
+	status = "disabled";
+	nxp,dqs-pad-loopback;
+
+	sdram0: sdram@80000000 {
+		/* Winbond W9825G6KH-5I */
+		compatible = "nxp,mcux-semc-sdram";
+		device_type = "memory";
+		reg = <0x80000000 DT_SIZE_M(64)>;
+		status = "disabled";
+		cs = <0>;
+		clk-frequency = <198000000>;
+		port-size = <32>;
+		burst-length = <8>;
+		column-bits = <9>;
+		cas-latency = <3>;
+		t-precharge-to-act-ns = <15>;
+		t-act-to-readwrite-ns = <15>;
+		t-refresh-recovery-ns = <70>;
+		t-write-recovery-ns = <10>;
+		t-cke-off-ns = <42>;
+		t-act-to-precharge-ns = <40>;
+		t-self-ref-recovery-ns = <70>;
+		t-refresh-to-refresh-ns = <60>;
+		t-act-to-act-ns = <10>;
+		refresh-period-ns-per-row = <7812>;
+		delay-chain = <6>;
 	};
 };
 

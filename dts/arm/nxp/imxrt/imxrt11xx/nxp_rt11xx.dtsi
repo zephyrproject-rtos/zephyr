@@ -100,11 +100,12 @@
 		};
 
 		semc: semc0@400d4000 {
-			compatible = "nxp,imx-semc";
+			compatible = "nxp,mcux-semc";
 			reg = <0x400d4000 0x4000>;
 			interrupts = <132 0>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			status = "disabled";
 		};
 
 		/* GPT1 is used for the hardware timer, not as a standard counter */

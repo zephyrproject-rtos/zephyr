@@ -23,6 +23,7 @@
 		sdhc0 = &usdhc1;
 		mcuboot-button0 = &user_button;
 		rtc = &counter_rtc;
+		memc0 = &sdram0;
 	};
 
 	chosen {
@@ -33,12 +34,6 @@
 		zephyr,console = &lpuart1;
 		zephyr,shell-uart = &lpuart1;
 		zephyr,canbus = &flexcan3;
-	};
-
-	sdram0: memory@80000000 {
-		/* Micron MT48LC16M16A2B4-6AIT:G */
-		device_type = "memory";
-		reg = <0x80000000 DT_SIZE_M(32)>;
 	};
 
 	/*
@@ -354,4 +349,41 @@ m2_wifi_sdio: &usdhc1 {};
 
 &counter_rtc {
 	status = "okay";
+};
+
+/*
+ * SEMC is kept disabled by default: the ROM boot code (DCD) already
+ * initializes the SDRAM and the kernel runs from it, so the memc driver
+ * (which software-resets SEMC on init) must not be enabled by default.
+ * Boards/applications that want the memc driver to own the controller must
+ * enable both &semc and &sdram0 and keep the active RAM outside SDRAM.
+ */
+&semc {
+	status = "disabled";
+	nxp,dqs-pad-loopback;
+
+	sdram0: sdram@80000000 {
+		/* Micron MT48LC16M16A2B4-6AIT:G */
+		compatible = "nxp,mcux-semc-sdram";
+		device_type = "memory";
+		reg = <0x80000000 DT_SIZE_M(32)>;
+		status = "disabled";
+		cs = <0>;
+		clk-frequency = <75000000>;
+		port-size = <16>;
+		burst-length = <8>;
+		column-bits = <9>;
+		cas-latency = <3>;
+		t-precharge-to-act-ns = <27>;
+		t-act-to-readwrite-ns = <27>;
+		t-refresh-recovery-ns = <120>;
+		t-write-recovery-ns = <120>;
+		t-cke-off-ns = <67>;
+		t-act-to-precharge-ns = <80>;
+		t-self-ref-recovery-ns = <170>;
+		t-refresh-to-refresh-ns = <120>;
+		t-act-to-act-ns = <27>;
+		refresh-period-ns-per-row = <72500>;
+		refresh-urgent-threshold = <170640>;
+	};
 };
