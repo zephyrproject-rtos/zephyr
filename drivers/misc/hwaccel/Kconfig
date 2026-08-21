@@ -1,0 +1,20 @@
+# Copyright (c) 2026 Ana Clara Forcelli <ana.forcelli@lsitec.org.br>
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig HWACCEL
+	bool "Hardware Acceleration drivers and API"
+
+if HWACCEL
+
+module = HWACCEL
+module-str = hwaccel
+#source "subsys/logging/Kconfig.template.log_config"
+
+config HWACCEL_INIT_PRIORITY
+	int "Hardware Acceleration Init Priority"
+	default 85
+
+# zephyr-keep-sorted-start
+source "drivers/misc/hwaccel/Kconfig.puppy"
+
+endif
