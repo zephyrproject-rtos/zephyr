@@ -1,5 +1,5 @@
-identifier: xgm240_rb4317a
-name: xGM240P +20 dBm Module Radio Board (xGM240-RB4317A, BRD4317A)
+identifier: xg24_rb4188a
+name: EFR32xG24 2.4 GHz +20 dBm Antenna Diversity Radio Board (xG24-RB4188A, BRD4188B)
 type: mcu
 arch: arm
 ram: 256
@@ -8,6 +8,7 @@ toolchain:
   - zephyr
   - gnuarmemb
 supported:
+  - adc
   - bluetooth
   - comparator
   - counter

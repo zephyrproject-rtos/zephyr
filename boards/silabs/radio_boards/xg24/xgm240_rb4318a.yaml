@@ -1,5 +1,5 @@
-identifier: xgm240_rb4317a
-name: xGM240P +20 dBm Module Radio Board (xGM240-RB4317A, BRD4317A)
+identifier: xgm240_rb4318a
+name: xGM240S +10 dBm SiP Module Radio Board (xGM240-RB4318A, BRD4318A)
 type: mcu
 arch: arm
 ram: 256
@@ -8,6 +8,7 @@ toolchain:
   - zephyr
   - gnuarmemb
 supported:
+  - adc
   - bluetooth
   - comparator
   - counter
@@ -20,5 +21,4 @@ supported:
   - spi
   - uart
   - watchdog
-  - netif:openthread
 vendor: silabs
