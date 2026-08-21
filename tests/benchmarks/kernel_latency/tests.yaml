@@ -1,0 +1,22 @@
+common:
+  tags:
+    - kernel
+    - benchmark
+tests:
+  benchmark.kernel.latency.objects:
+    min_ram: 32
+    timeout: 300
+    extra_configs:
+      - CONFIG_ZTEST_BENCHMARK_OUTPUT_CSV=y
+    harness: console
+    integration_platforms:
+      - qemu_x86
+      - qemu_cortex_a53
+      - qemu_riscv32
+    harness_config:
+      type: one_line
+      record:
+        regex:
+          - "^P,(?P<suite>[^,]+),(?P<metric>[^,]+),(?P<samples>[^,]+),(?P<min>[^,]+),(?P<p50>[^,]+),(?P<p90>[^,]+),(?P<p99>[^,]+),(?P<p999>[^,]+),(?P<p9999>[^,]+),(?P<max>[^,]+)$"
+      regex:
+        - "PROJECT EXECUTION SUCCESSFUL"
