@@ -191,12 +191,44 @@ set_target_properties(
 )
 
 #-------------------------------------------------------------------------------
+# Doxygen (XML only)
+#
+# Same configuration as 'doxygen' -- overlays included, since the generated
+# Doxyfile is pulled in with @INCLUDE -- with the HTML and the tag file turned
+# off. Writes to its own directory so that it cannot race with 'doxygen'.
+
+set(DOXY_XML_OUT ${CMAKE_CURRENT_BINARY_DIR}/doxygen-xml)
+set(DOXYFILE_XML_OUT ${CMAKE_CURRENT_BINARY_DIR}/zephyr-xml.doxyfile)
+
+file(WRITE ${DOXYFILE_XML_OUT}
+"@INCLUDE = ${DOXYFILE_OUT}
+OUTPUT_DIRECTORY = ${DOXY_XML_OUT}
+GENERATE_HTML = NO
+GENERATE_TAGFILE =
+")
+
+add_custom_target(
+  doxygen-xml
+  COMMAND
+    ${DOXYGEN_EXECUTABLE} ${DOXYFILE_XML_OUT}
+  COMMENT "Running Doxygen (XML only)..."
+)
+
+add_dependencies(doxygen-xml requirements)
+
+set_target_properties(
+  doxygen-xml
+  PROPERTIES
+    ADDITIONAL_CLEAN_FILES "${DOXY_XML_OUT}"
+)
+
+#-------------------------------------------------------------------------------
 # Doxygen Coverage
 
 add_custom_target(
   doxygen-coverage
   COMMAND ${PYTHON_EXECUTABLE} -m coverxygen
-    --xml-dir ${CMAKE_CURRENT_BINARY_DIR}/doxygen/xml/
+    --xml-dir ${DOXY_XML_OUT}/xml/
     --src-dir ${ZEPHYR_BASE}/include/
     --output ${CMAKE_CURRENT_BINARY_DIR}/doc-coverage.info
   COMMAND lcov
@@ -207,18 +239,18 @@ add_custom_target(
     --no-branch-coverage
     ${CMAKE_CURRENT_BINARY_DIR}/new.info
     -o ${CMAKE_CURRENT_BINARY_DIR}/coverage-report
-  DEPENDS doxygen
+  DEPENDS doxygen-xml
   COMMENT "Generating Doxygen coverage info and HTML report..."
 )
 
 add_custom_target(
   doxygen-coverage-json
   COMMAND ${PYTHON_EXECUTABLE} -m coverxygen
-    --xml-dir ${CMAKE_CURRENT_BINARY_DIR}/doxygen/xml/
+    --xml-dir ${DOXY_XML_OUT}/xml/
     --src-dir ${ZEPHYR_BASE}/include/
     --format json-v3
     --output ${CMAKE_CURRENT_BINARY_DIR}/doc-coverage.json
-  DEPENDS doxygen
+  DEPENDS doxygen-xml
   COMMENT "Generating Doxygen coverage info in JSON format..."
 )
 

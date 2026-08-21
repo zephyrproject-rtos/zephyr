@@ -350,6 +350,9 @@ much faster than building the full documentation set::
 
 The output can be found in ``_build/doxygen/html``.
 
+The ``doxygen-xml`` target builds the same documentation with only the XML output enabled, in
+``_build/doxygen-xml/xml``.
+
 In the regular documentation build, references made from Doxygen comments to the main
 documentation (e.g. ``@kconfig{}``, ``@dtcompatible{}`` or ``@rstref{}``, see
 :ref:`doxygen_sphinx_xrefs`) are automatically resolved into hyperlinks. In a standalone Doxygen
