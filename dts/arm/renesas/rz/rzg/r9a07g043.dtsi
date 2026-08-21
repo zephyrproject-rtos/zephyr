@@ -714,6 +714,32 @@
 				status = "disabled";
 			};
 		};
+
+		/* CA55_0 <-> CM33 */
+		mbox1: mhu@40400020 {
+			compatible = "renesas,rz-mhu-mbox";
+			unit = <1>;
+			reg = <0x40400020 0x20>;
+			channel-mask = <0x1>;
+			channels-count = <1>;
+			interrupts = <69 2>;
+			interrupt-names = "mhuns";
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
+		/* CM33 <-> CA55_0 */
+		mbox4: mhu@40400080 {
+			compatible = "renesas,rz-mhu-mbox";
+			unit = <4>;
+			reg = <0x40400080 0x20>;
+			channel-mask = <0x1>;
+			channels-count = <1>;
+			interrupts = <78 2>;
+			interrupt-names = "mhuns";
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
 	};
 };
 

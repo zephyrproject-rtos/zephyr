@@ -1,17 +1,23 @@
 # Copyright (c) 2025 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-description: Renesas MHU MBOX
+description: |
+  Renesas MHU MBOX
+
+  Notes:
+  - With Renesas MHU MBOX, both TX and RX functions can be used on a single channel.
 
 compatible: "renesas,rz-mhu-mbox"
 
 include: [base.yaml, mailbox-controller.yaml]
 
 properties:
-  channel:
+  unit:
     type: int
     required: true
-    description: the channel number of the underlying MHU unit used for MBOX.
+    description: |
+      Index of the underlying MHU hardware channel used by this MBOX controller.
+      This value is independent of MBOX channel numbering.
 
   reg:
     required: true
@@ -19,15 +25,10 @@ properties:
   interrupts:
     required: true
 
-  tx-mask:
+  channel-mask:
     type: int
     required: true
-    description: TX supported channels mask
-
-  rx-mask:
-    type: int
-    required: true
-    description: RX supported channels mask
+    description: bitmask of available valid MBOX channels (bit n enables channel n).
 
   channels-count:
     type: int
@@ -39,7 +40,8 @@ properties:
     description: |
       Reference to the shared memory region that is going
       to be used for the buffer communication between
-      MHU units. No data will be transmitted if not set.
+      MHU units. This property is optional and should not be set
+      in most cases.
 
 mbox-cells:
   - channel
