@@ -19,20 +19,6 @@
 
 LOG_MODULE_REGISTER(nxp_sc18is606_gpio, CONFIG_GPIO_LOG_LEVEL);
 
-#define SC18IS606_GPIO_MAX_PINS 3
-
-#define SC18IS606_GPIO_WRITE  0xF4
-#define SC18IS606_GPIO_READ   0xF5
-#define SC18IS606_GPIO_ENABLE 0xF6
-#define SC18IS606_GPIO_CONF   0xF7
-
-#define SC18IS606_GPIO_CONF_INPUT      0x00
-#define SC18IS606_GPIO_CONF_PUSH_PULL  0x01
-#define SC18IS606_GPIO_CONF_OPEN_DRAIN 0x03
-#define SC18IS606_GPIO_CONF_MASK       0x03
-
-#define SC18IS606_GPIO_ENABLE_MASK GENMASK(2, 0)
-
 struct gpio_sc18is606_config {
 	struct gpio_driver_config common;
 	const struct device *bridge;
@@ -43,9 +29,6 @@ struct gpio_sc18is606_data {
 
 	/* current port state */
 	uint8_t output_state;
-
-	/* current port pin config */
-	uint8_t conf;
 };
 
 static int gpio_sc18is606_port_set_raw(const struct device *port, uint8_t mask, uint8_t value,
@@ -84,20 +67,8 @@ static int gpio_sc18is606_pin_configure(const struct device *port, gpio_pin_t pi
 					gpio_flags_t flags)
 {
 	const struct gpio_sc18is606_config *cfg = port->config;
-	struct gpio_sc18is606_data *data = port->data;
 	uint8_t pin_conf;
-	uint8_t pin_enable;
 	int ret;
-
-	uint8_t buf[] = {
-		SC18IS606_GPIO_CONF,
-		0x00,
-	};
-
-	uint8_t enable_buf[] = {
-		SC18IS606_GPIO_ENABLE,
-		0x00,
-	};
 
 	if (pin >= SC18IS606_GPIO_MAX_PINS) {
 		return -EINVAL;
@@ -124,22 +95,9 @@ static int gpio_sc18is606_pin_configure(const struct device *port, gpio_pin_t pi
 		return -ENOTSUP;
 	}
 
-	pin_enable = FIELD_PREP(SC18IS606_GPIO_ENABLE_MASK, (1 << pin));
-
-	enable_buf[1] = pin_enable;
-
-	ret = nxp_sc18is606_transfer(cfg->bridge, enable_buf, sizeof(enable_buf), NULL, 0, NULL);
+	ret = nxp_sc18is606_set_pin_mode(cfg->bridge, pin, true, pin_conf);
 	if (ret < 0) {
-		LOG_ERR("Failed to enable GPIO (%d)", ret);
-	}
-
-	data->conf &= ~(SC18IS606_GPIO_CONF_MASK << (pin * 2));
-	data->conf |= (pin_conf & SC18IS606_GPIO_CONF_MASK) << (pin * 2);
-	buf[1] = data->conf;
-
-	ret = nxp_sc18is606_transfer(cfg->bridge, buf, sizeof(buf), NULL, 0, NULL);
-	if (ret < 0) {
-		LOG_ERR("Failed to configure GPIO (%d)", ret);
+		LOG_ERR("Failed to set pin mode (%d)", ret);
 	}
 
 	if (ret == 0 && flags & GPIO_OUTPUT) {
@@ -224,9 +182,8 @@ static DEVICE_API(gpio, gpio_sc18is606_driver_api) = {
 		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(inst),                                   \
 		.bridge = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                     \
 	};                                                                                         \
-	static struct gpio_sc18is606_data gpio_sc18is606_data##inst = {                            \
-		.conf = 0x00,                                                                      \
-	};                                                                                         \
+                                                                                                   \
+	static struct gpio_sc18is606_data gpio_sc18is606_data##inst = {0};                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, gpio_sc18is606_init, NULL, &gpio_sc18is606_data##inst,         \
 			      &gpio_sc18is606_config##inst, POST_KERNEL,                           \
