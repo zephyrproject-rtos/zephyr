@@ -1,0 +1,125 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+/*
+ * Single-core (CM33) overlay for the low-power modes sample on the PSC3M5 EVK.
+ *
+ * The PSC3M5 is a plain single-core DUT: it owns all the power-management
+ * registers directly and exercises the SoC power states (runtime-idle,
+ * DeepSleep, DeepSleep-RAM and the DeepSleep-OFF / Hibernate terminal modes).
+ *
+ * Two observable probes are wired up:
+ *
+ *   - A free-running 32-bit counter on a regular TCPWM (counter0_0) as the
+ *     clock-gating probe: it runs from peri group 4 (CLK_HF2), which the HF
+ *     clocks gate during DeepSleep, so the counter freezes while the SoC is
+ *     asleep and the counter driver's pm_action restarts it on wake.
+ *
+ *   - A PWM LED on P4.0 (TCPWM1 line 4) that blinks at 2 Hz while the SoC is
+ *     running.  The on-chip user LEDs (P8.4/P8.5) have no TCPWM route, so
+ *     connect an LED (or a scope) to P4.0 to watch the PWM: it stops driving
+ *     during DeepSleep and the PWM driver's pm_action restores it on wake.
+ */
+
+/ {
+	aliases {
+		counter0 = &counter0_0;
+		pwm-led0 = &pwm_led0;
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+		status = "okay";
+
+		pwm_led0: pwm_led0 {
+			pwms = <&pwm1_4 0 PWM_MSEC(500) PWM_POLARITY_NORMAL>;
+			label = "PWM LED (P4.0)";
+		};
+	};
+};
+
+/*
+ * Arm the Hibernate wake source declaratively.  The SoC power management reads
+ * this node at init, enables the input buffer on the armed pad and programs the
+ * SRSS wake registers, so the application enters Hibernate without any runtime
+ * wake-source API call.  PIN0 = P2.0 = SW2 on this EVK, pressed low; PIN1 =
+ * P9.0 is unconnected here so it is left off.
+ */
+&hibernate_wakeup {
+	status = "okay";
+	wakeup-pin0-trigger = "low";
+};
+
+/*
+ * DeepSleep-RAM is disabled by default in the SoC devicetree, so a plain
+ * application only sees runtime-idle and regular DeepSleep.  Enabling the state
+ * here selects it explicitly: because its power-state-name is
+ * "suspend-to-ram", it auto-selects CONFIG_PM_S2RAM.  On this part DeepSleep-RAM
+ * powers the CPU down; the SoC power.c installs a RAM-resident warm-boot entry
+ * point (required by the boot ROM) and warm-resumes in place through the reset
+ * handler.
+ *
+ * The SoC default min-residency (2 s) equals the sample's 2 s sleep window, so
+ * it is right on the edge of qualifying; lower it here so the state reliably
+ * engages during the demo's fixed sleep.
+ */
+&deepsleep_ram {
+	status = "okay";
+	min-residency-us = <500000>;
+};
+
+/* Free-running 32-bit counter used to observe clock gating across DeepSleep.
+ * peri group 4 is a CLK_HF2 divider (80 MHz); divide to a 1 MHz tick.
+ */
+&peri0_group4_16bit_0 {
+	status = "okay";
+	clock-div = <80>;
+};
+
+&tcpwm0_0 {
+	status = "okay";
+
+	counter0_0 {
+		status = "okay";
+		clocks = <&peri0_group4_16bit_0>;
+	};
+};
+
+/*
+ * PWM LED on P4.0 (TCPWM1 line 4).  tcpwm1_4 is a 16-bit counter, so feed it a
+ * slow clock: divide the peri group 5 source by 2000 to keep the 500 ms (2 Hz)
+ * blink period well within the 16-bit range.  With CONFIG_PM_DEVICE the PWM is
+ * suspended across DeepSleep, so the LED stops blinking while the SoC sleeps and
+ * the driver's pm_action re-arms it on wake.
+ */
+&peri0_group5_16bit_0 {
+	status = "okay";
+	clock-div = <2000>;
+};
+
+&tcpwm1_4 {
+	status = "okay";
+
+	pwm1_4: pwm1_4 {
+		status = "okay";
+		clocks = <&peri0_group5_16bit_0>;
+		pinctrl-0 = <&p4_0_pwm1_4>;
+		pinctrl-names = "default";
+	};
+};
+
+&pinctrl {
+	p4_0_pwm1_4: p4_0_pwm1_4 {
+		drive-push-pull;
+	};
+};
+
+&gpio_prt4 {
+	status = "okay";
+};

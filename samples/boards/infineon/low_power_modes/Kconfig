@@ -1,0 +1,30 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Infineon low-power modes sample"
+
+# The sample builds a single device-under-test (DUT) image that drives the
+# power-management sequence and exercises each peripheral's pm_action callback.
+# APP_DEEP_MODES gates the deeper phases; enable it once the SoC power management
+# implements the retained (DeepSleep-RAM) and power-down (DeepSleep-OFF /
+# hibernate) modes.
+
+config APP_ROLE_DUT
+	bool "Build the device-under-test application"
+	default y
+	help
+	  Build main_dut.c: the application that drives the power-management test
+	  sequence and exercises each peripheral's pm_action callback.
+
+config APP_DEEP_MODES
+	bool "Exercise the retained and power-down deep sleep modes"
+	depends on APP_ROLE_DUT
+	help
+	  Run the DeepSleep-RAM, DeepSleep-OFF and hibernate phases in addition to
+	  regular DeepSleep.  Leave disabled on targets whose SoC power management
+	  only implements regular DeepSleep, so the sample runs the shallow phases
+	  only.
+
+source "Kconfig.zephyr"
