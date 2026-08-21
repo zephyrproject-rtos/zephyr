@@ -1,4 +1,5 @@
 /* Copyright (c) 2022 Google LLC
+ * Copyright (c) 2026 James Roy <rruuaanng@gmail.com>
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -267,6 +268,36 @@ static inline void zdsp_not_u16(const uint16_t *src, uint16_t *dst, uint32_t blo
 static inline void zdsp_not_u32(const uint32_t *src, uint32_t *dst, uint32_t block_size)
 {
 	arm_not_u32(src, dst, block_size);
+}
+
+static inline float32_t zdsp_sin_f32(DSP_DATA float32_t x)
+{
+	return arm_sin_f32(x);
+}
+
+static inline q15_t zdsp_sin_q15(DSP_DATA q15_t x)
+{
+	return arm_sin_q15(x);
+}
+
+static inline q31_t zdsp_sin_q31(DSP_DATA q31_t x)
+{
+	return arm_sin_q31(x);
+}
+
+static inline float32_t zdsp_cos_f32(DSP_DATA float32_t x)
+{
+	return arm_cos_f32(x);
+}
+
+static inline q15_t zdsp_cos_q15(DSP_DATA q15_t x)
+{
+	return arm_cos_q15(x);
+}
+
+static inline q31_t zdsp_cos_q31(DSP_DATA q31_t x)
+{
+	return arm_cos_q31(x);
 }
 
 #ifdef __cplusplus
