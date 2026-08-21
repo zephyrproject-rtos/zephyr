@@ -37,9 +37,6 @@ extern void z_arm_configure_static_mpu_regions(void);
 extern void z_arm_configure_dynamic_mpu_regions(struct k_thread *thread);
 extern int z_arm_mpu_init(void);
 #endif /* CONFIG_ARM_MPU */
-#ifdef CONFIG_ARM_AARCH32_MMU
-extern int z_arm_mmu_init(void);
-#endif /* CONFIG_ARM_AARCH32_MMU */
 
 static ALWAYS_INLINE void arch_kernel_init(void)
 {
