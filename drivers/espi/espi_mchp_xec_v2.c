@@ -632,7 +632,7 @@ static void send_slave_bootdone(const struct device *dev)
 	uint8_t boot_done = false;
 
 	ret = espi_xec_receive_vwire(dev, ESPI_VWIRE_SIGNAL_TARGET_BOOT_DONE, &boot_done);
-	if ((ret == 0) && (boot_done == true)) {
+	if ((ret == 0) && !boot_done) {
 		/* SLAVE_BOOT_DONE & SLAVE_LOAD_STS have to be sent together */
 		espi_xec_send_vwire(dev, ESPI_VWIRE_SIGNAL_TARGET_BOOT_STS, 1);
 		espi_xec_send_vwire(dev, ESPI_VWIRE_SIGNAL_TARGET_BOOT_DONE, 1);
