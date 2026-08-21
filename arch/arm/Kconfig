@@ -14,6 +14,11 @@ config CPU_ARM9
 	help
 	  This option signifies the use of a CPU of the ARM9 family.
 
+config CPU_ARMV6
+	bool
+	help
+	  This option signifies the use of a classic ARMv6/ARMv6K CPU (ARM11).
+
 config CPU_CORTEX
 	bool
 	help
