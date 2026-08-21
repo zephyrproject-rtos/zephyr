@@ -21,6 +21,7 @@ from pathlib import Path
 
 from build_helpers import forward_logging_to_west
 from west.commands import WestCommand
+from zephyr_ext_common import ZEPHYR_BASE
 
 
 class Sdk(WestCommand):
@@ -561,7 +562,11 @@ class Sdk(WestCommand):
                 str(Path(__file__).parent / "sdk" / "listsdk.cmake"),
             ]
 
-            output = zcmake.run_cmake(cmds, capture_output=True)
+            # listsdk.cmake reads ZEPHYR_BASE from the environment; fall back to
+            # the location derived in zephyr_ext_common when it is not exported.
+            env = os.environ.copy()
+            env.setdefault("ZEPHYR_BASE", str(ZEPHYR_BASE))
+            output = zcmake.run_cmake(cmds, capture_output=True, env=env)
             if output:
                 # remove '-- Zephyr-sdk,' leader
                 sdk_lines = [l[15:] for l in output if l.startswith("-- Zephyr-sdk,")]

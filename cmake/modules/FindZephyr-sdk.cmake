@@ -45,8 +45,48 @@ zephyr_get(ZEPHYR_TOOLCHAIN_VARIANT)
 
 zephyr_get(ZEPHYR_SDK_INSTALL_DIR)
 
+zephyr_get(ZEPHYR_SDK_VERSION)
+
 if("${Zephyr-sdk_FIND_COMPONENTS}" STREQUAL "")
   set(Zephyr-sdk_FIND_COMPONENTS LOAD)
+endif()
+
+# Paths that are used to find installed Zephyr SDK versions.
+set(zephyr_sdk_search_paths
+  /usr
+  /usr/local
+  /opt
+  $ENV{HOME}
+  $ENV{HOME}/.local
+  $ENV{HOME}/.local/opt
+  $ENV{HOME}/bin
+)
+
+# When a specific Zephyr SDK version is requested (and no explicit install
+# directory is set), resolve it to its installation directory so that the
+# regular ZEPHYR_SDK_INSTALL_DIR handling below applies (toolchain variant
+# selection, host tools loading and compatibility checking).
+if(DEFINED ZEPHYR_SDK_VERSION AND NOT DEFINED ZEPHYR_SDK_INSTALL_DIR
+   AND LOAD IN_LIST Zephyr-sdk_FIND_COMPONENTS)
+  find_package(Zephyr-sdk 0.0.0 EXACT QUIET CONFIG PATHS ${zephyr_sdk_search_paths})
+
+  foreach(version config IN ZIP_LISTS Zephyr-sdk_CONSIDERED_VERSIONS Zephyr-sdk_CONSIDERED_CONFIGS)
+    if(NOT DEFINED Zephyr-sdk-${version}_DIR)
+      set(Zephyr-sdk-${version}_DIR ${config})
+    endif()
+  endforeach()
+  list(REMOVE_DUPLICATES Zephyr-sdk_CONSIDERED_VERSIONS)
+
+  if(NOT ZEPHYR_SDK_VERSION IN_LIST Zephyr-sdk_CONSIDERED_VERSIONS)
+    message(FATAL_ERROR
+      "Requested Zephyr SDK version '${ZEPHYR_SDK_VERSION}' is not installed.\n"
+      "Installed versions: ${Zephyr-sdk_CONSIDERED_VERSIONS}"
+    )
+  endif()
+
+  # The Zephyr SDK CMake config is located in '<install-dir>/cmake'.
+  cmake_path(GET Zephyr-sdk-${ZEPHYR_SDK_VERSION}_DIR PARENT_PATH ZEPHYR_SDK_INSTALL_DIR)
+  cmake_path(GET ZEPHYR_SDK_INSTALL_DIR PARENT_PATH ZEPHYR_SDK_INSTALL_DIR)
 endif()
 
 # Load Zephyr SDK Toolchain.
@@ -90,17 +130,6 @@ if((${ZEPHYR_TOOLCHAIN_VARIANT} MATCHES "^zephyr/?") OR
       set(ZEPHYR_TOOLCHAIN_VARIANT ${ZEPHYR_CURRENT_TOOLCHAIN_VARIANT})
     endif()
   else()
-    # Paths that are used to find installed Zephyr SDK versions
-    SET(zephyr_sdk_search_paths
-      /usr
-      /usr/local
-      /opt
-      $ENV{HOME}
-      $ENV{HOME}/.local
-      $ENV{HOME}/.local/opt
-      $ENV{HOME}/bin
-    )
-
     # Search for Zephyr SDK version 0.0.0 which does not exist, this is needed to
     # return a list of compatible versions and find the best suited version that
     # is available.
