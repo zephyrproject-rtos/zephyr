@@ -11,6 +11,7 @@ config SPI_SMARTBOND
 
 config SPI_SMARTBOND_DMA
 	bool "Renesas Smartbond(tm) SPI with DMA acceleration"
+	default y if SPI_DMA
 	depends on SPI_SMARTBOND
 	select DMA
 	help

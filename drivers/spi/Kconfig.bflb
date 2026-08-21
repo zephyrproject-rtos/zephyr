@@ -3,6 +3,7 @@
 
 config SPI_BFLB
 	bool "Bouffalolab SPI driver"
+	select SPI_ASYNC_NOT_SUPPORTED
 	default y
 	depends on DT_HAS_BFLB_SPI_ENABLED
 	help

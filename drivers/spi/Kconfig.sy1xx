@@ -3,6 +3,7 @@
 
 config SPI_SY1XX
 	bool "Sensry SY1xx SPI driver"
+	select SPI_ASYNC_NOT_SUPPORTED
 	default y
 	depends on DT_HAS_SENSRY_SY1XX_SPI_ENABLED
 	help
