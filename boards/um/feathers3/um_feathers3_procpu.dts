@@ -1,0 +1,277 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
+ * SPDX-FileCopyrightText: Copyright (c) 2024 Leon Rinkel <leon@rinkel.me>
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Perry Naseck, MIT Media Lab <pnaseck@media.mit.edu>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/dts-v1/;
+
+#include <espressif/esp32s3/esp32s3_wroom_n16r8.dtsi>
+#include <espressif/partitions_0x0_amp_16M.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/led/led.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include "feather_connector.dtsi"
+#include "um_feathers3-pinctrl.dtsi"
+
+/ {
+	model = "Unexpected Maker FeatherS3 PROCPU";
+	compatible = "um,feathers3", "espressif,esp32s3";
+
+	aliases {
+		i2c-0 = &i2c0;
+		watchdog0 = &wdt0;
+		uart-0 = &uart0;
+		sw0 = &button0;
+		led0 = &led0;
+		led-strip = &led_strip;
+		light-sensor = &als_pt19;
+		mcuboot-button0 = &button0;
+		mcuboot-led0 = &led0;
+		pwm-led0 = &pwm_led0;
+	};
+
+	chosen {
+		zephyr,sram = &sram1;
+		zephyr,console = &usb_serial;
+		zephyr,shell-uart = &usb_serial;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,bt-hci = &esp32_bt_hci;
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: button_0 {
+			gpios = <&gpio0 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "BOOT Button";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&gpio0 13 GPIO_ACTIVE_HIGH>;
+			label = "Blue LED";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		pwm_led0: pwm_led0 {
+			pwms = <&ledc0 0 PWM_HZ(100) PWM_POLARITY_NORMAL>;
+			label = "Blue LED";
+		};
+	};
+
+	/* USB VBUS 5V presence detect on IO34 */
+	vbus_sense: vbus_sense {
+		compatible = "gpio-keys";
+
+		usb_vbus: usb_vbus {
+			gpios = <&gpio1 2 GPIO_ACTIVE_HIGH>; /* GPIO34 */
+			label = "USB VBUS sense";
+		};
+	};
+
+	/*
+	 * The NeoPixel and LDO2 output are powered by a second LDO (U3)
+	 * whose enable is gated through an AND gate (IC1B) with VDD_SPI
+	 * and GPIO39 (MTCK). Setting GPIO39 high enables LDO2.
+	 */
+	ldo2_pwr: ldo2_pwr {
+		compatible = "power-domain-gpio";
+		#power-domain-cells = <0>;
+		enable-gpios = <&gpio1 7 GPIO_ACTIVE_HIGH>; /* GPIO39 */
+	};
+
+	/* Horizontal STEMMA QT connector, powered by LDO1 */
+	stemma1_connector: stemma1_connector {
+		compatible = "stemma-qt-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpio0 9 0>,	/* SCL */
+			   <1 0 &gpio0 8 0>;	/* SDA */
+	};
+
+	/* Vertical STEMMA QT connector, powered by LDO2 (P7/P8: I2C1) */
+	stemma2_connector: stemma2_connector {
+		compatible = "stemma-qt-connector";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpio0 15 0>,	/* SCL */
+			   <1 0 &gpio0 16 0>;	/* SDA */
+	};
+
+	/* ALS-PT19 ambient light sensor on IO4 (ADC1 CH3), R17 = 100K load */
+	als_pt19: als-pt19 {
+		compatible = "everlight,als-pt19";
+		io-channels = <&adc0 3>;
+		load-resistor = <100000>;
+	};
+
+	/*
+	 * Battery voltage sense via resistor divider on IO2 (ADC1 CH1):
+	 * R2 = 442K (high side from VBAT), R14 = 3.3K (low side to GND).
+	 */
+	vbatt: vbatt {
+		compatible = "voltage-divider";
+		io-channels = <&adc0 1>;
+		output-ohms = <3300>;
+		full-ohms = <(442000 + 3300)>;
+	};
+};
+
+&usb_serial {
+	status = "okay";
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-names = "default";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+/* Horizontal STEMMA QT I2C bus (LDO1) */
+zephyr_i2c: &i2c0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+};
+
+/* Vertical STEMMA QT I2C bus (LDO2) — P7/P8: separate I2C1 */
+&i2c1 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&i2c1_default>;
+	pinctrl-names = "default";
+	power-domains = <&ldo2_pwr>;
+};
+
+&spi2 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+	pinctrl-0 = <&spim2_default>;
+	pinctrl-names = "default";
+};
+
+&spi3 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+	pinctrl-0 = <&spim3_default>;
+	pinctrl-names = "default";
+
+	/* Workaround to support WS2812 driver */
+	line-idle-low;
+
+	led_strip: ws2812@0 {
+		compatible = "worldsemi,ws2812-spi";
+		power-domains = <&ldo2_pwr>;
+
+		/* SPI */
+		reg = <0>; /* ignored, but necessary for SPI bindings */
+		spi-max-frequency = <6400000>;
+
+		/* WS2812 */
+		chain-length = <1>;
+		spi-cpha;
+		spi-one-frame = <0xf0>;  /* 625 ns high and 625 ns low */
+		spi-zero-frame = <0xc0>; /* 312.5 ns high and 937.5 ns low */
+		color-mapping = <LED_COLOR_ID_GREEN
+				 LED_COLOR_ID_RED
+				 LED_COLOR_ID_BLUE>;
+	};
+};
+
+&adc0 {
+	status = "okay";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	/* VBATT */
+	channel@1 {
+		reg = <1>;
+		zephyr,gain = "ADC_GAIN_1_4";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+
+	/* ALS-PT19 */
+	channel@3 {
+		reg = <3>;
+		zephyr,gain = "ADC_GAIN_1_4";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+};
+
+&ledc0 {
+	status = "okay";
+	pinctrl-0 = <&ledc0_default>;
+	pinctrl-names = "default";
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	/* Blue LED */
+	channel0@0 {
+		reg = <0x0>;
+		timer = <0>;
+	};
+};
+
+&twai {
+	pinctrl-0 = <&twai_default>;
+	pinctrl-names = "default";
+};
+
+&timer0 {
+	status = "disabled";
+};
+
+&timer1 {
+	status = "disabled";
+};
+
+&timer2 {
+	status = "disabled";
+};
+
+&timer3 {
+	status = "disabled";
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&coretemp {
+	status = "okay";
+};
+
+&trng0 {
+	status = "okay";
+};
+
+&esp32_bt_hci {
+	status = "okay";
+};
