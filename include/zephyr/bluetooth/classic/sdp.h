@@ -725,16 +725,25 @@ int bt_sdp_discover(struct bt_conn *conn,
 
 /** @brief Release waiting SDP discovery request.
  *
- *  It can cancel valid waiting SDP client request identified by SDP discovery
- *  parameters object.
+ *  Cancels a waiting SDP client request identified by the SDP discovery
+ *  parameters object, i.e. one that was queued with bt_sdp_discover() but
+ *  whose resolution has not started yet. On success the discovery callback
+ *  will not be called for the request and the parameters object may be
+ *  reused immediately.
+ *
+ *  A request that is already being resolved cannot be canceled; in that
+ *  case -EINPROGRESS is returned and the callback will still be called.
  *
  * @param conn Object identifying connection to remote.
  * @param params SDP discovery parameters.
  *
- * @return 0 in case of success or negative value in case of error.
+ * @retval 0 The request was canceled.
+ * @retval -EINVAL @p conn or @p params is NULL.
+ * @retval -EINPROGRESS The request is already being resolved.
+ * @retval -ESRCH No such request is waiting.
  */
 int bt_sdp_discover_cancel(struct bt_conn *conn,
-			   const struct bt_sdp_discover_params *params);
+			   struct bt_sdp_discover_params *params);
 
 
 /* Helper types & functions for SDP client to get essential data from server */
