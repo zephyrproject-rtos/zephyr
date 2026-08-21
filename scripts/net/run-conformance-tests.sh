@@ -6,7 +6,7 @@
 # See the documentation under
 # doc/services/connectivity/networking/conformance for what the suites are.
 
-all_suites="mdns dns sntp coap dhcpv4 dhcpv4_server arp ndp tcp"
+all_suites="mdns dnssd dns sntp coap dhcpv4 dhcpv4_server arp ndp tcp"
 suites=""
 outdir=""
 keep=0
