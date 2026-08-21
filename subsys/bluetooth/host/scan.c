@@ -89,6 +89,10 @@ struct fragmented_advertiser {
 
 static struct fragmented_advertiser reassembling_advertiser;
 
+/* The timeout handler runs on the Bluetooth workqueue and is thereby
+ * serialized with the extended advertising report processing, which also
+ * accesses reassembling_advertiser without locking.
+ */
 static void reassembly_timeout_work_handler(struct k_work *work)
 {
 	if (reassembling_advertiser.state == FRAG_ADV_REASSEMBLING) {
@@ -105,7 +109,7 @@ K_WORK_DELAYABLE_DEFINE(reassembly_timeout_work, reassembly_timeout_work_handler
 
 static void reassembly_timeout_work_reschedule(void)
 {
-	int err = k_work_reschedule(&reassembly_timeout_work, REASSEMBLY_TIMEOUT);
+	int err = bt_work_reschedule(&reassembly_timeout_work, REASSEMBLY_TIMEOUT);
 
 	if (err < 0) {
 		LOG_ERR("Failed to reschedule reassembly timeout work: %d", err);
