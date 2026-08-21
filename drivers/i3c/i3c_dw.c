@@ -2987,7 +2987,7 @@ static DEVICE_API(i3c, dw_i3c_api) = {
 				DT_INST_PROP_OR(n, primary_controller_da, 0x00),                   \
 			.common.flags = I3C_CONTROLLER_CONFIG_FLAGS_DT_INST(n),))                  \
 		I3C_DW_PINCTRL_INIT(n)};                                                           \
-	PM_DEVICE_DT_INST_DEFINE(n, dw_i3c_pm_action);                                             \
+	PM_DEVICE_DT_INST_DEFINE(n, dw_i3c_pm_ctrl);                                               \
 	DEVICE_DT_INST_DEFINE(n, dw_i3c_init, PM_DEVICE_DT_INST_GET(n), &dw_i3c_data_##n,          \
 			      &dw_i3c_cfg_##n, POST_KERNEL, CONFIG_I3C_CONTROLLER_INIT_PRIORITY,   \
 			      &dw_i3c_api);
@@ -3070,7 +3070,7 @@ BUILD_ASSERT(IS_ENABLED(CONFIG_HAS_MCHP_MEC_I3C),
 				DT_INST_PROP_OR(n, primary_controller_da, 0x00),                 \
 			.common.flags = I3C_CONTROLLER_CONFIG_FLAGS_DT_INST(n),))                \
 		I3C_DW_PINCTRL_INIT(n)};                                                         \
-	PM_DEVICE_DT_INST_DEFINE(n, dw_i3c_pm_action);                                             \
+	PM_DEVICE_DT_INST_DEFINE(n, dw_i3c_pm_ctrl);                                               \
 	DEVICE_DT_INST_DEFINE(n, dw_i3c_init, PM_DEVICE_DT_INST_GET(n), &xec_i3c_data_##n,         \
 			      &xec_i3c_cfg_##n, POST_KERNEL, CONFIG_I3C_CONTROLLER_INIT_PRIORITY,  \
 			      &dw_i3c_api);
