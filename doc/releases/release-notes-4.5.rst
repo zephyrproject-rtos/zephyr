@@ -288,6 +288,8 @@ New APIs and options
     * :c:func:`bt_ascs_unregister`
     * :c:func:`bt_bap_unicast_client_qos_from_group`
     * :c:func:`bt_bap_qos_cfg_eq`
+    * :c:func:`bt_aics_client_free_instance`
+    * :c:func:`bt_vocs_client_free_instance`
 
   * Host
 
