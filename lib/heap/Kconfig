@@ -164,6 +164,17 @@ config SYS_HEAP_CANARIES_RANDOM
 	  Without this, canaries are still effective at detecting
 	  accidental corruption but are predictable.
 
+config SYS_HEAP_RELEASE_HOOK
+	bool
+	help
+	  Hidden symbol selected by any consumer that needs to know when a
+	  region of heap memory stops being owned by its caller. When set,
+	  heap.c calls heap_release_hook() for the block handed to
+	  sys_heap_free() and for the suffix an in-place shrink splits off,
+	  while the memory is still valid. The consumer implements that entry
+	  point. Keeping the call sites gated on this single symbol means
+	  heap.c carries no consumer-specific conditionals.
+
 config SYS_HEAP_SANITIZER_HOOKS
 	bool
 	help

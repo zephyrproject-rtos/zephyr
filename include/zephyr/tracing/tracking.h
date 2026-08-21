@@ -66,6 +66,37 @@ extern struct k_queue *_track_list_k_queue;
 extern struct k_event *_track_list_k_event;
 
 /**
+ * @name Tracking list locks
+ *
+ * Objects leave their list when their memory is released back to a sys_heap
+ * based allocator, so a traversal that can run concurrently with a release
+ * must hold the matching lock.
+ *
+ * @{
+ */
+/** @brief Lock protecting the k_timer tracking list. */
+extern struct k_spinlock _track_list_k_timer_lock;
+/** @brief Lock protecting the k_mem_slab tracking list. */
+extern struct k_spinlock _track_list_k_mem_slab_lock;
+/** @brief Lock protecting the k_sem tracking list. */
+extern struct k_spinlock _track_list_k_sem_lock;
+/** @brief Lock protecting the k_mutex tracking list. */
+extern struct k_spinlock _track_list_k_mutex_lock;
+/** @brief Lock protecting the k_stack tracking list. */
+extern struct k_spinlock _track_list_k_stack_lock;
+/** @brief Lock protecting the k_msgq tracking list. */
+extern struct k_spinlock _track_list_k_msgq_lock;
+/** @brief Lock protecting the k_mbox tracking list. */
+extern struct k_spinlock _track_list_k_mbox_lock;
+/** @brief Lock protecting the k_pipe tracking list. */
+extern struct k_spinlock _track_list_k_pipe_lock;
+/** @brief Lock protecting the k_queue tracking list. */
+extern struct k_spinlock _track_list_k_queue_lock;
+/** @brief Lock protecting the k_event tracking list. */
+extern struct k_spinlock _track_list_k_event_lock;
+/** @} */
+
+/**
  * @brief Gets node's next element in a object tracking list.
  *
  * @param list Node to get next element from.

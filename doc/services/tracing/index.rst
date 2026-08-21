@@ -704,6 +704,14 @@ all initialized mutexes, one can write::
     cur = SYS_PORT_TRACK_NEXT(cur);
   }
 
+Objects leave their list when their memory is released back to a
+``sys_heap`` based allocator, such as through :c:func:`k_free` or the
+common libc ``free()``. A traversal that can run concurrently with such
+a release must hold the matching ``_track_list_<type>_lock`` spinlock,
+or it may follow a link that is being removed. Memory handed out by
+other allocators, for example slab blocks, is not covered: freeing a
+tracked object there still leaves a stale node behind.
+
 To enable object tracking, enable :kconfig:option:`CONFIG_TRACING_OBJECT_TRACKING`.
 Note that each list can be enabled or disabled via their tracing
 configuration. For example, to disable tracking of semaphores, one can
