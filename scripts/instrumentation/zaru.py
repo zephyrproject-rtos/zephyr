@@ -380,7 +380,7 @@ def set_stopper_addr(port, addr):
     returned. If address '0' is given it disables the stopper.
     """
 
-    port.write(b'trigger ' + b'0x' + bytes(f"{addr:08x}", "ascii") + b'\r')
+    port.write(b'stopper ' + b'0x' + bytes(f"{addr:08x}", "ascii") + b'\r')
 
     # Check if stopper was set correctly.
     addr_set = get_trigger_stopper_addr(port)["stopper"]
