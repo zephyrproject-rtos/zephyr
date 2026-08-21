@@ -154,133 +154,124 @@ static int print_formatted(const struct log_output *output,
 static int timestamp_print(const struct log_output *output,
 			   uint32_t flags, log_timestamp_t timestamp)
 {
-	int length;
 	bool format =
 		(flags & LOG_OUTPUT_FLAG_FORMAT_TIMESTAMP) |
 		(flags & LOG_OUTPUT_FLAG_FORMAT_SYSLOG) |
 		IS_ENABLED(CONFIG_LOG_OUTPUT_FORMAT_LINUX_TIMESTAMP) |
 		IS_ENABLED(CONFIG_LOG_OUTPUT_FORMAT_CUSTOM_TIMESTAMP);
-
+#ifdef CONFIG_LOG_TIMESTAMP_64BIT
+	uint64_t total_seconds;
+#else
+	uint32_t total_seconds;
+#endif
+	uint32_t remainder;
+	uint32_t ms;
+	uint32_t us;
+	uint32_t seconds;
+	uint32_t hours;
+	uint32_t mins;
 
 	if (!format) {
 #ifndef CONFIG_LOG_TIMESTAMP_64BIT
-		length = print_formatted(output, "[%010lu] ", timestamp);
+		return print_formatted(output, "[%010lu] ", timestamp);
 #else
-		length = print_formatted(output, "[%020llu] ", timestamp);
+		return print_formatted(output, "[%020llu] ", timestamp);
 #endif
-	} else if (freq != 0U) {
-#ifndef CONFIG_LOG_TIMESTAMP_64BIT
-		uint32_t total_seconds;
-#else
-		uint64_t total_seconds;
-#endif
-		uint32_t remainder;
-		uint32_t ms;
-		uint32_t us;
-
-		timestamp /= timestamp_div;
-		total_seconds = timestamp / freq;
-
-		remainder = timestamp % freq;
-		ms = (remainder * 1000U) / freq;
-		us = (1000 * (remainder * 1000U - (ms * freq))) / freq;
-
-		if (IS_ENABLED(CONFIG_LOG_BACKEND_NET) && flags & LOG_OUTPUT_FLAG_FORMAT_SYSLOG) {
-#if defined(CONFIG_POSIX_C_LANG_SUPPORT_R)
-			struct tm tm_timestamp = {0};
-			time_t time_seconds = total_seconds;
-
-			gmtime_r(&time_seconds, &tm_timestamp);
-#if defined(CONFIG_REQUIRES_FULL_LIBC)
-			char time_str[sizeof("1970-01-01T00:00:00")];
-
-			strftime(time_str, sizeof(time_str), "%FT%T", &tm_timestamp);
-
-			length = print_formatted(output, "%s.%06uZ ",
-						 time_str, ms * 1000U + us);
-#else /* CONFIG_REQUIRES_FULL_LIBC */
-			length = print_formatted(output,
-					"%04u-%02u-%02uT%02u:%02u:%02u.%06uZ ",
-					tm_timestamp.tm_year + 1900, tm_timestamp.tm_mon + 1,
-					tm_timestamp.tm_mday, tm_timestamp.tm_hour,
-					tm_timestamp.tm_min, tm_timestamp.tm_sec,
-					ms * 1000U + us);
-#endif /* CONFIG_REQUIRES_FULL_LIBC */
-#endif /* CONFIG_POSIX_C_LANG_SUPPORT_R */
-		} else if (IS_ENABLED(CONFIG_LOG_OUTPUT_FORMAT_CUSTOM_TIMESTAMP)) {
-			length = log_custom_timestamp_print(output, timestamp, print_formatted);
-		} else {
-			if (IS_ENABLED(CONFIG_LOG_OUTPUT_FORMAT_LINUX_TIMESTAMP)) {
-				length = print_formatted(output,
-#if defined(CONFIG_LOG_TIMESTAMP_64BIT)
-							"[%5llu.%06d] ",
-#else
-							"[%5lu.%06d] ",
-#endif
-							total_seconds, ms * 1000U + us);
-#if defined(CONFIG_POSIX_C_LANG_SUPPORT_R)
-			} else if (IS_ENABLED(CONFIG_LOG_OUTPUT_FORMAT_DATE_TIMESTAMP)) {
-				struct tm tm_timestamp = {0};
-				time_t time_seconds = total_seconds;
-
-				gmtime_r(&time_seconds, &tm_timestamp);
-#if defined(CONFIG_REQUIRES_FULL_LIBC)
-				char time_str[sizeof("1970-01-01 00:00:00")];
-
-				strftime(time_str, sizeof(time_str), "%F %T", &tm_timestamp);
-
-				length = print_formatted(output, "[%s.%03u,%03u] ", time_str, ms,
-							 us);
-#else /* CONFIG_REQUIRES_FULL_LIBC */
-				length = print_formatted(
-					output, "[%04u-%02u-%02u %02u:%02u:%02u.%03u,%03u] ",
-					tm_timestamp.tm_year + 1900, tm_timestamp.tm_mon + 1,
-					tm_timestamp.tm_mday, tm_timestamp.tm_hour,
-					tm_timestamp.tm_min, tm_timestamp.tm_sec,
-					ms, us);
-#endif /* CONFIG_REQUIRES_FULL_LIBC */
-			} else if (IS_ENABLED(CONFIG_LOG_OUTPUT_FORMAT_ISO8601_TIMESTAMP)) {
-				struct tm tm_timestamp = {0};
-				time_t time_seconds = total_seconds;
-
-				gmtime_r(&time_seconds, &tm_timestamp);
-#if defined(CONFIG_REQUIRES_FULL_LIBC)
-				char time_str[sizeof("1970-01-01T00:00:00")];
-
-				strftime(time_str, sizeof(time_str), "%FT%T", &tm_timestamp);
-
-				length = print_formatted(output, "[%s,%06uZ] ", time_str,
-							 ms * 1000U + us);
-#else /* CONFIG_REQUIRES_FULL_LIBC */
-				length = print_formatted(output,
-							 "[%04u-%02u-%02uT%02u:%02u:%02u,%06uZ] ",
-							 tm_timestamp.tm_year + 1900,
-							 tm_timestamp.tm_mon + 1,
-							 tm_timestamp.tm_mday, tm_timestamp.tm_hour,
-							 tm_timestamp.tm_min, tm_timestamp.tm_sec,
-							 ms * 1000U + us);
-#endif /* CONFIG_REQUIRES_FULL_LIBC */
-#endif /* CONFIG_POSIX_C_LANG_SUPPORT_R */
-			} else {
-				uint32_t seconds;
-				uint32_t hours;
-				uint32_t mins;
-
-				seconds = total_seconds;
-				hours = seconds / 3600U;
-				seconds -= hours * 3600U;
-				mins = seconds / 60U;
-				seconds -= mins * 60U;
-				length = print_formatted(output,
-							"[%02u:%02u:%02u.%03u,%03u] ",
-							hours, mins, seconds, ms, us);
-			}
-		}
-	} else {
-		length = 0;
 	}
 
-	return length;
+	if (freq == 0U) {
+		return 0;
+	}
+
+	timestamp /= timestamp_div;
+	total_seconds = timestamp / freq;
+
+	remainder = timestamp % freq;
+	ms = (remainder * 1000U) / freq;
+	us = (1000 * (remainder * 1000U - (ms * freq))) / freq;
+
+#if defined(CONFIG_POSIX_C_LANG_SUPPORT_R)
+	if (IS_ENABLED(CONFIG_LOG_BACKEND_NET) && flags & LOG_OUTPUT_FLAG_FORMAT_SYSLOG) {
+		struct tm tm_timestamp = {0};
+		time_t time_seconds = total_seconds;
+
+		gmtime_r(&time_seconds, &tm_timestamp);
+#if defined(CONFIG_REQUIRES_FULL_LIBC)
+		char time_str[sizeof("1970-01-01T00:00:00")];
+
+		strftime(time_str, sizeof(time_str), "%FT%T", &tm_timestamp);
+
+		return print_formatted(output, "%s.%06uZ ", time_str, ms * 1000U + us);
+#else  /* CONFIG_REQUIRES_FULL_LIBC */
+		return print_formatted(output, "%04u-%02u-%02uT%02u:%02u:%02u.%06uZ ",
+				       tm_timestamp.tm_year + 1900, tm_timestamp.tm_mon + 1,
+				       tm_timestamp.tm_mday, tm_timestamp.tm_hour,
+				       tm_timestamp.tm_min, tm_timestamp.tm_sec, ms * 1000U + us);
+#endif /* CONFIG_REQUIRES_FULL_LIBC */
+	}
+#endif /* CONFIG_POSIX_C_LANG_SUPPORT_R */
+
+	if (IS_ENABLED(CONFIG_LOG_OUTPUT_FORMAT_CUSTOM_TIMESTAMP)) {
+		return log_custom_timestamp_print(output, timestamp, print_formatted);
+	}
+
+	if (IS_ENABLED(CONFIG_LOG_OUTPUT_FORMAT_LINUX_TIMESTAMP)) {
+		return print_formatted(output,
+#if defined(CONFIG_LOG_TIMESTAMP_64BIT)
+				       "[%5llu.%06d] ",
+#else
+				       "[%5lu.%06d] ",
+#endif
+				       total_seconds, ms * 1000U + us);
+	}
+
+#if defined(CONFIG_POSIX_C_LANG_SUPPORT_R)
+	if (IS_ENABLED(CONFIG_LOG_OUTPUT_FORMAT_DATE_TIMESTAMP)) {
+		struct tm tm_timestamp = {0};
+		time_t time_seconds = total_seconds;
+
+		gmtime_r(&time_seconds, &tm_timestamp);
+#if defined(CONFIG_REQUIRES_FULL_LIBC)
+		char time_str[sizeof("1970-01-01 00:00:00")];
+
+		strftime(time_str, sizeof(time_str), "%F %T", &tm_timestamp);
+
+		return print_formatted(output, "[%s.%03u,%03u] ", time_str, ms, us);
+#else  /* CONFIG_REQUIRES_FULL_LIBC */
+		return print_formatted(output, "[%04u-%02u-%02u %02u:%02u:%02u.%03u,%03u] ",
+				       tm_timestamp.tm_year + 1900, tm_timestamp.tm_mon + 1,
+				       tm_timestamp.tm_mday, tm_timestamp.tm_hour,
+				       tm_timestamp.tm_min, tm_timestamp.tm_sec, ms, us);
+#endif /* CONFIG_REQUIRES_FULL_LIBC */
+	}
+
+	if (IS_ENABLED(CONFIG_LOG_OUTPUT_FORMAT_ISO8601_TIMESTAMP)) {
+		struct tm tm_timestamp = {0};
+		time_t time_seconds = total_seconds;
+
+		gmtime_r(&time_seconds, &tm_timestamp);
+#if defined(CONFIG_REQUIRES_FULL_LIBC)
+		char time_str[sizeof("1970-01-01T00:00:00")];
+
+		strftime(time_str, sizeof(time_str), "%FT%T", &tm_timestamp);
+
+		return print_formatted(output, "[%s,%06uZ] ", time_str, ms * 1000U + us);
+#else  /* CONFIG_REQUIRES_FULL_LIBC */
+		return print_formatted(output, "[%04u-%02u-%02uT%02u:%02u:%02u,%06uZ] ",
+				       tm_timestamp.tm_year + 1900, tm_timestamp.tm_mon + 1,
+				       tm_timestamp.tm_mday, tm_timestamp.tm_hour,
+				       tm_timestamp.tm_min, tm_timestamp.tm_sec, ms * 1000U + us);
+#endif /* CONFIG_REQUIRES_FULL_LIBC */
+	}
+#endif /* CONFIG_POSIX_C_LANG_SUPPORT_R */
+
+	seconds = total_seconds;
+	hours = seconds / 3600U;
+	seconds -= hours * 3600U;
+	mins = seconds / 60U;
+	seconds -= mins * 60U;
+
+	return print_formatted(output, "[%02u:%02u:%02u.%03u,%03u] ", hours, mins, seconds, ms, us);
 }
 
 static void color_print(const struct log_output *output,
