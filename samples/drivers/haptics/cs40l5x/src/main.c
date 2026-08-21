@@ -14,12 +14,6 @@
 #include <zephyr/shell/shell.h>
 #include <zephyr/sys/util.h>
 
-#define CS40L5X_DEMO_TRIGGER DT_NODE_HAS_PROP(DT_ALIAS(haptic0), trigger_gpios)
-
-#if CS40L5X_DEMO_TRIGGER
-#include <zephyr/drivers/gpio.h>
-#endif /* CS40L5X_DEMO_TRIGGER */
-
 #if CONFIG_SHELL
 #include <stdlib.h>
 #endif /* CONFIG_SHELL */
@@ -33,10 +27,6 @@ LOG_MODULE_REGISTER(main);
 #define CS40L5X_DEMO_LEVEL             27
 
 const struct device *cs40l5x = DEVICE_DT_GET(DT_ALIAS(haptic0));
-
-#if CS40L5X_DEMO_TRIGGER
-const struct gpio_dt_spec demo_gpio = GPIO_DT_SPEC_GET_BY_IDX(DT_ALIAS(haptic0), trigger_gpios, 0);
-#endif /* CS40L5X_DEMO_TRIGGER */
 
 #if CONFIG_SHELL
 #define CS40L5X_HELP                SHELL_HELP("CS40L5x haptics commands", NULL)
@@ -213,15 +203,6 @@ int main(void)
 	if (ret < 0) {
 		LOG_WRN("buzz configuration failure (%d)", ret);
 	}
-
-#if CS40L5X_DEMO_TRIGGER
-	/* Demonstration of GPIO configuration for edge-triggered haptic effects */
-	ret = cs40l5x_configure_trigger(cs40l5x, &demo_gpio, HAPTICS_SOURCE_ROM, &cfg,
-					CS40L5X_ATTENUATION_3DB, CS40L5X_RISING_EDGE);
-	if (ret < 0) {
-		LOG_WRN("configure GPIO trigger failure (%d)", ret);
-	}
-#endif /* CS40L5X_DEMO_TRIGGER */
 
 	/* Basic demonstration if not using the custom shell interface. */
 	if (!IS_ENABLED(CONFIG_SHELL)) {
