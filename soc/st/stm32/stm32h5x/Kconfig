@@ -19,6 +19,7 @@ config SOC_SERIES_STM32H5X
 	select HAS_SWO
 	# Software options
 	select HAS_PM
+	select HAS_POWEROFF
 	select PM_STATE_SET_IRQ_UNLOCKED
 	select SOC_EARLY_INIT_HOOK
 	# STM32-specific options
