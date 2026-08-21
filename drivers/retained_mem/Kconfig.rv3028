@@ -1,0 +1,23 @@
+# Copyright (c) 2026 Janez Ugovsek <janez@ugovsek.info>
+# SPDX-License-Identifier: Apache-2.0
+
+config RETAINED_MEM_RV3028
+	bool "Micro Crystal RV3028 user RAM driver"
+	default y
+	depends on DT_HAS_MICROCRYSTAL_RV3028_RAM_ENABLED
+	depends on DT_HAS_MICROCRYSTAL_RV3028_ENABLED
+	select MFD
+	help
+	  Enable the user RAM child driver for the Micro Crystal RV3028.
+	  The two bytes of battery-backed user RAM are exposed through the
+	  retained memory API.
+
+config RETAINED_MEM_RV3028_INIT_PRIORITY
+	int "RV3028 Retained mem initialization priority"
+	depends on RETAINED_MEM_RV3028
+	default 52
+	help
+	  Initialization priority for the Micro Crystal RV3028 retained
+	  memory driver.
+	  It must be later than the initialization priority of RV3028
+	  MFD (parent) driver.
