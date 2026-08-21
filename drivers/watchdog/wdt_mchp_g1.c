@@ -16,10 +16,18 @@
 LOG_MODULE_REGISTER(wdt_mchp_g1, CONFIG_WDT_LOG_LEVEL);
 
 #define WDT_LOCK_TIMEOUT              K_MSEC(10)
-#define MAX_INSTALLABLE_TIMEOUT_COUNT (DT_PROP(DT_NODELABEL(wdt), max_installable_timeout_count))
-#define MAX_TIMEOUT_WINDOW            (DT_PROP(DT_NODELABEL(wdt), max_timeout_window))
-#define MAX_TIMEOUT_WINDOW_MODE       (DT_PROP(DT_NODELABEL(wdt), max_timeout_window_mode))
-#define MIN_WINDOW_LIMIT              (DT_PROP(DT_NODELABEL(wdt), min_window_limit))
+/*
+ * Read through the instance rather than through a node label. DT_NODELABEL(wdt)
+ * compiles only on a devicetree that labels the node exactly `wdt`, which is a
+ * requirement the binding does not state and a board cannot discover except by
+ * hitting it. The values below already come from the instance; the one
+ * exception is the neighbouring only_one_timeout_val_supported_flag, which
+ * reads a label no devicetree in the tree defines and is left alone here.
+ */
+#define MAX_INSTALLABLE_TIMEOUT_COUNT (DT_INST_PROP(0, max_installable_timeout_count))
+#define MAX_TIMEOUT_WINDOW            (DT_INST_PROP(0, max_timeout_window))
+#define MAX_TIMEOUT_WINDOW_MODE       (DT_INST_PROP(0, max_timeout_window_mode))
+#define MIN_WINDOW_LIMIT              (DT_INST_PROP(0, min_window_limit))
 #define WDT_FLAG_ONLY_ONE_TIMEOUT_VALUE_SUPPORTED                                                  \
 	(DT_PROP(DT_NODELABEL(wdog), only_one_timeout_val_supported_flag))
 
@@ -33,7 +41,14 @@ LOG_MODULE_REGISTER(wdt_mchp_g1, CONFIG_WDT_LOG_LEVEL);
  * left-shifting the number 8 by `n` positions. The result of this macro is 8 * 2^n.
  */
 #define PERIOD_VALUE(n)  (8 << n)
-#define TIMEOUT_VALUE_US 1000
+/* The watchdog is clocked from the internal ultra low power oscillator, which
+ * on some parts of this family reaches the peripheral at about 1.024 kHz. One
+ * synchronization therefore costs milliseconds, not microseconds: enabling the
+ * watchdog on a PIC32CM GC00 was measured at 1.12 ms. A timeout below that
+ * lets the driver carry on writing registers while the peripheral is still
+ * synchronizing, and those writes are discarded.
+ */
+#define TIMEOUT_VALUE_US 5000
 #define DELAY_US         2
 
 typedef enum {
@@ -456,8 +471,12 @@ static int wdt_mchp_install_timeout(const struct device *wdt_dev, const struct w
 	channel_data[mchp_wdt_data->installed_timeout_cnt].window.min =
 		actual_set_timeout.window.min;
 
-	LOG_ERR("Rounded off timeout min to %d\nRounded off timeout max to %d",
-		actual_set_timeout.window.min, actual_set_timeout.window.max);
+	if ((actual_set_timeout.window.min != cfg->window.min) ||
+	    (actual_set_timeout.window.max != cfg->window.max)) {
+		LOG_WRN("timeout rounded: min %u to %u ms, max %u to %u ms", cfg->window.min,
+			actual_set_timeout.window.min, cfg->window.max,
+			actual_set_timeout.window.max);
+	}
 
 	/* this will return the channel id and then increment the
 	 * count which will then be used for the next channel.
