@@ -14,6 +14,7 @@
 #include <zephyr/drivers/virtio.h>
 #include <zephyr/drivers/virtio/virtqueue.h>
 #include "virtio_common.h"
+#include "virtio_pci_internal.h"
 #include "assert.h"
 
 #define DT_DRV_COMPAT virtio_pci
@@ -610,7 +611,7 @@ static DEVICE_API(virtio, virtio_pci_driver_api) = {
 			DEVICE_DT_INST_GET(inst), 0                                             \
 		);                                                                          \
 		int ret = virtio_pci_init_common(dev);                                      \
-		irq_enable(DT_INST_IRQN(inst));                                             \
+		virtio_pci_enable_irq_on_success(ret, DT_INST_IRQN(inst));                  \
 		return ret;                                                                 \
 	}                                                                               \
 	DEVICE_DT_INST_DEFINE(                                                          \
