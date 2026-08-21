@@ -4,7 +4,4 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-small_partition: &slot1_partition {
-	label = "small";
-	reg = <0xc2000 0x10000>;
-};
+small_partition: &slot1_partition {};
