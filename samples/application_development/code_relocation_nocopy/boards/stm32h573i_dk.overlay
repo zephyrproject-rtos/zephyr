@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 STMicroelectronics
+ * Copyright (c) 2026 STMicroelectronics
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,6 +12,6 @@
 };
 
 &ext_flash_ctrl {
-	/* permission = 0 for Rd/Wr */
-	memmap-config = <1 0 DT_SIZE_M(64) 0>;
+	/* permission = 1 for Rd only */
+	memmap-config = <1 0 DT_SIZE_M(64) 1>;
 };

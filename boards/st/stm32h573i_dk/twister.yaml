@@ -28,6 +28,7 @@ supported:
   - usb_device
   - usbd
   - watchdog
+  - mspi
 vendor: st
 variants:
   stm32h573i_dk/stm32h573xx:
