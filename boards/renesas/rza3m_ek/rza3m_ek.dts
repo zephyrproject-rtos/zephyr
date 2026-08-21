@@ -39,6 +39,7 @@
 	aliases {
 		led0 = &led1;
 		sw0 = &sw1;
+		i2c-0 = &i2c0;
 	};
 
 	leds {
@@ -147,5 +148,17 @@
 };
 
 &gpio20 {
+	status = "okay";
+};
+
+&i2c0 {
+	pinctrl-0 = <&i2c0_pins>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_pins>;
+	pinctrl-names = "default";
 	status = "okay";
 };
