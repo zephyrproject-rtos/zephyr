@@ -15,7 +15,17 @@ config I2S_INFINEON
 	help
 	  This option enables the I2S driver.
 
-if I2S_INFINEON
+config I2S_INFINEON_V2
+	bool "Infineon I2S driver based on i2s pdl"
+	default y
+	depends on DT_HAS_INFINEON_I2S_V2_ENABLED
+	select USE_INFINEON_I2S
+	select PINCTRL
+	select DMA
+	help
+	  This option enables the I2S driver for Infineon TRAVEO T2G AUDIOSS block.
+
+if I2S_INFINEON || I2S_INFINEON_V2
 
 config I2S_INFINEON_RX_QUEUE_SIZE
 	int "RX queue length"
