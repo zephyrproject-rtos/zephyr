@@ -382,3 +382,87 @@ config SHARED_MULTI_HEAP
 	  etc...) defined in the DT.
 
 endmenu
+
+config HEAPTRACE
+	bool "Heap trace"
+	select HEAP_LISTENER
+	help
+	  Enable heap trace to track outstanding memory allocations.
+	  Records each k_malloc/k_free with thread info, timestamp, and caller
+	  address. Provides shell commands for dumping and summarizing allocations.
+
+	  This is a debug-only feature. Every allocation takes a global
+	  spinlock (shared across all heaps and CPUs, with interrupts
+	  disabled), copies the thread name, formats a timestamp, and (when
+	  HEAPTRACE_BACKTRACE is enabled) walks the call stack. Both alloc
+	  and free perform a linear scan of the record table under that
+	  lock, so the per-call cost grows with the table size. This adds
+	  significant overhead to the allocator hot path and must not be
+	  enabled in production builds.
+
+if HEAPTRACE
+
+config HEAPTRACE_MAX_RECORDS
+	int "Maximum number of heaptrace records"
+	default 32
+	help
+	  Maximum number of outstanding allocation records the heap trace
+	  can track simultaneously. When the table is full, new allocations
+	  will be dropped with a warning.
+
+config HEAPTRACE_MAX_RESIZE_RECORDS
+	int "Maximum number of heap resize records"
+	default 16
+	help
+	  Maximum number of heap resize events kept in the history ring buffer.
+	  When the buffer is full, the oldest entry is overwritten.
+
+config HEAPTRACE_BACKTRACE
+	bool "Capture call stack backtrace on allocation"
+	depends on ARCH_STACKWALK
+	help
+	  Capture a stack backtrace for each allocation using arch_stack_walk().
+	  This allows tracing the exact call chain that led to a malloc, even
+	  when using the heap_listener callback path where __builtin_return_address()
+	  cannot reach the original caller.
+
+	  Requires CONFIG_ARCH_STACKWALK support (available on RISC-V, x86, ARM64).
+	  FRAME_POINTER is selected automatically to ensure reliable unwinding.
+
+	  Note: this significantly increases per-record memory usage and adds
+	  runtime overhead on each allocation. Use for debugging only.
+
+config HEAPTRACE_BACKTRACE_DEPTH
+	int "Maximum backtrace depth per allocation"
+	default 16
+	depends on HEAPTRACE_BACKTRACE
+	help
+	  Maximum number of stack frames to capture per allocation record.
+	  Higher values give more context but increase memory usage.
+
+config HEAPTRACE_BACKTRACE_SKIP
+	int "Number of infrastructure frames to skip"
+	default 4
+	depends on HEAPTRACE_BACKTRACE
+	help
+	  Number of top stack frames to skip when capturing a backtrace.
+	  The heap_listener callback path goes through several infrastructure
+	  layers (heaptrace_alloc -> heap_listener_notify -> allocator
+	  internals -> k_malloc) before reaching the actual caller. Skipping
+	  these frames ensures the captured backtrace contains only the
+	  user code call chain.
+
+	  Increase this value if the backtrace still shows allocator internals
+	  at the top; decrease it if user frames are being cut off.
+
+config HEAPTRACE_SHELL
+	bool "Heap trace shell commands"
+	default y
+	depends on SHELL
+	help
+	  Register shell commands for the heap trace:
+	    heaptrace dump    - Dump all outstanding allocations
+	    heaptrace reset   - Reset heaptrace records
+	    heaptrace summary - Dump summary grouped by thread
+
+endif # HEAPTRACE

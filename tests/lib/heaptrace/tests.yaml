@@ -1,0 +1,7 @@
+common:
+  tags: heaptrace
+  integration_platforms:
+    - qemu_x86
+
+tests:
+  libraries.heaptrace: {}
