@@ -1,0 +1,23 @@
+# AMEBA UART configuration
+
+# Copyright (c) 2024 Realtek Semiconductor Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_AMEBA
+	bool "AMEBA MCU serial driver"
+	default y
+	depends on DT_HAS_REALTEK_AMEBA_UART_ENABLED
+	select PINCTRL
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	# the ASYNC implementation requires a DMA controller
+	select SERIAL_SUPPORT_ASYNC \
+		if DT_HAS_REALTEK_AMEBA_GDMA_ENABLED
+	select DMA if UART_ASYNC_API
+	help
+	  This option enables the UART driver for AMEBA family of processors.
+	  Say y if you wish to use serial port on AMEBA MCU.
+
+config SERIAL_ASYNC_WITH_ERETI
+	bool
+	# realize serial async mechanism with ERETI interrupt
