@@ -5,6 +5,13 @@
  *
  * ZMS: Zephyr Memory Storage
  */
+
+/**
+ * @file
+ * @brief Header file for the Zephyr Memory Storage (ZMS) API.
+ * @ingroup zms
+ */
+
 #ifndef ZEPHYR_INCLUDE_KVSS_ZMS_H_
 #define ZEPHYR_INCLUDE_KVSS_ZMS_H_
 
