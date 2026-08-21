@@ -2159,14 +2159,15 @@ void bt_hci_le_adv_set_terminated(struct net_buf *buf)
 		if (bt_dev.cached_conn_complete[i].valid &&
 		    bt_dev.cached_conn_complete[i].evt.handle == evt->conn_handle) {
 			if (was_adv_enabled) {
-				/* Process the cached connection complete event
-				 * now that the corresponding advertising set is known.
+				/* Process the cached connection complete event with the
+				 * advertising set context.
 				 *
 				 * If the advertiser has been stopped before the connection
 				 * complete event has been raised to the application, we
 				 * discard the event.
 				 */
-				bt_hci_le_enh_conn_complete(&bt_dev.cached_conn_complete[i].evt);
+				bt_hci_le_enh_conn_complete(&bt_dev.cached_conn_complete[i].evt,
+							    adv);
 			}
 			bt_dev.cached_conn_complete[i].valid = false;
 		}
