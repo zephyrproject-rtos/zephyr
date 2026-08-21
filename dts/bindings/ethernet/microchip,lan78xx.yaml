@@ -1,0 +1,26 @@
+# Copyright (c) 2026 Narek Aydinyan
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip LAN78xx USB-to-Ethernet adapter
+
+compatible: "microchip,lan78xx"
+
+include: ethernet-controller.yaml
+
+properties:
+  phy-handle:
+    required: true
+
+  alt-setting:
+    type: int
+    default: 0
+    description: |
+      USB data interface alternate setting to select after endpoint discovery.
+      The default 0 matches the supported LAN7800/LAN7850 adapters.
+
+  led-enable-mask:
+    type: int
+    default: 0
+    description: |
+      Bitmask of LAN78xx LED outputs to enable in HW_CFG. The default 0 keeps
+      the reset/strap LED configuration unchanged.
