@@ -19,6 +19,14 @@ config I2S_INIT_PRIORITY
 	help
 	  Device driver initialization priority.
 
+config I2S_RTIO
+	bool "I2S RTIO [Experimental]"
+	select EXPERIMENTAL
+	select RTIO
+	select RTIO_SYS_MEM_BLOCKS
+	help
+	  Enable the RTIO API calls.
+
 module = I2S
 module-str = i2s
 source "subsys/logging/Kconfig.template.log_config"

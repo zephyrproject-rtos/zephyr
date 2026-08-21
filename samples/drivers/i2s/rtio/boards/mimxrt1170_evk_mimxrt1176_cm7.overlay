@@ -1,0 +1,34 @@
+/*
+ *  SPDX-FileCopyrightText: 2026 Basalte bv
+ *
+ *  SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		i2s-rtio-tx = &sai1;
+		i2s-rtio-rx = &sai3;
+	};
+
+	chosen {
+		zephyr,sram = &ocram1;
+	};
+};
+
+&sai1 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_sai1>;
+	pinctrl-names = "default";
+
+	mclk-output;
+	nxp,tx-channel = <1>;
+};
+
+&sai3 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_sai3>;
+	pinctrl-names = "default";
+
+	mclk-output;
+	nxp,tx-channel = <1>;
+};
