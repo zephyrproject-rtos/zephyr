@@ -1,29 +1,33 @@
-# copyright (c) (2016-2025), Cypress Semiconductor Corporation
-# (an Infineon company) or an affiliate of Cypress Semiconductor Corporation.
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
 #
 # SPDX-License-Identifier: Apache-2.0
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 
 # Infineon PSC3 based MCU default configuration
 
 if SOC_SERIES_PSC3
 
-config CORTEX_M_SYSTICK
-	default n if INFINEON_LP_TIMER_PDL
+# PSC3 uses SysTick as the primary system timer by default. When PM is
+# enabled, the MCWDT serves as a low-power companion timer via the
+# SYSTEM_TIMER_LPM_COMPANION_HOOKS mechanism, providing timekeeping during
+# deepsleep when the SysTick (and HF clocks) stop. To use the LP timer as the
+# primary system timer instead, set CONFIG_CORTEX_M_SYSTICK=n and
+# CONFIG_INFINEON_LP_TIMER_PDL=y.
+config INFINEON_LP_TIMER_PDL
+	default n
+
+choice SYSTEM_TIMER_LPM_COMPANION
+	default SYSTEM_TIMER_LPM_COMPANION_HOOKS if PM
+endchoice
 
 config NUM_IRQS
 	default 140
+
+# A DeepSleep-RAM (suspend-to-RAM) warm boot cold-boots the device, so the
+# system timer restarts from zero and the PM subsystem must re-sync its
+# timekeeping on resume.
+config SYSTEM_TIMER_RESET_BY_LPM
+	default y if PM_S2RAM
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if CORTEX_M_SYSTICK
@@ -31,6 +35,12 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 
 config SYS_CLOCK_TICKS_PER_SEC
 	default $(div,$(dt_node_int_prop_int,/clocks/clk_wco,clock-frequency),4) if USE_INFINEON_LPTIMER
+
+# MPU-based null-pointer dereferencing detection cannot be applied as
+# the (0x0 - 0x400) is unmapped target.
+choice NULL_POINTER_EXCEPTION_DETECTION
+	default  NULL_POINTER_EXCEPTION_DETECTION_NONE
+endchoice
 
 # add additional die specific params
 

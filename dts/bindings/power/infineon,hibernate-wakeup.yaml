@@ -1,0 +1,110 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon hibernate / hibernate-RAM wakeup source configuration.
+
+  Infineon SoCs provide a set of dedicated hardware sources that can wake the
+  device from the hibernate (and, where supported, hibernate-RAM) power modes.
+  The set of available sources and the pin-to-pad mapping are fixed in silicon
+  and differ per device; consult the SoC datasheet or the SoC devicetree for
+  the mapping.  A device implements only a subset of the properties below
+  - set only the ones the target SoC supports.
+
+  Typical availability:
+    PIN0, PIN1, LPCOMP0, LPCOMP1, WDT, RTC alarm
+
+  Each pin and LPCOMP source can be independently enabled and configured to wake
+  on a high or low logic level.
+
+  Example (wake on the first dedicated pin, active low):
+
+    hibernate_wakeup: hibernate-wakeup {
+        compatible = "infineon,hibernate-wakeup";
+        wakeup-pin0-trigger = "low";
+    };
+
+compatible: "infineon,hibernate-wakeup"
+
+properties:
+  wakeup-pin0-trigger:
+    type: string
+    enum:
+      - "low"
+      - "high"
+    description: |
+      Enable dedicated wake PIN0 as a hibernate wakeup source.  The physical pad
+      is device-specific (see the SoC devicetree/datasheet).  Set to "low" to
+      wake on a low logic level, "high" for a high level.  Omit to disable PIN0.
+
+  wakeup-pin1-trigger:
+    type: string
+    enum:
+      - "low"
+      - "high"
+    description: |
+      Enable dedicated wake PIN1 as a hibernate wakeup source.  The physical pad
+      is device-specific (see the SoC devicetree/datasheet).  Set to "low" to
+      wake on a low logic level, "high" for a high level.  Omit to disable PIN1.
+
+  wakeup-pin2-trigger:
+    type: string
+    enum:
+      - "low"
+      - "high"
+    description: |
+      Enable dedicated wake PIN2 as a hibernate wakeup source (device-specific;
+      for example PSB3).  The physical pad is device-specific.  Set to "low" to
+      wake on a low logic level, "high" for a high level.  Omit to disable PIN2.
+
+  wakeup-pin3-trigger:
+    type: string
+    enum:
+      - "low"
+      - "high"
+    description: |
+      Enable dedicated wake PIN3 as a hibernate wakeup source (device-specific;
+      for example PSB3).  The physical pad is device-specific.  Set to "low" to
+      wake on a low logic level, "high" for a high level.  Omit to disable PIN3.
+
+  wakeup-lpcomp0-trigger:
+    type: string
+    enum:
+      - "low"
+      - "high"
+    description: |
+      Enable low-power comparator 0 (LPCOMP0) as a hibernate wakeup source.
+      Set to "low" to wake on a low output level, "high" for a high level.
+      Omit to disable LPCOMP0.
+
+  wakeup-lpcomp1-trigger:
+    type: string
+    enum:
+      - "low"
+      - "high"
+    description: |
+      Enable low-power comparator 1 (LPCOMP1) as a hibernate wakeup source.
+      Set to "low" to wake on a low output level, "high" for a high level.
+      Omit to disable LPCOMP1.
+
+  wakeup-wdt:
+    type: boolean
+    description: |
+      Enable the watchdog timer as a hibernate wakeup source.  Use on
+      single-watchdog devices.
+
+  wakeup-wdt0:
+    type: boolean
+    description: |
+      Enable WDT0 as a hibernate wakeup source.  Use on dual-watchdog devices.
+
+  wakeup-wdt1:
+    type: boolean
+    description: |
+      Enable WDT1 as a hibernate wakeup source.  Use on dual-watchdog devices.
+
+  wakeup-rtc-alarm:
+    type: boolean
+    description: Enable RTC alarm as a hibernate wakeup source.
