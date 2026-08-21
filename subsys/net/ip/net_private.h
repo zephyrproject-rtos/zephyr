@@ -12,6 +12,7 @@
 
 #include <errno.h>
 #include <zephyr/sys/printk.h>
+#include <zephyr/net/ethernet.h>
 #include <zephyr/net/net_context.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/icmp.h>
@@ -483,3 +484,5 @@ static inline void net_ipv6_mld_send_leave(struct net_if *iface __unused,
 {
 }
 #endif /* CONFIG_NET_IPV6_MLD */
+
+int net_eth_mcast_ip_addr_update(struct net_if *iface, const struct net_addr *addr, bool add);
