@@ -14,6 +14,8 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <ifaddrs.h>
+#include <net/if.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <netinet/tcp.h>
@@ -446,6 +448,42 @@ static int sockaddr_to_nsos_mid(const struct sockaddr *addr, socklen_t addrlen,
 	return -NSI_ERRNO_MID_EINVAL;
 }
 
+/* A link-local IPv4/IPv6 multicast address cannot be bound on a host socket
+ * without a single interface scope, but the single offloaded Zephyr interface
+ * has no such host scope (see nsos_adapt_join_mcast_all()). Rewrite the bind to
+ * the wildcard address, keeping the port, and let group membership do the
+ * filtering. Enable address/port reuse too, since callers like the mDNS
+ * responder bind one socket per interface to the same multicast address and
+ * port, which all collapse onto the same wildcard bind here.
+ */
+static void nsos_adapt_bind_fixup_mcast(int fd, struct sockaddr *addr)
+{
+	int on = 1;
+
+	if (addr->sa_family == AF_INET) {
+		struct sockaddr_in *addr_in = (struct sockaddr_in *)addr;
+
+		if (!IN_MULTICAST(ntohl(addr_in->sin_addr.s_addr))) {
+			return;
+		}
+
+		addr_in->sin_addr.s_addr = htonl(INADDR_ANY);
+	} else if (addr->sa_family == AF_INET6) {
+		struct sockaddr_in6 *addr_in6 = (struct sockaddr_in6 *)addr;
+
+		if (!IN6_IS_ADDR_MULTICAST(&addr_in6->sin6_addr)) {
+			return;
+		}
+
+		addr_in6->sin6_addr = in6addr_any;
+	} else {
+		return;
+	}
+
+	(void)setsockopt(fd, SOL_SOCKET, SO_REUSEADDR, &on, sizeof(on));
+	(void)setsockopt(fd, SOL_SOCKET, SO_REUSEPORT, &on, sizeof(on));
+}
+
 int nsos_adapt_bind(int fd, const struct nsos_mid_sockaddr *addr_mid, size_t addrlen_mid)
 {
 	struct sockaddr_storage addr_storage;
@@ -457,6 +495,8 @@ int nsos_adapt_bind(int fd, const struct nsos_mid_sockaddr *addr_mid, size_t add
 	if (ret < 0) {
 		return ret;
 	}
+
+	nsos_adapt_bind_fixup_mcast(fd, addr);
 
 	ret = bind(fd, addr, addrlen);
 	if (ret < 0) {
@@ -778,6 +818,66 @@ static int nsos_adapt_setsockopt_int(int fd, int level, int optname,
 	return 0;
 }
 
+/* In native-sim the single offloaded Zephyr interface maps to host lo, so a
+ * faithful single-interface join would only receive multicast on lo. Join the
+ * group on every host interface instead, so the offloaded listener receives
+ * multicast on the real host links too.
+ */
+static int nsos_adapt_join_mcast_all(int fd, int family, const void *optval, size_t optlen)
+{
+	int level = (family == AF_INET6) ? IPPROTO_IPV6 : IPPROTO_IP;
+	int optname = (family == AF_INET6) ? IPV6_ADD_MEMBERSHIP : IP_ADD_MEMBERSHIP;
+	size_t mreq_size =
+		(family == AF_INET6) ? sizeof(struct ipv6_mreq) : sizeof(struct ip_mreqn);
+	struct if_nameindex *ifs;
+	unsigned int joined = 0;
+	int last_errno = 0;
+
+	if (optlen < mreq_size) {
+		return -NSI_ERRNO_MID_EINVAL;
+	}
+
+	ifs = if_nameindex();
+	if (ifs == NULL) {
+		/* fallback - join only on lo */
+		return nsos_adapt_setsockopt_int(fd, level, optname, optval, optlen);
+	}
+
+	for (struct if_nameindex *ife = ifs; ife->if_index != 0; ife++) {
+		int ret;
+
+		if (family == AF_INET6) {
+			struct ipv6_mreq mreq;
+
+			memcpy(&mreq, optval, sizeof(mreq));
+			mreq.ipv6mr_interface = ife->if_index;
+			ret = setsockopt(fd, level, optname, &mreq, sizeof(mreq));
+		} else {
+			struct ip_mreqn mreq;
+
+			memcpy(&mreq, optval, sizeof(mreq));
+			mreq.imr_ifindex = ife->if_index;
+			ret = setsockopt(fd, level, optname, &mreq, sizeof(mreq));
+		}
+
+		if (ret < 0) {
+			/* Interface may be down or already joined; keep going. */
+			last_errno = errno;
+			continue;
+		}
+
+		joined++;
+	}
+
+	if_freenameindex(ifs);
+
+	if (joined == 0) {
+		return -nsi_errno_to_mid(last_errno != 0 ? last_errno : EADDRNOTAVAIL);
+	}
+
+	return 0;
+}
+
 int nsos_adapt_setsockopt(int fd, int nsos_mid_level, int nsos_mid_optname,
 			  const void *nsos_mid_optval, size_t nsos_mid_optlen)
 {
@@ -858,8 +958,25 @@ int nsos_adapt_setsockopt(int fd, int nsos_mid_level, int nsos_mid_optname,
 		}
 		break;
 
+	case NSOS_MID_IPPROTO_IP:
+		switch (nsos_mid_optname) {
+		case NSOS_MID_IP_MULTICAST_LOOP:
+			return nsos_adapt_setsockopt_int(fd, IPPROTO_IP, IP_MULTICAST_LOOP,
+							 nsos_mid_optval, nsos_mid_optlen);
+		case NSOS_MID_IP_ADD_MEMBERSHIP:
+			return nsos_adapt_join_mcast_all(fd, AF_INET, nsos_mid_optval,
+							 nsos_mid_optlen);
+		}
+		break;
+
 	case NSOS_MID_IPPROTO_IPV6:
 		switch (nsos_mid_optname) {
+		case NSOS_MID_IPV6_MULTICAST_LOOP:
+			return nsos_adapt_setsockopt_int(fd, IPPROTO_IPV6, IPV6_MULTICAST_LOOP,
+							 nsos_mid_optval, nsos_mid_optlen);
+		case NSOS_MID_IPV6_ADD_MEMBERSHIP:
+			return nsos_adapt_join_mcast_all(fd, AF_INET6, nsos_mid_optval,
+							 nsos_mid_optlen);
 		case NSOS_MID_IPV6_V6ONLY:
 			return nsos_adapt_setsockopt_int(fd, IPPROTO_IPV6, IPV6_V6ONLY,
 							 nsos_mid_optval, nsos_mid_optlen);
@@ -1135,6 +1252,78 @@ void nsos_adapt_freeaddrinfo(struct nsos_mid_addrinfo *res_mid)
 
 	freeaddrinfo(wrap->addrinfo);
 	free(wrap);
+}
+
+static uint8_t netmask_to_prefix(const uint8_t *mask, size_t len)
+{
+	uint8_t prefix = 0;
+
+	for (size_t i = 0; i < len; i++) {
+		prefix += __builtin_popcount(mask[i]);
+	}
+
+	return prefix;
+}
+
+int nsos_adapt_get_ifaddrs(struct nsos_mid_ifaddr *addrs, size_t *count)
+{
+	struct ifaddrs *ifap;
+	size_t capacity = *count;
+	size_t stored = 0;
+	size_t total = 0;
+
+	if (getifaddrs(&ifap) < 0) {
+		return -nsi_errno_to_mid(errno);
+	}
+
+	/* Count every qualifying host address (total) but only store up to capacity,
+	 * so the caller can detect and report truncation.
+	 */
+	for (struct ifaddrs *ifa = ifap; ifa != NULL; ifa = ifa->ifa_next) {
+		struct nsos_mid_ifaddr entry;
+
+		if (ifa->ifa_addr == NULL) {
+			continue;
+		}
+
+		if ((ifa->ifa_flags & IFF_LOOPBACK) || !(ifa->ifa_flags & IFF_UP)) {
+			continue;
+		}
+
+		if (ifa->ifa_addr->sa_family == AF_INET) {
+			struct sockaddr_in *addr = (struct sockaddr_in *)ifa->ifa_addr;
+			struct sockaddr_in *nm = (struct sockaddr_in *)ifa->ifa_netmask;
+
+			entry.family = NSOS_MID_AF_INET;
+			memcpy(entry.addr, &addr->sin_addr, 4);
+			entry.prefix_len = nm ? netmask_to_prefix((uint8_t *)&nm->sin_addr, 4) : 32;
+		} else if (ifa->ifa_addr->sa_family == AF_INET6) {
+			struct sockaddr_in6 *addr = (struct sockaddr_in6 *)ifa->ifa_addr;
+			struct sockaddr_in6 *nm = (struct sockaddr_in6 *)ifa->ifa_netmask;
+
+			/* Link-local addresses need a scope the Zephyr stack cannot map. */
+			if (IN6_IS_ADDR_LINKLOCAL(&addr->sin6_addr)) {
+				continue;
+			}
+
+			entry.family = NSOS_MID_AF_INET6;
+			memcpy(entry.addr, &addr->sin6_addr, 16);
+			entry.prefix_len = nm ? netmask_to_prefix(nm->sin6_addr.s6_addr, 16) : 128;
+		} else {
+			continue;
+		}
+
+		total++;
+
+		if (stored < capacity) {
+			addrs[stored++] = entry;
+		}
+	}
+
+	freeifaddrs(ifap);
+	*count = total;
+
+	return 0;
 }
 
 int nsos_adapt_fcntl_getfl(int fd)
