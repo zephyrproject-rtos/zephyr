@@ -2,6 +2,23 @@
 
 include_guard(GLOBAL)
 
+#[=======================================================================[.rst:
+west
+****
+
+This module finds and configures the ``west`` meta-tool for use in the Zephyr build system.
+It ensures that west is available and correctly configured.
+
+Variables
+=========
+
+The following variables will be defined when this CMake module completes:
+
+* :cmake:variable:`WEST`
+* :cmake:variable:`WEST_TOPDIR`
+
+#]=======================================================================]
+
 include(python)
 
 # west is an optional dependency. We need to run west using the same

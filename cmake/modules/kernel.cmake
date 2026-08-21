@@ -2,23 +2,66 @@
 #
 # Copyright (c) 2021, Nordic Semiconductor ASA
 
-# Zephyr Kernel CMake module.
-#
-# This is the main Zephyr Kernel CMake module which is responsible for creation
-# of Zephyr libraries and the Zephyr executable.
-#
-# This CMake module creates 'project(Zephyr-Kernel)'
-#
-# It defines properties to use while configuring libraries to be built as well
-# as using add_subdirectory() to add the main <ZEPHYR_BASE>/CMakeLists.txt file.
-#
-# Outcome:
-# - Zephyr build system.
-# - Zephyr project
-#
-# Important libraries:
-# - app: This is the main application library where the application can add
-#        source files that must be included when building Zephyr
+#[=======================================================================[.rst:
+kernel
+******
+
+Main Zephyr Kernel CMake module.
+
+This module is responsible for creating Zephyr libraries and the Zephyr executable.
+It creates a CMake project named `Zephyr-Kernel` and defines properties used while
+configuring libraries to be built.
+
+Variables
+=========
+
+After loading this module, the following global variables are defined:
+
+.. cmake:variable:: ZEPHYR_LIBS
+
+   Global list of all Zephyr CMake libraries that should be linked in.
+   :cmake:command:`zephyr_library()` appends libraries to this list.
+
+.. cmake:variable:: ZEPHYR_INTERFACE_LIBS
+
+   Global list of all Zephyr interface libraries that should be linked in.
+   :cmake:command:`zephyr_interface_library_named()` appends libraries to this list.
+
+.. cmake:variable:: GENERATED_APP_SOURCE_FILES
+
+   Source files that are generated after Zephyr has been linked once.
+   May include dev_handles.c etc.
+
+.. cmake:variable:: GENERATED_KERNEL_OBJECT_FILES
+
+   Object files that are generated after symbol addresses are fixed.
+   May include mmu tables, etc.
+
+.. cmake:variable:: GENERATED_KERNEL_SOURCE_FILES
+
+   Source files that are generated after symbol addresses are fixed.
+   May include isr_tables.c etc.
+
+Targets
+=======
+
+.. cmake:variable:: code_data_relocation_target
+
+   Custom target for code data relocation.
+
+
+.. cmake:variable:: app
+
+   CMake library containing all the application code.
+   Modified by the entry point ${APPLICATION_SOURCE_DIR}/CMakeLists.txt.
+
+Usage
+=====
+
+This module is not intended for direct loading, but should be loaded through
+:cmake:command:`find_package(Zephyr)`. It won't load any Zephyr CMake modules by itself.
+
+#]=======================================================================]
 
 include_guard(GLOBAL)
 
