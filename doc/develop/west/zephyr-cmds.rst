@@ -297,6 +297,10 @@ under their original filename or with a SHA-256 suffix (``<filename>.<sha>``).
 If found, the blob is copied from the cache to the blob path; otherwise
 it is downloaded from its URL(s) to the blob path.
 
+If the ``blobs.url-mirror`` configuration option is set to a ``;``-separated
+list of ``<src-url>=<mirror-url>`` mappings, ``west blobs fetch`` tries each
+matching mirror URL before falling back to the blob's original URL.
+
 .. _west-twister:
 
 Twister wrapper: ``west twister``
