@@ -101,21 +101,31 @@ static void eth_nxp_enet_qos_phy_cb(const struct device *phy,
 		const struct nxp_enet_qos_mac_config *config = dev->config;
 		enet_qos_t *base = config->module.base;
 
+		uint32_t mac_cfg = base->MAC_CONFIGURATION;
+
 		if (PHY_LINK_IS_SPEED_10M(state->speed)) {
 			LOG_DBG("Link Speed reduced to 10MBit");
-			base->MAC_CONFIGURATION &= ~ENET_QOS_REG_PREP(MAC_CONFIGURATION, FES, 0b1);
+			mac_cfg &= ~ENET_QOS_REG_PREP(MAC_CONFIGURATION, FES, 0b1);
 		} else {
 			LOG_DBG("Link Speed 100MBit or higher");
-			base->MAC_CONFIGURATION |= ENET_QOS_REG_PREP(MAC_CONFIGURATION, FES, 0b1);
+			mac_cfg |= ENET_QOS_REG_PREP(MAC_CONFIGURATION, FES, 0b1);
 		}
 
+		/* Duplex configuration */
 		if (PHY_LINK_IS_FULL_DUPLEX(state->speed)) {
 			LOG_DBG("Link Full Duplex");
-			base->MAC_CONFIGURATION |= ENET_QOS_REG_PREP(MAC_CONFIGURATION, DM, 0b1);
+			mac_cfg |= ENET_QOS_REG_PREP(MAC_CONFIGURATION, DM, 0b1);
 		} else {
 			LOG_DBG("Link Half Duplex");
-			base->MAC_CONFIGURATION &= ~ENET_QOS_REG_PREP(MAC_CONFIGURATION, DM, 0b1);
+			mac_cfg &= ~ENET_QOS_REG_PREP(MAC_CONFIGURATION, DM, 0b1);
 		}
+
+		/* Transmit and receive enable */
+		mac_cfg |= ENET_QOS_REG_PREP(MAC_CONFIGURATION, TE, 0b1);
+		mac_cfg |= ENET_QOS_REG_PREP(MAC_CONFIGURATION, RE, 0b1);
+
+		/* Single write back */
+		base->MAC_CONFIGURATION = mac_cfg;
 	}
 }
 
@@ -710,11 +720,6 @@ static inline void enet_qos_start(enet_qos_t *base)
 		/* Receive and Transmit IRQs */
 		ENET_QOS_REG_PREP(MAC_INTERRUPT_ENABLE, TXSTSIE, 0b1) |
 		ENET_QOS_REG_PREP(MAC_INTERRUPT_ENABLE, RXSTSIE, 0b1);
-
-	/* Start the TX and RX on the MAC */
-	base->MAC_CONFIGURATION |=
-		ENET_QOS_REG_PREP(MAC_CONFIGURATION, TE, 0b1) |
-		ENET_QOS_REG_PREP(MAC_CONFIGURATION, RE, 0b1);
 }
 
 static inline void enet_qos_tx_desc_init(enet_qos_t *base, struct nxp_enet_qos_tx_data *tx)
