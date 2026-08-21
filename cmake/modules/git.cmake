@@ -11,7 +11,17 @@ find_package(Git QUIET)
 # OUTPUT is set to the output of `git describe --abbrev=12 --always` as run
 # from DIR.
 #
-function(git_describe DIR OUTPUT)
+function(git_describe ARG OUTPUT)
+  if(NOT IS_DIRECTORY "${ARG}")
+    cmake_path(GET ARG PARENT_PATH Parent_DIR)
+    if(NOT IS_DIRECTORY "${Parent_DIR}")
+      message(FATAL_ERROR "neither ${ARG} nor its parent are a valid directory!?")
+    endif()
+    set(DIR "${Parent_DIR}")
+  else()
+    set(DIR "${ARG}")
+  endif()
+
   if(GIT_FOUND)
     execute_process(
       COMMAND ${GIT_EXECUTABLE} describe --abbrev=12 --always
