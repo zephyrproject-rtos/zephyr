@@ -1,0 +1,16 @@
+identifier: esp32_devkitc/esp32/procpu/qemu
+name: ESP32-DevkitC PROCPU (Espressif QEMU)
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+ram: 8192
+supported:
+  - uart
+  - entropy
+  - crypto
+  - watchdog
+  - nvs
+  - counter
+  - retained_mem
+vendor: espressif
