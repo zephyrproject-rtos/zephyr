@@ -1,9 +1,17 @@
 sample:
   name: TDK Sensor APEX sample
+common:
+  build_only: true
+  tags: sensors
+  filter: dt_alias_exists("tdk-apex-sensor0")
+  platform_allow:
+    - nrf52dk/nrf52832
+  integration_platforms:
+    - nrf52dk/nrf52832
 tests:
-  sample.sensor.icm42670.apex:
-    build_only: true
-    tags: sensors
-    filter: dt_alias_exists("tdk_apex_sensor0")
-    integration_platforms:
-      - nrf52dk/nrf52832
+  sample.sensor.icm42670.apex.i2c:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE=boards/nrf52dk_nrf52832_i2c.overlay
+  sample.sensor.icm42670.apex.spi:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE=boards/nrf52dk_nrf52832_spi.overlay
