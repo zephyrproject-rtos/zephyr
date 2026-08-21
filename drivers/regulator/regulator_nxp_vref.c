@@ -57,6 +57,7 @@ static int regulator_nxp_vref_set_mode(const struct device *dev, regulator_mode_
 {
 	const struct regulator_nxp_vref_config *config = dev->config;
 	VREF_Type *const base = config->base;
+
 	uint32_t csr = base->CSR;
 	struct regulator_nxp_vref_data *data = dev->data;
 
@@ -64,9 +65,9 @@ static int regulator_nxp_vref_set_mode(const struct device *dev, regulator_mode_
 	if (mode != NXP_VREF_MODE_STANDBY && mode != NXP_VREF_MODE_LOW_POWER &&
 	    mode != NXP_VREF_MODE_HIGH_POWER) {
 		return -EINVAL;
-	} else{
-		data->mode = mode;
 	}
+
+	data->mode = mode;
 
 	if (regulator_is_enabled(dev)) {
 		if (mode == NXP_VREF_MODE_STANDBY) {
@@ -92,6 +93,7 @@ static int regulator_nxp_vref_get_mode(const struct device *dev, regulator_mode_
 {
 	const struct regulator_nxp_vref_config *config = dev->config;
 	VREF_Type *const base = config->base;
+
 	uint32_t csr = base->CSR;
 
 	/* Check bits to determine mode */
@@ -185,7 +187,7 @@ static int regulator_nxp_vref_set_voltage(const struct device *dev, int32_t min_
 	uint16_t idx;
 	int ret;
 
-	if(!regulator_is_enabled(dev)) {
+	if (!regulator_is_enabled(dev)) {
 		ret = clock_control_on(config->clock_dev, config->clock_subsys);
 		if (ret) {
 			LOG_ERR("Failed to enable clock: %d", ret);
