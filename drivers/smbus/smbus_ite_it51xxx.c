@@ -8,6 +8,7 @@
 
 #include <soc.h>
 #include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/smbus.h>
@@ -162,6 +163,7 @@ static const uint8_t start_cmd_table[] = {
 struct smbus_it51xxx_config {
 	/* SMBus alternate configuration */
 	const struct pinctrl_dev_config *pcfg;
+	struct gpio_dt_spec alert_gpio;
 	mm_reg_t host_base;
 	mm_reg_t smbbase;
 	uint32_t bitrate;
@@ -177,6 +179,12 @@ struct smbus_it51xxx_data {
 	struct k_sem xfer_done;
 	/* Host Notify work, deferred out of ISR context */
 	struct k_work host_notify_work;
+	/* SMBALERT# ARA (Alert Response Address) work, deferred out of ISR context */
+	struct k_work smbalert_work;
+	/* SMBALERT# GPIO interrupt callback */
+	struct gpio_callback alert_gpio_cb;
+	/* SMBALERT# callback list */
+	sys_slist_t smbalert_cbs;
 	/* Host Notify callback list */
 	sys_slist_t host_notify_cbs;
 	/* Configured mode flags */
@@ -200,6 +208,8 @@ struct smbus_it51xxx_data {
 	bool blk_active;
 	bool pec_sw;
 };
+
+static int it51xxx_smb_alert_gpio_setup(const struct device *dev);
 
 static inline void it51xxx_smb_pec_update(const struct device *dev, const uint8_t *buf, size_t len)
 {
@@ -851,8 +861,17 @@ static int smbus_it51xxx_configure(const struct device *dev, uint32_t config_val
 	}
 
 	if (config_value & SMBUS_MODE_SMBALERT) {
-		LOG_ERR("%s: SMBALERT# is not support", dev->name);
-		return -EIO;
+		/*
+		 * it51xxx has no host-register level SMBALERT# detection;
+		 * this mode is only usable on instances with an alert-gpios
+		 * entry in the devicetree overlay.
+		 */
+		ret = it51xxx_smb_alert_gpio_setup(dev);
+		if (ret) {
+			LOG_ERR("%s: SMBALERT# setup failed (%d), continuing without alert "
+				"support",
+				dev->name, ret);
+		}
 	}
 
 	data->dev_config = config_value;
@@ -1219,6 +1238,87 @@ static void it51xxx_smb_host_notify_handle(const struct device *dev)
 	k_work_submit(&data->host_notify_work);
 }
 
+static int smbus_it51xxx_smbalert_set_cb(const struct device *dev, struct smbus_callback *cb)
+{
+	struct smbus_it51xxx_data *data = dev->data;
+
+	LOG_DBG("%s: SMBALERT# set: dev %p cb %p", dev->name, dev, cb);
+
+	return smbus_callback_set(&data->smbalert_cbs, cb);
+}
+
+static int smbus_it51xxx_smbalert_remove_cb(const struct device *dev, struct smbus_callback *cb)
+{
+	struct smbus_it51xxx_data *data = dev->data;
+
+	LOG_DBG("%s: SMBALERT# remove: dev %p cb %p", dev->name, dev, cb);
+
+	return smbus_callback_remove(&data->smbalert_cbs, cb);
+}
+
+static void it51xxx_smb_alert_work(struct k_work *work)
+{
+	struct smbus_it51xxx_data *data =
+		CONTAINER_OF(work, struct smbus_it51xxx_data, smbalert_work);
+	const struct device *dev = data->dev;
+
+	LOG_DBG("%s: SMBALERT# got SMB alert", dev->name);
+
+	smbus_loop_alert_devices(dev, &data->smbalert_cbs);
+}
+
+static void it51xxx_smb_alert_gpio_isr(const struct device *port, struct gpio_callback *cb,
+				       gpio_port_pins_t pins)
+{
+	ARG_UNUSED(port);
+	ARG_UNUSED(pins);
+
+	struct smbus_it51xxx_data *data =
+		CONTAINER_OF(cb, struct smbus_it51xxx_data, alert_gpio_cb);
+
+	k_work_submit(&data->smbalert_work);
+}
+
+static int it51xxx_smb_alert_gpio_setup(const struct device *dev)
+{
+	const struct smbus_it51xxx_config *cfg = dev->config;
+	struct smbus_it51xxx_data *data = dev->data;
+	int ret;
+
+	if (cfg->alert_gpio.port == NULL) {
+		LOG_ERR("%s: SMBALERT# GPIO not defined in devicetree (alert-gpios)", dev->name);
+		return -EIO;
+	}
+
+	if (!gpio_is_ready_dt(&cfg->alert_gpio)) {
+		LOG_ERR("%s: SMBALERT# GPIO not ready", dev->name);
+		return -ENODEV;
+	}
+
+	ret = gpio_pin_configure_dt(&cfg->alert_gpio, GPIO_INPUT);
+	if (ret) {
+		LOG_ERR("%s: Failed to configure SMBALERT# GPIO: %d", dev->name, ret);
+		return ret;
+	}
+
+	gpio_init_callback(&data->alert_gpio_cb, it51xxx_smb_alert_gpio_isr,
+			   BIT(cfg->alert_gpio.pin));
+
+	ret = gpio_add_callback(cfg->alert_gpio.port, &data->alert_gpio_cb);
+	if (ret) {
+		LOG_ERR("%s: Failed to add SMBALERT# GPIO callback: %d", dev->name, ret);
+		return ret;
+	}
+
+	ret = gpio_pin_interrupt_configure_dt(&cfg->alert_gpio, GPIO_INT_EDGE_FALLING);
+	if (ret) {
+		LOG_ERR("%s: Failed to enable SMBALERT# GPIO interrupt: %d", dev->name, ret);
+		return ret;
+	}
+
+	return 0;
+}
+
 static void smbus_it51xxx_isr(const struct device *dev)
 {
 	const struct smbus_it51xxx_config *cfg = dev->config;
@@ -1278,6 +1378,10 @@ static int smbus_it51xxx_init(const struct device *dev)
 	sys_slist_init(&data->host_notify_cbs);
 	k_work_init(&data->host_notify_work, it51xxx_smb_host_notify_work);
 
+	/* Initialize smbalert work structures */
+	sys_slist_init(&data->smbalert_cbs);
+	k_work_init(&data->smbalert_work, it51xxx_smb_alert_work);
+
 	cfg->irq_config_func(dev);
 
 	ret = smbus_it51xxx_configure(dev, SMBUS_MODE_CONTROLLER);
@@ -1321,6 +1425,9 @@ static DEVICE_API(smbus, smbus_it51xxx_api) = {
 
 	.smbus_host_notify_set_cb = smbus_it51xxx_host_notify_set_cb,
 	.smbus_host_notify_remove_cb = smbus_it51xxx_host_notify_remove_cb,
+
+	.smbus_smbalert_set_cb = smbus_it51xxx_smbalert_set_cb,
+	.smbus_smbalert_remove_cb = smbus_it51xxx_smbalert_remove_cb,
 };
 
 #define IT51XXX_I2C_COMPAT ite_it51xxx_i2c
@@ -1356,6 +1463,7 @@ BUILD_ASSERT((IT51XXX_SMBUS_FIFO_ENABLE_COUNT + IT51XXX_I2C_FIFO_ENABLE_COUNT) <
 	};                                                                                         \
 	static struct smbus_it51xxx_config smbus_it51xxx_config_##inst = {                         \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
+		.alert_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, alert_gpios, {0}),                    \
 		.host_base = DT_INST_REG_ADDR(inst),                                               \
 		.smbbase = DT_REG_ADDR_BY_IDX(DT_NODELABEL(i2cbase), 0),                           \
 		.smbus_irq = DT_INST_IRQN(inst),                                                   \
