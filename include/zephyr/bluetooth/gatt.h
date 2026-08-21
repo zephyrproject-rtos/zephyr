@@ -94,6 +94,14 @@ enum bt_gatt_perm {
 	 *  not set, prepare writes are accepted by default (subject to normal
 	 *  write permissions).
 	 *
+	 *  @note Unlike the other values of this enum, this is not an access
+	 *  check: clearing it does not make the GATT layer reject prepare
+	 *  writes. Every value that gets queued is passed to the write
+	 *  callback when the client executes the write, so an attribute that
+	 *  cannot accept a prepared write has to reject it from its write
+	 *  callback: at prepare time if this permission is set, and otherwise
+	 *  at execution.
+	 *
 	 *  Do not confuse this with @ref BT_GATT_CEP_RELIABLE_WRITE, which is
 	 *  a Characteristic Extended Property bit from the specification.
 	 */
@@ -127,6 +135,10 @@ enum bt_gatt_attr_write_flag {
 	 *
 	 * If set, write callback should only check if the device is
 	 * authorized but no data shall be written.
+	 *
+	 * Only delivered for attributes that set
+	 * @ref BT_GATT_PERM_PREPARE_WRITE. See that permission for why its
+	 * absence does not mean prepared writes are rejected.
 	 */
 	BT_GATT_WRITE_FLAG_PREPARE = BIT(0),
 
