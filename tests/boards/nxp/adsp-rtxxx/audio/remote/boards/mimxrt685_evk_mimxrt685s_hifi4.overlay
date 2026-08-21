@@ -1,0 +1,31 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		i2s-rx = &i2s0;
+		i2s-tx = &i2s1;
+	};
+
+	mailboxes: mbox-consumer {
+		mboxes = <&mbox 1>, <&mbox 0>;
+		mbox-names = "rx", "tx";
+
+		compatible = "vnd,mbox-consumer";
+	};
+};
+
+&i3c0 {
+	status = "okay";
+};
+
+&i2s0 {
+	status = "okay";
+};
+
+&i2s1 {
+	status = "okay";
+};
