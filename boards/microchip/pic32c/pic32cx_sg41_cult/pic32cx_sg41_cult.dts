@@ -31,6 +31,7 @@
 		sw0 = &button0;
 		pwm-led0 = &pwm_led0;
 		rtc = &rtc;
+		eeprom-0 = &eeprom;
 	};
 
 	leds {
@@ -177,6 +178,14 @@
 			gclkgen-run-in-standby-en = <1>;
 			gclkgen-en = <1>;
 		};
+
+		gclkgen2 {
+			subsystem = <CLOCK_MCHP_GCLKGEN_ID_GEN2>;
+			gclkgen-div-factor = <3>;
+			gclkgen-src = "fdpll0";
+			gclkgen-run-in-standby-en = <1>;
+			gclkgen-en = <1>;
+		};
 	};
 
 	gclkperiph: gclkperiph {
@@ -198,6 +207,12 @@
 		dac {
 			subsystem = <CLOCK_MCHP_GCLKPERIPH_ID_DAC>;
 			gclkperiph-src = "gclk1";
+			gclkperiph-en = <0>;
+		};
+
+		sercom6 {
+			subsystem = <CLOCK_MCHP_GCLKPERIPH_ID_SERCOM6_CORE>;
+			gclkperiph-src = "gclk2";
 			gclkperiph-en = <0>;
 		};
 	};
@@ -265,7 +280,7 @@
 	status = "okay";
 };
 
-&sercom6 {
+i2c0: &sercom6 {
 	compatible = "microchip,sercom-g1-i2c";
 	#address-cells = <1>;
 	#size-cells = <0>;
@@ -275,6 +290,15 @@
 	dmas = <&dmac 10 0x10>, <&dmac 11 0x11>;
 	dma-names = "rx", "tx";
 	status = "okay";
+
+	eeprom: eeprom@56 {
+		compatible = "atmel,at24", "atmel,24mac402";
+		reg = <0x56>;
+		size = <256>;
+		pagesize = <16>;
+		address-width = <8>;
+		timeout = <5>;
+	};
 };
 
 &tc5 {

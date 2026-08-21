@@ -16,8 +16,8 @@
 
 	sercom6_i2c_default: sercom6_i2c_default {
 		group1 {
-			pinmux = <PD9D_SERCOM6_PAD0>,
-				 <PD8D_SERCOM6_PAD1>;
+			pinmux = <PD9D_SERCOM6_PAD0>,  /* SDA */
+				 <PD8D_SERCOM6_PAD1>;  /* SCL */
 		};
 	};
 
