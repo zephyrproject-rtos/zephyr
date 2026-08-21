@@ -15,8 +15,15 @@ config SOC_SERIES_AM64X_M4
 	select MM_TI_RAT
 	select SOC_EARLY_INIT_HOOK
 
+# There are multiple reasons why the MPU needs to be always enabled for this SoC
+# series. This includes that a lot of peripherals are in memory regions that are
+# cached by default and have no ordering guarantees and that firmware memory is
+# either in a shared memory region while needing a non-shared region for atomic
+# instructions to work or being in external DRAM, which is marked as XN by
+# default.
 config SOC_SERIES_AM64X_R5
 	select ARM
+	select ARM_MPU
 	select CPU_CORTEX_R5
 	select CPU_HAS_ARM_MPU
 	select VFP_SP_D16
