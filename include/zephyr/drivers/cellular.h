@@ -149,6 +149,8 @@ enum cellular_event {
 	CELLULAR_EVENT_MODEM_COMMS_CHECK_RESULT = BIT(2),
 	/** Cellular network status changed */
 	CELLULAR_EVENT_NETWORK_STATUS_CHANGED = BIT(3),
+	/** Cellular modem suspension callback */
+	CELLULAR_EVENT_MODEM_SUSPENDED = BIT(4),
 };
 
 /* Opaque bit-mask large enough for all current & future events */
