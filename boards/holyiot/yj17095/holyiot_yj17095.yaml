@@ -6,7 +6,7 @@ toolchain:
   - zephyr
   - gnuarmemb
 supported:
-  - ble
+  - bluetooth
   - pwm
   - watchdog
 ram: 64

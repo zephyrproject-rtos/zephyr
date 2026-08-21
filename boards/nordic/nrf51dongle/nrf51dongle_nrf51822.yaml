@@ -8,6 +8,6 @@ toolchain:
 ram: 32
 flash: 256
 supported:
-  - ble
+  - bluetooth
   - nvs
 vendor: nordic
