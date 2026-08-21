@@ -15,7 +15,7 @@
 LOG_MODULE_REGISTER(clock_control_agilex5_ll, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
 /* Extract reference clock from platform clock source */
-static uint32_t get_ref_clk(mm_reg_t pllglob_reg, mm_reg_t pllm_reg)
+static uint32_t get_ref_clk(mm_reg_t pllglob_reg, mm_reg_t pllm_reg, const struct device *sysmgr)
 {
 	uint32_t arefclkdiv = 0U;
 	uint32_t ref_clk = 0U;
@@ -32,9 +32,10 @@ static uint32_t get_ref_clk(mm_reg_t pllglob_reg, mm_reg_t pllm_reg)
 	 * scratch registers. These values are filled by boot loader based on
 	 * hand-off data.
 	 */
+
 	switch (CLKCTRL_PSRC(pllglob_val)) {
 	case CLKCTRL_PLLGLOB_PSRC_EOSC1:
-		ref_clk = sys_read32(SOCFPGA_SYSMGR(BOOT_SCRATCH_COLD_1));
+		syscon_read_reg(sysmgr, SOCFPGA_SYSMGR_BOOT_SCRATCH_COLD_1, &ref_clk);
 		break;
 
 	case CLKCTRL_PLLGLOB_PSRC_INTOSC:
@@ -42,7 +43,7 @@ static uint32_t get_ref_clk(mm_reg_t pllglob_reg, mm_reg_t pllm_reg)
 		break;
 
 	case CLKCTRL_PLLGLOB_PSRC_F2S:
-		ref_clk = sys_read32(SOCFPGA_SYSMGR(BOOT_SCRATCH_COLD_2));
+		syscon_read_reg(sysmgr, SOCFPGA_SYSMGR_BOOT_SCRATCH_COLD_2, &ref_clk);
 		break;
 
 	default:
@@ -67,7 +68,7 @@ static uint32_t get_ref_clk(mm_reg_t pllglob_reg, mm_reg_t pllm_reg)
 
 /* Calculate clock frequency based on parameter */
 static uint32_t get_clk_freq(mm_reg_t psrc_reg, mm_reg_t mainpllc_reg,
-			     mm_reg_t perpllc_reg)
+			     mm_reg_t perpllc_reg, const struct device *sysmgr)
 {
 	uint32_t clock_val = 0U;
 	uint32_t clk_psrc = 0U;
@@ -78,23 +79,24 @@ static uint32_t get_clk_freq(mm_reg_t psrc_reg, mm_reg_t mainpllc_reg,
 	 * is not bypassed
 	 */
 	clk_psrc = sys_read32(psrc_reg);
+
 	switch (GET_CLKCTRL_CLKSRC(clk_psrc)) {
 	case CLKCTRL_CLKSRC_MAIN:
-		clock_val = get_ref_clk(CLKCTRL_MAINPLL(PLLGLOB), CLKCTRL_MAINPLL(PLLM));
+		clock_val = get_ref_clk(CLKCTRL_MAINPLL(PLLGLOB), CLKCTRL_MAINPLL(PLLM), sysmgr);
 		pllcx_div = (sys_read32(mainpllc_reg) & CLKCTRL_PLLCX_DIV_MSK);
 		__ASSERT(pllcx_div != 0, "Main PLLC clock divider is zero");
 		clock_val /= pllcx_div;
 		break;
 
 	case CLKCTRL_CLKSRC_PER:
-		clock_val = get_ref_clk(CLKCTRL_PERPLL(PLLGLOB), CLKCTRL_PERPLL(PLLM));
+		clock_val = get_ref_clk(CLKCTRL_PERPLL(PLLGLOB), CLKCTRL_PERPLL(PLLM), sysmgr);
 		pllcx_div = (sys_read32(perpllc_reg) & CLKCTRL_PLLCX_DIV_MSK);
 		__ASSERT(pllcx_div != 0, "Peripheral PLLC clock divider is zero");
 		clock_val /= pllcx_div;
 		break;
 
 	case CLKCTRL_CLKSRC_OSC1:
-		clock_val = sys_read32(SOCFPGA_SYSMGR(BOOT_SCRATCH_COLD_1));
+		syscon_read_reg(sysmgr, SOCFPGA_SYSMGR_BOOT_SCRATCH_COLD_1, &clock_val);
 		break;
 
 	case CLKCTRL_CLKSRC_INTOSC:
@@ -102,7 +104,7 @@ static uint32_t get_clk_freq(mm_reg_t psrc_reg, mm_reg_t mainpllc_reg,
 		break;
 
 	case CLKCTRL_CLKSRC_FPGA:
-		clock_val = sys_read32(SOCFPGA_SYSMGR(BOOT_SCRATCH_COLD_2));
+		syscon_read_reg(sysmgr, SOCFPGA_SYSMGR_BOOT_SCRATCH_COLD_2, &clock_val);
 		break;
 
 	default:
@@ -117,17 +119,17 @@ static uint32_t get_clk_freq(mm_reg_t psrc_reg, mm_reg_t mainpllc_reg,
 }
 
 /* Get L3 free clock */
-static uint32_t get_l3_main_free_clk(void)
+static uint32_t get_l3_main_free_clk(const struct device *sysmgr)
 {
 	return get_clk_freq(CLKCTRL_MAINPLL(NOCCLK),
 			    CLKCTRL_MAINPLL(PLLC3),
-			    CLKCTRL_PERPLL(PLLC1));
+			    CLKCTRL_PERPLL(PLLC1), sysmgr);
 }
 
 /* Get L4 mp clock */
-static uint32_t get_l4_mp_clk(void)
+static uint32_t get_l4_mp_clk(const struct device *sysmgr)
 {
-	uint32_t l3_main_free_clk = get_l3_main_free_clk();
+	uint32_t l3_main_free_clk = get_l3_main_free_clk(sysmgr);
 	uint32_t mainpll_nocdiv_l4mp = BIT(GET_CLKCTRL_MAINPLL_NOCDIV_L4MP(
 					sys_read32(CLKCTRL_MAINPLL(NOCDIV))));
 
@@ -141,19 +143,18 @@ static uint32_t get_l4_mp_clk(void)
  * "l4_sp_clk" (100MHz) will be used for slow peripherals like UART, I2C,
  * Timers ...etc.
  */
-static uint32_t get_l4_sp_clk(void)
+static uint32_t get_l4_sp_clk(const struct device *sysmgr)
 {
-	uint32_t l3_main_free_clk = get_l3_main_free_clk();
+	uint32_t l3_main_free_clk = get_l3_main_free_clk(sysmgr);
 	uint32_t mainpll_nocdiv_l4sp = BIT(GET_CLKCTRL_MAINPLL_NOCDIV_L4SP(
 					sys_read32(CLKCTRL_MAINPLL(NOCDIV))));
-
 	uint32_t l4_sp_clk = (l3_main_free_clk / mainpll_nocdiv_l4sp);
 
 	return l4_sp_clk;
 }
 
 /* Get MPU clock */
-uint32_t get_mpu_clk(void)
+uint32_t get_mpu_clk(const struct device *sysmgr)
 {
 	uint8_t cpu_id = arch_curr_cpu()->id;
 	uint32_t ctr_reg = 0U;
@@ -162,11 +163,11 @@ uint32_t get_mpu_clk(void)
 	if (cpu_id > CLKCTRL_CPU_ID_CORE1) {
 		clock_val = get_clk_freq(CLKCTRL_CTLGRP(CORE23CTR),
 				     CLKCTRL_MAINPLL(PLLC0),
-				     CLKCTRL_PERPLL(PLLC0));
+				     CLKCTRL_PERPLL(PLLC0), sysmgr);
 	} else {
 		clock_val = get_clk_freq(CLKCTRL_CTLGRP(CORE01CTR),
 				     CLKCTRL_MAINPLL(PLLC1),
-				     CLKCTRL_PERPLL(PLLC0));
+				     CLKCTRL_PERPLL(PLLC0), sysmgr);
 	}
 
 	switch (cpu_id) {
@@ -194,9 +195,9 @@ uint32_t get_mpu_clk(void)
 }
 
 /* Calculate clock frequency to be used for watchdog timer */
-uint32_t get_wdt_clk(void)
+uint32_t get_wdt_clk(const struct device *sysmgr)
 {
-	uint32_t l3_main_free_clk = get_l3_main_free_clk();
+	uint32_t l3_main_free_clk = get_l3_main_free_clk(sysmgr);
 	uint32_t mainpll_nocdiv_l4sysfreeclk = BIT(GET_CLKCTRL_MAINPLL_NOCDIV_L4SYSFREE(
 						sys_read32(CLKCTRL_MAINPLL(NOCDIV))));
 	uint32_t l4_sys_free_clk = (l3_main_free_clk / mainpll_nocdiv_l4sysfreeclk);
@@ -205,15 +206,15 @@ uint32_t get_wdt_clk(void)
 }
 
 /* Get clock frequency to be used for UART driver */
-uint32_t get_uart_clk(void)
+uint32_t get_uart_clk(const struct device *sysmgr)
 {
-	return get_l4_sp_clk();
+	return get_l4_sp_clk(sysmgr);
 }
 
 /* Calculate clock frequency to be used for SDMMC driver */
-uint32_t get_sdmmc_clk(void)
+uint32_t get_sdmmc_clk(const struct device *sysmgr)
 {
-	uint32_t l4_mp_clk = get_l4_mp_clk();
+	uint32_t l4_mp_clk = get_l4_mp_clk(sysmgr);
 	uint32_t mainpll_nocdiv = sys_read32(CLKCTRL_MAINPLL(NOCDIV));
 	uint32_t sdmmc_clk = l4_mp_clk / BIT(GET_CLKCTRL_MAINPLL_NOCDIV_SPHY(mainpll_nocdiv));
 
@@ -221,18 +222,17 @@ uint32_t get_sdmmc_clk(void)
 }
 
 /* Calculate clock frequency to be used for Timer driver */
-uint32_t get_timer_clk(void)
+uint32_t get_timer_clk(const struct device *sysmgr)
 {
-	return get_l4_sp_clk();
+	return get_l4_sp_clk(sysmgr);
 }
 
 /* Calculate clock frequency to be used for QSPI driver */
-uint32_t get_qspi_clk(void)
+uint32_t get_qspi_clk(const struct device *sysmgr)
 {
-	uint32_t scr_reg, ref_clk;
+	uint32_t ref_clk;
 
-	scr_reg = SOCFPGA_SYSMGR(BOOT_SCRATCH_COLD_0);
-	ref_clk = sys_read32(scr_reg);
+	syscon_read_reg(sysmgr, SOCFPGA_SYSMGR_BOOT_SCRATCH_COLD_0, &ref_clk);
 
 	/*
 	 * In ATF, the qspi clock is divided by 1000 and loaded in scratch cold register 0
@@ -242,13 +242,13 @@ uint32_t get_qspi_clk(void)
 }
 
 /* Calculate clock frequency to be used for I2C driver */
-uint32_t get_i2c_clk(void)
+uint32_t get_i2c_clk(const struct device *sysmgr)
 {
-	return get_l4_sp_clk();
+	return get_l4_sp_clk(sysmgr);
 }
 
 /* Calculate clock frequency to be used for I3C driver */
-uint32_t get_i3c_clk(void)
+uint32_t get_i3c_clk(const struct device *sysmgr)
 {
-	return get_l4_mp_clk();
+	return get_l4_mp_clk(sysmgr);
 }
