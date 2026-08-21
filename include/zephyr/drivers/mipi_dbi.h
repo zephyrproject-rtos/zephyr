@@ -99,8 +99,10 @@ extern "C" {
  * @brief Initialize a MIPI DBI configuration from devicetree
  *
  * This helper allows drivers to initialize a MIPI DBI configuration
- * structure from devicetree. It sets the MIPI DBI mode, as well
- * as configuration fields in the SPI configuration structure
+ * structure from devicetree. It sets the MIPI DBI mode and color
+ * coding, as well as configuration fields in the SPI configuration
+ * structure. If the color-coding property is absent the color coding
+ * field is left at zero, meaning no Type A/B coding was specified.
  * @param node_id Devicetree node identifier for the MIPI DBI device to
  *                initialize
  * @param operation_ the desired operation field in the struct spi_config
@@ -110,6 +112,7 @@ extern "C" {
 #define MIPI_DBI_CONFIG_DT(node_id, operation_, delay_)			\
 	{								\
 		.mode = DT_STRING_UPPER_TOKEN(node_id, mipi_mode),	\
+		.color_coding = DT_STRING_UPPER_TOKEN_OR(node_id, color_coding, 0), \
 		.config = MIPI_DBI_SPI_CONFIG_DT(node_id, operation_, delay_), \
 	}
 
