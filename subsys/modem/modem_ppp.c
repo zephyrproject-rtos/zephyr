@@ -479,6 +479,37 @@ static void modem_ppp_send_handler(struct k_work *item)
 	}
 }
 
+static size_t modem_ppp_process_received_bytes_fast(struct modem_ppp *ppp, const uint8_t *data,
+						    size_t len)
+{
+	size_t avail;
+	size_t span;
+
+	if (ppp->receive_state != MODEM_PPP_RECEIVE_STATE_WRITING) {
+		return 0;
+	}
+
+	avail = net_pkt_available_buffer(ppp->rx_pkt);
+	if ((avail < 2U) || (len < 2U)) {
+		return 0;
+	}
+
+	len = MIN(len - 1U, avail - 1U);
+
+	for (span = 0; span < len; span++) {
+		if ((data[span] == MODEM_PPP_CODE_DELIMITER) ||
+		    (data[span] == MODEM_PPP_CODE_ESCAPE)) {
+			break;
+		}
+	}
+
+	if ((span < 2U) || (net_pkt_write(ppp->rx_pkt, data, span) < 0)) {
+		return 0;
+	}
+
+	return span;
+}
+
 static void modem_ppp_process_handler(struct k_work *item)
 {
 	struct modem_ppp *ppp = CONTAINER_OF(item, struct modem_ppp, process_work);
@@ -494,6 +525,7 @@ static void modem_ppp_process_handler(struct k_work *item)
 #endif
 
 	for (int i = 0; i < ret; i++) {
+		i += modem_ppp_process_received_bytes_fast(ppp, &ppp->receive_buf[i], ret - i);
 		modem_ppp_process_received_byte(ppp, ppp->receive_buf[i]);
 	}
 

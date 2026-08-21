@@ -29,6 +29,12 @@
 #define TEST_MODEM_PPP_IP_FRAME_SEND_LARGE_N	(2048)
 #define TEST_MODEM_PPP_IP_FRAME_RECEIVE_LARGE_N (2048)
 
+/* Number of FCS bytes the receiver strips from the tail of a frame */
+#define TEST_MODEM_PPP_FCS_SIZE			(2)
+/* Frame sizes used by the bulk-write (span) receive regression tests */
+#define TEST_MODEM_PPP_IP_FRAME_RECEIVE_CLEAN_N	 (2048)
+#define TEST_MODEM_PPP_IP_FRAME_RECEIVE_ESCAPE_N (600)
+
 /*************************************************************************************************/
 /*                                          Mock pipe                                            */
 /*************************************************************************************************/
@@ -280,6 +286,55 @@ static void test_modem_ppp_generate_ppp_frame(uint8_t *frame, size_t size)
 
 	frame[size - 2] = fcs >> 8;
 	frame[size - 1] = fcs;
+}
+
+/*
+ * Generate a PPP frame whose body never contains a byte that HDLC has to escape
+ * (< 0x20, 0x7D or 0x7E). The whole body therefore travels through the
+ * bulk-write span path on receive, stressing the mid-span fragment allocation.
+ * The last two bytes act as the FCS and are stripped by the receiver.
+ */
+static void test_modem_ppp_generate_clean_ppp_frame(uint8_t *frame, size_t size)
+{
+	uint8_t byte = 0x20;
+
+	frame[0] = 0x00;
+	frame[1] = 0x21;
+
+	for (size_t i = 2; i < size; i++) {
+		if ((byte == 0x7D) || (byte == 0x7E)) {
+			byte = 0x7F;
+		}
+		frame[i] = byte;
+		byte = (byte == 0xFF) ? 0x20 : (byte + 1);
+	}
+}
+
+/*
+ * Generate a PPP frame with bytes that HDLC must escape sprinkled between short
+ * runs of clean bytes, including consecutive escapes. On receive this keeps
+ * switching between the span path and the per-byte path (spans of length 0/1
+ * fall back to per-byte), which the bulk-write optimisation must leave intact.
+ * The last two bytes act as the FCS and are stripped by the receiver.
+ */
+static void test_modem_ppp_generate_escape_heavy_ppp_frame(uint8_t *frame, size_t size)
+{
+	frame[0] = 0x00;
+	frame[1] = 0x21;
+
+	for (size_t i = 2; i < size; i++) {
+		switch (i % 8) {
+		case 0:
+			frame[i] = 0x7E; /* delimiter code, escaped to 7D 5E */
+			break;
+		case 1:
+			frame[i] = 0x11; /* control char (< 0x20), escaped */
+			break;
+		default:
+			frame[i] = (uint8_t)(0x40 + (i % 0x30)); /* clean run */
+			break;
+		}
+	}
 }
 
 static size_t test_modem_ppp_wrap_ppp_frame(uint8_t *wrapped, const uint8_t *frame, size_t size)
@@ -774,6 +829,74 @@ ZTEST(modem_ppp, test_ip_frame_receive_large)
 	/* FCS is removed from packet data */
 	zassert_true(pkt_len == (TEST_MODEM_PPP_IP_FRAME_RECEIVE_LARGE_N - 2),
 		     "Incorrect length of net packet received");
+}
+
+/*
+ * Bulk-write (span) receive regression tests.
+ *
+ * The RX path writes runs of payload bytes that are free of HDLC delimiter and
+ * escape codes with a single net_pkt_write instead of one net_pkt_write_u8 per
+ * byte. These tests feed frames that exercise that span path and assert the
+ * reconstructed payload is byte-for-byte identical to what the per-byte path
+ * would have produced, across net_buf fragment boundaries.
+ */
+static void put_frame_and_validate_content(const uint8_t *frame, size_t frame_size)
+{
+	struct net_pkt *pkt;
+	size_t wrapped_size;
+	size_t pkt_len;
+
+	wrapped_size = test_modem_ppp_wrap_ppp_frame(wrapped_buffer, frame, frame_size);
+	zassert_true(wrapped_size > frame_size, "Failed to wrap data");
+	zassert_true(wrapped_size <= sizeof(wrapped_buffer), "Wrapped frame exceeds test buffer");
+
+	modem_backend_mock_put(&mock, wrapped_buffer, wrapped_size);
+
+	/* Give modem ppp time to process received frame */
+	k_msleep(frame_size * 2);
+
+	zassert_true(received_packets_len == 1, "Expected to receive one network packet");
+	pkt = received_packets[0];
+	pkt_len = net_pkt_get_len(pkt);
+
+	/* FCS is stripped from the received frame */
+	zassert_equal(pkt_len, frame_size - TEST_MODEM_PPP_FCS_SIZE,
+		      "Received net pkt data len incorrect");
+
+	net_pkt_cursor_init(pkt);
+	net_pkt_read(pkt, unwrapped_buffer, pkt_len);
+	zassert_true(memcmp(unwrapped_buffer, frame, pkt_len) == 0,
+		     "Received net pkt data does not match (bulk-write span corruption?)");
+}
+
+ZTEST(modem_ppp, test_ip_frame_receive_large_validate)
+{
+	/*
+	 * Realistic mix of span runs and escaped bytes spanning many fragments;
+	 * unlike test_ip_frame_receive_large this validates the full payload.
+	 */
+	test_modem_ppp_generate_ppp_frame(buffer, TEST_MODEM_PPP_IP_FRAME_RECEIVE_LARGE_N);
+	put_frame_and_validate_content(buffer, TEST_MODEM_PPP_IP_FRAME_RECEIVE_LARGE_N);
+}
+
+ZTEST(modem_ppp, test_ip_frame_receive_clean_runs)
+{
+	/* Escape-free body: entire payload goes through the span path and forces
+	 * mid-span fragment allocation as fragments fill up.
+	 */
+	test_modem_ppp_generate_clean_ppp_frame(buffer, TEST_MODEM_PPP_IP_FRAME_RECEIVE_CLEAN_N);
+	put_frame_and_validate_content(buffer, TEST_MODEM_PPP_IP_FRAME_RECEIVE_CLEAN_N);
+}
+
+ZTEST(modem_ppp, test_ip_frame_receive_escape_heavy)
+{
+	/* Escapes interleaved with short clean runs, including consecutive
+	 * escapes, so the receiver keeps alternating between the span path and
+	 * the per-byte fallback.
+	 */
+	test_modem_ppp_generate_escape_heavy_ppp_frame(buffer,
+						       TEST_MODEM_PPP_IP_FRAME_RECEIVE_ESCAPE_N);
+	put_frame_and_validate_content(buffer, TEST_MODEM_PPP_IP_FRAME_RECEIVE_ESCAPE_N);
 }
 
 ZTEST_SUITE(modem_ppp, NULL, test_modem_ppp_setup, test_modem_ppp_before, NULL, NULL);
