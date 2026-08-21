@@ -24,7 +24,7 @@
 			compatible = "wch,usart";
 			reg = <0x40004400 0x20>;
 			clocks = <&rcc CH32V20X_V30X_CLOCK_USART2>;
-			resets = <&rctl CH32_RESET(APB1, 17)>;
+			resets = <&rctl CH32V20X_V30X_RESET_USART2>;
 			interrupt-parent = <&pfic>;
 			interrupts = <54>;
 			status = "disabled";
@@ -34,7 +34,7 @@
 			compatible = "wch,usart";
 			reg = <0x40004800 0x20>;
 			clocks = <&rcc CH32V20X_V30X_CLOCK_USART3>;
-			resets = <&rctl CH32_RESET(APB1, 18)>;
+			resets = <&rctl CH32V20X_V30X_RESET_USART3>;
 			interrupt-parent = <&pfic>;
 			interrupts = <55>;
 			status = "disabled";
@@ -44,7 +44,7 @@
 			compatible = "wch,usart";
 			reg = <0x40004c00 0x20>;
 			clocks = <&rcc CH32V20X_V30X_CLOCK_USART4>;
-			resets = <&rctl CH32_RESET(APB1, 19)>;
+			resets = <&rctl CH32V20X_V30X_RESET_USART4>;
 			interrupt-parent = <&pfic>;
 			interrupts = <68>;
 			status = "disabled";
@@ -54,7 +54,7 @@
 			compatible = "wch,usart";
 			reg = <0x40005000 0x20>;
 			clocks = <&rcc CH32V20X_V30X_CLOCK_USART5>;
-			resets = <&rctl CH32_RESET(APB1, 20)>;
+			resets = <&rctl CH32V20X_V30X_RESET_USART5>;
 			interrupt-parent = <&pfic>;
 			interrupts = <69>;
 			status = "disabled";
