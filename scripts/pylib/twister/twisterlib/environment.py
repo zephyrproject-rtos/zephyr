@@ -1104,6 +1104,7 @@ class TwisterEnv:
         else:
             self.board_roots = options.board_root
         self.outdir = os.path.abspath(options.outdir)
+        self._setup_ccache()
 
         self.snippet_roots = [Path(ZEPHYR_BASE)]
         self.soc_roots = [Path(ZEPHYR_BASE), Path(ZEPHYR_BASE) / 'subsys' / 'testsuite']
@@ -1132,6 +1133,21 @@ class TwisterEnv:
         self.test_config = options.test_config
 
         self.alt_config_root = options.alt_config_root
+
+    def _setup_ccache(self) -> None:
+        """Let ccache reuse objects between the per-test build directories.
+
+        The build directory otherwise appears in the compiler command line and,
+        because Zephyr builds with -g, in the hash that separates debug info.
+        The trade-off is that a reused object carries the debug info of the
+        build directory it came from. That is of little consequence for test
+        builds, and is limited to files generated into the build directory, as
+        Zephyr refers to the rest by absolute path. Settings already in the
+        environment win.
+        """
+        os.environ.setdefault("CCACHE_BASEDIR", self.outdir)
+        if not {"CCACHE_HASHDIR", "CCACHE_NOHASHDIR"} & os.environ.keys():
+            os.environ["CCACHE_NOHASHDIR"] = "true"
 
     def non_default_options(self) -> dict:
         """Returns current command line options which are set to non-default values."""
