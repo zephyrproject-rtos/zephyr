@@ -1,0 +1,29 @@
+# SII9022A HDMI/DVI bridge driver
+
+# Copyright (c) 2026 Texas Instruments Incorporated
+# SPDX-License-Identifier: Apache-2.0
+
+config SII9022A
+	bool "Silicon Image SII9022A HDMI/DVI bridge driver"
+	default y
+	depends on DT_HAS_SIL_SII9022A_ENABLED
+	select I2C
+	help
+	  Enable driver for the Silicon Image SII9022A HDMI/DVI transmitter
+	  bridge.  The chip accepts a parallel DPI/RGB input (with
+	  separate DE, HSYNC and VSYNC signals) and outputs HDMI or DVI.
+	  Configured via I2C.
+
+if SII9022A
+
+config SII9022A_INIT_PRIORITY
+	int "SII9022A initialisation priority"
+	default 86
+	help
+	  Device initialisation priority for the SII9022A bridge.  Must be
+	  greater (numerically) than CONFIG_DISPLAY_INIT_PRIORITY (default 85)
+	  because the display-controller phandle on the SII9022A DT node creates
+	  a Zephyr device dependency — the display controller must be initialised
+	  first.
+
+endif # SII9022A

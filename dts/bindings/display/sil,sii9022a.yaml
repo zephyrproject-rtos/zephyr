@@ -1,0 +1,57 @@
+# Copyright (c) 2026 Texas Instruments Incorporated
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Silicon Image SII9022A HDMI/DVI transmitter bridge (I2C).
+
+  The SII9022A accepts a parallel DPI/RGB input with separate DE,
+  HSYNC and VSYNC signals ("external sync" mode) and converts it to HDMI or
+  DVI output.
+
+  Example DT node (on I2C bus main_i2c1 at address 0x3B):
+
+    &main_i2c1 {
+        sii9022a: sii9022a@3b {
+            compatible = "sil,sii9022a";
+            reg = <0x3b>;
+            output-format = <0>;   /* HDMI RGB */
+            display-controller = <&dss>;
+            clk-falling;
+        };
+    };
+
+compatible: "sil,sii9022a"
+
+include: i2c-device.yaml
+
+properties:
+  output-format:
+    type: int
+    required: true
+    enum:
+      - 0   # HDMI RGB
+      - 1   # HDMI YUV 4:4:4
+      - 2   # HDMI YUV 4:2:2
+      - 3   # DVI RGB
+    description: |
+      Output format selection.
+        0 = HDMI, RGB colour space
+        1 = HDMI, YUV 4:4:4 colour space
+        2 = HDMI, YUV 4:2:2 colour space
+        3 = DVI,  RGB colour space
+
+  clk-falling:
+    type: boolean
+    description: |
+      When present, input pixel data is latched on the falling edge of the
+      pixel clock.  When absent (default), data is latched on the rising edge.
+
+  display-controller:
+    type: phandle
+    required: true
+    description: |
+      Phandle to the upstream display controller DT node (e.g. ti,tidss).
+      The bridge driver reads the video timing properties (pixel-clock-hz,
+      width, height, hfront-porch, hback-porch, hsync-len, vfront-porch,
+      vback-porch, vsync-len) directly from that node at build time, so no
+      runtime API call from the display controller to the bridge is needed.
