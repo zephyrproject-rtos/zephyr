@@ -198,7 +198,14 @@ static int settings_line_raw_read_until(off_t seek, char *out, size_t len_req,
 		}
 
 		off = seek - off;
+		if (read_size < (size_t)off) {
+			break; /* past end-of-data */
+		}
 		len = read_size - off;
+		/* Clamp to buffer size — read_cb should never return more than
+		 * sizeof(temp_buf), but guard against a misbehaving backend.
+		 */
+		len = MIN(len, sizeof(temp_buf) - (size_t)off);
 		len = MIN(rem_size, len);
 
 		if (until_char != NULL) {
@@ -252,6 +259,9 @@ size_t settings_line_val_get_len(off_t val_off, void *read_cb_ctx)
 
 	len = settings_io_cb.get_len_cb(read_cb_ctx);
 
+	if ((size_t)val_off > len) {
+		return 0;
+	}
 	return len - val_off;
 }
 
