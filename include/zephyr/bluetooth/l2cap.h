@@ -872,6 +872,18 @@ struct bt_l2cap_server {
  */
 int bt_l2cap_server_register(struct bt_l2cap_server *server);
 
+/** @brief Unregister L2CAP server.
+ *
+ *  Unregister L2CAP server for a PSM, making the PSM available for
+ *  registration again. Channels already accepted by the server are not
+ *  affected and stay connected until they are disconnected explicitly.
+ *
+ *  @param server Server structure.
+ *
+ *  @return 0 in case of success or negative value in case of error.
+ */
+int bt_l2cap_server_unregister(struct bt_l2cap_server *server);
+
 /** @brief Register L2CAP server on BR/EDR oriented connection.
  *
  *  Register L2CAP server for a PSM, each new connection is authorized using
