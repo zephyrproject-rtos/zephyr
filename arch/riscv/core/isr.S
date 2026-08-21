@@ -140,6 +140,10 @@ GTEXT(z_riscv_custom_stack_guard_enable)
 GTEXT(z_riscv_custom_stack_guard_disable)
 #endif /* CONFIG_CUSTOM_STACK_GUARD */
 
+#ifdef CONFIG_GEN_SW_ISR_TABLE_SWITCH
+GTEXT(get_isr_entry)
+#endif /* CONFIG_GEN_SW_ISR_TABLE_SWITCH */
+
 /* exports */
 GTEXT(_isr_wrapper)
 
@@ -735,7 +739,35 @@ on_irq_stack:
 	 */
 	jal ra, __soc_handle_irq
 
-#if defined CONFIG_GEN_SW_ISR_TABLE
+#if defined CONFIG_GEN_SW_ISR_TABLE_SWITCH
+	/*
+	 * Retrieve the corresponding ISR entry and argument for the given IRQ index.
+	 * get_isr_entry(int irq_index, struct _isr_table_entry *entry)
+	 * a0 already contains the IRQ index.
+	 * a1 will contain the pointer to a local struct _isr_table_entry on the stack.
+	 * struct _isr_table_entry layout:
+	 * +0          : arg
+	 * +RV_REGSIZE : isr
+	 */
+
+	/* space for struct _isr_table_entry on the stack, keep stack 16-byte aligned */
+	addi sp, sp, -16
+
+	/* a1 will point to struct _isr_table_entry on the stack */
+	mv a1, sp
+	/*
+	 * Call to get_isr_entry will fill the struct _isr_table_entry
+	 * with the ISR address and argument for the given IRQ index
+	 */
+	call get_isr_entry
+
+	/* Load argument in a0 register */
+	lr a0, 0(sp)
+	/* Load ISR function address in register t1 */
+	lr t1, RV_REGSIZE(sp)
+	addi sp, sp, 16
+#elif defined CONFIG_GEN_SW_ISR_TABLE
+
 	/*
 	 * Call corresponding registered function in _sw_isr_table.
 	 * (table is 2-word wide, we should shift index accordingly)
