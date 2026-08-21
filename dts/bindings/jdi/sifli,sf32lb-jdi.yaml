@@ -1,0 +1,17 @@
+# Copyright (c) 2026 Qingsong Gou <gouqs@hotmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+include:
+  - jdi-device.yaml
+  - pinctrl-device.yaml
+
+description: Sifli sf32lb JDI LCD Bus Controller
+
+compatible: "sifli,sf32lb-jdi"
+
+properties:
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true

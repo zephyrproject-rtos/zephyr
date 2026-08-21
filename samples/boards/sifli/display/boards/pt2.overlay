@@ -1,0 +1,114 @@
+/*
+ * Copyright (c) 2026 Qingsong Gou <gouqs@hotmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/pinctrl/sf32lb52x-pinctrl.h>
+
+/ {
+	chosen {
+		zephyr,display = &ls013b7dh03;
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		pwm_led_backlight: pwm_led_backlight {
+			pwms = <&pwm0 0 PWM_MSEC(10) PWM_POLARITY_NORMAL>;
+		};
+	};
+
+	aliases {
+		pwm-led0 = &pwm_led_backlight;
+	};
+};
+
+&pinctrl {
+	jdi_default: jdi_default {
+		group1 {
+			pinmux = <PA02_LCDC1_JDI_B2>,
+				 <PA03_LCDC1_JDI_B1>,
+				 <PA04_LCDC1_JDI_G1>,
+				 <PA05_LCDC1_JDI_R1>,
+				 <PA06_LCDC1_JDI_HST>,
+				 <PA07_LCDC1_JDI_ENB>,
+				 <PA08_LCDC1_JDI_VST>,
+				 <PA39_LCDC1_JDI_VCK>,
+				 <PA40_LCDC1_JDI_XRST>,
+				 <PA41_LCDC1_JDI_HCK>,
+				 <PA42_LCDC1_JDI_R2>,
+				 <PA43_LCDC1_JDI_G2>;
+			input-enable;
+			input-schmitt-enable;
+		};
+	};
+
+	pwm0_default: pwm0_default {
+		group1 {
+			pinmux = <PA01_GPTIM2_CH1>;
+		};
+	};
+
+	vcom_pwm_default: vcom_pwm_default {
+		group1 {
+			pinmux = <PA24_GPTIM1_CH1>, <PA25_GPTIM1_CH2>;
+		};
+	};
+};
+
+&gptim2 {
+	status = "okay";
+	sifli,prescaler = <23>;
+
+	pwm0: pwm {
+		status = "okay";
+		pinctrl-0 = <&pwm0_default>;
+		pinctrl-names = "default";
+	};
+};
+
+&gptim1 {
+	status = "okay";
+	sifli,prescaler = <2399>;
+
+	pwm1: pwm {
+		status = "okay";
+		pinctrl-0 = <&vcom_pwm_default>;
+		pinctrl-names = "default";
+	};
+};
+
+&lcdc {
+	status = "okay";
+
+	jdi_bus: jdi {
+		compatible = "sifli,sf32lb-jdi";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		pinctrl-0 = <&jdi_default>;
+		pinctrl-names = "default";
+
+		ls013b7dh03: ls013b7dh03@0 {
+			compatible = "jdi,parallel";
+			reg = <0>;
+			width = <200>;
+			height = <228>;
+
+			vlcd-gpios = <&gpioa_00_31 29 GPIO_ACTIVE_HIGH>;
+			vddp-gpios = <&gpioa_00_31 28 GPIO_ACTIVE_HIGH>;
+			power-seq-delay-ms = <11>;
+			pwms = <&pwm1 0 PWM_HZ(60) PWM_POLARITY_NORMAL>,
+			       <&pwm1 1 PWM_HZ(60) PWM_POLARITY_INVERTED>;
+			clock-frequency = <746268>;
+			bank_col_head = <2>;
+			valid-columns = <200>;
+			bank_col_tail = <6>;
+			bank_row_head = <0>;
+			valid-rows = <228>;
+			bank-row-tail = <6>;
+			enb-start-col = <3>;
+			enb-end-col = <99>;
+		};
+	};
+};
