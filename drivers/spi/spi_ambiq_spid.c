@@ -174,11 +174,16 @@ static int spi_config(const struct device *dev, const struct spi_config *config)
 	data->ios_cfg.pui8SRAMBuffer = ambiq_spid_sram_buffer,
 	data->ios_cfg.ui32SRAMBufferCap = AMBIQ_SPID_TX_BUFSIZE_MAX,
 
-	ctx->config = config;
+	ctx->config = NULL;
 
 	ret = am_hal_ios_configure(data->ios_handler, &data->ios_cfg);
+	if (ret != AM_HAL_STATUS_SUCCESS) {
+		return -EIO;
+	}
 
-	return ret;
+	ctx->config = config;
+
+	return 0;
 }
 
 static int spi_ambiq_xfer(const struct device *dev, const struct spi_config *config)
