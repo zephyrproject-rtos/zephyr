@@ -153,7 +153,7 @@ static int esp32_usb_otg_shutdown(const struct device *const dev)
 
 	/* Disable & free interrupt handler */
 	if (data->int_handle != NULL) {
-		/* Stor interrupts first */
+		/* Stop interrupts first */
 		ret = esp_intr_disable(data->int_handle);
 		if (ret != 0) {
 			LOG_ERR("Unable to disable interrupt: %d", ret);
