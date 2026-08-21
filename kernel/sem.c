@@ -27,6 +27,7 @@
 #include <zephyr/init.h>
 #include <zephyr/internal/syscall_handler.h>
 #include <zephyr/tracing/tracing.h>
+#include <zephyr/tracing/tracking.h>
 #include <zephyr/sys/check.h>
 
 /* We use a system-wide lock to synchronize semaphores, which has
@@ -81,6 +82,27 @@ int z_vrfy_k_sem_init(struct k_sem *sem, unsigned int initial_count,
 }
 #include <zephyr/syscalls/k_sem_init_mrsh.c>
 #endif /* CONFIG_USERSPACE */
+
+#if defined(CONFIG_OBJ_CORE_SEM) || defined(CONFIG_TRACING_OBJECT_TRACKING) || \
+	defined(CONFIG_USERSPACE)
+void k_sem_deinit(struct k_sem *sem)
+{
+	__ASSERT(z_waitq_head(&sem->wait_q) == NULL,
+		 "deinit of a semaphore with waiters");
+
+#ifdef CONFIG_USERSPACE
+	k_object_uninit(sem);
+#endif /* CONFIG_USERSPACE */
+
+#ifdef CONFIG_OBJ_CORE_SEM
+	k_obj_core_unlink(K_OBJ_CORE(sem));
+#endif /* CONFIG_OBJ_CORE_SEM */
+
+#ifdef CONFIG_TRACING_OBJECT_TRACKING
+	sys_track_k_sem_deinit(sem);
+#endif /* CONFIG_TRACING_OBJECT_TRACKING */
+}
+#endif
 
 static inline bool sem_handle_poll_events(struct k_sem *sem)
 {
