@@ -31,3 +31,19 @@ tests:
       - mps2/an521/cpu0
     integration_platforms:
       - mps2/an521/cpu0
+  buildsystem.cmake.board.default_qualifier:
+    extra_args:
+      # Omitted qualifiers resolve to the default_qualifier of the board.
+      - CACHED_BOARD=mps2_default
+    platform_allow:
+      - mps2/an521/cpu0
+    integration_platforms:
+      - mps2/an521/cpu0
+  buildsystem.cmake.board.default_qualifier_extend:
+    extra_args:
+      # A leading slash extends the default_qualifier of the board.
+      - CACHED_BOARD=mps2_default//two
+    platform_allow:
+      - mps2/an521/cpu0
+    integration_platforms:
+      - mps2/an521/cpu0
