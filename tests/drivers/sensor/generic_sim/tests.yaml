@@ -1,0 +1,16 @@
+sample:
+  description: Generic simulated sensor
+  name: Generic simulated sensor
+
+common:
+  sysbuild: true
+  platform_allow:
+    - native_sim
+  integration_platforms:
+    - native_sim
+tests:
+  sensor.generic_sim: {}
+  sensor.generic_sim.pm:
+    extra_configs:
+      - CONFIG_PM_DEVICE=y
+      - CONFIG_PM_DEVICE_RUNTIME=y

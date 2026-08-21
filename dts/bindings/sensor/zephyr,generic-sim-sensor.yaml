@@ -1,0 +1,17 @@
+# Copyright (c) 2026 Embeint Holdings Pty Ltd
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Generic simulated sensor for use in testing other libraries
+
+compatible: "zephyr,generic-sim-sensor"
+
+include: [sensor-device.yaml]
+
+properties:
+  negated-init-rc:
+    type: int
+    default: 0
+    description:
+      Value to return in init function (negated due to devicetree limitation
+      to unsigned integers).

@@ -245,6 +245,12 @@
 @{
 @}
 
+@defgroup sensor_interface_ext_zephyr Zephyr
+@ingroup sensor_interface_ext
+@brief Device-specific extensions for Zephyr defined sensors.
+@{
+@}
+
 @defgroup misc_interfaces Miscellaneous Devices
 @ingroup io_interfaces
 @brief Interfaces for hardware peripherals that do not have a dedicated driver class.
