@@ -25,10 +25,3 @@ module-str = POSIX Reader-Writer Locks
 source "subsys/logging/Kconfig.template.log_config"
 
 endif # POSIX_RW_LOCKS
-
-config POSIX_READER_WRITER_LOCKS
-	bool "POSIX reader-writer locks [DEPRECATED]"
-	select DEPRECATED
-	select POSIX_RW_LOCKS
-	help
-	  This option is deprecated. Use POSIX_RW_LOCKS instead.

@@ -146,6 +146,10 @@ Removed APIs and options
     * ``TLS_CREDENTIAL_SERVER_CERTIFICATE``
     * ``start_11r_roaming``
 
+* POSIX
+
+    * ``CONFIG_POSIX_READER_WRITER_LOCKS``
+
 * Random
 
     * ``CONFIG_CTR_DRBG_CSPRNG_GENERATOR``
