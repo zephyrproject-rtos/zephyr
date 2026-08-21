@@ -284,6 +284,7 @@ LOG_MODULE_REGISTER(i3c_dw, CONFIG_I3C_DW_LOG_LEVEL);
 #define SCL_I2C_FM_TIMING         0xbc
 #define SCL_I2C_FM_TIMING_HCNT(x) (((x) << 16) & GENMASK(31, 16))
 #define SCL_I2C_FM_TIMING_LCNT(x) ((x) & GENMASK(15, 0))
+#define SCL_I2C_FM_TIMING_CNT_MAX 0xffff
 
 #define SCL_I2C_FMP_TIMING         0xc0
 #define SCL_I2C_FMP_TIMING_HCNT(x) (((x) << 16) & GENMASK(23, 16))
@@ -350,6 +351,7 @@ LOG_MODULE_REGISTER(i3c_dw, CONFIG_I3C_DW_LOG_LEVEL);
 #define I3C_BUS_SDR2_SCL_RATE       6000000
 #define I3C_BUS_SDR3_SCL_RATE       4000000
 #define I3C_BUS_SDR4_SCL_RATE       2000000
+#define I3C_BUS_I2C_SM_TLOW_MIN_NS  4700
 #define I3C_BUS_I2C_FM_TLOW_MIN_NS  1300
 #define I3C_BUS_I2C_FMP_TLOW_MIN_NS 500
 #define I3C_BUS_THIGH_MAX_NS        41
@@ -361,6 +363,7 @@ LOG_MODULE_REGISTER(i3c_dw, CONFIG_I3C_DW_LOG_LEVEL);
 #define I3C_BUS_TYP_I3C_SCL_RATE     12500000
 #define I3C_BUS_I2C_FM_PLUS_SCL_RATE 1000000
 #define I3C_BUS_I2C_FM_SCL_RATE      400000
+#define I3C_BUS_I2C_SM_SCL_RATE      100000
 #define I3C_BUS_TLOW_OD_MIN_NS       200
 
 #define I3C_HOT_JOIN_ADDR 0x02
@@ -1708,7 +1711,7 @@ static int dw_i3c_init_scl_timing(const struct device *dev, struct i3c_config_co
 	struct dw_i3c_data *data = dev->data;
 	uint32_t core_rate, scl_timing;
 #ifdef CONFIG_I3C_CONTROLLER
-	uint32_t hcnt, lcnt, fmlcnt, fmplcnt, free_cnt;
+	uint32_t hcnt, lcnt, fmlcnt, fmplcnt, free_cnt, i2c_scl_hz, tlow_min_ns;
 #endif /* CONFIG_I3C_CONTROLLER */
 
 	if (clock_control_get_rate(config->clock, config->clock_subsys, &core_rate) != 0) {
@@ -1763,8 +1766,24 @@ static int dw_i3c_init_scl_timing(const struct device *dev, struct i3c_config_co
 	sys_write32(scl_timing, config->regs + SCL_I2C_FMP_TIMING);
 
 	/* I2C FM */
-	fmlcnt = DIV_ROUND_UP(I3C_BUS_I2C_FM_TLOW_MIN_NS * (uint64_t)core_rate, I3C_PERIOD_NS);
-	hcnt = DIV_ROUND_UP(core_rate, I3C_BUS_I2C_FM_SCL_RATE) - fmlcnt;
+	i2c_scl_hz = ctrl_cfg->scl.i2c;
+	if (i2c_scl_hz == 0) {
+		/* Not set in devicetree: derive from the LVRs of the attached I2C devices. */
+		i2c_scl_hz = i3c_any_i2c_fast_mode(&config->common.dev_list)
+				     ? I3C_BUS_I2C_FM_SCL_RATE
+				     : I3C_BUS_I2C_FM_PLUS_SCL_RATE;
+	}
+	i2c_scl_hz = MIN(i2c_scl_hz, I3C_BUS_I2C_FM_SCL_RATE);
+
+	if (i2c_scl_hz <= I3C_BUS_I2C_SM_SCL_RATE) {
+		tlow_min_ns = I3C_BUS_I2C_SM_TLOW_MIN_NS;
+	} else {
+		tlow_min_ns = I3C_BUS_I2C_FM_TLOW_MIN_NS;
+	}
+
+	fmlcnt = DIV_ROUND_UP(tlow_min_ns * (uint64_t)core_rate, I3C_PERIOD_NS);
+	fmlcnt = MIN(fmlcnt, SCL_I2C_FM_TIMING_CNT_MAX);
+	hcnt = MIN(DIV_ROUND_UP(core_rate, i2c_scl_hz) - fmlcnt, SCL_I2C_FM_TIMING_CNT_MAX);
 	scl_timing = SCL_I2C_FM_TIMING_HCNT(hcnt) | SCL_I2C_FM_TIMING_LCNT(fmlcnt);
 	sys_write32(scl_timing, config->regs + SCL_I2C_FM_TIMING);
 
