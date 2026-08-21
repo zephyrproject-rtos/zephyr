@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config INFINEON_MPC
+	bool "Infineon Memory Protection Controller driver"
+	depends on ARM_SECURE_FIRMWARE
+	default y if DT_HAS_INFINEON_MPC_ENABLED
+	select MPC
+	help
+	  Enables the devicetree-driven driver for the Infineon Memory
+	  Protection Controller.  mpc_configure_all() programs each enabled
+	  "infineon,mpc" node's violation response and controlled memory
+	  regions from the protection-context configuration expressed in the DTS.

@@ -510,6 +510,18 @@ New Drivers
 
   * Analog Devices ADXL313 3-axis accelerometer (:dtcompatible:`adi,adxl313`).
 
+* MPC (Memory Protection Controller)
+
+  * Arm CoreLink TrustZone Memory Protection Controller
+    (:dtcompatible:`arm,tz-mpc`).
+  * Infineon MPC (:dtcompatible:`infineon,mpc`).
+
+* PPC (Peripheral Protection Controller)
+
+  * Arm SSE-200 Secure Privilege Control block
+    (:dtcompatible:`arm,sse-200-spctrl`).
+  * Infineon PPC (:dtcompatible:`infineon,ppc`).
+
 * Clock Monitor
 
   * :dtcompatible:`nxp,cmu-fc` — NXP Clock Monitoring Unit (Frequency Check)
@@ -578,6 +590,7 @@ Libraries / Subsystems
     the Semtech LoRaMac-node dependency.  Currently supports the EU868 region.
   * :c:member:`lora_modem_config.sync_word`
 
+<<<<<<< HEAD
 * Video
 
   * Introducing a video subsystem that inherits all the function names previously in
@@ -588,6 +601,13 @@ Libraries / Subsystems
   * :kconfig:option:`CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_ISOLATION` now works without requiring
     a dedicated pool on every channel (channels fall back to the shared pool until
     :c:func:`zbus_chan_set_msg_sub_pool` is called)
+=======
+* Secure calls
+
+  * Added the ``__secure_call`` code-generation mechanism for crossing the Arm
+    TrustZone-M Non-Secure/Secure boundary, mirroring the ``__syscall``
+    pattern.  See :ref:`secure_call`.
+>>>>>>> cfdc6fe5463 (tests: secure_call: add __secure_call integration and codegen tests)
 
 Devicetree
 **********

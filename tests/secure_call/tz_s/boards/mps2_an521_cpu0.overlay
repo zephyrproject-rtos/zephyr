@@ -1,0 +1,107 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Add a linker MEMORY region covering the NS-alias of SSRAM1 so that
+ * .gnu.sgstubs can be placed at 0x0001e000 (CONFIG_ARM_NSC_REGION_BASE_ADDRESS)
+ * without triggering a "cannot move location counter backwards" error.
+ *
+ * The NS alias (0x00000000-0x003FFFFF) and the S alias (0x10000000-0x103FFFFF)
+ * map to the same physical SSRAM1.  This overlay only creates the named MEMORY
+ * region; it does not change zephyr,flash or zephyr,sram.
+ *
+ * MPC nodes configure the QEMU mps2-an521 Memory Protection Controllers:
+ *   mpc_sram1 (0x58007000): controls code SRAM (NS alias 0x00000000-0x003FFFFF)
+ *   mpc_sram2 (0x58008000): controls data SRAM (NS alias 0x28000000-0x281FFFFF)
+ *
+ * nonsecure-ranges encodes (offset, size) pairs relative to each bank's base.
+ * The NS code and data partitions both start at offset 0x100000 within their
+ * respective SRAM banks and are each 512 KB in size.
+ */
+
+/ {
+	nsc_ns_alias: memory@0 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x0 DT_SIZE_K(128)>;
+		zephyr,memory-region = "NSC_NS_ALIAS";
+	};
+
+	/*
+	 * SAU region table (see arch_security_partition_configure()).
+	 *
+	 * The regions must NOT overlap: QEMU's v8m_security_lookup treats an
+	 * address matching two regions as Secure, which breaks the SG stubs.  The
+	 * NS code region starts at 0x00100000, leaving 0x0-0xFFFFF uncovered so the
+	 * NSC veneer window at CONFIG_ARM_NSC_REGION_BASE_ADDRESS (0x0001E000) is
+	 * covered only by the NSC region.
+	 */
+	security_partition: security-partition {
+		compatible = "zephyr,security-partition";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		region@100000 {
+			reg = <0x00100000 0x0f000000>;
+			zephyr,attr = "non-secure";
+		};
+		region@20000000 {
+			reg = <0x20000000 0x10000000>;
+			zephyr,attr = "non-secure";
+		};
+		region@40000000 {
+			reg = <0x40000000 0x10000000>;
+			zephyr,attr = "non-secure";
+		};
+		region@1e000 {
+			reg = <0x0001e000 0x2000>;
+			zephyr,attr = "non-secure-callable";
+		};
+	};
+
+	/*
+	 * SSE-200 SPCTRL: set CODENSC (bit 0) so the IDAU marks code SRAM as
+	 * NSC-capable.  Required for SG veneers in the NS-alias code SRAM to
+	 * survive QEMU's v8m_security_lookup without being stripped to plain NS.
+	 */
+	spctrl: spctrl@50080000 {
+		compatible = "arm,sse-200-spctrl";
+		reg = <0x50080000 0x1000>;
+		nsccfg = <0x1>;
+		/* Grant NS access to all APB expansion PPC1 ports (UARTs 0-4 etc.) */
+		apbnsppcexp1-ns-mask = <0xFFFFFFFF>;
+		status = "okay";
+	};
+
+	/*
+	 * QEMU mps2-an521 TZ-MPC peripherals on the Secure AHB bus (0x58000000).
+	 * These are not in the upstream AN521 DTS; we define them here so the
+	 * arm_tz_mpc driver can program the NS partitions from the child nodes.
+	 */
+	mpc_sram1: mpc@58007000 {
+		compatible = "arm,tz-mpc";
+		reg = <0x58007000 0x1000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		status = "okay";
+
+		/* NS code partition: offset 0x100000, 512 KB */
+		region@100000 {
+			reg = <0x00100000 0x00080000>;
+		};
+	};
+
+	mpc_sram2: mpc@58008000 {
+		compatible = "arm,tz-mpc";
+		reg = <0x58008000 0x1000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		status = "okay";
+
+		/* NS data partition: offset 0x100000 within data SRAM, 512 KB */
+		region@100000 {
+			reg = <0x00100000 0x00080000>;
+		};
+	};
+};

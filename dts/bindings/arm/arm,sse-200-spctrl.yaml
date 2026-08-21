@@ -1,0 +1,53 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  ARM SSE-200 Secure Privilege Control Register block (SPCTRL).
+
+  SPCTRL is only accessible from Secure state.  It configures the
+  SSE-200's IDAU and Peripheral Protection Controllers.
+
+  The nsccfg property sets bits in the NSCCFG register (offset 0x14),
+  which tells the IDAU which SRAM banks are Non-Secure Callable.  Setting
+  CODENSC (bit 0) marks the code SRAM bank as NSC-capable, which is
+  required for SG veneers placed in that bank to work correctly.
+
+  Example board overlay (mps2-an521):
+
+    spctrl: spctrl@50080000 {
+        compatible = "arm,sse-200-spctrl";
+        reg = <0x50080000 0x1000>;
+        nsccfg = <0x1>;
+        apbnsppcexp1-ns-mask = <0xFFFFFFFF>;
+        status = "okay";
+    };
+
+compatible: "arm,sse-200-spctrl"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  nsccfg:
+    type: int
+    default: 0
+    description: |
+      Bitmask to OR into the NSCCFG register (offset 0x14).
+      Bit 0 (CODENSC): marks code SRAM as NSC-capable in the IDAU.
+      Bit 1 (DATASECCFG): marks data SRAM as NSC-capable.
+      Leave at 0 if the IDAU does not need adjustment.
+
+  apbnsppcexp1-ns-mask:
+    type: int
+    default: 0
+    description: |
+      Bitmask to write into the APBNSPPCEXP1 register (offset 0x84).
+      Each bit grants Non-Secure access to the corresponding APB expansion
+      PPC1 port and simultaneously BLOCKS Secure access to that port.
+      This write must occur after all Secure-world I/O (e.g. UART printk)
+      is complete; call arm_sse200_spctrl_ppc_configure() explicitly just
+      before branching to the Non-Secure image.

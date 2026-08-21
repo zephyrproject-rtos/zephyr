@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config ARM_TZ_MPC
+	bool "ARM TrustZone Memory Protection Controller (TZ-MPC) driver"
+	depends on ARM_SECURE_FIRMWARE
+	default y if DT_HAS_ARM_TZ_MPC_ENABLED
+	select MPC
+	help
+	  Enables the driver for ARM TrustZone MPC (PL523 or compatible)
+	  peripherals.  When enabled, arm_tz_mpc_configure_all() programs
+	  the block LUT of each enabled arm,tz-mpc DTS node according to
+	  the nonsecure-ranges property.

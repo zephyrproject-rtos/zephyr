@@ -38,8 +38,8 @@
 
 /* cybsp_ipc_sema is part of the Infineon BSP public ABI (cybsp.h). */
 CY_SECTION_SHAREDMEM cy_stc_ipc_sema_t cybsp_ipc_sema;
-CY_SECTION_SHAREDMEM static uint32_t pse84_ipc_sema_array[CY_IPC_SEMA_COUNT /
-							  CY_IPC_SEMA_PER_WORD];
+CY_SECTION_SHAREDMEM static __maybe_unused uint32_t
+	pse84_ipc_sema_array[CY_IPC_SEMA_COUNT / CY_IPC_SEMA_PER_WORD];
 
 /* -------------------------------------------------------------------------- */
 /* TF-M SRF default pool                                                      */
@@ -241,11 +241,19 @@ void soc_early_init_hook(void)
 	/* Initialize SystemCoreClock variable. */
 	SystemCoreClockSetup(PSE84_CPU_FREQ_HZ, PSE84_CPU_FREQ_HZ);
 
+#if defined(CONFIG_BUILD_WITH_TFM) || defined(CONFIG_PSOC_EDGE_M55_SRF_SUPPORT)
+	/*
+	 * The IPC0 semaphore channel coordinates with the secure enclave / CM55
+	 * (TF-M SPM and the SRF relay).  IPC0 is a Secure-owned peripheral, so a
+	 * standalone non-secure image (BUILD_WITH_TFM=n, no M55 SRF) must not touch
+	 * it — doing so faults.  Guard it like the SRF pool/IPC init below.
+	 */
 	cybsp_ipc_sema.maxSema     = CY_IPC_SEMA_COUNT;
 	cybsp_ipc_sema.arrayPtr    = pse84_ipc_sema_array;
 	cybsp_ipc_sema.arrayPtr_sec = NULL;
 
 	Cy_IPC_Sema_InitExt(IPC0_SEMA_CH_NUM, &cybsp_ipc_sema);
+#endif
 
 #if defined(CONFIG_BUILD_WITH_TFM)
 	pse84_srf_pool_init();

@@ -40,6 +40,7 @@ if(CONFIG_BUILD_WITH_TFM)
 endif()
 
 if(CONFIG_CPU_CORTEX_M33 AND CONFIG_TRUSTED_EXECUTION_SECURE)
+  zephyr_compile_definitions(COMPONENT_SECURE_DEVICE)
   zephyr_sources(soc_pse84_m33_s.c)
 
   zephyr_sources(security_config/pse84_s_mpc.c)
