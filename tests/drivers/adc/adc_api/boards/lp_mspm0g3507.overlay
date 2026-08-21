@@ -20,7 +20,6 @@
 	#address-cells = <1>;
 	#size-cells = <0>;
 	ti,clk-divider = <1>;
-	ti,clk-range = <6>;
 	status = "okay";
 
 	channel@4 {
