@@ -22,9 +22,9 @@ What a run needs
 * **A checkout of net-tools**, which a west workspace already has: it is in
   :file:`west.yml` under the ``tools`` group, which is not filtered out.
 * **make**, because that is how Titan builds a suite.
-* **The** ``zeth`` **interface**, or ``zethL2`` for the two suites that work
+* **The** ``zeth`` **interface**, or ``zethL2`` for the three suites that work
   below the IP layer. See :ref:`ttcn3_interfaces`.
-* **Root**, for the four suites that cannot avoid a privileged port or a
+* **Root**, for the five suites that cannot avoid a privileged port or a
   packet socket.
 * **expect**, for the one suite that runs through Titan's main controller.
 
@@ -143,7 +143,7 @@ picks up all six.
 Running as root
 ===============
 
-Four suites have to be run as root. DHCP is defined on ports 67 and 68 and
+Five suites have to be run as root. DHCP is defined on ports 67 and 68 and
 there is no way to move it elsewhere, so the tester cannot avoid binding a
 privileged port; and reading frames off a link needs a packet socket. Those
 tests skip themselves when they are not run with enough privilege.

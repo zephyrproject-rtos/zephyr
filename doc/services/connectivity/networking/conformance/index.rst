@@ -98,6 +98,11 @@ socket on a link of its own.
      - ``zethL2``
      - root
      - 5
+   * - ``ndp``
+     - :zephyr_file:`tests/net/conformance/ndp`
+     - ``zethL2``
+     - root
+     - 8
    * - ``tcp``
      - :zephyr_file:`tests/net/conformance/tcp`
      - ``zethL2``
@@ -225,6 +230,28 @@ resolution requests for the suite to look at.
 * ``tc_unicast_request_is_answered``
 * ``tc_request_for_another_address_is_ignored``
 * ``tc_reply_is_not_answered``
+
+Neighbour discovery
+===================
+
+Address resolution one layer up from ARP, and rather more besides: which
+solicitations have to be answered and which discarded, where the answer goes
+when the asker had no address to answer to, and what a host does with a prefix
+a router advertises.
+
+The two tests that watch the system under test resolve an address run first and
+have to. A solicitation from the tester carries its own link layer address,
+which is enough to be remembered, and a remembered neighbour is confirmed by a
+unicast solicitation rather than resolved by a multicast one.
+
+* ``tc_it_asks_before_it_sends``
+* ``tc_advertisement_completes_resolution``
+* ``tc_solicitation_is_answered``
+* ``tc_solicitation_for_another_address_is_ignored``
+* ``tc_solicitation_from_the_unspecified_address_is_multicast``
+* ``tc_solicitation_with_a_low_hop_limit_is_ignored``
+* ``tc_solicitation_from_nowhere_with_a_link_layer_address_is_ignored``
+* ``tc_router_advertisement_is_acted_on``
 
 TCP
 ===
