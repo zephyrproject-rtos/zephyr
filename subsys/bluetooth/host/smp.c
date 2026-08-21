@@ -3233,6 +3233,13 @@ static uint8_t smp_pairing_req(struct bt_smp *smp, struct net_buf *buf)
 
 		rsp->init_key_dist &= RECV_KEYS_SC;
 		rsp->resp_key_dist &= SEND_KEYS_SC;
+	} else {
+		/* A BR/EDR link key can only be derived from an LE Secure
+		 * Connections LTK, so do not negotiate its distribution when
+		 * pairing falls back to legacy.
+		 */
+		rsp->init_key_dist &= ~LINK_DIST;
+		rsp->resp_key_dist &= ~LINK_DIST;
 	}
 
 	if (atomic_test_bit(smp->flags, SMP_FLAG_SC)) {
@@ -3524,6 +3531,13 @@ static uint8_t smp_pairing_rsp(struct bt_smp *smp, struct net_buf *buf)
 				return err;
 			}
 		}
+
+		/* A BR/EDR link key can only be derived from an LE Secure
+		 * Connections LTK. Drop it from the negotiated set so that
+		 * pairing can still complete when it falls back to legacy.
+		 */
+		smp->local_dist &= ~LINK_DIST;
+		smp->remote_dist &= ~LINK_DIST;
 
 		return legacy_pairing_rsp(smp);
 #endif /* CONFIG_BT_SMP_SC_PAIR_ONLY */
