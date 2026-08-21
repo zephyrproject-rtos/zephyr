@@ -62,6 +62,7 @@ static int regulator_nxp_vref_set_mode(const struct device *dev, regulator_mode_
 {
 	const struct regulator_nxp_vref_config *config = dev->config;
 	VREF_Type *const base = config->base;
+
 	uint32_t csr = base->CSR;
 	struct regulator_nxp_vref_data *data = dev->data;
 
@@ -70,7 +71,6 @@ static int regulator_nxp_vref_set_mode(const struct device *dev, regulator_mode_
 	    mode != NXP_VREF_MODE_HIGH_POWER) {
 		return -EINVAL;
 	}
-
 
 	data->mode = mode;
 
@@ -98,6 +98,7 @@ static int regulator_nxp_vref_get_mode(const struct device *dev, regulator_mode_
 {
 	const struct regulator_nxp_vref_config *config = dev->config;
 	VREF_Type *const base = config->base;
+
 	uint32_t csr = base->CSR;
 
 	/* Check bits to determine mode */
