@@ -1,0 +1,11 @@
+/*
+ * Copyright (c) 2026 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c5 {
+	lps22hh_x_stm32mp_msp01: lps22hh@5d {
+		status = "disabled";
+	};
+};

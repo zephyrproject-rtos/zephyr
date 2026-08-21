@@ -1,0 +1,5 @@
+# Copyright (c) 2026 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_X_STM32MP_MSP01
+	def_bool $(shields_list_contains,x_stm32mp_msp01)
