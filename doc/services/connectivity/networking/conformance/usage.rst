@@ -160,6 +160,35 @@ only one conformance test can be running at a time. They take an exclusive lock
 on the interface and wait for each other, which means a run of the whole
 directory is serial however many jobs Twister is given.
 
+Running the suites with the script
+**********************************
+
+:zephyr_file:`scripts/net/run-conformance-tests.sh` does all of the above in
+one command: it finds net-tools, fetches the modules if they are missing,
+creates whichever interfaces the selected suites need, re-runs itself under
+``sudo`` if a selected suite needs root, runs Twister once, and tears the
+interfaces down again.
+
+.. code-block:: console
+
+   export TTCN3_DIR=/usr
+   ./scripts/net/run-conformance-tests.sh
+
+Naming suites runs only those, which is the quick way to stay unprivileged
+while working on one:
+
+.. code-block:: console
+
+   ./scripts/net/run-conformance-tests.sh mdns dns
+
+``--list`` shows the suites and what each one needs, ``--keep`` leaves the
+interfaces up for the next run, and ``--start`` and ``--stop`` do only that
+half. ``--help`` lists the rest, along with the directories it detected.
+
+Because a privileged run creates files as root, the script hands the Twister
+output directory and the suite build directories back to the invoking user
+before it exits.
+
 .. _ttcn3_running_by_hand:
 
 Running a suite by hand
