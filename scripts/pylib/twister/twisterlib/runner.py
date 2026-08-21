@@ -1539,7 +1539,7 @@ class ProjectBuilder(FilterBuilder):
                 if self.instance.platform.arch == cond_args[1]:
                     args.append(cond_args[2])
             elif cond_args[0] == "platform" and len(cond_args) == 3:
-                if self.instance.platform.name == cond_args[1]:
+                if cond_args[1] in self.instance.platform.name:
                     args.append(cond_args[2])
             elif cond_args[0] == "simulation" and len(cond_args) == 3:
                 if self.instance.platform.simulation == cond_args[1]:
