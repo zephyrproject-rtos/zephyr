@@ -71,7 +71,11 @@ static void handle_flush(struct k_work *work) { }
 static inline void init_flusher(struct z_work_flusher *flusher)
 {
 	struct k_work *work = &flusher->work;
-	k_sem_init(&flusher->sem, 0, 1);
+
+	/* The flusher is part of the caller's k_work_sync, which typically
+	 * lives on its stack, so the semaphore must stay untracked.
+	 */
+	flusher->sem = (struct k_sem)K_SEM_INITIALIZER(flusher->sem, 0, 1);
 	k_work_init(&flusher->work, handle_flush);
 	flag_set(&work->flags, K_WORK_FLUSHING_BIT);
 }
@@ -90,7 +94,7 @@ static sys_slist_t pending_cancels;
 static inline void init_work_cancel(struct z_work_canceller *canceler,
 				    struct k_work *work)
 {
-	k_sem_init(&canceler->sem, 0, 1);
+	canceler->sem = (struct k_sem)K_SEM_INITIALIZER(canceler->sem, 0, 1);
 	canceler->work = work;
 	sys_slist_append(&pending_cancels, &canceler->node);
 }
