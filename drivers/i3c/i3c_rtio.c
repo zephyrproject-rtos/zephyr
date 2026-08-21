@@ -20,7 +20,7 @@ const struct rtio_iodev_api i3c_iodev_api = {
 	.submit = i3c_iodev_submit,
 };
 
-struct rtio_sqe *i3c_rtio_copy(struct rtio *r, struct rtio_iodev *iodev, const struct i3c_msg *msgs,
+struct rtio_sqe *i3c_rtio_copy(struct rtio *r, struct rtio_iodev *iodev, struct i3c_msg *msgs,
 			       uint8_t num_msgs)
 {
 	__ASSERT(num_msgs > 0, "Expecting at least one message to copy");
@@ -37,10 +37,10 @@ struct rtio_sqe *i3c_rtio_copy(struct rtio *r, struct rtio_iodev *iodev, const s
 
 		if (msgs[i].flags & I3C_MSG_READ) {
 			rtio_sqe_prep_read(sqe, iodev, RTIO_PRIO_NORM, msgs[i].buf, msgs[i].len,
-					   NULL);
+					   (void *)&msgs[i]);
 		} else {
 			rtio_sqe_prep_write(sqe, iodev, RTIO_PRIO_NORM, msgs[i].buf, msgs[i].len,
-					    NULL);
+					    (void *)&msgs[i]);
 		}
 		sqe->flags |= RTIO_SQE_TRANSACTION;
 		sqe->iodev_flags =
@@ -57,13 +57,15 @@ struct rtio_sqe *i3c_rtio_copy(struct rtio *r, struct rtio_iodev *iodev, const s
 	return sqe;
 }
 
-void i3c_rtio_init(struct i3c_rtio *ctx)
+void i3c_rtio_init(struct i3c_rtio *ctx, const struct device *dev)
 {
 	k_sem_init(&ctx->lock, 1, 1);
 	mpsc_init(&ctx->io_q);
 	ctx->txn_curr = NULL;
 	ctx->txn_head = NULL;
+	ctx->iodev_data.bus = dev;
 	ctx->iodev.api = &i3c_iodev_api;
+	ctx->iodev.data = &ctx->iodev_data;
 }
 
 /**
@@ -268,3 +270,167 @@ out:
 	k_sem_give(&ctx->lock);
 	return res;
 }
+
+#ifdef CONFIG_I3C_CALLBACK
+/*
+ * Allocate a callback closure slot. Lock-free via atomic_test_and_set_bit;
+ * safe from any context. Returns NULL when the pool is exhausted (caller
+ * treats as -ENOMEM).
+ */
+static struct i3c_rtio_cb_slot *i3c_rtio_cb_slot_alloc(struct i3c_rtio *ctx)
+{
+	for (uint32_t i = 0; i < ARRAY_SIZE(ctx->cb_slots); i++) {
+		if (!atomic_test_and_set_bit(ctx->cb_slot_used, i)) {
+			struct i3c_rtio_cb_slot *slot = &ctx->cb_slots[i];
+
+			slot->ctx = ctx;
+			return slot;
+		}
+	}
+
+	return NULL;
+}
+
+static void i3c_rtio_cb_slot_free(struct i3c_rtio_cb_slot *slot)
+{
+	struct i3c_rtio *ctx = slot->ctx;
+	uint32_t i = slot - &ctx->cb_slots[0];
+
+	atomic_clear_bit(ctx->cb_slot_used, i);
+}
+
+/*
+ * Trampoline invoked by RTIO_OP_CALLBACK after the preceding chained
+ * transaction completes. last_result carries the transfer status.
+ *
+ * The async helper held ctx->lock for the duration of the transfer (so that
+ * ctx->i3c_desc / ctx->dt_spec stayed stable for the driver's iodev_submit).
+ * Release it here before invoking user code so that another async caller
+ * can start while the user runs.
+ */
+static void i3c_rtio_cb_trampoline(struct rtio *r, const struct rtio_sqe *sqe, int last_result,
+				   void *arg0)
+{
+	struct i3c_rtio_cb_slot *slot = arg0;
+	struct i3c_rtio *ctx = slot->ctx;
+	i3c_callback_t cb = slot->cb;
+	void *userdata = slot->userdata;
+	const struct device *dev = slot->dev;
+
+	ARG_UNUSED(r);
+	ARG_UNUSED(sqe);
+
+	/* Snapshot, free the slot, release lock, then invoke user code. */
+	i3c_rtio_cb_slot_free(slot);
+	k_sem_give(&ctx->lock);
+
+	cb(dev, last_result, userdata);
+}
+
+int i3c_rtio_transfer_cb(struct i3c_rtio *ctx, const struct device *dev, struct i3c_msg *msgs,
+			 uint8_t num_msgs, struct i3c_device_desc *desc, i3c_callback_t cb,
+			 void *userdata)
+{
+	struct rtio_iodev *iodev = &ctx->iodev;
+	struct rtio *const r = ctx->r;
+	struct rtio_sqe *last_msg_sqe;
+	struct rtio_sqe *cb_sqe;
+	struct i3c_rtio_cb_slot *slot;
+
+	__ASSERT_NO_MSG(num_msgs > 0);
+	__ASSERT_NO_MSG(cb != NULL);
+
+	slot = i3c_rtio_cb_slot_alloc(ctx);
+	if (slot == NULL) {
+		return -ENOMEM;
+	}
+
+	/*
+	 * Take ctx->lock so ctx->i3c_desc stays bound to this transaction
+	 * until the trampoline releases it. Matches the blocking helper's
+	 * locking discipline.
+	 */
+	k_sem_take(&ctx->lock, K_FOREVER);
+
+	ctx->i3c_desc = desc;
+
+	last_msg_sqe = i3c_rtio_copy(r, iodev, msgs, num_msgs);
+	if (last_msg_sqe == NULL) {
+		k_sem_give(&ctx->lock);
+		i3c_rtio_cb_slot_free(slot);
+		return -ENOMEM;
+	}
+
+	cb_sqe = rtio_sqe_acquire(r);
+	if (cb_sqe == NULL) {
+		rtio_sqe_drop_all(r);
+		k_sem_give(&ctx->lock);
+		i3c_rtio_cb_slot_free(slot);
+		return -ENOMEM;
+	}
+
+	slot->cb = cb;
+	slot->userdata = userdata;
+	slot->dev = dev;
+
+	rtio_sqe_prep_callback(cb_sqe, i3c_rtio_cb_trampoline, slot, NULL);
+	cb_sqe->flags |= RTIO_SQE_NO_RESPONSE;
+
+	/* Chain the callback after the (last) msg sqe. */
+	last_msg_sqe->flags |= RTIO_SQE_CHAINED;
+
+	rtio_submit(r, 0);
+
+	return 0;
+}
+
+int i3c_rtio_ccc_cb(struct i3c_rtio *ctx, const struct device *dev,
+		    struct i3c_ccc_payload *payload, i3c_callback_t cb, void *userdata)
+{
+	struct rtio_iodev *iodev = &ctx->iodev;
+	struct rtio *const r = ctx->r;
+	struct rtio_sqe *ccc_sqe;
+	struct rtio_sqe *cb_sqe;
+	struct i3c_rtio_cb_slot *slot;
+
+	__ASSERT_NO_MSG(cb != NULL);
+
+	slot = i3c_rtio_cb_slot_alloc(ctx);
+	if (slot == NULL) {
+		return -ENOMEM;
+	}
+
+	k_sem_take(&ctx->lock, K_FOREVER);
+
+	ccc_sqe = rtio_sqe_acquire(r);
+	if (ccc_sqe == NULL) {
+		k_sem_give(&ctx->lock);
+		i3c_rtio_cb_slot_free(slot);
+		return -ENOMEM;
+	}
+
+	ccc_sqe->op = RTIO_OP_I3C_CCC;
+	ccc_sqe->flags = RTIO_SQE_CHAINED;
+	ccc_sqe->iodev = iodev;
+	ccc_sqe->ccc_payload = payload;
+
+	cb_sqe = rtio_sqe_acquire(r);
+	if (cb_sqe == NULL) {
+		rtio_sqe_drop_all(r);
+		k_sem_give(&ctx->lock);
+		i3c_rtio_cb_slot_free(slot);
+		return -ENOMEM;
+	}
+
+	slot->cb = cb;
+	slot->userdata = userdata;
+	slot->dev = dev;
+
+	rtio_sqe_prep_callback(cb_sqe, i3c_rtio_cb_trampoline, slot, NULL);
+	cb_sqe->flags |= RTIO_SQE_NO_RESPONSE;
+
+	rtio_submit(r, 0);
+
+	return 0;
+}
+#endif /* CONFIG_I3C_CALLBACK */
