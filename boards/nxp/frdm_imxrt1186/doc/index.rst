@@ -304,22 +304,6 @@ overlay file is located at:
 
    boards/nxp/frdm_imxrt1186/cm7_code_hyperram.overlay
 
-The MPU attributes for the board also need to be changed in this file:
-
-.. code-block:: none
-
-   boards/nxp/frdm_imxrt1186/cm7/mpu_regions.c
-
-Changing the line below enables execution from the HyperRAM region by setting the flash attribute:
-
-.. code-block:: none
-
-   #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(hyperram0))
-        MPU_REGION_ENTRY("HYPER_RAM", REGION_HYPER_RAM_BASE_ADDRESS,
-   -                        ARM_MPU_SRAM_REGION_ATTR(REGION_HYPER_RAM_SIZE)),
-   +                        REGION_FLASH_ATTR(REGION_HYPER_RAM_SIZE)),
-   #endif
-
 Memory Usage
 ============
 
