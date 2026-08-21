@@ -114,7 +114,7 @@ int adxl345_reg_write_mask(const struct device *dev,
 	}
 
 	tmp &= ~mask;
-	tmp |= data;
+	tmp |= (data & mask);
 
 	return adxl345_reg_write_byte(dev, reg_addr, tmp);
 }
@@ -526,6 +526,8 @@ static int adxl345_init(const struct device *dev)
 	if (rc) {
 		return rc;
 	}
+
+	data->odr = cfg->odr;
 #endif
 
 	rc = adxl345_reg_read_byte(dev, ADXL345_DATA_FORMAT_REG, &full_res);
