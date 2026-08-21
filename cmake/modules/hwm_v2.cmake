@@ -43,10 +43,48 @@ list(APPEND ARCH_ROOT ${ZEPHYR_BASE})
 list(TRANSFORM ARCH_ROOT PREPEND "--arch-root=" OUTPUT_VARIABLE arch_root_args)
 list(TRANSFORM SOC_ROOT PREPEND "--soc-root=" OUTPUT_VARIABLE soc_root_args)
 
+# Only the SoC being targeted is loaded into the build system, together with any SoC listed in
+# the 'requires' property of its soc.yml entry. This keeps the SoC namespace isolated: a build
+# only sees the Kconfig symbols and CMake variables of the SoC trees it actually needs, which
+# also cuts CMake configuration time and memory usage significantly.
+#
+# A SoC which is defined in terms of a SoC owned by another soc.yml tree, such as a SiP wrapping
+# a die from another vendor, must opt in to seeing that tree, for example:
+#
+#   socs:
+#     - name: <sip>
+#       requires:
+#         - <die>
+#
+# A board which pairs SoC trees that are independent of each other, such as a simulated board
+# built on one SoC while using the Kconfig of the SoC it simulates, declares the extra trees the
+# same way in its board.yml:
+#
+#   boards:
+#     - name: <board>
+#       socs:
+#         - name: <soc>
+#       requires:
+#         - <other-soc>
+#
+# Setting HWM_LOAD_ALL_SOCS loads every SoC from every SoC root instead, restoring the legacy
+# behaviour where all SoC namespaces are visible to each other. This is an escape hatch for
+# out-of-tree users who cannot express their dependencies with 'requires' yet, and comes at the
+# cost of the configuration time and memory usage mentioned above.
+if(HWM_LOAD_ALL_SOCS OR NOT BOARD_QUALIFIERS)
+  set(soc_filter --socs)
+else()
+  string(REPLACE "/" ";" split_board_qualifiers ";${BOARD_QUALIFIERS}")
+  list(GET split_board_qualifiers 1 target_soc)
+  set(soc_filter --soc ${target_soc})
+  foreach(soc ${LIST_BOARD_SOC_REQUIRES})
+    list(APPEND soc_filter --soc ${soc})
+  endforeach()
+endif()
+
 execute_process(COMMAND ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/scripts/list_hardware.py
                 ${arch_root_args} ${soc_root_args}
-                --archs --socs
-                --cmakeformat={TYPE}\;{NAME}\;{DIR}
+                --archs ${soc_filter} --cmakeformat={TYPE}\;{NAME}\;{DIR}
                 OUTPUT_VARIABLE ret_hw
                 ERROR_VARIABLE err_hw
                 RESULT_VARIABLE ret_val

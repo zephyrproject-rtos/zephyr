@@ -364,6 +364,33 @@ If multiple boards are placed in the same board folder, then the file
      ...
    ...
 
+.. _board_porting_requires:
+
+Boards pairing several SoC trees
+================================
+
+A build loads the Kconfig and CMake trees of the SoC that the board target selects. It also loads
+the trees of any SoC listed in that board's ``requires`` property:
+
+.. code-block:: yaml
+
+   boards:
+   - name: <board-name>
+     vendor: <board-vendor>
+     socs:
+     - name: <soc>
+     requires:
+     - <other-soc>
+
+Each entry names a SoC as it is written in a :file:`soc.yml` file, not a Kconfig symbol. The SoC
+may come from any SoC root. Anything that SoC requires in turn is loaded as well.
+
+Only add this property when the board cannot be built without the extra tree. A board whose SoC
+is described completely by its own :file:`soc.yml` entry does not need it, and neither does a
+board whose SoC already declares what it depends on, which is covered by
+:ref:`soc_porting_requires`. This property exists for cases where a board combines multiple SoCs which
+have no relationship to each other outside that board, such as a simulated board built on one SoC
+
 
 .. _default_board_configuration:
 

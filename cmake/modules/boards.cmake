@@ -178,7 +178,7 @@ endif()
 
 set(format_str "{NAME}\;{DIR}\;")
 set(format_str "${format_str}{REVISION_FORMAT}\;{REVISION_DEFAULT}\;{REVISION_EXACT}\;")
-set(format_str "${format_str}{REVISIONS}\;{SOCS}\;{QUALIFIERS}")
+set(format_str "${format_str}{REVISIONS}\;{SOCS}\;{SOC_REQUIRES}\;{QUALIFIERS}")
 
 list(TRANSFORM BOARD_DIRECTORIES PREPEND "--board-dir=" OUTPUT_VARIABLE board_dir_arg)
 execute_process(${list_boards_commands} --board=${BOARD} ${board_dir_arg}
@@ -194,7 +194,7 @@ endif()
 if(NOT "${ret_board}" STREQUAL "")
   string(STRIP "${ret_board}" ret_board)
   set(single_val "NAME;REVISION_FORMAT;REVISION_DEFAULT;REVISION_EXACT")
-  set(multi_val  "DIR;REVISIONS;SOCS;QUALIFIERS")
+  set(multi_val  "DIR;REVISIONS;SOCS;SOC_REQUIRES;QUALIFIERS")
   cmake_parse_arguments(LIST_BOARD "" "${single_val}" "${multi_val}" ${ret_board})
   list(GET LIST_BOARD_DIR 0 BOARD_DIR)
   set(BOARD_DIR ${BOARD_DIR} CACHE PATH "Main board directory for board (${BOARD})" FORCE)

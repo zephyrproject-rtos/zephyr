@@ -6,7 +6,7 @@
 import argparse
 import re
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path, PurePath
 
 import jsonschema
@@ -62,7 +62,8 @@ class Systems:
                 series = Series(s['name'], [folder], f['name'], [])
                 socs = [(Soc(soc['name'],
                              [c['name'] for c in soc.get('cpuclusters', [])],
-                             [folder], s['name'], f['name']))
+                             [folder], s['name'], f['name'],
+                             list(soc.get('requires', []))))
                         for soc in s.get('socs', [])]
                 series.socs.extend(socs)
                 self._series.append(series)
@@ -71,7 +72,8 @@ class Systems:
                 family.socs.extend(socs)
             socs = [(Soc(soc['name'],
                          [c['name'] for c in soc.get('cpuclusters', [])],
-                         [folder], None, f['name']))
+                         [folder], None, f['name'],
+                         list(soc.get('requires', []))))
                     for soc in f.get('socs', [])]
             self._socs.extend(socs)
             self._families.append(family)
@@ -80,7 +82,8 @@ class Systems:
             series = Series(s['name'], [folder], '', [])
             socs = [(Soc(soc['name'],
                          [c['name'] for c in soc.get('cpuclusters', [])],
-                         [folder], s['name'], ''))
+                         [folder], s['name'], '',
+                         list(soc.get('requires', []))))
                     for soc in s.get('socs', [])]
             series.socs.extend(socs)
             self._series.append(series)
@@ -89,11 +92,11 @@ class Systems:
         for soc in data.get('socs', []):
             if soc.get('name') is not None:
                 self._socs.append(Soc(soc['name'], [c['name'] for c in soc.get('cpuclusters', [])],
-                                  [folder], '', ''))
+                                  [folder], '', '', list(soc.get('requires', []))))
             elif soc.get('extend') is not None:
                 self._extended_socs.append(Soc(soc['extend'],
                                            [c['name'] for c in soc.get('cpuclusters', [])],
-                                           [folder], '', ''))
+                                           [folder], '', '', list(soc.get('requires', []))))
             else:
                 # This should not happen if schema validation passed
                 sys.exit(f'ERROR: Malformed "socs" section in SoC file: {soc_yaml}\n'
@@ -167,12 +170,57 @@ class Systems:
     def get_extended_socs(self):
         return self._extended_socs
 
+    def get_loaded_trees(self, names):
+        '''Return the SoCs, series and families described by the soc.yml trees holding the given
+        SoCs.
+
+        The unit the build system loads is the soc.yml tree, not the individual SoC, so a lookup
+        must report everything a selected tree describes. Reporting only the SoCs asked for would
+        leave their CMake variables out of sync with the Kconfig that is loaded for them anyway,
+        which breaks any SoC whose CONFIG_SOC resolves to a sibling in the same tree.
+        '''
+        folders = {f for s in self.get_soc_closure(names) for f in s.folder}
+        return (
+            [s for s in self._socs if folders.intersection(s.folder)],
+            [s for s in self._series if folders.intersection(s.folder)],
+            [f for f in self._families if folders.intersection(f.folder)],
+        )
+
     def get_soc(self, name):
         try:
             return next(s for s in self._socs if s.name == name)
         except StopIteration:
             sys.exit(f"ERROR: SoC '{name}' is not found, please ensure that the SoC exists "
                      f"and that soc-root containing '{name}' has been correctly defined.")
+
+    def get_soc_closure(self, names):
+        '''Return the given SoCs together with the transitive closure of the SoCs they list in
+        the 'requires' property of their soc.yml entry.
+
+        The SoC trees of all returned SoCs must be loaded by the build system for the given
+        SoCs to be usable.
+        '''
+        socs = []
+        seen = set()
+        pending = [(name, None) for name in names]
+
+        while pending:
+            soc_name, required_by = pending.pop(0)
+            if soc_name in seen:
+                continue
+            seen.add(soc_name)
+
+            soc = next((s for s in self._socs if s.name == soc_name), None)
+            if soc is None:
+                required_by_msg = f", required by SoC '{required_by}'," if required_by else ''
+                sys.exit(f"ERROR: SoC '{soc_name}'{required_by_msg} is not found, please ensure "
+                         f"that the SoC exists and that soc-root containing '{soc_name}' has "
+                         "been correctly defined.")
+
+            socs.append(soc)
+            pending.extend((r, soc_name) for r in soc.requires)
+
+        return socs
 
 
 @dataclass
@@ -182,11 +230,15 @@ class Soc:
     folder: list[str]
     series: str = ''
     family: str = ''
+    # Names of other SoCs whose Kconfig and CMake trees must be loaded together with this SoC,
+    # for example when a SiP is described as a SoC wrapping a die maintained in another SoC tree.
+    requires: list[str] = field(default_factory=list)
 
     def extend(self, soc):
         if self.name == soc.name:
             self.cpuclusters.extend(soc.cpuclusters)
             self.folder.extend(soc.folder)
+            self.requires.extend(r for r in soc.requires if r not in self.requires)
 
 
 @dataclass
@@ -263,7 +315,8 @@ def add_args(parser):
     parser.add_argument("--soc-root", dest='soc_roots', default=[],
                         type=Path, action='append',
                         help='add a SoC root, may be given more than once')
-    parser.add_argument("--soc", default=None, help='lookup the specific soc')
+    parser.add_argument("--soc", dest='socs_lookup', default=[], action='append',
+                        help='lookup the specific soc, may be given more than once')
     parser.add_argument("--soc-series", default=None, help='lookup the specific soc series')
     parser.add_argument("--soc-family", default=None, help='lookup the specific family')
     parser.add_argument("--socs", action='store_true', help='lookup all socs')
@@ -313,9 +366,6 @@ def dump_v2_archs(args):
 
 
 def dump_v2_system(args, type, system):
-    if args.soc is not None and system.name != args.soc:
-        return
-
     if args.soc_family is not None and (type != "soc" or system.family is None or \
        system.family != args.soc_family):
         return
@@ -359,19 +409,26 @@ def dump_v2_system(args, type, system):
 def dump_v2_systems(args):
     systems = find_v2_systems(args)
 
-    for f in systems.get_families():
+    if args.socs_lookup:
+        socs, series, families = systems.get_loaded_trees(args.socs_lookup)
+    else:
+        socs = systems.get_socs()
+        families = systems.get_families()
+        series = systems.get_series()
+
+    for f in families:
         dump_v2_system(args, 'family', f)
 
-    for s in systems.get_series():
+    for s in series:
         dump_v2_system(args, 'series', s)
 
-    for s in systems.get_socs():
+    for s in socs:
         dump_v2_system(args, 'soc', s)
 
 
 if __name__ == '__main__':
     args = parse_args()
-    if any([args.socs, args.soc, args.soc_series, args.soc_family]):
+    if any([args.socs, args.socs_lookup, args.soc_series, args.soc_family]):
         dump_v2_systems(args)
     if args.archs or args.arch is not None:
         dump_v2_archs(args)

@@ -1,2 +1,6 @@
 socs:
   - name: osd32mp15x
+    # The OSD32MP15x is a SiP built around an STMicroelectronics STM32MP15x die, so the STM32
+    # SoC tree has to be loaded together with this one.
+    requires:
+      - stm32mp157cxx
