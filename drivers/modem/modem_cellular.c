@@ -823,7 +823,13 @@ static void modem_cellular_event_dispatch_handler(struct k_work *item)
 static void modem_cellular_delegate_event(struct modem_cellular_data *data,
 					  enum modem_cellular_event evt)
 {
-	k_pipe_write(&data->event_pipe, (const uint8_t *)&evt, sizeof(evt), K_NO_WAIT);
+	int ret;
+
+	ret = k_pipe_write(&data->event_pipe, (const uint8_t *)&evt, sizeof(evt), K_NO_WAIT);
+	if (ret <= 0) {
+		LOG_WRN("Event %d dropped", evt);
+		return;
+	}
 	k_work_submit(&data->event_dispatch_work);
 }
 
