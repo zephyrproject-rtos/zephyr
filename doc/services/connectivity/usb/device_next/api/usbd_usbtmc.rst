@@ -44,7 +44,8 @@ is delivered in chunks by the ``msg_out`` handler, without requiring a
 complete message to fit into the class buffers. Message data to be sent to
 the host is submitted with :c:func:`usbd_usbtmc_msg_write`, the data is
 copied to class buffers and sent when the host requests it, a message can be
-submitted in multiple chunks.
+submitted in multiple chunks. See the :zephyr:code-sample:`usbtmc` sample
+for how the API is used.
 
 API Reference
 *************

@@ -1,0 +1,11 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&zephyr_udc0 {
+	usbtmc0: usbtmc0 {
+		compatible = "zephyr,usbtmc-device";
+		label = "USBTMC instrument";
+	};
+};
