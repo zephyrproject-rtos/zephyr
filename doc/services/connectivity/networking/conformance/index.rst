@@ -68,6 +68,11 @@ socket on a link of its own.
      - ``zeth``
      - any user
      - 8
+   * - ``dnssd``
+     - :zephyr_file:`tests/net/conformance/dnssd`
+     - ``zeth``
+     - any user
+     - 6
    * - ``dns``
      - :zephyr_file:`tests/net/conformance/dns`
      - ``zeth``
@@ -127,6 +132,30 @@ query for a name the responder does not own.
 * ``tc_multiple_answers_share_the_name``
 * ``tc_legacy_query_is_answered_conventionally``
 * ``tc_answer_count_matches``
+
+DNS-SD
+======
+
+The application registers one service and listens on the port it advertises,
+which it has to: the responder checks that a service is bound before mentioning
+it, so a registration whose port nothing listens on is silently never
+advertised.
+
+The tester asks the three questions a client asks, in order: what service types
+are here, what instances of this type are here, and where is this instance. The
+last answer has to carry the service record and the address as well, so that
+naming an instance was enough.
+
+Queries go to the group address, so anything else on the link that speaks
+multicast DNS answers them too. The suite skips those rather than failing on
+them.
+
+* ``tc_service_type_is_enumerated``
+* ``tc_service_instance_is_named``
+* ``tc_answer_carries_the_service_details``
+* ``tc_answer_carries_the_address``
+* ``tc_unknown_service_is_ignored``
+* ``tc_legacy_query_answer_is_not_adapted``
 
 DNS
 ===
@@ -286,10 +315,19 @@ DNS-SD legacy unicast queries
 
 The hostname side of the mDNS responder answers a legacy unicast query the way
 :rfc:`6762` section 6.7 asks. The service discovery side does not: it builds
-its own messages, still sets the cache flush bit, uses its own long time to
-live, and echoes neither the identifier nor the question. Fixing it means
-reworking name compression offsets that are all computed from a fixed header
-size. No suite covers it.
+its own messages, uses the lifetimes it would have used for a multicast answer,
+and echoes neither the identifier nor the question. Fixing it means reworking
+name compression offsets that are all computed from a fixed header size.
+
+The ``dnssd`` suite records this rather than asserting the standard, in
+``f_check_legacy_shape``, so that a test does not sit failing until somebody
+gets to it. Each check there says what would have to change with it.
+
+The cache flush bit is not part of this. It is per record, and the responder
+gets it right: :rfc:`6763` section 12 keeps it clear on the pointer record,
+because several instances of a service share that name and an answer about one
+must not evict the others, and sets it on the records that belong to a single
+instance. The suite checks that as correct.
 
 CoAP block transfer and observe
 ===============================
