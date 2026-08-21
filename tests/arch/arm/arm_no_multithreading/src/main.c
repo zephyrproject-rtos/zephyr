@@ -87,57 +87,21 @@ void test_main(void)
 
 	__ASSERT(flag == 0, "Test flag not initialized to 0\n");
 
-	for (i = CONFIG_NUM_IRQS - 1; i >= 0; i--) {
-		if (NVIC_GetEnableIRQ(i) == 0) {
-			/*
-			 * Interrupts configured statically with IRQ_CONNECT(.)
-			 * are automatically enabled. NVIC_GetEnableIRQ()
-			 * returning false, here, implies that the IRQ line is
-			 * either not implemented or it is not enabled, thus,
-			 * currently not in use by Zephyr.
-			 */
+	i = get_available_nvic_line(CONFIG_NUM_IRQS);
+	printk("Available IRQ line: %u\n", i);
 
-			/* Set the NVIC line to pending. */
-			NVIC_SetPendingIRQ(i);
+	NVIC_SetPendingIRQ(i);
 
-			if (NVIC_GetPendingIRQ(i)) {
-				/* If the NVIC line is pending, it is
-				 * guaranteed that it is implemented; clear the
-				 * line.
-				 */
-				NVIC_ClearPendingIRQ(i);
+	arch_irq_connect_dynamic(i, 0 /* highest priority */, arm_isr_handler, NULL, 0);
 
-				if (!NVIC_GetPendingIRQ(i)) {
-					/*
-					 * If the NVIC line can be successfully
-					 * un-pended, it is guaranteed that it
-					 * can be used for software interrupt
-					 * triggering. Trigger it.
-					 */
-					NVIC_SetPendingIRQ(i);
-					break;
-				}
-			}
-		}
-	}
+	NVIC_EnableIRQ(i);
 
-	if (i >= 0) {
+	barrier_dsync_fence_full();
+	barrier_isync_fence_full();
 
-		printk("Available IRQ line: %u\n", i);
+	flag = test_flag;
 
-		arch_irq_connect_dynamic(i, 0 /* highest priority */, arm_isr_handler, NULL, 0);
+	__ASSERT(flag > 0, "Test flag not set by IRQ\n");
 
-		NVIC_EnableIRQ(i);
-
-		barrier_dsync_fence_full();
-		barrier_isync_fence_full();
-
-		flag = test_flag;
-
-		__ASSERT(flag > 0, "Test flag not set by IRQ\n");
-
-		printk("ARM no multithreading test successful\n");
-	} else {
-		__ASSERT(0, "No available IRQ line to use in the test\n");
-	}
+	printk("ARM no multithreading test successful\n");
 }

@@ -7,12 +7,13 @@
 #include <zephyr/ztest.h>
 #include <zephyr/arch/cpu.h>
 #include <cmsis_core.h>
+#include <zephyr/interrupt_util.h>
 #include <zephyr/sys/barrier.h>
 
 #if CONFIG_2ND_LVL_ISR_TBL_OFFSET > 0
-#define TEST_1ST_LEVEL_INTERRUPTS_MAX (CONFIG_2ND_LVL_ISR_TBL_OFFSET - 1)
+#define TEST_1ST_LEVEL_INTERRUPTS_MAX CONFIG_2ND_LVL_ISR_TBL_OFFSET
 #else
-#define TEST_1ST_LEVEL_INTERRUPTS_MAX (CONFIG_NUM_IRQS - 1)
+#define TEST_1ST_LEVEL_INTERRUPTS_MAX CONFIG_NUM_IRQS
 #endif
 
 static volatile int test_flag;
@@ -45,43 +46,7 @@ ZTEST(arm_irq_advanced_features, test_arm_zero_latency_irqs)
 
 	zassert_false(init_flag, "Test flag not initialized to zero\n");
 
-	for (i = TEST_1ST_LEVEL_INTERRUPTS_MAX; i >= 0; i--) {
-		if (NVIC_GetEnableIRQ(i) == 0) {
-			/*
-			 * Interrupts configured statically with IRQ_CONNECT(.)
-			 * are automatically enabled. NVIC_GetEnableIRQ()
-			 * returning false, here, implies that the IRQ line is
-			 * either not implemented or it is not enabled, thus,
-			 * currently not in use by Zephyr.
-			 */
-
-			/* Set the NVIC line to pending. */
-			NVIC_SetPendingIRQ(i);
-
-			if (NVIC_GetPendingIRQ(i)) {
-				/*
-				 * If the NVIC line is pending, it is
-				 * guaranteed that it is implemented; clear the
-				 * line.
-				 */
-				NVIC_ClearPendingIRQ(i);
-
-				if (!NVIC_GetPendingIRQ(i)) {
-					/*
-					 * If the NVIC line can be successfully
-					 * un-pended, it is guaranteed that it
-					 * can be used for software interrupt
-					 * triggering. Return the NVIC line
-					 * number.
-					 */
-					break;
-				}
-			}
-		}
-	}
-
-	zassert_true(i >= 0, "No available IRQ line to configure as zero-latency\n");
-
+	i = get_available_nvic_line(TEST_1ST_LEVEL_INTERRUPTS_MAX);
 	TC_PRINT("Available IRQ line: %u\n", i);
 
 	/* Configure the available IRQ line as zero-latency. */
@@ -89,7 +54,6 @@ ZTEST(arm_irq_advanced_features, test_arm_zero_latency_irqs)
 	arch_irq_connect_dynamic(i, 0 /* Unused */, arm_zero_latency_isr_handler, NULL,
 				 IRQ_ZERO_LATENCY);
 
-	NVIC_ClearPendingIRQ(i);
 	NVIC_EnableIRQ(i);
 
 	/* Lock interrupts */

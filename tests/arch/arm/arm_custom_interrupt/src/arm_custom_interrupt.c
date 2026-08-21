@@ -7,6 +7,7 @@
 #include <zephyr/ztest.h>
 #include <zephyr/arch/cpu.h>
 #include <cmsis_core.h>
+#include <zephyr/interrupt_util.h>
 #include <zephyr/sys/barrier.h>
 
 unsigned int sw_irq_number = (unsigned int)(-1);
@@ -18,9 +19,9 @@ static volatile bool custom_eoi_called;
 static volatile bool irq_handler_called;
 
 #if CONFIG_2ND_LVL_ISR_TBL_OFFSET > 0
-#define TEST_1ST_LEVEL_INTERRUPTS_MAX (CONFIG_2ND_LVL_ISR_TBL_OFFSET - 1)
+#define TEST_1ST_LEVEL_INTERRUPTS_MAX CONFIG_2ND_LVL_ISR_TBL_OFFSET
 #else
-#define TEST_1ST_LEVEL_INTERRUPTS_MAX (CONFIG_NUM_IRQS - 1)
+#define TEST_1ST_LEVEL_INTERRUPTS_MAX CONFIG_NUM_IRQS
 #endif
 
 /* Define out custom SoC interrupt controller interface methods.
@@ -35,7 +36,7 @@ void z_soc_irq_init(void)
 {
 	int irq = 0;
 
-	for (; irq <= TEST_1ST_LEVEL_INTERRUPTS_MAX; irq++) {
+	for (; irq < TEST_1ST_LEVEL_INTERRUPTS_MAX; irq++) {
 		NVIC_SetPriority((IRQn_Type)irq, _IRQ_PRIO_OFFSET);
 	}
 
@@ -131,51 +132,14 @@ ZTEST(arm_custom_interrupt, test_arm_custom_interrupt)
 	zassert_true(custom_init_called, "Custom IRQ init not called\n");
 
 	/* Determine an NVIC IRQ line that is not currently in use. */
-	int i;
-
-	for (i = TEST_1ST_LEVEL_INTERRUPTS_MAX; i >= 0; i--) {
-		if (NVIC_GetEnableIRQ(i) == 0) {
-			/*
-			 * Interrupts configured statically with IRQ_CONNECT(.)
-			 * are automatically enabled. NVIC_GetEnableIRQ()
-			 * returning false, here, implies that the IRQ line is
-			 * either not implemented or it is not enabled, thus,
-			 * currently not in use by Zephyr.
-			 */
-
-			/* Set the NVIC line to pending. */
-			NVIC_SetPendingIRQ(i);
-
-			if (NVIC_GetPendingIRQ(i)) {
-				/* If the NVIC line is pending, it is
-				 * guaranteed that it is implemented; clear the
-				 * line.
-				 */
-				NVIC_ClearPendingIRQ(i);
-
-				if (!NVIC_GetPendingIRQ(i)) {
-					/*
-					 * If the NVIC line can be successfully
-					 * un-pended, it is guaranteed that it
-					 * can be used for software interrupt
-					 * triggering.
-					 */
-					break;
-				}
-			}
-		}
-	}
-
-	zassert_true(i >= 0, "No available IRQ line to use in the test\n");
-
-	TC_PRINT("Available IRQ line: %u\n", i);
-	sw_irq_number = i;
+	sw_irq_number = get_available_nvic_line(TEST_1ST_LEVEL_INTERRUPTS_MAX);
+	TC_PRINT("Available IRQ line: %u\n", sw_irq_number);
 
 	zassert_false(custom_set_priority_called, "Custom set priority flag set\n");
 	arch_irq_connect_dynamic(sw_irq_number, 0 /* highest priority */, arm_isr_handler, NULL, 0);
 	zassert_true(custom_set_priority_called, "Custom set priority not called\n");
 
-	NVIC_ClearPendingIRQ(i);
+	NVIC_ClearPendingIRQ(sw_irq_number);
 
 	zassert_false(arch_irq_is_enabled(sw_irq_number), "SW IRQ already enabled\n");
 	zassert_false(custom_enable_called, "Custom IRQ enable flag is set\n");
@@ -189,7 +153,7 @@ ZTEST(arm_custom_interrupt, test_arm_custom_interrupt)
 		custom_set_priority_called = false;
 
 		/* Set the dynamic IRQ to pending state. */
-		NVIC_SetPendingIRQ(i);
+		NVIC_SetPendingIRQ(sw_irq_number);
 
 		/*
 		 * Instruction barriers to make sure the NVIC IRQ is

@@ -5,14 +5,15 @@
  */
 
 #include <zephyr/ztest.h>
+#include <zephyr/interrupt_util.h>
 #include <zephyr/arch/cpu.h>
 #include <cmsis_core.h>
 
 #if defined(CONFIG_ARM_SECURE_FIRMWARE) && defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
 #if CONFIG_2ND_LVL_ISR_TBL_OFFSET > 0
-#define TEST_1ST_LEVEL_INTERRUPTS_MAX (CONFIG_2ND_LVL_ISR_TBL_OFFSET - 1)
+#define TEST_1ST_LEVEL_INTERRUPTS_MAX CONFIG_2ND_LVL_ISR_TBL_OFFSET
 #else
-#define TEST_1ST_LEVEL_INTERRUPTS_MAX (CONFIG_NUM_IRQS - 1)
+#define TEST_1ST_LEVEL_INTERRUPTS_MAX CONFIG_NUM_IRQS
 #endif
 
 extern irq_target_state_t irq_target_state_set(unsigned int irq, irq_target_state_t target_state);
@@ -27,41 +28,7 @@ ZTEST(arm_irq_advanced_features, test_arm_irq_target_state)
 	/* Determine an NVIC IRQ line that is implemented
 	 * but not currently in use.
 	 */
-	int i;
-
-	for (i = TEST_1ST_LEVEL_INTERRUPTS_MAX; i >= 0; i--) {
-		if (NVIC_GetEnableIRQ(i) == 0) {
-			/*
-			 * In-use interrupts are automatically enabled by
-			 * virtue of IRQ_CONNECT(.). NVIC_GetEnableIRQ()
-			 * returning false, here, implies that the IRQ line is
-			 * either not implemented or it is not enabled, thus,
-			 * currently not in use by Zephyr.
-			 */
-
-			/* Set the NVIC line to pending. */
-			NVIC_SetPendingIRQ(i);
-
-			if (NVIC_GetPendingIRQ(i)) {
-				/* If the NVIC line is pending, it is
-				 * guaranteed that it is implemented.
-				 */
-				NVIC_ClearPendingIRQ(i);
-
-				if (!NVIC_GetPendingIRQ(i)) {
-					/*
-					 * If the NVIC line can be successfully
-					 * un-pended, it is guaranteed that it
-					 * can be used for software interrupt
-					 * triggering.
-					 */
-					break;
-				}
-			}
-		}
-	}
-
-	zassert_true(i >= 0, "No available IRQ line to configure as zero-latency\n");
+	int i = get_available_nvic_line(TEST_1ST_LEVEL_INTERRUPTS_MAX);
 
 	TC_PRINT("Available IRQ line: %u\n", i);
 
