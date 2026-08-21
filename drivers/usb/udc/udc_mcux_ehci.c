@@ -543,7 +543,20 @@ static int udc_mcux_ep_enqueue(const struct device *dev,
 static int udc_mcux_ep_dequeue(const struct device *dev,
 			       struct udc_ep_config *const cfg)
 {
+	const struct udc_mcux_config *config = dev->config;
+	const usb_device_controller_interface_struct_t *mcux_if = config->mcux_if;
+	struct udc_mcux_data *priv = udc_get_private(dev);
+
 	cfg->stat.halted = false;
+
+	/* Cancel the transfer that is already primed in the controller,
+	 * otherwise it is still transferred to the host although the buffer
+	 * is reported to the class as aborted. A class that has to terminate
+	 * an aborted transfer with a short packet, USB 2.0, 5.8.3, would
+	 * queue a second one.
+	 */
+	(void)mcux_if->deviceCancel(priv->mcux_device.controllerHandle, cfg->addr);
+
 	udc_ep_cancel_queued(dev, cfg);
 
 	udc_mcux_lock(dev);
