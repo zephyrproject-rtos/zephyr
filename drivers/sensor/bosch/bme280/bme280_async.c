@@ -23,6 +23,8 @@ void bme280_submit_sync(struct rtio_iodev_sqe *iodev_sqe)
 
 	const struct sensor_read_config *cfg = iodev_sqe->sqe.iodev->data;
 	const struct device *dev = cfg->sensor;
+	const struct bme280_data *data = dev->data;
+	const bool has_hum = (data->chip_id == BME280_CHIP_ID);
 	const struct sensor_chan_spec *const channels = cfg->channels;
 	const size_t num_channels = cfg->count;
 
@@ -55,14 +57,14 @@ void bme280_submit_sync(struct rtio_iodev_sqe *iodev_sqe)
 			edata->has_temp = 1;
 			break;
 		case SENSOR_CHAN_HUMIDITY:
-			edata->has_humidity = 1;
+			edata->has_humidity = has_hum ? 1 : 0;
 			break;
 		case SENSOR_CHAN_PRESS:
 			edata->has_press = 1;
 			break;
 		case SENSOR_CHAN_ALL:
 			edata->has_temp = 1;
-			edata->has_humidity = 1;
+			edata->has_humidity = has_hum ? 1 : 0;
 			edata->has_press = 1;
 			break;
 		default:
