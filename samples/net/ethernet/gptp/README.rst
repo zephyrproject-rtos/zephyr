@@ -150,7 +150,18 @@ Multiport Setup
 
 If you set :kconfig:option:`CONFIG_NET_GPTP_NUM_PORTS` larger than 1, then gPTP sample
 will create multiple TSN ports. This configuration is currently only supported
-in native_sim board.
+in native_sim board. The number of ``zephyr,native-tap`` interfaces defined in
+devicetree must match :kconfig:option:`CONFIG_NET_GPTP_NUM_PORTS`. For two ports,
+build with :file:`overlay-multiport.conf` and :file:`overlay-multiport.overlay`,
+which add a second TAP interface:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/ethernet/gptp
+   :board: native_sim
+   :gen-args: -DEXTRA_CONF_FILE=overlay-multiport.conf -DEXTRA_DTC_OVERLAY_FILE=overlay-multiport.overlay
+   :goals: build
+   :compact:
+
 
 You need to enable the ports in the net-tools. If the number of ports is set
 to 2, then give following commands to create the network interfaces in host

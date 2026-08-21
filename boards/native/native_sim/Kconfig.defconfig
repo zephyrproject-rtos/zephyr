@@ -15,9 +15,6 @@ config OUTPUT_PRINT_MEMORY_USAGE
 configdefault ETH_DRIVER
 	default y if !NET_LOOPBACK && !NET_TEST
 
-configdefault ETH_NATIVE_TAP
-	default y if NET_L2_ETHERNET && ETH_DRIVER
-
 if CONSOLE
 
 config POSIX_ARCH_CONSOLE
