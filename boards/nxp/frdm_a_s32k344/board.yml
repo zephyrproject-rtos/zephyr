@@ -1,0 +1,8 @@
+board:
+  name: frdm_a_s32k344
+  full_name: FRDM-A-S32K344
+  vendor: nxp
+  socs:
+    - name: s32k344
+      variants:
+        - name: mcuboot
