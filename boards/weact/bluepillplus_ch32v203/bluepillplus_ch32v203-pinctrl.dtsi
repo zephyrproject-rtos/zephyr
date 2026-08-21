@@ -19,4 +19,22 @@
 			bias-pull-up;
 		};
 	};
+
+	tkey1_default: tkey1_default {
+		touch_l1 {
+			pinmux = <ADC1_A9_PB1_0>;
+		};
+
+		touch_l2 {
+			pinmux = <ADC1_A8_PB0_0>;
+		};
+
+		touch_r2 {
+			pinmux = <ADC1_A7_PA7_0>;
+		};
+
+		touch_r1 {
+			pinmux = <ADC1_A5_PA5_0>;
+		};
+	};
 };

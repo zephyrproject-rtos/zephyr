@@ -143,6 +143,13 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 		};
+
+		tkey2: touch@40012800 {
+			compatible = "wch,ch32-tkey";
+			reg = <0x40012800 0x50>;
+			clocks = <&rcc CH32V20X_V30X_CLOCK_ADC2>;
+			status = "disabled";
+		};
 	};
 };
 
