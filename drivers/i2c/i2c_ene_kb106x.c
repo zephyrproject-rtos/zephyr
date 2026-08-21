@@ -32,7 +32,7 @@ struct i2c_kb106x_data {
 	volatile int err_code;
 };
 
-/* I2C Master local functions */
+/* I2C Controller local functions */
 static void i2c_kb106x_isr(const struct device *dev)
 {
 	const struct i2c_kb106x_config *config = dev->config;
@@ -231,7 +231,7 @@ static int i2c_kb106x_poll_read(const struct device *dev, struct i2c_msg *msg, u
 	return 0;
 }
 
-/* I2C Master api functions */
+/* I2C Controller api functions */
 static int i2c_kb106x_configure(const struct device *dev, uint32_t dev_config)
 {
 	const struct i2c_kb106x_config *config = dev->config;
@@ -324,7 +324,7 @@ static int i2c_kb106x_transfer(const struct device *dev, struct i2c_msg *msgs, u
 	return ret;
 }
 
-/* I2C Master driver registration */
+/* I2C Controller driver registration */
 static DEVICE_API(i2c, i2c_kb106x_api) = {
 	.configure = i2c_kb106x_configure,
 	.get_config = i2c_kb106x_get_config,

@@ -85,7 +85,7 @@ LOG_MODULE_REGISTER(i2c_npcx, CONFIG_I2C_LOG_LEVEL);
 /* Timeout for device should be available after reset (SMBus spec. unit:ms) */
 #define I2C_MAX_TIMEOUT 35
 
-/* Timeout for SCL held to low by slave device . (SMBus spec. unit:ms). */
+/* Timeout for SCL held to low by target device . (SMBus spec. unit:ms). */
 #define I2C_MIN_TIMEOUT 25
 
 /* Valid bit fields in SMBST register */
@@ -541,7 +541,7 @@ static void i2c_ctrl_target_isr(const struct device *dev, uint8_t status)
 		return;
 	}
 
-	/* A 'Slave Stop' Condition has been identified */
+	/* A 'Target Stop' Condition has been identified */
 	if (IS_BIT_SET(status, NPCX_SMBST_SLVSTP)) {
 		/* Clear SLVSTP Bit */
 		inst->SMBST = BIT(NPCX_SMBST_SLVSTP);
@@ -666,7 +666,7 @@ static void i2c_ctrl_isr(const struct device *dev)
 		/* Clear BER Bit */
 		inst->SMBST = BIT(NPCX_SMBST_BER);
 
-		/* Make sure slave doesn't hold bus by reading FIFO again */
+		/* Make sure target doesn't hold bus by reading FIFO again */
 		tmp = i2c_ctrl_data_read(dev);
 
 		LOG_ERR("Bus error occurred on i2c %s::%02x!", dev->name, data->port);

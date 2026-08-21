@@ -105,9 +105,9 @@ static void nxp_ii2c_async_iter(const struct device *dev);
 
 #endif
 
-static void nxp_ii2c_master_transfer_callback(I2C_Type *base,
-					      i2c_master_handle_t *handle,
-					      status_t status, void *userdata)
+static void nxp_ii2c_controller_transfer_callback(I2C_Type *base,
+						  i2c_master_handle_t *handle,
+						  status_t status, void *userdata)
 {
 
 	ARG_UNUSED(handle);
@@ -324,7 +324,7 @@ static int nxp_ii2c_init(const struct device *dev)
 	const struct nxp_ii2c_config *config = dev->config;
 	struct nxp_ii2c_data *data = dev->data;
 	uint32_t clock_freq, bitrate_cfg;
-	i2c_master_config_t master_config;
+	i2c_master_config_t controller_config;
 	int error;
 
 	DEVICE_MMIO_NAMED_MAP(dev, reg_base, K_MEM_CACHE_NONE | K_MEM_DIRECT_MAP);
@@ -349,10 +349,10 @@ static int nxp_ii2c_init(const struct device *dev)
 	k_sem_init(&data->lock, 1, 1);
 	k_sem_init(&data->device_sync_sem, 0, K_SEM_MAX_LIMIT);
 
-	I2C_MasterGetDefaultConfig(&master_config);
-	I2C_MasterInit(base, &master_config, clock_freq);
+	I2C_MasterGetDefaultConfig(&controller_config);
+	I2C_MasterInit(base, &controller_config, clock_freq);
 	I2C_MasterTransferCreateHandle(base, &data->handle,
-				       nxp_ii2c_master_transfer_callback, (void *)dev);
+				       nxp_ii2c_controller_transfer_callback, (void *)dev);
 
 	bitrate_cfg = i2c_map_dt_bitrate(config->bitrate);
 

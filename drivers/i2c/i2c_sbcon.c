@@ -100,12 +100,12 @@ static int i2c_sbcon_get_config(const struct device *dev, uint32_t *config)
 }
 
 static int i2c_sbcon_transfer(const struct device *dev, struct i2c_msg *msgs,
-				uint8_t num_msgs, uint16_t slave_address)
+				uint8_t num_msgs, uint16_t target_address)
 {
 	struct i2c_sbcon_context *context = dev->data;
 
 	return i2c_bitbang_transfer(&context->bitbang, msgs, num_msgs,
-							slave_address);
+							target_address);
 }
 
 static int i2c_sbcon_recover_bus(const struct device *dev)

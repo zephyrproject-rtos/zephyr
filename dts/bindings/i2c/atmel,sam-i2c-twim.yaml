@@ -7,8 +7,8 @@ description: |
   The Atmel Two-wire Master Interface (TWIM) interconnects components on a
   unique two-wire bus, made up of one clock line and one data line with speeds
   of up to 3.4 Mbit/s, based on a byte-oriented transfer format.  The TWIM is
-  always a bus master and can transfer sequential or single bytes.  Multiple
-  master capability is supported.  Arbitration of the bus is performed
+  always a bus controller and can transfer sequential or single bytes.  Multiple
+  controller capability is supported.  Arbitration of the bus is performed
   internally and relinquishes the bus automatically if the bus arbitration is
   lost.
 
@@ -191,7 +191,7 @@ properties:
     required: true
     description: |
       3-bit code to be prefixed with 0b00001 to form a unique
-      8-bit HS-mode master code (0000 1XXX)
+      8-bit HS-mode controller code (0000 1XXX)
     enum:
       - 0   # 000
       - 1   # 001

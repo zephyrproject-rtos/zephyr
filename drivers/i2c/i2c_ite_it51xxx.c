@@ -1956,7 +1956,7 @@ static int i2c_it51xxx_init(const struct device *dev)
 
 	/* Enable SMBus function */
 	sys_write8(SMB_SMD_TO_EN | SMB_SMH_EN, config->host_base + SMB_HOCTL2);
-	/* Kill SMBus host transaction. And enable the interrupt for the master interface */
+	/* Kill SMBus host transaction. And enable the interrupt for the controller interface */
 	sys_write8(SMB_KILL | SMB_INTREN, config->host_base + SMB_HOCTL);
 	sys_write8(SMB_INTREN, config->host_base + SMB_HOCTL);
 	/* W/C host status register */

@@ -35,7 +35,7 @@ static inline void i2c_ctrl_fifo_free_scl(const struct device *dev)
 	inst->SMBCTL4 |= BIT(NPCX_SMBCTL4_LVL_WE);
 	/*
 	 * Release SCL bus. Then it might be still driven by module itself or
-	 * slave device.
+	 * target device.
 	 */
 	inst->SMBCTL3 |= BIT(NPCX_SMBCTL3_SCL_LVL) | BIT(NPCX_SMBCTL3_SDA_LVL);
 	/* Disable writing to them */
@@ -62,7 +62,7 @@ static inline void i2c_ctrl_fifo_free_sda(const struct device *dev)
 	inst->SMBCTL4 |= BIT(NPCX_SMBCTL4_LVL_WE);
 	/*
 	 * Release SDA bus. Then it might be still driven by module itself or
-	 * slave device.
+	 * target device.
 	 */
 	inst->SMBCTL3 |= BIT(NPCX_SMBCTL3_SDA_LVL) | BIT(NPCX_SMBCTL3_SCL_LVL);
 	/* Disable writing to them */
@@ -155,7 +155,7 @@ void i2c_ctrl_handle_write_int_event(const struct device *dev)
 
 	/* START condition is issued */
 	if (data->oper_state == NPCX_I2C_WAIT_START || data->oper_state == NPCX_I2C_WAIT_RESTART) {
-		/* Write slave address with W bit */
+		/* Write target address with W bit */
 		i2c_ctrl_data_write(dev, ((data->addr << 1) & ~BIT(0)));
 		/* Start to proceed write process */
 		data->oper_state = NPCX_I2C_WRITE_DATA;
@@ -233,7 +233,7 @@ void i2c_ctrl_handle_read_int_event(const struct device *dev)
 		/* Setup threshold of rx FIFO before sending address byte */
 		i2c_ctrl_fifo_rx_setup_threshold_nack(dev, data->msg->len,
 						      (data->msg->flags & I2C_MSG_STOP) != 0);
-		/* Write slave address with R bit */
+		/* Write target address with R bit */
 		i2c_ctrl_data_write(dev, ((data->addr << 1) | BIT(0)));
 		/* Start to proceed read process */
 		data->oper_state = NPCX_I2C_READ_DATA;
