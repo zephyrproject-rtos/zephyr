@@ -56,7 +56,12 @@ Z_GENERIC_SECTION(.text._HandlerModeExit) void z_arm_exc_exit(void)
 {
 #ifdef CONFIG_PREEMPT_ENABLED
 	if (_kernel.ready_q.cache != _kernel.cpus->current) {
-		SCB->ICSR |= SCB_ICSR_PENDSVSET_Msk;
+		/* PENDSVSET is write-one-to-set and writing zero to the
+		 * other ICSR bits has no effect, so a plain store is
+		 * sufficient (and avoids a read-modify-write that could
+		 * write back stale state bits).
+		 */
+		SCB->ICSR = SCB_ICSR_PENDSVSET_Msk;
 	}
 #endif /* CONFIG_PREEMPT_ENABLED */
 
