@@ -11,6 +11,9 @@
 
 #include "vc.h"
 
+#define PCIE_VC_NEGOTIATION_RETRIES 100
+#define PCIE_VC_NEGOTIATION_DELAY_MS 10
+
 uint32_t pcie_vc_cap_lookup(pcie_bdf_t bdf, struct pcie_vc_regs *regs)
 {
 	uint32_t base;
@@ -56,12 +59,11 @@ void pcie_vc_load_resources_regs(pcie_bdf_t bdf,
 
 static int get_vc_registers(pcie_bdf_t bdf,
 			    struct pcie_vc_regs *regs,
-			    struct pcie_vc_resource_regs *res_regs)
+			    struct pcie_vc_resource_regs *res_regs,
+			    uint32_t *base)
 {
-	uint32_t base;
-
-	base = pcie_vc_cap_lookup(bdf, regs);
-	if (base == 0) {
+	*base = pcie_vc_cap_lookup(bdf, regs);
+	if (*base == 0) {
 		return -ENOTSUP;
 	}
 
@@ -70,10 +72,27 @@ static int get_vc_registers(pcie_bdf_t bdf,
 		return -ENOTSUP;
 	}
 
-	pcie_vc_load_resources_regs(bdf, base, res_regs,
-			       regs->cap_reg_1.vc_count + 1);
+	pcie_vc_load_resources_regs(bdf, *base, res_regs,
+				    regs->cap_reg_1.vc_count + 1);
 
 	return 0;
+}
+
+static int wait_for_vc_negotiation(pcie_bdf_t bdf, uint32_t base, int idx)
+{
+	struct pcie_vc_resource_regs regs;
+
+	for (int retry = 0; retry < PCIE_VC_NEGOTIATION_RETRIES; retry++) {
+		regs.status_reg.raw =
+			pcie_conf_read(bdf, base + PCIE_VC_RES_STATUS_REG_OFFSET(idx));
+		if (regs.status_reg.vc_negocation_pending == 0) {
+			return 0;
+		}
+
+		k_msleep(PCIE_VC_NEGOTIATION_DELAY_MS);
+	}
+
+	return -ETIMEDOUT;
 }
 
 
@@ -81,22 +100,31 @@ int pcie_vc_enable(pcie_bdf_t bdf)
 {
 	struct pcie_vc_regs regs;
 	struct pcie_vc_resource_regs res_regs[PCIE_VC_MAX_COUNT];
+	uint32_t base;
 	int idx;
+	int ret;
 
-	if (get_vc_registers(bdf, &regs, res_regs) != 0) {
+	if (get_vc_registers(bdf, &regs, res_regs, &base) != 0) {
 		return -ENOTSUP;
 	}
 
-	/* We do not touch VC0: it is always on */
+	/* Check all extended VCs before changing hardware to avoid a partial update. */
 	for (idx = 1; idx < regs.cap_reg_1.vc_count + 1; idx++) {
-		if (idx > 0 && res_regs[idx].ctrl_reg.vc_enable == 1) {
-			/*
-			 * VC has not been disabled properly, if at all?
-			 */
+		if (res_regs[idx].ctrl_reg.vc_enable == 1) {
 			return -EALREADY;
 		}
+	}
 
+	/* We do not touch VC0: it is always on. */
+	for (idx = 1; idx < regs.cap_reg_1.vc_count + 1; idx++) {
 		res_regs[idx].ctrl_reg.vc_enable = 1;
+		pcie_conf_write(bdf, base + PCIE_VC_RES_CTRL_REG_OFFSET(idx),
+				res_regs[idx].ctrl_reg.raw);
+
+		ret = wait_for_vc_negotiation(bdf, base, idx);
+		if (ret != 0) {
+			return ret;
+		}
 	}
 
 	return 0;
@@ -106,20 +134,24 @@ int pcie_vc_disable(pcie_bdf_t bdf)
 {
 	struct pcie_vc_regs regs;
 	struct pcie_vc_resource_regs res_regs[PCIE_VC_MAX_COUNT];
+	uint32_t base;
 	int idx;
+	int ret;
 
-	if (get_vc_registers(bdf, &regs, res_regs) != 0) {
+	if (get_vc_registers(bdf, &regs, res_regs, &base) != 0) {
 		return -ENOTSUP;
 	}
 
-	/* We do not touch VC0: it is always on */
+	/* We do not touch VC0: it is always on. */
 	for (idx = 1; idx < regs.cap_reg_1.vc_count + 1; idx++) {
-		/* Let's wait for the pending negotiation to end */
-		while (res_regs[idx].status_reg.vc_negocation_pending == 1) {
-			k_msleep(10);
-		}
-
 		res_regs[idx].ctrl_reg.vc_enable = 0;
+		pcie_conf_write(bdf, base + PCIE_VC_RES_CTRL_REG_OFFSET(idx),
+				res_regs[idx].ctrl_reg.raw);
+
+		ret = wait_for_vc_negotiation(bdf, base, idx);
+		if (ret != 0) {
+			return ret;
+		}
 	}
 
 	return 0;
@@ -129,15 +161,20 @@ int pcie_vc_map_tc(pcie_bdf_t bdf, struct pcie_vctc_map *map)
 {
 	struct pcie_vc_regs regs;
 	struct pcie_vc_resource_regs res_regs[PCIE_VC_MAX_COUNT];
+	uint32_t base;
 	int idx;
 	uint8_t tc_mapped = 0;
 
-	if (get_vc_registers(bdf, &regs, res_regs) != 0) {
+	if (map == NULL) {
+		return -EINVAL;
+	}
+
+	if (get_vc_registers(bdf, &regs, res_regs, &base) != 0) {
 		return -ENOTSUP;
 	}
 
-	/* Map must relate to the actual VC count */
-	if (regs.cap_reg_1.vc_count != map->vc_count) {
+	/* EVCC excludes the default VC0, while vc_count includes it. */
+	if ((regs.cap_reg_1.vc_count + 1) != map->vc_count) {
 		return -EINVAL;
 	}
 
@@ -156,7 +193,7 @@ int pcie_vc_map_tc(pcie_bdf_t bdf, struct pcie_vctc_map *map)
 		tc_mapped |= map->vc_tc[idx];
 	}
 
-	for (idx = 0; idx < regs.cap_reg_1.vc_count + 1; idx++) {
+	for (idx = 0; idx < map->vc_count; idx++) {
 		/* Let's just set the VC ID to related index for now */
 		if (idx > 0) {
 			res_regs[idx].ctrl_reg.vc_id = idx;
@@ -164,8 +201,10 @@ int pcie_vc_map_tc(pcie_bdf_t bdf, struct pcie_vctc_map *map)
 
 		/* Currently, only HW round robin is used */
 		res_regs[idx].ctrl_reg.pa_select = PCIE_VC_PA_RR;
-
 		res_regs[idx].ctrl_reg.tc_vc_map = map->vc_tc[idx];
+
+		pcie_conf_write(bdf, base + PCIE_VC_RES_CTRL_REG_OFFSET(idx),
+				res_regs[idx].ctrl_reg.raw);
 	}
 
 	return 0;
