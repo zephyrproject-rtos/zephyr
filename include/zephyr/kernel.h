@@ -5854,7 +5854,6 @@ struct k_pipe {
  */
 	size_t waiting;
 	struct ring_buf buf;
-	struct k_spinlock lock;
 	_wait_q_t data;
 	_wait_q_t space;
 	uint8_t flags;

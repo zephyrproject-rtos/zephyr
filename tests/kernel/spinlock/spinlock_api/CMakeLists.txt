@@ -4,6 +4,10 @@ cmake_minimum_required(VERSION 3.28.0)
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(spinlock_api)
 
-target_sources(app PRIVATE src/main.c)
-target_sources(app PRIVATE src/spinlock_error_case.c)
-target_sources(app PRIVATE src/spinlock_fairness.c)
+target_sources(app PRIVATE src/spinlock_pool.c)
+
+if(CONFIG_SMP)
+  target_sources(app PRIVATE src/main.c)
+  target_sources(app PRIVATE src/spinlock_error_case.c)
+  target_sources(app PRIVATE src/spinlock_fairness.c)
+endif()
