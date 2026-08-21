@@ -1,0 +1,40 @@
+# Copyright (c) 2024 Maurer Systems GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Binding for a generic OpenAMP VirtIO device.
+
+  This node represents a VirtIO device backed by OpenAMP. It references
+  one or more vrings (virtqueues) used for communication between
+  processors.
+
+compatible: "openamp,virtio-device"
+
+include: base.yaml
+
+properties:
+  device-id:
+    type: int
+    description: |
+      VirtIO device identifier as defined by the VirtIO specification.
+
+  vrings:
+    type: phandle-array
+    required: true
+    description: |
+      Phandle array referencing the vring nodes associated with this
+      VirtIO device.
+
+  vring-names:
+    type: string-array
+    required: true
+    description: |
+      Names corresponding to each entry in the "vrings" property.
+      These names identify the role of each vring.
+
+  "#vring-cells":
+    type: int
+    const: 0
+    description: |
+      Number of cells in a vring specifier. Must be 0 since vrings
+      do not require additional specifier data.
