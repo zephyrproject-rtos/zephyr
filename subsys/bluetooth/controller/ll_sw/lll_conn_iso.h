@@ -32,7 +32,7 @@ struct lll_conn_iso_stream {
 	uint16_t handle;            /* CIS handle */
 
 	/* Connection parameters */
-	uint8_t  access_addr[4];    /* Access address */
+	uint8_t  access_addr[PDU_ACCESS_ADDR_SIZE]; /* Access address */
 	uint32_t offset;            /* Offset of CIS from start of CIG in us */
 	uint32_t sub_interval;      /* Interval between subevents in us */
 	uint8_t  nse:5;             /* Number of subevents */
