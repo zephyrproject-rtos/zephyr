@@ -1,0 +1,18 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Board DTS leaves ADC and VREFINT disabled. Enable both so this Nucleo
+ * (local hardware) can build and run the test. Clock settings match
+ * nucleo_g474re; VREFINT is an internal channel so no pinctrl is required.
+ */
+
+&adc1 {
+	st,adc-clock-source = "SYNC";
+	st,adc-prescaler = <4>;
+	status = "okay";
+};
+
+&vref {
+	status = "okay";
+};

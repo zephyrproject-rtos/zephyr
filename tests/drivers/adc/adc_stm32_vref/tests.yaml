@@ -1,0 +1,25 @@
+common:
+  tags:
+    - adc
+    - drivers
+    - stm32
+  platform_allow:
+    - nucleo_f091rc
+    - stm32f3_disco
+    - nucleo_f429zi
+    - nucleo_g071rb
+    - nucleo_g474re
+    - nucleo_h753zi
+    - disco_l475_iot1
+    - nucleo_g431kb
+    - nucleo_l476rg
+  integration_platforms:
+    - nucleo_l476rg
+  filter: dt_compat_enabled("st,stm32-vref")
+tests:
+  drivers.adc.stm32.vrefint:
+    extra_configs:
+      - CONFIG_ADC_STM32_VREFINT_CALIBRATE=y
+  drivers.adc.stm32.vrefint.off:
+    extra_configs:
+      - CONFIG_ADC_STM32_VREFINT_CALIBRATE=n
