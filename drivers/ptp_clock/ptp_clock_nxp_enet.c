@@ -144,6 +144,42 @@ static int ptp_clock_nxp_enet_rate_adjust(const struct device *dev,
 	return 0;
 }
 
+static int ptp_clock_nxp_enet_get_caps(const struct device *dev, struct ptp_clock_caps *caps)
+{
+	const struct ptp_clock_nxp_enet_config *config = dev->config;
+	uint32_t enet_ref_pll_rate;
+	uint32_t hw_inc;
+	int64_t rate_limit_ppb;
+	int ret;
+
+	if (caps == NULL) {
+		return -EINVAL;
+	}
+
+	ret = clock_control_get_rate(config->clock_dev, config->clock_subsys, &enet_ref_pll_rate);
+	if (ret < 0) {
+		return ret;
+	}
+
+	hw_inc = NSEC_PER_SEC / enet_ref_pll_rate;
+	if (hw_inc == 0U) {
+		return -ERANGE;
+	}
+
+	rate_limit_ppb = (int64_t)NSEC_PER_SEC / (2 * (int64_t)hw_inc);
+
+	*caps = (struct ptp_clock_caps){
+		.flags = PTP_CLOCK_CAP_READ | PTP_CLOCK_CAP_SET | PTP_CLOCK_CAP_ADJUST |
+			 PTP_CLOCK_CAP_RATE_ADJUST,
+		.resolution_ns = hw_inc,
+		.max_adjust_ns = NSEC_PER_SEC - 1,
+		.min_rate_ppb = -(int32_t)MIN(rate_limit_ppb, (int64_t)INT32_MAX),
+		.max_rate_ppb = (int32_t)MIN(rate_limit_ppb, (int64_t)INT32_MAX),
+	};
+
+	return 0;
+}
+
 void nxp_enet_ptp_clock_callback(const struct device *dev,
 			enum nxp_enet_callback_reason event,
 			void *cb_data)
@@ -228,6 +264,7 @@ static DEVICE_API(ptp_clock, ptp_clock_nxp_enet_api) = {
 	.get = ptp_clock_nxp_enet_get,
 	.adjust = ptp_clock_nxp_enet_adjust,
 	.rate_adjust = ptp_clock_nxp_enet_rate_adjust,
+	.get_caps = ptp_clock_nxp_enet_get_caps,
 };
 
 #define PTP_CLOCK_NXP_ENET_INIT(n)						\

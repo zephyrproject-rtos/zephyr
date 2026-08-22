@@ -23,6 +23,7 @@ LOG_MODULE_REGISTER(dwmac_ptp_clock, CONFIG_ETHERNET_LOG_LEVEL);
 
 struct dwmac_ptp_data {
 	uint32_t default_addend;
+	uint32_t resolution_ns;
 };
 
 static void dwmac_ptp_wait_for_clear(mm_reg_t base, uint32_t reg, uint32_t mask)
@@ -131,6 +132,32 @@ static int dwmac_ptp_rate_adjust(const struct device *dev, double ratio)
 	return 0;
 }
 
+static int dwmac_ptp_get_caps(const struct device *dev, struct ptp_clock_caps *caps)
+{
+	const struct dwmac_ptp_data *data = dev->data;
+	double max_rate_ppb = INT32_MAX;
+
+	if (caps == NULL) {
+		return -EINVAL;
+	}
+
+	if (data->default_addend > 0U) {
+		max_rate_ppb =
+			(((double)UINT32_MAX / (double)data->default_addend) - 1.0) * NSEC_PER_SEC;
+	}
+
+	*caps = (struct ptp_clock_caps){
+		.flags = PTP_CLOCK_CAP_READ | PTP_CLOCK_CAP_SET | PTP_CLOCK_CAP_ADJUST |
+			 PTP_CLOCK_CAP_RATE_ADJUST,
+		.resolution_ns = data->resolution_ns,
+		.max_adjust_ns = NSEC_PER_SEC - 1,
+		.min_rate_ppb = -999999999,
+		.max_rate_ppb = (int32_t)MIN(max_rate_ppb, (double)INT32_MAX),
+	};
+
+	return 0;
+}
+
 static int dwmac_ptp_init(const struct device *dev)
 {
 	const struct device *eth_dev = dev->config;
@@ -162,6 +189,7 @@ static int dwmac_ptp_init(const struct device *dev)
 	addend_val = temp / ptp_clk_rate;
 
 	data->default_addend = addend_val;
+	data->resolution_ns = ss_incr_ns;
 
 	sys_write32(addend_val, base + DWMAC_PTP_ADDEND_REG);
 	sys_write32(sys_read32(base + DWMAC_PTP_CTRL_REG) | DWMAC_PTP_CTRL_ADDEND_UPDATE,
@@ -211,6 +239,7 @@ static DEVICE_API(ptp_clock, dwmac_ptp_api) = {
 	.get = dwmac_ptp_get,
 	.adjust = dwmac_ptp_adjust,
 	.rate_adjust = dwmac_ptp_rate_adjust,
+	.get_caps = dwmac_ptp_get_caps,
 };
 
 const struct device *dwmac_get_ptp_clock(const struct device *dev, struct net_if *iface __unused)

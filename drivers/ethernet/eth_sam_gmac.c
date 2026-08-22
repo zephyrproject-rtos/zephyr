@@ -2244,11 +2244,31 @@ static int ptp_clock_sam_gmac_rate_adjust(const struct device *dev,
 	return -ENOTSUP;
 }
 
+static int ptp_clock_sam_gmac_get_caps(const struct device *dev, struct ptp_clock_caps *caps)
+{
+	ARG_UNUSED(dev);
+
+	if (caps == NULL) {
+		return -EINVAL;
+	}
+
+	*caps = (struct ptp_clock_caps){
+		.flags = PTP_CLOCK_CAP_READ | PTP_CLOCK_CAP_SET | PTP_CLOCK_CAP_ADJUST,
+		.resolution_ns = 1,
+		.max_adjust_ns = NSEC_PER_SEC - 1,
+		.min_rate_ppb = 0,
+		.max_rate_ppb = 0,
+	};
+
+	return 0;
+}
+
 static DEVICE_API(ptp_clock, ptp_api) = {
 	.set = ptp_clock_sam_gmac_set,
 	.get = ptp_clock_sam_gmac_get,
 	.adjust = ptp_clock_sam_gmac_adjust,
 	.rate_adjust = ptp_clock_sam_gmac_rate_adjust,
+	.get_caps = ptp_clock_sam_gmac_get_caps,
 };
 
 #define SAM_GMAC_PTP_CLOCK_DEFN(n)							\

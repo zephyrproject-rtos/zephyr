@@ -92,8 +92,10 @@ LOG_MODULE_REGISTER(eth_xmc4xxx);
 #define ETH_LINK_DUPLEX_FULL 1
 
 #define ETH_PTP_CLOCK_FREQUENCY       50000000
-#define ETH_PTP_RATE_ADJUST_RATIO_MIN 0.9
-#define ETH_PTP_RATE_ADJUST_RATIO_MAX 1.1
+#define ETH_PTP_RATE_ADJUST_PPB_MIN   (-100000000)
+#define ETH_PTP_RATE_ADJUST_PPB_MAX   100000000
+#define ETH_PTP_RATE_ADJUST_RATIO_MIN (1.0 + ((double)ETH_PTP_RATE_ADJUST_PPB_MIN / NSEC_PER_SEC))
+#define ETH_PTP_RATE_ADJUST_RATIO_MAX (1.0 + ((double)ETH_PTP_RATE_ADJUST_PPB_MAX / NSEC_PER_SEC))
 
 struct eth_xmc4xxx_data {
 	struct net_if *iface;
@@ -1342,11 +1344,32 @@ static int eth_xmc4xxx_ptp_clock_rate_adjust(const struct device *dev, double ra
 	return 0;
 }
 
+static int eth_xmc4xxx_ptp_clock_get_caps(const struct device *dev, struct ptp_clock_caps *caps)
+{
+	ARG_UNUSED(dev);
+
+	if (caps == NULL) {
+		return -EINVAL;
+	}
+
+	*caps = (struct ptp_clock_caps){
+		.flags = PTP_CLOCK_CAP_READ | PTP_CLOCK_CAP_SET | PTP_CLOCK_CAP_ADJUST |
+			 PTP_CLOCK_CAP_RATE_ADJUST,
+		.resolution_ns = NSEC_PER_SEC / ETH_PTP_CLOCK_FREQUENCY,
+		.max_adjust_ns = NSEC_PER_SEC - 1,
+		.min_rate_ppb = ETH_PTP_RATE_ADJUST_PPB_MIN,
+		.max_rate_ppb = ETH_PTP_RATE_ADJUST_PPB_MAX,
+	};
+
+	return 0;
+}
+
 static DEVICE_API(ptp_clock, ptp_api_xmc4xxx) = {
 	.set = eth_xmc4xxx_ptp_clock_set,
 	.get = eth_xmc4xxx_ptp_clock_get,
 	.adjust = eth_xmc4xxx_ptp_clock_adjust,
 	.rate_adjust = eth_xmc4xxx_ptp_clock_rate_adjust,
+	.get_caps = eth_xmc4xxx_ptp_clock_get_caps,
 };
 
 DEVICE_DEFINE(xmc4xxx_ptp_clock_0, PTP_CLOCK_NAME, NULL,  NULL,

@@ -88,7 +88,7 @@ static int cmd_ptp_clock_set(const struct shell *sh, size_t argc, char **argv)
 	return 0;
 }
 
-/* ptp_clock adj <device> <seconds> */
+/* ptp_clock adj <device> <nanoseconds> */
 static int cmd_ptp_clock_adj(const struct shell *sh, size_t argc, char **argv)
 {
 	const struct device *dev;
@@ -134,6 +134,34 @@ static int cmd_ptp_clock_freq(const struct shell *sh, size_t argc, char **argv)
 	if (ret < 0) {
 		return ret;
 	}
+
+	return 0;
+}
+
+/* ptp_clock caps <device> */
+static int cmd_ptp_clock_caps(const struct shell *sh, size_t argc, char **argv)
+{
+	struct ptp_clock_caps caps;
+	const struct device *dev;
+	int ret;
+
+	ret = parse_device_arg(sh, argv, &dev);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = ptp_clock_get_caps(dev, &caps);
+	if (ret < 0) {
+		return ret;
+	}
+
+	shell_print(sh, "flags:%s%s%s%s", caps.flags & PTP_CLOCK_CAP_READ ? " read" : "",
+		    caps.flags & PTP_CLOCK_CAP_SET ? " set" : "",
+		    caps.flags & PTP_CLOCK_CAP_ADJUST ? " adjust" : "",
+		    caps.flags & PTP_CLOCK_CAP_RATE_ADJUST ? " rate-adjust" : "");
+	shell_print(sh, "resolution: %u ns", caps.resolution_ns);
+	shell_print(sh, "max phase adjust: %d ns", caps.max_adjust_ns);
+	shell_print(sh, "rate range: %d..%d ppb", caps.min_rate_ppb, caps.max_rate_ppb);
 
 	return 0;
 }
@@ -205,13 +233,13 @@ static int cmd_ptp_clock_selftest(const struct shell *sh, size_t argc, char **ar
 	}
 	shell_print(sh, "  result: read back time %"PRIu64".%09u", tm.second, tm.nanosecond);
 
-	/* set 'adj' seconds and read back time to verify time adjustment */
+	/* set 'adj' nanoseconds and read back time to verify time adjustment */
 	ret = ptp_clock_adjust(dev, adj);
 	if (ret < 0) {
 		shell_print(sh, "failed to adjtime");
 		return ret;
 	}
-	shell_print(sh, "test3: adjust time %d seconds", adj);
+	shell_print(sh, "test3: adjust time %d nanoseconds", adj);
 
 	ret = ptp_clock_get(dev, &tm);
 	if (ret < 0) {
@@ -223,33 +251,32 @@ static int cmd_ptp_clock_selftest(const struct shell *sh, size_t argc, char **ar
 	return 0;
 }
 
-SHELL_STATIC_SUBCMD_SET_CREATE(sub_ptp_clock_cmds,
-	SHELL_CMD_ARG(get, &dsub_device_name,
-		      SHELL_HELP("Get current time", "<device>"),
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	sub_ptp_clock_cmds,
+	SHELL_CMD_ARG(get, &dsub_device_name, SHELL_HELP("Get current time", "<device>"),
 		      cmd_ptp_clock_get, 2, 0),
-	SHELL_CMD_ARG(set, &dsub_device_name,
-		      SHELL_HELP("Set time", "<device> <seconds>"),
+	SHELL_CMD_ARG(set, &dsub_device_name, SHELL_HELP("Set time", "<device> <seconds>"),
 		      cmd_ptp_clock_set, 3, 0),
-	SHELL_CMD_ARG(adj, &dsub_device_name,
-		      SHELL_HELP("Adjust time", "<device> <seconds>"),
+	SHELL_CMD_ARG(adj, &dsub_device_name, SHELL_HELP("Adjust time", "<device> <nanoseconds>"),
 		      cmd_ptp_clock_adj, 3, 0),
-	SHELL_CMD_ARG(freq, &dsub_device_name,
-		      SHELL_HELP("Adjust frequency", "<device> <ppb>"),
+	SHELL_CMD_ARG(freq, &dsub_device_name, SHELL_HELP("Adjust frequency", "<device> <ppb>"),
 		      cmd_ptp_clock_freq, 3, 0),
+	SHELL_CMD_ARG(caps, &dsub_device_name, SHELL_HELP("Show clock capabilities", "<device>"),
+		      cmd_ptp_clock_caps, 2, 0),
 	SHELL_CMD_ARG(selftest, &dsub_device_name,
 		      SHELL_HELP("Run self-test sequence",
-				 "<device> <time> <freq> <delay> <adj>\n"
+				 "<device> <time-sec> <freq-ppb> <delay-sec> <adj-nsec>\n"
 				 "The selftest will do the following steps:\n"
 				 "1. set 'time' with seconds and read back to\n"
 				 "   verify clock setting/getting.\n"
 				 "2. set 'freq' with ppb value, sleep 'delay' seconds,\n"
 				 "   and read back time to verify rate adjustment.\n"
-				 "3. set 'adj' seconds and read back time to\n"
+				 "3. set 'adj' nanoseconds and read back time to\n"
 				 "   verify time adjustment.\n"
 				 "Example:\n"
 				 "   ptp_clock selftest ptp_clock 1000 100000000 10 10"),
 		      cmd_ptp_clock_selftest, 6, 0),
-	SHELL_SUBCMD_SET_END     /* Array terminated. */
+	SHELL_SUBCMD_SET_END /* Array terminated. */
 );
 
 SHELL_CMD_REGISTER(ptp_clock, &sub_ptp_clock_cmds, "PTP clock commands", NULL);

@@ -218,6 +218,22 @@ static int my_ptp_clock_rate_adjust(const struct device *dev, double ratio)
 	return 0;
 }
 
+static int my_ptp_clock_get_caps(const struct device *dev, struct ptp_clock_caps *caps)
+{
+	ARG_UNUSED(dev);
+
+	*caps = (struct ptp_clock_caps){
+		.flags = PTP_CLOCK_CAP_READ | PTP_CLOCK_CAP_SET | PTP_CLOCK_CAP_ADJUST |
+			 PTP_CLOCK_CAP_RATE_ADJUST,
+		.resolution_ns = 8,
+		.max_adjust_ns = 1000,
+		.min_rate_ppb = -100,
+		.max_rate_ppb = 200,
+	};
+
+	return 0;
+}
+
 static struct ptp_context ptp_test_1_context;
 static struct ptp_context ptp_test_2_context;
 
@@ -226,6 +242,7 @@ static DEVICE_API(ptp_clock, api) = {
 	.get = my_ptp_clock_get,
 	.adjust = my_ptp_clock_adjust,
 	.rate_adjust = my_ptp_clock_rate_adjust,
+	.get_caps = my_ptp_clock_get_caps,
 };
 
 static int ptp_test_1_init(const struct device *port)
@@ -430,6 +447,24 @@ static void test_ptp_clock_interfaces(void)
 			 ptp_clocks[0]);
 }
 
+static void test_ptp_clock_caps(void)
+{
+	struct ptp_clock_caps caps;
+	const struct device *clk;
+	int idx = ptp_interface[0];
+
+	clk = net_eth_get_ptp_clock(eth_interfaces[idx]);
+	zassert_not_null(clk, "Clock not found for interface %p\n", eth_interfaces[idx]);
+
+	zassert_ok(ptp_clock_get_caps(clk, &caps));
+	zassert_equal(caps.flags, PTP_CLOCK_CAP_READ | PTP_CLOCK_CAP_SET | PTP_CLOCK_CAP_ADJUST |
+					  PTP_CLOCK_CAP_RATE_ADJUST);
+	zassert_equal(caps.resolution_ns, 8);
+	zassert_equal(caps.max_adjust_ns, 1000);
+	zassert_equal(caps.min_rate_ppb, -100);
+	zassert_equal(caps.max_rate_ppb, 200);
+}
+
 static void test_ptp_clock_iface(int idx)
 {
 	int rnd_value = sys_rand32_get();
@@ -574,6 +609,7 @@ ZTEST(ptp_clock_test_suite, test_ptp_clock)
 	test_check_interfaces();
 	test_address_setup();
 	test_ptp_clock_interfaces();
+	test_ptp_clock_caps();
 	test_ptp_clock_iface_1();
 	test_ptp_clock_iface_2();
 	test_ptp_clock_get_by_index();

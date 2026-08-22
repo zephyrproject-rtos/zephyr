@@ -198,6 +198,34 @@ error:
 	return ret;
 }
 
+static int ptp_clock_stm32_get_caps(const struct device *dev, struct ptp_clock_caps *caps)
+{
+	int64_t min_rate_ppb;
+	int64_t max_rate_ppb;
+
+	ARG_UNUSED(dev);
+
+	if (caps == NULL) {
+		return -EINVAL;
+	}
+
+	min_rate_ppb =
+		((int64_t)CONFIG_ETH_STM32_HAL_PTP_CLOCK_ADJ_MIN_PCT - 100) * (NSEC_PER_SEC / 100);
+	max_rate_ppb =
+		((int64_t)CONFIG_ETH_STM32_HAL_PTP_CLOCK_ADJ_MAX_PCT - 100) * (NSEC_PER_SEC / 100);
+
+	*caps = (struct ptp_clock_caps){
+		.flags = PTP_CLOCK_CAP_READ | PTP_CLOCK_CAP_SET | PTP_CLOCK_CAP_ADJUST |
+			 PTP_CLOCK_CAP_RATE_ADJUST,
+		.resolution_ns = NSEC_PER_SEC / CONFIG_ETH_STM32_HAL_PTP_CLOCK_SRC_HZ,
+		.max_adjust_ns = NSEC_PER_SEC - 1,
+		.min_rate_ppb = (int32_t)CLAMP(min_rate_ppb, INT32_MIN, INT32_MAX),
+		.max_rate_ppb = (int32_t)CLAMP(max_rate_ppb, INT32_MIN, INT32_MAX),
+	};
+
+	return 0;
+}
+
 static void eth_stm32_ptp_enable_timestamping(ETH_HandleTypeDef *heth)
 {
 	/* Mask the Timestamp Trigger interrupt and enable timestamping */
@@ -269,6 +297,7 @@ static DEVICE_API(ptp_clock, api) = {
 	.get = ptp_clock_stm32_get,
 	.adjust = ptp_clock_stm32_adjust,
 	.rate_adjust = ptp_clock_stm32_rate_adjust,
+	.get_caps = ptp_clock_stm32_get_caps,
 };
 
 BUILD_ASSERT(NSEC_PER_SEC % CONFIG_ETH_STM32_HAL_PTP_CLOCK_SRC_HZ == 0,
