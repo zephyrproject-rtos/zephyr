@@ -37,8 +37,7 @@
 #define INA219_MODE_OFF		0x0 /* Power off */
 
 /* Others */
-#define INA219_SIGN_BIT(x)	((x) >> 15) & 0x1
-#define INA219_V_BUS_MUL	0.004
+#define INA219_V_BUS_MUL	0.004    /* 4 mV */
 #define INA219_V_SHUNT_MUL	0.00001  /* 10 uV */
 #define INA219_SI_MUL		0.00001
 #define INA219_POWER_MUL	20
