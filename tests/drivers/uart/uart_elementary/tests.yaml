@@ -10,6 +10,7 @@ tests:
   drivers.uart.uart_elementary:
     filter: CONFIG_SERIAL_SUPPORT_INTERRUPT
     platform_allow:
+      - mimxrt2660_evk/mimxrt2663/cm85
       - nrf54h20dk/nrf54h20/cpuapp
       - nrf54h20dk/nrf54h20/cpuflpr
       - nrf54l15dk/nrf54l15/cpuapp
