@@ -65,6 +65,8 @@ LOG_MODULE_REGISTER(i3c_dw, CONFIG_I3C_DW_LOG_LEVEL);
 	((role) == HW_CAP_DEVICE_ROLE_SEC_MASTER || (role) == HW_CAP_DEVICE_ROLE_SLAVE)
 
 #define COMMAND_QUEUE_PORT         0xc
+/* A controller command takes two queue locations: cmd_hi then cmd_lo */
+#define COMMAND_QUEUE_DWORDS_PER_CMD 2
 #define COMMAND_PORT_TOC           BIT(30)
 #define COMMAND_PORT_READ_TRANSFER BIT(28)
 #define COMMAND_PORT_SDAP          BIT(27)
@@ -128,6 +130,10 @@ LOG_MODULE_REGISTER(i3c_dw, CONFIG_I3C_DW_LOG_LEVEL);
 #define QUEUE_THLD_CTRL_IBI_STS_MASK  GENMASK(31, 24)
 #define QUEUE_THLD_CTRL_RESP_BUF_MASK GENMASK(15, 8)
 #define QUEUE_THLD_CTRL_RESP_BUF(x)   (((x) - 1) << 8)
+
+#define QUEUE_THLD_CTRL_CMD_EMPTY_BUF_MASK GENMASK(7, 0)
+/* Empty locations required before CMD_QUEUE_READY is raised */
+#define QUEUE_THLD_CTRL_CMD_EMPTY_BUF(x)   ((x) & GENMASK(7, 0))
 
 #define QUEUE_THLD_CTRL_IBI_DATA_MASK    GENMASK(23, 16)
 #define QUEUE_THLD_CTRL_IBI_DATA(x)      (((x) << 16) & QUEUE_THLD_CTRL_IBI_DATA_MASK)
@@ -375,6 +381,16 @@ LOG_MODULE_REGISTER(i3c_dw, CONFIG_I3C_DW_LOG_LEVEL);
 #define DW_I3C_MAX_DEVS         32
 #define DW_I3C_MAX_CMD_BUF_SIZE 16
 
+/*
+ * TID is shared by the command and response descriptors. 0x0-0x7 are user-defined; the
+ * controller generates the rest itself, and only while it is acting as a target.
+ */
+#define DW_I3C_TID_USER_MAX   0x7
+#define DW_I3C_TID_MWR_STATUS 0x8 /* Master Write Data Status */
+#define DW_I3C_TID_DEFSLVS    0xf /* DEFSLVS Status */
+
+#define DW_I3C_MAX_CMDS (DW_I3C_TID_USER_MAX + 1)
+
 /* Snps I3C/I2C Device Private Data */
 struct dw_i3c_i2c_dev_data {
 	/* Device id within the retaining registers. This is set after bus initialization by the
@@ -396,6 +412,7 @@ struct dw_i3c_xfer {
 	int32_t ret;
 	uint32_t ncmds;
 	uint32_t nresp_seen;
+	uint32_t cmd_idx;
 	struct dw_i3c_cmd cmds[DW_I3C_MAX_CMD_BUF_SIZE];
 };
 
@@ -631,6 +648,57 @@ static void dw_i3c_deftgts_work_fn(struct k_work *work)
 }
 #endif /* CONFIG_I3C_CONTROLLER && CONFIG_I3C_TARGET */
 
+static void dw_i3c_intr_enable(const struct dw_i3c_config *config, uint32_t bits)
+{
+	uint32_t mask = sys_read32(config->regs + INTR_STATUS_EN) | bits;
+
+	sys_write32(mask, config->regs + INTR_STATUS_EN);
+	sys_write32(mask, config->regs + INTR_SIGNAL_EN);
+}
+
+static void dw_i3c_intr_disable(const struct dw_i3c_config *config, uint32_t bits)
+{
+	uint32_t mask = sys_read32(config->regs + INTR_STATUS_EN) & ~bits;
+
+	sys_write32(mask, config->regs + INTR_STATUS_EN);
+	sys_write32(mask, config->regs + INTR_SIGNAL_EN);
+}
+
+/**
+ * @brief Enqueue pending commands into the Command Queue as space allows.
+ *
+ * Keeping the queue fed avoids the "next command unavailable" SCL stall on
+ * repeated-start chains longer than the queue.
+ *
+ * @param dev Pointer to the I3C device structure.
+ *
+ * @retval true if every command has been enqueued.
+ * @retval false if commands remain.
+ */
+static bool dw_i3c_cmd_write_to_cmd_fifo(const struct device *dev)
+{
+	const struct dw_i3c_config *config = dev->config;
+	struct dw_i3c_data *data = dev->data;
+	struct dw_i3c_xfer *xfer = &data->xfer;
+	struct dw_i3c_cmd *cmd;
+	uint32_t nempty;
+
+	while (xfer->cmd_idx < xfer->ncmds) {
+		nempty = QUEUE_STATUS_LEVEL_CMD(sys_read32(config->regs + QUEUE_STATUS_LEVEL));
+		if (nempty < COMMAND_QUEUE_DWORDS_PER_CMD) {
+			/* Rest goes on CMD_QUEUE_READY */
+			break;
+		}
+
+		cmd = &xfer->cmds[xfer->cmd_idx];
+		sys_write32(cmd->cmd_hi, config->regs + COMMAND_QUEUE_PORT);
+		sys_write32(cmd->cmd_lo, config->regs + COMMAND_QUEUE_PORT);
+		xfer->cmd_idx++;
+	}
+
+	return xfer->cmd_idx == xfer->ncmds;
+}
+
 static void dw_i3c_reset(const struct dw_i3c_config *config, uint32_t mask)
 {
 	sys_write32(mask, config->regs + RESET_CTRL);
@@ -640,6 +708,8 @@ static void dw_i3c_reset(const struct dw_i3c_config *config, uint32_t mask)
 
 static void dw_i3c_reset_fifos_and_queues(const struct dw_i3c_config *config)
 {
+	/* A flushed queue asserts CMD_QUEUE_READY; stop the refill before it fires */
+	dw_i3c_intr_disable(config, INTR_CMD_QUEUE_READY_STAT);
 	dw_i3c_reset(config, RESET_CTRL_FIFO_QUEUE);
 	sys_write32(INTR_TRANSFER_ERR_STAT | INTR_TRANSFER_ABORT_STAT, config->regs + INTR_STATUS);
 	sys_write32(sys_read32(config->regs + DEVICE_CTRL) | DEV_CTRL_RESUME,
@@ -680,10 +750,12 @@ static void dw_i3c_process_response(const struct device *dev, uint32_t resp)
 	struct dw_i3c_cmd *cmd;
 	uint8_t tid = RESPONSE_PORT_TID(resp);
 
-	if (tid == 0xf) {
+	if (tid > DW_I3C_TID_USER_MAX) {
 #if defined(CONFIG_I3C_CONTROLLER) && defined(CONFIG_I3C_TARGET)
-		data->deftgts_count = RESPONSE_PORT_DATA_LEN(resp);
-		k_work_submit(&data->deftgts_work);
+		if (tid == DW_I3C_TID_DEFSLVS) {
+			data->deftgts_count = RESPONSE_PORT_DATA_LEN(resp);
+			k_work_submit(&data->deftgts_work);
+		}
 #endif
 		return;
 	}
@@ -814,6 +886,7 @@ static void start_xfer(const struct device *dev)
 
 	/* Cap at the FIFO depth; dw_i3c_end_xfer() re-arms for any remainder */
 	xfer->nresp_seen = 0;
+	xfer->cmd_idx = 0;
 	xfer->ret = 0;
 	thld_ctrl = sys_read32(config->regs + QUEUE_THLD_CTRL);
 	thld_ctrl &= ~QUEUE_THLD_CTRL_RESP_BUF_MASK;
@@ -821,13 +894,21 @@ static void start_xfer(const struct device *dev)
 	sys_write32(thld_ctrl, config->regs + QUEUE_THLD_CTRL);
 
 	/* Enqueue CMD */
-	for (i = 0; i < xfer->ncmds; i++) {
-		cmd = &xfer->cmds[i];
-		/* Only cmd_lo is used when it is a target */
-		if (dw_i3c_is_current_controller(dev)) {
-			sys_write32(cmd->cmd_hi, config->regs + COMMAND_QUEUE_PORT);
+	if (dw_i3c_is_current_controller(dev)) {
+		if (!dw_i3c_cmd_write_to_cmd_fifo(dev)) {
+			thld_ctrl = sys_read32(config->regs + QUEUE_THLD_CTRL);
+			thld_ctrl &= ~QUEUE_THLD_CTRL_CMD_EMPTY_BUF_MASK;
+			thld_ctrl |= QUEUE_THLD_CTRL_CMD_EMPTY_BUF(COMMAND_QUEUE_DWORDS_PER_CMD);
+			sys_write32(thld_ctrl, config->regs + QUEUE_THLD_CTRL);
+
+			dw_i3c_intr_enable(config, INTR_CMD_QUEUE_READY_STAT);
 		}
-		sys_write32(cmd->cmd_lo, config->regs + COMMAND_QUEUE_PORT);
+	} else {
+		/* Only cmd_lo is used when it is a target */
+		for (i = 0; i < xfer->ncmds; i++) {
+			cmd = &xfer->cmds[i];
+			sys_write32(cmd->cmd_lo, config->regs + COMMAND_QUEUE_PORT);
+		}
 	}
 }
 #ifdef CONFIG_I3C_CONTROLLER
@@ -906,7 +987,7 @@ static int dw_i3c_xfers(const struct device *dev, struct i3c_device_desc *target
 		return -EACCES;
 	}
 
-	if (num_msgs > data->cmdfifodepth) {
+	if (num_msgs > DW_I3C_MAX_CMDS) {
 		return -ENOTSUP;
 	}
 
@@ -1129,7 +1210,7 @@ static int dw_i3c_i2c_transfer(const struct device *dev, struct i3c_i2c_device_d
 		return -EACCES;
 	}
 
-	if (num_msgs > data->cmdfifodepth) {
+	if (num_msgs > DW_I3C_MAX_CMDS) {
 		return -ENOTSUP;
 	}
 
@@ -1690,6 +1771,16 @@ static int i3c_dw_irq(const struct device *dev)
 
 		if (status & INTR_TRANSFER_ERR_STAT) {
 			sys_write32(INTR_TRANSFER_ERR_STAT, config->regs + INTR_STATUS);
+		}
+	}
+
+	/*
+	 * CMD_QUEUE_READY tracks queue occupancy and cannot be cleared by writing the status
+	 * bit, so mask against the enable register to tell an armed refill from an idle queue.
+	 */
+	if (status & sys_read32(config->regs + INTR_STATUS_EN) & INTR_CMD_QUEUE_READY_STAT) {
+		if (dw_i3c_cmd_write_to_cmd_fifo(dev)) {
+			dw_i3c_intr_disable(config, INTR_CMD_QUEUE_READY_STAT);
 		}
 	}
 #ifdef CONFIG_I3C_CONTROLLER
