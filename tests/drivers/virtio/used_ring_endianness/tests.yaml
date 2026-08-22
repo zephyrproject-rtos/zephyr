@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.virtio.used_ring_endianness:
+    platform_allow:
+      - qemu_leon3
+    tags:
+      - drivers
+      - virtio
