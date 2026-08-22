@@ -5384,13 +5384,21 @@ static void tx_processor(struct k_work *item)
 {
 	LOG_DBG("TX process start");
 
-	/* Historically, the code in process_pending_cmd() and
-	 * bt_conn_tx_processor() has been invoked only from
-	 * cooperative threads. For now, we assume their
-	 * implementations rely on this and ensure the current
-	 * thread is cooperative.
+	/* The whole TX processing pass (command and data processors) runs
+	 * under the host lock, which replaces the historical reliance on
+	 * cooperative scheduling (k_sched_lock). This serializes it against
+	 * bt_conn_data_ready()/l2cap raise/cancel_data_ready() and the other
+	 * host-lock sections.
+	 *
+	 * Ordering rule: no code may wait, while holding the host lock,
+	 * on anything produced by the HCI prio path (ncmd_sem, command
+	 * completion). All resource acquisitions on this path are K_NO_WAIT.
+	 * Note that the HCI driver's send() is called with the lock held;
+	 * drivers that deliver events synchronously from send() (e.g. the
+	 * native controller) re-enter bt_recv() on this thread, which is
+	 * fine since the lock is recursive.
 	 */
-	k_sched_lock();
+	bt_dev_lock();
 
 	if (process_pending_cmd(K_NO_WAIT)) {
 		/* If we processed a command, let the scheduler run before
@@ -5406,7 +5414,7 @@ static void tx_processor(struct k_work *item)
 	}
 
 exit:
-	k_sched_unlock();
+	bt_dev_unlock();
 }
 
 /**

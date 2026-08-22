@@ -32,6 +32,8 @@ DEFINE_FAKE_VALUE_FUNC(void *, k_heap_alloc, struct k_heap *, size_t, k_timeout_
 DEFINE_FAKE_VOID_FUNC(k_heap_free, struct k_heap *, void *);
 DEFINE_FAKE_VOID_FUNC(k_sched_lock);
 DEFINE_FAKE_VOID_FUNC(k_sched_unlock);
+DEFINE_FAKE_VALUE_FUNC(int, k_mutex_lock, struct k_mutex *, k_timeout_t);
+DEFINE_FAKE_VALUE_FUNC(int, k_mutex_unlock, struct k_mutex *);
 DEFINE_FAKE_VALUE_FUNC(void *, k_heap_aligned_alloc, struct k_heap *,
 			size_t, size_t, k_timeout_t);
 
