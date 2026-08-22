@@ -50,6 +50,12 @@
 	pinctrl-names = "default";
 };
 
+/* Alternate UART; left disabled until an overlay enables it. */
+&lpuart2 {
+	pinctrl-0 = <&pinmux_lpuart2>;
+	pinctrl-names = "default";
+};
+
 /*
  * U24 Winbond W25H512NWEAM: 512 Mbit (64 MB) serial NOR, 1.8 V, quad.
  * Boot ROM configures the pins and brings XSPI0 up for XIP from the flash
