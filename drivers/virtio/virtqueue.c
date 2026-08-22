@@ -7,7 +7,6 @@
 #include <zephyr/drivers/virtio/virtqueue.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/sys/__assert.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/barrier.h>
 #include <zephyr/sys/util.h>
@@ -34,10 +33,13 @@ int virtq_create(struct virtq *v, size_t size)
 	/*
 	 * A size of 0 denotes a queue the driver enumerates but does not use
 	 * (e.g. the virtiofs high priority queue). Such a queue is set up empty
-	 * and is never operated on, so only a non-zero size must be a power of 2.
+	 * and is never operated on. Other split virtqueue sizes must be powers
+	 * of two no greater than 2^15.
 	 */
-	__ASSERT(size == 0 || IS_POWER_OF_TWO(size), "size of virtqueue must be a power of 2");
-	__ASSERT(size <= KB(32), "size of virtqueue must be at most 32KB");
+	if (size > BIT(15) || (size != 0U && !IS_POWER_OF_TWO(size))) {
+		LOG_ERR("invalid virtqueue size %zu", size);
+		return -EINVAL;
+	}
 	/*
 	 * For sizes and alignments see table in spec 2.7. We are supporting only modern virtio, so
 	 * we don't have to adhere to additional constraints from spec 2.7.2
