@@ -32,6 +32,7 @@ tests:
       - ek_ra8m2/r7ka8m2jflcac/cm85
       - frdm_mcxn236
       - frdm_mcxn947/mcxn947/cpu0
+      - frdm_mcxw72
       - mcxw23_evk
       - frdm_mcxw23
       - frdm_mcxa153
