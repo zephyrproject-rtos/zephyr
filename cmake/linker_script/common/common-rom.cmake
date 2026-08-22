@@ -140,6 +140,11 @@ if(CONFIG_SETTINGS)
   zephyr_iterable_section(NAME settings_handler_static KVMA RAM_REGION GROUP RODATA_REGION)
 endif()
 
+if(CONFIG_SAFETY_TEST)
+  zephyr_iterable_section(NAME safety_test KVMA RAM_REGION GROUP RODATA_REGION)
+  zephyr_iterable_section(NAME safety_test_failure_hook KVMA RAM_REGION GROUP RODATA_REGION)
+endif()
+
 if(CONFIG_SENSING)
   zephyr_iterable_section(NAME sensing_sensor_info KVMA RAM_REGION GROUP RODATA_REGION)
 endif()
