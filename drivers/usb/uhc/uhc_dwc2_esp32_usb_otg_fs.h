@@ -24,14 +24,12 @@
 struct esp32_usb_otg_config {
 	const struct device *clock_dev;
 	const clock_control_subsys_t clock_subsys;
-	int irq_source;
-	int irq_priority;
-	int irq_flags;
+	unsigned int irq;
+	void (*irq_configure)(void);
 	usb_phy_target_t phy_target;
 };
 
 struct esp32_usb_otg_data {
-	struct intr_handle_data_t *int_handle;
 	usb_wrap_hal_context_t wrap_hal;
 };
 
@@ -40,7 +38,6 @@ static void uhc_dwc2_isr_handler(const struct device *dev);
 static inline int esp32_usb_otg_init(const struct device *dev)
 {
 	const struct esp32_usb_otg_config *const cfg = UHC_DWC2_QUIRK_CONFIG(dev);
-	struct esp32_usb_otg_data *const data = UHC_DWC2_QUIRK_DATA(dev);
 
 	int ret;
 
@@ -68,18 +65,20 @@ static inline int esp32_usb_otg_init(const struct device *dev)
 					USB_OTG_AVALID_IN_IDX,
 					false);
 
-	/* allocate interrupt but keep it disabled to avoid
-	 * spurious suspend/resume event at enumeration phase
+	/* Connect only - IRQ_CONNECT leaves the line masked, which is what
+	 * ESP_INTR_FLAG_INTRDISABLED bought: no spurious suspend/resume event
+	 * at the enumeration phase. Pre-multilevel path, kept for reference:
+	 *
+	 * ret = esp_intr_alloc(cfg->irq_source,
+	 *                      ESP_INTR_FLAG_INTRDISABLED |
+	 *                              ESP_PRIO_TO_FLAGS(cfg->irq_priority) |
+	 *                              ESP_INT_FLAGS_CHECK(cfg->irq_flags),
+	 *                      (intr_handler_t)uhc_dwc2_isr_handler, (void *)dev,
+	 *                      &data->int_handle);
 	 */
-	ret = esp_intr_alloc(cfg->irq_source,
-			ESP_INTR_FLAG_INTRDISABLED |
-			ESP_PRIO_TO_FLAGS(cfg->irq_priority) |
-					ESP_INT_FLAGS_CHECK(cfg->irq_flags),
-			(intr_handler_t)uhc_dwc2_isr_handler,
-			(void *)dev,
-			&data->int_handle);
+	cfg->irq_configure();
 
-	return ret;
+	return 0;
 }
 
 static int esp32_usb_otg_enable_phy(const struct device *const dev)
@@ -148,26 +147,13 @@ static int esp32_usb_otg_pre_init(const struct device *const dev)
 static int esp32_usb_otg_shutdown(const struct device *const dev)
 {
 	const struct esp32_usb_otg_config *const cfg = UHC_DWC2_QUIRK_CONFIG(dev);
-	struct esp32_usb_otg_data *const data = UHC_DWC2_QUIRK_DATA(dev);
 	int ret;
 
-	/* Disable & free interrupt handler */
-	if (data->int_handle != NULL) {
-		/* Stor interrupts first */
-		ret = esp_intr_disable(data->int_handle);
-		if (ret != 0) {
-			LOG_ERR("Unable to disable interrupt: %d", ret);
-			return ret;
-		}
-
-		ret = esp_intr_free(data->int_handle);
-		if (ret != 0) {
-			LOG_ERR("Unable to free interrupt: %d", ret);
-			return ret;
-		}
-
-		data->int_handle = NULL;
-	}
+	/* Statically connected, so there is nothing to free - just mask it.
+	 * Was: esp_intr_disable(data->int_handle) then esp_intr_free(data->int_handle),
+	 * both of which returned an error code; irq_disable() cannot fail.
+	 */
+	irq_disable(cfg->irq);
 
 	/* Disable PHY */
 	esp32_usb_otg_disable_phy(dev);
@@ -196,27 +182,32 @@ static int esp32_usb_otg_shutdown(const struct device *const dev)
 
 static void esp32_usb_otg_irq_enable_func(const struct device *const dev)
 {
-	struct esp32_usb_otg_data *const data = UHC_DWC2_QUIRK_DATA(dev);
+	const struct esp32_usb_otg_config *const cfg = UHC_DWC2_QUIRK_CONFIG(dev);
 
-	esp_intr_enable(data->int_handle);
+	irq_enable(cfg->irq);
 }
 
 static void esp32_usb_otg_irq_disable_func(const struct device *const dev)
 {
-	struct esp32_usb_otg_data *const data = UHC_DWC2_QUIRK_DATA(dev);
+	const struct esp32_usb_otg_config *const cfg = UHC_DWC2_QUIRK_CONFIG(dev);
 
-	esp_intr_disable(data->int_handle);
+	irq_disable(cfg->irq);
 }
 
 #define QUIRK_ESP32_USB_OTG_DEFINE(n)						\
+										\
+	static void uhc_dwc2_quirk_irq_configure_##n(void)			\
+	{									\
+		IRQ_CONNECT(DT_INST_IRQN_BY_IDX(n, 0), IRQ_DEFAULT_PRIORITY,	\
+			    uhc_dwc2_isr_handler, DEVICE_DT_INST_GET(n), 0);	\
+	}									\
 										\
 	static const struct esp32_usb_otg_config uhc_dwc2_quirk_config_##n = {	\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),		\
 		.clock_subsys = (clock_control_subsys_t)			\
 			DT_INST_CLOCKS_CELL(n, offset),				\
-		.irq_source = DT_INST_IRQ_BY_IDX(n, 0, irq),			\
-		.irq_priority = DT_INST_IRQ_BY_IDX(n, 0, priority),		\
-		.irq_flags = DT_INST_IRQ_BY_IDX(n, 0, flags),			\
+		.irq = DT_INST_IRQN_BY_IDX(n, 0),				\
+		.irq_configure = uhc_dwc2_quirk_irq_configure_##n,		\
 		.phy_target = USB_PHY_TARGET_INT,				\
 	};									\
 										\
