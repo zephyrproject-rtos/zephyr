@@ -202,7 +202,6 @@ static int ina219_channel_get(const struct device *dev,
 	const struct ina219_config *cfg = dev->config;
 	struct ina219_data *data = dev->data;
 	double tmp;
-	int8_t sign = 1;
 
 	switch (chan) {
 	case SENSOR_CHAN_VOLTAGE:
@@ -212,14 +211,10 @@ static int ina219_channel_get(const struct device *dev,
 		tmp = (int16_t)data->v_shunt * INA219_V_SHUNT_MUL;
 		break;
 	case SENSOR_CHAN_POWER:
-		tmp = data->power * cfg->current_lsb * INA219_POWER_MUL * INA219_SI_MUL;
+		tmp = data->power * (cfg->current_lsb * INA219_POWER_MUL * INA219_SI_MUL);
 		break;
 	case SENSOR_CHAN_CURRENT:
-		if (INA219_SIGN_BIT(data->current)) {
-			data->current = ~data->current + 1;
-			sign = -1;
-		}
-		tmp = sign * data->current * cfg->current_lsb * INA219_SI_MUL;
+		tmp = (int16_t)data->current * (cfg->current_lsb * INA219_SI_MUL);
 		break;
 	default:
 		LOG_DBG("Channel not supported by device!");
