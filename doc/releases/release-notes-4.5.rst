@@ -609,6 +609,11 @@ Libraries / Subsystems
     a dedicated pool on every channel (channels fall back to the shared pool until
     :c:func:`zbus_chan_set_msg_sub_pool` is called)
 
+* __assert
+
+   * ``__ASSERT_ON`` define has been removed.
+
+
 Devicetree
 **********
 * Nodes can now use phandles to refer to their children without causing a cycle in the
