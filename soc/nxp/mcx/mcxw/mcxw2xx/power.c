@@ -7,6 +7,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/init.h>
 #include <zephyr/pm/pm.h>
+#include <zephyr/arch/arch_interface.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/interrupt_controller/nxp_pint.h>
 #include <zephyr/drivers/timer/system_timer_lpm.h>
@@ -244,20 +245,20 @@ __weak void pm_state_set(enum pm_state state, uint8_t id)
 	uint32_t exclude_from_pd;
 	uint64_t wakeup_sources;
 	status_t status;
-
-	/* Set PRIMASK */
-	__disable_irq();
-	/* Set BASEPRI to 0 */
-	irq_unlock(0);
+	unsigned int key;
 
 	switch (state) {
 	case PM_STATE_RUNTIME_IDLE:
+		key = arch_pm_state_set_prepare();
 		POWER_EnterSleep();
+		arch_pm_state_set_finish(key);
 		break;
 
 	case PM_STATE_SUSPEND_TO_IDLE:
 		pm_get_lowpower_resource_list(&exclude_from_pd, &wakeup_sources, false);
+		key = arch_pm_state_set_prepare();
 		status = POWER_EnterDeepSleep(exclude_from_pd, wakeup_sources);
+		arch_pm_state_set_finish(key);
 		if (status != kStatus_Success) {
 			LOG_ERR("Failed to enter deep sleep mode: %d", status);
 		}
@@ -265,7 +266,9 @@ __weak void pm_state_set(enum pm_state state, uint8_t id)
 
 	case PM_STATE_STANDBY:
 		pm_get_lowpower_resource_list(&exclude_from_pd, &wakeup_sources, true);
+		key = arch_pm_state_set_prepare();
 		status = POWER_EnterPowerDown(exclude_from_pd, wakeup_sources, 1);
+		arch_pm_state_set_finish(key);
 		if (status != kStatus_Success) {
 			LOG_ERR("Failed to enter power down mode: %d", status);
 		}
@@ -281,9 +284,6 @@ __weak void pm_state_exit_post_ops(enum pm_state state, uint8_t id)
 {
 	ARG_UNUSED(state);
 	ARG_UNUSED(id);
-
-	/* Clear PRIMASK */
-	__enable_irq();
 }
 
 #if WAKEUP_PIN_ENABLE
