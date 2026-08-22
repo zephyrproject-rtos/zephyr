@@ -1,11 +1,13 @@
 /*
- * Copyright 2023-2025 NXP
+ * Copyright 2023-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/irq.h>
 #include <zephyr/kernel.h>
 #include <zephyr/pm/pm.h>
+#include <zephyr/arch/arch_interface.h>
+#include <zephyr/sys/atomic.h>
 #include <fsl_clock.h>
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(standby))
 #include <fsl_rtc.h>
@@ -46,6 +48,24 @@ power_sleep_config_t slp_cfg;
 pinctrl_soc_pin_t pin_cfg;
 #if CONFIG_GPIO
 const struct device *gpio;
+
+#if !defined(CONFIG_PM_STATE_SET_IRQ_UNLOCKED)
+static atomic_t pending_gpio_wakeup_pins;
+
+static void gpio_wakeup_work_handler(struct k_work *work)
+{
+	uint32_t pins;
+
+	ARG_UNUSED(work);
+
+	pins = (uint32_t)atomic_set(&pending_gpio_wakeup_pins, 0);
+	if (pins != 0U) {
+		gpio_mcux_lpc_trigger_cb(gpio, pins);
+	}
+}
+
+static K_WORK_DEFINE(gpio_wakeup_work, gpio_wakeup_work_handler);
+#endif /* !CONFIG_PM_STATE_SET_IRQ_UNLOCKED */
 #endif
 #endif
 
@@ -161,6 +181,29 @@ static void config_wakeup_gpio_pins(void)
 #endif
 }
 
+#if !defined(CONFIG_PM_STATE_SET_IRQ_UNLOCKED)
+static void enter_sleep_mode(void)
+{
+	unsigned int key;
+
+	key = arch_pm_state_set_prepare();
+	__WFI();
+	arch_pm_state_set_finish(key);
+}
+
+static bool enter_power_mode(uint32_t mode)
+{
+	unsigned int key;
+	bool result;
+
+	key = arch_pm_state_set_prepare();
+	result = POWER_EnterPowerMode(mode, &slp_cfg);
+	arch_pm_state_set_finish(key);
+
+	return result;
+}
+#endif /* !CONFIG_PM_STATE_SET_IRQ_UNLOCKED */
+
 /* Invoke Low Power/System Off specific Tasks */
 __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
@@ -183,15 +226,20 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 	POWER_EnableWakeup(DT_IRQN(DT_NODELABEL(pin1)));
 #endif
 
-	/* Set PRIMASK */
+#if defined(CONFIG_PM_STATE_SET_IRQ_UNLOCKED)
+	/* Use PRIMASK while BASEPRI is cleared so any IRQ can wake WFI. */
 	__disable_irq();
-	/* Set BASEPRI to 0 */
 	irq_unlock(0);
+#endif
 
 	switch (state) {
 	case PM_STATE_RUNTIME_IDLE:
 		POWER_SetSleepMode(POWER_MODE1);
+#if defined(CONFIG_PM_STATE_SET_IRQ_UNLOCKED)
 		__WFI();
+#else
+		enter_sleep_mode();
+#endif
 		break;
 	case PM_STATE_SUSPEND_TO_IDLE:
 		/* save old value of main clock mux and switch to lposc */
@@ -200,7 +248,11 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 
 		CLKCTL0->MAINCLKSELA = 2;
 		CLKCTL0->MAINCLKSELB = 0;
-		POWER_EnterPowerMode(POWER_MODE2, &slp_cfg);
+#if defined(CONFIG_PM_STATE_SET_IRQ_UNLOCKED)
+		(void)POWER_EnterPowerMode(POWER_MODE2, &slp_cfg);
+#else
+		(void)enter_power_mode(POWER_MODE2);
+#endif
 		/* restore previous main clock */
 		CLKCTL0->MAINCLKSELA = main_sel_a;
 		CLKCTL0->MAINCLKSELB = main_sel_b;
@@ -223,7 +275,11 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 			sys_clock_unlock(key);
 		}
 
+#if defined(CONFIG_PM_STATE_SET_IRQ_UNLOCKED)
 		if (POWER_EnterPowerMode(POWER_MODE3, &slp_cfg)) {
+#else
+		if (enter_power_mode(POWER_MODE3)) {
+#endif
 			/* Go back to PM Mode 3 if RTC wakeup is to be ignored.*/
 			while (z_nxp_os_timer_ignore_timer_wakeup() &&
 			       (PMU->WAKEUP_STATUS & PMU_WAKEUP_STATUS_RTC_MASK)) {
@@ -262,7 +318,12 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 				/* Reinitialize the board specific power rails */
 				board_early_init_hook();
 
-				if (!(POWER_EnterPowerMode(POWER_MODE3, &slp_cfg))) {
+#if defined(CONFIG_PM_STATE_SET_IRQ_UNLOCKED)
+				if (!POWER_EnterPowerMode(POWER_MODE3,
+							  &slp_cfg)) {
+#else
+				if (!enter_power_mode(POWER_MODE3)) {
+#endif
 					break;
 				}
 			}
@@ -296,11 +357,21 @@ __weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 		/* GPIO_0_24 & GPIO_0_25 are used for wakeup */
 		uint32_t pins = PMU->WAKEUP_STATUS &
 				(PMU_WAKEUP_STATUS_PIN0_MASK | PMU_WAKEUP_STATUS_PIN1_MASK);
-		gpio_mcux_lpc_trigger_cb(gpio, (pins << 24));
+
+		if (pins != 0U) {
+#if defined(CONFIG_PM_STATE_SET_IRQ_UNLOCKED)
+			gpio_mcux_lpc_trigger_cb(gpio, (pins << 24));
+#else
+			atomic_or(&pending_gpio_wakeup_pins,
+				  (atomic_val_t)(pins << 24));
+			(void)k_work_submit(&gpio_wakeup_work);
+#endif
+		}
 	}
 #endif
-	/* Clear PRIMASK */
+#if defined(CONFIG_PM_STATE_SET_IRQ_UNLOCKED)
 	__enable_irq();
+#endif
 }
 
 void nxp_rw6xx_power_init(void)
