@@ -30,4 +30,18 @@
 			input-enable;
 		};
 	};
+
+	/*
+	 * LPUART2 on PIO2_8 (TXD) / PIO2_9 (RXD), the pair the SDK muxes as this
+	 * board's alternate UART (BOARD_InitALT_UARTPins). No RTS/CTS: the SDK
+	 * routes neither, so runtime flow-control requests fall back to this state.
+	 */
+	pinmux_lpuart2: pinmux_lpuart2 {
+		group0 {
+			pinmux = <&main__iomuxc_pio2_8_hsp_lpuart2_txd>,
+				 <&main__iomuxc_pio2_9_hsp_lpuart2_rxd>;
+			slew-rate = "high";
+			input-enable;
+		};
+	};
 };

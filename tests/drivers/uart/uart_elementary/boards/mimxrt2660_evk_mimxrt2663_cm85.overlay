@@ -1,0 +1,34 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * LPUART2 is this board's alternate UART (PIO2_8/PIO2_9); the console keeps
+ * LPUART0. nxp,loopback ties the transmitter to the receiver inside the
+ * peripheral, so no wiring and no fixture are needed.
+ *
+ * The pins get their own group rather than the board's pinmux_lpuart2 because
+ * that one enables the pad receiver, as a UART driven from outside needs. Here
+ * the pad is unconnected and loopback bypasses it, and an enabled receiver
+ * latches one noise byte from the floating line during init -- enough to shift
+ * every subsequent read by one and fail the transmission test.
+ */
+&pinctrl {
+	pinmux_lpuart2_loopback: pinmux_lpuart2_loopback {
+		group0 {
+			pinmux = <&main__iomuxc_pio2_8_hsp_lpuart2_txd>,
+				 <&main__iomuxc_pio2_9_hsp_lpuart2_rxd>;
+			slew-rate = "high";
+		};
+	};
+};
+
+dut: &lpuart2 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_lpuart2_loopback>;
+	pinctrl-names = "default";
+	nxp,loopback;
+};
