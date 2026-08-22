@@ -149,6 +149,8 @@ LOG_MODULE_REGISTER(i3c_dw, CONFIG_I3C_DW_LOG_LEVEL);
 #define RESET_CTRL_RESP_QUEUE BIT(2)
 #define RESET_CTRL_CMD_QUEUE  BIT(1)
 #define RESET_CTRL_SOFT       BIT(0)
+#define RESET_CTRL_FIFO_QUEUE                                                                      \
+	(RESET_CTRL_RX_FIFO | RESET_CTRL_TX_FIFO | RESET_CTRL_RESP_QUEUE | RESET_CTRL_CMD_QUEUE)
 #define RESET_CTRL_ALL                                                                             \
 	(RESET_CTRL_IBI_QUEUE | RESET_CTRL_RX_FIFO | RESET_CTRL_TX_FIFO | RESET_CTRL_RESP_QUEUE |  \
 	 RESET_CTRL_CMD_QUEUE | RESET_CTRL_SOFT)
@@ -380,6 +382,9 @@ LOG_MODULE_REGISTER(i3c_dw, CONFIG_I3C_DW_LOG_LEVEL);
 
 #define DW_I3C_MAX_DEVS         32
 #define DW_I3C_MAX_CMD_BUF_SIZE 16
+
+/* Upper bound on the RESET_CTRL self-clear busy-wait */
+#define DW_I3C_RESET_TIMEOUT_US 10000
 
 /* Snps I3C/I2C Device Private Data */
 struct dw_i3c_i2c_dev_data {
@@ -647,6 +652,55 @@ static void dw_i3c_deftgts_work_fn(struct k_work *work)
 #endif /* CONFIG_I3C_CONTROLLER && CONFIG_I3C_TARGET */
 
 /**
+ * @brief Reset the selected FIFOs and queues and wait for the reset to complete.
+ *
+ * Also called from the ISR, so the wait is a bounded busy-wait.
+ *
+ * @param dev Pointer to the I3C device structure.
+ * @param mask RESET_CTRL bits to assert.
+ *
+ * @retval 0 on success.
+ * @retval -ETIMEDOUT The reset bits did not clear.
+ */
+static int dw_i3c_reset(const struct device *dev, uint32_t mask)
+{
+	sys_write32(mask, dw_i3c_regs(dev) + RESET_CTRL);
+	if (!WAIT_FOR((sys_read32(dw_i3c_regs(dev) + RESET_CTRL) & mask) == 0,
+		      DW_I3C_RESET_TIMEOUT_US, NULL)) {
+		LOG_ERR("%s: RESET_CTRL 0x%x did not clear", dev->name, mask);
+		return -ETIMEDOUT;
+	}
+
+	return 0;
+}
+
+/**
+ * @brief Flush the FIFOs and queues after an error and resume the controller.
+ *
+ * @param dev Pointer to the I3C device structure.
+ *
+ * @retval 0 on success.
+ * @retval -ETIMEDOUT The flush did not complete; the controller is left halted.
+ */
+static int dw_i3c_reset_fifos_and_queues(const struct device *dev)
+{
+	int ret;
+
+	ret = dw_i3c_reset(dev, RESET_CTRL_FIFO_QUEUE);
+	if (ret != 0) {
+		/* Resuming would run whatever the failed flush left in the command queue */
+		return ret;
+	}
+
+	sys_write32(INTR_TRANSFER_ERR_STAT | INTR_TRANSFER_ABORT_STAT,
+		    dw_i3c_regs(dev) + INTR_STATUS);
+	sys_write32(sys_read32(dw_i3c_regs(dev) + DEVICE_CTRL) | DEV_CTRL_RESUME,
+		    dw_i3c_regs(dev) + DEVICE_CTRL);
+
+	return 0;
+}
+
+/**
  * @brief End the I3C transfer and process responses.
  *
  * This function is responsible for ending the I3C transfer on the specified
@@ -738,11 +792,7 @@ static void dw_i3c_end_xfer(const struct device *dev)
 	xfer->ret = ret;
 
 	if (ret < 0) {
-		sys_write32(RESET_CTRL_RX_FIFO | RESET_CTRL_TX_FIFO | RESET_CTRL_RESP_QUEUE |
-			    RESET_CTRL_CMD_QUEUE,
-			    dw_i3c_regs(dev) + RESET_CTRL);
-		sys_write32(sys_read32(dw_i3c_regs(dev) + DEVICE_CTRL) | DEV_CTRL_RESUME,
-			    dw_i3c_regs(dev) + DEVICE_CTRL);
+		(void)dw_i3c_reset_fifos_and_queues(dev);
 	}
 	k_sem_give(&data->sem_xfer);
 }
@@ -762,6 +812,8 @@ static void start_xfer(const struct device *dev)
 	struct dw_i3c_cmd *cmd;
 	uint32_t thld_ctrl;
 	int32_t i;
+
+	k_sem_reset(&data->sem_xfer);
 
 	/* Push data to TXFIFO */
 	for (i = 0; i < xfer->ncmds; i++) {
@@ -788,6 +840,27 @@ static void start_xfer(const struct device *dev)
 	}
 }
 #ifdef CONFIG_I3C_CONTROLLER
+/**
+ * @brief Wait for the running transfer to complete.
+ *
+ * @param dev Pointer to the I3C device structure.
+ *
+ * @retval 0 if the transfer completed.
+ * @retval -ETIMEDOUT if it did not complete in time.
+ */
+static int dw_i3c_wait_for_xfer(const struct device *dev)
+{
+	struct dw_i3c_data *data = dev->data;
+
+	if (k_sem_take(&data->sem_xfer, K_MSEC(CONFIG_I3C_DW_RW_TIMEOUT_MS)) != 0) {
+		LOG_ERR("%s: Transfer timeout", dev->name);
+		(void)dw_i3c_reset_fifos_and_queues(dev);
+		return -ETIMEDOUT;
+	}
+
+	return 0;
+}
+
 /**
  * @brief Get the position of an I3C device with the specified address.
  *
@@ -873,7 +946,6 @@ static int dw_i3c_xfers(const struct device *dev, struct i3c_device_desc *target
 	memset(xfer, 0, sizeof(struct dw_i3c_xfer));
 
 	xfer->ncmds = num_msgs;
-	xfer->ret = -1;
 
 	for (i = 0; i < num_msgs; i++) {
 		struct dw_i3c_cmd *cmd = &xfer->cmds[i];
@@ -985,9 +1057,8 @@ static int dw_i3c_xfers(const struct device *dev, struct i3c_device_desc *target
 
 	start_xfer(dev);
 
-	ret = k_sem_take(&data->sem_xfer, K_MSEC(CONFIG_I3C_DW_RW_TIMEOUT_MS));
+	ret = dw_i3c_wait_for_xfer(dev);
 	if (ret) {
-		LOG_ERR("%s: Semaphore err (%d)", dev->name, ret);
 		goto error;
 	}
 
@@ -1102,7 +1173,6 @@ static int dw_i3c_i2c_transfer(const struct device *dev, struct i3c_i2c_device_d
 	memset(xfer, 0, sizeof(struct dw_i3c_xfer));
 
 	xfer->ncmds = num_msgs;
-	xfer->ret = -1;
 
 	for (i = 0; i < num_msgs; i++) {
 		struct dw_i3c_cmd *cmd = &xfer->cmds[i];
@@ -1139,9 +1209,8 @@ static int dw_i3c_i2c_transfer(const struct device *dev, struct i3c_i2c_device_d
 
 	start_xfer(dev);
 
-	ret = k_sem_take(&data->sem_xfer, K_MSEC(CONFIG_I3C_DW_RW_TIMEOUT_MS));
+	ret = dw_i3c_wait_for_xfer(dev);
 	if (ret) {
-		LOG_ERR("%s: Semaphore err (%d)", dev->name, ret);
 		goto error;
 	}
 
@@ -2084,7 +2153,6 @@ static int dw_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *paylo
 	pm_device_busy_set(dev);
 
 	memset(xfer, 0, sizeof(struct dw_i3c_xfer));
-	xfer->ret = -1;
 
 	/* in the case of multiple targets in a CCC, each command queue must have the same CCC ID
 	 * loaded along with different dev index fields pointing to the targets
@@ -2154,9 +2222,8 @@ static int dw_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *paylo
 
 	start_xfer(dev);
 
-	ret = k_sem_take(&data->sem_xfer, K_MSEC(CONFIG_I3C_DW_RW_TIMEOUT_MS));
+	ret = dw_i3c_wait_for_xfer(dev);
 	if (ret) {
-		LOG_ERR("%s: Semaphore err (%d)", dev->name, ret);
 		goto error;
 	}
 
@@ -2402,7 +2469,6 @@ static int dw_i3c_do_daa(const struct device *dev)
 	memset(xfer, 0, sizeof(struct dw_i3c_xfer));
 
 	xfer->ncmds = 1;
-	xfer->ret = -1;
 
 	cmd = &xfer->cmds[0];
 	cmd->cmd_hi = COMMAND_PORT_TRANSFER_ARG;
@@ -2411,13 +2477,12 @@ static int dw_i3c_do_daa(const struct device *dev)
 		      COMMAND_PORT_CMD(I3C_CCC_ENTDAA) | COMMAND_PORT_ADDR_ASSGN_CMD;
 
 	start_xfer(dev);
-	ret = k_sem_take(&data->sem_xfer, K_MSEC(CONFIG_I3C_DW_RW_TIMEOUT_MS));
+	ret = dw_i3c_wait_for_xfer(dev);
 
 	pm_device_busy_clear(dev);
 	k_mutex_unlock(&data->mt);
 
 	if (ret) {
-		LOG_ERR("%s: Semaphore err (%d)", dev->name, ret);
 		return ret;
 	}
 
@@ -2663,6 +2728,7 @@ static struct i3c_device_desc *dw_i3c_device_find(const struct device *dev,
  *
  * @retval 0 on success.
  * @retval -EACCES if controller is not in master mode.
+ * @retval -EBUSY The flush did not complete; the controller is left halted.
  */
 static int dw_i3c_recover_bus(const struct device *dev)
 {
@@ -2692,18 +2758,18 @@ static int dw_i3c_recover_bus(const struct device *dev)
 	/* Flush command / response / data FIFOs and the IBI queue.
 	 * Crucially, SOFT reset is NOT asserted here — DAT/DCT survive.
 	 */
-	sys_write32(RESET_CTRL_RX_FIFO | RESET_CTRL_TX_FIFO |
-		    RESET_CTRL_RESP_QUEUE | RESET_CTRL_CMD_QUEUE |
-		    RESET_CTRL_IBI_QUEUE,
-		    dw_i3c_regs(dev) + RESET_CTRL);
-
-	/* Resume controller from any halt state caused by a prior error. */
-	sys_write32(sys_read32(dw_i3c_regs(dev) + DEVICE_CTRL) | DEV_CTRL_RESUME,
-		    dw_i3c_regs(dev) + DEVICE_CTRL);
+	ret = dw_i3c_reset(dev, RESET_CTRL_FIFO_QUEUE | RESET_CTRL_IBI_QUEUE);
+	if (ret == 0) {
+		/* Resume controller from any halt state caused by a prior error. */
+		sys_write32(sys_read32(dw_i3c_regs(dev) + DEVICE_CTRL) | DEV_CTRL_RESUME,
+			    dw_i3c_regs(dev) + DEVICE_CTRL);
+	} else {
+		ret = -EBUSY;
+	}
 
 	k_mutex_unlock(&data->mt);
 
-	return 0;
+	return ret;
 }
 #endif /* CONFIG_I3C_CONTROLLER */
 #ifdef CONFIG_I3C_TARGET
