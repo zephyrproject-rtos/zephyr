@@ -11,6 +11,7 @@
 	aliases {
 		led0 = &user_led;
 		sw0 = &user_button;
+		ambient-temp0 = &p3t1755;
 	};
 
 	leds {

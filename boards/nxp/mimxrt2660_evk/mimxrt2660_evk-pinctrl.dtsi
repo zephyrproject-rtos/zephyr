@@ -44,4 +44,25 @@
 			input-enable;
 		};
 	};
+
+	/*
+	 * LPI2C1 on PIO2_24 (SDA) / PIO2_25 (SCL) -- the bus the on-board
+	 * P3T1755DP sensor (U28) sits on, which is why this instance rather than
+	 * LPI2C0, whose pins only reach unpopulated headers. A 0-ohm jumper picks
+	 * I2C1 over I3C on each ball (R349 SDA, R347 SCL), fitted on the I2C1 side.
+	 *
+	 * No internal pull-up: the board pulls both up (R273/R290, 4.7k). Without
+	 * input-enable the master reads SCL as permanently low, takes it for clock
+	 * stretching and issues no clocks at all -- the transfer then sits with
+	 * MSR.MBF set and no event flags.
+	 */
+	pinmux_lpi2c1: pinmux_lpi2c1 {
+		group0 {
+			pinmux = <&main__iomuxc_pio2_24_hsp_lpi2c1_sda>,
+				 <&main__iomuxc_pio2_25_hsp_lpi2c1_scl>;
+			slew-rate = "low";
+			drive-open-drain;
+			input-enable;
+		};
+	};
 };

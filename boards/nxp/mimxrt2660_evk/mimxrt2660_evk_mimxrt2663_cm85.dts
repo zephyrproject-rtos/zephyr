@@ -105,3 +105,20 @@
 &psram {
 	status = "okay";
 };
+
+&lpi2c1 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpi2c1>;
+	pinctrl-names = "default";
+
+	/*
+	 * U28, NXP P3T1755DP temperature sensor; A0/A1/A2 strapped low select
+	 * address 0x48. The part is dual-mode -- the SDK reaches it over I3C on
+	 * these same two balls -- and the R349/R347 jumpers select the legacy I2C
+	 * function used here.
+	 */
+	p3t1755: p3t1755@48 {
+		compatible = "nxp,p3t1755";
+		reg = <0x48>;
+	};
+};
