@@ -110,6 +110,7 @@ static int ina219_sample_fetch(const struct device *dev,
 
 	if (chan != SENSOR_CHAN_ALL &&
 		chan != SENSOR_CHAN_VOLTAGE &&
+		chan != SENSOR_CHAN_VSHUNT &&
 		chan != SENSOR_CHAN_POWER &&
 		chan != SENSOR_CHAN_CURRENT) {
 		return -ENOTSUP;
@@ -159,6 +160,17 @@ static int ina219_sample_fetch(const struct device *dev,
 	}
 
 	if (chan == SENSOR_CHAN_ALL ||
+		chan == SENSOR_CHAN_VSHUNT) {
+
+		rc = ina219_reg_read(dev, INA219_REG_V_SHUNT, &tmp);
+		if (rc) {
+			LOG_ERR("Error reading shunt voltage.");
+			return rc;
+		}
+		data->v_shunt = tmp;
+	}
+
+	if (chan == SENSOR_CHAN_ALL ||
 		chan == SENSOR_CHAN_POWER)	{
 
 		rc = ina219_reg_read(dev, INA219_REG_POWER, &tmp);
@@ -195,6 +207,9 @@ static int ina219_channel_get(const struct device *dev,
 	switch (chan) {
 	case SENSOR_CHAN_VOLTAGE:
 		tmp = data->v_bus * INA219_V_BUS_MUL;
+		break;
+	case SENSOR_CHAN_VSHUNT:
+		tmp = (int16_t)data->v_shunt * INA219_V_SHUNT_MUL;
 		break;
 	case SENSOR_CHAN_POWER:
 		tmp = data->power * cfg->current_lsb * INA219_POWER_MUL * INA219_SI_MUL;
