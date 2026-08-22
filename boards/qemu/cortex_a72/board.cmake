@@ -10,6 +10,13 @@ set(QEMU_BOARD_FLAGS
   -machine raspi4b
 )
 
+if(CONFIG_USB_HOST_STACK)
+  list(APPEND QEMU_BOARD_FLAGS
+    -usb
+    -device usb-kbd
+  )
+endif()
+
 set(QEMU_KERNEL_OPTION
   -kernel ${PROJECT_BINARY_DIR}/${CONFIG_KERNEL_BIN_NAME}.bin
 )
