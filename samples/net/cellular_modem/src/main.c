@@ -468,9 +468,6 @@ int main(void)
 
 	ppp_iface = net_if_get_first_by_type(&NET_L2_GET_NAME(PPP));
 
-	printk("Powering on modem\n");
-	pm_device_action_run(modem, PM_DEVICE_ACTION_RESUME);
-
 	printk("Bring up network interface\n");
 	ret = net_if_up(ppp_iface);
 	if (ret < 0) {
@@ -544,15 +541,19 @@ int main(void)
 	}
 
 power_cycle:
-	printk("Shutting down modem\n");
-	ret = pm_device_action_run(modem, PM_DEVICE_ACTION_SUSPEND);
-	if (ret != 0) {
-		printk("Failed to power down modem\n");
+	printk("Taking interface down\n");
+	ret = net_if_down(ppp_iface);
+	if (ret < 0) {
+		printk("Failed to take down network interface\n");
 		return -1;
 	}
 
-	printk("Restarting modem\n");
-	pm_device_action_run(modem, PM_DEVICE_ACTION_RESUME);
+	printk("Requesting interface up\n");
+	ret = net_if_up(ppp_iface);
+	if (ret < 0) {
+		printk("Failed to request network interface back up\n");
+		return -1;
+	}
 
 	printk("Waiting for L4 connected\n");
 	ret = k_event_wait(&l4_event, L4_CONNECTED, false, K_SECONDS(120));
@@ -562,7 +563,7 @@ power_cycle:
 	}
 	printk("L4 connected\n");
 
-	/* Wait a bit to avoid (unsuccessfully) trying to send the first echo packet too quickly. */
+	/* Wait a bit to avoid (unsuccessfully) trying to send the first echo packet too quickly */
 	k_sleep(K_SECONDS(5));
 
 	if (valid_dns) {
@@ -576,16 +577,10 @@ power_cycle:
 		return -1;
 	}
 
+	printk("Final interface down\n");
 	ret = net_if_down(ppp_iface);
 	if (ret < 0) {
-		printk("Failed to bring down network interface\n");
-		return -1;
-	}
-
-	printk("Powering down modem\n");
-	ret = pm_device_action_run(modem, PM_DEVICE_ACTION_SUSPEND);
-	if (ret != 0) {
-		printk("Failed to power down modem\n");
+		printk("Failed to take down network interface\n");
 		return -1;
 	}
 
