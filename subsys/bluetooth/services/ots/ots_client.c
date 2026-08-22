@@ -8,6 +8,7 @@
 
 #include <zephyr/bluetooth/uuid.h>
 #include <zephyr/kernel.h>
+#include <zephyr/net_buf.h>
 #include <zephyr/types.h>
 
 #include <zephyr/device.h>
@@ -398,17 +399,24 @@ static void oacp_ind_handler(struct bt_conn *conn,
 		}
 
 		if (req_opcode == BT_GATT_OTS_OACP_PROC_CHECKSUM_CALC) {
-			if (net_buf.len == sizeof(checksum)) {
-				checksum = net_buf_simple_pull_le32(&net_buf);
-				LOG_DBG("Object checksum 0x%08x\n", checksum);
-				if (otc_inst->cb->obj_checksum_calculated) {
-					otc_inst->cb->obj_checksum_calculated(
-						otc_inst, conn, result_code, checksum);
+			if (result_code == BT_GATT_OTS_OACP_RES_SUCCESS) {
+				if (net_buf.len == sizeof(checksum)) {
+					checksum = net_buf_simple_pull_le32(&net_buf);
+					LOG_DBG("Object checksum 0x%08x", checksum);
+				} else {
+					LOG_DBG("Invalid indication data len %u after opcode and "
+						"result pulled",
+						net_buf.len);
+					return;
 				}
 			} else {
-				LOG_ERR("Invalid indication data len %u after opcode and result "
-					"pulled", net_buf.len);
-				return;
+				/* The checksum is omitted in error responses */
+				checksum = 0U;
+			}
+
+			if (otc_inst->cb != NULL && otc_inst->cb->obj_checksum_calculated != NULL) {
+				otc_inst->cb->obj_checksum_calculated(otc_inst, conn, result_code,
+								      checksum);
 			}
 		}
 
