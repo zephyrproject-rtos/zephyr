@@ -80,7 +80,14 @@ properties:
   vref-mv:
     type: int
     default: 3300
-    description: Indicates the reference voltage of the ADC in mV (on the target board).
+    description: |
+      Board nominal ADC reference voltage in millivolts (VREF+/VDDA).
+
+      Used as the static adc_ref_internal() value when
+      CONFIG_ADC_STM32_VREFINT_CALIBRATE is disabled, and as the fallback
+      when VREFINT measurement has not yet produced a cached value.
+      When that Kconfig is enabled, adc_ref_internal() may return a
+      measured scale instead of this property.
 
   st,adc-resolutions:
     type: array
