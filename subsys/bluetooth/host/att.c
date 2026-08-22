@@ -632,8 +632,11 @@ static int bt_att_chan_req_send(struct bt_att_chan *chan, struct bt_att_req *req
 	buf = net_buf_take(&req->buf);
 
 	/* This lock makes sure the value of `bt_att_mtu(chan)` does not
-	 * change.
+	 * change; the scheduler lock keeps the RX-path request handling,
+	 * which does not take the host lock, from preempting a preemptible
+	 * caller.
 	 */
+	bt_dev_lock();
 	k_sched_lock();
 	err = bt_att_chan_send(chan, buf);
 	if (err) {
@@ -644,6 +647,7 @@ static int bt_att_chan_req_send(struct bt_att_chan *chan, struct bt_att_req *req
 		bt_gatt_req_set_mtu(req, bt_att_mtu(chan));
 	}
 	k_sched_unlock();
+	bt_dev_unlock();
 
 	return err;
 }
@@ -4072,11 +4076,18 @@ int bt_att_req_send(struct bt_conn *conn, struct bt_att_req *req)
 	__ASSERT_NO_MSG(conn);
 	__ASSERT_NO_MSG(req);
 
+	/* att_handle_rsp() processes the request queue on the RX workqueue
+	 * without the host lock, relying on cooperative scheduling: hold the
+	 * scheduler lock as well so that it cannot preempt a preemptible
+	 * caller mid-update.
+	 */
+	bt_dev_lock();
 	k_sched_lock();
 
 	att = att_get(conn);
 	if (!att) {
 		k_sched_unlock();
+		bt_dev_unlock();
 		return -ENOTCONN;
 	}
 
@@ -4084,6 +4095,7 @@ int bt_att_req_send(struct bt_conn *conn, struct bt_att_req *req)
 	att_req_send_process(att);
 
 	k_sched_unlock();
+	bt_dev_unlock();
 
 	return 0;
 }

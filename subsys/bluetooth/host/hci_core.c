@@ -166,6 +166,7 @@ struct bt_dev bt_dev = {
 	.appearance = CONFIG_BT_DEVICE_APPEARANCE,
 #endif
 	.hci = BT_HCI_DEV,
+	.lock = Z_MUTEX_INITIALIZER(bt_dev.lock),
 };
 
 static bt_ready_cb_t ready_cb;
