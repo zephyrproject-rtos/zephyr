@@ -225,6 +225,7 @@ static int w6300_tx(const struct device *dev, struct net_pkt *pkt)
 {
 	struct w6300_runtime *ctx = dev->data;
 	uint16_t len = (uint16_t)net_pkt_get_len(pkt);
+	k_timepoint_t end = sys_timepoint_calc(K_MSEC(W6300_CMD_TIMEOUT_MS));
 	uint16_t offset;
 	uint8_t tmp[2];
 	int ret;
@@ -234,6 +235,24 @@ static int w6300_tx(const struct device *dev, struct net_pkt *pkt)
 	}
 
 	k_sem_reset(&ctx->tx_sem);
+
+	while (true) {
+		ret = w6300_spi_read(dev, W6300_BSB_SOCK(0), W6300_Sn_TX_FSR,
+				     tmp, 2);
+		if (ret < 0) {
+			return ret;
+		}
+
+		if (sys_get_be16(tmp) >= len) {
+			break;
+		}
+
+		if (sys_timepoint_expired(end)) {
+			return -EIO;
+		}
+
+		k_busy_wait(W6300_CMD_POLL_US);
+	}
 
 	ret = w6300_spi_read(dev, W6300_BSB_SOCK(0), W6300_Sn_TX_WR, tmp, 2);
 	if (ret < 0) {
