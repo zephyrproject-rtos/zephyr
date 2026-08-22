@@ -31,6 +31,8 @@
 	FAKE(k_heap_free)                                                                          \
 	FAKE(k_sched_lock)                                                                         \
 	FAKE(k_sched_unlock)                                                                       \
+	FAKE(k_mutex_lock)                                                                         \
+	FAKE(k_mutex_unlock)                                                                       \
 
 DECLARE_FAKE_VALUE_FUNC(bool, k_is_in_isr);
 DECLARE_FAKE_VALUE_FUNC(int, k_sem_take, struct k_sem *, k_timeout_t);
@@ -53,5 +55,7 @@ DECLARE_FAKE_VALUE_FUNC(void *, k_heap_alloc, struct k_heap *, size_t, k_timeout
 DECLARE_FAKE_VOID_FUNC(k_heap_free, struct k_heap *, void *);
 DECLARE_FAKE_VOID_FUNC(k_sched_lock);
 DECLARE_FAKE_VOID_FUNC(k_sched_unlock);
+DECLARE_FAKE_VALUE_FUNC(int, k_mutex_lock, struct k_mutex *, k_timeout_t);
+DECLARE_FAKE_VALUE_FUNC(int, k_mutex_unlock, struct k_mutex *);
 DECLARE_FAKE_VALUE_FUNC(void *, k_heap_aligned_alloc, struct k_heap *,
 			size_t, size_t, k_timeout_t);

@@ -420,6 +420,13 @@ static bool chan_has_data(struct bt_l2cap_br_chan *br_chan)
 
 static void raise_data_ready(struct bt_l2cap_br_chan *br_chan)
 {
+	/* The l2cap_data_ready list is only ever modified under the host
+	 * lock: here (append, any thread context), in cancel_data_ready()
+	 * (remove, any thread context) and in lower_data_ready() (remove,
+	 * TX processor context, which holds the lock across the whole pass).
+	 */
+	bt_dev_lock();
+
 	if (!atomic_set(&br_chan->_pdu_ready_lock, 1)) {
 		sys_slist_append(&br_chan->chan.conn->l2cap_data_ready,
 				 &br_chan->_pdu_ready);
@@ -428,13 +435,22 @@ static void raise_data_ready(struct bt_l2cap_br_chan *br_chan)
 		LOG_DBG("data ready already");
 	}
 
+	bt_dev_unlock();
+
 	bt_conn_data_ready(br_chan->chan.conn);
 }
 
 static void lower_data_ready(struct bt_l2cap_br_chan *br_chan)
 {
 	struct bt_conn *conn = br_chan->chan.conn;
-	__maybe_unused sys_snode_t *s = sys_slist_get(&conn->l2cap_data_ready);
+	__maybe_unused sys_snode_t *s;
+
+	/* Only called from the TX processor, which holds the host lock
+	 * across the whole processing pass.
+	 */
+	BT_DEV_LOCK_ASSERT();
+
+	s = sys_slist_get(&conn->l2cap_data_ready);
 
 	__ASSERT_NO_MSG(s == &br_chan->_pdu_ready);
 
@@ -447,10 +463,18 @@ static void cancel_data_ready(struct bt_l2cap_br_chan *br_chan)
 {
 	struct bt_conn *conn = br_chan->chan.conn;
 
+	/* Take the host lock as this function can be called from any
+	 * thread context and the data ready list must not be modified
+	 * while we are removing the channel from it (see raise_data_ready()).
+	 */
+	bt_dev_lock();
+
 	sys_slist_find_and_remove(&conn->l2cap_data_ready,
 				  &br_chan->_pdu_ready);
 
 	atomic_set(&br_chan->_pdu_ready_lock, 0);
+
+	bt_dev_unlock();
 }
 
 #if defined(CONFIG_BT_L2CAP_RET_FC)
