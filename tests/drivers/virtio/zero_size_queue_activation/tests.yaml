@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.virtio.zero_size_queue_activation.mmio:
+    platform_allow:
+      - qemu_leon3
+    extra_configs:
+      - CONFIG_VIRTIO_MMIO=y
+    extra_dtc_overlay_files:
+      - mmio.overlay
+    tags:
+      - drivers
+      - virtio
+  drivers.virtio.zero_size_queue_activation.pci:
+    platform_allow:
+      - qemu_malta
+    extra_configs:
+      - CONFIG_VIRTIO_PCI=y
+    extra_dtc_overlay_files:
+      - pci.overlay
+    tags:
+      - drivers
+      - pcie
+      - virtio
