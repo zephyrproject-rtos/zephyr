@@ -95,6 +95,10 @@ Connections and I/Os
 |           | DATA0..DATA3    | (quad; the flash is not wired      |
 |           |                 | octal on this board)               |
 +-----------+-----------------+------------------------------------+
+| LPI2C1    | SDA, SCL        | PIO2_24, PIO2_25 (on-board         |
+|           |                 | P3T1755DP temperature sensor at    |
+|           |                 | 0x48, ``ambient-temp0``)           |
++-----------+-----------------+------------------------------------+
 
 The debug console runs at 115200 8N1 on the MCU-Link virtual COM port.
 
