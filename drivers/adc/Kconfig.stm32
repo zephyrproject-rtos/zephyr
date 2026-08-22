@@ -21,6 +21,30 @@ config ADC_STM32
 	help
 	  Enable the driver implementation for the stm32xx ADC
 
+if ADC_STM32
+
+config ADC_STM32_VREFINT_CALIBRATE
+	bool "Measure VREF+ from VREFINT at init/calibrate"
+	depends on DT_HAS_ST_STM32_VREF_ENABLED
+	default y
+	help
+	  Measure the ADC reference rail (VREF+/VDDA) using the VREFINT
+	  channel and factory calibration described by the st,stm32-vref
+	  node. The value is cached SoC-wide and returned by
+	  adc_ref_internal() / adc_ref_get() for ADC_REF_INTERNAL on all
+	  STM32 ADC instances. Re-measure when sequence.calibrate is set
+	  on the VREFINT-owning ADC.
+
+config ADC_STM32_VREFINT_CALIB_VIA_NVMEM
+	bool
+	default y
+	depends on ADC_STM32_VREFINT_CALIBRATE && OTP && NVMEM
+	help
+	  Read VREFINT_CAL via the NVMEM API instead of a raw OTP pointer.
+	  Independent of CONFIG_STM32_VREF (the sensor).
+
+endif # ADC_STM32
+
 config ADC_STM32WB0
 	bool "STM32WB0 ADC driver"
 	default y
