@@ -19,20 +19,89 @@
 #include <scheduler.h>
 #include <zephyr/init.h>
 #include <zephyr/internal/syscall_handler.h>
+#include <zephyr/sys/list_gen.h>
 #include <kernel_internal.h>
 #include <zephyr/sys/check.h>
 
+#define Z_QUEUE_NODE_FLAG_ALLOCATED BIT(0)
+
+/*
+ * A queue stores either caller-owned objects or allocated wrappers. Bit 0 of
+ * next_and_flags is clear for a caller-owned object and set for a wrapper.
+ * No other flag bits are needed.
+ */
+struct z_queue_node {
+	uintptr_t next_and_flags;
+};
+
+typedef struct z_queue_node sys_queue_node_t;
+typedef sys_slist_t sys_queue_list_t;
+
+BUILD_ASSERT(__alignof__(sys_queue_node_t) >= 2, "k_queue requires one free pointer bit");
+
+static inline uintptr_t z_queue_node_flags_get(const sys_queue_node_t *node)
+{
+	return node->next_and_flags & Z_QUEUE_NODE_FLAG_ALLOCATED;
+}
+
+static inline void z_queue_node_init(sys_queue_node_t *node, uintptr_t flags)
+{
+	__ASSERT((flags & ~(uintptr_t)Z_QUEUE_NODE_FLAG_ALLOCATED) == 0U,
+		 "invalid k_queue node flags");
+	node->next_and_flags = flags;
+}
+
+static inline sys_queue_node_t *z_queue_node_next_peek(const sys_queue_node_t *node)
+{
+	return (sys_queue_node_t *)(node->next_and_flags & ~(uintptr_t)Z_QUEUE_NODE_FLAG_ALLOCATED);
+}
+
+static inline void z_queue_node_next_set(sys_queue_node_t *parent, sys_queue_node_t *child)
+{
+	parent->next_and_flags = z_queue_node_flags_get(parent) | (uintptr_t)child;
+}
+
+static inline void z_queue_list_head_set(sys_queue_list_t *list, sys_queue_node_t *node)
+{
+	z_slist_head_set(list, (sys_snode_t *)node);
+}
+
+static inline void z_queue_list_tail_set(sys_queue_list_t *list, sys_queue_node_t *node)
+{
+	z_slist_tail_set(list, (sys_snode_t *)node);
+}
+
+static inline sys_queue_node_t *sys_queue_list_peek_head(const sys_queue_list_t *list)
+{
+	return (sys_queue_node_t *)sys_slist_peek_head(list);
+}
+
+static inline sys_queue_node_t *sys_queue_list_peek_tail(const sys_queue_list_t *list)
+{
+	return (sys_queue_node_t *)sys_slist_peek_tail(list);
+}
+
+Z_GENLIST_IS_EMPTY(queue_list)
+Z_GENLIST_PEEK_NEXT_NO_CHECK(queue_list, queue_node)
+Z_GENLIST_PEEK_NEXT(queue_list, queue_node)
+Z_GENLIST_PREPEND(queue_list, queue_node)
+Z_GENLIST_APPEND(queue_list, queue_node)
+Z_GENLIST_APPEND_LIST(queue_list, queue_node)
+Z_GENLIST_INSERT(queue_list, queue_node)
+Z_GENLIST_GET_NOT_EMPTY(queue_list, queue_node)
+Z_GENLIST_REMOVE(queue_list, queue_node)
+
 struct alloc_node {
-	sys_sfnode_t node;
+	sys_queue_node_t node;
 	void *data;
 };
 
 /* The queue must have its spinlock held before calling this function. */
-static void *z_queue_node_peek(sys_sfnode_t *node, bool needs_free)
+static void *z_queue_node_peek(sys_queue_node_t *node, bool needs_free)
 {
 	void *ret;
 
-	if ((node != NULL) && (sys_sfnode_flags_get(node) != (uint8_t)0)) {
+	if ((node != NULL) && (z_queue_node_flags_get(node) == Z_QUEUE_NODE_FLAG_ALLOCATED)) {
 		/* If the flag is set, then the enqueue operation for this item
 		 * did a behind-the scenes memory allocation of an alloc_node
 		 * struct, which is what got put in the queue. Free it and pass
@@ -46,7 +115,7 @@ static void *z_queue_node_peek(sys_sfnode_t *node, bool needs_free)
 			k_free(anode);
 		}
 	} else {
-		/* Data was directly placed in the queue, the first word
+		/* Data was directly placed in the queue, the first pointer-sized field
 		 * reserved for the linked list. User mode isn't allowed to
 		 * do this, although it can get data sent this way.
 		 */
@@ -58,7 +127,7 @@ static void *z_queue_node_peek(sys_sfnode_t *node, bool needs_free)
 
 void z_impl_k_queue_init(struct k_queue *queue)
 {
-	sys_sflist_init(&queue->data_q);
+	sys_slist_init(&queue->data_q);
 	queue->lock = (struct k_spinlock) {};
 	z_waitq_init(&queue->wait_q);
 #if defined(CONFIG_POLL)
@@ -134,7 +203,7 @@ static int32_t queue_insert(struct k_queue *queue, void *prev, void *data,
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_queue, queue_insert, queue, alloc);
 
 	if (is_append) {
-		prev = sys_sflist_peek_tail(&queue->data_q);
+		prev = sys_queue_list_peek_tail(&queue->data_q);
 	}
 
 	if (z_sched_wake(&queue->wait_q, 0, data)) {
@@ -153,13 +222,13 @@ static int32_t queue_insert(struct k_queue *queue, void *prev, void *data,
 			goto out;
 		}
 		anode->data = data;
-		sys_sfnode_init(&anode->node, 0x1);
+		z_queue_node_init(&anode->node, Z_QUEUE_NODE_FLAG_ALLOCATED);
 		data = anode;
 	} else {
-		sys_sfnode_init(data, 0x0);
+		z_queue_node_init(data, 0U);
 	}
 
-	sys_sflist_insert(&queue->data_q, prev, data);
+	sys_queue_list_insert(&queue->data_q, prev, data);
 	resched = queue_handle_poll_events(queue, K_POLL_STATE_DATA_AVAILABLE);
 
 out:
@@ -268,7 +337,7 @@ int k_queue_append_list(struct k_queue *queue, void *head, void *tail)
 	}
 
 	if (head != NULL) {
-		sys_sflist_append_list(&queue->data_q, head, tail);
+		sys_queue_list_append_list(&queue->data_q, head, tail);
 	}
 
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_queue, append_list, queue, 0);
@@ -302,9 +371,8 @@ int k_queue_merge_slist(struct k_queue *queue, sys_slist_t *list)
 	 * - the slist implementation keeps the next pointer as the first
 	 *   field of the node object type
 	 * - list->tail->next = NULL.
-	 * - sflist implementation only differs from slist by stuffing
-	 *   flag bytes in the lower order bits of the data pointer
-	 * - source list is really an slist and not an sflist with flags set
+	 * - the queue list uses bit 0 of each next pointer as its only flag
+	 * - the source is an ordinary slist and has no tagged links
 	 */
 	ret = k_queue_append_list(queue, list->head, list->tail);
 	CHECKIF(ret != 0) {
@@ -326,10 +394,10 @@ void *z_impl_k_queue_get(struct k_queue *queue, k_timeout_t timeout)
 
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_queue, get, queue, timeout);
 
-	if (likely(!sys_sflist_is_empty(&queue->data_q))) {
-		sys_sfnode_t *node;
+	if (likely(!sys_queue_list_is_empty(&queue->data_q))) {
+		sys_queue_node_t *node;
 
-		node = sys_sflist_get_not_empty(&queue->data_q);
+		node = sys_queue_list_get_not_empty(&queue->data_q);
 		data = z_queue_node_peek(node, true);
 		k_spin_unlock(&queue->lock, key);
 
@@ -361,21 +429,21 @@ bool k_queue_remove(struct k_queue *queue, void *data)
 {
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_queue, remove, queue);
 	k_spinlock_key_t key = k_spin_lock(&queue->lock);
-	sys_sfnode_t *prev = NULL;
-	sys_sfnode_t *node = sys_sflist_peek_head(&queue->data_q);
+	sys_queue_node_t *prev = NULL;
+	sys_queue_node_t *node = sys_queue_list_peek_head(&queue->data_q);
 	bool ret = false;
 
 	while (node != NULL) {
 		void *peeked = z_queue_node_peek(node, false);
 
 		if (peeked == data) {
-			sys_sflist_remove(&queue->data_q, prev, node);
+			sys_queue_list_remove(&queue->data_q, prev, node);
 			(void)z_queue_node_peek(node, true);
 			ret = true;
 			break;
 		}
 		prev = node;
-		node = sys_sflist_peek_next(node);
+		node = sys_queue_list_peek_next(node);
 	}
 
 	k_spin_unlock(&queue->lock, key);
@@ -390,10 +458,10 @@ bool k_queue_unique_append(struct k_queue *queue, void *data)
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_queue, unique_append, queue);
 	k_spinlock_key_t key = k_spin_lock(&queue->lock);
 
-	sys_sfnode_t *test;
+	sys_queue_node_t *test;
 
-	SYS_SFLIST_FOR_EACH_NODE(&queue->data_q, test) {
-		if (test == (sys_sfnode_t *) data) {
+	Z_GENLIST_FOR_EACH_NODE(queue_list, &queue->data_q, test) {
+		if (test == (sys_queue_node_t *)data) {
 			k_spin_unlock(&queue->lock, key);
 			SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_queue, unique_append, queue, false);
 
@@ -411,7 +479,7 @@ bool k_queue_unique_append(struct k_queue *queue, void *data)
 void *z_impl_k_queue_peek_head(struct k_queue *queue)
 {
 	k_spinlock_key_t key = k_spin_lock(&queue->lock);
-	void *ret = z_queue_node_peek(sys_sflist_peek_head(&queue->data_q), false);
+	void *ret = z_queue_node_peek(sys_queue_list_peek_head(&queue->data_q), false);
 
 	k_spin_unlock(&queue->lock, key);
 
@@ -423,7 +491,7 @@ void *z_impl_k_queue_peek_head(struct k_queue *queue)
 void *z_impl_k_queue_peek_tail(struct k_queue *queue)
 {
 	k_spinlock_key_t key = k_spin_lock(&queue->lock);
-	void *ret = z_queue_node_peek(sys_sflist_peek_tail(&queue->data_q), false);
+	void *ret = z_queue_node_peek(sys_queue_list_peek_tail(&queue->data_q), false);
 
 	k_spin_unlock(&queue->lock, key);
 
