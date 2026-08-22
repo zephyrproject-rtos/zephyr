@@ -518,6 +518,13 @@ Devicetree
 Other notable changes
 *********************
 
+* ADC
+
+  * STM32 ADC driver (:dtcompatible:`st,stm32-adc`): when
+    :kconfig:option:`CONFIG_ADC_STM32_VREFINT_CALIBRATE` is enabled,
+    :c:func:`adc_ref_internal` may return a measured scale instead of DT
+    ``vref-mv``. See the :ref:`migration guide<migration_4.5>` ADC section.
+
 * Build system
 
   * The minimum required CMake version has been raised to 3.28.0, a version satisfied by the CMake package in the
