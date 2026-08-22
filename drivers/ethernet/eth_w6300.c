@@ -483,7 +483,7 @@ static void w6300_thread(void *p1, void *p2, void *p3)
 			w6300_update_link_status(dev);
 		}
 
-		if (res == 0 && ctx->state.is_up) {
+		if (ctx->state.is_up) {
 			w6300_handle_interrupts(dev, &config->interrupt);
 		}
 	}
