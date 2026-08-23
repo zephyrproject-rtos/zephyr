@@ -79,9 +79,8 @@ void mpipe_thread_resume(struct mpipe_thread *thread)
 		}
 	}
 
-	/* Wake from initial K_FOREVER sleep (no-op if already awake) */
+	/* Parked on the sem; the give releases it (wakeup covers any start delay). */
 	k_wakeup(&thread->thread);
-	/* Unblock from wait() if blocked on the semaphore */
 	k_sem_give(&thread->sem);
 }
 

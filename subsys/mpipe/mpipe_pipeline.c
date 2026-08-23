@@ -379,10 +379,15 @@ mpipe_pipeline_change_state(struct mpipe_element *element, enum mpipe_state_chan
 		/* Clear the flushing gate so buffers can flow again */
 		mpipe_pipeline_set_flushing(&pipeline->bin, false);
 
-		/* Create the thread but do not start it (K_FOREVER) */
+		/*
+		 * Start now; wait() gates it on the PAUSED state until resumed.
+		 * Creating it delayed (K_FOREVER) + k_wakeup() to start races with
+		 * the start-delay timeout and can leave the source unstarted after
+		 * a replay.
+		 */
 		if (mpipe_thread_create(&pipeline->thread, mpipe_pipeline_thread_func, element,
 					NULL, NULL, CONFIG_MPIPE_THREAD_DEFAULT_PRIORITY,
-					K_FOREVER) == NULL) {
+					K_NO_WAIT) == NULL) {
 			LOG_ERR("Failed to create a new pipeline thread");
 			return MPIPE_STATE_CHANGE_FAILURE;
 		}
