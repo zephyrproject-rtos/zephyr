@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright (c) 2026 Dev It Wise
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  depends_on: netif
+  tags:
+    - net
+    - sntp
+tests:
+  net.sntp:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+      - qemu_x86
+    integration_platforms:
+      - native_sim
