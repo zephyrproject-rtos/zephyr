@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <espressif/esp32p4/esp32p4_n16r8.dtsi>
+#include <espressif/esp32p4/esp32p4.dtsi>
 #include "esp32p4x_function_ev_board_hpcore-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <espressif/partitions_0x2000_default_16M.dtsi>
@@ -39,6 +39,15 @@
 			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
+};
+
+&flash0 {
+	reg = <0x0 DT_SIZE_M(16)>;
+	ranges = <0x0 0x0 DT_SIZE_M(16)>;
+};
+
+&psram0 {
+	size = <DT_SIZE_M(8)>;
 };
 
 /*

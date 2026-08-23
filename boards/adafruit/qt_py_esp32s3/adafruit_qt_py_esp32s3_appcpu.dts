@@ -1,10 +1,12 @@
 /*
  * Copyright (c) 2024 Ian Wakely
+ *
+ * SPDX-License-Identifier: Apache-2.0
  */
 
 /dts-v1/;
 
-#include <espressif/esp32s3/esp32s3_wroom_n8.dtsi>
+#include <espressif/esp32s3/esp32s3.dtsi>
 #include "adafruit_qt_py_esp32s3-pinctrl.dtsi"
 #include <espressif/partitions_0x0_amp.dtsi>
 
@@ -19,6 +21,11 @@
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_appcpu_partition;
 	};
+};
+
+&flash0 {
+	reg = <0x0 DT_SIZE_M(8)>;
+	ranges = <0x0 0x0 DT_SIZE_M(8)>;
 };
 
 &trng0 {

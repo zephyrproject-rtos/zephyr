@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <espressif/esp32s2/esp32s2_wroom.dtsi>
+#include <espressif/esp32s2/esp32s2.dtsi>
 #include "esp32s2_franzininho-pinctrl.dtsi"
 #include <espressif/partitions_0x1000_default.dtsi>
 
@@ -42,6 +42,11 @@
 			label = "User - LED1";
 		};
 	};
+};
+
+&flash0 {
+	reg = <0x0 DT_SIZE_M(4)>;
+	ranges = <0x0 0x0 DT_SIZE_M(4)>;
 };
 
 &uart0 {

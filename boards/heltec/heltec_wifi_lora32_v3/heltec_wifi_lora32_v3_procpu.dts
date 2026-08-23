@@ -7,7 +7,7 @@
  */
 /dts-v1/;
 
-#include <espressif/esp32s3/esp32s3_fn8.dtsi>
+#include <espressif/esp32s3/esp32s3.dtsi>
 #include "heltec_wifi_lora32_v3-pinctrl.dtsi"
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
@@ -88,6 +88,11 @@
 		zephyr,bt-hci = &esp32_bt_hci;
 		zephyr,display = &ssd1306_128x64;
 	};
+};
+
+&flash0 {
+	reg = <0x0 DT_SIZE_M(8)>;
+	ranges = <0x0 0x0 DT_SIZE_M(8)>;
 };
 
 &adc1 {

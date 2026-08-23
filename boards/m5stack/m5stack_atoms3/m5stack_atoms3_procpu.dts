@@ -5,7 +5,7 @@
  */
 /dts-v1/;
 
-#include <espressif/esp32s3/esp32s3_fn8.dtsi>
+#include <espressif/esp32s3/esp32s3.dtsi>
 #include "m5stack_atoms3-pinctrl.dtsi"
 #include "grove_connectors.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
@@ -89,6 +89,11 @@
 			mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
 		};
 	};
+};
+
+&flash0 {
+	reg = <0x0 DT_SIZE_M(8)>;
+	ranges = <0x0 0x0 DT_SIZE_M(8)>;
 };
 
 &usb_serial {
