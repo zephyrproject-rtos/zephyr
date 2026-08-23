@@ -10,21 +10,21 @@ config INT_BENCH_NUM_ITERATIONS
 	default 1000
 	help
 	  Number of samples collected for each measured scenario. Larger
-	  values give more stable statistics at the cost of runtime and of
-	  the RAM needed to record the individual samples (4 bytes each).
+	  values give more stable statistics at the cost of runtime.
 
 choice INT_BENCH_TRIGGER
 	prompt "Interrupt trigger backend"
-	default INT_BENCH_TRIGGER_SW_IRQ if CPU_CORTEX_M || GIC || ARC
+	default INT_BENCH_TRIGGER_SW_IRQ if CPU_CORTEX_M || GIC || ARC || X86
 	default INT_BENCH_TRIGGER_OFFLOAD
 
 config INT_BENCH_TRIGGER_SW_IRQ
 	bool "Software-triggered hardware interrupt"
-	depends on CPU_CORTEX_M || GIC || ARC
+	depends on CPU_CORTEX_M || GIC || ARC || X86
 	help
 	  Raise a real asynchronous interrupt through the platform
 	  interrupt controller (NVIC STIR/ISPR on Cortex-M, a GIC SGI on
-	  Arm GIC platforms, IRQ_HINT on ARC). This exercises the full
+	  Arm GIC platforms, IRQ_HINT on ARC, a local APIC self IPI on
+	  x86). This exercises the full
 	  hardware interrupt entry path and is required for the entry
 	  latency, critical section and throughput scenarios.
 
@@ -48,8 +48,8 @@ config INT_BENCH_IRQ_LINE
 	  IRQ line the benchmark connects its ISR to and then triggers
 	  from software. The default of -1 selects a platform-appropriate
 	  line automatically: an SGI on GIC platforms, a line known to be
-	  free on selected QEMU boards, and the last available line
-	  (CONFIG_NUM_IRQS - 1) otherwise. Override this on SoCs where
+	  free on selected QEMU boards and on x86, and the last
+	  available line (CONFIG_NUM_IRQS - 1) otherwise. Override this on SoCs where
 	  the automatic choice is not an implemented or free line.
 
 config INT_BENCH_IRQ_PRIO
@@ -115,10 +115,19 @@ config INT_BENCH_SCENARIO_DYNAMIC
 	depends on INT_BENCH_TRIGGER_SW_IRQ
 	depends on DYNAMIC_INTERRUPTS
 	depends on !SHARED_INTERRUPTS
+	# On x86, arch_irq_connect_dynamic() is a one shot allocation
+	# rather than a rebindable install: it allocates a new IDT vector
+	# and consumes an entry from a fixed pool of interrupt stubs on
+	# every call, and asserts that the line is not already
+	# configured. Repeatedly connecting the same line to gather
+	# samples exhausts that pool.
+	depends on !X86
 	default y
 	help
 	  Measure the cost of installing an ISR at runtime with
-	  irq_connect_dynamic().
+	  irq_connect_dynamic(), by repeatedly reinstalling the handler
+	  on the benchmark IRQ line. This requires the architecture to
+	  support rebinding a line that is already connected.
 
 config INT_BENCH_SCENARIO_THROUGHPUT
 	bool "Sustained interrupt round-trip cost"
