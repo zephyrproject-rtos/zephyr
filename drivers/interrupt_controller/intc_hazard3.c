@@ -7,6 +7,7 @@
 #define DT_DRV_COMPAT hazard3_hazard3_intc
 
 #include <zephyr/kernel.h>
+#include <zephyr/drivers/interrupt_controller/intc_hazard3.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/irq.h>
 #include <zephyr/device.h>
@@ -19,17 +20,17 @@
 
 #define CSR_WINDOW_SIZE 16
 
-void arch_irq_enable(unsigned int irq)
+void intc_hazard3_irq_enable(unsigned int irq)
 {
 	irq_set_enabled(irq, true);
 }
 
-void arch_irq_disable(unsigned int irq)
+void intc_hazard3_irq_disable(unsigned int irq)
 {
 	irq_set_enabled(irq, false);
 }
 
-int arch_irq_is_enabled(unsigned int irq)
+int intc_hazard3_irq_is_enabled(unsigned int irq)
 {
 	return pico_irq_is_enabled(irq);
 }
