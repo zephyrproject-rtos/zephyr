@@ -15,6 +15,16 @@ LOG_MODULE_REGISTER(tftp_client, CONFIG_TFTP_LOG_LEVEL);
 	(sa.sa_family == AF_INET ? \
 		sizeof(struct sockaddr_in) : sizeof(struct sockaddr_in6))
 
+static char *error_msg(struct tftpc *client, int rcv_size)
+{
+	size_t end = CLAMP((size_t)rcv_size, TFTP_HEADER_SIZE,
+			   sizeof(client->tftp_buf) - 1);
+
+	client->tftp_buf[end] = '\0';
+
+	return (char *)client->tftp_buf + TFTP_HEADER_SIZE;
+}
+
 /*
  * Prepare a request as required by RFC1350. This packet can be sent
  * out directly to the TFTP server.
@@ -121,7 +131,7 @@ static int send_data(int sock, struct tftpc *client, uint32_t block_no, const ui
 						.type = TFTP_EVT_ERROR
 					};
 
-					evt.param.error.msg = client->tftp_buf + TFTP_HEADER_SIZE;
+					evt.param.error.msg = error_msg(client, ret);
 					evt.param.error.code = block_no;
 					client->callback(&evt);
 				}
@@ -282,7 +292,7 @@ int tftp_get(struct tftpc *client, const char *remote_file, const char *mode)
 					.type = TFTP_EVT_ERROR
 				};
 
-				evt.param.error.msg = client->tftp_buf + TFTP_HEADER_SIZE;
+				evt.param.error.msg = error_msg(client, rcv_size);
 				evt.param.error.code = block_no;
 				client->callback(&evt);
 			}
@@ -405,7 +415,7 @@ int tftp_put(struct tftpc *client, const char *remote_file, const char *mode,
 					.type = TFTP_EVT_ERROR
 				};
 
-				evt.param.error.msg = client->tftp_buf + TFTP_HEADER_SIZE;
+				evt.param.error.msg = error_msg(client, ret);
 				evt.param.error.code = block_no;
 				client->callback(&evt);
 			}
