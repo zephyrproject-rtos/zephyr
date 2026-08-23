@@ -10,6 +10,12 @@
  *
  */
 
+/*
+ * This file is x86 platform glue, not an interrupt controller driver:
+ * it implements the architecture interrupt control functions and vector
+ * programming by dispatching between the IOAPIC and LOAPIC drivers.
+ */
+
 #include <zephyr/sys/__assert.h>
 #include <zephyr/kernel.h>
 #include <zephyr/arch/cpu.h>
