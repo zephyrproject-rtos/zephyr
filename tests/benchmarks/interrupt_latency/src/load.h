@@ -42,6 +42,12 @@ void bench_load_pollute(void);
  */
 void bench_load_churn(void);
 
+/*
+ * Number of times the load timer handler has run, for attributing
+ * outlying samples to it. Zero when there is no timer load.
+ */
+uint32_t bench_load_timer_runs(void);
+
 /* Describe the enabled load sources, for the benchmark banner. */
 const char *bench_load_description(void);
 
@@ -61,6 +67,11 @@ static inline void bench_load_pollute(void)
 
 static inline void bench_load_churn(void)
 {
+}
+
+static inline uint32_t bench_load_timer_runs(void)
+{
+	return 0;
 }
 
 static inline const char *bench_load_description(void)

@@ -353,6 +353,33 @@ for the column layout)::
    M,interrupt,entry_trigger_to_isr,1000,55000,55.000,0.000,0.000,55,1,55,1
    M,interrupt,exit_resume_interrupted,1000,56000,56.000,0.000,0.000,56,1,56,1
 
+Where the outliers come from
+****************************
+
+:kconfig:option:`CONFIG_INT_BENCH_OUTLIER_TRACE` prints a line for each
+sample far above the smallest one seen, naming what else happened while it
+was taken: how many clock ticks were announced and how many times the load
+timer ran. An outlier accompanied by neither was caused by something the
+benchmark cannot observe, such as the memory system or an attached debug
+probe.
+
+On an FRDM-MCXN947 under load this attributes the tail completely. Every
+outlier reports one tick and one load timer run, so the tail is the
+competing timer interrupt and nothing else, and its size, around 1200 to
+1350 cycles, is the cost of that interrupt being serviced first.
+
+It also explains why the scenarios differ in how often they are hit. The
+frequency is simply how much of the time each measurement is exposed:
+``irq_to_thread`` spans 2.2us against a 1ms timer period and sees 0.26% of
+its samples disturbed, while ``locked_unlock_to_isr`` holds interrupts
+masked for far longer and sees 2.1%, which is why its tail begins at p99
+rather than at p99.9.
+
+Idle outliers are a different matter. One run in three showed a single
+566 cycle sample out of 10000 and the other two showed none at all, so
+there is nothing periodic to find; with no load there is no tick or timer
+for the trace to point at either.
+
 Notes on methodology
 ********************
 

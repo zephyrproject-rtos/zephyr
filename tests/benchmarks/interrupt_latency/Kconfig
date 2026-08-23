@@ -224,6 +224,36 @@ config INT_BENCH_ISR_IN_RAM
 	  put them, so the difference is a lower bound on what fully
 	  relocating the interrupt path would save.
 
+config INT_BENCH_OUTLIER_TRACE
+	bool "Report what coincided with outlying samples"
+	help
+	  Print a line for each sample far above the smallest one seen,
+	  naming what else the system did while it was being taken: how
+	  many clock ticks were announced and how many times the load
+	  timer ran. An outlier that coincides with neither was caused by
+	  something the benchmark cannot see, such as the memory system
+	  or a debug probe.
+
+	  The witnesses are read once per sample, outside the measured
+	  span, so this changes the steady state slightly and is meant
+	  for diagnosis rather than for the numbers to be quoted.
+
+config INT_BENCH_OUTLIER_FACTOR
+	int "How far above the minimum counts as an outlier"
+	depends on INT_BENCH_OUTLIER_TRACE
+	default 4
+	help
+	  A sample is reported when it exceeds this many times the
+	  smallest sample seen so far in the same benchmark.
+
+config INT_BENCH_OUTLIER_LIMIT
+	int "Maximum outliers reported per benchmark"
+	depends on INT_BENCH_OUTLIER_TRACE
+	default 8
+	help
+	  Printing perturbs the samples that follow, so stop after this
+	  many. The count of the rest is still reported.
+
 comment "Scenarios"
 
 config INT_BENCH_SCENARIO_ENTRY
