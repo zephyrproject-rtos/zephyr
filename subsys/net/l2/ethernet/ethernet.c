@@ -295,10 +295,6 @@ static struct ethernet_context *ethernet_mcast_ctx(struct net_if *iface)
 		return NULL;
 	}
 
-	if (!(net_eth_get_hw_capabilities(iface) & ETHERNET_HW_FILTERING)) {
-		return NULL;
-	}
-
 	return net_if_l2_data(iface);
 }
 

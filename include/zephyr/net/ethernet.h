@@ -434,8 +434,7 @@ struct ethernet_filter {
 /** @cond INTERNAL_HIDDEN */
 
 /* The L2 multicast addresses are tracked only if something joins the groups,
- * either the IP level or a packet socket, and there is a receive filter to
- * program.
+ * either the IP level or a packet socket.
  */
 #if defined(CONFIG_NET_L2_ETHERNET) && !defined(CONFIG_NET_RAW_MODE) &&	\
 	(defined(CONFIG_NET_NATIVE_IP) ||				\
