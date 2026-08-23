@@ -91,7 +91,7 @@ int intc_irqmp_irq_is_enabled(unsigned int source)
 	return !!(*pimask & (1U << source));
 }
 
-int z_sparc_int_get_source(int irl)
+int intc_irqmp_get_source(int irl)
 {
 	volatile struct irqmp_regs *regs = get_irqmp_regs();
 	const int eirq = get_irqmp_eirq();
