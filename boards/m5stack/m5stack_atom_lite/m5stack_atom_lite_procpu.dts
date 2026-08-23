@@ -7,7 +7,7 @@
  */
 /dts-v1/;
 
-#include <espressif/esp32/esp32_pico_d4.dtsi>
+#include <espressif/esp32/esp32.dtsi>
 #include "m5stack_atom_lite-pinctrl.dtsi"
 #include "grove_connectors.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
@@ -53,6 +53,11 @@
 			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
+};
+
+&flash0 {
+	reg = <0x0 DT_SIZE_M(4)>;
+	ranges = <0x0 0x0 DT_SIZE_M(4)>;
 };
 
 &uart0 {
@@ -131,6 +136,7 @@
 };
 
 &gpio0 {
+	gpio-reserved-ranges = <6 3>, <11 1>, <16 2>, <20 1>, <24 1>, <28 4>;
 	status = "okay";
 };
 

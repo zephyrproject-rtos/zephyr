@@ -7,7 +7,7 @@
 
 /dts-v1/;
 
-#include <espressif/esp32c3/esp32c3_fx4.dtsi>
+#include <espressif/esp32c3/esp32c3.dtsi>
 #include "esp32c3_042_oled-pinctrl.dtsi"
 #include <espressif/partitions_0x0_default.dtsi>
 
@@ -31,6 +31,11 @@
 	};
 
 	/* WS2812B LED connected to GPIO2 */
+};
+
+&flash0 {
+	reg = <0x0 DT_SIZE_M(4)>;
+	ranges = <0x0 0x0 DT_SIZE_M(4)>;
 };
 
 /* Have to use uart1 as some tests are hardcoded for that DTS node :/ */
