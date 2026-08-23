@@ -11,6 +11,9 @@ config ETH_DWC_ETHER_QOS_CORE
 	bool
 	depends on NET_BUF_FIXED_DATA_SIZE
 	select CACHE_MANAGEMENT if DCACHE
+	# The DMA descriptor rings are not cache maintained, so they need an
+	# uncached region, which on ARM can only be carved out by the MPU.
+	select ARM_MPU if CPU_HAS_ARM_MPU && DCACHE
 	help
 	  This is a driver for the Synopsys DesignWare Ethernet MAC 10/100/1G Quality-of-Service,
 	  also referred to as "dwc_ether_qos".
@@ -20,6 +23,9 @@ config ETH_DWC_ETHER_1000_CORE
 	bool
 	depends on NET_BUF_FIXED_DATA_SIZE
 	select CACHE_MANAGEMENT if DCACHE
+	# The DMA descriptor rings are not cache maintained, so they need an
+	# uncached region, which on ARM can only be carved out by the MPU.
+	select ARM_MPU if CPU_HAS_ARM_MPU && DCACHE
 	help
 	  This is a driver for the Synopsys DesignWare Ethernet MAC 10/100/1G Universal,
 	  also referred to as "dwc_ether_mac10_100_1000_universal".
