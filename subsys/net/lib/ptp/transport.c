@@ -32,6 +32,13 @@ static const struct net_in6_addr pdelay_mcast_addr_ipv6 = {
 static const uint8_t mcast_addr_l2[PTP_L2_ADDR_LEN] = {0x01, 0x1B, 0x19, 0x00, 0x00, 0x00};
 static const uint8_t pdelay_mcast_addr_l2[PTP_L2_ADDR_LEN] = {0x01, 0x80, 0xC2, 0x00, 0x00, 0x0E};
 
+#if defined(CONFIG_PTP_IEEE_802_3_PROTOCOL) && defined(CONFIG_NET_SOCKETS_PACKET_MCAST_MEMBERSHIP)
+BUILD_ASSERT((CONFIG_PTP_NUM_PORTS * (IS_ENABLED(CONFIG_PTP_DELAY_MECHANISM_P2P) ? 2 : 1)) <=
+		     CONFIG_NET_SOCKETS_PACKET_MCAST_MEMBERSHIP_COUNT,
+	     "CONFIG_NET_SOCKETS_PACKET_MCAST_MEMBERSHIP_COUNT not large enough for the number of "
+	     "PTP ports and delay mechanisms");
+#endif
+
 static bool transport_is_pdelay_msg(const void *buf)
 {
 	const struct ptp_msg *msg = buf;
@@ -136,8 +143,42 @@ static int transport_join_ipv6_group(struct ptp_port *port, int socket,
 	return 0;
 }
 
+static int transport_join_l2_group(struct ptp_port *port, int socket, const uint8_t *addr,
+				   const char *name)
+{
+	struct net_packet_mreq mreq = {0};
+
+	mreq.mr_ifindex = net_if_get_by_iface(port->iface);
+	mreq.mr_type = NET_PACKET_MR_MULTICAST;
+	mreq.mr_alen = PTP_L2_ADDR_LEN;
+	memcpy(mreq.mr_address, addr, PTP_L2_ADDR_LEN);
+
+	if (zsock_setsockopt(socket, ZSOCK_SOL_PACKET, ZSOCK_PACKET_ADD_MEMBERSHIP, &mreq,
+			     sizeof(mreq)) != 0) {
+		LOG_ERR("Failed to join L2 %s multicast group", name);
+		return -1;
+	}
+
+	return 0;
+}
+
 static int transport_join_multicast(struct ptp_port *port)
 {
+	if (IS_ENABLED(CONFIG_PTP_IEEE_802_3_PROTOCOL)) {
+		if (transport_join_l2_group(port, port->socket[PTP_SOCKET_EVENT], mcast_addr_l2,
+					    "default") != 0) {
+			return -1;
+		}
+
+		if (CONFIG_PTP_DELAY_MECHANISM == PTP_DM_P2P &&
+		    transport_join_l2_group(port, port->socket[PTP_SOCKET_EVENT],
+					    pdelay_mcast_addr_l2, "peer-delay") != 0) {
+			return -1;
+		}
+
+		return 0;
+	}
+
 	if (IS_ENABLED(CONFIG_PTP_UDP_IPV4_PROTOCOL)) {
 		if (transport_join_ipv4_group(port, port->socket[PTP_SOCKET_GENERAL],
 					      &mcast_addr_ipv4, "default") != 0) {
@@ -379,7 +420,7 @@ int ptp_transport_open(struct ptp_port *port)
 		port->socket[PTP_SOCKET_EVENT] = socket;
 		port->socket[PTP_SOCKET_GENERAL] = -1;
 
-		return 0;
+		goto end;
 	}
 
 	for (int i = 0; i < PTP_SOCKET_CNT; i++) {
@@ -399,6 +440,7 @@ int ptp_transport_open(struct ptp_port *port)
 		port->socket[i] = socket;
 	}
 
+end:
 	if (transport_join_multicast(port)) {
 		ptp_transport_close(port);
 		return -1;
