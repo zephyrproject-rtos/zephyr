@@ -13,3 +13,5 @@ zephyr_include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../common)
 if(CONFIG_CPU_CORTEX_A)
   zephyr_linker_sources_ifdef(CONFIG_OPENAMP_RSC_TABLE SECTIONS rsc_table.ld)
 endif()
+
+zephyr_sources_ifdef(CONFIG_NXP_IRQSTEER ../common/irqsteer_irq.c)
