@@ -44,9 +44,13 @@ static K_SEM_DEFINE(kernel_load_sem, 0, 1);
 #endif
 
 #ifdef CONFIG_INT_BENCH_LOAD_TIMER
+static volatile uint32_t load_timer_runs;
+
 static void load_timer_handler(struct k_timer *timer)
 {
 	ARG_UNUSED(timer);
+
+	load_timer_runs++;
 
 	/*
 	 * Runs in the system clock ISR. Kept short on purpose: the
@@ -190,6 +194,15 @@ void bench_load_pollute(void)
 	for (size_t i = 0U; i < WORKING_SET_SIZE; i += WORKING_SET_STRIDE) {
 		working_set[i]++;
 	}
+#endif
+}
+
+uint32_t bench_load_timer_runs(void)
+{
+#ifdef CONFIG_INT_BENCH_LOAD_TIMER
+	return load_timer_runs;
+#else
+	return 0;
 #endif
 }
 

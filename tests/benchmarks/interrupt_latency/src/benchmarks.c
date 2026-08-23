@@ -25,6 +25,159 @@
 
 #define NUM_ITERATIONS CONFIG_INT_BENCH_NUM_ITERATIONS
 
+#ifdef CONFIG_INT_BENCH_OUTLIER_TRACE
+/*
+ * Cortex-M counts the cycles it spends entering and leaving exceptions
+ * in DWT_EXCCNT, which is the one witness that distinguishes an
+ * interrupt from a stall in the memory system. It is only eight bits
+ * wide, but exception overhead is a few cycles at a time, so it does
+ * not wrap between consecutive samples.
+ */
+#if defined(CONFIG_CPU_CORTEX_M) && defined(CONFIG_CORTEX_M_DWT)
+#include <cmsis_core.h>
+#define OUTLIER_HAS_EXC_COUNT 1
+
+static inline void outlier_exc_init(void)
+{
+	DWT->CTRL |= DWT_CTRL_EXCEVTENA_Msk;
+	DWT->EXCCNT = 0;
+}
+
+static inline uint32_t outlier_exc_count(void)
+{
+	return DWT->EXCCNT & 0xFFU;
+}
+#else
+static inline void outlier_exc_init(void)
+{
+}
+
+static inline uint32_t outlier_exc_count(void)
+{
+	return 0;
+}
+#endif
+
+/*
+ * Report what else the system was doing when a sample came out far
+ * above the smallest one seen.
+ *
+ * The witnesses are sampled once per iteration rather than around the
+ * measured span itself, so what they cover is the interval between
+ * consecutive samples. That is enough to tell an outlier caused by a
+ * clock tick or by the load timer from one caused by something the
+ * benchmark cannot observe, which is the distinction worth having.
+ */
+static uint32_t outlier_min;
+static uint32_t outlier_reported;
+static uint32_t outlier_seen;
+static uint32_t outlier_prev_ticks;
+static uint32_t outlier_prev_timer;
+static uint32_t outlier_prev_exc;
+static timing_t outlier_prev_time;
+static uint32_t outlier_iteration;
+
+static void outlier_check(uint64_t cycles)
+{
+	uint32_t ticks = (uint32_t)sys_clock_tick_get_32();
+	uint32_t timer = bench_load_timer_runs();
+	uint32_t exc = outlier_exc_count();
+	uint32_t iteration = outlier_iteration++;
+
+	/*
+	 * The framework does not tell a scenario when it is starting, so
+	 * count the samples and wrap. A scenario that skips a sample
+	 * makes the wrap late, which only shifts the iteration numbers
+	 * in the trace.
+	 */
+	if (outlier_iteration >= NUM_ITERATIONS) {
+		outlier_iteration = 0U;
+	}
+
+	if (iteration == 0U) {
+		/*
+		 * A new benchmark is starting: close off the previous
+		 * one, since there is no hook for its end here.
+		 */
+		if (outlier_seen > outlier_reported) {
+			printk("\tprevious benchmark: %u outliers in total, %u reported\n",
+			       outlier_seen, outlier_reported);
+		}
+
+		outlier_min = UINT32_MAX;
+		outlier_reported = 0U;
+		outlier_seen = 0U;
+		outlier_exc_init();
+	} else if ((outlier_min != UINT32_MAX) &&
+		   (cycles > (uint64_t)outlier_min * CONFIG_INT_BENCH_OUTLIER_FACTOR)) {
+		outlier_seen++;
+
+		if (outlier_reported < CONFIG_INT_BENCH_OUTLIER_LIMIT) {
+			timing_t now = timing_counter_get();
+			timing_t prev = outlier_prev_time;
+			uint64_t since = (outlier_prev_time == 0) ? 0 :
+					 timing_cycles_get(&prev, &now);
+
+			outlier_prev_time = now;
+			outlier_reported++;
+			printk("\toutlier: iteration %u, %llu cycles against a minimum of %u, "
+			       "ticks +%u, load timer +%u, exception cycles +%u\n",
+			       iteration, cycles, outlier_min, ticks - outlier_prev_ticks,
+			       timer - outlier_prev_timer,
+			       (exc - outlier_prev_exc) & 0xFFU);
+			printk("\t          %llu cycles since the previous one\n", since);
+		}
+	}
+
+	if (cycles < outlier_min) {
+		outlier_min = (uint32_t)cycles;
+	}
+
+	outlier_prev_ticks = ticks;
+	outlier_prev_timer = timer;
+	outlier_prev_exc = exc;
+}
+#endif /* CONFIG_INT_BENCH_OUTLIER_TRACE */
+
+/*
+ * The trace needs the size of the sample, which the framework does not
+ * hand back. Take its own timestamps immediately outside the span, so
+ * that what it measures is the sample plus one counter read and the
+ * measurement itself pays nothing for being traced.
+ */
+#ifdef CONFIG_INT_BENCH_OUTLIER_TRACE
+static volatile timing_t trace_start;
+static volatile timing_t trace_end;
+
+#define BENCH_SPAN_START()						\
+	do {								\
+		trace_start = timing_counter_get();			\
+		ztest_benchmark_start();				\
+	} while (0)
+
+#define BENCH_SPAN_END()						\
+	do {								\
+		ztest_benchmark_end();					\
+		trace_end = timing_counter_get();			\
+	} while (0)
+
+static inline void bench_trace(void)
+{
+	timing_t s = trace_start;
+	timing_t e = trace_end;
+
+	outlier_check(timing_cycles_get(&s, &e));
+}
+#else
+#define BENCH_SPAN_START() ztest_benchmark_start()
+#define BENCH_SPAN_END()   ztest_benchmark_end()
+
+static inline void bench_trace(void)
+{
+}
+#endif /* CONFIG_INT_BENCH_OUTLIER_TRACE */
+
+
 #if defined(CONFIG_INT_BENCH_SCENARIO_DIRECT) || defined(CONFIG_INT_BENCH_SCENARIO_ZLI) || \
 	defined(CONFIG_INT_BENCH_SCENARIO_NESTED)
 #define BENCH_ALT_LINE_USED 1
@@ -42,7 +195,7 @@ static volatile bool alt_fired;
  */
 ISR_DIRECT_DECLARE(bench_alt_isr)
 {
-	ztest_benchmark_end();
+	BENCH_SPAN_END();
 	alt_fired = true;
 
 	return 0;
@@ -52,7 +205,7 @@ static void bench_alt_regular_isr(const void *arg)
 {
 	ARG_UNUSED(arg);
 
-	ztest_benchmark_end();
+	BENCH_SPAN_END();
 	alt_fired = true;
 }
 #endif
@@ -116,7 +269,7 @@ static volatile bool fired;
 /* Timestamp as early as possible in the ISR: measures the entry path */
 static BENCH_ISR_FUNC void entry_handler(void)
 {
-	ztest_benchmark_end();
+	BENCH_SPAN_END();
 	fired = true;
 }
 #endif
@@ -144,11 +297,13 @@ ZTEST_BENCHMARK_MANUAL(interrupt, entry_trigger_to_isr, NUM_ITERATIONS, entry_se
 	bench_load_churn();
 	bench_load_pollute();
 
-	ztest_benchmark_start();
+	BENCH_SPAN_START();
 	bench_trigger();
 
 	while (!fired) {
 	}
+
+	bench_trace();
 }
 #endif /* CONFIG_INT_BENCH_SCENARIO_ENTRY */
 
@@ -166,7 +321,7 @@ static struct k_thread waiter_thread;
 static BENCH_ISR_FUNC void exit_handler(void)
 {
 	fired = true;
-	ztest_benchmark_start();
+	BENCH_SPAN_START();
 }
 
 /*
@@ -196,13 +351,15 @@ ZTEST_BENCHMARK_MANUAL(interrupt, exit_resume_interrupted, NUM_ITERATIONS, exit_
 	while (!fired) {
 	}
 
-	ztest_benchmark_end();
+	BENCH_SPAN_END();
+
+	bench_trace();
 }
 
 static void resched_handler(void)
 {
 	k_sem_give(&wake_sem);
-	ztest_benchmark_start();
+	BENCH_SPAN_START();
 }
 
 
@@ -213,7 +370,7 @@ static void waiter_entry(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p3);
 
 	k_sem_take(&wake_sem, K_FOREVER);
-	ztest_benchmark_end();
+	BENCH_SPAN_END();
 	k_sem_give(&sync_sem);
 }
 
@@ -247,7 +404,7 @@ ZTEST_BENCHMARK_MANUAL(interrupt, exit_reschedule, NUM_ITERATIONS, resched_setup
 	bench_trigger();
 	k_sem_take(&sync_sem, K_FOREVER);
 
-
+	bench_trace();
 }
 #endif /* CONFIG_INT_BENCH_SCENARIO_EXIT */
 
@@ -292,11 +449,13 @@ ZTEST_BENCHMARK_MANUAL(interrupt, locked_unlock_to_isr, NUM_ITERATIONS, locked_s
 	 */
 	bench_load_pollute();
 
-	ztest_benchmark_start();
+	BENCH_SPAN_START();
 	irq_unlock(key);
 
 	while (!fired) {
 	}
+
+	bench_trace();
 }
 #endif /* CONFIG_INT_BENCH_SCENARIO_LOCKED */
 
@@ -312,11 +471,11 @@ static volatile uint32_t isr_count;
 static void throughput_handler(void)
 {
 	if (isr_count == 0U) {
-		ztest_benchmark_start();
+		BENCH_SPAN_START();
 		isr_count = 1U;
 		bench_trigger();
 	} else {
-		ztest_benchmark_end();
+		BENCH_SPAN_END();
 		done = true;
 	}
 }
@@ -352,7 +511,7 @@ ZTEST_BENCHMARK_MANUAL(interrupt, throughput_round_trip, NUM_ITERATIONS, through
 	while (!done) {
 	}
 
-
+	bench_trace();
 }
 #endif /* CONFIG_INT_BENCH_SCENARIO_THROUGHPUT */
 
@@ -381,9 +540,11 @@ ZTEST_BENCHMARK_MANUAL(interrupt, dynamic_connect, NUM_ITERATIONS, dynamic_setup
 	bench_load_churn();
 	bench_load_pollute();
 
-	ztest_benchmark_start();
+	BENCH_SPAN_START();
 	(void)irq_connect_dynamic(line, CONFIG_INT_BENCH_IRQ_PRIO, bench_trigger_isr, NULL, 0);
-	ztest_benchmark_end();
+	BENCH_SPAN_END();
+
+	bench_trace();
 }
 #endif /* CONFIG_INT_BENCH_SCENARIO_DYNAMIC */
 
@@ -426,9 +587,9 @@ static void mask_timer_handler(struct k_timer *timer)
 	ARG_UNUSED(timer);
 
 	if (mask_seq == 0U) {
-		ztest_benchmark_start();
+		BENCH_SPAN_START();
 	} else if (mask_seq == 1U) {
-		ztest_benchmark_end();
+		BENCH_SPAN_END();
 	}
 
 	mask_seq++;
@@ -493,6 +654,8 @@ ZTEST_BENCHMARK_MANUAL(interrupt, periodic_isr_interval, NUM_ITERATIONS, mask_se
 			irq_unlock(key);
 		}
 	}
+
+	bench_trace();
 }
 #endif /* CONFIG_INT_BENCH_SCENARIO_MASKING */
 
@@ -530,7 +693,7 @@ static void alt_entry_measure(const char *name)
 	bench_load_churn();
 	bench_load_pollute();
 
-	ztest_benchmark_start();
+	BENCH_SPAN_START();
 	bench_trigger_alt();
 
 	if (!alt_wait()) {
@@ -549,6 +712,8 @@ static void alt_entry_measure(const char *name)
 ZTEST_BENCHMARK_MANUAL(interrupt, entry_direct_isr, NUM_ITERATIONS, NULL, NULL)
 {
 	alt_entry_measure("entry_direct_isr");
+
+	bench_trace();
 }
 #endif /* CONFIG_INT_BENCH_SCENARIO_DIRECT */
 
@@ -571,6 +736,8 @@ ZTEST_BENCHMARK_MANUAL(interrupt, entry_direct_isr, NUM_ITERATIONS, NULL, NULL)
 ZTEST_BENCHMARK_MANUAL(interrupt, zli_entry_trigger_to_isr, NUM_ITERATIONS, NULL, NULL)
 {
 	alt_entry_measure("zli_entry_trigger_to_isr");
+
+	bench_trace();
 }
 
 ZTEST_BENCHMARK_MANUAL(interrupt, zli_entry_while_locked, NUM_ITERATIONS, NULL, NULL)
@@ -584,7 +751,7 @@ ZTEST_BENCHMARK_MANUAL(interrupt, zli_entry_while_locked, NUM_ITERATIONS, NULL, 
 
 	key = irq_lock();
 
-	ztest_benchmark_start();
+	BENCH_SPAN_START();
 	bench_trigger_alt();
 
 	served = alt_wait();
@@ -595,6 +762,8 @@ ZTEST_BENCHMARK_MANUAL(interrupt, zli_entry_while_locked, NUM_ITERATIONS, NULL, 
 		printk("zli_entry_while_locked: not served while locked, skipping\n");
 		return;
 	}
+
+	bench_trace();
 }
 #endif /* CONFIG_INT_BENCH_SCENARIO_ZLI */
 
@@ -611,7 +780,7 @@ static void e2e_waiter_entry(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p3);
 
 	k_sem_take(&wake_sem, K_FOREVER);
-	ztest_benchmark_end();
+	BENCH_SPAN_END();
 	k_sem_give(&sync_sem);
 }
 
@@ -646,10 +815,12 @@ ZTEST_BENCHMARK_MANUAL(interrupt, irq_to_thread, NUM_ITERATIONS, e2e_setup, e2e_
 	bench_load_churn();
 	bench_load_pollute();
 
-	ztest_benchmark_start();
+	BENCH_SPAN_START();
 	bench_trigger();
 
 	k_sem_take(&sync_sem, K_FOREVER);
+
+	bench_trace();
 }
 #endif /* CONFIG_INT_BENCH_SCENARIO_END_TO_END */
 
@@ -670,7 +841,7 @@ static void nested_low_handler(void)
 {
 	alt_fired = false;
 
-	ztest_benchmark_start();
+	BENCH_SPAN_START();
 	bench_trigger_alt();
 
 	nested_preempted = alt_wait();
@@ -712,5 +883,6 @@ ZTEST_BENCHMARK_MANUAL(interrupt, nested_preempt, NUM_ITERATIONS, nested_setup,
 		return;
 	}
 
+	bench_trace();
 }
 #endif /* CONFIG_INT_BENCH_SCENARIO_NESTED */
