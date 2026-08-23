@@ -12,7 +12,7 @@ config BUILD_OUTPUT_EXE
 config OUTPUT_PRINT_MEMORY_USAGE
 	default n
 
-configdefault NET_L2_ETHERNET
+configdefault ETH_DRIVER
 	default y if !NET_LOOPBACK && !NET_TEST
 
 configdefault ETH_NATIVE_TAP

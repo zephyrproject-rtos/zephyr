@@ -154,6 +154,7 @@ config NET_QEMU_PPP
 
 config NET_QEMU_ETHERNET
 	bool "Ethernet"
+	imply ETH_DRIVER
 	imply NET_L2_ETHERNET
 	help
 	  Connect to host system via Qemu ethernet driver support. One such

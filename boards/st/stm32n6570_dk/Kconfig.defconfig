@@ -5,7 +5,7 @@
 
 if BOARD_STM32N6570_DK
 
-configdefault NET_L2_ETHERNET
+configdefault ETH_DRIVER
 	default y
 
 configdefault OTP

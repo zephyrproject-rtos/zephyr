@@ -3,7 +3,7 @@
 
 if BOARD_NANO_CH32V317
 
-configdefault NET_L2_ETHERNET
+configdefault ETH_DRIVER
 	default y
 
 endif # BOARD_NANO_CH32V317

@@ -540,6 +540,10 @@ Ethernet
   the network stack has joined is received. Disable this option to receive all multicast, as
   before. (:github:`113235`)
 
+* Boards with Ethernet interfaces should now enable :kconfig:option:`CONFIG_ETH_DRIVER` by default,
+  instead of :kconfig:option:`CONFIG_NET_L2_ETHERNET`. The later is now enabled by default when the
+  former is. (:github:`117121`)
+
 Flash
 =====
 * :dtcompatible:`jedec,spi-nand` now requires a ``plane-bytes`` property, which indicates the size
