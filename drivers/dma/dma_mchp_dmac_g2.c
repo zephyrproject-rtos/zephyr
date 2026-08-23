@@ -358,31 +358,53 @@ static int dma_mchp_desc_setup(struct dma_mchp_dev_data *dev_data, struct dma_co
 static void dma_mchp_isr(const struct device *dev)
 {
 	struct dma_mchp_dev_data *dev_data = dev->data;
-	uint16_t pend = DMAC_REG->DMAC_INTPEND;
-	uint32_t channel = (pend & DMAC_INTPEND_ID_Msk) >> DMAC_INTPEND_ID_Pos;
+	uint8_t saved_chid = DMAC_REG->DMAC_CHID;
+	uint32_t channel;
 
-	/* Acknowledge interrupt immediately */
-	DMAC_REG->DMAC_INTPEND = pend;
+	/*
+	 * On PIC32CM GC00, INTPEND reads back zero even with a channel's
+	 * CHINTFLAG.TCMPL set, so the level-driven interrupt never clears and
+	 * starves other threads. Poll INTSTATUS (one bit per channel) instead,
+	 * and read each pending channel's CHINTFLAG through CHID.
+	 *
+	 * CHINTFLAG is write-one-to-clear; clear it before the callback runs
+	 * so a callback that queues the next transfer can't race its own
+	 * completion flag.
+	 */
+	for (channel = 0; channel < dev_data->dma_ctx.dma_channels; channel++) {
+		struct dma_mchp_channel_config *cfg;
+		uint8_t flags;
 
-	/* Ignore non TC / ERR interrupts */
-	if ((pend & (DMAC_INTPEND_TERR_Msk | DMAC_INTPEND_TCMPL_Msk)) == 0) {
-		return;
-	}
-
-	struct dma_mchp_channel_config *cfg = &dev_data->dma_channel_config[channel];
-
-	if (cfg->cb == NULL) {
-		return;
-	}
-
-	if (pend & DMAC_INTPEND_TERR_Msk) {
-		/* Invoke error callback only if it is not disabled */
-		if (cfg->is_err_cb_dis == false) {
-			cfg->cb(dev, cfg->user_data, channel, -EIO);
+		if ((DMAC_REG->DMAC_INTSTATUS & BIT(channel)) == 0U) {
+			continue;
 		}
-	} else {
-		cfg->cb(dev, cfg->user_data, channel, DMA_STATUS_COMPLETE);
+
+		DMAC_REG->DMAC_CHID = channel;
+		flags = DMAC_REG->DMAC_CHINTFLAG & DMAC_REG->DMAC_CHINTENSET;
+		flags &= (uint8_t)(DMAC_CHINTFLAG_TERR_Msk | DMAC_CHINTFLAG_TCMPL_Msk);
+
+		if (flags == 0U) {
+			continue;
+		}
+
+		DMAC_REG->DMAC_CHINTFLAG = flags;
+
+		cfg = &dev_data->dma_channel_config[channel];
+		if (cfg->cb == NULL) {
+			continue;
+		}
+
+		if ((flags & DMAC_CHINTFLAG_TERR_Msk) != 0U) {
+			/* Invoke error callback only if it is not disabled */
+			if (cfg->is_err_cb_dis == false) {
+				cfg->cb(dev, cfg->user_data, channel, -EIO);
+			}
+		} else {
+			cfg->cb(dev, cfg->user_data, channel, DMA_STATUS_COMPLETE);
+		}
 	}
+
+	DMAC_REG->DMAC_CHID = saved_chid;
 }
 
 static int dma_mchp_config(const struct device *dev, uint32_t channel, struct dma_config *config)
