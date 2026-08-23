@@ -5,7 +5,7 @@
  */
 
 /dts-v1/;
-#include <espressif/esp32s3/esp32s3_r2.dtsi>
+#include <espressif/esp32s3/esp32s3.dtsi>
 #include <espressif/partitions_0x0_amp_4M.dtsi>
 
 / {
@@ -24,6 +24,10 @@
 &flash0 {
 	reg = <0x0 DT_SIZE_M(4)>;
 	ranges = <0x0 0x0 DT_SIZE_M(4)>;
+};
+
+&psram0 {
+	size = <DT_SIZE_M(2)>;
 };
 
 &trng0 {

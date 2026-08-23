@@ -13,9 +13,6 @@ config SOC_SERIES_ESP32C3
 
 if SOC_SERIES_ESP32C3
 
-config SOC_ESP32C3_FH4X
-	select SOC_ESP32C3_REV_1_1
-
 config SOC_ESP32C3_REV_1_1
 	bool "SOC is revision v1.1"
 	help

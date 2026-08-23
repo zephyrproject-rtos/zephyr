@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <espressif/esp32p4/esp32p4_n32r32.dtsi>
+#include <espressif/esp32p4/esp32p4.dtsi>
 #include "esp32p4_wifi6_esp32p4_hpcore-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <espressif/partitions_0x2000_default_32M.dtsi>
@@ -38,6 +38,15 @@
 			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
+};
+
+&flash0 {
+	reg = <0x0 DT_SIZE_M(32)>;
+	ranges = <0x0 0x0 DT_SIZE_M(32)>;
+};
+
+&psram0 {
+	size = <DT_SIZE_M(32)>;
 };
 
 /* Pre-v3 (v1.3) silicon: valid CPU frequencies are 90/180/360 MHz */
