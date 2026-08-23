@@ -10,5 +10,9 @@ if(CONFIG_DT_HAS_AMBIQ_MSPI_CONTROLLER_ENABLED)
   target_include_directories(app PRIVATE ${ZEPHYR_BASE}/drivers/mspi)
 endif()
 
+if(CONFIG_MSPI_STM32_CONTROLLER)
+  target_include_directories(app PRIVATE ${ZEPHYR_BASE}/drivers/mspi)
+endif()
+
 FILE(GLOB app_sources src/*.c)
 target_sources(app PRIVATE ${app_sources})

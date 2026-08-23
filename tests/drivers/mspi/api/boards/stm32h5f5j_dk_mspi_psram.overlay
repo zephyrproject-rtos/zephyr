@@ -1,0 +1,58 @@
+/*
+ * Copyright (c) 2026 EXALT Technologies
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/delete-node/ &xspi2;
+
+/ {
+	aliases {
+		mspi0 = &xspi2;
+	};
+};
+
+/ {
+	soc {
+		xspi2: spi@47002400 {
+			compatible = "st,stm32-xspi-controller";
+			reg = <0x47002400 0x400>, <0x70000000 DT_SIZE_M(256)>;
+			interrupts = <150 0>;
+			clock-names = "xspix", "xspi-ker";
+			clocks = <&rcc STM32_CLOCK(AHB4, 21)>,
+				 <&rcc STM32_SRC_PLL1_Q OCTOSPI2_SEL(1)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clock-frequency = <DT_FREQ_M(66)>;
+			pinctrl-0 = <&octospim_p2_io0_pg0 &octospim_p2_io1_pd2
+				     &octospim_p2_io2_pg2 &octospim_p2_io3_pg3
+				     &octospim_p2_io4_pg4 &octospim_p2_io5_pg5
+				     &octospim_p2_io6_pg10 &octospim_p2_io7_pg15
+				     &octospim_p2_clk_pe14 &octospim_p2_ncs1_pe15
+				     &octospim_p2_dqs_pf5>;
+			pinctrl-names = "default";
+			status = "okay";
+
+			memc: aps6408l: memory@0 {
+				compatible = "st,psram-device", "aps-z8";
+				reg = <0>;
+				size = <DT_SIZE_M(64)>;
+				mspi-max-frequency = <DT_FREQ_M(66)>;
+				mspi-io-mode = "MSPI_IO_MODE_OCTAL";
+				mspi-data-rate = "MSPI_DATA_RATE_S_D_D";
+				mspi-hardware-ce-num = <0>;
+				read-command = <0x20>;
+				write-command = <0xa0>;
+				st,mem-type = "apmem";
+				st,timing-config = <1>;
+				command-length = "INSTR_1_BYTE";
+				address-length = "ADDR_4_BYTE";
+				rx-dummy = <3>;
+				tx-dummy = <3>;
+				memmap-config = <1 0 DT_SIZE_M(64) 0>;
+				aps-version = "APS6408L";
+				zephyr,pm-device-runtime-auto;
+			};
+		};
+	};
+};

@@ -23,6 +23,11 @@ typedef enum mspi_timing_param mspi_timing_param;
 typedef struct mspi_ambiq_timing_cfg mspi_timing_cfg;
 typedef enum mspi_ambiq_timing_param mspi_timing_param;
 #define MSPI_PORT ((DT_REG_ADDR(MSPI_BUS_NODE) - MSPI0_BASE) / (MSPI1_BASE - MSPI0_BASE))
+#elif defined(CONFIG_SOC_FAMILY_STM32)
+#include "mspi_stm32.h"
+typedef struct mspi_stm32_timing_cfg mspi_timing_cfg;
+typedef enum mspi_stm32_timing_param mspi_timing_param;
+#define MSPI_PORT 0
 #else
 #define MSPI_PORT 0
 #endif
