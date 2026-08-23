@@ -7,7 +7,6 @@
 /dts-v1/;
 
 #include <espressif/esp32s2/esp32s2.dtsi>
-#include <espressif/esp32s2/esp32s2_wroom.dtsi>
 #include "adafruit_feather_esp32s2-pinctrl.dtsi"
 #include <espressif/partitions_0x1000_default.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
@@ -62,6 +61,11 @@
 			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
+};
+
+&flash0 {
+	reg = <0x0 DT_SIZE_M(4)>;
+	ranges = <0x0 0x0 DT_SIZE_M(4)>;
 };
 
 &uart0 {

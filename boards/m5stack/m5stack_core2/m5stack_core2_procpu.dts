@@ -5,7 +5,7 @@
  */
 /dts-v1/;
 
-#include <espressif/esp32/esp32_d0wd_v3.dtsi>
+#include <espressif/esp32/esp32.dtsi>
 #include "m5stack_core2-pinctrl.dtsi"
 #include "grove_connectors.dtsi"
 #include "m5stack_mbus_connectors.dtsi"
@@ -102,6 +102,7 @@
 };
 
 &gpio0 {
+	gpio-reserved-ranges = <20 1>, <24 1>, <28 4>;
 	status = "okay";
 };
 
