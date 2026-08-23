@@ -33,7 +33,7 @@ void z_sparc_enter_irq(uint32_t irl)
 
 #ifdef CONFIG_IRQ_OFFLOAD
 	if (irl != 141U) {
-		irl = z_sparc_int_get_source(irl);
+		irl = intc_irqmp_get_source(irl);
 		ite = &_sw_isr_table[irl];
 		ite->isr(ite->arg);
 	} else {
@@ -41,7 +41,7 @@ void z_sparc_enter_irq(uint32_t irl)
 	}
 #else
 	/* Get the actual interrupt source from the interrupt controller */
-	irl = z_sparc_int_get_source(irl);
+	irl = intc_irqmp_get_source(irl);
 	ite = &_sw_isr_table[irl];
 	ite->isr(ite->arg);
 #endif

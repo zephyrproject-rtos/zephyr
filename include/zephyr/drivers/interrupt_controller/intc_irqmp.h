@@ -34,4 +34,16 @@ void intc_irqmp_irq_disable(unsigned int source);
  */
 int intc_irqmp_irq_is_enabled(unsigned int source);
 
+/**
+ * @brief Get the interrupt source behind a processor interrupt request
+ *
+ * Acknowledges interrupt request level @a irl and returns the actual
+ * interrupt source, taking IRQMP extended interrupts into account.
+ *
+ * @param irl Processor interrupt request level
+ *
+ * @return Interrupt source number
+ */
+int intc_irqmp_get_source(int irl);
+
 #endif /* ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_INTC_IRQMP_H_ */
