@@ -42,6 +42,12 @@
  * is known not to collide with the platform's own IRQ assignments.
  */
 #define BENCH_IRQ_LINE 27
+#elif defined(CONFIG_INTC_ESP32)
+/*
+ * Reported for the banner only. The interrupt matrix assigns the CPU
+ * interrupt when the source is allocated, so there is no line to pick.
+ */
+#define BENCH_IRQ_LINE 0
 #elif defined(CONFIG_RISCV) && !defined(CONFIG_CLIC) && !defined(CONFIG_NRFX_CLIC)
 /*
  * Without a CLIC, the only interrupt a RISC-V hart can raise on itself
@@ -207,6 +213,74 @@ void bench_trigger_alt(void)
 }
 #endif
 
+#elif defined(CONFIG_INTC_ESP32)
+/*
+ * Espressif SoCs route every interrupt through an interrupt matrix
+ * rather than exposing lines the CPU can pend directly, so neither the
+ * RISC-V nor the Xtensa mechanism below applies. What they do have is a
+ * set of peripheral sources whose only job is to be raised by software,
+ * intended for cross-core signalling: writing the register asserts a
+ * real interrupt that arrives through the matrix like any other.
+ *
+ * Sources 0 and 1 are the ones ESP-IDF and Zephyr's own SMP code use,
+ * so take source 2.
+ *
+ * The register lives in a different peripheral depending on the part,
+ * and the interrupt is level triggered, so the ISR has to clear it.
+ */
+#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
+#include <soc/soc.h>
+#include <soc/interrupts.h>
+
+/* The registers moved peripheral, and name, more than once */
+#if defined(CONFIG_SOC_SERIES_ESP32C6) || defined(CONFIG_SOC_SERIES_ESP32H2) ||                    \
+	defined(CONFIG_SOC_SERIES_ESP32C5)
+#include <soc/intpri_reg.h>
+#define BENCH_FROM_CPU_REG INTPRI_CPU_INTR_FROM_CPU_2_REG
+#define BENCH_FROM_CPU_BIT INTPRI_CPU_INTR_FROM_CPU_2
+#elif defined(CONFIG_SOC_SERIES_ESP32)
+#include <soc/dport_reg.h>
+#define BENCH_FROM_CPU_REG DPORT_CPU_INTR_FROM_CPU_2_REG
+#define BENCH_FROM_CPU_BIT DPORT_CPU_INTR_FROM_CPU_2
+#elif defined(CONFIG_SOC_SERIES_ESP32S2)
+/* The register moved to the system peripheral but kept the old prefix */
+#include <soc/system_reg.h>
+#define BENCH_FROM_CPU_REG DPORT_CPU_INTR_FROM_CPU_2_REG
+#define BENCH_FROM_CPU_BIT DPORT_CPU_INTR_FROM_CPU_2
+#else
+#include <soc/system_reg.h>
+#define BENCH_FROM_CPU_REG SYSTEM_CPU_INTR_FROM_CPU_2_REG
+#define BENCH_FROM_CPU_BIT SYSTEM_CPU_INTR_FROM_CPU_2
+#endif
+
+#define BENCH_TRIGGER_LEVEL_ACK 1
+#define BENCH_TRIGGER_OWN_CONNECT 1
+
+void bench_trigger(void)
+{
+	WRITE_PERI_REG(BENCH_FROM_CPU_REG, BENCH_FROM_CPU_BIT);
+}
+
+static inline void bench_trigger_ack(void)
+{
+	WRITE_PERI_REG(BENCH_FROM_CPU_REG, 0);
+}
+
+/* The allocator hands the ISR a non-const argument */
+static void bench_trigger_esp_isr(void *arg)
+{
+	bench_trigger_isr(arg);
+}
+
+/*
+ * The matrix allocates a CPU interrupt for the source, so the line is
+ * not known until then and IRQ_CONNECT() cannot be used.
+ */
+static int bench_trigger_connect(void)
+{
+	return esp_intr_alloc(ETS_FROM_CPU_INTR2_SOURCE, 0, bench_trigger_esp_isr, NULL, NULL);
+}
+
 #elif defined(CONFIG_RISCV)
 #if defined(CONFIG_CLIC) || defined(CONFIG_NRFX_CLIC)
 void riscv_clic_irq_set_pending(uint32_t irq);
@@ -267,6 +341,9 @@ static inline void bench_trigger_ack(void)
 
 int bench_trigger_init(void)
 {
+#ifdef BENCH_TRIGGER_OWN_CONNECT
+	return bench_trigger_connect();
+#else
 	IRQ_CONNECT(BENCH_IRQ_LINE, CONFIG_INT_BENCH_IRQ_PRIO, bench_trigger_isr, NULL, 0);
 
 #ifdef CONFIG_X86
@@ -284,4 +361,5 @@ int bench_trigger_init(void)
 	irq_enable(BENCH_IRQ_LINE);
 
 	return 0;
+#endif /* BENCH_TRIGGER_OWN_CONNECT */
 }
