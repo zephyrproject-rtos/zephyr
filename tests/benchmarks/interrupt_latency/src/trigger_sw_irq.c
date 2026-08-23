@@ -35,6 +35,13 @@
  * used by tests/arch/common/interrupt).
  */
 #define BENCH_IRQ_LINE 42
+#elif defined(CONFIG_X86)
+/*
+ * x86 has no CONFIG_NUM_IRQS; IRQ lines are mapped to IDT vectors at
+ * build time. Use the same line as tests/arch/common/interrupt, which
+ * is known not to collide with the platform's own IRQ assignments.
+ */
+#define BENCH_IRQ_LINE 27
 #else
 #define BENCH_IRQ_LINE (CONFIG_NUM_IRQS - 1)
 #endif
@@ -98,6 +105,43 @@ void bench_trigger(void)
 	z_arc_v2_aux_reg_write(_ARC_V2_AUX_IRQ_HINT, BENCH_IRQ_LINE);
 }
 
+#elif defined(CONFIG_X86)
+#ifdef CONFIG_X2APIC
+#include <zephyr/drivers/interrupt_controller/loapic.h>
+#define VECTOR_MASK 0xFFU
+#else
+#include <zephyr/arch/arch_interface.h>
+/*
+ * LOAPIC ICR value for a self directed IPI: fixed delivery mode,
+ * physical destination mode, level assert, edge triggered, no
+ * destination shorthand.
+ */
+#define LOAPIC_ICR_IPI_TEST 0x00004000U
+#endif
+
+/*
+ * The interrupt is emulated by sending an IPI from the local APIC to
+ * the core itself. Note that unlike trigger_irq() in
+ * <zephyr/interrupt_util.h>, no delay loop is added after the write:
+ * the delay would be counted as interrupt entry latency. Callers spin
+ * on a flag set by the ISR instead.
+ */
+static uint8_t bench_vector;
+
+void bench_trigger(void)
+{
+#ifdef CONFIG_X2APIC
+	x86_write_x2apic(LOAPIC_SELF_IPI, bench_vector & VECTOR_MASK);
+#else
+#ifdef CONFIG_SMP
+	int cpu_id = arch_curr_cpu()->id;
+#else
+	int cpu_id = 0;
+#endif
+	z_loapic_ipi(cpu_id, LOAPIC_ICR_IPI_TEST, bench_vector);
+#endif /* CONFIG_X2APIC */
+}
+
 #else
 #error "No software interrupt trigger available for this architecture"
 #endif
@@ -105,6 +149,16 @@ void bench_trigger(void)
 int bench_trigger_init(void)
 {
 	IRQ_CONNECT(BENCH_IRQ_LINE, CONFIG_INT_BENCH_IRQ_PRIO, bench_trigger_isr, NULL, 0);
+
+#ifdef CONFIG_X86
+	/*
+	 * The local APIC is addressed by IDT vector rather than by IRQ
+	 * line. Resolve the vector assigned to the benchmark line once,
+	 * so that triggering costs no more than the APIC write itself.
+	 */
+	bench_vector = (uint8_t)Z_IRQ_TO_INTERRUPT_VECTOR(BENCH_IRQ_LINE);
+#endif
+
 	irq_enable(BENCH_IRQ_LINE);
 
 	return 0;

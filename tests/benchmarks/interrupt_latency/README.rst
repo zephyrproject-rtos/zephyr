@@ -34,7 +34,10 @@ All benchmarks are in the ``interrupt`` suite:
   ISR + exit + entry round trip under back-to-back service. Its inverse
   is the maximum sustainable interrupt rate.
 * ``dynamic_connect`` -- cost of installing an ISR at runtime with
-  ``irq_connect_dynamic()`` (needs ``CONFIG_DYNAMIC_INTERRUPTS``).
+  ``irq_connect_dynamic()`` (needs ``CONFIG_DYNAMIC_INTERRUPTS``). Not
+  available on x86, where connecting an interrupt dynamically is a one
+  shot allocation of an IDT vector and an interrupt stub rather than a
+  rebindable install, so it cannot be repeated to gather samples.
 
 Each benchmark records ``CONFIG_INT_BENCH_NUM_ITERATIONS`` samples; the
 framework reports mean, standard deviation, standard error and min/max with
@@ -51,11 +54,12 @@ Interrupt generation is abstracted behind a small backend API
 
 ``CONFIG_INT_BENCH_TRIGGER_SW_IRQ``
    Raises a real interrupt through the interrupt controller. Currently
-   implemented for Cortex-M (NVIC STIR/ISPR), Arm GIC v2/v3 (SGI) and ARC
-   (IRQ_HINT), using the same mechanisms as ``tests/arch/common/interrupt``.
-   The IRQ line is auto-selected (an SGI on GIC, ``CONFIG_NUM_IRQS - 1``
-   otherwise) and can be overridden with ``CONFIG_INT_BENCH_IRQ_LINE`` for
-   SoCs where the automatic choice is not a free, implemented line.
+   implemented for Cortex-M (NVIC STIR/ISPR), Arm GIC v2/v3 (SGI), ARC
+   (IRQ_HINT) and x86 (local APIC self IPI, both xAPIC and x2APIC), using
+   the same mechanisms as ``tests/arch/common/interrupt``. The IRQ line is
+   auto-selected (an SGI on GIC, ``CONFIG_NUM_IRQS - 1`` otherwise) and can
+   be overridden with ``CONFIG_INT_BENCH_IRQ_LINE`` for SoCs where the
+   automatic choice is not a free, implemented line.
 
 ``CONFIG_INT_BENCH_TRIGGER_OFFLOAD``
    Fallback for every other architecture, based on ``irq_offload()``. Since
@@ -94,6 +98,11 @@ Notes on methodology
   tick per second on a 150MHz part makes the driver fall back to its
   ten microsecond minimum and interrupt 78000 times a second instead of
   once.
+* The first iteration of each scenario runs with cold caches, branch
+  predictors and TLBs and is typically an order of magnitude slower than
+  the steady state. The framework reports it separately as the cold cost,
+  and :kconfig:option:`CONFIG_ZTEST_BENCHMARK_WARMUP` discards further
+  iterations before sampling if the steady state is all that matters.
 * Entry latency includes the cost of the trigger write itself and, on some
   interrupt controllers, the propagation delay of the software-generated
   interrupt. Numbers are therefore comparable across Zephyr versions and
@@ -102,8 +111,7 @@ Notes on methodology
 Future work
 ***********
 
-* sw-irq trigger backends for x86 (LOAPIC self-IPI), RISC-V (CLIC/mip) and
-  Xtensa (INTSET).
+* sw-irq trigger backends for RISC-V (CLIC/mip) and Xtensa (INTSET).
 * Nested interrupt preemption latency (two lines, two priorities).
 * Direct ISR (``IRQ_DIRECT_CONNECT``) and zero-latency IRQ comparison
   scenarios.
