@@ -3,7 +3,7 @@
 
 if SHIELD_ESP_THREADBR_ETHERNET
 
-configdefault NET_L2_ETHERNET
+configdefault ETH_DRIVER
 	default y
 
 endif # SHIELD_ESP_THREADBR_ETHERNET

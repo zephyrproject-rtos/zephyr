@@ -5,7 +5,7 @@
 
 if BOARD_NUCLEO_F767ZI
 
-configdefault NET_L2_ETHERNET
+configdefault ETH_DRIVER
 	default n
 
 endif # BOARD_NUCLEO_F767ZI

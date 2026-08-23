@@ -6,7 +6,7 @@
 
 if BOARD_NUMAKER_PFM_M467
 
-configdefault NET_L2_ETHERNET
+configdefault ETH_DRIVER
 	default y if !MODEM
 
 endif # BOARD_NUMAKER_PFM_M467

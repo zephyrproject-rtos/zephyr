@@ -24,7 +24,7 @@ config CAN_TRANSCEIVER_INIT_PRIORITY
 
 endif # CAN
 
-configdefault NET_L2_ETHERNET
+configdefault ETH_DRIVER
 	default y
 
 configdefault NET_TX_STACK_SIZE
