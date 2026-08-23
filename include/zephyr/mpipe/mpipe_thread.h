@@ -67,8 +67,8 @@ struct mpipe_thread {
 /**
  * @brief Create a new thread reusing the stack from the thread pool
  *
- * The thread is created in a sleeping state (K_FOREVER delay).  Call
- * mpipe_thread_resume() to actually start execution.
+ * Use K_NO_WAIT when mpipe_thread_wait() gates execution on the thread's
+ * semaphore. Call mpipe_thread_resume() to release that gate.
  *
  * @param thread Pointer to an uninitialized struct @ref mpipe_thread
  * @param func Entry function of the thread
