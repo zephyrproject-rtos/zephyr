@@ -442,6 +442,7 @@ static void modem_ppp_send_handler(struct k_work *item)
 	if (ppp->tx_pkt != NULL) {
 		/* Initialize wrap */
 		if (ppp->transmit_state == MODEM_PPP_TRANSMIT_STATE_IDLE) {
+			LOG_DBG("Transmitting PPP frame (len %zu)", net_pkt_get_len(ppp->tx_pkt));
 			ppp->transmit_state = MODEM_PPP_TRANSMIT_STATE_SOF;
 		}
 
