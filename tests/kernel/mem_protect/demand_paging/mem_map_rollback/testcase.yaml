@@ -1,0 +1,8 @@
+tests:
+  kernel.demand_paging.mem_map_rollback:
+    tags:
+      - kernel
+      - mmu
+      - demand_paging
+    platform_allow:
+      - qemu_x86_tiny

@@ -571,6 +571,82 @@ static int map_anon_page(void *addr, uint32_t flags)
 	return 0;
 }
 
+/* Unmap one anonymous page and release its backing resource. */
+static bool unmap_anon_page_locked(uint8_t *addr)
+{
+	uintptr_t phys;
+	struct k_mem_page_frame *pf;
+	int ret;
+
+#ifdef CONFIG_DEMAND_PAGING
+	enum arch_page_location status;
+	uintptr_t location;
+
+	status = arch_page_location_get(addr, &location);
+	switch (status) {
+	case ARCH_PAGE_LOCATION_PAGED_OUT:
+		arch_mem_unmap(addr, CONFIG_MMU_PAGE_SIZE);
+		k_mem_paging_backing_store_location_free(location);
+		return true;
+	case ARCH_PAGE_LOCATION_PAGED_IN:
+		/* The page may be inaccessible for eviction tracking, so use the
+		 * physical address returned by arch_page_location_get().
+		 */
+		phys = location;
+		ret = 0;
+		break;
+	default:
+		ret = arch_page_phys_get(addr, &phys);
+		break;
+	}
+#else
+	ret = arch_page_phys_get(addr, &phys);
+#endif
+
+	__ASSERT(ret == 0, "cannot unmap anonymous address %p", addr);
+	if (ret != 0) {
+		return false;
+	}
+
+	__ASSERT(k_mem_is_page_frame(phys),
+		 "%p: 0x%lx is not a page frame", addr, phys);
+	if (!k_mem_is_page_frame(phys)) {
+		return false;
+	}
+
+	pf = k_mem_phys_to_page_frame(phys);
+	__ASSERT(k_mem_page_frame_is_mapped(pf),
+		 "%p: 0x%lx is not a mapped page frame", addr, phys);
+	if (!k_mem_page_frame_is_mapped(pf)) {
+		return false;
+	}
+
+	arch_mem_unmap(addr, CONFIG_MMU_PAGE_SIZE);
+#ifdef CONFIG_DEMAND_PAGING
+	if (IS_ENABLED(CONFIG_EVICTION_TRACKING) &&
+	    !k_mem_page_frame_is_pinned(pf)) {
+		k_mem_paging_eviction_remove(pf);
+	}
+#endif
+	page_frame_free_locked(pf);
+
+	return true;
+}
+
+/* Release the pages mapped before an anonymous mapping ran out of frames. */
+static bool rollback_anon_mapping_locked(uint8_t *addr, size_t size)
+{
+	uint8_t *pos;
+
+	VIRT_FOREACH(addr, size, pos) {
+		if (!unmap_anon_page_locked(pos)) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
 void *k_mem_map_phys_guard(uintptr_t phys, size_t size, uint32_t flags, bool is_anon)
 {
 	uint8_t *dst;
@@ -647,11 +723,15 @@ void *k_mem_map_phys_guard(uintptr_t phys, size_t size, uint32_t flags, bool is_
 				ret = map_anon_page(pos, flags);
 
 				if (ret != 0) {
-					/* TODO:
-					 * call k_mem_unmap(dst, pos - dst)
-					 * when implemented in #28990 and
-					 * release any guard virtual page as well.
-					 */
+					bool rolled_back =
+						rollback_anon_mapping_locked(dst, pos - dst);
+
+					__ASSERT(rolled_back,
+						 "cannot roll back anonymous mapping");
+					if (rolled_back) {
+						virt_region_free(dst - CONFIG_MMU_PAGE_SIZE,
+								total_size);
+					}
 					dst = NULL;
 					goto out;
 				}
@@ -682,9 +762,7 @@ out:
 
 void k_mem_unmap_phys_guard(void *addr, size_t size, bool is_anon)
 {
-	uintptr_t phys;
 	uint8_t *pos;
-	struct k_mem_page_frame *pf;
 	k_spinlock_key_t key;
 	size_t total_size;
 	int ret;
@@ -724,79 +802,9 @@ void k_mem_unmap_phys_guard(void *addr, size_t size, bool is_anon)
 	if (is_anon) {
 		/* Unmapping anonymous memory */
 		VIRT_FOREACH(addr, size, pos) {
-#ifdef CONFIG_DEMAND_PAGING
-			enum arch_page_location status;
-			uintptr_t location;
-
-			status = arch_page_location_get(pos, &location);
-			switch (status) {
-			case ARCH_PAGE_LOCATION_PAGED_OUT:
-				/*
-				 * No pf is associated with this mapping.
-				 * Simply get rid of the MMU entry and free
-				 * corresponding backing store.
-				 */
-				arch_mem_unmap(pos, CONFIG_MMU_PAGE_SIZE);
-				k_mem_paging_backing_store_location_free(location);
-				continue;
-			case ARCH_PAGE_LOCATION_PAGED_IN:
-				/*
-				 * The page is in memory but it may not be
-				 * accessible in order to manage tracking
-				 * of the ARCH_DATA_PAGE_ACCESSED flag
-				 * meaning arch_page_phys_get() could fail.
-				 * Still, we know the actual phys address.
-				 */
-				phys = location;
-				ret = 0;
-				break;
-			default:
-				ret = arch_page_phys_get(pos, &phys);
-				break;
-			}
-#else
-			ret = arch_page_phys_get(pos, &phys);
-#endif
-			__ASSERT(ret == 0,
-				 "%s: cannot unmap an unmapped address %p",
-				 __func__, pos);
-			if (ret != 0) {
-				/* Found an address not mapped. Do not continue. */
+			if (!unmap_anon_page_locked(pos)) {
 				goto out;
 			}
-
-			__ASSERT(k_mem_is_page_frame(phys),
-				 "%s: 0x%lx is not a page frame", __func__, phys);
-			if (!k_mem_is_page_frame(phys)) {
-				/* Physical address has no corresponding page frame
-				 * description in the page frame array.
-				 * This should not happen. Do not continue.
-				 */
-				goto out;
-			}
-
-			/* Grab the corresponding page frame from physical address */
-			pf = k_mem_phys_to_page_frame(phys);
-
-			__ASSERT(k_mem_page_frame_is_mapped(pf),
-				 "%s: 0x%lx is not a mapped page frame", __func__, phys);
-			if (!k_mem_page_frame_is_mapped(pf)) {
-				/* Page frame is not marked mapped.
-				 * This should not happen. Do not continue.
-				 */
-				goto out;
-			}
-
-			arch_mem_unmap(pos, CONFIG_MMU_PAGE_SIZE);
-#ifdef CONFIG_DEMAND_PAGING
-			if (IS_ENABLED(CONFIG_EVICTION_TRACKING) &&
-			    (!k_mem_page_frame_is_pinned(pf))) {
-				k_mem_paging_eviction_remove(pf);
-			}
-#endif
-
-			/* Put the page frame back into free list */
-			page_frame_free_locked(pf);
 		}
 	} else {
 		/*
