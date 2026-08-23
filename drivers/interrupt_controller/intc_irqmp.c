@@ -17,6 +17,7 @@
 #define DT_DRV_COMPAT gaisler_irqmp
 
 #include <zephyr/kernel.h>
+#include <zephyr/drivers/interrupt_controller/intc_irqmp.h>
 #include <zephyr/device.h>
 
 /*
@@ -58,7 +59,7 @@ static int get_irqmp_eirq(void)
 	return DT_INST_PROP(0, eirq);
 }
 
-void arch_irq_enable(unsigned int source)
+void intc_irqmp_irq_enable(unsigned int source)
 {
 	volatile struct irqmp_regs *regs = get_irqmp_regs();
 	volatile uint32_t *pimask = &regs->pimask[0];
@@ -70,7 +71,7 @@ void arch_irq_enable(unsigned int source)
 	arch_irq_unlock(key);
 }
 
-void arch_irq_disable(unsigned int source)
+void intc_irqmp_irq_disable(unsigned int source)
 {
 	volatile struct irqmp_regs *regs = get_irqmp_regs();
 	volatile uint32_t *pimask = &regs->pimask[0];
@@ -82,7 +83,7 @@ void arch_irq_disable(unsigned int source)
 	arch_irq_unlock(key);
 }
 
-int arch_irq_is_enabled(unsigned int source)
+int intc_irqmp_irq_is_enabled(unsigned int source)
 {
 	volatile struct irqmp_regs *regs = get_irqmp_regs();
 	volatile uint32_t *pimask = &regs->pimask[0];
