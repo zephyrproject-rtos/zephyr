@@ -1,0 +1,83 @@
+/*
+ * Copyright (c) 2026 EXALT Technologies
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/delete-node/ &xspi2;
+
+/ {
+	soc {
+		xspi2: spi@5200a000 {
+			compatible = "st,stm32-xspi-controller";
+			reg = <0x5200a000 0x1000>, <0x70000000 DT_SIZE_M(256)>;
+			interrupts = <106 0>;
+			clock-names = "xspix";
+			clocks = <&rcc STM32_CLOCK(AHB5, 12)>;
+			clock-frequency = <DT_FREQ_M(133)>;
+			op-mode = "MSPI_OP_MODE_CONTROLLER";
+			st,csbound = <0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			pinctrl-0 = <&xspim_p2_clk_pn6 &xspim_p2_ncs1_pn1
+				     &xspim_p2_io0_pn2 &xspim_p2_io1_pn3
+				     &xspim_p2_io2_pn4 &xspim_p2_io3_pn5
+				     &xspim_p2_io4_pn8 &xspim_p2_io5_pn9
+				     &xspim_p2_io6_pn10 &xspim_p2_io7_pn11
+				     &xspim_p2_dqs0_pn0>;
+			pinctrl-names = "default";
+			status = "okay";
+
+			ext_flash_ctrl: xspi-nor-flash@0 {
+				compatible = "st,nor", "mxicy,mx25u", "jedec,nor";
+				reg = <0>;
+				size = <DT_SIZE_M(256)>;
+				status = "okay";
+				read-command = <0xec13>;
+				write-command = <0x12ed>;
+				memmap-config = <1 0x00000000 0 1>;
+				rx-dummy = <20>;
+				st,mem-type = "macronix";
+				mspi-max-frequency = <DT_FREQ_M(133)>;
+				mspi-io-mode = "MSPI_IO_MODE_OCTAL";
+				mspi-data-rate = "MSPI_DATA_RATE_SINGLE";
+				mspi-hardware-ce-num = <0>;
+				command-length = "INSTR_2_BYTE";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				ext_flash: mx25uw25645: xspi-nor-flash@0 {
+					compatible = "soc-nv-flash";
+					reg = <0x0 DT_SIZE_M(32)>;
+					write-block-size = <1>;
+					erase-block-size = <DT_SIZE_K(4)>;
+
+					partitions {
+						compatible = "fixed-partitions";
+						#address-cells = <1>;
+						#size-cells = <1>;
+
+						boot_partition: partition@0 {
+							label = "mcuboot";
+							reg = <0x00000000 DT_SIZE_K(64)>;
+						};
+
+						storage_partition: partition@210000 {
+							label = "image-1";
+							reg = <0x210000 DT_SIZE_K(1536)>;
+						};
+					};
+				};
+			};
+		};
+	};
+};
+
+&iocell {
+	status = "okay";
+
+	vddxspi2 {
+		/delete-property/ hslv-mode;
+		/delete-property/ compensation-enabled;
+	};
+};
