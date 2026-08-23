@@ -137,6 +137,7 @@ config PTP_UDP_IPV6_PROTOCOL
 config PTP_IEEE_802_3_PROTOCOL
 	bool "IEEE 802.3 (Layer 2 / EtherType 0x88F7)"
 	select NET_SOCKETS_PACKET
+	select NET_SOCKETS_PACKET_MCAST_MEMBERSHIP
 
 endchoice
 
