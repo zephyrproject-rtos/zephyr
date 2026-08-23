@@ -728,9 +728,15 @@ config NET_TEST
 	  Used for self-contained networking tests that do not require a
 	  network device.
 
+config NET_PKT_LARGE_DEFAULTS
+	bool "More networking packets by default"
+	default y if ETH_DRIVER
+	default y if NET_SLIP_TAP
+	default y if WIFI && !WIFI_USAGE_MODE_SCAN_ONLY
+
 config NET_PKT_RX_COUNT
 	int "How many packet receives can be pending at the same time"
-	default 14 if NET_L2_ETHERNET
+	default 14 if NET_PKT_LARGE_DEFAULTS
 	default 4
 	help
 	  Each RX buffer will occupy smallish amount of memory.
@@ -738,7 +744,7 @@ config NET_PKT_RX_COUNT
 
 config NET_PKT_TX_COUNT
 	int "How many packet sends can be pending at the same time"
-	default 14 if NET_L2_ETHERNET
+	default 14 if NET_PKT_LARGE_DEFAULTS
 	default 4
 	help
 	  Each TX buffer will occupy smallish amount of memory.
@@ -746,7 +752,7 @@ config NET_PKT_TX_COUNT
 
 config NET_BUF_RX_COUNT
 	int "How many network buffers are allocated for receiving data"
-	default 36 if NET_L2_ETHERNET
+	default 36 if NET_PKT_LARGE_DEFAULTS
 	default 16
 	help
 	  Each data buffer will occupy CONFIG_NET_BUF_DATA_SIZE + smallish
@@ -754,7 +760,7 @@ config NET_BUF_RX_COUNT
 
 config NET_BUF_TX_COUNT
 	int "How many network buffers are allocated for sending data"
-	default 36 if NET_L2_ETHERNET
+	default 36 if NET_PKT_LARGE_DEFAULTS
 	default 16
 	help
 	  Each data buffer will occupy CONFIG_NET_BUF_DATA_SIZE + smallish
@@ -790,7 +796,7 @@ config NET_BUF_DATA_SIZE
 
 config NET_PKT_BUF_RX_DATA_POOL_SIZE
 	int "Size of the RX memory pool where buffers are allocated from"
-	default 4096 if NET_L2_ETHERNET
+	default 4096 if NET_PKT_LARGE_DEFAULTS
 	default 2048
 	depends on NET_BUF_VARIABLE_DATA_SIZE
 	help
@@ -799,7 +805,7 @@ config NET_PKT_BUF_RX_DATA_POOL_SIZE
 
 config NET_PKT_BUF_TX_DATA_POOL_SIZE
 	int "Size of the TX memory pool where buffers are allocated from"
-	default 4096 if NET_L2_ETHERNET
+	default 4096 if NET_PKT_LARGE_DEFAULTS
 	default 2048
 	depends on NET_BUF_VARIABLE_DATA_SIZE
 	help
