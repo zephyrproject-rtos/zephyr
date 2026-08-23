@@ -30,7 +30,7 @@ extern "C" {
 #define FIDO2_ATTESTATION_FMT_PACKED  "packed"
 /** @brief No attestation */
 #define FIDO2_ATTESTATION_FMT_NONE    "none"
-/** Maximum attestation format identifier length. */
+/** @brief Maximum attestation format identifier length */
 #define FIDO2_ATTESTATION_FMT_MAX_LEN 32
 
 /**
