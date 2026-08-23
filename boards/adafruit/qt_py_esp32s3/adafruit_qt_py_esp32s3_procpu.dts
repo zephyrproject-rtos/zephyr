@@ -7,7 +7,7 @@
 
 /dts-v1/;
 
-#include <espressif/esp32s3/esp32s3_wroom_n8.dtsi>
+#include <espressif/esp32s3/esp32s3.dtsi>
 #include <zephyr/dt-bindings/led/led.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include "adafruit_qt_py_esp32s3-pinctrl.dtsi"
@@ -52,6 +52,11 @@
 		gpio-map = <0 0 &gpio1 7 0>,
 			   <1 0 &gpio1 8 0>;
 	};
+};
+
+&flash0 {
+	reg = <0x0 DT_SIZE_M(8)>;
+	ranges = <0x0 0x0 DT_SIZE_M(8)>;
 };
 
 &usb_serial {

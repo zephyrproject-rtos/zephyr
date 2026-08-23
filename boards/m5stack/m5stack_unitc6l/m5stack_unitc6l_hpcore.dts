@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <espressif/esp32c6/esp32c6_common.dtsi>
+#include <espressif/esp32c6/esp32c6.dtsi>
 #include "m5stack_unitc6l_hpcore-pinctrl.dtsi"
 #include "m5stack_unitc6l-grove.dtsi"
 #include <espressif/partitions_0x0_default_16M.dtsi>

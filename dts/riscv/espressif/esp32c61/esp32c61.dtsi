@@ -4,9 +4,4 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "esp32p4_lpcore.dtsi"
-
-&flash0 {
-	reg = <0x0 DT_SIZE_M(16)>;
-	ranges = <0x0 0x0 DT_SIZE_M(16)>;
-};
+#include "esp32c61_common.dtsi"

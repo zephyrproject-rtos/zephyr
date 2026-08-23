@@ -4,4 +4,4 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "esp32c3_common.dtsi"
+#include "esp32p4_common.dtsi"
