@@ -1,0 +1,152 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Interrupt Handling Benchmark"
+
+menu "Interrupt benchmark options"
+
+config INT_BENCH_NUM_ITERATIONS
+	int "Number of iterations per scenario"
+	default 1000
+	help
+	  Number of samples collected for each measured scenario. Larger
+	  values give more stable statistics at the cost of runtime and of
+	  the RAM needed to record the individual samples (4 bytes each).
+
+choice INT_BENCH_TRIGGER
+	prompt "Interrupt trigger backend"
+	default INT_BENCH_TRIGGER_SW_IRQ if CPU_CORTEX_M || GIC || ARC
+	default INT_BENCH_TRIGGER_OFFLOAD
+
+config INT_BENCH_TRIGGER_SW_IRQ
+	bool "Software-triggered hardware interrupt"
+	depends on CPU_CORTEX_M || GIC || ARC
+	help
+	  Raise a real asynchronous interrupt through the platform
+	  interrupt controller (NVIC STIR/ISPR on Cortex-M, a GIC SGI on
+	  Arm GIC platforms, IRQ_HINT on ARC). This exercises the full
+	  hardware interrupt entry path and is required for the entry
+	  latency, critical section and throughput scenarios.
+
+config INT_BENCH_TRIGGER_OFFLOAD
+	bool "irq_offload() software trap"
+	depends on IRQ_OFFLOAD
+	help
+	  Run the benchmark ISRs synchronously via irq_offload(). This
+	  works on every architecture but does not go through the
+	  interrupt controller: only the interrupt *exit* paths are
+	  measured. Entry latency numbers are not available with this
+	  backend.
+
+endchoice
+
+config INT_BENCH_IRQ_LINE
+	int "IRQ line used by the benchmark (-1 = auto-select)"
+	depends on INT_BENCH_TRIGGER_SW_IRQ
+	default -1
+	help
+	  IRQ line the benchmark connects its ISR to and then triggers
+	  from software. The default of -1 selects a platform-appropriate
+	  line automatically: an SGI on GIC platforms, a line known to be
+	  free on selected QEMU boards, and the last available line
+	  (CONFIG_NUM_IRQS - 1) otherwise. Override this on SoCs where
+	  the automatic choice is not an implemented or free line.
+
+config INT_BENCH_IRQ_PRIO
+	int "Priority of the benchmark IRQ"
+	depends on INT_BENCH_TRIGGER_SW_IRQ
+	default 1
+	help
+	  Interrupt priority for the benchmark IRQ line, using the same
+	  convention as the priority argument of IRQ_CONNECT() on the
+	  target architecture.
+
+config INT_BENCH_LOCK_HOLD_US
+	int "Critical section hold time (microseconds)"
+	depends on INT_BENCH_SCENARIO_LOCKED
+	default 10
+	help
+	  How long the critical section scenario keeps interrupts locked
+	  with the benchmark interrupt pending before unlocking and
+	  measuring the unlock-to-ISR-entry latency.
+
+comment "Scenarios"
+
+config INT_BENCH_SCENARIO_ENTRY
+	bool "Interrupt entry latency"
+	depends on INT_BENCH_TRIGGER_SW_IRQ
+	default y
+	help
+	  Measure the time from the software trigger of a hardware
+	  interrupt to the first instruction of its ISR.
+
+config INT_BENCH_SCENARIO_EXIT
+	bool "Interrupt exit latency"
+	default y
+	help
+	  Measure the time from the end of the ISR body back to the
+	  interrupted thread, and the time from the end of an ISR that
+	  wakes a higher priority thread to that thread running.
+
+config INT_BENCH_SCENARIO_LOCKED
+	bool "Entry latency after a critical section"
+	depends on INT_BENCH_TRIGGER_SW_IRQ
+	# ARC raises a software interrupt by writing the line number to
+	# the single IRQ_HINT register, and the system timer writes that
+	# same register from sys_clock_cycle_get_32() whenever it finds
+	# the timer already expired. The hold below busy waits on that
+	# function with interrupts locked, so the timer takes the
+	# register over from the benchmark and the two then fight for it
+	# for as long as the timer stays behind.
+	depends on !ARC
+	default y
+	help
+	  Trigger the benchmark interrupt while interrupts are locked,
+	  hold the lock for a configurable window, then measure the time
+	  from irq_unlock() to ISR entry. This approximates the latency
+	  an interrupt experiences when it arrives during a kernel or
+	  application critical section.
+
+	  Not available on ARC, where the benchmark trigger and the
+	  system timer share one hardware register.
+
+config INT_BENCH_SCENARIO_DYNAMIC
+	bool "Dynamic interrupt connect cost"
+	depends on INT_BENCH_TRIGGER_SW_IRQ
+	depends on DYNAMIC_INTERRUPTS
+	depends on !SHARED_INTERRUPTS
+	default y
+	help
+	  Measure the cost of installing an ISR at runtime with
+	  irq_connect_dynamic().
+
+config INT_BENCH_SCENARIO_THROUGHPUT
+	bool "Sustained interrupt round-trip cost"
+	depends on INT_BENCH_TRIGGER_SW_IRQ
+	default y
+	help
+	  Re-trigger the benchmark interrupt from within its own ISR so
+	  interrupts are serviced back to back, and report the average
+	  cost of one full entry + ISR + exit round trip. The inverse of
+	  this number is the maximum sustainable interrupt rate.
+
+endmenu
+
+config SYS_CLOCK_TICKS_PER_SEC
+	int "Number of ticks per second"
+	default 20 if SOC_FAMILY_STM32
+	default 100
+	help
+	  A low tick rate keeps timer interrupts out of the measurements,
+	  but it cannot be lowered without limit: a tick has to be
+	  expressible in the timer's counter. A Cortex-M SysTick counter
+	  is 24 bits, so a tick longer than 16777215 cycles cannot be
+	  programmed, and the driver then falls back to its minimum delay
+	  of ten microseconds and interrupts continuously.
+
+	  The default of 100 is representable on any core up to 1.6GHz.
+	  Combined with a tickless kernel it is also quiet: with nothing
+	  scheduled the driver programs as far ahead as the counter
+	  allows, which on a 150MHz part is 110ms.
+
+source "Kconfig.zephyr"
