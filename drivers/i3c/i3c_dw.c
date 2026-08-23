@@ -2049,6 +2049,12 @@ static int dw_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *paylo
 			ret = -EINVAL;
 			goto error;
 		}
+		if (payload->targets.num_targets > DW_I3C_MAX_CMD_BUF_SIZE) {
+			LOG_ERR("%s: %zu CCC targets exceeds %d", dev->name,
+				payload->targets.num_targets, DW_I3C_MAX_CMD_BUF_SIZE);
+			ret = -ENOTSUP;
+			goto error;
+		}
 		xfer->ncmds = payload->targets.num_targets;
 		for (i = 0; i < payload->targets.num_targets; i++) {
 			cmd = &xfer->cmds[i];
