@@ -108,7 +108,7 @@ Interrupt generation is abstracted behind a small backend API
    implemented for Cortex-M (NVIC STIR/ISPR), Arm GIC v2/v3 (SGI), ARC
    (IRQ_HINT), x86 (local APIC self IPI, both xAPIC and x2APIC) and RISC-V
    (CLIC pending bit, or the CLINT machine software interrupt where there
-   is no CLIC), largely using the same mechanisms as
+   is no CLIC) and Espressif SoCs, largely using the same mechanisms as
    ``tests/arch/common/interrupt``. The IRQ line is auto-selected and can
    be overridden with ``CONFIG_INT_BENCH_IRQ_LINE`` for SoCs where the
    automatic choice is not a free, implemented line.
@@ -122,6 +122,19 @@ Interrupt generation is abstracted behind a small backend API
    entry latency therefore includes one store to the CLINT. This backend
    is unavailable on SMP builds, where the machine software interrupt is
    already used for scheduler IPIs.
+
+   Espressif parts route every interrupt through an interrupt matrix rather
+   than exposing lines the CPU can pend, so neither the RISC-V nor the
+   Xtensa mechanism applies to them. They do have peripheral sources whose
+   only purpose is to be raised by software, meant for cross-core
+   signalling: writing the register asserts a real interrupt that arrives
+   through the matrix like any other. The benchmark takes source 2, leaving
+   0 and 1 to ESP-IDF and to Zephyr's own SMP code, and allocates it with
+   ``esp_intr_alloc()`` since the matrix picks the CPU interrupt and there
+   is no line to name in ``IRQ_CONNECT()``. The register moved peripheral
+   and name across the family, so the address is selected per SoC series;
+   the interrupt is level triggered, so the ISR clears it. Verified to
+   build on ESP32, ESP32-S3, ESP32-C3 and ESP32-C6.
 
 ``CONFIG_INT_BENCH_TRIGGER_OFFLOAD``
    Fallback for every other architecture, based on ``irq_offload()``. Since
