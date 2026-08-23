@@ -1,0 +1,61 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright (c) 2026 Dev It Wise
+# SPDX-License-Identifier: Apache-2.0
+#
+# libFuzzer dictionary for the DNS message parser. A DNS message is not
+# reachable by mutation from nothing: the header has to pass the flag and
+# opcode checks, a name has to be a run of length-prefixed labels ending
+# in a zero octet, and a record only parses with a class of IN. The
+# tokens below are those fixed shapes, so the executions go into the name
+# walk and the record walk instead of into rediscovering the framing.
+#
+# The tree accepts no binary files, so this dictionary, not a seed
+# corpus, is where the structure of a DNS message is kept. See
+# README.rst.
+
+# Whole 12-byte headers. Anything shorter than one of these is rejected
+# before a name is looked at.
+hdr_query_1q="\x12\x34\x01\x00\x00\x01\x00\x00\x00\x00\x00\x00"
+hdr_mdns_query="\x00\x00\x00\x00\x00\x01\x00\x00\x00\x00\x00\x00"
+hdr_response_1a="\x12\x34\x81\x80\x00\x01\x00\x01\x00\x00\x00\x00"
+hdr_response_2a="\x12\x34\x81\x80\x00\x01\x00\x02\x00\x00\x00\x00"
+hdr_mdns_response="\x00\x00\x84\x00\x00\x00\x00\x01\x00\x00\x00\x00"
+hdr_response_additional="\x12\x34\x81\x80\x00\x01\x00\x01\x00\x01\x00\x01"
+
+# Name pieces: a label is a length octet and that many bytes, and the
+# name ends in the zero octet of the root label.
+label_local="\x05local"
+label_www="\x03www"
+label_arpa="\x04arpa"
+label_max63="\x3f"
+label_root="\x00"
+name_zephyr_local="\x06zephyr\x05local\x00"
+
+# Compression pointers. The top two bits mark the octet as a pointer and
+# the remaining 14 bits are an offset into the message, so these are the
+# tokens that send the name walk somewhere else in the packet.
+ptr_to_header="\xc0\x0c"
+ptr_to_self="\xc0\x00"
+ptr_high="\xff\xff"
+ptr_reserved_bits="\x80\x0c"
+ptr_40="\x40\x0c"
+
+# Question trailer: query type and class IN.
+qtype_a_in="\x00\x01\x00\x01"
+qtype_aaaa_in="\x00\x1c\x00\x01"
+qtype_ptr_in="\x00\x0c\x00\x01"
+qtype_srv_in="\x00\x21\x00\x01"
+qtype_txt_in="\x00\x10\x00\x01"
+qtype_any_in="\x00\xff\x00\x01"
+qclass_cache_flush="\x80\x01"
+
+# Record trailers: type, class, TTL and rdlength, the four fields
+# dns_unpack_answer() reads before it trusts the rdata length.
+rr_a="\x00\x01\x00\x01\x00\x00\x00\x3c\x00\x04"
+rr_aaaa="\x00\x1c\x00\x01\x00\x00\x00\x3c\x00\x10"
+rr_cname="\x00\x05\x00\x01\x00\x00\x00\x3c\x00\x02"
+rr_srv="\x00\x21\x00\x01\x00\x00\x00\x3c\x00\x08"
+rr_txt="\x00\x10\x00\x01\x00\x00\x00\x3c\x00\x01"
+rr_ptr="\x00\x0c\x00\x01\x00\x00\x00\x3c\x00\x02"
+rdlength_max="\xff\xff"
+ttl_max="\x7f\xff\xff\xff"
