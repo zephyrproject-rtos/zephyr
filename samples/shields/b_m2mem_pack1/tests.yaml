@@ -1,0 +1,40 @@
+sample:
+  name: b_m2mem_pack1
+  description: B-M2MEM-PACK1 shield sample
+
+common:
+  tags:
+    - shield
+  harness: console
+  harness_config:
+    type: multi_line
+    ordered: true
+    regex:
+      - "Flash:"
+      - "EEPROM:"
+
+tests:
+  sample.shields.b_m2mem_pack1.mb1927_18ba:
+    platform_allow:
+      - nucleo_u3c5zi_q
+    integration_platforms:
+      - nucleo_u3c5zi_q
+    extra_args: SHIELD=b_m2mem_pack1_mb1927_18ba
+  sample.shields.b_m2mem_pack1.mb1927_33ba:
+    platform_allow:
+      - nucleo_u3c5zi_q
+    integration_platforms:
+      - nucleo_u3c5zi_q
+    extra_args: SHIELD=b_m2mem_pack1_mb1927_33ba
+  sample.shields.b_m2mem_pack1.mb1928_33la:
+    platform_allow:
+      - nucleo_u3c5zi_q
+    integration_platforms:
+      - nucleo_u3c5zi_q
+    extra_args: SHIELD=b_m2mem_pack1_mb1928_33la
+  sample.shields.b_m2mem_pack1.mb1928_33lb:
+    platform_allow:
+      - nucleo_u3c5zi_q
+    integration_platforms:
+      - nucleo_u3c5zi_q
+    extra_args: SHIELD=b_m2mem_pack1_mb1928_33lb
