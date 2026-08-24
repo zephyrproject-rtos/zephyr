@@ -5,6 +5,12 @@
  */
 /* Please keep in sync with cmake/linker_script/common/common-noinit.cmake */
 
+#include <zephyr/linker/sections.h>
+#include <zephyr/sys/util.h>
+
+#define DCACHELINE_EXCLUSIVE_NOINIT_SECTION_START UTIL_CAT(__, UTIL_CAT(__DCACHELINE_EXCLUSIVE_NOINIT_SECTION_NAME, _start))
+#define DCACHELINE_EXCLUSIVE_NOINIT_SECTION_END UTIL_CAT(__, UTIL_CAT(__DCACHELINE_EXCLUSIVE_NOINIT_SECTION_NAME, _end))
+
 SECTION_PROLOGUE(_NOINIT_SECTION_NAME,(NOLOAD),)
 {
         /*
@@ -32,6 +38,13 @@ SECTION_PROLOGUE(_NOINIT_SECTION_NAME,(NOLOAD),)
 	*(.user_stacks*)
 	z_user_stacks_end = .;
 #endif /* CONFIG_USERSPACE */
+#if defined(CONFIG_DCACHE_LINE_SIZE)
+	. = ALIGN(CONFIG_DCACHE_LINE_SIZE);
+	PLACE_SYMBOL_HERE(DCACHELINE_EXCLUSIVE_NOINIT_SECTION_START);
+	KEEP(*(SORT_BY_NAME(.__DCACHELINE_EXCLUSIVE_NOINIT_SECTION_NAME.*)))
+	. = ALIGN(CONFIG_DCACHE_LINE_SIZE);
+	PLACE_SYMBOL_HERE(DCACHELINE_EXCLUSIVE_NOINIT_SECTION_END);
+#endif /* CONFIG_DCACHE_LINE_SIZE */
 
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.
