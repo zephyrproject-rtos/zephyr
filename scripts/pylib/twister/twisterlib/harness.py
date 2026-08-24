@@ -52,6 +52,11 @@ class Harness:
     GCOV_START = "GCOV_COVERAGE_DUMP_START"
     GCOV_END = "GCOV_COVERAGE_DUMP_END"
     FAULT = "ZEPHYR FATAL ERROR"
+    # Printed by Ztest's fatal-error/assert hooks
+    UNEXPECTED_FAULT_MARKERS = (
+        "fatal error was unexpected",
+        "assert failed was unexpected",
+    )
     RUN_PASSED = "PROJECT EXECUTION SUCCESSFUL"
     RUN_FAILED = "PROJECT EXECUTION FAILED"
     run_id_pattern = r"RunID: (?P<run_id>[0-9A-Fa-f]+)"
@@ -185,9 +190,13 @@ class Harness:
             if run_id == str(self.run_id):
                 self.matched_run_id = True
 
-        # Faults are logged with a timestamp and module prefix, so the marker
-        # has to be matched as a substring rather than against the whole line.
-        if self.fail_on_fault and self.FAULT in line:
+        # Faults are logged with a timestamp and module prefix, so the markers
+        # have to be matched as substrings rather than against the whole line.
+        line_lower = line.lower()
+        unexpected_hook_fault = any(
+            marker in line_lower for marker in self.UNEXPECTED_FAULT_MARKERS
+        )
+        if (self.fail_on_fault and self.FAULT in line) or unexpected_hook_fault:
             self.fault = True
             # A fault can be reported after the test has already announced
             # success, for instance a stray interrupt taken once the test
