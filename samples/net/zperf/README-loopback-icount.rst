@@ -326,6 +326,16 @@ Two details make the comparison mean what it should:
   request that changes the sample therefore does not move the number by changing
   what is being measured.
 
+A companion workflow, :file:`.github/workflows/net-perf-comment.yml`, posts the
+same report as a comment on the pull request, so the numbers are visible where
+the change is reviewed. It is a separate workflow because the measurement runs
+from a ``pull_request`` event, whose token is read-only for forks and cannot
+comment; the companion runs on ``workflow_run``, reads the report and the pull
+request number out of the artifacts, and never checks out pull request code.
+There is one comment per pull request, rewritten in place on every push, and a
+platform whose metrics all held still is collapsed so an unchanged result stays
+a single line.
+
 The check is **advisory**. It runs with ``--exit-zero``, every measuring step is
 ``continue-on-error``, and it is not one of the required checks: a red or
 surprising number is information for the reviewer, never a merge blocker. A

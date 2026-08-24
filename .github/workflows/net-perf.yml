@@ -168,6 +168,25 @@ jobs:
               --exit-zero
           cat net-perf.md >> "${GITHUB_STEP_SUMMARY}"
 
+      # The companion workflow that comments on the pull request runs in a
+      # privileged context and cannot trust anything this job produces, so the
+      # pull request number travels as its own artifact and is checked against
+      # the measured commit there. Same shape as doc-build.yml.
+      - name: Record the pull request number
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        run: |
+          echo "${{ github.event.pull_request.number }}" > pr_num
+
+      - name: Upload the pull request number
+        if: ${{ !cancelled() }}
+        continue-on-error: true
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: pr_num
+          path: pr_num
+          if-no-files-found: ignore
+
       - name: Upload throughput data
         if: ${{ !cancelled() }}
         continue-on-error: true
