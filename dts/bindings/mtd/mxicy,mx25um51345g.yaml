@@ -1,0 +1,8 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: Macronix MX25UM51345G Octal SPI NOR flash
+
+compatible: "mxicy,mx25um51345g"
+
+include: soc-nv-flash.yaml
