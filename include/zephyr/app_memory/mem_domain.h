@@ -26,6 +26,15 @@ extern "C" {
 
 #ifdef CONFIG_USERSPACE
 /**
+ * @def K_MEM_PARTITION_DEFINE_UNCHECKED
+ *
+ * @brief Statically declare a memory partition, without checking argument alignment
+ */
+#define K_MEM_PARTITION_DEFINE_UNCHECKED(name, start, size, attr) \
+	struct k_mem_partition name =\
+		{ (uintptr_t)start, size, attr}
+
+/**
  * @def K_MEM_PARTITION_DEFINE
  *
  * @brief Statically declare a memory partition
@@ -33,12 +42,10 @@ extern "C" {
 #ifdef _ARCH_MEM_PARTITION_ALIGN_CHECK
 #define K_MEM_PARTITION_DEFINE(name, start, size, attr) \
 	_ARCH_MEM_PARTITION_ALIGN_CHECK(start, size); \
-	struct k_mem_partition name =\
-		{ (uintptr_t)start, size, attr}
+	K_MEM_PARTITION_DEFINE_UNCHECKED(name, start, size, attr)
 #else
 #define K_MEM_PARTITION_DEFINE(name, start, size, attr) \
-	struct k_mem_partition name =\
-		{ (uintptr_t)start, size, attr}
+	K_MEM_PARTITION_DEFINE_UNCHECKED(name, start, size, attr)
 #endif /* _ARCH_MEM_PARTITION_ALIGN_CHECK */
 
 /**
