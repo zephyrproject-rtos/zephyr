@@ -12,8 +12,6 @@
 #include <nxp/nxp_imx/rt/MIMXRT798SGFOB-pinctrl.h>
 
 &ext_flash_ctrl {
-	/* Select the quad W25Q512NW device configuration in the XSPI NOR driver. */
-	device-name = "w25q512nw";
 	/*
 	 * W25Q512NW has no DQS pin. Sample read data with the controller-generated
 	 * strobe looped back through the DQS pad (LoopbackFromDqsPad = 2) — this is
@@ -21,6 +19,11 @@
 	 * when the driver re-applies the device config during init.
 	 */
 	sample-clk-source = <2>;
+};
+
+&ext_flash {
+	/* Reworked board populates the Winbond W25Q512NW quad NOR instead. */
+	compatible = "winbond,w25q512nw", "soc-nv-flash";
 };
 
 &pinmux_xspi0 {

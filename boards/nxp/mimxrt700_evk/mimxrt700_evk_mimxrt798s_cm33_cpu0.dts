@@ -31,7 +31,7 @@
 
 	chosen {
 		zephyr,flash-controller = &ext_flash_ctrl;
-		zephyr,flash = &mx25um51345g;
+		zephyr,flash = &ext_flash;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,sram = &sram0;
 		zephyr,console = &flexcomm0_lpuart0;
@@ -384,7 +384,6 @@ nxp_8080_touch_panel_i2c: &flexcomm8_lpi2c8 {};
 	ext_flash_ctrl: flash-controller@0 {
 		status = "okay";
 		compatible = "nxp,xspi-nor";
-		device-name = "mx25um51345g";
 		/* MX25UM51345G is 64MB, 512Mbit flash part. */
 		size = <DT_SIZE_M(64)>;
 		reg = <0>;
@@ -393,8 +392,8 @@ nxp_8080_touch_panel_i2c: &flexcomm8_lpi2c8 {};
 		#size-cells = <1>;
 		ranges = <0x0 0x38000000 DT_SIZE_M(64)>;
 
-		mx25um51345g: flash@0 {
-			compatible = "soc-nv-flash";
+		ext_flash: flash@0 {
+			compatible = "mxicy,mx25um51345g", "soc-nv-flash";
 			reg = <0x0 DT_SIZE_M(64)>;
 			erase-block-size = <DT_SIZE_K(4)>;
 			write-block-size = <4>;
