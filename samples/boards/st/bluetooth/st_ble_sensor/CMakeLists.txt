@@ -14,4 +14,4 @@ else()
 endif()
 
 
-zephyr_library_include_directories(${ZEPHYR_BASE}/samples/bluetooth)
+zephyr_library_include_directories(${ZEPHYR_BASE}/samples/boards/st/bluetooth)
