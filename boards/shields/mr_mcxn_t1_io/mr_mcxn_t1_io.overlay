@@ -1,0 +1,106 @@
+/*
+ * Copyright (c) 2026 CogniPilot Foundation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <nxp/mcx/mcxn/pinctrl/MCXN947VDF-pinctrl.h>
+
+/ {
+	aliases {
+		pwm-0 = &flexpwm0_pwm0;
+		pwm-1 = &flexpwm1_pwm0;
+	};
+};
+
+/*
+ * Flex IO breakout: a passive expansion board with no fixed silicon. It
+ * routes an expansion I2C bus, two flow-controlled UARTs, two FlexPWM
+ * blocks, an ADC and two SPI buses to the stacking header. The board
+ * leaves these buses disabled with their pin routing in place; enable each
+ * parent and the exposed function here. Consumers on the expansion
+ * connectors are defined by the application.
+ */
+&flexcomm3 {
+	status = "okay";
+};
+
+&mr_mcxn_t1_flexio_i2c {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+};
+
+&flexcomm0 {
+	status = "okay";
+};
+
+&mr_mcxn_t1_flexio_uart0 {
+	status = "okay";
+	current-speed = <115200>;
+};
+
+&flexcomm2 {
+	status = "okay";
+};
+
+&mr_mcxn_t1_flexio_uart2 {
+	status = "okay";
+	current-speed = <115200>;
+};
+
+&flexpwm0 {
+	status = "okay";
+};
+
+&mr_mcxn_t1_flexio_pwm0 {
+	status = "okay";
+};
+
+&flexpwm1 {
+	status = "okay";
+};
+
+&mr_mcxn_t1_flexio_pwm1 {
+	status = "okay";
+};
+
+&mr_mcxn_t1_flexio_adc {
+	status = "okay";
+};
+
+/*
+ * LP_FLEXCOMM6 and LP_FLEXCOMM7 are the same SPI buses the MR-MCXN-T1-OFL
+ * shield uses for its IMUs, and one shield mounts on the base board at a
+ * time. The SPI1 connector chip select is SSEL2, added to the board pin
+ * group here, and the SPI2 connector chip select is SSEL0. Applications
+ * define the attached devices and their chip selects.
+ */
+&pinctrl {
+	pinmux_flexcomm6_spi1_cs: pinmux_flexcomm6_spi1_cs {
+		group0 {
+			pinmux = <FC6_P5_PIO3_13>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+	};
+};
+
+&flexcomm6 {
+	status = "okay";
+};
+
+&flexcomm6_lpspi6 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_flexcomm6_lpspi &pinmux_flexcomm6_spi1_cs>;
+	pinctrl-names = "default";
+};
+
+&flexcomm7 {
+	status = "okay";
+};
+
+&flexcomm7_lpspi7 {
+	status = "okay";
+};
