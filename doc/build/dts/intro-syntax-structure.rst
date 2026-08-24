@@ -282,7 +282,7 @@ status
     elsewhere (e.g. by another core or domain in a multi-domain application);
     it is handled the same as ``"disabled"`` by ``edtlib``. Use of the
     remaining values (``"fail"`` and ``"fail-sss"``) is not currently
-    supported by Zephyr.
+    used by Zephyr.
 
     A node is considered enabled if its status property is either ``"okay"`` or
     not defined (i.e. does not exist in the devicetree source). Nodes with
