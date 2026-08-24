@@ -4,10 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#undef _POSIX_C_SOURCE
+#define _POSIX_C_SOURCE 200809L
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(tftp_client, CONFIG_TFTP_LOG_LEVEL);
 
 #include <stddef.h>
+#include <string.h>
 #include <zephyr/net/tftp.h>
 #include "tftp_client.h"
 #include "net_private.h"
@@ -25,14 +29,16 @@ static size_t make_request(uint8_t *buf, int request,
 {
 	char *ptr = (char *)buf;
 	const char def_mode[] = "octet";
+	size_t len;
 
 	/* Fill in the Request Type. */
 	sys_put_be16(request, ptr);
 	ptr += 2;
 
 	/* Copy the name of the remote file. */
+	len = strnlen(remote_file, TFTP_MAX_FILENAME_SIZE);
 	strncpy(ptr, remote_file, TFTP_MAX_FILENAME_SIZE);
-	ptr += strlen(remote_file);
+	ptr += len;
 	*ptr++ = '\0';
 
 	/* Default to "Octet" if mode not specified. */
@@ -41,8 +47,9 @@ static size_t make_request(uint8_t *buf, int request,
 	}
 
 	/* Copy the mode of operation. */
+	len = strnlen(mode, TFTP_MAX_MODE_SIZE);
 	strncpy(ptr, mode, TFTP_MAX_MODE_SIZE);
-	ptr += strlen(mode);
+	ptr += len;
 	*ptr++ = '\0';
 
 	return ptr - (char *)buf;
