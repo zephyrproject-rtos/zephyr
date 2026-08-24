@@ -14,7 +14,7 @@ if UHC_DWC2
 
 config UHC_DWC2_STACK_SIZE
 	int "UHC DWC2 driver thread stack size"
-	default 512
+	default 1024
 	help
 	  DWC2 driver thread stack size.
 
