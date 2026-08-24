@@ -20,6 +20,8 @@
 	adc0: adc@40004000 {
 		compatible = "ti,mspm0-adc12";
 		reg = <0x40004000 0x2000>;
+		clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
+		max-result-reg = <12>;
 		interrupts = <4 0>;
 		status = "disabled";
 		ti,num-channels = <32>;
