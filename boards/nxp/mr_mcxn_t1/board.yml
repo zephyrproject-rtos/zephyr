@@ -1,0 +1,6 @@
+board:
+  name: mr_mcxn_t1
+  full_name: MR-MCXN-T1
+  vendor: nxp
+  socs:
+  - name: mcxn947

@@ -1,0 +1,35 @@
+/*
+ * SPDX-FileCopyrightText: 2024-2025 NXP
+ * SPDX-FileCopyrightText: 2026 CogniPilot Foundation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/mcx/mcxn/nxp_mcxn94x.dtsi>
+#include "mr_mcxn_t1.dtsi"
+
+/ {
+	model = "NXP MR-MCXN-T1 board";
+	compatible = "nxp,mcxn947", "nxp,mcx";
+
+	cpus {
+		/delete-node/ cpu@0;
+	};
+
+	chosen {
+		zephyr,sram = &sramg;
+		zephyr,flash = &flash;
+		zephyr,flash-controller = &fmu;
+		zephyr,code-partition = &slot1_partition;
+	};
+};
+
+&mbox {
+	status = "okay";
+};
+
+&edma0 {
+	status = "okay";
+};

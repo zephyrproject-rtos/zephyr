@@ -1,0 +1,15 @@
+/*
+ * SPDX-FileCopyrightText: 2025 NXP
+ * SPDX-FileCopyrightText: 2026 CogniPilot Foundation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "mr_mcxn_t1_mcxn947_cpu0.dtsi"
+
+/ {
+	model = "NXP MR-MCXN-T1 board";
+	compatible = "nxp,mcxn947", "nxp,mcx";
+};
