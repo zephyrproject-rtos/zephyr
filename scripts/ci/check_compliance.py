@@ -836,6 +836,7 @@ class KconfigCheck(ComplianceTest):
         self.check_top_menu_not_too_long(kconf)
         self.check_no_pointless_menuconfigs(kconf)
         self.check_no_undef_within_kconfig(kconf)
+        self.check_module_activation(kconf)
         self.check_no_redefined_in_defconfig(kconf)
         self.check_no_enable_in_boolean_prompt(kconf)
         self.check_soc_name_sync(kconf)
@@ -1483,6 +1484,35 @@ https://docs.zephyrproject.org/latest/build/kconfig/tips.html#menuconfig-symbols
                 + "\n".join(
                     f"{node.item.name:35} {node.filename}:{node.linenr}" for node in bad_mconfs
                 )
+            )
+
+    def check_module_activation(self, kconf):
+        # Kconfig ORs a symbol's dependencies across its definition sites, so a
+        # site that leaves out 'depends on ZEPHYR_<name>_MODULE' cancels the
+        # ones that have it, and the module can be activated while absent from
+        # the workspace with no error at all.
+
+        bad = []
+        for name, sym in kconf.syms.items():
+            if not (name.startswith("ZEPHYR_") and name.endswith("_MODULE_ACTIVE")):
+                continue
+            module = kconf.syms.get(name[: -len("_ACTIVE")])
+            for node in sym.nodes:
+                # 'kconfiglib' is global
+                # pylint: disable=undefined-variable
+                if module not in kconfiglib.expr_items(node.dep):
+                    bad.append((node, name))
+
+        if bad:
+            self.failure(
+                """\
+Found module activation symbols that do not depend on their module being
+available. Every definition of ZEPHYR_<name>_MODULE_ACTIVE must carry
+'depends on ZEPHYR_<name>_MODULE'. See
+https://docs.zephyrproject.org/latest/develop/modules.html#module-activation.
+
+"""
+                + "\n".join(f"{name:45} {node.filename}:{node.linenr}" for node, name in bad)
             )
 
     def check_no_undef_within_kconfig(self, kconf):
