@@ -566,11 +566,15 @@ int net_recv_data(struct net_if *iface, struct net_pkt *pkt)
 {
 	int ret;
 #if defined(CONFIG_NET_DSA)
-	struct ethernet_context *eth_ctx = net_if_l2_data(iface);
+	if (net_if_l2(iface) == &NET_L2_GET_NAME(ETHERNET)) {
+		struct ethernet_context *eth_ctx = net_if_l2_data(iface);
 
-	/* DSA driver handles first to untag and to redirect to user interface. */
-	if (eth_ctx != NULL && (eth_ctx->dsa_port == DSA_CONDUIT_PORT)) {
-		iface = dsa_recv(iface, pkt);
+		NET_ASSERT(eth_ctx != NULL);
+
+		/* DSA driver handles first to untag and to redirect to user interface. */
+		if (eth_ctx->dsa_port == DSA_CONDUIT_PORT) {
+			iface = dsa_recv(iface, pkt);
+		}
 	}
 #endif
 
