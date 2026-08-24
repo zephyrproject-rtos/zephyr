@@ -7,7 +7,7 @@ menuconfig IIS3DHHC
 	bool "IIS3DHHC accelerometer sensor"
 	default y
 	depends on DT_HAS_ST_IIS3DHHC_ENABLED
-	depends on ZEPHYR_HAL_ST_MODULE
+	select ZEPHYR_HAL_ST_MODULE_ACTIVE
 	select SPI
 	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_ST_IIS3DHHC),irq-gpios)
 	select HAS_STMEMSC

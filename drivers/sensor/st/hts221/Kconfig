@@ -5,7 +5,7 @@ menuconfig HTS221
 	bool "HTS221 temperature and humidity sensor"
 	default y
 	depends on DT_HAS_ST_HTS221_ENABLED
-	depends on ZEPHYR_HAL_ST_MODULE
+	select ZEPHYR_HAL_ST_MODULE_ACTIVE
 	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_ST_HTS221),i2c)
 	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_ST_HTS221),spi)
 	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_ST_HTS221),drdy-gpios)
