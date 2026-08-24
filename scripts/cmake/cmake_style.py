@@ -10,7 +10,11 @@ Checks a subset of the "CMake Style Guidelines" documented in
 doc/contribute/style/cmake.rst:
 
   1. Indentation: use 2 spaces per block level, never tabs.
-  2. Commands: always use lowercase command names.
+  2. Commands: always use lowercase command names. Commands whose canonical
+     names are mixed-case by convention (CMake module commands and their
+     Zephyr/sysbuild extensions) are listed in cmake_style_mixed_case.txt next
+     to this script; for those the canonical spelling is the only accepted
+     form. Downstream projects append their own names with --mixed-case-file.
   3. No space between a command and its opening parenthesis ('if(' not 'if (').
   4. Cache/option variables (option(...) and set(... CACHE ...)) use UPPERCASE names.
   5. Boolean values are not quoted, in the positions where a boolean is expected:
@@ -41,6 +45,7 @@ Requires: pip install tree-sitter tree-sitter-cmake
 """
 
 import argparse
+import re
 import sys
 import traceback
 from dataclasses import dataclass
@@ -54,34 +59,12 @@ INDENT = 2
 # CMake boolean constants that should not be quoted (rule 5).
 CMAKE_BOOLEANS = {"ON", "OFF", "TRUE", "FALSE"}
 
-# Commands that are an exception to the lowercase rule (rule 2): CMake module
-# commands, and Zephyr/sysbuild commands that extend a mixed-case command, use a
-# mixed-case 'Module_Action' convention. For these the canonical mixed-case
-# spelling is the only accepted form, so both an all-lowercase and any other
-# casing are flagged and corrected to the literal below. Built-in CMake commands
-# are not listed here, so an uppercase 'FILE(' or 'SET(' is still caught by the
-# lowercase rule.
-MIXED_CASE_COMMANDS = {
-    # ExternalProject module (https://cmake.org/cmake/help/latest/module/ExternalProject.html).
-    "ExternalProject_Add",
-    "ExternalProject_Add_Step",
-    "ExternalProject_Add_StepTargets",
-    "ExternalProject_Add_StepDependencies",
-    "ExternalProject_Get_Property",
-    # FetchContent module (https://cmake.org/cmake/help/latest/module/FetchContent.html).
-    "FetchContent_Declare",
-    "FetchContent_MakeAvailable",
-    "FetchContent_Populate",
-    "FetchContent_GetProperties",
-    "FetchContent_SetPopulated",
-    # Zephyr sysbuild extensions, modeled after ExternalProject_Add.
-    "ExternalZephyrProject_Add",
-    "ExternalZephyrVariantProject_Add",
-    "ExternalZephyrProject_Cmake",
-}
+# Default allow-list of mixed-case commands (rule 2), shipped next to this
+# script. Extra files given with --mixed-case-file append to it.
+DEFAULT_MIXED_CASE_FILE = Path(__file__).parent / "cmake_style_mixed_case.txt"
 
-# Lookup from the lowercased command name to its canonical mixed-case spelling.
-_MIXED_CASE_BY_LOWER = {name.lower(): name for name in MIXED_CASE_COMMANDS}
+# CMake command names: an identifier, as matched by CMake's own grammar.
+_COMMAND_NAME_RE = re.compile(r"[A-Za-z_][A-Za-z0-9_]*")
 
 EXIT_OK = 0
 EXIT_ISSUES = 1
@@ -98,6 +81,39 @@ class Issue:
     col: int  # 1-based
     rule: str
     message: str
+
+
+def load_mixed_case(paths: list[Path]) -> dict[str, str]:
+    """
+    Load the mixed-case command allow-list files at 'paths', returning a lookup
+    from the lowercased command name to its canonical mixed-case spelling.
+
+    Each file holds one canonical name per line; blank lines and '#' comments
+    (whole-line or trailing) are ignored. Later files append to earlier ones.
+    Raises ValueError for an entry that is not a valid command name, is
+    all-lowercase (which would allow-list nothing), or spells a name already
+    loaded with a different case; raises OSError for an unreadable file.
+    """
+    mixed_case: dict[str, str] = {}
+    for path in paths:
+        for lineno, line in enumerate(path.read_text(encoding="utf-8").splitlines(), start=1):
+            name = line.split("#", 1)[0].strip()
+            if not name:
+                continue
+            if not _COMMAND_NAME_RE.fullmatch(name):
+                raise ValueError(f"{path}:{lineno}: '{name}' is not a valid command name")
+            if name == name.lower():
+                raise ValueError(
+                    f"{path}:{lineno}: '{name}' is all-lowercase; only mixed-case "
+                    "command names belong in the allow-list"
+                )
+            canonical = mixed_case.setdefault(name.lower(), name)
+            if canonical != name:
+                raise ValueError(
+                    f"{path}:{lineno}: '{name}' conflicts with the earlier "
+                    f"canonical spelling '{canonical}'"
+                )
+    return mixed_case
 
 
 def _text(node: Node) -> str:
@@ -117,7 +133,9 @@ def _tab_indent_issues(lines: list[str]) -> list[Issue]:
     return issues
 
 
-def _check_command(node: Node, depth: int, lines: list[str], issues: list[Issue]) -> None:
+def _check_command(
+    node: Node, depth: int, lines: list[str], mixed_case: dict[str, str], issues: list[Issue]
+) -> None:
     name_node = node.named_children[0] if node.named_children else None
     if name_node is None:
         return
@@ -125,10 +143,10 @@ def _check_command(node: Node, depth: int, lines: list[str], issues: list[Issue]
     name_line = name_node.start_point.row + 1
     name_col = name_node.start_point.column
 
-    # Rule 2: lowercase command, except module/sysbuild commands whose canonical
+    # Rule 2: lowercase command, except allow-listed commands whose canonical
     # names are mixed-case by convention. For those the canonical spelling is the
     # only accepted form; everything else must be lowercase.
-    canonical = _MIXED_CASE_BY_LOWER.get(name.lower())
+    canonical = mixed_case.get(name.lower())
     if canonical is not None:
         if name != canonical:
             issues.append(Issue(name_line, name_col + 1, "command-case", f"use '{canonical}'"))
@@ -247,14 +265,14 @@ def _check_quoted_bool(node: Node, command: str, issues: list[Issue]) -> None:
             )
 
 
-def _tree_issues(root: Node, lines: list[str]) -> list[Issue]:
+def _tree_issues(root: Node, lines: list[str], mixed_case: dict[str, str]) -> list[Issue]:
     """Rules 1 (depth), 2, 3, 4 and 5, derived from the tree-sitter-cmake tree."""
     issues: list[Issue] = []
 
     def walk(node: Node, depth: int) -> None:
         node_type = node.type
         if node_type.endswith("_command"):
-            _check_command(node, depth, lines, issues)
+            _check_command(node, depth, lines, mixed_case, issues)
         child_depth = depth + 1 if node_type == "body" else depth
         for child in node.children:
             walk(child, child_depth)
@@ -263,8 +281,12 @@ def _tree_issues(root: Node, lines: list[str]) -> list[Issue]:
     return issues
 
 
-def check_text(text: str) -> list[Issue]:
-    """Return the list of style issues for the given CMake file contents."""
+def check_text(text: str, mixed_case: dict[str, str]) -> list[Issue]:
+    """
+    Return the list of style issues for the given CMake file contents.
+    'mixed_case' maps lowercased command names to their canonical mixed-case
+    spelling (see load_mixed_case()).
+    """
     lines = text.split("\n")
     if lines and lines[-1] == "":
         lines = lines[:-1]
@@ -273,14 +295,14 @@ def check_text(text: str) -> list[Issue]:
     # token columns).
     lines = [line[:-1] if line.endswith("\r") else line for line in lines]
     root = _PARSER.parse(text.encode("utf-8")).root_node
-    issues = _tab_indent_issues(lines) + _tree_issues(root, lines)
+    issues = _tab_indent_issues(lines) + _tree_issues(root, lines, mixed_case)
     issues.sort(key=lambda issue: (issue.line, issue.col))
     return issues
 
 
-def check_file(path: Path) -> list[Issue]:
+def check_file(path: Path, mixed_case: dict[str, str]) -> list[Issue]:
     """Return the list of style issues for a single file."""
-    return check_text(path.read_text(encoding="utf-8"))
+    return check_text(path.read_text(encoding="utf-8"), mixed_case)
 
 
 def _is_cmake_file(name: str) -> bool:
@@ -316,17 +338,33 @@ def parse_args() -> argparse.Namespace:
         help="CMake files to check. Directories are searched recursively for "
         "CMakeLists.txt and *.cmake files.",
     )
+    parser.add_argument(
+        "--mixed-case-file",
+        metavar="FILE",
+        type=Path,
+        action="append",
+        default=[],
+        help="extra mixed-case command allow-list file (one canonical name per "
+        f"line, '#' comments), appended to '{DEFAULT_MIXED_CASE_FILE.name}'. "
+        "May be given multiple times.",
+    )
     return parser.parse_args()
 
 
 def main() -> int:
     args = parse_args()
 
+    try:
+        mixed_case = load_mixed_case([DEFAULT_MIXED_CASE_FILE, *args.mixed_case_file])
+    except (OSError, ValueError) as err:
+        print(f"error: {err}", file=sys.stderr)
+        return EXIT_ERROR
+
     total = 0
     failed = False
     for path in expand_paths(args.paths):
         try:
-            issues = check_file(path)
+            issues = check_file(path, mixed_case)
         except Exception:
             # Never let a checker failure masquerade as "no issues" (exit 0) or
             # "issues found" (exit 1): report it and exit with EXIT_ERROR.
