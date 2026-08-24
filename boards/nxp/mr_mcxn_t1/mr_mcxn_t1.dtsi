@@ -1,0 +1,318 @@
+/*
+ * SPDX-FileCopyrightText: 2025 NXP
+ * SPDX-FileCopyrightText: 2026 CogniPilot Foundation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "mr_mcxn_t1-pinctrl.dtsi"
+#include <zephyr/dt-bindings/sensor/icm45686.h>
+#include <zephyr/dt-bindings/led/led.h>
+
+/ {
+	can_phy0: can-phy0 {
+		compatible = "nxp,tja1462", "can-transceiver-gpio";
+		standby-gpios = <&gpio4 14 GPIO_ACTIVE_HIGH>;
+		max-bitrate = <5000000>;
+		#phy-cells = <0>;
+	};
+
+	can_phy1: can-phy1 {
+		compatible = "nxp,tja1462", "can-transceiver-gpio";
+		standby-gpios = <&gpio4 17 GPIO_ACTIVE_HIGH>;
+		max-bitrate = <5000000>;
+		#phy-cells = <0>;
+	};
+
+	/*
+	 * Stacking-header connector nexus. Maps the raw GPIO control lines the
+	 * expansion boards use (sensor interrupts, resets, indicator and user
+	 * inputs) so expansion-board overlays reference stable nexus names
+	 * instead of SoC GPIO controllers. The multiplexed peripheral buses are
+	 * exposed separately below as labeled bus nodes.
+	 */
+	mr_mcxn_t1_header: mr-mcxn-t1-connector {
+		compatible = "mr-mcxn-t1-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpio1 18 0>, /* Optical flow AFBR-S50 INT */
+			   <1 0 &gpio3 18 0>, /* Optical flow ICM-42688 INT */
+			   <2 0 &gpio3 19 0>, /* Optical flow ICM-45686 INT */
+			   <3 0 &gpio2 0 0>,  /* Optical flow PAA3905 INT */
+			   <4 0 &gpio3 7 0>,  /* GNSS F9P reset */
+			   <5 0 &gpio1 22 0>, /* GNSS RM3100 data-ready */
+			   <6 0 &gpio3 9 0>,  /* GNSS fix-status indicator */
+			   <7 0 &gpio3 0 0>,  /* GNSS F9P EXTINT time-mark */
+			   <8 0 &gpio1 2 0>,  /* User input 0 */
+			   <9 0 &gpio1 3 0>;  /* User input 1 */
+	};
+};
+
+&flexcomm1_lpuart1 {
+	current-speed = <115200>;
+	pinctrl-0 = <&pinmux_flexcomm1_lpuart>;
+	pinctrl-names = "default";
+};
+
+/*
+ * I3C barometer and magnetometer. Left disabled by default: the I3C bus on
+ * this board stalls in a busy-wait at startup, and keeping I3C off frees
+ * flexcomm1 for the physical LPUART1 console (this board has no USB CDC ACM
+ * console). Re-enable the bus and both sensors once the I3C startup behavior
+ * is resolved.
+ */
+&i3c0 {
+	status = "disabled";
+	pinctrl-0 = <&pinmux_i3c0>;
+	pinctrl-names = "default";
+	i2c-scl-hz = <400000>;
+
+	bmp581_0: bmp581_0@470000000000000050 {
+		compatible = "bosch,bmp581";
+		reg = <0x47 0x0 0x50>;
+		status = "disabled";
+	};
+
+	bmm350_0: bmm350_0@140000000000000050 {
+		compatible = "bosch,bmm350";
+		reg = <0x14 0x0 0x50>;
+		drdy-gpios = <&gpio0 19 GPIO_ACTIVE_HIGH>;
+		push-pull-int;
+		active-high-int;
+		status = "disabled";
+	};
+};
+
+/*
+ * Stacking-header peripheral buses. Each bus carries its board-side pin
+ * routing and is left disabled here; an expansion-board overlay enables the
+ * function it needs. FlexCOMM3 and FlexCOMM7 are multiplexed across boards
+ * (SPI, UART or I2C), so only one function per instance can be active at a
+ * time.
+ */
+&flexcomm3_lpspi3 {
+	pinctrl-0 = <&pinmux_flexcomm3_lpspi>;
+	pinctrl-1 = <&pinmux_flexcomm3_lpspi_gpio>;
+	pinctrl-names = "default", "priv_start";
+};
+
+mr_mcxn_t1_flow_spi_argus: &flexcomm3_lpspi3 {};
+
+&flexcomm3_lpuart3 {
+	pinctrl-0 = <&pinmux_flexcomm3_lpuart>;
+	pinctrl-names = "default";
+};
+
+mr_mcxn_t1_gnss_uart2: &flexcomm3_lpuart3 {};
+
+&flexcomm3_lpi2c3 {
+	pinctrl-0 = <&pinmux_flexcomm3_lpi2c>;
+	pinctrl-names = "default";
+};
+
+mr_mcxn_t1_flexio_i2c: &flexcomm3_lpi2c3 {};
+
+&flexcomm4_lpi2c4 {
+	pinctrl-0 = <&pinmux_flexcomm4_lpi2c>;
+	pinctrl-names = "default";
+};
+
+mr_mcxn_t1_gnss_i2c: &flexcomm4_lpi2c4 {};
+
+&flexcomm6_lpspi6 {
+	pinctrl-0 = <&pinmux_flexcomm6_lpspi>;
+	pinctrl-names = "default";
+};
+
+mr_mcxn_t1_flow_spi_imu42688: &flexcomm6_lpspi6 {};
+
+&flexcomm7_lpspi7 {
+	pinctrl-0 = <&pinmux_flexcomm7_lpspi>;
+	pinctrl-names = "default";
+};
+
+mr_mcxn_t1_flow_spi_imu45686: &flexcomm7_lpspi7 {};
+
+&flexcomm7_lpuart7 {
+	pinctrl-0 = <&pinmux_flexcomm7_lpuart>;
+	pinctrl-names = "default";
+};
+
+mr_mcxn_t1_gnss_uart: &flexcomm7_lpuart7 {};
+
+&flexcomm9_lpspi9 {
+	pinctrl-0 = <&pinmux_flexcomm9_lpspi>;
+	pinctrl-names = "default";
+};
+
+mr_mcxn_t1_flow_spi_flow: &flexcomm9_lpspi9 {};
+
+&flexcomm0_lpuart0 {
+	pinctrl-0 = <&pinmux_flexcomm0_lpuart>;
+	pinctrl-names = "default";
+};
+
+mr_mcxn_t1_flexio_uart0: &flexcomm0_lpuart0 {};
+
+&flexcomm2_lpuart2 {
+	pinctrl-0 = <&pinmux_flexcomm2_lpuart>;
+	pinctrl-names = "default";
+};
+
+mr_mcxn_t1_flexio_uart2: &flexcomm2_lpuart2 {};
+
+&flexpwm0_pwm0 {
+	pinctrl-0 = <&pinmux_flexpwm0_pwm0>;
+	pinctrl-names = "default";
+};
+
+mr_mcxn_t1_flexio_pwm0: &flexpwm0_pwm0 {};
+
+&flexpwm1_pwm0 {
+	pinctrl-0 = <&pinmux_flexpwm1_pwm0>;
+	pinctrl-names = "default";
+};
+
+mr_mcxn_t1_flexio_pwm1: &flexpwm1_pwm0 {};
+
+mr_mcxn_t1_flexio_adc: &lpadc1 {};
+
+/* On-board hub IMU. */
+&flexcomm8_lpspi8 {
+	pinctrl-0 = <&pinmux_flexcomm8_lpspi>;
+	pinctrl-names = "default";
+
+	icm45686_0: icm45686_hub@0 {
+		compatible = "invensense,icm45686";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(20)>;
+		int-gpios = <&gpio3 22 GPIO_ACTIVE_HIGH>;
+		spi-cs-setup-delay-ns = <50>;
+		spi-cs-hold-delay-ns = <50>;
+		spi-interframe-delay-ns = <50>;
+		accel-pwr-mode = <ICM45686_DT_ACCEL_LN>;
+		accel-fs = <ICM45686_DT_ACCEL_FS_2>;
+		accel-odr = <ICM45686_DT_ACCEL_ODR_400>;
+		accel-lpf = <ICM45686_DT_ACCEL_LPF_BW_1_32>;
+		gyro-pwr-mode = <ICM45686_DT_GYRO_LN>;
+		gyro-fs = <ICM45686_DT_GYRO_FS_4000>;
+		gyro-odr = <ICM45686_DT_GYRO_ODR_400>;
+		gyro-lpf = <ICM45686_DT_GYRO_LPF_BW_1_32>;
+
+		fifo-watermark = <1>;
+	};
+};
+
+/*
+ * The board uses SYSTICK as the kernel timer.
+ * To switch to the OS timer instead, replace
+ * &systick with &os_timer.
+ */
+&os_timer {
+	status = "disabled";
+};
+
+&systick {
+	status = "okay";
+};
+
+&sram {
+	sramg: memory@20050000 {
+		compatible = "mmio-sram";
+		reg = <0x20050000 DT_SIZE_K(64)>;
+	};
+
+	sramh: memory@20060000 {
+		compatible = "mmio-sram";
+		reg = <0x20060000 DT_SIZE_K(32)>;
+	};
+};
+
+&flash {
+	partitions {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		/*
+		 * Partition sizes must be aligned
+		 * to the flash memory sector size of 8KB.
+		 */
+		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			label = "mcuboot";
+			reg = <0x00000000 DT_SIZE_K(80)>;
+		};
+
+		slot0_partition: partition@14000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-0";
+			reg = <0x00014000 DT_SIZE_K(984)>;
+		};
+
+		slot1_partition: partition@10a000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-1";
+			reg = <0x0010a000 DT_SIZE_K(984)>;
+		};
+	};
+};
+
+&enet {
+	pinctrl-0 = <&pinmux_enet_qos>;
+	pinctrl-names = "default";
+	phy-connection-type = "rmii";
+	nxp,unique-mac;
+	phy-handle = <&phy>;
+};
+
+&enet_mdio {
+	phy: ethernet-phy@12 {
+		compatible = "nxp,tja1103";
+		status = "okay";
+		reg = <0x12>;
+		int-gpios = <&gpio1 19 GPIO_ACTIVE_LOW>;
+		master-slave = "auto";
+	};
+};
+
+&enet_ptp_clock {
+	status = "okay";
+};
+
+&flexcan0 {
+	pinctrl-0 = <&pinmux_flexcan0>;
+	pinctrl-names = "default";
+	phys = <&can_phy0>;
+};
+
+&flexcan1 {
+	pinctrl-0 = <&pinmux_flexcan1>;
+	pinctrl-names = "default";
+	phys = <&can_phy1>;
+};
+
+&flexio0 {
+	flexio_spi0: flexio_spi0 {
+		compatible = "nxp,flexio-spi";
+		status = "okay";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		sdo-pin = <0>;
+		sdi-pin = <0>;
+		sck-pin = <1>;
+		pinctrl-0 = <&pinmux_flexio_spi0>;
+		pinctrl-names = "default";
+
+		led_strip: apa102@0 {
+			compatible = "apa,apa102";
+			reg = <0>;
+			spi-max-frequency = <DT_FREQ_M(8)>;
+			chain-length = <1>;
+			color-mapping = <LED_COLOR_ID_BLUE
+					 LED_COLOR_ID_GREEN
+					 LED_COLOR_ID_RED>;
+		};
+	};
+};
