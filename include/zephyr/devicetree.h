@@ -3266,21 +3266,21 @@
  * @brief Get an interrupt specifier's interrupt controller by index
  *
  * @code{.dts}
- *     gpio0: gpio0 {
+ *     intc0: intc0 {
  *             interrupt-controller;
  *             #interrupt-cells = <2>;
  *     };
  *
  *     foo: foo {
- *             interrupt-parent = <&gpio0>;
+ *             interrupt-parent = <&intc0>;
  *             interrupts = <1 1>, <2 2>;
  *     };
  *
  *     bar: bar {
- *             interrupts-extended = <&gpio0 3 3>, <&pic0 4>;
+ *             interrupts-extended = <&intc0 3 3>, <&intc1 4>;
  *     };
  *
- *     pic0: pic0 {
+ *     intc1: intc1 {
  *             interrupt-controller;
  *             #interrupt-cells = <1>;
  *
@@ -3293,12 +3293,12 @@
  *
  * Example usage:
  *
- *     DT_IRQ_INTC_BY_IDX(DT_NODELABEL(foo), 0) // &gpio0
- *     DT_IRQ_INTC_BY_IDX(DT_NODELABEL(foo), 1) // &gpio0
- *     DT_IRQ_INTC_BY_IDX(DT_NODELABEL(bar), 0) // &gpio0
- *     DT_IRQ_INTC_BY_IDX(DT_NODELABEL(bar), 1) // &pic0
- *     DT_IRQ_INTC_BY_IDX(DT_NODELABEL(qux), 0) // &pic0
- *     DT_IRQ_INTC_BY_IDX(DT_NODELABEL(qux), 1) // &pic0
+ *     DT_IRQ_INTC_BY_IDX(DT_NODELABEL(foo), 0) // &intc0
+ *     DT_IRQ_INTC_BY_IDX(DT_NODELABEL(foo), 1) // &intc0
+ *     DT_IRQ_INTC_BY_IDX(DT_NODELABEL(bar), 0) // &intc0
+ *     DT_IRQ_INTC_BY_IDX(DT_NODELABEL(bar), 1) // &intc1
+ *     DT_IRQ_INTC_BY_IDX(DT_NODELABEL(qux), 0) // &intc1
+ *     DT_IRQ_INTC_BY_IDX(DT_NODELABEL(qux), 1) // &intc1
  *
  * @param node_id node identifier
  * @param idx interrupt specifier's index
@@ -3311,23 +3311,23 @@
  * @brief Get an interrupt specifier's interrupt controller by name
  *
  * @code{.dts}
- *     gpio0: gpio0 {
+ *     intc0: intc0 {
  *             interrupt-controller;
  *             #interrupt-cells = <2>;
  *     };
  *
  *     foo: foo {
- *             interrupt-parent = <&gpio0>;
+ *             interrupt-parent = <&intc0>;
  *             interrupts = <1 1>, <2 2>;
  *             interrupt-names = "int1", "int2";
  *     };
  *
  *     bar: bar {
- *             interrupts-extended = <&gpio0 3 3>, <&pic0 4>;
+ *             interrupts-extended = <&intc0 3 3>, <&intc1 4>;
  *             interrupt-names = "int1", "int2";
  *     };
  *
- *     pic0: pic0 {
+ *     intc1: intc1 {
  *             interrupt-controller;
  *             #interrupt-cells = <1>;
  *
@@ -3340,12 +3340,12 @@
  *
  * Example usage:
  *
- *     DT_IRQ_INTC_BY_NAME(DT_NODELABEL(foo), int1) // &gpio0
- *     DT_IRQ_INTC_BY_NAME(DT_NODELABEL(foo), int2) // &gpio0
- *     DT_IRQ_INTC_BY_NAME(DT_NODELABEL(bar), int1) // &gpio0
- *     DT_IRQ_INTC_BY_NAME(DT_NODELABEL(bar), int2) // &pic0
- *     DT_IRQ_INTC_BY_NAME(DT_NODELABEL(qux), int1) // &pic0
- *     DT_IRQ_INTC_BY_NAME(DT_NODELABEL(qux), int2) // &pic0
+ *     DT_IRQ_INTC_BY_NAME(DT_NODELABEL(foo), int1) // &intc0
+ *     DT_IRQ_INTC_BY_NAME(DT_NODELABEL(foo), int2) // &intc0
+ *     DT_IRQ_INTC_BY_NAME(DT_NODELABEL(bar), int1) // &intc0
+ *     DT_IRQ_INTC_BY_NAME(DT_NODELABEL(bar), int2) // &intc1
+ *     DT_IRQ_INTC_BY_NAME(DT_NODELABEL(qux), int1) // &intc1
+ *     DT_IRQ_INTC_BY_NAME(DT_NODELABEL(qux), int2) // &intc1
  *
  * @param node_id node identifier
  * @param name interrupt specifier's name
@@ -3359,21 +3359,21 @@
  * @note Equivalent to DT_IRQ_INTC_BY_IDX(node_id, 0)
  *
  * @code{.dts}
- *     gpio0: gpio0 {
+ *     intc0: intc0 {
  *             interrupt-controller;
  *             #interrupt-cells = <2>;
  *     };
  *
  *     foo: foo {
- *             interrupt-parent = <&gpio0>;
+ *             interrupt-parent = <&intc0>;
  *             interrupts = <1 1>;
  *     };
  *
  *     bar: bar {
- *             interrupts-extended = <&gpio0 3 3>;
+ *             interrupts-extended = <&intc0 3 3>;
  *     };
  *
- *     pic0: pic0 {
+ *     intc1: intc1 {
  *             interrupt-controller;
  *             #interrupt-cells = <1>;
  *
