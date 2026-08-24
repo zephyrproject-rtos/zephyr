@@ -266,7 +266,7 @@ ZTEST(tftp_client_error_response, test_data_block_rejected_reports_the_servers_c
 	set_ack_reply(0, 0);
 	set_error_reply(1, TFTP_ERROR_DISK_FULL, NULL, 0, false);
 
-	(void)run_put();
+	zassert_equal(run_put(), TFTPC_REMOTE_ERROR, "the rejection did not end the transfer");
 
 	zassert_true(saw_error, "the callback saw no error event");
 	zassert_equal(seen_code, TFTP_ERROR_DISK_FULL,
@@ -285,7 +285,7 @@ ZTEST(tftp_client_error_response, test_data_block_rejected_with_a_message_report
 	set_ack_reply(0, 0);
 	set_error_reply(1, TFTP_ERROR_DISK_FULL, msg, strlen(msg), true);
 
-	(void)run_put();
+	zassert_equal(run_put(), TFTPC_REMOTE_ERROR, "the rejection did not end the transfer");
 
 	zassert_true(saw_error, "the callback saw no error event");
 	zassert_equal(seen_code, TFTP_ERROR_DISK_FULL,
