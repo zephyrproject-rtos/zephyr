@@ -5,7 +5,7 @@
 
 """
 Compiler launcher wrapper that captures what appears to be Devicetree-related build errors, and
-diagnoses them using diagnose_build_error.py.
+diagnoses them using dtdoctor_analyzer.py.
 
 The tool is meant to be configured as a CMAKE_<LANG>_COMPILER_LAUNCHER or as a
 CMAKE_<LANG>_LINKER_LAUNCHER.
@@ -47,10 +47,11 @@ def main() -> int:
     # Extract __device_dts_ord_xxx symbols from errors and run diagnostics
     if proc.returncode != 0 and args.edt_pickle:
         patterns = [
-            r"(__device_dts_ord_\d+).*undeclared here",  # gcc
+            r"(__device_dts_ord_\d+).* undeclared",  # gcc (quote style depends on locale)
+            r"(__device_dts_ord_\d+).* was not declared",  # g++
             r"undefined reference to.*(__device_dts_ord_\d+)",  # ld
             r"use of undeclared identifier '(__device_dts_ord_\d+)'",  # LLVM/clang (ATfE)
-            r"undefined symbol: \(__device_dts_ord_(\d+)",  # LLVM/lld (ATfE)
+            r"undefined symbol: (__device_dts_ord_\d+)",  # LLVM/lld (ATfE)
         ]
         symbols = {m for p in patterns for m in re.findall(p, proc.stderr)}
 
