@@ -21,6 +21,12 @@
 			status = "disabled";
 		};
 
+		lcd0: lcd@40070000 {
+			compatible = "ti,mspm0-lcd";
+			reg = <0x40070000 0x2000>;
+			status = "disabled";
+		};
+
 		timg0: timg0@40084000 {
 			compatible = "ti,mspm0-timer";
 			reg = <0x40084000 0x2000>;
