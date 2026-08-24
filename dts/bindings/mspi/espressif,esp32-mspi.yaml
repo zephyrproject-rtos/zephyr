@@ -1,0 +1,85 @@
+# espressif,esp32-mspi.yaml
+# Copyright (c) 2026, Pavel Maloletkov
+# SPDX-License-Identifier: Apache-2.0
+
+description: Espressif ESP32 MSPI controller
+
+compatible: "espressif,esp32-mspi"
+
+include: [mspi-controller.yaml, pinctrl-device.yaml, reset-device.yaml]
+
+properties:
+  reg:
+    required: true
+    description: Base address and size of the SPI peripheral registers
+
+  peripheral-id:
+    type: int
+    required: true
+    description: |
+      0-based SPI peripheral index as seen by the driver:
+        0 → SPI2 (HSPI/FSPI), HAL host_id = 1
+        1 → SPI3 (VSPI),      HAL host_id = 2
+      SPI0 and SPI1 are reserved for flash cache.
+
+  clocks:
+    required: true
+    description: Clock controller phandle and clock specifier
+
+  clock-frequency:
+    type: int
+    default: 80000000
+    description: Maximum controller clock in Hz. Default is 80 MHz.
+
+  interrupts:
+    description: Interrupt specifier for the SPI peripheral
+
+  dma-enabled:
+    type: boolean
+    description: Enable DMA support for data transfers.
+
+  dma-host:
+    type: int
+    required: true
+    description: |
+      DMA host / peripheral slot index (0-based):
+        0 → SPI2, 1 → SPI3.
+      On GDMA targets this selects the GDMA trigger-peripheral slot.
+      On legacy ESP32/ESP32-S2 it maps to the DPORT_SPI_DMA_CHAN_SEL field.
+
+  # -----------------------------------------------------------------------
+  # Legacy integrated-DMA path (ESP32, ESP32-S2 only)
+  # Ignored at compile time on GDMA targets via #ifdef SOC_GDMA_SUPPORTED.
+  # -----------------------------------------------------------------------
+  dma-clk:
+    type: int
+    description: |
+      Clock module ID for the legacy integrated SPI-DMA engine.
+      Only for ESP32 / ESP32-S2.  Do not set on GDMA-capable SoCs.
+
+  line-idle-low:
+    type: boolean
+    description: |
+      Drive data lines low when idle.  Default (absent) is high, which
+      is correct for SPI modes 0 and 3.
+
+  use-iomux:
+    type: boolean
+    description: |
+      Route signals through IO_MUX instead of the GPIO matrix.
+      Required for frequencies above ~20 MHz.  Only valid for the
+      dedicated IO_MUX pins of the selected peripheral; see TRM.
+
+  transfer-timeout:
+    type: int
+    default: 100
+    description: |
+      Default transfer timeout in milliseconds used when the caller
+      does not supply a per-transfer timeout.
+
+  duty-cycle:
+    type: int
+    default: 128
+    description: |
+      SPI clock duty-cycle hint (0–255, 128 ≈ 50 %).
+      Passed to spi_hal_cal_clock_conf().
