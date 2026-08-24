@@ -20,4 +20,5 @@ supported:
   - video
   - dma
   - i2c
+  - spi
 vendor: nxp

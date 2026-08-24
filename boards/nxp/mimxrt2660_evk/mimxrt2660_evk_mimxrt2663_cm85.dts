@@ -130,3 +130,9 @@ zephyr_mipi_dsi: &mipi_dsi {};
 		reg = <0x48>;
 	};
 };
+
+&lpspi0 {
+	pinctrl-0 = <&pinmux_lpspi0>;
+	pinctrl-names = "default";
+	status = "okay";
+};
