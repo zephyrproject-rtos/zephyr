@@ -21,6 +21,17 @@
 				reg = <0x08100000 DT_SIZE_K(1024)>;
 				ranges = <0 0x8100000 DT_SIZE_K(1024)>;
 				bank2-flash-size = <1024>;
+
+				partitions {
+					compatible = "fixed-partitions";
+					#address-cells = <1>;
+					#size-cells = <1>;
+
+					slot0_partition: partition@0 {
+						label = "image-0";
+						reg = <0x00000000 DT_SIZE_K(1024)>;
+					};
+				};
 			};
 		};
 
