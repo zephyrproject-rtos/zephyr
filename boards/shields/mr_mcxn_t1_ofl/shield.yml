@@ -1,0 +1,9 @@
+# Copyright (c) 2026 CogniPilot Foundation
+# SPDX-License-Identifier: Apache-2.0
+
+shield:
+  name: mr_mcxn_t1_ofl
+  full_name: MR-MCXN-T1-OFL
+  vendor: nxp
+  supported_features:
+    - sensor
