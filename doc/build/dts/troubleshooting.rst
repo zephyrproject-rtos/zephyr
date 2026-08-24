@@ -298,23 +298,23 @@ them. For example, to use ``clang-format`` to reformat the file in place:
 You can then open the file in your favorite editor to view the final C results
 after preprocessing.
 
-Do not track macro expansion
-****************************
+Track macro expansion
+*********************
 
-Compiler messages for devicetree errors can sometimes be very long. This
-typically happens when the compiler prints a message for every step of a
-complex macro expansion that has several intermediate expansion steps.
+Devicetree macros expand through several intermediate steps, and a compiler that
+reports every one of them turns a single error into a very long message. Zephyr
+therefore leaves :kconfig:option:`CONFIG_COMPILER_TRACK_MACRO_EXPANSION` disabled,
+which typically reduces the output to one message per error.
 
-To prevent the compiler from doing this, you can disable the
-:kconfig:option:`CONFIG_COMPILER_TRACK_MACRO_EXPANSION` option. This typically
-reduces the output to one message per error.
+Enable the option when the intermediate expansion steps are what you need to see,
+for example when you are working on the macros themselves.
 
-For example, to build :zephyr:code-sample:`hello_world` with west and this option disabled,
+For example, to build :zephyr:code-sample:`hello_world` with west and this option enabled,
 use:
 
 .. code-block:: sh
 
-   west build -b BOARD samples/hello_world -- -DCONFIG_COMPILER_TRACK_MACRO_EXPANSION=n
+   west build -b BOARD samples/hello_world -- -DCONFIG_COMPILER_TRACK_MACRO_EXPANSION=y
 
 Validate properties
 *******************
