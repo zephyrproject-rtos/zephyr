@@ -3,10 +3,15 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
+DT_CHOSEN_ZEPHYR_SYSTEM_TIMER := zephyr,system-timer
+DT_CHOSEN_ZEPHYR_SYSTEM_TIMER_PATH := $(dt_chosen_path,$(DT_CHOSEN_ZEPHYR_SYSTEM_TIMER))
+
 config MCHP_PIT_G1_TIMER
 	bool "Microchip Periodic Interval Timer (PIT)"
 	default y
-	depends on DT_HAS_MICROCHIP_PIT_G1_TIMER_ENABLED
+	depends on DT_HAS_MICROCHIP_PIT_G1_TIMER_ENABLED && \
+		$(dt_chosen_enabled,$(DT_CHOSEN_ZEPHYR_SYSTEM_TIMER)) && \
+		$(dt_node_has_compat,$(DT_CHOSEN_ZEPHYR_SYSTEM_TIMER_PATH),$(DT_COMPAT_MICROCHIP_PIT_G1_TIMER))
 	help
 	  This module implements a kernel device driver for the Microchip
 	  SAMA5D2 series PIT timer and provides the standard "system clock
