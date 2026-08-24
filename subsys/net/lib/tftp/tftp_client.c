@@ -18,10 +18,12 @@ LOG_MODULE_REGISTER(tftp_client, CONFIG_TFTP_LOG_LEVEL);
 
 static char *error_msg(struct tftpc *client, int rcv_size)
 {
-	if (rcv_size <= TFTP_HEADER_SIZE) {
+	size_t size = MIN((size_t)rcv_size, sizeof(client->tftp_buf));
+
+	if (size <= TFTP_HEADER_SIZE) {
 		client->tftp_buf[TFTP_HEADER_SIZE] = '\0';
 	} else {
-		client->tftp_buf[rcv_size - 1] = '\0';
+		client->tftp_buf[size - 1] = '\0';
 	}
 
 	return (char *)client->tftp_buf + TFTP_HEADER_SIZE;
