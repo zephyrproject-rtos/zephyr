@@ -15,8 +15,10 @@ Hardware
 - 2048KB dual-bank on chip Flash
 - 640 KB RAM
 - 2x FlexCAN with FD, 1x RGB LED, 3x SW buttons
+- 10/100 Mbit Ethernet (external PHY, MII interface)
 - On-board MCU-Link debugger with CMSIS-DAP
 - Arduino Header, SmartDMA/Camera Header, mikroBUS
+
 
 For more information about the MCX-A577 SoC and FRDM-MCXA577 board, see:
 
@@ -82,6 +84,32 @@ Serial Port
 
 The FRDM-MCXA577 SoC has 6 LPUART  interfaces for serial communication.
 LPUART0 is configured as UART for the console.
+
+Ethernet
+===========
+
+The board has a 10/100 Mbit external Ethernet PHY (MII interface). MII avoids
+ERR053383, under which ENET can intermittently fail to receive in RMII mode, so
+the Rev B pilot board is reworked for MII.
+
+The ENET MAC, MDIO bus and PHY are **disabled by default** so that ordinary
+samples keep the on-board MCU-Link VCOM console on LPUART1. This is necessary
+because MII needs P1_8/P1_9 (ENET0_TXD2/TXD3, the only balls that carry those
+signals), which are the LPUART1 VCOM pins. ENET and the on-board VCOM therefore
+cannot coexist.
+
+To build a networking application, add the board's ENET overlay to the build.
+It enables the ENET MAC/MDIO/PHY, disables LPUART1 and moves the console/shell
+to LPUART2 (Arduino D0/D1 header, P2_11/P2_10):
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/zperf
+   :board: frdm_mcxa577
+   :gen-args: -DEXTRA_DTC_OVERLAY_FILE=boards/nxp/frdm_mcxa577/dts/nxp,enet.overlay
+   :goals: build
+
+While ENET is enabled the on-board VCOM is not available; connect a USB-serial
+adapter to the LPUART2 pins on the Arduino D0/D1 header for the console.
 
 Programming and Debugging
 *************************
