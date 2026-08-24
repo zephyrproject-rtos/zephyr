@@ -50,6 +50,9 @@
 /** No such user. */
 #define TFTP_ERROR_NO_USER             7
 
+ZTESTABLE_STATIC size_t make_request(uint8_t *buf, int request,
+				     const char *remote_file, const char *mode);
+
 struct tftphdr_ack {
 	uint16_t opcode;
 	uint16_t block;
