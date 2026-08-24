@@ -6,19 +6,26 @@
 config ZEPHYR_HAL_STM32_MODULE
 	bool
 
+config ZEPHYR_HAL_STM32_MODULE_ACTIVE
+	bool
+	depends on ZEPHYR_HAL_STM32_MODULE
+
 config ZEPHYR_HAL_STM32_MODULE_BLOBS
 	bool
 
 config HAS_STM32LIB
 	bool
+	select ZEPHYR_HAL_STM32_MODULE_ACTIVE
 
 config HAS_STM32CUBE
 	bool
 	select HAS_CMSIS_CORE
 	depends on SOC_FAMILY_STM32
+	select ZEPHYR_HAL_STM32_MODULE_ACTIVE
 
 config STM32CUBE_SOC_NAME_OVERRIDE
 	string
+	depends on ZEPHYR_HAL_STM32_MODULE
 	help
 	  Hidden option used to override the SoC name at STM32Cube HAL level.
 

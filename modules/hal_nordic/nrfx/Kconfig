@@ -3,6 +3,7 @@
 
 config HAS_NRFX
 	bool
+	select ZEPHYR_HAL_NORDIC_MODULE_ACTIVE
 
 menu "nrfx drivers"
 	depends on HAS_NRFX

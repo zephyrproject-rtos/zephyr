@@ -4,11 +4,17 @@
 config ZEPHYR_HAL_ST_MODULE
 	bool
 
+config ZEPHYR_HAL_ST_MODULE_ACTIVE
+	bool
+	depends on ZEPHYR_HAL_ST_MODULE
+
 config HAS_STLIB
 	bool
+	select ZEPHYR_HAL_ST_MODULE_ACTIVE
 
 config HAS_STMEMSC
 	bool
+	select ZEPHYR_HAL_ST_MODULE_ACTIVE
 
 if HAS_STMEMSC
 

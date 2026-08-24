@@ -4,8 +4,13 @@
 config ZEPHYR_TRUSTED_FIRMWARE_A_MODULE
 	bool
 
+config ZEPHYR_TRUSTED_FIRMWARE_A_MODULE_ACTIVE
+	bool
+	depends on ZEPHYR_TRUSTED_FIRMWARE_A_MODULE
+
 menuconfig BUILD_WITH_TFA
 	bool "Build with TF-A as the Secure Execution Environment"
+	select ZEPHYR_TRUSTED_FIRMWARE_A_MODULE_ACTIVE
 	help
 	  When enabled, this option instructs the Zephyr build process to
 	  additionally generate a TF-A image for the Secure Execution

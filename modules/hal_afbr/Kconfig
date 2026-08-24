@@ -5,5 +5,10 @@
 config ZEPHYR_HAL_AFBR_MODULE
 	bool
 
+config ZEPHYR_HAL_AFBR_MODULE_ACTIVE
+	bool
+	depends on ZEPHYR_HAL_AFBR_MODULE
+
 config AFBR_LIB
 	bool
+	select ZEPHYR_HAL_AFBR_MODULE_ACTIVE

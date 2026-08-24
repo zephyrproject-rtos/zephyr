@@ -1,8 +1,16 @@
 # Copyright (c) 2022 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
+config ZEPHYR_UOSCORE_UEDHOC_MODULE
+	bool
+
+config ZEPHYR_UOSCORE_UEDHOC_MODULE_ACTIVE
+	bool
+	depends on ZEPHYR_UOSCORE_UEDHOC_MODULE
+
 menuconfig UOSCORE
 	bool "UOSCORE library"
+	select ZEPHYR_UOSCORE_UEDHOC_MODULE_ACTIVE
 	depends on ZCBOR
 	depends on ZCBOR_CANONICAL
 	select UOSCORE_UEDHOC_CRYPTO_COMMON

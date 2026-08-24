@@ -4,9 +4,13 @@
 config ZEPHYR_OPEN_AMP_MODULE
 	bool
 
+config ZEPHYR_OPEN_AMP_MODULE_ACTIVE
+	bool
+	depends on ZEPHYR_OPEN_AMP_MODULE
+
 config OPENAMP
 	bool "OpenAMP Support"
-	depends on ZEPHYR_OPEN_AMP_MODULE
+	select ZEPHYR_OPEN_AMP_MODULE_ACTIVE
 	select LIBMETAL
 	help
 	  This option enables the OpenAMP IPC library

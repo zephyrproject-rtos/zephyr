@@ -7,6 +7,7 @@
 config AMBIQ_HAL
 	bool "Ambiq HAL drivers support"
 	depends on SOC_SERIES_APOLLO2X || SOC_SERIES_APOLLO3X || SOC_SERIES_APOLLO4X || SOC_SERIES_APOLLO5X
+	select ZEPHYR_HAL_AMBIQ_MODULE_ACTIVE
 	help
 	  Use the Ambiq HAL
 

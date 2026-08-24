@@ -6,6 +6,7 @@ menu "nrf-regtool options"
 
 config NRF_REGTOOL_GENERATE_UICR
 	bool "Generate UICR"
+	select ZEPHYR_HAL_NORDIC_MODULE_ACTIVE
 	help
 	  Generate a UICR hex based on devicetree contents using nrf-regtool.
 	  CPU domains that require UICR allocation aren't bootable without it

@@ -7,3 +7,4 @@ config HAS_NXP_S32_HAL
 	bool
 	select HAS_CMSIS_CORE
 	depends on SOC_FAMILY_NXP_S32
+	select ZEPHYR_HAL_NXP_MODULE_ACTIVE

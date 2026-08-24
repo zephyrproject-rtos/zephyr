@@ -4,9 +4,13 @@
 config ZEPHYR_LIBMETAL_MODULE
 	bool
 
+config ZEPHYR_LIBMETAL_MODULE_ACTIVE
+	bool
+	depends on ZEPHYR_LIBMETAL_MODULE
+
 menuconfig LIBMETAL
 	bool "libmetal Support"
-	depends on ZEPHYR_LIBMETAL_MODULE
+	select ZEPHYR_LIBMETAL_MODULE_ACTIVE
 	help
 	  This option enables the libmetal HAL abstraction layer
 

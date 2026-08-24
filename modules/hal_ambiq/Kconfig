@@ -3,5 +3,12 @@
 # Copyright (c) 2023 Antmicro <www.antmicro.com>
 # Copyright (c) 2025, Ambiq Micro Inc. <www.ambiq.com>
 
+config ZEPHYR_HAL_AMBIQ_MODULE
+	bool
+
+config ZEPHYR_HAL_AMBIQ_MODULE_ACTIVE
+	bool
+	depends on ZEPHYR_HAL_AMBIQ_MODULE
+
 rsource "Kconfig.hal"
 rsource "Kconfig.components"
