@@ -15,3 +15,9 @@ tests:
       - frdm_mcxa366/mcxa366
     extra_args:
       - SHIELD=od_6010
+  sample.drivers.auxdisplay_digits.lp_mspm0l2228:
+    tags:
+      - auxdisplay
+    platform_allow:
+      - lp_mspm0l2228
+    build_only: true
