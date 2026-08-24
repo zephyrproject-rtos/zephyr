@@ -390,6 +390,8 @@ enum lpc_peripheral_opcode {
 	E8042_READ_KB_STS, /**< Read 8042 keyboard status */
 	E8042_SET_FLAG,    /**< Set 8042 flag */
 	E8042_CLEAR_FLAG,  /**< Clear 8042 flag */
+	E8042_READ_KB_CHAR,        /**< Read character from 8042 keyboard buffer */
+	E8042_READ_MB_CHAR,        /**< Read character from 8042 mouse buffer */
 	/* ACPI read transactions */
 	EACPI_OBF_HAS_CHAR = EACPI_START_OPCODE, /**< Check if ACPI output buffer has character */
 	EACPI_IBF_HAS_CHAR,                      /**< Check if ACPI input buffer has character */
@@ -398,6 +400,10 @@ enum lpc_peripheral_opcode {
 	/* ACPI status transactions */
 	EACPI_READ_STS,  /**< Read ACPI status */
 	EACPI_WRITE_STS, /**< Write ACPI status */
+	EACPI_READ_CHAR, /**< Read character from ACPI input buffer */
+	/* ACPI control transactions without input parameters */
+	EACPI_RESUME_IRQ, /**< Resume ACPI interrupt processing */
+	EACPI_PAUSE_IRQ,  /**< Pause ACPI interrupt processing */
 #if defined(CONFIG_ESPI_PERIPHERAL_ACPI_SHM_REGION) || defined(__DOXYGEN__)
 	/**
 	 * Shared memory region support to return the ACPI response data
@@ -429,6 +435,10 @@ enum lpc_peripheral_opcode {
 	 */
 	ECUSTOM_HOST_CMD_SEND_RESULT,
 #endif /* CONFIG_ESPI_PERIPHERAL_CUSTOM_OPCODE */
+#ifdef CONFIG_ESPI_NPCX_HOST_SUB_V2
+	/* Forces the enum to 16-bit storage so opcodes can carry a packed channel index */
+	ESPI_OP_FORCE_16BIT = 0x7FFF,
+#endif
 };
 
 /** KBC 8042 event: Input Buffer Full */
