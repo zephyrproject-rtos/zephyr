@@ -24,7 +24,7 @@ Building and Running
 Build and flash the sample as follows, replacing ``<board>`` with your target board:
 
 .. zephyr-app-commands::
-   :zephyr-app: samples/bluetooth/st_ble_sensor
+   :zephyr-app: samples/boards/st/bluetooth/st_ble_sensor
    :board: <board>
    :goals: build flash
    :compact:
