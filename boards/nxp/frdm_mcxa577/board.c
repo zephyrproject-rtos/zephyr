@@ -336,8 +336,12 @@ void board_early_init_hook(void)
 	/* Connect ENET to internal TENBASET_PHY0 */
 	SYSCON->ENET_CTRL = SYSCON_ENET_CTRL_PHY_SEL(1) | SYSCON_ENET_CTRL_PHY_INTF(0);
 #else
-	/* Connect ENET to external PHY over RMII */
-	SYSCON->ENET_CTRL = SYSCON_ENET_CTRL_PHY_SEL(0) | SYSCON_ENET_CTRL_PHY_INTF(1);
+	/*
+	 * Connect ENET to external PHY over MII (Rev B pilot board).
+	 * PHY_INTF: 0 = MII, 1 = RMII. MII avoids ERR053383, under which
+	 * ENET can intermittently fail to receive in RMII mode.
+	 */
+	SYSCON->ENET_CTRL = SYSCON_ENET_CTRL_PHY_SEL(0) | SYSCON_ENET_CTRL_PHY_INTF(0);
 #endif
 #endif
 

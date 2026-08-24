@@ -103,10 +103,16 @@
 			pinmux = <ENET0_RXDV_P1_13>,
 				 <ENET0_RXD0_P1_11>,
 				 <ENET0_RXD1_P1_12>,
+				 <ENET0_RXD2_P1_16>,
+				 <ENET0_RXD3_P1_17>,
+				 <ENET0_RX_CLK_P1_14>,
+				 <ENET0_RXER_P1_15>,
 				 <ENET0_TX_CLK_P1_4>,
 				 <ENET0_TXEN_P1_5>,
 				 <ENET0_TXD0_P1_6>,
-				 <ENET0_TXD1_P1_7>;
+				 <ENET0_TXD1_P1_7>,
+				 <ENET0_TXD2_P1_8>,
+				 <ENET0_TXD3_P1_9>;
 			slew-rate = "fast";
 			drive-strength = "low";
 			input-enable;
