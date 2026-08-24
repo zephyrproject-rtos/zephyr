@@ -4,5 +4,9 @@
 config ZEPHYR_LITTLEFS_MODULE
 	bool
 
+config ZEPHYR_LITTLEFS_MODULE_ACTIVE
+	bool
+	depends on ZEPHYR_LITTLEFS_MODULE
+
 # Configuration of LittleFS is found in subsys/fs/Kconfig.littlefs for historic
 # reasons.
