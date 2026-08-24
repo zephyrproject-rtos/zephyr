@@ -167,10 +167,10 @@ static const char *hl78xx_event_str(enum hl78xx_event event)
 		return "bus closed";
 	case MODEM_HL78XX_EVENT_SOCKET_READY:
 		return "socket ready";
-#ifdef CONFIG_MODEM_HL78XX_RAT_NBNTN
+#ifdef CONFIG_MODEM_HL78XX_NTN_SUPPORT
 	case MODEM_HL78XX_EVENT_NTN_POSREQ:
 		return "ntn posreq";
-#endif /* CONFIG_MODEM_HL78XX_RAT_NBNTN */
+#endif /* CONFIG_MODEM_HL78XX_NTN_SUPPORT */
 	case MODEM_HL78XX_EVENT_PHONE_FUNCTIONALITY_CHANGED:
 		return "phone functionality changed";
 #ifdef CONFIG_HL78XX_GNSS
@@ -1173,7 +1173,7 @@ void hl78xx_on_kbnd(struct modem_chat *chat, char **argv, uint16_t argc, void *u
 	strncpy(data->status.band.active_band.bnd_bitmap, argv[2], bitmap_size);
 	data->status.band.active_band.bnd_bitmap[bitmap_size] = '\0';
 }
-#ifdef CONFIG_MODEM_HL78XX_RAT_NBNTN
+#ifdef CONFIG_MODEM_HL78XX_NTN_SUPPORT
 
 void hl78xx_on_kntncfg(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data)
 {
@@ -1197,7 +1197,7 @@ void hl78xx_on_kntn_posreq(struct modem_chat *chat, char **argv, uint16_t argc, 
 	hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_NTN_POSREQ);
 }
 
-#endif /* CONFIG_MODEM_HL78XX_RAT_NBNTN */
+#endif /* CONFIG_MODEM_HL78XX_NTN_SUPPORT */
 
 void hl78xx_on_csq(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data)
 {
@@ -2389,14 +2389,21 @@ static int hl78xx_on_rat_cfg_script_state_enter(struct hl78xx_data *data)
 		goto error;
 	}
 
-#ifdef CONFIG_MODEM_HL78XX_RAT_NBNTN
-
-	ret = hl78xx_rat_ntn_cfg(data, &modem_require_restart, rat_config_request);
-	if (ret < 0) {
-		goto error;
+#ifdef CONFIG_MODEM_HL78XX_NTN_SUPPORT
+	/* Dedicated NB-NTN builds are always on NTN. Auto-RAT builds reach NTN
+	 * only through the terrestrial-to-NTN fallback flow, which latches
+	 * AT+KSRAT=3 and restarts; the init script's AT+KSRAT? query has
+	 * recorded that RAT by the time this state runs, so gate on it rather
+	 * than on the compile-time RAT choice.
+	 */
+	if (IS_ENABLED(CONFIG_MODEM_HL78XX_RAT_NBNTN) ||
+	    data->status.registration.rat_mode == HL78XX_RAT_NBNTN) {
+		ret = hl78xx_rat_ntn_cfg(data, &modem_require_restart, rat_config_request);
+		if (ret < 0) {
+			goto error;
+		}
 	}
-
-#endif /* CONFIG_MODEM_HL78XX_RAT_NBNTN */
+#endif /* CONFIG_MODEM_HL78XX_NTN_SUPPORT */
 	if (modem_require_restart) {
 		HL78XX_LOG_DBG("Modem restart required to apply new RAT/Band settings");
 		data->status.restart.config_pending = true;
@@ -2782,13 +2789,13 @@ static void hl78xx_await_registered_event_handler(struct hl78xx_data *data, enum
 	case MODEM_HL78XX_EVENT_SUSPEND:
 		hl78xx_enter_state(data, MODEM_HL78XX_STATE_INIT_POWER_OFF);
 		break;
-#ifdef CONFIG_MODEM_HL78XX_RAT_NBNTN
+#ifdef CONFIG_MODEM_HL78XX_NTN_SUPPORT
 #ifdef CONFIG_NTN_POSITION_SOURCE_MANUAL
 	case MODEM_HL78XX_EVENT_NTN_POSREQ:
 		hl78xx_run_ntn_pos_script_async(data);
 		break;
 #endif /* CONFIG_NTN_POSITION_SOURCE_MANUAL */
-#endif /* CONFIG_MODEM_HL78XX_RAT_NBNTN */
+#endif /* CONFIG_MODEM_HL78XX_NTN_SUPPORT */
 #if defined(CONFIG_MODEM_HL78XX_AUTORAT) && defined(CONFIG_MODEM_HL78XX_HAS_KSTATEV_URC)
 	case MODEM_HL78XX_EVENT_AUTORAT_RAT_CHANGED: {
 		const struct hl78xx_config *rat_cfg = data->devices.hl78xx->config;
