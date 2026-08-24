@@ -459,13 +459,28 @@ static void crsf_uart_callback(const struct device *uart_dev, struct uart_event 
 		LOG_ERR("CRSF TX Aborted");
 		break;
 
-	case UART_RX_RDY:
+	case UART_RX_RDY: {
+		uint8_t *rx_buf = evt->data.rx.buf;
+		size_t rx_off = evt->data.rx.offset;
+		size_t rx_len = evt->data.rx.len;
+
+		/*
+		 * The window must name one of our two RX buffers and stay inside
+		 * it, or the async event is corrupt and gets dropped.
+		 */
+		if ((rx_buf != data->rx_buf_a && rx_buf != data->rx_buf_b) || rx_len == 0 ||
+		    rx_off > CRSF_RX_BUF_SIZE || rx_len > (size_t)CRSF_RX_BUF_SIZE - rx_off) {
+			LOG_DBG("Dropping out-of-range CRSF RX window");
+			break;
+		}
+
 #ifdef CRSF_INVALIDATE_CACHE
-		arch_dcache_invd_range(&evt->data.rx.buf[evt->data.rx.offset], evt->data.rx.len);
+		arch_dcache_invd_range(&rx_buf[rx_off], rx_len);
 #endif
 		/* Process received data chunk */
-		crsf_process_bytes(dev, &evt->data.rx.buf[evt->data.rx.offset], evt->data.rx.len);
+		crsf_process_bytes(dev, &rx_buf[rx_off], rx_len);
 		break;
+	}
 
 	case UART_RX_BUF_REQUEST:
 		/* Provide the next buffer to keep reception continuous */
