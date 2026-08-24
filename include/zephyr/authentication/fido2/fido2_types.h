@@ -46,14 +46,19 @@ extern "C" {
 /** @brief Maximum user ID size in bytes */
 #define FIDO2_USER_ID_MAX_SIZE 64
 
-/** @brief AAGUID size in bytes */
-#define FIDO2_AAGUID_SIZE 16
-
 /** @brief SHA-256 hash size */
 #define FIDO2_SHA256_SIZE 32
 
 /** @brief PIN hash size */
 #define FIDO2_PIN_HASH_SIZE 16
+
+/** @brief ASN.1-encoded ECDSA signature length */
+#define FIDO2_ECDSA_SIG_MAX_SIZE 72
+
+/** @cond INTERNAL_HIDDEN */
+
+/** @brief AAGUID size in bytes */
+#define FIDO2_AAGUID_SIZE 16
 
 /** @brief Size of a discoverable credential ID */
 #define FIDO2_DISCOVERABLE_CRED_ID_SIZE 32
@@ -68,7 +73,7 @@ extern "C" {
 #define FIDO2_ATTESTED_CRED_DATA_MAX_SIZE                                                          \
 	(FIDO2_AAGUID_SIZE + 2 + FIDO2_CREDENTIAL_ID_MAX_SIZE + FIDO2_COSE_KEY_MAX_SIZE)
 
-/** @brief Maximum authenticatorData size 8 */
+/** @brief Maximum authenticatorData size */
 #define FIDO2_AUTH_DATA_MAX_SIZE (FIDO2_AUTH_DATA_HEADER_SIZE + FIDO2_ATTESTED_CRED_DATA_MAX_SIZE)
 
 /** @brief Maximum number of supported extensions */
@@ -86,8 +91,7 @@ extern "C" {
 /** @brief EC point prefix */
 #define FIDO2_EC_POINT_UNCOMPRESSED 0x04
 
-/** @brief ASN.1-encoded ECDSA signature length */
-#define FIDO2_ECDSA_SIG_MAX_SIZE 72
+/** @endcond */
 
 /** @brief Credential extension HMAC secret */
 #define FIDO2_EXT_HMAC_SECRET     BIT(0)
@@ -97,6 +101,8 @@ extern "C" {
 #define FIDO2_EXT_CRED_BLOB       BIT(2)
 /** @brief Credential extension thirdPartyPayment */
 #define FIDO2_EXT_THIRD_PARTY_PAY BIT(3)
+
+/** @cond INTERNAL_HIDDEN */
 
 /** @brief Transport USB */
 #define FIDO2_TRANSPORT_USB BIT(0)
@@ -178,6 +184,8 @@ enum fido2_cmd {
 	FIDO2_CMD_SELECTION = 0x0B,          /**< Authenticator selection */
 };
 
+/** @endcond */
+
 /** @brief Credential protection levels */
 enum fido2_cred_protect {
 	/** UV optional; credential usable without verification */
@@ -230,6 +238,8 @@ struct fido2_credential {
 	uint8_t cred_protect;
 };
 
+/** @cond INTERNAL_HIDDEN */
+
 /**
  * @brief Device information returned by authenticatorGetInfo.
  */
@@ -276,6 +286,8 @@ struct fido2_device_info {
 	/** Current minimum PIN length */
 	uint8_t min_pin_length;
 };
+
+/** @endcond */
 
 #ifdef __cplusplus
 }
