@@ -306,6 +306,37 @@ The remaining options shape the report rather than the measurement:
    report from the sibling ``../build`` tree while writing outputs into the
    repository.
 
+Continuous integration
+======================
+
+:file:`.github/workflows/net-perf.yml` runs this scenario on every pull request
+that touches ``subsys/net/``, ``include/zephyr/net/``, ``lib/net_buf/``, the
+loopback driver or this sample. It measures the pull request and the branch it
+targets on the same runner, on both platforms, and writes the comparison to the
+job summary.
+
+Two details make the comparison mean what it should:
+
+- The workflow runs after the pull request has been rebased onto its target
+  branch, so the difference is what the series itself does and cannot pick up
+  unrelated movement on the target branch.
+- The target branch is measured with the pull request's copy of
+  :file:`samples/net/zperf/`, so the runner, the overlay and the payload sizes
+  are identical on both sides and only the code under test differs. A pull
+  request that changes the sample therefore does not move the number by changing
+  what is being measured.
+
+The check is **advisory**. It runs with ``--exit-zero``, every measuring step is
+``continue-on-error``, and it is not one of the required checks: a red or
+surprising number is information for the reviewer, never a merge blocker. A
+result that cannot be produced - because the target branch did not build, for
+instance - is reported as a comparison that was not available, and the job still
+passes.
+
+Only the loopback path is measured, so a flat report is not a claim that a
+change has no performance effect; driver, L2 and offload work will not show up
+here at all.
+
 Visualize the results
 =====================
 
