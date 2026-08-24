@@ -3844,7 +3844,6 @@ LiteX Platforms:
     - maass-hamburg
   collaborators:
     - kgugala
-    - mateusz-holenko
   files:
     - boards/enjoydigital/litex_vexriscv/
     - drivers/*/*litex*
@@ -6298,7 +6297,7 @@ Testing with Renode:
   # This area is to be converted to a subarea
   status: odd fixes
   collaborators:
-    - mateusz-holenko
+    - PiotrZierhoffer
     - fkokosinski
   files:
     - cmake/emu/renode.cmake
