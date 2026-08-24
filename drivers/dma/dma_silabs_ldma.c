@@ -311,12 +311,18 @@ static void dma_silabs_irq_handler(const struct device *dev, uint32_t id)
 	uint32_t pending, chnum, error_mask, error_chnum;
 
 	pending = sl_hal_ldma_get_enabled_pending_interrupts(config->ldma);
+#if defined(LDMA_IF_ERROR)
 	error_mask = LDMA_IF_ERROR;
 	error_chnum = FIELD_GET(_LDMA_STATUS_CHERROR_MASK, sl_hal_ldma_get_status(config->ldma));
+#endif
 
 	for (chnum = 0; chnum < data->dma_ctx.dma_channels; chnum++) {
 		chan = &data->dma_chan_table[chnum];
 		status = DMA_STATUS_COMPLETE;
+#if !defined(LDMA_IF_ERROR)
+		error_mask = BIT(_LDMA_IF_ERROR0_SHIFT + chnum);
+		error_chnum = chnum;
+#endif
 
 		if ((pending & error_mask) && (error_chnum == chnum)) {
 			sl_hal_ldma_clear_interrupts(config->ldma, error_mask);
