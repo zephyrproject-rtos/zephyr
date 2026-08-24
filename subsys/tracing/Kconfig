@@ -84,7 +84,7 @@ config PERCEPIO_TRACERECORDER
 	select THREAD_NAME
 	select INIT_STACKS
 	select THREAD_MONITOR
-	depends on ZEPHYR_PERCEPIO_MODULE
+	select ZEPHYR_PERCEPIO_MODULE_ACTIVE
 
 config SEGGER_SYSTEMVIEW
 	bool "Segger SystemView support"

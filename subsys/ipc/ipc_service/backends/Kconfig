@@ -21,7 +21,7 @@ config IPC_SERVICE_BACKEND_RPMSG_LITE
 	default y
 	depends on MBOX
 	depends on DT_HAS_NXP_IPC_RPMSG_LITE_ENABLED
-	depends on ZEPHYR_HAL_NXP_MODULE
+	select ZEPHYR_HAL_NXP_MODULE_ACTIVE
 	select RPMSGLITE
 	select RPMSGLITE_NS
 	select EVENTS
