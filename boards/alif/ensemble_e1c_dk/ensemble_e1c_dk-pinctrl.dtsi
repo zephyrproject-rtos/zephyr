@@ -16,4 +16,22 @@
 			pinmux = <PIN_P5_3__UART2_TX_B>;
 		};
 	};
+
+	pinctrl_i2c0: pinctrl_i2c0 {
+		group0 {
+			pinmux = <PIN_P7_0__I2C0_SDA_C>,
+				 <PIN_P7_1__I2C0_SCL_C>;
+			input-enable;
+			drive-strength = <12>;
+		};
+	};
+
+	pinctrl_i2c1: pinctrl_i2c1 {
+		group0 {
+			pinmux = <PIN_P7_2__I2C1_SDA_C>,
+				 <PIN_P7_3__I2C1_SCL_C>;
+			input-enable;
+			drive-strength = <12>;
+		};
+	};
 };

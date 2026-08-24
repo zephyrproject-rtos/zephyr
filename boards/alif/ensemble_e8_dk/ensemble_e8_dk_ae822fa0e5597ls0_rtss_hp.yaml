@@ -9,3 +9,5 @@ arch: arm
 vendor: alif
 toolchain:
   - zephyr
+supported:
+  - i2c
