@@ -715,6 +715,19 @@ static inline void enet_qos_start(enet_qos_t *base)
 	base->MAC_CONFIGURATION |=
 		ENET_QOS_REG_PREP(MAC_CONFIGURATION, TE, 0b1) |
 		ENET_QOS_REG_PREP(MAC_CONFIGURATION, RE, 0b1);
+
+#if defined(CONFIG_PTP_CLOCK_NXP_ENET_QOS)
+	/*
+	 * Writing MAC_TIMESTAMP_CONTROL while the receiver is enabled arms the
+	 * RX timestamp snapshot logic. The PTP clock driver may have
+	 * programmed this register before RX was enabled, so rewrite the
+	 * existing value here to latch it. This read-back write is
+	 * intentional and not a redundant no-op.
+	 */
+	uint32_t timestamp_control = base->MAC_TIMESTAMP_CONTROL;
+
+	base->MAC_TIMESTAMP_CONTROL = timestamp_control;
+#endif
 }
 
 static inline void enet_qos_tx_desc_init(enet_qos_t *base, struct nxp_enet_qos_tx_data *tx)
