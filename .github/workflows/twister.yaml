@@ -172,6 +172,9 @@ jobs:
       BSIM_OUT_PATH: /opt/bsim/
       BSIM_COMPONENTS_PATH: /opt/bsim/components
       TWISTER_COMMON: ' --test-config tests/test_config_ci.yaml --force-color --inline-logs -v -N -M --retry-failed 3 --timeout-multiplier 2 --post-build-checks '
+      # Only for tests in this tree. A test that ships inside a module needs
+      # that module, and nothing here can declare it.
+      STRICT_MODULES: ' -x=ZEPHYR_MODULE_ACTIVATION=strict '
       WEEKLY_OPTIONS: ' -M --build-only --all --show-footprint --report-filtered -j 32'
       PR_OPTIONS: ' --clobber-output --integration -j 16'
       PUSH_OPTIONS: ' --clobber-output -M --show-footprint --report-filtered -j 16'
@@ -268,7 +271,7 @@ jobs:
               ;;
           esac
 
-          ./scripts/twister --subset ${{matrix.subset}}/${{ strategy.job-total }} ${LOAD_TESTS} ${TWISTER_COMMON} ${OPTIONS}
+          ./scripts/twister --subset ${{matrix.subset}}/${{ strategy.job-total }} ${LOAD_TESTS} ${TWISTER_COMMON} ${STRICT_MODULES} ${OPTIONS}
 
           # Module tests run once, on the first subset. On pull requests they
           # only run for a full run.
