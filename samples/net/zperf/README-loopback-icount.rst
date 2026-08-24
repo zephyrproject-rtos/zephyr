@@ -162,6 +162,14 @@ A few non-obvious points are baked into :file:`overlay-loopback-icount.conf`:
   so any realistic packet size (up to ~500 kB) is supported.
 - **No SLIP/TAP.** The QEMU SLIP host networking backend is disabled; the run
   needs no host-side ``slip.sock``.
+- **Log buffer size.** The result lines are printed with ``printk()``, which the
+  log subsystem forwards through its deferred backend. At the default 1024 byte
+  buffer the ``qemu_x86_64`` run overflows it during the first IPv4 transfers,
+  and :kconfig:option:`CONFIG_LOG_MODE_OVERFLOW` then drops the three oldest
+  messages - which silently swallows the ``udp4_frag`` result line, so that
+  metric never reaches the report at all. The overlay raises
+  :kconfig:option:`CONFIG_LOG_BUFFER_SIZE` to 4096. The measurement itself is
+  unaffected; the 32-bit numbers are bit-identical with the larger buffer.
 
 Usage
 *****
