@@ -649,10 +649,12 @@ static inline void enet_qos_mac_config_init(enet_qos_t *base, struct nxp_enet_qo
 					data->mac_addr.addr[1] << 8  |
 					data->mac_addr.addr[0]);
 
-	/* permit multicast packets if there is no space in hash table for mac addresses */
-	if ((base->MAC_HW_FEAT[1] & ENET_MAC_HW_FEAT_HASHTBLSZ_MASK) == 0) {
-		base->MAC_PACKET_FILTER |= ENET_MAC_PACKET_FILTER_PM_MASK;
-	}
+	/* This driver never populates the multicast hash table nor advertises
+	 * ETHERNET_HW_FILTERING, so perfect multicast filtering is unavailable
+	 * regardless of HASHTBLSZ. Pass all multicast unconditionally. The stack
+	 * still filters in software.
+	 */
+	base->MAC_PACKET_FILTER |= ENET_MAC_PACKET_FILTER_PM_MASK;
 
 #ifdef ENET_MAC_ONEUS_TIC_COUNTER_TIC_1US_CNTR
 	/* Set the reference for 1 microsecond of ENET QOS CSR clock cycles */
