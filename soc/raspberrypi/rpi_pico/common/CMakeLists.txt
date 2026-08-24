@@ -21,4 +21,3 @@ zephyr_linker_sources_ifdef(CONFIG_RPI_PICO_BINARY_INFO
 zephyr_linker_sources_ifdef(CONFIG_RPI_PICO_BINARY_INFO
   RODATA binary_info.ld
 )
-zephyr_sources_ifdef(CONFIG_HAZARD3_INTC irq.c)

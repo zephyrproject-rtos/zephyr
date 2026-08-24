@@ -37,6 +37,8 @@ config HAZARD3_INTC
 	default y
 	select PICOSDK_USE_CLAIM
 	select RISCV_SOC_HAS_CUSTOM_IRQ_HANDLING
+	# The Hazard3 controller is the root interrupt controller device.
+	select INTC_ROOT_DEVICE
 	depends on DT_HAS_HAZARD3_HAZARD3_INTC_ENABLED
 	help
 	  IRQ implementation for Hazard3 Interrupt Controller found on the RP2350 series SoCs
