@@ -187,12 +187,16 @@ static int send_data(int sock, struct tftpc *client, const struct net_sockaddr *
 				return ret;
 			}
 
-			if (ret != TFTP_HEADER_SIZE) {
-				break; /* wrong response, re-send data */
+			if (ret < TFTP_HEADER_SIZE) {
+				break;
 			}
 
 			uint16_t opcode = sys_get_be16(client->tftp_buf);
 			uint16_t blockno = sys_get_be16(client->tftp_buf + 2);
+
+			if (ret != TFTP_HEADER_SIZE && opcode != ERROR_OPCODE) {
+				break; /* wrong response, re-send data */
+			}
 
 			LOG_DBG("Receive: opcode %u, block no %u, size %d",
 				opcode, blockno, ret);
