@@ -580,17 +580,338 @@ New Boards
   that this list will be recomputed at the time of the release, so you don't *have* to update it.
   In any case, just link the board, further details go in the board description.
 
+* Adafruit Industries, LLC
+
+  * :zephyr:board:`adafruit_feather_esp32c6` (``adafruit_feather_esp32c6``)
+  * :zephyr:board:`adafruit_trrs_trinkey` (``adafruit_trrs_trinkey``)
+
+* Advanced Micro Devices (AMD), Inc.
+
+  * :zephyr:board:`acp_7_0_adsp` (``acp_7_0_adsp``)
+  * :zephyr:board:`acp_7_x_adsp` (``acp_7_x_adsp``)
+  * :zephyr:board:`zynqmp_apu` (``zynqmp_apu``)
+  * :zephyr:board:`zynqmp_rpu` (``zynqmp_rpu``)
+
+* Aesc Silicon
+
+  * :zephyr:board:`elemrv_flask_h` (``elemrv_flask_h``)
+
+* Ai-Thinker Co., Ltd.
+
+  * :zephyr:board:`ai_m64p_32s_kit` (``ai_m64p_32s_kit``)
+  * :zephyr:board:`aipi_eyes_s2` (``aipi_eyes_s2``)
+
+* Alif Semiconductor
+
+  * :zephyr:board:`balletto_b1_dk` (``balletto_b1_dk``)
+  * :zephyr:board:`ensemble_e8_ak` (``ensemble_e8_ak``)
+
+* Analog Devices, Inc.
+
+  * :zephyr:board:`max32651evkit` (``max32651evkit``)
+
+* Antmicro
+
+  * :zephyr:board:`stm32h7_hdmi_board` (``stm32h7_hdmi_board``)
+  * :zephyr:board:`stm32h7_renode_reference_board` (``stm32h7_renode_reference_board``)
+
 * Arduino
 
-  * :zephyr:board:`Arduino Nesso N1 <arduino_nesso_n1>` (``arduino_nesso_n1``)
+  * :zephyr:board:`arduino_nano_connect` (``arduino_nano_connect``)
+  * :zephyr:board:`arduino_nesso_n1` (``arduino_nesso_n1``)
 
-* Seeed
+* ARM Ltd.
 
-  * :zephyr:board:`Seeed Wio Tracker L1 <wio_tracker_l1>` (``wio_tracker_l1``)
+  * :zephyr:board:`fvp_corstone1000` (``fvp_corstone1000``)
 
-* WCH
+* Armfly
 
-  * :zephyr:board:`WCH CH32V103EVT <ch32v103evt>` (``ch32v103evt``)
+  * :zephyr:board:`armfly_stm32h743xih6` (``armfly_stm32h743xih6``)
+
+* Barth Elektronik GmbH
+
+  * :zephyr:board:`stg_800` (``stg_800``)
+
+* BeagleBoard.org Foundation
+
+  * :zephyr:board:`beaglebadge` (``beaglebadge``)
+  * :zephyr:board:`beagleconnect_zepto` (``beagleconnect_zepto``)
+  * :zephyr:board:`pocketbeagle_2_industrial` (``pocketbeagle_2_industrial``)
+
+* BLIIoT Technology Co., Ltd.
+
+  * :zephyr:board:`am62x_m4_bl350` (``am62x_m4_bl350``)
+
+* Bouffalo Lab (Nanjing) Co., Ltd.
+
+  * :zephyr:board:`bl618g0` (``bl618g0``)
+
+* CAN-module, FOP
+
+  * :zephyr:board:`canbridge_g473` (``canbridge_g473``)
+  * :zephyr:board:`usbcan_iso` (``usbcan_iso``)
+  * :zephyr:board:`usbcanfd_dual` (``usbcanfd_dual``)
+  * :zephyr:board:`usbcanfd_solo` (``usbcanfd_solo``)
+
+* Chengdu Ebyte Electronic Technology
+
+  * :zephyr:board:`e80_900mbl_01` (``e80_900mbl_01``)
+  * :zephyr:board:`eora_hub_900tb` (``eora_hub_900tb``)
+
+* Chengdu Heltec Automation Technology Co., Ltd.
+
+  * :zephyr:board:`heltec_t114_v2` (``heltec_t114_v2``)
+
+* Cirrus Logic, Inc.
+
+  * :zephyr:board:`crd40l26` (``crd40l26``)
+
+* emtrion GmbH
+
+  * :zephyr:board:`emsbc_neon_cm7` (``emsbc_neon_cm7``)
+
+* Espressif Systems
+
+  * :zephyr:board:`esp32p4_function_ev_board` (``esp32p4_function_ev_board``)
+  * :zephyr:board:`esp32p4x_function_ev_board` (``esp32p4x_function_ev_board``)
+  * :zephyr:board:`esp32s3_box3` (``esp32s3_box3``)
+
+* Eurovibes
+
+  * :zephyr:board:`eurovibes_stm32g431_sertest-ng` (``eurovibes_stm32g431_sertest-ng``)
+
+* FlySky
+
+  * :zephyr:board:`fs_i6s` (``fs_i6s``)
+
+* Heimann Sensor GmbH
+
+  * :zephyr:board:`htpa_eval` (``htpa_eval``)
+
+* Intel Corporation
+
+  * :zephyr:board:`intel_nvl_s_rvp` (``intel_nvl_s_rvp``)
+
+* Jhoinrch
+
+  * :zephyr:board:`rh02` (``rh02``)
+  * :zephyr:board:`rh02_plus_2026` (``rh02_plus_2026``)
+
+* KAGA FEI Co., Ltd.
+
+  * :zephyr:board:`ec4l15ba1` (``ec4l15ba1``)
+
+* KinCony Electronics Co., Ltd.
+
+  * :zephyr:board:`kincony_kc868_a8` (``kincony_kc868_a8``)
+
+* Lilygo Shenzhen Xinyuan Electronic Technology Co., Ltd
+
+  * :zephyr:board:`t_deck` (``t_deck``)
+
+* M5Stack
+
+  * :zephyr:board:`m5stack_paper_color` (``m5stack_paper_color``)
+  * :zephyr:board:`m5stack_sticks3` (``m5stack_sticks3``)
+  * :zephyr:board:`m5stack_unitc6l` (``m5stack_unitc6l``)
+
+* Makerfabs
+
+  * :zephyr:board:`matouch_mtro128g` (``matouch_mtro128g``)
+
+* Microchip Technology Inc.
+
+  * :zephyr:board:`m2s010_mkr_kit` (``m2s010_mkr_kit``)
+  * :zephyr:board:`m2s_hello_fpga_kit` (``m2s_hello_fpga_kit``)
+  * :zephyr:board:`pic32ck_gc01_cult` (``pic32ck_gc01_cult``)
+  * :zephyr:board:`pic32cm_gc00_cpro` (``pic32cm_gc00_cpro``)
+  * :zephyr:board:`pic32cm_sg00_cpro` (``pic32cm_sg00_cpro``)
+  * :zephyr:board:`sama5d27_som1_ek1` (``sama5d27_som1_ek1``)
+
+* MuseLab Electronics
+
+  * :zephyr:board:`nano_ch32v317` (``nano_ch32v317``)
+  * :zephyr:board:`nano_ch57x` (``nano_ch57x``)
+
+* Nordic Semiconductor
+
+  * :zephyr:board:`nrf93m1dk` (``nrf93m1dk``)
+
+* Norik Systems
+
+  * :zephyr:board:`dect_nr_plus_usb_dongle` (``dect_nr_plus_usb_dongle``)
+
+* NUCODE Co., Ltd. (nuworks.io)
+
+  * :zephyr:board:`nucode_nu32` (``nucode_nu32``)
+  * :zephyr:board:`nucode_nu40` (``nucode_nu40``)
+
+* Nuvoton Technology Corporation
+
+  * :zephyr:board:`numaker_m031ki` (``numaker_m031ki``)
+  * :zephyr:board:`numaker_m3351ki` (``numaker_m3351ki``)
+
+* NXP Semiconductors
+
+  * :zephyr:board:`frdm_imxrt1152` (``frdm_imxrt1152``)
+  * :zephyr:board:`frdm_imxrt700` (``frdm_imxrt700``)
+  * :zephyr:board:`imx952_evk` (``imx952_evk``)
+  * :zephyr:board:`lpc845brk` (``lpc845brk``)
+  * :zephyr:board:`lpcxpresso54628` (``lpcxpresso54628``)
+  * :zephyr:board:`mimxrt685_aud_evk` (``mimxrt685_aud_evk``)
+  * :zephyr:board:`mr_navq95b` (``mr_navq95b``)
+
+* OLIMEX Ltd.
+
+  * :zephyr:board:`esp32p4_pc` (``esp32p4_pc``)
+
+* Others
+
+  * :zephyr:board:`bl704l_dvk` (``bl704l_dvk``)
+  * :zephyr:board:`esp32h2_supermini` (``esp32h2_supermini``)
+  * :zephyr:board:`jz_f407vet6` (``jz_f407vet6``)
+  * :zephyr:board:`stm32_debug_probe` (``stm32_debug_probe``)
+
+* Pine64
+
+  * :zephyr:board:`pinecone` (``pinecone``)
+
+* QEMU
+
+  * :zephyr:board:`qemu_cortex_a72` (``qemu_cortex_a72``)
+
+* Radxa
+
+  * :zephyr:board:`rock_3b` (``rock_3b``)
+  * :zephyr:board:`rock_5b_plus` (``rock_5b_plus``)
+
+* Raspberry Pi Foundation
+
+  * :zephyr:board:`rpi_zero_2w` (``rpi_zero_2w``)
+
+* Raytac Corporation
+
+  * :zephyr:board:`raytac_an54lv_db_15` (``raytac_an54lv_db_15``)
+
+* Realtek Semiconductor Corp.
+
+  * :zephyr:board:`pke8721daf_c13_f10` (``pke8721daf_c13_f10``)
+
+* Renesas Electronics Corporation
+
+  * :zephyr:board:`rcar_ironhide_x5h` (``rcar_ironhide_x5h``)
+  * :zephyr:board:`rza3m_ek` (``rza3m_ek``)
+
+* Seeed Technology Co., Ltd
+
+  * :zephyr:board:`reterminal_e1001` (``reterminal_e1001``)
+  * :zephyr:board:`reterminal_e1003` (``reterminal_e1003``)
+  * :zephyr:board:`wio_tracker_l1` (``wio_tracker_l1``)
+  * :zephyr:board:`xiao_esp32c5` (``xiao_esp32c5``)
+  * :zephyr:board:`xiao_nrf54lm20a` (``xiao_nrf54lm20a``)
+
+* SEGGER Microcontroller GmbH
+
+  * :zephyr:board:`nandeval_h743zi` (``nandeval_h743zi``)
+
+* SHAKTI Processor Program
+
+  * :zephyr:board:`nexys_ganga` (``nexys_ganga``)
+
+* Shanghai Ruiside Electronic Technology Co., Ltd.
+
+  * :zephyr:board:`ra8p1_titan` (``ra8p1_titan``)
+  * :zephyr:board:`ra8p1_titan_mini` (``ra8p1_titan_mini``)
+
+* Shenzhen JLC Technology Group Co., Ltd.
+
+  * :zephyr:board:`skystar_gd32f407vet6` (``skystar_gd32f407vet6``)
+
+* Shenzhen Luckfox Technology Co., Ltd.
+
+  * :zephyr:board:`pico_ultra` (``pico_ultra``)
+
+* Shenzhen Sipeed Technology Co., Ltd.
+
+  * :zephyr:board:`m0sense` (``m0sense``)
+  * :zephyr:board:`m1s_dock` (``m1s_dock``)
+
+* Shenzhen Xunlong Software CO.,Limited
+
+  * :zephyr:board:`opi_zero2w` (``opi_zero2w``)
+
+* Silicon Laboratories
+
+  * :zephyr:board:`kg100s_rb4332a` (``kg100s_rb4332a``)
+  * :zephyr:board:`xg26_dk2608a` (``xg26_dk2608a``)
+  * :zephyr:board:`xg26_rb4121a` (``xg26_rb4121a``)
+
+* STMicroelectronics
+
+  * :zephyr:board:`nucleo_g491re` (``nucleo_g491re``)
+  * :zephyr:board:`nucleo_u545re_q` (``nucleo_u545re_q``)
+
+* Sutajio Ko-Usagi PTE Ltd.
+
+  * :zephyr:board:`tomu` (``tomu``)
+
+* Texas Instruments
+
+  * :zephyr:board:`lp_am13e230` (``lp_am13e230``)
+  * :zephyr:board:`lp_am243` (``lp_am243``)
+  * :zephyr:board:`lp_mspm33c321a` (``lp_mspm33c321a``)
+
+* Trenz Electronic
+
+  * :zephyr:board:`te0950` (``te0950``)
+
+* Tuya Inc.
+
+  * :zephyr:board:`tyzs3` (``tyzs3``)
+
+* u-blox
+
+  * :zephyr:board:`ubx_evknorab2` (``ubx_evknorab2``)
+
+* Udoo
+
+  * :zephyr:board:`udoo_key` (``udoo_key``)
+
+* Umeta & Ikki Automotive Parts
+
+  * :zephyr:board:`uiapduino_pro_micro_ch32v003` (``uiapduino_pro_micro_ch32v003``)
+
+* VIEWE Display Co., Ltd.
+
+  * :zephyr:board:`uedx24240013_md50e` (``uedx24240013_md50e``)
+  * :zephyr:board:`uedx32480035e_wb_a` (``uedx32480035e_wb_a``)
+
+* Waveshare Electronics
+
+  * :zephyr:board:`esp32c6_lcd_1_47` (``esp32c6_lcd_1_47``)
+  * :zephyr:board:`esp32p4_wifi6` (``esp32p4_wifi6``)
+  * :zephyr:board:`esp32p4_wifi6_dev_kit` (``esp32p4_wifi6_dev_kit``)
+  * :zephyr:board:`waveshare_esp32p4_eth` (``waveshare_esp32p4_eth``)
+
+* WeAct Studio
+
+  * :zephyr:board:`ch32v00x_core` (``ch32v00x_core``)
+  * :zephyr:board:`usb2canfdv2` (``usb2canfdv2``)
+  * :zephyr:board:`weact_ra4m1_core` (``weact_ra4m1_core``)
+
+* WinChipHead
+
+  * :zephyr:board:`ch32h417evt` (``ch32h417evt``)
+  * :zephyr:board:`ch32v103evt` (``ch32v103evt``)
+  * :zephyr:board:`ch32v203c8t6evt` (``ch32v203c8t6evt``)
+  * :zephyr:board:`ch32v305f_evt_r0` (``ch32v305f_evt_r0``)
+
+* WIZnet Co., Ltd.
+
+  * :zephyr:board:`w55rp20_evb_pico` (``w55rp20_evb_pico``)
+  * :zephyr:board:`w6100_evb_pico` (``w6100_evb_pico``)
+  * :zephyr:board:`w6100_evb_pico2` (``w6100_evb_pico2``)
+  * :zephyr:board:`w6300_evb_pico2` (``w6300_evb_pico2``)
 
 New Shields
 ***********
@@ -598,6 +919,26 @@ New Shields
 ..
   Same as above, this will also be recomputed at the time of the release.
 
+* :ref:`AD-APARDPFW-SL <ad_apardpfw_sl>`
+* :ref:`Adafruit FeatherWing MAX3421E Shield <adafruit_featherwing_max3421e>`
+* :ref:`Analog Devices Low-Speed Mixed-Signal Playground <adi_lsmspg>`
+* :ref:`ArduCam Mega SPI Camera Shield <arducam_mega>`
+* :ref:`DFRobot Gravity TM6605 Haptic Motor Driver Module <dfrobot_gravity_tm6605>`
+* :ref:`EVAL-AD5529R-ARDZ <eval_ad5529r_ardz>`
+* :ref:`M5Stack Unit Gesture <m5stack_unit_gesture_shield>`
+* :ref:`M5Stack Unit Mini OLED <m5stack_unit_minioled_shield>`
+* :ref:`MB1280 STMod+ fan-out shield <mb1280_stmod_plus>`
+* :ref:`MikroElektronika EERAM 3.3V Click <mikroe_eeram_33v_click_shield>`
+* :ref:`MikroElektronika Two Wire ETH Click <mikroe_two_wire_eth_click_shield>`
+* :ref:`NXP MX8 DSI OLED1A Panel <nxp_mx8_dsi_oled1a>`
+* :ref:`NXP MX9 DSI OLED Panel <nxp_mx9_dsi_oled>`
+* :ref:`OD-6010 SLCD Panel Shield <od_6010_shield>`
+* :ref:`Seeed Studio COB LED Driver Board for XIAO <seeed_xiao_cob_led>`
+* :ref:`ST B-M2MEM-PACK1 M.2 serial memory pack <st_b_m2mem_pack1_shield>`
+* :ref:`X-NUCLEO-67W61M1: Wi-Fi 6 expansion board <x_nucleo_67w61m1>`
+* :ref:`X-NUCLEO-GNSS1A1: GNSS expansion board based on Teseo-LIV3F <x-nucleo-gnss1a1>`
+* :ref:`X-NUCLEO-PGEEZ1 page EEPROM expansion board <x_nucleo_pgeez1_shield>`
+* :ref:`X-NUCLEO-WBA25A1: BLE expansion board <x-nucleo-wba25a1>`
 
 New Drivers
 ***********
@@ -606,53 +947,749 @@ New Drivers
   Same as above, this will also be recomputed at the time of the release.
   Just link the driver, further details go in the binding description
 
-* ADC
+* :abbr:`ADC (Analog to Digital Converter)`
 
-  * Analog Devices AD4190-8 and AD4195-8 Sigma-Delta ADCs
-    (:dtcompatible:`adi,ad4190-8-adc`, :dtcompatible:`adi,ad4195-8-adc`).
+  * :dtcompatible:`adi,ad4190-8-adc` (:github:`111922`)
+  * :dtcompatible:`adi,ad4195-8-adc` (:github:`111922`)
+  * :dtcompatible:`infineon,autanalog-sar-fifo` (:github:`110289`)
+  * :dtcompatible:`infineon,autanalog-sar-fir` (:github:`110289`)
+  * :dtcompatible:`m5stack,m5pm1-adc` (:github:`109961`)
+  * :dtcompatible:`realtek,ameba-adc` (:github:`106677`)
+  * :dtcompatible:`realtek,bee-adc` (:github:`105264`)
+  * :dtcompatible:`ti,adc081c021` (:github:`114289`)
+  * :dtcompatible:`ti,adc081c027` (:github:`114289`)
+  * :dtcompatible:`ti,adc101c021` (:github:`114289`)
+  * :dtcompatible:`ti,adc101c027` (:github:`114289`)
+  * :dtcompatible:`ti,adc121c021` (:github:`114289`)
+  * :dtcompatible:`ti,adc121c027` (:github:`114289`)
+  * :dtcompatible:`ti,ads1118` (:github:`94152`)
+  * :dtcompatible:`ti,ads1220` (:github:`102479`)
+  * :dtcompatible:`ti,ads7828` (:github:`114359`)
+  * :dtcompatible:`ti,ads7830` (:github:`114359`)
+  * :dtcompatible:`ti,mspm0-adc12` (:github:`94736`)
+  * :dtcompatible:`ti,tla2528-adc` (:github:`110722`)
 
-* GPIO
+* ARM architecture
 
-  * Diodes/Pericom PI4IOE5V6408 8-bit I2C-bus I/O expander
-    (:dtcompatible:`diodes,pi4ioe5v6408`).
-  * ST Zio connector for STM32 Nucleo-144 boards
-    (:dtcompatible:`st-zio-header`).
+  * :dtcompatible:`infineon,edge-npu` (:github:`106826`)
+  * :dtcompatible:`nordic,nrf-wicr` (:github:`108141`)
+  * :dtcompatible:`nordic,nrf71-uicr` (:github:`106134`)
+
+* Audio
+
+  * :dtcompatible:`st,stm32-dfsdm` (:github:`108302`)
+  * :dtcompatible:`st,stm32-dfsdm-dmic` (:github:`108302`)
+  * :dtcompatible:`ti,tas2563` (:github:`103148`)
+  * :dtcompatible:`ti,tlv320aic26` (:github:`106836`)
+  * :dtcompatible:`wolfson,wm8960` (:github:`106212`)
+  * :dtcompatible:`zephyr,dummy-codec` (:github:`109891`)
+  * :dtcompatible:`zephyr,native-sim-dmic` (:github:`109898`)
+
+* Auxiliary Display
+
+  * :dtcompatible:`nxp,slcd` (:github:`102796`)
+  * :dtcompatible:`slcd-panel` (:github:`102796`)
+
+* Bluetooth
+
+  * :dtcompatible:`espressif,esp-hosted-mcu-bt-hci` (:github:`114532`)
+  * :dtcompatible:`realtek,ameba-bt-hci` (:github:`109287`)
+
+* Buzzer
+
+  * :dtcompatible:`gpio-buzzer` (:github:`108911`)
+  * :dtcompatible:`pwm-buzzer` (:github:`108911`)
+
+* :abbr:`CAN (Controller Area Network)`
+
+  * :dtcompatible:`bflb,bl61x-can` (:github:`110672`)
+  * :dtcompatible:`espressif,esp32-twaifd` (:github:`107680`)
+  * :dtcompatible:`realtek,bee-can` (:github:`105411`)
+
+* Charger
+
+  * :dtcompatible:`adi,adp5360-charger` (:github:`105258`)
+  * :dtcompatible:`silergy,sy6974b` (:github:`107439`)
+  * :dtcompatible:`ti,bq24295` (:github:`114650`)
+  * :dtcompatible:`ti,bq24296` (:github:`114650`)
+  * :dtcompatible:`ti,bq24296m` (:github:`114650`)
+  * :dtcompatible:`ti,bq24297` (:github:`114650`)
+  * :dtcompatible:`ti,bq24298` (:github:`114650`)
+
+* Clock control
+
+  * :dtcompatible:`bflb,bl616cl-clock-controller` (:github:`112738`)
+  * :dtcompatible:`bflb,bl808-clock-controller` (:github:`105580`)
+  * :dtcompatible:`bflb,mm-clk` (:github:`105580`)
+  * :dtcompatible:`microchip,pic32cm-sg-gc-clock` (:github:`112582`)
+  * :dtcompatible:`microchip,pic32cm-sg-gc-dfll48m` (:github:`112582`)
+  * :dtcompatible:`microchip,pic32cm-sg-gc-dpll` (:github:`112582`)
+  * :dtcompatible:`microchip,pic32cm-sg-gc-gclkgen` (:github:`112582`)
+  * :dtcompatible:`microchip,pic32cm-sg-gc-gclkperiph` (:github:`112582`)
+  * :dtcompatible:`microchip,pic32cm-sg-gc-mclkdomain` (:github:`112582`)
+  * :dtcompatible:`microchip,pic32cm-sg-gc-mclkperiph` (:github:`112582`)
+  * :dtcompatible:`microchip,pic32cm-sg-gc-rtc` (:github:`112582`)
+  * :dtcompatible:`microchip,pic32cm-sg-gc-xosc` (:github:`112582`)
+  * :dtcompatible:`microchip,pic32cm-sg-gc-xosc32k` (:github:`112582`)
+  * :dtcompatible:`microchip,smartfusion2-clock` (:github:`106926`)
+  * :dtcompatible:`nordic,nrf-clock-hfclk` (:github:`104658`)
+  * :dtcompatible:`nordic,nrf-clock-hfclk192m` (:github:`104658`)
+  * :dtcompatible:`nordic,nrf-clock-hfclkaudio` (:github:`104658`)
+  * :dtcompatible:`nordic,nrf-clock-lfclk` (:github:`104658`)
+  * :dtcompatible:`nordic,nrf-clock-xo` (:github:`104658`)
+  * :dtcompatible:`nordic,nrf-clock-xo24m` (:github:`104658`)
+  * :dtcompatible:`nuvoton,m4-hclk-clock` (:github:`103668`)
+  * :dtcompatible:`nuvoton,m4-hxt-clock` (:github:`103668`)
+  * :dtcompatible:`nuvoton,m4-lxt-clock` (:github:`103668`)
+  * :dtcompatible:`nuvoton,m4-pll-clock` (:github:`103668`)
+  * :dtcompatible:`nuvoton,numicro-m4-pcc` (:github:`103668`)
+  * :dtcompatible:`nuvoton,numicro-m4-scc` (:github:`103668`)
+  * :dtcompatible:`nxp,imxrt118x-arm-pll` (:github:`106881`)
+  * :dtcompatible:`nxp,imxrt11xx-arm-pll` (:github:`106881`)
+  * :dtcompatible:`nxp,lpc84x-clock` (:github:`105928`)
+  * :dtcompatible:`nxp,mcxw7x-clock` (:github:`101937`)
+  * :dtcompatible:`silabs,series0-cmu` (:github:`111754`)
+  * :dtcompatible:`silabs,series0-hfxo` (:github:`111754`)
+  * :dtcompatible:`silabs,series0-lfrco` (:github:`111754`)
+  * :dtcompatible:`silabs,series0-lfxo` (:github:`111754`)
+  * :dtcompatible:`st,stm32h5-pll-clock` (:github:`110914`)
+  * :dtcompatible:`st,stm32n6-msi-clock` (:github:`108997`)
+  * :dtcompatible:`wch,ch32h41x-pll-clock` (:github:`111725`)
+
+* Clock monitor
+
+  * :dtcompatible:`nxp,cmu-fc` (:github:`107879`)
+  * :dtcompatible:`nxp,cmu-fm` (:github:`107879`)
+  * :dtcompatible:`nxp,freqme` (:github:`112403`)
+
+* Comparator
+
+  * :dtcompatible:`espressif,esp32-ana-cmpr` (:github:`113625`)
+  * :dtcompatible:`infineon,autanalog-ptcomp-comp` (:github:`107488`)
+  * :dtcompatible:`infineon,hppass-csg-comp` (:github:`109879`)
+  * :dtcompatible:`infineon,lp-comp` (:github:`104636`)
+  * :dtcompatible:`infineon,lp-comp-channel` (:github:`104636`)
+  * :dtcompatible:`ti,mspm0-comparator` (:github:`94737`)
+
+* Counter
+
+  * :dtcompatible:`arm,crsas-ma2-counter` (:github:`112815`)
+  * :dtcompatible:`arm,crsas-ma2-timer` (:github:`112815`)
+  * :dtcompatible:`nxp,irtc-wake-timer` (:github:`111552`)
+  * :dtcompatible:`nxp,sysctr` (:github:`106300`)
+  * :dtcompatible:`nxp,tstmr` (:github:`112255`)
+  * :dtcompatible:`nxp,wake-timer` (:github:`110811`)
+  * :dtcompatible:`realtek,ameba-counter` (:github:`106664`)
+  * :dtcompatible:`realtek,bee-counter-rtc` (:github:`105193`)
+  * :dtcompatible:`ti,k3-rtc-counter` (:github:`104048`)
+  * :dtcompatible:`wch,adtm` (:github:`109728`)
+  * :dtcompatible:`xlnx,ttc` (:github:`103117`)
+  * :dtcompatible:`xlnx,ttc-counter` (:github:`103117`)
+  * :dtcompatible:`xlnx,zynqmp-rtc` (:github:`107684`)
+
+* :abbr:`CPU (Central Processing Unit)`
+
+  * :dtcompatible:`adi,max32-m4f-cpu1` (:github:`105310`)
+  * :dtcompatible:`arm,armv8` (:github:`114145`)
+  * :dtcompatible:`arm,cortex-a32` (:github:`107644`)
+  * :dtcompatible:`arm,cortex-a57` (:github:`114109`)
+  * :dtcompatible:`arm,cortex-a720` (:github:`113087`)
+  * :dtcompatible:`arm,cortex-r8f` (:github:`114145`)
+  * :dtcompatible:`intel,nova-lake` (:github:`111818`)
+  * :dtcompatible:`intel,x86_64` (:github:`115174`)
+  * :dtcompatible:`spinalhdl,vexiiriscv` (:github:`109932`)
+  * :dtcompatible:`wch,qingke-v3c` (:github:`111171`)
+  * :dtcompatible:`wch,qingke-v3f` (:github:`111725`)
+  * :dtcompatible:`wch,qingke-v5f` (:github:`111725`)
+
+* :abbr:`CPU (Central Processing Unit)` frequency scaling
+
+  * :dtcompatible:`zephyr,cpu-freq-thermal-cap` (:github:`108242`)
+
+* :abbr:`CRC (Cyclic Redundancy Check)`
+
+  * :dtcompatible:`ambiq,hw-crc32` (:github:`110366`)
+
+* Cryptographic accelerator
+
+  * :dtcompatible:`infineon,mxcrypto-crypto` (:github:`108439`)
+  * :dtcompatible:`infineon,mxcrypto-trng` (:github:`108439`)
+  * :dtcompatible:`infineon,mxcryptolite-crypto` (:github:`109693`)
+  * :dtcompatible:`infineon,mxcryptolite-trng` (:github:`109693`)
+  * :dtcompatible:`realtek,bee-aes` (:github:`114817`)
+  * :dtcompatible:`realtek,bee-sha256` (:github:`114817`)
+  * :dtcompatible:`ti,mspm0-aes` (:github:`94734`)
+
+* :abbr:`DAC (Digital to Analog Converter)`
+
+  * :dtcompatible:`adi,ad5529r` (:github:`106256`)
+  * :dtcompatible:`infineon,autanalog-ctdac` (:github:`107490`)
+  * :dtcompatible:`infineon,hppass-csg-dac` (:github:`109967`)
+  * :dtcompatible:`microchip,dac-g2` (:github:`109820`)
+  * :dtcompatible:`ti,dac43508` (:github:`112038`)
+  * :dtcompatible:`ti,dac53508` (:github:`112038`)
+  * :dtcompatible:`ti,dac63508` (:github:`112038`)
+  * :dtcompatible:`ti,mspm0-dac` (:github:`94725`)
+
+* :abbr:`DAI (Digital Audio Interface)`
+
+  * :dtcompatible:`amd,acp-sdw-dai` (:github:`104450`)
+  * :dtcompatible:`amd,tdm-dai` (:github:`108314`)
+
+* :abbr:`DALI (Digital Addressable Lighting Interface)`
+
+  * :dtcompatible:`zephyr,dali-pwm` (:github:`88128`)
+
+* Disk
+
+  * :dtcompatible:`virtio,blk` (:github:`112581`)
+  * :dtcompatible:`zephyr,memc-ram-disk` (:github:`111528`)
+
+* Display
+
+  * :dtcompatible:`charlieplex-led-matrix` (:github:`110137`)
+  * :dtcompatible:`chipwealth,ch1115` (:github:`107434`)
+  * :dtcompatible:`chipwealth,ch1116` (:github:`107434`)
+  * :dtcompatible:`eink,ed2208-doa` (:github:`109961`)
+  * :dtcompatible:`eink,ed2208-gca` (:github:`107510`)
+  * :dtcompatible:`fitipower,ek79007` (:github:`116543`)
+  * :dtcompatible:`himax,hx8353e` (:github:`108055`)
+  * :dtcompatible:`ite,it8951` (:github:`108591`)
+  * :dtcompatible:`levetop,lt7680` (:github:`112389`)
+  * :dtcompatible:`raspberrypi,bcm2711-framebuffer` (:github:`109522`)
+  * :dtcompatible:`raydium,rm67199` (:github:`98554`)
+  * :dtcompatible:`raydium,rm692c9` (:github:`93134`)
+  * :dtcompatible:`sinowealth,sh1107` (:github:`107434`)
+  * :dtcompatible:`socionext,dpu` (:github:`93134`)
+  * :dtcompatible:`solomon,ssd1305` (:github:`107434`)
+  * :dtcompatible:`solomon,ssd1306b` (:github:`107434`)
+  * :dtcompatible:`solomon,ssd1315` (:github:`107434`)
+  * :dtcompatible:`solomon,ssd1683` (:github:`112893`)
+  * :dtcompatible:`st,neochrom-gpu2d` (:github:`105970`)
+  * :dtcompatible:`st,stm32-dma2d` (:github:`103687`)
+  * :dtcompatible:`ultrachip,uc8253` (:github:`113230`)
+  * :dtcompatible:`zephyr,panel-color-palette` (:github:`107945`)
+
+* :abbr:`DMA (Direct Memory Access)`
+
+  * :dtcompatible:`amd,acp-host-dma` (:github:`104450`)
+  * :dtcompatible:`amd,acp-sdw-dma` (:github:`104450`)
+  * :dtcompatible:`amd,acp-tdm-dma` (:github:`108314`)
+  * :dtcompatible:`amd,versal2-dma-1.0` (:github:`101685`)
+  * :dtcompatible:`infineon,mdma` (:github:`110847`)
+  * :dtcompatible:`microchip,dmac-g3-dma` (:github:`109209`)
+  * :dtcompatible:`nxp,gdma` (:github:`104868`)
+  * :dtcompatible:`realtek,ameba-gdma` (:github:`105366`)
+  * :dtcompatible:`realtek,bee-dma` (:github:`104754`)
+  * :dtcompatible:`renesas,rza2m-dma` (:github:`107009`)
+  * :dtcompatible:`ti,mspm0-dma` (:github:`91502`)
+  * :dtcompatible:`xlnx,zynqmp-dma-1.0` (:github:`101685`)
+
+* :abbr:`DSP (Digital Signal Processor)`
+
+  * :dtcompatible:`nxp,powerquad` (:github:`110745`)
+
+* :abbr:`EDAC (Error Detection and Correction)`
+
+  * :dtcompatible:`nxp,mecc` (:github:`105341`)
+
+* :abbr:`ESPI (Enhanced Serial Peripheral Interface)`
+
+  * :dtcompatible:`intel,espi-peci` (:github:`103773`)
+
+* Ethernet
+
+  * :dtcompatible:`brcm,genet` (:github:`113360`)
+  * :dtcompatible:`brcm,genet-mdio` (:github:`113360`)
+  * :dtcompatible:`microchip,gmac-g1-eth` (:github:`105275`)
+  * :dtcompatible:`microchip,gmac-g1-mdio` (:github:`105275`)
+  * :dtcompatible:`microchip,lan8840` (:github:`110896`)
+  * :dtcompatible:`nxp,imx-netc-vsi` (:github:`114331`)
+  * :dtcompatible:`snps,dwmac` (:github:`114760`)
+  * :dtcompatible:`snps,dwmac-mdio` (:github:`108046`)
+  * :dtcompatible:`snps,dwmac-ptp-clock` (:github:`114242`)
+  * :dtcompatible:`wch,ch9120` (:github:`111708`)
+  * :dtcompatible:`wiznet,w6300` (:github:`102727`)
+  * :dtcompatible:`xlnx,gem-mdio` (:github:`87313`)
+  * :dtcompatible:`zephyr,native-ptp-clock` (:github:`109265`)
+
+* Firmware
+
+  * :dtcompatible:`arm,scmi-reset` (:github:`106306`)
+  * :dtcompatible:`raspberrypi,bcm283x-firmware` (:github:`107536`)
+
+* Flash controller
+
+  * :dtcompatible:`aesc,spi-flash-controller` (:github:`110957`)
+  * :dtcompatible:`infineon,rram-controller` (:github:`108532`)
+  * :dtcompatible:`intel,pflash-cfi01` (:github:`112714`)
+  * :dtcompatible:`microchip,igloo2-envm-controller` (:github:`111817`)
+  * :dtcompatible:`microchip,nvmctrl-g2` (:github:`108440`)
+  * :dtcompatible:`microchip,nvmctrl-g3` (:github:`109747`)
+  * :dtcompatible:`microchip,smartfusion2-flash-controller` (:github:`106926`)
+  * :dtcompatible:`nxp,iap-fmc84x` (:github:`105928`)
+  * :dtcompatible:`realtek,ameba-flash-controller` (:github:`106690`)
+  * :dtcompatible:`realtek,bee-nor-flash-controller` (:github:`107007`)
+
+* :abbr:`FPGA (Field Programmable Gate Array)`
+
+  * :dtcompatible:`renesas,slg47910` (:github:`107551`)
+
+* Fuel gauge
+
+  * :dtcompatible:`adi,adp5360-fuel-gauge` (:github:`105258`)
+
+* :abbr:`GNSS (Global Navigation Satellite System)`
+
+  * :dtcompatible:`ericsson,f5521gw` (:github:`113055`)
+  * :dtcompatible:`u-blox,m10` (:github:`110846`)
+
+* :abbr:`GPIO (General Purpose Input/Output)` & Headers
+
+  * :dtcompatible:`allwinner,sun50i-h618-gpio` (:github:`110502`)
+  * :dtcompatible:`allwinner,sunxi-gpio` (:github:`110502`)
+  * :dtcompatible:`arduino-mega-header` (:github:`105160`)
+  * :dtcompatible:`diodes,pi4ioe5v6408` (:github:`108505`)
+  * :dtcompatible:`esp-01-header` (:github:`109705`)
+  * :dtcompatible:`gpio-mmio-latch` (:github:`105732`)
+  * :dtcompatible:`m5stack,m5pm1-gpio` (:github:`109961`)
+  * :dtcompatible:`nordic,npm10xx-gpio` (:github:`108508`)
+  * :dtcompatible:`raspberrypi,bcm283x-gpio` (:github:`110788`)
+  * :dtcompatible:`realtek,rts5817-gpio` (:github:`105542`)
+  * :dtcompatible:`st,m2-memory-connector` (:github:`109004`)
+  * :dtcompatible:`st,stmod-plus-connector` (:github:`109705`)
+  * :dtcompatible:`st-zio-header` (:github:`115412`)
+  * :dtcompatible:`ti,tca9554` (:github:`111041`)
+  * :dtcompatible:`ti,tla2528-gpio` (:github:`110722`)
+  * :dtcompatible:`virtio,gpio` (:github:`114983`)
+  * :dtcompatible:`wch,ch5xx-gpio` (:github:`111171`)
+
+* Haptics
+
+  * :dtcompatible:`cirrus,cs40l26` (:github:`106934`)
+  * :dtcompatible:`cirrus,cs40l27` (:github:`106934`)
+  * :dtcompatible:`cirrus,cs40l50` (:github:`105683`)
+  * :dtcompatible:`cirrus,cs40l51` (:github:`105683`)
+  * :dtcompatible:`cirrus,cs40l52` (:github:`105683`)
+  * :dtcompatible:`cirrus,cs40l53` (:github:`105683`)
+  * :dtcompatible:`titanmec,tm6605` (:github:`109104`)
+
+* Hardware information
+
+  * :dtcompatible:`nxp,lpc-pmc-hwinfo` (:github:`114693`)
+  * :dtcompatible:`nxp,mc-rgm` (:github:`111359`)
+  * :dtcompatible:`nxp,otp-uid` (:github:`111493`)
+
+* :abbr:`I2C (Inter-Integrated Circuit)`
+
+  * :dtcompatible:`ambiq,ios-i2c` (:github:`96059`)
+  * :dtcompatible:`brcm,bcm2711-i2c` (:github:`105601`)
+  * :dtcompatible:`ene,kb106x-i2c` (:github:`106693`)
+  * :dtcompatible:`realtek,ameba-i2c` (:github:`108235`)
+  * :dtcompatible:`realtek,bee-i2c` (:github:`105028`)
+  * :dtcompatible:`zephyr,i2c-target-tmp103` (:github:`114727`)
+
+* :abbr:`I2S (Inter-Integrated Circuit Sound)`
+
+  * :dtcompatible:`zephyr,native-sim-i2s` (:github:`109902`)
+
+* :abbr:`I3C (Improved Inter-Integrated Circuit)`
+
+  * :dtcompatible:`microchip,xec-i3c` (:github:`116252`)
+
+* IEEE 802.15.4
+
+  * :dtcompatible:`silabs,efr32-ieee802154` (:github:`108596`)
 
 * Input
 
-  * VIRTIO input device (:dtcompatible:`virtio,input`).
+  * :dtcompatible:`tbs,crsf` (:github:`106941`)
+  * :dtcompatible:`virtio,input` (:github:`111029`)
+
+* Interrupt controller
+
+  * :dtcompatible:`amd,acp-intc` (:github:`104450`)
+  * :dtcompatible:`brcm,bcm2835-armctrl-ic` (:github:`110189`)
+  * :dtcompatible:`brcm,bcm2836-l1-intc` (:github:`110189`)
+  * :dtcompatible:`microchip,smartfusion2-h2f-irqctrl` (:github:`106926`)
+
+* :abbr:`IPC (Inter-Processor Communication)`
+
+  * :dtcompatible:`nxp,ipc-rpmsg-lite` (:github:`104807`)
+
+* :abbr:`LED (Light Emitting Diode)`
+
+  * :dtcompatible:`issi,is31fl3193` (:github:`107555`)
+  * :dtcompatible:`nordic,npm10xx-led` (:github:`108756`)
+  * :dtcompatible:`nxp,pca9530` (:github:`112203`)
+  * :dtcompatible:`nxp,pca9531` (:github:`112203`)
+  * :dtcompatible:`nxp,pca9532` (:github:`112203`)
+  * :dtcompatible:`ti,lp5860` (:github:`108801`)
+  * :dtcompatible:`ti,lp5861` (:github:`108801`)
+  * :dtcompatible:`ti,lp5862` (:github:`108801`)
+  * :dtcompatible:`ti,lp5864` (:github:`108801`)
+  * :dtcompatible:`ti,lp5866` (:github:`108801`)
+  * :dtcompatible:`ti,lp5868` (:github:`108801`)
+  * :dtcompatible:`zephyr,fake-leds` (:github:`110819`)
+  * :dtcompatible:`zephyr,native-linux-leds` (:github:`111189`)
+
+* :abbr:`LED (Light Emitting Diode)` strip
+
+  * :dtcompatible:`worldsemi,ws2812-bflb-wo` (:github:`105325`)
+  * :dtcompatible:`worldsemi,ws2812-pulse-io` (:github:`110466`)
+
+* LoRa
+
+  * :dtcompatible:`semtech,lr1121` (:github:`109912`)
+
+* Mailbox
+
+  * :dtcompatible:`arm,mhuv2` (:github:`110686`)
+  * :dtcompatible:`brcm,bcm2711-mbox` (:github:`107536`)
+  * :dtcompatible:`renesas,rcar-mfis-mbox` (:github:`108868`)
+
+* MCUmgr
+
+  * :dtcompatible:`zephyr,smp-spi` (:github:`106947`)
+
+* Memory controller
+
+  * :dtcompatible:`bflb,bl808-psram-uhs` (:github:`110702`)
+  * :dtcompatible:`bflb,bl808-psram-uhs-controller` (:github:`110702`)
+  * :dtcompatible:`bflb,sf-bank` (:github:`107223`)
+  * :dtcompatible:`bflb,sf-controller` (:github:`107223`)
+  * :dtcompatible:`nxp,imx-snvs-gpr` (:github:`109842`)
+
+* Miscellaneous
+
+  * :dtcompatible:`adi,tmc6460` (:github:`113438`)
+  * :dtcompatible:`nxp,imx93-video-pll` (:github:`98554`)
+  * :dtcompatible:`nxp,mcxw-hw-params` (:github:`108974`)
+  * :dtcompatible:`ti,tdp2004` (:github:`111950`)
+
+* Modem
+
+  * :dtcompatible:`fibocom,le250` (:github:`114755`)
+  * :dtcompatible:`nordic,nrf91-sm-v2` (:github:`115058`)
+  * :dtcompatible:`nordic,nrf93m1` (:github:`106289`)
+  * :dtcompatible:`quectel,bc66` (:github:`111279`)
+  * :dtcompatible:`quectel,bc660k` (:github:`111279`)
+  * :dtcompatible:`quectel,bc66x` (:github:`111279`)
+  * :dtcompatible:`quectel,eg21-g` (:github:`115561`)
+  * :dtcompatible:`quectel,eg915u` (:github:`95921`)
+  * :dtcompatible:`telit,le910c1tx` (:github:`106716`)
+  * :dtcompatible:`telit,lex10q1` (:github:`109206`)
+  * :dtcompatible:`trasna,lexi-r10` (:github:`107308`)
+
+* :abbr:`MTD (Memory Technology Device)`
+
+  * :dtcompatible:`bflb,sf-device` (:github:`107223`)
+  * :dtcompatible:`bflb,sf-flash` (:github:`107223`)
+  * :dtcompatible:`is66wv` (:github:`111074`)
+  * :dtcompatible:`microchip,flash-g2` (:github:`108440`)
+  * :dtcompatible:`microchip,flash-g3` (:github:`109747`)
+  * :dtcompatible:`nordic,tz-nonsecure` (:github:`108883`)
+  * :dtcompatible:`nordic,tz-secure` (:github:`108883`)
+  * :dtcompatible:`nxp,imx-flexspi-nand` (:github:`104870`)
+  * :dtcompatible:`nxp,mcxw-ifr` (:github:`108974`)
+  * :dtcompatible:`realtek,bee-nor-flash` (:github:`107007`)
+
+* Multi-bit :abbr:`SPI (Serial Peripheral Interface)`
+
+  * :dtcompatible:`microchip,xec-qmspi-controller` (:github:`113243`)
+  * :dtcompatible:`microchip,xec-qmspi-device` (:github:`113243`)
+  * :dtcompatible:`st,nor` (:github:`113368`)
+  * :dtcompatible:`st,psram-device` (:github:`105219`)
+  * :dtcompatible:`zephyr,peripheral-device` (:github:`103754`)
+
+* Multi-Function Device
+
+  * :dtcompatible:`ambiq,ios` (:github:`96059`)
+  * :dtcompatible:`infineon,autanalog` (:github:`106227`)
+  * :dtcompatible:`infineon,autanalog-ac-state` (:github:`106227`)
+  * :dtcompatible:`infineon,autanalog-ctb` (:github:`107489`)
+  * :dtcompatible:`infineon,autanalog-prb` (:github:`107487`)
+  * :dtcompatible:`infineon,autanalog-ptcomp` (:github:`107488`)
+  * :dtcompatible:`infineon,hppass-ac-state` (:github:`109196`)
+  * :dtcompatible:`infineon,hppass-analog` (:github:`109196`)
+  * :dtcompatible:`infineon,hppass-csg` (:github:`109694`)
+  * :dtcompatible:`infineon,mxcrypto` (:github:`108439`)
+  * :dtcompatible:`infineon,mxcryptolite` (:github:`109693`)
+  * :dtcompatible:`m5stack,m5pm1` (:github:`109961`)
+  * :dtcompatible:`ti,tla2528` (:github:`110722`)
+
+* :abbr:`MUX (Multiplexer)`
+
+  * :dtcompatible:`adi,adgm3121` (:github:`112088`)
+  * :dtcompatible:`adi,adgm3121-gpio` (:github:`112088`)
+  * :dtcompatible:`gpio-mux` (:github:`112088`)
+  * :dtcompatible:`nxp,inputmux` (:github:`109379`)
+  * :dtcompatible:`nxp,trgmux` (:github:`112088`)
+
+* Networking
+
+  * :dtcompatible:`st,stm32wba-radio` (:github:`110546`)
+
+* :abbr:`OPAMP (Operational Amplifier)`
+
+  * :dtcompatible:`infineon,autanalog-ctb-opamp` (:github:`107489`)
+
+* :abbr:`OTP (One-Time Programmable)` memory
+
+  * :dtcompatible:`adi,axi-sysid` (:github:`115280`)
+  * :dtcompatible:`nxp,otpc` (:github:`111707`)
+  * :dtcompatible:`nxp,rt7xx-ocotp` (:github:`108075`)
+  * :dtcompatible:`realtek,rts5817-ocotp` (:github:`111141`)
+
+* :abbr:`PCIe (Peripheral Component Interconnect Express)`
+
+  * :dtcompatible:`brcm,iproc-pcie-ep-v2` (:github:`111490`)
+
+* PHY
+
+  * :dtcompatible:`st,stm32f7-usbphyc` (:github:`114696`)
+  * :dtcompatible:`st,stm32n6-usbphyc` (:github:`114696`)
+
+* Pin control
+
+  * :dtcompatible:`aesc,pinctrl` (:github:`108137`)
+  * :dtcompatible:`arm,v2m_musca_b1-pinctrl` (:github:`114671`)
+  * :dtcompatible:`elan,em32-pinctrl` (:github:`103037`)
+  * :dtcompatible:`nxp,lpc84x-iocon` (:github:`105928`)
+  * :dtcompatible:`nxp,lpc84x-swm` (:github:`105928`)
+  * :dtcompatible:`renesas,rcar-pfc-x5h` (:github:`108871`)
+  * :dtcompatible:`wch,ch570-pinctrl` (:github:`111171`)
+  * :dtcompatible:`wch,h41x-afio` (:github:`111725`)
+
+* Power domain
+
+  * :dtcompatible:`raspberrypi,bcm283x-power` (:github:`112918`)
+
+* Power management
+
+  * :dtcompatible:`microchip,supc-g1` (:github:`115872`)
+  * :dtcompatible:`nxp,smc` (:github:`102228`)
+  * :dtcompatible:`sifli,sf32lb52x-pmuc` (:github:`108093`)
+  * :dtcompatible:`st,stm32-pwr-wkupctrl` (:github:`114092`)
+  * :dtcompatible:`st,stm32f1-pwr-wkupctrl` (:github:`114092`)
+  * :dtcompatible:`st,stm32f7-pwr-wkupctrl` (:github:`114092`)
+
+* Pulse IO
+
+  * :dtcompatible:`espressif,esp32-rmt` (:github:`110466`)
+  * :dtcompatible:`zephyr,pulse-io-loopback` (:github:`110466`)
+
+* :abbr:`PWM (Pulse Width Modulation)`
+
+  * :dtcompatible:`realtek,ameba-pwm` (:github:`106669`)
+  * :dtcompatible:`realtek,bee-pwm` (:github:`105014`)
+  * :dtcompatible:`ti,am3352-ecap` (:github:`88860`)
+  * :dtcompatible:`ti,am3352-ehrpwm` (:github:`88757`)
+  * :dtcompatible:`wch,adtm-pwm` (:github:`109728`)
+  * :dtcompatible:`zephyr,pwm-bitbang` (:github:`106536`)
+
+* Regulator
+
+  * :dtcompatible:`gd,gd32-bldo` (:github:`106501`)
+  * :dtcompatible:`infineon,autanalog-prb-vref` (:github:`107487`)
+  * :dtcompatible:`m5stack,m5pm1-regulator` (:github:`109961`)
+  * :dtcompatible:`realtek,rts5817-regulator` (:github:`108545`)
+  * :dtcompatible:`sifli,sf32lb52x-ldo` (:github:`108093`)
+  * :dtcompatible:`ti,mspm0-vref` (:github:`94732`)
+
+* Reset controller
+
+  * :dtcompatible:`wch,ch32-rcc-rctl` (:github:`115714`)
+
+* Retained memory
+
+  * :dtcompatible:`gd,gd32-backup-sram` (:github:`106501`)
+
+* :abbr:`RNG (Random Number Generator)`
+
+  * :dtcompatible:`brcm,bcm2835-rng` (:github:`110191`)
+  * :dtcompatible:`microchip,trng-g2-entropy` (:github:`108155`)
+  * :dtcompatible:`realtek,ameba-trng` (:github:`106670`)
+  * :dtcompatible:`realtek,bee-trng` (:github:`105335`)
+
+* :abbr:`RTC (Real Time Clock)`
+
+  * :dtcompatible:`ite,it8xxx2-rtc` (:github:`106350`)
+  * :dtcompatible:`microchip,rtc-mss` (:github:`110842`)
+  * :dtcompatible:`microchip,xec-hibtimer` (:github:`111476`)
+  * :dtcompatible:`microchip,xec-rtc` (:github:`106116`)
+  * :dtcompatible:`microcrystal,rv3028-rtc` (:github:`112978`)
+  * :dtcompatible:`nxp,rtc-analog` (:github:`107196`)
+  * :dtcompatible:`realtek,ameba-rtc` (:github:`105376`)
+
+* :abbr:`SDHC (Secure Digital High Capacity)`
+
+  * :dtcompatible:`bflb,sdhc` (:github:`105243`)
+  * :dtcompatible:`microchip,sdhc-g1` (:github:`109211`)
+  * :dtcompatible:`nuvoton,numaker-sdhc` (:github:`105437`)
+  * :dtcompatible:`realtek,ameba-sdhost` (:github:`106687`)
+  * :dtcompatible:`ti,am654-sdhci` (:github:`97172`)
 
 * Sensors
 
-  * Analog Devices ADXL313 3-axis accelerometer (:dtcompatible:`adi,adxl313`).
+  * :dtcompatible:`adi,adis1647x` (:github:`110012`)
+  * :dtcompatible:`adi,adxl313` (:github:`114936`)
+  * :dtcompatible:`adi,ltc4286` (:github:`105618`)
+  * :dtcompatible:`adi,max30009` (:github:`112988`)
+  * :dtcompatible:`bflb,tsen` (:github:`107717`)
+  * :dtcompatible:`hamamatsu,s9706` (:github:`107607`)
+  * :dtcompatible:`invensense,icm56622` (:github:`112362`)
+  * :dtcompatible:`invensense,icm56686` (:github:`112362`)
+  * :dtcompatible:`invensense,tad2144` (:github:`107994`)
+  * :dtcompatible:`maxim,max30102` (:github:`108697`)
+  * :dtcompatible:`maxim,max31826` (:github:`112398`)
+  * :dtcompatible:`meas,htu21d` (:github:`106318`)
+  * :dtcompatible:`meas,htu31d` (:github:`107532`)
+  * :dtcompatible:`meas,ms5637` (:github:`106344`)
+  * :dtcompatible:`microchip,pac194x` (:github:`105902`)
+  * :dtcompatible:`nordic,nrf-vbat` (:github:`106102`)
+  * :dtcompatible:`nxp,mcux-eqdc` (:github:`111927`)
+  * :dtcompatible:`raspberrypi,bcm283x-vc-thermal` (:github:`110192`)
+  * :dtcompatible:`realtek,bee-aon-qdec` (:github:`105129`)
+  * :dtcompatible:`realtek,bee-basic-qdec` (:github:`105129`)
+  * :dtcompatible:`realtek,bee-qdec` (:github:`105129`)
+  * :dtcompatible:`sensylink,cht8315` (:github:`106391`)
+  * :dtcompatible:`st,stm32-vddcore` (:github:`108053`)
+  * :dtcompatible:`ti,fdc1004` (:github:`107233`)
+  * :dtcompatible:`ti,tmp451` (:github:`108384`)
+  * :dtcompatible:`zephyr,flow-meter` (:github:`111366`)
+  * :dtcompatible:`zephyr,native-linux-temp` (:github:`114563`)
 
-* Clock Monitor
+* Serial controller
 
-  * :dtcompatible:`nxp,cmu-fc` — NXP Clock Monitoring Unit (Frequency Check)
-    back-end for the new :ref:`clock_monitor_api` subsystem.
-  * :dtcompatible:`nxp,cmu-fm` — NXP Clock Monitoring Unit (Frequency Meter)
-    back-end for the new :ref:`clock_monitor_api` subsystem.
+  * :dtcompatible:`elan,em32-uart` (:github:`103037`)
+  * :dtcompatible:`microchip,uart-g1` (:github:`114034`)
+  * :dtcompatible:`nxp,lpc84x-uart` (:github:`105928`)
+  * :dtcompatible:`shakti,uart` (:github:`113000`)
+  * :dtcompatible:`wch,ch5xx-uart` (:github:`111171`)
+  * :dtcompatible:`wch,sdi-console` (:github:`109777`)
 
-* USB
+* :abbr:`SMbus (System Management Bus)`
 
-  * :dtcompatible:`espressif,esp32-usb-otg-fs` - Espressif USB-OTG full-speed
-    controller with internal FS/LS PHY.
-  * :dtcompatible:`espressif,esp32-usb-otg-hs` - Espressif USB-OTG high-speed
-    controller with internal UTMI PHY.
+  * :dtcompatible:`ite,it51xxx-smbus` (:github:`114832`)
+
+* :abbr:`SPI (Serial Peripheral Interface)`
+
+  * :dtcompatible:`microchip,flexcom-g1-spi` (:github:`107467`)
+  * :dtcompatible:`nuvoton,numaker-usci-spi` (:github:`109123`)
+  * :dtcompatible:`realtek,ameba-spi` (:github:`108234`)
+  * :dtcompatible:`realtek,bee-spi` (:github:`104958`)
+  * :dtcompatible:`realtek,rts5817-spi` (:github:`106346`)
+  * :dtcompatible:`renesas,rz-spi-b` (:github:`107073`)
+  * :dtcompatible:`ti,mspm0-spi` (:github:`94726`)
+  * :dtcompatible:`xlnx,zynqmp-qspi-1.0` (:github:`88466`)
+
+* Tachometer
+
+  * :dtcompatible:`ene,kb106x-tach` (:github:`106739`)
+
+* Timer
+
+  * :dtcompatible:`microchip,pit-g1-timer` (:github:`114034`)
+  * :dtcompatible:`st,stm32u5-lptim` (:github:`112400`)
+  * :dtcompatible:`ti,am26-rtitimer` (:github:`102545`)
+
+* :abbr:`USB (Universal Serial Bus)`
+
+  * :dtcompatible:`espressif,esp32-usb-otg-fs` (:github:`111508`)
+  * :dtcompatible:`espressif,esp32-usb-otg-hs` (:github:`111508`)
+  * :dtcompatible:`infineon,usbhs` (:github:`106841`)
+  * :dtcompatible:`microchip,udphs-g1-udc` (:github:`99620`)
+  * :dtcompatible:`nordic,nrf-usbhs-bc12` (:github:`106759`)
+
+* Wakeup Controller
+
+  * :dtcompatible:`nxp,sleepcon-wuc` (:github:`113447`)
+  * :dtcompatible:`nxp,wuc-wuu` (:github:`100866`)
+
+* Watchdog
+
+  * :dtcompatible:`arm,crsas-ma2-watchdog` (:github:`112700`)
+  * :dtcompatible:`m5stack,m5pm1-wdt` (:github:`109961`)
+  * :dtcompatible:`nordic,npm10xx-wdt` (:github:`109381`)
+  * :dtcompatible:`nordic,nrf-gswdt` (:github:`110067`)
+  * :dtcompatible:`nuvoton,numaker-wdt` (:github:`105247`)
+  * :dtcompatible:`realtek,ameba-watchdog` (:github:`106672`)
+  * :dtcompatible:`realtek,bee-core-wdt` (:github:`107021`)
+  * :dtcompatible:`ti,mspm0-watchdog` (:github:`95304`)
+
+* Wi-Fi
+
+  * :dtcompatible:`bflb,wifi6` (:github:`113078`)
+  * :dtcompatible:`espressif,esp-hosted-mcu` (:github:`114532`)
+  * :dtcompatible:`espressif,esp-hosted-mcu-wifi` (:github:`114532`)
+  * :dtcompatible:`realtek,ameba-wifi` (:github:`105614`)
+  * :dtcompatible:`st,st67w611m1` (:github:`111583`)
+  * :dtcompatible:`zephyr,wifi-hwsim` (:github:`111236`)
 
 New Samples
 ***********
 
 ..
   Same as above, this will also be recomputed at the time of the release.
- Just link the sample, further details go in the sample documentation itself.
+  Just link the sample, further details go in the sample documentation itself.
 
-* :zephyr:code-sample:`mctp_i2c_bus_host` (renamed from ``mctp_i2c_bus_owner``)
-* :zephyr:code-sample:`mctp_i3c_bus_host` (renamed from ``mctp_i3c_bus_owner``)
-* ``samples/drivers/clock_monitor/check_freq`` — demonstrates WINDOW-mode
-  out-of-window frequency checking on the new :ref:`clock_monitor_api`.
-* ``samples/drivers/clock_monitor/measure_freq`` — demonstrates MEASURE-mode
-  one-shot frequency measurement on the new :ref:`clock_monitor_api`.
+* :zephyr:code-sample:`adi-gpio-wakeup`
+* :zephyr:code-sample:`adi-pm`
+* :zephyr:code-sample:`autanalog_fir_fifo`
+* :zephyr:code-sample:`bluetooth_cap_handover`
+* :zephyr:code-sample:`buzzer-tone`
+* :zephyr:code-sample:`coap-client-tcp`
+* :zephyr:code-sample:`color-palette`
+* :zephyr:code-sample:`coredump-udp-demo-shell`
+* :zephyr:code-sample:`coresight_stm_shell`
+* :zephyr:code-sample:`cpu_freq_thermal_cap`
+* :zephyr:code-sample:`cs40l26`
+* :zephyr:code-sample:`dali`
+* :zephyr:code-sample:`dhcpv6-pd`
+* :zephyr:code-sample:`esp32-qdec-trigger`
+* :zephyr:code-sample:`espnow`
+* :zephyr:code-sample:`fido2`
+* :zephyr:code-sample:`flow-meter`
+* :zephyr:code-sample:`frdm-mcxe31b-system-off`
+* :zephyr:code-sample:`i2c-tiny-usb`
+* :zephyr:code-sample:`logging_multidomain`
+* :zephyr:code-sample:`lora-duty-cycle`
+* :zephyr:code-sample:`lp586x`
+* :zephyr:code-sample:`mcp-server-hello-world`
+* :zephyr:code-sample:`mfd_charger`
+* :zephyr:code-sample:`mspi-throughput`
+* :zephyr:code-sample:`net-rtp`
+* :zephyr:code-sample:`nrf-sys-event`
+* :zephyr:code-sample:`nxp_mcx_s2ram`
+* :zephyr:code-sample:`nxp_mcx_system_off`
+* :zephyr:code-sample:`nxp_smartdma_mem_to_mem`
+* :zephyr:code-sample:`pm-latency`
+* :zephyr:code-sample:`pulse_io_byte_transfer`
+* :zephyr:code-sample:`qdec_multi`
+* :zephyr:code-sample:`quic-client-echo`
+* :zephyr:code-sample:`quic-service-echo`
+* :zephyr:code-sample:`riscv-aia-smp-uart-echo`
+* :zephyr:code-sample:`riscv-aia-uart-echo`
+* :zephyr:code-sample:`rpi-board-info`
+* :zephyr:code-sample:`rpmsg-lite`
+* :zephyr:code-sample:`rw612_pm_flash_check`
+* :zephyr:code-sample:`spi-rtio-loopback`
+* :zephyr:code-sample:`ssh-server-client`
+* :zephyr:code-sample:`sx9500`
+* :zephyr:code-sample:`tad2144`
+* :zephyr:code-sample:`tflite-neutron`
+* :zephyr:code-sample:`tfm_fwu`
+* :zephyr:code-sample:`tm6605`
+* :zephyr:code-sample:`tmc6460`
+* :zephyr:code-sample:`tracing-pipeline`
+* :zephyr:code-sample:`tsn-switch`
+* :zephyr:code-sample:`wifi-ble-provisioning`
+* :zephyr:code-sample:`wifi-mesh`
+* :zephyr:code-sample:`wifi-mesh-ip`
+* :zephyr:code-sample:`zms-cycle-count`
+* :zephyr_file:`samples/drivers/clock_monitor/check_freq`
+* :zephyr_file:`samples/drivers/clock_monitor/measure_freq`
 
 Libraries / Subsystems
 **********************
