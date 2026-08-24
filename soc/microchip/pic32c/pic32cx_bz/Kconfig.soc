@@ -1,0 +1,14 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config ENABLE_PMU_BUCK_MODE
+	bool "PMU Buck Mode support"
+
+config CUSTOM_ANTENNA_GAIN
+	int "Custom Antenna Gain (dBm)"
+	default 3
+	range -5 6
+
+rsource "*/Kconfig.soc"
+rsource "Kconfig.image_header"
+rsource "Kconfig.system_config"
