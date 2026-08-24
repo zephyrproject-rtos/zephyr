@@ -70,11 +70,7 @@ ZTEST(nsos, test_close_while_polling)
 	zassert_ok(ret, "poller did not start");
 	k_msleep(100);
 
-	/* Close sock_a while the poller is blocked on it. With the bug, this
-	 * frees the socket object but leaves its poll node linked in
-	 * nsos_polls, dangling into freed memory. The poller is woken (made
-	 * ready) but, being lower priority, does not run yet.
-	 */
+	/* Close sock_a while the poller is blocked on it. */
 	ret = zsock_close(sock_a);
 	zassert_ok(ret, "close(sock_a) failed: %d", errno);
 
@@ -97,9 +93,6 @@ ZTEST(nsos, test_close_while_polling)
 	ret = zsock_poll(&fds, 1, 0);
 	zassert_true(ret >= 0, "poll(sock_b) failed: %d", errno);
 
-	/* If we got here the bug is fixed. Let the woken poller run to
-	 * completion and clean up.
-	 */
 	ret = k_thread_join(&poller_thread, K_SECONDS(5));
 	zassert_ok(ret, "poller did not return after sock_a was closed");
 
