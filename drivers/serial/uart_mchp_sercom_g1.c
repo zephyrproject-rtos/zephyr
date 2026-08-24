@@ -52,18 +52,24 @@ LOG_MODULE_REGISTER(uart_mchp_sercom_g1, CONFIG_UART_LOG_LEVEL);
 typedef struct mchp_uart_clock {
 	/* Clock driver */
 	const struct device *clock_dev;
-
+#ifdef MCLK_SYSTEM_CLOCK
 	/* Main clock subsystem. */
 	clock_control_subsys_t mclk_sys;
-
+#endif
 	/* Generic clock subsystem. */
 	clock_control_subsys_t gclk_sys;
 } mchp_uart_clock_t;
 
+#ifdef MCLK_SYSTEM_CLOCK
 #define UART_MCHP_CLOCK_DEFN(n)                                                                    \
 	.uart_clock.clock_dev = DEVICE_DT_GET(DT_NODELABEL(clock)),                                \
 	.uart_clock.mclk_sys = (void *)(DT_INST_CLOCKS_CELL_BY_NAME(n, mclk, subsystem)),          \
 	.uart_clock.gclk_sys = (void *)(DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, subsystem)),
+#else
+#define UART_MCHP_CLOCK_DEFN(n)                                                                    \
+	.uart_clock.clock_dev = DEVICE_DT_GET(DT_NODELABEL(clock)),                                \
+	.uart_clock.gclk_sys = (void *)(DT_INST_CLOCKS_CELL_BY_NAME(n, gclk, subsystem)),
+#endif /* !MCLK_SYSTEM_CLOCK */
 
 #ifdef CONFIG_UART_MCHP_ASYNC
 /**
@@ -1107,6 +1113,52 @@ static void uart_mchp_isr(const struct device *dev)
 }
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_MCHP_ASYNC */
 
+#ifndef MCLK_SYSTEM_CLOCK
+static int uart_mchp_enable_module(sercom_registers_t *regs)
+{
+	switch ((uintptr_t)regs) {
+#ifdef CFG_PMD3_SER0MD_Msk
+	case (uintptr_t)SERCOM0_REGS:
+		CFG_REGS->CFG_PMD3 &= ~CFG_PMD3_SER0MD_Msk;
+		break;
+#endif
+#ifdef CFG_PMD3_SER1MD_Msk
+	case (uintptr_t)SERCOM1_REGS:
+		CFG_REGS->CFG_PMD3 &= ~CFG_PMD3_SER1MD_Msk;
+		break;
+#endif
+#ifdef CFG_PMD3_SER2MD_Msk
+	case (uintptr_t)SERCOM2_REGS:
+		CFG_REGS->CFG_PMD3 &= ~CFG_PMD3_SER2MD_Msk;
+		break;
+#endif
+#ifdef CFG_PMD3_SER3MD_Msk
+	case (uintptr_t)SERCOM3_REGS:
+		CFG_REGS->CFG_PMD3 &= ~CFG_PMD3_SER3MD_Msk;
+		break;
+#endif
+#ifdef CFG_PMD3_SER4MD_Msk
+	case (uintptr_t)SERCOM4_REGS:
+		CFG_REGS->CFG_PMD3 &= ~CFG_PMD3_SER4MD_Msk;
+		break;
+#endif
+#ifdef CFG_PMD3_SER5MD_Msk
+	case (uintptr_t)SERCOM5_REGS:
+		CFG_REGS->CFG_PMD3 &= ~CFG_PMD3_SER5MD_Msk;
+		break;
+#endif
+#ifdef CFG_PMD3_SER6MD_Msk
+	case (uintptr_t)SERCOM6_REGS:
+		CFG_REGS->CFG_PMD3 &= ~CFG_PMD3_SER6MD_Msk;
+		break;
+#endif
+	default:
+		return -EINVAL;
+	}
+	return 0;
+}
+#endif /* !MCLK_SYSTEM_CLOCK */
+
 /******************************************************************************
  * @brief API functions
  *****************************************************************************/
@@ -1130,7 +1182,11 @@ static int uart_mchp_init(const struct device *dev)
 		return retval;
 	}
 
+#ifdef MCLK_SYSTEM_CLOCK
 	retval = clock_control_on(cfg->uart_clock.clock_dev, cfg->uart_clock.mclk_sys);
+#else
+	retval = uart_mchp_enable_module(regs);
+#endif
 	if ((retval != UART_SUCCESS) && (retval != -EALREADY)) {
 		return retval;
 	}
