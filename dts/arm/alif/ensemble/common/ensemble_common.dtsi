@@ -8,6 +8,7 @@
 #include <freq.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include <zephyr/dt-bindings/clock/alif-ensemble-clocks.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 
 /*
  * Interrupt routing for the peripherals defined here is intentionally kept
@@ -216,6 +217,40 @@
 			ngpios = <2>;
 			gpio-controller;
 			#gpio-cells = <2>;
+			status = "disabled";
+		};
+
+		/*
+		 * DesignWare I2C controllers.
+		 * hcnt-offset / lcnt-offset are the tuning offsets applied on top
+		 * of the values computed from the input clock and target speed.
+		 * Verify against the target board layout and adjust per instance if needed.
+		 */
+		i2c0: i2c@49010000 {
+			compatible = "snps,designware-i2c";
+			clocks = <&clockctrl ALIF_I2C0_SYST_PCLK>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			hcnt-offset = <0>;
+			lcnt-offset = <0>;
+			fs-spike-len = <5>;
+			hs-spike-len = <1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x49010000 0x1000>;
+			status = "disabled";
+		};
+
+		i2c1: i2c@49011000 {
+			compatible = "snps,designware-i2c";
+			clocks = <&clockctrl ALIF_I2C1_SYST_PCLK>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			hcnt-offset = <0>;
+			lcnt-offset = <0>;
+			fs-spike-len = <5>;
+			hs-spike-len = <1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x49011000 0x1000>;
 			status = "disabled";
 		};
 	};
