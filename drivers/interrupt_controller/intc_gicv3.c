@@ -14,6 +14,7 @@
 #include <zephyr/sw_isr_table.h>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 #include <zephyr/drivers/interrupt_controller/gic.h>
+#include <zephyr/drivers/interrupt_controller/intc.h>
 #include <zephyr/sys/barrier.h>
 #include "intc_gic_common_priv.h"
 #include "intc_gicv3_priv.h"
@@ -769,8 +770,80 @@ int arm_gic_init(const struct device *dev)
 
 	return 0;
 }
+
+#if defined(CONFIG_INTC_ROOT_DEVICE)
+static void intc_gic_enable(const struct device *dev, unsigned int irq)
+{
+	ARG_UNUSED(dev);
+	arm_gic_irq_enable(irq);
+}
+
+static void intc_gic_disable(const struct device *dev, unsigned int irq)
+{
+	ARG_UNUSED(dev);
+	arm_gic_irq_disable(irq);
+}
+
+static int intc_gic_is_enabled(const struct device *dev, unsigned int irq)
+{
+	ARG_UNUSED(dev);
+	return arm_gic_irq_is_enabled(irq);
+}
+
+static void intc_gic_priority_set(const struct device *dev, unsigned int irq, unsigned int prio,
+				  uint32_t flags)
+{
+	ARG_UNUSED(dev);
+	arm_gic_irq_set_priority(irq, prio, flags);
+}
+
+static void intc_gic_set_pending(const struct device *dev, unsigned int irq)
+{
+	ARG_UNUSED(dev);
+	arm_gic_irq_set_pending(irq);
+}
+
+static void intc_gic_clear_pending(const struct device *dev, unsigned int irq)
+{
+	ARG_UNUSED(dev);
+	arm_gic_irq_clear_pending(irq);
+}
+
+static bool intc_gic_is_pending(const struct device *dev, unsigned int irq)
+{
+	ARG_UNUSED(dev);
+	return arm_gic_irq_is_pending(irq);
+}
+
+static DEVICE_API(intc, intc_gic_api) = {
+	.enable = intc_gic_enable,
+	.disable = intc_gic_disable,
+	.is_enabled = intc_gic_is_enabled,
+	.priority_set = intc_gic_priority_set,
+	.set_pending = intc_gic_set_pending,
+	.clear_pending = intc_gic_clear_pending,
+	.is_pending = intc_gic_is_pending,
+};
+
+INTC_ROOT_DEVICE_DEFINE(DT_DRV_INST(0));
+
+unsigned int intc_root_get_active(void)
+{
+	return arm_gic_get_active();
+}
+
+void intc_root_eoi(unsigned int irq)
+{
+	arm_gic_eoi(irq);
+}
+
+#define GIC_INTC_API (&intc_gic_api)
+#else
+#define GIC_INTC_API NULL
+#endif /* CONFIG_INTC_ROOT_DEVICE */
+
 DEVICE_DT_INST_DEFINE(0, arm_gic_init, NULL, NULL, NULL, PRE_KERNEL_1, CONFIG_INTC_INIT_PRIORITY,
-		      NULL);
+		      GIC_INTC_API);
 
 #ifdef CONFIG_SMP
 void arm_gic_secondary_init(void)
