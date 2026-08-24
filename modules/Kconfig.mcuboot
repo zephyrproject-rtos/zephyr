@@ -5,8 +5,16 @@
 # Copyright (c) 2023 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
+config ZEPHYR_MCUBOOT_MODULE
+	bool
+
+config ZEPHYR_MCUBOOT_MODULE_ACTIVE
+	bool
+	depends on ZEPHYR_MCUBOOT_MODULE
+
 config MCUBOOT
 	bool
+	select ZEPHYR_MCUBOOT_MODULE_ACTIVE
 	help
 	  Hidden option used to indicate that the current image is MCUBoot
 
@@ -390,6 +398,7 @@ endif # BOOTLOADER_MCUBOOT
 
 menuconfig MCUBOOT_BOOTUTIL_LIB
 	bool "MCUboot utility library"
+	select ZEPHYR_MCUBOOT_MODULE_ACTIVE
 	help
 	  Enable MCUboot utility library which implements functions
 	  required by the chain-loaded application and the MCUboot.
