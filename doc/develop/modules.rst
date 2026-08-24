@@ -448,6 +448,58 @@ See :ref:`west-basics` for more on west workspaces.
 Finally, you can also specify the list of modules yourself in various ways, or
 not use modules at all if your application doesn't need them.
 
+.. _module-activation:
+
+Module activation
+*****************
+
+Being in the workspace and being part of the build are two different things.
+A module is *available* when it is checked out, and *active* when this build
+uses it: its Kconfig options exist, its :file:`CMakeLists.txt` is added to the
+build, and ``ZEPHYR_<MODULE_NAME>_MODULE_DIR`` points at it.
+
+Two Kconfig symbols keep the two apart. ``ZEPHYR_<MODULE_NAME>_MODULE`` means
+the module is available. It is set for every module found in the workspace and
+is a statement of fact, never a target for ``select``.
+``ZEPHYR_<MODULE_NAME>_MODULE_ACTIVE`` means this build uses the module, and a
+feature that needs a module selects it:
+
+.. code-block:: kconfig
+
+   config HAS_STM32CUBE
+           bool
+           select ZEPHYR_HAL_STM32_MODULE_ACTIVE
+
+By default every available module is active, which is how Zephyr has always
+worked. It also means a workspace holding every module hides every dependency
+nobody declared: code can use a module without saying so, and the build only
+breaks for whoever has a workspace without it.
+
+Set :makevar:`ZEPHYR_MODULE_ACTIVATION` to ``strict`` to activate only the
+modules the configuration asks for:
+
+.. code-block:: console
+
+   west build -b <board> <app> -- -DZEPHYR_MODULE_ACTIVATION=strict
+
+``ZEPHYR_<MODULE_NAME>_MODULE_ACTIVE`` then has no default, so a module takes
+part in the build only where a feature selects it, and its
+:file:`CMakeLists.txt` is added only if it ended up active. A feature that
+needs a module the workspace does not have fails during configuration, in
+either mode, with an error naming the module and the feature that asked for
+it. Nothing is ever downloaded: supplying the module is up to you or to west.
+
+Use ``depends on ZEPHYR_<MODULE_NAME>_MODULE`` only where an option genuinely
+means "only if the module happens to be available", such as conditions on
+fetched blobs. A feature that does not work without the module should select
+``ZEPHYR_<MODULE_NAME>_MODULE_ACTIVE`` instead.
+
+This is related to, but distinct from, west's :ref:`project groups
+<west-manifest-groups>`. A project made inactive through
+``manifest.group-filter`` is not part of the workspace as far as the build is
+concerned, so it is not available and nothing can activate it. Module
+activation decides which of the *available* modules a given build uses.
+
 .. _module-yml:
 
 Module yaml file description

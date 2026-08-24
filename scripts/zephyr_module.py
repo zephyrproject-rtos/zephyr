@@ -345,16 +345,30 @@ def process_blobs(module, meta):
     return blobs
 
 
-def kconfig_module_opts(name_sanitized, blobs, taint_blobs):
-    snippet = [f'config ZEPHYR_{name_sanitized.upper()}_MODULE',
+def kconfig_module_opts(name, name_sanitized, blobs, taint_blobs, active_default_y=True):
+    module = f'ZEPHYR_{name_sanitized.upper()}_MODULE'
+
+    snippet = [f'config {module}',
                '	bool',
-               '	default y']
+               '	default y',
+               '	help',
+               f'	  The {name} module is available in the workspace.',
+               '',
+               f'config {module}_ACTIVE',
+               '	bool',
+               f'	depends on {module}']
+
+    if active_default_y:
+        snippet += ['	default y']
 
     if taint_blobs:
         snippet += ['	select TAINT_BLOBS']
 
+    snippet += ['	help',
+                f'	  This build uses the {name} module.']
+
     if blobs:
-        snippet += [f'\nconfig ZEPHYR_{name_sanitized.upper()}_MODULE_BLOBS',
+        snippet += [f'\nconfig {module}_BLOBS',
                     '	bool']
         if taint_blobs:
             snippet += ['	default y']
@@ -362,7 +376,8 @@ def kconfig_module_opts(name_sanitized, blobs, taint_blobs):
     return snippet
 
 
-def kconfig_snippet(meta, path, kconfig_file=None, blobs=False, taint_blobs=False, sysbuild=False):
+def kconfig_snippet(meta, path, kconfig_file=None, blobs=False, taint_blobs=False,
+                    sysbuild=False, active_default_y=True):
     name = meta['name']
     name_sanitized = meta['name-sanitized']
 
@@ -372,7 +387,7 @@ def kconfig_snippet(meta, path, kconfig_file=None, blobs=False, taint_blobs=Fals
                 else f'osource "$(SYSBUILD_{name_sanitized.upper()}_KCONFIG)"' if sysbuild is True
                 else f'osource "$(ZEPHYR_{name_sanitized.upper()}_KCONFIG)"']
 
-    snippet += kconfig_module_opts(name_sanitized, blobs, taint_blobs)
+    snippet += kconfig_module_opts(name, name_sanitized, blobs, taint_blobs, active_default_y)
 
     snippet += ['endmenu\n']
 
@@ -388,7 +403,7 @@ def process_kconfig_module_dir(module, meta, cmake_output):
     return f'list(APPEND kconfig_env_dirs ZEPHYR_{name_sanitized.upper()}_MODULE_DIR={module_path.as_posix()})\n'
 
 
-def process_kconfig(module, meta):
+def process_kconfig(module, meta, active_default_y=True):
     blobs = process_blobs(module, meta)
     taint_blobs = any(b['status'] != BLOB_NOT_PRESENT for b in blobs)
     section = meta.get('build', dict())
@@ -397,7 +412,8 @@ def process_kconfig(module, meta):
     kconfig_extern = section.get('kconfig-ext', False)
 
     if kconfig_extern:
-        return kconfig_snippet(meta, module_path, blobs=blobs, taint_blobs=taint_blobs)
+        return kconfig_snippet(meta, module_path, blobs=blobs, taint_blobs=taint_blobs,
+                               active_default_y=active_default_y)
 
     kconfig_setting = section.get('kconfig', None)
     if not validate_setting(kconfig_setting, module):
@@ -407,11 +423,12 @@ def process_kconfig(module, meta):
 
     kconfig_file = os.path.join(module, kconfig_setting or 'zephyr/Kconfig')
     if os.path.isfile(kconfig_file):
-        return kconfig_snippet(meta, module_path, Path(kconfig_file),
-                               blobs=blobs, taint_blobs=taint_blobs)
+        return kconfig_snippet(meta, module_path, Path(kconfig_file), blobs=blobs,
+                               taint_blobs=taint_blobs, active_default_y=active_default_y)
     else:
-        name_sanitized = meta['name-sanitized']
-        return '\n'.join(kconfig_module_opts(name_sanitized, blobs, taint_blobs)) + '\n'
+        return '\n'.join(
+            kconfig_module_opts(meta['name'], meta['name-sanitized'], blobs, taint_blobs,
+                                active_default_y)) + '\n'
 
 
 def process_sysbuildkconfig(module, meta):
@@ -837,6 +854,13 @@ def main():
     Process a list of projects and create Kconfig / CMake include files for
     projects which are also a Zephyr module''', allow_abbrev=False)
 
+    parser.add_argument('--activation', choices=('all', 'strict'), default='all',
+                        help='''Which of the modules found in the workspace take
+                             part in the build. 'all' activates every module,
+                             which is how Zephyr has always worked. 'strict'
+                             gives the presence symbols no default, so a module
+                             is part of the build only where Kconfig selects
+                             it''')
     parser.add_argument('--kconfig-out',
                         help="""File to write with resulting KConfig import
                              statements.""")
@@ -895,10 +919,19 @@ def main():
     modules = parse_modules(args.zephyr_base, None, west_projs,
                             args.modules, args.extra_modules)
 
+    # In strict mode a module is active only where something in the
+    # configuration selects it. A module named by hand is the exception:
+    # nothing in the tree knows about it, and supplying it is already the
+    # decision to use it.
+    strict = args.activation == 'strict'
+    by_hand = {PurePath(p).as_posix()
+               for p in (args.modules or []) + (args.extra_modules or [])}
+
     for module in modules:
+        active = not strict or PurePath(module.project).as_posix() in by_hand
         kconfig_module_dirs += process_kconfig_module_dir(module.project, module.meta, False)
         kconfig_module_dirs_cmake += process_kconfig_module_dir(module.project, module.meta, True)
-        kconfig += process_kconfig(module.project, module.meta)
+        kconfig += process_kconfig(module.project, module.meta, active)
         cmake += process_cmake(module.project, module.meta)
         sysbuild_kconfig += process_sysbuildkconfig(
             module.project, module.meta)
