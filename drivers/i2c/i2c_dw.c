@@ -1381,7 +1381,7 @@ static int i2c_dw_probe_hw(const struct device *dev)
 {
 	struct i2c_dw_dev_config *const dw = dev->data;
 	union ic_con_register ic_con;
-	uint32_t reg_base = DEVICE_MMIO_GET(dev);
+	mm_reg_t reg_base = DEVICE_MMIO_GET(dev);
 
 	if (read_comp_type(reg_base) != I2C_DW_MAGIC_KEY) {
 		LOG_DBG("I2C: DesignWare magic key not found, check base "
