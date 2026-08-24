@@ -529,12 +529,14 @@ void modem_cellular_chat_on_imsi(struct modem_chat *chat, char **argv, uint16_t 
 
 static bool modem_cellular_is_registered(struct modem_cellular_data *data)
 {
-	return (data->registration_status_gsm == CELLULAR_REGISTRATION_REGISTERED_HOME)
-		|| (data->registration_status_gsm == CELLULAR_REGISTRATION_REGISTERED_ROAMING)
-		|| (data->registration_status_gprs == CELLULAR_REGISTRATION_REGISTERED_HOME)
-		|| (data->registration_status_gprs == CELLULAR_REGISTRATION_REGISTERED_ROAMING)
-		|| (data->registration_status_lte == CELLULAR_REGISTRATION_REGISTERED_HOME)
-		|| (data->registration_status_lte == CELLULAR_REGISTRATION_REGISTERED_ROAMING);
+	return (data->registration_status_gsm == CELLULAR_REGISTRATION_REGISTERED_HOME) ||
+		(data->registration_status_gsm == CELLULAR_REGISTRATION_REGISTERED_ROAMING) ||
+		(data->registration_status_gprs == CELLULAR_REGISTRATION_REGISTERED_HOME) ||
+		(data->registration_status_gprs == CELLULAR_REGISTRATION_REGISTERED_ROAMING) ||
+		(data->registration_status_lte == CELLULAR_REGISTRATION_REGISTERED_HOME) ||
+		(data->registration_status_lte == CELLULAR_REGISTRATION_REGISTERED_ROAMING) ||
+		(data->registration_status_5g == CELLULAR_REGISTRATION_REGISTERED_HOME) ||
+		(data->registration_status_5g == CELLULAR_REGISTRATION_REGISTERED_ROAMING);
 }
 
 static void modem_cellular_clear_registration_status(struct modem_cellular_data *data)
@@ -542,6 +544,7 @@ static void modem_cellular_clear_registration_status(struct modem_cellular_data 
 	data->registration_status_gsm = CELLULAR_REGISTRATION_NOT_REGISTERED;
 	data->registration_status_gprs = CELLULAR_REGISTRATION_NOT_REGISTERED;
 	data->registration_status_lte = CELLULAR_REGISTRATION_NOT_REGISTERED;
+	data->registration_status_5g = CELLULAR_REGISTRATION_NOT_REGISTERED;
 }
 
 #if defined(CONFIG_MODEM_CELLULAR_STATS)
@@ -593,6 +596,7 @@ void modem_cellular_chat_on_cxreg(struct modem_chat *chat, char **argv, uint16_t
 	 *   +CREG: <stat>[,<lac>,<ci>[,<AcT>]]
 	 *   +CGREG:<stat>[,<lac>,<ci>[,<AcT>,<rac>]]
 	 *   +CEREG: <stat>[,[<tac>],[<ci>],[<AcT>]]
+	 *   +C5GREG: <stat>[,[<tac>],[<ci>],[<AcT>],[<Allowed_NSSAI_length>],[<Allowed_NSSAI>]]
 	 */
 	num_args = argc - base;
 	registration_status = atoi(argv[base]);
@@ -610,6 +614,9 @@ void modem_cellular_chat_on_cxreg(struct modem_chat *chat, char **argv, uint16_t
 	} else if (strcmp(argv[0], "+CGREG: ") == 0) {
 		registration_prev = data->registration_status_gprs;
 		data->registration_status_gprs = registration_status;
+	} else if (strcmp(argv[0], "+C5GREG: ") == 0) {
+		registration_prev = data->registration_status_5g;
+		data->registration_status_5g = registration_status;
 	} else { /* CEREG */
 		registration_prev = data->registration_status_lte;
 		data->registration_status_lte = registration_status;
@@ -2680,10 +2687,6 @@ static int modem_cellular_get_registration_status(const struct device *dev,
 	int ret = 0;
 	struct modem_cellular_data *data = (struct modem_cellular_data *)dev->data;
 
-	/* Techs explicitly not handled as N/A to CREG, CGREG, CEREG:
-	 *   CELLULAR_ACCESS_TECHNOLOGY_NR_5G_CN
-	 *   CELLULAR_ACCESS_TECHNOLOGY_NG_RAN
-	 */
 	switch (tech) {
 	case CELLULAR_ACCESS_TECHNOLOGY_GSM:
 	case CELLULAR_ACCESS_TECHNOLOGY_GSM_COMPACT:
@@ -2704,6 +2707,11 @@ static int modem_cellular_get_registration_status(const struct device *dev,
 	case CELLULAR_ACCESS_TECHNOLOGY_E_UTRAN_WB_S1_SAT:
 	case CELLULAR_ACCESS_TECHNOLOGY_NG_RAN_SAT:
 		*status = data->registration_status_lte;
+		break;
+	case CELLULAR_ACCESS_TECHNOLOGY_E_UTRA_5G_CN:
+	case CELLULAR_ACCESS_TECHNOLOGY_NR_5G_CN:
+	case CELLULAR_ACCESS_TECHNOLOGY_NG_RAN:
+		*status = data->registration_status_5g;
 		break;
 	default:
 		ret = -ENODATA;
