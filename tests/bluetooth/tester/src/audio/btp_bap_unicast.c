@@ -1425,7 +1425,7 @@ static int server_configure_codec(struct btp_bap_unicast_connection *u_conn, str
 				  uint8_t ase_id, struct bt_audio_codec_cfg *codec_cfg)
 {
 	struct btp_bap_unicast_stream *stream;
-	int err = 0;
+	int err = -EINVAL;
 
 	stream = btp_bap_unicast_stream_find(u_conn, ase_id);
 	if (stream == NULL) {
@@ -1444,13 +1444,16 @@ static int server_configure_codec(struct btp_bap_unicast_connection *u_conn, str
 			stream = btp_bap_unicast_stream_alloc(u_conn);
 			if (stream == NULL) {
 				LOG_DBG("No streams available");
-
-				return -ENOMEM;
+				err = -ENOMEM;
+				break;
 			}
 
 			memcpy(&stream->codec_cfg, codec_cfg, sizeof(*codec_cfg));
 			err = server_stream_config(conn, stream_unicast_to_bap(stream),
 						   &stream->codec_cfg, &qos_pref);
+			if (err != 0) {
+				break;
+			}
 		}
 	} else {
 		/* Reconfigure a stream */
