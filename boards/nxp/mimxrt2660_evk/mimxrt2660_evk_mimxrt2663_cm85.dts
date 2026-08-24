@@ -122,3 +122,9 @@
 		reg = <0x48>;
 	};
 };
+
+&lpspi0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpspi0>;
+	pinctrl-names = "default";
+};

@@ -1,0 +1,42 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * To run this test, two board changes are needed:
+ *
+ *  1. Move J53 to 1-2. PIO3_20..25 reach either the LCD interface or LPSPI0
+ *     through a pair of analog switches (U33 TMUX136 + U34 TMUX1574) selected by
+ *     LCD0_SPI1_SEL, and that line is low by default -- both the R392 strap and
+ *     J53's default 2-3 position tie it to GND -- so out of the box these balls
+ *     carry the LCD signals, not SPI.
+ *  2. Connect LPSPI0_SDO (PIO3_21) to LPSPI0_SDI (PIO3_22) on the expansion
+ *     header. The EVK has no populated SPI target and the SDK ships only
+ *     board-to-board examples for this SoC, so the data has to be looped back.
+ */
+
+&lpspi0 {
+	slow@0 {
+		compatible = "test-spi-loopback-slow";
+		reg = <0>;
+		spi-max-frequency = <500000>;
+	};
+
+	fast@0 {
+		compatible = "test-spi-loopback-fast";
+		reg = <0>;
+		spi-max-frequency = <16000000>;
+	};
+
+	/*
+	 * Without these the CPHA=0 cases (modes 0 and 2) are flaky while CPHA=1
+	 * passes: sampling on the leading edge leaves no margin for the chip-select
+	 * to settle before the first clock. Same values the frdm_imxrt1186 overlay
+	 * uses for its LPSPI.
+	 */
+	transfer-delay = <100>;
+	pcs-sck-delay = <100>;
+	sck-pcs-delay = <100>;
+};

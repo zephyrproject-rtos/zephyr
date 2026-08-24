@@ -65,4 +65,21 @@
 			input-enable;
 		};
 	};
+
+	/*
+	 * LPSPI0 on PIO3_20..23, as the SDK's examples use for this EVK. These
+	 * pads only reach LPSPI0 with J53 at 1-2; the default 2-3 hands them to
+	 * the LCD interface (see the board documentation). PIO3_20/21 are also
+	 * LPI2C0's alternate mapping, which is why LPI2C0 uses PIO2_12/13 here.
+	 */
+	pinmux_lpspi0: pinmux_lpspi0 {
+		group0 {
+			pinmux = <&main__iomuxc_pio3_20_hsp_lpspi0_sck>,
+				 <&main__iomuxc_pio3_21_hsp_lpspi0_sout>,
+				 <&main__iomuxc_pio3_22_hsp_lpspi0_sin>,
+				 <&main__iomuxc_pio3_23_hsp_lpspi0_pcs0>;
+			slew-rate = "fast";
+			input-enable;
+		};
+	};
 };
