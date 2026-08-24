@@ -1639,6 +1639,8 @@ uint8_t btp_bap_broadcast_sink_sync(const void *cmd, uint16_t cmd_len, void *rsp
 		}
 
 		err = pa_sync_past(conn, cp->sync_timeout);
+
+		bt_conn_unref(conn);
 	} else {
 		/* We scanned on our own or the Broadcast Assistant does not support PAST transfer.
 		 * Let's sync to the Broadcaster PA without PAST.
@@ -1873,6 +1875,8 @@ uint8_t btp_bap_broadcast_discover_scan_delegators(const void *cmd, uint16_t cmd
 
 	err = bt_bap_broadcast_assistant_discover(conn);
 
+	bt_conn_unref(conn);
+
 	return BTP_STATUS_VAL(err);
 }
 
@@ -1895,6 +1899,8 @@ uint8_t btp_bap_broadcast_assistant_scan_start(const void *cmd, uint16_t cmd_len
 	}
 
 	err = bt_bap_broadcast_assistant_scan_start(conn, true);
+
+	bt_conn_unref(conn);
 
 	return BTP_STATUS_VAL(err);
 }
@@ -1919,6 +1925,8 @@ uint8_t btp_bap_broadcast_assistant_scan_stop(const void *cmd, uint16_t cmd_len,
 
 	err = bt_bap_broadcast_assistant_scan_stop(conn);
 
+	bt_conn_unref(conn);
+
 	return BTP_STATUS_VAL(err);
 }
 
@@ -1936,11 +1944,6 @@ uint8_t btp_bap_broadcast_assistant_add_src(const void *cmd, uint16_t cmd_len, v
 	ARG_UNUSED(rsp_len);
 
 	LOG_DBG("");
-
-	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
-	if (!conn) {
-		return BTP_STATUS_FAILED;
-	}
 
 	memset(delegator_subgroups, 0, sizeof(delegator_subgroups));
 	bt_addr_le_copy(&param.addr, &cp->broadcaster_address);
@@ -1964,7 +1967,15 @@ uint8_t btp_bap_broadcast_assistant_add_src(const void *cmd, uint16_t cmd_len, v
 		ptr += subgroup->metadata_len;
 	}
 
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
+	if (!conn) {
+		return BTP_STATUS_FAILED;
+	}
+
 	err = bt_bap_broadcast_assistant_add_src(conn, &param);
+
+	bt_conn_unref(conn);
+
 	if (err != 0) {
 		LOG_DBG("err %d", err);
 
@@ -1994,6 +2005,8 @@ uint8_t btp_bap_broadcast_assistant_remove_src(const void *cmd, uint16_t cmd_len
 
 	err = bt_bap_broadcast_assistant_rem_src(conn, cp->src_id);
 
+	bt_conn_unref(conn);
+
 	return BTP_STATUS_VAL(err);
 }
 
@@ -2011,11 +2024,6 @@ uint8_t btp_bap_broadcast_assistant_modify_src(const void *cmd, uint16_t cmd_len
 	ARG_UNUSED(rsp_len);
 
 	LOG_DBG("");
-
-	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
-	if (!conn) {
-		return BTP_STATUS_FAILED;
-	}
 
 	memset(delegator_subgroups, 0, sizeof(delegator_subgroups));
 	param.src_id = cp->src_id;
@@ -2037,7 +2045,14 @@ uint8_t btp_bap_broadcast_assistant_modify_src(const void *cmd, uint16_t cmd_len
 		ptr += subgroup->metadata_len;
 	}
 
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
+	if (!conn) {
+		return BTP_STATUS_FAILED;
+	}
+
 	err = bt_bap_broadcast_assistant_mod_src(conn, &param);
+
+	bt_conn_unref(conn);
 
 	return BTP_STATUS_VAL(err);
 }
@@ -2061,6 +2076,9 @@ uint8_t btp_bap_broadcast_assistant_set_broadcast_code(const void *cmd, uint16_t
 	}
 
 	err = bt_bap_broadcast_assistant_set_broadcast_code(conn, cp->src_id, cp->broadcast_code);
+
+	bt_conn_unref(conn);
+
 	if (err != 0) {
 		LOG_DBG("err %d", err);
 		return BTP_STATUS_FAILED;
@@ -2084,11 +2102,6 @@ uint8_t btp_bap_broadcast_assistant_send_past(const void *cmd, uint16_t cmd_len,
 
 	LOG_DBG("");
 
-	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
-	if (!conn) {
-		return BTP_STATUS_FAILED;
-	}
-
 	pa_sync = tester_gap_padv_get();
 	if (!pa_sync) {
 		LOG_DBG("Could not send PAST to Scan Delegator");
@@ -2103,7 +2116,15 @@ uint8_t btp_bap_broadcast_assistant_send_past(const void *cmd, uint16_t cmd_len,
 	 */
 	service_data = cp->src_id << 8;
 
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
+	if (!conn) {
+		return BTP_STATUS_FAILED;
+	}
+
 	err = bt_le_per_adv_sync_transfer(pa_sync, conn, service_data);
+
+	bt_conn_unref(conn);
+
 	if (err != 0) {
 		LOG_DBG("Could not transfer periodic adv sync: %d", err);
 
