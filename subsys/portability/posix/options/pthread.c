@@ -208,14 +208,16 @@ void __z_pthread_cleanup_push(void *cleanup[3], void (*routine)(void *arg), void
 	struct posix_thread *t = NULL;
 	struct __pthread_cleanup *const c = (struct __pthread_cleanup *)cleanup;
 
+	BUILD_ASSERT(3 * sizeof(void *) == sizeof(*c));
+	__ASSERT_NO_MSG(c != NULL);
+	__ASSERT_NO_MSG(routine != NULL);
+	__z_pthread_cleanup_init(c, routine, arg);
+
 	SYS_SEM_LOCK(&pthread_pool_lock) {
 		t = to_posix_thread(pthread_self());
-		BUILD_ASSERT(3 * sizeof(void *) == sizeof(*c));
-		__ASSERT_NO_MSG(t != NULL);
-		__ASSERT_NO_MSG(c != NULL);
-		__ASSERT_NO_MSG(routine != NULL);
-		__z_pthread_cleanup_init(c, routine, arg);
-		sys_slist_prepend(&t->cleanup_list, &c->node);
+		if (t != NULL) {
+			sys_slist_prepend(&t->cleanup_list, &c->node);
+		}
 	}
 }
 
@@ -227,14 +229,15 @@ void __z_pthread_cleanup_pop(int execute)
 
 	SYS_SEM_LOCK(&pthread_pool_lock) {
 		t = to_posix_thread(pthread_self());
-		__ASSERT_NO_MSG(t != NULL);
-		node = sys_slist_get(&t->cleanup_list);
-		__ASSERT_NO_MSG(node != NULL);
-		c = CONTAINER_OF(node, struct __pthread_cleanup, node);
-		__ASSERT_NO_MSG(c != NULL);
-		__ASSERT_NO_MSG(c->routine != NULL);
+		if (t != NULL) {
+			node = sys_slist_get(&t->cleanup_list);
+			__ASSERT_NO_MSG(node != NULL);
+			c = CONTAINER_OF(node, struct __pthread_cleanup, node);
+			__ASSERT_NO_MSG(c != NULL);
+			__ASSERT_NO_MSG(c->routine != NULL);
+		}
 	}
-	if (execute) {
+	if (execute && c != NULL) {
 		c->routine(c->arg);
 	}
 }
@@ -467,11 +470,27 @@ extern struct sys_sem pthread_key_lock;
 
 static void posix_thread_finalize(struct posix_thread *t, void *retval)
 {
-	sys_snode_t *node_l, *node_s;
+	sys_snode_t *node_l = NULL, *node_s;
 	pthread_key_obj *key_obj;
 	pthread_thread_data *thread_spec_data;
 	sys_snode_t *node_key_data, *node_key_data_s, *node_key_data_prev = NULL;
 	struct pthread_key_data *key_data;
+	struct __pthread_cleanup *c;
+
+	while (true) {
+		SYS_SEM_LOCK(&pthread_pool_lock) {
+			node_l = sys_slist_get(&t->cleanup_list);
+		}
+
+		if (node_l == NULL) {
+			break;
+		}
+
+		c = CONTAINER_OF(node_l, struct __pthread_cleanup, node);
+		if (c->routine != NULL) {
+			c->routine(c->arg);
+		}
+	}
 
 	SYS_SLIST_FOR_EACH_NODE_SAFE(&t->key_list, node_l, node_s) {
 		thread_spec_data = (pthread_thread_data *)node_l;
