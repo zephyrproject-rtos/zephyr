@@ -17,6 +17,15 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(RM3100_STREAM, CONFIG_SENSOR_LOG_LEVEL);
 
+/** A streaming read-config describes triggers, not channels: struct sensor_read_config
+ * keeps "channels" and "triggers" in the same union and "count" is the trigger count.
+ * A data-ready event always carries all three axes, so the encoded channel mask is
+ * fixed here instead of being derived from the read-config.
+ */
+static const struct sensor_chan_spec rm3100_stream_chan_spec[] = {
+	{ SENSOR_CHAN_MAGN_XYZ, 0 },
+};
+
 static void rm3100_complete_result(struct rtio *ctx, const struct rtio_sqe *sqe, int err,
 				   void *arg)
 {
@@ -69,9 +78,6 @@ static void rm3100_stream_get_data(const struct device *dev)
 	}
 
 	struct rtio_iodev_sqe *iodev_sqe = data->stream.iodev_sqe;
-	const struct sensor_read_config *cfg = iodev_sqe->sqe.iodev->data;
-	const struct sensor_chan_spec *const channels = cfg->channels;
-	const size_t num_channels = cfg->count;
 	uint8_t *buf;
 	uint32_t buf_len;
 	uint32_t min_buf_len = sizeof(struct rm3100_encoded_data);
@@ -88,7 +94,8 @@ static void rm3100_stream_get_data(const struct device *dev)
 
 	edata = (struct rm3100_encoded_data *)buf;
 
-	err = rm3100_encode(dev, channels, num_channels, buf);
+	err = rm3100_encode(dev, rm3100_stream_chan_spec,
+			    ARRAY_SIZE(rm3100_stream_chan_spec), buf);
 	if (err != 0) {
 		LOG_ERR("Failed to encode sensor data");
 		rtio_iodev_sqe_err(iodev_sqe, err);
