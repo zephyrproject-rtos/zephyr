@@ -781,6 +781,11 @@ foreach(module_name ${ZEPHYR_MODULE_NAMES})
   # the main binary dir instead.
   # https://cmake.org/pipermail/cmake/2019-June/069547.html
   zephyr_string(SANITIZE TOUPPER MODULE_NAME_UPPER ${module_name})
+  if(ZEPHYR_MODULE_ACTIVATION STREQUAL "strict"
+     AND NOT CONFIG_ZEPHYR_${MODULE_NAME_UPPER}_MODULE_ACTIVE)
+    # Nothing in the configuration asked for this module.
+    continue()
+  endif()
   if(NOT ${ZEPHYR_${MODULE_NAME_UPPER}_CMAKE_DIR} STREQUAL "")
     set(ZEPHYR_CURRENT_MODULE_NAME ${ZEPHYR_${MODULE_NAME_UPPER}_MODULE_NAME})
     set(ZEPHYR_CURRENT_MODULE_DIR ${ZEPHYR_${MODULE_NAME_UPPER}_MODULE_DIR})
