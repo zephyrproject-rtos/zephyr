@@ -1933,16 +1933,21 @@ class DtsBindingStrategy(DriverCompatStrategy):
 
     Resolution chain
     ----------------
-    1. For each changed ``.yaml`` file under ``dts/bindings/``, read the
-       top-level ``compatible:`` field.  Bindings without a ``compatible:``
-       field (base / include fragments) are skipped.
+    1. For each changed ``.yaml`` file under ``dts/bindings/``, collect the
+       top-level ``compatible:`` field from the current file and, when a git
+       commit range is available, from the base revision. This preserves the
+       previous compatible when a binding is deleted or its compatible string
+       is changed. Bindings without a ``compatible:`` field (base / include
+       fragments) are skipped.
 
-    2. Feed the compat string to ``_find_test_dirs_for_compat()`` to collect
-       ``-T`` test-root calls.
+    2. Feed each collected compat string to ``_find_test_dirs_for_compat()``
+       to collect ``-T`` test-root calls. Identical compatible strings from
+       the current and base revisions are deduplicated.
 
     3. If a *maintainers_file* is configured, additionally call
-       ``_find_boards_for_compat()`` and emit a board-targeted area-pattern
-       call (same as the board-targeted path in :class:`DriverCompatStrategy`).
+       ``_find_boards_for_compat()`` for each compat string and emit a
+       board-targeted area-pattern call (same as the board-targeted path in
+       :class:`DriverCompatStrategy`).
 
     This strategy is **additive** (``consumes = False``) so that
     :class:`MaintainerAreaStrategy` still runs as a backstop for binding
@@ -1950,6 +1955,22 @@ class DtsBindingStrategy(DriverCompatStrategy):
     """
 
     # Inherit consumes = False from SelectionStrategy (DCS sets it False too)
+
+    def __init__(
+        self,
+        zephyr_base,
+        platform_filter=None,
+        maintainers_file=None,
+        repo=None,
+        commits=None,
+    ):
+        super().__init__(
+            zephyr_base=zephyr_base,
+            platform_filter=platform_filter,
+            maintainers_file=maintainers_file,
+        )
+        self._repo = repo
+        self._commits = commits
 
     @property
     def name(self):
@@ -1964,16 +1985,33 @@ class DtsBindingStrategy(DriverCompatStrategy):
 
         # Map compat_str → set of binding file paths
         compat_to_files: dict = {}
+
         for f in binding_files:
-            compat_str = self._read_binding_compat(self._zephyr_base / f)
-            if compat_str is None:
-                log.debug("[%s] '%s' has no top-level compatible - skipping.", self.name, f)
+            compats = {
+                compat
+                for compat in (
+                    self._read_binding_compat(self._zephyr_base / f),
+                    self._read_old_binding_compat(f),
+                )
+                if compat is not None
+            }
+
+            if not compats:
+                log.debug(
+                    "[%s] '%s' has no top-level compatible in either revision - skipping.",
+                    self.name,
+                    f,
+                )
                 continue
-            vendor = compat_str.split(",")[0]
-            if vendor in self._MOCK_VENDORS:
-                log.debug("[%s] Skipping mock compat '%s'.", self.name, compat_str)
-                continue
-            compat_to_files.setdefault(compat_str, set()).add(f)
+
+            for compat_str in sorted(compats):
+                vendor = compat_str.split(",")[0]
+
+                if vendor in self._MOCK_VENDORS:
+                    log.debug("[%s] Skipping mock compat '%s'.", self.name, compat_str)
+                    continue
+
+                compat_to_files.setdefault(compat_str, set()).add(f)
 
         if not compat_to_files:
             return [], set()
@@ -2044,6 +2082,26 @@ class DtsBindingStrategy(DriverCompatStrategy):
     # ------------------------------------------------------------------
     # Helpers
     # ------------------------------------------------------------------
+
+    def _read_old_binding_compat(self, rel_path):
+        """Return a binding's compatible value from the base revision."""
+        if self._repo is None or not self._commits:
+            return None
+
+        base_commit = self._commits.split("..")[0]
+
+        try:
+            content = self._repo.git.show(f"{base_commit}:{rel_path}")
+            data = yaml.safe_load(content)
+
+            if isinstance(data, dict):
+                compat = data.get("compatible")
+                if isinstance(compat, str) and compat:
+                    return compat
+        except Exception:  # noqa: BLE001
+            pass
+
+        return None
 
     @staticmethod
     def _read_binding_compat(abs_path):
@@ -3801,6 +3859,8 @@ def build_strategies(
             zephyr_base=base,
             platform_filter=platform_filter,
             maintainers_file=maintainers_file,
+            repo=repo,
+            commits=commits,
         ),
         # 9. Kconfig / config-fragment changes: tests that enable the symbols.
         KconfigImpactStrategy(
