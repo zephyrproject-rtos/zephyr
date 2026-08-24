@@ -227,7 +227,7 @@ static int rm3100_init(const struct device *dev)
 
 #define RM3100_DEFINE(inst)									   \
 												   \
-	RTIO_DEFINE(rm3100_rtio_ctx_##inst, 8, 8);						   \
+	RTIO_DEFINE(rm3100_rtio_ctx_##inst, 16, 16);						   \
 	COND_CODE_1(DT_INST_ON_BUS(inst, i2c),							   \
 		    (I2C_DT_IODEV_DEFINE(rm3100_bus_##inst, DT_DRV_INST(inst))),		   \
 		    ());									   \
