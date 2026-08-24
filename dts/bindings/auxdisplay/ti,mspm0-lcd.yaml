@@ -1,0 +1,143 @@
+# Copyright (c) 2025 Texas Instruments
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  TI MSPM0 LCD Segment Display Controller (SLAU847F, Chapter 20)
+
+  Describes the LCD hardware peripheral only (COM/SEG pin assignment,
+  multiplexing, voltage configuration).  Display geometry and character
+  encoding live in a required child node of compatible "slcd-panel".
+
+compatible: "ti,mspm0-lcd"
+
+include:
+  - name: base.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  mux-mode:
+    type: int
+    required: true
+    description: |
+      LCD multiplex mode (LCDMXX in LCDCTL0).
+      0=Static, 1=2-mux, 2=3-mux, 3=4-mux, 4=5-mux, 5=6-mux, 6=7-mux, 7=8-mux.
+      Hardware segment blinking is only supported for modes 0-3 (Static to 4-mux).
+    enum: [0, 1, 2, 3, 4, 5, 6, 7]
+
+  bias-mode:
+    type: string
+    required: true
+    description: LCD bias mode (LCDBIASSEL in LCDVCTL).
+    enum:
+      - "static"
+      - "1/3-bias"
+      - "1/4-bias"
+
+  frequency-divider:
+    type: int
+    required: true
+    description: |
+      LCD frequency divider value N (0-31); hardware divides by N+1.
+      CLKLCD = LFCLK / ((N+1) × mux_frame_clocks).
+
+  voltage-source:
+    type: string
+    required: true
+    description: |
+      LCD charge-pump / bias voltage generation configuration (LCDVCTL).
+      external-ref-external-divider: External reference on R33, external resistor ladder.
+      external-ref-internal-divider: External reference on R33, internal resistor ladder.
+      avdd-internal-divider:         AVDD reference, internal resistor ladder.
+      charge-pump-external:          Charge pump with external supply on R33/R13.
+      charge-pump-internal-ref:      Charge pump with internal VREF on R13.
+      avdd-external-divider:         AVDD on R33, external resistor ladder.
+      charge-pump-avdd:              Charge pump using AVDD as supply.
+    enum:
+      - "external-ref-external-divider"
+      - "external-ref-internal-divider"
+      - "avdd-internal-divider"
+      - "charge-pump-external"
+      - "charge-pump-internal-ref"
+      - "avdd-external-divider"
+      - "charge-pump-avdd"
+
+  high-power-drive:
+    type: boolean
+    description: |
+      Enable high-power LCD drive mode (LCD_HP_LP = 1 in LCDVCTL).
+      Selects the high-power (low-impedance) resistor ladder when the
+      internal bias resistor divider is active (LCDINTBIASEN=1). Only
+      meaningful for voltage-source values: external-ref-internal-divider,
+      avdd-internal-divider, and charge-pump-internal-ref.
+
+  reference-mode-switched:
+    type: boolean
+    description: |
+      Enable switched mode for the internal reference circuit
+      (LCDREFMODE = 1 in LCDVCTL). Reduces power consumption by
+      periodically disabling the reference. Only relevant for
+      charge-pump-internal-ref voltage source.
+
+  internal-reference-voltage:
+    type: int
+    description: |
+      Internal reference voltage in mV (VLCDx field in LCDVCTL).
+      Only applicable for charge-pump-internal-ref voltage source.
+    enum: [2600, 2660, 2720, 2780, 2840, 2900, 2960, 3020,
+           3080, 3140, 3200, 3260, 3320, 3380, 3440, 3500]
+
+  internal-reference-ontime:
+    type: int
+    description: |
+      On-time of the VREF for charge pump, in CLKCP cycles
+      (LCDVREFCFG.ONTIME). Only applicable for charge-pump-internal-ref
+      with reference-mode-switched enabled.
+    enum: [16, 32, 128, 256]
+    default: 16
+
+  charge-pump-frequency:
+    type: int
+    description: |
+      Charge pump frequency in Hz (LCDCPFSELx in LCDVCTL).
+      Only applicable for charge-pump-* voltage sources.
+    enum: [4096, 2048, 1365, 1024, 819, 682, 585, 512, 455, 409, 372]
+    default: 4096
+
+  blink-rate:
+    type: int
+    description: |
+      Hardware segment blink rate prescaler (LCDBLKPREx in LCDBLKCTL).
+      The blink clock is derived from CLKFRAME / 2^(blink-rate+1).
+        0 = ÷2  (fastest), 1 = ÷4,  2 = ÷8,   3 = ÷16,
+        4 = ÷32,           5 = ÷64, 6 = ÷128, 7 = ÷256 (slowest).
+      Only effective for mux modes 0-3 (Static to 4-mux).
+    enum: [0, 1, 2, 3, 4, 5, 6, 7]
+    default: 3
+
+  lcd-com-pins:
+    type: array
+    required: true
+    description: |
+      LCD peripheral pin indices (0-63) used as COM lines, in COM order.
+
+  lcd-seg-pins:
+    type: array
+    required: true
+    description: |
+      LCD peripheral pin indices (0-63) used as SEG lines.
+
+examples:
+  - |
+    /* LP-MSPM0L2228: 6-digit 14-segment display, 4-mux, AVDD internal divider */
+    auxdisplay_0: &lcd0 {
+      mux-mode = <3>;
+      bias-mode = "1/3-bias";
+      frequency-divider = <3>;
+      voltage-source = "avdd-internal-divider";
+      lcd-com-pins = <24 42 43 44>;
+      lcd-seg-pins = <18 19 20 23 36 37 38 39 40 41
+                      45 46 47 48 49 50 51 52 53 54 55 56 57 58>;
+    };
