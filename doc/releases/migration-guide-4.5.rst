@@ -1723,6 +1723,16 @@ Networking
   This allows applications to bring the interface down and up without losing the multicast
   addresses. (:github:`115307`)
 
+* The TFTP client (:c:func:`tftp_get` and :c:func:`tftp_put`) now checks the source of every
+  datagram it receives and ignores the ones that did not come from the server the transfer
+  was requested from, as RFC 1350 requires of a TFTP implementation. The server's first reply
+  is accepted from any port at the configured server address, which is the transfer
+  identifier the protocol assigns to it; every datagram after it has to come from that same
+  address and port. An ignored datagram is not answered, costs no retransmission, and does
+  not shorten the :kconfig:option:`CONFIG_TFTPC_REQUEST_TIMEOUT` wait for the server's own
+  reply. A transfer that relied on a reply arriving from an address other than the one it was
+  requested from no longer completes. (:github:`117262`)
+
 Ethernet
 ========
 
