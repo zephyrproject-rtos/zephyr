@@ -370,6 +370,12 @@ static void eth_nxp_enet_qos_rx(struct k_work *work)
 					(desc->write.control3 >> 28) & 0x0f);
 				/* Error statistics for this packet already updated earlier */
 				LOG_DBG("dropping frame from errored packet");
+				/* The writeback clobbered RDES0, which is the buffer
+				 * address in read format, so restore it before handing
+				 * the descriptor back to the DMA.
+				 */
+				desc->read.buf1_addr =
+					(uint32_t)data->rx.reserved_bufs[desc_idx]->data;
 				desc->read.control = rx_desc_refresh_flags;
 				goto next;
 			}
@@ -380,6 +386,8 @@ static void eth_nxp_enet_qos_rx(struct k_work *work)
 			if (!pkt) {
 				LOG_WRN("Could not alloc new RX pkt");
 				/* error: no new buffer, reuse previous immediately */
+				desc->read.buf1_addr =
+					(uint32_t)data->rx.reserved_bufs[desc_idx]->data;
 				desc->read.control = rx_desc_refresh_flags;
 				eth_stats_update_errors_rx(data->iface);
 				goto next;
@@ -403,6 +411,7 @@ static void eth_nxp_enet_qos_rx(struct k_work *work)
 				pkt_len, processed_len);
 			net_pkt_unref(pkt);
 			pkt = NULL;
+			desc->read.buf1_addr = (uint32_t)data->rx.reserved_bufs[desc_idx]->data;
 			desc->read.control = rx_desc_refresh_flags;
 			eth_stats_update_errors_rx(data->iface);
 			goto next;
@@ -423,6 +432,7 @@ static void eth_nxp_enet_qos_rx(struct k_work *work)
 			LOG_WRN("No new RX buf available");
 			net_pkt_unref(pkt);
 			pkt = NULL;
+			desc->read.buf1_addr = (uint32_t)data->rx.reserved_bufs[desc_idx]->data;
 			desc->read.control = rx_desc_refresh_flags;
 			eth_stats_update_errors_rx(data->iface);
 			goto next;
