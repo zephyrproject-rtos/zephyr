@@ -113,3 +113,59 @@
 	pinctrl-0 = <&analog_pa23>;
 	pinctrl-names = "default";
 };
+
+auxdisplay_0: &lcd0 {
+	mux-mode = <3>;
+	bias-mode = "1/3-bias";
+	frequency-divider = <3>;
+	voltage-source = "avdd-internal-divider";
+	lcd-com-pins = <24 42 43 44>;
+	lcd-seg-pins = <18 19 20 23 36 37 38 39 40 41
+			45 46 47 48 49 50 51 52 53 54 55 56 57 58>;
+	status = "okay";
+
+	slcd_panel: lp-mspm0l2228-panel {
+		compatible = "slcd-panel";
+		columns = <6>;
+		rows = <1>;
+		segment-type = <14>;
+
+		/* segment-pins/coms: 6 pos × 14 segs = 84 entries each (Table 2-3, SLAU928A).
+		 * Bit order: A=0 B=1 C=2 D=3 E=4 F=5 G=6 H=7 J=8 K=9 M=10 N=11 P=12 Q=13
+		 * pos0=dig1  pos1=dig2  pos2=dig3  pos3=dig4  pos4=dig5  pos5=dig6
+		 */
+		segment-pins = <
+				/*  A   B   C   D   E   F   G   H   J   K   M   N   P   Q */
+				57 55 55 58 58 58 57 57 56 56 55 56 56 57
+				37 18 18 36 36 36 37 37 38 38 18 38 38 37
+				20 39 39 19 19 19 20 20 23 23 39 23 23 20
+				41 53 53 40 40 40 41 41 54 54 53 54 54 41
+				51 49 49 52 52 52 51 51 50 50 49 50 50 51
+				47 45 45 48 48 48 47 47 46 46 45 46 46 47>;
+		/* COM indices 0-3 (0=COM1…3=COM4) */
+		segment-coms = <
+				/*  A  B  C  D  E  F  G  H  J  K  M  N  P  Q */
+				3 3 1 0 1 2 1 2 2 3 2 0 1 0
+				3 3 1 0 1 2 1 2 2 3 2 0 1 0
+				3 3 1 0 1 2 1 2 2 3 2 0 1 0
+				3 3 1 0 1 2 1 2 2 3 2 0 1 0
+				3 3 1 0 1 2 1 2 2 3 2 0 1 0
+				3 3 1 0 1 2 1 2 2 3 2 0 1 0>;
+		/* Indicators
+		 *  0=P1 (dot·dig1)  1=P2 (dot·dig2)  2=P3 (dot·dig3)
+		 *  3=P4 (dot·dig4)  4=P5 (dot·dig5)
+		 *  5=COL2 (colon dig2-3)  6=COL3 (colon dig4-5)
+		 *  7=COL4 (° Celsius after dig5)
+		 *  8=DP (minus sign, before dig1)
+		 */
+		num-indicators = <9>;
+		indicator-pins = <55 18 39 53 49 19 52 48 58>;
+		indicator-coms = <0 0 0 0 0 3 3 3 3>;
+		/* ':' COL2 at gap1, COL3 at gap3; 0xff = no colon */
+		col-indicators = <0xff 5 0xff 6 0xff>;
+		/* '.' P1-P5 decimal dots after each digit */
+		lower-dot-indicators = <0 1 2 3 4>;
+		/* '.' COL4 degree symbol at gap4 only */
+		upper-dot-indicators = <0xff 0xff 0xff 0xff 7>;
+	};
+};
