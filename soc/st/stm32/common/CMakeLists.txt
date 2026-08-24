@@ -17,6 +17,7 @@ endif()
 zephyr_sources_ifdef(CONFIG_STM32_WKUP_PINS pwr_wkupctrl.c)
 zephyr_sources_ifdef(CONFIG_STM32_IOCELL stm32_iocell.c)
 zephyr_sources_ifdef(CONFIG_STM32_XSPIM stm32_xspim.c)
+zephyr_sources_ifdef(CONFIG_FLASH_STM32_XSPI_RAM_RELOCATION stm32_xspi_hal_timer.c)
 
 if(CONFIG_PM AND CONFIG_STM32_ENABLE_DEBUG_SLEEP_STOP)
   message(WARNING "\
