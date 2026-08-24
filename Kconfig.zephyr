@@ -565,11 +565,13 @@ config COMPILER_SAVE_TEMPS
 
 config COMPILER_TRACK_MACRO_EXPANSION
 	bool "Track macro expansion"
-	default y
 	help
 	  When enabled, locations of tokens across macro expansions will be
-	  tracked. Disabling this option may be useful to debug long macro
-	  expansion chains.
+	  tracked, so a diagnostic reports every step of the expansion chain
+	  that produced it. Zephyr's logging, device and devicetree macros
+	  expand through many layers, which turns a single mistake into pages
+	  of output, so this is disabled by default. Enable it when the
+	  expansion chain itself is what you need to see.
 
 config COMPILER_COLOR_DIAGNOSTICS
 	bool "Colored diagnostics"
