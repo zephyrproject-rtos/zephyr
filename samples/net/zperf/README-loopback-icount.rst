@@ -216,13 +216,22 @@ report:
        --outdir ../build/zperf_run
 
 The scenario is allowed on both ``qemu_x86`` (32-bit) and ``qemu_x86_64``
-(64-bit); run the latter for a 64-bit data point (for example to exercise the
-64-bit checksum fast path):
+(64-bit); the latter gives a 64-bit data point (for example the 64-bit checksum
+fast path). Both can be measured in one run:
 
 .. code-block:: console
 
-   ./scripts/twister -p qemu_x86_64 -s sample.net.zperf.loopback_icount \
-       --outdir ../build/zperf_run64
+   ./scripts/twister -T samples/net/zperf -s sample.net.zperf.loopback_icount \
+       -p qemu_x86 -p qemu_x86_64 --outdir ../build/zperf_run
+
+Restricting the scan with ``-T samples/net/zperf`` avoids walking the whole
+tree for a single scenario.
+
+The two platforms report different absolute numbers and are never comparable
+with each other, so :file:`scripts/zperf_regression.py` keys every metric by
+the twister platform name (``qemu_x86/atom``, ``qemu_x86_64/atom``) and reports
+each one separately. Use ``--platform`` to restrict the report to one of them,
+given either as the full ``board/soc`` name or as just the board.
 
 Baseline and regression gate
 ============================
@@ -251,6 +260,43 @@ On a later commit, re-run and gate on a maximum allowed drop (in percent):
 The script exits non-zero if any recorded metric dropped by more than the
 tolerance, which makes it suitable as a CI regression check.
 
+Two runs can also be compared directly, without the intermediate baseline file:
+
+.. code-block:: console
+
+   samples/net/zperf/scripts/zperf_regression.py --base-dir .. \
+       --twister-json ../build/zperf_cur/twister.json \
+       --baseline-twister-json ../build/zperf_base/twister.json
+
+The remaining options shape the report rather than the measurement:
+
+.. list-table::
+   :header-rows: 1
+
+   * - Option
+     - Meaning
+   * - ``--threshold PCT``
+     - Reporting noise floor, 1% by default. A metric that moved by less than
+       this is described as unchanged rather than as an improvement or a
+       regression. icount repeats exactly for a given binary, but two trees
+       build two different binaries, and code layout alone can move the number
+       without any change in the work performed. In practice that drift is
+       small: comparing two trees 157 commits apart, across a change that only
+       touched TCP, every UDP metric came back bit-identical on ``qemu_x86``
+       and within 0.02% on ``qemu_x86_64``.
+   * - ``--markdown PATH``
+     - Write the comparison as a markdown table, one section per platform, for a
+       GitHub Actions job summary or a pull request comment. A platform whose
+       metrics all held still is folded into a collapsed ``<details>`` block
+       whose summary line says so; one where something moved is left open.
+   * - ``--annotate``
+     - Emit one ``::notice::`` workflow command per platform, summarising the
+       metrics that moved.
+   * - ``--exit-zero``
+     - Always exit successfully. Use when the comparison is advisory and must
+       not fail a build. A missing or unbuildable baseline is reported the same
+       way, as a comparison that could not be made.
+
 .. note::
 
    For safety when the script is driven by automation, every file it reads or
@@ -272,3 +318,7 @@ combined with ``--baseline`` it draws grouped baseline-vs-current bars:
    samples/net/zperf/scripts/zperf_regression.py --base-dir .. \
        --twister-json ../build/zperf_cur/twister.json \
        --baseline baseline.json --plot throughput.svg
+
+With more than one platform in the report the platform name is appended to each
+file name, so the example above writes :file:`throughput-qemu_x86_atom.svg` and
+:file:`throughput-qemu_x86_64_atom.svg`.
