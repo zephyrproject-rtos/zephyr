@@ -16,9 +16,11 @@ config SOC_RP2350A
 
 config SOC_RP2350A_HAZARD3
 	bool
-	select SOC_RP2350A
+	select SOC_RP2350A_HAZARD3_0
+	select DEPRECATED
 	help
 	  Use the RP2350A with a Hazard3 core in both 'sockets'.
+	  Deprecated, use SOC_RP2350A_HAZARD3_0 instead
 
 config SOC_RP2350A_HAZARD3_0
 	bool
@@ -28,9 +30,11 @@ config SOC_RP2350A_HAZARD3_0
 
 config SOC_RP2350A_M33
 	bool
-	select SOC_RP2350A
+	select SOC_RP2350A_M33_0
+	select DEPRECATED
 	help
 	  Use the RP2350A with a Cortex-M33 core in both 'sockets'.
+	  Deprecated, use SOC_RP2350A_M33_0 instead
 
 config SOC_RP2350A_M33_0
 	bool
@@ -44,9 +48,11 @@ config SOC_RP2350B
 
 config SOC_RP2350B_HAZARD3
 	bool
-	select SOC_RP2350B
+	select SOC_RP2350B_HAZARD3_0
+	select DEPRECATED
 	help
 	  Use the RP2350B with a Hazard3 core in both 'sockets'.
+	  Deprecated, use SOC_RP2350B_HAZARD3_0 instead
 
 config SOC_RP2350B_HAZARD3_0
 	bool
@@ -56,9 +62,11 @@ config SOC_RP2350B_HAZARD3_0
 
 config SOC_RP2350B_M33
 	bool
-	select SOC_RP2350B
+	select SOC_RP2350B_M33_0
+	select DEPRECATED
 	help
 	  Use the RP2350B with a Cortex-M33 core in both 'sockets'.
+	  Deprecated, use SOC_RP2350B_M33_0 instead
 
 config SOC_RP2350B_M33_0
 	bool
