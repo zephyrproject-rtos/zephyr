@@ -79,9 +79,8 @@ struct flash_mcux_xspi_config {
 struct flash_mcux_xspi_data {
 	xspi_config_t xspi_config;
 	const struct device *xspi_dev;
-	const char *dev_name;
 	uint32_t amba_address;
-	const struct flash_xspi_device *chip;
+	const struct flash_xspi_device *flash_dev;
 	struct flash_parameters flash_param;
 	uint64_t flash_size;
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
@@ -208,61 +207,58 @@ static const uint32_t flash_xspi_lut_w25q512nw[][5] = {
 		},
 };
 
-static struct flash_xspi_device device_configs[] = {
-	{
-		.memc = {
-			.name_prefix = "mx25um51345g",
-			.xspi_dev_config = {
-				.deviceInterface = kXSPI_StrandardExtendedSPI,
-				.interfaceSettings.strandardExtendedSPISettings.pageSize = 256,
-				.CSHoldTime = 2,
-				.CSSetupTime = 2,
-				.addrMode = kXSPI_DeviceByteAddressable,
-				.columnAddrWidth = 0,
-				.enableCASInterleaving = false,
-				.ptrDeviceDdrConfig =
-					&(xspi_device_ddr_config_t){
-						.ddrDataAlignedClk =
-							kXSPI_DDRDataAlignedWith2xInternalRefClk,
-						.enableByteSwapInOctalMode = false,
-						.enableDdr = true,
-					},
-				.deviceSize = {64 * 1024, 64 * 1024},
-			},
-			.lut_array = &flash_xspi_lut_mx25um[0][0],
-			.lut_count = FLASH_MCUX_XSPI_LUT_ARRAY_SIZE(flash_xspi_lut_mx25um),
+static const struct flash_xspi_device flash_xspi_mxicy_mx25um51345g __maybe_unused = {
+	.memc = {
+		.xspi_dev_config = {
+			.deviceInterface = kXSPI_StrandardExtendedSPI,
+			.interfaceSettings.strandardExtendedSPISettings.pageSize = 256,
+			.CSHoldTime = 2,
+			.CSSetupTime = 2,
+			.addrMode = kXSPI_DeviceByteAddressable,
+			.columnAddrWidth = 0,
+			.enableCASInterleaving = false,
+			.ptrDeviceDdrConfig =
+				&(xspi_device_ddr_config_t){
+					.ddrDataAlignedClk =
+						kXSPI_DDRDataAlignedWith2xInternalRefClk,
+					.enableByteSwapInOctalMode = false,
+					.enableDdr = true,
+				},
+			.deviceSize = {64 * 1024, 64 * 1024},
 		},
-		.mode_enable = true,
-		.mode_enable_value = 0x02, /* CR2: select DTR-OPI. */
-		.addr_4byte = false,
-		.status_read_size = 2,
-		.reset_assert_us = 10, /* tRLRH: Reset# low pulse width. */
-		.reset_recovery_us = 35, /* tREADY1: reset recovery time from standby. */
+		.lut_array = &flash_xspi_lut_mx25um[0][0],
+		.lut_count = FLASH_MCUX_XSPI_LUT_ARRAY_SIZE(flash_xspi_lut_mx25um),
 	},
-	{
-		.memc = {
-			.name_prefix = "w25q512nw",
-			.xspi_dev_config = {
-				.deviceInterface = kXSPI_StrandardExtendedSPI,
-				.interfaceSettings.strandardExtendedSPISettings.pageSize = 256,
-				.CSHoldTime = 3,
-				.CSSetupTime = 3,
-				.addrMode = kXSPI_DeviceByteAddressable,
-				.columnAddrWidth = 0,
-				.enableCASInterleaving = false,
-				.ptrDeviceDdrConfig = NULL,
-				.deviceSize = {64 * 1024, 0},
-			},
-			.lut_array = &flash_xspi_lut_w25q512nw[0][0],
-			.lut_count = FLASH_MCUX_XSPI_LUT_ARRAY_SIZE(flash_xspi_lut_w25q512nw),
+	.mode_enable = true,
+	.mode_enable_value = 0x02, /* CR2: select DTR-OPI. */
+	.addr_4byte = false,
+	.status_read_size = 2,
+	.reset_assert_us = 10, /* tRLRH: Reset# low pulse width. */
+	.reset_recovery_us = 35, /* tREADY1: reset recovery time from standby. */
+};
+
+static const struct flash_xspi_device flash_xspi_winbond_w25q512nw __maybe_unused = {
+	.memc = {
+		.xspi_dev_config = {
+			.deviceInterface = kXSPI_StrandardExtendedSPI,
+			.interfaceSettings.strandardExtendedSPISettings.pageSize = 256,
+			.CSHoldTime = 3,
+			.CSSetupTime = 3,
+			.addrMode = kXSPI_DeviceByteAddressable,
+			.columnAddrWidth = 0,
+			.enableCASInterleaving = false,
+			.ptrDeviceDdrConfig = NULL,
+			.deviceSize = {64 * 1024, 0},
 		},
-		.mode_enable = true,
-		.mode_enable_value = 0x02, /* SR2: set QE (bit 1) */
-		.addr_4byte = false,
-		.status_read_size = 1,
-		.reset_assert_us = 0,
-		.reset_recovery_us = 30, /* Soft reset tRST=30us. Not support hardware reset. */
+		.lut_array = &flash_xspi_lut_w25q512nw[0][0],
+		.lut_count = FLASH_MCUX_XSPI_LUT_ARRAY_SIZE(flash_xspi_lut_w25q512nw),
 	},
+	.mode_enable = true,
+	.mode_enable_value = 0x02, /* SR2: set QE (bit 1) */
+	.addr_4byte = false,
+	.status_read_size = 1,
+	.reset_assert_us = 0,
+	.reset_recovery_us = 30, /* Soft reset tRST=30us. Not support hardware reset. */
 };
 
 static int flash_xspi_nor_wait_bus_busy(const struct device *dev)
@@ -278,7 +274,7 @@ static int flash_xspi_nor_wait_bus_busy(const struct device *dev)
 	flashXfer.cmdType = kXSPI_Read;
 	flashXfer.data = &readValue;
 	flashXfer.targetGroup = kXSPI_TargetGroup0;
-	flashXfer.dataSize = devData->chip->status_read_size;
+	flashXfer.dataSize = devData->flash_dev->status_read_size;
 	flashXfer.seqIndex = FLASH_CMD_READ_STATUS;
 	flashXfer.lockArbitration = false;
 
@@ -499,7 +495,7 @@ static int flash_mcux_xspi_mode_enable(const struct device *dev)
 {
 	struct flash_mcux_xspi_data *data = dev->data;
 	const struct device *xspi_dev = data->xspi_dev;
-	uint32_t value = data->chip->mode_enable_value;
+	uint32_t value = data->flash_dev->mode_enable_value;
 	xspi_transfer_t flashXfer = {0};
 	int ret;
 
@@ -544,17 +540,17 @@ static int flash_mcux_xspi_enter_4byte(const struct device *dev)
 static int flash_mcux_xspi_configure_mode(const struct device *dev)
 {
 	struct flash_mcux_xspi_data *data = dev->data;
-	const struct flash_xspi_device *chip = data->chip;
+	const struct flash_xspi_device *flash_dev = data->flash_dev;
 	int ret;
 
-	if (chip->mode_enable) {
+	if (flash_dev->mode_enable) {
 		ret = flash_mcux_xspi_mode_enable(dev);
 		if (ret < 0) {
 			return ret;
 		}
 	}
 
-	if (chip->addr_4byte) {
+	if (flash_dev->addr_4byte) {
 		ret = flash_mcux_xspi_enter_4byte(dev);
 		if (ret < 0) {
 			return ret;
@@ -643,7 +639,8 @@ static int flash_mcux_xspi_soft_reset(const struct device *dev)
 static int flash_mcux_xspi_hw_reset(const struct device *dev)
 {
 	const struct flash_mcux_xspi_config *config = dev->config;
-	const struct flash_xspi_device *chip = ((struct flash_mcux_xspi_data *)dev->data)->chip;
+	const struct flash_xspi_device *flash_dev =
+		((struct flash_mcux_xspi_data *)dev->data)->flash_dev;
 	int ret;
 
 	if (!gpio_is_ready_dt(&config->reset_gpio)) {
@@ -657,8 +654,8 @@ static int flash_mcux_xspi_hw_reset(const struct device *dev)
 		return ret;
 	}
 
-	if (chip->reset_assert_us != 0) {
-		k_busy_wait(chip->reset_assert_us);
+	if (flash_dev->reset_assert_us != 0) {
+		k_busy_wait(flash_dev->reset_assert_us);
 	}
 
 	/* Deassert RESET#. */
@@ -669,7 +666,8 @@ static int flash_mcux_xspi_hw_reset(const struct device *dev)
 static int flash_mcux_xspi_reset(const struct device *dev)
 {
 	const struct flash_mcux_xspi_config *config = dev->config;
-	const struct flash_xspi_device *chip = ((struct flash_mcux_xspi_data *)dev->data)->chip;
+	const struct flash_xspi_device *flash_dev =
+		((struct flash_mcux_xspi_data *)dev->data)->flash_dev;
 	bool did_reset = false;
 	int ret;
 
@@ -693,8 +691,8 @@ static int flash_mcux_xspi_reset(const struct device *dev)
 	}
 #endif
 
-	if (did_reset && chip->reset_recovery_us != 0) {
-		k_busy_wait(chip->reset_recovery_us);
+	if (did_reset && flash_dev->reset_recovery_us != 0) {
+		k_busy_wait(flash_dev->reset_recovery_us);
 	}
 
 	return 0;
@@ -707,35 +705,23 @@ static int flash_mcux_xspi_probe(const struct device *dev)
 		(const struct flash_mcux_xspi_config *)dev->config;
 	struct flash_mcux_xspi_data *data = dev->data;
 	const struct device *xspi_dev = data->xspi_dev;
-	struct flash_xspi_device *flash_dev_config = NULL;
-	xspi_device_config_t *dev_config = NULL;
+	const struct flash_xspi_device *flash_dev = data->flash_dev;
+	xspi_device_config_t dev_config;
 	uint32_t key = 0;
 	int ret;
 
-	/* Setup the specific flash parameters. */
-	for (uint32_t i = 0; i < ARRAY_SIZE(device_configs); i++) {
-		if (strncmp(device_configs[i].memc.name_prefix, data->dev_name,
-				strlen(device_configs[i].memc.name_prefix)) == 0) {
-			flash_dev_config = &device_configs[i];
-			break;
-		}
+	if (flash_dev == NULL) {
+		LOG_ERR("Unsupported flash chip compatible");
+		return -ENOTSUP;
 	}
 
+	dev_config = flash_dev->memc.xspi_dev_config;
+
 	do {
-		if (flash_dev_config == NULL) {
-			LOG_ERR("Unsupported device: %s", data->dev_name);
-			ret = -ENOTSUP;
-			break;
-		}
+		dev_config.enableCknPad = flash_config->enable_differential_clk;
+		dev_config.sampleClkConfig = flash_config->sample_clk_config;
 
-		data->chip = flash_dev_config;
-
-		/* Set special device configurations. */
-		dev_config = &flash_dev_config->memc.xspi_dev_config;
-		dev_config->enableCknPad = flash_config->enable_differential_clk;
-		dev_config->sampleClkConfig = flash_config->sample_clk_config;
-
-		ret = memc_mcux_xspi_get_root_clock(xspi_dev, &dev_config->xspiRootClk);
+		ret = memc_mcux_xspi_get_root_clock(xspi_dev, &dev_config.xspiRootClk);
 		if (ret < 0) {
 			break;
 		}
@@ -748,9 +734,9 @@ static int flash_mcux_xspi_probe(const struct device *dev)
 			memc_xspi_wait_bus_idle(xspi_dev);
 		}
 
-		ret = memc_xspi_set_device_config(xspi_dev, dev_config,
-						  flash_dev_config->memc.lut_array,
-						  flash_dev_config->memc.lut_count);
+		ret = memc_xspi_set_device_config(xspi_dev, &dev_config,
+						  flash_dev->memc.lut_array,
+						  flash_dev->memc.lut_count);
 #if FLASH_MCUX_XSPI_HAS_RESET
 		if (ret == 0 && !memc_xspi_is_running_xip(xspi_dev)) {
 			ret = flash_mcux_xspi_reset(dev);
@@ -817,6 +803,16 @@ static DEVICE_API(flash, flash_mcux_xspi_api) = {
 #define FLASH_MCUX_XSPI_SOFT_RESET(n)
 #endif
 
+#define FLASH_MCUX_XSPI_CHIP_DEV(node_id)					\
+	COND_CODE_1(DT_NODE_HAS_COMPAT(node_id, mxicy_mx25um51345g),		\
+		    (&flash_xspi_mxicy_mx25um51345g,),				\
+	(COND_CODE_1(DT_NODE_HAS_COMPAT(node_id, winbond_w25q512nw),		\
+		    (&flash_xspi_winbond_w25q512nw,),				\
+		    ())))
+
+#define FLASH_MCUX_XSPI_NOR_DEV(n)						\
+	GET_ARG_N(1, DT_INST_FOREACH_CHILD_STATUS_OKAY(n, FLASH_MCUX_XSPI_CHIP_DEV) NULL)
+
 #define FLASH_MCUX_XSPI_INIT(n)	\
 	static const struct flash_mcux_xspi_config flash_mcux_xspi_config_##n = {	\
 		.enable_differential_clk = DT_INST_PROP(n, enable_differential_clk),	\
@@ -832,7 +828,7 @@ static DEVICE_API(flash, flash_mcux_xspi_api) = {
 	};	\
 	static struct flash_mcux_xspi_data flash_mcux_xspi_data_##n = {	\
 		.xspi_dev = DEVICE_DT_GET(DT_INST_BUS(n)),	\
-		.dev_name = DT_INST_PROP(n, device_name),	\
+		.flash_dev = FLASH_MCUX_XSPI_NOR_DEV(n),	\
 		.flash_param = {	\
 				.write_block_size = DT_INST_PROP(n, write_block_size),	\
 				.erase_value = 0xFF,	\
