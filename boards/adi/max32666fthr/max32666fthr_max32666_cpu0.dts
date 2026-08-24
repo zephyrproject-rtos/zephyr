@@ -16,6 +16,7 @@
 	compatible = "adi,max32666fthr";
 
 	chosen {
+		zephyr,code-partition = &code_partition;
 		zephyr,console = &uart1;
 		zephyr,shell-uart = &uart1;
 		zephyr,sram = &sram4;
@@ -200,4 +201,24 @@ feather_i2c: &i2c0 {
 
 zephyr_udc0: &usbhs {
 	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		code_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x0 DT_SIZE_K(256)>;
+			read-only;
+		};
+
+		storage_partition: partition@40000 {
+			compatible = "zephyr,mapped-partition";
+			label = "storage";
+			reg = <0x40000 DT_SIZE_K(256)>;
+		};
+	};
 };
