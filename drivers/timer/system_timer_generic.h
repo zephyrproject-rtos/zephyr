@@ -275,10 +275,18 @@ typedef uint64_t timer_core_cycles_t;
 #endif
 
 /*
- * Furthest ahead of the last announce that the core will arm: what the counter
- * can still resolve, or what the alarm can express, whichever binds first.
+ * Furthest ahead of the last announce that unannounced time may run: what the
+ * counter can still resolve. Nothing else bounds it, the alarm's reach being a
+ * bound on one arm rather than on the total.
  */
-#define TIMER_CORE_MAX_UNANNOUNCED_CYCLES                                                          \
+#define TIMER_CORE_MAX_UNANNOUNCED_CYCLES TIMER_CORE_COUNTER_SAFE_SPAN
+
+/*
+ * Furthest one arm reaches: what the alarm can express, never past what the
+ * counter can resolve. A deadline beyond this is walked to over several arms,
+ * each announcing nothing until the last.
+ */
+#define TIMER_CORE_MAX_ARM_CYCLES                                                                  \
 	((timer_core_cycles_t)MIN((uint64_t)TIMER_CORE_COUNTER_SAFE_SPAN,                          \
 				  (uint64_t)TIMER_CORE_ALARM_MAX_CYCLES))
 
@@ -536,6 +544,15 @@ static void timer_core_arm(uint32_t ticks)
 	 */
 	timer_core_cycles_t rel = (want > done) ? (want - done) : 0;
 
+	/* Only where the alarm binds before the counter does; the span clamp
+	 * above already holds `rel` inside the counter's reach, so this folds
+	 * away for hardware whose alarm covers the whole span.
+	 */
+	if ((TIMER_CORE_MAX_ARM_CYCLES < TIMER_CORE_MAX_UNANNOUNCED_CYCLES) &&
+	    (rel > TIMER_CORE_MAX_ARM_CYCLES)) {
+		rel = TIMER_CORE_MAX_ARM_CYCLES;
+	}
+
 	if (rel < TIMER_CORE_ALARM_MIN_CYCLES) {
 		/*
 		 * The announce is due (or overdue): fire as soon as the floor
@@ -577,8 +594,13 @@ static void timer_core_arm(uint32_t ticks)
 	if ((ticks <= span) && (timer_core_last_elapsed <= (span - ticks))) {
 		span = timer_core_last_elapsed + ticks;
 	}
-	timer_core_set_compare(timer_core_last_cycle +
-			       (timer_core_cycles_t)span * TIMER_CORE_CYC_PER_TICK);
+	timer_core_cycles_t offset = (timer_core_cycles_t)span * TIMER_CORE_CYC_PER_TICK;
+
+	if ((TIMER_CORE_MAX_ARM_CYCLES < TIMER_CORE_MAX_UNANNOUNCED_CYCLES) &&
+	    (offset > TIMER_CORE_MAX_ARM_CYCLES)) {
+		offset = TIMER_CORE_MAX_ARM_CYCLES;
+	}
+	timer_core_set_compare(timer_core_last_cycle + offset);
 #else
 	/* Nothing to narrow to: the span and the baseline are the same width, so
 	 * form the deadline directly and let the clamp subtract the baseline off.
@@ -586,8 +608,8 @@ static void timer_core_arm(uint32_t ticks)
 	uint64_t deadline =
 		(timer_core_last_tick + timer_core_last_elapsed + ticks) * TIMER_CORE_CYC_PER_TICK;
 
-	if ((deadline - timer_core_last_cycle) > TIMER_CORE_MAX_UNANNOUNCED_CYCLES) {
-		deadline = timer_core_last_cycle + TIMER_CORE_MAX_UNANNOUNCED_CYCLES;
+	if ((deadline - timer_core_last_cycle) > TIMER_CORE_MAX_ARM_CYCLES) {
+		deadline = timer_core_last_cycle + TIMER_CORE_MAX_ARM_CYCLES;
 	}
 	timer_core_set_compare(deadline);
 #endif
