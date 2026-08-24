@@ -90,7 +90,11 @@ static void rm3100_submit_one_shot(const struct device *dev, struct rtio_iodev_s
 		return;
 	}
 
-	uint8_t val = RM3100_REG_MX | REG_READ_BIT;
+	uint8_t val = RM3100_REG_MX;
+
+	if (rtio_is_spi(data->rtio.type)) {
+		val |= REG_READ_BIT;
+	}
 
 	rtio_sqe_prep_tiny_write(write_sqe,
 				 data->rtio.iodev,

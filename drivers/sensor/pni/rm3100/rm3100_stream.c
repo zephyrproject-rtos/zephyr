@@ -112,7 +112,10 @@ static void rm3100_stream_get_data(const struct device *dev)
 
 	uint8_t val;
 
-	val = RM3100_REG_STATUS | REG_READ_BIT;
+	val = RM3100_REG_STATUS;
+	if (rtio_is_spi(data->rtio.type)) {
+		val |= REG_READ_BIT;
+	}
 
 	rtio_sqe_prep_tiny_write(status_wr_sqe,
 				 data->rtio.iodev,
@@ -134,7 +137,10 @@ static void rm3100_stream_get_data(const struct device *dev)
 	}
 	status_rd_sqe->flags |= RTIO_SQE_CHAINED;
 
-	val = RM3100_REG_MX | REG_READ_BIT;
+	val = RM3100_REG_MX;
+	if (rtio_is_spi(data->rtio.type)) {
+		val |= REG_READ_BIT;
+	}
 
 	rtio_sqe_prep_tiny_write(write_sqe,
 				 data->rtio.iodev,
