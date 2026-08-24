@@ -474,6 +474,9 @@ static void init_sck_pin(const struct device *dev, uint16_t operation)
 
 	initial_value = SPI_MODE_GET(operation) & SPI_MODE_CPOL ? 1 : 0;
 
+#if NRF_GPIO_HAS_RETENTION_SETCLEAR
+	nrf_gpio_pin_retain_disable(sck_pin);
+#endif
 	nrf_gpio_pin_write(sck_pin, initial_value);
 }
 
@@ -483,6 +486,8 @@ int spi_nrfx_spim_common_configure(const struct device *dev, const struct spi_co
 	const struct spi_nrfx_common_config *dev_config = dev->config;
 	nrfx_spim_config_t spim_cfg;
 	int ret;
+
+	init_sck_pin(dev, spi_cfg->operation);
 
 	if (dev_data->configured && spi_config_equal(&dev_data->spi_cfg, spi_cfg)) {
 		return 0;
@@ -518,8 +523,6 @@ int spi_nrfx_spim_common_configure(const struct device *dev, const struct spi_co
 		LOG_ERR("Frequencies lower than 125 kHz are not supported");
 		return -EINVAL;
 	}
-
-	init_sck_pin(dev, spi_cfg->operation);
 
 	spim_cfg.ss_pin = NRF_SPIM_PIN_NOT_CONNECTED;
 	spim_cfg.orc = dev_config->orc;
