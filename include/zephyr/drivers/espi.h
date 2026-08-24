@@ -429,6 +429,10 @@ enum lpc_peripheral_opcode {
 	 */
 	ECUSTOM_HOST_CMD_SEND_RESULT,
 #endif /* CONFIG_ESPI_PERIPHERAL_CUSTOM_OPCODE */
+#ifdef CONFIG_ESPI_NPCX_HOST_SUB_V2
+	/* Forces the enum to 16-bit storage so opcodes can carry a packed channel index */
+	ESPI_OP_FORCE_16BIT = 0x7FFF,
+#endif
 };
 
 /** KBC 8042 event: Input Buffer Full */
