@@ -62,4 +62,14 @@ config ETH_NXP_ENET_QOS_RX_THREAD_PRIORITY
 	help
 	  Cooperative priority of the ENET QOS RX thread
 
+config ETH_NXP_ENET_QOS_TX_TIMEOUT_MS
+	int "Transmit completion timeout in milliseconds"
+	default 100
+	range 10 10000
+	help
+	  Time to wait for the transmit DMA to write back the descriptors of
+	  a frame handed to it. A frame still outstanding after this time is
+	  abandoned: the transmit path is reset and the packet is returned to
+	  its pool.
+
 endif # ETH_NXP_ENET_QOS
