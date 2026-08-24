@@ -212,6 +212,14 @@ struct bt_le_per_adv_response_info {
  * @note Must point to valid memory during the lifetime of the advertising set.
  *
  * @note Used in @ref bt_le_ext_adv_create.
+ *
+ * @note The callbacks are invoked from a thread context, never from an
+ *       ISR. Whether a callback is invoked from a context internal to
+ *       the stack or synchronously from within the API call that
+ *       triggers it, and from which context, is not part of the API and
+ *       may change between releases. See
+ *       @rstref{Callback execution contexts <bluetooth_callback_contexts>}
+ *       for the hazards of blocking in a callback and their mitigations.
  */
 struct bt_le_ext_adv_cb {
 	/**
@@ -333,7 +341,9 @@ typedef void (*bt_ready_cb_t)(int err);
  * earlier.
  *
  * @param cb Callback to notify completion or NULL to perform the
- * enabling synchronously. The callback is called from the system workqueue.
+ * enabling synchronously. The callback is called from a thread context
+ * internal to the stack, never from an ISR; see
+ * @rstref{Callback execution contexts <bluetooth_callback_contexts>}.
  *
  * @return Zero on success or (negative) error code otherwise.
  */
@@ -1869,6 +1879,14 @@ struct bt_le_per_adv_sync_state_info {
  * advertising.
  *
  * @note Used in @ref bt_le_per_adv_sync_cb_register function.
+ *
+ * @note The callbacks are invoked from a thread context, never from an
+ *       ISR. Whether a callback is invoked from a context internal to
+ *       the stack or synchronously from within the API call that
+ *       triggers it, and from which context, is not part of the API and
+ *       may change between releases. See
+ *       @rstref{Callback execution contexts <bluetooth_callback_contexts>}
+ *       for the hazards of blocking in a callback and their mitigations.
  */
 
 struct bt_le_per_adv_sync_cb {
@@ -2519,7 +2537,16 @@ struct bt_le_scan_recv_info {
 	uint8_t secondary_phy;
 };
 
-/** Listener context for (LE) scanning. */
+/** Listener context for (LE) scanning.
+ *
+ * @note The callbacks are invoked from a thread context, never from an
+ *       ISR. Whether a callback is invoked from a context internal to
+ *       the stack or synchronously from within the API call that
+ *       triggers it, and from which context, is not part of the API and
+ *       may change between releases. See
+ *       @rstref{Callback execution contexts <bluetooth_callback_contexts>}
+ *       for the hazards of blocking in a callback and their mitigations.
+ */
 struct bt_le_scan_cb {
 
 	/**

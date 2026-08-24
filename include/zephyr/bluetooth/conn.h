@@ -2217,6 +2217,14 @@ struct bt_conn_br_cb {
  *  tracking the connection state. If a callback is not of interest for
  *  an instance, it may be set to NULL and will as a consequence not be
  *  used for that instance.
+ *
+ *  @note The callbacks are invoked from a thread context, never from an
+ *        ISR. Whether a callback is invoked from a context internal to
+ *        the stack or synchronously from within the API call that
+ *        triggers it, and from which context, is not part of the API and
+ *        may change between releases. See
+ *        @rstref{Callback execution contexts <bluetooth_callback_contexts>}
+ *        for the hazards of blocking in a callback and their mitigations.
  */
 struct bt_conn_cb {
 	/** @brief A new connection has been established.
@@ -2888,7 +2896,16 @@ struct bt_conn_pairing_feat {
  */
 #define BT_PASSKEY_RAND 0xffffffff
 
-/** Authenticated pairing callback structure */
+/** Authenticated pairing callback structure
+ *
+ *  @note The callbacks are invoked from a thread context, never from an
+ *        ISR. Whether a callback is invoked from a context internal to
+ *        the stack or synchronously from within the API call that
+ *        triggers it, and from which context, is not part of the API and
+ *        may change between releases. See
+ *        @rstref{Callback execution contexts <bluetooth_callback_contexts>}
+ *        for the hazards of blocking in a callback and their mitigations.
+ */
 struct bt_conn_auth_cb {
 #if defined(CONFIG_BT_SMP_APP_PAIRING_ACCEPT) || defined(__DOXYGEN__)
 	/** @brief Query to proceed incoming pairing or not.
@@ -3113,7 +3130,16 @@ struct bt_conn_auth_cb {
 #endif /* CONFIG_BT_APP_PASSKEY */
 };
 
-/** Authenticated pairing information callback structure */
+/** Authenticated pairing information callback structure
+ *
+ *  @note The callbacks are invoked from a thread context, never from an
+ *        ISR. Whether a callback is invoked from a context internal to
+ *        the stack or synchronously from within the API call that
+ *        triggers it, and from which context, is not part of the API and
+ *        may change between releases. See
+ *        @rstref{Callback execution contexts <bluetooth_callback_contexts>}
+ *        for the hazards of blocking in a callback and their mitigations.
+ */
 struct bt_conn_auth_info_cb {
 	/** @brief notify that pairing procedure was complete.
 	 *

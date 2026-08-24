@@ -618,6 +618,14 @@ struct bt_l2cap_br_chan {
 /** @brief L2CAP Channel operations structure.
  *
  * The object has to stay valid and constant for the lifetime of the channel.
+ *
+ * @note The callbacks are invoked from a thread context, never from an
+ *       ISR. Whether a callback is invoked from a context internal to
+ *       the stack or synchronously from within the API call that
+ *       triggers it, and from which context, is not part of the API and
+ *       may change between releases. See
+ *       @rstref{Callback execution contexts <bluetooth_callback_contexts>}
+ *       for the hazards of blocking in a callback and their mitigations.
  */
 struct bt_l2cap_chan_ops {
 	/** @brief Channel connected callback
