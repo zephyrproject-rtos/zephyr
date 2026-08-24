@@ -1,0 +1,9 @@
+# Copyright (c) 2022-2024 Intel Corporation
+# Copyright (c) 2026 Altera Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_AGILEX3
+
+rsource "Kconfig.defconfig.agilex3*"
+
+endif # SOC_SERIES_AGILEX3
