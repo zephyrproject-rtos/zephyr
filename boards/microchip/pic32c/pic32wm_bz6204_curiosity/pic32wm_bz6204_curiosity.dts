@@ -1,0 +1,106 @@
+/*
+ * Copyright (c) 2025 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <microchip/pic32c/pic32cx_bz/bz6x/bz62/pic32cx2051bz62132.dtsi>
+#include "pic32wm_bz6204_curiosity-pinctrl.dtsi"
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "Microchip PIC32WM_BZ6204 Curiosity";
+	compatible = "microchip,pic32wm-bz6204-curiosity";
+
+	chosen {
+		zephyr,console = &sercom0;
+		zephyr,shell-uart = &sercom0;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &code_partition;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&portc 7 GPIO_ACTIVE_HIGH>;
+			label = "Red LED 1";
+		};
+
+		led1: led_1 {
+			gpios = <&portc 10 GPIO_ACTIVE_HIGH>;
+			label = "Green LED 1";
+		};
+
+		led2: led_2 {
+			gpios = <&porte 0 GPIO_ACTIVE_HIGH>;
+			label = "Blue LED 1";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: button_0 {
+			gpios = <&porte 3 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "SW0";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+		led2 = &led2;
+		sw0 = &button0;
+	};
+};
+
+&cpu0 {
+	clock-frequency = <128000000>;
+};
+
+&flash0 {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		code_partition: partition@0 {
+			label = "code";
+			reg = <0x0 DT_SIZE_K(2048-16)>;  /* Start at 0x01000000, size 2 MB */
+			read-only;
+		};
+
+		/*
+		 * The final 16 KiB is reserved for the application.
+		 * Storage partition will be used by FCB/LittleFS/NVS
+		 * if enabled.
+		 */
+		storage_partition: partition@1fc000 {
+			label = "storage";
+			reg = <0x1fc000 0x00004000>;
+		};
+	};
+};
+
+&portc {
+	status = "okay";
+};
+
+&porte {
+	status = "okay";
+};
+
+&sercom0 {
+	status = "okay";
+	compatible = "microchip,sercom-g1-uart";
+	rxpo = <1>;
+	txpo = <0>;
+	current-speed = <115200>;
+	pinctrl-0 = <&sercom0_uart_default>;
+	pinctrl-names = "default";
+};
