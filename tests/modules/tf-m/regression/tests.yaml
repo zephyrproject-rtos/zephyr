@@ -62,6 +62,7 @@ tests:
       - kit_pse84_eval/pse846gps2dbzc4a/m33/ns
       - rd_rw612_bga/rw612/ns
       - frdm_rw612/rw612/ns
+      - frdm_mcxa577/mcxa577/ns
     filter: CONFIG_TFM_PROFILE_TYPE_SMALL or CONFIG_TFM_PROFILE_TYPE_NOT_SET
     extra_args:
       - CONFIG_TFM_SFN=y
