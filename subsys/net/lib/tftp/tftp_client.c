@@ -217,8 +217,8 @@ static int send_data(int sock, struct tftpc *client, const struct net_sockaddr *
 					evt.param.error.code = blockno;
 					client->callback(&evt);
 				}
-				LOG_WRN("Server rejected the data block.");
-				break;
+				LOG_ERR("Server rejected the data block.");
+				return TFTPC_REMOTE_ERROR;
 			} else {
 				LOG_ERR("Server responded with invalid opcode or block number.");
 				break; /* wrong response, re-send data */
@@ -227,8 +227,6 @@ static int send_data(int sock, struct tftpc *client, const struct net_sockaddr *
 
 		send_count++;
 	} while (true);
-
-	return TFTPC_REMOTE_ERROR;
 }
 
 /*
