@@ -5,7 +5,7 @@
 
 config SOC_SERIES_RP2350
 	select HAS_RPI_PICO
-	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
+	select HAS_SEGGER_RTT
 	select SOC_RESET_HOOK
 	imply XIP
 

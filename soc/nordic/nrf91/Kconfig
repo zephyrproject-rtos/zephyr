@@ -13,7 +13,7 @@ config SOC_SERIES_NRF91
 	select ARMV8_M_DSP
 	imply XIP
 	select HAS_NRFX
-	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
+	select HAS_SEGGER_RTT
 	select HAS_POWEROFF
 	select SOC_EARLY_INIT_HOOK
 

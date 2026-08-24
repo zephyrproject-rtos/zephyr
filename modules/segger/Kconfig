@@ -4,6 +4,10 @@
 config ZEPHYR_SEGGER_MODULE
 	bool
 
+config ZEPHYR_SEGGER_MODULE_ACTIVE
+	bool
+	depends on ZEPHYR_SEGGER_MODULE
+
 config HAS_SEGGER_RTT
 	bool
 	help
@@ -12,6 +16,7 @@ config HAS_SEGGER_RTT
 config USE_SEGGER_RTT
 	bool "SEGGER RTT libraries."
 	depends on HAS_SEGGER_RTT
+	select ZEPHYR_SEGGER_MODULE_ACTIVE
 	select STM32_ENABLE_DEBUG_SLEEP_STOP if SOC_FAMILY_STM32
 	help
 	  Enable Segger J-Link RTT libraries for platforms that support it.
