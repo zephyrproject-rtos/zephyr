@@ -3,6 +3,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_FAMILY_CH32V
+	select HAS_WCH_CH32FUN
 	select RISCV
 	select BUILD_OUTPUT_HEX
 	select CH32V00X_SYSTICK

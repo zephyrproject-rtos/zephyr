@@ -4,9 +4,10 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_FAMILY_MAX32
+	select HAS_MAX32_HAL
 	select BUILD_OUTPUT_HEX
 	select SOC_EARLY_INIT_HOOK
-	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
+	select HAS_SEGGER_RTT
 
 config SOC_FAMILY_MAX32_M33
 	select ARM

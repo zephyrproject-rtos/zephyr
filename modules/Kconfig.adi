@@ -1,0 +1,18 @@
+# Analog Devices MSDK HAL configuration
+
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config ZEPHYR_ADI_MODULE
+	bool
+
+config ZEPHYR_ADI_MODULE_ACTIVE
+	bool
+	depends on ZEPHYR_ADI_MODULE
+
+config HAS_MAX32_HAL
+	bool
+	select ZEPHYR_ADI_MODULE_ACTIVE
+	help
+	  The MAX32xxx peripheral drivers and register headers. Selected by the
+	  SoC family, whose sources and drivers are built against them.

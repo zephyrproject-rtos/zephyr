@@ -1,0 +1,11 @@
+# libmctp configuration
+
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config ZEPHYR_LIBMCTP_MODULE
+	bool
+
+config ZEPHYR_LIBMCTP_MODULE_ACTIVE
+	bool
+	depends on ZEPHYR_LIBMCTP_MODULE

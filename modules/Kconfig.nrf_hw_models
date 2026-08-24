@@ -1,0 +1,15 @@
+# BabbleSim nRF hardware models configuration
+
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config ZEPHYR_NRF_HW_MODELS_MODULE
+	bool
+
+config ZEPHYR_NRF_HW_MODELS_MODULE_ACTIVE
+	bool
+	depends on ZEPHYR_NRF_HW_MODELS_MODULE
+	select ZEPHYR_HAL_NORDIC_MODULE_ACTIVE
+	help
+	  Simulated nRF peripherals for the BabbleSim boards. The models are
+	  built against the nRF HAL, which the module.yml also records.
