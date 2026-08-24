@@ -4594,7 +4594,7 @@ Networking:
   collaborators:
     - pdgendt
   files:
-    - .github/workflows/net-perf.yml
+    - .github/workflows/net-perf*
     - scripts/net/
     - drivers/net/
     - include/zephyr/net/
