@@ -16,7 +16,6 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/arch/cpu.h>
-#include <zephyr/drivers/interrupt_controller/gic.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/barrier.h>
 #include <zephyr/toolchain.h>
@@ -29,79 +28,11 @@
 extern void z_arm_reserved(void);
 
 /*
- * For Cortex-A and Cortex-R cores, the default interrupt controller is the ARM
- * Generic Interrupt Controller (GIC) and therefore the architecture interrupt
- * control functions are mapped to the GIC driver interface.
- *
- * When GIC is used together with other interrupt controller for
- * multi-level interrupts support (i.e. CONFIG_MULTI_LEVEL_INTERRUPTS
- * is enabled), the architecture interrupt control functions are mapped
- * to the SoC layer in `include/arch/arm/irq.h`.
- * The exported arm interrupt control functions which are wrappers of
- * GIC control could be used for SoC to do level 1 irq control to implement SoC
- * layer interrupt control functions.
- *
- * When a custom interrupt controller is used (i.e.
- * CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER is enabled), the architecture
- * interrupt control functions are mapped to the SoC layer in
- * `include/arch/arm/irq.h`.
+ * For Cortex-A and Cortex-R cores, the root interrupt controller is an
+ * interrupt controller device: the architecture interrupt control
+ * functions are implemented generically in arch/common/intc_root.c. With
+ * CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER the SoC provides them instead.
  */
-
-#if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
-void arm_irq_enable(unsigned int irq)
-{
-	arm_gic_irq_enable(irq);
-}
-
-void arm_irq_disable(unsigned int irq)
-{
-	arm_gic_irq_disable(irq);
-}
-
-int arm_irq_is_enabled(unsigned int irq)
-{
-	return arm_gic_irq_is_enabled(irq);
-}
-
-#if defined(CONFIG_ARCH_HAS_IRQ_PENDING_OPS)
-void arm_irq_clear_pending(unsigned int irq)
-{
-	__ASSERT(irq < CONFIG_NUM_IRQS, "IRQ %u out of range", irq);
-
-	arm_gic_irq_clear_pending(irq);
-}
-
-void arm_irq_set_pending(unsigned int irq)
-{
-	__ASSERT(irq < CONFIG_NUM_IRQS, "IRQ %u out of range", irq);
-
-	arm_gic_irq_set_pending(irq);
-}
-
-bool arm_irq_is_pending(unsigned int irq)
-{
-	__ASSERT(irq < CONFIG_NUM_IRQS, "IRQ %u out of range", irq);
-
-	return arm_gic_irq_is_pending(irq);
-}
-#endif
-
-/**
- * @internal
- *
- * @brief Set an interrupt's priority
- *
- * The priority is verified if ASSERT_ON is enabled. The maximum number
- * of priority levels is a little complex, as there are some hardware
- * priority levels which are reserved: three for various types of exceptions,
- * and possibly one additional to support zero latency interrupts.
- */
-void arm_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
-{
-	arm_gic_irq_set_priority(irq, prio, flags);
-}
-
-#endif /* !CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
 
 #if defined(CONFIG_ARM_TRACK_ACTIVE_IRQ)
 unsigned int arch_irq_get_active(void)

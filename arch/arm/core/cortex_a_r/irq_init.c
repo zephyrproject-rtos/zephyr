@@ -10,7 +10,6 @@
  */
 
 #include <zephyr/arch/cpu.h>
-#include <zephyr/drivers/interrupt_controller/gic.h>
 
 /**
  *
