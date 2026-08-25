@@ -114,3 +114,7 @@
 &aon_lpi2c0 {
 	interrupts = <128 0>;
 };
+
+&aon_lpuart0 {
+	interrupts = <130 0>;
+};
