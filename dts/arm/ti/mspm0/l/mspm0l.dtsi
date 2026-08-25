@@ -24,6 +24,14 @@
 		status = "disabled";
 		#io-channel-cells = <1>;
 	};
+
+	trng: trng@40444000 {
+		compatible = "ti,mspm0-trng";
+		reg = <0x40444000 0x2000>;
+		interrupts = <1 0>;
+		clocks = <&ckm MSPM0_CLOCK_MCLK>;
+		status = "disabled";
+	};
 };
 
 &run0 {
