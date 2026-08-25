@@ -169,7 +169,7 @@ static void sy1xx_mac_set_mac_addr(const struct device *dev)
 	sys_write32(v_low, cfg->ctrl_addr + SY1XX_MAC_ADDRESS_LOW_REG);
 
 	v_high = sys_read32(cfg->ctrl_addr + SY1XX_MAC_ADDRESS_HIGH_REG);
-	v_high |= (v_high & 0xffff0000) | sys_get_le16(&data->mac_addr[4]);
+	v_high = (v_high & 0xffff0000) | sys_get_le16(&data->mac_addr[4]);
 	sys_write32(v_high, cfg->ctrl_addr + SY1XX_MAC_ADDRESS_HIGH_REG);
 }
 
