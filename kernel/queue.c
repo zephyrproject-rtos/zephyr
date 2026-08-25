@@ -22,6 +22,8 @@
 #include <kernel_internal.h>
 #include <zephyr/sys/check.h>
 
+BUILD_ASSERT(SYS_SFLIST_FLAG_BITS >= 1, "k_queue needs one sflist flag bit");
+
 struct alloc_node {
 	sys_sfnode_t node;
 	void *data;
