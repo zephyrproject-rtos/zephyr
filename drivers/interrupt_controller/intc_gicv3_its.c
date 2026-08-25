@@ -567,8 +567,9 @@ static int gicv3_its_init_device_id(const struct device *dev, uint32_t device_id
 		}
 	}
 
-	/* ITT must be of power of 2 */
+	/* ITT must be power of 2 — round up to next power-of-2 */
 	nr_ites = MAX(2, nites);
+	nr_ites = 1 << fls_z(nr_ites - 1);
 	alloc_size = ROUND_UP(nr_ites * entry_size, 256);
 
 	LOG_INF("Allocating ITT for DeviceID %x and %d vectors (%ld bytes entry)",
