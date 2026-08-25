@@ -2183,6 +2183,15 @@ if(NOT CMAKE_C_COMPILER_ID STREQUAL "ARMClang")
   )
 endif()
 
+if(CONFIG_CHECK_STACK_KERNEL_OBJECTS)
+  list(APPEND
+    post_build_commands
+    COMMAND ${PYTHON_EXECUTABLE}
+    ${ZEPHYR_BASE}/scripts/build/check_stack_kobjects.py
+    --elf-file=${BYPRODUCT_KERNEL_ELF_NAME}
+  )
+endif()
+
 # Generate signed (MCUboot or other) related artifacts as needed. Priority is:
 # * Sysbuild (if set)
 # * SIGNING_SCRIPT target property (if set)
