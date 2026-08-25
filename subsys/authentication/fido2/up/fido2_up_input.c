@@ -30,19 +30,22 @@ int fido2_up_wait(void)
 {
 	int ret;
 
-	atomic_clear(&up_cancelled);
-	k_sem_reset(&up_sem);
-
 	ret = k_sem_take(&up_sem, K_MSEC(CONFIG_FIDO2_UP_TIMEOUT_MS));
 	if (ret) {
 		return -ETIMEDOUT;
 	}
 
-	if (atomic_get(&up_cancelled)) {
+	if (atomic_get(&up_cancelled) != 0) {
 		return -ECANCELED;
 	}
 
 	return 0;
+}
+
+void fido2_up_reset(void)
+{
+	atomic_clear(&up_cancelled);
+	k_sem_reset(&up_sem);
 }
 
 void fido2_up_cancel(void)
