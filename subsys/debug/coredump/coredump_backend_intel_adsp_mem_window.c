@@ -32,8 +32,14 @@ static void coredump_mem_window_backend_start(void)
 #ifdef CONFIG_INTEL_ADSP_DEBUG_SLOT_MANAGER
 	struct adsp_dw_desc slot_desc = { .type = ADSP_DW_SLOT_TELEMETRY, };
 
-	/* Forcibly take debug slot 1 */
-	coredump_slot_addr = adsp_dw_seize_slot(1, &slot_desc, NULL);
+	/* Reuse the telemetry slot if one is already assigned, avoiding a second,
+	 * duplicate ADSP_DW_SLOT_TELEMETRY descriptor pointing elsewhere.
+	 */
+	coredump_slot_addr = adsp_dw_request_slot(&slot_desc, NULL);
+	if (!coredump_slot_addr) {
+		/* No telemetry slot exists yet, forcibly take debug slot 1 */
+		coredump_slot_addr = adsp_dw_seize_slot(1, &slot_desc, NULL);
+	}
 	if (!coredump_slot_addr) {
 		/* Try to get the first slot if slot 1 is not available as fallback */
 		coredump_slot_addr = adsp_dw_seize_slot(0, &slot_desc, NULL);
