@@ -237,6 +237,7 @@ static void nrf_wifi_net_iface_work_handler(struct k_work *work)
 	struct nrf_wifi_vif_ctx_zep *vif_ctx_zep = CONTAINER_OF(work,
 								struct nrf_wifi_vif_ctx_zep,
 								nrf_wifi_net_iface_work);
+	bool operational;
 
 	if (!vif_ctx_zep) {
 		LOG_ERR("%s: vif_ctx_zep is NULL", __func__);
@@ -248,17 +249,18 @@ static void nrf_wifi_net_iface_work_handler(struct k_work *work)
 		return;
 	}
 
-	if (vif_ctx_zep->if_carr_state == NRF_WIFI_FMAC_IF_CARR_STATE_ON) {
-		/* For STA mode, keep the interface dormant on association and only
-		 * clear it once the controlled port is authorized (see
-		 * nrf_wifi_wpa_set_supp_port). This withholds data TX during the
-		 * 802.1X handshake window while EAPOL still flows out-of-band via
-		 * the control port (nrf_wifi_wpa_tx_control_port).
-		 */
-		if (vif_ctx_zep->if_type != NRF_WIFI_IFTYPE_STATION) {
-			net_if_dormant_off(vif_ctx_zep->zep_net_if_ctx);
-		}
-	} else if (vif_ctx_zep->if_carr_state == NRF_WIFI_FMAC_IF_CARR_STATE_OFF) {
+	/* The FMAC device context this reads through is freed under vif_lock,
+	 * so hold it for the decision. Release it before touching the net_if:
+	 * net_if_down() holds the iface lock across nrf_wifi_if_stop_zep(),
+	 * which takes vif_lock, so keeping both here would invert that order.
+	 */
+	k_mutex_lock(&vif_ctx_zep->vif_lock, K_FOREVER);
+	operational = nrf_wifi_iface_operational(vif_ctx_zep);
+	k_mutex_unlock(&vif_ctx_zep->vif_lock);
+
+	if (operational) {
+		net_if_dormant_off(vif_ctx_zep->zep_net_if_ctx);
+	} else {
 		net_if_dormant_on(vif_ctx_zep->zep_net_if_ctx);
 	}
 }
@@ -312,7 +314,7 @@ enum nrf_wifi_status nrf_wifi_if_carr_state_chg(void *os_vif_ctx,
 
 	LOG_DBG("%s: Carrier state: %d", __func__, carr_state);
 
-	k_work_submit(&vif_ctx_zep->nrf_wifi_net_iface_work);
+	nrf_wifi_refresh_oper_state(vif_ctx_zep);
 
 	status = NRF_WIFI_STATUS_SUCCESS;
 
@@ -988,6 +990,8 @@ int nrf_wifi_if_start_zep(const struct device *dev, struct net_if *iface)
 	k_mutex_init(&vif_ctx_zep->vif_lock);
 	vif_ctx_zep->if_type = add_vif_info.iftype;
 
+	nrf_wifi_clear_session_state(vif_ctx_zep);
+
 	/* Check if user has provided a valid MAC address, if not
 	 * fetch it from OTP.
 	 */
@@ -1078,6 +1082,7 @@ dev_rem:
 	}
 out:
 	k_mutex_unlock(&vif_ctx_zep->vif_lock);
+	nrf_wifi_refresh_oper_state(vif_ctx_zep);
 	return ret;
 }
 
@@ -1109,6 +1114,8 @@ int nrf_wifi_if_stop_zep(const struct device *dev, struct net_if *iface __unused
 		LOG_ERR("%s: Failed to lock vif_lock", __func__);
 		goto unlock;
 	}
+
+	nrf_wifi_clear_session_state(vif_ctx_zep);
 
 	rpu_ctx_zep = vif_ctx_zep->rpu_ctx_zep;
 	if (!rpu_ctx_zep || !rpu_ctx_zep->rpu_ctx) {
@@ -1160,6 +1167,7 @@ int nrf_wifi_if_stop_zep(const struct device *dev, struct net_if *iface __unused
 	ret = 0;
 unlock:
 	k_mutex_unlock(&vif_ctx_zep->vif_lock);
+	nrf_wifi_refresh_oper_state(vif_ctx_zep);
 
 	ret = nrf_wifi_if_zep_stop_board(dev);
 	if (ret) {
@@ -1313,6 +1321,7 @@ int nrf_wifi_if_set_config_zep(const struct device *dev,
 		    config->txinjection_mode) {
 			LOG_INF("%s: Driver TX injection setting is same as configured setting",
 				__func__);
+			ret = 0;
 			goto unlock;
 		}
 		/**
@@ -1336,6 +1345,12 @@ int nrf_wifi_if_set_config_zep(const struct device *dev,
 			LOG_ERR("%s: Mode set operation failed", __func__);
 			goto unlock;
 		}
+
+		sys_dev_ctx->vif_ctx[vif_ctx_zep->vif_idx]->txinjection_mode =
+			config->txinjection_mode;
+		nrf_wifi_refresh_oper_state(vif_ctx_zep);
+		ret = 0;
+		goto unlock;
 	}
 #endif
 #ifdef CONFIG_NRF70_PROMISC_DATA_RX
