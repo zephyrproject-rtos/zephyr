@@ -16,12 +16,6 @@ properties:
       Set GPIO connected to the controller INTN pin.
       This is used for notifying interruption.
 
-  reset-gpios:
-    type: phandle-array
-    description: |
-      Set GPIO connected to the controller RSTN pin.
-      This is used for controlling resets via GPIO.
-
   port0-push-pull:
     type: boolean
     description: |
