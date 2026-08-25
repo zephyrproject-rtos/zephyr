@@ -57,6 +57,10 @@ Build System
   now fails on one. Expand the pattern with ``file(GLOB ...)`` and pass the
   resulting file names instead.
 
+* The ``ZephyrUnittest`` CMake package, deprecated since Zephyr 3.1, has been removed and
+  ``west zephyr-export`` no longer registers it. Use
+  ``find_package(Zephyr COMPONENTS unittest)`` instead of ``find_package(ZephyrUnittest)``.
+
 * ``west spdx --init`` is deprecated and will be removed in Zephyr 5.0. A build with
   :kconfig:option:`CONFIG_BUILD_OUTPUT_META` now asks CMake for the file-based API object model
   that ``west spdx`` reads, so generating an SBOM no longer needs the build directory to be
