@@ -742,6 +742,13 @@ static void hci_acl(struct net_buf *buf)
 		return;
 	}
 
+	if (!net_buf_is_valid(buf)) {
+		LOG_ERR("ACL data does not fit its buffer (len %u size %u)", buf->len,
+			buf->size);
+		net_buf_unref(buf);
+		return;
+	}
+
 	conn = bt_conn_lookup_handle(acl(buf)->handle, BT_CONN_TYPE_ALL);
 	if (!conn) {
 		LOG_ERR("Unable to find conn for handle %u", acl(buf)->handle);
