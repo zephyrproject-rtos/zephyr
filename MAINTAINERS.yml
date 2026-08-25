@@ -1276,6 +1276,21 @@ DSP subsystem:
   tests:
     - zdsp
 
+DT Doctor:
+  status: maintained
+  maintainers:
+    - kartben
+  files:
+    - cmake/sca/dtdoctor/
+    - doc/develop/sca/dtdoctor.rst
+    - scripts/dts/dtdoctor_analyzer.py
+    - scripts/dts/dtdoctor_sca_wrapper.py
+    - tests/misc/dtdoctor/
+  labels:
+    - "area: Devicetree"
+  tests:
+    - sca.dtdoctor
+
 Debug:
   status: maintained
   maintainers:
