@@ -588,6 +588,7 @@ New APIs and options
     Memberships still held when the socket is closed are dropped automatically,
     and :kconfig:option:`CONFIG_NET_SOCKETS_PACKET_MCAST_MEMBERSHIP_COUNT` sets
     how many memberships can be active at the same time.
+  * :kconfig:option:`CONFIG_PTP_NETWORK_MODE_HYBRID`
 
 * Power Management
 
