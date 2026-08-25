@@ -549,6 +549,39 @@ Interrupt Controllers
 * Deprecate ``GIC_NUM_CPU_IF`` from GIC header file :file:`gic.h`. One shall use
   instead.:kconfig:option:`CONFIG_MP_MAX_NUM_CPUS` instead.
 
+MBOX
+====
+
+* The :dtcompatible:`renesas,rz-mhu-mbox` driver was reworked so that a single MHU unit
+  serves both TX and RX on one MBOX channel, instead of dedicating each channel to one
+  direction. A single driver instance can now own several channels. Devicetree nodes using
+  this compatible must be updated:
+
+  * ``channel`` was renamed to ``unit``, because it indexes the underlying MHU hardware unit
+    and not the MBOX channel. The two numbering schemes are independent.
+  * ``tx-mask`` and ``rx-mask`` were replaced by a single ``channel-mask``, a bitmask of the
+    valid MBOX channels where bit ``n`` enables channel ``n``.
+  * ``channels-count`` must match the number of ``interrupt-names`` entries on the node.
+    This is now enforced at build time.
+  * ``shared-memory`` is now optional and should be left unset in most cases.
+
+  For example:
+
+  .. code-block:: devicetree
+
+     /* Before */
+     mbox3: mhu@40400060 {
+             channel = <3>;
+             tx-mask = <0x00000002>;
+             rx-mask = <0x00000001>;
+     };
+
+     /* After */
+     mbox3: mhu@40400060 {
+             unit = <3>;
+             channel-mask = <0x1>;
+     };
+
 MSPI
 ====
 
