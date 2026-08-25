@@ -663,9 +663,11 @@ ssize_t zsock_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 	end = sys_timepoint_calc(timeout);
 
 	/* Register the callback before sending in order to receive the response
-	 * from the peer.
+	 * from the peer. Once registered, a context with a connection handler
+	 * needs no update.
 	 */
-	if (!sock_is_eof(ctx)) {
+	if (!sock_is_eof(ctx) &&
+	    (ctx->recv_cb != zsock_received_cb || ctx->conn_handler == NULL)) {
 		status = net_context_recv(ctx, zsock_received_cb,
 					  K_NO_WAIT, ctx->user_data);
 		if (status < 0) {
