@@ -535,6 +535,9 @@ GPIO
 
 * On STM32F1 series, GPIO output pins now use 50 MHz max. speed instead of 10 MHz. (:github:`104690`)
 
+* The :dtcompatible:`awinic,aw9523b-gpio` driver no longer has the ``reset-gpios`` property. This has instead
+  been moved to the parent :dtcompatible:`awinic,aw9523b` MFD device.
+
 Haptics
 =======
 
