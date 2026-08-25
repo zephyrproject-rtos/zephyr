@@ -67,3 +67,4 @@ properties:
     type: boolean
     description: |
       Enable or disable run-in-standby mode for watchdog timer peripheral.
+      Supported only on PIC32CZ CA and PIC32CM SG/GC.
