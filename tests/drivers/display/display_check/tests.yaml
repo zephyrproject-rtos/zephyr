@@ -106,3 +106,4 @@ tests:
       - platform:mimxrt700_evk/mimxrt798s/cm33_cpu0:SHIELD=zc143ac72mipi
       - platform:imx93_evk/mimx9352/m33/ddr:SHIELD=nxp_mx8_dsi_oled1a
       - platform:nucleo_u575zi_q/stm32u575xx:SHIELD=x_nucleo_gfx02z1_az2
+      - platform:nucleo_f446ze/stm32f446xx:SHIELD=x_nucleo_gfx02z1_az2

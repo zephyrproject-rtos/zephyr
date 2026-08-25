@@ -51,14 +51,20 @@ pinouts used on your development board:
 Currently supported boards:
 
 - ``nucleo_u575zi_q``
+- ``nucleo_f446ze``
 
 Hardware configuration
 **********************
 
-The FMC, OCTOSPI and joystick GPIO pin assignments are board specific and are
-provided by the shield's board-level overlay. See
-:zephyr_file:`boards/shields/x_nucleo_gfx02z1/boards/nucleo_u575zi_q.overlay`
-for the NUCLEO-U575ZI-Q pin configuration.
+The pin assignments for the parallel display (FMC), the Quad-SPI NOR Flash and
+the joystick are board specific and are provided by the shield's board-level
+overlays. The Quad-SPI NOR Flash is driven by a different controller peripheral
+depending on the board:
+
+- :zephyr_file:`boards/shields/x_nucleo_gfx02z1/boards/nucleo_u575zi_q.overlay`
+  for the NUCLEO-U575ZI-Q, where the NOR Flash is wired to the OCTOSPI controller
+- :zephyr_file:`boards/shields/x_nucleo_gfx02z1/boards/nucleo_f446ze.overlay`
+  for the NUCLEO-F446ZE, where the NOR Flash is wired to the QUADSPI controller
 
 Samples
 *******
