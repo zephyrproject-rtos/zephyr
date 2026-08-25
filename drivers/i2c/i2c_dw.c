@@ -102,12 +102,6 @@ static int i2c_check_bus(const struct device *dev)
 	int ret = 0;
 	struct i2c_dw_dev_config *const dw = dev->data;
 
-#if CONFIG_I2C_ALLOW_NO_STOP_TRANSACTIONS
-	if (!dw->need_setup) {
-		return 0;
-	}
-#endif
-
 	if (dw->check_bus_cb) {
 		/* callback customize check function */
 		ret = dw->check_bus_cb(dw->check_bus_dev);
@@ -192,9 +186,6 @@ static int i2c_dw_error_chk(const struct device *dev)
 		LOG_ERR("SCL Stuck Low on %s", dev->name);
 	}
 	if (dw->state & I2C_DW_ERR_MASK) {
-#if CONFIG_I2C_ALLOW_NO_STOP_TRANSACTIONS
-		dw->need_setup = true;
-#endif
 		LOG_ERR_RATELIMIT("IO Fail on %s", dev->name);
 		return -EIO;
 	}
@@ -568,9 +559,6 @@ static void i2c_dw_isr(const struct device *port)
 			dw->state = I2C_DW_CMD_ERROR;
 			i2c_dw_error_chk(port);
 			value = read_clr_tx_abrt(reg_base);
-#if CONFIG_I2C_ALLOW_NO_STOP_TRANSACTIONS
-			dw->need_setup = true;
-#endif
 			goto done;
 		}
 
@@ -608,9 +596,6 @@ static void i2c_dw_isr(const struct device *port)
 		/* STOP detected: finish processing this message */
 		if (intr_stat.bits.stop_det) {
 			value = read_clr_stop_det(reg_base);
-#if CONFIG_I2C_ALLOW_NO_STOP_TRANSACTIONS
-			dw->need_setup = true;
-#endif
 			goto done;
 		}
 
@@ -683,16 +668,6 @@ static int i2c_dw_setup(const struct device *dev, uint16_t slave_address)
 	union ic_con_register ic_con;
 	union ic_tar_register ic_tar;
 	mm_reg_t reg_base = DEVICE_MMIO_GET(dev);
-
-#if CONFIG_I2C_ALLOW_NO_STOP_TRANSACTIONS
-	if (!dw->need_setup) {
-		/* If slave address changed setup is still needed */
-		ic_tar.raw = read_tar(reg_base);
-		if (ic_tar.bits.ic_tar == slave_address) {
-			return 0;
-		}
-	}
-#endif
 
 	ic_con.raw = 0U;
 
@@ -813,9 +788,6 @@ static int i2c_dw_setup(const struct device *dev, uint16_t slave_address)
 	}
 	write_tar(ic_tar.raw, reg_base);
 
-#if CONFIG_I2C_ALLOW_NO_STOP_TRANSACTIONS
-	dw->need_setup = false;
-#endif
 	return 0;
 }
 
@@ -824,14 +796,6 @@ bool i2c_dw_is_busy(const struct device *dev)
 	struct i2c_dw_dev_config *const dw = dev->data;
 	mm_reg_t reg_base = DEVICE_MMIO_GET(dev);
 
-#if CONFIG_I2C_ALLOW_NO_STOP_TRANSACTIONS
-	/* The application explicitly started a transaction without
-	 * a STOP.  Allow the application to continue sending transactions.
-	 */
-	if (!dw->need_setup) {
-		return false;
-	}
-#endif
 	if (test_bit_status_activity(reg_base) || (dw->state & I2C_DW_BUSY)) {
 		return true;
 	}
@@ -1021,12 +985,6 @@ error:
 	k_sem_give(&dw->bus_sem);
 
 	pm_device_runtime_put(dev);
-#if CONFIG_I2C_ALLOW_NO_STOP_TRANSACTIONS
-	if (ret != 0) {
-		/* Failed/aborted transaction is no longer active, require setup */
-		dw->need_setup = true;
-	}
-#endif
 
 	return ret;
 }
@@ -1330,9 +1288,6 @@ static int i2c_dw_init_config(const struct device *dev)
 	}
 
 	dw->state = I2C_DW_STATE_READY;
-#if CONFIG_I2C_ALLOW_NO_STOP_TRANSACTIONS
-	dw->need_setup = true;
-#endif
 #ifdef CONFIG_I2C_DW_EXTENDED_SUPPORT
 	write_sdatimeout(sda_timeout, reg_base);
 	write_scltimeout(scl_timeout, reg_base);

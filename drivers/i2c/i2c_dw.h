@@ -216,9 +216,6 @@ struct i2c_dw_dev_config {
 	struct device *recover_bus_dev;
 	i2c_api_check_bus_t check_bus_cb;
 	const struct device *check_bus_dev;
-#if CONFIG_I2C_ALLOW_NO_STOP_TRANSACTIONS
-	bool need_setup;
-#endif
 	uint32_t i2c_stat_not_ready;
 	uint32_t not_ready_cnt;
 };

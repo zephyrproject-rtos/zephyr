@@ -130,6 +130,10 @@ Removed APIs and options
     * ``CONFIG_COUNTER_MAXIM_DS3231``
     * ``prescaler`` property of :dtcompatible:`nxp,lptmr`
 
+* I2C
+
+    * ``CONFIG_I2C_ALLOW_NO_STOP_TRANSACTIONS``
+
 * LLEXT
 
     * ``llext_get_fn_table``, replaced by ``llext_get_fn_table_entry``
