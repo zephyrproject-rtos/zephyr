@@ -83,6 +83,7 @@ zephyr_library_sources_ifdef(CONFIG_NRFX_CLOCK_HFCLK      ${SRC_DIR}/nrfx_clock_
 zephyr_library_sources_ifdef(CONFIG_NRFX_CLOCK_HFCLKAUDIO ${SRC_DIR}/nrfx_clock_hfclkaudio.c)
 zephyr_library_sources_ifdef(CONFIG_NRFX_CLOCK_HFCLK192M  ${SRC_DIR}/nrfx_clock_hfclk192m.c)
 zephyr_library_sources_ifdef(CONFIG_NRFX_CLOCK_LFCLK      ${SRC_DIR}/nrfx_clock_lfclk.c)
+zephyr_library_sources_ifdef(CONFIG_NRFX_CLOCK_LFRC       ${SRC_DIR}/nrfx_clock_lfrc.c)
 zephyr_library_sources_ifdef(CONFIG_NRFX_CLOCK_XO         ${SRC_DIR}/nrfx_clock_xo.c)
 zephyr_library_sources_ifdef(CONFIG_NRFX_CLOCK_XO24M      ${SRC_DIR}/nrfx_clock_xo24m.c)
 zephyr_library_sources_ifdef(CONFIG_NRFX_COMP    ${SRC_DIR}/nrfx_comp.c)
