@@ -3623,6 +3623,15 @@ static void call_notify_cb_and_maybe_unsubscribe(struct bt_conn *conn, struct ga
 	struct bt_gatt_subscribe_params *params, *tmp;
 	int err;
 
+	/* Core Specification Vol 3, Part F, Section 3.2.9: the maximum length
+	 * of an attribute value is 512 octets.
+	 */
+	if (length > BT_ATT_MAX_ATTRIBUTE_LEN) {
+		LOG_WRN("Ignoring value with invalid length %u for handle 0x%04x", length,
+			handle);
+		return;
+	}
+
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&sub->list, params, tmp, node) {
 		if (handle != params->value_handle) {
 			continue;
