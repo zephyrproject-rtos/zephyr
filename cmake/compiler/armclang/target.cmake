@@ -59,7 +59,7 @@ foreach(isystem_include_dir ${NOSTDINC})
   list(APPEND isystem_include_flags -isystem ${isystem_include_dir})
 endforeach()
 
-set(CMAKE_REQUIRED_FLAGS ${isystem_include_flags})
+set(CMAKE_REQUIRED_FLAGS -mcpu=${GCC_M_CPU} ${isystem_include_flags})
 string(REPLACE ";" " " CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS}")
 
 if(CONFIG_ARMCLANG_STD_LIBC)
