@@ -633,12 +633,12 @@
     "UP030",    # https://docs.astral.sh/ruff/rules/format-literals
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
 ]
-"./soc/nuvoton/npcm/common/esiost/esiost.py" = [
+"./soc/nuvoton/npcx/common/npcmn/esiost/esiost.py" = [
     "F541",     # https://docs.astral.sh/ruff/rules/f-string-missing-placeholders
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
     "UP032",    # https://docs.astral.sh/ruff/rules/f-string
 ]
-"./soc/nuvoton/npcm/common/esiost/esiost_args.py" = [
+"./soc/nuvoton/npcx/common/npcmn/esiost/esiost_args.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
 ]
@@ -924,8 +924,8 @@ exclude = [
     "./soc/intel/intel_adsp/tools/remote-fw-service.py",
     "./soc/intel/intel_ish/utils/build_ish_firmware.py",
     "./soc/microchip/mec/common/spigen/mec_spi_gen.py",
-    "./soc/nuvoton/npcm/common/esiost/esiost.py",
-    "./soc/nuvoton/npcm/common/esiost/esiost_args.py",
+    "./soc/nuvoton/npcx/common/npcmn/esiost/esiost.py",
+    "./soc/nuvoton/npcx/common/npcmn/esiost/esiost_args.py",
     "./soc/nuvoton/npcx/common/ecst/ecst.py",
     "./soc/nuvoton/npcx/common/ecst/ecst_args.py",
     "./soc/silabs/silabs_sim3/sim3u/gen_crossbar_config.py",
