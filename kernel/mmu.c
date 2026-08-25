@@ -386,6 +386,8 @@ static void *virt_region_alloc(size_t size, size_t align)
  * This implies in the future there may be multiple slists managing physical
  * pages. Each page frame will still just have one snode link.
  */
+BUILD_ASSERT(SYS_SFLIST_FLAG_BITS >= 1, "MMU free-page list needs one sflist flag bit");
+
 static sys_sflist_t free_page_frame_list;
 
 /* Number of unused and available free page frames.
