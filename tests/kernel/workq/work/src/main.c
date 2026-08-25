@@ -528,6 +528,8 @@ ZTEST(work_1cpu, test_1cpu_sync_queue)
  * @see k_work_init()
  * @see k_work_submit_to_queue()
  * @verifies ZEP-SRS-38-14
+ * @verifies ZEP-SRS-38-47
+ * @verifies ZEP-SRS-38-48
  */
 ZTEST(work_1cpu, test_1cpu_reentrant_queue)
 {
@@ -674,6 +676,8 @@ ZTEST(work_1cpu, test_1cpu_running_flush)
  * @see k_work_flush_delayable()
  * @see k_work_schedule_for_queue()
  * @verifies ZEP-SRS-38-15
+ * @verifies ZEP-SRS-38-42
+ * @verifies ZEP-SRS-38-50
  */
 ZTEST(work_1cpu, test_1cpu_delayed_flush)
 {
@@ -1551,6 +1555,7 @@ ZTEST(work_1cpu, test_1cpu_basic_reschedule)
  * @see k_work_reschedule_for_queue()
  * @see k_work_init_delayable()
  * @verifies ZEP-SRS-38-23
+ * @verifies ZEP-SRS-38-49
  */
 ZTEST(work_1cpu, test_1cpu_immed_reschedule)
 {
@@ -1686,7 +1691,7 @@ static bool try_queue_no_yield(struct k_work_q *wq)
 /**
  * @brief Work queue no-yield option processes items without yielding
  * @ingroup kernel_workqueue_tests
- * @verifies ZEP-SRS-38-4
+ * @verifies ZEP-SRS-38-44
  */
 ZTEST(work_1cpu, test_1cpu_queue_no_yield)
 {

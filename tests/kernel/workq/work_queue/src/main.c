@@ -563,6 +563,7 @@ static void test_triggered_trigger(void)
  * @ingroup kernel_workqueue_tests
  * @see k_work_poll_init(), k_work_poll_submit()
  * @verifies ZEP-SRS-38-27
+ * @verifies ZEP-SRS-38-51
  */
 ZTEST(workqueue_triggered, test_triggered)
 {
@@ -672,6 +673,7 @@ static void triggered_resubmit_work_handler(struct k_work *work)
  * @ingroup kernel_workqueue_tests
  * @see k_work_poll_init(), k_work_poll_submit()
  * @verifies ZEP-SRS-38-27
+ * @verifies ZEP-SRS-38-52
  */
 ZTEST(workqueue_triggered, test_triggered_resubmit)
 {
