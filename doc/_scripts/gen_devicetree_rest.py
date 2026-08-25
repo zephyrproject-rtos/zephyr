@@ -703,8 +703,13 @@ def write_orphans(bindings, base_binding, vnd_lookup, driver_sources, out_dir):
                  num_written)
 
 def make_sidebar(compatible, vendor_name, vendor_ref_target, driver_paths=None):
+    sidebar_class = "dt-binding-overview"
+    if driver_paths and len(driver_paths) > 1:
+        sidebar_class += " dt-binding-overview-multiple-drivers"
+
     lines = [
         ".. sidebar:: Overview",
+        f"   :class: {sidebar_class}",
         "",
         f"   :Name: ``{compatible}``",
         f"   :Vendor: :ref:`{vendor_name} <{vendor_ref_target}>`",
