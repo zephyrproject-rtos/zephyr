@@ -87,6 +87,11 @@ static void coredump_mem_window_backend_buffer_output(uint8_t *buf, size_t bufle
 		return;
 	}
 
+	/* Clamp to the remaining space: writing past the slot boundary would
+	 * spill into whatever debug window slot physically follows this one.
+	 */
+	buflen = MIN(buflen, ADSP_DW_SLOT_SIZE - 4 - mem_wptr);
+
 	if (buf) {
 		for (data_left = buflen; data_left > 0; data_left--) {
 			*mem_window_sink = *coredump_data;
