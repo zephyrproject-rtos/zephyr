@@ -879,7 +879,10 @@ SHELL_CMD_REGISTER(plic, &plic_cmds, "PLIC shell commands", NULL);
 
 /* IRQ ID 0 is reserved, so valid local IRQs are 1..riscv,ndev (ndev + 1 IDs) */
 #define PLIC_NR_IRQS(n)     (DT_INST_PROP(n, riscv_ndev) + 1)
-#define PLIC_MIN_IRQ_NUM(n) MIN(PLIC_NR_IRQS(n), CONFIG_MAX_IRQ_PER_AGGREGATOR)
+/* TODO: check against upstream this line
+#define PLIC_MIN_IRQ_NUM(n) MIN(PLIC_NR_IRQS(n), CONFIG_MAX_IRQ_PER_AGGREGATOR) */
+#define PLIC_MIN_IRQ_NUM(n) MIN(PLIC_NR_IRQS(n),                                                   \
+	    Z_MAX_IRQ_PER_AGGREGATOR_BY_ALVL(DT_INST_INTC_GET_AGGREGATOR_LEVEL(n)))
 
 #ifdef CONFIG_PLIC_SHELL_IRQ_COUNT
 #define PLIC_INTC_IRQ_COUNT_BUF_DEFINE(n)                                                          \
