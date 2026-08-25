@@ -1200,9 +1200,6 @@ static int adc_stm32_vrefint_measure(const struct device *dev)
 	uint16_t raw = 0;
 	uint16_t vrefint_cal = 0;
 	uint16_t mv;
-	uint32_t saved_channels = data->channels;
-	uint8_t saved_count = data->channel_count;
-	uint8_t saved_res = data->resolution;
 	int err = 0;
 	const struct adc_sequence meas_seq = {
 		.resolution = STM32_VREFINT_MEAS_RES,
@@ -1240,13 +1237,20 @@ static int adc_stm32_vrefint_measure(const struct device *dev)
 
 	err = set_resolution(dev, &meas_seq);
 	if (err) {
-		goto restore;
+		return err;
 	}
 
 	err = set_sequencer(dev);
 	if (err) {
-		goto restore;
+		return err;
 	}
+
+#if ANY_ADC_HAS_CHANNEL_PRESELECTION
+	err = adc_stm32_preselection_setup(dev, cfg->vrefint_channel);
+	if (err) {
+		return err;
+	}
+#endif
 
 	adc_stm32_vrefint_enable_path(adc);
 
@@ -1308,11 +1312,6 @@ disable_path:
 #if !IS_ENABLED(CONFIG_STM32_VREF_INJECTED)
 	adc_stm32_vrefint_disable_path(adc);
 #endif
-
-restore:
-	data->channels = saved_channels;
-	data->channel_count = saved_count;
-	data->resolution = saved_res;
 	return err;
 }
 
@@ -1406,21 +1405,16 @@ static int start_read(const struct device *dev,
 	const struct adc_stm32_cfg *config = dev->config;
 	struct adc_stm32_data *data = dev->data;
 	ADC_TypeDef *adc = config->base;
+	uint8_t channel_count = POPCOUNT(sequence->channels);
 	int err;
 
-	data->buffer = sequence->buffer;
-	data->channels = sequence->channels;
-	data->channel_count = POPCOUNT(data->channels);
-	data->samples_count = 0;
-	data->resolution = sequence->resolution;
-
-	if (data->channel_count == 0) {
+	if (channel_count == 0) {
 		LOG_ERR("No channels selected");
 		return -EINVAL;
 	}
 
 #if ANY_ADC_SEQUENCER_TYPE_IS(SEQUENCER_PROGRAMMABLE)
-	if (data->channel_count > ARRAY_SIZE(table_seq_len)) {
+	if (channel_count > ARRAY_SIZE(table_seq_len)) {
 		LOG_ERR("Too many channels for sequencer. Max: %d", ARRAY_SIZE(table_seq_len));
 		return -EINVAL;
 	}
@@ -1428,11 +1422,59 @@ static int start_read(const struct device *dev,
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) && !defined(CONFIG_ADC_STM32_DMA)
 	/* Multiple samplings is only supported with DMA for F1 */
-	if (data->channel_count > 1) {
+	if (channel_count > 1) {
 		LOG_ERR("Without DMA, this device only supports single channel sampling");
 		return -EINVAL;
 	}
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) && !CONFIG_ADC_STM32_DMA */
+
+#ifndef HAS_OVERSAMPLING
+	if (sequence->oversampling) {
+		LOG_ERR("Oversampling not supported");
+		return -ENOTSUP;
+	}
+#endif /* !HAS_OVERSAMPLING */
+
+#ifndef CONFIG_ADC_STREAM
+	/*
+	 * In streaming mode the application does not provide a buffer in the
+	 * sequence: sample data is written to a buffer allocated from the RTIO
+	 * mempool inside the ISR. Skip the sequence buffer validation here.
+	 */
+	err = check_buffer(sequence, channel_count);
+	if (err) {
+		LOG_ERR("ADC buffer error");
+		return err;
+	}
+#endif /* !CONFIG_ADC_STREAM */
+
+	if (sequence->calibrate) {
+#if defined(HAS_CALIBRATION)
+		err = adc_stm32_calibrate(dev, false);
+		if (err < 0) {
+			LOG_ERR("Calibration error");
+			return err;
+		}
+#endif /* HAS_CALIBRATION */
+#ifdef CONFIG_ADC_STM32_VREFINT_CALIBRATE
+		if (adc_stm32_is_vrefint_owner(dev)) {
+			err = adc_stm32_vrefint_measure(dev);
+			if (err < 0) {
+				LOG_WRN("VREFINT measure failed (%d)", err);
+			}
+		}
+#endif /* CONFIG_ADC_STM32_VREFINT_CALIBRATE */
+#if !defined(HAS_CALIBRATION) && !defined(CONFIG_ADC_STM32_VREFINT_CALIBRATE)
+		LOG_ERR("Calibration not supported");
+		return -ENOTSUP;
+#endif
+	}
+
+	data->buffer = sequence->buffer;
+	data->channels = sequence->channels;
+	data->channel_count = channel_count;
+	data->samples_count = 0;
+	data->resolution = sequence->resolution;
 
 	/* Check and set the resolution */
 	err = set_resolution(dev, sequence);
@@ -1448,63 +1490,13 @@ static int start_read(const struct device *dev,
 		return err;
 	}
 
-#ifndef CONFIG_ADC_STREAM
-	/*
-	 * In streaming mode the application does not provide a buffer in the
-	 * sequence: sample data is written to a buffer allocated from the RTIO
-	 * mempool inside the ISR. Skip the sequence buffer validation here.
-	 */
-	err = check_buffer(sequence, data->channel_count);
-	if (err) {
-		LOG_ERR("ADC buffer error");
-		return err;
-	}
-#endif /* !CONFIG_ADC_STREAM */
-
 #ifdef HAS_OVERSAMPLING
 	err = adc_stm32_oversampling(dev, sequence->oversampling);
 	if (err) {
 		LOG_ERR("Error setting the ADC oversampler");
 		return err;
 	}
-#else
-	if (sequence->oversampling) {
-		LOG_ERR("Oversampling not supported");
-		return -ENOTSUP;
-	}
 #endif /* HAS_OVERSAMPLING */
-
-	if (sequence->calibrate) {
-#if defined(HAS_CALIBRATION)
-		err = adc_stm32_calibrate(dev, false);
-		if (err < 0) {
-			LOG_ERR("Calibration error");
-			return err;
-		}
-#else
-		LOG_ERR("Calibration not supported");
-		return -ENOTSUP;
-#endif
-	}
-
-#ifdef CONFIG_ADC_STM32_VREFINT_CALIBRATE
-	if (sequence->calibrate && adc_stm32_is_vrefint_owner(dev)) {
-		int merr = adc_stm32_vrefint_measure(dev);
-
-		if (merr) {
-			LOG_WRN("VREFINT measure failed (%d)", merr);
-		}
-		/* Measure may have overwritten sequencer/resolution. */
-		err = set_resolution(dev, sequence);
-		if (err < 0) {
-			return err;
-		}
-		err = set_sequencer(dev);
-		if (err < 0) {
-			return err;
-		}
-	}
-#endif /* CONFIG_ADC_STM32_VREFINT_CALIBRATE */
 
 	/*
 	 * Make sure the ADC is enabled as it might have been disabled earlier
