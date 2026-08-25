@@ -1604,6 +1604,13 @@ static int wifi_set_bgscan(uint64_t mgmt_request, struct net_if *iface, void *da
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_BGSCAN, wifi_set_bgscan);
 #endif
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
+
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P_DEVICE_NAME
+BUILD_ASSERT(sizeof(CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P_DEVICE_NAME) - 1 <=
+			WIFI_P2P_DEVICE_NAME_MAX_LEN,
+			"CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P_DEVICE_NAME too long");
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P_DEVICE_NAME */
+
 static int wifi_p2p_oper(uint64_t mgmt_request, struct net_if *iface,
 		    void *data, size_t len)
 {
