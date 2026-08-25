@@ -677,6 +677,15 @@
 			clocks = <&syscon MCUX_FLEXIO0_CLK>;
 		};
 
+		smartdma: dma@4000e000 {
+			compatible = "nxp,smartdma";
+			reg = <0x4000e000 0x1000>;
+			status = "disabled";
+			interrupts = <108 0>;
+			program-mem = <0x4000000>;
+			#dma-cells = <0>;
+		};
+
 		slcd: display-controller@400c2000 {
 			compatible = "nxp,slcd";
 			reg = <0x400c2000 0x1000>;
