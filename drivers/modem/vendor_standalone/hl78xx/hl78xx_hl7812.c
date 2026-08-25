@@ -40,6 +40,23 @@ static void hl78xx_hl7812_on_kstatev_urc(struct hl78xx_data *data, int state_val
 	hl78xx_on_kstatev_parser(data, state_value, rat_mode);
 #endif /* CONFIG_MODEM_HL78XX_LOG_CONTEXT_VERBOSE_DEBUG */
 
+	/* NB-NTN runs the NB-IoT protocol stack, and +KSTATEV reports the
+	 * stack's technology, not the +KSRAT selection: while KSRAT is 3
+	 * (NB-NTN) the URC says 1 (NB-IoT). Overwriting the cached RAT with
+	 * that value made the driver announce a switch to terrestrial NB-IoT
+	 * moments after AT+KSRAT? read back 3, and the application tore down
+	 * and re-applied its whole NTN configuration in response. A genuine
+	 * departure from NB-NTN cannot happen behind our back (it requires a
+	 * KSRAT write; the NTN flows keep Auto-RAT disabled with a cleared
+	 * PRL) and always flows through an AT+KSRAT? readback, which remains
+	 * the authoritative source.
+	 */
+	if ((rat_mode == (int)HL78XX_RAT_NB1) &&
+	    (data->status.registration.rat_mode == HL78XX_RAT_NBNTN)) {
+		LOG_DBG("KSTATEV reported NB-IoT while NB-NTN is selected; keeping NB-NTN");
+		return;
+	}
+
 	if (rat_mode != data->status.registration.rat_mode) {
 		data->status.registration.rat_mode = rat_mode;
 		event.content.rat_mode = data->status.registration.rat_mode;

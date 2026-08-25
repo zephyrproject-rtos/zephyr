@@ -599,6 +599,17 @@ static void hl78xx_dispatch_rat_mode_update_if_needed(struct hl78xx_data *data,
 		return;
 	}
 
+	/* Registration URCs report the protocol stack's technology, which
+	 * cannot tell NB-NTN from terrestrial NB-IoT (same rule as the
+	 * +KSTATEV handler in hl78xx_hl7812.c): while NB-NTN is the selected
+	 * RAT, an NB-IoT report is not a RAT change and must not overwrite
+	 * the selection. AT+KSRAT? readbacks stay authoritative.
+	 */
+	if ((rat_mode == HL78XX_RAT_NB1) &&
+	    (data->status.registration.rat_mode == HL78XX_RAT_NBNTN)) {
+		return;
+	}
+
 	data->status.registration.rat_mode = rat_mode;
 	rat_event->content.rat_mode = rat_mode;
 	event_dispatcher_dispatch(rat_event);
