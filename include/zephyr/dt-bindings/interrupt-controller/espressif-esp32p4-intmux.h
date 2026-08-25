@@ -1,6 +1,5 @@
-/*
+/**
  * Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
- *
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -14,6 +13,8 @@
 
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_INTERRUPT_CONTROLLER_ESP_ESP32P4_INTMUX_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_INTERRUPT_CONTROLLER_ESP_ESP32P4_INTMUX_H_
+
+#include <zephyr/dt-bindings/interrupt-controller/espressif-intmux-common.h>
 
 /**
  * @defgroup dt_esp32p4_intmux Espressif ESP32-P4 interrupt allocator
@@ -159,7 +160,71 @@
  *
  * Zero will allocate low/medium levels of priority (ESP_INTR_FLAG_LOWMED).
  */
-#define IRQ_DEFAULT_PRIORITY 0
+#define IRQ_DEFAULT_PRIORITY 1 /**< Irq Default Priority */
+
+/**
+ * @brief LP core interrupts.
+ *
+ * Unlike the HP core, the LP core has no interrupt matrix. Each of these is a slot
+ * in the LP core's directly-vectored interrupt table, which jumps straight to the
+ * matching weak ulp_lp_core_*_intr_handler() symbol; unlisted slots trap into the
+ * panic handler. These are the values for the "espressif,esp32-lpcore-intc" cell -
+ * do not use the HP source numbers above.
+ */
+#define LP_CORE_SW_INTR_SOURCE        3  /**< HP core software interrupt */
+#define LP_CORE_UART_INTR_SOURCE      7  /**< LP core UART interrupt */
+#define LP_CORE_SPI_INTR_SOURCE       11 /**< LP core SPI interrupt */
+#define LP_CORE_TRNG_INTR_SOURCE      16 /**< LP core TRNG interrupt */
+#define LP_CORE_I2C_INTR_SOURCE       17 /**< LP core I2C interrupt */
+#define LP_CORE_IO_INTR_SOURCE        18 /**< LP core IO interrupt */
+#define LP_CORE_ADC_INTR_SOURCE       19 /**< LP core ADC interrupt */
+#define LP_CORE_TOUCH_INTR_SOURCE     20 /**< LP core touch interrupt */
+#define LP_CORE_TSENS_INTR_SOURCE     21 /**< LP core temperature sensor interrupt */
+#define LP_CORE_EFUSE_INTR_SOURCE     22 /**< LP core eFuse interrupt */
+#define LP_CORE_SYSREG_INTR_SOURCE    23 /**< LP core system register interrupt */
+#define LP_CORE_ANA_PERI_INTR_SOURCE  24 /**< LP core analog peripheral interrupt */
+#define LP_CORE_PMU_INTR_SOURCE       25 /**< LP core PMU interrupt */
+#define LP_CORE_MAILBOX_INTR_SOURCE   26 /**< LP core mailbox interrupt */
+#define LP_CORE_TIMER_INTR_SOURCE     27 /**< LP core timer interrupt */
+#define LP_CORE_WDT_INTR_SOURCE       28 /**< LP core watchdog interrupt */
+#define LP_CORE_RTC_INTR_SOURCE       29 /**< LP core RTC interrupt */
+
+/**
+ * @brief CPU interrupt lines.
+ *
+ * 6 for "permanently disabled interrupt"
+ */
+#define ESP_CPU_IRQ_0  0  /**< CPU interrupt line 0 */
+#define ESP_CPU_IRQ_1  1  /**< CPU interrupt line 1 */
+#define ESP_CPU_IRQ_2  2  /**< CPU interrupt line 2 */
+#define ESP_CPU_IRQ_3  3  /**< CPU interrupt line 3 */
+#define ESP_CPU_IRQ_4  4  /**< CPU interrupt line 4 */
+#define ESP_CPU_IRQ_5  5  /**< CPU interrupt line 5 */
+#define ESP_CPU_IRQ_7  7  /**< CPU interrupt line 7 */
+#define ESP_CPU_IRQ_8  8  /**< CPU interrupt line 8 */
+#define ESP_CPU_IRQ_9  9  /**< CPU interrupt line 9 */
+#define ESP_CPU_IRQ_10 10 /**< CPU interrupt line 10 */
+#define ESP_CPU_IRQ_11 11 /**< CPU interrupt line 11 */
+#define ESP_CPU_IRQ_12 12 /**< CPU interrupt line 12 */
+#define ESP_CPU_IRQ_13 13 /**< CPU interrupt line 13 */
+#define ESP_CPU_IRQ_14 14 /**< CPU interrupt line 14 */
+#define ESP_CPU_IRQ_15 15 /**< CPU interrupt line 15 */
+#define ESP_CPU_IRQ_16 16 /**< CPU interrupt line 16 */
+#define ESP_CPU_IRQ_17 17 /**< CPU interrupt line 17 */
+#define ESP_CPU_IRQ_18 18 /**< CPU interrupt line 18 */
+#define ESP_CPU_IRQ_19 19 /**< CPU interrupt line 19 */
+#define ESP_CPU_IRQ_20 20 /**< CPU interrupt line 20 */
+#define ESP_CPU_IRQ_21 21 /**< CPU interrupt line 21 */
+#define ESP_CPU_IRQ_22 22 /**< CPU interrupt line 22 */
+#define ESP_CPU_IRQ_23 23 /**< CPU interrupt line 23 */
+#define ESP_CPU_IRQ_24 24 /**< CPU interrupt line 24 */
+#define ESP_CPU_IRQ_25 25 /**< CPU interrupt line 25 */
+#define ESP_CPU_IRQ_26 26 /**< CPU interrupt line 26 */
+#define ESP_CPU_IRQ_27 27 /**< CPU interrupt line 27 */
+#define ESP_CPU_IRQ_28 28 /**< CPU interrupt line 28 */
+#define ESP_CPU_IRQ_29 29 /**< CPU interrupt line 29 */
+#define ESP_CPU_IRQ_30 30 /**< CPU interrupt line 30 */
+#define ESP_CPU_IRQ_31 31 /**< CPU interrupt line 31 */
 
 /** @endcond */
 
