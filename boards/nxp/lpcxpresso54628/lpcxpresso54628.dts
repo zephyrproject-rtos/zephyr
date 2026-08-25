@@ -7,6 +7,7 @@
 /dts-v1/;
 
 #include <nxp/lpc/nxp_lpc546xx.dtsi>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include "lpcxpresso54628-pinctrl.dtsi"
 
@@ -27,6 +28,7 @@
 		led2 = &led3;
 		usart-0 = &flexcomm0;
 		sw0 = &user_button;
+		accel0 = &mma8652fc;
 	};
 
 	/*
@@ -105,5 +107,27 @@ zephyr_udc0: &usbhs {
 		compatible = "zephyr,sdmmc-disk";
 		disk-name = "SD";
 		status = "okay";
+	};
+};
+
+&flexcomm2 {
+	compatible = "nxp,lpc-i2c";
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&pinmux_flexcomm2_i2c>;
+	pinctrl-names = "default";
+
+	/*
+	 * NXP MMA8652FC 3-axis accelerometer. INT1 is wired to P3_4 and INT2 is
+	 * unconnected. The pin interrupt engine can only select pins on ports 0
+	 * and 1, so INT1 cannot raise a GPIO interrupt and the driver's trigger
+	 * support is unavailable on this board.
+	 */
+	mma8652fc: mma8652fc@1d {
+		compatible = "nxp,fxos8700", "nxp,mma8652fc";
+		reg = <0x1d>;
+		int1-gpios = <&gpio3 4 GPIO_ACTIVE_LOW>;
 	};
 };
