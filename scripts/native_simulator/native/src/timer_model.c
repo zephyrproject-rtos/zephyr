@@ -189,11 +189,44 @@ static void hwtimer_init(void)
 NSI_TASK(hwtimer_init, HW_INIT, 10);
 
 /**
- * Enable the HW timer tick interrupts with a period <period> in microseconds
+ * Enable the HW ticker timer in one shot mode, so it triggers once at <deadline>
+ * where <deadline> is the number of microseconds since boot.
+ *
+ * If deadline is in the past, at less than UINT64_MAX/2 it will trigger immediately.
+ * If it is further than that, an overflow will be assumed, and it will not trigger ever.
+ *
+ * You can call it with deadline = NSI_NEVER to effectively disable the tick timer interrupt
+ *
+ * Note a possible periodic tick, and silent_ticks, configuration will be cleared.
+ */
+void hwtimer_set_tick_one_shot(uint64_t deadline)
+{
+	uint64_t now = nsi_hws_get_time();
+
+	if (deadline < now) {
+		if ((now - deadline) > UINT64_MAX/2) {
+			nsi_print_warning("%s: deadline seems to have overflowed. "
+					  "It will never trigger.\n", __func__);
+			deadline = NSI_NEVER;
+		} else {
+			deadline = now;
+		}
+	}
+	hw_timer_tick_timer = deadline;
+	tick_p = NSI_NEVER;
+	silent_ticks = 0;
+	hwtimer_update_timer();
+	nsi_hws_find_next_event();
+}
+
+/**
+ * Enable the HW timer periodic tick interrupts with a period <period> in microseconds.
  *
  * The next interrupt will be <period> microseconds from now.
  *
  * If silent_ticks had been enabled, it will be cleared.
+ * If a one shot deadline had been configured it will also be cleared.
+ *
  * If period would overflow the timer, the deadline will be set at the end of time (NSI_NEVER)
  */
 void hwtimer_enable(uint64_t period)
@@ -290,7 +323,8 @@ NSI_HW_EVENT(hw_timer_timer, hwtimer_timer_reached, 0);
 
 /**
  * The timer HW will awake the CPU (without an interrupt) at least when <time>
- * comes (it may awake it earlier)
+ * comes (it may awake it earlier).
+ * This is unrelated to the timer tick functionality and its one shot mode
  *
  * If there was a previous request for an earlier time, the old one will prevail
  *
