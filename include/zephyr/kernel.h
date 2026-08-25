@@ -4278,6 +4278,8 @@ static inline bool k_work_is_pending(const struct k_work *work);
  * @satisfies ZEP-SRS-38-11
  * @satisfies ZEP-SRS-38-12
  * @satisfies ZEP-SRS-38-14
+ * @satisfies ZEP-SRS-38-47
+ * @satisfies ZEP-SRS-38-48
  * @satisfies ZEP-SRS-38-32
  */
 int k_work_submit_to_queue(struct k_work_q *queue,
@@ -4514,6 +4516,8 @@ int k_work_queue_unplug(struct k_work_q *queue);
  * @retval -ENOTSUP if the work queue is essential
  *
  * @satisfies ZEP-SRS-38-8
+ * @satisfies ZEP-SRS-38-45
+ * @satisfies ZEP-SRS-38-46
  */
 int k_work_queue_stop(struct k_work_q *queue, k_timeout_t timeout);
 
@@ -4702,6 +4706,7 @@ int k_work_schedule(struct k_work_delayable *dwork,
  *         k_work_submit_to_queue() fails with this code.
  *
  * @satisfies ZEP-SRS-38-23
+ * @satisfies ZEP-SRS-38-49
  */
 int k_work_reschedule_for_queue(struct k_work_q *queue,
 				 struct k_work_delayable *dwork,
@@ -4720,6 +4725,7 @@ int k_work_reschedule_for_queue(struct k_work_q *queue,
  * @return as with k_work_reschedule_for_queue().
  *
  * @satisfies ZEP-SRS-38-23
+ * @satisfies ZEP-SRS-38-49
  */
 int k_work_reschedule(struct k_work_delayable *dwork,
 				     k_timeout_t delay);
@@ -4749,6 +4755,7 @@ int k_work_reschedule(struct k_work_delayable *dwork,
  * @retval false if work was already idle
  *
  * @satisfies ZEP-SRS-38-42
+ * @satisfies ZEP-SRS-38-50
  */
 bool k_work_flush_delayable(struct k_work_delayable *dwork,
 			    struct k_work_sync *sync);
@@ -5405,6 +5412,7 @@ struct k_work_poll {
  *
  * @param work Address of triggered work item.
  * @param handler Function to invoke each time work item is processed.
+ * @satisfies ZEP-SRS-38-51
  */
 void k_work_poll_init(struct k_work_poll *work,
 			     k_work_handler_t handler);
@@ -5444,6 +5452,7 @@ void k_work_poll_init(struct k_work_poll *work,
  * @retval -EADDRINUSE Work item is pending on a different workqueue.
  *
  * @satisfies ZEP-SRS-38-27
+ * @satisfies ZEP-SRS-38-52
  */
 int k_work_poll_submit_to_queue(struct k_work_q *work_q,
 				       struct k_work_poll *work,
@@ -5483,6 +5492,7 @@ int k_work_poll_submit_to_queue(struct k_work_q *work_q,
  * @retval -EADDRINUSE Work item is pending on a different workqueue.
  *
  * @satisfies ZEP-SRS-38-27
+ * @satisfies ZEP-SRS-38-52
  */
 int k_work_poll_submit(struct k_work_poll *work,
 				     struct k_poll_event *events,

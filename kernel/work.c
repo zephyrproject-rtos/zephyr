@@ -689,6 +689,7 @@ static void work_timeout_stop_locked(struct k_work_q *queue)
  *
  * @satisfies ZEP-SRS-38-3
  * @satisfies ZEP-SRS-38-4
+ * @satisfies ZEP-SRS-38-44
  * @satisfies ZEP-SRS-38-13
  */
 static void work_queue_main(void *workq_ptr, void *p2, void *p3)
