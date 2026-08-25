@@ -86,6 +86,20 @@ config ZMS_NO_DOUBLE_WRITE
 	  This option will reduce write performance as it will need to do a research of the
 	  data in the whole storage before any write.
 
+config ZMS_NO_ERASE_VERIFY
+	bool "Skip post-erase read-back verification"
+	help
+	  By default ZMS verifies that a sector was successfully erased by reading
+	  back every byte and comparing it to the flash erase value (typically 0xFF).
+	  On platforms where the flash read path uses transparent hardware encryption
+	  (e.g. XIP with AES-CTR), an erased sector does not read back as 0xFF even
+	  though the erase physically succeeded -- the hardware decrypts the raw 0xFF
+	  bits into a non-0xFF pattern.  In such cases the read-back check always fails
+	  even though the erase is fine.
+	  When this option is enabled the post-erase verification step is skipped.
+	  Only enable it if the flash driver reliably reports erase completion on
+	  its own, since ZMS will no longer confirm the erase by reading it back.
+
 module = ZMS
 module-str = zms
 source "subsys/logging/Kconfig.template.log_config"
