@@ -102,3 +102,15 @@
 	pinctrl-names = "default";
 	status = "okay";
 };
+
+/* HDC2010 temperature and humidity sensor is on this bus at 0x41 */
+&i2c0 {
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	hdc2010: hdc2010@41 {
+		compatible = "ti,hdc2010";
+		reg = <0x41>;
+	};
+};
