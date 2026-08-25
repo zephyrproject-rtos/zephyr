@@ -1,0 +1,6 @@
+board:
+  name: xg29_rb4413a
+  full_name: EFR32xG29 2.4 GHz 6 dBm Boost QFN40 (xG29-RB4413A)
+  vendor: silabs
+  socs:
+    - name: efr32mg29b230f1024cm40
