@@ -31,6 +31,7 @@ tests:
       - pic32cz_ca80_cult
       - pic32cz_ca90_cult
       - pic32cm_sg00_cpro
+      - pic32cm_gc00_cpro
     integration_platforms:
       - nrf54l15dk/nrf54l15/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
