@@ -555,3 +555,10 @@ test_spi_icm56686: icm56686@42 {
 	gyro-lpf = <1>;
 	gyro-pwr-mode = <2>;
 };
+
+test_spi_ad5940: ad5940@43 {
+	compatible = "adi,ad5940";
+	reg = <0x43>;
+	spi-max-frequency = <0>;
+	int-gpios = <&test_gpio 0 0>;
+};
