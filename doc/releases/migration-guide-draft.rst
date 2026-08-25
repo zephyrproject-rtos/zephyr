@@ -47,6 +47,15 @@ Device Drivers and Devicetree
 
 .. zephyr-keep-sorted-start re(^\w) ignorecase
 
+I2C
+===
+
+* ``CONFIG_I2C_ALLOW_NO_STOP_TRANSACTIONS``, deprecated since Zephyr 4.0, has been removed.
+  :c:func:`i2c_transfer` and :c:func:`i2c_transfer_cb` now always enforce a STOP condition on
+  the last message of a transfer. Splitting a logical transaction across several
+  :c:func:`i2c_transfer` calls to keep the bus claimed is no longer possible; issue the whole
+  transaction, using ``I2C_MSG_RESTART`` where needed, in a single call instead.
+
 .. zephyr-keep-sorted-stop
 
 Bluetooth
