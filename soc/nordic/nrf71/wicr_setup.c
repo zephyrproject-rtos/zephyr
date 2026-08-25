@@ -22,8 +22,10 @@
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 #endif
 
-/* When out-of-tree patch is included, it defines the LMAC and UMAC patch
- * addresses and takes precedence over the devicetree values.
+/* A Wi-Fi ROM patch build defines the LMAC and UMAC patch addresses, taken
+ * from the patch manifest and reserved in MRAM by the build system, and those
+ * take precedence. Without a patch the devicetree values are used, which point
+ * at the entry the ROM uses when no patch is applied.
  */
 #ifdef NRF71_WIFI_LMAC_PATCH_ADDR
 #define WICR_LMAC_PATCH_ADDR NRF71_WIFI_LMAC_PATCH_ADDR
