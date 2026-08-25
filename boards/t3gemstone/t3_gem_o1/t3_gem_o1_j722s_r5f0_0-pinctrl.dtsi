@@ -20,6 +20,16 @@
 		pinmux = <K3_PINMUX(0x01b0, PIN_OUTPUT, MUX_MODE_2)>;
 	};
 
+	led_green_default: led-green-default-pins {
+		/* GPIO1_52 - green user LED */
+		pinmux = <K3_PINMUX(0x025c, PIN_OUTPUT, MUX_MODE_7)>;
+	};
+
+	led_red_default: led-red-default-pins {
+		/* GPIO1_53 - red user LED */
+		pinmux = <K3_PINMUX(0x0260, PIN_OUTPUT, MUX_MODE_7)>;
+	};
+
 	hat_07_gpio: hat-07-gpio-pins {
 		/* (W26) GPMC0_WAIT1.GPIO0_38 */
 		pinmux = <K3_PINMUX(0x09c, PIN_INPUT, MUX_MODE_7)>;
