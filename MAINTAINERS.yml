@@ -7778,6 +7778,7 @@ hawkBit:
 
 nRF BSIM:
   status: maintained
+  meta: true
   maintainers:
     - aescolar
   files:
