@@ -532,7 +532,8 @@ static int offload_poll(struct zsock_pollfd *fds, int nfds, int msecs)
 }
 
 /*
- * Offloads ioctl. Only supported ioctl is poll_offload.
+ * Offloads ioctl. Supports the poll offload requests and the
+ * F_GETFL/F_SETFL fcntl requests.
  */
 static int offload_ioctl(void *obj, unsigned int request, va_list args)
 {
@@ -554,6 +555,16 @@ static int offload_ioctl(void *obj, unsigned int request, va_list args)
 
 		return offload_poll(fds, nfds, timeout);
 	}
+
+	case ZVFS_F_GETFL:
+		/* The socket is always blocking, no flags are set. */
+		return 0;
+
+	case ZVFS_F_SETFL:
+		/* Accept and ignore: the socket stays blocking, non-blocking
+		 * reads are requested per call via MSG_DONTWAIT.
+		 */
+		return 0;
 
 	default:
 		errno = EINVAL;
