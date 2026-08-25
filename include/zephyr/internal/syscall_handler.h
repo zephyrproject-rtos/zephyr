@@ -121,6 +121,33 @@ void k_object_dump_error(int retval, const void *obj,
  */
 struct k_object *k_object_find(const void *obj);
 
+/**
+ * Check whether a kernel object was dynamically allocated
+ *
+ * The lifetime of a dynamically allocated kernel object is driven by its
+ * permission bitmask: the object is freed as soon as
+ * the last thread holding permission on it releases that permission or
+ * terminates, and the memory may then be reused by an unrelated kernel object.
+ * A pointer held by the kernel itself is not represented in that bitmask and
+ * therefore does not keep the object alive.
+ *
+ * Any syscall which retains a pointer to a kernel object beyond the duration
+ * of the call itself must therefore reject dynamically allocated objects, as
+ * validating the object at registration time says nothing about its validity
+ * when the retained pointer is later dereferenced.
+ *
+ * @param obj Address of the kernel object
+ * @return true if the object exists and was dynamically allocated
+ * @note This is an internal API. Do not use unless you are extending
+ *       functionality in the Zephyr tree.
+ */
+static inline bool k_object_is_dynamic(const void *obj)
+{
+	struct k_object *ko = k_object_find(obj);
+
+	return (ko != NULL) && ((ko->flags & K_OBJ_FLAG_ALLOC) != 0U);
+}
+
 typedef void (*_wordlist_cb_func_t)(struct k_object *ko, void *context);
 
 /**
@@ -646,6 +673,32 @@ static inline int k_object_validation_check(struct k_object *ko,
 
 #define K_SYSCALL_OBJ_NEVER_INIT(ptr, type) \
 	K_SYSCALL_IS_OBJ(ptr, type, _OBJ_INIT_FALSE)
+
+/**
+ * @brief Runtime check kernel object pointer that the kernel will retain
+ *
+ * As K_SYSCALL_OBJ(), but additionally rejects dynamically allocated kernel
+ * objects. Use this instead of K_SYSCALL_OBJ() in system call handlers which
+ * store the object pointer somewhere the kernel dereferences after the system
+ * call has returned. A dynamically allocated object can be freed by user mode
+ * at any point after the check -- by calling k_object_release() or simply by
+ * terminating the last thread holding permission on it -- leaving the retained
+ * pointer dangling and liable to alias an unrelated object once the memory is
+ * reused.
+ *
+ * @param ptr Untrusted kernel object pointer
+ * @param type Expected kernel object type
+ * @return 0 on success, nonzero on failure
+ * @note This is an internal API. Do not use unless you are extending
+ *       functionality in the Zephyr tree.
+ */
+
+#define K_SYSCALL_OBJ_STATIC(ptr, type) \
+	(K_SYSCALL_OBJ(ptr, type) || \
+	 K_SYSCALL_VERIFY_MSG(!k_object_is_dynamic((const void *)(ptr)), \
+			      "dynamically allocated kernel object %p may not " \
+			      "be used here, it can be freed while still in use", \
+			      (const void *)(ptr)))
 
 #include <zephyr/driver-validation.h>
 
