@@ -1186,17 +1186,8 @@ int nrf_wifi_wpa_set_supp_port(void *if_priv, int authorized, char *bssid)
 out:
 	k_mutex_unlock(&vif_ctx_zep->vif_lock);
 
-	/* Toggle dormant outside vif_lock: bringing the interface operational
-	 * runs net stack callbacks that may queue TX (which takes vif_lock).
-	 * Data TX is withheld until the controlled port is authorized (EAPOL
-	 * uses the control port), avoiding transmits into the closed port.
-	 */
 	if (update_dormant) {
-		if (authorized) {
-			net_if_dormant_off(vif_ctx_zep->zep_net_if_ctx);
-		} else {
-			net_if_dormant_on(vif_ctx_zep->zep_net_if_ctx);
-		}
+		nrf_wifi_refresh_oper_state(vif_ctx_zep);
 	}
 	return ret;
 }
