@@ -179,6 +179,7 @@ FUNC_NORETURN void arch_secondary_cpu_init(void)
 #endif
 
 #ifdef CONFIG_SMP
+#if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
 	arm_gic_secondary_init();
 
 	irq_enable(SGI_SCHED_IPI);
@@ -191,6 +192,14 @@ FUNC_NORETURN void arch_secondary_cpu_init(void)
 #ifdef CONFIG_DEBUG_COREDUMP_SMP_FREEZE_CPUS
 	irq_enable(SGI_COREDUMP_FREEZE_IPI);
 #endif
+#else
+	/*
+	 * No GIC (e.g. BCM2710/BCM2836 ARM-local intc). Per-core IPI setup
+	 * is done by the SoC in soc_per_core_init_hook() below and the
+	 * per-core timer by smp_timer_init(); the scheduler IPI is raised
+	 * via the SoC mailbox path in send_ipi().
+	 */
+#endif /* !CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
 #endif
 
 	soc_per_core_init_hook();
@@ -215,6 +224,50 @@ FUNC_NORETURN void arch_secondary_cpu_init(void)
 
 #ifdef CONFIG_SMP
 
+#if defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
+/*
+ * The mem-cfg IPI has no custom-intc transport: delivering it as a
+ * scheduler IPI would leave the other cores' page tables stale, so
+ * refuse the combination outright rather than misbehave at runtime.
+ */
+BUILD_ASSERT(!IS_ENABLED(CONFIG_USERSPACE),
+	     "CONFIG_USERSPACE needs the mem-cfg IPI, which has no "
+	     "custom interrupt controller transport yet");
+
+/*
+ * Raise a scheduler IPI on the target core. The SoC provides the real
+ * implementation (e.g. the BCM2836 per-core mailboxes); this weak no-op
+ * keeps non-mailbox custom-intc platforms linking.
+ */
+__weak void soc_sched_ipi(uint64_t target_mpidr)
+{
+	ARG_UNUSED(target_mpidr);
+}
+
+#ifdef CONFIG_FPU_SHARING
+/*
+ * FPU-flush IPI transport. Same contract as soc_sched_ipi: the SoC
+ * supplies the transport, connects flush_fpu_ipi_handler() to it, and
+ * lets arch_spin_relax() below poll and clear a pending flush. A SoC
+ * that provides none of these cannot safely migrate FPU state and
+ * must keep FPU_SHARING disabled.
+ */
+__weak void soc_flush_fpu_ipi(uint64_t target_mpidr)
+{
+	ARG_UNUSED(target_mpidr);
+}
+
+__weak bool soc_fpu_ipi_is_pending(void)
+{
+	return false;
+}
+
+__weak void soc_fpu_ipi_clear_pending(void)
+{
+}
+#endif
+#endif
+
 static void send_ipi(unsigned int ipi, uint32_t cpu_bitmap)
 {
 	uint64_t mpidr = MPIDR_TO_CORE(GET_MPIDR());
@@ -237,7 +290,18 @@ static void send_ipi(unsigned int ipi, uint32_t cpu_bitmap)
 		}
 
 		aff0 = MPIDR_AFFLVL(target_mpidr, 0);
+#if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
 		gic_raise_sgi(ipi, target_mpidr, 1 << aff0);
+#else
+		ARG_UNUSED(aff0);
+		/*
+		 * Only the scheduler IPI is routed through the SoC hook.
+		 * CONFIG_USERSPACE's mem-cfg IPI has no custom-intc
+		 * transport yet.
+		 */
+		__ASSERT(ipi == SGI_SCHED_IPI, "unsupported IPI %u", ipi);
+		soc_sched_ipi(target_mpidr);
+#endif
 	}
 }
 
@@ -299,7 +363,12 @@ void arch_flush_fpu_ipi(unsigned int cpu)
 	}
 
 	aff0 = MPIDR_AFFLVL(mpidr, 0);
+#if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
 	gic_raise_sgi(SGI_FPU_IPI, mpidr, 1 << aff0);
+#else
+	ARG_UNUSED(aff0);
+	soc_flush_fpu_ipi(mpidr);
+#endif
 }
 
 /*
@@ -311,6 +380,7 @@ void arch_flush_fpu_ipi(unsigned int cpu)
  */
 void arch_spin_relax(void)
 {
+#if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
 	if (arm_gic_irq_is_pending(SGI_FPU_IPI)) {
 		arm_gic_irq_clear_pending(SGI_FPU_IPI);
 		/*
@@ -319,6 +389,13 @@ void arch_spin_relax(void)
 		 */
 		arch_float_disable(_current_cpu->arch.fpu_owner);
 	}
+#else
+	if (soc_fpu_ipi_is_pending()) {
+		soc_fpu_ipi_clear_pending();
+		/* Ditto: possibly not in IRQ context. */
+		arch_float_disable(_current_cpu->arch.fpu_owner);
+	}
+#endif
 }
 #endif
 
@@ -575,6 +652,7 @@ int arch_smp_init(void)
 	 * SGI0 is use for sched ipi, this might be changed to use Kconfig
 	 * option
 	 */
+#if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
 	IRQ_CONNECT(SGI_SCHED_IPI, IRQ_DEFAULT_PRIORITY, sched_ipi_handler, NULL, 0);
 	irq_enable(SGI_SCHED_IPI);
 
@@ -592,6 +670,9 @@ int arch_smp_init(void)
 			coredump_freeze_ipi_handler, NULL, 0);
 	irq_enable(SGI_COREDUMP_FREEZE_IPI);
 #endif
+#else
+	/* No GIC: the SoC connects its mailbox IPI to sched_ipi_handler. */
+#endif /* !CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
 
 	return 0;
 }
