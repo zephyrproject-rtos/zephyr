@@ -227,6 +227,18 @@ static void send_ctaphid_error(const uint32_t cid, const uint8_t error_code)
 	usb_hid_send_frame(CTAPHID_ERROR, cid, &error_code, 1);
 }
 
+static uint8_t recv_error_to_ctaphid(int err)
+{
+	switch (err) {
+	case -EMSGSIZE:
+		return CTAPHID_ERR_INVALID_LEN;
+	case -ENOBUFS:
+		return CTAPHID_ERR_CHANNEL_BUSY;
+	default:
+		return CTAPHID_ERR_OTHER;
+	}
+}
+
 static void send_ctaphid_init_response(const uint32_t resp_cid,
 				       const uint8_t nonce[CTAPHID_INIT_NONCE_SIZE],
 				       const uint32_t new_cid)
@@ -276,28 +288,37 @@ static void dispatch_message(uint32_t cid, uint8_t cmd, uint8_t *data, size_t le
 		/* Echo back the same thing */
 		usb_hid_send_frame(cmd, cid, data, len);
 		break;
-	case CTAPHID_CBOR:
+	case CTAPHID_CBOR: {
+		int ret;
+
 		/*
 		 * Implicitly cancel any pending UP wait before dispatching the
 		 * new command. Some WebAuthn clients don't send CTAPHID_CANCEL
 		 * command, Safari/AuthenticationServices framework has this issue.
 		 */
 		if (ctx.cancel_cb) {
-			ctx.cancel_cb();
+			ctx.cancel_cb(&usb_hid_transport);
 		}
+		if (ctx.recv_cb == NULL) {
+			send_ctaphid_error(cid, CTAPHID_ERR_OTHER);
+			break;
+		}
+
 		/* Forward to core layer */
-		if (ctx.recv_cb) {
-			ctx.recv_cb(&usb_hid_transport, cid, data, len);
+		ret = ctx.recv_cb(&usb_hid_transport, cid, data, len);
+		if (ret != 0) {
+			LOG_WRN("Failed to enqueue CTAPHID_CBOR on CID 0x%08x: %d", cid, ret);
+			send_ctaphid_error(cid, recv_error_to_ctaphid(ret));
 		}
 		break;
+	}
 	case CTAPHID_CANCEL:
 		/*
 		 * Cancel any pending operation. Per spec this has no
 		 * response, it just aborts a pending keepalive/UP cycle.
 		 */
-		LOG_DBG("CTAPHID CANCEL on CID 0x%08x", cid);
 		if (ctx.cancel_cb) {
-			ctx.cancel_cb();
+			ctx.cancel_cb(&usb_hid_transport);
 		}
 		break;
 	case CTAPHID_MSG:

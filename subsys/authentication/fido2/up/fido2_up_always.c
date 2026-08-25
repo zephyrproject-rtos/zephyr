@@ -12,6 +12,10 @@ int fido2_up_wait(void)
 	return 0;
 }
 
+void fido2_up_reset(void)
+{
+}
+
 void fido2_up_cancel(void)
 {
 }
