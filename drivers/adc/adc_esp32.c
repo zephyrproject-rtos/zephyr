@@ -9,6 +9,7 @@
 #include <esp_clk_tree.h>
 #include <esp_private/sar_periph_ctrl.h>
 #include <esp_private/adc_share_hw_ctrl.h>
+#include <esp_private/regi2c_ctrl.h>
 
 #include "adc_esp32.h"
 
@@ -150,6 +151,7 @@ static int adc_esp32_read(const struct device *dev, const struct adc_sequence *s
 	}
 #else
 	uint32_t acq_raw;
+	bool valid;
 
 	if (seq->channels > BIT(channel_id)) {
 		LOG_ERR("Multi-channel readings not supported");
@@ -167,6 +169,7 @@ static int adc_esp32_read(const struct device *dev, const struct adc_sequence *s
 	}
 
 	adc_lock_acquire(data->hal.unit);
+	ANALOG_CLOCK_ENABLE();
 
 	adc_oneshot_hal_setup(&data->hal, channel_id);
 
@@ -174,9 +177,14 @@ static int adc_esp32_read(const struct device *dev, const struct adc_sequence *s
 	adc_set_hw_calibration_code(data->hal.unit, data->attenuation[channel_id]);
 #endif /* SOC_ADC_CALIBRATION_V1_SUPPORTED */
 
-	adc_oneshot_hal_convert(&data->hal, &acq_raw);
+	valid = adc_oneshot_hal_convert(&data->hal, &acq_raw);
 
+	ANALOG_CLOCK_DISABLE();
 	adc_lock_release(data->hal.unit);
+
+	if (!valid) {
+		return -ETIMEDOUT;
+	}
 
 	if (data->cal_handle[channel_id]) {
 		if (data->meas_ref_internal > 0) {
@@ -380,6 +388,7 @@ static int adc_esp32_init(const struct device *dev)
 		.work_mode = ADC_HAL_SINGLE_READ_MODE,
 		.clk_src = ADC_DIGI_CLK_SRC_DEFAULT,
 		.clk_src_freq_hz = clock_src_hz,
+		.conv_timeout_us = CONFIG_ADC_ESP32_CONVERSION_TIMEOUT_US,
 	};
 
 	adc_oneshot_hal_init(&data->hal, &config);
