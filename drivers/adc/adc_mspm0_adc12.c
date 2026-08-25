@@ -365,10 +365,30 @@ static void adc_context_update_buffer_pointer(struct adc_context *ctx, bool repe
 	}
 }
 
+static int adc_mspm0_acq_time_to_ticks(uint16_t acq_time, uint32_t period_ns, uint32_t *ticks)
+{
+	switch (ADC_ACQ_TIME_UNIT(acq_time)) {
+	case ADC_ACQ_TIME_TICKS:
+		*ticks = ADC_ACQ_TIME_VALUE(acq_time);
+		break;
+	case ADC_ACQ_TIME_MICROSECONDS:
+		*ticks = DIV_ROUND_UP(ADC_ACQ_TIME_VALUE(acq_time) * 1000U, period_ns);
+		break;
+	case ADC_ACQ_TIME_NANOSECONDS:
+		*ticks = DIV_ROUND_UP(ADC_ACQ_TIME_VALUE(acq_time), period_ns);
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 static int adc_mspm0_validate_sampling_time(const struct adc_mspm0_cfg *config, uint16_t acq_time)
 {
 	uint32_t clock_rate;
 	uint32_t period_ns;
+	uint32_t ticks;
 	int ret;
 	uint8_t wakeup_cycles;
 
@@ -378,19 +398,23 @@ static int adc_mspm0_validate_sampling_time(const struct adc_mspm0_cfg *config, 
 		return ret;
 	}
 
+	period_ns = ADC_MSPM0_NS_PER_SEC / (clock_rate / config->divider);
+
 	if (!config->auto_pwdn) {
 		if (acq_time == ADC_ACQ_TIME_DEFAULT) {
 			return 0;
 		}
 
-		if ((ADC_ACQ_TIME_UNIT(acq_time) == ADC_ACQ_TIME_TICKS) &&
-		    (ADC_ACQ_TIME_VALUE(acq_time) <= ADC12_SCOMP_VAL)) {
-			return ADC_ACQ_TIME_VALUE(acq_time);
-		} else {
+		ret = adc_mspm0_acq_time_to_ticks(acq_time, period_ns, &ticks);
+		if (ret < 0) {
+			return ret;
+		}
+
+		if (ticks > ADC12_SCOMP_VAL) {
 			return -EINVAL;
 		}
+		return ticks;
 	} else {
-		period_ns = ADC_MSPM0_NS_PER_SEC / (clock_rate / config->divider);
 		/* Wakeup time is 5us for both l and g mspm0 series */
 		wakeup_cycles = ADC_MSPM0_WAKEUP_TIME_NS / period_ns;
 
@@ -398,15 +422,16 @@ static int adc_mspm0_validate_sampling_time(const struct adc_mspm0_cfg *config, 
 			return wakeup_cycles + 1;
 		}
 
-		if (ADC_ACQ_TIME_UNIT(acq_time) != ADC_ACQ_TIME_TICKS) {
-			return -EINVAL;
+		ret = adc_mspm0_acq_time_to_ticks(acq_time, period_ns, &ticks);
+		if (ret < 0) {
+			return ret;
 		}
 
-		acq_time = ADC_ACQ_TIME_VALUE(acq_time) + wakeup_cycles;
-		if (acq_time > ADC12_SCOMP_VAL) {
+		ticks += wakeup_cycles;
+		if (ticks > ADC12_SCOMP_VAL) {
 			return -EINVAL;
 		}
-		return acq_time;
+		return ticks;
 	}
 }
 
