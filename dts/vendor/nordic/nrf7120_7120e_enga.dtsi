@@ -1022,6 +1022,16 @@
 				};
 			};
 
+			lfrc: lfrc@123000 {
+				compatible = "nordic,nrf-lfrc";
+				reg = <0x123000 0x1000>;
+				interrupts = <291 NRF_DEFAULT_IRQ_PRIORITY>;
+				status = "disabled";
+				#clock-cells = <0>;
+				clock-frequency = <32768>;
+				accuracy-ppm = <250>;
+			};
+
 			audio_auxpll: auxpll@130000 {
 				compatible = "nordic,nrf-auxpll";
 				reg = <0x130000 0x1000>;
