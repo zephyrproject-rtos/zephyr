@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Perry Naseck, MIT Media Lab <pnaseck@media.mit.edu>
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - gpio
+  harness: ztest
+
+tests:
+  drivers.gpio.fast_api.oot_backend:
+    platform_allow:
+      - native_sim
