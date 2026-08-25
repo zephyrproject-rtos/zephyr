@@ -52,7 +52,7 @@
 		compatible = "nxp,kinetis-gpio";
 		status = "disabled";
 		reg = <0x9f000 0x1000>;
-		interrupts = <132 0>, <133 0>;
+		interrupts = <5 0>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		nxp,kinetis-port = <&porta>;
@@ -62,14 +62,14 @@
 		compatible = "nxp,lpuart";
 		status = "disabled";
 		reg = <0x82000 0x1000>;
-		interrupts = <130 0>;
+		interrupts = <3 0>;
 		clocks = <&root_clock1>;
 	};
 
 	rtc: rtc@9a000 {
 		compatible = "nxp,rtc-analog";
 		reg = <0x9a000 0x1000>;
-		interrupts = <140 0>, <141 0>, <142 0>;
+		interrupts = <13 0>, <14 0>, <15 0>;
 		interrupt-names = "alarm0", "alarm1", "alarm2";
 		alarms-count = <3>;
 		status = "disabled";
