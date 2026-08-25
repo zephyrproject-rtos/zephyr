@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2026 Linumiz
+ * SPDX-FileCopyrightText: 2026 Linumiz
+ * SPDX-FileCopyrightText: 2026 Texas Instruments Incorporated
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -13,9 +14,6 @@
 };
 
 &adc0 {
-	clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
-	ti,clk-divider = <1>;
-	max-result-reg = <12>;
 	pinctrl-0 = <&analog_pb25 &analog_pb24>;
 	pinctrl-names = "default";
 	status = "okay";
@@ -26,7 +24,8 @@
 		reg = <4>;
 		zephyr,gain = "ADC_GAIN_1";
 		zephyr,reference = "ADC_REF_VDD_1";
-		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,vref-mv = <3300>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 5)>;
 		zephyr,resolution = <12>;
 	};
 
@@ -34,7 +33,8 @@
 		reg = <5>;
 		zephyr,gain = "ADC_GAIN_1";
 		zephyr,reference = "ADC_REF_VDD_1";
-		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,vref-mv = <3300>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_MICROSECONDS, 5)>;
 		zephyr,resolution = <12>;
 	};
 };
