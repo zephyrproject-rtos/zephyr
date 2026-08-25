@@ -30,6 +30,7 @@ tests:
       - raytac_an54lv_db_15/nrf54l15/cpuapp
       - pic32cz_ca80_cult
       - pic32cz_ca90_cult
+      - pic32cm_sg00_cpro
     integration_platforms:
       - nrf54l15dk/nrf54l15/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
