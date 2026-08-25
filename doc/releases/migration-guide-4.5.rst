@@ -1756,6 +1756,13 @@ Other subsystems
   assertions are disabled.
   Mark values used only by assertions with ``__maybe_unused`` or ``ARG_UNUSED()`` as appropriate.
 
+hawkBit
+=======
+
+* The legacy ``<zephyr/mgmt/hawkbit.h>`` header, deprecated since Zephyr 4.0, has been removed.
+  Include ``<zephyr/mgmt/hawkbit/hawkbit.h>``, ``<zephyr/mgmt/hawkbit/config.h>`` and
+  ``<zephyr/mgmt/hawkbit/autohandler.h>`` instead.
+
 Logging
 =======
 

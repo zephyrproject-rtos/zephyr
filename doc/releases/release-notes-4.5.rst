@@ -175,6 +175,10 @@ Removed APIs and options
     * ``CONFIG_COUNTER_MAXIM_DS3231``
     * ``prescaler`` property of :dtcompatible:`nxp,lptmr`
 
+* hawkBit
+
+    * ``<zephyr/mgmt/hawkbit.h>``
+
 * LLEXT
 
     * ``llext_get_fn_table``, replaced by ``llext_get_fn_table_entry``
