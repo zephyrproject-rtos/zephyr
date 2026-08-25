@@ -32,11 +32,17 @@ separate_arguments(LATEXMKOPTS)
 
 find_package(Doxygen REQUIRED dot)
 
-find_program(SPHINXBUILD sphinx-build)
+get_filename_component(PYTHON_BIN_DIR "${PYTHON_EXECUTABLE}" DIRECTORY)
+
+# Prefer the Sphinx tools installed with the selected Python interpreter. Fall
+# back to the normal executable search path when they are not available there.
+unset(SPHINXBUILD CACHE)
+find_program(SPHINXBUILD sphinx-build HINTS "${PYTHON_BIN_DIR}")
 if(NOT SPHINXBUILD)
   message(WARNING "The 'sphinx-build' command was not found; Sphinx-based targets will not be available.")
 endif()
-find_program(SPHINXAUTOBUILD sphinx-autobuild)
+unset(SPHINXAUTOBUILD CACHE)
+find_program(SPHINXAUTOBUILD sphinx-autobuild HINTS "${PYTHON_BIN_DIR}")
 
 find_package(LATEX COMPONENTS PDFLATEX)
 find_program(LATEXMK latexmk)
