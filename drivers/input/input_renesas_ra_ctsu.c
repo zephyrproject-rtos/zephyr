@@ -337,10 +337,6 @@ __maybe_unused static void ctsu_renesas_ra_slider_cb(const struct device *dev, v
 	const struct ctsu_device_cfg *cfg = dev->config;
 	uint16_t *p_data = data;
 
-	if (p_data == NULL) {
-		return;
-	}
-
 	input_report_abs(dev, cfg->event_code, *p_data, false, K_NO_WAIT);
 }
 
