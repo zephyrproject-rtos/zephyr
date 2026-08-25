@@ -314,12 +314,21 @@ struct _timeout {
 	 */
 	int64_t abs_ticks;
 	struct min_heap_handle heap_handle;
+#elif defined(CONFIG_TIMEOUT_BACKEND_SKIPLIST)
+	/*
+	 * Skip-list backend: absolute expiry tick plus a geometric-height
+	 * tower of forward pointers. height == 0 means the timeout is not
+	 * queued (idle, popped for announcing, or aborted).
+	 */
+	int64_t abs_ticks;
+	uint8_t height;
+	struct _timeout *forward[CONFIG_TIMEOUT_SKIPLIST_MAX_LEVEL];
 #else
 	/*
-	 * Delta-list and timer-wheel backends: a list node plus dticks (a
-	 * delta to the predecessor for the delta list; an encoded slot
-	 * position for the wheel). The wheel adds a flags field recording
-	 * which wheel tier the timeout currently occupies.
+	 * Delta-list, bucket, and timer-wheel backends: a list node plus
+	 * dticks (a delta to the predecessor for the delta list; an encoded
+	 * slot position for the wheel or bucket). The wheel adds a flags
+	 * field recording which wheel tier the timeout currently occupies.
 	 */
 	sys_dnode_t node;
 #if defined(CONFIG_TIMEOUT_BACKEND_WHEEL)
