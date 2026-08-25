@@ -214,6 +214,11 @@ ADC
   default 3300). This only affects multi-ADC DTs that set divergent
   ``vref-mv`` values and relied on the old shared ``DEVICE_API``.
 
+  VREFINT measurement is no longer tied to the first okay
+  :dtcompatible:`st,stm32-vref` node. Any enabled ADC named by a vref
+  node's ``io-channels`` (including disabled vref nodes) can refresh the
+  shared rail cache.
+
 Audio Codec
 ===========
 

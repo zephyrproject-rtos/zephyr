@@ -528,7 +528,9 @@ Other notable changes
   * STM32 ADC driver (:dtcompatible:`st,stm32-adc`): when
     :kconfig:option:`CONFIG_ADC_STM32_VREFINT_CALIBRATE` is enabled,
     :c:func:`adc_ref_internal` may return a measured scale instead of DT
-    ``vref-mv``. See the :ref:`migration guide<migration_4.5>` ADC section.
+    ``vref-mv``. Any ADC named by an :dtcompatible:`st,stm32-vref`
+    ``io-channels`` property can take that measurement; the result is
+    cached SoC-wide. See the :ref:`migration guide<migration_4.5>` ADC section.
 
 * Build system
 

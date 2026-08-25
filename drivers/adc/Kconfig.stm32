@@ -29,11 +29,12 @@ config ADC_STM32_VREFINT_CALIBRATE
 	default y
 	help
 	  Measure the ADC reference rail (VREF+/VDDA) using the VREFINT
-	  channel and factory calibration described by the st,stm32-vref
-	  node. The value is cached SoC-wide and returned by
-	  adc_ref_internal() / adc_ref_get() for ADC_REF_INTERNAL on all
-	  STM32 ADC instances. Re-measure when sequence.calibrate is set
-	  on the VREFINT-owning ADC.
+	  channel and factory calibration described by st,stm32-vref
+	  nodes. Each ADC whose io-channels is named by such a node
+	  (including disabled nodes) can measure; the value is cached
+	  SoC-wide and returned by adc_ref_internal() / adc_ref_get()
+	  for ADC_REF_INTERNAL on all STM32 ADC instances. Re-measure
+	  when sequence.calibrate is set on any VREFINT-capable ADC.
 
 config ADC_STM32_VREFINT_CALIB_VIA_NVMEM
 	bool
