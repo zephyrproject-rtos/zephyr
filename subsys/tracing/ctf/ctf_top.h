@@ -503,14 +503,20 @@ typedef struct {
 	char buf[CTF_MAX_STRING_LEN];
 } ctf_bounded_string_t;
 
-static inline void ctf_top_thread_switched_out(uint32_t thread_id, ctf_bounded_string_t name)
+static inline void ctf_top_thread_switched_out(uint32_t thread_id,
+						ctf_bounded_string_t name,
+						uint8_t cpu_id, int8_t prio)
 {
-	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_THREAD_SWITCHED_OUT), thread_id, name);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_THREAD_SWITCHED_OUT),
+		  thread_id, name, cpu_id, prio);
 }
 
-static inline void ctf_top_thread_switched_in(uint32_t thread_id, ctf_bounded_string_t name)
+static inline void ctf_top_thread_switched_in(uint32_t thread_id,
+					       ctf_bounded_string_t name,
+					       uint8_t cpu_id, int8_t prio)
 {
-	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_THREAD_SWITCHED_IN), thread_id, name);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_THREAD_SWITCHED_IN),
+		  thread_id, name, cpu_id, prio);
 }
 
 static inline void ctf_top_thread_priority_set(uint32_t thread_id, int8_t prio,
