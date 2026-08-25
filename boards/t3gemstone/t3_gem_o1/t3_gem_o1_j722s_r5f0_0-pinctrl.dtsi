@@ -20,6 +20,12 @@
 		pinmux = <K3_PINMUX(0x01b0, PIN_OUTPUT, MUX_MODE_2)>;
 	};
 
+	i2c0_default: i2c0-default-pins {
+		/* main_i2c0 SCL and SDA */
+		pinmux = <K3_PINMUX(0x01e0, PIN_INPUT_PULLUP, MUX_MODE_0)>,
+			 <K3_PINMUX(0x01e4, PIN_INPUT_PULLUP, MUX_MODE_0)>;
+	};
+
 	led_green_default: led-green-default-pins {
 		/* GPIO1_52 - green user LED */
 		pinmux = <K3_PINMUX(0x025c, PIN_OUTPUT, MUX_MODE_7)>;
