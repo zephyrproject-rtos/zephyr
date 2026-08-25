@@ -14,6 +14,15 @@ tests:
     integration_platforms:
       - nucleo_h563zi
 
+  sample.net.ptp.multicast:
+    extra_configs:
+      - CONFIG_PTP_NETWORK_MODE_HYBRID=n
+    depends_on:
+      - eth
+      - ptp_clock
+    integration_platforms:
+      - nucleo_h563zi
+
   sample.net.ptp.dwmac:
     extra_configs:
       - CONFIG_ETH_STM32_HAL=n
