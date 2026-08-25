@@ -55,6 +55,25 @@ the MAIN domain GPIO controllers, and a console over RPmsg.
 
 .. zephyr:board-supported-hw::
 
+User LEDs
+---------
+Two user LEDs are connected to the MAIN domain GPIO1 controller. They are
+exposed through the ``led0`` and ``led1`` aliases so that samples such as
+:zephyr:code-sample:`blinky` work out of the box.
+
++-------+-------+----------+-------------+
+| Alias | Color | Pin      | Polarity    |
++=======+=======+==========+=============+
+| led0  | Green | GPIO1_52 | Active high |
++-------+-------+----------+-------------+
+| led1  | Red   | GPIO1_53 | Active low  |
++-------+-------+----------+-------------+
+
+The red LED lights up while its pin is left as an input, which is the state
+the GPIO driver leaves it in until an application configures it. Applications
+that do not drive the red LED should configure it as an inactive output to
+keep it off.
+
 Running Zephyr
 **************
 

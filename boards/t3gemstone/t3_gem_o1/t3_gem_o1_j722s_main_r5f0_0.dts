@@ -12,6 +12,7 @@
 #include <ti/j722s_main_r5.dtsi>
 #include "t3_gem_o1_j722s_r5f0_0-pinctrl.dtsi"
 #include <freq.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
 	compatible = "t3gemstone,t3-gem-o1";
@@ -23,6 +24,25 @@
 		zephyr,shell-uart = &uart1;
 		zephyr,ipc = &ipc0;
 		zephyr,ipc_shm = &ddr0;
+	};
+
+	aliases {
+		led0 = &led0;
+		led1 = &led1;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&main_gpio1 52 GPIO_ACTIVE_HIGH>;
+			label = "User LED Green";
+		};
+
+		led1: led_1 {
+			gpios = <&main_gpio1 53 GPIO_ACTIVE_LOW>;
+			label = "User LED Red";
+		};
 	};
 
 	cpus {
@@ -73,5 +93,12 @@
 
 /* GPIO1_7..18 on the 40-pin header */
 &main_gpio1_0 {
+	status = "okay";
+};
+
+/* User LEDs: GPIO1_52 (green), GPIO1_53 (red) */
+&main_gpio1_1 {
+	pinctrl-0 = <&led_green_default &led_red_default>;
+	pinctrl-names = "default";
 	status = "okay";
 };
