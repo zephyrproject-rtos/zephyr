@@ -107,3 +107,21 @@
 			   <ST_ZIO_CN10_34 0 &gpiob 11 0>; /* D35 */
 	};
 };
+
+/*
+ * ST Zio connector alternate node labels.
+ *
+ * QUADSPI (bank 1) is routed to the Zio connector (D26-D31):
+ * NCS=PB6 (D26), CLK=PB2 (D27), IO3=PD13 (D28), IO1=PD12 (D29),
+ * IO0=PD11 (D30), IO2=PE2 (D31).
+ */
+st_zio_qspi: &quadspi {};
+
+/*
+ * FMC (NOR/PSRAM bank 1) is routed to the Zio connector and can drive an
+ * Intel 8080 parallel bus (e.g. a display over MIPI DBI Mode B):
+ * D0=PD14 (D10), D1=PD15 (D9), D2=PD0 (D67), D3=PD1 (D66),
+ * D4=PE7 (D41), D5=PE8 (D42), D6=PE9 (D6), D7=PE10 (D40),
+ * NWE=PD5 (D53), NOE=PD4 (D54), NE1=PD7 (D51), A20=PE4 (D57).
+ */
+st_zio_fmc: &fmc {};
