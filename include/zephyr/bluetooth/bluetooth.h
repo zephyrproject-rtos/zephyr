@@ -337,6 +337,10 @@ int bt_enable(bt_ready_cb_t cb);
  *
  * Disable Bluetooth. Can't be called before bt_enable has completed.
  *
+ * When bt_enable() was called with a ready callback the initialization runs
+ * asynchronously. If bt_disable() is called before the ready callback fires,
+ * it returns -EAGAIN. The caller should retry after the ready callback.
+ *
  * This API will clear all configured identity addresses and keys that are not persistently
  * stored with @kconfig{CONFIG_BT_SETTINGS}. These can be restored
  * with @ref settings_load before reenabling the stack.
@@ -349,7 +353,10 @@ int bt_enable(bt_ready_cb_t cb);
  *
  * Close and release HCI resources. Result is architecture dependent.
  *
- * @return Zero on success or (negative) error code otherwise.
+ * @retval 0 Success.
+ * @retval -EAGAIN bt_enable() with a ready callback has not completed yet;
+ *                 retry after the ready callback fires.
+ * @retval -EALREADY bt_disable() has already been called.
  */
 int bt_disable(void);
 
