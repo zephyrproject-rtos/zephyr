@@ -75,7 +75,7 @@ static int32_t parse_response(uint8_t *data, uint16_t len, struct sntp_time *exp
 	int64_t client_rx_us;
 	int64_t server_rx_us;
 	int64_t server_tx_us;
-	int32_t rtt_us;
+	int64_t rtt_us;
 	uint32_t ts;
 	int ret;
 
