@@ -26,10 +26,10 @@ set(dtdoctor_wrapper_cmd
   --
 )
 
-set(CMAKE_C_COMPILER_LAUNCHER   ${dtdoctor_wrapper_cmd} CACHE INTERNAL "")
-set(CMAKE_CXX_COMPILER_LAUNCHER ${dtdoctor_wrapper_cmd} CACHE INTERNAL "")
-set(CMAKE_ASM_COMPILER_LAUNCHER ${dtdoctor_wrapper_cmd} CACHE INTERNAL "")
+set(CMAKE_C_COMPILER_LAUNCHER   ${dtdoctor_wrapper_cmd})
+set(CMAKE_CXX_COMPILER_LAUNCHER ${dtdoctor_wrapper_cmd})
+set(CMAKE_ASM_COMPILER_LAUNCHER ${dtdoctor_wrapper_cmd})
 
-set(CMAKE_C_LINKER_LAUNCHER   ${dtdoctor_wrapper_cmd} CACHE INTERNAL "")
-set(CMAKE_CXX_LINKER_LAUNCHER ${dtdoctor_wrapper_cmd} CACHE INTERNAL "")
-set(CMAKE_ASM_LINKER_LAUNCHER ${dtdoctor_wrapper_cmd} CACHE INTERNAL "")
+set(CMAKE_C_LINKER_LAUNCHER   ${dtdoctor_wrapper_cmd})
+set(CMAKE_CXX_LINKER_LAUNCHER ${dtdoctor_wrapper_cmd})
+set(CMAKE_ASM_LINKER_LAUNCHER ${dtdoctor_wrapper_cmd})
