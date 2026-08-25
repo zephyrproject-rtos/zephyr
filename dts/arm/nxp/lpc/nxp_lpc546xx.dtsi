@@ -207,6 +207,37 @@
 			num-inputs = <64>;
 		};
 
+		dma0: dma-controller@40082000 {
+			compatible = "nxp,lpc-dma";
+			reg = <0x40082000 0x1000>;
+			interrupts = <1 0>;
+			dma-channels = <30>;
+			#dma-cells = <1>;
+			status = "disabled";
+		};
+
+		dmic0: dmic@40090000 {
+			compatible = "nxp,dmic";
+			reg = <0x40090000 0x1000>;
+			interrupts = <25 0>;
+			clocks = <&syscon MCUX_DMIC_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+
+			pdmc0: dmic-channel@0 {
+				reg = <0>;
+				dmas = <&dma0 16>;
+				status = "disabled";
+			};
+
+			pdmc1: dmic-channel@1 {
+				reg = <1>;
+				dmas = <&dma0 17>;
+				status = "disabled";
+			};
+		};
+
 		flexcomm0: flexcomm@40086000 {
 			compatible = "nxp,lpc-flexcomm";
 			reg = <0x40086000 0x1000>;
