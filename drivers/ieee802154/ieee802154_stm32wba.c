@@ -377,7 +377,6 @@ static enum ieee802154_hw_caps stm32wba_802154_get_capabilities(const struct dev
 #if (SUPPORT_RADIO_SECURITY_OT_1_2 == 1)
 		IEEE802154_HW_TX_SEC |
 #endif
-		IEEE802154_HW_SLEEP_TO_TX |
 		IEEE802154_RX_ON_WHEN_IDLE;
 }
 

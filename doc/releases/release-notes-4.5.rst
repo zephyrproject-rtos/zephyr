@@ -227,6 +227,7 @@ Removed APIs and options
     * ``struct openthread_state_changed_cb``
     * ``TLS_CREDENTIAL_SERVER_CERTIFICATE``
     * ``start_11r_roaming``
+    * ``IEEE802154_HW_SLEEP_TO_TX``
 
 * Nordic
 
