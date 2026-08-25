@@ -515,6 +515,11 @@ Devicetree
   * :c:macro:`DT_NODELABEL_C_TOKEN`
   * :c:macro:`DT_NODELABEL_C_TOKEN_BY_IDX`
 
+* STM32G4 SoC dtsi files now describe the extra VREFINT inputs that exist in
+  silicon: :dtcompatible:`st,stm32-vref` ``vref3`` (ADC3, G491 and up),
+  ``vref4`` and ``vref5`` (ADC4/ADC5, G473 and up). Nodes stay disabled;
+  boards enable the instance they use. ADC2 has no VREFINT mux.
+
 Other notable changes
 *********************
 

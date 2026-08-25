@@ -161,4 +161,20 @@
 		i2c = <&i2c4>;
 		status = "disabled";
 	};
+
+	vref4: vref_4 {
+		compatible = "st,stm32-vref";
+		nvmem-cells = <&vrefint_otp>;
+		vrefint-cal-mv = <3000>;
+		io-channels = <&adc4 18>;
+		status = "disabled";
+	};
+
+	vref5: vref_5 {
+		compatible = "st,stm32-vref";
+		nvmem-cells = <&vrefint_otp>;
+		vrefint-cal-mv = <3000>;
+		io-channels = <&adc5 18>;
+		status = "disabled";
+	};
 };
