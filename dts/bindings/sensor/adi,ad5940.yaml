@@ -1,0 +1,406 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Analog Devices AD5940/AD5941 High-Precision Impedance and Electrochemical
+  Analog Front-End (AFE).
+
+  The AD5940 is a complete analog front-end for electrochemical impedance
+  spectroscopy (EIS), amperometry, cyclic voltammetry, and raw ADC measurements.
+  It communicates over SPI at up to 16 MHz (Mode 0, MSB first).
+
+  The AD5941 is a pin-compatible 2-electrode variant detected at runtime
+  by reading the CHIPID register.
+
+  Board-level hardware connections (SPI, GPIO) are fixed at board design time.
+  Measurement defaults (frequency, amplitude, RTIA, bias voltage, sweep range)
+  are set via DT properties and applied once during driver init; they can be
+  overridden at runtime via sensor_attr_set().
+
+  Example usage:
+
+    &spi1 {
+        status = "okay";
+        cs-gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
+
+        ad5940: ad5940@0 {
+            compatible = "adi,ad5940";
+            reg = <0>;
+            spi-max-frequency = <8000000>;
+            int-gpios = <&gpio0 26 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+            reset-gpios = <&gpio0 27 GPIO_ACTIVE_LOW>;
+            rcal-ohms = <200>;
+        };
+    };
+
+compatible: "adi,ad5940"
+
+include: [spi-device.yaml, sensor-device.yaml]
+
+properties:
+  int-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to the AD5940 interrupt output pin. This signal is
+      asserted (active-low) when the data FIFO threshold is reached or other
+      enabled interrupt sources fire. Required when CONFIG_AD5940_TRIGGER or
+      CONFIG_AD5940_STREAM is enabled.
+
+  int-ad5940-pin:
+    type: int
+    default: 0
+    min: 0
+    max: 7
+    description: |
+      AD5940 GP pin number (0–7) physically wired to the MCU interrupt GPIO.
+      The driver configures this pin as INT0 output in GP0CON and enables its
+      output driver in GP0OEN. Default 0 (GP0 is the INT0 reset-default pin).
+
+  int-ad5940-pull-en:
+    type: boolean
+    description: |
+      When present, enables the internal pull resistor on the AD5940 interrupt
+      GP pin. Omit if the board provides an external pull resistor.
+
+  reset-gpios:
+    type: phandle-array
+    description: |
+      Optional GPIO connected to the AD5940 hardware RESET pin (active-low).
+      When present, the driver performs a hardware reset during initialization.
+      If absent, the driver uses the software reset sequence via SWRSTCON/RSTCONKEY.
+
+  rcal-ohms:
+    type: int
+    default: 200
+    min: 1
+    max: 200000
+    description: |
+      Value in ohms of the on-chip RCAL calibration resistor used during HSTIA
+      RTIA calibration. Default is 200 ohms per the AD5940 datasheet nominal.
+      Adjust only if an external precision calibration resistor is used.
+
+  clksel-sysclksel:
+    type: int
+    default: 0
+    min: 0
+    max: 3
+    description: |
+      System clock source selection written to CLKSEL[SYSCLKSEL] at init.
+      0 = Internal HFOSC (16 MHz, default — always available, no external component)
+      1 = External high-frequency crystal (more accurate, requires XTAL circuit)
+      2 = Internal 32 kHz LFOSC (not recommended per datasheet — very low accuracy)
+      3 = External clock input on the CLK pin
+      The internal HFOSC (0) is the safe default; select 1 only if a precision
+      crystal is fitted and stable before the driver initialises.
+
+  hfosc-32mhz-mode:
+    type: boolean
+    description: |
+      When present, configures the internal high-frequency oscillator (HFOSC)
+      to output 32 MHz and sets the system clock divider to 2, maintaining
+      the system clock at 16 MHz. Omit for the default 16 MHz HFOSC mode.
+
+  eis-frequency-hz:
+    type: int
+    default: 1000
+    min: 1
+    max: 200000
+    description: |
+      EIS sinusoidal excitation frequency in Hz used at driver init.
+      1000 Hz is a mid-range frequency that avoids low-frequency drift and
+      high-frequency parasitic effects, making it a safe starting point for
+      most electrochemical cells before the application tunes for its target
+      analyte. Can be overridden at runtime with SENSOR_ATTR_AD5940_EIS_FREQ_HZ.
+
+  eis-amplitude-mvpp:
+    type: int
+    default: 200
+    min: 1
+    max: 800
+    description: |
+      EIS sinusoidal excitation amplitude in mVpp (1–800) used at driver init.
+      200 mVpp is the standard small-signal amplitude recommended by the AD5940
+      datasheet for maintaining linear electrode behaviour while keeping the
+      signal well above the noise floor. Reduce for sensitive biological
+      interfaces; increase for high-impedance dry electrodes.
+      Can be overridden at runtime with SENSOR_ATTR_AD5940_EIS_AMPLITUDE_MVPP.
+
+  hsrtiacon-rtiacon:
+    type: int
+    default: 4
+    min: 0
+    max: 7
+    description: |
+      HSTIA internal RTIA (transimpedance amplifier) resistor selector used
+      at driver init. Values: 0=200Ω, 1=1kΩ, 2=5kΩ, 3=10kΩ, 4=20kΩ,
+      5=40kΩ, 6=80kΩ, 7=160kΩ. 20kΩ (index 4) is a balanced mid-range choice
+      that provides adequate gain for typical electrochemical cells in the
+      1kΩ–100kΩ impedance range without saturating the ADC.
+      Can be overridden at runtime with SENSOR_ATTR_AD5940_RTIA_SEL.
+
+  eis-settling-cycles:
+    type: int
+    default: 16
+    min: 1
+    max: 255
+    description: |
+      Number of excitation cycles the DFT engine waits before sampling, used
+      at driver init (1–255). 16 cycles gives the electrode interface time to
+      reach steady-state after the excitation is applied, suppressing transient
+      artefacts without adding excessive measurement latency at kHz frequencies.
+      Increase for low-frequency sweeps where each cycle is longer.
+      Can be overridden at runtime with SENSOR_ATTR_AD5940_EIS_SETTLING_CYCLES.
+
+  amper-bias-mv:
+    type: int
+    default: 1200
+    min: 200
+    max: 2200
+    description: |
+      Amperometry DC bias potential in mV (200–2200) applied to the working
+      electrode at driver init. 1200 mV sits at the mid-point of the LPDAC
+      output range (0.2 V–2.2 V), providing symmetric headroom for both
+      oxidation and reduction currents without clipping. Adjust to the
+      half-wave potential of the target redox reaction for your application.
+      Can be overridden at runtime with SENSOR_ATTR_AD5940_BIAS_MV.
+
+  amper-lpamp-rtia:
+    type: int
+    default: 2
+    min: 0
+    max: 7
+    description: |
+      LP amplifier transimpedance resistor selector used at driver init.
+      Index 2 corresponds to a moderate gain that is appropriate for
+      microamp-range currents typical of small electrochemical sensors.
+      Increase for lower currents (higher impedance cells); decrease when
+      expecting milliamp-level currents to avoid ADC saturation.
+      Can be overridden at runtime with SENSOR_ATTR_AD5940_LPAMP_RTIA.
+
+  sweep-start-hz:
+    type: int
+    default: 1000
+    description: |
+      Lower bound of the EIS frequency sweep in Hz used at driver init.
+      1000 Hz avoids the low-frequency dispersion region where many electrodes
+      exhibit strong capacitive behaviour, keeping sweep time reasonable.
+      Reduce to 0.1–10 Hz for diffusion-dominated or biological systems.
+      Can be overridden at runtime with SENSOR_ATTR_AD5940_EIS_FREQ_START_HZ.
+
+  sweep-stop-hz:
+    type: int
+    default: 100000
+    description: |
+      Upper bound of the EIS frequency sweep in Hz used at driver init.
+      100 kHz reaches well into the high-frequency resistive plateau of most
+      electrochemical cells, allowing solution resistance to be resolved without
+      approaching the AD5940 DFT engine bandwidth limit (~200 kHz).
+      Can be overridden at runtime with SENSOR_ATTR_AD5940_EIS_FREQ_STOP_HZ.
+
+  sweep-points:
+    type: int
+    default: 20
+    min: 2
+    max: 100
+    description: |
+      Number of discrete frequency points in the EIS sweep used at driver init
+      (2–AD5940_MAX_SWEEP_POINTS). 20 points gives a well-resolved Nyquist plot
+      across a 1 kHz–100 kHz decade span with logarithmic spacing, while keeping
+      the total measurement time under one second at moderate settling cycles.
+      Increase for high-resolution spectroscopy; decrease for fast screening.
+      Can be overridden at runtime with SENSOR_ATTR_AD5940_EIS_FREQ_POINTS.
+
+  sweep-log-scale:
+    type: boolean
+    description: |
+      When present, the EIS sweep uses logarithmic frequency spacing. Logarithmic
+      spacing distributes points evenly across decades, which matches the
+      characteristic time-constant distribution of most electrochemical interfaces
+      and produces uniform Nyquist plots. Omit for linear spacing, which is
+      preferable when comparing closely spaced resonant features.
+      Can be overridden at runtime with SENSOR_ATTR_AD5940_EIS_FREQ_LOG_SCALE.
+
+  dftcon-dftnum:
+    type: int
+    default: 11
+    min: 0
+    max: 12
+    description: |
+      DFT point count selector (no-OS DftNum register field).
+      0=4, 1=8, 2=16, 3=32, 4=64, 5=128, 6=256, 7=512, 8=1024, 9=2048,
+      10=4096, 11=8192 (default), 12=16384.
+      Use 11 (8192 pts) for EIS below 1 kHz to avoid spectral leakage —
+      the DFT window must span at least 2 full excitation cycles.
+      Can be overridden at runtime with SENSOR_ATTR_AD5940_DFT_NUM.
+
+  dftcon-dftinsel:
+    type: int
+    default: 1
+    min: 0
+    max: 3
+    description: |
+      DFT input source selector (no-OS DftSrc).
+      0=SINC2+Notch output, 1=SINC3 output (default), 2=ADC raw, 3=SINC3 average.
+      Use 1 (SINC3) for EIS, matching no-OS AppBiaCfg (DFTSRC_SINC3).
+      Can be overridden at runtime with SENSOR_ATTR_AD5940_DFT_SRC.
+
+  dftcon-hanningen:
+    type: boolean
+    description: |
+      When present, enables the Hanning window in the DFT engine to reduce
+      spectral leakage from non-integer cycle counts. Recommended for EIS —
+      matches no-OS AppBiaCfg (HanWinEn = true).
+      Can be overridden at runtime with SENSOR_ATTR_AD5940_HANNING_WIN.
+
+  adcfiltercon-sinc3osr:
+    type: int
+    default: 2
+    min: 0
+    max: 2
+    description: |
+      SINC3 oversampling ratio selector (no-OS ADCSinc3Osr).
+      0=OSR5 (160 kHz out), 1=OSR4, 2=OSR2 (400 kHz out, default).
+      Use 2 (OSR2) for EIS — at 800 kSPS the 8192-pt DFT window is ~20.5 ms,
+      spanning at least 2 excitation cycles down to 100 Hz.
+      Can be overridden at runtime with SENSOR_ATTR_AD5940_ADC_SINC3_OSR.
+
+  hsdaccon-inampgnmde:
+    type: int
+    default: 0
+    min: 0
+    max: 1
+    description: |
+      Excitation buffer gain selector (no-OS ExcitBufGain).
+      0=2× full-swing output (default), 1=0.25× attenuated output.
+      Use 0 for normal EIS with the full DAC amplitude range.
+      Can be overridden at runtime with SENSOR_ATTR_AD5940_EXCIT_BUF_GAIN.
+
+  hsdaccon-attenen:
+    type: int
+    default: 0
+    min: 0
+    max: 1
+    description: |
+      HSDAC output gain selector (no-OS HsDacGain).
+      0=1× (default), 1=0.2× attenuated.
+      Use 0 for normal EIS to utilise the full DAC output swing.
+      Can be overridden at runtime with SENSOR_ATTR_AD5940_HSDAC_GAIN.
+
+  hsdaccon-rate:
+    type: int
+    default: 7
+    description: |
+      HSDAC update rate divider (no-OS HsDacUpdateRate, 7–255).
+      DAC update rate = SysClk / (value + 1). Default 7 → SysClk/8.
+      Lower values give faster DAC updates and better high-frequency fidelity
+      but increase power. Valid range: 7–255.
+      Can be overridden at runtime with SENSOR_ATTR_AD5940_HSDAC_UPDATE_RATE.
+
+  hsrtiacon-ctiacon:
+    type: int
+    default: 0
+    description: |
+      HSTIA CTIA bypass capacitor selector (no-OS CtiaSel, 0–31).
+      Each step adds approximately 2 pF in parallel with the RTIA feedback
+      resistor, filtering high-frequency current noise at the cost of phase
+      accuracy. 0 (default) disables the bypass capacitor for maximum bandwidth.
+      Can be overridden at runtime with SENSOR_ATTR_AD5940_CTIA_SEL.
+
+  eis-power-mode:
+    type: int
+    default: 0
+    description: |
+      AFE power mode selector (no-OS PwrMod / PMBW.SYSHS).
+      0=low-power mode (≤80 kHz operation, 16 MHz HFOSC, default),
+      1=high-power mode (>80 kHz, requires 32 MHz system clock).
+      Match to eis-frequency-hz and sweep-stop-hz: use 1 only when the
+      highest sweep frequency exceeds 80 kHz.
+      Can be overridden at runtime with SENSOR_ATTR_AD5940_POWER_MODE.
+
+  # ------------------------------------------------------------------------
+  # 4-wire BIA switch matrix (xSWFULLCON + SWCON + SWMUX)
+  #
+  # Routes the excitation buffer, P/N nodes, and HSTIA to the physical AFE
+  # pins (AIN0-3, CE0, SE0, RE0, RCAL...). Each property is a bitmask formed by
+  # OR-ing the AD5940_DT_SW* macros from <zephyr/dt-bindings/sensor/ad5940.h>.
+  # SWCON.SWSOURCESEL is asserted unconditionally by the driver (structural),
+  # so it is not exposed here.
+  #
+  # Defaults reproduce the EVAL-AD5940BIOZ 4-wire routing that was previously
+  # hardcoded in the driver. yaml defaults must be integer literals (they
+  # cannot reference BIT()/macros); the equivalent macro is named in each
+  # comment and the sample overlay sets these with the readable macro form.
+  # ------------------------------------------------------------------------
+
+  swmat-dsw:
+    type: int
+    default: 0x10
+    description: |
+      DSWFULLCON register (0x2150). Excitation-buffer (D-node) switches.
+      Bitmask of AD5940_DT_SWD_* macros.
+      Default 0x10 = AD5940_DT_SWD_D5 (excitation buffer to CE0).
+
+  swmat-psw:
+    type: int
+    default: 0x400
+    description: |
+      PSWFULLCON register (0x2158). P-node switches.
+      Bitmask of AD5940_DT_SWP_* macros.
+      Default 0x400 = AD5940_DT_SWP_P11 (P-node to CE0).
+
+  swmat-nsw:
+    type: int
+    default: 0x2
+    description: |
+      NSWFULLCON register (0x2154). N-node switches.
+      Bitmask of AD5940_DT_SWN_* macros.
+      Default 0x2 = AD5940_DT_SWN_N2 (N-node to AIN1).
+
+  swmat-tsw:
+    type: int
+    default: 0x102
+    description: |
+      TSWFULLCON register (0x215C). T-node (HSTIA input) switches.
+      Bitmask of AD5940_DT_SWT_* macros.
+      Default 0x102 = AD5940_DT_SWT_T9 | AD5940_DT_SWT_T2 (AIN1 to HSTIA).
+
+  swmat-swmux:
+    type: int
+    default: 0x8
+    description: |
+      SWMUX register (0x235C). Common-mode switch mux for the AIN2/AIN3
+      voltage-sense pair. Raw register value.
+      Default 0x8 = AD5940_SWMUX_CMMUX (BIT3) — provides the CM bias needed
+      for AIN2/AIN3 Kelvin voltage sensing.
+
+  adccon-muxselp-v:
+    type: int
+    default: 0x6
+    description: |
+      ADC positive mux for the impedance VOLTAGE capture (Kelvin sense).
+      Uses the AD5940_DT_ADC_MUXP_* encoding.
+      Default 0x6 = AD5940_DT_ADC_MUXP_AIN2.
+
+  adccon-muxseln-v:
+    type: int
+    default: 0x7
+    description: |
+      ADC negative mux for the impedance VOLTAGE capture (Kelvin sense).
+      Uses the AD5940_DT_ADC_MUXN_* encoding.
+      Default 0x7 = AD5940_DT_ADC_MUXN_AIN3.
+
+  adccon-muxselp-i:
+    type: int
+    default: 0x1
+    description: |
+      ADC positive mux for the impedance CURRENT capture (voltage across
+      HSTIA RTIA). Uses the AD5940_DT_ADC_MUXP_* encoding.
+      Default 0x1 = AD5940_DT_ADC_MUXP_HSTIA_P.
+
+  adccon-muxseln-i:
+    type: int
+    default: 0x1
+    description: |
+      ADC negative mux for the impedance CURRENT capture (voltage across
+      HSTIA RTIA). Uses the AD5940_DT_ADC_MUXN_* encoding.
+      Default 0x1 = AD5940_DT_ADC_MUXN_HSTIA_N.
