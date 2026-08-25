@@ -113,7 +113,8 @@ static int thejas32_intc_init(const struct device *dev)
 	return 0;
 }
 
-#define THEJAS32_INTC_NR_IRQS(n) CONFIG_MAX_IRQ_PER_AGGREGATOR
+#define THEJAS32_INTC_NR_IRQS(n)                                                                   \
+	Z_MAX_IRQ_PER_AGGREGATOR_BY_LEVEL(DT_INST_INTC_GET_AGGREGATOR_LEVEL(n))
 
 #define THEJAS32_INTC_INIT(n)                                                                      \
 	static void thejas32_intc_irq_config_func_##n(void)                                        \
