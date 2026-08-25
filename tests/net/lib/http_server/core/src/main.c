@@ -2732,6 +2732,58 @@ ZTEST(server_function_tests, test_http1_static_fs)
 			  "Received data doesn't match expected response");
 }
 
+/* HPACK-encoded "GET /static_file.html" request, END_STREAM | END_HEADERS set.
+ * :method: GET (indexed, 0x82), :scheme: http (indexed, 0x86) and :path with an
+ * indexed name (4) and a literal, non-Huffman value.
+ */
+#define TEST_HTTP2_HEADERS_GET_STATIC_FS(_stream_id) \
+	0x00, 0x00, 0x15, 0x01, 0x05, 0x00, 0x00, 0x00, _stream_id, \
+	0x82, 0x86, 0x04, 0x11, 0x2f, 0x73, 0x74, 0x61, 0x74, 0x69, 0x63, 0x5f, \
+	0x66, 0x69, 0x6c, 0x65, 0x2e, 0x68, 0x74, 0x6d, 0x6c
+
+ZTEST(server_function_tests, test_http2_static_fs)
+{
+	static const uint8_t request_get_static_fs[] = {
+		TEST_HTTP2_MAGIC,
+		TEST_HTTP2_SETTINGS,
+		TEST_HTTP2_SETTINGS_ACK,
+		TEST_HTTP2_HEADERS_GET_STATIC_FS(TEST_STREAM_ID_1),
+	};
+	/* Second request, sent once the first one has been served. Serving a
+	 * static filesystem resource must not clobber the connection RX state,
+	 * so the server has to keep processing the connection normally.
+	 */
+	static const uint8_t request_get_static_fs_again[] = {
+		TEST_HTTP2_HEADERS_GET_STATIC_FS(TEST_STREAM_ID_2),
+		TEST_HTTP2_GOAWAY,
+	};
+	size_t offset = 0;
+	int ret;
+
+	ret = setup_fs("");
+	zassert_equal(ret, TC_PASS, "Failed to mount fs");
+
+	ret = zsock_send(client_fd, request_get_static_fs,
+			 sizeof(request_get_static_fs), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	memset(buf, 0, sizeof(buf));
+
+	expect_http2_settings_frame(&offset, false);
+	expect_http2_settings_frame(&offset, true);
+	expect_http2_headers_frame(&offset, TEST_STREAM_ID_1, HTTP2_FLAG_END_HEADERS, NULL, 0);
+	expect_http2_data_frame(&offset, TEST_STREAM_ID_1, TEST_STATIC_FS_PAYLOAD,
+				strlen(TEST_STATIC_FS_PAYLOAD), HTTP2_FLAG_END_STREAM);
+
+	ret = zsock_send(client_fd, request_get_static_fs_again,
+			 sizeof(request_get_static_fs_again), 0);
+	zassert_not_equal(ret, -1, "send() failed (%d)", errno);
+
+	expect_http2_headers_frame(&offset, TEST_STREAM_ID_2, HTTP2_FLAG_END_HEADERS, NULL, 0);
+	expect_http2_data_frame(&offset, TEST_STREAM_ID_2, TEST_STATIC_FS_PAYLOAD,
+				strlen(TEST_STATIC_FS_PAYLOAD), HTTP2_FLAG_END_STREAM);
+}
+
 ZTEST(server_function_tests, test_http1_static_fs_compression)
 {
 #define HTTP1_COMPRESSION_REQUEST                                                                  \
