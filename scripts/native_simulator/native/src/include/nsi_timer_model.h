@@ -21,8 +21,10 @@ void hwtimer_set_rt_ratio(double ratio);
 void hwtimer_adjust_rt_ratio(double ratio_correction);
 
 void hwtimer_wake_in_time(uint64_t time);
-void hwtimer_set_silent_ticks(int64_t sys_ticks);
+
 void hwtimer_enable(uint64_t period);
+void hwtimer_set_tick_one_shot(uint64_t deadline);
+void hwtimer_set_silent_ticks(int64_t sys_ticks);
 int64_t hwtimer_get_pending_silent_ticks(void);
 
 void hwtimer_reset_rtc(void);
