@@ -19,7 +19,7 @@
  * @brief FIDO2 authenticator subsystem
  * @defgroup fido2 FIDO2
  * @since 4.5
- * @version 0.1.0
+ * @version 0.1.1
  * @ingroup authentication
  * @{
  */
