@@ -29,6 +29,7 @@
 		usart-0 = &flexcomm0;
 		sw0 = &user_button;
 		accel0 = &mma8652fc;
+		dmic0 = &dmic0;
 	};
 
 	/*
@@ -130,4 +131,24 @@ zephyr_udc0: &usbhs {
 		reg = <0x1d>;
 		int1-gpios = <&gpio3 4 GPIO_ACTIVE_LOW>;
 	};
+};
+
+&dma0 {
+	status = "okay";
+};
+
+/*
+ * On-board Knowles SPH0641LM4H MEMS microphone on DMIC hardware channel 1,
+ * which the DMIC API addresses as the right channel of controller 0. Channel 0
+ * reaches the expansion connectors only through solder jumpers JS33 and JS36,
+ * which take the pins away from LCD data lines 14 and 15, so it stays disabled.
+ */
+&dmic0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_dmic>;
+	pinctrl-names = "default";
+};
+
+&pdmc1 {
+	status = "okay";
 };
