@@ -1823,9 +1823,9 @@ lvgl
 ====
 
 * The ``zephyr,lvgl-pointer-input`` devicetree binding marks the ``swap-xy``, ``invert-x``, and
-  ``invert-y`` properties as **deprecated**. Users should instead add these properties to the
-  underlying touch input controller device node, where they are now the canonical location for
-  such transformations.
+  ``invert-y`` properties as **deprecated**. Users should instead add the corresponding
+  touchscreen properties ``swapped-x-y``, ``inverted-x``, and ``inverted-y`` to the underlying
+  touch input controller device node, where these transformations are now defined canonically.
 
 * :kconfig:option:`CONFIG_LV_Z_FULL_REFRESH` is now part of the ``LV_Z_RENDERING_MODE`` Kconfig
   choice, alongside :kconfig:option:`CONFIG_LV_Z_PARTIAL_REFRESH` (default) and
