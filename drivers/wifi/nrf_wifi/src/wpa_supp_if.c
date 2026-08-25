@@ -1192,11 +1192,7 @@ out:
 	 * uses the control port), avoiding transmits into the closed port.
 	 */
 	if (update_dormant) {
-		if (authorized) {
-			net_if_dormant_off(vif_ctx_zep->zep_net_if_ctx);
-		} else {
-			net_if_dormant_on(vif_ctx_zep->zep_net_if_ctx);
-		}
+		k_work_submit(&vif_ctx_zep->nrf_wifi_net_iface_work);
 	}
 	return ret;
 }

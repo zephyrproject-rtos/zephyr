@@ -805,6 +805,9 @@ int nrf_wifi_mode(const struct device *dev,
 	struct peers_info *peer = NULL;
 	int i = 0;
 	int ret = -1;
+#ifdef CONFIG_NRF70_DATA_TX
+	bool refresh_dormant = false;
+#endif /* CONFIG_NRF70_DATA_TX */
 
 	if (!dev || !mode) {
 		LOG_ERR("%s: illegal input parameters", __func__);
@@ -871,6 +874,14 @@ int nrf_wifi_mode(const struct device *dev,
 			goto out;
 		}
 
+#ifdef CONFIG_NRF70_RAW_DATA_TX
+		if (sys_dev_ctx->vif_ctx[vif_ctx_zep->vif_idx]) {
+			sys_dev_ctx->vif_ctx[vif_ctx_zep->vif_idx]->txinjection_mode = false;
+		}
+#endif /* CONFIG_NRF70_RAW_DATA_TX */
+#ifdef CONFIG_NRF70_DATA_TX
+		refresh_dormant = true;
+#endif /* CONFIG_NRF70_DATA_TX */
 	} else {
 		mode->mode = sys_dev_ctx->vif_ctx[vif_ctx_zep->vif_idx]->mode;
 		/**
@@ -891,6 +902,11 @@ int nrf_wifi_mode(const struct device *dev,
 	ret = 0;
 out:
 	k_mutex_unlock(&vif_ctx_zep->vif_lock);
+#ifdef CONFIG_NRF70_DATA_TX
+	if (refresh_dormant) {
+		k_work_submit(&vif_ctx_zep->nrf_wifi_net_iface_work);
+	}
+#endif /* CONFIG_NRF70_DATA_TX */
 	return ret;
 }
 #endif /* CONFIG_NRF70_SYSTEM_WITH_RAW_MODES */
