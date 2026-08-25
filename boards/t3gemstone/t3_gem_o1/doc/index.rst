@@ -50,10 +50,29 @@ IRQ and FIQ.
 
 Supported Features
 ******************
-The board configuration supports a console UART via the 40-pin GPIO header.
-Future versions will also support a console over RPmsg.
+The board configuration supports a console UART via the 40-pin GPIO header,
+the MAIN domain GPIO controllers, and a console over RPmsg.
 
 .. zephyr:board-supported-hw::
+
+User LEDs
+---------
+Two user LEDs are connected to the MAIN domain GPIO1 controller. They are
+exposed through the ``led0`` and ``led1`` aliases so that samples such as
+:zephyr:code-sample:`blinky` work out of the box.
+
++-------+-------+----------+-------------+
+| Alias | Color | Pin      | Polarity    |
++=======+=======+==========+=============+
+| led0  | Green | GPIO1_52 | Active high |
++-------+-------+----------+-------------+
+| led1  | Red   | GPIO1_53 | Active low  |
++-------+-------+----------+-------------+
+
+The red LED lights up while its pin is left as an input, which is the state
+the GPIO driver leaves it in until an application configures it. Applications
+that do not drive the red LED should configure it as an inactive output to
+keep it off.
 
 Running Zephyr
 **************
@@ -108,24 +127,55 @@ For the MCU domain Cortex R5F on T3 Gemstone O1:
    :board: t3_gem_o1/j722s/mcu_r5f0_0
    :goals: build
 
-To load the image:
+To load the image, use the remoteproc interface in sysfs. Identify the target
+core first. The MAIN domain R5F is ``78400000.r5f`` and the MCU domain R5F is
+``79000000.r5f``:
 
-| Copy Zephyr image to the /lib/firmware/ directory.
-| ``cp build/zephyr/zephyr.elf /lib/firmware/``
-|
-| Ensure the Core is not running.
-| ``echo stop > /dev/remoteproc/am67a-{main,mcu}-r5f0_0/state``
-|
-| Configuring the image name to the remoteproc module.
-| ``echo zephyr.elf > /dev/remoteproc/am67a-{main,mcu}-r5f0_0/firmware``
-|
-| Once the image name is configured, send the start command.
-| ``echo start > /dev/remoteproc/am67a-{main,mcu}-r5f0_0/state``
+.. code-block:: console
+
+   # grep -H . /sys/class/remoteproc/remoteproc*/name
+   /sys/class/remoteproc/remoteproc2/name:79000000.r5f
+   /sys/class/remoteproc/remoteproc3/name:78400000.r5f
+
+Copy the Zephyr image to ``/lib/firmware/``, point the remoteproc instance at
+it and start the core. Replace ``remoteprocN`` with the instance found above:
+
+.. code-block:: console
+
+   # cp build/zephyr/zephyr.elf /lib/firmware/
+   # echo zephyr.elf > /sys/class/remoteproc/remoteprocN/firmware
+   # echo start > /sys/class/remoteproc/remoteprocN/state
+
+.. warning::
+
+   Do not stop the MAIN domain R5F with ``echo stop``. The core is not
+   given back afterwards: the remoteproc instance refuses to start again
+   and a warm reboot does not recover it, only a power cycle does. To load
+   another image, copy it to ``/lib/firmware/``, reboot the board and start
+   the core again. The MCU domain R5F can be stopped and started freely.
+
+Some distributions expose the same interface under ``/dev/remoteproc/``
+through udev rules, but this is not available on every image.
 
 Console
 -------
 Zephyr on the T3 Gemstone O1 Cortex-R5F uses UART 1 (40-pin GPIO header
 pins 8-TX, 10-RX) as console.
+
+A console over RPmsg is also available and requires no extra cabling. Build
+the :zephyr:code-sample:`openamp-rsc-table` sample, which enables the RPmsg
+shell backend, and load it as described above. Once the core is running,
+Linux creates the corresponding rpmsg channels:
+
+.. code-block:: console
+
+   $ ls /sys/bus/rpmsg/devices/
+   virtio1.rpmsg-client-sample.-1.1025
+   virtio1.rpmsg-tty.-1.1024
+   virtio1.rpmsg-tty.-1.1026
+
+Binding the ``rpmsg-tty`` channel to a Linux driver such as ``rpmsg_tty`` or
+``rpmsg_char`` gives access to the Zephyr shell from the Linux side.
 
 Debugging
 ---------
