@@ -74,6 +74,8 @@ static enum fido2_runtime_state runtime_state = FIDO2_RUNTIME_STATE_STOPPED;
 static fido2_state_callback_t runtime_state_cb;
 static void *runtime_state_cb_user_data;
 
+static const struct fido2_transport *active_transport;
+
 static void set_runtime_state(enum fido2_runtime_state state)
 {
 	fido2_state_callback_t cb;
@@ -331,7 +333,8 @@ handle_make_credential(uint8_t *cbor_in, size_t cbor_in_len, uint8_t *cbor_out, 
 
 			ret = fido2_up_wait();
 			if (ret) {
-				return FIDO2_ERR_OPERATION_DENIED;
+				return ret == -ECANCELED ? FIDO2_ERR_KEEPALIVE_CANCEL
+							 : FIDO2_ERR_OPERATION_DENIED;
 			}
 
 			set_runtime_state(FIDO2_RUNTIME_STATE_PROCESSING);
@@ -622,7 +625,8 @@ static enum fido2_status handle_get_assertion(uint8_t *cbor_in, size_t cbor_in_l
 
 			ret = fido2_up_wait();
 			if (ret) {
-				return FIDO2_ERR_OPERATION_DENIED;
+				return ret == -ECANCELED ? FIDO2_ERR_KEEPALIVE_CANCEL
+							 : FIDO2_ERR_OPERATION_DENIED;
 			}
 
 			set_runtime_state(FIDO2_RUNTIME_STATE_PROCESSING);
@@ -725,6 +729,9 @@ static enum fido2_status handle_get_info(uint8_t *cbor_out, size_t cbor_out_cap,
 	info.transports = 0;
 	if (IS_ENABLED(CONFIG_FIDO2_TRANSPORT_USB_HID)) {
 		info.transports |= FIDO2_TRANSPORT_USB;
+	}
+	if (IS_ENABLED(CONFIG_FIDO2_TRANSPORT_BLE)) {
+		info.transports |= FIDO2_TRANSPORT_BLE;
 	}
 
 	info.options.rk = !IS_ENABLED(CONFIG_FIDO2_STORAGE_NONE);
@@ -933,17 +940,22 @@ static enum fido2_status process_command(uint8_t cmd, uint8_t *cbor_in, size_t c
 	}
 }
 
-static void transport_recv_cb(const struct fido2_transport *transport, uint32_t cid,
-			      const uint8_t *buf, size_t len)
+static int transport_recv_cb(const struct fido2_transport *transport, uint32_t cid,
+			     const uint8_t *buf, size_t len)
 {
 	int ret;
 
-	if (len > sizeof(rx_enqueue_msg.data)) {
-		LOG_WRN("Message too large, dropping");
-		return;
+	if (len == 0 || len > sizeof(rx_enqueue_msg.data)) {
+		LOG_WRN("Invalid message length: %zu", len);
+		return -EMSGSIZE;
 	}
 
 	k_mutex_lock(&rx_enqueue_mutex, K_FOREVER);
+
+	if (active_transport != NULL && active_transport != transport) {
+		k_mutex_unlock(&rx_enqueue_mutex);
+		return -ENOBUFS;
+	}
 
 	rx_enqueue_msg.transport = transport;
 	rx_enqueue_msg.cid = cid;
@@ -951,17 +963,29 @@ static void transport_recv_cb(const struct fido2_transport *transport, uint32_t 
 	memcpy(rx_enqueue_msg.data, buf, len);
 
 	ret = k_msgq_put(&fido2_msgq, &rx_enqueue_msg, K_NO_WAIT);
+	if (ret) {
+		k_mutex_unlock(&rx_enqueue_mutex);
+
+		LOG_WRN("Message queue full, dropping cid=0x%08x", cid);
+		return -ENOBUFS;
+	}
+
+	active_transport = transport;
 
 	k_mutex_unlock(&rx_enqueue_mutex);
 
-	if (ret) {
-		LOG_WRN("Message queue full, dropping cid=0x%08x", cid);
-	}
+	return 0;
 }
 
-static inline void transport_cancel_cb(void)
+static void transport_cancel_cb(const struct fido2_transport *transport)
 {
-	fido2_up_cancel();
+	k_mutex_lock(&rx_enqueue_mutex, K_FOREVER);
+
+	if (active_transport == transport) {
+		fido2_up_cancel();
+	}
+
+	k_mutex_unlock(&rx_enqueue_mutex);
 }
 
 static void fido2_thread_fn(void *p1, void *p2, void *p3)
@@ -984,6 +1008,8 @@ static void fido2_thread_fn(void *p1, void *p2, void *p3)
 		enum fido2_status status;
 		int ret;
 
+		fido2_up_reset();
+
 		status =
 			process_command(cmd, rx_dequeue_msg.data + 1, rx_dequeue_msg.len - 1,
 					ctap_tx_frame + 1, sizeof(ctap_tx_frame) - 1, &cbor_out_len,
@@ -993,13 +1019,24 @@ static void fido2_thread_fn(void *p1, void *p2, void *p3)
 		notify_wire(rx_dequeue_msg.transport, rx_dequeue_msg.cid, FIDO2_WIRE_STATUS_DONE);
 
 		ctap_tx_frame[0] = (uint8_t)status;
-		if (rx_dequeue_msg.transport && rx_dequeue_msg.transport->api) {
+
+		if (rx_dequeue_msg.transport && rx_dequeue_msg.transport->api &&
+		    rx_dequeue_msg.transport->api->send) {
 			ret = rx_dequeue_msg.transport->api->send(rx_dequeue_msg.cid, ctap_tx_frame,
 								  cbor_out_len + 1);
 		} else {
 			LOG_ERR("No send path for cid=0x%08x", rx_dequeue_msg.cid);
 			ret = -ENODEV;
 		}
+
+		k_mutex_lock(&rx_enqueue_mutex, K_FOREVER);
+
+		if (active_transport == rx_dequeue_msg.transport &&
+		    k_msgq_num_used_get(&fido2_msgq) == 0) {
+			active_transport = NULL;
+		}
+
+		k_mutex_unlock(&rx_enqueue_mutex);
 
 		if (ret) {
 			LOG_WRN("Response send failed: %d", ret);
