@@ -1,0 +1,231 @@
+/*
+ * Copyright (c) 2025 Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <silabs/xg29/efr32mg29b230f1024cm40.dtsi>
+#include <silabs/xg29/clock-hfrcodpll.dtsi>
+#include <silabs/xg29/clock-lfxo.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include "xg29_rb4413a-pinctrl.dtsi"
+
+/ {
+	model = "Silicon Labs xG29-RB4413A";
+	compatible = "silabs,xg29_rb4413a", "silabs,efr32mg29";
+
+	chosen {
+		zephyr,bt-hci = &bt_hci_silabs;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,console = &usart1;
+		zephyr,display = &ls013b7dh03;
+		zephyr,flash = &flash0;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,uart-pipe = &usart1;
+	};
+
+	aliases {
+		dht0 = &si7021;
+		led0 = &led0;
+		led1 = &led1;
+		spi-flash0 = &mx25r80;
+		/*
+		 * Map buttons to the opposite aliases so samples can use LED0
+		 * and SW0 simultaneously; each LED shares a pin with a button.
+		 */
+		sw0 = &button1;
+		sw1 = &button0;
+		watchdog0 = &wdog0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&gpiob 0 GPIO_ACTIVE_LOW>;
+			label = "LED 0";
+		};
+
+		led1: led_1 {
+			gpios = <&gpiob 1 GPIO_ACTIVE_LOW>;
+			label = "LED 1";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: button_0 {
+			gpios = <&gpiob 0 GPIO_ACTIVE_LOW>;
+			label = "User Push Button 0";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		button1: button_1 {
+			gpios = <&gpiob 1 GPIO_ACTIVE_LOW>;
+			label = "User Push Button 1";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+
+	display_enable: sensor_enable: gpio_switch_0 {
+		compatible = "regulator-fixed";
+		enable-gpios = <&gpioc 7 GPIO_ACTIVE_HIGH>;
+		regulator-name = "sensor_enable";
+	};
+};
+
+&itm {
+	pinctrl-0 = <&itm_default>;
+	pinctrl-names = "default";
+};
+
+&hfxo {
+	ctune = <129>;
+	precision = <50>;
+};
+
+&lfxo {
+	ctune = <42>;
+	precision = <50>;
+};
+
+&usart1 {
+	current-speed = <115200>;
+	pinctrl-0 = <&usart1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&dma0 {
+	status = "okay";
+};
+
+&i2c0 {
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+	dmas = <&dma0 DMA_REQSEL_I2C0RXDATAV>, <&dma0 DMA_REQSEL_I2C0TXBL>;
+	dma-names = "rx", "tx";
+	status = "okay";
+
+	si7021: si7021@40 {
+		compatible = "silabs,si7006";
+		reg = <0x40>;
+		vin-supply = <&sensor_enable>;
+	};
+};
+
+&eusart1 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clock-frequency = <DT_FREQ_M(8)>;
+	cs-gpios = <&gpioa 4 GPIO_ACTIVE_LOW>, <&gpioc 6 GPIO_ACTIVE_HIGH>;
+	pinctrl-0 = <&eusart1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	mx25r80: mx25r8035f@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		dpd-wakeup-sequence = <30000 20 35000>;
+		has-dpd;
+		jedec-id = [c2 28 14];
+		mxicy,mx25r-power-mode = "low-power";
+		size = <0x800000>;
+		spi-max-frequency = <DT_FREQ_M(33)>;
+		t-enter-dpd = <0>;
+		zephyr,pm-device-runtime-auto;
+	};
+
+	ls013b7dh03: ls0xx@1 {
+		compatible = "sharp,ls0xx";
+		reg = <1>;
+		disp-en-gpios = <&gpioc 7 GPIO_ACTIVE_HIGH>;
+		extcomin-frequency = <60>;
+		extcomin-gpios = <&gpiod 2 GPIO_ACTIVE_HIGH>;
+		height = <128>;
+		spi-max-frequency = <DT_FREQ_M(2)>;
+		width = <128>;
+	};
+};
+
+&gpio {
+	status = "okay";
+};
+
+&gpioa {
+	status = "okay";
+};
+
+&gpiob {
+	status = "okay";
+
+	vcom-enable {
+		gpio-hog;
+		gpios = <4 GPIO_ACTIVE_HIGH>;
+		output-high;
+	};
+};
+
+&gpioc {
+	status = "okay";
+};
+
+&gpiod {
+	status = "okay";
+};
+
+&wdog0 {
+	status = "okay";
+};
+
+&rtcc0 {
+	status = "okay";
+};
+
+&se {
+	status = "okay";
+};
+
+&radio {
+	pa-2p4ghz = "highest";
+	pa-voltage-mv = <1800>;
+};
+
+&bt_hci_silabs {
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x00000000 DT_SIZE_K(48)>;
+			label = "mcuboot";
+		};
+
+		slot0_partition: partition@c000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x0000c000 DT_SIZE_K(472)>;
+			label = "image-0";
+		};
+
+		slot1_partition: partition@82000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x00082000 DT_SIZE_K(472)>;
+			label = "image-1";
+		};
+
+		storage_partition: partition@f8000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x000f8000 DT_SIZE_K(32)>;
+			label = "storage";
+		};
+	};
+};
