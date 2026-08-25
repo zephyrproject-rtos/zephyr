@@ -1403,6 +1403,15 @@ int can_add_rx_filter(const struct device *dev, can_rx_callback_t callback,
  * @note The message queue must be initialized before calling this function and
  * the caller must have appropriate permissions on it.
  *
+ * @warning The CAN controller driver retains the message queue pointer for as
+ * long as the filter is installed. The message queue must therefore remain
+ * valid until the filter is removed with @a can_remove_rx_filter(); received
+ * frames are otherwise written to freed memory. Use @a CAN_MSGQ_DEFINE() to
+ * statically define the message queue. Message queues obtained from
+ * @a k_object_alloc() may not be used, as they are freed once the last thread
+ * holding permission on them releases it or terminates; such message queues
+ * are rejected when this function is called from user mode.
+ *
  * @warning Message queue overruns are silently ignored and overrun frames
  * discarded. Custom error handling can be implemented by using
  * @a can_add_rx_filter() and @a k_msgq_put() directly.
