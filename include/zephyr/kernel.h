@@ -3775,15 +3775,53 @@ struct k_sem {
 };
 
 /**
- * @cond INTERNAL_HIDDEN
+ * @brief Initializer for a semaphore.
+ *
+ * Yields an initializer for the semaphore @a obj, which must be the
+ * semaphore being initialized (the initializer refers to its address).
+ *
+ * Unlike k_sem_init(), a semaphore brought up this way is not registered
+ * with the kernel object tracking facilities (see
+ * @kconfig{CONFIG_OBJ_CORE_SEM} and @kconfig{CONFIG_TRACING_OBJECT_TRACKING}).
+ * Those facilities keep the objects they track on a list for the lifetime of
+ * the program, so they must only ever be handed objects that live that long.
+ * This initializer is therefore the way to bring up a transient semaphore,
+ * such as one living on a thread's stack:
+ *
+ * @code
+ * struct k_sem done = K_SEM_INITIALIZER(done, 0, 1);
+ * @endcode
+ *
+ * It also works for a semaphore embedded in a larger object:
+ *
+ * @code
+ * struct my_ctx ctx = { .done = K_SEM_INITIALIZER(ctx.done, 0, 1) };
+ * @endcode
+ *
+ * Semaphores that do live for the lifetime of the program are better defined
+ * with K_SEM_DEFINE(), which does keep them visible to object tracking.
+ *
+ * @note A semaphore initialized this way is not a registered kernel object
+ * and cannot be used from user mode.
+ *
+ * @param obj The semaphore being initialized.
+ * @param initial_count Initial semaphore count.
+ * @param count_limit Maximum permitted semaphore count.
  */
-#define Z_SEM_INITIALIZER(obj, initial_count, count_limit) \
+#define K_SEM_INITIALIZER(obj, initial_count, count_limit) \
 	{ \
 	.wait_q = Z_WAIT_Q_INIT(&(obj).wait_q), \
 	.count = (initial_count), \
 	.limit = (count_limit), \
 	Z_POLL_EVENT_OBJ_INIT(obj) \
 	}
+
+/**
+ * @cond INTERNAL_HIDDEN
+ */
+/* Retained for the many in-tree users that predate K_SEM_INITIALIZER(). */
+#define Z_SEM_INITIALIZER(obj, initial_count, count_limit) \
+	K_SEM_INITIALIZER(obj, initial_count, count_limit)
 /**
  * INTERNAL_HIDDEN @endcond
  */
@@ -3803,11 +3841,17 @@ struct k_sem {
  *
  * This routine initializes a semaphore object, prior to its first use.
  *
+ * @a sem must live for the lifetime of the program: the kernel object
+ * tracking facilities keep a reference to every semaphore initialized this
+ * way. Use K_SEM_INITIALIZER() for a transient semaphore, such as one living
+ * on a thread's stack.
+ *
  * @param sem Address of the semaphore.
  * @param initial_count Initial semaphore count.
  * @param limit Maximum permitted semaphore count.
  *
  * @see K_SEM_MAX_LIMIT
+ * @see K_SEM_INITIALIZER
  *
  * @retval 0 Semaphore created successfully
  * @retval -EINVAL Invalid values
@@ -3891,7 +3935,7 @@ static inline unsigned int z_impl_k_sem_count_get(struct k_sem *sem)
  */
 #define K_SEM_DEFINE(name, initial_count, count_limit)                                             \
 	STRUCT_SECTION_ITERABLE(k_sem, name) =                                                     \
-		Z_SEM_INITIALIZER(name, initial_count, count_limit);                               \
+		K_SEM_INITIALIZER(name, initial_count, count_limit);                               \
 	BUILD_ASSERT(((count_limit) != 0) &&                                                       \
 		     (((initial_count) < (count_limit)) || ((initial_count) == (count_limit))) &&  \
 		     ((count_limit) <= K_SEM_MAX_LIMIT));

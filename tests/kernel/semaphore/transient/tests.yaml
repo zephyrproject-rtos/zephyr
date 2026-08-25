@@ -1,0 +1,13 @@
+tests:
+  kernel.semaphore.transient:
+    tags:
+      - kernel
+      - semaphore
+  kernel.semaphore.transient.tracking:
+    tags:
+      - kernel
+      - semaphore
+    extra_configs:
+      - CONFIG_TRACING=y
+      - CONFIG_TRACING_NONE=y
+      - CONFIG_TRACING_OBJECT_TRACKING=y

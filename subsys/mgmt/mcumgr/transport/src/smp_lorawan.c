@@ -185,9 +185,9 @@ static int smp_lorawan_uplink(struct net_buf *nb)
 #ifdef CONFIG_MCUMGR_TRANSPORT_LORAWAN_FRAGMENTED_UPLINKS
 	struct smp_lorawan_uplink_message_t tx_data = {
 		.nb = nb,
+		.my_sem = K_SEM_INITIALIZER(tx_data.my_sem, 0, 1),
 	};
 
-	k_sem_init(&tx_data.my_sem, 0, 1);
 	k_fifo_put(&smp_lorawan_fifo, &tx_data);
 	k_sem_take(&tx_data.my_sem, K_FOREVER);
 #else
