@@ -54,6 +54,12 @@ family:
       - name: efr32mg21
         socs:
           - name: efr32mg21a020f1024im32
+          - name: efr32mg21b010f512im32
+          - name: efr32mg21b010f768im32
+          - name: efr32mg21b010f1024im32
+          - name: efr32mg21b020f512im32
+          - name: efr32mg21b020f768im32
+          - name: efr32mg21b020f1024im32
       - name: efr32bg22
         socs:
           - name: efr32bg22c224f512im40
