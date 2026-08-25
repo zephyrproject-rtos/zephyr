@@ -103,6 +103,18 @@
 	status = "okay";
 };
 
+&dma1 {
+	status = "okay";
+};
+
+&dma2 {
+	status = "okay";
+};
+
+&dmamux1 {
+	status = "okay";
+};
+
 &pll1 {
 	clocks = <&clk_hse>;
 	div-m = <2>;
