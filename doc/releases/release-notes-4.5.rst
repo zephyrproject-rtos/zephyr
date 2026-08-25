@@ -243,6 +243,11 @@ Removed APIs and options
 
     * ``stream_flash_erase_page()``
 
+* ZTest
+
+    * ``CONFIG_ZTEST_SHUFFLE_SUITE_REPEAT_COUNT``
+    * ``CONFIG_ZTEST_SHUFFLE_TEST_REPEAT_COUNT``
+
 * West sign support for imgtool, which was deprecated in Zephyr 4.0, has been removed.
 
 * The ``scripts/logging/dictionary/log_parser_uart.py`` dictionary logging script, which was

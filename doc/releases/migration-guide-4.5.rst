@@ -1743,6 +1743,13 @@ Other subsystems
      ZTEST_BENCHMARK(suite, my_bench, 100, setup, teardown) { /* ... */ }
      ZTEST_BENCHMARK_TIMED(suite, my_bench, 1000, setup, teardown) { /* ... */ }
 
+* The ``CONFIG_ZTEST_SHUFFLE_SUITE_REPEAT_COUNT`` and ``CONFIG_ZTEST_SHUFFLE_TEST_REPEAT_COUNT``
+  Kconfig options, deprecated since Zephyr 4.0, have been removed. With
+  :kconfig:option:`CONFIG_ZTEST_SHUFFLE` alone, suites and tests now run once per execution, in a
+  shuffled order; to repeat them, enable :kconfig:option:`CONFIG_ZTEST_REPEAT` and set
+  :kconfig:option:`CONFIG_ZTEST_SUITE_REPEAT_COUNT` and
+  :kconfig:option:`CONFIG_ZTEST_TEST_REPEAT_COUNT`.
+
 * The CPU load metric module has been merged into the unified :ref:`cpu_load` module. The
   :kconfig:option:`CONFIG_CPU_LOAD_METRIC` option is deprecated; enable
   :kconfig:option:`CONFIG_CPU_LOAD` with the :kconfig:option:`CONFIG_CPU_LOAD_BACKEND_RUNTIME_STATS`
