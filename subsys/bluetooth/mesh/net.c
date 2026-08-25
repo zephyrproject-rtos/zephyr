@@ -286,6 +286,11 @@ void bt_mesh_iv_update_test(bool enable)
 	atomic_set_bit_to(bt_mesh.flags, BT_MESH_IVU_TEST, enable);
 	/* Reset the duration variable - needed for some PTS tests */
 	bt_mesh.ivu_duration = 0U;
+	/* ivu_refresh() drops the beacon cache when the 96-hour limit expires. Test mode
+	 * lifts that limit without the timer running, so drop it here too, or a beacon
+	 * cached while the limit was in force would keep being filtered as a duplicate.
+	 */
+	bt_mesh_subnet_foreach(bt_mesh_beacon_cache_clear);
 }
 
 bool bt_mesh_iv_update(void)
