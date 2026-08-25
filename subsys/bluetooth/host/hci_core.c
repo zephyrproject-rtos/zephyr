@@ -4859,6 +4859,16 @@ int bt_disable(void)
 	struct net_buf *buf;
 	int err;
 
+	/* When bt_enable() was called with a ready callback, bt_init() runs
+	 * asynchronously in the init_work item. If bt_disable() is called
+	 * before init has finished, reject it so that bt_init() can complete
+	 * without racing against HCI_Reset. The caller should retry once
+	 * bt_enable() has signalled its ready callback.
+	 */
+	if (k_work_busy_get(&bt_dev.init) != 0) {
+		return -EAGAIN;
+	}
+
 	if (atomic_test_and_set_bit(bt_dev.flags, BT_DEV_DISABLE)) {
 		return -EALREADY;
 	}
