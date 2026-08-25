@@ -158,6 +158,8 @@ Removed APIs and options
     * The CMake ``flash``, ``debug``, ``debugserver``, ``attach`` and ``rtt`` targets,
       replaced by the corresponding ``west`` commands
     * The ``WEST_DIR`` build system variable
+    * The ``ZephyrUnittest`` CMake package, replaced by
+      ``find_package(Zephyr COMPONENTS unittest)``
 
 * CAN
 
