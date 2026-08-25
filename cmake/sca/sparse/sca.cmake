@@ -12,7 +12,7 @@ message(STATUS "Found SCA: sparse (${SPARSE_COMPILER})")
 configure_file(${CMAKE_CURRENT_LIST_DIR}/sparse.template ${CMAKE_BINARY_DIR}/sparse.cmake @ONLY)
 
 set(launch_environment ${CMAKE_COMMAND} -P ${CMAKE_BINARY_DIR}/sparse.cmake --)
-set(CMAKE_C_COMPILER_LAUNCHER ${launch_environment} CACHE INTERNAL "")
+set(CMAKE_C_COMPILER_LAUNCHER ${launch_environment})
 
 list(APPEND TOOLCHAIN_C_FLAGS -D__CHECKER__)
 # Avoid compiler "attribute directive ignored" warnings
