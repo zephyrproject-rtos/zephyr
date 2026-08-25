@@ -179,6 +179,7 @@ static int mcux_ctimer_pwm_set_cycles(const struct device *dev, uint32_t pulse_c
 	const struct pwm_mcux_ctimer_config *config = dev->config;
 	struct pwm_mcux_ctimer_data *data = dev->data;
 	uint32_t period_channel = data->current_period_channel;
+	bool period_changed;
 	int ret = 0;
 	status_t status;
 
@@ -205,6 +206,8 @@ static int mcux_ctimer_pwm_set_cycles(const struct device *dev, uint32_t pulse_c
 		LOG_ERR("could not select valid period channel. ret=%d", ret);
 		return ret;
 	}
+
+	period_changed = data->channel_states[period_channel].cycles != period_cycles;
 
 	/*
 	 * CTIMER PWM-mode output: after each TC reset the pin starts LOW; it
@@ -237,6 +240,20 @@ static int mcux_ctimer_pwm_set_cycles(const struct device *dev, uint32_t pulse_c
 		LOG_ERR("failed setup pwm period. status=%d", status);
 		return -EIO;
 	}
+
+	/*
+	 * CTIMER_SetupPwmPeriod() only rewrites the match registers, it does not
+	 * touch TC. Shortening the period while the timer runs can therefore leave
+	 * TC above the new MR[period_channel] value, so the reset-on-match never
+	 * fires again until TC wraps around 32 bits and the output freezes for up
+	 * to 2^32 timer cycles. Realign TC with the new period whenever the period
+	 * value actually changes. Duty-cycle-only updates keep the counter running
+	 * so they introduce no phase discontinuity.
+	 */
+	if (period_changed) {
+		CTIMER_Reset(config->base);
+	}
+
 	mcux_ctimer_pwm_update_state(data, pulse_channel, pulse_cycles, period_channel,
 				     period_cycles);
 
