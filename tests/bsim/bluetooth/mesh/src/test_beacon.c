@@ -1056,6 +1056,70 @@ static void test_tx_beacon_cache(void)
 	PASS();
 }
 
+static void snb_recv_ivu(const struct bt_mesh_snb *snb)
+{
+	ASSERT_EQUAL(snb->flags, 0x02);
+	ASSERT_EQUAL(snb->iv_idx, 1);
+	snb_cnt++;
+	k_sem_give(&beacon_sem);
+}
+
+static void test_rx_beacon_cache_ivu_test_mode(void)
+{
+	k_sem_init(&beacon_sem, 0, 1);
+	snb_cb_ptr = snb_recv_ivu;
+
+	bt_mesh_test_cfg_set(&rx_cfg, WAIT_TIME);
+	bt_mesh_test_setup();
+
+	/* Test mode is left off, so the first beacon is refused by the 96-hour limit. */
+	ASSERT_OK_MSG(k_sem_take(&beacon_sem, K_SECONDS(20)), "Didn't receive first SNB");
+	ASSERT_EQUAL(bt_mesh.iv_index, 0);
+	ASSERT_FALSE(atomic_test_bit(bt_mesh.flags, BT_MESH_IVU_IN_PROGRESS));
+
+	bt_mesh_iv_update_test(true);
+
+	/* The repeated beacon must not be filtered out as a duplicate now that the limit
+	 * no longer applies.
+	 */
+	ASSERT_OK_MSG(k_sem_take(&beacon_sem, K_SECONDS(20)), "Cached SNB was not reprocessed");
+	ASSERT_EQUAL(bt_mesh.iv_index, 1);
+	ASSERT_TRUE(atomic_test_bit(bt_mesh.flags, BT_MESH_IVU_IN_PROGRESS));
+
+	bt_mesh_iv_update_test(false);
+
+	ASSERT_OK_MSG(k_sem_take(&beacon_sem, K_SECONDS(20)), "Cached SNB was not reprocessed");
+
+	/* Duplicate filtering is unaffected by test mode, so the fourth beacon is dropped. */
+	ASSERT_TRUE(k_sem_take(&beacon_sem, K_SECONDS(20)) != 0);
+	ASSERT_EQUAL(snb_cnt, 3);
+
+	PASS();
+}
+
+static void test_tx_beacon_cache_ivu_test_mode(void)
+{
+	NET_BUF_SIMPLE_DEFINE(iv1, 22);
+
+	bt_mesh_test_cfg_set(NULL, WAIT_TIME);
+	bt_mesh_crypto_init();
+	ASSERT_OK_MSG(bt_enable(NULL), "Bluetooth init failed");
+
+	beacon_create(&iv1, test_net_key, 0x02, 0x0001);
+
+	/* The rx device sends its own beacons on a 10 second cycle. Offset the transmissions by
+	 * half a cycle, otherwise they collide with those and the rx device never sees them.
+	 */
+	k_sleep(K_SECONDS(5));
+
+	for (size_t i = 0; i < 4; i++) {
+		send_beacon(&iv1);
+		k_sleep(K_SECONDS(10));
+	}
+
+	PASS();
+}
+
 typedef void (*priv_beacon_cb)(const struct bt_mesh_prb *prb);
 
 static priv_beacon_cb priv_beacon_cb_ptr;
@@ -2213,6 +2277,7 @@ static const struct bst_test_instance test_beacon[] = {
 	TEST_CASE(tx, multiple_netkeys, "Beacon: multiple Net Keys"),
 	TEST_CASE(tx, secure_beacon_interval, "Beacon: send secure beacons"),
 	TEST_CASE(tx, beacon_cache,   "Beacon: advertise duplicate SNBs"),
+	TEST_CASE(tx, beacon_cache_ivu_test_mode, "Beacon: duplicate SNB, IVU test mode"),
 	TEST_CASE(tx, priv_on_iv_update,   "Private Beacon: send on IV update"),
 	TEST_CASE(tx, priv_on_key_refresh,   "Private Beacon: send on Key Refresh"),
 	TEST_CASE(tx, priv_adv,   "Private Beacon: advertise Private Beacons"),
@@ -2235,6 +2300,7 @@ static const struct bst_test_instance test_beacon[] = {
 	TEST_CASE(rx, multiple_netkeys, "Beacon: multiple Net Keys"),
 	TEST_CASE(rx, secure_beacon_interval, "Beacon: receive and send secure beacons"),
 	TEST_CASE(rx, beacon_cache,   "Beacon: receive duplicate SNBs"),
+	TEST_CASE(rx, beacon_cache_ivu_test_mode, "Beacon: duplicate SNB, IVU test mode"),
 	TEST_CASE(rx, priv_adv,   "Private Beacon: verify random regeneration"),
 	TEST_CASE(rx, priv_invalid,   "Private Beacon: receive invalid beacons"),
 	TEST_CASE(rx, priv_interleave,   "Private Beacon: interleaved with SNB"),
