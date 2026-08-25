@@ -23,6 +23,8 @@ config SOC_R8A779G0_R52
 	select ARM_ARCH_TIMER
 	select CPU_HAS_ARM_MPU
 	select ARM_MPU
+	select CACHE_MANAGEMENT
+	select SOC_EARLY_INIT_HOOK
 
 config SOC_R8A779G0_A76
 	select ARM64
