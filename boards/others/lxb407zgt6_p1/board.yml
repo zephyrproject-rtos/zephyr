@@ -1,0 +1,6 @@
+board:
+  name: lxb407zgt6_p1
+  full_name: LXB STM32F407ZGT6 Core Board (LXB407ZGT6-P1)
+  vendor: others
+  socs:
+    - name: stm32f407xx
