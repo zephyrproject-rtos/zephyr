@@ -4,6 +4,9 @@ family:
   - name: npck3
     socs:
     - name: npck3m8k
+  - name: npcm4
+    socs:
+    - name: npcm400
   - name: npcx4
     socs:
     - name: npcx4m3f

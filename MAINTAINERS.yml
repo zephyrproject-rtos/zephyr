@@ -5005,7 +5005,8 @@ Nuvoton NPCM Platforms:
   maintainers:
     - maxdog988
   files:
-    - soc/nuvoton/npcm/
+    - soc/nuvoton/npcx/npcm4/
+    - soc/nuvoton/npcx/common/npcmn/
     - boards/nuvoton/npcm*/
     - dts/arm/nuvoton/
     - drivers/*/*_npcm*
