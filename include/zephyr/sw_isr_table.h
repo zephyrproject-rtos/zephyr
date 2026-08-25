@@ -15,6 +15,7 @@
 #define ZEPHYR_INCLUDE_SW_ISR_TABLE_H_
 
 #if !defined(_ASMLANGUAGE)
+#include <stdbool.h>
 #include <zephyr/device.h>
 #include <zephyr/sys/iterable_sections.h>
 #include <zephyr/types.h>
@@ -61,6 +62,47 @@ struct _irq_parent_entry {
 	unsigned int offset;
 };
 
+#if defined(CONFIG_3RD_LEVEL_INTERRUPTS) && defined(CONFIG_INTERRUPT_MATRIX_LAYOUT)
+/**
+ * @brief Placement of one 3rd-level aggregator's window in _sw_isr_table.
+ *
+ * A 3rd-level aggregator is a 2nd-level interrupt source that fans out into
+ * several flags of a peripheral interrupt-status register. Its window is packed
+ * densely: one slot per status bit that actually has a handler connected, so a
+ * flag's slot is @ref win_base plus the flag's rank among the set bits of
+ * @ref mask.
+ *
+ * This table is emitted by gen_isr_tables.py, the only stage that sees every
+ * connected flag and can therefore derive @ref mask. It carries no
+ * status-register address: that is peripheral knowledge, and the interrupt
+ * controller driver joins it in from the devicetree.
+ *
+ * Only produced for the interrupt-matrix layout
+ * (CONFIG_INTERRUPT_MATRIX_LAYOUT); other layouts use fixed-width windows and
+ * do not reference this table.
+ */
+struct z_isr_l3_window {
+	/** Status-register bits owned by this aggregator */
+	uint32_t mask;
+	/** First _sw_isr_table slot of this aggregator's window */
+	uint16_t win_base;
+	/** The aggregator's own 2nd-level IRQ number */
+	uint16_t l2_src;
+	/**
+	 * True if the last slot of the window holds a catch-all handler: one
+	 * that owns no bit of @ref mask and is called unconditionally, after
+	 * every pending bit has been dispatched. It is how a handler with no
+	 * usable status bit shares a source with handlers that have one; such a
+	 * handler is expected to check its own peripheral state and return when
+	 * it has no work. At most one per aggregator.
+	 */
+	bool catch_all;
+};
+
+extern const struct z_isr_l3_window z_isr_l3_windows[];
+extern const size_t z_isr_l3_window_num;
+#endif /* CONFIG_3RD_LEVEL_INTERRUPTS && CONFIG_INTERRUPT_MATRIX_LAYOUT */
+
 /**
  * @cond INTERNAL_HIDDEN
  */
@@ -77,6 +119,17 @@ struct _irq_parent_entry {
  * `CONFIG_3RD_LVL_ISR_TBL_OFFSET` if third level aggregator
  */
 #define Z_SW_ISR_TBL_KCONFIG_BY_ALVL(l) CONCAT(CONFIG_, CONCAT(Z_STR_L, l), _LVL_ISR_TBL_OFFSET)
+
+/**
+ * @brief Get the max-IRQs-per-aggregator Kconfig for the given aggregator level
+ *
+ * @param l Aggregator level, must be 2 or 3
+ *
+ * @return `CONFIG_MAX_IRQ_PER_2ND_LEVEL_AGGREGATOR` if second level aggregator,
+ * `CONFIG_MAX_IRQ_PER_3RD_LEVEL_AGGREGATOR` if third level aggregator
+ */
+#define Z_MAX_IRQ_PER_AGGREGATOR_BY_ALVL(l)                                                        \
+	CONCAT(CONFIG_MAX_IRQ_PER_, CONCAT(Z_STR_L, l), _LEVEL_AGGREGATOR)
 
 /**
  * INTERNAL_HIDDEN @endcond
@@ -101,7 +154,9 @@ struct _irq_parent_entry {
  * @return Software ISR table offset of the interrupt controller
  */
 #define INTC_INST_ISR_TBL_OFFSET(inst)                                                             \
-	(INTC_BASE_ISR_TBL_OFFSET(DT_DRV_INST(inst)) + (inst * CONFIG_MAX_IRQ_PER_AGGREGATOR))
+	(INTC_BASE_ISR_TBL_OFFSET(DT_DRV_INST(inst)) +                                             \
+	 (inst * Z_MAX_IRQ_PER_AGGREGATOR_BY_ALVL(                                                 \
+			 DT_INTC_GET_AGGREGATOR_LEVEL(DT_DRV_INST(inst)))))
 
 /**
  * @brief Get the SW ISR table offset for a child interrupt controller
@@ -115,7 +170,8 @@ struct _irq_parent_entry {
  */
 #define INTC_CHILD_ISR_TBL_OFFSET(node_id)                                                         \
 	(INTC_BASE_ISR_TBL_OFFSET(node_id) +                                                       \
-	 (DT_NODE_CHILD_IDX(node_id) * CONFIG_MAX_IRQ_PER_AGGREGATOR))
+	 (DT_NODE_CHILD_IDX(node_id) *                                                             \
+	  Z_MAX_IRQ_PER_AGGREGATOR_BY_ALVL(DT_INTC_GET_AGGREGATOR_LEVEL(node_id))))
 
 /**
  * @brief Register an  interrupt controller with the software ISR table
