@@ -236,6 +236,11 @@ extern "C" {
 #define RTIO_IODEV_I3C_NBCH BIT(4)
 
 /**
+ * @brief Equivalent to the I3C_MSG_NOACK_EXPECTED
+ */
+#define RTIO_IODEV_I3C_NOACK_EXPECTED BIT(5)
+
+/**
  * @brief I3C HDR Mode Mask
  */
 #define RTIO_IODEV_I3C_HDR_MODE_MASK GENMASK(15, 8)
