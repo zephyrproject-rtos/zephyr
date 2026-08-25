@@ -18,7 +18,7 @@
 
 #if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_pwr_antswc)
 
-#if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE) || defined(__NRF_TFM__)
+#if !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE) || !defined(__ZEPHYR__)
 #define PWR_ANTSWC_REG (0x5010F780UL)
 #else
 #define PWR_ANTSWC_REG (0x4010F780UL)
