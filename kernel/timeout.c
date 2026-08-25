@@ -111,6 +111,8 @@ static uint32_t elapsed(void)
 #include "timeout_wheel.h"
 #elif defined(CONFIG_TIMEOUT_BACKEND_BUCKET)
 #include "timeout_bucket.h"
+#elif defined(CONFIG_TIMEOUT_BACKEND_SKIPLIST)
+#include "timeout_skiplist.h"
 #else /* CONFIG_TIMEOUT_BACKEND_DLIST */
 #include "timeout_list.h"
 #endif

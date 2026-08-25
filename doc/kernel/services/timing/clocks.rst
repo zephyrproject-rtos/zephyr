@@ -201,7 +201,7 @@ The default, :kconfig:option:`CONFIG_TIMEOUT_BACKEND_DLIST`, stores
 events in a doubly linked list sorted by expiry, each holding a delta
 count in ticks from its predecessor.  Insertion is O(N) in the number of
 pending timeouts: inexpensive for the handful a typical system has
-pending, but it scales poorly when many are outstanding.  The three
+pending, but it scales poorly when many are outstanding.  The four
 alternative backends, all currently experimental, trade extra memory or
 behaviour for faster insertion at scale:
 
@@ -227,6 +227,13 @@ behaviour for faster insertion at scale:
   sorted overflow list beyond it.  It also requires 64-bit ticks, but
   unlike the wheel it preserves same-tick firing order and adds no
   idle-wakeup cost.
+
+* :kconfig:option:`CONFIG_TIMEOUT_BACKEND_SKIPLIST` is a Pugh skip list
+  keyed on absolute expiry.  Expected insertion and removal are O(log N)
+  with no capacity limit, and same-tick firing order is FIFO.  It
+  requires 64-bit ticks.  Each event stores
+  :kconfig:option:`CONFIG_TIMEOUT_SKIPLIST_MAX_LEVEL` forward pointers,
+  so per-event RAM is higher than the delta list or min-heap.
 
 The non-default backends target systems that hold many concurrent
 timeouts, especially ones clustered in the near future.  For most
