@@ -26,6 +26,7 @@ config NRFX_CLOCK
 		$(dt_nodelabel_exists,hfclk192m) || \
 		$(dt_nodelabel_exists,hfclkaudio) || \
 		$(dt_nodelabel_exists,lfclk) || \
+		$(dt_nodelabel_exists,lfrc) || \
 		$(dt_nodelabel_exists,xo) || \
 		$(dt_nodelabel_exists,xo24m)
 
@@ -45,13 +46,13 @@ config NRFX_CLOCK_LFCLK
 	bool "LFCLK driver"
 	depends on $(dt_nodelabel_exists,lfclk) || CLOCK_CONTROL_NRF
 
+config NRFX_CLOCK_LFRC
+	bool "LFRC driver"
+	depends on $(dt_has_compat,$(DT_COMPAT_NORDIC_NRF_LFRC)) || CLOCK_CONTROL_NRF
+
 if NRFX_CLOCK_LFCLK
 
 if CLOCK_CONTROL_NRF
-
-config NRFX_CLOCK_USE_LFRC_CALIBRATION
-	bool "Extend NRFX_CLOCK to use LFRC peripheral"
-	select DEPRECATED
 
 config NRFX_CLOCK_LF_CAL_ENABLED
 	bool "LFRC Calibration enabled"
@@ -85,13 +86,6 @@ config NRFX_CLOCK_LFXO_TWO_STAGE_ENABLED
 	select DEPRECATED
 
 endif # CLOCK_CONTROL_NRF
-
-if !CLOCK_CONTROL_NRF
-
-config NRFX_CLOCK_LFCLK_USE_LFRC_CALIBRATION
-	bool "Extend NRFX_CLOCK to use LFRC peripheral"
-
-endif # !CLOCK_CONTROL_NRF
 
 endif # NRFX_CLOCK_LFCLK
 
