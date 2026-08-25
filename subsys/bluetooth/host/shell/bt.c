@@ -1335,7 +1335,15 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 
 static int cmd_disable(const struct shell *sh, size_t argc, char *argv[])
 {
-	return bt_disable();
+	int err;
+
+	err = bt_disable();
+	if (err != 0) {
+		shell_error(sh, "Bluetooth disable failed (err %d)", err);
+		return -ENOEXEC;
+	}
+
+	return 0;
 }
 
 #ifdef CONFIG_SETTINGS
