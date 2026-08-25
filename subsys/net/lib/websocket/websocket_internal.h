@@ -22,7 +22,7 @@
 #define MAX_HEADER_LEN 14
 
 /* From RFC 6455 chapter 4.2.2 */
-#define WS_MAGIC "258EAFA5-E914-47DA-95CA-C5AB0DC85B11"
+#define WS_MAGIC "258EAFA5-E914-47DA-95CA-5AB0DC85B11F"
 
 /**
  * Websocket parser states
