@@ -866,7 +866,7 @@ void lll_conn_rx_pkt_set(struct lll_conn *lll)
 	phy = 0U;
 #endif /* !CONFIG_BT_CTLR_PHY */
 
-	radio_phy_set(phy, PHY_FLAGS_UNUSED);
+	radio_phy_set(phy, PHY_FLAGS_S8);
 
 	if (0) {
 #if defined(CONFIG_BT_CTLR_LE_ENC)
