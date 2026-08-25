@@ -358,7 +358,7 @@ class GdbStub(abc.ABC):
                     )
                     thread_prio_byte = self.get_memory(thread_ptr + t_prio_offset, 1)
                     if thread_prio_byte is not None:
-                        thread_prio = int.from_bytes(thread_prio_byte, "little")
+                        thread_prio = int.from_bytes(thread_prio_byte, "little", signed=True)
                         thread_info_bytes += b', prio: ' + bytes(hex(thread_prio), 'ascii')
 
                 self.put_gdb_packet(binascii.hexlify(thread_info_bytes))
