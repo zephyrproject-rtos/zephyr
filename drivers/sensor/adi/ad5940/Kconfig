@@ -1,0 +1,153 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig AD5940
+	bool "Analog Devices AD5940/AD5941 impedance AFE sensor driver"
+	default y
+	depends on DT_HAS_ADI_AD5940_ENABLED
+	select SPI
+	select GPIO
+	help
+	  Enable driver for the Analog Devices AD5940/AD5941 high-precision
+	  impedance and electrochemical analog front-end (AFE). The device
+	  supports EIS, amperometry, cyclic voltammetry, and raw ADC streaming
+	  via the Zephyr sensor API and RTIO interface.
+
+if AD5940
+
+choice AD5940_TRIGGER_MODE
+	prompt "AD5940 interrupt trigger mode"
+	default AD5940_TRIGGER_NONE
+	help
+	  Select how the AD5940 FIFO watermark interrupt is handled.
+
+config AD5940_TRIGGER_NONE
+	bool "No interrupt trigger"
+	help
+	  Disable interrupt-driven mode. Use polling only (sensor_sample_fetch).
+
+config AD5940_TRIGGER_GLOBAL_THREAD
+	bool "Global workqueue interrupt trigger"
+	depends on GPIO
+	select AD5940_TRIGGER
+	help
+	  Handle the AD5940 interrupt in the system workqueue using k_work.
+	  Lower latency than own-thread but shares thread resources.
+
+config AD5940_TRIGGER_OWN_THREAD
+	bool "Dedicated interrupt thread"
+	depends on GPIO
+	select AD5940_TRIGGER
+	help
+	  Handle the AD5940 interrupt in a dedicated kernel thread.
+	  Provides better isolation and allows blocking operations in the handler.
+
+endchoice
+
+config AD5940_TRIGGER
+	bool
+	help
+	  Internal symbol set by trigger mode choice.
+
+config AD5940_THREAD_STACK_SIZE
+	int "AD5940 trigger thread stack size (bytes)"
+	default 2048
+	depends on AD5940_TRIGGER_OWN_THREAD
+	help
+	  Stack size in bytes for the dedicated AD5940 trigger thread.
+	  Must be large enough for the trigger handler call depth.
+	  Default is 2048 bytes (increased from 1024 to prevent stack overflow).
+
+config AD5940_THREAD_PRIORITY
+	int "AD5940 trigger thread priority"
+	default 10
+	depends on AD5940_TRIGGER_OWN_THREAD
+	help
+	  Priority of the dedicated AD5940 interrupt handler thread.
+	  Lower values indicate higher priority.
+
+config AD5940_STREAM
+	bool "AD5940 RTIO streaming support"
+	depends on GPIO
+	select SPI_RTIO
+	select SENSOR_ASYNC_API
+	select RTIO_WORKQ
+	select AD5940_TRIGGER
+	help
+	  Enable RTIO-based async streaming for high-throughput data acquisition.
+	  When enabled, use sensor_stream() and rtio_cqe_consume_block() to
+	  receive FIFO data asynchronously.
+	  Requires CONFIG_AD5940_TRIGGER to be set.
+
+config AD5940_FREQUENCY_SWEEP_ENABLE
+	bool "AD5940 EIS frequency sweep support"
+	help
+	  Enable multi-point EIS frequency sweep mode. When enabled, the driver
+	  automatically advances through a configured frequency table after each
+	  impedance measurement, allowing broadband impedance spectroscopy.
+
+config AD5940_MAX_SWEEP_POINTS
+	int "Maximum EIS sweep frequency points"
+	default 20
+	range 2 500
+	depends on AD5940_FREQUENCY_SWEEP_ENABLE
+	help
+	  Maximum number of frequency points in the EIS sweep table.
+	  Each point requires an entry in the RTIA calibration table.
+	  Increasing this value increases RAM usage.
+
+config AD5940_RTIO_SQ_SZ
+	int "AD5940 RTIO submission queue size"
+	default 32
+	depends on AD5940_STREAM
+	help
+	  Number of entries in the AD5940 RTIO submission queue.
+	  Must be large enough to hold all SQEs in the FIFO burst read chain.
+	  Minimum recommended value is 16.
+
+config AD5940_RTIO_CQ_SZ
+	int "AD5940 RTIO completion queue size"
+	default 32
+	depends on AD5940_STREAM
+	help
+	  Number of entries in the AD5940 RTIO completion queue.
+	  Should match or exceed the submission queue size.
+
+config AD5940_SEQGEN
+	bool "AD5940 runtime sequencer opcode generator (SEQGen)"
+	default n
+	help
+	  Generate the EIS measurement sequencer opcode stream at runtime from
+	  the AFE block-config helpers (record mode) instead of the hand-authored
+	  static meas_seq[] array. The generated array is loaded through the same
+	  ad5940_seq_load() path as the static one. Default n keeps the known-good
+	  static sequence; enable to validate the generator produces an identical
+	  stream before switching over.
+
+config AD5940_SEQGEN_BUF_WORDS
+	int "AD5940 SEQGen opcode buffer size (32-bit words)"
+	default 256
+	range 64 1024
+	depends on AD5940_SEQGEN
+	help
+	  Size, in 32-bit words, of the scratch buffer used by the runtime opcode
+	  generator. The command stream and the record-mode register shadow table
+	  share this one buffer, growing from opposite ends. 256 words is ample
+	  for the EIS measurement sequence (~30 opcodes + shadow entries).
+
+config AD5940_ADC_SELFCAL
+	bool "AD5940 ADC/PGA offset-gain self-calibration"
+	default n
+	help
+	  Run the ADC offset self-calibration at init (after HSTIA RTIA
+	  calibration): measure the ADC code with the inputs shorted, derive the
+	  zero offset, and apply it via ADCOFFSETGN1. A sanity gate rejects railed
+	  readings (the shorted-input mux does not present a valid 0 V differential
+	  on every board configuration) so a bogus offset is never written.
+
+	  Default n: the offset stage only helps boards where the internal short is
+	  valid, and the known-good EIS path needs no ADC offset. Enable and verify
+	  the logged offset is small (hundreds of codes, not near the rail) before
+	  relying on it. The full reference-mux offset+gain cal is not implemented.
+
+endif # AD5940
