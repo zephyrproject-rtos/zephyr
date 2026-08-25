@@ -299,7 +299,7 @@ Suggested Uses
 
 Use cooperative threads for device drivers and other performance-critical work.
 
-Use cooperative threads to implement mutually exclusion without the need
+Use cooperative threads to implement mutual exclusion without the need
 for a kernel object, such as a mutex.
 
 Use preemptive threads to give priority to time-sensitive processing
