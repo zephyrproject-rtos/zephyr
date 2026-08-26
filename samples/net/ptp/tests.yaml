@@ -8,16 +8,9 @@ sample:
   name: PTP sample app
 tests:
   sample.net.ptp:
-    platform_allow:
-      - native_sim
-      - native_sim/native/64
-      - nucleo_h563zi
-      - nucleo_h743zi
-      - nucleo_h753zi
-      - nucleo_h745zi_q/stm32h745xx/m7
-      - qemu_x86
-      - esp32p4x_function_ev_board/esp32p4/hpcore
-    depends_on: eth
+    depends_on:
+      - eth
+      - ptp_clock
     integration_platforms:
       - nucleo_h563zi
 
@@ -25,7 +18,9 @@ tests:
     extra_configs:
       - CONFIG_ETH_STM32_HAL=n
       - CONFIG_ETH_ESP32=n
-    depends_on: eth
+    depends_on:
+      - eth
+      - ptp_clock
     platform_allow:
       - stm32h735g_disco
       - nucleo_h753zi
