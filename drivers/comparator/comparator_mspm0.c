@@ -13,7 +13,10 @@
 #include <zephyr/drivers/regulator.h>
 #include <zephyr/irq.h>
 #include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/sys/atomic.h>
+
+LOG_MODULE_REGISTER(comparator_mspm0, CONFIG_COMPARATOR_LOG_LEVEL);
 
 /*
  * COMP register map.
@@ -63,6 +66,15 @@ struct comp_mspm0_regs {
 	volatile uint32_t ctl3;               /**< Control 3 Register, offset: 0x110C */
 	uint32_t reserved7[4];                /**< Reserved, offset: 0x1110 - 0x1120 */
 	volatile const uint32_t stat;         /**< Status Register, offset: 0x1120 */
+#ifdef CONFIG_COMPARATOR_MSPM0_ANALOG_COMPARISON
+	uint32_t reserved8[7];                /**< Reserved, offset: 0x1124 - 0x1140 */
+	volatile uint32_t anacmpwkupctl;      /**< Wakeup Control, offset: 0x1140 */
+	volatile uint32_t anacmpctrctl;       /**< Comparison Counter Control, offset: 0x1144 */
+	volatile uint32_t anacmpdaccode;      /**< DAC Codes, offset: 0x1148 */
+	volatile uint32_t anacmpwd;           /**< Window Operation Control, offset: 0x114C */
+	volatile const uint32_t anacmpchsts;  /**< Channel Event Status, offset: 0x1150 */
+	volatile uint32_t anacmpchstsclr;     /**< Channel Event Status Clear, offset: 0x1154 */
+#endif
 };
 
 /* pwren bits */
@@ -131,6 +143,23 @@ struct comp_mspm0_regs {
 #define COMP_MSPM0_INTERRUPT_OUTPUT_EDGE     BIT(1)
 #define COMP_MSPM0_INTERRUPT_OUTPUT_EDGE_INV BIT(2)
 
+#ifdef CONFIG_COMPARATOR_MSPM0_ANALOG_COMPARISON
+/* analog window wakeup bits */
+#define COMP_MSPM0_ANACMPWKUPCTL_WKUPEN     BIT(0)
+#define COMP_MSPM0_ANACMPCTRCTL_BLKCMPPRD   GENMASK(7, 0)
+#define COMP_MSPM0_ANACMPCTRCTL_CMPPRD      GENMASK(11, 8)
+#define COMP_MSPM0_ANACMPDACCODE_IP0DACCODE GENMASK(7, 0)
+#define COMP_MSPM0_ANACMPDACCODE_IP1DACCODE GENMASK(15, 8)
+#define COMP_MSPM0_ANACMPDACCODE_IP2DACCODE GENMASK(23, 16)
+#define COMP_MSPM0_ANACMPDACCODE_IP3DACCODE GENMASK(31, 24)
+#define COMP_MSPM0_ANACMPWD_WDEN            BIT(0)
+#define COMP_MSPM0_ANACMPWD_INMUXSEL_WD     GENMASK(2, 1)
+#define COMP_MSPM0_ANACMPCHSTS_IN0EVT       BIT(0)
+#define COMP_MSPM0_ANACMPCHSTS_IN1EVT       BIT(1)
+#define COMP_MSPM0_ANACMPCHSTS_IN2EVT       BIT(2)
+#define COMP_MSPM0_ANACMPCHSTS_IN3EVT       BIT(3)
+#endif
+
 struct comparator_mspm0_ref_config {
 	uint32_t source;
 	uint32_t terminal;
@@ -155,6 +184,14 @@ struct comparator_mspm0_config {
 	struct comp_mspm0_regs *window_companion_regs;
 	uint32_t window_lower_thresh;
 	bool window_mode_enable;
+#endif
+#ifdef CONFIG_COMPARATOR_MSPM0_ANALOG_COMPARISON
+	uint8_t wakeup_dac_codes[4];
+	uint8_t wakeup_comparison_period;
+	uint8_t wakeup_blank_period;
+	uint8_t wakeup_window_input;
+	bool wakeup_enable;
+	bool wakeup_window_enable;
 #endif
 	bool filter_enable;
 };
@@ -199,8 +236,8 @@ static int comparator_mspm0_set_trigger(const struct device *dev,
 	}
 #ifdef CONFIG_COMPARATOR_MSPM0_WINDOW_MODE
 	if (config->window_mode_enable) {
-		config->regs->ctl1 = (config->regs->ctl1 & ~COMP_MSPM0_CTL1_IES) |
-				     (COMP_MSPM0_CTL1_IES_RISING | COMP_MSPM0_CTL1_IES_FALLING);
+		config->regs->ctl1 =
+			(config->regs->ctl1 & ~COMP_MSPM0_CTL1_IES) | COMP_MSPM0_CTL1_IES_RISING;
 
 		interrupt_mask =
 			COMP_MSPM0_INTERRUPT_OUTPUT_EDGE | COMP_MSPM0_INTERRUPT_OUTPUT_EDGE_INV;
@@ -221,9 +258,8 @@ static int comparator_mspm0_set_trigger(const struct device *dev,
 			break;
 
 		case COMPARATOR_TRIGGER_BOTH_EDGES:
-			config->regs->ctl1 =
-				(config->regs->ctl1 & ~COMP_MSPM0_CTL1_IES) |
-				(COMP_MSPM0_CTL1_IES_RISING | COMP_MSPM0_CTL1_IES_FALLING);
+			config->regs->ctl1 = (config->regs->ctl1 & ~COMP_MSPM0_CTL1_IES) |
+					     COMP_MSPM0_CTL1_IES_RISING;
 			interrupt_mask = COMP_MSPM0_INTERRUPT_OUTPUT_EDGE |
 					 COMP_MSPM0_INTERRUPT_OUTPUT_EDGE_INV;
 			break;
@@ -236,7 +272,7 @@ static int comparator_mspm0_set_trigger(const struct device *dev,
 	}
 #endif
 
-	config->regs->cpu_int.imask |= interrupt_mask;
+	config->regs->cpu_int.imask = interrupt_mask;
 out:
 	k_mutex_unlock(&data->dev_lock);
 	return ret;
@@ -278,6 +314,11 @@ static void comparator_mspm0_isr(const struct device *dev)
 	struct comparator_mspm0_data *data = dev->data;
 
 	if (config->regs->cpu_int.iidx) {
+#ifdef CONFIG_COMPARATOR_MSPM0_ANALOG_COMPARISON
+		if (config->wakeup_enable) {
+			config->regs->anacmpchstsclr = config->regs->anacmpchsts;
+		}
+#endif
 		if (data->callback) {
 			data->callback(dev, data->user_data);
 		} else {
@@ -285,6 +326,40 @@ static void comparator_mspm0_isr(const struct device *dev)
 		}
 	}
 }
+
+#ifdef CONFIG_COMPARATOR_MSPM0_ANALOG_COMPARISON
+static int comparator_mspm0_configure_wakeup_window(const struct comparator_mspm0_config *config)
+{
+	if (config->wakeup_blank_period + config->wakeup_comparison_period >
+	    COMP_MSPM0_ANACMPCTRCTL_BLKCMPPRD) {
+		LOG_ERR("wakeup blank period plus comparison period exceeds register field");
+		return -EINVAL;
+	}
+
+	config->regs->anacmpdaccode =
+		FIELD_PREP(COMP_MSPM0_ANACMPDACCODE_IP0DACCODE, config->wakeup_dac_codes[0]) |
+		FIELD_PREP(COMP_MSPM0_ANACMPDACCODE_IP1DACCODE, config->wakeup_dac_codes[1]) |
+		FIELD_PREP(COMP_MSPM0_ANACMPDACCODE_IP2DACCODE, config->wakeup_dac_codes[2]) |
+		FIELD_PREP(COMP_MSPM0_ANACMPDACCODE_IP3DACCODE, config->wakeup_dac_codes[3]);
+
+	config->regs->anacmpctrctl =
+		FIELD_PREP(COMP_MSPM0_ANACMPCTRCTL_BLKCMPPRD,
+			   config->wakeup_blank_period + config->wakeup_comparison_period) |
+		FIELD_PREP(COMP_MSPM0_ANACMPCTRCTL_CMPPRD, config->wakeup_comparison_period);
+
+	if (config->wakeup_window_enable) {
+		config->regs->anacmpwd = (config->regs->anacmpwd &
+					   ~COMP_MSPM0_ANACMPWD_INMUXSEL_WD) |
+					  FIELD_PREP(COMP_MSPM0_ANACMPWD_INMUXSEL_WD,
+						     config->wakeup_window_input) |
+					  COMP_MSPM0_ANACMPWD_WDEN;
+	}
+
+	config->regs->anacmpwkupctl |= COMP_MSPM0_ANACMPWKUPCTL_WKUPEN;
+
+	return 0;
+}
+#endif
 
 static int comparator_mspm0_init(const struct device *dev)
 {
@@ -328,15 +403,20 @@ static int comparator_mspm0_init(const struct device *dev)
 				     config->ref_config.dac_input;
 
 		/* DAC input codes */
-		config->regs->ctl3 = ((uint32_t)config->ref_config.dac_code1 << 16) | config->ref_config.dac_code0;
+		config->regs->ctl3 = ((uint32_t)config->ref_config.dac_code1 << 16) |
+				     config->ref_config.dac_code0;
 
 		if (config->ref_config.terminal == COMP_MSPM0_CTL2_REFSEL_NEG) {
-			/* neg reference terminal is selected then only enable positive channel
-			 * selection */
+			/*
+			 * neg reference terminal is selected then only enable positive channel
+			 * selection
+			 */
 			config->regs->ctl0 &= ~COMP_MSPM0_CTL0_IMEN;
 		} else {
-			/* pos reference terminal is selected then only enable negative channel
-			 * selection */
+			/*
+			 * pos reference terminal is selected then only enable negative channel
+			 * selection
+			 */
 			config->regs->ctl0 &= ~COMP_MSPM0_CTL0_IPEN;
 		}
 
@@ -362,6 +442,15 @@ static int comparator_mspm0_init(const struct device *dev)
 			(config->window_companion_regs->ctl0 & ~COMP_MSPM0_CTL0_IMSEL) |
 			config->window_lower_thresh;
 		config->window_companion_regs->ctl1 |= COMP_MSPM0_CTL1_ENABLE;
+	}
+#endif
+#ifdef CONFIG_COMPARATOR_MSPM0_ANALOG_COMPARISON
+	if (config->wakeup_enable) {
+		int ret = comparator_mspm0_configure_wakeup_window(config);
+
+		if (ret < 0) {
+			return ret;
+		}
 	}
 #endif
 
@@ -404,8 +493,9 @@ static DEVICE_API(comparator, comparator_mspm0_api) = {
 		.hysteresis = _CONCAT(COMP_MSPM0_CTL1_HYST_,					   \
 				      DT_INST_STRING_UPPER_TOKEN_OR(n, ti_hysteresis, NONE)),      \
 		.ref_config = {									   \
-			.source = _CONCAT(COMP_MSPM0_CTL2_REFSRC_, DT_INST_STRING_UPPER_TOKEN_OR(n, \
-							       ti_reference_source, NONE)),        \
+			.source = _CONCAT(COMP_MSPM0_CTL2_REFSRC_,				   \
+					  DT_INST_STRING_UPPER_TOKEN_OR(n,			   \
+							 ti_reference_source, NONE)),		   \
 			.terminal = _CONCAT(COMP_MSPM0_CTL2_REFSEL_,				   \
 					    DT_INST_STRING_UPPER_TOKEN_OR(n,			   \
 					    ti_reference_terminal, NEG)),			   \
@@ -414,8 +504,8 @@ static DEVICE_API(comparator, comparator_mspm0_api) = {
 			.dac_control = _CONCAT(COMP_MSPM0_CTL2_DACCTL_,				   \
 					       DT_INST_STRING_UPPER_TOKEN_OR(n,                    \
 					       ti_reference_dac_control, COMP_OUT)),		   \
-			.dac_input = _CONCAT(COMP_MSPM0_CTL2_DACSW_DACCODE,				   \
-					     DT_INST_PROP_OR(n, ti_reference_dac_input, 0)),       \
+			.dac_input = _CONCAT(COMP_MSPM0_CTL2_DACSW_DACCODE,			   \
+					     DT_INST_PROP_OR(n, ti_reference_dac_input, 0)),	   \
 		},										   \
 		.filter_enable = DT_INST_PROP_OR(n, ti_filter_enable, false),			   \
 		.filter_delay = _CONCAT(COMP_MSPM0_CTL1_FLTDLY_,				   \
@@ -427,9 +517,22 @@ static DEVICE_API(comparator, comparator_mspm0_api) = {
 				((struct comp_mspm0_regs *)DT_REG_ADDR(DT_PHANDLE(DT_DRV_INST(n), \
 								     ti_window_companion))),	   \
 								     (NULL)),			   \
-			.window_lower_thresh = FIELD_PREP(COMP_MSPM0_CTL0_IMSEL,			   \
+			.window_lower_thresh = FIELD_PREP(COMP_MSPM0_CTL0_IMSEL,		   \
 						       DT_INST_PROP_OR(n,			   \
 						       ti_window_lower_threshold, 0)),		   \
+		))										   \
+		IF_ENABLED(CONFIG_COMPARATOR_MSPM0_ANALOG_COMPARISON, (				   \
+			.wakeup_enable =							   \
+				DT_INST_NODE_HAS_PROP(n, ti_analog_comparison_dac_codes),	   \
+			.wakeup_window_enable =						   \
+				DT_INST_NODE_HAS_PROP(n, ti_analog_comparison_window_input),	   \
+			.wakeup_dac_codes = DT_INST_PROP(n, ti_analog_comparison_dac_codes),	   \
+			.wakeup_comparison_period =						   \
+				DT_INST_PROP_OR(n, ti_analog_comparison_cmpprd, 0),		   \
+			.wakeup_blank_period =						   \
+				DT_INST_PROP_OR(n, ti_analog_comparison_blkprd, 0),		   \
+			.wakeup_window_input =						   \
+				DT_INST_PROP_OR(n, ti_analog_comparison_window_input, 0),	   \
 		))										   \
 		.irq_config_func = comparator_mspm0_irq_config_##n,				   \
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(n, vref),					   \
