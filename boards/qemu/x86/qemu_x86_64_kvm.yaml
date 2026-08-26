@@ -14,3 +14,7 @@ testing:
     - benchmark
     - kernel
 vendor: qemu
+
+# Running this board needs /dev/kvm and a QEMU able to emulate CET, which no
+# CI runner nor any Zephyr SDK release provides yet.
+twister: false
