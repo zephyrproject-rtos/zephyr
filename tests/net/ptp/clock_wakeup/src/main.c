@@ -205,6 +205,15 @@ int ptp_transport_send(struct ptp_port *port, struct ptp_msg *msg, enum ptp_sock
 	return 0;
 }
 
+int ptp_transport_sendto(struct ptp_port *port, struct ptp_msg *msg, enum ptp_socket idx)
+{
+	ARG_UNUSED(port);
+	ARG_UNUSED(msg);
+	ARG_UNUSED(idx);
+
+	return 0;
+}
+
 int ptp_port_management_resp(struct ptp_port *port, struct ptp_msg *req, struct ptp_tlv_mgmt *tlv)
 {
 	ARG_UNUSED(port);
