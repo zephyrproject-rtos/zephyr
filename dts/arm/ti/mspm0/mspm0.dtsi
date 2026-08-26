@@ -163,6 +163,8 @@
 		wdt0: wdt0@40080000 {
 			compatible = "ti,mspm0-watchdog";
 			reg = <0x40080000 0x2000>;
+			interrupts = <0 0>;
+			clocks = <&ckm MSPM0_CLOCK_LFCLK>;
 			ti,watchdog-reset-action = <1>;
 			closed-window = <0>;
 			status = "disabled";
