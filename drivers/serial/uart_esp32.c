@@ -420,8 +420,21 @@ static int uart_esp32_configure(const struct device *dev, const struct uart_conf
 	 * breaks the reg_update sync mechanism, causing uart_ll_update()
 	 * to spin forever. Keep the ROM-configured clock source (XTAL).
 	 * IDF also does not change UART clock source during driver init.
+	 *
+	 * On C6, UART_SCLK_DEFAULT is PLL_F80M while the reset default
+	 * and ROM selection are XTAL, so this switch moves a live port
+	 * onto the PLL right after cold-boot PLL bring-up, which
+	 * intermittently latches a wrong effective clock: the port then
+	 * corrupts essentially every frame for the whole session. Warm
+	 * resets never reproduce it (PLL already settled), and re-running
+	 * this configure with identical values once the clock tree is
+	 * stable heals the port instantly - the fault is the latch, not
+	 * the values. Keep the UART on the always-stable XTAL instead;
+	 * the fractional divider keeps standard rates within ~0.1%.
 	 */
-#if !defined(CONFIG_SOC_SERIES_ESP32P4) && !defined(CONFIG_SOC_SERIES_ESP32C61)
+#if defined(CONFIG_SOC_SERIES_ESP32C6)
+	uart_hal_set_sclk(&data->hal, UART_SCLK_XTAL);
+#elif !defined(CONFIG_SOC_SERIES_ESP32P4) && !defined(CONFIG_SOC_SERIES_ESP32C61)
 	uart_hal_set_sclk(&data->hal, UART_SCLK_DEFAULT);
 #endif
 	uart_hal_set_rxfifo_full_thr(&data->hal, UART_RX_FIFO_THRESH);
