@@ -17,6 +17,7 @@ supported:
   - gpio
   - net
   - netif:eth
+  - ptp_clock
   - spi
   - uart
 testing:
