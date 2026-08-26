@@ -12,6 +12,7 @@
 #include <zephyr/init.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/dma.h>
+#include <zephyr/dt-bindings/dma/ti-mspm0-dma.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
 #include <zephyr/sys/sys_io.h>
@@ -52,6 +53,10 @@ LOG_MODULE_REGISTER(ti_mspm0_dma, CONFIG_DMA_LOG_LEVEL);
 #define DMA_MSPM0_INCR_INCREMENT 0x3U
 
 #define DMA_MSPM0_EM_NORMAL      0x0U
+#define DMA_MSPM0_EM_GATHER      0x1U
+#define DMA_MSPM0_EM_FILL        0x2U
+#define DMA_MSPM0_EM_TABLE       0x3U
+
 #define DMA_MSPM0_TM_SINGLE      0x0U
 #define DMA_MSPM0_TM_BLOCK       0x1U
 #define DMA_MSPM0_TM_RPTSNGL     0x2U
@@ -149,13 +154,30 @@ static inline bool dma_ti_mspm0_is_full_channel(const struct dma_ti_mspm0_config
 
 static inline uint32_t dma_ti_mspm0_get_transfer_mode(struct dma_config *config)
 {
-	bool block = config->channel_direction == MEMORY_TO_MEMORY;
+	switch (config->channel_direction) {
+	case MEMORY_TO_MEMORY:
+		return config->cyclic ? DMA_MSPM0_TM_RPTBLCK : DMA_MSPM0_TM_BLOCK;
+	default:
+		return config->cyclic ? DMA_MSPM0_TM_RPTSNGL : DMA_MSPM0_TM_SINGLE;
+	}
+}
 
-	if (config->cyclic) {
-		return block ? DMA_MSPM0_TM_RPTBLCK : DMA_MSPM0_TM_RPTSNGL;
+static inline uint32_t dma_ti_mspm0_get_extended_mode(uint32_t dma_slot)
+{
+	uint32_t extmode = TI_MSPM0_DMA_SLOT_EXTMODE(dma_slot);
+
+	switch (extmode) {
+	case TI_MSPM0_DMA_SLOT_EXTMODE_FILL:
+		return DMA_MSPM0_EM_FILL;
+	case TI_MSPM0_DMA_SLOT_EXTMODE_TABLE:
+		return DMA_MSPM0_EM_TABLE;
+	case TI_MSPM0_DMA_SLOT_EXTMODE_GATHER:
+		return DMA_MSPM0_EM_GATHER;
+	default:
+		return DMA_MSPM0_EM_NORMAL;
 	}
 
-	return block ? DMA_MSPM0_TM_BLOCK : DMA_MSPM0_TM_SINGLE;
+	return 0;
 }
 
 static int dma_ti_mspm0_configure(const struct device *dev, uint32_t channel,
@@ -167,7 +189,10 @@ static int dma_ti_mspm0_configure(const struct device *dev, uint32_t channel,
 	struct dma_ti_mspm0_data *dma_data = dev->data;
 	struct dma_ti_mspm0_channel_data *data = NULL;
 	struct dma_block_config *b_cfg = NULL;
+	uint32_t trigger = TI_MSPM0_DMA_SLOT_DMATSEL(config->dma_slot);
 	uint32_t tm;
+	uint32_t em;
+	int ret = 0;
 
 	if ((config == NULL) || (channel >= cfg->dma_max_channels)) {
 		return -EINVAL;
@@ -198,24 +223,41 @@ static int dma_ti_mspm0_configure(const struct device *dev, uint32_t channel,
 
 	ctl |= FIELD_PREP(DMA_MSPM0_CTL_DSTINCR, temp);
 
-	if (dma_ti_mspm0_get_datawidth(config->source_data_size, &temp)) {
-		LOG_ERR("Invalid Source data width");
-		return -EINVAL;
+	em = dma_ti_mspm0_get_extended_mode(config->dma_slot);
+	if (em != DMA_MSPM0_EM_NORMAL && !dma_ti_mspm0_is_full_channel(cfg, channel)) {
+		return -ENOTSUP;
 	}
 
-	ctl |= FIELD_PREP(DMA_MSPM0_CTL_SRCWDTH, temp);
+	if (em == DMA_MSPM0_EM_TABLE) {
+		ctl |= FIELD_PREP(DMA_MSPM0_CTL_SRCWDTH, DMA_MSPM0_WIDTH_LONG) |
+		       FIELD_PREP(DMA_MSPM0_CTL_DSTWDTH, DMA_MSPM0_WIDTH_WORD);
 
-	if (dma_ti_mspm0_get_datawidth(config->dest_data_size, &temp)) {
-		LOG_ERR("Invalid Destination data width");
-		return -EINVAL;
-	}
+		data->data_size = DMA_TI_MSPM0_DATAWIDTH_LONG;
+	} else if (em == DMA_MSPM0_EM_GATHER) {
+		ctl |= FIELD_PREP(DMA_MSPM0_CTL_SRCWDTH, DMA_MSPM0_WIDTH_WORD) |
+		       FIELD_PREP(DMA_MSPM0_CTL_DSTWDTH, DMA_MSPM0_WIDTH_WORD);
 
-	ctl |= FIELD_PREP(DMA_MSPM0_CTL_DSTWDTH, temp);
-
-	if (config->channel_direction == PERIPHERAL_TO_MEMORY) {
-		data->data_size = config->source_data_size;
+		data->data_size = DMA_TI_MSPM0_DATAWIDTH_WORD;
 	} else {
-		data->data_size = config->dest_data_size;
+		if (dma_ti_mspm0_get_datawidth(config->source_data_size, &temp)) {
+			LOG_ERR("Invalid Source data width");
+			return -EINVAL;
+		}
+
+		ctl |= FIELD_PREP(DMA_MSPM0_CTL_SRCWDTH, temp);
+
+		if (dma_ti_mspm0_get_datawidth(config->dest_data_size, &temp)) {
+			LOG_ERR("Invalid Destination data width");
+			return -EINVAL;
+		}
+
+		ctl |= FIELD_PREP(DMA_MSPM0_CTL_DSTWDTH, temp);
+
+		if (config->channel_direction == PERIPHERAL_TO_MEMORY) {
+			data->data_size = config->source_data_size;
+		} else {
+			data->data_size = config->dest_data_size;
+		}
 	}
 
 	tm = dma_ti_mspm0_get_transfer_mode(config);
@@ -226,7 +268,7 @@ static int dma_ti_mspm0_configure(const struct device *dev, uint32_t channel,
 	}
 
 	ctl |= FIELD_PREP(DMA_MSPM0_CTL_TM, tm);
-	ctl |= FIELD_PREP(DMA_MSPM0_CTL_EM, DMA_MSPM0_EM_NORMAL);
+	ctl |= FIELD_PREP(DMA_MSPM0_CTL_EM, em);
 
 	data->direction = config->channel_direction;
 	data->dma_callback = config->dma_callback;
@@ -237,7 +279,7 @@ static int dma_ti_mspm0_configure(const struct device *dev, uint32_t channel,
 		sys_clear_bit(cfg->base + DMA_MSPM0_CPU_INT_IMASK, channel);
 		sys_write32(b_cfg->block_size / data->data_size,
 			    cfg->base + DMA_MSPM0_DMASZ(channel));
-		sys_write32(FIELD_PREP(DMA_MSPM0_TCTL_DMATSEL, config->dma_slot),
+		sys_write32(FIELD_PREP(DMA_MSPM0_TCTL_DMATSEL, trigger),
 			    cfg->base + DMA_MSPM0_DMATCTL(channel));
 		sys_write32(ctl, cfg->base + DMA_MSPM0_DMACTL(channel));
 		sys_write32(b_cfg->source_address, cfg->base + DMA_MSPM0_DMASA(channel));
