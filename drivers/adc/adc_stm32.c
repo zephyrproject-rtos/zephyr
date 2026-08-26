@@ -20,6 +20,7 @@
 #include <zephyr/init.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
 #include <soc.h>
 #include <stm32_bitops.h>
 #include <stm32_cache.h>
@@ -114,6 +115,13 @@ LOG_MODULE_REGISTER(adc_stm32);
 #define INTERNAL_REGULATOR_STARTUP_SW_DELAY	1
 #define INTERNAL_REGULATOR_STARTUP_HW_STATUS	2
 
+/* WAIT_FOR() timeouts. Match the previous busy-wait budgets (ADRDY: 1 ms,
+ * EOC: 10 ms) without leaving raw literals at the call sites.
+ */
+#define ADC_STM32_ADRDY_TIMEOUT_US (1U * USEC_PER_MSEC)
+#define ADC_STM32_EOC_TIMEOUT_US   (10U * USEC_PER_MSEC)
+#define ADC_STM32_POLL_INTERVAL_US 1U
+
 #define ANY_NUM_COMMON_SAMPLING_TIME_CHANNELS_IS(value) \
 	(DT_INST_FOREACH_STATUS_OKAY_VARGS(IS_EQ_PROP_OR, \
 					   num_sampling_time_common_channels,\
@@ -204,7 +212,7 @@ LOG_MODULE_REGISTER(adc_stm32);
 
 #define STM32_ADC_VREFINT_CAL_SHIFT(adc_inst)                                                      \
 	COND_CODE_1(STM32_ADC_HAS_VREFINT(adc_inst),                                               \
-		    (DT_PROP(STM32_ADC_VREF_NODE(adc_inst), vrefint_cal_resolution) -               \
+		    (DT_PROP(STM32_ADC_VREF_NODE(adc_inst), vrefint_cal_resolution) -              \
 		     STM32_VREFINT_MEAS_RES),                                                      \
 		    (0))
 
@@ -535,20 +543,16 @@ static int adc_stm32_enable(ADC_TypeDef *adc)
 	 * still not stabilized, this will wait for a short time (about 1ms)
 	 * to ensure ADC modules are properly enabled.
 	 */
-	uint32_t count_timeout = 0;
-
-	while (LL_ADC_IsActiveFlag_ADRDY(adc) == 0) {
+	if (!WAIT_FOR(LL_ADC_IsActiveFlag_ADRDY(adc) == 1, ADC_STM32_ADRDY_TIMEOUT_US, {
 #ifdef CONFIG_SOC_SERIES_STM32F0X
 		/* For F0, continue to write ADEN=1 until ADRDY=1 */
 		if (LL_ADC_IsEnabled(adc) == 0UL) {
 			LL_ADC_Enable(adc);
 		}
 #endif /* CONFIG_SOC_SERIES_STM32F0X */
-		count_timeout++;
-		k_busy_wait(100);
-		if (count_timeout >= 10) {
-			return -ETIMEDOUT;
-		}
+		k_busy_wait(ADC_STM32_POLL_INTERVAL_US);
+	})) {
+		return -ETIMEDOUT;
 	}
 #else
 	/*
@@ -1183,7 +1187,7 @@ static int set_sequencer(const struct device *dev)
 		}
 #endif /* ANY_ADC_SEQUENCER_TYPE_IS(SEQUENCER_PROGRAMMABLE) */
 
-#if ANY_ADC_HAS_CHANNEL_PRESELECTION && !defined(CONFIG_ADC_STM32_INJECTED_CHANNELS)
+#if ANY_ADC_HAS_CHANNEL_PRESELECTION
 		int err = adc_stm32_preselection_setup(dev, channel_id);
 
 		if (err < 0) {
@@ -1216,7 +1220,143 @@ static int set_sequencer(const struct device *dev)
 	return 0;
 }
 
+/*
+ * Bind sequence channels, resolution, and oversampling into driver data and
+ * ADC registers. Does not enable the ADC, IRQs, DMA, or adc_context.
+ */
+static int prepare_read(const struct device *dev, const struct adc_sequence *sequence)
+{
+	struct adc_stm32_data *data = dev->data;
+	uint8_t channel_count = POPCOUNT(sequence->channels);
+	int err;
+
+	if (channel_count == 0) {
+		LOG_ERR("No channels selected");
+		return -EINVAL;
+	}
+
+#if ANY_ADC_SEQUENCER_TYPE_IS(SEQUENCER_PROGRAMMABLE)
+	if (channel_count > ARRAY_SIZE(table_seq_len)) {
+		LOG_ERR("Too many channels for sequencer. Max: %d", ARRAY_SIZE(table_seq_len));
+		return -EINVAL;
+	}
+#endif /* ANY_ADC_SEQUENCER_TYPE_IS(SEQUENCER_PROGRAMMABLE) */
+
+#ifndef HAS_OVERSAMPLING
+	if (sequence->oversampling) {
+		LOG_ERR("Oversampling not supported");
+		return -ENOTSUP;
+	}
+#endif /* !HAS_OVERSAMPLING */
+
+	data->channels = sequence->channels;
+	data->channel_count = channel_count;
+	data->resolution = sequence->resolution;
+
+	err = set_resolution(dev, sequence);
+	if (err < 0) {
+		LOG_ERR("Error setting the ADC resolution");
+		return err;
+	}
+
+	err = set_sequencer(dev);
+	if (err < 0) {
+		LOG_ERR("Error setting the ADC sequencer");
+		return err;
+	}
+
+#ifdef HAS_OVERSAMPLING
+	err = adc_stm32_oversampling(dev, sequence->oversampling);
+	if (err) {
+		LOG_ERR("Error setting the ADC oversampler");
+		return err;
+	}
+#endif /* HAS_OVERSAMPLING */
+
+	return 0;
+}
+
 #ifdef CONFIG_ADC_STM32_VREFINT_CALIBRATE
+
+static bool adc_stm32_reg_eoc_is_set(ADC_TypeDef *adc)
+{
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc)
+	return LL_ADC_IsActiveFlag_EOS(adc) == 1;
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc)
+	return LL_ADC_IsActiveFlag_EOCS(adc) == 1;
+#else
+	return LL_ADC_IsActiveFlag_EOC(adc) == 1;
+#endif
+}
+
+static void adc_stm32_reg_eoc_clear(ADC_TypeDef *adc)
+{
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc)
+	LL_ADC_ClearFlag_EOS(adc);
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc)
+	LL_ADC_ClearFlag_EOCS(adc);
+#else
+	LL_ADC_ClearFlag_EOC(adc);
+#endif
+}
+
+static void adc_stm32_disable_eoc_it(ADC_TypeDef *adc)
+{
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc)
+	LL_ADC_DisableIT_EOCS(adc);
+#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc)
+	LL_ADC_DisableIT_EOS(adc);
+#else
+	LL_ADC_DisableIT_EOC(adc);
+#endif
+}
+
+#ifdef CONFIG_ADC_STM32_DMA
+static void adc_stm32_disable_dma_transfer(ADC_TypeDef *adc)
+{
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc)
+	if (LL_ADC_REG_GetDMATransfer(adc) != LL_ADC_REG_DMA_TRANSFER_NONE) {
+		/* Changing CR2 DMA while ADON=1 starts a conversion on F1. */
+		(void)adc_stm32_disable(adc, true);
+		LL_ADC_REG_SetDMATransfer(adc, LL_ADC_REG_DMA_TRANSFER_NONE);
+	}
+#elif defined(CONFIG_SOC_SERIES_STM32C5X) || defined(CONFIG_SOC_SERIES_STM32H7X) ||                \
+	defined(CONFIG_SOC_SERIES_STM32N6X) || defined(CONFIG_SOC_SERIES_STM32U3X) ||              \
+	defined(CONFIG_SOC_SERIES_STM32U5X)
+	LL_ADC_REG_SetDataTransferMode(adc, LL_ADC_REG_DR_TRANSFER);
+#else
+	LL_ADC_REG_SetDMATransfer(adc, LL_ADC_REG_DMA_TRANSFER_NONE);
+#endif
+}
+#endif /* CONFIG_ADC_STM32_DMA */
+
+static int adc_stm32_convert_poll(const struct device *dev, uint16_t *raw)
+{
+	const struct adc_stm32_cfg *config = dev->config;
+	ADC_TypeDef *adc = config->base;
+	int err;
+
+	adc_stm32_disable_eoc_it(adc);
+#ifdef CONFIG_ADC_STM32_DMA
+	adc_stm32_disable_dma_transfer(adc);
+#endif
+
+	err = adc_stm32_enable(adc);
+	if (err) {
+		return err;
+	}
+
+	adc_stm32_reg_eoc_clear(adc);
+	adc_stm32_start_conversion(dev);
+
+	if (!WAIT_FOR(adc_stm32_reg_eoc_is_set(adc), ADC_STM32_EOC_TIMEOUT_US,
+		      k_busy_wait(ADC_STM32_POLL_INTERVAL_US))) {
+		return -EIO;
+	}
+
+	*raw = (uint16_t)LL_ADC_REG_ReadConversionData32(adc);
+	return 0;
+}
 
 static void adc_stm32_vrefint_enable_path(ADC_TypeDef *adc)
 {
@@ -1240,20 +1380,26 @@ static void adc_stm32_vrefint_disable_path(ADC_TypeDef *adc)
 }
 #endif
 
+struct adc_stm32_smpr_save {
+	int8_t acq_time_index[2];
+	uint32_t common[2];
+	uint32_t channel_smpr;
+};
+
 static int adc_stm32_sampling_time_setup(const struct device *dev, uint8_t id, uint16_t acq_time);
+static void adc_stm32_sampling_time_save(const struct device *dev, uint8_t channel_id,
+					 struct adc_stm32_smpr_save *save);
+static void adc_stm32_sampling_time_restore(const struct device *dev, uint8_t channel_id,
+					    const struct adc_stm32_smpr_save *save);
 
 static int adc_stm32_vrefint_measure(const struct device *dev)
 {
 	const struct adc_stm32_cfg *cfg = dev->config;
 	ADC_TypeDef *adc = cfg->base;
-	struct adc_stm32_data *data = dev->data;
 	uint16_t raw = 0;
 	uint16_t vrefint_cal = 0;
 	uint16_t mv;
 	int err = 0;
-	const struct adc_sequence meas_seq = {
-		.resolution = STM32_VREFINT_MEAS_RES,
-	};
 
 #if defined(CONFIG_ADC_STM32_VREFINT_CALIB_VIA_NVMEM)
 	{
@@ -1277,65 +1423,34 @@ static int adc_stm32_vrefint_measure(const struct device *dev)
 	}
 #endif
 
+	const struct adc_sequence meas_seq = {
+		.channels = BIT(cfg->vrefint_channel),
+		.resolution = STM32_VREFINT_MEAS_RES,
+	};
+
+	struct adc_stm32_smpr_save smpr_save;
+	struct adc_stm32_data *data = dev->data;
+
+	adc_stm32_sampling_time_save(dev, cfg->vrefint_channel, &smpr_save);
+
+	data->acq_time_index[0] = -1;
+	data->acq_time_index[1] = -1;
+
 	err = adc_stm32_sampling_time_setup(dev, cfg->vrefint_channel, ADC_ACQ_TIME_MAX);
 	if (err) {
-		return err;
+		goto restore_sampling_time;
 	}
 
-	data->channels = BIT(cfg->vrefint_channel);
-	data->channel_count = 1;
-	data->resolution = STM32_VREFINT_MEAS_RES;
-
-	err = set_resolution(dev, &meas_seq);
+	err = prepare_read(dev, &meas_seq);
 	if (err) {
-		return err;
+		goto restore_sampling_time;
 	}
-
-	err = set_sequencer(dev);
-	if (err) {
-		return err;
-	}
-
-#if ANY_ADC_HAS_CHANNEL_PRESELECTION
-	err = adc_stm32_preselection_setup(dev, cfg->vrefint_channel);
-	if (err) {
-		return err;
-	}
-#endif
 
 	adc_stm32_vrefint_enable_path(adc);
 
-	err = adc_stm32_enable(adc);
+	err = adc_stm32_convert_poll(dev, &raw);
 	if (err) {
 		goto disable_path;
-	}
-
-	adc_stm32_start_conversion(dev);
-
-	{
-		uint32_t count_timeout = 0;
-		bool eoc = false;
-
-		while (!eoc) {
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc)
-			eoc = LL_ADC_IsActiveFlag_EOS(adc) == 1;
-#elif DT_HAS_COMPAT_STATUS_OKAY(st_stm32f4_adc)
-			eoc = LL_ADC_IsActiveFlag_EOCS(adc) == 1;
-#else
-			eoc = LL_ADC_IsActiveFlag_EOC(adc) == 1;
-#endif
-			if (eoc) {
-				break;
-			}
-			count_timeout++;
-			k_busy_wait(100);
-			if (count_timeout >= 100) {
-				err = -EIO;
-				goto disable_path;
-			}
-		}
-
-		raw = (uint16_t)LL_ADC_REG_ReadConversionData32(adc);
 	}
 
 	if (raw == 0U) {
@@ -1360,6 +1475,8 @@ disable_path:
 #if !IS_ENABLED(CONFIG_STM32_VREF_INJECTED)
 	adc_stm32_vrefint_disable_path(adc);
 #endif
+restore_sampling_time:
+	adc_stm32_sampling_time_restore(dev, cfg->vrefint_channel, &smpr_save);
 	return err;
 }
 
@@ -1453,20 +1570,8 @@ static int start_read(const struct device *dev,
 	const struct adc_stm32_cfg *config = dev->config;
 	struct adc_stm32_data *data = dev->data;
 	ADC_TypeDef *adc = config->base;
-	uint8_t channel_count = POPCOUNT(sequence->channels);
+	__maybe_unused uint8_t channel_count = POPCOUNT(sequence->channels);
 	int err;
-
-	if (channel_count == 0) {
-		LOG_ERR("No channels selected");
-		return -EINVAL;
-	}
-
-#if ANY_ADC_SEQUENCER_TYPE_IS(SEQUENCER_PROGRAMMABLE)
-	if (channel_count > ARRAY_SIZE(table_seq_len)) {
-		LOG_ERR("Too many channels for sequencer. Max: %d", ARRAY_SIZE(table_seq_len));
-		return -EINVAL;
-	}
-#endif /* ANY_ADC_SEQUENCER_TYPE_IS(SEQUENCER_PROGRAMMABLE) */
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) && !defined(CONFIG_ADC_STM32_DMA)
 	/* Multiple samplings is only supported with DMA for F1 */
@@ -1475,13 +1580,6 @@ static int start_read(const struct device *dev,
 		return -EINVAL;
 	}
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32f1_adc) && !CONFIG_ADC_STM32_DMA */
-
-#ifndef HAS_OVERSAMPLING
-	if (sequence->oversampling) {
-		LOG_ERR("Oversampling not supported");
-		return -ENOTSUP;
-	}
-#endif /* !HAS_OVERSAMPLING */
 
 #ifndef CONFIG_ADC_STREAM
 	/*
@@ -1519,32 +1617,12 @@ static int start_read(const struct device *dev,
 	}
 
 	data->buffer = sequence->buffer;
-	data->channels = sequence->channels;
-	data->channel_count = channel_count;
 	data->samples_count = 0;
-	data->resolution = sequence->resolution;
 
-	/* Check and set the resolution */
-	err = set_resolution(dev, sequence);
+	err = prepare_read(dev, sequence);
 	if (err < 0) {
-		LOG_ERR("Error setting the ADC resolution");
 		return err;
 	}
-
-	/* Configure the sequencer */
-	err = set_sequencer(dev);
-	if (err < 0) {
-		LOG_ERR("Error setting the ADC sequencer");
-		return err;
-	}
-
-#ifdef HAS_OVERSAMPLING
-	err = adc_stm32_oversampling(dev, sequence->oversampling);
-	if (err) {
-		LOG_ERR("Error setting the ADC oversampler");
-		return err;
-	}
-#endif /* HAS_OVERSAMPLING */
 
 	/*
 	 * Make sure the ADC is enabled as it might have been disabled earlier
@@ -1929,6 +2007,83 @@ static int adc_stm32_sampling_time_setup(const struct device *dev, uint8_t id,
 	}
 	return 0;
 }
+
+#ifdef CONFIG_ADC_STM32_VREFINT_CALIBRATE
+static void adc_stm32_sampling_time_save(const struct device *dev, uint8_t channel_id,
+					 struct adc_stm32_smpr_save *save)
+{
+	const struct adc_stm32_cfg *config = dev->config;
+	struct adc_stm32_data *data = dev->data;
+	ADC_TypeDef *adc = config->base;
+	__maybe_unused uint32_t channel = STM32_ADC_DECIMAL_NB_TO_CHANNEL(channel_id);
+
+	save->acq_time_index[0] = data->acq_time_index[0];
+	save->acq_time_index[1] = data->acq_time_index[1];
+	save->common[0] = 0;
+	save->common[1] = 0;
+	save->channel_smpr = 0;
+
+	switch (config->num_sampling_time_common_channels) {
+	case 0:
+#if ANY_NUM_COMMON_SAMPLING_TIME_CHANNELS_IS(0)
+		save->channel_smpr = LL_ADC_GetChannelSamplingTime(adc, channel);
+#endif
+		break;
+	case 1:
+#if ANY_NUM_COMMON_SAMPLING_TIME_CHANNELS_IS(1)
+		save->common[0] = LL_ADC_GetSamplingTimeCommonChannels(adc);
+#endif
+		break;
+	case 2:
+#if ANY_NUM_COMMON_SAMPLING_TIME_CHANNELS_IS(2)
+		save->common[0] =
+			LL_ADC_GetSamplingTimeCommonChannels(adc, LL_ADC_SAMPLINGTIME_COMMON_1);
+		save->common[1] =
+			LL_ADC_GetSamplingTimeCommonChannels(adc, LL_ADC_SAMPLINGTIME_COMMON_2);
+		save->channel_smpr = LL_ADC_GetChannelSamplingTime(adc, channel);
+#endif
+		break;
+	default:
+		break;
+	}
+}
+
+static void adc_stm32_sampling_time_restore(const struct device *dev, uint8_t channel_id,
+					    const struct adc_stm32_smpr_save *save)
+{
+	const struct adc_stm32_cfg *config = dev->config;
+	struct adc_stm32_data *data = dev->data;
+	ADC_TypeDef *adc = config->base;
+	__maybe_unused uint32_t channel = STM32_ADC_DECIMAL_NB_TO_CHANNEL(channel_id);
+
+	data->acq_time_index[0] = save->acq_time_index[0];
+	data->acq_time_index[1] = save->acq_time_index[1];
+
+	switch (config->num_sampling_time_common_channels) {
+	case 0:
+#if ANY_NUM_COMMON_SAMPLING_TIME_CHANNELS_IS(0)
+		LL_ADC_SetChannelSamplingTime(adc, channel, save->channel_smpr);
+#endif
+		break;
+	case 1:
+#if ANY_NUM_COMMON_SAMPLING_TIME_CHANNELS_IS(1)
+		LL_ADC_SetSamplingTimeCommonChannels(adc, save->common[0]);
+#endif
+		break;
+	case 2:
+#if ANY_NUM_COMMON_SAMPLING_TIME_CHANNELS_IS(2)
+		LL_ADC_SetSamplingTimeCommonChannels(adc, LL_ADC_SAMPLINGTIME_COMMON_1,
+						     save->common[0]);
+		LL_ADC_SetSamplingTimeCommonChannels(adc, LL_ADC_SAMPLINGTIME_COMMON_2,
+						     save->common[1]);
+		LL_ADC_SetChannelSamplingTime(adc, channel, save->channel_smpr);
+#endif
+		break;
+	default:
+		break;
+	}
+}
+#endif /* CONFIG_ADC_STM32_VREFINT_CALIBRATE */
 
 #if ANY_ADC_HAS_DIFFERENTIAL_SUPPORT
 static int set_channel_differential_mode(ADC_TypeDef *adc, uint8_t channel_id, bool differential)

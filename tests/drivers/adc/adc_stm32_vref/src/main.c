@@ -12,7 +12,7 @@
 		   ({                                                                              \
 			    .dev = DEVICE_DT_GET_OR_NULL(DT_IO_CHANNELS_CTLR(vref_n)),             \
 			    .channel = DT_IO_CHANNELS_INPUT(vref_n),                               \
-		    }, ))
+		    },))
 
 #define ADC_DEV_ENTRY(n) DEVICE_DT_GET(n),
 
@@ -23,18 +23,13 @@ struct vref_owner {
 	uint8_t channel;
 };
 
-static const struct vref_owner owners[] = {
-	DT_FOREACH_STATUS_OKAY(st_stm32_vref, VREF_OWNER_ENTRY)
-};
+static const struct vref_owner owners[] = {DT_FOREACH_STATUS_OKAY(st_stm32_vref, VREF_OWNER_ENTRY)};
 
-static const struct device *const adcs[] = {
-	DT_FOREACH_STATUS_OKAY(st_stm32_adc, ADC_DEV_ENTRY)
-};
+static const struct device *const adcs[] = {DT_FOREACH_STATUS_OKAY(st_stm32_adc, ADC_DEV_ENTRY)};
 
 #ifndef CONFIG_ADC_STM32_VREFINT_CALIBRATE
 static const uint16_t adc_dt_vref_mv[] = {
-	DT_FOREACH_STATUS_OKAY(st_stm32_adc, ADC_DT_VREF_MV_ENTRY)
-};
+	DT_FOREACH_STATUS_OKAY(st_stm32_adc, ADC_DT_VREF_MV_ENTRY)};
 #endif
 
 static void assert_owner_ready(const struct vref_owner *owner)
@@ -55,8 +50,7 @@ ZTEST(adc_stm32_vref, test_ref_internal_after_boot)
 		assert_owner_ready(&owners[i]);
 
 		ret = adc_ref_get(owners[i].dev, ADC_REF_INTERNAL, &mv);
-		zassert_ok(ret, "adc_ref_get(INTERNAL) failed on %s: %d", owners[i].dev->name,
-			   ret);
+		zassert_ok(ret, "adc_ref_get(INTERNAL) failed on %s: %d", owners[i].dev->name, ret);
 		zassert_true(mv > 0, "expected positive INTERNAL mV on %s", owners[i].dev->name);
 		zassert_equal(adc_ref_internal(owners[i].dev), mv, "adc_ref_internal mismatch");
 
@@ -105,6 +99,43 @@ ZTEST(adc_stm32_vref, test_calibrate_refresh_does_not_fail)
 	zassert_equal(adc_ref_internal(owners[0].dev), adc_ref_internal(owners[1].dev),
 		      "calibrate on one owner must keep a shared cache");
 }
+
+#ifdef CONFIG_ADC_STM32_VREFINT_CALIBRATE
+ZTEST(adc_stm32_vref, test_calibrate_after_default_channel_setup)
+{
+	int16_t buf;
+	int ret;
+
+	zassert_true(ARRAY_SIZE(owners) > 0, "no okay st,stm32-vref node with io-channels");
+
+	for (size_t i = 0; i < ARRAY_SIZE(owners); i++) {
+		struct adc_channel_cfg ch_cfg = {
+			.gain = ADC_GAIN_1,
+			.reference = ADC_REF_INTERNAL,
+			.acquisition_time = ADC_ACQ_TIME_DEFAULT,
+			.channel_id = owners[i].channel,
+		};
+		struct adc_sequence seq = {
+			.channels = BIT(owners[i].channel),
+			.buffer = &buf,
+			.buffer_size = sizeof(buf),
+			.resolution = 12,
+			.calibrate = true,
+		};
+
+		assert_owner_ready(&owners[i]);
+
+		ret = adc_channel_setup(owners[i].dev, &ch_cfg);
+		zassert_ok(ret, "channel_setup(DEFAULT) failed on %s: %d", owners[i].dev->name,
+			   ret);
+
+		ret = adc_read(owners[i].dev, &seq);
+		zassert_ok(ret, "calibrate after DEFAULT setup failed on %s: %d",
+			   owners[i].dev->name, ret);
+		zassert_true(adc_ref_internal(owners[i].dev) > 0, "ref after calibrate");
+	}
+}
+#endif /* CONFIG_ADC_STM32_VREFINT_CALIBRATE */
 
 #ifndef CONFIG_ADC_STM32_VREFINT_CALIBRATE
 ZTEST(adc_stm32_vref, test_ref_internal_matches_dt_vref_mv)
