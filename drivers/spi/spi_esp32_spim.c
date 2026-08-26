@@ -732,7 +732,7 @@ static int spi_esp32_init(const struct device *dev)
 	return 0;
 }
 
-static inline uint8_t spi_esp32_get_line_mode(uint16_t operation)
+static inline uint8_t spi_esp32_get_line_mode(spi_operation_t operation)
 {
 	if (IS_ENABLED(CONFIG_SPI_EXTENDED_MODES)) {
 		switch (operation & SPI_LINES_MASK) {
