@@ -306,7 +306,7 @@ work item:
 * :c:func:`k_work_cancel_sync()` may be invoked from threads to block until
   the work completes; it will return immediately if the cancellation was
   successful or not necessary (the work wasn't submitted or running).  This
-  can be used after :c:func:`k_work_cancel()` is invoked (from an ISR)` to
+  can be used after :c:func:`k_work_cancel()` is invoked (from an ISR) to
   confirm completion of an ISR-initiated cancellation.
 
 Scheduling a Delayable Work Item
