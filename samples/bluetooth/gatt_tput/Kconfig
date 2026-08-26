@@ -1,0 +1,22 @@
+# Copyright (c) 2026 Infineon Technologies AG
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "BLE GATT Throughput sample"
+
+choice
+	prompt "Application role"
+	default APP_ROLE_PERIPHERAL
+	help
+	  Selects whether this image runs as the GATT server (peripheral,
+	  advertises as "TPUT") or the GATT client (central). The same source
+	  builds both roles; pick one per image.
+
+config APP_ROLE_PERIPHERAL
+	bool "Peripheral (GATT server, advertises as TPUT)"
+
+config APP_ROLE_CENTRAL
+	bool "Central (GATT client, connects to TPUT)"
+
+endchoice
+
+source "Kconfig.zephyr"
