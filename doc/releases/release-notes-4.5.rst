@@ -440,6 +440,8 @@ New APIs and options
     * :c:func:`bt_rfcomm_dlc_recv_complete` to return RX credits to the peer. Applications can
       return ``-EINPROGRESS`` from the :c:member:`bt_rfcomm_dlc_ops.recv` callback to defer buffer
       release and flow-control credit refill until processing is complete.
+    * :kconfig:option:`CONFIG_BT_ATT_PREPARE_COUNT_PER_CONN` to limit how many of the ATT
+      prepare write buffers a single connection may hold.
 
   * Mesh
 

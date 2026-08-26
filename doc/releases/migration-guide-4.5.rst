@@ -1559,6 +1559,19 @@ Bluetooth Host
   deprecated since Zephyr 4.2, and the number of pending TX buffers with a callback always
   follows :kconfig:option:`CONFIG_BT_BUF_ACL_TX_COUNT`.
 
+* The ATT prepare write buffers (:kconfig:option:`CONFIG_BT_ATT_PREPARE_COUNT`) are now shared
+  equally between connections: a single connection holds at most
+  :kconfig:option:`CONFIG_BT_ATT_PREPARE_COUNT_PER_CONN` of them, which defaults to
+  ``CONFIG_BT_ATT_PREPARE_COUNT / CONFIG_BT_MAX_CONN`` but at least 1 (a pool smaller than
+  ``CONFIG_BT_MAX_CONN`` therefore stays over-subscribed), and its further Prepare Write
+  Requests are rejected with Prepare Queue Full. Applications with ``CONFIG_BT_MAX_CONN``
+  above 1 whose long or reliable writes need more buffers than that share must either raise
+  ``CONFIG_BT_ATT_PREPARE_COUNT`` or set ``CONFIG_BT_ATT_PREPARE_COUNT_PER_CONN`` explicitly,
+  accepting in the latter case that one connection can hold buffers the others need. The
+  recommended sizing is ``CONFIG_BT_ATT_PREPARE_COUNT`` = buffers needed by one client
+  multiplied by ``CONFIG_BT_MAX_CONN``, which keeps every connection's capacity independent
+  of the other connections.
+
 Bluetooth Mesh
 ==============
 
