@@ -654,7 +654,13 @@ struct bt_sdp_attribute_id_range {
 
 /** @brief SDP attribute ID list for Service Attribute and Service Search Attribute transactions */
 struct bt_sdp_attribute_id_list {
-	/** Count of the SDP attribute ID range */
+	/**
+	 * Count of the SDP attribute ID range
+	 *
+	 * The encoded list has to fit in an SDP request PDU: a range is encoded in 5 bytes, a
+	 * single attribute ID (equal beginning and ending) in 3 bytes, and the list including its
+	 * 2-byte header is limited to 162 bytes. bt_sdp_discover() rejects longer lists.
+	 */
 	size_t count;
 	/** Attribute ID range array list */
 	struct bt_sdp_attribute_id_range *ranges;
@@ -717,7 +723,9 @@ struct bt_sdp_discover_params {
  * @param conn Object identifying connection to remote.
  * @param params SDP discovery parameters.
  *
- * @return 0 in case of success or negative value in case of error.
+ * @retval 0 Success.
+ * @retval -EINVAL Invalid @p params, or an attribute ID list that does not fit in a request PDU.
+ * @return Other negative error code on failure to set up the SDP channel.
  */
 
 int bt_sdp_discover(struct bt_conn *conn,
