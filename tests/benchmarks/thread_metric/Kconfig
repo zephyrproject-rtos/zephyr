@@ -78,4 +78,14 @@ config TM_SYNCHRONIZATION
 
 endchoice
 
+config TM_POSIX_API
+	bool "Use the POSIX API porting layer"
+	depends on POSIX_API && POSIX_MESSAGE_PASSING && POSIX_PRIORITY_SCHEDULING
+	depends on DYNAMIC_THREAD
+	depends on !TM_INTERRUPT && !TM_INTERRUPT_PREEMPTION
+	help
+	  Run Thread-Metric through Zephyr's POSIX API implementation instead
+	  of calling the Zephyr kernel API directly. Interrupt benchmarks are
+	  not supported because POSIX does not define an interrupt API.
+
 source "Kconfig.zephyr"

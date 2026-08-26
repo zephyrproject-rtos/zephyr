@@ -122,6 +122,15 @@ tm_synchronization_processing_test.c          Semaphore get/put processing test
 tm_memory_allocation_test.c                   Basic memory allocation test
 tm_porting_layer_zephyr.c                     Specific porting layer source
                                                  code for Zephyr
+tm_porting_layer_posix.c                      Porting layer using Zephyr's POSIX
+                                                 API implementation
+
+The POSIX port supports the basic, cooperative scheduling, preemptive
+scheduling, message processing, synchronization, and memory allocation tests.
+POSIX semaphores provide the suspend and resume behavior required by the
+preemptive scheduling test because POSIX does not define those thread controls.
+The interrupt tests are not available with this port because POSIX does not
+define an interrupt API.
 
 2.5. Test execution with Twister tool
 
