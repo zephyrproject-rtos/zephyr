@@ -27,6 +27,7 @@ supported:
   - gpio
   - i2c
   - netif:eth
+  - ptp_clock
   - sdhc
   - spi
   - usbd

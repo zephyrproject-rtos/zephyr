@@ -21,3 +21,4 @@ supported:
   - counter
   - adc
   - netif:eth
+  - ptp_clock

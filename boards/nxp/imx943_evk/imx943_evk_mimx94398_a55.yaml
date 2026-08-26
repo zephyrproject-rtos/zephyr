@@ -19,6 +19,7 @@ supported:
   - i2c
   - net
   - netif:eth
+  - ptp_clock
   - spi
   - uart
   - watchdog
