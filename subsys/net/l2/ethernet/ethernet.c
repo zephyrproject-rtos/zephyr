@@ -599,7 +599,7 @@ static struct net_buf *ethernet_fill_header(struct ethernet_context *ctx,
 	}
 
 	reserve_ll_header = get_reserve_ll_header_size(orig_iface);
-	if (reserve_ll_header > 0) {
+	if ((reserve_ll_header > 0) && (reserve_ll_header <= net_buf_headroom(pkt->buffer))) {
 		hdr_len = reserve_ll_header;
 		hdr_frag = pkt->buffer;
 
@@ -608,6 +608,12 @@ static struct net_buf *ethernet_fill_header(struct ethernet_context *ctx,
 		/* Make room for the header */
 		net_buf_push(pkt->buffer, hdr_len);
 	} else {
+		/*
+		 * Packets can be allocated by a different L2 and forwarded to
+		 * Ethernet. Such packets do not have the Ethernet header space
+		 * reserved by ethernet_l2_alloc(), so use a separate fragment.
+		 */
+		reserve_ll_header = 0U;
 		hdr_len = IS_ENABLED(CONFIG_NET_VLAN) ?
 			sizeof(struct net_eth_vlan_hdr) :
 			sizeof(struct net_eth_hdr);
