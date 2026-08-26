@@ -1,0 +1,32 @@
+# Copyright (c) 2026 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ITE general configuration
+
+properties:
+  "#extend-ctrl-cells":
+    type: int
+    const: 3
+    description: |
+      Number of cells in an extend-control specifier.
+
+  ite,extend-ctrl:
+    type: phandle-array
+    specifier-space: extend-ctrl
+    description: |
+      Extend-control register configurations. Each entry references
+      an extend-control provider and supplies register address, enable
+      bitmap, and disable bitmap. Set the disable bitmap to zero when
+      only the enable bitmap is required, and vice versa.
+
+extend-ctrl-cells:
+  - addr
+  - enable-bitmap
+  - disable-bitmap
+
+examples:
+  - |
+    &i3c2 {
+      #extend-ctrl-cells = <3>;
+      ite,extend-ctrl = <&i3c2 0xf016de BIT(0) 0>;
+    };

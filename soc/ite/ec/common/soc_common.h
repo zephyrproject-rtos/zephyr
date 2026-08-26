@@ -16,9 +16,25 @@
 
 #ifndef _ASMLANGUAGE
 
+#include <zephyr/sys/sys_io.h>
+
 struct ite_clk_cfg {
 	uint8_t ctrl;
 	uint8_t bits;
+};
+
+/**
+ * @brief Extended-control register configuration.
+ *
+ * Describes the register address and bitmaps used to enable and disable.
+ */
+struct ite_extend_control {
+	/** The extend_control register address. */
+	mm_reg_t addr;
+	/** Bitmap of bits to enable. */
+	uint8_t enable_bitmap;
+	/** Bitmap of bits to disable. */
+	uint8_t disable_bitmap;
 };
 
 #ifdef CONFIG_HAS_ITE_INTC
@@ -61,6 +77,14 @@ void riscv_idle(enum chip_pll_mode mode, unsigned int key);
 void chip_permit_idle(void);
 void chip_block_idle(void);
 bool cpu_idle_not_allowed(void);
+
+/**
+ * @brief Apply extend-control register configurations.
+ *
+ * @param extend_ctrl Extend-control configuration array.
+ * @param cnt Number of entries.
+ */
+void ite_apply_extend_control(const struct ite_extend_control *extend_ctrl, const size_t cnt);
 
 #endif /* !_ASMLANGUAGE */
 
