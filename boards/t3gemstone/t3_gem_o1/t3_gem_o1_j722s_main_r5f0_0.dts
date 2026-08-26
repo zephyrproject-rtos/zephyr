@@ -114,3 +114,17 @@
 		reg = <0x41>;
 	};
 };
+
+/* LPS22DF pressure and temperature sensor is on chip select 1 */
+&mcu_spi0 {
+	pinctrl-0 = <&mcu_spi0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	lps22df: lps22df@1 {
+		compatible = "st,lps22df";
+		reg = <1>;
+		spi-max-frequency = <DT_FREQ_M(8)>;
+		odr = <3>;
+	};
+};

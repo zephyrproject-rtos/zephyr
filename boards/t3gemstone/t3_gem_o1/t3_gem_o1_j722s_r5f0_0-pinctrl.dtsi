@@ -291,3 +291,14 @@
 		pinmux = <K3_PINMUX(0x19c, PIN_INPUT_PULLDOWN, MUX_MODE_7)>;
 	};
 };
+
+&mcu_pinctrl {
+	mcu_spi0_default: mcu-spi0-default-pins {
+		/* MCU_SPI0 CS0, CS1, CLK, D0 (MOSI) and D1 (MISO) */
+		pinmux = <K3_PINMUX(0x0000, PIN_OUTPUT, MUX_MODE_0)>,
+			 <K3_PINMUX(0x0004, PIN_OUTPUT, MUX_MODE_0)>,
+			 <K3_PINMUX(0x0008, PIN_OUTPUT, MUX_MODE_0)>,
+			 <K3_PINMUX(0x000c, PIN_OUTPUT, MUX_MODE_0)>,
+			 <K3_PINMUX(0x0010, PIN_INPUT, MUX_MODE_0)>;
+	};
+};
