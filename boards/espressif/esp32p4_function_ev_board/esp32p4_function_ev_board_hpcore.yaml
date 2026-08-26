@@ -19,6 +19,7 @@ supported:
   - input
   - netif:eth
   - netif:wifi
+  - ptp_clock
   - sdhc
   - spi
   - uart

@@ -17,6 +17,7 @@ supported:
   - input
   - netif:eth
   - netif:wifi
+  - ptp_clock
   - pulse_io
   - sdhc
   - spi
