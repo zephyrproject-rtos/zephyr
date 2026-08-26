@@ -1470,8 +1470,8 @@ const static struct ipc_service_backend backend_ops = {
 			},                                                                         \
 		.bound_packet =                                                                    \
 			BOUND_PACKET_INIT(DT_INST_PROP(i, tx_blocks), DT_INST_PROP(i, rx_blocks)), \
-		IF_ENABLED(CONFIG_STATS_NAMES,                                              \
-			   (.stats_name = STRINGIFY(ipc_icbmsg_##i),)) };         \
+		IF_ENABLED(CONFIG_STATS,                                                           \
+			   (.stats_name = STRINGIFY(ipc_icbmsg_##i),)) };                          \
 	BUILD_ASSERT(IS_ALIGNED(GET_MEM_ADDR_INST(i, tx), GET_CACHE_ALIGNMENT(i)),                 \
 		     "TX producer queue is not aligned to cache alignment");                       \
 	BUILD_ASSERT(IS_ALIGNED(GET_MEM_ADDR_INST(i, rx), GET_CACHE_ALIGNMENT(i)),                 \
