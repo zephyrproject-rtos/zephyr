@@ -11,6 +11,7 @@
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/can.h>
+#include <zephyr/kernel.h>
 #include "can_mcan.h"
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/nrf_clock_control.h>
@@ -174,36 +175,48 @@ static int can_nrf_init(const struct device *dev)
 	return 0;
 }
 
-#define CAN_NRF_DEFINE(n)                                                                          \
-	PINCTRL_DT_INST_DEFINE(n);                                                                 \
-                                                                                                   \
-	static inline void can_nrf_irq_configure##n(void)                                          \
-	{                                                                                          \
-		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority), can_nrf_irq_handler,        \
-			    DEVICE_DT_INST_GET(n), 0);                                             \
-		irq_enable(DT_INST_IRQN(n));                                                       \
-	}                                                                                          \
-                                                                                                   \
-	static const struct can_nrf_config can_nrf_config##n = {                                   \
-		.wrapper = DT_INST_REG_ADDR_BY_NAME(n, wrapper),                                   \
-		.mcan = CAN_MCAN_DT_INST_MCAN_ADDR(n),                                             \
-		.mrba = CAN_MCAN_DT_INST_MRBA(n),                                                  \
-		.mram = CAN_MCAN_DT_INST_MRAM_ADDR(n),                                             \
-		.auxpll = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_NAME(n, auxpll)),                   \
-		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                         \
-		.irq = DT_INST_IRQN(n),                                                            \
-		.irq_configure = can_nrf_irq_configure##n,                                         \
-	};                                                                                         \
-                                                                                                   \
-	CAN_MCAN_DT_INST_CALLBACKS_DEFINE(n, can_mcan_nrf_cbs##n);                                 \
-                                                                                                   \
-	static const struct can_mcan_config can_mcan_nrf_config##n = CAN_MCAN_DT_CONFIG_INST_GET(  \
-		n, &can_nrf_config##n, &can_mcan_nrf_ops, &can_mcan_nrf_cbs##n);                   \
-                                                                                                   \
-	CAN_MCAN_DATA_DEFINE(can_mcan_nrf_data##n, NULL);                                          \
-                                                                                                   \
-	CAN_DEVICE_DT_INST_DEFINE(n, can_nrf_init, NULL, &can_mcan_nrf_data##n,                    \
-				  &can_mcan_nrf_config##n, POST_KERNEL, CONFIG_CAN_INIT_PRIORITY,  \
+#define CAN_NRF_DEFINE(inst)									\
+	PINCTRL_DT_INST_DEFINE(inst);								\
+												\
+	static void CONCAT(can_nrf_irq_configure, inst)(void)					\
+	{											\
+		IRQ_CONNECT(DT_INST_IRQN(inst),							\
+			    DT_INST_IRQ(inst, priority),					\
+			    can_nrf_irq_handler,						\
+			    DEVICE_DT_INST_GET(inst),						\
+			    0);									\
+												\
+		irq_enable(DT_INST_IRQN(inst));							\
+	}											\
+												\
+	static const struct can_nrf_config CONCAT(can_nrf_config, inst) = {			\
+		.wrapper = DT_INST_REG_ADDR_BY_NAME(inst, wrapper),				\
+		.mcan = CAN_MCAN_DT_INST_MCAN_ADDR(inst),					\
+		.mrba = CAN_MCAN_DT_INST_MRBA(inst),						\
+		.mram = CAN_MCAN_DT_INST_MRAM_ADDR(inst),					\
+		.auxpll = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_NAME(inst, auxpll)),		\
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),					\
+		.irq = DT_INST_IRQN(inst),							\
+		.irq_configure = CONCAT(can_nrf_irq_configure, inst),				\
+	};											\
+												\
+	CAN_MCAN_DT_INST_CALLBACKS_DEFINE(inst, CONCAT(can_mcan_nrf_cbs, inst));		\
+												\
+	static const struct can_mcan_config CONCAT(can_mcan_nrf_config, inst) =			\
+		CAN_MCAN_DT_CONFIG_INST_GET(inst,						\
+					    &CONCAT(can_nrf_config, inst),			\
+					    &can_mcan_nrf_ops,					\
+					    &CONCAT(can_mcan_nrf_cbs, inst));			\
+												\
+	CAN_MCAN_DATA_DEFINE(CONCAT(can_mcan_nrf_data, inst), NULL);				\
+												\
+	CAN_DEVICE_DT_INST_DEFINE(inst,								\
+				  can_nrf_init,							\
+				  NULL,								\
+				  &CONCAT(can_mcan_nrf_data, inst),				\
+				  &CONCAT(can_mcan_nrf_config, inst),				\
+				  POST_KERNEL,							\
+				  CONFIG_CAN_INIT_PRIORITY,					\
 				  &can_nrf_api);
 
 DT_INST_FOREACH_STATUS_OKAY(CAN_NRF_DEFINE)
