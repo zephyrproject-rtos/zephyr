@@ -434,6 +434,19 @@ int sx12xx_lora_test_cw(const struct device *dev, uint32_t frequency,
 	return 0;
 }
 
+int sx12xx_lora_rssi(const struct device *dev, int16_t *rssi)
+{
+	/*
+	 * Deliberately no modem_acquire(): that claims the radio for one
+	 * exclusive operation, and reading the RSSI is a query on the receive
+	 * already in progress. The bus access itself is serialised one layer
+	 * down.
+	 */
+	*rssi = Radio.Rssi(MODEM_LORA);
+
+	return 0;
+}
+
 int sx12xx_init(const struct device *dev)
 {
 	atomic_set(&dev_data.modem_usage, 0);
