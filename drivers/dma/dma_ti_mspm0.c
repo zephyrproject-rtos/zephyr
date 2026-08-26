@@ -88,6 +88,7 @@ struct dma_mspm0_regs {
 #define DMA_MSPM0_INCR_UNCHANGED 0x0U
 #define DMA_MSPM0_INCR_DECREMENT 0x2U
 #define DMA_MSPM0_INCR_INCREMENT 0x3U
+#define DMA_MSPM0_INCR_STRIDE(n) (0x8U + ((n) - 2U))
 
 #define DMA_MSPM0_EM_NORMAL      0x0U
 #define DMA_MSPM0_EM_GATHER      0x1U
@@ -155,6 +156,37 @@ static inline int dma_ti_mspm0_get_memory_increment(uint8_t adj,
 	}
 
 	return 0;
+}
+
+/*
+ * HW stride steps by n * width every transfer, with no grouping/jump concept, so it only matches
+ * gather/scatter's count-then-jump semantics when count <= 1; interval is n itself (a
+ * dimensionless multiplier), not a byte offset. Every stride encoding only increments, never
+ * decrements, so it's only valid alongside DMA_ADDR_ADJ_INCREMENT.
+ */
+static inline int dma_ti_mspm0_get_stride_incr(bool gather_scatter_en, uint16_t count,
+					       uint16_t interval, uint8_t addr_adj, uint32_t *incr)
+{
+	if (gather_scatter_en) {
+		if (count > 1) {
+			return -ENOTSUP;
+		}
+
+		if (interval > 9) {
+			return -EINVAL;
+		}
+
+		if (interval >= 2) {
+			if (addr_adj != DMA_ADDR_ADJ_INCREMENT) {
+				return -EINVAL;
+			}
+
+			*incr = DMA_MSPM0_INCR_STRIDE(interval);
+			return 0;
+		}
+	}
+
+	return dma_ti_mspm0_get_memory_increment(addr_adj, incr);
 }
 
 static inline int dma_ti_mspm0_get_datawidth(uint8_t wd, uint32_t *width)
@@ -238,6 +270,7 @@ static int dma_ti_mspm0_configure(const struct device *dev, uint32_t channel,
 	struct dma_block_config *b_cfg = NULL;
 	uint32_t tm;
 	uint32_t em;
+	int ret = 0;
 
 	if ((config == NULL) || (channel >= cfg->dma_max_channels)) {
 		return -EINVAL;
@@ -254,16 +287,22 @@ static int dma_ti_mspm0_configure(const struct device *dev, uint32_t channel,
 		return -EBUSY;
 	}
 
-	if (dma_ti_mspm0_get_memory_increment(b_cfg->source_addr_adj, &temp)) {
+	ret = dma_ti_mspm0_get_stride_incr(b_cfg->source_gather_en, b_cfg->source_gather_count,
+					   b_cfg->source_gather_interval, b_cfg->source_addr_adj,
+					   &temp);
+	if (ret < 0) {
 		LOG_ERR("Invalid Source address increment");
-		return -EINVAL;
+		return ret;
 	}
 
 	ctl |= FIELD_PREP(DMA_MSPM0_CTL_SRCINCR, temp);
 
-	if (dma_ti_mspm0_get_memory_increment(b_cfg->dest_addr_adj, &temp)) {
+	ret = dma_ti_mspm0_get_stride_incr(b_cfg->dest_scatter_en, b_cfg->dest_scatter_count,
+					   b_cfg->dest_scatter_interval, b_cfg->dest_addr_adj,
+					   &temp);
+	if (ret < 0) {
 		LOG_ERR("Invalid Destination address increment");
-		return -EINVAL;
+		return ret;
 	}
 
 	ctl |= FIELD_PREP(DMA_MSPM0_CTL_DSTINCR, temp);
