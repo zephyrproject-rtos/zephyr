@@ -811,3 +811,25 @@
 		};
 	};
 };
+
+#ifndef USE_NON_SECURE_ADDRESS_MAP
+/ {
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		/*
+		 * The KMU pushes keys to a fixed address at the start of SRAM,
+		 * so this area is not available to the application. When
+		 * building with TF-M the area is part of the SRAM partition
+		 * owned by the secure image instead.
+		 */
+		kmu_push_area: memory@20000000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x20000000 0x60>;
+			zephyr,memory-region = "KMU_PUSH";
+		};
+	};
+};
+#endif

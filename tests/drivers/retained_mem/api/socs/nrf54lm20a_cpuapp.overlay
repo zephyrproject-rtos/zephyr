@@ -22,10 +22,9 @@
 	};
 };
 
-&cpuapp_sram {
+&cpuapp_sram_app {
 	/* Shrink SRAM size to avoid overlap with retained memory region:
 	 * 511 - 4 = 507KB = 0x7ec00
 	 */
-	reg = <0x20000000 DT_SIZE_K(507)>;
-	ranges = <0x0 0x20000000 0x7ec00>;
+	reg = <0x60 (DT_SIZE_K(507) - 0x60)>;
 };
