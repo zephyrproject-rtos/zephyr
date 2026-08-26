@@ -4521,6 +4521,7 @@ int k_work_queue_unplug(struct k_work_q *queue);
  *
  * @satisfies ZEP-SRS-38-8
  * @satisfies ZEP-SRS-38-45
+ * @satisfies ZEP-SRS-38-53
  * @satisfies ZEP-SRS-38-46
  */
 int k_work_queue_stop(struct k_work_q *queue, k_timeout_t timeout);
