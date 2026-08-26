@@ -696,7 +696,6 @@ static void arp_gratuitous_work_handler(struct k_work *work)
 void net_arp_update(struct net_if *iface,
 		    struct net_in_addr *src,
 		    struct net_eth_addr *hwaddr,
-		    bool gratuitous,
 		    bool force)
 {
 	struct arp_entry *entry;
@@ -880,8 +879,7 @@ enum net_verdict net_arp_input(struct net_pkt *pkt,
 				net_ipv4_addr_copy_raw(src_ipaddr.s4_addr,
 						       arp_hdr->src_ipaddr);
 				net_arp_update(net_pkt_iface(pkt), &src_ipaddr,
-					       &arp_hdr->src_hwaddr,
-					       true, false);
+					       &arp_hdr->src_hwaddr, false);
 				break;
 			}
 		}
@@ -923,8 +921,7 @@ enum net_verdict net_arp_input(struct net_pkt *pkt,
 			net_ipv4_addr_copy_raw(src_ipaddr.s4_addr,
 					       arp_hdr->src_ipaddr);
 			net_arp_update(net_pkt_iface(pkt), &src_ipaddr,
-				       &arp_hdr->src_hwaddr,
-				       false, true);
+				       &arp_hdr->src_hwaddr, true);
 
 			dst_hw_addr = &arp_hdr->src_hwaddr;
 		} else {
@@ -950,8 +947,7 @@ enum net_verdict net_arp_input(struct net_pkt *pkt,
 			net_ipv4_addr_copy_raw(src_ipaddr.s4_addr,
 					       arp_hdr->src_ipaddr);
 			net_arp_update(net_pkt_iface(pkt), &src_ipaddr,
-				       &arp_hdr->src_hwaddr,
-				       false, false);
+				       &arp_hdr->src_hwaddr, false);
 		}
 
 		break;

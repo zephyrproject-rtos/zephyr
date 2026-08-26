@@ -677,7 +677,7 @@ static int dhcpv4_send(struct dhcpv4_server_ctx *ctx, enum net_dhcpv4_msg_type t
 		struct net_eth_addr hwaddr;
 
 		memcpy(&hwaddr, msg->chaddr, sizeof(hwaddr));
-		net_arp_update(ctx->iface, yiaddr, &hwaddr, false, true);
+		net_arp_update(ctx->iface, yiaddr, &hwaddr, true);
 		dst_addr.sin_addr = *yiaddr;
 	} else {
 		NET_ERR("Unspecified destination address.");

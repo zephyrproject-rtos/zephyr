@@ -90,8 +90,7 @@ int net_arp_foreach(net_arp_cb_t cb, void *user_data);
 void net_arp_clear_cache(struct net_if *iface);
 void net_arp_init(void);
 void net_arp_update(struct net_if *iface, struct net_in_addr *src,
-		    struct net_eth_addr *hwaddr, bool gratuitous,
-		    bool force);
+		    struct net_eth_addr *hwaddr, bool force);
 
 
 #else /* CONFIG_NET_ARP */
