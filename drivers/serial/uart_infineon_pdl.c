@@ -856,7 +856,8 @@ static void ifx_cat1_uart_irq_handler(const struct device *dev)
 	uint32_t locTxErr = (CY_SCB_UART_TRANSMIT_ERR & tx_masked);
 	uint32_t rx_clear = locRxErr | CY_SCB_UART_RX_NOT_EMPTY;
 	uint32_t tx_clear = locTxErr | CY_SCB_UART_TX_EMPTY | CY_SCB_UART_TX_OVERFLOW |
-			    CY_SCB_TX_INTR_UART_NACK | CY_SCB_TX_INTR_UART_ARB_LOST;
+			    CY_SCB_TX_INTR_UART_NACK | CY_SCB_TX_INTR_UART_ARB_LOST |
+			    CY_SCB_TX_INTR_UART_DONE;
 
 	Cy_SCB_ClearRxInterrupt(base, rx_clear);
 	Cy_SCB_ClearTxInterrupt(base, tx_clear);
@@ -1686,10 +1687,22 @@ static int ifx_cat1_uart_pm_action(const struct device *dev, enum pm_device_acti
 
 	switch (action) {
 	case PM_DEVICE_ACTION_SUSPEND:
-		/* Refuse mid-transmission; gating would truncate the frame. */
+		/* Refuse mid-TX; gating truncates the frame. With interrupt-driven,
+		 * arm the TX-done IRQ to wake and retry a tickless suspend; the IRQ
+		 * handler clears CY_SCB_TX_INTR_UART_DONE. Without it the retry waits
+		 * for the next scheduled wake - never busy-wait here (idle path).
+		 */
 		if (!Cy_SCB_UART_IsTxComplete(config->reg_addr)) {
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+			Cy_SCB_ClearTxInterrupt(config->reg_addr, CY_SCB_TX_INTR_UART_DONE);
+			ifx_cat1_uart_tx_done_irq_set(config->reg_addr, true);
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 			return -EBUSY;
 		}
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+		/* TX drained: drop the wake interrupt if a prior attempt armed it. */
+		ifx_cat1_uart_tx_done_irq_set(config->reg_addr, false);
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 		/* Leave enabled for a wakeup source; gating would disable RX DeepSleep wake. */
 		if (pm_device_wakeup_is_enabled(dev)) {
 			break;
