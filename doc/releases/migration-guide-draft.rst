@@ -94,6 +94,22 @@ Bluetooth Classic
   :c:func:`bt_l2cap_br_echo_rsp`. The stack answers a received ECHO request with an ECHO response
   without data, unless a registered ``req`` callback handles it.
 
+Bluetooth Host
+==============
+
+* The ATT prepare write buffers (:kconfig:option:`CONFIG_BT_ATT_PREPARE_COUNT`) are now shared
+  equally between connections: a single connection holds at most
+  :kconfig:option:`CONFIG_BT_ATT_PREPARE_COUNT_PER_CONN` of them, which defaults to
+  ``CONFIG_BT_ATT_PREPARE_COUNT / CONFIG_BT_MAX_CONN`` but at least 1 (a pool smaller than
+  ``CONFIG_BT_MAX_CONN`` therefore stays over-subscribed), and its further Prepare Write
+  Requests are rejected with Prepare Queue Full. Applications with ``CONFIG_BT_MAX_CONN``
+  above 1 whose long or reliable writes need more buffers than that share must either raise
+  ``CONFIG_BT_ATT_PREPARE_COUNT`` or set ``CONFIG_BT_ATT_PREPARE_COUNT_PER_CONN`` explicitly,
+  accepting in the latter case that one connection can hold buffers the others need. The
+  recommended sizing is ``CONFIG_BT_ATT_PREPARE_COUNT`` = buffers needed by one client
+  multiplied by ``CONFIG_BT_MAX_CONN``, which keeps every connection's capacity independent
+  of the other connections.
+
 Networking
 **********
 
