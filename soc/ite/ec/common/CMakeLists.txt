@@ -2,6 +2,7 @@ zephyr_include_directories(.)
 
 zephyr_sources(
   soc_common_irq.c
+  soc_common.c
   )
 
 zephyr_sources_ifdef(CONFIG_PM power.c)

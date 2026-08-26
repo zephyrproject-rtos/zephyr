@@ -5,7 +5,7 @@ description: IT51XXX I3CS controller
 
 compatible: "ite,it51xxx-i3cs"
 
-include: [base.yaml, pinctrl-device.yaml]
+include: [base.yaml, pinctrl-device.yaml, "ite,general-config.yaml"]
 
 class: i3c
 
@@ -18,10 +18,8 @@ properties:
   interrupts:
     required: true
 
-  extern-enable:
+  ite,extend-ctrl:
     required: true
-    type: array
-    description: Extern enable configuration defined as <reg_address bit_mask>
 
   io-channel:
     required: true
