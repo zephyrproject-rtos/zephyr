@@ -135,6 +135,36 @@ properties:
   ti,window-companion:
     type: phandle
 
+  ti,analog-comparison-dac-codes:
+    type: array
+    default: [0, 0, 0, 0]
+    description: |
+      4 entries, one 8-bit DAC reference code per VMON input. Presence of this property enables the
+      sequencer. In STOP mode, hardware cycles through the 4 VMON inputs comparing each against its
+      own code here, using cmpprd/blkprd timing.
+
+  ti,analog-comparison-cmpprd:
+    type: int
+    default: 0
+    description: |
+      CMPPRD value (0-15): how long each VMON voltage is held and compared against its DACCODE
+      before the sequencer advances.
+
+  ti,analog-comparison-blkprd:
+    type: int
+    default: 0
+    description: |
+      Blanking period (0-240): time to ignore the comparator output after switching VMON input,
+      before comparison starts.
+
+  ti,analog-comparison-window-input:
+    type: int
+    enum: [0, 1, 2, 3]
+    description: |
+      Lock the sequencer to a single VMON input (0-3) instead of cycling through all 4, presence of
+      this property enabled window (static) mode. The static VMON input is still taken from
+      ti,analog-comparison-dac-codes.
+
   vref:
     type: phandle
     description: |
