@@ -44,6 +44,10 @@ logger = logging.getLogger(__name__)
 AVDTP_PSM = 0x0019
 AVDTP_VERSION = 0x0100
 
+# Largest attribute ID list a request PDU carries: 32 ranges of 5 bytes plus the 2-byte
+# sequence header make 162 bytes.
+SDP_ATTR_ID_RANGE_MAX_COUNT = 32
+
 SDP_SERVICE_RECORDS_A2DP = {
     0x00010001: [
         ServiceAttribute(
@@ -1047,6 +1051,60 @@ async def sdp_sa_discover_multiple_records_with_range(hci_port, shell, dut, addr
             assert found is True
 
 
+async def sdp_sa_discover_max_attr_id_ranges(hci_port, shell, dut, address) -> None:
+    logger.info('<<< SDP Discovery ...')
+    async with await open_transport_or_link(hci_port) as hci_transport:
+        device = Device.with_hci(
+            'Bumble',
+            Address('F0:F1:F2:F3:F4:F5'),
+            hci_transport.source,
+            hci_transport.sink,
+        )
+        device.classic_enabled = True
+        device.le_enabled = False
+        device.sdp_service_records = SDP_SERVICE_ONE_RECORD
+        with open(f"bumble_hci_{sys._getframe().f_code.co_name}.log", "wb") as snoop_file:
+            device.host.snooper = BtSnooper(snoop_file)
+            await device_power_on(device)
+            await device.send_command(HCI_Write_Page_Timeout_Command(page_timeout=0xFFFF))
+
+            target_address = address.split(" ")[0]
+            logger.info(f'=== Connecting to {target_address}...')
+            try:
+                connection = await device.connect(target_address, transport=BT_BR_EDR_TRANSPORT)
+                logger.info(f'=== Connected to {connection.peer_address}!')
+            except Exception as e:
+                logger.error(f'Fail to connect to {target_address}!')
+                raise e
+
+            await wait_for_shell_response(dut, "Connected:")
+
+            # Discover SDP Record with the whole attribute ID space split into the largest
+            # number of ranges that fits in a request
+            shell.exec_command(
+                f"sdp_client sa_discovery_ranges 00010001 {SDP_ATTR_ID_RANGE_MAX_COUNT}"
+            )
+            found, lines = await wait_for_shell_response(dut, "SDP Discovery Done")
+            assert found is True
+
+            found = False
+            for line in lines:
+                if "PROTOCOL:" in line and "L2CAP" in line.split(':')[1]:
+                    assert int(line.split(':')[2]) == AVDTP_PSM
+                    found = True
+
+            logger.info(f'Rsp: PROTOCOL: L2CAP: {AVDTP_PSM} is found? {found}')
+            assert found is True
+
+            # One range more does not fit in a request and is rejected
+            lines = shell.exec_command(
+                f"sdp_client sa_discovery_ranges 00010001 {SDP_ATTR_ID_RANGE_MAX_COUNT + 1}"
+            )
+            logger.info(f'{lines}')
+            found = any("Fail to start SDP Discovery (err -22)" in line for line in lines)
+            assert found is True
+
+
 async def sdp_ssa_discover_fail(hci_port, shell, dut, address) -> None:
     def on_app_connection_request(self, request) -> None:
         logger.info('Force L2CAP connection failure')
@@ -1196,6 +1254,15 @@ class TestSdpServer:
         logger.info(f'test_sdp_sa_discover_multiple_records_with_range {sdp_client_dut}')
         hci, iut_address = sdp_client_dut
         asyncio.run(sdp_sa_discover_multiple_records_with_range(hci, shell, dut, iut_address))
+
+    def test_sdp_sa_discover_max_attr_id_ranges(
+        self, shell: Shell, dut: DeviceAdapter, sdp_client_dut
+    ):
+        """Test case to request SDP records with the largest attribute ID list that fits in a
+        request, and with one that does not."""
+        logger.info(f'test_sdp_sa_discover_max_attr_id_ranges {sdp_client_dut}')
+        hci, iut_address = sdp_client_dut
+        asyncio.run(sdp_sa_discover_max_attr_id_ranges(hci, shell, dut, iut_address))
 
     def test_sdp_ssa_discover_fail(self, shell: Shell, dut: DeviceAdapter, sdp_client_dut):
         """Test case to request SDP records. but the L2CAP connecting fail."""
