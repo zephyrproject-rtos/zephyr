@@ -160,11 +160,11 @@ uart4: &scb4 {
 };
 
 &mxcrypto_trng {
-	status = "okay";
+	status = "disabled";
 };
 
 &mxcrypto_crypto {
-	status = "okay";
+	status = "disabled";
 };
 
 /*
