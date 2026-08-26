@@ -6026,6 +6026,266 @@ SHELL_SUBCMD_ADD((wifi), twt, &wifi_twt_ops,
 		 NULL,
 		 0, 0);
 
+#ifdef CONFIG_WIFI_MGMT_DMS
+static int wifi_dms_args_to_params(const struct shell *sh, size_t argc, char *argv[],
+				   struct wifi_dms_params *params)
+{
+	int opt;
+	int opt_index = 0;
+	struct sys_getopt_state *state;
+	static const struct sys_getopt_option long_options[] = {
+		{"dialog_token", sys_getopt_required_argument, 0, 't'},
+		{"up", sys_getopt_required_argument, 0, 'u'},
+		{"tclass_type", sys_getopt_required_argument, 0, 'Q'},
+		{"tclass_mask", sys_getopt_required_argument, 0, 'M'},
+		{"version", sys_getopt_required_argument, 0, 'v'},
+		{"src_ip", sys_getopt_required_argument, 0, 'S'},
+		{"src_port", sys_getopt_required_argument, 0, 's'},
+		{"dest_ip", sys_getopt_required_argument, 0, 'D'},
+		{"dest_port", sys_getopt_required_argument, 0, 'd'},
+		{"dscp", sys_getopt_required_argument, 0, 'q'},
+		{"protocol", sys_getopt_required_argument, 0, 'p'},
+		{"help", sys_getopt_no_argument, 0, 'h'},
+		{0, 0, 0, 0}};
+	struct net_in_addr addr;
+	long val;
+
+	while ((opt = sys_getopt_long(argc, argv, "t:u:Q:M:v:S:s:D:d:q:p:h",
+				      long_options, &opt_index)) != -1) {
+		state = sys_getopt_state_get();
+		switch (opt) {
+		case 't':
+			if (!parse_number(sh, &val, state->optarg, "dialog_token",
+					  WIFI_DMS_MIN_DIALOG_TOKEN, WIFI_DMS_MAX_DIALOG_TOKEN)) {
+				return -EINVAL;
+			}
+			params->dialog_token = (uint8_t)val;
+			break;
+		case 'u':
+			if (!parse_number(sh, &val, state->optarg, "user_priority",
+					  WIFI_DMS_TCLAS_UP_MSDU, WIFI_DMS_TCLAS_UP_AC_BK)) {
+				return -EINVAL;
+			}
+			params->tclas_elem.up = (enum wifi_dms_tclas_up)val;
+			break;
+		case 'Q':
+			if (!parse_number(sh, &val, state->optarg, "tclass_type",
+					  WIFI_DMS_TCLAS_TYPE_4, WIFI_DMS_TCLAS_TYPE_4)) {
+				return -EINVAL;
+			}
+			params->tclas_elem.classifier_info.type = WIFI_DMS_TCLAS_TYPE_4;
+			break;
+		case 'M':
+			if (!parse_number(sh, &val, state->optarg, "tclass_mask",
+					  WIFI_DMS_MIN_CLASSIFIER_MASK,
+					  WIFI_DMS_MAX_CLASSIFIER_MASK)) {
+				return -EINVAL;
+			}
+			params->tclas_elem.classifier_info.mask = (uint8_t)val;
+			break;
+		case 'v':
+			if (!parse_number(sh, &val, state->optarg, "version", 4, 6)) {
+				return -EINVAL;
+			}
+			if (val != 4 && val != 6) {
+				PR_ERROR("Invalid value for version %ld\n", val);
+				return -EINVAL;
+			}
+			params->tclas_elem.classifier_info.param_info.version = (uint8_t)val;
+			break;
+		case 'S':
+			if (net_addr_pton(NET_AF_INET, state->optarg, &addr)) {
+				PR_ERROR("Invalid address: %s\n", state->optarg);
+				return -EINVAL;
+			}
+			params->tclas_elem.classifier_info.param_info.src_ip_addr = addr.s_addr;
+			break;
+		case 'D':
+			if (net_addr_pton(NET_AF_INET, state->optarg, &addr)) {
+				PR_ERROR("Invalid address: %s\n", state->optarg);
+				return -EINVAL;
+			}
+			if (!net_ipv4_is_addr_mcast(&addr)) {
+				PR_ERROR("Invalid multicast address: %s\n", state->optarg);
+				return -EINVAL;
+			}
+			params->tclas_elem.classifier_info.param_info.dest_ip_addr = addr.s_addr;
+			break;
+		case 's':
+			if (!parse_number(sh, &val, state->optarg, "src_port", 1, 65535)) {
+				return -EINVAL;
+			}
+			params->tclas_elem.classifier_info.param_info.src_port =
+				(unsigned short)val;
+			break;
+		case 'd':
+			if (!parse_number(sh, &val, state->optarg, "dest_port", 1, 65535)) {
+				return -EINVAL;
+			}
+			params->tclas_elem.classifier_info.param_info.dest_port =
+				(unsigned short)val;
+			break;
+		case 'q':
+			if (!parse_number(sh, &val, state->optarg, "dscp", 0, 63)) {
+				return -EINVAL;
+			}
+			params->tclas_elem.classifier_info.param_info.dscp = (uint8_t)(val << 2);
+			break;
+		case 'p':
+			if (!parse_number(sh, &val, state->optarg, "protocol",
+					  WIFI_DMS_MIN_PROTOCOL, WIFI_DMS_MAX_PROTOCOL)) {
+				return -EINVAL;
+			}
+			params->tclas_elem.classifier_info.param_info.protocol = (uint8_t)val;
+			break;
+		case 'h':
+			shell_help(sh);
+			return SHELL_CMD_HELP_PRINTED;
+		default:
+			PR_ERROR("Invalid option %c\n", state->optopt);
+			shell_help(sh);
+			return -EINVAL;
+		}
+	}
+
+	return 0;
+}
+
+static int cmd_wifi_dms_add(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = net_if_get_first_wifi();
+	struct wifi_dms_params params = {0};
+
+	context.sh = sh;
+	params.operation = WIFI_DMS_REQ_ADD;
+
+	if (wifi_dms_args_to_params(sh, argc, argv, &params)) {
+		return -ENOEXEC;
+	}
+
+	if (net_mgmt(NET_REQUEST_WIFI_DMS, iface, &params, sizeof(params))) {
+		PR_WARNING("%s failed. reason : %s\n", wifi_dms_operation_txt(params.operation),
+			   wifi_dms_get_err_code_str(params.fail_reason));
+		return -ENOEXEC;
+	}
+
+	PR("DMS add operation %s with dg: %d, dmsid: %d requested\n",
+	   wifi_dms_operation_txt(params.operation), params.dialog_token, params.dmsid);
+
+	return 0;
+}
+
+static int cmd_wifi_dms_remove(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = net_if_get_first_wifi();
+	struct wifi_dms_params params = {0};
+	long val;
+
+	ARG_UNUSED(argc);
+
+	context.sh = sh;
+	params.operation = WIFI_DMS_REQ_REMOVE;
+
+	if (!parse_number(sh, &val, argv[1], "dialog_token",
+			  WIFI_DMS_MIN_DIALOG_TOKEN, WIFI_DMS_MAX_DIALOG_TOKEN)) {
+		return -EINVAL;
+	}
+	params.dialog_token = (uint8_t)val;
+
+	if (!parse_number(sh, &val, argv[2], "dmsid", WIFI_DMS_MIN_ID, WIFI_DMS_MAX_ID)) {
+		return -EINVAL;
+	}
+	params.dmsid = (uint8_t)val;
+
+	if (net_mgmt(NET_REQUEST_WIFI_DMS, iface, &params, sizeof(params))) {
+		PR_WARNING("%s failed, reason : %s\n",
+			   wifi_dms_operation_txt(params.operation),
+			   wifi_dms_get_err_code_str(params.fail_reason));
+		return -ENOEXEC;
+	}
+
+	PR("DMS operation %s with dmsid: %d success\n", wifi_dms_operation_txt(params.operation),
+	   params.dmsid);
+
+	return 0;
+}
+
+static int cmd_wifi_dms_change(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = net_if_get_first_wifi();
+	struct wifi_dms_params params = {0};
+	long val;
+
+	context.sh = sh;
+	params.operation = WIFI_DMS_REQ_CHANGE;
+
+	if (!parse_number(sh, &val, argv[1], "dmsid", WIFI_DMS_MIN_ID, WIFI_DMS_MAX_ID)) {
+		return -EINVAL;
+	}
+	params.dmsid = (uint8_t)val;
+
+	/* dmsid is positional, so hand the option parser everything after it. It takes
+	 * argv[1] as the command name and starts scanning options from argv[2].
+	 */
+	if (wifi_dms_args_to_params(sh, argc - 1, &argv[1], &params)) {
+		return -ENOEXEC;
+	}
+
+	if (net_mgmt(NET_REQUEST_WIFI_DMS, iface, &params, sizeof(params))) {
+		PR_WARNING("%s failed. reason : %s\n", wifi_dms_operation_txt(params.operation),
+			   wifi_dms_get_err_code_str(params.fail_reason));
+		return -ENOEXEC;
+	}
+
+	PR("DMS change operation %s with dg: %d, dmsid: %d requested\n",
+	   wifi_dms_operation_txt(params.operation), params.dialog_token, params.dmsid);
+
+	return 0;
+}
+
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	wifi_dms_ops,
+	SHELL_CMD_ARG(add, NULL,
+		      SHELL_HELP("Start a DMS operation",
+				 "-t --dialog_token=<0-255>\n"
+				 "[-u --up=<user priority: 0-11>]\n"
+				 "-Q --tclass_type=<frame classifier type: 4>\n"
+				 "-M --tclass_mask=<frame classifier mask: 0-127>\n"
+				 "-v --version=<IP version: 4 or 6>\n"
+				 "[-S --src_ip=<source IP address>]\n"
+				 "[-s --src_port=<source port: 1-65535>]\n"
+				 "-D --dest_ip=<destination multicast IP address>\n"
+				 "[-d --dest_port=<destination port: 1-65535>]\n"
+				 "-q --dscp=<0-63>\n"
+				 "-p --protocol=<0-255>"),
+		      cmd_wifi_dms_add, 3, 22),
+	SHELL_CMD_ARG(remove, NULL,
+		      SHELL_HELP("Remove a DMS operation",
+				 "<dialog_token: 0-255> <dmsid: 0-255>"),
+		      cmd_wifi_dms_remove, 3, 0),
+	SHELL_CMD_ARG(change, NULL,
+		      SHELL_HELP("Change a DMS session parameters",
+				 "<dmsid: 0-255>\n"
+				 "-t --dialog_token=<0-255>\n"
+				 "[-u --up=<user priority: 0-11>]\n"
+				 "-Q --tclass_type=<frame classifier type: 4>\n"
+				 "-M --tclass_mask=<frame classifier mask: 0-127>\n"
+				 "-v --version=<IP version: 4 or 6>\n"
+				 "[-S --src_ip=<source IP address>]\n"
+				 "[-s --src_port=<source port: 1-65535>]\n"
+				 "-D --dest_ip=<destination multicast IP address>\n"
+				 "[-d --dest_port=<destination port: 1-65535>]\n"
+				 "-q --dscp=<0-63>\n"
+				 "-p --protocol=<0-255>"),
+		      cmd_wifi_dms_change, 4, 22),
+	SHELL_SUBCMD_SET_END);
+
+SHELL_SUBCMD_ADD((wifi), dms, &wifi_dms_ops,
+		 "Manage Directed Multicast Services (DMS).",
+		 NULL,
+		 0, 0);
+#endif /* CONFIG_WIFI_MGMT_DMS */
+
 SHELL_SUBCMD_ADD((wifi), version, NULL,
 		 SHELL_HELP("Print Wi-Fi Driver and Firmware versions",
 			    "[-i, --iface=<interface index>]"),

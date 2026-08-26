@@ -352,6 +352,23 @@ const char *wifi_bandwidth_txt(enum wifi_frequency_bandwidths bandwidth);
 /** Any channel number */
 #define WIFI_CHANNEL_ANY 255
 
+/** Minimum Dialog token */
+#define WIFI_DMS_MIN_DIALOG_TOKEN    0
+/** Maximum Dialog token */
+#define WIFI_DMS_MAX_DIALOG_TOKEN    0xFF
+/** Minimum DMSID */
+#define WIFI_DMS_MIN_ID              0
+/** Maximum DMSID */
+#define WIFI_DMS_MAX_ID              0xFF
+/** Minimum classifier Mask */
+#define WIFI_DMS_MIN_CLASSIFIER_MASK 0
+/** Maximum classifier Mask */
+#define WIFI_DMS_MAX_CLASSIFIER_MASK 0x7F
+/** Minimum protocol val */
+#define WIFI_DMS_MIN_PROTOCOL        0
+/** Maximum protocol val */
+#define WIFI_DMS_MAX_PROTOCOL        0xFF
+
 /** @brief Wi-Fi interface states.
  *
  * Based on https://w1.fi/wpa_supplicant/devel/defs_8h.html#a4aeb27c1e4abd046df3064ea9756f0bc
@@ -778,6 +795,89 @@ enum wifi_config_param {
 	/** Used for STA mode configuration parameter OKC */
 	WIFI_CONFIG_PARAM_OKC = BIT(0),
 };
+
+/** @brief Wi-Fi Directed Multicast Service (DMS) operations. */
+enum wifi_dms_operation {
+	/** DMS operation add */
+	WIFI_DMS_REQ_ADD = 0,
+	/** DMS operation remove */
+	WIFI_DMS_REQ_REMOVE,
+	/** DMS operation change */
+	WIFI_DMS_REQ_CHANGE,
+	/** DMS operation type invalid */
+	WIFI_DMS_REQ_INVALID
+};
+
+/** Helper function to get user-friendly DMS operation name. */
+const char *wifi_dms_operation_txt(enum wifi_dms_operation dms_operation);
+
+/** @brief Wi-Fi Directed Multicast Service (DMS) negotiation status. */
+enum wifi_dms_req_add_resp_status {
+	/** DMS response received for DMS request */
+	WIFI_DMS_RESP_RECEIVED = 0,
+	/** DMS response not received for DMS request */
+	WIFI_DMS_RESP_NOT_RECEIVED,
+};
+
+/** @brief Directed Multicast Service (DMS) error codes. */
+enum wifi_dms_fail_reason {
+	/** Unspecified error */
+	WIFI_DMS_FAIL_UNSPECIFIED,
+	/** Command execution failed */
+	WIFI_DMS_FAIL_CMD_EXEC_FAIL,
+	/** Operation not supported */
+	WIFI_DMS_FAIL_OPERATION_NOT_SUPPORTED,
+	/** Unable to get interface status */
+	WIFI_DMS_FAIL_UNABLE_TO_GET_IFACE_STATUS,
+	/** Device not connected to AP */
+	WIFI_DMS_FAIL_DEVICE_NOT_CONNECTED,
+	/** Peer not HE (802.11ax/Wi-Fi 6) capable */
+	WIFI_DMS_FAIL_PEER_NOT_HE_CAPAB,
+	/** Peer not DMS capable */
+	WIFI_DMS_FAIL_PEER_NOT_DMS_CAPAB,
+	/** A DMS flow is already in progress */
+	WIFI_DMS_FAIL_OPERATION_IN_PROGRESS,
+	/** Invalid negotiated flow id */
+	WIFI_DMS_FAIL_INVALID_DMS_ID,
+	/** IP address not assigned or configured */
+	WIFI_DMS_FAIL_IP_NOT_ASSIGNED,
+	/** Flow already exists */
+	WIFI_DMS_FAIL_FLOW_ALREADY_EXISTS,
+};
+
+/** @brief Wi-Fi Directed Multicast Service (DMS) remove status. */
+enum wifi_dms_req_remove_resp_status {
+	/** DMS remove success */
+	WIFI_DMS_REMOVE_SUCCESS = 0,
+	/** DMS remove failure */
+	WIFI_DMS_REMOVE_FAILED,
+};
+
+/** @cond INTERNAL_HIDDEN */
+static const char * const wifi_dms_err_code_tbl[] = {
+	[WIFI_DMS_FAIL_UNSPECIFIED] = "Unspecified",
+	[WIFI_DMS_FAIL_CMD_EXEC_FAIL] = "Command Execution failed",
+	[WIFI_DMS_FAIL_OPERATION_NOT_SUPPORTED] = "Operation not supported",
+	[WIFI_DMS_FAIL_UNABLE_TO_GET_IFACE_STATUS] = "Unable to get iface status",
+	[WIFI_DMS_FAIL_DEVICE_NOT_CONNECTED] = "Device not connected",
+	[WIFI_DMS_FAIL_PEER_NOT_HE_CAPAB] = "Peer not HE capable",
+	[WIFI_DMS_FAIL_PEER_NOT_DMS_CAPAB] = "Peer not DMS capable",
+	[WIFI_DMS_FAIL_OPERATION_IN_PROGRESS] = "Operation already in progress",
+	[WIFI_DMS_FAIL_INVALID_DMS_ID] = "Invalid negotiated dms id",
+	[WIFI_DMS_FAIL_IP_NOT_ASSIGNED] = "IP address not assigned",
+	[WIFI_DMS_FAIL_FLOW_ALREADY_EXISTS] = "Flow already exists",
+};
+/** @endcond */
+
+/** Helper function to get user-friendly DMS error code name. */
+static inline const char *wifi_dms_get_err_code_str(int16_t err_no)
+{
+	if ((err_no) < (int16_t)ARRAY_SIZE(wifi_dms_err_code_tbl)) {
+		return wifi_dms_err_code_tbl[err_no];
+	}
+
+	return "<unknown>";
+}
 
 /** Helper function to get user-friendly status name for the status code. */
 const char *wifi_conn_status_txt(enum wifi_conn_status status);

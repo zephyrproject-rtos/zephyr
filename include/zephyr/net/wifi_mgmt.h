@@ -150,6 +150,8 @@ enum net_request_wifi_cmd {
 	NET_REQUEST_WIFI_CMD_BGSCAN,
 	/** Wi-Fi Direct (P2P) operations*/
 	NET_REQUEST_WIFI_CMD_P2P_OPER,
+	/** Set DMS(Directed Multicast Service) */
+	NET_REQUEST_WIFI_CMD_DMS,
 	/** @cond INTERNAL_HIDDEN */
 	NET_REQUEST_WIFI_CMD_MAX
 	/** @endcond */
@@ -372,6 +374,12 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_BGSCAN);
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_P2P_OPER);
 
+/** Request a Wi-Fi DMS (Directed Multicast Service) operation */
+#define NET_REQUEST_WIFI_DMS							\
+	(NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_DMS)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_DMS);
+
 /** @cond INTERNAL_HIDDEN */
 
 enum {
@@ -398,6 +406,7 @@ enum {
 	NET_EVENT_WIFI_CMD_NAN_PUBLISH_TERMINATED_VAL,
 	NET_EVENT_WIFI_CMD_NAN_SUBSCRIBE_TERMINATED_VAL,
 	NET_EVENT_WIFI_CMD_NAN_RECEIVE_VAL,
+	NET_EVENT_WIFI_CMD_DMS_VAL,
 
 	NET_EVENT_WIFI_CMD_MAX,
 };
@@ -459,6 +468,8 @@ enum net_event_wifi_cmd {
 	/** Supplicant specific event */
 	NET_MGMT_CMD(NET_EVENT_WIFI_CMD_NAN_RECEIVE),
 #endif
+	/** DMS events */
+	NET_MGMT_CMD(NET_EVENT_WIFI_CMD_DMS),
 };
 
 /** Event emitted for Wi-Fi scan result */
@@ -524,6 +535,10 @@ enum net_event_wifi_cmd {
 /** Event emitted for P2P device found event */
 #define NET_EVENT_WIFI_P2P_DEVICE_FOUND				\
 	(NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_P2P_DEVICE_FOUND)
+
+/** Event emitted for Wi-Fi DMS operation */
+#define NET_EVENT_WIFI_DMS					\
+	(NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_DMS)
 
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
 /** Maximum length for P2P device name */
@@ -966,6 +981,8 @@ struct wifi_iface_status {
 	unsigned short beacon_interval;
 	/** is TWT capable? */
 	bool twt_capable;
+	/** is DMS capable? */
+	bool dms_capable;
 	/** The current 802.11 PHY TX data rate (in Mbps) */
 	float current_phy_tx_rate;
 };
@@ -1255,6 +1272,130 @@ struct wifi_ap_sta_info {
 	bool twt_capable;
 };
 
+/** @brief Wi-Fi DMS TCLAS frame classifier type 4 parameters */
+struct wifi_dms_tclas_classifier_type_4_info {
+	/** IP version, 4 or 6 */
+	uint8_t version;
+	/** Source IP address */
+	uint32_t src_ip_addr;
+	/** Destination (multicast) IP address */
+	uint32_t dest_ip_addr;
+	/** Source port */
+	unsigned short src_port;
+	/** Destination port */
+	unsigned short dest_port;
+	/** DSCP */
+	uint8_t dscp;
+	/** Protocol */
+	uint8_t protocol;
+};
+
+/** @brief Wi-Fi DMS TCLAS element, as built for the request frame */
+struct wifi_dms_tclas_params {
+	/** TCLAS element payload */
+	uint8_t params[80];
+	/** Length of the TCLAS element payload */
+	uint8_t len;
+};
+
+/** Maximum length of the DMS TCLAS classifier mask */
+#define MAX_DMS_TCLAS_CLASSIFIER_MASK_LEN 3
+
+/** @brief Wi-Fi DMS TCLAS category type */
+enum wifi_dms_tclas_type {
+	/** Ethernet parameters */
+	WIFI_DMS_TCLAS_TYPE_0 = 0,
+	/** TCP/UDP IP parameters */
+	WIFI_DMS_TCLAS_TYPE_1 = 1,
+	/** IPv4/IPv6 parameters */
+	WIFI_DMS_TCLAS_TYPE_4 = 4,
+	/** Classifier type invalid */
+	WIFI_DMS_TCLAS_TYPE_INVALID,
+};
+
+/** @brief Wi-Fi DMS TCLAS frame classifer info */
+struct wifi_dms_tclas_frame_classifier {
+	/** Frame classifier type */
+	enum wifi_dms_tclas_type type;
+	/** Frame classifier mask */
+	uint8_t mask;
+	/** Classifier type 4 information */
+	struct wifi_dms_tclas_classifier_type_4_info param_info;
+};
+
+/** @brief Wi-Fi DMS TCLAS User priority */
+enum wifi_dms_tclas_up {
+	/** 0 - 7 The User Priority value of an MSDU. */
+	WIFI_DMS_TCLAS_UP_MSDU,
+	/** 8 The AC value of an MPDU is AC-VO. */
+	WIFI_DMS_TCLAS_UP_AC_VO = 8,
+	/** 9 The AC value of an MPDU is AC-VI. */
+	WIFI_DMS_TCLAS_UP_AC_VI,
+	/** 10 The AC value of an MPDU is AC-BE. */
+	WIFI_DMS_TCLAS_UP_AC_BE,
+	/** 11 The AC value of an MPDU is AC-BK. */
+	WIFI_DMS_TCLAS_UP_AC_BK,
+	/* 12-254 Reserved.
+	 * 255 The User Priority field is not used for comparison.
+	 */
+	/** User priority invalid */
+	WIFI_DMS_TCLAS_UP_INVALID,
+};
+
+/** @brief Wi-Fi DMS TCLAS elements */
+struct wifi_dms_tclas_elements {
+	/** User priority */
+	enum wifi_dms_tclas_up up;
+	/** Frame classifier information */
+	struct wifi_dms_tclas_frame_classifier classifier_info;
+};
+
+/** Maximum length of the DMS TSPEC element */
+#define MAX_DMS_TSPEC_ELEMENT_LEN 57
+
+/** @brief Wi-Fi DMS TSPEC element */
+struct wifi_dms_tspec {
+	/** TSPEC element payload */
+	uint8_t element[MAX_DMS_TSPEC_ELEMENT_LEN];
+	/** Length of the TSPEC element payload */
+	uint8_t len;
+};
+
+/** Maximum length of a DMS descriptor sub-element */
+#define MAX_DMS_SUB_ELEMENT_LEN 100
+
+/** @brief Wi-Fi DMS descriptor sub-element */
+struct wifi_dms_sub_element {
+	/** Sub-element payload */
+	uint8_t element[MAX_DMS_SUB_ELEMENT_LEN];
+	/** Length of the sub-element payload */
+	uint8_t len;
+};
+
+/** @brief Wi-Fi DMS parameters */
+struct wifi_dms_params {
+	/** DMS request operation, see enum wifi_dms_operation */
+	enum wifi_dms_operation operation;
+	/** DMS add request response status, see enum wifi_dms_req_add_resp_status */
+	enum wifi_dms_req_add_resp_status add_req_resp_status;
+	/** DMS remove request cmd status, see enum wifi_dms_req_remove_resp_status */
+	enum wifi_dms_req_remove_resp_status remove_req_resp_status;
+	/** Dialog token, used to map requests to responses */
+	uint8_t dialog_token;
+	/** DMSID, used to identifying the DMS for the group addressed frame */
+	uint8_t dmsid;
+	/** TCLAS elements */
+	struct wifi_dms_tclas_elements tclas_elem;
+	/** TCLAS processing element */
+	uint8_t tclas_processing_element;
+	/** TSPEC element */
+	struct wifi_dms_tspec tspec_elem;
+	/** Descriptor sub-element */
+	struct wifi_dms_sub_element sub_elem;
+	/** DMS fail reason, see enum wifi_dms_fail_reason */
+	enum wifi_dms_fail_reason fail_reason;
+};
+
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN
 /** @brief NAN discovery result event structure (subscriber found publisher) */
 struct wifi_nan_discovery_result_event {
@@ -1327,6 +1468,9 @@ union wifi_mgmt_events {
 #endif /* CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS */
 	struct wifi_twt_params twt_params;
 	struct wifi_ap_sta_info ap_sta_info;
+#ifdef CONFIG_WIFI_MGMT_DMS
+	struct wifi_dms_params dms_params;
+#endif /* CONFIG_WIFI_MGMT_DMS */
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
 	struct wifi_p2p_device_info p2p_device_info;
 #endif
@@ -2417,6 +2561,16 @@ struct wifi_mgmt_ops {
 	 * Return 0 to let the caller use the default.
 	 */
 	 uint32_t (*get_iface_caps)(const struct device *dev, struct net_if *iface);
+	/** Request to add, remove or change Directed Multicast Service
+	 *
+	 * @param dev Pointer to the device structure for the driver instance.
+	 * @param iface Network interface to use
+	 * @param params DMS parameters
+	 *
+	 * @return 0 if ok, < 0 if error
+	 */
+	int (*req_dms)(const struct device *dev, struct net_if *iface,
+		       struct wifi_dms_params *params);
 };
 
 /** Wi-Fi management offload API */
@@ -2558,6 +2712,15 @@ void wifi_mgmt_raise_ap_sta_disconnected_event(struct net_if *iface,
 void wifi_mgmt_raise_p2p_device_found_event(struct net_if *iface,
 		struct wifi_p2p_device_info *peer_info);
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P */
+
+#ifdef CONFIG_WIFI_MGMT_DMS
+/** Wi-Fi management DMS event
+ * @param iface Network interface
+ * @param dms_params DMS parameters
+ */
+void wifi_mgmt_raise_dms_event(struct net_if *iface,
+		struct wifi_dms_params *dms_params);
+#endif /* CONFIG_WIFI_MGMT_DMS */
 
 /**
  * @}
