@@ -35,6 +35,9 @@
 #include <zephyr/arch/common/addr_types.h>
 #include <zephyr/arch/common/sys_bitops.h>
 #include <zephyr/arch/common/ffs.h>
+#if defined(CONFIG_GDBSTUB)
+#include <zephyr/arch/arm64/gdbstub.h>
+#endif
 
 #ifdef __cplusplus
 extern "C" {
