@@ -341,7 +341,7 @@ static int pwm_rz_mtu_enable_capture(const struct device *dev, uint32_t channel)
 	data->capture.is_busy = true;
 
 	/* Start counter */
-	err = cfg->fsp_api->start(data->fsp_ctrl);
+	err = cfg->fsp_api->enable(data->fsp_ctrl);
 	if (err != FSP_SUCCESS) {
 		return -EIO;
 	}
@@ -485,7 +485,7 @@ static int pwm_rz_mtu_init(const struct device *dev)
 
 #ifdef CONFIG_PWM_CAPTURE
 	data->fsp_cfg->p_callback = fsp_callback;
-	data->fsp_cfg->p_context = dev;
+	data->fsp_cfg->p_context = (void *)dev;
 #endif /* CONFIG_PWM_CAPTURE */
 
 	err = cfg->fsp_api->open(data->fsp_ctrl, data->fsp_cfg);
@@ -516,7 +516,9 @@ static int pwm_rz_mtu_init(const struct device *dev)
 	 : (DIV) == 64                                                                      ? 0x3  \
 											    : 0x0)
 
-#define RZ_MTU(idx) DT_INST_PARENT(idx)
+#define RZ_MTU(idx)     DT_INST_PARENT(idx)
+#define RZ_MTU_REG_(ch) R_MTU##ch
+#define RZ_MTU_REG(ch)  RZ_MTU_REG_(ch)
 
 #ifdef CONFIG_PWM_CAPTURE
 
@@ -548,6 +550,7 @@ static int pwm_rz_mtu_init(const struct device *dev)
 						       DT_PROP(RZ_MTU(inst), channel)),            \
 		.clk_edge = MTU3_CLOCK_EDGE_RISING,                                                \
 		.mtu3_clear = MTU3_TCNT_CLEAR_DISABLE,                                             \
+		.custom_waveform_enabled = 1,                                                      \
 		.mtioc_ctrl_setting = {.output_pin_level_a = MTU3_IO_PIN_LEVEL_NO_OUTPUT,          \
 				       .output_pin_level_b = MTU3_IO_PIN_LEVEL_NO_OUTPUT},         \
 		.capture_a_irq = DT_IRQ_BY_NAME(RZ_MTU(inst), tgia, irq),                          \
@@ -560,6 +563,7 @@ static int pwm_rz_mtu_init(const struct device *dev)
 		.noise_filter_mtclk_clk = MTU3_NOISE_FILTER_EXTERNAL_CLOCK_DIV_1,                  \
 		.adc_activation_setting = MTU3_ADC_TGRA_COMPARE_MATCH_DISABLE,                     \
 		.p_pwm_cfg = NULL,                                                                 \
+		.p_reg = RZ_MTU_REG(DT_PROP(RZ_MTU(inst), channel)),                               \
 	};                                                                                         \
 	static timer_cfg_t g_timer##inst##_cfg = {                                                 \
 		.mode = TIMER_MODE_PWM,                                                            \
