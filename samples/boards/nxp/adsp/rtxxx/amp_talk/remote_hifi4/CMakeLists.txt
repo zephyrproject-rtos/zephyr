@@ -1,4 +1,4 @@
-# Copyright 2025 NXP
+# Copyright 2025 - 2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 cmake_minimum_required(VERSION 3.28.0)
@@ -9,5 +9,3 @@ project(remote)
 target_sources(app PRIVATE src/main.c)
 
 target_include_directories(app PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)
-
-include("${CMAKE_CURRENT_LIST_DIR}/../../common/remote-dsp-imgs.cmake")

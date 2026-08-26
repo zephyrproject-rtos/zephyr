@@ -1,4 +1,5 @@
 # Copyright 2024 Daniel DeGrasse <daniel@degrasse.com>
+# Copyright 2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 config SECOND_CORE_MCUX_LAUNCHER
@@ -10,3 +11,24 @@ config SECOND_CORE_MCUX_LAUNCHER
 	  one. The primary core will be loaded with the samples/basic/minimal
 	  application, and the appropriate configuration will be set to
 	  boot the secondary core during startup.
+
+menuconfig SOC_SERIES_IMXRT_BUILD_AMP_DSP
+	bool "Build a HiFi4 DSP remote image"
+	depends on SOC_SERIES_IMXRT6XX || SOC_SERIES_IMXRT7XX
+	help
+	  Build the DSP application found in the directory named by
+	  SOC_SERIES_IMXRT_BUILD_AMP_DSP_REMOTE_DIR (relative to the primary
+	  application source directory) as a decoupled remote image for the DSP
+	  domain.
+
+if SOC_SERIES_IMXRT_BUILD_AMP_DSP
+
+config SOC_SERIES_IMXRT_BUILD_AMP_DSP_REMOTE_DIR
+	string "HiFi4 DSP remote application directory"
+	default "remote"
+	help
+	  Location of the DSP (HiFi4) remote application, relative to the primary
+	  application's source directory (APP_DIR). Defaults to the conventional
+	  "remote" subdirectory. An absolute path is also accepted.
+
+endif # SOC_SERIES_IMXRT_BUILD_AMP_DSP
