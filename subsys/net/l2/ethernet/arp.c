@@ -522,23 +522,32 @@ int net_arp_prepare(struct net_pkt *pkt,
 	return NET_ARP_COMPLETE;
 }
 
-static void arp_gratuitous(struct net_if *iface,
-			   struct net_in_addr *src,
-			   struct net_eth_addr *hwaddr)
+/* RFC 826 tells to update the hardware address of an already known sender
+ * whenever we accept an ARP message from it, no matter what the operation
+ * code of that message is. Only an existing entry is refreshed here, a new
+ * one is never created.
+ */
+static bool arp_entry_update(struct net_if *iface,
+			     struct net_in_addr *src,
+			     struct net_eth_addr *hwaddr)
 {
 	sys_snode_t *prev = NULL;
 	struct arp_entry *entry;
 
 	entry = arp_entry_find(&arp_table, iface, src, &prev);
-	if (entry) {
-		NET_DBG("Gratuitous ARP hwaddr %s -> %s",
-			net_sprint_ll_addr((const uint8_t *)&entry->eth,
-					   sizeof(struct net_eth_addr)),
-			net_sprint_ll_addr((const uint8_t *)hwaddr,
-					   sizeof(struct net_eth_addr)));
-
-		memcpy(&entry->eth, hwaddr, sizeof(struct net_eth_addr));
+	if (entry == NULL) {
+		return false;
 	}
+
+	NET_DBG("Update ARP hwaddr %s -> %s",
+		net_sprint_ll_addr((const uint8_t *)&entry->eth,
+				   sizeof(struct net_eth_addr)),
+		net_sprint_ll_addr((const uint8_t *)hwaddr,
+				   sizeof(struct net_eth_addr)));
+
+	memcpy(&entry->eth, hwaddr, sizeof(struct net_eth_addr));
+
+	return true;
 }
 
 #if defined(CONFIG_NET_ARP_GRATUITOUS_TRANSMISSION)
@@ -700,35 +709,24 @@ void net_arp_update(struct net_if *iface,
 
 	entry = arp_entry_get_pending(iface, src);
 	if (!entry) {
-		if (IS_ENABLED(CONFIG_NET_ARP_GRATUITOUS) && gratuitous) {
-			arp_gratuitous(iface, src, hwaddr);
-		}
-
-		if (force) {
-			sys_snode_t *prev = NULL;
+		if (!arp_entry_update(iface, src, hwaddr) && force) {
+			/* Add new entry as it was not found and force
+			 * was set.
+			 */
 			struct arp_entry *arp_ent;
 
-			arp_ent = arp_entry_find(&arp_table, iface, src, &prev);
-			if (arp_ent) {
-				memcpy(&arp_ent->eth, hwaddr,
-				       sizeof(struct net_eth_addr));
-			} else {
-				/* Add new entry as it was not found and force
-				 * was set.
-				 */
-				arp_ent = arp_entry_get_free();
-				if (!arp_ent) {
-					/* Then let's take one from table? */
-					arp_ent = arp_entry_get_last_from_table();
-				}
+			arp_ent = arp_entry_get_free();
+			if (arp_ent == NULL) {
+				/* Then let's take one from table? */
+				arp_ent = arp_entry_get_last_from_table();
+			}
 
-				if (arp_ent) {
-					arp_ent->req_start = k_uptime_get_32();
-					arp_ent->iface = iface;
-					net_ipaddr_copy(&arp_ent->ip, src);
-					memcpy(&arp_ent->eth, hwaddr, sizeof(arp_ent->eth));
-					sys_slist_prepend(&arp_table, &arp_ent->node);
-				}
+			if (arp_ent != NULL) {
+				arp_ent->req_start = k_uptime_get_32();
+				arp_ent->iface = iface;
+				net_ipaddr_copy(&arp_ent->ip, src);
+				memcpy(&arp_ent->eth, hwaddr, sizeof(arp_ent->eth));
+				sys_slist_prepend(&arp_table, &arp_ent->node);
 			}
 		}
 
