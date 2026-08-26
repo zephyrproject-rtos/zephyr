@@ -150,6 +150,10 @@ static int st7701_check_id(const struct device *dev)
 	int ret;
 
 	ret = mipi_dsi_dcs_read(cfg->mipi_dsi, cfg->channel, ST7701_CMD_ID1, &id, sizeof(id));
+	if (ret == -ENOTSUP || ret == -ENOSYS) {
+		LOG_WRN("MIPI-DSI host does not support DCS read, skipping panel ID check");
+		return 0;
+	}
 	if (ret != sizeof(id)) {
 		LOG_ERR("Read panel ID failed! (%d)", ret);
 		return -EIO;
