@@ -11,6 +11,11 @@
 #include <nrfx_clock.h>
 #else
 #include <nrfx_clock_lfclk.h>
+#if IS_ENABLED(CONFIG_NRFX_CLOCK_LFRC)
+#include <nrfx_clock_lfrc.h>
+BUILD_ASSERT(NRF_LFRC_HAS_CALIBRATION,
+	     "Low Frequency RC Oscillator does not have calibration mechanism.");
+#endif
 #endif
 #include <zephyr/logging/log.h>
 #include <stdlib.h>
@@ -161,6 +166,8 @@ static void start_hw_cal(void)
 {
 #if defined(CONFIG_CLOCK_CONTROL_NRF)
 	nrfx_clock_calibration_start();
+#elif IS_ENABLED(CONFIG_NRFX_CLOCK_LFRC)
+	nrfx_clock_lfrc_calibration_start();
 #else
 	nrfx_clock_lfclk_calibration_start();
 #endif
