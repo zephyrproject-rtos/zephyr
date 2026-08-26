@@ -14,5 +14,6 @@ toolchain:
   - zephyr
   - gnuarmemb
 supported:
+  - netif:eth
   - uart
 vendor: nxp
