@@ -178,7 +178,17 @@ static int st7701_configure(const struct device *dev)
 	const uint8_t ff2[] = {DSI_CMD2BKX_SEL, 0x77, 0x01, 0x00, 0x00, DSI_CMD2BKX_SEL_NONE};
 
 	const uint8_t control0[] = {DSI_CMD2BKX_SEL, 0x77, 0x01, 0x00, 0x00, DSI_CMD2BK0_SEL};
-	const uint8_t control1[] = {0xC0, 0x63, 0x00};
+	/*
+	 * Number of lines NL = (Line[6:0] + 1) * 8 + (LDE_EN ? Line_delta[1:0] * 2 : 0).
+	 * When the height is not a multiple of 8, enable the extra-line delta to
+	 * encode the remainder. Panel heights are always even, so the delta (in
+	 * units of 2 lines) can represent any remainder.
+	 */
+	const uint8_t lde_line = (uint8_t)(cfg->height / 8 - 1);
+	const uint8_t lde_delta = (cfg->height % 8) / 2;
+	const uint8_t control1[] = {DSI_CMD2_BK0_LNESET,
+				    (uint8_t)(lde_delta ? (BIT(7) | lde_line) : lde_line),
+				    lde_delta};
 	const uint8_t control2[] = {0xC1, 0x11, 0x02};
 	const uint8_t control3[] = {0xC2, 0x01, 0x08};
 	const uint8_t control4[] = {0xCC, 0x18};
@@ -482,6 +492,8 @@ static int st7701_init(const struct device *dev)
 }
 
 #define ST7701_DEVICE(inst)                                                                        \
+	BUILD_ASSERT((DT_INST_PROP(inst, height) % 2) == 0,                                         \
+		     "Panel height must be even for the line setting encoding");                   \
 	static const struct st7701_config st7701_config_##inst = {                                 \
 		.mipi_dsi = DEVICE_DT_GET(DT_INST_BUS(inst)),                                      \
 		.reset = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {0}),                         \
