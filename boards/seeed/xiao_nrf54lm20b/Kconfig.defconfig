@@ -1,0 +1,18 @@
+# Copyright (c) 2026 Seeed Technology Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config HW_STACK_PROTECTION
+	default ARCH_HAS_STACK_PROTECTION
+
+if SPI_NOR
+
+config SPI_NOR_FLASH_LAYOUT_PAGE_SIZE
+	default 4096 if MCUBOOT || BOOTLOADER_MCUBOOT
+
+endif # SPI_NOR
+
+if BOARD_XIAO_NRF54LM20B_NRF54LM20B_CPUAPP
+
+source "boards/common/usb/Kconfig.cdc_acm_serial.defconfig"
+
+endif # BOARD_XIAO_NRF54LM20B_NRF54LM20B_CPUAPP

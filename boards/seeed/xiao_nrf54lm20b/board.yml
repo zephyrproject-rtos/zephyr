@@ -1,0 +1,34 @@
+board:
+  name: xiao_nrf54lm20b
+  full_name: XIAO nRF54LM20B
+  vendor: seeed
+  socs:
+  - name: nrf54lm20b
+runners:
+  run_once:
+    '--recover':
+    - runners:
+      - nrfjprog
+      - nrfutil
+      run: first
+      groups:
+      - boards:
+        - xiao_nrf54lm20b/nrf54lm20b/cpuapp
+    '--erase':
+    - runners:
+      - nrfjprog
+      - jlink
+      - nrfutil
+      run: first
+      groups:
+      - boards:
+        - xiao_nrf54lm20b/nrf54lm20b/cpuapp
+    '--reset':
+    - runners:
+      - nrfjprog
+      - jlink
+      - nrfutil
+      run: last
+      groups:
+      - boards:
+        - xiao_nrf54lm20b/nrf54lm20b/cpuapp
