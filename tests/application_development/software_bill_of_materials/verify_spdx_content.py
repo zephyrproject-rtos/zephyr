@@ -24,7 +24,6 @@ from spdx_tools.spdx.model.relationship import RelationshipType
 
 ZEPHYR_ORGANIZATION = "The Zephyr Project"
 SPDX_TOOL_PREFIX = "Zephyr SPDX builder"
-PURL_ZEPHYR_PREFIX = "pkg:github/zephyrproject-rtos/zephyr@"
 UTILITY_TARGETS = {
     "run",
     "flash",
@@ -113,6 +112,29 @@ def get_purl_refs(package):
         if ref.category == ExternalPackageRefCategory.PACKAGE_MANAGER
         and ref.reference_type == "purl"
     ]
+
+
+def assert_zephyr_purl(doc_name, package, purl_prefix, purl_versions):
+    """Assert a package's purl identifies the Zephyr checkout the SBOM was built from.
+
+    With no purl prefix, zephyr.meta records no usable remote for zephyr, so the
+    package is expected to carry no purl at all.
+    """
+    purls = get_purl_refs(package)
+    if purl_prefix is None:
+        assert not purls, (
+            f"{doc_name}: {package.name} should carry no purl when zephyr.meta records "
+            f"no remote for zephyr, got {purls}"
+        )
+        return
+
+    matching = [p for p in purls if p.startswith(purl_prefix)]
+    assert matching, f"{doc_name}: {package.name} missing purl prefix '{purl_prefix}', got {purls}"
+    pinned = {p.removeprefix(purl_prefix) for p in matching}
+    assert pinned <= purl_versions, (
+        f"{doc_name}: {package.name} purls {sorted(pinned - purl_versions)} are not pinned to "
+        f"a revision recorded in zephyr.meta ({sorted(purl_versions)})"
+    )
 
 
 def get_supplier_name(package):
@@ -488,21 +510,20 @@ class TestModulesDocument:
 class TestPackageProvenance:
     """Tests for package supplier and purl metadata."""
 
-    def test_zephyr_sources_supplier_and_purl(self, zephyr_doc, zephyr_meta_remote):
+    def test_zephyr_sources_supplier_and_purl(
+        self, zephyr_doc, zephyr_purl_prefix, zephyr_purl_versions
+    ):
         """Test zephyr-sources supplier and purl reference."""
         pkg = find_package_by_name(zephyr_doc, "zephyr-sources")
         assert pkg is not None, "zephyr.spdx: zephyr-sources package not found"
         assert get_supplier_name(pkg) == f"Organization: {ZEPHYR_ORGANIZATION}", (
             f"zephyr.spdx: zephyr-sources supplier is '{get_supplier_name(pkg)}'"
         )
-        if not zephyr_meta_remote:
-            pytest.skip("zephyr.meta has no remote URL for zephyr")
-        purls = get_purl_refs(pkg)
-        assert any(p.startswith(PURL_ZEPHYR_PREFIX) for p in purls), (
-            f"zephyr.spdx: zephyr-sources missing purl prefix '{PURL_ZEPHYR_PREFIX}', got {purls}"
-        )
+        assert_zephyr_purl("zephyr.spdx", pkg, zephyr_purl_prefix, zephyr_purl_versions)
 
-    def test_zephyr_deps_supplier_and_purl(self, modules_doc, zephyr_meta_remote):
+    def test_zephyr_deps_supplier_and_purl(
+        self, modules_doc, zephyr_purl_prefix, zephyr_purl_versions
+    ):
         """Test zephyr-deps supplier and purl reference."""
         if len(modules_doc.packages) == 0:
             pytest.skip("No packages in modules-deps.spdx")
@@ -511,13 +532,7 @@ class TestPackageProvenance:
         assert get_supplier_name(pkg) == f"Organization: {ZEPHYR_ORGANIZATION}", (
             f"modules-deps.spdx: zephyr-deps supplier is '{get_supplier_name(pkg)}'"
         )
-        if not zephyr_meta_remote:
-            pytest.skip("zephyr.meta has no remote URL for zephyr")
-        purls = get_purl_refs(pkg)
-        assert any(p.startswith(PURL_ZEPHYR_PREFIX) for p in purls), (
-            f"modules-deps.spdx: zephyr-deps missing purl prefix '{PURL_ZEPHYR_PREFIX}', "
-            f"got {purls}"
-        )
+        assert_zephyr_purl("modules-deps.spdx", pkg, zephyr_purl_prefix, zephyr_purl_versions)
 
     def test_module_deps_supplier_and_purl(self, modules_doc):
         """Test first module-deps supplier and purl reference."""
