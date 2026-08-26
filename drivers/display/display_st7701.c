@@ -120,7 +120,7 @@ static int st7701_short_write_1p(const struct device *dev, uint8_t cmd, uint8_t 
 	int ret;
 	uint8_t buf[] = {cmd, val};
 
-	ret = mipi_dsi_generic_write(cfg->mipi_dsi, cfg->channel, buf, sizeof(val));
+	ret = mipi_dsi_generic_write(cfg->mipi_dsi, cfg->channel, buf, sizeof(buf));
 	if (ret < 0) {
 		LOG_ERR("Short write failed! (%d)", ret);
 		return ret;
