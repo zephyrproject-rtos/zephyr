@@ -11,19 +11,6 @@ config SOC_FAMILY_SILABS_S2
 	select HAS_SILABS_SISDK
 	select PM_STATE_SET_IRQ_UNLOCKED
 
-config SOC_SILABS_IMAGE_PROPERTIES
-	bool "Include application properties data structure in image"
-	default y if MCUBOOT
-	help
-	  Include the Silicon Labs application properties data structure in the
-	  the firmware image. This allows the SE and Gecko bootloader to access
-	  information about the image, such as its version and capabilities. If
-	  MCUboot is used, only the MCUboot image itself needs the image
-	  properties data structure to enable the SE to perform secure boot
-	  verification of the bootloader. MCUboot uses its own TLV format to
-	  verify the application. If Gecko bootloader is used, the Zephyr
-	  application image also needs the data structure.
-
 config CRYPTO_ACC_GECKO_TRNG
 	bool
 	help
