@@ -105,7 +105,9 @@ struct dma_mspm0_regs {
 #define DMA_MSPM0_PREIRQ_HALF    0x7U
 
 /* dmatctl bits (per-channel, dmatctl[n]) */
-#define DMA_MSPM0_TCTL_DMATSEL GENMASK(5, 0)
+#define DMA_MSPM0_TCTL_DMATSEL  GENMASK(5, 0)
+#define DMA_MSPM0_TCTL_DMATINT  BIT(7)
+#define DMA_MSPM0_TCTL_SWREQ    0x0U
 
 /* dmaprio bits (instance-wide) */
 #define DMA_MSPM0_PRIO_ROUNDROBIN BIT(0)
@@ -153,6 +155,7 @@ struct dma_ti_mspm0_channel_data {
 	uint8_t source_data_size;
 	bool cyclic;
 	bool error_dis;
+	bool sw_triggered;
 };
 
 struct dma_ti_mspm0_data {
@@ -389,6 +392,7 @@ static int dma_ti_mspm0_configure(const struct device *dev, uint32_t channel,
 	data->source_data_size = config->source_data_size;
 	data->cyclic = config->cyclic;
 	data->error_dis = config->error_callback_dis;
+	data->sw_triggered = config->dma_slot == DMA_MSPM0_TCTL_SWREQ;
 
 	K_SPINLOCK(&dma_data->lock) {
 		cfg->regs->cpu_int.imask &= ~BIT(channel);
@@ -416,12 +420,17 @@ static int dma_ti_mspm0_configure(const struct device *dev, uint32_t channel,
 static int dma_ti_mspm0_start(const struct device *dev, const uint32_t channel)
 {
 	const struct dma_ti_mspm0_config *cfg = dev->config;
+	struct dma_ti_mspm0_data *dma_data = dev->data;
 
 	if (channel >= cfg->dma_max_channels) {
 		return -EINVAL;
 	}
 
 	cfg->regs->dmachan[channel].dmactl |= DMA_MSPM0_CTL_DMAEN;
+
+	if (dma_data->ch_data[channel].sw_triggered) {
+		cfg->regs->dmachan[channel].dmactl |= DMA_MSPM0_CTL_DMAREQ;
+	}
 
 	return 0;
 }
