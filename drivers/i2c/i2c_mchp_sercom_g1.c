@@ -240,7 +240,10 @@ static void i2c_write_addr(const struct device *dev, uint16_t addr, bool is_read
 /* Calculates baud rate register values for requested I2C bitrate */
 static bool i2c_baudrate_calc(uint32_t bitrate, uint32_t sys_clock_rate, uint32_t *baud_val)
 {
-	uint32_t baud_value = 0U;
+	uint32_t baud_offset;
+	uint32_t baud_min;
+	uint32_t baud_max;
+	uint32_t baud_value;
 
 	/* Reference clock frequency must be at least two times the baud rate */
 	if (sys_clock_rate < (2U * bitrate)) {
@@ -251,54 +254,50 @@ static bool i2c_baudrate_calc(uint32_t bitrate, uint32_t sys_clock_rate, uint32_
 
 	if (bitrate > I2C_BITRATE_FAST_PLUS) {
 		/* HS mode baud calculation: BAUD = (f_ref / f_scl) - 2 */
-		baud_value = (sys_clock_rate / bitrate) - 2U;
+		baud_offset = 2U;
 	} else {
 		/* Standard, FM and FM+ baud calculation:
 		 * BAUD = (f_ref / f_scl) - ((f_ref * T_RISE_ns) / 1,000,000,000) - 10
 		 */
-		baud_value = (sys_clock_rate / bitrate) -
-			     ((sys_clock_rate * I2C_TRISE_DEFAULT_NS) / 1000000000U) - 10U;
+		baud_offset = ((sys_clock_rate * I2C_TRISE_DEFAULT_NS) / 1000000000U) + 10U;
 	}
 
 	if (bitrate <= I2C_BITRATE_FAST) {
 		/* For I2C clock speed up to 400 kHz, the value of BAUD<7:0>
 		 * determines both SCL_L and SCL_H with SCL_L = SCL_H
 		 */
-		if (baud_value > (I2C_BAUD_MAX * 2U)) {
-			/* Set baud rate to the maximum possible value */
-			baud_value = I2C_BAUD_MAX;
-		} else if (baud_value <= 1U) {
-			/* Baud value cannot be 0. Set baud rate to minimum possible */
-			baud_value = 1U;
-		} else {
-			baud_value /= 2U;
-		}
-
-		*baud_val = baud_value;
-
-		return true;
+		baud_min = 2U;
+		baud_max = I2C_BAUD_MAX * 2U;
+	} else {
+		/* To maintain the ratio of SCL_L:SCL_H to 2:1, the max value of
+		 * BAUD_LOW<15:8>:BAUD<7:0> can be 0xFF:0x7F. Hence BAUD_LOW + BAUD
+		 * can not exceed 255+127 = 382
+		 */
+		baud_min = 4U;
+		baud_max = I2C_BAUD_LOW_HIGH_MAX - 1U;
 	}
 
-	/* To maintain the ratio of SCL_L:SCL_H to 2:1, the max value of
-	 * BAUD_LOW<15:8>:BAUD<7:0> can be 0xFF:0x7F. Hence BAUD_LOW + BAUD
-	 * can not exceed 255+127 = 382
-	 */
-	if (baud_value >= I2C_BAUD_LOW_HIGH_MAX) {
-		/* Set baud rate to the maximum possible value while
-		 * maintaining SCL_L:SCL_H to 2:1
-		 */
-		baud_value = (0xFFUL << 8U) | (0x7FU);
-	} else if (baud_value <= 3U) {
-		/* Baud value cannot be 0. Set baud rate to minimum possible
-		 * value while maintaining SCL_L:SCL_H to 2:1
-		 */
-		baud_value = (2UL << 8U) | 1U;
+	/* Tested before the subtraction below, which would otherwise wrap */
+	if ((sys_clock_rate / bitrate) < (baud_offset + baud_min)) {
+		LOG_ERR("Reference clock %u Hz is too slow for I2C bitrate %u Hz", sys_clock_rate,
+			bitrate);
+		return false;
+	}
+
+	baud_value = (sys_clock_rate / bitrate) - baud_offset;
+
+	if (baud_value > baud_max) {
+		LOG_ERR("Reference clock %u Hz is too fast for I2C bitrate %u Hz", sys_clock_rate,
+			bitrate);
+		return false;
+	}
+
+	if (bitrate <= I2C_BITRATE_FAST) {
+		*baud_val = baud_value / 2U;
 	} else {
 		/* For Fm+ mode, I2C SCL_L:SCL_H to 2:1 */
-		baud_value = ((((baud_value * 2U) / 3U) << 8U) | (baud_value / 3U));
+		*baud_val = ((((baud_value * 2U) / 3U) << 8U) | (baud_value / 3U));
 	}
-
-	*baud_val = baud_value;
 
 	return true;
 }
@@ -383,7 +382,7 @@ static int i2c_apply_speed(const struct device *dev, uint32_t config)
 
 	if (!i2c_set_baudrate(dev, f_scl, f_ref)) {
 		LOG_ERR("Failed to set baudrate");
-		return -EIO;
+		return -EINVAL;
 	}
 
 	return 0;
