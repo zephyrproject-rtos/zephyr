@@ -3,40 +3,21 @@
 
 if BOARD_QEMU_X86 || BOARD_QEMU_X86_64 || BOARD_QEMU_X86_LAKEMONT || BOARD_QEMU_X86_TINY
 
+config BUILD_OUTPUT_BIN
+	default n
+
+endif # BOARD_QEMU_X86 || BOARD_QEMU_X86_64 || BOARD_QEMU_X86_LAKEMONT || BOARD_QEMU_X86_TINY
+
+if BOARD_QEMU_X86 || BOARD_QEMU_X86_64 || BOARD_QEMU_X86_TINY
+
 # The EEPROM emulator must be initialized after the flash simulator
 config EEPROM_INIT_PRIORITY
 	default 60
 	depends on EEPROM
 
-config BUILD_OUTPUT_BIN
-	default n
+endif # BOARD_QEMU_X86 || BOARD_QEMU_X86_64 || BOARD_QEMU_X86_TINY
 
-config QEMU_TARGET
-	default y
-
-config HAS_COVERAGE_SUPPORT
-	default y
-
-endif # BOARD_QEMU_X86 || BOARD_QEMU_X86_64 || BOARD_QEMU_X86_LAKEMONT || BOARD_QEMU_X86_TINY
-
-
-if BOARD_QEMU_X86
-
-config FLASH_SIMULATOR
-	default y
-	depends on FLASH
-
-config KERNEL_VM_SIZE
-	default 0x10000000 if ACPI
-
-config MULTIBOOT
-	default y
-
-config MULTIBOOT_INFO
-	default y if MULTIBOOT
-
-config MULTIBOOT_MEMMAP
-	default y if MULTIBOOT
+if BOARD_QEMU_X86 || BOARD_QEMU_X86_LAKEMONT || BOARD_QEMU_X86_TINY
 
 config QEMU_ICOUNT
 	default n if HPET_TIMER && SHELL
@@ -44,57 +25,35 @@ config QEMU_ICOUNT
 config QEMU_ICOUNT_SHIFT
 	default 5
 
-endif # BOARD_QEMU_X86
+endif # BOARD_QEMU_X86 || BOARD_QEMU_X86_LAKEMONT || BOARD_QEMU_X86_TINY
 
-
-if BOARD_QEMU_X86_64
+if BOARD_QEMU_X86 || BOARD_QEMU_X86_64
 
 config KERNEL_VM_SIZE
 	default 0x10000000 if ACPI
 
-endif # BOARD_QEMU_X86_64
+endif # BOARD_QEMU_X86 || BOARD_QEMU_X86_64
 
+if BOARD_QEMU_X86
+
+config MULTIBOOT_MEMMAP
+	default y
+
+endif # BOARD_QEMU_X86
 
 if BOARD_QEMU_X86_LAKEMONT
 
 config KERNEL_VM_SIZE
 	default 0x400000
 
-config MULTIBOOT
-	# This is needed for QEMU to load the ELF image
-	default y
-
+# Unlike the SoC's usual targets, QEMU presents a PC-compatible machine
+# and loads the ELF image through its multiboot header.
 config X86_PC_COMPATIBLE
-	# QEMU presents a PC-compatible machine
 	default y
-
-config QEMU_ICOUNT
-	default n if HPET_TIMER && SHELL
-
-config QEMU_ICOUNT_SHIFT
-	default 5
 
 endif # BOARD_QEMU_X86_LAKEMONT
 
-
 if BOARD_QEMU_X86_TINY
-
-config KERNEL_VM_SIZE
-	default 0x400000
-
-config MULTIBOOT
-	# This is needed for QEMU to load the ELF image
-	default y
-
-config X86_PC_COMPATIBLE
-	# QEMU presents a PC-compatible machine
-	default y
-
-config QEMU_ICOUNT
-	default n if HPET_TIMER && SHELL
-
-config QEMU_ICOUNT_SHIFT
-	default 5
 
 config HAVE_CUSTOM_LINKER_SCRIPT
 	default y
