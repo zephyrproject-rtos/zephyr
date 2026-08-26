@@ -401,6 +401,14 @@ static int dma_ti_mspm0_configure(const struct device *dev, uint32_t channel,
 			dma_ti_mspm0_get_dmasz(b_cfg->block_size, config->source_data_size,
 					       config->dest_data_size, config->channel_direction);
 		cfg->regs->dmatctl[channel] = FIELD_PREP(DMA_MSPM0_TCTL_DMATSEL, trigger);
+
+		if (config->source_chaining_en || config->dest_chaining_en) {
+			cfg->regs->dmatctl[config->linked_channel] =
+				DMA_MSPM0_TCTL_DMATINT |
+				FIELD_PREP(DMA_MSPM0_TCTL_DMATSEL, channel);
+			cfg->regs->dmachan[config->linked_channel].dmactl |= DMA_MSPM0_CTL_DMAEN;
+		}
+
 		cfg->regs->dmachan[channel].dmactl = ctl;
 		cfg->regs->dmachan[channel].dmasa = b_cfg->source_address;
 		cfg->regs->dmachan[channel].dmada = b_cfg->dest_address;
