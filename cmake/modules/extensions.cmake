@@ -903,6 +903,53 @@ function(board_runner_args runner)
   set_property(GLOBAL APPEND PROPERTY BOARD_RUNNER_ARGS_EXPLICIT_${runner_id} ${ARGN})
 endfunction()
 
+# Command-scoped variants of board_runner_args().
+#
+# Usage from board.cmake files:
+#   board_runner_args_flash(runner "--device=SOME_FLASH_CORE")
+#   board_runner_args_debug(runner "--device=SOME_DEBUG_CORE")
+#
+# These behave exactly like board_runner_args(), except the arguments
+# only apply when the runner is invoked for the matching west command
+# (flash, debug, debugserver, attach, rtt or reset).
+#
+# board_runner_args() (with no command scope) remains the way to set
+# arguments common to every command and command-scoped arguments are
+# applied after the common ones (so they take precedence for options
+# where the last value wins).
+function(_board_runner_args_command command runner)
+  string(TOUPPER ${command} command_upper)
+  string(MAKE_C_IDENTIFIER ${runner} runner_id)
+  # Note the "_EXPLICIT_" here, and see board_finalize_runner_args().
+  set_property(GLOBAL APPEND PROPERTY
+    BOARD_RUNNER_ARGS_EXPLICIT_${command_upper}_${runner_id} ${ARGN})
+endfunction()
+
+function(board_runner_args_flash runner)
+  _board_runner_args_command(flash ${runner} ${ARGN})
+endfunction()
+
+function(board_runner_args_debug runner)
+  _board_runner_args_command(debug ${runner} ${ARGN})
+endfunction()
+
+function(board_runner_args_debugserver runner)
+  _board_runner_args_command(debugserver ${runner} ${ARGN})
+endfunction()
+
+function(board_runner_args_attach runner)
+  _board_runner_args_command(attach ${runner} ${ARGN})
+endfunction()
+
+function(board_runner_args_rtt runner)
+  _board_runner_args_command(rtt ${runner} ${ARGN})
+endfunction()
+
+function(board_runner_args_reset runner)
+  _board_runner_args_command(reset ${runner} ${ARGN})
+endfunction()
+
+
 # This function is intended for internal use by
 # boards/common/runner.board.cmake files.
 #
@@ -943,9 +990,28 @@ function(board_finalize_runner_args runner)
     ${BOARD_RUNNER_ARGS_${runner_id}}
     )
 
+  # Consolidate any command-scoped arguments set via
+  # board_runner_args_<command>() into their final per-command property.
+  foreach(command flash debug debugserver attach rtt reset)
+    string(TOUPPER ${command} command_upper)
+    get_property(cmd_explicit GLOBAL PROPERTY
+      "BOARD_RUNNER_ARGS_EXPLICIT_${command_upper}_${runner_id}")
+    if(cmd_explicit OR BOARD_RUNNER_ARGS_${command_upper}_${runner_id})
+      # Note no _EXPLICIT_ here. This property contains the final list.
+      set_property(GLOBAL APPEND PROPERTY
+        BOARD_RUNNER_ARGS_${command_upper}_${runner_id}
+        # Arguments explicitly given with board_runner_args_<command>().
+        ${cmd_explicit}
+        # Arguments given via the CMake cache come last of all.
+        ${BOARD_RUNNER_ARGS_${command_upper}_${runner_id}}
+        )
+    endif()
+  endforeach()
+
   # Add the finalized runner to the global property list.
   set_property(GLOBAL APPEND PROPERTY ZEPHYR_RUNNERS ${runner})
 endfunction()
+
 
 function(board_set_rimage_target target)
   set(RIMAGE_TARGET ${target} CACHE STRING "rimage target")
