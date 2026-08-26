@@ -2,6 +2,7 @@
  * Copyright (c) 2018-2019 Jan Van Winkel <jan.van_winkel@dxplore.eu>
  * Copyright (c) 2025 Abderrahmane JARMOUNI
  *
+ * Copyright 2026 NXP
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -69,9 +70,13 @@ struct lvgl_disp_data disp_data[DT_ZEPHYR_DISPLAYS_COUNT] = {{
 	  100) / 8 +                                                                               \
 	 8)
 #else
-#define BUFFER_SIZE(n)                                                                             \
-	(CONFIG_LV_Z_BITS_PER_PIXEL *                                                              \
-	 ((CONFIG_LV_Z_VDB_SIZE * DISPLAY_WIDTH(n) * DISPLAY_HEIGHT(n)) / 100) / 8)
+#define BUFFER_STRIDE(n) \
+	ROUND_UP(DISPLAY_WIDTH(n) * (CONFIG_LV_Z_BITS_PER_PIXEL / 8), \
+			CONFIG_LV_DRAW_BUF_STRIDE_ALIGN)
+
+#define BUFFER_SIZE(n) \
+	(ROUND_UP((CONFIG_LV_Z_VDB_SIZE * DISPLAY_HEIGHT(n)) / 100, 1) * BUFFER_STRIDE(n))
+
 #endif /* IS_MONOCHROME_DISPLAY */
 
 static uint32_t disp_buf_size[DT_ZEPHYR_DISPLAYS_COUNT] = {0};
@@ -150,12 +155,33 @@ static void lvgl_log(lv_log_level_t level, const char *buf)
 
 static void lvgl_allocate_rendering_buffers_static(lv_display_t *display, int disp_idx)
 {
-#ifdef CONFIG_LV_Z_DOUBLE_VDB
-	lv_display_set_buffers(display, buf0_p[disp_idx], buf1_p[disp_idx], disp_buf_size[disp_idx],
-			       RENDER_MODE);
+	int32_t width = lv_display_get_horizontal_resolution(display);
+	uint32_t stride;
+
+#if IS_MONOCHROME_DISPLAY
+	stride = ROUND_UP(width, 8) / 8;
 #else
-	lv_display_set_buffers(display, buf0_p[disp_idx], NULL, disp_buf_size[disp_idx],
-			       RENDER_MODE);
+	uint32_t bpp = lv_color_format_get_size(lv_display_get_color_format(display));
+
+	stride = ROUND_UP(width * bpp, CONFIG_LV_DRAW_BUF_STRIDE_ALIGN);
+#endif
+
+#ifdef CONFIG_LV_Z_DOUBLE_VDB
+	lv_display_set_buffers_with_stride(
+		display,
+		buf0_p[disp_idx],
+		buf1_p[disp_idx],
+		disp_buf_size[disp_idx],
+		stride,
+		RENDER_MODE);
+#else
+	lv_display_set_buffers_with_stride(
+		display,
+		buf0_p[disp_idx],
+		NULL,
+		disp_buf_size[disp_idx],
+		stride,
+		RENDER_MODE);
 #endif /* CONFIG_LV_Z_DOUBLE_VDB */
 
 #if ALLOC_MONOCHROME_CONV_BUFFER
