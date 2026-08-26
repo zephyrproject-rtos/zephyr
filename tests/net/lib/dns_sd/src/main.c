@@ -622,12 +622,9 @@ ZTEST(dns_sd, test_dns_sd_handle_service_type_enum)
 		0x74, 0x04, 0x5f, 0x74, 0x63, 0x70, 0xc0, 0x23,
 	};
 	int expected_int = sizeof(expected_rsp);
-	int actual_int = dns_sd_handle_service_type_enum(&chromecast,
-						 &addr,
-						 NULL,
-						 &actual_rsp[0],
-						 sizeof(actual_rsp) -
-						 sizeof(struct dns_header));
+	int actual_int =
+		dns_sd_handle_service_type_enum(NULL, &chromecast, &addr, NULL, &actual_rsp[0],
+						sizeof(actual_rsp) - sizeof(struct dns_header));
 
 	zassert_true(actual_int > 0, "dns_sd_handle_service_type_enum() failed (%d)", actual_int);
 
@@ -638,14 +635,16 @@ ZTEST(dns_sd, test_dns_sd_handle_service_type_enum)
 	/* show non-advertisement for uninitialized port */
 	nonconst_port = 0;
 	zassert_equal(-EHOSTDOWN,
-		      dns_sd_handle_service_type_enum(&nasxxxxxx_ephemeral, &addr, NULL,
-				&actual_rsp[0], sizeof(actual_rsp) - sizeof(struct dns_header)),
+		      dns_sd_handle_service_type_enum(
+			      NULL, &nasxxxxxx_ephemeral, &addr, NULL, &actual_rsp[0],
+			      sizeof(actual_rsp) - sizeof(struct dns_header)),
 		      "port zero should not "
 		      "produce any DNS-SD query response");
 
 	zassert_equal(-EINVAL,
-		      dns_sd_handle_service_type_enum(&invalid_dns_sd_record, &addr, NULL,
-			  &actual_rsp[0], sizeof(actual_rsp) - sizeof(struct dns_header)),
+		      dns_sd_handle_service_type_enum(
+			      NULL, &invalid_dns_sd_record, &addr, NULL, &actual_rsp[0],
+			      sizeof(actual_rsp) - sizeof(struct dns_header)),
 		      "");
 }
 
