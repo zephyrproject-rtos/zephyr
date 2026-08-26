@@ -15,6 +15,7 @@ extern "C" {
 #include <stdint.h>
 
 #include <zephyr/kernel.h>
+#include <zephyr/sys/check.h>
 #include <zephyr/sys/util.h>
 
 /**
@@ -46,6 +47,8 @@ struct sys_bitarray {
 	/* Spinlock guarding access to this bit array */
 	struct k_spinlock lock;
 };
+/* Number of bits represented by one bundle */
+#define Z_BITARRAY_BUNDLE_BITNESS(ba) (sizeof((ba)->bundles[0]) * 8)
 /** @endcond */
 
 /** Bitarray structure */
@@ -114,6 +117,11 @@ int sys_bitarray_clear_bit(sys_bitarray_t *bitarray, size_t bit);
 /**
  * Test whether a bit is set or not
  *
+ * The bit is read with a single unsynchronized word access, so the value is
+ * only a snapshot of the moment the function returns.  Callers needing the
+ * test and a subsequent update to be atomic must use
+ * sys_bitarray_test_and_set_bit() or sys_bitarray_test_and_clear_bit().
+ *
  * @param[in]  bitarray Bitarray struct
  * @param[in]  bit      The bit to be tested
  * @param[out] val      The value of the bit (0 or 1)
@@ -122,7 +130,28 @@ int sys_bitarray_clear_bit(sys_bitarray_t *bitarray, size_t bit);
  * @retval -EINVAL Invalid argument (e.g. bit to test exceeds
  *                 the number of bits in bit array, etc.)
  */
-int sys_bitarray_test_bit(sys_bitarray_t *bitarray, size_t bit, int *val);
+static inline int sys_bitarray_test_bit(sys_bitarray_t *bitarray, size_t bit, int *val)
+{
+	size_t idx, off;
+
+	__ASSERT_NO_MSG(bitarray != NULL);
+	__ASSERT_NO_MSG(bitarray->num_bits > 0);
+
+	CHECKIF(val == NULL) {
+		return -EINVAL;
+	}
+
+	if (bit >= bitarray->num_bits) {
+		return -EINVAL;
+	}
+
+	idx = bit / Z_BITARRAY_BUNDLE_BITNESS(bitarray);
+	off = bit % Z_BITARRAY_BUNDLE_BITNESS(bitarray);
+
+	*val = (bitarray->bundles[idx] & BIT(off)) != 0 ? 1 : 0;
+
+	return 0;
+}
 
 /**
  * Test the bit and set it

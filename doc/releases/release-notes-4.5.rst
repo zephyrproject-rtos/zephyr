@@ -1761,10 +1761,18 @@ Libraries / Subsystems
     a dedicated pool on every channel (channels fall back to the shared pool until
     :c:func:`zbus_chan_set_msg_sub_pool` is called)
 
+* Utilities
+
+  * :c:func:`sys_bitarray_test_bit` no longer takes the bitarray spinlock and is
+    now inlined.  The lock could not make a single-bit test any less stale, so
+    the semantics are unchanged for every use that was already well defined;
+    callers needing an atomic test-and-update must use
+    :c:func:`sys_bitarray_test_and_set_bit` or
+    :c:func:`sys_bitarray_test_and_clear_bit`.
+
 * __assert
 
    * ``__ASSERT_ON`` define has been removed.
-
 
 Devicetree
 **********

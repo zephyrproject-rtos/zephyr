@@ -12,9 +12,6 @@
 #include <zephyr/sys/check.h>
 #include <zephyr/sys/sys_io.h>
 
-/* Number of bits represented by one bundle */
-#define bundle_bitness(ba)	(sizeof((ba)->bundles[0]) * 8)
-
 struct bundle_data {
 	 /* Start and end index of bundles */
 	size_t sidx, eidx;
@@ -30,11 +27,11 @@ static void setup_bundle_data(sys_bitarray_t *bitarray,
 			      struct bundle_data *bd,
 			      size_t offset, size_t num_bits)
 {
-	bd->sidx = offset / bundle_bitness(bitarray);
-	bd->soff = offset % bundle_bitness(bitarray);
+	bd->sidx = offset / Z_BITARRAY_BUNDLE_BITNESS(bitarray);
+	bd->soff = offset % Z_BITARRAY_BUNDLE_BITNESS(bitarray);
 
-	bd->eidx = (offset + num_bits - 1) / bundle_bitness(bitarray);
-	bd->eoff = (offset + num_bits - 1) % bundle_bitness(bitarray);
+	bd->eidx = (offset + num_bits - 1) / Z_BITARRAY_BUNDLE_BITNESS(bitarray);
+	bd->eoff = (offset + num_bits - 1) % Z_BITARRAY_BUNDLE_BITNESS(bitarray);
 
 	bd->smask = ~(BIT(bd->soff) - 1);
 	bd->emask = (BIT(bd->eoff) - 1) | BIT(bd->eoff);
@@ -151,7 +148,7 @@ mismatch:
 
 		mismatch_bit_off = find_lsb_set(mismatch_bundle) - 1;
 		mismatch_bit_off += mismatch_bundle_idx *
-				    bundle_bitness(bitarray);
+				    Z_BITARRAY_BUNDLE_BITNESS(bitarray);
 		*mismatch = (uint32_t)mismatch_bit_off;
 	}
 	return false;
@@ -333,8 +330,8 @@ int sys_bitarray_set_bit(sys_bitarray_t *bitarray, size_t bit)
 		goto out;
 	}
 
-	idx = bit / bundle_bitness(bitarray);
-	off = bit % bundle_bitness(bitarray);
+	idx = bit / Z_BITARRAY_BUNDLE_BITNESS(bitarray);
+	off = bit % Z_BITARRAY_BUNDLE_BITNESS(bitarray);
 
 	bitarray->bundles[idx] |= BIT(off);
 
@@ -361,47 +358,10 @@ int sys_bitarray_clear_bit(sys_bitarray_t *bitarray, size_t bit)
 		goto out;
 	}
 
-	idx = bit / bundle_bitness(bitarray);
-	off = bit % bundle_bitness(bitarray);
+	idx = bit / Z_BITARRAY_BUNDLE_BITNESS(bitarray);
+	off = bit % Z_BITARRAY_BUNDLE_BITNESS(bitarray);
 
 	bitarray->bundles[idx] &= ~BIT(off);
-
-	ret = 0;
-
-out:
-	k_spin_unlock(&bitarray->lock, key);
-	return ret;
-}
-
-int sys_bitarray_test_bit(sys_bitarray_t *bitarray, size_t bit, int *val)
-{
-	k_spinlock_key_t key;
-	int ret;
-	size_t idx, off;
-
-	__ASSERT_NO_MSG(bitarray != NULL);
-	__ASSERT_NO_MSG(bitarray->num_bits > 0);
-
-	key = k_spin_lock(&bitarray->lock);
-
-	CHECKIF(val == NULL) {
-		ret = -EINVAL;
-		goto out;
-	}
-
-	if (bit >= bitarray->num_bits) {
-		ret = -EINVAL;
-		goto out;
-	}
-
-	idx = bit / bundle_bitness(bitarray);
-	off = bit % bundle_bitness(bitarray);
-
-	if ((bitarray->bundles[idx] & BIT(off)) != 0) {
-		*val = 1;
-	} else {
-		*val = 0;
-	}
 
 	ret = 0;
 
@@ -431,8 +391,8 @@ int sys_bitarray_test_and_set_bit(sys_bitarray_t *bitarray, size_t bit, int *pre
 		goto out;
 	}
 
-	idx = bit / bundle_bitness(bitarray);
-	off = bit % bundle_bitness(bitarray);
+	idx = bit / Z_BITARRAY_BUNDLE_BITNESS(bitarray);
+	off = bit % Z_BITARRAY_BUNDLE_BITNESS(bitarray);
 
 	if ((bitarray->bundles[idx] & BIT(off)) != 0) {
 		*prev_val = 1;
@@ -470,8 +430,8 @@ int sys_bitarray_test_and_clear_bit(sys_bitarray_t *bitarray, size_t bit, int *p
 		goto out;
 	}
 
-	idx = bit / bundle_bitness(bitarray);
-	off = bit % bundle_bitness(bitarray);
+	idx = bit / Z_BITARRAY_BUNDLE_BITNESS(bitarray);
+	off = bit % Z_BITARRAY_BUNDLE_BITNESS(bitarray);
 
 	if ((bitarray->bundles[idx] & BIT(off)) != 0) {
 		*prev_val = 1;
@@ -538,7 +498,7 @@ int sys_bitarray_alloc(sys_bitarray_t *bitarray, size_t num_bits,
 	for (size_t idx = 0; idx < bitarray->num_bundles; idx++) {
 		if (~bitarray->bundles[idx] == 0U) {
 			/* bundle is all 1s => all allocated, skip */
-			bit_idx += bundle_bitness(bitarray);
+			bit_idx += Z_BITARRAY_BUNDLE_BITNESS(bitarray);
 			continue;
 		}
 
@@ -634,10 +594,10 @@ found:
 	/* The bit we are looking for must be in the current bundle idx.
 	 * Find out the exact index of the bit.
 	 */
-	for (size_t j = 0; j <= bundle_bitness(bitarray) - 1; j++) {
+	for (size_t j = 0; j <= Z_BITARRAY_BUNDLE_BITNESS(bitarray) - 1; j++) {
 		if (bitarray->bundles[idx] & mask & BIT(j)) {
 			if (--n <= 0) {
-				*found_at = idx * bundle_bitness(bitarray) + j;
+				*found_at = idx * Z_BITARRAY_BUNDLE_BITNESS(bitarray) + j;
 				ret = 0;
 				break;
 			}
