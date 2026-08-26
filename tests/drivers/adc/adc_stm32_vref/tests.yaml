@@ -1,0 +1,48 @@
+common:
+  tags:
+    - adc
+    - drivers
+    - stm32
+  filter: dt_compat_enabled("st,stm32-vref")
+tests:
+  drivers.adc.stm32.vrefint:
+    extra_configs:
+      - CONFIG_ADC_STM32_VREFINT_CALIBRATE=y
+    platform_allow:
+      - nucleo_f091rc
+      - stm32f3_disco
+      - nucleo_f429zi
+      - nucleo_g071rb
+      - nucleo_g474re
+      - nucleo_h753zi
+      - disco_l475_iot1
+      - nucleo_g431kb
+      - nucleo_l476rg
+      - nucleo_u575zi_q
+    integration_platforms:
+      - nucleo_l476rg
+  drivers.adc.stm32.vrefint.off:
+    extra_configs:
+      - CONFIG_ADC_STM32_VREFINT_CALIBRATE=n
+    platform_allow:
+      - nucleo_f091rc
+      - stm32f3_disco
+      - nucleo_f429zi
+      - nucleo_g071rb
+      - nucleo_g474re
+      - nucleo_h753zi
+      - disco_l475_iot1
+      - nucleo_g431kb
+      - nucleo_l476rg
+      - nucleo_u575zi_q
+    integration_platforms:
+      - nucleo_l476rg
+  drivers.adc.stm32.vrefint.adc4_only:
+    extra_configs:
+      - CONFIG_ADC_STM32_VREFINT_CALIBRATE=y
+    extra_dtc_overlay_files:
+      - overlays/u5_adc4_only.overlay
+    platform_allow:
+      - nucleo_u575zi_q
+    integration_platforms:
+      - nucleo_u575zi_q

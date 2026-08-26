@@ -103,4 +103,12 @@
 			status = "disabled";
 		};
 	};
+
+	vref3: vref_3 {
+		compatible = "st,stm32-vref";
+		nvmem-cells = <&vrefint_otp>;
+		vrefint-cal-mv = <3000>;
+		io-channels = <&adc3 18>;
+		status = "disabled";
+	};
 };

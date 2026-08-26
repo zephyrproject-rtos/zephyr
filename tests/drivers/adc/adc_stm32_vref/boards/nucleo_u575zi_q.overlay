@@ -1,0 +1,11 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Board already enables ADC1, ADC4, and vref1. Enable vref4 so both ADCs
+ * are VREFINT owners and share one cached rail.
+ */
+
+&vref4 {
+	status = "okay";
+};

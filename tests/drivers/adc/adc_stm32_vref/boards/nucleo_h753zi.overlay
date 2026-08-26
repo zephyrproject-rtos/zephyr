@@ -1,0 +1,11 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Board DTS enables adc1/adc3 but leaves VREFINT disabled. On this H7
+ * the factory-calibrated VREFINT path is ADC3 (16-bit VREFINT_CAL).
+ */
+
+&vref {
+	status = "okay";
+};
