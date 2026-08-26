@@ -5218,14 +5218,14 @@ int k_work_poll_submit_to_queue(struct k_work_q *work_q,
  *
  * Submitting a previously submitted triggered work item that is still
  * waiting for the event cancels the existing submission and reschedules it
- * the using the new event list. Note that this behavior is inherently subject
+ * using the new event list. Note that this behavior is inherently subject
  * to race conditions with the pre-existing triggered work item and work queue,
  * so care must be taken to synchronize such resubmissions externally.
  *
  * @isr_ok
  *
  * @warning
- * Provided array of events as well as a triggered work item must not be
+ * The provided array of events as well as a triggered work item must not be
  * modified until the item has been processed by the workqueue.
  *
  * @param work Address of delayed work item.
