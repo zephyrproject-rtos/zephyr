@@ -341,6 +341,23 @@ static int transport_send_udp(int socket, int port, void *buf, int length,
 	net_socklen_t addrlen;
 	int cnt;
 
+	if (addr != NULL) {
+		/* Deliver unicast messages to the well-known PTP port of the
+		 * used socket instead of the source port the peer sent from.
+		 */
+		if (IS_ENABLED(CONFIG_PTP_UDP_IPV4_PROTOCOL) && addr->sa_family == NET_AF_INET) {
+			net_sin(addr)->sin_port = net_htons(port);
+		} else if (IS_ENABLED(CONFIG_PTP_UDP_IPV6_PROTOCOL) &&
+			   addr->sa_family == NET_AF_INET6) {
+			net_sin6(addr)->sin6_port = net_htons(port);
+		} else {
+			/* Not usable with the configured transport, use the
+			 * default multicast address instead.
+			 */
+			addr = NULL;
+		}
+	}
+
 	if (!addr) {
 		if (IS_ENABLED(CONFIG_PTP_UDP_IPV4_PROTOCOL)) {
 			m_addr->sa_family = NET_AF_INET;
@@ -376,8 +393,10 @@ static int transport_send_udp(int socket, int port, void *buf, int length,
 	return cnt;
 }
 
-static int transport_send_l2(struct ptp_port *port, int socket, void *buf, int length)
+static int transport_send_l2(struct ptp_port *port, int socket, void *buf, int length,
+			     const struct net_sockaddr *dst)
 {
+	const struct net_sockaddr_ll *dst_ll = (const struct net_sockaddr_ll *)dst;
 	struct net_sockaddr_ll addr = {0};
 	int ifindex = net_if_get_by_iface(port->iface);
 	int cnt;
@@ -391,7 +410,10 @@ static int transport_send_l2(struct ptp_port *port, int socket, void *buf, int l
 	addr.sll_protocol = net_htons(NET_ETH_PTYPE_PTP);
 	addr.sll_ifindex = ifindex;
 	addr.sll_halen = PTP_L2_ADDR_LEN;
-	if (transport_is_pdelay_msg(buf)) {
+	if (dst != NULL && dst->sa_family == NET_AF_PACKET &&
+	    dst_ll->sll_halen == PTP_L2_ADDR_LEN) {
+		memcpy(addr.sll_addr, dst_ll->sll_addr, PTP_L2_ADDR_LEN);
+	} else if (transport_is_pdelay_msg(buf)) {
 		memcpy(addr.sll_addr, pdelay_mcast_addr_l2, sizeof(pdelay_mcast_addr_l2));
 	} else {
 		memcpy(addr.sll_addr, mcast_addr_l2, sizeof(mcast_addr_l2));
@@ -489,7 +511,7 @@ int ptp_transport_send(struct ptp_port *port, struct ptp_msg *msg, enum ptp_sock
 	int length = net_ntohs(msg->header.msg_length);
 
 	if (IS_ENABLED(CONFIG_PTP_IEEE_802_3_PROTOCOL)) {
-		return transport_send_l2(port, port->socket[PTP_SOCKET_EVENT], msg, length);
+		return transport_send_l2(port, port->socket[PTP_SOCKET_EVENT], msg, length, NULL);
 	}
 
 	return transport_send_udp(port->socket[idx], socket_port[idx], msg, length, NULL);
@@ -503,7 +525,8 @@ int ptp_transport_sendto(struct ptp_port *port, struct ptp_msg *msg, enum ptp_so
 	int length = net_ntohs(msg->header.msg_length);
 
 	if (IS_ENABLED(CONFIG_PTP_IEEE_802_3_PROTOCOL)) {
-		return transport_send_l2(port, port->socket[PTP_SOCKET_EVENT], msg, length);
+		return transport_send_l2(port, port->socket[PTP_SOCKET_EVENT], msg, length,
+					 net_sad(&msg->addr));
 	}
 
 	return transport_send_udp(port->socket[idx], socket_port[idx], msg, length,
@@ -588,6 +611,8 @@ static int transport_recv_l2_msg(struct ptp_port *port, struct ptp_msg *msg)
 	int cnt;
 
 	transport_init_recv_msghdr(msg, &msghdr, &iov, ctrl, sizeof(ctrl));
+	msghdr.msg_name = &msg->addr;
+	msghdr.msg_namelen = sizeof(msg->addr);
 
 	now = k_uptime_get();
 
@@ -618,8 +643,10 @@ static int transport_recv_l2_msg(struct ptp_port *port, struct ptp_msg *msg)
 	}
 
 	if (!recvmsg_ok) {
+		net_socklen_t addrlen = sizeof(msg->addr);
+
 		cnt = zsock_recvfrom(port->socket[PTP_SOCKET_EVENT], msg, sizeof(msg->mtu),
-				     ZSOCK_MSG_DONTWAIT, NULL, NULL);
+				     ZSOCK_MSG_DONTWAIT, net_sad(&msg->addr), &addrlen);
 		if (cnt < 0) {
 			if (errno == EAGAIN || errno == EWOULDBLOCK) {
 				return 0;
@@ -653,6 +680,8 @@ static int transport_recv_udp_msg(struct ptp_port *port, struct ptp_msg *msg, en
 	int cnt;
 
 	transport_init_recv_msghdr(msg, &msghdr, &iov, ctrl, sizeof(ctrl));
+	msghdr.msg_name = &msg->addr;
+	msghdr.msg_namelen = sizeof(msg->addr);
 
 	cnt = zsock_recvmsg(port->socket[idx], &msghdr, ZSOCK_MSG_DONTWAIT);
 	if (cnt < 0) {

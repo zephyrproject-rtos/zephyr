@@ -102,6 +102,13 @@ static int port_msg_send(struct ptp_port *port, struct ptp_msg *msg, enum ptp_so
 	return ptp_transport_send(port, msg, idx);
 }
 
+static int port_msg_sendto(struct ptp_port *port, struct ptp_msg *msg, enum ptp_socket idx)
+{
+	ptp_msg_pre_send(msg);
+
+	return ptp_transport_sendto(port, msg, idx);
+}
+
 static void port_timer_set_timeout(struct k_timer *timer, uint8_t factor, int8_t log_seconds)
 {
 	uint64_t timeout = log_seconds < 0 ?
@@ -1075,11 +1082,14 @@ static int port_delay_req_msg_process(struct ptp_port *port, struct ptp_msg *msg
 	resp->delay_resp.req_port_id = msg->header.src_port_id;
 
 	if (msg->header.flags[0] & PTP_MSG_UNICAST_FLAG) {
-		/* TODO handle unicast messages */
+		/* Respond directly to the requesting timeReceiver. */
 		resp->header.flags[0] |= PTP_MSG_UNICAST_FLAG;
+		resp->header.log_msg_interval = DEFAULT_LOG_MSG_INTERVAL;
+		memcpy(&resp->addr, &msg->addr, sizeof(resp->addr));
+		ret = port_msg_sendto(port, resp, PTP_SOCKET_EVENT);
+	} else {
+		ret = port_msg_send(port, resp, PTP_SOCKET_EVENT);
 	}
-
-	ret = port_msg_send(port, resp, PTP_SOCKET_EVENT);
 	ptp_msg_unref(resp);
 
 	if (ret < 0) {
