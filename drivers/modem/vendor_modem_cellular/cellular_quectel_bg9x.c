@@ -27,7 +27,7 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(
 	MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+QGMR", cgmr_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CIMI", cimi_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+QCCID", qccid_match),
-	MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT+CMUX=0,0,5,127", 300));
+	MODEM_CHAT_SCRIPT_CMD_RESP_NONE("AT+CMUX=0,0,5," STRINGIFY(CONFIG_MODEM_CMUX_MTU), 300));
 
 MODEM_CHAT_SCRIPT_DEFINE(quectel_bg9x_init_chat_script, quectel_bg9x_init_chat_script_cmds,
 			 abort_matches, modem_cellular_chat_callback_handler, 10);

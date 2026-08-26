@@ -26,7 +26,7 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGREG?", ok_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CGSN", imei_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CGMM", cgmm_match),
-	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CMUX=0,0,5,127", ok_match));
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CMUX=0,0,5," STRINGIFY(CONFIG_MODEM_CMUX_MTU), ok_match));
 
 MODEM_CHAT_SCRIPT_DEFINE(u_blox_sara_r4_init_chat_script, u_blox_sara_r4_init_chat_script_cmds,
 			 abort_matches, modem_cellular_chat_callback_handler, 10);
