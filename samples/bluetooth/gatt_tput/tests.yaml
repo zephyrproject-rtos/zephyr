@@ -1,0 +1,22 @@
+sample:
+  name: BLE GATT Throughput
+  description: Measure BLE throughput using a custom GATT service (peripheral/central)
+tests:
+  sample.bluetooth.gatt_tput:
+    harness: bluetooth
+    platform_allow:
+      - qemu_cortex_m3
+      - qemu_x86
+    integration_platforms:
+      - qemu_cortex_m3
+    tags: bluetooth
+  sample.bluetooth.gatt_tput.central:
+    harness: bluetooth
+    extra_args:
+      - EXTRA_CONF_FILE=overlay-central.conf
+    platform_allow:
+      - qemu_cortex_m3
+      - qemu_x86
+    integration_platforms:
+      - qemu_cortex_m3
+    tags: bluetooth
