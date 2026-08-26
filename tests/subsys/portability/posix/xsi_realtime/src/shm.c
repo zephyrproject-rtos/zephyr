@@ -200,3 +200,28 @@ ZTEST(xsi_realtime, test_shm_mmap)
 
 	zassert_ok(shm_unlink(VALID_SHM_PATH));
 }
+
+ZTEST(xsi_realtime, test_shm_open_fd_leak)
+{
+	int fd[N];
+
+	/* Repeatedly attempt to open nonexistent shm without O_CREAT */
+	for (size_t i = 0; i < N * 2; ++i) {
+		int bad_fd = shm_open("/nonexistent_shm", OPEN_FLAGS, VALID_MODE);
+
+		zassert_equal(bad_fd, -1, "shm_open should fail for nonexistent shm");
+		zassert_equal(errno, ENOENT, "errno should be ENOENT");
+	}
+
+	/* Verify all N file descriptor slots remain available */
+	for (size_t i = 0; i < N; ++i) {
+		fd[i] = shm_open(VALID_SHM_PATH, i == 0 ? CREATE_FLAGS : OPEN_FLAGS, VALID_MODE);
+		zassert_true(fd[i] >= 0, "shm_open(%s) failed after failed opens: fd=%d, errno=%d",
+			     VALID_SHM_PATH, fd[i], errno);
+	}
+
+	zassert_ok(shm_unlink(VALID_SHM_PATH));
+	for (size_t i = N; i > 0; --i) {
+		zassert_ok(close(fd[i - 1]));
+	}
+}
