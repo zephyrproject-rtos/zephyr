@@ -2,9 +2,10 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-config BOARD_QEMU_X86
+# The 32-bit and the 64-bit boards share the Atom SoC, so unlike the other x86
+# SoCs, soc/intel/atom cannot select the sub-architecture itself.
+config QEMU_X86_64BIT
 	bool
-	default y
-	select CPU_HAS_FPU if BOARD_QEMU_X86 || BOARD_QEMU_X86_LAKEMONT || BOARD_QEMU_X86_TINY
-	select X86_64 if BOARD_QEMU_X86_64 || BOARD_QEMU_X86_64_KVM
+	default y if BOARD_QEMU_X86_64 || BOARD_QEMU_X86_64_KVM
+	select X86_64
 	select X86_CPU_HAS_CET if BOARD_QEMU_X86_64_KVM
