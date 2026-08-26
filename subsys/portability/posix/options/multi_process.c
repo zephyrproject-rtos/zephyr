@@ -33,6 +33,12 @@ pid_t getpid(void)
 FUNC_ALIAS(getpid, _getpid, pid_t);
 #endif /* CONFIG_POSIX_MULTI_PROCESS_ALIAS_GETPID */
 
+/*
+ * The runtime statistics this needs are only collected when
+ * CONFIG_SCHED_THREAD_USAGE is enabled, and collecting them adds
+ * accounting to every context switch.
+ */
+#ifdef CONFIG_SCHED_THREAD_USAGE
 clock_t times(struct tms *buffer)
 {
 	int ret;
@@ -58,3 +64,4 @@ clock_t times(struct tms *buffer)
 
 	return utime;
 }
+#endif /* CONFIG_SCHED_THREAD_USAGE */
