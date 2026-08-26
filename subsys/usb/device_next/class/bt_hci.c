@@ -5,18 +5,24 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/* Bluetooth HCI USB transport layer implementation with following
- * endpoint configuration:
+/* Bluetooth HCI USB transport layer implementation.
+ *
+ * The implementation supports the optional USB bulk serialization mode. In
+ * this mode, only the bulk endpoints are used. If the host supports bulk
+ * serialization mode, it can enable it by selecting an alternate setting for
+ * the first interface.
+ *
+ * In the default interface setting, three endpoints are used
  *  - HCI commands through control endpoint (host-to-device only)
  *  - HCI events through interrupt IN endpoint
  *  - ACL data through one bulk IN and one bulk OUT endpoints
  *
- * TODO: revise transfer handling so that Bluetooth net_bufs can be used
- * directly without intermediate copying.
+ * In the alternate interface setting, two endpoints are used
+ *  - HCI commands, ACL OUT, and ISO OUT through bulk OUT endpoint
+ *  - HCI events, ACL IN, and ISO IN through bulk IN endpoint
  *
  * Limitations:
  *  - Remote wakeup before IN transfer is not yet supported.
- *  - H4 transport layer is not yet supported
  */
 
 #include <zephyr/init.h>
@@ -61,6 +67,7 @@ LOG_MODULE_REGISTER(bt_hci, CONFIG_USBD_BT_HCI_LOG_LEVEL);
 #define BT_HCI_EP_INTERVAL_VOICE	3
 
 #define BT_HCI_CLASS_ENABLED		0
+#define BT_HCI_BULK_SER_MODE		1
 
 static K_FIFO_DEFINE(bt_hci_rx_queue);
 static K_FIFO_DEFINE(bt_hci_tx_queue);
@@ -71,12 +78,12 @@ UDC_BUF_POOL_DEFINE(bt_hci_out_ep_pool,
 		    sizeof(struct udc_buf_info), NULL);
 
 /*
- * The TX queue carries Controller-to-Host ACL data and events. Size the
- * pool for the largest complete HCI packet.
+ * The TX queue carries Controller-to-Host ACL data and events.
+ * In the bulk serialization mode, it also includes ISO data.
+ * Size the pool for the largest complete HCI packet.
  */
 UDC_BUF_POOL_DEFINE(bt_hci_in_pool,
-		    CONFIG_USBD_BT_HCI_IN_BUF_COUNT,
-		    MAX(BT_BUF_ACL_RX_SIZE, BT_BUF_EVT_RX_SIZE),
+		    CONFIG_USBD_BT_HCI_IN_BUF_COUNT, BT_BUF_RX_SIZE,
 		    sizeof(struct udc_buf_info), NULL);
 
 /* HCI RX/TX threads */
@@ -99,6 +106,12 @@ struct usbd_bt_hci_desc {
 	struct usb_ep_descriptor if0_out_ep;
 	struct usb_ep_descriptor if0_hs_in_ep;
 	struct usb_ep_descriptor if0_hs_out_ep;
+
+	struct usb_if_descriptor if0_1;
+	struct usb_ep_descriptor if0_1_in_ep;
+	struct usb_ep_descriptor if0_1_out_ep;
+	struct usb_ep_descriptor if0_1_hs_in_ep;
+	struct usb_ep_descriptor if0_1_hs_out_ep;
 
 	struct usb_if_descriptor if1_0;
 	struct usb_ep_descriptor if1_0_iso_in_ep;
@@ -140,6 +153,15 @@ static uint8_t bt_hci_get_bulk_in(struct usbd_class_data *const c_data)
 	struct bt_hci_data *data = usbd_class_get_private(c_data);
 	struct usbd_bt_hci_desc *desc = data->desc;
 
+	if (atomic_test_bit(&data->state, BT_HCI_BULK_SER_MODE)) {
+		if (USBD_SUPPORTS_HIGH_SPEED &&
+		    usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
+			return desc->if0_1_hs_in_ep.bEndpointAddress;
+		}
+
+		return desc->if0_1_in_ep.bEndpointAddress;
+	}
+
 	if (USBD_SUPPORTS_HIGH_SPEED &&
 	    usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
 		return desc->if0_hs_in_ep.bEndpointAddress;
@@ -153,6 +175,15 @@ static uint8_t bt_hci_get_bulk_out(struct usbd_class_data *const c_data)
 	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
 	struct bt_hci_data *data = usbd_class_get_private(c_data);
 	struct usbd_bt_hci_desc *desc = data->desc;
+
+	if (atomic_test_bit(&data->state, BT_HCI_BULK_SER_MODE)) {
+		if (USBD_SUPPORTS_HIGH_SPEED &&
+		    usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
+			return desc->if0_1_hs_out_ep.bEndpointAddress;
+		}
+
+		return desc->if0_1_out_ep.bEndpointAddress;
+	}
 
 	if (USBD_SUPPORTS_HIGH_SPEED &&
 	    usbd_bus_speed(uds_ctx) == USBD_SPEED_HS) {
@@ -199,6 +230,7 @@ static void bt_hci_tx_in(struct usbd_class_data *const c_data,
 static void bt_hci_tx_thread(void *p1, void *p2, void *p3)
 {
 	struct usbd_class_data *const c_data = p1;
+	struct bt_hci_data *data = usbd_class_get_private(c_data);
 
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
@@ -209,6 +241,23 @@ static void bt_hci_tx_thread(void *p1, void *p2, void *p3)
 		uint8_t ep;
 
 		bt_buf = k_fifo_get(&bt_hci_tx_queue, K_FOREVER);
+
+		if (atomic_test_bit(&data->state, BT_HCI_BULK_SER_MODE)) {
+			/*
+			 * In bulk serialization mode, HCI packet indicator
+			 * should be prefixed to each packet. That is already
+			 * the case. No need to pull or replace the type.
+			 */
+			ep = bt_hci_get_bulk_in(c_data);
+			bt_hci_tx_in(c_data, bt_buf, ep);
+			net_buf_unref(bt_buf);
+			continue;
+		}
+
+		/*
+		 * In legacy mode, packets are transferred over separate
+		 * channels, and HCI packet indicator must be removed.
+		 */
 		type = net_buf_pull_u8(bt_buf);
 
 		switch (type) {
@@ -334,13 +383,15 @@ static int bt_hci_acl_out_cb(struct usbd_class_data *const c_data,
 {
 	struct bt_hci_data *hci_data = usbd_class_get_private(c_data);
 
-	if (err) {
+	if (err || buf->len == 0) {
 		net_buf_drop(&hci_data->out_buf);
 		hci_data->out_rem = 0;
 		goto restart_out_transfer;
 	}
 
 	if (hci_data->out_buf == NULL) {
+		enum bt_buf_type type;
+		uint8_t h4_type;
 		uint16_t len;
 
 		if (hci_data->out_rem != 0) {
@@ -349,13 +400,20 @@ static int bt_hci_acl_out_cb(struct usbd_class_data *const c_data,
 			goto restart_out_transfer;
 		}
 
-		len = hci_pkt_get_len(BT_HCI_H4_ACL, buf->data, buf->len);
+		if (atomic_test_bit(&hci_data->state, BT_HCI_BULK_SER_MODE)) {
+			h4_type = net_buf_pull_u8(buf);
+		} else {
+			h4_type = BT_HCI_H4_ACL;
+		}
+
+		len = hci_pkt_get_len(h4_type, buf->data, buf->len);
 		if (len == 0 || len < buf->len) {
 			goto restart_out_transfer;
 		}
 
 		hci_data->out_rem = len - buf->len;
-		hci_data->out_buf = bt_buf_get_tx(BT_BUF_ACL_OUT, K_FOREVER,
+		type = bt_buf_type_from_h4(h4_type, BT_BUF_OUT);
+		hci_data->out_buf = bt_buf_get_tx(type, K_FOREVER,
 						  buf->data, buf->len);
 		if (hci_data->out_buf == NULL) {
 			LOG_ERR("Failed to allocate net_buf");
@@ -414,8 +472,28 @@ static int bt_hci_request(struct usbd_class_data *const c_data,
 static void bt_hci_update(struct usbd_class_data *const c_data,
 			  uint8_t iface, uint8_t alternate)
 {
+	struct bt_hci_data *data = usbd_class_get_private(c_data);
+	struct usbd_bt_hci_desc *desc = data->desc;
+	const uint8_t first_iface = desc->if0.bInterfaceNumber;
+	const uint8_t first_alt = desc->if0_1.bAlternateSetting;
+
 	LOG_DBG("New configuration, interface %u alternate %u",
 		iface, alternate);
+
+	if (iface == first_iface && alternate == first_alt) {
+		LOG_INF("Enable bulk serialization mode");
+		atomic_set_bit(&data->state, BT_HCI_BULK_SER_MODE);
+	}
+
+	if (iface == first_iface && alternate == 0) {
+		LOG_INF("Enable legacy mode");
+		atomic_clear_bit(&data->state, BT_HCI_BULK_SER_MODE);
+	}
+
+	/*
+	 * TODO: Reject alternate setting update of the second interface if
+	 * bulk serialization mode is enabled.
+	 */
 }
 
 static void bt_hci_enable(struct usbd_class_data *const c_data)
@@ -429,6 +507,7 @@ static void bt_hci_enable(struct usbd_class_data *const c_data)
 	net_buf_drop(&hci_data->out_buf);
 	hci_data->out_rem = 0;
 
+	atomic_clear_bit(&hci_data->state, BT_HCI_BULK_SER_MODE);
 	atomic_set_bit(&hci_data->state, BT_HCI_CLASS_ENABLED);
 	LOG_INF("Configuration enabled");
 
@@ -449,10 +528,16 @@ static int bt_hci_ctd(struct usbd_class_data *const c_data,
 		      const struct usb_setup_packet *const setup,
 		      const struct net_buf *const buf)
 {
+	struct bt_hci_data *data = usbd_class_get_private(c_data);
 	struct net_buf *cmd_buf;
 
 	/* We expect host-to-device class request */
 	if (setup->RequestType.type != USB_REQTYPE_TYPE_CLASS) {
+		return -ENOTSUP;
+	}
+
+	if (atomic_test_bit(&data->state, BT_HCI_BULK_SER_MODE)) {
+		/* Reject any HCI commands if bulk serialization mode is enabled. */
 		return -ENOTSUP;
 	}
 
@@ -574,6 +659,55 @@ static struct usbd_bt_hci_desc bt_hci_desc_##n = {				\
 		.wMaxPacketSize = sys_cpu_to_le16(BT_HCI_EP_HS_MPS_ACL_DATA),	\
 		.bInterval = 0,							\
 	},									\
+										\
+	.if0_1 = {								\
+		.bLength = sizeof(struct usb_if_descriptor),			\
+		.bDescriptorType = USB_DESC_INTERFACE,				\
+		.bInterfaceNumber = 0,						\
+		.bAlternateSetting = 1,						\
+		.bNumEndpoints = 2,						\
+		.bInterfaceClass = USB_BCC_WIRELESS_CONTROLLER,			\
+		.bInterfaceSubClass = BT_HCI_SUBCLASS,				\
+		.bInterfaceProtocol = BT_HCI_PROTOCOL,				\
+		.iInterface = 0,						\
+	},									\
+										\
+	.if0_1_in_ep = {							\
+		.bLength = sizeof(struct usb_ep_descriptor),			\
+		.bDescriptorType = USB_DESC_ENDPOINT,				\
+		.bEndpointAddress = BT_HCI_EP_ACL_DATA_IN,			\
+		.bmAttributes = USB_EP_TYPE_BULK,				\
+		.wMaxPacketSize = sys_cpu_to_le16(BT_HCI_EP_FS_MPS_ACL_DATA),	\
+		.bInterval = 0,							\
+	},									\
+										\
+	.if0_1_out_ep = {							\
+		.bLength = sizeof(struct usb_ep_descriptor),			\
+		.bDescriptorType = USB_DESC_ENDPOINT,				\
+		.bEndpointAddress = BT_HCI_EP_ACL_DATA_OUT,			\
+		.bmAttributes = USB_EP_TYPE_BULK,				\
+		.wMaxPacketSize = sys_cpu_to_le16(BT_HCI_EP_FS_MPS_ACL_DATA),	\
+		.bInterval = 0,							\
+	},									\
+										\
+	.if0_1_hs_in_ep = {							\
+		.bLength = sizeof(struct usb_ep_descriptor),			\
+		.bDescriptorType = USB_DESC_ENDPOINT,				\
+		.bEndpointAddress = BT_HCI_EP_ACL_DATA_IN,			\
+		.bmAttributes = USB_EP_TYPE_BULK,				\
+		.wMaxPacketSize = sys_cpu_to_le16(BT_HCI_EP_HS_MPS_ACL_DATA),	\
+		.bInterval = 0,							\
+	},									\
+										\
+	.if0_1_hs_out_ep = {							\
+		.bLength = sizeof(struct usb_ep_descriptor),			\
+		.bDescriptorType = USB_DESC_ENDPOINT,				\
+		.bEndpointAddress = BT_HCI_EP_ACL_DATA_OUT,			\
+		.bmAttributes = USB_EP_TYPE_BULK,				\
+		.wMaxPacketSize = sys_cpu_to_le16(BT_HCI_EP_HS_MPS_ACL_DATA),	\
+		.bInterval = 0,							\
+	},									\
+										\
 	.if1_0 = {								\
 		.bLength = sizeof(struct usb_if_descriptor),			\
 		.bDescriptorType = USB_DESC_INTERFACE,				\
@@ -646,6 +780,9 @@ const static struct usb_desc_header *bt_hci_fs_desc_##n[] = {			\
 	(struct usb_desc_header *) &bt_hci_desc_##n.if0_int_ep,			\
 	(struct usb_desc_header *) &bt_hci_desc_##n.if0_in_ep,			\
 	(struct usb_desc_header *) &bt_hci_desc_##n.if0_out_ep,			\
+	(struct usb_desc_header *) &bt_hci_desc_##n.if0_1,			\
+	(struct usb_desc_header *) &bt_hci_desc_##n.if0_1_in_ep,		\
+	(struct usb_desc_header *) &bt_hci_desc_##n.if0_1_out_ep,		\
 	(struct usb_desc_header *) &bt_hci_desc_##n.if1_0,			\
 	(struct usb_desc_header *) &bt_hci_desc_##n.if1_0_iso_in_ep,		\
 	(struct usb_desc_header *) &bt_hci_desc_##n.if1_0_iso_out_ep,		\
@@ -661,6 +798,9 @@ const static __maybe_unused struct usb_desc_header *bt_hci_hs_desc_##n[] = {	\
 	(struct usb_desc_header *) &bt_hci_desc_##n.if0_int_ep,			\
 	(struct usb_desc_header *) &bt_hci_desc_##n.if0_hs_in_ep,		\
 	(struct usb_desc_header *) &bt_hci_desc_##n.if0_hs_out_ep,		\
+	(struct usb_desc_header *) &bt_hci_desc_##n.if0_1,			\
+	(struct usb_desc_header *) &bt_hci_desc_##n.if0_1_hs_in_ep,		\
+	(struct usb_desc_header *) &bt_hci_desc_##n.if0_1_hs_out_ep,		\
 	(struct usb_desc_header *) &bt_hci_desc_##n.if1_0,			\
 	(struct usb_desc_header *) &bt_hci_desc_##n.if1_0_iso_in_ep,		\
 	(struct usb_desc_header *) &bt_hci_desc_##n.if1_0_iso_out_ep,		\
