@@ -4603,6 +4603,40 @@ done:
 }
 #endif /* CONFIG_BT_L2CAP_RET_FC */
 
+static void l2cap_br_config_rsp_sent_cb(struct bt_conn *conn, void *user_data, int err)
+{
+	uint16_t scid = POINTER_TO_UINT(user_data);
+	struct bt_l2cap_chan *chan;
+
+	chan = bt_l2cap_br_lookup_tx_cid(conn, scid);
+	if (chan == NULL) {
+		return;
+	}
+
+	if (err != 0) {
+		LOG_ERR("Config response of chan %p failed to send (%d)", BR_CHAN(chan), err);
+		l2cap_br_chan_disconn(chan);
+		return;
+	}
+
+	atomic_set_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_RCONF_DONE);
+
+	if (!atomic_test_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_LCONF_DONE)) {
+		LOG_DBG("Local config req is not done");
+		return;
+	}
+
+	if (BR_CHAN(chan)->state == BT_L2CAP_CONFIG) {
+		LOG_DBG("scid 0x%04x rx MTU %u dcid 0x%04x tx MTU %u", BR_CHAN(chan)->rx.cid,
+			BR_CHAN(chan)->rx.mtu, BR_CHAN(chan)->tx.cid, BR_CHAN(chan)->tx.mtu);
+
+		bt_l2cap_br_chan_set_state(chan, BT_L2CAP_CONNECTED);
+		if (chan->ops != NULL && chan->ops->connected != NULL) {
+			chan->ops->connected(chan);
+		}
+	}
+}
+
 static void l2cap_br_conf_req(struct bt_l2cap_br *l2cap, uint8_t ident, uint16_t len,
 			      struct net_buf *buf)
 {
@@ -4614,6 +4648,7 @@ static void l2cap_br_conf_req(struct bt_l2cap_br *l2cap, uint8_t ident, uint16_t
 	struct bt_l2cap_conf_opt *opt = NULL;
 	uint16_t flags, dcid, opt_len, hint, result = BT_L2CAP_CONF_SUCCESS;
 	struct net_buf *rsp_buf;
+	int err;
 
 	if (len < sizeof(*req)) {
 		LOG_ERR("Too small L2CAP conf req packet size");
@@ -4764,9 +4799,8 @@ send_rsp:
 
 	hdr->len = sys_cpu_to_le16(rsp_buf->len - sizeof(*hdr));
 
-	l2cap_send(conn, BT_L2CAP_CID_BR_SIG, rsp_buf);
-
 	if (result != BT_L2CAP_CONF_SUCCESS) {
+		l2cap_send(conn, BT_L2CAP_CID_BR_SIG, rsp_buf);
 		return;
 	}
 
@@ -4785,17 +4819,12 @@ send_rsp:
 	}
 #endif /* CONFIG_BT_L2CAP_RET_FC */
 
-	atomic_set_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_RCONF_DONE);
-
-	if (atomic_test_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_LCONF_DONE) &&
-	    BR_CHAN(chan)->state == BT_L2CAP_CONFIG) {
-		LOG_DBG("scid 0x%04x rx MTU %u dcid 0x%04x tx MTU %u", BR_CHAN(chan)->rx.cid,
-			BR_CHAN(chan)->rx.mtu, BR_CHAN(chan)->tx.cid, BR_CHAN(chan)->tx.mtu);
-
-		bt_l2cap_br_chan_set_state(chan, BT_L2CAP_CONNECTED);
-		if (chan->ops && chan->ops->connected) {
-			chan->ops->connected(chan);
-		}
+	err = bt_l2cap_br_send_cb(conn, BT_L2CAP_CID_BR_SIG, rsp_buf, l2cap_br_config_rsp_sent_cb,
+				  UINT_TO_POINTER(BR_CHAN(chan)->tx.cid));
+	if (err != 0) {
+		LOG_ERR("Failed to send config response of chan %p (%d)", BR_CHAN(chan), err);
+		net_buf_unref(rsp_buf);
+		l2cap_br_chan_disconn(chan);
 	}
 }
 
