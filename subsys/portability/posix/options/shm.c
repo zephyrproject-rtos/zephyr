@@ -25,6 +25,7 @@
 static const struct fd_op_vtable shm_vtable;
 
 static sys_dlist_t shm_list = SYS_DLIST_STATIC_INIT(&shm_list);
+static K_MUTEX_DEFINE(shm_lock);
 
 struct shm_obj {
 	uint8_t *mem;
@@ -239,10 +240,12 @@ static int shm_close(void *obj)
 {
 	struct shm_obj *shm = obj;
 
+	k_mutex_lock(&shm_lock, K_FOREVER);
 	shm->refs -= (shm->refs > 0) ? 1 : 0;
 	if (shm->unlinked && (shm->refs == 0)) {
 		shm_obj_remove(shm);
 	}
+	k_mutex_unlock(&shm_lock);
 
 	return 0;
 }
@@ -336,15 +339,21 @@ int shm_open(const char *name, int oflag, mode_t mode)
 	}
 
 	key = hash32(name, name_len);
+
+	k_mutex_lock(&shm_lock, K_FOREVER);
+
 	shm = shm_obj_find(key);
 	if ((shm != NULL) && shm->unlinked) {
 		/* we cannot open a shm object that has already been unlinked */
+		k_mutex_unlock(&shm_lock);
+		zvfs_free_fd(fd);
 		errno = EACCES;
 		return -1;
 	}
 
 	if (creat) {
 		if ((shm != NULL) && excl) {
+			k_mutex_unlock(&shm_lock);
 			zvfs_free_fd(fd);
 			errno = EEXIST;
 			return -1;
@@ -353,6 +362,7 @@ int shm_open(const char *name, int oflag, mode_t mode)
 		if (shm == NULL) {
 			shm = k_calloc(1, sizeof(*shm));
 			if (shm == NULL) {
+				k_mutex_unlock(&shm_lock);
 				zvfs_free_fd(fd);
 				errno = ENOSPC;
 				return -1;
@@ -362,11 +372,15 @@ int shm_open(const char *name, int oflag, mode_t mode)
 			shm_obj_add(shm);
 		}
 	} else if (shm == NULL) {
+		k_mutex_unlock(&shm_lock);
+		zvfs_free_fd(fd);
 		errno = ENOENT;
 		return -1;
 	}
 
 	++shm->refs;
+	k_mutex_unlock(&shm_lock);
+
 	zvfs_finalize_typed_fd(fd, shm, &shm_vtable, ZVFS_MODE_IFSHM);
 
 	return fd;
@@ -384,8 +398,12 @@ int shm_unlink(const char *name)
 	}
 
 	key = hash32(name, name_len);
+
+	k_mutex_lock(&shm_lock, K_FOREVER);
+
 	shm = shm_obj_find(key);
 	if ((shm == NULL) || shm->unlinked) {
+		k_mutex_unlock(&shm_lock);
 		errno = ENOENT;
 		return -1;
 	}
@@ -394,6 +412,8 @@ int shm_unlink(const char *name)
 	if (shm->refs == 0) {
 		shm_obj_remove(shm);
 	}
+
+	k_mutex_unlock(&shm_lock);
 
 	return 0;
 }
