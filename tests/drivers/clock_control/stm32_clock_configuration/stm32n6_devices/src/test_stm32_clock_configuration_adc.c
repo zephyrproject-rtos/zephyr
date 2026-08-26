@@ -11,7 +11,7 @@
 
 ZTEST(stm32n6_devices_clocks, test_adc_clk_config)
 {
-	static const struct stm32_pclken pclken[] = STM32_DT_CLOCKS(DT_NODELABEL(adc1));
+	static const struct stm32_pclken pclken[] = STM32_DT_CLOCKS(DT_NODELABEL(adc12_common));
 
 	uint32_t dev_dt_clk_freq, dev_actual_clk_freq, dev_actual_clk_src;
 	enum clock_control_status status;
@@ -35,7 +35,7 @@ ZTEST(stm32n6_devices_clocks, test_adc_clk_config)
 	zassert_true((status == CLOCK_CONTROL_STATUS_ON),
 		     "[Zephyr] ADC1 gating clock should be on");
 
-	if (DT_NUM_CLOCKS(DT_NODELABEL(adc1)) > 1) {
+	if (DT_NUM_CLOCKS(DT_NODELABEL(adc12_common)) > 1) {
 		/* Test clock_on(domain_clk) */
 		r = clock_control_configure(DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 					    (clock_control_subsys_t) &pclken[1],
@@ -102,7 +102,7 @@ ZTEST(stm32n6_devices_clocks, test_adc_clk_config)
 				dev_dt_clk_freq, dev_actual_clk_freq);
 
 	} else {
-		zassert_true((DT_NUM_CLOCKS(DT_NODELABEL(adc1)) == 1), "test config issue");
+		zassert_true((DT_NUM_CLOCKS(DT_NODELABEL(adc12_common)) == 1), "test config issue");
 		/* No domain clock available, don't check gating clock as for adc there is no
 		 * uniform way to verify via hal.
 		 */

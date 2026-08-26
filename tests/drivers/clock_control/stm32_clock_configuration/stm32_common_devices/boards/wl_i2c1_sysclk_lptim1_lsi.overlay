@@ -82,7 +82,11 @@
 	status = "okay";
 };
 
-&adc1 {
+&adc1_common {
 	/* Basic test only. Don't configure domain clock. */
+	status = "okay";
+};
+
+&adc1 {
 	status = "okay";
 };
