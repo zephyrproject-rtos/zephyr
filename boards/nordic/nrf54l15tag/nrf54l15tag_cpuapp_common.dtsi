@@ -30,13 +30,13 @@
 &lfxo {
 	status = "okay";
 	load-capacitors = "internal";
-	load-capacitance-femtofarad = <9000>;
+	load-capacitance-femtofarad = <17000>;
 };
 
 &hfxo {
 	status = "okay";
 	load-capacitors = "internal";
-	load-capacitance-femtofarad = <8000>;
+	load-capacitance-femtofarad = <15000>;
 };
 
 &radio {
