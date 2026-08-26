@@ -205,11 +205,6 @@ static int dma_ti_mspm0_configure(const struct device *dev, uint32_t channel,
 		return -EBUSY;
 	}
 
-	if (config->dest_data_size != config->source_data_size) {
-		LOG_ERR("Source and Destination data width is not same");
-		return -EINVAL;
-	}
-
 	if (dma_ti_mspm0_get_memory_increment(b_cfg->source_addr_adj, &temp)) {
 		LOG_ERR("Invalid Source address increment");
 		return -EINVAL;
