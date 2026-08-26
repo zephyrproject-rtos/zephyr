@@ -1,0 +1,19 @@
+identifier: adi_eval_adin1140d1z/max32690/m4
+name: adi_eval_adin1140d1z m4
+vendor: adi
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+supported:
+  - gpio
+  - serial
+  - spi
+  - i2c
+  - trng
+  - dma
+  - netif:eth
+ram: 128
+flash: 3072
