@@ -6,6 +6,7 @@
 
 #include <zephyr/arch/posix/posix_soc_if.h>
 #include "board_irq.h"
+#include <zephyr/irq.h>
 
 #ifdef CONFIG_IRQ_OFFLOAD
 #include <zephyr/irq_offload.h>
@@ -35,6 +36,36 @@ int arch_irq_is_enabled(unsigned int irq)
 {
 	return posix_irq_is_enabled(irq);
 }
+
+#ifdef CONFIG_ARCH_HAS_IRQ_PENDING_OPS
+void arch_irq_set_pending(unsigned int irq)
+{
+	posix_sw_set_pending_IRQ(irq);
+}
+
+void arch_irq_clear_pending(unsigned int irq)
+{
+	posix_sw_clear_pending_IRQ(irq);
+}
+
+bool arch_irq_is_pending(unsigned int irq)
+{
+	return posix_irq_is_pending(irq);
+}
+#endif /* CONFIG_ARCH_HAS_IRQ_PENDING_OPS */
+
+#ifdef CONFIG_ARCH_HAS_IRQ_GET_ACTIVE
+unsigned int arch_irq_get_active(void)
+{
+	int current = posix_get_current_irq();
+
+	if (current == -1) {
+		return K_IRQ_ACTIVE_NONE;
+	} else {
+		return current;
+	}
+}
+#endif
 
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
 /**
