@@ -15,6 +15,7 @@ supported:
   - hwinfo
   - i2c
   - netif:eth
+  - ptp_clock
   - sdhc
   - uart
   - usb_device
