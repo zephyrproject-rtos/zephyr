@@ -305,3 +305,66 @@ ZTEST(xsi_realtime, test_mqueue_open_and_unlink_multiple)
 	zassert_ok(mq_close(mqd1), "Unable to close message queue 1 descriptor.");
 	zassert_ok(mq_close(mqd2), "Unable to close message queue 2 descriptor.");
 }
+
+ZTEST(xsi_realtime, test_mqueue_open_invalid_attrs_einval)
+{
+	mqd_t mqd;
+	struct mq_attr invalid_attrs = {
+		.mq_msgsize = -1,
+		.mq_maxmsg = MESG_COUNT_PERMQ,
+	};
+
+	errno = 0;
+	mqd = mq_open("/inv_neg_sz", O_RDWR | O_CREAT, 0600, &invalid_attrs);
+	zassert_equal(mqd, (mqd_t)-1, "mq_open should fail for negative msgsize");
+	zassert_equal(errno, EINVAL, "errno should be EINVAL for negative msgsize");
+
+	invalid_attrs.mq_msgsize = MESSAGE_SIZE;
+	invalid_attrs.mq_maxmsg = -1;
+	errno = 0;
+	mqd = mq_open("/inv_neg_mx", O_RDWR | O_CREAT, 0600, &invalid_attrs);
+	zassert_equal(mqd, (mqd_t)-1, "mq_open should fail for negative maxmsg");
+	zassert_equal(errno, EINVAL, "errno should be EINVAL for negative maxmsg");
+
+	invalid_attrs.mq_msgsize = CONFIG_MSG_SIZE_MAX + 1;
+	invalid_attrs.mq_maxmsg = MESG_COUNT_PERMQ;
+	errno = 0;
+	mqd = mq_open("/inv_ovf_sz", O_RDWR | O_CREAT, 0600, &invalid_attrs);
+	zassert_equal(mqd, (mqd_t)-1,
+		      "mq_open should fail for msgsize exceeding limit");
+	zassert_equal(errno, EINVAL, "errno should be EINVAL for msgsize exceeding limit");
+}
+
+ZTEST(xsi_realtime, test_mqueue_open_existing_null_attrs)
+{
+	const char *q_name = "/exist_null";
+	mqd_t mqd1, mqd2;
+	struct mq_attr attrs = {
+		.mq_msgsize = MESSAGE_SIZE,
+		.mq_maxmsg = MESG_COUNT_PERMQ,
+	};
+
+	mqd1 = mq_open(q_name, O_RDWR | O_CREAT | O_EXCL, 0600, &attrs);
+	zassert_not_equal(mqd1, (mqd_t)-1, "mq_open failed to create queue");
+
+	/* POSIX: If O_CREAT is specified without O_EXCL and queue exists, O_CREAT has no effect */
+	mqd2 = mq_open(q_name, O_RDWR | O_CREAT, 0600, NULL);
+	zassert_not_equal(mqd2, (mqd_t)-1,
+			  "mq_open with O_CREAT and NULL attrs should open existing queue");
+
+	zassert_ok(mq_close(mqd1), "Unable to close mqd1");
+	zassert_ok(mq_close(mqd2), "Unable to close mqd2");
+	zassert_ok(mq_unlink(q_name), "Unable to unlink queue");
+}
+
+ZTEST(xsi_realtime, test_mqueue_open_default_attrs)
+{
+	const char *q_name = "/def_attr";
+	mqd_t mqd;
+
+	mqd = mq_open(q_name, O_RDWR | O_CREAT, 0600, NULL);
+	zassert_not_equal(mqd, (mqd_t)-1, "mq_open should succeed with default attributes");
+
+	zassert_ok(mq_close(mqd), "Unable to close descriptor");
+	zassert_ok(mq_unlink(q_name), "Unable to unlink queue");
+}

@@ -69,129 +69,120 @@ mqd_t mq_open(const char *name, int oflags, ...)
 	if ((oflags & O_CREAT) != 0) {
 		BUILD_ASSERT(sizeof(mode_t) <= sizeof(int));
 		mode = va_arg(va, unsigned int);
-		attrs = va_arg(va, struct mq_attr*);
+		attrs = va_arg(va, struct mq_attr *);
 	}
 	va_end(va);
 
-	if (attrs != NULL) {
-		msg_size = attrs->mq_msgsize;
-		max_msgs = attrs->mq_maxmsg;
-	}
-
-	if ((name == NULL) || ((oflags & O_CREAT) != 0 && (msg_size <= 0 ||
-						      max_msgs <= 0))) {
+	if (name == NULL) {
 		errno = EINVAL;
 		return (mqd_t)mqd;
 	}
 
-	if ((strlen(name) + 1)  > CONFIG_MQUEUE_NAMELEN_MAX) {
+	if ((strlen(name) + 1) > CONFIG_MQUEUE_NAMELEN_MAX) {
 		errno = ENAMETOOLONG;
 		return (mqd_t)mqd;
 	}
 
-	/* Check if queue already exists */
+	if (attrs != NULL) {
+		if (attrs->mq_msgsize <= 0 || attrs->mq_maxmsg <= 0 ||
+		    attrs->mq_msgsize > CONFIG_MSG_SIZE_MAX ||
+		    attrs->mq_maxmsg > CONFIG_POSIX_MQ_OPEN_MAX) {
+			errno = EINVAL;
+			return (mqd_t)mqd;
+		}
+		msg_size = attrs->mq_msgsize;
+		max_msgs = attrs->mq_maxmsg;
+	} else if ((oflags & O_CREAT) != 0) {
+		msg_size = CONFIG_MSG_SIZE_MAX;
+		max_msgs = CONFIG_POSIX_MQ_OPEN_MAX;
+	}
+
+	/* Lock before checking to make sure that the call is atomic */
 	k_sem_take(&mq_sem, K_FOREVER);
 	msg_queue = find_in_list(name);
-	k_sem_give(&mq_sem);
 
-	if ((msg_queue != NULL) && (oflags & O_CREAT) != 0 &&
-	    (oflags & O_EXCL) != 0) {
-		/* Message queue has already been opened and O_EXCL is set */
-		errno = EEXIST;
-		return (mqd_t)mqd;
-	}
-
-	if ((msg_queue == NULL) && (oflags & O_CREAT) == 0) {
-		errno = ENOENT;
-		return (mqd_t)mqd;
-	}
-
-	mq_desc_ptr = k_malloc(sizeof(struct mqueue_desc));
-	if (mq_desc_ptr != NULL) {
-		(void)memset(mq_desc_ptr, 0, sizeof(struct mqueue_desc));
-		msg_queue_desc = (struct mqueue_desc *)mq_desc_ptr;
-		msg_queue_desc->mem_desc = mq_desc_ptr;
-	} else {
-		goto free_mq_desc;
-	}
-
-
-	/* Allocate mqueue object for new message queue */
-	if (msg_queue == NULL) {
-		size_t buf_size;
-
-		/* Check for message quantity and size in message queue */
-		if (attrs->mq_msgsize > CONFIG_MSG_SIZE_MAX ||
-		    attrs->mq_maxmsg > CONFIG_POSIX_MQ_OPEN_MAX) {
-			goto free_mq_desc;
-		}
-
-		mq_obj_ptr = k_malloc(sizeof(mqueue_object));
-		if (mq_obj_ptr != NULL) {
-			(void)memset(mq_obj_ptr, 0, sizeof(mqueue_object));
-			msg_queue = (mqueue_object *)mq_obj_ptr;
-			msg_queue->mem_obj = mq_obj_ptr;
-
-		} else {
-			goto free_mq_object;
-		}
-
-		mq_name_ptr = k_malloc(strlen(name) + 1);
-		if (mq_name_ptr != NULL) {
-			(void)memset(mq_name_ptr, 0, strlen(name) + 1);
-			msg_queue->name = mq_name_ptr;
-
-		} else {
-			goto free_mq_name;
-		}
-
-		strcpy(msg_queue->name, name);
-
-		if (size_mul_overflow((size_t)msg_size, (size_t)max_msgs, &buf_size)) {
-			goto free_mq_buffer;
-		}
-
-		mq_buf_ptr = k_malloc(buf_size);
-		if (mq_buf_ptr != NULL) {
-			(void)memset(mq_buf_ptr, 0, buf_size);
-			msg_queue->mem_buffer = mq_buf_ptr;
-		} else {
-			goto free_mq_buffer;
-		}
-
-		(void)atomic_set(&msg_queue->ref_count, 1);
-		/* initialize zephyr message queue */
-		k_msgq_init(&msg_queue->queue, msg_queue->mem_buffer, msg_size,
-			    max_msgs);
-		k_sem_take(&mq_sem, K_FOREVER);
-		sys_slist_append(&mq_list, (sys_snode_t *)&(msg_queue->snode));
-		k_sem_give(&mq_sem);
-
-	} else {
-		k_sem_take(&mq_sem, K_FOREVER);
-		if (find_in_list(name) != msg_queue) {
+	if (msg_queue != NULL) {
+		if (((oflags & O_CREAT) != 0) && ((oflags & O_EXCL) != 0)) {
 			k_sem_give(&mq_sem);
-			errno = ENOENT;
-			goto free_mq_desc;
+			errno = EEXIST;
+			return (mqd_t)mqd;
 		}
 
 		atomic_inc(&msg_queue->ref_count);
 		k_sem_give(&mq_sem);
+		goto alloc_desc;
 	}
 
+	/* Named message queue doesn't exist, try to create new one */
+	if ((oflags & O_CREAT) == 0) {
+		k_sem_give(&mq_sem);
+		errno = ENOENT;
+		return (mqd_t)mqd;
+	}
+
+	size_t buf_size;
+
+	if (size_mul_overflow((size_t)msg_size, (size_t)max_msgs, &buf_size)) {
+		k_sem_give(&mq_sem);
+		errno = EINVAL;
+		return (mqd_t)mqd;
+	}
+
+	mq_obj_ptr = k_malloc(sizeof(mqueue_object));
+	if (mq_obj_ptr == NULL) {
+		k_sem_give(&mq_sem);
+		errno = ENOSPC;
+		return (mqd_t)mqd;
+	}
+	(void)memset(mq_obj_ptr, 0, sizeof(mqueue_object));
+	msg_queue = (mqueue_object *)mq_obj_ptr;
+	msg_queue->mem_obj = mq_obj_ptr;
+
+	mq_name_ptr = k_malloc(strlen(name) + 1);
+	if (mq_name_ptr == NULL) {
+		k_free(mq_obj_ptr);
+		k_sem_give(&mq_sem);
+		errno = ENOSPC;
+		return (mqd_t)mqd;
+	}
+	(void)memset(mq_name_ptr, 0, strlen(name) + 1);
+	msg_queue->name = mq_name_ptr;
+	strcpy(msg_queue->name, name);
+
+	mq_buf_ptr = k_malloc(buf_size);
+	if (mq_buf_ptr == NULL) {
+		k_free(mq_name_ptr);
+		k_free(mq_obj_ptr);
+		k_sem_give(&mq_sem);
+		errno = ENOSPC;
+		return (mqd_t)mqd;
+	}
+	(void)memset(mq_buf_ptr, 0, buf_size);
+	msg_queue->mem_buffer = mq_buf_ptr;
+
+	(void)atomic_set(&msg_queue->ref_count, 1);
+	/* initialize zephyr message queue */
+	k_msgq_init(&msg_queue->queue, msg_queue->mem_buffer, msg_size, max_msgs);
+	sys_slist_append(&mq_list, (sys_snode_t *)&(msg_queue->snode));
+	k_sem_give(&mq_sem);
+
+alloc_desc:
+	mq_desc_ptr = k_malloc(sizeof(struct mqueue_desc));
+	if (mq_desc_ptr == NULL) {
+		atomic_dec(&msg_queue->ref_count);
+		if (msg_queue->name == NULL) {
+			remove_mq(msg_queue);
+		}
+		errno = ENOSPC;
+		return (mqd_t)mqd;
+	}
+
+	(void)memset(mq_desc_ptr, 0, sizeof(struct mqueue_desc));
+	msg_queue_desc = (struct mqueue_desc *)mq_desc_ptr;
+	msg_queue_desc->mem_desc = mq_desc_ptr;
 	msg_queue_desc->mqueue = msg_queue;
 	msg_queue_desc->flags = (oflags & O_NONBLOCK) != 0 ? O_NONBLOCK : 0;
 	return (mqd_t)msg_queue_desc;
-
-free_mq_buffer:
-	k_free(mq_name_ptr);
-free_mq_name:
-	k_free(mq_obj_ptr);
-free_mq_object:
-	k_free(mq_desc_ptr);
-free_mq_desc:
-	errno = ENOSPC;
-	return (mqd_t)mqd;
 }
 
 /**
