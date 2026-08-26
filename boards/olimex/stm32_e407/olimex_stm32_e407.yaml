@@ -9,5 +9,6 @@ ram: 128
 flash: 1024
 supported:
   - counter
+  - netif:eth
   - usb_device
 vendor: olimex
