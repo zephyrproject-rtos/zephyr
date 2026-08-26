@@ -18,6 +18,7 @@ supported:
   - hwinfo
   - led
   - netif:eth
+  - ptp_clock
   - sdhc
   - spi
   - uart
