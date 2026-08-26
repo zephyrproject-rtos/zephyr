@@ -12,12 +12,6 @@ boards:
           - name: 'virt'
           - name: 'xip'
 
-  - name: qemu_x86_lakemont
-    full_name: QEMU Emulation for X86 / Lakemont CPU
-    vendor: intel
-    socs:
-      - name: lakemont
-
   - name: qemu_x86_tiny
     full_name: QEMU Emulation for X86 Minimal Configuration
     vendor: intel
