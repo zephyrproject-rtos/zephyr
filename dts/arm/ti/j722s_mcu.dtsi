@@ -13,6 +13,21 @@
 	#address-cells = <1>;
 	#size-cells = <1>;
 
+	mcu_padcfg0: syscon@4080000 {
+		compatible = "ti,control-module";
+		reg = <0x04080000 DT_SIZE_K(32)>;
+		ranges = <0x00 0x04080000 DT_SIZE_K(32)>;
+		ti,unlock-offsets = <0x1008 0x5008>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		mcu_pinctrl: pinctrl@4000 {
+			compatible = "ti,k3-pinctrl";
+			reg = <0x4000 0x88>;
+			status = "okay";
+		};
+	};
+
 	mcu_gpio0: gpio@4201010 {
 		compatible = "ti,davinci-gpio";
 		reg = <0x4201010 0x28>;
@@ -36,6 +51,17 @@
 		compatible = "ti,j7-rti-wdt";
 		reg = <0x04880000 0x100>;
 		clock-frequency = <DT_FREQ_M(25)>;
+		status = "disabled";
+	};
+
+	mcu_spi0: spi@4b00000 {
+		compatible = "ti,omap-mcspi";
+		reg = <0x04b00000 0x400>;
+		clock-frequency = <DT_FREQ_M(50)>;
+		ti,spi-num-cs = <4>;
+		ti,d1-miso-d0-mosi;
+		#address-cells = <1>;
+		#size-cells = <0>;
 		status = "disabled";
 	};
 };
