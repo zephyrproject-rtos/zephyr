@@ -177,6 +177,11 @@ int ptp_transport_send(struct ptp_port *port, struct ptp_msg *msg, enum ptp_sock
 	return transport_send_ret;
 }
 
+int ptp_transport_sendto(struct ptp_port *port, struct ptp_msg *msg, enum ptp_socket idx)
+{
+	return ptp_transport_send(port, msg, idx);
+}
+
 int ptp_transport_open(struct ptp_port *port)
 {
 	ARG_UNUSED(port);
