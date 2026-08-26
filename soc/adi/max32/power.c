@@ -111,8 +111,8 @@ void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 				MXC_LP_GetGPIOWakeupEnable(gpio_wakeup_sources[i].port) &
 				MXC_LP_GetGPIOWakeupStatus(gpio_wakeup_sources[i].port);
 			if (wakeup_status) {
-				NVIC_EnableIRQ(gpio_wakeup_sources[i].irq);
-				NVIC_SetPendingIRQ(gpio_wakeup_sources[i].irq);
+				k_irq_enable(gpio_wakeup_sources[i].irq);
+				k_irq_set_pending(gpio_wakeup_sources[i].irq);
 			}
 		}
 
