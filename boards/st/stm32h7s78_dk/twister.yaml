@@ -13,6 +13,7 @@ supported:
   - memc
   - netif:eth
   - octospi
+  - ptp_clock
   - rtc
   - uart
   - usbd

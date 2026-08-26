@@ -18,6 +18,7 @@ supported:
   - gpio
   - memc
   - netif:eth
+  - ptp_clock
   - pwm
   - rtc
   - spi
