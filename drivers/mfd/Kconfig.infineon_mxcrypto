@@ -5,14 +5,18 @@
 
 config MFD_INFINEON_MXCRYPTO
 	bool "Infineon MXCRYPTO multi-function device driver"
-	default y
+	default y if ENTROPY_INFINEON_MXCRYPTO_TRNG || CRYPTO_INFINEON_MXCRYPTO
 	depends on DT_HAS_INFINEON_MXCRYPTO_ENABLED
+	select USE_INFINEON_MXCRYPTO_CORE
 	help
 	  Enable the Infineon MXCRYPTO MFD driver.  The MXCRYPTO block is a
 	  single hardware crypto engine shared by a True Random Number Generator
 	  (TRNG) and AES / SHA acceleration.  This driver owns the shared
 	  register base address and the mutex that serialises access between the
-	  TRNG and crypto child function drivers.
+	  TRNG and crypto child function drivers, and enables the block through
+	  the MXCRYPTO PDL.
+
+	  Enabled by default when a child function driver is enabled.
 
 config MFD_INFINEON_MXCRYPTO_INIT_PRIORITY
 	int "Infineon MXCRYPTO MFD init priority"

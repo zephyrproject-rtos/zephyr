@@ -104,18 +104,27 @@ config USE_INFINEON_TRNG
 	help
 	  Enable True Random Number Generator (TRNG) HAL module driver for Infineon devices
 
+config USE_INFINEON_MXCRYPTO_CORE
+	bool
+	help
+	  Enable Infineon MXCRYPTO PDL core sources, shared by the TRNG, AES
+	  and SHA accelerators and by the MFD driver that enables the block
+
 config USE_INFINEON_MXCRYPTO_TRNG
 	bool
+	select USE_INFINEON_MXCRYPTO_CORE
 	help
 	  Enable Infineon MXCRYPTO PDL TRNG hardware accelerator sources
 
 config USE_INFINEON_MXCRYPTO_AES
 	bool
+	select USE_INFINEON_MXCRYPTO_CORE
 	help
 	  Enable Infineon MXCRYPTO PDL AES (ECB/CBC/CTR/CCM/GCM) hardware accelerator sources
 
 config USE_INFINEON_MXCRYPTO_SHA
 	bool
+	select USE_INFINEON_MXCRYPTO_CORE
 	help
 	  Enable Infineon MXCRYPTO PDL SHA (SHA-224/256/384/512) hardware accelerator sources
 
