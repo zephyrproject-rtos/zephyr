@@ -11,6 +11,7 @@
 #include <zephyr/init.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/dma.h>
+#include <zephyr/dt-bindings/dma/ti-mspm0-dma.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
 #include <zephyr/sys/util.h>
@@ -89,6 +90,10 @@ struct dma_mspm0_regs {
 #define DMA_MSPM0_INCR_INCREMENT 0x3U
 
 #define DMA_MSPM0_EM_NORMAL      0x0U
+#define DMA_MSPM0_EM_GATHER      0x1U
+#define DMA_MSPM0_EM_FILL        0x2U
+#define DMA_MSPM0_EM_TABLE       0x3U
+
 #define DMA_MSPM0_TM_SINGLE      0x0U
 #define DMA_MSPM0_TM_BLOCK       0x1U
 #define DMA_MSPM0_TM_RPTSNGL     0x2U
@@ -196,13 +201,30 @@ static inline bool dma_ti_mspm0_is_full_channel(const struct dma_ti_mspm0_config
 
 static inline uint32_t dma_ti_mspm0_get_transfer_mode(struct dma_config *config)
 {
-	bool block = config->channel_direction == MEMORY_TO_MEMORY;
+	switch (config->channel_direction) {
+	case MEMORY_TO_MEMORY:
+		return config->cyclic ? DMA_MSPM0_TM_RPTBLCK : DMA_MSPM0_TM_BLOCK;
+	default:
+		return config->cyclic ? DMA_MSPM0_TM_RPTSNGL : DMA_MSPM0_TM_SINGLE;
+	}
+}
 
-	if (config->cyclic) {
-		return block ? DMA_MSPM0_TM_RPTBLCK : DMA_MSPM0_TM_RPTSNGL;
+static inline uint32_t dma_ti_mspm0_get_extended_mode(uint32_t dma_slot)
+{
+	uint32_t extmode = TI_MSPM0_DMA_SLOT_EXTMODE(dma_slot);
+
+	switch (extmode) {
+	case TI_MSPM0_DMA_SLOT_EXTMODE_FILL:
+		return DMA_MSPM0_EM_FILL;
+	case TI_MSPM0_DMA_SLOT_EXTMODE_TABLE:
+		return DMA_MSPM0_EM_TABLE;
+	case TI_MSPM0_DMA_SLOT_EXTMODE_GATHER:
+		return DMA_MSPM0_EM_GATHER;
+	default:
+		return DMA_MSPM0_EM_NORMAL;
 	}
 
-	return block ? DMA_MSPM0_TM_BLOCK : DMA_MSPM0_TM_SINGLE;
+	return 0;
 }
 
 static int dma_ti_mspm0_configure(const struct device *dev, uint32_t channel,
@@ -214,7 +236,10 @@ static int dma_ti_mspm0_configure(const struct device *dev, uint32_t channel,
 	struct dma_ti_mspm0_data *dma_data = dev->data;
 	struct dma_ti_mspm0_channel_data *data = NULL;
 	struct dma_block_config *b_cfg = NULL;
+	uint32_t trigger = TI_MSPM0_DMA_SLOT_DMATSEL(config->dma_slot);
 	uint32_t tm;
+	uint32_t em;
+	int ret = 0;
 
 	if ((config == NULL) || (channel >= cfg->dma_max_channels)) {
 		return -EINVAL;
@@ -245,8 +270,18 @@ static int dma_ti_mspm0_configure(const struct device *dev, uint32_t channel,
 
 	ctl |= FIELD_PREP(DMA_MSPM0_CTL_DSTINCR, temp);
 
+	em = dma_ti_mspm0_get_extended_mode(config->dma_slot);
+	if (em != DMA_MSPM0_EM_NORMAL && !dma_ti_mspm0_is_full_channel(cfg, channel)) {
+		return -ENOTSUP;
+	}
+
 	if (dma_ti_mspm0_get_datawidth(config->source_data_size, &temp)) {
 		LOG_ERR("Invalid Source data width");
+		return -EINVAL;
+	}
+
+	if (em == DMA_MSPM0_EM_TABLE && temp != DMA_MSPM0_WIDTH_LONG) {
+		LOG_ERR("Table mode requires 64-bit source width");
 		return -EINVAL;
 	}
 
@@ -254,6 +289,11 @@ static int dma_ti_mspm0_configure(const struct device *dev, uint32_t channel,
 
 	if (dma_ti_mspm0_get_datawidth(config->dest_data_size, &temp)) {
 		LOG_ERR("Invalid Destination data width");
+		return -EINVAL;
+	}
+
+	if (em == DMA_MSPM0_EM_TABLE && temp != DMA_MSPM0_WIDTH_WORD) {
+		LOG_ERR("Table mode requires 32-bit destination width");
 		return -EINVAL;
 	}
 
@@ -267,7 +307,7 @@ static int dma_ti_mspm0_configure(const struct device *dev, uint32_t channel,
 	}
 
 	ctl |= FIELD_PREP(DMA_MSPM0_CTL_TM, tm);
-	ctl |= FIELD_PREP(DMA_MSPM0_CTL_EM, DMA_MSPM0_EM_NORMAL);
+	ctl |= FIELD_PREP(DMA_MSPM0_CTL_EM, em);
 
 	data->direction = config->channel_direction;
 	data->dma_callback = config->dma_callback;
@@ -281,8 +321,7 @@ static int dma_ti_mspm0_configure(const struct device *dev, uint32_t channel,
 		cfg->regs->dmachan[channel].dmasz =
 			dma_ti_mspm0_get_dmasz(b_cfg->block_size, config->source_data_size,
 					       config->dest_data_size, config->channel_direction);
-		cfg->regs->dmatctl[channel] =
-			FIELD_PREP(DMA_MSPM0_TCTL_DMATSEL, config->dma_slot);
+		cfg->regs->dmatctl[channel] = FIELD_PREP(DMA_MSPM0_TCTL_DMATSEL, trigger);
 		cfg->regs->dmachan[channel].dmactl = ctl;
 		cfg->regs->dmachan[channel].dmasa = b_cfg->source_address;
 		cfg->regs->dmachan[channel].dmada = b_cfg->dest_address;
