@@ -230,7 +230,10 @@ static int st7701_configure(const struct device *dev)
 		return ret;
 	}
 
-	k_msleep(50);
+	/* The controller requires 120 ms after Sleep Out before further
+	 * commands are accepted.
+	 */
+	k_msleep(120);
 
 	/* Set pixel color format */
 	switch (data->dsi_pixel_format) {
