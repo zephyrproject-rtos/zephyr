@@ -75,6 +75,14 @@ struct st7701_config {
 	uint32_t vbp;
 	uint32_t vsync;
 	uint32_t vfp;
+	uint8_t bk3_ef[4];
+	uint8_t bk3_ef_len;
+	uint8_t lneset[3];
+	uint8_t lneset_len;
+	uint8_t porctrl[3];
+	uint8_t porctrl_len;
+	uint8_t cc_control[2];
+	uint8_t cc_control_len;
 	uint8_t invsel[3];
 	uint8_t invsel_len;
 	uint8_t vrhs;
@@ -97,9 +105,11 @@ struct st7701_config {
 	uint8_t gip_e6[5];
 	uint8_t gip_e7[3];
 	uint8_t gip_e8[17];
+	uint8_t gip_e9[4];
 	uint8_t gip_eb[8];
 	uint8_t gip_ec[3];
 	uint8_t gip_ed[17];
+	uint8_t gip_ef[8];
 	uint8_t pvgamctrl[17];
 	uint8_t nvgamctrl[17];
 	uint8_t gip_e0_len;
@@ -111,9 +121,11 @@ struct st7701_config {
 	uint8_t gip_e6_len;
 	uint8_t gip_e7_len;
 	uint8_t gip_e8_len;
+	uint8_t gip_e9_len;
 	uint8_t gip_eb_len;
 	uint8_t gip_ec_len;
 	uint8_t gip_ed_len;
+	uint8_t gip_ef_len;
 	uint8_t pvgamctrl_len;
 	uint8_t nvgamctrl_len;
 };
@@ -240,15 +252,35 @@ static int st7701_configure(const struct device *dev)
 	const uint8_t control3[] = {DSI_CMD2_BK0_INVSEL, 0x01, 0x08};
 	const uint8_t control4[] = {0xCC, 0x18};
 
+	/* Optional Command2 BK3 setting */
+	if (cfg->bk3_ef_len > 0U) {
+		const uint8_t ff3[] = {DSI_CMD2BKX_SEL, 0x77, 0x01, 0x00, 0x00, 0x13};
+
+		st7701_generic_write(dev, ff3, sizeof(ff3));
+		st7701_write_dt_setting(dev, cfg->bk3_ef, cfg->bk3_ef_len);
+	}
+
 	st7701_generic_write(dev, control0, sizeof(control0));
-	st7701_generic_write(dev, control1, sizeof(control1));
-	st7701_generic_write(dev, control2, sizeof(control2));
+	if (cfg->lneset_len > 0U) {
+		st7701_write_dt_setting(dev, cfg->lneset, cfg->lneset_len);
+	} else {
+		st7701_generic_write(dev, control1, sizeof(control1));
+	}
+	if (cfg->porctrl_len > 0U) {
+		st7701_write_dt_setting(dev, cfg->porctrl, cfg->porctrl_len);
+	} else {
+		st7701_generic_write(dev, control2, sizeof(control2));
+	}
 	if (cfg->invsel_len > 0U) {
 		st7701_write_dt_setting(dev, cfg->invsel, cfg->invsel_len);
 	} else {
 		st7701_generic_write(dev, control3, sizeof(control3));
 	}
-	st7701_generic_write(dev, control4, sizeof(control4));
+	if (cfg->cc_control_len > 0U) {
+		st7701_write_dt_setting(dev, cfg->cc_control, cfg->cc_control_len);
+	} else {
+		st7701_generic_write(dev, control4, sizeof(control4));
+	}
 
 	/* Gamma Cluster Setting */
 	st7701_write_dt_setting(dev, cfg->pvgamctrl, cfg->pvgamctrl_len);
@@ -284,9 +316,11 @@ static int st7701_configure(const struct device *dev)
 	st7701_write_dt_setting(dev, cfg->gip_e6, cfg->gip_e6_len);
 	st7701_write_dt_setting(dev, cfg->gip_e7, cfg->gip_e7_len);
 	st7701_write_dt_setting(dev, cfg->gip_e8, cfg->gip_e8_len);
+	st7701_write_dt_setting(dev, cfg->gip_e9, cfg->gip_e9_len);
 	st7701_write_dt_setting(dev, cfg->gip_eb, cfg->gip_eb_len);
 	st7701_write_dt_setting(dev, cfg->gip_ec, cfg->gip_ec_len);
 	st7701_write_dt_setting(dev, cfg->gip_ed, cfg->gip_ed_len);
+	st7701_write_dt_setting(dev, cfg->gip_ef, cfg->gip_ef_len);
 
 	/* Bank1 setting */
 	st7701_generic_write(dev, ff2, sizeof(ff2));
@@ -544,9 +578,36 @@ static int st7701_init(const struct device *dev)
 	return 0;
 }
 
+/* Fail the build if a devicetree array property does not fit its config field. */
+#define ST7701_ASSERT_LEN(inst, prop, field)                                                       \
+	BUILD_ASSERT(DT_INST_PROP_LEN_OR(inst, prop, 0) <=                                         \
+		     sizeof(((struct st7701_config *)0)->field),                                   \
+		     "devicetree property " #prop " is too long for " #field)
+
 #define ST7701_DEVICE(inst)                                                                        \
-	BUILD_ASSERT((DT_INST_PROP(inst, height) % 2) == 0,                                         \
+	BUILD_ASSERT((DT_INST_PROP(inst, height) % 2) == 0,                                        \
 		     "Panel height must be even for the line setting encoding");                   \
+	ST7701_ASSERT_LEN(inst, bk3_ef, bk3_ef);                                                   \
+	ST7701_ASSERT_LEN(inst, lneset, lneset);                                                   \
+	ST7701_ASSERT_LEN(inst, porctrl, porctrl);                                                 \
+	ST7701_ASSERT_LEN(inst, cc_control, cc_control);                                           \
+	ST7701_ASSERT_LEN(inst, invsel, invsel);                                                   \
+	ST7701_ASSERT_LEN(inst, gip_e0, gip_e0);                                                   \
+	ST7701_ASSERT_LEN(inst, gip_e1, gip_e1);                                                   \
+	ST7701_ASSERT_LEN(inst, gip_e2, gip_e2);                                                   \
+	ST7701_ASSERT_LEN(inst, gip_e3, gip_e3);                                                   \
+	ST7701_ASSERT_LEN(inst, gip_e4, gip_e4);                                                   \
+	ST7701_ASSERT_LEN(inst, gip_e5, gip_e5);                                                   \
+	ST7701_ASSERT_LEN(inst, gip_e6, gip_e6);                                                   \
+	ST7701_ASSERT_LEN(inst, gip_e7, gip_e7);                                                   \
+	ST7701_ASSERT_LEN(inst, gip_e8, gip_e8);                                                   \
+	ST7701_ASSERT_LEN(inst, gip_e9, gip_e9);                                                   \
+	ST7701_ASSERT_LEN(inst, gip_eb, gip_eb);                                                   \
+	ST7701_ASSERT_LEN(inst, gip_ec, gip_ec);                                                   \
+	ST7701_ASSERT_LEN(inst, gip_ed, gip_ed);                                                   \
+	ST7701_ASSERT_LEN(inst, gip_ef, gip_ef);                                                   \
+	ST7701_ASSERT_LEN(inst, pvgamctrl, pvgamctrl);                                             \
+	ST7701_ASSERT_LEN(inst, nvgamctrl, nvgamctrl);                                             \
 	static const struct st7701_config st7701_config_##inst = {                                 \
 		.mipi_dsi = DEVICE_DT_GET(DT_INST_BUS(inst)),                                      \
 		.reset = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {0}),                         \
@@ -562,6 +623,14 @@ static int st7701_init(const struct device *dev)
 		.vbp = DT_PROP(DT_INST_CHILD(inst, display_timings), vback_porch),                 \
 		.vsync = DT_PROP(DT_INST_CHILD(inst, display_timings), vsync_len),                 \
 		.vfp = DT_PROP(DT_INST_CHILD(inst, display_timings), vfront_porch),                \
+		.bk3_ef = DT_INST_PROP_OR(inst, bk3_ef, {}),                                       \
+		.bk3_ef_len = DT_INST_PROP_LEN_OR(inst, bk3_ef, 0),                                \
+		.lneset = DT_INST_PROP_OR(inst, lneset, {}),                                       \
+		.lneset_len = DT_INST_PROP_LEN_OR(inst, lneset, 0),                                \
+		.porctrl = DT_INST_PROP_OR(inst, porctrl, {}),                                     \
+		.porctrl_len = DT_INST_PROP_LEN_OR(inst, porctrl, 0),                              \
+		.cc_control = DT_INST_PROP_OR(inst, cc_control, {}),                               \
+		.cc_control_len = DT_INST_PROP_LEN_OR(inst, cc_control, 0),                        \
 		.invsel = DT_INST_PROP_OR(inst, invsel, {}),                                       \
 		.invsel_len = DT_INST_PROP_LEN_OR(inst, invsel, 0),                                \
 		.vrhs = DT_INST_PROP(inst, vrhs),                                                  \
@@ -584,9 +653,11 @@ static int st7701_init(const struct device *dev)
 		.gip_e6 = DT_INST_PROP_OR(inst, gip_e6, {}),                                       \
 		.gip_e7 = DT_INST_PROP_OR(inst, gip_e7, {}),                                       \
 		.gip_e8 = DT_INST_PROP_OR(inst, gip_e8, {}),                                       \
+		.gip_e9 = DT_INST_PROP_OR(inst, gip_e9, {}),                                       \
 		.gip_eb = DT_INST_PROP_OR(inst, gip_eb, {}),                                       \
 		.gip_ec = DT_INST_PROP_OR(inst, gip_ec, {}),                                       \
 		.gip_ed = DT_INST_PROP_OR(inst, gip_ed, {}),                                       \
+		.gip_ef = DT_INST_PROP_OR(inst, gip_ef, {}),                                       \
 		.pvgamctrl = DT_INST_PROP_OR(inst, pvgamctrl, {}),                                 \
 		.nvgamctrl = DT_INST_PROP_OR(inst, nvgamctrl, {}),                                 \
 		.gip_e0_len = DT_INST_PROP_LEN_OR(inst, gip_e0, 0),                                \
@@ -598,9 +669,11 @@ static int st7701_init(const struct device *dev)
 		.gip_e6_len = DT_INST_PROP_LEN_OR(inst, gip_e6, 0),                                \
 		.gip_e7_len = DT_INST_PROP_LEN_OR(inst, gip_e7, 0),                                \
 		.gip_e8_len = DT_INST_PROP_LEN_OR(inst, gip_e8, 0),                                \
+		.gip_e9_len = DT_INST_PROP_LEN_OR(inst, gip_e9, 0),                                \
 		.gip_eb_len = DT_INST_PROP_LEN_OR(inst, gip_eb, 0),                                \
 		.gip_ec_len = DT_INST_PROP_LEN_OR(inst, gip_ec, 0),                                \
 		.gip_ed_len = DT_INST_PROP_LEN_OR(inst, gip_ed, 0),                                \
+		.gip_ef_len = DT_INST_PROP_LEN_OR(inst, gip_ef, 0),                                \
 		.pvgamctrl_len = DT_INST_PROP_LEN_OR(inst, pvgamctrl, 0),                          \
 		.nvgamctrl_len = DT_INST_PROP_LEN_OR(inst, nvgamctrl, 0),                          \
 	};                                                                                         \
