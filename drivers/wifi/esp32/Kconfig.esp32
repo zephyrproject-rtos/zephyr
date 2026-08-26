@@ -326,7 +326,9 @@ config ESP32_WIFI_SLP_IRAM_OPT
 	bool "Wi-Fi SLP IRAM speed optimization"
 	select SOC_ESP32_PM_SLP_DEFAULT_PARAMS_OPT if PM && TICKLESS_KERNEL
 	select ESP32_PM_SLP_IRAM_OPT if PM && TICKLESS_KERNEL
-	default y if SOC_ESP32_WIFI_HE_SUPPORT
+	# Keep disabled in no-blobs builds: without CONFIG_PM this path
+	# links a modem sleep function that only the blobs provide.
+	default y if SOC_ESP32_WIFI_HE_SUPPORT && !BUILD_ONLY_NO_BLOBS
 	help
 	  Select this option to place called Wi-Fi library TBTT process and receive
 	  beacon functions in IRAM. Some functions can be put in IRAM either by
