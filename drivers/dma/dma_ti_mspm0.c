@@ -361,6 +361,15 @@ static int dma_ti_mspm0_configure(const struct device *dev, uint32_t channel,
 			    cfg->base + DMA_MSPM0_DMASZ(channel));
 		sys_write32(FIELD_PREP(DMA_MSPM0_TCTL_DMATSEL, trigger),
 			    cfg->base + DMA_MSPM0_DMATCTL(channel));
+
+		if (config->source_chaining_en || config->dest_chaining_en) {
+			sys_write32(DMA_MSPM0_TCTL_DMATINT |
+				    FIELD_PREP(DMA_MSPM0_TCTL_DMATSEL, channel),
+				    cfg->base + DMA_MSPM0_DMATCTL(config->linked_channel));
+			sys_set_bits(cfg->base + DMA_MSPM0_DMACTL(config->linked_channel),
+				     DMA_MSPM0_CTL_DMAEN);
+		}
+
 		sys_write32(ctl, cfg->base + DMA_MSPM0_DMACTL(channel));
 		sys_write32(b_cfg->source_address, cfg->base + DMA_MSPM0_DMASA(channel));
 		sys_write32(b_cfg->dest_address, cfg->base + DMA_MSPM0_DMADA(channel));
