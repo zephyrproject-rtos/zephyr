@@ -35,6 +35,13 @@ properties:
     description: |
       Display rotation (CW) in degrees. Defaults to 0, display default.
 
+  inversion-on:
+    type: boolean
+    description: |
+      Enable display inversion mode (DCS INVON). The inversion state is
+      always programmed explicitly (INVON when present, INVOFF when
+      absent), as the power-on state of some panels is not deterministic.
+
   bk3-ef:
     type: uint8-array
     description: |
