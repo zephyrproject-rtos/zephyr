@@ -90,6 +90,9 @@ struct dma_mspm0_regs {
 
 #define DMA_MSPM0_EM_NORMAL      0x0U
 #define DMA_MSPM0_TM_SINGLE      0x0U
+#define DMA_MSPM0_TM_BLOCK       0x1U
+#define DMA_MSPM0_TM_RPTSNGL     0x2U
+#define DMA_MSPM0_TM_RPTBLCK     0x3U
 
 /* dmatctl bits (per-channel, dmatctl[n]) */
 #define DMA_MSPM0_TCTL_DMATSEL GENMASK(5, 0)
@@ -117,6 +120,7 @@ struct dma_ti_mspm0_channel_data {
 	bool busy;
 	uint8_t source_data_size;
 	uint8_t dest_data_size;
+	bool cyclic;
 };
 
 struct dma_ti_mspm0_data {
@@ -190,6 +194,17 @@ static inline bool dma_ti_mspm0_is_full_channel(const struct dma_ti_mspm0_config
 	return channel < cfg->num_full_channels;
 }
 
+static inline uint32_t dma_ti_mspm0_get_transfer_mode(struct dma_config *config)
+{
+	bool block = config->channel_direction == MEMORY_TO_MEMORY;
+
+	if (config->cyclic) {
+		return block ? DMA_MSPM0_TM_RPTBLCK : DMA_MSPM0_TM_RPTSNGL;
+	}
+
+	return block ? DMA_MSPM0_TM_BLOCK : DMA_MSPM0_TM_SINGLE;
+}
+
 static int dma_ti_mspm0_configure(const struct device *dev, uint32_t channel,
 				  struct dma_config *config)
 {
@@ -199,6 +214,7 @@ static int dma_ti_mspm0_configure(const struct device *dev, uint32_t channel,
 	struct dma_ti_mspm0_data *dma_data = dev->data;
 	struct dma_ti_mspm0_channel_data *data = NULL;
 	struct dma_block_config *b_cfg = NULL;
+	uint32_t tm;
 
 	if ((config == NULL) || (channel >= cfg->dma_max_channels)) {
 		return -EINVAL;
@@ -242,7 +258,15 @@ static int dma_ti_mspm0_configure(const struct device *dev, uint32_t channel,
 	}
 
 	ctl |= FIELD_PREP(DMA_MSPM0_CTL_DSTWDTH, temp);
-	ctl |= FIELD_PREP(DMA_MSPM0_CTL_TM, DMA_MSPM0_TM_SINGLE);
+
+	tm = dma_ti_mspm0_get_transfer_mode(config);
+
+	if ((tm == DMA_MSPM0_TM_RPTSNGL || tm == DMA_MSPM0_TM_RPTBLCK) &&
+	    !dma_ti_mspm0_is_full_channel(cfg, channel)) {
+		return -ENOTSUP;
+	}
+
+	ctl |= FIELD_PREP(DMA_MSPM0_CTL_TM, tm);
 	ctl |= FIELD_PREP(DMA_MSPM0_CTL_EM, DMA_MSPM0_EM_NORMAL);
 
 	data->direction = config->channel_direction;
@@ -250,6 +274,7 @@ static int dma_ti_mspm0_configure(const struct device *dev, uint32_t channel,
 	data->user_data = config->user_data;
 	data->source_data_size = config->source_data_size;
 	data->dest_data_size = config->dest_data_size;
+	data->cyclic = config->cyclic;
 
 	K_SPINLOCK(&dma_data->lock) {
 		cfg->regs->cpu_int.imask &= ~BIT(channel);
@@ -358,9 +383,12 @@ static inline void dma_ti_mspm0_isr(const struct device *dev)
 	}
 
 	data = &dma_data->ch_data[channel];
-	cfg->regs->dmachan[channel].dmactl &= ~DMA_MSPM0_CTL_DMAEN;
 
-	data->busy = false;
+	if (!data->cyclic) {
+		cfg->regs->dmachan[channel].dmactl &= ~DMA_MSPM0_CTL_DMAEN;
+		data->busy = false;
+	}
+
 	if (data->dma_callback != NULL) {
 		data->dma_callback(dev, data->user_data, channel, DMA_STATUS_COMPLETE);
 	}
