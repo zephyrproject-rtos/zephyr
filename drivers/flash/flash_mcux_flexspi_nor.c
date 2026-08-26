@@ -1458,7 +1458,8 @@ static int flash_flexspi_nor_check_jedec(struct flash_flexspi_nor_data *data,
 		/* Device uses bit 1 of status reg 2 for QE */
 		return flash_flexspi_nor_quad_enable(data, flexspi_lut,
 						     JESD216_DW15_QER_VAL_S2B1v5);
-	case 0x20609d: /* IS25LP512M */
+	case 0x1a609d: /* IS25LP512M */
+	case 0x20609d:
 		/*
 		 * Keep the runtime LUT in 4-byte Quad I/O read mode while XIP
 		 * is active.
