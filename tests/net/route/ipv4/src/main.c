@@ -664,8 +664,7 @@ static void test_route_ipv4_forward_packet_between_ifaces(void)
 				   NET_ROUTE_PREFERENCE_HIGH);
 	zassert_not_null(route, "Forwarding route add failed");
 
-	net_arp_update(my_iface_alt, &gateway_addr_alt, &gateway_lladdr_alt,
-		      false, true);
+	net_arp_update(my_iface_alt, &gateway_addr_alt, &gateway_lladdr_alt, true);
 
 	reset_send_state();
 	drain_wait_data();
@@ -775,8 +774,7 @@ static void test_route_ipv4_forward_onlink_packet_between_ifaces(void)
 	Z_TEST_SKIP_IFNDEF(CONFIG_NET_IPV4_FORWARDING);
 
 	net_arp_clear_cache(my_iface_alt);
-	net_arp_update(my_iface_alt, &onlink_dest_addr_alt, &gateway_lladdr_alt,
-		       false, true);
+	net_arp_update(my_iface_alt, &onlink_dest_addr_alt, &gateway_lladdr_alt, true);
 
 	reset_send_state();
 	drain_wait_data();
@@ -837,8 +835,7 @@ static void test_route_ipv4_forward_onlink_ttl_expired_drops(void)
 
 	Z_TEST_SKIP_IFNDEF(CONFIG_NET_IPV4_FORWARDING);
 
-	net_arp_update(my_iface_alt, &onlink_dest_addr_alt, &gateway_lladdr_alt,
-		       false, true);
+	net_arp_update(my_iface_alt, &onlink_dest_addr_alt, &gateway_lladdr_alt, true);
 
 	reset_send_state();
 	drain_wait_data();
@@ -930,8 +927,7 @@ static void test_route_ipv4_input_onlink_routes_via_matching_iface(void)
 	 * honors the NULL "search all interfaces" contract.
 	 */
 	net_arp_clear_cache(my_iface_alt);
-	net_arp_update(my_iface_alt, &onlink_input_dest, &onlink_input_lladdr,
-		       false, true);
+	net_arp_update(my_iface_alt, &onlink_input_dest, &onlink_input_lladdr, true);
 
 	reset_send_state();
 	drain_wait_data();
