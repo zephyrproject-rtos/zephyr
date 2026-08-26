@@ -35,6 +35,31 @@ properties:
     description: |
       Display rotation (CW) in degrees. Defaults to 0, display default.
 
+  bk3-ef:
+    type: uint8-array
+    description: |
+      Command2 BK3 setting at address 0xEF, including the command byte.
+      Written (preceded by the BK3 selection) at the start of the init
+      sequence when present.
+
+  lneset:
+    type: uint8-array
+    description: |
+      Display line setting at address 0xC0, including the command byte.
+      Overrides the value computed from the panel height when present.
+
+  porctrl:
+    type: uint8-array
+    description: |
+      Porch control setting at address 0xC1, including the command byte.
+      Overrides the value derived from the display timings when present.
+
+  cc-control:
+    type: uint8-array
+    description: |
+      Setting at address 0xCC, including the command byte. Defaults to
+      [CC 18] when absent.
+
   invsel:
     type: uint8-array
     description: |
@@ -127,6 +152,10 @@ properties:
     type: uint8-array
     description: GIP setting at address 0xE8.
 
+  gip-e9:
+    type: uint8-array
+    description: GIP setting at address 0xE9.
+
   gip-eb:
     type: uint8-array
     description: GIP setting at address 0xEB.
@@ -138,6 +167,10 @@ properties:
   gip-ed:
     type: uint8-array
     description: GIP setting at address 0xED.
+
+  gip-ef:
+    type: uint8-array
+    description: Command2 BK1 setting at address 0xEF.
 
   pvgamctrl:
     type: uint8-array
