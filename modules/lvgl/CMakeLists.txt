@@ -63,13 +63,13 @@ if(CONFIG_LVGL)
   zephyr_library_sources(
       lvgl.c
       lvgl_display.c
-      lvgl_display_mono.c
       lvgl_display_8bit.c
       lvgl_display_16bit.c
       lvgl_display_24bit.c
       lvgl_display_32bit.c
       lvgl_zephyr_osal.c
   )
+  zephyr_library_sources_ifdef(CONFIG_LV_Z_MONOCHROME_CONVERSION_BUFFER lvgl_display_mono.c)
 
   zephyr_library_sources_ifdef(CONFIG_LV_Z_USE_FILESYSTEM lvgl_fs.c)
   zephyr_library_sources_ifdef(CONFIG_LV_Z_MEM_POOL_SYS_HEAP lvgl_mem.c)
