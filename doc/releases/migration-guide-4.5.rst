@@ -311,6 +311,9 @@ Boards
 
   The Arduino UNO R4 Minima is unaffected. (:github:`118433`)
 
+* The Silabs Kconfig option ``CONFIG_SOC_SILABS_IMAGE_PROPERTIES``
+  has been renamed to :kconfig:option:`CONFIG_SOC_VENDOR_SILABS_IMAGE_PROPERTIES`.
+
 Device Drivers and Devicetree
 *****************************
 
