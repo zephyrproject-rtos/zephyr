@@ -75,6 +75,7 @@ struct st7701_config {
 	uint32_t vbp;
 	uint32_t vsync;
 	uint32_t vfp;
+	bool inversion_on;
 	uint8_t bk3_ef[4];
 	uint8_t bk3_ef_len;
 	uint8_t lneset[3];
@@ -354,6 +355,16 @@ static int st7701_configure(const struct device *dev)
 		return ret;
 	}
 
+	/* Always program the inversion state explicitly, the power-on
+	 * state of some panels is not deterministic.
+	 */
+	ret = st7701_dcs_write(dev, cfg->inversion_on ? MIPI_DCS_ENTER_INVERT_MODE
+						      : MIPI_DCS_EXIT_INVERT_MODE,
+			       NULL, 0);
+	if (ret < 0) {
+		return ret;
+	}
+
 	buf[0] = 0x00;
 	buf[1] = 0x00;
 	sys_put_be16(data->xres, (uint8_t *)&buf[2]);
@@ -623,6 +634,7 @@ static int st7701_init(const struct device *dev)
 		.vbp = DT_PROP(DT_INST_CHILD(inst, display_timings), vback_porch),                 \
 		.vsync = DT_PROP(DT_INST_CHILD(inst, display_timings), vsync_len),                 \
 		.vfp = DT_PROP(DT_INST_CHILD(inst, display_timings), vfront_porch),                \
+		.inversion_on = DT_INST_PROP(inst, inversion_on),                                  \
 		.bk3_ef = DT_INST_PROP_OR(inst, bk3_ef, {}),                                       \
 		.bk3_ef_len = DT_INST_PROP_LEN_OR(inst, bk3_ef, 0),                                \
 		.lneset = DT_INST_PROP_OR(inst, lneset, {}),                                       \
