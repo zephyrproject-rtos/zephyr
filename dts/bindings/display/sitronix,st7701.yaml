@@ -35,6 +35,62 @@ properties:
     description: |
       Display rotation (CW) in degrees. Defaults to 0, display default.
 
+  invsel:
+    type: uint8-array
+    description: |
+      Inversion selection and minimum line period setting at address 0xC2,
+      including the command byte. Defaults to [C2 01 08] when absent.
+
+  vrhs:
+    type: int
+    default: 0x65
+    description: Vop amplitude setting (Command2 BK1, 0xB0).
+
+  vcom:
+    type: int
+    default: 0x34
+    description: VCOM amplitude setting (Command2 BK1, 0xB1).
+
+  vghss:
+    type: int
+    default: 0x87
+    description: VGH voltage setting (Command2 BK1, 0xB2).
+
+  vgls:
+    type: int
+    default: 0x49
+    description: VGL voltage setting (Command2 BK1, 0xB5).
+
+  pwctlr1:
+    type: int
+    default: 0x85
+    description: Power control 1 (Command2 BK1, 0xB7).
+
+  pwctlr2:
+    type: int
+    default: 0x20
+    description: Power control 2 (Command2 BK1, 0xB8).
+
+  spd1:
+    type: int
+    default: 0x78
+    description: Source pre-drive timing set 1 (Command2 BK1, 0xC1).
+
+  spd2:
+    type: int
+    default: 0x78
+    description: Source EQ2 setting (Command2 BK1, 0xC2).
+
+  mipiset1:
+    type: int
+    default: 0x88
+    description: MIPI setting 1 (Command2 BK1, 0xD0).
+
+  b9:
+    type: int
+    description: |
+      Command2 BK1 setting at address 0xB9. Written only when present.
+
   gip-e0:
     type: uint8-array
     description: GIP setting at address 0xE0.

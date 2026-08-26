@@ -75,6 +75,19 @@ struct st7701_config {
 	uint32_t vbp;
 	uint32_t vsync;
 	uint32_t vfp;
+	uint8_t invsel[3];
+	uint8_t invsel_len;
+	uint8_t vrhs;
+	uint8_t vcom;
+	uint8_t vghss;
+	uint8_t vgls;
+	uint8_t pwctlr1;
+	uint8_t pwctlr2;
+	uint8_t spd1;
+	uint8_t spd2;
+	uint8_t mipiset1;
+	uint8_t b9;
+	bool has_b9;
 	uint8_t gip_e0[4];
 	uint8_t gip_e1[12];
 	uint8_t gip_e2[14];
@@ -223,14 +236,18 @@ static int st7701_configure(const struct device *dev)
 	const uint8_t control1[] = {DSI_CMD2_BK0_LNESET,
 				    (uint8_t)(lde_delta ? (BIT(7) | lde_line) : lde_line),
 				    lde_delta};
-	const uint8_t control2[] = {0xC1, 0x11, 0x02};
-	const uint8_t control3[] = {0xC2, 0x01, 0x08};
+	const uint8_t control2[] = {DSI_CMD2_BK0_PORCTRL, 0x11, 0x02};
+	const uint8_t control3[] = {DSI_CMD2_BK0_INVSEL, 0x01, 0x08};
 	const uint8_t control4[] = {0xCC, 0x18};
 
 	st7701_generic_write(dev, control0, sizeof(control0));
 	st7701_generic_write(dev, control1, sizeof(control1));
 	st7701_generic_write(dev, control2, sizeof(control2));
-	st7701_generic_write(dev, control3, sizeof(control3));
+	if (cfg->invsel_len > 0U) {
+		st7701_write_dt_setting(dev, cfg->invsel, cfg->invsel_len);
+	} else {
+		st7701_generic_write(dev, control3, sizeof(control3));
+	}
 	st7701_generic_write(dev, control4, sizeof(control4));
 
 	/* Gamma Cluster Setting */
@@ -240,19 +257,21 @@ static int st7701_configure(const struct device *dev)
 	/* Initial power control registers */
 	st7701_generic_write(dev, ff1, sizeof(ff1));
 
-	st7701_short_write_1p(dev, DSI_CMD2_BK1_VRHS, 0x65);
-	st7701_short_write_1p(dev, DSI_CMD2_BK1_VCOM, 0x34);
-	st7701_short_write_1p(dev, DSI_CMD2_BK1_VGHSS, 0x87);
+	st7701_short_write_1p(dev, DSI_CMD2_BK1_VRHS, cfg->vrhs);
+	st7701_short_write_1p(dev, DSI_CMD2_BK1_VCOM, cfg->vcom);
+	st7701_short_write_1p(dev, DSI_CMD2_BK1_VGHSS, cfg->vghss);
 	st7701_short_write_1p(dev, DSI_CMD2_BK1_TESTCMD, 0x80);
 
-	st7701_short_write_1p(dev, DSI_CMD2_BK1_VGLS, 0x49);
-	st7701_short_write_1p(dev, DSI_CMD2_BK1_PWCTLR1, 0x85);
+	st7701_short_write_1p(dev, DSI_CMD2_BK1_VGLS, cfg->vgls);
+	st7701_short_write_1p(dev, DSI_CMD2_BK1_PWCTLR1, cfg->pwctlr1);
 
-	st7701_short_write_1p(dev, DSI_CMD2_BK1_PWCTLR2, 0x20);
-	st7701_short_write_1p(dev, 0xB9, 0x10);
-	st7701_short_write_1p(dev, DSI_CMD2_BK1_SPD1, 0x78);
-	st7701_short_write_1p(dev, DSI_CMD2_BK1_SPD2, 0x78);
-	st7701_short_write_1p(dev, DSI_CMD2_BK1_MIPISET1, 0x88);
+	st7701_short_write_1p(dev, DSI_CMD2_BK1_PWCTLR2, cfg->pwctlr2);
+	if (cfg->has_b9) {
+		st7701_short_write_1p(dev, 0xB9, cfg->b9);
+	}
+	st7701_short_write_1p(dev, DSI_CMD2_BK1_SPD1, cfg->spd1);
+	st7701_short_write_1p(dev, DSI_CMD2_BK1_SPD2, cfg->spd2);
+	st7701_short_write_1p(dev, DSI_CMD2_BK1_MIPISET1, cfg->mipiset1);
 	k_msleep(100);
 
 	/* GIP Setting */
@@ -543,6 +562,19 @@ static int st7701_init(const struct device *dev)
 		.vbp = DT_PROP(DT_INST_CHILD(inst, display_timings), vback_porch),                 \
 		.vsync = DT_PROP(DT_INST_CHILD(inst, display_timings), vsync_len),                 \
 		.vfp = DT_PROP(DT_INST_CHILD(inst, display_timings), vfront_porch),                \
+		.invsel = DT_INST_PROP_OR(inst, invsel, {}),                                       \
+		.invsel_len = DT_INST_PROP_LEN_OR(inst, invsel, 0),                                \
+		.vrhs = DT_INST_PROP(inst, vrhs),                                                  \
+		.vcom = DT_INST_PROP(inst, vcom),                                                  \
+		.vghss = DT_INST_PROP(inst, vghss),                                                \
+		.vgls = DT_INST_PROP(inst, vgls),                                                  \
+		.pwctlr1 = DT_INST_PROP(inst, pwctlr1),                                            \
+		.pwctlr2 = DT_INST_PROP(inst, pwctlr2),                                            \
+		.spd1 = DT_INST_PROP(inst, spd1),                                                  \
+		.spd2 = DT_INST_PROP(inst, spd2),                                                  \
+		.mipiset1 = DT_INST_PROP(inst, mipiset1),                                          \
+		.b9 = DT_INST_PROP_OR(inst, b9, 0),                                                \
+		.has_b9 = DT_INST_NODE_HAS_PROP(inst, b9),                                         \
 		.gip_e0 = DT_INST_PROP_OR(inst, gip_e0, {}),                                       \
 		.gip_e1 = DT_INST_PROP_OR(inst, gip_e1, {}),                                       \
 		.gip_e2 = DT_INST_PROP_OR(inst, gip_e2, {}),                                       \
