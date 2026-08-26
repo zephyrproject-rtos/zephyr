@@ -21,5 +21,8 @@ app=tests/bsim/bluetooth/host/gatt/settings conf_file=prj_2.conf compile
 app=tests/bsim/bluetooth/host/gatt/ccc_store compile
 app=tests/bsim/bluetooth/host/gatt/ccc_store conf_file=prj_2.conf compile
 app=tests/bsim/bluetooth/host/gatt/sc_indicate compile
+app=tests/bsim/bluetooth/host/gatt/prepare_write_quota compile
+app=tests/bsim/bluetooth/host/gatt/prepare_write_quota \
+  conf_overlay=overlay-oversubscribed.conf compile
 
 wait_for_background_jobs
