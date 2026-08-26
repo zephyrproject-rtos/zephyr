@@ -10,6 +10,9 @@ elseif(CONFIG_SOC_FAMILY_SILABS_S0 OR CONFIG_SOC_FAMILY_SILABS_S1)
   zephyr_sources_ifdef(CONFIG_PM soc_power.c)
 endif()
 
+zephyr_sources_ifdef(CONFIG_SILABS_IMAGE_PROPERTIES soc_image_properties.c)
+zephyr_linker_sources_ifdef(CONFIG_SILABS_IMAGE_PROPERTIES RODATA soc_image_properties.ld)
+
 zephyr_sources_ifdef(CONFIG_DT_HAS_SILABS_SERIES0_CMU_ENABLED clock.c)
 zephyr_include_directories(.)
 

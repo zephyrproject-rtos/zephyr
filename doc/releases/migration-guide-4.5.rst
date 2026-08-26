@@ -266,6 +266,9 @@ Boards
   them have to reference the SoC nodes (``&spi2``, ``&i2c0``, ``&gpio0``,
   ``&gpio1``) directly. (:github:`116956`)
 
+* The Silabs Kconfig option ``CONFIG_SOC_SILABS_IMAGE_PROPERTIES``
+  has been renamed to :kconfig:option:`CONFIG_SILABS_IMAGE_PROPERTIES`.
+
 Device Drivers and Devicetree
 *****************************
 
