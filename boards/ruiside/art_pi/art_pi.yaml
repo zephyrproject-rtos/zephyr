@@ -16,4 +16,5 @@ supported:
   - sdmmc
   - usbd
   - netif:eth
+  - ptp_clock
 vendor: ruiside
