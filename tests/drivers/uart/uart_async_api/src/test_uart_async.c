@@ -686,7 +686,7 @@ ZTEST_USER(uart_async_read_abort, test_read_abort)
 	 * RX interrupt load and delay TX completion handling on some platforms.
 	 */
 	if (!IS_ENABLED(CONFIG_UART_WIDE_DATA)) {
-		cfg.baudrate = MIN(cfg.baudrate, 9600);
+		cfg.baudrate = MIN(cfg.baudrate, 19200);
 	}
 	zassert_ok(uart_configure(uart_dev, &cfg));
 
