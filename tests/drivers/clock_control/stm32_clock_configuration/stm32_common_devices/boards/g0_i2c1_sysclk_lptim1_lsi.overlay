@@ -75,7 +75,11 @@
 	status = "okay";
 };
 
-&adc1 {
+&adc1_common {
 	/* Basic test only. ADC1 domain clock is set by the board DTS : SYSCLK */
+	status = "okay";
+};
+
+&adc1 {
 	status = "okay";
 };
