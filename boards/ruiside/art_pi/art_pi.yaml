@@ -15,4 +15,5 @@ supported:
   - display
   - sdmmc
   - usbd
+  - netif:eth
 vendor: ruiside
