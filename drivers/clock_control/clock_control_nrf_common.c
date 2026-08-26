@@ -224,12 +224,6 @@ void common_connect_irq(void)
 	}
 	irq_connected = true;
 
-#if NRF_LFRC_HAS_CALIBRATION
-	IRQ_CONNECT(LFRC_IRQn, DT_IRQ(DT_INST(0, nordic_nrf_clock), priority), nrfx_isr,
-		    clock_control_nrf_common_irq_handler, 0);
-	irq_enable(LFRC_IRQn);
-#endif
-
 	IRQ_CONNECT(DT_IRQN(DT_INST(0, nordic_nrf_clock)),
 		    DT_IRQ(DT_INST(0, nordic_nrf_clock), priority), nrfx_isr,
 		    clock_control_nrf_common_irq_handler, 0);
