@@ -783,4 +783,134 @@ ZTEST(arp_fn_tests, test_bcast_hwaddr_unicast_ipaddr)
 			unicast_ipaddr, true);
 }
 
+static void arp_cb_ip_only(struct arp_entry *entry, void *user_data)
+{
+	struct net_in_addr *addr = user_data;
+
+	if (memcmp(&entry->ip, addr, sizeof(struct net_in_addr)) == 0) {
+		entry_found = true;
+	}
+}
+
+/* Craft an ARP message with the given opcode and addresses and feed it to the
+ * ARP input handler the way the Ethernet L2 would.
+ */
+static enum net_verdict recv_arp_msg(struct net_if *iface, uint16_t opcode,
+				     const struct net_in_addr *src_ip,
+				     const struct net_eth_addr *src_hwaddr,
+				     const struct net_in_addr *dst_ip,
+				     const struct net_eth_addr *dst_hwaddr,
+				     const struct net_eth_addr *eth_dst)
+{
+	struct net_arp_hdr *arp_hdr;
+	enum net_verdict verdict;
+	struct net_pkt *pkt;
+
+	pkt = net_pkt_alloc_with_buffer(iface, sizeof(struct net_eth_hdr) +
+					sizeof(struct net_arp_hdr),
+					NET_AF_UNSPEC, 0, K_SECONDS(1));
+	zassert_not_null(pkt, "out of mem");
+
+	setup_eth_header(iface, pkt, eth_dst, NET_ETH_PTYPE_ARP);
+
+	net_buf_add(pkt->buffer, sizeof(struct net_eth_hdr));
+	net_buf_pull(pkt->buffer, sizeof(struct net_eth_hdr));
+
+	arp_hdr = NET_ARP_HDR(pkt);
+
+	arp_hdr->hwtype = net_htons(NET_ARP_HTYPE_ETH);
+	arp_hdr->protocol = net_htons(NET_ETH_PTYPE_IP);
+	arp_hdr->hwlen = sizeof(struct net_eth_addr);
+	arp_hdr->protolen = sizeof(struct net_in_addr);
+	arp_hdr->opcode = net_htons(opcode);
+
+	memcpy(&arp_hdr->src_hwaddr, src_hwaddr, sizeof(struct net_eth_addr));
+	memcpy(&arp_hdr->dst_hwaddr, dst_hwaddr, sizeof(struct net_eth_addr));
+	net_ipv4_addr_copy_raw(arp_hdr->src_ipaddr, (const uint8_t *)src_ip);
+	net_ipv4_addr_copy_raw(arp_hdr->dst_ipaddr, (const uint8_t *)dst_ip);
+
+	net_buf_add(pkt->buffer, sizeof(struct net_arp_hdr));
+
+	net_pkt_set_ll_proto_type(pkt, NET_ETH_PTYPE_ARP);
+
+	verdict = net_arp_input(pkt, (struct net_eth_addr *)src_hwaddr,
+				(struct net_eth_addr *)eth_dst);
+	if (verdict == NET_DROP) {
+		net_pkt_unref(pkt);
+	}
+
+	return verdict;
+}
+
+/* A peer whose link address changed can announce itself with an ARP reply we
+ * never solicited. As the peer is already in our cache, that reply must
+ * refresh it instead of being ignored, otherwise we keep sending to the old
+ * link address forever.
+ */
+ZTEST(arp_fn_tests, test_arp_msg_updates_known_entry)
+{
+	struct net_eth_addr hwaddr_old = { { 0x02, 0x00, 0x5e, 0x11, 0x22, 0x33 } };
+	struct net_eth_addr hwaddr_new = { { 0x02, 0x00, 0x5e, 0x44, 0x55, 0x66 } };
+	struct net_eth_addr zero_hwaddr = { { 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 } };
+	struct net_in_addr peer = { { { 192, 0, 2, 2 } } };
+	struct net_in_addr unknown = { { { 192, 0, 2, 3 } } };
+	struct net_in_addr src = { { { 192, 0, 2, 1 } } };
+	struct net_eth_addr *our_hwaddr;
+	struct net_if_addr *ifaddr;
+	enum net_verdict verdict;
+	struct net_if *iface;
+
+	iface = net_if_lookup_by_dev(DEVICE_GET(net_arp_test));
+	zassert_not_null(iface, "No ARP test interface");
+
+	ifaddr = net_if_ipv4_addr_add(iface, &src, NET_ADDR_MANUAL, 0);
+	zassert_not_null(ifaddr, "Cannot add address");
+	ifaddr->addr_state = NET_ADDR_PREFERRED;
+
+	our_hwaddr = (struct net_eth_addr *)net_if_get_link_addr(iface)->addr;
+
+	req_test = true;
+
+	net_arp_clear_cache(iface);
+
+	/* Learn the peer from an ordinary broadcast ARP request asking for our
+	 * address. This is the path that keeps the cache fresh for any peer
+	 * that sends something to us.
+	 */
+	verdict = recv_arp_msg(iface, NET_ARP_REQUEST, &peer, &hwaddr_old,
+			       &src, &zero_hwaddr, net_eth_broadcast_addr());
+	zassert_not_equal(verdict, NET_DROP, "ARP request was dropped");
+
+	/* Yielding so that network interface TX thread can proceed. */
+	k_yield();
+
+	entry_found = false;
+	expected_hwaddr = &hwaddr_old;
+	net_arp_foreach(arp_cb, &peer);
+	zassert_true(entry_found, "Peer was not added to the ARP cache");
+
+	/* The same peer now announces a new link address with an ARP reply
+	 * that we did not solicit.
+	 */
+	verdict = recv_arp_msg(iface, NET_ARP_REPLY, &peer, &hwaddr_new,
+			       &src, our_hwaddr, our_hwaddr);
+	zexpect_not_equal(verdict, NET_DROP, "ARP reply was dropped");
+
+	entry_found = false;
+	expected_hwaddr = &hwaddr_new;
+	net_arp_foreach(arp_cb, &peer);
+	zexpect_true(entry_found, "ARP reply did not update the cache entry");
+
+	/* A reply from a peer we know nothing about must not add an entry, we
+	 * only refresh what we already have.
+	 */
+	verdict = recv_arp_msg(iface, NET_ARP_REPLY, &unknown, &hwaddr_new,
+			       &src, our_hwaddr, our_hwaddr);
+	zexpect_not_equal(verdict, NET_DROP, "ARP reply was dropped");
+
+	entry_found = false;
+	net_arp_foreach(arp_cb_ip_only, &unknown);
+	zexpect_false(entry_found, "Unsolicited ARP reply created a cache entry");
+}
+
 ZTEST_SUITE(arp_fn_tests, NULL, NULL, NULL, NULL, NULL);
