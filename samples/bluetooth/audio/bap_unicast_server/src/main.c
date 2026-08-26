@@ -39,6 +39,10 @@
 
 #include "stream_tx.h"
 
+#if defined(CONFIG_LIBLC3)
+#include "le_audio_playback.h"
+#endif
+
 #define AVAILABLE_SINK_CONTEXT  (BT_AUDIO_CONTEXT_TYPE_UNSPECIFIED | \
 				 BT_AUDIO_CONTEXT_TYPE_CONVERSATIONAL | \
 				 BT_AUDIO_CONTEXT_TYPE_MEDIA | \
@@ -50,9 +54,11 @@
 				  BT_AUDIO_CONTEXT_TYPE_MEDIA | \
 				  BT_AUDIO_CONTEXT_TYPE_GAME)
 
+#if CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT > 0
 NET_BUF_POOL_FIXED_DEFINE(tx_pool, CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT,
 			  BT_ISO_SDU_BUF_SIZE(CONFIG_BT_ISO_TX_MTU),
 			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
+#endif
 
 static const struct bt_audio_codec_cap lc3_codec_cap = BT_AUDIO_CODEC_CAP_LC3(
 	BT_AUDIO_CODEC_CAP_FREQ_ANY, BT_AUDIO_CODEC_CAP_DURATION_10,
@@ -93,15 +99,50 @@ static const struct bt_data ad[] = {
 
 #if defined(CONFIG_LIBLC3)
 
-#include "lc3.h"
+/* Latest sink codec configuration, extracted at Codec Config / Enable time and
+ * handed to the le_audio_playback module when the sink stream starts.
+ */
+static struct le_audio_pcm_cfg sink_pcm_cfg;
 
-#define MAX_SAMPLE_RATE         48000U
-#define MAX_FRAME_DURATION_US   10000U
-#define MAX_NUM_SAMPLES         ((MAX_FRAME_DURATION_US * MAX_SAMPLE_RATE) / USEC_PER_SEC)
+static int extract_sink_pcm_cfg(const struct bt_audio_codec_cfg *codec_cfg,
+				struct le_audio_pcm_cfg *out)
+{
+	enum bt_audio_location alloc = 0;
+	int ret;
 
-static lc3_decoder_t lc3_decoder;
-static lc3_decoder_mem_48k_t lc3_decoder_mem;
-static int frames_per_sdu;
+	ret = bt_audio_codec_cfg_get_freq(codec_cfg);
+	if (ret < 0) {
+		return ret;
+	}
+	out->freq_hz = (uint32_t)bt_audio_codec_cfg_freq_to_freq_hz(ret);
+
+	ret = bt_audio_codec_cfg_get_frame_dur(codec_cfg);
+	if (ret < 0) {
+		return ret;
+	}
+	out->frame_duration_us =
+		(uint32_t)bt_audio_codec_cfg_frame_dur_to_frame_dur_us(ret);
+
+	ret = bt_audio_codec_cfg_get_octets_per_frame(codec_cfg);
+	if (ret < 0) {
+		return ret;
+	}
+	out->octets_per_frame = (uint16_t)ret;
+
+	ret = bt_audio_codec_cfg_get_frame_blocks_per_sdu(codec_cfg, true);
+	if (ret <= 0) {
+		return ret < 0 ? ret : -EBADMSG;
+	}
+	out->frame_blocks_per_sdu = (uint8_t)ret;
+
+	ret = bt_audio_codec_cfg_get_chan_allocation(codec_cfg, &alloc, false);
+	if (ret == 0 && alloc != 0) {
+		out->chan_cnt = (uint8_t)__builtin_popcount((uint32_t)alloc);
+	} else {
+		out->chan_cnt = 1U;
+	}
+	return 0;
+}
 
 #endif
 
@@ -239,8 +280,16 @@ static int lc3_config(struct bt_conn *conn, const struct bt_bap_ep *ep, enum bt_
 	*pref = qos_pref;
 
 #if defined(CONFIG_LIBLC3)
-	/* Nothing to free as static memory is used */
-	lc3_decoder = NULL;
+	if (dir == BT_AUDIO_DIR_SINK) {
+		int ext = extract_sink_pcm_cfg(codec_cfg, &sink_pcm_cfg);
+
+		if (ext != 0) {
+			printk("Failed to extract PCM cfg from codec_cfg (err %d)\n", ext);
+			*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_CONF_INVALID,
+					       BT_BAP_ASCS_REASON_CODEC_DATA);
+			return ext;
+		}
+	}
 #endif
 
 	return 0;
@@ -257,10 +306,6 @@ static int lc3_reconfig(struct bt_bap_stream *stream, enum bt_audio_dir dir,
 
 	print_codec_cfg(codec_cfg);
 
-#if defined(CONFIG_LIBLC3)
-	/* Nothing to free as static memory is used */
-	lc3_decoder = NULL;
-#endif
 
 	*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_CONF_UNSUPPORTED, BT_BAP_ASCS_REASON_NONE);
 
@@ -288,44 +333,18 @@ static int lc3_enable(struct bt_bap_stream *stream, const uint8_t meta[], size_t
 	printk("Enable: stream %p meta_len %zu\n", stream, meta_len);
 
 #if defined(CONFIG_LIBLC3)
-	{
-		int frame_duration_us;
-		int freq;
-		int ret;
+	/* Refresh the sink PCM configuration from the (possibly reconfigured)
+	 * codec cfg for sink streams. The le_audio_playback module owns the LC3
+	 * decoder setup; the actual bring-up is deferred to stream_started().
+	 */
+	if (stream_dir(stream) == BT_AUDIO_DIR_SINK) {
+		int ext = extract_sink_pcm_cfg(stream->codec_cfg, &sink_pcm_cfg);
 
-		ret = bt_audio_codec_cfg_get_freq(stream->codec_cfg);
-		if (ret > 0) {
-			freq = bt_audio_codec_cfg_freq_to_freq_hz(ret);
-		} else {
-			printk("Error: Codec frequency not set, cannot start codec.");
+		if (ext != 0) {
+			printk("Error: could not extract sink PCM cfg (%d)\n", ext);
 			*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_CONF_INVALID,
 					       BT_BAP_ASCS_REASON_CODEC_DATA);
-			return ret;
-		}
-
-		ret = bt_audio_codec_cfg_get_frame_dur(stream->codec_cfg);
-		if (ret > 0) {
-			frame_duration_us = bt_audio_codec_cfg_frame_dur_to_frame_dur_us(ret);
-		} else {
-			printk("Error: Frame duration not set, cannot start codec.");
-			*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_CONF_INVALID,
-					       BT_BAP_ASCS_REASON_CODEC_DATA);
-			return ret;
-		}
-
-		frames_per_sdu =
-			bt_audio_codec_cfg_get_frame_blocks_per_sdu(stream->codec_cfg, true);
-
-		lc3_decoder = lc3_setup_decoder(frame_duration_us,
-						freq,
-						0, /* No resampling */
-						&lc3_decoder_mem);
-
-		if (lc3_decoder == NULL) {
-			printk("ERROR: Failed to setup LC3 encoder - wrong parameters?\n");
-			*rsp = BT_BAP_ASCS_RSP(BT_BAP_ASCS_RSP_CODE_CONF_INVALID,
-					       BT_BAP_ASCS_REASON_CODEC_DATA);
-			return -1;
+			return ext;
 		}
 	}
 #else
@@ -335,18 +354,21 @@ static int lc3_enable(struct bt_bap_stream *stream, const uint8_t meta[], size_t
 	return 0;
 }
 
+
 static int lc3_start(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
 {
 	ARG_UNUSED(rsp);
 
 	printk("Start: stream %p\n", stream);
 
+#if CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT > 0
 	for (size_t i = 0U; i < configured_source_stream_count; i++) {
 		if (stream == &source_streams[i].stream) {
 			source_streams[i].seq_num = 0U;
 			break;
 		}
 	}
+#endif /* CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT > 0 */
 
 	return 0;
 }
@@ -379,6 +401,12 @@ static int lc3_disable(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp
 
 	printk("Disable: stream %p\n", stream);
 
+#if defined(CONFIG_LIBLC3)
+	if (stream_dir(stream) == BT_AUDIO_DIR_SINK) {
+		le_audio_playback_stream_stop();
+	}
+#endif
+
 	return 0;
 }
 
@@ -388,6 +416,12 @@ static int lc3_stop(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
 
 	printk("Stop: stream %p\n", stream);
 
+#if defined(CONFIG_LIBLC3)
+	if (stream_dir(stream) == BT_AUDIO_DIR_SINK) {
+		le_audio_playback_stream_stop();
+	}
+#endif
+
 	return 0;
 }
 
@@ -396,8 +430,16 @@ static int lc3_release(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp
 	ARG_UNUSED(rsp);
 
 	printk("Release: stream %p\n", stream);
+
+#if defined(CONFIG_LIBLC3)
+	if (stream_dir(stream) == BT_AUDIO_DIR_SINK) {
+		le_audio_playback_stream_stop();
+	}
+#endif
+
 	return 0;
 }
+
 
 static struct bt_bap_unicast_server_register_param param = {
 	CONFIG_BT_ASCS_MAX_ASE_SNK_COUNT,
@@ -423,13 +465,14 @@ static void stream_recv_lc3_codec(struct bt_bap_stream *stream,
 				  const struct bt_iso_recv_info *info,
 				  struct net_buf *buf)
 {
-	static int16_t audio_buf[MAX_NUM_SAMPLES];
-
 	struct audio_sink *sink_stream = CONTAINER_OF(stream, struct audio_sink, stream);
-	const bool valid_data = (info->flags & BT_ISO_FLAGS_VALID) != 0;
-	const int octets_per_frame = buf->len / frames_per_sdu;
 
-	if (valid_data) {
+	/* This callback runs in the BT RX thread. Do NOT log per SDU: at a 10 ms
+	 * ISO interval a synchronous printk on every (possibly lost) packet
+	 * starves the RX thread, exhausts the HCI RX buffers and drops even the
+	 * valid SDUs. Only emit the throttled recv_cnt report on valid data.
+	 */
+	if ((info->flags & BT_ISO_FLAGS_VALID) != 0) {
 		sink_stream->recv_cnt++;
 
 		if (CONFIG_INFO_REPORTING_INTERVAL > 0 &&
@@ -437,28 +480,16 @@ static void stream_recv_lc3_codec(struct bt_bap_stream *stream,
 			printk("Incoming audio on stream %p len %u (%zu)\n", stream, buf->len,
 			       sink_stream->recv_cnt);
 		}
-	} else {
-		printk("Bad packet: 0x%02X\n", info->flags);
 	}
 
-	if (lc3_decoder == NULL) {
-		printk("LC3 decoder not setup, cannot decode data.\n");
-		return;
-	}
-
-	for (int i = 0; i < frames_per_sdu; i++) {
-		/* Passing NULL performs PLC */
-		const int err = lc3_decode(
-			lc3_decoder, valid_data ? net_buf_pull_mem(buf, octets_per_frame) : NULL,
-			octets_per_frame, LC3_PCM_FORMAT_S16, audio_buf, 1);
-
-		if (err == 1) {
-			printk("[%d]: Decoder performed PLC\n", i);
-		} else if (err < 0) {
-			printk("[%d]: Decoder failed - wrong parameters?: %d\n", i, err);
-		}
-	}
+	/* Hand every SDU to the LC3 -> PCM -> I2S playback pipeline. The module
+	 * owns the decoder(s), performs PLC on missing/short input, and drops the
+	 * SDU if playback is not running.
+	 */
+	le_audio_playback_stream_recv(buf);
 }
+
+
 
 #else
 
@@ -508,7 +539,20 @@ static void stream_started(struct bt_bap_stream *stream)
 		struct audio_sink *sink_stream = CONTAINER_OF(stream, struct audio_sink, stream);
 
 		sink_stream->recv_cnt = 0U;
+
+#if defined(CONFIG_LIBLC3)
+		/* Kick off the LC3 -> PCM -> I2S playback pipeline. Codec/I2S
+		 * bring-up is deferred to a workqueue inside the module so this
+		 * callback is not blocked by codec control-bus traffic.
+		 */
+		const int pret = le_audio_playback_stream_start(&sink_pcm_cfg);
+
+		if (pret != 0 && pret != -EALREADY) {
+			printk("le_audio_playback_stream_start failed: %d\n", pret);
+		}
+#endif
 	} else if (IS_ENABLED(CONFIG_BT_AUDIO_TX)) {
+
 		const int err = stream_tx_register(stream);
 
 		if (err != 0) {
@@ -567,8 +611,16 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 
 	bt_conn_drop(&default_conn);
 
+#if defined(CONFIG_LIBLC3)
+	/* Make sure the playback pipeline is parked if the peer disappears
+	 * without an explicit ASE stop/release.
+	 */
+	le_audio_playback_stream_stop();
+#endif
+
 	k_sem_give(&sem_disconnected);
 }
+
 
 BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.connected = connected,
@@ -672,11 +724,21 @@ static int set_available_contexts(void)
 int main(void)
 {
 	struct bt_le_ext_adv *adv;
+	/* Advertise source PAC/location only when the build enables the source
+	 * direction. Sink-only builds (CONFIG_BT_PAC_SRC=n /
+	 * CONFIG_BT_ASCS_MAX_ASE_SRC_COUNT=0) must not populate these members;
+	 * pacs.h only defines the src_* fields when CONFIG_BT_PAC_SRC / _LOC is
+	 * enabled, so guard the initializer with the same preprocessor gate.
+	 */
 	const struct bt_pacs_register_param pacs_param = {
 		.snk_pac = true,
 		.snk_loc = true,
+#if defined(CONFIG_BT_PAC_SRC)
 		.src_pac = true,
+#endif
+#if defined(CONFIG_BT_PAC_SRC_LOC)
 		.src_loc = true,
+#endif
 	};
 	int err;
 
@@ -688,7 +750,19 @@ int main(void)
 
 	printk("Bluetooth initialized\n");
 
+#if defined(CONFIG_LIBLC3)
+	/* Bring up the LC3 -> PCM -> I2S playback pipeline. This is a no-op on
+	 * boards without an i2s_codec_tx alias / audio_codec node.
+	 */
+	err = le_audio_playback_init();
+	if (err != 0) {
+		printk("le_audio_playback_init failed (err %d)\n", err);
+		return 0;
+	}
+#endif
+
 	err = bt_pacs_register(&pacs_param);
+
 	if (err != 0) {
 		printk("Could not register PACS (err %d)\n", err);
 		return 0;
@@ -716,10 +790,12 @@ int main(void)
 		return 0;
 	}
 
-	err = bt_pacs_cap_register(BT_AUDIO_DIR_SOURCE, &cap_source);
-	if (err != 0) {
-		printk("Could not register source capability (err %d)\n", err);
-		return 0;
+	if (IS_ENABLED(CONFIG_BT_PAC_SRC)) {
+		err = bt_pacs_cap_register(BT_AUDIO_DIR_SOURCE, &cap_source);
+		if (err != 0) {
+			printk("Could not register source capability (err %d)\n", err);
+			return 0;
+		}
 	}
 
 	for (size_t i = 0U; i < ARRAY_SIZE(sink_streams); i++) {

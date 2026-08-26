@@ -1,7 +1,20 @@
 # Copyright (c) 2025 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-mainmenu "Bluetooth: BAP Unicast Client"
+# LC3 decode plus audio_codec bring-up push main and sysworkq past their
+# defaults. Declared before Kconfig.zephyr so our defaults are searched
+# ahead of kernel/Kconfig's defaults.
+if LIBLC3
+
+config MAIN_STACK_SIZE
+	default 4096
+
+config SYSTEM_WORKQUEUE_STACK_SIZE
+	default 4096
+
+endif # LIBLC3
+
+mainmenu "Bluetooth: BAP Unicast Server"
 
 config INFO_REPORTING_INTERVAL
 	int "Number of SDUs received between each information report"
@@ -9,5 +22,45 @@ config INFO_REPORTING_INTERVAL
 	help
 	  Determines how often information about received data is logged.
 	  Set to 0 to disable reporting.
+
+menu "Audio playback"
+	depends on LIBLC3 && I2S && AUDIO_CODEC
+
+config BAP_UNICAST_SERVER_I2S_WORKER_STACK_SIZE
+	int "I2S worker thread stack size"
+	default 4096
+	help
+	  Stack size of the thread that copies decoded PCM blocks into the
+	  I2S TX mem_slab. Must accommodate the codec driver's write path;
+	  4096 B is safe for the NXP SAI + WM8962 combination.
+
+config BAP_UNICAST_SERVER_I2S_WORKER_PRIORITY
+	int "I2S worker thread priority (cooperative)"
+	default 5
+	help
+	  Cooperative priority of the I2S worker thread. Lower values run
+	  ahead of BAP RX and may starve the host stack; higher values
+	  increase the risk of underruns on marginal DMA timing.
+
+config BAP_UNICAST_SERVER_I2S_DMA_BLOCK_COUNT
+	int "I2S TX DMA block count"
+	default 4
+	range 2 16
+	help
+	  Number of decoded PCM blocks the SAI/DMA can hold. Each block is
+	  one SDU worth of audio (up to ~1920 B for 48 kHz / 10 ms stereo).
+	  Increase for looser DMA timing, decrease to shorten pause/resume
+	  latency.
+
+config BAP_UNICAST_SERVER_PCM_QUEUE_DEPTH
+	int "Decode to I2S handoff queue depth"
+	default 8
+	range 2 32
+	help
+	  Number of decoded PCM blocks buffered between the BAP RX context
+	  and the I2S worker. Larger values absorb SDU jitter; smaller
+	  values reduce audio latency.
+
+endmenu
 
 source "Kconfig.zephyr"

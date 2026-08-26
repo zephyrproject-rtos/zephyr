@@ -354,6 +354,7 @@ static struct bt_bap_stream_ops stream_ops = {
 	.connected = stream_connected_cb,
 };
 
+
 static void add_remote_source(struct bt_bap_ep *ep)
 {
 	for (size_t i = 0U; i < ARRAY_SIZE(sources); i++) {
