@@ -1,0 +1,87 @@
+/*
+ * Copyright (c) 2026 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Memory layout for an application running with IronSide TE on nRF54LM20A and nRF54LM20B.
+ *
+ * IronSide TE owns the low end of both memories, so there is no bootloader
+ * partition and no second application slot: updates are staged in DFUBANK.
+ *
+ * The addresses mirror ironsdk/client/include/ironside_client/layout.h for the
+ * reference bundle configuration. Only the DFUBANK, APPSTORAGE, UROTSTORAGE and
+ * DFUIMAGE sizes, packed against the end of RRAM, and the PSA key slot storage
+ * size are provisioned, in UICR.IRONSIDE.IROT.PARTITIONS and
+ * UICR.IRONSIDE.UROT.KEYSLOTSTORAGESIZE; every other address is derived from
+ * them. The IronSide TE client module checks the result against the placement
+ * rules at build time and against what the device reports at boot.
+ * ironsdk/scripts/read_partitions.py reads a device's layout out.
+ */
+
+&cpuapp_sram {
+	/*
+	 * The low 32 KiB of SRAM is secure: IronSide TE state, the boot report and
+	 * the PSA key slots. Key slot storage beyond the reference 1536 bytes is
+	 * reserved above it, moving the non-secure base up by as much.
+	 * The high 4 KiB of SRAM is APP-XRAM.
+	 * The application gets what remains in the middle (511 - 36 = 475 KiB).
+	 */
+	sram_ns: sram@8000 {
+		compatible = "mmio-sram";
+		#address-cells = <1>;
+		#size-cells = <1>;
+		reg = <0x8000 DT_SIZE_K(475)>;
+		ranges = <0x0 0x8000 DT_SIZE_K(475)>;
+	};
+};
+
+&cpuapp_rram {
+	/*
+	 * 0x0000_0000 IronSide TE IRoT (15 KiB)
+	 * 0x0000_3C00 IronSide TE IRoT storage (1 KiB)
+	 * 0x0000_4000 IronSide TE URoT (124 KiB)
+	 * 0x0002_3000 Application (1668 KiB, implicit remainder up to DFUBANK)
+	 * 0x001C_4000 DFUBANK, update candidate staging (128 KiB)
+	 * 0x001E_4000 APPSTORAGE (64 KiB)
+	 * 0x001F_4000 UROTSTORAGE, secure (4 KiB)
+	 * 0x001F_5000 DFUIMAGE, the IronSide DFU agent (32 KiB)
+	 * 0x001F_D000 end of RRAM (total 2036 KiB)
+	 */
+	partitions {
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		slot0_partition: partition@23000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-0";
+			reg = <0x00023000 DT_SIZE_K(1668)>;
+		};
+
+		dfubank_partition: partition@1c4000 {
+			compatible = "zephyr,mapped-partition";
+			label = "dfubank";
+			reg = <0x001c4000 DT_SIZE_K(128)>;
+		};
+
+		storage_partition: partition@1e4000 {
+			compatible = "zephyr,mapped-partition";
+			label = "storage";
+			reg = <0x001e4000 DT_SIZE_K(64)>;
+		};
+
+		urotstorage_partition: partition@1f4000 {
+			compatible = "zephyr,mapped-partition";
+			label = "urotstorage";
+			reg = <0x001f4000 DT_SIZE_K(4)>;
+		};
+
+		dfuimage_partition: partition@1f5000 {
+			compatible = "zephyr,mapped-partition";
+			label = "dfuimage";
+			reg = <0x001f5000 DT_SIZE_K(32)>;
+		};
+	};
+};
