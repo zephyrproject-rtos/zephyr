@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - pm
+  harness: ztest
+  timeout: 120
+  # Run only where a system-timer low-power companion is configured, so the
+  # test stays vendor-neutral and self-selects the relevant boards.
+  filter: CONFIG_SYSTEM_TIMER_LPM_COMPANION_HOOKS or
+    CONFIG_SYSTEM_TIMER_LPM_COMPANION_COUNTER
+tests:
+  pm.system_timer_lpm:
+    integration_platforms:
+      - frdm_mcxa156
+      - frdm_ke17z

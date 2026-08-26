@@ -1,0 +1,22 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	zephyr,user {
+		/* Default sleep durations (ms) for the timekeeping test.
+		 * Override per board with boards/<board>.overlay to cover the
+		 * durations that best exercise that platform's companion timer.
+		 */
+		sleep-durations-ms = <50 250 1500 3000>;
+
+		/* Optional: microseconds to keep the CPU busy after each
+		 * progress line so a slower console can finish draining before
+		 * the sleep gates its clocks. Defaults to 20000 when omitted.
+		 */
+		/* console-drain-us = <20000>; */
+	};
+};
