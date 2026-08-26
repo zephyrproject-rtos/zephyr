@@ -571,7 +571,7 @@ static int pwm_rz_gpt_init(const struct device *dev)
 
 #ifdef CONFIG_PWM_CAPTURE
 	data->fsp_cfg->p_callback = fsp_callback;
-	data->fsp_cfg->p_context = dev;
+	data->fsp_cfg->p_context = (void *)dev;
 #endif /* CONFIG_PWM_CAPTURE */
 
 	err = cfg->fsp_api->open(data->fsp_ctrl, data->fsp_cfg);
