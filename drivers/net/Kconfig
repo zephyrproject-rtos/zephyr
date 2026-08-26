@@ -273,6 +273,17 @@ config NET_NATIVE_OFFLOADED_SOCKETS_EPOLL_WAIT_INTERVAL
 	  Decrease that value when lower network traffic latency is expected, at the expense of more
 	  CPU processing overhead.
 
+config NET_NATIVE_OFFLOADED_SOCKETS_HOST_IF_NAME
+	string "Represented host interface for the offloaded interface"
+	default ""
+	help
+	  Name of the Linux host network interface that the offloaded interface
+	  represents: its addresses are mirrored onto the Zephyr net_if and its
+	  host ifindex pins multicast joins, egress and IPv6 scope. The Zephyr
+	  interface name does not exist on the host, so it cannot be used
+	  directly. When left empty, the interface used for the default route
+	  (default gateway) is used.
+
 config NET_NATIVE_OFFLOADED_SOCKETS_CONNECTIVITY_SIM
 	bool "Support for the network connectivity API"
 	help
