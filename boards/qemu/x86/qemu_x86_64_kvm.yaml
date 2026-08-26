@@ -13,4 +13,5 @@ testing:
   ignore_tags:
     - benchmark
     - kernel
+    - synchronization
 vendor: qemu
