@@ -1,0 +1,30 @@
+# Copyright (c) 2026 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Nuvoton NPCX Host Sub-Module - Power Management (PM) channel group.
+
+  This node groups PM channel child nodes and provides shared PM channel
+  interrupts such as "pmch_ibf" and "pmch_obe".
+
+compatible: "nuvoton,npcx-host-pm-ch-group"
+
+include: [base.yaml]
+
+properties:
+  interrupts:
+    required: true
+    description: |
+      Shared PM channel interrupts. The group provides "pmch_ibf"
+      (Input Buffer Full) and "pmch_obe" (Output Buffer Empty).
+
+  interrupt-names:
+    required: true
+    description: |
+      Names for PM channel interrupts: "pmch_ibf" and/or "pmch_obe".
+
+child-binding:
+  properties:
+    reg:
+      type: array
+      required: true
