@@ -1714,6 +1714,7 @@ int supplicant_status(const struct device *dev __unused, struct net_if *iface,
 			status->beacon_interval = conn_info->beacon_interval;
 			status->dtim_period = conn_info->dtim_period;
 			status->twt_capable = conn_info->twt_capable;
+			status->dms_capable = conn_info->dms_capable;
 		} else {
 			wpa_printf(MSG_WARNING, "%s: Failed to get connection info\n",
 				__func__);
@@ -2180,6 +2181,21 @@ int supplicant_set_bss_max_idle_period(const struct device *dev, struct net_if *
 
 	return wifi_mgmt_api->set_bss_max_idle_period(dev, iface, bss_max_idle_period);
 }
+
+#ifdef CONFIG_WIFI_MGMT_DMS
+int supplicant_req_dms(const struct device *dev, struct net_if *iface,
+		       struct wifi_dms_params *params)
+{
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_mgmt_api(dev);
+
+	if (!wifi_mgmt_api || !wifi_mgmt_api->req_dms) {
+		wpa_printf(MSG_ERROR, "Request DMS ops not supported");
+		return -ENOTSUP;
+	}
+
+	return wifi_mgmt_api->req_dms(dev, iface, params);
+}
+#endif /* CONFIG_WIFI_MGMT_DMS */
 
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_BGSCAN
 int supplicant_set_bgscan(const struct device *dev __unused, struct net_if *iface,

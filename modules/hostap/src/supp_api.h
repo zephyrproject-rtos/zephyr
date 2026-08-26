@@ -357,6 +357,18 @@ int supplicant_wps_config(const struct device *dev, struct net_if *iface,
 int supplicant_set_bss_max_idle_period(const struct device *dev, struct net_if *iface,
 				       unsigned short bss_max_idle_period);
 
+#if defined(CONFIG_WIFI_MGMT_DMS) || defined(__DOXYGEN__)
+/** @ Request Wi-Fi DMS operation
+ *
+ * @param dev Wi-Fi interface handle to use
+ * @param iface Network interface to use
+ * @param params DMS parameters for the operation
+ * @return 0 for OK; -1 for ERROR
+ */
+int supplicant_req_dms(const struct device *dev, struct net_if *iface,
+		       struct wifi_dms_params *params);
+#endif /* CONFIG_WIFI_MGMT_DMS */
+
 #if defined(CONFIG_WIFI_NM_WPA_SUPPLICANT_BGSCAN) || defined(__DOXYGEN__)
 /** @ Set Wi-Fi background scanning parameters
  *
