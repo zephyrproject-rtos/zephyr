@@ -881,6 +881,7 @@ config NXP_WIFI_CSI_AMI
 config NXP_WIFI_WLS
 	bool "Wireless Location Service"
 	select FPU
+	default y if (NXP_IW61X && WIFI_NM_WPA_SUPPLICANT)
 	depends on NXP_WIFI_CSI
 	help
 	  Enable/Disable Wireless Location Service(WLS) feature.
