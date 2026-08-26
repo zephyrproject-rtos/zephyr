@@ -53,6 +53,12 @@
 @{
 @}
 
+@defgroup sensor_interface_ext_atmel Atmel
+@ingroup sensor_interface_ext
+@brief Device-specific extensions for sensors from Atmel.
+@{
+@}
+
 @defgroup sensor_interface_ext_avago Avago Technologies
 @ingroup sensor_interface_ext
 @brief Device-specific extensions for sensors from Avago Technologies.
