@@ -88,6 +88,18 @@ struct nsos_mid_timeval {
 /** @} */
 
 /**
+ * @name IPv4 level options (NSOS_MID_IPPROTO_IP)
+ * @{
+ */
+/** Set the IPv4 multicast time-to-live value for the socket. */
+#define NSOS_MID_IP_MULTICAST_TTL 33
+
+/** Set the IPv4 multicast loop bit for the socket. */
+#define NSOS_MID_IP_MULTICAST_LOOP 34
+
+/** @} */
+
+/**
  * @name TCP level options (NSOS_MID_IPPROTO_TCP)
  * @{
  */
@@ -113,6 +125,9 @@ struct nsos_mid_timeval {
 
 /** Set the multicast hop limit for the socket. */
 #define NSOS_MID_IPV6_MULTICAST_HOPS 18
+
+/** Set the multicast loop bit for the socket. */
+#define NSOS_MID_IPV6_MULTICAST_LOOP 19
 
 /** Join IPv6 multicast group. */
 #define NSOS_MID_IPV6_ADD_MEMBERSHIP 20
