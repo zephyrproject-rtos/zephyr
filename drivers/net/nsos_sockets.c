@@ -1427,8 +1427,25 @@ static int nsos_setsockopt(void *obj, int level, int optname,
 		}
 		break;
 
+	case NET_IPPROTO_IP:
+		switch (optname) {
+		case ZSOCK_IP_MULTICAST_TTL:
+			return nsos_setsockopt_int(sock, NSOS_MID_IPPROTO_IP,
+						   NSOS_MID_IP_MULTICAST_TTL, optval, optlen);
+		case ZSOCK_IP_MULTICAST_LOOP:
+			return nsos_setsockopt_int(sock, NSOS_MID_IPPROTO_IP,
+						   NSOS_MID_IP_MULTICAST_LOOP, optval, optlen);
+		}
+		break;
+
 	case NET_IPPROTO_IPV6:
 		switch (optname) {
+		case ZSOCK_IPV6_MULTICAST_HOPS:
+			return nsos_setsockopt_int(sock, NSOS_MID_IPPROTO_IPV6,
+						   NSOS_MID_IPV6_MULTICAST_HOPS, optval, optlen);
+		case ZSOCK_IPV6_MULTICAST_LOOP:
+			return nsos_setsockopt_int(sock, NSOS_MID_IPPROTO_IPV6,
+						   NSOS_MID_IPV6_MULTICAST_LOOP, optval, optlen);
 		case ZSOCK_IPV6_V6ONLY:
 			return nsos_setsockopt_int(sock,
 						   NSOS_MID_IPPROTO_IPV6, NSOS_MID_IPV6_V6ONLY,
