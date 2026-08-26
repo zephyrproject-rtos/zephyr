@@ -84,6 +84,18 @@ NET_BUF_POOL_FIXED_DEFINE(sdp_pool, CONFIG_BT_MAX_CONN, BT_L2CAP_BUF_SIZE(SDP_MT
 
 #define SDP_CLIENT_MTU 64
 
+/*
+ * Largest encoded AttributeIDList a request PDU can carry. The PDU parameters have to fit in
+ * SDP_DATA_MTU together with a ServiceSearchPattern holding a 128-bit UUID (2-byte sequence
+ * header, 1-byte UUID header, 16-byte UUID), the 2-byte MaximumAttributeByteCount and a
+ * ContinuationState of the maximum length (1-byte length, BT_SDP_MAX_PDU_CSTATE_LEN bytes of
+ * state). A ServiceAttribute request carries a 4-byte ServiceRecordHandle instead of the search
+ * pattern, so the bound holds for it as well. The resulting size is documented at
+ * bt_sdp_attribute_id_list::count.
+ */
+#define SDP_CLIENT_ATTR_ID_LIST_MAX_LEN                                                            \
+	(SDP_DATA_MTU - (2 + 1 + BT_UUID_SIZE_128) - 2 - (1 + BT_SDP_MAX_PDU_CSTATE_LEN))
+
 #define SDP_SA_MAX_ATTR_BYTE_COUNT 0xffff
 #define SDP_SA_MIN_ATTR_BYTE_COUNT 0x0007
 
@@ -2101,9 +2113,10 @@ static int sdp_client_ss_search(struct bt_sdp_client *session,
 	return bt_sdp_send(&session->chan.chan, buf, BT_SDP_SVC_SEARCH_REQ, session->tid);
 }
 
-static uint16_t sdp_client_get_attribute_id_list_len(struct bt_sdp_attribute_id_list *ids)
+/* Encoded size of the AttributeIDList elements, excluding the sequence header */
+static size_t sdp_client_get_attribute_id_list_len(const struct bt_sdp_attribute_id_list *ids)
 {
-	uint16_t len = 0;
+	size_t len = 0;
 
 	if (ids == NULL || ids->count == 0) {
 		return sizeof(uint8_t) + sizeof(uint32_t);
@@ -2120,11 +2133,23 @@ static uint16_t sdp_client_get_attribute_id_list_len(struct bt_sdp_attribute_id_
 	return len;
 }
 
-static void sdp_client_add_attribute_id(struct net_buf *buf, struct bt_sdp_attribute_id_list *ids)
+/* Size of the sequence header of an AttributeIDList with @p len bytes of elements */
+static size_t sdp_client_get_attribute_id_list_hdr_len(size_t len)
 {
-	uint16_t len;
+	if (len > UINT8_MAX) {
+		return sizeof(uint8_t) + sizeof(uint16_t);
+	}
 
-	len = sdp_client_get_attribute_id_list_len(ids);
+	return sizeof(uint8_t) + sizeof(uint8_t);
+}
+
+/*
+ * Add the AttributeIDList to the PDU. @p len is the size of its elements as returned by
+ * sdp_client_get_attribute_id_list_len(), which the caller has checked against the tailroom.
+ */
+static void sdp_client_add_attribute_id(struct net_buf *buf,
+					const struct bt_sdp_attribute_id_list *ids, size_t len)
+{
 	/*
 	 * Sequence definition where data is sequence of elements and where
 	 * additional next byte points the size of elements within
@@ -2162,20 +2187,11 @@ static void sdp_client_add_attribute_id(struct net_buf *buf, struct bt_sdp_attri
 	}
 }
 
-static uint16_t sdp_client_get_total_len(struct bt_sdp_client *session,
-					 const struct bt_sdp_discover_params *param)
+/* Size of the AttributeIDList and the ContinuationState of the next request */
+static size_t sdp_client_get_total_len(const struct bt_sdp_client *session, size_t ids_len)
 {
-	uint16_t len;
-
-	len = sdp_client_get_attribute_id_list_len(param->ids);
-	if (len > UINT8_MAX) {
-		len += sizeof(uint8_t) + sizeof(uint16_t);
-	} else {
-		len += sizeof(uint8_t) + sizeof(uint8_t);
-	}
-	len += sizeof(session->cstate.length) + session->cstate.length;
-
-	return len;
+	return sdp_client_get_attribute_id_list_hdr_len(ids_len) + ids_len +
+	       sizeof(session->cstate.length) + session->cstate.length;
 }
 
 /* ServiceAttribute PDU, ref to BT Core 5.4, Vol 3, part B, 4.6.1 */
@@ -2184,6 +2200,7 @@ static int sdp_client_sa_search(struct bt_sdp_client *session,
 {
 	struct net_buf *buf;
 	uint16_t len;
+	size_t ids_len;
 
 	len = net_buf_tailroom(session->rec_buf);
 	if (!SDP_SA_ATTR_BYTE_IN_RANGE(len)) {
@@ -2200,15 +2217,15 @@ static int sdp_client_sa_search(struct bt_sdp_client *session,
 	net_buf_add_be16(buf, len);
 
 	/* Check the tailroom of the buffer */
-	len = sdp_client_get_total_len(session, param);
-	if (len > net_buf_tailroom(buf)) {
+	ids_len = sdp_client_get_attribute_id_list_len(param->ids);
+	if (sdp_client_get_total_len(session, ids_len) > net_buf_tailroom(buf)) {
 		LOG_ERR("No space to add attribute ID");
 		net_buf_unref(buf);
 		return -ENOMEM;
 	}
 
 	/* Add attribute ID List */
-	sdp_client_add_attribute_id(buf, param->ids);
+	sdp_client_add_attribute_id(buf, param->ids, ids_len);
 
 	/*
 	 * Update and validate PDU ContinuationState. Initial SSA Request has
@@ -2235,6 +2252,7 @@ static int sdp_client_ssa_search(struct bt_sdp_client *session,
 	struct net_buf *buf;
 	uint8_t uuid128[BT_UUID_SIZE_128];
 	uint16_t len;
+	size_t ids_len;
 
 	len = net_buf_tailroom(session->rec_buf);
 	if (!SDP_SSA_ATTR_BYTE_IN_RANGE(len)) {
@@ -2295,15 +2313,15 @@ static int sdp_client_ssa_search(struct bt_sdp_client *session,
 	net_buf_add_be16(buf, len);
 
 	/* Check the tailroom of the buffer */
-	len = sdp_client_get_total_len(session, param);
-	if (len > net_buf_tailroom(buf)) {
+	ids_len = sdp_client_get_attribute_id_list_len(param->ids);
+	if (sdp_client_get_total_len(session, ids_len) > net_buf_tailroom(buf)) {
 		LOG_ERR("No space to add attribute ID");
 		net_buf_unref(buf);
 		return -ENOMEM;
 	}
 
 	/* Add attribute ID List */
-	sdp_client_add_attribute_id(buf, param->ids);
+	sdp_client_add_attribute_id(buf, param->ids, ids_len);
 
 	/*
 	 * Update and validate PDU ContinuationState. Initial SSA Request has
@@ -2916,6 +2934,8 @@ static int sdp_client_discovery_start(struct bt_conn *conn,
 int bt_sdp_discover(struct bt_conn *conn,
 		    struct bt_sdp_discover_params *params)
 {
+	size_t ids_len;
+
 	if (params == NULL || params->uuid == NULL || params->func == NULL ||
 	    params->pool == NULL ||
 	    (params->ids != NULL && params->ids->count != 0 && params->ids->ranges == NULL)) {
@@ -2935,6 +2955,13 @@ int bt_sdp_discover(struct bt_conn *conn,
 			LOG_WRN("Invalid range %u > %u", range->beginning, range->ending);
 			return -EINVAL;
 		}
+	}
+
+	ids_len = sdp_client_get_attribute_id_list_len(params->ids);
+	if (sdp_client_get_attribute_id_list_hdr_len(ids_len) + ids_len >
+	    SDP_CLIENT_ATTR_ID_LIST_MAX_LEN) {
+		LOG_WRN("Attribute ID list of %zu bytes does not fit in a request PDU", ids_len);
+		return -EINVAL;
 	}
 
 	return sdp_client_discovery_start(conn, params);
