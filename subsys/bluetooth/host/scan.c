@@ -1145,6 +1145,16 @@ static void bt_hci_le_per_adv_report_common(struct net_buf *buf)
 
 	if (!per_adv_sync->report_truncated) {
 #if CONFIG_BT_PER_ADV_SYNC_BUF_SIZE > 0
+		if (evt->length > buf->len) {
+			/* The event does not carry the data it claims. Drop the report */
+			LOG_WRN("Periodic adv report corrupted (wants %u out of %u)", evt->length,
+				buf->len);
+
+			per_adv_sync->report_truncated = true;
+			net_buf_simple_reset(&per_adv_sync->reassembly);
+			return;
+		}
+
 		if (net_buf_simple_tailroom(&per_adv_sync->reassembly) < evt->length) {
 			/* The buffer is too small for the entire report. Drop it */
 			LOG_WRN("Buffer is too small to reassemble the report. "
