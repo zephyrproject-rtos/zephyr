@@ -10,14 +10,15 @@
 #include <zephyr/input/input.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 
 #include <soc/soc_caps.h>
 #include <esp_err.h>
+#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include <soc/periph_defs.h>
 #include <hal/touch_sensor_ll.h>
 #include <hal/touch_sensor_periph.h>
-#include <esp_intr_alloc.h>
+#include <esp_cpu.h>
+#include <esp_rom_sys.h>
 
 #if SOC_TOUCH_SENSOR_VERSION <= 2
 #include <soc/rtc_cntl_reg.h>
@@ -87,6 +88,7 @@ struct esp32_touch_sensor_config {
 	int filter_smooth_level;
 	const struct esp32_touch_sensor_channel_config *channel_cfg;
 	struct esp32_touch_sensor_channel_data *channel_data;
+	void (*irq_configure)(void);
 };
 
 struct esp32_touch_sensor_channel_data {
@@ -136,7 +138,7 @@ static void esp32_touch_handle_active(const struct device *dev)
 	}
 }
 
-static void esp32_touch_sensor_interrupt_cb(void *arg)
+static void esp32_touch_sensor_interrupt_cb(const void *arg)
 {
 	const struct device *dev = arg;
 
@@ -203,7 +205,7 @@ static void esp32_touch_sensor_interrupt_cb(void *arg)
 }
 
 #if SOC_TOUCH_SENSOR_VERSION <= 2
-static void IRAM_ATTR esp32_touch_rtc_isr(void *arg)
+static void IRAM_ATTR esp32_touch_rtc_isr(const void *arg)
 {
 	uint32_t status = REG_READ(RTC_CNTL_INT_ST_REG);
 
@@ -212,8 +214,12 @@ static void IRAM_ATTR esp32_touch_rtc_isr(void *arg)
 	}
 
 	esp32_touch_sensor_interrupt_cb(arg);
-	REG_WRITE(RTC_CNTL_INT_CLR_REG, status);
+	/* RTC_CORE is shared with other RTC_CNTL inputs: clear only the touch bits */
+	REG_WRITE(RTC_CNTL_INT_CLR_REG, status & ESP32_RTC_INTR_MSK);
 }
+#define ESP32_TOUCH_ISR esp32_touch_rtc_isr
+#else
+#define ESP32_TOUCH_ISR esp32_touch_sensor_interrupt_cb
 #endif
 
 /**
@@ -243,9 +249,6 @@ static void esp32_touch_sensor_change_deferred(struct k_work *work)
 
 static int esp32_touch_sensor_init(const struct device *dev)
 {
-	esp_err_t err;
-	int flags;
-
 	const struct esp32_touch_sensor_config *dev_cfg = dev->config;
 	const int num_channels = dev_cfg->num_channels;
 
@@ -417,21 +420,7 @@ static int esp32_touch_sensor_init(const struct device *dev)
 	touch_ll_filter_enable(true);
 #endif /* SOC_TOUCH_SENSOR_VERSION */
 
-	flags = ESP_PRIO_TO_FLAGS(DT_IRQ_BY_IDX(DT_NODELABEL(touch), 0, priority)) |
-		ESP_INT_FLAGS_CHECK(DT_IRQ_BY_IDX(DT_NODELABEL(touch), 0, flags));
-
-#if SOC_TOUCH_SENSOR_VERSION <= 2
-	flags |= ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_IRAM;
-	err = esp_intr_alloc(DT_IRQ_BY_IDX(DT_NODELABEL(touch), 0, irq), flags, esp32_touch_rtc_isr,
-			     (void *)dev, NULL);
-#elif SOC_TOUCH_SENSOR_VERSION == 3
-	err = esp_intr_alloc(DT_IRQ_BY_IDX(DT_NODELABEL(touch), 0, irq), flags,
-			     esp32_touch_sensor_interrupt_cb, (void *)dev, NULL);
-#endif
-	if (err) {
-		LOG_ERR("Failed to register ISR\n");
-		return -EFAULT;
-	}
+	dev_cfg->irq_configure();
 
 #if SOC_TOUCH_SENSOR_VERSION == 1
 	touch_ll_interrupt_clear(TOUCH_LL_INTR_MASK_ALL);
@@ -472,6 +461,13 @@ static int esp32_touch_sensor_init(const struct device *dev)
 #endif
 
 #define ESP32_TOUCH_SENSOR_INIT(inst)                                                              \
+	static void esp32_touch_sensor_##inst##_irq_configure(void)                                \
+	{                                                                                          \
+		IRQ_CONNECT(DT_INST_IRQN_BY_IDX(inst, 0), IRQ_DEFAULT_PRIORITY,                    \
+			    ESP32_TOUCH_ISR,                                                       \
+			    DEVICE_DT_INST_GET(inst), ESP_INTR_FLAG_IRAM);                         \
+		irq_enable(DT_INST_IRQN_BY_IDX(inst, 0));                                          \
+	}                                                                                          \
 	static const struct esp32_touch_sensor_channel_config                                      \
 		esp32_touch_sensor_channel_config_##inst[] = {                                     \
 			DT_INST_FOREACH_CHILD_STATUS_OKAY_SEP(                                     \
@@ -491,6 +487,7 @@ static int esp32_touch_sensor_init(const struct device *dev)
 		.filter_smooth_level = DT_INST_PROP(inst, filter_smooth_level),                    \
 		.channel_cfg = esp32_touch_sensor_channel_config_##inst,                           \
 		.channel_data = esp32_touch_sensor_channel_data_##inst,                            \
+		.irq_configure = esp32_touch_sensor_##inst##_irq_configure,                        \
 	};                                                                                         \
                                                                                                    \
 	static struct esp32_touch_sensor_data esp32_touch_sensor_data_##inst;                      \
@@ -498,7 +495,6 @@ static int esp32_touch_sensor_init(const struct device *dev)
 	DEVICE_DT_INST_DEFINE(inst, &esp32_touch_sensor_init, NULL,                                \
 			      &esp32_touch_sensor_data_##inst, &esp32_touch_sensor_config_##inst,  \
 			      POST_KERNEL, CONFIG_INPUT_INIT_PRIORITY, NULL);
-
 /* clang-format on */
 
 DT_INST_FOREACH_STATUS_OKAY(ESP32_TOUCH_SENSOR_INIT)
