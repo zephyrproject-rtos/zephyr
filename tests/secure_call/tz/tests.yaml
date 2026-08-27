@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  secure_call.tz:
+    tags:
+      - secure_call
+      - trustzone
+      - arm
+    platform_allow:
+      - mps2/an521/cpu0/ns
+    integration_platforms:
+      - mps2/an521/cpu0/ns
+    sysbuild: true
+    harness: pytest
+    harness_config:
+      pytest_root:
+        - pytest/test_tz_calls.py
+    timeout: 120

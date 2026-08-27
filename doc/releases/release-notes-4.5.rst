@@ -1771,6 +1771,12 @@ Libraries / Subsystems
 
    * ``__ASSERT_ON`` define has been removed.
 
+* Secure calls
+
+  * Added the ``__secure_call`` code-generation mechanism for crossing the Arm
+    TrustZone-M Non-Secure/Secure boundary, mirroring the ``__syscall``
+    pattern.  See :ref:`secure_call`.
+
 
 Devicetree
 **********
