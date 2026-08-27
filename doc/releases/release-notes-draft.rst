@@ -65,6 +65,10 @@ New APIs and options
 
 * Bluetooth
 
+  * Host
+
+    * :c:func:`bt_le_ext_adv_foreach`
+
   * Services
 
     * :kconfig:option:`CONFIG_BT_HIDS`
