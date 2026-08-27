@@ -732,6 +732,41 @@ static int vm_clone_range(struct vm_clone_ctx *ctx, uintptr_t start, size_t size
 		return ret;
 	}
 
+#ifdef CONFIG_SIGNAL
+	/* a fresh image (fork+exec-like birth): only ignored dispositions inherit */
+	ret = z_sig_actions_clone(_current->process, proc, false);
+	if (ret < 0) {
+		leader_discard(args, tid);
+		z_process_fds_drop(proc);
+		(void)z_process_record_free(proc);
+		return -EAGAIN;
+	}
+#endif /* CONFIG_SIGNAL */
+
+	ret = k_process_init(proc, &tid, 1);
+	if (ret < 0) {
+		leader_discard(args, tid);
+#ifdef CONFIG_SIGNAL
+		z_sig_process_drop(proc);
+#endif /* CONFIG_SIGNAL */
+#ifdef CONFIG_SIGNAL
+	/* the fork model: the child inherits every parent disposition */
+	ret = z_sig_actions_clone(parent, proc, true);
+	if (ret < 0) {
+		k_thread_abort(tid);
+		z_process_mmap_drop(proc);
+		z_process_fds_drop(proc);
+		(void)z_process_record_free(proc);
+		return -EAGAIN;
+	}
+#endif /* CONFIG_SIGNAL */
+
+	ret = k_process_init(proc, &tid, 1);
+	if (ret < 0) {
+		k_thread_abort(tid);
+#ifdef CONFIG_SIGNAL
+		z_sig_process_drop(proc);
+#endif /* CONFIG_SIGNAL */
 	ctx->ranges[ctx->nframes++] = (struct vm_clone_range){
 		.start = start,
 		.size = size,

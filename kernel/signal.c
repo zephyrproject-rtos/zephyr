@@ -46,6 +46,11 @@ static struct k_poll_signal k_sig_fifo_ready = K_POLL_SIGNAL_INITIALIZER(k_sig_f
 K_MEM_SLAB_DEFINE_STATIC(k_sig_slab, sizeof(struct k_sig_fifo_element), SIGNAL_QUEUE_SIZE,
 			 alignof(struct k_sig_fifo_element));
 struct k_sig_fifo_element signal_actions[SIGNAL_ACTION_DB_SIZE];
+
+#ifndef CONFIG_PROCESS
+/* signals pending at system scope: the single (figurative) process */
+static atomic_t sig_pending_sys;
+#endif /* !CONFIG_PROCESS */
 static struct k_sig_fifo_element *const k_sig_array =
 	(struct k_sig_fifo_element *)_k_mem_slab_buf_k_sig_slab;
 static struct k_spinlock *const k_sig_lock = &k_sig_slab.lock;
@@ -82,6 +87,11 @@ static bool sig_entry_for(const struct k_sig_fifo_element *entry, k_tid_t tid)
 {
 #ifdef CONFIG_PROCESS
 	if ((entry->proc != NULL) && (entry->proc == tid->process)) {
+		return true;
+	}
+#else
+	if (entry->tid == NULL) {
+		/* system scope: any thread of the single (figurative) process may claim */
 		return true;
 	}
 #endif /* CONFIG_PROCESS */
@@ -254,12 +264,19 @@ static int z_sig_queue_common(k_pid_t pid, int signo, union k_sig_val value, int
 			      struct k_timer *timer, k_pid_t child_pid, int child_status,
 			      struct k_process *proc, bool resolved)
 {
+#ifdef CONFIG_PROCESS
+	const bool system = false;
+#else
+	/* a NULL pid from a resolved kernel path pends at system scope */
+	const bool system = resolved && (pid == NULL);
+#endif /* CONFIG_PROCESS */
+
 	if ((signo < 0) || (signo > SIGNAL_SET_SIZE)) {
 		LOG_DBG("invalid signo %d", signo);
 		return -EINVAL;
 	}
 
-	if ((proc == NULL) && !z_sig_pid_is_valid(pid)) {
+	if (!system && (proc == NULL) && !z_sig_pid_is_valid(pid)) {
 		LOG_DBG("invalid pid %p", pid);
 		return -ESRCH;
 	}
@@ -347,6 +364,10 @@ static int z_sig_queue_common(k_pid_t pid, int signo, union k_sig_val value, int
 	if (proc != NULL) {
 		atomic_inc(&proc->sig_pending);
 	} else
+#else
+	if (system) {
+		atomic_inc(&sig_pending_sys);
+	} else
 #endif /* CONFIG_PROCESS */
 	{
 		atomic_inc(&pid->base.sig.pending);
@@ -370,16 +391,59 @@ static int z_sig_queue_common(k_pid_t pid, int signo, union k_sig_val value, int
 }
 
 #ifdef CONFIG_PROCESS
-int z_sig_queue_thread(k_tid_t tid, int signo)
+int z_sig_queue_thread(k_tid_t tid, int signo, union k_sig_val value)
 {
-	return z_sig_queue_common(tid, signo, (union k_sig_val){0}, K_SI_QUEUE, NULL, NULL, 0, NULL,
-				  true);
+	return z_sig_queue_common(tid, signo, value, K_SI_QUEUE, NULL, NULL, 0, NULL, true);
 }
 
-int z_sig_queue_process(struct k_process *proc, int signo)
+int z_sig_queue_process(struct k_process *proc, int signo, union k_sig_val value)
 {
-	return z_sig_queue_common(NULL, signo, (union k_sig_val){0}, K_SI_QUEUE, NULL, NULL, 0,
-				  proc, true);
+	return z_sig_queue_common(NULL, signo, value, K_SI_QUEUE, NULL, NULL, 0, proc, true);
+}
+
+/*
+ * Duplicate @a parent's dispositions for @a child at process creation:
+ * every disposition for the fork model (@a all), only ignored signals for a
+ * fresh image (fork+exec-like birth, where handled dispositions default).
+ */
+int z_sig_actions_clone(struct k_process *parent, struct k_process *child, bool all)
+{
+	int ret = 0;
+
+	if ((parent == NULL) || (child == NULL)) {
+		return 0;
+	}
+
+	K_SPINLOCK(k_sig_lock) {
+		ARRAY_FOR_EACH(signal_actions, i) {
+			struct k_sig_fifo_element *slot = NULL;
+
+			if ((signal_actions[i].proc != parent) ||
+			    (signal_actions[i].info.signo == 0)) {
+				continue;
+			}
+			if (!all && (signal_actions[i].action.handler != K_SIG_IGN)) {
+				continue;
+			}
+			ARRAY_FOR_EACH(signal_actions, j) {
+				if (signal_actions[j].info.signo == 0) {
+					slot = &signal_actions[j];
+					break;
+				}
+			}
+			if (slot == NULL) {
+				ret = -ENOMEM;
+				/* K_SPINLOCK_BREAK would resume the entry loop */
+				break;
+			}
+			*slot = signal_actions[i];
+			slot->proc = child;
+			/* process-keyed entries never consult the installer thread */
+			slot->tid = NULL;
+		}
+	}
+
+	return ret;
 }
 
 /*
@@ -390,6 +454,13 @@ int z_sig_queue_process(struct k_process *proc, int signo)
 void z_sig_process_drop(struct k_process *proc)
 {
 	K_SPINLOCK(k_sig_lock) {
+		/* the retiring record's dispositions go with it */
+		ARRAY_FOR_EACH(signal_actions, i) {
+			if (signal_actions[i].proc == proc) {
+				signal_actions[i] = (struct k_sig_fifo_element){0};
+			}
+		}
+
 		for (size_t i = 0, N = ring_buf_size_get(&k_sig_fifo); i < N; ++i) {
 			uint8_t pos;
 			struct k_sig_fifo_element *entry;
@@ -418,6 +489,63 @@ int z_impl_k_sig_queue(k_pid_t pid, int signo, union k_sig_val value)
 {
 	return z_sig_queue_common(pid, signo, value, K_SI_QUEUE, NULL, NULL, 0, NULL, false);
 }
+
+#ifndef CONFIG_PROCESS
+/*
+ * Without process objects the system is the single (figurative) process:
+ * NULL and any live thread handle name it. Delivery is process-directed:
+ * the caller takes the signal when it has it unblocked, otherwise it pends
+ * at system scope for the first thread that unblocks or waits for it.
+ */
+static int sig_kill_system(k_pid_t pid, int signo, union k_sig_val value)
+{
+	if ((pid != NULL) && !z_sig_pid_is_valid(pid)) {
+		return -ESRCH;
+	}
+	if (signo == 0) {
+		/* existence check only */
+		return 0;
+	}
+	if (!k_is_in_isr() &&
+	    (k_sig_ismember(&_current->base.sig.mask, signo) == 0)) {
+		return z_sig_queue_common(_current, signo, value, K_SI_QUEUE, NULL, NULL, 0, NULL,
+					  true);
+	}
+	return z_sig_queue_common(NULL, signo, value, K_SI_QUEUE, NULL, NULL, 0, NULL, true);
+}
+
+int z_impl_k_kill(k_pid_t pid, int signo)
+{
+	return sig_kill_system(pid, signo, (union k_sig_val){0});
+}
+
+#ifdef CONFIG_USERSPACE
+static inline int z_vrfy_k_kill(k_pid_t pid, int signo)
+{
+	if (pid != NULL) {
+		K_OOPS(K_SYSCALL_OBJ(pid, K_OBJ_THREAD));
+	}
+	return z_impl_k_kill(pid, signo);
+}
+#include <zephyr/syscalls/k_kill_mrsh.c>
+#endif /* CONFIG_USERSPACE */
+
+int z_impl_k_sigqueue(k_pid_t pid, int signo, union k_sig_val value)
+{
+	return sig_kill_system(pid, signo, value);
+}
+
+#ifdef CONFIG_USERSPACE
+static inline int z_vrfy_k_sigqueue(k_pid_t pid, int signo, union k_sig_val value)
+{
+	if (pid != NULL) {
+		K_OOPS(K_SYSCALL_OBJ(pid, K_OBJ_THREAD));
+	}
+	return z_impl_k_sigqueue(pid, signo, value);
+}
+#include <zephyr/syscalls/k_sigqueue_mrsh.c>
+#endif /* CONFIG_USERSPACE */
+#endif /* !CONFIG_PROCESS */
 
 #ifdef CONFIG_PROCESS
 int z_sig_queue_chld(k_tid_t tid, struct k_process *proc, k_pid_t child_pid, int child_status,
@@ -624,6 +752,10 @@ int z_impl_k_sig_timedwait(const struct k_sig_set *ZRESTRICT set, struct k_sig_i
 #ifdef CONFIG_PROCESS
 	if (k_sig_array[pos].proc != NULL) {
 		atomic_dec(&k_sig_array[pos].proc->sig_pending);
+	} else
+#else
+	if (k_sig_array[pos].tid == NULL) {
+		atomic_dec(&sig_pending_sys);
 	} else
 #endif /* CONFIG_PROCESS */
 	{
@@ -956,6 +1088,8 @@ bool z_sig_pending_any(struct k_thread *tid)
 #ifdef CONFIG_PROCESS
 	anything = anything ||
 		   ((tid->process != NULL) && (atomic_get(&tid->process->sig_pending) > 0));
+#else
+	anything = anything || (atomic_get(&sig_pending_sys) > 0);
 #endif /* CONFIG_PROCESS */
 
 	return anything;
@@ -983,9 +1117,22 @@ int z_sig_claim(struct k_thread *tid)
 	struct k_sig_fifo_element entry = k_sig_array[pos];
 
 	k_mem_slab_free(&k_sig_slab, &k_sig_array[pos]);
-	atomic_dec(&ctx->pending);
+#ifdef CONFIG_PROCESS
+	if (entry.proc != NULL) {
+		atomic_dec(&entry.proc->sig_pending);
+	} else
+#else
+	if (entry.tid == NULL) {
+		atomic_dec(&sig_pending_sys);
+	} else
+#endif /* CONFIG_PROCESS */
+	{
+		atomic_dec(&ctx->pending);
+	}
+	atomic_dec(&z_syscall_work_pending);
 
-	if (z_sig_action(entry.info.signo, NULL, &entry.action, entry.tid) < 0) {
+	/* the action in force for the claiming thread, whatever the entry's scope */
+	if (z_sig_action(entry.info.signo, NULL, &entry.action, tid) < 0) {
 		/* assertion is valid since we are only querying the existing handler */
 		__ASSERT(false, "signal at position %d has invalid signal number %d", pos,
 			 entry.info.signo);
@@ -1073,6 +1220,9 @@ static int z_sig_action(int sig, const struct k_sig_action *act, struct k_sig_ac
 			k_tid_t tid)
 {
 	struct k_sig_fifo_element *custom = NULL;
+#ifdef CONFIG_PROCESS
+	struct k_process *const proc = (tid == NULL) ? NULL : tid->process;
+#endif /* CONFIG_PROCESS */
 
 	if (!z_sig_is_valid(sig)) {
 		return -EINVAL;
@@ -1080,6 +1230,20 @@ static int z_sig_action(int sig, const struct k_sig_action *act, struct k_sig_ac
 
 	K_SPINLOCK(k_sig_lock) {
 		ARRAY_FOR_EACH(signal_actions, i) {
+#ifdef CONFIG_PROCESS
+			if (signal_actions[i].proc != NULL) {
+				/*
+				 * Process-keyed: the disposition of every member thread,
+				 * outliving its installer; purged at reap, not here.
+				 */
+				if ((signal_actions[i].proc == proc) &&
+				    (signal_actions[i].info.signo == sig)) {
+					custom = &signal_actions[i];
+					break;
+				}
+				continue;
+			}
+#endif /* CONFIG_PROCESS */
 			if (!z_sig_pid_is_valid(signal_actions[i].tid)) {
 				/* If an action in the queue, at any point, belongs to a dead thread
 				* remove it! */
@@ -1158,6 +1322,10 @@ static int z_sig_action(int sig, const struct k_sig_action *act, struct k_sig_ac
 
 	*custom = (struct k_sig_fifo_element){
 		.tid = tid,
+#ifdef CONFIG_PROCESS
+		/* the disposition belongs to the process, not the installing thread */
+		.proc = proc,
+#endif /* CONFIG_PROCESS */
 		.info.signo = sig,
 		.action = *act,
 	};

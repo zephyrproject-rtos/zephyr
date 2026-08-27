@@ -20,7 +20,7 @@ tests:
       # (kernel) test process, which keeps it masked; size the queue with
       # headroom for both. test_kill installs one signal handler.
       - CONFIG_SIGNAL_QUEUE_SIZE=8
-      - CONFIG_SIGNAL_ACTION_DB_SIZE=2
+      - CONFIG_SIGNAL_ACTION_DB_SIZE=8
   kernel.process.init:
     filter: not CONFIG_USERSPACE
     integration_platforms:

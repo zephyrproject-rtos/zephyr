@@ -76,6 +76,73 @@ ZTEST(signal, test_k_sig_queue)
 	}
 }
 
+static volatile int kill_handler_calls;
+
+static void kill_handler(int sig, struct k_sig_info *info, void *ucontext)
+{
+	ARG_UNUSED(sig);
+	ARG_UNUSED(info);
+	ARG_UNUSED(ucontext);
+
+	kill_handler_calls++;
+}
+
+ZTEST(signal, test_k_kill)
+{
+	struct k_sig_set set;
+	struct k_sig_action action = {.handler = kill_handler};
+
+	/* degenerate cases */
+	zassert_equal(k_kill(NULL, -1), -EINVAL);
+
+	/* existence checks: NULL and any live thread handle name the single process */
+	zassert_ok(k_kill(NULL, 0));
+	zassert_ok(k_kill(k_current_get(), 0));
+
+	/* every thread masks it (the kernel default): it pends at system scope */
+	zassert_ok(k_kill(NULL, K_SIG_RTMIN));
+
+	/* and the first thread to wait for it claims it */
+	zassert_ok(k_sig_emptyset(&set));
+	zassert_ok(k_sig_addset(&set, K_SIG_RTMIN));
+	zassert_equal(k_sig_timedwait(&set, NULL, K_NO_WAIT), K_SIG_RTMIN);
+
+	/* a caller with the signal unblocked takes the delivery itself */
+	zassert_ok(k_sig_emptyset(&action.mask));
+	zassert_ok(k_sig_action(K_SIG_USR1, &action, NULL));
+	zassert_ok(k_sig_emptyset(&set));
+	zassert_ok(k_sig_addset(&set, K_SIG_USR1));
+	zassert_ok(k_sig_mask(K_SIG_UNBLOCK, &set, NULL));
+
+	kill_handler_calls = 0;
+	zassert_ok(k_kill(NULL, K_SIG_USR1));
+	zassert_equal(kill_handler_calls, 1, "the eligible caller did not take the delivery");
+
+	zassert_ok(k_sig_mask(K_SIG_BLOCK, &set, NULL));
+	action.handler = K_SIG_DFL;
+	zassert_ok(k_sig_action(K_SIG_USR1, &action, NULL));
+}
+
+ZTEST(signal, test_k_sigqueue)
+{
+	struct k_sig_set set;
+	struct k_sig_info info;
+
+	/* degenerate cases */
+	zassert_equal(k_sigqueue(NULL, -1, (union k_sig_val){0}), -EINVAL);
+
+	/* signal 0 checks for existence and delivers nothing */
+	zassert_ok(k_sigqueue(NULL, 0, (union k_sig_val){0}));
+
+	/* pends at system scope with the value intact */
+	zassert_ok(k_sigqueue(NULL, K_SIG_RTMIN, (union k_sig_val){.sival_int = 41}));
+	zassert_ok(k_sig_emptyset(&set));
+	zassert_ok(k_sig_addset(&set, K_SIG_RTMIN));
+	info = (struct k_sig_info){0};
+	zassert_equal(k_sig_timedwait(&set, &info, K_NO_WAIT), K_SIG_RTMIN);
+	zassert_equal(info.value.sival_int, 41);
+}
+
 static struct sigqueue_work {
 	struct k_work_delayable dwork;
 	k_tid_t tid;

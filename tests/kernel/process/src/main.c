@@ -268,6 +268,63 @@ static void waitpid_orphan_reaped(void)
 	zassert_equal(sys_process_id(&child_b), -ESRCH);
 }
 
+#ifdef CONFIG_SIGNAL
+static void disp_noop_handler(int sig, struct k_sig_info *info, void *ucontext)
+{
+	ARG_UNUSED(sig);
+	ARG_UNUSED(info);
+	ARG_UNUSED(ucontext);
+}
+
+static void disp_child_entry(void *p1, void *p2, void *p3)
+{
+	int code = 0;
+	struct k_sig_action oact;
+
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	/* a fresh process inherits ignored dispositions, and only those */
+	if ((k_sig_action(K_SIG_USR2, NULL, &oact) != 0) || (oact.handler != K_SIG_IGN)) {
+		code |= 1;
+	}
+	if ((k_sig_action(K_SIG_USR1, NULL, &oact) != 0) || (oact.handler != K_SIG_DFL)) {
+		code |= 2;
+	}
+	k_exit(code);
+}
+
+static void spawn_dispositions(void)
+{
+	int ws = -1;
+	k_pid_t child = &child_a;
+	struct k_sig_action act = {.handler = K_SIG_IGN};
+	struct sys_clone_args args = {
+		.entry = disp_child_entry,
+		.thread = &child_a,
+		.stack = child_stack_a,
+		.stack_size = STATIC_PROC_STACK_SIZE,
+		.prio = K_LOWEST_APPLICATION_THREAD_PRIO,
+	};
+
+	zassert_ok(k_sig_emptyset(&act.mask));
+	zassert_ok(k_sig_action(K_SIG_USR2, &act, NULL));
+	act.handler = disp_noop_handler;
+	zassert_ok(k_sig_action(K_SIG_USR1, &act, NULL));
+
+	zassert_ok(sys_clone(&args, NULL));
+	zassert_ok(k_waitpid(child, NULL, &ws, 0, K_FOREVER));
+	zassert_true(K_WIFEXITED(ws) && (K_WEXITSTATUS(ws) == 0),
+		     "dispositions not inherited as a fresh image requires (code=%d)",
+		     K_WEXITSTATUS(ws));
+
+	act.handler = K_SIG_DFL;
+	zassert_ok(k_sig_action(K_SIG_USR1, &act, NULL));
+	zassert_ok(k_sig_action(K_SIG_USR2, &act, NULL));
+}
+#endif /* CONFIG_SIGNAL */
+
 ZTEST(kernel_process, test_spawn)
 {
 	int ws = 0;
@@ -352,6 +409,10 @@ ZTEST(kernel_process, test_spawn)
 	zassert_equal(member, (k_pid_t)&child_b);
 	zassert_ok(k_thread_join(&child_b, K_SECONDS(5)));
 	zassert_equal(seen, k_getpid());
+
+#ifdef CONFIG_SIGNAL
+	spawn_dispositions();
+#endif /* CONFIG_SIGNAL */
 }
 
 ZTEST(kernel_process, test_spawn_waitpid_selectors)
@@ -706,6 +767,45 @@ ZTEST(kernel_process, test_kill)
 	/* the process handle is the leader's handle */
 	zassert_not_equal(elig_recipient, child,
 			  "signal was delivered to the leader, not the eligible thread");
+}
+
+ZTEST(kernel_process, test_kill_all)
+{
+	int ws = 1;
+	k_pid_t child = &child_a;
+	struct sys_clone_args args = {
+		.entry = elig_leader,
+		.thread = &child_a,
+		.stack = child_stack_a,
+		.stack_size = STATIC_PROC_STACK_SIZE,
+		.prio = K_LOWEST_APPLICATION_THREAD_PRIO,
+	};
+
+	/*
+	 * Broadcast excludes the caller's process and the reserved records.
+	 * Other test processes (static topology members, unreaped boot-time
+	 * processes) may or may not be alive here, so only the error space of
+	 * the existence probe is fixed.
+	 */
+	int probe = k_kill_all(0);
+
+	zassert_true((probe == 0) || (probe == -ESRCH), "k_kill_all(0) returned %d", probe);
+
+	elig_handler_ran = false;
+	elig_recipient = NULL;
+	zassert_ok(sys_clone(&args, NULL));
+	zassert_ok(k_sem_take(&elig_ready, K_SECONDS(5)));
+
+	/* with another process alive, existence and delivery both succeed */
+	zassert_ok(k_kill_all(0));
+	zassert_ok(k_kill_all(K_SIG_USR1));
+
+	zassert_ok(k_waitpid(child, NULL, &ws, 0, K_FOREVER));
+	zassert_true(K_WIFEXITED(ws) && (K_WEXITSTATUS(ws) == 0),
+		     "broadcast did not reach the eligible non-leader thread (code=%d)",
+		     K_WEXITSTATUS(ws));
+	zassert_not_equal(elig_recipient, child,
+			  "broadcast was delivered to the leader, not the eligible thread");
 }
 #endif /* CONFIG_SIGNAL */
 

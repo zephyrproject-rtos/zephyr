@@ -548,8 +548,9 @@ void z_timer_sig_discarded(struct k_timer *timer);
 /* generation-side plumbing between kernel/process.c and kernel/signal.c (internal) */
 int z_sig_queue_chld(k_tid_t tid, struct k_process *proc, k_pid_t child_pid, int child_status,
 		     bool exited);
-int z_sig_queue_thread(k_tid_t tid, int signo);
-int z_sig_queue_process(struct k_process *proc, int signo);
+int z_sig_queue_thread(k_tid_t tid, int signo, union k_sig_val value);
+int z_sig_queue_process(struct k_process *proc, int signo, union k_sig_val value);
+int z_sig_actions_clone(struct k_process *parent, struct k_process *child, bool all);
 void z_sig_process_drop(struct k_process *proc);
 #endif /* CONFIG_PROCESS && CONFIG_SIGNAL */
 

@@ -8314,6 +8314,23 @@ __syscall int k_setpgid(k_pid_t pid, k_pgrp_t pgrp);
 __syscall int k_kill_pgrp(k_pgrp_t pgrp, int signo);
 
 /**
+ * @brief Send a signal to every other process
+ *
+ * Delivers kernel signal @a signo process-directed to each registered
+ * process except the reserved system processes and the caller's own
+ * process, batching exactly as k_kill_pgrp() batches group members.
+ *
+ * @param signo kernel signal number, or 0 to check for existence only
+ *
+ * @retval 0 when at least one process accepted the signal
+ * @retval -ESRCH if no eligible process exists
+ * @retval -EINVAL if @a signo is invalid
+ */
+__syscall int k_kill_all(int signo);
+#endif /* defined(CONFIG_PROCESS) || defined(__DOXYGEN__) */
+
+#if defined(CONFIG_PROCESS) || defined(CONFIG_SIGNAL) || defined(__DOXYGEN__)
+/**
  * @brief Send a signal to a process
  *
  * Delivers kernel signal @a signo to one thread of the process named by
@@ -8321,7 +8338,12 @@ __syscall int k_kill_pgrp(k_pgrp_t pgrp, int signo);
  * POSIX kill() encodings (0, -1, negative group IDs) are a system/POSIX layer
  * concern and are decoded above the kernel; group delivery is k_kill_pgrp().
  *
- * @param pid process handle
+ * Without @kconfig{CONFIG_PROCESS} the system is the single (figurative)
+ * process: @a pid may be NULL or any live thread handle, the caller takes
+ * the signal when it has it unblocked, and the signal otherwise pends at
+ * system scope for the first thread to unblock or wait for it.
+ *
+ * @param pid process handle, or NULL for the calling process
  * @param signo kernel signal number, or 0 to check for existence only
  *
  * @retval 0 on success
@@ -8330,6 +8352,24 @@ __syscall int k_kill_pgrp(k_pgrp_t pgrp, int signo);
  */
 __syscall int k_kill(k_pid_t pid, int signo);
 
+/**
+ * @brief Send a signal and an accompanying value to a process
+ *
+ * As k_kill(), additionally carrying @a value in the signal information
+ * observed by the claiming thread.
+ *
+ * @param pid process handle, or NULL for the calling process
+ * @param signo kernel signal number, or 0 to check for existence only
+ * @param value value delivered with the signal
+ *
+ * @retval 0 on success
+ * @retval -ESRCH if @a pid names no process
+ * @retval -EINVAL if @a signo is invalid
+ */
+__syscall int k_sigqueue(k_pid_t pid, int signo, union k_sig_val value);
+#endif /* CONFIG_PROCESS || CONFIG_SIGNAL || __DOXYGEN__ */
+
+#if defined(CONFIG_PROCESS) || defined(__DOXYGEN__)
 /**
  * @brief Terminate the calling thread's process
  *

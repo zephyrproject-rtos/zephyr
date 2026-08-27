@@ -896,7 +896,8 @@ int z_pgrp_validate(k_pgrp_t pgrp)
 		SYS_DLIST_FOR_EACH_CONTAINER(&pgrp->members, member, pgrp_node) {
 			if (!process_record_valid_locked(member)) {
 				ret = -EINVAL;
-				K_SPINLOCK_BREAK;
+				/* K_SPINLOCK_BREAK would resume this member walk */
+				break;
 			}
 		}
 	}
@@ -953,7 +954,7 @@ int z_impl_k_kill_pgrp(k_pgrp_t pgrp, int signo)
 				/* every member masked: pend at process scope,
 				 * under the lock so reap cannot race the queue
 				 */
-				if (z_sig_queue_process(proc, signo) == 0) {
+				if (z_sig_queue_process(proc, signo, (union k_sig_val){0}) == 0) {
 					ret = 0;
 				}
 				continue;
@@ -968,7 +969,7 @@ int z_impl_k_kill_pgrp(k_pgrp_t pgrp, int signo)
 		found += n;
 #ifdef CONFIG_SIGNAL
 		for (int i = 0; i < n; i++) {
-			int err = z_sig_queue_thread(targets[i], signo);
+			int err = z_sig_queue_thread(targets[i], signo, (union k_sig_val){0});
 
 			if (err == -EINVAL) {
 				return -EINVAL;
@@ -1003,7 +1004,7 @@ static inline int z_vrfy_k_kill_pgrp(k_pgrp_t pgrp, int signo)
 #include <zephyr/syscalls/k_kill_pgrp_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
-int z_impl_k_kill(k_pid_t pid, int signo)
+static int process_kill(k_pid_t pid, int signo, union k_sig_val value)
 {
 	bool found = false;
 	bool live = false;
@@ -1028,7 +1029,7 @@ int z_impl_k_kill(k_pid_t pid, int signo)
 				/* every member masked: pend at process scope,
 				 * under the lock so reap cannot race the queue
 				 */
-				ret = z_sig_queue_process(proc, signo);
+				ret = z_sig_queue_process(proc, signo, value);
 				pended = true;
 			}
 		}
@@ -1049,12 +1050,18 @@ int z_impl_k_kill(k_pid_t pid, int signo)
 	if (pended) {
 		return ret;
 	}
-	return z_sig_queue_thread(tid, signo);
+	return z_sig_queue_thread(tid, signo, value);
 #else
 	ARG_UNUSED(pended);
 	ARG_UNUSED(ret);
+	ARG_UNUSED(value);
 	return -ENOTSUP;
 #endif /* CONFIG_SIGNAL */
+}
+
+int z_impl_k_kill(k_pid_t pid, int signo)
+{
+	return process_kill(pid, signo, (union k_sig_val){0});
 }
 
 #ifdef CONFIG_USERSPACE
@@ -1105,6 +1112,115 @@ static FUNC_NORETURN void process_exit(int wstatus)
 
 	CODE_UNREACHABLE;
 }
+
+int z_impl_k_sigqueue(k_pid_t pid, int signo, union k_sig_val value)
+{
+	return process_kill(pid, signo, value);
+}
+
+#ifdef CONFIG_USERSPACE
+static inline int z_vrfy_k_sigqueue(k_pid_t pid, int signo, union k_sig_val value)
+{
+	/* identity-value resolution validates the handle; never dereferenced */
+	return z_impl_k_sigqueue(pid, signo, value);
+}
+#include <zephyr/syscalls/k_sigqueue_mrsh.c>
+#endif /* CONFIG_USERSPACE */
+
+int z_impl_k_kill_all(int signo)
+{
+	int ret = -ESRCH;
+	size_t skip = 0;
+	bool done = false;
+	struct k_thread *targets[8];
+	struct k_process *self = NULL;
+
+	/*
+	 * Broadcast: every registered process except the reserved system
+	 * records and the caller's own process, batched exactly as
+	 * k_kill_pgrp() batches group members.
+	 */
+	k_spinlock_key_t key = k_spin_lock(&process_lock);
+
+	self = process_self();
+
+	while (!done) {
+		int n = 0;
+		size_t pos = 0;
+		struct k_process *proc;
+
+		done = true;
+		SYS_DLIST_FOR_EACH_CONTAINER(&process_active, proc, active_node) {
+			k_tid_t tgt;
+
+			if (pos++ < skip) {
+				continue;
+			}
+			if (n >= (int)ARRAY_SIZE(targets)) {
+				done = false;
+				break;
+			}
+			skip++;
+			if (process_is_reserved(proc) || (proc == self) ||
+			    (proc->state == K_PROCESS_UNUSED) ||
+			    sys_dlist_is_empty(&proc->threads)) {
+				continue;
+			}
+			if (signo == 0) {
+				/* existence check only */
+				ret = 0;
+				continue;
+			}
+#ifdef CONFIG_SIGNAL
+			tgt = process_sig_target(proc, signo);
+			if (tgt == NULL) {
+				/* every member masked: pend at process scope,
+				 * under the lock so reap cannot race the queue
+				 */
+				if (z_sig_queue_process(proc, signo, (union k_sig_val){0}) == 0) {
+					ret = 0;
+				}
+				continue;
+			}
+#else
+			tgt = SYS_DLIST_PEEK_HEAD_CONTAINER(&proc->threads, tgt, process_node);
+#endif /* CONFIG_SIGNAL */
+			targets[n++] = tgt;
+		}
+		k_spin_unlock(&process_lock, key);
+
+#ifdef CONFIG_SIGNAL
+		for (int i = 0; i < n; i++) {
+			int err = z_sig_queue_thread(targets[i], signo, (union k_sig_val){0});
+
+			if (err == -EINVAL) {
+				return -EINVAL;
+			}
+			if (err == 0) {
+				ret = 0;
+			}
+		}
+#else
+		if (n > 0) {
+			ret = -ENOTSUP;
+		}
+#endif /* CONFIG_SIGNAL */
+
+		if (!done) {
+			key = k_spin_lock(&process_lock);
+		}
+	}
+
+	return ret;
+}
+
+#ifdef CONFIG_USERSPACE
+static inline int z_vrfy_k_kill_all(int signo)
+{
+	return z_impl_k_kill_all(signo);
+}
+#include <zephyr/syscalls/k_kill_all_mrsh.c>
+#endif /* CONFIG_USERSPACE */
 
 void z_impl_k_exit(int code)
 {
