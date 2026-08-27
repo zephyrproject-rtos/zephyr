@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -12,9 +12,15 @@
  * Define noncacheable flash region attributes using noncacheable SRAM memory
  * attribute index.
  */
+#if defined(CONFIG_MPU_ALLOW_FLASH_WRITE)
+#define MAX32_RBAR_RW_MASK P_RW_U_RO_Msk
+#else
+#define MAX32_RBAR_RW_MASK RO_Msk
+#endif /* CONFIG_MPU_ALLOW_FLASH_WRITE */
+
 #define MAX32_FLASH_NON_CACHEABLE(base, size)                                                      \
 	{                                                                                          \
-		.rbar = RO_Msk | NON_SHAREABLE_Msk,                                                \
+		.rbar = NOT_EXEC | MAX32_RBAR_RW_MASK | NON_SHAREABLE_Msk,                         \
 		.mair_idx = MPU_MAIR_INDEX_SRAM_NOCACHE,                                           \
 		.r_limit = REGION_LIMIT_ADDR(base, size),                                          \
 	}
