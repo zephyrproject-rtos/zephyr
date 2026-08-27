@@ -301,4 +301,10 @@
 			 <K3_PINMUX(0x000c, PIN_OUTPUT, MUX_MODE_0)>,
 			 <K3_PINMUX(0x0010, PIN_INPUT, MUX_MODE_0)>;
 	};
+
+	mcu_i2c0_default: mcu-i2c0-default-pins {
+		/* 40-pin header pin 5 (SCL) and pin 3 (SDA) */
+		pinmux = <K3_PINMUX(0x0044, PIN_INPUT_PULLUP, MUX_MODE_0)>,
+			 <K3_PINMUX(0x0048, PIN_INPUT_PULLUP, MUX_MODE_0)>;
+	};
 };
