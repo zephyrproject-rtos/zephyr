@@ -1,12 +1,19 @@
 /*
- * Copyright (c) 2025 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2025-2026 Espressif Systems (Shanghai) Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/*
+ * Only enable the timers; their interrupt wiring is inherited from
+ * esp32_common.dtsi, which routes each one through its own INTMUX node with a
+ * single interrupt cell. Do not override "interrupts" here: the pre-INTMUX
+ * <cpu_line source priority flags> form parses as four separate interrupts
+ * against a 1-cell intmux and makes gen_isr_tables.py reject the build.
+ */
+
 &timer0 {
 	status = "okay";
-	interrupts = <TG0_T0_LEVEL_INTR_SOURCE 1 0>;
 
 	counter {
 		status = "okay";
@@ -15,7 +22,6 @@
 
 &timer1 {
 	status = "okay";
-	interrupts = <TG0_T1_LEVEL_INTR_SOURCE 2 0>;
 
 	counter {
 		status = "okay";
@@ -24,7 +30,6 @@
 
 &timer2 {
 	status = "okay";
-	interrupts = <TG1_T0_LEVEL_INTR_SOURCE 3 0>;
 
 	counter {
 		status = "okay";
