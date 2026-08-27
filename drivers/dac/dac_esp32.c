@@ -20,7 +20,6 @@
 LOG_MODULE_REGISTER(esp32_dac, CONFIG_DAC_LOG_LEVEL);
 
 struct dac_esp32_config {
-	int irq_source;
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
 };
@@ -82,10 +81,10 @@ static DEVICE_API(dac, dac_esp32_driver_api) = {
 	.write_value = dac_esp32_write_value
 };
 
+/* clang-format off */
 #define ESP32_DAC_INIT(id)									\
 												\
 	static const struct dac_esp32_config dac_esp32_config_##id = {				\
-		.irq_source = DT_INST_IRQN(id),							\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(id)),				\
 		.clock_subsys =	(clock_control_subsys_t) DT_INST_CLOCKS_CELL(id, offset),	\
 	};											\
@@ -98,5 +97,6 @@ static DEVICE_API(dac, dac_esp32_driver_api) = {
 		POST_KERNEL,									\
 		CONFIG_DAC_INIT_PRIORITY,							\
 		&dac_esp32_driver_api);
+/* clang-format on */
 
 DT_INST_FOREACH_STATUS_OKAY(ESP32_DAC_INIT);
