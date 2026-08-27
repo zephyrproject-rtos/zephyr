@@ -1515,7 +1515,7 @@ int bt_le_ext_adv_delete(struct bt_le_ext_adv *adv);
  * @return Index of the advertising set object.
  * The range of the returned value is 0..@kconfig{CONFIG_BT_EXT_ADV_MAX_ADV_SET}-1
  */
-uint8_t bt_le_ext_adv_get_index(struct bt_le_ext_adv *adv);
+uint8_t bt_le_ext_adv_get_index(const struct bt_le_ext_adv *adv);
 
 /** Advertising states. */
 enum bt_le_ext_adv_state {
