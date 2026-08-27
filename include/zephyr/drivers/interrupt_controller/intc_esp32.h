@@ -42,6 +42,21 @@
 				 ESP_INTR_FLAG_NMI)
 
 /*
+ * Default CPU-line interrupt priority for IRQ_CONNECT(). Mirrors the
+ * IRQ_DEFAULT_PRIORITY used by the intmux devicetree nodes and is fixed per
+ * architecture: ignored on Xtensa (the priority is determined by the CPU
+ * interrupt line), and a valid controller priority on RISC-V, where 0 is not
+ * usable. Guarded so it yields to the dt-bindings definition if both are seen.
+ */
+#ifndef IRQ_DEFAULT_PRIORITY
+#if defined(CONFIG_RISCV)
+#define IRQ_DEFAULT_PRIORITY 1
+#else
+#define IRQ_DEFAULT_PRIORITY 0
+#endif
+#endif
+
+/*
  * Get the interrupt flags from the supplied priority.
  */
 #define ESP_PRIO_TO_FLAGS(priority) \
@@ -74,6 +89,7 @@ typedef struct intr_handle_data_t intr_handle_data_t;
 /* Handle to an interrupt handler */
 typedef intr_handle_data_t *intr_handle_t;
 
+#if 0
 struct shared_vector_desc_t {
 	int disabled: 1;
 	int source: 16;
@@ -299,6 +315,8 @@ int esp_intr_enable(intr_handle_t handle);
  */
 int esp_intr_set_in_iram(intr_handle_t handle, bool is_in_iram);
 
+#endif
+
 /**
  * @brief Disable interrupts that aren't specifically marked as running from IRAM
  */
@@ -308,5 +326,6 @@ void esp_intr_noniram_disable(void);
  * @brief Re-enable interrupts disabled by esp_intr_noniram_disable
  */
 void esp_intr_noniram_enable(void);
+
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_INTERRUPT_CONTROLLER_INTC_ESP32_H_ */
