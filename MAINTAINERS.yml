@@ -5788,6 +5788,24 @@ Samples:
   labels:
     - "area: Samples"
 
+"Secure calls":
+  status: maintained
+  maintainers:
+    - teburd
+  files:
+    - arch/arm/core/cortex_m/tz/sau.c
+    - doc/services/secure_call.rst
+    - include/zephyr/arch/secure_domain.h
+    - include/zephyr/arch/security_partition.h
+    - include/zephyr/internal/secure_call_handler.h
+    - include/zephyr/secure_call.h
+    - scripts/build/gen_secure_calls.py
+    - scripts/build/parse_secure_calls.py
+    - scripts/tests/build/test_parse_gen.py
+    - tests/secure_call/
+  labels:
+    - "area: Secure calls"
+
 Secure storage:
   status: maintained
   maintainers:
