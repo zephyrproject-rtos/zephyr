@@ -17,6 +17,14 @@ An NVMEM provider is a driver that exposes NVMEM cells. For example, an EEPROM
 driver can be an NVMEM provider. The NVMEM provider is responsible for reading
 and writing data to the underlying hardware.
 
+Devices implementing one of the memory device APIs (BBRAM, EEPROM, flash and
+OTP) act as NVMEM providers as-is. Other devices can expose NVMEM cells by
+implementing the dedicated NVMEM provider device API, see
+:c:struct:`nvmem_driver_api`. For such providers the cell's devicetree reg
+address is passed to the driver unmodified and does not have to be a byte
+offset into a flat memory space; the byte offset within the cell is passed
+separately.
+
 NVMEM Cell
 ==========
 
@@ -33,6 +41,7 @@ Configuration
 *************
 
 * :kconfig:option:`CONFIG_NVMEM`: Enables the NVMEM subsystem.
+* :kconfig:option:`CONFIG_NVMEM_PROVIDER`: Enabled when a native NVMEM provider driver is selected.
 * :kconfig:option:`CONFIG_NVMEM_BBRAM`: Enables NVMEM support for Battery Backed RAM.
 * :kconfig:option:`CONFIG_NVMEM_EEPROM`: Enables NVMEM support for EEPROM devices.
 * :kconfig:option-regex:`CONFIG_NVMEM_FLASH.*`: Configure NVMEM support for flash devices.

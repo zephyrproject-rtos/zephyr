@@ -6,6 +6,13 @@ menuconfig NVMEM
 
 if NVMEM
 
+config NVMEM_PROVIDER
+	bool
+	help
+	  Enabled when a native NVMEM provider driver is selected. Native
+	  providers implement the NVMEM provider device API instead of one
+	  of the memory device APIs.
+
 config NVMEM_BBRAM
 	bool "NVMEM support for Battery Backed RAM"
 	default y
