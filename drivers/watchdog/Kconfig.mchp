@@ -8,3 +8,10 @@ config WDT_MCHP_G1
 	select HAS_WDT_DISABLE_AT_BOOT
 	help
 	  Enable WDT driver for Microchip G1 IPs.
+
+config WDT_MCHP_MSS
+	bool "Microchip MSS Watchdog (WDT) Driver"
+	default y
+	depends on DT_HAS_MICROCHIP_WDT_MSS_ENABLED
+	help
+	  Enable WDT driver for Microchip MSS.
