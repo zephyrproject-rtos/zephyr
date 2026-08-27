@@ -1475,11 +1475,18 @@ uint8_t btp_ascs_configure_codec(const void *cmd, uint16_t cmd_len, void *rsp, u
 	struct btp_bap_unicast_connection *u_conn;
 	struct bt_audio_codec_cfg codec_cfg;
 
-	ARG_UNUSED(cmd_len);
 	ARG_UNUSED(rsp);
 	ARG_UNUSED(rsp_len);
 
 	LOG_DBG("");
+
+	if (cmd_len < sizeof(*cp) || cmd_len != sizeof(*cp) + cp->cc_ltvs_len) {
+		return BTP_STATUS_FAILED;
+	}
+
+	if (cp->cc_ltvs_len > sizeof(codec_cfg.data)) {
+		return BTP_STATUS_FAILED;
+	}
 
 	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
 	if (!conn) {
