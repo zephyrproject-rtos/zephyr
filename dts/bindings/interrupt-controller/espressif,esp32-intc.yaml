@@ -1,7 +1,15 @@
 # Copyright (c) 2021 Espressif Systems (Shanghai) Co., Ltd.
 # SPDX-License-Identifier: Apache-2.0
 
-description: ESP32 Interrupt controller
+description: |
+  ESP32 Interrupt controller (level-1 CPU interrupt lines).
+
+  reg carries the INTMUX register bases the multi-level dispatcher reads,
+  per core: the MAP (per-source routing) base then the pending-STATUS base.
+  Single-core parts provide one pair (map0, status0); dual-core parts add a
+  second pair (map1, status1). The STATUS entry size determines the number of
+  pending-status words (size / 4).
+
 compatible: "espressif,esp32-intc"
 
 include: [interrupt-controller.yaml, base.yaml]
