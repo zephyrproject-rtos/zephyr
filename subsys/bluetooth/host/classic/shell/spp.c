@@ -252,12 +252,14 @@ static void bt_spp_disconnected(struct bt_rfcomm_dlc *dlci)
 	bt_shell_print("SPP: disconnected (ep=%p)", ep);
 }
 
-static void bt_spp_recv(struct bt_rfcomm_dlc *dlci, struct net_buf *buf)
+static int bt_spp_recv(struct bt_rfcomm_dlc *dlci, struct net_buf *buf)
 {
 	struct bt_spp_endpoint *ep = SPP_EP_FROM_DLC(dlci);
 
 	bt_shell_print("SPP: rx data (ep=%p, len=%u)", ep, (unsigned int)buf->len);
 	bt_shell_hexdump(buf->data, buf->len);
+
+	return 0;
 }
 
 static int spp_sdp_set_uuid(const struct bt_uuid *uuid)

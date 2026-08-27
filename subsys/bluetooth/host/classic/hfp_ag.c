@@ -3753,7 +3753,7 @@ static int hfp_ag_at_cmd_ack(struct bt_hfp_ag *ag, int err)
 	return err;
 }
 
-static void hfp_ag_recv(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
+static int hfp_ag_recv(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
 {
 	struct bt_hfp_ag *ag = CONTAINER_OF(dlc, struct bt_hfp_ag, rfcomm_dlc);
 	uint8_t *data = buf->data;
@@ -3783,14 +3783,14 @@ static void hfp_ag_recv(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
 
 	if (err == -EINPROGRESS) {
 		LOG_DBG("OK code will be replied later");
-		return;
+		return 0;
 	}
 
 	if (!atomic_test_and_set_bit(ag->flags, BT_HFP_AG_1ST_AT_RECV)) {
 		LOG_DBG("First AT command ack will be replied later");
 		ag->ack_err = err;
 		bt_work_submit(&ag->slc_work);
-		return;
+		return 0;
 	}
 
 	err = hfp_ag_at_cmd_ack(ag, err);
@@ -3800,6 +3800,8 @@ static void hfp_ag_recv(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
 	if (err != 0) {
 		LOG_ERR("HFP AG send response err :(%d)", err);
 	}
+
+	return 0;
 }
 
 static void hfp_ag_sent(struct bt_rfcomm_dlc *dlc, int err)

@@ -38,7 +38,7 @@ static sys_slist_t goep_rfcomm_server = SYS_SLIST_STATIC_INIT(&goep_rfcomm_serve
 
 #define GOEP_GET_TRANSPORT_V1(_dlc) CONTAINER_OF((_dlc), struct bt_goep_transport_v1, dlc)
 
-static void goep_rfcomm_recv(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
+static int goep_rfcomm_recv(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
 {
 	struct bt_goep_transport_v1 *goep_transport_v1 = GOEP_GET_TRANSPORT_V1(dlc);
 	struct bt_goep *goep = goep_transport_v1->goep;
@@ -48,6 +48,8 @@ static void goep_rfcomm_recv(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
 	if (err != 0) {
 		LOG_WRN("Fail to handle OBEX packet (err %d)", err);
 	}
+
+	return 0;
 }
 
 static void goep_rfcomm_connected(struct bt_rfcomm_dlc *dlc)
