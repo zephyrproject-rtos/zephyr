@@ -1576,6 +1576,7 @@ New Drivers
 
   * Arm CoreLink TrustZone Memory Protection Controller
     (:dtcompatible:`arm,tz-mpc`).
+  * Infineon MPC (:dtcompatible:`infineon,mpc`).
 
 * PPC (Peripheral Protection Controller)
 
@@ -1776,7 +1777,7 @@ Libraries / Subsystems
 
   * Added the ``__secure_call`` code-generation mechanism for crossing the Arm
     TrustZone-M Non-Secure/Secure boundary, mirroring the ``__syscall``
-    pattern.  See :ref:`secure_call`.
+    pattern. See :ref:`secure_call`.
 
 
 Devicetree

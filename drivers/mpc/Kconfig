@@ -12,12 +12,13 @@ config MPC
 	help
 	  Set by any Memory Protection Controller (MPC) driver to indicate
 	  that the mpc_configure_all() API (<zephyr/drivers/mpc/mpc.h>) is
-	  available.  Individual MPC drivers select this symbol; application
+	  available. Individual MPC drivers select this symbol; application
 	  and Secure-image code can test CONFIG_MPC instead of naming a
 	  specific driver.
 
 # zephyr-keep-sorted-start
 source "drivers/mpc/arm_tz_mpc/Kconfig"
+source "drivers/mpc/infineon_mpc/Kconfig"
 # zephyr-keep-sorted-stop
 
 endmenu
