@@ -19,6 +19,15 @@ Core Build System & Hardware Modules
    module/extensions
    module/kconfig
 
+Sysbuild Modules
+----------------
+
+.. toctree::
+   :maxdepth: 1
+   :glob:
+
+   module/sysbuild_extensions
+
 Utility & Tooling Modules
 -------------------------
 
