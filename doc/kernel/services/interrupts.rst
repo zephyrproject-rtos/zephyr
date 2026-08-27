@@ -80,17 +80,24 @@ illustrated and explained below:
 
 .. code-block:: none
 
-                 9             2   0
-           _ _ _ _ _ _ _ _ _ _ _ _ _         (LEVEL 1)
-         5       |         A   |
-       _ _ _ _ _ _ _         _ _ _ _ _ _ _   (LEVEL 2)
-         |   C                       B
-       _ _ _ _ _ _ _                         (LEVEL 3)
-               D
+              9                           2       0
+    ┌───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┬───┐
+    │   │   │ ╷ │   │   │   │   │ A │   │ ╷ │   │   │               (LEVEL 1)
+    └───┴───┴─│─┴───┴───┴───┴───┴───┴───┴─│─┴───┴───┘
+              └─────────────────┐         └─────────────────────┐
+          5                     v                               v
+    ┌───┬───┬───┬───┬───┬───┬───┐   ┌───┬───┬───┬───┬───┬───┬───┐
+    │   │ ╷ │   │ C │   │   │   │   │   │   │   │   │ B │   │   │   (LEVEL 2)
+    └───┴─│─┴───┴───┴───┴───┴───┘   └───┴───┴───┴───┴───┴───┴───┘
+          └─────────────────────┐
+                                v
+    ┌───┬───┬───┬───┬───┬───┬───┐
+    │   │   │   │   │ D │   │   │                                   (LEVEL 3)
+    └───┴───┴───┴───┴───┴───┴───┘
 
 There are three interrupt levels shown here.
 
-* '-' means interrupt line and is numbered from 0 (right most).
+* A cell represents an interrupt line and is numbered from 0 (right most).
 * LEVEL 1 has 12 interrupt lines, with two lines (2 and 9) connected
   to nested controllers and one device 'A' on line 4.
 * One of the LEVEL 2 controllers has interrupt line 5 connected to
