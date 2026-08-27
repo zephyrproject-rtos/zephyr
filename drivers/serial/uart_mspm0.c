@@ -137,10 +137,10 @@
 
 #endif /* !CONFIG_HAS_MSPM0_SDK */
 
-#define UART_IFLS_TXIFLSEL_LVL_1_ENTRY FIELD_PREP(UART_IFLS_TXIFLSEL_MASK, 7)
+#define UART_IFLS_TXIFLSEL_LVL_1_ENTRY         FIELD_PREP(UART_IFLS_TXIFLSEL_MASK, 7)
 #define UART_IFLS_UNICOMM_TXIFLSEL_LVL_1_ENTRY FIELD_PREP(UART_IFLS_TXIFLSEL_MASK, 4)
 
-#define UART_IFLS_RXIFLSEL_LVL_1_ENTRY UART_IFLS_TXIFLSEL_LVL_1_ENTRY
+#define UART_IFLS_RXIFLSEL_LVL_1_ENTRY         UART_IFLS_TXIFLSEL_LVL_1_ENTRY
 #define UART_IFLS_UNICOMM_RXIFLSEL_LVL_1_ENTRY UART_IFLS_UNICOMM_TXIFLSEL_LVL_1_ENTRY
 
 /*
@@ -239,7 +239,7 @@ struct uart_mspm0_config {
  * Grouped here so they can be accessed as data->uart_config.parity, etc.
  */
 struct uart_mspm0_line_config {
-	uint32_t parity;      /* LCRH parity bits */
+	uint32_t parity;       /* LCRH parity bits */
 	uint32_t word_length;  /* LCRH WLEN field */
 	uint32_t stop_bits;    /* LCRH STP2 field */
 	uint32_t flow_control; /* CTL0 RTSEN/CTSEN bits */
@@ -864,15 +864,16 @@ static DEVICE_API(uart, uart_mspm0_driver_api) = {
 
 #define MSPM0_CLK_DIV_REG(n) (DT_INST_PROP(n, clk_div) - 1)
 
+/* clang-format off */
 #define MSPM0_UART_INIT_FN(index)								\
-                                                                                                \
+												\
 	PINCTRL_DT_INST_DEFINE(index);                                                          \
-                                                                                                \
+												\
 	static const struct mspm0_sys_clock mspm0_uart_sys_clock##index =                       \
 		MSPM0_CLOCK_SUBSYS_FN(index);                                                   \
-                                                                                                \
+												\
 	MSP_UART_IRQ_DEFINE(index);                                                             \
-                                                                                                \
+												\
 	static const struct uart_mspm0_config uart_mspm0_cfg_##index = {			\
 		.regs = (mspm0_uart_regs *)(DT_INST_REG_ADDR(index) - MSPM0_UART_REGS_OFFSET),  \
 		.pinctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(index),                               \
@@ -880,10 +881,10 @@ static DEVICE_API(uart, uart_mspm0_driver_api) = {
 		.clk_sel = MSPM0_CLOCK_PERIPH_REG_MASK(DT_INST_CLOCKS_CELL(index, clk)),        \
 		.clk_div = MSPM0_CLK_DIV_REG(index),                                            \
 		.stat_txff_mask = COND_CODE_1(DT_INST_PROP(index, is_unicomm_uart),		\
-				(UART_STAT_UNICOMM_TXFF_MASK),				\
+				(UART_STAT_UNICOMM_TXFF_MASK),					\
 				(UART_STAT_TXFF_MASK)),						\
 		.stat_txfe_mask = COND_CODE_1(DT_INST_PROP(index, is_unicomm_uart),		\
-				(UART_STAT_UNICOMM_TXFE_MASK),				\
+				(UART_STAT_UNICOMM_TXFE_MASK),					\
 				(UART_STAT_TXFE_MASK)),						\
 		.skip_power_on = COND_CODE_1(DT_INST_PROP(index, is_unicomm_uart),		\
 				(true),								\
@@ -904,7 +905,7 @@ static DEVICE_API(uart, uart_mspm0_driver_api) = {
 				.parity = 0,                                                    \
 				.word_length = UART_LCRH_WLEN_DATABIT8,                         \
 				.stop_bits = UART_LCRH_STP2_DISABLE,                            \
-				.flow_control = (DT_INST_PROP(index, hw_flow_control)            \
+				.flow_control = (DT_INST_PROP(index, hw_flow_control)		\
 							? (UART_CTL0_RTSEN_ENABLE |             \
 							   UART_CTL0_CTSEN_ENABLE)              \
 							: (UART_CTL0_RTSEN_DISABLE |            \
@@ -915,5 +916,6 @@ static DEVICE_API(uart, uart_mspm0_driver_api) = {
 	DEVICE_DT_INST_DEFINE(index, &uart_mspm0_init, NULL, &uart_mspm0_data_##index,		\
 			      &uart_mspm0_cfg_##index, PRE_KERNEL_1,				\
 			      CONFIG_SERIAL_INIT_PRIORITY, &uart_mspm0_driver_api);
+/* clang-format on */
 
 DT_INST_FOREACH_STATUS_OKAY(MSPM0_UART_INIT_FN)
