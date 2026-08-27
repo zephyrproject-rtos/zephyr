@@ -48,8 +48,8 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define TX_AVAIL_WAIT K_MSEC(1)
 
 /* descriptor index iterators */
-#define INC_WRAP(idx, size) ({ idx = (idx + 1) % size; })
-#define DEC_WRAP(idx, size) ({ idx = (idx + size - 1) % size; })
+#define INC_WRAP(idx, size) ((idx) = ((idx) + 1) % (size))
+#define DEC_WRAP(idx, size) ({ (idx) = ((idx) + (size) - 1) % (size); })
 
 /*
  * Descriptor physical location .
@@ -437,7 +437,8 @@ static void dwmac_rx_refill_desc(const struct device *dev, struct net_buf *frag)
 	barrier_dmem_fence_full();
 
 	/* advance to the next descriptor */
-	p->rx_desc_head = INC_WRAP(d_idx, NB_RX_DESCS);
+	INC_WRAP(d_idx, NB_RX_DESCS);
+	p->rx_desc_head = d_idx;
 
 	/* lastly notify the hardware */
 	DWMAC_REG_WRITE(DMA_CHn_RXDESC_TAIL_PTR(0), RXDESC_PHYS_L(d_idx));

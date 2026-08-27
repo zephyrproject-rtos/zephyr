@@ -25,7 +25,7 @@ LOG_MODULE_REGISTER(dwmac_core, CONFIG_ETHERNET_LOG_LEVEL);
 #define RX_FRAG_SIZE  CONFIG_NET_BUF_DATA_SIZE
 #define TX_AVAIL_WAIT K_MSEC(1)
 
-#define INC_WRAP(idx, size) ({ (idx) = ((idx) + 1) % (size); })
+#define INC_WRAP(idx, size) ((idx) = ((idx) + 1) % (size))
 #define DEC_WRAP(idx, size) ({ (idx) = ((idx) + (size) - 1) % (size); })
 
 #define TDES0_OWN BIT(31)
@@ -370,7 +370,8 @@ static void dwmac_rx_refill_desc(const struct device *dev, struct net_buf *frag)
 
 	d->des0 = RDES0_OWN;
 
-	p->rx_desc_head = INC_WRAP(d_idx, NB_RX_DESCS);
+	INC_WRAP(d_idx, NB_RX_DESCS);
+	p->rx_desc_head = d_idx;
 	DWMAC_REG_WRITE(DWMAC_DMARPDR, 0);
 
 	LOG_DBG("desc sem/head/tail=%d/%d/%d %s", k_sem_count_get(&p->free_rx_descs),
