@@ -1493,6 +1493,11 @@ Bluetooth Classic
 * Renamed ``CONFIG_BT_DEVICE_VEDNOR_ID`` to :kconfig:option:`CONFIG_BT_DEVICE_VENDOR_ID`
   to fix a typo.
 
+* The :c:member:`bt_rfcomm_dlc_ops.recv` callback signature has changed from
+  ``void`` to ``int``. Existing implementations must be updated to return ``0``
+  to preserve previous synchronous behavior, or ``-EINPROGRESS`` to use the new
+  asynchronous completion path.
+
 Bluetooth HCI
 =============
 
