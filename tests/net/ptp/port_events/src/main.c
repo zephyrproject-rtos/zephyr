@@ -730,6 +730,53 @@ ZTEST(ptp_port_events, test_event_gen_delay_resp_time_receiver_updates_delay)
 		      "delay interval should be updated from response");
 }
 
+static int8_t delay_resp_interval_result(uint8_t flags, int8_t log_msg_interval)
+{
+	struct ptp_port port;
+	struct ptp_msg req;
+
+	init_port(&port, PTP_PS_TIME_RECEIVER);
+	memset(&req, 0, sizeof(req));
+	req.header.sequence_id = net_htons(3);
+	sys_slist_append(&port.delay_req_list, &req.node);
+
+	init_rx_msg(PTP_MSG_DELAY_RESP, 0x50);
+	scripted_rx_msg.header.sequence_id = 3;
+	scripted_rx_msg.header.flags[0] = flags;
+	scripted_rx_msg.header.log_msg_interval = log_msg_interval;
+	scripted_rx_msg.delay_resp.req_port_id = port.port_ds.id;
+
+	zassert_equal(ptp_port_event_gen(&port, PTP_SOCKET_GENERAL), PTP_EVT_NONE,
+		      "Delay_Resp should not change port event state");
+	zassert_is_null(sys_slist_peek_head(&port.delay_req_list),
+			"matched Delay_Req should be removed");
+
+	return port.port_ds.log_min_delay_req_interval;
+}
+
+ZTEST(ptp_port_events, test_event_gen_delay_resp_ignores_not_applicable_interval)
+{
+	zassert_equal(delay_resp_interval_result(PTP_MSG_UNICAST_FLAG, 0x7F), 0,
+		      "0x7F marks the interval as not applicable and must not be adopted");
+	zassert_equal(delay_resp_interval_result(0, 0x7F), 0,
+		      "0x7F marks the interval as not applicable and must not be adopted");
+}
+
+ZTEST(ptp_port_events, test_event_gen_delay_resp_unicast_updates_interval)
+{
+	/* The unicast flag alone says nothing about the interval field. */
+	zassert_equal(delay_resp_interval_result(PTP_MSG_UNICAST_FLAG, -3), -3,
+		      "interval advertised in a unicast Delay_Resp should be adopted");
+}
+
+ZTEST(ptp_port_events, test_event_gen_delay_resp_ignores_bogus_interval)
+{
+	zassert_equal(delay_resp_interval_result(0, 23), 0,
+		      "out of range delay request interval must be ignored");
+	zassert_equal(delay_resp_interval_result(0, -11), 0,
+		      "out of range delay request interval must be ignored");
+}
+
 ZTEST(ptp_port_events, test_timer_pdelay_sends_request_only_for_p2p)
 {
 	struct ptp_port port;
