@@ -434,7 +434,7 @@ protected by such a lock to prevent further resubmission, it's safe to do the
 resubmit as long as you're sure that eventually the item will take its lock
 and check that state to determine whether it should do anything.  Where a
 delayable work item is being rescheduled in its handler due to inability to
-take the lock some other self-locking state, such as an atomic flag set by the
+take the lock, some other self-locking state, such as an atomic flag set by the
 application/driver when the cancel is initiated, would be required to detect
 the cancellation and avoid the cancelled work item being submitted again after
 the deadline.
