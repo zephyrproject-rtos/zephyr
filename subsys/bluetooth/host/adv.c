@@ -238,26 +238,30 @@ struct bt_le_ext_adv *bt_hci_adv_lookup_handle(uint8_t handle)
 #endif /* CONFIG_BT_BROADCASTER */
 #endif /* defined(CONFIG_BT_EXT_ADV) */
 
-void bt_le_ext_adv_foreach(void (*func)(struct bt_le_ext_adv *adv, void *data),
+void bt_le_ext_adv_foreach(bool (*func)(struct bt_le_ext_adv *adv, void *data),
 			   void *data)
 {
 #if defined(CONFIG_BT_EXT_ADV)
 	for (size_t i = 0; i < ARRAY_SIZE(adv_pool); i++) {
 		if (atomic_test_bit(adv_pool[i].flags, BT_ADV_CREATED)) {
-			func(&adv_pool[i], data);
+			if (!func(&adv_pool[i], data)) {
+				return;
+			}
 		}
 	}
 #else
 	if (atomic_test_bit(bt_dev.adv.flags, BT_ADV_CREATED)) {
-		func(&bt_dev.adv, data);
+		(void)func(&bt_dev.adv, data);
 	}
 #endif /* defined(CONFIG_BT_EXT_ADV) */
 }
 
-static void clear_ext_adv_instance(struct bt_le_ext_adv *adv, void *data)
+static bool clear_ext_adv_instance(struct bt_le_ext_adv *adv, void *data)
 {
 	bt_le_lim_adv_cancel_timeout(adv);
 	memset(adv, 0, sizeof(*adv));
+
+	return true;
 }
 
 void bt_adv_reset_adv_pool(void)
