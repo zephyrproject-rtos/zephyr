@@ -993,6 +993,25 @@ void net_eth_mcast_addr_foreach(struct net_if *iface,
 				net_eth_mcast_addr_cb_t cb,
 				void *user_data);
 
+/** @cond INTERNAL_HIDDEN */
+
+/**
+ * @brief Join or leave the L2 multicast group of an IP multicast address.
+ *
+ * @details Converts the IP address to its Ethernet multicast address and
+ * calls net_eth_mcast_addr_add() or net_eth_mcast_addr_rm() with it.
+ *
+ * @param iface Network interface
+ * @param addr IPv4 or IPv6 multicast address
+ * @param add True to join the group, false to leave it
+ *
+ * @return -EINVAL if the address family is not supported, otherwise the
+ * return value of net_eth_mcast_addr_add() or net_eth_mcast_addr_rm()
+ */
+int net_eth_mcast_ip_addr_update(struct net_if *iface, const struct net_addr *addr, bool add);
+
+/** @endcond */
+
 #else /* NET_ETH_MCAST_FILTER_SUPPORTED */
 
 static inline int net_eth_mcast_addr_add(struct net_if *iface,
@@ -1020,6 +1039,13 @@ static inline void net_eth_mcast_addr_foreach(struct net_if *iface,
 	ARG_UNUSED(iface);
 	ARG_UNUSED(cb);
 	ARG_UNUSED(user_data);
+}
+
+static inline int net_eth_mcast_ip_addr_update(struct net_if *iface __unused,
+					       const struct net_addr *addr __unused,
+					       bool add __unused)
+{
+	return -ENOTSUP;
 }
 
 #endif /* NET_ETH_MCAST_FILTER_SUPPORTED */

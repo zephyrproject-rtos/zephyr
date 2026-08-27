@@ -12,6 +12,7 @@
 
 #include <errno.h>
 #include <zephyr/sys/printk.h>
+#include <zephyr/net/ethernet.h>
 #include <zephyr/net/net_context.h>
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/icmp.h>
