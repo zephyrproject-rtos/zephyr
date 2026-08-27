@@ -537,6 +537,13 @@ New APIs and options
     and :kconfig:option:`CONFIG_NET_SOCKETS_PACKET_MCAST_MEMBERSHIP_COUNT` sets
     how many memberships can be active at the same time.
 
+* NVMEM
+
+  * Devices can now natively provide NVMEM cells by implementing the new NVMEM provider device
+    API class, see :c:struct:`nvmem_driver_api`.
+  * NVMEM cells can now be backed by PSA Secure Storage entries, see
+    :kconfig:option:`CONFIG_NVMEM_PSA_ITS` and :kconfig:option:`CONFIG_NVMEM_PSA_PS`.
+
 * Power Management
 
   * :c:macro:`LOG_DBG_PM_DEVICE_RUNTIME_GET`
