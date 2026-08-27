@@ -1,0 +1,18 @@
+/*
+ * SPDX-FileCopyrightText: Copyright Alif Semiconductor
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * On-board peripherals shared by every ensemble_e8_dk board target. Include
+ * this after the SoC dtsi, the cluster dtsi and the board pinctrl dtsi: every
+ * node referenced below comes from one of those.
+ */
+
+&i2c0 {
+	status = "okay";
+	pinctrl-0 = <&pinctrl_i2c0>;
+	pinctrl-names = "default";
+};
+
+mikrobus_i2c: &i2c0 {};
