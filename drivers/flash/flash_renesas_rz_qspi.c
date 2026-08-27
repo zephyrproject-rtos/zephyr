@@ -464,6 +464,7 @@ static DEVICE_API(flash, flash_renesas_rz_qspi_driver_api) = {
 		.prefetch_en =                                                                     \
 			(xspi_qspi_prefetch_function_t)XSPI_QSPI_CFG_UNIT_##n##_PREFETCH_FUNCTION, \
 		.p_address_space = &g_qspi##n##_address_space_settings,                            \
+		.p_reg = (void *)DT_REG_ADDR(DT_INST_PARENT(n)),                                   \
 	};                                                                                         \
 	static spi_flash_cfg_t g_qspi##n##_cfg = {                                                 \
 		.spi_protocol = SPI_FLASH_PROTOCOL_1S_1S_1S,                                       \
@@ -535,6 +536,7 @@ DT_INST_FOREACH_STATUS_OKAY(FLASH_RENESAS_RZ_QSPI_XSPI_DEFINE)
 			},                                                                         \
 		.io_fix_mask = (0u << 2) | (1u << 3),                                              \
 		.io_fix_value = (1u << 2) | (1u << 3),                                             \
+		.p_reg = (void *)DT_REG_ADDR(DT_INST_PARENT(n)),                                   \
 	};                                                                                         \
 	static spi_flash_cfg_t g_qspi##n##_cfg = {                                                 \
 		.spi_protocol = SPI_FLASH_PROTOCOL_EXTENDED_SPI,                                   \
