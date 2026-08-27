@@ -599,31 +599,66 @@ kbd, .kbd,
     font-weight: 700;
 }
 
-/* Definition lists */
-.rst-content dl {
-    /* Neutral gray, distinct from the accent color the headings use for their left border, so a
-       definition list is not mistaken for content nested under the preceding heading. */
-    border-left: 4px solid var(--code-border-color);
+/* Definition lists: three layouts (stacked, fields, entry) and two term
+   flavours (word, code). Stock RTD styles every classed dl as an API
+   signature at (0,8,2), which is why the entry rules below repeat its
+   :not() chain — that chain is an inert filter on the selectors we use. */
+
+/* Exclusions go in :where() so they cost no specificity; otherwise this base
+   rule outranks the component rules below it. */
+
+.rst-content dl:where(:not(.option-list, .footnote, .citation)) {
+    border-left: 0;
 }
 
-.rst-content dl:not(.field-list) > dt {
-    position: relative;
-    padding-left: 1rem;
-    line-height: 1.8rem;
-    background: var(--highlight-background-color);
-    border-radius: 0 16px 16px 0;
+.rst-content dl:where(:not(.option-list, .footnote, .citation)) > dt {
+    font-size: 1.0625rem;
+    font-weight: 700;
+    line-height: 1.4;
+    color: var(--term-color);
+    background: none;
+    border-radius: 0;
+    padding: 0;
+    margin: 1.875rem 0 0.1875rem;
 }
 
-.rst-content dl:not(.field-list) > dt::before {
-    content: '';
-    position: absolute;
-    left: -10px;
-    top: 6px;
-    width: 16px;
-    height: 16px;
-    background: var(--admonition-note-title-background-color);
-    border-radius: 50%;
-    border: 4px solid var(--content-background-color);
+.rst-content dl > dt:first-child {
+    margin-top: 0;
+}
+
+.rst-content dl:where(:not(.option-list, .footnote, .citation)) > dt::before {
+    content: none;
+}
+
+.rst-content dl:where(:not(.option-list, .footnote, .citation)) > dd {
+    margin: 0;
+}
+
+.rst-content dl:where(:not(.option-list, .footnote, .citation)) > dd > :last-child {
+    margin-bottom: 0;
+}
+
+/* Fields: a field list and a colon-terminated definition list say the same
+   thing, so they render alike. fit-content() stops a long label eating the row. */
+html.writer-html5 .rst-content dl.field-list,
+.rst-content dl.simple:not(.glossary) {
+    display: grid;
+    grid-template-columns: fit-content(11rem) minmax(0, 1fr);
+    gap: 6px 20px;
+    align-items: baseline;
+}
+
+html.writer-html5 .rst-content dl.field-list > dt,
+.rst-content dl.simple:not(.glossary) > dt {
+    display: block;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    line-height: 1.5;
+    color: var(--footer-color);
+    /* RTD indents a field-list term by 1em, which misaligns it against its
+       own value. */
+    margin: 0;
+    padding: 0;
 }
 
 /* Give CMake signatures and their nested parameter terms the code background, so the syntax
@@ -1000,25 +1035,37 @@ div.graphviz > object {
     margin-bottom: 0px;
 }
 
-.rst-content .sidebar dl.field-list {
-    align-items: center;
-    margin-top: 12px !important;
-    margin-bottom: 12px !important;
-    grid-template-columns: auto 1fr !important;
-    padding-right: 1em;
+/* A sidebar card is narrow, so its labels shrink rather than its values: at the
+   body label size, "Architecture:" alone takes half the card. */
+html.writer-html5 .rst-content .sidebar dl.field-list {
+    grid-template-columns: fit-content(5.5rem) minmax(0, 1fr);
+    gap: 9px 12px;
+    align-items: baseline;
+    margin: 12px 0;
+    /* The card has no padding of its own: each child insets itself, and the
+       figure caption above sets the convention at 16px. */
+    padding: 0 16px;
 }
 
-.rst-content .sidebar dl.field-list>dt {
-    background: transparent !important;
+html.writer-html5 .rst-content .sidebar dl.field-list > dt {
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-weight: 500;
+    margin: 0;
+    padding: 0;
 }
 
-.rst-content .sidebar dl.field-list>dd {
-    margin-left: 1em;
-    text-overflow: ellipsis;
-    overflow: hidden;
+.rst-content .sidebar dl.field-list > dt .colon {
+    display: none;
 }
 
-.rst-content .sidebar dl.field-list>dd code {
+html.writer-html5 .rst-content .sidebar dl.field-list > dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+.rst-content .sidebar dl.field-list > dd code {
     font-size: 0.9em;
 }
 
