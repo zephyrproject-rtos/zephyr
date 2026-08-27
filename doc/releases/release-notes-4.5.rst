@@ -562,6 +562,11 @@ New APIs and options
 
   * :c:struct:`sys_ringq` (see :ref:`fixed_size_ringq_api`)
 
+* USB
+
+  * Added support for the USB Test and Measurement Class (USBTMC) to the USB
+    device stack (see :ref:`usbd_usbtmc`).
+
 * Zbus
 
   * :kconfig:option:`CONFIG_ZBUS_RUNTIME_CHANNEL_REGISTRATION`
@@ -653,6 +658,8 @@ New Samples
   out-of-window frequency checking on the new :ref:`clock_monitor_api`.
 * ``samples/drivers/clock_monitor/measure_freq`` — demonstrates MEASURE-mode
   one-shot frequency measurement on the new :ref:`clock_monitor_api`.
+* :zephyr:code-sample:`usbtmc` — implements a tiny laboratory instrument
+  using the new USBTMC device class.
 
 Libraries / Subsystems
 **********************
