@@ -2110,10 +2110,7 @@ static void nxp_wifi_sta_init(struct net_if *iface)
 	net_eth_set_if_type_wifi(iface);
 	intf->netif = iface;
 #ifdef CONFIG_WIFI_NM
-#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT
-	wifi_nm_register_mgd_type_iface(wifi_nm_get_instance("wifi_supplicant"),
-			WIFI_TYPE_STA, iface);
-#else
+#ifndef CONFIG_WIFI_NM_WPA_SUPPLICANT
 	wifi_nm_register_mgd_type_iface(wifi_nm_get_instance("wifi_sta"),
 			WIFI_TYPE_STA, iface);
 #endif
@@ -2151,10 +2148,7 @@ static void nxp_wifi_uap_init(struct net_if *iface)
 	intf->netif = iface;
 
 #ifdef CONFIG_WIFI_NM
-#ifdef CONFIG_WIFI_NM_HOSTAPD_AP
-	wifi_nm_register_mgd_type_iface(wifi_nm_get_instance("hostapd"),
-			WIFI_TYPE_SAP, iface);
-#else
+#ifndef CONFIG_WIFI_NM_HOSTAPD_AP
 	wifi_nm_register_mgd_type_iface(wifi_nm_get_instance("wifi_sap"),
 			WIFI_TYPE_SAP, iface);
 #endif
