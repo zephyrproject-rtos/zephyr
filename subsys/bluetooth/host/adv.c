@@ -1057,8 +1057,6 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 	int err;
 	uint16_t props = 0;
 
-	adv->options = param->options;
-
 	if ((param->options & BT_LE_ADV_OPT_TX_POWER) != 0U) {
 		if (!IN_RANGE(param->tx_power, BT_HCI_LE_ADV_TX_POWER_MIN,
 			      BT_HCI_LE_ADV_TX_POWER_MAX)) {
@@ -1203,6 +1201,8 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 			return err;
 		}
 	}
+
+	adv->options = param->options;
 
 	bt_id_save_adv_addr(adv, own_addr_type);
 
