@@ -37,6 +37,10 @@
     /* Definition terms */
     --term-color: #ffffff;
 
+    /* Signature blocks */
+    --sig-background-color: #1c2029;
+    --sig-border-color: #727d90;
+
     /* Heading rails */
     --heading-accent-color: #6ab0de;
     --heading-rule-color: #727d90;

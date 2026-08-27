@@ -661,16 +661,88 @@ html.writer-html5 .rst-content dl.field-list > dt,
     padding: 0;
 }
 
-/* Give CMake signatures and their nested parameter terms the code background, so the syntax
-   highlighting stays legible and the terms aren't left with the theme's too-bright default. */
-.rst-content dl.cmake > dt,
-.rst-content dl.cmake dd dl:not(.field-list) > dt {
-    background: var(--highlight-background-color) !important;
+/* Entry: dt.sig is Sphinx's marker on every object description, so this covers
+   py, cmake, kconfig, c and cpp without a selector per domain. */
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.citation):not(.glossary):not(.simple) > dt.sig {
+    /* Not flex: the py domain emits many sibling spans per signature. */
+    display: block;
+    font-size: 1rem;
+    /* RTD bolds the whole dt; the name should carry the weight, not the
+       parameters. */
+    font-weight: 400;
+    line-height: 1.6;
+    border-radius: 5px;
+    padding: 9px 12px;
+    position: static;
+    /* RTD hard-codes #f0f0f0/#555 for nested object descriptions at (0,14,3);
+       repeating that chain would be unreadable, hence !important. */
     color: var(--highlight-default-color) !important;
+    background: var(--sig-background-color) !important;
+    border: 1px solid var(--sig-border-color) !important;
+    margin: 0 0 13px !important;
 }
 
-.rst-content dl.cmake > dt .sig-name {
+.rst-content dt.sig + dd {
+    margin-left: 1.5rem;
+    padding-left: 1.25rem;
+    border-left: 1px solid var(--hr-color);
+    padding-bottom: 20px;
+    margin-bottom: 24px;
+    border-bottom: 1px solid var(--hr-color);
+}
+
+html.writer-html5 .rst-content dd dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.citation):not(.glossary):not(.simple) > dt.sig {
+    background: none !important;
+    border: 0 !important;
+    border-bottom: 1px solid var(--sig-border-color) !important;
+    border-radius: 0;
+    padding: 0 0 5px;
+    margin: 0 0 10px;
+}
+
+.rst-content dd dt.sig + dd {
+    border-bottom: 0;
+    padding-bottom: 0;
+    margin-bottom: 20px;
+}
+
+.rst-content dl > dt.sig:last-of-type + dd:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
+    margin-bottom: 0;
+}
+
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.citation):not(.glossary):not(.simple) > dt.sig .headerlink {
+    float: right;
+    margin-left: 12px;
+    color: var(--link-color);
+    opacity: 0.45;
+    visibility: visible;
+}
+
+.rst-content dt.sig:hover .headerlink,
+.rst-content dt.sig .headerlink:focus {
+    opacity: 1;
+}
+
+.rst-content dt.sig + dd dl:not(.field-list) > dt:not(.sig) {
+    justify-self: start;
+    font-family: var(--monospace-font-family);
+    font-size: 0.875rem;
+    font-weight: 500;
+    border: 1px solid var(--code-border-color) !important;
+    border-radius: 3px;
+    padding: 2px 8px;
+    color: var(--highlight-default-color) !important;
+    background: var(--highlight-background-color) !important;
+}
+
+/* RTD hard-codes `color: #000` on .sig-name/.descname at (0,8,x), invisible on
+   a dark signature fill. */
+.rst-content dt.sig .sig-name,
+.rst-content dt.sig .descname {
     color: inherit !important;
+    font-weight: 700;
 }
 
 /* Buttons */
@@ -976,7 +1048,6 @@ html.writer-html5 .rst-content dl.field-list > dt,
 .wy-alert.wy-alert-danger {
     background-color: var(--admonition-danger-background-color);
 }
-
 
 dark-mode-toggle::part(fieldset) {
   padding-inline: 0.75rem;
