@@ -15,6 +15,7 @@
 LOG_MODULE_REGISTER(wdt_mchp_xec);
 
 #include <zephyr/drivers/watchdog.h>
+#include <zephyr/pm/device.h>
 #include <soc.h>
 #include <errno.h>
 
@@ -31,6 +32,7 @@ struct wdt_xec_config {
 struct wdt_xec_data {
 	wdt_callback_t cb;
 	bool timeout_installed;
+	bool pause_in_sleep;
 };
 
 static int wdt_xec_setup(const struct device *dev, uint8_t options)
@@ -48,10 +50,7 @@ static int wdt_xec_setup(const struct device *dev, uint8_t options)
 		return -EINVAL;
 	}
 
-	if (options & WDT_OPT_PAUSE_IN_SLEEP) {
-		LOG_WRN("WDT_OPT_PAUSE_IN_SLEEP is not supported");
-		return -ENOTSUP;
-	}
+	data->pause_in_sleep = (options & WDT_OPT_PAUSE_IN_SLEEP) != 0;
 
 	if (options & WDT_OPT_PAUSE_HALTED_BY_DBG) {
 		regs->CTRL |= MCHP_WDT_CTRL_JTAG_STALL_EN;
@@ -78,6 +77,7 @@ static int wdt_xec_disable(const struct device *dev)
 
 	regs->CTRL &= ~MCHP_WDT_CTRL_EN;
 	data->timeout_installed = false;
+	data->pause_in_sleep = false;
 
 	LOG_DBG("WDT Disabled");
 
@@ -165,6 +165,33 @@ static void wdt_xec_isr(const struct device *dev)
 	regs->IEN &= ~MCHP_WDT_IEN_EVENT_IRQ_EN;
 }
 
+#ifdef CONFIG_PM_DEVICE
+static int wdt_xec_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	struct wdt_xec_config const *cfg = dev->config;
+	struct wdt_xec_data *data = dev->data;
+	struct wdt_regs *regs = cfg->regs;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		if (data->pause_in_sleep && (regs->CTRL & MCHP_WDT_CTRL_EN)) {
+			regs->CTRL &= ~MCHP_WDT_CTRL_EN;
+		}
+		break;
+	case PM_DEVICE_ACTION_RESUME:
+		if (data->pause_in_sleep && data->timeout_installed) {
+			regs->KICK = 1;
+			regs->CTRL |= MCHP_WDT_CTRL_EN;
+		}
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_PM_DEVICE */
+
 static DEVICE_API(wdt, wdt_xec_api) = {
 	.setup = wdt_xec_setup,
 	.disable = wdt_xec_disable,
@@ -204,7 +231,11 @@ static const struct wdt_xec_config wdt_xec_config_0 = {
 
 static struct wdt_xec_data wdt_xec_dev_data;
 
-DEVICE_DT_INST_DEFINE(0, wdt_xec_init, NULL,
+#ifdef CONFIG_PM_DEVICE
+PM_DEVICE_DT_INST_DEFINE(0, wdt_xec_pm_action);
+#endif
+
+DEVICE_DT_INST_DEFINE(0, wdt_xec_init, PM_DEVICE_DT_INST_GET(0),
 		    &wdt_xec_dev_data, &wdt_xec_config_0,
 		    PRE_KERNEL_1, CONFIG_KERNEL_INIT_PRIORITY_DEVICE,
 		    &wdt_xec_api);
