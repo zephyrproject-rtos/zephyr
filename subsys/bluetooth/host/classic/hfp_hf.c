@@ -4291,7 +4291,7 @@ static void hfp_hf_disconnected(struct bt_rfcomm_dlc *dlc)
 	hf->acl = NULL;
 }
 
-static void hfp_hf_recv(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
+static int hfp_hf_recv(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
 {
 	struct bt_hfp_hf *hf = CONTAINER_OF(dlc, struct bt_hfp_hf, rfcomm_dlc);
 
@@ -4301,6 +4301,8 @@ static void hfp_hf_recv(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
 	}
 	atomic_clear_bit(hf->flags, BT_HFP_HF_FLAG_RX_ONGOING);
 	k_work_submit(&hf->work);
+
+	return 0;
 }
 
 static void hfp_hf_sent(struct bt_rfcomm_dlc *dlc, int err)
