@@ -243,7 +243,7 @@ static int cmd_csip_set_member_set_size_and_rank(const struct shell *sh, size_t 
 		return -ENOEXEC;
 	}
 
-	if (info.lockable && !IN_RANGE(rank, 1, rank)) {
+	if (info.lockable && !IN_RANGE(rank, 1, UINT8_MAX)) {
 		shell_error(sh, "Invalid rank: %lu", rank);
 
 		return -ENOEXEC;
