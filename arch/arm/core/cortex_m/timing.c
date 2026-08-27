@@ -50,8 +50,14 @@ static inline uint64_t z_arm_dwt_freq_get(void)
 	uint64_t dcyc, ddwt;
 
 	if (!dwt_frequency) {
+		bool cyccnt_enabled;
 
 		z_arm_dwt_init();
+
+		cyccnt_enabled = (DWT->CTRL & DWT_CTRL_CYCCNTENA_Msk) != 0;
+
+		/* enable cyccnt timer for measurement */
+		DWT->CTRL |= DWT_CTRL_CYCCNTENA_Msk;
 
 		do {
 			cyc_start = k_cycle_get_32();
@@ -71,6 +77,11 @@ static inline uint64_t z_arm_dwt_freq_get(void)
 
 			ddwt = dwt_end - dwt_start;
 		} while ((dcyc == 0) || (ddwt == 0));
+
+		/* restore cyccnt timer state */
+		if (!cyccnt_enabled) {
+			DWT->CTRL &= ~DWT_CTRL_CYCCNTENA_Msk;
+		}
 
 		dwt_frequency = (cyc_freq * ddwt) / dcyc;
 	}
