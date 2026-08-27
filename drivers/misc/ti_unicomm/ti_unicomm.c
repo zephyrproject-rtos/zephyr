@@ -45,6 +45,26 @@ struct ti_unicomm_data {
 	enum IPMode ip_mode;
 };
 
+/*
+ * Busy-wait loop safe to call at PRE_KERNEL_1 (before SysTick is started).
+ * Calibrated to the same cycle accounting as DL_Common_delayCycles.
+ */
+#ifndef CONFIG_HAS_MSPM0_SDK
+static inline void unicomm_delay_cycles(uint32_t cycles)
+{
+	uint32_t scratch;
+
+	__asm volatile(".syntax unified\n\t"
+		       "SUBS %0, %[c], #2\n\t"
+		       "1:\n\t"
+		       "SUBS %0, %0, #4\n\t"
+		       "NOP\n\t"
+		       "BHS  1b\n\t"
+		       : "=&r"(scratch)
+		       : [c] "r"(cycles));
+}
+#endif /* !CONFIG_HAS_MSPM0_SDK */
+
 static int ti_unicomm_init(const struct device *dev)
 {
 	const struct ti_unicomm_config *cfg = dev->config;
@@ -52,24 +72,34 @@ static int ti_unicomm_init(const struct device *dev)
 
 	volatile UNICOMM_Regs_t *unicomm = (UNICOMM_Regs_t *)cfg->inst_base;
 
-	/* Reset, set IP mode and enable power */
+	/*
+	 * Assert reset, enable power, wait for peripheral to come up, then
+	 * set IPMODE.
+	 */
 	unicomm->rstctl = RSTCTL_KEY_UNLOCK | RSTCTL_STICKY_BIT_CLEAR | RSTCTL_ASSERT_RESET;
+	unicomm->pwren = PWREN_KEY | PWREN_ENABLE;
+	unicomm_delay_cycles(CONFIG_MSPM0_PERIPH_STARTUP_DELAY);
 	if (!cfg->fixed_mode) {
 		unicomm->ipmode = data->ip_mode;
 	}
-	unicomm->pwren = PWREN_KEY | PWREN_ENABLE;
 
 	return 0;
 }
 
 /*
  * Derive the IPMODE enum value at compile time from the active child node's
- * compatible string.
+ * compatible string. For ti,unicomm-i2c (unified controller/target node)
+ * default to I2CC; the i2c driver switches to I2CT in target_register().
  */
 #define TI_UNICOMM_CHILD_IPMODE_UART(node_id)                                                      \
 	COND_CODE_1(DT_NODE_HAS_COMPAT(node_id, ti_mspm0_uart), (IPMODE_UART), ())
 
-#define TI_UNICOMM_CHILD_IPMODE(node_id) TI_UNICOMM_CHILD_IPMODE_UART(node_id)
+#define TI_UNICOMM_CHILD_IPMODE_I2C(node_id)                                                       \
+	COND_CODE_1(DT_NODE_HAS_COMPAT(node_id, ti_unicomm_i2c), (IPMODE_I2CC), ())
+
+#define TI_UNICOMM_CHILD_IPMODE(node_id)                                                           \
+	TI_UNICOMM_CHILD_IPMODE_UART(node_id)                                                      \
+	TI_UNICOMM_CHILD_IPMODE_I2C(node_id)
 
 #define TI_UNICOMM_INIT(idx)                                                                       \
 	BUILD_ASSERT(DT_INST_CHILD_NUM_STATUS_OKAY(idx) == 1,                                      \
