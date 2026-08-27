@@ -142,6 +142,7 @@ BUILD_ASSERT(!DT_ANY_INST_HAS_PROP_STATUS_OKAY(direct_io) ||
 struct eth_dm9000_config {
 	DEVICE_MMIO_NAMED_ROM(addr);
 	DEVICE_MMIO_NAMED_ROM(data);
+
 	struct net_eth_mac_config mac_cfg;
 	struct gpio_dt_spec gpio_int;
 	struct gpio_dt_spec gpio_reset;
@@ -152,6 +153,7 @@ struct eth_dm9000_config {
 struct eth_dm9000_data {
 	DEVICE_MMIO_NAMED_RAM(addr);
 	DEVICE_MMIO_NAMED_RAM(data);
+
 	K_KERNEL_STACK_MEMBER(rx_thread_stack, CONFIG_ETH_DM9000_RX_THREAD_STACK_SIZE);
 	struct gpio_callback gpio_cb;
 	struct k_thread rx_thread;
