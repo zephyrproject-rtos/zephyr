@@ -50,9 +50,9 @@ IRQ and FIQ.
 
 Supported Features
 ******************
-The board configuration supports a console UART via the 40-pin GPIO header,
-the MAIN domain GPIO controllers, the MAIN domain I2C0 and the MCU domain
-SPI0 buses along with the sensors on them, and a console over RPmsg.
+The board configuration supports a console UART and an I2C bus on the 40-pin
+header, the MAIN domain GPIO controllers, the on-board I2C and SPI buses
+along with the sensors on them, and a console over RPmsg.
 
 .. zephyr:board-supported-hw::
 

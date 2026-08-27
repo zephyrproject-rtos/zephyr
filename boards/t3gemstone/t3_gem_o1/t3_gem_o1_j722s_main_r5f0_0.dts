@@ -128,3 +128,10 @@
 		odr = <3>;
 	};
 };
+
+/* I2C on the 40-pin header, pin 3 (SDA) and pin 5 (SCL) */
+&mcu_i2c0 {
+	pinctrl-0 = <&mcu_i2c0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
