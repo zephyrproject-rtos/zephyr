@@ -1101,6 +1101,7 @@ SECTIONS
   #include <zephyr/linker/cplusplus-rom.ld>
   #include <zephyr/linker/common-rom/common-rom-init.ld>
   #include <zephyr/linker/common-rom/common-rom-kernel-devices.ld>
+  #include <zephyr/linker/common-rom/common-rom-interrupt-controllers.ld>
   #include <zephyr/linker/common-rom/common-rom-ztest.ld>
   #include <zephyr/linker/common-rom/common-rom-net.ld>
   #include <zephyr/linker/common-rom/common-rom-debug.ld>
