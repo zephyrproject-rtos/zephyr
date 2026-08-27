@@ -610,6 +610,7 @@ void counter_rz_cmtw_cmwi_isr(const struct device *dev)
 	static cmtw_extended_cfg_t g_timer##inst##_extend = {                                      \
 		.clear_source = CMTW_CLEAR_SOURCE_DISABLED,                                        \
 		.counter_size = TIMER_VARIANT_32_BIT,                                              \
+		.p_reg = (void *)DT_REG_ADDR(RZ_CMTW(inst)),                                       \
 	};                                                                                         \
 	static timer_cfg_t g_timer##inst##_cfg = {                                                 \
 		.mode = TIMER_MODE_PERIODIC,                                                       \
