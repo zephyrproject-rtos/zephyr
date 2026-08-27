@@ -44,6 +44,37 @@ Supported Boards
 - esp32_devkitc/esp32/procpu
 - esp32s2_devkitc
 - esp32s3_devkitc/esp32s3/procpu
+- esp32c6_devkitc/esp32c6/hpcore
+
+IRQ flags tests (``esp_irq_flags`` suite)
+=========================================
+
+The ``irq_flags.c`` tests verify shared CPU IRQ line IRAM flag handling:
+
+* Two IRAM clients on the same line leave ``non_iram_int_mask`` clear.
+* Mixing IRAM and non-IRAM clients on the same line is rejected at connect time.
+* A non-IRAM client sets the mask bit; disconnect clears it.
+* ``ESP_INTR_FLAG_IRAM`` is rejected when the handler is not in IRAM.
+
+MLI dispatch tests (``mli_dispatch`` suite, ESP32-S3)
+====================================================
+
+With ``CONFIG_MULTI_LEVEL_INTERRUPTS`` and the flat single-aggregator layout
+(``NUM_2ND_LEVEL_AGGREGATORS=1``):
+
+* Shared timer CPU line 8 hosts ``z_soc_2nd_lvl_isr`` in its L1 slot.
+* Timer leaf ISRs live at ``CONFIG_2ND_LVL_ISR_TBL_OFFSET + source``.
+* ``irq_enable`` / ``irq_disable`` update the per-line INTSTATUS-aligned
+  enabled-source mask (``shares_count`` and per-source bits).
+
+Pre-Phase-2 validation checklist
+==============================
+
+Before migrating ``non_iram_int_mask`` to ``soc/espressif/common/irq.c``:
+
+* Run this test on ESP32-S3 (Xtensa) and ESP32-C6 (RISC-V).
+* With GDMA enabled, confirm CPU IRQ 12 stays out of the mask when all channel ISRs are IRAM.
+* WiFi + flash read/write stress with ``esp_intr_noniram_disable()`` active.
 
 Building and Running
 ********************

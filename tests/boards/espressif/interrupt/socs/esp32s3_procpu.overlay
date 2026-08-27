@@ -6,7 +6,6 @@
 
 &timer0 {
 	status = "okay";
-	interrupts = <TG0_T0_LEVEL_INTR_SOURCE 1 0>;
 
 	counter {
 		status = "okay";
@@ -15,7 +14,6 @@
 
 &timer1 {
 	status = "okay";
-	interrupts = <TG0_T1_LEVEL_INTR_SOURCE 2 0>;
 
 	counter {
 		status = "okay";
@@ -24,9 +22,23 @@
 
 &timer2 {
 	status = "okay";
-	interrupts = <TG1_T0_LEVEL_INTR_SOURCE 3 0>;
 
 	counter {
 		status = "okay";
 	};
+};
+
+/*
+ * The level-3 cases in mli_dispatch.c / mli_encoding.c are guarded on
+ * lcd_cam_l3_intc being okay. It already defaults to okay in esp32s3_common.dtsi,
+ * so without this the coverage is opt-out: adding status = "disabled" to either
+ * node upstream would silently delete five test cases with no twister signal.
+ * Enable them here so the dependency is deliberate.
+ */
+&lcd_cam {
+	status = "okay";
+};
+
+&lcd_cam_l3_intc {
+	status = "okay";
 };
