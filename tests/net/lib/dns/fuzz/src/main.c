@@ -47,14 +47,17 @@
  */
 #define FUZZ_MAX_PACKET DNS_RESOLVER_MAX_BUF_SIZE
 
-/* The responders unpack a name into a buffer of this size and the
- * resolver copies a CNAME into one, so the tail-room checks in
- * dns_unpack_name() and dns_copy_qname() are exercised against the
- * length a name is allowed to reach on the wire.
+/* Matches the buffer sizes the code under test actually uses (not
+ * DNS_NAME_MAX_SIZE), so tail-room checks in dns_unpack_name() and
+ * dns_copy_qname() are exercised against the real buffers. The two differ;
+ * CONFIG_DNS_RESOLVER_MAX_QUERY_LEN (255) matching the CNAME buffer is
+ * coincidental today.
  */
-#define FUZZ_NAME_BUF_SIZE DNS_NAME_MAX_SIZE
+#define FUZZ_QUERY_NAME_BUF_SIZE CONFIG_MDNS_RESOLVER_BUF_SIZE
+#define FUZZ_CNAME_BUF_SIZE CONFIG_DNS_RESOLVER_MAX_QUERY_LEN
 
-NET_BUF_POOL_DEFINE(fuzz_name_pool, 2, FUZZ_NAME_BUF_SIZE, 0, NULL);
+NET_BUF_POOL_DEFINE(fuzz_query_name_pool, 2, FUZZ_QUERY_NAME_BUF_SIZE, 0, NULL);
+NET_BUF_POOL_DEFINE(fuzz_cname_pool, 2, FUZZ_CNAME_BUF_SIZE, 0, NULL);
 
 /* Each consumer gets its own copy: parsers keep the buffer pointer, and
  * update_query_idx() lower-cases the question in place.
@@ -106,7 +109,7 @@ static void consume_query(uint8_t *buf, uint16_t size)
 		return;
 	}
 
-	result = net_buf_alloc(&fuzz_name_pool, K_NO_WAIT);
+	result = net_buf_alloc(&fuzz_query_name_pool, K_NO_WAIT);
 	if (result == NULL) {
 		return;
 	}
@@ -204,7 +207,7 @@ static void consume_response(uint8_t *buf, uint16_t size)
 
 	ctx.queries[0].query_hash = query_hash;
 
-	cname = net_buf_alloc(&fuzz_name_pool, K_NO_WAIT);
+	cname = net_buf_alloc(&fuzz_cname_pool, K_NO_WAIT);
 	if (cname == NULL) {
 		return;
 	}
