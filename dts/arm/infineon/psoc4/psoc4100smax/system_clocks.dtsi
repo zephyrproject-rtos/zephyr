@@ -72,6 +72,8 @@
 	};
 
 	peri_div: peri-div {
+		compatible = "infineon,peri";
+
 		peri_clk_div0: peri-clk-div0 {
 			#clock-cells = <0>;
 			compatible = "infineon,peri-div";
