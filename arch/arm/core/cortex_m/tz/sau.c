@@ -9,6 +9,7 @@
 #include <zephyr/arch/security_partition.h>
 #include <zephyr/arch/secure_domain.h>
 #include <cmsis_core.h>
+#include <arm_cmse.h>
 
 int arch_security_partition_configure(const struct arch_security_region *regions, uint8_t count)
 {
@@ -122,8 +123,8 @@ static void __attribute__((naked)) secure_domain_svc_entry(void)
 /*
  * An ARMv8-M vector table holds the 16 architectural system exceptions
  * (initial SP, Reset, ..., SVCall at index 11, ..., SysTick) followed by the
- * CONFIG_NUM_IRQS external interrupt vectors.  The RAM copy must be able to
- * hold all of them.  VTOR requires the table base to be aligned to a power of
+ * CONFIG_NUM_IRQS external interrupt vectors. The RAM copy must be able to
+ * hold all of them. VTOR requires the table base to be aligned to a power of
  * two no smaller than the table size; 0x400 (256 vectors) satisfies every
  * ARMv8-M IRQ count and is asserted below.
  */
@@ -137,7 +138,7 @@ static uint32_t secure_domain_vtable_ram[SECURE_DOMAIN_NUM_VECTORS] __aligned(0x
 
 /*
  * Some silicon raises INVTRAN on BXNS even when every ARMv8-M precondition is
- * satisfied (a documented deviation, e.g. Infineon PSE84 / PSC3).  Enter the
+ * satisfied (a documented deviation, e.g. Infineon PSE84 / PSC3). Enter the
  * Non-Secure world via an exception return instead:
  *   1. Build a Non-Secure exception frame at the top of MSP_NS.
  *   2. Clone the Secure vector table into RAM and replace the SVC handler with
@@ -179,7 +180,7 @@ __weak FUNC_NORETURN void z_arch_secure_domain_enter(uintptr_t entry, uintptr_t 
 
 /*
  * On real Cortex-M33, bit 0 of the BXNS target selects the Thumb state and must
- * be 1.  QEMU's v7m_bxns instead interprets bit 0 as the target security state
+ * be 1. QEMU's v7m_bxns instead interprets bit 0 as the target security state
  * (0 = Non-Secure), so under emulation it must be cleared.
  */
 __weak FUNC_NORETURN void z_arch_secure_domain_enter(uintptr_t entry, uintptr_t stack)
@@ -210,4 +211,28 @@ FUNC_NORETURN void arch_secure_domain_swap(const struct arch_secure_domain *doma
 	z_arch_secure_domain_enter(domain->entry, domain->stack);
 
 	CODE_UNREACHABLE;
+}
+
+__weak FUNC_NORETURN void arch_secure_call_oops(void)
+{
+	/*
+	 * A secure-call argument failed validation, so Non-Secure code tried to
+	 * reach Secure memory. Halt rather than continue; a SoC may override
+	 * this with a richer oops/reset handler.
+	 */
+	for (;;) {
+		/* halt */
+	}
+}
+
+bool arch_secure_call_buffer_accessible(const void *addr, size_t size, bool write)
+{
+	int flags = CMSE_NONSECURE | (write ? CMSE_MPU_READWRITE : CMSE_MPU_READ);
+
+	/*
+	 * The CMSE TT instruction checks that the whole range is Non-Secure and
+	 * accessible from the current privilege level. It returns NULL if any of
+	 * the range fails the check.
+	 */
+	return cmse_check_address_range((void *)(uintptr_t)addr, size, flags) != NULL;
 }
