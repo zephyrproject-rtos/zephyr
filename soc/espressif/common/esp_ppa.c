@@ -12,7 +12,8 @@
 #include <zephyr/cache.h>
 #include <zephyr/logging/log.h>
 
-#include <esp_intr_alloc.h>
+#include <zephyr/irq.h>
+#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 
 #include "esp_err.h"
 #include "esp_cache.h"
@@ -91,7 +92,6 @@ static struct esp_ppa_state {
 	struct k_spinlock queue_lock;
 	ppa_dev_t *ppa;
 	dma2d_dev_t *dma;
-	intr_handle_t rx_intr;
 	sys_slist_t pending;
 	struct esp_ppa_txn *active;
 	struct esp_ppa_txn txns[ESP_PPA_MAX_PENDING];
@@ -118,9 +118,9 @@ static uint32_t esp_ppa_burst_bytes(ppa_data_burst_length_t burst)
 	}
 }
 
-static void esp_ppa_isr(void *arg)
+static void esp_ppa_isr(const void *arg)
 {
-	struct esp_ppa_state *st = arg;
+	struct esp_ppa_state *st = (struct esp_ppa_state *)arg;
 	dma2d_dev_t *dma = st->dma;
 	uint32_t status = dma2d_ll_rx_get_interrupt_status(dma, ESP_PPA_RX_CH);
 
@@ -209,16 +209,8 @@ static int esp_ppa_engine_init(void)
 
 	dma2d_ll_hw_enable(ppa_state.dma, true);
 
-	int err = esp_intr_alloc_intrstatus(
-		DT_INST_IRQN(0), ESP_INTR_FLAG_SHARED,
-		(uint32_t)dma2d_ll_rx_get_interrupt_status_reg(ppa_state.dma, ESP_PPA_RX_CH),
-		ESP_PPA_RX_DONE_MASK, esp_ppa_isr, &ppa_state, &ppa_state.rx_intr);
-	if (err != 0) {
-		LOG_ERR("Failed to allocate PPA interrupt (%d)", err);
-		ppa_state.rx_intr = NULL;
-		dma2d_ll_hw_enable(ppa_state.dma, false);
-		return -EIO;
-	}
+	IRQ_CONNECT(DT_INST_IRQN(0), IRQ_DEFAULT_PRIORITY, esp_ppa_isr, &ppa_state, 0);
+	irq_enable(DT_INST_IRQN(0));
 
 	return 0;
 }

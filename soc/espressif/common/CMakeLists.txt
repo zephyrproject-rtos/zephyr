@@ -14,6 +14,16 @@ endif()
 # Continue to prepare the build environment
 zephyr_include_directories(include)
 
+# Arch-facing interrupt entry points (arch_irq_*, z_soc_irq_*) and the flash-path
+# esp_intr_noniram_disable/enable. The espressif,esp32-intc device they route
+# into is drivers/interrupt_controller/intc_esp32.c.
+if(CONFIG_INTC_ESP32)
+  # z_get_sw_isr_table_idx() is declared in the
+  # arch-private sw_isr_common.h, as for every other multi-level controller.
+  zephyr_include_directories(${ZEPHYR_BASE}/arch/common/include)
+  zephyr_sources(irq.c)
+endif()
+
 if(NOT CONFIG_MCUBOOT AND NOT CONFIG_SOC_ESP32_APPCPU_TARGET)
   zephyr_sources_ifdef(CONFIG_ESP_SPIRAM esp_psram.c)
 endif()
