@@ -946,58 +946,61 @@ static void handle_pending_messages(const struct device *instance)
 	bool cont;
 	bool high_prio_present;
 
-	MSG_QUEUE_CACHE_INV(config->rx_msg_q.prod_shmq);
-	local_idx = data->msg_q.rx_local_prod_idx;
-	new_msgs = config->rx_msg_q.prod_shmq->hdr.block_idx - local_idx;
-	LOG_DBG("new_msgs: %d local_idx: %d block_idx: %d",
-		new_msgs, local_idx, config->rx_msg_q.prod_shmq->hdr.block_idx);
-	if (likely(new_msgs == 1)) {
-		/* The most common case: only one new message. Handle it directly. */
-		uint32_t idx = local_idx % MAX_ACTIVE_COUNT;
-		uint32_t block_index = config->rx_msg_q.prod_shmq->slots[idx];
-
-		if (block_index & HI_PRIO_MASK) {
-			block_index &= ~HI_PRIO_MASK;
-			data->msg_q.rx_local_hi_prio_cnt++;
+	while (true) {
+		MSG_QUEUE_CACHE_INV(config->rx_msg_q.prod_shmq);
+		local_idx = data->msg_q.rx_local_prod_idx;
+		new_msgs = config->rx_msg_q.prod_shmq->hdr.block_idx - local_idx;
+		LOG_DBG("new_msgs: %d local_idx: %d block_idx: %d",
+			new_msgs, local_idx, config->rx_msg_q.prod_shmq->hdr.block_idx);
+		if (new_msgs == 0) {
+			return;
 		}
-		data->msg_q.rx_local_prod_idx++;
-		handle_message(instance, block_index);
-		return;
-	} else if (new_msgs == 0) {
-		return;
-	}
-	__ASSERT_NO_MSG(new_msgs <= MAX_ACTIVE_COUNT);
-
-	hi_prio_msgs =
-		config->rx_msg_q.prod_shmq->hdr.hi_prio_cnt - data->msg_q.rx_local_hi_prio_cnt;
-	data->msg_q.rx_local_hi_prio_cnt += hi_prio_msgs;
-
-	/* More than one message. Start by handling high priority messages*/
-	do {
-		high_prio_present = hi_prio_msgs != 0;
-		cont = high_prio_present && (new_msgs != hi_prio_msgs);
-		for (uint32_t i = 0; i < new_msgs; i++) {
-			uint32_t idx = (local_idx + i) % MAX_ACTIVE_COUNT;
+		if (likely(new_msgs == 1)) {
+			/* The most common case: only one new message. Handle it directly. */
+			uint32_t idx = local_idx % MAX_ACTIVE_COUNT;
 			uint32_t block_index = config->rx_msg_q.prod_shmq->slots[idx];
-			bool is_hi_prio = block_index & HI_PRIO_MASK;
 
-			if (high_prio_present) {
-				if (is_hi_prio) {
-					block_index &= ~HI_PRIO_MASK;
-					hi_prio_msgs--;
-				} else {
-					continue;
-				}
-			} else {
-				if (is_hi_prio) {
-					continue;
-				}
+			if (block_index & HI_PRIO_MASK) {
+				block_index &= ~HI_PRIO_MASK;
+				data->msg_q.rx_local_hi_prio_cnt++;
 			}
+			data->msg_q.rx_local_prod_idx++;
 			handle_message(instance, block_index);
+			continue;
 		}
-	} while (cont);
+		__ASSERT_NO_MSG(new_msgs <= MAX_ACTIVE_COUNT);
 
-	data->msg_q.rx_local_prod_idx += new_msgs;
+		hi_prio_msgs = config->rx_msg_q.prod_shmq->hdr.hi_prio_cnt -
+			       data->msg_q.rx_local_hi_prio_cnt;
+		data->msg_q.rx_local_hi_prio_cnt += hi_prio_msgs;
+
+		/* More than one message. Start by handling high priority messages*/
+		do {
+			high_prio_present = hi_prio_msgs != 0;
+			cont = high_prio_present && (new_msgs != hi_prio_msgs);
+			for (uint32_t i = 0; i < new_msgs; i++) {
+				uint32_t idx = (local_idx + i) % MAX_ACTIVE_COUNT;
+				uint32_t block_index = config->rx_msg_q.prod_shmq->slots[idx];
+				bool is_hi_prio = block_index & HI_PRIO_MASK;
+
+				if (high_prio_present) {
+					if (is_hi_prio) {
+						block_index &= ~HI_PRIO_MASK;
+						hi_prio_msgs--;
+					} else {
+						continue;
+					}
+				} else {
+					if (is_hi_prio) {
+						continue;
+					}
+				}
+				handle_message(instance, block_index);
+			}
+		} while (cont);
+
+		data->msg_q.rx_local_prod_idx += new_msgs;
+	}
 }
 
 static void mbox_callback(const struct device *dev, uint32_t channel, void *user_data,
@@ -1301,10 +1304,6 @@ static int open(const struct device *instance)
 		(void *)config->rx.blocks_ptr, heap_max_data_size(&config->rx));
 
 	data->state = STATE_CONNECTING;
-	rv = send_bound_request(instance);
-	if (rv < 0) {
-		return rv;
-	}
 
 	MSG_QUEUE_CACHE_INV(config->rx_msg_q.prod_shmq);
 
@@ -1313,7 +1312,26 @@ static int open(const struct device *instance)
 		return rv;
 	}
 
-	return mbox_set_enabled_dt(&config->mbox_rx, true);
+	rv = mbox_set_enabled_dt(&config->mbox_rx, true);
+	if (rv < 0) {
+		return rv;
+	}
+
+	rv = send_bound_request(instance);
+	if (rv < 0) {
+		return rv;
+	}
+
+	/* The remote may have opened and produced its bound request before our
+	 * RX mailbox was enabled above. Its edge-triggered doorbell was then
+	 * lost, so nothing will call the RX handler for those messages. Drain
+	 * the RX queue once here to pick up anything already pending, otherwise
+	 * the side that opens later would stall waiting for a doorbell that was
+	 * already delivered while it was not listening.
+	 */
+	handle_pending_messages(instance);
+
+	return 0;
 }
 
 /**
