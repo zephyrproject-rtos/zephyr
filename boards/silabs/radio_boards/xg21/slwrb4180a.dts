@@ -7,11 +7,10 @@
 
 /dts-v1/;
 #include <silabs/xg21/efr32mg21a020f1024im32.dtsi>
-#include <silabs/xg21/clock-hfrcodpll.dtsi>
-#include <silabs/xg21/clock-lfxo.dtsi>
 #include <zephyr/dt-bindings/adc/silabs-adc.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include "xg21_common.dtsi"
 #include "slwrb4180a-pinctrl.dtsi"
 
 / {
@@ -137,14 +136,10 @@
 
 &hfxo {
 	ctune = <129>;
-	precision = <50>;
-	status = "okay";
 };
 
 &lfxo {
 	ctune = <79>;
-	precision = <50>;
-	status = "okay";
 };
 
 &adc0 {
@@ -163,13 +158,6 @@
 		zephyr,resolution = <12>;
 		zephyr,vref-mv = <3300>;
 	};
-};
-
-&usart0 {
-	current-speed = <115200>;
-	pinctrl-0 = <&usart0_default>;
-	pinctrl-names = "default";
-	status = "okay";
 };
 
 &rtcc0 {
