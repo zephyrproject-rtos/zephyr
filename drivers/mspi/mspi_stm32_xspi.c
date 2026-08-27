@@ -267,10 +267,6 @@ static int mspi_stm32_xspi_memmap_off(const struct device *controller)
 	struct mspi_stm32_data *dev_data = controller->data;
 	hal_status_t hal_ret;
 
-	if (!mspi_stm32_xspi_is_memorymap(controller)) {
-		return 0;
-	}
-
 	hal_ret = HAL_XSPI_StopMemoryMappedMode(&dev_data->hmspi.xspi);
 	if (hal_ret != HAL_OK) {
 		LOG_ERR("MemMapped stop failed: %x", hal_ret);
@@ -1577,8 +1573,11 @@ static int mspi_stm32_xspi_memmap_config(const struct device *controller,
 	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 
 	if (!memmap_cfg->enable) {
-		/* This is for aborting */
-		ret = mspi_stm32_xspi_memmap_off(controller);
+		/* Abort memory-mapped mode only if it was enabled. This avoids
+		 * a possible assert when USE_ASSERT_DBG_STATE is enabled on
+		 * devices using the HAL2 XSPI driver underneath.
+		 */
+		ret = mspi_stm32_xspi_abort_memmap_if_enabled(controller);
 	} else {
 		ret = mspi_stm32_xspi_memmap_on(controller);
 	}
