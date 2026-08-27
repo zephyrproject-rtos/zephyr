@@ -179,6 +179,12 @@ static int ethernet_set_config(uint64_t mgmt_request,
 			return -ENOTSUP;
 		}
 
+		/* Anything but 802.1Q priority tagging requires HW_VLAN capability */
+		if (params->filter.vid != NET_VLAN_TAG_PRIORITY &&
+		    !is_hw_caps_supported(dev, iface, ETHERNET_HW_VLAN)) {
+			return -ENOTSUP;
+		}
+
 		/* A multicast group can be needed by several users at once,
 		 * so the L2 counts them and tells the driver only when the
 		 * first user joins and when the last one leaves.
@@ -187,10 +193,12 @@ static int ethernet_set_config(uint64_t mgmt_request,
 		    params->filter.type == ETHERNET_FILTER_TYPE_DST_MAC_ADDRESS &&
 		    net_eth_is_addr_multicast(&params->filter.mac_address)) {
 			if (params->filter.set) {
-				return net_eth_mcast_addr_add(iface, &params->filter.mac_address);
+				return net_eth_vlan_mcast_addr_add(
+					iface, &params->filter.mac_address, params->filter.vid);
 			}
 
-			return net_eth_mcast_addr_rm(iface, &params->filter.mac_address);
+			return net_eth_vlan_mcast_addr_rm(iface, &params->filter.mac_address,
+							  params->filter.vid);
 		}
 
 		memcpy(&config.filter, &params->filter, sizeof(struct ethernet_filter));
