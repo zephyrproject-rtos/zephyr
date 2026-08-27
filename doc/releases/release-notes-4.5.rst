@@ -440,6 +440,9 @@ New APIs and options
     * :c:func:`bt_rfcomm_dlc_recv_complete` to return RX credits to the peer. Applications can
       return ``-EINPROGRESS`` from the :c:member:`bt_rfcomm_dlc_ops.recv` callback to defer buffer
       release and flow-control credit refill until processing is complete.
+    * ``bt_sco_server_bind()`` and ``bt_sco_server_unbind()`` to bind a
+      SCO server to a specific BR/EDR ACL connection, replacing the global
+      ``bt_sco_server_register()``/``bt_sco_server_unregister()``.
 
   * Mesh
 

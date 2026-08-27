@@ -1498,6 +1498,11 @@ Bluetooth Classic
   to preserve previous synchronous behavior, or ``-EINPROGRESS`` to use the new
   asynchronous completion path.
 
+* ``bt_sco_server_register()`` and ``bt_sco_server_unregister()`` have been
+  replaced by ``bt_sco_server_bind()`` and ``bt_sco_server_unbind()``, which
+  bind the SCO server to an ACL connection given as an additional argument.
+  (:github:`117676`)
+
 Bluetooth HCI
 =============
 
