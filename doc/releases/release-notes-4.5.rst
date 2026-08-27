@@ -1768,11 +1768,6 @@ Other notable changes
     Ubuntu 24.04 LTS package repositories. See the :ref:`migration guide <migration_4.5>` for
     options if your distribution ships an older version.
 
-  * :kconfig:option:`CONFIG_COMPILER_TRACK_MACRO_EXPANSION` is now disabled by default. A
-    diagnostic raised inside Zephyr's logging, device or devicetree macros is now reported as a
-    single message at the line that caused it, instead of one message for every step of the
-    expansion chain. Set the option to ``y`` to get the full chain back.
-
 * Kernel
 
   * :kconfig:option:`CONFIG_SCHED_CPU_MASK` no longer depends on
