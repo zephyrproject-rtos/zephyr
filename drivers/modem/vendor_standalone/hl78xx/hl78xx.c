@@ -1862,7 +1862,7 @@ static void hl78xx_clear_script_failure(struct hl78xx_data *data)
 	data->script_failure.recovery_rule = NULL;
 	data->script_failure.result = MODEM_CHAT_SCRIPT_RESULT_SUCCESS;
 	data->script_failure.origin_state = MODEM_HL78XX_STATE_IDLE;
-	data->script_failure.script_chat_index = 0U;
+	data->script_failure.script_chat = NULL;
 	data->script_failure.valid = false;
 }
 

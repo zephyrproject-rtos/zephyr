@@ -157,8 +157,8 @@ static void hl78xx_on_unsol_monitored(struct modem_chat *chat, char **argv, uint
 				      void *user_data);
 static const struct hl78xx_script_recovery_rule *
 hl78xx_find_script_recovery_rule(enum hl78xx_state state,
-				 const struct modem_chat_script_chat *script_chat,
-				 uint16_t script_chat_index, enum modem_chat_script_result result);
+				 const struct modem_chat_script_callback_ctx *ctx,
+				 enum modem_chat_script_result result);
 
 MODEM_CHAT_MATCH_DEFINE(hl78xx_ok_match, "OK", "", NULL);
 MODEM_CHAT_MATCHES_DEFINE(hl78xx_allow_match, MODEM_CHAT_MATCH(MDM_HL78XX_OK_STRING, "", NULL),
@@ -680,22 +680,19 @@ size_t hl78xx_get_ktcp_state_matches_size(void)
 }
 
 /* Capture script failure information */
-static void hl78xx_capture_script_failure(struct hl78xx_data *data, struct modem_chat *chat,
+static void hl78xx_capture_script_failure(struct hl78xx_data *data,
+					  const struct modem_chat_script_callback_ctx *ctx,
 					  enum modem_chat_script_result result)
 {
-	const struct modem_chat_script_chat *script_chat;
-	uint16_t script_chat_index;
 	enum hl78xx_state origin_state;
 
 	origin_state = data->status.state;
 
-	script_chat = modem_chat_callback_script_chat(chat);
-	script_chat_index = modem_chat_callback_script_chat_index(chat);
 
 	data->script_failure.recovery_rule = hl78xx_find_script_recovery_rule(
-		origin_state, script_chat, script_chat_index, result);
+		origin_state, ctx, result);
 
-	data->script_failure.script_chat_index = script_chat_index;
+	data->script_failure.script_chat = ctx->script_chat;
 	data->script_failure.result = result;
 	data->script_failure.origin_state = origin_state;
 
@@ -712,8 +709,8 @@ static void hl78xx_capture_script_failure(struct hl78xx_data *data, struct modem
  */
 
 /* Bridge function - modem_chat callback */
-void hl78xx_chat_callback_handler(struct modem_chat *chat, enum modem_chat_script_result result,
-				  void *user_data)
+void hl78xx_chat_callback_handler_ctx(const struct modem_chat_script_callback_ctx *ctx,
+				      enum modem_chat_script_result result, void *user_data)
 {
 	struct hl78xx_data *data = (struct hl78xx_data *)user_data;
 
@@ -724,18 +721,27 @@ void hl78xx_chat_callback_handler(struct modem_chat *chat, enum modem_chat_scrip
 	if (result == MODEM_CHAT_SCRIPT_RESULT_SUCCESS) {
 		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_SCRIPT_SUCCESS);
 	} else if (result == MODEM_CHAT_SCRIPT_RESULT_TIMEOUT) {
-		hl78xx_capture_script_failure(data, chat, result);
+		hl78xx_capture_script_failure(data, ctx, result);
 		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_AT_CMD_TIMEOUT);
 	} else {
-		hl78xx_capture_script_failure(data, chat, result);
+		hl78xx_capture_script_failure(data, ctx, result);
 		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_SCRIPT_FAILED);
 	}
 }
 
-void hl78xx_chat_callback_handler_ctx(const struct modem_chat_script_callback_ctx *ctx,
-				      enum modem_chat_script_result result, void *user_data)
+void hl78xx_chat_callback_handler(struct modem_chat *chat, enum modem_chat_script_result result,
+				  void *user_data)
 {
-	hl78xx_chat_callback_handler(ctx->chat, result, user_data);
+	/* Construct a context object for the non callback usage of this function
+	 * in other HL78xx files.
+	 */
+	const struct modem_chat_script_callback_ctx ctx = {
+		.chat = chat,
+		.script = NULL,
+		.script_chat = NULL,
+	};
+
+	hl78xx_chat_callback_handler_ctx(&ctx, result, user_data);
 }
 
 /* --- Wrapper helpers -------------------------------------------------- */
@@ -1028,7 +1034,7 @@ static const struct hl78xx_script_recovery_rule hl78xx_script_recovery_rules[] =
 	{
 		.failed_state = MODEM_HL78XX_STATE_RUN_INIT_SCRIPT,
 		.failed_request = "AT+KBNDCFG?",
-		.failed_script_chat_index = HL78XX_SCRIPT_CHAT_INDEX_ANY,
+		.failed_script_chat = NULL,
 		.result_mask = HL78XX_SCRIPT_RESULT_BIT(MODEM_CHAT_SCRIPT_RESULT_ABORT),
 		.action = hl78xx_recover_kbndcfg,
 		.success_state = MODEM_HL78XX_STATE_RUN_INIT_SCRIPT,
@@ -1039,7 +1045,7 @@ static const struct hl78xx_script_recovery_rule hl78xx_script_recovery_rules[] =
 	{
 		.failed_state = MODEM_HL78XX_STATE_AWAIT_POWER_ON,
 		.failed_request = "",
-		.failed_script_chat_index = 0U,
+		.failed_script_chat = &hl78xx_post_restart_chat_script_cmds[0],
 		.result_mask = HL78XX_SCRIPT_RESULT_BIT(MODEM_CHAT_SCRIPT_RESULT_TIMEOUT),
 		.action = hl78xx_recover_post_restart_timeout,
 		.success_state = MODEM_HL78XX_STATE_RUN_INIT_SCRIPT,
@@ -1051,16 +1057,16 @@ static const struct hl78xx_script_recovery_rule hl78xx_script_recovery_rules[] =
 
 static const struct hl78xx_script_recovery_rule *
 hl78xx_find_script_recovery_rule(enum hl78xx_state state,
-				 const struct modem_chat_script_chat *script_chat,
-				 uint16_t script_chat_index, enum modem_chat_script_result result)
+				 const struct modem_chat_script_callback_ctx *ctx,
+				 enum modem_chat_script_result result)
 {
 	const char *request;
 
-	if (script_chat == NULL) {
+	if (ctx->script_chat == NULL) {
 		return NULL;
 	}
 
-	request = script_chat->request;
+	request = ctx->script_chat->request;
 	if (request == NULL) {
 		return NULL;
 	}
@@ -1071,8 +1077,8 @@ hl78xx_find_script_recovery_rule(enum hl78xx_state state,
 		if ((rule->failed_state == state) &&
 		    ((rule->result_mask & HL78XX_SCRIPT_RESULT_BIT(result)) != 0U) &&
 		    (strcmp(rule->failed_request, request) == 0) &&
-		    ((rule->failed_script_chat_index == HL78XX_SCRIPT_CHAT_INDEX_ANY) ||
-		     (rule->failed_script_chat_index == script_chat_index))) {
+		    ((rule->failed_script_chat == NULL) ||
+		     (rule->failed_script_chat == ctx->script_chat))) {
 			return rule;
 		}
 	}
