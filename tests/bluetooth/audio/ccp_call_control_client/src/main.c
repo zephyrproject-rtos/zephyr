@@ -216,6 +216,8 @@ static ZTEST_F(ccp_call_control_client_test_suite, test_ccp_call_control_client_
 
 #if defined(CONFIG_BT_TBS_CLIENT_TBS)
 	zassert_equal(CONFIG_BT_TBS_CLIENT_MAX_TBS_INSTANCES, bearers.tbs_count);
-	zassert_not_null(bearers.tbs_bearers);
+	for (size_t i = 0U; i < bearers.tbs_count; i++) {
+		zassert_not_null(bearers.tbs_bearers[i]);
+	}
 #endif /* CONFIG_BT_TBS_CLIENT_TBS */
 }
