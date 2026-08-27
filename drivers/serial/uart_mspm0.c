@@ -28,6 +28,8 @@
 #include <zephyr/drivers/uart.h>
 #include <zephyr/dt-bindings/uart/mspm0_uart.h>
 #include <zephyr/irq.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 
 /*
  * This driver uses its own native register definitions (mspm0_uart_regs and
@@ -89,6 +91,7 @@
 #define UART_STAT_TXFE_MASK GENMASK(6, 6)
 #define UART_STAT_TXFF_MASK GENMASK(7, 7)
 #define UART_STAT_RXFE_MASK GENMASK(2, 2)
+#define UART_STAT_BUSY_MASK GENMASK(0, 0)
 
 /*
  * IFLS Interrupt FIFO Level Select Register
@@ -142,6 +145,8 @@
 
 #define UART_IFLS_RXIFLSEL_LVL_1_ENTRY         UART_IFLS_TXIFLSEL_LVL_1_ENTRY
 #define UART_IFLS_UNICOMM_RXIFLSEL_LVL_1_ENTRY UART_IFLS_UNICOMM_TXIFLSEL_LVL_1_ENTRY
+
+#define UART_MSPM0_RX_FIFO_DEPTH 4U
 
 /*
  * UART register-map structs.
@@ -250,6 +255,10 @@ struct uart_mspm0_data {
 	uint32_t current_speed;
 	/* UART line configuration - raw register field values */
 	struct uart_mspm0_line_config uart_config;
+#ifdef CONFIG_PM_DEVICE
+	/* Maximum time needed to transmit one frame. */
+	uint32_t frame_time_us;
+#endif
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	/* Callback function pointer */
 	uart_irq_callback_user_data_t cb;
@@ -290,6 +299,15 @@ static const uint32_t uart_mspm0_tx_fifo_level[] = {
 	[MSPM0_UART_TX_FIFO_LEVEL_EMPTY] = UART_IFLS_TXIFLSEL_LVL_EMPTY,
 };
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
+
+static inline int uart_mspm0_pm_is_active(const struct device *dev)
+{
+	enum pm_device_state state = PM_DEVICE_STATE_OFF;
+	int err;
+
+	err = pm_device_state_get(dev, &state);
+	return state == PM_DEVICE_STATE_ACTIVE || err < 0;
+}
 
 static inline void uart_mspm0_set_clock(mspm0_uart_regs *regs, uint32_t clk_sel, uint32_t clk_div)
 {
@@ -356,7 +374,7 @@ static int uart_mspm0_poll_in(const struct device *dev, unsigned char *c)
 	const struct uart_mspm0_config *config = dev->config;
 	mspm0_uart_regs *regs = config->regs;
 
-	if ((regs->stat & UART_STAT_RXFE_MASK) != 0U) {
+	if (uart_mspm0_pm_is_active(dev) == 0U || (regs->stat & UART_STAT_RXFE_MASK) != 0U) {
 		return -1;
 	}
 
@@ -370,12 +388,24 @@ static void uart_mspm0_poll_out(const struct device *dev, unsigned char c)
 	mspm0_uart_regs *regs = config->regs;
 	unsigned int key;
 
+	if (pm_device_runtime_get(dev) < 0) {
+		return;
+	}
+
+	/* Runtime PM resumes an opted-in device. Discard transmission if the device
+	 * was suspended directly through the device PM API, preventing data from
+	 * being trapped in the TX FIFO and unexpectedly transmitted after resume.
+	 */
+	if (uart_mspm0_pm_is_active(dev) == 0U) {
+		goto out;
+	}
+
 	/* Skip the irq_lock()s below when in ISR context. */
 	if (k_is_in_isr()) {
 		while ((regs->stat & config->stat_txff_mask) != 0U) {
 		}
 		regs->txdata = (uint32_t)c;
-		return;
+		goto out;
 	}
 
 	/* Wait until TX FIFO has space, then write atomically.
@@ -390,11 +420,95 @@ static void uart_mspm0_poll_out(const struct device *dev, unsigned char c)
 		if ((regs->stat & config->stat_txff_mask) == 0U) {
 			regs->txdata = (uint32_t)c;
 			irq_unlock(key);
-			return;
+			break;
 		}
 		irq_unlock(key);
 	} while (true);
+
+out:
+	(void)pm_device_runtime_put(dev);
 }
+
+#if defined(CONFIG_PM_DEVICE)
+
+static uint32_t uart_mspm0_frame_time_us(const struct uart_mspm0_data *data)
+{
+	uint32_t bits;
+
+	bits = 1U; /* Start bit */
+	bits += FIELD_GET(UART_LCRH_WLEN_MASK, data->uart_config.word_length) + 5U;
+	bits += (data->uart_config.parity & UART_LCRH_PEN_MASK) != 0U;
+	bits += (data->uart_config.stop_bits & UART_LCRH_STP2_MASK) != 0U ? 2U : 1U;
+
+	return DIV_ROUND_UP(bits * USEC_PER_SEC, data->current_speed) + 10U;
+}
+
+static int uart_mspm0_suspend_hw(const struct device *dev)
+{
+	const struct uart_mspm0_config *config = dev->config;
+	int err;
+
+	/* Move pins to sleep state. */
+	err = pinctrl_apply_state(config->pinctrl, PINCTRL_STATE_SLEEP);
+	if ((err < 0) && (err != -ENOENT)) {
+		return err;
+	}
+
+	/* Unselect all parent clocks, effectively gating the entire peripheral. */
+	uart_mspm0_set_clock(config->regs, 0U, config->clk_div);
+
+	return 0;
+}
+
+static int uart_mspm_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	const struct uart_mspm0_data *data = dev->data;
+	int err;
+	const struct uart_mspm0_config *config = dev->config;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		/* Set pins to active state */
+		err = pinctrl_apply_state(config->pinctrl, PINCTRL_STATE_DEFAULT);
+		if (err < 0) {
+			return err;
+		}
+
+		/* Restore selection of parent clock that may been previously gated */
+		uart_mspm0_set_clock(config->regs, config->clk_sel, config->clk_div);
+
+		/* Flush the RX FIFO after the peripheral clock has been restored. */
+		for (uint32_t i = 0U; (i < UART_MSPM0_RX_FIFO_DEPTH) &&
+				      ((config->regs->stat & UART_STAT_RXFE_MASK) == 0U);
+		     i++) {
+			(void)config->regs->rxdata;
+		}
+
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		/* Wait until all queued data has moved out of the TX FIFO. */
+		while ((config->regs->stat & config->stat_txfe_mask) == 0U) {
+		}
+
+		/* Wait until frame is fully transmitted and the TX line is idle.
+		 * BUSY flag is also for RX so don't wait indefinitely for it.
+		 */
+		(void)WAIT_FOR((config->regs->stat & UART_STAT_BUSY_MASK) == 0U,
+			       data->frame_time_us, k_busy_wait(1));
+
+		err = uart_mspm0_suspend_hw(dev);
+		if (err < 0) {
+			return err;
+		}
+
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif
 
 static int uart_mspm0_install_configuration(const struct device *dev)
 {
@@ -431,6 +545,10 @@ static int uart_mspm0_install_configuration(const struct device *dev)
 
 	/* Configure baud rate */
 	uart_mspm0_configure_baudrate(config->regs, uart_clk, data->current_speed);
+
+#ifdef CONFIG_PM_DEVICE
+	data->frame_time_us = uart_mspm0_frame_time_us(data);
+#endif
 
 	/* Re-enable FIFOs: uart_mspm0_configure_line() overwrites CTL0 entirely,
 	 * clearing the FEN bit. Always re-enable FIFOs after reconfiguring the
@@ -539,6 +657,11 @@ static int uart_mspm0_configure(const struct device *dev, const struct uart_conf
 	uint32_t value;
 	int ret;
 
+	ret = pm_device_runtime_get(dev);
+	if (ret < 0) {
+		return ret;
+	}
+
 	UART_MSPM0_DISABLE(config->regs);
 
 	data->current_speed = cfg->baudrate;
@@ -546,7 +669,7 @@ static int uart_mspm0_configure(const struct device *dev, const struct uart_conf
 	ret = uart_mspm0_translate_in(uart_parity_to_mspm0, ARRAY_SIZE(uart_parity_to_mspm0),
 				      cfg->parity, &value);
 	if (ret != 0) {
-		return ret;
+		goto out;
 	}
 
 	data->uart_config.parity = value;
@@ -554,7 +677,7 @@ static int uart_mspm0_configure(const struct device *dev, const struct uart_conf
 	ret = uart_mspm0_translate_in(uart_stop_bits_to_mspm0, ARRAY_SIZE(uart_stop_bits_to_mspm0),
 				      cfg->stop_bits, &value);
 	if (ret != 0) {
-		return ret;
+		goto out;
 	}
 
 	data->uart_config.stop_bits = value;
@@ -562,7 +685,7 @@ static int uart_mspm0_configure(const struct device *dev, const struct uart_conf
 	ret = uart_mspm0_translate_in(uart_data_bits_to_mspm0, ARRAY_SIZE(uart_data_bits_to_mspm0),
 				      cfg->data_bits, &value);
 	if (ret != 0) {
-		return ret;
+		goto out;
 	}
 
 	data->uart_config.word_length = value;
@@ -571,19 +694,22 @@ static int uart_mspm0_configure(const struct device *dev, const struct uart_conf
 				      ARRAY_SIZE(uart_flow_control_to_mspm0), cfg->flow_ctrl,
 				      &value);
 	if (ret != 0) {
-		return ret;
+		goto out;
 	}
 
 	data->uart_config.flow_control = value;
 
 	ret = uart_mspm0_install_configuration(dev);
 	if (ret != 0) {
-		return ret;
+		goto out;
 	}
 
 	UART_MSPM0_ENABLE(config->regs);
 
-	return 0;
+	ret = 0;
+out:
+	(void)pm_device_runtime_put(dev);
+	return ret;
 }
 
 static int uart_mspm0_config_get(const struct device *dev, struct uart_config *cfg)
@@ -645,6 +771,13 @@ static int uart_mspm0_fifo_fill(const struct device *dev, const uint8_t *tx_data
 	const struct uart_mspm0_config *config = dev->config;
 	int count = 0;
 
+	/* Discard transmission if the peripheral is inactive. This prevents data from
+	 * getting trapped in the TX buffer and unexpectedly transmitting later upon wake-up.
+	 */
+	if (uart_mspm0_pm_is_active(dev) == 0U) {
+		return 0;
+	}
+
 	while (count < size && ((config->regs->stat & config->stat_txff_mask) == 0)) {
 		config->regs->txdata = tx_data[count];
 		count++;
@@ -658,6 +791,10 @@ static int uart_mspm0_fifo_read(const struct device *dev, uint8_t *rx_data, cons
 	const struct uart_mspm0_config *config = dev->config;
 	int count = 0;
 
+	if (uart_mspm0_pm_is_active(dev) == 0U) {
+		return 0;
+	}
+
 	while (count < size && ((config->regs->stat & UART_STAT_RXFE_MASK) == 0)) {
 		rx_data[count] = (uint8_t)(config->regs->rxdata & 0xFF);
 		count++;
@@ -670,7 +807,12 @@ static void uart_mspm0_irq_tx_enable(const struct device *dev)
 {
 	const struct uart_mspm0_config *config = dev->config;
 
-	config->regs->cpu_int.imask |= UART_MSPM0_TX_INTERRUPTS;
+	if ((config->regs->cpu_int.imask & UART_MSPM0_TX_INTERRUPTS) == 0U) {
+		if (pm_device_runtime_get(dev) < 0) {
+			return;
+		}
+		config->regs->cpu_int.imask |= UART_MSPM0_TX_INTERRUPTS;
+	}
 
 	/* If the TX FIFO is already empty (below the LVL_EMPTY threshold) the
 	 * TXIFG flag may have been cleared by a prior IIDX read without a new
@@ -687,7 +829,10 @@ static void uart_mspm0_irq_tx_disable(const struct device *dev)
 {
 	const struct uart_mspm0_config *config = dev->config;
 
-	config->regs->cpu_int.imask &= ~UART_MSPM0_TX_INTERRUPTS;
+	if ((config->regs->cpu_int.imask & UART_MSPM0_TX_INTERRUPTS) != 0U) {
+		config->regs->cpu_int.imask &= ~UART_MSPM0_TX_INTERRUPTS;
+		(void)pm_device_runtime_put(dev);
+	}
 }
 
 static int uart_mspm0_irq_tx_ready(const struct device *dev)
@@ -703,7 +848,12 @@ static void uart_mspm0_irq_rx_enable(const struct device *dev)
 {
 	const struct uart_mspm0_config *config = dev->config;
 
-	config->regs->cpu_int.imask |= UART_MSPM0_RX_INTERRUPTS;
+	if ((config->regs->cpu_int.imask & UART_MSPM0_RX_INTERRUPTS) == 0U) {
+		if (pm_device_runtime_get(dev) < 0) {
+			return;
+		}
+		config->regs->cpu_int.imask |= UART_MSPM0_RX_INTERRUPTS;
+	}
 
 	/* If the RX FIFO already contains data the RXIFG flag may have been
 	 * cleared by a prior IIDX read while the interrupt was masked, without
@@ -720,7 +870,10 @@ static void uart_mspm0_irq_rx_disable(const struct device *dev)
 {
 	const struct uart_mspm0_config *config = dev->config;
 
-	config->regs->cpu_int.imask &= ~UART_MSPM0_RX_INTERRUPTS;
+	if ((config->regs->cpu_int.imask & UART_MSPM0_RX_INTERRUPTS) != 0U) {
+		config->regs->cpu_int.imask &= ~UART_MSPM0_RX_INTERRUPTS;
+		(void)pm_device_runtime_put(dev);
+	}
 }
 
 static int uart_mspm0_irq_tx_complete(const struct device *dev)
@@ -769,14 +922,22 @@ static void uart_mspm0_irq_error_enable(const struct device *dev)
 {
 	const struct uart_mspm0_config *config = dev->config;
 
-	config->regs->cpu_int.imask |= UART_MSPM0_ERROR_INTERRUPTS;
+	if ((config->regs->cpu_int.imask & UART_MSPM0_ERROR_INTERRUPTS) == 0U) {
+		if (pm_device_runtime_get(dev) < 0) {
+			return;
+		}
+		config->regs->cpu_int.imask |= UART_MSPM0_ERROR_INTERRUPTS;
+	}
 }
 
 static void uart_mspm0_irq_error_disable(const struct device *dev)
 {
 	const struct uart_mspm0_config *config = dev->config;
 
-	config->regs->cpu_int.imask &= ~UART_MSPM0_ERROR_INTERRUPTS;
+	if ((config->regs->cpu_int.imask & UART_MSPM0_ERROR_INTERRUPTS) != 0U) {
+		config->regs->cpu_int.imask &= ~UART_MSPM0_ERROR_INTERRUPTS;
+		(void)pm_device_runtime_put(dev);
+	}
 }
 
 static void uart_mspm0_isr(const struct device *dev)
@@ -821,7 +982,21 @@ static int uart_mspm0_init(const struct device *dev)
 	/* Enable UART */
 	UART_MSPM0_ENABLE(config->regs);
 
+#if defined(CONFIG_PM_DEVICE)
+	/*
+	 * pm_device_driver_init() expects runtime-managed hardware to start suspended.
+	 * No transmission can be pending during initialization, and timer-based waits
+	 * are not available yet because this driver initializes at PRE_KERNEL_1.
+	 */
+	ret = uart_mspm0_suspend_hw(dev);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return pm_device_driver_init(dev, uart_mspm_pm_action);
+#else
 	return 0;
+#endif
 }
 
 static DEVICE_API(uart, uart_mspm0_driver_api) = {
@@ -913,7 +1088,9 @@ static DEVICE_API(uart, uart_mspm0_driver_api) = {
 			},                                                                      \
 	};                                                                                      \
 												\
-	DEVICE_DT_INST_DEFINE(index, &uart_mspm0_init, NULL, &uart_mspm0_data_##index,		\
+	PM_DEVICE_DT_INST_DEFINE(index, uart_mspm_pm_action);					\
+	DEVICE_DT_INST_DEFINE(index, &uart_mspm0_init, PM_DEVICE_DT_INST_GET(index),		\
+			      &uart_mspm0_data_##index,						\
 			      &uart_mspm0_cfg_##index, PRE_KERNEL_1,				\
 			      CONFIG_SERIAL_INIT_PRIORITY, &uart_mspm0_driver_api);
 /* clang-format on */
