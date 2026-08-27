@@ -37,11 +37,6 @@ Build System
 * :kconfig:option:`CONFIG_LEGACY_GENERATED_INCLUDE_PATH` has been deprecated, and disabled by
   default, includes must now be prefixed with ``zephyr/`` for zephyr files.
 
-* :kconfig:option:`CONFIG_COMPILER_TRACK_MACRO_EXPANSION` is now disabled by default, so a
-  compiler diagnostic raised inside a macro is reported once, at the line that caused it,
-  rather than once per step of the expansion chain. Applications that relied on seeing the
-  whole chain can enable the option again.
-
 * CMake variables ``SOC_NAME``, ``SOC_SERIES``, ``SOC_FAMILY`` and ``SOC_V2_DIR`` have been
   deprecated as they duplicate variables already, the replacement variables are as follows:
   :kconfig:option:`CONFIG_SOC`, :kconfig:option:`CONFIG_SOC_SERIES`,
