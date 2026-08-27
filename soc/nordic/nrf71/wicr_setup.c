@@ -22,23 +22,6 @@
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 #endif
 
-/* When out-of-tree patch is included, it defines the LMAC and UMAC patch
- * addresses and takes precedence over the devicetree values.
- */
-#ifdef NRF71_WIFI_LMAC_PATCH_ADDR
-#define WICR_LMAC_PATCH_ADDR NRF71_WIFI_LMAC_PATCH_ADDR
-#else
-#define WICR_LMAC_PATCH_ADDR \
-	DT_REG_ADDR(DT_PHANDLE(WICR_NODE, firmware_lmacrompatchaddr))
-#endif /* NRF71_WIFI_LMAC_PATCH_ADDR */
-
-#ifdef NRF71_WIFI_UMAC_PATCH_ADDR
-#define WICR_UMAC_PATCH_ADDR NRF71_WIFI_UMAC_PATCH_ADDR
-#else
-#define WICR_UMAC_PATCH_ADDR \
-	DT_REG_ADDR(DT_PHANDLE(WICR_NODE, firmware_umacrompatchaddr))
-#endif /* NRF71_WIFI_UMAC_PATCH_ADDR */
-
 struct wicr_word {
 	uint16_t offset;
 	uint32_t value;
@@ -47,8 +30,8 @@ struct wicr_word {
 static const struct wicr_word wicr_words[] = {
 	{0x000, DT_REG_ADDR(DT_PHANDLE(WICR_NODE, firmware_lmacinitpc))},
 	{0x004, DT_REG_ADDR(DT_PHANDLE(WICR_NODE, firmware_umacinitpc))},
-	{0x008, WICR_LMAC_PATCH_ADDR},
-	{0x00C, WICR_UMAC_PATCH_ADDR},
+	{0x008, DT_REG_ADDR(DT_PHANDLE(WICR_NODE, firmware_lmacrompatchaddr))},
+	{0x00C, DT_REG_ADDR(DT_PHANDLE(WICR_NODE, firmware_umacrompatchaddr))},
 	{0x080, DT_REG_ADDR(DT_PHANDLE(WICR_NODE, ipcconfig_commandmbox))},
 	{0x084, DT_REG_SIZE(DT_PHANDLE(WICR_NODE, ipcconfig_commandmbox))},
 	{0x088, DT_REG_ADDR(DT_PHANDLE(WICR_NODE, ipcconfig_eventmbox))},
