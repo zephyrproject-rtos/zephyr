@@ -1,0 +1,50 @@
+# Copyright (c) 2026 T3 Gemstone
+# 	T3 Gemstone Developer Team <support@t3gemstone.org>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    InvenSense ICM-20948 Nine-Axis Motion Tracking device. Only the
+    accelerometer and the gyroscope are supported, the magnetometer behind
+    the auxiliary I2C bus is not.
+
+    The SPI clock of the device must not exceed 7 MHz.
+
+compatible: "invensense,icm20948"
+
+include: [sensor-device.yaml, spi-device.yaml]
+
+properties:
+  gyro-fs:
+    type: int
+    default: 250
+    enum: [250, 500, 1000, 2000]
+    description: |
+      Full scale range of the gyroscope in degrees per second. The default
+      is the reset value of the device.
+
+  accel-fs:
+    type: int
+    default: 2
+    enum: [2, 4, 8, 16]
+    description: |
+      Full scale range of the accelerometer in g. The default is the reset
+      value of the device.
+
+  gyro-dlpf:
+    type: int
+    default: 197
+    enum: [197, 152, 120, 51, 24, 12, 6, 361]
+    description: |
+      3 dB bandwidth of the gyroscope low pass filter in Hz, rounded to the
+      nearest integer. The values are listed in the order the device expects
+      them, which is not the order of the bandwidths themselves.
+
+  accel-dlpf:
+    type: int
+    default: 246
+    enum: [246, 111, 50, 24, 12, 6, 473]
+    description: |
+      3 dB bandwidth of the accelerometer low pass filter in Hz, rounded to
+      the nearest integer. The device has two configurations that give
+      246 Hz, only the first of them is exposed.
