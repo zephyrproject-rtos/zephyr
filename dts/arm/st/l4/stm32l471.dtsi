@@ -356,6 +356,34 @@
 			};
 		};
 
+		sai2: sai2@40015800 {
+			compatible = "st,stm32-sai";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			reg = <0x40015800 0x400>;
+			ranges;
+			clocks = <&rcc STM32_CLOCK(APB2, 22)>,
+				 <&rcc STM32_SRC_PLLSAI1_P SAI2_SEL(0)>;
+			clock-names = "sai_ck", "sai_ker_ck";
+			status = "disabled";
+
+			sai2_a: sai2a@40015804 {
+				reg = <0x40015804 0x20>;
+				dmas = <&dma2 3 1 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+
+			sai2_b: sai2b@40015824 {
+				reg = <0x40015824 0x20>;
+				dmas = <&dma2 4 1 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+		};
+
 		dfsdm: dfsdm@40016000 {
 			compatible = "st,stm32-dfsdm";
 			reg = <0x40016000 0x400>;
