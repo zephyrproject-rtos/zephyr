@@ -215,6 +215,17 @@ Zephyr-Kconfig-Condition = "CONFIG_MINIMAL_LIBC"
 
 [[annotations]]
 path = [
+    "doc/_extensions/moderncmakedomain/__init__.py",
+    "doc/_extensions/moderncmakedomain/cmake.py",
+    "doc/_extensions/moderncmakedomain/colors.py",
+]
+SPDX-License-Identifier = "BSD-3-Clause"
+SPDX-FileComment = "Provide the CMake domain used to render the documentation and are never linked into a firmware."
+Zephyr-Description = "Modern CMake Sphinx Domain"
+Zephyr-Origin = "https://gitlab.kitware.com/cmake/cmake/-/tree/master/Utilities/Sphinx"
+
+[[annotations]]
+path = [
     "doc/_extensions/zephyr/domain/static/css/nouislider.min.css",
     "doc/_extensions/zephyr/domain/static/js/nouislider.min.js",
 ]
