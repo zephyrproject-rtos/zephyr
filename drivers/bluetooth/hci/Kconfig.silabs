@@ -96,6 +96,7 @@ config BT_SILABS_EFR32_COMPLETED_PACKETS_TIMEOUT
 
 config BT_SILABS_EFR32_LINK_LAYER_STACK_SIZE
 	int "Link layer thread stack size"
+	default 2048 if SOC_FAMILY_SILABS_S3
 	default 1024
 	help
 	  Link layer thread stack size.
