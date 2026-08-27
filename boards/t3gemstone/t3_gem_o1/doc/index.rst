@@ -51,7 +51,8 @@ IRQ and FIQ.
 Supported Features
 ******************
 The board configuration supports a console UART via the 40-pin GPIO header,
-the MAIN domain GPIO controllers, and a console over RPmsg.
+the MAIN domain GPIO controllers, the MAIN domain I2C0 and the MCU domain
+SPI0 buses along with the sensors on them, and a console over RPmsg.
 
 .. zephyr:board-supported-hw::
 
@@ -73,6 +74,23 @@ The red LED lights up while its pin is left as an input, which is the state
 the GPIO driver leaves it in until an application configures it. Applications
 that do not drive the red LED should configure it as an inactive output to
 keep it off.
+
+On-board sensors
+----------------
+Two of the sensors of the board are described by the board configuration and
+can be read with the sensor shell or with the generic sensor samples.
+
++----------+---------------------------+-------------------------+
+| Sensor   | Measures                  | Connection              |
++==========+===========================+=========================+
+| HDC2010  | Temperature and humidity  | MAIN I2C0, address 0x41 |
++----------+---------------------------+-------------------------+
+| LPS22DF  | Pressure and temperature  | MCU SPI0, chip select 1 |
++----------+---------------------------+-------------------------+
+
+The LPS22DF is given an output data rate of 10 Hz. The part comes out of
+reset powered down and returns zeroes until an output data rate is set,
+either from the devicetree or at runtime.
 
 Running Zephyr
 **************
