@@ -149,7 +149,6 @@ hr,
     border-color: var(--hr-color);
 }
 
-
 footer,
 #search-results .context {
     color: var(--footer-color);
@@ -508,7 +507,6 @@ kbd, .kbd,
   color: var(--link-color);
 }
 
-
 /* heading tweaks to make document hierarchy easier to grasp */
 
 .rst-content section > h1 {
@@ -531,45 +529,60 @@ kbd, .kbd,
     opacity:50%;
 }
 
-.rst-content section > h2,
-.rst-content section > h3,
-.rst-content section > h4,
-.rst-content section > h5 {
-    font-weight: 500;
-    padding-inline-start: 8px;
-    margin-inline-start: 0px;
-    border-inline-start: 8px solid;
-    padding-top: 0.2em;
-    padding-bottom: 0.2em;
-}
-
 .rst-content section > h2 {
-    border-color: var(--admonition-note-title-background-color);
+    font-size: 1.625rem;
+    font-weight: 600;
+    line-height: 1.2;
+    margin: 3.5rem 0 1rem;
+    padding-inline-start: 12px;
+    border-inline-start: 3px solid var(--heading-accent-color);
 }
 
 .rst-content section > h3 {
-    border-color: var(--admonition-note-background-color);
+    font-size: 1.25rem;
+    font-weight: 600;
+    line-height: 1.3;
+    margin: 2.5rem 0 0.75rem;
+    padding-inline-start: 12px;
+    border-inline-start: 3px solid var(--heading-rule-color);
 }
 
 .rst-content section > h4 {
-    border-color: transparent;
-    font-weight: 400;
+    font-size: 1.0625rem;
+    font-weight: 600;
+    margin: 1.875rem 0 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+}
+
+.rst-content section > h4::before {
+    content: '';
+    flex: none;
+    width: 14px;
+    height: 2px;
+    background: var(--footer-color);
 }
 
 .rst-content section > h5 {
-    border-color: transparent;
-    font-weight: 100;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--body-color);
+    margin: 2rem 0 0.5rem;
+}
+
+/* Consecutive leaf sections are a list of entries — separate them. */
+.rst-content section:has(> h5) + section:has(> h5) > h5 {
+    border-top: 1px solid var(--hr-color);
+    padding-top: 1.75rem;
+    margin-top: 1.75rem;
 }
 
 /* Section titles that are code identifiers would otherwise render as a small inline-code chip, both
    in the body and the sidebar. Let the code inherit the surrounding size, weight and color so the
-   heading hierarchy and nav entries stay legible. */
-.rst-content section > h1 code,
-.rst-content section > h2 code,
-.rst-content section > h3 code,
-.rst-content section > h4 code,
-.rst-content section > h5 code,
-.rst-content section > h6 code,
+   heading hierarchy and nav entries stay legible.
+   The code.literal qualifier is what makes `color` stick. */
+.rst-content section > :is(h1, h2, h3, h4, h5, h6) code.literal,
 .wy-menu-vertical a code.literal {
     font-size: inherit;
     font-weight: inherit;
@@ -577,6 +590,13 @@ kbd, .kbd,
     border: 0;
     padding: 0;
     color: inherit;
+}
+
+/* An h5 that is nothing but an identifier is named like one, in the same colour
+   a signature would give it. */
+.rst-content section > h5 > code.literal {
+    color: var(--highlight-function-color);
+    font-weight: 700;
 }
 
 /* Definition lists */
