@@ -13,14 +13,9 @@ description: |
 
 compatible: "qemu,ramfb"
 
-include: display-controller.yaml
+include: simple-framebuffer.yaml
 
 properties:
-  fwcfg:
-    type: phandle
-    required: true
-    description: fw_cfg device used to configure the ramfb endpoint.
-
   memory-region:
     type: phandle
     required: true
