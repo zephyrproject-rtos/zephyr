@@ -1966,11 +1966,6 @@ static void address_expired(struct net_if_addr *ifaddr)
 	NET_DBG("IPv6 address %s is expired",
 		net_sprint_ipv6_addr(&ifaddr->address.in6_addr));
 
-	sys_slist_find_and_remove(&active_address_lifetime_timers,
-				  &ifaddr->lifetime.node);
-
-	net_timeout_set(&ifaddr->lifetime, 0, 0);
-
 	STRUCT_SECTION_FOREACH(net_if, iface) {
 		ARRAY_FOR_EACH(iface->config.ip.ipv6->unicast, i) {
 			if (&iface->config.ip.ipv6->unicast[i] == ifaddr) {
@@ -1987,8 +1982,11 @@ static void address_lifetime_timeout(struct k_work *work)
 	uint32_t next_update = UINT32_MAX;
 	uint32_t current_time = k_uptime_get_32();
 	struct net_if_addr *current, *next;
+	sys_slist_t expired_list;
 
 	ARG_UNUSED(work);
+
+	sys_slist_init(&expired_list);
 
 	k_mutex_lock(&lock, K_FOREVER);
 
@@ -1999,7 +1997,12 @@ static void address_lifetime_timeout(struct k_work *work)
 							     current_time);
 
 		if (this_update == 0U) {
-			address_expired(current);
+			sys_slist_find_and_remove(
+				&active_address_lifetime_timers,
+				&current->lifetime.node);
+			net_timeout_set(&current->lifetime, 0, 0);
+			sys_slist_append(&expired_list,
+					 &current->lifetime.node);
 			continue;
 		}
 
@@ -2019,6 +2022,15 @@ static void address_lifetime_timeout(struct k_work *work)
 	}
 
 	k_mutex_unlock(&lock);
+
+	/* address_expired() calls net_if_ipv6_addr_rm(), which takes the
+	 * interface lock. That lock is acquired before this one elsewhere, so
+	 * the removals must happen with this lock released.
+	 */
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&expired_list, current, next,
+					  lifetime.node) {
+		address_expired(current);
+	}
 }
 
 #if defined(CONFIG_NET_TEST)
