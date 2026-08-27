@@ -186,6 +186,7 @@ zephyr_compile_definitions_ifdef(CONFIG_MEMC_SILABS_SIWX91X_QSPI
   QSPI_ROMDRIVER_PRESENT # replace rsi_qspi.c
 )
 zephyr_library_sources_ifdef(CONFIG_MEMC_SILABS_SIWX91X_QSPI
+  ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/unified_api/src/rsi_d_cache.c
   ${WISECONNECT}/components/device/silabs/si91x/mcu/drivers/unified_api/src/sl_si91x_psram.c
 )
 
