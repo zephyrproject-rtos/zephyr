@@ -1572,6 +1572,11 @@ New Drivers
   * :dtcompatible:`zephyr,flow-meter` (:github:`111366`)
   * :dtcompatible:`zephyr,native-linux-temp` (:github:`114563`)
 
+* MPC (Memory Protection Controller)
+
+  * Arm CoreLink TrustZone Memory Protection Controller
+    (:dtcompatible:`arm,tz-mpc`).
+
 * PPC (Peripheral Protection Controller)
 
   * Arm SSE-200 Secure Privilege Control block

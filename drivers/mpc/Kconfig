@@ -17,6 +17,7 @@ config MPC
 	  specific driver.
 
 # zephyr-keep-sorted-start
+source "drivers/mpc/arm_tz_mpc/Kconfig"
 # zephyr-keep-sorted-stop
 
 endmenu
