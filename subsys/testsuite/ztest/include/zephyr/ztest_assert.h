@@ -18,8 +18,24 @@
 #include <stdio.h>
 #include <string.h>
 
+#include <zephyr/sys/util.h>
 #include <zephyr/tc_util.h>
 #include <zephyr/ztest.h>
+
+#ifdef __cplusplus
+template < typename T >
+static inline bool z_ztest_is_null(const T &ptr)
+{
+	return !ptr;
+}
+static inline bool z_ztest_is_null(decltype(nullptr))
+{
+	return true;
+}
+#define Z_ZTEST_IS_NULL(ptr) z_ztest_is_null(ptr)
+#else
+#define Z_ZTEST_IS_NULL(ptr) is_null_no_warn((void *)(ptr))
+#endif
 
 #ifdef __cplusplus
 extern "C" {
@@ -300,14 +316,16 @@ static inline __printf_like(6, 7) bool z_zexpect(bool cond, const char *default_
  * @param ptr Pointer to compare
  * @param ... Optional message and variables to print if the assertion fails
  */
-#define zassert_is_null(ptr, ...) zassert((ptr) == NULL, #ptr " is not NULL", ##__VA_ARGS__)
+#define zassert_is_null(ptr, ...)                                                                  \
+	zassert(Z_ZTEST_IS_NULL(ptr), #ptr " is not NULL", ##__VA_ARGS__)
 
 /**
  * @brief Assert that @a ptr is not NULL
  * @param ptr Pointer to compare
  * @param ... Optional message and variables to print if the assertion fails
  */
-#define zassert_not_null(ptr, ...) zassert((ptr) != NULL, #ptr " is NULL", ##__VA_ARGS__)
+#define zassert_not_null(ptr, ...)                                                                 \
+	zassert(!Z_ZTEST_IS_NULL(ptr), #ptr " is NULL", ##__VA_ARGS__)
 
 /**
  * @brief Assert that @a a equals @a b
@@ -466,7 +484,8 @@ static inline __printf_like(6, 7) bool z_zexpect(bool cond, const char *default_
  * @param ptr Pointer to compare
  * @param ... Optional message and variables to print if the assumption fails
  */
-#define zassume_is_null(ptr, ...) zassume((ptr) == NULL, #ptr " is not NULL", ##__VA_ARGS__)
+#define zassume_is_null(ptr, ...)                                                                  \
+	zassume(Z_ZTEST_IS_NULL(ptr), #ptr " is not NULL", ##__VA_ARGS__)
 
 /**
  * @brief Assume that @a ptr is not NULL
@@ -476,7 +495,8 @@ static inline __printf_like(6, 7) bool z_zexpect(bool cond, const char *default_
  * @param ptr Pointer to compare
  * @param ... Optional message and variables to print if the assumption fails
  */
-#define zassume_not_null(ptr, ...) zassume((ptr) != NULL, #ptr " is NULL", ##__VA_ARGS__)
+#define zassume_not_null(ptr, ...)                                                                 \
+	zassume(!Z_ZTEST_IS_NULL(ptr), #ptr " is NULL", ##__VA_ARGS__)
 
 /**
  * @brief Assume that @a a equals @a b
@@ -636,7 +656,8 @@ static inline __printf_like(6, 7) bool z_zexpect(bool cond, const char *default_
  * @param ptr Pointer to compare
  * @param ... Optional message and variables to print if the expectation fails
  */
-#define zexpect_is_null(ptr, ...) zexpect((ptr) == NULL, #ptr " is not NULL", ##__VA_ARGS__)
+#define zexpect_is_null(ptr, ...)                                                                  \
+	zexpect(Z_ZTEST_IS_NULL(ptr), #ptr " is not NULL", ##__VA_ARGS__)
 
 /**
  * @brief Expect that @a ptr is not NULL, otherwise mark test as failed but continue its execution.
@@ -644,7 +665,8 @@ static inline __printf_like(6, 7) bool z_zexpect(bool cond, const char *default_
  * @param ptr Pointer to compare
  * @param ... Optional message and variables to print if the expectation fails
  */
-#define zexpect_not_null(ptr, ...) zexpect((ptr) != NULL, #ptr " is NULL", ##__VA_ARGS__)
+#define zexpect_not_null(ptr, ...)                                                                 \
+	zexpect(!Z_ZTEST_IS_NULL(ptr), #ptr " is NULL", ##__VA_ARGS__)
 
 /**
  * @brief Expect that @a a equals @a b, otherwise mark test as failed but continue its execution.
