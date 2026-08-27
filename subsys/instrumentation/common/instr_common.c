@@ -1,32 +1,32 @@
 /*
  * Copyright 2023 Linaro
  * Copyright 2025 Linaro
+ * Copyright (c) 2026 Antmicro <www.antmicro.com>
+ * Copyright (c) 2026 Analog Devices
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #include <assert.h>
 #include <string.h>
+#include <stdarg.h>
+#include <stdlib.h>
 
 #include <zephyr/instrumentation/instrumentation.h>
-#include <instr_buffer.h>
+#include <instr_transport.h>
 #include <instr_timestamp.h>
 
 #include <zephyr/init.h>
 #include <zephyr/device.h>
-#include <zephyr/drivers/uart.h>
 #include <zephyr/kernel.h>
 #include <zephyr/retention/retention.h>
 #include <zephyr/sys/reboot.h>
-
-#include <kernel_internal.h>
-#include <ksched.h>
-
-#ifdef CONFIG_INSTRUMENTATION_MODE_CALLGRAPH_DUMP_ON_FULL
-#define INSTR_INIT_TAG "-*-INSTR-INIT-*-\n"
+#if defined(CONFIG_INSTR_CMD_OUT_DEDICATED_HW)
+#include <zephyr/drivers/uart.h>
 #endif
-#define INSTR_START_TAG "-*-#"
-#define INSTR_END_TAG "-*-!\n"
+
+extern void z_thread_mark_switched_in(void);
+extern void z_thread_mark_switched_out(void);
 
 /*
  * Memory buffer to store instrumentation event records has the following modes:
@@ -48,10 +48,12 @@ const struct device *instrumentation_triggers =
 #endif
 
 static bool _instr_initialized;
-static bool _instr_enabled;
-static bool _instr_on;
-static bool _instr_tracing_disabled;
-static bool _instr_profiling_disabled;
+static bool _global_instr_on;
+static bool _global_instr_stopped;
+static Z_THREAD_LOCAL bool _instr_enabled;
+static Z_THREAD_LOCAL bool _instr_on = true;
+static Z_THREAD_LOCAL bool _instr_tracing_disabled;
+static Z_THREAD_LOCAL bool _instr_profiling_disabled;
 static bool _instr_tracing_supported = IS_ENABLED(CONFIG_INSTRUMENTATION_MODE_CALLGRAPH);
 static bool _instr_profiling_supported = IS_ENABLED(CONFIG_INSTRUMENTATION_MODE_STATISTICAL);
 static bool _instr_dynamic_trigger_supported = IS_ENABLED(CONFIG_INSTRUMENTATION_DYNAMIC_TRIGGER);
@@ -64,17 +66,13 @@ static bool _instr_dynamic_trigger_supported = IS_ENABLED(CONFIG_INSTRUMENTATION
  * no profiling information is collected for them.
  */
 
-#define MAX_CALL_DEPTH CONFIG_INSTRUMENTATION_MODE_STATISTICAL_MAX_CALL_DEPTH
-struct disco_func_entry {
-	timing_t entry_timestamp;		/* Timestamp at function entry */
-	uint64_t delta_t;			/* Accumulated (per function) delta time */
-	void *addr;				/* Function address/ID */
-	uint16_t call_depth;			/* Call depth */
-};
-
+#define MAX_CALL_DEPTH     CONFIG_INSTRUMENTATION_MODE_STATISTICAL_MAX_CALL_DEPTH
 #define MAX_NUM_DISCO_FUNC CONFIG_INSTRUMENTATION_MODE_STATISTICAL_MAX_NUM_FUNC
+
 static int num_disco_func;
-struct disco_func_entry disco_func[MAX_NUM_DISCO_FUNC] = { 0 };
+struct disco_func_entry disco_func[MAX_NUM_DISCO_FUNC] = {0};
+
+static bool instr_pending_profile_dump;
 
 /* To track the number of unbalanced/spurious entry/exist pairs, for debugging */
 static int unbalanced;
@@ -82,6 +80,37 @@ static int unbalanced;
 
 #ifdef CONFIG_THREAD_NAME
 #define THREAD_NAME_NONE "thread-none"
+#endif
+
+#if defined(CONFIG_INSTR_CMD_OUT_STDOUT)
+#define INSTR_PRINT(...) printk(__VA_ARGS__)
+
+#elif defined(CONFIG_INSTR_CMD_OUT_DEDICATED_HW)
+
+static const struct device *const instr_hw_dev =
+	DEVICE_DT_GET(DT_CHOSEN(zephyr_instrumentation_uart));
+
+static void instr_hw_print(const char *fmt, ...)
+{
+	char buf[128];
+	int len;
+	va_list args;
+
+	if (!device_is_ready(instr_hw_dev)) {
+		return;
+	}
+
+	va_start(args, fmt);
+	len = vsnprintf(buf, sizeof(buf), fmt, args);
+	va_end(args);
+
+	for (int i = 0; i < len; i++) {
+		uart_poll_out(instr_hw_dev, buf[i]);
+	}
+}
+#define INSTR_PRINT(...) instr_hw_print(__VA_ARGS__)
+#else
+#define INSTR_PRINT(...)
 #endif
 
 /* See instr_fundamentals_initialized() */
@@ -98,16 +127,6 @@ static void *k_stopper_callee = INSTR_STOPPER_FUNCTION;
 /* Current (live) trigger and stopper addresses */
 static void *trigger_callee;
 static void *stopper_callee;
-
-#ifdef CONFIG_INSTRUMENTATION_MODE_CALLGRAPH_DUMP_ON_FULL
-int instr_init_tag_emit(void)
-{
-	printk(INSTR_INIT_TAG);
-	return 0;
-}
-
-SYS_INIT(instr_init_tag_emit, APPLICATION, 0);
-#endif
 
 bool instr_tracing_supported(void)
 {
@@ -161,11 +180,8 @@ int instr_init(void)
 	stopper_callee = k_stopper_callee;
 #endif
 
-#if defined(CONFIG_INSTRUMENTATION_MODE_CALLGRAPH)
-	/* Initialize ring buffer */
-	instr_buffer_init();
-#endif
-
+	/* Init transportation backend */
+	instr_transport_init();
 	/* Init and start counters for timestamping */
 	instr_timestamp_init();
 
@@ -233,7 +249,10 @@ bool instr_enabled(void)
 __no_instrumentation__
 int instr_turn_on(void)
 {
+
+	_global_instr_on = true;
 	_instr_on = true;
+	_instr_enabled = true;
 
 	return 0;
 }
@@ -241,6 +260,7 @@ int instr_turn_on(void)
 __no_instrumentation__
 int instr_turn_off(void)
 {
+	_global_instr_stopped = true;
 	_instr_on = false;
 
 	return 0;
@@ -306,61 +326,70 @@ void *instr_get_stop_func(void)
 }
 
 __no_instrumentation__
-void instr_dump_buffer_uart(void)
+void instr_cmd_handle(char *cmd, uint32_t length)
 {
-#if defined(CONFIG_INSTRUMENTATION_MODE_CALLGRAPH)
-	static const struct device *const uart_dev =
-	DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
+	char *beginptr;
+	char *endptr;
+	long address;
+	void *func_address;
 
-	uint8_t *transferring_buf;
-	uint32_t transferring_length;
-
-	/* Make sure instrumentation is disabled. */
-	instr_disable();
-
-	/* Initiator mark */
-	printk(INSTR_START_TAG);
-
-	while (!ring_buf_is_empty(instr_buffer_get_ring_buf())) {
-		transferring_length =
-			ring_buf_get_ptr(instr_buffer_get_ring_buf(), &transferring_buf, 0);
-
-		for (uint32_t i = 0; i < transferring_length; i++) {
-			uart_poll_out(uart_dev, transferring_buf[i]);
+	if (strncmp("reboot", cmd, length) == 0) {
+		sys_reboot(SYS_REBOOT_COLD);
+	} else if (strncmp("status", cmd, length) == 0) {
+		INSTR_PRINT("%d %d %d\n", instr_tracing_supported(), instr_profiling_supported(),
+			    instr_dynamic_trigger_supported());
+	} else if (strncmp("ping", cmd, length) == 0) {
+		INSTR_PRINT("pong\n");
+	} else if (strncmp("dump_trace", cmd, length) == 0) {
+		instr_transport_cmd_dump_trace();
+	} else if (strncmp("dump_profile", cmd, length) == 0) {
+		instr_transport_cmd_dump_profile();
+	} else if (strncmp(cmd, "trigger", strlen("trigger")) == 0) {
+		beginptr = cmd + strlen("trigger");
+		address = strtol(beginptr, &endptr, 16);
+		if (endptr != beginptr) {
+			instr_set_trigger_func((void *)address);
+		} else {
+			INSTR_PRINT("trigger: invalid argument in: '%s'\n", cmd);
+		}
+	} else if (strncmp(cmd, "stopper", strlen("stopper")) == 0) {
+		beginptr = cmd + strlen("stopper");
+		address = strtol(beginptr, &endptr, 16);
+		if (endptr != beginptr) {
+			instr_set_stop_func((void *)address);
+		} else {
+			INSTR_PRINT("stopper: invalid argument in: '%s'\n", cmd);
+		}
+	} else if (strncmp("listsets", cmd, length) == 0) {
+		func_address = instr_get_trigger_func();
+		if (func_address) {
+			INSTR_PRINT("trigger: %p\n", func_address);
+		} else {
+			INSTR_PRINT("trigger: not set.\n");
 		}
 
-		ring_buf_consume(instr_buffer_get_ring_buf(), transferring_length);
+		func_address = instr_get_stop_func();
+		if (func_address) {
+			INSTR_PRINT("stopper: %p\n", func_address);
+		} else {
+			INSTR_PRINT("stopper: not set.\n");
+		}
+	} else {
+		INSTR_PRINT("invalid command %s\n", cmd);
 	}
-
-	/* Terminator mark */
-	printk(INSTR_END_TAG);
-#endif
 }
 
 __no_instrumentation__
-void instr_dump_deltas_uart(void)
+void instr_dump_deltas(void)
+{
+	instr_pending_profile_dump = true;
+}
+
+__no_instrumentation__
+void instr_dump_deltas_impl(void)
 {
 #if defined(CONFIG_INSTRUMENTATION_MODE_STATISTICAL)
-	static const struct device *const uart_dev =
-	DEVICE_DT_GET(DT_CHOSEN(zephyr_console));
-
-	instr_disable();
-
-	/* Initiator mark */
-	printk(INSTR_START_TAG);
-
-	for (int i = 0; i < num_disco_func; i++) {
-		uart_poll_out(uart_dev, INSTR_EVENT_PROFILE);
-		for (int j = 0; j < sizeof(disco_func[i].addr); j++) {
-			uart_poll_out(uart_dev, *((uint8_t *)&disco_func[i].addr + j));
-		}
-		for (int k = 0; k < sizeof(disco_func[i].delta_t); k++) {
-			uart_poll_out(uart_dev, *((uint8_t *)&disco_func[i].delta_t + k));
-		}
-	}
-
-	/* Terminator mark */
-	printk(INSTR_END_TAG);
+	instr_transport_send_stats(disco_func, num_disco_func);
 #endif
 }
 
@@ -425,7 +454,6 @@ void pop_callee_timestamp(void *callee)
 
 				/* Accumulate delta T */
 				disco_func[curr_func].delta_t += dt_ns;
-
 			}
 
 			return;
@@ -466,7 +494,7 @@ enum instr_event_types promote_event_type(enum instr_event_types type, void *cal
 	/*
 	 * Context switch events.
 	 */
-
+#if defined(CONFIG_TRACING)
 	/*
 	 * Only when z_thread_mark_switched_in/out are entered a trace event is
 	 * recorded, i.e. it doesn't matter when such a functions return. So
@@ -490,6 +518,7 @@ enum instr_event_types promote_event_type(enum instr_event_types type, void *cal
 		*lock_key = irq_lock();
 		type = INSTR_EVENT_SCHED_OUT;
 	}
+#endif
 
 	/*
 	 * Other ENTRY and EXIT events are not promoted.
@@ -508,24 +537,12 @@ __no_instrumentation__
 static void set_up_record(struct instr_record *record, enum instr_event_types type,
 			  void *callee, void *caller)
 {
-	record->header.type = type;
+	record->header.type = (uint8_t)type;
 	record->callee = callee;
 	record->caller = caller;
 	record->timestamp = instr_timestamp_ns();
 
 	save_context(record);
-
-}
-
-static bool instr_record_data_put(struct instr_record *record)
-{
-	/* If record won't fit, free enough space in the buffer */
-	if (ring_buf_space_get(instr_buffer_get_ring_buf()) < sizeof(struct instr_record)) {
-		ring_buf_consume(instr_buffer_get_ring_buf(), sizeof(struct instr_record));
-	}
-
-	ring_buf_put(instr_buffer_get_ring_buf(), (uint8_t *)record, sizeof(struct instr_record));
-	return true;
 }
 
 __no_instrumentation__
@@ -535,6 +552,15 @@ void instr_event_handler(enum instr_event_types type, void *callee, void *caller
 	/* For IRQ locking */
 	unsigned int key = 0;
 #endif
+
+	if (_global_instr_stopped && _instr_on) {
+		_instr_on = false;
+	}
+
+	if (_global_instr_on && !_instr_on) {
+		_instr_on = true;
+		_instr_enabled = true;
+	}
 
 	/*
 	 * Essentially, the instrumented code can only generate events when a
@@ -550,6 +576,12 @@ void instr_event_handler(enum instr_event_types type, void *callee, void *caller
 
 	/* Enter critical section */
 	instr_disable();
+
+	/* Handle pending profile dump */
+	if (instr_pending_profile_dump) {
+		instr_pending_profile_dump = false;
+		instr_dump_deltas_impl();
+	}
 
 #if defined(CONFIG_INSTRUMENTATION_MODE_STATISTICAL)
 	/* Profiling */
@@ -578,25 +610,12 @@ void instr_event_handler(enum instr_event_types type, void *callee, void *caller
 	/* Tracing */
 	if (!_instr_tracing_disabled) {
 		struct instr_record record;
-
-		if (!IS_ENABLED(CONFIG_INSTRUMENTATION_MODE_CALLGRAPH_BUFFER_OVERWRITE) &&
-		    ring_buf_space_get(instr_buffer_get_ring_buf()) <
-			    sizeof(struct instr_record)) {
-#ifdef CONFIG_INSTRUMENTATION_MODE_CALLGRAPH_DUMP_ON_FULL
-			instr_dump_buffer_uart();
-			instr_buffer_reset();
-#else
-			_instr_tracing_disabled = true;
-			return;
-#endif
-		}
-
 		set_up_record(&record, type, callee, caller);
-		instr_record_data_put(&record);
+
+		instr_transport_push_record(&record);
 	}
 
-	if (type == INSTR_EVENT_SCHED_IN ||
-		type == INSTR_EVENT_SCHED_OUT) {
+	if (type == INSTR_EVENT_SCHED_IN || type == INSTR_EVENT_SCHED_OUT) {
 		irq_unlock(key);
 	}
 #endif
