@@ -2,6 +2,7 @@
  * Copyright (c) 2022 Intel Corporation
  * Copyright (c) 2022 Esco Medical ApS
  * Copyright (c) 2020 TDK Invensense
+ * Copyright (c) 2026 RAKwireless Technology Limited
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -10,14 +11,12 @@
 
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/sensor/icm4268x.h>
-#include <zephyr/drivers/spi.h>
 #include <zephyr/sys/byteorder.h>
 
 #include "icm4268x.h"
 #include "icm4268x_decoder.h"
 #include "icm4268x_reg.h"
 #include "icm4268x_rtio.h"
-#include "icm4268x_spi.h"
 #include "icm4268x_trigger.h"
 
 #include <zephyr/logging/log.h>
@@ -106,9 +105,7 @@ static int icm4268x_sample_fetch(const struct device *dev, enum sensor_channel c
 {
 	uint8_t status;
 	struct icm4268x_dev_data *data = dev->data;
-	const struct icm4268x_dev_cfg *cfg = dev->config;
-
-	int res = icm4268x_spi_read(&cfg->spi, REG_INT_STATUS, &status, 1);
+	int res = icm4268x_reg_read(dev, REG_INT_STATUS, &status, 1);
 
 	if (res) {
 		return res;
@@ -292,12 +289,11 @@ static DEVICE_API(sensor, icm4268x_driver_api) = {
 int icm4268x_init(const struct device *dev)
 {
 	struct icm4268x_dev_data *data = dev->data;
-	const struct icm4268x_dev_cfg *cfg = dev->config;
 	int res;
 
-	if (!spi_is_ready_dt(&cfg->spi)) {
-		LOG_ERR_DEVICE_NOT_READY(cfg->spi.bus);
-		return -ENODEV;
+	res = icm4268x_bus_check(dev);
+	if (res < 0) {
+		return res;
 	}
 
 	if (icm4268x_reset(dev)) {
@@ -341,74 +337,108 @@ void icm4268x_unlock(const struct device *dev)
 	SPI_DT_IODEV_DEFINE(icm4268x_spi_iodev_##inst, DT_DRV_INST(inst), ICM4268X_SPI_CFG);       \
 	RTIO_DEFINE(icm4268x_rtio_##inst, 32, 32);
 
-#define ICM42688_DT_CONFIG_INIT(inst)						\
-	{									\
-		COND_CODE_1(DT_INST_NODE_HAS_COMPAT(inst, invensense_icm42688),	\
-			(.variant = ICM4268X_VARIANT_ICM42688,), (		\
-		COND_CODE_1(DT_INST_NODE_HAS_COMPAT(inst, invensense_icm42686),	\
-			(.variant = ICM4268X_VARIANT_ICM42686,), ())))		\
-		.accel_pwr_mode = DT_INST_PROP(inst, accel_pwr_mode),		\
-		.accel_fs = DT_INST_PROP(inst, accel_fs),			\
-		.accel_odr = DT_INST_PROP(inst, accel_odr),			\
-		.gyro_pwr_mode = DT_INST_PROP(inst, gyro_pwr_mode),		\
-		.gyro_fs = DT_INST_PROP(inst, gyro_fs),				\
-		.gyro_odr = DT_INST_PROP(inst, gyro_odr),			\
-		.temp_dis = false,						\
-		.fifo_en = IS_ENABLED(CONFIG_ICM4268X_STREAM),			\
-		.batch_ticks = 0,						\
-		.fifo_hires = DT_INST_PROP(inst, fifo_hires),			\
-		.interrupt1_drdy = false,					\
-		.interrupt1_fifo_ths = false,					\
-		.interrupt1_fifo_full = false,					\
-		.pin9_function = ICM4268X_PIN9_FUNCTION_INT2,			\
-		.rtc_freq = 32000,						\
-		.axis_align[0].index = DT_INST_PROP(inst, axis_align_x),	\
-		.axis_align[1].index = DT_INST_PROP(inst, axis_align_y),	\
-		.axis_align[2].index = DT_INST_PROP(inst, axis_align_z),	\
-		.axis_align[0].sign = DT_INST_PROP(inst, axis_align_x_sign)-1,	\
-		.axis_align[1].sign = DT_INST_PROP(inst, axis_align_y_sign)-1,	\
-		.axis_align[2].sign = DT_INST_PROP(inst, axis_align_z_sign)-1	\
+#if defined(CONFIG_ICM4268X_STREAM)
+#define ICM4268X_STREAM_DEFINE(inst)                                                               \
+	COND_CODE_1(DT_INST_ON_BUS(inst, spi), (ICM4268X_RTIO_DEFINE(inst)), ())
+#define ICM4268X_STREAM_DATA_SPI(inst)                                                             \
+	.bus.rtio = {                                                                              \
+		.ctx = &icm4268x_rtio_##inst,                                                      \
+		.iodev = &icm4268x_spi_iodev_##inst,                                               \
+	}
+#define ICM4268X_STREAM_DATA_INIT(inst)                                                            \
+	COND_CODE_1(DT_INST_ON_BUS(inst, spi), (ICM4268X_STREAM_DATA_SPI(inst),), ())
+#else
+#define ICM4268X_STREAM_DEFINE(inst)
+#define ICM4268X_STREAM_DATA_INIT(inst)
+#endif
+
+#define ICM4268X_VARIANT_INIT(inst)                                                                \
+	COND_CODE_1(DT_INST_NODE_HAS_COMPAT(inst, invensense_icm42688),                            \
+		    (ICM4268X_VARIANT_ICM42688),                                                   \
+	(COND_CODE_1(DT_INST_NODE_HAS_COMPAT(inst, invensense_icm42686),                           \
+		     (ICM4268X_VARIANT_ICM42686),                                                  \
+	(COND_CODE_1(DT_INST_NODE_HAS_COMPAT(inst, invensense_iim42652),                           \
+		     (ICM4268X_VARIANT_IIM42652), ())))))
+
+#define ICM42688_DT_CONFIG_INIT(inst)                                                              \
+	{                                                                                          \
+		.variant = ICM4268X_VARIANT_INIT(inst),                                            \
+		.accel_pwr_mode = DT_INST_PROP(inst, accel_pwr_mode),                              \
+		.accel_fs = DT_INST_PROP(inst, accel_fs),                                          \
+		.accel_odr = DT_INST_PROP(inst, accel_odr),                                        \
+		.gyro_pwr_mode = DT_INST_PROP(inst, gyro_pwr_mode),                                \
+		.gyro_fs = DT_INST_PROP(inst, gyro_fs),                                            \
+		.gyro_odr = DT_INST_PROP(inst, gyro_odr),                                          \
+		.temp_dis = false,                                                                 \
+		.fifo_en = IS_ENABLED(CONFIG_ICM4268X_STREAM) && DT_INST_ON_BUS(inst, spi),        \
+		.batch_ticks = 0,                                                                  \
+		.fifo_hires = DT_INST_PROP(inst, fifo_hires),                                      \
+		.interrupt1_drdy = false,                                                          \
+		.interrupt1_fifo_ths = false,                                                      \
+		.interrupt1_fifo_full = false,                                                     \
+		.pin9_function = ICM4268X_PIN9_FUNCTION_INT2,                                      \
+		.rtc_freq = 32000,                                                                 \
+		.axis_align[0].index = DT_INST_PROP(inst, axis_align_x),                           \
+		.axis_align[1].index = DT_INST_PROP(inst, axis_align_y),                           \
+		.axis_align[2].index = DT_INST_PROP(inst, axis_align_z),                           \
+		.axis_align[0].sign = DT_INST_PROP(inst, axis_align_x_sign) - 1,                   \
+		.axis_align[1].sign = DT_INST_PROP(inst, axis_align_y_sign) - 1,                   \
+		.axis_align[2].sign = DT_INST_PROP(inst, axis_align_z_sign) - 1                    \
 	}
 
 #define ICM4268X_DEFINE_DATA(inst)                                                                 \
-	IF_ENABLED(CONFIG_ICM4268X_STREAM, (ICM4268X_RTIO_DEFINE(inst)));                          \
+	ICM4268X_STREAM_DEFINE(inst);                                                              \
 	static struct icm4268x_dev_data icm4268x_driver_##inst = {                                 \
 		.cfg = ICM42688_DT_CONFIG_INIT(inst),                                              \
-		IF_ENABLED(CONFIG_ICM4268X_STREAM,						   \
-		(										   \
-			.bus.rtio = {								   \
-				.ctx = &icm4268x_rtio_##inst,					   \
-				.iodev = &icm4268x_spi_iodev_##inst,				   \
-			},									   \
-		))										   \
-	};
+		ICM4268X_STREAM_DATA_INIT(inst)};
 
 /** The rest of the Device-tree configuration is validated in the YAML
  * file. This outlier comes from the fact we're sharing the dts-properties
  * across variants, and ICM42686 has an extra enum for the accel-fs.
  */
-#define ICM42688_BUILD_CONFIG_VALIDATION(inst)							   \
-	BUILD_ASSERT((DT_INST_PROP(inst, accel_fs) >= ICM42688_DT_ACCEL_FS_16) &&		   \
-		     (DT_INST_PROP(inst, accel_fs) <=  ICM42688_DT_ACCEL_FS_2),			   \
-		"Invalid accel-fs configured for ICM42688. Please revisit DTS config-set");
+#define ICM42688_BUILD_CONFIG_VALIDATION(inst)                                                     \
+	BUILD_ASSERT((DT_INST_PROP(inst, accel_fs) >= ICM42688_DT_ACCEL_FS_16) &&                  \
+			     (DT_INST_PROP(inst, accel_fs) <= ICM42688_DT_ACCEL_FS_2),             \
+		     "Invalid accel-fs configured for ICM42688. Please revisit DTS config-set");
+
+#define ICM4268X_CONFIG_SPI(inst)                                                                  \
+	{                                                                                          \
+		.bus =                                                                             \
+			{                                                                          \
+				.spi = SPI_DT_SPEC_INST_GET(inst, ICM4268X_SPI_CFG),               \
+			},                                                                         \
+		.bus_io = &icm4268x_bus_io_spi,                                                    \
+		.gpio_int1 = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {0}),                       \
+	}
+
+#define ICM4268X_CONFIG_I2C(inst)                                                                  \
+	{                                                                                          \
+		.bus =                                                                             \
+			{                                                                          \
+				.i2c = I2C_DT_SPEC_INST_GET(inst),                                 \
+			},                                                                         \
+		.bus_io = &icm4268x_bus_io_i2c,                                                    \
+		.gpio_int1 = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {0}),                       \
+	}
 
 #define ICM4268X_INIT(inst)                                                                        \
-												   \
-	BUILD_ASSERT(DT_INST_NODE_HAS_COMPAT(inst, invensense_icm42688) ||			   \
-		     DT_INST_NODE_HAS_COMPAT(inst, invensense_icm42686),			   \
-		"Please define additional compatible property to dts node: "			   \
-		"<invensense,icm42688> or <invensense,icm42686>");				   \
-												   \
-												   \
-	COND_CODE_1(DT_INST_NODE_HAS_COMPAT(inst, invensense_icm42688),				   \
-		    (ICM42688_BUILD_CONFIG_VALIDATION(inst)), ());				   \
-												   \
+                                                                                                   \
+	BUILD_ASSERT(DT_INST_NODE_HAS_COMPAT(inst, invensense_icm42688) ||                         \
+			     DT_INST_NODE_HAS_COMPAT(inst, invensense_icm42686) ||                 \
+			     DT_INST_NODE_HAS_COMPAT(inst, invensense_iim42652),                   \
+		     "Please define additional compatible property to dts node: "                  \
+		     "<invensense,icm42688>, <invensense,icm42686>, or <invensense,iim42652>");    \
+                                                                                                   \
+	COND_CODE_1(DT_INST_NODE_HAS_COMPAT(inst, invensense_icm42688),                            \
+		    (ICM42688_BUILD_CONFIG_VALIDATION(inst)), ());                                 \
+	COND_CODE_1(DT_INST_NODE_HAS_COMPAT(inst, invensense_iim42652),                            \
+		    (ICM42688_BUILD_CONFIG_VALIDATION(inst)), ());                                 \
+                                                                                                   \
 	ICM4268X_DEFINE_DATA(inst);                                                                \
                                                                                                    \
-	static const struct icm4268x_dev_cfg icm4268x_cfg_##inst = {                               \
-		.spi = SPI_DT_SPEC_INST_GET(inst, ICM4268X_SPI_CFG),                               \
-		.gpio_int1 = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {0}),                       \
-	};                                                                                         \
+	static const struct icm4268x_dev_cfg icm4268x_cfg_##inst =                                 \
+		COND_CODE_1(DT_INST_ON_BUS(inst, spi), (ICM4268X_CONFIG_SPI(inst)),                \
+			    (ICM4268X_CONFIG_I2C(inst)));                                          \
                                                                                                    \
 	SENSOR_DEVICE_DT_INST_DEFINE(inst, icm4268x_init, NULL, &icm4268x_driver_##inst,           \
 				     &icm4268x_cfg_##inst, POST_KERNEL,                            \
