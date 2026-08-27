@@ -1292,6 +1292,11 @@ USB
   their API struct definitions and switch their API instances to ``DEVICE_API(uhc, ...)``.
   (:github:`108414`)
 
+* ``CONFIG_USBD_CDC_ACM_BUF_POOL`` has been removed. The CDC ACM implementation
+  now allocates bulk IN and OUT transfer buffers from a per-instance pool. The
+  device tree properties ``tx-fifo-size`` or ``rx-fifo-size`` are used as pool
+  size.
+
 Video
 =====
 
