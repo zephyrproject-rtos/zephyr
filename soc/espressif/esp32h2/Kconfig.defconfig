@@ -3,8 +3,62 @@
 
 if SOC_SERIES_ESP32H2
 
+# Multi-level interrupts: L1 = intc (CPU line), L2 = <periph>_intmux (INTMUX
+# source -> CPU line). One flat 2nd-level aggregator spanning every INTMUX
+# source (ETS_MAX_INTR_SOURCE = 65). CPU lines occupy table slots 0..31, so the
+# source window starts at 32 and ends at 97, where the level-3 window begins;
+# NUM_IRQS = 97 + 32.
 config NUM_IRQS
+	default 129
+
+config MULTI_LEVEL_INTERRUPTS
+	default y
+
+config 2ND_LEVEL_INTERRUPTS
+	default y
+
+config 1ST_LEVEL_INTERRUPT_BITS
+	default 8
+
+config 2ND_LEVEL_INTERRUPT_BITS
+	default 8
+
+config 2ND_LVL_ISR_TBL_OFFSET
 	default 32
+
+config 2ND_LVL_INTR_00_OFFSET
+	default 32
+
+config MAX_IRQ_PER_2ND_LEVEL_AGGREGATOR
+	default 65
+
+config NUM_2ND_LEVEL_AGGREGATORS
+	default 1
+
+# That single aggregator is the interrupt matrix, so its window is indexed by
+# the source number rather than by an aggregator slot.
+config INTERRUPT_MATRIX_LAYOUT
+	default y
+
+# Level-3: GPIO_INTR_SOURCE is shared by the analog comparator, which owns
+# GPIO_EXT.int_st bit 0, and the GPIO port driver, which has no bit in that
+# register and takes the catch-all leaf instead (see gpio0_l3_intc in the SoC
+# dtsi). Window base is the end of the level-2 window.
+config 3RD_LEVEL_INTERRUPTS
+	default y
+
+config 3RD_LEVEL_INTERRUPT_BITS
+	default 8
+
+config NUM_3RD_LEVEL_AGGREGATORS
+	default 1
+
+# Upper bound on a flag's bit number, and the slots reserved per aggregator.
+config MAX_IRQ_PER_3RD_LEVEL_AGGREGATOR
+	default 32
+
+config 3RD_LVL_ISR_TBL_OFFSET
+	default 97
 
 config MAIN_STACK_SIZE
 	default 2048
