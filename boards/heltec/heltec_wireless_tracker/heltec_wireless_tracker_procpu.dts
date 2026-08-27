@@ -157,6 +157,7 @@
 	status = "okay";
 	pinctrl-0 = <&spim2_default>;
 	pinctrl-names = "default";
+	cs-gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
 
 	lora0: lora@0 {
 		compatible = "semtech,sx1262";
