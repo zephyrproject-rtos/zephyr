@@ -78,6 +78,11 @@
 			reg = <0x44030000 0x8>;
 		};
 
+		/* CFM CAL OTP region containing calibration data for USB HS PHY */
+		cfm_calotp_usbhs: cfm_calotp_usbhs@a00718c {
+			reg = <0x0a00718c 0x4>;
+		};
+
 		clock: clock@44052000 {
 			compatible = "microchip,pic32cz-ca-clock";
 			reg = <0x44052000 0x60>, <0x44040000 0x8c>,
@@ -324,6 +329,38 @@
 				interrupt-names = "core";
 				status = "disabled";
 			};
+		};
+
+		hsusb0: usb@4f010000 {
+			compatible = "microchip,usbhs-g1", "mentor,musb";
+			reg = <0x4f010000 0x2000>, <0x4f011000 0x400>;
+			reg-names = "wrapper", "core";
+			interrupts = <213 0>;
+			interrupt-names = "int";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_HUSB0>;
+			clock-names = "ahb";
+			num-bidir-endpoints = <8>;
+			num-in-endpoints = <8>;
+			num-out-endpoints = <8>;
+			maximum-speed = "high-speed";
+			nvm-phy-calib = <&cfm_calotp_usbhs>;
+			status = "disabled";
+		};
+
+		hsusb1: usb@4f012000 {
+			compatible = "microchip,usbhs-g1", "mentor,musb";
+			reg = <0x4f012000 0x2000>, <0x4f013000 0x400>;
+			reg-names = "wrapper", "core";
+			interrupts = <214 0>;
+			interrupt-names = "int";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_HUSB1>;
+			clock-names = "ahb";
+			num-bidir-endpoints = <8>;
+			num-in-endpoints = <8>;
+			num-out-endpoints = <8>;
+			maximum-speed = "high-speed";
+			nvm-phy-calib = <&cfm_calotp_usbhs>;
+			status = "disabled";
 		};
 	};
 };
