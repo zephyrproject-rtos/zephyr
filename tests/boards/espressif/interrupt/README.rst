@@ -1,12 +1,12 @@
 .. _interrupt_test:
 
-Espressif's Xtensa interrupt test
-#################################
+Espressif interrupt test
+########################
 
 Overview
 ********
 
-Test objective is to verify that the ESP32, ESP32-S2 and ESP32-S3 platforms correctly support nested interrupts, where higher-priority interrupts can preempt lower-priority ones.
+The nested-ISR suite verifies that the ESP32, ESP32-S2 and ESP32-S3 platforms correctly support nested interrupts, where higher-priority interrupts can preempt lower-priority ones.
 
 Three independent hardware timers are configured.
 
@@ -44,6 +44,42 @@ Supported Boards
 - esp32_devkitc/esp32/procpu
 - esp32s2_devkitc
 - esp32s3_devkitc/esp32s3/procpu
+- esp32c6_devkitc/esp32c6/hpcore
+- esp32h2_devkitm
+
+The nested-ISR suite needs three timer group counters and runs on ESP32, ESP32-S2 and ESP32-S3
+only.
+
+Non-IRAM pause tests (``esp_noniram`` suite)
+============================================
+
+``esp_intr_noniram_disable()`` masks every CPU line not marked ``ESP_INTR_FLAG_IRAM`` in the
+devicetree, as the flash driver does while the cache is off. The suite uses the
+first enabled timer group counter, whose alarm interrupt is level-triggered:
+
+* An alarm raised while paused does not fire, the IRQ still reads as enabled, and the alarm
+  fires once on ``esp_intr_noniram_enable()``.
+* ``irq_disable()`` during the pause is kept after the resume.
+* ``irq_enable()`` during the pause waits for the resume.
+
+Multi-level encoding tests (``mli_encoding`` suite)
+===================================================
+
+* A shared consumer is a level-2 IRQ: the level-2 field is its interrupt matrix source and the
+  level-1 field is the intmux key line.
+* ``uart0`` lacks ``ESP_INTR_FLAG_IRAM`` and ``systimer0`` has it.
+* A level-3 consumer carries its input index, the source of its aggregator and the key line
+  (``rtc_timer`` on ``rtc_l3_intc``; on ESP32-H2 ``gpio0`` on the catch-all input of
+  ``gpio0_l3_intc`` and ``ana_cmpr0`` on input 0).
+
+Multi-level dispatch tests (``mli_dispatch`` suite)
+===================================================
+
+* A level-2 IRQ uses table slot ``CONFIG_2ND_LVL_ISR_TBL_OFFSET`` plus its source.
+* The counter ISR sits in its slot, and ``irq_enable()``, ``irq_disable()`` and
+  ``irq_is_enabled()`` agree.
+* On ESP32-H2 the GPIO ISR sits in the catch-all slot of the ``gpio0_l3_intc`` window and the
+  aggregator ISR in its level-2 slot.
 
 Building and Running
 ********************
