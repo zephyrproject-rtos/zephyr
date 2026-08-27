@@ -24,4 +24,75 @@ endchoice
 
 endif # PM && TICKLESS_KERNEL
 
+# Multi-level interrupt hierarchy
+#   L1 = intc            : CPU interrupt line
+#   L2 = <periph>_intmux : INTMUX aggregator (peripheral sources -> one CPU line)
+#   L3 = <periph>_signal : Peripheral signal aggregator (peripheral signal -> one intmux handler)
+
+config MULTI_LEVEL_INTERRUPTS
+	default y
+
+config 2ND_LEVEL_INTERRUPTS
+	default y
+
+config 3RD_LEVEL_INTERRUPTS
+	default y
+
+config 1ST_LEVEL_INTERRUPT_BITS
+	default 8
+
+config 2ND_LEVEL_INTERRUPT_BITS
+	default 8
+
+config 3RD_LEVEL_INTERRUPT_BITS
+	default 8
+
+config 2ND_LVL_ISR_TBL_OFFSET
+	default 32
+
+config MAX_IRQ_PER_2ND_LEVEL_AGGREGATOR
+	default 100
+
+# One 2nd-level aggregator per distinct CPU interrupt line that hosts INTMUX
+# nodes in the devicetree. Each 2ND_LVL_INTR_NN_OFFSET is that aggregator's L1
+# CPU line; gen_isr_tables.py and the INTMUX dispatcher place a leaf ISR at
+# (2ND_LVL_ISR_TBL_OFFSET + NN * MAX_IRQ_PER_AGGREGATOR + source). The NN->line
+# mapping is an arbitrary bijection; only distinctness matters.
+config NUM_2ND_LEVEL_AGGREGATORS
+	default 1
+
+# That single aggregator is the interrupt matrix, so its window is indexed by
+# the source number rather than by an aggregator slot.
+config INTERRUPT_MATRIX_LAYOUT
+	default y
+
+# Two meanings, both satisfied by the register width. It is the upper bound the
+# generator enforces on a flag's bit number, and - via the CONFIG_NUM_IRQS macro
+# in <zephyr/arch/xtensa/irq.h> - the number of table slots reserved per 3rd-level
+# aggregator. Windows are packed densely (one slot per connected bit), so the
+# reserved region is an upper bound, not the space actually used.
+config MAX_IRQ_PER_3RD_LEVEL_AGGREGATOR
+	default 32
+
+# Informational in the flat layout. gen_isr_tables.py derives the aggregators
+# and their windows from the connected level-3 leaves rather than from
+# 3RD_LVL_INTR_NN_OFFSET, so no per-aggregator Kconfig is needed.
+config NUM_3RD_LEVEL_AGGREGATORS
+	default 1
+
+config 2ND_LVL_INTR_00_OFFSET
+	default 32
+
+# The 3rd-level window region starts immediately after the level-2 source
+# window, which spans 2ND_LVL_ISR_TBL_OFFSET .. + MAX_IRQ_PER_2ND (32 + 100).
+config 3RD_LVL_ISR_TBL_OFFSET
+	default 132
+
+# NUM_IRQS is NOT a Kconfig symbol on Xtensa: <zephyr/arch/xtensa/irq.h> defines
+# it as a macro, XCHAL_NUM_INTERRUPTS + NUM_2ND * MAX_IRQ_PER_2ND +
+# NUM_3RD * MAX_IRQ_PER_3RD = 32 + 100 + 32 = 164 here. Keep the offsets above
+# consistent with it: the level-2 window ends at 32 + 100 = 132, which is where
+# the level-3 region starts, and the table ends at 164.
+
+
 endif # SOC_SERIES_ESP32S3
