@@ -26,7 +26,6 @@
 			compatible = "cdns,tensilica-xtensa-lx7";
 			reg = <1>;
 			cpu-power-states = <&d0i3 &d3>;
-			zephyr,deferred-start;
 		};
 
 		power-states {
