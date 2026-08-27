@@ -25,6 +25,8 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_SECURE_DOMAIN_H_
 #define ZEPHYR_INCLUDE_ARCH_SECURE_DOMAIN_H_
 
+#include <stdbool.h>
+#include <stddef.h>
 #include <stdint.h>
 #include <zephyr/toolchain.h>
 
@@ -76,6 +78,34 @@ void z_arch_secure_domain_set_vector_table(uintptr_t base);
 
 /** @brief Transfer control to @p entry using @p stack; does not return. */
 FUNC_NORETURN void z_arch_secure_domain_enter(uintptr_t entry, uintptr_t stack);
+
+/**
+ * @brief Abort the current secure call (does not return).
+ *
+ * Called by the Z_SECURE_VERIFY() validation macros (see
+ * <zephyr/internal/secure_call_handler.h>) when an untrusted caller passes an
+ * argument that fails a bounds/attribution check — a confused-deputy attempt.
+ * The __weak default halts; a backend may override it with a custom oops/reset
+ * handler.
+ */
+FUNC_NORETURN void arch_secure_call_oops(void);
+
+/**
+ * @brief Query whether an untrusted caller's buffer is accessible to it.
+ *
+ * The Z_SECURE_MEMORY_READ() / Z_SECURE_MEMORY_WRITE() validation macros (see
+ * <zephyr/internal/secure_call_handler.h>) call this to confirm that a pointer
+ * handed in by untrusted code really points into memory that caller may access,
+ * before the trusted code dereferences it. It keeps the generic handler
+ * arch-neutral; each arch backend supplies the check.
+ *
+ * @param addr  Start of the buffer (an untrusted-supplied pointer).
+ * @param size  Buffer size in bytes.
+ * @param write true to require write access, false for read-only.
+ * @return true if the whole range is accessible to the untrusted caller with
+ *         the requested access, false otherwise.
+ */
+bool arch_secure_call_buffer_accessible(const void *addr, size_t size, bool write);
 
 #ifdef __cplusplus
 }
