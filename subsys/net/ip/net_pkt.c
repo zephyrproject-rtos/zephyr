@@ -533,9 +533,6 @@ void net_pkt_unref(struct net_pkt *pkt)
 	atomic_val_t ref;
 
 	if (!pkt) {
-#if NET_LOG_LEVEL >= LOG_LEVEL_DBG
-		NET_ERR("*** ERROR *** pkt %p (%s():%d)", pkt, caller, line);
-#endif
 		return;
 	}
 
