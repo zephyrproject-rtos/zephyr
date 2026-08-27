@@ -171,6 +171,13 @@
 				ranges = <0x0 0xfff80000 DT_SIZE_K(512)>;
 				write-block-size = <4>;
 				erase-block-size = <1024>;
+
+				code_flash_mem: flash@0 {
+					compatible = "soc-nv-flash";
+					reg = <0x0 DT_SIZE_K(512)>;
+					#address-cells = <1>;
+					#size-cells = <1>;
+				};
 			};
 
 			data_flash: flash@100000 {
@@ -182,6 +189,13 @@
 				ranges = <0x0 0x100000 DT_SIZE_K(8)>;
 				write-block-size = <1>;
 				erase-block-size = <1024>;
+
+				data_flash_mem: flash@0 {
+					compatible = "soc-nv-flash";
+					reg = <0x0 DT_SIZE_K(8)>;
+					#address-cells = <1>;
+					#size-cells = <1>;
+				};
 			};
 		};
 	};
