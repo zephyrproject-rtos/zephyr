@@ -221,7 +221,6 @@ static inline int bt_hci_recv_err(const struct device *dev, struct net_buf *buf)
 	struct bt_hci_driver_data *data = dev->data;
 
 	if (data->recv == NULL) {
-		net_buf_unref(buf);
 		return -ENOTCONN;
 	}
 
