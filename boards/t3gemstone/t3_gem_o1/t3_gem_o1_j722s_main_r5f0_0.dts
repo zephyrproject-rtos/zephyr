@@ -115,7 +115,7 @@
 	};
 };
 
-/* LPS22DF pressure and temperature sensor is on chip select 1 */
+/* LPS22DF on chip select 1, ICM-20948 on chip select 3 */
 &mcu_spi0 {
 	pinctrl-0 = <&mcu_spi0_default>;
 	pinctrl-names = "default";
@@ -126,6 +126,12 @@
 		reg = <1>;
 		spi-max-frequency = <DT_FREQ_M(8)>;
 		odr = <3>;
+	};
+
+	icm20948: icm20948@3 {
+		compatible = "invensense,icm20948";
+		reg = <3>;
+		spi-max-frequency = <DT_FREQ_M(1)>;
 	};
 };
 
