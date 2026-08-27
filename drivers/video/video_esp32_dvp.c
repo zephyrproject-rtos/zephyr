@@ -13,7 +13,6 @@
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/dma/dma_esp32.h>
 #include <zephyr/drivers/video.h>
-#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include <zephyr/kernel.h>
 #include <hal/cam_hal.h>
 #include <hal/cam_ll.h>
