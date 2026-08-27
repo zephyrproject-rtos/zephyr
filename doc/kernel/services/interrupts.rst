@@ -513,7 +513,7 @@ The limitation of this parser is the fact that after the arrays are generated
 it is expected for the code not to relocate.
 Any relocation on this stage may lead to the situation where the entry in the interrupt array
 is no longer pointing to the function that was expected.
-It means that this parser, being more compatible is limiting us from using Link Time Optimization.
+It means that this parser, being more compatible, is limiting us from using Link Time Optimization.
 
 The local ISR declaration parser uses different approach to construct
 the same arrays at binary level.
