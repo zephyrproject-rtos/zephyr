@@ -257,6 +257,38 @@ void bt_adv_foreach(bool (*func)(struct bt_le_ext_adv *adv, void *data),
 #endif /* defined(CONFIG_BT_EXT_ADV) */
 }
 
+struct le_ext_adv_foreach_cb_data {
+	bt_le_ext_adv_foreach_cb func;
+	void *data;
+	bool stopped;
+};
+
+static bool le_ext_adv_foreach_cb(struct bt_le_ext_adv *adv, void *data)
+{
+	struct le_ext_adv_foreach_cb_data *cb_data = data;
+
+	cb_data->stopped = !cb_data->func(adv, cb_data->data);
+
+	return !cb_data->stopped;
+}
+
+int bt_le_ext_adv_foreach(bt_le_ext_adv_foreach_cb func, void *data)
+{
+	if (func == NULL) {
+		return -EINVAL;
+	}
+
+	struct le_ext_adv_foreach_cb_data cb_data = {
+		.func = func,
+		.data = data,
+		.stopped = false,
+	};
+
+	bt_adv_foreach(le_ext_adv_foreach_cb, &cb_data);
+
+	return cb_data.stopped ? -ECANCELED : 0;
+}
+
 static bool clear_ext_adv_instance(struct bt_le_ext_adv *adv, void *data)
 {
 	bt_le_lim_adv_cancel_timeout(adv);
