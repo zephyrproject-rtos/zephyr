@@ -85,7 +85,7 @@ config PTP_CLOCK_TYPE
 	default 0x02 if PTP_TRANSPARENT_P2P_CLOCK
 	default 0x03 if PTP_TRANSPARENT_E2E_CLOCK
 
-choice
+choice PTP_DELAY_MECHANISM_TYPE
 	prompt "PTP Delay Mechanism"
 	default PTP_DELAY_MECHANISM_E2E
 	help
