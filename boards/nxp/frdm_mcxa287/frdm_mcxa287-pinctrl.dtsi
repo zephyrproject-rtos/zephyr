@@ -1,0 +1,138 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/mcx/MCXA287VPN-pinctrl.h>
+
+&pinctrl {
+	pinmux_lpuart0: pinmux_lpuart0 {
+		group0 {
+			pinmux = <LPUART0_RXD_P0_2>,
+				 <LPUART0_TXD_P0_3>;
+			drive-strength = "low";
+			slew-rate = "fast";
+			input-enable;
+		};
+	};
+
+	pinmux_lpuart1: pinmux_lpuart1 {
+		group0 {
+			pinmux = <LPUART1_RXD_P1_8>,
+				 <LPUART1_TXD_P1_9>;
+			drive-strength = "low";
+			slew-rate = "fast";
+			input-enable;
+		};
+	};
+
+	pinmux_lpuart2: pinmux_lpuart2 {
+		group0 {
+			pinmux = <LPUART2_RXD_P2_11>,
+				 <LPUART2_TXD_P2_10>;
+			drive-strength = "low";
+			slew-rate = "fast";
+			input-enable;
+		};
+	};
+
+	pinmux_lpadc0: pinmux_lpadc0 {
+		group0 {
+			pinmux = <ADC0_A9_P0_19>;
+			slew-rate = "fast";
+			drive-strength = "low";
+		};
+	};
+
+	pinmux_lpspi1: pinmux_lpspi1 {
+		group0 {
+			pinmux = <LPSPI1_SDO_P2_13>,
+				 <LPSPI1_SCK_P2_12>,
+				 <LPSPI1_SDI_P2_15>,
+				 <LPSPI1_PCS0_P2_17>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+	};
+
+	pinmux_lpspi2: pinmux_lpspi2 {
+		group0 {
+			pinmux = <LPSPI2_SDO_P4_4>,
+				 <LPSPI2_SCK_P4_3>,
+				 <LPSPI2_SDI_P4_5>,
+				 <LPSPI2_PCS1_P4_0>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+	};
+
+	pinmux_lpi2c0: pinmux_lpi2c0 {
+		group0 {
+			pinmux = <LPI2C0_SDA_P0_16>,
+				 <LPI2C0_SCL_P0_17>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+			bias-pull-up;
+			drive-open-drain;
+		};
+	};
+
+	pinmux_lpi2c3: pinmux_lpi2c3 {
+		group0 {
+			pinmux = <LPI2C3_SDA_P3_20>,
+				 <LPI2C3_SCL_P3_21>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+			bias-pull-up;
+			drive-open-drain;
+		};
+	};
+
+	pinmux_lpcmp0: pinmux_lpcmp0 {
+		group0 {
+			pinmux = <CMP0_IN2_P1_4>;
+			drive-strength = "low";
+			slew-rate = "fast";
+		};
+	};
+
+	pinmux_flexcan0: pinmux_flexcan0 {
+		group0 {
+			pinmux = <CAN0_TXD_P1_18>,
+				 <CAN0_RXD_P1_19>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+	};
+
+	pinmux_dac0: pinmux_dac0 {
+		group0 {
+			pinmux = <DAC0_OUT_P2_2>;
+			drive-strength = "low";
+			slew-rate = "fast";
+		};
+	};
+
+	pinmux_i3c0: pinmux_i3c0 {
+		group0 {
+			pinmux = <I3C0_SDA_P0_20>,
+				 <I3C0_SCL_P0_21>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+			bias-pull-up;
+		};
+
+		group1 {
+			pinmux = <I3C0_PUR_P0_2>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+	};
+};
