@@ -78,16 +78,32 @@ extern void z_riscv_irq_vector_set(unsigned int irq);
 #define z_riscv_irq_vector_set(i) /* Nothing */
 #endif /* CONFIG_RISCV_HAS_CLIC */
 
+/*
+ * IRQ number used to place an ISR in _sw_isr_table. The reserved-IRQ offset
+ * belongs to level-1 IRQs only: a multi-level encoded IRQ is placed through the
+ * window of its aggregator, whose table offset already accounts for it, and
+ * adding the offset would change the level-1 field that identifies the
+ * aggregator.
+ */
+#if defined(CONFIG_MULTI_LEVEL_INTERRUPTS)
+#define Z_RISCV_IRQ_TABLE_IRQ(irq)                                                                 \
+	((((irq) & ~BIT_MASK(CONFIG_1ST_LEVEL_INTERRUPT_BITS)) != 0)                               \
+		 ? (irq)                                                                           \
+		 : ((irq) + CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET))
+#else
+#define Z_RISCV_IRQ_TABLE_IRQ(irq) ((irq) + CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET)
+#endif
+
 #define ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
 { \
-	Z_ISR_DECLARE(irq_p + CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET, \
+	Z_ISR_DECLARE(Z_RISCV_IRQ_TABLE_IRQ(irq_p), \
 		      0, isr_p, isr_param_p); \
 	z_riscv_irq_priority_set(irq_p, priority_p, flags_p); \
 }
 
 #define ARCH_IRQ_DIRECT_CONNECT(irq_p, priority_p, isr_p, flags_p) \
 { \
-	Z_ISR_DECLARE_DIRECT(irq_p + CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET, \
+	Z_ISR_DECLARE_DIRECT(Z_RISCV_IRQ_TABLE_IRQ(irq_p), \
 		      ISR_FLAG_DIRECT, isr_p); \
 	z_riscv_irq_priority_set(irq_p, priority_p, flags_p); \
 	z_riscv_irq_vector_set(irq_p); \
