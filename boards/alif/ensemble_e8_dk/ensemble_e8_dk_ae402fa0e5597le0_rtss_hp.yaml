@@ -9,4 +9,5 @@ vendor: alif
 toolchain:
   - zephyr
 supported:
+  - gpio
   - i2c
