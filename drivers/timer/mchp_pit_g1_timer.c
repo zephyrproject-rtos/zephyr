@@ -15,10 +15,6 @@
 #include <zephyr/spinlock.h>
 #include <zephyr/sys/clock.h>
 
-#if defined(CONFIG_TICKLESS_KERNEL)
-BUILD_ASSERT(0, "PIT driver for tickless kernel support DOES NOT implemented yet!");
-#endif
-
 BUILD_ASSERT(DT_HAS_CHOSEN(zephyr_system_timer),
 	     "zephyr,system-timer must be set to a microchip,pit-g1-timer node");
 BUILD_ASSERT(DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_system_timer), microchip_pit_g1_timer),
@@ -54,6 +50,7 @@ struct mchp_pit_timer_data {
 #define DEV_DATA(_dev) ((struct mchp_pit_timer_data *)(_dev)->data)
 
 static const struct device *systick_timer_dev;
+static bool mchp_pit_mmio_mapped;
 
 #if defined(CONFIG_TEST)
 const int32_t z_sys_timer_irq_for_test = TIMER_IRQ_NUM;
@@ -74,6 +71,10 @@ static inline uint32_t timer_driver_cycle_get(void)
 {
 	struct mchp_pit_timer_data *data = systick_timer_dev->data;
 	uint32_t piir;
+
+	if (!mchp_pit_mmio_mapped) {
+		return 0;
+	}
 
 	piir = mchp_pit_reg_read(PIT_PIIR_REG_OFST);
 
@@ -144,6 +145,7 @@ static int sys_clock_driver_init(void)
 	data->piv = TIMER_CORE_CYC_PER_TICK - 1;
 
 	DEVICE_MMIO_NAMED_MAP(systick_timer_dev, reg_base, K_MEM_CACHE_NONE);
+	mchp_pit_mmio_mapped = true;
 
 	/* Read PIT_PIVR and clear PITS in PIT_SR */
 	(void)mchp_pit_reg_read(PIT_PIVR_REG_OFST);
