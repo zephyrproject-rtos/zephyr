@@ -14,7 +14,6 @@
 #include <efuse_virtual.h>
 #include <esp_rom_serial_output.h>
 #include <zephyr/init.h>
-#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include <zephyr/kernel_structs.h>
 #include <zephyr/arch/common/init.h>
 #include <zephyr/arch/riscv/arch.h>
