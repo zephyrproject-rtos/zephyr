@@ -12,12 +12,13 @@ config PPC
 	help
 	  Set by any Peripheral Protection Controller (PPC) driver to indicate
 	  that the ppc_configure_ns_all() API (<zephyr/drivers/ppc/ppc.h>) is
-	  available.  Individual PPC drivers select this symbol; application and
+	  available. Individual PPC drivers select this symbol; application and
 	  Secure-image code can test CONFIG_PPC instead of naming a specific
 	  driver.
 
 # zephyr-keep-sorted-start
 source "drivers/ppc/arm_sse200_spctrl/Kconfig"
+source "drivers/ppc/infineon_ppc/Kconfig"
 # zephyr-keep-sorted-stop
 
 endmenu

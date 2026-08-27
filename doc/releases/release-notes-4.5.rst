@@ -1581,6 +1581,7 @@ New Drivers
 
   * Arm SSE-200 Secure Privilege Control block
     (:dtcompatible:`arm,sse-200-spctrl`).
+  * Infineon PPC (:dtcompatible:`infineon,ppc`).
 
 * Serial controller
 
