@@ -27,6 +27,8 @@ LOG_MODULE_REGISTER(dma_mchp_dmac_g1, CONFIG_DMA_LOG_LEVEL);
 #define TIMEOUT_VALUE_US 1000
 #define DELAY_US         2
 
+#define DESC_POOL_SIZE CONFIG_DMA_MCHP_DMAC_G1_DESC_POOL_SIZE
+
 enum dma_mchp_ch_state {
 	DMA_MCHP_CH_IDLE,
 	DMA_MCHP_CH_PENDING,
@@ -46,6 +48,8 @@ struct dma_mchp_dmac {
 	__aligned(16) dmac_descriptor_registers_t descriptors[DMAC_CH_NUM];
 	/* DMA write-back descriptors for tracking completed transfers (16-byte aligned). */
 	__aligned(16) dmac_descriptor_registers_t descriptors_wb[DMAC_CH_NUM];
+	/* DMA descriptor pool for dynamically allocated channel descriptors. */
+	__aligned(16) dmac_descriptor_registers_t desc_pool[DESC_POOL_SIZE];
 };
 
 struct dma_mchp_dev_config {
@@ -60,6 +64,7 @@ struct dma_mchp_dev_data {
 	struct dma_context dma_ctx;
 	struct dma_mchp_dmac *dmac_desc_data;
 	struct dma_mchp_channel_config *dma_channel_config;
+	dmac_descriptor_registers_t *desc_pool;
 };
 
 static enum dma_mchp_ch_state dmac_ch_get_state(dmac_registers_t *dmac_reg, uint32_t channel)
@@ -91,10 +96,71 @@ static enum dma_mchp_ch_state dmac_ch_get_state(dmac_registers_t *dmac_reg, uint
 	return ch_state;
 }
 
+/* Initialize descriptor pool as a linked list */
+static void desc_pool_init(struct dma_mchp_dev_data *dev_data)
+{
+	dmac_descriptor_registers_t *pool = dev_data->dmac_desc_data->desc_pool;
+
+	for (int i = 0; i < DESC_POOL_SIZE - 1; i++) {
+		pool[i].DMAC_DESCADDR = (uint32_t)&pool[i + 1];
+	}
+	pool[DESC_POOL_SIZE - 1].DMAC_DESCADDR = 0;
+
+	dev_data->desc_pool = pool;
+}
+
+/* Get a descriptor from pool */
+static dmac_descriptor_registers_t *desc_pool_get(struct dma_mchp_dev_data *dev_data)
+{
+	dmac_descriptor_registers_t *ret_desc;
+	unsigned int key;
+
+	key = irq_lock();
+	ret_desc = dev_data->desc_pool;
+	if (ret_desc != NULL) {
+		dev_data->desc_pool = (dmac_descriptor_registers_t *)(ret_desc->DMAC_DESCADDR);
+	}
+	irq_unlock(key);
+
+	return ret_desc;
+}
+
+static void desc_pool_free(struct dma_mchp_dev_data *dev_data, dmac_descriptor_registers_t *desc)
+{
+	unsigned int key;
+
+	desc->DMAC_BTCTRL = 0;
+	desc->DMAC_BTCNT = 0;
+	desc->DMAC_SRCADDR = 0;
+	desc->DMAC_DSTADDR = 0;
+
+	key = irq_lock();
+	desc->DMAC_DESCADDR = (uint32_t)(dev_data->desc_pool);
+	dev_data->desc_pool = desc;
+	irq_unlock(key);
+}
+
+static void channel_free_linked_descs(struct dma_mchp_dev_data *dev_data, uint32_t channel)
+{
+	dmac_descriptor_registers_t *base_desc = &dev_data->dmac_desc_data->descriptors[channel];
+	dmac_descriptor_registers_t *desc;
+	dmac_descriptor_registers_t *next;
+
+	desc = (dmac_descriptor_registers_t *)(uintptr_t)base_desc->DMAC_DESCADDR;
+
+	while (desc != NULL && desc != base_desc) {
+		next = (dmac_descriptor_registers_t *)(uintptr_t)desc->DMAC_DESCADDR;
+		desc_pool_free(dev_data, desc);
+		desc = next;
+	}
+
+	base_desc->DMAC_DESCADDR = 0;
+}
+
 static inline void dmac_desc_init(const struct device *dev)
 {
-	struct dma_mchp_dmac *data =
-		((const struct dma_mchp_dev_data *)(dev)->data)->dmac_desc_data;
+	struct dma_mchp_dev_data *dev_data = dev->data;
+	struct dma_mchp_dmac *data = dev_data->dmac_desc_data;
 
 	DMAC_REG->DMAC_BASEADDR = (uintptr_t)data->descriptors;
 	DMAC_REG->DMAC_WRBADDR = (uintptr_t)data->descriptors_wb;
@@ -314,8 +380,11 @@ static int dma_mchp_config(const struct device *dev, uint32_t channel, struct dm
 {
 	struct dma_mchp_dev_data *const dev_data = dev->data;
 	struct dma_mchp_channel_config *channel_config;
+	dmac_descriptor_registers_t *base_desc;
 	dmac_descriptor_registers_t *desc;
+	dmac_descriptor_registers_t *prev_desc;
 	dmac_descriptor_registers_t *desc_wb;
+	struct dma_block_config *block;
 	int ret;
 
 	ret = dma_mchp_validate(dev, channel, config);
@@ -323,27 +392,57 @@ static int dma_mchp_config(const struct device *dev, uint32_t channel, struct dm
 		return ret;
 	}
 
+	channel_free_linked_descs(dev_data, channel);
+
 	ret = dma_mchp_setup_channel(dev, channel, config);
 	if (ret != 0) {
 		return ret;
 	}
 
-	if (config->block_count > 1) {
-		LOG_ERR("Multi block transfers not supported");
-		return -ENOTSUP;
-	}
+	base_desc = &dev_data->dmac_desc_data->descriptors[channel];
+	block = config->head_block;
 
-	desc = &dev_data->dmac_desc_data->descriptors[channel];
-
-	ret = dmac_desc_block_config(config->head_block, desc, config->source_data_size);
+	ret = dmac_desc_block_config(block, base_desc, config->source_data_size);
 	if (ret != 0) {
 		return ret;
 	}
 
+	prev_desc = base_desc;
+
+	for (uint32_t i = 1; i < config->block_count; i++) {
+		block = block->next_block;
+		if (block == NULL) {
+			LOG_ERR("Block config list shorter than block_count");
+			channel_free_linked_descs(dev_data, channel);
+			return -EINVAL;
+		}
+
+		desc = desc_pool_get(dev_data);
+		if (desc == NULL) {
+			LOG_ERR("No descriptors available in pool");
+			channel_free_linked_descs(dev_data, channel);
+			return -ENOMEM;
+		}
+
+		ret = dmac_desc_block_config(block, desc, config->source_data_size);
+		if (ret != 0) {
+			desc_pool_free(dev_data, desc);
+			channel_free_linked_descs(dev_data, channel);
+			return ret;
+		}
+
+		prev_desc->DMAC_DESCADDR = (uint32_t)(uintptr_t)desc;
+		prev_desc = desc;
+	}
+
+	if (config->cyclic && config->block_count > 0) {
+		prev_desc->DMAC_DESCADDR = (uint32_t)(uintptr_t)base_desc;
+	}
+
 	desc_wb = &dev_data->dmac_desc_data->descriptors_wb[channel];
-	desc_wb->DMAC_SRCADDR = desc->DMAC_SRCADDR;
-	desc_wb->DMAC_DSTADDR = desc->DMAC_DSTADDR;
-	desc_wb->DMAC_BTCNT = desc->DMAC_BTCNT;
+	desc_wb->DMAC_SRCADDR = base_desc->DMAC_SRCADDR;
+	desc_wb->DMAC_DSTADDR = base_desc->DMAC_DSTADDR;
+	desc_wb->DMAC_BTCNT = base_desc->DMAC_BTCNT;
 
 	atomic_set_bit(dev_data->dma_ctx.atomic, channel);
 
@@ -543,9 +642,28 @@ static int dma_mchp_get_attribute(const struct device *dev, uint32_t type, uint3
 	return 0;
 }
 
+static void dma_mchp_chan_release(const struct device *dev, uint32_t channel)
+{
+	struct dma_mchp_dev_data *const dev_data = dev->data;
+	struct dma_mchp_channel_config *channel_config;
+
+	if (channel >= dev_data->dma_ctx.dma_channels) {
+		return;
+	}
+
+	channel_free_linked_descs(dev_data, channel);
+
+	channel_config = &dev_data->dma_channel_config[channel];
+	channel_config->cb = NULL;
+	channel_config->user_data = NULL;
+	channel_config->is_configured = false;
+	channel_config->is_err_cb_dis = false;
+}
+
 static int dma_mchp_init(const struct device *dev)
 {
 	const struct dma_mchp_dev_config *dev_cfg = dev->config;
+	struct dma_mchp_dev_data *dev_data = dev->data;
 	int ret;
 
 	ret = clock_control_on(dev_cfg->clock_dev, dev_cfg->mclk_sys);
@@ -564,6 +682,7 @@ static int dma_mchp_init(const struct device *dev)
 	}
 
 	dmac_desc_init(dev);
+	desc_pool_init(dev_data);
 
 	DMAC_REG->DMAC_PRICTRL0 = DMAC_PRICTRL0_LVLPRI0(0) | DMAC_PRICTRL0_LVLPRI1(1) |
 				  DMAC_PRICTRL0_LVLPRI2(2) | DMAC_PRICTRL0_LVLPRI3(3);
@@ -585,6 +704,7 @@ static DEVICE_API(dma, dma_mchp_api) = {
 	.resume = dma_mchp_resume,
 	.chan_filter = dma_mchp_chan_filter,
 	.get_attribute = dma_mchp_get_attribute,
+	.chan_release = dma_mchp_chan_release,
 };
 
 #define DMA_MCHP_IRQ_HANDLER_DECL(n) static void mchp_dma_irq_connect_##n(void)
