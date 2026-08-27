@@ -11,7 +11,6 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
-#include <zephyr/drivers/mdio.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/net/ethernet.h>
@@ -25,7 +24,13 @@
 #include <ethernet/eth_stats.h>
 #include <zephyr/net/net_stats.h>
 
+#include "eth_dm9000_priv.h"
+
 LOG_MODULE_REGISTER(eth_dm9000, CONFIG_ETHERNET_LOG_LEVEL);
+
+BUILD_ASSERT(!DT_ANY_INST_HAS_PROP_STATUS_OKAY(direct_io) ||
+	     DT_ALL_INST_HAS_PROP_STATUS_OKAY(direct_io),
+	     "davicom,dm9000 'direct-io' must be set on all instances or none");
 
 #define DM9000_CRC_SIZE		4U
 #define DM9000_MIN_FRAME_SIZE	64U
@@ -160,18 +165,6 @@ struct eth_dm9000_data {
 	uint8_t tx_count;
 };
 
-/* The integrated MII PHY is reached through the controller's EPCR/EPAR/EPDR
- * registers rather than a dedicated MDIO pin pair. A child "davicom,dm9000-mdio"
- * node binds this controller as an MDIO bus so the generic phy_mii driver can
- * manage the PHY; that controller forwards every transfer to the parent MAC.
- */
-struct eth_dm9000_mdio_config {
-	const struct device *mac;
-};
-
-#define DEV_CFG(dev)  ((const struct eth_dm9000_config *)(dev)->config)
-#define DEV_DATA(dev) ((struct eth_dm9000_data *)(dev)->data)
-
 static inline volatile uint16_t *dm9000_addr_ptr(const struct device *dev)
 {
 	return (volatile uint16_t *)(DEVICE_MMIO_NAMED_GET(dev, addr));
@@ -189,18 +182,19 @@ static inline volatile uint16_t *dm9000_data_ptr(const struct device *dev)
  * strapping sampled at reset; this driver implements the 16-bit interface
  * only and expects the bus to be wired and configured accordingly.
  *
- * With CONFIG_ETH_DM9000_DIRECT_IO the ports are accessed through a plain
- * volatile dereference, which omits the data memory barrier that
- * sys_read16()/sys_write16() emit on some architectures (for example Arm).
- * Dropping that barrier measurably speeds up the per-frame FIFO copy loops
- * and is safe when the controller sits on a strongly ordered, non-speculative
- * device-memory region (the normal case for an external parallel bus such as
- * the STM32 FMC).  Otherwise the portable sys_read16()/sys_write16() helpers
- * are used so the driver stays decoupled from any particular bus mapping.
+ * When every instance has the "direct-io" property the ports are accessed
+ * through a plain volatile dereference, which omits the data memory barrier
+ * that sys_read16()/sys_write16() emit on some architectures (for example
+ * Arm). Dropping that barrier measurably speeds up the per-frame FIFO copy
+ * loops and is safe when the controller sits on a strongly ordered,
+ * non-speculative device-memory region (the normal case for an external
+ * parallel bus such as the STM32 FMC). Otherwise the portable
+ * sys_read16()/sys_write16() helpers are used so the driver stays decoupled
+ * from any particular bus mapping.
  */
 static inline uint16_t dm9000_io_read16(volatile uint16_t *port)
 {
-#ifdef CONFIG_ETH_DM9000_DIRECT_IO
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(direct_io)
 	return *port;
 #else
 	return sys_read16((mem_addr_t)port);
@@ -209,7 +203,7 @@ static inline uint16_t dm9000_io_read16(volatile uint16_t *port)
 
 static inline void dm9000_io_write16(volatile uint16_t *port, uint16_t val)
 {
-#ifdef CONFIG_ETH_DM9000_DIRECT_IO
+#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(direct_io)
 	*port = val;
 #else
 	sys_write16(val, (mem_addr_t)port);
@@ -398,6 +392,32 @@ static int dm9000_mii_write_locked(const struct device *dev, uint8_t prtad, uint
 	return ret;
 }
 
+int dm9000_mdio_c22_read(const struct device *mac, uint8_t prtad, uint8_t regad,
+			 uint16_t *data)
+{
+	struct eth_dm9000_data *mac_data = mac->data;
+	int ret;
+
+	k_mutex_lock(&mac_data->lock, K_FOREVER);
+	ret = dm9000_mii_read_locked(mac, prtad, regad, data);
+	k_mutex_unlock(&mac_data->lock);
+
+	return ret;
+}
+
+int dm9000_mdio_c22_write(const struct device *mac, uint8_t prtad, uint8_t regad,
+			  uint16_t data)
+{
+	struct eth_dm9000_data *mac_data = mac->data;
+	int ret;
+
+	k_mutex_lock(&mac_data->lock, K_FOREVER);
+	ret = dm9000_mii_write_locked(mac, prtad, regad, data);
+	k_mutex_unlock(&mac_data->lock);
+
+	return ret;
+}
+
 static int dm9000_check_id(const struct device *dev)
 {
 	uint32_t id;
@@ -514,7 +534,6 @@ static int dm9000_hw_stop(const struct device *dev, struct net_if *iface __unuse
 
 	return 0;
 }
-
 
 static struct net_pkt *dm9000_recv_pkt(const struct device *dev)
 {
@@ -950,59 +969,6 @@ static int dm9000_init(const struct device *dev)
 	return 0;
 }
 
-/* MDIO controller wrapping the integrated MII access. The bus serialization
- * reuses the MAC's device lock so PHY register access cannot interleave with a
- * half-finished register access on the data path. The MAC maps the MMIO and
- * powers the PHY in its own init; guard against being called before that.
- */
-static int dm9000_mdio_read(const struct device *mdio_dev, uint8_t prtad, uint8_t regad,
-			    uint16_t *data)
-{
-	const struct eth_dm9000_mdio_config *cfg = mdio_dev->config;
-	const struct device *mac = cfg->mac;
-	struct eth_dm9000_data *mac_data = mac->data;
-	int ret;
-
-	if (!device_is_ready(mac)) {
-		return -EIO;
-	}
-
-	k_mutex_lock(&mac_data->lock, K_FOREVER);
-	ret = dm9000_mii_read_locked(mac, prtad, regad, data);
-	k_mutex_unlock(&mac_data->lock);
-
-	return ret;
-}
-
-static int dm9000_mdio_write(const struct device *mdio_dev, uint8_t prtad, uint8_t regad,
-			     uint16_t data)
-{
-	const struct eth_dm9000_mdio_config *cfg = mdio_dev->config;
-	const struct device *mac = cfg->mac;
-	struct eth_dm9000_data *mac_data = mac->data;
-	int ret;
-
-	if (!device_is_ready(mac)) {
-		return -EIO;
-	}
-
-	k_mutex_lock(&mac_data->lock, K_FOREVER);
-	ret = dm9000_mii_write_locked(mac, prtad, regad, data);
-	k_mutex_unlock(&mac_data->lock);
-
-	return ret;
-}
-
-static int dm9000_mdio_init(const struct device *dev __unused)
-{
-	return 0;
-}
-
-static DEVICE_API(mdio, dm9000_mdio_api) = {
-	.read = dm9000_mdio_read,
-	.write = dm9000_mdio_write,
-};
-
 #define ETH_DM9000_INIT(inst)									\
 	static struct eth_dm9000_data eth_dm9000_data_##inst;					\
 												\
@@ -1018,14 +984,6 @@ static DEVICE_API(mdio, dm9000_mdio_api) = {
 												\
 	ETH_NET_DEVICE_DT_INST_DEFINE(inst, dm9000_init, NULL, &eth_dm9000_data_##inst,	\
 				      &eth_dm9000_config_##inst, CONFIG_ETH_INIT_PRIORITY,	\
-				      &dm9000_api, NET_ETH_MTU);				\
-												\
-	static const struct eth_dm9000_mdio_config eth_dm9000_mdio_config_##inst = {		\
-		.mac = DEVICE_DT_INST_GET(inst),						\
-	};											\
-												\
-	DEVICE_DT_DEFINE(DT_INST_CHILD(inst, mdio), dm9000_mdio_init, NULL, NULL,		\
-			 &eth_dm9000_mdio_config_##inst, POST_KERNEL,				\
-			 CONFIG_MDIO_INIT_PRIORITY, &dm9000_mdio_api);
+				      &dm9000_api, NET_ETH_MTU);
 
 DT_INST_FOREACH_STATUS_OKAY(ETH_DM9000_INIT)

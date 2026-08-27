@@ -69,3 +69,17 @@ properties:
       Frequency in Hz of the host bus clock driving the DM9000's parallel
       interface. The driver uses it to select the controller's bus timing.
       Defaults to 100 MHz.
+
+  direct-io:
+    type: boolean
+    description: |
+      Access the DM9000 index and data ports with plain volatile pointer
+      dereferences instead of sys_read16()/sys_write16(). This omits the
+      data memory barrier those helpers emit on some architectures, which
+      speeds up the per-frame FIFO copy loops.
+
+      Because the accessors are compiled in globally, this property must be
+      present on every davicom,dm9000 instance or on none of them. Enable it
+      only when every instance sits on a strongly ordered, non-speculative
+      device-memory region (the normal case for an external parallel bus
+      such as the STM32 FMC).
