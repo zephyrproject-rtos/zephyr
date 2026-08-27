@@ -20,15 +20,16 @@
 #include <esp_system.h>
 #include <hal/rtc_io_hal.h>
 #include <esp_private/io_mux.h>
+#include <esp_cpu.h>
 
 #include <soc.h>
+#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include <errno.h>
 #include <power.h>
 #include <esp_gpio_port.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/dt-bindings/gpio/espressif-esp32-gpio.h>
-#include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include <zephyr/kernel.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/sys/util.h>
@@ -597,45 +598,28 @@ static int gpio_esp32_sys_init(void)
 	return 0;
 }
 
-static void gpio_esp32_isr(void *param);
+static void gpio_esp32_isr(const void *param);
+
+/*
+ * Both GPIO ports raise the same matrix source and are serviced by one ISR that
+ * fires the callbacks of each port in turn, so the interrupt belongs to the
+ * peripheral and is connected once, not once per port. On ESP32-H2 the source
+ * is shared with the analog comparator and gpio0 is the catch-all input of
+ * its level-3 aggregator.
+ */
+static void gpio_esp32_connect_isr(void)
+{
+	IRQ_CONNECT(DT_IRQN(DT_NODELABEL(gpio0)), IRQ_DEFAULT_PRIORITY, gpio_esp32_isr, NULL,
+		    ESP_INTR_FLAG_IRAM);
+	irq_enable(DT_IRQN(DT_NODELABEL(gpio0)));
+}
 
 static int gpio_esp32_init(const struct device *dev)
 {
 	static bool isr_connected;
 
 	if (!isr_connected) {
-		int ret;
-
-#if defined(CONFIG_SOC_SERIES_ESP32H2) && defined(CONFIG_COMPARATOR_ESP32_ANA_CMPR)
-		/*
-		 * On ESP32-H2, the analog comparator (ana_cmpr) unit shares this
-		 * exact interrupt source (GPIO_INTR_SOURCE) with the GPIO
-		 * peripheral, but uses its own, separate status/enable/clear
-		 * registers (GPIO_EXT.*). Register as a shared interrupt, limited
-		 * to this driver's own status bits, so both drivers can coexist on
-		 * the line independently -- see shared_intr_isr() in intc_esp32.c.
-		 */
-		ret = esp_intr_alloc_intrstatus(
-			DT_IRQ_BY_IDX(DT_NODELABEL(gpio0), 0, irq),
-			ESP_PRIO_TO_FLAGS(DT_IRQ_BY_IDX(DT_NODELABEL(gpio0), 0, priority)) |
-				ESP_INT_FLAGS_CHECK(DT_IRQ_BY_IDX(DT_NODELABEL(gpio0), 0, flags)) |
-				ESP_INTR_FLAG_SHARED | ESP_INTR_FLAG_IRAM,
-			(uint32_t)(uintptr_t)&GPIO.pcpu_int, 0xFFFFFFFF,
-			(intr_handler_t)gpio_esp32_isr, (void *)dev, NULL);
-#else
-		ret = esp_intr_alloc(
-			DT_IRQ_BY_IDX(DT_NODELABEL(gpio0), 0, irq),
-			ESP_PRIO_TO_FLAGS(DT_IRQ_BY_IDX(DT_NODELABEL(gpio0), 0, priority)) |
-				ESP_INT_FLAGS_CHECK(DT_IRQ_BY_IDX(DT_NODELABEL(gpio0), 0, flags)) |
-				ESP_INTR_FLAG_IRAM,
-			(intr_handler_t)gpio_esp32_isr, (void *)dev, NULL);
-#endif
-
-		if (ret != 0) {
-			LOG_ERR("could not allocate interrupt (err %d)", ret);
-			return ret;
-		}
-
+		gpio_esp32_connect_isr();
 		isr_connected = true;
 	}
 
@@ -654,30 +638,38 @@ static DEVICE_API(gpio, gpio_esp32_driver_api) = {
 	.get_pending_int = gpio_esp32_get_pending_int,
 };
 
+/* clang-format off */
 #define ESP_SOC_GPIO_INIT(_id)                                                                     \
 	static struct gpio_esp32_data gpio_data_##_id;                                             \
 	static struct gpio_esp32_config gpio_config_##_id = {                                      \
 		.drv_cfg = GPIO_COMMON_CONFIG_FROM_DT_INST(_id),                                   \
 		.gpio_base = (gpio_dev_t *)DT_REG_ADDR(DT_NODELABEL(gpio0)),                       \
 		.gpio_dev = (gpio_dev_t *)DT_REG_ADDR(DT_NODELABEL(gpio##_id)),                    \
-		.gpio_port = _id};                                                                 \
+		.gpio_port = _id,                                                                  \
+	};                                                                                         \
 	PM_DEVICE_DT_INST_DEFINE(_id, gpio_esp32_pm_action);                                       \
-	DEVICE_DT_INST_DEFINE(_id, &gpio_esp32_init, PM_DEVICE_DT_INST_GET(_id), &gpio_data_##_id, \
-			      &gpio_config_##_id, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY,         \
-			      &gpio_esp32_driver_api);
+	DEVICE_DT_DEFINE(DT_NODELABEL(gpio##_id),                                                  \
+			&gpio_esp32_init,                                                          \
+			PM_DEVICE_DT_INST_GET(_id),                                                \
+			&gpio_data_##_id,                                                          \
+			&gpio_config_##_id,                                                        \
+			PRE_KERNEL_1,                                                              \
+			CONFIG_GPIO_INIT_PRIORITY,                                                 \
+			&gpio_esp32_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ESP_SOC_GPIO_INIT);
+/* clang-format on */
 
-static void IRAM_ATTR gpio_esp32_isr(void *param)
+static void IRAM_ATTR gpio_esp32_isr(const void *param)
 {
 	ARG_UNUSED(param);
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio0))
-	gpio_esp32_fire_callbacks(DEVICE_DT_INST_GET(0));
+	gpio_esp32_fire_callbacks(DEVICE_DT_GET(DT_NODELABEL(gpio0)));
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio1))
-	gpio_esp32_fire_callbacks(DEVICE_DT_INST_GET(1));
+	gpio_esp32_fire_callbacks(DEVICE_DT_GET(DT_NODELABEL(gpio1)));
 #endif
 }
 
