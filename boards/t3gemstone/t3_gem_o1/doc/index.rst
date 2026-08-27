@@ -77,20 +77,33 @@ keep it off.
 
 On-board sensors
 ----------------
-Two of the sensors of the board are described by the board configuration and
+The three sensors of the board are described by the board configuration and
 can be read with the sensor shell or with the generic sensor samples.
 
-+----------+---------------------------+-------------------------+
-| Sensor   | Measures                  | Connection              |
-+==========+===========================+=========================+
-| HDC2010  | Temperature and humidity  | MAIN I2C0, address 0x41 |
-+----------+---------------------------+-------------------------+
-| LPS22DF  | Pressure and temperature  | MCU SPI0, chip select 1 |
-+----------+---------------------------+-------------------------+
++-----------+----------------------------------+-------------------------+
+| Sensor    | Measures                         | Connection              |
++===========+==================================+=========================+
+| HDC2010   | Temperature and humidity         | MAIN I2C0, address 0x41 |
++-----------+----------------------------------+-------------------------+
+| LPS22DF   | Pressure and temperature         | MCU SPI0, chip select 1 |
++-----------+----------------------------------+-------------------------+
+| ICM-20948 | Acceleration, angular rate and   | MCU SPI0, chip select 3 |
+|           | magnetic field                   |                         |
++-----------+----------------------------------+-------------------------+
 
 The LPS22DF is given an output data rate of 10 Hz. The part comes out of
 reset powered down and returns zeroes until an output data rate is set,
 either from the devicetree or at runtime.
+
+The magnetometer of the ICM-20948 sits behind an auxiliary I2C bus of the
+part. It is read through that bus and is enabled by default; disable
+:kconfig:option:`CONFIG_ICM20948_MAGN_EN` to leave it powered down. The SPI
+clock of the part must not exceed 7 MHz.
+
+The SPI lines of the ICM-20948 pass through a level shifter whose output
+enable is driven by ``MCU_GPIO0_12``. Linux holds that pin low for as long
+as it is up, so the part only answers while Linux is running. The board
+configuration does not drive the pin itself.
 
 Running Zephyr
 **************
