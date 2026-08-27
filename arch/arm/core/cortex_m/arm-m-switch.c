@@ -143,6 +143,19 @@ void *arm_m_lto_refs[2];
 /* Bitmask to determine if the XPSR indicates the exception frame was padded */
 #define XPSR_STACK_ALIGN BIT(9)
 
+/* EXC_RETURN value which will return to a Zephyr thread context. */
+#if defined(CONFIG_TRUSTED_EXECUTION_NONSECURE) ||                                                 \
+	(!defined(CONFIG_ARMV8_M_SE) &&                                                            \
+	 (defined(CONFIG_ARMV8_M_MAINLINE) || defined(CONFIG_ARMV8_M_BASELINE)))
+/* Set S = 0 and ES = 0 if Zephyr is running as non-secure or there is
+ * no security extension and we're on v8m.
+ */
+#define ZEPHYR_EXC_RETURN 0xFFFFFFBC
+#else
+/* Set S = 1 and ES = 1 if Zephyr is running as secure, or if on v7m. */
+#define ZEPHYR_EXC_RETURN 0xFFFFFFFD
+#endif
+
 /* Unit test hook, unused in production */
 void *arm_m_last_switch_handle;
 
@@ -202,18 +215,6 @@ uint32_t arm_m_switch_control;
 static bool pc_match(uint32_t pc, void *addr)
 {
 	return ((pc ^ (uint32_t) addr) & ~1) == 0;
-}
-
-/* Reports if the passed return address is a valid EXC_RETURN (high
- * four bits set) that will restore to the PSP running in thread mode
- * (low four bits == 0xd).  That is an interrupted Zephyr thread
- * context.  For everything else, we just return directly via the
- * hardware-pushed stack frame with no special handling. See ARMv7M
- * manual B1.5.8.
- */
-static bool is_thread_return(uint32_t lr)
-{
-	return (lr & 0xf000000f) == 0xf000000d;
 }
 
 /* Returns true if the EXC_RETURN address indicates a FPU subframe was
@@ -617,10 +618,9 @@ void arm_m_legacy_exit(void)
  * We know that r4-r11 of the interrupted thread have been restored
  * (other registers will be forgotten and can be clobbered).  First
  * call arm_m_must_switch() (which handles the other context switch
- * duties), and spill/fill if necessary.  If no context switch is
- * needed, we just return via the original LR.  If we are switching,
- * we synthesize a integer-only EXC_RETURN as FPU state switching was
- * handled in software already.
+ * duties), and spill/fill if necessary. Return via the LR in lr_save.
+ * If arm_m_must_switch does a context switch, this will be written
+ * with the correct LR for returning to the next thread.
  */
 #ifdef CONFIG_MULTITHREADING
 __attribute__((naked)) void arm_m_exc_exit(void)
@@ -630,10 +630,10 @@ __attribute__((naked)) void arm_m_exc_exit(void)
 		"  mov r3, #0;"
 		"  ldr lr, [r2, #8];" /* lr_save */
 		"  cbz r0, 1f;"
-		"  mov lr, #0xfffffffd;" /* integer-only LR */
-		"  ldm r2, {r0, r1};"    /* fields: out, in */
-		"  stm r0, {r4-r11};"    /* out is a switch_frame */
-		"  ldm r1!, {r7-r11};"   /* in is a synth_frame */
+		"  mov lr, %[exc_return];" /* integer-only LR */
+		"  ldm r2, {r0, r1};"      /* fields: out, in */
+		"  stm r0, {r4-r11};"      /* out is a switch_frame */
+		"  ldm r1!, {r7-r11};"     /* in is a synth_frame */
 		"  ldm r1, {r4-r6};"
 		"1:\n"
 		"  msr basepri, r3;" /* release lock taken in must_switch */
