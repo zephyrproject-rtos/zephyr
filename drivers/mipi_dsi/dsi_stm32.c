@@ -402,20 +402,25 @@ static ssize_t mipi_dsi_stm32_transfer(const struct device *dev, uint8_t channel
 	case MIPI_DSI_GENERIC_SHORT_WRITE_0_PARAM:
 	case MIPI_DSI_GENERIC_SHORT_WRITE_1_PARAM:
 	case MIPI_DSI_GENERIC_SHORT_WRITE_2_PARAM:
-		param1 = ((uint8_t *)msg->tx_buf)[0];
-		if (msg->tx_len == 1U) {
-			param2 = ((uint8_t *)msg->tx_buf)[1];
+		if (msg->tx_len >= 1U) {
+			param1 = ((uint8_t *)msg->tx_buf)[0];
 		}
 
 		if (msg->tx_len >= 2U) {
-			param2 = *(uint16_t *)&((uint8_t *)msg->tx_buf)[1];
+			param2 = ((uint8_t *)msg->tx_buf)[1];
 		}
 
 		ret = HAL_DSI_ShortWrite(&data->hdsi, channel, msg->type, param1, param2);
 		len = msg->tx_len;
 		break;
 	case MIPI_DSI_GENERIC_LONG_WRITE:
-		ret = HAL_DSI_LongWrite(&data->hdsi, channel, msg->type, msg->tx_len,
+		if (msg->tx_len == 0U) {
+			LOG_ERR("Generic long write with an empty buffer");
+			return -EINVAL;
+		}
+
+		/* The first payload byte is passed separately from the remaining ones. */
+		ret = HAL_DSI_LongWrite(&data->hdsi, channel, msg->type, msg->tx_len - 1U,
 					((uint8_t *)msg->tx_buf)[0], &((uint8_t *)msg->tx_buf)[1]);
 		len = msg->tx_len;
 		break;
