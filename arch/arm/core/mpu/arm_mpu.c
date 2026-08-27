@@ -168,9 +168,6 @@ static int mpu_configure_regions_from_dt(uint8_t *reg_index)
 			 */
 			continue;
 		}
-#if defined(CONFIG_ARMV7_R)
-		region_conf.size = size_to_mpu_rasr_size(region[idx].dt_size);
-#endif
 
 		if (region_allocate_and_init((*reg_index),
 					     (const struct arm_mpu_region *) &region_conf) < 0) {
