@@ -25,6 +25,20 @@ config UART_STM32
 
 if UART_STM32
 
+# Workaround for not being able to have commas in macro arguments
+DT_ST_SW_RTS_GPIOS := st,sw-rts-gpios
+
+config UART_STM32_ABNORMAL_RTS_ERRATUM_WORKAROUND
+	bool "Workaround for nRTS driven abnormally low after protocol violation"
+	default y if $(dt_compat_any_has_prop,$(DT_COMPAT_ST_STM32_UART),$(DT_ST_SW_RTS_GPIOS))
+	select GPIO
+	help
+	  Enable software RTS flow control via GPIO on STM32 UART
+	  peripherals when hardware flow control (hw-flow-control) is enabled.
+	  This works around the erratum "nRTS driven abnormally low after
+	  protocol violation" on affected STM32 devices by managing RTS
+	  in software while keeping hardware CTS active.
+
 config UART_STM32U5_ERRATA_DMAT_AFFECTED
 	bool
 	default y
