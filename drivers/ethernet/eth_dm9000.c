@@ -165,6 +165,9 @@ struct eth_dm9000_data {
 	uint8_t tx_count;
 };
 
+#define DEV_CFG(_dev)  ((const struct eth_dm9000_config *)(_dev)->config)
+#define DEV_DATA(_dev) ((struct eth_dm9000_data *)(_dev)->data)
+
 static inline volatile uint16_t *dm9000_addr_ptr(const struct device *dev)
 {
 	return (volatile uint16_t *)(DEVICE_MMIO_NAMED_GET(dev, addr));
