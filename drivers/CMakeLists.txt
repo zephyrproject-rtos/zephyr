@@ -10,6 +10,7 @@ add_subdirectory(firmware)
 add_subdirectory(interrupt_controller)
 add_subdirectory(misc)
 add_subdirectory(pcie)
+add_subdirectory(ppc)
 add_subdirectory(usb)
 add_subdirectory(usb_c)
 

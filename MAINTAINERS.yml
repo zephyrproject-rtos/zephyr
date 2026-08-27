@@ -2587,6 +2587,20 @@ Documentation Infrastructure:
   labels:
     - "area: PM CPU ops"
 
+"Drivers: PPC":
+  status: maintained
+  maintainers:
+    - teburd
+  files:
+    - doc/hardware/peripherals/ppc.rst
+    - drivers/ppc/
+    - dts/bindings/arm/arm,sse-200-spctrl.yaml
+    - dts/bindings/ppc/
+    - include/zephyr/drivers/ppc/
+    - include/zephyr/dt-bindings/ppc/
+  labels:
+    - "area: PPC"
+
 "Drivers: PS2":
   status: odd fixes
   files:
