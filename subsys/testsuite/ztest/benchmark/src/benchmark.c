@@ -601,6 +601,8 @@ static void ztest_benchmark_timed_run(struct ztest_benchmark_timed *benchmark)
 		RUN_100(benchmark->run());
 		iterations += 100;
 	}
+	barrier_dsync_fence_full();
+	barrier_isync_fence_full();
 	end = timing_counter_get();
 
 	benchmark->stats.duration_cycles = timing_cycles_get(&start, &end);
