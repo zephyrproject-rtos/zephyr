@@ -504,15 +504,16 @@ Any relocation on this stage may lead to the situation where the entry in the in
 is no longer pointing to the function that was expected.
 It means that this parser, being more compatible, is limiting us from using Link Time Optimization.
 
-The local ISR declaration parser uses different approach to construct
-the same arrays at binary level.
+The local ISR declaration parser uses a different approach to construct
+the same arrays at the binary level.
 All the entries to the arrays are declared and defined locally,
 directly in the file where :c:macro:`IRQ_CONNECT` is used.
-They are placed in a section with the unique, synthesized name.
-The name of the section is then placed in .intList section and it is used to create linker script
-to properly place the created entry in the right place in the memory.
-This parser is now limited to the supported architectures and toolchains but in reward it keeps
-the information about object relations for linker thus allowing the Link Time Optimization.
+They are placed in a section with a unique, synthesized name.
+The name of that section is then placed in the .intList section, which is used to
+generate a linker script fragment placing the entry at the right address.
+This parser is currently limited to the supported architectures and toolchains,
+but in return, it preserves the information about object relations for the linker,
+thus enabling Link Time Optimization.
 
 Implementation using C arrays
 -----------------------------
