@@ -34,4 +34,26 @@
 			drive-strength = <12>;
 		};
 	};
+
+	pinctrl_gpio4: pinctrl_gpio4 {
+		group0 {
+			/* Multicolor LED0: blue on P4_3, green on P4_5, red on P4_7 */
+			pinmux = <PIN_P4_3__GPIO>,
+				 <PIN_P4_5__GPIO>,
+				 <PIN_P4_7__GPIO>;
+		};
+	};
+
+	pinctrl_gpio5: pinctrl_gpio5 {
+		group0 {
+			/* Navigation joystick JOY_SW1 to JOY_SW5 on SW3 */
+			pinmux = <PIN_P5_0__GPIO>,
+				 <PIN_P5_4__GPIO>,
+				 <PIN_P5_5__GPIO>,
+				 <PIN_P5_6__GPIO>,
+				 <PIN_P5_7__GPIO>;
+			input-enable;
+			bias-pull-up;
+		};
+	};
 };
