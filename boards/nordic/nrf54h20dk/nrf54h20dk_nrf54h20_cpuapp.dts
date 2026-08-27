@@ -286,7 +286,8 @@ zephyr_udc0: &usbhs {
 
 &can120 {
 	pinctrl-0 = <&can120_default>;
-	pinctrl-names = "default";
+	pinctrl-1 = <&can120_sleep>;
+	pinctrl-names = "default", "sleep";
 	status = "okay";
 };
 
