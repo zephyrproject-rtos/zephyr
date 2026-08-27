@@ -205,6 +205,17 @@
 				clocks = <&ckm MSPM0_CLOCK_MCLK_DIV_4>;
 				status = "disabled";
 			};
+
+			unicomm1_0_i2c: unicomm1_0_i2c@40523000 {
+				reg = <0x40523000 DT_SIZE_K(8)>, <0x40543000 DT_SIZE_K(8)>;
+				reg-names = "controller", "target";
+				interrupts = <25 0>;
+				compatible = "ti,unicomm-i2c";
+				clocks = <&ckm MSPM0_CLOCK_MCLK_DIV_4>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
 		};
 
 		unicomm1_1: unicomm1_1@40584000 {
@@ -223,6 +234,17 @@
 				compatible = "ti,mspm0-uart";
 				is-unicomm-uart;
 				clocks = <&ckm MSPM0_CLOCK_MCLK_DIV_4>;
+				status = "disabled";
+			};
+
+			unicomm1_1_i2c: unicomm1_1_i2c@40525000 {
+				reg = <0x40525000 DT_SIZE_K(8)>, <0x40545000 DT_SIZE_K(8)>;
+				reg-names = "controller", "target";
+				interrupts = <26 0>;
+				compatible = "ti,unicomm-i2c";
+				clocks = <&ckm MSPM0_CLOCK_MCLK_DIV_4>;
+				#address-cells = <1>;
+				#size-cells = <0>;
 				status = "disabled";
 			};
 		};
@@ -266,6 +288,17 @@
 				clk-div = <1>;
 				status = "disabled";
 			};
+
+			unicomm13_0_i2c: unicomm13_0_i2c@4062b000 {
+				reg = <0x4062b000 DT_SIZE_K(8)>, <0x4064b000 DT_SIZE_K(8)>;
+				reg-names = "controller", "target";
+				interrupts = <31 0>;
+				compatible = "ti,unicomm-i2c";
+				clocks = <&ckm MSPM0_CLOCK_MCLK_DIV_2>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
 		};
 
 		unicomm13_1: unicomm13_1@40780000 {
@@ -287,6 +320,17 @@
 				clk-div = <1>;
 				status = "disabled";
 			};
+
+			unicomm13_1_i2c: unicomm13_1_i2c@40721000 {
+				reg = <0x40721000 DT_SIZE_K(8)>, <0x40741000 DT_SIZE_K(8)>;
+				reg-names = "controller", "target";
+				interrupts = <50 0>;
+				compatible = "ti,unicomm-i2c";
+				clocks = <&ckm MSPM0_CLOCK_MCLK_DIV_2>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
 		};
 
 		unicomm13_2: unicomm13_2@40782000 {
@@ -306,6 +350,17 @@
 				is-unicomm-uart;
 				clocks = <&ckm MSPM0_CLOCK_MCLK_DIV_2>;
 				clk-div = <1>;
+				status = "disabled";
+			};
+
+			unicomm13_2_i2c: unicomm13_2_i2c@40723000 {
+				reg = <0x40723000 DT_SIZE_K(8)>, <0x40743000 DT_SIZE_K(8)>;
+				reg-names = "controller", "target";
+				interrupts = <51 0>;
+				compatible = "ti,unicomm-i2c";
+				clocks = <&ckm MSPM0_CLOCK_MCLK_DIV_2>;
+				#address-cells = <1>;
+				#size-cells = <0>;
 				status = "disabled";
 			};
 		};
@@ -348,6 +403,57 @@
 				is-unicomm-uart;
 				clocks = <&ckm MSPM0_CLOCK_MCLK_DIV_2>;
 				clk-div = <1>;
+				status = "disabled";
+			};
+
+			unicomm13_3_i2c: unicomm13_3_i2c@40725000 {
+				reg = <0x40725000 DT_SIZE_K(8)>, <0x40745000 DT_SIZE_K(8)>;
+				reg-names = "controller", "target";
+				interrupts = <52 0>;
+				compatible = "ti,unicomm-i2c";
+				clocks = <&ckm MSPM0_CLOCK_MCLK_DIV_2>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+		};
+
+		unicomm15_0: unicomm15_0@40684000 {
+			reg = <0x40684000 DT_SIZE_K(8)>;
+			compatible = "ti,unicomm";
+			interrupts = <28 0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "disabled";
+
+			unicomm15_0_i2c: unicomm15_0_i2c@40625000 {
+				reg = <0x40625000 DT_SIZE_K(8)>, <0x40645000 DT_SIZE_K(8)>;
+				reg-names = "controller", "target";
+				interrupts = <28 0>;
+				compatible = "ti,unicomm-i2c";
+				clocks = <&ckm MSPM0_CLOCK_MCLK_DIV_2>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+		};
+
+		unicomm15_1: unicomm15_1@40686000 {
+			reg = <0x40686000 DT_SIZE_K(8)>;
+			compatible = "ti,unicomm";
+			interrupts = <29 0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "disabled";
+
+			unicomm15_1_i2c: unicomm15_1_i2c@40627000 {
+				reg = <0x40627000 DT_SIZE_K(8)>, <0x40647000 DT_SIZE_K(8)>;
+				reg-names = "controller", "target";
+				interrupts = <29 0>;
+				compatible = "ti,unicomm-i2c";
+				clocks = <&ckm MSPM0_CLOCK_MCLK_DIV_2>;
+				#address-cells = <1>;
+				#size-cells = <0>;
 				status = "disabled";
 			};
 		};
