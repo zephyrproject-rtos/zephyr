@@ -113,6 +113,7 @@ static bool test_rx_timestamp_marked = true;
 
 static uint8_t lladdr1[] = { 0x02, 0x01, 0x01, 0x01, 0x01, 0x01 };
 static uint8_t lladdr2[] = { 0x02, 0x02, 0x02, 0x02, 0x02, 0x02 };
+static uint8_t lladdr3[] = { 0x02, 0x03, 0x03, 0x03, 0x03, 0x03 };
 
 struct eth_fake_context {
 	struct net_if *iface;
@@ -126,6 +127,10 @@ static struct eth_fake_context eth_fake_data1 = {
 };
 static struct eth_fake_context eth_fake_data2 = {
 	.mac_address = lladdr2
+};
+/* A device without a receive filter */
+static struct eth_fake_context eth_fake_data3 = {
+	.mac_address = lladdr3
 };
 
 /* Last multicast address the Ethernet L2 programmed to the receive filter
@@ -205,6 +210,15 @@ static enum ethernet_hw_caps eth_fake_get_capabilities(const struct device *dev,
 	return ETHERNET_HW_FILTERING;
 }
 
+static enum ethernet_hw_caps eth_fake_get_no_capabilities(const struct device *dev,
+							  struct net_if *iface)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(iface);
+
+	return 0;
+}
+
 static int eth_fake_set_config(const struct device *dev, struct net_if *iface,
 			       enum ethernet_config_type type,
 			       const struct ethernet_config *config)
@@ -237,6 +251,20 @@ ETH_NET_DEVICE_INIT(eth_fake1, "eth_fake1", NULL, NULL, &eth_fake_data1, NULL,
 
 ETH_NET_DEVICE_INIT(eth_fake2, "eth_fake2", NULL, NULL, &eth_fake_data2, NULL,
 		    CONFIG_ETH_INIT_PRIORITY, &eth_fake_api_funcs,
+		    NET_ETH_MTU);
+
+/* The device still records a receive filter request, so that the tests can
+ * see that it was not asked to filter.
+ */
+static struct ethernet_api eth_fake_no_filter_api_funcs = {
+	.iface_api.init = eth_fake_iface_init,
+	.get_capabilities = eth_fake_get_no_capabilities,
+	.set_config = eth_fake_set_config,
+	.send = eth_fake_send,
+};
+
+ETH_NET_DEVICE_INIT(eth_fake3, "eth_fake3", NULL, NULL, &eth_fake_data3, NULL,
+		    CONFIG_ETH_INIT_PRIORITY, &eth_fake_no_filter_api_funcs,
 		    NET_ETH_MTU);
 
 static void setup_packet_socket(int *sock, int type, int proto)
@@ -278,6 +306,7 @@ static void prepare_packet_socket(int *sock, struct net_if *iface, int type,
 struct user_data {
 	struct net_if *first;
 	struct net_if *second;
+	struct net_if *third;
 } ud;
 
 static void iface_cb(struct net_if *iface, void *user_data)
@@ -290,6 +319,11 @@ static void iface_cb(struct net_if *iface, void *user_data)
 	}
 
 	link_addr = net_if_get_link_addr(iface);
+	if (memcmp(link_addr->addr, lladdr3, sizeof(lladdr3)) == 0) {
+		test_data->third = iface;
+		return;
+	}
+
 	if (memcmp(link_addr->addr, lladdr1, sizeof(lladdr1)) != 0 &&
 	    memcmp(link_addr->addr, lladdr2, sizeof(lladdr2)) != 0) {
 		return;
@@ -1840,6 +1874,27 @@ ZTEST(socket_packet, test_packet_sock_membership_eth_filter_full)
 	}
 }
 
+/* A device with no receive filter passes the group up anyway, so the join
+ * succeeds and the address is tracked for a filter programmed later.
+ */
+ZTEST(socket_packet, test_packet_sock_membership_no_hw_filtering)
+{
+	struct net_eth_addr addr = { { 0x01, 0x00, 0x5e, 0x00, 0x00, 0x01 } };
+	int ret;
+
+	memset(&eth_filter_data, 0, sizeof(eth_filter_data));
+
+	ret = net_eth_mcast_addr_add(ud.third, &addr);
+	zexpect_ok(ret, "Cannot join without HW filtering (%d)", ret);
+	zexpect_equal(mcast_addr_count(ud.third), 1, "Group not tracked");
+	zexpect_equal(eth_filter_data.count, 0, "Device asked to filter");
+
+	ret = net_eth_mcast_addr_rm(ud.third, &addr);
+	zexpect_ok(ret, "Cannot leave without HW filtering (%d)", ret);
+	zexpect_equal(mcast_addr_count(ud.third), 0, "Group still tracked");
+	zexpect_equal(eth_filter_data.count, 0, "Device asked to filter");
+}
+
 /* An interface that cannot track another multicast address must say so to the
  * application instead of letting the join look like it succeeded.
  */
@@ -2241,6 +2296,7 @@ static void *test_setup(void)
 
 	zassert_not_null(ud.first, "1st Ethernet interface not found");
 	zassert_not_null(ud.second, "2nd Ethernet interface not found");
+	zassert_not_null(ud.third, "3rd Ethernet interface not found");
 
 	return NULL;
 }
