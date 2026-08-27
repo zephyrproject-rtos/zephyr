@@ -17,6 +17,7 @@ config PPC
 	  driver.
 
 # zephyr-keep-sorted-start
+source "drivers/ppc/arm_sse200_spctrl/Kconfig"
 # zephyr-keep-sorted-stop
 
 endmenu

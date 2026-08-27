@@ -1572,6 +1572,11 @@ New Drivers
   * :dtcompatible:`zephyr,flow-meter` (:github:`111366`)
   * :dtcompatible:`zephyr,native-linux-temp` (:github:`114563`)
 
+* PPC (Peripheral Protection Controller)
+
+  * Arm SSE-200 Secure Privilege Control block
+    (:dtcompatible:`arm,sse-200-spctrl`).
+
 * Serial controller
 
   * :dtcompatible:`elan,em32-uart` (:github:`103037`)
