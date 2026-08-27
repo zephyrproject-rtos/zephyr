@@ -11,6 +11,10 @@
 #include <zephyr/drivers/counter.h>
 #include <zephyr/sys/printk.h>
 
+#define COUNTER_INST_COUNT DT_NUM_INST_STATUS_OKAY(espressif_esp32_counter)
+
+#if COUNTER_INST_COUNT >= 3
+
 /* Test sets the three timer units, each with different interrupt priority level.
  * Each timer/counter is set to respond to three separate alarms.
  * The alarm times are set so each would trigger one after another separated by
@@ -135,3 +139,5 @@ ZTEST(esp_interrupt, test_nested_isr)
 }
 
 ZTEST_SUITE(esp_interrupt, NULL, esp_interrupt_suite_setup, NULL, NULL, NULL);
+
+#endif /* COUNTER_INST_COUNT >= 3 */
