@@ -416,6 +416,12 @@ New APIs and options
   * :c:macro:`DT_IRQN_BY_NAME`
   * :c:macro:`DT_INST_IRQN_BY_NAME`
 
+* Ethernet
+
+  * :c:func:`net_eth_vlan_mac_filter`
+  * :c:func:`net_eth_vlan_mcast_addr_add`
+  * :c:func:`net_eth_vlan_mcast_addr_rm`
+
 * Haptics
 
   * :c:enumerator:`haptics_monitor`
