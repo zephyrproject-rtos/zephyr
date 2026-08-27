@@ -1,5 +1,7 @@
 /*
  * Copyright (c) 2019 Intel corporation
+ * Copyright (c) 2026 Antmicro
+ * Copyright (c) 2026 Analog Devices
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -19,6 +21,12 @@
 #include <tracing_backend.h>
 #ifdef CONFIG_TRACING_CTF_TIMESTAMP
 #include <zephyr/timing/timing.h>
+#endif
+
+#ifdef CONFIG_INSTRUMENTATION
+#include <zephyr/instrumentation/instrumentation.h>
+
+#define TRACING_CMD_INSTR_PREFIX "instr_"
 #endif
 
 #define TRACING_CMD_ENABLE  "enable"
@@ -48,8 +56,7 @@ static k_tid_t tracing_thread_tid;
 static struct k_thread tracing_thread;
 static struct k_timer tracing_thread_timer;
 static K_SEM_DEFINE(tracing_thread_sem, 0, 1);
-static K_THREAD_STACK_DEFINE(tracing_thread_stack,
-			CONFIG_TRACING_THREAD_STACK_SIZE);
+static K_THREAD_STACK_DEFINE(tracing_thread_stack, CONFIG_TRACING_THREAD_STACK_SIZE);
 
 static void tracing_thread_func(void *dummy1, void *dummy2, void *dummy3)
 {
@@ -64,12 +71,9 @@ static void tracing_thread_func(void *dummy1, void *dummy2, void *dummy3)
 		if (tracing_buffer_is_empty()) {
 			k_sem_take(&tracing_thread_sem, K_FOREVER);
 		} else {
-			transferring_length =
-				tracing_buffer_get_claim(
-						&transferring_buf,
-						tracing_buffer_max_length);
-			tracing_buffer_handle(transferring_buf,
-					      transferring_length);
+			transferring_length = tracing_buffer_get_claim(&transferring_buf,
+								       tracing_buffer_max_length);
+			tracing_buffer_handle(transferring_buf, transferring_length);
 			tracing_buffer_get_finish(transferring_length);
 		}
 	}
@@ -127,13 +131,11 @@ static int tracing_init(void)
 	}
 
 #ifdef CONFIG_TRACING_ASYNC
-	k_timer_init(&tracing_thread_timer,
-		     tracing_thread_timer_expiry_fn, NULL);
+	k_timer_init(&tracing_thread_timer, tracing_thread_timer_expiry_fn, NULL);
 
 	k_thread_create(&tracing_thread, tracing_thread_stack,
-			K_THREAD_STACK_SIZEOF(tracing_thread_stack),
-			tracing_thread_func, NULL, NULL, NULL,
-			K_LOWEST_APPLICATION_THREAD_PRIO, 0, K_NO_WAIT);
+			K_THREAD_STACK_SIZEOF(tracing_thread_stack), tracing_thread_func, NULL,
+			NULL, NULL, K_LOWEST_APPLICATION_THREAD_PRIO, 0, K_NO_WAIT);
 	k_thread_name_set(&tracing_thread, TRACING_THREAD_NAME);
 #endif
 
@@ -166,8 +168,7 @@ BUILD_ASSERT(CONFIG_TRACING_INIT_PRIORITY > CONFIG_SYSTEM_CLOCK_INIT_PRIORITY,
 void tracing_trigger_output(bool before_put_is_empty)
 {
 	if (before_put_is_empty) {
-		k_timer_start(&tracing_thread_timer,
-			      K_MSEC(CONFIG_TRACING_THREAD_WAIT_THRESHOLD),
+		k_timer_start(&tracing_thread_timer, K_MSEC(CONFIG_TRACING_THREAD_WAIT_THRESHOLD),
 			      K_NO_WAIT);
 	}
 }
@@ -185,6 +186,15 @@ bool is_tracing_enabled(void)
 
 void tracing_cmd_handle(uint8_t *buf, uint32_t length)
 {
+#ifdef CONFIG_INSTRUMENTATION
+	const char *instr_prefix = TRACING_CMD_INSTR_PREFIX;
+	const int instr_prefix_len = strlen(instr_prefix);
+
+	if (strncmp(buf, instr_prefix, MIN(length, instr_prefix_len)) == 0) {
+		instr_cmd_handle(buf + instr_prefix_len, length - instr_prefix_len);
+	}
+#endif
+
 	if (strncmp(buf, TRACING_CMD_ENABLE, length) == 0) {
 		tracing_set_state(TRACING_ENABLE);
 	} else if (strncmp(buf, TRACING_CMD_DISABLE, length) == 0) {
@@ -194,17 +204,28 @@ void tracing_cmd_handle(uint8_t *buf, uint32_t length)
 
 void tracing_buffer_handle(uint8_t *data, uint32_t length)
 {
+#ifdef CONFIG_INSTRUMENTATION
+	bool instr_state = instr_enabled();
+
+	instr_disable();
+#endif
+
 	tracing_backend_output(primary_backend, data, length);
 
-	if (!multiple_backends) {
-		return;
-	}
-
-	STRUCT_SECTION_FOREACH(tracing_backend, backend) {
-		if (strcmp(backend->name, CONFIG_TRACING_BACKEND_NAME) != 0) {
-			tracing_backend_output(backend, data, length);
+	if (multiple_backends) {
+		STRUCT_SECTION_FOREACH(tracing_backend, backend) {
+			if (strcmp(backend->name, CONFIG_TRACING_BACKEND_NAME) != 0) {
+				tracing_backend_output(backend, data, length);
+			}
 		}
 	}
+
+
+#ifdef CONFIG_INSTRUMENTATION
+	if (instr_state) {
+		instr_enable();
+	}
+#endif
 }
 
 void tracing_packet_drop_handle(void)

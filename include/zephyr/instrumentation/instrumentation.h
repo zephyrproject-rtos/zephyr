@@ -1,5 +1,7 @@
 /*
  * Copyright 2023 Linaro
+ * Copyright (c) 2026 Antmicro <www.antmicro.com>
+ * Copyright (c) 2026 Analog Devices
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -65,6 +67,13 @@ struct instr_event_context {
 	char thread_name[CONFIG_THREAD_MAX_NAME_LEN];
 #endif
 } __packed;
+
+#if defined(CONFIG_INSTRUMENTATION_BACKEND_TRACING_CORE)
+#if defined(CONFIG_THREAD_MAX_NAME_LEN) &&                                                         \
+	CONFIG_THREAD_MAX_NAME_LEN != CONFIG_INSTRUMENTATION_CTF_THREAD_NAME_LENGTH
+#error THREAD_MAX_NAME_LEN must be set to match the metadata file (subsys/tracing/ctf/tsdl/metadata)
+#endif
+#endif
 
 /**
  * @brief Event records and associated payloads. Payloads are determined based
@@ -186,14 +195,17 @@ bool instr_trace_enabled(void);
 bool instr_profile_enabled(void);
 
 /**
- * @brief Dumps the buffered contents via UART (tracing).
+ * @brief Dumps the delta accumulator array (profiling).
  */
-void instr_dump_buffer_uart(void);
+void instr_dump_deltas(void);
 
 /**
- * @brief Dumps the delta accumulator array via UART (profiling).
+ * @brief Handle instrumentation command.
+ *
+ * @param cmd Instrumentation command buffer address.
+ * @param length Instrumentation command buffer length.
  */
-void instr_dump_deltas_uart(void);
+void instr_cmd_handle(char *cmd, uint32_t length);
 
 /**
  * @brief Shared callback handler to process entry/exit events.

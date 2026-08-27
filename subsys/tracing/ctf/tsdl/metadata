@@ -4128,3 +4128,85 @@ event {
 		uint32_t id;
 	};
 };
+
+typealias integer { size = 5; signed = false; } := uint5_t;
+typealias integer { size = 1; signed = false; } := uint1_t;
+typealias integer { size = 2; signed = false; } := uint2_t;
+typealias integer { size = 3; signed = false; } := uint3_t;
+
+stream {
+	id = 2;
+	event.header := struct event_header;
+	packet.context := struct {
+		uint16_t packet_size;
+	};
+};
+
+event {
+	stream_id = 2;
+	name = func_entry_with_context;
+	id = 0;
+	fields := struct {
+		uint32_t callee;
+		uint32_t caller;
+		uint3_t mode;
+		uint5_t cpu;
+		uint32_t thread_id;
+		ctf_bounded_string_t thread_name[20];
+	};
+};
+
+event {
+	stream_id = 2;
+	name = func_exit_with_context;
+	id = 1;
+	fields := struct {
+		uint32_t callee;
+		uint32_t caller;
+		uint3_t mode;
+		uint5_t cpu;
+		uint32_t thread_id;
+		ctf_bounded_string_t thread_name[20];
+	};
+};
+
+event {
+	stream_id = 2;
+	name = profile;
+	id = 2;
+	fields := struct {
+		uint32_t num_records;
+		struct {
+			uint32_t callee;
+			uint64_t delta_t;
+		} records[num_records];
+	};
+};
+
+event {
+	stream_id = 2;
+	name = sched_switched_in;
+	id = 3;
+	fields := struct {
+		uint32_t callee;
+		uint32_t caller;
+		uint3_t mode;
+		uint5_t cpu;
+		uint32_t thread_id;
+		ctf_bounded_string_t thread_name[20];
+	};
+};
+
+event {
+	stream_id = 2;
+	name = sched_switched_out;
+	id = 4;
+	fields := struct {
+		uint32_t callee;
+		uint32_t caller;
+		uint3_t mode;
+		uint5_t cpu;
+		uint32_t thread_id;
+		ctf_bounded_string_t thread_name[20];
+	};
+};
