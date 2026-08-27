@@ -78,7 +78,6 @@ struct sdmmc_event {
  * Host contexts
  */
 struct host_ctx {
-	intr_handle_t intr_handle;
 	struct k_msgq *event_queue;
 };
 
