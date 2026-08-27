@@ -2821,8 +2821,7 @@ ZTEST(server_function_tests, test_http1_static_fs_compression)
 			continue;
 		}
 		TC_PRINT("Testing %s compression...\n", http_compression_text(i));
-		zassert(i < ARRAY_SIZE(file_ending_map) && &file_ending_map[i] != NULL,
-			"No file ending defined for compression");
+		zassert(i < ARRAY_SIZE(file_ending_map), "No file ending defined for compression");
 
 		sprintf(http1_request, HTTP1_COMPRESSION_REQUEST, http_compression_text(i));
 		expected_response_size = sprintf(expected_response, HTTP1_COMPRESSION_RESPONSE,
