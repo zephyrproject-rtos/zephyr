@@ -4983,18 +4983,6 @@ int bt_disable(void)
 	bt_periodic_sync_disable();
 #endif /* CONFIG_BT_PER_ADV_SYNC */
 
-	if (IS_ENABLED(CONFIG_BT_ISO)) {
-		bt_iso_reset();
-	}
-
-#if defined(CONFIG_BT_CONN)
-	if (IS_ENABLED(CONFIG_BT_SMP)) {
-		bt_pub_key_hci_disrupted();
-	}
-	bt_conn_cleanup_all();
-	disconnected_handles_reset();
-#endif /* CONFIG_BT_CONN */
-
 	/* Stop low-priority RX processing before resetting and closing the
 	 * transport: new packets are no longer queued (see
 	 * rx_teardown_active()), already-queued ones are discarded here, and
@@ -5033,6 +5021,24 @@ int bt_disable(void)
 
 		hci_reset_complete();
 	}
+
+	/* Tear down the connections only after the controller has been reset:
+	 * until then it still owns the packets in flight and reports their
+	 * completion, which must find the TX bookkeeping intact. What is left
+	 * afterwards is completed by the host with an error. Neither the ISO
+	 * nor the connection cleanup sends HCI commands.
+	 */
+	if (IS_ENABLED(CONFIG_BT_ISO)) {
+		bt_iso_reset();
+	}
+
+#if defined(CONFIG_BT_CONN)
+	if (IS_ENABLED(CONFIG_BT_SMP)) {
+		bt_pub_key_hci_disrupted();
+	}
+	bt_conn_cleanup_all();
+	disconnected_handles_reset();
+#endif /* CONFIG_BT_CONN */
 
 	/* Mark the transport closed before purging the command queue: a
 	 * command queued after this point is taken back by its sender (see
