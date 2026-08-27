@@ -735,7 +735,7 @@ static void dm9000_iface_init(struct net_if *iface)
 	if (device_is_ready(config->phy_dev)) {
 		phy_link_callback_set(config->phy_dev, dm9000_phy_link_cb, (void *)dev);
 	} else {
-		LOG_ERR("%s: PHY device not ready", dev->name);
+		LOG_ERR_DEVICE_NOT_READY(config->phy_dev);
 	}
 
 	k_thread_create(&data->rx_thread, data->rx_thread_stack,

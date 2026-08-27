@@ -38,7 +38,7 @@ static int mdio_dm9000_init(const struct device *dev)
 	const struct device *mac = dev->config;
 
 	if (!device_is_ready(mac)) {
-		LOG_ERR("%s: parent MAC %s is not ready", dev->name, mac->name);
+		LOG_ERR_DEVICE_NOT_READY(mac);
 		return -ENODEV;
 	}
 
