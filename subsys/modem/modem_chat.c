@@ -113,6 +113,8 @@ static void modem_chat_log_received_command(struct modem_chat *chat)
 
 static void modem_chat_script_stop(struct modem_chat *chat, enum modem_chat_script_result result)
 {
+	uint16_t script_chat_it;
+
 	if ((chat == NULL) || (chat->script == NULL)) {
 		return;
 	}
@@ -126,9 +128,24 @@ static void modem_chat_script_stop(struct modem_chat *chat, enum modem_chat_scri
 		LOG_WRN("%s: timed out", chat->script->name);
 	}
 
+	/* modem_chat_script_next advances the iterator past the end of the array */
+	script_chat_it = chat->script_chat_it;
+	if ((result == MODEM_CHAT_SCRIPT_RESULT_SUCCESS) &&
+	    (chat->script->script_chats_size > 0) &&
+	    (script_chat_it == chat->script->script_chats_size)) {
+		script_chat_it--;
+	}
+
+	struct modem_chat_script_callback_ctx ctx = {
+		.chat  = chat,
+		.script = chat->script,
+		.script_chat = (chat->script->script_chats_size > 0) ?
+			       &chat->script->script_chats[script_chat_it] : NULL,
+	};
+
 	/* Call back with result */
 	if (chat->script->callback != NULL) {
-		chat->script->callback(chat, result, chat->user_data);
+		chat->script->callback(&ctx, result, chat->user_data);
 	}
 
 	/* Clear parse_match in case it is stored in the script being stopped */

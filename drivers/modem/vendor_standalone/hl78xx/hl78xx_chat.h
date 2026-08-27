@@ -136,6 +136,11 @@ struct hl78xx_data;
 void hl78xx_chat_callback_handler(struct modem_chat *chat, enum modem_chat_script_result result,
 				  void *user_data);
 
+/* Chat callback bridge for modem_chat callbacks */
+void hl78xx_chat_callback_handler_ctx(const struct modem_chat_script_callback_ctx *ctx,
+				      enum modem_chat_script_result result,
+				      void *user_data);
+
 /* Wrapper helpers so other translation units don't need compile-time
  * visibility of the MODEM_CHAT_* macro-generated symbols.
  */

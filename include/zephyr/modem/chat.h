@@ -29,6 +29,7 @@ extern "C" {
  */
 
 struct modem_chat;
+struct modem_chat_script;
 
 /**
  * @brief Callback called to determine if a chat command should be run
@@ -253,13 +254,25 @@ enum modem_chat_script_result {
 };
 
 /**
+ * @brief Context about the state of the chat script upon completion
+ */
+struct modem_chat_script_callback_ctx {
+	/** Chat instance */
+	struct modem_chat *chat;
+	/** Script that was executing */
+	const struct modem_chat_script *script;
+	/** Script chat that last ran or skipped (Can be NULL for empty scripts) */
+	const struct modem_chat_script_chat *script_chat;
+};
+
+/**
  * @brief Callback called when script chat is received
  *
- * @param chat Pointer to chat instance instance
+ * @param ctx Extra context about the script that was running
  * @param result Result of script execution
  * @param user_data Free to use user data set during modem_chat_init()
  */
-typedef void (*modem_chat_script_callback)(struct modem_chat *chat,
+typedef void (*modem_chat_script_callback)(const struct modem_chat_script_callback_ctx *ctx,
 					   enum modem_chat_script_result result, void *user_data);
 
 /**

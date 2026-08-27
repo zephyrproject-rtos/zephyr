@@ -182,8 +182,8 @@ static void on_rx(struct modem_chat *chat, char **argv, uint16_t argc, void *use
 	}
 }
 
-static void on_script_finished(struct modem_chat *chat, enum modem_chat_script_result result,
-			       void *user_data)
+static void on_script_finished(const struct modem_chat_script_callback_ctx *ctx,
+			       enum modem_chat_script_result result, void *user_data)
 {
 	struct rylr_data *driver_data = user_data;
 
