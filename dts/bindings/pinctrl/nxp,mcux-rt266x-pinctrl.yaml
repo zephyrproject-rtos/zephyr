@@ -1,0 +1,108 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  The node has the 'pinctrl' node label set in an MCUX RT266x SoC's devicetree.
+
+  Unlike the RT10xx/RT11xx/RT118x parts (which expose separate SW_MUX_CTL and
+  SW_PAD_CTL registers), every RT266x pad is controlled by a single combined
+  IOMUXC PIO register. This binding therefore describes the RT266x PIO pad
+  fields directly, and is shared by every part in the RT266x series (RT2661/
+  RT2662/RT2663 and future dies built on the same IOMUXC).
+
+  The mux, mode, input, daisy, and cfg fields in a group select the pins to be
+  configured, and the remaining devicetree properties set configuration values
+  for those pins. For example, here is a group configuring LPUART0 pins:
+
+  group0 {
+      pinmux = <&main__iomuxc_pio3_30_hsp_lpuart0_txd>,
+          <&main__iomuxc_pio3_31_hsp_lpuart0_rxd>;
+      drive-strength = "50-ohm";
+      slew-rate = "fast";
+  };
+
+  These are the effects of each property on the IOMUXC PIO register:
+  drive-open-drain: ODENA=1 (PIO0..PIO4 only; PIO5/6/7 have no ODENA)
+  input-enable:     IBENA=1 (input buffer / receiver enable)
+  bias-pull-down:   PULLENA=0b01
+  bias-pull-up:     PULLENA=0b10
+  bias-disable:     PULLENA=0b00
+  slew-rate:        SLEWRATE=<enum index>
+  drive-strength:   DRIVE=<enum index>
+
+  If only the required properties are supplied, the pad will have PULLENA=0b00
+  (pull disabled), IBENA=0, ODENA=0, SLEWRATE=0b00 (low) and DRIVE=0b00
+  (100 ohm).
+
+compatible: "nxp,mcux-rt266x-pinctrl"
+
+include: base.yaml
+
+child-binding:
+  description: MCUX RT266x pin controller pin group
+  child-binding:
+    description: |
+      MCUX RT266x pin controller pin configuration node.
+
+    include:
+      - name: pincfg-node.yaml
+        property-allowlist:
+          - drive-open-drain
+          - input-enable
+          - bias-disable
+          - bias-pull-down
+          - bias-pull-up
+
+    properties:
+      pinmux:
+        required: true
+        type: phandles
+        description: |
+          Pin mux selections for this group. See the soc level iomuxc DTSI file
+          for a defined list of these options.
+      drive-strength:
+        type: string
+        enum:
+          - "100-ohm"
+          - "66-ohm"
+          - "50-ohm"
+          - "33-ohm"
+        description: |
+          Output driver impedance. Sets the DRIVE field in the IOMUXC PIO
+          register. The listed values map to the register encoding in order:
+          100 ohm (0b00, default), 66 ohm (0b01), 50 ohm (0b10), 33 ohm (0b11) --
+          the encoding the SDK header documents for IOMUXC_PIO_DRIVE. Lower
+          impedance yields a stronger drive.
+
+          A string enum rather than an integer, matching slew-rate here and every
+          other NXP pinctrl binding: the value is consumed by DT_ENUM_IDX, which
+          reads its position in this list and never the number itself, so an
+          integer would advertise arithmetic that does not happen.
+
+          Deliberately no default. Omitting the property leaves DRIVE at its reset
+          value, which is 100 ohm, so a default would only be redundant -- and it
+          would defeat the build-time check that rejects this property on the
+          PIO0..PIO4 pads, which have no DRIVE field: a binding default is
+          materialized for every group, making "the user asked for this"
+          indistinguishable from "the binding filled it in".
+
+          Only the PIO5, PIO6 and PIO7 pads have a DRIVE field. On the PIO0
+          (VBAT), PIO1 (WAKE) and PIO2/PIO3/PIO4 (MAIN) pads this property
+          has no effect and is not written.
+      slew-rate:
+        type: string
+        default: "low"
+        enum:
+          - "low"
+          - "medium"
+          - "fast"
+          - "high"
+        description: |
+          Pad slew rate. Sets the SLEWRATE field in the IOMUXC PIO register.
+          The listed values map to the register encoding in order:
+          low (0b00, default), medium (0b01), fast (0b10), high (0b11).
+
+          SLEWRATE is 2 bits wide only on the PIO5, PIO6 and PIO7 pads. On
+          the PIO0, PIO1 and PIO2/PIO3/PIO4 pads it is a single bit, so any
+          value above "low" selects that pad's one fast setting.
