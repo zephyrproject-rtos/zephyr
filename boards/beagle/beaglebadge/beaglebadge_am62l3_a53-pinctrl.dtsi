@@ -1,0 +1,84 @@
+/*
+ * Copyright (C) 2025 Texas Instruments Incorporated - https://www.ti.com/
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&wkup_pinctrl {
+	status = "okay";
+
+	uart0_rx_default: uart0_rx_default {
+		/* (D13) UART0_RXD */
+		pinmux = <K3_PINMUX(0x1b4, PIN_INPUT, MUX_MODE_0)>;
+	};
+
+	uart0_tx_default: uart0_tx_default {
+		/* (C13) UART0_TXD */
+		pinmux = <K3_PINMUX(0x1b8, PIN_OUTPUT, MUX_MODE_0)>;
+	};
+
+	dc_pins_default: dc-default-pins {
+		/* (E12) SPI0_D0.GPIO0_90 */
+		pinmux = <K3_PINMUX(0x1ac, PIN_OUTPUT, MUX_MODE_7)>;
+	};
+
+	res_pins_default: res-default-pins {
+		/* (H20) GPMC0_AD9.GPIO0_24 */
+		pinmux = <K3_PINMUX(0x09c, PIN_OUTPUT, MUX_MODE_7)>;
+	};
+
+	busy_pins_default: busy-default-pins {
+		/* (N21) GPMC0_WPn.GPIO0_39 */
+		pinmux = <K3_PINMUX(0x0dc, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	clk_pins_default: clk-default-pins {
+		/* (E13) SPI0_CLK.GPIO0_89 */
+		pinmux = <K3_PINMUX(0x1a8, PIN_OUTPUT, MUX_MODE_7)>;
+	};
+
+	cs0_pins_default: cs0-default-pins {
+		/* (E11) SPI0_CS0.GPIO0_87 */
+		pinmux = <K3_PINMUX(0x1a0, PIN_OUTPUT, MUX_MODE_7)>;
+	};
+
+	mosi_pins_default: mosi-default-pins {
+		/* (B12) SPI0_D1.GPIO0_91 */
+		pinmux = <K3_PINMUX(0x1b0, PIN_OUTPUT, MUX_MODE_7)>;
+	};
+
+	btn_down_pins_default: btn-down-default-pins {
+		/* (L19) GPMC0_AD19.GPIO0_42 */
+		pinmux = <K3_PINMUX(0x0e8, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	btn_select_pins_default: btn-select-default-pins {
+		/* (H18) GPMC0_AD11.GPIO0_26 */
+		pinmux = <K3_PINMUX(0x0a4, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	btn_up_pins_default: btn-up-default-pins {
+		/* (N19) GPMC0_ADVn_ALE.GPIO0_32 */
+		pinmux = <K3_PINMUX(0x0c0, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	btn_left_pins_default: btn-left-default-pins {
+		/* (L21) GPMC0_CLK.GPIO0_31 */
+		pinmux = <K3_PINMUX(0x0b8, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	btn_right_pins_default: btn-right-default-pins {
+		/* (B13) UART0_RTSn.GPIO0_95 */
+		pinmux = <K3_PINMUX(0x1c0, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	btn_back_pins_default: btn-back-default-pins {
+		/* (D16) EXT_REFCLK1.GPIO0_104 */
+		pinmux = <K3_PINMUX(0x1e4, PIN_INPUT, MUX_MODE_7)>;
+	};
+
+	buzzer_pins_default: buzzer-default-pins {
+		/* (F22) GPMC0_AD14.GPIO0_29 */
+		pinmux = <K3_PINMUX(0x0b0, PIN_OUTPUT, MUX_MODE_7)>;
+	};
+};

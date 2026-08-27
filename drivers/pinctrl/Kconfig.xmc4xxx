@@ -1,0 +1,9 @@
+# Copyright (c) 2022 Schlumberger
+# SPDX-License-Identifier: Apache-2.0
+
+config PINCTRL_XMC4XXX
+	bool "XMC4XXX pin controller driver"
+	default y
+	depends on DT_HAS_INFINEON_XMC4XXX_PINCTRL_ENABLED
+	help
+	  Enables XMC4XXX pin controller driver.

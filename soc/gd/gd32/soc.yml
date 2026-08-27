@@ -1,0 +1,30 @@
+family:
+- name: gd_gd32
+  series:
+  - name: gd32a50x
+    socs:
+    - name: gd32a503
+  - name: gd32e10x
+    socs:
+    - name: gd32e103
+  - name: gd32e50x
+    socs:
+    - name: gd32e507
+  - name: gd32f3x0
+    socs:
+    - name: gd32f350
+  - name: gd32f4xx
+    socs:
+    - name: gd32f405
+    - name: gd32f407
+    - name: gd32f450
+    - name: gd32f470
+  - name: gd32f403
+    socs:
+    - name: gd32f403
+  - name: gd32l23x
+    socs:
+    - name: gd32l233
+  - name: gd32vf103
+    socs:
+    - name: gd32vf103

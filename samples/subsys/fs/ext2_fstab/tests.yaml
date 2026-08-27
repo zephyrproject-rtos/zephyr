@@ -1,0 +1,14 @@
+sample:
+  name: EXT2 fstab sample
+tests:
+  sample.filesystem.ext2.fstab:
+    platform_allow:
+      - native_sim
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="ext2_fstab.overlay"
+    tags: filesystem
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "I: Filesystem access successful"

@@ -1,0 +1,322 @@
+/*
+ * Copyright (c) 2026 Andrei-Edward Popa
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv8-r.dtsi>
+#include <dt-bindings/interrupt-controller/arm-gic.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+
+#include <common/freq.h>
+
+/ {
+	model = "Arm MPS3 Cortex-R52x2 AN536";
+	compatible = "arm,mps3-an536";
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-r52";
+			reg = <0>;
+		};
+
+		cpu1: cpu@1 {
+			device_type = "cpu";
+			compatible = "arm,cortex-r52";
+			reg = <1>;
+		};
+	};
+
+	atcm0: memory@ee000000 {
+		compatible = "mmio-sram";
+		reg = <0xee000000 0x8000>;
+		status = "disabled";
+	};
+
+	btcm0: memory@ee100000 {
+		compatible = "mmio-sram";
+		reg = <0xee100000 0x8000>;
+		status = "disabled";
+	};
+
+	ctcm0: memory@ee200000 {
+		compatible = "mmio-sram";
+		reg = <0xee200000 0x8000>;
+		status = "disabled";
+	};
+
+	atcm1: memory@ee400000 {
+		compatible = "mmio-sram";
+		reg = <0xee400000 0x8000>;
+		status = "disabled";
+	};
+
+	btcm1: memory@ee500000 {
+		compatible = "mmio-sram";
+		reg = <0xee500000 0x8000>;
+		status = "disabled";
+	};
+
+	ctcm1: memory@ee600000 {
+		compatible = "mmio-sram";
+		reg = <0xee600000 0x8000>;
+		status = "disabled";
+	};
+
+	arch_timer: timer {
+		compatible = "arm,armv8-timer";
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 14 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 11 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+			     <GIC_PPI 10 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		/*
+		 * QEMU uses 62.5 MHz as the Arm generic timer back-compat
+		 * frequency. See GTIMER_BACKCOMPAT_HZ in QEMU's
+		 * target/arm/internals.h.
+		 */
+		clock-frequency = <62500000>;
+		status = "okay";
+	};
+
+	sram0: memory@10000000 {
+		compatible = "mmio-sram";
+		reg = <0x10000000 0x00080000>;
+	};
+
+	ddr0: memory@20000000 {
+		compatible = "mmio-sram";
+		reg = <0x20000000 0xc0000000>;
+		status = "disabled";
+	};
+
+	sysclk: system-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <DT_FREQ_M(50)>;
+		#clock-cells = <0>;
+	};
+
+	pinctrl: pinctrl {
+		compatible = "arm,mps3-pinctrl";
+		status = "okay";
+	};
+
+	soc: soc {
+		compatible = "simple-bus";
+		interrupt-parent = <&gic>;
+
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		gic: interrupt-controller@f0000000 {
+			compatible = "arm,gic-v3", "arm,gic";
+			reg = <0xf0000000 0x10000>,
+			      <0xf0100000 0xa0000>;
+			interrupt-controller;
+			#interrupt-cells = <4>;
+			status = "okay";
+		};
+
+		peripherals: bus@e0000000 {
+			compatible = "simple-bus";
+			reg = <0xe0000000 0x08000000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0xe0000000 0x8000000>;
+
+			gpio0: gpio@0 {
+				compatible = "arm,cmsdk-gpio";
+				reg = <0x00000000 0x1000>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 26 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				status = "disabled";
+			};
+
+			gpio1: gpio@1000 {
+				compatible = "arm,cmsdk-gpio";
+				reg = <0x00001000 0x1000>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 27 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				status = "disabled";
+			};
+
+			gpio2: gpio@2000 {
+				compatible = "arm,cmsdk-gpio";
+				reg = <0x00002000 0x1000>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 28 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				status = "disabled";
+			};
+
+			gpio3: gpio@3000 {
+				compatible = "arm,cmsdk-gpio";
+				reg = <0x00003000 0x1000>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 29 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				status = "disabled";
+			};
+
+			wdog0: watchdog@100000 {
+				compatible = "arm,cmsdk-watchdog";
+				reg = <0x00100000 0x1000>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 0 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+
+			dual_timer0: timer@101000 {
+				compatible = "arm,cmsdk-dualtimer";
+				reg = <0x00101000 0x1000>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 3 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				clocks = <&sysclk>;
+				status = "disabled";
+			};
+
+			i2c_touch: i2c@102000 {
+				compatible = "arm,versatile-i2c";
+				reg = <0x00102000 0x1000>;
+				clock-frequency = <I2C_BITRATE_STANDARD>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+
+			i2c_audio_conf: i2c@103000 {
+				compatible = "arm,versatile-i2c";
+				reg = <0x00103000 0x1000>;
+				clock-frequency = <I2C_BITRATE_STANDARD>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+
+			spi_adc: spi@104000 {
+				compatible = "arm,pl022";
+				reg = <0x00104000 0x1000>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 22 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				clocks = <&sysclk>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+
+			spi_shield0: spi@105000 {
+				compatible = "arm,pl022";
+				reg = <0x00105000 0x1000>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 23 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				clocks = <&sysclk>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				pinctrl-0 = <&spi_shield0_default>;
+				pinctrl-names = "default";
+				status = "disabled";
+			};
+
+			spi_shield1: spi@106000 {
+				compatible = "arm,pl022";
+				reg = <0x00106000 0x1000>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 24 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				clocks = <&sysclk>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				pinctrl-0 = <&spi_shield1_default>;
+				pinctrl-names = "default";
+				status = "disabled";
+			};
+
+			i2c_shield0: i2c@107000 {
+				compatible = "arm,versatile-i2c";
+				reg = <0x00107000 0x1000>;
+				clock-frequency = <I2C_BITRATE_STANDARD>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				pinctrl-0 = <&i2c_shield0_default>;
+				pinctrl-names = "default";
+				status = "disabled";
+			};
+
+			i2c_shield1: i2c@108000 {
+				compatible = "arm,versatile-i2c";
+				reg = <0x00108000 0x1000>;
+				clock-frequency = <I2C_BITRATE_STANDARD>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				pinctrl-0 = <&i2c_shield1_default>;
+				pinctrl-names = "default";
+				status = "disabled";
+			};
+
+			i2c_ddr4_eeprom: i2c@109000 {
+				compatible = "arm,versatile-i2c";
+				reg = <0x00109000 0x1000>;
+				clock-frequency = <I2C_BITRATE_STANDARD>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+
+			uart2: uart@205000 {
+				compatible = "arm,cmsdk-uart";
+				reg = <0x00205000 0x1000>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 13 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				current-speed = <115200>;
+				clocks = <&sysclk>;
+				status = "disabled";
+			};
+
+			uart3: uart@206000 {
+				compatible = "arm,cmsdk-uart";
+				reg = <0x00206000 0x1000>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 14 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				current-speed = <115200>;
+				clocks = <&sysclk>;
+				status = "disabled";
+			};
+
+			uart4: uart@207000 {
+				compatible = "arm,cmsdk-uart";
+				reg = <0x00207000 0x1000>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 15 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				clocks = <&sysclk>;
+				current-speed = <115200>;
+				pinctrl-0 = <&uart_shield0_default>;
+				pinctrl-names = "default";
+				status = "disabled";
+			};
+
+			uart5: uart@208000 {
+				compatible = "arm,cmsdk-uart";
+				reg = <0x00208000 0x1000>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 16 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				clocks = <&sysclk>;
+				current-speed = <115200>;
+				pinctrl-0 = <&uart_shield1_default>;
+				pinctrl-names = "default";
+				status = "disabled";
+			};
+		};
+	};
+};
+
+#include "mps3_an536-pinctrl.dtsi"

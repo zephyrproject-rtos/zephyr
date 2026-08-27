@@ -1,0 +1,36 @@
+/*
+ * Copyright (c) 2025 Jilay Sandeep Pandya
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	gpio1: gpio1 {
+		compatible = "zephyr,gpio-emul";
+		#gpio-cells = <0x2>;
+		status = "okay";
+		gpio-controller;
+	};
+
+	gpio2: gpio2 {
+		compatible = "zephyr,gpio-emul";
+		#gpio-cells = <0x2>;
+		status = "okay";
+		gpio-controller;
+	};
+
+	gpio3: gpio3 {
+		compatible = "zephyr,gpio-emul";
+		#gpio-cells = <0x2>;
+		status = "okay";
+		gpio-controller;
+	};
+
+	gpio4: gpio4 {
+		compatible = "zephyr,gpio-emul";
+		#gpio-cells = <0x2>;
+		status = "okay";
+		gpio-controller;
+	};
+};

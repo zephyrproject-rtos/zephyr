@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 AMD
+# SPDX-License-Identifier: Apache-2.0
+
+description: AMD ACP Unified TDM DAI (HS/SP/BT)
+
+compatible: "amd,tdm-dai"
+
+include: [base.yaml]
+
+properties:
+  dai-index:
+    type: int
+    description: |
+      TDM instance index: 0=HS, 1=SP, 2=BT.
+      Used by SOF to fetch the device for a given DAI index.

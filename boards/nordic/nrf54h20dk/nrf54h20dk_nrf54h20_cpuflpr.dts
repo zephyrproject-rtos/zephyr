@@ -1,0 +1,51 @@
+/*
+ * Copyright (c) 2024 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nordic/nrf54h20_cpuflpr.dtsi>
+#include "nrf54h20dk_nrf54h20-common.dtsi"
+
+/delete-node/ &cpuapp_cpurad_ipc;
+/delete-node/ &cpuapp_cpusys_ipc;
+/delete-node/ &cpuapp_cpuppr_ipc;
+/delete-node/ &cpurad_cpusys_ipc;
+/delete-node/ &cpusec_cpuapp_ipc;
+/delete-node/ &cpusec_cpurad_ipc;
+
+/ {
+	compatible = "nordic,nrf54h20dk_nrf54h20-cpuflpr";
+	model = "Nordic nRF54H20 DK nRF54H20 Fast Lightweight Processor MCU";
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	chosen {
+		zephyr,console = &uart120;
+		zephyr,code-partition = &cpuflpr_code_partition;
+		zephyr,flash = &mram1x;
+		zephyr,sram = &cpuflpr_code_data;
+		zephyr,shell-uart = &uart120;
+	};
+};
+
+&cpuapp_cpuflpr_ipc {
+	mbox-names = "tx", "rx";
+	tx-region = <&cpuflpr_cpuapp_ipc_shm>;
+	rx-region = <&cpuapp_cpuflpr_ipc_shm>;
+};
+
+&grtc {
+	status = "okay";
+	owned-channels = <6>;
+};
+
+&uart120 {
+	status = "okay";
+	current-speed = <115200>;
+	pinctrl-0 = <&uart120_default>;
+	pinctrl-1 = <&uart120_sleep>;
+	pinctrl-names = "default", "sleep";
+};

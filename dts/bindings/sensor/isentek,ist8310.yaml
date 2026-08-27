@@ -1,0 +1,10 @@
+# Copyright (c) 2019, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    iSentek ist8310 Geomagnetic sensor.  See more info at:
+    https://isentek.com/products_view.php?PID=10&sn=13
+
+compatible: "isentek,ist8310"
+
+include: ["i2c-device.yaml", "sensor-device.yaml"]

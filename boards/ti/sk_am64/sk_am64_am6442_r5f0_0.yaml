@@ -1,0 +1,8 @@
+identifier: sk_am64/am6442/r5f0_0
+name: TI AM64X Starter Kit (SK) R5FSS0 Core 0
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+ram: 32
+vendor: ti

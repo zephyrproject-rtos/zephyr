@@ -1,0 +1,17 @@
+description: |
+  SY24561 is a simple gas gauge IC for single cell lithium-ion (Li+) batteries in handheld
+  and portable equipment.
+
+  SY24561 senses battery terminal voltage and use the proprietary algorithm to calculate the
+  corresponding State of Charge (SOC). Comparing with conventional voltage-based gauge which
+  translates terminal voltage directly to SOC, the advanced algorithm in SY24561 shows great
+  advantage in SOC accuracy. SY24561 can be classified as advanced voltage-based gauge without
+  current sensor and the SOC accuracy will not degrade with time. Temperature of the battery
+  pack is measured by the host microcontroller and feed to SY24561 through the I2C interface.
+  SY24561 can automatically compensate temperature, load variation and battery age.
+
+  https://www.silergy.com/productsview/SY24561DFC
+
+compatible: "silergy,sy24561"
+
+include: [i2c-device.yaml, fuel-gauge.yaml]

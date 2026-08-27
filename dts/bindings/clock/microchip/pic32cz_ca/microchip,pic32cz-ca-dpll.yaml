@@ -1,0 +1,153 @@
+# Copyright (c) 2025-2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: PIC32CZ_CA DPLL clock
+
+description: |
+  Digital Phase Locked Loop (DPLL), 12.7 MHz to 300 MHz output frequency or up to 1.6 GHz for
+  fractional divider module use, from a 4 MHz to 48 MHz Reference Input Clock.
+
+include: [base.yaml]
+
+compatible: "microchip,pic32cz-ca-dpll"
+
+child-binding:
+  properties:
+    subsystem:
+      type: int
+      required: true
+      description: Clock subsystem
+
+    dpll-bandwidth-sel:
+      type: string
+      enum:
+        - "4mhz-10mhz"
+        - "10mhz-20mhz"
+        - "20mhz-30mhz"
+        - "30mhz-60mhz"
+      default: "4mhz-10mhz"
+      description: |
+        Select the PLL closed loop filter bandwidth.
+
+        Depending on the frequency after the reference divider FPFD. Selecting the correct filter
+        bandwidth is important to operate the PLL'VCO in its best range.
+
+    dpll-src:
+      type: string
+      enum:
+        - "gclk0"
+        - "gclk1"
+        - "gclk2"
+        - "gclk3"
+        - "gclk4"
+        - "gclk5"
+        - "gclk6"
+        - "gclk7"
+        - "gclk8"
+        - "gclk9"
+        - "gclk10"
+        - "gclk11"
+        - "gclk12"
+        - "gclk13"
+        - "gclk14"
+        - "gclk15"
+        - "xosc"
+        - "dfll48m"
+      default: "xosc"
+      description: |
+        Reference source clock selection
+
+    dpll-on-demand-en:
+      type: int
+      enum:
+        - 0
+        - 1
+      default: 0
+      description: |
+        0: The oscillator is always on
+        1: The oscillator is running when a peripheral is requesting the oscillator to be used as a
+        clock source. The oscillator is not running if no peripheral is requesting the clock source.
+        Important: Initializing it with 1, along with clock enabled, can lead to indefinite wait
+        for the clock to be on, if there is no peripheral request for the clock in the sequence of
+        clock Initialization. If required, better to turn on the clock using API, instead of
+        enabling both during startup.
+
+    dpll-en:
+      type: int
+      enum:
+        - 0
+        - 1
+      default: 0
+      description: |
+        Oscillator Enable
+        0: to disable, 1: to enable
+
+    dpll-feedback-divider-factor:
+      type: int
+      default: 0
+      description: |
+        This field determines the ratio of the PLL's VCO output frequency to the PLL Reference
+        input frequency.
+
+        Writing to the FBDIV(feedback-divider-factor) bits will cause lock to be lost.
+        The value of FBDIV, (i.e. PLLFBDIV) must be within the range 21 ≤ FBDIV ≤ 1023.
+        The frequency of the Voltage Controlled Oscillator (VCO) giving the PLL oscillation is
+        given by the formula: FVCO = FCKR * (FBDIV / REFDIV), (i.e., Must be between 800 MHz and
+        1600 MHz).
+        fCKR(source clock), REFDIV(ref-division-factor) and FBDIV must be selected to satisfy this
+        condition.
+
+    dpll-ref-division-factor:
+      type: int
+      default: 0
+      description: |
+        This field determines the division factor of the PLL input reference frequency.
+
+        Writing to the REFDIV bits will cause lock to be lost.
+        REFDIV value must be in the range of 1 ≤ REFDIV ≤ 63.
+        The frequency after the reference divider (FPFD) is given by the formula:
+        FPFD = FCKR / REFDIV (i.e., FPFD must always be between 4 MHz to 48 MHz.
+
+  child-binding:
+    properties:
+      subsystem:
+        type: int
+        required: true
+        description: Clock subsystem
+
+      dpll-output-en:
+        type: int
+        enum:
+          - 0
+          - 1
+        default: 0
+        description: |
+          0: Output disabled
+          1: Output enabled
+
+      dpll-output-division-factor:
+        type: int
+        default: 0
+        description: |
+          This field determines the division factor of the PLL VCO frequency output.
+
+      dpll-fractional-divider-int:
+        type: int
+        default: 0
+        description: |
+          Fractional Frequency Divider integer part. Applicable only for PLL1 output 0 and 1.
+
+          Only the PLL1 supplies the clocks to the fractional dividers. FRACDIV0 is fed by PLL1
+          output 0 (under control of PLL1POSTDIVA[0]) and FRACDIV1 is fed by PLL1 output 1 (under
+          control of PLL1POSTDIVA[1]).
+          The maximum fractional divider input frequency is 1.6 GHz.
+          The divided frequency is given by the integer and reminder part of the divider, INTDIV and
+          REMDIV.
+          The resulting frequency FFRACDIV is calculated using the following equation:
+          FCLK_PLL1_FRC_CLKOUTn = FCLK_PLL/ (2 * (INTDIV + (REMDIV/ 512)))
+
+      dpll-fractional-divider-rem:
+        type: int
+        default: 0
+        description: |
+          Fractional Frequency Divider reminder part. Applicable only for PLL1 output 0 and 1.

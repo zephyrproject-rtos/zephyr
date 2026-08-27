@@ -1,0 +1,48 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: Use this compatible for the i.MX8ULP boards
+
+compatible: "nxp,imx8ulp-pinctrl"
+
+include: base.yaml
+
+child-binding:
+  description: i.MX8ULP pin controller pin group
+  child-binding:
+    description: i.MX8ULP pin controller pin configuration node
+    include:
+      - name: pincfg-node.yaml
+        property-allowlist:
+          - bias-pull-up
+          - bias-pull-down
+          - drive-open-drain
+    properties:
+      pinmux:
+        required: true
+        type: phandles
+      drive-strength:
+        type: string
+        description: |
+          Used to configure the pad's drive strength, which, together
+          with the slew rate, affects the maximum frequency the pad's
+          output buffer can yield. If "normal" drive strength is used,
+          the maximum frequency will be lower as per the measurements
+          found in the SoC datasheet. Note that the TRM refers to the
+          "normal" drive strength as "standard". If unspecified, the
+          default will be "normal".
+        enum:
+          - "normal"
+          - "high"
+      slew-rate:
+        type: string
+        description: |
+          Used to configure the pad's slew rate, which affects the
+          maximum frequency the pad's output buffer can yield (
+          "fast" slew rate -> higher pad frequency, "slow" slew rate ->
+          lower pad frequency). Note that the TRM refers to the "fast"
+          slew rate as "standard". If unspecified, the default will be
+          "fast".
+        enum:
+          - "fast"
+          - "slow"

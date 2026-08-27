@@ -1,0 +1,10 @@
+/*
+ * Copyright (c) 2025 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Using the smallest available PSRAM size of 2MB */
+&psram0 {
+	size = <DT_SIZE_M(2)>;
+};

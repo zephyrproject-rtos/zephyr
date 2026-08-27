@@ -1,0 +1,5 @@
+# Copyright (c) 2023 Evan Perry Grove
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NUCLEO_F722ZE
+	select SOC_STM32F722XX

@@ -1,0 +1,18 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: Native_sim file-backed I2S controller
+
+compatible: "zephyr,native-sim-i2s"
+
+include: base.yaml
+
+properties:
+  stream-direction:
+    type: string
+    required: true
+    enum:
+      - rx
+      - tx
+      - both
+    description: Select whether the logical native_sim I2S device handles RX or TX.

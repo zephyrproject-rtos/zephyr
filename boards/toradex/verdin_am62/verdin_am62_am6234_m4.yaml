@@ -1,0 +1,8 @@
+identifier: verdin_am62/am6234/m4
+name: Toradex Verdin AM62
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+ram: 192
+vendor: toradex

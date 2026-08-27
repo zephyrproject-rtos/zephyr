@@ -1,0 +1,15 @@
+/* Copyright (c) 2024 Mario Paja
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&mikrobus_spi {
+	status = "okay";
+
+	eth3_click_mikroe_eth3_click: eth3_click@0 {
+		compatible = "microchip,lan9250";
+		reg = <0x0>;
+		local-mac-address = [00 00 00 01 02 03];
+		spi-max-frequency = <30000000>;
+		int-gpios = <&mikrobus_header 7 GPIO_ACTIVE_LOW>;	/* INT */
+	};
+};

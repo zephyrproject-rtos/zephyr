@@ -1,0 +1,6 @@
+board:
+  name: udoo_key
+  full_name: UDOO KEY
+  vendor: udoo
+  socs:
+    - name: esp32

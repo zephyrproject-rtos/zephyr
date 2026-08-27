@@ -1,0 +1,18 @@
+# LoRaWAN emulator configuration
+#
+# Copyright (c) 2024 A Labs GmbH
+# Copyright (c) 2024 tado GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config LORAWAN_EMUL
+	bool "LoRaWAN Emulator"
+	# The emulator currently depends on loramac-node for some types and
+	# functions. Once these dependencies are removed, this can be changed.
+	depends on LORA_MODULE_BACKEND_LORAMAC_NODE
+	help
+	  The emulator can be used for unit testing of LoRaWAN services.
+	  It provides interfaces to send arbitrary messages to the LoRaWAN
+	  stack and receive the response through callbacks without using
+	  actual LoRa hardware.
+
+	  See include/zephyr/lorawan/emul.h for the emulator API.

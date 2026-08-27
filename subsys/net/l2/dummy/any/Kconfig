@@ -1,0 +1,23 @@
+# Copyright (c) 2024 Nordic Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig NET_PSEUDO_IFACE
+	bool "Pseudo network interface a.k.a any interface"
+	depends on NET_L2_DUMMY
+	select NET_L2_VIRTUAL
+	help
+	  This implements a pseudo network interface that does nothing
+	  itself. It can be used for example to hook virtual interfaces
+	  on top of it that can act as a network packet capture handlers.
+	  The option will create an "any" network interface which acts
+	  as a packet sink.
+
+if NET_PSEUDO_IFACE
+
+module = NET_PSEUDO_IFACE
+module-dep = NET_LOG
+module-str = Log level for pseudo network interface
+module-help = Enables pseudo interface to output debug messages.
+source "subsys/net/Kconfig.template.log_config.net"
+
+endif # NET_PSEUDO_IFACE

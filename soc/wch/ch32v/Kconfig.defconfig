@@ -1,0 +1,9 @@
+# Copyright (c) 2024 Michael Hope
+# Copyright (c) 2024 Jianxiong Gu
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_FAMILY_CH32V
+
+rsource "*/Kconfig.defconfig"
+
+endif # SOC_FAMILY_CH32V

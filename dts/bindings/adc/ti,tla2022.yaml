@@ -1,0 +1,8 @@
+# Copyright (c) 2024 Securiton AG
+# SPDX-License-Identifier: Apache-2.0
+
+description: Texas Instruments TLA2022 Low-Power ADC with PGA
+
+compatible: "ti,tla2022"
+
+include: ti,tla202x-base.yaml

@@ -1,0 +1,19 @@
+# Copyright (c) 2023-2024 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: MAX32 GPIO
+
+compatible: "adi,max32-gpio"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#gpio-cells":
+    const: 2
+
+gpio-cells:
+  - pin
+  - flags

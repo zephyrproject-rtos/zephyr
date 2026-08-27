@@ -1,0 +1,34 @@
+# Copyright (c) 2026 Advanced Micro Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+# ARM64 PMUv3 configuration
+
+config ARM64_PMUV3
+	bool "ARMv8-A PMUv3 support"
+	depends on ARM64 && ARCH_HAS_PMU
+	help
+	  Enable support for ARM Performance Monitoring Unit (PMU).
+	  The PMU provides hardware performance counters for monitoring
+	  CPU behavior including cache misses, branch mispredictions,
+	  memory accesses, and cycle counts.
+
+	  This driver supports ARMv8-A PMUv3 and is compatible with all
+	  Cortex-A processors (A53, A55, A57, A72, A73, A75, A76, A77, A78,
+	  A510, A710, X1, X2, etc.)
+
+if ARM64_PMUV3
+
+config ARM64_PMUV3_USER_ACCESS
+	bool "User-mode access to PMU counters"
+	help
+	  Allow unprivileged (user-mode) applications to access PMU counters.
+	  This is useful for benchmarking but may have security implications.
+
+	  WARNING: Enabling this allows any user-space code to read performance
+	  counters, which could leak sensitive timing information.
+
+module = ARM64_PMUV3
+module-str = ARM64 PMUv3
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # ARM64_PMUV3

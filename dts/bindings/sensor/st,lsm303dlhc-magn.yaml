@@ -1,0 +1,8 @@
+# Copyright (c) 2018 Philémon Jaermann
+# SPDX-License-Identifier: Apache-2.0
+
+description: STMicroelectronics LSM303DLHC magnetometer sensor
+
+compatible: "st,lsm303dlhc-magn"
+
+include: [sensor-device.yaml, i2c-device.yaml]

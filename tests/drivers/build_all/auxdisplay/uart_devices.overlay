@@ -1,0 +1,32 @@
+/*
+ * Copyright (c) 2024 TOKITA Hiroshi
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	test {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		test_gpio: gpio@deadbeef {
+			compatible = "vnd,gpio";
+			gpio-controller;
+			reg = <0xdeadbeef 0x1000>;
+			#gpio-cells = <0x2>;
+			status = "okay";
+		};
+
+		test_uart: uart@55556666 {
+			compatible = "vnd,serial";
+			reg = <0x55556666 0x1000>;
+			status = "okay";
+
+			test_uart_itron: itron {
+				compatible = "noritake,itron";
+				status = "okay";
+				columns = <20>;
+				rows = <2>;
+			};
+		};
+	};
+};

@@ -1,0 +1,10 @@
+identifier: uiapduino_pro_micro_ch32v003
+name: UIAPduino Pro Micro CH32V003
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+ram: 2
+flash: 16
+supported:
+  - gpio

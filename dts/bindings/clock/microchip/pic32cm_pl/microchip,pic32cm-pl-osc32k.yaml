@@ -1,0 +1,29 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: PIC32CM_PL Internal Oscillator (OSC32K) Control
+
+description: |
+  32.768 kHz High Accuracy Internal Oscillator (OSC32K).
+
+include: [base.yaml]
+
+compatible: "microchip,pic32cm-pl-osc32k"
+
+properties:
+  osc32k-on-demand-en:
+    type: int
+    enum:
+      - 0
+      - 1
+    default: 0
+    description: |
+      On Demand Configuration
+
+      0: The oscillator is always on, if standby-en is true, else run in
+         Standby Sleep mode if requested by a peripheral.
+      1: Run if requested by peripheral
+      Important: Initializing it with 1, along with clock enabled, can lead to indefinite wait for
+      the clock to be on, if there is no peripheral request for the clock in the sequence of clock
+      Initialization. If required, better to turn on the clock using API, instead of enabling both
+      during startup.

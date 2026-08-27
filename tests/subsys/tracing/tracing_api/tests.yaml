@@ -1,0 +1,10 @@
+common:
+  platform_allow: qemu_x86
+  extra_args: CONF_FILE="prj.conf"
+
+tests:
+  tracing.transport.uart.async.test:
+    tags: tracing_testing
+  tracing.transport.uart.sync.test:
+    extra_configs:
+      - CONFIG_TRACING_SYNC=y

@@ -1,0 +1,6 @@
+board:
+  name: xg26_dk2608a
+  full_name: EFR32xG26 Dev Kit (xG26-DK2608A)
+  vendor: silabs
+  socs:
+  - name: efr32mg26b510f3200im68

@@ -1,0 +1,12 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config WDT_NRF_GSWDT
+	bool "Nordic Global Software Watchdog Timer (GSWDT) driver"
+	depends on DT_HAS_NORDIC_NRF_GSWDT_ENABLED
+	default y
+	select MBOX
+	select HAS_WDT_NO_CALLBACKS
+	help
+	  This option enables the Nordic Global Software Watchdog Timer
+	  (GSWDT) driver.

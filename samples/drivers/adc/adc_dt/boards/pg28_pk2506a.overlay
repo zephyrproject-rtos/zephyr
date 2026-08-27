@@ -1,0 +1,54 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2026 Silicon Laboratories Inc.
+ */
+
+/*
+ * ch0: VDD: does not need analog bus
+ * ch1: button0 on GPIO port B1 pin: requires even analog bus
+ */
+
+#include <dt-bindings/adc/silabs-adc.h>
+
+/ {
+	zephyr,user {
+		/* adjust channel number according to pinmux in board.dts */
+		io-channels = <&adc0 0>, <&adc0 1>;
+	};
+};
+
+&pinctrl {
+	adc0_default: adc0_default {
+		group0 {
+			silabs,analog-bus = <ABUS_BODD0_IADC0>;
+		};
+	};
+};
+
+&adc0 {
+	pinctrl-0 = <&adc0_default>;
+	pinctrl-names = "default";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+		zephyr,input-positive = <IADC_INPUT_AVDD>;
+	};
+
+	channel@1 {
+		reg = <1>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,vref-mv = <3300>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+		zephyr,input-positive = <IADC_INPUT_PB1>;
+	};
+};

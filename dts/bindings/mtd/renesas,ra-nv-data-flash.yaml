@@ -1,0 +1,19 @@
+# Copyright (c) 2024-2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Flash memory binding for Renesas RA Data flash region
+
+include: [base.yaml, soc-nv-flash.yaml]
+
+compatible: "renesas,ra-nv-data-flash"
+
+properties:
+  programming-enable:
+    type: boolean
+    description: |
+      Enable data flash programming configuration
+
+  erase-value-undefined:
+    type: boolean
+    description: Areas of flash that are in an erased state will read back undefined values.

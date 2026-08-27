@@ -1,0 +1,39 @@
+# Copyright (c) 2018 Intel Corporation
+# Copyright (c) 2023 Meta
+# Copyright (c) 2024 Tenstorrent AI ULC
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# zephyr-keep-sorted-start
+rsource "Kconfig.aio"
+rsource "Kconfig.barrier"
+rsource "Kconfig.device_io"
+rsource "Kconfig.fd_mgmt"
+rsource "Kconfig.file_system_r"
+rsource "Kconfig.fs"
+rsource "Kconfig.mem"
+rsource "Kconfig.mqueue"
+rsource "Kconfig.net"
+rsource "Kconfig.proc1"
+rsource "Kconfig.procN"
+rsource "Kconfig.pthread"
+rsource "Kconfig.rwlock"
+rsource "Kconfig.sched"
+rsource "Kconfig.semaphore"
+rsource "Kconfig.signal"
+rsource "Kconfig.spinlock"
+rsource "Kconfig.sync_io"
+rsource "Kconfig.timer"
+# zephyr-keep-sorted-stop
+
+menu "X/Open system interfaces"
+
+# zephyr-keep-sorted-start
+rsource "Kconfig.xsi_realtime"
+rsource "Kconfig.xsi_single_process"
+rsource "Kconfig.xsi_streams"
+rsource "Kconfig.xsi_system_logging"
+rsource "Kconfig.xsi_threads_ext"
+# zephyr-keep-sorted-stop
+
+endmenu # "X/Open system interfaces"

@@ -1,0 +1,20 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_RA8P1_TITAN_MINI
+
+if DISK_DRIVER_SDMMC
+
+config SD_CMD_TIMEOUT
+	default 1000
+
+endif # DISK_DRIVER_SDMMC
+
+configdefault NET_L2_ETHERNET
+	default y
+
+# Enable fixed clock for ethernet phy
+config CLOCK_CONTROL_FIXED_RATE_CLOCK
+	default y if ETH_PHY_DRIVER
+
+endif # BOARD_RA8P1_TITAN_MINI

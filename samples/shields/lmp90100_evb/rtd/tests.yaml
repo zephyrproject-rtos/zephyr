@@ -1,0 +1,9 @@
+sample:
+  description: Demonstration of the LMP90100 EVB with RTD sensor
+  name: LMP90100 EVB RTD
+tests:
+  sample.shields.lmp90100_evb.rtd:
+    platform_allow: frdm_k64f
+    harness: shield
+    tags: shield
+    depends_on: arduino_spi

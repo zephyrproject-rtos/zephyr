@@ -1,0 +1,86 @@
+# TI CC2520 configuration options
+
+# Copyright (c) 2017 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig IEEE802154_CC2520
+	bool "TI CC2520 Driver support"
+	default y
+	depends on DT_HAS_TI_CC2520_ENABLED
+
+if IEEE802154_CC2520
+
+config IEEE802154_CC2520_RX_STACK_SIZE
+	int "Driver's internal RX thread stack size"
+	default 800
+	help
+	  This option sets the driver's stack size for its internal RX thread.
+	  The default value should be sufficient, but in case it proves to be
+	  a too little one, this option makes it easy to play with the size.
+
+config IEEE802154_CC2520_INIT_PRIO
+	int "CC2520 initialization priority"
+	default 80
+	help
+	  Set the initialization priority number. Do not mess with it unless
+	  you know what you are doing. Beware cc2520 requires gpio and spi to
+	  be ready first (and sometime gpio should be the very first as spi
+	  might need it too). And of course it has to start before the net stack.
+
+config IEEE802154_CC2520_RANDOM_MAC
+	bool "Random MAC address"
+	default y
+	help
+	  Generate a random MAC address dynamically.
+
+if ! IEEE802154_CC2520_RANDOM_MAC
+
+config IEEE802154_CC2520_MAC4
+	hex "MAC Address Byte 4"
+	default 0
+	range 0 0xff
+	help
+	  This is the byte 4 of the MAC address.
+
+config IEEE802154_CC2520_MAC5
+	hex "MAC Address Byte 5"
+	default 0
+	range 0 0xff
+	help
+	  This is the byte 5 of the MAC address.
+
+config IEEE802154_CC2520_MAC6
+	hex "MAC Address Byte 6"
+	default 0
+	range 0 0xff
+	help
+	  This is the byte 6 of the MAC address.
+
+config IEEE802154_CC2520_MAC7
+	hex "MAC Address Byte 7"
+	default 0
+	range 0 0xff
+	help
+	  This is the byte 7 of the MAC address.
+
+endif # IEEE802154_CC2520_RANDOM_MAC
+
+config IEEE802154_CC2520_CRYPTO
+	bool "Hardware crypto helper on cc2520"
+	default y
+	depends on NET_L2_IEEE802154_SECURITY
+	help
+	  This option will expose the hardware AES encryption from CC2520.
+	  Such feature should not be used for anything but 802.15.4 security.
+	  The crypto device exposed will only support synchronous CCM operation.
+
+config IEEE802154_CC2520_CRYPTO_INIT_PRIO
+	int "TI CC2520 crypto device initialization priority"
+	default 81
+	depends on IEEE802154_CC2520_CRYPTO
+	help
+	  Set the initialization priority number. Do not mess with it unless
+	  you know what you are doing. It should be initialized after CC2520
+	  as it shares the same runtime context.
+
+endif # IEEE802154_CC2520

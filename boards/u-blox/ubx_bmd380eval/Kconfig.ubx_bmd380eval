@@ -1,0 +1,10 @@
+# BMD-380-EVAL board configuration
+
+# Copyright (c) 2021 u-blox AG
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_UBX_BMD380EVAL
+	select SOC_NRF52840_QIAA
+
+# should be CKAA,
+# but SOC file not yet available from Nordic Semiconductor

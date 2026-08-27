@@ -1,0 +1,27 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RZ GPIO interrupt (TINT) controller
+
+compatible: "renesas,rz-tint"
+
+include: base.yaml
+
+properties:
+  trigger-type:
+    required: true
+    type: string
+    description: |
+      Indicates the condition that will trigger an interrupt when detected.
+    enum:
+      - "rising"
+      - "falling"
+      - "high_level"
+      - "low_level"
+
+  "#irq-cells":
+    type: int
+    const: 1
+
+irq-cells:
+  - pin

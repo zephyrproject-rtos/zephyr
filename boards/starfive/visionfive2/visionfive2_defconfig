@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+
+# Zephyr Kernel Configuration
+CONFIG_PRINTK=y
+CONFIG_XIP=n
+
+# Serial Drivers
+CONFIG_SERIAL=y
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y

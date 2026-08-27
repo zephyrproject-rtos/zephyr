@@ -1,0 +1,5 @@
+# Copyright (c) 2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_RZN2H_EVB
+	select SOC_R9A09G087M44GBG_CR52_0 if BOARD_RZN2H_EVB_R9A09G087M44GBG_CR52_0

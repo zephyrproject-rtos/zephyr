@@ -1,0 +1,12 @@
+# Copyright (c) 2026, Realtek Semiconductor Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config QDEC_BEE
+	bool "Realtek Bee series QDEC driver"
+	default y
+	depends on DT_HAS_REALTEK_BEE_BASIC_QDEC_ENABLED || DT_HAS_REALTEK_BEE_AON_QDEC_ENABLED
+	select HAL_REALTEK_BEE_QDEC if DT_HAS_REALTEK_BEE_BASIC_QDEC_ENABLED
+	select HAL_REALTEK_BEE_AON_QDEC if DT_HAS_REALTEK_BEE_AON_QDEC_ENABLED
+	select PINCTRL
+	help
+	  This option enables the QDEC driver for Realtek Bee SoCs.

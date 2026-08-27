@@ -1,0 +1,90 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&{/soc} {
+	plic: interrupt-controller@c000000 {
+		compatible = "sifive,plic-1.0.0";
+		reg = <0x0c000000 0x04000000>;
+		riscv,max-priority = <7>;
+		riscv,ndev = <1024>;
+		interrupts-extended = <&hlic0 0x0b &hlic0 0x09
+				       &hlic1 0x0b &hlic1 0x09
+				       &hlic2 0x0b &hlic2 0x09
+				       &hlic3 0x0b &hlic3 0x09
+				       &hlic4 0x0b &hlic4 0x09
+				       &hlic5 0x0b &hlic5 0x09
+				       &hlic6 0x0b &hlic6 0x09
+				       &hlic7 0x0b &hlic7 0x09>;
+		interrupt-controller;
+		#address-cells = <0x00>;
+		#interrupt-cells = <0x02>;
+	};
+};
+
+&uart0 {
+	interrupt-parent = <&plic>;
+	interrupts = <0x0a 1>;
+};
+
+&virtio_mmio0 {
+	interrupt-parent = <&plic>;
+	interrupts = <0x01 1>;
+};
+
+&virtio_mmio1 {
+	interrupt-parent = <&plic>;
+	interrupts = <0x02 1>;
+};
+
+&virtio_mmio2 {
+	interrupt-parent = <&plic>;
+	interrupts = <0x03 1>;
+};
+
+&virtio_mmio3 {
+	interrupt-parent = <&plic>;
+	interrupts = <0x04 1>;
+};
+
+&virtio_mmio4 {
+	interrupt-parent = <&plic>;
+	interrupts = <0x05 1>;
+};
+
+&virtio_mmio5 {
+	interrupt-parent = <&plic>;
+	interrupts = <0x06 1>;
+};
+
+&virtio_mmio6 {
+	interrupt-parent = <&plic>;
+	interrupts = <0x07 1>;
+};
+
+&virtio_mmio7 {
+	interrupt-parent = <&plic>;
+	interrupts = <0x08 1>;
+};
+
+&pcie {
+	interrupt-map-mask = <0x1800 0x00 0x00 0x07>;
+	interrupt-map = <0x0000 0x00 0x00 1 &plic 32 1
+			 0x0000 0x00 0x00 2 &plic 33 1
+			 0x0000 0x00 0x00 3 &plic 34 1
+			 0x0000 0x00 0x00 4 &plic 35 1
+			 0x0800 0x00 0x00 1 &plic 33 1
+			 0x0800 0x00 0x00 2 &plic 34 1
+			 0x0800 0x00 0x00 3 &plic 35 1
+			 0x0800 0x00 0x00 4 &plic 32 1
+			 0x1000 0x00 0x00 1 &plic 34 1
+			 0x1000 0x00 0x00 2 &plic 35 1
+			 0x1000 0x00 0x00 3 &plic 32 1
+			 0x1000 0x00 0x00 4 &plic 33 1
+			 0x1800 0x00 0x00 1 &plic 35 1
+			 0x1800 0x00 0x00 2 &plic 32 1
+			 0x1800 0x00 0x00 3 &plic 33 1
+			 0x1800 0x00 0x00 4 &plic 34 1>;
+};

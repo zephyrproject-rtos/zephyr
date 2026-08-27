@@ -1,0 +1,9 @@
+# Copyright (c) 2025, Qingsong Gou <gouqs@hotmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config MIPI_DBI_SF32LB
+	bool "SF32LB MIPI DBI driver"
+	default y
+	depends on DT_HAS_SIFLI_SF32LB_LCDC_MIPI_DBI_ENABLED
+	help
+	  Enable driver for SF32LB MIPI DBI controller.

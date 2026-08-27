@@ -1,0 +1,16 @@
+# Copyright (c) 2026 Zhaoming Li
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - gpio
+  depends_on: gpio
+  harness: ztest
+
+tests:
+  drivers.gpio.mmio_latch:
+    platform_allow:
+      - qemu_cortex_m3
+    integration_platforms:
+      - qemu_cortex_m3

@@ -1,0 +1,8 @@
+# Copyright (c) 2025 Analog Devices Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+include: base.yaml
+
+description: Analog Devices MAX22216/MAX22217 MISC
+
+compatible: "adi,max2221x-misc"

@@ -1,0 +1,27 @@
+# Copyright (c) 2020 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuvoton, NPCX-Host Sub-Modules node
+
+compatible: "nuvoton,npcx-host-sub"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    description: mmio register space
+    required: true
+
+  clocks:
+    required: true
+    description: configurations of device source clock controller
+
+  host-acc-wui:
+    type: phandle
+    required: true
+    description: |
+        Mapping table between Wake-Up Input (WUI) and any legacy host
+        access transactions.
+
+        For example the WUI mapping on NPCX7 would be
+           host-acc-wui = <&wui_host_acc>;

@@ -1,0 +1,12 @@
+# Renesas RA Family
+
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config MEMC_RENESAS_RA_SDRAM
+	bool "Renesas RA sdram controller"
+	default y
+	depends on DT_HAS_RENESAS_RA_SDRAM_ENABLED
+	select USE_RA_FSP_SDRAM
+	help
+	  Enable Renesas RA sdram controller

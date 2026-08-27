@@ -1,0 +1,33 @@
+# Copyright (c) 2025, FocalTech Systems CO.,Ltd
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  FocalTech FT9001 USART controller node
+
+  The FT9001 USART (Universal Synchronous/Asynchronous Receiver/Transmitter)
+  controller provides serial communication capabilities with support for:
+  - Asynchronous UART communication
+  - Configurable baud rates
+  - Hardware flow control (optional)
+  - Interrupt-driven and polling operation modes
+  - 7, 8, or 9-bit data formats
+  - Even, odd, or no parity
+  - 1 or 2 stop bits
+  - FIFO buffering for improved performance
+
+compatible: "focaltech,ft9001-usart"
+
+include: [uart-controller.yaml, reset-device.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  resets:
+    required: true
+
+  clocks:
+    required: true

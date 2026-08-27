@@ -1,0 +1,35 @@
+name: ST STM32H750B Discovery Kit
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 512
+supported:
+  - arduino_gpio
+  - gpio
+  - dma
+  - flash
+  - rtc
+  - memc
+  - display
+  - spi
+vendor: st
+variants:
+  stm32h750b_dk/stm32h750xx:
+    flash: 128
+    twister: true
+  stm32h750b_dk/stm32h750xx/ext_flash_app:
+    sysbuild: true
+    flash: 61439  # size in kB of 1 app slot minus MCUboot header size (1KB)
+    toolchain:
+      - zephyr
+    testing:
+      ignore_tags:
+        - arch
+        - arm
+        - clib
+        - cpp
+        - kernel
+        - posix
+        - cmsis-dsp

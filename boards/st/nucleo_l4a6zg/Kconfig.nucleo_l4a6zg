@@ -1,0 +1,5 @@
+# Copyright (c) 2022 Tomislav Milkovic
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NUCLEO_L4A6ZG
+	select SOC_STM32L4A6XX

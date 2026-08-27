@@ -1,0 +1,9 @@
+# Copyright (c) 2023 Efinix Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_EFINIX_SAPPHIRE
+	select INCLUDE_RESET_VECTOR
+	select RISCV
+	select RISCV_PRIVILEGED
+	select RISCV_HAS_PLIC
+	imply XIP

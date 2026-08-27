@@ -1,0 +1,6 @@
+shield:
+  name: st_b_cams_imx_mb1854
+  full_name: ST B-CAMS-IMX-MB1854
+  vendor: st
+  supported_features:
+    - video

@@ -1,0 +1,11 @@
+description: Xen Platform Control Registers
+
+compatible: "xen,xen"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+  interrupts:
+    required: true

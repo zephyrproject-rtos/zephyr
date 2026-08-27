@@ -1,0 +1,11 @@
+# Nuvoton NuMaker Pin Controller configuration options
+
+# Copyright (c) 2023 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+config PINCTRL_NUMAKER
+	bool "Nuvoton NuMaker pin controller driver"
+	default y
+	depends on DT_HAS_NUVOTON_NUMAKER_PINCTRL_ENABLED
+	help
+	  This option enables the pin controller driver for Nuvoton NuMaker MCUs.

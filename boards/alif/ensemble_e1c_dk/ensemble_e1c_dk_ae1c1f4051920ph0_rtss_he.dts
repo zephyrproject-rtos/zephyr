@@ -1,0 +1,27 @@
+/*
+ * SPDX-FileCopyrightText: Copyright Alif Semiconductor
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <alif/ensemble/ae1c1f4051920ph0.dtsi>
+#include <alif/ensemble/ae1c1f4051920ph0_nvic_irq.dtsi>
+#include "ensemble_e1c_dk-pinctrl.dtsi"
+
+/ {
+	compatible = "alif,ensemble-e1c-dk-ae1c1f4051920ph0-rtss-he";
+
+	chosen {
+		zephyr,flash = &mram;
+		zephyr,sram = &dtcm;
+		zephyr,console = &uart2;
+		zephyr,shell-uart = &uart2;
+	};
+};
+
+&uart2 {
+	status = "okay";
+	pinctrl-0 = <&pinctrl_uart2>;
+	pinctrl-names = "default";
+};

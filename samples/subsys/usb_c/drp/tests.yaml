@@ -1,0 +1,14 @@
+sample:
+  name: USB-C DRP (Dual Role Power)
+tests:
+  sample.usbc.drp:
+    depends_on: tcpc
+    tags: usbc drp
+    platform_allow: stm32g081b_eval
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "Unattached.SNK"
+        - "Unattached.SRC"

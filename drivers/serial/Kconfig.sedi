@@ -1,0 +1,15 @@
+# Copyright (c) 2023 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config UART_SEDI
+	bool "Intel SEDI UART driver"
+	default y
+	depends on DT_HAS_INTEL_SEDI_UART_ENABLED
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	help
+	  This option enables the Intel SEDI UART driver.
+	  This driver is simply a shim driver built upon the SEDI
+	  bare metal UART driver in the hal-intel module

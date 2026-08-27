@@ -1,0 +1,6 @@
+shield:
+  name: esp_threadbr_ethernet
+  full_name: ESP Thread Border Router / ZigBee Gateway Sub Ethernet
+  vendor: espressif
+  supported_features:
+    - ethernet

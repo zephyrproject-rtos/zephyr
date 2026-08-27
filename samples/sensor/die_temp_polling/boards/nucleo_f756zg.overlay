@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2024 Noah Pendleton
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		die-temp0 = &die_temp;
+	};
+};
+
+&die_temp {
+	status = "okay";
+};
+
+&adc1 {
+	pinctrl-0 = <&adc1_in0_pa0>;
+	pinctrl-names = "default";
+	st,adc-prescaler = <4>;
+	status = "okay";
+};

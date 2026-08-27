@@ -1,0 +1,24 @@
+/*
+ * Copyright 2024 Nordic Semiconductor ASA
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	mbox-consumer {
+		compatible = "vnd,mbox-consumer";
+		mboxes = <&cpuflpr_vevif_rx 21>, <&cpuflpr_vevif_tx 20>;
+		mbox-names = "rx", "tx";
+	};
+};
+
+&cpuflpr_vevif_rx {
+	status = "okay";
+};
+
+&cpuflpr_vevif_tx {
+	status = "okay";
+};
+
+&uart30 {
+	/delete-property/ hw-flow-control;
+};

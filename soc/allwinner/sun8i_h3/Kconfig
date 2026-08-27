@@ -1,0 +1,8 @@
+# Copyright (c) 2025 Muhammad Waleed Badar
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SUN8I_H3
+	select ARM
+	select CPU_CORTEX_A7
+	select ARM_ARCH_TIMER
+	select SYS_CLOCK_EXISTS

@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright Alif Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: ensemble_e8_dk/ae612fa0e5597ls0/rtss_he
+name: Alif Ensemble E8 DevKit AE612FA0E5597LS0 RTSS-HE MCU
+type: mcu
+arch: arm
+vendor: alif
+toolchain:
+  - zephyr

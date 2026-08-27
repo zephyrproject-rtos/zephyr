@@ -1,0 +1,6 @@
+# MikroE Quail board configuration
+
+# Copyright (c) 2025 ThoseBoards
+# SPDX-License-Identifier: Apache-2.0
+
+source "boards/common/usb/Kconfig.cdc_acm_serial.defconfig"

@@ -1,0 +1,23 @@
+# Copyright (c) 2022 Espressif Systems
+# SPDX-License-Identifier: Apache-2.0
+
+description: ESP32 soft inter processor message
+
+compatible: "espressif,esp32-ipm"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  shared-memory:
+    required: true
+    type: phandle
+
+  shared-memory-size:
+    required: true
+    type: int
+
+  interrupts:
+    required: true

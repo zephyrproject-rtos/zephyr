@@ -1,0 +1,18 @@
+common:
+  tags:
+    - drivers
+    - uart
+  depends_on: dma
+  harness: ztest
+  platform_allow:
+    - esp32s3_devkitc/esp32s3/procpu
+    - esp32c6_devkitc/esp32c6/hpcore
+  integration_platforms:
+    - esp32s3_devkitc/esp32s3/procpu
+tests:
+  drivers.uart.async_slip.tx:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE=slip_tx.overlay
+  drivers.uart.async_slip.rx:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE=slip_rx.overlay

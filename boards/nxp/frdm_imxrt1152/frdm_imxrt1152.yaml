@@ -1,0 +1,19 @@
+#
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: frdm_imxrt1152/mimxrt1152
+name: NXP FRDM-IMXRT1152
+type: mcu
+arch: arm
+ram: 32768
+flash: 65536
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - gpio
+  - uart
+vendor: nxp

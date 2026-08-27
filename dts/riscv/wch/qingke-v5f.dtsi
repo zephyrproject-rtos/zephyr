@@ -1,0 +1,66 @@
+/*
+ * Copyright (c) 2026 Liu Changjie
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <freq.h>
+
+/ {
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	power-states {
+		run0: run0 {
+			compatible = "zephyr,power-state";
+			power-state-name = "runtime-idle";
+			substate-id = <1>;
+		};
+	};
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu@1 {
+			device_type = "cpu";
+			compatible = "wch,qingke-v5f", "riscv";
+			reg = <1>;
+			riscv,isa-base = "rv32i";
+			riscv,isa-extensions = "i", "m", "a", "f", "c", "zicsr", "zifencei";
+			clock-frequency = <DT_FREQ_M(480)>;
+			cpu-power-states = <&run0>;
+		};
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "simple-bus";
+		ranges;
+
+		pfic: interrupt-controller@e000e000 {
+			compatible = "wch,pfic";
+			#address-cells = <0>;
+			#interrupt-cells = <1>;
+			interrupt-controller;
+			reg = <0xe000e000 0x10>;
+			status = "okay";
+		};
+
+		/*
+		 * The CH32H417 has two independent global SysTick timers, one per
+		 * core: SysTick0 @0xe000f000 (IRQ 12) drives the V3F boot core and
+		 * SysTick1 @0xe000f080 (IRQ 13) drives the V5F application core.
+		 * The V5F image must use SysTick1, otherwise the tick interrupt is
+		 * delivered to the (idle) V3F core and the scheduler never advances.
+		 */
+		systick: systimer@e000f080 {
+			compatible = "wch,systick";
+			reg = <0xe000f080 0x18>;
+			status = "okay";
+			interrupt-parent = <&pfic>;
+			interrupts = <13>;
+		};
+	};
+};

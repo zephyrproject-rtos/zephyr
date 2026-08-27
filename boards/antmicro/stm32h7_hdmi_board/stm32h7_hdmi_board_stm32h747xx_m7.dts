@@ -1,0 +1,296 @@
+/*
+ * Copyright (c) 2026 Antmicro <www.antmicro.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/h7/stm32h747Xi_m7.dtsi>
+#include <st/h7/stm32h747xihx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/clock/stm32h7_clock.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+#include "stm32h7_hdmi_board.dtsi"
+
+/ {
+	model = "Antmicro STM32H7 Hdmi Board";
+	compatible = "antmicro,stm32h7-hdmi-board";
+
+	chosen {
+		zephyr,crc = &crc;
+		zephyr,entropy = &rng;
+		zephyr,console = &uart5;
+		zephyr,shell-uart = &uart5;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,flash-controller = &st256ql01gj1;
+		zephyr,canbus = &fdcan2;
+	};
+
+	aliases {
+		led0 = &led_g;
+		led1 = &led_r;
+		led2 = &led_b;
+		sw0 = &user_btn;
+	};
+
+	sdram2: sdram@d0000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		device_type = "memory";
+		reg = <0xd0000000 DT_SIZE_M(32)>;
+		zephyr,memory-region = "SDRAM2";
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
+	};
+
+	ext_memory: memory@90000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x90000000 DT_SIZE_G(2)>; /* 2 Gbits */
+		zephyr,memory-region = "EXTMEM";
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_FLASH)>;
+	};
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(25)>;
+	hse-bypass;
+	status = "okay";
+};
+
+&clk_hsi48 {
+	status = "okay";
+};
+
+&pll {
+	div-m = <5>;
+	mul-n = <160>;
+	div-p = <2>;
+	div-q = <4>;
+	div-r = <2>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&pll2 {
+	div-m = <5>;
+	mul-n = <96>;
+	div-p = <2>;
+	div-q = <4>;
+	div-r = <10>;
+	clocks = <&clk_hse>;  /* Assuming 25MHz HSE */
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(400)>;
+};
+
+&quadspi {
+	pinctrl-0 = <&quadspi_clk_pf10 &quadspi_bk1_ncs_pg6
+		     &quadspi_bk1_io0_pf8 &quadspi_bk1_io1_pf9
+		     &quadspi_bk1_io2_pf7 &quadspi_bk1_io3_pd13
+		     &quadspi_bk2_io0_ph2 &quadspi_bk2_io1_ph3
+		     &quadspi_bk2_io2_pg9 &quadspi_bk2_io3_pg14>;
+	pinctrl-names = "default";
+	dual-flash;
+	ssht-enable;
+	status = "okay";
+
+	st256ql01gj1: qspi-nor-flash@0 {
+		compatible = "st,stm32-qspi-nor";
+		reg = <0>;
+		size = <DT_SIZE_G(1)>; /* 1 Gbits */
+		qspi-max-frequency = <72000000>;
+		cs-high-time = <4>;
+		spi-bus-width = <4>;
+		reset-cmd;
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			storage_partition: partition@0 {
+				label = "storage";
+				reg = <0 DT_SIZE_M(128)>;
+			};
+		};
+	};
+
+	st256ql01gj2: qspi-nor-flash@1 {
+		compatible = "st,stm32-qspi-nor";
+		reg = <1>;
+		size = <DT_SIZE_G(1)>; /* 1 Gbits */
+		qspi-max-frequency = <72000000>;
+		reset-cmd;
+	};
+};
+
+&fmc {
+	status = "okay";
+	pinctrl-0 = <&fmc_nbl0_pe0 &fmc_nbl1_pe1 &fmc_nbl2_pi4 &fmc_nbl3_pi5
+		     &fmc_sdclk_pg8 &fmc_sdnwe_pc0 &fmc_sdcke0_pc3 &fmc_sdne0_pc2
+		     &fmc_sdcke1_ph7 &fmc_sdne1_ph6 &fmc_sdnras_pf11 &fmc_sdncas_pg15
+		     &fmc_a0_pf0 &fmc_a1_pf1 &fmc_a2_pf2 &fmc_a3_pf3 &fmc_a4_pf4
+		     &fmc_a5_pf5 &fmc_a6_pf12 &fmc_a7_pf13 &fmc_a8_pf14
+		     &fmc_a9_pf15 &fmc_a10_pg0 &fmc_a11_pg1 &fmc_a12_pg2
+		     &fmc_a14_pg4 &fmc_a15_pg5 &fmc_d0_pd14 &fmc_d1_pd15
+		     &fmc_d2_pd0 &fmc_d3_pd1 &fmc_d4_pe7 &fmc_d5_pe8 &fmc_d6_pe9
+		     &fmc_d7_pe10 &fmc_d8_pe11 &fmc_d9_pe12 &fmc_d10_pe13
+		     &fmc_d11_pe14 &fmc_d12_pe15 &fmc_d13_pd8 &fmc_d14_pd9
+		     &fmc_d15_pd10 &fmc_d16_ph8 &fmc_d17_ph9 &fmc_d18_ph10
+		     &fmc_d19_ph11 &fmc_d20_ph12 &fmc_d21_ph13 &fmc_d22_ph14
+		     &fmc_d23_ph15 &fmc_d24_pi0 &fmc_d25_pi1 &fmc_d26_pi2
+		     &fmc_d27_pi3 &fmc_d28_pi6 &fmc_d29_pi7 &fmc_d30_pi9
+		     &fmc_d31_pi10>;
+	pinctrl-names = "default";
+
+	/* Give alias for easy access in overlays */
+	fmc_sdram: sdram {};
+};
+
+&sdmmc1 {
+	clocks = <&rcc STM32_CLOCK(AHB3, 16)>,
+		 <&rcc STM32_SRC_PLL2_R SDMMC_SEL(1)>;
+	pinctrl-0 = <&sdmmc1_d0_pc8 &sdmmc1_d1_pc9
+		     &sdmmc1_d2_pc10 &sdmmc1_d3_pc11
+		     &sdmmc1_ck_pc12 &sdmmc1_cmd_pd2>;
+	pinctrl-names = "default";
+	cd-gpios = <&gpioa 8 GPIO_ACTIVE_LOW>;
+	disk-name = "SD";
+	status = "okay";
+};
+
+&sdmmc2 {
+	clocks = <&rcc STM32_CLOCK(AHB2, 9)>,
+		 <&rcc STM32_SRC_PLL2_R SDMMC_SEL(1)>;
+	pinctrl-0 = <&sdmmc2_d0_pb14 &sdmmc2_d1_pb15
+		     &sdmmc2_d2_pg11 &sdmmc2_d3_pb4
+		     &sdmmc2_d4_pb8 &sdmmc2_d5_pb9
+		     &sdmmc2_d6_pc6 &sdmmc2_d7_pc7
+		     &sdmmc2_ck_pd6 &sdmmc2_cmd_pa0>;
+	pinctrl-names = "default";
+	disk-name = "eMMC";
+	status = "okay";
+};
+
+pmod_uart: &usart2 {
+	pinctrl-0 = <&usart2_tx_pd5
+		     &usart2_rx_pa3
+		     &usart2_rts_pd4
+		     &usart2_cts_pd3>;
+	pinctrl-names = "default";
+};
+
+&uart5 {
+	status = "okay";
+};
+
+&i2c2 {
+	pinctrl-0 = <&i2c2_scl_ph4 &i2c2_sda_ph5>;
+	pinctrl-names = "default";
+};
+
+&i2c4 {
+	pinctrl-0 = <&i2c4_scl_pd12 &i2c4_sda_pb7>;
+	pinctrl-names = "default";
+	scl-gpios = <&gpiod 12 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpiob 7 GPIO_ACTIVE_HIGH>;
+	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
+};
+
+&spi4 {
+	pinctrl-0 = <&spi4_miso_pe5
+		     &spi4_mosi_pe6
+		     &spi4_sck_pe2
+		     &spi4_nss_pe4>;
+	pinctrl-names = "default";
+	status = "okay";
+	cs-gpios = <&gpioe 4 GPIO_ACTIVE_LOW>;
+
+	usba_p1: zephyr_uhc0: max3421e@0 {
+		compatible = "maxim,max3421e-spi";
+		reg = <0>;
+		int-gpios = <&gpioe 3 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&gpioc 13 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+		spi-max-frequency = <26000000>;
+	};
+};
+
+pmod_spi: &spi5 {
+	pinctrl-0 = <&spi5_miso_pj11
+		     &spi5_mosi_pj10
+		     &spi5_sck_pk0
+		     &spi5_nss_pf6>;
+	pinctrl-names = "default";
+	status = "okay";
+	cs-gpios = <&gpioi 8 GPIO_ACTIVE_LOW>;
+
+	usba_p2: zephyr_uhc1: max3421e@0 {
+		compatible = "maxim,max3421e-spi";
+		reg = <0>;
+		int-gpios = <&gpioj 9 GPIO_ACTIVE_HIGH>;
+		reset-gpios = <&gpioj 8 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+		spi-max-frequency = <26000000>;
+	};
+};
+
+zephyr_udc0: &usbotg_fs {
+	pinctrl-0 = <&usb_otg_fs_dm_pa11
+		     &usb_otg_fs_dp_pa12
+		     &usb_otg_fs_id_pa10
+		     &usb_otg_fs_vbus_pa9>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&mdio {
+	pinctrl-0 = <&eth_mdio_pa2 &eth_mdc_pc1>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	eth_phy: ethernet-phy@0 {
+		compatible = "microchip,lan8742";
+		reg = <0>;
+		reset-gpios = <&gpiob 2 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&mac {
+	pinctrl-0 = <&eth_txd0_pg13
+		     &eth_txd1_pg12
+		     &eth_tx_en_pb11
+		     &eth_ref_clk_pa1
+		     &eth_rxd0_pc4
+		     &eth_rxd1_pc5
+		     &eth_crs_dv_pa7>;
+	pinctrl-names = "default";
+	phy-connection-type = "rmii";
+	phy-handle = <&eth_phy>;
+	status = "okay";
+};
+
+&fdcan2 {
+	status = "okay";
+	pinctrl-0 = <&fdcan2_tx_pb13 &fdcan2_rx_pb5>;
+	pinctrl-names = "default";
+	clocks = <&rcc STM32_CLOCK(APB1_2, 8)>,
+		 <&rcc STM32_SRC_PLL2_Q FDCAN_SEL(2)>;
+	bitrate = <125000>;
+
+	can-transceiver {
+		max-bitrate = <8000000>;
+	};
+};
+
+&crc {
+	status = "okay";
+};
+
+&rng {
+	status = "okay";
+};
+
+zephyr_jpegenc: &jpeg {
+	status = "okay";
+};

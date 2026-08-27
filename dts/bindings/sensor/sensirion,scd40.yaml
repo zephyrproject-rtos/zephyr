@@ -1,0 +1,8 @@
+# Copyright (c) 2024, Jan Fäh
+# SPDX-License-Identifier: Apache-2.0
+
+description: Sensirion SCD4x temperature sensor
+
+compatible: "sensirion,scd40"
+
+include: [sensor-device.yaml, i2c-device.yaml]

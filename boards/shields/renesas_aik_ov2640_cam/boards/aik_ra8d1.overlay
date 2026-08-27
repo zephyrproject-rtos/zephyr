@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2026 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pwm3 {
+	status = "okay";
+};
+
+&dvp_20pin_interface {
+	status = "okay";
+
+	port {
+		dvp_20pin_ep_in: endpoint {
+			hsync-sample = <1>;
+			vsync-sample = <1>;
+		};
+	};
+};

@@ -1,0 +1,15 @@
+sample:
+  description: demo of quality of service for ethernet layer
+  name: quality_of_service
+common:
+  harness: net
+tests:
+  sample.net.Qos:
+    tags:
+      - net
+      - socket
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim

@@ -1,0 +1,43 @@
+# Copyright (c) 2019 Synopsys, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_EMSDP_EM11D
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default 40000000
+
+config CPU_EM4_FPUDA
+	default y
+
+config ARC_MPU_VER
+	default 2
+
+config RGF_NUM_BANKS
+	default 2
+
+config HARVARD
+	default y
+
+config ARC_FIRQ
+	default y
+
+config CACHE_MANAGEMENT
+	default y
+
+config FP_FPU_DA
+	default y
+
+config MAIN_STACK_SIZE
+	default 2048
+
+config IDLE_STACK_SIZE
+	default 2048
+
+config ZTEST_STACK_SIZE
+	default 2048
+	depends on ZTEST
+
+config NUM_IRQS
+	default 111
+
+endif # SOC_EMSDP_EM11D

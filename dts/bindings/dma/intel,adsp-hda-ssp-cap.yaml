@@ -1,0 +1,16 @@
+# Copyright (c) 2022 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Intel HDA SSP Capabilities controller
+
+compatible: "intel,adsp-hda-ssp-cap"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+    description: |
+        Intel HD Audio Multiple Links Capability Structure
+        for I2S / PCM Link.

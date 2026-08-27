@@ -1,0 +1,19 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 AMD
+# SPDX-License-Identifier: Apache-2.0
+
+description: AMD ACP Unified TDM DMA (HS/SP/BT)
+
+compatible: "amd,acp-tdm-dma"
+
+include: dma-controller.yaml
+
+"#dma-cells":
+  - channel
+
+properties:
+  dma-channels:
+    type: int
+    description: Number of DMA channels supported
+  dma-requests:
+    type: int
+    description: Number of DMA requests supported

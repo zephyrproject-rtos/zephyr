@@ -1,0 +1,11 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&mx25uw63 {
+	status = "okay";
+	mspi-max-frequency = <DT_FREQ_K(256)>;
+	transfer-timeout = <500>;
+};

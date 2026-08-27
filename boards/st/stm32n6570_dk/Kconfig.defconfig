@@ -1,0 +1,76 @@
+# STM32N6570 DISCOVERY board configuration
+
+# Copyright (c) 2025 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_STM32N6570_DK
+
+configdefault NET_L2_ETHERNET
+	default y
+
+configdefault OTP
+	default y if ETH_STM32_HAL && NVMEM
+
+# MEMC needs to be enabled in order to store
+# LTDC frame buffer and video buffer pool to external PSRAM
+config MEMC
+	default y if STM32_LTDC || VIDEO
+
+if DISPLAY
+configdefault I2C_STM32_V2_TIMING
+	default y if INPUT
+endif # DISPLAY
+
+if VIDEO
+# Place video buffer pool into the PSRAM
+config VIDEO_BUFFER_POOL_ZEPHYR_REGION
+	default y
+
+config VIDEO_BUFFER_POOL_ZEPHYR_REGION_NAME
+	default "PSRAM"
+
+# Place VENC internal buffer into the PSRAM
+if VIDEO_STM32_VENC
+
+choice VIDEO_STM32_VENC_MEM_ALLOC
+	default VIDEO_STM32_VENC_HEAP_ALLOC
+endchoice
+
+config VIDEO_STM32_VENC_HEAP_ZEPHYR_REGION
+	default y
+
+config VIDEO_STM32_VENC_HEAP_ZEPHYR_REGION_NAME
+	default "PSRAM"
+
+endif # VIDEO_STM32_VENC
+endif # VIDEO
+
+if LVGL
+
+if NEOCHROM_GPU2D
+
+configdefault LV_ATTRIBUTE_MEM_ALIGN_SIZE
+	default 32 if NEOCHROM_GPU2D
+
+configdefault LV_Z_NEMA_GFX_MULTI_THREAD
+	default y if LV_USE_NEMA_GFX
+
+choice LV_USE_NEMA_HAL
+	default LV_NEMA_HAL_CUSTOM
+endchoice
+
+choice LV_USE_NEMA_LIB
+	default LV_NEMA_LIB_M55
+endchoice
+
+configdefault LV_NEMA_USE_CACHE
+	default y
+
+configdefault LV_NEMA_CACHE_HAL_INCLUDE
+	default "stm32n6xx_hal.h"
+
+endif # NEOCHROM_GPU2D
+
+endif # LVGL
+
+endif # BOARD_STM32N6570_DK

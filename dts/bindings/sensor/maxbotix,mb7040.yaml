@@ -1,0 +1,12 @@
+description: MB7040 ultrasonic distance sensor
+
+compatible: "maxbotix,mb7040"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  status-gpios:
+    type: phandle-array
+    description: |
+      GPIO pin connected to Pin 2 (Address Announce/Status) to monitor sensor
+      state. Pin is high during range reading and low when ready for I2C communication.

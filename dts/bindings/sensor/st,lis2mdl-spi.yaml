@@ -1,0 +1,9 @@
+# Copyright (c) 2019 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    STMicroelectronics LIS2MDL magnetometer accessed through SPI bus
+
+compatible: "st,lis2mdl"
+
+include: ["spi-device.yaml", "st,lis2mdl-common.yaml"]

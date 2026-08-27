@@ -1,0 +1,54 @@
+# VIDEO resolution settings
+
+# Copyright (c) 2024 Charles Dias <charlesdias.cd@outlook.com>
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Video capture to LVGL sample application"
+
+menu "Video capture configuration"
+
+config VIDEO_SOURCE_CROP_LEFT
+	int "Crop area left value"
+	default 0
+	help
+	   Left value of the crop area within the video source.
+
+config VIDEO_SOURCE_CROP_TOP
+	int "Crop area top value"
+	default 0
+	help
+	   Top value of the crop area within the video source.
+
+config VIDEO_SOURCE_CROP_WIDTH
+	int "Crop area width value"
+	default 0
+	help
+	   Width value of the crop area within the video source.
+	   If set to 0, the crop is not applied.
+
+config VIDEO_SOURCE_CROP_HEIGHT
+	int "Crop area height value"
+	default 0
+	help
+	   Height value of the crop area within the video source.
+	   If set to 0, the crop is not applied.
+
+config VIDEO_WIDTH
+	int "Define the width of the video"
+	default 320
+
+config VIDEO_HEIGHT
+	int "Define the height of the video"
+	default 240
+
+config VIDEO_HFLIP
+	bool "Horizontal flip"
+	default n
+
+config VIDEO_VFLIP
+	bool "Vertical flip"
+	default n
+
+endmenu
+
+source "Kconfig.zephyr"

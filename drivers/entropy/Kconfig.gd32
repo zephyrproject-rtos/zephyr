@@ -1,0 +1,15 @@
+# GD32 TRNG configuration
+
+# Copyright (c) 2025 Aleksandr Senin <al@meshium.net>
+# SPDX-License-Identifier: Apache-2.0
+
+config ENTROPY_GD32_TRNG
+	bool "GigaDevice GD32F4xx TRNG driver"
+	default y
+	depends on DT_HAS_GD_GD32_TRNG_ENABLED
+	select ENTROPY_HAS_DRIVER
+	select USE_GD32_TRNG
+	help
+	  Enable True Random Number Generator (TRNG) driver for GigaDevice
+	  GD32F4xx series. This driver uses the GD32 HAL and operates in
+	  polling mode.

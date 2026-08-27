@@ -1,0 +1,27 @@
+sample:
+  name: Flow Meter
+  description: Hall-effect pulse-output flow meter driver sample. Simulated
+    via gpio_emul on native_sim; requires a real sensor on other boards.
+tests:
+  sample.sensor.flow_meter:
+    tags:
+      - sensor
+      - drivers
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "1 L volume threshold armed"
+        - "Volume threshold reached! Total volume: 1.000000 L"
+  sample.sensor.flow_meter.build:
+    build_only: true
+    tags:
+      - sensor
+      - drivers
+    platform_allow:
+      - esp32c6_devkitc/esp32c6/hpcore

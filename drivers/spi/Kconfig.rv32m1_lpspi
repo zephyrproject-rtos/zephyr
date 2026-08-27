@@ -1,0 +1,13 @@
+# RV32M1 SPI
+
+# Copyright (c) 2019, Karsten Koenig <karsten.koenig.030@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_RV32M1_LPSPI
+	bool "RV32M1 LPSPI driver"
+	default y
+	depends on DT_HAS_OPENISA_RV32M1_LPSPI_ENABLED
+	depends on CLOCK_CONTROL
+	select PINCTRL
+	help
+	  Enable the RV32M1 LPSPI driver.

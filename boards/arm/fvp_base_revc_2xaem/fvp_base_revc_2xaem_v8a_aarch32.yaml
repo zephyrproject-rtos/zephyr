@@ -1,0 +1,22 @@
+# SPDX-FileCopyrightText: Copyright Alif Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: fvp_base_revc_2xaem/v8a_aarch32
+name: FVP Emulation FVP_Base_RevC-2xAEMvA (ARMv8-A AArch32)
+arch: arm
+type: sim
+simulation:
+  - name: armfvp
+    exec: FVP_Base_RevC-2xAEMvA
+toolchain:
+  - zephyr
+  - cross-compile
+ram: 2048
+flash: 64
+vendor: arm
+supported:
+  - uart
+testing:
+  ignore_tags:
+    - net
+    - bluetooth

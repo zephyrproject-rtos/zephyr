@@ -1,0 +1,102 @@
+#
+# Copyright (c) 2025 Charles Dias
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: |
+    STM32U5 series MIPI DSI controller.
+
+compatible: "st,stm32u5-mipi-dsi"
+
+include:
+  - name: st,stm32-mipi-dsi.yaml
+    property-blocklist:
+      - clock-names
+
+properties:
+  clock-names:
+    type: string-array
+    required: true
+    description: |
+      "dsiclk" DSI clock enable.
+      "dsisrc" DSI clock source.
+      "refclk" External crystal or oscillator clock.
+      "pixelclk" LTDC pixel clock.
+      "refclk" and "pixelclk" are only used to retrieve the frequency for timing calculation.
+
+  phy-freq-range:
+    required: true
+    type: int
+    min: 0x0
+    max: 0x8
+    description: |
+      D-PHY PLL input frequency range. This is used to select the appropriate
+      frequency range for the D-PHY PLL operation:
+        0x0 : Frequency range 80~100 MHz
+        0x1 : Frequency range 100~120 MHz
+        0x2 : Frequency range 120~160 MHz
+        0x3 : Frequency range 160~200 MHz
+        0x4 : Frequency range 200~240 MHz
+        0x5 : Frequency range 240~320 MHz
+        0x6 : Frequency range 320~390 MHz
+        0x7 : Frequency range 390~450 MHz
+        0x8 : Frequency range 450~510 MHz
+
+  phy-low-power-offset:
+    required: true
+    type: int
+    min: 0x0
+    max: 0xF
+    description: |
+      D-PHY low power offset configuration specific to STM32U5 series.
+        0x0 : PHY_LP_OFFSSET_0_CLKP        (0 CLKP)
+        0x1 : PHY_LP_OFFSSET_1_CLKP        (+1 CLKP)
+        0x2 : PHY_LP_OFFSSET_2_CLKP        (+2 CLKP)
+        0x3 : PHY_LP_OFFSSET_3_CLKP        (+3 CLKP)
+        0x4 : PHY_LP_OFFSSET_4_CLKP        (+4 CLKP)
+        0x5 : PHY_LP_OFFSSET_5_CLKP        (+5 CLKP)
+        0x6 : PHY_LP_OFFSSET_6_CLKP        (+6 CLKP)
+        0x7 : PHY_LP_OFFSSET_7_CLKP        (+7 CLKP)
+        0x8 : PHY_LP_OFFSSET_MINUS_1_CLKP  (-1 CLKP)
+        0x9 : PHY_LP_OFFSSET_MINUS_2_CLKP  (-2 CLKP)
+        0xA : PHY_LP_OFFSSET_MINUS_3_CLKP  (-3 CLKP)
+        0xB : PHY_LP_OFFSSET_MINUS_4_CLKP  (-4 CLKP)
+        0xC : PHY_LP_OFFSSET_MINUS_5_CLKP  (-5 CLKP)
+        0xD : PHY_LP_OFFSSET_MINUS_6_CLKP  (-6 CLKP)
+        0xE : PHY_LP_OFFSSET_MINUS_7_CLKP  (-7 CLKP)
+        0xF : PHY_LP_OFFSSET_MINUS_8_CLKP  (-8 CLKP)
+
+  pll-vco-range:
+    required: true
+    type: int
+    min: 0x0
+    max: 0x1
+    description: |
+      PLL VCO frequency range configuration for STM32U5 D-PHY:
+        0x0 : Frequency range 500~800 MHz
+        0x1 : Frequency range 800~1000 MHz
+
+  pll-charge-pump:
+    required: true
+    type: int
+    min: 0x0
+    max: 0x3
+    description: |
+     PLL charge pump configuration for STM32U5 D-PHY.
+     The correct value depends on the PLL charge pump frequency:
+       0x0 : Frequency in range 2.0~4.4 MHz or 14.1~30.9 MHz
+       0x1 : Frequency in range 4.4~14.1 MHz
+       0x2 : Frequency in range 45.7~50 MHz
+       0x3 : Frequency in range 30.9~45.7 MHz
+
+  pll-tuning:
+    required: true
+    type: int
+    min: 0x0
+    max: 0x2
+    description: |
+      PLL tuning parameter (loop filter) for STM32U5 D-PHY.
+        0x0 : Frequency range 2000~4400 Hz
+        0x1 : Frequency range 4400~30900 Hz
+        0x2 : Frequency range 30900~50000 Hz

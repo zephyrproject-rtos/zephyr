@@ -1,0 +1,39 @@
+/*
+ * Copyright (c) 2025 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,camera = &st_cam_dvp;
+	};
+};
+
+&st_cam_i2c {
+	ov9655: camera@30 {
+		compatible = "ovti,ov9655";
+		reg = <0x30>;
+		pwdn-gpios = <&dcmi_camera_connector 6 GPIO_ACTIVE_HIGH>;
+
+		port {
+			ov9655_ep_out: endpoint {
+				remote-endpoint-label = "dcmi_ep_in";
+			};
+		};
+	};
+};
+
+&st_cam_dvp {
+	status = "okay";
+
+	port {
+		dcmi_ep_in: endpoint {
+			remote-endpoint-label = "ov9655_ep_out";
+			bus-width = <8>;
+			hsync-active = <1>;
+			vsync-active = <1>;
+			pclk-sample = <1>;
+		};
+	};
+};

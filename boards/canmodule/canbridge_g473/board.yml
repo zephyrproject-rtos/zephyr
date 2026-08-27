@@ -1,0 +1,6 @@
+board:
+  name: canbridge_g473
+  vendor: canmodule
+  full_name: CANBRIDGE G473
+  socs:
+    - name: stm32g473xx

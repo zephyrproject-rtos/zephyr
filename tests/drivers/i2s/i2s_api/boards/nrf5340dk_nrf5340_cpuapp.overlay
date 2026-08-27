@@ -1,0 +1,28 @@
+/* i2s-node0 is the transmitter/receiver */
+
+/ {
+	aliases {
+		i2s-node0 = &i2s0;
+	};
+};
+
+&pinctrl {
+	i2s0_default_alt: i2s0_default_alt {
+		group1 {
+			psels = <NRF_PSEL(I2S_SCK_M, 1, 6)>,
+				<NRF_PSEL(I2S_LRCK_M, 1, 7)>,
+				<NRF_PSEL(I2S_SDOUT, 0, 4)>,
+				<NRF_PSEL(I2S_SDIN, 0, 5)>;
+		};
+	};
+};
+
+&uart1 {
+	status = "disabled";
+};
+
+&i2s0 {
+	status = "okay";
+	pinctrl-0 = <&i2s0_default_alt>;
+	pinctrl-names = "default";
+};

@@ -1,0 +1,17 @@
+/*
+ * Copyright 2025 Embeint Pty Ltd
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		gnss = &gnss;
+	};
+
+	gnss: gnss {
+		compatible = "zephyr,gnss-emul";
+		status = "okay";
+		zephyr,pm-device-runtime-auto;
+	};
+};

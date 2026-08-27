@@ -1,0 +1,16 @@
+identifier: ttgo_t7v1_5/esp32/procpu
+name: TTGO T7 V1.5 PROCPU
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - i2c
+  - spi
+  - watchdog
+  - uart
+  - pinmux
+  - display
+  - nvs
+vendor: lilygo

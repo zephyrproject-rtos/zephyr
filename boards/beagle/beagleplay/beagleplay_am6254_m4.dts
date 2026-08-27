@@ -1,0 +1,72 @@
+/*
+ * Copyright (c) 2026 BeagleBoard.org Foundation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <ti/am62x_m4.dtsi>
+#include "beagleplay_am6254_m4-pinctrl.dtsi"
+
+/ {
+	model = "BeagleBoard.org BeaglePlay";
+	compatible = "beagle,beagleplay_m4";
+
+	chosen {
+		/* Split and place TEXT and DATA in I-RAM and D-RAM respectively. `sram_icode`
+		 * is a section in internal SRAM, not an external flash.
+		 */
+		zephyr,flash = &sram_icode;
+		zephyr,sram = &sram_dcode;
+		zephyr,console = &main_uart5;
+		zephyr,ipc = &ipc0;
+		zephyr,ipc_shm = &ddr0;
+		zephyr,sram1 = &ddr1;
+	};
+
+	aliases {
+		watchdog0 = &mcu_rti0;
+	};
+
+	cpus {
+		cpu@0 {
+			status = "okay";
+			clock-frequency = <400000000>;
+		};
+	};
+
+	ddr0: memory@9cb00000 {
+		compatible = "mmio-sram";
+		reg = <0x9cb00000 DT_SIZE_M(1)>;
+	};
+
+	rsc_table: memory@9cc00000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x9cc00000 DT_SIZE_K(4)>;
+		zephyr,memory-region = "RSC_TABLE";
+	};
+
+	ddr1: memory@9cc01000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x9cc01000 (DT_SIZE_M(14) - DT_SIZE_K(4))>;
+		zephyr,memory-region = "DDR";
+	};
+
+	ipc0: ipc {
+		compatible = "zephyr,mbox-ipm";
+		mboxes = <&mbox0 0>, <&mbox0 1>;
+		mbox-names = "tx", "rx";
+	};
+};
+
+&main_uart5 {
+	current-speed = <115200>;
+	pinctrl-0 = <&mikrobus_uart_pins_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&mcu_rti0 {
+	status = "okay";
+};

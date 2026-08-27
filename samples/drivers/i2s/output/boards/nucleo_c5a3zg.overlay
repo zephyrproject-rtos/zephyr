@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2026 Mario Paja
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		i2s-tx = &i2s2;
+	};
+};
+
+/* Half-Duplex Master Transmit */
+&i2s2 {
+	pinctrl-0 = <&i2s2_mck_pc6 &i2s2_ws_pa0
+		     &i2s2_ck_pa9 &i2s2_sdo_pa8>;
+	clocks = <&rcc STM32_CLOCK(APB1, 14)>,
+		 <&rcc STM32_SRC_PSIK SPI2_SEL(1)>;
+	pinctrl-names = "default";
+	mck-enabled;
+	status = "okay";
+};
+
+&lpdma1 {
+	status = "okay";
+};

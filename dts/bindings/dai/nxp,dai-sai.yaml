@@ -1,0 +1,97 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP Synchronous Audio Interface (SAI)
+
+  Below you may find some configuration examples:
+
+  1) Configuring SAI1 for i.MX8QM MEK board
+
+  #include <zephyr/dt-bindings/clock/imx_ccm.h>
+
+  dai@59050000 {
+    compatible = "nxp,dai-sai";
+    reg = <0x59050000 DT_SIZE_K(64)>;
+    interrupt-parent = <&master5>;
+    interrupts = <28>;
+    clocks = <&ccm IMX_CCM_SAI1_CLK 0x0 0x0>;
+    clock-names = "bus";
+    dai-index = <1>;
+    dmas = <&edma0 15 0>, <&edma0 14 0>;
+    dma-names = "tx", "rx";
+    rx-fifo-watermark = <48>;
+    tx-fifo-watermark = <2>;
+    fifo-depth = <48>;
+    rx-sync-mode = <1>;
+  };
+
+  2) Configuring SAI6 for i.MX8ULP EVK9 board
+
+  dai@2da90000 {
+    compatible = "nxp,dai-sai";
+    reg = <0x2da90000 DT_SIZE_K(4)>;
+    interrupt-parent = <&clic>;
+    interrupts = <24 0 0>;
+    dmas = <&edma2 0 72>, <&edma2 1 71>;
+    dma-names = "tx", "rx";
+    dai-index = <6>;
+    rx-fifo-watermark = <8>;
+    tx-fifo-watermark = <1>;
+    fifo-depth = <8>;
+    rx-sync-mode = <1>;
+    tx-dataline = <2>;
+  };
+
+compatible: "nxp,dai-sai"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+  mclk-is-output:
+    type: boolean
+    description: MCLK is configured as output.
+  rx-fifo-watermark:
+    type: int
+    description: Watermark value (in FIFO words) of RX FIFO.
+  tx-fifo-watermark:
+    type: int
+    description: Watermark value (in FIFO words) of TX FIFO.
+  interrupts:
+    required: true
+  fifo-depth:
+    type: int
+    description: Size (in FIFO words) of the TX/RX FIFO.
+  dai-index:
+    type: int
+    description: Index of the DAI instance. Must match Linux side.
+  tx-sync-mode:
+    type: int
+    enum:
+      - 0
+      - 1
+    description: |
+      Transmitter synchronization mode.
+
+      0: transmitter is ASYNC to receiver
+      1: transmitter is SYNC with receiver
+  rx-sync-mode:
+    type: int
+    enum:
+      - 0
+      - 1
+    description: |
+      Receiver synchronization mode.
+
+      0: receiver is ASYNC to transmitter
+      1: receiver is SYNC with transmitter
+  tx-dataline:
+    type: int
+    description: |
+      Index of the data line to transmit data on in multiline SAI instances.
+  rx-dataline:
+    type: int
+    description: |
+      Index of the data line to receive data on in multiline SAI instances.

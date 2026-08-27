@@ -1,0 +1,9 @@
+common:
+  depends_on: netif
+tests:
+  net.socket.poll:
+    min_ram: 21
+    tags:
+      - net
+      - socket
+      - poll

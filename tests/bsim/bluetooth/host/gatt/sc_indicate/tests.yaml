@@ -1,0 +1,23 @@
+common:
+  tags:
+    - bluetooth
+  depends_on: bsim
+  platform_allow:
+    - nrf52_bsim/native
+  harness: bsim
+
+tests:
+  bluetooth.host.gatt.sc_indicate:
+    harness_config:
+      fixture: bsim_multi_test
+      bsim_exe_name: tests_bsim_bluetooth_host_gatt_sc_indicate_prj_conf
+      tests_scripts:
+        - test_scripts/sc_indicate.sh
+  bluetooth.host.gatt.sc_indicate_privacy:
+    extra_args:
+      - EXTRA_CONF_FILE=overlay-privacy.conf
+    harness_config:
+      fixture: bsim_multi_test
+      bsim_exe_name: tests_bsim_bluetooth_host_gatt_sc_indicate_overlay-privacy_conf
+      tests_scripts:
+        - test_scripts/sc_indicate_privacy.sh

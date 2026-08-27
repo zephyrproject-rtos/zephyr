@@ -1,0 +1,31 @@
+#
+# Copyright (c) 2025 Alexander Kozhinov <ak.alexander.kozhinov@gmail.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: |
+    This binding provides resources required to build and run the
+    tests/drivers/interrupt_controller/intc_exti_stm32 test in Zephyr.
+
+compatible: "test-st-stm32-exti"
+
+properties:
+
+  exti-line-nr:
+    type: int
+    required: true
+    description: |
+      Number of the EXTI line to use for the test.
+
+  exti-line-irq-nr:
+    type: int
+    required: true
+    description: |
+      IRQn of the interrupt triggered by the specified EXTI line.
+
+  exti-line-irq-prio:
+    type: int
+    required: true
+    description: |
+      Priority of the interrupt triggered by the specified EXTI line.

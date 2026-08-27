@@ -1,0 +1,20 @@
+sample:
+  description: Demonstration of the LED strip driver
+  name: LED strip sample
+tests:
+  sample.drivers.led_strip:
+    tags: LED
+    filter: dt_alias_exists("led-strip")
+    harness_config:
+      fixture: fixture_led_strip
+    integration_platforms:
+      - mimxrt1050_evk/mimxrt1052/hyperflash
+  sample.drivers.led_strip.pulse_io:
+    tags:
+      - LED
+      - pulse_io
+    extra_args: FILE_SUFFIX=pulse_io
+    platform_allow:
+      - esp32s3_devkitc/esp32s3/procpu
+    harness_config:
+      fixture: fixture_led_strip

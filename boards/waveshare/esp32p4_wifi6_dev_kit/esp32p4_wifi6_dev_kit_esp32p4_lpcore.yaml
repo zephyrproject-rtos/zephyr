@@ -1,0 +1,19 @@
+identifier: esp32p4_wifi6_dev_kit/esp32p4/lpcore
+name: Waveshare ESP32-P4-WIFI6-Dev-Kit LP Core
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+supported:
+  - cpu
+  - uart
+  - serial
+testing:
+  only_tags:
+    - introduction
+  ignore_tags:
+    - kernel
+    - posix
+    - chre
+    - cpp
+vendor: waveshare

@@ -1,0 +1,43 @@
+/*
+ * Copyright (c) 2026 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* I2C bus pins are exposed on the STMod+.
+ *
+ *  Bus        SDA               SCL
+ *          Pin   Hdr         Pin   Hdr
+ *  i2c1    PB9   CN1:9      PB8  CN1:10
+ *  i2c3    PC1   CN4:5      PC0  CN4:6
+ *
+ * Short Pin PB9 to PC1, and PB8 to PC0, for the test to pass.
+ */
+
+#define IC2_TEST_0_DMA_TX <&dma1 6 3 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)>
+#define IC2_TEST_0_DMA_RX <&dma1 7 3 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>
+
+i2c_test_0: &i2c1 {
+	dmas = IC2_TEST_0_DMA_TX, IC2_TEST_0_DMA_RX;
+	dma-names = "tx", "rx";
+
+	eeprom0: eeprom@54 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x54>;
+		size = <256>;
+	};
+};
+
+#define IC2_TEST_1_DMA_TX <&dma1 2 3 (STM32_DMA_PERIPH_TX | STM32_DMA_PRIORITY_HIGH)>
+#define IC2_TEST_1_DMA_RX <&dma1 3 3 (STM32_DMA_PERIPH_RX | STM32_DMA_PRIORITY_HIGH)>
+
+i2c_test_1: &i2c3 {
+	dmas = IC2_TEST_1_DMA_TX, IC2_TEST_1_DMA_RX;
+	dma-names = "tx", "rx";
+
+	eeprom1: eeprom@56 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x56>;
+		size = <256>;
+	};
+};

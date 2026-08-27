@@ -1,0 +1,24 @@
+tests:
+  tests.bsim.bluetooth.audio_samples.bap_broadcast_sink:
+    timeout: 600
+    tags:
+      - bluetooth
+    depends_on: bsim
+    platform_allow:
+      - nrf52_bsim
+      - nrf5340bsim/nrf5340/cpuapp
+      - nrf54l15bsim/nrf54l15/cpuapp
+    sysbuild: true
+    extra_args:
+      - CONF_FILE=${ZEPHYR_BASE}/samples/bluetooth/audio/bap_broadcast_sink/prj.conf
+      - EXTRA_CONF_FILE="${ZEPHYR_BASE}/samples/bluetooth/audio/bap_broadcast_sink/overlay-bt_ll_sw_split.conf"
+      - platform:nrf5340bsim/nrf5340/cpuapp:EXTRA_CONF_FILE=""
+    harness: bsim
+    harness_config:
+      fixture: bsim_multi_test
+      bsim_exe_name: tests_bsim_bluetooth_audio_samples_bap_broadcast_sink_prj_conf
+    required_applications:
+      - application: sample.bluetooth.audio.bap_broadcast_source.interleaved.bsim
+        path: ${ZEPHYR_BASE}/samples/bluetooth/audio/bap_broadcast_source/
+      - application: sample.bluetooth.audio.bap_broadcast_source.sequential.bsim
+        path: ${ZEPHYR_BASE}/samples/bluetooth/audio/bap_broadcast_source/

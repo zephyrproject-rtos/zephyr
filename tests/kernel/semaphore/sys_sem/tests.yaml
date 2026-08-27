@@ -1,0 +1,9 @@
+tests:
+  kernel.semaphore.usage:
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    arch_exclude:
+      - posix
+    tags:
+      - kernel
+      - userspace
+    ignore_faults: true

@@ -1,0 +1,42 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+title: Nordic nPM10 Series PMIC's Watchdog driver
+
+description: |
+  Nordic's nPM10 Series PMICs feature a Watchdog that can either issue a pin reset through one of
+  PMIC's GPIOs or power cycle the system by turning off all voltage supplies and internally
+  resetting the PMIC. It can also be used as a general purpose timer without any reset
+  functionality. In addition to that, it can issue a pre-warning 32ms before timer expiration
+  either through interrupt configured using the nPM10xx MFD driver or through a dedicated GPIO.
+
+compatible: "nordic,npm10xx-wdt"
+
+include: base.yaml
+
+properties:
+  reset-gpio-config:
+    type: array
+    description: PMIC pin used as reset output <idx flags>.
+
+  prewarn-gpio-config:
+    type: array
+    description: PMIC pin used as pre-warning output <idx flags>.
+
+  timeout-gpio-config:
+    type: array
+    description: PMIC pin used as timeout output <idx flags>.
+
+examples:
+  - |
+    npm1012: pmic@6b {
+      /* ... */
+
+      wdt {
+        compatible = "nordic,npm10xx-wdt";
+        reset-gpio-config = <0 (GPIO_ACTIVE_LOW | GPIO_OPEN_DRAIN)>;
+        prewarn-gpio-config = <1 GPIO_ACTIVE_HIGH>;
+      };
+
+      /* ... */
+    };

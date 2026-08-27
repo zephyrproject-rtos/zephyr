@@ -1,0 +1,24 @@
+# Copyright (c) 2024 Meta Platforms
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    STMicroelectronics LSM6DSV16X 6-axis IMU (Inertial Measurement Unit) sensor
+    accessed through I3C bus
+
+compatible: "st,lsm6dsv16x"
+
+include: ["i3c-device.yaml", "st,lsm6dsv16x-common.yaml"]
+
+properties:
+  int-en-i3c:
+    type: boolean
+    description: |
+      Enables INT pin when I3C is enabled
+
+  bus-act-sel-us:
+    type: int
+    default: 50
+    description: |
+      Bus available time for I3C IBI in microseconds
+
+    enum: [50, 2, 1000, 25000]

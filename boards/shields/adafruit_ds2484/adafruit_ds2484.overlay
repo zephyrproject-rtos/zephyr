@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2025 Jonas Berg
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&zephyr_i2c {
+	status = "okay";
+
+	w1_adafruit_ds2482: w1@18 {
+		compatible = "maxim,ds2484";
+		status = "okay";
+		reg = <0x18>;
+	};
+};
+
+/* Alternate node label for samples/drivers/w1/scanner */
+w1: &w1_adafruit_ds2482 {};

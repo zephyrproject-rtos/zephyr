@@ -1,0 +1,25 @@
+# Copyright (c) 2026, Xsight Labs
+# SPDX-License-Identifier: Apache-2.0
+
+config MBOX_MHUV2
+	bool "ARM MHUv2 mailbox driver"
+	depends on DT_HAS_ARM_MHUV2_ENABLED
+	default y
+	help
+	  Driver for Arm MHUv2 (Message Handling Unit v2).
+	  Provides doorbell signalling via the Zephyr mbox API.
+
+if MBOX_MHUV2
+
+config MBOX_MHUV2_NUM_CHANS
+	int "ARM MHUv2 mailbox number of channels"
+	range 1 124
+	default 1
+	help
+	  Maximum number of hardware channel windows supported.
+	  Must be less than or equal to MSG_NO_CAP reported by hardware.
+	  MHUv2 allows up to 124 channel windows, each with 32 doorbell slots.
+	  This configuration parameter is needed to avoid dynamic memory
+	  allocation of per-doorbell data structures.
+
+endif

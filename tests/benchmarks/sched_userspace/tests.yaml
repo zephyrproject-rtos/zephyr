@@ -1,0 +1,17 @@
+tests:
+  benchmark.kernel.scheduler_userspace:
+    arch_allow: arm64
+    tags:
+      - kernel
+      - benchmark
+      - userspace
+    filter: CONFIG_ARCH_HAS_USERSPACE
+    slow: true
+    arch_exclude:
+      - posix
+    timeout: 300
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "SUCCESS"

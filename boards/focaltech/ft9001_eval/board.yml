@@ -1,0 +1,6 @@
+board:
+  name: ft9001_eval
+  full_name: FocalTech FT9001 Evaluation Board
+  vendor: focaltech
+  socs:
+    - name: ft9001

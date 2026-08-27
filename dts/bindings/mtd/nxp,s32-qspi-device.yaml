@@ -1,0 +1,28 @@
+# Copyright 2023-2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  QSPI memory device supporting xSPI or Hyperbus.
+
+compatible: "nxp,s32-qspi-device"
+
+include: [base.yaml, "jedec,jesd216.yaml"]
+
+on-bus: qspi
+
+properties:
+  reg:
+    required: true
+
+  max-program-buffer-size:
+    type: int
+    required: true
+    description: |
+      The maximum of programming page buffer size of the flash memory device,
+      as specified in the flash memory device datasheet.
+
+  write-block-size:
+    type: int
+    required: true
+    description: |
+      The number of bytes used in write operations.

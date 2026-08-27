@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: BSD-3-Clause
+
+description: Valid property-blocklist.
+compatible: blocklist
+include:
+  - name: include.yaml
+    property-blocklist: [x]

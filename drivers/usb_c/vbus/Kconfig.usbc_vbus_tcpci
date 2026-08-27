@@ -1,0 +1,12 @@
+# USB-C TCPCI VBUS device configuration options
+
+# Copyright 2024 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config USBC_VBUS_TCPCI
+	bool "USB-C VBUS TCPCI"
+	select USBC_TCPC_TCPCI
+	default y
+	depends on DT_HAS_ZEPHYR_USB_C_VBUS_TCPCI_ENABLED
+	help
+	  Measure VBUS using the TCPC chip compliant to TCPCI

@@ -1,0 +1,43 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-FileCopyrightText: Copyright 2026 Siemens Mobility GmbH
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <ti/am64x_m4.dtsi>
+#include "lp_am243_m4-pinctrl.dtsi"
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	model = "AM243x LaunchPad M4F Core";
+	compatible = "ti,lp_am243";
+
+	chosen {
+		/*
+		 * MCU_UART0 isn't connected to the onboard USB UART bridge since the
+		 * r5f0_0 core is using that UART instance already. Therefor it's
+		 * necessary to connected an external USB to UART bridge on the onboard
+		 * pinheader!
+		 */
+		zephyr,console = &mcu_uart0;
+		zephyr,shell-uart = &mcu_uart0;
+		zephyr,sram = &sram0;
+	};
+};
+
+&mcu_padcfg0 {
+	status = "okay";
+};
+
+&mcu_uart0 {
+	current-speed = <115200>;
+	pinctrl-0 = <&mcu_uart0_tx_default &mcu_uart0_rx_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&mcu_gpio0 {
+	status = "okay";
+};

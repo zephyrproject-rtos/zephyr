@@ -1,0 +1,18 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2024 Ambiq Micro
+
+description: AMBIQ RTC
+
+compatible: "ambiq,rtc"
+
+include: rtc-device.yaml
+
+properties:
+  reg:
+    required: true
+  clock:
+    type: string
+    default: "XTAL"
+    enum:
+      - "XTAL"
+      - "LFRC"

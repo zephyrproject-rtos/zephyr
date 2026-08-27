@@ -1,0 +1,21 @@
+# Copyright (c) 2026 RISE Lab, IIT Madras
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_GANGA
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/cpus,timebase-frequency)
+
+config 2ND_LVL_ISR_TBL_OFFSET
+	default 12
+
+config 2ND_LVL_INTR_00_OFFSET
+	default 11
+
+config MAX_IRQ_PER_AGGREGATOR
+	default 64
+
+config NUM_IRQS
+	default 64
+
+endif # SOC_GANGA

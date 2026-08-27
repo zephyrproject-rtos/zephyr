@@ -1,0 +1,4 @@
+family:
+- name: realtek_fingerprint
+  socs:
+  - name: rts5817

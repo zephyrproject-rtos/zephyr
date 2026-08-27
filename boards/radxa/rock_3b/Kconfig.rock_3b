@@ -1,0 +1,5 @@
+# SPDX-FileCopyrightText: 2026 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ROCK_3B
+	select SOC_RK3568

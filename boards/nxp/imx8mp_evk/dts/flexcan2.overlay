@@ -1,0 +1,23 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * DTS binding overlay for enabling FlexCAN2
+ */
+
+/ {
+	chosen {
+		zephyr,canbus = &flexcan2;
+	};
+};
+
+&can_phy2 {
+	status = "okay";
+};
+
+&flexcan2 {
+	status = "okay";
+};
+
+&gpio4 {
+	status = "okay";
+};

@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright (c) 2018 - 2019 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_LITEX_VEXRISCV
+	select RISCV
+	select INCLUDE_RESET_VECTOR
+	# There are varriants of the Vexriscv without cache, be able to set it
+	select CPU_HAS_ICACHE if $(dt_node_int_prop_int,/cpus/cpu@0,i-cache-line-size) > 0
+	select CPU_HAS_DCACHE if $(dt_node_int_prop_int,/cpus/cpu@0,d-cache-line-size) > 0

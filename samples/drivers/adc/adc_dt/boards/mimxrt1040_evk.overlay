@@ -1,0 +1,37 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright 2023 NXP
+ */
+
+/ {
+	zephyr,user {
+		/* adjust channel number according to pinmux in board.dts */
+		io-channels = <&adc1 3>, <&adc1 4>;
+	};
+};
+
+&adc1 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	/*
+	 * To use this sample connect
+	 * J33.1 (ADC1 CH3) and J33.2 (ADC1 CH4) to voltages between 0 and 3.3V
+	 */
+	channel@3 {
+		reg = <3>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+
+	channel@4 {
+		reg = <4>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+};

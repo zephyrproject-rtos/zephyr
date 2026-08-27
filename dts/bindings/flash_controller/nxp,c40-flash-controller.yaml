@@ -1,0 +1,19 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+title: NXP C40 Flash Controller
+
+description: |
+  Controller for the on-chip NXP C40 flash array.
+
+compatible: "nxp,c40-flash-controller"
+
+include: base.yaml
+
+properties:
+  "#address-cells":
+    const: 1
+    description: Number of address cells for child flash nodes.
+
+  "#size-cells":
+    const: 1
+    description: Number of size cells for child flash nodes.

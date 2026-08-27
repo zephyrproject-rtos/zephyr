@@ -1,0 +1,44 @@
+/*
+ * SPDX-FileCopyrightText: <text>Copyright 2026 Arm Limited and/or its
+ * affiliates <open-source-office@arm.com></text>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	/* Keep a small ISRAM slice for .text to avoid colliding with fast scratch */
+	isram_text: sram@31000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x31000000 0x00100000>; /* 1 MiB for code/RO */
+		zephyr,memory-region = "ISRAM_TEXT";
+	};
+
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		/* Define a dedicated secure DDR4 slice (256 MiB) at 0x7000_0000 */
+		ddr4_sec_700: memory@70000000 {
+			compatible = "zephyr,memory-region";
+			reg = <0x70000000 DT_SIZE_M(256)>;
+			zephyr,memory-region = "DDR4_SEC_700";
+		};
+
+		/* 256 KiB fast scratch for the NPU */
+		ethosu_fast_isram: sram@31100000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x31100000 0x00040000>;
+			zephyr,memory-region = "ETHOSU_FAST";
+		};
+	};
+
+	chosen {
+		zephyr,flash = &isram_text;   /* code in ISRAM */
+		zephyr,tflm-storage = &ddr4_sec_700; /* TFLM buffers in secure DDR4 @ 0x7000_0000 */
+		/* zephyr,sram: use base DTS */
+	};
+};
+
+&ethosu0 {
+	fast-memory-region = <&ethosu_fast_isram>;
+};

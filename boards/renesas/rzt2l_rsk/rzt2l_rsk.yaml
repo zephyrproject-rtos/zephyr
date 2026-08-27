@@ -1,0 +1,17 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: rzt2l_rsk
+name: Renesas Starter Kit+ for RZ/T2L
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+supported:
+  - adc
+  - counter
+  - uart
+  - gpio
+  - i2c
+  - pwm
+vendor: renesas

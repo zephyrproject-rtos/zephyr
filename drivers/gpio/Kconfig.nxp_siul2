@@ -1,0 +1,10 @@
+# Copyright 2022, 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_NXP_SIUL2
+	bool "NXP SIUL2 GPIO driver"
+	default y
+	depends on DT_HAS_NXP_SIUL2_GPIO_ENABLED
+	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
+	help
+	  Enable the GPIO driver for NXP SIUL2.

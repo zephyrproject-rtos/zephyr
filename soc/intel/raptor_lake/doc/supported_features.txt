@@ -1,0 +1,13 @@
+Supported Features
+==================
+
+In addition to the standard architecture devices (HPET, local and I/O APICs,
+etc.), Zephyr supports the following Raptor Lake-specific SoC devices:
+
+* SMBus
+
+UART Serial Port Support
+------------------------
+
+The Raptor Lake UARTs are NS16550-compatible. Baud rate of
+115.2kbps is supported on uart0.

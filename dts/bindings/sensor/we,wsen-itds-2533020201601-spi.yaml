@@ -1,0 +1,10 @@
+# Copyright (c) 2025 Würth Elektronik eiSos GmbH & Co. KG
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Würth Elektronik WSEN-ITDS-2533020201601 acceleration sensor with
+    integrated temperature sensor (SPI bus)
+
+compatible: "we,wsen-itds-2533020201601"
+
+include: ["spi-device.yaml", "we,wsen-itds-2533020201601-common.yaml"]

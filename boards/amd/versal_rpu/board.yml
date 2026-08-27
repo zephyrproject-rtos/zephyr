@@ -1,0 +1,9 @@
+# Copyright (c) 2026, Advanced Micro Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: versal_rpu
+  full_name: AMD Versal RPU Cortex-R5
+  vendor: amd
+  socs:
+  - name: versal_rpu

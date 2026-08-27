@@ -1,0 +1,9 @@
+identifier: lp_mspm33c321a
+name: TI MSPM33C321A Launchpad
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+ram: 256
+flash: 1024
+vendor: ti

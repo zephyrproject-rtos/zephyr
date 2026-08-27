@@ -1,0 +1,6 @@
+# Copyright 2022 HNU-ESNL
+# Copyright 2022 openEuler SIG-Zephyr
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ROC_RK3568_PC
+	select SOC_RK3568

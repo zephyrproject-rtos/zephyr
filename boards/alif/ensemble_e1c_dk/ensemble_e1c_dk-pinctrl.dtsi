@@ -1,0 +1,19 @@
+/*
+ * SPDX-FileCopyrightText: Copyright Alif Semiconductor
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/alif-ensemble-e1c-pinctrl.h>
+
+&pinctrl {
+	pinctrl_uart2: pinctrl_uart2 {
+		group0 {
+			pinmux = <PIN_P5_2__UART2_RX_B>;
+			input-enable;
+		};
+
+		group1 {
+			pinmux = <PIN_P5_3__UART2_TX_B>;
+		};
+	};
+};

@@ -1,0 +1,4 @@
+tests:
+  libraries.word_granular_access:
+    platform_allow:
+      - esp32_devkitc/esp32/procpu

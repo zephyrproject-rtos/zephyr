@@ -1,0 +1,29 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Cherrence Sarip <cherrence.sarip@analog.com>
+# SPDX-License-Identifier: Apache-2.0
+
+sample:
+  name: TMC6460 Voltage Mode Sample
+  description: Drives a BLDC motor in open-loop voltage mode using the TMC6460.
+tests:
+  sample.drivers.misc.tmc6460:
+    tags: misc
+    depends_on:
+      - spi
+      - gpio
+    platform_allow:
+      - nucleo_f413zh
+    integration_platforms:
+      - nucleo_f413zh
+    filter: dt_compat_enabled("adi,tmc6460")
+  sample.drivers.misc.tmc6460.uart:
+    tags: misc uart
+    depends_on:
+      - gpio
+    platform_allow:
+      - nucleo_f413zh
+    integration_platforms:
+      - nucleo_f413zh
+    filter: dt_compat_enabled("adi,tmc6460")
+    extra_args:
+      - DTC_OVERLAY_FILE=uart.overlay
+      - EXTRA_CONF_FILE=overlay-uart.conf

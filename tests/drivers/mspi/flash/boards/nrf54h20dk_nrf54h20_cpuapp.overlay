@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		mspi0 = &exmif;
+	};
+};
+
+&gpio6 {
+	status = "okay";
+};
+
+&exmif {
+	status = "okay";
+};
+
+&mx25uw63 {
+	status = "okay";
+};

@@ -1,0 +1,6 @@
+board:
+  name: pke8721daf_c13_f10
+  full_name: RTL8721Dx Evaluation Board
+  vendor: realtek
+  socs:
+    - name: rtl8721dx

@@ -1,0 +1,6 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 ID8 Engineering AB
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_MIKROE_TEMP_HUM_CLICK
+	def_bool $(shields_list_contains,mikroe_temp_hum_click)
+	depends on I2C

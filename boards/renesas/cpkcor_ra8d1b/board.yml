@@ -1,0 +1,6 @@
+board:
+  name: cpkcor_ra8d1b
+  full_name: CPKCOR RA8D1B board
+  vendor: renesas
+  socs:
+  - name: r7fa8d1bhecbd

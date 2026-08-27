@@ -1,0 +1,15 @@
+# Copyright (c) 2025 Qingsong Gou <gouqs@hotmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: SiFli SF32LB Reset Controller
+
+compatible: "sifli,sf32lb-rcc-rctl"
+
+include: reset-controller.yaml
+
+properties:
+  "#reset-cells":
+    const: 1
+
+reset-cells:
+  - id

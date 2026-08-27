@@ -1,0 +1,11 @@
+# SPDX-License-Identifier: Apache-2.0
+set(SUPPORTED_EMU_PLATFORMS qemu)
+
+set(QEMU_BINARY_SUFFIX riscv32)
+set(QEMU_CPU_TYPE riscv32)
+
+set(QEMU_BOARD_FLAGS
+  -machine sifive_e
+)
+
+include(${ZEPHYR_BASE}/boards/common/qemu.board.cmake)

@@ -1,0 +1,14 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+title: Generic MSPI peripheral device
+
+description: |
+  This node describes a device on the MSPI bus that is a peripheral (e.g. another SoC
+  in peripheral mode, or an external peripheral). The local MSPI controller is the
+  master; this node describes the peripheral it talks to. Use for SoC-to-SoC links,
+  or any application-defined peripheral with no dedicated Zephyr driver.
+
+compatible: "zephyr,peripheral-device"
+
+include: mspi-device.yaml

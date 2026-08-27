@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Devicetree Info"
+
+osource "$(KCONFIG_BINARY_DIR)/Kconfig.dts"
+
+endmenu

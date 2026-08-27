@@ -1,0 +1,20 @@
+# Copyright (c) 2022 Florin Stancu <niflostancu@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI CC13xx/CC26xx watchdog
+
+compatible: "ti,cc13xx-cc26xx-watchdog"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  interrupt-nmi:
+    type: boolean
+    description: |
+      Whether the watchdog triggers a Non-Maskable Interrupt or a standard one

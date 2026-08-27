@@ -1,0 +1,18 @@
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  I2C mux
+
+  This is an I2C device that is also (multiple) I2C controllers. We
+  model this as a node which is an I2C device, whose children are I2C
+  controllers, and whose grandchildren are therefore I2C devices.
+
+compatible: "vnd,i2c-mux"
+
+include: "i2c-device.yaml"
+
+child-binding:
+  description: I2C mux controller
+  compatible: "vnd,i2c-mux-controller"
+  include: "i2c-controller.yaml"

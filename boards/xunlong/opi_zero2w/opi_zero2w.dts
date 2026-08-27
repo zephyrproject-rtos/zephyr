@@ -1,0 +1,58 @@
+/*
+ * Copyright (c) 2026 Khai Do
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <allwinner/sun50i-h618.dtsi>
+#include <common/mem.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	model = "Xunlong Orange Pi Zero 2W";
+	compatible = "xunlong,orangepi-zero2w", "allwinner,sun50i-h618";
+
+	aliases {
+		led0 = &led_green;
+	};
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &dram0;
+	};
+
+	dram0: memory@40080000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0x40080000 DT_SIZE_M(1023)>;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_green: led_green {
+			gpios = <&gpioc 13 GPIO_ACTIVE_HIGH>;
+			label = "Green LED";
+		};
+	};
+};
+
+&gpioc {
+	status = "okay";
+};
+
+&gpioh {
+	status = "okay";
+};
+
+&gpioi {
+	status = "okay";
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+};

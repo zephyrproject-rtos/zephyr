@@ -1,0 +1,17 @@
+common:
+  depends_on: netif
+  min_ram: 16
+  tags:
+    - net
+    - route
+tests:
+  net.route.ipv6: {}
+  net.route.ipv6.forwarding:
+    extra_configs:
+      - CONFIG_NET_IPV6_FORWARDING=y
+  net.route.ipv6.unknown_ll:
+    extra_configs:
+      - CONFIG_NET_L2_ETHERNET=y
+      - CONFIG_ETH_DRIVER=n
+      - CONFIG_ASSERT=y
+      - CONFIG_NET_IF_MAX_IPV6_COUNT=3

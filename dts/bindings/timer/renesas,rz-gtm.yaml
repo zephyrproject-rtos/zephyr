@@ -1,0 +1,19 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RZ GTM Timer
+
+compatible: "renesas,rz-gtm"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  channel:
+    type: int
+    required: true
+
+  interrupts:
+    required: true

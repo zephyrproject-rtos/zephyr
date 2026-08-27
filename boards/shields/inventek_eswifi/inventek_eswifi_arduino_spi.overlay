@@ -1,0 +1,25 @@
+/*
+ * Copyright (c) 2020 ATL Electronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
+
+&arduino_spi {
+	status = "okay";
+
+	cs-gpios = <&arduino_header ARDUINO_HEADER_R3_D10 GPIO_ACTIVE_LOW>;
+
+	wifi0_inventek_eswifi_arduino_spi: iwin@0 {
+		status = "okay";
+		compatible = "inventek,eswifi";
+		spi-max-frequency = <2000000>;
+		reg = <0>;
+
+		data-gpios = <&arduino_header ARDUINO_HEADER_R3_D9 GPIO_ACTIVE_HIGH>;
+		wakeup-gpios = <&arduino_header ARDUINO_HEADER_R3_D7 GPIO_ACTIVE_HIGH>;
+		resetn-gpios = <&arduino_header ARDUINO_HEADER_R3_D6 GPIO_ACTIVE_HIGH>;
+		boot0-gpios = <&arduino_header ARDUINO_HEADER_R3_D5 GPIO_ACTIVE_HIGH>;
+	};
+};

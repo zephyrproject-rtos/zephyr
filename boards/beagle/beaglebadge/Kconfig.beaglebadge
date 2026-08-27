@@ -1,0 +1,8 @@
+# BeagleBoard.org BeagleBadge
+#
+# Copyright (c) 2025 Texas Instruments Incorporated
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_BEAGLEBADGE
+	select SOC_AM62L3_A53

@@ -1,0 +1,266 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <renesas/ra/ra8/r7ka8p1kflcac_cm85.dtsi>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include "ra8p1_titan.dtsi"
+
+/ {
+	model = "Ruiside RA8P1 Titan";
+	compatible = "ruiside,ra8p1-titan", "renesas,ra8p1", "renesas,ra8";
+
+	chosen {
+		zephyr,console = &uart5;
+		zephyr,shell-uart = &uart5;
+		zephyr,sram = &sram0;
+		zephyr,flash = &code_mram_cm85;
+		zephyr,flash-controller = &mram_ctrl;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,entropy = &trng;
+	};
+
+	aliases {
+		led0 = &led_red;
+		sw0 = &user_button;
+		sdhc0 = &sdhc0;
+	};
+};
+
+&user_button {
+	status = "okay";
+};
+
+&sci5 {
+	pinctrl-0 = <&sci5_default>;
+	pinctrl-names = "default";
+	interrupts = <0 1>, <1 1>, <2 1>, <3 1>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
+	status = "okay";
+
+	uart5: uart {
+		current-speed = <115200>;
+		status = "okay";
+	};
+};
+
+&sci9 {
+	pinctrl-0 = <&sci9_default>;
+	pinctrl-names = "default";
+	interrupts = <4 1>, <5 1>, <6 1>, <7 1>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
+	status = "okay";
+
+	uart9: uart {
+		current-speed = <115200>;
+		status = "okay";
+	};
+};
+
+&sci1 {
+	pinctrl-0 = <&sci1_default>;
+	pinctrl-names = "default";
+	interrupts = <8 1>, <9 1>, <10 1>, <11 1>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
+
+	i2c1: i2c {
+		sda-output-delay = <300>;
+		noise-filter-clock-select = <1>;
+		bit-rate-modulation;
+	};
+};
+
+&spi0 {
+	pinctrl-0 = <&spi0_default>;
+	pinctrl-names = "default";
+	interrupts = <12 1>, <13 1>, <14 1>, <15 1>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
+	cs-gpios = <&ioport6 12 GPIO_ACTIVE_LOW>,
+		   <&ioport3 0 GPIO_ACTIVE_LOW>;
+	status = "okay";
+
+	bmi088_accel: bmi088-accel@0 {
+		compatible = "bosch,bmi08x-accel";
+		reg = <0>;
+		spi-max-frequency = <10000000>;
+		accel-hz = "100";
+		accel-fs = <6>;
+		status = "okay";
+	};
+
+	bmi088_gyro: bmi088-gyro@1 {
+		compatible = "bosch,bmi08x-gyro";
+		reg = <1>;
+		spi-max-frequency = <10000000>;
+		gyro-hz = "100_32";
+		gyro-fs = <2000>;
+		status = "okay";
+	};
+};
+
+&iic2 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&iic2_default>;
+	pinctrl-names = "default";
+	interrupts = <16 1>, <17 1>, <18 1>, <19 1>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
+	status = "okay";
+
+	ist8310: magnetometer@e {
+		compatible = "isentek,ist8310";
+		reg = <0x0e>;
+		status = "okay";
+	};
+};
+
+/* RTL8211F PHY2 interrupt on PC13, mapped to port IRQ1. */
+&port_irq1 {
+	interrupts = <20 12>;
+	status = "okay";
+};
+
+/* USER_KEY: user button on P110, mapped to port IRQ20. */
+&port_irq20 {
+	interrupts = <21 12>;
+	status = "okay";
+};
+
+/* RTL8211F PHY1 interrupt on P107, mapped to port IRQ31. */
+&port_irq31 {
+	interrupts = <22 12>;
+	status = "okay";
+};
+
+&ulpt0 {
+	interrupts = <23 1>;
+	interrupt-names = "ulpti";
+	status = "okay";
+
+	timer {
+		status = "okay";
+	};
+};
+
+&ulpt1 {
+	status = "okay";
+
+	timer {
+		status = "okay";
+	};
+};
+
+&usbfs {
+	interrupts = <24 12>, <25 12>;
+	interrupt-names = "usbfs-i", "usbfs-r";
+	status = "okay";
+
+	zephyr_udc0: udc {
+		status = "okay";
+	};
+};
+
+&code_mram_cm85 {
+	partitions {
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			label = "mcuboot";
+			reg = <0x0 DT_SIZE_K(64)>;
+		};
+
+		slot0_partition: partition@10000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-0";
+			reg = <0x10000 DT_SIZE_K(344)>;
+		};
+
+		slot1_partition: partition@66000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-1";
+			reg = <0x66000 DT_SIZE_K(344)>;
+		};
+
+		storage_partition: partition@bc000 {
+			compatible = "zephyr,mapped-partition";
+			label = "storage";
+			reg = <0xbc000 DT_SIZE_K(16)>;
+		};
+	};
+};
+
+&sdhc0 {
+	interrupt-names = "accs", "card", "dma-req";
+	interrupts = <26 12>, <27 12>, <28 12>;
+	pinctrl-0 = <&sdhc0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	sdmmc {
+		compatible = "zephyr,sdmmc-disk";
+		disk-name = "SD";
+		status = "okay";
+	};
+};
+
+&eswm {
+	interrupts = <29 1>;
+	interrupt-names = "gwdi";
+	status = "okay";
+};
+
+&eth0 {
+	phy-connection-type = "rgmii";
+	local-mac-address = [74 90 50 01 02 03];
+	phy-clock-type = "xtal";
+	phy-handle = <&phy2>;
+	pinctrl-0 = <&eth0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&mdio0 {
+	pinctrl-0 = <&mdio0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	phy2: phy@2 {
+		compatible = "realtek,rtl8211f";
+		reg = <2>;
+		int-gpios = <&ioportc 13 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&ioport8 13 GPIO_ACTIVE_HIGH>;
+		realtek,rgmii-delay = "rxid";
+		status = "okay";
+	};
+};
+
+&eth1 {
+	phy-connection-type = "rgmii";
+	local-mac-address = [74 90 50 01 02 04];
+	phy-clock-type = "xtal";
+	phy-handle = <&phy1>;
+	pinctrl-0 = <&eth1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&mdio1 {
+	pinctrl-0 = <&mdio1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	phy1: phy@1 {
+		compatible = "realtek,rtl8211f";
+		reg = <1>;
+		int-gpios = <&ioport1 7 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&ioporta 10 GPIO_ACTIVE_HIGH>;
+		status = "okay";
+	};
+};

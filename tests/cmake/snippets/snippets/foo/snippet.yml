@@ -1,0 +1,5 @@
+name: foo
+append:
+  EXTRA_CONF_FILE: foo.conf
+  EXTRA_DTC_OVERLAY_FILE: foo.overlay
+  DTS_EXTRA_CPPFLAGS: -DCMAKE_DTS_CONFIGURE

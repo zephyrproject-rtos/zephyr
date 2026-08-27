@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2026 Gregory Planchon <gregory.planchon@st.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&spi5 {
+	slow@0 {
+		compatible = "test-spi-loopback-slow";
+		reg = <0>;
+		spi-max-frequency = <500000>;
+	};
+
+	fast@0 {
+		compatible = "test-spi-loopback-fast";
+		reg = <0>;
+		spi-max-frequency = <16000000>;
+	};
+};

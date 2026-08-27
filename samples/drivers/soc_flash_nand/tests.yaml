@@ -1,0 +1,28 @@
+sample:
+  description: Cadence Nand Driver sample application.
+  name: cdns_nand
+tests:
+  sample.drivers.flash.soc_flash_nand:
+    platform_allow:
+      - intel_socfpga_agilex5_socdk
+    integration_platforms:
+      - intel_socfpga_agilex5_socdk
+    tags:
+      - flash
+      - cdns
+    harness: console
+    harness_config:
+      fixture: external_flash
+      type: multi_line
+      ordered: true
+      regex:
+        - "Nand flash driver test sample"
+        - "Nand flash driver block size 20000"
+        - "The Page size of 800"
+        - "Nand flash driver data erase successful...."
+        - "Nand flash driver write completed...."
+        - "Nand flash driver read completed...."
+        - "Nand flash driver read verified"
+        - "Nand flash driver data erase successful...."
+        - "Nand flash driver read verified after erase...."
+        - "Nand flash driver test sample completed...."

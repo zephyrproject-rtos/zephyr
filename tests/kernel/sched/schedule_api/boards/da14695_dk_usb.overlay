@@ -1,0 +1,28 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Clock control for Smartbond schedules delayed work
+ * that interferes with slice scheduling test.
+ * Slice scheduling test does not expect any additional
+ * thread to be scheduled during test.
+ * This simply sets xtal32k settle time to fire way
+ * before slice test is started.
+ * RCX and RC32K calibration intervals are set to 0
+ * to disable calibration for tests.
+ */
+
+&xtal32k {
+	settle-time = <500>;
+};
+
+&rcx {
+	calibration-interval = <0>;
+};
+
+&rc32k {
+	calibration-interval = <0>;
+};

@@ -1,0 +1,14 @@
+# Copyright (c) 2021, BayLibre SAS
+# SPDX-License-Identifier: Apache-2.0
+
+title: Synopsys DesignWare Ethernet
+
+compatible: "snps,designware-ethernet"
+
+include: snps,dwmac.yaml
+
+properties:
+  reg:
+    required: true
+  interrupts:
+    required: true

@@ -1,0 +1,13 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* SOC DTS for the single Cortex-M7 core i.MX RT1152 */
+
+/* Include the shared RT11xx series devicetree for the Cortex-M7 core */
+#include <nxp/imxrt/imxrt11xx/nxp_rt11xx_cm7.dtsi>
+
+/* Includes the specifics for the RT1150 family */
+#include <nxp/imxrt/imxrt11xx/nxp_rt115x.dtsi>

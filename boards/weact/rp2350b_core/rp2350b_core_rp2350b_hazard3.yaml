@@ -1,0 +1,20 @@
+identifier: rp2350b_core/rp2350b/hazard3
+name: WeAct RP2350B Core (Hazard3)
+type: mcu
+arch: riscv
+flash: 4096
+ram: 520
+toolchain:
+  - zephyr
+supported:
+  - clock
+  - counter
+  - dma
+  - gpio
+  - hwinfo
+  - i2c
+  - pwm
+  - spi
+  - uart
+  - usbd
+  - watchdog

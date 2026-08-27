@@ -1,0 +1,23 @@
+# Copyright (c) 2026 u-blox AG
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: ubx_evknorab2/nrf54l15/cpuapp/ns
+name: UBX_EVKNORAB2-nRF54l15-Application-Non-Secure
+type: mcu
+arch: arm
+toolchain:
+  - gnuarmemb
+  - zephyr
+ram: 256
+flash: 940
+supported:
+  - adc
+  - counter
+  - gpio
+  - i2c
+  - i2s
+  - pwm
+  - spi
+  - watchdog
+vendor: u-blox
+sysbuild: true

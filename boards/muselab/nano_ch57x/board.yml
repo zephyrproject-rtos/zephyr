@@ -1,0 +1,7 @@
+board:
+  name: nano_ch57x
+  full_name: MuseLab nanoCH57x
+  vendor: muselab
+  socs:
+    - name: ch570
+    - name: ch572

@@ -1,0 +1,54 @@
+; MEC1727 SPI Image Generator configuration file for internal 512KB flash
+[SPI]
+SPISizeMegabits = 4
+Flashmap = false
+FlshmapAddr = 0
+
+[DEVICE]
+TagAddr0 = 0
+TagAddr1 = 0
+; BoardID is used by a Boot-ROM feature named PlatformID. By default PlatformID
+; is disabled. If PlatformID is enabled in OTP Boot-ROM will check the image
+; BoardID value with an OTP PlatformID value. Load is aborted if the ID's do
+; not match.
+BoardID = 0
+
+[IMAGE "0"]
+ImageLocation = 0x1000
+SpiFreqMHz = 24
+SpiReadCommand = Dual
+SpiDriveStrength = 4
+SpiSlewFast = false
+SpiSignalControl = 0x00
+FwBinFile = zephyr.bin
+ImageRevision = 0x56
+FwOffset = 0
+FwLoadAddress = 0xC0000
+FwEntryAddress = 0
+UseECDSA = false
+AuthenticateKeySelt = 5
+AutoKeyRevEn = true
+KeyRevPermission = 0x11223344
+AutoRollBackProtEn = false
+RollbackProtPerm031000 = 0x11223344
+RollbackProtPerm063032 = 0x55667788
+RollbackProtPerm095063 = 0
+RollbackProtPerm127096 = 0xDDEEFF99
+ECDSAPrivKeyFile = ec384.pem
+ECDSAPrivKeyPassword = ec384
+FwEncrypt = false
+AesGenECPubKeyFile = ec384_crt.pem
+SHA256andECDSA = false
+TagBuildNumber= 0x1156
+Comp0ProgDrvStrenEN = true
+Comp0WritCmdTotByts = 1
+Comp0ReadCmdByte = 0x15
+Comp0WritCmdByte = 0x11
+Comp0DrvValue = 0x40
+Comp0DrvMask = 0x60
+Comp1ProgDrvStrenEN = true
+Comp1WritCmdTotByts = 1
+Comp1ReadCmdByte = 0x15
+Comp1WritCmdByte = 0x11
+Comp1DrvValue = 0x20
+Comp1DrvMask = 0x60

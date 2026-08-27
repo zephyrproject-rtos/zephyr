@@ -1,0 +1,21 @@
+# OPT300X light sensor configuration options
+
+# Copyright (c) 2019 Actinius
+# SPDX-License-Identifier: Apache-2.0
+
+config OPT300X
+	bool "OPT300X Light Sensor"
+	default y
+	depends on DT_HAS_TI_OPT3001_ENABLED || DT_HAS_TI_OPT3004_ENABLED
+	select I2C
+	help
+	  Enable driver for OPT300X light sensors.
+
+if OPT300X
+
+module = OPT300X
+thread_priority = 10
+thread_stack_size = 1024
+source "drivers/sensor/Kconfig.trigger_template"
+
+endif # OPT300X

@@ -1,0 +1,5 @@
+/ {
+	chosen {
+		/delete-property/ zephyr,bt-hci;
+	};
+};

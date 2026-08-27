@@ -1,0 +1,23 @@
+sample:
+  name: Multi-Function Device (MFD) Sample
+  description: Sample for generic MFD with Charger, Fuel Gauge, and Regulator support
+common:
+  tags:
+    - charger
+    - fuel_gauge
+    - regulator
+  harness: console
+  harness_config:
+    type: multi_line
+    regex:
+      - "Current.*uA"
+      - "Charger is.*"
+      - "Fuel gauge.*Capacity"
+      - "Fuel gauge SoC"
+      - ".*Output Voltage.*"
+tests:
+  sample.drivers.mfd_charger:
+    filter: dt_nodelabel_enabled("charger") and dt_nodelabel_enabled("fuelgauge") and
+            dt_nodelabel_enabled("buck") and dt_nodelabel_enabled("buckboost")
+    platform_allow:
+      - nucleo_u575zi_q

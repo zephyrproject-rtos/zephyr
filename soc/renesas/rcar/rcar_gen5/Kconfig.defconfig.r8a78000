@@ -1,0 +1,64 @@
+# Copyright (c) 2026 BayLibre, SAS
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_R8A78000_R52
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,$(dt_nodelabel_path,arch_timer),clock-frequency)
+
+# Mailbox and SCMI depend on GIC. Set their init priority to GIC's.
+# They will be initialized in order according to dts dependencies.
+config MBOX_INIT_PRIORITY
+	default INTC_INIT_PRIORITY
+
+config ARM_SCMI_SHMEM_INIT_PRIORITY
+	default INTC_INIT_PRIORITY
+
+config ARM_SCMI_TRANSPORT_INIT_PRIORITY
+	default INTC_INIT_PRIORITY
+
+config CLOCK_CONTROL_INIT_PRIORITY
+	default INTC_INIT_PRIORITY
+
+config RESET_INIT_PRIORITY
+	default INTC_INIT_PRIORITY
+
+config POWER_DOMAIN_ARM_SCMI_INIT_PRIORITY
+	default INTC_INIT_PRIORITY
+
+if PM_DEVICE
+
+config PM_DEVICE_RUNTIME
+	default y
+
+config POWER_DOMAIN
+	default y
+
+endif # PM_DEVICE
+
+endif # SOC_R8A78000_R52
+
+if SOC_R8A78000_A720
+
+config TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
+	default y
+
+config MBOX_INIT_PRIORITY
+	default INTC_INIT_PRIORITY
+
+config ARM_SCMI_SHMEM_INIT_PRIORITY
+	default INTC_INIT_PRIORITY
+
+config ARM_SCMI_TRANSPORT_INIT_PRIORITY
+	default INTC_INIT_PRIORITY
+
+config CLOCK_CONTROL_INIT_PRIORITY
+	default INTC_INIT_PRIORITY
+
+config MAX_XLAT_TABLES
+	default 32
+
+config NUM_IRQS
+	default 5120 # SPI (INTIDs 32..1019) + ESPI (INTIDs 4096..5119)
+
+endif # SOC_R8A78000_A720

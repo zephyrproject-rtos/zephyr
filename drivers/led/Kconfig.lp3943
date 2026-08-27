@@ -1,0 +1,14 @@
+# Copyright (c) 2018 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config LP3943
+	bool "LP3943 LED driver"
+	default y
+	depends on DT_HAS_TI_LP3943_ENABLED
+	select I2C
+	help
+	  Enable LED driver for LP3943.
+
+	  LP3943 LED driver has 16 channels each with multi-programmable
+	  states at a specified rate. Each channel can drive up to 25 mA
+	  per LED.

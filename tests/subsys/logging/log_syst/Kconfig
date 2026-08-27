@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2022 Intel Corporation
+
+config LOG_BACKEND_MOCK
+	bool "MOCK backend"
+	help
+	  When enabled MOCK backend is used for logging. It is
+	  used to capture the output buffer used for validation of
+	  log messages. It will not output any logs.
+
+if LOG_BACKEND_MOCK
+
+backend = MOCK
+backend-str = mock
+source "subsys/logging/Kconfig.template.log_format_config"
+
+endif # LOG_BACKEND_MOCK
+
+# Include Zephyr's Kconfig.
+source "Kconfig.zephyr"

@@ -1,0 +1,41 @@
+#
+# Copyright (c) 2025 Advanced Micro Devices, Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if SOC_AMD_VERSALNET
+
+configdefault CACHE_MANAGEMENT
+	default y
+
+if SOC_AMD_VERSALNET_RPU
+
+config NUM_IRQS
+	# must be >= the highest interrupt number used
+	# - include the UART interrupts
+	default 256
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
+
+endif # SOC_AMD_VERSALNET_RPU
+
+if SOC_AMD_VERSALNET_APU
+
+configdefault DCACHE_LINE_SIZE
+	default 64
+
+configdefault ICACHE_LINE_SIZE
+	default 64
+
+config NUM_IRQS
+	# must be >= the highest interrupt number used
+	# - include the UART interrupts
+	default 256
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
+
+endif # SOC_AMD_VERSALNET_APU
+endif # SOC_AMD_VERSALNET

@@ -1,0 +1,10 @@
+# Copyright (c) 2023 Efinix Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_EFINIX_SAPPIHIRE
+	bool "EFINIX_SAPPIHIRE serial driver"
+	default y
+	depends on DT_HAS_EFINIX_SAPPHIRE_UART0_ENABLED
+	select SERIAL_HAS_DRIVER
+	help
+	  This option enables Efinix sapphire serial driver.

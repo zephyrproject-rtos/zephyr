@@ -1,0 +1,58 @@
+/*
+ * Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		spi-ram = &scb10;
+	};
+};
+
+/* Configure SCB10 as SPI master for FM25W256 FRAM connection:
+ *   MOSI → P16.1
+ *   MISO → P16.2
+ *   CLK  → P16.0
+ *   CS   → P16.3 (GPIO, active-low)
+ */
+spi1: &scb10 {
+	compatible = "infineon,spi";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+
+	pinctrl-0 = <&p16_1_scb10_spi_m_mosi
+		     &p16_2_scb10_spi_m_miso
+		     &p16_0_scb10_spi_m_clk>;
+	pinctrl-names = "default";
+
+	cs-gpios = <&gpio_prt16 3 GPIO_ACTIVE_LOW>;
+
+	clocks = <&peri0_group1_16bit_2>;
+};
+
+&peri0_group1_16bit_2 {
+	status = "okay";
+};
+
+/* Ensure GPIO port 16 is enabled for the CS pin */
+&gpio_prt16 {
+	status = "okay";
+};
+
+&p16_1_scb10_spi_m_mosi {
+	drive-strength = "full";
+	drive-push-pull;
+};
+
+&p16_2_scb10_spi_m_miso {
+	drive-strength = "full";
+	input-enable;
+};
+
+&p16_0_scb10_spi_m_clk {
+	drive-strength = "full";
+	drive-push-pull;
+};

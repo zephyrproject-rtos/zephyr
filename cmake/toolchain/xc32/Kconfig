@@ -1,0 +1,19 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config TOOLCHAIN_XC
+	def_bool y
+	select HAS_COVERAGE_SUPPORT
+	help
+	  Microchip MPLAB XC32 compiler toolchain. XC32 is a GCC-based
+	  toolchain targeting PIC32 (MIPS-core), PIC32C/PIC32CX (ARM
+	  Cortex-M), and PIC32AK/dsPIC33A device families.
+
+config TOOLCHAIN_XC_SUPPORTS_GNU_EXTENSIONS
+	def_bool y
+	select TOOLCHAIN_SUPPORTS_GNU_EXTENSIONS
+
+config TOOLCHAIN_XC_SUPPORTS_THREAD_LOCAL_STORAGE
+	def_bool y
+	depends on ARM
+	select TOOLCHAIN_SUPPORTS_THREAD_LOCAL_STORAGE

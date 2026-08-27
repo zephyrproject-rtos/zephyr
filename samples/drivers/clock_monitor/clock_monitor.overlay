@@ -1,0 +1,19 @@
+/*
+ * SPDX-FileCopyrightText: 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* freqme0 is enabled and fully configured (clocks, INPUTMUX routing) at the
+ * SoC / board devicetree level on every FREQME-capable board; this just
+ * adds the aliases the clock_monitor samples look up. Shared by check_freq
+ * and measure_freq via EXTRA_DTC_OVERLAY_FILE so neither sample duplicates
+ * this overlay.
+ */
+
+/ {
+	aliases {
+		clock-monitor = &freqme0;
+		clock-meter = &freqme0;
+	};
+};

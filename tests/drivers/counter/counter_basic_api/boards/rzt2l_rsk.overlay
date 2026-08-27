@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&cmtw0 {
+	status = "okay";
+
+	counter {
+		status = "okay";
+	};
+};
+
+&cmtw1 {
+	status = "okay";
+
+	counter {
+		status = "okay";
+	};
+};

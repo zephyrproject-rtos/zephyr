@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Siemens AG
+# SPDX-License-Identifier: Apache-2.0
+
+shield:
+  name: mikroe_two_wire_eth_click
+  full_name: Two-Wire ETH Click
+  vendor: mikroe
+  supported_features:
+    - ethernet

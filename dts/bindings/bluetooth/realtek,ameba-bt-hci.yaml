@@ -1,0 +1,12 @@
+# Copyright (c) 2026 Realtek Semiconductor Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Bluetooth HCI for REALTEK AMEBA
+
+compatible: "realtek,ameba-bt-hci"
+
+include: bt-hci.yaml
+
+properties:
+  bt-hci-name:
+    default: "BT AMEBA"

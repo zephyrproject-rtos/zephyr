@@ -1,0 +1,73 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: Glitchless clock switching Clock Generation module
+
+compatible: "nxp,mc-cgm"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  max-ido-change:
+    required: true
+    type: int
+    description: |
+      Maximum variation of current per time (mA/microsec) -  max allowable
+      IDD change is determined by the user's power supply design.
+
+  step-duration:
+    required: true
+    type: int
+    description: Step duration of each PCFS step (time per step in us).
+
+  clk-src-freq:
+    required: true
+    type: int
+    description: |
+      Frequency of the clock source from which ramp-down and to which ramp-up are processed.
+
+  mux-0-dc-0-div:
+    type: int
+    description: MUX_0_DC_0 divider setting
+
+  mux-0-dc-1-div:
+    type: int
+    description: MUX_0_DC_1 divider setting
+
+  mux-0-dc-2-div:
+    type: int
+    description: MUX_0_DC_2 divider setting
+
+  mux-0-dc-3-div:
+    type: int
+    description: MUX_0_DC_3 divider setting
+
+  mux-0-dc-4-div:
+    type: int
+    description: MUX_0_DC_4 divider setting
+
+  mux-0-dc-5-div:
+    type: int
+    description: MUX_0_DC_5 divider setting
+
+  mux-0-dc-6-div:
+    type: int
+    description: MUX_0_DC_6 divider setting
+
+  mux-1-dc-0-div:
+    type: int
+    description: MUX_1_DC_0 divider setting
+
+  mux-2-dc-0-div:
+    type: int
+    description: MUX_2_DC_0 divider setting
+
+  "#clock-cells":
+    type: int
+    const: 1
+
+clock-cells:
+  - name

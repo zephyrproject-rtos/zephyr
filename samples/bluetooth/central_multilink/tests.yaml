@@ -1,0 +1,12 @@
+sample:
+  name: Bluetooth Central Multilink
+tests:
+  sample.bluetooth.central.multilink:
+    harness: bluetooth
+    platform_allow:
+      - qemu_cortex_m3
+      - qemu_x86
+      - nrf52840dk/nrf52840
+    integration_platforms:
+      - qemu_cortex_m3
+    tags: bluetooth

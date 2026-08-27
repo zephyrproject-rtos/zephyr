@@ -1,0 +1,54 @@
+# Copyright (c) 2023 Intel Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+# Macro to find node in device tree
+DT_CHOSEN_CDNS_NAND_NODE := nand
+
+config FLASH_CDNS_NAND
+	bool "Cadence NAND Flash driver"
+	default y
+	depends on DT_HAS_CDNS_NAND_ENABLED
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_EXPLICIT_ERASE
+	help
+	  Enable Cadence NAND support.
+
+if FLASH_CDNS_NAND
+
+config CDNS_NAND_INTERRUPT_SUPPORT
+	bool "Cadence Nand Interrupt Support"
+	def_bool $(dt_node_has_prop,$(DT_CHOSEN_CDNS_NAND_NODE),interrupts)
+	help
+	  Enable Cadence Nand Interrupt Support.
+
+choice
+	prompt "Set the NAND Operating mode"
+	default CDNS_NAND_CDMA_MODE
+	help
+	  Specify the Operating mode used by the driver.
+
+config CDNS_NAND_CDMA_MODE
+	bool "Cadence Nand CDMA Operating Mode"
+
+config CDNS_NAND_PIO_MODE
+	bool "Cadence Nand PIO Operating Mode"
+
+config CDNS_NAND_GENERIC_MODE
+	bool "Cadence Nand Generic Operating Mode"
+
+endchoice
+
+config FLASH_CDNS_CDMA_PAGE_COUNT
+	int "Set the page count for a single transfer in the CDMA Mode"
+	default 10
+	help
+	  Configure the page count for a single transfer in the CDMA Mode
+
+config FLASH_CDNS_CDMA_BLOCK_COUNT
+	int "Set the block count for a single transfer in the CDMA Mode"
+	default 10
+	help
+	  Configure the block count for a single transfer in the CDMA Mode
+
+endif # FLASH_CDNS_NAND

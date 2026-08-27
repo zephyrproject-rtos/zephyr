@@ -1,0 +1,12 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+mainmenu "Bluetooth: Mesh Provisioner"
+
+config MESH_PROVISIONER_USE_SW0
+	bool "Use sw0 button to provision"
+	depends on $(dt_alias_enabled,sw0)
+	select GPIO
+	default y

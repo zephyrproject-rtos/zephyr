@@ -1,0 +1,4 @@
+tests:
+  arch.riscv.atomic:
+    arch_allow: riscv
+    filter: CONFIG_RISCV_ISA_EXT_A and not CONFIG_SOC_OPENISA_RV32M1

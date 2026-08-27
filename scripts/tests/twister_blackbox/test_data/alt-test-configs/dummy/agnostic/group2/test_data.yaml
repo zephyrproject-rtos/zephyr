@@ -1,0 +1,12 @@
+tests:
+  dummy.agnostic.group2.alt:
+    platform_allow:
+      - native_sim
+      - qemu_x86
+      - qemu_x86_64
+    integration_platforms:
+      - native_sim
+    slow: true
+    tags:
+      - agnostic
+      - alternate-config-root

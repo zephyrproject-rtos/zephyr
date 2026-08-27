@@ -1,0 +1,6 @@
+board:
+  name: bg29_rb4420a
+  full_name: EFR32BG29 Bluetooth LE 4 dBm DCDC Boost WLCSP (BG29-RB4420A)
+  vendor: silabs
+  socs:
+    - name: efr32bg29b220f1024cj45

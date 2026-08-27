@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2023 Cypress Semiconductor Corporation (an Infineon company) or
+ * an affiliate of Cypress Semiconductor Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/armv6-m.dtsi>
+
+/ {
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu@0 {
+			device_type = "cpu";
+			compatible = "arm,cortex-m0+";
+			reg = <0>;
+			clock-frequency = <100000000>;
+		};
+	};
+};
+
+&nvic {
+	arm,num-irq-priority-bits = <2>;
+};

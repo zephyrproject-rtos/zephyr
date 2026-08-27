@@ -1,0 +1,5 @@
+# Copyright 2023, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_MIMXRT1040_EVK
+	select SOC_PART_NUMBER_MIMXRT1042XJM5B

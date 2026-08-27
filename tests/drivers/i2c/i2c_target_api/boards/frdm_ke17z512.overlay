@@ -1,0 +1,26 @@
+/*
+ * Copyright 2024 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* To test this sample, connect
+ * LPI2C0 SCL(J2-20)  -->  LPI2C1 SCL(J2-10)
+ * LPI2C0 SDA(J2-18)  -->  LPI2C1 SDA(J2-12)
+ */
+
+&lpi2c0 {
+	eeprom0: eeprom@54 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x54>;
+		size = <256>;
+	};
+};
+
+&lpi2c1 {
+	eeprom1: eeprom@56 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x56>;
+		size = <256>;
+	};
+};

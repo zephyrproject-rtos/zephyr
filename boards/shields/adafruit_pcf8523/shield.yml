@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2025, Jonas Berg
+
+shield:
+  name: adafruit_pcf8523
+  full_name: Adafruit PCF8523 Real Time Clock Shield
+  vendor: adafruit
+  supported_features:
+    - rtc

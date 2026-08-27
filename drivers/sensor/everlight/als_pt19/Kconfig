@@ -1,0 +1,10 @@
+# Copyright (c) 2025 Dipak Shetty <shetty.dipak@gmx.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config EVERLIGHT_ALS_PT19
+	bool "Everlight ALS-PT19 Ambient Light Sensor"
+	default y
+	depends on DT_HAS_EVERLIGHT_ALS_PT19_ENABLED
+	select ADC
+	help
+	  Enable support for the Everlight ALS-PT19 ambient light sensor.

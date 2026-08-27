@@ -1,0 +1,20 @@
+# Copyright (c) 2020, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: VND PWM controller
+
+compatible: "vnd,pwm"
+
+include: [pwm-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#pwm-cells":
+    const: 3
+
+pwm-cells:
+  - channel
+  - period
+  - flags

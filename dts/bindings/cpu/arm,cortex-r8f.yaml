@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: ARM Cortex-R8F CPU
+
+compatible: "arm,cortex-r8f"
+
+include: cpu.yaml

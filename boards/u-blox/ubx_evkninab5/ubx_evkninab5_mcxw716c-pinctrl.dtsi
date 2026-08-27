@@ -1,0 +1,35 @@
+/*
+ * Copyright 2026 NXP
+ * Copyright 2026 u-blox
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/mcx/MCXW716CMFTA-pinctrl.h>
+
+&pinctrl {
+	pinmux_lpuart0: pinmux_lpuart0 {
+		group0 {
+			pinmux = <LPUART0_RX_PTA16>, <LPUART0_TX_PTA17>;
+			drive-strength = "low";
+			slew-rate = "fast";
+		};
+	};
+
+	pinmux_lpuart1: pinmux_lpuart1 {
+		group0 {
+			pinmux = <LPUART1_RX_PTC2>, <LPUART1_TX_PTC3>;
+			drive-strength = "low";
+			slew-rate = "fast";
+		};
+	};
+
+	pinmux_lpadc0: pinmux_lpadc0 {
+		group0 {
+			pinmux = <ADC0_A6_PTD2>,
+				 <ADC0_B6_PTD3>,
+				 <ADC0_B5_PTD1>;
+			drive-strength = "low";
+			slew-rate = "fast";
+		};
+	};
+};

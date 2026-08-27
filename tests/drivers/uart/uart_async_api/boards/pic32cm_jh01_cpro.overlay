@@ -1,0 +1,31 @@
+/*
+ * Copyright (c) 2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+dut: &sercom2 {
+	compatible = "microchip,sercom-g1-uart";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	current-speed = <115200>;
+
+	/* Internally loop-back TX and RX on PAD0 */
+	rxpo = <0>;
+	txpo = <0>;
+
+	pinctrl-0 = <&sercom2_uart_default>;
+	pinctrl-names = "default";
+	dmas = <&dmac 0x2 0x6>, <&dmac 0x3 0x7>;
+	dma-names = "rx", "tx";
+	status = "okay";
+};
+
+&pinctrl {
+	sercom2_uart_default: sercom2_uart_default {
+		group1 {
+			pinmux = <PA12C_SERCOM2_PAD0>,
+				 <PA13C_SERCOM2_PAD1>;
+		};
+	};
+};

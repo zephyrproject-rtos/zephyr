@@ -1,0 +1,62 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  TE Connectivity HTU31D digital humidity and temperature sensor.
+  Communicates via I2C at address 0x40 (ADDR pin to GND) or
+  0x41 (ADDR pin to VDD).
+
+compatible: "meas,htu31d"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  osr-temp:
+    type: int
+    default: 3
+    description: |
+      Temperature oversampling level (HTU31D datasheet Table 3).
+      Higher levels give better resolution at the cost of longer
+      conversion time.
+        0: 0.040 C resolution, 1.57 ms max conversion
+        1: 0.025 C resolution, 3.06 ms max
+        2: 0.016 C resolution, 6.03 ms max
+        3: 0.012 C resolution, 11.98 ms max (default)
+      The sensor has no built-in default OSR; 3 is selected as the
+      driver default to maximize measurement accuracy.
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+
+  osr-humidity:
+    type: int
+    default: 3
+    description: |
+      Humidity oversampling level (HTU31D datasheet Table 3).
+        0: 0.14 %RH resolution, 1.11 ms max conversion
+        1: 0.10 %RH resolution, 2.14 ms max
+        2: 0.07 %RH resolution, 4.21 ms max
+        3: 0.05 %RH resolution, 8.34 ms max (default)
+      The sensor has no built-in default OSR; 3 is selected as the
+      driver default to maximize measurement accuracy.
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+
+examples:
+  - |
+    i2c {
+      #address-cells = <1>;
+      #size-cells = <0>;
+
+      htu31d@40 {
+        compatible = "meas,htu31d";
+        reg = <0x40>;
+        osr-temp = <2>;
+        osr-humidity = <2>;
+      };
+    };

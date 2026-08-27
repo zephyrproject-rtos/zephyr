@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2021 Linaro Limited
+ * Copyright (c) 2023 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Warning: This overlay performs configuration from clean sheet.
+ * It is assumed that it is applied after clear_clocks.overlay file.
+ */
+
+&clk_csi {
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&clk_csi>;
+	clock-frequency = <DT_FREQ_M(4)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <1>;
+	apb2-prescaler = <1>;
+	apb3-prescaler = <1>;
+};

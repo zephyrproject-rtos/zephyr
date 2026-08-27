@@ -1,0 +1,5 @@
+tests:
+  kernel.timer.timer_observer:
+    tags:
+      - kernel
+      - timer

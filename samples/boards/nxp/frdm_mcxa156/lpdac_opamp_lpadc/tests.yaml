@@ -1,0 +1,15 @@
+# Copyright 2025 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+sample:
+  name: LPDAC OPAMP LPADC demo for FRDM-MCXA156
+common:
+  tags:
+    - ADC
+    - DAC
+    - OPAMP
+tests:
+  sample.boards.frdm_mcxa156.lpdac_opamp_lpadc:
+    build_only: true
+    platform_allow: frdm_mcxa156

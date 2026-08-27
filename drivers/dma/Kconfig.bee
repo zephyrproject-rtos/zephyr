@@ -1,0 +1,37 @@
+# Copyright (c) 2026, Realtek Semiconductor Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config DMA_BEE
+	bool "Realtek Bee series DMA driver"
+	default y
+	depends on DT_HAS_REALTEK_BEE_DMA_ENABLED
+	select HAL_REALTEK_BEE_DMA
+	select SYS_MEM_BLOCKS
+	help
+	  This option enables the DMA driver for Realtek Bee SoCs.
+
+if DMA_BEE
+
+config DMA_BEE_LLI_POOL_COUNT
+	int "Number of LLI in the pool"
+	default 128
+	help
+	  Specifies the total number of Linked List Item (LLI) descriptors
+	  available in the driver's internal memory pool.
+
+	  These descriptors are used for multi-block DMA transfers.
+	  Each block in a DMA configuration requires one LLI.
+
+	  Increase this value if you have many concurrent DMA channels using
+	  multi-block transfers or if you have single transfers with a large
+	  number of blocks.
+
+config DMA_BEE_MAX_BLOCKS_PER_CHANNEL
+	int "Max number of blocks per channel"
+	default 16
+	range 1 64
+	help
+	  Specifies the maximum number of blocks that can be configured for a
+	  single DMA channel transaction.
+
+endif

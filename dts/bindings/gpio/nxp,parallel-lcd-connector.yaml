@@ -1,0 +1,33 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+
+compatible: "nxp,parallel-lcd-connector"
+
+description: |
+    GPIO pins exposed on NXP LCD interface. These pins are
+    exposed on a 40 pin flexible printed cable connector. The pins have the
+    following assignments:
+
+      FPC Pin      Function
+      1            LED backlight cathode
+      2            LED backlight anode
+      3            GND
+      4            VDD (3v3)
+      5-7          GND
+      8-12         LCD D11-D15
+      13-14        GND
+      15-20        LCD D5-D10
+      21-23        GND
+      24-28        LCD D0-D4
+      29           GND
+      30           LCD CLK
+      31           LCD DISP
+      32           LCD HSYNC
+      33           LCD VSYNC
+      34           LCD DE
+      35           NC
+      36           GND
+      37-40        NC
+
+include: [gpio-nexus.yaml, base.yaml]

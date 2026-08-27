@@ -1,0 +1,20 @@
+sample:
+  name: DHCP Client
+tests:
+  sample.net.dhcpv4_client:
+    harness: net
+    depends_on: netif
+    tags:
+      - net
+      - http
+  sample.net.dhcpv4_client.qemu:
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - "Run dhcpv4 client"
+        - "Address\\[[0-9]+\\]: 10\\.0\\.2\\."
+    platform_allow:
+      - qemu_riscv64
+    extra_configs:
+      - CONFIG_NET_QEMU_USER=y

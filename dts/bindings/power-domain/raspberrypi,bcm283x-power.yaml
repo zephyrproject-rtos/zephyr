@@ -1,0 +1,18 @@
+# Copyright (c) 2026 Muhammad Waleed Badar
+# SPDX-License-Identifier: Apache-2.0
+
+description: Raspberry Pi BCM283x power domain
+
+compatible: "raspberrypi,bcm283x-power"
+
+include: power-domain.yaml
+
+properties:
+  firmware:
+    required: true
+    type: phandle
+
+  power-domain-id:
+    required: true
+    type: int
+    description: Raspberry Pi BCM283x power domain ID

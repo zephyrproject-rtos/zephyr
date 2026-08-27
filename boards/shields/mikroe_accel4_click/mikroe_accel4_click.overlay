@@ -1,0 +1,20 @@
+/*
+ * Copyright (C) 2026 Savoir-faire Linux, Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		accel0 = &lis2mdl_mikroe_accel_4_click;
+	};
+};
+
+&mikrobus_i2c {
+	status = "okay";
+
+	lis2mdl_mikroe_accel_4_click: fxls8974@18 {
+		compatible = "nxp,fxls8974";
+		reg = <0x18>;
+		int2-gpios = <&mikrobus_header 7 GPIO_ACTIVE_LOW>;
+	};
+};

@@ -1,0 +1,23 @@
+identifier: jz_f407vet6
+name: JZ-F407VET6 Industrial Control Board
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 192
+flash: 512
+supported:
+  - can
+  - eeprom
+  - entropy
+  - gpio
+  - i2c
+  - netif:eth
+  - nvs
+  - rtc
+  - sdhc
+  - spi
+  - uart
+  - usb_device
+  - watchdog

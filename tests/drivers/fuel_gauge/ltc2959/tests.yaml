@@ -1,0 +1,7 @@
+tests:
+  drivers.fuel_gauge.ltc2959:
+    tags:
+      - fuel_gauge
+    filter: dt_compat_enabled("adi,ltc2959")
+    platform_allow:
+      - native_sim

@@ -1,0 +1,49 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* To test this sample, connect
+ * SCL1 P400  -->  SCL0 P302
+ * SDA1 P401  -->  SDA0 P301
+ */
+
+&pinctrl {
+	iic0_default: iic0_default {
+		group1 {
+			/* SCL0 SDA0 */
+			psels = <RA_PSEL(RA_PSEL_I2C, 3, 2)>,
+				<RA_PSEL(RA_PSEL_I2C, 3, 1)>;
+			drive-strength = "medium";
+		};
+	};
+};
+
+&iic1 {
+	status = "okay";
+
+	eeprom0: eeprom@54 {
+		compatible = "zephyr,i2c-target-eeprom";
+		address-width = <8>;
+		reg = <0x54>;
+		size = <256>;
+	};
+};
+
+&iic0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&iic0_default>;
+	pinctrl-names = "default";
+	interrupts = <60 1>, <61 1>, <62 1>, <63 1>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
+	status = "okay";
+
+	eeprom1: eeprom@56 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x56>;
+		size = <256>;
+	};
+};

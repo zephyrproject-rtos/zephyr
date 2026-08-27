@@ -1,0 +1,18 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP OTP unique chip identifier (UID).
+
+  Describes the read-only unique chip identifier that some NXP MCUs store in a
+  one-time-programmable (OTP) flash memory area. The hwinfo device-id backend
+  reads the identifier directly from the address given by reg. The identifier is
+  programmed by NXP during manufacturing and can be read by any core.
+
+compatible: "nxp,otp-uid"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

@@ -1,0 +1,40 @@
+# MAX1125X ADC configuration options
+
+# Copyright (c) 2023 Mustafa Abdullah Kus, Sparse Technology
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_MAX1125X
+	bool "MAX1125X driver"
+	default y
+	depends on DT_HAS_MAXIM_MAX11254_ENABLED || DT_HAS_MAXIM_MAX11253_ENABLED
+	select SPI
+	select ADC_CONFIGURABLE_INPUTS
+	help
+	  Enable the driver implementation for the MAX1125X
+
+if ADC_MAX1125X
+
+config ADC_MAX1125X_INIT_PRIORITY
+	int "Init priority"
+	default 80
+	help
+	  ADS1X1X ADC device driver initialization priority.
+
+config ADC_MAX1125X_ASYNC_THREAD_INIT_PRIORITY
+	int "ADC MAX1125X async thread priority"
+	default 0
+
+config ADC_MAX1125X_ACQUISITION_THREAD_PRIORITY
+	int "Priority for the ADC data acquisition thread"
+	default 0
+	help
+	  Priority level for the internal ADC data acquisition thread.
+
+config ADC_MAX1125X_ACQUISITION_THREAD_STACK_SIZE
+	int "Stack size for the ADC data acquisition thread"
+	default 400
+	help
+	  Size of the stack used for the internal data acquisition
+	  thread.
+
+endif # ADC_MAX1125X

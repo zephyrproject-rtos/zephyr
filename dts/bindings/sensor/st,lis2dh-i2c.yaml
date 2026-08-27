@@ -1,0 +1,9 @@
+# Copyright (c) 2018 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    STMicroelectronics LIS2DH 3-axis accelerometer accessed through I2C bus
+
+compatible: "st,lis2dh"
+
+include: ["i2c-device.yaml", "st,lis2dh-common.yaml"]

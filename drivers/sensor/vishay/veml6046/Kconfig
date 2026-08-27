@@ -1,0 +1,12 @@
+# Copyright (c) 2025 Andreas Klinger
+# SPDX-License-Identifier: Apache-2.0
+
+# Vishay VEML6046 RGBIR color sensor driver options.
+
+config VEML6046
+	bool "Vishay VEML6046 RGBIR color sensor"
+	default y
+	depends on DT_HAS_VISHAY_VEML6046_ENABLED
+	select I2C
+	help
+	  Enable Vishay VEML6046 RGBIR color sensor driver.

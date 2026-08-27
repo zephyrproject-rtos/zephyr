@@ -1,0 +1,21 @@
+# Copyright (c) 2023 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip XEC symmetric crypto (AES/Hash) accelerator.
+
+compatible: "microchip,xec-symcr"
+
+include:
+  - name: base.yaml
+  - name: microchip,dmec-ecia-girq.yaml
+
+properties:
+  reg:
+    required: true
+
+  pcr:
+    type: int
+    required: true
+    description: |
+      Integer encoding the PCR register index and bit position
+      of this Crypto controller.

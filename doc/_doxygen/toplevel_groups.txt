@@ -1,0 +1,35 @@
+# SPDX-FileCopyrightText: The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# Groups allowed at the top level of the API documentation index.
+#
+# A Doxygen group ends up here when no other group pulls it in with @ingroup or
+# @addtogroup. These are the coarse categories of the API index, so the list is
+# meant to stay short: nest a new group under an existing category instead of
+# adding a line below. Enforced by scripts/ci/doxygen_toplevel_groups.py.
+#
+# Blank lines are ignored and '#' starts a comment.
+
+# zephyr-keep-sorted-start
+device_model
+devicetree
+internal_api
+io_interfaces
+kernel_apis
+mem_mgmt
+os_services
+system_errno
+testing
+third_party
+toolchain
+utilities
+# zephyr-keep-sorted-stop
+
+# Doxygen's EXCLUDE_SYMBOLS drops leading-underscore names, so these three never
+# appear on the homepage but they are still top level in the Doxygen XML. list
+# them here to avoid having to maintain duplicated logic in
+# `doxygen_toplevel_groups` for groups that are going to be deleted soon anyway
+# as they are for the deprecated legacy USB device stack.
+_usb_device_core_api
+_usb_device_controller_api
+_usbc_device_api

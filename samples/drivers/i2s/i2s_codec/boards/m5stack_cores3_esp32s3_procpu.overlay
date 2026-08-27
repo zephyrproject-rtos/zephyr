@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2025 TOKITA Hiroshi
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		i2s-codec-tx = &i2s1;
+	};
+};
+
+audio_codec: &aw88298 {
+	status = "okay";
+};
+
+&i2s1 {
+	status = "okay";
+};
+
+&dma {
+	status = "okay";
+};

@@ -1,0 +1,6 @@
+board:
+  name: lp_mspm0l2228
+  full_name: MSPM0L2228 Launchpad
+  vendor: ti
+  socs:
+    - name: mspm0l2228

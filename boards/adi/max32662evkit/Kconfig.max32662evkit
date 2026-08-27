@@ -1,0 +1,7 @@
+# MAX32662EVKIT boards configuration
+
+# Copyright (c) 2024 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_MAX32662EVKIT
+	select SOC_MAX32662

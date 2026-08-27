@@ -1,0 +1,190 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/led/led.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	aliases {
+		led0 = &led1_blue;
+		sw0 = &button0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led1_red: led1_red {
+			gpios = <&gpio2 8 GPIO_ACTIVE_LOW>;
+			label = "LED 1 red";
+		};
+
+		led1_green: led1_green {
+			gpios = <&gpio2 10 GPIO_ACTIVE_LOW>;
+			label = "LED 1 green";
+		};
+
+		led1_blue: led1_blue {
+			gpios = <&gpio2 9 GPIO_ACTIVE_LOW>;
+			label = "LED 1 blue";
+		};
+
+		led2_red: led2_red {
+			status = "disabled";
+			gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
+			label = "LED 2 red";
+		};
+
+		led2_green: led2_green {
+			status = "disabled";
+			gpios = <&gpio0 4 GPIO_ACTIVE_LOW>;
+			label = "LED 2 green";
+		};
+
+		led2_blue: led2_blue {
+			status = "disabled";
+			gpios = <&gpio2 7 GPIO_ACTIVE_LOW>;
+			label = "LED 2 blue";
+		};
+	};
+
+	rgb_led_1: rgb_led_1 {
+		compatible = "leds-group-multicolor";
+
+		leds = <&led1_red>,
+		       <&led1_green>,
+		       <&led1_blue>;
+
+		color-mapping = <LED_COLOR_ID_RED>,
+				<LED_COLOR_ID_GREEN>,
+				<LED_COLOR_ID_BLUE>;
+	};
+
+	rgb_led_2: rgb_led_2 {
+		status = "disabled";
+		compatible = "leds-group-multicolor";
+
+		leds = <&led2_red>,
+		       <&led2_green>,
+		       <&led2_blue>;
+
+		color-mapping = <LED_COLOR_ID_RED>,
+				<LED_COLOR_ID_GREEN>,
+				<LED_COLOR_ID_BLUE>;
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		button0: button0 {
+			gpios = <&gpio0 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button 0";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		button1: button1 {
+			status = "disabled";
+			gpios = <&gpio0 1 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button 1";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+
+	sky13348: sky13348 {
+		compatible = "skyworks,sky13348";
+		v1-gpios = <&gpio1 9 GPIO_ACTIVE_HIGH>;
+		v2-gpios = <&gpio1 10 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&pinctrl {
+	i2c21_default: i2c21_default {
+		group1 {
+			psels = <NRF_PSEL(TWIM_SDA, 1, 12)>,
+				<NRF_PSEL(TWIM_SCL, 1, 11)>;
+		};
+	};
+
+	i2c21_sleep: i2c21_sleep {
+		group1 {
+			psels = <NRF_PSEL(TWIM_SDA, 1, 12)>,
+				<NRF_PSEL(TWIM_SCL, 1, 11)>;
+			low-power-enable;
+		};
+	};
+
+	spi22_default: spi22_default {
+		group1 {
+			psels = <NRF_PSEL(SPIM_SCK, 1, 8)>,
+				<NRF_PSEL(SPIM_MOSI, 1, 6)>,
+				<NRF_PSEL(SPIM_MISO, 1, 5)>;
+		};
+	};
+
+	spi22_sleep: spi22_sleep {
+		group1 {
+			psels = <NRF_PSEL(SPIM_SCK, 1, 8)>,
+				<NRF_PSEL(SPIM_MOSI, 1, 6)>,
+				<NRF_PSEL(SPIM_MISO, 1, 5)>;
+			low-power-enable;
+		};
+	};
+};
+
+&i2c21 {
+	pinctrl-0 = <&i2c21_default>;
+	pinctrl-1 = <&i2c21_sleep>;
+	pinctrl-names = "default", "sleep";
+	zephyr,concat-buf-size = <256>;
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+
+	bme688: bme688@76 {
+		status = "disabled";
+		compatible = "bosch,bme680";
+		reg = <0x76>;
+	};
+
+	adxl367: adxl367@1d {
+		status = "disabled";
+		compatible = "adi,adxl367";
+		reg = <0x1d>;
+	};
+};
+
+&spi22 {
+	pinctrl-0 = <&spi22_default>;
+	pinctrl-1 = <&spi22_sleep>;
+	pinctrl-names = "default", "sleep";
+	overrun-character = <0x00>;
+	cs-gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;
+
+	bmi270: bmi270@0 {
+		status = "disabled";
+		compatible = "bosch,bmi270";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(8)>;
+		irq-gpios = <&gpio1 4 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio2 {
+	status = "okay";
+};
+
+&gpiote20 {
+	status = "okay";
+};
+
+&gpiote30 {
+	status = "okay";
+};

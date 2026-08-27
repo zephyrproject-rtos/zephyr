@@ -1,0 +1,32 @@
+/*
+ * SPDX-FileCopyrightText: <text>Copyright 2026 Arm Limited and/or its
+ * affiliates <open-source-office@arm.com></text>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	/* Split 4 MiB ISRAM:
+	 *  - 1 MiB for code/ro (RX)
+	 *  - 3 MiB for TFLM buffers (RW)
+	 */
+	isram_text: sram@31000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x31000000 0x00100000>; /* 1 MiB */
+		zephyr,memory-region = "ISRAM_TEXT";
+	};
+
+	isram_rw: sram@31100000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x31100000 0x00300000>; /* 3 MiB */
+		zephyr,memory-region = "ISRAM_RW";
+	};
+
+	chosen {
+		/* Code still executes from ISRAM (RX), data stays in SRAM (RW) */
+		zephyr,flash = &isram_text;
+		zephyr,sram = &sram;
+
+		/* TFLM buffers go to the writable ISRAM slice */
+		zephyr,tflm-storage = &isram_rw;
+	};
+};

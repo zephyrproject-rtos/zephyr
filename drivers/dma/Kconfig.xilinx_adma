@@ -1,0 +1,29 @@
+# ADMA Driver configuration options
+# Copyright (c) 2026 Advanced Micro Devices.
+
+# SPDX-License-Identifier: Apache-2.0
+
+
+config DMA_XILINX_ADMA
+	bool "Using Xilinx ADMA driver"
+	default y
+	depends on DT_HAS_XLNX_ZYNQMP_DMA_1_0_ENABLED || DT_HAS_AMD_VERSAL2_DMA_1_0_ENABLED
+	select CACHE_MANAGEMENT
+	select SYS_MEM_BLOCKS
+	help
+	  DMA driver for Xilinx ADMA.
+
+config DMA_XILINX_ADMA_SG_BUFFER_COUNT
+	int "Maximum number of scatter-gather descriptors per channel"
+	default 32
+	range 1 32
+	help
+	  Number of scatter-gather descriptor slots allocated per DMA channel
+	  in the descriptor memory pool. Each entry holds a paired source and
+	  destination hardware descriptor used by a single SG block.
+
+config DMA_XILINX_ADMA_DESC_POOL_ALIGNMENT
+	int "DMA descriptor pool alignment in bytes"
+	default 64
+	help
+	  Memory alignment requirement for DMA descriptor pool allocation.

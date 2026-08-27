@@ -1,0 +1,21 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,sram = &ocram1;
+	};
+};
+
+&sai1 {
+	mclk-output;
+	podf = <32>;
+	pll-clocks = <&anatop 0 0 0>,
+		     <&anatop 0 0 30>,
+		     <&anatop 0 0 1>,
+		     <&anatop 0 0 106>,
+		     <&anatop 0 0 1000>;
+};

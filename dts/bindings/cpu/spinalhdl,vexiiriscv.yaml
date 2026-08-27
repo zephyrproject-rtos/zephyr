@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: VexiiRiscv RISC-V CPU
+
+compatible: "spinalhdl,vexiiriscv"
+
+include: riscv-common.yaml

@@ -1,0 +1,6 @@
+# Copyright (c) 2023 Antmicro
+# Copyright (c) 2024 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_SIWG917
+	select SOC_EARLY_INIT_HOOK

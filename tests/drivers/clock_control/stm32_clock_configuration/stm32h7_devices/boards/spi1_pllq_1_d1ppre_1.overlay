@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2021 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Warning: This overlay performs configuration from clean sheet.
+ * It is assumed that it is applied after core_init.overlay file.
+ */
+
+&pll {
+	/delete-property/ div-q;
+	div-q = <1>;
+};
+
+&rcc {
+	/delete-property/ d1ppre;
+	d1ppre = <1>;
+};
+
+&spi1 {
+	/delete-property/ clocks;
+	clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00001000>,
+		 <&rcc STM32_SRC_PLL1_Q SPI123_SEL(0)>;
+	status = "okay";
+};

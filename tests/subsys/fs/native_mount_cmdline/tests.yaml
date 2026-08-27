@@ -1,0 +1,30 @@
+tests:
+  filesystem.native_mount_cmdline.default:
+    tags:
+      - native_mount
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim
+    harness: pytest
+    timeout: 60
+    extra_configs:
+      - CONFIG_NATIVE_EXTRA_CMDLINE_ARGS="-volume=./dir_a:/dir_a -volume=./dir_b:/dir_b"
+    extra_args:
+      - NATIVE_MOUNT_HOST_DIR_A=dir_a
+      - NATIVE_MOUNT_HOST_DIR_B=dir_b
+
+  filesystem.native_mount_cmdline.banana_apple:
+    tags:
+      - native_mount
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    harness: pytest
+    timeout: 60
+    extra_configs:
+      - CONFIG_NATIVE_EXTRA_CMDLINE_ARGS="-volume=./banana:/dir_a -volume=./apple:/dir_b"
+    extra_args:
+      - NATIVE_MOUNT_HOST_DIR_A=banana
+      - NATIVE_MOUNT_HOST_DIR_B=apple

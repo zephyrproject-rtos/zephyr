@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2024 TOKITA Hiroshi
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	test {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		test_i2s: i2s@11112222 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "vnd,i2s";
+			reg = <0x11112222 0x1000>;
+			status = "okay";
+
+			test_i2s_mpxxdtyy: mpxxdtyy@0 {
+				compatible = "st,mpxxdtyy";
+				reg = <0>;
+			};
+		};
+	};
+};

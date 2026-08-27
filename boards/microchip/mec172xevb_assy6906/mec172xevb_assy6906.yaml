@@ -1,0 +1,29 @@
+#
+# Copyright (c) 2021, Microchip Technology Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: mec172xevb_assy6906
+name: MEC172X EVB ASSY 6906
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 64
+flash: 352
+supported:
+  - gpio
+  - i2c
+  - adc
+  - pwm
+  - counter
+  - spi
+testing:
+  binaries:
+    - spi_image.bin
+  ignore_tags:
+    - bluetooth
+    - net
+vendor: microchip

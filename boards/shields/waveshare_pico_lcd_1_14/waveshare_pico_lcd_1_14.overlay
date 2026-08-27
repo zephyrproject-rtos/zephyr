@@ -1,0 +1,8 @@
+/*
+ * Copyright (c) 2025 TOKITA Hiroshi
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "waveshare_pico_lcd_1_14_display.overlay"
+#include "waveshare_pico_lcd_1_14_buttons.overlay"

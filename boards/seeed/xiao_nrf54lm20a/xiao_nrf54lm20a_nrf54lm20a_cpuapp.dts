@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2025 Seeed Technology Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "nrf54lm20a_cpuapp_common.dtsi"
+#include "seeed_xiao_connector.dtsi"
+
+/ {
+	compatible = "seeed,xiao_nrf54lm20a_nrf54lm20a-cpuapp";
+	model = "Seeed XIAO nRF54LM20A nRF54LM20A Application MCU";
+
+	chosen {
+		zephyr,code-partition = &slot0_partition;
+		zephyr,sram = &cpuapp_sram;
+	};
+};

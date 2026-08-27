@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2020 Thomas Stranger
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/g0/stm32g0.dtsi>
+
+/ {
+	soc {
+		compatible = "st,stm32g030", "st,stm32g0", "simple-bus";
+	};
+};

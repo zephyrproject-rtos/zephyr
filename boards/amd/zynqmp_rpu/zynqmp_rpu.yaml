@@ -1,0 +1,17 @@
+# Copyright (c) 2026 Advanced Micro Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: zynqmp_rpu
+name: AMD ZynqMP RPU
+arch: arm
+toolchain:
+  - zephyr
+ram: 262144
+flash: 524288
+supported:
+  - gpio
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: amd

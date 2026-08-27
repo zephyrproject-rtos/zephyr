@@ -1,0 +1,9 @@
+# Copyright (c) 2025 Realtek Semiconductor, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: rts5817_maa_evb
+  full_name: RTS5817 MAA Evaluation Board
+  vendor: realtek
+  socs:
+    - name: rts5817

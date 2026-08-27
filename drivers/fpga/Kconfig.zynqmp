@@ -1,0 +1,9 @@
+# FPGA ZYNQMP driver configuration options
+
+# Copyright (c) 2021-2022 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config ZYNQMP_FPGA
+	bool "ZYNQMP fpga driver"
+	help
+	  Enable ZYNQMP FPGA driver.

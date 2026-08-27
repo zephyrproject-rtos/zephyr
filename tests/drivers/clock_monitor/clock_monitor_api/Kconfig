@@ -1,0 +1,31 @@
+# SPDX-FileCopyrightText: 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+config TEST_CLOCK_MONITOR_EXPECTED_HZ
+	int "Clock monitor expected frequency (Hz), 0 = auto"
+	default 0
+	help
+	  Nominal expected frequency of the monitored clock, in Hz.
+	  Set to 0 to let the back-end auto-derive it from the monitored
+	  clock via the clock control driver.
+
+config TEST_CLOCK_MONITOR_TOLERANCE_PPM
+	int "Clock monitor tolerance (parts-per-million)"
+	default 50000
+	help
+	  Acceptable plus/minus deviation from the expected frequency,
+	  in parts-per-million.
+
+config TEST_CLOCK_MONITOR_WINDOW_NS
+	int "Clock monitor window duration (ns)"
+	default 1000000
+	help
+	  Check window duration in nanoseconds
+
+config TEST_CLOCK_MONITOR_MEASURE_NS
+	int "Clock monitor measure duration (ns)"
+	default 1000000
+	help
+	  Duration in nanoseconds for frequency measurement

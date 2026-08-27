@@ -1,0 +1,6 @@
+shield:
+  name: eval_adxl372_ardz
+  full_name: ADXL372 Evaluation Shield
+  vendor: adi
+  supported_features:
+    - sensor

@@ -1,0 +1,244 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <st/f4/stm32f407Xe.dtsi>
+#include <st/f4/stm32f407v(e-g)tx-pinctrl.dtsi>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	model = "JZ-F407VET6 Industrial Control Board";
+	compatible = "jz_f407vet6";
+
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,dtcm = &ccm0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_1: led_1 {
+			gpios = <&gpioe 13 (GPIO_OPEN_DRAIN | GPIO_ACTIVE_LOW)>;
+			label = "LED1";
+		};
+
+		led_2: led_2 {
+			gpios = <&gpioe 14 (GPIO_OPEN_DRAIN | GPIO_ACTIVE_LOW)>;
+			label = "LED2";
+		};
+
+		led_3: led_3 {
+			gpios = <&gpioe 15 (GPIO_OPEN_DRAIN | GPIO_ACTIVE_LOW)>;
+			label = "LED3";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+
+		sw_1: sw_1 {
+			label = "SW1";
+			gpios = <&gpioe 10 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		sw_2: sw_2 {
+			label = "SW2";
+			gpios = <&gpioe 11 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_1>;
+		};
+
+		sw_3: sw_3 {
+			label = "SW3";
+			gpios = <&gpioe 12 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			zephyr,code = <INPUT_KEY_2>;
+		};
+	};
+
+	aliases {
+		led0 = &led_1;
+		led1 = &led_2;
+		led2 = &led_3;
+		sw0 = &sw_1;
+		sw1 = &sw_2;
+		sw2 = &sw_3;
+		watchdog0 = &iwdg;
+		eeprom-0 = &eeprom;
+		rtc = &rtc;
+		sdhc0 = &sdmmc1;
+	};
+};
+
+&clk_lsi {
+	status = "okay";
+};
+
+&clk_lse {
+	status = "okay";
+};
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(25)>;
+	status = "okay";
+};
+
+&pll {
+	div-m = <25>;
+	mul-n = <336>;
+	div-p = <2>;
+	div-q = <7>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
+&rcc {
+	clocks = <&pll>;
+	clock-frequency = <DT_FREQ_M(168)>;
+	ahb-prescaler = <1>;
+	apb1-prescaler = <4>;
+	apb2-prescaler = <2>;
+};
+
+&rtc {
+	clocks = <&rcc STM32_CLOCK(APB1, 28)>,
+		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
+	status = "okay";
+
+	backup_regs {
+		status = "okay";
+	};
+};
+
+&usart1 {
+	pinctrl-0 = <&usart1_tx_pa9 &usart1_rx_pa10>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&usart2 {
+	pinctrl-0 = <&usart2_tx_pd5 &usart2_rx_pd6>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+
+	modbus0 {
+		compatible = "zephyr,modbus-serial";
+		de-gpios = <&gpiod 7 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&can1 {
+	pinctrl-0 = <&can1_rx_pd0 &can1_tx_pd1>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&can2 {
+	pinctrl-0 = <&can2_rx_pb5 &can2_tx_pb6>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&i2c1 {
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&i2c1_scl_pb8 &i2c1_sda_pb9>;
+	pinctrl-names = "default";
+	scl-gpios = <&gpiob 8 GPIO_ACTIVE_HIGH>;
+	sda-gpios = <&gpiob 9 GPIO_ACTIVE_HIGH>;
+	status = "okay";
+
+	eeprom: eeprom@50 {
+		compatible = "atmel,at24";
+		reg = <0x50>;
+		size = <256>;
+		pagesize = <8>;
+		address-width = <8>;
+		timeout = <5>;
+		status = "okay";
+	};
+};
+
+&spi2 {
+	pinctrl-0 = <&spi2_sck_pb10 &spi2_miso_pc2 &spi2_mosi_pc3>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpioe 3 GPIO_ACTIVE_LOW>;
+	status = "okay";
+
+	w25q64jv: spi-nor-flash@0 {
+		compatible = "jedec,spi-nor";
+		size = <DT_SIZE_M(64)>;
+		spi-max-frequency = <DT_FREQ_M(40)>;
+		jedec-id = [ef 40 17];
+		has-dpd;
+		t-enter-dpd = <3500>;
+		t-exit-dpd = <3500>;
+		reg = <0>;
+		status = "okay";
+	};
+};
+
+&mac {
+	status = "okay";
+	pinctrl-0 = <&eth_rxd0_pc4
+		     &eth_rxd1_pc5
+		     &eth_ref_clk_pa1
+		     &eth_crs_dv_pa7
+		     &eth_tx_en_pb11
+		     &eth_txd0_pb12
+		     &eth_txd1_pb13>;
+	pinctrl-names = "default";
+	phy-connection-type = "rmii";
+	phy-handle = <&eth_phy>;
+};
+
+&mdio {
+	status = "okay";
+	pinctrl-0 = <&eth_mdio_pa2 &eth_mdc_pc1>;
+	pinctrl-names = "default";
+
+	eth_phy: ethernet-phy@1 {
+		compatible = "ethernet-phy";
+		reg = <1>;
+	};
+};
+
+zephyr_udc0: &usbotg_fs {
+	pinctrl-0 = <&usb_otg_fs_dm_pa11 &usb_otg_fs_dp_pa12>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+zephyr_uhc0: &usbotg_hs {
+	pinctrl-0 = <&usb_otg_hs_dm_pb14 &usb_otg_hs_dp_pb15>;
+	pinctrl-names = "default";
+	status = "disabled";
+};
+
+&sdmmc1 {
+	status = "okay";
+	pinctrl-0 = <&sdio_d0_pc8 &sdio_d1_pc9
+		     &sdio_d2_pc10 &sdio_d3_pc11
+		     &sdio_ck_pc12 &sdio_cmd_pd2>;
+	pinctrl-names = "default";
+	cd-gpios = <&gpiod 3 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+	disk-name = "SD";
+};
+
+&rng {
+	status = "okay";
+};
+
+&backup_sram {
+	status = "okay";
+};
+
+&iwdg {
+	status = "okay";
+};

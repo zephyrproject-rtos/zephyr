@@ -1,0 +1,58 @@
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Test pin controller.
+
+compatible: "vnd,pinctrl-test"
+
+include: base.yaml
+
+child-binding:
+  description: |
+    Test pin controller pin configuration nodes. Each node is composed by one or
+    more groups, each defining the configuration for a set of pins.
+
+  child-binding:
+    description: |
+      Test pin controller pin configuration group. Each group contains a list of
+      pins sharing the same set of properties. Example:
+
+      /* node representing default state for test_device0 */
+      test_device0_default: test_device0_default {
+        /* group 1 (name is arbitrary) */
+        group1 {
+          /* configure pins 0 and 1 */
+          pins = <0>, <1>;
+          /* both pins 0 and 1 have pull-up enabled */
+          bias-pull-up;
+        };
+        ...
+        /* group N (name is arbitrary) */
+        groupN {
+          /* configure pin M */
+          pins = <M>;
+          /* pin M has pull-down enabled */
+          bias-pull-down;
+        };
+      };
+
+      The list of supported standard properties:
+
+      - bias-pull-up: Enable pull-up resistor.
+      - bias-pull-down: Enable pull-down resistor.
+
+    include:
+      - name: pincfg-node.yaml
+        property-allowlist:
+          - bias-pull-down
+          - bias-pull-up
+
+    properties:
+      pins:
+        required: true
+        type: array
+        description: |
+          An array of pins sharing the same group properties. Each entry is a
+          32-bit integer that is just used to identify the entry for testing
+          purposes.

@@ -1,0 +1,18 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Jilay Sandeep Pandya
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "TMC50XX sample application"
+
+config STEPS_PER_REV
+	int "Steps per revolution"
+	default 200
+
+config PING_PONG_N_REV
+	int "Change direction every N revolutions"
+	default 1
+
+config MAX_VELOCITY_MULTIPLIER
+	int "Max velocity multiplier"
+	default 1
+
+source "Kconfig.zephyr"

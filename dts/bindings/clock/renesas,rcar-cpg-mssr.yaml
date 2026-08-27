@@ -1,0 +1,17 @@
+# Copyright (c) 2020, IoT.bzh
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas Clock Pulse Generator / Module Standby and Software Reset
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#clock-cells":
+    const: 2
+
+clock-cells:
+  - domain
+  - module

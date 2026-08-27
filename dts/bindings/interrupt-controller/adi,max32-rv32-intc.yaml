@@ -1,0 +1,16 @@
+description: MAX32 RV32 Core Interrupt Controller
+
+compatible: "adi,max32-rv32-intc"
+
+include: [base.yaml, interrupt-controller.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#interrupt-cells":
+    const: 2
+
+interrupt-cells:
+  - irq
+  - priority

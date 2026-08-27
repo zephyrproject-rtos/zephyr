@@ -1,0 +1,42 @@
+# Copyright (c) 2026 The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: M5Stack M5PM1 fixed-voltage regulators
+
+compatible: "m5stack,m5pm1-regulator"
+
+on-bus: m5pm1
+
+include: base.yaml
+
+child-binding:
+  include:
+    - name: regulator.yaml
+      property-allowlist:
+        - regulator-min-microvolt
+        - regulator-max-microvolt
+        - regulator-boot-on
+        - regulator-boot-off
+        - regulator-always-on
+
+examples:
+  - |
+    i2c {
+      pmic@6e {
+        compatible = "m5stack,m5pm1";
+        reg = <0x6e>;
+
+        regulators {
+          compatible = "m5stack,m5pm1-regulator";
+
+          DCDC_3V3 {
+          };
+
+          LDO_3V3 {
+          };
+
+          BOOST_5V {
+          };
+        };
+      };
+    };

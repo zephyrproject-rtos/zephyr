@@ -1,0 +1,42 @@
+/*
+ * Copyright (c) 2022 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Warning: This overlay clears clocks back to a state equivalent to what could
+ * be found in stm32fxx.dtsi
+ */
+
+&clk_hse {
+	status = "disabled";
+	/delete-property/ hse-bypass;
+	/delete-property/ clock-frequency;
+};
+
+&clk_hsi {
+	status = "disabled";
+};
+
+&clk_lse {
+	status = "disabled";
+};
+
+&clk_lsi {
+	status = "disabled";
+};
+
+&pll {
+	/delete-property/ mul-n;
+	/delete-property/ div-m;
+	/delete-property/ div-p;
+	/delete-property/ div-q;
+	/delete-property/ clocks;
+	status = "disabled";
+};
+
+&rcc {
+	/delete-property/ clocks;
+	/delete-property/ clock-frequency;
+};

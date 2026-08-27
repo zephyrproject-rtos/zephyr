@@ -1,0 +1,102 @@
+# Copyright (c) 2014-2015 Wind River Systems, Inc.
+# Copyright (c) 2016 Cadence Design Systems, Inc.
+# Copyright (c) 2019-2023 Intel Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+	prompt "Default System Timer"
+	default HPET_TIMER if SOC_FAMILY_INTEL_ISH || SOC_ATOM || SOC_LAKEMONT
+	default APIC_TSC_DEADLINE_TIMER
+	depends on X86
+	help
+	  Select Default System Timer.
+
+config HPET_TIMER
+	bool "HPET timer"
+	depends on DT_HAS_INTEL_HPET_ENABLED
+	select IOAPIC
+	select LOAPIC
+	imply TIMER_READS_ITS_FREQUENCY_AT_RUNTIME
+	select TICKLESS_CAPABLE
+	select TIMER_HAS_64BIT_CYCLE_COUNTER
+	help
+	  This option selects High Precision Event Timer (HPET) as a
+	  system timer.
+
+config APIC_TIMER
+	bool "Local APIC timer"
+	select LOAPIC
+	select TIMER_HAS_64BIT_CYCLE_COUNTER
+	select SYSTEM_CLOCK_LOCK_FREE_COUNT
+	help
+	  Use the x86 local APIC in periodic mode as the system time
+	  source.  NOTE: this probably isn't what you want except on
+	  older or idiosyncratic hardware (or environments like qemu
+	  without complete APIC emulation).  Modern hardware will work
+	  better with CONFIG_APIC_TSC_DEADLINE_TIMER.
+
+config APIC_TSC_DEADLINE_TIMER
+	bool "Local APIC timer using TSC deadline mode"
+	select LOAPIC
+	select TICKLESS_CAPABLE
+	select TIMER_HAS_64BIT_CYCLE_COUNTER
+	help
+	  Extremely simple timer driver based the local APIC TSC
+	  deadline capability.  The use of a free-running 64 bit
+	  counter with comparator eliminates almost all edge cases
+	  from the handling, and the near-instruction-cycle resolution
+	  permits effectively unlimited precision where needed (the
+	  limit becomes the CPU time taken to execute the timing
+	  logic). SMP-safe and very fast, this should be the obvious
+	  choice for any x86 device with invariant TSC and TSC
+	  deadline capability.
+
+config APIC_TIMER_TSC
+	bool "Local APIC timer using TSC time source"
+	depends on !SMP
+	select LOAPIC
+	select TICKLESS_CAPABLE
+	select TIMER_HAS_64BIT_CYCLE_COUNTER
+	help
+	  If your CPU supports invariant TSC but no TSC deadline capability
+	  then this choice will rely on the TSC as time source and the
+	  local APIC in one-shot mode as the timeout event source.
+	  You must know the ratio of the TSC frequency to the local APIC
+	  timer frequency.
+
+endchoice
+
+if APIC_TIMER
+
+config APIC_TIMER_IRQ
+	int "Local APIC timer IRQ"
+	default 24
+	help
+	  This option specifies the IRQ used by the local APIC timer.
+	  Note: this MUST be set to the index immediately after the
+	  last IO-APIC IRQ (the timer is the first entry in the APIC
+	  local vector table).  This footgun is not intended to be
+	  user-configurable and almost certainly should be managed via
+	  a different mechanism.
+
+endif # APIC_TIMER
+
+if APIC_TIMER_TSC
+
+config APIC_TIMER_TSC_N
+	int "TSC to local APIC timer frequency multiplier (N)"
+	default 1
+
+config APIC_TIMER_TSC_M
+	int "TSC to local APIC timer frequency divisor (M)"
+	default 1
+
+endif # APIC_TIMER_TSC
+
+config APIC_TIMER_IRQ_PRIORITY
+	int "Local APIC timer interrupt priority"
+	depends on APIC_TIMER || APIC_TSC_DEADLINE_TIMER || APIC_TIMER_TSC
+	default 4
+	help
+	  This option specifies the interrupt priority used by the
+	  local APIC timer.

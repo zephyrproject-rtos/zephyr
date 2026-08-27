@@ -1,0 +1,19 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/esp32c6-pinctrl.h>
+
+/* The S3KM1110 module's UART is exposed on pin D2/D3 of the XIAO connector instead of the
+ * typical D6/D7, so we need to override the default pinmux settings for UART0.
+ */
+&uart0_default {
+	group1 {
+		pinmux = <UART0_TX_GPIO21>;
+	};
+
+	group2 {
+		pinmux = <UART0_RX_GPIO2>;
+	};
+};

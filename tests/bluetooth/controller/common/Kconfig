@@ -1,0 +1,9 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+# The link layer requires a corresponding device tree node to be enabled
+# The corresponding Kconfig entry is not generated for unit tests,
+# so we add it here.
+config DT_HAS_ZEPHYR_BT_HCI_LL_SW_SPLIT_ENABLED
+	bool
+	default y

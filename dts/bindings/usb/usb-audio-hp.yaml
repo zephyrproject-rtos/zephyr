@@ -1,0 +1,106 @@
+# Copyright (c) 2020 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+# Specific fields for USB audio headphones.
+
+description: USB Audio headphones specific fields.
+
+compatible: "usb-audio-hp"
+
+include: [usb-audio.yaml, usb-audio-feature-volume.yaml]
+
+properties:
+  resolution:
+    type: int
+    default: 16
+    enum:
+      - 8
+      - 16
+      - 24
+      - 32
+  sample-rate-hz:
+    type: int
+    default: 48000
+  polling-interval:
+    type: int
+    default: 1
+  # channel configuration options
+  channel-l:
+    type: boolean
+    description: Enable (l) channel.
+  channel-r:
+    type: boolean
+    description: Enable (r) channel.
+  channel-c:
+    type: boolean
+    description: Enable (c) channel.
+  channel-lfe:
+    type: boolean
+    description: Enable (lfe) channel.
+  channel-ls:
+    type: boolean
+    description: Enable (ls) channel.
+  channel-rs:
+    type: boolean
+    description: Enable (rs) channel.
+  channel-lc:
+    type: boolean
+    description: Enable (lc) channel.
+  channel-rc:
+    type: boolean
+    description: Enable (rc) channel.
+  channel-s:
+    type: boolean
+    description: Enable (s) channel.
+  channel-sl:
+    type: boolean
+    description: Enable (sl) channel.
+  channel-sr:
+    type: boolean
+    description: Enable (sr) channel.
+  channel-t:
+    type: boolean
+    description: Enable (t) channel.
+  channel-cfg:
+    type: boolean
+    description: Enable (cfg) channel.
+  # feature unit configuration options
+  feature-mute:
+    type: boolean
+    required: true
+    description: Enable Mute feature.
+  feature-volume:
+    type: boolean
+    description: |
+      Enable Volume feature.
+      Currently not supported.
+  feature-tone-control:
+    type: boolean
+    description: |
+      Enable Tone Control (Bass, Mid, Treble) feature.
+      Currently not supported.
+  feature-graphic-equalizer:
+    type: boolean
+    description: |
+      Enable  Graphic Equalizer feature.
+      Currently not supported.
+  feature-automatic-gain-control:
+    type: boolean
+    description: |
+      Enable Autoamtic Gain Control feature.
+      Currently not supported.
+  feature-delay:
+    type: boolean
+    description: |
+      Enable Delay feature.
+      Currently not supported.
+  feature-bass-boost:
+    type: boolean
+    description: |
+      Enable Bass Boost feature.
+      Currently not supported.
+  feature-loudness:
+    type: boolean
+    description: |
+      Enable Loudness feature.
+      Currently not supported.

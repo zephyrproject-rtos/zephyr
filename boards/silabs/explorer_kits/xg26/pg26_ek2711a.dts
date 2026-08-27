@@ -1,0 +1,20 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <silabs/xg26/efm32pg26b500f3200im68.dtsi>
+#include "xg26_explorer_kit.dtsi"
+
+/ {
+	model = "Silicon Labs PG26 Explorer Kit";
+	compatible = "silabs,pg26_ek2711a", "silabs,efm32pg26";
+};
+
+&hfxo {
+	ctune = <140>;
+	precision = <50>;
+	status = "okay";
+};

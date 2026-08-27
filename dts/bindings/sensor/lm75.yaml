@@ -1,0 +1,20 @@
+# Copyright (c) 2021 Leica Geosystems AG
+# SPDX-License-Identifier: Apache-2.0
+
+description: LM75 Digital Temperature Sensor with 2-Wire Interface.
+
+compatible: "lm75"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  int-gpios:
+    type: phandle-array
+    description: |
+      Identifies the INT signal, which is active-low open drain by default
+      when produced by the sensor.
+
+  int-inverted:
+    type: boolean
+    description: |
+      When present, the polarity on the INT signal is inverted (active-high).

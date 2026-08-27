@@ -1,0 +1,23 @@
+identifier: nucleo_u083rc
+name: ST Nucleo U083RC
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - adc
+  - aes
+  - arduino_gpio
+  - dac
+  - dma
+  - gpio
+  - i2c
+  - lptim
+  - pwm
+  - rng
+  - rtc
+  - spi
+  - usart
+ram: 32
+flash: 256

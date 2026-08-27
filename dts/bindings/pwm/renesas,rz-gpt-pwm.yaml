@@ -1,0 +1,17 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RZ GPT PWM
+
+compatible: "renesas,rz-gpt-pwm"
+
+include: [pwm-controller.yaml, base.yaml, pinctrl-device.yaml]
+
+properties:
+  "#pwm-cells":
+    const: 3
+
+pwm-cells:
+  - channel
+  - period
+  - flags

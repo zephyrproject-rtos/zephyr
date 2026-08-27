@@ -1,0 +1,26 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+title: STMicroelectronics DFSDM block
+
+description: |
+  This device represents the base DFSDM block, where common properties are
+  handled.  The DFSDM bindings is inspired from the one implemented in the
+  Linux kernel.
+
+compatible: "st,stm32-dfsdm"
+
+include: ["base.yaml", "reset-device.yaml"]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  clock-names:
+    required: true
+
+  resets:
+    required: true

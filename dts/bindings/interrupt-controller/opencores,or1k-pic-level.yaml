@@ -1,0 +1,18 @@
+#
+# Copyright (c) 2025 NVIDIA Corporation <jholdsworth@nvidia.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: OpenRISC CPU interrupt controller
+
+compatible: "opencores,or1k-pic-level"
+
+include: [interrupt-controller.yaml, base.yaml]
+
+properties:
+  "#interrupt-cells":
+    const: 1
+
+interrupt-cells:
+  - irq

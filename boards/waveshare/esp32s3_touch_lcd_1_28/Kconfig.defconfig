@@ -1,0 +1,15 @@
+# Copyright (c) 2024 Joel Guittet
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_ESP32S3_TOUCH_LCD_1_28_ESP32S3_PROCPU
+
+config KERNEL_MEM_POOL
+	default y
+
+config PWM
+	default y if DISPLAY
+
+configdefault LV_COLOR_16_SWAP
+	default y if LVGL
+
+endif # BOARD_ESP32S3_TOUCH_LCD_1_28_ESP32S3_PROCPU

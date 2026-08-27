@@ -1,0 +1,8 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config ARM_SCMI_SHELL
+	bool "ARM SCMI shell commands"
+	select SHELL
+	help
+	  Enable support for the ARM SCMI shell commands.

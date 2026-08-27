@@ -1,0 +1,9 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config DMA_NXP_SDMA
+	bool "NXP SDMA driver"
+	default y
+	depends on DT_HAS_NXP_SDMA_ENABLED
+	help
+		Enable driver for NXP's SDMA IP.

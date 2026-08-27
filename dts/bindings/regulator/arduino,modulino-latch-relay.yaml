@@ -1,0 +1,19 @@
+# Copyright (c) 2026 Silicon Labs
+#
+# SPDX-License-Identifier: Apache-2.0
+
+title: Arduino Modulino Latch Relay
+
+description: |
+  The Arduino Modulino Latch Relay module features a bistable latching relay
+  that maintains its state without continuous power, capable of switching
+  high-current DC loads up to 30V.
+  See: https://docs.arduino.cc/hardware/modulino-latch/
+
+compatible: "arduino,modulino-latch-relay"
+
+include: i2c-device.yaml
+
+properties:
+  reg:
+    required: true

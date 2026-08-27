@@ -1,0 +1,6 @@
+board:
+  name: holyiot_21014
+  full_name: 21014 Module
+  vendor: holyiot
+  socs:
+  - name: nrf52810

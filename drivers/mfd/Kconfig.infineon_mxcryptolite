@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config MFD_INFINEON_MXCRYPTOLITE
+	bool "Infineon MXCRYPTOLITE multi-function device driver"
+	default y
+	depends on DT_HAS_INFINEON_MXCRYPTOLITE_ENABLED
+	help
+	  Enable the Infineon MXCRYPTOLITE MFD driver.  The MXCRYPTOLITE block is a
+	  single hardware crypto engine shared by a True Random Number Generator
+	  (TRNG) and AES / SHA-256 acceleration.  This driver owns the shared
+	  register base address and the mutex that serialises access between the
+	  TRNG and crypto child function drivers.
+
+config MFD_INFINEON_MXCRYPTOLITE_INIT_PRIORITY
+	int "Infineon MXCRYPTOLITE MFD init priority"
+	default 40
+	depends on MFD_INFINEON_MXCRYPTOLITE
+	help
+	  Initialization priority for the MXCRYPTOLITE MFD driver.  This must be
+	  lower (earlier) than the init priority of the child drivers
+	  (CONFIG_ENTROPY_INIT_PRIORITY and CONFIG_CRYPTO_INIT_PRIORITY) so the
+	  shared resources are ready before a child uses them.

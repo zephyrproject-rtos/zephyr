@@ -1,0 +1,10 @@
+# Copyright (c) 2023 Meta
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_RISCV_VIRTUAL_RENODE
+	bool
+	help
+	  Renode RISCV32 Virtual system implementation
+
+config SOC
+	default "riscv_virtual_renode" if SOC_RISCV_VIRTUAL_RENODE

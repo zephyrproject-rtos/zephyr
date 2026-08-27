@@ -1,0 +1,10 @@
+# Copyright (c) 2025 Elan Microelectronics Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_EM32F967
+	bool
+	help
+	  ELAN EM32F967
+
+config SOC
+	default "em32f967" if SOC_EM32F967

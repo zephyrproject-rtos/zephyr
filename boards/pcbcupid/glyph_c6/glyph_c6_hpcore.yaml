@@ -1,0 +1,13 @@
+identifier: glyph_c6/esp32c6/hpcore
+name: Glyph ESP32C6 HP Core
+vendor: pcbcupid
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - i2c
+  - uart
+  - watchdog
+  - entropy

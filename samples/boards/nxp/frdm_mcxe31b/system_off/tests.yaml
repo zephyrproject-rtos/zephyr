@@ -1,0 +1,19 @@
+#
+# Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+sample:
+  name: MCXE31B System Off (standby) Sample
+common:
+  tags: power
+tests:
+  sample.boards.frdm_mcxe31b.system_off:
+    platform_allow:
+      - frdm_mcxe31b
+    timeout: 120
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "Completed 10 standby cycles"

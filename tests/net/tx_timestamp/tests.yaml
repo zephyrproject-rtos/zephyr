@@ -1,0 +1,9 @@
+common:
+  tags:
+    - net
+    - tx_timestamp
+    - gptp
+tests:
+  net.timestamp:
+    min_ram: 16
+    depends_on: netif

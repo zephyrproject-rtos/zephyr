@@ -1,0 +1,8 @@
+identifier: scobc_v1/miv
+name: SC-OBC Module V1 IGLOO2 Mi-V
+arch: riscv
+toolchain:
+  - zephyr
+vendor: sc
+supported:
+  - uart

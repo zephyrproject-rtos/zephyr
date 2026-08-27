@@ -1,0 +1,33 @@
+# Copyright (c) 2026 Realtek Semiconductor Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Ameba watchdog
+
+compatible: "realtek,ameba-watchdog"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  early-int-cnt-ms:
+    type: int
+    default: 500
+    min: 1
+    max: 65535
+    description: |
+      Watchdog early interrupt trigger threshold in milliseconds.
+      The early interrupt fires this many milliseconds before the watchdog
+      reset, giving firmware time to perform recovery or logging.
+
+  realtek,auto-enabled:
+    type: boolean
+    description: |
+      Watchdog is automatically enabled by hardware at power-on (IWDT).
+      When set, the driver marks the watchdog as already running during
+      initialization, so wdt_feed() works before wdt_setup() is called.
+      Useful for bootloader contexts where the IWDT is hardware-enabled.

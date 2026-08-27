@@ -1,0 +1,21 @@
+identifier: esp32c3_lckfb
+name: ESP32-C3 (LCKFB)
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+supported:
+  - adc
+  - gpio
+  - i2c
+  - i2s
+  - watchdog
+  - uart
+  - dma
+  - pwm
+  - spi
+  - counter
+  - entropy
+  - crypto
+  - retained_mem
+vendor: others

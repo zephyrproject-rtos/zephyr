@@ -1,0 +1,24 @@
+description: NEORV32 UART
+
+compatible: "neorv32,uart"
+
+include: uart-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  interrupt-names:
+    required: true
+
+  current-speed:
+    required: true
+
+  syscon:
+    type: phandle
+    required: true
+    description: |
+      phandle to syscon (NEORV32 SYSINFO) node.

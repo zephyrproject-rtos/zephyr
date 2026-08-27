@@ -1,0 +1,17 @@
+# Copyright (c) 2026 CodeWrights GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+title: STM32 Vddcore
+description: |
+  Voltage sensor for the internal digital core supply voltage (Vddcore)
+  on STM32 devices. This sensor uses an internal ADC channel to measure
+  the core supply voltage.
+
+include: sensor-device.yaml
+
+compatible: "st,stm32-vddcore"
+
+properties:
+  io-channels:
+    required: true
+    description: ADC channel for Vddcore sensor

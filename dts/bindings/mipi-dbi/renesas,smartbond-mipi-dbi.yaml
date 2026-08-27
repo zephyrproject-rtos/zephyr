@@ -1,0 +1,54 @@
+# Copyright (c) 2023 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+include: [mipi-dbi-controller.yaml, pinctrl-device.yaml]
+
+description: Renesas Smartbond(tm) MIPI DBI Host
+
+compatible: "renesas,smartbond-mipi-dbi"
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  reset-gpios:
+    type: phandle-array
+    description: |
+      Reset GPIO pin. Used to reset the display during initialization.
+
+  te-enable:
+    type: boolean
+    description: |
+      Boolean to indicate whether the tearing effect (TE) signal is available or not.
+
+  te-inversion:
+    type: boolean
+    description: |
+      Boolean to apply an inversion on the TE signal that triggers the MIPI DBI controller.
+
+  dma-prefetch:
+    type: string
+    enum:
+      - "no-prefetch"
+      - "prefetch-44-bytes"
+      - "prefetch-84-bytes"
+      - "prefetch-116-bytes"
+      - "prefetch-108-bytes"
+    description: |
+      Host controller will wait for at least the specified number of bytes before triggering
+      a single frame update. The prefetch mechanism should be enabled when frame buffer(s)
+      is stored into external storage mediums, e.g. PSRAM, that introduce comparable delays.
+      In such a case it might case that the controller runs into underrun conditions which
+      results in correpting the whole frame update. It's user's responsibility to ensure that
+      the selected value does not exceed frame's total size as otherwise the controller will
+      not be able to trigger the frame update.
+
+  spi-dev:
+    type: phandle
+    description: |
+      SPI bus to use for display read operations. When this property is present, MIPI DBI read
+      operations will be exhibited by the driver. This is because, the LCDC IP block does not
+      support read functionality, natively.

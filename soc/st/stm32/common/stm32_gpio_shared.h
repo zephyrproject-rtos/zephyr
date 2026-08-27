@@ -1,0 +1,164 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 STMicroelectronics
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef ZEPHYR_SOC_ST_STM32_COMMON_STM32_GPIO_SHARED_H_
+#define ZEPHYR_SOC_ST_STM32_COMMON_STM32_GPIO_SHARED_H_
+
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
+#include <zephyr/drivers/gpio.h>
+#include <zephyr/drivers/pinctrl.h>
+#include <zephyr/types.h>
+
+/*
+ * Name of all GPIO ports that may exist (without the `gpio` prefix).
+ *
+ * This should be the only thing that needs updating when adding support
+ * for new GPIO ports if need arises.
+ *
+ * WARNING: make sure both list are kept in sync when modifying!
+ */
+#define STM32_GPIO_PORTS_LIST_LWR \
+	a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p, q, r, s, t, u, v, w, x, y, z
+
+#define STM32_GPIO_PORTS_LIST_UPR \
+	A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z
+
+/**
+ * Checks that the node is active AND has compatible handled by STM32 code.
+ * It is possible for DT nodes to use a `gpioX` nodelabel despite not being
+ * an in-SoC GPIO controller, in which case we could try to operate on them
+ * even though we don't actually know how to handle them.
+ *
+ * @param port GPIO port name (lowercase letter)
+ * @return 1 if the GPIO port is active and compatible, 0 otherwise
+ */
+#define STM32_GPIO_PORT_DEVICE_IS_ACTIVE(port)				\
+	UTIL_OR(DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(gpio##port),	\
+					  st_stm32_gpio, okay),		\
+		DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(gpio##port),	\
+					  st_stm32mp2_gpio, okay))
+
+/*
+ * STM32 GPIO port configuration block and data block structures
+ */
+struct gpio_stm32_config {
+#if defined(CONFIG_GPIO_STM32)
+	struct gpio_driver_config common;
+#endif /* CONFIG_GPIO_STM32 */
+
+	/* GPIO port base address */
+	void *base;
+
+	/* GPIO port index (`STM32_PORTx`) */
+	uint32_t port;
+
+	/* Clock configuration */
+	struct stm32_pclken pclken;
+};
+
+#if defined(CONFIG_GPIO_STM32)
+/*
+ * Fields in the instance data are only useful to the GPIO driver.
+ * If not enabled, we don't create the instance data: don't define
+ * the structure to prevent accidental usage (which would be wrong).
+ */
+struct gpio_stm32_data {
+	struct gpio_driver_data common;
+
+	/*
+	 * Keeps track of pins which are used as GPIOs
+	 * and need the GPIO port clock to remain enabled.
+	 */
+	gpio_port_pins_t pin_has_clock_enabled;
+
+	/* User callbacks list */
+	sys_slist_t cb;
+};
+#endif /* CONFIG_GPIO_STM32 */
+
+/**
+ * @brief Translate pin to pinval that the LL library needs
+ */
+static inline uint32_t stm32_gpiomgr_pinnum_to_ll_val(gpio_pin_t pinnum)
+{
+	uint32_t pinval;
+
+#ifdef CONFIG_SOC_SERIES_STM32F1X
+	/*
+	 * Avoid pulling <stm32_ll_gpio.h> by hardcoding
+	 * the value of the GPIO_PIN_MASK_POS macro here
+	 */
+	const uint32_t gpio_pin_mask_pos = 8u;
+
+	pinval = (1u << pinnum) << gpio_pin_mask_pos;
+	if (pinnum <= 7) {
+		pinval |= 1u << pinnum;
+	} else {
+		pinval |= (1u << (pinnum % 8)) | 0x04000000u;
+	}
+#else
+	pinval = 1u << pinnum;
+#endif
+	return pinval;
+}
+
+/*
+ * Exports from the GPIO port manager module
+ */
+
+/**
+ * @brief Get GPIO port device by index
+ *
+ * @param port_index GPIO port index `STM32_PORTx`
+ * (c.f., `include/zephyr/dt-bindings/pinctrl/stm32-pinctrl-common.h`)
+ *
+ * @return Non-NULL pointer to requested GPIO port device on success,
+ * NULL if the requested GPIO port does not exist or is not ready.
+ */
+const struct device *stm32_gpioport_get(uint32_t port_index);
+
+/**
+ * @brief Configure specific pin on GPIO port
+ *
+ * @param port GPIO port device
+ * @param pin Pin to configure
+ * @param config Pin configuration
+ * (Format is documented in `soc/st/stm32/common/pinctrl_soc.h`)
+ * @param apply_out_level Should output level from @p config be applied?
+ * NOTE: output level is never applied (regardless of this parameter) if
+ * @p config does not correspond to General-Purpose Output mode.
+ *
+ * @return 0 on success, negative errno value otherwise
+ */
+int stm32_gpioport_configure_pin(const struct device *port,
+				 gpio_pin_t pin,
+				 pinctrl_soc_pin_t config,
+				 bool apply_out_level);
+
+#if defined(CONFIG_STM32_WKUP_PINS)
+/**
+ * @brief Enable and configure the wake-up line associated to a GPIO pin.
+ *
+ * @param port_idx GPIO port index (STM32_PORTx)
+ * @param pin GPIO pin number
+ * @param flags GPIO configuration flags
+ * @retval 0 Success
+ * @retval -ENODEV No wake-up line associated to specified GPIO pin
+ * @retval <0 Unspecified error
+ */
+int stm32_gpiomgr_enable_wakeup_pin(uint32_t port_idx, gpio_pin_t pin, gpio_flags_t flags);
+#endif /* defined(CONFIG_STM32_WKUP_PINS) */
+
+/*
+ * GPIO port device API
+ *
+ * Implementation of the Zephyr GPIO driver API
+ * exported by the GPIO driver when enabled.
+ */
+#if defined(CONFIG_GPIO_STM32)
+extern const struct gpio_driver_api gpio_stm32_driver;
+#endif /* CONFIG_GPIO_STM32 */
+
+#endif /* ZEPHYR_SOC_ST_STM32_COMMON_STM32_GPIO_SHARED_H_ */

@@ -1,0 +1,10 @@
+# Copyright (c) 2023 Chen Xingyu <hi@xingrz.me>
+# SPDX-License-Identifier: Apache-2.0
+
+config AUXDISPLAY_PT6314
+	bool "PTC PT6314 dot character VFD driver"
+	default y
+	select SPI
+	depends on DT_HAS_PTC_PT6314_ENABLED
+	help
+	  Enable driver for PTC PT6314.

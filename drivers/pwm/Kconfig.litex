@@ -1,0 +1,19 @@
+#
+# Copyright (c) 2019 Antmicro <www.antmicro.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+menuconfig PWM_LITEX
+	bool "LiteX PWM driver"
+	default y
+	depends on DT_HAS_LITEX_PWM_ENABLED
+	help
+	  Enable support for LiteX PWM driver
+
+config PWM_LITEX_INIT_PRIORITY
+	int "Init priority"
+	default 70
+	depends on PWM_LITEX
+	help
+	  PWM device driver initialization priority.

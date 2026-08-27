@@ -1,0 +1,14 @@
+#
+# Copyright (c) 2020 Nordic Semiconductor ASA
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+sample:
+  description: Demonstration of the SX1509B LED driver intensity functionality
+  name: SX1509B intensity sample
+tests:
+  sample.drivers.led.sx1509b_intensity:
+    platform_allow: thingy52/nrf52832
+    tags: LED
+    depends_on: i2c

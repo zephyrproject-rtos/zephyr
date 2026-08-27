@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2025 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Remove JP149 to disconnect GPIO156 from Q38/LED7
+ * Remove Jp150 to disconnect GPIO157 from Q39/LED8
+ * Connect the JP75 pin 11 and 13 to test the GPIO loopback.
+ * Connect JP75 pin 11 to pin 12 to connect 100K board pull-up to VTR1.
+ * Pull-up is required because test_gpio_config_trigger disconnects
+ * GPIO157 and later enables GPIO157 as output, open-drain,
+ * and internal-pull-up enabled but does not specify an initial value
+ * for the pin. The test program never sets GPIO157 output value before this
+ * test. Therefore the driver does not know what value to use. All it can
+ * do is use the current pin input as the output value.
+ */
+
+/ {
+	resources {
+		compatible = "test-gpio-basic-api";
+
+		in-gpios = <MCHP_GPIO_DECODE_156 0>; /* GPIO_156, JP75 Pin 11 */
+		out-gpios = <MCHP_GPIO_DECODE_157 0>; /* GPIO_157, JP75 Pin 13 */
+	};
+};

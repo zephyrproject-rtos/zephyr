@@ -1,0 +1,5 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ORANGEPI_5_ULTRA_RK3588
+	select SOC_RK3588

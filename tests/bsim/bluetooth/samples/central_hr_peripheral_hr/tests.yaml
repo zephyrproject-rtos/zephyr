@@ -1,0 +1,68 @@
+common:
+  tags:
+    - bluetooth
+  depends_on: bsim
+  harness: bsim
+  sysbuild: true
+  platform_allow:
+    - nrf52_bsim
+    - nrf5340bsim/nrf5340/cpuapp
+    - nrf54l15bsim/nrf54l15/cpuapp
+
+tests:
+  tests.bsim.bluetooth.samples.central_hr_peripheral_hr:
+    extra_conf_files:
+      - ${ZEPHYR_BASE}/samples/bluetooth/central_hr/prj.conf
+    harness_config:
+      fixture: bsim_multi_test
+      bsim_exe_name: tests_bsim_bluetooth_samples_central_hr_peripheral_hr_prj_conf
+      tests_scripts:
+        - tests_scripts/central_hr_peripheral_hr.sh
+    required_applications:
+      - application: sample.bluetooth.peripheral_hr.bsim
+        path: $ZEPHYR_BASE/samples/bluetooth/peripheral_hr
+
+  tests.bsim.bluetooth.samples.central_hr_peripheral_hr.extended:
+    extra_conf_files:
+      - ${ZEPHYR_BASE}/samples/bluetooth/central_hr/prj.conf
+    extra_overlay_confs:
+      - ${ZEPHYR_BASE}/samples/bluetooth/central_hr/overlay-extended.conf
+    harness_config:
+      fixture: bsim_multi_test
+      bsim_exe_name: >-
+        tests_bsim_bluetooth_samples_central_hr_peripheral_hr_prj_conf_overlay-extended_conf
+      tests_scripts:
+        - tests_scripts/central_hr_peripheral_hr_extended.sh
+    required_applications:
+      - application: sample.bluetooth.peripheral_hr.extended.bsim
+        path: $ZEPHYR_BASE/samples/bluetooth/peripheral_hr
+
+  tests.bsim.bluetooth.samples.central_hr_peripheral_hr.phy_coded:
+    extra_conf_files:
+      - ${ZEPHYR_BASE}/samples/bluetooth/central_hr/prj.conf
+    extra_overlay_confs:
+      - ${ZEPHYR_BASE}/samples/bluetooth/central_hr/overlay-phy_coded.conf
+    harness_config:
+      fixture: bsim_multi_test
+      bsim_exe_name: >-
+        tests_bsim_bluetooth_samples_central_hr_peripheral_hr_prj_conf_overlay-phy_coded_conf
+      tests_scripts:
+        - tests_scripts/central_hr_peripheral_hr_phy_coded.sh
+    required_applications:
+      - application: sample.bluetooth.peripheral_hr.phy_coded.bsim
+        path: $ZEPHYR_BASE/samples/bluetooth/peripheral_hr
+
+  tests.bsim.bluetooth.samples.central_hr_peripheral_hr.static_callbacks:
+    extra_conf_files:
+      - ${ZEPHYR_BASE}/samples/bluetooth/central_hr/prj.conf
+    extra_overlay_confs:
+      - ${ZEPHYR_BASE}/samples/bluetooth/central_hr/overlay-static_callbacks.conf
+    harness_config:
+      fixture: bsim_multi_test
+      bsim_exe_name: >-
+        tests_bsim_bluetooth_samples_central_hr_peripheral_hr_prj_conf_overlay-static_callbacks_conf
+      tests_scripts:
+        - tests_scripts/central_hr_peripheral_hr_static_callbacks.sh
+    required_applications:
+      - application: sample.bluetooth.peripheral_hr.static_callbacks.bsim
+        path: $ZEPHYR_BASE/samples/bluetooth/peripheral_hr

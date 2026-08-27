@@ -1,0 +1,9 @@
+# TTGO LoRa32 board configuration
+
+# Copyright (c) 2024 Lothar Felten <lothar.felten@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_TTGO_LORA32
+	select SOC_ESP32_PICO_D4
+	select SOC_ESP32_PROCPU if BOARD_TTGO_LORA32_ESP32_PROCPU
+	select SOC_ESP32_APPCPU if BOARD_TTGO_LORA32_ESP32_APPCPU

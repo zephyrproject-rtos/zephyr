@@ -1,0 +1,36 @@
+# Copyright (c) 2026 Realtek Semiconductor, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Realtek RTS5817 core and fingerprint sensor power supply regulator.
+
+compatible: "realtek,rts5817-regulator"
+
+include: base.yaml
+
+properties:
+  syscon-ldo:
+    type: phandle
+    required: true
+    description: |
+      phandle to dlink_ldo node.
+  syscon-sys:
+    type: phandle
+    required: true
+    description: |
+      phandle to dlink_sys node.
+
+child-binding:
+  include:
+    - name: regulator.yaml
+      property-allowlist:
+        - regulator-always-on
+        - regulator-boot-on
+        - regulator-init-microvolt
+        - regulator-min-microvolt
+        - regulator-max-microvolt
+        - startup-delay-us
+  properties:
+    ocp-enable:
+      type: boolean
+      description: svio & sva ldo over current protect.

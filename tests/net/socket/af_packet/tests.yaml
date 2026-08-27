@@ -1,0 +1,15 @@
+common:
+  depends_on: netif
+  tags:
+    - net
+    - socket
+    - af_packet
+tests:
+  net.socket.af_packet:
+    min_ram: 21
+  net.socket.af_packet.mgmt_event:
+    min_ram: 24
+    extra_configs:
+      - CONFIG_NET_MGMT=y
+      - CONFIG_NET_MGMT_EVENT=y
+      - CONFIG_NET_MGMT_EVENT_INFO=y

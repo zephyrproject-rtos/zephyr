@@ -1,0 +1,5 @@
+# Copyright (c) 2024 Pavlo Yadvychuk
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_WEACT_STM32F405_CORE
+	select SOC_STM32F405XX

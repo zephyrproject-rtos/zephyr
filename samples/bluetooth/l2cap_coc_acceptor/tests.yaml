@@ -1,0 +1,11 @@
+sample:
+  name: Bluetooth L2CAP dynamic channels sample (acceptor role)
+  description: Sample demonstrating L2CAP dynamic channels (acceptor role).
+tests:
+  sample.bluetooth.l2cap_coc_acceptor:
+    harness: bluetooth
+    platform_allow:
+      - qemu_x86
+    integration_platforms:
+      - qemu_x86
+    tags: bluetooth

@@ -1,0 +1,9 @@
+## SPDX-FileCopyrightText: Copyright Bavariamatic GmbH
+## SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_SMARTFUSION2
+	select ARM
+	select CPU_CORTEX_M3
+	select CPU_HAS_ARM_MPU
+	select CPU_CORTEX_M_HAS_DWT
+	select SOC_EARLY_INIT_HOOK

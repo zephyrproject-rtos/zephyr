@@ -1,0 +1,121 @@
+# Copyright (c) 2026 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+include: spi-device.yaml
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    description: |
+      Pin connected to the modem's typically active-low RESET signal.
+
+  busy-gpios:
+    type: phandle-array
+    description: |
+      Pin connected to the modem's typically active-high BUSY signal.
+
+  irq-gpios:
+    type: phandle-array
+    description: |
+      Pin connected to the modem's typically active-high IRQ Pin. It is DIO9 for this driver.
+
+  lf-clk:
+    type: string
+    enum:
+      - "RC"
+      - "XTAL"
+      - "DIO11"
+    description: |
+      Low frequency clock source for the radio.
+      - RC: 32.768KHz RC Oscillator.
+      - XTAL: 32.768KHz Crystal Oscillator.
+      - DIO11: 32.768KHz Signal on DIO11.
+
+  tcxo-voltage:
+    type: int
+    default: 0
+    enum:
+      - 1600
+      - 1700
+      - 1800
+      - 2200
+      - 2400
+      - 2700
+      - 3000
+      - 3300
+      - 0
+    description: |
+      TCXO voltage in mV, except 0 where TCXO is disabled.
+      The default is no TCXO is used.
+
+  tcxo-power-startup-delay-ms:
+    type: int
+    default: 5
+    description: |
+      Startup delay to let the TCXO stabilize after TCXO power on. 5 ms is usually sufficient.
+
+  rfsw-enable:
+    type: int
+    default: 0
+    description: |
+      RF switch DIO enable bitmask. Pins set here are used to set RF path, unset pins are kept Hi-Z.
+      - A[0]: DIO5 (RFSW0)
+      - A[1]: DIO6 (RFSW1)
+      - A[2]: DIO7 (RFSW2)
+      - A[3]: DIO8 (RFSW3)
+      - A[4]: DIO10 (RFSW4)
+
+      The default has no pins controlling amplifiers.
+
+  rfsw-standby:
+    type: int
+    default: 0
+    description: |
+      RF switch state in standby mode. See rfsw-enable for mask bit meaning.
+      Defines which RFSW GPIOs are set high (bit set) or low (bit unset) in the mode.
+
+  rfsw-rx:
+    type: int
+    default: 0
+    description: RF switch state in RX mode. See rfsw-standby.
+
+  rfsw-tx:
+    type: int
+    default: 0
+    description: RF switch state in sub-GHz, low-power TX mode. See rfsw-standby.
+
+  rfsw-tx-hp:
+    type: int
+    default: 0
+    description: RF switch state in sub-GHz, high-power TX mode. See rfsw-standby.
+
+  rfsw-tx-hf:
+    type: int
+    default: 0
+    description: RF switch state in high-frequency TX mode. See rfsw-standby.
+
+  rfsw-gnss:
+    type: int
+    default: 0
+    description: RF switch state in GNSS RX mode. See rfsw-standby.
+
+  rfsw-wifi:
+    type: int
+    default: 0
+    description: RF switch state in WIFI RX mode. See rfsw-standby.
+
+  use-dcdc:
+    type: boolean
+    description: Use DCDC regulator instead of LDO (RegMode = 1).
+
+  force-ldro:
+    type: boolean
+    description: |
+      Force usage of Low Data Rate Optimization even in cases where the symbol time is shorter than
+      16.38ms. Useful for designs using no TCXO or with bad heat dissipation.
+
+  rx-boosted:
+    type: boolean
+    description: |
+      Enable RX boosted mode, which increases the power consumption of
+      RX mode by ~2mA in exchange for ~2dB sensitivity improvement.

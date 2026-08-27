@@ -1,0 +1,18 @@
+# Copyright (c) 2024 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuvoton, NuMaker window watchdog timer
+
+compatible: "nuvoton,numaker-wwdt"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true

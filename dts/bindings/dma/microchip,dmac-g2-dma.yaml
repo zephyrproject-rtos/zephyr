@@ -1,0 +1,60 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: Microchip G2 DMA Controller
+
+description: |
+  Microchip G2 DMA driver.
+
+  Group G2 DMA driver supports following hardware peripherals:
+    - module name="DMAC" id="U2223" version="2.4.0"
+
+compatible: "microchip,dmac-g2-dma"
+
+include: dma-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  clock-names:
+    required: true
+
+  dma-channels:
+    required: true
+
+  "#dma-cells":
+    type: int
+    const: 2
+    description: |
+      Specifies the number of cells used for the DMA specifier.
+
+# #dma-cells : Must be <2>.
+# The 1st cell specifies the DMAC channel to be used for the data transfer.
+#   This channel should be unique between all peripherals that are using the
+#   DMAC instance.
+# The 2nd cell defines the peripheral trigger which is the source of the transfer.
+#   For details on trigger selection and trigger modes, refer to
+#   "Transfer Triggers and Actions".
+#   See the SoC's reference manual for all the supported request sources.
+#
+# Example of devicetree dma channel configuration:
+#
+# &sercom3 {
+#     /* Configure DMA channels for async operation */
+#     dmas = <&dmac 10 7>, <&dmac 11 8>;
+#     dma-names = "rx", "tx";
+# };
+#
+# In above fragment 10 and 11 represents the different channels used to
+# transfer data between peripheral and ram. The numbers 7/8 are, for instance,
+# uart_rx/tx peripheral trigger for sercom3.
+dma-cells:
+  - channel
+  - trigsrc

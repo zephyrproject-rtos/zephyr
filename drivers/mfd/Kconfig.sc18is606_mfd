@@ -1,0 +1,10 @@
+# Copyright (c) 2026, tinyvision.ai
+# SPDX-License-Identifier: Apache-2.0
+
+config MFD_SC18IS606
+	bool "NXP SC18IS606 SPI/GPIO bridge"
+	default y
+	depends on DT_HAS_NXP_SC18IS606_ENABLED
+	select I2C
+	help
+	  Enable the driver for the NXP SC18IS606 SPI/GPIO bridge

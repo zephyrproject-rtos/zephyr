@@ -1,0 +1,21 @@
+identifier: esp32p4x_function_ev_board/esp32p4/hpcore
+name: ESP32-P4X-Function-EV-Board HP Core
+vendor: espressif
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+supported:
+  - counter
+  - dma
+  - entropy
+  - gpio
+  - hwinfo
+  - i2s
+  - netif:eth
+  - netif:wifi
+  - pulse_io
+  - sdhc
+  - spi
+  - uart
+  - watchdog

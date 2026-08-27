@@ -1,0 +1,6 @@
+board:
+  name: adafruit_feather_propmaker_rp2040
+  full_name: RP2040 Prop-Maker Feather
+  vendor: adafruit
+  socs:
+  - name: rp2040

@@ -1,0 +1,15 @@
+identifier: weact_stm32g0b1_core
+name: WeAct STM32G0B1 Core Board
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 128
+flash: 144
+supported:
+  - can
+  - gpio
+  - usb_device
+  - usbd
+vendor: weact

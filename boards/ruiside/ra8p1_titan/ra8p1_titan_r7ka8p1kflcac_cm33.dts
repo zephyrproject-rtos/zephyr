@@ -1,0 +1,86 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <renesas/ra/ra8/r7ka8p1kflcac_cm33.dtsi>
+#include "ra8p1_titan.dtsi"
+
+/ {
+	model = "Ruiside RA8P1 Titan";
+	compatible = "ruiside,ra8p1-titan", "renesas,ra8p1", "renesas,ra8";
+
+	chosen {
+		zephyr,sram = &sram1;
+		zephyr,flash = &code_mram_cm33;
+		zephyr,flash-controller = &mram_ctrl;
+		zephyr,console = &uart6;
+		zephyr,shell-uart = &uart6;
+		zephyr,entropy = &trng;
+	};
+
+	aliases {
+		led0 = &led_green;
+		sw0 = &user_button;
+	};
+};
+
+&user_button {
+	status = "okay";
+};
+
+&sci6 {
+	pinctrl-0 = <&sci6_default>;
+	pinctrl-names = "default";
+	interrupts = <40 1>, <41 1>, <42 1>, <43 1>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
+	status = "okay";
+
+	uart6: uart {
+		current-speed = <115200>;
+		status = "okay";
+	};
+};
+
+&iic2 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&iic2_default>;
+	pinctrl-names = "default";
+	interrupts = <44 1>, <45 1>, <46 1>, <47 1>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
+	status = "okay";
+
+	ist8310: magnetometer@e {
+		compatible = "isentek,ist8310";
+		reg = <0x0e>;
+		status = "okay";
+	};
+};
+
+/* USER_KEY: user button on P110, mapped to port IRQ20. */
+&port_irq20 {
+	interrupts = <48 12>;
+	status = "okay";
+};
+
+&ulpt0 {
+	interrupts = <49 1>;
+	interrupt-names = "ulpti";
+	status = "okay";
+
+	timer {
+		status = "okay";
+	};
+};
+
+&ulpt1 {
+	status = "okay";
+
+	timer {
+		status = "okay";
+	};
+};

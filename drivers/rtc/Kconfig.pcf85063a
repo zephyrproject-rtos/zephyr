@@ -1,0 +1,10 @@
+# Copyright (c) 2025 Fabian Blatz <fabianblatz@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config RTC_PCF85063A
+	bool "NXP PCF85063A Real-Time Clock driver"
+	default y
+	depends on DT_HAS_NXP_PCF85063A_ENABLED
+	select I2C
+	help
+	  Enable NXP PCF85063A I2C driver.

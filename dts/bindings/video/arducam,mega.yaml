@@ -1,0 +1,10 @@
+# ARDUCAM_MEGA
+
+# Copyright (c) 2023 Arducam Technology Co., Ltd. <www.arducam.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Arducam Mega CMOS video sensor
+
+compatible: "arducam,mega"
+
+include: spi-device.yaml

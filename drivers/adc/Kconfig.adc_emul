@@ -1,0 +1,29 @@
+# Copyright 2021 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_EMUL
+	bool "ADC emulator"
+	default y
+	depends on DT_HAS_ZEPHYR_ADC_EMUL_ENABLED
+	help
+	  Enable the ADC emulator driver. This is a fake driver in that it
+	  does not talk to real hardware. It pretends to be actual ADC. It
+	  is used for testing higher-level API for ADC devices.
+
+if ADC_EMUL
+
+config ADC_EMUL_ACQUISITION_THREAD_STACK_SIZE
+	int "Stack size for the ADC data acquisition thread"
+	default 512
+	help
+	  Size of the stack used for the internal data acquisition
+	  thread. Increasing size may be required when value function for
+	  emulated ADC require a lot of memory.
+
+config ADC_EMUL_ACQUISITION_THREAD_PRIO
+	int "Priority for the ADC data acquisition thread"
+	default 0
+	help
+	  Priority level for the internal ADC data acquisition thread.
+
+endif # ADC_EMUL

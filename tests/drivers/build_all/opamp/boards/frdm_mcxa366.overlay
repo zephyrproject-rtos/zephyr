@@ -1,0 +1,18 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&opamp0 {
+	bias-current = <1>;
+	compensation-capcitor = <0>;
+	is-reference-source;
+	functional-mode = "follower";
+};
+
+&opamp1 {
+	bias-current = <1>;
+	compensation-capcitor = <0>;
+	functional-mode = "inverting";
+};

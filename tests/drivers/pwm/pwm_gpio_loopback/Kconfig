@@ -1,0 +1,29 @@
+# Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "PWM GPIO loopback test"
+
+source "Kconfig.zephyr"
+
+config SAMPLING_TIME
+	int "Sampling wait time (ms)"
+	default 50
+	help
+	  Time to wait for PWM edge sampling, in milliseconds.
+
+config SKIP_EDGE_NUM
+	int "Number of edges to skip before sampling PWM"
+	default 2
+	help
+	  Number of PWM edges to skip before starting sampling.
+	  This parameter improves measurement precision as there can be significant
+	  latency in the first sampled edge.
+
+config ALLOWED_DEVIATION
+	int "Allowed deviation (%) for PWM timing checks"
+	default 5
+	range 0 100
+	help
+	  Maximum allowed deviation (%) from the programmed values for the test to be
+	  considered a PASS. For example, if set to 5, the measured period or duty cycle
+	  can deviate by up to 5% from the programmed values for the test to pass.

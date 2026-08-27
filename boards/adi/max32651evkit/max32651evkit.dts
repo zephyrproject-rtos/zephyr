@@ -1,0 +1,170 @@
+/*
+ * Copyright (c) 2026 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <adi/max32/max32650.dtsi>
+#include <adi/max32/max32650-pinctrl.dtsi>
+#include <zephyr/dt-bindings/gpio/adi-max32-gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/memory-controller/adi-max32-hpb.h>
+
+/ {
+	model = "Analog Devices MAX32651EVKIT";
+	compatible = "adi,max32651evkit";
+
+	chosen {
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,sram = &sram4;
+		zephyr,flash = &flash0;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led1: led_1 {
+			gpios = <&gpio2 25 GPIO_ACTIVE_LOW>;
+			label = "Red LED";
+		};
+
+		led2: led_2 {
+			gpios = <&gpio2 26 GPIO_ACTIVE_LOW>;
+			label = "Green LED";
+		};
+	};
+
+	buttons {
+		compatible = "gpio-keys";
+
+		pb1: pb1 {
+			gpios = <&gpio2 28 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "SW2";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		pb2: pb2 {
+			gpios = <&gpio2 30 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "SW3";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+
+	/* These aliases are provided for compatibility with samples */
+	aliases {
+		led0 = &led1;
+		led1 = &led2;
+		sw0 = &pb1;
+		watchdog0 = &wdt0;
+	};
+
+	sdram1: memory@60000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x60000000 DT_SIZE_M(8)>;
+		zephyr,memory-region = "SDRAM1";
+		status = "disabled";
+	};
+};
+
+&uart0 {
+	pinctrl-0 = <&uart0_tx_p2_12 &uart0_rx_p2_11>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	data-bits = <8>;
+	parity = "none";
+	dmas = <&dma0 4 MAX32_DMA_SLOT_UART0_TX>, <&dma0 5 MAX32_DMA_SLOT_UART0_RX>;
+	dma-names = "tx", "rx";
+	status = "okay";
+};
+
+&clk_ipo {
+	status = "okay";
+};
+
+/*
+ * ERTCO is required for counter RTC
+ */
+&clk_ertco {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio2 {
+	status = "okay";
+};
+
+&gpio3 {
+	status = "okay";
+};
+
+&dma0 {
+	status = "okay";
+};
+
+&i2c0 {
+	pinctrl-0 = <&i2c0_scl_p2_8 &i2c0_sda_p2_7>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&spi2 {
+	status = "okay";
+	pinctrl-0 = <&spi2_mosi_p2_4 &spi2_miso_p2_3 &spi2_sck_p2_2 &spi2_ss0_p2_5>;
+	pinctrl-names = "default";
+};
+
+&wdt0 {
+	status = "okay";
+};
+
+&rtc_counter {
+	status = "okay";
+};
+
+zephyr_udc0: &usbhs {
+	status = "okay";
+};
+
+&hpb {
+	pinctrl-0 = <&hyp_cs0_p1_11 &hyp_rwds_p1_14
+		     &hyp_d0_p1_12 &hyp_d1_p1_15 &hyp_d2_p1_19
+		     &hyp_d3_p1_20 &hyp_d4_p1_13 &hyp_d5_p1_16
+		     &hyp_d6_p1_18 &hyp_d7_p1_21>;
+	pinctrl-names = "default";
+	enable-emcc;
+	status = "okay";
+
+	mem@0 {
+		reg = <0>;
+		base-address = <0x60000000>;
+		device-type = <ADI_MAX32_HPB_DEV_TYPE_HYPER_RAM>;
+		/* HPB runs from the 60 MHz peripheral clock on MAX32651.
+		 *   - CS high 2.5 cycles = 41.7 ns
+		 *   - CS setup/hold 1 cycle = 16.7 ns
+		 */
+		read-cs-high = <ADI_MAX32_HPB_CS_HIGH_2_5>;
+		write-cs-high = <ADI_MAX32_HPB_CS_HIGH_2_5>;
+		read-cs-setup = <ADI_MAX32_HPB_CS_SETUP_HOLD_1>;
+		write-cs-setup = <ADI_MAX32_HPB_CS_SETUP_HOLD_1>;
+		read-cs-hold = <ADI_MAX32_HPB_CS_SETUP_HOLD_1>;
+		write-cs-hold = <ADI_MAX32_HPB_CS_SETUP_HOLD_1>;
+
+		latency-cycles = <ADI_MAX32_HPB_LAT_6>;
+		/* CR0 register at address 0x1000, default value is 0x8f2f
+		 * Change to 0x8f1f to reduce clock latency from 7 to 6, to match
+		 * latency-cycles above.
+		 */
+		config-regs = <0x1000>;
+		config-reg-vals = <0x8f1f>;
+	};
+};

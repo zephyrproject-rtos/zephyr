@@ -1,0 +1,16 @@
+boards:
+  - name: mgm260p_ek2713a
+    full_name: xGM260P Explorer Kit (MGM260P-EK2713A)
+    vendor: silabs
+    socs:
+      - name: mgm260pd32vna
+  - name: pg26_ek2711a
+    full_name: EFM32PG26 Explorer Kit (PG26-EK2711A)
+    vendor: silabs
+    socs:
+      - name: efm32pg26b500f3200im68
+  - name: xg26_ek2709a
+    full_name: EFR32xG26 Explorer Kit (xG26-EK2709A)
+    vendor: silabs
+    socs:
+      - name: efr32mg26b510f3200im48

@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2025 Siratul Islam
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		biometrics = &biometrics;
+	};
+
+	biometrics: biometrics {
+		compatible = "zephyr,biometrics-emul";
+		status = "okay";
+	};
+};

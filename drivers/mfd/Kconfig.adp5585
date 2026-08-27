@@ -1,0 +1,17 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig MFD_ADP5585
+	bool "Analog ADP5585 I2C configurable GPIO/PWM/KeyScan chip"
+	default y
+	depends on DT_HAS_ADI_ADP5585_ENABLED
+	depends on I2C
+	help
+	  Enable driver for Analog ADP5585.
+
+config MFD_ADP5585_INIT_PRIORITY
+	int "Init priority"
+	default 65
+	depends on MFD_ADP5585
+	help
+	  Device driver initialization priority.

@@ -1,0 +1,118 @@
+# Copyright 2023 The ChromiumOS Authors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  When an io-channel measures the voltage over a current sense amplifier,
+  the interesting measurement is almost always the current through the
+  sense resistor, not the voltage over it. This binding describes such a current
+  sense circuit.
+
+  This is based on Linux, documentation:
+    https://www.kernel.org/doc/Documentation/devicetree/bindings/iio/afe/current-sense-amplifier.yaml
+
+compatible: "current-sense-amplifier"
+
+include: base.yaml
+
+properties:
+  io-channels:
+    required: true
+    description: |
+      Channels available with this divider configuration.
+
+  sense-resistor-milli-ohms:
+    type: int
+    required: true
+    description: |
+      Resistance of the shunt resistor in milli-ohms.
+
+  sense-gain-mult:
+    type: int
+    default: 1
+    description: |
+      Amplifier gain multiplier. The default is <1>. The maximum value is <65535>.
+
+  sense-gain-div:
+    type: int
+    default: 1
+    description: |
+      Amplifier gain divider. The default is <1>. The maximum value is <65535>.
+
+  zero-current-voltage-mv:
+    type: int
+    default: 0
+    description: |
+      The zero-current voltage in millivolts. Defaults to <0>, with a range of <-32768> to <32767>.
+
+      Some current sense amplifiers output a voltage proportional to current, independent of a
+      current sense resistor (e.g., Hall-effect current sensors). These sensors often have a
+      nonzero offset voltage that corresponds to zero current.
+
+      To use this binding with such sensors, `sense-resistor-milli-ohms` should be set to 1.
+
+  power-gpios:
+    type: phandle-array
+    description: |
+      Control power to the current amplifier.
+
+      If present the corresponding GPIO must be set to an active level
+      to enable the current amplifier.
+
+  enable-calibration:
+    type: boolean
+    description: |
+      Enable calibration of the current sense amplifier.
+      This is used to calibrate the ADC prior to taking measurements.
+
+  zephyr,noise-threshold:
+    type: int
+    default: 0
+    description: |
+     Raw ADC readings below this threshold are treated as noise and
+     reported as 0 uA. The default value of 0 disables the threshold.
+
+  gain-extended-range:
+    type: string
+    description: |
+      Alternate gain to use if primary measurement hits limit:
+      - ADC_GAIN_1_6: x 1/6
+      - ADC_GAIN_1_5: x 1/5
+      - ADC_GAIN_1_4: x 1/4
+      - ADC_GAIN_1_3: x 1/3
+      - ADC_GAIN_2_5: x 2/5
+      - ADC_GAIN_1_2: x 1/2
+      - ADC_GAIN_2_3: x 2/3
+      - ADC_GAIN_4_5: x 4/5
+      - ADC_GAIN_1:   x 1
+      - ADC_GAIN_2:   x 2
+      - ADC_GAIN_3:   x 3
+      - ADC_GAIN_4:   x 4
+      - ADC_GAIN_6:   x 6
+      - ADC_GAIN_8:   x 8
+      - ADC_GAIN_12:  x 12
+      - ADC_GAIN_16:  x 16
+      - ADC_GAIN_24:  x 24
+      - ADC_GAIN_32:  x 32
+      - ADC_GAIN_64:  x 64
+      - ADC_GAIN_128: x 128
+    enum:
+      - "ADC_GAIN_1_6"
+      - "ADC_GAIN_1_5"
+      - "ADC_GAIN_1_4"
+      - "ADC_GAIN_1_3"
+      - "ADC_GAIN_2_5"
+      - "ADC_GAIN_1_2"
+      - "ADC_GAIN_2_3"
+      - "ADC_GAIN_4_5"
+      - "ADC_GAIN_1"
+      - "ADC_GAIN_2"
+      - "ADC_GAIN_3"
+      - "ADC_GAIN_4"
+      - "ADC_GAIN_6"
+      - "ADC_GAIN_8"
+      - "ADC_GAIN_12"
+      - "ADC_GAIN_16"
+      - "ADC_GAIN_24"
+      - "ADC_GAIN_32"
+      - "ADC_GAIN_64"
+      - "ADC_GAIN_128"

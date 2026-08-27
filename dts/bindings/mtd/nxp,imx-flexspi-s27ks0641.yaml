@@ -1,0 +1,9 @@
+# Copyright 2021 Basalte bv
+# Copyright 2022 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: Cypress S27KS0641 HyperRAM on NXP FlexSPI bus
+
+compatible: "nxp,imx-flexspi-s27ks0641"
+
+include: nxp,imx-flexspi-device.yaml

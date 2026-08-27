@@ -1,0 +1,30 @@
+# Copyright (c) 2025 Synopsys, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: RISC-V Incoming Message-Signaled Interrupt Controller (IMSIC)
+
+compatible: "riscv,imsic"
+
+include: [interrupt-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+    description: Base address and size of the IMSIC file
+
+  riscv,num-ids:
+    type: int
+    required: true
+    description: |
+      Number of interrupt identities (EIIDs) supported by this IMSIC instance.
+      Per RISC-V AIA specification, valid range is 1-2047 (EIID 0 is reserved).
+
+  riscv,hart-id:
+    type: int
+    required: true
+    description: |
+      Hart ID associated with this IMSIC instance. Each hart has its own
+      IMSIC interrupt file.
+
+interrupt-cells:
+  - id

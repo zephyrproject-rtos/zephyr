@@ -1,0 +1,34 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		die-temp0 = &die_temp;
+	};
+};
+
+&die_temp {
+	status = "okay";
+	ts-cal-resolution = <12>;
+};
+
+&adc3 {
+	status = "okay";
+	pinctrl-0 = <>;
+	pinctrl-names = "default";
+	st,adc-clock-source = "SYNC";
+	st,adc-prescaler = <4>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@11 {
+		reg = <0x11>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_MAX>;
+		zephyr,resolution = <12>;
+	};
+};

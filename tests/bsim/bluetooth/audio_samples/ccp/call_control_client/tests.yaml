@@ -1,0 +1,19 @@
+tests:
+  tests.bsim.bluetooth.audio_samples.ccp.client:
+    tags:
+      - bluetooth
+    depends_on: bsim
+    platform_allow:
+      - nrf52_bsim
+      - nrf5340bsim/nrf5340/cpuapp
+      - nrf54l15bsim/nrf54l15/cpuapp
+    sysbuild: true
+    build_only: true
+    harness: bsim
+    extra_args:
+      - CONF_FILE=${ZEPHYR_BASE}/samples/bluetooth/audio/ccp_call_control_client/prj.conf
+      - EXTRA_CONF_FILE="${ZEPHYR_BASE}/samples/bluetooth/audio/ccp_call_control_client/overlay-bt_ll_sw_split.conf"
+      - platform:nrf5340bsim/nrf5340/cpuapp:EXTRA_CONF_FILE="${ZEPHYR_BASE}/samples/bluetooth/audio/ccp_call_control_client/boards/nrf5340_audio_dk_nrf5340_cpuapp.conf"
+      # Note the last provided EXTRA_CONF_FILE definition will be used by cmake
+    harness_config:
+      bsim_exe_name: tests_bsim_bluetooth_audio_samples_ccp_call_control_client_prj_conf

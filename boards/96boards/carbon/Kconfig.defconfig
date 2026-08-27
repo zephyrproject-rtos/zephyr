@@ -1,0 +1,15 @@
+# 96boards Carbon board configuration
+
+# Copyright (c) 2016 Linaro Limited.
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_96B_CARBON_STM32F401XE
+
+configdefault MAIN_STACK_SIZE
+	default 1600 if MBEDTLS_INIT
+
+endif # BOARD_96B_CARBON_STM32F401XE
+
+if BOARD_96B_CARBON_NRF51822
+
+endif # BOARD_96B_CARBON_NRF51822

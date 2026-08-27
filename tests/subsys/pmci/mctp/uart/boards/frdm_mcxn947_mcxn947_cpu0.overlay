@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2026 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Connect RX to TX:
+ * J1.2 to J1.4
+ */
+&flexcomm2_lpuart2 {
+	status = "okay";
+};
+
+host_serial: &flexcomm2_lpuart2 {};
+
+endpoint_serial: &flexcomm2_lpuart2 {};

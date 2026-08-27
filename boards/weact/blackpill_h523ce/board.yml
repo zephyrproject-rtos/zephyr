@@ -1,0 +1,6 @@
+board:
+  name: blackpill_h523ce
+  full_name: Black Pill STM32H523
+  vendor: weact
+  socs:
+    - name: stm32h523xx

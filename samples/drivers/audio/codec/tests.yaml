@@ -1,0 +1,16 @@
+sample:
+  description: onchip audio codec example application
+  name: audio codec sample
+tests:
+  sample.drivers.audio.codec:
+    filter: dt_nodelabel_enabled("audcodec")
+    tags: codec
+    integration_platforms:
+      - sf32lb52_devkit_lcd
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "Audio codec sample"
+        - "Exiting"

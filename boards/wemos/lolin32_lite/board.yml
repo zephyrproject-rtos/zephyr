@@ -1,0 +1,6 @@
+board:
+  name: lolin32_lite
+  full_name: Wemos Lolin32 Lite
+  vendor: wemos
+  socs:
+    - name: esp32

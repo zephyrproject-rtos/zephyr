@@ -1,0 +1,35 @@
+# Copyright (c) 2025 Basalte bv
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Cypress CY8CMBR3002/3102/3106S/3108/3110/3116 capacitive touch sensor
+
+compatible: "cypress,cy8cmbr3xxx"
+
+include: i2c-device.yaml
+
+properties:
+  int-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      The interrupt pin generates an active low pulse signal on
+      any change in the CapSense sensor's status.
+
+  rst-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      The reset pin resets the capsense controller with an active
+      low reset pulse.
+
+  input-codes:
+    type: array
+    required: true
+    description: |
+      Array of input event key codes (INPUT_KEY_* or INPUT_BTN_*).
+
+  proximity-codes:
+    type: array
+    description: |
+      Array of input event key codes (INPUT_KEY_* or INPUT_BTN_*).

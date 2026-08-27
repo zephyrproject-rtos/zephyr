@@ -1,0 +1,19 @@
+# Copyright 2025 NXP
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config TEST_FLASH_PATTERN_SIZE
+	int "Flash interface test pattern size"
+	default 256
+
+config TEST_SEQUENTIAL_READ_PATTERN_AMOUNT
+	int "Perform amount of sequential-read-pattern tests"
+	default 1000000
+
+config TEST_SEQUENTIAL_ALTERNATING_READ_PATTERN_AMOUNT
+	int "Perform amount of sequential-alternating-read-pattern tests"
+	default 1000000
+
+source "Kconfig.zephyr"

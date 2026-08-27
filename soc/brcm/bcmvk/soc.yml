@@ -1,0 +1,12 @@
+family:
+  - name: bcmvk
+    series:
+      - name: valkyrie
+        socs:
+          - name: bcm58400
+      - name: viper
+        socs:
+          - name: bcm58402
+            cpuclusters:
+              - name: m7
+              - name: a72

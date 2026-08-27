@@ -1,0 +1,31 @@
+# Atmel SAMR35 MCU series
+
+# Copyright (c) 2021 Argentum Systems Ltd.
+# Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_SAMR35
+	bool
+	select SOC_FAMILY_ATMEL_SAM0
+	help
+	  Enable support for Atmel SAMR35 Cortex-M0+ microcontrollers.
+
+config SOC_SERIES
+	default "samr35" if SOC_SERIES_SAMR35
+
+config SOC_SAMR35J16B
+	bool
+	select SOC_SERIES_SAMR35
+
+config SOC_SAMR35J17B
+	bool
+	select SOC_SERIES_SAMR35
+
+config SOC_SAMR35J18B
+	bool
+	select SOC_SERIES_SAMR35
+
+config SOC
+	default "samr35j16b" if SOC_SAMR35J16B
+	default "samr35j17b" if SOC_SAMR35J17B
+	default "samr35j18b" if SOC_SAMR35J18B

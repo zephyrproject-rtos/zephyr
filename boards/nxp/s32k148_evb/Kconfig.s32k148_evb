@@ -1,0 +1,6 @@
+# Copyright 2023-2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_S32K148_EVB
+	select SOC_S32K148
+	select SOC_PART_NUMBER_FS32K148HAT0MLUT

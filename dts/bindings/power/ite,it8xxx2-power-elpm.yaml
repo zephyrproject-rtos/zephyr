@@ -1,0 +1,40 @@
+# Copyright (c) 2025 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+description: IT8XXX2 Extreme Low Power Controller
+
+compatible: "ite,it8xxx2-power-elpm"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+child-binding:
+  description: XLPIN configuration
+
+  properties:
+    reg:
+      type: int
+      description: the index of XLPIN
+
+    latch-enable:
+      type: boolean
+      description: Enable latching of XLPIN if present
+
+    polarity:
+      type: string
+      required: true
+      enum: ["default", "low-falling", "high-rising"]
+      description: |
+        Polarity setting for this XLPIN:
+          - "default" disables it
+          - "low-falling" triggers on low/falling edge
+          - "high-rising" triggers on high/rising edge

@@ -1,0 +1,28 @@
+/*
+ * Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <espressif/esp32p4/esp32p4_lpcore_n16.dtsi>
+#include <espressif/partitions_0x2000_default_16M.dtsi>
+
+/ {
+	model = "Espressif ESP32-P4X-Function-EV-Board LP Core";
+	compatible = "espressif,esp32p4";
+
+	chosen {
+		zephyr,sram = &sramlp;
+		zephyr,console = &lp_uart;
+		zephyr,shell-uart = &lp_uart;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_lpcore_partition;
+	};
+};
+
+&lp_uart {
+	status = "okay";
+	current-speed = <115200>;
+};

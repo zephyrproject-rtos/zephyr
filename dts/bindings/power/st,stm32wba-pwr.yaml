@@ -1,0 +1,66 @@
+# Copyright (c) 2026 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+title: STM32WBA power controller
+
+description: |
+  Power controller of STM32WBA series
+
+  Controls the memory retained in s2ram power state.
+
+compatible: "st,stm32wba-pwr"
+
+include: "st,stm32-dualreg-pwr.yaml"
+
+properties:
+  retain-sram2:
+    type: boolean
+    description: |
+      Enables retention of SRAM2 while in Standby low-power mode.
+      (Standby mode is a suspend-to-RAM power state)
+
+      If this property is present, the entire SRAM2 memory region
+      will be retained in Standby mode (all contents preserved).
+
+      If this property is not present, the SRAM2 memory region will
+      will not be retained in Standby mode (all contents are lost),
+      except if the Zephyr RAM region `/chosen/zephyr,sram` overlaps
+      with SRAM2 (in this case, retention is always enabled).
+
+examples:
+  - |
+    /*
+     * Not used RAM retained (and so powered) is simply a
+     * pointless waste of energy.
+     * `/chosen/zephyr,sram` (Zephyr system memory) is mapped on
+     * sram0 memory controller.
+     * According the required ram, sram0 memory controller will use
+     * SRAM1 (up to 448KB) and SRAM2 (up to 64KB) physical banks.
+     *
+     * Let's imagine a build report shows an application needs
+     * 120 KB of RAM and Standby low-power feature is required.
+     * In this case only the first 2 pages of SRAM1 will be retained.
+     * And SRAM2 is not retained by default.
+     * The overlay file can be modified like this:
+     */
+    sram0: memory@20000000 {
+            reg = <0x20000000 DT_SIZE_K(120)>;
+    };
+  - |
+    /*
+     * If for any specific reason application needs to retain SRAM2:
+     */
+    &pwr {
+            power-supply = "smps";
+            retain-sram2;
+            status = "okay";
+    };
+  - |
+    /*
+     * If full memory is required, SRAM1 and SRAM2 will be
+     * fully retained and the sram0 memory node will appear
+     * like this:
+     */
+    sram0: memory@20000000 {
+            reg = <0x20000000 DT_SIZE_K(512)>;
+    };

@@ -1,0 +1,10 @@
+# Waveshare ESP32-P4-WIFI6-Dev-Kit configuration
+#
+# Copyright (c) 2026 Process Mission
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ESP32P4_WIFI6_DEV_KIT
+	select SOC_ESP32P4_HPCORE if BOARD_ESP32P4_WIFI6_DEV_KIT_ESP32P4_HPCORE
+	select SOC_ESP32P4_LPCORE if BOARD_ESP32P4_WIFI6_DEV_KIT_ESP32P4_LPCORE
+	select SOC_ESP32P4_REV_3_1

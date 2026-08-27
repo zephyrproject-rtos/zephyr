@@ -1,0 +1,7 @@
+series:
+- name: qemu_arc
+  socs:
+  - name: qemu_arc_em
+  - name: qemu_arc_hs
+  - name: qemu_arc_hs5x
+  - name: qemu_arc_hs6x

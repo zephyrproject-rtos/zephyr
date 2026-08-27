@@ -1,0 +1,17 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+sample:
+  name: nPM13xx EK
+common:
+  platform_allow: nrf52dk/nrf52832
+  depends_on: arduino_i2c
+  tags:
+    - shield
+    - regulator
+    - sensor
+tests:
+  sample.shields.npm1300_ek:
+    extra_args: SHIELD=npm1300_ek
+  sample.shields.npm1304_ek:
+    extra_args: SHIELD=npm1304_ek

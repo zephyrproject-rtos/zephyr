@@ -1,0 +1,43 @@
+tests:
+  libraries.spsc_pbuf:
+    integration_platforms:
+      - native_sim
+    # Exclude platform which does not link with cache functions
+    platform_exclude: ast1030_evb
+    timeout: 120
+
+  libraries.spsc_pbuf.cache:
+    integration_platforms:
+      - native_sim
+    # This configuration only make sense for interprocessor data sharing so
+    # configuration can only be verified against compilation errors on a single core.
+    platform_allow: native_sim
+    build_only: true
+    extra_configs:
+      - CONFIG_SPSC_PBUF_CACHE_ALWAYS=y
+
+  libraries.spsc_pbuf.nocache.:
+    integration_platforms:
+      - native_sim
+    # Exclude platform which does not link with cache functions
+    platform_exclude: ast1030_evb
+    timeout: 120
+    extra_configs:
+      - CONFIG_SPSC_PBUF_CACHE_NEVER=y
+
+  libraries.spsc_pbuf.utilization:
+    integration_platforms:
+      - native_sim
+    # Exclude platform which does not link with cache functions
+    platform_exclude: ast1030_evb
+    timeout: 120
+    extra_configs:
+      - CONFIG_SPSC_PBUF_UTILIZATION=y
+
+  libraries.spsc_pbuf.stress:
+    platform_allow: qemu_x86
+    timeout: 120
+    extra_configs:
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=100000
+    integration_platforms:
+      - qemu_x86

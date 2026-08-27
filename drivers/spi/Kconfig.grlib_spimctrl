@@ -1,0 +1,8 @@
+# Copyright (c) 2023 Frontgrade Gaisler AB
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_GRLIB_SPIMCTRL
+	bool "GRLIB SPI memory controller"
+	depends on SOC_SPARC_LEON
+	help
+	  Enable the GRLIB SPIMCTRL

@@ -1,0 +1,15 @@
+# NXP S32K5XX MCU series
+
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_S32K566_R52
+
+config NUM_IRQS
+	# must be >= the highest interrupt number used
+	default 328
+
+config MAIN_STACK_SIZE
+	default 1024
+
+endif # SOC_S32K566_R52

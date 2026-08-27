@@ -1,0 +1,5 @@
+# Copyright (c) 2025 Core Devices LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_SF32LB52_DEVKIT_LCD
+	select SOC_SF32LB525UC6

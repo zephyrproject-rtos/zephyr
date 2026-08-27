@@ -1,0 +1,8 @@
+/*
+ * Copyright (c) 2026 James Bennion-Pedley
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "nano_ch32v317_common.dtsi"

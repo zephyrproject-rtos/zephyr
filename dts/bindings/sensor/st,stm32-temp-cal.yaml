@@ -1,0 +1,28 @@
+# Copyright (c) 2022, Wouter Cappelle
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    STM32 family TEMP node for production calibrated sensors with two calibration temperatures.
+
+compatible: "st,stm32-temp-cal"
+
+include:
+  - name: st,stm32-temp-cal-common.yaml
+    property-blocklist:
+      - avgslope
+      - ntc
+
+properties:
+  nvmem-cell-names:
+    description: |
+      Two NVMEM cells must be provided:
+        - TS_CAL1
+        - TS_CAL2
+
+      Each cell corresponds to the eponymous calibration parameter.
+    enum: ["TS_CAL1", "TS_CAL2"]
+
+  ts-cal2-temp:
+    type: int
+    required: true
+    description: Temperature at which TS_CAL2 has been measured (TS_CAL2_TEMP)

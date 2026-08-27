@@ -1,0 +1,37 @@
+# Copyright 2024-2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_IMX8MP_EVK
+
+if BOARD_IMX8MP_EVK_MIMX8ML8_A53 || BOARD_IMX8MP_EVK_MIMX8ML8_A53_SMP
+
+configdefault NET_L2_ETHERNET
+	default y
+
+configdefault NET_TX_STACK_SIZE
+	default 8192
+
+configdefault NET_RX_STACK_SIZE
+	default 8192
+
+configdefault NET_TCP_WORKQ_STACK_SIZE
+	default 8192
+
+configdefault NET_MGMT_EVENT_STACK_SIZE
+	default 8192
+
+configdefault NET_SOCKETS_SERVICE_STACK_SIZE
+	default 8192
+
+if CAN && GPIO_PCA_SERIES
+
+# For FlexCAN2, SAI5 PDM/CAN2 IOMUX select is controlled by IO expander PCA6416A
+# IO port, so CAN transceiver must be initialized after PCA6416A initialization
+config CAN_TRANSCEIVER_INIT_PRIORITY
+	default 75
+
+endif # CAN && GPIO_PCA_SERIES
+
+endif # BOARD_IMX8MP_EVK_MIMX8ML8_A53 || BOARD_IMX8MP_EVK_MIMX8ML8_A53_SMP
+
+endif # BOARD_IMX8MP_EVK

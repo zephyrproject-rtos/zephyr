@@ -1,0 +1,20 @@
+# Zephyr composite fuel-gauge device
+
+# Copyright (c) 2024 Embeint Inc
+# SPDX-License-Identifier: Apache-2.0
+
+config FUEL_GAUGE_COMPOSITE
+	bool "Zephyr composite fuel gauge"
+	default y
+	depends on DT_HAS_ZEPHYR_FUEL_GAUGE_COMPOSITE_ENABLED
+	help
+	  Enable driver for the Zephyr composite fuel gauge device.
+
+config FUEL_GAUGE_COMPOSITE_DATA_VALIDITY_MS
+	int "Data from sensor_fetch is cached for this long"
+	depends on FUEL_GAUGE_COMPOSITE
+	default 150
+	help
+	  To ensure that data is consistent across multiple calls to
+	  fuel_gauge_get_prop, sensor_fetch is only called if at least
+	  this long has passed since the previous call.

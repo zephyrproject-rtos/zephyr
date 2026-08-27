@@ -1,0 +1,16 @@
+# Copyright (c) 2026 Intel Corporation
+# SPDX - License - Identifier : Apache - 2.0
+
+description: PECI node associated to this eSPI bus.
+
+compatible: "intel,espi-peci"
+
+on-bus: espi
+
+properties:
+  peci-addr:
+    type: int
+    default: 0x7
+    description: |
+      I2C/PECI address of the PECI controller exposed over the eSPI bus.
+      This address is used by the host to communicate with the PECI device.

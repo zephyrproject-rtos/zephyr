@@ -1,0 +1,41 @@
+/*
+ * Copyright (c) 2026 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&cpu0 {
+	/* USART Wakeup requires automatic HSI16 switch on in deepsleep mode
+	 * which isn't possible in Stop Mode 2.
+	 * Remove Stop Mode 2 from supported modes
+	 */
+	cpu-power-states = <&stop0 &stop1>;
+};
+
+&rcc {
+	clocks = <&clk_hsi>;
+	clock-frequency = <DT_FREQ_M(16)>;
+};
+
+dut: &usart1 {
+	clocks = <&rcc STM32_CLOCK_BUS_APB2 0x00004000>,
+		 <&rcc STM32_SRC_HSI16 USART1_SEL(2)>;
+
+	dmas = <&gpdma1 4 12 STM32_DMA_PERIPH_TX>,
+	       <&gpdma1 5 11 (STM32_DMA_MODE_CYCLIC |
+			      STM32_DMA_PERIPH_RX |
+			      STM32_DMA_MEM_8BITS)>;
+	dma-names = "tx", "rx";
+	wakeup-source;
+	fifo-enable;
+	pinctrl-1 = <&analog_pb12 &analog_pa8>;
+	pinctrl-names = "default", "sleep";
+};
+
+&gpdma1 {
+	status = "okay";
+};
+
+&clk_hsi {
+	status = "okay";
+};

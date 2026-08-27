@@ -1,0 +1,49 @@
+# Copyright (c) 2022 Panasonic Industrial Devices Europe GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Panasonic's reduced Arduino header.
+
+                                  D15    21
+                                  D14    20
+                                  AREF   -
+                                  GND    -
+        -   N/C                   D13    19
+        -   IOREF                 D12    18
+        -   RESET                 D11    17
+        -   3V3                   D10    16
+        -   5V                    D9     NC
+        -   GND                   D8     NC
+        -   GND
+        -   VIN                   D7     NC
+                                  D6     NC
+        0   A0                    D5     11
+        1   A1                    D4     10
+        2   A2                    D3     9
+        3   A3                    D2     8
+        NC  A4                    D1     7
+        NC  A5                    D0     6
+
+    Panasonic's reduced Arduino header is based on the Arduino UNO layout
+    and provides four different headers. The main difference is that some
+    pins are not available due to the lack of pins on the Panasonic module.
+    These unconnected pins are labeled "NC" in the mapping above.
+
+    So:
+
+    1. Power Supply header exactly, like on Arduino UNO layout.
+
+    2. Analog Input header, like on Arduino UNO layout, but A4 and A5 are
+    not connected.
+
+    3. 8-pin header (opposite Analog Input).  Digital input signals, like on
+    Arduino UNO layout, labeled from D0 at the bottom to D7 at the top, but D6
+    and D7 are not connected.
+
+    4. 10-pin header (opposite Power Supply). Digital input signals, like on
+    Arduino UNO layout, labeled from D8 at the bottom through D15 at the top,
+    but D8 and D9 are not connected.
+
+compatible: "panasonic,reduced-arduino-header"
+
+include: [gpio-nexus.yaml, base.yaml]

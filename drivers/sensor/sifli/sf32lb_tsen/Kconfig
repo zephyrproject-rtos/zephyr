@@ -1,0 +1,9 @@
+# Copyright (c) 2025, Qingsong Gou <gouqs@hotmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SF32LB_TSEN
+	bool "SIFLI SF32LB TSEN temperature sensor driver"
+	default y
+	depends on DT_HAS_SIFLI_SF32LB_TSEN_ENABLED
+	help
+	  Enable driver for the SIFLI SF32LB on-chip temperature sensor (TSEN).

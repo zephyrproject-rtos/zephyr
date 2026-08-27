@@ -1,0 +1,8 @@
+# Copyright (c) 2025 Alexander Kozhinov <ak.alexander.kozhinov@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config OPAMP_STM32
+	bool "STM32 OPAMP driver"
+	default y
+	select PINCTRL
+	depends on DT_HAS_ST_STM32_OPAMP_ENABLED

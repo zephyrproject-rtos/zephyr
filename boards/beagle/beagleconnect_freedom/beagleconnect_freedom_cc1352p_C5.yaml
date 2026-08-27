@@ -1,0 +1,19 @@
+identifier: beagleconnect_freedom@C5/cc1352p
+name: BeagleConnect Freedom C5
+type: mcu
+arch: arm
+ram: 80
+flash: 352
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - gpio
+  - i2c
+  - spi
+  - uart
+  - hwinfo
+  - adc
+  - pwm
+  - flash
+vendor: beagle

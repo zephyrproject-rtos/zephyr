@@ -1,0 +1,27 @@
+# Copyright (c) 2026 Zhaoming Li
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: armfly_stm32h743xih6
+name: Armfly STM32H743XIH6
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 512
+flash: 2048
+supported:
+  - uart
+  - gpio
+  - input
+  - counter
+  - i2c
+  - spi
+  - flash
+  - sdhc
+  - pwm
+  - rtc
+  - display
+  - memc
+  - netif:eth
+vendor: armfly

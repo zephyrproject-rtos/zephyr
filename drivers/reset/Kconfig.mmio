@@ -1,0 +1,11 @@
+# MMIO reset driver configuration options
+
+# Copyright (c) 2025 Google LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config RESET_MMIO
+	bool "Generic MMIO reset driver"
+	default y
+	depends on DT_HAS_RESET_MMIO_ENABLED
+	help
+	  This option enables the generic MMIO reset driver. This is meant for IPs with a single memory mapped reset bit required to take them out of reset.

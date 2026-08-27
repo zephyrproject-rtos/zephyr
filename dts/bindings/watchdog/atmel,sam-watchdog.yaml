@@ -1,0 +1,18 @@
+# Copyright (c) 2018, Atmel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: ATMEL SAM0 watchdog
+
+compatible: "atmel,sam-watchdog"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true

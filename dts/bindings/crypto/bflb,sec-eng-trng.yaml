@@ -1,0 +1,12 @@
+description: Bouffalo Lab SEC Engine TRNG (True Random Number Generator)
+
+compatible: "bflb,sec-eng-trng"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true

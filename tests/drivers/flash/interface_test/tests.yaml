@@ -1,0 +1,38 @@
+#
+# Copyright 2025 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+common:
+  tags:
+    - drivers
+    - flash
+    - memc
+tests:
+  drivers.flash.interface_test.default:
+    timeout: 600
+    platform_allow:
+      - pic32cm_jh01_cpro
+  drivers.flash.interface_test.build_only:
+    harness: ztest
+    build_only: true
+    filter: CONFIG_FLASH_HAS_DRIVER_ENABLED and
+            (dt_label_with_parent_compat_enabled("slot1_partition", "fixed-partitions") or
+             dt_label_compat_enabled("slot1_partition", "zephyr,mapped-partition"))
+    integration_platforms:
+      - imx95_evk/mimx9596/m7
+      - nrf54l15dk/nrf54l15/cpuapp
+  drivers.flash.interface_test.spi_nand.w25n01gv:
+    harness_config:
+      fixture: w25n01gv
+    extra_configs:
+      - CONFIG_TEST_SEQUENTIAL_READ_PATTERN_AMOUNT=50000
+      - CONFIG_TEST_SEQUENTIAL_ALTERNATING_READ_PATTERN_AMOUNT=25000
+      - CONFIG_FLASH_EX_OP_ENABLED=y
+    extra_args:
+      - FILE_SUFFIX="w25n01gv"
+      - EXTRA_CONF_FILE="boards/w25n01gv.conf"
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp
+    timeout: 900

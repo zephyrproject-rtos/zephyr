@@ -1,0 +1,27 @@
+identifier: pg28_pk2506a
+name: EFM32PG28 Pro Kit (PG28-PK2506A, BRD2506A)
+type: mcu
+arch: arm
+ram: 256
+flash: 1024
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - clock_control
+  - comparator
+  - counter
+  - dma
+  - entropy
+  - flash
+  - gpio
+  - i2c
+  - led
+  - pinctrl
+  - spi
+  - uart
+  - watchdog
+testing:
+  ignore_tags:
+    - pm
+vendor: silabs

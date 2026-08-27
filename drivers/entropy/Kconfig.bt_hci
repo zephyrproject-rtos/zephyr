@@ -1,0 +1,18 @@
+# Copyright (c) 2022, Commonwealth Scientific and Industrial Research
+# Organisation (CSIRO) ABN 41 687 119 230.
+# SPDX-License-Identifier: Apache-2.0
+
+config ENTROPY_BT_HCI
+	bool "Bluetooth HCI RNG driver"
+	default y
+	depends on DT_HAS_ZEPHYR_BT_HCI_ENTROPY_ENABLED
+	depends on BT_HCI_HOST
+	select ENTROPY_HAS_DRIVER
+	help
+	  Enable Random Number Generator from a Bluetooth HCI device.
+
+# Don't use use Bluetooth HCI as a random source since it will be slow.
+# Instead, use the software implemented xoshiro RNG.
+choice RNG_GENERATOR_CHOICE
+	default XOSHIRO_RANDOM_GENERATOR if ENTROPY_BT_HCI
+endchoice

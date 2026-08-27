@@ -1,0 +1,7 @@
+tests:
+  net.pkt_filter:
+    min_ram: 16
+    tags:
+      - net
+      - npf
+    depends_on: netif

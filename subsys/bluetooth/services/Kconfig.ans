@@ -1,0 +1,86 @@
+# Bluetooth GATT Alert Notification Service
+
+# Copyright (c) 2025 Sean Kyer
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig BT_ANS
+	bool "GATT Alert Notification Service [EXPERIMENTAL]"
+	depends on UTF8
+	select EXPERIMENTAL
+
+if BT_ANS
+
+module = BT_ANS
+module-str = Alert Notification Service (ANS)
+source "subsys/logging/Kconfig.template.log_config"
+
+menu "New Alert Categories"
+
+config BT_ANS_NALRT_CAT_SIMPLE_ALERT
+	bool "Support Simple Alert"
+
+config BT_ANS_NALRT_CAT_EMAIL
+	bool "Support Email"
+
+config BT_ANS_NALRT_CAT_NEWS
+	bool "Support News"
+
+config BT_ANS_NALRT_CAT_CALL
+	bool "Support Call"
+
+config BT_ANS_NALRT_CAT_MISSED_CALL
+	bool "Support Missed Call"
+
+config BT_ANS_NALRT_CAT_SMS_MMS
+	bool "Support SMS/MMS"
+
+config BT_ANS_NALRT_CAT_VOICE_MAIL
+	bool "Support Voice Mail"
+
+config BT_ANS_NALRT_CAT_SCHEDULE
+	bool "Support Schedule"
+
+config BT_ANS_NALRT_CAT_HIGH_PRI_ALERT
+	bool "Support High Priority Alert"
+
+config BT_ANS_NALRT_CAT_INSTANT_MESSAGE
+	bool "Support Instant Message"
+
+endmenu
+
+menu "Unread Alert Categories"
+
+config BT_ANS_UNALRT_CAT_SIMPLE_ALERT
+	bool "Support Simple Alert"
+
+config BT_ANS_UNALRT_CAT_EMAIL
+	bool "Support Email"
+
+config BT_ANS_UNALRT_CAT_NEWS
+	bool "Support News"
+
+config BT_ANS_UNALRT_CAT_CALL
+	bool "Support Call"
+
+config BT_ANS_UNALRT_CAT_MISSED_CALL
+	bool "Support Missed Call"
+
+config BT_ANS_UNALRT_CAT_SMS_MMS
+	bool "Support SMS/MMS"
+
+config BT_ANS_UNALRT_CAT_VOICE_MAIL
+	bool "Support Voice Mail"
+
+config BT_ANS_UNALRT_CAT_SCHEDULE
+	bool "Support Schedule"
+
+config BT_ANS_UNALRT_CAT_HIGH_PRI_ALERT
+	bool "Support High Priority Alert"
+
+config BT_ANS_UNALRT_CAT_INSTANT_MESSAGE
+	bool "Support Instant Message"
+
+endmenu
+
+endif # BT_ANS

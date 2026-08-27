@@ -1,0 +1,8 @@
+# Copyright (c) 2022, Jamie McCrae
+# SPDX-License-Identifier: Apache-2.0
+
+config WDT_RPI_PICO
+	bool "Raspberry Pi Pico Watchdog driver"
+	default y
+	depends on DT_HAS_RASPBERRYPI_PICO_WATCHDOG_ENABLED
+	select HAS_WDT_NO_CALLBACKS

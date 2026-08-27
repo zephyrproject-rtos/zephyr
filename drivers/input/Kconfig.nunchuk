@@ -1,0 +1,16 @@
+# Copyright (c) 2024 Bootlin
+# SPDX-License-Identifier: Apache-2.0
+
+config INPUT_NUNCHUK
+	bool "Nintendo Nunchuk joystick"
+	default y
+	depends on DT_HAS_NINTENDO_NUNCHUK_ENABLED
+	select I2C
+	help
+	  This option enables the driver for the Nintendo Nunchuk joystick.
+
+config INPUT_NUNCHUK_ACCELERATION
+	bool "Nintendo Nunchuk joystick acceleration sensor data"
+	depends on INPUT_NUNCHUK
+	help
+	  This option enables the acceleration data reading for the Nintendo Nunchuk joystick.

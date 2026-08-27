@@ -1,0 +1,12 @@
+/*
+ * Copyright (c) 2025 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&tcc4 {
+	compatible = "microchip,tcc-g1-counter";
+	max-bit-width = <24>;
+	prescaler = <64>;
+	status = "okay";
+};

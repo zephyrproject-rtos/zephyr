@@ -1,0 +1,14 @@
+# Xilinx SPI
+
+# Copyright (c) 2020 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_XLNX_ZYNQMP_GQSPI
+	bool "Xilinx ZynqMP GQSPI driver"
+	default y
+	depends on DT_HAS_XLNX_ZYNQMP_QSPI_1_0_ENABLED
+	select EVENTS
+	help
+	  Enable Xilinx ZynqMP Generic Quad SPI driver.
+	  This is normally used with QSPI flash devices but can also be used
+	  with other SPI devices.

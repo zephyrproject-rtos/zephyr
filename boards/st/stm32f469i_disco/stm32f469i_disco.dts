@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2017 Linaro Limited
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include "stm32f469i_disco_common.dtsi"
+
+&i2c1 {
+	ft5336: ft5336@2a {
+		compatible = "focaltech,ft5336";
+		reg = <0x2a>;
+		int-gpios = <&gpioj 5 0>;
+		inverted-y;
+		screen-width = <800>;
+		screen-height = <480>;
+		status = "okay";
+	};
+};

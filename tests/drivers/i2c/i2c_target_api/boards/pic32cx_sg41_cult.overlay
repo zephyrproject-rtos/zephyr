@@ -1,0 +1,40 @@
+/*
+ * Copyright (c) 2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Connect PD9 to PC12 (SDA), and PD8 to PC13 (SCL) */
+
+&pinctrl {
+	sercom7_i2c_default: sercom7_i2c_default {
+		group1 {
+			pinmux = <PC12C_SERCOM7_PAD0>,
+				 <PC13C_SERCOM7_PAD1>;
+		};
+	};
+};
+
+&sercom7 {
+	compatible = "microchip,sercom-g1-i2c";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	clock-frequency = <I2C_BITRATE_FAST>;
+	pinctrl-0 = <&sercom7_i2c_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	eeprom0: eeprom@54 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x54>;
+		size = <256>;
+	};
+};
+
+&sercom6 {
+	eeprom1: eeprom@56 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x56>;
+		size = <256>;
+	};
+};

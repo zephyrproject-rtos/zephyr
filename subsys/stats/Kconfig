@@ -1,0 +1,29 @@
+# Copyright (c) 2020 Intel Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+
+config STATS
+	bool "Statistics support"
+	help
+	  Enable per-module event counters for troubleshooting, maintenance,
+	  and usage monitoring.  Statistics can be retrieved with the mcumgr
+	  management subsystem.
+
+config STATS_NAMES
+	bool "Statistic names"
+	depends on STATS
+	help
+	  Include a full name string for each statistic in the build.  If this
+	  setting is disabled, statistics are assigned generic names of the
+	  form "s0", "s1", etc.  Enabling this setting simplifies debugging,
+	  but results in a larger code size.
+
+config STATS_SHELL
+	bool "Statistics Shell Command"
+	depends on STATS && SHELL
+	imply STATS_NAMES
+	help
+	  Include a full name string for each statistic in the build.  If this
+	  setting is disabled, statistics are assigned generic names of the
+	  form "s0", "s1", etc.  Enabling this setting simplifies debugging,
+	  but results in a larger code size.

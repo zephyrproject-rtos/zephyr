@@ -1,0 +1,14 @@
+sample:
+  name: X-NUCLEO-IKS01A2 sensor shield
+tests:
+  sample.shields.x_nucleo_iks01a2.sensorhub:
+    harness: shield
+    tags: shield
+    depends_on:
+      - arduino_i2c
+      - arduino_gpio
+    platform_exclude:
+      - disco_l475_iot1
+      - lpcxpresso55s16
+      - stm32mp157c_dk2
+      - mimxrt1010_evk

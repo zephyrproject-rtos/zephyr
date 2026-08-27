@@ -1,0 +1,23 @@
+identifier: rp2040_zero
+name: Waveshare RP2040-Zero
+type: mcu
+arch: arm
+flash: 2048
+ram: 264
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - uart
+  - gpio
+  - adc
+  - i2c
+  - spi
+  - hwinfo
+  - watchdog
+  - pwm
+  - flash
+  - dma
+  - counter
+  - clock
+  - usbd

@@ -1,0 +1,19 @@
+platforms:
+  override_default_platforms: false
+  increased_platform_scope: true
+levels:
+  - name: smoke
+    description: >
+      A plan to be used verifying basic zephyr features on hardware.
+    adds:
+      - kernel.threads.*
+      - kernel.timer.behavior
+      - arch.interrupt
+      - boards.*
+  - name: acceptance
+    description: >
+      More coverage
+    adds:
+      - kernel.*
+      - arch.interrupt
+      - boards.*

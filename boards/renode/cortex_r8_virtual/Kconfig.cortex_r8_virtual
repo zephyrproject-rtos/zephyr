@@ -1,0 +1,5 @@
+# Copyright (c) 2024 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_CORTEX_R8_VIRTUAL
+	select SOC_CORTEX_R8_VIRTUAL

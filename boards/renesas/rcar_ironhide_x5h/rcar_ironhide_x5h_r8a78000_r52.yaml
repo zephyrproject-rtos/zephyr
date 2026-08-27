@@ -1,0 +1,12 @@
+identifier: rcar_ironhide_x5h/r8a78000/r52
+name: Cortex R52 for Renesas Ironhide
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - clock_control
+  - gpio
+  - uart
+  - i2c

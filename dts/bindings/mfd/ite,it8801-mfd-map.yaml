@@ -1,0 +1,13 @@
+# Copyright (c) 2024 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ITE IT8801 alternate controller node
+
+compatible: "ite,it8801-mfd-map"
+
+child-binding:
+  description: Child node to present the mapping of IT8801 altternate function
+  properties:
+    altctrls:
+      type: phandle-array
+      required: true

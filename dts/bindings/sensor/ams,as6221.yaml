@@ -1,0 +1,18 @@
+# Copyright (c) 2025 Byteflies NV
+# Copyright (c) 2022 T-Mobile USA, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    AMS AS6221 Digital Temperature Sensor.  See more info at
+    https://ams.com/en/as6221
+
+compatible: "ams,as6221"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  alert-gpios:
+    type: phandle-array
+    description: |
+      Identifies the ALERT signal, which is active-low open drain when
+      produced by the sensor.

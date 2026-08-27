@@ -1,0 +1,11 @@
+# Copyright (c) 2025 CATIE
+# SPDX-License-Identifier: Apache-2.0
+
+config 2SMPB_02E
+	bool "OMRON 2SMPB_02E digital barometric pressure sensor"
+	default y
+	depends on DT_HAS_OMRON_2SMPB_02E_ENABLED
+	select I2C
+	select FPU if CPU_HAS_FPU
+	help
+	  Enable driver for OMRON O2SMPB_02E digital barometric pressure sensor.

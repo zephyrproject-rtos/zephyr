@@ -1,0 +1,8 @@
+common:
+  tags:
+    - kernel
+    - workqueue
+tests:
+  kernel.workqueue.critical:
+    integration_platforms:
+      - qemu_x86

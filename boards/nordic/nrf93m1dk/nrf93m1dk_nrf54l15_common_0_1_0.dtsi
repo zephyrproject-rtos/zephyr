@@ -1,0 +1,36 @@
+/*
+ * Copyright (c) 2026 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "nrf93m1dk_nrf54l15_common.dtsi"
+
+/ {
+	buttons {
+		/* Override button0 with different GPIO */
+		button0: button_0 {
+			gpios = <&gpio1 2 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button 0";
+			zephyr,code = <INPUT_KEY_0>;
+		};
+
+		button1: button_1 {
+			gpios = <&gpio1 3 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+			label = "Push button 1";
+			zephyr,code = <INPUT_KEY_1>;
+		};
+	};
+
+	aliases {
+		sw1 = &button1;
+	};
+};
+
+&uart30 {
+	modem: modem {
+		compatible = "nordic,nrf93m1";
+		mdm-power-gpios = <&gpio1 13 GPIO_ACTIVE_HIGH>;
+		mdm-reset-gpios = <&gpio1 12 GPIO_ACTIVE_HIGH>;
+	};
+};

@@ -1,0 +1,32 @@
+description: Nordic UICR (User Information Configuration Registers)
+
+compatible: "nordic,nrf-uicr"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  nfct-pins-as-gpios:
+    type: boolean
+    description: |
+      When enabled this property will configure pins dedicated to NFCT
+      peripheral as regular GPIOs.
+
+      NFC pins in nRF52 series: P0.09 and P0.10
+      NFC pins in nRF5340: P0.02 and P0.03
+
+      This setting, once applied, can only be unset by erasing the UICR
+      registers. Refer to the reference manual for more details.
+
+  gpio-as-nreset:
+    type: boolean
+    description: |
+      When enabled, this property will configure the reset GPIO as nRESET.
+
+      nRESET pin in nRF52805/52810/52811/52832 series: P0.21
+      nRESET pin in nRF52820/52833/52840 series: P0.18
+
+      This setting, once applied, can only be unset by erasing the UICR
+      registers. Refer to the reference manual for more details.

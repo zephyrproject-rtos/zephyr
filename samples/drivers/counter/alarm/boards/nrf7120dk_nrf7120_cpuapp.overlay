@@ -1,0 +1,16 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2026 Nordic Semiconductor ASA
+ */
+
+/ {
+	chosen {
+		counter = &timer10;
+	};
+};
+
+&timer10 {
+	prescaler = <4>;
+	status = "okay";
+};

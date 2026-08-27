@@ -1,0 +1,9 @@
+# Copyright (c) 2024 Gustavo Silva
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    ScioSense ENS160 Digital Metal Oxide Multi-Gas Sensor on SPI bus
+
+compatible: "sciosense,ens160"
+
+include: ["spi-device.yaml", "sciosense,ens160-common.yaml"]

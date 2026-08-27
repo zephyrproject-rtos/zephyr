@@ -1,0 +1,5 @@
+# Copyright (c) 2024 Kickmaker
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_STM32C0116_DK
+	select SOC_STM32C011XX

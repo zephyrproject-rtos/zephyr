@@ -1,0 +1,19 @@
+# Copyright (c) 2024 TDK Invensense
+# SPDX-License-Identifier: Apache-2.0
+
+description: ICP101xx High Accuracy, Low Power, Barometric Pressure and Temperature Sensors IC
+
+compatible: "invensense,icp101xx"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  mode:
+    type: string
+    default: "normal"
+    description: Mode of pressure and temperature measurement
+    enum:
+      - "low-power"
+      - "normal"
+      - "low-noise"
+      - "ultra-low-noise"

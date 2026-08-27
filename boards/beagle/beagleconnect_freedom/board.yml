@@ -1,0 +1,13 @@
+board:
+  name: beagleconnect_freedom
+  full_name: BeagleConnect Freedom
+  vendor: beagle
+  socs:
+    - name: cc1352p
+    - name: cc1352p7
+  revision:
+    format: custom
+    exact: true
+    revisions:
+      - name: "C5"
+      - name: "C7"

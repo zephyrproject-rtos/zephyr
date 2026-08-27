@@ -1,0 +1,26 @@
+#
+# Copyright (c) 2022 Jason Kridner, BeagleBoard.org Foundation
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+CONFIG_GPIO=y
+
+CONFIG_BUILD_OUTPUT_HEX=y
+# Custom callback for the antenna switch configuration
+CONFIG_CC13X2_CC26X2_HAS_CUSTOM_RF_HWATTRS=y
+CONFIG_CC13X2_CC26X2_BOOTLOADER_ENABLE=y
+CONFIG_CC13X2_CC26X2_BOOTLOADER_BACKDOOR_ENABLE=y
+CONFIG_CC13X2_CC26X2_BOOTLOADER_BACKDOOR_PIN=15
+
+CONFIG_ARM_MPU=y
+CONFIG_HW_STACK_PROTECTION=y
+
+# Disable internal capacitors. BeaglePlay has external load capacitors.
+# Source: https://www.ti.com/lit/er/swrz109a/swrz109a.pdf?ts=1761755410798 Radio_01
+CONFIG_CC13X2_CC26X2_XOSC_CAPARRAY_DELTA=0xFF
+
+# Enable default uart console
+CONFIG_SERIAL=y
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y

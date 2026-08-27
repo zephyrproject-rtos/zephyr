@@ -1,0 +1,25 @@
+# Copyright (c) 2025 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_AD4130
+	bool "ADI AD4130 Analog-to-Digital Converter"
+	default y
+	depends on DT_HAS_ADI_AD4130_ADC_ENABLED
+	select SPI
+	select ADC_CONFIGURABLE_INPUTS
+	help
+	  Enable the AD4130 ADC driver. It is SPI based
+	  Ultra Low Power, 24-Bit Sigma-Delta ADC.
+
+config ADI_AD4130_ADC_ACQUISITION_THREAD_PRIO
+	int "ADC data acquisition thread priority"
+	default 90
+	depends on ADC_AD4130 && ADC_ASYNC
+
+config ADI_AD4130_ADC_ACQUISITION_THREAD_STACK_SIZE
+	int "Stack size for the ADC data acquisition thread"
+	default 400
+	depends on ADC_AD4130 && ADC_ASYNC
+	help
+	  Size of the stack used for the internal data acquisition
+	  thread.

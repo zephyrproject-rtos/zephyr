@@ -1,0 +1,24 @@
+# Copyright (c) 2019, Linaro Limited
+# Copyright (c) 2019, Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+# Common fields for LED strips
+
+properties:
+  chain-length:
+    type: int
+    required: true
+    description: |
+      The number of devices in the daisy-chain.
+
+  color-mapping:
+    type: array
+    required: true
+    description: |
+      Channel to color mapping (or pixel order).
+
+      For example a GRB channel to color mapping would be
+
+         color-mapping = <LED_COLOR_ID_GREEN
+                          LED_COLOR_ID_RED
+                          LED_COLOR_ID_BLUE>;

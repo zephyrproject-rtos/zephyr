@@ -1,0 +1,8 @@
+# RAKWIRELESS RAK5010 Board configuration
+
+# Copyright (c) 2020 Guillaume Paquet <guillaume.paquet@smile.fr>
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_RAK5010
+
+endif # BOARD_RAK5010

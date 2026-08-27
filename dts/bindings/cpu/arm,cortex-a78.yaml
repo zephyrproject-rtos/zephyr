@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: ARM Cortex-A78 CPU
+
+compatible: "arm,cortex-a78"
+
+include: cpu.yaml

@@ -1,0 +1,24 @@
+# Copyright (c) 2018 - 2019 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: LiteX VexRiscV interrupt controller
+
+compatible: "litex,vexriscv-intc0"
+
+include: [interrupt-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  riscv,max-priority:
+    type: int
+    description: maximum interrupt priority
+    required: true
+
+  "#interrupt-cells":
+    const: 2
+
+interrupt-cells:
+  - irq
+  - priority

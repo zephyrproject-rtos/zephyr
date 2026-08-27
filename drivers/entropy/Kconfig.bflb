@@ -1,0 +1,12 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config ENTROPY_BFLB_SEC_ENG
+	bool "Bouffalo Lab SEC Engine TRNG driver"
+	default y
+	depends on DT_HAS_BFLB_SEC_ENG_TRNG_ENABLED
+	select ENTROPY_HAS_DRIVER
+	help
+	  Enable the Bouffalo Lab SEC Engine TRNG entropy driver.
+	  Provides hardware true random number generation via the
+	  SEC_ENG TRNG peripheral.

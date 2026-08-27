@@ -1,0 +1,28 @@
+/*
+ * Copyright (c) 2025 Zephyr Project
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Add two wifi_hwsim radios for native_sim (unit addresses avoid clash with
+ * spi@200 on the base board).
+ */
+
+/ {
+	wifi_hwsim_0: wifi_hwsim@202 {
+		compatible = "zephyr,wifi-hwsim";
+		reg = <0x202 1>;
+		radio-index = <0>;
+		status = "okay";
+	};
+
+	wifi_hwsim_1: wifi_hwsim@203 {
+		compatible = "zephyr,wifi-hwsim";
+		reg = <0x203 1>;
+		radio-index = <1>;
+		status = "okay";
+	};
+};
+
+/* Connect UART (shell) to process stdin/stdout so the shell is interactive. */
+&uart0 {
+	on-stdinout;
+};

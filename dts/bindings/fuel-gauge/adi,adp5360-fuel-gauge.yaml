@@ -1,0 +1,187 @@
+# Copyright (c) 2026 Analog Devices Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Analog Devices ADP5360 fuel gauge
+
+  The ADP5360 is a multi-function power management IC (PMIC)
+  that includes a battery charger, regulator, and fuel gauge.
+  This binding describes the fuel gauge function.
+
+  The fuel gauge provides battery monitoring including:
+    - State of charge (SOC)
+    - Battery voltage
+    - Charge cycle accumulation
+    - Programmable SOC voltage table
+
+  The fuel gauge is modeled in DT as a child device of "adi,adp5360" compatible node.
+
+compatible: "adi,adp5360-fuel-gauge"
+
+include:
+  - base.yaml
+  - fuel-gauge.yaml
+
+properties:
+  v-soc-0:
+    type: int
+    default: 3500
+    description: |
+      Voltage corresponding to 0% state of charge (SOC) in mV.
+      The device default for this setting is 3.5V.
+
+  v-soc-5:
+    type: int
+    default: 3660
+    description: |
+      Voltage corresponding to 5% SOC in mV.
+      The device default for this setting is 3.66V.
+
+  v-soc-11:
+    type: int
+    default: 3684
+    description: |
+      Voltage corresponding to 11% SOC in mV.
+      The device default for this setting is 3.684V.
+
+  v-soc-19:
+    type: int
+    default: 3724
+    description: |
+      Voltage corresponding to 19% SOC in mV.
+      The device default for this setting is 3.724V.
+
+  v-soc-28:
+    type: int
+    default: 3764
+    description: |
+      Voltage corresponding to 28% SOC in mV.
+      The device default for this setting is 3.764V.
+
+  v-soc-41:
+    type: int
+    default: 3804
+    description: |
+      Voltage corresponding to 41% SOC in mV.
+      The device default for this setting is 3.804V.
+
+  v-soc-55:
+    type: int
+    default: 3868
+    description: |
+      Voltage corresponding to 55% SOC in mV.
+      The device default for this setting is 3.868V.
+
+  v-soc-69:
+    type: int
+    default: 3948
+    description: |
+      Voltage corresponding to 69% SOC in mV.
+      The device default for this setting is 3.948V.
+
+  v-soc-84:
+    type: int
+    default: 4068
+    description: |
+      Voltage corresponding to 84% SOC in mV.
+      The device default for this setting is 4.068V.
+
+  v-soc-100:
+    type: int
+    default: 4204
+    description: |
+      Voltage corresponding to 100% SOC in mV.
+      The device default for this setting is 4.204V.
+
+  bat-cap:
+    type: int
+    default: 100
+    description: |
+      Battery capacity in mAh.
+      The device default for this setting is 100 mAh.
+
+  bat-cap-age:
+    type: int
+    default: 1 # 1.5% reduction
+    enum:
+      - 0 # 0.8% reduction
+      - 1 # 1.5% reduction
+      - 2 # 3.1% reduction
+      - 3 # 6.3% reduction
+    description: |
+      Battery Capacity Reduction Percentage When BAT_SOCACM Overflows.
+      The device default for this setting is 1.5% reduction.
+
+  bat-cap-temp:
+    type: int
+    default: 0 # 0.2% / °C
+    enum:
+      - 0 # 0.2% / °C
+      - 1 # 0.4% / °C
+      - 2 # 0.6% / °C
+      - 3 # 0.8% / °C
+    description: |
+      Battery Capacity Compensation with Temperature Coefficient.
+      The device default for this setting is 0.2% / °C.
+
+  bat-cap-temp-en:
+    type: boolean
+    description: |
+      Enable battery capacity compensation with temperature coefficient.
+      Default value corresponds to reset value of compensation.
+
+  bat-cap-age-en:
+    type: boolean
+    description: |
+      Enable battery capacity reduction when BAT_SOCACM overflows.
+      Default value corresponds to reset value of reduction.
+
+  soc-low-threshold:
+    type: int
+    default: 1 # 11% SOC low threshold
+    enum:
+      - 0 # 6% SOC low threshold
+      - 1 # 11% SOC low threshold
+      - 2 # 20% SOC low threshold
+      - 3 # 31% SOC low threshold
+    description: |
+      SOC low threshold in percentage.
+      The device default for this setting is 11% SOC low threshold.
+
+  sleep-mode-current-threshold:
+    type: int
+    default: 1 # 10 mA sleep mode current threshold
+    enum:
+      - 0 # 5 mA sleep mode current threshold
+      - 1 # 10 mA sleep mode current threshold
+      - 2 # 20 mA sleep mode current threshold
+      - 3 # 40 mA sleep mode current threshold
+    description: |
+      Sleep mode current threshold in mA.
+      The device default for this setting is 10 mA sleep mode current threshold.
+
+  sleep-mode-update-rate:
+    type: int
+    default: 0 # 1 minute sleep mode update rate
+    enum:
+      - 0 # 1 minute sleep mode update rate
+      - 1 # 4 minute sleep mode update rate
+      - 2 # 8 minute sleep mode update rate
+      - 3 # 16 minute sleep mode update rate
+    description: |
+      Sleep mode update rate in seconds.
+      The device default for this setting is 1 minute sleep mode update rate.
+
+  fuel-gauge-operation-mode:
+    type: int
+    default: 0 # Normal mode
+    enum:
+      - 0 # Normal mode
+      - 1 # Sleep mode
+    description: |
+      Fuel gauge operation mode.
+      The device default for this setting is Normal mode.
+
+  fuel-gauge-enable:
+    type: boolean
+    description: Enables fuel gauge on initialization.

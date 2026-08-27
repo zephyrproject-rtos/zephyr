@@ -1,0 +1,36 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nordic nRF low-frequency crystal oscillator (nRF54L series)
+
+compatible: "nordic,nrf54l-lfxo"
+
+include: fixed-clock.yaml
+
+properties:
+  clock-frequency:
+    const: 32768
+
+  load-capacitors:
+    type: string
+    enum:
+      - "internal"
+      - "external"
+    description: |
+      Type of load capacitors connected to the crystal. If not specified,
+      adjustments may still happen when the device trimming happens during
+      system initialization.
+
+  load-capacitance-femtofarad:
+    type: int
+    description: |
+      Load capacitance in femtofarads, holding any value between 3000 and 18000. Configured
+      capacitance is within 650 fF tolerance from the desired setting.
+      This property is only used when load-capacitors is set to "internal".
+
+  external-clock-source:
+    type: boolean
+    description: |
+      The LFXO is designed to work with an external rail-to-rail 32768
+      Hz clock source applied directly to the XL1 pin, leaving the XL2
+      unconnected, and internal load capacitor disabled.

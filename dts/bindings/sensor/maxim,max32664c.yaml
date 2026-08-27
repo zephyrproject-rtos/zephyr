@@ -1,0 +1,159 @@
+title: |
+  MAX32664 biometric sensor hub
+
+description: |
+  The MAX32664 is a ultra-low power biometric sensor hub.
+
+  NOTES:
+  This driver is primarily written to work with a MAX86141. Other sensors can be
+  used but they are untested! The driver supports up to two photodetectors (PDs)
+  and three LEDs fix. It requires a specific LED
+  configuration for the MAX86141.
+    LED1 -> Green
+    LED2 -> IR
+    LED3 -> Red
+  The LEDs can be changed manually but this may require changes in the driver.
+
+  This driver is tested with Sensor Hub firmware 30.13.31 and an external
+  Accelerometer (e.g. LIS2DH12).
+
+  See more info at:
+  https://www.analog.com/media/en/technical-documentation/data-sheets/MAX32664.pdf
+
+compatible: "maxim,max32664c"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    required: true
+    description:
+      External System Reset (Active-Low) Input.
+
+  mfio-gpios:
+    type: phandle-array
+    required: true
+    description:
+      MFIO asserts low as an output when the sensor hub needs to
+      communication with the host; MFIO acts as an input and when held
+      low during a reset, the sensor hub enters bootloader mode.
+
+  use-max86141:
+    type: boolean
+    description:
+      Use the MAX86141 as the AFE for the MAX32664C. This is the
+      default and recommended configuration. The driver is optimized for
+      this sensor.
+
+  use-max86161:
+    type: boolean
+    description:
+      Use the MAX86161 as the AFE for the MAX32664C.
+
+  motion-time:
+    type: int
+    default: 200
+    description:
+      Sensor Hub configuration - Motion activation time in milliseconds.
+      The default corresponds to Table 12 in the HR and SpO2 User guide.
+
+  motion-threshold:
+    type: int
+    default: 500
+    description:
+      Sensor Hub configuration - Motion activation time in milli-g.
+      The default corresponds to Table 12 in the HR and SpO2 User guide.
+
+  report-period:
+    type: int
+    default: 1
+    description:
+      Sensor Hub configuration - Set the samples report period (e.g., a value
+      of 25 means a samples report is generated once every 25 samples).
+      The default corresponds to Table 16 in the HR and SpO2 User guide.
+
+  spo2-calib:
+    type: array
+    default: [0xFFE69196, 0x000CB735, 0x00989680]
+    description:
+      Algorithm configuration - SpO2 calibration coefficients.
+      The default corresponds to Table 12 in the HR and SpO2 User guide.
+
+  min-integration-time:
+    type: int
+    default: 14
+    enum:
+      - 14
+      - 29
+      - 58
+      - 117
+    description:
+      Algorithm configuration - Minimum integration time in microseconds.
+      The default corresponds to Table 11 in the HR and SpO2 User guide.
+
+  min-sampling-rate:
+    type: int
+    default: 50
+    enum:
+      - 25
+      - 50
+      - 100
+      - 200
+      - 400
+    description:
+      Algorithm configuration - Minimum sampling rate (samples per second)
+      and averaging (samples).
+      The default corresponds to Table 11 in the HR and SpO2 User guide.
+
+  max-integration-time:
+    type: int
+    default: 117
+    enum:
+      - 14
+      - 29
+      - 58
+      - 117
+    description:
+      Algorithm configuration - Maximum integration time in microseconds.
+      The default corresponds to Table 11 in the HR and SpO2 User guide.
+
+  max-sampling-rate:
+    type: int
+    default: 100
+    enum:
+      - 25
+      - 50
+      - 100
+      - 200
+      - 400
+    description:
+      Algorithm configuration - Maximum sampling rate (samples per second)
+      and averaging (samples).
+      The default corresponds to Table 11 in the HR and SpO2 User guide.
+
+  led-current:
+    type: uint8-array
+    default: [0x7F, 0x7F, 0x7F]
+    description:
+      Initial LED current configuration in bits. Please check the datasheet
+      of the attached AFE to determine the appropriate values.
+      The current can also be changed later by the firmware.
+      Index 0 corresponds to LED1, index 1 to LED2, and index 2 to LED3.
+      The default corresponds to Table 5 in the HR and SpO2 User guide.
+
+  hr-config:
+    type: uint8-array
+    default: [0x00, 0x01]
+    description:
+      Algorithm configuration - LED and PD configuration for the heartrate measurement.
+      The first entry configures channel 1, the second channel 2.
+      The default corresponds to Table 15 in the HR and SpO2 User guide.
+
+  spo2-config:
+    type: uint8-array
+    default: [0x10, 0x20]
+    description:
+      Algorithm configuration - LED and PD configuration for the SpO2 measurement.
+      The first entry configures the IR channel, the second the red channel.
+      The default corresponds to Table 15 in the HR and SpO2 User guide.

@@ -1,0 +1,46 @@
+# Copyright (c) 2025 Analog Devices Inc.
+# SPDX-License-Identifier: Apache-2.0
+#
+# This file contains the binding for MAX31331 RTC from Analog Devices.
+
+description: MAX31331, an Ultra-Low-Power, I2C Real-Time Clock.
+
+compatible: "adi,max31331"
+
+include: [rtc-device.yaml, i2c-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupt-gpios:
+    description: "GPIO connected to the INT pin of the MAX31331."
+    type: phandle-array
+
+  ts-enable:
+    description: "Enable the timestamping feature of the MAX31331."
+    type: boolean
+
+  ts-vbat-enable:
+    description: "Enable timestamping in VBAT mode."
+    type: boolean
+
+  ts-din:
+    description: "Data input for timestamping."
+    type: boolean
+
+  ts-overwrite:
+    description: "Enable overwriting of the timestamp register."
+    type: boolean
+
+  ts-power-supply-switch:
+    description: "Enable power supply switch for timestamping."
+    type: boolean
+
+  din-polarity:
+    description: "Polarity of the data input for timestamping."
+    type: boolean
+
+  din-en-io:
+    description: "Enable data input as IO."
+    type: boolean

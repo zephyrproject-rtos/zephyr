@@ -1,0 +1,19 @@
+# Copyright (c) 2021, Teslabs Engineering S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STM32 Backup SRAM.
+
+  With a battery connected to the VBAT pin, the backup SRAM can be used to
+  retain data during low-power mode (Standby and VBAT mode).
+
+compatible: "st,stm32-backup-sram"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true

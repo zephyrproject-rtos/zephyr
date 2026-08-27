@@ -1,0 +1,151 @@
+/*
+ * Copyright (c) 2026 Analog Devices, Inc
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	zephyr,user {
+		dac = <&ad5592_dac>;
+		dac-channel-id = <0>;
+		dac-resolution = <12>;
+	};
+};
+
+&feather_spi {
+	status = "okay";
+
+	cs-gpios = <&feather_header 16 GPIO_ACTIVE_LOW>;
+
+	ad5592@0 {
+		compatible = "adi,ad559x";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(1)>;
+
+		ad5592_adc: ad5592_adc {
+			compatible = "adi,ad559x-adc";
+			#io-channel-cells = <1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			channel@0 {
+				reg = <0>;
+				zephyr,gain = "ADC_GAIN_1";
+				zephyr,reference = "ADC_REF_INTERNAL";
+				zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+				zephyr,resolution = <12>;
+				zephyr,vref-mv = <2500>;
+			};
+
+			channel@1 {
+				reg = <1>;
+				zephyr,gain = "ADC_GAIN_1";
+				zephyr,reference = "ADC_REF_INTERNAL";
+				zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+				zephyr,resolution = <12>;
+				zephyr,vref-mv = <2500>;
+			};
+
+			channel@2 {
+				reg = <2>;
+				zephyr,gain = "ADC_GAIN_1";
+				zephyr,reference = "ADC_REF_INTERNAL";
+				zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+				zephyr,resolution = <12>;
+				zephyr,vref-mv = <2500>;
+			};
+		};
+
+		ad5592_dac: ad5592_dac {
+			compatible = "adi,ad559x-dac";
+			#io-channel-cells = <1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			channel@0 {
+				reg = <0>;
+				zephyr,resolution = <12>;
+				zephyr,vref-mv = <2500>;
+			};
+
+			channel@2 {
+				reg = <2>;
+				zephyr,resolution = <12>;
+				zephyr,vref-mv = <2500>;
+			};
+		};
+	};
+};
+
+&feather_i2c {
+	status = "okay";
+
+	ad5593@10 {
+		compatible = "adi,ad559x";
+		reg = <0x10>;
+
+		ad5593_adc: ad5593_adc {
+			compatible = "adi,ad559x-adc";
+			#io-channel-cells = <1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			channel@0 {
+				reg = <0>;
+				zephyr,gain = "ADC_GAIN_1";
+				zephyr,reference = "ADC_REF_INTERNAL";
+				zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+				zephyr,resolution = <12>;
+				zephyr,vref-mv = <2500>;
+			};
+
+			channel@1 {
+				reg = <1>;
+				zephyr,gain = "ADC_GAIN_1";
+				zephyr,reference = "ADC_REF_INTERNAL";
+				zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+				zephyr,resolution = <12>;
+				zephyr,vref-mv = <2500>;
+			};
+
+			channel@2 {
+				reg = <2>;
+				zephyr,gain = "ADC_GAIN_1";
+				zephyr,reference = "ADC_REF_INTERNAL";
+				zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+				zephyr,resolution = <12>;
+				zephyr,vref-mv = <2500>;
+			};
+		};
+
+		ad5593_dac: ad5593_dac {
+			compatible = "adi,ad559x-dac";
+			#io-channel-cells = <1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			channel@0 {
+				reg = <0>;
+				zephyr,resolution = <12>;
+				zephyr,vref-mv = <2500>;
+			};
+
+			channel@2 {
+				reg = <2>;
+				zephyr,resolution = <12>;
+				zephyr,vref-mv = <2500>;
+			};
+
+			channel@3 {
+				reg = <3>;
+				zephyr,resolution = <12>;
+				zephyr,vref-mv = <2500>;
+			};
+		};
+	};
+
+	lm75: lm75@48 {
+		compatible = "lm75";
+		reg = <0x48>;
+	};
+};

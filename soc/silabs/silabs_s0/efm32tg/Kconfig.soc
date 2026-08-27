@@ -1,0 +1,18 @@
+# Copyright (c) 2025 Lukas Woodtli
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_EFM32TG
+	bool
+	select SOC_FAMILY_SILABS_S0
+	help
+	  Silicon Labs EFM32TG (Tiny Gecko) Series MCU
+
+config SOC_EFM32TG840F32
+	bool
+	select SOC_SERIES_EFM32TG
+
+config SOC_SERIES
+	default "efm32tg" if SOC_SERIES_EFM32TG
+
+config SOC
+	default "efm32tg840f32" if SOC_EFM32TG840F32
