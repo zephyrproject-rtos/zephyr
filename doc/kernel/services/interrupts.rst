@@ -515,7 +515,7 @@ Any relocation on this stage may lead to the situation where the entry in the in
 is no longer pointing to the function that was expected.
 It means that this parser, being more compatible is limiting us from using Link Time Optimization.
 
-The local isr declaration parser uses different approach to construct
+The local ISR declaration parser uses different approach to construct
 the same arrays at binary level.
 All the entries to the arrays are declared and defined locally,
 directly in the file where :c:macro:`IRQ_CONNECT` is used.
@@ -634,7 +634,7 @@ Implementation using linker script
 ----------------------------------
 
 This way of prepare and parse .isrList section to implement interrupt vectors arrays
-is called local isr declaration.
+is called local ISR declaration.
 The name comes from the fact that all the entries to the arrays that would create
 interrupt vectors are created locally in place of invocation of :c:macro:`IRQ_CONNECT` macro.
 Then automatically generated linker scripts are used to place it in the right place in the memory.
