@@ -3,7 +3,10 @@
 
 if SOC_SERIES_ESP32C6
 
+# HP core: 32 CPU lines, then one level-2 slot per interrupt matrix source
+# (ETS_MAX_INTR_SOURCE = 77). The LP core keeps the flat model.
 config NUM_IRQS
+	default 109 if SOC_ESP32C6_HPCORE
 	default 32
 
 config PMP_SLOTS
@@ -20,6 +23,38 @@ config MAIN_STACK_SIZE
 	default 2048
 
 endif # SOC_SERIES_ESP32C6
+
+if SOC_ESP32C6_HPCORE
+
+# Multi-level interrupts: L1 = intc (CPU lines), L2 = intmux (the interrupt
+# matrix as one aggregator, slot = 32 + source).
+config MULTI_LEVEL_INTERRUPTS
+	default y
+
+config 2ND_LEVEL_INTERRUPTS
+	default y
+
+config 1ST_LEVEL_INTERRUPT_BITS
+	default 8
+
+config 2ND_LEVEL_INTERRUPT_BITS
+	default 8
+
+config 2ND_LVL_ISR_TBL_OFFSET
+	default 32
+
+# Key line of intmux, the "interrupts" line of the intmux node. Line 6 is
+# permanently disabled, so no matrix source is ever routed to it.
+config 2ND_LVL_INTR_00_OFFSET
+	default 6
+
+config MAX_IRQ_PER_2ND_LEVEL_AGGREGATOR
+	default 77
+
+config NUM_2ND_LEVEL_AGGREGATORS
+	default 1
+
+endif # SOC_ESP32C6_HPCORE
 
 if SOC_ESP32C6_LPCORE
 

@@ -10,7 +10,11 @@ choice CACHE_TYPE
 	default EXTERNAL_CACHE if CACHE_MANAGEMENT
 endchoice
 
+# HP core uses the multi-level/INTMUX model. With RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET
+# = 16, CPU lines occupy table slots 16..47, so the source window starts at 48;
+# NUM_IRQS = 48 + ETS_MAX_INTR_SOURCE (84). The LP core keeps the flat model.
 config NUM_IRQS
+	default 132 if SOC_ESP32C5_HPCORE
 	default 48
 
 config RISCV_MCAUSE_EXCEPTION_MASK
@@ -55,6 +59,39 @@ config MAIN_STACK_SIZE
 	default 2048
 
 endif # SOC_SERIES_ESP32C5
+
+if SOC_ESP32C5_HPCORE
+
+# Multi-level interrupts: L1 = intc (CPU lines, slot = 16 + line), L2 = intmux
+# (the interrupt matrix as one aggregator, slot = 48 + source).
+config MULTI_LEVEL_INTERRUPTS
+	default y
+
+config 2ND_LEVEL_INTERRUPTS
+	default y
+
+config 1ST_LEVEL_INTERRUPT_BITS
+	default 8
+
+config 2ND_LEVEL_INTERRUPT_BITS
+	default 8
+
+config 2ND_LVL_ISR_TBL_OFFSET
+	default 48
+
+# Key line of intmux, the "interrupts" line of the intmux node. Line 6 is
+# permanently disabled, so no matrix source is ever routed to it. The level-1
+# IRQ number carries no reserved-IRQ offset; only the table slots do.
+config 2ND_LVL_INTR_00_OFFSET
+	default 6
+
+config MAX_IRQ_PER_2ND_LEVEL_AGGREGATOR
+	default 84
+
+config NUM_2ND_LEVEL_AGGREGATORS
+	default 1
+
+endif # SOC_ESP32C5_HPCORE
 
 if SOC_ESP32C5_LPCORE
 
