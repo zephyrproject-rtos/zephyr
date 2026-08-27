@@ -1,6 +1,0 @@
-board:
-  name: xg21_rb4195b
-  full_name: EFR32xG21B 2.4 GHz 10 dBm (xG21-RB4195B)
-  vendor: silabs
-  socs:
-    - name: efr32mg21b010f1024im32
