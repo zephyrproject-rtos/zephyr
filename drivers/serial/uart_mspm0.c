@@ -218,7 +218,7 @@ struct uart_mspm0_config {
  * Grouped here so they can be accessed as data->uart_config.parity, etc.
  */
 struct uart_mspm0_line_config {
-	uint32_t parity;      /* LCRH parity bits */
+	uint32_t parity;       /* LCRH parity bits */
 	uint32_t word_length;  /* LCRH WLEN field */
 	uint32_t stop_bits;    /* LCRH STP2 field */
 	uint32_t flow_control; /* CTL0 RTSEN/CTSEN bits */
@@ -830,47 +830,45 @@ static DEVICE_API(uart, uart_mspm0_driver_api) = {
 
 #define MSPM0_CLK_DIV_REG(n) (DT_INST_PROP(n, clk_div) - 1)
 
-#define MSPM0_UART_INIT_FN(index)								\
-                                                                                                \
-	PINCTRL_DT_INST_DEFINE(index);                                                          \
-                                                                                                \
-	static const struct mspm0_sys_clock mspm0_uart_sys_clock##index =                       \
-		MSPM0_CLOCK_SUBSYS_FN(index);                                                   \
-                                                                                                \
-	MSP_UART_IRQ_DEFINE(index);                                                             \
-                                                                                                \
-	static const struct uart_mspm0_config uart_mspm0_cfg_##index = {			\
-		.regs = (mspm0_uart_regs *)DT_INST_REG_ADDR(index),                             \
-		.pinctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(index),                               \
-		.clock_subsys = &mspm0_uart_sys_clock##index,                                   \
-		.clk_sel = MSPM0_CLOCK_PERIPH_REG_MASK(DT_INST_CLOCKS_CELL(index, clk)),        \
-		.clk_div = MSPM0_CLK_DIV_REG(index),                                            \
-		IF_ENABLED(									\
-		  CONFIG_UART_INTERRUPT_DRIVEN,							\
-		  (.rx_fifo_threshold = DT_INST_PROP(index, rx_fifo_threshold),))		\
-				 IF_ENABLED(							\
-			  CONFIG_UART_INTERRUPT_DRIVEN,						\
-				(.tx_fifo_threshold = DT_INST_PROP(index, tx_fifo_threshold),))	\
-						  IF_ENABLED(					\
-				  CONFIG_UART_INTERRUPT_DRIVEN,					\
-				  (.irq_config_func = uart_mspm0_##index##_irq_register,))};	\
-												\
-	static struct uart_mspm0_data uart_mspm0_data_##index = {                               \
-		.current_speed = DT_INST_PROP(index, current_speed),                            \
-		.uart_config = {                                                                \
-				.parity = 0,                                                    \
-				.word_length = UART_LCRH_WLEN_DATABIT8,                         \
-				.stop_bits = UART_LCRH_STP2_DISABLE,                            \
-				.flow_control = (DT_INST_PROP(index, hw_flow_control)            \
-							? (UART_CTL0_RTSEN_ENABLE |             \
-							   UART_CTL0_CTSEN_ENABLE)              \
-							: (UART_CTL0_RTSEN_DISABLE |            \
-							   UART_CTL0_CTSEN_DISABLE)),           \
-			},                                                                      \
-	};                                                                                      \
-												\
-	DEVICE_DT_INST_DEFINE(index, uart_mspm0_init, NULL, &uart_mspm0_data_##index,		\
-			      &uart_mspm0_cfg_##index, PRE_KERNEL_1,				\
-			      CONFIG_SERIAL_INIT_PRIORITY, &uart_mspm0_driver_api);
+/* clang-format off */
+#define MSPM0_UART_INIT_FN(index)								   \
+												   \
+	PINCTRL_DT_INST_DEFINE(index);								   \
+												   \
+	static const struct mspm0_sys_clock mspm0_uart_sys_clock##index =			   \
+		MSPM0_CLOCK_SUBSYS_FN(index);							   \
+												   \
+	MSP_UART_IRQ_DEFINE(index);								   \
+												   \
+	static const struct uart_mspm0_config uart_mspm0_cfg_##index = {			   \
+		.regs = (mspm0_uart_regs *)DT_INST_REG_ADDR(index),				   \
+		.pinctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(index),				   \
+		.clock_subsys = &mspm0_uart_sys_clock##index,					   \
+		.clk_sel = MSPM0_CLOCK_PERIPH_REG_MASK(DT_INST_CLOCKS_CELL(index, clk)),	   \
+		.clk_div = MSPM0_CLK_DIV_REG(index),						   \
+		IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN,					   \
+			   (.rx_fifo_threshold = DT_INST_PROP(index, rx_fifo_threshold),))	   \
+		IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN,					   \
+			   (.tx_fifo_threshold = DT_INST_PROP(index, tx_fifo_threshold),))	   \
+		IF_ENABLED(CONFIG_UART_INTERRUPT_DRIVEN,					   \
+			   (.irq_config_func = uart_mspm0_##index##_irq_register,))		   \
+	};											   \
+												   \
+	static struct uart_mspm0_data uart_mspm0_data_##index = {				   \
+		.current_speed = DT_INST_PROP(index, current_speed),				   \
+		.uart_config = {								   \
+			.parity = 0,								   \
+			.word_length = UART_LCRH_WLEN_DATABIT8,					   \
+			.stop_bits = UART_LCRH_STP2_DISABLE,					   \
+			.flow_control = (DT_INST_PROP(index, hw_flow_control)			   \
+					 ? (UART_CTL0_RTSEN_ENABLE | UART_CTL0_CTSEN_ENABLE)	   \
+					 : (UART_CTL0_RTSEN_DISABLE | UART_CTL0_CTSEN_DISABLE)),   \
+		},										   \
+	};											   \
+												   \
+	DEVICE_DT_INST_DEFINE(index, uart_mspm0_init, NULL, &uart_mspm0_data_##index,		   \
+			      &uart_mspm0_cfg_##index, PRE_KERNEL_1, CONFIG_SERIAL_INIT_PRIORITY,  \
+			      &uart_mspm0_driver_api);
+/* clang-format on */
 
 DT_INST_FOREACH_STATUS_OKAY(MSPM0_UART_INIT_FN)
