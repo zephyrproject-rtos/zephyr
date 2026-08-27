@@ -56,7 +56,6 @@ static void discover_cb(struct bt_ccp_call_control_client *client, int err,
 
 #if defined(CONFIG_BT_TBS_CLIENT_TBS)
 	zassert_equal(CONFIG_BT_TBS_CLIENT_MAX_TBS_INSTANCES, bearers->tbs_count);
-	zassert_not_null(bearers->tbs_bearers);
 	for (size_t i = 0U; i < bearers->tbs_count; i++) {
 		zassert_not_null(bearers->tbs_bearers[i]);
 		fixture->bearers[i + IS_ENABLED(CONFIG_BT_TBS_CLIENT_GTBS)] =
