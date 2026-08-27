@@ -1,0 +1,16 @@
+# ICM20948 Nine-Axis Motion Tracking device configuration options
+#
+# Copyright (c) 2026 T3 Gemstone
+#	T3 Gemstone Developer Team <support@t3gemstone.org>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config ICM20948
+	bool "ICM20948 Nine-Axis Motion Tracking Device"
+	default y
+	depends on DT_HAS_INVENSENSE_ICM20948_ENABLED
+	select SPI
+	help
+	  Enable driver for the InvenSense ICM20948 motion tracking device.
+	  Only the accelerometer and the gyroscope are supported, the
+	  magnetometer behind the auxiliary I2C bus is not.
