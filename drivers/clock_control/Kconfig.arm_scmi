@@ -6,3 +6,12 @@ config CLOCK_CONTROL_ARM_SCMI
 	depends on ARM_SCMI_CLK_HELPERS
 	help
 	  Enable support for SCMI-based clock control.
+
+if CLOCK_CONTROL_ARM_SCMI
+
+config CLOCK_CONTROL_SCMI_INIT_PRIORITY
+	int "SCMI clock controller driver initialization priority"
+	default 60 if ARM_SCMI_OPTEE_TRANSPORT
+	default CLOCK_CONTROL_INIT_PRIORITY
+
+endif # CLOCK_CONTROL_ARM_SCMI

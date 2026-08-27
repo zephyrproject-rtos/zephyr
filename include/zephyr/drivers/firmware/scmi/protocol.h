@@ -68,6 +68,19 @@
  */
 #define SCMI_MESSAGE_HDR_TAKE_TOKEN(hdr)    FIELD_GET(GENMASK(27, 18), (hdr))
 
+/**
+ * @brief Initialization level for SCMI protocols.
+ *
+ * SCMI protocols require POST_KERNEL initialization when OP-TEE transport
+ * is enabled, as the underlying OP-TEE driver initializes during POST_KERNEL.
+ * Defaults to PRE_KERNEL_1 for standard transports.
+ */
+#if defined(CONFIG_ARM_SCMI_OPTEE_TRANSPORT)
+#define SCMI_PROTOCOL_INIT_LEVEL  POST_KERNEL
+#else
+#define SCMI_PROTOCOL_INIT_LEVEL  PRE_KERNEL_1
+#endif
+
 struct scmi_channel;
 
 /**

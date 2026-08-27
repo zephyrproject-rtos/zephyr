@@ -173,5 +173,5 @@ static int scmi_clock_init(const struct device *dev)
 static struct scmi_clock_data data;
 
 DT_INST_SCMI_PROTOCOL_DEFINE(0, &scmi_clock_init, NULL, &data, NULL,
-			     PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
+			     SCMI_PROTOCOL_INIT_LEVEL, CONFIG_CLOCK_CONTROL_SCMI_INIT_PRIORITY,
 			     &scmi_clock_api, SCMI_CLK_PROTOCOL_SUPPORTED_VERSION, NULL);
