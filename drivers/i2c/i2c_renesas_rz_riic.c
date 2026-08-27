@@ -636,7 +636,9 @@ static DEVICE_API(i2c, i2c_rz_riic_driver_api) = {
 	I2C_RZ_IRQ_CONNECT(index, tei, iic_master_tei_isr);
 
 #define I2C_RZ_EXTENDED_CFG(index)                                                                 \
-	static riic_master_extended_cfg_t g_i2c_controller##index##_extend = {};
+	static riic_master_extended_cfg_t g_i2c_controller##index##_extend = {                     \
+		.p_reg = (void *)DT_INST_REG_ADDR(index),                                          \
+	};
 #endif /* CONFIG_I2C_RENESAS_RZ_IIC */
 
 #define I2C_RZ_RIIC_INIT(index)                                                                    \
