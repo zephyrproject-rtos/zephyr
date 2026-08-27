@@ -2429,6 +2429,20 @@ Documentation Infrastructure:
   tests:
     - drivers.mipi_dsi
 
+"Drivers: MPC":
+  status: maintained
+  maintainers:
+    - teburd
+  files:
+    - doc/hardware/peripherals/mpc.rst
+    - drivers/mpc/
+    - dts/bindings/memory-controllers/arm,mpc-base.yaml
+    - dts/bindings/memory-controllers/arm,tz-mpc.yaml
+    - dts/bindings/misc/infineon,mpc.yaml
+    - include/zephyr/drivers/mpc/
+  labels:
+    - "area: MPC"
+
 "Drivers: MSPI":
   status: maintained
   maintainers:
