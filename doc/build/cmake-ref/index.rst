@@ -27,6 +27,8 @@ Sysbuild Modules
    :glob:
 
    module/sysbuild_extensions
+   module/sysbuild_kconfig
+   module/sysbuild_root
    module/native_simulator_sb_extensions
 
 Utility & Tooling Modules
