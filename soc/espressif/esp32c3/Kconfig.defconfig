@@ -3,8 +3,57 @@
 
 if SOC_SERIES_ESP32C3
 
+# Multi-level interrupts: L1 = intc (CPU lines), L2 = intmux (the interrupt
+# matrix as one aggregator, slot = 32 + source, ETS_MAX_INTR_SOURCE = 62),
+# L3 = rtc_intc (16 slots from 94); NUM_IRQS = 94 + 16.
 config NUM_IRQS
+	default 110
+
+config MULTI_LEVEL_INTERRUPTS
+	default y
+
+config 2ND_LEVEL_INTERRUPTS
+	default y
+
+config 1ST_LEVEL_INTERRUPT_BITS
+	default 8
+
+config 2ND_LEVEL_INTERRUPT_BITS
+	default 8
+
+config 2ND_LVL_ISR_TBL_OFFSET
 	default 32
+
+# Key line of intmux, the "interrupts" line of the intmux node. Line 6 is
+# permanently disabled, so no matrix source is ever routed to it.
+config 2ND_LVL_INTR_00_OFFSET
+	default 6
+
+# Level-3: the RTC_CNTL peripherals share RTC_CORE_INTR_SOURCE and are demuxed
+# by rtc_intc (see the SoC dtsi). Window base is the end of the level-2 window.
+config 3RD_LEVEL_INTERRUPTS
+	default y
+
+config 3RD_LEVEL_INTERRUPT_BITS
+	default 8
+
+config NUM_3RD_LEVEL_AGGREGATORS
+	default 1
+
+config 3RD_LVL_INTR_00_OFFSET
+	default 27	# RTC_CORE_INTR_SOURCE, rtc_intc
+
+config MAX_IRQ_PER_3RD_LEVEL_AGGREGATOR
+	default 16
+
+config 3RD_LVL_ISR_TBL_OFFSET
+	default 94
+
+config MAX_IRQ_PER_2ND_LEVEL_AGGREGATOR
+	default 62
+
+config NUM_2ND_LEVEL_AGGREGATORS
+	default 1
 
 config MAIN_STACK_SIZE
 	default 2048
