@@ -163,6 +163,40 @@ config RISCV_ISA_EXT_ZIFENCEI
 	  provides explicit synchronization between writes to instruction
 	  memory and instruction fetches on the same hart.
 
+config RISCV_ISA_EXT_ZICBOM
+	bool
+	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_EXT_PROP),zicbom)
+	select CPU_HAS_DCACHE
+	help
+	  (Zicbom) - Standard Extension for Cache-Block Management Instructions
+
+	  The Zicbom extension adds cache-block management operations, including
+	  CBO.INVAL, CBO.CLEAN, and CBO.FLUSH, for cache maintenance.
+
+config RISCV_ISA_EXT_ZICBOZ
+	bool
+	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_EXT_PROP),zicboz)
+	help
+	  (Zicboz) - Standard Extension for Cache-Block Zero Instructions
+
+	  The Zicboz extension adds cache-block zeroing operations, including
+	  CBO.ZERO, to accelerate zero initialization of memory blocks.
+
+config RISCV_ISA_EXT_ZIC64B
+	bool
+	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_EXT_PROP),zic64b)
+	help
+	  (Zic64b) - Standard Extension for 64-Byte Cache Block Size
+
+	  The Zic64b extension indicates that cache block operations act on
+	  64-byte aligned, 64-byte blocks of memory.
+
+configdefault DCACHE_LINE_SIZE
+	default 64 if RISCV_ISA_EXT_ZIC64B
+
+configdefault ICACHE_LINE_SIZE
+	default 64 if RISCV_ISA_EXT_ZIC64B
+
 config RISCV_ISA_EXT_ZAAMO
 	bool
 	default y if $(dt_compat_all_has_prop,riscv,$(RISCV_ISA_EXT_PROP),zaamo)
