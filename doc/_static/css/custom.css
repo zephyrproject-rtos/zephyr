@@ -737,12 +737,47 @@ html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(
     background: var(--highlight-background-color) !important;
 }
 
-/* RTD hard-codes `color: #000` on .sig-name/.descname at (0,8,x), invisible on
-   a dark signature fill. */
+/* Only CMake signatures go through Pygments and land in a .highlight wrapper;
+   other domains emit the same token classes without it, so they came out
+   monochrome. The same variables keep one palette across both. */
+
 .rst-content dt.sig .sig-name,
 .rst-content dt.sig .descname {
-    color: inherit !important;
+    color: var(--highlight-function-color) !important;
     font-weight: 700;
+}
+
+.rst-content dt.sig .sig-prename,
+.rst-content dt.sig .descclassname {
+    color: var(--footer-color) !important;
+    font-weight: 400;
+}
+
+.rst-content dt.sig .property,
+.rst-content dt.sig .k {
+    color: var(--highlight-keyword-color);
+}
+
+/* Body colour on purpose: --highlight-type2-color is a near neighbour of
+   --highlight-type-color, so colouring this muddies the annotation. */
+.rst-content dt.sig .sig-param > .n:first-child {
+    color: var(--highlight-default-color);
+}
+
+.rst-content dt.sig .sig-param .n,
+.rst-content dt.sig .sig-return-typehint,
+.rst-content dt.sig .sig-return-typehint .n {
+    color: var(--highlight-type-color);
+}
+
+.rst-content dt.sig .default_value,
+.rst-content dt.sig .m {
+    color: var(--highlight-number-color);
+}
+
+.rst-content dt.sig .o,
+.rst-content dt.sig .sig-return-icon {
+    color: var(--highlight-operator-color);
 }
 
 /* Buttons */
