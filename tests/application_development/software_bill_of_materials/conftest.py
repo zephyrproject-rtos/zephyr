@@ -101,7 +101,8 @@ def modules_doc(spdx_dir):
 
 @pytest.fixture(scope="session")
 def zephyr_version():
-    """Fixture providing the Zephyr version from the VERSION file."""
+    """Fixture providing the Zephyr version from the VERSION file, EXTRAVERSION
+    included."""
     zephyr_base = os.environ.get("ZEPHYR_BASE")
     if not zephyr_base:
         pytest.skip("ZEPHYR_BASE not set")
@@ -118,13 +119,16 @@ def zephyr_version():
         pytest.skip(f"Cannot read {version_file}")
 
     try:
-        return (
+        base_version = (
             f"{int(values['VERSION_MAJOR'])}"
             f".{int(values['VERSION_MINOR'])}"
             f".{int(values['PATCHLEVEL'])}"
         )
     except (KeyError, ValueError):
         pytest.skip(f"Cannot parse version from {version_file}")
+
+    extra = values.get("EXTRAVERSION", "")
+    return f"{base_version}-{extra}" if extra else base_version
 
 
 @pytest.fixture(scope="session")
