@@ -10,7 +10,6 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/spinlock.h>
-#include <zephyr/sys/ring_buffer.h>
 #include <zephyr/sys/byteorder.h>
 
 #include <zephyr/usb/usbd.h>
@@ -45,7 +44,6 @@ LOG_MODULE_REGISTER(usbd_cdc_acm, CONFIG_USBD_CDC_ACM_LOG_LEVEL);
 #define CDC_ACM_CLASS_SUSPENDED		1
 #define CDC_ACM_IRQ_RX_ENABLED		2
 #define CDC_ACM_IRQ_TX_ENABLED		3
-#define CDC_ACM_TX_FIFO_BUSY		4
 
 struct cdc_acm_rx_uart_fifo {
 	struct k_fifo *bufs;
@@ -55,7 +53,9 @@ struct cdc_acm_rx_uart_fifo {
 };
 
 struct cdc_acm_tx_uart_fifo {
-	struct ring_buf *rb;
+	struct net_buf_pool *pool;
+	struct net_buf *current;
+	atomic_t enqueued;
 	bool irq;
 	bool altered;
 };
@@ -135,44 +135,6 @@ struct cdc_acm_uart_data {
 };
 
 static void cdc_acm_irq_rx_enable(const struct device *dev);
-
-#if CONFIG_USBD_CDC_ACM_BUF_POOL
-UDC_BUF_POOL_DEFINE(cdc_acm_ep_pool,
-		    DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT),
-		    CONFIG_USBD_CDC_ACM_BUF_POOL_SIZE,
-		    sizeof(struct udc_buf_info), NULL);
-
-BUILD_ASSERT((CONFIG_USBD_CDC_ACM_BUF_POOL_SIZE % USBD_MAX_BULK_MPS) == 0,
-	     "USBD_CDC_ACM_BUF_POOL_SIZE is not multiple of bulk endpoint MPS");
-
-static struct net_buf *cdc_acm_buf_alloc(struct usbd_class_data *const c_data,
-					 const uint8_t ep)
-{
-	ARG_UNUSED(c_data);
-	struct net_buf *buf = NULL;
-	struct udc_buf_info *bi;
-
-	buf = net_buf_alloc(&cdc_acm_ep_pool, K_NO_WAIT);
-	if (!buf) {
-		return NULL;
-	}
-
-	bi = udc_get_buf_info(buf);
-	bi->ep = ep;
-
-	return buf;
-}
-#else
-/*
- * The required IN buffer is 64 bytes per instance on a full-speed device. Use
- * common (UDC) buffer, as this results in a smaller footprint.
- */
-static struct net_buf *cdc_acm_buf_alloc(struct usbd_class_data *const c_data,
-					 const uint8_t ep)
-{
-	return usbd_ep_buf_alloc(c_data, ep, USBD_MAX_BULK_MPS);
-}
-#endif /* CONFIG_USBD_CDC_ACM_BUF_POOL */
 
 #if CONFIG_USBD_CDC_ACM_WORKQUEUE
 static struct k_work_q cdc_acm_work_q;
@@ -282,6 +244,52 @@ static size_t cdc_acm_get_bulk_mps(struct usbd_class_data *const c_data)
 	return 64U;
 }
 
+static size_t cdc_acm_tx_current_tailroom(struct cdc_acm_uart_data *const data)
+{
+	k_spinlock_key_t key;
+	size_t tailroom = 0;
+
+	key = k_spin_lock(&data->lock);
+	if (data->tx_fifo.current != NULL) {
+		tailroom = net_buf_tailroom(data->tx_fifo.current);
+	}
+
+	k_spin_unlock(&data->lock, key);
+
+	return tailroom;
+}
+
+static size_t cdc_acm_tx_fifo_space_get(struct cdc_acm_uart_data *const data)
+{
+	const atomic_val_t enqueued = atomic_get(&data->tx_fifo.enqueued);
+	const uint16_t count = data->tx_fifo.pool->buf_count;
+	const uint16_t available = count - enqueued;
+
+	if (available == 0) {
+		return 0;
+	}
+
+	if (available == 1 || !data->echo_mitigated) {
+		return cdc_acm_tx_current_tailroom(data);
+	}
+
+	/* Use count - enqueued - 1 to prevent sudden drop of available
+	 * size when a partially filled buffer is enqueued.
+	 */
+	return USBD_MAX_BULK_MPS * (available - 1);
+}
+
+static void cdc_acm_tx_buf_recycle_locked(struct cdc_acm_uart_data *const data,
+					  struct net_buf *const buf)
+{
+	if (data->tx_fifo.current == NULL) {
+		net_buf_reset(buf);
+		data->tx_fifo.current = buf;
+	} else {
+		net_buf_unref(buf);
+	}
+}
+
 static int usbd_cdc_acm_request(struct usbd_class_data *const c_data,
 				struct net_buf *buf, int err)
 {
@@ -289,7 +297,10 @@ static int usbd_cdc_acm_request(struct usbd_class_data *const c_data,
 	const struct device *dev = usbd_class_get_private(c_data);
 	struct cdc_acm_uart_data *data = dev->data;
 	struct udc_buf_info *bi;
+	k_spinlock_key_t key;
+	atomic_val_t count;
 	int ret = 0;
+	int len;
 
 	bi = udc_get_buf_info(buf);
 	if (err) {
@@ -302,7 +313,11 @@ static int usbd_cdc_acm_request(struct usbd_class_data *const c_data,
 		}
 
 		if (bi->ep == cdc_acm_get_bulk_in(c_data)) {
-			atomic_clear_bit(&data->state, CDC_ACM_TX_FIFO_BUSY);
+			atomic_dec(&data->tx_fifo.enqueued);
+			key = k_spin_lock(&data->lock);
+			cdc_acm_tx_buf_recycle_locked(data, buf);
+			k_spin_unlock(&data->lock, key);
+			goto ep_buf_already_handled;
 		}
 
 		if (bi->ep == cdc_acm_get_int_in(c_data)) {
@@ -337,7 +352,11 @@ static int usbd_cdc_acm_request(struct usbd_class_data *const c_data,
 			cdc_acm_work_submit(&data->irq_cb_work);
 		}
 
-		atomic_clear_bit(&data->state, CDC_ACM_TX_FIFO_BUSY);
+		count = atomic_dec(&data->tx_fifo.enqueued);
+		key = k_spin_lock(&data->lock);
+		cdc_acm_tx_buf_recycle_locked(data, buf);
+		len = data->tx_fifo.current->len;
+		k_spin_unlock(&data->lock, key);
 
 		if (!data->echo_mitigated) {
 			/* If mitigation was not yet applied give the host some
@@ -346,15 +365,19 @@ static int usbd_cdc_acm_request(struct usbd_class_data *const c_data,
 			cdc_acm_work_schedule(&data->tx_fifo_work,
 					      K_MSEC(CONFIG_USBD_CDC_ACM_TX_DELAY_MS));
 			data->echo_mitigated = true;
-		} else if (!ring_buf_is_empty(data->tx_fifo.rb)) {
-			/* Queue pending TX data on IN endpoint */
-			cdc_acm_work_schedule(&data->tx_fifo_work, K_NO_WAIT);
+		} else if (count == 1) {
+			if (data->zlp_needed || len) {
+				/* Queue pending TX data on IN endpoint */
+				cdc_acm_work_schedule(&data->tx_fifo_work, K_NO_WAIT);
+			}
 		} else {
 			/* No need to schedule if there is no data left
 			 * to send. Any new data will be scheduled either
 			 * after fifo_fill or poll_out.
 			 */
 		}
+
+		goto ep_buf_already_handled;
 	}
 
 	if (bi->ep == cdc_acm_get_int_in(c_data)) {
@@ -651,22 +674,34 @@ static __maybe_unused int cdc_acm_send_notification(const struct device *dev,
 	return ret;
 }
 
-/*
- * TX handler is triggered when the state of TX fifo has been altered.
- */
-static void cdc_acm_tx_fifo_handler(struct k_work *work)
+static uint32_t cdc_acm_tx_put_locked(const struct device *dev, const uint8_t *const src,
+				      const uint32_t len)
 {
-	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
-	struct cdc_acm_uart_data *data;
-	const struct cdc_acm_uart_config *cfg;
-	struct usbd_class_data *c_data;
+	struct cdc_acm_uart_data *const data = dev->data;
 	struct net_buf *buf;
-	size_t len = 0;
-	int ret;
+	uint32_t written;
 
-	data = CONTAINER_OF(dwork, struct cdc_acm_uart_data, tx_fifo_work);
-	cfg = data->dev->config;
-	c_data = cfg->c_data;
+	buf = data->tx_fifo.current;
+	if (buf == NULL) {
+		return 0;
+	}
+
+	written = MIN(len, net_buf_tailroom(buf));
+	net_buf_add_mem(buf, src, written);
+
+	return written;
+}
+
+static void cdc_acm_tx_fifo_enqueue(const struct device *dev)
+{
+	struct cdc_acm_uart_data *const data = dev->data;
+	const struct cdc_acm_uart_config *cfg = dev->config;
+	struct usbd_class_data *c_data = cfg->c_data;
+	struct udc_buf_info *bi;
+	k_spinlock_key_t key;
+	struct net_buf *buf;
+	struct net_buf *new_buf;
+	int ret;
 
 	if (!atomic_test_bit(&data->state, CDC_ACM_CLASS_ENABLED)) {
 		LOG_DBG("USB configuration is not enabled");
@@ -678,36 +713,53 @@ static void cdc_acm_tx_fifo_handler(struct k_work *work)
 		return;
 	}
 
-	if (ring_buf_is_empty(data->tx_fifo.rb) && !data->zlp_needed) {
+	new_buf = net_buf_alloc(data->tx_fifo.pool, K_NO_WAIT);
+
+	key = k_spin_lock(&data->lock);
+
+	if (data->echo_mitigated) {
+		/* Echo was mitigated, can enqueue current buffer with data. */
+		buf = data->tx_fifo.current;
+		data->tx_fifo.current = new_buf;
+	} else {
+		/* Echo not yet mitigated, enqueue new (empty, zero length) buffer */
+		buf = new_buf;
+	}
+
+	k_spin_unlock(&data->lock, key);
+
+	if (buf == NULL) {
+		return;
+	}
+
+	if (buf->len == 0 && !data->zlp_needed) {
+		net_buf_unref(buf);
 		LOG_DBG("ZLP not needed and no data to send");
 		return;
 	}
 
-	if (atomic_test_and_set_bit(&data->state, CDC_ACM_TX_FIFO_BUSY)) {
-		LOG_DBG("TX transfer already in progress");
-		return;
-	}
+	data->zlp_needed = buf->len != 0 && buf->len % cdc_acm_get_bulk_mps(c_data) == 0;
 
-	buf = cdc_acm_buf_alloc(c_data, cdc_acm_get_bulk_in(c_data));
-	if (buf == NULL) {
-		atomic_clear_bit(&data->state, CDC_ACM_TX_FIFO_BUSY);
-		cdc_acm_work_schedule(&data->tx_fifo_work, K_MSEC(1));
-		return;
-	}
+	bi = udc_get_buf_info(buf);
+	bi->ep = cdc_acm_get_bulk_in(c_data);
 
-	if (data->echo_mitigated) {
-		len = ring_buf_get(data->tx_fifo.rb, buf->data, buf->size);
-	}
-	net_buf_add(buf, len);
-
-	data->zlp_needed = len != 0 && len % cdc_acm_get_bulk_mps(c_data) == 0;
-
+	atomic_inc(&data->tx_fifo.enqueued);
 	ret = usbd_ep_enqueue(c_data, buf);
 	if (ret) {
 		LOG_ERR("Failed to enqueue");
+		atomic_dec(&data->tx_fifo.enqueued);
 		net_buf_unref(buf);
-		atomic_clear_bit(&data->state, CDC_ACM_TX_FIFO_BUSY);
 	}
+}
+
+static void cdc_acm_tx_fifo_handler(struct k_work *work)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct cdc_acm_uart_data *data;
+
+	data = CONTAINER_OF(dwork, struct cdc_acm_uart_data, tx_fifo_work);
+
+	cdc_acm_tx_fifo_enqueue(data->dev);
 }
 
 /*
@@ -762,7 +814,7 @@ static void cdc_acm_irq_tx_enable(const struct device *dev)
 
 	atomic_set_bit(&data->state, CDC_ACM_IRQ_TX_ENABLED);
 
-	if (ring_buf_space_get(data->tx_fifo.rb)) {
+	if (cdc_acm_tx_fifo_space_get(data)) {
 		LOG_INF("tx_en: trigger irq_cb_work");
 		cdc_acm_work_submit(&data->irq_cb_work);
 	}
@@ -803,7 +855,7 @@ static int cdc_acm_fifo_fill(const struct device *dev,
 {
 	struct cdc_acm_uart_data *const data = dev->data;
 	k_spinlock_key_t key;
-	uint32_t done;
+	int done = 0;
 
 	if (!check_wq_ctx(dev)) {
 		LOG_WRN("Invoked by inappropriate context");
@@ -811,15 +863,40 @@ static int cdc_acm_fifo_fill(const struct device *dev,
 		return 0;
 	}
 
-	key = k_spin_lock(&data->lock);
-	done = ring_buf_put(data->tx_fifo.rb, tx_data, len);
-	k_spin_unlock(&data->lock, key);
+	if (len <= 0) {
+		return 0;
+	}
+
+	while (done < len) {
+		bool enqueue = false;
+		uint32_t written;
+
+		key = k_spin_lock(&data->lock);
+
+		written = cdc_acm_tx_put_locked(dev, &tx_data[done], len - done);
+		if (written != 0) {
+			done += written;
+			enqueue = data->echo_mitigated &&
+				  net_buf_tailroom(data->tx_fifo.current) == 0;
+		}
+
+		k_spin_unlock(&data->lock, key);
+
+		if (written == 0) {
+			break;
+		}
+
+		if (enqueue) {
+			cdc_acm_tx_fifo_enqueue(dev);
+		}
+	}
+
 	if (done) {
 		data->tx_fifo.altered = true;
 	}
 
-	LOG_INF("UART dev %p, len %d, remaining space %u",
-		dev, len, ring_buf_space_get(data->tx_fifo.rb));
+	LOG_INF("UART dev %p, len %d, remaining space %zu", dev, len,
+		cdc_acm_tx_fifo_space_get(data));
 
 	return done;
 }
@@ -867,7 +944,7 @@ static int cdc_acm_irq_tx_ready(const struct device *dev)
 
 	if (check_wq_ctx(dev)) {
 		if (data->tx_fifo.irq) {
-			return ring_buf_space_get(data->tx_fifo.rb);
+			return cdc_acm_tx_fifo_space_get(data);
 		}
 	} else {
 		LOG_WRN("Invoked by inappropriate context");
@@ -928,7 +1005,7 @@ static void cdc_acm_irq_update(const struct device *dev)
 	}
 
 	if (atomic_test_bit(&data->state, CDC_ACM_IRQ_TX_ENABLED) &&
-	    ring_buf_space_get(data->tx_fifo.rb)) {
+	    cdc_acm_tx_fifo_space_get(data)) {
 		data->tx_fifo.irq = true;
 	} else {
 		data->tx_fifo.irq = false;
@@ -977,7 +1054,7 @@ static void cdc_acm_irq_cb_handler(struct k_work *work)
 		cdc_acm_work_submit(&data->rx_fifo_work);
 	}
 
-	if (!atomic_test_bit(&data->state, CDC_ACM_TX_FIFO_BUSY)) {
+	if (atomic_get(&data->tx_fifo.enqueued) == 0) {
 		if (data->tx_fifo.altered) {
 			LOG_DBG("tx fifo altered, submit work");
 			cdc_acm_work_schedule(&data->tx_fifo_work, K_NO_WAIT);
@@ -994,7 +1071,7 @@ static void cdc_acm_irq_cb_handler(struct k_work *work)
 	}
 
 	if (atomic_test_bit(&data->state, CDC_ACM_IRQ_TX_ENABLED) &&
-	    ring_buf_space_get(data->tx_fifo.rb)) {
+	    cdc_acm_tx_fifo_space_get(data)) {
 		LOG_DBG("tx irq pending, submit irq_cb_work");
 		cdc_acm_work_submit(&data->irq_cb_work);
 	}
@@ -1039,7 +1116,7 @@ static void cdc_acm_poll_out(const struct device *dev, const unsigned char c)
 
 	while (true) {
 		key = k_spin_lock(&data->lock);
-		wrote = ring_buf_put(data->tx_fifo.rb, &c, 1);
+		wrote = cdc_acm_tx_put_locked(dev, &c, 1);
 		k_spin_unlock(&data->lock, key);
 
 		if (wrote == 1) {
@@ -1047,8 +1124,8 @@ static void cdc_acm_poll_out(const struct device *dev, const unsigned char c)
 		}
 
 		if (k_is_in_isr() || !data->flow_ctrl) {
-			LOG_WRN_ONCE("Ring buffer full, discard data");
-			break;
+			LOG_WRN_ONCE("No TX buffer available, discard data");
+			goto cdc_acm_poll_out_schedule;
 		}
 
 		k_msleep(1);
@@ -1058,6 +1135,7 @@ static void cdc_acm_poll_out(const struct device *dev, const unsigned char c)
 	 * one byte per USB transfer. The latency increase is negligible while
 	 * the increased throughput and reduced CPU usage is easily observable.
 	 */
+cdc_acm_poll_out_schedule:
 	if (data->echo_mitigated) {
 		cdc_acm_work_schedule(&data->tx_fifo_work, K_MSEC(1));
 	}
@@ -1164,13 +1242,13 @@ static int usbd_cdc_acm_preinit(const struct device *dev)
 {
 	struct cdc_acm_uart_data *const data = dev->data;
 
-	ring_buf_reset(data->tx_fifo.rb);
-
 	k_work_init_delayable(&data->tx_fifo_work, cdc_acm_tx_fifo_handler);
 	k_work_init(&data->rx_fifo_work, cdc_acm_rx_fifo_handler);
 	k_work_init(&data->irq_cb_work, cdc_acm_irq_cb_handler);
 
 	cdc_acm_update_uart_cfg(data);
+
+	data->tx_fifo.current = net_buf_alloc(data->tx_fifo.pool, K_NO_WAIT);
 
 	return 0;
 }
@@ -1377,6 +1455,9 @@ const static struct usb_desc_header *const cdc_acm_hs_desc_##n[] = {		\
 #define CDC_ACM_RX_BUF_COUNT(n)							\
 	DIV_ROUND_UP(DT_INST_PROP(n, rx_fifo_size), USBD_MAX_BULK_MPS)
 
+#define CDC_ACM_TX_BUF_COUNT(n)							\
+	DIV_ROUND_UP(DT_INST_PROP(n, tx_fifo_size), USBD_MAX_BULK_MPS)
+
 #define USBD_CDC_ACM_DT_DEVICE_DEFINE(n)					\
 	BUILD_ASSERT(DT_INST_ON_BUS(n, usb),					\
 		     "node " DT_NODE_PATH(DT_DRV_INST(n))			\
@@ -1397,7 +1478,11 @@ const static struct usb_desc_header *const cdc_acm_hs_desc_##n[] = {		\
 				USBD_DUT_STRING_INTERFACE);			\
 	))									\
 										\
-	RING_BUF_DECLARE(cdc_acm_rb_tx_##n, DT_INST_PROP(n, tx_fifo_size));	\
+	BUILD_ASSERT(CDC_ACM_TX_BUF_COUNT(n) >= 2,				\
+		     "tx-fifo-size must be greater than the bulk endpoint MPS");\
+	UDC_BUF_POOL_DEFINE(cdc_acm_tx_pool_##n,				\
+			    CDC_ACM_TX_BUF_COUNT(n), USBD_MAX_BULK_MPS,		\
+			    sizeof(struct udc_buf_info), NULL);			\
 	UDC_BUF_POOL_DEFINE(cdc_acm_rx_pool_##n,				\
 			    CDC_ACM_RX_BUF_COUNT(n), USBD_MAX_BULK_MPS,		\
 			    sizeof(struct udc_buf_info), NULL);			\
@@ -1420,7 +1505,7 @@ const static struct usb_desc_header *const cdc_acm_hs_desc_##n[] = {		\
 		.line_coding = CDC_ACM_DEFAULT_LINECODING,			\
 		.rx_fifo.bufs = &cdc_acm_uart_rx_fifo##n,			\
 		.rx_fifo.pool = &cdc_acm_rx_pool_##n,				\
-		.tx_fifo.rb = &cdc_acm_rb_tx_##n,				\
+		.tx_fifo.pool = &cdc_acm_tx_pool_##n,				\
 		.flow_ctrl = DT_INST_PROP(n, hw_flow_control),			\
 		.notif_sem = Z_SEM_INITIALIZER(uart_data_##n.notif_sem, 0, 1),	\
 	};									\
