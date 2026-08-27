@@ -24,3 +24,11 @@
 	pinctrl-0 = <&pinctrl_uart2>;
 	pinctrl-names = "default";
 };
+
+&i2c1 {
+	status = "okay";
+	pinctrl-0 = <&pinctrl_i2c1>;
+	pinctrl-names = "default";
+};
+
+mikrobus_i2c: &i2c1 {};
