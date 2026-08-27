@@ -3110,6 +3110,8 @@ def _run_tests_parallel(testcases, jobs, loglevel):
     # 'jobs' is 0). Returns the same tuples as _run_tests_sequential().
     jobs = jobs or os.cpu_count() or 1
     jobs = min(jobs, len(testcases)) or 1
+    if jobs == 1:
+        return _run_tests_sequential(testcases)
 
     # Start the slowest checks first so that they are not left running alone at
     # the end. The Kconfig-based checks each parse a full Kconfig tree.
@@ -3231,16 +3233,16 @@ def parse_args(argv):
         nargs='?',
         type=int,
         const=0,
-        default=None,
+        default=0,
         metavar='N',
         help='''Run the checks in parallel, using N worker processes (one per
-                CPU if N is 0 or omitted). The default is to run the checks
-                sequentially.''',
+                CPU if N is 0 or omitted, which is the default). Pass 1 to run
+                the checks sequentially.''',
     )
 
     args = parser.parse_args(argv)
 
-    if args.parallel is not None and args.parallel < 0:
+    if args.parallel < 0:
         parser.error("argument -p/--parallel: N must be >= 0")
 
     return args
@@ -3304,10 +3306,10 @@ def _main(args):
 
         testcases.append(testcase)
 
-    if args.parallel is not None:
-        results = _run_tests_parallel(testcases, args.parallel, args.loglevel)
-    else:
+    if args.parallel == 1:
         results = _run_tests_sequential(testcases)
+    else:
+        results = _run_tests_parallel(testcases, args.parallel, args.loglevel)
 
     for testcase, case, fmtd_failures in results:
         # Annotate if required
