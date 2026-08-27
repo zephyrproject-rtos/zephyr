@@ -1302,6 +1302,12 @@ config NXP_WIFI_NET_DEBUG
 	help
 	  If you enable this the network driver abstraction APIs debugs will be enabled.
 
+config NXP_WIFI_SUPP_DEBUG
+	bool "Supplicant interface debug"
+	default y if WIFI_NM_WPA_SUPPLICANT_LOG_LEVEL_DBG
+	help
+	  If you enable this the supplicant interface debugs will be enabled.
+
 config NXP_WIFI_WLCMGR_DEBUG
 	bool "Wireless Connection Manager"
 	help
