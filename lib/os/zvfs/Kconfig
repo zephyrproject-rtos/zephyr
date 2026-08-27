@@ -105,6 +105,24 @@ config ZVFS_FS_RECORD_LOCK_MAX
 	  Maximum POSIX record locks (fcntl F_SETLK/F_GETLK) stored per open file
 	  description backed by zvfs_fs_desc.
 
+config ZVFS_UNLINK_ON_CLOSE
+	bool
+	depends on ZVFS_FS
+	help
+	  Allow marking an open descriptor (zvfs_unlink_on_close()) so that its
+	  path is removed from the file system on the final close of its open
+	  file description, wherever that close happens - an explicit close or
+	  the descriptor sweep at process exit.
+
+config ZVFS_UNLINK_ON_CLOSE_MAX
+	int "Maximum descriptions marked unlink-on-close"
+	depends on ZVFS_UNLINK_ON_CLOSE
+	default 4
+	range 1 64
+	help
+	  Maximum open file descriptions concurrently marked for removal on
+	  their final close.
+
 config ZVFS_OPEN_ADD_SIZE_FS
 	int
 	depends on ZVFS_FS

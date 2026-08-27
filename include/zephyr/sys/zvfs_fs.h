@@ -190,6 +190,23 @@ void zvfs_record_lock_drop_obj(void *obj);
 __syscall int zvfs_unlink(const char *path);
 
 /**
+ * @brief Remove @a path on the final close of the description behind @a fd
+ *
+ * Marks the open file description so that @a path is unlinked when its last
+ * descriptor is closed, wherever that close happens - an explicit close or
+ * the descriptor sweep at process exit. The mark is consumed by the close.
+ *
+ * Requires @kconfig{CONFIG_ZVFS_UNLINK_ON_CLOSE}.
+ *
+ * @param fd File descriptor naming the description.
+ * @param path Absolute path to remove; copied, of bounded length.
+ *
+ * @return 0 on success, -1 with errno set on error (EBADF, EINVAL,
+ *         ENAMETOOLONG, ENOSPC when the mark table is full).
+ */
+__syscall int zvfs_unlink_on_close(int fd, const char *path);
+
+/**
  * @brief Rename file or directory, moving it if necessary.
  *
  * @param old Current name
