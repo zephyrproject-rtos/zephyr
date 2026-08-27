@@ -26,22 +26,27 @@
 	}
 
 #define MAX32_MPU_REGION(name, base, attr, size) MPU_REGION_ENTRY(name, (base), attr((base), size))
+#if DT_HAS_CHOSEN(zephyr_settings_partition)
+#define STORAGE_PARTITION DT_CHOSEN(zephyr_settings_partition)
+#else
+#define STORAGE_PARTITION DT_NODELABEL(storage_partition)
+#endif /* DT_HAS_CHOSEN(zephyr_settings_partition) */
 
 /*
  * The MPU regions are defined in the following way:
  * - Cacheable flash region
- * - Non-cacheable flash region, i.e., storage area at the end of the flash
+ * - Non-cacheable flash region, i.e., storage area in flash
  * - SRAM region
  * If the storage partition is not defined, the flash region spans the whole
  * flash.
  */
 static const struct arm_mpu_region mpu_regions[] = {
-#if PARTITION_EXISTS(storage_partition)
-#define STORAGE_ADDR (CONFIG_FLASH_BASE_ADDRESS + PARTITION_OFFSET(storage_partition))
-#define STORAGE_SIZE (PARTITION_SIZE(storage_partition) >> 10)
-	MAX32_MPU_REGION("FLASH", CONFIG_FLASH_BASE_ADDRESS, REGION_FLASH_ATTR,
-			 KB(CONFIG_FLASH_SIZE - STORAGE_SIZE)),
-	MAX32_MPU_REGION("STORAGE", STORAGE_ADDR, MAX32_FLASH_NON_CACHEABLE, KB(STORAGE_SIZE)),
+#if DT_NODE_EXISTS(STORAGE_PARTITION)
+#define STORAGE_ADDR DT_PARTITION_ADDR(STORAGE_PARTITION)
+#define STORAGE_SIZE DT_REG_SIZE(STORAGE_PARTITION)
+	MAX32_MPU_REGION("FLASH", DT_PARTITION_ADDR(DT_CHOSEN(zephyr_code_partition)),
+			 REGION_FLASH_ATTR, DT_REG_SIZE(DT_CHOSEN(zephyr_code_partition))),
+	MAX32_MPU_REGION("STORAGE", STORAGE_ADDR, MAX32_FLASH_NON_CACHEABLE, STORAGE_SIZE),
 #else
 	MAX32_MPU_REGION("FLASH", CONFIG_FLASH_BASE_ADDRESS, REGION_FLASH_ATTR,
 			 KB(CONFIG_FLASH_SIZE)),
