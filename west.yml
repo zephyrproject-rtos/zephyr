@@ -142,7 +142,7 @@ manifest:
       groups:
         - tools
     - name: fatfs
-      revision: f4ead3bf4a6dab3a07d7b5f5315795c073db568d
+      revision: pull/24/head
       path: modules/fs/fatfs
       groups:
         - fs
@@ -319,7 +319,7 @@ manifest:
       revision: a8ddc544043e72807cf7db532478e1dda734ae7c
       path: modules/lib/lora-basics-modem
     - name: loramac-node
-      revision: fb00b383072518c918e2258b0916c996f2d4eebe
+      revision: pull/18/head
       path: modules/lib/loramac-node
     - name: lvgl
       revision: d1fe35d350a1503db2ec7fd4dfff8e0cc26eea7e
@@ -398,7 +398,7 @@ manifest:
       groups:
         - crypto
     - name: trusted-firmware-a
-      revision: 4d431cbbb451d13359534c63bf67e2d315ca37de
+      revision: pull/14/head
       path: modules/tee/tf-a/trusted-firmware-a
       groups:
         - tee
