@@ -1139,9 +1139,11 @@ endfunction()
    This function sets the runner for the board unconditionally.
    It's meant to be used from application's :file:`CMakeLists.txt` files.
 
-   NOTE: Usually :cmake:command:`board_set_xxx_ifnset()` is best in :file:`board.cmake` files.
-         This lets the user set the runner at cmake time, or in their own application's
-         :file:`CMakeLists.txt`.
+   .. note::
+
+      Usually :cmake:command:`board_set_xxx_ifnset()` is best in
+      :file:`board.cmake` files. This lets the user set the runner at cmake
+      time, or in their own application's :file:`CMakeLists.txt`.
 
    Example usage:
 
