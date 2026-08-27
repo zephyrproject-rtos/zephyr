@@ -213,10 +213,18 @@ Removed APIs and options
 
     * ``zephyr,memory-region-mpu``
 
+
 * Ethernet
 
     * The NuMaker Ethernet driver with ``CONFIG_ETH_NUMAKER`` is superseded by
       :kconfig:option:`CONFIG_ETH_NUMAKER_DWC_ETHER_1000`. See the migration guide.
+
+* Debug
+
+  * The experimental ``CONFIG_ASSERT_CUSTOM_HEADER`` option and its ``zephyr_custom_assert.h``
+    include hook have been removed without a deprecation period, per the experimental API policy.
+    Applications that need to customize assertion handling should override the weak zassert hooks
+    (``zassert_fail``/``zassert_vprint``/``zassert_post_action``) instead.
 
 * LLEXT
 
@@ -646,6 +654,19 @@ New APIs and options
   * :c:enumerator:`CRYPTO_CIPHER_MODE_OFB`
   * :c:func:`cipher_cfb_op`
   * :c:func:`cipher_ofb_op`
+
+* Debug
+
+  * Introduced ZASSERT, a granular per-module/file assertion facility.
+    Each source file selects an assertion module via ``ZASSERT_MODULE(<MODULE>)``,
+    the level is resolved from ``CONFIG_ASSERT_MODULE_<MODULE>_LEVEL`` and
+    may be overridden per file.
+    Four levels are available: off (compiled out), terse (check only),
+    normal (check + location only), and verbose (check + location, condition and message).
+    Failure behavior is customizable through the weak hooks ``zassert_fail()``,
+    ``zassert_vprint()`` and ``zassert_post_action()``.
+    The legacy ``__ASSERT()`` family continues to work largely unchanged as a thin compatibility
+    layer over the ZASSERT ``DEFAULT`` module.
 
 * Devicetree
 
@@ -1958,6 +1979,7 @@ New Samples
 
 * :zephyr:code-sample:`adi-gpio-wakeup`
 * :zephyr:code-sample:`adi-pm`
+* :zephyr:code-sample:`assert`
 * :zephyr:code-sample:`autanalog_fir_fifo`
 * :zephyr:code-sample:`bluetooth_cap_handover`
 * :zephyr:code-sample:`buzzer-tone`
