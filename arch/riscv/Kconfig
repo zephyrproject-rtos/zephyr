@@ -704,8 +704,6 @@ config RISCV_S_MODE_INTERNAL_SBI
 
 config RISCV_S_MODE_EXTERNAL_SBI
 	bool "Enter S-mode directly, relying on an external SBI (e.g. OpenSBI)"
-	# TODO: Remove once SMP is fixed with this configuration
-	depends on !SMP
 	help
 	  Skip the in-tree M-mode boot sequence (PMP/medeleg/mideleg/
 	  mcounteren/mtvec setup and the mret drop to S-mode). Use this when

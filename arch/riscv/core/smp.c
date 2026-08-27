@@ -64,7 +64,11 @@ void arch_secondary_cpu_init(int hartid)
 		}
 	}
 
+#ifdef CONFIG_RISCV_S_MODE_EXTERNAL_SBI
+	csr_write(sscratch, &_kernel.cpus[cpu_num]);
+#else
 	csr_write(mscratch, &_kernel.cpus[cpu_num]);
+#endif
 
 	/*
 	 * The no-match check must sit after the mscratch write:
