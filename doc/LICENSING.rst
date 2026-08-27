@@ -163,6 +163,7 @@ Thread-Metric RTOS Test Suite Source Files
   * :zephyr_file:`tests/benchmarks/thread_metric/src/tm_memory_allocation_test.c`
   * :zephyr_file:`tests/benchmarks/thread_metric/src/tm_message_processing_test.c`
   * :zephyr_file:`tests/benchmarks/thread_metric/src/tm_porting_layer.h`
+  * :zephyr_file:`tests/benchmarks/thread_metric/src/tm_porting_layer_posix.c`
   * :zephyr_file:`tests/benchmarks/thread_metric/src/tm_porting_layer_zephyr.c`
   * :zephyr_file:`tests/benchmarks/thread_metric/src/tm_preemptive_scheduling_test.c`
   * :zephyr_file:`tests/benchmarks/thread_metric/src/tm_synchronization_processing_test.c`
