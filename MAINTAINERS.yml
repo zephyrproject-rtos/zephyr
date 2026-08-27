@@ -632,7 +632,7 @@ Bluetooth Audio:
     - tests/bsim/bluetooth/audio/
     - tests/bsim/bluetooth/audio_samples/
     - tests/bsim/bluetooth/tester/src/audio/
-    - tests/bluetooth/shell/audio.conf
+    - tests/bluetooth/shell/extra-audio.conf
     - tests/bluetooth/shell/usb_audio.overlay
     - tests/bluetooth/tester/overlay-le-audio.conf
     - tests/bluetooth/tester/overlay-bt_ll_sw_split.conf
@@ -799,7 +799,7 @@ Bluetooth Host:
     - tests/bluetooth/controller/
     - tests/bluetooth/mesh*/
     - tests/bluetooth/qualification/
-    - tests/bluetooth/shell/audio.conf
+    - tests/bluetooth/shell/extra-audio.conf
     - tests/bluetooth/shell/mesh.conf
     - tests/bluetooth/shell/usb_audio.overlay
     - tests/bluetooth/tester/
