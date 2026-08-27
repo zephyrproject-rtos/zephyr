@@ -875,8 +875,7 @@ struct bt_le_adv_param {
 	 * @brief Advertising Set Identifier, valid range is @ref BT_GAP_SID_MIN to
 	 * @ref BT_GAP_SID_MAX.
 	 *
-	 * @note Requires @ref BT_LE_ADV_OPT_EXT_ADV bit (see @ref bt_le_adv_opt field)  to be
-	 *set as @ref bt_le_adv_param.options.
+	 * @note If @ref BT_LE_ADV_OPT_EXT_ADV is not set in the options, this field is ignored.
 	 **/
 	uint8_t  sid;
 
@@ -1549,7 +1548,12 @@ struct bt_le_ext_adv_info {
 	/** Currently selected Transmit Power in dBm. Range: -127 to +20. */
 	int8_t                     tx_power;
 
-	/** Advertising Set ID */
+	/**
+	 * @brief Advertising Set ID
+	 *
+	 * Will be @ref BT_GAP_SID_INVALID for advertising sets that were configured without
+	 * @ref BT_LE_ADV_OPT_EXT_ADV.
+	 */
 	uint8_t                    sid;
 
 	/** @brief Current local advertising address used.
