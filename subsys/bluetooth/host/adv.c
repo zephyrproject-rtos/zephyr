@@ -1,10 +1,11 @@
 /*
- * Copyright (c) 2017-2021 Nordic Semiconductor ASA
+ * Copyright (c) 2017-2026 Nordic Semiconductor ASA
  * Copyright (c) 2015-2016 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <errno.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
@@ -375,18 +376,19 @@ int bt_le_adv_set_enable(struct bt_le_ext_adv *adv, bool enable)
 
 static bool valid_adv_ext_param(const struct bt_le_adv_param *param)
 {
+	const bool is_ext_adv = (param->options & BT_LE_ADV_OPT_EXT_ADV) != 0U;
+
 	if (IS_ENABLED(CONFIG_BT_EXT_ADV) &&
 	    BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
-		if (param->peer && !(param->options & BT_LE_ADV_OPT_EXT_ADV) &&
-		    !(param->options & BT_LE_ADV_OPT_CONN)) {
+
+		if (param->peer && !is_ext_adv && !(param->options & BT_LE_ADV_OPT_CONN)) {
 			/* Cannot do directed non-connectable advertising
 			 * without extended advertising.
 			 */
 			return false;
 		}
 
-		if (param->peer &&
-		    (param->options & BT_LE_ADV_OPT_EXT_ADV) &&
+		if (param->peer && is_ext_adv &&
 		    !(param->options & BT_LE_ADV_OPT_DIR_MODE_LOW_DUTY)) {
 			/* High duty cycle directed connectable advertising
 			 * shall not be used with Extended Advertising.
@@ -394,13 +396,16 @@ static bool valid_adv_ext_param(const struct bt_le_adv_param *param)
 			return false;
 		}
 
-		if (!(param->options & BT_LE_ADV_OPT_EXT_ADV) &&
-		    param->options & (BT_LE_ADV_OPT_EXT_ADV |
-				      BT_LE_ADV_OPT_NO_2M |
-				      BT_LE_ADV_OPT_CODED |
-				      BT_LE_ADV_OPT_ANONYMOUS |
-				      BT_LE_ADV_OPT_USE_TX_POWER)) {
+		if (!is_ext_adv &&
+		    param->options & (BT_LE_ADV_OPT_NO_2M | BT_LE_ADV_OPT_CODED |
+				      BT_LE_ADV_OPT_ANONYMOUS | BT_LE_ADV_OPT_USE_TX_POWER)) {
 			/* Extended options require extended advertising. */
+			return false;
+		}
+
+		/* For non-ext-adv we ignore the param->sid */
+		if (is_ext_adv && param->sid > BT_GAP_SID_MAX) {
+			LOG_DBG("Invalid SID 0x%02X", param->sid);
 			return false;
 		}
 	}
@@ -441,7 +446,7 @@ static bool valid_adv_ext_param(const struct bt_le_adv_param *param)
 	    !param->peer) {
 		uint32_t interval_max_limit = BT_LE_ADV_INTERVAL_MAX;
 
-		if (param->options & BT_LE_ADV_OPT_EXT_ADV) {
+		if (is_ext_adv) {
 			/* BT Core [Vol 4, Part E, 7.8.53]: extended advertising uses
 			 * a 24-bit interval with a permitted range of 0x000020 to
 			 * 0xFFFFFF (~10485s), not the legacy 0x4000 ceiling.
@@ -1033,6 +1038,10 @@ static int adv_start_legacy(struct bt_le_ext_adv *adv,
 		bt_conn_unref(conn);
 	}
 
+#if defined(CONFIG_BT_EXT_ADV)
+	adv->sid = BT_GAP_SID_INVALID;
+#endif /* CONFIG_BT_EXT_ADV */
+
 	atomic_set_bit_to(adv->flags, BT_ADV_CONNECTABLE, param->options & BT_LE_ADV_OPT_CONN);
 
 	atomic_set_bit_to(adv->flags, BT_ADV_SCANNABLE, scannable);
@@ -1047,6 +1056,7 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 				const struct bt_le_adv_param *param,
 				bool  has_scan_data)
 {
+	const bool is_ext_adv = (param->options & BT_LE_ADV_OPT_EXT_ADV) != 0U;
 	struct bt_hci_cp_le_set_ext_adv_param_v2 *cp;
 
 	uint16_t opcode;
@@ -1105,8 +1115,7 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 		       param->tx_power : BT_HCI_LE_ADV_TX_POWER_NO_PREF;
 	cp->prim_adv_phy = BT_HCI_LE_PHY_1M;
 
-	if ((param->options & BT_LE_ADV_OPT_EXT_ADV) &&
-	    !(param->options & BT_LE_ADV_OPT_NO_2M)) {
+	if (is_ext_adv && !(param->options & BT_LE_ADV_OPT_NO_2M)) {
 		cp->sec_adv_phy = BT_HCI_LE_PHY_2M;
 	} else {
 		cp->sec_adv_phy = BT_HCI_LE_PHY_1M;
@@ -1133,7 +1142,7 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 		}
 	}
 
-	if (!(param->options & BT_LE_ADV_OPT_EXT_ADV)) {
+	if (!is_ext_adv) {
 		props |= BT_HCI_LE_ADV_PROP_LEGACY;
 	}
 
@@ -1151,7 +1160,7 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 
 	if (param->options & BT_LE_ADV_OPT_CONN) {
 		props |= BT_HCI_LE_ADV_PROP_CONN;
-		if (!dir_adv && !(param->options & BT_LE_ADV_OPT_EXT_ADV)) {
+		if (!dir_adv && !is_ext_adv) {
 			/* When using non-extended adv packets then undirected
 			 * advertising has to be scannable as well.
 			 * We didn't require this option to be set before, so
@@ -1176,7 +1185,12 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 		bt_addr_le_copy(&cp->peer_addr, param->peer);
 	}
 
-	cp->sid = param->sid;
+	if (is_ext_adv) {
+		cp->sid = param->sid;
+	} else {
+		/* The SID is ignored for legacy advertising, but 0 keeps the parameter valid */
+		cp->sid = 0U;
+	}
 
 	cp->sec_adv_max_skip = param->secondary_max_skip;
 
@@ -1204,6 +1218,15 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 		}
 	}
 
+#if defined(CONFIG_BT_EXT_ADV)
+	/* Only set SID for extended advertising sets, else set BT_GAP_SID_INVALID for legacy adv */
+	if (is_ext_adv) {
+		adv->sid = param->sid;
+	} else {
+		adv->sid = BT_GAP_SID_INVALID;
+	}
+#endif /* CONFIG_BT_EXT_ADV */
+
 	bt_id_save_adv_addr(adv, own_addr_type);
 
 	atomic_set_bit_to(adv->flags, BT_ADV_CONNECTABLE, param->options & BT_LE_ADV_OPT_CONN);
@@ -1213,8 +1236,7 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 	atomic_set_bit_to(adv->flags, BT_ADV_USE_IDENTITY,
 			  param->options & BT_LE_ADV_OPT_USE_IDENTITY);
 
-	atomic_set_bit_to(adv->flags, BT_ADV_EXT_ADV,
-			  param->options & BT_LE_ADV_OPT_EXT_ADV);
+	atomic_set_bit_to(adv->flags, BT_ADV_EXT_ADV, is_ext_adv);
 
 	atomic_set_bit_to(adv->flags, BT_ADV_RANDOM_ADDR_UPDATED,
 			  own_addr_type == BT_HCI_OWN_ADDR_RANDOM);
@@ -1252,6 +1274,7 @@ static int adv_start_ext(struct bt_le_ext_adv *adv,
 	}
 
 	adv->id = param->id;
+
 	err = le_ext_adv_param_set(adv, param, sd != NULL);
 	if (err) {
 		return err;
@@ -1473,7 +1496,6 @@ int bt_le_ext_adv_create(const struct bt_le_adv_param *param,
 	}
 
 	adv->id = param->id;
-	adv->sid = param->sid;
 	adv->cb = cb;
 
 	err = le_ext_adv_param_set(adv, param, false);
