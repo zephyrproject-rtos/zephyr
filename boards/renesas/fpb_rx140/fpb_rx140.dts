@@ -115,13 +115,14 @@
 	status = "okay";
 };
 
-&data_flash {
+&data_flash_mem {
 	partitions {
-		compatible = "fixed-partitions";
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
 		storage_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			label = "storage";
 			reg = <0x0 DT_SIZE_K(8)>;
 		};
