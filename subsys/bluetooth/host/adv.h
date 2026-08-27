@@ -14,7 +14,7 @@ struct bt_le_ext_adv *bt_le_adv_lookup_legacy(void);
 void bt_le_adv_delete_legacy(void);
 int bt_le_adv_set_enable(struct bt_le_ext_adv *adv, bool enable);
 
-void bt_le_ext_adv_foreach(void (*func)(struct bt_le_ext_adv *adv, void *data),
+void bt_le_ext_adv_foreach(bool (*func)(struct bt_le_ext_adv *adv, void *data),
 			   void *data);
 
 int bt_le_adv_set_enable_ext(struct bt_le_ext_adv *adv,
