@@ -34,6 +34,8 @@ enum afbr_s50_st {
 
 struct afbr_s50_data {
 	atomic_t st; /* enum afbr_s50_st */
+	/** Consecutive failed reinitialization attempts in the recovery path. */
+	uint8_t recovery_attempts;
 	/** RTIO section was included in the device data struct since the Argus
 	 * API does not support passing a parameter to get through the async
 	 * handler. Therefore, we're getting it through object composition:
@@ -143,7 +145,14 @@ static inline void submit_sync_item(struct rtio_iodev_sqe *iodev_sqe, rtio_work_
 	 * discourages its use in the callback context as it may be blocking
 	 * while in ISR context.
 	 */
-	struct rtio_work_req *req = rtio_work_req_alloc();
+	struct rtio_work_req *req;
+
+	CHECKIF(!iodev_sqe) {
+		LOG_ERR("No submission to hand over to the work-queue");
+		return;
+	}
+
+	req = rtio_work_req_alloc();
 
 	CHECKIF(!req) {
 		LOG_ERR("RTIO work item allocation failed. Consider to increase "
@@ -152,6 +161,13 @@ static inline void submit_sync_item(struct rtio_iodev_sqe *iodev_sqe, rtio_work_
 	}
 	rtio_work_req_submit(req, iodev_sqe, handler);
 }
+
+/** Cap on consecutive reinitialization attempts before the recovery gives
+ * up, and the base delay it backs off by between attempts. A detached or
+ * dead device would otherwise reinitialize forever on the RTIO workqueue.
+ */
+#define AFBR_S50_RECOVERY_MAX_ATTEMPTS 5U
+#define AFBR_S50_RECOVERY_BACKOFF_MS   10U
 
 static void handle_recovery(struct rtio_iodev_sqe *iodev_sqe)
 {
@@ -162,19 +178,42 @@ static void handle_recovery(struct rtio_iodev_sqe *iodev_sqe)
 
 	err = reinitialize_sequence(dev);
 	CHECKIF(err != 0) {
-		LOG_ERR("Failed to reinitialize... %d", err);
+		data->recovery_attempts++;
+		if (data->recovery_attempts >= AFBR_S50_RECOVERY_MAX_ATTEMPTS) {
+			LOG_ERR("Recovery failed after %u attempts: %d", data->recovery_attempts,
+				err);
+			data->recovery_attempts = 0;
+			(void)atomic_set(&data->st, AFBR_S50_ST_IDLE);
+			data->rtio.iodev_sqe = NULL;
+			rtio_iodev_sqe_err(iodev_sqe, -EIO);
+			return;
+		}
+		LOG_ERR("Failed to reinitialize (attempt %u): %d", data->recovery_attempts, err);
+		k_sleep(K_MSEC(AFBR_S50_RECOVERY_BACKOFF_MS * data->recovery_attempts));
 		submit_sync_item(iodev_sqe, handle_recovery);
 		return;
 	}
 
+	data->recovery_attempts = 0;
 	(void)atomic_set(&data->st, AFBR_S50_ST_IDLE);
 	data->rtio.iodev_sqe = NULL;
-	rtio_iodev_sqe_err(iodev_sqe, 0);
+	rtio_iodev_sqe_ok(iodev_sqe, 0);
 }
 
 static inline void handle_error_on_result(struct afbr_s50_data *data, int result)
 {
 	struct rtio_iodev_sqe *iodev_sqe = data->rtio.iodev_sqe;
+
+	CHECKIF(!iodev_sqe) {
+		/** No submission is checked out, so there is nothing to report
+		 * the error on and no way to reach the device: the recovery
+		 * work item gets there through the submission. Return to idle
+		 * so the next submission is accepted and can recover.
+		 */
+		LOG_ERR("Error reported with no submission in progress: %d", result);
+		(void)atomic_set(&data->st, AFBR_S50_ST_IDLE);
+		return;
+	}
 
 	if (atomic_set(&data->st, AFBR_S50_ST_STOPPING) != AFBR_S50_ST_STOPPING) {
 		submit_sync_item(iodev_sqe, handle_recovery);
