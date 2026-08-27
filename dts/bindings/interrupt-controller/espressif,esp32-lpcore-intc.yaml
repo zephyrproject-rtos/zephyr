@@ -1,0 +1,56 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  ESP32 LP (low-power) core interrupt controller.
+
+  This is deliberately NOT the same binding as "espressif,esp32-intc". The LP core
+  has no interrupt matrix: there is nothing to route, no CPU line to pick and no
+  priority or flags to program, so a single cell is all an LP-core interrupt needs.
+  An LP-core image also builds without any of Zephyr's interrupt machinery -
+  INTC_ESP32 is off (see drivers/interrupt_controller/Kconfig.esp32) and
+  GEN_ISR_TABLES is off - so nothing is connected at runtime either.
+
+  Handlers are claimed by defining one of the hal_espressif weak symbols
+  (ulp_lp_core_sw_intr_handler(), ulp_lp_core_lp_pmu_intr_handler(),
+  ulp_lp_core_lp_timer_intr_handler(), ...) declared in ulp_lp_core_interrupts.h.
+  The cell in a consumer's "interrupts" property names which LP interrupt that
+  handler belongs to; it is documentation and a cross-check, not a parameter that
+  any code programs into hardware.
+
+  The meaning of the cell is SoC-specific:
+
+  - ESP32-C6, ESP32-C5 (SOC_LP_CORE_SINGLE_INTERRUPT_VECTOR): the bit position in
+    LPPERI.interrupt_source, which the single vector entry demuxes through the
+    handler table in lp_core_interrupt.c -
+    0 = LP_IO, 1 = LP_I2C, 2 = LP_UART, 3 = LP_TIMER, 4 = modem (unused), 5 = LP_PMU.
+    The LP_CORE_*_INTR_SOURCE defines in the per-SoC intmux dt-binding header carry
+    these values.
+
+  - ESP32-P4: the slot in the LP core's 32-entry vector table (port/esp32p4/
+    vector_table.S), which is directly vectored - 3 = SW, 7 = LP_UART, 11 = LP_SPI,
+    17 = LP_I2C, 18 = LP_IO, 25 = LP_PMU, 26 = MAILBOX, 27 = LP_TIMER, 28 = LP_WDT,
+    29 = LP_RTC.
+
+  Note that the HP-core interrupt source numbers (PMU_INTR_SOURCE and friends) are
+  matrix inputs and are meaningless here; use the LP_CORE_* values.
+
+compatible: "espressif,esp32-lpcore-intc"
+
+include: [interrupt-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+    description: |
+      Reserved for future use. Unlike "espressif,esp32-intc", where reg carries the
+      INTMUX MAP and STATUS bases the multi-level dispatcher reads, nothing consumes
+      this address today - there is no interrupt-controller driver on the LP core.
+
+  "#interrupt-cells":
+    const: 1
+
+# First cell must be named "irq": the devicetree interrupt macros read it as the
+# interrupt number. Here it carries the LP-core interrupt index described above.
+interrupt-cells:
+  - irq

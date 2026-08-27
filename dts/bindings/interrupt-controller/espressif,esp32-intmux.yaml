@@ -1,0 +1,38 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  ESP32 interrupt matrix as the one level-2 interrupt aggregator.
+
+  Every peripheral interrupt that shares a CPU line is an input of this single
+  node. The input number is the matrix source, so the aggregator's window in
+  _sw_isr_table has CONFIG_MAX_IRQ_PER_2ND_LEVEL_AGGREGATOR entries, one per
+  source.
+
+  The node's own "interrupts" line is a key, not a line any source is routed
+  to: it must equal CONFIG_2ND_LVL_INTR_00_OFFSET, and every level-2 IRQ number
+  carries it in its level-1 field. The real CPU line of each input is the
+  "line" cell, filled in by the espressif,esp32-cpu-interrupt node the
+  consumer points at.
+
+compatible: "espressif,esp32-intmux"
+
+include: [interrupt-controller.yaml, base.yaml]
+
+properties:
+  "#interrupt-cells":
+    const: 2
+
+  "#address-cells":
+    const: 0
+    description: |
+      espressif,esp32-cpu-interrupt nodes map into this node, so the parent
+      specifier carries no unit address.
+
+# The interrupt number cell must be named "irq": the multi-level DT_IRQN()
+# macros read it. "line" comes first because interrupt-map-pass-thru copies the
+# consumer cell into the rightmost parent cell, which must be "irq". The driver
+# reads the line with DT_IRQ(node, line).
+interrupt-cells:
+  - line
+  - irq

@@ -1,0 +1,66 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  ESP32 level-3 interrupt aggregator: several status bits of one peripheral
+  that share one interrupt matrix source.
+
+  The node is an input of the espressif,esp32-intmux aggregator; its own
+  "interrupts" cell names that source through a CPU line node. "bits" lists
+  the bits of "status-reg" it serves, and a consumer names an input by its
+  index in that list:
+
+      rtc_l3_intc: rtc-l3-intc {
+              compatible = "espressif,esp32-l3-intc";
+              interrupt-controller;
+              #interrupt-cells = <1>;
+              interrupt-parent = <&cpu_interrupt_1>;
+              interrupts = <RTC_CORE_INTR_SOURCE>;
+              status-reg = <0x60008048>;
+              bits = <4 6 7 8 10 16 18>;
+      };
+
+      xt_wdt: xt_wdt@60021004 {
+              interrupt-parent = <&rtc_l3_intc>;
+              interrupts = <5>;       /* bits[5] = 16 */
+      };
+
+  The list holds at most CONFIG_MAX_IRQ_PER_3RD_LEVEL_AGGREGATOR entries. The
+  peripheral driver masks and clears its own bits; irq_disable() of one input
+  leaves the shared source routed.
+
+  A handler that shares the source but has no bit in "status-reg" gets an
+  ESP_L3_CATCH_ALL entry, listed last. It is called on every interrupt of the
+  source, after the inputs before it, so it must check its own peripheral state
+  and return when it has nothing to do. On ESP32-H2 the GPIO port driver shares
+  GPIO_INTR_SOURCE with the analog comparator, which owns bit 0:
+
+      bits = <0 ESP_L3_CATCH_ALL>;
+      ...
+      ana_cmpr0 { interrupts = <0>; };
+      gpio0 { interrupts = <1>; };
+
+compatible: "espressif,esp32-l3-intc"
+
+include: [interrupt-controller.yaml, base.yaml]
+
+properties:
+  "#interrupt-cells":
+    const: 1
+
+  status-reg:
+    type: int
+    required: true
+    description: Address of the peripheral interrupt status register.
+
+  bits:
+    type: array
+    required: true
+    description: |
+      Status register bit of each input, in input order, or ESP_L3_CATCH_ALL
+      for an input without a status bit.
+
+# The first cell must be named "irq": the multi-level DT_IRQN() macros read it.
+# It is the input index into "bits".
+interrupt-cells:
+  - irq

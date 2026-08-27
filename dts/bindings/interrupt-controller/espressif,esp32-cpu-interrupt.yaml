@@ -1,0 +1,40 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  One ESP32 CPU interrupt line that carries several interrupt matrix sources.
+
+  An interrupt nexus, not an interrupt controller, so it adds no interrupt
+  level. A consumer names only its matrix source; the map turns that into the
+  <line irq> specifier of the espressif,esp32-intmux node:
+
+      interrupt-parent = <&cpu_interrupt_5>;
+      interrupts = <UART0_INTR_SOURCE>;
+
+  resolves to intmux <5 UART0_INTR_SOURCE>.
+
+  Write the node with ESP_CPU_INTERRUPT(n) from
+  <zephyr/dt-bindings/interrupt-controller/espressif-intmux-common.h>, so that
+  "cpu-line" and the line in "interrupt-map" are written once.
+
+compatible: "espressif,esp32-cpu-interrupt"
+
+include: [interrupt-nexus.yaml, base.yaml]
+
+properties:
+  "#interrupt-cells":
+    const: 1
+
+  "#address-cells":
+    const: 0
+
+  cpu-line:
+    type: int
+    required: true
+    description: CPU interrupt line this node stands for.
+
+  interrupt-map-mask:
+    required: true
+
+  interrupt-map-pass-thru:
+    required: true
