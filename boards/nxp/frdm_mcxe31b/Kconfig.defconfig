@@ -3,7 +3,7 @@
 
 if BOARD_FRDM_MCXE31B
 
-configdefault NET_L2_ETHERNET
+configdefault ETH_DRIVER
 	default y
 
 endif # BOARD_FRDM_MCXE31B
