@@ -43,9 +43,6 @@ struct mipi_dbi_esp32_device_config {
 
 struct mipi_dbi_esp32_config {
 	soc_periph_lcd_clk_src_t clock_source;
-	int irq_source;
-	int irq_priority;
-	int irq_flags;
 	const struct device *dma_dev;
 	const struct mipi_dbi_esp32_device_config *devices;
 	uint16_t num_devices;
@@ -326,7 +323,7 @@ static DEVICE_API(mipi_dbi, mipi_dbi_esp32_api) = {
 	.reset = mipi_dbi_esp32_reset,
 };
 
-static void IRAM_ATTR mipi_dbi_esp32_isr(void *arg)
+static void IRAM_ATTR mipi_dbi_esp32_isr(const void *arg)
 {
 	const struct device *dev = (const struct device *)arg;
 	struct mipi_dbi_esp32_data *data = dev->data;
@@ -412,17 +409,16 @@ static int mipi_dbi_esp32_init(const struct device *dev)
 	lcd_ll_reset(hal->dev);
 	lcd_ll_fifo_reset(hal->dev);
 
-	/* Set up interrupts */
-
-	ret = esp_intr_alloc_intrstatus(
-		cfg->irq_source,
-		ESP_PRIO_TO_FLAGS(cfg->irq_priority) | ESP_INT_FLAGS_CHECK(cfg->irq_flags),
-		(uint32_t)lcd_ll_get_interrupt_status_reg(hal->dev), LCD_LL_EVENT_TRANS_DONE,
-		(intr_handler_t)mipi_dbi_esp32_isr, (void *)dev, NULL);
-	if (ret != 0) {
-		LOG_ERR("Failed to allocate interrupt (%d)", ret);
-		return ret;
-	}
+	/*
+	 * Set up interrupts: the LCD_CAM interrupt is a level-3 aggregator whose
+	 * flags are exposed as the parent lcd_cam node's interrupts. Connect the
+	 * LCD_TRANS_DONE flag (index 1). The SoC backend routes the INTMUX source
+	 * and installs the L2/L3 dispatchers; the L3 dispatcher demuxes the
+	 * LCD_CAM status register to this leaf. The ISR is IRAM_ATTR.
+	 */
+	IRQ_CONNECT(DT_IRQN_BY_IDX(DT_INST_PARENT(0), 1), IRQ_DEFAULT_PRIORITY,
+		    mipi_dbi_esp32_isr, DEVICE_DT_INST_GET(0), ESP_INTR_FLAG_IRAM);
+	irq_enable(DT_IRQN_BY_IDX(DT_INST_PARENT(0), 1));
 
 	lcd_ll_enable_interrupt(hal->dev, LCD_LL_EVENT_TRANS_DONE, false);
 	lcd_ll_clear_interrupt_status(hal->dev, LCD_LL_EVENT_TRANS_DONE);
@@ -458,9 +454,6 @@ static const struct gpio_dt_spec mipi_dbi_esp32_cs_gpios[] = {
 
 static const struct mipi_dbi_esp32_config mipi_dbi_esp32_config = {
 	.clock_source = LCD_CLK_SRC_DEFAULT,
-	.irq_source = DT_IRQ_BY_IDX(DT_INST_PARENT(0), 0, irq),
-	.irq_priority = DT_IRQ_BY_IDX(DT_INST_PARENT(0), 0, priority),
-	.irq_flags = DT_IRQ_BY_IDX(DT_INST_PARENT(0), 0, flags),
 	.dma_dev = DEVICE_DT_GET_OR_NULL(DT_DMAS_CTLR_BY_NAME(DT_INST_PARENT(0), tx)),
 	.tx_dma_channel = DT_DMAS_CELL_BY_NAME(DT_INST_PARENT(0), tx, channel),
 	.devices = mipi_dbi_esp32_devices,
