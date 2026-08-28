@@ -1,0 +1,21 @@
+# Microchip SAM MIPI CSI-2 host controller driver configuration options
+
+# Copyright (C) 2025 Microchip Technology Inc. and its subsidiaries
+# SPDX-License-Identifier: Apache-2.0
+
+config VIDEO_MCHP_SAM_CSI2HOST
+	bool "Microchip SAM MIPI CSI-2 host controller driver"
+	default y
+	depends on DT_HAS_MICROCHIP_SAMA7G5_CSI2HOST_ENABLED
+	help
+	  Enable the driver for the MIPI CSI-2 host controller and its D-PHY
+	  receiver found on the Microchip SAMA7G5 family. It feeds the CSI-2
+	  Demux Controller (CSI2DC).
+
+config VIDEO_MCHP_SAM_CSI2HOST_INIT_PRIORITY
+	int "Microchip SAM MIPI CSI-2 host controller init priority"
+	default 61
+	depends on VIDEO_MCHP_SAM_CSI2HOST
+	help
+	  Initialization priority of the MIPI CSI-2 host controller. It must
+	  initialize after the image sensor it receives data from.
