@@ -961,13 +961,6 @@ struct hl78xx_variant_ops {
 	void (*on_kcellmeas_ready)(struct hl78xx_data *data);
 
 	/**
-	 * @brief Handle pending GNSS mode request on CARRIER_ON entry.
-	 *
-	 * @return true if the variant handled routing and the caller should return.
-	 */
-	bool (*carrier_on_gnss_pending)(struct hl78xx_data *data);
-
-	/**
 	 * @brief Handle GNSS mode enter request while low power mode is enabled.
 	 *
 	 * @return true if the variant handled the request and caller should return.
