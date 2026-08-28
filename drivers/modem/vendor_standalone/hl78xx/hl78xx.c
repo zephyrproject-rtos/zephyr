@@ -2903,18 +2903,22 @@ static int hl78xx_on_carrier_on_state_enter(struct hl78xx_data *data)
 	int ret;
 
 #ifdef CONFIG_HL78XX_GNSS
-	/* Check and process any pending GNSS mode entry request */
-	if (hl78xx_gnss_is_pending(data)) {
-		const struct hl78xx_config *config = data->devices.hl78xx->config;
+	/* A GNSS mode request queued while the modem was registering must not
+	 * be executed here: entering GNSS mode now takes the carrier that just
+	 * came up (CFUN=4) and discards a fresh registration -- a 7-minute-old
+	 * queued request once killed a registration and stranded a device.
+	 * Drop the request and tell the application it was blocked; it decides
+	 * whether and when to ask again.
+	 */
+	if (hl78xx_gnss_check_and_clear_pending(data)) {
+		struct hl78xx_evt gnss_evt = {
+			.type = HL78XX_GNSS_EVENT_START_BLOCKED,
+			.content.status = false,
+		};
 
-		if (config->variant->carrier_on_gnss_pending &&
-		    config->variant->carrier_on_gnss_pending(data)) {
-			return 0;
-		}
-
-		LOG_INF("Processing pending GNSS mode request (queued before modem ready)");
-		hl78xx_enter_state(data, MODEM_HL78XX_STATE_RUN_GNSS_INIT_SCRIPT);
-		return 0;
+		LOG_WRN("Dropping queued GNSS mode request: the carrier is on, notifying the "
+			"application");
+		event_dispatcher_dispatch(&gnss_evt);
 	}
 	notif_carrier_on(data->devices.hl78xx);
 #endif /* CONFIG_HL78XX_GNSS */
