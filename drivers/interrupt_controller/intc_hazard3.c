@@ -13,23 +13,25 @@
 #include <zephyr/types.h>
 #include <zephyr/arch/riscv/csr.h>
 #include <zephyr/arch/riscv/irq.h>
+#include <zephyr/drivers/interrupt_controller/intc_root.h>
 
 #include <pico/runtime_init.h>
 #include <hardware/irq.h>
 
 #define CSR_WINDOW_SIZE 16
 
-void arch_irq_enable(unsigned int irq)
+/* The Hazard3 controller is the root interrupt controller of the RP2350 */
+void intc_root_enable(unsigned int irq)
 {
 	irq_set_enabled(irq, true);
 }
 
-void arch_irq_disable(unsigned int irq)
+void intc_root_disable(unsigned int irq)
 {
 	irq_set_enabled(irq, false);
 }
 
-int arch_irq_is_enabled(unsigned int irq)
+int intc_root_is_enabled(unsigned int irq)
 {
 	return pico_irq_is_enabled(irq);
 }
