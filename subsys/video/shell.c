@@ -298,6 +298,13 @@ static int cmd_video_capture(const struct shell *sh, size_t argc, char **argv)
 			shell_error(sh, "Failed to enqueue this buffer: %s", strerror(-ret));
 			goto end;
 		}
+
+		/*
+		 * The buffer belongs to the device again. Stopping the stream flushes it
+		 * back to the completed queue, where the loop below releases it, so it
+		 * must not be released a second time as a leftover of this loop.
+		 */
+		vbuf = NULL;
 	}
 
 	frmival_msec = this_uptime - first_uptime;
