@@ -1062,15 +1062,7 @@ static DEVICE_API(sdhc, sdhc_infineon_api) = {
 
 #define PERI_INFO(n) .clock_peri_group = DT_PROP_BY_IDX(DT_INST_PHANDLE(n, clocks), peri_group, 1),
 
-#define IFX_SDHC_PERI_CLOCK_INIT(n)                                                                \
-	.clock =                                                                                   \
-		{                                                                                  \
-			.block = IFX_CAT1_PERIPHERAL_GROUP_ADJUST(                                 \
-				DT_PROP_BY_IDX(DT_INST_PHANDLE(n, clocks), peri_group, 0),         \
-				DT_PROP_BY_IDX(DT_INST_PHANDLE(n, clocks), peri_group, 1),         \
-				DT_INST_PROP_BY_PHANDLE(n, clocks, div_type)),                     \
-	},                                                                                         \
-	PERI_INFO(n)
+#define IFX_SDHC_PERI_CLOCK_INIT(n) .clock = IFX_CAT1_PERI_CLOCK_DT_INST_INIT(n), PERI_INFO(n)
 #elif defined(COMPONENT_CAT1A)
 #define IFX_SDHC_IRQ_INIT(n)                                                                       \
 	void sdhc_infineon_isr_##n(void)                                                           \
