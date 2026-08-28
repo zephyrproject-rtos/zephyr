@@ -16,6 +16,7 @@ enum ipc4_uaol_aux_config_tlv_type {
 	IPC4_UAOL_AUX_CONFIG_TLV_USB_EP_INFO            = 3,
 	IPC4_UAOL_AUX_CONFIG_TLV_USB_EP_FEEDBACK_INFO   = 4,
 	IPC4_UAOL_AUX_CONFIG_TLV_USB_ART_DIVIDER        = 5,
+	IPC4_UAOL_AUX_CONFIG_TLV_SERVICE_INTERVAL       = 6,
 };
 
 enum ipc4_uaol_dma_control_tlv_type {
