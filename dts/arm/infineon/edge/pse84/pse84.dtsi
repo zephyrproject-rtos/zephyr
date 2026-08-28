@@ -395,6 +395,15 @@
 			};
 		};
 
+		/* System-reserved: channels 0-3, 8-10; interrupts 0-2, 6-7.
+		 * ch0 and 1 are used for communication with the secure enclave
+		 * ch2 is used to monitor RRAM operations
+		 * ch3 is used to handle PDL semaphores
+		 * ch 8-9-10 are used by TF-M
+		 * intr0 and 1 are used for secure enclave purposes
+		 * intr2 is used for the RRAM
+		 * Application-usable: channels 4-7, 11-15; interrupts 3-5.
+		 */
 		ipc0: ipc@422a0000 {
 			compatible = "infineon,ipc";
 			reg = <0x422a0000 0x1200>;
@@ -402,8 +411,16 @@
 			#ipc-config-cells = <2>;
 			channel-count = <16>;
 			interrupt-count = <8>;
+			channel-mask = <0xf8f0>;
+			interrupt-mask = <0x38>;
 		};
 
+		/* System-reserved: channels 0, 1, 15; interrupts 0-4.
+		 * ch0 is reserved
+		 * ch1 and 15 are used by SRF
+		 * intr 0-4 are used by SRF
+		 * Application-usable: channels 2-14; interrupts 5-7.
+		 */
 		ipc1: ipc@441d0000 {
 			compatible = "infineon,ipc";
 			reg = <0x441d0000 0x1200>;
@@ -411,6 +428,8 @@
 			#ipc-config-cells = <2>;
 			channel-count = <16>;
 			interrupt-count = <8>;
+			channel-mask = <0x7ffc>;
+			interrupt-mask = <0xe0>;
 		};
 
 		scb0: scb@42990000 {
