@@ -71,8 +71,6 @@ config ARM64
 	select ARCH_HAS_ISR_TABLES_LOCAL_DECLARATION
 	select ARCH_SUPPORTS_ROM_OFFSET
 	select ARCH_HAS_CPU_IDLE_HOOKS
-	# Backed by the GIC distributor ICPENDR/ISPENDR registers.
-	select ARCH_HAS_IRQ_PENDING_OPS if !ARM_CUSTOM_INTERRUPT_CONTROLLER
 	help
 	  ARM64 (AArch64) architecture
 

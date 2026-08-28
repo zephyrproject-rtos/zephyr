@@ -17,65 +17,15 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/linker/sections.h>
 #include <zephyr/sw_isr_table.h>
-#include <zephyr/drivers/interrupt_controller/gic.h>
 
 void z_arm64_fatal_error(unsigned int reason, struct arch_esf *esf);
 
-#if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
 /*
- * The default interrupt controller for AArch64 is the ARM Generic Interrupt
- * Controller (GIC) and therefore the architecture interrupt control functions
- * are mapped to the GIC driver interface.
- *
- * When a custom interrupt controller is used (i.e.
- * CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER is enabled), the architecture
- * interrupt control functions are mapped to the SoC layer in
- * `include/arch/arm64/irq.h`.
+ * The architecture interrupt control functions map onto the root interrupt
+ * controller API (intc_root_*) provided by the controller driver, see
+ * include/zephyr/arch/arm64/irq.h. With CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER
+ * the SoC provides them instead.
  */
-
-void arch_irq_enable(unsigned int irq)
-{
-	arm_gic_irq_enable(irq);
-}
-
-void arch_irq_disable(unsigned int irq)
-{
-	arm_gic_irq_disable(irq);
-}
-
-int arch_irq_is_enabled(unsigned int irq)
-{
-	return arm_gic_irq_is_enabled(irq);
-}
-
-#if defined(CONFIG_ARCH_HAS_IRQ_PENDING_OPS)
-void arch_irq_clear_pending(unsigned int irq)
-{
-	__ASSERT(irq < CONFIG_NUM_IRQS, "IRQ %u out of range", irq);
-
-	arm_gic_irq_clear_pending(irq);
-}
-
-void arch_irq_set_pending(unsigned int irq)
-{
-	__ASSERT(irq < CONFIG_NUM_IRQS, "IRQ %u out of range", irq);
-
-	arm_gic_irq_set_pending(irq);
-}
-
-bool arch_irq_is_pending(unsigned int irq)
-{
-	__ASSERT(irq < CONFIG_NUM_IRQS, "IRQ %u out of range", irq);
-
-	return arm_gic_irq_is_pending(irq);
-}
-#endif
-
-void z_arm64_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
-{
-	arm_gic_irq_set_priority(irq, prio, flags);
-}
-#endif /* !CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
 
 #ifdef CONFIG_DYNAMIC_INTERRUPTS
 int arch_irq_connect_dynamic(unsigned int irq, unsigned int priority,
