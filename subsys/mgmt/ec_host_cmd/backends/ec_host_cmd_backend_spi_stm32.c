@@ -665,7 +665,7 @@ void gpio_cb_nss(const struct device *port, struct gpio_callback *cb, gpio_port_
 		/* CS asserted during processing a command. Prepare for receiving after
 		 * sending response.
 		 */
-		if (hc_spi->state == SPI_HOST_CMD_STATE_PROCESSING) {
+		if (hc_spi->prepare_rx_later || hc_spi->state == SPI_HOST_CMD_STATE_PROCESSING) {
 			hc_spi->prepare_rx_later = 1;
 			return;
 		}
@@ -709,6 +709,7 @@ void gpio_cb_nss(const struct device *port, struct gpio_callback *cb, gpio_port_
 
 		hc_spi->rx_ctx->len = exp_size;
 		hc_spi->state = SPI_HOST_CMD_STATE_PROCESSING;
+		hc_spi->prepare_rx_later = 1;
 		tx_status(spi, EC_SPI_PROCESSING);
 		ec_host_cmd_rx_notify();
 
@@ -717,7 +718,9 @@ void gpio_cb_nss(const struct device *port, struct gpio_callback *cb, gpio_port_
 
 spi_bad_rx:
 	tx_status(spi, EC_SPI_NOT_READY);
-	hc_spi->state = SPI_HOST_CMD_STATE_RX_BAD;
+	if (hc_spi->state != SPI_HOST_CMD_STATE_PROCESSING && !hc_spi->prepare_rx_later) {
+		hc_spi->state = SPI_HOST_CMD_STATE_RX_BAD;
+	}
 }
 
 static int ec_host_cmd_spi_init(const struct ec_host_cmd_backend *backend,
