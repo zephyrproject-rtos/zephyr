@@ -86,6 +86,15 @@ uint8_t *tracing_stream_reserve(uint32_t length, uint64_t tstamp);
 void tracing_stream_drain(void);
 
 /**
+ * @brief Close the calling CPU's packet so its events can be shipped.
+ *
+ * Meant for the moment a CPU goes idle: what it has gathered so far would
+ * otherwise sit in an unfinished packet until enough further events arrived to
+ * fill it, which on a CPU that has just gone quiet may be a long time or never.
+ */
+void tracing_stream_flush_cpu(void);
+
+/**
  * @brief Close every partially filled packet and ship everything.
  *
  * Used to get a complete trace out at a point where the application knows it

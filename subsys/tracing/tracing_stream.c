@@ -91,17 +91,16 @@ static void packet_close(struct tracing_cpu_stream *s, uint32_t cpu)
 	ctx->timestamp_begin = s->ts_begin;
 	ctx->timestamp_end = s->ts_end;
 	ctx->content_size = s->used[slot] * 8U;
-	ctx->packet_size = PACKET_SIZE * 8U;
+	/*
+	 * Sized to what it holds rather than padded out to a fixed length. CTF
+	 * takes the length of each packet from the packet itself, so a short
+	 * one is perfectly legal, and a packet closed early - because the CPU
+	 * is going idle rather than because it filled up - then costs only what
+	 * is in it instead of a full packet's worth of padding.
+	 */
+	ctx->packet_size = s->used[slot] * 8U;
 	ctx->events_discarded = s->discarded;
 	ctx->cpu_id = (uint8_t)cpu;
-
-	/*
-	 * Every packet goes out at full size so the stream stays a sequence of
-	 * equally sized packets; the reader stops at content_size and ignores
-	 * the padding.
-	 */
-	(void)memset(&s->packet[slot][s->used[slot]], 0, PACKET_SIZE - s->used[slot]);
-	s->used[slot] = PACKET_SIZE;
 
 	s->open = false;
 	(void)atomic_inc(&s->head);
@@ -187,7 +186,7 @@ void tracing_stream_drain(void)
 		while (atomic_get(&s->tail) != atomic_get(&s->head)) {
 			uint32_t slot = (uint32_t)atomic_get(&s->tail) % NUM_PACKETS;
 
-			tracing_buffer_handle((uint8_t)cpu, &s->packet[slot][0], PACKET_SIZE);
+			tracing_buffer_handle((uint8_t)cpu, &s->packet[slot][0], s->used[slot]);
 			(void)atomic_inc(&s->tail);
 		}
 	}
@@ -248,6 +247,27 @@ void tracing_ctf_emit_post(void)
 	 */
 	tracing_stream_drain();
 #endif
+}
+
+void tracing_stream_flush_cpu(void)
+{
+	uint32_t cpu;
+	unsigned int key;
+
+	/*
+	 * Only ever closes the calling CPU's own packet, so unlike
+	 * tracing_stream_flush() it races with nobody: the owning CPU is the
+	 * only writer of this state, and the local interrupt lock shuts out its
+	 * own interrupt-context producers.
+	 */
+	key = irq_lock();
+	cpu = stream_cpu_id();
+	if (streams[cpu].open &&
+	    streams[cpu].used[(uint32_t)atomic_get(&streams[cpu].head) % NUM_PACKETS] >
+		    TRACING_PACKET_PREFIX_SIZE) {
+		packet_close(&streams[cpu], cpu);
+	}
+	irq_unlock(key);
 }
 
 void tracing_stream_flush(void)
