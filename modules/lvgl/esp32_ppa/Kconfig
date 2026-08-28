@@ -1,0 +1,92 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menu "LVGL Zephyr ESP32 PPA support"
+
+menuconfig LV_USE_PPA
+	bool "Pixel processing accelerator"
+	depends on DT_HAS_ESPRESSIF_ESP32_PPA_ENABLED
+	select ESP32_PPA
+	help
+	  Draw fills and image blits with the pixel processing accelerator
+	  instead of rendering them in software.
+
+if LV_USE_PPA
+
+config CACHE_L2_CACHE_LINE_SIZE
+	int
+	default ESP32_CACHE_L2_LINE_SIZE
+	help
+	  L2 cache line size, under the name the draw unit expects. The
+	  accelerator reads and writes the draw buffers directly, so
+	  LV_DRAW_BUF_ALIGN has to match it.
+
+config LV_USE_PPA_IMG
+	bool "Accelerate image blits"
+	default y
+	help
+	  Draw image tasks with the accelerator as well as fills.
+
+choice LV_PPA_BURST
+	prompt "Accelerator burst length in bytes"
+	default LV_PPA_BURST_128
+	help
+	  Burst length used for the accelerator transfers. A larger value
+	  gives higher throughput, a smaller one leaves more bus bandwidth
+	  to other peripherals.
+
+config LV_PPA_BURST_8
+	bool "8"
+
+config LV_PPA_BURST_16
+	bool "16"
+
+config LV_PPA_BURST_32
+	bool "32"
+
+config LV_PPA_BURST_64
+	bool "64"
+
+config LV_PPA_BURST_128
+	bool "128"
+
+endchoice
+
+config LV_PPA_BURST_LENGTH
+	int
+	default 8 if LV_PPA_BURST_8
+	default 16 if LV_PPA_BURST_16
+	default 32 if LV_PPA_BURST_32
+	default 64 if LV_PPA_BURST_64
+	default 128
+
+endif # LV_USE_PPA
+
+config LV_Z_DRAW_PPA_ESP32
+	bool "ESP32 pixel processing accelerator draw unit"
+	depends on DT_HAS_ESPRESSIF_ESP32_PPA_ENABLED
+	depends on !LV_USE_PPA
+	select ESP32_PPA
+	help
+	  Register the pixel processing accelerator as an LVGL draw unit, so
+	  fills it can express are done in hardware instead of the software
+	  renderer. This is the Zephyr-native binding; LV_USE_PPA selects the
+	  one LVGL carries for its own platform layer and the two cannot both
+	  drive the accelerator.
+
+config LV_Z_DRAW_PPA_ESP32_ASYNC
+	bool "Hand work to the accelerator without waiting for it"
+	depends on LV_Z_DRAW_PPA_ESP32
+	help
+	  Submit a transfer and return, so the processor renders what the
+	  accelerator cannot take while the transfer runs, instead of waiting
+	  for it. The task is completed on a later dispatch, once the transfer
+	  has reported it is done.
+
+	  This trades processor time for frames, and on a display bound
+	  workload it buys very little: measured on a 1024x600 panel it gained
+	  one frame per second for eight points of processor load. Enable it
+	  where the processor has other work to get on with.
+
+endmenu

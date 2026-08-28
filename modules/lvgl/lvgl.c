@@ -439,6 +439,14 @@ lv_result_t lv_mem_test_core(void)
 
 #define ENUMERATE_DISPLAY_DEVS(n) display_dev[n] = DEVICE_DT_GET(DISPLAY_NODE(n));
 
+/* A hardware draw unit hooks in here. The default does nothing, so a build
+ * without one renders in software.
+ */
+__weak int lvgl_draw_unit_init(void)
+{
+	return 0;
+}
+
 int lvgl_init(void)
 {
 	const struct device *display_dev[DT_ZEPHYR_DISPLAYS_COUNT];
@@ -465,6 +473,11 @@ int lvgl_init(void)
 #ifdef CONFIG_LV_Z_USE_FILESYSTEM
 	lvgl_fs_init();
 #endif
+
+	err = lvgl_draw_unit_init();
+	if (err < 0) {
+		return err;
+	}
 
 #ifdef CONFIG_LV_Z_BUFFER_ALLOC_STATIC
 	/* clang-format off */
