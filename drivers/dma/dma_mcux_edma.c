@@ -66,6 +66,30 @@ struct dma_mcux_channel_transfer_edma_settings {
 	uint32_t source_burst_length;
 	enum dma_channel_direction direction;
 	edma_transfer_type_t transfer_type;
+	/* 
+	 * Per-minor-loop address offsets (SOFF/DOFF) established at config time.
+	 * These preserve any scatter/gather stride requested through
+	 * dma_block_config across dma_reload(), which only carries src/dst/size.
+	 */
+	int16_t source_offset;
+	int16_t dest_offset;
+	/*
+	 * True only when the caller requested an explicit scatter/gather stride
+	 * (non-zero source_gather_interval/dest_scatter_interval). When false the
+	 * SOFF/DOFF derived by EDMA_PrepareTransfer() are already correct.
+	 */
+	bool has_explicit_offset;
+	/* 
+	 * Source minor-loop offset (eDMA SMLOE/MLOFF) established at config time.
+	 * The offset is stored in the TCD NBYTES (MLOFFYES layout) so it is wiped
+	 * whenever NBYTES is (re)written by the cyclic ring build or a reload;
+	 * cache it here so it can be re-applied to every TCD. When enabled the
+	 * major-loop count (CITER/BITER) must be block_size / source_burst_length
+	 * (frames) rather than block_size / source_data_size, because one minor
+	 * loop now consumes a whole burst spanning source_burst_length bytes.
+	 */
+	bool source_minor_loop_offset_en;
+	int32_t source_minor_loop_offset;
 	bool valid;
 	/* This var indicate it is dynamic SG mode or loop SG mode. */
 	bool cyclic;
@@ -347,6 +371,44 @@ static inline void dma_mcux_edma_configure_muxes(const struct device *dev, uint3
 #endif
 }
 
+/*
+ * Re-apply the cached source minor-loop offset (eDMA SMLOE/MLOFF) to a TCD.
+ *
+ * The offset is encoded in the TCD NBYTES register (MLOFFYES layout), so it is
+ * wiped every time NBYTES is rewritten. It MUST therefore be applied AFTER the
+ * transfer config (which sets NBYTES) has been established, and must be
+ * re-applied on every ring-build and reload. This is what lets a single eDMA
+ * channel read one sample from each of N contiguous peripheral data registers
+ * per minor loop and then rewind the source back to the first register for the
+ * next minor loop (e.g. one MICFIL request draining N adjacent DATACH FIFOs).
+ *
+ * Only implemented for the eDMA revisions whose HAL exposes the minor-offset
+ * primitive; on other revisions the caller must not set the opt-in flag.
+ */
+static inline void dma_mcux_edma_apply_minor_offset(const struct device *dev, uint32_t channel,
+						    edma_tcd_t *tcd)
+{
+	struct call_back *data = DEV_CHANNEL_DATA(dev, channel);
+
+	if (!data->transfer_settings.source_minor_loop_offset_en) {
+		return;
+	}
+
+	edma_minor_offset_config_t minor_offset = {
+		.enableSrcMinorOffset = true,
+		.enableDestMinorOffset = false,
+		.minorOffset =
+			(uint32_t)data->transfer_settings.source_minor_loop_offset,
+	};
+
+#if defined(CONFIG_DMA_MCUX_EDMA_V4)
+	EDMA_TcdSetMinorOffsetConfigExt(DEV_BASE(dev), tcd, &minor_offset);
+#elif defined(CONFIG_DMA_MCUX_EDMA_V3) || defined(CONFIG_DMA_MCUX_EDMA)
+	EDMA_TcdSetMinorOffsetConfig(tcd, &minor_offset);
+#else
+	ARG_UNUSED(minor_offset);
+#endif
+}
 
 static int dma_mcux_edma_configure_sg_loop(const struct device *dev,
 					   uint32_t channel,
@@ -400,10 +462,42 @@ static int dma_mcux_edma_configure_sg_loop(const struct device *dev,
 			EDMA_MMAP_ADDR(block_config->source_address);
 		EDMA_TCD_DADDR(tcd, EDMA_TCD_TYPE((void *)DEV_BASE(dev))) =
 			EDMA_MMAP_ADDR(block_config->dest_address);
-		EDMA_TCD_BITER(tcd, EDMA_TCD_TYPE((void *)DEV_BASE(dev))) =
-			block_config->block_size / config->source_data_size;
-		EDMA_TCD_CITER(tcd, EDMA_TCD_TYPE((void *)DEV_BASE(dev))) =
-			block_config->block_size / config->source_data_size;
+		/* Major-loop count. With a source minor-loop offset enabled one
+		 * minor loop consumes a whole burst (source_burst_length bytes)
+		 * spanning N peripheral registers, so the count is measured in
+		 * bursts/frames, not single data units. Otherwise a minor loop is
+		 * one data unit and the count is in data units (the SAI/I2S path).
+		 */
+		if (data->transfer_settings.source_minor_loop_offset_en) {
+			EDMA_TCD_BITER(tcd, EDMA_TCD_TYPE((void *)DEV_BASE(dev))) =
+				block_config->block_size / config->source_burst_length;
+			EDMA_TCD_CITER(tcd, EDMA_TCD_TYPE((void *)DEV_BASE(dev))) =
+				block_config->block_size / config->source_burst_length;
+		} else {
+			EDMA_TCD_BITER(tcd, EDMA_TCD_TYPE((void *)DEV_BASE(dev))) =
+				block_config->block_size / config->source_data_size;
+			EDMA_TCD_CITER(tcd, EDMA_TCD_TYPE((void *)DEV_BASE(dev))) =
+				block_config->block_size / config->source_data_size;
+		}
+
+		/* Apply the per-minor-loop address strides (SOFF/DOFF) ONLY when
+		 * the caller requested an explicit scatter/gather interleave
+		 * stride. In that case the initial EDMA_PrepareTransfer() forces
+		 * DOFF to the data size and drops the stride, so restore the
+		 * cached offsets to land multi-channel interleaved captures at the
+		 * right stride. For a plain peripheral stream (SAI/I2S) the
+		 * prepare-derived SOFF/DOFF are already correct AND identical to
+		 * the untouched reloaded TCDs; overwriting them here diverges the
+		 * config-time TCD from the reload path and corrupts playback after
+		 * the first ring buffer.
+		 */
+		if (data->transfer_settings.has_explicit_offset) {
+			EDMA_TCD_SOFF(tcd, EDMA_TCD_TYPE((void *)DEV_BASE(dev))) =
+				data->transfer_settings.source_offset;
+			EDMA_TCD_DOFF(tcd, EDMA_TCD_TYPE((void *)DEV_BASE(dev))) =
+				data->transfer_settings.dest_offset;
+		}
+
 		/*Enable auto stop for last transfer.*/
 		if (block_config->next_block == NULL) {
 			EDMA_TCD_CSR(tcd, EDMA_TCD_TYPE((void *)DEV_BASE(dev))) |=
@@ -412,6 +506,11 @@ static int dma_mcux_edma_configure_sg_loop(const struct device *dev,
 			EDMA_TCD_CSR(tcd, EDMA_TCD_TYPE((void *)DEV_BASE(dev))) &=
 				~DMA_CSR_DREQ(1U);
 		}
+
+		/* NBYTES was rewritten above; re-encode the source minor-loop
+		 * offset (SMLOE/MLOFF) into this TCD. No-op unless enabled.
+		 */
+		dma_mcux_edma_apply_minor_offset(dev, channel, tcd);
 
 		data->transfer_settings.write_idx =
 			(data->transfer_settings.write_idx + 1) %
@@ -659,6 +758,73 @@ static inline void dma_mcux_edma_set_xfer_settings(const struct device *dev, uin
 	xfer_settings->direction = config->channel_direction;
 	xfer_settings->valid = true;
 	xfer_settings->cyclic = config->cyclic;
+
+	/* Capture the source minor-loop offset (eDMA SMLOE/MLOFF) requested by
+	 * the caller. It is stored in the TCD NBYTES register, which is wiped
+	 * whenever NBYTES/CITER are rewritten, so it must be re-applied to every
+	 * TCD by the cyclic-ring build and each reload.
+	 */
+	xfer_settings->source_minor_loop_offset_en = false;
+	xfer_settings->source_minor_loop_offset = 0;
+	if (config->head_block != NULL &&
+	    config->head_block->source_minor_loop_offset_en) {
+		xfer_settings->source_minor_loop_offset_en = true;
+		xfer_settings->source_minor_loop_offset =
+			config->head_block->source_minor_loop_offset;
+	}
+
+	/*
+	 * Capture the per-minor-loop address strides (SOFF/DOFF) so dma_reload()
+	 * can re-arm the transfer with the same offsets (the plain src/dst/size
+	 * reload cannot otherwise recover them).
+	 *
+	 * The BASE offsets must match exactly what EDMA_PrepareTransfer() derives
+	 * from the transfer DIRECTION: a peripheral side is a fixed register
+	 * (offset 0) and a memory side advances one data unit per minor loop.
+	 * Deriving these from source_addr_adj/dest_addr_adj instead is WRONG for
+	 * peripheral transfers -- e.g. a MEMORY_TO_PERIPHERAL stream leaves
+	 * dest_addr_adj at its INCREMENT default, which would incorrectly walk the
+	 * destination off the peripheral data register and silently corrupt the
+	 * stream (this regressed SAI/I2S playback).
+	 */
+	switch (xfer_settings->transfer_type) {
+	case kEDMA_MemoryToPeripheral:
+		xfer_settings->source_offset = (int16_t)config->source_data_size;
+		xfer_settings->dest_offset = 0;
+		break;
+	case kEDMA_PeripheralToMemory:
+		xfer_settings->source_offset = 0;
+		xfer_settings->dest_offset = (int16_t)config->dest_data_size;
+		break;
+	case kEDMA_PeripheralToPeripheral:
+		xfer_settings->source_offset = 0;
+		xfer_settings->dest_offset = 0;
+		break;
+	case kEDMA_MemoryToMemory:
+	default:
+		xfer_settings->source_offset = (int16_t)config->source_data_size;
+		xfer_settings->dest_offset = (int16_t)config->dest_data_size;
+		break;
+	}
+
+	/*
+	 * Only override the direction-derived offset when the caller explicitly
+	 * requests a scatter/gather stride via a NON-ZERO interval. This is what a
+	 * multi-channel interleaved capture (e.g. MICFIL/PDM) needs; simple
+	 * peripheral streams (SAI, etc.) leave the interval at 0 and keep the
+	 * direction-derived offsets untouched.
+	 */
+	struct dma_block_config *head = config->head_block;
+
+	xfer_settings->has_explicit_offset = false;
+	if (head != NULL && head->source_gather_en && head->source_gather_interval != 0U) {
+		xfer_settings->source_offset = (int16_t)head->source_gather_interval;
+		xfer_settings->has_explicit_offset = true;
+	}
+	if (head != NULL && head->dest_scatter_en && head->dest_scatter_interval != 0U) {
+		xfer_settings->dest_offset = (int16_t)head->dest_scatter_interval;
+		xfer_settings->has_explicit_offset = true;
+	}
 }
 
 /* stops, resets, and creates new MCUX SDK handle for a channel */
@@ -835,8 +1001,16 @@ static int edma_reload_loop(const struct device *dev, uint32_t channel,
 		return -ENOBUFS;
 	}
 
-	/* Convert size into major loop count */
-	size = size / data->transfer_settings.dest_data_size;
+	/* Convert size (bytes) into major loop count. With a source minor-loop
+	 * offset enabled one minor loop consumes a whole burst spanning several
+	 * peripheral registers, so the count is bursts/frames (size /
+	 * source_burst_length); otherwise a minor loop is one data unit.
+	 */
+	if (data->transfer_settings.source_minor_loop_offset_en) {
+		size = size / data->transfer_settings.source_burst_length;
+	} else {
+		size = size / data->transfer_settings.dest_data_size;
+	}
 
 	/* Previous TCD index in circular list */
 	pre_idx = data->transfer_settings.write_idx - 1;
@@ -854,6 +1028,28 @@ static int edma_reload_loop(const struct device *dev, uint32_t channel,
 	EDMA_TCD_CITER(tcd, EDMA_TCD_TYPE((void *)DEV_BASE(dev))) = size;
 	/* Enable automatically stop */
 	EDMA_TCD_CSR(tcd, EDMA_TCD_TYPE((void *)DEV_BASE(dev))) |= DMA_CSR_DREQ(1U);
+
+	/* Restore the per-minor-loop address strides (SOFF/DOFF) and the source
+	 * minor-loop offset (NBYTES MLOFFYES) on the reloaded TCD. The reload
+	 * writes above only touch SADDR/DADDR/CITER/BITER/CSR, but the cyclic
+	 * reload cycles write_idx through every TCD pool slot -- and pool slots
+	 * beyond the initial ring were seeded by EDMA_PrepareTransfer with a
+	 * plain peripheral config (SOFF=0, no SMLOE/MLOFF). Without restoring
+	 * them here a multi-FIFO interleaved capture (e.g. a single MICFIL/PDM
+	 * channel draining N adjacent DATACH FIFOs per minor loop) collapses to
+	 * reading one fixed source register on every reloaded block: the other
+	 * FIFOs are never drained and overflow. This mirrors the offset restore
+	 * that dma_mcux_edma_configure_sg_loop() performs when first arming the
+	 * ring.
+	 */
+	if (data->transfer_settings.has_explicit_offset) {
+		EDMA_TCD_SOFF(tcd, EDMA_TCD_TYPE((void *)DEV_BASE(dev))) =
+			data->transfer_settings.source_offset;
+		EDMA_TCD_DOFF(tcd, EDMA_TCD_TYPE((void *)DEV_BASE(dev))) =
+			data->transfer_settings.dest_offset;
+	}
+	dma_mcux_edma_apply_minor_offset(dev, channel, tcd);
+
 	sw_id = EDMA_TCD_DLAST_SGA(tcd, EDMA_TCD_TYPE((void *)DEV_BASE(dev)));
 
 	/* Block the peripheral's hardware request trigger to prevent
@@ -878,7 +1074,26 @@ static int edma_reload_loop(const struct device *dev, uint32_t channel,
 		/* All transfers have been done.DMA is stopped automatically,
 		 * invalid TCD has been loaded into the HW, update HW.
 		 */
-		dma_mcux_edma_update_hw_tcd(dev, hw_channel, src, dst, size);
+		if (data->transfer_settings.has_explicit_offset ||
+		    data->transfer_settings.source_minor_loop_offset_en) {
+			/* dma_mcux_edma_update_hw_tcd() pokes only
+			 * SADDR/DADDR/BITER/CITER/CSR into the live HW TCD; it
+			 * does NOT carry SOFF/DOFF or the NBYTES minor-loop
+			 * offset. On an auto-stopped channel that HW TCD is what
+			 * the next request restarts from, so a plain poke would
+			 * resume with SOFF=0 / no SMLOE-MLOFF and silently
+			 * collapse a multi-FIFO interleaved capture (e.g. a
+			 * single MICFIL/PDM channel draining N adjacent DATACH
+			 * FIFOs) to one fixed source register. Install the
+			 * pool TCD we just fully prepared above (it already has
+			 * the strides, minor offset and auto-stop DREQ) so those
+			 * survive the auto-stop reload.
+			 */
+			EDMA_InstallTCD(DEV_EDMA_HANDLE(dev, channel)->base,
+					hw_channel, tcd);
+		} else {
+			dma_mcux_edma_update_hw_tcd(dev, hw_channel, src, dst, size);
+		}
 		LOG_DBG("Transfer done,auto stop");
 
 	} else {
