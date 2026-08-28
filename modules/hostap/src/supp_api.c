@@ -1900,21 +1900,58 @@ int supplicant_candidate_scan(const struct device *dev __unused, struct net_if *
 	char *end = pos + SUPPLICANT_CANDIDATE_SCAN_CMD_BUF_SIZE;
 	int freq = 0;
 	struct wpa_supplicant *wpa_s;
+	int cur_freq = 0;
+	bool first = true;
 
 	wpa_s = get_wpa_s_handle(iface);
 	if (!wpa_s) {
 		return -1;
 	}
 
+	/*
+	 * Include the current connected AP's frequency in the scan so that
+	 * wpa_supplicant's BSS cache has an up-to-date entry for the current
+	 * AP after the scan completes.
+	 *
+	 * Without this, wpa_supplicant_need_to_roam() (events.c) hits one of
+	 * two early-return paths that bypass need_to_roam_within_ess():
+	 *
+	 *   1. current_bss == NULL  (cache entry expired / not refreshed)
+	 *   2. selected->last_update_idx > current_bss->last_update_idx
+	 *      (candidate was seen in this scan round, current AP was not)
+	 *
+	 * Both cases cause an unconditional roam regardless of RSSI delta,
+	 * potentially associating to a much weaker AP.
+	 */
+	if (wpa_s->current_bss) {
+		cur_freq = wpa_s->current_bss->freq;
+	}
+
 	strcpy(pos, "freq=");
 	pos += 5;
+
+	/* Add current AP frequency first */
+	if (cur_freq > 0) {
+		pos += snprintf(pos, end - pos, "%d", cur_freq);
+		first = false;
+	}
+
+	/* Add neighbor report channels, skipping duplicates */
 	while (params->band_chan[i].channel) {
-		if (i > 0) {
+		freq = chan_to_freq(params->band_chan[i].channel);
+		i++;
+		if (freq <= 0) {
+			continue;
+		}
+		/* Skip if this neighbor channel is the same as current AP */
+		if (freq == cur_freq) {
+			continue;
+		}
+		if (!first) {
 			pos += snprintf(pos, end - pos, ",");
 		}
-		freq = chan_to_freq(params->band_chan[i].channel);
 		pos += snprintf(pos, end - pos, "%d", freq);
-		i++;
+		first = false;
 	}
 
 	if (!wpa_cli_cmd_v("scan %s", cmd)) {
