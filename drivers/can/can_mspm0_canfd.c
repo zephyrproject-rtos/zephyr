@@ -22,7 +22,6 @@ LOG_MODULE_REGISTER(can_mspm0_canfd, CONFIG_CAN_LOG_LEVEL);
 #define DT_DRV_COMPAT ti_mspm0_canfd
 
 #define MSPM0_MCAN_REVID_SCHEME_INVALID		0x00
-#define MSPM0_MCAN_MRBA				0x8000
 
 #define MSPM0_MCAN_DIV_RATIO_1			1
 #define MSPM0_MCAN_DIV_RATIO_2			2
@@ -48,6 +47,7 @@ struct can_mspm0_canfd_config {
 	const struct mspm0_sys_clock *clock_subsys;
 	mm_reg_t mcan_base;
 	mem_addr_t mram;
+	uintptr_t mrba;
 	const struct pinctrl_dev_config *pinctrl;
 	void (*irq_cfg_func)(void);
 
@@ -182,7 +182,7 @@ static int can_mspm0_canfd_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	ret = can_mcan_configure_mram(dev, MSPM0_MCAN_MRBA, config->mram);
+	ret = can_mcan_configure_mram(dev, config->mrba, config->mram);
 	if (ret != 0) {
 		return ret;
 	}
@@ -290,6 +290,7 @@ static const struct can_mcan_ops can_mspm0_canfd_ops = {
 		},										\
 		.mcan_base = CAN_MCAN_DT_INST_MCAN_ADDR(inst),					\
 		.mram = CAN_MCAN_DT_INST_MRAM_ADDR(inst),					\
+		.mrba = CAN_MCAN_DT_INST_MRBA(inst),						\
 		.irq_cfg_func = can_mspm0_canfd_irq_cfg_##inst,					\
 		.pinctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),				\
 	};											\
