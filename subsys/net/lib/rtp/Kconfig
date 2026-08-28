@@ -80,4 +80,42 @@ config RTP_LOCAL_PORT_BASE
 
 endif # RTP_TRANSPORT_NET_PKT
 
+config SRTP
+	bool "Secure RTP (SRTP) [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	select PSA_CRYPTO
+	select PSA_WANT_KEY_TYPE_AES
+	select PSA_WANT_ALG_CTR
+	select PSA_WANT_ALG_ECB_NO_PADDING
+	select PSA_WANT_ALG_HMAC
+	select PSA_WANT_KEY_TYPE_HMAC
+	select PSA_WANT_ALG_SHA_1
+	imply PSA_WANT_ALG_GCM
+	help
+	  Secure Real-time Transport Protocol implementation based on RFC 3711,
+	  with AES-128 and AES-256 GCM crypto suites based on RFC 7714.
+	  Protects RTP packets only; SRTCP is not supported. Key exchange is
+	  out of scope: master keys are provisioned by the application.
+
+if SRTP
+
+config SRTP_MAX_RX_STREAMS
+	int "SRTP Max RX streams per session"
+	default 4
+	range 1 $(UINT8_MAX)
+	help
+	  Number of inbound SSRCs per RTP session for which SRTP crypto
+	  contexts can be instantiated. Streams are late-bound: a context is
+	  created when the first packet of an unknown SSRC arrives.
+
+config SRTP_REPLAY_WINDOW_SIZE
+	int "SRTP replay protection window size"
+	default 128
+	range 64 1024
+	help
+	  Size of the replay protection sliding window in packets, as per
+	  RFC 3711 section 3.3.2. Must be a multiple of 64.
+
+endif # SRTP
+
 endif # RTP
