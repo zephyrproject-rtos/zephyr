@@ -14,9 +14,5 @@
 };
 
 i2s_rxtx: &i2s0 {
-
-	interrupts = <I2S0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>,
-		     <I2S0_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
-	interrupt-names = "rx", "tx";
 	status = "okay";
 };
