@@ -110,6 +110,15 @@ config RISCV_SMP_IPI_CLINT
 	help
 	  Use CLINT-based IPI implementation.
 
+config RISCV_SMP_IPI_SBI
+	bool "SBI-based IPI"
+	depends on RISCV_S_MODE_EXTERNAL_SBI
+	help
+	  Use the SBI IPI extension (sbi_send_ipi) to raise the supervisor
+	  software interrupt on the target hart. This is the implementation to
+	  use when Zephyr runs in S-mode as a payload of an external SBI such
+	  as OpenSBI, which owns the CLINT.
+
 config RISCV_SMP_IPI_CUSTOM
 	bool "Custom IPI implementation"
 	help
