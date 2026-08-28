@@ -349,6 +349,95 @@ bool pm_device_wakeup_is_capable(const struct device *dev)
 			       PM_DEVICE_FLAG_WS_CAPABLE);
 }
 
+#ifdef CONFIG_PM_DEVICE_WAKEUP_POWER_STATES
+
+/*
+ * The per-device state lists are generated here rather than from the device
+ * definition macros in <zephyr/pm/device.h>. Several drivers wrap
+ * PM_DEVICE_DT_*_DEFINE() in IF_ENABLED(CONFIG_PM_DEVICE, ...), and a
+ * COND_CODE_1() expanded inside another one yields nothing at all, which would
+ * leave those devices without PM data and no diagnostic.
+ *
+ * A node carrying the property must have a device, or DEVICE_DT_GET() below
+ * fails to link.
+ */
+#define PM_DEVICE_WS_NAME(node_id) _CONCAT(__pm_device_ws_, node_id)
+
+#define PM_DEVICE_WS_ARRAY(node_id)						\
+	static const struct pm_state_constraint PM_DEVICE_WS_NAME(node_id)[] = { \
+		DT_FOREACH_PROP_ELEM_SEP(node_id, zephyr_wakeup_power_states,	\
+					 Z_PM_STATE_CONSTRAINT_REF, (,))	\
+	};
+
+#define PM_DEVICE_WS_ARRAY_DEFINE(node_id)					\
+	COND_CODE_0(DT_NODE_HAS_PROP(node_id, zephyr_wakeup_power_states), (),	\
+		    (PM_DEVICE_WS_ARRAY(node_id)))
+
+#define PM_DEVICE_WS_COUNT_ONE(node_id)						\
+	COND_CODE_0(DT_NODE_HAS_PROP(node_id, zephyr_wakeup_power_states), (), (+1))
+
+#define PM_DEVICE_WS_COUNT (0 DT_FOREACH_STATUS_OKAY_NODE(PM_DEVICE_WS_COUNT_ONE))
+
+#if PM_DEVICE_WS_COUNT > 0
+
+DT_FOREACH_STATUS_OKAY_NODE(PM_DEVICE_WS_ARRAY_DEFINE)
+
+struct pm_device_wakeup_states {
+	const struct device *dev;
+	struct pm_state_constraints states;
+};
+
+#define PM_DEVICE_WS_ENTRY(node_id)						\
+	{									\
+		.dev = DEVICE_DT_GET(node_id),					\
+		.states = {							\
+			.list = PM_DEVICE_WS_NAME(node_id),			\
+			.count = DT_PROP_LEN(node_id,				\
+					     zephyr_wakeup_power_states),	\
+		},								\
+	},
+
+#define PM_DEVICE_WS_ENTRY_DEFINE(node_id)					\
+	COND_CODE_0(DT_NODE_HAS_PROP(node_id, zephyr_wakeup_power_states), (),	\
+		    (PM_DEVICE_WS_ENTRY(node_id)))
+
+static const struct pm_device_wakeup_states wakeup_states[] = {
+	DT_FOREACH_STATUS_OKAY_NODE(PM_DEVICE_WS_ENTRY_DEFINE)
+};
+
+#endif /* PM_DEVICE_WS_COUNT > 0 */
+#else
+#define PM_DEVICE_WS_COUNT 0
+#endif /* CONFIG_PM_DEVICE_WAKEUP_POWER_STATES */
+
+bool pm_device_wakeup_is_capable_for_state(const struct device *dev,
+					   enum pm_state state,
+					   uint8_t substate_id)
+{
+	if (!pm_device_wakeup_is_capable(dev)) {
+		return false;
+	}
+
+#if PM_DEVICE_WS_COUNT > 0
+	const struct pm_state_constraint match = {
+		.state = state,
+		.substate_id = substate_id,
+	};
+
+	for (size_t i = 0U; i < ARRAY_SIZE(wakeup_states); i++) {
+		if (wakeup_states[i].dev == dev) {
+			return pm_state_in_constraints(&wakeup_states[i].states, match);
+		}
+	}
+#else
+	ARG_UNUSED(state);
+	ARG_UNUSED(substate_id);
+#endif
+
+	/* No list: the device did not narrow the set, so every state. */
+	return true;
+}
+
 bool pm_device_on_power_domain(const struct device *dev)
 {
 #ifdef CONFIG_PM_DEVICE_POWER_DOMAIN
