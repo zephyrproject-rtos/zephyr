@@ -51,6 +51,40 @@ Connections and IOs
 
 The `SAMA7G54-EK User Guide`_ has detailed information about board connections.
 
+MIPI CSI-2 camera
+=================
+
+The Raspberry Pi CSI camera connector (J17) is wired to the MIPI CSI-2 capture
+pipeline of the SoC, made of three blocks chained together:
+
+.. code-block:: none
+
+   sensor --CSI-2--> csi2host --IDI--> csi2dc --parallel--> isc --> memory
+
+The board devicetree describes a `Raspberry Pi Camera Module 2`_ (Sony IMX219)
+attached to that connector: the sensor is controlled over ``i2c8`` at address
+0x10 and sends two CSI-2 D-PHY data lanes. The Image Sensor Controller is the
+``zephyr,camera`` chosen node, so the video samples capture from it directly:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/video/capture
+   :board: sama7g54_ek
+   :goals: build
+
+The controller writes raw Bayer frames (``SBGGR8``, ``SBGGR10``) to memory, or
+converts them to ``RGB565``, ``BGRX32``, ``YUYV`` or ``GREY`` with its image
+processing pipeline. Converted frames are gamma corrected with the sRGB transfer
+function, so they are ready for a display, but scaling, automatic white balance
+and automatic exposure are not implemented and the gains are fixed at unity.
+
+The contrast, brightness, hue and saturation of the ``YUYV`` and ``GREY`` frames
+are adjustable with the ``video ctrl`` shell command, as are the exposure time
+and the analog and digital gains of the sensor. Since nothing drives the exposure
+automatically, those are the controls to reach for when the image is too dark.
+
+The D-PHY configuration clock is derived from the CSI generated clock (GCLK 33),
+which the driver programs to 26.6 MHz from one of the SoC PLLs.
+
 Programming
 ***********
 
@@ -79,6 +113,9 @@ SAMA7G54 Evaluation Kit Page:
 
 .. _SAMA7G54-EK User Guide:
     https://ww1.microchip.com/downloads/aemDocuments/documents/MPU32/ProductDocuments/UserGuides/SAMA7G54-EK-User%27s-Guide-DS50003273.pdf
+
+.. _Raspberry Pi Camera Module 2:
+    https://www.raspberrypi.com/documentation/accessories/camera.html
 
 .. _at91bootstrap:
     https://developerhelp.microchip.com/xwiki/bin/view/products/mcu-mpu/32bit-mpu/at91bootstrap/
