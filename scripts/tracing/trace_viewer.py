@@ -94,9 +94,10 @@ def safe_open(path, mode, **kwargs):
 HDR = struct.Struct("<QH")
 HDR_NO_TS = struct.Struct("<H")
 
-# Events are gathered into fixed-size CTF packets, one sequence of them per CPU.
-# A packet opens with these two structures, is filled with records up to
-# content_size, and is padded out to packet_size.
+# Events are gathered into CTF packets, one sequence of them per CPU. A packet
+# opens with these two structures and holds records up to content_size; it is
+# packet_size long on the wire, which earlier captures padded out to a fixed
+# length and later ones size to their contents.
 #
 #   struct packet_header  { uint32_t magic; uint32_t stream_id; }
 #   struct packet_context { uint64_t timestamp_begin, timestamp_end;

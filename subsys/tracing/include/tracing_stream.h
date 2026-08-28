@@ -24,10 +24,10 @@ extern "C" {
  * the clock and appends in that order. A reader merges the streams by the
  * declared trace clock.
  *
- * Packets are fixed size because CTF records the amount of data a packet holds
- * in its own header. Filling a packet to a boundary and padding the tail lets
- * that count be written when the packet is closed, with no need to go back and
- * patch data already handed to a backend.
+ * A packet records in its own header how much data it holds, which is written
+ * when the packet is closed, so nothing already handed to a backend ever has to
+ * be patched. Packets are shipped sized to their contents rather than padded to
+ * a fixed length, so closing one early costs only what is in it.
  */
 
 /** CTF packet header, on the wire. Must match trace.packet.header in the TSDL. */
