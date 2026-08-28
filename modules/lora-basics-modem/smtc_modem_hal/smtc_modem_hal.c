@@ -799,10 +799,12 @@ uint16_t smtc_modem_hal_flash_get_page_size(void)
  *
  * @remark It could be convenient in the case of an RTOS implementation to
  *         notify the thread that manages the LBM stack.
- *
- * @remark Not implemented yet.
  */
+__weak void lbm_engine_notify(void)
+{
+}
+
 void smtc_modem_hal_user_lbm_irq(void)
 {
-	/* Not implemented yet */
+	lbm_engine_notify();
 }

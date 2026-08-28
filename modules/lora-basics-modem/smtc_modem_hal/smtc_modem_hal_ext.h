@@ -23,6 +23,16 @@ extern "C" {
  */
 void smtc_modem_hal_init(const struct device *transceiver);
 
+/**
+ * @brief Tell the stack owner that the modem engine has work to do.
+ *
+ * The HAL calls this on every modem interrupt. Code that queues a task from
+ * another thread must call it too, because the engine is otherwise asleep
+ * until the wake-up the last engine run asked for.
+ *
+ * The default implementation does nothing.
+ */
+void lbm_engine_notify(void);
 
 #ifdef __cplusplus
 }
