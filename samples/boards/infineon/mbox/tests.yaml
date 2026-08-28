@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+sample:
+  name: Infineon IPC MBOX
+tests:
+  sample.boards.infineon.mbox:
+    platform_allow:
+      - kit_pse84_eval/pse846gps2dbzc4a/m33/ns
+      - kit_pse84_eval/pse846gps2dbzc4a/m55
+      - kit_pse84_ai/pse846gps2dbzc4a/m33/ns
+      - kit_pse84_ai/pse846gps2dbzc4a/m55
+    tags: mbox
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: false
+      regex:
+        - "Ping .*on channel 1"
+        - "Pong .*on channel 0 .data 1, 4"
+        - "Pong .*on channel 0 .data 2, 4"
+        - "Pong .*on channel 0 .data 3, 4"
+    filter: dt_compat_enabled("infineon,mbox")
