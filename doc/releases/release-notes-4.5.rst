@@ -699,6 +699,12 @@ New APIs and options
     :c:func:`net_if_ipv6_nbr_flush` drop the neighbors an interface has
     learned, and :c:func:`net_if_ipv4_nbr_rm` and :c:func:`net_if_ipv6_nbr_rm`
     remove a single one. On an Ethernet link the IPv4 cache is the ARP cache.
+  * Add native SRTP (:rfc:`3711`) support for the RTP stack
+    (:kconfig:option:`CONFIG_SRTP`), built on the PSA Crypto API. Supports
+    AES-128-CM with HMAC-SHA1-80/32 authentication and AES-128/256-GCM
+    (:rfc:`7714`), with key derivation, replay protection, rollover counter
+    tracking and master key identifiers. See :c:func:`rtp_session_set_srtp`,
+    :c:func:`srtp_stream_protect` and :c:func:`srtp_stream_unprotect`.
   * Add :c:func:`net_dhcpv4_set_reboot_hint` to seed the DHCPv4 client with a
     previously leased address for INIT-REBOOT.
   * Add an mDNS responder interface policy
