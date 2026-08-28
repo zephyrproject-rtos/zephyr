@@ -8,6 +8,7 @@
 
 import argparse
 import sys
+from collections.abc import Callable
 
 try:
     import bt2
@@ -27,6 +28,7 @@ import re
 import shutil
 import subprocess
 import tempfile
+import time
 
 import serial
 from colorama import Fore, Style
@@ -177,29 +179,51 @@ def get_ctf_metadata_file(args, verbose, exit_on_failure=True):
     return ctf_metadata_file
 
 
-def ping(port):
+def wait_for_uart_pred(
+    readlines_fn: Callable[[], list[str]], pred_fn: Callable[[str], bool], delay=0.05, attempts=5
+):
+    """Wait for a line matching the given predicate."""
+    for _ in range(attempts):
+        lines = readlines_fn()
+        for line in lines:
+            if pred_fn(line):
+                return line
+        time.sleep(delay)
+    return None
+
+
+rescued_traces = b""
+
+
+def ping(port, console):
     """Ping target.
 
     Ping target connected to port 'port'. If target responds (by sending back a
     'pong' string, then this function returns 'True', otherwise it returns
     false.
     """
+    global rescued_traces
+    target = console if console is not None else port
 
     # Clean up possible app. output before getting command response.
-    _ = port.readlines()
+    rescued_traces += target.read_all()
 
-    port.write(b'ping\r')
+    target.write(b'instr_ping\r')
 
     # Kludge for annoying incompatibility change in the 'serial' module.
     if float(serial.__version__) < 3.5:
-        r = port.read_until(terminator=b'pong\n')
+        r = target.read_until(terminator=b'pong\n')
     else:
-        r = port.read_until(expected=b'pong\n')
+        r = target.read_until(expected=b'pong\n')
 
-    return b'pong' in r
+    if b'pong' not in r:
+        rescued_traces += r
+        return False
+
+    return True
 
 
-def connect_to_target(port, verbose=False):
+def connect_to_target(port, console, verbose=False):
     """Connect to target.
 
     Connect to target using serial device 'port'. A ping command is sent
@@ -208,14 +232,21 @@ def connect_to_target(port, verbose=False):
     """
 
     try:
-        sport = serial.serial_for_url(port, baudrate=115200, timeout=0.2, write_timeout=1)
+        sport = serial.serial_for_url(port, baudrate=115200, timeout=5.0, write_timeout=2)
+        if console is not None:
+            console_sport = serial.serial_for_url(
+                console, baudrate=115200, timeout=5.0, write_timeout=2
+            )
+        else:
+            console_sport = None
+
         if verbose:
             print(f"Using '{port}' to connect.")
 
-        if ping(sport):
+        if ping(sport, console_sport):
             if verbose:
                 print("Connected to target.")
-            return sport
+            return sport, console_sport
         else:
             print(
                 "No response from target. Is the correct FW flashed? Also, check if port is "
@@ -233,22 +264,23 @@ def connect_to_target(port, verbose=False):
         sys.exit(1)
 
 
-def reboot_target(port, verbose=False):
+def reboot_target(port, console, verbose=False):
     """Reboot target.
 
     Reboot target connected to the port 'port'. After the reboot the target is
     checked to see if it's still alive using the 'ping' command. If it's ok
     after the reboot 'True' is returned, otherwise 'False' is returned.
     """
+    target = console if console is not None else port
 
-    port.write(b'reboot\r')
+    target.write(b'instr_reboot\r')
 
     if verbose:
         print("Rebooting target...", end="", flush=True)
 
     num_attempts = 0
     while num_attempts < NUM_PING_ATTEMPTS:
-        if ping(port):
+        if ping(port, console):
             break
         num_attempts = num_attempts + 1
         if verbose:
@@ -268,39 +300,35 @@ def reboot_target(port, verbose=False):
         return False
 
 
-def get_target_status(port, verbose=False):
+def get_target_status(port, console, verbose=False):
     """Get trace and profile status.
 
     Returns trace and profile status in a dict() from the target connected via
     port 'port'. If it's not possible to obtain the status 'None' is returned
     instead.
     """
-
-    # Clean up possible app. output before getting command response.
-    _ = port.readlines()
-
-    port.write(b'status\r')
-
-    inb = port.readline()
-
     regex = re.compile(STATUS_REPLY_PATTERN)
-    r = regex.match(inb.decode("ascii"))
+    target = console if console is not None else port
 
-    if r is None:
-        return r
+    _ = target.readlines()
+    target.write(b'instr_status\r')
 
-    trace_enabled = r.group(1) == "1"
-    profile_enabled = r.group(2) == "1"
-    dynamic_trigger_enabled = r.group(3) == "1"
+    raw_status = wait_for_uart_pred(
+        target.readlines, lambda x: regex.match(x.decode('ascii', errors='ignore'))
+    )
+    if raw_status is None:
+        return None
+
+    r = regex.match(raw_status.decode('ascii', errors='ignore'))
 
     return {
-        "trace": trace_enabled,
-        "profile": profile_enabled,
-        "dynamic_trigger": dynamic_trigger_enabled,
+        "trace": r.group(1) == "1",
+        "profile": r.group(2) == "1",
+        "dynamic_trigger": r.group(3) == "1",
     }
 
 
-def get_trigger_stopper_addr(port):
+def get_trigger_stopper_addr(port, console):
     """Get trigger and stopper addresses set in the target.
 
     This function get the trigger and stopper address from the target connected
@@ -308,39 +336,38 @@ def get_trigger_stopper_addr(port):
     the address is not set (mechanism is disabled) 'None' is returned instead of
     the addresses.
     """
+    target = console if console is not None else port
 
-    port.write(b'listsets\r')
+    _ = target.readlines()
+
+    target.write(b'instr_listsets\r')
 
     try:
-        trigger_reply = port.readline()
-        stopper_reply = port.readline()
+        trigger_reply = target.readline()
+        stopper_reply = target.readline()
     except serial.serialutil.SerialException:
-        print(
-            "Device reports readiness to read but returned no data (device disconnected or "
-            "multiple access on port?)"
-        )
+        print("Device reports readiness to read but returned no data.")
         sys.exit(1)
 
     # If trigger or stopper is not set (disabled), then only a message saying it
     # is displayed by the target, hence LISTSETS_REPLY_PATTERN won't match and
     # trigger_addr and/or stopper_addr will then be 'None'.
     r = re.compile(LISTSETS_REPLY_PATTERN)
-    trigger_addr = r.match(trigger_reply.decode("ascii"))
-    stopper_addr = r.match(stopper_reply.decode("ascii"))
 
     # Format address so it's possible to use it as keys for the symbol lookup.
     # If trigger_addr or stopper_addr is 'None', then skip format.
+    trigger_addr = r.match(trigger_reply.decode("ascii", errors="ignore"))
+    stopper_addr = r.match(stopper_reply.decode("ascii", errors="ignore"))
 
     if trigger_addr:
-        trigger_addr = int(trigger_addr.group(2), base=16)
-
+        trigger_addr = f'{int(trigger_addr.group(2), base=16):08x}'
     if stopper_addr:
-        stopper_addr = int(stopper_addr.group(2), base=16)
+        stopper_addr = f'{int(stopper_addr.group(2), base=16):08x}'
 
     return {"trigger": trigger_addr, "stopper": stopper_addr}
 
 
-def set_trigger_addr(port, addr, verbose=False):
+def set_trigger_addr(port, console, addr, verbose=False):
     """Set the function address to start tracing.
 
     This function sets the 'addr' as the address of the function which, when
@@ -350,17 +377,16 @@ def set_trigger_addr(port, addr, verbose=False):
     is returned. If address '0' is given it disables the trigger.
     """
 
-    status = get_target_status(port, verbose)
-    if not status["dynamic_trigger"]:
-        print(
-            Fore.YELLOW + "Dynamic triggers are not supported. Please enable it via 'menuconfig'."
-        )
+    status = get_target_status(port, console, verbose)
+    if not status['profile']:
+        print(Fore.YELLOW + "Profile is not supported. Please enable it via 'menuconfig'.")
         sys.exit(1)
 
-    port.write(b'trigger ' + b'0x' + bytes(f"{addr:08x}", "ascii") + b'\r')
+    target = console if console is not None else port
+    target.write(b'instr_trigger ' + b'0x' + bytes(addr, "ascii") + b'\r')
 
     # Check if trigger was set correctly.
-    addr_set = get_trigger_stopper_addr(port)["trigger"]
+    addr_set = get_trigger_stopper_addr(port, console)["trigger"]
 
     # Special case, when disabling trigger: if given 'addr' is 0, then it's
     # expected that 'addr_set' is 'None', because trigger is disabled.
@@ -370,7 +396,7 @@ def set_trigger_addr(port, addr, verbose=False):
     return addr_set == addr
 
 
-def set_stopper_addr(port, addr):
+def set_stopper_addr(port, console, addr):
     """Set the function address to stop tracing.
 
     This function sets the 'addr' as the address of the function which, when it
@@ -380,10 +406,10 @@ def set_stopper_addr(port, addr):
     returned. If address '0' is given it disables the stopper.
     """
 
-    port.write(b'trigger ' + b'0x' + bytes(f"{addr:08x}", "ascii") + b'\r')
+    port.write(b'instr_stopper ' + b'0x' + bytes(addr, "ascii") + b'\r')
 
     # Check if stopper was set correctly.
-    addr_set = get_trigger_stopper_addr(port)["stopper"]
+    addr_set = get_trigger_stopper_addr(port, console)["stopper"]
 
     # Special case, when disabling stopper: if given 'addr' is 0, then it's
     # expected that 'addr_set' is 'None', because stopper is disabled.
@@ -400,18 +426,19 @@ def get_stream(port):
     'port' and returns the stream as 'bytes' object.
     """
 
-    ll = b""
+    global rescued_traces
+    ll = rescued_traces
+    rescued_traces = b""
     while True:
-        si = port.read(1)
-        ll = ll + si
-        if b"-*-#" in ll:  # Initiator
-            ll = b""  # zero input buffer
+        if b"-*-#" in ll:
+            ll = ll[ll.find(b"-*-#") + 4 :]
             while True:
+                if b"-*-!" in ll:
+                    return ll[: ll.find(b"-*-!")]
                 si = port.read(1)
                 ll = ll + si
-                if b"-*-!" in ll:  # Terminator
-                    ll = ll[:-4]  # trim terminator
-                    return ll
+        si = port.read(1)
+        ll = ll + si
 
 
 # Generator for getting an event with symbols resolved.
@@ -842,7 +869,7 @@ def export_to_trace_event_format(args, tmpdir, elf, output_filename, demangle, v
     return events_len
 
 
-def get_and_print_profile(args, port, elf, n, verbose=False):
+def get_and_print_profile(args, port, console, elf, n, verbose=False):
     """Get profile info from target and print it.
 
     This function uses 'port' to get the binary stream from target and 'elf'
@@ -851,7 +878,8 @@ def get_and_print_profile(args, port, elf, n, verbose=False):
     'metadata', using library babeltrece2.
     """
 
-    port.write(b'dump_profile\r')
+    target = console if console is not None else port
+    target.write(b'instr_dump_profile\r')
 
     # See comment above in get_and_print_trace() about CTF and babeltrace2
     # caveats.
@@ -926,17 +954,38 @@ def get_and_print_profile(args, port, elf, n, verbose=False):
         return len(profiles)
 
 
+def dump_profile(args, port):
+    """Get profile info from target and print it.
+
+    This function uses 'port' to get the binary stream from target and 'elf'
+    file to resolve the symbols and then prints the profile info in it. The
+    binary stream is interpreted according to the CTF (Common Trace Format) file
+    'metadata', using library babeltrece2.
+    """
+
+    port.write(b'instr_dump_profile\r')
+
+
 def reboot(args):
-    sport = connect_to_target(args.serial, args.verbose)
-    if not reboot_target(sport, args.verbose):
+    sport, console = connect_to_target(args.serial, args.serial_console, args.verbose)
+    if not reboot_target(sport, console, args.verbose):
         print("Reboot failed! Check target.")
         sys.exit(2)
 
 
-def status(args):
-    sport = connect_to_target(args.serial, args.verbose)
+def ping_cmd(args):
+    port, console = connect_to_target(args.serial, args.serial_console)
 
-    status = get_target_status(sport, args.verbose)
+    if ping(port, console):
+        print("pong")
+    else:
+        print("failed")
+
+
+def status(args):
+    sport, console = connect_to_target(args.serial, args.serial_console, args.verbose)
+
+    status = get_target_status(sport, console, args.verbose)
 
     if not status:
         print("Failed while trying to get status! Check target.")
@@ -952,17 +1001,20 @@ def status(args):
 
 
 def trace(args):
-    sport = connect_to_target(args.serial, args.verbose)
+    sport, console = connect_to_target(args.serial, args.serial_console, args.verbose)
 
-    status = get_target_status(sport, args.verbose)
+    status = get_target_status(sport, console, args.verbose)
     if not status['trace']:
         print(Fore.YELLOW + "Trace is not supported. Please enable it via 'menuconfig'.")
         sys.exit(1)
 
     if args.list:
+        if console is None:
+            print(Fore.YELLOW + "Zephyr console is required.")
+            sys.exit(1)
         elf_file = get_elf_file(args, args.verbose)
         symbols = get_symbols_from_elf(elf_file, args.verbose)
-        addr = get_trigger_stopper_addr(sport)
+        addr = get_trigger_stopper_addr(sport, console)
 
         if addr["trigger"]:
             func_name = symbols.get(addr["trigger"], None)
@@ -995,11 +1047,13 @@ def trace(args):
         args.stopper = args.couple
 
     if args.trigger or args.stopper:
-        if not status['dynamic_trigger']:
+        if console is not None and not status['dynamic_trigger']:
             print(
                 Fore.YELLOW
-                + "Dynamic trigger configuration is not supported. "
-                + "Please enable it via 'menuconfig'."
+                + (
+                    "Dynamic trigger configuration is not supported."
+                    "Please enable it via 'menuconfig'."
+                )
             )
             sys.exit(1)
 
@@ -1013,7 +1067,7 @@ def trace(args):
                 sys.exit(2)
             else:
                 address = symbol_to_addr[args.trigger]
-                if not set_trigger_addr(sport, address, verbose=args.verbose):
+                if not set_trigger_addr(sport, console, address):
                     print("Failed to set new trigger address! Check target.")
                     sys.exit(2)
                 else:
@@ -1031,7 +1085,7 @@ def trace(args):
                 sys.exit(2)
             else:
                 address = symbol_to_addr[args.stopper]
-                if not set_stopper_addr(sport, address):
+                if not set_stopper_addr(sport, console, address):
                     print("Failed to set new stopper address! Check target.")
                     sys.exit(2)
                 else:
@@ -1043,15 +1097,14 @@ def trace(args):
                             f"at address 0x{address}."
                         )
 
-        sys.exit(0)
-
-    if args.reboot and not reboot_target(sport, args.verbose):
+    if args.reboot and not reboot_target(sport, console, args.verbose):
         print("Failed to reboot target before tracing! Check target.")
         sys.exit(1)
 
     elf_file = get_elf_file(args, args.verbose)
 
-    sport.write(b"dump_trace\r")
+    target = console if console is not None else sport
+    target.write(b"instr_dump_trace\r")
 
     # babeltrace2 and CTF 1.8 specification is a tad odd in the sense that
     # TraceCollectionMessageIterator() only allows a directory to be specified, which must contain a
@@ -1088,7 +1141,7 @@ def trace(args):
 
 
 def profile(args):
-    sport = connect_to_target(args.serial, args.verbose)
+    sport, console = connect_to_target(args.serial, args.serial_console, args.verbose)
 
     status = get_target_status(sport, args.verbose)
     if not status['profile']:
@@ -1100,7 +1153,7 @@ def profile(args):
         sys.exit(1)
 
     elf_file = get_elf_file(args, args.verbose)
-    num_profiles = get_and_print_profile(args, sport, elf_file, args.n, args.verbose)
+    num_profiles = get_and_print_profile(args, sport, console, elf_file, args.n, args.verbose)
     if num_profiles == 0:
         print_message_on_empty_buffer("profile")
 
@@ -1130,11 +1183,19 @@ if __name__ == "__main__":
         help=f"defaults to '{SERIAL}'. It can be also a TCP/IP port, e.g 'socket://localhost:4321'.",
     )
     parser.add_argument(
+        "--serial-console",
+        default=None,
+        required=False,
+    )
+    parser.add_argument(
         "--build-dir",
         help=f"build dir where flashed {ELF} is. If not given zaru will try to guess it.",
     )
 
     subparsers = parser.add_subparsers(required=True)
+
+    ping_parser = subparsers.add_parser("ping", help="ping target.")
+    ping_parser.set_defaults(func=ping_cmd)
 
     reboot_parser = subparsers.add_parser("reboot", help="reboot target.")
     reboot_parser.add_argument('--verbose', '-v', action='store_true', help="verbose mode.")
