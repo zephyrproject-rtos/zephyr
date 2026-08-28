@@ -615,6 +615,9 @@ static inline int npcx_i3c_xfer_stop(struct i3c_reg *inst)
 	LOG_DBG("Current working state=%d", state);
 
 	switch (state) {
+	case MSTATUS_STATE_IDLE:
+		ret = 0;
+		break;
 	case MSTATUS_STATE_NORMACT: /* SDR */
 		ret = npcx_i3c_request_emit_stop(inst);
 		break;
