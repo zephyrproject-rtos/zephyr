@@ -12,19 +12,6 @@
 #include "xg21_common.dtsi"
 #include "xg21_rb4196b-pinctrl.dtsi"
 
-&cpu0 {
-	clock-frequency = <DT_FREQ_M(80)>;
-};
-
-&hfrcodpll {
-	clock-frequency = <DT_FREQ_M(80)>;
-	dpll-n = <3999>;
-};
-
-&itm {
-	swo-ref-frequency = <DT_FREQ_M(80)>;
-};
-
 / {
 	model = "Silicon Labs EFR32xG21B +20 dBm Radio Board (xG21-RB4196B, BRD4196B)";
 	compatible = "silabs,xg21_rb4196b", "silabs,efr32mg21";
