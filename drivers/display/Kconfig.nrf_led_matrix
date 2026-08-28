@@ -7,6 +7,7 @@ config DISPLAY_NRF_LED_MATRIX
 	depends on DT_HAS_NORDIC_NRF_LED_MATRIX_ENABLED
 	select NRFX_GPIOTE
 	select NRFX_GPPI
+	select DISPLAY_SUPPORTS_FRAMEBUFFER_ACCESS
 	help
 	  Enable driver for a LED matrix with rows and columns driven by
 	  GPIOs. The driver allows setting one of 256 levels of brightness

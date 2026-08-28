@@ -464,6 +464,13 @@ New APIs and options
   * :c:macro:`DT_IRQN_BY_NAME`
   * :c:macro:`DT_INST_IRQN_BY_NAME`
 
+* Display
+
+  * :c:member:`display_capabilities.framebuffer_count`, so a caller can tell
+    how many framebuffers a driver hands out, and
+    :kconfig:option:`CONFIG_DISPLAY_SUPPORTS_FRAMEBUFFER_ACCESS`, which a
+    driver selects to say it hands them out at all.
+
 * Haptics
 
   * :c:enumerator:`haptics_monitor`

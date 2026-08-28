@@ -238,6 +238,7 @@ static void stm32_ltdc_get_capabilities(const struct device *dev,
 
 	capabilities->current_pixel_format = data->current_pixel_format;
 	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;
+	capabilities->framebuffer_count = CONFIG_STM32_LTDC_FB_NUM;
 	capabilities->supported_events = DISPLAY_EVENT_VSYNC | DISPLAY_EVENT_LINE_INT;
 }
 
@@ -383,11 +384,19 @@ static int stm32_ltdc_read(const struct device *dev, const uint16_t x,
 	return 0;
 }
 
-static void *stm32_ltdc_get_framebuffer(const struct device *dev)
+static void *stm32_ltdc_get_framebuffer(const struct device *dev, uint32_t index, size_t *size)
 {
 	struct display_stm32_ltdc_data *data = dev->data;
 
-	return ((void *)data->front_buf);
+	if (index >= CONFIG_STM32_LTDC_FB_NUM) {
+		return NULL;
+	}
+
+	if (size != NULL) {
+		*size = data->frame_buffer_len;
+	}
+
+	return data->frame_buffer + (index * data->frame_buffer_len);
 }
 
 static int stm32_ltdc_display_blanking_off(const struct device *dev)

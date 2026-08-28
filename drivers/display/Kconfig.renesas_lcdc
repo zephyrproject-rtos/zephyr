@@ -9,6 +9,7 @@ config DISPLAY_RENESAS_LCDC
 	select DMA
 	select PINCTRL
 	default y
+	select DISPLAY_SUPPORTS_FRAMEBUFFER_ACCESS
 	help
 	  Enable Smartbond display controller.
 

@@ -7,6 +7,7 @@ menuconfig DISPLAY_MCUX_LCDIFV3
 	default y
 	depends on DT_HAS_NXP_IMX_LCDIFV3_ENABLED
 	depends on CLOCK_CONTROL
+	select DISPLAY_SUPPORTS_FRAMEBUFFER_ACCESS if MCUX_LCDIFV3_FB_NUM > 0
 	help
 	  Enable support for mcux LCDIFV3 driver.
 

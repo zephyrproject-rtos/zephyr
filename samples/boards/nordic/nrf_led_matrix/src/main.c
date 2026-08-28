@@ -110,7 +110,7 @@ static void show_all_brightness_levels(const struct device *dev)
 
 static void update_through_framebuffer(const struct device *dev)
 {
-	uint8_t *framebuf = display_get_framebuffer(dev);
+	uint8_t *framebuf = display_get_framebuffer(dev, 0, NULL);
 	uint8_t dimmed = 0;
 	bool inc = false;
 	enum {

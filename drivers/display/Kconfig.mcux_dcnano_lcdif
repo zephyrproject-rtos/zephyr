@@ -6,6 +6,7 @@ menuconfig DISPLAY_MCUX_DCNANO_LCDIF
 	bool "MCUX DCNano LCDIF driver"
 	default y
 	depends on DT_HAS_NXP_DCNANO_LCDIF_ENABLED
+	select DISPLAY_SUPPORTS_FRAMEBUFFER_ACCESS if MCUX_DCNANO_LCDIF_FB_NUM > 0
 	help
 	  Enable support for mcux DCNano LCDIF driver.
 

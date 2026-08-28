@@ -8,6 +8,7 @@ menuconfig DISPLAY_MCUX_ELCDIF
 	default y
 	depends on DT_HAS_NXP_IMX_ELCDIF_ENABLED
 	select PINCTRL
+	select DISPLAY_SUPPORTS_FRAMEBUFFER_ACCESS if MCUX_ELCDIF_FB_NUM > 0
 	help
 	  Enable support for mcux eLCDIF driver.
 

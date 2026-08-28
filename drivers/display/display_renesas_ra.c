@@ -206,6 +206,7 @@ static void ra_display_get_capabilities(const struct device *dev,
 	capabilities->x_resolution = config->width;
 	capabilities->y_resolution = config->height;
 	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;
+	capabilities->framebuffer_count = CONFIG_RENESAS_RA_GLCDC_FB_NUM;
 	capabilities->supported_pixel_formats =
 		PIXEL_FORMAT_RGB_888 | PIXEL_FORMAT_ARGB_8888 | PIXEL_FORMAT_RGB_565;
 	capabilities->current_pixel_format = data->current_pixel_format;
@@ -340,11 +341,19 @@ static int ra_display_set_contrast(const struct device *dev, const uint8_t contr
 	return ra_display_color_config(dev, &display_color_cfg);
 }
 
-static void *ra_display_get_framebuffer(const struct device *dev)
+static void *ra_display_get_framebuffer(const struct device *dev, uint32_t index, size_t *size)
 {
 	struct display_ra_data *data = dev->data;
 
-	return (void *)data->front_buf;
+	if (index >= CONFIG_RENESAS_RA_GLCDC_FB_NUM) {
+		return NULL;
+	}
+
+	if (size != NULL) {
+		*size = data->frame_buffer_len;
+	}
+
+	return data->frame_buffer + (index * data->frame_buffer_len);
 }
 
 static DEVICE_API(display, display_api) = {
