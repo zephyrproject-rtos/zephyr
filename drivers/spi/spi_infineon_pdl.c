@@ -1017,6 +1017,9 @@ static cy_rslt_t ifx_cat1_spi_int_frequency(const struct device *dev, uint32_t h
 		CY_UNUSED_PARAMETER(last_ovrsmpl_val);
 	}
 
+	/* Disable, set, then re-enable so the new rate takes effect immediately. */
+	(void)ifx_cat1_utils_peri_pclk_disable_divider(config->clk_dst, &(data->clock));
+
 	if ((data->clock.block & 0x02) == 0) {
 		result = ifx_cat1_utils_peri_pclk_set_divider(config->clk_dst, &(data->clock),
 							      last_dvdr_val - 1);
@@ -1024,6 +1027,8 @@ static cy_rslt_t ifx_cat1_spi_int_frequency(const struct device *dev, uint32_t h
 		result = ifx_cat1_utils_peri_pclk_set_frac_divider(config->clk_dst, &(data->clock),
 								   last_dvdr_val - 1, 0);
 	}
+
+	(void)ifx_cat1_utils_peri_pclk_enable_divider(config->clk_dst, &(data->clock));
 
 	return result;
 }
