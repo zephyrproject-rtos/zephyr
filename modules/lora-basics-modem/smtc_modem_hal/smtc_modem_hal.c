@@ -12,6 +12,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/random/random.h>
+#include <zephyr/settings/settings.h>
 #include <zephyr/sys/printk.h>
 
 #include <lbm_common.h>
@@ -22,6 +23,9 @@ LOG_MODULE_REGISTER(smtc_modem_hal, CONFIG_LORA_LOG_LEVEL);
 
 #define HAL_WORKQ_STACK_SIZE 1024
 #define HAL_WORKQ_PRIORITY (-1)
+
+/* "lbm/" + context type + "/" + offset + NUL */
+#define CONTEXT_KEY_LEN 24
 
 typedef void (*callback_t)(void *context);
 
@@ -93,6 +97,16 @@ void smtc_modem_hal_init(const struct device *transceiver)
 	__ASSERT(DEVICE_API_IS(lora, transceiver), "transceiver must be a LoRa device");
 
 	prv_transceiver_dev = transceiver;
+
+	if (IS_ENABLED(CONFIG_LORA_BASICS_MODEM_NVM)) {
+		int ret = settings_subsys_init();
+
+		if (ret < 0) {
+			LOG_ERR("settings init failed: %d", ret);
+		}
+	} else {
+		LOG_WRN("no context storage, the join nonce restarts on every boot");
+	}
 
 	k_work_queue_start(&hal_workq, hal_workq_stack,
 			   K_THREAD_STACK_SIZEOF(hal_workq_stack),
@@ -386,12 +400,39 @@ void smtc_modem_hal_set_offset_to_test_wrapping(const uint32_t offset_to_test_wr
 /* --- CONTEXT SAVING MANAGEMENT -------------------------------------------- */
 /* -------------------------------------------------------------------------- */
 
+struct context_read {
+	uint8_t *buffer;
+	uint32_t size;
+};
+
+static int context_read_cb(const char *key, size_t len, settings_read_cb read_cb, void *cb_arg,
+			   void *param)
+{
+	struct context_read *req = param;
+
+	if (len != req->size) {
+		LOG_WRN("stored context is %u bytes, %u wanted", (unsigned int)len,
+			(unsigned int)req->size);
+		return -EINVAL;
+	}
+
+	return read_cb(cb_arg, req->buffer, req->size);
+}
+
+/*
+ * One settings entry per context and offset. The modem reads a context back
+ * with the offset and size it wrote, and checks the content itself, so a
+ * missing entry only has to leave the buffer alone.
+ */
+static void context_key(char *key, size_t key_len, modem_context_type_t ctx_type, uint32_t offset)
+{
+	snprintk(key, key_len, "lbm/%u/%u", (unsigned int)ctx_type, (unsigned int)offset);
+}
+
 /**
  * @brief Restores the data context.
  *
  * @remark This function is used to restore Modem data from a non volatile memory.
- *
- * @remark Not implemented yet.
  *
  * @param [in]  ctx_type Type of modem context that need to be restored
  * @param [in]  offset   Memory offset after ctx_type address
@@ -401,15 +442,29 @@ void smtc_modem_hal_set_offset_to_test_wrapping(const uint32_t offset_to_test_wr
 void smtc_modem_hal_context_restore(const modem_context_type_t ctx_type, uint32_t offset,
 				    uint8_t *buffer, const uint32_t size)
 {
-	/* Not implemented yet */
+	struct context_read req = {
+		.buffer = buffer,
+		.size = size,
+	};
+	char key[CONTEXT_KEY_LEN];
+	int ret;
+
+	if (!IS_ENABLED(CONFIG_LORA_BASICS_MODEM_NVM)) {
+		return;
+	}
+
+	context_key(key, sizeof(key), ctx_type, offset);
+
+	ret = settings_load_subtree_direct(key, context_read_cb, &req);
+	if (ret < 0) {
+		LOG_WRN("restore %s failed: %d", key, ret);
+	}
 }
 
 /**
  * @brief Stores the data context.
  *
  * @remark This function is used to store Modem data in a non volatile memory.
- *
- * @remark Not implemented yet.
  *
  * @param [in] ctx_type Type of modem context that need to be saved
  * @param [in] offset   Memory offset after ctx_type address
@@ -419,7 +474,19 @@ void smtc_modem_hal_context_restore(const modem_context_type_t ctx_type, uint32_
 void smtc_modem_hal_context_store(const modem_context_type_t ctx_type, uint32_t offset,
 				  const uint8_t *buffer, const uint32_t size)
 {
-	/* Not implemented yet */
+	char key[CONTEXT_KEY_LEN];
+	int ret;
+
+	if (!IS_ENABLED(CONFIG_LORA_BASICS_MODEM_NVM)) {
+		return;
+	}
+
+	context_key(key, sizeof(key), ctx_type, offset);
+
+	ret = settings_save_one(key, buffer, size);
+	if (ret < 0) {
+		LOG_ERR("store %s failed: %d", key, ret);
+	}
 }
 
 /**

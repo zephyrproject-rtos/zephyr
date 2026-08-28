@@ -17,3 +17,15 @@ config LORA_BASICS_MODEM_HAL
 	  Compile the smtc_modem_hal implementation for LoRa Basics Modem.
 	  This is required for porting tests and full modem functionality.
 	  Currently only supported with SX126x radios.
+
+config LORA_BASICS_MODEM_NVM
+	bool "Keep the modem context in non-volatile storage"
+	depends on LORA_BASICS_MODEM_HAL
+	depends on SETTINGS
+	default y
+	help
+	  Store the modem context, which holds the join nonce among other
+	  things, so that it survives a reboot. A network rejects a join
+	  request whose nonce does not increase, so a device that forgets the
+	  context can only join once. This needs a settings backend, which the
+	  application chooses.
