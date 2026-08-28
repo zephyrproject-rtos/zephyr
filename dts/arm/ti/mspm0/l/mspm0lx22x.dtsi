@@ -130,6 +130,7 @@
 			current-speed = <9600>;
 			clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
 			clk-div = <1>;
+			zephyr,disabling-power-states = <&stdby1>;
 			status = "disabled";
 		};
 
@@ -140,6 +141,7 @@
 			current-speed = <9600>;
 			clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
 			clk-div = <1>;
+			zephyr,disabling-power-states = <&stdby1>;
 			status = "disabled";
 		};
 
@@ -150,6 +152,7 @@
 			current-speed = <9600>;
 			clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
 			clk-div = <1>;
+			zephyr,disabling-power-states = <&stdby1>;
 			status = "disabled";
 		};
 
@@ -160,6 +163,7 @@
 			current-speed = <9600>;
 			clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
 			clk-div = <1>;
+			zephyr,disabling-power-states = <&stdby1>;
 			status = "disabled";
 		};
 	};
