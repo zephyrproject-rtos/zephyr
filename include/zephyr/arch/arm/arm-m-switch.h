@@ -110,22 +110,26 @@ bool arm_m_must_switch(void);
 void arm_m_exc_exit(void);
 
 /**
- * @brief Recover an interrupted IT/ICI instruction after a context switch.
+ * @brief Recover an interrupted IT/ICI instruction or preempted secure call
+ * after a cooperative context switch.
  *
  * The function is called from the fault handler that follows the deliberate
- * `UDF` in arm_m_iciit_stub(). It detects whether the undefined instruction
+ * `UDF` in arm_m_iciit_stub() or arm_m_secure_preempt_stub().
+ *
+ * It detects whether the undefined instruction
  * came from our stub and, if so, restores the saved PC/xPSR to re-execute the
- * original instruction.
+ * original instruction (in the case of an interrupted IT/ICI) or restores the
+ * EXC_RETURN. (in order to return from interrupt into an
+ * interrupted secure call)
  *
  * @param msp Exception entry stack pointer for MSP.
  * @param psp Exception entry stack pointer for PSP.
  * @param lr  EXC_RETURN value captured on exception entry.
  *
- * @retval true  The fault corresponded to the IT/ICI recovery stub and was
- *               handled.
+ * @retval true  The fault corresponded to either stub and was handled.
  * @retval false The fault was unrelated and should be processed normally.
  */
-bool arm_m_iciit_check(uint32_t msp, uint32_t psp, uint32_t lr);
+bool arm_m_udf_fixup_check(uint32_t msp, uint32_t psp, uint32_t lr);
 
 /**
  * @brief Undefined-instruction stub used to force IT/ICI recovery.

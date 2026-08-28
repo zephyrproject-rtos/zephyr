@@ -1114,7 +1114,7 @@ void z_arm_fault(uint32_t msp, uint32_t psp, uint32_t exc_return, _callee_saved_
 
 #ifdef CONFIG_USE_SWITCH
 	/* Handle the stub fault to restore interrupted ICI/IT instructions */
-	if (arm_m_iciit_check(msp, psp, exc_return)) {
+	if (arm_m_udf_fixup_check(msp, psp, exc_return)) {
 		return;
 	}
 #endif
