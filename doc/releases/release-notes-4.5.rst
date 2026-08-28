@@ -531,6 +531,12 @@ New APIs and options
 * Network
 
   * Add :c:func:`net_eth_set_if_type_wifi` to set the ethernet interface type to Wi-Fi.
+  * Add native SRTP (:rfc:`3711`) support for the RTP stack
+    (:kconfig:option:`CONFIG_SRTP`), built on the PSA Crypto API. Supports
+    AES-128-CM with HMAC-SHA1-80/32 authentication and AES-128/256-GCM
+    (:rfc:`7714`), with key derivation, replay protection, rollover counter
+    tracking and master key identifiers. See :c:func:`rtp_session_set_srtp`,
+    :c:func:`srtp_protect` and :c:func:`srtp_unprotect`.
   * Add :c:func:`net_dhcpv4_set_reboot_hint` to seed the DHCPv4 client with a
     previously leased address for INIT-REBOOT.
   * Add an mDNS responder interface policy
