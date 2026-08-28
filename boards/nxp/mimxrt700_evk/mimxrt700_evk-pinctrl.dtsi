@@ -298,7 +298,10 @@
 	pinmux_micfil: pinmux_micfil {
 		group0 {
 			pinmux = <PDM_CLK_PIO10_8>,
-				 <PDM_DATA0_PIO10_9>;
+				 <PDM_DATA0_PIO10_9>,
+				 <PDM_DATA1_PIO10_2>,
+				 <PDM_DATA2_PIO10_3>,
+				 <PDM_DATA3_PIO10_4>;
 			slew-rate = "normal";
 			drive-strength = "normal";
 			input-enable;
