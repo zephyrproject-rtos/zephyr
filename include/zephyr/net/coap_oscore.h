@@ -8,7 +8,7 @@
 /** @file
  * @brief CoAP OSCORE API
  *
- * A public API for creating OSCORE (RFC 8613) security contexts that can be
+ * A public API for creating OSCORE (@rfc{8613}) security contexts that can be
  * attached to a CoAP client or service.
  */
 
@@ -45,20 +45,20 @@ extern "C" {
  */
 struct coap_oscore_context;
 
-/** @brief AEAD algorithm used to protect OSCORE messages (RFC 8613 Section 3.1). */
+/** @brief AEAD algorithm used to protect OSCORE messages (@rfc{8613,section-3.1}). */
 enum coap_oscore_aead_alg {
 	/** AES-CCM mode 128-bit key, 64-bit tag, 13-byte nonce. */
 	COAP_OSCORE_AEAD_AES_CCM_16_64_128 = 0,
 };
 
-/** @brief HKDF algorithm used to derive OSCORE keys (RFC 8613 Section 3.1). */
+/** @brief HKDF algorithm used to derive OSCORE keys (@rfc{8613,section-3.1}). */
 enum coap_oscore_hkdf {
 	/** HKDF-SHA-256. */
 	COAP_OSCORE_HKDF_SHA_256 = 0,
 };
 
 /**
- * @brief OSCORE security context derivation parameters (RFC 8613 Section 3.2).
+ * @brief OSCORE security context derivation parameters (@rfc{8613,section-3.2}).
  *
  * @note coap_oscore_context_add() copies all referenced buffers into the
  *       context pool, so the caller may free or reuse them as soon as the call
@@ -110,7 +110,7 @@ struct coap_oscore_init_params {
  * @brief Add an OSCORE security context.
  *
  * Derives the common, sender and recipient contexts from @p params
- * (RFC 8613 Section 3.2) and adds them to the pool of contexts that can be used with
+ * (@rfc{8613,section-3.2}) and adds them to the pool of contexts that can be used with
  * the CoAP server. Contexts are allocated from a fixed pool sized by
  * @kconfig{CONFIG_COAP_OSCORE_MAX_CONTEXTS} and released with
  * coap_oscore_context_remove(). Each context corresponds to one client identity
@@ -154,7 +154,7 @@ int coap_oscore_context_remove(struct coap_oscore_context *ctx);
  * @brief OSCORE exchange entry.
  *
  * Tracks which server responses need OSCORE protection by matching the client
- * address and request token (RFC 8613 Section 8.3). A CoAP service defined with
+ * address and request token (@rfc{8613,section-8.3}). A CoAP service defined with
  * @ref COAP_SERVICE_DEFINE_OSCORE owns a statically allocated cache of these
  * entries.
  *
