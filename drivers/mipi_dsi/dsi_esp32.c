@@ -26,7 +26,13 @@ LOG_MODULE_REGISTER(dsi_esp32, CONFIG_MIPI_DSI_LOG_LEVEL);
 
 #define MIPI_DSI_DEFAULT_TIMEOUT_CLK_FREQ_MHZ 10
 #define MIPI_DSI_DEFAULT_ESCAPE_CLK_FREQ_MHZ  18
+#if defined(CONFIG_SOC_ESP32P4_REV_MIN_FULL) && CONFIG_SOC_ESP32P4_REV_MIN_FULL < 300
+#define MIPI_DSI_PHY_PLLREF_CLK_SRC           MIPI_DSI_PHY_PLLREF_CLK_SRC_DEFAULT_LEGACY
+#define MIPI_DSI_PHY_PLL_REF_CLK_FREQ_HZ      20000000
+#else
+#define MIPI_DSI_PHY_PLLREF_CLK_SRC           MIPI_DSI_PHY_PLLREF_CLK_SRC_DEFAULT
 #define MIPI_DSI_PHY_PLL_REF_CLK_FREQ_HZ      40000000
+#endif
 
 /* The PHY PLL only has settings for this range, and a rate outside it is
  * programmed with the wrong one rather than being rejected.
@@ -310,7 +316,7 @@ static int mipi_dsi_esp32_init(const struct device *dev)
 	mipi_dsi_ll_set_phy_config_clock_source(0, MIPI_DSI_PHY_CFG_CLK_SRC_DEFAULT);
 	mipi_dsi_ll_enable_phy_config_clock(0, true);
 
-	mipi_dsi_ll_set_phy_pllref_clock_source(0, MIPI_DSI_PHY_PLLREF_CLK_SRC_DEFAULT);
+	mipi_dsi_ll_set_phy_pllref_clock_source(0, MIPI_DSI_PHY_PLLREF_CLK_SRC);
 	mipi_dsi_ll_set_phy_pll_ref_clock_div(0, 1);
 	mipi_dsi_ll_enable_phy_pllref_clock(0, true);
 
