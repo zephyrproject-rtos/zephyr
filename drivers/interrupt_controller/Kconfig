@@ -6,6 +6,21 @@
 
 menu "Interrupt controller drivers"
 
+config INTC_ROOT
+	bool
+	# A custom controller provides the z_soc_irq_* hooks instead
+	depends on !ARM_CUSTOM_INTERRUPT_CONTROLLER
+	help
+	  Selected by the interrupt controller driver that is the platform's
+	  root interrupt controller. The driver provides the intc_root_*
+	  functions and the architecture interrupt control functions map
+	  onto them directly.
+
+	  On an architecture whose root interrupt controller is part of the
+	  architecture and handled in arch/, such as the NVIC on Cortex-M, the
+	  driver selecting this option takes over that implementation and is
+	  responsible for the architecture's controller as well.
+
 config ARCV2_INTERRUPT_UNIT
 	bool "ARCv2 Interrupt Unit"
 	default y
