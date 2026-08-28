@@ -524,6 +524,7 @@ static void siwx91x_iface_init(struct net_if *iface)
 
 	sidev->state = WIFI_STATE_INTERFACE_DISABLED;
 	sidev->iface = iface;
+	k_work_init(&sidev->on_join_work, siwx91x_on_join_work);
 
 	sl_wifi_set_callback_v2(SL_WIFI_SCAN_RESULT_EVENTS, siwx91x_on_scan, sidev);
 	sl_wifi_set_callback_v2(SL_WIFI_JOIN_EVENTS, siwx91x_on_join, sidev);
