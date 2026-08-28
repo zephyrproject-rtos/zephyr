@@ -10,7 +10,65 @@
 				compatible = "zephyr,power-state";
 				power-state-name = "suspend-to-ram";
 			};
+
+			/*
+			 * Not in cpu-power-states: only ever named by the
+			 * per-device properties below.
+			 */
+			state1: state1 {
+				compatible = "zephyr,power-state";
+				power-state-name = "standby";
+			};
 		};
+	};
+
+	/* Powered in every state, but cannot wake the system from state1. */
+	gpio1: gpio_emul1 {
+		compatible = "zephyr,gpio-emul";
+		gpio-controller;
+		#gpio-cells = <2>;
+		rising-edge;
+		falling-edge;
+		high-level;
+		low-level;
+		wakeup-source;
+		zephyr,wakeup-disabling-power-states = <&state1>;
+		status = "okay";
+	};
+
+	/*
+	 * Names no wakeup property of its own, but loses its power in state0,
+	 * so it cannot wake the system from state0 either.
+	 */
+	gpio2: gpio_emul2 {
+		compatible = "zephyr,gpio-emul";
+		gpio-controller;
+		#gpio-cells = <2>;
+		rising-edge;
+		falling-edge;
+		high-level;
+		low-level;
+		wakeup-source;
+		zephyr,disabling-power-states = <&state0>;
+		status = "okay";
+	};
+
+	/*
+	 * Names both properties: unpowered in state0, powered but unable to
+	 * wake the system in state1.
+	 */
+	gpio3: gpio_emul3 {
+		compatible = "zephyr,gpio-emul";
+		gpio-controller;
+		#gpio-cells = <2>;
+		rising-edge;
+		falling-edge;
+		high-level;
+		low-level;
+		wakeup-source;
+		zephyr,wakeup-disabling-power-states = <&state1>;
+		zephyr,disabling-power-states = <&state0>;
+		status = "okay";
 	};
 };
 
