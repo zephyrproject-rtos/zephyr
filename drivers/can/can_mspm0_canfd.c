@@ -44,6 +44,7 @@ LOG_MODULE_REGISTER(can_mspm0_canfd, CONFIG_CAN_LOG_LEVEL);
 
 struct can_mspm0_canfd_config {
 	MCAN_Regs *ti_canfd_base;
+	const struct device *clock_dev;
 	const struct mspm0_sys_clock *clock_subsys;
 	mm_reg_t mcan_base;
 	mem_addr_t mram;
@@ -100,11 +101,11 @@ static int can_mspm0_canfd_get_core_clock(const struct device *dev, uint32_t *ra
 {
 	const struct can_mcan_config *mcan_config = dev->config;
 	const struct can_mspm0_canfd_config *config = mcan_config->custom;
-	const struct device *clk_dev = DEVICE_DT_GET(DT_NODELABEL(ckm));
 	uint32_t clock_rate, clk_div;
 	int ret;
 
-	ret = clock_control_get_rate(clk_dev, (struct mspm0_sys_clock *)config->clock_subsys,
+	ret = clock_control_get_rate(config->clock_dev,
+				     (struct mspm0_sys_clock *)config->clock_subsys,
 				     &clock_rate);
 	if (ret < 0) {
 		return ret;
@@ -283,6 +284,7 @@ static const struct can_mcan_ops can_mspm0_canfd_ops = {
 												\
 	static const struct can_mspm0_canfd_config can_mspm0_canfd_cfg_##inst = {		\
 		.ti_canfd_base = (MCAN_Regs *)DT_REG_ADDR_BY_NAME(DT_DRV_INST(inst), ti_canfd),	\
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst)),				\
 		.clock_subsys = &can_mspm0_canfd_sys_clock_##inst,				\
 		.clock_cfg = {									\
 			.clockSel = MSPM0_MCAN_CLK_SEL,						\
