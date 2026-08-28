@@ -1177,18 +1177,26 @@ static void target_i2c_isr_pio(const struct device *dev, uint8_t interrupt_statu
 IT8XXX2_I2C_CODE_IN_RAM
 static void target_i2c_isr(const struct device *dev)
 {
+	struct i2c_enhance_data *data = dev->data;
 	const struct i2c_enhance_config *config = dev->config;
 	uint8_t *base = config->base;
 	uint8_t target_status = IT8XXX2_I2C_STR(base);
 
 	/* Any error */
 	if (target_status & E_TARGET_ANY_ERROR) {
+		const struct i2c_target_callbacks *target_cb = data->target_cfg->callbacks;
+
 		/* Hardware reset */
 		IT8XXX2_I2C_CTR(base) |= IT8XXX2_I2C_HALT;
 		/* NACK */
 		IT8XXX2_I2C_CTR(base) &= ~IT8XXX2_I2C_ACK;
 		IT8XXX2_I2C_CTR(base) |= IT8XXX2_I2C_ACK;
 
+		if (target_cb->error) {
+			target_cb->error(data->target_cfg, (target_status & E_TARGET_TMOE)
+								   ? I2C_ERROR_TIMEOUT
+								   : I2C_ERROR_ARBITRATION);
+		}
 		return;
 	}
 
