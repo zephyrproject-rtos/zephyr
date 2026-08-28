@@ -152,11 +152,11 @@ config TRACING_CTF_PACKET_SIZE
 	range 128 8192
 	help
 	  Size in bytes of a single CTF packet. Events are gathered into
-	  packets of this fixed size, which is what lets the amount of data a
-	  packet holds be recorded in the packet itself. A packet is padded to
-	  full size when it is closed, so a very large size wastes bandwidth
-	  on a mostly idle system while a very small one spends more of the
-	  stream on packet headers.
+	  packets of this size, which is what lets the amount of data a packet
+	  holds be recorded in the packet itself. A packet is shipped sized to
+	  its contents, so a very small size spends more of the stream on
+	  packet headers while a very large one holds events for longer before
+	  there is a full packet to send.
 
 config TRACING_CTF_PACKETS_PER_CPU
 	int "Number of CTF packets per CPU"

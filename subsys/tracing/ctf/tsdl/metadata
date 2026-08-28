@@ -32,10 +32,10 @@ struct event_header {
 	uint16_t id;
 };
 
-/* Events are gathered into fixed-size packets, one sequence of them per CPU.
- * content_size is what makes that possible: it is written when a packet is
- * closed and tells the reader where the events stop and the tail padding
- * begins, so the size never has to be known in advance.
+/* Events are gathered into packets, one sequence of them per CPU. content_size
+ * is what makes that possible: it is written when a packet is closed and tells
+ * the reader how much of the packet holds events, so the size never has to be
+ * known in advance.
  *
  * cpu_id names the CPU that produced the packet. For a backend that carries
  * one link, every CPU's packets travel interleaved on it and cpu_id is what
