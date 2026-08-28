@@ -13,9 +13,20 @@ config COMPARATOR_MSPM0
 	  Enable driver for the Texas Instruments MSPM0 series comparators.
 	  Supports reference voltage configuration and internal DAC control.
 
+if COMPARATOR_MSPM0
+
 config COMPARATOR_MSPM0_WINDOW_MODE
 	bool
 	default y if SOC_SERIES_MSPM0G
-	depends on COMPARATOR_MSPM0
 	help
 	  Window comparator mode (auto-enabled for MSPM0G series).
+
+config COMPARATOR_MSPM0_ANALOG_COMPARISON
+	bool
+	default y if SOC_SERIES_MSPM33C
+	help
+	  Analog comparison wakeup sequencer. Lets the comparator wake the
+	  device from STOP mode by auto-sequencing through up to 4 preset
+	  DAC reference levels on separate VMON inputs.
+
+endif # COMPARATOR_MSPM0
