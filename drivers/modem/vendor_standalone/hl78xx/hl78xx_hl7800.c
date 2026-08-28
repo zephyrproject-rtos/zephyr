@@ -78,18 +78,6 @@ static bool hl78xx_hl7800_cfg_skip_band_for_rat(struct hl78xx_data *data,
 	return false;
 }
 
-static bool hl78xx_hl7800_carrier_on_gnss_pending(struct hl78xx_data *data)
-{
-#ifdef CONFIG_HL78XX_GNSS
-	LOG_INF("HL7800 GNSS pending - routing through carrier_off/airplane");
-	hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_GNSS_MODE_ENTER_REQUESTED);
-	return true;
-#else
-	ARG_UNUSED(data);
-	return false;
-#endif /* CONFIG_HL78XX_GNSS */
-}
-
 static bool hl78xx_hl7800_on_gnss_mode_enter_lpm(struct hl78xx_data *data)
 {
 #ifdef CONFIG_HL78XX_GNSS
@@ -521,6 +509,5 @@ const struct hl78xx_variant_ops hl78xx_variant_ops_hl7800 = {
 	.on_registered_ready = NULL, /* HL7800 readiness gates on carrier_on_dns_complete */
 	.on_kcellmeas_ready = NULL,  /* HL7800 readiness gates on carrier_on_dns_complete */
 #endif                               /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
-	.carrier_on_gnss_pending = hl78xx_hl7800_carrier_on_gnss_pending,
 	.on_gnss_mode_enter_lpm = hl78xx_hl7800_on_gnss_mode_enter_lpm,
 };
