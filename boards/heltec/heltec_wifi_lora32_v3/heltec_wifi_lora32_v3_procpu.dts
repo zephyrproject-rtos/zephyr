@@ -60,7 +60,7 @@
 
 	vbatt {
 		compatible = "voltage-divider";
-		io-channels = <&adc1 0>;
+		io-channels = <&adc0 0>;
 		output-ohms = <100000>;
 		full-ohms = <(100000 + 390000)>;
 	};
@@ -90,7 +90,7 @@
 	};
 };
 
-&adc1 {
+&adc0 {
 	status = "okay";
 };
 
