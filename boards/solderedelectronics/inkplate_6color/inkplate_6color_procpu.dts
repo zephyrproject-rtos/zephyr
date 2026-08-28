@@ -55,7 +55,7 @@
 	vbatt: vbatt0 {
 		status = "okay";
 		compatible = "voltage-divider";
-		io-channels = <&adc1 7>;
+		io-channels = <&adc0 7>;
 		output-ohms = <100000>;
 		full-ohms = <(100000 + 100000)>;
 		power-gpios = <&pcal6416a 9 GPIO_ACTIVE_HIGH>;
@@ -63,7 +63,7 @@
 	};
 };
 
-&adc1 {
+&adc0 {
 	status = "okay";
 
 	#address-cells = <1>;
