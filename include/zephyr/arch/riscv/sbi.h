@@ -56,6 +56,12 @@
 /** @brief SBI_EXT_HSM function ID: stop the calling hart */
 #define SBI_FUNC_HART_STOP  1
 
+/** @brief SBI extension ID for the IPI extension (sPI) */
+#define SBI_EXT_IPI 0x735049
+
+/** @brief SBI_EXT_IPI function ID: send an IPI to a set of harts */
+#define SBI_FUNC_SEND_IPI 0
+
 /** @brief SBI return code: call completed successfully */
 #define SBI_SUCCESS			0
 /** @brief SBI return code: the call failed for an unspecified reason */
