@@ -10,6 +10,8 @@
 #include <zephyr/dt-bindings/clock/imx_ccm_rev2.h>
 #include <zephyr/sys/util.h>
 #include <fsl_clock.h>
+#include "clock_control_common.h"
+
 #if defined(CONFIG_SOC_MIMX9352) || defined(CONFIG_SOC_MIMX9131)
 #include <soc.h>
 #endif
@@ -134,7 +136,8 @@ static int mcux_ccm_on(const struct device *dev, clock_control_subsys_t sub_syst
 
 static int mcux_ccm_off(const struct device *dev, clock_control_subsys_t sub_system)
 {
-	return 0;
+	/* Supported by hardware, but not implemented */
+	return -ENOSYS;
 }
 
 static int mcux_ccm_get_subsys_rate(const struct device *dev, clock_control_subsys_t sub_system,
