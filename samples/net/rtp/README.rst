@@ -104,6 +104,59 @@ and with ``net_pkt.conf``:
    :conf: "sink.conf ipv6.conf"
    :compact:
 
+Building with SRTP
+==================
+
+The ``srtp.conf`` extra configuration file protects the session with SRTP
+(:kconfig:option:`CONFIG_SRTP`), using the AES-128-CM cipher with HMAC-SHA1-80
+authentication and a static demonstration key. It can be combined with either
+role, and with ``net_pkt.conf``:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/rtp
+   :board: <board to use>
+   :goals: build run
+   :conf: "source.conf srtp.conf"
+   :compact:
+
+FFmpeg can test both directions of the protected stream. The base64 key
+material below is the concatenation of the sample's master key and master
+salt.
+
+To receive from the **source** role, create a :file:`stream-srtp.sdp` file
+declaring the secure profile and the key (:rfc:`4568` SDES):
+
+.. code-block:: none
+
+   v=0
+   o=- 0 0 IN IP4 127.0.0.1
+   s=No Name
+   c=IN IP4 239.0.1.1
+   t=0 0
+   m=audio 5004 RTP/SAVP 97
+   a=rtpmap:97 L16/8000/1
+   a=crypto:1 AES_CM_128_HMAC_SHA1_80 inline:EBESExQVFhcYGRobHB0eHzAxMjM0NTY3ODk6Ozw9
+
+Then receive, decrypt, and save the stream to a WAV file (``-localaddr``
+selects the ``zeth`` interface for the multicast join):
+
+.. code-block:: console
+
+   ffmpeg -protocol_whitelist file,udp,rtp,srtp -localaddr 192.0.2.2 \
+          -i stream-srtp.sdp \
+          -acodec pcm_s16le -ar 8000 -ac 1 \
+          -f wav out.wav
+
+To feed the **sink** role, send an SRTP protected sine tone:
+
+.. code-block:: console
+
+   ffmpeg -re -f lavfi -i "sine=frequency=100:sample_rate=8000" \
+          -acodec pcm_s16be -ac 1 -f rtp \
+          -srtp_out_suite AES_CM_128_HMAC_SHA1_80 \
+          -srtp_out_params EBESExQVFhcYGRobHB0eHzAxMjM0NTY3ODk6Ozw9 \
+          "srtp://239.0.1.1:5004?localaddr=192.0.2.2&pkt_size=1200"
+
 Testing with FFmpeg
 ===================
 
