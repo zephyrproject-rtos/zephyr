@@ -5,3 +5,7 @@
  */
 
 #include <ti/mspm0/g/mspm0g.dtsi>
+
+&uart3 {
+	zephyr,disabling-power-states = <&stop0 &stop1 &stop2 &stdby0 &stdby1>;
+};
