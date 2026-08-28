@@ -342,6 +342,8 @@ struct display_capabilities {
 	enum display_orientation current_orientation;
 	/** Supported callback events mask, 0 when event callback unsupported */
 	uint32_t supported_events;
+	/** Number of framebuffers the driver hands out, zero if it does not */
+	uint8_t framebuffer_count;
 #if defined(CONFIG_DISPLAY_COLOR_PALETTE) || defined(__DOXYGEN__)
 	/** Color palette supported by the display, indexed by pixel value */
 	struct display_palette_color color_palette[CONFIG_DISPLAY_COLOR_PALETTE_MAX_SIZE];
@@ -466,7 +468,8 @@ typedef int (*display_clear_api)(const struct device *dev);
  * @brief Callback API to get framebuffer pointer.
  * See display_get_framebuffer() for argument description
  */
-typedef void *(*display_get_framebuffer_api)(const struct device *dev);
+typedef void *(*display_get_framebuffer_api)(const struct device *dev, uint32_t index,
+					     size_t *size);
 
 /**
  * @brief Callback API to set display brightness.
@@ -647,15 +650,25 @@ static inline int display_clear(const struct device *dev)
 }
 
 /**
- * @brief Get pointer to framebuffer for direct access
+ * @brief Get a framebuffer for direct access
+ *
+ * A driver that owns several framebuffers exposes each of them here, so a
+ * caller can render into one while the driver presents another. The index
+ * identifies a fixed buffer: it stays the same across page flips.
+ *
+ * This call has no side effects: it neither changes which buffer the driver
+ * renders into nor which one it presents.
  *
  * @param dev Pointer to device structure
+ * @param index Framebuffer index, zero for the first
+ * @param size Size of the framebuffer in bytes, so a caller can tell how
+ * much it may write. May be NULL when the caller does not need it, and is
+ * set whenever a buffer is returned.
  *
- * @return Pointer to frame buffer or NULL if direct framebuffer access
- * is not supported
- *
+ * @return Pointer to the framebuffer, or NULL if direct framebuffer access
+ * is not supported or the index does not exist.
  */
-static inline void *display_get_framebuffer(const struct device *dev)
+static inline void *display_get_framebuffer(const struct device *dev, uint32_t index, size_t *size)
 {
 	const struct display_driver_api *api = DEVICE_API_GET(display, dev);
 
@@ -663,7 +676,7 @@ static inline void *display_get_framebuffer(const struct device *dev)
 		return NULL;
 	}
 
-	return api->get_framebuffer(dev);
+	return api->get_framebuffer(dev, index, size);
 }
 
 /**

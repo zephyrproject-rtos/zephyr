@@ -641,8 +641,12 @@ static int lt7680_read(const struct device *dev, const uint16_t x, const uint16_
 	return 0;
 }
 
-static void *lt7680_get_framebuffer(const struct device *dev)
+static void *lt7680_get_framebuffer(const struct device *dev, uint32_t index, size_t *size)
 {
+	ARG_UNUSED(dev);
+	ARG_UNUSED(index);
+	ARG_UNUSED(size);
+
 	return NULL;
 }
 

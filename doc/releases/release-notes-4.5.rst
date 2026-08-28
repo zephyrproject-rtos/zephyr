@@ -430,6 +430,11 @@ New APIs and options
   * :c:macro:`DT_IRQN_BY_NAME`
   * :c:macro:`DT_INST_IRQN_BY_NAME`
 
+* Display
+
+  * :c:member:`display_capabilities.framebuffer_count`, so a caller can tell
+    how many framebuffers a driver hands out.
+
 * Haptics
 
   * :c:enumerator:`haptics_monitor`

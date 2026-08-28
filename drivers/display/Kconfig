@@ -16,6 +16,12 @@ config DISPLAY_INIT_PRIORITY
 	help
 	  Display devices initialization priority.
 
+config DISPLAY_SUPPORTS_FRAMEBUFFER_ACCESS
+	bool
+	help
+	  Selected by display drivers that hand out the framebuffers they own,
+	  so a caller can render into one while the driver presents another.
+
 config DISPLAY_COLOR_PALETTE
 	bool "Support for color palette"
 	help

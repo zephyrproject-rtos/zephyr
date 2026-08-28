@@ -702,11 +702,16 @@ static int display_esp32_dsi_blanking_off(const struct device *dev)
 	return display_blanking_off(config->panel);
 }
 
-static void *display_esp32_dsi_get_framebuffer(const struct device *dev)
+static void *display_esp32_dsi_get_framebuffer(const struct device *dev, uint32_t index,
+					       size_t *size)
 {
 	struct display_esp32_dsi_data *data = dev->data;
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
-	void *fb = data->started ? data->fb[data->draw_fb] : NULL;
+	void *fb = (data->started && index < data->fb_count) ? data->fb[index] : NULL;
+
+	if (fb != NULL && size != NULL) {
+		*size = data->fb_size;
+	}
 
 	k_spin_unlock(&data->lock, key);
 

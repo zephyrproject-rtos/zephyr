@@ -214,9 +214,18 @@ static int hub12_read(const struct device *dev, const uint16_t x, const uint16_t
 	return -ENOTSUP;
 }
 
-static void *hub12_get_framebuffer(const struct device *dev)
+static void *hub12_get_framebuffer(const struct device *dev, uint32_t index, size_t *size)
 {
+	const struct hub12_config *config = dev->config;
 	struct hub12_data *data = dev->data;
+
+	if (index != 0U) {
+		return NULL;
+	}
+
+	if (size != NULL) {
+		*size = config->width * config->height / HUB12_PIXELS_PER_BYTE;
+	}
 
 	return data->framebuffer;
 }

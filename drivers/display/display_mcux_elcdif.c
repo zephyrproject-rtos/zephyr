@@ -247,15 +247,19 @@ static int mcux_elcdif_write(const struct device *dev, const uint16_t x, const u
 	return ret;
 }
 
-static void *mcux_elcdif_get_framebuffer(const struct device *dev)
+static void *mcux_elcdif_get_framebuffer(const struct device *dev, uint32_t index, size_t *size)
 {
 	const struct mcux_elcdif_data *dev_data = dev->data;
 
-	/* Double cast to get around the const qualifier
-	 * In the case that active_fb has been assigned from the app's buffer
-	 * in mcux_elcdif_write, the pointer already belongs to the app.
-	 */
-	return ((void *)((uint32_t)dev_data->active_fb));
+	if (index >= CONFIG_MCUX_ELCDIF_FB_NUM) {
+		return NULL;
+	}
+
+	if (size != NULL) {
+		*size = dev_data->fb_bytes;
+	}
+
+	return dev_data->fb[index];
 }
 
 static int mcux_elcdif_display_blanking_off(const struct device *dev)

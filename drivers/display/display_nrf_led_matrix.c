@@ -159,9 +159,17 @@ static int api_blanking_off(const struct device *dev)
 	return 0;
 }
 
-static void *api_get_framebuffer(const struct device *dev)
+static void *api_get_framebuffer(const struct device *dev, uint32_t index, size_t *size)
 {
 	struct display_drv_data *dev_data = dev->data;
+
+	if (index != 0U) {
+		return NULL;
+	}
+
+	if (size != NULL) {
+		*size = sizeof(dev_data->framebuf);
+	}
 
 	return dev_data->framebuf;
 }
