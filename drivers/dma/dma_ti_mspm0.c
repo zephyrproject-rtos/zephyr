@@ -103,6 +103,14 @@ struct dma_mspm0_regs {
 /* dmatctl bits (per-channel, dmatctl[n]) */
 #define DMA_MSPM0_TCTL_DMATSEL GENMASK(5, 0)
 
+/* dmaprio bits (instance-wide) */
+#define DMA_MSPM0_PRIO_ROUNDROBIN BIT(0)
+#define DMA_MSPM0_PRIO_BURSTSZ    GENMASK(17, 16)
+#define DMA_MSPM0_BURST_INFINITE  0x0U
+#define DMA_MSPM0_BURST_8         0x1U
+#define DMA_MSPM0_BURST_16        0x2U
+#define DMA_MSPM0_BURST_32        0x3U
+
 /* cpu_int / gen_event IIDX status codes: channel N reports (N + 1) */
 #define DMA_MSPM0_IIDX_NONE 0x00U
 
@@ -117,6 +125,8 @@ struct dma_ti_mspm0_config {
 	uint8_t dma_max_channels;
 	void (*irq_config_func)(void);
 	uint8_t num_full_channels;
+	bool round_robin;
+	uint8_t burst_size;
 };
 
 struct dma_ti_mspm0_channel_data {
@@ -468,13 +478,37 @@ static inline void dma_ti_mspm0_isr(const struct device *dev)
 	}
 }
 
+static inline uint32_t dma_ti_mspm0_encode_burst_size(uint32_t burst_size)
+{
+	switch (burst_size) {
+	case 32:
+		return DMA_MSPM0_BURST_32;
+	case 16:
+		return DMA_MSPM0_BURST_16;
+	case 8:
+		return DMA_MSPM0_BURST_8;
+	default:
+		return DMA_MSPM0_BURST_INFINITE;
+	}
+}
+
 static int dma_ti_mspm0_init(const struct device *dev)
 {
 	const struct dma_ti_mspm0_config *cfg = dev->config;
+	uint32_t dmaprio = 0;
 
 	if (cfg->irq_config_func != NULL) {
 		cfg->irq_config_func();
 	}
+
+	if (cfg->round_robin) {
+		dmaprio |= DMA_MSPM0_PRIO_ROUNDROBIN;
+	}
+
+	dmaprio |= FIELD_PREP(DMA_MSPM0_PRIO_BURSTSZ,
+			      dma_ti_mspm0_encode_burst_size(cfg->burst_size));
+
+	cfg->regs->dmaprio = dmaprio;
 
 	return 0;
 }
@@ -513,6 +547,8 @@ static DEVICE_API(dma, dma_ti_mspm0_api) = {
 		.regs		  = (struct dma_mspm0_regs *)DT_INST_REG_ADDR(inst),	\
 		.dma_max_channels = DT_INST_PROP(inst, dma_channels),		\
 		.irq_config_func  = dma_ti_mspm0_irq_cfg_##inst,		\
+		.round_robin	   = DT_INST_PROP(inst, ti_round_robin_priority),\
+		.burst_size	   = DT_INST_PROP(inst, ti_burst_size),		\
 	};									\
 										\
 	static struct dma_ti_mspm0_data dma_data_##inst = {			\
