@@ -399,14 +399,18 @@
 			compatible = "infineon,ipc";
 			reg = <0x422a0000 0x1200>;
 			status = "disabled";
-			#ipc-config-cells = <3>;
+			#ipc-config-cells = <2>;
+			channel-count = <16>;
+			interrupt-count = <8>;
 		};
 
 		ipc1: ipc@441d0000 {
 			compatible = "infineon,ipc";
 			reg = <0x441d0000 0x1200>;
 			status = "disabled";
-			#ipc-config-cells = <3>;
+			#ipc-config-cells = <2>;
+			channel-count = <16>;
+			interrupt-count = <8>;
 		};
 
 		scb0: scb@42990000 {
