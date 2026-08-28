@@ -1023,15 +1023,20 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
-		compatible = "nxp,micfil";
+		compatible = "nxp,dmic-pdm";
 		reg = <0x20e000 0x1000>;
 
 		interrupts = <18 0>;
+		dmas = <&edma0 0 1>;
+		dma-names = "rx";
 		clocks = <&clkctl0 MCUX_MICFIL_CLK>;
 		quality-mode = <1>;
 		cic-decimation-rate = <16>;
-		fifo-watermark = <7>;
+
+		fifo-watermark = <4>;
 		sample-rate = <16000>;
+
+
 
 		status = "disabled";
 
@@ -1044,6 +1049,48 @@
 
 		channel1: micfil-channel@1 {
 			reg = <1>;
+			dc-remover-cutoff-freq = <2>;
+			decimation-filter-gain = <4>;
+			status = "disabled";
+		};
+
+		channel2: micfil-channel@2 {
+			reg = <2>;
+			dc-remover-cutoff-freq = <2>;
+			decimation-filter-gain = <4>;
+			status = "disabled";
+		};
+
+		channel3: micfil-channel@3 {
+			reg = <3>;
+			dc-remover-cutoff-freq = <2>;
+			decimation-filter-gain = <4>;
+			status = "disabled";
+		};
+
+		channel4: micfil-channel@4 {
+			reg = <4>;
+			dc-remover-cutoff-freq = <2>;
+			decimation-filter-gain = <4>;
+			status = "disabled";
+		};
+
+		channel5: micfil-channel@5 {
+			reg = <5>;
+			dc-remover-cutoff-freq = <2>;
+			decimation-filter-gain = <4>;
+			status = "disabled";
+		};
+
+		channel6: micfil-channel@6 {
+			reg = <6>;
+			dc-remover-cutoff-freq = <2>;
+			decimation-filter-gain = <4>;
+			status = "disabled";
+		};
+
+		channel7: micfil-channel@7 {
+			reg = <7>;
 			dc-remover-cutoff-freq = <2>;
 			decimation-filter-gain = <4>;
 			status = "disabled";
