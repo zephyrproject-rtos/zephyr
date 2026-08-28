@@ -235,6 +235,15 @@
 			clock-names = "mclk", "gclk";
 			status = "disabled";
 		};
+
+		/*
+		 * Reset controller. RCAUSE at offset 0 is 16 bits wide on this
+		 * family and the block ends at DBGCTRL (0x04, 32-bit).
+		 */
+		rstc: rstc@45004000 {
+			compatible = "microchip,rstc-g1-reset";
+			reg = <0x45004000 0x8>;
+		};
 	};
 };
 
