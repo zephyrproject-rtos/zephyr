@@ -712,7 +712,10 @@ enum hl78xx_evt_type {
 	HL78XX_GNSS_EVENT_STOP,
 	/** GNSS position fix obtained. @kconfig_dep{CONFIG_HL78XX_GNSS} */
 	HL78XX_GNSS_EVENT_POSITION,
-	/** GNSS start failed because LTE is active (shared RF path)
+	/** GNSS request dropped because LTE holds the shared RF path: either the
+	 * GNSS start failed while LTE was active, or a queued GNSS mode request
+	 * was discarded when the carrier came up. The driver does not retry;
+	 * the application must request GNSS again.
 	 * @kconfig_dep{CONFIG_HL78XX_GNSS}
 	 */
 	HL78XX_GNSS_EVENT_START_BLOCKED,
