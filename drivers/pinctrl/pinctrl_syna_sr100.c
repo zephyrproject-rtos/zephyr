@@ -7,7 +7,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/dt-bindings/pinctrl/syna-sr100-pinctrl.h>
 #include <zephyr/drivers/pinctrl.h>
-#include <zephyr/arch/common/sys_io.h>
+#include <zephyr/sys/sys_io.h>
 
 struct pinctrl_syna_controller {
 	uint32_t mux;

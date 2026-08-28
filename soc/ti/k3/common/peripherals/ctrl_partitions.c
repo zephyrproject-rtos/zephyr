@@ -7,7 +7,7 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/device_mmio.h>
-#include <zephyr/arch/common/sys_io.h>
+#include <zephyr/arch/cpu.h>
 
 #define KICK0_UNLOCK_VAL (0x68EF3490U)
 #define KICK1_UNLOCK_VAL (0xD172BC5AU)

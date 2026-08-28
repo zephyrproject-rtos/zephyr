@@ -8,7 +8,7 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/dt-bindings/clock/rts5817_clock.h>
 #include <zephyr/pm/device.h>
-#include <zephyr/arch/common/sys_io.h>
+#include <zephyr/sys/sys_io.h>
 #include <zephyr/device.h>
 #include <errno.h>
 #include <stdint.h>
