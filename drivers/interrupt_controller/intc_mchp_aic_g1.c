@@ -7,6 +7,7 @@
 
 #include <soc.h>
 #include <zephyr/kernel.h>
+#include <zephyr/drivers/interrupt_controller/intc_root.h>
 
 #define DT_DRV_COMPAT microchip_aic_g1_intc
 
@@ -40,7 +41,8 @@ static aic_registers_t *mchp_aic_get_aic(uint32_t source)
 	return aic_reg[AIC_NON_SECURE];
 }
 
-void z_aic_irq_enable(unsigned int irq)
+/* The AIC is the root interrupt controller of the SAMA5 SoCs */
+void intc_root_enable(unsigned int irq)
 {
 	k_spinlock_key_t key = k_spin_lock(&lock);
 	aic_registers_t *aic = mchp_aic_get_aic(irq);
@@ -51,7 +53,7 @@ void z_aic_irq_enable(unsigned int irq)
 	k_spin_unlock(&lock, key);
 }
 
-void z_aic_irq_disable(unsigned int irq)
+void intc_root_disable(unsigned int irq)
 {
 	k_spinlock_key_t key = k_spin_lock(&lock);
 	aic_registers_t *aic = mchp_aic_get_aic(irq);
@@ -62,7 +64,7 @@ void z_aic_irq_disable(unsigned int irq)
 	k_spin_unlock(&lock, key);
 }
 
-int z_aic_irq_is_enabled(unsigned int irq)
+int intc_root_is_enabled(unsigned int irq)
 {
 	k_spinlock_key_t key = k_spin_lock(&lock);
 	aic_registers_t *aic = mchp_aic_get_aic(irq);
@@ -73,10 +75,10 @@ int z_aic_irq_is_enabled(unsigned int irq)
 
 	k_spin_unlock(&lock, key);
 
-	return ((imr & AIC_IMR_INTM_Msk) == 0) ? 0 : 1;
+	return (imr & AIC_IMR_INTM_Msk) != 0;
 }
 
-bool z_soc_irq_is_pending(unsigned int irq)
+bool intc_root_is_pending(unsigned int irq)
 {
 	aic_registers_t *aic = mchp_aic_get_aic(irq);
 	unsigned int ipr, mask;
@@ -100,7 +102,7 @@ bool z_soc_irq_is_pending(unsigned int irq)
 	return ((ipr & mask) == 0) ? 0 : 1;
 }
 
-void z_soc_irq_set_pending(unsigned int irq)
+void intc_root_set_pending(unsigned int irq)
 {
 	k_spinlock_key_t key = k_spin_lock(&lock);
 	aic_registers_t *aic = mchp_aic_get_aic(irq);
@@ -111,7 +113,7 @@ void z_soc_irq_set_pending(unsigned int irq)
 	k_spin_unlock(&lock, key);
 }
 
-void z_soc_irq_clear_pending(unsigned int irq)
+void intc_root_clear_pending(unsigned int irq)
 {
 	k_spinlock_key_t key = k_spin_lock(&lock);
 	aic_registers_t *aic = mchp_aic_get_aic(irq);
@@ -122,7 +124,7 @@ void z_soc_irq_clear_pending(unsigned int irq)
 	k_spin_unlock(&lock, key);
 }
 
-void z_aic_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
+void intc_root_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
 {
 	k_spinlock_key_t key = k_spin_lock(&lock);
 	aic_registers_t *aic = mchp_aic_get_aic(irq);
@@ -140,7 +142,7 @@ void z_aic_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
 	k_spin_unlock(&lock, key);
 }
 
-unsigned int z_aic_irq_get_active(void)
+unsigned int intc_root_get_active(void)
 {
 	aic_registers_t *aic = aic_reg[AIC_NON_SECURE];
 
@@ -149,16 +151,11 @@ unsigned int z_aic_irq_get_active(void)
 	return aic->AIC_ISR;
 }
 
-void z_aic_irq_eoi(unsigned int irq)
+void intc_root_eoi(unsigned int irq)
 {
 	aic_registers_t *aic = mchp_aic_get_aic(irq);
 
 	aic->AIC_EOICR = AIC_EOICR_ENDIT(1);
-}
-
-void z_aic_irq_init(void)
-{
-	/* nothing to initialize */
 }
 
 int mchp_aic_init(const struct device *dev)
