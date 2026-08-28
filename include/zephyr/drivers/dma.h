@@ -119,9 +119,9 @@ struct dma_block_config {
 	uint32_t dest_address;
 #endif
 	/** Address adjustment at gather boundary */
-	uint32_t source_gather_interval;
+	int32_t source_gather_interval;
 	/** Address adjustment at scatter boundary */
-	uint32_t dest_scatter_interval;
+	int32_t dest_scatter_interval;
 	/** Continuous transfer count between scatter boundaries */
 	uint16_t dest_scatter_count;
 	/** Continuous transfer count between gather boundaries */

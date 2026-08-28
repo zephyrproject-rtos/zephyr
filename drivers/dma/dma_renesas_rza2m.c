@@ -360,11 +360,21 @@ static int rza2m_dma_construct_link_chain(const struct device *dev, struct dma_c
 
 		/* DMA controller supports only 1 interval so apply the bigger one which enabled */
 		if (block->source_gather_en) {
+			if (block->source_gather_interval < 0) {
+				LOG_ERR("%s: source_gather_interval cannot be negative", __func__);
+				return -EINVAL;
+			}
+
 			chan->descrs[i].interval = block->source_gather_interval;
 		}
 
 		if (block->dest_scatter_en &&
 		    (chan->descrs[i].interval < block->dest_scatter_interval)) {
+			if (block->dest_scatter_interval < 0) {
+				LOG_ERR("%s: dest_scatter_interval cannot be negative", __func__);
+				return -EINVAL;
+			}
+
 			chan->descrs[i].interval = block->dest_scatter_interval;
 		}
 
