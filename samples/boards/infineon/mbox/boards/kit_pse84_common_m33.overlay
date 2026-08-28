@@ -1,0 +1,13 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "kit_pse84_eval_common.overlay"
+
+&mbox0 {
+	/* m33syscpuss NVIC vectors for IPC0 interrupt structures 4 and 5. */
+	interrupts = <74 4>, <75 4>;
+};
