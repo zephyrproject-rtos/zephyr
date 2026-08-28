@@ -167,11 +167,5 @@ static DEVICE_API(clock_control, rz_clock_control_driver_api) = {
 	.get_rate = clock_control_renesas_rz_get_rate,
 };
 
-static int clock_control_rz_init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-	return 0;
-}
-
-DEVICE_DT_INST_DEFINE(0, clock_control_rz_init, NULL, NULL, NULL, PRE_KERNEL_1,
-		      CONFIG_CLOCK_CONTROL_INIT_PRIORITY, &rz_clock_control_driver_api);
+DEVICE_DT_INST_DEFINE(0, NULL, NULL, NULL, NULL, PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
+		      &rz_clock_control_driver_api);

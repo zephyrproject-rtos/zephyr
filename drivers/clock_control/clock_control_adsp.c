@@ -17,20 +17,11 @@ static int cavs_clock_ctrl_set_rate(const struct device *clk,
 	return adsp_clock_set_cpu_freq(freq_idx);
 }
 
-static int cavs_clock_ctrl_init(const struct device *dev)
-{
-	/* Nothing to do. All initialisation should've been handled
-	 * by SOC level driver.
-	 */
-	return 0;
-}
-
 static DEVICE_API(clock_control, cavs_clock_api) = {
 	.on = clock_control_always_running_clk_on,
 	.off = clock_control_always_running_clk_off,
 	.set_rate = cavs_clock_ctrl_set_rate,
 };
 
-DEVICE_DT_DEFINE(DT_NODELABEL(clkctl), cavs_clock_ctrl_init, NULL,
-		 NULL, NULL, POST_KERNEL,
+DEVICE_DT_DEFINE(DT_NODELABEL(clkctl), NULL, NULL, NULL, NULL, POST_KERNEL,
 		 CONFIG_CLOCK_CONTROL_INIT_PRIORITY, &cavs_clock_api);
