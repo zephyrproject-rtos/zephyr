@@ -75,3 +75,7 @@
 &bee_bt_hci {
 	status = "okay";
 };
+
+zephyr_udc0: &udc {
+	status = "okay";
+};

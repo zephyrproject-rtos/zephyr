@@ -1,0 +1,9 @@
+# Copyright (c) 2026, Realtek Semiconductor Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Realtek Bee USB device controller (Synopsys DesignWare OTG USB 2.0 core).
+
+compatible: "realtek,bee-udc"
+
+include: ["snps,dwc2.yaml"]
