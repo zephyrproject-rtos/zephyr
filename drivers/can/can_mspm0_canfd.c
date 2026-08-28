@@ -208,17 +208,22 @@ static void can_mspm0_canfd_isr(const struct device *dev)
 	volatile uint32_t *eoi =
 		&config->ti_canfd_base->MCANSS.TI_WRAPPER.PROCESSORS.MCANSS_REGS.MCANSS_EOI;
 
-	switch (DL_MCAN_getPendingInterrupt(config->ti_canfd_base)) {
-	case DL_MCAN_IIDX_LINE0:
-		can_mcan_line_0_isr(dev);
-		*eoi = DL_MCAN_INTR_SRC_MCAN_LINE_0;
-		break;
-	case DL_MCAN_IIDX_LINE1:
-		can_mcan_line_1_isr(dev);
-		*eoi = DL_MCAN_INTR_SRC_MCAN_LINE_1;
-		break;
-	default:
-		break;
+	/* MCANSS muxes LINE0 and LINE1 onto a single CPU IRQ via IIDX.
+	 * Loop up to the number of lines so both can be drained per entry.
+	 */
+	for (int i = 0; i < 2; i++) {
+		switch (DL_MCAN_getPendingInterrupt(config->ti_canfd_base)) {
+		case DL_MCAN_IIDX_LINE0:
+			can_mcan_line_0_isr(dev);
+			*eoi = DL_MCAN_INTR_SRC_MCAN_LINE_0;
+			break;
+		case DL_MCAN_IIDX_LINE1:
+			can_mcan_line_1_isr(dev);
+			*eoi = DL_MCAN_INTR_SRC_MCAN_LINE_1;
+			break;
+		default:
+			return;
+		}
 	}
 }
 
