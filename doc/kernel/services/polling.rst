@@ -72,7 +72,7 @@ Using k_poll()
 
 The main API is :c:func:`k_poll`, which operates on an array of poll events
 of type :c:struct:`k_poll_event`. Each entry in the array represents one
-event a call to :c:func:`k_poll` will wait for its condition to be
+event with a condition, which a call to :c:func:`k_poll` will wait for to be
 fulfilled.
 
 Poll events can be initialized using either the runtime initializers
