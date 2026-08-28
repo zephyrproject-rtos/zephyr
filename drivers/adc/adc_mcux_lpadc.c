@@ -371,7 +371,7 @@ static int mcux_lpadc_start_read(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	ret = adc_sequence_validate_buffer(sequence, POPCOUNT(sequence->channels), 
+	ret = adc_sequence_validate_buffer(sequence, POPCOUNT(sequence->channels),
 					   sizeof(uint16_t));
 	if (ret < 0) {
 		return ret;
@@ -470,14 +470,16 @@ static int mcux_lpadc_read_async(const struct device *dev,
 			struct k_poll_signal *async)
 {
 	struct mcux_lpadc_data *data = dev->data;
+#if CONFIG_PM_DEVICE
 	const struct mcux_lpadc_config *config = dev->config;
+#endif
 	int error;
 
 	pm_device_runtime_get(dev);
 	adc_context_lock(&data->ctx, async ? true : false, async);
 	mcux_lpadc_pm_policy_device_power_lock_get(dev);
 
-/* 
+/*
  * Re-calibrate on read is only needed on low-power modes
  * since the peripheral configurations are lost after
  * entering low-power and ensures proper function after
@@ -489,19 +491,19 @@ static int mcux_lpadc_read_async(const struct device *dev,
 #if defined(FSL_FEATURE_LPADC_HAS_OFSTRIM) && FSL_FEATURE_LPADC_HAS_OFSTRIM
 	/* Request offset calibration. */
 #if defined(CONFIG_LPADC_DO_OFFSET_CALIBRATION) && CONFIG_LPADC_DO_OFFSET_CALIBRATION
- 	LPADC_DoOffsetCalibration(config->base);
+	LPADC_DoOffsetCalibration(config->base);
 #else
 #if defined(FSL_FEATURE_LPADC_OFSTRIM_COUNT) && (FSL_FEATURE_LPADC_OFSTRIM_COUNT == 1U)
 	LPADC_SetOffsetValue(config->base, config->offset_a);
 #else
 	LPADC_SetOffsetValue(config->base, config->offset_a, config->offset_b);
 #endif /* FSL_FEATURE_LPADC_OFSTRIM_COUNT */
-#endif /* DEMO_LPADC_DO_OFFSET_CALIBRATION */
+#endif /* CONFIG_LPADC_DO_OFFSET_CALIBRATION */
 #endif /* FSL_FEATURE_LPADC_HAS_OFSTRIM */
 	k_busy_wait(1U);
- 	LPADC_PrepareAutoCalibration(config->base);
- 	LPADC_FinishAutoCalibration(config->base);
- 	LPADC_DoAutoCalibration(config->base);
+	LPADC_PrepareAutoCalibration(config->base);
+	LPADC_FinishAutoCalibration(config->base);
+	LPADC_DoAutoCalibration(config->base);
 #endif
 #endif
 	/* Perform ADC reading after calibration */
@@ -856,18 +858,6 @@ static int mcux_lpadc_pm_callback(const struct device *dev, enum pm_device_actio
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
 
-		err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
-		if (err < 0 && err != -ENOENT) {
-			return err;
-		}
-
-		if (regulator != NULL) {
-			err = regulator_enable(regulator);
-			if (err < 0) {
-				return err;
-			}
-		}
-
 		err = clock_control_configure(config->clock_dev, config->clock_subsys, NULL);
 		if (err && err != -ENOSYS) {
 			/* Real error occurred */
@@ -879,6 +869,18 @@ static int mcux_lpadc_pm_callback(const struct device *dev, enum pm_device_actio
 		if (err && err != -ENOSYS) {
 			/* Real error occurred */
 			LOG_ERR("Failed to enable clock: %d", err);
+			return err;
+		}
+
+		if (regulator != NULL) {
+			err = regulator_enable(regulator);
+			if (err < 0) {
+				return err;
+			}
+		}
+
+		err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
+		if (err < 0 && err != -ENOENT) {
 			return err;
 		}
 
@@ -904,24 +906,25 @@ static int mcux_lpadc_pm_callback(const struct device *dev, enum pm_device_actio
 
 	case PM_DEVICE_ACTION_SUSPEND:
 
-		LPADC_Enable(config->base, false);
-
 		/* Disable interrupts before gating clock */
 #if (defined(FSL_FEATURE_LPADC_FIFO_COUNT) && (FSL_FEATURE_LPADC_FIFO_COUNT == 2U))
 		LPADC_DisableInterrupts(config->base, kLPADC_FIFO0WatermarkInterruptEnable);
 #else
 		LPADC_DisableInterrupts(config->base, kLPADC_FIFOWatermarkInterruptEnable);
 #endif
-		err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_SLEEP);
-		if (err < 0 && err != -ENOENT) {
-			return err;
-		}
+
+		LPADC_Enable(config->base, false);
 
 		if (regulator != NULL) {
 			err = regulator_disable(regulator);
 			if (err < 0) {
 				return err;
 			}
+		}
+
+		err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_SLEEP);
+		if (err < 0 && err != -ENOENT) {
+			return err;
 		}
 
 		/* gate the peripheral clock */
