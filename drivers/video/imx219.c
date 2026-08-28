@@ -8,6 +8,7 @@
 #define DT_DRV_COMPAT sony_imx219
 
 #include <zephyr/device.h>
+#include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/video.h>
 #include <zephyr/kernel.h>
@@ -93,6 +94,7 @@ struct imx219_data {
 
 struct imx219_config {
 	struct i2c_dt_spec i2c;
+	struct gpio_dt_spec reset_gpio;
 	uint32_t input_clk_hz;
 };
 
@@ -152,6 +154,13 @@ static const struct video_reg16 imx219_fmt_raw10_regs[] = {
 
 /* TODO the FPS registers are currently tuned for 1920x1080 cropped resolution */
 
+/*
+ * The output PLL sets the CSI-2 line rate and must agree with the link frequency
+ * reported through VIDEO_CID_LINK_FREQ, since the receiver programs its D-PHY from
+ * that value: with a 24 MHz input clock, PREPLLCK_OP_DIV of 3 and PLL_OP_MPY of 114
+ * the lanes run at 24 / 3 * 114 = 912 Mbps, i.e. IMX219_2DL_LINK_FREQ of 456 MHz DDR.
+ * Only the video timing PLL is varied to pick the frame rate.
+ */
 static const struct video_reg imx219_fps_30_regs[] = {
 	{IMX219_CCI_PREPLLCK_VT_DIV, 0x03},	/* Auto */
 	{IMX219_CCI_PREPLLCK_OP_DIV, 0x03},	/* Auto */
@@ -160,7 +169,7 @@ static const struct video_reg imx219_fps_30_regs[] = {
 	{IMX219_CCI_OPPXCK_DIV, 10},		/* Output pixel clock divider */
 	{IMX219_CCI_OPSYCK_DIV, 1},
 	{IMX219_CCI_PLL_VT_MPY, 30},		/* Video Timing clock multiplier */
-	{IMX219_CCI_PLL_OP_MPY, 50},		/* Output clock multiplier */
+	{IMX219_CCI_PLL_OP_MPY, 114},		/* Output clock multiplier */
 };
 
 static const struct video_reg imx219_fps_15_regs[] = {
@@ -171,7 +180,7 @@ static const struct video_reg imx219_fps_15_regs[] = {
 	{IMX219_CCI_OPPXCK_DIV, 10},		/* Output pixel clock divider */
 	{IMX219_CCI_OPSYCK_DIV, 1},
 	{IMX219_CCI_PLL_VT_MPY, 15},		/* Video Timing clock multiplier */
-	{IMX219_CCI_PLL_OP_MPY, 50},		/* Output clock multiplier */
+	{IMX219_CCI_PLL_OP_MPY, 114},		/* Output clock multiplier */
 };
 
 enum {
@@ -518,6 +527,21 @@ static int imx219_init(const struct device *dev)
 		return -ENODEV;
 	}
 
+	/* Release the sensor from hardware standby before talking to it */
+	if (cfg->reset_gpio.port != NULL) {
+		if (!gpio_is_ready_dt(&cfg->reset_gpio)) {
+			LOG_ERR("GPIO device %s is not ready", cfg->reset_gpio.port->name);
+			return -ENODEV;
+		}
+
+		ret = gpio_pin_configure_dt(&cfg->reset_gpio, GPIO_OUTPUT_ACTIVE);
+		if (ret < 0) {
+			return ret;
+		}
+
+		k_sleep(K_MSEC(5));
+	}
+
 	k_sleep(K_MSEC(1));
 
 	ret = video_write_cci_reg(&cfg->i2c, IMX219_CCI_SOFTWARE_RESET, 1);
@@ -572,6 +596,7 @@ static int imx219_init(const struct device *dev)
                                                                                                    \
 	static const struct imx219_config imx219_cfg_##n = {                                       \
 		.i2c = I2C_DT_SPEC_INST_GET(n),                                                    \
+		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {0}),                       \
 		.input_clk_hz = DT_INST_PROP_BY_PHANDLE(n, clocks, clock_frequency),               \
 	};                                                                                         \
                                                                                                    \
