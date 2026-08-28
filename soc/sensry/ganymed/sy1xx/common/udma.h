@@ -7,7 +7,7 @@
 #define GANYMED_SY1XX_UDMA_H
 
 #include <stdint.h>
-#include <zephyr/arch/common/sys_io.h>
+#include <zephyr/arch/cpu.h>
 #include <soc.h>
 
 /* UDMA */

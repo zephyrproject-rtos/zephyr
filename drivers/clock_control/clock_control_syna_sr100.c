@@ -7,7 +7,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/dt-bindings/clock/syna_sr100_clock.h>
-#include <zephyr/arch/common/sys_io.h>
+#include <zephyr/sys/sys_io.h>
 
 #define DT_DRV_COMPAT syna_sr100_clock
 
