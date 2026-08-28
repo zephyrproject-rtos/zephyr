@@ -72,9 +72,9 @@
 	};
 
 	/* This partition is shared with code in RAM */
-	sram_shared_code1: memory@20058000 {
+	sram_shared_code1: memory@20580000 {
 		compatible = "mmio-sram";
-		reg = <0x20058000 DT_SIZE_K(256)>;
+		reg = <0x20580000 DT_SIZE_K(256)>;
 	};
 
 	sram0: memory@20180000 {
@@ -92,11 +92,6 @@
 		compatible = "mmio-sram";
 		/* Only use 256K, align with SDK */
 		reg = <0x205c0000 DT_SIZE_K(256)>;
-	};
-
-	sram4: memory@20600000 {
-		compatible = "mmio-sram";
-		reg = <0x20600000 DT_SIZE_K(256)>;
 	};
 };
 
