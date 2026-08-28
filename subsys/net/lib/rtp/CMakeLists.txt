@@ -7,6 +7,7 @@ zephyr_library_include_directories(${ZEPHYR_BASE}/subsys/net/ip)
 
 zephyr_library_sources(
   rtp.c
+  rtp_packet.c
   rtp_transport.c
 )
 
