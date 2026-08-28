@@ -21,7 +21,7 @@
 #include <zephyr/drivers/uaol.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/time_units.h>
-#include <zephyr/arch/common/sys_io.h>
+#include <zephyr/sys/sys_io.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
 #include <zephyr/logging/log.h>
