@@ -75,10 +75,9 @@ static int regulator_nxp_vref_set_mode(const struct device *dev, regulator_mode_
 		} else if (mode == NXP_VREF_MODE_LOW_POWER) {
 			csr &= ~VREF_CSR_HI_PWR_LV_MASK;
 			csr |= VREF_CSR_BUF21EN_MASK;
-		} else if (mode == NXP_VREF_MODE_HIGH_POWER) {
-			csr |= (VREF_CSR_HI_PWR_LV_MASK | VREF_CSR_BUF21EN_MASK);
 		} else {
-			return -EINVAL;
+			/* mode == NXP_VREF_MODE_HIGH_POWER */
+			csr |= (VREF_CSR_HI_PWR_LV_MASK | VREF_CSR_BUF21EN_MASK);
 		}
 
 		base->CSR = csr;
@@ -117,11 +116,14 @@ static int regulator_nxp_vref_enable(const struct device *dev)
 
 	volatile uint32_t *const csr = &base->CSR;
 
+/* Gating the clock is only needed in low power modes */
+#if CONFIG_PM_DEVICE
 	ret = clock_control_on(config->clock_dev, config->clock_subsys);
 	if (ret) {
 		LOG_ERR("Failed to enable clock: %d", ret);
 		return ret;
 	}
+#endif
 
 	*csr |= VREF_CSR_LPBGEN_MASK;
 #if !(defined(FSL_FEATURE_VREF_HAS_LOWPOWER_BUFFER) && (FSL_FEATURE_VREF_HAS_LOWPOWER_BUFFER == 0))
@@ -160,11 +162,14 @@ static int regulator_nxp_vref_disable(const struct device *dev)
 #endif
 	);
 
+/* Gating the clock is only needed in low power modes */
+#if CONFIG_PM_DEVICE
 	ret = clock_control_off(config->clock_dev, config->clock_subsys);
 	if (ret) {
 		LOG_ERR("Failed to disable clock: %d", ret);
 		return ret;
 	}
+#endif
 
 	return 0;
 }
