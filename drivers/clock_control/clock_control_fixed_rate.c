@@ -33,23 +33,11 @@ static DEVICE_API(clock_control, fixed_rate_clk_api) = {
 	.get_rate = fixed_rate_clk_get_rate,
 };
 
-static int fixed_rate_clk_init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
+#define FIXED_CLK_INIT(idx)                                                                        \
+	static const struct fixed_rate_clock_config fixed_rate_clock_config_##idx = {              \
+		.rate = DT_INST_PROP(idx, clock_frequency),                                        \
+	};                                                                                         \
+	DEVICE_DT_INST_DEFINE(idx, NULL, NULL, NULL, &fixed_rate_clock_config_##idx, PRE_KERNEL_1, \
+			      CONFIG_CLOCK_CONTROL_INIT_PRIORITY, &fixed_rate_clk_api);
 
-	return 0;
-}
-
-#define FIXED_CLK_INIT(idx) \
-	static const struct fixed_rate_clock_config fixed_rate_clock_config_##idx = { \
-		.rate = DT_INST_PROP(idx, clock_frequency),                           \
-	};                                                                            \
-	DEVICE_DT_INST_DEFINE(idx,                                                    \
-		fixed_rate_clk_init,                                                  \
-		NULL, NULL,                                                           \
-		&fixed_rate_clock_config_##idx,                                       \
-		PRE_KERNEL_1,                                                         \
-		CONFIG_CLOCK_CONTROL_INIT_PRIORITY,                                   \
-		&fixed_rate_clk_api                                                   \
-	);
 DT_INST_FOREACH_STATUS_OKAY(FIXED_CLK_INIT)
