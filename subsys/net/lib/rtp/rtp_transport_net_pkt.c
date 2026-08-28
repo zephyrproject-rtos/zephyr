@@ -31,9 +31,19 @@ LOG_MODULE_REGISTER(rtp_net_pkt, CONFIG_RTP_LOG_LEVEL);
 #include "net_stats.h"
 #include "udp_internal.h"
 
+#include "rtp_packet.h"
+#include "rtp_srtp.h"
+
 BUILD_ASSERT(CONFIG_NET_BUF_DATA_SIZE >= RTP_MIN_HEADER_LEN);
 
 #define PKT_WAIT_TIME K_MSEC(1)
+
+#ifdef CONFIG_SRTP
+BUILD_ASSERT(CONFIG_SRTP_NET_PKT_BUF_SIZE > RTP_MIN_HEADER_LEN + SRTP_MAX_TRAILER_LEN,
+	     "SRTP staging buffer too small for protected packets");
+
+#define SRTP_STAGING_LOCK_TIMEOUT K_MSEC(100)
+#endif /* CONFIG_SRTP */
 
 static uint16_t get_next_local_port(void)
 {
@@ -47,6 +57,73 @@ static uint16_t get_next_local_port(void)
 
 	return (uint16_t)port;
 }
+
+#ifdef CONFIG_SRTP
+/* Unprotection needs a contiguous view of the whole packet. The RTP packet
+ * handed to the application callback points into the session's staging
+ * buffer, which the lock keeps valid for the duration of the callback.
+ *
+ * Kept out of line so plain RTP reception does not pay for the SRTP path.
+ */
+static __noinline enum net_verdict rtp_net_pkt_recv_srtp(struct rtp_session *session,
+							 struct net_pkt *pkt)
+{
+	struct srtp_session_ctx *srtp_ctx = session->srtp;
+	struct rtp_packet rtp_pkt = {};
+	size_t len = net_pkt_remaining_data(pkt);
+	size_t plain_len;
+	int ret;
+
+	if (srtp_ctx == NULL) {
+		return NET_DROP;
+	}
+
+	if (len > sizeof(srtp_ctx->net_pkt_buf)) {
+		NET_DBG("SRTP packet larger than CONFIG_SRTP_NET_PKT_BUF_SIZE");
+		return NET_DROP;
+	}
+
+	ret = k_mutex_lock(&srtp_ctx->net_pkt_lock, SRTP_STAGING_LOCK_TIMEOUT);
+	if (ret < 0) {
+		NET_DBG("Failed to lock SRTP staging buffer (%d)", ret);
+		return NET_DROP;
+	}
+
+	ret = net_pkt_read(pkt, srtp_ctx->net_pkt_buf, len);
+	if (ret < 0) {
+		NET_DBG("Failed to read packet data (%d)", ret);
+		goto drop;
+	}
+
+	ret = rtp_srtp_unprotect(session, srtp_ctx->net_pkt_buf, len, &plain_len);
+	if (ret < 0) {
+		NET_DBG("Dropping unauthenticated SRTP packet (%d)", ret);
+		goto drop;
+	}
+
+	ret = rtp_packet_deserialize(&rtp_pkt, srtp_ctx->net_pkt_buf, plain_len);
+	if (ret < 0) {
+		NET_DBG("Failed to deserialize RTP packet (%d)", ret);
+		goto drop;
+	}
+
+#ifdef CONFIG_NET_PKT_TIMESTAMP
+	memcpy(&rtp_pkt.timestamp, &pkt->timestamp, sizeof(rtp_pkt.timestamp));
+#endif
+
+	session->rtp_context.callback(session, &rtp_pkt, session->rtp_context.user_data);
+
+	(void)k_mutex_unlock(&srtp_ctx->net_pkt_lock);
+
+	net_pkt_unref(pkt);
+
+	return NET_OK;
+
+drop:
+	(void)k_mutex_unlock(&srtp_ctx->net_pkt_lock);
+	return NET_DROP;
+}
+#endif /* CONFIG_SRTP */
 
 static enum net_verdict rtp_conn_cb(struct net_conn *conn, struct net_pkt *pkt,
 				    union net_ip_header *ip_hdr, union net_proto_header *proto_hdr,
@@ -101,6 +178,12 @@ static enum net_verdict rtp_conn_cb(struct net_conn *conn, struct net_pkt *pkt,
 		NET_DBG("Invalid RTP packet received of length %zu", net_pkt_remaining_data(pkt));
 		return NET_DROP;
 	}
+
+#ifdef CONFIG_SRTP
+	if (rtp_srtp_rx_enabled(session)) {
+		return rtp_net_pkt_recv_srtp(session, pkt);
+	}
+#endif /* CONFIG_SRTP */
 
 	(void)net_pkt_read_u8(pkt, &rtp_pkt.header.vpxcc);
 	(void)net_pkt_read_u8(pkt, &rtp_pkt.header.mpt);
@@ -212,7 +295,10 @@ static enum net_verdict rtp_conn_cb(struct net_conn *conn, struct net_pkt *pkt,
 	return NET_OK;
 }
 
-static struct net_pkt *rtp_create_net_pkt(struct rtp_session *session, size_t size)
+/* Force-inlined: with SRTP compiled in this helper gains a second caller,
+ * which would otherwise move it out of line in the plain transmit path.
+ */
+static ALWAYS_INLINE struct net_pkt *rtp_create_net_pkt(struct rtp_session *session, size_t size)
 {
 	struct rtp_session_context *rtp_context = &session->rtp_context;
 	struct net_sockaddr_storage *sock_addr = &rtp_context->sock_addr;
@@ -451,14 +537,114 @@ int rtp_transport_net_pkt_stop_tx(struct rtp_session *session)
 	return 0;
 }
 
+/* Force-inlined for the same reason as rtp_create_net_pkt() */
+static ALWAYS_INLINE int rtp_net_pkt_finalize_send(struct rtp_session *session, struct net_pkt *pkt)
+{
+	int ret;
+
+	net_pkt_cursor_init(pkt);
+
+	switch (session->rtp_context.sock_addr.ss_family) {
+#ifdef CONFIG_NET_NATIVE_IPV4
+	case NET_AF_INET:
+		net_ipv4_finalize(pkt, NET_IPPROTO_UDP);
+		break;
+#endif /* CONFIG_NET_NATIVE_IPV4 */
+#ifdef CONFIG_NET_NATIVE_IPV6
+	case NET_AF_INET6:
+		net_ipv6_finalize(pkt, NET_IPPROTO_UDP);
+		break;
+#endif /* CONFIG_NET_NATIVE_IPV6 */
+	default:
+		break;
+	}
+
+	ret = net_send_data(pkt);
+	if (ret < 0) {
+		NET_DBG("Failed to send rtp (%d)", ret);
+		net_pkt_unref(pkt);
+		return ret;
+	}
+
+	net_stats_update_udp_sent(session->rtp_context.iface);
+
+	return 0;
+}
+
+#ifdef CONFIG_SRTP
+/* Kept out of line: inlining this into the send path pushes the packet
+ * allocation and finalization helpers out of line there, taxing plain RTP
+ * transmission.
+ */
+static __noinline int rtp_net_pkt_send_srtp(struct rtp_session *session, struct rtp_packet *rtp_pkt,
+					    uint8_t padding)
+{
+	struct srtp_session_ctx *srtp_ctx = session->srtp;
+	struct net_pkt *pkt;
+	size_t protected_len;
+	int len;
+	int ret;
+
+	if (srtp_ctx == NULL) {
+		return -ENOENT;
+	}
+
+	ret = k_mutex_lock(&srtp_ctx->net_pkt_lock, SRTP_STAGING_LOCK_TIMEOUT);
+	if (ret < 0) {
+		NET_DBG("Failed to lock SRTP staging buffer");
+		return ret;
+	}
+
+	/* Serialize into the staging buffer, leaving room for the tag */
+	len = rtp_packet_serialize(rtp_pkt, padding, srtp_ctx->net_pkt_buf,
+				   sizeof(srtp_ctx->net_pkt_buf) - SRTP_MAX_TRAILER_LEN);
+	if (len < 0) {
+		ret = len;
+		goto unlock;
+	}
+
+	ret = rtp_srtp_protect(session, srtp_ctx->net_pkt_buf, len, sizeof(srtp_ctx->net_pkt_buf),
+			       &protected_len);
+	if (ret < 0) {
+		NET_DBG("Failed to protect RTP packet (%d)", ret);
+		goto unlock;
+	}
+
+	pkt = rtp_create_net_pkt(session, protected_len);
+	if (pkt == NULL) {
+		NET_DBG("Net pkt is NULL");
+		ret = -EIO;
+		goto unlock;
+	}
+
+	ret = net_pkt_write(pkt, srtp_ctx->net_pkt_buf, protected_len);
+	if (ret < 0) {
+		NET_DBG("Failed to write SRTP packet (%d)", ret);
+		net_pkt_unref(pkt);
+		goto unlock;
+	}
+
+	(void)k_mutex_unlock(&srtp_ctx->net_pkt_lock);
+
+	return rtp_net_pkt_finalize_send(session, pkt);
+
+unlock:
+	(void)k_mutex_unlock(&srtp_ctx->net_pkt_lock);
+	return ret;
+}
+#endif /* CONFIG_SRTP */
+
 int rtp_transport_net_pkt_send(struct rtp_session *session, struct rtp_packet *rtp_pkt,
 			       uint8_t padding)
 {
-	struct rtp_session_context *rtp_context;
 	struct net_pkt *pkt;
 	int ret;
 
-	rtp_context = &session->rtp_context;
+#ifdef CONFIG_SRTP
+	if (rtp_srtp_tx_enabled(session)) {
+		return rtp_net_pkt_send_srtp(session, rtp_pkt, padding);
+	}
+#endif /* CONFIG_SRTP */
 
 	pkt = rtp_create_net_pkt(session, CONFIG_NET_BUF_DATA_SIZE);
 	if (pkt == NULL) {
@@ -515,32 +701,7 @@ int rtp_transport_net_pkt_send(struct rtp_session *session, struct rtp_packet *r
 		(void)net_pkt_write_u8(pkt, padding);
 	}
 
-	net_pkt_cursor_init(pkt);
-
-	switch (rtp_context->sock_addr.ss_family) {
-#ifdef CONFIG_NET_NATIVE_IPV4
-	case NET_AF_INET:
-		net_ipv4_finalize(pkt, NET_IPPROTO_UDP);
-		break;
-#endif /* CONFIG_NET_NATIVE_IPV4 */
-#ifdef CONFIG_NET_NATIVE_IPV6
-	case NET_AF_INET6:
-		net_ipv6_finalize(pkt, NET_IPPROTO_UDP);
-		break;
-#endif /* CONFIG_NET_NATIVE_IPV6 */
-	default:
-		break;
-	}
-
-	ret = net_send_data(pkt);
-	if (ret < 0) {
-		NET_DBG("Failed to send rtp (%d)", ret);
-		goto fail;
-	}
-
-	net_stats_update_udp_sent(rtp_context->iface);
-
-	return 0;
+	return rtp_net_pkt_finalize_send(session, pkt);
 
 fail:
 	if (pkt != NULL) {
