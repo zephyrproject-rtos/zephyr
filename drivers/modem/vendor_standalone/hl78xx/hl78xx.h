@@ -961,13 +961,6 @@ struct hl78xx_variant_ops {
 	void (*on_kcellmeas_ready)(struct hl78xx_data *data);
 
 	/**
-	 * @brief Handle pending GNSS mode request on CARRIER_ON entry.
-	 *
-	 * @return true if the variant handled routing and the caller should return.
-	 */
-	bool (*carrier_on_gnss_pending)(struct hl78xx_data *data);
-
-	/**
 	 * @brief Handle GNSS mode enter request while low power mode is enabled.
 	 *
 	 * @return true if the variant handled the request and caller should return.
@@ -1328,7 +1321,9 @@ void hl78xx_enter_lte_restore_state(struct hl78xx_data *data);
  *
  * Deliberately does NOT touch request/intent flags (gnss_mode_enter_pending):
  * those record what the caller wants, not what the hardware was doing, and the
- * boot path consumes them to serve the request in the new session.
+ * boot path consumes them in the new session: a boot in airplane mode serves
+ * the request, a boot in fully functional mode drops it at the carrier-on, and
+ * a low-power build whose modem sleeps first serves it from sleep.
  *
  * @param data Modem data structure.
  */

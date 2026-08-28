@@ -712,7 +712,10 @@ enum hl78xx_evt_type {
 	HL78XX_GNSS_EVENT_STOP,
 	/** GNSS position fix obtained. @kconfig_dep{CONFIG_HL78XX_GNSS} */
 	HL78XX_GNSS_EVENT_POSITION,
-	/** GNSS start failed because LTE is active (shared RF path)
+	/** GNSS request dropped because LTE holds the shared RF path: either the
+	 * GNSS start failed while LTE was active, or a queued GNSS mode request
+	 * was discarded when the driver entered the carrier-on state. The driver
+	 * does not retry; the application must request GNSS again.
 	 * @kconfig_dep{CONFIG_HL78XX_GNSS}
 	 */
 	HL78XX_GNSS_EVENT_START_BLOCKED,
@@ -2141,7 +2144,7 @@ int hl78xx_edrx_get_time_to_sleep(const struct device *dev);
  * on the modem's current power state:
  *
  * **Without low-power mode (default / airplane mode path):**
- * 1. Carrier off (notify app, close sockets)
+ * 1. Carrier off (notify app, remove the addresses and DNS state)
  * 2. Put modem in airplane mode (AT+CFUN=4)
  * 3. Initialize GNSS engine
  * 4. Fire HL78XX_GNSS_ENGINE_READY event when complete
@@ -2157,6 +2160,15 @@ int hl78xx_edrx_get_time_to_sleep(const struct device *dev);
  * the LTE modem is unavailable and the shared RF Rx path is free.
  *
  * After entering GNSS mode, call hl78xx_queue_gnss_search() to start fix acquisition.
+ *
+ * A request made while the modem is still registering is not served: it stays
+ * pending until the modem registers, is then dropped at the carrier-on,
+ * reported with HL78XX_GNSS_EVENT_START_BLOCKED, and must be made again. An
+ * application that needs a fix meanwhile leaves GNSS to its next cycle. A power
+ * down carries a pending request into the next session: a boot in airplane mode
+ * serves it, a boot in fully functional mode drops it at the carrier-on. A
+ * low-power build whose modem sleeps before the carrier comes up serves it from
+ * sleep instead.
  *
  * @kconfig_dep{CONFIG_HL78XX_GNSS}
  *
