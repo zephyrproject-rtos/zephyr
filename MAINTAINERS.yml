@@ -6148,6 +6148,7 @@ TI K3 Platforms:
     - vaishnavachath
     - natto1784
     - Kronosblaster
+    - soumya-TI
   files:
     - boards/ti/*am2*/
     - boards/ti/*am6*/
@@ -6178,6 +6179,7 @@ TI MSPM Platforms:
     - karthi012
     - Girinandha-M
     - santhosh-c-c
+    - soumya-TI
   files:
     - soc/ti/mspm/
     - boards/ti/*mspm*/
