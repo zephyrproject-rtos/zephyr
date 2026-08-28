@@ -270,7 +270,9 @@
 			compatible = "infineon,ipc";
 			reg = <0x521d0000 0x1200>;
 			status = "disabled";
-			#ipc-config-cells = <3>;
+			#ipc-config-cells = <2>;
+			channel-count = <4>;
+			interrupt-count = <2>;
 		};
 
 		canfd0: canfd@52800000 {
