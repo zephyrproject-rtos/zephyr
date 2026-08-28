@@ -553,6 +553,13 @@ New APIs and options
   * :c:macro:`HWSPINLOCK_COMMON_CONFIG_FROM_DT_NODE`
   * :c:macro:`HWSPINLOCK_COMMON_CONFIG_FROM_DT_INST`
 
+* Interrupt controllers
+
+  * The root interrupt controller API, :zephyr_file:`include/zephyr/drivers/interrupt_controller/intc_root.h`:
+    an interrupt controller driver selects :kconfig:option:`CONFIG_INTC_ROOT` and provides the
+    ``intc_root_*`` functions, and the architecture interrupt control functions map onto them
+    directly, replacing per-platform glue.
+
 * Kconfig
 
   * Add ``dt_partition_mtd`` preprocessor function (:github:`111599`)

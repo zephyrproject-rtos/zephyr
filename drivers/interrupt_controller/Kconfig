@@ -6,6 +6,14 @@
 
 menu "Interrupt controller drivers"
 
+config INTC_ROOT
+	bool
+	help
+	  Selected by the interrupt controller driver that is the platform's
+	  root interrupt controller. The driver provides the intc_root_*
+	  functions and the architecture interrupt control functions map
+	  onto them directly.
+
 config ARCV2_INTERRUPT_UNIT
 	bool "ARCv2 Interrupt Unit"
 	default y
