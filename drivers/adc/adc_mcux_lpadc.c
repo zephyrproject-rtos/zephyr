@@ -974,6 +974,11 @@ static int mcux_lpadc_pm_callback(const struct device *dev, enum pm_device_actio
 			return err;
 		}
 
+		err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_SLEEP);
+		if (err < 0 && err != -ENOENT) {
+			return err;
+		}
+
 		/* gate the peripheral clock */
 		err = clock_control_off(config->clock_dev, config->clock_subsys);
 		if (err < 0 && err != -ENOENT) {
