@@ -13,6 +13,7 @@ config USE_LORA_BASICS_MODEM_DRIVERS
 config LORA_BASICS_MODEM_HAL
 	bool "LoRa Basics Modem HAL implementation"
 	depends on USE_LORA_BASICS_MODEM_DRIVERS && LORA_SX126X
+	default y if LORAWAN
 	help
 	  Compile the smtc_modem_hal implementation for LoRa Basics Modem.
 	  This is required for porting tests and full modem functionality.
@@ -29,3 +30,14 @@ config LORA_BASICS_MODEM_NVM
 	  request whose nonce does not increase, so a device that forgets the
 	  context can only join once. This needs a settings backend, which the
 	  application chooses.
+
+config LORA_BASICS_MODEM_CORE
+	bool "LoRa Basics Modem LoRaWAN stack"
+	depends on LORA_BASICS_MODEM_HAL
+	depends on LORAWAN
+	default y
+	select ENTROPY_GENERATOR
+	help
+	  Compile the modem core, which provides the LoRaWAN stack on top of
+	  the radio drivers. The LoRaWAN subsystem needs it to reach the
+	  modem, so it comes on by default once both sides are present.
