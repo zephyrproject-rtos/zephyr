@@ -25,6 +25,8 @@
 
 LOG_MODULE_REGISTER(display_esp32_dsi, CONFIG_DISPLAY_LOG_LEVEL);
 
+#define DISPLAY_ESP32_DSI_GDMA_CLK_TIMEOUT_US 1000
+
 struct display_esp32_dsi_config {
 	const struct device *panel;
 	uint8_t dma_channel;
@@ -245,6 +247,11 @@ static int display_esp32_dsi_dma_setup(const struct device *dev)
 	uint8_t ch = data->dma_channel;
 
 	dw_gdma_ll_enable_bus_clock(0, true);
+	if (!WAIT_FOR(dw_gdma_ll_is_bus_clock_enabled(0), DISPLAY_ESP32_DSI_GDMA_CLK_TIMEOUT_US,
+		      k_busy_wait(1))) {
+		LOG_ERR("GDMA bus clock did not come up");
+		return -ETIMEDOUT;
+	}
 	dw_gdma_ll_reset(dma);
 
 	dw_gdma_ll_enable_controller(dma, true);
