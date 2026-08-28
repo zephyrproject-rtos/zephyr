@@ -206,8 +206,10 @@ disabled system (e.g. without TF-M support).
 You can use STM32CubeProgrammer_ to disable the SoC TZEN Option Byte config. Refer
 to `How to disable STM32WBA65 TZEN Option Byte`_.
 
+Secure bootloader
+=================
 STM32 OEMiROT integration
-=========================
+-------------------------
 
 STM32CubeWBA provides an external secure bootloader called STM32 OEMiROT
 that takes advantage of the secure features of the STM32WBA65RI
@@ -216,6 +218,59 @@ details on this bootloader.
 
 Integration of this bootloader in the Zephyr build environment is available
 in the external `STM32 OEMxROT module`_.
+
+Default Zephyr bootloader
+-------------------------
+
+STM32WBAx chips also support secure boot and secure FOTA with Zephyr using the default
+MCUboot-based workflows.
+The :zephyr:code-sample:`smp-svr` application is one example that can be used for this.
+
+Use an MCUmgr-capable client (`tools and libraries <https://docs.zephyrproject.org/latest/services/device_mgmt/mcumgr.html#tools-libraries>`_).
+The following procedure uses `newtmgr`_.
+
+Once ``smp_svr`` is flashed, you can use ``newtmgr`` for FOTA over BLE.
+The examples below assume the HCI interface is ``hci0``. Note that internal HCI devices can sometimes be unreliable.
+
+.. code-block:: console
+
+   newtmgr -i 0 --conntype ble --connstring peer_name=Zephyr image upload build/smp_svr/zephyr/zephyr.signed.bin
+   newtmgr -i 0 --conntype ble --connstring peer_name=Zephyr image list
+   newtmgr -i 0 --conntype ble --connstring peer_name=Zephyr image test <image0_slot1_hash>
+   newtmgr -i 0 --conntype ble --connstring peer_name=Zephyr reset
+
+Low Power
+=========
+
+STM32WBA65I-DK1 supports Zephyr power management to enter low-power states
+when the application is idle.
+
+To achieve the lowest power consumption, Zephyr ``suspend-to-ram`` leverages
+the STM32 Standby mode on this platform.
+
+Power management must be enabled in your application by activating
+``CONFIG_PM``:
+
+.. code-block:: none
+
+  CONFIG_PM=y
+
+For suspend-to-ram on STM32WBA, the reference implementation is
+:zephyr:code-sample:`ble_peripheral_hr`, used together with
+:zephyr_file:`samples/bluetooth/peripheral_hr/boards/stm32wba_pwr_optim.overlay`.
+
+In this overlay, ``sram0`` can be reduced to the minimal usable size to
+lower consumption, while ``pm_s2ram`` should remain located at the end of
+the usable RAM.
+
+Example build command:
+
+.. code-block:: console
+
+   west build -b stm32wba65i_dk1 samples/bluetooth/peripheral_hr -- \
+     -DDTC_OVERLAY_FILE=boards/stm32wba_pwr_optim.overlay \
+    -DCONFIG_PM=y
+
 
 Connections and IOs
 ===================
@@ -312,6 +367,9 @@ you can debug an application in the usual way using OpenOCD. Here is an example 
 
 .. _STM32 OEMxROT module:
    https://github.com/stm32-hotspot/zephyr-stm32-oemxrot
+
+.. _newtmgr:
+  https://mynewt.apache.org/latest/newtmgr/index.html
 
 .. _OpenOCD WBA6xx commit:
    https://github.com/openocd-org/openocd/commit/df14f586629a70878636d138ec3bffd9148aaf1b
