@@ -12,6 +12,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/random/random.h>
+#include <zephyr/sys/printk.h>
 
 #include <lbm_common.h>
 #include <smtc_modem_hal.h>
@@ -501,14 +502,16 @@ int8_t smtc_modem_hal_get_board_delay_ms(void)
 /**
  * @brief Prints debug trace.
  *
- * @remark Not implemented yet.
- *
  * @param [in] fmt  String format
  * @param [in] ...  String arguments
  */
 void smtc_modem_hal_print_trace(const char *fmt, ...)
 {
-	/* Not implemented yet */
+	va_list args;
+
+	va_start(args, fmt);
+	vprintk(fmt, args);
+	va_end(args);
 }
 
 /* -------------------------------------------------------------------------- */
