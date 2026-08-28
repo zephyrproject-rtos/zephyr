@@ -8,11 +8,10 @@ toolchain:
   - zephyr
 preferred_toolchain: zephyr/llvm
 supported:
-  - netif
+  - netif:eth
 ram: 262144
 flash: 32768
 testing:
   default: true
   ignore_tags:
-    - net
     - bluetooth
