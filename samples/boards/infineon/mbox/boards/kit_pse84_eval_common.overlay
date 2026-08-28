@@ -1,0 +1,26 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&ipc0 {
+	status = "okay";
+};
+
+/ {
+	mbox0: mbox {
+		compatible = "infineon,mbox";
+		#mbox-cells = <1>;
+		interrupt-parent = <&nvic>;
+
+		/* Cross-core ping-pong over IPC0 (reachable from either core):
+		 * channel 0 = CM33 -> CM55, channel 1 = CM55 -> CM33. IPC0
+		 * channels 4/5 and interrupt structures 4/5 are application-usable.
+		 * Per-core NVIC vectors are set in the board overlays.
+		 */
+		ipc-configs = <&ipc0 4 4>, <&ipc0 5 5>;
+		status = "okay";
+	};
+};
