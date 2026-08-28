@@ -19,6 +19,9 @@
 
 #include <zephyr/sw_isr_table.h>
 #include <stdbool.h>
+#if defined(CONFIG_INTC_ROOT)
+#include <zephyr/drivers/interrupt_controller/intc_root.h>
+#endif
 #if !defined(_ASMLANGUAGE) && defined(CONFIG_CPU_CORTEX_M)
 #include <zephyr/arch/arm/arm-m-switch.h>
 #endif
@@ -28,13 +31,21 @@ extern "C" {
 #endif
 
 #ifdef _ASMLANGUAGE
-#if defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER) || defined(CONFIG_MULTI_LEVEL_INTERRUPTS)
+#if defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER) || \
+	(defined(CONFIG_MULTI_LEVEL_INTERRUPTS) && !defined(CONFIG_INTC_ROOT))
 #define arch_irq_enable                     z_soc_irq_enable
 #define arch_irq_disable                    z_soc_irq_disable
 #define arch_irq_is_enabled                 z_soc_irq_is_enabled
 #define arch_irq_clear_pending              z_soc_irq_clear_pending
 #define arch_irq_set_pending                z_soc_irq_set_pending
 #define arch_irq_is_pending                 z_soc_irq_is_pending
+#elif defined(CONFIG_INTC_ROOT)
+#define arch_irq_enable                     intc_root_enable
+#define arch_irq_disable                    intc_root_disable
+#define arch_irq_is_enabled                 intc_root_is_enabled
+#define arch_irq_clear_pending              intc_root_clear_pending
+#define arch_irq_set_pending                intc_root_set_pending
+#define arch_irq_is_pending                 intc_root_is_pending
 #else
 #define arch_irq_enable                     arm_irq_enable
 #define arch_irq_disable                    arm_irq_disable
@@ -57,10 +68,14 @@ GTEXT(arch_irq_is_pending)
 #if defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
 GTEXT(z_soc_irq_get_active)
 GTEXT(z_soc_irq_eoi)
+#elif defined(CONFIG_INTC_ROOT)
+GTEXT(intc_root_get_active)
+GTEXT(intc_root_eoi)
 #endif /* CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
 #else
 
 #if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
+/* Cortex-M NVIC control functions; also used by aggregators for level 1 */
 extern void arm_irq_enable(unsigned int irq);
 extern void arm_irq_disable(unsigned int irq);
 extern int arm_irq_is_enabled(unsigned int irq);
@@ -70,7 +85,7 @@ extern void arm_irq_clear_pending(unsigned int irq);
 extern void arm_irq_set_pending(unsigned int irq);
 extern bool arm_irq_is_pending(unsigned int irq);
 #endif
-#if !defined(CONFIG_MULTI_LEVEL_INTERRUPTS)
+#if !defined(CONFIG_MULTI_LEVEL_INTERRUPTS) && !defined(CONFIG_INTC_ROOT)
 #define arch_irq_enable(irq)                     arm_irq_enable(irq)
 #define arch_irq_disable(irq)                    arm_irq_disable(irq)
 #define arch_irq_is_enabled(irq)                 arm_irq_is_enabled(irq)
@@ -83,7 +98,8 @@ extern bool arm_irq_is_pending(unsigned int irq);
 #endif
 #endif
 
-#if defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER) || defined(CONFIG_MULTI_LEVEL_INTERRUPTS)
+#if defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER) || \
+	(defined(CONFIG_MULTI_LEVEL_INTERRUPTS) && !defined(CONFIG_INTC_ROOT))
 /*
  * When a custom interrupt controller or multi-level interrupts is specified,
  * map the architecture interrupt control functions to the SoC layer interrupt
@@ -119,6 +135,24 @@ bool z_soc_irq_is_pending(unsigned int irq);
 
 #define z_arm_irq_priority_set(irq, prio, flags)	\
 	z_soc_irq_priority_set(irq, prio, flags)
+
+#elif defined(CONFIG_INTC_ROOT)
+/*
+ * The root interrupt controller driver provides the intc_root_* API:
+ * map the architecture interrupt control functions onto it directly.
+ */
+#define arch_irq_enable(irq)		intc_root_enable(irq)
+#define arch_irq_disable(irq)		intc_root_disable(irq)
+#define arch_irq_is_enabled(irq)	intc_root_is_enabled(irq)
+
+#if defined(CONFIG_ARCH_HAS_IRQ_PENDING_OPS)
+#define arch_irq_clear_pending(irq)	intc_root_clear_pending(irq)
+#define arch_irq_set_pending(irq)	intc_root_set_pending(irq)
+#define arch_irq_is_pending(irq)	intc_root_is_pending(irq)
+#endif
+
+#define z_arm_irq_priority_set(irq, prio, flags)	\
+	intc_root_priority_set(irq, prio, flags)
 
 #endif
 
