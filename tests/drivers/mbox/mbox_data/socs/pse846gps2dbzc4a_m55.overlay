@@ -1,0 +1,29 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&ipc1 {
+	status = "okay";
+};
+
+/ {
+	mbox0: mbox {
+		compatible = "infineon,mbox";
+		#mbox-cells = <1>;
+		interrupt-parent = <&nvic>;
+		ipc-configs = <&ipc1 3 5>, <&ipc1 4 6>, <&ipc1 5 7>;
+		interrupts = <52 4>, <53 4>, <54 4>;
+		status = "okay";
+	};
+
+	mbox-consumer {
+		compatible = "vnd,mbox-consumer";
+		mboxes = <&mbox0 0>, <&mbox0 0>,
+			 <&mbox0 1>, <&mbox0 1>,
+			 <&mbox0 2>, <&mbox0 2>;
+		mbox-names = "tx0", "rx0", "tx1", "rx1", "tx2", "rx2";
+	};
+};
