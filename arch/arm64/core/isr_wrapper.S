@@ -58,11 +58,11 @@ SECTION_FUNC(TEXT, _isr_wrapper)
 #endif
 
 	/* Get active IRQ number from the interrupt controller */
-#if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
-	bl	arm_gic_get_active
-#else
+#if defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
 	bl	z_soc_irq_get_active
-#endif /* !CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
+#else
+	bl	intc_root_get_active
+#endif /* CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
 
 	/* Preserve original IAR value */
 	str	x0, [sp, #-16]!
@@ -109,11 +109,11 @@ spurious_continue:
 	ldr	x0, [sp], #16
 
 	/* Signal end-of-interrupt */
-#if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
-	bl	arm_gic_eoi
-#else
+#if defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
 	bl	z_soc_irq_eoi
-#endif /* !CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
+#else
+	bl	intc_root_eoi
+#endif /* CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
 
 #ifdef CONFIG_TRACING
 	bl	sys_trace_isr_exit
