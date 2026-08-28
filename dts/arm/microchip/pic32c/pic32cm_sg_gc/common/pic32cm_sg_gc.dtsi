@@ -235,6 +235,11 @@
 			clock-names = "mclk", "gclk";
 			status = "disabled";
 		};
+
+		rstc: rstc@45004000 {
+			compatible = "microchip,rstc-g1-reset";
+			reg = <0x45004000 0x8>;
+		};
 	};
 };
 
