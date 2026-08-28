@@ -79,6 +79,7 @@ struct dma_mspm0_regs {
 #define DMA_MSPM0_CTL_DSTINCR   GENMASK(23, 20)
 #define DMA_MSPM0_CTL_EM        GENMASK(25, 24)
 #define DMA_MSPM0_CTL_TM        GENMASK(29, 28)
+#define DMA_MSPM0_CTL_PREIRQ    GENMASK(6, 4)
 
 #define DMA_MSPM0_WIDTH_BYTE     0x0U
 #define DMA_MSPM0_WIDTH_HALF     0x1U
@@ -100,6 +101,9 @@ struct dma_mspm0_regs {
 #define DMA_MSPM0_TM_RPTSNGL     0x2U
 #define DMA_MSPM0_TM_RPTBLCK     0x3U
 
+#define DMA_MSPM0_PREIRQ_DISABLE 0x0U
+#define DMA_MSPM0_PREIRQ_HALF    0x7U
+
 /* dmatctl bits (per-channel, dmatctl[n]) */
 #define DMA_MSPM0_TCTL_DMATSEL GENMASK(5, 0)
 
@@ -111,8 +115,16 @@ struct dma_mspm0_regs {
 #define DMA_MSPM0_BURST_16        0x2U
 #define DMA_MSPM0_BURST_32        0x3U
 
-/* cpu_int / gen_event IIDX status codes: channel N reports (N + 1) */
-#define DMA_MSPM0_IIDX_NONE 0x00U
+/* cpu_int / gen_event IIDX status codes:
+ * channel N reports (N + 1)
+ * early/pre-IRQ event reports (0x11 + N)
+ */
+#define DMA_MSPM0_IIDX_NONE        0x00U
+#define DMA_MSPM0_IIDX_PREIRQ_BASE 0x11U
+#define DMA_MSPM0_IIDX_PREIRQ_LAST 0x18U
+#define DMA_MSPM0_IMASK_PREIRQ(n)  BIT(16U + (n))
+#define DMA_MSPM0_PREIRQ_MAX_CHANNELS \
+	(DMA_MSPM0_IIDX_PREIRQ_LAST - DMA_MSPM0_IIDX_PREIRQ_BASE + 1)
 
 /* Data Transfer Width, in bytes -- matches Zephyr's source/dest_data_size */
 #define DMA_TI_MSPM0_DATAWIDTH_BYTE	1
@@ -357,6 +369,15 @@ static int dma_ti_mspm0_configure(const struct device *dev, uint32_t channel,
 	ctl |= FIELD_PREP(DMA_MSPM0_CTL_TM, tm);
 	ctl |= FIELD_PREP(DMA_MSPM0_CTL_EM, em);
 
+	if (config->half_complete_callback_en) {
+		if (channel < DMA_MSPM0_PREIRQ_MAX_CHANNELS &&
+		    dma_ti_mspm0_is_full_channel(cfg, channel)) {
+			ctl |= FIELD_PREP(DMA_MSPM0_CTL_PREIRQ, DMA_MSPM0_PREIRQ_HALF);
+		} else {
+			return -ENOTSUP;
+		}
+	}
+
 	data->direction = config->channel_direction;
 	data->dma_callback = config->dma_callback;
 	data->user_data = config->user_data;
@@ -372,6 +393,12 @@ static int dma_ti_mspm0_configure(const struct device *dev, uint32_t channel,
 		cfg->regs->dmachan[channel].dmasa = b_cfg->source_address;
 		cfg->regs->dmachan[channel].dmada = b_cfg->dest_address;
 		cfg->regs->cpu_int.imask |= BIT(channel);
+		if (config->half_complete_callback_en && channel < DMA_MSPM0_PREIRQ_MAX_CHANNELS) {
+			cfg->regs->cpu_int.imask |= DMA_MSPM0_IMASK_PREIRQ(channel);
+		} else {
+			cfg->regs->cpu_int.imask &= ~DMA_MSPM0_IMASK_PREIRQ(channel);
+		}
+
 		data->busy = true;
 	}
 
@@ -458,6 +485,21 @@ static inline void dma_ti_mspm0_isr(const struct device *dev)
 	/* Reading IIDX also latches-clears the highest priority pending flag */
 	status = cfg->regs->cpu_int.iidx;
 	if (status == DMA_MSPM0_IIDX_NONE) {
+		return;
+	}
+
+	if (status >= DMA_MSPM0_IIDX_PREIRQ_BASE && status <= DMA_MSPM0_IIDX_PREIRQ_LAST) {
+		channel = status - DMA_MSPM0_IIDX_PREIRQ_BASE;
+		if (channel >= cfg->dma_max_channels) {
+			return;
+		}
+
+		data = &dma_data->ch_data[channel];
+		if (data->dma_callback != NULL) {
+			data->dma_callback(dev, data->user_data, channel,
+					    DMA_STATUS_HALF_COMPLETE);
+		}
+
 		return;
 	}
 
