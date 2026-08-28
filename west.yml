@@ -303,7 +303,7 @@ manifest:
       revision: b6be45dfc5c67c43c3a5e12589ae3845ea00ab5e
       path: modules/lib/libmctp
     - name: libmetal
-      revision: c41f476ba425663cadf7e456b6432e4b21591278
+      revision: 77237e9748212796a8f93a33689ce935fb9c81c2
       path: modules/hal/libmetal
       groups:
         - hal
