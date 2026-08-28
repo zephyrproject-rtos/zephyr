@@ -156,6 +156,13 @@ static const struct video_reg16 imx219_fmt_raw10_regs[] = {
 
 /* TODO the FPS registers are currently tuned for 1920x1080 cropped resolution */
 
+/*
+ * The output PLL sets the CSI-2 line rate and must agree with the link frequency
+ * reported through VIDEO_CID_LINK_FREQ, since the receiver programs its D-PHY from
+ * that value: with a 24 MHz input clock, PREPLLCK_OP_DIV of 3 and PLL_OP_MPY of 114
+ * the lanes run at 24 / 3 * 114 = 912 Mbps, i.e. IMX219_2DL_LINK_FREQ of 456 MHz DDR.
+ * Only the video timing PLL is varied to pick the frame rate.
+ */
 static const struct video_reg imx219_fps_30_regs[] = {
 	{IMX219_CCI_PREPLLCK_VT_DIV, 0x03},	/* Auto */
 	{IMX219_CCI_PREPLLCK_OP_DIV, 0x03},	/* Auto */
@@ -164,7 +171,7 @@ static const struct video_reg imx219_fps_30_regs[] = {
 	{IMX219_CCI_OPPXCK_DIV, 10},		/* Output pixel clock divider */
 	{IMX219_CCI_OPSYCK_DIV, 1},
 	{IMX219_CCI_PLL_VT_MPY, 30},		/* Video Timing clock multiplier */
-	{IMX219_CCI_PLL_OP_MPY, 50},		/* Output clock multiplier */
+	{IMX219_CCI_PLL_OP_MPY, 114},		/* Output clock multiplier */
 };
 
 static const struct video_reg imx219_fps_15_regs[] = {
@@ -175,7 +182,7 @@ static const struct video_reg imx219_fps_15_regs[] = {
 	{IMX219_CCI_OPPXCK_DIV, 10},		/* Output pixel clock divider */
 	{IMX219_CCI_OPSYCK_DIV, 1},
 	{IMX219_CCI_PLL_VT_MPY, 15},		/* Video Timing clock multiplier */
-	{IMX219_CCI_PLL_OP_MPY, 50},		/* Output clock multiplier */
+	{IMX219_CCI_PLL_OP_MPY, 114},		/* Output clock multiplier */
 };
 
 enum {
