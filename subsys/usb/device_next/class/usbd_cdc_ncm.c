@@ -654,6 +654,7 @@ static int usbd_cdc_ncm_request(struct usbd_class_data *const c_data,
 	}
 
 	if (bi->ep == cdc_ncm_get_bulk_in(c_data)) {
+		net_buf_unref(buf);
 		k_sem_give(&data->sync_sem);
 		return 0;
 	}
@@ -1065,9 +1066,15 @@ static int cdc_ncm_send(const struct device *dev, struct net_pkt *const pkt)
 		return -EACCES;
 	}
 
+	if (k_sem_take(&data->sync_sem, K_MSEC(CONFIG_USBD_CDC_NCM_TX_TIMEOUT)) != 0) {
+		LOG_DBG("Previous transfer still pending, drop");
+		return -ETIMEDOUT;
+	}
+
 	buf = cdc_ncm_buf_alloc(cdc_ncm_get_bulk_in(c_data));
 	if (buf == NULL) {
 		LOG_ERR("Failed to allocate buffer");
+		k_sem_give(&data->sync_sem);
 		return -ENOMEM;
 	}
 
@@ -1096,6 +1103,7 @@ static int cdc_ncm_send(const struct device *dev, struct net_pkt *const pkt)
 	if (net_pkt_read(pkt, buf->data + buf->len, len)) {
 		LOG_ERR("Failed copy net_pkt");
 		net_buf_unref(buf);
+		k_sem_give(&data->sync_sem);
 
 		return -ENOBUFS;
 	}
@@ -1111,12 +1119,9 @@ static int cdc_ncm_send(const struct device *dev, struct net_pkt *const pkt)
 		LOG_ERR("Failed to enqueue net_buf for 0x%02x",
 			cdc_ncm_get_bulk_in(c_data));
 		net_buf_unref(buf);
+		k_sem_give(&data->sync_sem);
 		return ret;
 	}
-
-	k_sem_take(&data->sync_sem, K_FOREVER);
-
-	net_buf_unref(buf);
 
 	return 0;
 }
@@ -1420,7 +1425,7 @@ const static struct usb_desc_header *cdc_ncm_hs_desc_##n[] = {			\
 	static struct cdc_ncm_eth_data eth_data_##n = {				\
 		.c_data = &cdc_ncm_##n,						\
 		.mac_addr = DT_INST_PROP_OR(n, local_mac_address, {0}),		\
-		.sync_sem = Z_SEM_INITIALIZER(eth_data_##n.sync_sem, 0, 1),	\
+		.sync_sem = Z_SEM_INITIALIZER(eth_data_##n.sync_sem, 1, 1),	\
 		.mac_desc_data = &mac_desc_data_##n,				\
 		.desc = &cdc_ncm_desc_##n,					\
 		.fs_desc = cdc_ncm_fs_desc_##n,					\
