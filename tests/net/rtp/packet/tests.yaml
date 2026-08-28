@@ -1,0 +1,16 @@
+common:
+  depends_on: netif
+  tags:
+    - net
+    - rtp
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+
+tests:
+  net.rtp.packet:
+    extra_configs:
+      - CONFIG_RTP_MAX_CSRC_COUNT=0
+  net.rtp.packet.csrc:
+    extra_configs:
+      - CONFIG_RTP_MAX_CSRC_COUNT=2
