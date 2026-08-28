@@ -19,8 +19,10 @@
 
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 
-static const struct device *const ckm_dev = DEVICE_DT_GET(DT_NODELABEL(ckm));
 static const struct device *const sysctl_dev = DEVICE_DT_GET(DT_NODELABEL(sysctl));
+
+#if !defined(CONFIG_SOC_SERIES_MSPM33C)
+static const struct device *const ckm_dev = DEVICE_DT_GET(DT_NODELABEL(ckm));
 
 static int mclk_set_source(enum mspm0_clock_source source)
 {
@@ -39,9 +41,14 @@ static int sysosc_set_enabled(bool enable)
 
 	return clock_control_off(ckm_dev, (clock_control_subsys_t)&sysosc);
 }
+#endif /* !CONFIG_SOC_SERIES_MSPM33C */
 
 static void set_mode_run(uint8_t state)
 {
+#if defined(CONFIG_SOC_SERIES_MSPM33C)
+	/* MSPM33C has a single combined RUN/SLEEP policy: no MCLK source tiering. */
+	ARG_UNUSED(state);
+#else
 	switch (state) {
 	case 1: /* RUN0/SLEEP0: MCLK from SYSOSC */
 		sysosc_set_enabled(true);
@@ -58,6 +65,7 @@ static void set_mode_run(uint8_t state)
 	default:
 		return;
 	}
+#endif /* !CONFIG_SOC_SERIES_MSPM33C */
 
 	SCB->SCR &= ~SCB_SCR_SLEEPDEEP_Msk;
 }
@@ -67,6 +75,10 @@ static void set_mode_stop(uint8_t state)
 	syscon_write_reg(sysctl_dev, SYSCTL_PMODECFG_OFFSET, SYSCTL_PMODECFG_DSLEEP_VAL_STOP);
 	SCB->SCR |= SCB_SCR_SLEEPDEEP_Msk;
 
+#if defined(CONFIG_SOC_SERIES_MSPM33C)
+	/* MSPM33C's STOP mode never touches SYSOSC: there is only one STOP policy. */
+	ARG_UNUSED(state);
+#else
 	switch (state) {
 	case 1: /* STOP0: SYSOSC keeps running */
 		syscon_update_bits(sysctl_dev, SYSCTL_SYSOSCCFG_OFFSET,
@@ -85,6 +97,7 @@ static void set_mode_stop(uint8_t state)
 	default:
 		return;
 	}
+#endif /* !CONFIG_SOC_SERIES_MSPM33C */
 }
 
 static void set_mode_standby(uint8_t state)
