@@ -18,3 +18,8 @@ zephyr_library_sources_ifdef(CONFIG_RTP_TRANSPORT_SOCKET
 zephyr_library_sources_ifdef(CONFIG_RTP_TRANSPORT_NET_PKT
   rtp_transport_net_pkt.c
 )
+
+zephyr_library_sources_ifdef(CONFIG_SRTP
+  srtp.c
+  srtp_crypto.c
+)
