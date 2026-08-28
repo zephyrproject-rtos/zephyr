@@ -90,7 +90,7 @@ struct dma_esp32_data {
 	bool is_axi;
 #endif
 #if CONFIG_PM
-	bool pm_policy_state_on;
+	uint8_t m2m_active_count;
 #endif
 };
 
@@ -219,8 +219,7 @@ static void IRAM_ATTR dma_esp32_pm_policy_state_lock_get(const struct device *de
 	struct dma_esp32_data *data = dev->data;
 	unsigned int key = irq_lock();
 
-	if (!data->pm_policy_state_on) {
-		data->pm_policy_state_on = true;
+	if (data->m2m_active_count++ == 0) {
 		pm_policy_state_all_lock_get();
 	}
 
@@ -232,9 +231,10 @@ static void IRAM_ATTR dma_esp32_pm_policy_state_lock_put(const struct device *de
 	struct dma_esp32_data *data = dev->data;
 	unsigned int key = irq_lock();
 
-	if (data->pm_policy_state_on) {
-		data->pm_policy_state_on = false;
-		pm_policy_state_all_lock_put();
+	if (data->m2m_active_count > 0) {
+		if (--data->m2m_active_count == 0) {
+			pm_policy_state_all_lock_put();
+		}
 	}
 
 	irq_unlock(key);
