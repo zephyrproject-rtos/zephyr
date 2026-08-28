@@ -44,6 +44,7 @@ static struct modem_pipe *mock_pipe;
 #define MODEM_CHAT_UTEST_ON_SCRIPT_CALLBACK_BIT		 (9)
 #define MODEM_CHAT_UTEST_ON_CMGL_PARTIAL_CALLED_BIT	 (10)
 #define MODEM_CHAT_UTEST_ON_CMGL_PARTIAL_ANY_CALLED_BIT	 (11)
+#define MODEM_CHAT_UTEST_ON_RESTART_SCRIPT_CALLBACK_BIT	 (12)
 
 static atomic_t callback_called;
 
@@ -140,6 +141,8 @@ static void on_cmgl_any_partial(struct modem_chat *cmd, char **argv, uint16_t ar
 static enum modem_chat_script_result script_result;
 static void *script_result_user_data;
 static const struct modem_chat_script_chat *script_result_script_chat;
+static enum modem_chat_script_result restart_script_result;
+static int restart_script_run_ret;
 
 static void on_script_result(const struct modem_chat_script_callback_ctx *ctx,
 			     enum modem_chat_script_result result, void *user_data)
@@ -154,6 +157,11 @@ static void on_script_result(const struct modem_chat_script_callback_ctx *ctx,
 	script_result_user_data = user_data;
 	script_result_script_chat = ctx->script_chat;
 }
+
+static void on_restart_script_result(const struct modem_chat_script_callback_ctx *ctx,
+				     enum modem_chat_script_result result, void *user_data);
+static void on_restart_script_start_next(const struct modem_chat_script_callback_ctx *ctx,
+					 enum modem_chat_script_result result, void *user_data);
 
 /*************************************************************************************************/
 /*                                            Script                                             */
@@ -242,6 +250,53 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(
 MODEM_CHAT_SCRIPT_DEFINE(script_echo, script_echo_cmds, abort_matches, on_script_result, 4);
 
 /*************************************************************************************************/
+/*                Scripts for starting a script from a script completion callback                 */
+/*************************************************************************************************/
+MODEM_CHAT_MATCH_DEFINE(first_match, "FIRST", "", NULL);
+MODEM_CHAT_MATCH_DEFINE(second_match, "SECOND", "", NULL);
+
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(
+	script_callback_restart_first_cmds,
+	MODEM_CHAT_SCRIPT_CMD_RESP("FIRST", first_match),
+);
+
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(
+	script_callback_restart_second_cmds,
+	MODEM_CHAT_SCRIPT_CMD_RESP("SECOND", second_match),
+);
+
+MODEM_CHAT_SCRIPT_DEFINE(script_callback_restart_first, script_callback_restart_first_cmds,
+			 abort_matches, on_restart_script_start_next, 4);
+MODEM_CHAT_SCRIPT_DEFINE(script_callback_restart_second, script_callback_restart_second_cmds,
+			 abort_matches, on_restart_script_result, 4);
+
+static void on_restart_script_start_next(const struct modem_chat_script_callback_ctx *ctx,
+					 enum modem_chat_script_result result, void *user_data)
+{
+	zassert_not_null(ctx);
+	zassert_equal(ctx->chat, &cmd);
+	zassert_equal(ctx->script, &script_callback_restart_first);
+	zassert_equal(ctx->script_chat, &script_callback_restart_first_cmds[0]);
+	zassert_equal(result, MODEM_CHAT_SCRIPT_RESULT_SUCCESS);
+	zassert_equal(user_data, &cmd_user_data);
+
+	restart_script_run_ret = modem_chat_script_run(ctx->chat, &script_callback_restart_second);
+}
+
+static void on_restart_script_result(const struct modem_chat_script_callback_ctx *ctx,
+				     enum modem_chat_script_result result, void *user_data)
+{
+	zassert_not_null(ctx);
+	zassert_equal(ctx->chat, &cmd);
+	zassert_equal(ctx->script, &script_callback_restart_second);
+	zassert_equal(ctx->script_chat, &script_callback_restart_second_cmds[0]);
+	zassert_equal(user_data, &cmd_user_data);
+
+	atomic_set_bit(&callback_called, MODEM_CHAT_UTEST_ON_RESTART_SCRIPT_CALLBACK_BIT);
+	restart_script_result = result;
+}
+
+/*************************************************************************************************/
 /*                                      Script responses                                         */
 /*************************************************************************************************/
 static const char at_response[] = "AT\r\n";
@@ -297,6 +352,8 @@ static void test_modem_chat_before(void *f)
 	/* Reset callback called */
 	atomic_set(&callback_called, 0);
 	script_result_script_chat = NULL;
+	restart_script_result = MODEM_CHAT_SCRIPT_RESULT_TIMEOUT;
+	restart_script_run_ret = -EALREADY;
 
 	/* Reset mock pipe */
 	modem_backend_mock_reset(&mock);
@@ -514,6 +571,44 @@ ZTEST(modem_chat, test_script_abort_on_second_chat)
 	zassert_equal(script_result_script_chat, &script_cmds[1],
 		      "Script result callback script chat is incorrect");
 	zassert_false(modem_chat_is_running(&cmd));
+}
+
+ZTEST(modem_chat, test_start_script_from_completion_callback)
+{
+	int ret;
+	bool called;
+
+	zassert_ok(modem_chat_script_run(&cmd, &script_callback_restart_first),
+		   "Failed to start first script");
+	k_msleep(100);
+
+	ret = modem_backend_mock_get(&mock, buffer, ARRAY_SIZE(buffer));
+	zassert_equal(ret, sizeof("FIRST\r\n") - 1);
+	zassert_mem_equal(buffer, "FIRST\r\n", sizeof("FIRST\r\n") - 1,
+			  "First request not sent as expected");
+
+	modem_backend_mock_put(&mock, "FIRST\r\n", sizeof("FIRST\r\n") - 1);
+	k_msleep(100);
+
+	zassert_ok(restart_script_run_ret, "Failed to start second script from callback");
+	called = atomic_test_bit(&callback_called, MODEM_CHAT_UTEST_ON_RESTART_SCRIPT_CALLBACK_BIT);
+	zassert_false(called, "Second script callback should not have been called yet");
+
+	ret = modem_backend_mock_get(&mock, buffer, ARRAY_SIZE(buffer));
+	zassert_equal(ret, sizeof("SECOND\r\n") - 1);
+	zassert_mem_equal(buffer, "SECOND\r\n", sizeof("SECOND\r\n") - 1,
+			  "Second request not sent as expected");
+
+	modem_backend_mock_put(&mock, "SECOND\r\n", sizeof("SECOND\r\n") - 1);
+	k_msleep(100);
+
+	called = atomic_test_bit(&callback_called, MODEM_CHAT_UTEST_ON_RESTART_SCRIPT_CALLBACK_BIT);
+	zassert_true(called, "Second script callback should have been called");
+	zassert_equal(restart_script_result, MODEM_CHAT_SCRIPT_RESULT_SUCCESS,
+		      "Second script should have stopped with success");
+	zassert_false(modem_chat_is_running(&cmd));
+	zassert_equal(modem_backend_mock_get(&mock, buffer, ARRAY_SIZE(buffer)), 0,
+		      "Script sent too many requests");
 }
 
 ZTEST(modem_chat, test_start_script_then_time_out)
