@@ -136,17 +136,15 @@ static void modem_chat_script_stop(struct modem_chat *chat, enum modem_chat_scri
 		script_chat_it--;
 	}
 
+	/* Cache all callback information so it remains valid after internal state reset */
 	struct modem_chat_script_callback_ctx ctx = {
 		.chat  = chat,
 		.script = chat->script,
 		.script_chat = (chat->script->script_chats_size > 0) ?
 			       &chat->script->script_chats[script_chat_it] : NULL,
 	};
-
-	/* Call back with result */
-	if (chat->script->callback != NULL) {
-		chat->script->callback(&ctx, result, chat->user_data);
-	}
+	modem_chat_script_callback cb = chat->script->callback;
+	void *ud = chat->user_data;
 
 	/* Clear parse_match in case it is stored in the script being stopped */
 	if ((chat->parse_match != NULL) &&
@@ -172,6 +170,11 @@ static void modem_chat_script_stop(struct modem_chat *chat, enum modem_chat_scri
 
 	/* Clear script running state */
 	atomic_clear_bit(&chat->script_state, MODEM_CHAT_SCRIPT_STATE_RUNNING_BIT);
+
+	/* Call back with result */
+	if (cb != NULL) {
+		cb(&ctx, result, ud);
+	}
 
 	/* Store result of script for script stoppted indication */
 	chat->script_result = result;

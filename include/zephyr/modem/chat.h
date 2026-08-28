@@ -266,7 +266,12 @@ struct modem_chat_script_callback_ctx {
 };
 
 /**
- * @brief Callback called when script chat is received
+ * @brief Callback called when script chat completes
+ *
+ * @note Internal `ctx->chat` context has already been reset at the callback point.
+ *       Additional asynchronous scripts can be queued directly from the callback, but
+ *       the internal object state cannot be usefully inspected. Access all information
+ *       through `ctx`.
  *
  * @param ctx Extra context about the script that was running
  * @param result Result of script execution
