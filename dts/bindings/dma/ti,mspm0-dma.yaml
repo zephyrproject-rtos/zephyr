@@ -27,6 +27,23 @@ properties:
     description: |
       Number of FULL-featured DMA channels on this instance, counted from channel 0.
 
+  ti,round-robin-priority:
+    type: boolean
+    description: |
+      Enable round-robin arbitration between channels instead of fixed priority
+
+  ti,burst-size:
+    type: int
+    default: 0
+    enum:
+      - 0
+      - 8
+      - 16
+      - 32
+    description: |
+      Number of transfers a channel completes before the arbitration priority is re-evaluated
+      (0 = infinite, i.e. run to completion).
+
 dma-cells:
   - channel
   - trigger
