@@ -12,17 +12,6 @@ properties:
   reg:
     required: true
 
-  clock-source:
-    type: int
-    enum: [4, 5]
-    description: |
-      Clock source to be used by the RTC peripheral. The following options
-      are available:
-      - 4: "ADI_MAX32_PRPH_CLK_SRC_ERTCO" External Real-Time Clock Oscillator
-      - 5: "ADI_MAX32_PRPH_CLK_SRC_INRO" Internal Ring Oscillator
-      The target device might not support all option please take a look on
-      target device user guide
-
   sqw-frequency:
     type: int
     description: |
@@ -39,13 +28,6 @@ properties:
 examples:
   - |
     /*
-     * Enable RTC counter.
-     */
-    &rtc_counter {
-        status = "okay";
-    };
-  - |
-    /*
      * Enable 32kHz square wave output on P3.1.
      */
     &rtc_counter {
@@ -53,4 +35,28 @@ examples:
         pinctrl-0 = <&sqwout_p3_1>;
         pinctrl-names = "default";
         sqw-frequency = <32768>;
+    };
+
+  - |
+    /* Use INRO as clock source */
+    &clk_32k {
+            status = "okay";
+            clocks = <&clk_inro>;
+    };
+
+  - |
+    /* Use RTC_CLK_IN as clock source */
+    &clk_rtc_in {
+      status = "okay";
+      pinctrl-0 = <&rtc_clk_in_p0_12>;
+      pinctrl-names = "default";
+    };
+
+    &clk_32k {
+      status = "okay";
+      clocks = <&clk_rtc_in>;
+    };
+
+    &rtc_counter {
+      status = "okay";
     };
