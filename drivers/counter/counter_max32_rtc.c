@@ -14,7 +14,6 @@
 
 #include <rtc.h>
 #include <wrap_max32_lp.h>
-#include <wrap_max32_rtc.h>
 
 LOG_MODULE_REGISTER(max32_counter_rtc, CONFIG_COUNTER_LOG_LEVEL);
 
@@ -252,10 +251,10 @@ static int rtc_max32_init(const struct device *dev)
 	int ret;
 	const struct max32_rtc_config *cfg = dev->config;
 
-	while ((ret = Wrap_MXC_RTC_Init(0, 0, cfg->perclk.clk_src)) != E_SUCCESS) {
+	while ((ret = MXC_RTC_Init(0, 0)) != E_SUCCESS) {
 		if (ret < 0) {
-			LOG_ERR("RTC does not support this clock source.");
-			return -ENOTSUP;
+			LOG_ERR("RTC initialization failed.");
+			return -EIO;
 		}
 	}
 
@@ -315,8 +314,6 @@ static DEVICE_API(counter, counter_rtc_max32_driver_api) = {
 		.pctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(_num),                                     \
 		.sqw_freq = DT_INST_PROP(_num, sqw_frequency),                               \
 		.irq_func = max32_rtc_irq_init_##_num,                                             \
-		.perclk.clk_src =                                                                  \
-			DT_INST_PROP_OR(_num, clock_source, ADI_MAX32_PRPH_CLK_SRC_ERTCO),         \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(_num, &rtc_max32_init, NULL, &rtc_max32_data_##_num,                 \
