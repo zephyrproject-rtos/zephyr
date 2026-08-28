@@ -83,6 +83,7 @@ enum ec_host_cmd_usb_state {
 
 enum {
 	EC_HOST_CMD_CLASS_ENABLED,
+	EC_HOST_CMD_HANDLER_OWNS_BUF,
 };
 
 static const char *const state_name[] = {
@@ -234,6 +235,7 @@ static int handle_out_transfer(struct usbd_class_data *const c_data)
 				ctx->rx_ctx->len, expected_len);
 		}
 		ctx->state = USB_EC_HOST_CMD_STATE_PROCESSING;
+		atomic_set_bit(&ctx->class_state, EC_HOST_CMD_HANDLER_OWNS_BUF);
 		ec_host_cmd_rx_notify();
 	}
 
@@ -377,6 +379,14 @@ static void ec_host_cmd_enable(struct usbd_class_data *const c_data)
 	bi = udc_get_buf_info(ctx->usb_tx_buf);
 	bi->ep = ec_host_cmd_get_in_bulk_ep(c_data);
 
+	if (atomic_test_bit(&ctx->class_state, EC_HOST_CMD_HANDLER_OWNS_BUF)) {
+		ctx->state = USB_EC_HOST_CMD_STATE_PROCESSING;
+		if (ctx->pending_event) {
+			ec_host_cmd_signal_event(c_data);
+		}
+		return;
+	}
+
 	buf = ec_host_cmd_buf_alloc(ec_host_cmd_get_out_ep(c_data), EP_BULK_SIZE, ctx->rx_ctx->buf);
 	if (buf == NULL) {
 		ctx->state = USB_EC_HOST_CMD_STATE_DISABLED;
@@ -454,6 +464,8 @@ static void ec_host_cmd_reset(struct k_work *work)
 	}
 
 	ctx->state = USB_EC_HOST_CMD_STATE_DISABLED;
+	atomic_clear_bit(&ctx->class_state, EC_HOST_CMD_HANDLER_OWNS_BUF);
+
 	ret = usbd_ep_dequeue(uds_ctx, ec_host_cmd_get_out_ep(c_data));
 	if (ret) {
 		LOG_ERR("Failed to dequeue EP OUT: %d", ret);
@@ -521,6 +533,8 @@ static int ec_host_cmd_backend_send(const struct ec_host_cmd_backend *backend)
 	struct usbd_class_data *const c_data = ctx->c_data;
 	struct net_buf *buf = NULL;
 	int ret;
+
+	atomic_clear_bit(&ctx->class_state, EC_HOST_CMD_HANDLER_OWNS_BUF);
 
 	if (!atomic_test_bit(&ctx->class_state, EC_HOST_CMD_CLASS_ENABLED)) {
 		LOG_ERR("Class not enabled");
