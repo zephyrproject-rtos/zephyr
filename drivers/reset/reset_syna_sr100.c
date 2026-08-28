@@ -6,7 +6,7 @@
 
 #define DT_DRV_COMPAT syna_sr100_reset
 
-#include <zephyr/arch/common/sys_io.h>
+#include <zephyr/arch/cpu.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/reset.h>
