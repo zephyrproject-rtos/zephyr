@@ -38,24 +38,17 @@ static DEVICE_API(clock_control, smartfusion2_clock_api) = {
 	.get_rate = smartfusion2_clock_get_rate,
 };
 
-static int smartfusion2_clock_init(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-
-	return 0;
-}
-
-#define SMARTFUSION2_CLOCK_INIT(inst)                                                       \
-	static const uint32_t smartfusion2_clock_rates_##inst[] =                            \
-		DT_INST_PROP(inst, clock_frequencies);                                          \
-	                                                                                       \
-	static const struct smartfusion2_clock_config smartfusion2_clock_config_##inst = {    \
-		.rates = smartfusion2_clock_rates_##inst,                                      \
-		.rate_count = ARRAY_SIZE(smartfusion2_clock_rates_##inst),                     \
-	};                                                                                     \
-	                                                                                       \
-	DEVICE_DT_INST_DEFINE(inst, smartfusion2_clock_init, NULL, NULL,                      \
-			      &smartfusion2_clock_config_##inst, PRE_KERNEL_1,              \
-			      CONFIG_CLOCK_CONTROL_INIT_PRIORITY, &smartfusion2_clock_api);
+#define SMARTFUSION2_CLOCK_INIT(inst)                                                              \
+	static const uint32_t smartfusion2_clock_rates_##inst[] =                                  \
+		DT_INST_PROP(inst, clock_frequencies);                                             \
+                                                                                                   \
+	static const struct smartfusion2_clock_config smartfusion2_clock_config_##inst = {         \
+		.rates = smartfusion2_clock_rates_##inst,                                          \
+		.rate_count = ARRAY_SIZE(smartfusion2_clock_rates_##inst),                         \
+	};                                                                                         \
+                                                                                                   \
+	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, NULL, &smartfusion2_clock_config_##inst,           \
+			      PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,                    \
+			      &smartfusion2_clock_api);
 
 DT_INST_FOREACH_STATUS_OKAY(SMARTFUSION2_CLOCK_INIT)
