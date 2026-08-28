@@ -20,6 +20,7 @@ zephyr_library_sources_ifdef(CONFIG_RTP_TRANSPORT_NET_PKT
 )
 
 zephyr_library_sources_ifdef(CONFIG_SRTP
+  rtp_srtp.c
   srtp.c
   srtp_crypto.c
 )

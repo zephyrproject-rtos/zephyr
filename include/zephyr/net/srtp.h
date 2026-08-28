@@ -263,6 +263,51 @@ int srtp_policy_validate(const struct srtp_policy *policy);
  */
 int srtp_unprotect(struct srtp_stream *stream, uint8_t *buf, size_t pkt_len, size_t *out_len);
 
+/**
+ * SRTP state of an RTP session.
+ *
+ * Allocated by the application and installed with rtp_session_set_srtp();
+ * all members are internal. The transmit stream is keyed by the session's
+ * SSRC. Receive streams are late-bound: a crypto context is instantiated
+ * from the receive policy when the first packet of an unknown SSRC arrives
+ * (@rfc{3711,section-3.2.3}), up to @kconfig{CONFIG_SRTP_MAX_RX_STREAMS}
+ * concurrent sources. A stream bound by a packet that fails authentication
+ * is released again, so unauthenticated traffic cannot pin the slots, though
+ * each spoofed source still costs one session key derivation.
+ */
+struct srtp_session_ctx {
+	/** @cond INTERNAL_HIDDEN */
+	struct srtp_stream tx;
+	bool tx_enabled;
+
+	struct srtp_stream rx[CONFIG_SRTP_MAX_RX_STREAMS];
+	bool rx_bound[CONFIG_SRTP_MAX_RX_STREAMS];
+	/** Packets currently being unprotected against each stream. */
+	uint8_t rx_users[CONFIG_SRTP_MAX_RX_STREAMS];
+	bool rx_enabled;
+
+	/** Receive policy template for late binding, pointing at the key
+	 *  material copies below.
+	 */
+	struct srtp_policy rx_policy;
+	uint8_t rx_master_key[SRTP_AES_256_KEY_LEN];
+	uint8_t rx_master_salt[SRTP_MASTER_SALT_LEN];
+	uint8_t rx_mki[SRTP_MKI_MAX_LEN];
+
+	/** Protects the receive stream binding table. */
+	struct k_mutex lock;
+
+#ifdef CONFIG_RTP_TRANSPORT_NET_PKT
+	/** Staging buffer for a contiguous packet view on the net_pkt
+	 *  transport, shared between transmit and receive.
+	 */
+	uint8_t net_pkt_buf[CONFIG_SRTP_NET_PKT_BUF_SIZE];
+	/** Protects @p net_pkt_buf. */
+	struct k_mutex net_pkt_lock;
+#endif  /* CONFIG_RTP_TRANSPORT_NET_PKT */
+	/** @endcond */
+};
+
 #ifdef __cplusplus
 }
 #endif

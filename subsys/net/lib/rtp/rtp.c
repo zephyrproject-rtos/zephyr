@@ -13,6 +13,7 @@ LOG_MODULE_REGISTER(rtp, CONFIG_RTP_LOG_LEVEL);
 #include <zephyr/random/random.h>
 
 #include <net_private.h>
+#include "rtp_srtp.h"
 #include "rtp_transport.h"
 
 #define API_LOCK_TIMEOUT K_MSEC(100)
@@ -69,9 +70,15 @@ static int rtp_session_start_tx(struct rtp_session *session)
 
 	sock_addr = &session->rtp_context.sock_addr;
 
-	/* Create random timestamp and sequence number */
+	/* Create random timestamp and sequence number. With SRTP, the packet
+	 * index must keep increasing for the lifetime of the master key, so
+	 * the sequence number is preserved across restarts (RFC 3711 3.3.1).
+	 */
 	session->timestamp = sys_rand32_get();
-	session->sequence_number = sys_rand16_get();
+
+	if (!rtp_srtp_tx_started(session)) {
+		session->sequence_number = sys_rand16_get();
+	}
 
 	switch (sock_addr->ss_family) {
 #ifdef CONFIG_NET_IPV4
@@ -191,7 +198,13 @@ static int rtp_session_stop_tx(struct rtp_session *session)
 	}
 
 	session->timestamp = 0;
-	session->sequence_number = 0;
+
+	/* With SRTP, the packet index must keep increasing for the lifetime
+	 * of the master key; keep the sequence number (RFC 3711 3.3.1).
+	 */
+	if (!rtp_srtp_tx_started(session)) {
+		session->sequence_number = 0;
+	}
 	session->csrc_len = 0;
 
 	memset(session->csrc, 0, sizeof(session->csrc));
@@ -277,13 +290,22 @@ int rtp_session_init(struct rtp_session *session, struct net_if *iface,
 		return -EINVAL;
 	}
 
-	rtp_context = &session->rtp_context;
-	rtp_context->iface = iface;
-
 	addr_size = net_family2size(sock_addr->sa_family);
-	if (addr_size == 0 || addr_size > sizeof(rtp_context->sock_addr)) {
+	if (addr_size == 0 || addr_size > sizeof(session->rtp_context.sock_addr)) {
 		return -EINVAL;
 	}
+
+#ifdef CONFIG_SRTP
+	/* A previously installed SRTP context is keyed to the old SSRC and
+	 * must not be reused with the new randomized one. This must stay
+	 * after the argument validation above: a rejected re-initialization
+	 * must not tear down the session's existing protection.
+	 */
+	(void)rtp_session_clear_srtp(session);
+#endif /* CONFIG_SRTP */
+
+	rtp_context = &session->rtp_context;
+	rtp_context->iface = iface;
 
 	memcpy(&rtp_context->sock_addr, sock_addr, addr_size);
 	rtp_context->role = role;
