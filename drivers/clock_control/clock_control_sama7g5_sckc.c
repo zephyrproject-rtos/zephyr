@@ -82,15 +82,6 @@ static int sckc_get_rate(const struct device *dev,
 	return ret;
 }
 
-static enum clock_control_status sckc_get_status(const struct device *dev,
-						 clock_control_subsys_t sys)
-{
-	ARG_UNUSED(dev);
-	ARG_UNUSED(sys);
-
-	return CLOCK_CONTROL_STATUS_ON;
-}
-
 static int sckc_driver_init(const struct device *dev)
 {
 	DEVICE_MMIO_MAP(dev, K_MEM_CACHE_NONE);
@@ -99,9 +90,11 @@ static int sckc_driver_init(const struct device *dev)
 }
 
 static DEVICE_API(clock_control, sckc_api) = {
+	/* Clock is always running, on() is used to choose its source */
 	.on = sckc_on,
+	.off = clock_control_always_running_clk_off,
 	.get_rate = sckc_get_rate,
-	.get_status = sckc_get_status,
+	.get_status = clock_control_always_running_clk_get_status,
 };
 
 DEVICE_DT_INST_DEFINE(0, sckc_driver_init, NULL, &mchp_sckc_data, &mchp_sckc_cfg, PRE_KERNEL_1,

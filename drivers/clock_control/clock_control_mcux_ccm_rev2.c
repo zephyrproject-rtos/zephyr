@@ -10,6 +10,8 @@
 #include <zephyr/dt-bindings/clock/imx_ccm_rev2.h>
 #include <zephyr/sys/util.h>
 #include <fsl_clock.h>
+#include "common_helpers.h"
+
 #if defined(CONFIG_SOC_MIMX9352)
 #include <soc.h>
 #endif
@@ -130,12 +132,6 @@ static int mcux_ccm_on(const struct device *dev,
 		(void)instance;
 		return 0;
 	}
-}
-
-static int mcux_ccm_off(const struct device *dev,
-				   clock_control_subsys_t sub_system)
-{
-	return 0;
 }
 
 static int mcux_ccm_get_subsys_rate(const struct device *dev,
@@ -604,7 +600,7 @@ static int CCM_SET_FUNC_ATTR mcux_ccm_set_subsys_rate(const struct device *dev,
 
 static DEVICE_API(clock_control, mcux_ccm_driver_api) = {
 	.on = mcux_ccm_on,
-	.off = mcux_ccm_off,
+	.off = clock_control_always_running_clk_off,
 	.get_rate = mcux_ccm_get_subsys_rate,
 	.set_rate = mcux_ccm_set_subsys_rate,
 };

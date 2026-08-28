@@ -10,36 +10,12 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/sys/util.h>
+#include "common_helpers.h"
 
 struct smartfusion2_clock_config {
 	const uint32_t *rates;
 	uint32_t rate_count;
 };
-
-static int smartfusion2_clock_on(const struct device *dev, clock_control_subsys_t sys)
-{
-	ARG_UNUSED(dev);
-	ARG_UNUSED(sys);
-
-	return 0;
-}
-
-static int smartfusion2_clock_off(const struct device *dev, clock_control_subsys_t sys)
-{
-	ARG_UNUSED(dev);
-	ARG_UNUSED(sys);
-
-	return 0;
-}
-
-static enum clock_control_status smartfusion2_clock_get_status(const struct device *dev,
-						       clock_control_subsys_t sys)
-{
-	ARG_UNUSED(dev);
-	ARG_UNUSED(sys);
-
-	return CLOCK_CONTROL_STATUS_ON;
-}
 
 static int smartfusion2_clock_get_rate(const struct device *dev, clock_control_subsys_t sys,
 					       uint32_t *rate)
@@ -56,9 +32,9 @@ static int smartfusion2_clock_get_rate(const struct device *dev, clock_control_s
 }
 
 static DEVICE_API(clock_control, smartfusion2_clock_api) = {
-	.on = smartfusion2_clock_on,
-	.off = smartfusion2_clock_off,
-	.get_status = smartfusion2_clock_get_status,
+	.on = clock_control_always_running_clk_on,
+	.off = clock_control_always_running_clk_off,
+	.get_status = clock_control_always_running_clk_get_status,
 	.get_rate = smartfusion2_clock_get_rate,
 };
 
