@@ -38,13 +38,13 @@ Each event must specify which **type** of condition must be satisfied so that
 its state is changed to signal the requested condition has been met.
 
 Each event must specify what **kernel object** it wants the condition to be
-satisfied.
+satisfied for.
 
 Each event must specify which **mode** of operation is used when the condition
 is satisfied.
 
 Each event can optionally specify a **tag** to group multiple events together,
-to the user's discretion.
+at the user's discretion.
 
 Apart from the kernel objects, there is also a **poll signal** pseudo-object
 type that be directly signaled.
