@@ -80,90 +80,11 @@
  * sources for core 0. Invoked by the SoC's @c z_soc_irq_init() during
  * arch boot, before any @c SYS_INIT priority.
  */
-void bcm2836_l1_intc_init(void);
-
-/**
- * @brief Enable an L1 IRQ source.
- *
- * @param irq Zephyr IRQ number in the L1 range (0..9). IRQ 8 (GPU
- *            cascade) is implicit and has no per-IRQ enable bit.
- */
-void bcm2836_l1_intc_irq_enable(unsigned int irq);
-
-/**
- * @brief Disable an L1 IRQ source.
- *
- * @param irq Zephyr IRQ number in the L1 range (0..9).
- */
-void bcm2836_l1_intc_irq_disable(unsigned int irq);
-
-/**
- * @brief Query whether an L1 IRQ source is currently enabled.
- *
- * @param irq Zephyr IRQ number in the L1 range.
- *
- * @retval 1 if enabled.
- * @retval 0 if disabled, or for PMU (no readback path).
- */
-int  bcm2836_l1_intc_irq_is_enabled(unsigned int irq);
-
-/**
- * @brief Decode the firing L1 IRQ.
- *
- * @return The Zephyr IRQ number of the firing source, or
- *         @kconfig{CONFIG_NUM_IRQS} if no L1 source is asserted.
- *         When the GPU cascade bit fires the caller is expected to
- *         walk into bcm2835_armctrl_ic_irq_get_active() next.
- */
-unsigned int bcm2836_l1_intc_irq_get_active(void);
-
-/**
- * @brief Initialise the BCM2835 ARMC peripheral interrupt controller.
- *
- * Maps the MMIO bank via @c device_map() and disables every bank-0,
- * PEND1 and PEND2 source. Invoked by the SoC's @c z_soc_irq_init()
- * during arch boot, before any @c SYS_INIT priority.
- */
-void bcm2835_armctrl_ic_init(void);
-
-/**
- * @brief Enable an ARMC peripheral IRQ source.
- *
- * @param irq Zephyr IRQ number in the ARMC range
- *            (@ref BCM283X_ARMC_IRQ_BASE .. @ref BCM283X_ARMC_IRQ_LIMIT - 1).
- *            Calls outside the range are silently ignored.
- */
-void bcm2835_armctrl_ic_irq_enable(unsigned int irq);
-
-/**
- * @brief Disable an ARMC peripheral IRQ source.
- *
- * @param irq Zephyr IRQ number in the ARMC range. Out-of-range
- *            callers are silently ignored.
- */
-void bcm2835_armctrl_ic_irq_disable(unsigned int irq);
-
-/**
- * @brief Query whether an ARMC peripheral IRQ source is enabled.
- *
- * @param irq Zephyr IRQ number in the ARMC range.
- *
- * @retval 1 if enabled.
- * @retval 0 if disabled, or @p irq is outside the ARMC range.
- */
-int  bcm2835_armctrl_ic_irq_is_enabled(unsigned int irq);
-
-/**
- * @brief Decode the firing ARMC peripheral IRQ.
- *
- * Encapsulates the bank-0 shortcut-bit decode (Quirk 1 in the
- * BCM2835 ARM Peripherals datasheet ch. 7) and falls through to
- * the PEND1 / PEND2 walk only when no shortcut bit is set.
- *
- * @return The Zephyr IRQ number of the firing peripheral, or
- *         @kconfig{CONFIG_NUM_IRQS} if no ARMC source is asserted.
- */
-unsigned int bcm2835_armctrl_ic_irq_get_active(void);
+/* ARMC peripheral aggregator, driven by the L1 root interrupt controller */
+void intc_bcm2835_armctrl_irq_enable(unsigned int irq);
+void intc_bcm2835_armctrl_irq_disable(unsigned int irq);
+int intc_bcm2835_armctrl_irq_is_enabled(unsigned int irq);
+unsigned int intc_bcm2835_armctrl_irq_get_active(void);
 
 /** @} */
 
