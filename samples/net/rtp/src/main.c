@@ -13,6 +13,9 @@
 #ifdef CONFIG_RTP_SAMPLE_ROLE_SOURCE
 #include "sine.h"
 #endif
+#ifdef CONFIG_SRTP
+#include <zephyr/net/srtp.h>
+#endif
 
 LOG_MODULE_REGISTER(main);
 
@@ -27,6 +30,37 @@ LOG_MODULE_REGISTER(main);
 #define MCAST_PORT  5004
 
 static RTP_SESSION_DEFINE(my_rtp_session, 0);
+
+#ifdef CONFIG_SRTP
+/* Static demonstration key material; real applications must provision master
+ * keys over a secure channel (e.g. DTLS-SRTP, SDES over TLS).
+ */
+/* clang-format off */
+static const uint8_t srtp_master_key[SRTP_AES_128_KEY_LEN] = {
+	0x10, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x17,
+	0x18, 0x19, 0x1a, 0x1b, 0x1c, 0x1d, 0x1e, 0x1f,
+};
+static const uint8_t srtp_master_salt[SRTP_MASTER_SALT_LEN] = {
+	0x30, 0x31, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37,
+	0x38, 0x39, 0x3a, 0x3b, 0x3c, 0x3d,
+};
+/* clang-format on */
+static struct srtp_session_ctx srtp_ctx;
+
+static int session_enable_srtp(struct rtp_session *session)
+{
+	const struct srtp_policy policy = {
+		.cipher = SRTP_CIPHER_AES_128_CM,
+		.auth = SRTP_AUTH_HMAC_SHA1_80,
+		.master_key = srtp_master_key,
+		.master_key_len = sizeof(srtp_master_key),
+		.master_salt = srtp_master_salt,
+		.master_salt_len = sizeof(srtp_master_salt),
+	};
+
+	return rtp_session_set_srtp(session, &policy, &policy, &srtp_ctx);
+}
+#endif /* CONFIG_SRTP */
 
 #ifdef CONFIG_RTP_SAMPLE_ROLE_SINK
 static uint32_t n_received;
@@ -68,6 +102,14 @@ static void rtp_sink(struct rtp_session *session, struct net_sockaddr *sockaddre
 		return;
 	}
 
+#ifdef CONFIG_SRTP
+	ret = session_enable_srtp(session);
+	if (ret < 0) {
+		LOG_ERR("Failed to enable SRTP (%d)", ret);
+		return;
+	}
+#endif /* CONFIG_SRTP */
+
 	n_received = 0;
 	ret = rtp_session_start(session);
 	if (ret < 0) {
@@ -94,6 +136,14 @@ static void rtp_source(struct rtp_session *session, struct net_sockaddr *sockadd
 		LOG_ERR("Failed to init rtp session (%d)", ret);
 		return;
 	}
+
+#ifdef CONFIG_SRTP
+	ret = session_enable_srtp(session);
+	if (ret < 0) {
+		LOG_ERR("Failed to enable SRTP (%d)", ret);
+		return;
+	}
+#endif /* CONFIG_SRTP */
 
 	ret = rtp_session_start(session);
 	if (ret < 0) {
