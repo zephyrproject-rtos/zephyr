@@ -12,12 +12,21 @@ power management subsystem to put an idle system into one of the supported power
 The kernel requests an amount of time it would like to suspend, then the PM subsystem decides
 the appropriate power state to transition to based on the configured power management policy.
 
-It is the application's responsibility to set up a wake-up event.
+Who sets up the wake-up event depends on why the system is going to sleep.
+When the kernel goes idle it asks for a duration, and the system timer, or the
+companion selected by ``/chosen/zephyr,system-timer-companion``, configures a
+time-based source on the kernel's behalf without the application being
+involved. When the application forces a state with :c:func:`pm_state_force`,
+or calls :c:func:`sys_poweroff`, it arms the sources it wants to wake on.
+
 A wake-up event will typically be an interrupt triggered by an SoC peripheral module.
 Examples include a SysTick, RTC, counter, or GPIO.
 Keep in mind that depending on the SoC and the power mode in question,
 not all peripherals may be active, and therefore
-some wake-up sources may not be usable in all power modes.
+some wake-up sources may not be usable in all power modes. A device can say
+which states it is able to wake the system from with the
+``zephyr,wakeup-power-states`` devicetree property; see
+:ref:`pm-device-wakeup-power-states`.
 
 The following diagram describes system power management:
 

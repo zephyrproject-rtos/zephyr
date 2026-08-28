@@ -719,6 +719,37 @@ later calling :c:func:`pm_device_wakeup_enable`.
    It is responsibility of driver or the application to do any additional
    configuration required by the device to support it.
 
+.. _pm-device-wakeup-power-states:
+
+Wakeup capability per power state
+=================================
+
+Enabling a device as a wakeup source keeps it active for every power state the
+system may enter. Parts often wake from some states but not others, so a device
+can narrow that set with ``zephyr,wakeup-power-states``:
+
+.. code-block:: devicetree
+
+                lptmr0: lptmr@40040000 {
+                        ...
+                        wakeup-source;
+                        zephyr,wakeup-power-states = <&stop0 &stop1>;
+                };
+
+With :kconfig:option:`CONFIG_PM_DEVICE_WAKEUP_POWER_STATES` enabled, a device
+that lists states is kept active only for those, and is suspended like any
+other device for the rest. :c:func:`pm_device_wakeup_is_capable_for_state`
+answers the same question for a driver or a policy. Devices that do not
+describe the property are capable from every state, which is the behaviour
+:c:func:`pm_device_wakeup_enable` has always had.
+
+This is a different question from ``zephyr,disabling-power-states``, which
+describes whether a state removes the device's power. The two can differ in
+both directions: a device may keep its power in a state and still be unable to
+wake the system from it, for instance because the clock it counts from is not
+running there; and a device may lose its power in a state and still wake the
+system through a separate always-on wake controller.
+
 Examples
 ********
 
