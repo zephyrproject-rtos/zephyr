@@ -13,41 +13,45 @@
  *
  * Offsets are relative to the SYSCTL base (soclock region base = SYSCTL base + 0x1000).
  */
-#define SYSCTL_SYSOSCCFG_OFFSET    0x1100 /**< SYSOSC configuration */
-#define SYSCTL_MCLKCFG_OFFSET      0x1104 /**< Main clock configuration */
-#define SYSCTL_HSCLKEN_OFFSET      0x1108 /**< HSCLK source enable/disable */
-#define SYSCTL_HSCLKCFG_OFFSET     0x110C /**< HSCLK source selection */
-#define SYSCTL_HFCLKCLKCFG_OFFSET  0x1110 /**< HFCLK configuration */
-#define SYSCTL_LFCLKCFG_OFFSET     0x1114 /**< LFXT configuration */
-#define SYSCTL_SYSPLLCFG0_OFFSET   0x1120 /**< SYSPLL ref/output config */
-#define SYSCTL_SYSPLLCFG1_OFFSET   0x1124 /**< SYSPLL divider */
-#define SYSCTL_SYSPLLPARAM0_OFFSET 0x1128 /**< SYSPLL param0 */
-#define SYSCTL_SYSPLLPARAM1_OFFSET 0x112C /**< SYSPLL param1 */
+#define SYSCTL_SYSOSCCFG_OFFSET    0x1100
+#define SYSCTL_MCLKCFG_OFFSET      0x1104
+#define SYSCTL_HSCLKEN_OFFSET      0x1108
+#define SYSCTL_HSCLKCFG_OFFSET     0x110C
+#define SYSCTL_HFCLKCLKCFG_OFFSET  0x1110
+#define SYSCTL_LFCLKCFG_OFFSET     0x1114
+#define SYSCTL_SYSPLLCFG0_OFFSET   0x1120
+#define SYSCTL_SYSPLLCFG1_OFFSET   0x1124
+#define SYSCTL_SYSPLLPARAM0_OFFSET 0x1128
+#define SYSCTL_SYSPLLPARAM1_OFFSET 0x112C
 
 #if defined(CONFIG_SOC_SERIES_MSPM33C)
-#define SYSCTL_SYSPLLPARAM2_OFFSET  0x1130 /**< SYSPLL param2 */
-#define SYSCTL_SYSPLLLDOCTL_OFFSET  0x1134 /**< SYSPLL LDO ctl */
-#define SYSCTL_SYSPLLLDOPROG_OFFSET 0x1138 /**< SYSPLL LDO VOUT PROG */
-#define SYSCTL_GENCLKEN_OFFSET      0x113C /**< General clock enable */
-#define SYSCTL_GENCLKCFG_OFFSET     0x1140 /**< General clock configuration */
+#define SYSCTL_SYSPLLPARAM2_OFFSET  0x1130
+#define SYSCTL_SYSPLLLDOCTL_OFFSET  0x1134
+#define SYSCTL_SYSPLLLDOPROG_OFFSET 0x1138
+#define SYSCTL_GENCLKEN_OFFSET      0x113C
+#define SYSCTL_GENCLKCFG_OFFSET     0x1140
+#define SYSCTL_PMODECFG_OFFSET      0x1144
 #else
-#define SYSCTL_GENCLKCFG_OFFSET 0x1138 /**< General clock configuration */
-#define SYSCTL_GENCLKEN_OFFSET  0x113C /**< General clock enable */
+#define SYSCTL_GENCLKCFG_OFFSET 0x1138
+#define SYSCTL_GENCLKEN_OFFSET  0x113C
+#define SYSCTL_PMODECFG_OFFSET  0x1140
 #endif
 
-#define SYSCTL_SYSOSCTRIMUSER_OFFSET 0x1170 /**< SYSOSC user-specified trim */
-#define SYSCTL_CLKSTATUS_OFFSET      0x1204 /**< Clock module status */
-#define SYSCTL_SYSSTATUS_OFFSET      0x1208 /**< System status */
-#define SYSCTL_RSTCAUSE_OFFSET       0x1220 /**< Reset Cause */
-#define SYSCTL_LFXTCTL_OFFSET        0x1314 /**< LFXT and LFCLK control */
-#define SYSCTL_EXLFCTL_OFFSET        0x1318 /**< LFCLK_IN control */
+#define SYSCTL_SYSOSCTRIMUSER_OFFSET 0x1170
+#define SYSCTL_CLKSTATUS_OFFSET      0x1204
+#define SYSCTL_SYSSTATUS_OFFSET      0x1208
+#define SYSCTL_RSTCAUSE_OFFSET       0x1220
+#define SYSCTL_LFXTCTL_OFFSET        0x1314
+#define SYSCTL_EXLFCTL_OFFSET        0x1318
 
 /* sysosccfg bits */
 #define SYSCTL_SYSOSCCFG_DISABLE       BIT(10)
+#define SYSCTL_SYSOSCCFG_DISABLESTOP   BIT(9)
+#define SYSCTL_SYSOSCCFG_USE4MHZSTOP   BIT(8)
 #define SYSCTL_SYSOSCCFG_FREQ          GENMASK(1, 0)
-#define SYSCTL_SYSOSCCFG_FREQ_BASE     0x0U /* 32 MHz */
-#define SYSCTL_SYSOSCCFG_FREQ_4M       0x1U /* 4 MHz */
-#define SYSCTL_SYSOSCCFG_FREQ_USERTRIM 0x2U /* 16 or 24 MHz, needs sysosctrimuser */
+#define SYSCTL_SYSOSCCFG_FREQ_BASE     0x0U
+#define SYSCTL_SYSOSCCFG_FREQ_4M       0x1U
+#define SYSCTL_SYSOSCCFG_FREQ_USERTRIM 0x2U
 
 /* sysosctrimuser bits */
 #define SYSCTL_SYSOSCTRIMUSER_FREQ     GENMASK(1, 0)
@@ -97,6 +101,13 @@
 #define SYSCTL_MCLKCFG_UDIV_VAL(x)        (x - 1)
 #define SYSCTL_MCLKCFG_MDIV               GENMASK(3, 0)
 #define SYSCTL_MCLKCFG_MDIV_VAL(x)        (x - 1)
+#define SYSCTL_MCLKCFG_STOPCLKSTBY        BIT(21)
+
+/* pmodecfg bits */
+#define SYSCTL_PMODECFG_DSLEEP              GENMASK(1, 0)
+#define SYSCTL_PMODECFG_DSLEEP_VAL_STOP     0x0U
+#define SYSCTL_PMODECFG_DSLEEP_VAL_STANDBY  0x1U
+#define SYSCTL_PMODECFG_DSLEEP_VAL_SHUTDOWN 0x2U
 
 /* genclkcfg bits */
 #define SYSCTL_GENCLKCFG_HFCLK4MFPCLKDIV        GENMASK(15, 12)
