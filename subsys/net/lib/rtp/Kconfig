@@ -51,6 +51,7 @@ config RTP_TRANSPORT_SOCKET_MAX_SESSIONS
 config RTP_TRANSPORT_SOCKET_BUF_SIZE
 	int "RTP Transport Socket Buf Size"
 	default 1500
+	range 64 $(UINT16_MAX)
 	help
 	  Size of the send and receive socket buffer
 
@@ -115,6 +116,19 @@ config SRTP_REPLAY_WINDOW_SIZE
 	help
 	  Size of the replay protection sliding window in packets, as per
 	  RFC 3711 section 3.3.2. Must be a multiple of 64.
+
+config SRTP_NET_PKT_BUF_SIZE
+	int "SRTP staging buffer size for the net pkt transport"
+	depends on RTP_TRANSPORT_NET_PKT
+	default NET_BUF_DATA_SIZE
+	range 64 $(UINT16_MAX)
+	help
+	  Size of the staging buffer used to get a contiguous view of RTP
+	  packets on the net pkt transport when SRTP is enabled on a session.
+	  The buffer is part of the session's SRTP context and shared between
+	  transmit and receive. The default matches the net pkt transport's
+	  transmit allocation size. Received packets larger than this are
+	  dropped.
 
 endif # SRTP
 
