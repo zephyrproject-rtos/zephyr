@@ -142,10 +142,86 @@ static int clk_generated_get_rate(const struct device *dev,
 	return 0;
 }
 
+#define GCK_DIV_MAX 256
+
+static int clk_generated_set_rate(const struct device *dev,
+				  clock_control_subsys_t sys,
+				  clock_control_subsys_rate_t rate)
+{
+	ARG_UNUSED(sys);
+
+	struct clk_generated *gck = to_clk_generated(dev);
+	uint32_t req = (uint32_t)(uintptr_t)rate;
+	uint32_t best_diff = UINT32_MAX;
+	uint32_t best_div = 1;
+	int best_parent = -1;
+	uint32_t i;
+
+	if (req == 0) {
+		return -EINVAL;
+	}
+
+	if (gck->range.max && req > gck->range.max) {
+		LOG_ERR("%s: requested rate %u above maximum %lu",
+			dev->name, req, gck->range.max);
+		return -EINVAL;
+	}
+
+	/*
+	 * Select the parent and the divider providing the closest rate to the
+	 * requested one. The configuration is applied to the PCR on the next
+	 * clock_control_on() call, which is also the point where the hardware
+	 * expects it, as GCLKDIV/GCLKCSS must not be changed while the
+	 * generated clock is enabled.
+	 */
+	for (i = 0; i < gck->num_parents; i++) {
+		uint32_t parent_rate, div, achieved, diff;
+
+		if (gck->parents[i] == NULL) {
+			continue;
+		}
+
+		if (clock_control_get_rate(gck->parents[i], NULL, &parent_rate) ||
+		    parent_rate == 0) {
+			continue;
+		}
+
+		div = CLAMP(DIV_ROUND_CLOSEST(parent_rate, req), 1, GCK_DIV_MAX);
+		achieved = parent_rate / div;
+		diff = (achieved > req) ? (achieved - req) : (req - achieved);
+
+		if (diff < best_diff) {
+			best_diff = diff;
+			best_div = div;
+			best_parent = i;
+		}
+	}
+
+	if (best_parent < 0) {
+		LOG_ERR("%s: no usable parent clock", dev->name);
+		return -ENODEV;
+	}
+
+	gck->parent_id = gck->mux_table[best_parent];
+	gck->gckdiv = best_div - 1;
+
+	LOG_DBG("%s: rate %u -> parent %s div %u", dev->name, req,
+		gck->parents[best_parent]->name, best_div);
+
+	if (clk_generated_get_status(dev, NULL) == CLOCK_CONTROL_STATUS_ON) {
+		/* Re-apply the new configuration on a running clock. */
+		clk_generated_off(dev, NULL);
+		return clk_generated_on(dev, NULL);
+	}
+
+	return 0;
+}
+
 static DEVICE_API(clock_control, generated_api) = {
 	.on = clk_generated_on,
 	.off = clk_generated_off,
 	.get_rate = clk_generated_get_rate,
+	.set_rate = clk_generated_set_rate,
 	.get_status = clk_generated_get_status,
 };
 
