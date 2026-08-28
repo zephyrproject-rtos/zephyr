@@ -331,6 +331,17 @@ void sys_trace_idle(void)
 #ifdef CONFIG_TRACING_IDLE
 	ctf_top_idle();
 #endif
+	/*
+	 * This CPU has run out of work, so whatever it has gathered would sit
+	 * in an unfinished packet until enough further events arrived to fill
+	 * it - on a CPU that has just gone quiet, possibly never. Close it here
+	 * instead, which bounds how long an event can be held to the point the
+	 * CPU next goes idle. Packets are sized to their contents, so closing
+	 * one early costs only what is in it.
+	 */
+	tracing_stream_flush_cpu();
+	tracing_stream_drain();
+
 	if (IS_ENABLED(CONFIG_CPU_LOAD_BACKEND_IDLE_HOOK)) {
 		cpu_load_on_enter_idle();
 	}
