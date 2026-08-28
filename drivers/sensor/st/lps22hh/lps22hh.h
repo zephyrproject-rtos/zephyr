@@ -41,6 +41,7 @@ struct lps22hh_config {
 #endif
 	} stmemsc_cfg;
 	uint8_t odr;
+	uint8_t lpfp;
 #ifdef CONFIG_LPS22HH_TRIGGER
 	struct gpio_dt_spec gpio_int;
 #endif

@@ -21,9 +21,12 @@ properties:
     type: int
     default: 0
     description: |
-        Specify the default output data rate expressed in samples per second (Hz).
+        Select the default output data rate and noise mode using the values below.
         This value is ignored in favor of one-shot mode unless trigger mode is enabled.
         The default is the power-on reset value.
+        Low-noise mode reduces RMS noise at the cost of higher supply current
+        and is available at 1, 10, 25, 50 and 75 Hz. Setting the sampling
+        frequency at runtime selects low-current mode and overrides this default.
 
         - 0  # LPS22HH_DT_ODR_POWER_DOWN
         - 1  # LPS22HH_DT_ODR_1HZ
@@ -33,8 +36,27 @@ properties:
         - 5  # LPS22HH_DT_ODR_75HZ
         - 6  # LPS22HH_DT_ODR_100HZ
         - 7  # LPS22HH_DT_ODR_200HZ
+        - 17 # LPS22HH_DT_ODR_1HZ_LOW_NOISE
+        - 18 # LPS22HH_DT_ODR_10HZ_LOW_NOISE
+        - 19 # LPS22HH_DT_ODR_25HZ_LOW_NOISE
+        - 20 # LPS22HH_DT_ODR_50HZ_LOW_NOISE
+        - 21 # LPS22HH_DT_ODR_75HZ_LOW_NOISE
 
-    enum: [0, 1, 2, 3, 4, 5, 6, 7]
+    enum: [0, 1, 2, 3, 4, 5, 6, 7, 17, 18, 19, 20, 21]
+
+  lpfp-bandwidth:
+    type: int
+    default: 0
+    description: |
+        Internal low-pass filter bandwidth selection (CTRL_REG1 lpfp_cfg).
+        Value 0 disables the filter; 2 and 3 select ODR/9 and ODR/20
+        bandwidths respectively. The default matches the reset state.
+
+        - 0  # LPS22HH_DT_LPF_DISABLED
+        - 2  # LPS22HH_DT_LPF_ODR_DIV_9
+        - 3  # LPS22HH_DT_LPF_ODR_DIV_20
+
+    enum: [0, 2, 3]
 
 examples:
   - |
@@ -43,5 +65,6 @@ examples:
     lps22hh: lps22hh@0 {
       /* ... */
 
-      odr = <LPS22HH_DT_ODR_200HZ>;
+      odr = <LPS22HH_DT_ODR_25HZ_LOW_NOISE>;
+      lpfp-bandwidth = <LPS22HH_DT_LPF_ODR_DIV_20>;
     };

@@ -27,6 +27,12 @@ static inline int lps22hh_set_odr_raw(const struct device *dev, uint8_t odr)
 {
 	const struct lps22hh_config *const cfg = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
+	int ret;
+
+	ret = lps22hh_data_rate_set(ctx, (lps22hh_odr_t)(odr & BIT(4)));
+	if (ret < 0 || odr == LPS22HH_POWER_DOWN) {
+		return ret;
+	}
 
 	return lps22hh_data_rate_set(ctx, odr);
 }
@@ -226,6 +232,13 @@ static int lps22hh_init_chip(const struct device *dev)
 
 	LOG_DBG("%s: chip id 0x%x", dev->name, chip_id);
 
+	/* Configure the internal low-pass filter bandwidth. */
+	if (cfg->lpfp != 0U &&
+	    lps22hh_lp_bandwidth_set(ctx, (lps22hh_lpfp_cfg_t)cfg->lpfp) < 0) {
+		LOG_ERR("%s: Failed to set low-pass filter", dev->name);
+		return -EIO;
+	}
+
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
 	if (cfg->i3c.bus != NULL) {
 		/*
@@ -361,6 +374,7 @@ static int lps22hh_init(const struct device *dev)
 
 #define LPS22HH_CONFIG_COMMON(inst)                                     \
 	.odr = DT_INST_PROP(inst, odr),                                 \
+	.lpfp = DT_INST_PROP(inst, lpfp_bandwidth),                       \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, drdy_gpios),		\
 			(LPS22HH_CFG_IRQ(inst)), ())
 
