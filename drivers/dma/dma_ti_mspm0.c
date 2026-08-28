@@ -122,7 +122,11 @@ struct dma_mspm0_regs {
 #define DMA_MSPM0_IIDX_NONE        0x00U
 #define DMA_MSPM0_IIDX_PREIRQ_BASE 0x11U
 #define DMA_MSPM0_IIDX_PREIRQ_LAST 0x18U
+#define DMA_MSPM0_IIDX_ADDRERR     0x19U
+#define DMA_MSPM0_IIDX_DATAERR     0x1AU
 #define DMA_MSPM0_IMASK_PREIRQ(n)  BIT(16U + (n))
+#define DMA_MSPM0_IMASK_ADDRERR    BIT(24)
+#define DMA_MSPM0_IMASK_DATAERR    BIT(25)
 #define DMA_MSPM0_PREIRQ_MAX_CHANNELS \
 	(DMA_MSPM0_IIDX_PREIRQ_LAST - DMA_MSPM0_IIDX_PREIRQ_BASE + 1)
 
@@ -148,6 +152,7 @@ struct dma_ti_mspm0_channel_data {
 	bool busy;
 	uint8_t source_data_size;
 	bool cyclic;
+	bool error_dis;
 };
 
 struct dma_ti_mspm0_data {
@@ -383,6 +388,7 @@ static int dma_ti_mspm0_configure(const struct device *dev, uint32_t channel,
 	data->user_data = config->user_data;
 	data->source_data_size = config->source_data_size;
 	data->cyclic = config->cyclic;
+	data->error_dis = config->error_callback_dis;
 
 	K_SPINLOCK(&dma_data->lock) {
 		cfg->regs->cpu_int.imask &= ~BIT(channel);
@@ -488,6 +494,19 @@ static inline void dma_ti_mspm0_isr(const struct device *dev)
 		return;
 	}
 
+	if (status == DMA_MSPM0_IIDX_ADDRERR || status == DMA_MSPM0_IIDX_DATAERR) {
+		int err = (status == DMA_MSPM0_IIDX_ADDRERR) ? -EFAULT : -EIO;
+
+		for (channel = 0; channel < cfg->dma_max_channels; channel++) {
+			data = &dma_data->ch_data[channel];
+			if (data->busy && data->dma_callback != NULL && !data->error_dis) {
+				data->dma_callback(dev, data->user_data, channel, err);
+			}
+		}
+
+		return;
+	}
+
 	if (status >= DMA_MSPM0_IIDX_PREIRQ_BASE && status <= DMA_MSPM0_IIDX_PREIRQ_LAST) {
 		channel = status - DMA_MSPM0_IIDX_PREIRQ_BASE;
 		if (channel >= cfg->dma_max_channels) {
@@ -551,6 +570,8 @@ static int dma_ti_mspm0_init(const struct device *dev)
 			      dma_ti_mspm0_encode_burst_size(cfg->burst_size));
 
 	cfg->regs->dmaprio = dmaprio;
+
+	cfg->regs->cpu_int.imask |= DMA_MSPM0_IMASK_ADDRERR | DMA_MSPM0_IMASK_DATAERR;
 
 	return 0;
 }
