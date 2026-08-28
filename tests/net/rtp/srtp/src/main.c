@@ -9,6 +9,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/ztest.h>
 
+#include "rtp_srtp.h"
 #include "srtp_crypto.h"
 
 #define KAT_SSRC 0xcafebabe
@@ -1459,5 +1460,357 @@ ZTEST_P(srtp_tests, test_replay_model)
 }
 
 ZTEST_INSTANTIATE_TEST_SUITE_P(model, srtp_tests, test_replay_model, model_seeds);
+
+ZTEST(srtp_tests, test_session_set_srtp)
+{
+	static struct rtp_session session;
+	static struct srtp_session_ctx ctx;
+
+	memset(&session, 0, sizeof(session));
+	k_mutex_init(&session.lock);
+	session.ssrc = KAT_SSRC;
+
+	zassert_equal(rtp_session_set_srtp(NULL, &policy_cm_sha1_80, NULL, &ctx), -EINVAL);
+	zassert_equal(rtp_session_set_srtp(&session, NULL, NULL, &ctx), -EINVAL);
+	zassert_equal(rtp_session_set_srtp(&session, &policy_cm_sha1_80, NULL, NULL), -EINVAL);
+
+	zassert_ok(rtp_session_set_srtp(&session, &policy_cm_sha1_80, &policy_cm_sha1_80, &ctx));
+	zassert_equal(rtp_session_set_srtp(&session, &policy_cm_sha1_80, NULL, &ctx), -EALREADY);
+
+	zassert_ok(rtp_session_clear_srtp(&session));
+	zassert_is_null(session.srtp);
+
+	/* Re-installation after a clear requires a fresh master key: the new
+	 * transmit stream restarts its packet index (RFC 3711 3.3.1 and 9.1).
+	 */
+	zassert_ok(rtp_session_set_srtp(&session, &policy_gcm_256, NULL, &ctx));
+	zassert_ok(rtp_session_clear_srtp(&session));
+}
+
+ZTEST(srtp_tests, test_session_rx_slot_recovery)
+{
+	static struct rtp_session session;
+	static struct srtp_session_ctx ctx;
+	uint8_t buf[128];
+	size_t out_len = 0;
+
+	memset(&session, 0, sizeof(session));
+	k_mutex_init(&session.lock);
+
+	zassert_ok(rtp_session_set_srtp(&session, NULL, &policy_cm_sha1_80, &ctx));
+
+	/* Unauthenticated packets with distinct SSRCs must not pin receive
+	 * stream slots (changing the SSRC invalidates the tag).
+	 */
+	for (uint32_t i = 0; i < CONFIG_SRTP_MAX_RX_STREAMS + 2; i++) {
+		memcpy(buf, kat_srtp_cm_sha1_80, sizeof(kat_srtp_cm_sha1_80));
+		sys_put_be32(0x1000 + i, &buf[8]);
+		zassert_equal(
+			rtp_srtp_unprotect(&session, buf, sizeof(kat_srtp_cm_sha1_80), &out_len),
+			-EBADMSG);
+	}
+
+	/* The legitimate source still binds a stream and unprotects */
+	memcpy(buf, kat_srtp_cm_sha1_80, sizeof(kat_srtp_cm_sha1_80));
+	zassert_ok(rtp_srtp_unprotect(&session, buf, sizeof(kat_srtp_cm_sha1_80), &out_len));
+	zassert_equal(out_len, sizeof(kat_rtp));
+	zassert_mem_equal(buf, kat_rtp, out_len);
+
+	zassert_ok(rtp_session_clear_srtp(&session));
+}
+
+ZTEST(srtp_tests, test_session_rx_mki)
+{
+	static struct rtp_session session;
+	static struct srtp_session_ctx ctx;
+	struct srtp_policy policy = policy_cm_sha1_80;
+	uint8_t mki[] = {0xde, 0xad, 0x00, 0x01};
+	const size_t ct_len = sizeof(kat_srtp_cm_sha1_80) - 10;
+	const size_t pkt_len = sizeof(kat_srtp_cm_sha1_80) + sizeof(mki);
+	uint8_t buf[128];
+	size_t out_len = 0;
+
+	memset(&session, 0, sizeof(session));
+	k_mutex_init(&session.lock);
+
+	policy.mki = mki;
+	policy.mki_len = sizeof(mki);
+
+	zassert_ok(rtp_session_set_srtp(&session, NULL, &policy, &ctx));
+
+	/* The MKI was copied into the session context along with the keys */
+	memset(mki, 0xff, sizeof(mki));
+
+	/* Splice the MKI between the ciphertext and the tag of the KAT packet */
+	memcpy(buf, kat_srtp_cm_sha1_80, ct_len);
+	memcpy(&buf[ct_len], kat_mki, sizeof(kat_mki));
+	memcpy(&buf[ct_len + sizeof(kat_mki)], &kat_srtp_cm_sha1_80[ct_len], 10);
+
+	zassert_ok(rtp_srtp_unprotect(&session, buf, pkt_len, &out_len));
+	zassert_equal(out_len, sizeof(kat_rtp));
+	zassert_mem_equal(buf, kat_rtp, out_len);
+
+	/* An unknown MKI is rejected on the late-bound stream */
+	memcpy(buf, kat_srtp_cm_sha1_80, ct_len);
+	memset(&buf[ct_len], 0xff, sizeof(kat_mki));
+	memcpy(&buf[ct_len + sizeof(kat_mki)], &kat_srtp_cm_sha1_80[ct_len], 10);
+	zassert_equal(rtp_srtp_unprotect(&session, buf, pkt_len, &out_len), -ENOENT);
+
+	zassert_ok(rtp_session_clear_srtp(&session));
+}
+
+ZTEST(srtp_tests, test_session_initial_sequence_number)
+{
+	static struct rtp_session session;
+	static struct srtp_session_ctx ctx;
+
+	memset(&session, 0, sizeof(session));
+	k_mutex_init(&session.lock);
+	session.ssrc = KAT_SSRC;
+	session.rtp_context.role = RTP_ROLE_SOURCE;
+
+	zassert_ok(rtp_session_set_srtp(&session, &policy_cm_sha1_80, NULL, &ctx));
+
+	/* The initial sequence number is assigned before the unset address
+	 * family fails the start; without SRTP it spans the full 16-bit
+	 * range, with SRTP it must stay in the lower half so receivers
+	 * bootstrap the rollover counter correctly (RFC 3711 section 8).
+	 */
+	for (int i = 0; i < 16; i++) {
+		zassert_equal(rtp_session_start(&session), -ENOTSUP);
+		zassert_true(session.sequence_number < 0x8000U,
+			     "Initial sequence number %u in the upper half",
+			     session.sequence_number);
+	}
+
+	zassert_ok(rtp_session_clear_srtp(&session));
+}
+
+/* Protect kat_rtp as the first packet of a new transmit stream for ssrc */
+static void protect_source(uint32_t ssrc, uint16_t seq, uint8_t *buf, size_t buf_size,
+			   size_t *out_len)
+{
+	(void)srtp_stream_deinit(&tx_stream);
+	zassert_ok(srtp_stream_init(&tx_stream, &policy_cm_sha1_80, ssrc));
+
+	memcpy(buf, kat_rtp, sizeof(kat_rtp));
+	sys_put_be16(seq, &buf[2]);
+	sys_put_be32(ssrc, &buf[8]);
+	zassert_ok(srtp_stream_protect(&tx_stream, buf, sizeof(kat_rtp), buf_size, out_len));
+}
+
+/* Authenticated sources keep their receive streams: a further source is
+ * refused, and a forged packet for a bound source does not unbind it.
+ */
+ZTEST(srtp_tests, test_session_rx_slots_full)
+{
+	static struct rtp_session session;
+	static struct srtp_session_ctx ctx;
+	uint8_t buf[128];
+	size_t len;
+	size_t out_len = 0;
+
+	memset(&session, 0, sizeof(session));
+	k_mutex_init(&session.lock);
+
+	zassert_ok(rtp_session_set_srtp(&session, NULL, &policy_cm_sha1_80, &ctx));
+
+	for (uint32_t i = 0; i < CONFIG_SRTP_MAX_RX_STREAMS; i++) {
+		protect_source(0x1000 + i, 10, buf, sizeof(buf), &len);
+		zassert_ok(rtp_srtp_unprotect(&session, buf, len, &out_len), "source %u", i);
+	}
+
+	protect_source(0x2000, 10, buf, sizeof(buf), &len);
+	zassert_equal(rtp_srtp_unprotect(&session, buf, len, &out_len), -ENOMEM);
+
+	protect_source(0x1000, 11, buf, sizeof(buf), &len);
+	buf[len - 1] ^= 0x01;
+	zassert_equal(rtp_srtp_unprotect(&session, buf, len, &out_len), -EBADMSG);
+
+	for (uint32_t i = 0; i < CONFIG_SRTP_MAX_RX_STREAMS; i++) {
+		protect_source(0x1000 + i, 11, buf, sizeof(buf), &len);
+		zassert_ok(rtp_srtp_unprotect(&session, buf, len, &out_len), "source %u", i);
+	}
+
+	zassert_ok(rtp_session_clear_srtp(&session));
+}
+
+/* Malformed packets leave no receive stream bound or held */
+ZTEST(srtp_tests, test_session_rx_malformed)
+{
+	static struct rtp_session session;
+	static struct srtp_session_ctx ctx;
+	uint8_t buf[128];
+	size_t out_len = 0;
+
+	memset(&session, 0, sizeof(session));
+	k_mutex_init(&session.lock);
+
+	zassert_ok(rtp_session_set_srtp(&session, NULL, &policy_cm_sha1_80, &ctx));
+
+	for (size_t len = 0; len < RTP_MIN_HEADER_LEN; len++) {
+		memcpy(buf, kat_srtp_cm_sha1_80, sizeof(kat_srtp_cm_sha1_80));
+		zassert_equal(rtp_srtp_unprotect(&session, buf, len, &out_len), -EBADMSG,
+			      "length %zu", len);
+	}
+
+	memcpy(buf, kat_srtp_cm_sha1_80, sizeof(kat_srtp_cm_sha1_80));
+	buf[0] |= RTP_HDR_CC_MASK;
+	zassert_equal(rtp_srtp_unprotect(&session, buf, sizeof(kat_srtp_cm_sha1_80), &out_len),
+		      -EBADMSG);
+
+	memcpy(buf, kat_srtp_cm_sha1_80, sizeof(kat_srtp_cm_sha1_80));
+	buf[0] |= RTP_HDR_X_MASK;
+	sys_put_be16(UINT16_MAX, &buf[RTP_MIN_HEADER_LEN + 2]);
+	zassert_equal(rtp_srtp_unprotect(&session, buf, sizeof(kat_srtp_cm_sha1_80), &out_len),
+		      -EBADMSG);
+
+	for (size_t i = 0; i < CONFIG_SRTP_MAX_RX_STREAMS; i++) {
+		zassert_false(ctx.rx_bound[i], "slot %zu bound", i);
+		zassert_equal(ctx.rx_users[i], 0, "slot %zu held", i);
+	}
+
+	zassert_ok(rtp_session_clear_srtp(&session));
+}
+
+#define DRAIN_STACK_SIZE 4096
+
+static K_THREAD_STACK_DEFINE(drain_rx_stack, DRAIN_STACK_SIZE);
+static K_THREAD_STACK_DEFINE(drain_clear_stack, DRAIN_STACK_SIZE);
+static struct k_thread drain_rx_thread;
+static struct k_thread drain_clear_thread;
+static struct rtp_session drain_session;
+static struct srtp_session_ctx drain_ctx;
+static uint8_t drain_buf[128];
+static size_t drain_len;
+static int drain_rx_ret;
+static int drain_clear_ret;
+
+static void drain_rx(void *p1, void *p2, void *p3)
+{
+	size_t out_len = 0;
+
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	drain_rx_ret = rtp_srtp_unprotect(&drain_session, drain_buf, drain_len, &out_len);
+}
+
+static void drain_clear(void *p1, void *p2, void *p3)
+{
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	drain_clear_ret = rtp_session_clear_srtp(&drain_session);
+}
+
+/* Start the receiving and the clearing thread one after the other, each
+ * running until it blocks; the test thread holds the lock they block on.
+ */
+static void drain_start_rx(int prio)
+{
+	(void)k_thread_create(&drain_rx_thread, drain_rx_stack,
+			      K_THREAD_STACK_SIZEOF(drain_rx_stack), drain_rx, NULL, NULL, NULL,
+			      prio, 0, K_NO_WAIT);
+	k_sleep(K_MSEC(1));
+}
+
+static void drain_start_clear(int prio)
+{
+	(void)k_thread_create(&drain_clear_thread, drain_clear_stack,
+			      K_THREAD_STACK_SIZEOF(drain_clear_stack), drain_clear, NULL, NULL,
+			      NULL, prio, 0, K_NO_WAIT);
+	k_sleep(K_MSEC(1));
+}
+
+static void drain_setup(void)
+{
+	memset(&drain_session, 0, sizeof(drain_session));
+	k_mutex_init(&drain_session.lock);
+
+	zassert_ok(rtp_session_set_srtp(&drain_session, NULL, &policy_cm_sha1_80, &drain_ctx));
+}
+
+/* Clearing SRTP while a packet is being unprotected: the session is
+ * unpublished at once, but the receive stream is only destroyed once the
+ * packet released it. Holding the stream lock keeps the packet in flight.
+ */
+ZTEST(srtp_tests, test_session_clear_drains_receivers)
+{
+	struct srtp_stream *stream = &drain_ctx.rx[0];
+	uint8_t buf[128];
+	size_t len;
+	size_t out_len = 0;
+
+	drain_setup();
+
+	protect_source(KAT_SSRC, 10, buf, sizeof(buf), &len);
+	zassert_ok(rtp_srtp_unprotect(&drain_session, buf, len, &out_len));
+	zassert_true(drain_ctx.rx_bound[0]);
+
+	protect_source(KAT_SSRC, 11, drain_buf, sizeof(drain_buf), &drain_len);
+
+	zassert_ok(k_mutex_lock(&stream->lock, K_FOREVER));
+
+	drain_start_rx(K_PRIO_PREEMPT(1));
+	zassert_equal(drain_ctx.rx_users[0], 1, "packet does not hold the stream");
+
+	drain_start_clear(K_PRIO_PREEMPT(1));
+
+	/* Unpublished and draining: the held stream is intact, the clear is
+	 * waiting and new packets are no longer unprotected.
+	 */
+	zassert_is_null(drain_session.srtp);
+	zassert_false(drain_ctx.rx_enabled);
+	zassert_true(drain_ctx.rx_bound[0], "held stream destroyed");
+	zassert_equal(k_thread_join(&drain_clear_thread, K_NO_WAIT), -EBUSY);
+
+	memcpy(buf, drain_buf, drain_len);
+	zassert_equal(rtp_srtp_unprotect(&drain_session, buf, drain_len, &out_len), -ENOENT);
+
+	zassert_ok(k_mutex_unlock(&stream->lock));
+
+	zassert_ok(k_thread_join(&drain_rx_thread, K_FOREVER));
+	zassert_ok(k_thread_join(&drain_clear_thread, K_FOREVER));
+
+	/* The in-flight packet completed with the stream's keys */
+	zassert_ok(drain_rx_ret);
+	zassert_ok(drain_clear_ret);
+	zassert_equal(drain_ctx.rx_users[0], 0);
+	zassert_false(drain_ctx.rx_bound[0]);
+}
+
+/* A packet that passed the unlocked SRTP check but binds its stream only
+ * after the clear disabled reception must not bind it. Holding the binding
+ * table lock parks the packet in front of the bind; the clearing thread has
+ * the higher priority, so it takes the lock first.
+ */
+ZTEST(srtp_tests, test_session_clear_races_bind)
+{
+	drain_setup();
+
+	protect_source(KAT_SSRC, 10, drain_buf, sizeof(drain_buf), &drain_len);
+
+	zassert_ok(k_mutex_lock(&drain_ctx.lock, K_FOREVER));
+
+	drain_start_rx(K_PRIO_PREEMPT(2));
+	drain_start_clear(K_PRIO_PREEMPT(1));
+	zassert_is_null(drain_session.srtp);
+
+	zassert_ok(k_mutex_unlock(&drain_ctx.lock));
+
+	zassert_ok(k_thread_join(&drain_clear_thread, K_FOREVER));
+	zassert_ok(k_thread_join(&drain_rx_thread, K_FOREVER));
+
+	zassert_equal(drain_rx_ret, -ENOENT);
+	zassert_ok(drain_clear_ret);
+
+	for (size_t i = 0; i < CONFIG_SRTP_MAX_RX_STREAMS; i++) {
+		zassert_false(drain_ctx.rx_bound[i], "slot %zu bound after clear", i);
+		zassert_equal(drain_ctx.rx_users[i], 0, "slot %zu held after clear", i);
+	}
+}
 
 ZTEST_SUITE(srtp_tests, NULL, NULL, NULL, streams_deinit, NULL);
