@@ -55,9 +55,21 @@ extern "C" {
 
 #ifndef _ASMLANGUAGE
 
+#if defined(CONFIG_INTC_ROOT)
+/*
+ * The root interrupt controller driver provides the intc_root_* API:
+ * map the architecture interrupt control functions onto it directly.
+ */
+#include <zephyr/drivers/interrupt_controller/intc_root.h>
+
+#define arch_irq_enable(irq)		intc_root_enable(irq)
+#define arch_irq_disable(irq)		intc_root_disable(irq)
+#define arch_irq_is_enabled(irq)	intc_root_is_enabled(irq)
+#else
 extern void arch_irq_enable(unsigned int irq);
 extern void arch_irq_disable(unsigned int irq);
 extern int arch_irq_is_enabled(unsigned int irq);
+#endif /* CONFIG_INTC_ROOT */
 
 #if defined(CONFIG_RISCV_HAS_PLIC) || defined(CONFIG_RISCV_HAS_CLIC) ||                            \
 	defined(CONFIG_RISCV_HAS_AIA)
