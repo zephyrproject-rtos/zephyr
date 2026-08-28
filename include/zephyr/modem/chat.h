@@ -264,9 +264,14 @@ struct modem_chat_script_completion_info {
 };
 
 /**
- * @brief Callback called when script chat is received
+ * @brief Callback called when script execution completes
  *
- * @param chat Pointer to chat instance instance
+ * @note Internal @p chat context has already been reset at the callback point.
+ *       Additional asynchronous scripts can be queued directly from the callback, but
+ *       the internal object state cannot be usefully inspected. Access all information
+ *       through @p info .
+ *
+ * @param chat Pointer to chat instance
  * @param result Result of script execution
  * @param info Extra information about the script that was running
  * @param user_data Free to use user data set during modem_chat_init()
