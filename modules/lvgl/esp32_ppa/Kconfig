@@ -1,0 +1,24 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# The draw unit and the options that select it come from LVGL itself, so
+# only what ties them to Zephyr is added here.
+
+config LV_USE_PPA
+	depends on DT_HAS_ESPRESSIF_ESP32_PPA_ENABLED
+	depends on SOC_SERIES_ESP32P4
+	select ESP32_PPA
+
+if LV_USE_PPA
+
+config CACHE_L2_CACHE_LINE_SIZE
+	int
+	default ESP32_CACHE_L2_LINE_SIZE
+	help
+	  L2 cache line size. The draw unit reads this name directly, to
+	  refuse a build whose LV_DRAW_BUF_ALIGN does not match it, so the
+	  name is not ours to choose. The accelerator reads and writes the
+	  draw buffers over 2D-DMA, which is why the two have to agree.
+
+endif # LV_USE_PPA
