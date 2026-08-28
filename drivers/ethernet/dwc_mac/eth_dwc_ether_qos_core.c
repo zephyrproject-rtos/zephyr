@@ -49,7 +49,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 /* descriptor index iterators */
 #define INC_WRAP(idx, size) ((idx) = ((idx) + 1) % (size))
-#define DEC_WRAP(idx, size) ({ (idx) = ((idx) + (size) - 1) % (size); })
 
 /*
  * Descriptor physical location .
