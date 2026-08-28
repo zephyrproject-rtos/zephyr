@@ -45,6 +45,15 @@
 #define LV_OS_CUSTOM_INCLUDE "lvgl_zephyr_osal.h"
 #endif /* CONFIG_LV_Z_USE_OSAL */
 
+#ifdef CONFIG_LV_USE_PPA
+#define LV_USE_PPA 1
+#ifdef CONFIG_LV_USE_PPA_IMG
+#define LV_USE_PPA_IMG 1
+#else
+#define LV_USE_PPA_IMG 0
+#endif /* CONFIG_LV_USE_PPA_IMG */
+#endif /* CONFIG_LV_USE_PPA */
+
 /*
  * Needed because of a workaround for a GCC bug,
  * see https://github.com/lvgl/lvgl/issues/3078
