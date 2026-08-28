@@ -267,3 +267,7 @@
 zephyr_uhc0: &usb_otg {
 	status = "okay";
 };
+
+&ppa {
+	status = "okay";
+};
