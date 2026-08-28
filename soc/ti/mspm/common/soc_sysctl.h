@@ -30,9 +30,11 @@
 #define SYSCTL_SYSPLLLDOPROG_OFFSET 0x1138 /**< SYSPLL LDO VOUT PROG */
 #define SYSCTL_GENCLKEN_OFFSET      0x113C /**< General clock enable */
 #define SYSCTL_GENCLKCFG_OFFSET     0x1140 /**< General clock configuration */
+#define SYSCTL_PMODECFG_OFFSET      0x1144
 #else
 #define SYSCTL_GENCLKCFG_OFFSET 0x1138 /**< General clock configuration */
 #define SYSCTL_GENCLKEN_OFFSET  0x113C /**< General clock enable */
+#define SYSCTL_PMODECFG_OFFSET  0x1140
 #endif
 
 #define SYSCTL_SYSOSCTRIMUSER_OFFSET 0x1170 /**< SYSOSC user-specified trim */
@@ -44,6 +46,8 @@
 
 /* sysosccfg bits */
 #define SYSCTL_SYSOSCCFG_DISABLE       BIT(10)
+#define SYSCTL_SYSOSCCFG_DISABLESTOP   BIT(9)
+#define SYSCTL_SYSOSCCFG_USE4MHZSTOP   BIT(8)
 #define SYSCTL_SYSOSCCFG_FREQ          GENMASK(1, 0)
 #define SYSCTL_SYSOSCCFG_FREQ_BASE     0x0U /* 32 MHz */
 #define SYSCTL_SYSOSCCFG_FREQ_4M       0x1U /* 4 MHz */
@@ -97,6 +101,13 @@
 #define SYSCTL_MCLKCFG_UDIV_VAL(x)        (x - 1)
 #define SYSCTL_MCLKCFG_MDIV               GENMASK(3, 0)
 #define SYSCTL_MCLKCFG_MDIV_VAL(x)        (x - 1)
+#define SYSCTL_MCLKCFG_STOPCLKSTBY        BIT(21)
+
+/* pmodecfg bits */
+#define SYSCTL_PMODECFG_DSLEEP              GENMASK(1, 0)
+#define SYSCTL_PMODECFG_DSLEEP_VAL_STOP     0x0U
+#define SYSCTL_PMODECFG_DSLEEP_VAL_STANDBY  0x1U
+#define SYSCTL_PMODECFG_DSLEEP_VAL_SHUTDOWN 0x2U
 
 /* genclkcfg bits */
 #define SYSCTL_GENCLKCFG_HFCLK4MFPCLKDIV        GENMASK(15, 12)
