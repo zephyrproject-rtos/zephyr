@@ -13,6 +13,7 @@
 #include <sys/types.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/__assert.h>
+#include <zephyr/spinlock.h>
 
 #include <zephyr/bluetooth/buf.h>
 #include <zephyr/bluetooth/classic/sdp.h>
@@ -97,24 +98,21 @@ NET_BUF_POOL_FIXED_DEFINE(sdp_pool, CONFIG_BT_MAX_CONN, BT_L2CAP_BUF_SIZE(SDP_MT
 	((count) >= SDP_SSA_MIN_ATTR_BYTE_COUNT && (count) <= SDP_SSA_MAX_ATTR_BYTE_COUNT)
 
 enum sdp_client_state {
-	SDP_CLIENT_RELEASED,
+	SDP_CLIENT_DISCONNECTED,
 	SDP_CLIENT_CONNECTING,
 	SDP_CLIENT_CONNECTED,
 	SDP_CLIENT_DISCONNECTING,
 };
 
 struct bt_sdp_client {
-	/* semaphore for lock/unlock */
-	struct k_sem                         sem_lock;
+	/* L2CAP channel for SDP client */
 	struct bt_l2cap_br_chan              chan;
-	/* list of waiting to create sdp connection again */
-	sys_slist_t                          reqs_next;
 	/* list of waiting to be resolved UUID params */
-	sys_slist_t                          reqs;
-	/* required SDP transaction ID */
-	uint16_t                                tid;
+	struct k_queue                       reqs_pending;
 	/* UUID params holder being now resolved */
 	const struct bt_sdp_discover_params *param;
+	/* required SDP transaction ID */
+	uint16_t                             tid;
 	/* PDU continuation state object */
 	struct bt_sdp_pdu_cstate             cstate;
 	/* buffer for collecting record data */
@@ -1694,8 +1692,7 @@ void bt_sdp_init(void)
 	}
 
 	ARRAY_FOR_EACH(bt_sdp_client_pool, i) {
-		/* Locking semaphore initialized to 1 (unlocked) */
-		k_sem_init(&bt_sdp_client_pool[i].sem_lock, 1, 1);
+		k_queue_init(&bt_sdp_client_pool[i].reqs_pending);
 	}
 
 	initialized = true;
@@ -1740,47 +1737,68 @@ int bt_sdp_register_service(struct bt_sdp_record *service)
 	return 0;
 }
 
+static void sdp_client_req_cleanup(struct bt_sdp_client *session)
+{
+	/* Clean current TID */
+	session->tid = 0U;
+	/* Invalidate cached param in context */
+	session->param = NULL;
+	/* Reset continuation state in current context */
+	memset(&session->cstate, 0, sizeof(session->cstate));
+	/* Release RX buffer */
+	net_buf_drop(&session->rec_buf);
+	/* Clear total length */
+	session->total_len = 0U;
+	/* Clear received length */
+	session->recv_len = 0U;
+}
+
+static void sdp_client_cleanup(struct bt_sdp_client *session)
+{
+	sdp_client_req_cleanup(session);
+	session->state = SDP_CLIENT_DISCONNECTED;
+}
+
 static int sdp_client_discover(struct bt_sdp_client *session);
+
+static int sdp_client_disconnect(struct bt_sdp_client *session)
+{
+	struct bt_l2cap_chan *chan = &session->chan.chan;
+	int err;
+	enum sdp_client_state state;
+
+
+	if (session->state == SDP_CLIENT_DISCONNECTING ||
+	    session->state == SDP_CLIENT_DISCONNECTED) {
+		return 0;
+	}
+
+	state = session->state;
+	session->state = SDP_CLIENT_DISCONNECTING;
+	err = bt_l2cap_chan_disconnect(chan);
+	if (err != 0) {
+		session->state = state;
+		LOG_ERR("Failed to send l2cap disconnect req on session %p (%d)", session, err);
+	}
+
+	return err;
+}
 
 static void sdp_client_params_iterator(struct bt_sdp_client *session)
 {
-	struct bt_l2cap_chan *chan = &session->chan.chan;
-	struct bt_sdp_discover_params *param, *tmp;
+	LOG_DBG("");
 
-	k_sem_take(&session->sem_lock, K_FOREVER);
-	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&session->reqs, param, tmp, _node) {
-		if (param != session->param) {
-			continue;
-		}
+	/* Cleanup current SDP discovery state */
+	sdp_client_req_cleanup(session);
 
-		LOG_DBG("");
-
-		/* Remove already checked UUID node */
-		sys_slist_remove(&session->reqs, NULL, &param->_node);
-		/* Invalidate cached param in context */
-		session->param = NULL;
-		net_buf_drop(&session->rec_buf);
-		/* Reset continuation state in current context */
-		(void)memset(&session->cstate, 0, sizeof(session->cstate));
-		/* Clear total length */
-		session->total_len = 0;
-		/* Clear received length */
-		session->recv_len = 0;
-
-		/* Check if there's valid next UUID */
-		if (!sys_slist_is_empty(&session->reqs)) {
-			k_sem_give(&session->sem_lock);
-			sdp_client_discover(session);
-			return;
-		}
-
-		/* No UUID items, disconnect channel */
-		session->state = SDP_CLIENT_DISCONNECTING;
-		k_sem_give(&session->sem_lock);
-		bt_l2cap_chan_disconnect(chan);
+	/* Check if there's valid next pending request */
+	if (k_queue_peek_head(&session->reqs_pending) != NULL) {
+		sdp_client_discover(session);
 		return;
 	}
-	k_sem_give(&session->sem_lock);
+
+	/* No pending requests, disconnect channel */
+	(void)sdp_client_disconnect(session);
 }
 
 static int sdp_client_get_total(struct bt_sdp_client *session, struct net_buf *buf, uint16_t *total,
@@ -1928,10 +1946,9 @@ enum uuid_state {
 	UUID_PARTIAL_RESOLVED,
 };
 
-static int sdp_client_notify_result(struct bt_sdp_client *session,
+static int sdp_client_notify_result(struct bt_conn *conn, struct bt_sdp_client *session,
 				    enum uuid_state state)
 {
-	struct bt_conn *conn = session->chan.chan.conn;
 	struct bt_sdp_client_result result;
 	uint16_t rec_len;
 	uint8_t user_ret;
@@ -2035,13 +2052,120 @@ no_more_space:
 	return 0;
 }
 
-static int sdp_client_ssa_sa_notify(struct bt_sdp_client *session)
+static int sdp_client_ssa_sa_notify(struct bt_conn *conn, struct bt_sdp_client *session)
 {
-	return sdp_client_notify_result(session, UUID_PARTIAL_RESOLVED);
+	return sdp_client_notify_result(conn, session, UUID_PARTIAL_RESOLVED);
 }
 
 #define GET_PARAM(__node) \
 	CONTAINER_OF(__node, struct bt_sdp_discover_params, _node)
+
+static void sdp_client_req_not_resolved(struct bt_conn *conn, struct bt_sdp_client *session)
+{
+	if (session->param != NULL) {
+		sdp_client_notify_result(conn, session, UUID_NOT_RESOLVED);
+		session->param = NULL;
+	}
+}
+
+static struct k_spinlock sdp_client_lock;
+
+static void sdp_client_reqs_pending_not_resolved(struct bt_conn *conn,
+						 struct bt_sdp_client *session)
+{
+	void *node;
+	k_spinlock_key_t key;
+
+	key = k_spin_lock(&sdp_client_lock);
+	node = k_queue_get(&session->reqs_pending, K_NO_WAIT);
+	while (node != NULL) {
+		session->param = GET_PARAM(node);
+		k_spin_unlock(&sdp_client_lock, key);
+		sdp_client_req_not_resolved(conn, session);
+		bt_conn_unref(conn);
+
+		key = k_spin_lock(&sdp_client_lock);
+		node = k_queue_get(&session->reqs_pending, K_NO_WAIT);
+	}
+	k_spin_unlock(&sdp_client_lock, key);
+}
+
+static void sdp_client_work_handler(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	ARRAY_FOR_EACH(bt_sdp_client_pool, i) {
+		struct bt_sdp_client *session = &bt_sdp_client_pool[i];
+		struct bt_conn *conn = bt_conn_lookup_index(i);
+		int err;
+
+		/* The check should remain in the first position */
+		if (conn == NULL) {
+			continue;
+		}
+
+		/* The check should remain in the second position */
+		if (conn->state != BT_CONN_CONNECTED) {
+			goto failed;
+		}
+
+		if (session->state == SDP_CLIENT_DISCONNECTING) {
+			bt_conn_unref(conn);
+			continue;
+		}
+
+		/* It is for the case that the session is failed to disconnect. */
+		if (session->state == SDP_CLIENT_CONNECTED && session->param == NULL) {
+			/* Get next request and start resolving it */
+			sdp_client_params_iterator(session);
+			bt_conn_unref(conn);
+			continue;
+		}
+
+		if (k_queue_peek_head(&session->reqs_pending) == NULL) {
+			bt_conn_unref(conn);
+			continue;
+		}
+
+		if (session->state == SDP_CLIENT_DISCONNECTED) {
+			err = sdp_client_new_session(conn, session);
+			if (err != 0) {
+				LOG_ERR("Failed to create sdp session (%d)", err);
+				goto failed;
+			}
+		}
+
+		bt_conn_unref(conn);
+		continue;
+
+failed:
+		sdp_client_req_not_resolved(conn, session);
+		sdp_client_reqs_pending_not_resolved(conn, session);
+		sdp_client_cleanup(session);
+		bt_conn_unref(conn);
+	}
+}
+
+static K_WORK_DEFINE(sdp_client_worker, sdp_client_work_handler);
+
+static void disconnected(struct bt_conn *conn, uint8_t reason)
+{
+	size_t index;
+	struct bt_sdp_client *session;
+
+	index = bt_conn_index(conn);
+	__ASSERT(index < ARRAY_SIZE(bt_sdp_client_pool), "Invalid connection index %zu", index);
+
+	session = &bt_sdp_client_pool[index];
+
+	sdp_client_req_not_resolved(conn, session);
+	sdp_client_reqs_pending_not_resolved(conn, session);
+	sdp_client_cleanup(session);
+}
+
+BT_CONN_CB_DEFINE(sdp_client_conn_callbacks) = {
+	.disconnected = disconnected,
+};
 
 /* ServiceSearch PDU, ref to BT Core 5.4, Vol 3, part B, 4.5.1 */
 static int sdp_client_ss_search(struct bt_sdp_client *session,
@@ -2247,7 +2371,7 @@ static int sdp_client_ssa_search(struct bt_sdp_client *session,
 		}
 
 		/* Notify current received data */
-		err = sdp_client_ssa_sa_notify(session);
+		err = sdp_client_ssa_sa_notify(session->chan.chan.conn, session);
 		if (err != 0) {
 			LOG_ERR("Failed to notify received data: %d", err);
 			return err;
@@ -2325,9 +2449,22 @@ static int sdp_client_ssa_search(struct bt_sdp_client *session,
 			   session->tid);
 }
 
+static struct bt_sdp_discover_params *sdp_client_get_pending_req(struct bt_conn *conn,
+								 struct bt_sdp_client *session)
+{
+	void *node;
+
+	node = k_queue_get(&session->reqs_pending, K_NO_WAIT);
+	if (node != NULL) {
+		bt_conn_unref(conn);
+		return GET_PARAM(node);
+	}
+
+	return NULL;
+}
+
 static int sdp_client_discover(struct bt_sdp_client *session)
 {
-	const struct bt_sdp_discover_params *param;
 	int err;
 
 	/*
@@ -2336,47 +2473,40 @@ static int sdp_client_discover(struct bt_sdp_client *session)
 	 * the context is in a middle of partial SDP PDU responses and cached
 	 * value from context can be used.
 	 */
-	k_sem_take(&session->sem_lock, K_FOREVER);
-	if (!session->param) {
-		param = GET_PARAM(sys_slist_peek_head(&session->reqs));
-	} else {
-		param = session->param;
+	if (session->param == NULL) {
+		k_spinlock_key_t key;
+
+		key = k_spin_lock(&sdp_client_lock);
+		session->param = sdp_client_get_pending_req(session->chan.chan.conn, session);
+		k_spin_unlock(&sdp_client_lock, key);
 	}
 
-	if (param != NULL && session->rec_buf == NULL) {
-		session->rec_buf = net_buf_alloc(param->pool, K_NO_WAIT);
+	if (session->param != NULL && session->rec_buf == NULL) {
+		session->rec_buf = net_buf_alloc(session->param->pool, K_NO_WAIT);
 		if (session->rec_buf == NULL) {
 			LOG_WRN("Unable to allocate a receive buffer");
 		}
 	}
 
-	if (param == NULL || session->rec_buf == NULL) {
+	if (session->param == NULL || session->rec_buf == NULL) {
 		struct bt_l2cap_chan *chan = &session->chan.chan;
 
-		session->state = SDP_CLIENT_DISCONNECTING;
-		k_sem_give(&session->sem_lock);
-		LOG_WRN("No more request, disconnect channel");
-		/* No UUID items, disconnect channel */
-		return bt_l2cap_chan_disconnect(chan);
+		/* Notify the result */
+		sdp_client_req_not_resolved(chan->conn, session);
+
+		/* No pending requests, disconnect channel */
+		return sdp_client_disconnect(session);
 	}
 
-	/* Activate the request while holding the lock, so that a concurrent
-	 * bt_sdp_discover_cancel() either sees it as still waiting and
-	 * removes it before the request PDU goes out, or sees it as the
-	 * active one and refuses to cancel it.
-	 */
-	session->param = param;
-	k_sem_give(&session->sem_lock);
-
-	switch (param->type) {
+	switch (session->param->type) {
 	case BT_SDP_DISCOVER_SERVICE_SEARCH:
-		err = sdp_client_ss_search(session, param);
+		err = sdp_client_ss_search(session, session->param);
 		break;
 	case BT_SDP_DISCOVER_SERVICE_ATTR:
-		err = sdp_client_sa_search(session, param);
+		err = sdp_client_sa_search(session, session->param);
 		break;
 	case BT_SDP_DISCOVER_SERVICE_SEARCH_ATTR:
-		err = sdp_client_ssa_search(session, param);
+		err = sdp_client_ssa_search(session, session->param);
 		break;
 	default:
 		err = -EINVAL;
@@ -2385,7 +2515,7 @@ static int sdp_client_discover(struct bt_sdp_client *session)
 
 	if (err) {
 		/* Notify the result */
-		sdp_client_notify_result(session, UUID_NOT_RESOLVED);
+		sdp_client_req_not_resolved(session->chan.chan.conn, session);
 		/* Get next UUID and start resolving it */
 		sdp_client_params_iterator(session);
 	}
@@ -2487,7 +2617,7 @@ static int sdp_client_receive_ss(struct bt_sdp_client *session, struct net_buf *
 	net_buf_pull(buf, sizeof(cstate->length));
 
 	LOG_DBG("UUID 0x%s resolved", bt_uuid_str(session->param->uuid));
-	sdp_client_notify_result(session, UUID_RESOLVED);
+	sdp_client_notify_result(session->chan.chan.conn, session, UUID_RESOLVED);
 	/* Get next UUID and start resolving it */
 	sdp_client_params_iterator(session);
 
@@ -2541,7 +2671,7 @@ static int sdp_client_receive_ssa_sa(struct bt_sdp_client *session, struct net_b
 	 */
 	if (frame_len == 0 && cstate->length != 0) {
 		/* Notify current received data */
-		err = sdp_client_ssa_sa_notify(session);
+		err = sdp_client_ssa_sa_notify(session->chan.chan.conn, session);
 		if (err != 0) {
 			LOG_ERR("Failed to notify received data: %d", err);
 			return err;
@@ -2623,7 +2753,7 @@ static int sdp_client_receive_ssa_sa(struct bt_sdp_client *session, struct net_b
 	net_buf_pull(buf, sizeof(cstate->length));
 
 	LOG_DBG("UUID 0x%s resolved", bt_uuid_str(session->param->uuid));
-	sdp_client_notify_result(session, UUID_RESOLVED);
+	sdp_client_notify_result(session->chan.chan.conn, session, UUID_RESOLVED);
 	/* Get next UUID and start resolving it */
 	sdp_client_params_iterator(session);
 
@@ -2682,40 +2812,11 @@ static int sdp_client_receive(struct bt_l2cap_chan *chan, struct net_buf *buf)
 	}
 
 	if (err < 0) {
-		sdp_client_notify_result(session, UUID_NOT_RESOLVED);
+		sdp_client_req_not_resolved(session->chan.chan.conn, session);
 		sdp_client_params_iterator(session);
 	}
 
 	return 0;
-}
-
-static int sdp_client_chan_connect(struct bt_sdp_client *session)
-{
-	return bt_l2cap_br_chan_connect(session->chan.chan.conn, &session->chan.chan, SDP_PSM);
-}
-
-static struct net_buf *sdp_client_alloc_buf(struct bt_l2cap_chan *chan)
-{
-	struct bt_sdp_client *session = SDP_CLIENT_CHAN(chan);
-	struct net_buf *buf;
-
-	LOG_DBG("session %p chan %p", session, chan);
-
-	session->param = GET_PARAM(sys_slist_peek_head(&session->reqs));
-	if (session->param == NULL) {
-		/* All requests were canceled while the channel was being
-		 * established. Returning NULL makes sdp_client_connected()
-		 * disconnect the channel.
-		 */
-		return NULL;
-	}
-
-	buf = net_buf_alloc(session->param->pool, K_NO_WAIT);
-	if (buf == NULL) {
-		LOG_WRN("Unable to allocate a receive buffer");
-	}
-
-	return buf;
 }
 
 static void sdp_client_connected(struct bt_l2cap_chan *chan)
@@ -2724,145 +2825,43 @@ static void sdp_client_connected(struct bt_l2cap_chan *chan)
 
 	LOG_DBG("session %p chan %p connected", session, chan);
 
-	k_sem_take(&session->sem_lock, K_FOREVER);
-	session->rec_buf = chan->ops->alloc_buf(chan);
-	if (!session->rec_buf) {
-		session->state = SDP_CLIENT_DISCONNECTING;
-		k_sem_give(&session->sem_lock);
-		bt_l2cap_chan_disconnect(chan);
-		return;
-	}
-	k_sem_give(&session->sem_lock);
+	session->state = SDP_CLIENT_CONNECTED;
 
 	sdp_client_discover(session);
-}
-
-static void sdp_client_clean_after_disconnect(struct bt_sdp_client *session)
-{
-	/*
-	 * keep the follow fields:
-	 * sem_lock - it is always valid to protect the session, never clean it after bt_sdp_init.
-	 * state - the session's state.
-	 * chan - it is still used before released callback.
-	 * reqs_next - the pending reqs in the disconnecting phase.
-	 */
-	sys_slist_init(&session->reqs);
-	session->tid = 0U;
-	session->param = NULL;
-	memset(&session->cstate, 0, sizeof(session->cstate));
-	net_buf_drop(&session->rec_buf);
-	session->total_len = 0U;
-	session->recv_len = 0U;
-}
-
-static void sdp_client_clean_after_release(struct bt_sdp_client *session)
-{
-	/*
-	 * keep the follow fields:
-	 * sem_lock - it is always valid to protect the session, never clean it after bt_sdp_init.
-	 * chan - it is maintained by l2cap layer.
-	 */
-	session->state = SDP_CLIENT_RELEASED;
-	sys_slist_init(&session->reqs_next);
-	sdp_client_clean_after_disconnect(session);
 }
 
 static void sdp_client_disconnected(struct bt_l2cap_chan *chan)
 {
 	struct bt_sdp_client *session = SDP_CLIENT_CHAN(chan);
-	sys_snode_t *node;
 
 	LOG_DBG("session %p chan %p disconnected", session, chan);
 
-	/* The disconnecting may be triggered by acl disconnection or failed sdp connecting */
-	k_sem_take(&session->sem_lock, K_FOREVER);
-	session->state = SDP_CLIENT_DISCONNECTING;
+	sdp_client_req_not_resolved(chan->conn, session);
+	sdp_client_cleanup(session);
 
-	/* callback all the sdp reqs; each node is popped while holding the
-	 * lock, so that a concurrent bt_sdp_discover_cancel() either removes
-	 * a request before its callback is called here, or does not find it
-	 * at all.
-	 */
-	node = sys_slist_get(&session->reqs);
-	while (node != NULL) {
-		session->param = GET_PARAM(node);
-		k_sem_give(&session->sem_lock);
-		sdp_client_notify_result(session, UUID_NOT_RESOLVED);
-		k_sem_take(&session->sem_lock, K_FOREVER);
-		node = sys_slist_get(&session->reqs);
-	}
-	k_sem_give(&session->sem_lock);
-
-	net_buf_drop(&session->rec_buf);
-
-	sdp_client_clean_after_disconnect(session);
+	/* Check if there is any pending request in fifo */
+	bt_work_submit(&sdp_client_worker);
 }
 
-void sdp_client_released(struct bt_l2cap_chan *chan)
+static int sdp_client_chan_connect(struct bt_conn *conn, struct bt_sdp_client *session)
 {
-	struct bt_sdp_client *session = SDP_CLIENT_CHAN(chan);
-	struct bt_sdp_discover_params *param, *tmp;
-	struct bt_conn *conn;
-	sys_slist_t cb_reqs;
-	int err;
-
-	k_sem_take(&session->sem_lock, K_FOREVER);
-	if (!sys_slist_is_empty(&session->reqs_next)) {
-		/* put the reqs_next to reqs */
-		SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&session->reqs_next, param, tmp, _node) {
-			sys_slist_append(&session->reqs, &param->_node);
-			/* Remove already processed node */
-			sys_slist_remove(&session->reqs_next, NULL, &param->_node);
-		}
-
-		conn = bt_conn_lookup_index(ARRAY_INDEX(bt_sdp_client_pool, session));
-		err = sdp_client_new_session(conn, session);
-
-		if (err) {
-			sys_slist_init(&cb_reqs);
-			SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&session->reqs, param, tmp, _node) {
-				sys_slist_append(&cb_reqs, &param->_node);
-			}
-
-			sdp_client_clean_after_release(session);
-		}
-		k_sem_give(&session->sem_lock);
-
-		if (err) {
-			struct bt_sdp_client_result result;
-
-			result.resp_buf = NULL;
-			result.next_record_hint = false;
-
-			SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&cb_reqs, param, tmp, _node) {
-				param->func(conn, &result, param);
-			}
-		}
-		bt_conn_unref(conn);
-	} else {
-		sdp_client_clean_after_release(session);
-		k_sem_give(&session->sem_lock);
-	}
+	return bt_l2cap_br_chan_connect(conn, &session->chan.chan, SDP_PSM);
 }
-
-static const struct bt_l2cap_chan_ops sdp_client_chan_ops = {
-		.connected = sdp_client_connected,
-		.disconnected = sdp_client_disconnected,
-		.released = sdp_client_released,
-		.recv = sdp_client_receive,
-		.alloc_buf = sdp_client_alloc_buf,
-};
 
 static int sdp_client_new_session(struct bt_conn *conn, struct bt_sdp_client *session)
 {
 	int err;
+	static const struct bt_l2cap_chan_ops sdp_client_chan_ops = {
+		.connected = sdp_client_connected,
+		.disconnected = sdp_client_disconnected,
+		.recv = sdp_client_receive,
+	};
 
 	session->chan.chan.ops = &sdp_client_chan_ops;
-	session->chan.chan.conn = conn;
 	session->chan.rx.mtu = SDP_CLIENT_MTU;
 
-	err = sdp_client_chan_connect(session);
-	if (err) {
+	err = sdp_client_chan_connect(conn, session);
+	if (err != 0) {
 		LOG_ERR("Cannot connect %d", err);
 		return err;
 	}
@@ -2871,51 +2870,17 @@ static int sdp_client_new_session(struct bt_conn *conn, struct bt_sdp_client *se
 	return err;
 }
 
-static int sdp_client_discovery_start(struct bt_conn *conn,
-				      struct bt_sdp_discover_params *params)
+int bt_sdp_discover(struct bt_conn *conn, struct bt_sdp_discover_params *params)
 {
-	int err;
 	struct bt_sdp_client *session;
+	struct bt_conn *acl;
 	size_t index;
 
-	index = (size_t)bt_conn_index(conn);
-	__ASSERT(index < ARRAY_SIZE(bt_sdp_client_pool), "ACL CONN index is out of bounds");
-
-	session = &bt_sdp_client_pool[index];
-	k_sem_take(&session->sem_lock, K_FOREVER);
-	if (session->state == SDP_CLIENT_CONNECTING ||
-	    session->state == SDP_CLIENT_CONNECTED) {
-		sys_slist_append(&session->reqs, &params->_node);
-		k_sem_give(&session->sem_lock);
-		return 0;
+	if (conn == NULL || conn->state != BT_CONN_CONNECTED ||
+	    !bt_conn_is_type(conn, BT_CONN_TYPE_BR)) {
+		return -ENOTCONN;
 	}
 
-	/* put in `reqs_next` for next round after disconnected */
-	if (session->state == SDP_CLIENT_DISCONNECTING) {
-		sys_slist_append(&session->reqs_next, &params->_node);
-		k_sem_give(&session->sem_lock);
-		return 0;
-	}
-
-	/*
-	 * Try to allocate session context since not found in pool and attempt
-	 * connect to remote SDP endpoint.
-	 */
-	sys_slist_init(&session->reqs);
-	sys_slist_init(&session->reqs_next);
-	sys_slist_append(&session->reqs, &params->_node);
-	err = sdp_client_new_session(conn, session);
-	if (err) {
-		sdp_client_clean_after_release(session);
-	}
-	k_sem_give(&session->sem_lock);
-
-	return err;
-}
-
-int bt_sdp_discover(struct bt_conn *conn,
-		    struct bt_sdp_discover_params *params)
-{
 	if (params == NULL || params->uuid == NULL || params->func == NULL ||
 	    params->pool == NULL ||
 	    (params->ids != NULL && params->ids->count != 0 && params->ids->ranges == NULL)) {
@@ -2924,10 +2889,10 @@ int bt_sdp_discover(struct bt_conn *conn,
 	}
 
 	if (params->ids != NULL) {
-		for (size_t i = 0; i < params->ids->count; i++) {
+		for (index = 0; index < params->ids->count; index++) {
 			struct bt_sdp_attribute_id_range *range;
 
-			range = &params->ids->ranges[i];
+			range = &params->ids->ranges[index];
 			if (range->beginning <= range->ending) {
 				continue;
 			}
@@ -2937,15 +2902,29 @@ int bt_sdp_discover(struct bt_conn *conn,
 		}
 	}
 
-	return sdp_client_discovery_start(conn, params);
+	acl = bt_conn_ref(conn);
+	if (acl == NULL) {
+		LOG_ERR("Invalid connection");
+		return -ENOTCONN;
+	}
+
+	index = (size_t)bt_conn_index(acl);
+	__ASSERT(index < ARRAY_SIZE(bt_sdp_client_pool), "ACL CONN index is out of bounds");
+
+	session = &bt_sdp_client_pool[index];
+
+	k_queue_append(&session->reqs_pending, &params->_node);
+
+	bt_work_submit(&sdp_client_worker);
+	return 0;
 }
 
 int bt_sdp_discover_cancel(struct bt_conn *conn,
 			   struct bt_sdp_discover_params *params)
 {
 	struct bt_sdp_client *session;
-	sys_snode_t *node;
 	size_t index;
+	k_spinlock_key_t key;
 	bool found;
 
 	if (conn == NULL || params == NULL) {
@@ -2958,29 +2937,23 @@ int bt_sdp_discover_cancel(struct bt_conn *conn,
 
 	session = &bt_sdp_client_pool[index];
 
-	k_sem_take(&session->sem_lock, K_FOREVER);
-
+	key = k_spin_lock(&sdp_client_lock);
 	if (session->param == params) {
 		/* The request is being resolved: a request PDU is out and its
 		 * response may already be under processing, so it is too late
 		 * to keep the callback from being called.
 		 */
-		k_sem_give(&session->sem_lock);
+		k_spin_unlock(&sdp_client_lock, key);
 		return -EINPROGRESS;
 	}
 
-	node = &params->_node;
-	found = sys_slist_find_and_remove(&session->reqs, node);
-	if (!found) {
-		found = sys_slist_find_and_remove(&session->reqs_next, node);
-	}
-
-	k_sem_give(&session->sem_lock);
-
+	found = k_queue_remove(&session->reqs_pending, &params->_node);
+	k_spin_unlock(&sdp_client_lock, key);
 	if (!found) {
 		return -ESRCH;
 	}
 
+	bt_conn_unref(conn);
 	return 0;
 }
 

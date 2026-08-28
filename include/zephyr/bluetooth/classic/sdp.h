@@ -616,7 +616,7 @@ struct bt_sdp_discover_params;
  *
  *  @param conn Connection object identifying connection to queried remote.
  *  @param result Object pointing to logical unparsed SDP record collected on
- *  base of response driven by given discover params.
+ *                base of response driven by given discover params.
  *  @param params Discover parameters.
  *
  *  @return BT_SDP_DISCOVER_UUID_STOP in case of no more need to read next
@@ -717,11 +717,16 @@ struct bt_sdp_discover_params {
  * @param conn Object identifying connection to remote.
  * @param params SDP discovery parameters.
  *
- * @return 0 in case of success or negative value in case of error.
+ * @retval 0         The request @p params has been put to request pending queue.
+ *                   The SDP discovery result will be notified through the `params->func` (
+ *                   @ref bt_sdp_discover_params.func ). If the parameter `result->resp_buf` (
+ *                   @ref bt_sdp_client_result.resp_buf ) is NULL, the discovery is failed or no
+ *                   SDP record discovered.
+ * @retval -ENOTCONN The connection @p conn is invalid or not established.
+ * @retval -EINVAL   The request @p params is invalid.
  */
 
-int bt_sdp_discover(struct bt_conn *conn,
-		    struct bt_sdp_discover_params *params);
+int bt_sdp_discover(struct bt_conn *conn, struct bt_sdp_discover_params *params);
 
 /** @brief Release waiting SDP discovery request.
  *
