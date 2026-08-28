@@ -915,6 +915,11 @@ New APIs and options
     observation (:rfc:`7641` re-registration) without tearing it down.
   * :c:func:`net_config_init_clock_via_sntp` to set system clock via SNTP.
   * :c:func:`net_config_sntp_set_server`
+  * Add an experimental RTP (:rfc:`3550`) stack (:kconfig:option:`CONFIG_RTP`)
+    to send and receive media streams over UDP, with a BSD socket transport
+    (:kconfig:option:`CONFIG_RTP_TRANSPORT_SOCKET`) and a raw ``net_pkt``
+    transport (:kconfig:option:`CONFIG_RTP_TRANSPORT_NET_PKT`). See
+    :ref:`rtp_interface`.
 
 * POSIX
 
