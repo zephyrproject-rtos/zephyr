@@ -55,7 +55,8 @@ endif()
 # and its crypto/CMSIS dependencies are passed as explicit paths below so the
 # TF-M build never falls back to fetching them from the network.
 foreach(dep
-    TRUSTED_FIRMWARE_M TRUSTED_FIRMWARE_A TF_PSA_CRYPTO CMSIS_6)
+    TRUSTED_FIRMWARE_M TRUSTED_FIRMWARE_A TF_PSA_CRYPTO TF_PSA_CRYPTO_DRIVERS
+    CMSIS_6)
   if(NOT DEFINED ZEPHYR_${dep}_MODULE_DIR)
     string(TOLOWER "${dep}" dep_lower)
     message(FATAL_ERROR
@@ -69,11 +70,13 @@ endforeach()
 set(tfm_source_dir ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR})
 set(tfa_source_dir ${ZEPHYR_TRUSTED_FIRMWARE_A_MODULE_DIR})
 set(tf_psa_crypto_dir ${ZEPHYR_TF_PSA_CRYPTO_MODULE_DIR})
+set(tf_psa_crypto_drivers_dir ${ZEPHYR_TF_PSA_CRYPTO_DRIVERS_MODULE_DIR})
 set(cmsis_6_module_dir ${ZEPHYR_CMSIS_6_MODULE_DIR})
 
 message(STATUS "Corstone-1000: TF-M source: ${tfm_source_dir}")
 message(STATUS "Corstone-1000: TF-A source: ${tfa_source_dir}")
 message(STATUS "Corstone-1000: TF-PSA-Crypto: ${tf_psa_crypto_dir}")
+message(STATUS "Corstone-1000: PSA crypto drivers: ${tf_psa_crypto_drivers_dir}")
 message(STATUS "Corstone-1000: CMSIS_6: ${cmsis_6_module_dir}")
 
 # TF-M's build runs its Python tools as console scripts, by bare name, and as
@@ -246,6 +249,15 @@ set(tfm_cmake_args
   # the builtin-key/key-id model (which would need an out-of-tree mcuboot patch).
   -DMCUBOOT_BUILTIN_KEY=OFF
 )
+
+# TF-M's corstone1000 platform builds the CryptoCell (cc3xx) PSA crypto driver
+# unconditionally: BL1 links it to verify boot images, so it is a hard
+# dependency rather than an optional accelerator.  TF-M would otherwise clone it
+# at configure time, which Zephyr does not allow: the resulting repository under
+# the build directory fails twister's post-build checks.  Build it from the
+# module instead.
+list(APPEND tfm_cmake_args
+  -DPSA_CRYPTO_DRIVER_PATH=${tf_psa_crypto_drivers_dir})
 
 # Multi-core support: boot all 4 host CPUs (secondaries enter holding pen)
 if("${BOARD_QUALIFIERS}" MATCHES "/smp$")
