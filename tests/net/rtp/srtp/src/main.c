@@ -9,6 +9,7 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/ztest.h>
 
+#include "rtp_srtp.h"
 #include "srtp_crypto.h"
 
 #define KAT_SSRC 0xcafebabe
@@ -917,6 +918,98 @@ ZTEST(srtp_tests, test_deinit_destroys_keys)
 	memcpy(buf, kat_rtp, sizeof(kat_rtp));
 	zassert_true(srtp_protect(&tx_stream, buf, sizeof(kat_rtp), sizeof(buf), &out_len) < 0,
 		     "Destroyed keys are unusable");
+}
+
+ZTEST(srtp_tests, test_session_set_srtp)
+{
+	static struct rtp_session session;
+	static struct srtp_session_ctx ctx;
+
+	memset(&session, 0, sizeof(session));
+	session.ssrc = KAT_SSRC;
+
+	zassert_equal(rtp_session_set_srtp(NULL, &policy_cm_sha1_80, NULL, &ctx), -EINVAL);
+	zassert_equal(rtp_session_set_srtp(&session, NULL, NULL, &ctx), -EINVAL);
+	zassert_equal(rtp_session_set_srtp(&session, &policy_cm_sha1_80, NULL, NULL), -EINVAL);
+
+	zassert_ok(rtp_session_set_srtp(&session, &policy_cm_sha1_80, &policy_cm_sha1_80, &ctx));
+	zassert_equal(rtp_session_set_srtp(&session, &policy_cm_sha1_80, NULL, &ctx), -EALREADY);
+
+	zassert_ok(rtp_session_clear_srtp(&session));
+	zassert_is_null(session.srtp);
+
+	zassert_ok(rtp_session_set_srtp(&session, &policy_cm_sha1_80, NULL, &ctx));
+	zassert_ok(rtp_session_clear_srtp(&session));
+}
+
+ZTEST(srtp_tests, test_session_rx_slot_recovery)
+{
+	static struct rtp_session session;
+	static struct srtp_session_ctx ctx;
+	uint8_t buf[128];
+	size_t out_len = 0;
+
+	memset(&session, 0, sizeof(session));
+
+	zassert_ok(rtp_session_set_srtp(&session, NULL, &policy_cm_sha1_80, &ctx));
+
+	/* Unauthenticated packets with distinct SSRCs must not pin receive
+	 * stream slots (changing the SSRC invalidates the tag).
+	 */
+	for (uint32_t i = 0; i < CONFIG_SRTP_MAX_RX_STREAMS + 2; i++) {
+		memcpy(buf, kat_srtp_cm_sha1_80, sizeof(kat_srtp_cm_sha1_80));
+		sys_put_be32(0x1000 + i, &buf[8]);
+		zassert_equal(
+			rtp_srtp_unprotect(&session, buf, sizeof(kat_srtp_cm_sha1_80), &out_len),
+			-EBADMSG);
+	}
+
+	/* The legitimate source still binds a stream and unprotects */
+	memcpy(buf, kat_srtp_cm_sha1_80, sizeof(kat_srtp_cm_sha1_80));
+	zassert_ok(rtp_srtp_unprotect(&session, buf, sizeof(kat_srtp_cm_sha1_80), &out_len));
+	zassert_equal(out_len, sizeof(kat_rtp));
+	zassert_mem_equal(buf, kat_rtp, out_len);
+
+	zassert_ok(rtp_session_clear_srtp(&session));
+}
+
+ZTEST(srtp_tests, test_session_rx_mki)
+{
+	static struct rtp_session session;
+	static struct srtp_session_ctx ctx;
+	struct srtp_policy policy = policy_cm_sha1_80;
+	uint8_t mki[] = {0xde, 0xad, 0x00, 0x01};
+	const size_t ct_len = sizeof(kat_srtp_cm_sha1_80) - 10;
+	const size_t pkt_len = sizeof(kat_srtp_cm_sha1_80) + sizeof(mki);
+	uint8_t buf[128];
+	size_t out_len = 0;
+
+	memset(&session, 0, sizeof(session));
+
+	policy.mki = mki;
+	policy.mki_len = sizeof(mki);
+
+	zassert_ok(rtp_session_set_srtp(&session, NULL, &policy, &ctx));
+
+	/* The MKI was copied into the session context along with the keys */
+	memset(mki, 0xff, sizeof(mki));
+
+	/* Splice the MKI between the ciphertext and the tag of the KAT packet */
+	memcpy(buf, kat_srtp_cm_sha1_80, ct_len);
+	memcpy(&buf[ct_len], kat_mki, sizeof(kat_mki));
+	memcpy(&buf[ct_len + sizeof(kat_mki)], &kat_srtp_cm_sha1_80[ct_len], 10);
+
+	zassert_ok(rtp_srtp_unprotect(&session, buf, pkt_len, &out_len));
+	zassert_equal(out_len, sizeof(kat_rtp));
+	zassert_mem_equal(buf, kat_rtp, out_len);
+
+	/* An unknown MKI is rejected on the late-bound stream */
+	memcpy(buf, kat_srtp_cm_sha1_80, ct_len);
+	memset(&buf[ct_len], 0xff, sizeof(kat_mki));
+	memcpy(&buf[ct_len + sizeof(kat_mki)], &kat_srtp_cm_sha1_80[ct_len], 10);
+	zassert_equal(rtp_srtp_unprotect(&session, buf, pkt_len, &out_len), -ENOENT);
+
+	zassert_ok(rtp_session_clear_srtp(&session));
 }
 
 ZTEST_SUITE(srtp_tests, NULL, NULL, NULL, streams_deinit, NULL);
