@@ -14,6 +14,7 @@
  */
 
 #include <zephyr/init.h>
+#include <zephyr/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/sys/clock.h>
@@ -240,4 +241,11 @@ static int stimer_init(void)
 	return 0;
 }
 
-SYS_INIT(stimer_init, PRE_KERNEL_2, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
+#if DT_HAS_COMPAT_STATUS_OKAY(DT_DRV_COMPAT)
+SYS_INIT_DEPENDS(stimer_init, PRE_KERNEL, DT_DRV_INST(0));
+#else
+/* Selected by Kconfig without its devicetree node present: there is no
+ * node to take the ordering from, so fall back to a priority.
+ */
+SYS_INIT(stimer_init, PRE_KERNEL, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);
+#endif

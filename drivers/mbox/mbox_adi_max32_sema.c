@@ -224,8 +224,8 @@ static DEVICE_API(mbox, adi_max32_sema_driver_api) = {
 		.perclk.bit = DT_INST_CLOCKS_CELL(n, bit),                                         \
 	};                                                                                         \
 	static struct mbox_adi_max32_sema_data mbox_adi_max32_sema_data_##n;                       \
-	DEVICE_DT_INST_DEFINE(n, &mbox_adi_max32_init, NULL, &mbox_adi_max32_sema_data_##n,        \
-			      &mbox_adi_max32_sema_cfg_##n, PRE_KERNEL_2,                          \
-			      CONFIG_KERNEL_INIT_PRIORITY_DEFAULT, &adi_max32_sema_driver_api);
+	DEVICE_DT_INST_DEFINE_AUTO(n, &mbox_adi_max32_init, NULL, &mbox_adi_max32_sema_data_##n,    \
+				   &mbox_adi_max32_sema_cfg_##n, PRE_KERNEL,                        \
+				   &adi_max32_sema_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(ADI_MAX32_SEMA)

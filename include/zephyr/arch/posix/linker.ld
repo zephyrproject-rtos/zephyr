@@ -81,6 +81,8 @@ SECTION_DATA_PROLOGUE(_NOINIT_SECTION_NAME,,)
  */
 #include <snippets-sections.ld>
 
+
+#include <zephyr/linker/debug-sections.ld>
 } INSERT AFTER .data;
 
 #include <zephyr/arch/posix/native_sim_interface.ld>

@@ -16,6 +16,7 @@ config SOC_MIMX9596_M7
 	select HAS_MCUX_CACHE
 	select HAS_PM
 	select PM_STATE_SET_IRQ_UNLOCKED
+	select SOC_INIT_ANCHOR
 
 config SOC_MIMX9596_A55
 	select ARM64
@@ -23,6 +24,7 @@ config SOC_MIMX9596_A55
 	select ARM_ARCH_TIMER if SYS_CLOCK_EXISTS
 	select HAS_MCUX
 	select HAS_MCUX_CACHE
+	select SOC_INIT_ANCHOR
 
 config MCUX_CORE_SUFFIX
 	default "_cm7" if SOC_MIMX9596_M7

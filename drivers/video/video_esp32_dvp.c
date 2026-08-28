@@ -392,8 +392,9 @@ static int video_esp32_init(const struct device *dev)
 	struct video_esp32_data *data = dev->data;
 
 	/*
-	 * Camera clock (XCLK) is configured in esp_lcd_cam.c at PRE_KERNEL_2
-	 * to ensure the image sensor receives clock before its I2C init.
+	 * Camera clock (XCLK) is configured in esp_lcd_cam.c, ordered by the
+	 * lcd_cam devicetree node, so that the image sensor receives clock
+	 * before its I2C init.
 	 */
 
 	k_fifo_init(&data->fifo_in);

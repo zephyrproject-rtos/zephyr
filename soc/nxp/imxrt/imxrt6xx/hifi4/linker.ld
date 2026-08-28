@@ -544,4 +544,6 @@ SECTIONS
 #endif
 
 #include <snippets-sections.ld>
+
+#include <zephyr/linker/debug-sections.ld>
 }

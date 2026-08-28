@@ -935,5 +935,12 @@ static int second_core_boot(void)
 	return 0;
 }
 
-SYS_INIT(second_core_boot, PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+/*
+ * Releases the second core, which expects the devices of this core to be up
+ * first. An anchored entry runs at the end of PRE_KERNEL, after every device
+ * ordered by priority or by devicetree, which is the position PRE_KERNEL_2 was
+ * standing in for.
+ */
+#define SYS_ANCHOR_imxrt11xx_second_core SYS_ANCHOR(imxrt11xx_second_core)
+SYS_INIT_ANCHORED(imxrt11xx_second_core, second_core_boot, PRE_KERNEL);
 #endif

@@ -12,6 +12,7 @@ LOG_MODULE_REGISTER(ptp, CONFIG_PTP_LOG_LEVEL);
 
 #include <zephyr/kernel.h>
 #include <zephyr/net/net_if.h>
+#include <zephyr/net/net_config.h>
 #include <zephyr/net/ptp.h>
 
 #include "clock.h"
@@ -115,7 +116,12 @@ static int ptp_init(void)
 	return 0;
 }
 
-SYS_INIT(ptp_init, APPLICATION, CONFIG_PTP_INIT_PRIO);
+/* The PTP thread polls sockets on the configured interfaces: run after
+ * the automatic network configuration when it is enabled.
+ */
+#define SYS_ANCHOR_ptp                                                         \
+	SYS_ANCHOR_AFTER_IF(CONFIG_NET_CONFIG_AUTO_INIT, SYS_ANCHOR_net_config, ptp)
+SYS_INIT_ANCHORED(ptp, ptp_init, APPLICATION);
 
 static enum net_verdict ptp_recv(struct net_if *iface, uint16_t ptype,
 				 struct net_pkt *pkt)

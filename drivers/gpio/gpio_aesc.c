@@ -295,13 +295,12 @@ static DEVICE_API(gpio, gpio_aesc_driver_api) = {
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(no),		      \
 		.irq_config = gpio_aesc_irq_config_##no,		      \
 	};								      \
-	DEVICE_DT_INST_DEFINE(no,					      \
+	DEVICE_DT_INST_DEFINE_AUTO(no,					      \
 			      gpio_aesc_init,				      \
 			      NULL,					      \
 			      &gpio_aesc_dev_data_##no,			      \
 			      &gpio_aesc_dev_cfg_##no,			      \
-			      PRE_KERNEL_2,				      \
-			      CONFIG_GPIO_INIT_PRIORITY,		      \
+			      PRE_KERNEL,				      \
 			      (void *)&gpio_aesc_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(AESC_GPIO_INIT)

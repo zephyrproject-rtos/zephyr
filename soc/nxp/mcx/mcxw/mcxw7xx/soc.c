@@ -161,7 +161,10 @@ static int soc_nbu_init(void)
 	return 0;
 }
 
-/* soc_nbu_init may call k_busy_wait, which requires the system timer to be initialized
- * (available by early PRE_KERNEL_2).
+/* soc_nbu_init may call k_busy_wait, which requires the system timer to be
+ * initialized. An anchored entry runs at the end of PRE_KERNEL, after every
+ * entry ordered by priority or by devicetree, which is where the system timer
+ * driver now places itself.
  */
-SYS_INIT(soc_nbu_init, PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+#define SYS_ANCHOR_mcxw_soc_nbu SYS_ANCHOR(mcxw_soc_nbu)
+SYS_INIT_ANCHORED(mcxw_soc_nbu, soc_nbu_init, PRE_KERNEL);
