@@ -5,7 +5,7 @@
  */
 
 &cpu0 {
-	clock-frequency = <DT_FREQ_K(76800)>;
+	clock-frequency = <DT_FREQ_M(80)>;
 };
 
 &em01grpaclk {
@@ -13,13 +13,13 @@
 };
 
 &hfrcodpll {
-	clock-frequency = <DT_FREQ_K(76800)>;
+	clock-frequency = <DT_FREQ_M(80)>;
 	clocks = <&hfxo>;
 	dpll-autorecover;
 	dpll-edge = "fall";
 	dpll-lock = "phase";
 	dpll-m = <1919>;
-	dpll-n = <3839>;
+	dpll-n = <3999>;
 };
 
 &hfxo {
@@ -27,7 +27,7 @@
 };
 
 &itm {
-	swo-ref-frequency = <DT_FREQ_K(76800)>;
+	swo-ref-frequency = <DT_FREQ_M(80)>;
 };
 
 &sysclk {
