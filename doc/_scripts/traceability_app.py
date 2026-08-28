@@ -54,6 +54,10 @@ Usage (from the zephyr tree root)::
         [--json doc/_build/html/needs.json] \\
         [--twister twister.json] [--matrix test_matrix.json] \\
         [--root .] [--port 8765]
+
+Add ``--export DIR`` to write the same UI and data as a static site
+(``index.html`` plus ``api/*.json``) that can be published on any web server
+or GitHub Pages instead of running the built-in server.
 """
 
 import argparse
@@ -558,6 +562,54 @@ class App:
                 "reqs": reqline, "impl_fns": sorted(fns_here, key=lambda x: x["a"])}
 
 
+# --- static export --------------------------------------------------------------
+
+def fname(s):
+    """Filesystem-safe name for an id; mirrored by fname() in the page script."""
+    return re.sub(r"[^A-Za-z0-9._-]", "_", s)
+
+
+def export_static(app, html, out, all_files=False):
+    """Write the UI and every API response as static files under ``out``.
+
+    Layout (all paths relative, so the tree can be served from any prefix):
+      index.html, api/model.json, api/req/<uid>.json, api/test/<id>.json,
+      api/file/<path>.json.  Source files are exported for files carrying
+      implementation symbols and for kernel/ and include/, unless
+      ``all_files`` is set; the page shows "no data" for the rest.
+    """
+    api = out / "api"
+
+    def dump(path, obj):
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(obj, separators=(",", ":")))
+        return path.stat().st_size
+
+    total = dump(api / "model.json", app.model)
+    n_req = n_test = n_file = 0
+    for uid in app.model["reqs"]:
+        total += dump(api / "req" / f"{fname(uid)}.json", app.req_detail(uid))
+        n_req += 1
+    fns = set(app.tests) | {fn for r in app.model["reqs"].values() for fn in r["tests"]}
+    for fn in sorted(fns):
+        total += dump(api / "test" / f"{fname(fn)}.json", app.test_detail(fn))
+        n_test += 1
+    impl_files = {b["file"] for bodies in app.impl_loc.values() for b in bodies}
+    files = set(app.by_line) | impl_files
+    if not all_files:
+        files = {f for f in files if f in impl_files or f.startswith(("kernel/", "include/"))}
+    for rel in sorted(files):
+        d = app.file_detail(rel)
+        if d:
+            total += dump(api / "file" / (rel + ".json"), d)
+            n_file += 1
+    out.mkdir(parents=True, exist_ok=True)
+    (out / "index.html").write_text(html.replace("__STATIC__", "true"))
+    print(f"exported {n_req} requirements, {n_test} tests, {n_file} source files "
+          f"({total // 1024 // 1024} MiB) to {out}")
+    print(f"serve with e.g.: python3 -m http.server -d {out}")
+
+
 # --- HTTP server ----------------------------------------------------------------
 
 def make_handler(app, html):
@@ -608,6 +660,10 @@ def main(argv=None):
     p.add_argument("--host", default="127.0.0.1")
     p.add_argument("--port", type=int, default=8765)
     p.add_argument("--no-browser", action="store_true")
+    p.add_argument("--export", metavar="DIR",
+                   help="write a static site (index.html + api/*.json) to DIR instead of serving")
+    p.add_argument("--export-all-files", action="store_true",
+                   help="with --export, also export annotated sources outside kernel/ and include/")
     args = p.parse_args(argv)
 
     for f in (args.json, args.twister, args.matrix):
@@ -626,6 +682,10 @@ def main(argv=None):
 
     html = _HTML.replace("__GENERATED__",
                          datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"))
+    if args.export:
+        export_static(app, html, Path(args.export), args.export_all_files)
+        return 0
+    html = html.replace("__STATIC__", "false")
     httpd = ThreadingHTTPServer((args.host, args.port), make_handler(app, html))
     url = f"http://{args.host}:{args.port}/"
     print(f"serving on {url}   (Ctrl-C to stop)")
@@ -760,7 +820,10 @@ let M=null;
 const el=h=>{const t=document.createElement('template');t.innerHTML=h.trim();return t.content.firstChild;};
 const esc=s=>(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const pct=(n,d)=>d?Math.round(100*n/d):0;
-const api=async p=>{const r=await fetch(p);if(!r.ok)throw new Error(p);return r.json();};
+const STATIC=__STATIC__;
+const fname=s=>s.replace(/[^A-Za-z0-9._-]/g,'_');
+const staticPath=p=>{let m;if(p==='/api/model')return 'api/model.json';if((m=p.match(/^\/api\/req\/(.*)$/)))return 'api/req/'+fname(m[1])+'.json';if((m=p.match(/^\/api\/test\/(.*)$/)))return 'api/test/'+fname(m[1])+'.json';if((m=p.match(/^\/api\/file\?path=(.*)$/)))return 'api/file/'+decodeURIComponent(m[1])+'.json';return p;};
+const api=async p=>{if(STATIC)p=staticPath(p);const r=await fetch(p);if(!r.ok)throw new Error(p);return r.json();};
 const chip=(v)=>`<span class="st st-${esc(v)}">${esc(v)}</span>`;
 const EV_COLORS={passing:'var(--ok)',failing:'var(--bad)',skipped:'var(--warn)','no-run':'#5a6b7d',untested:'#39434f'};
 const ADQ_COLORS={true:'var(--ok)',partial:'var(--warn)',broken:'var(--bad)',unattributed:'#7a5ea8',unresolved:'#5a6b7d','no-impl':'#39434f','no-cov':'#4a5764'};
