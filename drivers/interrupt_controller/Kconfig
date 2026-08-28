@@ -54,6 +54,7 @@ config LEON_IRQMP
 	bool "GRLIB IRQMP interrupt controller"
 	default y
 	depends on DT_HAS_GAISLER_IRQMP_ENABLED
+	select INTC_ROOT
 	help
 	  GRLIB IRQMP and IRQAMP
 
