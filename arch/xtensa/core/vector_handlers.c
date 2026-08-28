@@ -20,6 +20,8 @@
 #include <xtensa_internal.h>
 #include <xtensa_stack.h>
 
+#include <xtensa_breadcrumb.h>
+
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 
 extern char xtensa_arch_except_epc[];
@@ -686,6 +688,8 @@ void *xtensa_excint1_c(void *esf)
 
 		ps = bsa->ps;
 		pc = (void *)bsa->pc;
+
+		XTENSA_RECORD_FATAL_BREADCRUMB(bsa, cause);
 
 		/* We intentionally use "ill" (illegal instruction) as a trap for custom exceptions.
 		 * So we need to find out if the illegal instruction is legit.
