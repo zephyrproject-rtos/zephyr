@@ -41,10 +41,6 @@ static const struct net_eth_addr multicast_eth_addr __unused = {
 static const struct net_eth_addr broadcast_eth_addr = {
 	{ 0xff, 0xff, 0xff, 0xff, 0xff, 0xff } };
 
-#if defined(NET_ETH_MCAST_FILTER_SUPPORTED) && defined(CONFIG_NET_NATIVE_IP)
-static struct net_if_mcast_monitor mcast_monitor;
-#endif
-
 const struct net_eth_addr *net_eth_broadcast_addr(void)
 {
 	return &broadcast_eth_addr;
@@ -499,10 +495,13 @@ void net_eth_mcast_addr_foreach(struct net_if *iface,
 #endif
 
 #if defined(NET_ETH_MCAST_FILTER_SUPPORTED) && defined(CONFIG_NET_NATIVE_IP)
-static void ethernet_mcast_monitor_cb(struct net_if *iface, const struct net_addr *addr,
-				      bool is_joined)
+int net_eth_mcast_ip_addr_update(struct net_if *iface, const struct net_addr *addr, bool add)
 {
 	struct net_eth_addr mac_addr;
+	int ret;
+
+	NET_ASSERT(iface != NULL);
+	NET_ASSERT(addr != NULL);
 
 	switch (addr->family) {
 #if defined(CONFIG_NET_IPV4)
@@ -516,18 +515,28 @@ static void ethernet_mcast_monitor_cb(struct net_if *iface, const struct net_add
 		break;
 #endif /* CONFIG_NET_IPV6 */
 	default:
-		return;
+		return -EINVAL;
+	}
+
+	if (!add) {
+		return net_eth_mcast_addr_rm(iface, &mac_addr);
 	}
 
 	/* Several IP multicast addresses can map to the same link layer
 	 * address, so the group is tracked by the L2 to know when the device
 	 * really has to start or stop listening to it.
 	 */
-	if (is_joined) {
-		(void)net_eth_mcast_addr_add(iface, &mac_addr);
-	} else {
+	ret = net_eth_mcast_addr_add(iface, &mac_addr);
+	if (ret < 0) {
+		/* The group was not joined, so leave it again as the L2 takes
+		 * the address into use before it programs it and keeps it if
+		 * the device refuses. Leaving a group that was never joined
+		 * is harmless, it just fails with -ENOENT.
+		 */
 		(void)net_eth_mcast_addr_rm(iface, &mac_addr);
 	}
+
+	return ret;
 }
 #endif
 
@@ -1381,12 +1390,6 @@ void ethernet_init(struct net_if *iface)
 	if ((caps & ETHERNET_PROMISC_MODE) != 0) {
 		ctx->ethernet_l2_flags |= NET_L2_PROMISC_MODE;
 	}
-
-#if defined(NET_ETH_MCAST_FILTER_SUPPORTED) && defined(CONFIG_NET_NATIVE_IP)
-	if ((caps & ETHERNET_HW_FILTERING) != 0) {
-		net_if_mcast_mon_register(&mcast_monitor, NULL, ethernet_mcast_monitor_cb);
-	}
-#endif
 
 	if ((caps & ETHERNET_LLDP) != 0) {
 		net_lldp_set_lldpdu(iface);

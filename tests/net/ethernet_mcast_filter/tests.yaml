@@ -1,0 +1,11 @@
+# Copyright (c) 2026 Fin Maaß
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  depends_on: netif
+  tags:
+    - net
+    - ethernet
+tests:
+  net.ethernet_mcast_filter:
+    min_ram: 32
