@@ -26,7 +26,6 @@ LOG_MODULE_REGISTER(dwmac_core, CONFIG_ETHERNET_LOG_LEVEL);
 #define TX_AVAIL_WAIT K_MSEC(1)
 
 #define INC_WRAP(idx, size) ((idx) = ((idx) + 1) % (size))
-#define DEC_WRAP(idx, size) ({ (idx) = ((idx) + (size) - 1) % (size); })
 
 #define TDES0_OWN BIT(31)
 #define TDES0_IC  BIT(30)
