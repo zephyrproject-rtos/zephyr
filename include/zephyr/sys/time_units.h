@@ -1031,6 +1031,96 @@ static inline unsigned int z_impl_sys_clock_hw_cycles_per_sec_runtime_get(void)
 	z_tmcvt_64(t, Z_HZ_ns, Z_HZ_cyc, Z_CCYC, true, false)
 
 
+/** @brief Convert nanoseconds to cycles at a given frequency. 32 bits. Truncates.
+ *
+ * Converts time values in nanoseconds to cycles at the specified frequency.
+ * Computes result in 32 bit precision.
+ * Truncates to the next lowest output unit.
+ *
+ * @param t Source time in nanoseconds. uint64_t
+ * @param freq Target frequency in Hz. uint32_t
+ *
+ * @return The converted time value in cycles. uint32_t
+ */
+#define ns_to_cyc_at_hz_floor32(t, freq) \
+	z_tmcvt_32(t, Z_HZ_ns, freq, false, false, false)
+
+
+/** @brief Convert nanoseconds to cycles at a given frequency. 64 bits. Truncates.
+ *
+ * Converts time values in nanoseconds to cycles at the specified frequency.
+ * Computes result in 64 bit precision.
+ * Truncates to the next lowest output unit.
+ *
+ * @param t Source time in nanoseconds. uint64_t
+ * @param freq Target frequency in Hz. uint32_t
+ *
+ * @return The converted time value in cycles. uint64_t
+ */
+#define ns_to_cyc_at_hz_floor64(t, freq) \
+	z_tmcvt_64(t, Z_HZ_ns, freq, false, false, false)
+
+
+/** @brief Convert nanoseconds to cycles at a given frequency. 32 bits. Round nearest.
+ *
+ * Converts time values in nanoseconds to cycles at the specified frequency.
+ * Computes result in 32 bit precision.
+ * Rounds to the nearest output unit.
+ *
+ * @param t Source time in nanoseconds. uint64_t
+ * @param freq Target frequency in Hz. uint32_t
+ *
+ * @return The converted time value in cycles. uint32_t
+ */
+#define ns_to_cyc_at_hz_near32(t, freq) \
+	z_tmcvt_32(t, Z_HZ_ns, freq, false, false, true)
+
+
+/** @brief Convert nanoseconds to cycles at a given frequency. 64 bits. Round nearest.
+ *
+ * Converts time values in nanoseconds to cycles at the specified frequency.
+ * Computes result in 64 bit precision.
+ * Rounds to the nearest output unit.
+ *
+ * @param t Source time in nanoseconds. uint64_t
+ * @param freq Target frequency in Hz. uint32_t
+ *
+ * @return The converted time value in cycles. uint64_t
+ */
+#define ns_to_cyc_at_hz_near64(t, freq) \
+	z_tmcvt_64(t, Z_HZ_ns, freq, false, false, true)
+
+
+/** @brief Convert nanoseconds to cycles at a given frequency. 32 bits. Rounds up.
+ *
+ * Converts time values in nanoseconds to cycles at the specified frequency.
+ * Computes result in 32 bit precision.
+ * Rounds up to the next highest output unit.
+ *
+ * @param t Source time in nanoseconds. uint64_t
+ * @param freq Target frequency in Hz. uint32_t
+ *
+ * @return The converted time value in cycles. uint32_t
+ */
+#define ns_to_cyc_at_hz_ceil32(t, freq) \
+	z_tmcvt_32(t, Z_HZ_ns, freq, false, true, false)
+
+
+/** @brief Convert nanoseconds to cycles at a given frequency. 64 bits. Rounds up.
+ *
+ * Converts time values in nanoseconds to cycles at the specified frequency.
+ * Computes result in 64 bit precision.
+ * Rounds up to the next highest output unit.
+ *
+ * @param t Source time in nanoseconds. uint64_t
+ * @param freq Target frequency in Hz. uint32_t
+ *
+ * @return The converted time value in cycles. uint64_t
+ */
+#define ns_to_cyc_at_hz_ceil64(t, freq) \
+	z_tmcvt_64(t, Z_HZ_ns, freq, false, true, false)
+
+
 /** @brief Convert nanoseconds to ticks. 32 bits. Truncates.
  *
  * Converts time values in nanoseconds to ticks.
