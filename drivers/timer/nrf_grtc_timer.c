@@ -606,6 +606,30 @@ static int grtc_post_init(void)
 				   : CLOCK_CONTROL_NRF_LF_START_STABLE);
 
 	z_nrf_clock_control_lf_on(mode);
+
+#if NRF_GRTC_HAS_SYSCOUNTER_LOADED
+	/* On SoCs where the SYSCOUNTER is only clocked once the LF clock is
+	 * running, the tick base captured at init is latched from a counter
+	 * that has not loaded yet (the read path only retries on BUSY, not on
+	 * LOADED). Wait for the counter to load and re-base it before the
+	 * kernel schedules on it. NO_WAIT must not block on the LF clock.
+	 */
+	if (mode != CLOCK_CONTROL_NRF_LF_START_NOWAIT) {
+		while (!(NRF_GRTC->GRTC_SYSCOUNTER.SYSCOUNTERH &
+			 GRTC_SYSCOUNTER_SYSCOUNTERH_LOADED_Msk)) {
+		}
+
+		unsigned int key = irq_lock();
+
+		last_count = (counter() / CYC_PER_TICK) * CYC_PER_TICK;
+		grtc_start_value = last_count;
+		expired_cc = UINT64_MAX;
+		if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
+			system_timeout_set_relative(CYC_PER_TICK);
+		}
+		irq_unlock(key);
+	}
+#endif /* NRF_GRTC_HAS_SYSCOUNTER_LOADED */
 #endif
 
 #if defined(CONFIG_NRF_GRTC_ALWAYS_ON)
