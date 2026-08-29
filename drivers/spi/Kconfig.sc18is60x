@@ -1,0 +1,24 @@
+# Copyright (c) 2026 tinyvision.ai
+# SPDX-License-Identifier: Apache-2.0
+
+config SPI_SC18IS60X
+	bool "NXP SC18IS602/SC18IS606 SPI controller driver"
+	default y
+	select MFD
+	depends on DT_HAS_NXP_SC18IS60X_SPI_ENABLED || DT_HAS_NXP_SC18IS606_SPI_ENABLED
+	help
+	  Enable the SPI controller child of an NXP SC18IS60x I2C-to-SPI
+	  bridge (SC18IS602/SC18IS602B or SC18IS606).
+
+if SPI_SC18IS60X
+
+config SPI_SC18IS60X_INIT_PRIORITY
+	int "SC18IS60x SPI init priority"
+	default 99
+	help
+	  SC18IS60x SPI controller initialization priority
+
+	  Note: Has to be greater than the parent SC18IS60x bridge init
+	  priority.
+
+endif
