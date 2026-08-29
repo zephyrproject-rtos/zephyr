@@ -3504,6 +3504,16 @@ __syscall int k_stack_pop(struct k_stack *stack, stack_data_t *data,
 struct k_work;
 struct k_work_q;
 struct k_work_queue_config;
+
+/**
+ * @brief The system work queue.
+ *
+ * Started automatically during kernel initialization when
+ * @kconfig{CONFIG_MULTITHREADING} is enabled. k_work_submit(),
+ * k_work_schedule() and k_work_reschedule() submit to this queue.
+ *
+ * @ingroup workqueue_apis
+ */
 extern struct k_work_q k_sys_work_q;
 /**
  * INTERNAL_HIDDEN @endcond
@@ -7268,6 +7278,11 @@ __syscall int k_float_enable(struct k_thread *thread, unsigned int options);
  */
 
 /**
+ * @addtogroup thread_apis
+ * @{
+ */
+
+/**
  * @brief Get the runtime statistics of a thread
  *
  * @param thread ID of thread.
@@ -7343,6 +7358,10 @@ void k_sys_runtime_stats_enable(void);
  * threads.
  */
 void k_sys_runtime_stats_disable(void);
+
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }
