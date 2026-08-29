@@ -404,7 +404,7 @@ def _render_symbols_page(title: str, symbols: dict[str, dict]) -> str:
     return "\n".join(out)
 
 
-def _render_index(symbol_pages: list[tuple[str, str]], have_symbols: bool) -> str:
+def _render_index(have_symbol_pages: bool, have_symbols: bool) -> str:
     title = "Requirements Traceability"
     out = [
         *_heading(title, "#"),
@@ -414,26 +414,34 @@ def _render_index(symbol_pages: list[tuple[str, str]], have_symbols: bool) -> st
         "",
         ".. toctree::",
         "   :maxdepth: 1",
-        "   :caption: Coverage and matrices",
         "",
         "   coverage",
         "   matrix_test",
         "   matrix_implementation",
         "   matrix_design",
         "   hierarchy",
+    ]
+    if have_symbol_pages:
+        out.append("   symbols")
+    out.append("")
+    if not have_symbol_pages and not have_symbols:
+        out += ["No traceability links were found in this build.", ""]
+    return "\n".join(out)
+
+
+def _render_symbols_index(symbol_pages: list[tuple[str, str]]) -> str:
+    title = "Verifying Tests and Implementations"
+    out = [
+        *_heading(title, "#"),
+        "The tests and implementation symbols carrying traceability links,",
+        "grouped by the component of the requirements they link to.",
+        "",
+        ".. toctree::",
+        "   :maxdepth: 1",
         "",
     ]
-    if symbol_pages:
-        out += [
-            ".. toctree::",
-            "   :maxdepth: 1",
-            "   :caption: Verifying tests and implementations",
-            "",
-        ]
-        out += [f"   {stem}" for _name, stem in symbol_pages]
-        out.append("")
-    elif not have_symbols:
-        out += ["No traceability links were found in this build.", ""]
+    out += [f"   {stem}" for _name, stem in symbol_pages]
+    out.append("")
     return "\n".join(out)
 
 
@@ -503,7 +511,9 @@ def generate_traceability(app: Sphinx) -> None:
         (base / f"{stem}.rst").write_text(_render_symbols_page(group["name"], group["symbols"]))
         symbol_pages.append((group["name"], stem))
 
-    (base / "index.rst").write_text(_render_index(symbol_pages, bool(symbols)))
+    if symbol_pages:
+        (base / "symbols.rst").write_text(_render_symbols_index(symbol_pages))
+    (base / "index.rst").write_text(_render_index(bool(symbol_pages), bool(symbols)))
 
     logger.info(
         "requirement_traceability: %d symbols across %d component pages",
