@@ -377,7 +377,10 @@ class TraceReader:
         # CPU whose stream is being followed, and everything seen in the trace.
         self.cpu = cpu
         self.cpus_seen = set()
-        self.discarded = 0
+        # cpu -> events the target dropped on that CPU. The packet context
+        # carries a running total per stream, so the last value seen for a
+        # CPU is that CPU's total.
+        self.discarded = {}
         # Some platforms back the CTF timestamp with a free-running cycle
         # counter that wraps, giving a sawtooth instead of a monotonic clock.
         # Unwrap it: every time the raw value jumps backwards, add the previous
@@ -585,8 +588,9 @@ class TraceReader:
                 off = nxt
                 continue
 
-            (_ts_begin, _ts_end, content_bits, packet_bits, discarded,
-             cpu) = PKT_CONTEXT.unpack_from(data, off + PKT_HEADER.size)
+            (_ts_begin, _ts_end, content_bits, packet_bits, discarded, cpu) = (
+                PKT_CONTEXT.unpack_from(data, off + PKT_HEADER.size)
+            )
             psize = packet_bits // 8
             csize = content_bits // 8
 
@@ -604,7 +608,7 @@ class TraceReader:
                 break  # incomplete trailing packet; wait for more
 
             self.cpus_seen.add(cpu)
-            self.discarded = max(self.discarded, discarded)
+            self.discarded[cpu] = discarded
 
             # Every CPU is decoded; self.cpu, when set, narrows the display to
             # one of them rather than the decode.
@@ -671,10 +675,13 @@ def _report_cpus(reader):
                 f"note: restricted to CPU {reader.cpu}; this trace also has "
                 f"{', '.join(str(c) for c in others)} (drop --cpu to see them all)\n"
             )
-    if reader.discarded:
+    dropped = {c: n for c, n in reader.discarded.items() if n}
+    if dropped:
+        per_cpu = ", ".join(f"{n} on CPU {c}" for c, n in sorted(dropped.items()))
         sys.stderr.write(
-            f"warning: the target discarded {reader.discarded} event(s) on CPU "
-            f"{reader.cpu} for want of a free packet\n"
+            f"warning: the target discarded {sum(dropped.values())} event(s) "
+            f"({per_cpu}) for want of a free packet; this trace is incomplete. "
+            "Raise CONFIG_TRACING_CTF_PACKETS_PER_CPU to capture them.\n"
         )
 
 
@@ -809,9 +816,7 @@ def cpu_lane_order(tr):
         lanes.append(Lane("cpu", cpu, None))
         # Real work first, busiest first; the idle thread sinks to the bottom of
         # the group, where it reads as the leftovers rather than dominating.
-        for tid in sorted(
-            busy.get(cpu, {}), key=lambda t: (is_idle_thread(tr, t), -busy[cpu][t])
-        ):
+        for tid in sorted(busy.get(cpu, {}), key=lambda t: (is_idle_thread(tr, t), -busy[cpu][t])):
             lanes.append(Lane("occ", cpu, tid))
         if cpu in isr_cpus:
             lanes.append(Lane("isr", cpu, None))
@@ -1139,8 +1144,7 @@ def run_text(tr, width):
     print()
     print("Threads")
     print(
-        f"  {'handle':<12}{'name':<18}{'prio':>5}  {'stack_base':<12}"
-        f"{'stack_sz':>9}  {'cpus':<16}"
+        f"  {'handle':<12}{'name':<18}{'prio':>5}  {'stack_base':<12}{'stack_sz':>9}  {'cpus':<16}"
     )
     for tid in threads:
         t = tr.threads[tid]
@@ -1565,6 +1569,7 @@ def _draw_gantt(
     panel_h = 5 if show_info else 0
     lanes_top = 3
     overhead = lanes_top + panel_h + 1  # +1 footer
+
     def lane_in_view(ln):
         if ln.kind in ("cpu", "isr", "sep"):
             return True
