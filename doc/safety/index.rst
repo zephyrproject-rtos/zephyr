@@ -12,3 +12,4 @@ for ensuring safety is addressed within the Zephyr project.
 
    safety_overview.rst
    safety_requirements/index
+   requirements_catalog.rst
