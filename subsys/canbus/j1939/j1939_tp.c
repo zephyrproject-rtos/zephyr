@@ -441,7 +441,6 @@ void j1939_tp_copy_data_tx_buffer(uint8_t tx_index, uint8_t *data)
 void j1939_tp_update_send_message_times(j1939_timer_t callPeriod)
 {
 	uint16_t index1;
-	j1939_byte_counter_t index2;
 	uint8_t index3;
 	uint8_t data[CAN_MAX_DLC];
 	uint32_t id;

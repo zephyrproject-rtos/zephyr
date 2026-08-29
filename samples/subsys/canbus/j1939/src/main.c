@@ -115,6 +115,14 @@ int main(void)
 		return 0;
 	}
 
+	can_mode_t mode = (IS_ENABLED(CONFIG_SAMPLE_LOOPBACK_MODE) ? CAN_MODE_LOOPBACK : 0);
+
+	ret = can_set_mode(can_dev, mode);
+	if (ret != 0) {
+		printk("CAN: Failed to set mode [%d]", ret);
+		return 0;
+	}
+
 	ret = can_start(can_dev);
 	if (ret != 0) {
 		printf("Error starting CAN controller [%d]", ret);

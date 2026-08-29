@@ -565,6 +565,14 @@ bool j1939_transmit_pgn(j1939_priority_t priority, j1939_pgn_t pgn,
  */
 bool j1939_is_pgn_valid(j1939_pgn_t pgn);
 
+/**
+ * @brief Check if a message is for the specified J1939 node
+ * @param message CAN frame to check
+ * @param node J1939 node to check against
+ * @return True if message is for the node, false if not.
+ */
+bool j1939_is_msg_for_me(const struct can_frame *message, j1939_node_t node);
+
 #ifdef J1939_ENABLE_RECEIVED_PGN_SUPPORT
 /** Callback type for single-frame received PGN handlers. */
 typedef bool (*j1939_received_pgn_callback_t)(const struct can_frame *message);
