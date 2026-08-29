@@ -420,6 +420,23 @@ void j1939_tp_update_receive_message_times(j1939_timer_t callPeriod)
 }
 #endif
 
+void j1939_tp_copy_data_tx_buffer(uint8_t tx_index, uint8_t *data)
+{
+	for (uint8_t i = 1; i < CAN_MAX_DLC; i++) {
+		/* If there is still data in the buffer to send... */
+		if (j1939_tp_transmit_message_list[tx_index].currentDataLocation <
+			(j1939_tp_transmit_message_list[tx_index].dataRegion +
+				j1939_tp_transmit_message_list[tx_index].totalBytesToTransmit)) {
+			/* Load data to transmit */
+			data[i] = *(j1939_tp_transmit_message_list[tx_index]
+						.currentDataLocation)++;
+		} else {
+			/* Default to J1939_BYTE_UNAVAILABLE */
+			data[i] = J1939_BYTE_UNAVAILABLE;
+		}
+	}
+}
+
 /**************************************************************************************************/
 void j1939_tp_update_send_message_times(j1939_timer_t callPeriod)
 {
@@ -563,159 +580,128 @@ void j1939_tp_update_send_message_times(j1939_timer_t callPeriod)
 				deltaTime = j1939_tp_transmit_message_list[index1]
 							.elapsedTimeFromLastTpDt;
 
-				if (deltaTime >=
+				if (deltaTime <
 					CONFIG_J1939TP_MILLISECONDS_BETWEEN_PACKET_GROUPS) {
-					/* If a CTS indicated that it doesn't want us to start
-					 * at the next indicated packet...
+					continue;
+				}
+				/* If a CTS indicated that it doesn't want us to start
+				 * at the next indicated packet...
+				 */
+				if (j1939_tp_transmit_message_list[index1]
+						.nextRequestedPacket) {
+					/* Recalculate location in the transmit buffer and
+					 * overwrite the current packet sequence number.
 					 */
+					j1939_tp_transmit_message_list[index1]
+						.currentDataLocation =
+						j1939_tp_transmit_message_list[index1]
+							.dataRegion +
+							(7 * (j1939_tp_transmit_message_list
+								[index1]
+									.nextRequestedPacket - 1));
+					j1939_tp_transmit_message_list[index1]
+						.currentPacketSequenceNum =
+						j1939_tp_transmit_message_list[index1]
+							.nextRequestedPacket;
+					j1939_tp_transmit_message_list[index1]
+						.nextRequestedPacket = 0;
+				}
+
+				for (totalMessagesQueuedThisSession = 0;
+					(totalMessagesQueuedThisSession <
+					CONFIG_J1939TP_MAX_MESSAGES_QUEUED_PER_SESSION) &&
+					j1939_tp_transmit_message_list[index1]
+						.numPacketsLeftCtsAllows &&
+					(totalMessagesQueued <
+					CONFIG_J1939TP_MAX_TOTAL_MESSAGES_QUEUED_FOR_ALL_SESSIONS);
+					totalMessagesQueuedThisSession++) {
+					data[0] =
+						j1939_tp_transmit_message_list[index1]
+							.currentPacketSequenceNum++; /* packet # */
+
 					if (j1939_tp_transmit_message_list[index1]
-							.nextRequestedPacket) {
-						/* Recalculate location in the transmit buffer and
-						 * overwrite the current packet sequence number.
-						 */
+						.currentPacketSequenceNum >
 						j1939_tp_transmit_message_list[index1]
-							.currentDataLocation =
-							j1939_tp_transmit_message_list
-								[index1]
-									.dataRegion +
-							(7 *
-								(j1939_tp_transmit_message_list
-									[index1]
-										.nextRequestedPacket -
-								1)); /* lint !e679 */
+							.highestPacketSequenceNum) {
 						j1939_tp_transmit_message_list[index1]
-							.currentPacketSequenceNum =
-							j1939_tp_transmit_message_list
-								[index1]
-									.nextRequestedPacket;
-						j1939_tp_transmit_message_list[index1]
-							.nextRequestedPacket = 0;
+							.highestPacketSequenceNum =
+							j1939_tp_transmit_message_list[index1]
+								.currentPacketSequenceNum;
 					}
 
-					for (totalMessagesQueuedThisSession = 0;
-						(totalMessagesQueuedThisSession <
-						CONFIG_J1939TP_MAX_MESSAGES_QUEUED_PER_SESSION) &&
-						j1939_tp_transmit_message_list[index1]
-							.numPacketsLeftCtsAllows &&
-						(totalMessagesQueued <
-						CONFIG_J1939TP_MAX_TOTAL_MESSAGES_QUEUED_FOR_ALL_SESSIONS);
-						totalMessagesQueuedThisSession++) {
-						data[0] =
-							j1939_tp_transmit_message_list[index1]
-								.currentPacketSequenceNum++; /* packet # */
+					/* Store off the existing pointer in case we
+					 * fail to queue the message
+					 */
+					currentDataLocation =
+						j1939_tp_transmit_message_list
+							[index1]
+								.currentDataLocation;
 
-						if (j1939_tp_transmit_message_list[index1]
-								.currentPacketSequenceNum >
-							j1939_tp_transmit_message_list[index1]
-								.highestPacketSequenceNum) {
-							j1939_tp_transmit_message_list[index1]
-								.highestPacketSequenceNum =
-								j1939_tp_transmit_message_list
-									[index1]
-										.currentPacketSequenceNum;
-						}
+					/* Copy over the 7 bytes of data to include
+					 * in the packet.
+					 */
+					j1939_tp_copy_data_tx_buffer(index1, data);
 
-						/* Store off the existing pointer in case we
-						 * fail to queue the message
-						 */
-						currentDataLocation =
+					/* Build the message ID */
+					id = j1939_build_message_id(
+						0, 0,
+						(j1939_priority_t)
+							CONFIG_J1939TP_PRIORITY,
+						j1939_build_pgn_from_pdu(
+							J1939_TP_DATA_TRANSFER_PF,
 							j1939_tp_transmit_message_list
 								[index1]
-									.currentDataLocation;
+									.destination),
+						j1939_tp_transmit_message_list
+							[index1]
+								.node
+								->source_address);
 
-						/* Copy over the 7 bytes of data to include
-						 * in the packet.
-						 */
-						for (index2 = 1; index2 < CAN_MAX_DLC;
-								index2++) {
-							/* If there is still data in the
-							 * buffer to send...
-							 */
-							if (j1939_tp_transmit_message_list
-									[index1]
-										.currentDataLocation <
-								(j1939_tp_transmit_message_list
-										[index1]
-											.dataRegion +
-									j1939_tp_transmit_message_list[index1]
-										.totalBytesToTransmit)) {
-								/* Load data to transmit */
-								data[index2] = *(
-									j1939_tp_transmit_message_list
-										[index1]
-											.currentDataLocation)++;
-							} else {
-								/* Default to
-								 * J1939_BYTE_UNAVAILABLE
-								 */
-								data[index2] =
-									J1939_BYTE_UNAVAILABLE;
-							}
-						}
-
-						/* Build the message ID */
-						id = j1939_build_message_id(
-							0, 0,
-							(j1939_priority_t)
-								CONFIG_J1939TP_PRIORITY,
-							j1939_build_pgn_from_pdu(
-								J1939_TP_DATA_TRANSFER_PF,
-								j1939_tp_transmit_message_list
-									[index1]
-										.destination),
-							j1939_tp_transmit_message_list
-								[index1]
-									.node
-									->source_address);
-
-						/* Send the message out to the appropriate
-						 * node.
-						 */
-						if (!j1939_build_and_queue_message(
-								j1939_tp_transmit_message_list
-									[index1].node,
+					/* Send the message out to the appropriate node. */
+					if (!j1939_build_and_queue_message(
+						j1939_tp_transmit_message_list
+							[index1].node,
 								id, CAN_MAX_DLC, true, data)) {
-							j1939_tp_transmit_message_list[index1]
-								.currentPacketSequenceNum--;
-							j1939_tp_transmit_message_list
-								[index1]
-									.currentDataLocation =
-								currentDataLocation;
-							/* Leave the
-							 * for(totalMessagesQueuedThisSession...)
-							 * loop right now since we
-							 * cannot queue more messages
-							 */
-							break;
-						}
-
 						j1939_tp_transmit_message_list[index1]
-							.numPacketsLeftCtsAllows--;
-						j1939_tp_transmit_message_list[index1]
-							.elapsedTimeFromLastTpDt = 0;
-
-						/*  If was message entirely transmitted... */
-						if (j1939_tp_transmit_message_list[index1]
-								.currentDataLocation ==
-							(j1939_tp_transmit_message_list[index1]
-									.dataRegion +
-								j1939_tp_transmit_message_list[index1]
-									.totalBytesToTransmit)) {
-							j1939_tp_transmit_message_list
-								[index1]
-									.isWaitingForEomAck =
-								true;
-
-							/* Leave the
-							 * for(totalMessagesQueuedThisSession...)
-							 * loop right now since we are done
-							 */
-							break;
-						}
-
-						totalMessagesQueued++;
+							.currentPacketSequenceNum--;
+						j1939_tp_transmit_message_list
+							[index1]
+								.currentDataLocation =
+							currentDataLocation;
+						/* Leave the
+						 * for(totalMessagesQueuedThisSession...)
+						 * loop right now since we
+						 * cannot queue more messages
+						 */
+						break;
 					}
-				} /* if(deltaTime > CONFIG_J1939TP_MILLISECONDS_BETWEEN_PACKET_GROUPS) */
+
+					j1939_tp_transmit_message_list[index1]
+						.numPacketsLeftCtsAllows--;
+					j1939_tp_transmit_message_list[index1]
+						.elapsedTimeFromLastTpDt = 0;
+
+					/*  If was message entirely transmitted... */
+					if (j1939_tp_transmit_message_list[index1]
+						.currentDataLocation ==
+						(j1939_tp_transmit_message_list[index1]
+							.dataRegion +
+							j1939_tp_transmit_message_list[index1]
+								.totalBytesToTransmit)) {
+						j1939_tp_transmit_message_list
+							[index1]
+								.isWaitingForEomAck =
+							true;
+
+						/* Leave the
+						 * for(totalMessagesQueuedThisSession...)
+						 * loop right now since we are done
+						 */
+						break;
+					}
+
+					totalMessagesQueued++;
+				}
 			}
 		} else {
 			/* This is a BAM message */
@@ -723,66 +709,53 @@ void j1939_tp_update_send_message_times(j1939_timer_t callPeriod)
 						.elapsedTimeFromLastTpDt;
 
 			/* If it is time to send out the BAM message */
-			if (deltaTime >= J1939TP_BAM_TIME) {
-				data[0] = j1939_tp_transmit_message_list[index1]
-							.currentPacketSequenceNum++;
-				for (index2 = 1; index2 < CAN_MAX_DLC; index2++) {
-					/* If there is still data in the buffer to send... */
-					if (j1939_tp_transmit_message_list[index1]
-							.currentDataLocation <
-						(j1939_tp_transmit_message_list[index1]
-								.dataRegion +
-							j1939_tp_transmit_message_list[index1]
-								.totalBytesToTransmit)) {
-						/* Load data into transmit object */
-						data[index2] = *(
-							j1939_tp_transmit_message_list[index1]
-								.currentDataLocation)++;
-					} else {
-						/* Default to J1939_BYTE_UNAVAILABLE */
-						data[index2] = J1939_BYTE_UNAVAILABLE;
-					}
-				}
+			if (deltaTime < J1939TP_BAM_TIME) {
+				continue;
+			}
 
-				/* Build the message ID */
-				id = j1939_build_message_id(
-					0, 0, (j1939_priority_t)CONFIG_J1939TP_PRIORITY,
-					j1939_build_pgn_from_pdu(J1939_TP_DATA_TRANSFER_PF,
-									J1939_GLOBAL_ADDRESS),
+			data[0] = j1939_tp_transmit_message_list[index1]
+						.currentPacketSequenceNum++;
+
+			j1939_tp_copy_data_tx_buffer(index1, data);
+
+			/* Build the message ID */
+			id = j1939_build_message_id(
+				0, 0, (j1939_priority_t)CONFIG_J1939TP_PRIORITY,
+				j1939_build_pgn_from_pdu(J1939_TP_DATA_TRANSFER_PF,
+					J1939_GLOBAL_ADDRESS),
+				j1939_tp_transmit_message_list[index1]
+					.node->source_address);
+
+			/* Send the message out to the appropriate node. */
+			(void)j1939_build_and_queue_message(
+				j1939_tp_transmit_message_list[index1].node, id,
+				CAN_MAX_DLC, true, data);
+
+			/* If there is nothing left to send... */
+			if (j1939_tp_transmit_message_list[index1]
+					.currentDataLocation ==
+				(j1939_tp_transmit_message_list[index1].dataRegion +
 					j1939_tp_transmit_message_list[index1]
-						.node->source_address);
+						.totalBytesToTransmit)) {
+				/* Completed BAM transmission...disable object */
+				j1939_tp_num_open_transmit_connections--;
 
-				/* Send the message out to the appropriate node. */
-				(void)j1939_build_and_queue_message(
-					j1939_tp_transmit_message_list[index1].node, id,
-					CAN_MAX_DLC, true, data);
-
-				/* If there is nothing left to send... */
-				if (j1939_tp_transmit_message_list[index1]
-						.currentDataLocation ==
-					(j1939_tp_transmit_message_list[index1].dataRegion +
-						j1939_tp_transmit_message_list[index1]
-							.totalBytesToTransmit)) {
-					/* Completed BAM transmission...disable object */
-					j1939_tp_num_open_transmit_connections--;
-
-					/* Free up the buffer that this TP Rx object was using */
-					j1939_tp_free_buffer(
-						j1939_tp_transmit_message_list[index1]
-							.dataRegion);
-					j1939_tp_transmit_message_list[index1].state =
-						j1939_tp_state_available;
-
-					/* not checking if node is valid since it should only be
-					 * created via iterable section
-					 */
+				/* Free up the buffer that this TP Rx object was using */
+				j1939_tp_free_buffer(
 					j1939_tp_transmit_message_list[index1]
-						.node->j1939_tp_transmit_bam = false;
-				} else {
-					/* Reset the elapsed time with last tx time */
-					j1939_tp_transmit_message_list[index1]
-						.elapsedTimeFromLastTpDt = 0;
-				}
+						.dataRegion);
+				j1939_tp_transmit_message_list[index1].state =
+					j1939_tp_state_available;
+
+				/* not checking if node is valid since it should only be
+				 * created via iterable section
+				 */
+				j1939_tp_transmit_message_list[index1]
+					.node->j1939_tp_transmit_bam = false;
+			} else {
+				/* Reset the elapsed time with last tx time */
+				j1939_tp_transmit_message_list[index1]
+					.elapsedTimeFromLastTpDt = 0;
 			}
 		}
 	}
@@ -847,22 +820,21 @@ bool j1939_tp_register_extended_length_messages(j1939_pgn_t pgn, j1939_node_t no
 		}
 	}
 
-	if (index < CONFIG_J1939TP_NUM_ALLOWED_RECEIVE_PGN) {
-		/* add PGN to the list and increment the index */
-		if (node->j1939_tp_register_pgn_index < CONFIG_J1939TP_NUM_ALLOWED_RECEIVE_PGN) {
-			node->j1939_tp_register_pgn_list[node->j1939_tp_register_pgn_index++]
-					.pgn = pgn;
-			CriticalSection_Unlock();
-			return true;
-		} else {
-			CriticalSection_Unlock();
-			return false;
-		}
-	} else {
-		/* the list is full! */
+	if (index >= CONFIG_J1939TP_NUM_ALLOWED_RECEIVE_PGN) {
 		CriticalSection_Unlock();
 		return false;
 	}
+
+	/* add PGN to the list and increment the index */
+	if (node->j1939_tp_register_pgn_index < CONFIG_J1939TP_NUM_ALLOWED_RECEIVE_PGN) {
+		node->j1939_tp_register_pgn_list[node->j1939_tp_register_pgn_index++]
+			.pgn = pgn;
+		CriticalSection_Unlock();
+		return true;
+	}
+
+	CriticalSection_Unlock();
+	return false;
 }
 #endif
 
@@ -1212,10 +1184,10 @@ void j1939_tp_process_dt(j1939_source_address_t source, const uint8_t *packetDat
 			J1939Tp_ReceiveMessageList[rxSessionIndex].lastReceivedPacket =
 				sequenceNum;
 			for (j1939_counter_t index = 1;
-					(index < CAN_MAX_DLC) &&
-					(J1939Tp_ReceiveMessageList[rxSessionIndex].currentByteOffset <
-					J1939Tp_ReceiveMessageList[rxSessionIndex].sizeMessage);
-					index++) {
+				(index < CAN_MAX_DLC) &&
+				(J1939Tp_ReceiveMessageList[rxSessionIndex].currentByteOffset <
+				J1939Tp_ReceiveMessageList[rxSessionIndex].sizeMessage);
+				index++) {
 				*(J1939Tp_ReceiveMessageList[rxSessionIndex]
 						.incomingDataObject +
 					J1939Tp_ReceiveMessageList[rxSessionIndex]
@@ -1269,10 +1241,10 @@ void j1939_tp_process_dt(j1939_source_address_t source, const uint8_t *packetDat
 				sequenceNum;
 
 			for (j1939_counter_t index = 1;
-					(index < CAN_MAX_DLC) &&
-					(J1939Tp_ReceiveMessageList[rxSessionIndex].currentByteOffset <
-					J1939Tp_ReceiveMessageList[rxSessionIndex].sizeMessage);
-					index++) {
+				(index < CAN_MAX_DLC) &&
+				(J1939Tp_ReceiveMessageList[rxSessionIndex].currentByteOffset <
+				J1939Tp_ReceiveMessageList[rxSessionIndex].sizeMessage);
+				index++) {
 				*(J1939Tp_ReceiveMessageList[rxSessionIndex]
 						.incomingDataObject +
 					J1939Tp_ReceiveMessageList[rxSessionIndex]
@@ -1298,35 +1270,32 @@ uint8_t *j1939_tp_get_completed_session_buffer(j1939_pgn_t pgn, j1939_source_add
 	j1939_counter_t wHoldingMessages = j1939_tp_num_holding_messages;
 	uint8_t *buffer = NULL;
 
-	if (length) {
-		/* Default to zero in case we do not find a match. */
-		*length = 0;
+	if (length == NULL) {
+		return NULL;
+	}
 
-		CriticalSection_Lock();
-		for (j1939_counter_t index = 0;
-			 wHoldingMessages && (index < CONFIG_J1939TP_NUMBER_OF_TP_RX_SESSIONS);
-			 index++) {
-			if (J1939Tp_ReceiveMessageList[index].state == j1939_tp_state_holding) {
-				wHoldingMessages--;
-				if (pgn == J1939Tp_ReceiveMessageList[index].pgn) {
-					if (source == J1939Tp_ReceiveMessageList[index].source) {
-						if (node ==
-							J1939Tp_ReceiveMessageList[index].node) {
-							*length = J1939Tp_ReceiveMessageList[index]
-									  .sizeMessage;
+	/* Default to zero in case we do not find a match. */
+	*length = 0;
 
-							/* Return from inside the loop for efficency
-							 */
-							buffer = J1939Tp_ReceiveMessageList[index]
-									 .incomingDataObject;
-							break;
-						}
-					}
-				}
+	CriticalSection_Lock();
+	for (j1939_counter_t index = 0;
+		wHoldingMessages && (index < CONFIG_J1939TP_NUMBER_OF_TP_RX_SESSIONS);
+		index++) {
+		if (J1939Tp_ReceiveMessageList[index].state == j1939_tp_state_holding) {
+			wHoldingMessages--;
+			if ((pgn == J1939Tp_ReceiveMessageList[index].pgn) &&
+				(source == J1939Tp_ReceiveMessageList[index].source) &&
+				(node == J1939Tp_ReceiveMessageList[index].node)) {
+
+				*length = J1939Tp_ReceiveMessageList[index].sizeMessage;
+
+				/* Return from inside the loop for efficency */
+				buffer = J1939Tp_ReceiveMessageList[index].incomingDataObject;
+				break;
 			}
 		}
-		CriticalSection_Unlock();
 	}
+	CriticalSection_Unlock();
 
 	return buffer;
 }
@@ -1459,8 +1428,8 @@ static void j1939_tp_transmit_connection_abort(j1939_tp_abort_code_t abortCode, 
 
 	/* Build identifier for message */
 	id = j1939_build_message_id(0, 0, (j1939_priority_t)CONFIG_J1939TP_PRIORITY,
-					j1939_build_pgn_from_pdu(J1939_TP_CONN_MANAGEMENT_PF, source),
-					node->source_address);
+				j1939_build_pgn_from_pdu(J1939_TP_CONN_MANAGEMENT_PF, source),
+				node->source_address);
 
 	/* Send the message out to the appropriate node. */
 	(void)j1939_build_and_queue_message(node, id, CAN_MAX_DLC, true, data);
@@ -1560,7 +1529,8 @@ static void j1939_tp_process_cts(j1939_source_address_t source, const uint8_t *d
 				 (j1939_tp_transmit_message_list[index].totalPackets + 1)) &&
 				(numAllowedPackets != 0) &&
 				(nextPacketToSend >=
-				 j1939_tp_transmit_message_list[index].lowestAblePacketSequenceNum)) {
+				 j1939_tp_transmit_message_list[index]
+				 .lowestAblePacketSequenceNum)) {
 				j1939_tp_transmit_message_list[index].numPacketsLeftCtsAllows =
 					numAllowedPackets;
 
