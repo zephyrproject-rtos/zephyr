@@ -1,0 +1,33 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - bluetooth
+    - avrcp
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim
+    - native_sim/native/64
+
+tests:
+  bluetooth.host.avrcp: {}
+  bluetooth.host.avrcp.no_browsing:
+    extra_configs:
+      - CONFIG_BT_AVRCP_BROWSING=n
+  bluetooth.host.avrcp.controller:
+    extra_configs:
+      - CONFIG_BT_AVRCP_TARGET=n
+  bluetooth.host.avrcp.controller.no_browsing:
+    extra_configs:
+      - CONFIG_BT_AVRCP_TARGET=n
+      - CONFIG_BT_AVRCP_BROWSING=n
+  bluetooth.host.avrcp.target:
+    extra_configs:
+      - CONFIG_BT_AVRCP_CONTROLLER=n
+  bluetooth.host.avrcp.target.no_browsing:
+    extra_configs:
+      - CONFIG_BT_AVRCP_CONTROLLER=n
+      - CONFIG_BT_AVRCP_BROWSING=n
