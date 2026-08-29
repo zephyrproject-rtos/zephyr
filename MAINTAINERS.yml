@@ -5016,9 +5016,11 @@ Networking:
     - include/zephyr/net/gptp.h
     - samples/net/ethernet/gptp/
     - subsys/net/l2/ethernet/gptp/
+    - tests/net/gptp/
   labels:
     - "area: Networking"
   tests:
+    - net.gptp
     - sample.net.gptp
 
 Nuvoton NPCM Platforms:

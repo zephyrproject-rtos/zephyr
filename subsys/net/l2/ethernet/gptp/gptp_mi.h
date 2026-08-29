@@ -69,6 +69,27 @@ void gptp_mi_state_machines(void);
  */
 uint64_t gptp_get_current_time_nanosecond(int port);
 
+#if defined(CONFIG_NET_GPTP_USE_DEFAULT_CLOCK_UPDATE)
+struct precision_clock;
+struct precision_pi;
+
+/**
+ * @brief Apply a gPTP offset to a local precision clock.
+ *
+ * @param pi PI controller used for small rate corrections.
+ * @param precision_clk Local clock to update.
+ * @param second_diff Signed whole-second portion of the offset.
+ * @param nanosecond_diff Signed fractional-nanosecond portion of the offset.
+ *
+ * @retval 0 on success.
+ * @retval -ERANGE if a hard-step target is not representable.
+ * @return A precision clock operation error on failure.
+ */
+int gptp_apply_clock_update(struct precision_pi *pi,
+			    const struct precision_clock *precision_clk,
+			    int64_t second_diff, int64_t nanosecond_diff);
+#endif
+
 #ifdef __cplusplus
 }
 #endif

@@ -57,6 +57,9 @@ int gptp_set_port_number(struct net_if *iface, uint16_t port)
 {
 	struct ethernet_context *ctx = net_if_l2_data(iface);
 	const struct device *clk;
+#if defined(CONFIG_NET_GPTP_USE_DEFAULT_CLOCK_UPDATE)
+	int ret;
+#endif
 
 	NET_ASSERT(ctx != NULL);
 
@@ -71,6 +74,13 @@ int gptp_set_port_number(struct net_if *iface, uint16_t port)
 	}
 
 	ctx->gptp_port = port;
+
+#if defined(CONFIG_NET_GPTP_USE_DEFAULT_CLOCK_UPDATE)
+	ret = precision_clock_ptp_init(&gptp_clock.clocks[GPTP_PORT_INDEX(port)], clk);
+	if (ret < 0) {
+		return ret;
+	}
+#endif
 
 	return 0;
 }
@@ -946,18 +956,6 @@ int gptp_get_port_data(struct gptp_domain *domain,
 	return 0;
 }
 
-double gptp_servo_pi(int64_t nanosecond_diff)
-{
-	double kp = 0.7;
-	double ki = 0.3;
-	double ppb;
-
-	gptp_clock.pi_drift += ki * nanosecond_diff;
-	ppb = kp * nanosecond_diff + gptp_clock.pi_drift;
-
-	return ppb;
-}
-
 static void init_ports(void)
 {
 	net_if_foreach(gptp_add_port, &gptp_domain.default_ds.nb_ports);
@@ -977,7 +975,9 @@ void net_gptp_init(void)
 	gptp_domain.default_ds.nb_ports = 0U;
 
 	gptp_clock.domain = &gptp_domain;
-	gptp_clock.pi_drift = 0.0;
+#if defined(CONFIG_NET_GPTP_USE_DEFAULT_CLOCK_UPDATE)
+	precision_pi_init(&gptp_clock.pi, 0.7, 0.3);
+#endif
 
 	init_ports();
 }
