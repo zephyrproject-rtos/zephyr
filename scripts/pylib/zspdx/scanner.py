@@ -231,16 +231,3 @@ def scan_sbom_graph(cfg, sbom_graph):
         if cfg.should_conclude_component_license:
             component.concluded_license = normalize_expression(lics_concluded)
         component.license_info_from_files = lics_from_files
-
-
-# Backward compatibility alias (deprecated)
-def scan_document(cfg, doc):
-    """
-    Deprecated: Use scan_sbom_graph instead.
-    This function is kept for backward compatibility during migration.
-    """
-    # This would need to convert Document to SBOMGraph, but since we're
-    # migrating away from Document, this should not be called in new code.
-    raise NotImplementedError(
-        "scan_document is deprecated. Use scan_sbom_graph with SBOMGraph instead."
-    )
