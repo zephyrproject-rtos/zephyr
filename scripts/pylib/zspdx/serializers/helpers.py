@@ -30,11 +30,3 @@ def format_blob_comment(blob: dict) -> str:
         if blob.get(key):
             parts.append(f"{key}: {blob[key]}")
     return "; ".join(parts)
-
-
-def get_standard_licenses() -> set:
-    """Get set of standard SPDX license IDs."""
-    # Import here to avoid circular dependency
-    from zspdx.licenses import LICENSES
-
-    return set(LICENSES)

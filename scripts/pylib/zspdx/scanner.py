@@ -9,7 +9,7 @@ from dataclasses import dataclass
 
 from reuse.project import Project
 
-from .licenses import LICENSES
+from .licenses import get_license_ids
 from .util import get_hashes
 
 _logger = logging.getLogger(__name__)
@@ -69,7 +69,7 @@ def check_license_valid(lic, sbom_graph):
         - lic: detected license ID
         - sbom_graph: SBOMGraph
     """
-    if lic not in LICENSES:
+    if lic not in get_license_ids():
         sbom_graph.custom_license_ids.add(lic)
 
 
