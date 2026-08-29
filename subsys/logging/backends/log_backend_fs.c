@@ -33,6 +33,17 @@ static int del_oldest_log(void);
 static int get_log_file_id(struct fs_dirent *ent);
 static uint32_t log_format_current = CONFIG_LOG_BACKEND_FS_OUTPUT_DEFAULT;
 
+static bool log_fs_dir_on_mount(const char *mnt_point)
+{
+	const size_t len = strlen(mnt_point);
+
+	/* Path prefix, not character prefix: same rule as fs_get_mnt_point(). */
+	return (strncmp(CONFIG_LOG_BACKEND_FS_DIR, mnt_point, len) == 0) &&
+	       ((len <= 1) ||
+		(CONFIG_LOG_BACKEND_FS_DIR[len] == '/') ||
+		(CONFIG_LOG_BACKEND_FS_DIR[len] == '\0'));
+}
+
 static int check_log_volume_available(void)
 {
 	int index = 0;
@@ -42,10 +53,7 @@ static int check_log_volume_available(void)
 	while (rc == 0) {
 		rc = fs_readmount(&index, &name);
 		if (rc == 0) {
-			if (strncmp(CONFIG_LOG_BACKEND_FS_DIR,
-				    name,
-				    strlen(name))
-			    == 0) {
+			if (log_fs_dir_on_mount(name)) {
 				return 0;
 			}
 		}
