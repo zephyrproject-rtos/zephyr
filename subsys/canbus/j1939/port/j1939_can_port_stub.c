@@ -34,5 +34,5 @@ bool Can_Transmit_BuildAndQueueMessage(const struct device *dev, uint32_t arbitr
 
 void Can_Transmit_SendQueues(void)
 {
-	/* used by the J1939 stack to transmit all queued messages. queueing not currently implemented*/
+	/* queueing not currently implemented*/
 }
