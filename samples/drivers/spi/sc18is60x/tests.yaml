@@ -1,0 +1,14 @@
+sample:
+  name: SC18IS60x I2C-to-SPI bridge
+tests:
+  sample.drivers.spi.sc18is60x:
+    tags:
+      - spi
+      - shield
+    build_only: true
+    extra_args:
+      - SHIELD=mikroe_i2c_to_spi_click
+    platform_allow:
+      - mikroe_clicker_ra4m1
+    integration_platforms:
+      - mikroe_clicker_ra4m1
