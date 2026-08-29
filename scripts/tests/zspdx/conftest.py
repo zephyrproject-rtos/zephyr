@@ -22,7 +22,7 @@ ZEPHYR_BASE = os.getenv("ZEPHYR_BASE")
 sys.path.insert(0, os.path.join(ZEPHYR_BASE, "scripts/pylib"))
 
 from spdx_tools.spdx.parser.tagvalue import tagvalue_parser  # noqa: E402
-from zspdx.model import SBOMComponent, SBOMDocument, SBOMGraph  # noqa: E402
+from zspdx.model import ComponentPurpose, SBOMComponent, SBOMDocument, SBOMGraph  # noqa: E402
 from zspdx.serializers.spdx2 import SPDX2Serializer  # noqa: E402
 from zspdx.serializers.spdx3 import SPDX3Serializer  # noqa: E402
 from zspdx.version import (  # noqa: E402
@@ -31,6 +31,7 @@ from zspdx.version import (  # noqa: E402
     SPDX_VERSION_3_0,
     SPDX_VERSION_3_1,
 )
+from zspdx.walker import SOURCES_COMMENT, Walker, WalkerConfig  # noqa: E402
 
 NAMESPACE = "https://example.com/sbom"
 
@@ -43,6 +44,13 @@ DEPS_DOCUMENT = "modules-deps"
 ORGANIZATION = "Example Organization"
 TOOL_NAME = "Example SBOM Builder"
 TOOL_VERSION = "0.0.1"
+
+# Stands in for the 'zephyr' entry of a build's metadata file.
+ZEPHYR_META = {
+    "remote": "https://github.com/zephyrproject-rtos/zephyr",
+    "revision": "0" * 40,
+    "tags": ["v4.3.0"],
+}
 
 # Bindings module per SPDX 3.x version, mirroring the serializer's own selection.
 SPDX3_BINDINGS = {SPDX_VERSION_3_0: "v3_0_1", SPDX_VERSION_3_1: "v3_1"}
@@ -143,3 +151,43 @@ def spdx3_documents(request, tmp_path):
         return spdx, object_sets
 
     return _documents
+
+
+@pytest.fixture
+def walker_graph(tmp_path):
+    """Factory building the module half of the graph the way the walker does.
+
+    Takes the module entries a build's metadata file would carry. The '-sources'
+    components are added directly rather than through the walker, whose
+    setup_zephyr_component() needs a west workspace and the CMake file-API; everything
+    the module dependency half contributes comes from the walker itself.
+    """
+
+    def _graph(modules, zephyr=None):
+        config = WalkerConfig()
+        config.namespace_prefix = NAMESPACE
+        config.build_dir = str(tmp_path)
+        walker = Walker(config)
+        walker.setup_documents()
+        walker.sbom_graph.metadata.update(
+            {
+                "creator_organization": ORGANIZATION,
+                "tool_name": TOOL_NAME,
+                "tool_version": TOOL_VERSION,
+            }
+        )
+
+        for name in ["zephyr"] + [module["name"] for module in modules]:
+            sources = SBOMComponent(
+                name=f"{name}-sources",
+                purpose=ComponentPurpose.SOURCE,
+                comment=SOURCES_COMMENT,
+            )
+            walker.sbom_graph.add_component(sources, "zephyr")
+            walker.doc_zephyr.add_described_component(sources)
+
+        assert walker.setup_modules_deps_component(modules, zephyr or ZEPHYR_META)
+        walker.walk_relationships()
+        return walker.sbom_graph
+
+    return _graph
