@@ -1,57 +1,47 @@
+#
+# SPDX-FileCopyrightText: Copyright tinyvision.ai
+# SPDX-License-Identifier: Apache-2.0
+#
 description: |
   NXP SC18IS606 I2C to SPI/GPIO bridge.
-
-  The SC18IS606 supports both an external SPI and GPIO controller.
-  These controllers have to be added  to the Device Tree as children, while
-  the device itself has to be a child of a I2C controller.
-  Do note that this device only supports 3 SPI devices on the bus.
+  Functional sibling of nxp,sc18is602: 3 chip-selects and a 1024-byte buffer.
+  Child SPI/GPIO controllers must be added in the device tree. The device
+  itself must be a child of an I2C controller.
 
   An example configuration:
 
-  &i2c0 {
-    status = "okay";
-    pinctrl-0 = <&i2c0_default>;
-    pinctrl-names = "default";
-
-    sc18is606: sc18is606 {
-      compatible = "nxp,sc18is606";
+    &i2c0 {
       status = "okay";
 
-
-      spi_ext: sc18is606_spi {
-        compatible = "nxp,sc18is606-spi";
+      sc18is606: sc18is606@28 {
+        compatible = "nxp,sc18is606";
         status = "okay";
-        #address-cells = <1>;
-        #size-cells = <0>;
-      };
+        reg = <0x28>;
 
-      gpio_ext: gpio {
-        compatible = "nxp,sc18is606-gpio";
-        status = "okay";
-        gpio-controller;
-        #gpio-cells = <2>;
-        ngpios = <3>;
+        spi_ext: sc18is606_spi {
+          compatible = "nxp,sc18is60x-spi";
+          status = "okay";
+          #address-cells = <1>;
+          #size-cells = <0>;
+        };
+
+        gpio_ext: sc18is606_gpio {
+          compatible = "nxp,sc18is60x-gpio";
+          status = "okay";
+          gpio-controller;
+          #gpio-cells = <2>;
+          ngpios = <3>;
+        };
       };
     };
-  };
 
 compatible: "nxp,sc18is606"
-include: i2c-device.yaml
+include: ["i2c-device.yaml", "nxp,sc18is60x-common.yaml"]
 
 properties:
-  reset-gpios:
-    type: phandle-array
-    description:
-      Driver reset pin of the bridge.
-      If connected directly to the MCU, this pin should be configured
-      as active low.
-
-  int-gpios:
-    type: phandle-array
-    description:
-      Driver interrupt pin of the bridge, this allows the driver to ensure
-      that SPI transactions are done before allowing other transactions.
-      If connected directly to the MCU, this pin should be configured
-      as active low.
-
-bus: nxp,sc18is606
+  buffer-size:
+    const: 1024
+    default: 1024
+  ss-count:
+    const: 3
+    default: 3
