@@ -1068,7 +1068,7 @@ def window_stats(tr, view0, view1):
 
 def run_text(tr, width):
     lanes = cpu_lane_order(tr)
-    order = all_lanes(tr)
+    threads = lane_order(tr)
     header = "CPU / THREAD"
     label_w = max([len(header)] + [len(lane_label(tr, ln)) for ln in lanes]) + 1
     label_w = min(label_w, 22)
@@ -1083,7 +1083,7 @@ def run_text(tr, width):
     print()
 
     occ = render_cpu_occupancy(tr, lanes, tr.t0, tr.t1, tl_w)
-    state_rows = render_state_rows(tr, order, tr.t0, tr.t1, tl_w)
+    state_rows = render_state_rows(tr, threads, tr.t0, tr.t1, tl_w)
 
     def lbl(s):
         s = s[: label_w - 1]
@@ -1115,7 +1115,7 @@ def run_text(tr, width):
     print()
     print(ruler)
     print(lbl("THREAD") + axis)
-    for tid in order:
+    for tid in threads:
         cells = state_rows[tid]
         if all(c is None for c in cells):
             continue
@@ -1142,7 +1142,7 @@ def run_text(tr, width):
         f"  {'handle':<12}{'name':<18}{'prio':>5}  {'stack_base':<12}"
         f"{'stack_sz':>9}  {'cpus':<16}"
     )
-    for tid in order:
+    for tid in threads:
         t = tr.threads[tid]
         prio = "" if t["prio"] is None else str(t["prio"])
         sb = "" if t["stack_base"] is None else f"0x{t['stack_base']:08x}"
