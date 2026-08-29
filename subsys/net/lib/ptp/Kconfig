@@ -5,6 +5,7 @@
 menuconfig PTP
 	bool "IEEE 1588 (PTP) support [EXPERIMENTAL]"
 	select EXPERIMENTAL
+	select PRECISION_TIMING
 	select ZVFS
 	select ZVFS_EVENTFD
 	select NET_SOCKETS
