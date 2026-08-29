@@ -1,0 +1,8 @@
+# SPDX-License-Identifier: Apache-2.0
+
+shield:
+  name: mikroe_i2c_to_spi_click
+  full_name: I2C to SPI Click
+  vendor: mikroe
+  supported_features:
+    - spi
