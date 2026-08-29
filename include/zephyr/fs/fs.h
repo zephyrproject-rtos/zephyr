@@ -586,6 +586,9 @@ int fs_closedir(struct fs_dir_t *zdp);
  * @retval -ENOTSUP when not supported by underlying file system driver;
  *         when @c FS_MOUNT_FLAG_USE_DISK_ACCESS is set but driver does not
  *         support it.
+ * @retval -EBUSY when @p mp is already mounted, when another file system is
+ *	   already mounted at @c mp->mnt_point, or when @c mp->fs_data is
+ *	   already in use by another mount point;
  * @retval -EROFS if system requires formatting but @c FS_MOUNT_FLAG_READ_ONLY
  *	   has been set;
  * @retval <0 another negative errno code on error.
