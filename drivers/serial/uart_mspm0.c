@@ -30,6 +30,7 @@
 #include <zephyr/irq.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
+#include <zephyr/pm/policy.h>
 
 /*
  * This driver uses its own native register definitions (mspm0_uart_regs and
@@ -391,6 +392,7 @@ static void uart_mspm0_poll_out(const struct device *dev, unsigned char c)
 	if (pm_device_runtime_get(dev) < 0) {
 		return;
 	}
+	pm_policy_device_power_lock_get(dev);
 
 	/* Runtime PM resumes an opted-in device. Discard transmission if the device
 	 * was suspended directly through the device PM API, preventing data from
@@ -426,6 +428,7 @@ static void uart_mspm0_poll_out(const struct device *dev, unsigned char c)
 	} while (true);
 
 out:
+	pm_policy_device_power_lock_put(dev);
 	(void)pm_device_runtime_put(dev);
 }
 
@@ -811,6 +814,7 @@ static void uart_mspm0_irq_tx_enable(const struct device *dev)
 		if (pm_device_runtime_get(dev) < 0) {
 			return;
 		}
+		pm_policy_device_power_lock_get(dev);
 		config->regs->cpu_int.imask |= UART_MSPM0_TX_INTERRUPTS;
 	}
 
@@ -831,6 +835,7 @@ static void uart_mspm0_irq_tx_disable(const struct device *dev)
 
 	if ((config->regs->cpu_int.imask & UART_MSPM0_TX_INTERRUPTS) != 0U) {
 		config->regs->cpu_int.imask &= ~UART_MSPM0_TX_INTERRUPTS;
+		pm_policy_device_power_lock_put(dev);
 		(void)pm_device_runtime_put(dev);
 	}
 }
@@ -852,6 +857,7 @@ static void uart_mspm0_irq_rx_enable(const struct device *dev)
 		if (pm_device_runtime_get(dev) < 0) {
 			return;
 		}
+		pm_policy_device_power_lock_get(dev);
 		config->regs->cpu_int.imask |= UART_MSPM0_RX_INTERRUPTS;
 	}
 
@@ -872,6 +878,7 @@ static void uart_mspm0_irq_rx_disable(const struct device *dev)
 
 	if ((config->regs->cpu_int.imask & UART_MSPM0_RX_INTERRUPTS) != 0U) {
 		config->regs->cpu_int.imask &= ~UART_MSPM0_RX_INTERRUPTS;
+		pm_policy_device_power_lock_put(dev);
 		(void)pm_device_runtime_put(dev);
 	}
 }
@@ -926,6 +933,7 @@ static void uart_mspm0_irq_error_enable(const struct device *dev)
 		if (pm_device_runtime_get(dev) < 0) {
 			return;
 		}
+		pm_policy_device_power_lock_get(dev);
 		config->regs->cpu_int.imask |= UART_MSPM0_ERROR_INTERRUPTS;
 	}
 }
@@ -936,6 +944,7 @@ static void uart_mspm0_irq_error_disable(const struct device *dev)
 
 	if ((config->regs->cpu_int.imask & UART_MSPM0_ERROR_INTERRUPTS) != 0U) {
 		config->regs->cpu_int.imask &= ~UART_MSPM0_ERROR_INTERRUPTS;
+		pm_policy_device_power_lock_put(dev);
 		(void)pm_device_runtime_put(dev);
 	}
 }
