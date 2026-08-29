@@ -10,6 +10,8 @@ on:
     - v*-branch
     paths:
     - 'scripts/pylib/build_helpers/**'
+    - 'scripts/pylib/zspdx/**'
+    - 'scripts/tests/zspdx/**'
     - '.github/workflows/pylib_tests.yml'
   pull_request:
     branches:
@@ -17,6 +19,8 @@ on:
     - v*-branch
     paths:
     - 'scripts/pylib/build_helpers/**'
+    - 'scripts/pylib/zspdx/**'
+    - 'scripts/tests/zspdx/**'
     - '.github/workflows/pylib_tests.yml'
 
 permissions:
@@ -58,3 +62,10 @@ jobs:
       run: |
         echo "Run build_helpers tests"
         PYTHONPATH=./scripts/tests pytest ./scripts/tests/build_helpers
+
+    - name: Run pytest for zspdx
+      env:
+        ZEPHYR_BASE: ./
+      run: |
+        echo "Run zspdx tests"
+        PYTHONPATH=./scripts/tests pytest ./scripts/tests/zspdx
