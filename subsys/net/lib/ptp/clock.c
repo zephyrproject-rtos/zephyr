@@ -66,6 +66,11 @@ struct ptp_clock {
 	sys_slist_t		    ports_list;
 	struct zsock_pollfd	    pollfd[1 + 2 * CONFIG_PTP_NUM_PORTS];
 	struct k_work timeout_work;
+	struct {
+		struct ptp_port_id sender;
+		ptp_clk_id grandmaster;
+		bool valid;
+	} selected_tt;
 	bool			    pollfd_valid;
 	bool			    state_decision_event;
 	uint8_t			    time_src;
@@ -128,6 +133,20 @@ static ptp_timeinterval clock_ns_to_timeinterval(int64_t val)
 	}
 
 	return (uint64_t)val << 16;
+}
+
+static bool clock_selected_tt_matches(const struct ptp_foreign_tt_clock *best)
+{
+	return ptp_clk.selected_tt.valid &&
+	       ptp_port_id_eq(&ptp_clk.selected_tt.sender, &best->dataset.sender) &&
+	       ptp_clock_id_eq(&ptp_clk.selected_tt.grandmaster, &best->dataset.clk_id);
+}
+
+static void clock_selected_tt_update(const struct ptp_foreign_tt_clock *best)
+{
+	ptp_clk.selected_tt.sender = best->dataset.sender;
+	ptp_clk.selected_tt.grandmaster = best->dataset.clk_id;
+	ptp_clk.selected_tt.valid = true;
 }
 
 static int clock_forward_msg(struct ptp_port *ingress,
@@ -326,6 +345,7 @@ const struct ptp_clock *ptp_clock_init(void)
 		LOG_ERR("Couldn't get PTP HW Clock for the interface.");
 		return NULL;
 	}
+	ptp_clk.selected_tt.valid = false;
 
 	ret = zvfs_eventfd(0, ZVFS_EFD_NONBLOCK);
 	if (ret < 0) {
@@ -360,9 +380,17 @@ void ptp_clock_handle_state_decision_evt(void)
 {
 	struct ptp_foreign_tt_clock *best = NULL, *foreign;
 	struct ptp_port *port;
-	bool tt_changed = false;
+	bool receiver_selected = false;
+	bool tt_changed;
 
 	if (!ptp_clk.state_decision_event) {
+		return;
+	}
+
+	if (sys_slist_is_empty(&ptp_clk.ports_list)) {
+		ptp_clk.best = NULL;
+		ptp_clk.selected_tt.valid = false;
+		ptp_clk.state_decision_event = false;
 		return;
 	}
 
@@ -377,6 +405,8 @@ void ptp_clock_handle_state_decision_evt(void)
 	}
 
 	ptp_clk.best = best;
+	tt_changed = best != NULL && ptp_clk.selected_tt.valid &&
+		     !clock_selected_tt_matches(best);
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&ptp_clk.ports_list, port, node) {
 		enum ptp_port_state state;
@@ -396,6 +426,7 @@ void ptp_clock_handle_state_decision_evt(void)
 			event = PTP_EVT_RS_TIME_TRANSMITTER;
 			break;
 		case PTP_PS_TIME_RECEIVER:
+			receiver_selected = true;
 			clock_update_time_receiver();
 			event = PTP_EVT_RS_TIME_RECEIVER;
 			break;
@@ -407,7 +438,11 @@ void ptp_clock_handle_state_decision_evt(void)
 			break;
 		}
 
-		ptp_port_event_handle(port, event, tt_changed);
+		ptp_port_event_handle(port, event, tt_changed && state == PTP_PS_TIME_RECEIVER);
+	}
+
+	if (receiver_selected) {
+		clock_selected_tt_update(best);
 	}
 
 	ptp_clk.state_decision_event = false;
