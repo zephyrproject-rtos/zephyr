@@ -14,3 +14,7 @@ properties:
     description: |
       Number of address bits used to address the EEPROM. If not specified
       the EEPROM is assumed to have a 8-bit address.
+
+  auto-register:
+    type: boolean
+    description: Automatically register target device on the I2C bus at init time.
