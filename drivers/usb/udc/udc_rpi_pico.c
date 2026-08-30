@@ -447,8 +447,6 @@ static ALWAYS_INLINE void rpi_pico_thread_handler(void *const arg)
 
 			if (!udc_ep_is_busy(ep_cfg)) {
 				rpi_pico_handle_xfer_next(dev, ep_cfg);
-			} else {
-				LOG_ERR("Endpoint 0x%02x busy", ep);
 			}
 		}
 	}
