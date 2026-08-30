@@ -6,6 +6,7 @@
 config CPU_CORTEX_A
 	bool
 	select CPU_CORTEX
+	select ARCH_HAS_CUSTOM_CURRENT_IMPL if SMP && !PM
 	select HAS_FLASH_LOAD_OFFSET
 	select KERNEL_DIRECT_MAP if MMU
 	select SCHED_IPI_SUPPORTED if SMP
