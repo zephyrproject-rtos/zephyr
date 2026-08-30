@@ -556,8 +556,16 @@ static ssize_t stdinout_write_vmeth(void *obj, const void *buffer, size_t count)
 
 static int stdinout_ioctl_vmeth(void *obj, unsigned int request, va_list args)
 {
-	errno = EINVAL;
-	return -1;
+	switch (request) {
+	case ZVFS_F_GETFL:
+		return ZVFS_O_RDWR;
+	case ZVFS_F_SETFL:
+		/* nothing the console honors yet; accept for fcntl() users */
+		return 0;
+	default:
+		errno = EINVAL;
+		return -1;
+	}
 }
 
 static const struct fd_op_vtable stdinout_fd_op_vtable = {
