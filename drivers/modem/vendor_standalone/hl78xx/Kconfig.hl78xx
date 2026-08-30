@@ -855,6 +855,20 @@ config MODEM_HL78XX_NTN_SUPPORT
 	  Compiles in the NTN configuration helpers (+KNTNCFG positioning) so
 	  both paths apply the same NTN setup.
 
+config MODEM_HL78XX_NTN_PDP_FAMILY
+	string "PDP context address family on NB-NTN"
+	depends on MODEM_HL78XX_NTN_SUPPORT
+	default "IP"
+	help
+	  Address family of the PDP context while NB-NTN is the active RAT:
+	  AT+CGDCONT=1,"<family>","" with the APN left to the network, and
+	  AT+KCNXCFG=1,"GPRS","",,, without a family. This is the profile the
+	  dedicated NB-NTN build has always used and that NTN attach was
+	  validated with; an Auto-RAT build applies it at runtime whenever the
+	  init script's AT+KSRAT? readback reports NB-NTN (after the
+	  terrestrial-to-NTN fallback latched AT+KSRAT=3), and returns to
+	  MODEM_HL78XX_ADDRESS_FAMILY with the resolved APN on terrestrial RATs.
+
 menuconfig MODEM_HL78XX_CONFIGURE_BANDS
 	bool "Configure modem bands"
 	depends on !MODEM_HL78XX_AUTORAT
