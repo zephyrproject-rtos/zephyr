@@ -767,6 +767,14 @@ static void hl78xx_power_down_shutdown_fn(struct k_work *work)
 		CONTAINER_OF(dwork, struct hl78xx_data, work.power_down_shutdown_work);
 
 	LOG_DBG("%d: power down shutdown: entering INIT_POWER_OFF", __LINE__);
+	/* The link goes down here, once the application has confirmed (or sat
+	 * out its window) -- not when it is asked. Raising L4 carrier-off at
+	 * ENTER made a vetoed shutdown tear the session down anyway (30-08
+	 * NB-NTN log: veto accepted, carrier already gone, the modem module
+	 * re-requested the power-down and the cloud session died under an
+	 * exchange in flight).
+	 */
+	notif_carrier_off(data->devices.hl78xx);
 	data->status.lpm.power_down.previous = data->status.lpm.power_down.current;
 	data->status.lpm.power_down.current = POWER_DOWN_EVENT_ENTER;
 
@@ -781,8 +789,6 @@ static void hl78xx_power_down_work_handler(struct k_work *work_item)
 		CONTAINER_OF(dwork, struct hl78xx_data, work.hl78xx_pwr_dwn_work);
 
 	LOG_DBG("%d: Power down work handler called", __LINE__);
-
-	notif_carrier_off(data->devices.hl78xx);
 
 	struct hl78xx_evt pd_evt = {.type = HL78XX_POWER_DOWN_UPDATE};
 
@@ -873,16 +879,35 @@ static int hl78xx_power_down_apply_response(struct hl78xx_data *data,
 
 	switch (response) {
 	case HL78XX_POWER_DOWN_RESPONSE_IMMEDIATE:
+	case HL78XX_POWER_DOWN_RESPONSE_ABORT:
+		break;
+	case HL78XX_POWER_DOWN_RESPONSE_RESCHEDULE:
+		if (timeout_s == 0U) {
+			return -EINVAL;
+		}
+		break;
+	default:
+		return -EINVAL;
+	}
+
+	/* Cancel first and read the result: a shutdown whose grace period ran
+	 * out meanwhile is running, or done, and past answering. A check before
+	 * the cancel could be overtaken by that expiry. Cancelled here, the
+	 * shutdown cannot start until an answer below schedules it again.
+	 */
+	if ((k_work_cancel_delayable(&data->work.power_down_shutdown_work) & K_WORK_RUNNING) != 0 ||
+	    data->status.lpm.power_down.is_power_down_requested) {
+		return -EBUSY;
+	}
+
+	switch (response) {
+	case HL78XX_POWER_DOWN_RESPONSE_IMMEDIATE:
 		LOG_INF("Power down confirmed by application, proceeding immediately");
 		hl78xx_power_down_allow_feeding(data);
 		(void)k_work_reschedule(&data->work.power_down_shutdown_work, K_NO_WAIT);
 		return 0;
 
 	case HL78XX_POWER_DOWN_RESPONSE_RESCHEDULE:
-		if (timeout_s == 0U) {
-			return -EINVAL;
-		}
-
 		LOG_INF("Power down rescheduled by application: %u s", timeout_s);
 		hl78xx_power_down_ignore_feeding(data);
 		(void)k_work_reschedule(&data->work.power_down_shutdown_work, K_SECONDS(timeout_s));
@@ -890,7 +915,6 @@ static int hl78xx_power_down_apply_response(struct hl78xx_data *data,
 
 	case HL78XX_POWER_DOWN_RESPONSE_ABORT:
 		LOG_INF("Power down aborted by application");
-		(void)k_work_cancel_delayable(&data->work.power_down_shutdown_work);
 		data->status.lpm.power_down.shutdown_pending = false;
 		hl78xx_power_down_allow_feeding(data);
 		return 0;

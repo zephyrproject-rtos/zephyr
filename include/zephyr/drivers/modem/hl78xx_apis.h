@@ -2349,8 +2349,9 @@ int hl78xx_power_down_cancel(const struct device *dev);
  * @param timeout_s New grace period in seconds when @p response is
  *        HL78XX_POWER_DOWN_RESPONSE_RESCHEDULE. Ignored otherwise.
  *
- * @return 0 on success, -EINVAL for invalid arguments, or -ENOENT if no
- *         application-controlled shutdown is pending.
+ * @return 0 on success, -EINVAL for invalid arguments, -ENOENT if no
+ *         application-controlled shutdown is pending, or -EBUSY if the
+ *         shutdown is already running and can no longer be answered.
  */
 int hl78xx_power_down_respond(const struct device *dev, enum hl78xx_power_down_response response,
 			      uint32_t timeout_s);
