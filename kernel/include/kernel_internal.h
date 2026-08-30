@@ -185,6 +185,10 @@ FUNC_NORETURN void z_process_exit_signaled(int sig);
  */
 #ifdef CONFIG_SYS_PROCESS
 int z_process_record_free(struct k_process *proc);
+#ifdef CONFIG_PROCESS_STOP
+void z_process_stop_self(int sig);
+void z_process_continue(struct k_process *proc);
+#endif /* CONFIG_PROCESS_STOP */
 int z_pgrp_cell_free(struct k_process_group *grp);
 int z_session_cell_free(struct k_session *session);
 #else

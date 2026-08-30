@@ -81,14 +81,17 @@ static int clone_thread(const struct sys_clone_args *args, k_pid_t *child)
 
 #ifdef CONFIG_SIGNAL
 	if (args->sigmask != NULL) {
+		bool enforce = IS_ENABLED(CONFIG_PROCESS_STOP);
+
 		tid->base.sig.mask = *args->sigmask;
 #ifdef CONFIG_USERSPACE
-		if (k_is_in_user_syscall()) {
-			/* as k_sig_mask(): user-mode requests cannot mask KILL or STOP */
+		enforce = enforce || k_is_in_user_syscall();
+#endif /* CONFIG_USERSPACE */
+		if (enforce) {
+			/* as k_sig_mask(): requests cannot mask KILL or STOP */
 			tid->base.sig.mask.sig[0] &=
 				~(BIT64(K_SIG_KILL - 1) | BIT64(K_SIG_STOP - 1));
 		}
-#endif /* CONFIG_USERSPACE */
 #ifdef CONFIG_THREAD_CANCEL
 		/* the reserved cancel bit in a requested mask is the cancellation state */
 		if (k_sig_ismember(&tid->base.sig.mask, K_SIG_CANCEL) != 0) {

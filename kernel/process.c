@@ -13,6 +13,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/math_extras.h>
 #include <ksched.h>
+#include <scheduler.h>
 #include <wait_q.h>
 
 LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
@@ -1048,6 +1049,16 @@ static int process_kill(k_pid_t pid, int signo, union k_sig_val value)
 	if (!live) {
 		return -ESRCH;
 	}
+#ifdef CONFIG_PROCESS_STOP
+	/*
+	 * Generation of K_SIG_CONT continues a stopped process regardless of
+	 * delivery, and K_SIG_KILL must be able to kill one: a stopped
+	 * member cannot run its own delivery.
+	 */
+	if ((signo == K_SIG_CONT) || (signo == K_SIG_KILL)) {
+		z_process_continue(proc);
+	}
+#endif /* CONFIG_PROCESS_STOP */
 #ifdef CONFIG_SIGNAL
 	if (pended) {
 		return ret;
@@ -1132,6 +1143,102 @@ static inline int z_vrfy_k_sigqueue(k_pid_t pid, int signo, union k_sig_val valu
 }
 #include <zephyr/syscalls/k_sigqueue_mrsh.c>
 #endif /* CONFIG_USERSPACE */
+
+#ifdef CONFIG_PROCESS_STOP
+/*
+ * Suspend/resume runs outside process_lock: the thread halt path holds the
+ * scheduler lock before taking process_lock, so taking scheduler locks under
+ * process_lock would invert that order. The bounded snapshot taken under the
+ * lock can miss a member racing its own creation; such a thread runs until
+ * the next stop signal, which POSIX permits (stop delivery is asynchronous).
+ */
+#define PROCESS_STOP_SNAPSHOT 16
+
+static int process_members_snapshot(struct k_process *proc, k_tid_t *snap, int max)
+{
+	int n = 0;
+	struct k_thread *member;
+
+	SYS_DLIST_FOR_EACH_CONTAINER(&proc->threads, member, process_node) {
+		if (n >= max) {
+			break;
+		}
+		snap[n++] = member;
+	}
+
+	return n;
+}
+
+void z_process_stop_self(int sig)
+{
+	k_tid_t snap[PROCESS_STOP_SNAPSHOT];
+	struct k_process *self = NULL;
+	struct k_process *parent = NULL;
+	int n = 0;
+
+	K_SPINLOCK(&process_lock) {
+		self = _current->process;
+		if ((self == NULL) || process_is_reserved(self) ||
+		    ((self->flags & K_PROCESS_FLAG_STOPPED) != 0)) {
+			self = NULL;
+			K_SPINLOCK_BREAK;
+		}
+		self->flags |= K_PROCESS_FLAG_STOPPED | K_PROCESS_FLAG_WSTOP_PENDING;
+		self->flags &= ~K_PROCESS_FLAG_WCONT_PENDING;
+		self->stop_sig = (uint8_t)sig;
+		parent = self->parent;
+		n = process_members_snapshot(self, snap, ARRAY_SIZE(snap));
+		atomic_inc(&process_wait_gen);
+	}
+
+	if (self == NULL) {
+		return;
+	}
+
+	for (int i = 0; i < n; i++) {
+		if (snap[i] != _current) {
+			k_thread_suspend(snap[i]);
+		}
+	}
+	if (parent != NULL) {
+		(void)z_sched_wake_all(&parent->waitq, 0, NULL);
+	}
+
+	/* last: the delivery context of the stop signal itself */
+	k_thread_suspend(_current);
+}
+
+void z_process_continue(struct k_process *proc)
+{
+	k_tid_t snap[PROCESS_STOP_SNAPSHOT];
+	struct k_process *parent = NULL;
+	int n = 0;
+	bool cont = false;
+
+	K_SPINLOCK(&process_lock) {
+		if ((proc->flags & K_PROCESS_FLAG_STOPPED) == 0) {
+			K_SPINLOCK_BREAK;
+		}
+		proc->flags &= ~(K_PROCESS_FLAG_STOPPED | K_PROCESS_FLAG_WSTOP_PENDING);
+		proc->flags |= K_PROCESS_FLAG_WCONT_PENDING;
+		parent = proc->parent;
+		n = process_members_snapshot(proc, snap, ARRAY_SIZE(snap));
+		atomic_inc(&process_wait_gen);
+		cont = true;
+	}
+
+	if (!cont) {
+		return;
+	}
+
+	for (int i = 0; i < n; i++) {
+		k_thread_resume(snap[i]);
+	}
+	if (parent != NULL) {
+		(void)z_sched_wake_all(&parent->waitq, 0, NULL);
+	}
+}
+#endif /* CONFIG_PROCESS_STOP */
 
 int z_impl_k_kill_all(int signo)
 {
@@ -1268,13 +1375,18 @@ static int waitpid_common(k_pid_t pid, k_pgrp_t pgrp, bool by_pgrp, k_pid_t *rea
 	struct k_process *self = process_self();
 	k_timepoint_t end = sys_timepoint_calc(timeout);
 
-	if ((options & (K_PROCESS_WUNTRACED | K_PROCESS_WCONTINUED)) != 0) {
+	if (!IS_ENABLED(CONFIG_PROCESS_STOP) &&
+	    ((options & (K_PROCESS_WUNTRACED | K_PROCESS_WCONTINUED)) != 0)) {
 		return -ENOTSUP;
 	}
 
 	while (true) {
 		bool have_match = false;
 		struct k_process *zombie = NULL;
+#ifdef CONFIG_PROCESS_STOP
+		struct k_process *job = NULL;
+		int job_status = 0;
+#endif /* CONFIG_PROCESS_STOP */
 		atomic_val_t gen = atomic_get(&process_wait_gen);
 			bool reaped_one = false;
 	k_spinlock_key_t key = k_spin_lock(&process_lock);
@@ -1288,6 +1400,19 @@ static int waitpid_common(k_pid_t pid, k_pgrp_t pgrp, bool by_pgrp, k_pid_t *rea
 				zombie = child;
 				break;
 			}
+#ifdef CONFIG_PROCESS_STOP
+			if (job == NULL) {
+				if (((options & K_PROCESS_WUNTRACED) != 0) &&
+				    ((child->flags & K_PROCESS_FLAG_WSTOP_PENDING) != 0)) {
+					job = child;
+					job_status = K_WSTATUS_STOPPED(child->stop_sig);
+				} else if (((options & K_PROCESS_WCONTINUED) != 0) &&
+					   ((child->flags & K_PROCESS_FLAG_WCONT_PENDING) != 0)) {
+					job = child;
+					job_status = K_WSTATUS_CONTINUED;
+				}
+			}
+#endif /* CONFIG_PROCESS_STOP */
 		}
 
 		if (zombie != NULL) {
@@ -1302,6 +1427,21 @@ static int waitpid_common(k_pid_t pid, k_pgrp_t pgrp, bool by_pgrp, k_pid_t *rea
 				reaped_one = true;
 			}
 			ret = 0;
+#ifdef CONFIG_PROCESS_STOP
+		} else if (job != NULL) {
+			if (reaped != NULL) {
+				*reaped = job->leader;
+			}
+			if (wstatus != NULL) {
+				*wstatus = job_status;
+			}
+			if ((options & K_PROCESS_WNOWAIT) == 0) {
+				job->flags &= ~((job_status == K_WSTATUS_CONTINUED)
+							? K_PROCESS_FLAG_WCONT_PENDING
+							: K_PROCESS_FLAG_WSTOP_PENDING);
+			}
+			ret = 0;
+#endif /* CONFIG_PROCESS_STOP */
 		} else if (!have_match) {
 			ret = -ECHILD;
 		} else if ((options & K_PROCESS_WNOHANG) != 0) {

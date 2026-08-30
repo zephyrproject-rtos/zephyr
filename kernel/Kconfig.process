@@ -19,6 +19,16 @@ config PROCESS
 
 if PROCESS
 
+config PROCESS_STOP
+	bool "Process stop and continue (job control)"
+	depends on PROCESS && SIGNAL
+	help
+	  Give the stop signals their POSIX default action: delivery of
+	  K_SIG_STOP, K_SIG_TSTP, K_SIG_TTIN, or K_SIG_TTOU suspends every
+	  member thread of the receiving process, K_SIG_CONT resumes them,
+	  and k_waitpid() reports the transitions to waiters passing
+	  K_PROCESS_WUNTRACED or K_PROCESS_WCONTINUED.
+
 config PROCESS_VM
 	bool "Per-process virtual address space duplication (experimental)"
 	depends on PROCESS && USERSPACE && ARCH_HAS_PROCESS_VM

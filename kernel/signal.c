@@ -827,10 +827,21 @@ int z_impl_k_sig_mask(int how, const struct k_sig_set *set, struct k_sig_set *os
 		break;
 	}
 
+#if defined(CONFIG_USERSPACE) || defined(CONFIG_PROCESS_STOP)
+	/*
+	 * Explicitly unmask signals which may not be masked. Kernel-mode
+	 * callers are otherwise trusted to mask anything, but with stop
+	 * support the stop and kill signals must remain deliverable.
+	 */
+	{
+		bool enforce = IS_ENABLED(CONFIG_PROCESS_STOP);
+
 #ifdef CONFIG_USERSPACE
-	if (k_is_in_user_syscall()) {
-		/* explicitly unmask signals which may not be masked */
-		tid->base.sig.mask.sig[0] &= ~UNMASKABLE_MASK;
+		enforce = enforce || k_is_in_user_syscall();
+#endif /* CONFIG_USERSPACE */
+		if (enforce) {
+			tid->base.sig.mask.sig[0] &= ~UNMASKABLE_MASK;
+		}
 	}
 #endif
 
@@ -1200,6 +1211,16 @@ static void z_sig_handler_term(int sig, struct k_sig_info *info, void *ucontext)
 	z_process_exit_signaled(sig);
 }
 
+#ifdef CONFIG_PROCESS_STOP
+static void z_sig_handler_stop(int sig, struct k_sig_info *info, void *ucontext)
+{
+	ARG_UNUSED(info);
+	ARG_UNUSED(ucontext);
+
+	z_process_stop_self(sig);
+}
+#endif /* CONFIG_PROCESS_STOP */
+
 /**
  * @brief The coredump signal handler
  *
@@ -1373,15 +1394,24 @@ static k_sig_handler_t z_sig_resolve(int sig)
 		return z_thread_cancel_handler;
 #endif
 
-	/* all signals that have default 'Ign' behaviour */
-	case K_SIG_CHLD:
-	case K_SIG_URG:
-	/* for now, ignore the following, since we do not support stop or continue */
-	case K_SIG_CONT:
+#ifdef CONFIG_PROCESS_STOP
 	case K_SIG_STOP:
 	case K_SIG_TSTP:
 	case K_SIG_TTIN:
 	case K_SIG_TTOU:
+		return z_sig_handler_stop;
+#else
+	/* without stop support these are ignored, as is a delivered CONT */
+	case K_SIG_STOP:
+	case K_SIG_TSTP:
+	case K_SIG_TTIN:
+	case K_SIG_TTOU:
+#endif /* CONFIG_PROCESS_STOP */
+	/* all signals that have default 'Ign' behaviour */
+	case K_SIG_CHLD:
+	case K_SIG_URG:
+	/* continuation happens at generation; the delivery itself is ignored */
+	case K_SIG_CONT:
 	default:
 		if ((sig >= K_SIG_RTMIN) && (sig < K_SIG_RTMIN + K_SIG_NUM_RT)) {
 			/* default behaviour for RT signals is also to terminate */

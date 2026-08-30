@@ -130,6 +130,12 @@ struct k_thread;
 /** @cond INTERNAL_HIDDEN */
 /** A K_SIG_CHLD notification for this zombie has not yet been emitted */
 #define K_PROCESS_FLAG_SIGCHLD BIT(0)
+/** @brief Every member thread is suspended by a stop signal */
+#define K_PROCESS_FLAG_STOPPED BIT(2)
+/** @brief The stop has not yet been reported to a K_PROCESS_WUNTRACED waiter */
+#define K_PROCESS_FLAG_WSTOP_PENDING BIT(3)
+/** @brief The continue has not yet been reported to a K_PROCESS_WCONTINUED waiter */
+#define K_PROCESS_FLAG_WCONT_PENDING BIT(4)
 /** Reparented to init while still running: init reaps it when it exits */
 #define K_PROCESS_FLAG_ADOPTED BIT(1)
 /** @endcond */
@@ -155,6 +161,16 @@ struct k_thread;
 #define K_WIFSIGNALED(wstatus) ((((signed char)(((wstatus) & 0x7f) + 1)) >> 1) > 0)
 /** @brief Kernel signal number that terminated the process */
 #define K_WTERMSIG(wstatus) ((wstatus) & 0x7f)
+/** @brief Encode a stopped wait status from kernel signal @a signo */
+#define K_WSTATUS_STOPPED(signo) ((((signo) & 0xff) << 8) | 0x7f)
+/** @brief Encode a continued wait status */
+#define K_WSTATUS_CONTINUED 0xffff
+/** @brief True if the child is stopped */
+#define K_WIFSTOPPED(wstatus) (((wstatus) & 0xff) == 0x7f)
+/** @brief Kernel signal number that stopped the child */
+#define K_WSTOPSIG(wstatus) (((wstatus) >> 8) & 0xff)
+/** @brief True if the child was continued */
+#define K_WIFCONTINUED(wstatus) ((wstatus) == K_WSTATUS_CONTINUED)
 /** @} */
 
 /**
@@ -166,9 +182,9 @@ struct k_thread;
 /** @brief Report status without reaping the child */
 #define K_PROCESS_WNOWAIT BIT(24)
 
-/** @brief Report stopped children (reserved; stop/continue is unsupported) */
+/** @brief Report stopped children (requires CONFIG_PROCESS_STOP) */
 #define K_PROCESS_WUNTRACED BIT(1)
-/** @brief Report continued children (reserved; stop/continue is unsupported) */
+/** @brief Report continued children (requires CONFIG_PROCESS_STOP) */
 #define K_PROCESS_WCONTINUED BIT(3)
 /** @brief Report exited children (the default; accepted for waitid() compatibility) */
 #define K_PROCESS_WEXITED BIT(2)
@@ -251,6 +267,8 @@ struct k_process {
 	uint8_t state;
 	/** Internal K_PROCESS_FLAG_* state bits */
 	uint8_t flags;
+	/** Kernel signal that stopped the process (K_PROCESS_FLAG_STOPPED) */
+	uint8_t stop_sig;
 	/** Latched wait status (K_WSTATUS_*), valid in K_PROCESS_ZOMBIE */
 	int wstatus;
 	/** Threads pending in k_waitpid() on this process's children */
