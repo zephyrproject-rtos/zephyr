@@ -417,6 +417,28 @@ error:
 }
 #endif
 
+/* The PDP profile follows the active RAT, not the build. Dedicated NB-NTN
+ * builds always use the NTN profile; an Auto-RAT build reaches NB-NTN only
+ * through the terrestrial-to-NTN fallback (AT+KSRAT=3 + restart), and the
+ * init script's AT+KSRAT? readback has recorded that RAT before the
+ * enable-GPRS state issues AT+CGDCONT. Until 30-08 the family and APN were
+ * compile-time only, so a fallback build on NTN sent
+ * AT+CGDCONT=1,"IPV4V6","<apn>" where the dedicated build sends
+ * AT+CGDCONT=1,"IP","" -- the profile NTN attach was validated with.
+ */
+static bool hl78xx_pdp_uses_ntn_profile(const struct hl78xx_data *data)
+{
+#if defined(CONFIG_MODEM_HL78XX_RAT_NBNTN)
+	ARG_UNUSED(data);
+	return true;
+#elif defined(CONFIG_MODEM_HL78XX_NTN_SUPPORT)
+	return data->status.registration.rat_mode == HL78XX_RAT_NBNTN;
+#else
+	ARG_UNUSED(data);
+	return false;
+#endif
+}
+
 int hl78xx_set_apn_internal(struct hl78xx_data *data, const char *apn, uint16_t size)
 {
 	int ret = 0;
@@ -436,24 +458,30 @@ int hl78xx_set_apn_internal(struct hl78xx_data *data, const char *apn, uint16_t 
 		safe_strncpy(data->identity.apn, apn, sizeof(data->identity.apn));
 	}
 	k_mutex_unlock(&data->api_lock);
-#if defined(CONFIG_MODEM_HL78XX_RAT_NBNTN)
-	snprintk(cmd_string, cmd_max_len, "AT+CGDCONT=1,\"%s\",\"\"", MODEM_HL78XX_ADDRESS_FAMILY);
-#else
-	snprintk(cmd_string, cmd_max_len, "AT+CGDCONT=1,\"%s\",\"%s\"", MODEM_HL78XX_ADDRESS_FAMILY,
-		 apn);
-#endif /* CONFIG_MODEM_HL78XX_RAT_NBNTN */
+	if (hl78xx_pdp_uses_ntn_profile(data)) {
+#if defined(CONFIG_MODEM_HL78XX_NTN_SUPPORT)
+		LOG_INF("PDP context: NB-NTN profile (family \"%s\", APN from the network)",
+			CONFIG_MODEM_HL78XX_NTN_PDP_FAMILY);
+		snprintk(cmd_string, cmd_max_len, "AT+CGDCONT=1,\"%s\",\"\"",
+			 CONFIG_MODEM_HL78XX_NTN_PDP_FAMILY);
+#endif /* CONFIG_MODEM_HL78XX_NTN_SUPPORT */
+	} else {
+		snprintk(cmd_string, cmd_max_len, "AT+CGDCONT=1,\"%s\",\"%s\"",
+			 MODEM_HL78XX_ADDRESS_FAMILY, apn);
+	}
 	ret = modem_dynamic_cmd_send(data, NULL, cmd_string, strlen(cmd_string),
 				     hl78xx_get_ok_match(), hl78xx_get_ok_match_size(),
 				     MDM_CMD_TIMEOUT, false);
 	if (ret < 0) {
 		goto error;
 	}
-#if defined(CONFIG_MODEM_HL78XX_RAT_NBNTN)
-	snprintk(cmd_string, cmd_max_len, "AT+KCNXCFG=1,\"GPRS\",\"%s\",,,", apn);
-#else
-	snprintk(cmd_string, cmd_max_len,
-		 "AT+KCNXCFG=1,\"GPRS\",\"%s\",,,\"" MODEM_HL78XX_ADDRESS_FAMILY "\"", apn);
-#endif /* CONFIG_MODEM_HL78XX_RAT_NBNTN */
+	if (hl78xx_pdp_uses_ntn_profile(data)) {
+		/* No family and no APN: the dedicated NB-NTN build's exact line. */
+		snprintk(cmd_string, cmd_max_len, "AT+KCNXCFG=1,\"GPRS\",\"\",,,");
+	} else {
+		snprintk(cmd_string, cmd_max_len,
+			 "AT+KCNXCFG=1,\"GPRS\",\"%s\",,,\"" MODEM_HL78XX_ADDRESS_FAMILY "\"", apn);
+	}
 	ret = modem_dynamic_cmd_send(data, NULL, cmd_string, strlen(cmd_string),
 				     hl78xx_get_ok_match(), hl78xx_get_ok_match_size(),
 				     MDM_CMD_TIMEOUT, false);
