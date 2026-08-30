@@ -383,7 +383,7 @@ static int spi_bflb_configure(const struct device *dev, const struct spi_config 
 	tmp |= SPI_CR_SPI_M_CONT_EN;
 	/* disable ignore RX */
 	tmp &= ~SPI_CR_SPI_RXD_IGNR_EN;
-#if defined(CONFIG_SOC_SERIES_BL61X)
+#if defined(CONFIG_SOC_SERIES_BL61X) || defined(CONFIG_SOC_SERIES_BL616CL)
 	tmp &= ~SPI_CR_SPI_S_3PIN_MODE;
 #endif
 
@@ -632,9 +632,17 @@ static int spi_bflb_deinit(const struct device *dev)
 	sys_write32(tmp, cfg->base + SPI_INT_STS_OFFSET);
 
 	/* disable clocks */
-#if defined(CONFIG_SOC_SERIES_BL61X)
+#if defined(CONFIG_SOC_SERIES_BL61X) || defined(CONFIG_SOC_SERIES_BL616CL)
 	tmp = sys_read32(GLB_BASE + GLB_SPI_CFG0_OFFSET);
+#if defined(CONFIG_SOC_SERIES_BL616CL)
+	if (cfg->base == SPI1_BASE) {
+		tmp &= ~GLB_SPI1_CLK_EN_MSK;
+	} else {
+		tmp &= ~GLB_SPI_CLK_EN_MSK;
+	}
+#else
 	tmp &= ~GLB_SPI_CLK_EN_MSK;
+#endif
 	sys_write32(tmp, GLB_BASE + GLB_SPI_CFG0_OFFSET);
 #else
 	tmp = sys_read32(GLB_BASE + GLB_CLK_CFG3_OFFSET);
