@@ -447,13 +447,13 @@ static int co5300_set_pixel_format(const struct device *dev,
 	case PIXEL_FORMAT_RGB_565:
 		mipi_pixel_format = CO5300_PIXFMT_RGB565;
 		bytes_per_pixel = 2U;
-		cmd_params[0] = MIPI_DCS_ADDRESS_MODE_BGR;
+		cmd_params[0] = config->red_blue_swap ? 0 : MIPI_DCS_ADDRESS_MODE_BGR;
 		cmd_params[1] = MIPI_DCS_PIXEL_FORMAT_16BIT;
 		break;
 	case PIXEL_FORMAT_RGB_888:
 		mipi_pixel_format = CO5300_PIXFMT_RGB888;
 		bytes_per_pixel = 3U;
-		cmd_params[0] = 0U;
+		cmd_params[0] = config->red_blue_swap ? MIPI_DCS_ADDRESS_MODE_BGR : 0;
 		cmd_params[1] = MIPI_DCS_PIXEL_FORMAT_24BIT;
 		break;
 	default:
@@ -753,7 +753,8 @@ static DEVICE_API(display, co5300_api) = {
 	.backlight_gpios = GPIO_DT_SPEC_INST_GET_OR(node_id, backlight_gpios, {0}),		\
 	.tear_effect_gpios = GPIO_DT_SPEC_INST_GET_OR(node_id, tear_effect_gpios, {0}),		\
 	.panel_width = DT_INST_PROP(node_id, width),						\
-	.panel_height = DT_INST_PROP(node_id, height)
+	.panel_height = DT_INST_PROP(node_id, height),						\
+	.red_blue_swap = DT_INST_PROP(node_id, red_blue_swap)
 
 #define CO5300_CONFIG_MSPI(node_id)								\
 	{											\
