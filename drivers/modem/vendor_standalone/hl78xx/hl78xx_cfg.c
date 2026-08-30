@@ -529,9 +529,17 @@ int hl78xx_gsm_pdp_activate(struct hl78xx_data *data)
 	int ret = 0;
 	/* Activate the PDP context, Today only one pdp context is supported */
 	const char *cmd_activate_pdp = "AT+CGACT=1,1";
-	/* Check if the current RAT is GSM and if the PDP context is not already active */
+	/* Only GSM needs an explicit activation. On every EPS RAT -- CAT-M1,
+	 * NB-IoT and NB-NTN alike -- the attach brings the default bearer up
+	 * (+CGEV: ME PDN ACT precedes +CEREG: 5) and AT+CGACT=1,1 on that live
+	 * context is refused. 30-08 outdoor NTN-only run: every NTN attach
+	 * (three of them, on both SIMs) was followed by a refused CGACT, the
+	 * carrier dropped, the modem re-attached 45 s later and hit the same
+	 * wall 30 times until the NTN budget expired; nothing was ever sent.
+	 */
 	if (data->status.registration.rat_mode == HL78XX_RAT_CAT_M1 ||
 	    data->status.registration.rat_mode == HL78XX_RAT_NB1 ||
+	    data->status.registration.rat_mode == HL78XX_RAT_NBNTN ||
 	    data->status.gprs[0].is_active) {
 		return 0;
 	}
