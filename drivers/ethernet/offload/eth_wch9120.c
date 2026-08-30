@@ -114,6 +114,9 @@ static bool ch9120_is_tcp_connected(void)
 
 static void ch9120_tcp_cb(const struct device *port, struct gpio_callback *cb, uint32_t pins)
 {
+	ARG_UNUSED(port);
+	ARG_UNUSED(pins);
+
 	struct ch9120_runtime *data = CONTAINER_OF(cb, struct ch9120_runtime, tcp_cb_data);
 	struct ch9120_socket *sck = &data->sock;
 
@@ -386,16 +389,16 @@ static int ch9120_close(void *obj)
 
 static int ch9120_ioctl(void *obj, unsigned int request, va_list args)
 {
+	ARG_UNUSED(obj);
+	ARG_UNUSED(args);
+
 	switch (request) {
 	case ZFD_IOCTL_POLL_PREPARE:
 	case ZFD_IOCTL_POLL_UPDATE:
-		errno = EXDEV;
-		return -1;
+		return -EXDEV;
 	default:
-		errno = EINVAL;
+		return -EINVAL;
 	}
-
-	return -1;
 }
 
 static int ch9120_connect(void *obj, const struct net_sockaddr *addr, net_socklen_t addrlen)
@@ -414,7 +417,7 @@ static int ch9120_connect(void *obj, const struct net_sockaddr *addr, net_sockle
 		return -1;
 	}
 
-	if (addr == NULL || addrlen < sizeof(struct sockaddr_in)) {
+	if (addr == NULL || addrlen < sizeof(struct net_sockaddr_in)) {
 		errno = EINVAL;
 		return -1;
 	}
@@ -489,7 +492,7 @@ static int ch9120_connect(void *obj, const struct net_sockaddr *addr, net_sockle
 	sck->state = CH9120_SOCK_CONNECTED;
 	k_mutex_unlock(&sck->lock);
 
-	memcpy(&sck->dst, addr, addrlen);
+	memcpy(&sck->dst, addr, sizeof(struct net_sockaddr_in));
 
 	uart_irq_rx_enable(cfg->uart_dev);
 
@@ -497,11 +500,10 @@ static int ch9120_connect(void *obj, const struct net_sockaddr *addr, net_sockle
 
 err:
 	k_mutex_lock(&sck->lock, K_FOREVER);
-	sck->in_use = false;
 	sck->state = CH9120_SOCK_OPEN;
 	k_mutex_unlock(&sck->lock);
 
-	return ret;
+	return -1;
 }
 
 static ssize_t ch9120_sendto(void *obj, const void *buf, size_t len, int flags,
@@ -838,5 +840,5 @@ static const struct socket_op_vtable ch9120_socket_fd_op_vtable = {
 NET_DEVICE_DT_INST_OFFLOAD_DEFINE(0, ch9120_init, NULL, &ch9120_runtime_data, &ch9120_config_data,
 				  CONFIG_ETH_INIT_PRIORITY, &ch9120_if_apis, NET_ETH_MTU);
 
-NET_SOCKET_OFFLOAD_REGISTER(ch9120, CONFIG_NET_SOCKETS_OFFLOAD_PRIORITY, AF_INET,
+NET_SOCKET_OFFLOAD_REGISTER(ch9120, CONFIG_NET_SOCKETS_OFFLOAD_PRIORITY, NET_AF_INET,
 			    ch9120_socket_is_supported, ch9120_socket_create);
