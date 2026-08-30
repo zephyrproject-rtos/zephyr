@@ -25,3 +25,10 @@ properties:
       The tearing effect pin is asserted by the controller at a display
       VSYNC interval. This permits the controller to send new display
       data during a VSYNC interval, removing tearing.
+
+  red-blue-swap:
+    type: boolean
+    description: |
+      Some panel variants require the red and blue color channels to be swapped.
+      Enable this property when the panel controller expects BGR color channel
+      order instead of RGB.
