@@ -84,6 +84,7 @@ MAKE_REG_HELPER(par_el1);
 MAKE_REG_HELPER(scr_el3);
 #endif /* CONFIG_ARMV8_R */
 MAKE_REG_HELPER(tpidrro_el0);
+MAKE_REG_HELPER(tpidr_el1);
 MAKE_REG_HELPER(vmpidr_el2);
 MAKE_REG_HELPER(sp_el0);
 
