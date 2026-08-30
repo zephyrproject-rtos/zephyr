@@ -620,27 +620,247 @@ static int ext2_statvfs(struct fs_mount_t *mountp, const char *path, struct fs_s
 
 /* File system interface */
 
-static const struct fs_file_system_t ext2_fs = {
-	.open = ext2_open,
-	.close = ext2_close,
-	.read = ext2_read,
-	.write = ext2_write,
-	.lseek = ext2_lseek,
-	.tell = ext2_tell,
-	.truncate = ext2_truncate,
-	.sync = ext2_sync,
-	.mkdir = ext2_mkdir,
-	.opendir = ext2_opendir,
-	.readdir = ext2_readdir,
-	.closedir = ext2_closedir,
-	.mount = ext2_mount,
-	.unmount = ext2_unmount,
-	.unlink = ext2_unlink,
-	.rename = ext2_rename,
-	.stat = ext2_stat,
-	.statvfs = ext2_statvfs,
+
+/*
+ * The driver was written assuming external serialization - the lookup and
+ * block-fetch state is shared - which concurrently running processes do not
+ * provide; one lock serializes every operation (ext2 supports one mounted
+ * instance at a time, see the superblock note above).
+ */
+static K_MUTEX_DEFINE(ext2_op_lock);
+
+static int ext2_locked_open(struct fs_file_t *filp, const char *fs_path, fs_mode_t flags)
+{
+	int ret;
+
+	(void)k_mutex_lock(&ext2_op_lock, K_FOREVER);
+	ret = ext2_open(filp, fs_path, flags);
+	k_mutex_unlock(&ext2_op_lock);
+
+	return ret;
+}
+
+static int ext2_locked_close(struct fs_file_t *filp)
+{
+	int ret;
+
+	(void)k_mutex_lock(&ext2_op_lock, K_FOREVER);
+	ret = ext2_close(filp);
+	k_mutex_unlock(&ext2_op_lock);
+
+	return ret;
+}
+
+static ssize_t ext2_locked_read(struct fs_file_t *filp, void *dest, size_t nbytes)
+{
+	ssize_t ret;
+
+	(void)k_mutex_lock(&ext2_op_lock, K_FOREVER);
+	ret = ext2_read(filp, dest, nbytes);
+	k_mutex_unlock(&ext2_op_lock);
+
+	return ret;
+}
+
+static ssize_t ext2_locked_write(struct fs_file_t *filp, const void *src, size_t nbytes)
+{
+	ssize_t ret;
+
+	(void)k_mutex_lock(&ext2_op_lock, K_FOREVER);
+	ret = ext2_write(filp, src, nbytes);
+	k_mutex_unlock(&ext2_op_lock);
+
+	return ret;
+}
+
+static int ext2_locked_lseek(struct fs_file_t *filp, off_t off, int whence)
+{
+	int ret;
+
+	(void)k_mutex_lock(&ext2_op_lock, K_FOREVER);
+	ret = ext2_lseek(filp, off, whence);
+	k_mutex_unlock(&ext2_op_lock);
+
+	return ret;
+}
+
+static off_t ext2_locked_tell(struct fs_file_t *filp)
+{
+	off_t ret;
+
+	(void)k_mutex_lock(&ext2_op_lock, K_FOREVER);
+	ret = ext2_tell(filp);
+	k_mutex_unlock(&ext2_op_lock);
+
+	return ret;
+}
+
+static int ext2_locked_truncate(struct fs_file_t *filp, off_t length)
+{
+	int ret;
+
+	(void)k_mutex_lock(&ext2_op_lock, K_FOREVER);
+	ret = ext2_truncate(filp, length);
+	k_mutex_unlock(&ext2_op_lock);
+
+	return ret;
+}
+
+static int ext2_locked_sync(struct fs_file_t *filp)
+{
+	int ret;
+
+	(void)k_mutex_lock(&ext2_op_lock, K_FOREVER);
+	ret = ext2_sync(filp);
+	k_mutex_unlock(&ext2_op_lock);
+
+	return ret;
+}
+
+static int ext2_locked_mkdir(struct fs_mount_t *mountp, const char *name)
+{
+	int ret;
+
+	(void)k_mutex_lock(&ext2_op_lock, K_FOREVER);
+	ret = ext2_mkdir(mountp, name);
+	k_mutex_unlock(&ext2_op_lock);
+
+	return ret;
+}
+
+static int ext2_locked_opendir(struct fs_dir_t *dirp, const char *fs_path)
+{
+	int ret;
+
+	(void)k_mutex_lock(&ext2_op_lock, K_FOREVER);
+	ret = ext2_opendir(dirp, fs_path);
+	k_mutex_unlock(&ext2_op_lock);
+
+	return ret;
+}
+
+static int ext2_locked_readdir(struct fs_dir_t *dirp, struct fs_dirent *entry)
+{
+	int ret;
+
+	(void)k_mutex_lock(&ext2_op_lock, K_FOREVER);
+	ret = ext2_readdir(dirp, entry);
+	k_mutex_unlock(&ext2_op_lock);
+
+	return ret;
+}
+
+static int ext2_locked_closedir(struct fs_dir_t *dirp)
+{
+	int ret;
+
+	(void)k_mutex_lock(&ext2_op_lock, K_FOREVER);
+	ret = ext2_closedir(dirp);
+	k_mutex_unlock(&ext2_op_lock);
+
+	return ret;
+}
+
+static int ext2_locked_mount(struct fs_mount_t *mountp)
+{
+	int ret;
+
+	(void)k_mutex_lock(&ext2_op_lock, K_FOREVER);
+	ret = ext2_mount(mountp);
+	k_mutex_unlock(&ext2_op_lock);
+
+	return ret;
+}
+
+static int ext2_locked_unmount(struct fs_mount_t *mountp)
+{
+	int ret;
+
+	(void)k_mutex_lock(&ext2_op_lock, K_FOREVER);
+	ret = ext2_unmount(mountp);
+	k_mutex_unlock(&ext2_op_lock);
+
+	return ret;
+}
+
+static int ext2_locked_unlink(struct fs_mount_t *mountp, const char *name)
+{
+	int ret;
+
+	(void)k_mutex_lock(&ext2_op_lock, K_FOREVER);
+	ret = ext2_unlink(mountp, name);
+	k_mutex_unlock(&ext2_op_lock);
+
+	return ret;
+}
+
+static int ext2_locked_rename(struct fs_mount_t *mountp, const char *from, const char *to)
+{
+	int ret;
+
+	(void)k_mutex_lock(&ext2_op_lock, K_FOREVER);
+	ret = ext2_rename(mountp, from, to);
+	k_mutex_unlock(&ext2_op_lock);
+
+	return ret;
+}
+
+static int ext2_locked_stat(struct fs_mount_t *mountp, const char *path, struct fs_dirent *entry)
+{
+	int ret;
+
+	(void)k_mutex_lock(&ext2_op_lock, K_FOREVER);
+	ret = ext2_stat(mountp, path, entry);
+	k_mutex_unlock(&ext2_op_lock);
+
+	return ret;
+}
+
+static int ext2_locked_statvfs(struct fs_mount_t *mountp, const char *path, struct fs_statvfs *stat)
+{
+	int ret;
+
+	(void)k_mutex_lock(&ext2_op_lock, K_FOREVER);
+	ret = ext2_statvfs(mountp, path, stat);
+	k_mutex_unlock(&ext2_op_lock);
+
+	return ret;
+}
+
 #if defined(CONFIG_FILE_SYSTEM_MKFS)
-	.mkfs = ext2_mkfs,
+static int ext2_locked_mkfs(uintptr_t dev_id, void *vcfg, int flags)
+{
+	int ret;
+
+	(void)k_mutex_lock(&ext2_op_lock, K_FOREVER);
+	ret = ext2_mkfs(dev_id, vcfg, flags);
+	k_mutex_unlock(&ext2_op_lock);
+
+	return ret;
+}
+#endif /* CONFIG_FILE_SYSTEM_MKFS */
+
+static const struct fs_file_system_t ext2_fs = {
+	.open = ext2_locked_open,
+	.close = ext2_locked_close,
+	.read = ext2_locked_read,
+	.write = ext2_locked_write,
+	.lseek = ext2_locked_lseek,
+	.tell = ext2_locked_tell,
+	.truncate = ext2_locked_truncate,
+	.sync = ext2_locked_sync,
+	.mkdir = ext2_locked_mkdir,
+	.opendir = ext2_locked_opendir,
+	.readdir = ext2_locked_readdir,
+	.closedir = ext2_locked_closedir,
+	.mount = ext2_locked_mount,
+	.unmount = ext2_locked_unmount,
+	.unlink = ext2_locked_unlink,
+	.rename = ext2_locked_rename,
+	.stat = ext2_locked_stat,
+	.statvfs = ext2_locked_statvfs,
+#if defined(CONFIG_FILE_SYSTEM_MKFS)
+	.mkfs = ext2_locked_mkfs,
 #endif
 };
 
