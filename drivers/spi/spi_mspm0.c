@@ -13,6 +13,8 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 
 /* TI DriverLib includes */
 #include <driverlib/dl_spi.h>
@@ -63,6 +65,7 @@ struct spi_mspm0_config {
 	const struct mspm0_sys_clock *clock_subsys;
 	const struct pinctrl_dev_config *pinctrl;
 	DL_SPI_CLOCK clock_sel;
+	DL_SPI_CLOCK_DIVIDE_RATIO clock_divide_ratio;
 };
 
 struct spi_mspm0_data {
@@ -74,6 +77,51 @@ static inline SPI_Regs *spi_mspm0_regs(const struct device *dev)
 {
 	return (SPI_Regs *)DEVICE_MMIO_GET(dev);
 }
+
+#ifdef CONFIG_PM_DEVICE
+static int mspm0_spi_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	const struct spi_mspm0_config *const config = dev->config;
+	SPI_Regs *regs = spi_mspm0_regs(dev);
+	DL_SPI_ClockConfig clk_cfg;
+	int err;
+
+	clk_cfg.divideRatio = config->clock_divide_ratio;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		/* Set pins to active state */
+		err = pinctrl_apply_state(config->pinctrl, PINCTRL_STATE_DEFAULT);
+		if (err < 0) {
+			return err;
+		}
+
+		/* Restoring parent clock selection */
+		clk_cfg.clockSel = config->clock_sel;
+
+		DL_SPI_setClockConfig(regs, (DL_SPI_ClockConfig *)&clk_cfg);
+
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		/* Move pins to sleep state */
+		err = pinctrl_apply_state(config->pinctrl, PINCTRL_STATE_SLEEP);
+		if ((err < 0) && (err != -ENOENT)) {
+			return err;
+		}
+
+		/* Don't select any parent clock effectively freezing the module */
+		clk_cfg.clockSel = 0;
+
+		DL_SPI_setClockConfig(regs, (DL_SPI_ClockConfig *)&clk_cfg);
+
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif
 
 static int spi_mspm0_configure(const struct device *dev, const struct spi_config *spi_cfg,
 			       uint8_t dfs)
@@ -222,27 +270,34 @@ static int spi_mspm0_transceive(const struct device *dev, const struct spi_confi
 		return -EINVAL;
 	}
 
-	spi_context_lock(&data->spi_ctx, false, NULL, NULL, spi_cfg);
-
 	word_size = SPI_WORD_SIZE_GET(spi_cfg->operation);
 	if (!IN_RANGE(word_size, 4, 16)) {
-		spi_context_release(&data->spi_ctx, -ENOTSUP);
 		return -ENOTSUP;
 	}
 
 	dfs = BYTES_PER_FRAME(word_size);
 
+	ret = pm_device_runtime_get(dev);
+	if (ret < 0) {
+		return ret;
+	}
+
+	spi_context_lock(&data->spi_ctx, false, NULL, NULL, spi_cfg);
+
 	ret = spi_mspm0_configure(dev, spi_cfg, dfs);
 	if (ret != 0) {
-		spi_context_release(&data->spi_ctx, ret);
-		return ret;
+		goto release;
 	}
 
 	spi_context_buffers_setup(&data->spi_ctx, tx_bufs, rx_bufs, dfs);
 	spi_mspm0_start_transfer(dev, dfs);
 
 	ret = spi_context_wait_for_completion(&data->spi_ctx);
+
+release:
 	spi_context_release(&data->spi_ctx, ret);
+
+	(void)pm_device_runtime_put(dev);
 
 	return ret;
 }
@@ -251,17 +306,26 @@ static int spi_mspm0_release(const struct device *dev, const struct spi_config *
 {
 	struct spi_mspm0_data *data = dev->data;
 	SPI_Regs *regs = spi_mspm0_regs(dev);
+	int ret;
 
 	if (!spi_context_configured(&data->spi_ctx, spi_cfg)) {
 		return -EINVAL;
 	}
 
-	if (DL_SPI_isBusy(regs)) {
-		return -EBUSY;
+	ret = pm_device_runtime_get(dev);
+	if (ret < 0) {
+		return ret;
 	}
 
-	spi_context_unlock_unconditionally(&data->spi_ctx);
-	return 0;
+	if (DL_SPI_isBusy(regs)) {
+		ret = -EBUSY;
+	} else {
+		spi_context_unlock_unconditionally(&data->spi_ctx);
+		ret = 0;
+	}
+
+	(void)pm_device_runtime_put(dev);
+	return ret;
 }
 
 static DEVICE_API(spi, spi_mspm0_api) = {
@@ -293,14 +357,23 @@ static int spi_mspm0_init(const struct device *dev)
 	}
 
 	clk_cfg.clockSel = config->clock_sel;
-	clk_cfg.divideRatio = DL_SPI_CLOCK_DIVIDE_RATIO_1;
+	clk_cfg.divideRatio = config->clock_divide_ratio;
 
 	DL_SPI_setClockConfig(regs, (DL_SPI_ClockConfig *)&clk_cfg);
 	DL_SPI_enable(regs);
 
 	spi_context_unlock_unconditionally(&data->spi_ctx);
 
-	return ret;
+#ifdef CONFIG_PM_DEVICE
+	ret = mspm0_spi_pm_action(dev, PM_DEVICE_ACTION_SUSPEND);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return pm_device_driver_init(dev, mspm0_spi_pm_action);
+#else
+	return 0;
+#endif
 }
 
 #define MSPM0_SPI_INIT(inst)                                                                       \
@@ -314,6 +387,7 @@ static int spi_mspm0_init(const struct device *dev)
 		.clock_subsys = &mspm0_spi_sys_clock##inst,                                        \
 		.pinctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                   \
 		.clock_sel = MSPM0_CLOCK_PERIPH_REG_MASK(DT_INST_CLOCKS_CELL(inst, clk)),          \
+		.clock_divide_ratio = DL_SPI_CLOCK_DIVIDE_RATIO_1,                                 \
 	};                                                                                         \
                                                                                                    \
 	static struct spi_mspm0_data spi_mspm0_data_##inst = {                                     \
@@ -321,8 +395,9 @@ static int spi_mspm0_init(const struct device *dev)
 		SPI_CONTEXT_INIT_SYNC(spi_mspm0_data_##inst, spi_ctx),                             \
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(inst), spi_ctx)};                      \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, spi_mspm0_init, NULL, &spi_mspm0_data_##inst,                  \
-			      &spi_mspm0_config_##inst, POST_KERNEL, CONFIG_SPI_INIT_PRIORITY,     \
-			      &spi_mspm0_api);
+	PM_DEVICE_DT_INST_DEFINE(inst, mspm0_spi_pm_action);                                       \
+	DEVICE_DT_INST_DEFINE(inst, spi_mspm0_init, PM_DEVICE_DT_INST_GET(inst),                   \
+			      &spi_mspm0_data_##inst, &spi_mspm0_config_##inst, POST_KERNEL,       \
+			      CONFIG_SPI_INIT_PRIORITY, &spi_mspm0_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MSPM0_SPI_INIT)
