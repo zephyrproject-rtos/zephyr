@@ -1,0 +1,11 @@
+# Copyright (c) 2026 Khai Do
+# Copyright (c) 2026 Eugene Cheng
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: opi_zero3
+name: Xunlong Orange Pi Zero3
+type: mcu
+arch: arm64
+toolchain:
+  - zephyr
+vendor: xunlong
