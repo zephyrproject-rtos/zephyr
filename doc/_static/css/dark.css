@@ -109,3 +109,34 @@
 
     --landing-card-background-color: var(--navbar-background-color);
 }
+
+/*
+ * sphinx-needs: dark values for the --sn-color-* palette that its bundled
+ * modern.css theme defines on :root (defined on body so they win regardless
+ * of stylesheet order). Accent colors (green/red/yellow/blue) are kept.
+ */
+body {
+    --sn-color-bg-gray: #3a3f44;
+    --sn-color-bg-lightgray: rgba(255, 255, 255, 0.03);
+    --sn-color-border-lightgray: rgba(255, 255, 255, 0.08);
+    --sn-color-need-border: #888;
+    --sn-color-need-row-border: rgba(255, 255, 255, 0.12);
+    --sn-color-need-bg: #2e3236;
+    --sn-color-need-bg-head: rgba(255, 255, 255, 0.06);
+    --sn-color-complete-bg-head: rgba(255, 255, 255, 0.06);
+    --sn-color-complete-bg-foot: rgba(255, 255, 255, 0.06);
+    --sn-color-datatable-label: #ccc;
+    --sn-color-datatable-btn-border: #777;
+}
+
+/* needpie charts are PNG images with dark labels on a transparent
+ * background; keep them legible on the dark page. */
+img.needs_pie,
+.needs_pie img,
+div.needs_pie svg,
+img[src*="need_pie"] {
+    background-color: #e9ecef;
+    border-radius: 4px;
+    padding: 6px;
+}
+
