@@ -758,6 +758,14 @@ static void hl78xx_power_down_shutdown_fn(struct k_work *work)
 		CONTAINER_OF(dwork, struct hl78xx_data, work.power_down_shutdown_work);
 
 	LOG_DBG("%d: power down shutdown: entering INIT_POWER_OFF", __LINE__);
+	/* The link goes down here, once the application has confirmed (or sat
+	 * out its window) -- not when it is asked. Raising L4 carrier-off at
+	 * ENTER made a vetoed shutdown tear the session down anyway (30-08
+	 * NB-NTN log: veto accepted, carrier already gone, the modem module
+	 * re-requested the power-down and the cloud session died under an
+	 * exchange in flight).
+	 */
+	notif_carrier_off(data->devices.hl78xx);
 	data->status.lpm.power_down.previous = data->status.lpm.power_down.current;
 	data->status.lpm.power_down.current = POWER_DOWN_EVENT_ENTER;
 
@@ -772,8 +780,6 @@ static void hl78xx_power_down_work_handler(struct k_work *work_item)
 		CONTAINER_OF(dwork, struct hl78xx_data, work.hl78xx_pwr_dwn_work);
 
 	LOG_DBG("%d: Power down work handler called", __LINE__);
-
-	notif_carrier_off(data->devices.hl78xx);
 
 	struct hl78xx_evt pd_evt = {.type = HL78XX_POWER_DOWN_UPDATE};
 
