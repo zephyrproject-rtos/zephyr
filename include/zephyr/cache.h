@@ -96,7 +96,8 @@ extern "C" {
  *     static __dcacheline_exclusive_noinit uint8_t var;
  */
 #define __dcacheline_exclusive_noinit \
-	__in_section_unique(__DCACHELINE_EXCLUSIVE_NOINIT_SECTION_NAME)
+	__in_section_unique(__DCACHELINE_EXCLUSIVE_NOINIT_SECTION_NAME) \
+	__aligned(CONFIG_DCACHE_LINE_SIZE)
 
 /** @brief Guarantee exclusive cache-line placement in DATA section in main RAM
  *
@@ -110,7 +111,8 @@ extern "C" {
  *     static __dcacheline_exclusive_data uint8_t var = 2;
  */
 #define __dcacheline_exclusive_data \
-	__in_section_unique(__DCACHELINE_EXCLUSIVE_DATA_SECTION_NAME)
+	__in_section_unique(__DCACHELINE_EXCLUSIVE_DATA_SECTION_NAME) \
+	__aligned(CONFIG_DCACHE_LINE_SIZE)
 
 #else
 #define __dcacheline_exclusive_noinit
