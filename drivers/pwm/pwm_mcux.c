@@ -447,6 +447,46 @@ static void mcux_pwm_isr(const struct device *dev)
 	}
 }
 
+/* Free running modulo for a capture-only submodule. The counter is signed
+ * (reference manual, "Counter Register"), so 0x7FFF is the maximum with INIT = 0.
+ */
+#define CAPTURE_ONLY_MODULO 0x7FFFU
+
+static bool mcux_pwm_period_configured(const struct pwm_mcux_data *data)
+{
+	uint32_t channel;
+
+	for (channel = 0; channel < CHANNEL_COUNT; channel++) {
+		if (data->period_cycles[channel] != 0U) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/* mcux_pwm_isr() derives the overflow size from VAL1 and INIT, which only
+ * mcux_pwm_set_cycles() ever programs. A capture-only submodule would keep their
+ * reset value of 0, making the reported tick count meaningless.
+ */
+static void mcux_pwm_setup_capture_modulo(const struct device *dev)
+{
+	const struct pwm_mcux_config *config = dev->config;
+	uint16_t ctrl;
+
+	config->base->SM[config->index].INIT = 0U;
+	PWM_SetVALxValue(config->base, config->index, kPWM_ValueRegister_1,
+			 CAPTURE_ONLY_MODULO);
+
+	/* INIT and VAL1 are buffered and would only load on the next reload, which
+	 * never comes while the counter is stopped, so force it through LDMOD.
+	 */
+	ctrl = config->base->SM[config->index].CTRL;
+	config->base->SM[config->index].CTRL = ctrl | PWM_CTRL_LDMOD_MASK;
+	PWM_SetPwmLdok(config->base, 1U << config->index, true);
+	config->base->SM[config->index].CTRL = ctrl;
+}
+
 static int check_channel(const struct device *dev, uint32_t channel)
 {
 	struct pwm_mcux_data *data = dev->data;
@@ -552,6 +592,11 @@ static int mcux_pwm_configure_capture(const struct device *dev,
 		pwm_channel = kPWM_PwmB;
 	} else {
 		pwm_channel = kPWM_PwmX;
+	}
+
+	/* A capture-only submodule has no period, so nothing set the modulo. */
+	if (!mcux_pwm_period_configured(data)) {
+		mcux_pwm_setup_capture_modulo(dev);
 	}
 
 	/* Setup input capture on channel */
