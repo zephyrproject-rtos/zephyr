@@ -233,13 +233,10 @@ enum hl78xx_event {
 #endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
 #ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
 
-	/* WDSI FOTA events */
-	MODEM_HL78XX_EVENT_WDSI_UPDATE,
-	MODEM_HL78XX_EVENT_WDSI_RESTART,
-	MODEM_HL78XX_EVENT_WDSI_DOWNLOAD_REQUEST,
-	MODEM_HL78XX_EVENT_WDSI_DOWNLOAD_PROGRESS,
-	MODEM_HL78XX_EVENT_WDSI_DOWNLOAD_COMPLETE,
-	MODEM_HL78XX_EVENT_WDSI_INSTALL_REQUEST,
+	/* WDSI FOTA events driving the install guard state only; all FOTA
+	 * decisions are made by the application via HL78XX_LTE_FOTA_UPDATE_STATUS
+	 * events and the hl78xx_airvantage_agreement_* APIs.
+	 */
 	MODEM_HL78XX_EVENT_WDSI_INSTALLING_FIRMWARE,
 	MODEM_HL78XX_EVENT_WDSI_FIRMWARE_INSTALL_SUCCEEDED,
 	MODEM_HL78XX_EVENT_WDSI_FIRMWARE_INSTALL_FAILED,
@@ -470,24 +467,15 @@ struct hl78xx_band_status {
 };
 
 #ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
-/* WDSI FOTA states */
-enum hl78xx_wdsi_fota_states {
-	HL78XX_WDSI_FOTA_IDLE = 0,
-	HL78XX_WDSI_FOTA_DOWNLOADING,
-	HL78XX_WDSI_FOTA_DOWNLOAD_COMPLETED,
-	HL78XX_WDSI_FOTA_INSTALLING,
-	HL78XX_WDSI_FOTA_INSTALL_COMPLETED,
-	HL78XX_WDSI_FOTA_INSTALL_FAILED
-};
-
+/* Last seen +WDSI indication; FOTA policy and sequencing live in the
+ * application, the driver only tracks enough to guard the install.
+ */
 struct hl78xx_wdsi_status {
 	enum wdsi_indication level;
 	uint32_t data;
 	size_t fota_size;
-	bool in_progress;
-	enum hl78xx_wdsi_fota_states fota_state;
-	bool completed;
 	int progress;
+	bool installing;
 };
 
 #endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE */
