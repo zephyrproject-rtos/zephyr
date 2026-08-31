@@ -1374,4 +1374,11 @@ void *can_classic_setup(void)
 	return NULL;
 }
 
-ZTEST_SUITE(can_classic, NULL, can_classic_setup, NULL, NULL, NULL);
+void can_classic_teardown(void *f)
+{
+	ARG_UNUSED(f);
+
+	can_common_test_teardown();
+}
+
+ZTEST_SUITE(can_classic, NULL, can_classic_setup, NULL, NULL, can_classic_teardown);
