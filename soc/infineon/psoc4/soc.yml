@@ -51,3 +51,43 @@ family:
   - name: psoc4100smax
     socs:
     - name: cy8c4149azi_s598
+  - name: psoc4000t
+    socs:
+    - name: cy8c4046lqi_t452
+    - name: cy8c4046lqe_t1
+    - name: cy8c4025lqi_t411
+    - name: cy8c4025lqi_t441
+    - name: cy8c4025lqi_t451
+    - name: cy8c4026lqi_t411
+    - name: cy8c4026lqi_t441
+    - name: cy8c4045lqi_t411
+    - name: cy8c4045lqi_t441
+    - name: cy8c4045lqi_t451
+    - name: cy8c4046lqi_t411
+    - name: cy8c4046lqi_t441
+    - name: cy8c4046lqi_t451
+    - name: cy8c4025lqi_t412
+    - name: cy8c4025lqi_t442
+    - name: cy8c4025lqi_t452
+    - name: cy8c4026lqi_t412
+    - name: cy8c4026lqi_t442
+    - name: cy8c4045lqi_t412
+    - name: cy8c4045lqi_t442
+    - name: cy8c4045lqi_t452
+    - name: cy8c4045lqe_t1
+    - name: cy8c4045lqs_t1
+    - name: cy8c4046lqi_t412
+    - name: cy8c4046lqi_t442
+    - name: cy8c4046lqs_t1
+    - name: cy8c4046lqq_t412
+    - name: cy8c4025fni_t412
+    - name: cy8c4025fni_t442
+    - name: cy8c4025fni_t452
+    - name: cy8c4026fni_t412
+    - name: cy8c4026fni_t442
+    - name: cy8c4045fni_t412
+    - name: cy8c4045fni_t442
+    - name: cy8c4045fni_t452
+    - name: cy8c4046fni_t412
+    - name: cy8c4046fni_t442
+    - name: cy8c4046fni_t452
