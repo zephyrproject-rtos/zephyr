@@ -442,6 +442,19 @@ static int dma_ti_mspm0_start(const struct device *dev, const uint32_t channel)
 	return 0;
 }
 
+static int dma_ti_mspm0_suspend(const struct device *dev, uint32_t channel)
+{
+	const struct dma_ti_mspm0_config *cfg = dev->config;
+
+	if (channel >= cfg->dma_max_channels) {
+		return -EINVAL;
+	}
+
+	cfg->regs->dmachan[channel].dmactl &= ~DMA_MSPM0_CTL_DMAEN;
+
+	return 0;
+}
+
 static int dma_ti_mspm0_stop(const struct device *dev, const uint32_t channel)
 {
 	const struct dma_ti_mspm0_config *cfg = dev->config;
@@ -596,6 +609,8 @@ static DEVICE_API(dma, dma_ti_mspm0_api) = {
 	.config		= dma_ti_mspm0_configure,
 	.start		= dma_ti_mspm0_start,
 	.stop		= dma_ti_mspm0_stop,
+	.suspend	= dma_ti_mspm0_suspend,
+	.resume		= dma_ti_mspm0_start,
 	.reload		= dma_ti_mspm0_reload,
 	.get_status	= dma_ti_mspm0_get_status,
 };
