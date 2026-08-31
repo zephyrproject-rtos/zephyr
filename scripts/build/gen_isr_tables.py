@@ -90,7 +90,18 @@ class gen_isr_config:
         self.__irq3_offsets = None
 
         if self.check_multi_level_interrupts():
-            self.__max_irq_per = self.get_sym("CONFIG_MAX_IRQ_PER_AGGREGATOR")
+            # Per-level aggregator window sizes, falling back to the common
+            # CONFIG_MAX_IRQ_PER_AGGREGATOR when a per-level symbol is absent.
+            # A value of 0 is used as is, as the C side does.
+            max_irq_common = self.get_sym("CONFIG_MAX_IRQ_PER_AGGREGATOR")
+            self.__max_irq_per = {
+                level: (
+                    self.get_sym(f"CONFIG_MAX_IRQ_PER_{name}_LEVEL_AGGREGATOR")
+                    if self.check_sym(f"CONFIG_MAX_IRQ_PER_{name}_LEVEL_AGGREGATOR")
+                    else max_irq_common
+                )
+                for level, name in ((2, "2ND"), (3, "3RD"))
+            }
 
             self.__int_bits[0] = self.get_sym("CONFIG_1ST_LEVEL_INTERRUPT_BITS")
             self.__int_bits[1] = self.get_sym("CONFIG_2ND_LEVEL_INTERRUPT_BITS")
@@ -206,7 +217,7 @@ class gen_isr_config:
         # Figure out third level interrupt position
         if irq3:
             list_index = self.get_irq_index(irq2 - 1, 3)
-            irq3_pos = self.get_irq_baseoffset(3) + self.__max_irq_per * list_index + irq3 - 1
+            irq3_pos = self.get_irq_baseoffset(3) + self.__max_irq_per[3] * list_index + irq3 - 1
             self.__log.debug('IRQ_level = 3')
             self.__log.debug('IRQ_Indx = ' + str(irq3))
             self.__log.debug('IRQ_Pos  = ' + str(irq3_pos))
@@ -214,7 +225,7 @@ class gen_isr_config:
         # Figure out second level interrupt position
         if irq2:
             list_index = self.get_irq_index(irq1, 2)
-            irq2_pos = self.get_irq_baseoffset(2) + self.__max_irq_per * list_index + irq2 - 1
+            irq2_pos = self.get_irq_baseoffset(2) + self.__max_irq_per[2] * list_index + irq2 - 1
             self.__log.debug('IRQ_level = 2')
             self.__log.debug('IRQ_Indx = ' + str(irq2))
             self.__log.debug('IRQ_Pos  = ' + str(irq2_pos))
