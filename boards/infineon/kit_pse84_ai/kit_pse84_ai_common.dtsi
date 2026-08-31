@@ -14,6 +14,7 @@
 		watchdog0 = &watchdog0;
 
 		/* Sensor Aliases */
+		ambient-temp0 = &sht4x;
 		pressure-sensor = &dps368;
 		accel0 = &bosch_bmi270;
 	};
@@ -104,7 +105,7 @@ i2c0: &scb0 {
 		reg = <0x77>;
 	};
 
-	sht4x@44 {
+	sht4x: sht4x@44 {
 		status = "okay";
 		compatible = "sensirion,sht4x";
 		reg = <0x44>;
