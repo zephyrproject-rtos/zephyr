@@ -11,6 +11,8 @@ config ETH_W5500
 	select ETH_WIZNET
 	select ETH_WIZNET_CORE
 	select SPI
+	select GPIO if ($(dt_compat_any_has_prop,$(DT_COMPAT_WIZNET_W5500),reset-gpios) || \
+			$(dt_compat_any_has_prop,$(DT_COMPAT_WIZNET_W5500),int-gpios))
 	help
 	  W5500 Stand-Alone Ethernet Controller
 	  with SPI Interface
