@@ -3,10 +3,6 @@
 
 if SOC_MT8188
 
-config NUM_2ND_LEVEL_AGGREGATORS
-	default 1
+rsource "Kconfig.defconfig.*"
 
-config 2ND_LVL_INTR_00_OFFSET
-	default 2
-
-endif
+endif # SOC_MT8188
