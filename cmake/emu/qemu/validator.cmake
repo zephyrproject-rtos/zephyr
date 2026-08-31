@@ -1,6 +1,8 @@
 # SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
 # SPDX-License-Identifier: Apache-2.0
 
+include(${CMAKE_CURRENT_LIST_DIR}/x86_kvm_validator.cmake)
+
 function(qemu_validator result_var prog)
   if(COMMAND custom_qemu_validator)
     set(result_var_local FALSE)

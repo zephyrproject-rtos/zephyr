@@ -1,0 +1,6 @@
+# Copyright (c) 2026 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_QEMU_X86_64_KVM
+	select SOC_ATOM
