@@ -1,0 +1,37 @@
+# Copyright (c) 2026 MediaTek Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: MediaTek MT8188 UART
+
+compatible: "mediatek,mt8188-uart"
+
+include: [uart-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  clock-frequency:
+    required: true
+    description: Frequency of the UART source clock, in Hz.
+
+  current-speed:
+    default: 115200
+
+  parity:
+    default: "none"
+
+  stop-bits:
+    default: "1"
+
+  data-bits:
+    default: 8
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
