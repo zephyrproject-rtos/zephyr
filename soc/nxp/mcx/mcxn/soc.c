@@ -1,5 +1,5 @@
 /*
- * Copyright 2024-2025 NXP
+ * Copyright 2024-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -15,6 +15,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
+#include <zephyr/platform/hooks.h>
 #include <soc.h>
 #if defined(CONFIG_PM) || defined(CONFIG_POWEROFF)
 #include <fsl_spc.h>
@@ -74,8 +75,7 @@ DT_FOREACH_STATUS_OKAY(nxp_lpspi, FLEXCOMM_CHECK)
 #if defined(CONFIG_SECOND_CORE_MCUX) &&                                                            \
 	(defined(CONFIG_SOC_MCXN947_CPU0) || defined(CONFIG_SOC_MCXN547_CPU0))
 
-/* This function is also called at deep sleep resume. */
-static int second_core_boot(void)
+void soc_late_init_hook(void)
 {
 	/* Configure CPU1 TrustZone access level before CPU1 is enabled */
 	AHBSC->MASTER_SEC_LEVEL |=
@@ -94,11 +94,7 @@ static int second_core_boot(void)
 	temp |= 0xc0c40000U;
 	SYSCON->CPUCTRL = temp | SYSCON_CPUCTRL_CPU1RSTEN_MASK | SYSCON_CPUCTRL_CPU1CLKEN_MASK;
 	SYSCON->CPUCTRL = (temp | SYSCON_CPUCTRL_CPU1CLKEN_MASK) & (~SYSCON_CPUCTRL_CPU1RSTEN_MASK);
-
-	return 0;
 }
-
-SYS_INIT(second_core_boot, PRE_KERNEL_2, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
 #endif
 
 void enable_ecc(uint32_t mask)

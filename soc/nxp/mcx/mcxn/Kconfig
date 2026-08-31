@@ -77,6 +77,7 @@ if SOC_MCXN947 || SOC_MCXN547
 config SECOND_CORE_MCUX
 	bool "MCXNX4X's second core"
 	depends on HAS_MCUX
+	select SOC_LATE_INIT_HOOK if SOC_MCXN947_CPU0 || SOC_MCXN547_CPU0
 	help
 	  Indicates the second core will be enabled, and the part will run
 	  in dual core mode.
