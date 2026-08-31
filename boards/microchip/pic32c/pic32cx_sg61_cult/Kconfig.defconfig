@@ -6,7 +6,7 @@ if BOARD_PIC32CX_SG61_CULT
 config EEPROM
 	default y if NVMEM
 
-configdefault NET_L2_ETHERNET
+configdefault ETH_DRIVER
 	default y
 
 endif # BOARD_PIC32CX_SG61_CULT
