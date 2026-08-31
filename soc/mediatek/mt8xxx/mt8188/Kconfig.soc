@@ -5,6 +5,12 @@ config SOC_MT8188
 	bool
 	select SOC_SERIES_MT818X
 
+config SOC_MT8188_A55
+	bool
+	select SOC_MT8188
+	help
+	  Mediatek MT8188 Cortex-A55 cluster
+
 config SOC_MT8188_ADSP
 	bool
 	select SOC_MT8188
