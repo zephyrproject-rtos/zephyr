@@ -30,4 +30,12 @@ config SOC_RPI_PICO_CPU1_ENABLE_CHECK_VTOR
 	help
 	  Verify that VTOR pointers are valid before booting the second CPU.
 
+config SOC_RPI_PICO_CPU1_ENABLE_TIMEOUT_US
+	int "CPU1 boot handshake timeout in microseconds"
+	default 100000
+	range 1 10000000
+	help
+	  Maximum time to wait for each power-state or inter-processor FIFO
+	  transition while launching CPU1.
+
 endif # SOC_RPI_PICO_CPU1_ENABLE

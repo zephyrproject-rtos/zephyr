@@ -22,6 +22,13 @@ properties:
     description: |
       Phandle to the memory region or partition from which the secondary CPU executes.
 
+  stack-memory:
+    type: phandle
+    required: true
+    description: |
+      Phandle to the SRAM region reserved for the secondary CPU's stack. The
+      launcher validates the initial stack pointer against this region.
+
   source-memory:
     type: phandle
     description: |
@@ -49,6 +56,7 @@ examples:
         cpu1-launcher {
             compatible = "raspberrypi,pico-pcbs";
             execution-memory = <&sram0_cpu1>;
+            stack-memory = <&sram0_cpu1>;
             source-memory = <&cpu1_slot0_partition>;
             status = "okay";
         };

@@ -10,6 +10,8 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/kernel.h>
 
+#include <errno.h>
+
 #include <hardware/structs/sio.h>
 #include <hardware/structs/psm.h>
 
@@ -44,9 +46,15 @@ BUILD_ASSERT((DT_PARTITION_EXISTS(DT_PHANDLE(CPU1_LAUNCHER_NODE, source_memory))
 #endif /* CPU1_LAUNCHER_EXEC_MEM_IN_FLASH */
 #define CPU1_EXEC_SIZE DT_REG_SIZE(DT_PHANDLE(CPU1_LAUNCHER_NODE, execution_memory))
 
-static inline void rpi_pico_mailbox_put_blocking(sio_hw_t *const sio_regs, uint32_t value)
+#define CPU1_STACK_ADDR DT_REG_ADDR(DT_PHANDLE(CPU1_LAUNCHER_NODE, stack_memory))
+#define CPU1_STACK_SIZE DT_REG_SIZE(DT_PHANDLE(CPU1_LAUNCHER_NODE, stack_memory))
+
+static int rpi_pico_mailbox_put_timeout(sio_hw_t *const sio_regs, uint32_t value)
 {
-	while (!rpi_pico_mbox_write_ready(sio_regs)) {
+	for (uint32_t waited = 0; !rpi_pico_mbox_write_ready(sio_regs); waited++) {
+		if (waited == CONFIG_SOC_RPI_PICO_CPU1_ENABLE_TIMEOUT_US) {
+			return -ETIMEDOUT;
+		}
 		k_busy_wait(1);
 	}
 
@@ -54,19 +62,20 @@ static inline void rpi_pico_mailbox_put_blocking(sio_hw_t *const sio_regs, uint3
 
 	/* Inform other CPU about FIFO update. */
 	__SEV();
+	return 0;
 }
 
-static inline uint32_t rpi_pico_mailbox_pop_blocking(sio_hw_t *const sio_regs)
+static int rpi_pico_mailbox_pop_timeout(sio_hw_t *const sio_regs, uint32_t *value)
 {
-	while (!rpi_pico_mbox_read_valid(sio_regs)) {
-		/*
-		 * Wait for a message to be available in the FIFO.
-		 * Before IRQ is enabled, this is signalled by an event.
-		 */
-		__WFE();
+	for (uint32_t waited = 0; !rpi_pico_mbox_read_valid(sio_regs); waited++) {
+		if (waited == CONFIG_SOC_RPI_PICO_CPU1_ENABLE_TIMEOUT_US) {
+			return -ETIMEDOUT;
+		}
+		k_busy_wait(1);
 	}
 
-	return rpi_pico_mbox_read(sio_regs);
+	*value = rpi_pico_mbox_read(sio_regs);
+	return 0;
 }
 
 #if CPU1_LAUNCHER_HAS_SOURCE_MEM
@@ -91,27 +100,26 @@ static void rpi_pico_load_cpu1_image(void)
 #ifdef CONFIG_SOC_RPI_PICO_CPU1_ENABLE_CHECK_VTOR
 static inline bool address_in_range(uint32_t addr, uint32_t base, uint32_t size)
 {
-	return addr >= base && addr < base + size;
+	return addr >= base && addr - base < size;
 }
 
 static inline int rpi_pico_validate_vtor(uint32_t cpu1_sp, uint32_t cpu1_pc)
 {
-#if CPU1_LAUNCHER_EXEC_MEM_IN_FLASH
-	/*
-	 * cpu1_sp will be in CPU1's SRAM, but CPU0 does not know where in SRAM that
-	 * is. Skip cpu1_sp validation.
-	 */
-	ARG_UNUSED(cpu1_sp);
-#else
-	if (!address_in_range(cpu1_sp, CPU1_EXEC_ADDR, CPU1_EXEC_SIZE)) {
+	if (cpu1_sp <= CPU1_STACK_ADDR || cpu1_sp - CPU1_STACK_ADDR > CPU1_STACK_SIZE ||
+	    !IS_ALIGNED(cpu1_sp, 8)) {
 		LOG_ERR("CPU1 stack pointer 0x%08x invalid.", cpu1_sp);
 		return -EINVAL;
 	}
 
 	LOG_DBG("CPU1 stack pointer: 0x%08x", cpu1_sp);
-#endif /* CPU1_LAUNCHER_EXEC_MEM_IN_FLASH */
 
-	if (!address_in_range(cpu1_pc, CPU1_EXEC_ADDR, CPU1_EXEC_SIZE)) {
+	if (!IS_ALIGNED(CPU1_EXEC_ADDR, 128)) {
+		LOG_ERR("CPU1 vector table 0x%08x invalid.", CPU1_EXEC_ADDR);
+		return -EINVAL;
+	}
+
+	if ((cpu1_pc & 1U) == 0U ||
+	    !address_in_range(cpu1_pc & ~1U, CPU1_EXEC_ADDR, CPU1_EXEC_SIZE)) {
 		LOG_ERR("CPU1 reset pointer 0x%08x invalid.", cpu1_pc);
 		return -EINVAL;
 	}
@@ -127,7 +135,10 @@ static int rpi_pico_reset_cpu1(sio_hw_t *const sio_regs, psm_hw_t *const psm_reg
 
 	/* Power off, and wait for it to take effect. */
 	hw_set_bits(&psm_regs->frce_off, PSM_FRCE_OFF_PROC1_BITS);
-	while (!(psm_regs->frce_off & PSM_FRCE_OFF_PROC1_BITS)) {
+	for (uint32_t waited = 0; !(psm_regs->frce_off & PSM_FRCE_OFF_PROC1_BITS); waited++) {
+		if (waited == CONFIG_SOC_RPI_PICO_CPU1_ENABLE_TIMEOUT_US) {
+			return -ETIMEDOUT;
+		}
 		k_busy_wait(1);
 	}
 
@@ -136,17 +147,26 @@ static int rpi_pico_reset_cpu1(sio_hw_t *const sio_regs, psm_hw_t *const psm_reg
 	 * that it has come back.
 	 */
 	hw_clear_bits(&psm_regs->frce_off, PSM_FRCE_OFF_PROC1_BITS);
-	val = rpi_pico_mailbox_pop_blocking(sio_regs);
+	for (uint32_t waited = 0; psm_regs->frce_off & PSM_FRCE_OFF_PROC1_BITS; waited++) {
+		if (waited == CONFIG_SOC_RPI_PICO_CPU1_ENABLE_TIMEOUT_US) {
+			return -ETIMEDOUT;
+		}
+		k_busy_wait(1);
+	}
+	if (rpi_pico_mailbox_pop_timeout(sio_regs, &val) != 0) {
+		return -ETIMEDOUT;
+	}
 
 	return val == 0 ? 0 : -EIO;
 }
 
-static void rpi_pico_boot_cpu1(sio_hw_t *const sio_regs, uint32_t vector_table_addr,
-			       uint32_t stack_ptr, uint32_t pc)
+static int rpi_pico_boot_cpu1(sio_hw_t *const sio_regs, uint32_t vector_table_addr,
+			      uint32_t stack_ptr, uint32_t pc)
 {
 	/* We synchronise with CPU1 and then we can hand over the memory addresses. */
 	uint32_t cmds[] = {0, 0, 1, vector_table_addr, stack_ptr, pc};
 	uint32_t seq = 0;
+	uint32_t attempts = 0;
 
 	do {
 		uint32_t cmd = cmds[seq], rsp;
@@ -159,11 +179,18 @@ static void rpi_pico_boot_cpu1(sio_hw_t *const sio_regs, uint32_t vector_table_a
 			__SEV();
 		}
 
-		rpi_pico_mailbox_put_blocking(sio_regs, cmd);
-		rsp = rpi_pico_mailbox_pop_blocking(sio_regs);
+		if (rpi_pico_mailbox_put_timeout(sio_regs, cmd) != 0 ||
+		    rpi_pico_mailbox_pop_timeout(sio_regs, &rsp) != 0) {
+			return -ETIMEDOUT;
+		}
 
 		seq = (cmd == rsp) ? seq + 1 : 0;
+		if (++attempts > ARRAY_SIZE(cmds) * 4U) {
+			return -EIO;
+		}
 	} while (seq < ARRAY_SIZE(cmds));
+
+	return 0;
 }
 
 void soc_late_init_hook(void)
@@ -190,5 +217,9 @@ void soc_late_init_hook(void)
 		return;
 	}
 
-	rpi_pico_boot_cpu1(sio_hw, (uint32_t)cpu1_vector_table, cpu1_sp, cpu1_pc);
+	int ret = rpi_pico_boot_cpu1(sio_hw, (uint32_t)cpu1_vector_table, cpu1_sp, cpu1_pc);
+
+	if (ret != 0) {
+		LOG_ERR("CPU1 boot handshake failed (%d).", ret);
+	}
 }
