@@ -36,7 +36,7 @@ static inline int z_vrfy_uart_poll_in(const struct device *dev,
 static inline int z_vrfy_uart_poll_in_u16(const struct device *dev,
 					  uint16_t *p_u16)
 {
-	K_OOPS(K_SYSCALL_DRIVER_UART(dev, poll_in));
+	K_OOPS(K_SYSCALL_OBJ(dev, K_OBJ_DRIVER_UART));
 	K_OOPS(K_SYSCALL_MEMORY_WRITE(p_u16, sizeof(uint16_t)));
 	return z_impl_uart_poll_in_u16(dev, p_u16);
 }
@@ -53,7 +53,11 @@ static inline void z_vrfy_uart_poll_out(const struct device *dev,
 static inline void z_vrfy_uart_poll_out_u16(const struct device *dev,
 					    uint16_t out_u16)
 {
-	K_OOPS(K_SYSCALL_DRIVER_UART(dev, poll_out));
+#ifdef CONFIG_UART_WIDE_DATA
+	K_OOPS(K_SYSCALL_DRIVER_UART(dev, poll_out_u16));
+#else
+	K_OOPS(K_SYSCALL_OBJ(dev, K_OBJ_DRIVER_UART));
+#endif
 	z_impl_uart_poll_out_u16((const struct device *)dev, out_u16);
 }
 #include <zephyr/syscalls/uart_poll_out_u16_mrsh.c>
@@ -101,7 +105,7 @@ static inline int z_vrfy_uart_tx_u16(const struct device *dev,
 				     const uint16_t *buf,
 				     size_t len, int32_t timeout)
 {
-	K_OOPS(K_SYSCALL_DRIVER_UART(dev, tx));
+	K_OOPS(K_SYSCALL_DRIVER_UART(dev, tx_u16));
 	K_OOPS(K_SYSCALL_MEMORY_ARRAY_READ(buf, len, sizeof(uint16_t)));
 	return z_impl_uart_tx_u16(dev, buf, len, timeout);
 }
@@ -126,7 +130,7 @@ static inline int z_vrfy_uart_rx_enable_u16(const struct device *dev,
 					    uint16_t *buf,
 					    size_t len, int32_t timeout)
 {
-	K_OOPS(K_SYSCALL_DRIVER_UART(dev, rx_enable));
+	K_OOPS(K_SYSCALL_DRIVER_UART(dev, rx_enable_u16));
 	K_OOPS(K_SYSCALL_MEMORY_ARRAY_WRITE(buf, len, sizeof(uint16_t)));
 	return z_impl_uart_rx_enable_u16(dev, buf, len, timeout);
 }
