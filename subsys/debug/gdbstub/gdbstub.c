@@ -261,6 +261,9 @@ static int gdb_get_packet(uint8_t *buf, size_t buf_len, size_t *len)
 
 	if (*len >= (buf_len - 1)) {
 		LOG_DBG("Packet too large. Got %u but only has %u", *len, (buf_len - 1));
+		/* Drain checksum to keep RX stream aligned with GDB RSP framing */
+		(void)z_gdb_getchar();
+		(void)z_gdb_getchar();
 		/* NACK packet */
 		z_gdb_putchar('-');
 		return -2;
