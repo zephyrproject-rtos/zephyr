@@ -47,10 +47,27 @@ endif # PM_DEVICE
 
 if SILABS_SIWX91X_NWP
 
-# Wiseconnect needs more than 1024 bytes of main stack size to initialize
-# (especially with PM)
+# Commands are passed to the network coprocessor through
+# sli_wifi_send_command(), whose callers build the request structure on the
+# stack of the calling thread: 1408 bytes for a common flash write or erase,
+# 1028 bytes for a firmware upgrade chunk. Including the rest of the call
+# chain, any thread issuing such a command needs roughly 2.7 kB of stack. The
+# MPU cannot be enabled on this SoC, so an overflow is silent: it corrupts the
+# neighbouring thread's stack instead of faulting.
+#
+# These are also the stack sizes WiseConnect needs to initialize at all, which
+# on its own required more than the 1024 byte default (especially with PM).
 configdefault MAIN_STACK_SIZE
-	default 2048
+	default 4096
+
+configdefault SHELL_STACK_SIZE
+	default 4096
+
+configdefault SYSTEM_WORKQUEUE_STACK_SIZE
+	default 4096
+
+configdefault BT_RX_STACK_SIZE
+	default 4096
 
 configdefault NUM_PREEMPT_PRIORITIES
 	default 56
