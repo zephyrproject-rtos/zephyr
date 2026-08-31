@@ -45,7 +45,8 @@ LOG_MODULE_REGISTER(usbd_cdc_acm, CONFIG_USBD_CDC_ACM_LOG_LEVEL);
 #define CDC_ACM_CLASS_SUSPENDED		1
 #define CDC_ACM_IRQ_RX_ENABLED		2
 #define CDC_ACM_IRQ_TX_ENABLED		3
-#define CDC_ACM_TX_FIFO_BUSY		4
+#define CDC_ACM_RX_FIFO_BUSY		4
+#define CDC_ACM_TX_FIFO_BUSY		5
 
 struct cdc_acm_rx_uart_fifo {
 	struct k_fifo *bufs;
@@ -301,6 +302,10 @@ static int usbd_cdc_acm_request(struct usbd_class_data *const c_data,
 				bi->ep, buf->len);
 		}
 
+		if (bi->ep == cdc_acm_get_bulk_out(c_data)) {
+			atomic_clear_bit(&data->state, CDC_ACM_RX_FIFO_BUSY);
+		}
+
 		if (bi->ep == cdc_acm_get_bulk_in(c_data)) {
 			atomic_clear_bit(&data->state, CDC_ACM_TX_FIFO_BUSY);
 		}
@@ -319,6 +324,7 @@ static int usbd_cdc_acm_request(struct usbd_class_data *const c_data,
 		if (buf->len == 0) {
 			/* Drop transfer with zero length */
 			net_buf_unref(buf);
+			atomic_clear_bit(&data->state, CDC_ACM_RX_FIFO_BUSY);
 			cdc_acm_work_submit(&data->rx_fifo_work);
 			goto ep_buf_already_handled;
 		}
@@ -328,6 +334,8 @@ static int usbd_cdc_acm_request(struct usbd_class_data *const c_data,
 			cdc_acm_work_submit(&data->irq_cb_work);
 		}
 
+		atomic_clear_bit(&data->state, CDC_ACM_RX_FIFO_BUSY);
+		cdc_acm_work_submit(&data->rx_fifo_work);
 		goto ep_buf_already_handled;
 	}
 
@@ -723,6 +731,8 @@ static void cdc_acm_rx_fifo_handler(struct k_work *work)
 	struct cdc_acm_uart_data *data;
 	const struct cdc_acm_uart_config *cfg;
 	struct usbd_class_data *c_data;
+	struct udc_buf_info *bi;
+	struct net_buf *buf;
 
 	data = CONTAINER_OF(work, struct cdc_acm_uart_data, rx_fifo_work);
 	cfg = data->dev->config;
@@ -734,25 +744,25 @@ static void cdc_acm_rx_fifo_handler(struct k_work *work)
 		return;
 	}
 
-	while (true) {
-		struct udc_buf_info *bi;
-		struct net_buf *buf;
+	if (atomic_test_and_set_bit(&data->state, CDC_ACM_RX_FIFO_BUSY)) {
+		return;
+	}
 
-		buf = net_buf_alloc(data->rx_fifo.pool, K_NO_WAIT);
-		if (buf == NULL) {
-			break;
-		}
+	buf = net_buf_alloc(data->rx_fifo.pool, K_NO_WAIT);
+	if (buf == NULL) {
+		atomic_clear_bit(&data->state, CDC_ACM_RX_FIFO_BUSY);
+		return;
+	}
 
-		/* Shrink the buffer size if operating on a full speed bus */
-		buf->size = MIN(cdc_acm_get_bulk_mps(c_data), buf->size);
+	/* Shrink the buffer size if operating on a full speed bus */
+	buf->size = MIN(cdc_acm_get_bulk_mps(c_data), buf->size);
 
-		bi = udc_get_buf_info(buf);
-		bi->ep = cdc_acm_get_bulk_out(c_data);
-		if (usbd_ep_enqueue(c_data, buf) != 0) {
-			LOG_ERR("Failed to enqueue net_buf for 0x%02x", bi->ep);
-			net_buf_unref(buf);
-			break;
-		}
+	bi = udc_get_buf_info(buf);
+	bi->ep = cdc_acm_get_bulk_out(c_data);
+	if (usbd_ep_enqueue(c_data, buf) != 0) {
+		LOG_ERR("Failed to enqueue net_buf for 0x%02x", bi->ep);
+		net_buf_unref(buf);
+		atomic_clear_bit(&data->state, CDC_ACM_RX_FIFO_BUSY);
 	}
 }
 
