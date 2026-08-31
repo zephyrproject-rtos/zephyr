@@ -4083,6 +4083,9 @@ static inline bool k_work_is_pending(const struct k_work *work);
  *
  * @param work pointer to the work item.
  *
+ * If the queue currently has no runner attached, the work will still be queued.
+ * In that case, it will start running after attaching a runner.
+ *
  * @retval 0 if work was already submitted to a queue
  * @retval 1 if work was not submitted and has been queued to @p queue
  * @retval 2 if work was running and has been queued to the queue that was
@@ -4092,7 +4095,6 @@ static inline bool k_work_is_pending(const struct k_work *work);
  * * @p queue is draining; or
  * * @p queue is plugged.
  * @retval -EINVAL if @p queue is null and the work item has never been run.
- * @retval -ENODEV if @p queue has not been started.
  */
 int k_work_submit_to_queue(struct k_work_q *queue,
 			   struct k_work *work);
@@ -4606,8 +4608,6 @@ enum {
 	K_WORK_DELAYABLE = BIT(K_WORK_DELAYABLE_BIT),
 
 	/* Dynamic work queue flags */
-	K_WORK_QUEUE_STARTED_BIT = 0,
-	K_WORK_QUEUE_STARTED = BIT(K_WORK_QUEUE_STARTED_BIT),
 	K_WORK_QUEUE_BUSY_BIT = 1,
 	K_WORK_QUEUE_BUSY = BIT(K_WORK_QUEUE_BUSY_BIT),
 	K_WORK_QUEUE_DRAIN_BIT = 2,
