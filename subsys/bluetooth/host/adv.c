@@ -251,7 +251,9 @@ void bt_le_ext_adv_foreach(void (*func)(struct bt_le_ext_adv *adv, void *data),
 		}
 	}
 #else
-	func(&bt_dev.adv, data);
+	if (atomic_test_bit(bt_dev.adv.flags, BT_ADV_CREATED)) {
+		func(&bt_dev.adv, data);
+	}
 #endif /* defined(CONFIG_BT_EXT_ADV) */
 }
 
@@ -277,6 +279,16 @@ static int adv_create_legacy(void)
 	bt_dev.adv = adv_new();
 	if (bt_dev.adv == NULL) {
 		return -ENOMEM;
+	}
+
+	if (!BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
+		/* If the controller does not support extended advertising but the host does, then
+		 * we use the legacy advertising events that do not have a separate create step
+		 * before starting when we call `adv_start_legacy`.
+		 * To treat the legacy (and only) advertising the same way as we treat it when
+		 * `CONFIG_BT_EXT_ADV=n` then we need to set the `BT_ADV_CREATED` bit here
+		 */
+		atomic_set_bit(bt_dev.adv->flags, BT_ADV_CREATED);
 	}
 #endif
 	return 0;
