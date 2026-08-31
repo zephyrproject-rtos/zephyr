@@ -597,7 +597,12 @@ static ALWAYS_INLINE void udc_thread_handler(const struct device *const dev)
 			if (!udc_ep_is_busy(ep_cfg)) {
 				udc_handle_xfer_next(dev, ep_cfg);
 			} else {
-				LOG_ERR("Endpoint %02x busy", ep);
+				/*
+				 * A transfer is still in flight, so the next one
+				 * is left in the queue for its completion to pick
+				 * up. Normal back-pressure, not an error.
+				 */
+				LOG_DBG("Endpoint %02x busy", ep);
 			}
 		}
 	}
@@ -618,7 +623,12 @@ static ALWAYS_INLINE void udc_thread_handler(const struct device *const dev)
 			if (!udc_ep_is_busy(ep_cfg)) {
 				udc_handle_xfer_next(dev, ep_cfg);
 			} else {
-				LOG_ERR("Endpoint %02x busy", ep);
+				/*
+				 * A transfer is still in flight, so the next one
+				 * is left in the queue for its completion to pick
+				 * up. Normal back-pressure, not an error.
+				 */
+				LOG_DBG("Endpoint %02x busy", ep);
 			}
 		}
 	}
