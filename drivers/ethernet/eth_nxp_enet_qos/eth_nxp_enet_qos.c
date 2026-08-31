@@ -199,7 +199,7 @@ static int eth_nxp_enet_qos_tx(const struct device *dev, struct net_pkt *pkt)
 
 	/* Setting up the descriptors  */
 	fragment = pkt->frags;
-	tx_desc_ptr->read.control2 = FIRST_DESCRIPTOR_FLAG;
+	tx_desc_ptr->read.control2 = FIRST_DESCRIPTOR_FLAG | TX_CHECKSUM_INSERT_FLAG;
 	while (frags_idx < frags_count) {
 		net_pkt_frag_ref(fragment);
 
@@ -303,6 +303,10 @@ static enum ethernet_hw_caps eth_nxp_enet_qos_get_capabilities(const struct devi
 							      struct net_if *iface __unused)
 {
 	enum ethernet_hw_caps caps = ETHERNET_LINK_100BASE | ETHERNET_LINK_10BASE;
+
+#if defined(CONFIG_NET_CHECKSUM_OFFLOAD)
+	caps |= ETHERNET_HW_TX_CHKSUM_OFFLOAD;
+#endif
 
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
 	caps |= ETHERNET_PROMISC_MODE;
