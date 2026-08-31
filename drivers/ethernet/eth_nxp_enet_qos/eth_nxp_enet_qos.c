@@ -30,7 +30,7 @@ LOG_MODULE_REGISTER(eth_nxp_enet_qos, CONFIG_ETHERNET_LOG_LEVEL);
 #endif
 
 /* Verify configuration */
-BUILD_ASSERT((ENET_QOS_RX_BUFFER_SIZE * NUM_RX_BUFDESC) >= ENET_QOS_MAX_NORMAL_FRAME_LEN,
+BUILD_ASSERT((ENET_QOS_RX_BUFFER_SIZE * NUM_RX_BUFDESC) >= ENET_QOS_MAX_FRAME_LEN,
 	"ENET_QOS_RX_BUFFER_SIZE * NUM_RX_BUFDESC is not large enough to receive a full frame");
 
 static const uint32_t rx_desc_refresh_flags =
@@ -316,6 +316,13 @@ static enum ethernet_hw_caps eth_nxp_enet_qos_get_capabilities(const struct devi
 	caps |= ETHERNET_HW_TX_CHKSUM_OFFLOAD | ETHERNET_HW_RX_CHKSUM_OFFLOAD;
 #endif
 
+#if defined(CONFIG_NET_VLAN)
+	/* The MAC accepts VLAN interfaces on the iface. Tags are inserted by
+	 * the L2 in software, so this only advertises that tagged frames are
+	 * permitted.
+	 */
+	caps |= ETHERNET_HW_VLAN;
+#endif
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
 	caps |= ETHERNET_PROMISC_MODE;
 #endif
@@ -1045,7 +1052,7 @@ static const struct ethernet_api api_funcs = {
 		.phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(n, phy_handle)),                          \
 		.hw_info =                                                                         \
 			{                                                                          \
-				.max_frame_len = ENET_QOS_MAX_NORMAL_FRAME_LEN,                    \
+				.max_frame_len = ENET_QOS_MAX_FRAME_LEN,                           \
 			},                                                                         \
 		.irq_config_func = nxp_enet_qos_##n##_irq_config_func,                             \
 		.mac_addr_source = NXP_ENET_QOS_MAC_ADDR_SOURCE(n),                                \
