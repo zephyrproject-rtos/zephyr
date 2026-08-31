@@ -107,6 +107,7 @@ static ALWAYS_INLINE bool thread_defines_time_slice_size(struct k_thread *thread
 #ifdef CONFIG_TIMESLICE_PER_THREAD
 	return (thread->base.slice_ticks != 0);
 #else  /* !CONFIG_TIMESLICE_PER_THREAD */
+	ARG_UNUSED(thread);
 	return false;
 #endif /* !CONFIG_TIMESLICE_PER_THREAD */
 }

@@ -199,6 +199,7 @@ unlock_out:
 out:
 	return ret;
 #else  /* CONFIG_ARCH_MEM_DOMAIN_SUPPORTS_DEINIT */
+	ARG_UNUSED(domain);
 	return -ENOTSUP;
 #endif /* CONFIG_ARCH_MEM_DOMAIN_SUPPORTS_DEINIT */
 }

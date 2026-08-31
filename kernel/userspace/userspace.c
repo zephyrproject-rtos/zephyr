@@ -632,11 +632,14 @@ void k_object_wordlist_foreach(_wordlist_cb_func_t func, void *context)
 Z_GENERIC_SECTION(.kobject_data.text.dummies)
 __weak struct k_object *z_object_gperf_find(const void *obj)
 {
+	ARG_UNUSED(obj);
 	return NULL;
 }
 Z_GENERIC_SECTION(.kobject_data.text.dummies)
 __weak void z_object_gperf_wordlist_foreach(_wordlist_cb_func_t func, void *context)
 {
+	ARG_UNUSED(func);
+	ARG_UNUSED(context);
 }
 #else
 Z_GENERIC_SECTION(.kobject_data.text.dummies)
