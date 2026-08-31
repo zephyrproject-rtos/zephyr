@@ -1347,6 +1347,7 @@ void __weak test_main(void)
 #ifdef ZTEST_UNITTEST
 int main(void)
 {
+	TC_PRINT_RUNID_START;
 	z_init_mock();
 	test_main();
 	end_report();
@@ -1600,6 +1601,7 @@ int main(void)
 #endif
 #endif /* CONFIG_USERSPACE */
 
+	TC_PRINT_RUNID_START;
 	z_init_mock();
 #ifndef CONFIG_ZTEST_SHELL
 	test_main();
