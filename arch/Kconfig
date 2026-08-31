@@ -45,6 +45,7 @@ config ARM
 	select ARCH_HAS_IRQ_OFFLOAD_NESTED if CPU_AARCH32_CORTEX_A || CPU_AARCH32_CORTEX_R
 	select ARCH_HAS_SEMIHOST
 	select ARCH_HAS_ISR_TABLES_LOCAL_DECLARATION
+	select ARCH_HAS_GEN_SW_ISR_TABLE_SWITCH if CPU_CORTEX_M
 	select ARCH_SUPPORTS_ROM_OFFSET
 	select ARCH_HAS_CPU_IDLE_HOOKS if CPU_CORTEX_M
 	select ARCH_HAS_DIRECT_INTERRUPTS
@@ -155,6 +156,7 @@ config RISCV
 	select ARCH_SUPPORTS_COREDUMP_STACK_PTR
 	select ARCH_SUPPORTS_ROM_START if !SOC_FAMILY_ESPRESSIF_ESP32
 	select ARCH_SUPPORTS_EMPTY_IRQ_SPURIOUS
+	select ARCH_HAS_GEN_SW_ISR_TABLE_SWITCH
 	select ARCH_HAS_CODE_DATA_RELOCATION
 	select ARCH_HAS_THREAD_LOCAL_STORAGE
 	select ARCH_HAS_SUSPEND_TO_RAM
@@ -621,12 +623,16 @@ config DYNAMIC_INTERRUPTS
 
 config SHARED_INTERRUPTS
 	bool "Set this to enable support for shared interrupts [EXPERIMENTAL]"
-	depends on GEN_SW_ISR_TABLE
+	depends on GEN_SW_ISR_TABLE_ARRAY
 	select EXPERIMENTAL
 	help
 	  Set this to enable support for shared interrupts. Use this with
 	  caution as enabling this will increase the image size by a
 	  non-negligible amount.
+
+	  Dispatch goes through z_shared_sw_isr_table[] and the _sw_isr_table[]
+	  entry of the shared line, so this requires the array ISR table and is
+	  not available with CONFIG_GEN_SW_ISR_TABLE_SWITCH.
 
 config SHARED_IRQ_MAX_NUM_CLIENTS
 	int "Maximum number of clients allowed per shared interrupt"
@@ -700,6 +706,28 @@ config GEN_SW_ISR_TABLE
 	  It can be generated as either an array or a switch-case.
 	  See CONFIG_GEN_SW_ISR_TABLE_TYPE.
 
+config GEN_SW_ISR_TABLE_SWITCH_SUPPORTED
+	bool
+	default y
+	depends on ARCH_HAS_GEN_SW_ISR_TABLE_SWITCH
+	depends on !MULTI_LEVEL_INTERRUPTS
+	depends on !RISCV_SOC_HAS_CUSTOM_IRQ_HANDLING
+	help
+	  Hidden option signalling that the platform can dispatch interrupts
+	  through get_isr_entry(). It is a prerequisite for
+	  CONFIG_GEN_SW_ISR_TABLE_SWITCH.
+
+	  Switch mode provides no _sw_isr_table array, so it requires an
+	  architecture whose interrupt entry path dispatches through
+	  get_isr_entry() and rules out:
+
+	  - CONFIG_MULTI_LEVEL_INTERRUPTS, because second level controllers such
+	    as the PLIC, the DesignWare aggregator and the NXP IRQSTEER index
+	    the array themselves.
+	  - CONFIG_RISCV_SOC_HAS_CUSTOM_IRQ_HANDLING, because those SoCs service
+	    interrupts in __soc_handle_all_irqs() and never reach the dispatch
+	    in arch/riscv/core/isr.S.
+
 choice GEN_SW_ISR_TABLE_TYPE
 	prompt "Allows to chose how ISR table is implemented"
 	depends on GEN_SW_ISR_TABLE
@@ -719,11 +747,24 @@ config GEN_SW_ISR_TABLE_ARRAY
 
 config GEN_SW_ISR_TABLE_SWITCH
 	bool "Generate a function with a switch-case"
+	depends on GEN_SW_ISR_TABLE_SWITCH_SUPPORTED
+	# There is no array to patch at runtime, and the generated function is
+	# code, so it must not be collected into the SRAM data section either
+	depends on !SRAM_SW_ISR_TABLE
+	# gen_isr_tables_parser_local.py has no switch writer, so the only
+	# get_isr_entry() left in the image would be the spurious fallback
+	depends on !ISR_TABLES_LOCAL_DECLARATION
 	help
 	  Use a switch-case instead of an array.
 	  This helps to limit binary size when most of the IRQs are not used.
 	  In such case common, duplicated entries are grouped in a single default block
 	  while few used interrupts have their own case blocks.
+
+	  The table is generated as code, so it cannot be patched at runtime.
+	  This rules out CONFIG_DYNAMIC_INTERRUPTS, CONFIG_SRAM_SW_ISR_TABLE and
+	  CONFIG_SHARED_INTERRUPTS, and it is incompatible with
+	  CONFIG_ISR_TABLES_LOCAL_DECLARATION (and therefore with CONFIG_LTO).
+	  Select CONFIG_GEN_SW_ISR_TABLE_ARRAY if any of those are required.
 
 endchoice
 
@@ -947,6 +988,14 @@ config ARCH_HAS_ISR_TABLES_LOCAL_DECLARATION
 	  This option is selected by architectures that support local
 	  declaration of interrupt tables placed by the linker. It is a
 	  prerequisite for CONFIG_ISR_TABLES_LOCAL_DECLARATION_SUPPORTED.
+
+config ARCH_HAS_GEN_SW_ISR_TABLE_SWITCH
+	bool
+	help
+	  This option is selected by architectures whose interrupt entry path
+	  dispatches through get_isr_entry() instead of indexing
+	  _sw_isr_table[]. It is a prerequisite for
+	  CONFIG_GEN_SW_ISR_TABLE_SWITCH_SUPPORTED.
 
 config ARCH_HAS_CPU_IDLE_HOOKS
 	bool

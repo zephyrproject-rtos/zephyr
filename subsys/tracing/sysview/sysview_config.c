@@ -62,7 +62,8 @@ static void cbSendSystemDesc(void)
 	SEGGER_SYSVIEW_SendSysDesc("C=" CONFIG_BOARD_QUALIFIERS);
 #endif
 
-#ifdef CONFIG_SYMTAB
+/* The switch-case ISR table cannot be walked, so ISR names are not reported. */
+#if defined(CONFIG_SYMTAB) && defined(CONFIG_GEN_SW_ISR_TABLE_ARRAY)
 	char isr_desc[SEGGER_SYSVIEW_MAX_STRING_LEN];
 
 	for (int idx = 0; idx < IRQ_TABLE_SIZE; idx++) {
