@@ -26,6 +26,7 @@ supported:
   - watchdog
   - flash
   - netif:eth
+  - ptp_clock
   - edac
   - can
   - dac

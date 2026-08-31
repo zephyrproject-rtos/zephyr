@@ -32,8 +32,13 @@ DWMAC_ASSERT_BUFFER_ALIGNMENT(DATA_BUS_WIDTH);
 
 #if DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, mii)
 #define PHY_MODE 0U
+#define PHY_INTERNAL 0U
 #elif DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, rmii)
 #define PHY_MODE 1U
+#define PHY_INTERNAL 0U
+#elif DT_INST_ENUM_HAS_VALUE(0, phy_connection_type, internal) && defined(CONFIG_SOC_FAMILY_MCXA)
+#define PHY_MODE 0U
+#define PHY_INTERNAL 1U
 #else
 #error "Unsupported PHY connection type"
 #endif
@@ -87,6 +92,11 @@ int dwmac_bus_init(const struct device *dev)
 	SYSCON->ENET_PHY_INTF_SEL =
 		(SYSCON->ENET_PHY_INTF_SEL & ~SYSCON_ENET_PHY_INTF_SEL_PHY_SEL_MASK) |
 		SYSCON_ENET_PHY_INTF_SEL_PHY_SEL(PHY_MODE);
+#elif defined(CONFIG_SOC_FAMILY_MCXA)
+	SYSCON->ENET_CTRL =
+		(SYSCON->ENET_CTRL &
+		 ~(SYSCON_ENET_CTRL_PHY_INTF_MASK | SYSCON_ENET_CTRL_PHY_SEL_MASK)) |
+		SYSCON_ENET_CTRL_PHY_INTF(PHY_MODE) | SYSCON_ENET_CTRL_PHY_SEL(PHY_INTERNAL);
 #endif
 
 	/*
@@ -198,7 +208,7 @@ int dwmac_platform_init(const struct device *dev)
 	NXP_ETH_IRQ_CONNECT(common);
 	NXP_ETH_IRQ_CONNECT(tx);
 	NXP_ETH_IRQ_CONNECT(rx);
-#elif defined(CONFIG_SOC_FAMILY_MCXN)
+#elif defined(CONFIG_SOC_FAMILY_MCXN) || defined(CONFIG_SOC_FAMILY_MCXA)
 	NXP_ETH_IRQ_CONNECT(mac);
 #endif
 
