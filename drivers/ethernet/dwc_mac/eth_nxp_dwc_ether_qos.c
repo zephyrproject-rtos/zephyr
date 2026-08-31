@@ -59,8 +59,10 @@ static const struct pinctrl_dev_config *eth0_pcfg = PINCTRL_DT_INST_DEV_CONFIG_G
 	(clock_control_subsys_t)DT_INST_CLOCKS_CELL_BY_NAME(0, clk, name)
 
 static const clock_control_subsys_t eth0_clocks[] = {
+#if defined(CONFIG_SOC_SERIES_MCXE31X)
 	NXP_ETH_CLOCK_SUBSYS(tx),
 	NXP_ETH_CLOCK_SUBSYS(rx),
+#endif
 	NXP_ETH_CLOCK_SUBSYS(ptp),
 	NXP_ETH_CLOCK_SUBSYS(mac),
 };
@@ -78,8 +80,14 @@ int dwmac_bus_init(const struct device *dev)
 	}
 
 	/* Select the PHY interface. */
+#if defined(CONFIG_SOC_SERIES_MCXE31X)
 	DCM_GPR->DCMRWF1 = (DCM_GPR->DCMRWF1 & ~DCM_GPR_DCMRWF1_RMII_MII_SEL_MASK) |
 			   DCM_GPR_DCMRWF1_RMII_MII_SEL(PHY_MODE);
+#elif defined(CONFIG_SOC_FAMILY_MCXN)
+	SYSCON->ENET_PHY_INTF_SEL =
+		(SYSCON->ENET_PHY_INTF_SEL & ~SYSCON_ENET_PHY_INTF_SEL_PHY_SEL_MASK) |
+		SYSCON_ENET_PHY_INTF_SEL_PHY_SEL(PHY_MODE);
+#endif
 
 	/*
 	 * The transmit, receive and timestamp clocks are derived from clocks the
@@ -186,9 +194,13 @@ int dwmac_platform_init(const struct device *dev)
 	 * completion on the dedicated tx/rx lines and everything else on the
 	 * common line, so all three share the same handler.
 	 */
+#if defined(CONFIG_SOC_SERIES_MCXE31X)
 	NXP_ETH_IRQ_CONNECT(common);
 	NXP_ETH_IRQ_CONNECT(tx);
 	NXP_ETH_IRQ_CONNECT(rx);
+#elif defined(CONFIG_SOC_FAMILY_MCXN)
+	NXP_ETH_IRQ_CONNECT(mac);
+#endif
 
 	return nxp_load_mac_addr(&mac_cfg, p->mac_addr);
 }
