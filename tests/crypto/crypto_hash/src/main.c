@@ -9,6 +9,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/sys/printk.h>
 
 #ifdef CONFIG_CRYPTO_MBEDTLS_SHIM
 #define CRYPTO_DRV_NAME CONFIG_CRYPTO_MBEDTLS_SHIM_DRV_NAME
@@ -340,5 +341,81 @@ ZTEST(crypto_hash, test_sha512)
 	run_vector_set(CRYPTO_HASH_ALGO_SHA512, 64, inputs, in_lens,
 		       (const uint8_t *const *)sha512_results_ptrs, 7);
 }
+
+#ifdef CONFIG_TEST_CRYPTO_HASH_BENCH
+
+#include <zephyr/sys/cpu_load.h>
+
+static uint8_t bench_buf[64 * 1024] __aligned(IO_ALIGNMENT_BYTES);
+
+static void run_bench_case(const struct device *dev, enum hash_algo algo, const char *name,
+			   size_t msg_len, int loops)
+{
+	struct hash_ctx ctx = {.flags = CAP_SYNC_OPS | CAP_SEPARATE_IO_BUFS};
+	uint8_t out[BUFFER_PAD(64)] __aligned(IO_ALIGNMENT_BYTES);
+	struct hash_pkt pkt = {.in_buf = bench_buf, .in_len = msg_len, .out_buf = out};
+	uint64_t total_bytes = (uint64_t)msg_len * (uint64_t)loops;
+	uint64_t cps = sys_clock_hw_cycles_per_sec();
+	uint64_t dt_cycles;
+	uint64_t bps;
+	uint32_t t0;
+	uint32_t t1;
+	int cpu_permille;
+	int rc = hash_begin_session(dev, &ctx, algo);
+
+	if (rc == -ENOTSUP) {
+		ztest_test_skip();
+		return;
+	}
+	zassert_equal(rc, 0, "bench %s: begin_session failed (%d)", name, rc);
+
+	/* Warm-up */
+	rc = hash_compute(&ctx, &pkt);
+	zassert_equal(rc, 0, "bench %s: warmup failed (%d)", name, rc);
+
+	(void)cpu_load_get(true);
+	t0 = k_cycle_get_32();
+	for (int i = 0; i < loops; i++) {
+		rc = hash_compute(&ctx, &pkt);
+		zassert_equal(rc, 0, "bench %s: loop %d failed (%d)", name, i, rc);
+	}
+	t1 = k_cycle_get_32();
+	cpu_permille = cpu_load_get(true);
+
+	hash_free_session(dev, &ctx);
+
+	dt_cycles = (uint32_t)(t1 - t0);
+	bps = (total_bytes * cps) / dt_cycles;
+
+	printk("BENCH %s len=%u loops=%d cycles=%llu cpb=%u MBps=%u.%03u CPU=%d.%d%%\n", name,
+	       (unsigned int)msg_len, loops, (unsigned long long)dt_cycles,
+	       (unsigned int)(dt_cycles / total_bytes), (unsigned int)(bps / 1000000ULL),
+	       (unsigned int)((bps % 1000000ULL) / 1000ULL), cpu_permille / 10,
+	       cpu_permille % 10);
+}
+
+static void run_bench_suite(enum hash_algo algo, const char *name)
+{
+	static const size_t msg_lens[] = {64, 256, 1024, 4096, 16384, 65536};
+	static const int loop_counts[] = {2000, 1000, 500, 200, 100, 40};
+	const struct device *dev = get_crypto_dev();
+
+	zassert_true(dev && device_is_ready(dev), "Crypto device is not ready");
+
+	for (size_t i = 0; i < sizeof(bench_buf); i++) {
+		bench_buf[i] = (uint8_t)(i & 0xff);
+	}
+
+	for (size_t i = 0; i < ARRAY_SIZE(msg_lens); i++) {
+		run_bench_case(dev, algo, name, msg_lens[i], loop_counts[i]);
+	}
+}
+
+ZTEST(crypto_hash, test_bench_sha256)
+{
+	run_bench_suite(CRYPTO_HASH_ALGO_SHA256, "SHA256");
+}
+
+#endif /* CONFIG_TEST_CRYPTO_HASH_BENCH */
 
 ZTEST_SUITE(crypto_hash, NULL, NULL, NULL, NULL, NULL);

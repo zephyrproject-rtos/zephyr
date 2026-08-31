@@ -17,3 +17,13 @@ config TEST_CRYPTO_IO_ALIGNMENT_BYTES
 	  sharing a partial cache line.  Boards whose crypto driver has
 	  this requirement should override this value (typically to the
 	  D-Cache line size) via a board overlay.
+
+config TEST_CRYPTO_HASH_BENCH
+	bool "Enable hash throughput/CPU-load benchmark tests"
+	select CPU_LOAD
+	help
+	  Enable additional ZTEST cases that benchmark hash_compute()
+	  throughput (cycles/byte, MB/s) and CPU load for each supported
+	  algorithm, on top of the functional known-answer tests. Disabled
+	  by default since it requires CONFIG_CPU_LOAD and takes noticeably
+	  longer to run.
