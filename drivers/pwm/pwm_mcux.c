@@ -634,8 +634,10 @@ static int mcux_pwm_enable_capture(const struct device *dev, uint32_t channel)
 		break;
 	}
 
-	/* Start the PWM counter if it's stopped.*/
-	if ((config->base->MCTRL & PWM_MCTRL_RUN_MASK) == 0) {
+	/* MCTRL[RUN] has one bit per submodule: testing the whole field would let
+	 * another running submodule hide that this one is halted.
+	 */
+	if ((config->base->MCTRL & PWM_MCTRL_RUN(1U << config->index)) == 0) {
 		PWM_StartTimer(config->base, (1U << config->index));
 	}
 
