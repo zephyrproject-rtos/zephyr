@@ -70,7 +70,7 @@ them, because the loader checks the plugin API version; check yours with
 
    samples/net/zperf/scripts/qemu_plugin_setup.sh ../tools/qemu-plugins
 
-This downloads two plugins from QEMU, raises the report limit in one of them
+This downloads three plugins from QEMU, raises the report limit in one of them
 and compiles them with :command:`gcc`. It needs :command:`curl`,
 :command:`gcc` and the glib development files; all of QEMU does *not* have to
 be built, because a plugin resolves QEMU's symbols at load time.
@@ -259,3 +259,105 @@ side checksum verification, one of the two passes the loopback path makes over
 each datagram. ``calc_chksum`` drops from 2.25 to 1.21 instructions per
 payload byte, which is one pass, and throughput rises from 14.582 to
 15.826 Mbps.
+
+Checking it automatically
+*************************
+
+The ``verify`` subcommand runs those checks, and several more, in one go. It
+needs QEMU and the plugins, so it is not part of CI; the unit tests next to the
+script are, and they cover the parsing, the symbol lookup and the arithmetic.
+What ``verify`` adds is everything that can only be established against
+something outside the script::
+
+   samples/net/zperf/scripts/zperf_profile.py verify --base-dir .. \
+       --plugin ../tools/qemu-plugins/lib/libhotblocks.so \
+       --outdir ../build/zprof-verify --board qemu_x86
+
+It builds one transfer, runs it several ways and reports:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 22 78
+
+   * - Check
+     - What it establishes, and against what
+   * - instruction count
+     - QEMU's own ``libinsn.so`` is loaded alongside ``libhotblocks.so`` in the
+       same run. It counts once per instruction where hotblocks counts once per
+       translation block, so the two totals come from unrelated code inside
+       QEMU. See the note below on why they are close rather than equal.
+   * - conservation
+     - The per-function totals, the per-kind totals and the block sum are the
+       same number, so nothing is lost or invented between the report and the
+       table.
+   * - attribution
+     - Once the boot prefix is subtracted, essentially no instruction belongs
+       to no function. What is left is the BIOS, and there should be none of it.
+   * - symbol table
+     - Every sized function ``nm`` reports is the function this script names at
+       both its first and its last byte. binutils and pyelftools read the same
+       ELF through no shared code. On both boards all 1279 and 1267 sized
+       functions agree.
+   * - non-perturbation
+     - The guest reports the same throughput with the plugins loaded and
+       without them, so watching it does not change what it does.
+   * - determinism
+     - Two identical runs land on the same instruction count, to within a few
+       thousandths of a percent.
+   * - prediction
+     - The one that matters, and the only one that tests the interpretation
+       rather than the plumbing. The build is repeated with
+       :kconfig:option:`CONFIG_NET_UDP_CHECKSUM` set to ``n``, and the
+       throughput change the profile implies is compared against the change the
+       guest measures.
+
+The prediction check is worth stating in full, because it is what makes
+"instructions per payload byte" a decomposition of the throughput rather than a
+quantity that merely correlates with it. Removing the receive side UDP checksum
+takes 1.36 instructions per byte out of ``udp4`` on ``qemu_x86``:
+
+.. list-table::
+   :header-rows: 1
+
+   * - Board
+     - Predicted from the profile
+     - Measured by the guest
+     - Difference
+   * - ``qemu_x86``
+     - +8.52%
+     - +8.53%
+     - 0.01 points
+   * - ``qemu_x86_64``
+     - +7.25%
+     - +7.25%
+     - 0.00 points
+
+Blocks are an upper bound
+=========================
+
+The instruction count check does not require the two plugins to agree exactly,
+and they do not: on ``udp4`` hotblocks comes out 0.110% high on ``qemu_x86`` and
+0.048% high on ``qemu_x86_64``.
+
+The cause is memory mapped I/O in the middle of a translation block. Under
+``-icount`` a device access has to be the last instruction of its block, so
+when one comes earlier, QEMU rewinds the block, executes the access on its own
+and resumes in a new block that starts right after it. Counting per instruction
+charges only what ran. Counting per block has already charged the whole rewound
+block on entry, so the instructions after the access are charged twice: once
+in the rewound block and once in the block that resumes. The difference can
+only go that way, so every per-function figure is an upper bound.
+
+The excess is not spread over the profile. It sits in the few functions that
+read device registers mid-block. Apart from the firmware the guest boots
+through, which the boot subtraction removes, that is almost entirely the HPET
+driver's ``sys_clock_elapsed()``, which reads the counter each time the kernel
+reads the time or sets a timeout. In one ``udp4`` run on ``qemu_x86``, 16,780
+rewinds account for 39,630 of the 42,093 excess instructions, and 36,008 of
+those are in ``sys_clock_elapsed()``, about 17% of that function's row. On
+``qemu_x86_64`` it holds 11,378 of the 18,028.
+
+For comparing two builds it very largely cancels, which is what the prediction
+check above demonstrates. For reading an absolute instructions-per-byte figure,
+treat it as a ceiling, and treat the row of ``sys_clock_elapsed()`` as
+overstated.
