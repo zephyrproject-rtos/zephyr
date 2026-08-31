@@ -66,6 +66,44 @@ struct pwm_mcux_data {
 #endif
 };
 
+/*
+ * Mask a channel to its inactive level, or hand the pin back to the generator.
+ *
+ * The mask forces the channel signal to 0 ahead of the polarity stage, so a
+ * masked pin settles on OCTRL POLx. That is already the inactive level for
+ * channels A and B, but channel X runs with POLX inverted (its pulse width comes
+ * from VAL0 alone), so POLX has to be flipped while masked.
+ */
+static void mcux_pwm_force_inactive(const struct device *dev, uint32_t channel, bool force)
+{
+	static const pwm_channels_t pwm_channel[CHANNEL_COUNT] = {
+		kPWM_PwmA,
+		kPWM_PwmB,
+		kPWM_PwmX,
+	};
+	const struct pwm_mcux_config *config = dev->config;
+	struct pwm_mcux_data *data = dev->data;
+	bool polx;
+
+	if (channel == 2) {
+		if (force) {
+			polx = (data->channel[channel].level == kPWM_LowTrue);
+		} else {
+			polx = (data->channel[channel].level == kPWM_HighTrue);
+		}
+
+		if (polx) {
+			config->base->SM[config->index].OCTRL |=
+				((uint16_t)1U << PWM_OCTRL_POLX_SHIFT);
+		} else {
+			config->base->SM[config->index].OCTRL &=
+				~((uint16_t)1U << PWM_OCTRL_POLX_SHIFT);
+		}
+	}
+
+	PWM_SetPwmForceOutputToZero(config->base, config->index, pwm_channel[channel], force);
+}
+
 static int mcux_pwm_set_cycles_internal(const struct device *dev, uint32_t channel,
 			       uint32_t period_cycles, uint32_t pulse_cycles,
 			       pwm_flags_t flags)
@@ -225,6 +263,11 @@ static int mcux_pwm_set_cycles_internal(const struct device *dev, uint32_t chann
 		}
 		PWM_SetPwmLdok(config->base, 1U << config->index, true);
 	}
+
+	/* A zero pulse width must hold the inactive level, but on channel X a VAL0
+	 * of 0 still lets a one tick pulse through at the reload boundary.
+	 */
+	mcux_pwm_force_inactive(dev, channel, pulse_cycles == 0U);
 
 	return 0;
 }
