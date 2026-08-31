@@ -5,12 +5,21 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-config ICM20948
+menuconfig ICM20948
 	bool "ICM20948 Nine-Axis Motion Tracking Device"
 	default y
 	depends on DT_HAS_INVENSENSE_ICM20948_ENABLED
 	select SPI
 	help
 	  Enable driver for the InvenSense ICM20948 motion tracking device.
-	  Only the accelerometer and the gyroscope are supported, the
-	  magnetometer behind the auxiliary I2C bus is not.
+
+if ICM20948
+
+config ICM20948_MAGN_EN
+	bool "Magnetometer enable"
+	default y
+	help
+	  Enable the AK09916 magnetometer that sits behind the auxiliary
+	  I2C bus of the device.
+
+endif # ICM20948
