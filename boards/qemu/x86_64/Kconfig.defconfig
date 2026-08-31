@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright (c) 2019 Intel Corp.
 
-if BOARD_QEMU_X86_64
+if BOARD_QEMU_X86_64 || BOARD_QEMU_X86_64_KVM
 
 config BUILD_OUTPUT_BIN
 	default n
@@ -15,3 +15,10 @@ config KERNEL_VM_SIZE
 	default 0x10000000 if ACPI
 
 endif # BOARD_QEMU_X86_64
+
+if BOARD_QEMU_X86_64_KVM
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
+
+endif # BOARD_QEMU_X86_64_KVM

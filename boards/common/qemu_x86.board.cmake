@@ -53,6 +53,11 @@ if(CONFIG_ENTROPY_VIRTIO)
   set(QEMU_VIRTIO_ENTROPY_FLAGS -device virtio-rng-pci)
 endif()
 
+if(CONFIG_X86_CET)
+  qemu_x86_cpu_feature(X86_CET cet-ss)
+  qemu_x86_cpu_feature(X86_CET cet-ibt)
+endif()
+
 if(CONFIG_INPUT_VIRTIO)
   if(CONFIG_INPUT_VIRTIO_DEVICE_TYPE_KEYBOARD)
     set(QEMU_VIRTIO_INPUT_FLAGS -device virtio-keyboard-pci,addr=05.0,id=input0)
