@@ -1,0 +1,13 @@
+# Copyright (c) 2026 Space Cubics Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Avalanche Technology AS301G208 1 Gbit MRAM-based persistent SRAM.
+
+  The device exposes two separately selected QSPI interfaces, each with
+  512 Mbit of storage. A node describes one interface and exposes 64 MiB.
+  Combining both interfaces in dual-parallel mode is not supported.
+
+compatible: "avalanche,as301g208"
+
+include: avalanche,serial-mram-common.yaml

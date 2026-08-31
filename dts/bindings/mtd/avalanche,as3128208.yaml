@@ -1,0 +1,13 @@
+# Copyright (c) 2026 Space Cubics Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Avalanche Technology AS3128208 128 Mbit MRAM-based persistent SRAM.
+
+  The device exposes two separately selected QSPI interfaces, each with
+  64 Mbit of storage. A node describes one interface and exposes 8 MiB.
+  Combining both interfaces in dual-parallel mode is not supported.
+
+compatible: "avalanche,as3128208"
+
+include: avalanche,serial-mram-common.yaml
