@@ -134,5 +134,5 @@ struct bt_hid_device {
 	bool intr_connected;
 
 	struct k_work_delayable intr_timeout;
-	struct k_work vcu_disconnect;
+	struct k_work_delayable vcu_disconnect;
 };
