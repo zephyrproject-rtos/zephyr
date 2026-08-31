@@ -61,6 +61,18 @@ typedef enum {
 	ESP_PRIV_EVENT_INIT,
 } esp_hosted_priv_event_t;
 
+/* Tags of the TLVs carried by ESP_PRIV_EVENT_INIT. Which ones the slave emits,
+ * and in what order, depends on the firmware version and the transport.
+ */
+typedef enum {
+	ESP_PRIV_CAPABILITY = 0x00,
+	ESP_PRIV_SPI_CLK_MHZ = 0x01,
+	ESP_PRIV_FIRMWARE_CHIP_ID = 0x02,
+	ESP_PRIV_TEST_RAW_TP = 0x03,
+	ESP_PRIV_FW_DATA = 0x04,
+	ESP_PRIV_TAG_MAX,
+} esp_hosted_priv_tag_t;
+
 /* TLV payload. */
 typedef struct __packed {
 	uint8_t ep_type;
