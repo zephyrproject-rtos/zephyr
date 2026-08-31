@@ -5074,8 +5074,8 @@ ZTEST(devicetree_api, test_clock_management)
 	zassert_equal(DT_CLOCK_OUTPUT_NAME_IDX(TEST_TEMP, fixed_clk_output), 1, "");
 
 	/* DT_CLOCK_STATE_NAME_IDX */
-	zassert_equal(DT_CLOCK_STATE_NAME_IDX(TEST_TEMP, default), 0, "");
-	zassert_equal(DT_CLOCK_STATE_NAME_IDX(TEST_TEMP, sleep), 1, "");
+	zassert_equal(DT_CLOCK_REQUEST_NAME_IDX(TEST_TEMP, default), 0, "");
+	zassert_equal(DT_CLOCK_REQUEST_NAME_IDX(TEST_TEMP, sleep), 1, "");
 
 	/* DT_SUPPORTS_CLK_ORDS */
 	zassert_true(ORD_IN_ARRAY(DT_DEP_ORD(TEST_TEMP), test_clk_supports), "");

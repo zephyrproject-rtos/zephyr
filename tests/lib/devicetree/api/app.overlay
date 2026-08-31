@@ -429,9 +429,9 @@
 			mbox-names = "tx", "rx", "zero";
 			clock-outputs = <&test_clk_output &test_fixed_clk_output>;
 			clock-output-names = "clk-output", "fixed-clk-output";
-			clock-state-0 = <&test_clk_default &test_fixed_clk_default>;
-			clock-state-1 = <&test_clk_sleep &test_fixed_clk_sleep>;
-			clock-state-names = "default", "sleep";
+			clock-request-0 = <&test_clk_default &test_fixed_clk_default>;
+			clock-request-1 = <&test_clk_sleep &test_fixed_clk_sleep>;
+			clock-request-names = "default", "sleep";
 		};
 
 		test_dac_1: dac@10004000 {
@@ -541,11 +541,13 @@
 				#clock-cells = <0>;
 
 				test_fixed_clk_default: test-fixed-clock-default-state {
-					clock-frequency = <0>;
+					clocks = <&test_fixed_clk 0>;
+					compatible = "clock-state";
 				};
 
 				test_fixed_clk_sleep: test-fixed-clock-sleep-state {
-					clock-frequency = <0>;
+					clocks = <&test_fixed_clk 0>;
+					compatible = "clock-state";
 				};
 			};
 		};
@@ -559,11 +561,13 @@
 				#clock-cells = <0>;
 
 				test_clk_default: test-clock-default-state {
-					clock-frequency = <0>;
+					clocks = <&test_fixed_clk 0>;
+					compatible = "clock-state";
 				};
 
 				test_clk_sleep: test-clock-sleep-state {
-					clock-frequency = <0>;
+					clocks = <&test_fixed_clk 0>;
+					compatible = "clock-state";
 				};
 			};
 		};
