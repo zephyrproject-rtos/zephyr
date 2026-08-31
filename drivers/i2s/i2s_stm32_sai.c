@@ -150,6 +150,8 @@ void HAL_SAI_RxCpltCallback(SAI_HandleTypeDef *hsai)
 		}
 	}
 
+	sys_cache_data_invd_range(stream->mem_block, stream->mem_block_len);
+
 	struct queue_item item = {.buffer = stream->mem_block, .size = stream->mem_block_len};
 
 	ret = k_msgq_put(&stream->queue, &item, K_NO_WAIT);
