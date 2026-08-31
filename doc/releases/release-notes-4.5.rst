@@ -401,6 +401,11 @@ Deprecated APIs and options
   * New :c:func:`sys_clock_idle_enter` hook for handling of entry in low-power state,
     replacing the call to :c:func:`sys_clock_set_timeout` with ``idle=true``.
 
+* :abbr:`USB (Universal Serial Bus)`
+
+  * Deprecated property ``clock-reference`` of :dtcompatible:`st,stm32u5-otghs-phy`.
+    Do not specify the property; it is no longer required by the underlying driver.
+
 * Video
 
   * All functions in the video driver API (``<zephyr/drivers/video.h>``) have moved to the video
