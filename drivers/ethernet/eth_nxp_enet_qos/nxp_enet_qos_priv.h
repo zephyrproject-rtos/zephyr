@@ -55,6 +55,16 @@
 #define ENET_QOS_RX_BUFFER_SIZE (CONFIG_NET_BUF_DATA_SIZE & 0xFFFFFFFC)
 #define ENET_QOS_MAX_NORMAL_FRAME_LEN 1518 /* Including FCS */
 
+#if defined(CONFIG_NET_VLAN)
+/* A single VLAN tag lengthens the maximum frame by four bytes. The MAC
+ * recognizes the VLAN type and extends its receive length limit by the same
+ * four bytes on its own, so no length register needs adjusting.
+ */
+#define ENET_QOS_MAX_FRAME_LEN (ENET_QOS_MAX_NORMAL_FRAME_LEN + NET_ETH_VLAN_HDR_SIZE)
+#else
+#define ENET_QOS_MAX_FRAME_LEN ENET_QOS_MAX_NORMAL_FRAME_LEN
+#endif
+
 #define NUM_SWR_WAIT_CHUNKS 5
 
 struct nxp_enet_qos_tx_read_desc {
