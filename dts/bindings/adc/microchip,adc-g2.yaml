@@ -1,0 +1,107 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: Microchip ADC G2 Driver
+
+description: |
+  Global Binding for the Microchip ADC driver supporting Group G2 peripherals.
+
+  Group G2 ADC driver supports the following hardware peripheral:
+    - module name="ADC" id="03620" version="1a0"
+
+compatible: "microchip,adc-g2"
+
+include:
+  - name: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clock-parent:
+    type: phandle
+    description: Reference to the clock node
+
+  clocks:
+    required: true
+
+  clock-names:
+    required: true
+
+  ctrl-clock-div:
+    type: int
+    required: true
+    description: |
+      This field(CTLCKDIV) divides the GCLK_ADC input clock into ADC control clock(CTL_CLK).
+
+      Range from 0 to 63.
+
+  adc-wkup-clock-count:
+    type: int
+    required: true
+    description: |
+      Wake-Up TAD Clock Count.
+
+      This field represent the number of ADC TAD clocks required to warm-up the ADC module before
+      it can perform conversion.
+
+  num-cores:
+    type: int
+    required: true
+    description: |
+      Number of ADC Cores Supported.
+
+  "#address-cells":
+    const: 1
+
+  "#size-cells":
+    const: 0
+
+child-binding:
+  description: |
+    ADC Core instances linked to the global ADC driver instance.
+
+  include:
+    - name: adc-controller.yaml
+      property-blocklist: [compatible]
+    - name: pinctrl-device.yaml
+
+  properties:
+    interrupts:
+      required: true
+      description: |
+        Interrupt specifier for the ADC Core.
+
+    core-id:
+      type: int
+      required: true
+      description: |
+        Core specifier for ADC peripheral.
+
+    num-channels:
+      type: int
+      required: true
+      description: |
+        Number of input channels supported by this ADC instance.
+
+    adc-div-ratio:
+      type: int
+      required: true
+      description: |
+        Division Ratio for ADC Sampling Clock.
+
+        This field(ADCDIV) provides the ADC analog functional clock referred to as the ADC clock or
+        TAD, (i.e., the period of the ADC clock). It divides CTL_CLK output clock from
+        (GCLK_ADC Period * (CTLCKDIV + 1)) with period = TQ to produce the resulting ADC_CLK
+        for ADC sampling and converting. It will have the period TAD given by the
+        formula: TAD = (GCLK_ADC x Period * (CTLCKDIV + 1)) * (2 * ADCDIV)
+        Range from 1 to 127.
+
+    "#io-channel-cells":
+      const: 1
+
+  io-channel-cells:
+    - input
