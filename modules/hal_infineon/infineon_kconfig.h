@@ -409,4 +409,350 @@
 
 #endif /* CONFIG_SOC_SERIES_PSOC4100SMAX */
 
+#if defined(CONFIG_SOC_SERIES_PSOC4000T)
+
+#if defined(CONFIG_SOC_CY8C4046LQI_T452)
+#ifndef CY8C4046LQI_T452
+#define CY8C4046LQI_T452
+#endif
+#ifndef CY8C4046LQI_T452_
+#define CY8C4046LQI_T452_
+#endif
+#endif
+
+#if defined(CONFIG_SOC_CY8C4046LQE_T1)
+#ifndef CY8C4046LQE_T1
+#define CY8C4046LQE_T1
+#endif
+#ifndef CY8C4046LQE_T1_
+#define CY8C4046LQE_T1_
+#endif
+#endif
+
+#if defined(CONFIG_SOC_CY8C4025LQI_T411)
+#ifndef CY8C4025LQI_T411
+#define CY8C4025LQI_T411
+#endif
+#ifndef CY8C4025LQI_T411_
+#define CY8C4025LQI_T411_
+#endif
+#endif
+
+#if defined(CONFIG_SOC_CY8C4025LQI_T441)
+#ifndef CY8C4025LQI_T441
+#define CY8C4025LQI_T441
+#endif
+#ifndef CY8C4025LQI_T441_
+#define CY8C4025LQI_T441_
+#endif
+#endif
+
+#if defined(CONFIG_SOC_CY8C4025LQI_T451)
+#ifndef CY8C4025LQI_T451
+#define CY8C4025LQI_T451
+#endif
+#ifndef CY8C4025LQI_T451_
+#define CY8C4025LQI_T451_
+#endif
+#endif
+
+#if defined(CONFIG_SOC_CY8C4026LQI_T411)
+#ifndef CY8C4026LQI_T411
+#define CY8C4026LQI_T411
+#endif
+#ifndef CY8C4026LQI_T411_
+#define CY8C4026LQI_T411_
+#endif
+#endif
+
+#if defined(CONFIG_SOC_CY8C4026LQI_T441)
+#ifndef CY8C4026LQI_T441
+#define CY8C4026LQI_T441
+#endif
+#ifndef CY8C4026LQI_T441_
+#define CY8C4026LQI_T441_
+#endif
+#endif
+
+#if defined(CONFIG_SOC_CY8C4045LQI_T411)
+#ifndef CY8C4045LQI_T411
+#define CY8C4045LQI_T411
+#endif
+#ifndef CY8C4045LQI_T411_
+#define CY8C4045LQI_T411_
+#endif
+#endif
+
+#if defined(CONFIG_SOC_CY8C4045LQI_T441)
+#ifndef CY8C4045LQI_T441
+#define CY8C4045LQI_T441
+#endif
+#ifndef CY8C4045LQI_T441_
+#define CY8C4045LQI_T441_
+#endif
+#endif
+
+#if defined(CONFIG_SOC_CY8C4045LQI_T451)
+#ifndef CY8C4045LQI_T451
+#define CY8C4045LQI_T451
+#endif
+#ifndef CY8C4045LQI_T451_
+#define CY8C4045LQI_T451_
+#endif
+#endif
+
+#if defined(CONFIG_SOC_CY8C4046LQI_T411)
+#ifndef CY8C4046LQI_T411
+#define CY8C4046LQI_T411
+#endif
+#ifndef CY8C4046LQI_T411_
+#define CY8C4046LQI_T411_
+#endif
+#endif
+
+#if defined(CONFIG_SOC_CY8C4046LQI_T441)
+#ifndef CY8C4046LQI_T441
+#define CY8C4046LQI_T441
+#endif
+#ifndef CY8C4046LQI_T441_
+#define CY8C4046LQI_T441_
+#endif
+#endif
+
+#if defined(CONFIG_SOC_CY8C4046LQI_T451)
+#ifndef CY8C4046LQI_T451
+#define CY8C4046LQI_T451
+#endif
+#ifndef CY8C4046LQI_T451_
+#define CY8C4046LQI_T451_
+#endif
+#endif
+
+#if defined(CONFIG_SOC_CY8C4025LQI_T412)
+#ifndef CY8C4025LQI_T412
+#define CY8C4025LQI_T412
+#endif
+#ifndef CY8C4025LQI_T412_
+#define CY8C4025LQI_T412_
+#endif
+#endif
+
+#if defined(CONFIG_SOC_CY8C4025LQI_T442)
+#ifndef CY8C4025LQI_T442
+#define CY8C4025LQI_T442
+#endif
+#ifndef CY8C4025LQI_T442_
+#define CY8C4025LQI_T442_
+#endif
+#endif
+
+#if defined(CONFIG_SOC_CY8C4025LQI_T452)
+#ifndef CY8C4025LQI_T452
+#define CY8C4025LQI_T452
+#endif
+#ifndef CY8C4025LQI_T452_
+#define CY8C4025LQI_T452_
+#endif
+#endif
+
+#if defined(CONFIG_SOC_CY8C4026LQI_T412)
+#ifndef CY8C4026LQI_T412
+#define CY8C4026LQI_T412
+#endif
+#ifndef CY8C4026LQI_T412_
+#define CY8C4026LQI_T412_
+#endif
+#endif
+
+#if defined(CONFIG_SOC_CY8C4026LQI_T442)
+#ifndef CY8C4026LQI_T442
+#define CY8C4026LQI_T442
+#endif
+#ifndef CY8C4026LQI_T442_
+#define CY8C4026LQI_T442_
+#endif
+#endif
+
+#if defined(CONFIG_SOC_CY8C4045LQI_T412)
+#ifndef CY8C4045LQI_T412
+#define CY8C4045LQI_T412
+#endif
+#ifndef CY8C4045LQI_T412_
+#define CY8C4045LQI_T412_
+#endif
+#endif
+
+#if defined(CONFIG_SOC_CY8C4045LQI_T442)
+#ifndef CY8C4045LQI_T442
+#define CY8C4045LQI_T442
+#endif
+#ifndef CY8C4045LQI_T442_
+#define CY8C4045LQI_T442_
+#endif
+#endif
+
+#if defined(CONFIG_SOC_CY8C4045LQI_T452)
+#ifndef CY8C4045LQI_T452
+#define CY8C4045LQI_T452
+#endif
+#ifndef CY8C4045LQI_T452_
+#define CY8C4045LQI_T452_
+#endif
+#endif
+
+#if defined(CONFIG_SOC_CY8C4045LQE_T1)
+#ifndef CY8C4045LQE_T1
+#define CY8C4045LQE_T1
+#endif
+#ifndef CY8C4045LQE_T1_
+#define CY8C4045LQE_T1_
+#endif
+#endif
+
+#if defined(CONFIG_SOC_CY8C4045LQS_T1)
+#ifndef CY8C4045LQS_T1
+#define CY8C4045LQS_T1
+#endif
+#ifndef CY8C4045LQS_T1_
+#define CY8C4045LQS_T1_
+#endif
+#endif
+
+#if defined(CONFIG_SOC_CY8C4046LQI_T412)
+#ifndef CY8C4046LQI_T412
+#define CY8C4046LQI_T412
+#endif
+#ifndef CY8C4046LQI_T412_
+#define CY8C4046LQI_T412_
+#endif
+#endif
+
+#if defined(CONFIG_SOC_CY8C4046LQI_T442)
+#ifndef CY8C4046LQI_T442
+#define CY8C4046LQI_T442
+#endif
+#ifndef CY8C4046LQI_T442_
+#define CY8C4046LQI_T442_
+#endif
+#endif
+
+#if defined(CONFIG_SOC_CY8C4046LQS_T1)
+#ifndef CY8C4046LQS_T1
+#define CY8C4046LQS_T1
+#endif
+#ifndef CY8C4046LQS_T1_
+#define CY8C4046LQS_T1_
+#endif
+#endif
+
+#if defined(CONFIG_SOC_CY8C4046LQQ_T412)
+#ifndef CY8C4046LQQ_T412
+#define CY8C4046LQQ_T412
+#endif
+#ifndef CY8C4046LQQ_T412_
+#define CY8C4046LQQ_T412_
+#endif
+#endif
+
+#if defined(CONFIG_SOC_CY8C4025FNI_T412)
+#ifndef CY8C4025FNI_T412
+#define CY8C4025FNI_T412
+#endif
+#ifndef CY8C4025FNI_T412_
+#define CY8C4025FNI_T412_
+#endif
+#endif
+
+#if defined(CONFIG_SOC_CY8C4025FNI_T442)
+#ifndef CY8C4025FNI_T442
+#define CY8C4025FNI_T442
+#endif
+#ifndef CY8C4025FNI_T442_
+#define CY8C4025FNI_T442_
+#endif
+#endif
+
+#if defined(CONFIG_SOC_CY8C4025FNI_T452)
+#ifndef CY8C4025FNI_T452
+#define CY8C4025FNI_T452
+#endif
+#ifndef CY8C4025FNI_T452_
+#define CY8C4025FNI_T452_
+#endif
+#endif
+
+#if defined(CONFIG_SOC_CY8C4026FNI_T412)
+#ifndef CY8C4026FNI_T412
+#define CY8C4026FNI_T412
+#endif
+#ifndef CY8C4026FNI_T412_
+#define CY8C4026FNI_T412_
+#endif
+#endif
+
+#if defined(CONFIG_SOC_CY8C4026FNI_T442)
+#ifndef CY8C4026FNI_T442
+#define CY8C4026FNI_T442
+#endif
+#ifndef CY8C4026FNI_T442_
+#define CY8C4026FNI_T442_
+#endif
+#endif
+
+#if defined(CONFIG_SOC_CY8C4045FNI_T412)
+#ifndef CY8C4045FNI_T412
+#define CY8C4045FNI_T412
+#endif
+#ifndef CY8C4045FNI_T412_
+#define CY8C4045FNI_T412_
+#endif
+#endif
+
+#if defined(CONFIG_SOC_CY8C4045FNI_T442)
+#ifndef CY8C4045FNI_T442
+#define CY8C4045FNI_T442
+#endif
+#ifndef CY8C4045FNI_T442_
+#define CY8C4045FNI_T442_
+#endif
+#endif
+
+#if defined(CONFIG_SOC_CY8C4045FNI_T452)
+#ifndef CY8C4045FNI_T452
+#define CY8C4045FNI_T452
+#endif
+#ifndef CY8C4045FNI_T452_
+#define CY8C4045FNI_T452_
+#endif
+#endif
+
+#if defined(CONFIG_SOC_CY8C4046FNI_T412)
+#ifndef CY8C4046FNI_T412
+#define CY8C4046FNI_T412
+#endif
+#ifndef CY8C4046FNI_T412_
+#define CY8C4046FNI_T412_
+#endif
+#endif
+
+#if defined(CONFIG_SOC_CY8C4046FNI_T442)
+#ifndef CY8C4046FNI_T442
+#define CY8C4046FNI_T442
+#endif
+#ifndef CY8C4046FNI_T442_
+#define CY8C4046FNI_T442_
+#endif
+#endif
+
+#if defined(CONFIG_SOC_CY8C4046FNI_T452)
+#ifndef CY8C4046FNI_T452
+#define CY8C4046FNI_T452
+#endif
+#ifndef CY8C4046FNI_T452_
+#define CY8C4046FNI_T452_
+#endif
+#endif
+
+#endif /* CONFIG_SOC_SERIES_PSOC4000T */
+
 #endif /* INFINEON_KCONFIG_H__ */
