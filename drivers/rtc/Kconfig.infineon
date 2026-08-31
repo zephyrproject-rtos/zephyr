@@ -1,7 +1,7 @@
 # Infineon CAT1 RTC configuration options
 
-# Copyright (c) 2024 Cypress Semiconductor Corporation (an Infineon company) or
-# an affiliate of Cypress Semiconductor Corporation
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -12,3 +12,10 @@ config RTC_INFINEON_CAT1
 	select USE_INFINEON_RTC
 	help
 	  This option enables the RTC driver for Infineon CAT1 family.
+
+config RTC_INFINEON_SKIP_SECURE_INIT
+	bool "Infineon RTC init skip"
+	default y if BUILD_WITH_TFM || PSOC_EDGE_M55_SRF_SUPPORT
+	help
+	  This option limits the scope of the init, if a board's core
+	  is running in a nonsecure TF-M state.
