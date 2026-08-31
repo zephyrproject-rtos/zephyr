@@ -10,6 +10,7 @@ toolchain:
 flash: 8192
 ram: 1024
 supported:
+  - adc
   - clock_control
   - dma
   - flash
