@@ -7,12 +7,19 @@
 #include <zephyr/internal/syscall_handler.h>
 #include <zephyr/drivers/charger.h>
 
+BUILD_ASSERT(CHARGER_PROP_COMMON_COUNT == 16,
+	     "charger property added; re-check user mode safety of the propval union");
+
 static inline int z_vrfy_charger_get_prop(const struct device *dev, const charger_prop_t prop,
 					  union charger_propval *val)
 {
 	union charger_propval k_val;
 
 	K_OOPS(K_SYSCALL_DRIVER_CHARGER(dev, get_property));
+
+	K_OOPS(K_SYSCALL_VERIFY_MSG(prop != CHARGER_PROP_STATUS_NOTIFICATION &&
+				    prop != CHARGER_PROP_ONLINE_NOTIFICATION,
+				    "callbacks may not be read from user mode"));
 
 	int ret = z_impl_charger_get_prop(dev, prop, &k_val);
 
@@ -31,6 +38,13 @@ static inline int z_vrfy_charger_set_prop(const struct device *dev, const charge
 	union charger_propval k_val;
 
 	K_OOPS(K_SYSCALL_DRIVER_CHARGER(dev, set_property));
+
+	/* Rejected even when NULL: the notifiers are device state, so a clear would
+	 * let user mode disable a notifier a supervisor thread installed.
+	 */
+	K_OOPS(K_SYSCALL_VERIFY_MSG(prop != CHARGER_PROP_STATUS_NOTIFICATION &&
+				    prop != CHARGER_PROP_ONLINE_NOTIFICATION,
+				    "callbacks may not be set from user mode"));
 
 	K_OOPS(k_usermode_from_copy(&k_val, val, sizeof(union charger_propval)));
 
