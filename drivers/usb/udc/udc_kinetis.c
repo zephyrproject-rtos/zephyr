@@ -93,36 +93,54 @@ struct usbfsotg_config {
 };
 
 enum usbfsotg_event_type {
-	/* Trigger next transfer, must not be used for control OUT */
-	USBFSOTG_EVT_XFER,
 	/* Setup packet received */
 	USBFSOTG_EVT_SETUP,
-	/* OUT transaction for specific endpoint is finished */
-	USBFSOTG_EVT_DOUT,
-	/* IN transaction for specific endpoint is finished */
-	USBFSOTG_EVT_DIN,
+	/* Trigger new transfer (except control endpoints) */
+	USBFSOTG_EVT_XFER_NEW,
+	/* Transfer for specific endpoint is finished */
+	USBFSOTG_EVT_XFER_FINISHED,
 };
-
-/* Structure for driver's endpoint events */
-struct usbfsotg_ep_event {
-	sys_snode_t node;
-	enum usbfsotg_event_type event;
-	uint8_t ep;
-};
-
-K_MEM_SLAB_DEFINE_TYPE(usbfsotg_ee_slab, struct usbfsotg_ep_event,
-		       CONFIG_UDC_KINETIS_EVENT_COUNT);
 
 struct usbfsotg_data {
 	struct k_thread thread_data;
-	struct k_fifo fifo;
+	struct k_event events;
+	/*
+	 * xfer_new and xfer_finished contain information on which endpoints
+	 * events USBFSOTG_EVT_XFER_NEW or USBFSOTG_EVT_XFER_FINISHED are
+	 * triggered. The mapping is bits 31..16 for IN endpoints and bits
+	 * 15..0 for OUT endpoints.
+	 */
+	atomic_t xfer_new;
+	atomic_t xfer_finished;
 	struct usb_setup_packet setup;
 	uint32_t odd;
 	bool setup_valid;
 };
 
-static int usbfsotg_ep_clear_halt(const struct device *dev,
-				  struct udc_ep_config *const cfg);
+static inline int udc_ep_to_bnum(const uint8_t ep)
+{
+	if (USB_EP_DIR_IS_IN(ep)) {
+		return 16UL + USB_EP_GET_IDX(ep);
+	}
+
+	return USB_EP_GET_IDX(ep);
+}
+
+static inline uint8_t udc_pull_ep_from_bmsk(uint32_t *const bitmap)
+{
+	unsigned int bit;
+
+	__ASSERT_NO_MSG(bitmap && *bitmap);
+
+	bit = find_lsb_set(*bitmap) - 1;
+	*bitmap &= ~BIT(bit);
+
+	if (bit >= 16U) {
+		return USB_EP_DIR_IN | (bit - 16U);
+	}
+
+	return USB_EP_DIR_OUT | bit;
+}
 
 static uint8_t usbfsotg_get_odd_bit(const uint8_t ep)
 {
@@ -278,72 +296,86 @@ static inline int handle_evt_finished(const struct device *dev,
 	return udc_submit_ep_event(dev, buf, 0);
 }
 
-static void usbfsotg_event_submit(const struct device *dev,
-				 const uint8_t ep,
-				 const enum usbfsotg_event_type event)
+static void usbfsotg_xfer_new_submit(const struct device *dev, const uint8_t ep)
 {
 	struct usbfsotg_data *priv = udc_get_private(dev);
-	struct usbfsotg_ep_event *ev;
-	int ret;
 
-	ret = k_mem_slab_alloc(&usbfsotg_ee_slab, (void **)&ev, K_NO_WAIT);
-	if (ret) {
-		udc_submit_event(dev, UDC_EVT_ERROR, ret);
-		LOG_ERR("Failed to allocate slab");
-		return;
-	}
+	atomic_set_bit(&priv->xfer_new, udc_ep_to_bnum(ep));
+	k_event_post(&priv->events, BIT(USBFSOTG_EVT_XFER_NEW));
+}
 
-	ev->ep = ep;
-	ev->event = event;
-	k_fifo_put(&priv->fifo, ev);
+static void usbfsotg_xfer_finished_submit(const struct device *dev, const uint8_t ep)
+{
+	struct usbfsotg_data *priv = udc_get_private(dev);
+
+	atomic_set_bit(&priv->xfer_finished, udc_ep_to_bnum(ep));
+	k_event_post(&priv->events, BIT(USBFSOTG_EVT_XFER_FINISHED));
 }
 
 static ALWAYS_INLINE void usbfsotg_thread_handler(const struct device *const dev)
 {
 	struct usbfsotg_data *priv = udc_get_private(dev);
-	struct usbfsotg_ep_event *ev;
 	struct udc_ep_config *ep_cfg;
-	int err = 0;
+	uint32_t evt;
+	uint32_t eps;
+	uint8_t ep;
+	int err;
 
-	ev = k_fifo_get(&priv->fifo, K_FOREVER);
+	evt = k_event_wait(&priv->events, UINT32_MAX, false, K_FOREVER);
 	udc_lock_internal(dev, K_FOREVER);
 
-	LOG_DBG("dev %s, ep 0x%02x, event %u", dev->name, ev->ep, ev->event);
-	ep_cfg = udc_get_ep_cfg(dev, ev->ep);
-	if (unlikely(ep_cfg == NULL)) {
-		udc_submit_event(dev, UDC_EVT_ERROR, -ENODATA);
-		goto thread_handler_exit;
-	}
+	if (evt & BIT(USBFSOTG_EVT_XFER_FINISHED)) {
+		k_event_clear(&priv->events, BIT(USBFSOTG_EVT_XFER_FINISHED));
+		eps = atomic_clear(&priv->xfer_finished);
 
-	switch (ev->event) {
-	case USBFSOTG_EVT_SETUP:
-		err = handle_evt_setup(dev);
-		break;
-	case USBFSOTG_EVT_DOUT:
-	case USBFSOTG_EVT_DIN:
-		err = handle_evt_finished(dev, ep_cfg);
-		udc_ep_set_busy(ep_cfg, false);
-		break;
-	case USBFSOTG_EVT_XFER:
-		break;
-	default:
-		break;
-	}
+		while (eps) {
+			ep = udc_pull_ep_from_bmsk(&eps);
+			ep_cfg = udc_get_ep_cfg(dev, ep);
+			LOG_DBG("Finished event ep 0x%02x", ep);
 
-	if (unlikely(err)) {
-		udc_submit_event(dev, UDC_EVT_ERROR, err);
-	}
+			err = handle_evt_finished(dev, ep_cfg);
+			if (unlikely(err)) {
+				udc_submit_event(dev, UDC_EVT_ERROR, err);
+			}
 
-	/* Peek next transfer */
-	if (ev->ep != USB_CONTROL_EP_OUT && !udc_ep_is_busy(ep_cfg)) {
-		if (usbfsotg_xfer_next(dev, ep_cfg) == 0) {
-			udc_ep_set_busy(ep_cfg, true);
+			udc_ep_set_busy(ep_cfg, false);
+
+			/* Peek next transfer */
+			if (ep != USB_CONTROL_EP_OUT) {
+				if (usbfsotg_xfer_next(dev, ep_cfg) == 0) {
+					udc_ep_set_busy(ep_cfg, true);
+				}
+			}
 		}
 	}
 
-thread_handler_exit:
+	if (evt & BIT(USBFSOTG_EVT_XFER_NEW)) {
+		k_event_clear(&priv->events, BIT(USBFSOTG_EVT_XFER_NEW));
+		eps = atomic_clear(&priv->xfer_new);
+
+		while (eps) {
+			ep = udc_pull_ep_from_bmsk(&eps);
+			ep_cfg = udc_get_ep_cfg(dev, ep);
+			LOG_DBG("New transfer ep 0x%02x in the queue", ep);
+
+			if (!udc_ep_is_busy(ep_cfg)) {
+				if (usbfsotg_xfer_next(dev, ep_cfg) == 0) {
+					udc_ep_set_busy(ep_cfg, true);
+				}
+			}
+		}
+	}
+
+	if (evt & BIT(USBFSOTG_EVT_SETUP)) {
+		k_event_clear(&priv->events, BIT(USBFSOTG_EVT_SETUP));
+
+		err = handle_evt_setup(dev);
+		if (unlikely(err)) {
+			udc_submit_event(dev, UDC_EVT_ERROR, err);
+		}
+	}
+
 	udc_unlock_internal(dev);
-	k_mem_slab_free(&usbfsotg_ee_slab, (void *)ev);
 }
 
 static ALWAYS_INLINE uint8_t stat_reg_get_ep(const uint8_t status)
@@ -395,7 +427,7 @@ static ALWAYS_INLINE void isr_handle_xfer_done(const struct device *dev,
 			memcpy(&priv->setup, UINT_TO_POINTER(bd->buf_addr), sizeof(priv->setup));
 		}
 
-		usbfsotg_event_submit(dev, ep, USBFSOTG_EVT_SETUP);
+		k_event_post(&priv->events, BIT(USBFSOTG_EVT_SETUP));
 		break;
 	case USBFSOTG_OUT_TOKEN:
 		WRITE_BIT(priv->odd, odd_bit, !odd);
@@ -414,7 +446,7 @@ static ALWAYS_INLINE void isr_handle_xfer_done(const struct device *dev,
 		    len == udc_mps_ep_size(ep_cfg)) {
 			usbfsotg_xfer_continue(dev, ep_cfg, buf);
 		} else {
-			usbfsotg_event_submit(dev, ep, USBFSOTG_EVT_DOUT);
+			usbfsotg_xfer_finished_submit(dev, ep);
 		}
 
 		break;
@@ -439,7 +471,7 @@ static ALWAYS_INLINE void isr_handle_xfer_done(const struct device *dev,
 				break;
 			}
 
-			usbfsotg_event_submit(dev, ep, USBFSOTG_EVT_DIN);
+			usbfsotg_xfer_finished_submit(dev, ep);
 		}
 
 		break;
@@ -560,7 +592,7 @@ static int usbfsotg_ep_enqueue(const struct device *dev,
 		return 0;
 	}
 
-	usbfsotg_event_submit(dev, cfg->addr, USBFSOTG_EVT_XFER);
+	usbfsotg_xfer_new_submit(dev, cfg->addr);
 
 	return 0;
 }
@@ -622,7 +654,7 @@ static int usbfsotg_ep_clear_halt(const struct device *dev,
 
 	if (USB_EP_GET_IDX(cfg->addr) != 0) {
 		/* trigger queued transfers */
-		usbfsotg_event_submit(dev, cfg->addr, USBFSOTG_EVT_XFER);
+		usbfsotg_xfer_new_submit(dev, cfg->addr);
 	}
 
 	return 0;
@@ -877,7 +909,9 @@ static int usbfsotg_driver_preinit(const struct device *dev)
 	int err;
 
 	k_mutex_init(&data->mutex);
-	k_fifo_init(&priv->fifo);
+	k_event_init(&priv->events);
+	atomic_clear(&priv->xfer_new);
+	atomic_clear(&priv->xfer_finished);
 
 	for (int i = 0; i < config->num_of_eps; i++) {
 		config->ep_cfg_out[i].caps.out = 1;
