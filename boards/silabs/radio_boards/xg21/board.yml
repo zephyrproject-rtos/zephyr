@@ -1,3 +1,6 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
 boards:
   - name: slwrb4180a
     full_name: EFR32xG21 2.4 GHz 20 dBm (SLWRB4180A)
