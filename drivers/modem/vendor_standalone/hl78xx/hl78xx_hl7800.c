@@ -234,17 +234,19 @@ static void hl78xx_hl7800_on_ksup_lpm(struct hl78xx_data *data)
 #endif /* CONFIG_HL78XX_GNSS */
 		if (data->status.state == MODEM_HL78XX_STATE_RUN_RAT_CONFIG_SCRIPT ||
 		    data->status.state == MODEM_HL78XX_STATE_RUN_PMC_CONFIG_SCRIPT ||
-		    data->status.state == MODEM_HL78XX_STATE_SOFT_RESET) {
+		    data->status.state == MODEM_HL78XX_STATE_SOFT_RESET ||
+		    data->status.state == MODEM_HL78XX_STATE_FOTA) {
 			/* KSUP during RAT_CFG, PMC_CFG, or SOFT_RESET means the driver
 			 * explicitly sent AT+CFUN=4,1 and is waiting for the modem to
-			 * reboot. Dispatch MDM_RESTART so the event handler transitions
-			 * back to RUN_INIT_SCRIPT.
+			 * reboot; KSUP during FOTA is the reboot that completes a
+			 * firmware install. Dispatch MDM_RESTART so the event handler
+			 * transitions back to RUN_INIT_SCRIPT.
 			 *
 			 * This reboot is a real session boundary — unlike the PSM/eDRX
 			 * KSUPs handled below, where modem state is preserved and the
 			 * GNSS queue must survive the wake.
 			 */
-			LOG_DBG("KSUP after config restart (state=%d) - "
+			LOG_DBG("KSUP after expected restart (state=%d) - "
 				"dispatching MDM_RESTART",
 				data->status.state);
 			hl78xx_reset_modem_session_state(data);

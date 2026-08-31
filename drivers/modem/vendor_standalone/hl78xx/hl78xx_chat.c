@@ -428,15 +428,30 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(
 #else
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+WDSI=?", hl78xx_ok_match),
 #endif /* CONFIG_MODEM_HL78XX_WDSI_PROFILE_VALUE */
+	/* User agreement states are stored in the modem NVM, so write both
+	 * the enabled and the disabled state to keep the modem in sync with
+	 * the build configuration.
+	 */
 #ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE_UA_CONNECT_AIRVANTAGE
-				   MODEM_CHAT_SCRIPT_CMD_RESP("AT+WDSC=0,1", hl78xx_ok_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT+WDSC=0,1", hl78xx_ok_match),
+#else
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT+WDSC=0,0", hl78xx_ok_match),
 #endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE_UA_CONNECT_AIRVANTAGE */
 #ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE_UA_DOWNLOAD_FIRMWARE
-				   MODEM_CHAT_SCRIPT_CMD_RESP("AT+WDSC=1,1", hl78xx_ok_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT+WDSC=1,1", hl78xx_ok_match),
+#else
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT+WDSC=1,0", hl78xx_ok_match),
 #endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE_UA_DOWNLOAD_FIRMWARE */
 #ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE_UA_INSTALL_FIRMWARE
-				   MODEM_CHAT_SCRIPT_CMD_RESP("AT+WDSC=2,1", hl78xx_ok_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT+WDSC=2,1", hl78xx_ok_match),
+#else
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT+WDSC=2,0", hl78xx_ok_match),
 #endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE_UA_INSTALL_FIRMWARE */
+#ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE_UA_REBOOT_DEVICE
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT+WDSC=5,1", hl78xx_ok_match),
+#else
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT+WDSC=5,0", hl78xx_ok_match),
+#endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE_UA_REBOOT_DEVICE */
 #endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE */
 				   MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGACT?", hl78xx_ok_match));
 
@@ -580,26 +595,6 @@ MODEM_CHAT_SCRIPT_DEFINE(hl78xx_ntn_pos_script, hl78xx_ntn_pos_cmds, hl78xx_abor
 
 #endif /* CONFIG_NTN_POSITION_SOURCE_MANUAL */
 #endif /* CONFIG_MODEM_HL78XX_NTN_SUPPORT */
-#ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
-/* AirVantage script connect accept  */
-MODEM_CHAT_SCRIPT_CMDS_DEFINE(hl78xx_av_connect_accept_cmds,
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+WDSR=1", hl78xx_ok_match));
-MODEM_CHAT_SCRIPT_DEFINE(hl78xx_av_connect_accept_script, hl78xx_av_connect_accept_cmds,
-			 hl78xx_abort_matches, hl78xx_chat_callback_handler_info,
-			 HL78XX_SCRIPT_TIMEOUT_NETWORK);
-/* FOTA script download accept */
-MODEM_CHAT_SCRIPT_CMDS_DEFINE(hl78xx_fota_download_accept_cmds,
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+WDSR=3", hl78xx_ok_match));
-MODEM_CHAT_SCRIPT_DEFINE(hl78xx_fota_download_accept_script, hl78xx_fota_download_accept_cmds,
-			 hl78xx_abort_matches, hl78xx_chat_callback_handler_info,
-			 HL78XX_SCRIPT_TIMEOUT_NETWORK);
-/* FOTA script install */
-MODEM_CHAT_SCRIPT_CMDS_DEFINE(hl78xx_fota_install_accept_cmds,
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+WDSR=4", hl78xx_ok_match));
-MODEM_CHAT_SCRIPT_DEFINE(hl78xx_fota_install_accept_script, hl78xx_fota_install_accept_cmds,
-			 hl78xx_abort_matches, hl78xx_chat_callback_handler_info,
-			 HL78XX_SCRIPT_TIMEOUT_NETWORK);
-#endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE */
 /* Socket-specific matches and wrappers exposed for the sockets translation
  * unit. These were extracted from hl78xx_sockets.c to centralize chat
  * definitions.
@@ -951,33 +946,6 @@ int hl78xx_run_gsm_dis_lte_en_reg_status_script(struct hl78xx_data *data)
 	}
 	return modem_chat_run_script(&data->chat, &hl78xx_gsm_dis_lte_en_reg_status_script);
 }
-#ifdef CONFIG_MODEM_HL78XX_AIRVANTAGE
-/* AirVantage script connect accept  */
-int hl78xx_run_av_connect_accept_script_async(struct hl78xx_data *data)
-{
-	if (!data) {
-		return -EINVAL;
-	}
-	return modem_chat_run_script_async(&data->chat, &hl78xx_av_connect_accept_script);
-}
-/* FOTA script download accept */
-int hl78xx_run_fota_script_download_accept_async(struct hl78xx_data *data)
-{
-	if (!data) {
-		return -EINVAL;
-	}
-	return modem_chat_run_script_async(&data->chat, &hl78xx_fota_download_accept_script);
-}
-/* FOTA script install accept */
-int hl78xx_run_fota_script_install_accept_async(struct hl78xx_data *data)
-{
-	if (!data) {
-		return -EINVAL;
-	}
-	return modem_chat_run_script_async(&data->chat, &hl78xx_fota_install_accept_script);
-}
-#endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE */
-
 int hl78xx_run_cfun_query_script_async(struct hl78xx_data *data)
 {
 	if (!data) {

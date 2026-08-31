@@ -1370,6 +1370,65 @@ int hl78xx_stop_airvantage_dm_session(const struct device *dev)
 	}
 	return 0;
 }
+
+/* +WDSR reply codes per agreement type, accept and delay forms */
+static const uint8_t hl78xx_wdsr_accept_reply[HL78XX_AIRVANTAGE_AGREEMENT_COUNT] = {1, 3, 4, 6, 8};
+static const uint8_t hl78xx_wdsr_delay_reply[HL78XX_AIRVANTAGE_AGREEMENT_COUNT] = {0, 2, 5, 7, 9};
+
+/**
+ * @brief Send a +WDSR user agreement reply.
+ *
+ * @param dev Modem device.
+ * @param reply +WDSR reply code.
+ * @param timer Delay in minutes, or a negative value for an accept reply.
+ * @return 0 on success, negative errno on failure.
+ */
+static int hl78xx_airvantage_send_wdsr(const struct device *dev, uint8_t reply, int32_t timer)
+{
+	char cmd[sizeof("AT+WDSR=#,####")] = {0};
+	struct hl78xx_data *data;
+	int len;
+	int ret;
+
+	if ((dev == NULL) || (dev->data == NULL)) {
+		return -EINVAL;
+	}
+	data = (struct hl78xx_data *)dev->data;
+
+	if (timer >= 0) {
+		len = snprintk(cmd, sizeof(cmd), "AT+WDSR=%u,%d", reply, timer);
+	} else {
+		len = snprintk(cmd, sizeof(cmd), "AT+WDSR=%u", reply);
+	}
+
+	ret = modem_dynamic_cmd_send(data, NULL, cmd, len, hl78xx_get_ok_match(),
+				     hl78xx_get_ok_match_size(), MDM_CMD_TIMEOUT, false);
+	if (ret < 0) {
+		LOG_ERR("WDSR reply %u error %d", reply, ret);
+	}
+	return ret;
+}
+
+int hl78xx_airvantage_agreement_accept(const struct device *dev,
+				       enum hl78xx_airvantage_agreement agreement)
+{
+	if ((agreement < 0) || (agreement >= HL78XX_AIRVANTAGE_AGREEMENT_COUNT)) {
+		return -EINVAL;
+	}
+	return hl78xx_airvantage_send_wdsr(dev, hl78xx_wdsr_accept_reply[agreement], -1);
+}
+
+int hl78xx_airvantage_agreement_delay(const struct device *dev,
+				      enum hl78xx_airvantage_agreement agreement,
+				      uint16_t delay_minutes)
+{
+	if ((agreement < 0) || (agreement >= HL78XX_AIRVANTAGE_AGREEMENT_COUNT) ||
+	    (delay_minutes > 1440U)) {
+		return -EINVAL;
+	}
+	return hl78xx_airvantage_send_wdsr(dev, hl78xx_wdsr_delay_reply[agreement],
+					   (int32_t)delay_minutes);
+}
 #endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE */
 
 static int hl78xx_set_wake_pin_level(const struct device *dev, int value)
