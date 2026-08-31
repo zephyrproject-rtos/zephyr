@@ -856,16 +856,6 @@ unlock:
 	return alloc;
 }
 
-static void mcux_flexcan_set_state_change_callback(const struct device *dev,
-						   can_state_change_callback_t callback,
-						   void *user_data)
-{
-	struct mcux_flexcan_data *data = dev->data;
-
-	data->common.state_change_cb = callback;
-	data->common.state_change_cb_user_data = user_data;
-}
-
 #ifdef CONFIG_CAN_MANUAL_RECOVERY_MODE
 static int mcux_flexcan_recover(const struct device *dev, k_timeout_t timeout)
 {
@@ -947,8 +937,6 @@ static inline void mcux_flexcan_transfer_error_status(const struct device *dev,
 	const struct mcux_flexcan_config *config = dev->config;
 	struct mcux_flexcan_data *data = dev->data;
 	CAN_Type *base = get_base(dev);
-	const can_state_change_callback_t cb = data->common.state_change_cb;
-	void *cb_data = data->common.state_change_cb_user_data;
 	can_tx_callback_t function;
 	void *arg;
 	int alloc;
@@ -982,10 +970,7 @@ static inline void mcux_flexcan_transfer_error_status(const struct device *dev,
 	(void)mcux_flexcan_get_state(dev, &state, &err_cnt);
 	if (data->state != state) {
 		data->state = state;
-
-		if (cb != NULL) {
-			cb(dev, state, err_cnt, cb_data);
-		}
+		can_fire_state_change_callbacks(dev, state, err_cnt);
 	}
 
 	if (state == CAN_STATE_BUS_OFF) {
@@ -1196,6 +1181,7 @@ static int mcux_flexcan_init(const struct device *dev)
 	LOG_DBG("Message Buffers: %d, RX MB: %d, TX MB: %d",
 		 config->number_of_mb, config->rx_mb, config->tx_mb);
 
+	sys_slist_init(&data->common.state_change_callbacks);
 	k_mutex_init(&data->rx_mutex);
 	k_mutex_init(&data->tx_mutex);
 	k_sem_init(&data->tx_allocs_sem, config->tx_mb, config->tx_mb);
@@ -1327,7 +1313,6 @@ static DEVICE_API(can, mcux_flexcan_driver_api) __maybe_unused = {
 #ifdef CONFIG_CAN_MANUAL_RECOVERY_MODE
 	.recover = mcux_flexcan_recover,
 #endif /* CONFIG_CAN_MANUAL_RECOVERY_MODE */
-	.set_state_change_callback = mcux_flexcan_set_state_change_callback,
 	.get_core_clock = mcux_flexcan_get_core_clock,
 	.get_max_filters = mcux_flexcan_get_max_filters,
 	/*
@@ -1370,7 +1355,6 @@ static DEVICE_API(can, mcux_flexcan_fd_driver_api) = {
 #ifdef CONFIG_CAN_MANUAL_RECOVERY_MODE
 	.recover = mcux_flexcan_recover,
 #endif /* CONFIG_CAN_MANUAL_RECOVERY_MODE */
-	.set_state_change_callback = mcux_flexcan_set_state_change_callback,
 	.get_core_clock = mcux_flexcan_get_core_clock,
 	.get_max_filters = mcux_flexcan_get_max_filters,
 	/*

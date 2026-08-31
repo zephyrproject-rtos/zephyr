@@ -250,13 +250,6 @@ int can_sja1000_get_state(const struct device *dev, enum can_state *state,
 			  struct can_bus_err_cnt *err_cnt);
 
 /**
- * @brief SJA1000 callback API upon setting a state change callback
- * See @a can_set_state_change_callback() for argument description
- */
-void can_sja1000_set_state_change_callback(const struct device *dev,
-					   can_state_change_callback_t callback, void *user_data);
-
-/**
  * @brief SJA1000 callback API upon getting the maximum number of concurrent CAN RX filters
  * See @a can_get_max_filters() for argument description
  */
