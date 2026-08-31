@@ -29,7 +29,6 @@ int settings_line_write(const char *name, const char *value, size_t val_len,
 	bool done;
 	char w_buf[32]; /* write buff, must be aligned either to minimal */
 			/* base64 encoding size and write-block-size */
-	int rc;
 	uint8_t wbs = settings_io_cb.rwbs;
 #ifdef CONFIG_SETTINGS_ENCODE_LEN
 	uint16_t len_field;
@@ -57,8 +56,7 @@ int settings_line_write(const char *name, const char *value, size_t val_len,
 
 	w_size += sizeof(len_field);
 	if (w_size % wbs == 0) {
-		rc = settings_io_cb.write_cb(cb_arg, w_loc, w_buf, w_size);
-		if (rc) {
+		if (settings_io_cb.write_cb(cb_arg, w_loc, w_buf, w_size)) {
 			return -EIO;
 		}
 	}
@@ -68,7 +66,9 @@ int settings_line_write(const char *name, const char *value, size_t val_len,
 	w_size = rem - rem % wbs;
 	rem %= wbs;
 
-	rc = settings_io_cb.write_cb(cb_arg, w_loc, name, w_size);
+	if (settings_io_cb.write_cb(cb_arg, w_loc, name, w_size)) {
+		return -EIO;
+	}
 	w_loc += w_size;
 	name += w_size;
 	w_size = rem;
@@ -104,8 +104,7 @@ int settings_line_write(const char *name, const char *value, size_t val_len,
 			}
 		}
 
-		rc = settings_io_cb.write_cb(cb_arg, w_loc, w_buf, w_size);
-		if (rc) {
+		if (settings_io_cb.write_cb(cb_arg, w_loc, w_buf, w_size)) {
 			return -EIO;
 		}
 
