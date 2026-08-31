@@ -90,6 +90,30 @@ be selected at run time with the ``video format`` shell command.
 The D-PHY configuration clock is derived from the CSI generated clock (GCLK 33),
 which the driver programs to 26.6 MHz from one of the SoC PLLs.
 
+USB video device
+================
+
+The board can present the camera to a host as a USB webcam, over the USB device
+port that ``zephyr_udc0`` describes:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/usb/uvc
+   :board: sama7g54_ek
+   :goals: build
+
+``YUYV`` is the only pixel format the image processing pipeline and USB Video
+have in common, so it is the one offered to the host, at the resolutions between
+QQVGA and 720p that fit the buffer pool. The host picks one, and any standard
+UVC application can then display the stream:
+
+.. code-block:: console
+
+   v4l2-ctl --list-formats-ext
+   ffplay /dev/video0
+
+The frames travel on a bulk endpoint, so the frame rate that arrives is whatever
+the link sustains rather than the one the sensor is programmed for.
+
 Programming
 ***********
 
