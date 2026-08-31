@@ -27,8 +27,8 @@ struct mtk_pll_control {
 	uint32_t con4;
 };
 
-#define MTK_PLL_CTRL (*(volatile struct mtk_pll_control *)		\
-		      DT_PROP(DT_NODELABEL(cpuclk), pll_ctrl_reg))
+#define MTK_PLL_CTRL                                                                               \
+	(*(volatile struct mtk_pll_control *)DT_PROP(DT_NODELABEL(cpuclk), pll_ctrl_reg))
 
 #define MTK_PLL_CON0_BASE_EN BIT(0)
 #define MTK_PLL_CON0_EN      BIT(9)
@@ -46,8 +46,7 @@ struct mtk_clk_gen {
 	} clk_cfg[29];
 };
 
-#define MTK_CLK_GEN (*(volatile struct mtk_clk_gen *) \
-		     DT_REG_ADDR(DT_NODELABEL(cpuclk)))
+#define MTK_CLK_GEN (*(volatile struct mtk_clk_gen *)DT_REG_ADDR(DT_NODELABEL(cpuclk)))
 
 #define MTK_CLK22_SEL_PLL 8
 #define MTK_CLK22_SEL_26M 0
@@ -55,16 +54,19 @@ struct mtk_clk_gen {
 #define MTK_CLK28_SEL_PLL 7
 #define MTK_CLK28_SEL_26M 0
 
-#define MTK_CK_CG (*(volatile uint32_t *)			\
-		   DT_PROP(DT_NODELABEL(cpuclk), cg_reg))
+#define MTK_CK_CG (*(volatile uint32_t *)DT_PROP(DT_NODELABEL(cpuclk), cg_reg))
 
 #define MTK_CK_CG_SW 1
 
-const struct { uint16_t mhz; bool pll; uint32_t pll_con2; } freqs[] = {
-	{  26, false, 0 },
-	{ 370,  true, 0x831c7628 },
-	{ 540,  true, 0x8214c4ed },
-	{ 720,  true, 0x821bb13c },
+const struct {
+	uint16_t mhz;
+	bool pll;
+	uint32_t pll_con2;
+} freqs[] = {
+	{26, false, 0},
+	{370, true, 0x831c7628},
+	{540, true, 0x8214c4ed},
+	{720, true, 0x821bb13c},
 };
 
 static int cur_idx;
