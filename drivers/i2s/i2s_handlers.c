@@ -24,9 +24,13 @@ static inline int z_vrfy_i2s_configure(const struct device *dev,
 				sizeof(struct i2s_config)));
 
 	/* When frame_clk_freq is 0, the stream is being disabled/unconfigured
-	 * and other config fields are not used, so skip validation.
+	 * and other config fields are not used, so skip validation. Clear the
+	 * memory slab so that an unvalidated pointer is never handed to a
+	 * driver that does not special-case this.
 	 */
 	if (config.frame_clk_freq == 0U) {
+		config.mem_slab = NULL;
+		config.block_size = 0;
 		goto do_configure;
 	}
 
