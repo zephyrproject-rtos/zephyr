@@ -24,6 +24,12 @@ static struct k_thread tdata[NUM_THREAD];
 #define SLICE_SIZE_MS      (SLEEP_TICKLESS_MS / 2)
 #define SLICE_TICKS        k_ms_to_ticks_ceil32(SLICE_SIZE_MS)
 
+/* Timeout interrupt and thread dispatch latency can span multiple ticks when
+ * the tick period is shorter than one millisecond. At lower tick rates this
+ * still evaluates to a one-tick tolerance.
+ */
+#define SLICE_TOLERANCE_TICKS k_ms_to_ticks_ceil32(1)
+
 /*align to millisecond boundary*/
 #define ALIGN_MS_BOUNDARY()		       \
 	do {				       \
@@ -35,6 +41,7 @@ static struct k_thread tdata[NUM_THREAD];
 K_SEM_DEFINE(sema, 0, NUM_THREAD);
 /* Reference timestamp (in ticks) for measuring slice durations */
 static uint64_t elapsed_slice;
+static uint32_t elapsed_slices[NUM_THREAD];
 
 static uint32_t ticks_delta(uint64_t *reftime)
 {
@@ -47,17 +54,9 @@ static uint32_t ticks_delta(uint64_t *reftime)
 
 static void thread_tslice(void *p1, void *p2, void *p3)
 {
-	uint32_t tick_delta = ticks_delta(&elapsed_slice);
+	uint32_t idx = POINTER_TO_UINT(p1);
 
-	TC_PRINT("elapsed slice %u ticks, expected ~%u\n",
-		 tick_delta, (uint32_t)SLICE_TICKS);
-
-	/* TESTPOINT: a measured slice falls on either the configured tick
-	 * boundary or the next one (kernel "+1" round-up).
-	 */
-	zassert_between_inclusive(tick_delta, SLICE_TICKS, SLICE_TICKS + 1,
-				  "elapsed %u ticks, expected ~%u",
-				  tick_delta, (uint32_t)SLICE_TICKS);
+	elapsed_slices[idx] = ticks_delta(&elapsed_slice);
 
 	/*keep the current thread busy for more than one slice*/
 	k_busy_wait(1000 * SLEEP_TICKLESS_MS);
@@ -114,7 +113,7 @@ ZTEST(tickless_concept, test_tickless_slice)
 	/*create delayed threads with equal preemptive priority*/
 	for (int i = 0; i < NUM_THREAD; i++) {
 		tid[i] = k_thread_create(&tdata[i], tstack[i], STACK_SIZE,
-					 thread_tslice, NULL, NULL, NULL,
+					 thread_tslice, UINT_TO_POINTER(i), NULL, NULL,
 					 K_PRIO_PREEMPT(0), 0,
 					 K_MSEC(SLICE_SIZE_MS));
 	}
@@ -130,6 +129,19 @@ ZTEST(tickless_concept, test_tickless_slice)
 	}
 	/*disable time slice*/
 	k_sched_time_slice_set(0, K_PRIO_PREEMPT(0));
+
+	for (int i = 0; i < NUM_THREAD; i++) {
+		uint32_t tick_delta = elapsed_slices[i];
+
+		TC_PRINT("elapsed slice %u ticks, expected ~%u\n",
+			 tick_delta, (uint32_t)SLICE_TICKS);
+
+		zexpect_between_inclusive(tick_delta,
+					  SLICE_TICKS - SLICE_TOLERANCE_TICKS,
+					  SLICE_TICKS + SLICE_TOLERANCE_TICKS,
+					  "elapsed %u ticks, expected ~%u",
+					  tick_delta, (uint32_t)SLICE_TICKS);
+	}
 }
 
 /**
