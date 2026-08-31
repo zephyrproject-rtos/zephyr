@@ -5278,12 +5278,14 @@ Precision Timing:
     - jukkar
   files:
     - include/zephyr/precision_timing/
+    - samples/subsys/precision_timing/
     - subsys/precision_timing/
     - tests/subsys/precision_timing/
     - doc/kernel/precision_timing.rst
   labels:
     - "area: Precision Timing"
   tests:
+    - sample.subsys.precision_timing
     - subsys.precision_timing
 
 QNX Hypervisor Platforms:

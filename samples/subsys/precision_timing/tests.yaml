@@ -1,0 +1,19 @@
+sample:
+  description: Demonstrate precision time, clock, and PI controller APIs
+  name: Precision timing
+common:
+  tags:
+    - timing
+    - precision_timing
+  harness: console
+  harness_config:
+    type: one_line
+    regex:
+      - "Precision clock: time 1000250000 ns, rate 16.25 ppm"
+tests:
+  sample.subsys.precision_timing:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim/native/64

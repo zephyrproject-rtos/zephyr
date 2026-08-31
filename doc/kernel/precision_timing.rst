@@ -75,6 +75,12 @@ use a :c:struct:`precision_pi` for the shared calculation. They initialize a
 PTP-clock adapter once and use :c:struct:`precision_clock` operations to access
 the PHC.
 
+Sample
+******
+
+The :zephyr:code-sample:`precision_timing` sample demonstrates checked time
+arithmetic, a software-backed precision clock, and PI-driven rate adjustment.
+
 API reference
 *************
 
