@@ -470,5 +470,5 @@ int stm32wb0x_flash_init(const struct device *dev)
 static struct flash_wb0x_data wb0x_flash_drv_data;
 
 DEVICE_DT_INST_DEFINE(0, stm32wb0x_flash_init, NULL,
-		    &wb0x_flash_drv_data, NULL, POST_KERNEL,
+		    &wb0x_flash_drv_data, NULL, PRE_KERNEL_1,
 		    CONFIG_FLASH_INIT_PRIORITY, &flash_wb0x_api);
