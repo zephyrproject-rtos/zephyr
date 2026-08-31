@@ -238,7 +238,7 @@ struct bt_le_ext_adv *bt_hci_adv_lookup_handle(uint8_t handle)
 #endif /* CONFIG_BT_BROADCASTER */
 #endif /* defined(CONFIG_BT_EXT_ADV) */
 
-void bt_le_ext_adv_foreach(bool (*func)(struct bt_le_ext_adv *adv, void *data),
+void bt_adv_foreach(bool (*func)(struct bt_le_ext_adv *adv, void *data),
 			   void *data)
 {
 #if defined(CONFIG_BT_EXT_ADV)
@@ -266,7 +266,7 @@ static bool clear_ext_adv_instance(struct bt_le_ext_adv *adv, void *data)
 
 void bt_adv_reset_adv_pool(void)
 {
-	bt_le_ext_adv_foreach(clear_ext_adv_instance, NULL);
+	bt_adv_foreach(clear_ext_adv_instance, NULL);
 	(void)memset(&bt_dev.adv, 0, sizeof(bt_dev.adv));
 }
 
