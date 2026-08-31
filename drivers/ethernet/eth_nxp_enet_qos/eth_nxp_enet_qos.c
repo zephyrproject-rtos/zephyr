@@ -120,6 +120,14 @@ static void eth_nxp_enet_qos_phy_cb(const struct device *phy,
 			mac_cfg &= ~ENET_QOS_REG_PREP(MAC_CONFIGURATION, DM, 0b1);
 		}
 
+#if defined(CONFIG_NET_CHECKSUM_OFFLOAD)
+		/* IPC enables the receive checksum offload engine, which
+		 * verifies the IPv4 header and the TCP, UDP and ICMP payload
+		 * checksums of incoming frames over both IPv4 and IPv6.
+		 */
+		mac_cfg |= ENET_QOS_REG_PREP(MAC_CONFIGURATION, IPC, 0b1);
+#endif
+
 		/* Transmit and receive enable */
 		mac_cfg |= ENET_QOS_REG_PREP(MAC_CONFIGURATION, TE, 0b1);
 		mac_cfg |= ENET_QOS_REG_PREP(MAC_CONFIGURATION, RE, 0b1);
@@ -305,7 +313,7 @@ static enum ethernet_hw_caps eth_nxp_enet_qos_get_capabilities(const struct devi
 	enum ethernet_hw_caps caps = ETHERNET_LINK_100BASE | ETHERNET_LINK_10BASE;
 
 #if defined(CONFIG_NET_CHECKSUM_OFFLOAD)
-	caps |= ETHERNET_HW_TX_CHKSUM_OFFLOAD;
+	caps |= ETHERNET_HW_TX_CHKSUM_OFFLOAD | ETHERNET_HW_RX_CHKSUM_OFFLOAD;
 #endif
 
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
@@ -472,7 +480,20 @@ static void eth_nxp_enet_qos_rx(struct k_work *work)
 			}
 #endif /* CONFIG_PTP_CLOCK_NXP_ENET_QOS */
 
-			if (net_recv_data(data->iface, pkt)) {
+			/* Hardware RX checksum offload: the checksum engine
+			 * writes its verdict into RDES1, valid only when
+			 * RX_STATUS1_VALID_FLAG is set. The stack trusts the
+			 * offload and does not re-verify, so drop a frame the
+			 * engine flagged with an IP header or payload checksum
+			 * error. Non-IP frames leave both bits clear.
+			 */
+			if ((desc->write.control3 & RX_STATUS1_VALID_FLAG) &&
+			    (desc->write.control1 &
+			     (RX_IP_HEADER_ERROR_FLAG | RX_IP_PAYLOAD_ERROR_FLAG))) {
+				LOG_DBG("dropping RX pkt %p with bad hardware checksum", pkt);
+				net_pkt_unref(pkt);
+				eth_stats_update_errors_rx(data->iface);
+			} else if (net_recv_data(data->iface, pkt)) {
 				LOG_WRN("RECV failed on pkt %p", pkt);
 				/* Error during processing, we continue with new buffer */
 				net_pkt_unref(pkt);
