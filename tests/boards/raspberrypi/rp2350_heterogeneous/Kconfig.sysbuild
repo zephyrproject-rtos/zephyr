@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: Apache-2.0
+
+source "share/sysbuild/Kconfig"
+
+config REMOTE_BOARD
+	string
+	default "rpi_pico2/rp2350a/hazard3/cpu1"

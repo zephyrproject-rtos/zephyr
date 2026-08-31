@@ -1,0 +1,44 @@
+/*
+ * Copyright (c) 2026 The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <vendor/raspberrypi/rp2350_amp_sram_partitions.dtsi>
+
+/ {
+	chosen {
+		zephyr,console = &cdc_acm_uart0;
+		zephyr,sram = &sram0_cpu0;
+	};
+
+	cpu1-launcher {
+		compatible = "raspberrypi,pico-pcbs";
+		architecture = "riscv";
+		execution-memory = <&sram0_cpu1>;
+		stack-memory = <&sram0_cpu1>;
+		source-memory = <&cpu1_slot0_partition>;
+		status = "okay";
+	};
+};
+
+&flash0 {
+	/delete-node/ partitions;
+};
+
+#define WITH_CPU1_PARTITIONS
+#include <vendor/raspberrypi/partitions_4M_default.dtsi>
+
+&zephyr_udc0 {
+	cdc_acm_uart0: cdc_acm_uart0 {
+		compatible = "zephyr,cdc-acm-uart";
+	};
+};
+
+&mbox {
+	status = "okay";
+};
+
+&ipm_mbox {
+	status = "okay";
+};

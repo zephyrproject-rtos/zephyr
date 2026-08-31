@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2026 The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&mbox {
+	status = "okay";
+};
+
+&ipm_mbox {
+	status = "okay";
+};

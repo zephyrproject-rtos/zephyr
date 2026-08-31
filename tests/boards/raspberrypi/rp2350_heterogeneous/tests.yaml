@@ -1,0 +1,12 @@
+common:
+  sysbuild: true
+  platform_allow:
+    - rpi_pico2/rp2350a/m33
+  tags:
+    - drivers
+    - ipc
+    - multicore
+  harness: ztest
+  timeout: 30
+tests:
+  boards.raspberrypi.rp2350_heterogeneous: {}
