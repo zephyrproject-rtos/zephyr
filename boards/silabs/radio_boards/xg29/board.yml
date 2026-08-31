@@ -1,3 +1,6 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
 boards:
   - name: bg29_rb4420a
     full_name: EFR32BG29 Bluetooth LE 4 dBm DCDC Boost WLCSP (BG29-RB4420A)

@@ -1,3 +1,4 @@
+# Copyright The Zephyr Project Contributors
 # SPDX-License-Identifier: Apache-2.0
 
 if(CONFIG_BOARD_BG29_RB4420A)
