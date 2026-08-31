@@ -413,19 +413,12 @@ static void can_max32_remove_rx_filter(const struct device *dev, int filter_idx)
 
 static void can_max32_state_change_handler(const struct device *dev, enum can_state old_state)
 {
-	struct max32_can_data *dev_data = dev->data;
 	struct can_bus_err_cnt err_cnt;
 	enum can_state new_state;
-	can_state_change_callback_t state_change_cb;
-
-	state_change_cb = dev_data->common.state_change_cb;
 
 	can_get_state(dev, &new_state, &err_cnt);
 	if (old_state != new_state) {
-		if (state_change_cb) {
-			state_change_cb(dev, new_state, err_cnt,
-					dev_data->common.state_change_cb_user_data);
-		}
+		can_fire_state_change_callbacks(dev, new_state, err_cnt);
 	}
 }
 
@@ -446,20 +439,6 @@ static int can_max32_get_state(const struct device *dev, enum can_state *state,
 	}
 
 	return 0;
-}
-
-static void can_max32_set_state_change_callback(const struct device *dev,
-						can_state_change_callback_t cb, void *user_data)
-{
-	struct max32_can_data *dev_data = dev->data;
-	unsigned int key;
-
-	key = irq_lock();
-
-	dev_data->common.state_change_cb = cb;
-	dev_data->common.state_change_cb_user_data = user_data;
-
-	irq_unlock(key);
 }
 
 static int can_max32_get_max_filters(const struct device *dev, bool ide)
@@ -609,6 +588,7 @@ static int can_max32_init(const struct device *dev)
 	struct can_timing timing = {0};
 	int ret = 0;
 
+	sys_slist_init(&dev_data->common.state_change_callbacks);
 	k_mutex_init(&dev_data->inst_mutex);
 	k_sem_init(&dev_data->tx_sem, 1, 1);
 
@@ -697,7 +677,6 @@ static DEVICE_API(can, can_max32_api) = {
 	.recover = can_max32_recover,
 #endif
 	.get_state = can_max32_get_state,
-	.set_state_change_callback = can_max32_set_state_change_callback,
 	.get_core_clock = can_max32_get_core_clock,
 	.get_max_filters = can_max32_get_max_filters,
 	.timing_min = {

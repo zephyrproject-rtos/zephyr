@@ -657,7 +657,6 @@ static void can_rcar_rscanfd_get_error_count(const struct device *dev,
 static void can_rcar_rscanfd_state_change(const struct device *dev, uint32_t new_state)
 {
 	struct can_rcar_rscanfd_data *data = dev->data;
-	const can_state_change_callback_t callback = data->common.state_change_cb;
 	struct can_bus_err_cnt err_cnt;
 
 	if (data->state == new_state) {
@@ -668,10 +667,8 @@ static void can_rcar_rscanfd_state_change(const struct device *dev, uint32_t new
 
 	data->state = new_state;
 
-	if (callback != NULL) {
-		can_rcar_rscanfd_get_error_count(dev, &err_cnt);
-		callback(dev, new_state, err_cnt, data->common.state_change_cb_user_data);
-	}
+	can_rcar_rscanfd_get_error_count(dev, &err_cnt);
+	can_fire_state_change_callbacks(dev, new_state, err_cnt);
 }
 
 static int can_rcar_rscanfd_get_capabilities(const struct device *dev, can_mode_t *cap)
@@ -1211,20 +1208,6 @@ static int can_rcar_rscanfd_get_state(const struct device *dev, enum can_state *
 	return 0;
 }
 
-static void can_rcar_rscanfd_set_state_change_callback(const struct device *dev,
-						       can_state_change_callback_t callback,
-						       void *user_data)
-{
-	struct can_rcar_rscanfd_data *data = dev->data;
-
-	k_mutex_lock(&data->inst_mutex, K_FOREVER);
-
-	data->common.state_change_cb = callback;
-	data->common.state_change_cb_user_data = user_data;
-
-	k_mutex_unlock(&data->inst_mutex);
-}
-
 static int can_rcar_rscanfd_get_core_clock(const struct device *dev, uint32_t *rate)
 {
 	const struct can_rcar_rscanfd_config *config = dev->config;
@@ -1622,6 +1605,7 @@ static int can_rcar_rscanfd_init(const struct device *dev)
 	can_rcar_rscanfd_configure_timing_data(dev, &timing);
 #endif
 
+	sys_slist_init(&data->common.state_change_callbacks);
 	k_mutex_init(&data->inst_mutex);
 	k_sem_init(&data->tx_sem, CAN_RCAR_RSCANFD_TX_QUEUE_BUFFERS_COUNT,
 		CAN_RCAR_RSCANFD_TX_QUEUE_BUFFERS_COUNT);
@@ -1689,7 +1673,6 @@ static DEVICE_API(can, can_rcar_rscanfd_driver_api) = {
 	.recover = can_rcar_rscanfd_recover,
 #endif
 	.get_state = can_rcar_rscanfd_get_state,
-	.set_state_change_callback = can_rcar_rscanfd_set_state_change_callback,
 	.get_core_clock = can_rcar_rscanfd_get_core_clock,
 	.get_max_filters = can_rcar_rscanfd_get_max_filters,
 	.timing_min = {

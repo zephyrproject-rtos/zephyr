@@ -178,7 +178,6 @@ static DEVICE_API(can, nxp_lpc_mcan_driver_api) = {
 	.recover = can_mcan_recover,
 #endif /* CONFIG_CAN_MANUAL_RECOVERY_MODE */
 	.get_state = can_mcan_get_state,
-	.set_state_change_callback = can_mcan_set_state_change_callback,
 	.get_core_clock = nxp_lpc_mcan_get_core_clock,
 	.get_max_filters = can_mcan_get_max_filters,
 	/*

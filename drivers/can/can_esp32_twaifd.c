@@ -361,25 +361,6 @@ static int can_esp32_twaifd_recover(const struct device *dev, k_timeout_t timeou
 }
 #endif /* CONFIG_CAN_MANUAL_RECOVERY_MODE */
 
-/*
- * The state-change callback is dispatched directly from ISR context, so it
- * must not call blocking Zephyr APIs. This matches the Zephyr CAN API
- * contract for the TX and RX callbacks, which are also invoked from the ISR.
- */
-static void can_esp32_twaifd_set_state_change_callback(const struct device *dev,
-						       can_state_change_callback_t cb,
-						       void *user_data)
-{
-	struct can_esp32_twaifd_data *data = dev->data;
-	unsigned int key;
-
-	/* Pair update atomic vs the ISR reading both fields. */
-	key = irq_lock();
-	data->common.state_change_cb = cb;
-	data->common.state_change_cb_user_data = user_data;
-	irq_unlock(key);
-}
-
 static int can_esp32_twaifd_send(const struct device *dev, const struct can_frame *frame,
 				 k_timeout_t timeout, can_tx_callback_t callback, void *user_data)
 {
@@ -629,8 +610,6 @@ static void IRAM_ATTR can_esp32_twaifd_handle_tx(const struct device *dev)
 static void IRAM_ATTR can_esp32_twaifd_update_state(const struct device *dev, uint32_t events)
 {
 	struct can_esp32_twaifd_data *data = dev->data;
-	can_state_change_callback_t cb;
-	void *user_data;
 	enum can_state new_state = data->state;
 	struct can_bus_err_cnt err_cnt;
 
@@ -675,16 +654,10 @@ static void IRAM_ATTR can_esp32_twaifd_update_state(const struct device *dev, ui
 		}
 	}
 
-	cb = data->common.state_change_cb;
-	user_data = data->common.state_change_cb_user_data;
-	if (cb == NULL) {
-		return;
-	}
-
 	err_cnt.tx_err_cnt = twai_hal_get_tec(&data->hal);
 	err_cnt.rx_err_cnt = twai_hal_get_rec(&data->hal);
 
-	cb(dev, new_state, err_cnt, user_data);
+	can_fire_state_change_callbacks(dev, new_state, err_cnt);
 }
 
 static void IRAM_ATTR can_esp32_twaifd_isr(void *arg)
@@ -737,6 +710,7 @@ static int can_esp32_twaifd_init(const struct device *dev)
 	struct can_timing timing_data = {0};
 #endif
 
+	sys_slist_init(&data->common.state_change_callbacks);
 	k_mutex_init(&data->lock);
 
 	if (!device_is_ready(cfg->clock_dev)) {
@@ -845,7 +819,6 @@ static DEVICE_API(can, can_esp32_twaifd_api) = {
 	.add_rx_filter = can_esp32_twaifd_add_rx_filter,
 	.remove_rx_filter = can_esp32_twaifd_remove_rx_filter,
 	.get_state = can_esp32_twaifd_get_state,
-	.set_state_change_callback = can_esp32_twaifd_set_state_change_callback,
 	.get_core_clock = can_esp32_twaifd_get_core_clock,
 	.get_max_filters = can_esp32_twaifd_get_max_filters,
 	.timing_min = {

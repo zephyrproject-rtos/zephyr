@@ -146,7 +146,6 @@ static DEVICE_API(can, can_bflb_driver_api) = {
 	.add_rx_filter = can_sja1000_add_rx_filter,
 	.remove_rx_filter = can_sja1000_remove_rx_filter,
 	.get_state = can_sja1000_get_state,
-	.set_state_change_callback = can_sja1000_set_state_change_callback,
 	.get_core_clock = can_bflb_get_core_clock,
 	.get_max_filters = can_sja1000_get_max_filters,
 #ifdef CONFIG_CAN_MANUAL_RECOVERY_MODE
