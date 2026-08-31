@@ -320,10 +320,10 @@ static void le_rpa_invalidate(void)
 			rpa_expired_data[i] = true;
 		}
 
-		bt_le_ext_adv_foreach(adv_rpa_invalidate, &rpa_expired_data);
+		bt_adv_foreach(adv_rpa_invalidate, &rpa_expired_data);
 #if defined(CONFIG_BT_RPA_SHARING)
 		/* rpa_expired data collected. now clear data based on data collected. */
-		bt_le_ext_adv_foreach(adv_rpa_clear_data, &rpa_expired_data);
+		bt_adv_foreach(adv_rpa_clear_data, &rpa_expired_data);
 #endif
 	}
 }
@@ -609,10 +609,10 @@ static bool le_adv_rpa_timeout(void)
 		if (IS_ENABLED(CONFIG_BT_EXT_ADV) &&
 		    BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
 			/* Pause all advertising sets using RPAs */
-			bt_le_ext_adv_foreach(adv_pause_rpa, &adv_enabled);
+			bt_adv_foreach(adv_pause_rpa, &adv_enabled);
 		} else {
 			/* Check if advertising set is enabled */
-			bt_le_ext_adv_foreach(adv_is_private_enabled, &adv_enabled);
+			bt_adv_foreach(adv_is_private_enabled, &adv_enabled);
 		}
 	}
 
@@ -698,7 +698,7 @@ static void le_update_private_addr(void)
 	if (IS_ENABLED(CONFIG_BT_BROADCASTER) &&
 	    IS_ENABLED(CONFIG_BT_EXT_ADV) &&
 	    BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
-		bt_le_ext_adv_foreach(adv_enable_rpa, NULL);
+		bt_adv_foreach(adv_enable_rpa, NULL);
 	}
 
 	if (IS_ENABLED(CONFIG_BT_BROADCASTER) &&
@@ -1103,7 +1103,7 @@ void bt_id_add(struct bt_keys *keys)
 	    IS_ENABLED(CONFIG_BT_EXT_ADV)) {
 		bool adv_enabled = false;
 
-		bt_le_ext_adv_foreach(adv_is_limited_enabled, &adv_enabled);
+		bt_adv_foreach(adv_is_limited_enabled, &adv_enabled);
 		if (adv_enabled) {
 			bt_id_pending_keys_update_set(keys,
 						   BT_KEYS_ID_PENDING_ADD);
@@ -1123,7 +1123,7 @@ void bt_id_add(struct bt_keys *keys)
 	pending_id_del_update();
 
 	if (IS_ENABLED(CONFIG_BT_BROADCASTER)) {
-		bt_le_ext_adv_foreach(adv_pause_enabled, NULL);
+		bt_adv_foreach(adv_pause_enabled, NULL);
 	}
 
 #if defined(CONFIG_BT_OBSERVER)
@@ -1203,7 +1203,7 @@ done:
 #endif /* CONFIG_BT_OBSERVER */
 
 	if (IS_ENABLED(CONFIG_BT_BROADCASTER)) {
-		bt_le_ext_adv_foreach(adv_unpause_enabled, NULL);
+		bt_adv_foreach(adv_unpause_enabled, NULL);
 	}
 }
 
@@ -1280,7 +1280,7 @@ static bool id_del(const bt_addr_le_t *addr, struct bt_keys *keys)
 	    IS_ENABLED(CONFIG_BT_EXT_ADV)) {
 		bool adv_enabled = false;
 
-		bt_le_ext_adv_foreach(adv_is_limited_enabled, &adv_enabled);
+		bt_adv_foreach(adv_is_limited_enabled, &adv_enabled);
 		if (adv_enabled) {
 			pending_id_del_set(addr, keys);
 			return false;
@@ -1292,7 +1292,7 @@ static bool id_del(const bt_addr_le_t *addr, struct bt_keys *keys)
 #endif /* CONFIG_BT_OBSERVER */
 
 	if (IS_ENABLED(CONFIG_BT_BROADCASTER)) {
-		bt_le_ext_adv_foreach(adv_pause_enabled, NULL);
+		bt_adv_foreach(adv_pause_enabled, NULL);
 	}
 
 #if defined(CONFIG_BT_OBSERVER)
@@ -1349,7 +1349,7 @@ done:
 #endif /* CONFIG_BT_OBSERVER */
 
 	if (IS_ENABLED(CONFIG_BT_BROADCASTER)) {
-		bt_le_ext_adv_foreach(adv_unpause_enabled, NULL);
+		bt_adv_foreach(adv_unpause_enabled, NULL);
 	}
 
 	return true;
@@ -1537,7 +1537,7 @@ int bt_id_reset(uint8_t id, bt_addr_le_t *addr, uint8_t *irk)
 			.adv_enabled = false,
 		};
 
-		bt_le_ext_adv_foreach(adv_id_check_func, &check_data);
+		bt_adv_foreach(adv_id_check_func, &check_data);
 		if (check_data.adv_enabled) {
 			return -EBUSY;
 		}
@@ -1575,7 +1575,7 @@ int bt_id_delete(uint8_t id)
 			.adv_enabled = false,
 		};
 
-		bt_le_ext_adv_foreach(adv_id_check_func, &check_data);
+		bt_adv_foreach(adv_id_check_func, &check_data);
 		if (check_data.adv_enabled) {
 			return -EBUSY;
 		}
@@ -1647,14 +1647,14 @@ int bt_id_reset_irk(uint8_t id, uint8_t *irk)
 			.adv_enabled = false,
 		};
 
-		bt_le_ext_adv_foreach(adv_id_check_func, &check_data);
+		bt_adv_foreach(adv_id_check_func, &check_data);
 		if (check_data.adv_enabled) {
 			return -EBUSY;
 		}
 
 		bool adv_enabled = false;
 
-		bt_le_ext_adv_foreach(adv_is_enabled_cb, &adv_enabled);
+		bt_adv_foreach(adv_is_enabled_cb, &adv_enabled);
 		if (adv_enabled) {
 			return -EBUSY;
 		}
