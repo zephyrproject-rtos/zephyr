@@ -15,6 +15,13 @@ config SOC_RP2350A_HAZARD3
 	select INCLUDE_RESET_VECTOR
 	select RISCV
 
+config SOC_RP2350A_HAZARD3_CPU1
+	select SOC_FAMILY_RPI_PICO_CPU1
+	select ARCH_HAS_RAMFUNC_SUPPORT if XIP
+	select HAS_FLASH_LOAD_OFFSET
+	select INCLUDE_RESET_VECTOR
+	select RISCV
+
 config SOC_RP2350A_M33
 	select ARM
 	select ARM_TRUSTZONE_M
@@ -60,7 +67,7 @@ if SOC_SERIES_RP2350
 config RP2_REQUIRES_IMAGE_DEFINITION_BLOCK
 	bool
 	# IMAGE_DEF should be used to define the image for booting CPU0
-	default y if !SOC_RP2350A_M33_CPU1
+	default y if !SOC_RP2350A_M33_CPU1 && !SOC_RP2350A_HAZARD3_CPU1
 	help
 	  Include an Image Definition Block (IMAGE_DEF) to enable the bootroom in
 	  RP23XX devices to consider this a valid image in flash.

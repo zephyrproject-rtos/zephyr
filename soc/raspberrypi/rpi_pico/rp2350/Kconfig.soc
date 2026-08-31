@@ -20,6 +20,12 @@ config SOC_RP2350A_HAZARD3
 	help
 	  Use the RP2350A with a Hazard3 core in both 'sockets'.
 
+config SOC_RP2350A_HAZARD3_CPU1
+	bool
+	select SOC_RP2350A
+	help
+	  Use the RP2350A with a Hazard3 core as CPU1.
+
 config SOC_RP2350A_M33
 	bool
 	select SOC_RP2350A

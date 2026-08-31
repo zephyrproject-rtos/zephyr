@@ -13,6 +13,7 @@
 
 	cpu1-launcher {
 		compatible = "raspberrypi,pico-pcbs";
+		architecture = "arm";
 		execution-memory = <&cpu1_slot0_partition>;
 		stack-memory = <&sram0_cpu1>;
 		status = "okay";

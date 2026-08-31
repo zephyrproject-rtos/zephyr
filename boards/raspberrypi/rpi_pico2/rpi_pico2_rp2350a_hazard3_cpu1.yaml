@@ -1,0 +1,11 @@
+identifier: rpi_pico2/rp2350a/hazard3/cpu1
+name: Raspberry Pi Pico 2 (Hazard3 CPU1)
+type: mcu
+arch: riscv
+flash: 0
+ram: 256
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - hwinfo

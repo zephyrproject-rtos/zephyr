@@ -16,6 +16,14 @@ compatible: "raspberrypi,pico-pcbs"
 include: base.yaml
 
 properties:
+  architecture:
+    type: string
+    required: true
+    enum:
+      - arm
+      - riscv
+    description: Architecture to select for the secondary CPU socket.
+
   execution-memory:
     type: phandle
     required: true
@@ -55,6 +63,7 @@ examples:
 
         cpu1-launcher {
             compatible = "raspberrypi,pico-pcbs";
+            architecture = "arm";
             execution-memory = <&sram0_cpu1>;
             stack-memory = <&sram0_cpu1>;
             source-memory = <&cpu1_slot0_partition>;

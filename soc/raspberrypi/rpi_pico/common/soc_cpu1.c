@@ -14,6 +14,10 @@
 
 #include <hardware/structs/sio.h>
 #include <hardware/structs/psm.h>
+#ifdef CONFIG_SOC_SERIES_RP2350
+#include <hardware/regs/otp.h>
+#include <hardware/structs/otp.h>
+#endif
 
 #include <zephyr/drivers/misc/mbox_rpi_pico/mbox_rpi_pico.h>
 
@@ -48,6 +52,7 @@ BUILD_ASSERT((DT_PARTITION_EXISTS(DT_PHANDLE(CPU1_LAUNCHER_NODE, source_memory))
 
 #define CPU1_STACK_ADDR DT_REG_ADDR(DT_PHANDLE(CPU1_LAUNCHER_NODE, stack_memory))
 #define CPU1_STACK_SIZE DT_REG_SIZE(DT_PHANDLE(CPU1_LAUNCHER_NODE, stack_memory))
+#define CPU1_ARCH_RISCV DT_ENUM_HAS_VALUE(CPU1_LAUNCHER_NODE, architecture, riscv)
 
 static int rpi_pico_mailbox_put_timeout(sio_hw_t *const sio_regs, uint32_t value)
 {
@@ -103,7 +108,7 @@ static inline bool address_in_range(uint32_t addr, uint32_t base, uint32_t size)
 	return addr >= base && addr - base < size;
 }
 
-static inline int rpi_pico_validate_vtor(uint32_t cpu1_sp, uint32_t cpu1_pc)
+static int rpi_pico_validate_image(uint32_t cpu1_vector, uint32_t cpu1_sp, uint32_t cpu1_pc)
 {
 	if (cpu1_sp <= CPU1_STACK_ADDR || cpu1_sp - CPU1_STACK_ADDR > CPU1_STACK_SIZE ||
 	    !IS_ALIGNED(cpu1_sp, 8)) {
@@ -113,11 +118,20 @@ static inline int rpi_pico_validate_vtor(uint32_t cpu1_sp, uint32_t cpu1_pc)
 
 	LOG_DBG("CPU1 stack pointer: 0x%08x", cpu1_sp);
 
-	if (!IS_ALIGNED(CPU1_EXEC_ADDR, 128)) {
-		LOG_ERR("CPU1 vector table 0x%08x invalid.", CPU1_EXEC_ADDR);
+#if CPU1_ARCH_RISCV
+	if (!IS_ALIGNED(cpu1_vector, 4) ||
+	    !address_in_range(cpu1_vector, CPU1_EXEC_ADDR, CPU1_EXEC_SIZE) ||
+	    !IS_ALIGNED(cpu1_pc, 4) ||
+	    !address_in_range(cpu1_pc, CPU1_EXEC_ADDR, CPU1_EXEC_SIZE)) {
+		LOG_ERR("CPU1 RISC-V vectors or entry point are invalid.");
 		return -EINVAL;
 	}
-
+	LOG_DBG("CPU1 RISC-V entry point: 0x%08x", cpu1_pc);
+#else
+	if (!IS_ALIGNED(cpu1_vector, 128)) {
+		LOG_ERR("CPU1 vector table 0x%08x invalid.", cpu1_vector);
+		return -EINVAL;
+	}
 	if ((cpu1_pc & 1U) == 0U ||
 	    !address_in_range(cpu1_pc & ~1U, CPU1_EXEC_ADDR, CPU1_EXEC_SIZE)) {
 		LOG_ERR("CPU1 reset pointer 0x%08x invalid.", cpu1_pc);
@@ -125,9 +139,31 @@ static inline int rpi_pico_validate_vtor(uint32_t cpu1_sp, uint32_t cpu1_pc)
 	}
 
 	LOG_DBG("CPU1 reset pointer: 0x%08x", cpu1_pc);
+#endif
 	return 0;
 }
 #endif /* CONFIG_SOC_RPI_PICO_CPU1_ENABLE_CHECK_VTOR */
+
+static int rpi_pico_select_cpu1_architecture(bool riscv)
+{
+#ifdef CONFIG_SOC_SERIES_RP2350
+	if (riscv) {
+		hw_set_bits(&otp_hw->archsel, OTP_ARCHSEL_CORE1_BITS);
+	} else {
+		hw_clear_bits(&otp_hw->archsel, OTP_ARCHSEL_CORE1_BITS);
+	}
+
+	if (!!(otp_hw->archsel & OTP_ARCHSEL_CORE1_BITS) != riscv) {
+		LOG_ERR("CPU1 architecture selection is prohibited by OTP boot policy.");
+		return -EPERM;
+	}
+#else
+	if (riscv) {
+		return -ENOTSUP;
+	}
+#endif
+	return 0;
+}
 
 static int rpi_pico_reset_cpu1(sio_hw_t *const sio_regs, psm_hw_t *const psm_regs)
 {
@@ -140,6 +176,9 @@ static int rpi_pico_reset_cpu1(sio_hw_t *const sio_regs, psm_hw_t *const psm_reg
 			return -ETIMEDOUT;
 		}
 		k_busy_wait(1);
+	}
+	if (rpi_pico_select_cpu1_architecture(CPU1_ARCH_RISCV) != 0) {
+		return -EPERM;
 	}
 
 	/*
@@ -156,6 +195,13 @@ static int rpi_pico_reset_cpu1(sio_hw_t *const sio_regs, psm_hw_t *const psm_reg
 	if (rpi_pico_mailbox_pop_timeout(sio_regs, &val) != 0) {
 		return -ETIMEDOUT;
 	}
+
+#ifdef CONFIG_SOC_SERIES_RP2350
+	if (!!(otp_hw->archsel_status & OTP_ARCHSEL_STATUS_CORE1_BITS) != CPU1_ARCH_RISCV) {
+		LOG_ERR("CPU1 started with the wrong architecture.");
+		return -EIO;
+	}
+#endif
 
 	return val == 0 ? 0 : -EIO;
 }
@@ -200,24 +246,31 @@ void soc_late_init_hook(void)
 #endif /* CPU1_LAUNCHER_HAS_SOURCE_MEM */
 	uint32_t cpu1_image_base = CPU1_EXEC_ADDR;
 
+#if CPU1_ARCH_RISCV
+	uint32_t cpu1_vector = cpu1_image_base;
+	uint32_t cpu1_sp = CPU1_STACK_ADDR + CPU1_STACK_SIZE;
+	uint32_t cpu1_pc = cpu1_image_base;
+#else
 	uint32_t *cpu1_vector_table = (void *)cpu1_image_base;
 	uint32_t cpu1_sp = cpu1_vector_table[0];
 	uint32_t cpu1_pc = cpu1_vector_table[1];
+	uint32_t cpu1_vector = (uint32_t)cpu1_vector_table;
+#endif
 
 #ifdef CONFIG_SOC_RPI_PICO_CPU1_ENABLE_CHECK_VTOR
-	if (rpi_pico_validate_vtor(cpu1_sp, cpu1_pc) != 0) {
+	if (rpi_pico_validate_image(cpu1_vector, cpu1_sp, cpu1_pc) != 0) {
 		return;
 	}
 #endif /* CONFIG_SOC_RPI_PICO_CPU1_ENABLE_CHECK_VTOR */
 
-	LOG_DBG("Launching CPU1 with vector table at 0x%p", (void *)cpu1_vector_table);
+	LOG_DBG("Launching CPU1 with vector table at 0x%08x", cpu1_vector);
 
 	if (rpi_pico_reset_cpu1(sio_hw, psm_hw) != 0) {
 		LOG_ERR("CPU1 reset failed.");
 		return;
 	}
 
-	int ret = rpi_pico_boot_cpu1(sio_hw, (uint32_t)cpu1_vector_table, cpu1_sp, cpu1_pc);
+	int ret = rpi_pico_boot_cpu1(sio_hw, cpu1_vector, cpu1_sp, cpu1_pc);
 
 	if (ret != 0) {
 		LOG_ERR("CPU1 boot handshake failed (%d).", ret);

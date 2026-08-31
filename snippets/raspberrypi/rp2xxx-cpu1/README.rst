@@ -13,5 +13,5 @@ executed from SRAM, so the CPU1 image must be built with
 
 .. note::
 
-   Currently only the RP2350 Cortex-M33 core is supported. The RP2040 and
-   the RP2350 RISC-V (Hazard3) core are not yet supported.
+   This snippet launches a Cortex-M33. Use :ref:`rp2xxx-cpu1-riscv` to launch
+   an RP2350 Hazard3 core. The RP2040 is not yet supported.
