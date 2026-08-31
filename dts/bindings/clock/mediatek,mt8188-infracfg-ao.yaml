@@ -1,0 +1,27 @@
+# Copyright (c) 2026 MediaTek Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  MediaTek MT8188 infra always-on clock controller.
+
+  Provides the peripheral gate clocks in the always-on infrastructure subsystem.
+  A consumer selects a clock with the matching CLK_INFRA_AO_* identifier from
+  <zephyr/dt-bindings/clock/mtk_mt8188_clock.h>, for example:
+
+    &uart1 {
+            clocks = <&infracfg_ao CLK_INFRA_AO_UART1>;
+    };
+
+compatible: "mediatek,mt8188-infracfg-ao"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#clock-cells":
+    const: 1
+
+clock-cells:
+  - id
