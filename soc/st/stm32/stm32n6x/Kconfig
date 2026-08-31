@@ -42,6 +42,7 @@ config STM32N6_RIF_OPEN
 	  configured during SoC initialization. Zephyr running with Secure privileges has full
 	  access to all SoC resources.
 
+source "soc/st/stm32/stm32n6x/axisram/Kconfig"
 source "soc/st/stm32/stm32n6x/npu/Kconfig"
 
 endif # SOC_SERIES_STM32N6X

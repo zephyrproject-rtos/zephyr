@@ -5,6 +5,6 @@ config STM32N6_AXISRAM
 	bool
 	select USE_STM32_HAL_RAMCFG
 	default y if $(dt_nodelabel_enabled,axisram3) || \
-		     $(dt_nodelabel_enabled,axisram4) || \
-		     $(dt_nodelabel_enabled,axisram5) || \
-		     $(dt_nodelabel_enabled,axisram6)
+			$(dt_nodelabel_enabled,axisram4) || \
+			$(dt_nodelabel_enabled,axisram5) || \
+			$(dt_nodelabel_enabled,axisram6)
