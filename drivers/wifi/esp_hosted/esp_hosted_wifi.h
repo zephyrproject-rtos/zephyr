@@ -119,6 +119,7 @@ typedef struct {
 		uint32_t minor;
 		uint32_t rev_patch1;
 		uint32_t rev_patch2;
+		char str[32];
 	} fw_version;
 
 	/* RX reassembly accumulator. */
