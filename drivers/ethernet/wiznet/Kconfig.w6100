@@ -10,6 +10,8 @@ config ETH_W6100
 	select ETH_WIZNET
 	select ETH_WIZNET_CORE
 	select SPI
+	select GPIO if ($(dt_compat_any_has_prop,$(DT_COMPAT_WIZNET_W6100),reset-gpios) || \
+			$(dt_compat_any_has_prop,$(DT_COMPAT_WIZNET_W6100),int-gpios))
 	help
 	  W6100 Stand-Alone Ethernet Controller
 	  with SPI Interface
