@@ -11,5 +11,6 @@ testing:
   only_tags:
     - xip
     - llext
+    - integration
 ram: 3000
 vendor: qemu
