@@ -1,3 +1,6 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
 identifier: slwrb4180a
 name: EFR32xG21 2.4 GHz 20 dBm Radio Board (SLWRB4180A, BRD4180A)
 type: mcu
