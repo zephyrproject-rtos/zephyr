@@ -71,7 +71,7 @@ attached to that connector: the sensor is controlled over ``i2c8`` at address
    :board: sama7g54_ek
    :goals: build
 
-The controller writes raw Bayer frames (``SBGGR8``, ``SBGGR10``) to memory, or
+The controller writes raw Bayer frames (``SRGGB8``, ``SRGGB10``) to memory, or
 converts them to ``RGB565``, ``BGRX32``, ``YUYV`` or ``GREY`` with its image
 processing pipeline. Converted frames are gamma corrected with the sRGB transfer
 function, so they are ready for a display, but scaling, automatic white balance
