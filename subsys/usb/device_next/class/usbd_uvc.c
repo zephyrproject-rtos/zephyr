@@ -996,6 +996,7 @@ static int uvc_get_control_op(const struct device *dev, const struct usb_setup_p
 		}
 
 		if (unit_id == desc->bUnitID) {
+			subtype = desc->bDescriptorSubtype;
 			break;
 		}
 	}
