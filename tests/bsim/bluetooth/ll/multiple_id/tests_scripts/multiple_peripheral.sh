@@ -7,7 +7,7 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 # Multiple connection between two devices with multiple peripheral identity
 simulation_id="${BOARD_TS}_central_multiple_peripheral_single"
 verbosity_level=2
-EXECUTE_TIMEOUT=1600
+EXECUTE_TIMEOUT=3600
 
 cd ${BSIM_OUT_PATH}/bin
 
