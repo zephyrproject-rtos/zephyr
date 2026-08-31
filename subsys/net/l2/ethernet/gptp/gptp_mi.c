@@ -774,13 +774,13 @@ int gptp_apply_clock_update(struct precision_pi *pi,
 		key = irq_lock();
 		ret = precision_clock_read(precision_clk, &current_time);
 		if (ret < 0) {
-			NET_WARN("Failed to read local clock (%d)", ret);
+			NET_WARN_RATELIMIT("Failed to read local clock (%d)", ret);
 			goto out;
 		}
 
 		if (second_diff > PRECISION_TIME_MAX / NSEC_PER_SEC ||
 		    second_diff < PRECISION_TIME_MIN / NSEC_PER_SEC) {
-			NET_WARN("gPTP clock correction is out of range");
+			NET_WARN_RATELIMIT("gPTP clock correction is out of range");
 			ret = -ERANGE;
 			goto out;
 		}
@@ -801,7 +801,7 @@ int gptp_apply_clock_update(struct precision_pi *pi,
 		}
 		ret = precision_clock_set(precision_clk, target_time);
 		if (ret < 0) {
-			NET_WARN("Failed to set local clock (%d)", ret);
+			NET_WARN_RATELIMIT("Failed to set local clock (%d)", ret);
 		}
 
 out:
@@ -818,7 +818,7 @@ out:
 
 		ret = precision_clock_adjust_rate(precision_clk, scaled_ppm);
 		if (ret < 0) {
-			NET_WARN("Failed to adjust local clock rate (%d)", ret);
+			NET_WARN_RATELIMIT("Failed to adjust local clock rate (%d)", ret);
 		}
 
 		if (IS_ENABLED(CONFIG_NET_GPTP_MONITOR_SYNC_STATUS)) {

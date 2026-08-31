@@ -573,7 +573,7 @@ static void clock_servo_reset(void)
 
 	ret = precision_clock_adjust_rate(precision_clock_ptp_get(&ptp_clk.precision_clock), 0);
 	if (ret < 0) {
-		LOG_WRN("Failed to reset PHC rate to nominal (err %d)", ret);
+		LOG_WRN_RATELIMIT("Failed to reset PHC rate to nominal (err %d)", ret);
 	}
 }
 
@@ -632,11 +632,12 @@ static __noinline void clock_log_ingress_fallback(uint64_t ingress,
 					  uint64_t ingress_phc_delta,
 					  bool ingress_ts_valid)
 {
-	LOG_WRN("Ingress timestamp fallback (%s): ingress=%" PRIu64 ".%09u phc_now=%" PRIu64
-		".%09u |ingress-phc|=%" PRIu64 "ns",
-		ingress_ts_valid ? "out-of-range" : "missing", ingress / NSEC_PER_SEC,
-		(uint32_t)(ingress % NSEC_PER_SEC), (uint64_t)(current_time / NSEC_PER_SEC),
-		(uint32_t)(current_time % NSEC_PER_SEC), ingress_phc_delta);
+	LOG_WRN_RATELIMIT("Ingress timestamp fallback (%s): ingress=%" PRIu64
+			  ".%09u phc_now=%" PRIu64 ".%09u |ingress-phc|=%" PRIu64 "ns",
+			  ingress_ts_valid ? "out-of-range" : "missing",
+			  ingress / NSEC_PER_SEC, (uint32_t)(ingress % NSEC_PER_SEC),
+			  (uint64_t)(current_time / NSEC_PER_SEC),
+			  (uint32_t)(current_time % NSEC_PER_SEC), ingress_phc_delta);
 }
 
 static __noinline void clock_step(const struct precision_clock *precision_clk,
@@ -646,32 +647,32 @@ static __noinline void clock_step(const struct precision_clock *precision_clk,
 	precision_time_t target_time;
 	int ret;
 
-	LOG_WRN("Clock offset exceeds 1 second (t1=%" PRIu64 ".%09u t2=%" PRIu64
-		".%09u delay=%lldns offset=%lldns phc_now=%" PRIu64
-		".%09u |t2-phc|=%" PRIu64 "ns)",
-		ptp_clk.timestamp.t1 / NSEC_PER_SEC,
-		(uint32_t)(ptp_clk.timestamp.t1 % NSEC_PER_SEC),
-		ptp_clk.timestamp.t2 / NSEC_PER_SEC,
-		(uint32_t)(ptp_clk.timestamp.t2 % NSEC_PER_SEC), delay, offset,
-		(uint64_t)(current_time / NSEC_PER_SEC),
-		(uint32_t)(current_time % NSEC_PER_SEC),
-		clock_abs_delta_u64(ptp_clk.timestamp.t2, phc_now_ns));
+	LOG_WRN_RATELIMIT("Clock offset exceeds 1 second (t1=%" PRIu64 ".%09u t2=%" PRIu64
+			  ".%09u delay=%lldns offset=%lldns phc_now=%" PRIu64
+			  ".%09u |t2-phc|=%" PRIu64 "ns)",
+			  ptp_clk.timestamp.t1 / NSEC_PER_SEC,
+			  (uint32_t)(ptp_clk.timestamp.t1 % NSEC_PER_SEC),
+			  ptp_clk.timestamp.t2 / NSEC_PER_SEC,
+			  (uint32_t)(ptp_clk.timestamp.t2 % NSEC_PER_SEC), delay, offset,
+			  (uint64_t)(current_time / NSEC_PER_SEC),
+			  (uint32_t)(current_time % NSEC_PER_SEC),
+			  clock_abs_delta_u64(ptp_clk.timestamp.t2, phc_now_ns));
 
 	ret = precision_clock_read(precision_clk, &current_time);
 	if (ret < 0) {
-		LOG_WRN("Failed to read PHC time for clock step (err %d)", ret);
+		LOG_WRN_RATELIMIT("Failed to read PHC time for clock step (err %d)", ret);
 		return;
 	}
 
 	ret = precision_time_sub(current_time, offset, &target_time);
 	if (ret < 0) {
-		LOG_WRN("Failed to calculate PHC time for clock step (err %d)", ret);
+		LOG_WRN_RATELIMIT("Failed to calculate PHC time for clock step (err %d)", ret);
 		return;
 	}
 
 	ret = precision_clock_set(precision_clk, target_time);
 	if (ret < 0) {
-		LOG_WRN("Failed to set PHC time (err %d)", ret);
+		LOG_WRN_RATELIMIT("Failed to set PHC time (err %d)", ret);
 		return;
 	}
 
@@ -712,16 +713,17 @@ static __noinline void clock_adjust_rate(const struct precision_clock *precision
 	ppb = precision_pi_update(&ptp_clk.pi, -offset);
 	ret = precision_clock_ppb_to_scaled_ppm(ppb, &scaled_ppm);
 	if (ret < 0) {
-		LOG_WRN("PTP PI output is out of range (ppb=%f), resetting servo", ppb);
+		LOG_WRN_RATELIMIT("PTP PI output is out of range (ppb=%f), resetting servo",
+				  ppb);
 		clock_servo_reset();
 		return;
 	}
 
 	ret = precision_clock_adjust_rate(precision_clk, scaled_ppm);
 	if (ret < 0) {
-		LOG_WRN("Failed to adjust PHC rate for offset %lldns (ppb=%f err %d), "
-			"resetting servo",
-			offset, ppb, ret);
+		LOG_WRN_RATELIMIT("Failed to adjust PHC rate for offset %lldns (ppb=%f err %d), "
+				  "resetting servo",
+				  offset, ppb, ret);
 		clock_servo_reset();
 		return;
 	}
@@ -743,7 +745,7 @@ static void clock_synchronize_with_delay(uint64_t ingress, uint64_t egress,
 
 	ret = precision_clock_read(precision_clk, &current_time);
 	if (ret < 0) {
-		LOG_WRN("Failed to read PHC time (err %d)", ret);
+		LOG_WRN_RATELIMIT("Failed to read PHC time (err %d)", ret);
 		return;
 	}
 
