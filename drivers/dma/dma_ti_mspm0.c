@@ -107,6 +107,7 @@ struct dma_ti_mspm0_config {
 	struct dma_mspm0_regs *regs;
 	uint8_t dma_max_channels;
 	void (*irq_config_func)(void);
+	uint8_t num_full_channels;
 };
 
 struct dma_ti_mspm0_channel_data {
@@ -171,6 +172,12 @@ static inline int dma_ti_mspm0_get_datawidth(uint8_t wd, uint32_t *width)
 	}
 
 	return 0;
+}
+
+static inline bool dma_ti_mspm0_is_full_channel(const struct dma_ti_mspm0_config *cfg,
+						uint32_t channel)
+{
+	return channel < cfg->num_full_channels;
 }
 
 static int dma_ti_mspm0_configure(const struct device *dev, uint32_t channel,
@@ -374,6 +381,10 @@ static DEVICE_API(dma, dma_ti_mspm0_api) = {
 	BUILD_ASSERT(DT_INST_NODE_HAS_PROP(inst, dma_channels),			\
 		     "DMA channels is required");				\
 										\
+	BUILD_ASSERT(DT_INST_PROP(inst, ti_num_full_channels) <=			\
+		     DT_INST_PROP(inst, dma_channels),				\
+		     "ti,num-full-channels can't exceed dma-channels");	\
+										\
 	static inline void dma_ti_mspm0_irq_cfg_##inst(void)			\
 	{									\
 		irq_disable(DT_INST_IRQN(inst));				\
@@ -387,6 +398,7 @@ static DEVICE_API(dma, dma_ti_mspm0_api) = {
 			channel_data_##inst[DT_INST_PROP(inst, dma_channels)];	\
 										\
 	static const struct dma_ti_mspm0_config dma_cfg_##inst = {		\
+		.num_full_channels = DT_INST_PROP(inst, ti_num_full_channels),	\
 		.regs		  = (struct dma_mspm0_regs *)DT_INST_REG_ADDR(inst),	\
 		.dma_max_channels = DT_INST_PROP(inst, dma_channels),		\
 		.irq_config_func  = dma_ti_mspm0_irq_cfg_##inst,		\
