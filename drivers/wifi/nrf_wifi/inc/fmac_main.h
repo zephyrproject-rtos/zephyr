@@ -90,6 +90,10 @@ struct nrf_wifi_vif_ctx_zep {
 #endif /* CONFIG_NRF70_DATA_TX */
 	unsigned long rssi_record_timestamp_us;
 	signed short rssi;
+#ifdef CONFIG_WIFI_MGMT_DMS
+	unsigned char dms_id_map;
+	unsigned char dms_id_in_progress_map;
+#endif /* CONFIG_WIFI_MGMT_DMS */
 #endif /* CONFIG_NRF70_STA_MODE */
 #ifdef CONFIG_NRF70_AP_MODE
 	int inactive_time_sec;

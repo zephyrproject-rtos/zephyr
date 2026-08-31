@@ -89,4 +89,22 @@ int nrf_wifi_get_rts_threshold(const struct device *dev,
 int nrf_wifi_set_bss_max_idle_period(const struct device *dev,
 				     struct net_if *iface,
 				     unsigned short bss_max_idle_period);
+
+#ifdef CONFIG_WIFI_MGMT_DMS
+int nrf_wifi_req_dms(const struct device *dev,
+		     struct net_if *iface,
+		     struct wifi_dms_params *dms_params);
+
+void nrf_wifi_event_proc_dms_add_zep(void *vif_ctx,
+				     struct nrf_wifi_umac_cmd_req_add_dms *add_dms_info,
+				     unsigned int event_len);
+
+void nrf_wifi_event_proc_dms_remove_zep(void *vif_ctx,
+					struct nrf_wifi_umac_cmd_req_remove_dms *remove_dms_info,
+					unsigned int event_len);
+
+void nrf_wifi_event_proc_dms_terminate_zep(void *vif_ctx,
+				struct nrf_wifi_umac_event_terminate_dms *terminate_dms_info,
+				unsigned int event_len);
+#endif /* CONFIG_WIFI_MGMT_DMS */
 #endif /*  __ZEPHYR_WIFI_MGMT_H__ */

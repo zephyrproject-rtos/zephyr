@@ -835,6 +835,11 @@ static int nrf_wifi_drv_main_zep(const struct device *dev)
 	callbk_fns.event_get_wiphy = nrf_wifi_wpa_supp_event_get_wiphy;
 	callbk_fns.mgmt_rx_callbk_fn = nrf_wifi_wpa_supp_event_mgmt_rx_callbk_fn;
 	callbk_fns.get_conn_info_callbk_fn = nrf_wifi_supp_event_proc_get_conn_info;
+#ifdef CONFIG_WIFI_MGMT_DMS
+	callbk_fns.req_add_dms_callbk_fn = nrf_wifi_event_proc_dms_add_zep;
+	callbk_fns.req_remove_dms_callbk_fn = nrf_wifi_event_proc_dms_remove_zep;
+	callbk_fns.terminate_dms_callbk_fn = nrf_wifi_event_proc_dms_terminate_zep;
+#endif /* CONFIG_WIFI_MGMT_DMS */
 	callbk_fns.roc_callbk_fn = nrf_wifi_supp_event_remain_on_channel;
 	callbk_fns.roc_cancel_callbk_fn = nrf_wifi_supp_event_roc_cancel_complete;
 #endif /* CONFIG_NRF70_STA_MODE */
@@ -917,6 +922,9 @@ static const struct wifi_mgmt_ops nrf_wifi_mgmt_ops = {
 	.set_rts_threshold = nrf_wifi_set_rts_threshold,
 	.get_rts_threshold = nrf_wifi_get_rts_threshold,
 	.set_bss_max_idle_period = nrf_wifi_set_bss_max_idle_period,
+#ifdef CONFIG_WIFI_MGMT_DMS
+	.req_dms = nrf_wifi_req_dms,
+#endif /* CONFIG_WIFI_MGMT_DMS */
 #endif
 #ifdef CONFIG_NRF70_SYSTEM_WITH_RAW_MODES
 	.mode = nrf_wifi_mode,

@@ -190,3 +190,10 @@ config WIFI_MGMT_BSS_MAX_IDLE_TIME
 	  equal to true, then the non-S1G AP may choose the non-AP STA’s
 	  preferred maximum idle period. The non-S1G AP indicates its chosen
 	  value to the non-S1G STA in the (Re)Association Response frame.
+
+config WIFI_MGMT_DMS
+	bool "Wi-Fi Directed Multicast Service"
+	help
+	  It enables the clients to request access points to transmit multicast packets
+	  as unicast packets. Thus enabling the STA to receive multicast packets
+	  it had lost while in sleep.
