@@ -78,10 +78,6 @@ static int stm32_u5otghs_phy_disable(const struct stm32_usb_phy *phy)
 #define PHY_CLK_REF(n)	\
 	CONCAT(SYSCFG_OTG_HS_PHY_CLK_SELECT_, UTIL_INC(DT_ENUM_IDX(n, clock_reference)))
 
-/*
- * Note that SYSCFG_OTG_HS_PHY_CLK_SELECT goes from 1 to N whereas
- * DT_ENUM_IDX() goes from 0 to (N-1), hence the UTIL_INC()
- */
 #define DEFINE_U5OTGHS_PHY(usb_node, phy_node)							\
 	static const struct stm32_u5otghs_phy_config CONCAT(phy, DT_DEP_ORD(phy_node), _cfg) = {\
 		.reference = PHY_CLK_REF(phy_node),						\
