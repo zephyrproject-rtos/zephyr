@@ -5,3 +5,5 @@ config MTK_ADSP
 	select XTENSA
 	select CPU_HAS_DCACHE
 	select ARCH_HAS_NOCACHE_MEMORY_SUPPORT
+
+orsource "*/Kconfig"
