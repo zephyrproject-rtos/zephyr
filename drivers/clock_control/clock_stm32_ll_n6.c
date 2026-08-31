@@ -172,6 +172,7 @@ int enabled_clock(uint32_t src_clk)
 	    ((src_clk == STM32_SRC_LSE) && IS_ENABLED(STM32_LSE_ENABLED)) ||
 	    ((src_clk == STM32_SRC_LSI) && IS_ENABLED(STM32_LSI_ENABLED)) ||
 	    ((src_clk == STM32_SRC_HSE) && IS_ENABLED(STM32_HSE_ENABLED)) ||
+	    ((src_clk == STM32_SRC_HSE_DIV2_OSC) && IS_ENABLED(STM32_HSE_ENABLED)) ||
 	    ((src_clk == STM32_SRC_HSI) && IS_ENABLED(STM32_HSI_ENABLED)) ||
 	    ((src_clk == STM32_SRC_HSI_DIV) && IS_ENABLED(STM32_HSI_ENABLED)) ||
 	    ((src_clk == STM32_SRC_MSI) && IS_ENABLED(STM32_MSI_ENABLED)) ||
@@ -344,6 +345,13 @@ static int stm32_clock_control_get_subsys_rate(const struct device *dev,
 #if defined(STM32_HSE_ENABLED)
 	case STM32_SRC_HSE:
 		*rate = STM32_HSE_FREQ;
+		break;
+	case STM32_SRC_HSE_DIV2_OSC:
+		if (IS_ENABLED(STM32_HSE_DIV2)) {
+			*rate = STM32_HSE_FREQ / 2;
+		} else {
+			*rate = STM32_HSE_FREQ;
+		}
 		break;
 #endif /* STM32_HSE_ENABLED */
 #if defined(STM32_HSI_ENABLED)
