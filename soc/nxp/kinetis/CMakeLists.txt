@@ -4,8 +4,6 @@ zephyr_sources_ifdef(CONFIG_KINETIS_FLASH_CONFIG	flash_configuration.c)
 
 add_subdirectory(${CONFIG_SOC_SERIES})
 
-# This is for access to pinctrl macros
-zephyr_include_directories(common)
 zephyr_include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../common)
 
 zephyr_linker_sources_ifdef(CONFIG_KINETIS_FLASH_CONFIG
