@@ -72,6 +72,9 @@ static int mpipe_aud_dmic_src_set_caps(struct mpipe_src *src, const struct mpipe
 		}
 	}
 
+	/* A bounded read lets teardown join the source thread after a stop. */
+	aud_dmic_src->read_timeout_ms = (int32_t)MAX(100U, (frame_interval / 1000U) * 10U);
+
 	cfg.streams[0].pcm_rate = sample_rate;
 	cfg.streams[0].block_size =
 		(bit_width >> 3) * ((sample_rate * frame_interval / 1000000) * num_of_channel);
@@ -94,13 +97,20 @@ static int mpipe_aud_dmic_src_acquire_buffer(struct mpipe_buffer_pool *pool,
 {
 	struct mpipe_aud_buffer_pool *aud_pool =
 		CONTAINER_OF(pool, struct mpipe_aud_buffer_pool, pool);
+	struct mpipe_aud_dmic_src *aud_dmic_src =
+		CONTAINER_OF(aud_pool, struct mpipe_aud_dmic_src, pool);
 	struct mpipe_buffer_meta *meta;
 	void *mem_block = NULL;
 	size_t bytes_used = pool->config.size;
 	int err = -1;
 
-	err = dmic_read(aud_pool->aud_dev, 0, &mem_block, &bytes_used, INT32_MAX);
+	err = dmic_read(aud_pool->aud_dev, 0, &mem_block, &bytes_used,
+			aud_dmic_src->read_timeout_ms);
 	if (err < 0) {
+		if (!pool->started) {
+			/* Capture drained after a stop: a flush, not an error. */
+			return -EPIPE;
+		}
 		LOG_ERR("Unable to read a DMIC buffer: %d", err);
 		return err;
 	}
@@ -159,6 +169,23 @@ static int mpipe_aud_dmic_src_start(struct mpipe_buffer_pool *pool)
 	return 0;
 }
 
+static int mpipe_aud_dmic_src_stop(struct mpipe_buffer_pool *pool)
+{
+	struct mpipe_aud_buffer_pool *aud_pool =
+		CONTAINER_OF(pool, struct mpipe_aud_buffer_pool, pool);
+
+	/* Stop capture so the device returns its blocks before the pool is reused. */
+	if (aud_pool->aud_dev != NULL) {
+		(void)dmic_trigger(aud_pool->aud_dev, DMIC_TRIGGER_STOP);
+	}
+
+	if (aud_pool->pool_parent_stop != NULL) {
+		return aud_pool->pool_parent_stop(pool);
+	}
+
+	return 0;
+}
+
 int mpipe_aud_dmic_src_init(struct mpipe_aud_dmic_src *aud_dmic_src, uint8_t id)
 {
 	__ASSERT_NO_MSG(aud_dmic_src != NULL);
@@ -184,6 +211,9 @@ int mpipe_aud_dmic_src_init(struct mpipe_aud_dmic_src *aud_dmic_src, uint8_t id)
 	src->set_caps = mpipe_aud_dmic_src_set_caps;
 	src->pool->acquire_buffer = mpipe_aud_dmic_src_acquire_buffer;
 	src->pool->start = mpipe_aud_dmic_src_start;
+
+	aud_dmic_src->pool.pool_parent_stop = src->pool->stop;
+	src->pool->stop = mpipe_aud_dmic_src_stop;
 
 	mpipe_aud_src_update_caps(src);
 
