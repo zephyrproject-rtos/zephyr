@@ -137,14 +137,18 @@ static void rpi_pico_mbox_isr(const struct device *dev)
 		return;
 	}
 
-	if (data->cb != NULL) {
+	while (rpi_pico_mbox_read_valid(mbox_sio_hw)) {
 		uint32_t d = rpi_pico_mbox_read(mbox_sio_hw);
-		struct mbox_msg msg = {
-			.data = &d,
-			.size = sizeof(d)};
-		data->cb(dev, 0, data->user_data, &msg);
+
+		if (data->cb != NULL) {
+			struct mbox_msg msg = {
+				.data = &d,
+				.size = sizeof(d),
+			};
+
+			data->cb(dev, 0, data->user_data, &msg);
+		}
 	}
-	rpi_pico_mbox_drain(mbox_sio_hw);
 }
 
 static int rpi_pico_mbox_init(const struct device *dev)
