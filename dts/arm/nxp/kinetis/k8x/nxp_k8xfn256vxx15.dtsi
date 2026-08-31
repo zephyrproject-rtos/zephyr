@@ -36,5 +36,8 @@
 		reg = <0x0 DT_SIZE_K(256)>;
 		erase-block-size = <DT_SIZE_K(4)>;
 		write-block-size = <4>;
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
 	};
 };
