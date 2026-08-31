@@ -857,6 +857,7 @@ New Boards
 * Silicon Laboratories
 
   * :zephyr:board:`kg100s_rb4332a` (``kg100s_rb4332a``)
+  * :zephyr:board:`siwx917_ek2708a` (``siwx917_ek2708a``)
   * :zephyr:board:`xg26_dk2608a` (``xg26_dk2608a``)
   * :zephyr:board:`xg26_rb4121a` (``xg26_rb4121a``)
 
