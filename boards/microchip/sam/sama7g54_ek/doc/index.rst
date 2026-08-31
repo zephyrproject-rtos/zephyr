@@ -82,6 +82,11 @@ are adjustable with the ``video ctrl`` shell command, as are the exposure time
 and the analog and digital gains of the sensor. Since nothing drives the exposure
 automatically, those are the controls to reach for when the image is too dark.
 
+The sensor is cropped to the requested resolution rather than scaled, and the
+pipeline has been exercised up to 1920x1080 at 30 frames per second. The sample
+configuration sizes its buffer pool for that resolution, so any smaller one can
+be selected at run time with the ``video format`` shell command.
+
 The D-PHY configuration clock is derived from the CSI generated clock (GCLK 33),
 which the driver programs to 26.6 MHz from one of the SoC PLLs.
 
