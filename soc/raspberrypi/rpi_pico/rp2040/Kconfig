@@ -12,7 +12,7 @@ config SOC_SERIES_RP2040
 	select CPU_HAS_ARM_MPU
 	select HAS_RPI_PICO
 	select XIP
-	select HAS_SEGGER_RTT if ZEPHYR_SEGGER_MODULE
+	select HAS_SEGGER_RTT
 	help
 	  Enable support for Raspberry Pi RP2040 MCU series
 

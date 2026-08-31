@@ -4,6 +4,10 @@
 config ZEPHYR_NRF_WIFI_MODULE
 	bool
 
+config ZEPHYR_NRF_WIFI_MODULE_ACTIVE
+	bool
+	depends on ZEPHYR_NRF_WIFI_MODULE
+
 config ZVFS_OPEN_ADD_SIZE_NRF70_ENABLE_DUAL_VIF
 	int "Number of socket descriptors needed by nrf wifi driver"
 	depends on NRF70_ENABLE_DUAL_VIF

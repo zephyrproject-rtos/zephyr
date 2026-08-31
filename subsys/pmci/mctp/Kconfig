@@ -5,6 +5,7 @@
 menuconfig MCTP
 	bool "Management Component Transport Protocol [EXPERIMENTAL]"
 	select EXPERIMENTAL
+	select ZEPHYR_LIBMCTP_MODULE_ACTIVE
 	help
 	  Enable the MCTP Subsystem and Module Usage
 

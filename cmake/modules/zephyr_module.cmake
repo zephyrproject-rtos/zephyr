@@ -27,6 +27,13 @@ include(python)
 # - `ZEPHYR_<MODULE_NAME>_CMAKE_DIR` is used for inclusion of the CMakeLists.txt
 # - `ZEPHYR_<MODULE_NAME>_KCONFIG` is used for inclusion of the Kconfig
 # files into the build system.
+#
+# Which of the modules found in the workspace take part in the build is
+# decided by:
+#   -DZEPHYR_MODULE_ACTIVATION=all|strict
+# 'all', the default, activates every module found. 'strict' activates only
+# the modules the configuration selects, so that a module being in the
+# workspace is not the same as the build using it.
 
 # Settings used by Zephyr module but where systems may define an alternative value.
 set_ifndef(KCONFIG_BINARY_DIR ${CMAKE_BINARY_DIR}/Kconfig)
@@ -39,6 +46,11 @@ endif()
 zephyr_get(EXTRA_ZEPHYR_MODULES MERGE VAR EXTRA_ZEPHYR_MODULES ZEPHYR_EXTRA_MODULES)
 if(EXTRA_ZEPHYR_MODULES)
   set(EXTRA_ZEPHYR_MODULES_ARG "--extra-modules" ${EXTRA_ZEPHYR_MODULES})
+endif()
+
+zephyr_get(ZEPHYR_MODULE_ACTIVATION)
+if(ZEPHYR_MODULE_ACTIVATION)
+  set(ZEPHYR_MODULE_ACTIVATION_ARG "--activation" ${ZEPHYR_MODULE_ACTIVATION})
 endif()
 
 file(MAKE_DIRECTORY ${KCONFIG_BINARY_DIR})
@@ -57,6 +69,7 @@ if(WEST OR ZEPHYR_MODULES)
     --zephyr-base=${ZEPHYR_BASE}
     ${ZEPHYR_MODULES_ARG}
     ${EXTRA_ZEPHYR_MODULES_ARG}
+    ${ZEPHYR_MODULE_ACTIVATION_ARG}
     --kconfig-out ${kconfig_modules_file}
     --cmake-out ${cmake_modules_file}
     --sysbuild-kconfig-out ${kconfig_sysbuild_file}

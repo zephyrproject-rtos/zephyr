@@ -4,9 +4,13 @@
 config ZEPHYR_ZCBOR_MODULE
 	bool
 
+config ZEPHYR_ZCBOR_MODULE_ACTIVE
+	bool
+	depends on ZEPHYR_ZCBOR_MODULE
+
 config ZCBOR
 	bool "zcbor CBOR library"
-	depends on ZEPHYR_ZCBOR_MODULE
+	select ZEPHYR_ZCBOR_MODULE_ACTIVE
 	help
 	  zcbor CBOR encoder/decoder library
 

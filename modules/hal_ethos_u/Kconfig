@@ -2,10 +2,18 @@
 # affiliates <open-source-office@arm.com></text>
 # SPDX-License-Identifier: Apache-2.0
 
+config ZEPHYR_HAL_ETHOS_U_MODULE
+	bool
+
+config ZEPHYR_HAL_ETHOS_U_MODULE_ACTIVE
+	bool
+	depends on ZEPHYR_HAL_ETHOS_U_MODULE
+
 config ETHOS_U
 	bool "Ethos-U core driver"
 	default n
 	depends on MULTITHREADING
+	select ZEPHYR_HAL_ETHOS_U_MODULE_ACTIVE
 	help
 	  This option enables the Arm Ethos-U core driver.
 

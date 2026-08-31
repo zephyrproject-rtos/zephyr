@@ -4,7 +4,7 @@
 config DISK_DRIVER_FTL
 	bool "Flash translation layer"
 	default y
-	depends on ZEPHYR_DHARA_MODULE
+	select ZEPHYR_DHARA_MODULE_ACTIVE
 	depends on DT_HAS_ZEPHYR_FTL_DHARA_ENABLED
 	select FLASH
 	select FLASH_MAP

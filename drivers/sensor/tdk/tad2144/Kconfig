@@ -6,6 +6,7 @@
 menuconfig TAD2144
 	bool "TAD2144 TMR Angle Sensor Device"
 	default y
+	select ZEPHYR_HAL_TDK_MODULE_ACTIVE
 	depends on DT_HAS_INVENSENSE_TAD2144_ENABLED
 	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_TAD2144),spi)
 	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_TAD2144),i2c)

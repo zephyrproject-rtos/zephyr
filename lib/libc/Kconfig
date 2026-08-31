@@ -54,7 +54,7 @@ config NEWLIB_LIBC_SUPPORTED
 # Picolibc with C++ support in Zephyr SDK is handled by Zephyr SDK's own Kconfig.
 config PICOLIBC_SUPPORTED
 	bool
-	depends on ("$(TOOLCHAIN_HAS_PICOLIBC)" = "y") || (ZEPHYR_PICOLIBC_MODULE && !REQUIRES_FULL_LIBCPP)
+	depends on ("$(TOOLCHAIN_HAS_PICOLIBC)" = "y") || !REQUIRES_FULL_LIBCPP
 	default y
 	select FULL_LIBC_SUPPORTED
 	help

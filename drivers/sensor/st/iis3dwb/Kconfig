@@ -7,7 +7,7 @@ menuconfig IIS3DWB
 	bool "IIS3DWB accelerometer sensor"
 	default y
 	depends on DT_HAS_ST_IIS3DWB_ENABLED
-	depends on ZEPHYR_HAL_ST_MODULE
+	select ZEPHYR_HAL_ST_MODULE_ACTIVE
 	select SPI
 	select SPI_RTIO if SENSOR_ASYNC_API
 	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_ST_IIS3DWB),int1-gpios) || \

@@ -23,6 +23,7 @@ config PSA_CRYPTO_PROVIDER_MBEDTLS
 	depends on !BUILD_WITH_TFM
 	select MBEDTLS
 	select MBEDTLS_PSA_CRYPTO_C
+	select ZEPHYR_MBEDTLS_MODULE_ACTIVE
 
 config PSA_CRYPTO_PROVIDER_CUSTOM
 	bool "Use an out-of-tree library"

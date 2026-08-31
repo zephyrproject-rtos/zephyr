@@ -3,10 +3,19 @@
 # Copyright (c) 2016 Piotr Mienkowski
 # SPDX-License-Identifier: Apache-2.0
 
+config ZEPHYR_ATMEL_MODULE
+	bool
+
+config ZEPHYR_ATMEL_MODULE_ACTIVE
+	bool
+	depends on ZEPHYR_ATMEL_MODULE
+
 config ASF
 	bool
 	select HAS_CMSIS_CORE
 	depends on SOC_FAMILY_ATMEL_SAM || SOC_FAMILY_ATMEL_SAM0
+	select ZEPHYR_ATMEL_MODULE_ACTIVE
 
 config ATMEL_WINC1500
 	bool
+	select ZEPHYR_ATMEL_MODULE_ACTIVE

@@ -4,6 +4,7 @@
 
 config NXP_MULTICORE
 	bool "NXP Multicore Manager support"
+	select ZEPHYR_HAL_NXP_MODULE_ACTIVE
 	help
 	  Includes NXP Multicore Manager support.
 

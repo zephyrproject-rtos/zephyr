@@ -7,7 +7,7 @@ menuconfig STTS751
 	bool "STTS751 temperature sensor"
 	default y
 	depends on DT_HAS_ST_STTS751_ENABLED
-	depends on ZEPHYR_HAL_ST_MODULE
+	select ZEPHYR_HAL_ST_MODULE_ACTIVE
 	select I2C
 	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_ST_STTS751),drdy-gpios)
 	select HAS_STMEMSC

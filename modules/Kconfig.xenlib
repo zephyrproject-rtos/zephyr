@@ -1,0 +1,11 @@
+# zephyr-xenlib configuration
+
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config ZEPHYR_XENLIB_MODULE
+	bool
+
+config ZEPHYR_XENLIB_MODULE_ACTIVE
+	bool
+	depends on ZEPHYR_XENLIB_MODULE

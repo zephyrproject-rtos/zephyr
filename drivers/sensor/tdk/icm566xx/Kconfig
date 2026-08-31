@@ -5,6 +5,7 @@
 menuconfig ICM566XX
 	bool "ICM566XX High-precision 6-Axis Motion Tracking Device"
 	default y
+	select ZEPHYR_HAL_TDK_MODULE_ACTIVE
 	depends on DT_HAS_INVENSENSE_ICM56622_ENABLED || \
 		DT_HAS_INVENSENSE_ICM56686_ENABLED
 	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_INVENSENSE_ICM56622),spi) \

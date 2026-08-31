@@ -4,8 +4,13 @@
 config ZEPHYR_CMSIS_DSP_MODULE
 	bool
 
+config ZEPHYR_CMSIS_DSP_MODULE_ACTIVE
+	bool
+	depends on ZEPHYR_CMSIS_DSP_MODULE
+
 menuconfig CMSIS_DSP
 	bool "CMSIS-DSP Library Support"
+	select ZEPHYR_CMSIS_DSP_MODULE_ACTIVE
 	help
 	  This option enables the CMSIS-DSP library.
 

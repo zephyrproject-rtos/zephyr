@@ -8,6 +8,10 @@
 config ZEPHYR_HAL_NXP_MODULE
 	bool
 
+config ZEPHYR_HAL_NXP_MODULE_ACTIVE
+	bool
+	depends on ZEPHYR_HAL_NXP_MODULE
+
 rsource "imx/Kconfig.imx"
 rsource "s32/Kconfig.nxp_s32"
 rsource "mcux/Kconfig.mcux"

@@ -6,6 +6,10 @@
 config ZEPHYR_MBEDTLS_MODULE
 	bool
 
+config ZEPHYR_MBEDTLS_MODULE_ACTIVE
+	bool
+	depends on ZEPHYR_MBEDTLS_MODULE
+
 config MBEDTLS_PROMPTLESS
 	bool
 	help

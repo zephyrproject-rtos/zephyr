@@ -4,9 +4,14 @@
 config ZEPHYR_CMSIS_NN_MODULE
 	bool
 
+config ZEPHYR_CMSIS_NN_MODULE_ACTIVE
+	bool
+	depends on ZEPHYR_CMSIS_NN_MODULE
+
 menuconfig CMSIS_NN
 	bool "CMSIS-NN Library Support"
 	depends on CPU_CORTEX_M
+	select ZEPHYR_CMSIS_NN_MODULE_ACTIVE
 	select CMSIS_DSP
 	help
 	  This option enables the CMSIS-NN library.

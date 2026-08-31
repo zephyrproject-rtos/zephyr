@@ -3,6 +3,7 @@
 
 config HAS_NRFS
 	bool
+	select ZEPHYR_HAL_NORDIC_MODULE_ACTIVE
 
 menu "nRF Services"
 	depends on HAS_NRFS

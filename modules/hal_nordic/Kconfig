@@ -4,8 +4,13 @@
 config ZEPHYR_HAL_NORDIC_MODULE
 	bool
 
+config ZEPHYR_HAL_NORDIC_MODULE_ACTIVE
+	bool
+	depends on ZEPHYR_HAL_NORDIC_MODULE
+
 config HAS_NORDIC_DRIVERS
 	bool
+	select ZEPHYR_HAL_NORDIC_MODULE_ACTIVE
 
 menu "Nordic drivers"
 	depends on HAS_NORDIC_DRIVERS

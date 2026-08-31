@@ -6,7 +6,7 @@ menuconfig WIFI_BFLB
 	bool "Bouffalo Lab WiFi driver"
 	default y
 	depends on DT_HAS_BFLB_WIFI6_ENABLED
-	depends on ZEPHYR_MBEDTLS_MODULE
+	select ZEPHYR_MBEDTLS_MODULE_ACTIVE
 	select NET_L2_WIFI_MGMT
 	select NET_L2_ETHERNET
 	select NET_L2_ETHERNET_MGMT

@@ -2,8 +2,16 @@
 # Copyright 2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
+config ZEPHYR_OPENTHREAD_MODULE
+	bool
+
+config ZEPHYR_OPENTHREAD_MODULE_ACTIVE
+	bool
+	depends on ZEPHYR_OPENTHREAD_MODULE
+
 config OPENTHREAD
 	bool "OpenThread Support"
+	select ZEPHYR_OPENTHREAD_MODULE_ACTIVE
 	imply FLASH
 	imply FLASH_MAP
 	imply MPU_ALLOW_FLASH_WRITE

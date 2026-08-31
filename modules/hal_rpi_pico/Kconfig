@@ -1,66 +1,86 @@
 # Copyright (c) 2021 Yonatan Schachter
 # SPDX-License-Identifier: Apache-2.0
 
+config ZEPHYR_HAL_RPI_PICO_MODULE
+	bool
+
+config ZEPHYR_HAL_RPI_PICO_MODULE_ACTIVE
+	bool
+	depends on ZEPHYR_HAL_RPI_PICO_MODULE
+
 config HAS_RPI_PICO
 	bool
+	select ZEPHYR_HAL_RPI_PICO_MODULE_ACTIVE
 
 config PICOSDK_USE_UART
 	bool
+	select ZEPHYR_HAL_RPI_PICO_MODULE_ACTIVE
 	help
 	  Use the UART driver from pico-sdk
 
 config PICOSDK_USE_GPIO
 	bool
+	select ZEPHYR_HAL_RPI_PICO_MODULE_ACTIVE
 	help
 	  Use the GPIO driver from pico-sdk
 
 config PICOSDK_USE_FLASH
 	bool
+	select ZEPHYR_HAL_RPI_PICO_MODULE_ACTIVE
 	help
 	  Use the flash driver from pico-sdk
 
 config PICOSDK_USE_PWM
 	bool
+	select ZEPHYR_HAL_RPI_PICO_MODULE_ACTIVE
 	help
 	  Use the PWM driver from pico-sdk
 
 config PICOSDK_USE_ADC
 	bool
+	select ZEPHYR_HAL_RPI_PICO_MODULE_ACTIVE
 	help
 	  Use the ADC driver from pico-sdk
 
 config PICOSDK_USE_DMA
 	bool
+	select ZEPHYR_HAL_RPI_PICO_MODULE_ACTIVE
 	help
 	  Use the DMA driver from pico-sdk
 
 config PICOSDK_USE_PIO
 	bool
 	select PICOSDK_USE_CLAIM
+	select ZEPHYR_HAL_RPI_PICO_MODULE_ACTIVE
 	help
 	  Use the PIO driver from pico-sdk
 
 config PICOSDK_USE_CLAIM
 	bool
+	select ZEPHYR_HAL_RPI_PICO_MODULE_ACTIVE
 	help
 	  Use the "claim" driver from pico-sdk
 
 config PICOSDK_USE_TIMER
 	bool
+	select ZEPHYR_HAL_RPI_PICO_MODULE_ACTIVE
 	help
 	  Use the TIMER driver from pico-sdk
 
 config PICOSDK_USE_RTC
 	bool
+	select ZEPHYR_HAL_RPI_PICO_MODULE_ACTIVE
 	help
 	  Use the RTC driver from pico-sdk
 
 config PICOSDK_USE_SHA256
 	bool
+	select ZEPHYR_HAL_RPI_PICO_MODULE_ACTIVE
 	help
 	  Use the SHA-256 driver and utilities from pico-sdk
 
 config PICOSDK_USE_RAND
 	bool
+	select ZEPHYR_HAL_RPI_PICO_MODULE_ACTIVE
 	help
 	  Use the "rand" driver from pico-sdk

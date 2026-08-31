@@ -3,8 +3,12 @@
 # Copyright (c) 2025 Texas Instruments
 # SPDX-License-Identifier: Apache-2.0
 
+# ZEPHYR_TI_MODULE is declared in Kconfig.simplelink.
 config HAS_MSPM0_SDK
 	bool
+	select ZEPHYR_TI_MODULE_ACTIVE
+
+if HAS_MSPM0_SDK
 
 config USE_MSPM0_DL_GPIO
 	bool
@@ -35,3 +39,5 @@ config USE_MSPM0_DL_ADC
 
 config USE_MSPM0_DL_DMA
 	bool
+
+endif # HAS_MSPM0_SDK

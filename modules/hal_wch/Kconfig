@@ -4,4 +4,16 @@
 # SPDX-License-Identifier: Apache-2.0
 #
 
-# file is empty and kept as a place holder if/when Kconfig is needed
+config ZEPHYR_HAL_WCH_MODULE
+	bool
+
+config ZEPHYR_HAL_WCH_MODULE_ACTIVE
+	bool
+	depends on ZEPHYR_HAL_WCH_MODULE
+
+config HAS_WCH_CH32FUN
+	bool
+	select ZEPHYR_HAL_WCH_MODULE_ACTIVE
+	help
+	  The ch32fun headers for WCH SoCs. Selected by the SoC family, whose
+	  sources and pinctrl drivers are built against them.

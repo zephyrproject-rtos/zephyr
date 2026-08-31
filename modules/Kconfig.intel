@@ -1,8 +1,16 @@
 # Copyright (c) 2023 Intel Corporation
 # SPDX-License-Identifier: Apache-2.0
 
+config ZEPHYR_HAL_INTEL_MODULE
+	bool
+
+config ZEPHYR_HAL_INTEL_MODULE_ACTIVE
+	bool
+	depends on ZEPHYR_HAL_INTEL_MODULE
+
 config INTEL_HAL
 	bool
+	select ZEPHYR_HAL_INTEL_MODULE_ACTIVE
 	help
 	  Build the Intel HAL module during build process.
 	  This is selected by the ARCH kconfig automatically.
