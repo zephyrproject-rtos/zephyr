@@ -6,6 +6,7 @@
  */
 
 #include <errno.h>
+#include <float.h>
 #include <limits.h>
 #include <math.h>
 #include <stdint.h>
@@ -25,7 +26,7 @@
 struct fake_clock_data {
 	precision_time_t time_ns;
 	precision_time_t phase;
-	double rate_ratio;
+	int64_t scaled_ppm;
 	int error;
 	int reads;
 	int sets;
@@ -70,7 +71,7 @@ static int fake_clock_adjust_phase(const struct precision_clock *precision_clk,
 	return 0;
 }
 
-static int fake_clock_adjust_rate(const struct precision_clock *precision_clk, double rate_ratio)
+static int fake_clock_adjust_rate(const struct precision_clock *precision_clk, int64_t scaled_ppm)
 {
 	struct fake_clock_data *data = precision_clk->data;
 
@@ -78,7 +79,7 @@ static int fake_clock_adjust_rate(const struct precision_clock *precision_clk, d
 		return data->error;
 	}
 
-	data->rate_ratio = rate_ratio;
+	data->scaled_ppm = scaled_ppm;
 	return 0;
 }
 
@@ -88,8 +89,6 @@ static const struct precision_clock_api fake_clock_api = {
 	.adjust_phase = fake_clock_adjust_phase,
 	.adjust_rate = fake_clock_adjust_rate,
 };
-
-static const struct precision_clock_api unsupported_clock_api;
 
 static struct net_ptp_time ptp_time;
 static int ptp_error;
@@ -153,13 +152,6 @@ static DEVICE_API(ptp_clock, fake_ptp_api) = {
 
 DEVICE_DEFINE(fake_ptp_clock, "fake_ptp_clock", NULL, NULL, NULL, NULL, POST_KERNEL,
 	      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &fake_ptp_api);
-
-static DEVICE_API(ptp_clock, readonly_ptp_api) = {
-	.get = fake_ptp_get,
-};
-
-DEVICE_DEFINE(readonly_ptp_clock, "readonly_ptp_clock", NULL, NULL, NULL, NULL, POST_KERNEL,
-	      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &readonly_ptp_api);
 
 ZTEST(precision_timing, test_time_addition)
 {
@@ -243,27 +235,32 @@ ZTEST(precision_timing, test_clock_dispatch_and_error_propagation)
 	zassert_equal(data.time_ns, -456);
 	zassert_ok(precision_clock_adjust_phase(&precision_clk, 789));
 	zassert_equal(data.phase, 789);
-	zassert_ok(precision_clock_adjust_rate(&precision_clk, 1.000001));
-	zassert_double_close(data.rate_ratio, 1.000001);
+	zassert_ok(precision_clock_adjust_rate(&precision_clk, PRECISION_CLOCK_SCALED_PPM_ONE));
+	zassert_equal(data.scaled_ppm, PRECISION_CLOCK_SCALED_PPM_ONE);
 
 	data.error = -EIO;
 	zassert_equal(precision_clock_read(&precision_clk, &time_ns), -EIO);
 	zassert_equal(precision_clock_set(&precision_clk, 0), -EIO);
 	zassert_equal(precision_clock_adjust_phase(&precision_clk, 0), -EIO);
-	zassert_equal(precision_clock_adjust_rate(&precision_clk, 1.0), -EIO);
+	zassert_equal(precision_clock_adjust_rate(&precision_clk, 0), -EIO);
 }
 
-ZTEST(precision_timing, test_clock_unsupported_operations)
+ZTEST(precision_timing, test_clock_ppb_to_scaled_ppm)
 {
-	struct precision_clock precision_clk = {.api = &unsupported_clock_api};
-	precision_time_t time_ns;
+	int64_t scaled_ppm;
 
-	zassert_equal(precision_clock_read(&precision_clk, &time_ns), -ENOTSUP);
-	zassert_equal(precision_clock_set(&precision_clk, 0), -ENOTSUP);
-	zassert_equal(precision_clock_adjust_phase(&precision_clk, 0), -ENOTSUP);
-	zassert_equal(precision_clock_adjust_rate(&precision_clk, 1.0), -ENOTSUP);
-	zassert_equal(precision_clock_read(NULL, &time_ns), -EINVAL);
-	zassert_equal(precision_clock_read(&precision_clk, NULL), -EINVAL);
+	zassert_ok(precision_clock_ppb_to_scaled_ppm(1000.0, &scaled_ppm));
+	zassert_equal(scaled_ppm, PRECISION_CLOCK_SCALED_PPM_ONE);
+	zassert_ok(precision_clock_ppb_to_scaled_ppm(-1000.0, &scaled_ppm));
+	zassert_equal(scaled_ppm, -PRECISION_CLOCK_SCALED_PPM_ONE);
+	zassert_ok(precision_clock_ppb_to_scaled_ppm(0.0, &scaled_ppm));
+	zassert_equal(scaled_ppm, 0);
+	zassert_equal(precision_clock_ppb_to_scaled_ppm(DBL_MAX, &scaled_ppm), -ERANGE);
+	zassert_equal(precision_clock_ppb_to_scaled_ppm(-DBL_MAX, &scaled_ppm), -ERANGE);
+	zassert_equal(precision_clock_ppb_to_scaled_ppm((double)NAN, &scaled_ppm), -ERANGE);
+	zassert_equal(precision_clock_ppb_to_scaled_ppm((double)INFINITY, &scaled_ppm), -ERANGE);
+	zassert_equal(precision_clock_ppb_to_scaled_ppm(-(double)INFINITY, &scaled_ppm), -ERANGE);
+	zassert_equal(precision_clock_ppb_to_scaled_ppm(0.0, NULL), -EINVAL);
 }
 
 ZTEST(precision_timing, test_ptp_adapter_converts_and_dispatches)
@@ -285,14 +282,20 @@ ZTEST(precision_timing, test_ptp_adapter_converts_and_dispatches)
 	zassert_equal(ptp_time.nanosecond, 78);
 	zassert_ok(precision_clock_adjust_phase(precision_clk, -123));
 	zassert_equal(ptp_phase, -123);
-	zassert_ok(precision_clock_adjust_rate(precision_clk, 1.000002));
+	zassert_ok(precision_clock_adjust_rate(precision_clk,
+					2 * PRECISION_CLOCK_SCALED_PPM_ONE));
 	zassert_double_close(ptp_rate_ratio, 1.000002);
+	zassert_ok(precision_clock_adjust_rate(precision_clk, 0));
+	zassert_double_close(ptp_rate_ratio, 1.0);
+	zassert_ok(precision_clock_adjust_rate(precision_clk,
+					-(3 * PRECISION_CLOCK_SCALED_PPM_ONE / 2)));
+	zassert_double_close(ptp_rate_ratio, 0.9999985);
 	zassert_equal(precision_clock_set(precision_clk, -1), -ERANGE);
 	zassert_equal(precision_clock_adjust_phase(precision_clk, (precision_time_t)INT_MAX + 1),
 		      -ERANGE);
 }
 
-ZTEST(precision_timing, test_ptp_adapter_errors_and_unsupported_operations)
+ZTEST(precision_timing, test_ptp_adapter_errors)
 {
 	struct precision_clock_ptp_adapter adapter;
 	const struct precision_clock *precision_clk;
@@ -307,14 +310,7 @@ ZTEST(precision_timing, test_ptp_adapter_errors_and_unsupported_operations)
 	zassert_equal(precision_clock_read(precision_clk, &time_ns), -EIO);
 	zassert_equal(precision_clock_set(precision_clk, 0), -EIO);
 	zassert_equal(precision_clock_adjust_phase(precision_clk, 0), -EIO);
-	zassert_equal(precision_clock_adjust_rate(precision_clk, 1.0), -EIO);
-
-	ptp_error = 0;
-	zassert_ok(precision_clock_ptp_init(&adapter, DEVICE_GET(readonly_ptp_clock)));
-	precision_clk = precision_clock_ptp_get(&adapter);
-	zassert_equal(precision_clock_set(precision_clk, 0), -ENOTSUP);
-	zassert_equal(precision_clock_adjust_phase(precision_clk, 0), -ENOTSUP);
-	zassert_equal(precision_clock_adjust_rate(precision_clk, 1.0), -ENOTSUP);
+	zassert_equal(precision_clock_adjust_rate(precision_clk, 0), -EIO);
 }
 
 ZTEST(precision_timing, test_ptp_adapter_rejects_unrepresentable_time)

@@ -82,7 +82,7 @@ struct precision_pi;
  * @param nanosecond_diff Signed fractional-nanosecond portion of the offset.
  *
  * @retval 0 on success.
- * @retval -ERANGE if a hard-step target is not representable.
+ * @retval -ERANGE if the clock correction is not representable.
  * @return A precision clock operation error on failure.
  */
 int gptp_apply_clock_update(struct precision_pi *pi,

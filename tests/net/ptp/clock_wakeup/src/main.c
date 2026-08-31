@@ -5,6 +5,8 @@
  */
 
 #include <errno.h>
+#include <float.h>
+#include <math.h>
 #include <string.h>
 
 #include <zephyr/drivers/ptp_clock.h>
@@ -131,6 +133,14 @@ static int fake_ptp_clock_set(const struct device *dev, struct net_ptp_time *tm)
 	return fake_ptp_clock_set_ret;
 }
 
+static int fake_ptp_clock_adjust(const struct device *dev, int increment)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(increment);
+
+	return 0;
+}
+
 static int fake_ptp_clock_rate_adjust(const struct device *dev, double ratio)
 {
 	ARG_UNUSED(dev);
@@ -144,6 +154,7 @@ static int fake_ptp_clock_rate_adjust(const struct device *dev, double ratio)
 static DEVICE_API(ptp_clock, fake_ptp_clock_api) = {
 	.set = fake_ptp_clock_set,
 	.get = fake_ptp_clock_get,
+	.adjust = fake_ptp_clock_adjust,
 	.rate_adjust = fake_ptp_clock_rate_adjust,
 };
 
@@ -565,6 +576,25 @@ ZTEST(ptp_clock_wakeup, test_pi_servo_uses_configured_gains)
 	correction = precision_pi_update(&ptp_clk.pi, offset);
 	zassert_within(correction, (kp + 2.0 * ki) * offset, 0.000001,
 		       "integral accumulation mismatch");
+}
+
+ZTEST(ptp_clock_wakeup, test_unrepresentable_pi_output_resets_servo)
+{
+	const struct precision_clock *precision_clk =
+		precision_clock_ptp_get(&ptp_clk.precision_clock);
+
+	precision_pi_init(&ptp_clk.pi, DBL_MAX, 0.0);
+	ptp_clk.sync_servo_locked = true;
+	ptp_clk.sync_servo_lock_samples = SYNC_SERVO_LOCK_SAMPLES;
+
+	clock_adjust_rate(precision_clk, -1);
+
+	zassert_equal(fake_ptp_clock_rate_adjust_calls, 1,
+		      "only the nominal-rate reset should reach the clock");
+	zassert_equal(fake_ptp_clock_last_rate_ratio, 1.0,
+		      "servo reset should restore nominal rate");
+	zassert_equal(ptp_clk.pi.integral, 0.0, "servo integral should be cleared");
+	zassert_false(ptp_clk.sync_servo_locked, "servo lock should be cleared");
 }
 
 ZTEST(ptp_clock_wakeup, test_synchronize_applies_pi_rate_adjustment)

@@ -571,7 +571,7 @@ static void clock_servo_reset(void)
 	ptp_clk.sync_servo_outlier_samples = 0;
 	ptp_clk.sync_servo_locked = false;
 
-	ret = precision_clock_adjust_rate(precision_clock_ptp_get(&ptp_clk.precision_clock), 1.0);
+	ret = precision_clock_adjust_rate(precision_clock_ptp_get(&ptp_clk.precision_clock), 0);
 	if (ret < 0) {
 		LOG_WRN("Failed to reset PHC rate to nominal (err %d)", ret);
 	}
@@ -690,6 +690,7 @@ static __noinline void clock_adjust_rate(const struct precision_clock *precision
 					 int64_t offset)
 {
 	double ppb;
+	int64_t scaled_ppm;
 	int ret;
 
 	LOG_DBG("Offset %lldns", offset);
@@ -709,7 +710,14 @@ static __noinline void clock_adjust_rate(const struct precision_clock *precision
 	ptp_clk.sync_servo_outlier_samples = 0;
 
 	ppb = precision_pi_update(&ptp_clk.pi, -offset);
-	ret = precision_clock_adjust_rate(precision_clk, 1.0 + (ppb / 1000000000.0));
+	ret = precision_clock_ppb_to_scaled_ppm(ppb, &scaled_ppm);
+	if (ret < 0) {
+		LOG_WRN("PTP PI output is out of range (ppb=%f), resetting servo", ppb);
+		clock_servo_reset();
+		return;
+	}
+
+	ret = precision_clock_adjust_rate(precision_clk, scaled_ppm);
 	if (ret < 0) {
 		LOG_WRN("Failed to adjust PHC rate for offset %lldns (ppb=%f err %d), "
 			"resetting servo",

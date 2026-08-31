@@ -20,6 +20,15 @@
 extern "C" {
 #endif
 
+/**
+ * @brief Precision Clock PTP Adapter
+ * @defgroup precision_clock_ptp Precision Clock PTP Adapter
+ * @since 4.5
+ * @version 0.1.0
+ * @ingroup precision_clock
+ * @{
+ */
+
 /** Adapter that exposes a PTP clock device as a precision clock. */
 struct precision_clock_ptp_adapter {
 	/** Protocol-neutral precision clock. */
@@ -51,6 +60,8 @@ precision_clock_ptp_get(const struct precision_clock_ptp_adapter *adapter)
 {
 	return &adapter->precision_clk;
 }
+
+/** @} */
 
 #ifdef __cplusplus
 }

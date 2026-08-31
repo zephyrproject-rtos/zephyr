@@ -29,10 +29,6 @@ static int precision_clock_ptp_read(const struct precision_clock *precision_clk,
 	uint32_t nanoseconds_limit = PRECISION_TIME_MAX % NSEC_PER_SEC;
 	int ret;
 
-	if (api == NULL || api->get == NULL) {
-		return -ENOTSUP;
-	}
-
 	ret = api->get(adapter->dev, &ptp_time);
 	if (ret < 0) {
 		return ret;
@@ -55,10 +51,6 @@ static int precision_clock_ptp_set(const struct precision_clock *precision_clk,
 	const struct ptp_clock_driver_api *api = ptp_api(precision_clk);
 	struct net_ptp_time ptp_time;
 
-	if (api == NULL || api->set == NULL) {
-		return -ENOTSUP;
-	}
-
 	if (time_ns < 0) {
 		return -ERANGE;
 	}
@@ -75,10 +67,6 @@ static int precision_clock_ptp_adjust_phase(const struct precision_clock *precis
 	const struct precision_clock_ptp_adapter *adapter = precision_clk->data;
 	const struct ptp_clock_driver_api *api = ptp_api(precision_clk);
 
-	if (api == NULL || api->adjust == NULL) {
-		return -ENOTSUP;
-	}
-
 	if (phase_ns < INT_MIN || phase_ns > INT_MAX) {
 		return -ERANGE;
 	}
@@ -87,14 +75,13 @@ static int precision_clock_ptp_adjust_phase(const struct precision_clock *precis
 }
 
 static int precision_clock_ptp_adjust_rate(const struct precision_clock *precision_clk,
-					   double rate_ratio)
+					   int64_t scaled_ppm)
 {
 	const struct precision_clock_ptp_adapter *adapter = precision_clk->data;
 	const struct ptp_clock_driver_api *api = ptp_api(precision_clk);
-
-	if (api == NULL || api->rate_adjust == NULL) {
-		return -ENOTSUP;
-	}
+	/* The existing PTP clock API expresses the adjustment as a rate ratio. */
+	double rate_ratio =
+		1.0 + (double)scaled_ppm / (1000000.0 * PRECISION_CLOCK_SCALED_PPM_ONE);
 
 	return api->rate_adjust(adapter->dev, rate_ratio);
 }

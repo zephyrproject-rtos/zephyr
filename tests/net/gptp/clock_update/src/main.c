@@ -5,6 +5,8 @@
  */
 
 #include <errno.h>
+#include <float.h>
+#include <math.h>
 #include <stdint.h>
 #include <string.h>
 
@@ -17,7 +19,7 @@
 struct fake_clock_data {
 	precision_time_t time;
 	precision_time_t set_value;
-	double rate_ratio;
+	int64_t scaled_ppm;
 	int read_error;
 	int set_error;
 	int rate_error;
@@ -66,12 +68,12 @@ static int fake_clock_adjust_phase(const struct precision_clock *precision_clk,
 }
 
 static int fake_clock_adjust_rate(const struct precision_clock *precision_clk,
-				  double rate_ratio)
+				  int64_t scaled_ppm)
 {
 	struct fake_clock_data *data = precision_clk->data;
 
 	data->rate_calls++;
-	data->rate_ratio = rate_ratio;
+	data->scaled_ppm = scaled_ppm;
 	return data->rate_error;
 }
 
@@ -103,9 +105,83 @@ ZTEST(gptp_clock_update, test_small_offset_adjusts_rate)
 
 	zassert_ok(ret);
 	zassert_equal(fake_data.rate_calls, 1);
-	zassert_within(fake_data.rate_ratio, 1.000001, 0.000000001);
+	zassert_equal(fake_data.scaled_ppm, PRECISION_CLOCK_SCALED_PPM_ONE);
 	zassert_equal(fake_data.read_calls, 0);
 	zassert_equal(fake_data.set_calls, 0);
+}
+
+ZTEST(gptp_clock_update, test_small_negative_offset_adjusts_rate)
+{
+	int ret;
+
+	ret = gptp_apply_clock_update(&pi, &fake_clock, 0, -1000);
+
+	zassert_ok(ret);
+	zassert_equal(fake_data.rate_calls, 1);
+	zassert_equal(fake_data.scaled_ppm, -PRECISION_CLOCK_SCALED_PPM_ONE);
+	zassert_equal(fake_data.read_calls, 0);
+	zassert_equal(fake_data.set_calls, 0);
+}
+
+ZTEST(gptp_clock_update, test_zero_offset_applies_nominal_rate)
+{
+	int ret;
+
+	ret = gptp_apply_clock_update(&pi, &fake_clock, 0, 0);
+
+	zassert_ok(ret);
+	zassert_equal(fake_data.rate_calls, 1);
+	zassert_equal(fake_data.scaled_ppm, 0);
+	zassert_equal(fake_data.read_calls, 0);
+	zassert_equal(fake_data.set_calls, 0);
+}
+
+ZTEST(gptp_clock_update, test_large_positive_pi_output_is_rejected)
+{
+	int ret;
+
+	precision_pi_init(&pi, DBL_MAX, 0.0);
+	ret = gptp_apply_clock_update(&pi, &fake_clock, 0, 1);
+
+	zassert_equal(ret, -ERANGE);
+	zassert_equal(fake_data.rate_calls, 0);
+}
+
+ZTEST(gptp_clock_update, test_large_negative_pi_output_is_rejected)
+{
+	int ret;
+
+	precision_pi_init(&pi, DBL_MAX, 0.0);
+	ret = gptp_apply_clock_update(&pi, &fake_clock, 0, -1);
+
+	zassert_equal(ret, -ERANGE);
+	zassert_equal(fake_data.rate_calls, 0);
+}
+
+ZTEST(gptp_clock_update, test_nan_pi_output_is_rejected)
+{
+	int ret;
+
+	precision_pi_init(&pi, (double)NAN, 0.0);
+	ret = gptp_apply_clock_update(&pi, &fake_clock, 0, 1);
+
+	zassert_equal(ret, -ERANGE);
+	zassert_equal(fake_data.rate_calls, 0);
+}
+
+ZTEST(gptp_clock_update, test_infinite_pi_outputs_are_rejected)
+{
+	int ret;
+
+	precision_pi_init(&pi, (double)INFINITY, 0.0);
+	ret = gptp_apply_clock_update(&pi, &fake_clock, 0, 1);
+	zassert_equal(ret, -ERANGE);
+	zassert_equal(fake_data.rate_calls, 0);
+
+	precision_pi_init(&pi, (double)INFINITY, 0.0);
+	ret = gptp_apply_clock_update(&pi, &fake_clock, 0, -1);
+	zassert_equal(ret, -ERANGE);
+	zassert_equal(fake_data.rate_calls, 0);
 }
 
 ZTEST(gptp_clock_update, test_large_positive_offset_steps_forward)

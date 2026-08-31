@@ -33,16 +33,17 @@ relationships is outside this API.
 Precision clock
 ***************
 
-:c:struct:`precision_clock` dispatches four optional clock operations:
+:c:struct:`precision_clock` dispatches four mandatory clock operations:
 
 * read the current time;
 * set an absolute time;
 * apply a phase adjustment; and
-* set a rate ratio relative to the nominal frequency.
+* set a rate offset from the nominal frequency as parts per million with a
+  16-bit binary fractional field.
 
-A missing operation returns ``-ENOTSUP``. Operation support, adjustment ranges,
-and other hardware constraints remain the responsibility of the underlying
-clock implementation.
+All operations must be implemented by a clock adapter. Adjustment ranges and
+other hardware constraints remain the responsibility of the underlying clock
+implementation.
 
 :c:struct:`precision_clock_ptp_adapter` exposes an existing Zephyr PTP clock
 device through this interface. It performs the required conversion between
@@ -82,5 +83,7 @@ API reference
 .. doxygengroup:: precision_time
 
 .. doxygengroup:: precision_clock
+
+.. doxygengroup:: precision_clock_ptp
 
 .. doxygengroup:: precision_pi

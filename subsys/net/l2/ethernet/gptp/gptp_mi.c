@@ -808,8 +808,15 @@ out:
 		irq_unlock(key);
 	} else {
 		double ppb = precision_pi_update(pi, nanosecond_diff);
+		int64_t scaled_ppm;
 
-		ret = precision_clock_adjust_rate(precision_clk, 1.0 + (ppb / 1000000000.0));
+		ret = precision_clock_ppb_to_scaled_ppm(ppb, &scaled_ppm);
+		if (ret < 0) {
+			NET_WARN_RATELIMIT("gPTP PI output is out of range (ppb=%f)", ppb);
+			return ret;
+		}
+
+		ret = precision_clock_adjust_rate(precision_clk, scaled_ppm);
 		if (ret < 0) {
 			NET_WARN("Failed to adjust local clock rate (%d)", ret);
 		}
