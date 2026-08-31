@@ -304,6 +304,41 @@ static int mcux_pwm_calc_ticks(uint16_t first_capture, uint16_t second_capture, 
 	return 0;
 }
 
+static void mcux_pwm_capture_irq_disable(const struct device *dev, uint32_t channel)
+{
+	const struct pwm_mcux_config *config = dev->config;
+
+	switch (channel) {
+#if defined(FSL_FEATURE_PWM_HAS_CAPTURE_ON_CHANNELA) && \
+	(FSL_FEATURE_PWM_HAS_CAPTURE_ON_CHANNELA == 1U)
+	case 0U:
+		/* Channel A */
+		PWM_DisableInterrupts(config->base, config->index, kPWM_CaptureA0InterruptEnable |
+			kPWM_CaptureA1InterruptEnable | kPWM_ReloadInterruptEnable);
+		break;
+#endif
+#if defined(FSL_FEATURE_PWM_HAS_CAPTURE_ON_CHANNELB) && \
+	(FSL_FEATURE_PWM_HAS_CAPTURE_ON_CHANNELB == 1U)
+	case 1U:
+		/* Channel B */
+		PWM_DisableInterrupts(config->base, config->index, kPWM_CaptureB0InterruptEnable |
+			kPWM_CaptureB1InterruptEnable | kPWM_ReloadInterruptEnable);
+		break;
+#endif
+#if defined(FSL_FEATURE_PWM_HAS_CAPTURE_ON_CHANNELX) && \
+	(FSL_FEATURE_PWM_HAS_CAPTURE_ON_CHANNELX == 1U)
+	case 2U:
+		/* Channel X */
+		PWM_DisableInterrupts(config->base, config->index, kPWM_CaptureX0InterruptEnable |
+			kPWM_CaptureX1InterruptEnable | kPWM_ReloadInterruptEnable);
+		break;
+#endif
+	default:
+		/* unsupported channel for this SoC: check_channel() should have rejected it */
+		break;
+	}
+}
+
 static void mcux_pwm_handle_capture(const struct device *dev, uint16_t first_edge_value,
 				    uint16_t second_edge_value, uint16_t modValue,
 				    int overflow_err)
@@ -609,7 +644,6 @@ static int mcux_pwm_enable_capture(const struct device *dev, uint32_t channel)
 
 static int mcux_pwm_disable_capture(const struct device *dev, uint32_t channel)
 {
-	const struct pwm_mcux_config *config = dev->config;
 	struct pwm_mcux_data *data = dev->data;
 	int ret;
 
@@ -619,35 +653,7 @@ static int mcux_pwm_disable_capture(const struct device *dev, uint32_t channel)
 	}
 
 	/* Disable capture interrupts */
-	switch (channel) {
-#if defined(FSL_FEATURE_PWM_HAS_CAPTURE_ON_CHANNELA) && \
-	(FSL_FEATURE_PWM_HAS_CAPTURE_ON_CHANNELA == 1U)
-	case 0U:
-		/* Channel A */
-		PWM_DisableInterrupts(config->base, config->index, kPWM_CaptureA0InterruptEnable |
-			kPWM_CaptureA1InterruptEnable | kPWM_ReloadInterruptEnable);
-		break;
-#endif
-#if defined(FSL_FEATURE_PWM_HAS_CAPTURE_ON_CHANNELB) && \
-	(FSL_FEATURE_PWM_HAS_CAPTURE_ON_CHANNELB == 1U)
-	case 1U:
-		/* Channel B */
-		PWM_DisableInterrupts(config->base, config->index, kPWM_CaptureB0InterruptEnable |
-			kPWM_CaptureB1InterruptEnable | kPWM_ReloadInterruptEnable);
-		break;
-#endif
-#if defined(FSL_FEATURE_PWM_HAS_CAPTURE_ON_CHANNELX) && \
-	(FSL_FEATURE_PWM_HAS_CAPTURE_ON_CHANNELX == 1U)
-	case 2U:
-		/* Channel X */
-		PWM_DisableInterrupts(config->base, config->index, kPWM_CaptureX0InterruptEnable |
-			kPWM_CaptureX1InterruptEnable | kPWM_ReloadInterruptEnable);
-		break;
-#endif
-	default:
-		/* unsupported channel for this SoC: check_channel() should have rejected it */
-		break;
-	}
+	mcux_pwm_capture_irq_disable(dev, channel);
 
 	data->capture_active = false;
 	data->capture.callback = NULL;
