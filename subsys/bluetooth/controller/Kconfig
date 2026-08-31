@@ -1029,6 +1029,7 @@ config BT_CTLR_SET_HOST_FEATURE
 config BT_CTLR_CENTRAL_ISO
 	bool "LE Connected Isochronous Stream Central" if !BT_LL_SW_SPLIT
 	depends on BT_CTLR_CENTRAL_ISO_SUPPORT && BT_ISO_CENTRAL
+	select BT_CTLR_CONN_ISO_SEQUENTIAL if !BT_CTLR_CONN_ISO_INTERLEAVED
 	default y if BT_ISO_CENTRAL
 	help
 	  Enable support for Bluetooth 5.2 LE Connected Isochronous Stream
@@ -1044,6 +1045,7 @@ config BT_CTLR_CENTRAL_ISO
 config BT_CTLR_PERIPHERAL_ISO
 	bool "LE Connected Isochronous Stream Peripheral" if !BT_LL_SW_SPLIT
 	depends on BT_CTLR_PERIPHERAL_ISO_SUPPORT && BT_ISO_PERIPHERAL
+	select BT_CTLR_CONN_ISO_SEQUENTIAL if !BT_CTLR_CONN_ISO_INTERLEAVED
 	default y if BT_ISO_PERIPHERAL
 	help
 	  Enable support for Bluetooth 5.2 LE Connected Isochronous Stream
@@ -1059,6 +1061,26 @@ config BT_CTLR_PERIPHERAL_ISO
 config BT_CTLR_CONN_ISO
 	bool
 	default BT_CTLR_CENTRAL_ISO || BT_CTLR_PERIPHERAL_ISO
+
+config BT_CTLR_CONN_ISO_SEQUENTIAL
+	bool "LE Connected Isochronous Stream sequential packing"
+	depends on BT_CTLR_CONN_ISO
+	default y
+	help
+	  Enable support for sequential packing of CIS subevents where all
+	  subevents of one CIS complete before the next CIS starts.
+	  At least one of sequential or interleaved packing must be enabled.
+
+config BT_CTLR_CONN_ISO_INTERLEAVED
+	bool "LE Connected Isochronous Stream interleaved packing"
+	depends on BT_CTLR_CONN_ISO
+	default y if BT_CTLR_PERIPHERAL_ISO
+	help
+	  Enable support for interleaved packing of CIS subevents where first
+	  subevents of all CISes are adjacent, then second subevents, etc.
+	  At least one of sequential or interleaved packing must be enabled.
+	  Note: Interleaved packing with low latency policy requires the
+	  reliability policy to also be enabled for flush timeout calculation.
 
 config BT_CTLR_CONN_ISO_STREAMS
 	int "LE Connected Isochronous Streams"

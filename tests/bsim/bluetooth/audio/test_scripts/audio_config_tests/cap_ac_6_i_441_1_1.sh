@@ -4,6 +4,4 @@
 
 source $(dirname "$0")/_ac_common.sh
 
-# bap_stream_rx.c:66): ISO receive lost
-# https://github.com/zephyrproject-rtos/zephyr/issues/84303
-# ac_config=6_i ac_tx_preset=441_1_1 ac_acc_cnt=1 Execute_cap_unicast_ac $@
+ac_config=6_i ac_tx_preset=441_1_1 ac_acc_cnt=1 Execute_cap_unicast_ac $@
