@@ -813,10 +813,12 @@ static int dfu_mode_init(struct usbd_class_data *const c_data)
 			data->image = image;
 		}
 
-		if (usbd_add_descriptor(uds_ctx, image->sd_nd)) {
-			LOG_ERR("Failed to add string descriptor");
-		} else {
-			image->if_desc->iInterface = usbd_str_desc_get_idx(image->sd_nd);
+		if (image->if_desc->iInterface == 0) {
+			if (usbd_add_descriptor(uds_ctx, image->sd_nd)) {
+				LOG_ERR("Failed to add string descriptor");
+			} else {
+				image->if_desc->iInterface = usbd_str_desc_get_idx(image->sd_nd);
+			}
 		}
 	}
 
