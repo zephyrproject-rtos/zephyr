@@ -30,6 +30,11 @@
 #define OWN_FLAG                        BIT(31)
 #define RX_STATUS1_VALID_FLAG           BIT(26)
 #define RX_TIMESTAMP_AVAILABLE_FLAG     BIT(14)
+/* RDES1 write-back status, valid only when RX_STATUS1_VALID_FLAG is set:
+ * IP header checksum error and IP payload (L4) checksum error.
+ */
+#define RX_IP_HEADER_ERROR_FLAG         BIT(3)
+#define RX_IP_PAYLOAD_ERROR_FLAG        BIT(7)
 
 #define RX_INTERRUPT_ON_COMPLETE_FLAG BIT(30)
 #define TX_INTERRUPT_ON_COMPLETE_FLAG BIT(31)
