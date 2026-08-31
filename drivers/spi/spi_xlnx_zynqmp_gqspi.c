@@ -94,7 +94,8 @@ enum xlnx_zynqmp_gqspi_registers {
 #define GQSPI_CS_HOLD_CYCLES  10
 #define GQSPI_MAX_EXPONENT    28
 
-#define GQSPI_GEN_FIFO_DEPTH 32
+#define GQSPI_GEN_FIFO_DEPTH    32
+#define GQSPI_MAX_TRANSFER_SIZE (BIT64(GQSPI_MAX_EXPONENT + 1) - 1U)
 
 #define GQSPI_FIFO_CTRL_RST_RX_FIFO_MASK  BIT(2)
 #define GQSPI_FIFO_CTRL_RST_TX_FIFO_MASK  BIT(1)
@@ -164,6 +165,48 @@ static inline void xlnx_zynqmp_gqspi_write32(const struct device *dev,
 	const struct xlnx_zynqmp_gqspi_config *config = dev->config;
 
 	sys_write32(value, config->base + (mm_reg_t)reg);
+}
+
+static size_t xlnx_zynqmp_gqspi_genfifo_entry_count(size_t length)
+{
+	size_t count = 0;
+	uint32_t exponent;
+
+	if (length > GQSPI_MAX_TRANSFER_SIZE) {
+		return 0;
+	}
+
+	if ((length & GQSPI_GEN_FIFO_IMMED_DATA_MASK) != 0U) {
+		count++;
+	}
+
+	for (exponent = 8; exponent <= GQSPI_MAX_EXPONENT; exponent++) {
+		if ((length & BIT64(exponent)) != 0U) {
+			count++;
+		}
+	}
+
+	return count;
+}
+
+static void xlnx_zynqmp_gqspi_queue_data(const struct device *dev, uint32_t genfifo_entry,
+					 size_t length)
+{
+	uint32_t exponent;
+
+	for (exponent = 8; exponent <= GQSPI_MAX_EXPONENT; exponent++) {
+		if ((length & BIT64(exponent)) != 0U) {
+			xlnx_zynqmp_gqspi_write32(dev, GQSPI_GEN_FIFO,
+						  genfifo_entry | GQSPI_GEN_FIFO_EXPONENT_MASK |
+							  exponent);
+		}
+	}
+
+	if ((length & GQSPI_GEN_FIFO_IMMED_DATA_MASK) != 0U) {
+		xlnx_zynqmp_gqspi_write32(dev, GQSPI_GEN_FIFO,
+					  genfifo_entry |
+						  (length & GQSPI_GEN_FIFO_IMMED_DATA_MASK));
+	}
 }
 
 static void xlnx_zynqmp_gqspi_cs_control(const struct device *dev, bool on)
@@ -363,10 +406,30 @@ static int xlnx_zynqmp_gqspi_transceive(const struct device *dev, const struct s
 	struct spi_context *ctx = &data->ctx;
 	int ret;
 	const size_t num_bufs = max(tx_bufs ? tx_bufs->count : 0, rx_bufs ? rx_bufs->count : 0);
+	size_t genfifo_entries = 2;
+	size_t buf;
 
-	/* Maximum 30 buffers to avoid filling generic (command) FIFO. */
-	if (num_bufs > GQSPI_GEN_FIFO_DEPTH - 2) {
-		LOG_ERR("Too many buffers: %zu", num_bufs);
+	for (buf = 0; buf < num_bufs; buf++) {
+		size_t tx_bytes = 0;
+		size_t rx_bytes = 0;
+		size_t transfer_bytes;
+
+		if (tx_bufs && buf < tx_bufs->count) {
+			tx_bytes = tx_bufs->buffers[buf].len;
+		}
+		if (rx_bufs && buf < rx_bufs->count) {
+			rx_bytes = rx_bufs->buffers[buf].len;
+		}
+		transfer_bytes = max(tx_bytes, rx_bytes);
+		genfifo_entries += xlnx_zynqmp_gqspi_genfifo_entry_count(transfer_bytes);
+		if (transfer_bytes > GQSPI_MAX_TRANSFER_SIZE) {
+			LOG_ERR("Buffer %zu is too large: %zu", buf, transfer_bytes);
+			return -ENOTSUP;
+		}
+	}
+
+	if (genfifo_entries > GQSPI_GEN_FIFO_DEPTH) {
+		LOG_ERR("Transfer needs %zu generic FIFO entries", genfifo_entries);
 		return -ENOTSUP;
 	}
 
@@ -387,7 +450,7 @@ static int xlnx_zynqmp_gqspi_transceive(const struct device *dev, const struct s
 
 	xlnx_zynqmp_gqspi_cs_control(dev, true);
 
-	for (size_t buf = 0; buf < num_bufs; buf++) {
+	for (buf = 0; buf < num_bufs; buf++) {
 		uint32_t genfifo_entry = GQSPI_GEN_FIFO_DATA_XFER_MASK;
 		size_t tx_bytes = 0;
 		size_t rx_bytes = 0;
@@ -417,30 +480,12 @@ static int xlnx_zynqmp_gqspi_transceive(const struct device *dev, const struct s
 		}
 		genfifo_entry |= GQSPI_GEN_FIFO_SPI_MODE_SINGLE << GQSPI_GEN_FIFO_SPI_MODE_SHIFT;
 
-		if (transfer_bytes < 256) {
-			genfifo_entry |= transfer_bytes;
-		} else {
-			uint32_t exponent = GQSPI_MAX_EXPONENT;
-			size_t exponent_len = 1 << exponent;
-
-			while (exponent_len > transfer_bytes) {
-				exponent_len >>= 1;
-				exponent--;
-			}
-			if (exponent_len != transfer_bytes) {
-				/* Could do this by breaking buffer into multiple transfer requests,
-				 * but not implemented yet
-				 */
-				LOG_ERR("Unsupported buffer size %zu", transfer_bytes);
-				ret = -ENOTSUP;
-				goto out;
-			}
-			genfifo_entry |= GQSPI_GEN_FIFO_EXPONENT_MASK | exponent;
-		}
 		LOG_DBG("Buffer %zu, TX bytes: %zu, RX bytes: %zu, transfer bytes: %zu, "
 			"genfifo_entry: 0x%08x",
 			buf, tx_bytes, rx_bytes, transfer_bytes, genfifo_entry);
-		xlnx_zynqmp_gqspi_write32(dev, GQSPI_GEN_FIFO, genfifo_entry);
+		if (transfer_bytes != 0U) {
+			xlnx_zynqmp_gqspi_queue_data(dev, genfifo_entry, transfer_bytes);
+		}
 	}
 
 	xlnx_zynqmp_gqspi_cs_control(dev, false);
