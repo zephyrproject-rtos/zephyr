@@ -107,3 +107,8 @@ tests:
       - FILE_SUFFIX="csg"
     platform_allow:
       - kit_psc3m5_evk/psc3m5fds2afq1
+  drivers.comparator.gpio_loopback.wch_comp:
+    platform_allow:
+      - nano_ch57x/ch570
+      - nano_ch57x/ch572
+    min_ram: 10
