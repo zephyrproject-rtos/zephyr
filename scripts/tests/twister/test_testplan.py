@@ -1017,23 +1017,23 @@ def test_testplan_load(
 
 TESTDATA_5 = [
     (False, False, None, 1, 2,
-     ['plat1/testA', 'plat2/testA', 'plat1/testB',
+     ['plat1/testA', 'plat1/testB', 'plat1/testC',
       'plat3/testA', 'plat3/testB', 'plat3/testC']),
     (False, False, None, 1, 5,
      ['plat1/testA',
       'plat3/testA', 'plat3/testB', 'plat3/testC']),
     (False, False, None, 2, 2,
-     ['plat2/testB', 'plat1/testC']),
+     ['plat2/testA', 'plat2/testB']),
     (True, False, None, 1, 2,
-     ['plat1/testA', 'plat2/testA', 'plat1/testB',
+     ['plat1/testA', 'plat1/testB', 'plat1/testC',
       'plat3/testA', 'plat3/testB', 'plat3/testC']),
     (True, False, None, 2, 2,
-     ['plat2/testB', 'plat1/testC']),
+     ['plat2/testA', 'plat2/testB']),
     (True, True, 123, 1, 2,
      ['plat2/testA', 'plat2/testB', 'plat1/testC',
       'plat3/testB', 'plat3/testA', 'plat3/testC']),
     (True, True, 123, 2, 2,
-     ['plat1/testB', 'plat1/testA']),
+     ['plat1/testA', 'plat1/testB']),
 ]
 
 @pytest.mark.parametrize(
@@ -1078,6 +1078,86 @@ def test_testplan_generate_subset(
 
     assert [instance for instance in testplan.instances.keys()] == \
            expected_subset
+
+
+def _place(instances, sets):
+    """Run every subset over the same instances; return names seen and, per test
+    suite, the set of subsets its instances landed in."""
+    seen = []
+    placement = {}
+    for subset in range(1, sets + 1):
+        testplan = TestPlan(env=mock_twister_env())
+        testplan.options = mock.Mock(
+            device_testing=False, shuffle_tests=False, shuffle_tests_seed=None
+        )
+        testplan.instances = dict(instances)
+        testplan.generate_subset(subset, sets)
+        seen.extend(testplan.instances.keys())
+        for inst in testplan.instances.values():
+            placement.setdefault(inst.testsuite.name, set()).add(subset)
+    return seen, placement
+
+
+@pytest.mark.parametrize('sets', [2, 3, 5, 7, 30], ids=lambda s: f'{s} sets')
+def test_testplan_generate_subset_covers_every_instance_once(sets):
+    """Every runnable instance lands in exactly one subset, whatever the number
+    of sets, and pre-filtered ones are not handed out at all."""
+    instances = {}
+    for suite in range(11):
+        for plat in range(7):
+            status = TwisterStatus.FILTER if (suite + plat) % 3 == 0 else TwisterStatus.NONE
+            inst = mock.Mock(status=status)
+            inst.testsuite.name = f'test{suite}'
+            instances[f'plat{plat}/test{suite}'] = inst
+    runnable = [name for name, inst in instances.items() if inst.status == TwisterStatus.NONE]
+
+    seen, _ = _place(instances, sets)
+
+    assert sorted(seen) == sorted(runnable)
+
+
+@pytest.mark.parametrize('sets', [2, 3, 4, 8], ids=lambda s: f'{s} sets')
+def test_testplan_generate_subset_keeps_suites_whole(sets):
+    """A test suite small enough to fit stays in one subset, so a suite failing
+    on many platforms fails one subset rather than most of them."""
+    instances = {}
+    for suite in range(40):
+        for plat in range(3):
+            inst = mock.Mock(status=TwisterStatus.NONE)
+            inst.testsuite.name = f'test{suite}'
+            instances[f'plat{plat}/test{suite}'] = inst
+
+    _, placement = _place(instances, sets)
+
+    for suite, subsets in placement.items():
+        assert len(subsets) == 1, f'{suite} spread over subsets {sorted(subsets)}'
+
+
+def test_testplan_generate_subset_splits_oversized_suite():
+    """A suite too large for a subset is cut up rather than swamping one."""
+    instances = {}
+    for plat in range(100):
+        inst = mock.Mock(status=TwisterStatus.NONE)
+        inst.testsuite.name = 'huge'
+        instances[f'plat{plat}/huge'] = inst
+    for plat in range(20):
+        inst = mock.Mock(status=TwisterStatus.NONE)
+        inst.testsuite.name = f'small{plat}'
+        instances[f'plat{plat}/small{plat}'] = inst
+
+    sizes = []
+    for subset in range(1, 5):
+        testplan = TestPlan(env=mock_twister_env())
+        testplan.options = mock.Mock(
+            device_testing=False, shuffle_tests=False, shuffle_tests_seed=None
+        )
+        testplan.instances = dict(instances)
+        testplan.generate_subset(subset, 4)
+        sizes.append(len(testplan.instances))
+
+    # without splitting, one subset would hold all 100 instances of 'huge'
+    assert max(sizes) < 100
+    assert sum(sizes) == len(instances)
 
 
 TESTDATA_6 = [
