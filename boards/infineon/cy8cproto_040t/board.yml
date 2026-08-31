@@ -3,9 +3,14 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
-board:
-  name: cy8cproto_040t_auto
-  full_name: PSOC™ 4000T AUTO
-  vendor: infineon
-  socs:
-  - name: cy8c4046lqe_t1
+boards:
+  - name: cy8cproto_040t_auto
+    full_name: PSOC™ 4000T AUTO
+    vendor: infineon
+    socs:
+      - name: cy8c4046lqe_t1
+  - name: cy8cproto_040t
+    full_name: PSOC™ 4000T
+    vendor: infineon
+    socs:
+      - name: cy8c4046lqi_t452
