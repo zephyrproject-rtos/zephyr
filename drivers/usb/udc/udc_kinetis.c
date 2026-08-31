@@ -86,6 +86,7 @@ struct usbfsotg_config {
 	struct usbfsotg_bd *bdt;
 	void (*irq_enable_func)(const struct device *dev);
 	void (*irq_disable_func)(const struct device *dev);
+	void (*make_thread)(const struct device *dev);
 	size_t num_of_eps;
 	struct udc_ep_config *ep_cfg_in;
 	struct udc_ep_config *ep_cfg_out;
@@ -105,7 +106,6 @@ enum usbfsotg_event_type {
 /* Structure for driver's endpoint events */
 struct usbfsotg_ep_event {
 	sys_snode_t node;
-	const struct device *dev;
 	enum usbfsotg_event_type event;
 	uint8_t ep;
 };
@@ -114,7 +114,7 @@ K_MEM_SLAB_DEFINE_TYPE(usbfsotg_ee_slab, struct usbfsotg_ep_event,
 		       CONFIG_UDC_KINETIS_EVENT_COUNT);
 
 struct usbfsotg_data {
-	struct k_work work;
+	struct k_thread thread_data;
 	struct k_fifo fifo;
 	struct usb_setup_packet setup;
 	uint32_t odd;
@@ -253,7 +253,7 @@ static int usbfsotg_xfer_next(const struct device *dev,
 	return usbfsotg_xfer_continue(dev, cfg, buf);
 }
 
-static inline int work_handler_setup(const struct device *dev)
+static inline int handle_evt_setup(const struct device *dev)
 {
 	struct usbfsotg_data *priv = udc_get_private(dev);
 
@@ -265,8 +265,8 @@ static inline int work_handler_setup(const struct device *dev)
 	return 0;
 }
 
-static inline int work_handler_data(const struct device *dev,
-				    struct udc_ep_config *ep_cfg)
+static inline int handle_evt_finished(const struct device *dev,
+				     struct udc_ep_config *ep_cfg)
 {
 	struct net_buf *buf;
 
@@ -293,60 +293,57 @@ static void usbfsotg_event_submit(const struct device *dev,
 		return;
 	}
 
-	ev->dev = dev;
 	ev->ep = ep;
 	ev->event = event;
 	k_fifo_put(&priv->fifo, ev);
-	k_work_submit_to_queue(udc_get_work_q(), &priv->work);
 }
 
-static void xfer_work_handler(struct k_work *item)
+static ALWAYS_INLINE void usbfsotg_thread_handler(const struct device *const dev)
 {
+	struct usbfsotg_data *priv = udc_get_private(dev);
 	struct usbfsotg_ep_event *ev;
-	struct usbfsotg_data *priv;
+	struct udc_ep_config *ep_cfg;
+	int err = 0;
 
-	priv = CONTAINER_OF(item, struct usbfsotg_data, work);
-	while ((ev = k_fifo_get(&priv->fifo, K_NO_WAIT)) != NULL) {
-		struct udc_ep_config *ep_cfg;
-		int err = 0;
+	ev = k_fifo_get(&priv->fifo, K_FOREVER);
+	udc_lock_internal(dev, K_FOREVER);
 
-		LOG_DBG("dev %p, ep 0x%02x, event %u",
-			ev->dev, ev->ep, ev->event);
-		ep_cfg = udc_get_ep_cfg(ev->dev, ev->ep);
-		if (unlikely(ep_cfg == NULL)) {
-			udc_submit_event(ev->dev, UDC_EVT_ERROR, -ENODATA);
-			goto xfer_work_error;
-		}
-
-		switch (ev->event) {
-		case USBFSOTG_EVT_SETUP:
-			err = work_handler_setup(ev->dev);
-			break;
-		case USBFSOTG_EVT_DOUT:
-		case USBFSOTG_EVT_DIN:
-			err = work_handler_data(ev->dev, ep_cfg);
-			udc_ep_set_busy(ep_cfg, false);
-			break;
-		case USBFSOTG_EVT_XFER:
-			break;
-		default:
-			break;
-		}
-
-		if (unlikely(err)) {
-			udc_submit_event(ev->dev, UDC_EVT_ERROR, err);
-		}
-
-		/* Peek next transfer */
-		if (ev->ep != USB_CONTROL_EP_OUT && !udc_ep_is_busy(ep_cfg)) {
-			if (usbfsotg_xfer_next(ev->dev, ep_cfg) == 0) {
-				udc_ep_set_busy(ep_cfg, true);
-			}
-		}
-
-xfer_work_error:
-		k_mem_slab_free(&usbfsotg_ee_slab, (void *)ev);
+	LOG_DBG("dev %s, ep 0x%02x, event %u", dev->name, ev->ep, ev->event);
+	ep_cfg = udc_get_ep_cfg(dev, ev->ep);
+	if (unlikely(ep_cfg == NULL)) {
+		udc_submit_event(dev, UDC_EVT_ERROR, -ENODATA);
+		goto thread_handler_exit;
 	}
+
+	switch (ev->event) {
+	case USBFSOTG_EVT_SETUP:
+		err = handle_evt_setup(dev);
+		break;
+	case USBFSOTG_EVT_DOUT:
+	case USBFSOTG_EVT_DIN:
+		err = handle_evt_finished(dev, ep_cfg);
+		udc_ep_set_busy(ep_cfg, false);
+		break;
+	case USBFSOTG_EVT_XFER:
+		break;
+	default:
+		break;
+	}
+
+	if (unlikely(err)) {
+		udc_submit_event(dev, UDC_EVT_ERROR, err);
+	}
+
+	/* Peek next transfer */
+	if (ev->ep != USB_CONTROL_EP_OUT && !udc_ep_is_busy(ep_cfg)) {
+		if (usbfsotg_xfer_next(dev, ep_cfg) == 0) {
+			udc_ep_set_busy(ep_cfg, true);
+		}
+	}
+
+thread_handler_exit:
+	udc_unlock_internal(dev);
+	k_mem_slab_free(&usbfsotg_ee_slab, (void *)ev);
 }
 
 static ALWAYS_INLINE uint8_t stat_reg_get_ep(const uint8_t status)
@@ -862,12 +859,14 @@ static int usbfsotg_shutdown(const struct device *dev)
 
 static void usbfsotg_lock(const struct device *dev)
 {
+	k_sched_lock();
 	udc_lock_internal(dev, K_FOREVER);
 }
 
 static void usbfsotg_unlock(const struct device *dev)
 {
 	udc_unlock_internal(dev);
+	k_sched_unlock();
 }
 
 static int usbfsotg_driver_preinit(const struct device *dev)
@@ -879,7 +878,6 @@ static int usbfsotg_driver_preinit(const struct device *dev)
 
 	k_mutex_init(&data->mutex);
 	k_fifo_init(&priv->fifo);
-	k_work_init(&priv->work, xfer_work_handler);
 
 	for (int i = 0; i < config->num_of_eps; i++) {
 		config->ep_cfg_out[i].caps.out = 1;
@@ -924,6 +922,8 @@ static int usbfsotg_driver_preinit(const struct device *dev)
 	data->caps.rwup = false;
 	data->caps.mps0 = USBFSOTG_MPS0;
 
+	config->make_thread(dev);
+
 	return 0;
 }
 
@@ -955,6 +955,31 @@ static const struct udc_api usbfsotg_api = {
 		     DEVICE_DT_INST_GET(n), 0)))
 
 #define USBFSOTG_DEVICE_DEFINE(n)						\
+	K_THREAD_STACK_DEFINE(usbfsotg_stack_##n,				\
+			      CONFIG_UDC_KINETIS_STACK_SIZE);			\
+										\
+	static void usbfsotg_thread_##n(void *dev, void *arg1, void *arg2)	\
+	{									\
+		while (true) {							\
+			usbfsotg_thread_handler(dev);				\
+		}								\
+	}									\
+										\
+	static void usbfsotg_make_thread_##n(const struct device *dev)		\
+	{									\
+		struct usbfsotg_data *priv = udc_get_private(dev);		\
+										\
+		k_thread_create(&priv->thread_data,				\
+				usbfsotg_stack_##n,				\
+				K_THREAD_STACK_SIZEOF(usbfsotg_stack_##n),	\
+				usbfsotg_thread_##n,				\
+				(void *)dev, NULL, NULL,			\
+				K_PRIO_COOP(CONFIG_UDC_KINETIS_THREAD_PRIORITY),\
+				K_ESSENTIAL,					\
+				K_NO_WAIT);					\
+		k_thread_name_set(&priv->thread_data, dev->name);		\
+	}									\
+										\
 	static void udc_irq_enable_func##n(const struct device *dev)		\
 	{									\
 		USBFSOTG_IRQ_DEFINE_OR(n);					\
@@ -979,6 +1004,7 @@ static const struct udc_api usbfsotg_api = {
 		.bdt = bdt_##n,							\
 		.irq_enable_func = udc_irq_enable_func##n,			\
 		.irq_disable_func = udc_irq_disable_func##n,			\
+		.make_thread = usbfsotg_make_thread_##n,			\
 		.num_of_eps = DT_INST_PROP(n, num_bidir_endpoints),		\
 		.ep_cfg_in = ep_cfg_in,						\
 		.ep_cfg_out = ep_cfg_out,					\
