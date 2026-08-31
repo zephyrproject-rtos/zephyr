@@ -11,6 +11,7 @@
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/reset.h>
+#include <zephyr/irq.h>
 #include <soc.h>
 
 #include "crypto_stm32_hash_priv.h"
@@ -20,6 +21,11 @@
 LOG_MODULE_REGISTER(crypto_stm32_hash);
 
 #define DT_DRV_COMPAT st_stm32_hash
+
+#if !defined(CONFIG_STM32_HAL2) && DT_INST_IRQ_HAS_IDX(0, 0)
+#define STM32_HASH_USE_IT
+static void stm32_hash_isr(const struct device *dev);
+#endif
 
 static struct crypto_stm32_hash_session stm32_hash_sessions[CONFIG_CRYPTO_STM32_HASH_MAX_SESSIONS];
 
@@ -143,6 +149,51 @@ static int stm32_hash_handler(struct hash_ctx *ctx, struct hash_pkt *pkt, bool f
 	status = HAL_HASH_Start(&data->hhash, pkt->in_buf, pkt->in_len, pkt->out_buf,
 				  HAL_MAX_DELAY);
 #else /* CONFIG_STM32_HAL2 */
+#if defined(STM32_HASH_USE_IT)
+	if ((session->algo == CRYPTO_HASH_ALGO_SHA224) ||
+	    (session->algo == CRYPTO_HASH_ALGO_SHA256)) {
+		k_sem_reset(&data->complete_sem);
+
+		if (session->algo == CRYPTO_HASH_ALGO_SHA224) {
+			status = HAL_HASHEx_SHA224_Start_IT(&data->hhash, pkt->in_buf, pkt->in_len,
+							    pkt->out_buf);
+		} else {
+			status = HAL_HASHEx_SHA256_Start_IT(&data->hhash, pkt->in_buf, pkt->in_len,
+							    pkt->out_buf);
+		}
+
+		if (status == HAL_OK) {
+			/*
+			 * HAL_HASHEx_SHAxxx_Start_IT() arms the peripheral and returns
+			 * immediately; completion (or error) is signalled asynchronously
+			 * from the HASH ISR via HAL_HASH_DgstCpltCallback()/
+			 * HAL_HASH_ErrorCallback(), both of which give complete_sem.
+			 */
+			if (k_sem_take(&data->complete_sem, K_MSEC(1000)) != 0) {
+				status = HAL_TIMEOUT;
+			} else if (data->hhash.State == HAL_HASH_STATE_READY) {
+				/*
+				 * hhash->Phase is left at HAL_HASH_PHASE_PROCESS after a
+				 * completed computation. Since this driver only performs
+				 * one-shot, non-multipart hashing, force it back to READY here
+				 * so the next call re-triggers HASH_CR_INIT instead of silently
+				 * continuing this message's internal digest state.
+				 */
+				data->hhash.Phase = HAL_HASH_PHASE_READY;
+				k_sem_give(&data->device_sem);
+				LOG_DBG("Hash computation successful (IT)");
+				return 0;
+			} else {
+				status = HAL_ERROR;
+			}
+		}
+
+		LOG_WRN("HASH IT path failed (status=%d), falling back to polling", status);
+		data->hhash.State = HAL_HASH_STATE_READY;
+		data->hhash.Phase = HAL_HASH_PHASE_READY;
+	}
+#endif /* DT_INST_IRQ_HAS_IDX(0, 0) */
+
 	switch (session->algo) {
 	case CRYPTO_HASH_ALGO_SHA224:
 		status = HAL_HASHEx_SHA224_Start(&data->hhash, pkt->in_buf, pkt->in_len,
@@ -169,6 +220,18 @@ static int stm32_hash_handler(struct hash_ctx *ctx, struct hash_pkt *pkt, bool f
 		LOG_ERR("Unsupported algorithm in handler: %d", session->algo);
 		return -ENOTSUP;
 	}
+
+	/*
+	 * The HAL leaves hhash->Phase at HAL_HASH_PHASE_PROCESS after a
+	 * completed computation (it only resets to READY for a genuinely new
+	 * message/session). Since this driver only performs one-shot,
+	 * non-multipart hashing, force it back to READY here so the next
+	 * hash_compute() call on this (or another) session re-triggers
+	 * HASH_CR_INIT instead of silently continuing this message's
+	 * internal digest state - which would produce a wrong digest with
+	 * no error reported.
+	 */
+	data->hhash.Phase = HAL_HASH_PHASE_READY;
 #endif /* CONFIG_STM32_HAL2 */
 
 	k_sem_give(&data->device_sem);
@@ -256,6 +319,14 @@ static int crypto_stm32_hash_init(const struct device *dev)
 	k_sem_init(&data->device_sem, 1, 1);
 	k_sem_init(&data->session_sem, 1, 1);
 
+#if defined(STM32_HASH_USE_IT)
+	k_sem_init(&data->complete_sem, 0, 1);
+
+	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), stm32_hash_isr,
+		    DEVICE_DT_INST_GET(0), 0);
+	irq_enable(DT_INST_IRQN(0));
+#endif
+
 #if defined(CONFIG_STM32_HAL2)
 	if (HAL_HASH_Init(&data->hhash, HAL_HASH) != HAL_OK) {
 		LOG_ERR("Peripheral init error");
@@ -290,6 +361,27 @@ static DEVICE_API(crypto, stm32_hash_funcs) = {
 };
 
 static struct crypto_stm32_hash_data crypto_stm32_hash_dev_data = {0};
+
+#if defined(STM32_HASH_USE_IT)
+static void stm32_hash_isr(const struct device *dev)
+{
+	struct crypto_stm32_hash_data *data = CRYPTO_STM32_HASH_DATA(dev);
+
+	HAL_HASH_IRQHandler(&data->hhash);
+}
+
+void HAL_HASH_DgstCpltCallback(HASH_HandleTypeDef *hhash)
+{
+	ARG_UNUSED(hhash);
+	k_sem_give(&crypto_stm32_hash_dev_data.complete_sem);
+}
+
+void HAL_HASH_ErrorCallback(HASH_HandleTypeDef *hhash)
+{
+	ARG_UNUSED(hhash);
+	k_sem_give(&crypto_stm32_hash_dev_data.complete_sem);
+}
+#endif /* DT_INST_IRQ_HAS_IDX(0, 0) */
 
 static const struct crypto_stm32_hash_config crypto_stm32_hash_dev_config = {
 	.base = (void *)DT_INST_REG_ADDR(0),
