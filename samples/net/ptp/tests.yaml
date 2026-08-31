@@ -18,6 +18,7 @@ tests:
     extra_configs:
       - CONFIG_ETH_STM32_HAL=n
       - CONFIG_ETH_ESP32=n
+      - CONFIG_ETH_NXP_ENET_QOS=n
     depends_on:
       - eth
       - ptp_clock
@@ -30,3 +31,4 @@ tests:
       - stm32h573i_dk
       - esp32p4x_function_ev_board/esp32p4/hpcore
       - frdm_mcxe31b
+      - frdm_mcxn947/mcxn947/cpu0
