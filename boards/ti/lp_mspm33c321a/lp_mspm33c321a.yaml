@@ -10,4 +10,5 @@ supported:
   - pinctrl
   - uart
   - gpio
+  - i2c
 vendor: ti
