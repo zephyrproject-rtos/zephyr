@@ -20,6 +20,8 @@
 
 void __weak sys_clock_set_timeout(uint32_t ticks, bool idle)
 {
+	ARG_UNUSED(ticks);
+	ARG_UNUSED(idle);
 }
 
 void __weak sys_clock_idle_exit(void)
