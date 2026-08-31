@@ -146,15 +146,33 @@ The header states how the run adds up (values are illustrative)::
 
    === tcp4 (qemu_x86) ===
    instructions      31,889,702   payload      791,780 B   ipb   40.276   boot subtracted 6,840,845
-   throughput   measured    6.325 Mbps   from profile    6.207 Mbps   cpu-bound  98.1%
+   throughput   measured    6.325 Mbps   from profile    6.207 Mbps   in-window  98.1%
+   virtual time profiled 1.020461 s of cpu   transfer window 1.001400 s   outside the window +0.019061 s
    attribution  exact 96.38%   inferred  3.62%   unattributed  0.00%
 
-``from profile`` is the throughput implied by the instruction count. Because
-``sleep=off`` lets halted time advance virtual time without executing
-instructions, the ratio to the measured value is the fraction of the run that
-was CPU bound; the remainder is time the guest spent waiting, which for TCP is
-mostly waiting for acknowledgements. A ratio above 100% means the accounting is
-wrong, not that the stack is fast.
+``from profile`` is the throughput implied by the instruction count. It is
+computed over everything the profile covers, from the boot boundary to the
+halt, while ``measured`` covers only the transfer the guest timed, so
+``in-window`` is the share of the profiled cost that the timed transfer
+accounts for. The rest is the network initialisation, the socket setup and the
+result reporting either side of it, and the line below states the same thing in
+seconds so the residual is a number rather than an inference.
+
+It is worth being clear about which way idle time moves that figure, because
+the obvious guess is the wrong one. ``sleep=off`` lets halted time advance
+virtual time without executing instructions, so time the guest spends waiting
+inside the timed window makes the window longer without adding a single
+instruction to the profile. Idle time therefore pushes ``in-window`` *above*
+100%, and a figure below it means the opposite thing: work was done outside the
+window.
+
+On loopback there is next to no waiting, and the measurements say so. The
+residual is 16.5 to 19.6 ms on every one of the eight transfers, and
+``in-window`` sits between 98.1% and 98.4% across UDP, TCP, fragmented UDP and
+builds with quite different code in them. A genuine idle fraction would not
+hold that still; a fixed block of setup and reporting work does. TCP's slightly
+lower figure is a slightly larger teardown, not time spent waiting for
+acknowledgements.
 
 ``unattributed`` should be essentially zero once the boot cost is subtracted.
 Before subtraction it is dominated by the BIOS the guest boots through.

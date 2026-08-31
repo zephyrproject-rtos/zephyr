@@ -690,6 +690,7 @@ def test_parse_console_extracts_results_and_byte_counts(tmp_path):
     assert zperf_profile.parse_console(path) == (
         {"tcp4": 91.25, "udp4": 120.5},
         {"tcp4": 1048576, "udp4": 2097152},
+        {"tcp4": 1001300, "udp4": 1000800},
     )
 
 
@@ -705,11 +706,11 @@ def test_parse_console_tolerates_undecodable_bytes(tmp_path):
     path = tmp_path / "c.log"
     path.write_bytes(b"\xff\xfe \x1b[1;32muart:~$ ZPERF-RESULT tcp4_mbps=5.0\n")
 
-    assert zperf_profile.parse_console(str(path)) == ({"tcp4": 5.0}, {})
+    assert zperf_profile.parse_console(str(path)) == ({"tcp4": 5.0}, {}, {})
 
 
 def test_parse_console_without_a_file():
-    assert zperf_profile.parse_console("/nonexistent/console.log") == ({}, {})
+    assert zperf_profile.parse_console("/nonexistent/console.log") == ({}, {}, {})
 
 
 #
@@ -933,14 +934,14 @@ def test_validate_qemu_arg_path_accepts_an_ordinary_path(tmp_path):
 
 GOLDEN_REPORT = (
     HEADER.format(n=4)
-    + "0x0000000000001000, 1, 4, 20\n"
-    + "0x0000000000002000, 1, 3, 10\n"
-    + "0x0000000000003000, 1, 2, 5\n"
-    + "0x0000000000000500, 1, 1, 8\n"
+    + "0x0000000000001000, 1, 4, 200\n"
+    + "0x0000000000002000, 1, 3, 100\n"
+    + "0x0000000000003000, 1, 2, 50\n"
+    + "0x0000000000000500, 1, 1, 80\n"
 )
-GOLDEN_BOOT = HEADER.format(n=2) + "0x0000000000001000, 1, 4, 5\n0x0000000000000500, 1, 1, 8\n"
+GOLDEN_BOOT = HEADER.format(n=2) + "0x0000000000001000, 1, 4, 50\n0x0000000000000500, 1, 1, 80\n"
 GOLDEN_CONSOLE = (
-    "*** Booting Zephyr OS ***\nZPERF-INFO tcp4_bytes=25\nZPERF-RESULT tcp4_mbps=62.5\n"
+    "*** Booting Zephyr OS ***\nZPERF-INFO tcp4_bytes=250 tcp4_us=32\nZPERF-RESULT tcp4_mbps=62.5\n"
 )
 
 
@@ -957,25 +958,28 @@ def _golden(tmp_path, boot=True, console=True):
 def test_build_profile_golden(tmp_path):
     """A report, its boot baseline and the console, end to end.
 
-    The numbers are chosen so the profile is self consistent: after the boot
-    prefix comes off, 100 instructions carried 25 payload bytes, which is 4.0
-    instructions per byte, which at shift 5 is exactly the 62.5 Mbps the guest
-    itself reported.
+    The numbers are chosen so the profile is self consistent in both
+    directions: after the boot prefix comes off, 1000 instructions carried 250
+    payload bytes, which is 4.0 instructions per byte, which at shift 5 is
+    exactly the 62.5 Mbps the guest itself reported; and those 1000
+    instructions are 32 us of virtual time, which is exactly the transfer
+    window the guest timed, so nothing was spent outside it.
     """
     assert _golden(tmp_path) == {
         "schema": 1,
         "label": "tcp4",
         "platform": "qemu_x86",
         "icount_shift": 5,
-        "bytes": 25,
+        "bytes": 250,
         "measured_mbps": 62.5,
-        "total_insns": 100,
-        "boot_insns": 28,
-        "kinds": {"exact": 60, "inferred": 40},
+        "window_us": 32,
+        "total_insns": 1000,
+        "boot_insns": 280,
+        "kinds": {"exact": 600, "inferred": 400},
         "functions": {
-            "net_pkt_alloc": {"insns": 60, "file": None, "group": "pktbuf"},
-            "arch_swap": {"insns": 30, "file": None, "group": "kernel"},
-            "memcpy": {"insns": 10, "file": None, "group": "libc"},
+            "net_pkt_alloc": {"insns": 600, "file": None, "group": "pktbuf"},
+            "arch_swap": {"insns": 300, "file": None, "group": "kernel"},
+            "memcpy": {"insns": 100, "file": None, "group": "libc"},
         },
     }
 
@@ -995,10 +999,10 @@ def test_build_profile_boot_subtraction_removes_the_firmware(tmp_path):
     with_boot = _golden(tmp_path)
     without_boot = _golden(tmp_path, boot=False)
 
-    assert without_boot["kinds"]["bucket"] == 8
+    assert without_boot["kinds"]["bucket"] == 80
     assert "bucket" not in with_boot["kinds"]
-    assert without_boot["total_insns"] == 128
-    assert with_boot["boot_insns"] == 28
+    assert without_boot["total_insns"] == 1280
+    assert with_boot["boot_insns"] == 280
 
 
 def test_build_profile_without_a_console(tmp_path):
@@ -1006,6 +1010,7 @@ def test_build_profile_without_a_console(tmp_path):
 
     assert profile["bytes"] == 0
     assert profile["measured_mbps"] is None
+    assert profile["window_us"] is None
 
 
 def test_build_profile_round_trips_through_json(tmp_path):
@@ -1026,9 +1031,14 @@ def test_render_reports_the_reconstructed_throughput(tmp_path, capsys):
 
     out = capsys.readouterr().out
     assert "=== tcp4 (qemu_x86) ===" in out
-    assert "payload           25 B   ipb    4.000" in out
-    assert "boot subtracted 28" in out
+    assert "payload          250 B   ipb    4.000" in out
+    assert "boot subtracted 280" in out
     assert "measured   62.500 Mbps   from profile   62.500 Mbps" in out
+    assert "in-window 100.0%" in out
+    # 1000 instructions at 32 ns each is 32 us of cpu, which is the whole of
+    # the 32 us window: nothing was spent outside it.
+    assert "profiled 0.000032 s of cpu   transfer window 0.000032 s" in out
+    assert "outside the window +0.000000 s" in out
     assert "attribution  exact 60.00%   inferred 40.00%   unattributed  0.00%" in out
     for group in ("pktbuf", "kernel", "libc"):
         assert group in out

@@ -555,14 +555,35 @@ def render(profile: dict, top: int) -> None:
     print(line)
 
     if measured:
+        # The profile covers everything from the boot boundary to the halt,
+        # while the measured throughput covers only the timed transfer, so
+        # this ratio is the share of the profiled cost the transfer accounts
+        # for. The rest is the network initialisation, the socket setup and
+        # the result reporting either side of it.
+        #
+        # It is not a CPU-bound fraction, and it moves the other way from one.
         # With icount sleep=off, halted time advances virtual time without
-        # executing instructions, so this ratio is the CPU-bound fraction of
-        # the run. Below 1 means the guest waited (TCP on ACKs, for example);
-        # above 1 means the accounting is wrong.
-        ratio = reconstructed / measured if measured else 0.0
+        # executing instructions, so time the guest spends idle inside the
+        # window makes the window longer without adding instructions, which
+        # pushes this figure *above* 100%. On loopback there is next to no
+        # such time, and what is seen instead is a steady few percent of work
+        # outside the window.
         print(
             f"throughput   measured {measured:8.3f} Mbps   "
-            f"from profile {reconstructed:8.3f} Mbps   cpu-bound {ratio * 100:5.1f}%"
+            f"from profile {reconstructed:8.3f} Mbps   "
+            f"in-window {_pct(reconstructed, measured):5.1f}%"
+        )
+
+    window_us = profile.get("window_us")
+    if window_us:
+        # The accounting behind the line above, in seconds, so the residual is
+        # a number rather than an inference.
+        cpu_s = total * (2**shift) / 1e9
+        window_s = window_us / 1e6
+        print(
+            f"virtual time profiled {cpu_s:.6f} s of cpu   "
+            f"transfer window {window_s:.6f} s   "
+            f"outside the window {cpu_s - window_s:+.6f} s"
         )
 
     kinds = profile.get("kinds") or {}
@@ -838,20 +859,32 @@ def build_one(
     subprocess.run(argv, check=True, cwd=zephyr_base)
 
 
-def parse_console(path: str) -> tuple[dict[str, float], dict[str, int]]:
-    """Extract the ZPERF-RESULT throughputs and ZPERF-INFO byte counts."""
+def parse_console(path: str) -> tuple[dict[str, float], dict[str, int], dict[str, int]]:
+    """Extract the ZPERF-RESULT throughputs and the ZPERF-INFO byte counts and
+    transfer durations.
+
+    The duration is the guest's own view of how long the timed transfer took,
+    in virtual microseconds. It is what makes the profile's virtual time
+    accounting checkable rather than merely plausible.
+    """
     mbps: dict[str, float] = {}
     byts: dict[str, int] = {}
+    window: dict[str, int] = {}
     if not os.path.exists(path):
-        return mbps, byts
+        return mbps, byts, window
 
     with open(path, errors="replace") as fp:
         text = fp.read()
     for label, value in re.findall(r"ZPERF-RESULT (\w+)_mbps=([0-9.]+)", text):
         mbps[label] = float(value)
-    for label, value in re.findall(r"ZPERF-INFO (\w+)_bytes=(\d+)", text):
-        byts[label] = int(value)
-    return mbps, byts
+    # One ZPERF-INFO line carries several fields, so scope to the line first
+    # rather than anchoring each field on the prefix.
+    for info in re.findall(r"ZPERF-INFO ([^\n]*)", text):
+        for label, value in re.findall(r"(\w+)_bytes=(\d+)", info):
+            byts[label] = int(value)
+        for label, value in re.findall(r"(\w+)_us=(\d+)", info):
+            window[label] = int(value)
+    return mbps, byts, window
 
 
 def build_profile(
@@ -875,7 +908,7 @@ def build_profile(
     table = SymbolTable.from_elf(elf)
     funcs, total, kinds = attribute(blocks, table, zephyr_base, topdir)
 
-    mbps, byts = parse_console(console) if console else ({}, {})
+    mbps, byts, window = parse_console(console) if console else ({}, {}, {})
 
     return {
         "schema": 1,
@@ -884,6 +917,7 @@ def build_profile(
         "icount_shift": shift,
         "bytes": byts.get(label, 0),
         "measured_mbps": mbps.get(label),
+        "window_us": window.get(label),
         "total_insns": total,
         "boot_insns": boot_insns,
         "kinds": kinds,
@@ -1267,8 +1301,8 @@ def cmd_verify(args: argparse.Namespace) -> int:
     # guest reports has to be identical with and without them.
     bare_console = os.path.join(outdir, f"{label}.noplugin.console")
     run_one(build_dir, None, os.path.join(outdir, f"{label}.noplugin.report"), bare_console)
-    bare_mbps, _ = parse_console(bare_console)
-    watched_mbps, _ = parse_console(os.path.join(outdir, f"{label}.console"))
+    bare_mbps, _bytes, _window = parse_console(bare_console)
+    watched_mbps, _bytes, _window = parse_console(os.path.join(outdir, f"{label}.console"))
     _report(
         results,
         "non-perturbation",
