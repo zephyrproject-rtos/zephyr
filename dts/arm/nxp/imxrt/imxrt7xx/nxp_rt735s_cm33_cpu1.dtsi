@@ -1,0 +1,24 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/imxrt/imxrt7xx/nxp_rt7xx_cm33_cpu1.dtsi>
+
+/* mimxrt735s has no HiFi4 DSP core, unlike mimxrt798s. */
+/* MU2: CPU1 to HiFi4 */
+/delete-node/ &mbox2_b;
+
+/*
+ * mimxrt735s has 5MiB of SRAM in two discrete physical ranges instead of one
+ * contiguous 7.5MiB block. See nxp_rt735s_cm33_cpu0.dtsi for the full layout.
+ */
+&sram {
+	ranges = <0x0 0x10000000 0x400000
+		  0x580000 0x10580000 0x100000
+		  0x20000000 0x30000000 0x400000
+		  0x20580000 0x30580000 0x100000>;
+};
+
+/delete-node/ &sram1;
