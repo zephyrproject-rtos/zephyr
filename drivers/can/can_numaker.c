@@ -150,7 +150,6 @@ static DEVICE_API(can, can_numaker_driver_api) = {
 	.recover = can_mcan_recover,
 #endif /* CONFIG_CAN_MANUAL_RECOVERY_MODE */
 	.get_state = can_mcan_get_state,
-	.set_state_change_callback = can_mcan_set_state_change_callback,
 	.get_core_clock = can_numaker_get_core_clock,
 	.get_max_filters = can_mcan_get_max_filters,
 	.timing_min = CAN_MCAN_TIMING_MIN_INITIALIZER,
