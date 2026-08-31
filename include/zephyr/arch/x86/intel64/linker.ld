@@ -93,6 +93,7 @@ SECTIONS
 	__text_region_start = .;
 	z_mapped_start = .;
 	*(.text)
+	KEEP (*(.text*personality*))
 	*(.text.*)
 
 	#include <snippets-text-sections.ld>
