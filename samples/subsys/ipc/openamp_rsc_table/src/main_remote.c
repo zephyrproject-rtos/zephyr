@@ -27,6 +27,14 @@ LOG_MODULE_REGISTER(openamp_rsc_table);
 
 #define SHM_DEVICE_NAME	"shm"
 
+/*
+ * Lifecycle messages the Linux remoteproc driver exchanges over the mailbox,
+ * from its own omap_remoteproc.h. Anything below the first of them is a vring
+ * index rather than a command.
+ */
+#define RP_MBOX_SHUTDOWN     0xFFFFFF14U
+#define RP_MBOX_SHUTDOWN_ACK 0xFFFFFF15U
+
 #if !DT_HAS_CHOSEN(zephyr_ipc_shm)
 #error "Sample requires definition of shared memory for rpmsg"
 #endif
@@ -89,10 +97,58 @@ static K_SEM_DEFINE(data_sem, 0, 1);
 static K_SEM_DEFINE(data_sc_sem, 0, 1);
 static K_SEM_DEFINE(data_tty_sem, 0, 1);
 
+/*
+ * Answers the shutdown request of the host and parks the core where the host
+ * expects to find it.
+ *
+ * Having asked, the host waits for the acknowledgment and then gives the
+ * core two milliseconds to reach WFI before it gives up and reports the stop
+ * as timed out. There is nothing left to return to, so park here rather than
+ * unwind through a mailbox interrupt the host is about to halt anyway.
+ */
+static void platform_shutdown(void)
+{
+	uint32_t ack = RP_MBOX_SHUTDOWN_ACK;
+
+	/*
+	 * A full mailbox is the one way this can fail, and dropping the
+	 * acknowledgment costs the host a five second wait and leaves it
+	 * unable to load anything else, so give the mailbox room to drain.
+	 */
+	for (int i = 0; i < 100; i++) {
+		if (IPM_SEND(ipm_handle, 0, ack, &ack, sizeof(ack)) == 0) {
+			break;
+		}
+
+		k_busy_wait(100);
+	}
+
+	/*
+	 * Nothing is left to return to, so park the core here rather than
+	 * unwind through a mailbox interrupt the host is about to halt
+	 * anyway. k_cpu_idle() is what puts the core in the state the host
+	 * looks for before halting it.
+	 */
+	for (;;) {
+		k_cpu_idle();
+	}
+}
+
 static void platform_ipm_callback(const struct device *dev, void *context,
 				  uint32_t id, volatile void *data)
 {
-	LOG_DBG("%s: msg received from mb %d", __func__, id);
+	/*
+	 * The message itself arrives as the payload; id carries the mailbox
+	 * channel it came in on.
+	 */
+	uint32_t msg = (data != NULL) ? *(volatile uint32_t *)data : 0;
+
+	LOG_DBG("%s: msg 0x%08x received from mb %d", __func__, msg, id);
+
+	if (msg == RP_MBOX_SHUTDOWN) {
+		platform_shutdown();
+	}
+
 	k_sem_give(&data_sem);
 }
 
