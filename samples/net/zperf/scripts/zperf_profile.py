@@ -56,6 +56,12 @@ Typical usage::
         --baseline ../build/zprof-base/profile.json \\
         --current ../build/zprof/profile.json
 
+    # Check the profile against QEMU's own instruction counter, against
+    # binutils, and against a code change whose effect it has to predict.
+    samples/net/zperf/scripts/zperf_profile.py verify --base-dir .. \\
+        --plugin ../tools/qemu-plugins/lib/libhotblocks.so \\
+        --outdir ../build/zprof-verify
+
 By default all files read or written must live under the current directory;
 pass --base-dir to widen that.
 """
@@ -734,11 +740,12 @@ def _kernel_images(argv: list[str]) -> list[str]:
 
 def run_one(
     build_dir: str,
-    plugin: str,
+    plugin: str | None,
     report_path: str,
     console_path: str,
     stop_plugin: str | None = None,
     stop_addr: int | None = None,
+    extra_plugins: tuple[str, ...] = (),
 ) -> None:
     argv = qemu_command(build_dir)
     argv += [
@@ -748,9 +755,13 @@ def run_one(
         "none",
         "-monitor",
         "none",
-        "-plugin",
-        f"file={plugin},inline=on",
     ]
+    # No plugin at all is how the run is checked for not being disturbed by
+    # being watched: the guest must report the same throughput either way.
+    if plugin is not None:
+        argv += ["-plugin", f"file={plugin},inline=on"]
+    for extra in extra_plugins:
+        argv += ["-plugin", extra]
     if stop_plugin is not None and stop_addr is not None:
         # Stop the guest the moment it reaches the address, so this run covers
         # only the prefix shared with the full run.
@@ -771,6 +782,9 @@ def run_one(
     # The guest halts itself through isa-debug-exit, so QEMU's exit status is
     # the guest's halt reason, not a failure indication.
     subprocess.run(argv, cwd=build_dir, check=False, timeout=1800)
+
+    if plugin is None:
+        return
 
     if not os.path.exists(report_path) or os.path.getsize(report_path) == 0:
         sys.exit(
@@ -797,7 +811,9 @@ def symbol_address(elf_path: str, name: str) -> int:
     sys.exit(f"No function symbol '{name}' in {elf_path}.")
 
 
-def build_one(zephyr_base: str, board: str, build_dir: str, only: str) -> None:
+def build_one(
+    zephyr_base: str, board: str, build_dir: str, only: str, extra: tuple[str, ...] = ()
+) -> None:
     west = shutil.which("west")
     if west is None:
         sys.exit("west not found in PATH; activate the workspace virtualenv first.")
@@ -817,6 +833,7 @@ def build_one(zephyr_base: str, board: str, build_dir: str, only: str) -> None:
         # the value, not around the -D argument.
         f'-DCONFIG_ZPERF_LOOPBACK_SELFTEST_ONLY="{only}"',
         "-DCONFIG_ZPERF_LOOPBACK_SELFTEST_HALT_ON_DONE=y",
+        *extra,
     ]
     subprocess.run(argv, check=True, cwd=zephyr_base)
 
@@ -1000,6 +1017,337 @@ def cmd_diff(args: argparse.Namespace) -> int:
     return 0 if ok else 1
 
 
+def parse_insn_total(path: str) -> int | None:
+    """The instruction count QEMU's own insn plugin reported, if it was loaded.
+
+    That plugin counts once per instruction, where hotblocks counts once per
+    translation block and multiplies by the block length. The two numbers come
+    from different code in QEMU and have to agree exactly; if they do not, the
+    block accounting every per-function figure is built on is wrong.
+    """
+    with open(path, errors="replace") as fp:
+        for line in fp:
+            match = re.match(r"total insns:\s*(\d+)", line.strip())
+            if match:
+                return int(match.group(1))
+    return None
+
+
+def cache_tool(build_dir: str, key: str) -> str | None:
+    """A toolchain binary the build recorded, e.g. CMAKE_NM."""
+    cache = os.path.join(build_dir, "CMakeCache.txt")
+    if not os.path.exists(cache):
+        return None
+
+    with open(cache, errors="replace") as fp:
+        for line in fp:
+            name, _, value = line.partition("=")
+            if name.split(":")[0] == key:
+                return value.strip() or None
+    return None
+
+
+# GCC splits a function into several symbols: a cold partition, a cloned
+# constant-propagated body, an interprocedural-scalar-replacement variant. They
+# are the same function under decorated names, and nm's size for the parent can
+# run into the child, so compare the undecorated stems.
+GCC_PARTITION = re.compile(r"\.(cold|hot|part|isra|constprop|lto_priv)(\.[0-9]+)*$")
+
+
+def base_symbol(name: str) -> str:
+    """A symbol name with GCC's per-partition decoration removed."""
+    while True:
+        stripped = GCC_PARTITION.sub("", name)
+        if stripped == name:
+            return name
+        name = stripped
+
+
+def nm_functions(nm: str, elf_path: str) -> dict[tuple[int, int], set[str]]:
+    """Sized functions as binutils sees them, keyed by (address, size).
+
+    The sysv format is used rather than the default because it names the
+    symbol type outright. The single letter codes do not: a constant placed in
+    a text section is a "T" like any function, and comparing against those
+    would report a difference wherever the profiler is right to ignore one.
+
+    Aliases share an address, so the value is a set of undecorated names: the
+    profiler picks one name per address and any of the aliases is a correct
+    answer.
+    """
+    out = subprocess.run(
+        [nm, "--format=sysv", "--defined-only", elf_path],
+        capture_output=True,
+        text=True,
+        check=True,
+    ).stdout
+
+    functions: dict[tuple[int, int], set[str]] = defaultdict(set)
+    for line in out.splitlines():
+        fields = [f.strip() for f in line.split("|")]
+        # Name | Value | Class | Type | Size | Line | Section
+        if len(fields) != 7 or fields[3] != "FUNC":
+            continue
+        try:
+            addr, size = int(fields[1], 16), int(fields[4], 16)
+        except ValueError:
+            # An unsized symbol leaves the column blank. Those are exactly the
+            # ones the profiler has to infer bounds for, so nm has nothing to
+            # check them against.
+            continue
+        if size:
+            functions[(addr, size)].add(base_symbol(fields[0]))
+    return dict(functions)
+
+
+def _report(results: list[tuple[str, str, str]], name: str, verdict: str, detail: str) -> None:
+    results.append((name, verdict, detail))
+    print(f"{verdict:<5} {name:<24} {detail}", flush=True)
+
+
+def _profile_one(
+    label: str,
+    build_dir: str,
+    outdir: str,
+    prefix: str,
+    plugin: str,
+    stop_plugin: str,
+    board: str,
+    shift: int,
+    zephyr_base: str,
+    topdir: str,
+    extra_plugins: tuple[str, ...] = (),
+) -> tuple[dict, str]:
+    """One full run plus its boot baseline, folded into a profile."""
+    elf = os.path.join(build_dir, "zephyr", "zephyr.elf")
+    report = os.path.join(outdir, f"{prefix}.report")
+    console = os.path.join(outdir, f"{prefix}.console")
+    boot_report = os.path.join(outdir, f"{prefix}.boot.report")
+    boot_console = os.path.join(outdir, f"{prefix}.boot.console")
+
+    run_one(build_dir, plugin, report, console, extra_plugins=extra_plugins)
+    run_one(build_dir, plugin, boot_report, boot_console, stop_plugin, symbol_address(elf, "main"))
+    profile = build_profile(
+        label, report, elf, boot_report, console, board, shift, zephyr_base, topdir
+    )
+    return profile, report
+
+
+def cmd_verify(args: argparse.Namespace) -> int:
+    """Check the profile against things that are not this script.
+
+    The unit tests establish that the script does what its author meant. They
+    cannot establish that what it means is true of the guest, because they
+    never run one. These checks compare its output against QEMU's own
+    instruction counter, against binutils' view of the same ELF, against the
+    guest running unobserved, and against a code change whose effect the
+    profile has to predict before it is measured.
+    """
+    zephyr_base = os.environ.get("ZEPHYR_BASE") or os.getcwd()
+    topdir = os.path.realpath(os.path.join(zephyr_base, ".."))
+    plugin = validate_qemu_arg_path(args.plugin, args.base_dir, for_write=False)
+    plugin_dir = os.path.dirname(plugin)
+    stop_plugin = validate_qemu_arg_path(
+        args.stop_plugin or os.path.join(plugin_dir, "libstoptrigger.so"),
+        args.base_dir,
+        for_write=False,
+    )
+    insn_plugin = validate_qemu_arg_path(
+        args.insn_plugin or os.path.join(plugin_dir, "libinsn.so"), args.base_dir, for_write=False
+    )
+    outdir = validate_path(args.outdir, args.base_dir, for_write=False)
+    os.makedirs(outdir, exist_ok=True)
+
+    label = args.transfer
+    if label not in TRANSFERS:
+        sys.exit(f"Unknown transfer '{label}'. One of: {', '.join(TRANSFERS)}")
+
+    build_dir = os.path.join(outdir, label)
+    elf = os.path.join(build_dir, "zephyr", "zephyr.elf")
+    results: list[tuple[str, str, str]] = []
+
+    print(f"--- {label}: building", flush=True)
+    build_one(zephyr_base, args.board, build_dir, label)
+
+    print(f"\n=== Verifying the profile ({label}, {args.board}) ===\n", flush=True)
+
+    # 1. QEMU's own instruction counter against the block accounting. Both
+    # plugins go into one run, so this costs nothing and compares the very
+    # same execution rather than two runs that merely ought to match.
+    profile, report = _profile_one(
+        label,
+        build_dir,
+        outdir,
+        label,
+        plugin,
+        stop_plugin,
+        args.board,
+        args.icount_shift,
+        zephyr_base,
+        topdir,
+        extra_plugins=(f"file={insn_plugin}",),
+    )
+    blocks, _ = parse_report(report)
+    block_total = sum(insns * count for (_, insns), count in blocks.items())
+    insn_total = parse_insn_total(report)
+    if insn_total is None:
+        _report(
+            results,
+            "instruction count",
+            "SKIP",
+            f"no insn plugin output in {os.path.basename(report)}; build libinsn.so "
+            f"with qemu_plugin_setup.sh",
+        )
+    else:
+        # These do not have to be equal, and knowing why is the point of
+        # running both. Counting per block charges a whole block whenever
+        # execution enters it, while counting per instruction charges only
+        # what ran; the two part company wherever a block is left early,
+        # which on this guest is the emulated timer and UART. So the block
+        # count is an upper bound, and what is checked is that the gap is
+        # small and in the direction it has to be. A block count *below* the
+        # instruction count would mean blocks are being missed entirely.
+        gap = _pct(block_total - insn_total, insn_total)
+        _report(
+            results,
+            "instruction count",
+            "PASS" if 0 <= gap <= args.block_bias else "FAIL",
+            f"hotblocks {block_total:,}, insn plugin {insn_total:,}, blocks high by {gap:.3f}%",
+        )
+
+    # 2. Nothing is lost or invented between the blocks and the table.
+    func_total = sum(info["insns"] for info in profile["functions"].values())
+    kind_total = sum(profile["kinds"].values())
+    _report(
+        results,
+        "conservation",
+        "PASS" if func_total == kind_total == profile["total_insns"] else "FAIL",
+        f"functions {func_total:,}, kinds {kind_total:,}, total {profile['total_insns']:,}",
+    )
+
+    # 3. After the boot prefix comes off, every instruction left belongs to a
+    # function in this image. Anything in the bucket is the BIOS, which means
+    # the subtraction did not do its job.
+    bucket = profile["kinds"].get("bucket", 0)
+    share = _pct(bucket, profile["total_insns"])
+    _report(
+        results,
+        "attribution",
+        "PASS" if share <= args.unattributed else "FAIL",
+        f"{bucket:,} instructions ({share:.4f}%) unattributed after boot subtraction",
+    )
+
+    # 4. binutils reading the same ELF has to agree about which function owns
+    # which address. This checks the symbol extraction and the interval
+    # construction against an implementation that shares no code with it.
+    nm = args.nm or cache_tool(build_dir, "CMAKE_NM")
+    if nm is None or shutil.which(nm) is None:
+        _report(results, "symbol table", "SKIP", "no nm found; pass --nm")
+    else:
+        table = SymbolTable.from_elf(elf)
+        functions = nm_functions(nm, elf)
+        bad = [
+            (addr, size, names)
+            for (addr, size), names in functions.items()
+            if base_symbol(table.lookup(addr)[0]) not in names
+            or base_symbol(table.lookup(addr + size - 1)[0]) not in names
+        ]
+        detail = f"{len(functions)} sized functions, {len(bad)} disagreeing with nm"
+        if bad:
+            addr, size, names = bad[0]
+            detail += (
+                f" (first: 0x{addr:x}+0x{size:x} is {sorted(names)}, profiler says "
+                f"{table.lookup(addr)[0]} at the start and "
+                f"{table.lookup(addr + size - 1)[0]} at the end)"
+            )
+        _report(results, "symbol table", "PASS" if not bad else "FAIL", detail)
+
+    # 5. Watching the guest must not change what it does. The plugin callbacks
+    # run on the host and execute no guest instructions, so the throughput the
+    # guest reports has to be identical with and without them.
+    bare_console = os.path.join(outdir, f"{label}.noplugin.console")
+    run_one(build_dir, None, os.path.join(outdir, f"{label}.noplugin.report"), bare_console)
+    bare_mbps, _ = parse_console(bare_console)
+    watched_mbps, _ = parse_console(os.path.join(outdir, f"{label}.console"))
+    _report(
+        results,
+        "non-perturbation",
+        "PASS" if bare_mbps == watched_mbps and bare_mbps else "FAIL",
+        f"unwatched {bare_mbps}, watched {watched_mbps}",
+    )
+
+    # 6. Under icount the same binary executes the same instructions, so a
+    # repeat run should land on the same total. The logging thread is
+    # scheduled independently of the traffic, which is what the tolerance is
+    # for; anything larger means the measurement is not repeatable.
+    repeat, _ = _profile_one(
+        label,
+        build_dir,
+        outdir,
+        f"{label}.repeat",
+        plugin,
+        stop_plugin,
+        args.board,
+        args.icount_shift,
+        zephyr_base,
+        topdir,
+    )
+    drift = abs(_pct(repeat["total_insns"] - profile["total_insns"], profile["total_insns"]))
+    _report(
+        results,
+        "determinism",
+        "PASS" if drift < args.drift else "FAIL",
+        f"{profile['total_insns']:,} then {repeat['total_insns']:,}, {drift:.4f}% apart",
+    )
+
+    # 7. The one that matters. If instructions per byte really is the
+    # throughput in different units, then removing known work from the stack
+    # must move the measured throughput by the amount the profile says. Take
+    # the receive side UDP checksum out, which is one of the two passes the
+    # loopback path makes over every datagram, and compare.
+    if not label.startswith("udp"):
+        _report(results, "prediction", "SKIP", f"needs a UDP transfer, not {label}")
+    else:
+        mod_dir = os.path.join(outdir, f"{label}-nocksum")
+        print(f"\n--- {label}: building without the UDP checksum", flush=True)
+        build_one(zephyr_base, args.board, mod_dir, label, extra=("-DCONFIG_NET_UDP_CHECKSUM=n",))
+        modified, _ = _profile_one(
+            label,
+            mod_dir,
+            outdir,
+            f"{label}.nocksum",
+            plugin,
+            stop_plugin,
+            args.board,
+            args.icount_shift,
+            zephyr_base,
+            topdir,
+        )
+        base_ipb = _ipb(profile["total_insns"], profile["bytes"])
+        mod_ipb = _ipb(modified["total_insns"], modified["bytes"])
+        predicted = _pct(base_ipb - mod_ipb, mod_ipb)
+        measured = _pct(
+            modified["measured_mbps"] - profile["measured_mbps"], profile["measured_mbps"]
+        )
+        _report(
+            results,
+            "prediction",
+            "PASS" if abs(predicted - measured) <= args.prediction else "FAIL",
+            f"profile said {predicted:+.2f}%, guest measured {measured:+.2f}%, "
+            f"{abs(predicted - measured):.2f} points apart",
+        )
+
+    failed = [name for name, verdict, _ in results if verdict == "FAIL"]
+    skipped = [name for name, verdict, _ in results if verdict == "SKIP"]
+    print(
+        f"\n{len(results) - len(failed) - len(skipped)} passed, "
+        f"{len(failed)} failed, {len(skipped)} skipped"
+    )
+    if failed:
+        print(f"Failed: {', '.join(failed)}", file=sys.stderr)
+    return 1 if failed else 0
+
+
 def main() -> int:
     # --base-dir is shared by every subcommand and accepted on either side of
     # the subcommand name, so it goes on a parent parser rather than the root.
@@ -1073,6 +1421,48 @@ def main() -> int:
     )
     dif.add_argument("--top", **common_top)
     dif.set_defaults(func=cmd_diff)
+
+    ver = sub.add_parser(
+        "verify",
+        help="check the profile against QEMU, binutils and a measured code change",
+        parents=[common],
+        allow_abbrev=False,
+    )
+    ver.add_argument("--plugin", required=True, help="path to the QEMU TCG plugin")
+    ver.add_argument("--outdir", required=True, help="directory for builds and reports")
+    ver.add_argument("--board", default="qemu_x86")
+    ver.add_argument("--transfer", default="udp4", help=f"one of: {' '.join(TRANSFERS)}")
+    ver.add_argument("--icount-shift", type=int, default=5)
+    ver.add_argument("--stop-plugin", help="default: libstoptrigger.so next to --plugin")
+    ver.add_argument("--insn-plugin", help="default: libinsn.so next to --plugin")
+    ver.add_argument("--nm", help="default: the nm the build used")
+    ver.add_argument(
+        "--drift",
+        type=float,
+        default=0.1,
+        help="allowed instruction count drift between two runs, in percent",
+    )
+    ver.add_argument(
+        "--block-bias",
+        type=float,
+        default=1.0,
+        help="how far the per-block instruction count may exceed the "
+        "per-instruction one, in percent",
+    )
+    ver.add_argument(
+        "--unattributed",
+        type=float,
+        default=0.01,
+        help="allowed share of instructions belonging to no function, in percent",
+    )
+    ver.add_argument(
+        "--prediction",
+        type=float,
+        default=0.5,
+        help="allowed gap between the predicted and the measured throughput "
+        "change, in percentage points",
+    )
+    ver.set_defaults(func=cmd_verify)
 
     args = parser.parse_args()
     return args.func(args)

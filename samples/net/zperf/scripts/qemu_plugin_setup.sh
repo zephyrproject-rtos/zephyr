@@ -18,6 +18,12 @@
 #   libhotblocks.so    counts executed instructions per translation block
 #   libstoptrigger.so  stops the guest at an address, used to measure the boot
 #                      cost that is subtracted from each transfer profile
+#   libinsn.so         counts executed instructions, full stop. It is an
+#                      independent check: it counts per instruction where
+#                      hotblocks counts per translation block, so if the two
+#                      disagree the block accounting is wrong. "zperf_profile.py
+#                      verify" loads it alongside hotblocks and requires an
+#                      exact match.
 #
 # Usage:
 #   samples/net/zperf/scripts/qemu_plugin_setup.sh [output-directory]
@@ -46,6 +52,9 @@ echo "Fetching QEMU $QEMU_TAG plugin sources into $DIR"
 curl -fsSL -o "$DIR/include/qemu-plugin.h" "$RAW/include/qemu/qemu-plugin.h"
 curl -fsSL -o "$DIR/src/hotblocks.c" "$RAW/contrib/plugins/hotblocks.c"
 curl -fsSL -o "$DIR/src/stoptrigger.c" "$RAW/contrib/plugins/stoptrigger.c"
+# insn.c lives under tests/ rather than contrib/, but it is built the same way
+# and the licensing position is the same: nothing is added to the Zephyr tree.
+curl -fsSL -o "$DIR/src/insn.c" "$RAW/tests/tcg/plugins/insn.c"
 
 # Released QEMU versions print only the 20 hottest blocks: the report limit is
 # a hardcoded constant and the plugin parses no argument for it. A profile of a
@@ -62,7 +71,7 @@ elif grep -q 'limit' "$DIR/src/hotblocks.c"; then
 	echo "      $DIR/src/hotblocks.c by hand and rebuild the plugin." >&2
 fi
 
-for plugin in hotblocks stoptrigger; do
+for plugin in hotblocks stoptrigger insn; do
 	echo "Building lib$plugin.so"
 	# The plugin resolves qemu_plugin_* from the QEMU executable at load time,
 	# so it links against nothing but glib. Building all of QEMU is not needed.
@@ -87,8 +96,13 @@ cat <<EOF
 Built against QEMU $QEMU_TAG in $DIR/lib:
   libhotblocks.so
   libstoptrigger.so
+  libinsn.so
 
 Profile the zperf loopback run with:
   samples/net/zperf/scripts/zperf_profile.py run --base-dir .. \\
       --plugin $DIR/lib/libhotblocks.so --outdir ../build/zprof
+
+Check that the profile is telling the truth with:
+  samples/net/zperf/scripts/zperf_profile.py verify --base-dir .. \\
+      --plugin $DIR/lib/libhotblocks.so --outdir ../build/zprof-verify
 EOF

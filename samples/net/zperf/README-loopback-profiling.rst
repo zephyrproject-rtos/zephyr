@@ -235,3 +235,96 @@ Setting :kconfig:option:`CONFIG_NET_UDP_CHECKSUM` to ``n`` removes the receive
 side checksum verification, one of the two passes the loopback path makes over
 each datagram. ``calc_chksum`` loses 0.95 instructions per payload byte, which
 is one pass, and throughput rises from 13.353 to 14.396 Mbps.
+
+Checking it automatically
+*************************
+
+The ``verify`` subcommand runs those checks, and several more, in one go. It
+needs QEMU and the plugins, so it is not part of CI; the unit tests next to the
+script are, and they cover the parsing, the symbol lookup and the arithmetic.
+What ``verify`` adds is everything that can only be established against
+something outside the script::
+
+   samples/net/zperf/scripts/zperf_profile.py verify --base-dir .. \
+       --plugin ../tools/qemu-plugins/lib/libhotblocks.so \
+       --outdir ../build/zprof-verify --board qemu_x86
+
+It builds one transfer, runs it several ways and reports:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 22 78
+
+   * - Check
+     - What it establishes, and against what
+   * - instruction count
+     - QEMU's own ``libinsn.so`` is loaded alongside ``libhotblocks.so`` in the
+       same run. It counts once per instruction where hotblocks counts once per
+       translation block, so the two totals come from unrelated code inside
+       QEMU. See the note below on why they are close rather than equal.
+   * - conservation
+     - The per-function totals, the per-kind totals and the block sum are the
+       same number, so nothing is lost or invented between the report and the
+       table.
+   * - attribution
+     - Once the boot prefix is subtracted, essentially no instruction belongs
+       to no function. What is left is the BIOS, and there should be none of it.
+   * - symbol table
+     - Every sized function ``nm`` reports is the function this script names at
+       both its first and its last byte. binutils and pyelftools read the same
+       ELF through no shared code. On both boards all 1279 and 1267 sized
+       functions agree.
+   * - non-perturbation
+     - The guest reports the same throughput with the plugins loaded and
+       without them, so watching it does not change what it does.
+   * - determinism
+     - Two identical runs land on the same instruction count, within 0.001%.
+   * - prediction
+     - The one that matters, and the only one that tests the interpretation
+       rather than the plumbing. The build is repeated with
+       :kconfig:option:`CONFIG_NET_UDP_CHECKSUM` set to ``n``, and the
+       throughput change the profile implies is compared against the change the
+       guest measures.
+
+The prediction check is worth stating in full, because it is what makes
+"instructions per payload byte" a decomposition of the throughput rather than a
+quantity that merely correlates with it. Removing the receive side UDP checksum
+takes 1.37 instructions per byte out of ``udp4`` on ``qemu_x86``:
+
+.. list-table::
+   :header-rows: 1
+
+   * - Board
+     - Predicted from the profile
+     - Measured by the guest
+     - Difference
+   * - ``qemu_x86``
+     - +7.76%
+     - +7.81%
+     - 0.05 points
+   * - ``qemu_x86_64``
+     - +6.84%
+     - +6.86%
+     - 0.02 points
+
+Blocks are an upper bound
+=========================
+
+The instruction count check does not require the two plugins to agree exactly,
+and they do not: hotblocks comes out 0.62% high on ``qemu_x86`` and 0.22% high
+on ``qemu_x86_64``.
+
+The direction is not a coincidence. Counting per block charges a whole block as
+soon as execution enters it, while counting per instruction charges only what
+ran, so the two can part company only where a block is entered and not
+completed, and only in that direction. Every per-function figure here is
+therefore an upper bound, slightly overstating whatever code is left early.
+
+The gap is not the timer: raising the tick rate from 1 kHz to 10 kHz, which is a
+tenfold change in how often the clock driver runs, moves it from 0.635% to
+0.618%. It is essentially a constant.
+
+For comparing two builds it very largely cancels, which is what the prediction
+check above demonstrates: a systematic 0.62% bias on both sides still leaves the
+predicted and the measured change 0.05 points apart. For reading an absolute
+instructions-per-byte figure, treat it as a ceiling.

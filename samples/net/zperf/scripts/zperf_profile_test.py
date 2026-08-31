@@ -21,6 +21,7 @@ import argparse
 import contextlib
 import json
 import os
+from pathlib import Path
 from unittest import mock
 
 import pytest
@@ -939,9 +940,7 @@ GOLDEN_REPORT = (
 )
 GOLDEN_BOOT = HEADER.format(n=2) + "0x0000000000001000, 1, 4, 5\n0x0000000000000500, 1, 1, 8\n"
 GOLDEN_CONSOLE = (
-    "*** Booting Zephyr OS ***\n"
-    "ZPERF-INFO tcp4_bytes=25 tcp4_us=3200\n"
-    "ZPERF-RESULT tcp4_mbps=62.5\n"
+    "*** Booting Zephyr OS ***\nZPERF-INFO tcp4_bytes=25\nZPERF-RESULT tcp4_mbps=62.5\n"
 )
 
 
@@ -1079,3 +1078,145 @@ def test_cmd_diff_exits_non_zero_on_a_regression(tmp_path, capsys):
 
     assert zperf_profile.cmd_diff(args) == 1
     assert "At least one transfer regressed beyond the tolerance." in capsys.readouterr().out
+
+
+#
+# The pieces the verify subcommand is built from
+#
+
+
+def test_parse_insn_total(tmp_path):
+    """QEMU's insn plugin appends its own totals to the same report file, so
+    the block table and this number come out of one run."""
+    path = _write(
+        tmp_path,
+        "r.log",
+        HEADER.format(n=1)
+        + "0x0000000000100238, 1, 4, 10\n"
+        + "cpu 0 insns: 38410031\n"
+        + "total insns: 38410031\n",
+    )
+
+    assert zperf_profile.parse_insn_total(path) == 38410031
+    # And the block table is unharmed by the extra lines.
+    assert zperf_profile.parse_report(path)[0] == {(0x100238, 4): 10}
+
+
+def test_parse_insn_total_without_the_plugin(tmp_path):
+    path = _write(tmp_path, "r.log", HEADER.format(n=1) + "0x0000000000100238, 1, 4, 10\n")
+
+    assert zperf_profile.parse_insn_total(path) is None
+
+
+@pytest.mark.parametrize(
+    ("name", "expected"),
+    [
+        ("net_pkt_alloc", "net_pkt_alloc"),
+        # GCC splits a function across partitions and clones it for constant
+        # arguments. Those are the same function under decorated names, and
+        # nm's size for the parent can run into the child.
+        ("dummy_recv.cold", "dummy_recv"),
+        ("net_ipv6_send_ns.cold", "net_ipv6_send_ns"),
+        ("foo.constprop.0", "foo"),
+        ("foo.isra.12", "foo"),
+        ("foo.part.3.cold", "foo"),
+        ("foo.lto_priv.0", "foo"),
+        # A dot that is not one of GCC's suffixes is part of the name.
+        ("foo.bar", "foo.bar"),
+    ],
+)
+def test_base_symbol(name, expected):
+    assert zperf_profile.base_symbol(name) == expected
+
+
+def test_nm_functions_keeps_only_sized_functions(tmp_path):
+    out = (
+        "Symbols from zephyr.elf:\n"
+        "\n"
+        "Name                  Value   Class        Type         Size     Line  Section\n"
+        "\n"
+        "net_pkt_alloc       |00100000|   T  |              FUNC|00000040|     |text\n"
+        "static_helper       |00100040|   t  |              FUNC|00000010|     |text\n"
+        # An alias: either name is a correct answer for that address.
+        "net_pkt_alloc_alias |00100000|   T  |              FUNC|00000040|     |text\n"
+        # A partition of a function, which is the same function.
+        "outer.cold          |00100100|   t  |              FUNC|00000020|     |text\n"
+        # Unsized: the profiler infers this one's bounds, so there is nothing
+        # to compare it against.
+        "arch_swap           |00100050|   T  |              FUNC|        |     |text\n"
+        # Data, including data that lives in a text section and so carries the
+        # same single letter code a function would.
+        "a_variable          |00200000|   B  |            OBJECT|00000004|     |bss\n"
+        "a_constant          |00100200|   T  |            OBJECT|00000008|     |text\n"
+    )
+    run = mock.Mock(return_value=mock.Mock(stdout=out))
+    with mock.patch("zperf_profile.subprocess.run", run):
+        functions = zperf_profile.nm_functions("nm", "zephyr.elf")
+
+    assert functions == {
+        (0x100000, 0x40): {"net_pkt_alloc", "net_pkt_alloc_alias"},
+        (0x100040, 0x10): {"static_helper"},
+        (0x100100, 0x20): {"outer"},
+    }
+    assert run.call_args.args[0] == ["nm", "--format=sysv", "--defined-only", "zephyr.elf"]
+
+
+def test_cache_tool(tmp_path):
+    (tmp_path / "CMakeCache.txt").write_text(
+        "//The nm to use\n"
+        "CMAKE_NM:FILEPATH=/opt/sdk/bin/x86_64-zephyr-elf-nm\n"
+        "CMAKE_ADDR2LINE:FILEPATH=/opt/sdk/bin/x86_64-zephyr-elf-addr2line\n"
+        "EMPTY_ONE:FILEPATH=\n"
+    )
+
+    assert (
+        zperf_profile.cache_tool(str(tmp_path), "CMAKE_NM") == "/opt/sdk/bin/x86_64-zephyr-elf-nm"
+    )
+    assert zperf_profile.cache_tool(str(tmp_path), "EMPTY_ONE") is None
+    assert zperf_profile.cache_tool(str(tmp_path), "NOT_THERE") is None
+
+
+def test_cache_tool_without_a_build():
+    assert zperf_profile.cache_tool("/nonexistent/build", "CMAKE_NM") is None
+
+
+def test_run_one_without_a_plugin_does_not_demand_a_report(tmp_path):
+    """The unwatched run exists precisely to produce no plugin output, so the
+    empty report it leaves behind must not be treated as a failure."""
+    report = str(tmp_path / "empty.report")
+    console = str(tmp_path / "c.log")
+    with (
+        mock.patch("zperf_profile.qemu_command", return_value=["qemu-system-i386"]),
+        mock.patch("zperf_profile.subprocess.run") as run,
+    ):
+        zperf_profile.run_one("/b", None, report, console)
+
+    argv = run.call_args.args[0]
+    assert "-plugin" not in argv
+    assert argv[argv.index("-D") + 1] == report
+
+
+def test_run_one_loads_every_plugin_it_is_given(tmp_path):
+    report = _write(tmp_path, "r.report", "collected 0 entries\n")
+    with (
+        mock.patch("zperf_profile.qemu_command", return_value=["qemu-system-i386"]),
+        mock.patch("zperf_profile.subprocess.run") as run,
+    ):
+        # The guest would write the report; stand in for it, because run_one
+        # treats a missing one as the guest never having exited.
+        run.side_effect = lambda *a, **k: Path(report).write_text("x")
+        zperf_profile.run_one(
+            "/b",
+            "/p/libhotblocks.so",
+            report,
+            str(tmp_path / "c.log"),
+            "/p/libstoptrigger.so",
+            0x1234,
+            extra_plugins=("file=/p/libinsn.so",),
+        )
+    argv = run.call_args.args[0]
+
+    assert argv.count("-plugin") == 3
+    assert "file=/p/libhotblocks.so,inline=on" in argv
+    assert "file=/p/libinsn.so" in argv
+    assert "file=/p/libstoptrigger.so,addr=0x1234" in argv
