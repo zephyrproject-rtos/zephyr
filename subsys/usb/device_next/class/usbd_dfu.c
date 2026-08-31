@@ -535,11 +535,20 @@ static struct net_buf *handle_get_status(struct usbd_class_data *const c_data,
 	/*
 	 * Add GET_STATUS response consisting of
 	 * bStatus, bwPollTimeout, bStatus, iString (no strings defined)
+	 *
+	 * The bState is the state that the device enters immediately after this
+	 * response instead the one it is leaving, per DFU 1.1 Table 6-2.
+	 *
+	 * The distinction here is what tells to the host wait: an image backend
+	 * that reply a waiting condition due to a slow operation from its next_cb
+	 * puts the device into DFU_DNBUSY. Without this signaling the host
+	 * interpret as DFU_DNLOAD_SYNC instead send the next block straight
+	 * into a device that is still busy without perform a poll.
 	 */
 	net_buf_add_u8(buf, data->status);
 	net_buf_add_le16(buf, CONFIG_USBD_DFU_POLLTIMEOUT);
 	net_buf_add_u8(buf, 0);
-	net_buf_add_u8(buf, data->state);
+	net_buf_add_u8(buf, data->next);
 	net_buf_add_u8(buf, 0);
 
 	return buf;
