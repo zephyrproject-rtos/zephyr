@@ -1225,6 +1225,7 @@ New Drivers
   * :dtcompatible:`snps,dwmac-mdio` (:github:`108046`)
   * :dtcompatible:`snps,dwmac-ptp-clock` (:github:`114242`)
   * :dtcompatible:`wch,ch9120` (:github:`111708`)
+  * :dtcompatible:`wiznet,w5100s` (:github:`113315`)
   * :dtcompatible:`wiznet,w6300` (:github:`102727`)
   * :dtcompatible:`xlnx,gem-mdio` (:github:`87313`)
   * :dtcompatible:`zephyr,native-ptp-clock` (:github:`109265`)
