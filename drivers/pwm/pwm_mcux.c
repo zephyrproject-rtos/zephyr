@@ -367,6 +367,14 @@ static void mcux_pwm_handle_capture(const struct device *dev, uint16_t first_edg
 	}
 
 	capture->overflow_count = 0;
+
+	if (!capture->continuous) {
+		/* One shot capture is done: the hardware stops arming, so drop the
+		 * interrupts that would keep firing on every reload. The channel
+		 * stays claimed until pwm_disable_capture(), as the API expects.
+		 */
+		mcux_pwm_capture_irq_disable(dev, capture->capture_channel);
+	}
 }
 
 static void mcux_pwm_isr(const struct device *dev)
