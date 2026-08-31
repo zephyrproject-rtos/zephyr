@@ -26,8 +26,8 @@ struct mtk_pll_control {
 	uint32_t con3;
 };
 
-#define MTK_PLL_CTRL (*(volatile struct mtk_pll_control *)		\
-		      DT_PROP(DT_NODELABEL(cpuclk), pll_ctrl_reg))
+#define MTK_PLL_CTRL                                                                               \
+	(*(volatile struct mtk_pll_control *)DT_PROP(DT_NODELABEL(cpuclk), pll_ctrl_reg))
 
 #define MTK_PLL_CON0_BASE_EN BIT(0)
 #define MTK_PLL_CON0_EN      BIT(9)
@@ -46,12 +46,11 @@ struct mtk_clk_gen {
 	} clk_cfg[MTK_NUM_CLK_CFG];
 };
 
-#define MTK_CLK_GEN (*(volatile struct mtk_clk_gen *) \
-		     DT_REG_ADDR(DT_NODELABEL(cpuclk)))
+#define MTK_CLK_GEN (*(volatile struct mtk_clk_gen *)DT_REG_ADDR(DT_NODELABEL(cpuclk)))
 
-#define MTK_CLK17_SEL_BUS_PLL 7
+#define MTK_CLK17_SEL_BUS_PLL  7
 #define MTK_CLK17_SEL_ADSP_PLL 8
-#define MTK_CLK17_SEL_26M 0
+#define MTK_CLK17_SEL_26M      0
 
 #define MTK_CLK22_SEL_PLL 8
 #define MTK_CLK22_SEL_26M 0
@@ -59,10 +58,22 @@ struct mtk_clk_gen {
 #define MTK_CLK28_SEL_PLL 7
 #define MTK_CLK28_SEL_26M 0
 
-const struct { uint16_t mhz; bool pll; uint32_t pll_con1; } freqs[] = {
-	{  26, false, 0 },
-	{ 400,  true, 0x831ec4ed, },
-	{ 800,  true, 0x810f6276, },
+const struct {
+	uint16_t mhz;
+	bool pll;
+	uint32_t pll_con1;
+} freqs[] = {
+	{26, false, 0},
+	{
+		400,
+		true,
+		0x831ec4ed,
+	},
+	{
+		800,
+		true,
+		0x810f6276,
+	},
 };
 
 static int cur_idx;
@@ -114,7 +125,7 @@ static void setclk(int clk, int shift, int updreg, int ubit, int val)
 	MTK_CLK_GEN.update[updreg] = BIT(ubit);
 }
 
-#define SETCLK17_ADSP(val) setclk(17, 0, 2, 4, (val))
+#define SETCLK17_ADSP(val)            setclk(17, 0, 2, 4, (val))
 #define SETCLK17_AUDIO_LOCAL_BUS(val) setclk(17, 8, 2, 5, (val))
 
 void mtk_adsp_set_cpu_freq(int mhz)

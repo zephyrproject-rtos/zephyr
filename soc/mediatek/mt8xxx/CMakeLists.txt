@@ -7,10 +7,10 @@ if(CONFIG_SOC_MTK_ADSP)
   zephyr_library_sources_ifndef(CONFIG_SOC_SERIES_MT8365 mbox.c)
   zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_MT8365 ipi.c)
 
-  zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_MT8195 ${CONFIG_SOC}/cpuclk.c)
-  zephyr_library_sources_ifdef(CONFIG_SOC_MT8188 ${CONFIG_SOC}/cpuclk.c)
+  zephyr_library_sources_ifdef(CONFIG_SOC_SERIES_MT8195 ${CONFIG_SOC}/adsp/cpuclk.c)
+  zephyr_library_sources_ifdef(CONFIG_SOC_MT8188 ${CONFIG_SOC}/adsp/cpuclk.c)
 
-  set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/${CONFIG_SOC}/linker.ld CACHE INTERNAL "")
+  set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/${CONFIG_SOC}/adsp/linker.ld CACHE INTERNAL "")
 
   add_custom_target(dsp_img ALL
     DEPENDS ${ZEPHYR_FINAL_EXECUTABLE}
