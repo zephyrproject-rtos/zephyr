@@ -1,7 +1,7 @@
 # Copyright 2024-2025 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_MIMXRT798S_HIFI1
+if SOC_MIMXRT798S_HIFI1 || SOC_MIMXRT758S_HIFI1 || SOC_MIMXRT735S_HIFI1
 
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
@@ -21,4 +21,4 @@ config XTENSA_CCOUNT_HZ
 config SYS_CLOCK_TICKS_PER_SEC
 	default 1000
 
-endif # SOC_MIMXRT798S_HIFI1
+endif # SOC_MIMXRT798S_HIFI1 || SOC_MIMXRT758S_HIFI1 || SOC_MIMXRT735S_HIFI1
