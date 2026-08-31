@@ -1445,13 +1445,13 @@ devices, for example:
       .. code-block:: yaml
 
          - connected: true
-           id: OSHW000032254e4500128002ab98002784d1000097969900
+           id: "OSHW000032254e4500128002ab98002784d1000097969900"
            platform: unknown
            product: DAPLink CMSIS-DAP
            runner: pyocd
            serial: /dev/cu.usbmodem146114202
          - connected: true
-           id: 000683759358
+           id: "000683759358"
            platform: unknown
            product: J-Link
            runner: unknown
@@ -1462,13 +1462,13 @@ devices, for example:
       .. code-block:: yaml
 
          - connected: true
-           id: OSHW000032254e4500128002ab98002784d1000097969900
+           id: "OSHW000032254e4500128002ab98002784d1000097969900"
            platform: unknown
            product: unknown
            runner: unknown
            serial: COM1
          - connected: true
-           id: 000683759358
+           id: "000683759358"
            platform: unknown
            product: unknown
            runner: unknown
@@ -1487,14 +1487,14 @@ In this example we are using a reel_board and an nrf52840dk/nrf52840:
       .. code-block:: yaml
 
          - connected: true
-           id: OSHW000032254e4500128002ab98002784d1000097969900
+           id: "OSHW000032254e4500128002ab98002784d1000097969900"
            platform: reel_board
            product: DAPLink CMSIS-DAP
            runner: pyocd
            serial: /dev/cu.usbmodem146114202
            baud: 9600
          - connected: true
-           id: 000683759358
+           id: "000683759358"
            platform: nrf52840dk/nrf52840
            product: J-Link
            runner: nrfjprog
@@ -1506,14 +1506,14 @@ In this example we are using a reel_board and an nrf52840dk/nrf52840:
       .. code-block:: yaml
 
          - connected: true
-           id: OSHW000032254e4500128002ab98002784d1000097969900
+           id: "OSHW000032254e4500128002ab98002784d1000097969900"
            platform: reel_board
            product: DAPLink CMSIS-DAP
            runner: pyocd
            serial: COM1
            baud: 9600
          - connected: true
-           id: 000683759358
+           id: "000683759358"
            platform: nrf52840dk/nrf52840
            product: J-Link
            runner: nrfjprog
@@ -1645,7 +1645,7 @@ Fixtures are defined in the hardware map file as a list:
       - connected: true
         fixtures:
           - gpio_loopback
-        id: 0240000026334e450015400f5e0e000b4eb1000097969900
+        id: "0240000026334e450015400f5e0e000b4eb1000097969900"
         platform: frdm_k64f
         product: DAPLink CMSIS-DAP
         runner: pyocd
@@ -1679,7 +1679,7 @@ example:
     - connected: false
       fixtures:
         - gpio_loopback
-      id: 000683290670
+      id: "000683290670"
       notes: An nrf5340dk/nrf5340 is detected as an nrf52840dk/nrf52840 with no serial
         port, and three serial ports with an unknown platform.  The board id of the serial
         ports is not the same as the board id of the development kit.  If you regenerate
@@ -1702,9 +1702,9 @@ using an external J-Link probe.  The ``probe_id`` keyword overrides the
 .. code-block:: yaml
 
     - connected: false
-      id: 0229000005d9ebc600000000000000000000000097969905
+      id: "0229000005d9ebc600000000000000000000000097969905"
       platform: mimxrt1060_evk
-      probe_id: 000609301751
+      probe_id: "000609301751"
       product: DAPLink CMSIS-DAP
       runner: jlink
       serial: null
@@ -1720,7 +1720,7 @@ Using Single Board For Multiple Variants
 .. code-block:: yaml
 
     - connected: true
-      id: '001234567890'
+      id: "001234567890"
       platform:
       - nrf5340dk/nrf5340/cpuapp
       - nrf5340dk/nrf5340/cpuapp/ns
@@ -1742,10 +1742,10 @@ For example:
 .. code-block:: yaml
 
     - connected: true
-      id: 001234567890
+      id: "001234567890"
       serial: /dev/ttyACM0
     - connected: true
-      id: 001234567890
+      id: "001234567890"
       platform:
       - nrf54l15dk/nrf54l15/cpuapp
       product: J-Link
@@ -1788,11 +1788,11 @@ Each entry needs a matching platform and a serial connection:
 .. code-block:: yaml
 
     - connected: true
-      id: 01
+      id: "01"
       platform: nrf52840dk/nrf52840
       serial: /dev/ttyACM0
     - connected: true
-      id: 02
+      id: "02"
       platform: nrf52840dk/nrf52840
       serial: /dev/ttyACM1
 
