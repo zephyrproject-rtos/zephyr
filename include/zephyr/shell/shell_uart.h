@@ -67,6 +67,7 @@ struct shell_uart_int_driven {
 struct shell_uart_async {
 	struct shell_uart_common common;
 	struct k_sem tx_sem;
+	struct k_spinlock lock;
 	struct uart_async_rx async_rx;
 	struct uart_async_rx_config async_rx_config;
 	atomic_t pending_rx_req;
