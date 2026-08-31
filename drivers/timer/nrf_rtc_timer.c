@@ -747,7 +747,16 @@ static int sys_clock_driver_init(void)
 		    rtc_nrf_isr, 0, 0);
 	irq_enable(RTC_IRQn);
 
+	/* We need a delay of 46 usec between the CLEAR/START event, otherwise
+	 * we may seen a non-zero value for RTC, which will grip the whole
+	 * "tick counting machinery".
+	 * This can happen when the RTC was used by a bootloader before
+	 * Zephyr starts.
+	 *
+	 * See: NRF52840 RTC spec, section "TASK and EVENT jitter/delay"
+	 */
 	nrfy_rtc_task_trigger(RTC, NRF_RTC_TASK_CLEAR);
+	k_busy_wait(46);
 	nrfy_rtc_task_trigger(RTC, NRF_RTC_TASK_START);
 
 	int_mask = BIT_MASK(CHAN_COUNT);
