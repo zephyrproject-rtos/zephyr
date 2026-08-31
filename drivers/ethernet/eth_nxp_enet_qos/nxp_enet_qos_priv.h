@@ -125,11 +125,36 @@ struct nxp_enet_qos_mac_config {
 #endif
 };
 
-struct nxp_enet_qos_tx_data {
-	struct k_sem tx_sem;
+/* One in-flight frame: num_descs consecutive descriptors ending at last_desc,
+ * wrapping with the ring. pkt is claimed by whichever of completion or abort
+ * reaches it first.
+ */
+struct nxp_enet_qos_tx_frame {
 	struct net_pkt *pkt;
-	int num_descs;
+	uint16_t first_desc;
+	uint16_t last_desc;
+	uint16_t num_descs;
+	uint32_t seq;
+	bool timestamp;
+};
+
+/* Persistent transmit ring with a parallel ring of in-flight frame records.
+ * The producer (thread), the consumer (transmit interrupt) and the abort path
+ * (PHY callback work) mutate head, tail and the records only under irq_lock,
+ * and a record's pkt is claimed once, so exactly one path returns each frame.
+ */
+struct nxp_enet_qos_tx_data {
 	struct k_work_delayable watchdog;
+	uint16_t desc_head;
+	uint16_t desc_used;
+	uint16_t frame_head;
+	uint16_t frame_tail;
+	uint16_t frame_used;
+	uint32_t seq_next;
+	uint32_t watchdog_seq;
+	bool watchdog_seq_valid;
+	bool aborting;
+	struct nxp_enet_qos_tx_frame frames[NUM_TX_BUFDESC];
 	volatile union nxp_enet_qos_tx_desc descriptors[NUM_TX_BUFDESC];
 };
 
