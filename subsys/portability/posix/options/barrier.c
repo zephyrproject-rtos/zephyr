@@ -17,6 +17,7 @@ struct posix_barrier {
 	struct k_condvar cond;
 	uint32_t max;
 	uint32_t count;
+	uint32_t cycle;
 };
 
 static struct posix_barrier posix_barrier_pool[CONFIG_MAX_PTHREAD_BARRIER_COUNT];
@@ -68,6 +69,7 @@ int pthread_barrier_wait(pthread_barrier_t *b)
 {
 	int ret;
 	int err;
+	uint32_t cycle;
 	pthread_barrier_t bb = *b;
 	struct posix_barrier *bar;
 
@@ -79,26 +81,26 @@ int pthread_barrier_wait(pthread_barrier_t *b)
 	err = k_mutex_lock(&bar->mutex, K_FOREVER);
 	__ASSERT_NO_MSG(err == 0);
 
-	++bar->count;
+	cycle = bar->cycle;
 
-	if (bar->count == bar->max) {
+	if (++bar->count == bar->max) {
+		bar->cycle++;
 		bar->count = 0;
 		ret = PTHREAD_BARRIER_SERIAL_THREAD;
+		err = k_condvar_broadcast(&bar->cond);
+		__ASSERT_NO_MSG(err == 0);
 
 		goto unlock;
 	}
 
-	while (bar->count != 0) {
+	while (cycle == bar->cycle) {
 		err = k_condvar_wait(&bar->cond, &bar->mutex, K_FOREVER);
 		__ASSERT_NO_MSG(err == 0);
-		/* Note: count is reset to zero by the serialized thread */
 	}
 
 	ret = 0;
 
 unlock:
-	err = k_condvar_signal(&bar->cond);
-	__ASSERT_NO_MSG(err == 0);
 	err = k_mutex_unlock(&bar->mutex);
 	__ASSERT_NO_MSG(err == 0);
 
@@ -122,6 +124,7 @@ int pthread_barrier_init(pthread_barrier_t *b, const pthread_barrierattr_t *attr
 	bar = &posix_barrier_pool[bit];
 	bar->max = count;
 	bar->count = 0;
+	bar->cycle = 0;
 
 	*b = mark_pthread_obj_initialized(bit);
 
@@ -148,6 +151,7 @@ int pthread_barrier_destroy(pthread_barrier_t *b)
 	/* An implementation may use this function to set barrier to an invalid value */
 	bar->max = 0;
 	bar->count = 0;
+	bar->cycle = 0;
 
 	bit = posix_barrier_to_offset(bar);
 	err = sys_bitarray_free(&posix_barrier_bitarray, 1, bit);
@@ -174,7 +178,7 @@ int pthread_barrierattr_init(pthread_barrierattr_t *attr)
 int pthread_barrierattr_setpshared(pthread_barrierattr_t *attr, int pshared)
 {
 	if (pshared != PTHREAD_PROCESS_PRIVATE && pshared != PTHREAD_PROCESS_PUBLIC) {
-		return -EINVAL;
+		return EINVAL;
 	}
 
 	attr->pshared = pshared;
