@@ -134,4 +134,12 @@ void *can_powermgmt_setup(void)
 	return NULL;
 }
 
-ZTEST_SUITE(can_powermgmt, can_powermgmt_predicate, can_powermgmt_setup, NULL, NULL, NULL);
+void can_powermgmt_teardown(void *f)
+{
+	ARG_UNUSED(f);
+
+	can_common_test_teardown();
+}
+
+ZTEST_SUITE(can_powermgmt, can_powermgmt_predicate, can_powermgmt_setup, NULL, NULL,
+	    can_powermgmt_teardown);
