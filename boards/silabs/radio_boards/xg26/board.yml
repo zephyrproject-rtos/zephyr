@@ -1,3 +1,6 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
 boards:
   - name: mgm260p_rb4350a
     full_name: MGM260P 2.4 GHz +10 dBm Radio Board
