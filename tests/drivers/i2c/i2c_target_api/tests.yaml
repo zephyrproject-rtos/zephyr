@@ -87,6 +87,7 @@ tests:
       - nrf7120dk/nrf7120/cpuapp
       - ophelia4ev/nrf54l15/cpuapp
       - pic32cm_jh01_cpro
+      - pic32cm_sg00_cpro
       - pic32cx_sg41_cult
       - pic32cz_ca80_cult
       - sam_e54_xpro
