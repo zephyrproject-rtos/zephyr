@@ -47,3 +47,25 @@ properties:
     description: |
       This option is used when the I2C target is enabled and it can
       support PIO mode for I2C target transfer.
+
+  scl-sda-low-timeout:
+    type: int
+    min: 0
+    max: 255
+    description: |
+      This option is used to configure the SCL/SDA low hardware timeout.
+      The timeout value specifies the number of 1024 kHz clock periods
+      to wait, which roughly translates to milliseconds of delay.
+      If this property is not specified, the driver defaults to the longest
+      possible SCL/SDA low timeout of 255 (which is 249 ms).
+
+      The ITE enhance driver also supports a software timeout using the
+      zephyr,transfer-timeout-ms property (or CONFIG_I2C_TRANSFER_TIMEOUT_MS).
+
+      The shorter timeout value (hardware or software) configures the maximum
+      clock stretch time supported on this I2C bus.
+
+      To support I2C targets that clock stretch longer than 249ms, set
+      scl-sda-low-timeout-ms to 0 to disable the hardware timer. The maximum
+      clock stretch time is then configured using the software timeout property
+      zephyr,transfer-timeout-ms.
