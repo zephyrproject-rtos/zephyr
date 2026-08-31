@@ -45,6 +45,37 @@
 	status = "okay";
 };
 
+&qspi {
+	clock-frequency = <DT_FREQ_M(300)>;
+	shared-data-bus;
+	status = "disabled";
+
+	boot_memory: mram@0 {
+		compatible = "avalanche,as301g208";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(40)>;
+		/*
+		 * The Safety Processor switches two independent boot memory banks
+		 * onto CS0. Use SPI to avoid bank-specific QPI state. The driver
+		 * requires matching TX/RX widths; mixed-width transfers are not
+		 * supported. QPI (4-4-4) is also supported by setting both widths
+		 * to 4, provided both banks are initialized before switching.
+		 */
+		spi-rx-bus-width = <1>;
+		spi-tx-bus-width = <1>;
+		status = "disabled";
+	};
+
+	hirel_memory: mram@1 {
+		compatible = "avalanche,as3064204";
+		reg = <1>;
+		spi-max-frequency = <DT_FREQ_M(40)>;
+		spi-rx-bus-width = <4>;
+		spi-tx-bus-width = <4>;
+		status = "disabled";
+	};
+};
+
 &sdhci1 {
 	status = "disabled";
 
