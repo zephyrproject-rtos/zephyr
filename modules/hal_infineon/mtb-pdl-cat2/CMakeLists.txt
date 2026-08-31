@@ -12,7 +12,8 @@ set(pdl_dev_dir ${pdl_dir}/devices)
 
 # Generate PDL specific SOC defines
 zephyr_library_compile_definitions(CONFIG_SOC_PART_NUMBER)
-zephyr_library_compile_definitions($<UPPER_CASE:${CONFIG_SOC}>)
+# Global (not library-scoped) so offsets.c and other non-library targets also see it.
+zephyr_compile_definitions($<UPPER_CASE:${CONFIG_SOC}>)
 zephyr_library_compile_definitions(${CONFIG_SOC_PART_NUMBER}_device)
 
 # Include directories
