@@ -284,22 +284,37 @@ static int check_vector(void *isr, int offset)
 
 #if defined(CONFIG_GEN_SW_ISR_TABLE) && \
 	(defined(ISR3_OFFSET) || defined(ISR4_OFFSET) || \
-	 defined(ISR5_OFFSET) || defined(ISR6_OFFSET))
+	 (defined(CONFIG_DYNAMIC_INTERRUPTS) && \
+	  (defined(ISR5_OFFSET) || defined(ISR6_OFFSET))))
+/* The software ISR table is either an array indexed by table index, or a
+ * generated switch-case reachable only through get_isr_entry().
+ */
+static void get_sw_isr_entry(unsigned int table_idx, struct _isr_table_entry *entry)
+{
+#if defined(CONFIG_GEN_SW_ISR_TABLE_ARRAY)
+	*entry = _sw_isr_table[table_idx];
+#else
+	get_isr_entry(table_idx, entry);
+#endif
+}
+
 static int check_sw_isr(void *isr, uintptr_t arg, int offset)
 {
-	const struct _isr_table_entry *e = &_sw_isr_table[TABLE_INDEX(offset)];
+	struct _isr_table_entry e;
 
-	TC_PRINT("Checking _sw_isr_table entry %d for irq %d\n",
+	get_sw_isr_entry(TABLE_INDEX(offset), &e);
+
+	TC_PRINT("Checking SW ISR table entry %d for irq %d\n",
 		 TABLE_INDEX(offset), IRQ_LINE(offset));
 
-	if (e->arg != (void *)arg) {
+	if (e.arg != (void *)arg) {
 		TC_PRINT("bad argument in SW isr table\n");
-		TC_PRINT("expected %p got %p\n", (void *)arg, e->arg);
+		TC_PRINT("expected %p got %p\n", (void *)arg, e.arg);
 		return -1;
 	}
-	if (e->isr != isr) {
+	if (e.isr != isr) {
 		TC_PRINT("Bad ISR in SW isr table\n");
-		TC_PRINT("expected %p got %p\n", (void *)isr, e->isr);
+		TC_PRINT("expected %p got %p\n", (void *)isr, e.isr);
 		return -1;
 	}
 #if defined(CONFIG_GEN_IRQ_VECTOR_TABLE) && !defined(CONFIG_IRQ_VECTOR_TABLE_JUMP_BY_CODE)
@@ -380,7 +395,11 @@ ZTEST(gen_isr_table, test_build_time_interrupt)
 #ifndef CONFIG_GEN_SW_ISR_TABLE
 	ztest_test_skip();
 #else
+#ifdef CONFIG_GEN_SW_ISR_TABLE_ARRAY
 	TC_PRINT("_sw_isr_table at location %p\n", _sw_isr_table);
+#else
+	TC_PRINT("get_isr_entry at location %p\n", (void *)(uintptr_t)get_isr_entry);
+#endif
 
 #ifdef ISR3_OFFSET
 	IRQ_CONNECT(IRQ_LINE(ISR3_OFFSET), 1, isr3, ISR3_ARG, IRQ_FLAGS);
@@ -423,7 +442,7 @@ ZTEST(gen_isr_table, test_build_time_interrupt)
 ZTEST(gen_isr_table, test_run_time_interrupt)
 {
 
-#ifndef CONFIG_GEN_SW_ISR_TABLE
+#if !defined(CONFIG_GEN_SW_ISR_TABLE) || !defined(CONFIG_DYNAMIC_INTERRUPTS)
 	ztest_test_skip();
 #else
 
