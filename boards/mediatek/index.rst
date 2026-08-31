@@ -1,7 +1,18 @@
+.. _boards-mediatek:
+
+MediaTek Inc.
+#############
+
+.. toctree::
+   :maxdepth: 1
+   :glob:
+
+   **/*
+
 .. _boards-mtk_adsp:
 
-Mediatek Audio DSPs
-###################
+Audio DSPs
+**********
 
 Zephyr can be built and run on the Audio DSPs included in various
 members of the Mediatek MT8xxx series of ARM SOCs used in Chromebooks
@@ -22,7 +33,7 @@ validation performed on at least these devices, though more exist:
   ======  =============  ===================================  =================
 
 Hardware
-********
+========
 
 These devices are Xtensa DSP cores, very similar to the Intel ADSP
 series in concept (with the notable difference that these are all
@@ -47,7 +58,7 @@ bidirectional interrupt source it uses to communicate with the host
 kernel.
 
 Programming and Debugging
-*************************
+=========================
 
 These devices work entirely in RAM, so there is no "flash" process as
 such.  Their memory state is initialized by the host Linux
@@ -82,7 +93,7 @@ my mt8186 device named "steelix":
    Hello World! mt8186/mt8186/adsp
 
 Debugging
-=========
+---------
 
 Given the limited I/O facilities, debugging support remains limited on
 these platforms.  Users with access to hardware-level debug and trace
@@ -93,7 +104,7 @@ with gdb_stub, which has support on Xtensa and via the SDK debuggers,
 but this is still unintegrated.
 
 Toolchains
-**********
+==========
 
 The MT8195, MT818X and MT8365 toolchains are already part of the Zephyr
 SDK, so builds for the ``mt8195/mt8195/adsp``, ``mt8186/mt8186/adsp``,
@@ -102,7 +113,7 @@ work out of the box simply following the generic Zephyr build instructions
 in the Getting Started guide.
 
 Closed-source Tools
-===================
+-------------------
 
 Zephyr can also be built by the proprietary Cadence xcc and xt-clang
 toolchains.  Support for those tools is beyond the scope of this

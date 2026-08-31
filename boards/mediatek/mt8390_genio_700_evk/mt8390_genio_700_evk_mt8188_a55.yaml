@@ -1,0 +1,15 @@
+identifier: mt8390_genio_700_evk/mt8188/a55
+name: MediaTek Genio 700 EVK
+type: mcu
+arch: arm64
+toolchain:
+  - zephyr
+  - cross-compile
+ram: 8192
+supported:
+  - pinctrl
+  - uart
+testing:
+  ignore_tags:
+    - bluetooth
+vendor: mediatek
