@@ -691,6 +691,7 @@ Bluetooth Controller:
     - doc/services/connectivity/bluetooth/img/ctlr*
     - doc/services/connectivity/bluetooth/api/controller.rst
     - include/zephyr/bluetooth/controller.h
+    - samples/bluetooth/hci_*/
     - subsys/bluetooth/common/
     - subsys/bluetooth/controller/
     - subsys/bluetooth/crypto/
@@ -700,9 +701,17 @@ Bluetooth Controller:
     - "area: Bluetooth Controller"
     - "area: Bluetooth"
   tests:
-    - bluetooth.controller
     - bluetooth
+    - bluetooth.controller
     - bluetooth.ll
+    - sample.bluetooth.hci_ipc
+    - sample.bluetooth.hci_pwr_ctrl
+    - sample.bluetooth.hci_spi
+    - sample.bluetooth.hci_uart
+    - sample.bluetooth.hci_uart_3wire
+    - sample.bluetooth.hci_uart_async
+    - sample.bluetooth.hci_usb
+    - sample.bluetooth.hci_vs_scan_req
 
 Bluetooth HCI:
   status: maintained
