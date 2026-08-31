@@ -50,21 +50,12 @@ endchoice
 
 config WIFI_SILABS_SIWX91X_ENHANCED_MAX_PSP
 	bool "Enhanced Max PSP Support"
-	default y
 	help
-	  Enable this option to allow the device to configure
-	  Enhanced Maximum Power Save (PSP) support during
-	  device initialization.
+	  This option replace the usual Fast PS mode (sometime called
+	  Dynamic PS) with an enhanced version of PS-Poll algorithm.
 
-	  **Advantages:**
-	  - Reduces power consumption during low traffic periods.
-	  - Automatically transitions to Fast PSP for improved responsiveness
-	    when traffic is high.
-
-	  **Limitations:**
-	  - Initially uses PS-Poll frames for power management, even if the
-	    user configures NULL frame-based.
-	  - Switches to NULL frame-based only when traffic increases.
+	  The algorithm will detect if the AP does not properly
+	  handle the PS-Poll request and will switch to Dynamic PS.
 
 config WIFI_SILABS_SIWX91X_MFP
 	bool "802.11w Management Frame Protection (MFP) support"
