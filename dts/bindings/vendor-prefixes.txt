@@ -97,6 +97,7 @@ atmel	Atmel Corporation
 auo	AU Optronics Corporation
 auvidea	Auvidea GmbH
 avago	Avago Technologies
+avalanche	Avalanche Technology Inc.
 avia	avia semiconductor
 avic	Shanghai AVIC Optoelectronics Co., Ltd.
 avnet	Avnet, Inc.
