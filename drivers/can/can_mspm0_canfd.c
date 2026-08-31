@@ -13,46 +13,75 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/mspm0_clock_control.h>
 #include <zephyr/logging/log.h>
-
-/* Driverlib includes */
-#include <ti/driverlib/dl_mcan.h>
+#include <zephyr/sys/sys_io.h>
 
 LOG_MODULE_REGISTER(can_mspm0_canfd, CONFIG_CAN_LOG_LEVEL);
 
 #define DT_DRV_COMPAT ti_mspm0_canfd
 
-#define MSPM0_MCAN_REVID_SCHEME_INVALID		0x00
+/* MCANSS register offsets and bitfields from ti_canfd base — verified from hw_mcan.h */
 
-#define MSPM0_MCAN_DIV_RATIO_1			1
-#define MSPM0_MCAN_DIV_RATIO_2			2
-#define MSPM0_MCAN_DIV_RATIO_4			4
+/* PWREN @ +0x6800 */
+#define MSPM0_MCANSS_PWREN_OFFSET        0x6800U
+#define MSPM0_MCANSS_PWREN_KEY           0x26000000U
+#define MSPM0_MCANSS_PWREN_ENABLE        0x00000001U
 
-#define MSPM0_MCAN_CLOCK_TIMEOUT_US		1000U
-#define MSPM0_MCAN_MEMINIT_TIMEOUT_US		1000U
-#define MSPM0_MCAN_POWER_STARTUP_DELAY_US	1000U
+/* RSTCTL @ +0x6804 */
+#define MSPM0_MCANSS_RSTCTL_OFFSET       0x6804U
+#define MSPM0_MCANSS_RSTCTL_KEY          0xB1000000U
+#define MSPM0_MCANSS_RSTCTL_STKYCLR      0x00000002U
+#define MSPM0_MCANSS_RSTCTL_ASSERT       0x00000001U
 
-#define MSPM0_MCAN_CLK_SEL					\
-	(DT_SAME_NODE(DT_CLOCKS_CTLR(DT_NODELABEL(canclk)),	\
-		      DT_NODELABEL(syspll))			\
-	 ? DL_MCAN_FCLK_SYSPLLCLK1 : DL_MCAN_FCLK_HFCLK)
+/* PID @ +0x7200: scheme field in bits [31:30]; non-zero when clock is stable */
+#define MSPM0_MCANSS_PID_OFFSET          0x7200U
+#define MSPM0_MCANSS_PID_SCHEME_SHIFT    30U
 
-#define MCAN_DT_CLK_DIV(inst)			\
-	DT_INST_PROP(inst, ti_divider)
+/* STAT @ +0x7208 */
+#define MSPM0_MCANSS_STAT_OFFSET         0x7208U
+#define MSPM0_MCANSS_STAT_MEMINIT        BIT(1)
 
-#define MCAN_DT_CLK_DIV_ENUM(inst)		\
-	_CONCAT(DL_MCAN_FCLK_DIV_, MCAN_DT_CLK_DIV(inst))
+/* EOI @ +0x7220: write line number to clear the aggregated CPU interrupt */
+#define MSPM0_MCANSS_EOI_OFFSET          0x7220U
+#define MSPM0_MCAN_EOI_LINE0             0x01U
+#define MSPM0_MCAN_EOI_LINE1             0x02U
+
+/* CPU_INT registers @ +0x7820 */
+#define MSPM0_MCAN_IIDX_OFFSET           0x7820U
+#define MSPM0_MCAN_IIDX_LINE0            0x01U
+#define MSPM0_MCAN_IIDX_LINE1            0x02U
+
+#define MSPM0_MCAN_IMASK_OFFSET          0x7828U
+#define MSPM0_MCAN_INT_LINE0             BIT(0)
+#define MSPM0_MCAN_INT_LINE1             BIT(1)
+
+#define MSPM0_MCAN_ICLR_OFFSET           0x7848U
+
+/* CLKEN @ +0x7900 */
+#define MSPM0_MCANSS_CLKEN_OFFSET        0x7900U
+#define MSPM0_MCANSS_CLK_ENABLE          0x00000001U
+
+/* CLKDIV @ +0x7904: 0=÷1, 1=÷2, 2=÷4 */
+#define MSPM0_MCANSS_CLKDIV_OFFSET       0x7904U
+
+#define MSPM0_MCAN_CLOCK_TIMEOUT_US      1000U
+#define MSPM0_MCAN_MEMINIT_TIMEOUT_US    1000U
+#define MSPM0_MCAN_POWER_STARTUP_DELAY_US 1000U
+
+/* CLKDIV register value: divider 1→0, 2→1, 4→2 */
+#define MCAN_DT_CLK_DIV_REG(inst) \
+	((DT_INST_PROP(inst, ti_divider) == 4) ? 2 : \
+	 (DT_INST_PROP(inst, ti_divider) == 2) ? 1 : 0)
 
 struct can_mspm0_canfd_config {
-	MCAN_Regs *ti_canfd_base;
+	mm_reg_t ti_canfd_base;
 	const struct device *clock_dev;
 	const struct mspm0_sys_clock *clock_subsys;
 	mm_reg_t mcan_base;
 	mem_addr_t mram;
 	uintptr_t mrba;
+	uint32_t clk_div;
 	const struct pinctrl_dev_config *pinctrl;
 	void (*irq_cfg_func)(void);
-
-	const DL_MCAN_ClockConfig clock_cfg;
 };
 
 static int can_mspm0_canfd_read_reg(const struct device *dev, uint16_t reg, uint32_t *val)
@@ -101,7 +130,7 @@ static int can_mspm0_canfd_get_core_clock(const struct device *dev, uint32_t *ra
 {
 	const struct can_mcan_config *mcan_config = dev->config;
 	const struct can_mspm0_canfd_config *config = mcan_config->custom;
-	uint32_t clock_rate, clk_div;
+	uint32_t clock_rate;
 	int ret;
 
 	ret = clock_control_get_rate(config->clock_dev,
@@ -111,21 +140,7 @@ static int can_mspm0_canfd_get_core_clock(const struct device *dev, uint32_t *ra
 		return ret;
 	}
 
-	switch (config->clock_cfg.divider) {
-	case DL_MCAN_FCLK_DIV_1:
-		clk_div = MSPM0_MCAN_DIV_RATIO_1;
-		break;
-	case DL_MCAN_FCLK_DIV_2:
-		clk_div = MSPM0_MCAN_DIV_RATIO_2;
-		break;
-	case DL_MCAN_FCLK_DIV_4:
-		clk_div = MSPM0_MCAN_DIV_RATIO_4;
-		break;
-	default:
-		return -EINVAL;
-	}
-
-	*rate = clock_rate / clk_div;
+	*rate = clock_rate >> config->clk_div;
 
 	return 0;
 }
@@ -134,17 +149,16 @@ static int can_mspm0_canfd_clock_enable(const struct device *dev)
 {
 	const struct can_mcan_config *mcan_cfg = dev->config;
 	const struct can_mspm0_canfd_config *config = mcan_cfg->custom;
-	DL_MCAN_RevisionId revid;
+	mm_reg_t base = config->ti_canfd_base;
 
-	DL_MCAN_setClockConfig(config->ti_canfd_base,
-			       (DL_MCAN_ClockConfig *)&config->clock_cfg);
-	DL_MCAN_enableModuleClock(config->ti_canfd_base);
+	sys_write32(config->clk_div, base + MSPM0_MCANSS_CLKDIV_OFFSET);
+	sys_write32(MSPM0_MCANSS_CLK_ENABLE, base + MSPM0_MCANSS_CLKEN_OFFSET);
 
 	/* The revision ID will be invalid until the clock domain is
 	 * fully stabilized.
 	 */
-	if (!WAIT_FOR(((DL_MCAN_getRevisionId(config->ti_canfd_base, &revid),
-			(uint32_t)revid.scheme) != MSPM0_MCAN_REVID_SCHEME_INVALID),
+	if (!WAIT_FOR(((sys_read32(base + MSPM0_MCANSS_PID_OFFSET) >>
+			MSPM0_MCANSS_PID_SCHEME_SHIFT) != 0U),
 		      MSPM0_MCAN_CLOCK_TIMEOUT_US, k_busy_wait(1))) {
 		LOG_ERR("MSPM0 MCAN clock stabilization failed");
 		return -ENODEV;
@@ -157,6 +171,7 @@ static int can_mspm0_canfd_init(const struct device *dev)
 {
 	const struct can_mcan_config *mcan_cfg = dev->config;
 	const struct can_mspm0_canfd_config *config = mcan_cfg->custom;
+	mm_reg_t base = config->ti_canfd_base;
 	int ret;
 
 	LOG_DBG("Initializing %s", dev->name);
@@ -167,8 +182,23 @@ static int can_mspm0_canfd_init(const struct device *dev)
 		return ret;
 	}
 
-	DL_MCAN_reset(config->ti_canfd_base);
-	DL_MCAN_enablePower(config->ti_canfd_base);
+	if (!device_is_ready(config->clock_dev)) {
+		LOG_ERR("clock control device not ready");
+		return -ENODEV;
+	}
+
+	ret = clock_control_on(config->clock_dev,
+			       (clock_control_subsys_t)config->clock_subsys);
+	if (ret < 0) {
+		LOG_ERR("failed to enable CANCLK (err %d)", ret);
+		return ret;
+	}
+
+	sys_write32(MSPM0_MCANSS_RSTCTL_KEY | MSPM0_MCANSS_RSTCTL_STKYCLR |
+		    MSPM0_MCANSS_RSTCTL_ASSERT,
+		    base + MSPM0_MCANSS_RSTCTL_OFFSET);
+	sys_write32(MSPM0_MCANSS_PWREN_KEY | MSPM0_MCANSS_PWREN_ENABLE,
+		    base + MSPM0_MCANSS_PWREN_OFFSET);
 	k_busy_wait(MSPM0_MCAN_POWER_STARTUP_DELAY_US);
 
 	ret = can_mspm0_canfd_clock_enable(dev);
@@ -177,7 +207,8 @@ static int can_mspm0_canfd_init(const struct device *dev)
 	}
 
 	/* Wait for Memory initialization to be completed. */
-	if (!WAIT_FOR(DL_MCAN_isMemInitDone(config->ti_canfd_base),
+	if (!WAIT_FOR((sys_read32(base + MSPM0_MCANSS_STAT_OFFSET) &
+		       MSPM0_MCANSS_STAT_MEMINIT) != 0U,
 		      MSPM0_MCAN_MEMINIT_TIMEOUT_US, k_busy_wait(1))) {
 		LOG_ERR("MSPM0 MCAN memory init failed");
 		return -ENODEV;
@@ -193,10 +224,10 @@ static int can_mspm0_canfd_init(const struct device *dev)
 		return ret;
 	}
 
-	DL_MCAN_clearInterruptStatus(config->ti_canfd_base,
-				     (DL_MCAN_MSP_INTERRUPT_LINE0 | DL_MCAN_MSP_INTERRUPT_LINE1));
-	DL_MCAN_enableInterrupt(config->ti_canfd_base,
-				(DL_MCAN_MSP_INTERRUPT_LINE0 | DL_MCAN_MSP_INTERRUPT_LINE1));
+	sys_write32(MSPM0_MCAN_INT_LINE0 | MSPM0_MCAN_INT_LINE1,
+		    base + MSPM0_MCAN_ICLR_OFFSET);
+	sys_write32(MSPM0_MCAN_INT_LINE0 | MSPM0_MCAN_INT_LINE1,
+		    base + MSPM0_MCAN_IMASK_OFFSET);
 	config->irq_cfg_func();
 
 	return 0;
@@ -206,21 +237,20 @@ static void can_mspm0_canfd_isr(const struct device *dev)
 {
 	const struct can_mcan_config *mcan_cfg = dev->config;
 	const struct can_mspm0_canfd_config *config = mcan_cfg->custom;
-	volatile uint32_t *eoi =
-		&config->ti_canfd_base->MCANSS.TI_WRAPPER.PROCESSORS.MCANSS_REGS.MCANSS_EOI;
+	mm_reg_t base = config->ti_canfd_base;
 
 	/* MCANSS muxes LINE0 and LINE1 onto a single CPU IRQ via IIDX.
 	 * Loop up to the number of lines so both can be drained per entry.
 	 */
 	for (int i = 0; i < 2; i++) {
-		switch (DL_MCAN_getPendingInterrupt(config->ti_canfd_base)) {
-		case DL_MCAN_IIDX_LINE0:
+		switch (sys_read32(base + MSPM0_MCAN_IIDX_OFFSET)) {
+		case MSPM0_MCAN_IIDX_LINE0:
 			can_mcan_line_0_isr(dev);
-			*eoi = DL_MCAN_INTR_SRC_MCAN_LINE_0;
+			sys_write32(MSPM0_MCAN_EOI_LINE0, base + MSPM0_MCANSS_EOI_OFFSET);
 			break;
-		case DL_MCAN_IIDX_LINE1:
+		case MSPM0_MCAN_IIDX_LINE1:
 			can_mcan_line_1_isr(dev);
-			*eoi = DL_MCAN_INTR_SRC_MCAN_LINE_1;
+			sys_write32(MSPM0_MCAN_EOI_LINE1, base + MSPM0_MCANSS_EOI_OFFSET);
 			break;
 		default:
 			return;
@@ -278,21 +308,16 @@ static const struct can_mcan_ops can_mspm0_canfd_ops = {
 												\
 	CAN_MCAN_DT_INST_CALLBACKS_DEFINE(inst, can_mspm0_canfd_cbs_##inst);			\
 												\
-	BUILD_ASSERT(CAN_MCAN_DT_INST_MRAM_ELEMENTS_SIZE(inst) <=				\
-		     CAN_MCAN_DT_INST_MRAM_SIZE(inst),						\
-		     "Insufficient Message RAM size");						\
+	CAN_MCAN_DT_INST_BUILD_ASSERT_MRAM_CFG(inst);						\
 												\
 	static const struct can_mspm0_canfd_config can_mspm0_canfd_cfg_##inst = {		\
-		.ti_canfd_base = (MCAN_Regs *)DT_REG_ADDR_BY_NAME(DT_DRV_INST(inst), ti_canfd),	\
+		.ti_canfd_base = DT_REG_ADDR_BY_NAME(DT_DRV_INST(inst), ti_canfd),		\
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst)),				\
 		.clock_subsys = &can_mspm0_canfd_sys_clock_##inst,				\
-		.clock_cfg = {									\
-			.clockSel = MSPM0_MCAN_CLK_SEL,						\
-			.divider = MCAN_DT_CLK_DIV_ENUM(inst),					\
-		},										\
 		.mcan_base = CAN_MCAN_DT_INST_MCAN_ADDR(inst),					\
 		.mram = CAN_MCAN_DT_INST_MRAM_ADDR(inst),					\
 		.mrba = CAN_MCAN_DT_INST_MRBA(inst),						\
+		.clk_div = MCAN_DT_CLK_DIV_REG(inst),						\
 		.irq_cfg_func = can_mspm0_canfd_irq_cfg_##inst,					\
 		.pinctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),				\
 	};											\
