@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Fake CAN controller driver API functions.
+ * @ingroup can_fake
+ */
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_CAN_CAN_FAKE_H_
 #define ZEPHYR_INCLUDE_DRIVERS_CAN_CAN_FAKE_H_
 
@@ -13,6 +19,48 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
+
+/**
+ * @brief Fake CAN controller driver
+ * @defgroup can_fake Fake CAN controller
+ * @ingroup io_emulators
+ * @ingroup can_interface
+ *
+ * The fake CAN controller driver implements every CAN controller API callback
+ * as a Fake Function Framework (FFF) fake. It is enabled by
+ * @kconfig{CONFIG_CAN_FAKE} and instantiated from
+ * @dtcompatible{zephyr,fake-can} devicetree nodes.
+ *
+ * Each fake is named after the API function it backs (`fake_can_send()` for
+ * `can_send()`, and so on) and is paired with an FFF control structure carrying
+ * an additional `_fake` suffix (`fake_can_send_fake`). Test suites include
+ * this header to set return values, install custom fakes, or inspect call
+ * counts and captured arguments. See @rstref{mocking-fff}.
+ *
+ * When @kconfig{CONFIG_ZTEST} is enabled, a ztest rule resets all fakes before
+ * each test case. The reset also re-installs a default `custom_fake` for
+ * `fake_can_get_capabilities()`, `fake_can_get_state()` and
+ * `fake_can_get_core_clock()`, which fill in their output parameters with
+ * usable values. FFF gives `custom_fake` precedence over `return_val`, so clear
+ * it before setting a return value for those three.
+ *
+ * @code{.c}
+ * const struct device *dev = DEVICE_DT_GET(DT_NODELABEL(fake_can));
+ * enum can_state state;
+ *
+ * // Drop the default delegate, then report an error instead.
+ * fake_can_get_state_fake.custom_fake = NULL;
+ * fake_can_get_state_fake.return_val = -EIO;
+ *
+ * zassert_equal(-EIO, can_get_state(dev, &state, NULL));
+ * zassert_equal(1, fake_can_get_state_fake.call_count);
+ * zassert_equal(dev, fake_can_get_state_fake.arg0_val);
+ * @endcode
+ *
+ * @{
+ */
+
+/** @cond INTERNAL_HIDDEN */
 
 DECLARE_FAKE_VALUE_FUNC(int, fake_can_start, const struct device *);
 
@@ -46,6 +94,12 @@ DECLARE_FAKE_VOID_FUNC(fake_can_set_state_change_callback, const struct device *
 DECLARE_FAKE_VALUE_FUNC(int, fake_can_get_max_filters, const struct device *, bool);
 
 DECLARE_FAKE_VALUE_FUNC(int, fake_can_get_core_clock, const struct device *, uint32_t *);
+
+/** @endcond */
+
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }
