@@ -323,6 +323,17 @@ static bool thread_idx_alloc(uintptr_t *tidx)
 	return ret;
 }
 
+/* Caller must hold lists_lock so two concurrent frees of thread indices within
+ * the same byte cannot lose a bit in the non-atomic |=.
+ */
+static void thread_idx_map_set(uintptr_t tidx)
+{
+	int base = tidx / NUM_BITS(_thread_idx_map[0]);
+	int offset = tidx % NUM_BITS(_thread_idx_map[0]);
+
+	_thread_idx_map[base] |= BIT(offset);
+}
+
 /**
  * @internal
  *
@@ -339,20 +350,13 @@ static void thread_idx_free(uintptr_t tidx)
 
 	z_object_gperf_wordlist_foreach(clear_perms_cb, (void *)tidx);
 
-	/* Hold lists_lock so two concurrent k_object_free() calls on thread indices
-	 * within the same byte cannot lose a bit in the non-atomic |=.
-	 */
 	k_spinlock_key_t key = k_spin_lock(&lists_lock);
 
 	SYS_DLIST_FOR_EACH_CONTAINER_SAFE(&obj_list, obj, next, dobj_list) {
 		clear_perms_cb(&obj->kobj, (void *)tidx);
 	}
 
-	/* Figure out which bits to set in _thread_idx_map[] and set it. */
-	int base = tidx / NUM_BITS(_thread_idx_map[0]);
-	int offset = tidx % NUM_BITS(_thread_idx_map[0]);
-
-	_thread_idx_map[base] |= BIT(offset);
+	thread_idx_map_set(tidx);
 
 	k_spin_unlock(&lists_lock, key);
 }
@@ -708,6 +712,15 @@ static void unref_check(struct k_object *ko, uintptr_t index, bool locked)
 		break;
 	case K_OBJ_STACK:
 		(void)z_stack_cleanup((struct k_stack *)ko->name, locked);
+		break;
+	case K_OBJ_THREAD:
+		/* thread_idx_free() cannot be used here: it takes lists_lock,
+		 * which the caller already holds, and its perm clearing would
+		 * re-enter this function. Only the bitmap update is needed;
+		 * thread_idx_alloc() clears the perms of the index it hands
+		 * out.
+		 */
+		thread_idx_map_set(ko->data.thread_id);
 		break;
 	case K_OBJ_TIMER:
 		/* k_timer_cleanup() does not check whether the timer has
