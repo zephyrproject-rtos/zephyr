@@ -21,6 +21,12 @@ properties:
   "#dma-cells":
     const: 2
 
+  ti,num-full-channels:
+    type: int
+    default: 0
+    description: |
+      Number of FULL-featured DMA channels on this instance, counted from channel 0.
+
 dma-cells:
   - channel
   - trigger
