@@ -50,8 +50,7 @@ DEFINE_FAKE_VALUE_FUNC(int, fake_can_recover, const struct device *, k_timeout_t
 DEFINE_FAKE_VALUE_FUNC(int, fake_can_get_state, const struct device *, enum can_state *,
 		       struct can_bus_err_cnt *);
 
-DEFINE_FAKE_VOID_FUNC(fake_can_set_state_change_callback, const struct device *,
-		      can_state_change_callback_t, void *);
+DEFINE_FAKE_VALUE_FUNC(int, fake_can_state_change_callbacks_enabled, const struct device *, bool);
 
 DEFINE_FAKE_VALUE_FUNC(int, fake_can_get_max_filters, const struct device *, bool);
 
@@ -110,7 +109,7 @@ static void fake_can_reset_rule_before(const struct ztest_unit_test *test, void 
 	RESET_FAKE(fake_can_remove_rx_filter);
 	RESET_FAKE(fake_can_get_state);
 	RESET_FAKE(fake_can_recover);
-	RESET_FAKE(fake_can_set_state_change_callback);
+	RESET_FAKE(fake_can_state_change_callbacks_enabled);
 	RESET_FAKE(fake_can_get_max_filters);
 	RESET_FAKE(fake_can_get_core_clock);
 
@@ -125,6 +124,10 @@ ZTEST_RULE(fake_can_reset_rule, fake_can_reset_rule_before, NULL);
 
 static int fake_can_init(const struct device *dev)
 {
+	struct fake_can_data *data = dev->data;
+
+	sys_slist_init(&data->common.state_change_callbacks);
+
 	/* Install default delegates */
 	fake_can_get_capabilities_fake.custom_fake = fake_can_get_capabilities_delegate;
 	fake_can_get_state_fake.custom_fake = fake_can_get_state_delegate;
@@ -146,7 +149,7 @@ static DEVICE_API(can, fake_can_driver_api) = {
 #ifdef CONFIG_CAN_MANUAL_RECOVERY_MODE
 	.recover = fake_can_recover,
 #endif /* CONFIG_CAN_MANUAL_RECOVERY_MODE */
-	.set_state_change_callback = fake_can_set_state_change_callback,
+	.state_change_callbacks_enabled = fake_can_state_change_callbacks_enabled,
 	.get_core_clock = fake_can_get_core_clock,
 	.get_max_filters = fake_can_get_max_filters,
 	/* Recommended configuration ranges from CiA 601-2 */

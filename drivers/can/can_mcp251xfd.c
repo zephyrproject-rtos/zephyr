@@ -659,15 +659,6 @@ done:
 	k_mutex_unlock(&dev_data->mutex);
 }
 
-static void mcp251xfd_set_state_change_callback(const struct device *dev,
-						can_state_change_callback_t cb, void *user_data)
-{
-	struct mcp251xfd_data *dev_data = dev->data;
-
-	dev_data->common.state_change_cb = cb;
-	dev_data->common.state_change_cb_user_data = user_data;
-}
-
 static int mcp251xfd_get_state(const struct device *dev, enum can_state *state,
 			       struct can_bus_err_cnt *err_cnt)
 {
@@ -905,10 +896,7 @@ static int mcp251xfd_handle_cerrif(const struct device *dev)
 		mcp251xfd_reset_tx_fifos(dev, -ENETDOWN);
 	}
 
-	if (dev_data->common.state_change_cb) {
-		dev_data->common.state_change_cb(dev, new_state, err_cnt,
-						 dev_data->common.state_change_cb_user_data);
-	}
+	can_fire_state_change_callbacks(dev, new_state, err_cnt);
 
 done:
 	k_mutex_unlock(&dev_data->mutex);
@@ -1540,6 +1528,7 @@ static int mcp251xfd_init(const struct device *dev)
 		}
 	}
 
+	sys_slist_init(&dev_data->common.state_change_callbacks);
 	k_sem_init(&dev_data->int_sem, 0, 1);
 	k_sem_init(&dev_data->tx_sem, MCP251XFD_TX_QUEUE_ITEMS, MCP251XFD_TX_QUEUE_ITEMS);
 
@@ -1720,7 +1709,6 @@ static DEVICE_API(can, mcp251xfd_api_funcs) = {
 	.add_rx_filter = mcp251xfd_add_rx_filter,
 	.remove_rx_filter = mcp251xfd_remove_rx_filter,
 	.get_state = mcp251xfd_get_state,
-	.set_state_change_callback = mcp251xfd_set_state_change_callback,
 	.get_core_clock = mcp251xfd_get_core_clock,
 	.get_max_filters = mcp251xfd_get_max_filters,
 	.timing_min = {
