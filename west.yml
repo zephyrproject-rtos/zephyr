@@ -229,7 +229,7 @@ manifest:
         - hal
     - name: hal_realtek
       path: modules/hal/realtek
-      revision: 5fa3e29115ea5dbe05da2de27288e8aa015af123
+      revision: 29d365ccfbceb9f42ce666d75463fbe2c83b8e29
       west-commands: west/west-commands.yml
       groups:
         - hal
