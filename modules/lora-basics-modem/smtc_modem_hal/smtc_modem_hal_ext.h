@@ -34,6 +34,16 @@ void smtc_modem_hal_init(const struct device *transceiver);
  */
 void lbm_engine_notify(void);
 
+/**
+ * @brief Report the battery level the modem answers a DevStatusReq with.
+ *
+ * @return 0 on external power, 1 to 254 for a battery level, 255 when the
+ *         level is unknown.
+ *
+ * The default implementation returns 255.
+ */
+uint8_t lbm_battery_level(void);
+
 #ifdef __cplusplus
 }
 #endif

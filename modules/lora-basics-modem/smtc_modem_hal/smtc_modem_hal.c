@@ -531,6 +531,11 @@ void smtc_modem_hal_on_panic(uint8_t *func, uint32_t line, const char *fmt, ...)
 /* --- ENVIRONMENT MANAGEMENT ----------------------------------------------- */
 /* -------------------------------------------------------------------------- */
 
+__weak uint8_t lbm_battery_level(void)
+{
+	return 255;
+}
+
 /**
  * @brief Return the battery level.
  *
@@ -539,14 +544,11 @@ void smtc_modem_hal_on_panic(uint8_t *func, uint32_t line, const char *fmt, ...)
  *         1..254: Battery level, where 1 is the minimum and 254 is the maximum.
  *         255: The end-device was not able to measure the battery level.
  *
- * @remark Not implemented yet.
- *
  * @return Battery level for LoRaWAN stack (255 = not able to measure)
  */
 uint8_t smtc_modem_hal_get_battery_level(void)
 {
-	/* Not implemented yet */
-	return 255;
+	return lbm_battery_level();
 }
 
 /**
