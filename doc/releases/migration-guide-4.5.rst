@@ -612,6 +612,30 @@ Flash
   of each plane in the flash device. For devices with a single plane, this should be set to the
   same value as ``size-bytes``.
 
+* The external flash on the Infineon PSE84 boards (``kit_pse84_eval`` and ``kit_pse84_ai``) now uses
+  the new :dtcompatible:`infineon,smif` controller and :dtcompatible:`infineon,smif-nor` device
+  bindings, replacing the previous ``infineon,qspi-flash`` controller with directly attached
+  ``soc-nv-flash`` / ``infineon,s25fs128s`` device nodes. Out-of-tree boards and overlays that
+  described PSE84 external memory with the old binding must be updated:
+
+  * The controller node's ``compatible`` changes from ``infineon,qspi-flash`` to
+    ``infineon,smif`` (and the node name from ``flash_controller@...`` to ``smif@...``). Add the
+    chip-select pad(s) actually used to ``pinctrl-0``. The controller no longer re-initialises the
+    SMIF block by default; set the new ``not-pre-initialized`` property only when an earlier boot
+    stage did not already bring the controller up in XIP mode.
+
+  * Each memory device is now described by an :dtcompatible:`infineon,smif-nor` child node on the
+    ``smif`` bus (``nor@<xip-base>``), instead of attaching ``soc-nv-flash`` nodes directly to the
+    controller. The per-core memory-mapped views (``soc-nv-flash``) and their
+    :dtcompatible:`zephyr,mapped-partition` partitions become children of this NOR node, so their
+    offsets resolve to the same physical device.
+
+  * The NOR device node requires the geometry and command set to be described statically (SFDP
+    auto-discovery is not used): ``chip-select``, ``data-select``, ``protocol``, ``address-bytes``,
+    ``read-command``, ``read-dummy-cycles``, ``program-command``, ``erase-command``, ``page-size``,
+    the ``*-time-*`` timing properties and the ``write-block-size`` / ``erase-block-size`` values.
+    Add ``memory-mapped`` on the device executed in place from its XIP window.
+
 Fuel Gauge
 ==========
 
