@@ -29,6 +29,8 @@ LOG_MODULE_REGISTER(dma_mchp_dmac_g1, CONFIG_DMA_LOG_LEVEL);
 
 #define DESC_POOL_SIZE CONFIG_DMA_MCHP_DMAC_G1_DESC_POOL_SIZE
 
+BUILD_ASSERT(DESC_POOL_SIZE > 0, "CONFIG_DMA_MCHP_DMAC_G1_DESC_POOL_SIZE must be greater than 0");
+
 enum dma_mchp_ch_state {
 	DMA_MCHP_CH_IDLE,
 	DMA_MCHP_CH_PENDING,
@@ -39,6 +41,16 @@ enum dma_mchp_ch_state {
 struct dma_mchp_channel_config {
 	dma_callback_t cb;
 	void *user_data;
+	/*
+	 * Tracks expected next descriptor address for multi-block transfers.
+	 * Used by ISR to determine if more blocks remain. The write-back
+	 * descriptor's DESCADDR is "one ahead" (points to next block's next),
+	 * so we track the previous value to correctly detect the last block.
+	 * Only used when complete_callback_en is set (TRIGACT_BLOCK mode).
+	 */
+	volatile uint32_t next_desc;
+	bool is_cyclic;
+	bool is_per_block_cb;
 	bool is_err_cb_dis;
 	bool is_configured;
 };
@@ -167,7 +179,8 @@ static inline void dmac_desc_init(const struct device *dev)
 }
 
 static int dmac_desc_block_config(struct dma_block_config *block,
-				  dmac_descriptor_registers_t *desc, uint32_t src_data_size)
+				  dmac_descriptor_registers_t *desc, uint32_t src_data_size,
+				  uint32_t block_int)
 {
 	uint16_t btctrl = 0;
 
@@ -213,6 +226,11 @@ static int dmac_desc_block_config(struct dma_block_config *block,
 	default:
 		LOG_ERR("Invalid parameter for DMA destination address");
 		return -EINVAL;
+	}
+
+	if (block_int) {
+		/* Generate interrupt after each block (used with TRIGACT_BLOCK) */
+		btctrl |= DMAC_BTCTRL_BLOCKACT(DMAC_BTCTRL_BLOCKACT_INT_Val);
 	}
 
 	btctrl |= DMAC_BTCTRL_VALID(1);
@@ -324,7 +342,20 @@ static int dma_mchp_setup_channel(const struct device *dev, uint32_t channel,
 	uint32_t chctrla = 0;
 
 	if (config->channel_direction == MEMORY_TO_MEMORY) {
-		chctrla = DMAC_CHCTRLA_TRIGACT_TRANSACTION | DMAC_CHCTRLA_TRIGSRC(config->dma_slot);
+		/*
+		 * M2M trigger action selection:
+		 * - TRIGACT_BLOCK + per-block callback (non-cyclic): Each SW
+		 *   trigger executes one block, ISR re-triggers for next.
+		 * - TRIGACT_TRANSACTION (cyclic or no callback): Single trigger
+		 *   executes entire descriptor chain automatically.
+		 */
+		if (config->complete_callback_en && (config->cyclic == 0)) {
+			chctrla = DMAC_CHCTRLA_TRIGACT_BLOCK |
+				  DMAC_CHCTRLA_TRIGSRC(config->dma_slot);
+		} else {
+			chctrla = DMAC_CHCTRLA_TRIGACT_TRANSACTION |
+				  DMAC_CHCTRLA_TRIGSRC(config->dma_slot);
+		}
 	} else {
 		chctrla = DMAC_CHCTRLA_TRIGACT_BURST | DMAC_CHCTRLA_TRIGSRC(config->dma_slot);
 	}
@@ -354,6 +385,7 @@ static void dma_mchp_isr(const struct device *dev)
 	struct dma_mchp_dev_data *const dev_data = dev->data;
 	uint16_t pend = DMAC_REG->DMAC_INTPEND;
 	uint32_t channel = (pend & DMAC_INTPEND_ID_Msk) >> DMAC_INTPEND_ID_Pos;
+	int int_status = DMA_STATUS_COMPLETE;
 
 	DMAC_REG->DMAC_INTPEND = pend;
 
@@ -367,13 +399,51 @@ static void dma_mchp_isr(const struct device *dev)
 		return;
 	}
 
+	/* Handle error first - don't process transfer logic on error */
 	if (pend & DMAC_INTPEND_TERR_Msk) {
 		if (!cfg->is_err_cb_dis) {
 			cfg->cb(dev, cfg->user_data, channel, -EIO);
 		}
-	} else {
-		cfg->cb(dev, cfg->user_data, channel, DMA_STATUS_COMPLETE);
+		return;
 	}
+
+	/* Transfer complete handling (TCMPL) */
+	if (cfg->is_cyclic) {
+		/* Cyclic: report block complete after each full cycle */
+		int_status = DMA_STATUS_BLOCK;
+	} else if (cfg->is_per_block_cb) {
+		/*
+		 * Per-block callback mode (TRIGACT_BLOCK):
+		 * The write-back descriptor's DESCADDR is "one ahead" - after block N
+		 * completes, desc_wb->DESCADDR points to block N+2's address. We use
+		 * next_desc (the PREVIOUS value) to correctly detect last block.
+		 */
+		dmac_descriptor_registers_t *desc_wb =
+			&dev_data->dmac_desc_data->descriptors_wb[channel];
+		dmac_descriptor_registers_t *desc =
+			&dev_data->dmac_desc_data->descriptors[channel];
+
+		if (cfg->next_desc == 0) {
+			/* Last block completed */
+			int_status = DMA_STATUS_COMPLETE;
+			/* Reset next_desc for re-start */
+			cfg->next_desc = (uint32_t)(uintptr_t)desc->DMAC_DESCADDR;
+		} else {
+			/* More blocks remain, trigger next */
+			int_status = DMA_STATUS_BLOCK;
+			cfg->next_desc = (uint32_t)(uintptr_t)desc_wb->DMAC_DESCADDR;
+			if ((DMAC_REG->CHANNEL[channel].DMAC_CHCTRLA &
+			     DMAC_CHCTRLA_TRIGSRC_Msk) == 0) {
+				DMAC_REG->DMAC_SWTRIGCTRL = BIT(channel);
+			}
+		}
+	} else {
+		/* TRIGACT_TRANSACTION - entire chain done */
+		int_status = DMA_STATUS_COMPLETE;
+	}
+
+
+	cfg->cb(dev, cfg->user_data, channel, int_status);
 }
 
 static int dma_mchp_config(const struct device *dev, uint32_t channel, struct dma_config *config)
@@ -402,7 +472,8 @@ static int dma_mchp_config(const struct device *dev, uint32_t channel, struct dm
 	base_desc = &dev_data->dmac_desc_data->descriptors[channel];
 	block = config->head_block;
 
-	ret = dmac_desc_block_config(block, base_desc, config->source_data_size);
+	ret = dmac_desc_block_config(block, base_desc, config->source_data_size,
+				     config->complete_callback_en);
 	if (ret != 0) {
 		return ret;
 	}
@@ -424,7 +495,8 @@ static int dma_mchp_config(const struct device *dev, uint32_t channel, struct dm
 			return -ENOMEM;
 		}
 
-		ret = dmac_desc_block_config(block, desc, config->source_data_size);
+		ret = dmac_desc_block_config(block, desc, config->source_data_size,
+					     config->complete_callback_en);
 		if (ret != 0) {
 			desc_pool_free(dev_data, desc);
 			channel_free_linked_descs(dev_data, channel);
@@ -435,6 +507,7 @@ static int dma_mchp_config(const struct device *dev, uint32_t channel, struct dm
 		prev_desc = desc;
 	}
 
+	/* Cyclic mode: link last descriptor back to first to form a loop */
 	if (config->cyclic && config->block_count > 0) {
 		prev_desc->DMAC_DESCADDR = (uint32_t)(uintptr_t)base_desc;
 	}
@@ -451,6 +524,12 @@ static int dma_mchp_config(const struct device *dev, uint32_t channel, struct dm
 	channel_config->user_data = config->user_data;
 	channel_config->is_configured = true;
 	channel_config->is_err_cb_dis = config->error_callback_dis;
+	channel_config->is_cyclic = (config->cyclic != 0);
+	channel_config->is_per_block_cb = (config->complete_callback_en && !config->cyclic);
+	channel_config->next_desc = 0;
+	if (channel_config->is_per_block_cb) {
+		channel_config->next_desc = (uint32_t)(uintptr_t)base_desc->DMAC_DESCADDR;
+	}
 
 	return 0;
 }
@@ -658,6 +737,9 @@ static void dma_mchp_chan_release(const struct device *dev, uint32_t channel)
 	channel_config->user_data = NULL;
 	channel_config->is_configured = false;
 	channel_config->is_err_cb_dis = false;
+	channel_config->is_cyclic = false;
+	channel_config->is_per_block_cb = false;
+	channel_config->next_desc = 0;
 }
 
 static int dma_mchp_init(const struct device *dev)
