@@ -527,6 +527,8 @@ ssize_t z_vrfy_zsock_recvfrom(int sock, void *buf, size_t max_len, int flags,
 		K_OOPS(k_usermode_from_copy(&addrlen_copy, addrlen,
 					sizeof(net_socklen_t)));
 	}
+	K_OOPS(K_SYSCALL_VERIFY_MSG(src_addr == NULL || addrlen != NULL,
+				    "addrlen is required when src_addr is given"));
 	K_OOPS(src_addr && K_SYSCALL_MEMORY_WRITE(src_addr, addrlen_copy));
 
 	ret = z_impl_zsock_recvfrom(sock, (void *)buf, max_len, flags,
@@ -568,6 +570,7 @@ ssize_t z_vrfy_zsock_recvmsg(int sock, struct net_msghdr *msg, int flags)
 	void *user_control;
 	size_t msg_iov_size;
 	size_t iovlen;
+	size_t control_len;
 	size_t i;
 	int ret;
 
@@ -593,6 +596,7 @@ ssize_t z_vrfy_zsock_recvmsg(int sock, struct net_msghdr *msg, int flags)
 	user_name = msg_copy.msg_name;
 	user_control = msg_copy.msg_control;
 	iovlen = msg_copy.msg_iovlen;
+	control_len = msg_copy.msg_controllen;
 
 	msg_copy.msg_name = NULL;
 	msg_copy.msg_control = NULL;
@@ -675,6 +679,13 @@ ssize_t z_vrfy_zsock_recvmsg(int sock, struct net_msghdr *msg, int flags)
 		}
 
 		if (msg_copy.msg_control != NULL) {
+			/* The control data cannot be longer than the buffer
+			 * that was allocated for it.
+			 */
+			if (msg_copy.msg_controllen > control_len) {
+				msg_copy.msg_controllen = control_len;
+			}
+
 			K_OOPS(k_usermode_to_copy(user_control,
 						  msg_copy.msg_control,
 						  msg_copy.msg_controllen));
@@ -912,9 +923,11 @@ int z_impl_zsock_getsockopt(int sock, int level, int optname,
 int z_vrfy_zsock_getsockopt(int sock, int level, int optname,
 			    void *optval, net_socklen_t *optlen)
 {
-	net_socklen_t kernel_optlen = *(net_socklen_t *)optlen;
+	net_socklen_t kernel_optlen;
 	void *kernel_optval;
 	int ret;
+
+	K_OOPS(k_usermode_from_copy(&kernel_optlen, optlen, sizeof(net_socklen_t)));
 
 	if (K_SYSCALL_MEMORY_WRITE(optval, kernel_optlen)) {
 		errno = -EPERM;
