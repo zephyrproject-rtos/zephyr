@@ -1599,12 +1599,15 @@ static inline int z_impl_can_recover(const struct device *dev, k_timeout_t timeo
  * Only one callback can be registered per controller. Calling this function
  * again overrides any previously registered callback.
  *
+ * @deprecated Use can_add_state_change_callback() and can_remove_state_change_callback() instead.
+ *
  * @param dev       Pointer to the device structure for the driver instance.
  * @param callback  Callback function.
  * @param user_data User data to pass to callback function.
  */
-void can_set_state_change_callback(const struct device *dev, can_state_change_callback_t callback,
-				   void *user_data);
+__deprecated void can_set_state_change_callback(const struct device *dev,
+						can_state_change_callback_t callback,
+						void *user_data);
 
 /**
  * @brief Initialize a CAN controller state change callback structure
