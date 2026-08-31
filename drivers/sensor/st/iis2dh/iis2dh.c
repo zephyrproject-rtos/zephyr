@@ -16,12 +16,6 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/drivers/sensor.h>
 
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-#include <zephyr/drivers/spi.h>
-#elif DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
-#include <zephyr/drivers/i2c.h>
-#endif
-
 #include "iis2dh.h"
 
 LOG_MODULE_REGISTER(IIS2DH, CONFIG_SENSOR_LOG_LEVEL);
@@ -53,10 +47,12 @@ static const uint32_t iis2dh_gain[3][4] = {
 
 static int iis2dh_set_fs_raw(const struct device *dev, uint8_t fs)
 {
+	const struct iis2dh_device_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	struct iis2dh_data *iis2dh = dev->data;
 	int err;
 
-	err = iis2dh_full_scale_set(iis2dh->ctx, fs);
+	err = iis2dh_full_scale_set(ctx, fs);
 
 	if (!err) {
 		/* save internally gain for optimization */
@@ -91,13 +87,13 @@ static int iis2dh_set_range(const struct device *dev, uint16_t range)
  */
 static int iis2dh_set_odr(const struct device *dev, uint16_t odr)
 {
-	struct iis2dh_data *iis2dh = dev->data;
 	const struct iis2dh_device_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	iis2dh_odr_t val;
 
 	val = IIS2DH_ODR_TO_REG_HR(cfg->pm, odr);
 
-	return iis2dh_data_rate_set(iis2dh->ctx, val);
+	return iis2dh_data_rate_set(ctx, val);
 }
 #endif
 
@@ -203,11 +199,13 @@ static int iis2dh_attr_set(const struct device *dev, enum sensor_channel chan,
 static int iis2dh_sample_fetch(const struct device *dev,
 			       enum sensor_channel chan)
 {
+	const struct iis2dh_device_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	struct iis2dh_data *iis2dh = dev->data;
 	int16_t buf[3];
 
 	/* fetch raw data sample */
-	if (iis2dh_acceleration_raw_get(iis2dh->ctx, buf) < 0) {
+	if (iis2dh_acceleration_raw_get(ctx, buf) < 0) {
 		LOG_DBG("Failed to fetch raw data sample");
 		return -EIO;
 	}
@@ -228,39 +226,41 @@ static DEVICE_API(sensor, iis2dh_driver_api) = {
 	.channel_get = iis2dh_channel_get,
 };
 
-static int iis2dh_init_interface(const struct device *dev)
+static int iis2dh_bus_check(const struct device *dev)
 {
-	int res;
-
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
-	res = iis2dh_spi_init(dev);
-	if (res) {
-		return res;
-	}
-#elif DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
-	res = iis2dh_i2c_init(dev);
-	if (res) {
-		return res;
-	}
+	const struct iis2dh_device_config *cfg = dev->config;
+	/*
+	 * Both bus specs start with the bus device, so either union member
+	 * yields the bus this instance is wired to.
+	 */
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c)
+	const struct device *bus = cfg->stmemsc_cfg.i2c.bus;
 #else
-#error "BUS MACRO NOT DEFINED IN DTS"
+	const struct device *bus = cfg->stmemsc_cfg.spi.bus;
 #endif
+
+	if (!device_is_ready(bus)) {
+		LOG_ERR_DEVICE_NOT_READY(bus);
+		return -ENODEV;
+	}
 
 	return 0;
 }
 
 static int iis2dh_init(const struct device *dev)
 {
-	struct iis2dh_data *iis2dh = dev->data;
 	const struct iis2dh_device_config *cfg = dev->config;
+	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&cfg->ctx;
 	uint8_t wai;
+	int err;
 
-	if (iis2dh_init_interface(dev)) {
-		return -EINVAL;
+	err = iis2dh_bus_check(dev);
+	if (err < 0) {
+		return err;
 	}
 
 	/* check chip ID */
-	if (iis2dh_device_id_get(iis2dh->ctx, &wai) < 0) {
+	if (iis2dh_device_id_get(ctx, &wai) < 0) {
 		return -EIO;
 	}
 
@@ -269,17 +269,17 @@ static int iis2dh_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	if (iis2dh_block_data_update_set(iis2dh->ctx, PROPERTY_ENABLE) < 0) {
+	if (iis2dh_block_data_update_set(ctx, PROPERTY_ENABLE) < 0) {
 		return -EIO;
 	}
 
-	if (iis2dh_operating_mode_set(iis2dh->ctx, cfg->pm)) {
+	if (iis2dh_operating_mode_set(ctx, cfg->pm)) {
 		return -EIO;
 	}
 
 #if (CONFIG_IIS2DH_ODR != 0)
 	/* set default odr and full scale for acc */
-	if (iis2dh_data_rate_set(iis2dh->ctx, CONFIG_IIS2DH_ODR) < 0) {
+	if (iis2dh_data_rate_set(ctx, CONFIG_IIS2DH_ODR) < 0) {
 		return -EIO;
 	}
 #endif
@@ -307,25 +307,51 @@ static int iis2dh_init(const struct device *dev)
 	return 0;
 }
 
-#define IIS2DH_SPI(inst)                                                                           \
-	(.spi = SPI_DT_SPEC_INST_GET(                                                              \
-		 inst, SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_WORD_SET(8)),)
+#define IIS2DH_SPI_OP							\
+	(SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_WORD_SET(8))
 
-#define IIS2DH_I2C(inst) (.i2c = I2C_DT_SPEC_INST_GET(inst),)
+#define IIS2DH_CONFIG_COMMON(inst)					\
+	.pm = CONFIG_IIS2DH_POWER_MODE,					\
+	IF_ENABLED(CONFIG_IIS2DH_TRIGGER,				\
+		   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, drdy_gpios, { 0 }),))
 
-#define IIS2DH_DEFINE(inst)									\
-	static struct iis2dh_data iis2dh_data_##inst;						\
-												\
-	static const struct iis2dh_device_config iis2dh_device_config_##inst = {		\
-		COND_CODE_1(DT_INST_ON_BUS(inst, i2c), IIS2DH_I2C(inst), ())			\
-		COND_CODE_1(DT_INST_ON_BUS(inst, spi), IIS2DH_SPI(inst), ())			\
-		.pm = CONFIG_IIS2DH_POWER_MODE,							\
-		IF_ENABLED(CONFIG_IIS2DH_TRIGGER,						\
-			   (.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, drdy_gpios, { 0 }),))	\
-	};											\
-												\
-	SENSOR_DEVICE_DT_INST_DEFINE(inst, iis2dh_init, NULL,					\
-			      &iis2dh_data_##inst, &iis2dh_device_config_##inst, POST_KERNEL,	\
-			      CONFIG_SENSOR_INIT_PRIORITY, &iis2dh_driver_api);			\
+/*
+ * Instantiation macro used when a device is on a SPI bus.
+ */
+#define IIS2DH_CONFIG_SPI(inst)						\
+	{								\
+		STMEMSC_CTX_SPI_INCR(&iis2dh_device_config_##inst.stmemsc_cfg),	\
+		.stmemsc_cfg = {					\
+			.spi = SPI_DT_SPEC_INST_GET(inst, IIS2DH_SPI_OP),	\
+		},							\
+		IIS2DH_CONFIG_COMMON(inst)				\
+	}
+
+/*
+ * Instantiation macro used when a device is on an I2C bus.
+ */
+#define IIS2DH_CONFIG_I2C(inst)						\
+	{								\
+		STMEMSC_CTX_I2C_INCR(&iis2dh_device_config_##inst.stmemsc_cfg),	\
+		.stmemsc_cfg = {					\
+			.i2c = I2C_DT_SPEC_INST_GET(inst),		\
+		},							\
+		IIS2DH_CONFIG_COMMON(inst)				\
+	}
+
+#define IIS2DH_DEFINE(inst)						\
+	static struct iis2dh_data iis2dh_data_##inst;			\
+									\
+	static const struct iis2dh_device_config iis2dh_device_config_##inst =	\
+		COND_CODE_1(DT_INST_ON_BUS(inst, spi),			\
+			    (IIS2DH_CONFIG_SPI(inst)),			\
+			    (IIS2DH_CONFIG_I2C(inst)));			\
+									\
+	SENSOR_DEVICE_DT_INST_DEFINE(inst, iis2dh_init, NULL,		\
+				     &iis2dh_data_##inst,		\
+				     &iis2dh_device_config_##inst,	\
+				     POST_KERNEL,			\
+				     CONFIG_SENSOR_INIT_PRIORITY,	\
+				     &iis2dh_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(IIS2DH_DEFINE)
