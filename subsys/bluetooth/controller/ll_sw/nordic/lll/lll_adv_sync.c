@@ -432,7 +432,7 @@ static void isr_tx(void *param)
 	radio_gpio_pa_lna_enable(radio_tmr_tifs_base_get() +
 				 EVENT_SYNC_B2B_MAFS_US -
 				 (EVENT_CLOCK_JITTER_US << 1) + cte_len_us -
-				 radio_tx_chain_delay_get(lll->phy_s, lll->adv->phy_flags) -
+				 radio_tx_chain_delay_get(lll->phy_s, lll->phy_flags) -
 				 HAL_RADIO_GPIO_PA_OFFSET);
 #endif /* HAL_RADIO_GPIO_HAVE_PA_PIN */
 
