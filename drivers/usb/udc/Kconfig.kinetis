@@ -6,17 +6,11 @@ config UDC_KINETIS
 	default y
 	depends on DT_HAS_NXP_KINETIS_USBD_ENABLED
 	select DYNAMIC_INTERRUPTS if UHC_NXP_KHCI
+	select EVENTS
 	help
 	  Kinetis USB device controller criver.
 
 if UDC_KINETIS
-
-config UDC_KINETIS_EVENT_COUNT
-	int "Number or blocks in event slab"
-	range 4 16
-	default 4
-	help
-	  Number of blocks in slab for internal endpoint events.
 
 config UDC_KINETIS_STACK_SIZE
 	int "UDC controller driver internal thread stack size"
