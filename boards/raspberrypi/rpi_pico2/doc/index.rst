@@ -9,9 +9,9 @@ Pico family. From the `Raspberry Pi website <https://www.raspberrypi.com/documen
 The Pico 2 supports running code on either a single Cortex-M33 or a Hazard3
 (RISC-V) core.
 
-The Pico 2 also supports multi-core Cortex-M33 running in an AMP configuration
-from SRAM or XIP Flash with the :ref:`rp2xxx-cpu1<rp2xxx-cpu1>` and :ref:`rp2xxx-cpu1-xip<rp2xxx-cpu1-xip>`
-snippets. Multi-core is not yet supported on the Hazard3 (RISC-V) core.
+The Pico 2 also supports AMP configurations with a Cortex-M33 CPU0 and either
+a Cortex-M33 or Hazard3 CPU1. CPU1 can execute from SRAM or XIP flash when both
+cores are Cortex-M33. A Hazard3 CPU1 executes from SRAM.
 
 Hardware
 ********
@@ -59,8 +59,8 @@ Below is an example of building and flashing the :zephyr:code-sample:`blinky` ap
 
 The blinky sample is not yet supported on Pico 2W, so try the :zephyr:code-sample:`wifi-shell` application to connect to the network.
 
-Multi-Core AMP (Cortex-M33)
-===========================
+Multi-Core AMP
+==============
 
 The Pico 2 supports running a Zephyr image on both Cortex-M33 cores
 simultaneously using the :ref:`rp2xxx-cpu1<rp2xxx-cpu1>` or
@@ -81,11 +81,35 @@ communication between the two cores. Build it with:
 Use the :ref:`rp2xxx-cpu1-xip<rp2xxx-cpu1-xip>` snippet instead to execute the
 CPU1 image from Flash instead of SRAM.
 
+Heterogeneous Cortex-M33 and Hazard3 AMP uses the
+:ref:`rp2xxx-cpu1-riscv` snippet on the CPU0 image and the
+``rpi_pico2/rp2350a/hazard3/cpu1`` target for the CPU1 image. The launcher
+copies the CPU1 image from its flash partition into its private SRAM banks,
+selects RISC-V while CPU1 is held in reset, and verifies the active
+architecture after reset. See
+``tests/boards/raspberrypi/rp2350_heterogeneous`` for a complete sysbuild
+configuration and hardware test.
+
+.. warning::
+
+   The RP2350 critical boot flags constrain architecture selection. A board
+   provisioned with a secure boot policy that prohibits RISC-V execution cannot
+   launch a Hazard3 CPU1.
+
 .. note::
 
-   The ``rpi_pico2/rp2350a/m33/cpu1`` board target cannot be built standalone.
-   It must be built as part of a sysbuild configuration launched by the main
-   board target best done with the ``rp2xxx-cpu*`` snippets.
+   AMP applications must assign SRAM, flash, peripherals, interrupts, and DMA
+   channels to exactly one image unless a peripheral-specific sharing protocol
+   is used. The SIO inter-processor FIFO is exclusively owned by Zephyr's
+   mailbox driver in the examples; do not also use it for Pico SDK multicore
+   lockout or an SMP scheduler.
+
+.. note::
+
+   The ``rpi_pico2/rp2350a/m33/cpu1`` and
+   ``rpi_pico2/rp2350a/hazard3/cpu1`` board targets cannot be run standalone.
+   They must be built as part of a sysbuild configuration launched by the main
+   board target, best done with the ``rp2xxx-cpu*`` snippets.
 
 Wi-Fi Firmware Setup
 =====================
