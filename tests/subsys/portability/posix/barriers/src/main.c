@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <errno.h>
 #include <pthread.h>
 #include <semaphore.h>
 
@@ -33,7 +34,7 @@ ZTEST(posix_barriers, test_barrier)
 	zassert_equal(pshared, PTHREAD_PROCESS_PUBLIC, "pshared attribute not retrieved correctly");
 
 	ret = pthread_barrierattr_setpshared(&attr, 42);
-	zassert_equal(ret, -EINVAL, "pthread_barrierattr_setpshared did not return EINVAL");
+	zassert_equal(ret, EINVAL, "pthread_barrierattr_setpshared should return EINVAL");
 
 	ret = pthread_barrierattr_destroy(&attr);
 	zassert_equal(ret, 0, "pthread_barrierattr_destroy failed");
