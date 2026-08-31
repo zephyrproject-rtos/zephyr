@@ -36,6 +36,8 @@ struct mpipe_aud_dmic_src {
 	struct mpipe_aud_src aud_src;
 	/** Buffer pool for managing audio data buffers */
 	struct mpipe_aud_buffer_pool pool;
+	/** Bound on a capture read, in milliseconds, derived from the caps */
+	int32_t read_timeout_ms;
 };
 
 /**
