@@ -3824,6 +3824,9 @@ __syscall void k_sem_give(struct k_sem *sem);
  * Any outstanding semaphore takes will be aborted
  * with -EAGAIN.
  *
+ * @note A reset does not wake semaphore poll waiters. They remain pending until the semaphore
+ *       becomes available or the poll operation times out.
+ *
  * @param sem Address of the semaphore.
  */
 __syscall void k_sem_reset(struct k_sem *sem);
