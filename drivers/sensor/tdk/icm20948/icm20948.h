@@ -29,6 +29,11 @@ struct icm20948_data {
 	int16_t accel[3];
 	int16_t gyro[3];
 	int16_t temp;
+#ifdef CONFIG_ICM20948_MAGN_EN
+	int16_t magn[3];
+	uint8_t magn_st2; /* Holds the overflow flag of the last conversion */
+	bool magn_valid;  /* Clear until a sample has been read off a live bus */
+#endif
 };
 
 /*

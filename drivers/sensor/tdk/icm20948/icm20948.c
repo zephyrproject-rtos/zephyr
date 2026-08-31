@@ -17,6 +17,10 @@
 #include "icm20948.h"
 #include "icm20948_reg.h"
 
+#ifdef CONFIG_ICM20948_MAGN_EN
+#include "icm20948_ak09916.h"
+#endif
+
 LOG_MODULE_REGISTER(ICM20948, CONFIG_SENSOR_LOG_LEVEL);
 
 #define ICM20948_SPI_CFG                                                                           \
@@ -61,7 +65,12 @@ static void icm20948_convert_temp(struct sensor_value *val, int16_t raw)
 static int icm20948_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	struct icm20948_data *data = dev->data;
+#ifdef CONFIG_ICM20948_MAGN_EN
+	uint8_t buf[ICM20948_DATA_LEN + ICM20948_MAGN_LEN];
+	uint8_t status;
+#else
 	uint8_t buf[ICM20948_DATA_LEN];
+#endif
 	int ret;
 
 	if (chan != SENSOR_CHAN_ALL) {
@@ -69,7 +78,19 @@ static int icm20948_sample_fetch(const struct device *dev, enum sensor_channel c
 	}
 
 	k_sem_take(&data->lock, K_FOREVER);
+#ifdef CONFIG_ICM20948_MAGN_EN
+	/*
+	 * The mirrored registers keep their last contents when the auxiliary
+	 * bus stops answering, so without this a stale sample would be
+	 * indistinguishable from a fresh one.
+	 */
+	ret = icm20948_read(dev, REG_I2C_MST_STATUS, &status, sizeof(status));
+	if (ret == 0) {
+		ret = icm20948_read(dev, REG_ACCEL_XOUT_H, buf, sizeof(buf));
+	}
+#else
 	ret = icm20948_read(dev, REG_ACCEL_XOUT_H, buf, sizeof(buf));
+#endif
 	k_sem_give(&data->lock);
 
 	if (ret < 0) {
@@ -83,6 +104,15 @@ static int icm20948_sample_fetch(const struct device *dev, enum sensor_channel c
 	}
 	data->temp = (int16_t)sys_get_be16(&buf[12]);
 
+#ifdef CONFIG_ICM20948_MAGN_EN
+	if (status & BIT_I2C_SLV0_NACK) {
+		LOG_WRN("the magnetometer stopped answering on the auxiliary bus");
+		data->magn_valid = false;
+	} else {
+		ak09916_parse_magn(data, &buf[ICM20948_DATA_LEN]);
+	}
+#endif
+
 	return 0;
 }
 
@@ -93,6 +123,17 @@ static int icm20948_channel_get(const struct device *dev, enum sensor_channel ch
 	struct icm20948_data *data = dev->data;
 	uint8_t shift = 14 - cfg->accel_fs;
 	uint16_t sens = icm20948_gyro_sensitivity_x10[cfg->gyro_fs];
+#ifdef CONFIG_ICM20948_MAGN_EN
+	int ret;
+#endif
+
+#ifdef CONFIG_ICM20948_MAGN_EN
+	if ((chan == SENSOR_CHAN_MAGN_XYZ || chan == SENSOR_CHAN_MAGN_X ||
+	     chan == SENSOR_CHAN_MAGN_Y || chan == SENSOR_CHAN_MAGN_Z) &&
+	    !data->magn_valid) {
+		return -EIO;
+	}
+#endif
 
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_XYZ:
@@ -123,6 +164,26 @@ static int icm20948_channel_get(const struct device *dev, enum sensor_channel ch
 	case SENSOR_CHAN_GYRO_Z:
 		icm20948_convert_gyro(val, data->gyro[2], sens);
 		break;
+#ifdef CONFIG_ICM20948_MAGN_EN
+	case SENSOR_CHAN_MAGN_XYZ:
+		ret = ak09916_convert_magn(&val[0], data->magn[0], data->magn_st2);
+		if (ret < 0) {
+			return ret;
+		}
+
+		ret = ak09916_convert_magn(&val[1], data->magn[1], data->magn_st2);
+		if (ret < 0) {
+			return ret;
+		}
+
+		return ak09916_convert_magn(&val[2], data->magn[2], data->magn_st2);
+	case SENSOR_CHAN_MAGN_X:
+		return ak09916_convert_magn(val, data->magn[0], data->magn_st2);
+	case SENSOR_CHAN_MAGN_Y:
+		return ak09916_convert_magn(val, data->magn[1], data->magn_st2);
+	case SENSOR_CHAN_MAGN_Z:
+		return ak09916_convert_magn(val, data->magn[2], data->magn_st2);
+#endif
 	case SENSOR_CHAN_DIE_TEMP:
 		icm20948_convert_temp(val, data->temp);
 		break;
@@ -179,6 +240,18 @@ static int icm20948_init(const struct device *dev)
 		return ret;
 	}
 
+	/*
+	 * The part picks its host interface by watching the bus and the reset
+	 * above threw that choice away. Disabling the primary I2C slave pins
+	 * it to SPI, and the auxiliary I2C master needs the pins that slave
+	 * would otherwise hold.
+	 */
+	ret = icm20948_update(dev, REG_USER_CTRL, BIT_I2C_IF_DIS, 1);
+	if (ret < 0) {
+		LOG_ERR("failed to select the SPI interface: %d", ret);
+		return ret;
+	}
+
 	ret = icm20948_write(dev, REG_GYRO_CONFIG_1,
 			     FIELD_PREP(MASK_GYRO_DLPFCFG, cfg->gyro_dlpf) |
 				     FIELD_PREP(MASK_GYRO_FS_SEL, cfg->gyro_fs) | BIT_GYRO_FCHOICE);
@@ -195,6 +268,14 @@ static int icm20948_init(const struct device *dev)
 		LOG_ERR("failed to configure the accelerometer: %d", ret);
 		return ret;
 	}
+
+#ifdef CONFIG_ICM20948_MAGN_EN
+	ret = ak09916_init(dev);
+	if (ret < 0) {
+		LOG_ERR("failed to initialise the magnetometer: %d", ret);
+		return ret;
+	}
+#endif
 
 	return 0;
 }

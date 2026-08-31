@@ -4,9 +4,9 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-    InvenSense ICM-20948 Nine-Axis Motion Tracking device. Only the
-    accelerometer and the gyroscope are supported, the magnetometer behind
-    the auxiliary I2C bus is not.
+    InvenSense ICM-20948 Nine-Axis Motion Tracking device. The accelerometer
+    and the gyroscope sit behind the primary interface, the AK09916
+    magnetometer behind an auxiliary I2C bus the device masters itself.
 
     The SPI clock of the device must not exceed 7 MHz.
 
