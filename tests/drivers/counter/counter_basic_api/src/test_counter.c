@@ -234,6 +234,9 @@ static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_CRSAS_MA2_TIMER
 	DEVS_FOR_DT_COMPAT(arm_crsas_ma2_timer)
 #endif
+#ifdef CONFIG_COUNTER_RCAR_CMT
+	DEVS_FOR_DT_COMPAT(renesas_rcar_cmt_counter)
+#endif
 };
 
 static const struct device *const period_devs[] = {
@@ -1382,6 +1385,11 @@ static bool reliable_cancel_capable(const struct device *dev)
 	return true;
 #endif
 #ifdef CONFIG_COUNTER_MSPM0_TIMER
+	if (single_channel_alarm_capable(dev)) {
+		return true;
+	}
+#endif
+#ifdef CONFIG_COUNTER_RCAR_CMT
 	if (single_channel_alarm_capable(dev)) {
 		return true;
 	}

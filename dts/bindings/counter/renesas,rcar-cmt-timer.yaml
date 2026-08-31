@@ -1,0 +1,17 @@
+description: Renesas R-Car Compare Match Timer
+
+compatible: "renesas,rcar-cmt-timer"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  clock-frequency:
+    type: int
+    required: true
+    description: Clock frequency information for Timer operation
+
+  clocks:
+    required: true
