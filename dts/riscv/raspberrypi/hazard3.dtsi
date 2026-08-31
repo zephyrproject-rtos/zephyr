@@ -25,6 +25,7 @@
 			interrupts-extended = <&intc 29 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
 			reg = <0xd00001b0 0x8 0xd00001b8 0x8>;
 			reg-names = "mtime", "mtimecmp";
+			riscv,mtimecmp-is-core-local;
 		};
 	};
 };

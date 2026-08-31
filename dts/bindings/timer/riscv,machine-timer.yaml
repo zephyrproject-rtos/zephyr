@@ -17,3 +17,9 @@ properties:
   clock-frequency:
     type: int
     description: Clock frequency in Hz
+
+  riscv,mtimecmp-is-core-local:
+    type: boolean
+    description: |
+      The mtimecmp register is exposed at the same address to every hart,
+      rather than as an array indexed by hart ID.

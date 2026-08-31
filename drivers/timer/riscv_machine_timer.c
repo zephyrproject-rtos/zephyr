@@ -46,7 +46,11 @@ const int32_t z_sys_timer_irq_for_test = TIMER_IRQN;
 
 static uintptr_t get_hart_mtimecmp(void)
 {
-	return MTIMECMP_REG + (arch_proc_id() * 8);
+	if (DT_INST_PROP(0, riscv_mtimecmp_is_core_local)) {
+		return MTIMECMP_REG;
+	}
+
+	return MTIMECMP_REG + (arch_proc_id() * sizeof(uint64_t));
 }
 
 static void set_mtimecmp(uint64_t time)
