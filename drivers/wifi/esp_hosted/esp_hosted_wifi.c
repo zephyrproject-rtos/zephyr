@@ -658,6 +658,16 @@ static int esp_hosted_dev_init(const struct device *dev)
 		 data->fw_version.rev_patch1, data->fw_version.rev_patch2);
 	LOG_INF("firmware version: v%s", data->fw_version.str);
 
+	/*
+	 * Both firmwares boot in WIFI_MODE_NULL, leaving the mode to the host.
+	 * APSTA enables both interfaces, which the MAC reads below need.
+	 */
+	ctrl_msg = (CtrlMsg)CtrlMsg_init_zero;
+	ctrl_msg.req_set_wifi_mode.mode = Ctrl_WifiMode_APSTA;
+	if (esp_hosted_ctrl(dev, CtrlMsgId_Req_SetWifiMode, &ctrl_msg, ESP_HOSTED_SYNC_TIMEOUT)) {
+		LOG_WRN("failed to set wifi mode");
+	}
+
 	/* Set MAC addresses. */
 	for (size_t i = 0; i < 2; i++) {
 		ctrl_msg.req_get_mac_address.mode = i + 1;
