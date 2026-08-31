@@ -4671,6 +4671,10 @@ void bt_finalize_init(void)
 		bt_scan_reset();
 	}
 
+#if !defined(CONFIG_BT_EXT_ADV)
+	atomic_set_bit(bt_dev.adv.flags, BT_ADV_CREATED);
+#endif /* !CONFIG_BT_EXT_ADV */
+
 	bt_dev_show_info();
 }
 

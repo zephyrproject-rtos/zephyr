@@ -251,6 +251,9 @@ void bt_le_ext_adv_foreach(void (*func)(struct bt_le_ext_adv *adv, void *data),
 		}
 	}
 #else
+	/* When CONFIG_BT_EXT_ADV=n there is only a single legacy advertising set,
+	 * which is always considered created, so we do not need to check for BT_ADV_CREATED here
+	 */
 	func(&bt_dev.adv, data);
 #endif /* defined(CONFIG_BT_EXT_ADV) */
 }
