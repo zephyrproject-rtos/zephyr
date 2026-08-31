@@ -528,17 +528,21 @@ void *z_vrfy_flash_simulator_get_memory(const struct device *dev,
 				      size_t *mock_size)
 {
 	K_OOPS(K_SYSCALL_SPECIFIC_DRIVER(dev, K_OBJ_DRIVER_FLASH, &flash_sim_api));
+	K_OOPS(K_SYSCALL_MEMORY_WRITE(mock_size, sizeof(size_t)));
 
 	return z_impl_flash_simulator_get_memory(dev, mock_size);
 }
 
+#ifdef CONFIG_FLASH_SIMULATOR_CALLBACKS
 void z_vrfy_flash_simulator_set_callbacks(const struct device *dev,
 					 const struct flash_simulator_cb *cb)
 {
 	K_OOPS(K_SYSCALL_SPECIFIC_DRIVER(dev, K_OBJ_DRIVER_FLASH, &flash_sim_api));
+	K_OOPS(K_SYSCALL_VERIFY_MSG(cb == NULL, "callbacks may not be set from user mode"));
 
 	z_impl_flash_simulator_set_callbacks(dev, cb);
 }
+#endif /* CONFIG_FLASH_SIMULATOR_CALLBACKS */
 
 const struct flash_simulator_params *z_vrfy_flash_simulator_get_params(const struct device *dev)
 {
@@ -548,6 +552,10 @@ const struct flash_simulator_params *z_vrfy_flash_simulator_get_params(const str
 }
 
 #include <zephyr/syscalls/flash_simulator_get_memory_mrsh.c>
+#include <zephyr/syscalls/flash_simulator_get_params_mrsh.c>
+#ifdef CONFIG_FLASH_SIMULATOR_CALLBACKS
+#include <zephyr/syscalls/flash_simulator_set_callbacks_mrsh.c>
+#endif /* CONFIG_FLASH_SIMULATOR_CALLBACKS */
 
 #endif /* CONFIG_USERSPACE */
 
