@@ -18,6 +18,9 @@ config LV_Z_VDB_SIZE
 
 endif # LVGL
 
+config DMA
+	default y
+
 config REGULATOR
 	default y
 

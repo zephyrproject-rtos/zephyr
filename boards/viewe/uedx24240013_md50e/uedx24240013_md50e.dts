@@ -90,6 +90,10 @@
 	};
 };
 
+&dma {
+	status = "okay";
+};
+
 &timer0 {
 	status = "disabled";
 };
@@ -123,6 +127,11 @@
 	status = "okay";
 	pinctrl-0 = <&spim2_default>;
 	pinctrl-names = "default";
+
+	dma-enabled;
+	dma-host = <0>;
+	dmas = <&dma 0>, <&dma 1>;
+	dma-names = "tx", "rx";
 };
 
 &esp32_bt_hci {
