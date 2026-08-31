@@ -4,23 +4,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-/dts-v1/;
-#include <st/mp1/stm32mp157.dtsi>
-#include <st/mp1/stm32mp157cacx-pinctrl.dtsi>
 #include "arduino_r3_connector.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
 	model = "STMicroelectronics STM32MP157-DK2 board";
-	compatible = "st,stm32mp157c-dk2";
+	compatible = "st,stm32mp157-dk2";
 
 	chosen {
 		/*
 		 * By default, Zephyr console and shell are assigned to
 		 * remoteproc. To enable console and shell over UART, uncomment
-		 * following lines and set the correct config in
-		 * stm32mp157c_dk2_defconfig "Serial Port" section in Zephyr
-		 * board documentation.
+		 * the following lines and set the correct config in the board's
+		 * defconfig "Serial Port" section in the Zephyr board
+		 * documentation.
 		 * zephyr,console = &usart3;
 		 * zephyr,shell-uart = &usart3;
 		 */

@@ -6,11 +6,11 @@ tests:
   sample.ipc.openamp_rs_table:
     build_only: true
     platform_allow:
-      - stm32mp157c_dk2
+      - stm32mp157_dk2/stm32mp157cxx
       - imx8mp_evk/mimx8ml8/adsp
       - scobc_v1/versal_rpu
     integration_platforms:
-      - stm32mp157c_dk2
+      - stm32mp157_dk2/stm32mp157cxx
       - imx8mp_evk/mimx8ml8/adsp
       - scobc_v1/versal_rpu
     tags:
