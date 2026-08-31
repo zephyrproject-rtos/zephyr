@@ -8,6 +8,7 @@ menuconfig ETH_NXP_ENET_QOS
 	depends on SOC_FAMILY_MCXA || SOC_FAMILY_MCXN
 	depends on NET_BUF_FIXED_DATA_SIZE
 	select PINCTRL
+	select NET_CHECKSUM_OFFLOAD_SUPPORTED if NET_L2_ETHERNET
 	help
 	  Enable NXP ENET QOS Ethernet Driver.
 
