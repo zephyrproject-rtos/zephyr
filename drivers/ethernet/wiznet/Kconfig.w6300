@@ -9,6 +9,7 @@ config ETH_W6300
 	depends on DT_HAS_WIZNET_W6300_ENABLED
 	select ETH_WIZNET
 	select SPI
-	select GPIO
+	select GPIO if ($(dt_compat_any_has_prop,$(DT_COMPAT_WIZNET_W6300),reset-gpios) || \
+			$(dt_compat_any_has_prop,$(DT_COMPAT_WIZNET_W6300),int-gpios))
 	help
 	  W6300 Stand-Alone Ethernet Controller with SPI interface.
