@@ -42,6 +42,7 @@ config ARM
 	select BARRIER_OPERATIONS_ARCH
 	select ARCH_HAS_SEMIHOST
 	select ARCH_HAS_ISR_TABLES_LOCAL_DECLARATION
+	select GEN_SW_ISR_TABLE_SWITCH_SUPPORTED if CPU_CORTEX_M
 	select ARCH_SUPPORTS_ROM_OFFSET
 	select ARCH_HAS_CPU_IDLE_HOOKS if CPU_CORTEX_M
 	help
@@ -647,6 +648,18 @@ config GEN_SW_ISR_TABLE
 	  It can be generated as either an array or a switch-case.
 	  See CONFIG_GEN_SW_ISR_TABLE_TYPE.
 
+config GEN_SW_ISR_TABLE_SWITCH_SUPPORTED
+	bool
+	help
+	  This option is selected by architectures and interrupt controllers
+	  that dispatch interrupts through get_isr_entry(). It is a
+	  prerequisite for CONFIG_GEN_SW_ISR_TABLE_SWITCH.
+
+	  Opting in is required because the switch-case table provides no
+	  _sw_isr_table array. Second level interrupt controllers such as the
+	  PLIC keep a pointer into that array to dispatch their own IRQs, and
+	  so cannot be built against it.
+
 choice GEN_SW_ISR_TABLE_TYPE
 	prompt "Allows to chose how ISR table is implemented"
 	depends on GEN_SW_ISR_TABLE
@@ -666,6 +679,7 @@ config GEN_SW_ISR_TABLE_ARRAY
 
 config GEN_SW_ISR_TABLE_SWITCH
 	bool "Generate a function with a switch-case"
+	depends on GEN_SW_ISR_TABLE_SWITCH_SUPPORTED
 	depends on !DYNAMIC_INTERRUPTS
 	help
 	  Use a switch-case instead of an array.
