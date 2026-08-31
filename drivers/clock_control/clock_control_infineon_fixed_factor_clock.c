@@ -107,11 +107,14 @@ static int fixed_factor_clk_init(const struct device *dev)
 		break;
 
 	case IFX_PUMP:
-#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+#if defined(CONFIG_INFINEON_SYSCLK_HAS_CLK_PUMP)
 		err = Cy_SysClk_ClkPumpSetSource(config->source_path);
 		if (err != CY_SYSCLK_SUCCESS) {
 			return -EIO;
 		}
+#else
+		/* No clk_pump (charge pump) IP block on this SoC. */
+		return -ENOTSUP;
 #endif
 		break;
 
