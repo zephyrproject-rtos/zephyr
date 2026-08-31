@@ -694,6 +694,47 @@ ZTEST(events_api, test_event_reset_on_wait)
 }
 
 /**
+ * @brief Verify that reset clears events with a zero wait mask
+ *
+ * @details
+ * Verify that all four event wait APIs return immediately with a zero wait
+ * mask. When reset is true, events already tracked by the event object must
+ * be cleared without reading the event object's internal fields.
+ *
+ * @see k_event_wait(), k_event_wait_all(), k_event_wait_safe(),
+ *      k_event_wait_all_safe(), k_event_test()
+ */
+ZTEST(events_api, test_event_zero_mask_reset)
+{
+	uint32_t events;
+
+	k_event_set(&test_event, BIT(0));
+
+	events = k_event_wait(&test_event, 0, false, K_NO_WAIT);
+	zassert_equal(events, 0);
+	zassert_equal(k_event_test(&test_event, ~0U), BIT(0));
+
+	events = k_event_wait(&test_event, 0, true, K_NO_WAIT);
+	zassert_equal(events, 0);
+	zassert_equal(k_event_test(&test_event, ~0U), 0);
+
+	k_event_set(&test_event, BIT(0));
+	events = k_event_wait_all(&test_event, 0, true, K_NO_WAIT);
+	zassert_equal(events, 0);
+	zassert_equal(k_event_test(&test_event, ~0U), 0);
+
+	k_event_set(&test_event, BIT(0));
+	events = k_event_wait_safe(&test_event, 0, true, K_NO_WAIT);
+	zassert_equal(events, 0);
+	zassert_equal(k_event_test(&test_event, ~0U), 0);
+
+	k_event_set(&test_event, BIT(0));
+	events = k_event_wait_all_safe(&test_event, 0, true, K_NO_WAIT);
+	zassert_equal(events, 0);
+	zassert_equal(k_event_test(&test_event, ~0U), 0);
+}
+
+/**
  * @brief Verify a single event delivery wakes all matching waiters.
  *
  * @details
