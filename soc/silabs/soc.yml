@@ -270,6 +270,7 @@ family:
       - name: siwg917
         socs:
           - name: siwg917m111mgtba
+          - name: siwg917y111mgaba
   - name: silabs_sim3
     series:
       - name: sim3u
