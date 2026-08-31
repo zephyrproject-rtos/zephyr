@@ -208,20 +208,20 @@ def validate_qemu_arg_path(path: str, base_dir: str, *, for_write: bool) -> str:
 class SymbolTable:
     """Interval lookup from a guest PC to the function containing it."""
 
-    def __init__(self, elf_path: str):
-        self._fp = open(elf_path, "rb")  # noqa: SIM115 - kept open for DWARF
-        elf = ELFFile(self._fp)
+    def __init__(
+        self,
+        symbols: list[tuple[str, int, int, str, str]],
+        load: list[tuple[int, int]],
+        source: str = "<symbols>",
+    ):
+        """Build the lookup tables from raw symbol tuples.
 
-        symtab = elf.get_section_by_name(".symtab")
-        if symtab is None:
-            sys.exit(f"{elf_path} has no .symtab; a stripped build cannot be profiled.")
-
-        exec_sections = {
-            idx
-            for idx, sec in enumerate(elf.iter_sections())
-            if sec["sh_flags"] & SH_FLAGS.SHF_EXECINSTR
-        }
-
+        *symbols* is (name, address, size, st_info.type, st_info.bind) for
+        every symbol defined in an executable section, and *load* is the
+        (start, end) of every non-empty PT_LOAD segment. Taking an ELF file
+        apart is from_elf()'s job; keeping it out of here lets the interval
+        logic be exercised without a binary to hand.
+        """
         # Two views of the symbol table.
         #
         # "ranges" holds sized STT_FUNC symbols. Those are authoritative: a PC
@@ -240,27 +240,17 @@ class SymbolTable:
         ranges: dict[int, tuple[int, int, str]] = {}
         bounds: dict[int, tuple[int, str]] = {}
 
-        for sym in symtab.iter_symbols():
-            entry = sym.entry
-            shndx = entry.st_shndx
-            if not isinstance(shndx, int) or shndx not in exec_sections:
-                continue
-
-            kind = entry.st_info.type
-            binding = entry.st_info.bind
-            addr = entry.st_value
-            size = entry.st_size
-
+        for name, addr, size, kind, binding in symbols:
             if kind == "STT_FUNC" and size:
                 rank = 1 if binding == "STB_GLOBAL" else 0
                 if addr not in ranges or rank > ranges[addr][0]:
-                    ranges[addr] = (rank, size, sym.name)
+                    ranges[addr] = (rank, size, name)
             elif kind == "STT_FUNC" or (
                 kind == "STT_NOTYPE" and binding in ("STB_GLOBAL", "STB_WEAK")
             ):
                 rank = 1 if kind == "STT_FUNC" else 0
                 if addr not in bounds or rank > bounds[addr][0]:
-                    bounds[addr] = (rank, sym.name)
+                    bounds[addr] = (rank, name)
 
         self._ranges = sorted((a, v[1], v[2]) for a, v in ranges.items())
         self._range_starts = [r[0] for r in self._ranges]
@@ -273,25 +263,62 @@ class SymbolTable:
         self._bound_starts = [b[0] for b in self._bounds]
 
         if not self._ranges and not self._bounds:
-            sys.exit(f"{elf_path} contains no function symbols.")
+            sys.exit(f"{source} contains no function symbols.")
 
         # Loadable ranges, used to tell "not a Zephyr function" apart from
         # "not Zephyr at all" (the BIOS the guest boots through).
-        self._load = [
+        self._load = list(load)
+
+        # Filled in by from_elf(); a table built from bare symbols has no
+        # DWARF, so source_file() returns None for every address.
+        self._fp = None
+        self._dwarf = None
+        self._aranges = None
+        self._file_cache: dict[str, str | None] = {}
+        self._sym_cache: dict[int, tuple[str, str]] = {}
+
+    @classmethod
+    def from_elf(cls, elf_path: str) -> "SymbolTable":
+        """Build the table from a build's ELF, DWARF included when present."""
+        fp = open(elf_path, "rb")  # noqa: SIM115 - kept open for DWARF
+        elf = ELFFile(fp)
+
+        symtab = elf.get_section_by_name(".symtab")
+        if symtab is None:
+            sys.exit(f"{elf_path} has no .symtab; a stripped build cannot be profiled.")
+
+        exec_sections = {
+            idx
+            for idx, sec in enumerate(elf.iter_sections())
+            if sec["sh_flags"] & SH_FLAGS.SHF_EXECINSTR
+        }
+
+        symbols = [
+            (
+                sym.name,
+                sym.entry.st_value,
+                sym.entry.st_size,
+                sym.entry.st_info.type,
+                sym.entry.st_info.bind,
+            )
+            for sym in symtab.iter_symbols()
+            if isinstance(sym.entry.st_shndx, int) and sym.entry.st_shndx in exec_sections
+        ]
+        load = [
             (seg["p_vaddr"], seg["p_vaddr"] + seg["p_memsz"])
             for seg in elf.iter_segments()
             if seg["p_type"] == "PT_LOAD" and seg["p_memsz"]
         ]
 
-        self._dwarf = elf.get_dwarf_info() if elf.has_dwarf_info() else None
-        self._aranges = None
-        if self._dwarf is not None:
+        table = cls(symbols, load, elf_path)
+        table._fp = fp
+        table._dwarf = elf.get_dwarf_info() if elf.has_dwarf_info() else None
+        if table._dwarf is not None:
             try:
-                self._aranges = self._dwarf.get_aranges()
+                table._aranges = table._dwarf.get_aranges()
             except Exception:  # noqa: BLE001 - DWARF is best effort
-                self._aranges = None
-        self._file_cache: dict[str, str | None] = {}
-        self._sym_cache: dict[int, tuple[str, str]] = {}
+                table._aranges = None
+        return table
 
     def in_image(self, pc: int) -> bool:
         return any(lo <= pc < hi for lo, hi in self._load)
@@ -478,6 +505,32 @@ def attribute(
     return funcs, total, dict(kinds)
 
 
+def _ipb(insns: int, byts: int) -> float:
+    """Instructions per payload byte; 0.0 when nothing was transferred."""
+    return (insns / byts) if byts else 0.0
+
+
+def _mbps(ipb: float, shift: int) -> float:
+    """Throughput implied by *ipb* under ``-icount shift=<shift>``.
+
+    8 bits/byte * 1e9 ns/s / (2**shift ns/insn * ipb insn/byte) / 1e6, which
+    at the default shift of 5 is 250/ipb.
+    """
+    return (8000.0 / (2**shift * ipb)) if ipb else 0.0
+
+
+def _mbps_gain(ipb: float, f_ipb: float, shift: int) -> float:
+    """What the throughput would gain if a function costing *f_ipb* were free."""
+    if ipb <= f_ipb:
+        return 0.0
+    return _mbps(ipb - f_ipb, shift) - _mbps(ipb, shift)
+
+
+def _pct(part: float, whole: float) -> float:
+    """*part* as a percentage of *whole*; 0.0 when *whole* is zero."""
+    return (100.0 * part / whole) if whole else 0.0
+
+
 def render(profile: dict, top: int) -> None:
     """Print the header, the per-function table and the group roll-up."""
     label = profile["label"]
@@ -486,9 +539,8 @@ def render(profile: dict, top: int) -> None:
     shift = profile.get("icount_shift", 5)
     measured = profile.get("measured_mbps")
 
-    ipb = (total / byts) if byts else 0.0
-    # Mbps = 8 bits/byte * 1e9 ns/s / (2**shift ns/insn * ipb insn/byte) / 1e6
-    reconstructed = (8000.0 / (2**shift * ipb)) if ipb else 0.0
+    ipb = _ipb(total, byts)
+    reconstructed = _mbps(ipb, shift)
 
     print(f"\n=== {label} ({profile.get('platform', '?')}) ===")
     line = f"instructions {total:>15,}   payload {byts:>12,} B   ipb {ipb:8.3f}"
@@ -512,9 +564,9 @@ def render(profile: dict, top: int) -> None:
         bucketed = kinds.get("bucket", 0)
         inferred = kinds.get("inferred", 0)
         print(
-            f"attribution  exact {100 * kinds.get('exact', 0) / total:5.2f}%   "
-            f"inferred {100 * inferred / total:5.2f}%   "
-            f"unattributed {100 * bucketed / total:5.2f}%"
+            f"attribution  exact {_pct(kinds.get('exact', 0), total):5.2f}%   "
+            f"inferred {_pct(inferred, total):5.2f}%   "
+            f"unattributed {_pct(bucketed, total):5.2f}%"
         )
 
     funcs = profile["functions"]
@@ -528,29 +580,24 @@ def render(profile: dict, top: int) -> None:
     for rank, (name, info) in enumerate(ranked[:top], start=1):
         insns = info["insns"]
         cum += insns
-        share = 100.0 * insns / total if total else 0.0
-        f_ipb = insns / byts if byts else 0.0
+        share = _pct(insns, total)
+        f_ipb = _ipb(insns, byts)
         # What the throughput would become if this function cost nothing.
-        gain = ((8000.0 / (2**shift * (ipb - f_ipb))) - reconstructed) if ipb > f_ipb else 0.0
+        gain = _mbps_gain(ipb, f_ipb, shift)
         print(
             f"{rank:>3}  {name[:33]:<34}{info['group']:<10}{insns:>14,}"
-            f"{f_ipb:>8.3f}{share:>6.2f}%{100 * cum / total if total else 0:>6.1f}%"
+            f"{f_ipb:>8.3f}{share:>6.2f}%{_pct(cum, total):>6.1f}%"
             f"{gain:>+8.2f}  {info['file'] or ''}"
         )
 
-    groups: dict[str, int] = defaultdict(int)
-    for info in funcs.values():
-        groups[info["group"]] += info["insns"]
+    groups = _group_totals(profile)
 
     print(f"\n{'group':<12}{'instructions':>14}{'ipb':>9}{'%':>8}")
     ordered = sorted(
         groups.items(), key=lambda kv: (GROUP_ORDER.index(kv[0]) if kv[0] in GROUP_ORDER else 99)
     )
     for group, insns in ordered:
-        print(
-            f"{group:<12}{insns:>14,}{insns / byts if byts else 0:>9.3f}"
-            f"{100.0 * insns / total if total else 0:>7.2f}%"
-        )
+        print(f"{group:<12}{insns:>14,}{_ipb(insns, byts):>9.3f}{_pct(insns, total):>7.2f}%")
 
 
 def render_diff(baseline: dict, current: dict, tolerance_pct: float, top: int) -> bool:
@@ -568,9 +615,9 @@ def render_diff(baseline: dict, current: dict, tolerance_pct: float, top: int) -
 
         b_bytes = base.get("bytes") or 0
         c_bytes = cur.get("bytes") or 0
-        b_ipb = base["total_insns"] / b_bytes if b_bytes else 0.0
-        c_ipb = cur["total_insns"] / c_bytes if c_bytes else 0.0
-        change = ((c_ipb - b_ipb) / b_ipb * 100.0) if b_ipb else 0.0
+        b_ipb = _ipb(base["total_insns"], b_bytes)
+        c_ipb = _ipb(cur["total_insns"], c_bytes)
+        change = _pct(c_ipb - b_ipb, b_ipb)
         # More instructions per byte is slower, so a positive change is bad.
         status = "OK" if change <= tolerance_pct else "REGRESSION"
         if status != "OK":
@@ -808,7 +855,7 @@ def build_profile(
         boot_insns = sum(n * c for (_, n), c in boot_blocks.items())
         blocks = subtract(blocks, boot_blocks)
 
-    table = SymbolTable(elf)
+    table = SymbolTable.from_elf(elf)
     funcs, total, kinds = attribute(blocks, table, zephyr_base, topdir)
 
     mbps, byts = parse_console(console) if console else ({}, {})
