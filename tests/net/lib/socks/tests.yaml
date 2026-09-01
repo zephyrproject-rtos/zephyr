@@ -1,0 +1,13 @@
+common:
+  tags:
+    - net
+    - socks
+  depends_on: netif
+tests:
+  net.socks5: {}
+  net.socks5.asan:
+    extra_configs:
+      - CONFIG_ASAN=y
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
