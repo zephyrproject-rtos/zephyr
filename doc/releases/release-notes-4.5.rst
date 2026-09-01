@@ -1483,6 +1483,12 @@ New Drivers
 
 * Networking
 
+  * gPTP
+
+    * :kconfig:option:`CONFIG_NET_GPTP_STATIC_TIME_RECEIVER` operates the node as a
+      statically configured time receiver, so it can synchronize through IEEE 802.1AS
+      automotive profile bridges that transmit no Announce messages.
+
   * :dtcompatible:`st,stm32wba-radio` (:github:`110546`)
 
 * :abbr:`OPAMP (Operational Amplifier)`

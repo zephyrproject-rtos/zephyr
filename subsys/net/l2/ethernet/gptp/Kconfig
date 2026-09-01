@@ -33,6 +33,29 @@ config NET_GPTP_PROBE_CLOCK_SOURCE_ON_DEMAND
 	  updated on each tick.
 	  See IEEE 802.1AS-2011, chapter 9.2 for more details.
 
+config NET_GPTP_STATIC_TIME_RECEIVER
+	bool "Static timeReceiver operation"
+	help
+	  Operate every gPTP port as a statically configured time
+	  receiver, as used by the IEEE 802.1AS automotive profile (AVnu
+	  Automotive Ethernet AVB Functional and Interoperability
+	  Specification). Automotive profile bridges use static port
+	  roles: they transmit Sync and Follow_Up but no Announce
+	  messages, so the BMCA can never select a port role. With this
+	  option the BMCA and all Announce handling are bypassed, the
+	  port role is pinned to the time receiver ("slave") state, asCapable is forced true so that
+	  synchronization does not depend on the neighbor Pdelay
+	  measurement (the bridge is not required to answer Pdelay
+	  requests), and the local clock is disciplined from the received
+	  Sync and Follow_Up messages alone. This matches the linuxptp
+	  ptp4l automotive time receiver configuration (BMCA "noop", clientOnly,
+	  inhibit_announce, asCapable "true", ignore_source_id). The
+	  device never becomes grandmaster and never transmits Sync or
+	  Announce messages, even if NET_GPTP_GM_CAPABLE is set.
+	  The standards analog of disabling the BMCA this way is the
+	  external port configuration of IEEE 802.1AS-2020, chapter
+	  10.3.14, derived from IEEE 1588-2019, chapter 17.6.2.
+
 config NET_GPTP_CLOCK_ACCURACY
 	hex "gPTP Clock Accuracy"
 	range 0 0xff

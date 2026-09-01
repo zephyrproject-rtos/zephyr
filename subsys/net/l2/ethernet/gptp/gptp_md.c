@@ -931,6 +931,21 @@ void gptp_md_state_machines(int port)
 {
 	gptp_md_pdelay_req_state_machine(port);
 	gptp_md_pdelay_resp_state_machine(port);
+
+#if defined(CONFIG_NET_GPTP_STATIC_TIME_RECEIVER)
+	/* A static time receiver takes part in synchronization regardless
+	 * of the Pdelay measurement outcome, the upstream bridge is not
+	 * required to answer Pdelay requests. Pin asCapable right after
+	 * the Pdelay state machines, which are its only writers, so the
+	 * Sync receive path never sees it deasserted and never resets.
+	 * Pinning pttPortEnabled is defensive as nothing clears it today,
+	 * but a future portEnabled or link state implementation must not
+	 * silently take down a statically configured time receiver.
+	 */
+	GPTP_PORT_DS(port)->ptt_port_enabled = true;
+	GPTP_PORT_DS(port)->as_capable = true;
+#endif
+
 	gptp_md_sync_receive_state_machine(port);
 	gptp_md_sync_send_state_machine(port);
 }
