@@ -1,7 +1,7 @@
 /*
  * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
  * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
- *
+ * Copyright (c) 2026 Linumiz
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -13,6 +13,35 @@
 
 #include <cy_syslib.h>
 
+#if defined(CONFIG_SOC_FAMILY_INFINEON_TRAVEO)
+#include <cy_flash_srom.h>
+
+ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
+{
+	un_srom_api_args_t args;
+	un_srom_api_resps_t resps;
+	cy_en_srom_driver_status_t st;
+	uint8_t uid[11];
+
+	memset(&args, 0, sizeof(args));
+	memset(&resps, 0, sizeof(resps));
+
+	args.RdUnId.arg0.Opcode = CY_SROM_OP_READ_UNIQUE_ID;
+	st = Cy_Srom_CallApi(&args, &resps);
+	if (st != CY_SROM_DR_SUCCEEDED) {
+		return -EIO;
+	}
+
+	sys_put_be24(resps.resp[0], &uid[0]);
+	sys_put_be32(resps.resp[1], &uid[3]);
+	sys_put_be32(resps.resp[2], &uid[7]);
+
+	length = MIN(length, sizeof(uid));
+	memcpy(buffer, uid, length);
+
+	return (ssize_t)length;
+}
+#else
 ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 {
 	uint64_t uid = sys_cpu_to_be64(Cy_SysLib_GetUniqueId());
@@ -22,7 +51,7 @@ ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 
 	return length;
 }
-
+#endif
 int z_impl_hwinfo_get_reset_cause(uint32_t *cause)
 {
 	uint32_t flags = 0;
