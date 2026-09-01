@@ -1290,8 +1290,11 @@ static void l2cap_chan_seg_recv_rx_init(struct bt_l2cap_le_chan *chan)
 }
 #endif /* CONFIG_BT_L2CAP_SEG_RECV */
 
-static void l2cap_chan_rx_init(struct bt_l2cap_le_chan *chan)
+static int l2cap_chan_rx_init(struct bt_l2cap_le_chan *chan,
+			      uint16_t min_mps)
 {
+	uint16_t max_mps;
+
 	LOG_DBG("chan %p", chan);
 
 	chan->rx.cid = 0U;
@@ -1300,7 +1303,7 @@ static void l2cap_chan_rx_init(struct bt_l2cap_le_chan *chan)
 	IF_ENABLED(CONFIG_BT_L2CAP_SEG_RECV, ({
 		if (chan->chan.ops->seg_recv) {
 			l2cap_chan_seg_recv_rx_init(chan);
-			return;
+			return 0;
 		}
 	}))
 
@@ -1314,9 +1317,24 @@ static void l2cap_chan_rx_init(struct bt_l2cap_le_chan *chan)
 
 	/* MPS shall not be bigger than MTU + BT_L2CAP_SDU_HDR_SIZE as the
 	 * remaining bytes cannot be used.
+	 *
+	 * An application may ask for a smaller MPS by setting rx.mps before
+	 * connecting or accepting. The value is validated here, where the
+	 * channel enters the stack, and rejected if it does not fit the
+	 * connection type (min_mps) and the receive buffers, the same way
+	 * invalid values from the peer are rejected. Zero means the
+	 * application leaves the choice to the stack.
 	 */
-	chan->rx.mps = MIN(chan->rx.mtu + BT_L2CAP_SDU_HDR_SIZE,
-			   BT_L2CAP_RX_MTU);
+	max_mps = MIN(chan->rx.mtu + BT_L2CAP_SDU_HDR_SIZE, BT_L2CAP_RX_MTU);
+	min_mps = MIN(min_mps, max_mps);
+
+	if (chan->rx.mps == 0U) {
+		chan->rx.mps = max_mps;
+	} else if (!IN_RANGE(chan->rx.mps, min_mps, max_mps)) {
+		LOG_ERR("Invalid RX MPS %u, valid range is %u-%u",
+			chan->rx.mps, min_mps, max_mps);
+		return -EINVAL;
+	}
 
 	/* Truncate MTU if channel have disabled segmentation but still have
 	 * set an MTU which requires it.
@@ -1328,6 +1346,8 @@ static void l2cap_chan_rx_init(struct bt_l2cap_le_chan *chan)
 	}
 
 	atomic_set(&chan->rx.credits, 1);
+
+	return 0;
 }
 
 /** @brief Get @c chan->state.
@@ -1443,7 +1463,7 @@ static uint16_t le_err_to_result(int err)
 static uint16_t l2cap_chan_accept(struct bt_conn *conn,
 			       struct bt_l2cap_server *server, uint16_t scid,
 			       uint16_t mtu, uint16_t mps, uint16_t credits,
-			       struct bt_l2cap_chan **chan)
+			       struct bt_l2cap_chan **chan, uint16_t min_mps)
 {
 	struct bt_l2cap_le_chan *le_chan;
 	int err;
@@ -1490,7 +1510,9 @@ static uint16_t l2cap_chan_accept(struct bt_conn *conn,
 	le_chan->tx.mtu = mtu;
 
 	/* Init RX parameters */
-	l2cap_chan_rx_init(le_chan);
+	if (l2cap_chan_rx_init(le_chan, min_mps) != 0) {
+		return BT_L2CAP_LE_ERR_UNACCEPT_PARAMS;
+	}
 
 	if (!l2cap_chan_add(conn, *chan, l2cap_chan_destroy)) {
 		return BT_L2CAP_LE_ERR_NO_RESOURCES;
@@ -1593,7 +1615,7 @@ static void le_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 	}
 
 	result = l2cap_chan_accept(conn, server, scid, mtu, mps, credits,
-				   &chan);
+				   &chan, L2CAP_LE_MIN_MPS);
 	if (result != BT_L2CAP_LE_SUCCESS) {
 		goto rsp;
 	}
@@ -1692,7 +1714,7 @@ static void le_ecred_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 		scid = net_buf_pull_le16(buf);
 
 		rc = l2cap_chan_accept(conn, server, scid, mtu, mps,
-				credits, &chan[i]);
+				credits, &chan[i], BT_L2CAP_ECRED_MIN_MPS);
 		if (rc != BT_L2CAP_LE_SUCCESS) {
 			result = rc;
 		}
@@ -3024,7 +3046,10 @@ static int l2cap_le_connect(struct bt_conn *conn, struct bt_l2cap_le_chan *ch,
 	}
 
 	l2cap_chan_tx_init(ch);
-	l2cap_chan_rx_init(ch);
+	err = l2cap_chan_rx_init(ch, L2CAP_LE_MIN_MPS);
+	if (err != 0) {
+		return err;
+	}
 
 	if (!l2cap_chan_add(conn, &ch->chan, l2cap_chan_destroy)) {
 		return -ENOMEM;
@@ -3061,13 +3086,17 @@ fail:
 static int l2cap_ecred_init(struct bt_conn *conn,
 			       struct bt_l2cap_le_chan *ch, uint16_t psm)
 {
+	int err;
 
 	if (psm < L2CAP_LE_PSM_FIXED_START || psm > L2CAP_LE_PSM_DYN_END) {
 		return -EINVAL;
 	}
 
 	l2cap_chan_tx_init(ch);
-	l2cap_chan_rx_init(ch);
+	err = l2cap_chan_rx_init(ch, BT_L2CAP_ECRED_MIN_MPS);
+	if (err != 0) {
+		return err;
+	}
 
 	if (!l2cap_chan_add(conn, &ch->chan, l2cap_chan_destroy)) {
 		return -ENOMEM;

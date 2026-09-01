@@ -252,6 +252,26 @@ struct bt_l2cap_le_chan {
 	 *  MTU of the receiving endpoint will be initialized to
 	 *  @ref BT_L2CAP_SDU_RX_MTU by the stack.
 	 *
+	 *  The MPS is optional as well. When it is left at zero the stack
+	 *  derives it from the MTU. When the application sets it, the value
+	 *  is validated when the channel is connected or accepted, and has
+	 *  to be at least 23 on a LE Credit Based channel, at least
+	 *  @ref BT_L2CAP_ECRED_MIN_MPS on an Enhanced Credit Based one, and
+	 *  at most MIN(MTU + 2, @ref BT_L2CAP_RX_MTU). A value outside that
+	 *  range is rejected: bt_l2cap_chan_connect() and
+	 *  bt_l2cap_ecred_chan_connect() fail with -EINVAL, and on the
+	 *  accept path the connection is refused. Channels using the
+	 *  seg_recv callback are not affected: with that alternative API,
+	 *  the application is responsible for setting the RX MTU and MPS.
+	 *  Asking for an MPS below MTU + 2 means received SDUs are segmented
+	 *  and therefore requires the alloc_buf callback; without it the MTU is
+	 *  truncated to match the MPS.
+	 *
+	 *  Zero is the "not set" marker for both fields and the stack writes
+	 *  the values it settled on back into this endpoint, so a channel
+	 *  object that is reused for another connection has to be
+	 *  reinitialised before it is connected or accepted again.
+	 *
 	 *  This is the source of the MTU, MPS and credit values when sending
 	 *  L2CAP_LE_CREDIT_BASED_CONNECTION_REQ/RSP and
 	 *  L2CAP_CONFIGURATION_REQ.
