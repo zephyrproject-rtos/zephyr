@@ -71,10 +71,20 @@ def terminate_process(proc):
     so we need to use try_kill_process_by_pid.
     """
 
+    children = []
+
     with contextlib.suppress(ProcessLookupError, psutil.NoSuchProcess):
-        for child in psutil.Process(proc.pid).children(recursive=True):
+        children = psutil.Process(proc.pid).children(recursive=True)
+        for child in children:
             with contextlib.suppress(ProcessLookupError, psutil.NoSuchProcess):
                 os.kill(child.pid, signal.SIGTERM)
+
+    if children:
+        _, alive = psutil.wait_procs(children, timeout=5, callback=None)
+        for p in alive:
+            with contextlib.suppress(psutil.NoSuchProcess, psutil.AccessDenied):
+                p.kill()
+
     proc.terminate()
     # sleep for a while before attempting to kill
     time.sleep(0.5)
