@@ -175,6 +175,7 @@ static inline void get_evt_hdr(const struct device *dev)
 			h4->rx.hdr_len++;
 			break;
 #if defined(CONFIG_BT_CLASSIC)
+		case BT_HCI_EVT_INQUIRY_RESULT:
 		case BT_HCI_EVT_INQUIRY_RESULT_WITH_RSSI:
 		case BT_HCI_EVT_EXTENDED_INQUIRY_RESULT:
 			h4->rx.discardable = true;

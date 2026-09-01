@@ -63,6 +63,7 @@ static bool is_hci_event_discardable(const struct bt_hci_evt_hdr *evt)
 {
 	switch (evt->evt) {
 #if defined(CONFIG_BT_CLASSIC)
+	case BT_HCI_EVT_INQUIRY_RESULT:
 	case BT_HCI_EVT_INQUIRY_RESULT_WITH_RSSI:
 	case BT_HCI_EVT_EXTENDED_INQUIRY_RESULT:
 		return true;

@@ -42,6 +42,7 @@ static bool bt_hci_bee_check_hci_event_discardable(const uint8_t *event_data)
 
 	switch (event_type) {
 #if defined(CONFIG_BT_CLASSIC)
+	case BT_HCI_EVT_INQUIRY_RESULT:
 	case BT_HCI_EVT_INQUIRY_RESULT_WITH_RSSI:
 	case BT_HCI_EVT_EXTENDED_INQUIRY_RESULT:
 		return true;
