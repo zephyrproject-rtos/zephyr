@@ -25,10 +25,11 @@
 #define STM32_UID_WORD_2 HAL_GetUIDw0()
 /* zephyr-keep-sorted-stop */
 
-#elif defined(CONFIG_SOC_SERIES_STM32WB0X)
+#elif defined(CONFIG_SOC_SERIES_STM32WB0X) || \
+	defined(CONFIG_SOC_SERIES_STM32WL3X)
 
 /*
- * The STM32WB0 series doesn't have the 96-bit UID.
+ * The STM32WB0 and STM32WL33 series don't have the 96-bit UID.
  * The LL_GetUID_WordN() API exists but returns the
  * value of UID64 instead, so there is no "Word2".
  */
