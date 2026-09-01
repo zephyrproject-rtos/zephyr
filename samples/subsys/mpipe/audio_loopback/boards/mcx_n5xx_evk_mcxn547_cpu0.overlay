@@ -7,15 +7,12 @@
 / {
 	aliases {
 		i2s-codec-tx = &sai1;
-		i2s-codec-rx = &sai0;
+		/* Only sai1 is pin-routed on this board; it carries both directions. */
+		i2s-codec-rx = &sai1;
 	};
 };
 
 &sai1 {
-	mclk-output;
-};
-
-&sai0 {
 	mclk-output;
 };
 
