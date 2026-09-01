@@ -295,7 +295,7 @@ int pm_device_runtime_get(const struct device *dev)
 	 * Early return if device runtime is not enabled.
 	 */
 	if (!atomic_test_bit(&pm->base.flags, PM_DEVICE_FLAG_RUNTIME_ENABLED)) {
-		return 0;
+		goto end;
 	}
 
 	if (atomic_test_bit(&dev->pm_base->flags, PM_DEVICE_FLAG_ISR_SAFE)) {
@@ -325,7 +325,8 @@ int pm_device_runtime_get(const struct device *dev)
 
 		ret = k_sem_take(&pm->lock, k_is_in_isr() ? K_NO_WAIT : K_FOREVER);
 		if (ret < 0) {
-			return -EWOULDBLOCK;
+			ret = -EWOULDBLOCK;
+			goto end;
 		}
 	}
 
