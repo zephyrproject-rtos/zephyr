@@ -286,6 +286,11 @@ jobs:
             fi
           fi
 
+          if [ ! -f twister-out/twister.json ]; then
+            echo "Twister did not produce a twister.json file, something went wrong."
+            exit 1
+          fi
+
       - name: Print ccache stats
         if: always()
         run: |
@@ -299,6 +304,7 @@ jobs:
           if-no-files-found: ignore
           path: |
             twister-out/twister.xml
+            twister-out/twister.log
             twister-out/twister.json
             module_tests/twister.xml
             testplan.json
