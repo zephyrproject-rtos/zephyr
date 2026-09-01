@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <string.h>
+
 #include <zephyr/internal/syscall_handler.h>
 #include <zephyr/drivers/charger.h>
 
@@ -20,6 +22,9 @@ static inline int z_vrfy_charger_get_prop(const struct device *dev, const charge
 	K_OOPS(K_SYSCALL_VERIFY_MSG(prop != CHARGER_PROP_STATUS_NOTIFICATION &&
 				    prop != CHARGER_PROP_ONLINE_NOTIFICATION,
 				    "callbacks may not be read from user mode"));
+
+	/* The whole union is copied out, not just the member the driver writes. */
+	memset(&k_val, 0, sizeof(k_val));
 
 	int ret = z_impl_charger_get_prop(dev, prop, &k_val);
 
