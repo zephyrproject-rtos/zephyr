@@ -2,9 +2,9 @@
 # SPDX-FileCopyrightText: Copyright (c) 2026 Kirill Shypachov
 # SPDX-License-Identifier: Apache-2.0
 
-description: |
-  Generic QPI PSRAM device on MSPI bus.
+title: Generic QPI PSRAM device on MSPI bus
 
+description: |
   Two mutually exclusive operating modes are supported. Pick one - the
   device parameters come either from the driver or from devicetree, never
   from both.
