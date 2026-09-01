@@ -1,8 +1,8 @@
 sample:
-  name: DMIC to I2S pipeline sample
+  name: Audio loopback pipeline sample
 
 tests:
-  sample.mpipe.dmic_i2s:
+  sample.mpipe.audio_loopback:
     tags:
       - mpipe
       - audio
