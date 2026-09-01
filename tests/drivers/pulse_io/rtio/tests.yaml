@@ -1,5 +1,8 @@
 common:
-  tags: drivers pulse_io rtio
+  tags:
+    - drivers
+    - pulse_io
+    - rtio
   filter: dt_nodelabel_enabled("pulse_io0")
   integration_platforms:
     - native_sim
