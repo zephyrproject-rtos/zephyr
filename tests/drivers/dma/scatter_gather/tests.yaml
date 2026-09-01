@@ -27,6 +27,7 @@ tests:
       - kg100s_rb4332a
       - pic32cz_ca80_cult
       - lp_mspm0g3507
+      - lp_mspm0g3519
     filter: dt_nodelabel_enabled("tst_dma0")
     integration_platforms:
       - intel_adsp/cavs25
