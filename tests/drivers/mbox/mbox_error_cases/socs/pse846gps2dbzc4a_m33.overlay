@@ -20,11 +20,10 @@
 	};
 
 	mbox-consumer {
-		compatible = "vnd,mbox-consumer";
-
-		/* Channels 0 and 1 exist; channel 5 is out of range (invalid). */
-		mboxes = <&mbox0 0>, <&mbox0 5>, <&mbox0 1>, <&mbox0 5>;
-		mbox-names = "remote_valid", "remote_incorrect",
-			     "local_valid", "local_incorrect";
+		compatible = "zephyr,mbox-consumer";
+		mboxes = <&mbox0 0>, <&mbox0 1>;
+		mbox-names = "tx0", "rx0";
+		bidirectional-channels;
+		mtu = <8>;
 	};
 };
