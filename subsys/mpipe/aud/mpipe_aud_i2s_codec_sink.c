@@ -39,6 +39,15 @@ LOG_MODULE_REGISTER(mpipe_aud_i2s_codec_sink, CONFIG_MPIPE_LOG_LEVEL);
  */
 #define AUD_I2S_SINK_START_PRIME 3
 
+static void mpipe_aud_i2s_codec_sink_start_codec(const struct device *codec)
+{
+	const struct audio_codec_driver_api *api = DEVICE_API_GET(audio_codec, codec);
+
+	if (api->start_output != NULL) {
+		audio_codec_start_output(codec);
+	}
+}
+
 /* A capability of this sink is one the I2S link and the codec both support */
 static int mpipe_aud_i2s_codec_sink_enum_caps(struct mpipe_pad *pad, uint32_t index,
 					      const struct mpipe_structure *filter,
@@ -104,6 +113,14 @@ static int mpipe_aud_i2s_codec_sink_propose_buffer_pool(struct mpipe_sink *sink,
 
 	cfg.min_buffers = MAX(MAX(i2s_caps.min_num_buffers, codec_caps.min_num_buffers),
 			      AUD_I2S_SINK_START_PRIME);
+
+#ifdef CONFIG_MPIPE_AUD_I2S_CODEC_SINK_SILENCE_PRIME
+	/* The silence prime coexists with the normal startup queue until the
+	 * synchronized receiver returns its first captured block.
+	 */
+	cfg.min_buffers = CONFIG_MPIPE_AUD_I2S_CODEC_SINK_SILENCE_PRIME_COUNT +
+			  MAX(cfg.min_buffers, AUD_I2S_SINK_START_PRIME);
+#endif
 
 	query->pool_cfg = cfg;
 
@@ -279,6 +296,7 @@ static int mpipe_aud_i2s_codec_sink_set_caps(struct mpipe_sink *sink,
 	 */
 	aud_i2s_codec_sink->started = false;
 	aud_i2s_codec_sink->count = 0;
+	aud_i2s_codec_sink->prime_block_size = config.block_size;
 
 	return 0;
 }
@@ -325,6 +343,7 @@ int mpipe_aud_i2s_codec_sink_chain_fn(struct mpipe_pad *pad, struct net_buf *in_
 				*out_buf = NULL;
 				return -EIO;
 			}
+			mpipe_aud_i2s_codec_sink_start_codec(aud_i2s_codec_sink->codec_dev);
 			aud_i2s_codec_sink->started = true;
 		}
 	}
@@ -338,12 +357,72 @@ int mpipe_aud_i2s_codec_sink_chain_fn(struct mpipe_pad *pad, struct net_buf *in_
 	return 0;
 }
 
+#ifdef CONFIG_MPIPE_AUD_I2S_CODEC_SINK_SILENCE_PRIME
+static int mpipe_aud_i2s_codec_sink_prime_silence(struct mpipe_aud_i2s_codec_sink *sink)
+{
+	const uint8_t prime_count = CONFIG_MPIPE_AUD_I2S_CODEC_SINK_SILENCE_PRIME_COUNT;
+	int ret = 0;
+
+	if (sink->mem_slab == NULL || sink->prime_block_size == 0U) {
+		return -EINVAL;
+	}
+
+	/*
+	 * Count only what this prime queues. A buffer that reached chain_fn
+	 * after a pause cleared the counter leaves a stale count behind, and
+	 * the checks below would then read a successful prime as a failure.
+	 */
+	sink->count = 0U;
+
+	for (uint8_t i = 0U; i < prime_count; i++) {
+		void *block;
+
+		ret = k_mem_slab_alloc(sink->mem_slab, &block, K_NO_WAIT);
+		if (ret != 0) {
+			break;
+		}
+
+		memset(block, 0, sink->prime_block_size);
+		ret = i2s_write(sink->i2s_dev, block, sink->prime_block_size);
+		if (ret != 0) {
+			k_mem_slab_free(sink->mem_slab, block);
+			break;
+		}
+
+		sink->count++;
+	}
+
+	if (ret == 0 && sink->count == prime_count) {
+		ret = i2s_trigger(sink->i2s_dev, I2S_DIR_TX, I2S_TRIGGER_START);
+	}
+	if (ret == 0 && sink->count == prime_count) {
+		mpipe_aud_i2s_codec_sink_start_codec(sink->codec_dev);
+		sink->started = true;
+		LOG_INF("TX started with %u silence buffers", sink->count);
+		return 0;
+	}
+
+	(void)i2s_trigger(sink->i2s_dev, I2S_DIR_TX, I2S_TRIGGER_DROP);
+	sink->count = 0U;
+	return ret != 0 ? ret : -ENOBUFS;
+}
+#endif
+
 static enum mpipe_state_change_return
 mpipe_aud_i2s_codec_sink_change_state(struct mpipe_element *self,
 				      enum mpipe_state_change transition)
 {
 	struct mpipe_aud_i2s_codec_sink *aud_i2s_codec_sink =
 		CONTAINER_OF(self, struct mpipe_aud_i2s_codec_sink, sink.element);
+
+#ifdef CONFIG_MPIPE_AUD_I2S_CODEC_SINK_SILENCE_PRIME
+	if (transition == MPIPE_STATE_CHANGE_PAUSED_TO_PLAYING &&
+	    !aud_i2s_codec_sink->started &&
+	    mpipe_aud_i2s_codec_sink_prime_silence(aud_i2s_codec_sink) != 0) {
+		LOG_ERR("Unable to prime synchronized I2S capture clocks");
+		return MPIPE_STATE_CHANGE_FAILURE;
+	}
+#endif
 
 	/*
 	 * On pause the source thread stops feeding but the transmitter keeps
@@ -389,6 +468,7 @@ int mpipe_aud_i2s_codec_sink_init(struct mpipe_aud_i2s_codec_sink *aud_i2s_codec
 
 	aud_i2s_codec_sink->started = false;
 	aud_i2s_codec_sink->count = 0;
+	aud_i2s_codec_sink->prime_block_size = 0U;
 	aud_i2s_codec_sink->mem_slab = NULL;
 	return 0;
 }

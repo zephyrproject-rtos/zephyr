@@ -41,6 +41,23 @@ config MPIPE_AUD_BUFFER_POOL_NUM_MAX
 	  audible artifact rather than a dropped frame, so leave enough for the
 	  sink to keep its buffers primed.
 
+config MPIPE_AUD_I2S_CODEC_SINK_SILENCE_PRIME
+	bool "Prime I2S TX with silence for synchronized capture"
+	help
+	  Start the I2S transmitter with silence when the pipeline enters PLAYING.
+	  Enable this when capture is synchronized to the transmitter and therefore
+	  cannot produce the buffers that would normally start TX.
+
+config MPIPE_AUD_I2S_CODEC_SINK_SILENCE_PRIME_COUNT
+	int "Number of silence buffers used to start I2S TX"
+	default 3
+	range 1 255
+	depends on MPIPE_AUD_I2S_CODEC_SINK_SILENCE_PRIME
+	help
+	  Number of zero-filled buffers queued before TX starts. This must fit in
+	  the I2S driver's TX queue. The negotiated pool also reserves the RX
+	  driver's required buffers.
+
 config MPIPE_AUD_I2S_CODEC_SINK_SET_OUTPUT_VOLUME
 	bool "Set codec output volume in the I2S codec sink"
 	help
