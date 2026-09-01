@@ -120,6 +120,8 @@ struct dma_ti_mspm0_channel_data {
 	bool cyclic;
 	bool error_dis;
 	bool sw_triggered;
+	struct dma_block_config *next_block;
+	bool per_block_cb;
 };
 
 struct dma_ti_mspm0_data {
@@ -272,6 +274,10 @@ static int dma_ti_mspm0_configure(const struct device *dev, uint32_t channel,
 		return -EBUSY;
 	}
 
+	if (config->cyclic && b_cfg->next_block != NULL) {
+		return -ENOTSUP;
+	}
+
 	ret = dma_ti_mspm0_get_stride_incr(b_cfg->source_gather_en, b_cfg->source_gather_count,
 					   b_cfg->source_gather_interval, b_cfg->source_addr_adj,
 					   &temp);
@@ -354,6 +360,8 @@ static int dma_ti_mspm0_configure(const struct device *dev, uint32_t channel,
 	data->cyclic = config->cyclic;
 	data->error_dis = config->error_callback_dis;
 	data->sw_triggered = trigger == DMA_MSPM0_TCTL_SWREQ;
+	data->next_block = b_cfg->next_block;
+	data->per_block_cb = config->complete_callback_en;
 
 	K_SPINLOCK(&dma_data->lock) {
 		sys_clear_bit(cfg->base + DMA_MSPM0_CPU_INT_IMASK, channel);
@@ -451,6 +459,7 @@ static int dma_ti_mspm0_reload(const struct device *dev, uint32_t channel,
 	sys_write32(src_addr, cfg->base + DMA_MSPM0_DMASA(channel));
 	sys_write32(dest_addr, cfg->base + DMA_MSPM0_DMADA(channel));
 	sys_write32(size / data->data_size, cfg->base + DMA_MSPM0_DMASZ(channel));
+	data->next_block = NULL;
 	data->busy = true;
 
 	return 0;
@@ -473,6 +482,28 @@ static int dma_ti_mspm0_get_status(const struct device *dev, uint32_t channel,
 	stat->busy = data->busy;
 
 	return 0;
+}
+
+static inline bool dma_ti_mspm0_chain_next_block(const struct dma_ti_mspm0_config *cfg,
+						 struct dma_ti_mspm0_channel_data *data,
+						 uint32_t channel)
+{
+	struct dma_block_config *block = data->next_block;
+
+	if (block == NULL) {
+		return false;
+	}
+
+	data->next_block = block->next_block;
+	sys_write32(block->source_address, cfg->base + DMA_MSPM0_DMASA(channel));
+	sys_write32(block->dest_address, cfg->base + DMA_MSPM0_DMADA(channel));
+	sys_write32(block->block_size / data->data_size, cfg->base + DMA_MSPM0_DMASZ(channel));
+	sys_set_bits(cfg->base + DMA_MSPM0_DMACTL(channel), DMA_MSPM0_CTL_DMAEN);
+	if (data->sw_triggered) {
+		sys_set_bits(cfg->base + DMA_MSPM0_DMACTL(channel), DMA_MSPM0_CTL_DMAREQ);
+	}
+
+	return true;
 }
 
 static inline void dma_ti_mspm0_isr(const struct device *dev)
@@ -523,6 +554,13 @@ static inline void dma_ti_mspm0_isr(const struct device *dev)
 	}
 
 	data = &dma_data->ch_data[channel];
+
+	if (dma_ti_mspm0_chain_next_block(cfg, data, channel)) {
+		if (data->per_block_cb && data->dma_callback != NULL) {
+			data->dma_callback(dev, data->user_data, channel, DMA_STATUS_BLOCK);
+		}
+		return;
+	}
 
 	if (!data->cyclic) {
 		sys_clear_bits(cfg->base + DMA_MSPM0_DMACTL(channel), DMA_MSPM0_CTL_DMAEN);
