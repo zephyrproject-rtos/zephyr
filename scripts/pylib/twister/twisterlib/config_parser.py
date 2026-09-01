@@ -94,6 +94,38 @@ class TwisterConfigParser:
         "sysbuild": {"type": "bool", "default": False}
     }
 
+    # Keys whose list/set members each name a single identifier: a tag, a
+    # platform, a board feature, a toolchain. Whitespace inside one of these is
+    # always a mistake. Either it is the space-separated list syntax dropped in
+    # commit 714e1933401, which is no longer split and so collapses into one
+    # unusable value, or it is a multi-word value that can never be matched.
+    #
+    # extra_args and extra_configs are deliberately absent: they carry Kconfig
+    # and CMake values that legitimately contain spaces. The conf file and
+    # overlay keys are absent because a path may contain a space.
+    keys_without_whitespace: set[str] = {
+        "arch_allow",
+        "arch_exclude",
+        "depends_on",
+        "extra_sections",
+        "integration_platforms",
+        "integration_toolchains",
+        "levels",
+        "modules",
+        "platform_allow",
+        "platform_exclude",
+        "platform_key",
+        "platform_type",
+        "required_snippets",
+        "simulation_exclude",
+        "tags",
+        "testcases",
+        "toolchain_allow",
+        "toolchain_exclude",
+        "vendor_allow",
+        "vendor_exclude",
+    }
+
     def __init__(self, filename: str, schema: dict[str, Any]) -> None:
         """Instantiate a new TwisterConfigParser object
 
@@ -114,6 +146,28 @@ class TwisterConfigParser:
         if 'common' in self.data:
             self.common = self.data['common']
         return data
+
+    def _check_no_whitespace(self, key: str, value: Any, name: str) -> None:
+        """Reject whitespace inside a value that has to name a single item.
+
+        Twister no longer splits space-separated lists, so "a b" is taken
+        verbatim and silently matches nothing. Fail loudly instead.
+        """
+        if key not in self.keys_without_whitespace:
+            return
+
+        items = [value] if isinstance(value, str) else value
+        if not isinstance(items, list):
+            return
+
+        for item in items:
+            if isinstance(item, str) and len(item.split()) > 1:
+                raise ConfigurationError(
+                    self.filename,
+                    f"whitespace in '{key}' value '{item}' in test '{name}'. "
+                    "Space-separated lists are not supported, write the value "
+                    "as a YAML list instead"
+                )
 
     def _cast_value(self, value: Any, typestr: str) -> Any:
         if typestr == "str":
@@ -263,6 +317,7 @@ class TwisterConfigParser:
                         default = self._cast_value("", kinfo["type"])
                     d[k] = default
             else:
+                self._check_no_whitespace(k, d[k], name)
                 try:
                     d[k] = self._cast_value(d[k], kinfo["type"])
                 except ValueError:
