@@ -279,6 +279,20 @@ ral_sx127x_bsp_get_instantaneous_lora_rx_power_consumption(const void *context, 
 	return RAL_STATUS_UNSUPPORTED_FEATURE;
 }
 
+/* The part spreads its interrupts over DIO0 to DIO2, each with its own
+ * callback that stays armed for the life of the device, so there is no single
+ * line for the common layer to mask.
+ */
+void lbm_driver_dio1_irq_enable(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+}
+
+void lbm_driver_dio1_irq_disable(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+}
+
 void lbm_driver_antenna_configure(const struct device *dev, enum lbm_modem_mode mode)
 {
 	const struct lbm_sx127x_config *config = dev->config;

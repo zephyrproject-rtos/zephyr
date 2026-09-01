@@ -22,17 +22,13 @@
 #include "sx126x_hal.h"
 #include "sx126x.h"
 
-#include "lbm_common.h"
+#include "lbm_sx126x_common.h"
 
 #define SX1261_TX_PWR_MAX 15
 #define SX1261_TX_PWR_MIN -17
 #define SX1262_TX_PWR_MAX 22
 #define SX1262_TX_PWR_MIN -9
 
-enum sx126x_variant {
-	VARIANT_SX1261,
-	VARIANT_SX1262,
-};
 
 /* Copied from LBM sx126x.c */
 enum sx126x_commands {
@@ -85,44 +81,14 @@ enum sx126x_commands {
 	SX126X_CLR_DEVICE_ERRORS = 0x07,
 };
 
-struct lbm_sx126x_config {
-	struct lbm_lora_config_common lbm_common;
-	struct spi_dt_spec spi;
-	struct gpio_dt_spec reset;
-	struct gpio_dt_spec busy;
-	struct gpio_dt_spec ant_enable;
-	struct gpio_dt_spec tx_enable;
-	struct gpio_dt_spec rx_enable;
-	int dio3_tcxo_startup_delay_ms;
-	uint8_t dio3_tcxo_voltage;
-	bool dio2_rf_switch;
-	bool rx_boosted;
-	bool regulator_ldo;
-	enum sx126x_variant variant;
-};
-
-struct lbm_sx126x_data {
-	struct lbm_lora_data_common lbm_common;
-	const struct device *dev;
-	struct gpio_callback dio1_callback;
-	bool asleep;
-};
-
 LOG_MODULE_DECLARE(lbm_driver, CONFIG_LORA_LOG_LEVEL);
-
-static bool sx126x_is_busy(const struct device *dev)
-{
-	const struct lbm_sx126x_config *config = dev->config;
-
-	return gpio_pin_get_dt(&config->busy);
-}
 
 static int sx126x_wait_device_ready(const struct device *dev, k_timeout_t timeout)
 {
 	k_timepoint_t expiry = sys_timepoint_calc(timeout);
 
 	do {
-		if (!sx126x_is_busy(dev)) {
+		if (!lbm_sx126x_is_busy(dev)) {
 			return 0;
 		}
 		k_sleep(K_MSEC(1));
@@ -147,7 +113,7 @@ static int sx126x_ensure_device_ready(const struct device *dev, k_timeout_t time
 	if (data->asleep) {
 		LOG_DBG("SLEEP -> ACTIVE");
 		/* Re-enable the DIO1 interrupt */
-		gpio_pin_interrupt_configure_dt(&config->lbm_common.dio1, GPIO_INT_EDGE_TO_ACTIVE);
+		lbm_driver_dio1_irq_enable(dev);
 		/* DO NOT USE sx126x_get_status as this will result in recursion */
 		ret = spi_write_dt(&config->spi, &tx_buf_set);
 		if (ret) {
@@ -194,7 +160,7 @@ sx126x_hal_status_t sx126x_hal_write(const void *context, const uint8_t *command
 	if (command[0] == SX126X_SET_SLEEP) {
 		LOG_DBG("ACTIVE -> SLEEP");
 		/* Disable the DIO1 interrupt to save power */
-		(void)gpio_pin_interrupt_configure_dt(&config->lbm_common.dio1, GPIO_INT_DISABLE);
+		lbm_driver_dio1_irq_disable(dev);
 		dev_data->asleep = true;
 		/* Wait for sleep to take effect */
 		k_sleep(K_MSEC(1));
@@ -250,14 +216,10 @@ sx126x_hal_status_t sx126x_hal_read(const void *context, const uint8_t *command,
 sx126x_hal_status_t sx126x_hal_reset(const void *context)
 {
 	const struct device *dev = context;
-	const struct lbm_sx126x_config *config = dev->config;
 
 	LOG_DBG("");
 
-	gpio_pin_set_dt(&config->reset, 1);
-	k_sleep(K_MSEC(20));
-	gpio_pin_set_dt(&config->reset, 0);
-	k_sleep(K_MSEC(10));
+	lbm_sx126x_reset(dev);
 
 	return SX126X_HAL_STATUS_OK;
 }
@@ -431,72 +393,9 @@ void lbm_driver_antenna_configure(const struct device *dev, enum lbm_modem_mode 
 	}
 }
 
-static void sx126x_dio1_callback(const struct device *dev, struct gpio_callback *cb, uint32_t pins)
-{
-	struct lbm_sx126x_data *data = CONTAINER_OF(cb, struct lbm_sx126x_data, dio1_callback);
-
-	LOG_DBG("");
-	/* Submit work to process the interrupt immediately */
-	k_work_schedule(&data->lbm_common.op_done_work, K_NO_WAIT);
-}
-
-int lbm_driver_add_dio1_gpio_callback(const struct device *dev,
-				      struct gpio_callback *callback,
-				      gpio_callback_handler_t handler)
-{
-	const struct lbm_sx126x_config *config = dev->config;
-	int ret;
-
-	if (!device_is_ready(dev)) {
-		return -ENODEV;
-	}
-
-	if (callback == NULL || handler == NULL) {
-		return -EINVAL;
-	}
-
-	gpio_init_callback(callback, handler, BIT(config->lbm_common.dio1.pin));
-
-	ret = gpio_add_callback(config->lbm_common.dio1.port, callback);
-	if (ret < 0) {
-		LOG_ERR("Failed to add GPIO callback: %d", ret);
-		return ret;
-	}
-
-	gpio_pin_interrupt_configure_dt(&config->lbm_common.dio1, GPIO_INT_EDGE_TO_ACTIVE);
-
-	LOG_DBG("Added user GPIO callback");
-	return 0;
-}
-
-int lbm_driver_remove_dio1_gpio_callback(const struct device *dev,
-					 struct gpio_callback *callback)
-{
-	const struct lbm_sx126x_config *config = dev->config;
-	int ret;
-
-	if (!device_is_ready(dev)) {
-		return -ENODEV;
-	}
-
-	if (callback == NULL) {
-		return -EINVAL;
-	}
-
-	ret = gpio_remove_callback(config->lbm_common.dio1.port, callback);
-	if (ret < 0) {
-		LOG_ERR("Failed to remove GPIO callback: %d", ret);
-		return ret;
-	}
-
-	LOG_DBG("Removed user GPIO callback");
-	return 0;
-}
-
 int lbm_driver_radio_init(const struct device *dev)
 {
 	const struct lbm_sx126x_config *config = dev->config;
-	struct lbm_sx126x_data *data = dev->data;
 	ral_status_t status;
 	int ret;
 
@@ -521,13 +420,10 @@ int lbm_driver_radio_init(const struct device *dev)
 	}
 
 	/* Configure and enable interrupts */
-	gpio_init_callback(&data->dio1_callback, sx126x_dio1_callback,
-			   BIT(config->lbm_common.dio1.pin));
-	if (gpio_add_callback(config->lbm_common.dio1.port, &data->dio1_callback) < 0) {
-		LOG_ERR("Could not set GPIO callback for DIO1 interrupt.");
-		return -EIO;
+	ret = lbm_sx126x_variant_init(dev);
+	if (ret < 0) {
+		return ret;
 	}
-	gpio_pin_interrupt_configure_dt(&config->lbm_common.dio1, GPIO_INT_EDGE_TO_ACTIVE);
 
 	LOG_INF("Radio initialized");
 	return 0;
@@ -537,6 +433,7 @@ static int sx126x_init(const struct device *dev)
 {
 	const struct lbm_sx126x_config *config = dev->config;
 	struct lbm_sx126x_data *data = dev->data;
+	int ret;
 
 	/* Validate hardware is ready */
 	if (!spi_is_ready_dt(&config->spi)) {
@@ -544,13 +441,15 @@ static int sx126x_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	/* Setup GPIOs */
-	if (gpio_pin_configure_dt(&config->reset, GPIO_OUTPUT_INACTIVE) ||
-	    gpio_pin_configure_dt(&config->busy, GPIO_INPUT) ||
-	    gpio_pin_configure_dt(&config->lbm_common.dio1, GPIO_INPUT)) {
-		LOG_ERR("GPIO configuration failed.");
-		return -EIO;
+	/* Which of reset, busy and DIO1 are pins at all depends on the part, so
+	 * the board glue claims those. The RF switch is wired the same way
+	 * whether or not the radio is on-die, so it is handled here.
+	 */
+	ret = lbm_sx126x_pins_init(dev);
+	if (ret < 0) {
+		return ret;
 	}
+
 	if (config->ant_enable.port) {
 		gpio_pin_configure_dt(&config->ant_enable, GPIO_OUTPUT_INACTIVE);
 	}

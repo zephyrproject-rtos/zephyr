@@ -65,7 +65,7 @@ static bool modem_release(const struct device *dev)
 	 * while the chip is transitioning to sleep. Any work item already queued
 	 * will find MODE_SLEEP and return early without touching the hardware.
 	 */
-	lbm_optional_dio1_irq_configure_dt(&config->dio1, GPIO_INT_DISABLE);
+	lbm_driver_dio1_irq_disable(dev);
 
 	/* Configure modem for sleep */
 	lbm_driver_antenna_configure(dev, MODE_SLEEP);
@@ -252,7 +252,7 @@ int lbm_lora_send_async(const struct device *dev, uint8_t *msg, uint32_t msg_len
 	 * the TX-done interrupt is delivered.
 	 */
 	(void)ral_clear_irq_status(&config->ralf.ral, RAL_IRQ_ALL);
-	lbm_optional_dio1_irq_configure_dt(&config->dio1, GPIO_INT_EDGE_TO_ACTIVE);
+	lbm_driver_dio1_irq_enable(dev);
 
 	/* Start the transmission */
 	status = ral_set_tx(&config->ralf.ral);
@@ -333,7 +333,7 @@ int lbm_lora_recv(const struct device *dev, uint8_t *msg, uint8_t msg_len, k_tim
 	 * DIO1 so the RX-done interrupt is delivered.
 	 */
 	(void)ral_clear_irq_status(&config->ralf.ral, RAL_IRQ_ALL);
-	lbm_optional_dio1_irq_configure_dt(&config->dio1, GPIO_INT_EDGE_TO_ACTIVE);
+	lbm_driver_dio1_irq_enable(dev);
 
 	/* Start the reception in continuous mode.
 	 * Receive timeouts are handled by the k_poll timeout.
@@ -411,7 +411,7 @@ int lbm_lora_recv_async(const struct device *dev, lora_recv_cb cb, void *user_da
 	 * DIO1 so packet-received interrupts are delivered.
 	 */
 	(void)ral_clear_irq_status(&config->ralf.ral, RAL_IRQ_ALL);
-	lbm_optional_dio1_irq_configure_dt(&config->dio1, GPIO_INT_EDGE_TO_ACTIVE);
+	lbm_driver_dio1_irq_enable(dev);
 
 	/* Start the reception in continuous mode */
 	status = ral_set_rx(&config->ralf.ral, RAL_RX_TIMEOUT_CONTINUOUS_MODE);
