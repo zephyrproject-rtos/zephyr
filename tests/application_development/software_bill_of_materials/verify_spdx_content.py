@@ -25,6 +25,7 @@ from spdx_tools.spdx.model.relationship import RelationshipType
 ZEPHYR_ORGANIZATION = "The Zephyr Project"
 SPDX_TOOL_PREFIX = "Zephyr SPDX builder"
 PURL_ZEPHYR_PREFIX = "pkg:github/zephyrproject-rtos/zephyr@"
+CPE_ZEPHYR_PREFIX = "cpe:2.3:o:zephyrproject:zephyr:"
 UTILITY_TARGETS = {
     "run",
     "flash",
@@ -113,6 +114,22 @@ def get_purl_refs(package):
         if ref.category == ExternalPackageRefCategory.PACKAGE_MANAGER
         and ref.reference_type == "purl"
     ]
+
+
+def get_cpe_refs(package):
+    """Collect CPE 2.3 external references from a package."""
+    return [
+        ref.locator
+        for ref in package.external_references
+        if ref.category == ExternalPackageRefCategory.SECURITY and ref.reference_type == "cpe23Type"
+    ]
+
+
+def expected_zephyr_cpe(zephyr_version):
+    """Build the CPE expected for a Zephyr version, with any pre-release qualifier
+    moved to the CPE 'update' field."""
+    release, _, update = zephyr_version.partition("-")
+    return f"{CPE_ZEPHYR_PREFIX}{release}:{update or '-'}:*:*:*:*:*:*"
 
 
 def get_supplier_name(package):
@@ -517,6 +534,47 @@ class TestPackageProvenance:
         assert any(p.startswith(PURL_ZEPHYR_PREFIX) for p in purls), (
             f"modules-deps.spdx: zephyr-deps missing purl prefix '{PURL_ZEPHYR_PREFIX}', "
             f"got {purls}"
+        )
+
+    def test_zephyr_sources_version(self, zephyr_doc, zephyr_version):
+        """Test zephyr-sources reports the version from the Zephyr VERSION file."""
+        pkg = find_package_by_name(zephyr_doc, "zephyr-sources")
+        assert pkg is not None, "zephyr.spdx: zephyr-sources package not found"
+        assert pkg.version == zephyr_version, (
+            f"zephyr.spdx: zephyr-sources version is '{pkg.version}', expected '{zephyr_version}'"
+        )
+
+    def test_zephyr_sources_cpe(self, zephyr_doc, zephyr_version):
+        """Test zephyr-sources carries the CPE for the built Zephyr version."""
+        pkg = find_package_by_name(zephyr_doc, "zephyr-sources")
+        assert pkg is not None, "zephyr.spdx: zephyr-sources package not found"
+        cpes = get_cpe_refs(pkg)
+        assert expected_zephyr_cpe(zephyr_version) in cpes, (
+            f"zephyr.spdx: zephyr-sources missing CPE "
+            f"'{expected_zephyr_cpe(zephyr_version)}', got {cpes}"
+        )
+
+    def test_zephyr_deps_version(self, modules_doc, zephyr_version):
+        """Test zephyr-deps reports the same version as zephyr-sources."""
+        if len(modules_doc.packages) == 0:
+            pytest.skip("No packages in modules-deps.spdx")
+        pkg = find_package_by_name(modules_doc, "zephyr-deps")
+        assert pkg is not None, "modules-deps.spdx: zephyr-deps package not found"
+        assert pkg.version == zephyr_version, (
+            f"modules-deps.spdx: zephyr-deps version is '{pkg.version}', "
+            f"expected '{zephyr_version}'"
+        )
+
+    def test_zephyr_deps_cpe(self, modules_doc, zephyr_version):
+        """Test zephyr-deps carries the CPE for the built Zephyr version."""
+        if len(modules_doc.packages) == 0:
+            pytest.skip("No packages in modules-deps.spdx")
+        pkg = find_package_by_name(modules_doc, "zephyr-deps")
+        assert pkg is not None, "modules-deps.spdx: zephyr-deps package not found"
+        cpes = get_cpe_refs(pkg)
+        assert expected_zephyr_cpe(zephyr_version) in cpes, (
+            f"modules-deps.spdx: zephyr-deps missing CPE "
+            f"'{expected_zephyr_cpe(zephyr_version)}', got {cpes}"
         )
 
     def test_module_deps_supplier_and_purl(self, modules_doc):

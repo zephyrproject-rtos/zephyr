@@ -26,6 +26,7 @@ from zspdx.model import (
     SBOMFile,
     SBOMGraph,
 )
+from zspdx.serializers.helpers import resolvable_revision
 
 _logger = logging.getLogger(__name__)
 
@@ -38,6 +39,15 @@ SPDX_TOOL_NAME = "Zephyr SPDX builder"
 
 # GitHub namespace under which Zephyr mirrors its modules.
 ZEPHYR_GITHUB_NAMESPACE = "zephyrproject-rtos"
+
+# Fallback identity of the Zephyr sources when their git remote is unknown.
+ZEPHYR_UPSTREAM_PURL = f"pkg:github/{ZEPHYR_GITHUB_NAMESPACE}/zephyr"
+
+# CPE 2.3 part, vendor and product Zephyr advisories are registered under in NVD.
+ZEPHYR_CPE_PREFIX = "cpe:2.3:o:zephyrproject:zephyr"
+
+# Matches a Zephyr release tag, e.g. "v4.3.0" or "v4.4.0-rc3".
+ZEPHYR_RELEASE_TAG_REGEX = r'v(?P<version>\d+\.\d+\.\d+(?:-[a-z0-9.\-]+)?)'
 
 # Free-form notes emitted as package comments to clarify each package's role. The
 # "-sources" and "-deps" packages are systematically emitted for every module, so
@@ -200,7 +210,9 @@ class Walker:
         host_type, namespace, package = parsed
         purl = f'pkg:{host_type}/{namespace}/{package}'
         if version:
-            purl += f'@{version}'
+            # A purl version is meant to be resolved, so it carries the commit
+            # rather than west's "this is not the manifest revision" suffix.
+            purl += f'@{resolvable_revision(version)}'
 
         return purl
 
@@ -273,6 +285,70 @@ class Walker:
         if extra:
             version += f"-{extra}"
         return version
+
+    @staticmethod
+    def _zephyr_cpe(version):
+        """Build the CPE 2.3 name for a Zephyr version.
+
+        CPE keeps a pre-release qualifier in its own ``update`` field, so
+        "4.4.0-rc3" becomes ``...:zephyr:4.4.0:rc3:*`` and "4.3.0" keeps the
+        "no update" marker, ``...:zephyr:4.3.0:-:*``. Returns "" when no version
+        is known.
+        """
+        if not version:
+            return ""
+        release, _, update = version.partition("-")
+        return f"{ZEPHYR_CPE_PREFIX}:{release}:{update or '-'}:*:*:*:*:*:*"
+
+    def _zephyr_version(self, zephyr):
+        """Determine the version of the Zephyr tree described by ``zephyr`` meta.
+
+        A release tag pointing at the checked-out revision is authoritative; any
+        other build is versioned by the repository's own VERSION file. Returns ""
+        when neither is available.
+        """
+        for tag in zephyr.get("tags") or []:
+            match = re.fullmatch(ZEPHYR_RELEASE_TAG_REGEX, tag)
+            if match:
+                return match.group("version")
+
+        return self._read_zephyr_version(zephyr.get("path", ""))
+
+    def _apply_zephyr_identity(self, component, zephyr):
+        """Attach the version, package URLs and CPE identifying Zephyr itself.
+
+        The purl follows the tree's own git remote, pinned to a release tag when
+        the checked-out revision carries one, and falls back to the upstream
+        repository when no remote is known. The CPE identifies the product and
+        version instead, and so is recorded whichever remote the sources came from.
+        """
+        url = zephyr.get("remote") or zephyr.get("url", "")
+        if url:
+            component.url = url
+        if zephyr.get("revision"):
+            component.revision = zephyr.get("revision")
+
+        component.version = self._zephyr_version(zephyr)
+
+        tags = [
+            tag for tag in zephyr.get("tags") or [] if re.fullmatch(ZEPHYR_RELEASE_TAG_REGEX, tag)
+        ]
+        purls = [self._build_purl(url, tag) for tag in tags]
+        if not purls:
+            purls = [self._build_purl(url, component.revision)]
+        if not any(purls):
+            pin = (
+                next(iter(tags), "") or resolvable_revision(component.revision) or component.version
+            )
+            purls = [f"{ZEPHYR_UPSTREAM_PURL}@{pin}" if pin else ZEPHYR_UPSTREAM_PURL]
+
+        for purl in purls:
+            if purl:
+                component.add_external_reference(purl)
+
+        cpe = self._zephyr_cpe(component.version)
+        if cpe:
+            component.add_external_reference(cpe)
 
     def _set_creation_metadata(self, zephyr):
         """Record SBOM creator provenance (author organization and tool version).
@@ -552,38 +628,7 @@ class Walker:
         component.supplier = ZEPHYR_ORGANIZATION
         component.comment = SOURCES_COMMENT
 
-        zephyr_url = zephyr.get("remote") or zephyr.get("url", "")
-        if zephyr_url:
-            component.url = zephyr_url
-
-        if zephyr.get("revision"):
-            component.revision = zephyr.get("revision")
-
-        purl = None
-        zephyr_tags = zephyr.get("tags", "")
-        if zephyr_tags:
-            # Find tag vX.Y.Z
-            for tag in zephyr_tags:
-                version = re.fullmatch(r'^v(?P<version>\d+\.\d+\.\d+)$', tag)
-                purl = self._build_purl(zephyr_url, tag)
-
-                if purl:
-                    component.add_external_reference(purl)
-
-                # Extract version from tag once
-                if component.version == "" and version:
-                    component.version = version.group('version')
-
-        # Fall back to a revision-pinned package URL when no release tag is known,
-        # so the component still carries a purl for vulnerability matching.
-        if purl is None and zephyr_url:
-            purl = self._build_purl(zephyr_url, component.revision)
-            if purl:
-                component.add_external_reference(purl)
-
-        if len(component.version) > 0:
-            cpe = f'cpe:2.3:o:zephyrproject:zephyr:{component.version}:-:*:*:*:*:*:*'
-            component.add_external_reference(cpe)
+        self._apply_zephyr_identity(component, zephyr)
 
         self.sbom_graph.add_component(component, "zephyr")
         self.doc_zephyr.add_described_component(component)
@@ -645,35 +690,7 @@ class Walker:
         # no PrimaryPackagePurpose: this is a reference-only dependency package with no files
         component = SBOMComponent(name="zephyr-deps", comment=ZEPHYR_DEPS_COMMENT)
         component.supplier = ZEPHYR_ORGANIZATION
-        component.url = zephyr.get("remote") or zephyr.get("url", "")
-        component.revision = zephyr.get("revision", "")
-
-        purl = None
-        zephyr_tags = zephyr.get("tags", None)
-        if zephyr_tags:
-            # Find tag vX.Y.Z
-            for tag in zephyr_tags:
-                version = re.fullmatch(r'^v(?P<version>\d+\.\d+\.\d+)$', tag)
-                purl = self._build_purl(component.url, tag)
-
-                if purl:
-                    component.add_external_reference(purl)
-
-                # Extract version from tag once
-                if component.version == "" and version:
-                    component.version = version.group('version')
-        else:
-            if zephyr.get("revision"):
-                purl = self._build_purl(component.url, zephyr.get("revision"))
-            if purl:
-                component.add_external_reference(purl)
-
-        if len(component.version) > 0:
-            cpe = f'cpe:2.3:o:zephyrproject:zephyr:{component.version}:-:*:*:*:*:*:*'
-            component.add_external_reference(cpe)
-
-        if component.version == "" and zephyr.get("revision"):
-            component.version = zephyr.get("revision")
+        self._apply_zephyr_identity(component, zephyr)
 
         self.sbom_graph.add_component(component, "modules-deps")
         self.doc_modules_deps.add_described_component(component)
