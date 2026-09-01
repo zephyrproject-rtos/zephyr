@@ -19,6 +19,8 @@
 #include <zephyr/net/ethernet.h>
 #include <zephyr/sys/device_mmio.h>
 
+struct phy_link_state;
+
 /*
  * Common checks
  */
@@ -80,10 +82,16 @@
  * are assumed to be the same for all instances.
  */
 
-BUILD_ASSERT(DT_HAS_COMPAT_STATUS_OKAY(snps_dwmac),
-	     "No device tree node with compatible \"snps,dwmac\" found");
+BUILD_ASSERT(DT_HAS_COMPAT_STATUS_OKAY(snps_dwmac) ||
+	     DT_HAS_COMPAT_STATUS_OKAY(snps_designware_ethernet),
+	     "No device tree node with compatible \"snps,dwmac\" or "
+	     "\"snps,designware-ethernet\" found");
 
+#if DT_HAS_COMPAT_STATUS_OKAY(snps_designware_ethernet)
+#define DWMAC_DT_NODE DT_INST(0, snps_designware_ethernet)
+#else
 #define DWMAC_DT_NODE DT_INST(0, snps_dwmac)
+#endif
 
 /* multicast filter capabilities of the hardware */
 #define DWMAC_MULTICAST_FILTER_BINS	DT_PROP_OR(DWMAC_DT_NODE, snps_multicast_filter_bins, 0)
@@ -228,6 +236,8 @@ struct dwmac_priv {
 int dwmac_probe(const struct device *dev);
 int dwmac_bus_init(const struct device *dev);
 int dwmac_platform_init(const struct device *dev);
+void dwmac_platform_phy_link_up(const struct device *dev,
+				const struct phy_link_state *state);
 void dwmac_setup_multicast_filter(const struct device *dev, const struct ethernet_filter *filter);
 void dwmac_isr(const struct device *ddev);
 #if defined(CONFIG_PTP_CLOCK_DWC_MAC)
@@ -1387,19 +1397,19 @@ extern const struct ethernet_api dwmac_api;
  * The following offsets are used to adjust the register addresses accordingly. We assume here that
  * the order is the same for all instances of the DWMAC driver, so we only check the first instance.
  */
-#if DT_REG_HAS_NAME(DT_INST(0, snps_dwmac), base)
-#if DT_REG_HAS_NAME(DT_INST(0, snps_dwmac), mac)
+#if DT_REG_HAS_NAME(DWMAC_DT_NODE, base)
+#if DT_REG_HAS_NAME(DWMAC_DT_NODE, mac)
 #define DWMAC_MAC_OFFSET                                                                           \
-	(DT_REG_ADDR_BY_NAME(DT_INST(0, snps_dwmac), mac) -                                        \
-	 DT_REG_ADDR_BY_NAME(DT_INST(0, snps_dwmac), base))
+	(DT_REG_ADDR_BY_NAME(DWMAC_DT_NODE, mac) -                                                \
+	 DT_REG_ADDR_BY_NAME(DWMAC_DT_NODE, base))
 #endif
 
-#if DT_REG_HAS_NAME(DT_INST(0, snps_dwmac), dma)
+#if DT_REG_HAS_NAME(DWMAC_DT_NODE, dma)
 #define DWMAC_DMA_OFFSET                                                                           \
-	(DT_REG_ADDR_BY_NAME(DT_INST(0, snps_dwmac), dma) -                                        \
-	 DT_REG_ADDR_BY_NAME(DT_INST(0, snps_dwmac), base))
+	(DT_REG_ADDR_BY_NAME(DWMAC_DT_NODE, dma) -                                                \
+	 DT_REG_ADDR_BY_NAME(DWMAC_DT_NODE, base))
 #endif
-#endif /* DT_REG_HAS_NAME(DT_INST(0, snps_dwmac), base) */
+#endif /* DT_REG_HAS_NAME(DWMAC_DT_NODE, base) */
 
 #ifndef DWMAC_MAC_OFFSET
 #define DWMAC_MAC_OFFSET		0x0000

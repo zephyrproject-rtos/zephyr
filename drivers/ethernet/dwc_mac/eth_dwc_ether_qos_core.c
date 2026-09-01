@@ -639,9 +639,17 @@ static void phy_link_state_changed(const struct device *phy_dev,
 		}
 
 		DWMAC_REG_WRITE(MAC_CONF, reg_val);
+		dwmac_platform_phy_link_up(dev, state);
 	}
 
 	net_eth_carrier_set(p->iface, state->is_up);
+}
+
+__weak void dwmac_platform_phy_link_up(const struct device *dev,
+				       const struct phy_link_state *state)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(state);
 }
 
 static const struct device *dwmac_get_phy(const struct device *dev, struct net_if *iface __unused)
@@ -682,6 +690,15 @@ static void dwmac_iface_init(struct net_if *iface)
 		/* multicast is perfect filtered against the MAC address entries */
 		DWMAC_REG_WRITE(MAC_PKT_FILTER, 0);
 	}
+
+	/*
+	 * After DMA soft reset the DBF bit may block broadcast frames (ARP).
+	 * Mirror Linux stmmac and always allow broadcast/multicast passthrough.
+	 */
+	reg_val = DWMAC_REG_READ(MAC_PKT_FILTER);
+	reg_val &= ~MAC_PKT_FILTER_DBF;
+	reg_val |= MAC_PKT_FILTER_PM;
+	DWMAC_REG_WRITE(MAC_PKT_FILTER, reg_val);
 
 	if (cfg->phy_dev != NULL) {
 		/* Do not start the interface until PHY link is up */
@@ -779,19 +796,42 @@ int dwmac_probe(const struct device *dev)
 	}
 
 	/* setup queues */
-	/* currently only a single queue is supported, assign full FIFO to it */
-	rx_fifo_size = BIT(7 + FIELD_GET(MAC_HW_FEATURE1_RXFIFOSIZE, p->feature1));
-	tx_fifo_size = BIT(7 + FIELD_GET(MAC_HW_FEATURE1_TXFIFOSIZE, p->feature1));
+	rx_fifo_size = 128U << FIELD_GET(MAC_HW_FEATURE1_RXFIFOSIZE, p->feature1);
+	tx_fifo_size = 128U << FIELD_GET(MAC_HW_FEATURE1_TXFIFOSIZE, p->feature1);
 	LOG_DBG("RX/TX fifo size: %u/%u bytes", rx_fifo_size, tx_fifo_size);
 
-	DWMAC_REG_WRITE(MTL_RXQn_OPERATION_MODE(0),
-			MTL_RXQn_OPERATION_MODE_RSF |
-			FIELD_PREP(MTL_RXQn_OPERATION_MODE_RQS, (rx_fifo_size/256) - 1));
-	DWMAC_REG_WRITE(MAC_RXQ_CTRL0, FIELD_PREP(MAC_RXQ_CTRL0_RXQ0EN, 2));
-	DWMAC_REG_WRITE(MTL_TXQn_OPERATION_MODE(0),
-			MTL_TXQn_OPERATION_MODE_TSF |
-			FIELD_PREP(MTL_TXQn_OPERATION_MODE_TQS, (tx_fifo_size/256) - 1) |
-			FIELD_PREP(MTL_TXQn_OPERATION_MODE_TXQEN, 1));
+	{
+		unsigned int tqs = (tx_fifo_size / 256U) - 1U;
+		unsigned int rqs = (rx_fifo_size / 256U) - 1U;
+		uint32_t mtl_tx;
+		uint32_t mtl_rx;
+		uint32_t reg;
+
+		mtl_tx = DWMAC_REG_READ(MTL_TXQn_OPERATION_MODE(0));
+		mtl_tx |= MTL_TXQn_OPERATION_MODE_TSF |
+			  FIELD_PREP(MTL_TXQn_OPERATION_MODE_TXQEN, 1);
+		mtl_tx &= ~MTL_TXQn_OPERATION_MODE_TQS;
+		mtl_tx |= FIELD_PREP(MTL_TXQn_OPERATION_MODE_TQS, tqs);
+		DWMAC_REG_WRITE(MTL_TXQn_OPERATION_MODE(0), mtl_tx);
+
+		mtl_rx = DWMAC_REG_READ(MTL_RXQn_OPERATION_MODE(0));
+		mtl_rx |= MTL_RXQn_OPERATION_MODE_RSF;
+		mtl_rx &= ~MTL_RXQn_OPERATION_MODE_RQS;
+		mtl_rx |= FIELD_PREP(MTL_RXQn_OPERATION_MODE_RQS, rqs);
+		DWMAC_REG_WRITE(MTL_RXQn_OPERATION_MODE(0), mtl_rx);
+
+		DWMAC_REG_WRITE(MTL_RXQ_DMA_MAP0, 0);
+
+		reg = DWMAC_REG_READ(MAC_RXQ_CTRL0);
+		reg &= ~GENMASK(1, 0);
+		reg |= FIELD_PREP(MAC_RXQ_CTRL0_RXQ0EN, 2);
+		DWMAC_REG_WRITE(MAC_RXQ_CTRL0, reg);
+
+		reg = DWMAC_REG_READ(MAC_RXQ_CTRL1);
+		reg &= ~GENMASK(18, 12);
+		reg |= BIT(20);
+		DWMAC_REG_WRITE(MAC_RXQ_CTRL1, reg);
+	}
 
 	/* set up DMA */
 	memset(p->tx_descs, 0, NB_TX_DESCS * sizeof(struct dwmac_dma_desc));
