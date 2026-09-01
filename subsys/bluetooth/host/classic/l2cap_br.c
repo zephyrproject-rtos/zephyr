@@ -5190,15 +5190,46 @@ static void l2cap_br_reject_rsp(struct bt_l2cap_br *l2cap, uint8_t ident, struct
 	} while (chan != NULL);
 }
 
+static void l2cap_br_send_echo_rsp(struct bt_conn *conn, uint8_t ident)
+{
+	struct bt_l2cap_sig_hdr *hdr;
+	struct net_buf *buf;
+
+	buf = l2cap_br_create_pdu(&br_sig_pool, L2CAP_BR_INFO_TIMEOUT);
+	if (buf == NULL) {
+		LOG_WRN("Fail to send echo response");
+		return;
+	}
+
+	hdr = net_buf_add(buf, sizeof(*hdr));
+	hdr->code = BT_L2CAP_ECHO_RSP;
+	hdr->ident = ident;
+	hdr->len = sys_cpu_to_le16(0);
+
+	l2cap_send(conn, BT_L2CAP_CID_BR_SIG, buf);
+}
+
 static void l2cap_br_echo_req(struct bt_l2cap_br *l2cap, uint8_t ident, struct net_buf *buf)
 {
 	struct bt_conn *conn = l2cap->chan.chan.conn;
 	struct bt_l2cap_br_echo_cb *callback;
+	bool handled = false;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&bt_l2cap_br_echo_cbs, callback, _node) {
 		if (callback->req) {
 			callback->req(conn, ident, buf);
+			handled = true;
 		}
+	}
+
+	if (!handled) {
+		/* A response is mandatory, see Core Spec v6.3 Vol 3, Part A,
+		 * 4.8. The echo data is optional, so answer without it when no
+		 * application takes the request. Note that a registered
+		 * callback may leave req NULL, which is why this is not a check
+		 * on the callback list being empty.
+		 */
+		l2cap_br_send_echo_rsp(conn, ident);
 	}
 }
 
