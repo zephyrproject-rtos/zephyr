@@ -47,9 +47,13 @@ from twisterlib.statuses import TwisterStatus
 if version.parse(elftools.__version__) < version.parse('0.24'):
     sys.exit("pyelftools is out of date, need version 0.24 or later")
 
-# Job server only works on Linux for now.
+# Only GNU Make's job server is Linux-only. JobClient is the neutral client --
+# unlimited jobs, plain subprocess.Popen -- and is what every other platform
+# gets, so it is imported everywhere.
+from twisterlib.jobserver import JobClient
+
 if sys.platform == 'linux':
-    from twisterlib.jobserver import GNUMakeJobClient, GNUMakeJobServer, JobClient
+    from twisterlib.jobserver import GNUMakeJobClient, GNUMakeJobServer
 
 from domains import Domains
 from twisterlib.coverage import run_coverage_instance
@@ -307,10 +311,7 @@ class CMake:
             kwargs['cwd'] = self.cwd
 
         start_time = time.time()
-        if sys.platform == 'linux':
-            p = self.jobserver.popen(cmd, **kwargs)
-        else:
-            p = subprocess.Popen(cmd, **kwargs)
+        p = self.jobserver.popen(cmd, **kwargs)
         logger.debug(f'Running {" ".join(cmd)}')
 
         out, _ = p.communicate()
@@ -491,10 +492,7 @@ class CMake:
             kwargs['cwd'] = self.cwd
 
         start_time = time.time()
-        if sys.platform == 'linux':
-            p = self.jobserver.popen(cmd, **kwargs)
-        else:
-            p = subprocess.Popen(cmd, **kwargs)
+        p = self.jobserver.popen(cmd, **kwargs)
         out, _ = p.communicate()
 
         duration = time.time() - start_time
@@ -1998,18 +1996,19 @@ class TwisterRunner:
         else:
             self.jobs = mp.cpu_count()
 
+        # sys.platform == 'linux' already implies os.name == 'posix', so the
+        # platform is the whole decision: GNU Make's job server there, the
+        # neutral client everywhere else.
         if sys.platform == "linux":
-            if os.name == 'posix':
-                self.jobserver = GNUMakeJobClient.from_environ(jobs=self.options.jobs)
-                if not self.jobserver:
-                    self.jobserver = GNUMakeJobServer(self.jobs)
-                elif self.jobserver.jobs:
-                    self.jobs = self.jobserver.jobs
-            # TODO: Implement this on windows/mac also
-            else:
-                self.jobserver = JobClient()
+            self.jobserver = GNUMakeJobClient.from_environ(jobs=self.options.jobs)
+            if not self.jobserver:
+                self.jobserver = GNUMakeJobServer(self.jobs)
+            elif self.jobserver.jobs:
+                self.jobs = self.jobserver.jobs
+        else:
+            self.jobserver = JobClient()
 
-            logger.info(f"JOBS: {self.jobs}")
+        logger.info(f"JOBS: {self.jobs}")
 
         self.update_counting_before_pipeline()
 
@@ -2192,10 +2191,7 @@ class TwisterRunner:
     def pipeline_mgr(self, processing_queue: deque, processing_ready: dict[str, TestInstance],
                      lock, results: ExecutionCounter):
         try:
-            if sys.platform == 'linux':
-                with self.jobserver.get_job():
-                    return self.process_tasks(processing_queue, processing_ready, lock, results)
-            else:
+            with self.jobserver.get_job():
                 return self.process_tasks(processing_queue, processing_ready, lock, results)
         except Exception as e:
             logger.error(f"General exception: {e}\n{traceback.format_exc()}")
