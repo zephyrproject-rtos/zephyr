@@ -118,4 +118,40 @@
 		reg-shift = <2>;
 		status = "disabled";
 	};
+
+	gmac0: ethernet@fe1b0000 {
+		compatible = "snps,designware-ethernet";
+		reg = <0xfe1b0000 0x10000>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 227 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		phy-connection-type = "rgmii";
+		status = "disabled";
+	};
+
+	gmac1: ethernet@fe1c0000 {
+		compatible = "snps,designware-ethernet";
+		reg = <0xfe1c0000 0x10000>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 234 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		phy-connection-type = "rgmii";
+		status = "disabled";
+	};
+
+	mdio0: mdio@fe1b0000 {
+		compatible = "snps,designware-mdio";
+		reg = <0xfe1b0000 0x10000>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		clock-frequency = <125000000>;
+		status = "disabled";
+	};
+
+	mdio1: mdio@fe1c0000 {
+		compatible = "snps,designware-mdio";
+		reg = <0xfe1c0000 0x10000>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		clock-frequency = <125000000>;
+		status = "disabled";
+	};
 };
