@@ -130,6 +130,12 @@
 	};
 };
 
+&dma {
+	dma-channels = <12>;
+	ti,num-full-channels = <6>;
+	status = "okay";
+};
+
 &rtc {
 	ti,rtc-x;
 };
