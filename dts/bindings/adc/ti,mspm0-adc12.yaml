@@ -80,5 +80,13 @@ properties:
       single sequence. Devices are typically 16 or 32 channels depending on
       variant.
 
+  dmas:
+    description: |
+      Optional DMA specifier. The first cell is for DMA channel and the second
+      cell is for the trigger number.
+
+      Example for channel 0 with ADC0's trigger 23 on mspm0g350x:
+        dmas = <&dma 0 23>;
+
 io-channel-cells:
   - input
