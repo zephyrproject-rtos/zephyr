@@ -89,6 +89,15 @@ static uint64_t cpu_map[CONFIG_MP_MAX_NUM_CPUS] = {
 	[0 ... (CONFIG_MP_MAX_NUM_CPUS - 1)] = INV_MPID
 };
 
+uint64_t arch_cpu_mpidr_get(unsigned int cpu_num)
+{
+	if (cpu_num >= ARRAY_SIZE(cpu_map)) {
+		return INV_MPID;
+	}
+
+	return cpu_map[cpu_num];
+}
+
 /* Called from Zephyr initialization */
 void arch_cpu_start(int cpu_num, k_thread_stack_t *stack, int sz,
 		    arch_cpustart_t fn, void *arg)
