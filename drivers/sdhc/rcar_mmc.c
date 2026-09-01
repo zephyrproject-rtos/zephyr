@@ -30,6 +30,24 @@ LOG_MODULE_REGISTER(rcar_mmc, CONFIG_LOG_DEFAULT_LEVEL);
 #define MMC_POLL_FLAGS_ONE_CYCLE_TIMEOUT_US 1
 #define MMC_BUS_CLOCK_FREQ 800000000
 
+/*
+ * CONFIG_SD_CMD_TIMEOUT and CONFIG_SD_DATA_TIMEOUT are provided by the SD
+ * subsystem (CONFIG_SD_STACK). The tuning procedure issues commands on its own,
+ * so it must also build when this driver is used without the SD subsystem.
+ * Fall back to the same defaults the subsystem defines in that case.
+ */
+#ifdef CONFIG_SD_CMD_TIMEOUT
+#define RCAR_MMC_CMD_TIMEOUT CONFIG_SD_CMD_TIMEOUT
+#else
+#define RCAR_MMC_CMD_TIMEOUT 200
+#endif
+
+#ifdef CONFIG_SD_DATA_TIMEOUT
+#define RCAR_MMC_DATA_TIMEOUT CONFIG_SD_DATA_TIMEOUT
+#else
+#define RCAR_MMC_DATA_TIMEOUT 10000
+#endif
+
 #ifdef CONFIG_RCAR_MMC_DMA_SUPPORT
 #define ALIGN_BUF_DMA __aligned(CONFIG_SDHC_BUFFER_ALIGNMENT)
 #else
@@ -1602,11 +1620,11 @@ static int rcar_mmc_execute_tuning(const struct device *dev)
 	}
 
 	cmd.response_type = SD_RSP_TYPE_R1;
-	cmd.timeout_ms = CONFIG_SD_CMD_TIMEOUT;
+	cmd.timeout_ms = RCAR_MMC_CMD_TIMEOUT;
 
 	data.blocks = 1;
 	data.data = dev_data->tuning_buf;
-	data.timeout_ms = CONFIG_SD_DATA_TIMEOUT;
+	data.timeout_ms = RCAR_MMC_DATA_TIMEOUT;
 	if (dev_data->host_io.bus_width == SDHC_BUS_WIDTH4BIT) {
 		data.block_size = sizeof(tun_block_4_bits_bus);
 		tun_block_ptr = tun_block_4_bits_bus;
@@ -1659,7 +1677,7 @@ static int rcar_mmc_execute_tuning(const struct device *dev)
 				struct sdhc_command stop_cmd = {
 					.opcode = SD_STOP_TRANSMISSION,
 					.response_type = SD_RSP_TYPE_R1b,
-					.timeout_ms = CONFIG_SD_CMD_TIMEOUT,
+					.timeout_ms = RCAR_MMC_CMD_TIMEOUT,
 				};
 
 				rcar_mmc_request(dev, &stop_cmd, NULL);
