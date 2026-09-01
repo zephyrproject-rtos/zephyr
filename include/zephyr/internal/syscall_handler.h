@@ -504,7 +504,7 @@ int k_usermode_string_copy(char *dst, const char *src, size_t maxlen);
  *
  * Used when the memory region is expressed in terms of number of elements and
  * each element size, handles any overflow issues with computing the total
- * array bounds. Otherwise see _SYSCALL_MEMORY_READ.
+ * array bounds. Otherwise see K_SYSCALL_MEMORY_READ().
  *
  * @param ptr Memory area to examine
  * @param nmemb Number of elements in the array
@@ -521,7 +521,7 @@ int k_usermode_string_copy(char *dst, const char *src, size_t maxlen);
  *
  * Used when the memory region is expressed in terms of number of elements and
  * each element size, handles any overflow issues with computing the total
- * array bounds. Otherwise see _SYSCALL_MEMORY_WRITE.
+ * array bounds. Otherwise see K_SYSCALL_MEMORY_WRITE().
  *
  * @param ptr Memory area to examine
  * @param nmemb Number of elements in the array
@@ -627,9 +627,9 @@ static inline int k_object_validation_check(struct k_object *ko,
 	K_SYSCALL_IS_OBJ(ptr, type, _OBJ_INIT_TRUE)
 
 /**
- * @brief Runtime check kernel object pointer for non-init functions
+ * @brief Runtime check kernel object pointer for init functions
  *
- * See description of _SYSCALL_IS_OBJ. No initialization checks are done.
+ * See description of K_SYSCALL_IS_OBJ(). No initialization checks are done.
  * Intended for init functions where objects may be re-initialized at will.
  *
  * @param ptr Untrusted kernel object pointer
@@ -643,9 +643,9 @@ static inline int k_object_validation_check(struct k_object *ko,
 	K_SYSCALL_IS_OBJ(ptr, type, _OBJ_INIT_ANY)
 
 /**
- * @brief Runtime check kernel object pointer for non-init functions
+ * @brief Runtime check kernel object pointer for one-shot init functions
  *
- * See description of _SYSCALL_IS_OBJ. The check fails if the object is
+ * See description of K_SYSCALL_IS_OBJ(). The check fails if the object is
  * initialized. Intended for init functions where objects, once initialized,
  * can only be re-used when their initialization state expires due to some
  * other mechanism.
