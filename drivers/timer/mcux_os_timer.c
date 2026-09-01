@@ -474,6 +474,10 @@ static int sys_clock_driver_init(void)
 	}
 #endif
 
+#ifndef CONFIG_SYSTEM_TIMER_LPM_COMPANION_NONE
+	z_sys_clock_lpm_init();
+#endif /* !CONFIG_SYSTEM_TIMER_LPM_COMPANION_NONE */
+
 #if (DT_INST_PROP(0, wakeup_source))
 	NXP_ENABLE_WAKEUP_SIGNAL(DT_INST_IRQN(0));
 #endif
