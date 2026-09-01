@@ -768,9 +768,6 @@ static int entropy_stm32_rng_get_entropy(const struct device *dev,
 					 uint8_t *buf,
 					 uint16_t len)
 {
-	/* Check if this API is called on correct driver instance. */
-	__ASSERT_NO_MSG(&entropy_stm32_rng_data == dev->data);
-
 	while (len) {
 		uint16_t bytes;
 
@@ -799,9 +796,6 @@ static int entropy_stm32_rng_get_entropy_isr(const struct device *dev,
 					     uint32_t flags)
 {
 	uint16_t cnt = len;
-
-	/* Check if this API is called on correct driver instance. */
-	__ASSERT_NO_MSG(&entropy_stm32_rng_data == dev->data);
 
 	if (likely((flags & ENTROPY_BUSYWAIT) == 0U)) {
 		return rng_pool_get(
@@ -859,17 +853,9 @@ static int entropy_stm32_rng_get_entropy_isr(const struct device *dev,
 
 static int entropy_stm32_rng_init(const struct device *dev)
 {
-	struct entropy_stm32_rng_dev_data *dev_data;
-	const struct entropy_stm32_rng_dev_cfg *dev_cfg;
+	const struct entropy_stm32_rng_dev_cfg *dev_cfg = dev->config;
+	struct entropy_stm32_rng_dev_data *dev_data = dev->data;
 	int res;
-
-	__ASSERT_NO_MSG(dev != NULL);
-
-	dev_data = dev->data;
-	dev_cfg = dev->config;
-
-	__ASSERT_NO_MSG(dev_data != NULL);
-	__ASSERT_NO_MSG(dev_cfg != NULL);
 
 	dev_data->clock = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 
