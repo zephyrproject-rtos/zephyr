@@ -9,4 +9,5 @@ tests:
       - xmc45_relax_kit
       - pic32cz_ca80_cult
       - lp_mspm0g3507
+      - lp_mspm0g3519
     filter: dt_nodelabel_enabled("tst_dma0")
