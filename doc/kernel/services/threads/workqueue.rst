@@ -190,6 +190,13 @@ use of it.
     for example, if the new work items perform blocking operations that
     would delay other system workqueue processing to an unacceptable degree.
 
+    Also note: The system workqueue has the lowest cooperative priority by
+    default. This means that draining the system workqueue takes precedence over
+    *all preemptible threads*. Configuring the system workqueue's priority to be
+    preemptible is risky, because subsystems and drivers may implicitly rely on
+    work items being executed in a cooperative context. Therefore, a separate
+    workqueue with lower priority may be appropriate for low-priority tasks.
+
 How to Use Workqueues
 *********************
 
