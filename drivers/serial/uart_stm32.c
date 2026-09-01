@@ -1465,7 +1465,9 @@ static void uart_stm32_isr(const struct device *dev)
 
 #ifdef CONFIG_UART_ASYNC_API
 		/* Prevent SoC from entering STOP mode until RX goes IDLE */
-		uart_stm32_rx_wakeup_lock_get(dev);
+		if (data->user_cb == NULL) {
+			uart_stm32_rx_wakeup_lock_get(dev);
+		}
 #endif
 
 #ifdef USART_ISR_REACK
