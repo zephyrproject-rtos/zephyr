@@ -868,6 +868,7 @@ Bluetooth Mesh:
     - "area: Bluetooth"
   tests:
     - bluetooth.mesh
+    - tests.bsim.bluetooth.mesh
 
 Bluetooth Qualification:
   status: maintained
