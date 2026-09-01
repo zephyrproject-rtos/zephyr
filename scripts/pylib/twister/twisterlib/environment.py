@@ -1156,7 +1156,15 @@ class TwisterEnv:
         builds, and is limited to files generated into the build directory, as
         Zephyr refers to the rest by absolute path. Settings already in the
         environment win.
+
+        Coverage builds are left alone: ccache hashes the working directory
+        whenever it generates a .gcno file, so there is nothing to reuse, while
+        rewriting the paths would leave gcov unable to find the generated
+        headers.
         """
+        if self.options.enable_coverage:
+            return
+
         os.environ.setdefault("CCACHE_BASEDIR", self.outdir)
         if not {"CCACHE_HASHDIR", "CCACHE_NOHASHDIR"} & os.environ.keys():
             os.environ["CCACHE_NOHASHDIR"] = "true"
