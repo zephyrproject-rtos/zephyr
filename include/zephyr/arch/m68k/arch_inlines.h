@@ -4,11 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief M68K architecture inline functions
+ */
+
 #ifndef ZEPHYR_INCLUDE_ARCH_M68K_ARCH_INLINES_H_
 #define ZEPHYR_INCLUDE_ARCH_M68K_ARCH_INLINES_H_
 
 #include <zephyr/kernel_structs.h>
 
+/** Implementation of @ref arch_num_cpus. */
 static ALWAYS_INLINE unsigned int arch_num_cpus(void)
 {
 	return CONFIG_MP_MAX_NUM_CPUS;
