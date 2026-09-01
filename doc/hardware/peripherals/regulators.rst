@@ -25,3 +25,5 @@ API Reference
 **************
 
 .. doxygengroup:: regulator_interface
+
+.. doxygengroup:: regulator_fake
