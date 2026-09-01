@@ -10,4 +10,5 @@ tests:
       - pic32cz_ca80_cult
       - lp_mspm0g3507
       - lp_mspm0g3519
+      - lp_mspm0l2228
     filter: dt_nodelabel_enabled("tst_dma0")
