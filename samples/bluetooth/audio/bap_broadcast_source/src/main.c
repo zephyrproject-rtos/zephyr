@@ -276,10 +276,10 @@ static void init_lc3_thread(void *arg1, void *arg2, void *arg3)
 	}
 
 	ret = bt_audio_codec_cfg_get_frame_dur(codec_cfg);
-	if (ret > 0) {
+	if (ret >= 0) {
 		frame_duration_us = bt_audio_codec_cfg_frame_dur_to_frame_dur_us(ret);
 	} else {
-		printk("Error: Frame duration not set, cannot start codec.");
+		printk("Error: Frame duration not set, cannot start codec: %d", ret);
 		return;
 	}
 
