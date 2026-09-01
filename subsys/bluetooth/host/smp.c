@@ -3149,6 +3149,20 @@ static int smp_send_security_req(struct bt_conn *conn)
 		}
 	}
 
+	/* A Security Request is already outstanding.
+	 *
+	 * SMP_FLAG_PAIRING is only set once the peer answers, so it does not
+	 * cover the window between sending the request and the answer. Sending
+	 * a second request in that window would put another PDU on air and
+	 * restart the local state through smp_init(), discarding the nonce
+	 * generated for the request that is already in flight. The check has to
+	 * be here rather than next to the set_bit() below, because smp_init()
+	 * clears smp->flags.
+	 */
+	if (atomic_test_bit(smp->flags, SMP_FLAG_SEC_REQ)) {
+		return -EALREADY;
+	}
+
 	if (smp_init(smp) != 0) {
 		return -ENOBUFS;
 	}
