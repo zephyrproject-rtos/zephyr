@@ -741,6 +741,7 @@ Bluetooth HCI:
   tests:
     - bluetooth
     - sample.bluetooth
+    - tests.bsim.bluetooth
 
 Bluetooth Host:
   status: maintained
