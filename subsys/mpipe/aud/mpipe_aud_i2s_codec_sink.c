@@ -264,7 +264,8 @@ static int mpipe_aud_i2s_codec_sink_set_caps(struct mpipe_sink *sink,
 	config.mem_slab = aud_i2s_codec_sink->mem_slab;
 	config.block_size =
 		(bit_width >> 3) * ((sample_rate * frame_interval / 1000000) * num_of_channel);
-	config.timeout = frame_interval * 10;
+	/* timeout is ms, frame_interval us: ~10 frame periods, 100 ms floor. */
+	config.timeout = MAX(100U, (frame_interval / 1000U) * 10U);
 
 	/*
 	 * A TX underrun latches the device in an error state that i2s_configure()
@@ -279,6 +280,13 @@ static int mpipe_aud_i2s_codec_sink_set_caps(struct mpipe_sink *sink,
 		LOG_ERR("Failed to configure I2S stream: %d", ret);
 		return ret;
 	}
+
+	/* Fresh configure: TX is not started yet, so re-prime on the next buffers.
+	 * Without this, replay keeps started=true from the previous run and never
+	 * issues TX START, so the transmitter stays down.
+	 */
+	aud_i2s_codec_sink->started = false;
+	aud_i2s_codec_sink->count = 0;
 
 	return 0;
 }
@@ -297,10 +305,21 @@ int mpipe_aud_i2s_codec_sink_chain_fn(struct mpipe_pad *pad, struct net_buf *in_
 
 	ret = i2s_write(aud_i2s_codec_sink->i2s_dev, in_buf->data, bytes_used);
 	if (ret < 0) {
-		LOG_DBG("Failed to write data: %d\n", ret);
-		net_buf_unref(in_buf);
-		*out_buf = NULL;
-		return -EIO;
+		/* DROP recovers both a latched ERROR and a stalled-but-RUNNING TX
+		 * (dead DMA after restart), unlike PREPARE; re-prime and restart.
+		 */
+		(void)i2s_trigger(aud_i2s_codec_sink->i2s_dev, I2S_DIR_TX, I2S_TRIGGER_DROP);
+		aud_i2s_codec_sink->started = false;
+		aud_i2s_codec_sink->count = 0;
+
+		ret = i2s_write(aud_i2s_codec_sink->i2s_dev, in_buf->data, bytes_used);
+		if (ret < 0) {
+			LOG_WRN("TX xrun, dropped a buffer (%d)", ret);
+			net_buf_unref(in_buf);
+			*out_buf = NULL;
+			return 0;
+		}
+		LOG_WRN("TX stalled, recovered");
 	}
 
 	if (!aud_i2s_codec_sink->started) {
@@ -332,7 +351,17 @@ mpipe_aud_i2s_codec_sink_change_state(struct mpipe_element *self,
 				      enum mpipe_state_change transition)
 {
 	struct mpipe_aud_i2s_codec_sink *aud_i2s_codec_sink =
-		(struct mpipe_aud_i2s_codec_sink *)self;
+		CONTAINER_OF(self, struct mpipe_aud_i2s_codec_sink, sink.element);
+
+	/*
+	 * On pause the source thread stops feeding but the transmitter keeps
+	 * running and would starve. Stop it cleanly and re-prime on resume.
+	 */
+	if (transition == MPIPE_STATE_CHANGE_PLAYING_TO_PAUSED && aud_i2s_codec_sink->started) {
+		(void)i2s_trigger(aud_i2s_codec_sink->i2s_dev, I2S_DIR_TX, I2S_TRIGGER_DROP);
+		aud_i2s_codec_sink->started = false;
+		aud_i2s_codec_sink->count = 0;
+	}
 
 	/*
 	 * Re-arm the priming counter on teardown. It is what decides when the
@@ -344,10 +373,7 @@ mpipe_aud_i2s_codec_sink_change_state(struct mpipe_element *self,
 		aud_i2s_codec_sink->count = 0;
 	}
 
-	/*
-	 * Chain to the base sink change_state, which resets the negotiated pad
-	 * caps on PAUSED_TO_READY so a subsequent re-negotiation starts fresh.
-	 */
+	/* Chain to the base sink state change, including its caps reset. */
 	return mpipe_sink_change_state(self, transition);
 }
 
@@ -372,7 +398,6 @@ int mpipe_aud_i2s_codec_sink_init(struct mpipe_aud_i2s_codec_sink *aud_i2s_codec
 
 	self->object.get_property = mpipe_aud_i2s_codec_sink_get_property;
 	self->object.set_property = mpipe_aud_i2s_codec_sink_set_property;
-
 	self->change_state = mpipe_aud_i2s_codec_sink_change_state;
 
 	sink->sink_pad.chain_fn = mpipe_aud_i2s_codec_sink_chain_fn;
