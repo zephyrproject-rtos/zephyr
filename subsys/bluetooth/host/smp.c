@@ -3162,15 +3162,33 @@ static int smp_send_security_req(struct bt_conn *conn)
 	req = net_buf_add(req_buf, sizeof(*req));
 	req->auth_req = get_auth(smp, BT_SMP_AUTH_DEFAULT);
 
+	/* Allow the Pairing Request before handing the PDU to L2CAP.
+	 *
+	 * bt_l2cap_send_pdu() only queues the PDU; it is transmitted later from
+	 * another thread. The peer Pairing Request that answers this Security
+	 * Request is handled by bt_smp_recv() on the Bluetooth RX thread, which
+	 * is also not this thread, so without ordering here the response can be
+	 * processed before the trailing atomic_set_bit() calls have run. It is
+	 * then rejected by the allowed_cmds check in bt_smp_recv() and dropped
+	 * without even a Pairing Failed, and the peer waits for a response that
+	 * never comes.
+	 *
+	 * Publishing the state first makes it visible before the request can be
+	 * on air, which is the only ordering the protocol needs. Roll back on a
+	 * send failure so that the Pairing Request stays allowed only while
+	 * SEC_REQ is set.
+	 */
+	atomic_set_bit(smp->flags, SMP_FLAG_SEC_REQ);
+	atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_PAIRING_REQ);
+
 	/* SMP timer is not restarted for SecRequest so don't use smp_send */
 	err = bt_l2cap_send_pdu(&smp->chan, req_buf, NULL, NULL);
 	if (err) {
 		net_buf_unref(req_buf);
+		atomic_clear_bit(smp->flags, SMP_FLAG_SEC_REQ);
+		atomic_clear_bit(smp->allowed_cmds, BT_SMP_CMD_PAIRING_REQ);
 		return err;
 	}
-
-	atomic_set_bit(smp->flags, SMP_FLAG_SEC_REQ);
-	atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_PAIRING_REQ);
 
 	return 0;
 }
