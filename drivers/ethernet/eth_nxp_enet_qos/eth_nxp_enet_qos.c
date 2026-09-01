@@ -907,8 +907,13 @@ done:
 
 static inline void enet_qos_dma_config_init(enet_qos_t *base)
 {
+	/* Burst descriptor and data fetches and let the DMA process the next
+	 * frame while the current one transmits, so back to back frames leave
+	 * no dead time on the wire.
+	 */
 	base->DMA_CH[0].DMA_CHX_TX_CTRL |=
-		ENET_QOS_REG_PREP(DMA_CH_DMA_CHX_TX_CTRL, TxPBL, 0b1);
+		ENET_QOS_REG_PREP(DMA_CH_DMA_CHX_TX_CTRL, TxPBL, 16) |
+		ENET_QOS_REG_PREP(DMA_CH_DMA_CHX_TX_CTRL, OSF, 0b1);
 	base->DMA_CH[0].DMA_CHX_RX_CTRL |=
 		ENET_QOS_REG_PREP(DMA_CH_DMA_CHX_RX_CTRL, RxPBL, 0b1);
 }
