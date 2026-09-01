@@ -74,6 +74,13 @@ struct arch_esf {
 		sys_define_gpr_with_alias(pc, r15);
 		uint32_t xpsr;
 	} basic;
+	/*
+	 * Interrupted SP (previous mode). After __basic_sf so SVC/IRQ
+	 * frames that omit this word still have a valid basic.r0 (the
+	 * oops/panic reason). Not part of __basic_sf so the thread
+	 * iframe used by arch_new_thread stays 8 words.
+	 */
+	uint32_t sp;
 };
 
 extern uint32_t z_arm_coredump_fault_sp;

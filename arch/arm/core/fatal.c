@@ -27,7 +27,11 @@ static void esf_dump(const struct arch_esf *esf)
 		esf->basic.a1, esf->basic.a2, esf->basic.a3);
 	EXCEPTION_DUMP("r3/a4:  0x%08x r12/ip:  0x%08x r14/lr:  0x%08x",
 		esf->basic.a4, esf->basic.ip, esf->basic.lr);
+#if defined(CONFIG_CPU_AARCH32_CORTEX_A) || defined(CONFIG_CPU_AARCH32_CORTEX_R)
+	EXCEPTION_DUMP(" r13/sp: 0x%08x  xpsr:  0x%08x", esf->sp, esf->basic.xpsr);
+#else
 	EXCEPTION_DUMP(" xpsr:  0x%08x", esf->basic.xpsr);
+#endif
 #if defined(CONFIG_FPU) && defined(CONFIG_FPU_SHARING)
 	bool extended_frame;
 #if defined(CONFIG_EXTRA_EXCEPTION_INFO) && defined(EXC_RETURN_STACK_FRAME_TYPE_Msk)
