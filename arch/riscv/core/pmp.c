@@ -326,7 +326,7 @@ static bool set_pmp_entry(unsigned int *index_p, uint8_t perm,
 		ok = false;
 	} else if (PMP_TOR_SUPPORTED) {
 		pmp_addr[index] = PMP_ADDR(start);
-		pmp_n_cfg[index] = 0;
+		pmp_n_cfg[index] = perm & PMP_L;
 		index += 1;
 		pmp_addr[index] = PMP_ADDR(start + size);
 		pmp_n_cfg[index] = perm | PMP_TOR;
