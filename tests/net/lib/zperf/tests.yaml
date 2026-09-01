@@ -6,6 +6,5 @@ common:
   platform_allow:
     - native_sim
     - native_sim/native/64
-  timeout: 60
 tests:
   net.zperf: {}
