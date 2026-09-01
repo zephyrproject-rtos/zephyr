@@ -540,6 +540,34 @@ static void inquiry_result_report(const bt_addr_t *addr, uint8_t pscan_rep_mode,
 	}
 }
 
+void bt_hci_inquiry_result(struct net_buf *buf)
+{
+	uint8_t num_reports = net_buf_pull_u8(buf);
+
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_INQUIRY)) {
+		return;
+	}
+
+	LOG_DBG("number of results: %u", num_reports);
+
+	while (num_reports--) {
+		struct bt_hci_evt_inquiry_result *evt;
+
+		if (buf->len < sizeof(*evt)) {
+			LOG_ERR("Unexpected end to buffer");
+			return;
+		}
+
+		evt = net_buf_pull_mem(buf, sizeof(*evt));
+		LOG_DBG("%s", bt_addr_str(&evt->addr));
+
+		/* The standard format carries no RSSI. */
+		inquiry_result_report(&evt->addr, evt->pscan_rep_mode,
+				      evt->clock_offset, evt->cod, RSSI_INVALID,
+				      NULL);
+	}
+}
+
 void bt_hci_inquiry_result_with_rssi(struct net_buf *buf)
 {
 	uint8_t num_reports = net_buf_pull_u8(buf);

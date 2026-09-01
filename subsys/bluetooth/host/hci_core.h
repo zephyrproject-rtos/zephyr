@@ -554,6 +554,7 @@ void bt_hci_conn_complete(struct net_buf *buf);
 
 
 void bt_hci_inquiry_complete(struct net_buf *buf);
+void bt_hci_inquiry_result(struct net_buf *buf);
 void bt_hci_inquiry_result_with_rssi(struct net_buf *buf);
 void bt_hci_extended_inquiry_result(struct net_buf *buf);
 void bt_hci_remote_name_request_complete(struct net_buf *buf);
