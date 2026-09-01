@@ -1349,10 +1349,9 @@ Demand Paging:
 Device Driver Model:
   status: maintained
   maintainers:
-    - tbursztyka
+    - nashif
   collaborators:
     - dcpleung
-    - nashif
     - edersondisouza
   files:
     - include/zephyr/device.h
@@ -2825,7 +2824,7 @@ Documentation Infrastructure:
 "Drivers: SPI":
   status: maintained
   maintainers:
-    - tbursztyka
+    - nashif
   collaborators:
     - teburd
   files:
