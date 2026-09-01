@@ -1,0 +1,93 @@
+/*
+ * Copyright (c) 2026 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* 256k RAM layout:
+ * - 155k APP RAM
+ * - 2k FLPR to APP IPC buffers
+ * - 2k APP to FLPR IPC buffers
+ * - 96k FLPR code and data
+ * - 1k FLPR hibernation space
+ */
+
+/ {
+	soc {
+		reserved-memory {
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			sram_rx: memory@20026c00 {
+				reg = <0x20026c00 DT_SIZE_K(2)>;
+			};
+
+			sram_tx: memory@20027400 {
+				reg = <0x20027400 DT_SIZE_K(2)>;
+			};
+		};
+
+		cpuflpr_sram_code_data: memory@20027c00 {
+			compatible = "mmio-sram";
+			reg = <0x20027c00 DT_SIZE_K(96)>;
+			ranges = <0x0 0x20027c00 DT_SIZE_K(96)>;
+			status = "reserved";
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+	};
+
+	ipc {
+		ipc0: ipc0 {
+			compatible = "zephyr,ipc-icbmsg";
+			dcache-alignment = <32>;
+			tx-region = <&sram_tx>;
+			rx-region = <&sram_rx>;
+			tx-blocks = <16>;
+			rx-blocks = <16>;
+			mboxes = <&cpuapp_vevif_rx 20>, <&cpuapp_vevif_tx 21>;
+			mbox-names = "rx", "tx";
+			status = "okay";
+		};
+	};
+};
+
+&cpuapp_sram_app {
+	reg = <0x60 (DT_SIZE_K(155) - 0x60)>;
+};
+
+&cpuapp_rram {
+	reg = <0x0 DT_SIZE_K(1428)>;
+	ranges = <0x0 0x0 DT_SIZE_K(1428)>;
+
+	/delete-node/ partitions;
+};
+
+&rram_controller {
+	cpuflpr_rram: rram@165000 {
+		compatible = "soc-nv-flash";
+		reg = <0x165000 DT_SIZE_K(96)>;
+		ranges = <0x0 0x165000 DT_SIZE_K(96)>;
+		erase-block-size = <0x1000>;
+		write-block-size = <0x10>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+	};
+};
+
+&cpuflpr_vpr {
+	status = "okay";
+	execution-memory = <&cpuflpr_sram_code_data>;
+	source-memory = <&cpuflpr_rram>;
+};
+
+&cpuapp_vevif_rx {
+	status = "okay";
+};
+
+&cpuapp_vevif_tx {
+	status = "okay";
+};
+
+#define WITH_FLPR_PARTITIONS
+#include <vendor/nordic/nrf54l15_cpuapp_partition.dtsi>

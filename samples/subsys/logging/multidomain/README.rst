@@ -16,6 +16,10 @@ The following targets are supported:
 
 * ``nrf5340dk/nrf5340/cpuapp``
 * ``nrf5340bsim/nrf5340/cpuapp``
+* ``nrf54l15dk/nrf54l15/cpuapp``
+
+On the nRF5340 the IPC service uses the OpenAMP static vrings backend, while on the nRF54L15
+the HOST (application core) and the REMOTE (FLPR core) communicate over the ICBMsg backend.
 
 Building and Running
 ********************
@@ -24,6 +28,15 @@ This sample can be built and flashed on the nrf5340dk as follows:
 .. zephyr-app-commands::
    :zephyr-app: samples/subsys/logging/multidomain
    :board: nrf5340dk/nrf5340/cpuapp
+   :goals: build flash
+   :west-args: --sysbuild
+   :compact:
+
+On the nRF54L15 DK, the REMOTE image runs on the FLPR core:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/logging/multidomain
+   :board: nrf54l15dk/nrf54l15/cpuapp
    :goals: build flash
    :west-args: --sysbuild
    :compact:
