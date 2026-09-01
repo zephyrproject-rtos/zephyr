@@ -818,6 +818,7 @@ Bluetooth Host:
   tests:
     - bluetooth
     - sample.bluetooth
+    - tests.bsim.bluetooth
 
 Bluetooth ISO:
   status: maintained
