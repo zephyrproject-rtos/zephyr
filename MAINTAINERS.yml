@@ -647,6 +647,7 @@ Bluetooth Audio:
     - bluetooth.audio
     - sample.bluetooth.audio
     - tests.bsim.bluetooth.audio
+    - tests.bsim.bluetooth.audio_samples
 
 Bluetooth Classic:
   status: maintained
