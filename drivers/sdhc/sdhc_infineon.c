@@ -51,7 +51,6 @@ LOG_MODULE_REGISTER(sdhc_infineon, CONFIG_SDHC_LOG_LEVEL);
 
 #include <zephyr/irq.h>
 
-#define IFX_SDHC_RETRY_TIMES             (1000U) /* The number loops to make timeout in us */
 #define IFX_SDHC_CMD_CMPLT_DELAY_US      (5U)    /* The Command complete delay in us */
 #define IFX_SDHC_MAX_TIMEOUT             (0x0EU) /* The data max timeout for TOUT_CTRL_R */
 #define IFX_SDHC_RETRY_TIME              (1000U) /* The number loops to make timeout in us */
@@ -62,6 +61,7 @@ LOG_MODULE_REGISTER(sdhc_infineon, CONFIG_SDHC_LOG_LEVEL);
 #define IFX_SDHC_SDIO_TRANSFER_TRIES     (50U)
 #define IFX_SDHC_SET_ALL_INTERRUPTS_MASK (0x61FFU)
 #define IFX_SDHC_1_8_REG_STABLE_TIME_MS  (200U) /* The 1.8 voltage regulator stable time in ms */
+#define IFX_SDHC_CLK_STABLE_TIMEOUT_US   (150000U) /* Max wait for INTERNAL_CLK_STABLE per spec */
 
 struct sdhc_infineon_config {
 	const struct pinctrl_dev_config *pincfg;
@@ -266,7 +266,7 @@ static inline int sdhc_prepare_for_transfer(const struct device *dev)
 static int sdhc_poll_cmd_complete(const struct device *dev)
 {
 	const struct sdhc_infineon_config *config = dev->config;
-	uint32_t timeout_us = IFX_SDHC_RETRY_TIMES * IFX_SDHC_CMD_CMPLT_DELAY_US;
+	uint32_t timeout_us = IFX_SDHC_RETRY_TIME * IFX_SDHC_CMD_CMPLT_DELAY_US;
 
 	if (!WAIT_FOR((CY_SD_HOST_CMD_COMPLETE &
 		       Cy_SD_Host_GetNormalInterruptStatus(config->reg_addr)) ==
@@ -286,7 +286,8 @@ static int sdhc_host_poll_transfer_complete(SDHC_Type *base)
 	/* Transfer Complete */
 	if (!WAIT_FOR(_FLD2BOOL(SDHC_CORE_NORMAL_INT_STAT_R_XFER_COMPLETE,
 				SDHC_CORE_NORMAL_INT_STAT_R(base)),
-		      IFX_SDHC_RETRY_TIME, k_busy_wait(IFX_SDHC_WRITE_TIMEOUT_US))) {
+		      IFX_SDHC_RETRY_TIME * IFX_SDHC_WRITE_TIMEOUT_US,
+		      k_busy_wait(IFX_SDHC_WRITE_TIMEOUT_US))) {
 		return -ETIMEDOUT;
 	}
 
@@ -301,7 +302,8 @@ static int sdhc_poll_buf_read_ready(SDHC_Type *base)
 	/* Check the Buffer Read ready */
 	if (!WAIT_FOR(_FLD2BOOL(SDHC_CORE_NORMAL_INT_STAT_R_BUF_RD_READY,
 				SDHC_CORE_NORMAL_INT_STAT_R(base)),
-		      IFX_SDHC_RETRY_TIME, k_busy_wait(IFX_SDHC_BUFFER_RDY_TIMEOUT_US))) {
+		      IFX_SDHC_RETRY_TIME * IFX_SDHC_BUFFER_RDY_TIMEOUT_US,
+		      k_busy_wait(IFX_SDHC_BUFFER_RDY_TIMEOUT_US))) {
 		return -ETIMEDOUT;
 	}
 
@@ -328,7 +330,7 @@ static int sdhc_cmd_rx_data(SDHC_Type *base, cy_stc_sd_host_data_config_t *pcmd)
 			/* Wait if valid data exists in the Host buffer. */
 			WAIT_FOR(_FLD2BOOL(SDHC_CORE_PSTATE_REG_BUF_RD_ENABLE,
 					   SDHC_CORE_PSTATE_REG(base)),
-				 IFX_SDHC_RETRY_TIME,
+				 IFX_SDHC_RETRY_TIME * IFX_SDHC_RD_WR_ENABLE_TIMEOUT_US,
 				 k_busy_wait(IFX_SDHC_RD_WR_ENABLE_TIMEOUT_US));
 
 			if (false == _FLD2BOOL(SDHC_CORE_PSTATE_REG_BUF_RD_ENABLE,
@@ -718,14 +720,20 @@ static int sdhc_change_clock(const struct device *dev, uint32_t *frequency)
 	bus_freq = source_freq / most_suitable_div;
 
 	Cy_SD_Host_DisableSdClk(config->reg_addr);
-	if (Cy_SD_Host_SetSdClkDiv(config->reg_addr, most_suitable_div >> 1) ==
+	if (Cy_SD_Host_SetSdClkDiv(config->reg_addr, most_suitable_div >> 1) !=
 	    CY_SD_HOST_SUCCESS) {
-		Cy_SD_Host_EnableSdClk(config->reg_addr);
-		*frequency = bus_freq;
-		return 0;
+		return -EINVAL;
+	}
+	Cy_SD_Host_EnableSdClk(config->reg_addr);
+
+	if (!WAIT_FOR(_FLD2BOOL(SDHC_CORE_CLK_CTRL_R_INTERNAL_CLK_STABLE,
+				SDHC_CORE_CLK_CTRL_R(config->reg_addr)),
+		      IFX_SDHC_CLK_STABLE_TIMEOUT_US, k_busy_wait(1))) {
+		return -ETIMEDOUT;
 	}
 
-	return -EINVAL;
+	*frequency = bus_freq;
+	return 0;
 }
 
 static void sdhc_card_power_cycle(const struct device *dev, enum sdhc_power power_mode)
@@ -897,12 +905,13 @@ static int sdhc_infineon_card_busy(const struct device *dev)
 {
 	const struct sdhc_infineon_config *config = dev->config;
 	int busy_status = 0;
-	/* Check DAT Line Active */
 	uint32_t state = Cy_SD_Host_GetPresentState(config->reg_addr);
 
-	if (((state & CY_SD_HOST_DAT_3_0) == 0) ||
-	    ((state & CY_SD_HOST_DAT_LINE_ACTIVE) == CY_SD_HOST_DAT_LINE_ACTIVE) ||
-	    ((state & CY_SD_HOST_CMD_CMD_INHIBIT_DAT) == CY_SD_HOST_CMD_CMD_INHIBIT_DAT)) {
+	/* Per the sdhc_card_busy() API contract, only the DAT[3:0] line level
+	 * reflects real card busy state; DAT_LINE_ACTIVE/CMD_INHIBIT_DAT can
+	 * stay set from unrelated host activity and cause false positives.
+	 */
+	if ((state & CY_SD_HOST_DAT_3_0) == 0) {
 		busy_status = 1;
 	}
 
