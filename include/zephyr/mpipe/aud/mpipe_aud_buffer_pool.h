@@ -39,6 +39,8 @@ struct mpipe_aud_buffer_pool {
 	const struct device *aud_dev;
 	/** Memory slab for efficient buffer allocation */
 	struct k_mem_slab *mem_slab;
+	/** Stop hook this element wrapped, restored per instance */
+	int (*pool_parent_stop)(struct mpipe_buffer_pool *pool);
 	/**
 	 * Per-chunk pointers into the mem_slab backing buffer. Bounded by the
 	 * same Kconfig that sizes the pool, so the table needs no allocation.
