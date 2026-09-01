@@ -32,6 +32,10 @@
 #include <fsl_sai.h>
 #include <fsl_edma.h>
 
+#ifdef CONFIG_I2S_RTIO
+#include "i2s_rtio.h"
+#endif
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(dev_i2s_mcux, CONFIG_I2S_LOG_LEVEL);
 
@@ -73,10 +77,19 @@ BUILD_ASSERT(MAX_TX_DMA_BLOCKS > NUM_DMA_BLOCKS_RX_PREP,
  *   and queued to out_queue when application reads, buffer is read
  *   (may optionally block) from out_queue and presented to application.
  */
+
+#ifdef CONFIG_I2S_RTIO
+static void i2s_mcux_iodev_start(const struct device *dev);
+static void i2s_mcux_iodev_advance(const struct device *dev);
+static void i2s_mcux_iodev_complete(const struct device *dev, int status);
+#endif /* CONFIG_I2S_RTIO */
+
+#ifndef CONFIG_I2S_RTIO
 struct i2s_q_entry {
 	void *mem_block;
 	size_t size;
 };
+#endif /* !CONFIG_I2S_RTIO */
 
 struct stream {
 	enum i2s_state state;
@@ -88,8 +101,13 @@ struct stream {
 	struct dma_block_config dma_block;
 	uint8_t free_tx_dma_blocks;
 	bool last_block;
+#ifdef CONFIG_I2S_RTIO
+	struct k_msgq rtio_in_queue;
+	struct k_msgq rtio_out_queue;
+#else
 	struct k_msgq in_queue;
 	struct k_msgq out_queue;
+#endif /* CONFIG_I2S_RTIO */
 };
 
 struct i2s_mcux_config {
@@ -122,11 +140,19 @@ struct i2s_dev_data {
 	DEVICE_MMIO_NAMED_RAM(sai_mmio);
 	const struct device *dev_dma;
 	struct stream tx;
+	struct stream rx;
+#ifdef CONFIG_I2S_RTIO
+	struct i2s_rtio *rtio_ctx;
+	struct rtio_iodev_sqe *rtio_tx_in_msgs[CONFIG_I2S_TX_BLOCK_COUNT];
+	struct rtio_iodev_sqe *rtio_tx_out_msgs[CONFIG_I2S_TX_BLOCK_COUNT];
+	struct rtio_iodev_sqe *rtio_rx_in_msgs[CONFIG_I2S_RX_BLOCK_COUNT];
+	struct rtio_iodev_sqe *rtio_rx_out_msgs[CONFIG_I2S_RX_BLOCK_COUNT];
+#else
 	struct i2s_q_entry tx_in_msgs[CONFIG_I2S_TX_BLOCK_COUNT];
 	struct i2s_q_entry tx_out_msgs[CONFIG_I2S_TX_BLOCK_COUNT];
-	struct stream rx;
 	struct i2s_q_entry rx_in_msgs[CONFIG_I2S_RX_BLOCK_COUNT];
 	struct i2s_q_entry rx_out_msgs[CONFIG_I2S_RX_BLOCK_COUNT];
+#endif /* CONFIG_I2S_RTIO */
 };
 
 #define DEV_CFG(_dev)  ((const struct i2s_mcux_config *)(_dev)->config)
@@ -137,6 +163,25 @@ static I2S_Type *get_base(const struct device *dev)
 	return (I2S_Type *)DEVICE_MMIO_NAMED_GET(dev, sai_mmio);
 }
 
+#ifdef CONFIG_I2S_RTIO
+static void i2s_rtio_purge_stream_buffers(struct stream *strm, bool in_drop, bool out_drop,
+					  bool error)
+{
+	struct rtio_iodev_sqe *iodev_sqe;
+
+	if (in_drop) {
+		while (k_msgq_get(&strm->rtio_in_queue, &iodev_sqe, K_NO_WAIT) == 0) {
+			rtio_iodev_sqe_err(iodev_sqe, error ? -EIO : -ECANCELED);
+		}
+	}
+
+	if (out_drop) {
+		while (k_msgq_get(&strm->rtio_out_queue, &iodev_sqe, K_NO_WAIT) == 0) {
+			rtio_iodev_sqe_err(iodev_sqe, error ? -EIO : -ECANCELED);
+		}
+	}
+}
+#else
 static void i2s_purge_stream_buffers(struct stream *strm, struct k_mem_slab *mem_slab, bool in_drop,
 				     bool out_drop)
 {
@@ -154,8 +199,9 @@ static void i2s_purge_stream_buffers(struct stream *strm, struct k_mem_slab *mem
 		}
 	}
 }
+#endif /* CONFIG_I2S_RTIO */
 
-static void i2s_tx_stream_disable(const struct device *dev, bool drop)
+static void i2s_tx_stream_disable(const struct device *dev, bool drop, bool error)
 {
 	I2S_Type *base = get_base(dev);
 	struct i2s_dev_data *dev_data = dev->data;
@@ -187,10 +233,15 @@ static void i2s_tx_stream_disable(const struct device *dev, bool drop)
 	}
 
 	/* purge buffers queued in the stream */
+#ifdef CONFIG_I2S_RTIO
+	i2s_rtio_purge_stream_buffers(strm, drop, drop, error);
+#else
+	ARG_UNUSED(error);
 	i2s_purge_stream_buffers(strm, dev_data->tx.cfg.mem_slab, drop, drop);
+#endif /* CONFIG_I2S_RTIO */
 }
 
-static void i2s_rx_stream_disable(const struct device *dev, bool in_drop, bool out_drop)
+static void i2s_rx_stream_disable(const struct device *dev, bool in_drop, bool out_drop, bool error)
 {
 	I2S_Type *base = get_base(dev);
 	struct i2s_dev_data *dev_data = dev->data;
@@ -218,7 +269,12 @@ static void i2s_rx_stream_disable(const struct device *dev, bool in_drop, bool o
 	base->RCSR &= ~I2S_RCSR_SR_MASK;
 
 	/* purge buffers queued in the stream */
+#ifdef CONFIG_I2S_RTIO
+	i2s_rtio_purge_stream_buffers(strm, in_drop, out_drop, error);
+#else
+	ARG_UNUSED(error);
 	i2s_purge_stream_buffers(strm, dev_data->rx.cfg.mem_slab, in_drop, out_drop);
+#endif /* CONFIG_I2S_RTIO */
 }
 
 static int i2s_tx_reload_multiple_dma_blocks(const struct device *dev, uint8_t *blocks_queued)
@@ -226,7 +282,6 @@ static int i2s_tx_reload_multiple_dma_blocks(const struct device *dev, uint8_t *
 	struct i2s_dev_data *dev_data = dev->data;
 	I2S_Type *base = get_base(dev);
 	struct stream *strm = &dev_data->tx;
-	struct i2s_q_entry q_entry = {0};
 	int ret = 0;
 	unsigned int key;
 
@@ -236,6 +291,38 @@ static int i2s_tx_reload_multiple_dma_blocks(const struct device *dev, uint8_t *
 
 	/* queue additional blocks to DMA if in_queue and DMA has free blocks */
 	while (strm->free_tx_dma_blocks) {
+#ifdef CONFIG_I2S_RTIO
+		struct rtio_iodev_sqe *iodev_sqe;
+
+		/* get the next entry from queue */
+		ret = k_msgq_get(&strm->rtio_in_queue, &iodev_sqe, K_NO_WAIT);
+		if (ret) {
+			/* in_queue is empty, no more blocks to send to DMA */
+			ret = 0;
+			break;
+		}
+
+		/* reload the DMA */
+		ret = dma_reload(
+			dev_data->dev_dma, strm->dma_channel, (uint32_t)iodev_sqe->sqe.tx.buf,
+			(uint32_t)&base->TDR[strm->start_channel], iodev_sqe->sqe.tx.buf_len);
+		if (ret != 0) {
+			LOG_ERR("dma_reload() failed with error 0x%x", ret);
+			break;
+		}
+
+		(strm->free_tx_dma_blocks)--;
+
+		ret = k_msgq_put(&strm->rtio_out_queue, &iodev_sqe, K_NO_WAIT);
+		if (ret != 0) {
+			LOG_ERR("buffer %p -> out %p err %d", iodev_sqe->sqe.tx.buf,
+				&strm->rtio_out_queue, ret);
+			break;
+		}
+
+#else
+		struct i2s_q_entry q_entry = {0};
+
 		/* get the next entry from queue */
 		ret = k_msgq_get(&strm->in_queue, &q_entry, K_NO_WAIT);
 		if (ret) {
@@ -260,6 +347,7 @@ static int i2s_tx_reload_multiple_dma_blocks(const struct device *dev, uint8_t *
 				ret);
 			break;
 		}
+#endif /* CONFIG_I2S_RTIO */
 
 		(*blocks_queued)++;
 	}
@@ -276,10 +364,23 @@ static void i2s_dma_tx_callback(const struct device *dma_dev, void *arg, uint32_
 	struct i2s_dev_data *dev_data = dev->data;
 	struct stream *strm = &dev_data->tx;
 	uint8_t blocks_queued;
-	struct i2s_q_entry q_entry = {0};
 	int ret;
 
 	LOG_DBG("tx cb");
+
+#ifdef CONFIG_I2S_RTIO
+	struct rtio_iodev_sqe *iodev_sqe;
+
+	ret = k_msgq_get(&strm->rtio_out_queue, &iodev_sqe, K_NO_WAIT);
+	if (ret == 0) {
+		/* transmission complete. free the buffer */
+		rtio_iodev_sqe_ok(iodev_sqe, 0);
+		(strm->free_tx_dma_blocks)++;
+	} else {
+		LOG_ERR("no buf in out_queue for channel %u", channel);
+	}
+#else
+	struct i2s_q_entry q_entry = {0};
 
 	ret = k_msgq_get(&strm->out_queue, &q_entry, K_NO_WAIT);
 	if (ret == 0) {
@@ -289,6 +390,7 @@ static void i2s_dma_tx_callback(const struct device *dma_dev, void *arg, uint32_
 	} else {
 		LOG_ERR("no buf in out_queue for channel %u", channel);
 	}
+#endif /* CONFIG_I2S_RTIO */
 
 	if (strm->free_tx_dma_blocks > MAX_TX_DMA_BLOCKS) {
 		strm->state = I2S_STATE_ERROR;
@@ -347,11 +449,11 @@ static void i2s_dma_tx_callback(const struct device *dma_dev, void *arg, uint32_
 
 
 disabled_exit_no_drop:
-	i2s_tx_stream_disable(dev, false);
+	i2s_tx_stream_disable(dev, false, false);
 	return;
 
 disabled_exit_drop:
-	i2s_tx_stream_disable(dev, true);
+	i2s_tx_stream_disable(dev, true, true);
 	return;
 
 enabled_exit:
@@ -365,20 +467,31 @@ static void i2s_dma_rx_callback(const struct device *dma_dev, void *arg, uint32_
 	I2S_Type *base = get_base(dev);
 	struct i2s_dev_data *dev_data = dev->data;
 	struct stream *strm = &dev_data->rx;
-	struct i2s_q_entry q_entry;
 	int ret;
 
 	LOG_DBG("RX cb");
 
 	if (strm->state == I2S_STATE_ERROR) {
 		LOG_ERR("State = I2S_STATE_ERROR");
-		i2s_rx_stream_disable(dev, true, true);
+		i2s_rx_stream_disable(dev, true, true, true);
 	}
 
 	if (strm->state != I2S_STATE_STOPPING && strm->state != I2S_STATE_RUNNING) {
 		LOG_ERR("Invalid state (%d)", strm->state);
 		return;
 	}
+
+#ifdef CONFIG_I2S_RTIO
+	struct rtio_iodev_sqe *iodev_sqe;
+	uint8_t *buf;
+	uint32_t buf_len;
+
+	ret = k_msgq_get(&strm->rtio_out_queue, &iodev_sqe, K_NO_WAIT);
+	__ASSERT_NO_MSG(ret == 0);
+
+	rtio_iodev_sqe_ok(iodev_sqe, 0);
+#else
+	struct i2s_q_entry q_entry;
 
 	/* retrieve entry from input queue */
 	ret = k_msgq_get(&strm->in_queue, &q_entry, K_NO_WAIT);
@@ -391,9 +504,10 @@ static void i2s_dma_rx_callback(const struct device *dma_dev, void *arg, uint32_
 			ret);
 		goto error;
 	}
+#endif /* CONFIG_I2S_RTIO */
 
 	if (strm->state == I2S_STATE_STOPPING) {
-		i2s_rx_stream_disable(dev, true, false);
+		i2s_rx_stream_disable(dev, true, false, false);
 		/* Received a STOP/DRAIN trigger */
 		strm->state = I2S_STATE_READY;
 		return;
@@ -401,6 +515,34 @@ static void i2s_dma_rx_callback(const struct device *dma_dev, void *arg, uint32_
 
 	/* Now the only possible case is the running state */
 
+#ifdef CONFIG_I2S_RTIO
+	ret = k_msgq_get(&strm->rtio_in_queue, &iodev_sqe, K_NO_WAIT);
+	if (ret < 0) {
+		LOG_DBG("Get from rtio_in_queue failed (%d)", ret);
+		goto error;
+	}
+
+	ret = rtio_sqe_rx_buf(iodev_sqe, strm->cfg.block_size, strm->cfg.block_size, &buf,
+			      &buf_len);
+	if (ret < 0) {
+		LOG_DBG("Failed to allocate rx buf from rtio sqe pool (%d)", ret);
+		goto error;
+	}
+
+	uint32_t data_path = strm->start_channel;
+
+	ret = dma_reload(dev_data->dev_dma, strm->dma_channel, (uint32_t)&base->RDR[data_path],
+			 (uint32_t)buf, strm->cfg.block_size);
+	if (ret < 0) {
+		LOG_ERR("dma_reload() failed with error 0x%x", ret);
+		goto error;
+	}
+
+	ret = k_msgq_put(&strm->rtio_out_queue, (void *)&iodev_sqe, K_NO_WAIT);
+	if (ret < 0) {
+		LOG_ERR("Failed to put iodev_sqe in out queue (%d)", ret);
+	}
+#else
 	/* allocate new buffer for next audio frame */
 	ret = k_mem_slab_alloc(strm->cfg.mem_slab, &q_entry.mem_block, K_NO_WAIT);
 	if (ret != 0) {
@@ -424,10 +566,12 @@ static void i2s_dma_rx_callback(const struct device *dma_dev, void *arg, uint32_
 		LOG_ERR("%p -> in_queue %p err %d", q_entry.mem_block, &strm->in_queue, ret);
 	}
 
+#endif /* CONFIG_I2S_RTIO */
+
 	return;
 
 error:
-	i2s_rx_stream_disable(dev, false, false);
+	i2s_rx_stream_disable(dev, false, false, true);
 	strm->state = I2S_STATE_ERROR;
 }
 
@@ -664,10 +808,12 @@ static int i2s_mcux_config(const struct device *dev, enum i2s_dir dir,
 
 	if (dir == I2S_DIR_TX) {
 		memcpy(&dev_data->tx.cfg, i2s_cfg, sizeof(struct i2s_config));
+#ifndef CONFIG_I2S_RTIO
 		LOG_DBG("tx slab free_list = 0x%x", (uint32_t)i2s_cfg->mem_slab->free_list);
 		LOG_DBG("tx slab num_blocks = %d", (uint32_t)i2s_cfg->mem_slab->info.num_blocks);
 		LOG_DBG("tx slab block_size = %d", (uint32_t)i2s_cfg->mem_slab->info.block_size);
 		LOG_DBG("tx slab buffer = 0x%x", (uint32_t)i2s_cfg->mem_slab->buffer);
+#endif /* !CONFIG_I2S_RTIO */
 
 		config.fifo.fifoWatermark = (uint32_t)FSL_FEATURE_SAI_FIFO_COUNTn(base) - 1;
 #if defined(FSL_FEATURE_SAI_HAS_FIFO_COMBINE_MODE) && FSL_FEATURE_SAI_HAS_FIFO_COMBINE_MODE
@@ -696,10 +842,12 @@ static int i2s_mcux_config(const struct device *dev, enum i2s_dir dir,
 #endif
 
 		memcpy(&dev_data->rx.cfg, i2s_cfg, sizeof(struct i2s_config));
+#ifndef CONFIG_I2S_RTIO
 		LOG_DBG("rx slab free_list = 0x%x", (uint32_t)i2s_cfg->mem_slab->free_list);
 		LOG_DBG("rx slab num_blocks = %d", (uint32_t)i2s_cfg->mem_slab->info.num_blocks);
 		LOG_DBG("rx slab block_size = %d", (uint32_t)i2s_cfg->mem_slab->info.block_size);
 		LOG_DBG("rx slab buffer = 0x%x", (uint32_t)i2s_cfg->mem_slab->buffer);
+#endif /* !CONFIG_I2S_RTIO */
 
 		/* set bit clock divider */
 		SAI_RxSetConfig(base, &config);
@@ -745,12 +893,22 @@ const struct i2s_config *i2s_mcux_config_get(const struct device *dev, enum i2s_
 static int i2s_tx_stream_start(const struct device *dev)
 {
 	int ret = 0;
-	struct i2s_q_entry q_entry = {0};
 	struct i2s_dev_data *dev_data = dev->data;
 	struct stream *strm = &dev_data->tx;
 	const struct device *dev_dma = dev_data->dev_dma;
 	const struct i2s_mcux_config *dev_cfg = dev->config;
 	I2S_Type *base = get_base(dev);
+
+#ifdef CONFIG_I2S_RTIO
+	struct rtio_iodev_sqe *iodev_sqe;
+
+	ret = k_msgq_get(&strm->rtio_in_queue, &iodev_sqe, K_NO_WAIT);
+	if (ret != 0) {
+		LOG_ERR("No iodev sqe entry in input queue to start");
+		return -EIO;
+	}
+#else
+	struct i2s_q_entry q_entry = {0};
 
 	/* retrieve entry from input queue */
 	ret = k_msgq_get(&strm->in_queue, &q_entry, K_NO_WAIT);
@@ -758,6 +916,7 @@ static int i2s_tx_stream_start(const struct device *dev)
 		LOG_ERR("No entry in input queue to start");
 		return -EIO;
 	}
+#endif /* CONFIG_I2S_RTIO */
 
 	LOG_DBG("tx stream start");
 
@@ -772,8 +931,13 @@ static int i2s_tx_stream_start(const struct device *dev)
 	uint32_t data_path = strm->start_channel;
 
 	blk_cfg->dest_address = (uint32_t)&base->TDR[data_path];
+#ifdef CONFIG_I2S_RTIO
+	blk_cfg->source_address = (uint32_t)iodev_sqe->sqe.tx.buf;
+	blk_cfg->block_size = iodev_sqe->sqe.tx.buf_len;
+#else
 	blk_cfg->source_address = (uint32_t)q_entry.mem_block;
 	blk_cfg->block_size = q_entry.size;
+#endif /* CONFIG_I2S_RTIO */
 	blk_cfg->dest_scatter_en = 1;
 
 	strm->dma_cfg.block_count = 1;
@@ -784,12 +948,21 @@ static int i2s_tx_stream_start(const struct device *dev)
 	(strm->free_tx_dma_blocks)--;
 	dma_config(dev_dma, strm->dma_channel, &strm->dma_cfg);
 
+#ifdef CONFIG_I2S_RTIO
+	/* put entry in output queue */
+	ret = k_msgq_put(&strm->rtio_out_queue, &iodev_sqe, K_NO_WAIT);
+	if (ret != 0) {
+		LOG_ERR("failed to put iodev sqe entry in output queue");
+		return ret;
+	}
+#else
 	/* put entry in output queue */
 	ret = k_msgq_put(&strm->out_queue, &q_entry, K_NO_WAIT);
 	if (ret != 0) {
 		LOG_ERR("failed to put entry in output queue");
 		return ret;
 	}
+#endif /* CONFIG_I2S_RTIO */
 
 	uint8_t blocks_queued;
 
@@ -825,7 +998,6 @@ static int i2s_tx_stream_start(const struct device *dev)
 static int i2s_rx_stream_start(const struct device *dev)
 {
 	int ret = 0;
-	struct i2s_q_entry q_entry = {0};
 	struct i2s_dev_data *dev_data = dev->data;
 	struct stream *strm = &dev_data->rx;
 	const struct device *dev_dma = dev_data->dev_dma;
@@ -833,7 +1005,11 @@ static int i2s_rx_stream_start(const struct device *dev)
 	I2S_Type *base = get_base(dev);
 	uint32_t num_of_bufs;
 
+#ifdef CONFIG_I2S_RTIO
+	num_of_bufs = k_msgq_num_used_get(&strm->rtio_in_queue);
+#else
 	num_of_bufs = k_mem_slab_num_free_get(strm->cfg.mem_slab);
+#endif /* CONFIG_I2S_RTIO */
 
 	/*
 	 * Need at least NUM_DMA_BLOCKS_RX_PREP buffers on the RX memory slab
@@ -843,6 +1019,26 @@ static int i2s_rx_stream_start(const struct device *dev)
 		return -EINVAL;
 	}
 
+#ifdef CONFIG_I2S_RTIO
+	struct rtio_iodev_sqe *iodev_sqe;
+	uint8_t *buf;
+	uint32_t buf_len;
+
+	ret = k_msgq_get(&strm->rtio_in_queue, &iodev_sqe, K_NO_WAIT);
+	if (ret < 0) {
+		LOG_DBG("Get from rtio_in_queue failed (%d)", ret);
+		return ret;
+	}
+
+	ret = rtio_sqe_rx_buf(iodev_sqe, strm->cfg.block_size, strm->cfg.block_size, &buf,
+			      &buf_len);
+	if (ret < 0) {
+		LOG_DBG("Failed to allocate rx buf from rtio sqe pool (%d)", ret);
+		return ret;
+	}
+#else
+	struct i2s_q_entry q_entry = {0};
+
 	/* allocate 1st receive entry from SLAB */
 	ret = k_mem_slab_alloc(strm->cfg.mem_slab, &q_entry.mem_block, K_NO_WAIT);
 	if (ret != 0) {
@@ -850,6 +1046,7 @@ static int i2s_rx_stream_start(const struct device *dev)
 		return ret;
 	}
 	q_entry.size = strm->cfg.block_size;
+#endif /* CONFIG_I2S_RTIO */
 
 	/* Configure DMA block */
 	struct dma_block_config *blk_cfg = &strm->dma_block;
@@ -858,9 +1055,14 @@ static int i2s_rx_stream_start(const struct device *dev)
 
 	uint32_t data_path = strm->start_channel;
 
-	blk_cfg->dest_address = (uint32_t)q_entry.mem_block;
 	blk_cfg->source_address = (uint32_t)&base->RDR[data_path];
+#ifdef CONFIG_I2S_RTIO
+	blk_cfg->dest_address = (uint32_t)buf;
+	blk_cfg->block_size = strm->cfg.block_size;
+#else
+	blk_cfg->dest_address = (uint32_t)q_entry.mem_block;
 	blk_cfg->block_size = q_entry.size;
+#endif /* CONFIG_I2S_RTIO */
 
 	blk_cfg->source_gather_en = 1;
 
@@ -870,16 +1072,51 @@ static int i2s_rx_stream_start(const struct device *dev)
 
 	dma_config(dev_dma, strm->dma_channel, &strm->dma_cfg);
 
+#ifdef CONFIG_I2S_RTIO
+	ret = k_msgq_put(&strm->rtio_out_queue, (void *)&iodev_sqe, K_NO_WAIT);
+	if (ret < 0) {
+		LOG_ERR("Failed to put iodev_sqe in out queue (%d)", ret);
+		return ret;
+	}
+#else
 	/* put entry in input queue */
 	ret = k_msgq_put(&strm->in_queue, &q_entry, K_NO_WAIT);
 	if (ret != 0) {
 		LOG_ERR("failed to put entry in input queue, ret1 %d", ret);
 		return ret;
 	}
+#endif /* CONFIG_I2S_RTIO */
 
 	/* prep DMA for each of remaining (NUM_DMA_BLOCKS_RX_PREP-1) buffers */
 	for (int i = 0; i < NUM_DMA_BLOCKS_RX_PREP - 1; i++) {
 
+#ifdef CONFIG_I2S_RTIO
+		ret = k_msgq_get(&strm->rtio_in_queue, &iodev_sqe, K_NO_WAIT);
+		if (ret < 0) {
+			LOG_DBG("Get from rtio_in_queue failed (%d)", ret);
+			return ret;
+		}
+
+		ret = rtio_sqe_rx_buf(iodev_sqe, strm->cfg.block_size, strm->cfg.block_size, &buf,
+				      &buf_len);
+		if (ret < 0) {
+			LOG_DBG("Failed to allocate rx buf from rtio sqe pool (%d)", ret);
+			return ret;
+		}
+
+		ret = dma_reload(dev_dma, strm->dma_channel, (uint32_t)&base->RDR[data_path],
+				 (uint32_t)buf, strm->cfg.block_size);
+		if (ret < 0) {
+			LOG_ERR("dma_reload() failed with error 0x%x", ret);
+			return ret;
+		}
+
+		ret = k_msgq_put(&strm->rtio_out_queue, (void *)&iodev_sqe, K_NO_WAIT);
+		if (ret < 0) {
+			LOG_ERR("Failed to put iodev_sqe in out queue (%d)", ret);
+			return ret;
+		}
+#else
 		/* allocate receive entry from SLAB */
 		ret = k_mem_slab_alloc(strm->cfg.mem_slab, &q_entry.mem_block, K_NO_WAIT);
 		if (ret != 0) {
@@ -901,6 +1138,7 @@ static int i2s_rx_stream_start(const struct device *dev)
 			LOG_ERR("failed to put entry in input queue, ret2 %d", ret);
 			return ret;
 		}
+#endif /* CONFIG_I2S_RTIO */
 	}
 
 	LOG_DBG("Starting DMA Ch%u", strm->dma_channel);
@@ -974,9 +1212,9 @@ static int i2s_mcux_trigger(const struct device *dev, enum i2s_dir dir, enum i2s
 
 		strm->state = I2S_STATE_READY;
 		if (dir == I2S_DIR_TX) {
-			i2s_tx_stream_disable(dev, true);
+			i2s_tx_stream_disable(dev, true, false);
 		} else {
-			i2s_rx_stream_disable(dev, true, true);
+			i2s_rx_stream_disable(dev, true, true, false);
 		}
 		break;
 
@@ -1009,9 +1247,9 @@ static int i2s_mcux_trigger(const struct device *dev, enum i2s_dir dir, enum i2s
 		}
 		strm->state = I2S_STATE_READY;
 		if (dir == I2S_DIR_TX) {
-			i2s_tx_stream_disable(dev, true);
+			i2s_tx_stream_disable(dev, true, false);
 		} else {
-			i2s_rx_stream_disable(dev, true, true);
+			i2s_rx_stream_disable(dev, true, true, false);
 		}
 		break;
 
@@ -1024,6 +1262,7 @@ static int i2s_mcux_trigger(const struct device *dev, enum i2s_dir dir, enum i2s
 	return ret;
 }
 
+#ifndef CONFIG_I2S_RTIO
 static int i2s_mcux_read(const struct device *dev, void **mem_block, size_t *size)
 {
 	struct i2s_dev_data *dev_data = dev->data;
@@ -1090,6 +1329,165 @@ static int i2s_mcux_write(const struct device *dev, void *mem_block, size_t size
 
 	return ret;
 }
+#endif /* !CONFIG_I2S_RTIO */
+
+#ifdef CONFIG_I2S_RTIO
+static void i2s_mcux_rtio_rx(const struct device *dev, struct i2s_rtio *rtio_ctx,
+			     struct rtio_sqe *sqe)
+{
+	struct i2s_dev_data *dev_data = dev->data;
+	struct stream *strm;
+	int ret;
+
+	strm = &dev_data->rx;
+
+	ret = k_msgq_put(&strm->rtio_in_queue, (void *)&rtio_ctx->txn_curr,
+			 SYS_TIMEOUT_MS(strm->cfg.timeout));
+	if (ret < 0) {
+		LOG_ERR("Failed to put in rx rtio_in_queue (%d)", ret);
+		i2s_mcux_iodev_complete(dev, ret);
+		return;
+	}
+
+	i2s_mcux_iodev_advance(dev);
+}
+
+static void i2s_mcux_rtio_tx(const struct device *dev, struct i2s_rtio *rtio_ctx,
+			     struct rtio_sqe *sqe)
+{
+	struct i2s_dev_data *dev_data = dev->data;
+	struct stream *strm;
+	int ret;
+
+	strm = &dev_data->tx;
+
+	ret = k_msgq_put(&strm->rtio_in_queue, (void *)&rtio_ctx->txn_curr,
+			 SYS_TIMEOUT_MS(strm->cfg.timeout));
+	if (ret < 0) {
+		LOG_ERR("Failed to put in tx rtio_in_queue (%d)", ret);
+		i2s_mcux_iodev_complete(dev, ret);
+		return;
+	}
+
+	if (strm->state == I2S_STATE_RUNNING && strm->free_tx_dma_blocks >= MAX_TX_DMA_BLOCKS) {
+		uint8_t blocks_queued = 0;
+		I2S_Type *base = get_base(dev);
+		/* As DMA has been stopped because reloading failure in TX callback,
+		 * here is a good place to reload it and resume TX.
+		 */
+		ret = i2s_tx_reload_multiple_dma_blocks(dev, &blocks_queued);
+		if (ret == 0 && blocks_queued > 0) {
+			SAI_TxEnable(base, true);
+			LOG_WRN("TX is resumed");
+		} else {
+			LOG_ERR("TX block reload err, TX is not resumed");
+			return i2s_mcux_iodev_complete(dev, ret);
+		}
+	}
+
+	i2s_mcux_iodev_advance(dev);
+}
+
+static void i2s_mcux_rtio_i2s_configure(const struct device *dev, struct i2s_rtio *rtio_ctx,
+					struct rtio_sqe *sqe)
+{
+	ARG_UNUSED(rtio_ctx);
+	ARG_UNUSED(sqe);
+
+	int ret;
+
+	ret = i2s_mcux_config(dev, sqe->i2s_config.dir,
+			      (struct i2s_config *)sqe->i2s_config.config);
+
+	i2s_mcux_iodev_complete(dev, ret);
+}
+
+static void i2s_mcux_rtio_i2s_trigger(const struct device *dev, struct i2s_rtio *rtio_ctx,
+				      struct rtio_sqe *sqe)
+{
+	ARG_UNUSED(rtio_ctx);
+	ARG_UNUSED(sqe);
+
+	int ret;
+
+	ret = i2s_mcux_trigger(dev, sqe->i2s_trigger.dir, sqe->i2s_trigger.cmd);
+
+	i2s_mcux_iodev_complete(dev, ret);
+}
+
+static void i2s_mcux_iodev_start(const struct device *dev)
+{
+	struct i2s_dev_data *dev_data = dev->data;
+	struct i2s_rtio *rtio_ctx = dev_data->rtio_ctx;
+	struct rtio_sqe *sqe = &rtio_ctx->txn_curr->sqe;
+
+	switch (sqe->op) {
+	case RTIO_OP_RX:
+		LOG_DBG("RTIO_OP_RX");
+		i2s_mcux_rtio_rx(dev, rtio_ctx, sqe);
+		break;
+	case RTIO_OP_TX:
+		LOG_DBG("RTIO_OP_TX");
+		i2s_mcux_rtio_tx(dev, rtio_ctx, sqe);
+		break;
+	case RTIO_OP_I2S_CONFIGURE:
+		LOG_DBG("RTIO_OP_I2S_CONFIGURE");
+		i2s_mcux_rtio_i2s_configure(dev, rtio_ctx, sqe);
+		break;
+	case RTIO_OP_I2S_TRIGGER:
+		LOG_DBG("RTIO_OP_I2S_TRIGGER");
+		i2s_mcux_rtio_i2s_trigger(dev, rtio_ctx, sqe);
+		break;
+	default:
+		LOG_ERR("Invalid op code %d for submission %p", sqe->op, (void *)sqe);
+		i2s_mcux_iodev_complete(dev, -EINVAL);
+		break;
+	}
+}
+
+static void i2s_mcux_iodev_advance(const struct device *dev)
+{
+	struct i2s_dev_data *dev_data = dev->data;
+	struct i2s_rtio *rtio_ctx = dev_data->rtio_ctx;
+
+	if ((rtio_ctx->txn_curr->sqe.flags & RTIO_SQE_TRANSACTION) != 0) {
+		rtio_ctx->txn_curr = rtio_txn_next(rtio_ctx->txn_curr);
+		i2s_mcux_iodev_start(dev);
+	} else {
+		if (i2s_rtio_advance(rtio_ctx)) {
+			i2s_mcux_iodev_start(dev);
+		}
+	}
+}
+
+static void i2s_mcux_iodev_complete(const struct device *dev, int status)
+{
+	struct i2s_dev_data *dev_data = dev->data;
+	struct i2s_rtio *rtio_ctx = dev_data->rtio_ctx;
+
+	if (status == 0 && (rtio_ctx->txn_curr->sqe.flags & RTIO_SQE_TRANSACTION) != 0) {
+		rtio_ctx->txn_curr = rtio_txn_next(rtio_ctx->txn_curr);
+		i2s_mcux_iodev_start(dev);
+	} else {
+		while (i2s_rtio_complete(rtio_ctx, status)) {
+			i2s_mcux_iodev_start(dev);
+		}
+	}
+}
+
+static void i2s_mcux_iodev_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
+{
+	struct i2s_dev_data *dev_data = dev->data;
+
+	LOG_DBG("%s", __func__);
+
+	if (i2s_rtio_submit(dev_data->rtio_ctx, iodev_sqe)) {
+		i2s_mcux_iodev_start(dev);
+	} else {
+		LOG_WRN("Submit returned false");
+	}
+}
+#endif /* CONFIG_I2S_RTIO */
 
 static void sai_driver_irq(const struct device *dev)
 {
@@ -1189,6 +1587,7 @@ static int i2s_mcux_initialize(const struct device *dev)
 	base = get_base(dev);
 
 	/* Initialize the entry queues */
+#ifndef CONFIG_I2S_RTIO
 	k_msgq_init(&dev_data->tx.in_queue, (char *)dev_data->tx_in_msgs,
 		    sizeof(struct i2s_q_entry), CONFIG_I2S_TX_BLOCK_COUNT);
 	k_msgq_init(&dev_data->rx.in_queue, (char *)dev_data->rx_in_msgs,
@@ -1197,6 +1596,18 @@ static int i2s_mcux_initialize(const struct device *dev)
 		    sizeof(struct i2s_q_entry), CONFIG_I2S_TX_BLOCK_COUNT);
 	k_msgq_init(&dev_data->rx.out_queue, (char *)dev_data->rx_out_msgs,
 		    sizeof(struct i2s_q_entry), CONFIG_I2S_RX_BLOCK_COUNT);
+#endif /* !CONFIG_I2S_RTIO */
+
+#ifdef CONFIG_I2S_RTIO
+	k_msgq_init(&dev_data->tx.rtio_in_queue, (char *)dev_data->rtio_tx_in_msgs,
+		    sizeof(struct rtio_iodev_sqe *), CONFIG_I2S_TX_BLOCK_COUNT);
+	k_msgq_init(&dev_data->rx.rtio_in_queue, (char *)dev_data->rtio_rx_in_msgs,
+		    sizeof(struct rtio_iodev_sqe *), CONFIG_I2S_RX_BLOCK_COUNT);
+	k_msgq_init(&dev_data->tx.rtio_out_queue, (char *)dev_data->rtio_tx_out_msgs,
+		    sizeof(struct rtio_iodev_sqe *), CONFIG_I2S_TX_BLOCK_COUNT);
+	k_msgq_init(&dev_data->rx.rtio_out_queue, (char *)dev_data->rtio_rx_out_msgs,
+		    sizeof(struct rtio_iodev_sqe *), CONFIG_I2S_RX_BLOCK_COUNT);
+#endif /* CONFIG_I2S_RTIO */
 
 	/* register ISR */
 	dev_cfg->irq_connect(dev);
@@ -1257,6 +1668,10 @@ static int i2s_mcux_initialize(const struct device *dev)
 	SAI_SetMasterClockConfig(base, &mclkConfig);
 #endif
 
+#ifdef CONFIG_I2S_RTIO
+	i2s_rtio_init(dev_data->rtio_ctx, dev);
+#endif /* CONFIG_I2S_RTIO */
+
 	LOG_INF("Device %s initialized", dev->name);
 
 	return 0;
@@ -1264,10 +1679,14 @@ static int i2s_mcux_initialize(const struct device *dev)
 
 static DEVICE_API(i2s, i2s_mcux_driver_api) = {
 	.configure = i2s_mcux_config,
-	.read = i2s_mcux_read,
-	.write = i2s_mcux_write,
 	.config_get = i2s_mcux_config_get,
 	.trigger = i2s_mcux_trigger,
+#ifdef CONFIG_I2S_RTIO
+	.iodev_submit = i2s_mcux_iodev_submit,
+#else
+	.read = i2s_mcux_read,
+	.write = i2s_mcux_write,
+#endif
 };
 
 #define I2S_MCUX_PINMUX_INIT(i2s_id)                                                               \
@@ -1310,6 +1729,8 @@ static DEVICE_API(i2s, i2s_mcux_driver_api) = {
 		.bclk_source = DT_INST_PROP(i2s_id, nxp_bclk_source),                              \
 	};                                                                                         \
                                                                                                    \
+	IF_ENABLED(CONFIG_I2S_RTIO,  (I2S_RTIO_DEFINE(i2s_mcux_rtio_##i2s_id)));                     \
+                                                                                                   \
 	static struct i2s_dev_data i2s_##i2s_id##_data = {                                         \
 		.dev_dma = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(i2s_id, rx)),                   \
 		.tx =                                                                              \
@@ -1348,7 +1769,7 @@ static DEVICE_API(i2s, i2s_mcux_driver_api) = {
 						.cyclic = 1,                                       \
 					},                                                         \
 			},                                                                         \
-	};                                                                                         \
+		IF_ENABLED(CONFIG_I2S_RTIO, (.rtio_ctx = &i2s_mcux_rtio_##i2s_id,)) };                \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(i2s_id, &i2s_mcux_initialize, NULL, &i2s_##i2s_id##_data,            \
 			      &i2s_##i2s_id##_config, POST_KERNEL, CONFIG_I2S_INIT_PRIORITY,       \
