@@ -1,0 +1,6 @@
+board:
+  name: mt8370_genio_510_evk
+  full_name: Genio 510 EVK
+  vendor: mediatek
+  socs:
+    - name: mt8188
