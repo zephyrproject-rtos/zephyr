@@ -162,3 +162,5 @@ API Reference
 *************
 
 .. doxygengroup:: pwm_interface
+
+.. doxygengroup:: pwm_fake
