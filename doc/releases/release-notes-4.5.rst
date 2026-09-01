@@ -414,6 +414,7 @@ New APIs and options
     * :c:member:`bt_conn_cb.le_param_update_rejected`
     * ``BT_HCI_QUIRK_NO_FLOW_CONTROL`` HCI device quirk for controllers that
       advertise but reject the controller to host flow control commands.
+    * :c:func:`bt_l2cap_server_unregister`
 
   * Mesh
 
