@@ -307,6 +307,20 @@ config NXP_IW611_MURATA_2DL_M2
 	  Detailed information about Type 2DL module you can find on
 	  https://www.murata.com/en-us/products/connectivitymodule/wi-fi-bluetooth/overview/lineup/type2dl
 
+config NXP_IW611_EZURIO_NX611
+	bool "NXP IW611-EZURIO-NX611"
+	select NXP_WIFI_COMPRESS_TX_PWTBL
+	select NXP_WIFI_COMPRESS_RU_TX_PWTBL
+	help
+	  Ezurio Sona NX611 is a small and very high performance module based
+	  on NXP IW611 combo chipset which supports Wi-Fi 802.11a/b/g/n/ac/ax +
+	  Bluetooth 5.4 BR/EDR/LE up to 600 Mbps PHY data rate on Wi-Fi and
+	  2Mbps PHY data rate on Bluetooth. Uses Ezurio-qualified firmware.
+
+	  All regulatory domains (WW/US/JP/CA/EU/AU) for this module ship as
+	  Ezurio-qualified compressed Tx power tables, so Compress TX/RU Power
+	  Table support is always enabled for this module.
+
 endchoice
 
 choice NXP_IW61X_REGION
@@ -328,6 +342,9 @@ config NXP_IW61X_REGION_EU
 
 config NXP_IW61X_REGION_US
 	bool "Regulatory domain US"
+
+config NXP_IW61X_REGION_AU
+	bool "Regulatory domain AU"
 
 endchoice
 
@@ -1111,17 +1128,21 @@ config NXP_WIFI_CLOCKSYNC
 	help
 	  This option enables clock synchronization of TSF latches.
 
+config NXP_WIFI_COMPRESS_PWTBL_SUPPORTED
+	bool
+	default y if NXP_RW610 || NXP_IW61X_REGION_WW || NXP_IW610 || NXP_IW611_EZURIO_NX611
+
 config NXP_WIFI_COMPRESS_TX_PWTBL
 	bool "Compress TX Power Table Support"
 	default y
-	depends on (NXP_RW610 || NXP_IW61X_REGION_WW || NXP_IW610)
+	depends on NXP_WIFI_COMPRESS_PWTBL_SUPPORTED
 	help
 	  This option enables the use of Compress TX Power Table support.
 
 config NXP_WIFI_COMPRESS_RU_TX_PWTBL
 	bool "Compress RU TX Power Table Support"
 	default y
-	depends on (NXP_RW610 || NXP_IW61X_REGION_WW || NXP_IW610)
+	depends on NXP_WIFI_COMPRESS_PWTBL_SUPPORTED
 	help
 	  This option enables the use of Compress RU TX Power Table support.
 
