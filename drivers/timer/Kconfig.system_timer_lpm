@@ -10,15 +10,22 @@ config SYSTEM_TIMER_HAS_LPM_COMPANION_SUPPORT
 	  This option should be selected by system timer drivers that support
 	  delegating low-power timekeeping to a companion timer.
 
+# The SYSTEM_TIMER_LPM_COMPANION choice and SYSTEM_TIMER_LPM_COMPANION_NONE option
+# have no dependency on purpose: this allows using the option as an always-available
+# indicator of whether or not companions are enabled, regardless of whether they are
+# supported (irrelevant to consumers).
+#
 # If all dependencies are enabled, and either the preferred
 # /chosen/zephyr,system-timer-companion property or the deprecated
 # /chosen/zephyr,cortex-m-idle-timer property is enabled, default
 # to using the Counter API-based LPM timer. Otherwise, the first
-# choice (SYSTEM_TIMER_LPM_COMPANION_NONE) will be selected automatically,
-# and no LPM companion timer will be enabled.
+# choice will be selected automatically and no LPM companion timer
+# will be enabled (CONFIG_SYSTEM_TIMER_LPM_COMPANION_NONE=y).
+#
+# The choice is promptless if LPM companions are not supported: in this situation,
+# only the NONE option can be selected - no "choice" can really be made.
 choice SYSTEM_TIMER_LPM_COMPANION
-	prompt "System timer low-power companion"
-	depends on SYSTEM_TIMER_HAS_LPM_COMPANION_SUPPORT
+	prompt "System timer low-power companion" if SYSTEM_TIMER_HAS_LPM_COMPANION_SUPPORT
 	# Preserve legacy SysTick Kconfig selections during the deprecation period.
 	# These defaults are scheduled to be removed in Zephyr 4.6.0.
 	default SYSTEM_TIMER_LPM_COMPANION_COUNTER if CORTEX_M_SYSTICK_LPM_TIMER_COUNTER
@@ -49,7 +56,7 @@ config SYSTEM_TIMER_LPM_COMPANION_NONE
 	  timer cannot keep time when this option is selected; otherwise, system
 	  behavior becomes unpredictable.
 
-if TICKLESS_KERNEL && PM
+if SYSTEM_TIMER_HAS_LPM_COMPANION_SUPPORT && TICKLESS_KERNEL && PM
 
 config SYSTEM_TIMER_LPM_COMPANION_COUNTER
 	bool "Counter API timer"
@@ -73,7 +80,8 @@ config SYSTEM_TIMER_LPM_COMPANION_HOOKS
 	  Refer to `include/zephyr/drivers/timer/system_timer_lpm.h` for more
 	  details.
 
-endif # TICKLESS_KERNEL && PM
+endif # SYSTEM_TIMER_HAS_LPM_COMPANION_SUPPORT && TICKLESS_KERNEL && PM
+
 endchoice # SYSTEM_TIMER_LPM_COMPANION
 
 config SYSTEM_TIMER_RESET_BY_LPM
