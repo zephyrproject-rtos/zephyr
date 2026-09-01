@@ -96,7 +96,6 @@ add_subdirectory(spi_nxp_lpspi)
 
 zephyr_library_include_directories_ifdef(CONFIG_SPI_AMEBA ${ZEPHYR_BASE}/drivers/dma)
 
-if(CONFIG_SPI_SC18IS606)
-  zephyr_library_include_directories(${ZEPHYR_BASE}/drivers/mfd)
-  zephyr_library_sources(spi_sc18is606.c)
+if(CONFIG_SPI_SC18IS60X)
+  zephyr_library_sources(spi_sc18is60x.c)
 endif()
