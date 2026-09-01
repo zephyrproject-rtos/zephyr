@@ -1282,6 +1282,10 @@ static bool smp_br_pairing_allowed(struct bt_smp_br *smp)
 		return false;
 	}
 
+	if (!IS_ENABLED(CONFIG_BT_SMP_CTKD_BR_TO_LE)) {
+		return false;
+	}
+
 	conn = smp->chan.chan.conn;
 
 	bt_addr_le_copy_addr(&addr, &conn->br.dst, BT_ADDR_LE_PUBLIC);
@@ -3235,6 +3239,11 @@ static uint8_t smp_pairing_req(struct bt_smp *smp, struct net_buf *buf)
 		rsp->resp_key_dist &= SEND_KEYS_SC;
 	}
 
+	if (!IS_ENABLED(CONFIG_BT_SMP_CTKD_LE_TO_BR)) {
+		rsp->init_key_dist &= ~LINK_DIST;
+		rsp->resp_key_dist &= ~LINK_DIST;
+	}
+
 	if (atomic_test_bit(smp->flags, SMP_FLAG_SC)) {
 		rsp->oob_flag = sc_oobd_present ? BT_SMP_OOB_PRESENT :
 				BT_SMP_OOB_NOT_PRESENT;
@@ -3424,6 +3433,16 @@ static int smp_send_pairing_req(struct bt_conn *conn)
 	} else {
 		req->init_key_dist = 0;
 		req->resp_key_dist = 0;
+	}
+
+	if (!IS_ENABLED(CONFIG_BT_SMP_CTKD_LE_TO_BR)) {
+		/* Do not ask for a derived BR/EDR link key. This has to happen
+		 * before the request is stored and sent, otherwise the peer
+		 * agrees to the derivation and keeps a link key that this side
+		 * never derives.
+		 */
+		req->init_key_dist &= ~LINK_DIST;
+		req->resp_key_dist &= ~LINK_DIST;
 	}
 
 	smp->local_dist = req->init_key_dist;
