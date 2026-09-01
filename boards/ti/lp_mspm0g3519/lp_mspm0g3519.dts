@@ -144,3 +144,7 @@
 	pinctrl-0 = <&analog_pa23>;
 	pinctrl-names = "default";
 };
+
+&dma {
+	status = "okay";
+};
