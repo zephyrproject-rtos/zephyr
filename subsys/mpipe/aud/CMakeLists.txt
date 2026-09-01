@@ -10,6 +10,7 @@ if(CONFIG_MPIPE_AUD)
     mpipe_aud_dmic_src.c
     mpipe_aud_gain.c
     mpipe_aud_i2s_codec_sink.c
+    mpipe_aud_i2s_src.c
     mpipe_aud_src.c
     mpipe_aud.c
   )
