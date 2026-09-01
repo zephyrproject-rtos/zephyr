@@ -16,7 +16,9 @@ tests:
       - nucleo_f413zh
     filter: dt_compat_enabled("adi,tmc6460")
   sample.drivers.misc.tmc6460.uart:
-    tags: misc uart
+    tags:
+      - misc
+      - uart
     depends_on:
       - gpio
     platform_allow:
