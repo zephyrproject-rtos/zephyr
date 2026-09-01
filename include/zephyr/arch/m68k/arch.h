@@ -4,9 +4,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief M68K-specific kernel interface
+ */
+
 #ifndef ZEPHYR_INCLUDE_ARCH_M68K_ARCH_H_
 #define ZEPHYR_INCLUDE_ARCH_M68K_ARCH_H_
 
+/** Implementation of @ref ARCH_STACK_PTR_ALIGN. */
 #define ARCH_STACK_PTR_ALIGN 2
 
 #include <zephyr/arch/common/ffs.h>
@@ -19,24 +25,30 @@
 
 #include <zephyr/sw_isr_table.h>
 
+/** @cond INTERNAL_HIDDEN */
 extern uint32_t sys_clock_cycle_get_32(void);
 extern uint64_t sys_clock_cycle_get_64(void);
+/** @endcond */
 
+/** Implementation of @ref arch_k_cycle_get_32. */
 static inline uint32_t arch_k_cycle_get_32(void)
 {
 	return sys_clock_cycle_get_32();
 }
 
+/** Implementation of @ref arch_k_cycle_get_64. */
 static inline uint64_t arch_k_cycle_get_64(void)
 {
 	return sys_clock_cycle_get_64();
 }
 
+/** Implementation of @ref arch_nop. */
 static ALWAYS_INLINE void arch_nop(void)
 {
 	__asm__ volatile("nop");
 }
 
+/** Interrupt priority level mask in the M68K status register. */
 #define M68K_SR_IPL_MASK 0x0700U
 
 static ALWAYS_INLINE uint16_t z_m68k_read_sr(void)
@@ -53,11 +65,13 @@ static ALWAYS_INLINE uint16_t z_m68k_read_sr(void)
 }
 
 /* CPU vectors have no per-line priority or flags. */
+/** Implementation of @ref ARCH_IRQ_CONNECT. */
 #define ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p)\
 	{								\
 		Z_ISR_DECLARE(irq_p, 0, isr_p, isr_param_p);		\
 	}
 
+/** Implementation of @ref arch_irq_lock. */
 static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 {
 	unsigned int key;
@@ -73,6 +87,7 @@ static ALWAYS_INLINE unsigned int arch_irq_lock(void)
 	return key;
 }
 
+/** Implementation of @ref arch_irq_unlock. */
 static ALWAYS_INLINE void arch_irq_unlock(unsigned int key)
 {
 	uint16_t scratch;
@@ -87,16 +102,19 @@ static ALWAYS_INLINE void arch_irq_unlock(unsigned int key)
 		: "memory", "cc");
 }
 
+/** Implementation of @ref arch_irq_unlocked. */
 static ALWAYS_INLINE bool arch_irq_unlocked(unsigned int key)
 {
 	return !key;
 }
 
+/** Implementation of @ref arch_cpu_irqs_are_enabled. */
 static ALWAYS_INLINE bool arch_cpu_irqs_are_enabled(void)
 {
 	return !(z_m68k_read_sr() & M68K_SR_IPL_MASK);
 }
 
+/** Implementation of @ref ARCH_EXCEPT. */
 #define ARCH_EXCEPT(reason_p)						\
 	do {								\
 		register unsigned int reason __asm__("d0") = (reason_p);	\

@@ -4,6 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief M68K thread context definitions
+ */
+
 #ifndef ZEPHYR_INCLUDE_ARCH_M68K_THREAD_H_
 #define ZEPHYR_INCLUDE_ARCH_M68K_THREAD_H_
 
