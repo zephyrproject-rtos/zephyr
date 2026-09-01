@@ -1551,15 +1551,19 @@ static int uart_stm32_async_callback_set(const struct device *dev,
 {
 	struct uart_stm32_data *data = dev->data;
 
-	data->async_cb = callback;
-	data->async_user_data = user_data;
-
+	if (data->dma_rx.dma_dev && data->dma_tx.dma_dev) { // Maybe we should use OR logic (more flexible)
+		data->async_cb = callback;
+		data->async_user_data = user_data;
+		
 #if defined(CONFIG_UART_EXCLUSIVE_API_CALLBACKS)
-	data->user_cb = NULL;
-	data->user_data = NULL;
+		data->user_cb = NULL;
+		data->user_data = NULL;
 #endif
 
-	return 0;
+		return 0;
+	} else {
+		return -ENOSYS;
+	}
 }
 
 static inline void uart_stm32_dma_tx_enable(const struct device *dev)
