@@ -95,12 +95,12 @@ BUILD_ASSERT(!IS_ENABLED(CONFIG_SOC_STM32WB09XX) ||
 	"STM32WB09: TRNG requires system clock frequency >= 32MHz");
 
 struct entropy_stm32_rng_dev_cfg {
+	RNG_TypeDef *rng;
+	const struct device *clock;
 	struct stm32_pclken *pclken;
 };
 
 struct entropy_stm32_rng_dev_data {
-	RNG_TypeDef *rng;
-	const struct device *clock;
 	struct k_sem sem_lock;
 	struct k_sem sem_sync;
 	struct k_work filling_work;
@@ -117,19 +117,18 @@ struct entropy_stm32_rng_dev_data {
 static struct stm32_pclken pclken_rng[] = STM32_DT_INST_CLOCKS(0);
 
 static struct entropy_stm32_rng_dev_cfg entropy_stm32_rng_config = {
+	.rng = (RNG_TypeDef *)DT_INST_REG_ADDR(0),
+	.clock = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 	.pclken	= pclken_rng
 };
 
-static struct entropy_stm32_rng_dev_data entropy_stm32_rng_data = {
-	.rng = (RNG_TypeDef *)DT_INST_REG_ADDR(0),
-};
+static struct entropy_stm32_rng_dev_data entropy_stm32_rng_data;
 
 static int entropy_stm32_suspend(void)
 {
 	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
-	struct entropy_stm32_rng_dev_data *dev_data = dev->data;
 	const struct entropy_stm32_rng_dev_cfg *dev_cfg = dev->config;
-	RNG_TypeDef *rng = dev_data->rng;
+	RNG_TypeDef *rng = dev_cfg->rng;
 	int res;
 
 #if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_STM32H7_DUAL_CORE)
@@ -177,7 +176,7 @@ static int entropy_stm32_suspend(void)
 #ifdef CONFIG_SOC_SERIES_STM32WBAX
 	uint32_t wait_cycles, rng_rate;
 
-	if (clock_control_get_rate(dev_data->clock,
+	if (clock_control_get_rate(dev_cfg->clock,
 			(clock_control_subsys_t) &dev_cfg->pclken[0],
 			&rng_rate) < 0) {
 		return -EIO;
@@ -189,7 +188,7 @@ static int entropy_stm32_suspend(void)
 	}
 #endif /* CONFIG_SOC_SERIES_STM32WBAX */
 
-	res = clock_control_off(dev_data->clock,
+	res = clock_control_off(dev_cfg->clock,
 			(clock_control_subsys_t)&dev_cfg->pclken[0]);
 
 #if defined(CONFIG_SOC_SERIES_STM32WBX) || defined(CONFIG_STM32H7_DUAL_CORE)
@@ -202,12 +201,11 @@ static int entropy_stm32_suspend(void)
 static int entropy_stm32_resume(void)
 {
 	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
-	struct entropy_stm32_rng_dev_data *dev_data = dev->data;
 	const struct entropy_stm32_rng_dev_cfg *dev_cfg = dev->config;
-	RNG_TypeDef *rng = dev_data->rng;
+	RNG_TypeDef *rng = dev_cfg->rng;
 	int res;
 
-	res = clock_control_on(dev_data->clock,
+	res = clock_control_on(dev_cfg->clock,
 			(clock_control_subsys_t)&dev_cfg->pclken[0]);
 #if defined(CONFIG_SOC_STM32WB09XX)
 	/**
@@ -225,7 +223,7 @@ static int entropy_stm32_resume(void)
 
 static void configure_rng(void)
 {
-	RNG_TypeDef *rng = entropy_stm32_rng_data.rng;
+	RNG_TypeDef *rng = entropy_stm32_rng_config.rng;
 
 #ifdef STM32_CONDRST_SUPPORT
 	uint32_t desired_nist_cfg = DT_INST_PROP_OR(0, nist_config, 0U);
@@ -402,7 +400,7 @@ static int random_sample_get(rng_sample_t *rnd_sample)
 {
 	int retval = -EAGAIN;
 	unsigned int key;
-	RNG_TypeDef *rng = entropy_stm32_rng_data.rng;
+	RNG_TypeDef *rng = entropy_stm32_rng_config.rng;
 
 	key = irq_lock();
 
@@ -462,8 +460,8 @@ static uint16_t generate_from_isr(uint8_t *buf, uint16_t len)
 #endif /* CONFIG_SOC_SERIES_STM32WBX || CONFIG_STM32H7_DUAL_CORE */
 
 	/* do not proceed if a Seed error occurred */
-	if (ll_rng_is_active_secs(entropy_stm32_rng_data.rng) ||
-		ll_rng_is_active_seis(entropy_stm32_rng_data.rng)) {
+	if (ll_rng_is_active_secs(entropy_stm32_rng_config.rng) ||
+		ll_rng_is_active_seis(entropy_stm32_rng_config.rng)) {
 
 		(void)random_sample_get(&rnd_sample); /* this will recover the error */
 
@@ -481,7 +479,7 @@ static uint16_t generate_from_isr(uint8_t *buf, uint16_t len)
 
 	do {
 		while (ll_rng_is_active_drdy(
-				entropy_stm32_rng_data.rng) != 1) {
+				entropy_stm32_rng_config.rng) != 1) {
 
 #if !defined(CONFIG_PM_S2RAM)
 #if !IRQLESS_TRNG
@@ -725,11 +723,11 @@ static int perform_pool_refill(void)
 static void trng_poll_work_item(struct k_work *work)
 {
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
-	RNG_TypeDef *rng = entropy_stm32_rng_data.rng;
+	RNG_TypeDef *rng = entropy_stm32_rng_config.rng;
 
 	/* Seed error occurred: reset TRNG and try again */
-	if (ll_rng_is_active_secs(entropy_stm32_rng_data.rng) ||
-		ll_rng_is_active_seis(entropy_stm32_rng_data.rng)) {
+	if (ll_rng_is_active_secs(entropy_stm32_rng_config.rng) ||
+		ll_rng_is_active_seis(entropy_stm32_rng_config.rng)) {
 
 		rng_sample_t dummy;
 		(void)random_sample_get(&dummy); /* this will recover the error */
@@ -857,9 +855,7 @@ static int entropy_stm32_rng_init(const struct device *dev)
 	struct entropy_stm32_rng_dev_data *dev_data = dev->data;
 	int res;
 
-	dev_data->clock = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
-
-	res = clock_control_on(dev_data->clock,
+	res = clock_control_on(dev_cfg->clock,
 		(clock_control_subsys_t)&dev_cfg->pclken[0]);
 	if (res != 0) {
 		LOG_ERR("Failed to enable RNG bus clock (err %d). "
@@ -869,7 +865,7 @@ static int entropy_stm32_rng_init(const struct device *dev)
 
 	/* Configure domain clock if any */
 	if (DT_INST_NUM_CLOCKS(0) > 1) {
-		res = clock_control_configure(dev_data->clock,
+		res = clock_control_configure(dev_cfg->clock,
 					      (clock_control_subsys_t)&dev_cfg->pclken[1],
 					      NULL);
 		if (res != 0) {
@@ -912,7 +908,7 @@ static int entropy_stm32_rng_init(const struct device *dev)
 	if (DT_INST_NUM_CLOCKS(0) > 1) {
 		uint32_t rng_clock_rate;
 
-		if (clock_control_get_rate(dev_data->clock,
+		if (clock_control_get_rate(dev_cfg->clock,
 					   (clock_control_subsys_t)&dev_cfg->pclken[1],
 					   &rng_clock_rate) != 0) {
 			LOG_ERR("Failed to get RNG domain clock rate");
@@ -934,6 +930,7 @@ static int entropy_stm32_rng_init(const struct device *dev)
 static int entropy_stm32_rng_pm_action(const struct device *dev,
 				       enum pm_device_action action)
 {
+	const struct entropy_stm32_rng_dev_cfg *dev_cfg = dev->config;
 	struct entropy_stm32_rng_dev_data *dev_data = dev->data;
 
 	int res = 0;
@@ -955,9 +952,9 @@ static int entropy_stm32_rng_pm_action(const struct device *dev,
 #if DT_INST_NODE_HAS_PROP(0, health_test_config)
 			entropy_stm32_resume();
 #if DT_INST_NODE_HAS_PROP(0, health_test_magic)
-			LL_RNG_SetHealthConfig(dev_data->rng, DT_INST_PROP(0, health_test_magic));
+			LL_RNG_SetHealthConfig(dev_cfg->rng, DT_INST_PROP(0, health_test_magic));
 #endif /* health_test_magic */
-			if (LL_RNG_GetHealthConfig(dev_data->rng) !=
+			if (LL_RNG_GetHealthConfig(dev_cfg->rng) !=
 				DT_INST_PROP_OR(0, health_test_config, 0U)) {
 				entropy_stm32_rng_init(dev);
 			} else if (!entropy_stm32_rng_data.filling_pools) {
