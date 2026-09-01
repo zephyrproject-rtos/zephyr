@@ -130,6 +130,11 @@
 	};
 };
 
+&dma {
+	dma-channels = <12>;
+	ti,num-full-channels = <6>;
+};
+
 &rtc {
 	ti,rtc-x;
 };
