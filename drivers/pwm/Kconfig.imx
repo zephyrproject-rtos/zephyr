@@ -11,6 +11,18 @@ menuconfig PWM_IMX
 	help
 	  Enable support for i.MX pwm driver.
 
+config PWM_IMX_MCUX
+	bool
+	default y
+	depends on PWM_IMX
+	depends on SOC_MIMX8ML8_A53
+	help
+	  Use the MCUXpresso SDK register layout and clock API for the i.MX
+	  PWM driver. This is required on i.MX8M family Cortex-A cores, which
+	  provide the classic i.MX PWM IP through the MCUXpresso SDK device
+	  headers (fsl_device_registers.h / fsl_clock.h) instead of the legacy
+	  device_imx.h HAL used by the i.MX6/i.MX7 Cortex-M ports.
+
 config PWM_PWMSWR_LOOP
 	int "Loop count for PWM Software Reset"
 	default 5
