@@ -146,8 +146,6 @@ static bool arm_gic_lpi_is_enabled(unsigned int intid)
 }
 #endif
 
-#if defined(CONFIG_ARMV8_A_NS) || defined(CONFIG_ARMV7_A_NS) \
-	|| defined(CONFIG_GIC_SINGLE_SECURITY_STATE)
 static inline void arm_gic_write_irouter(uint64_t val, unsigned int intid)
 {
 	mem_addr_t addr;
@@ -165,7 +163,14 @@ static inline void arm_gic_write_irouter(uint64_t val, unsigned int intid)
 	sys_write64(val, addr);
 #endif
 }
-#endif
+
+void arm_gic_irq_set_affinity(unsigned int intid, uint64_t mpidr)
+{
+	__ASSERT(GIC_IS_SPI(intid) || GIC_IS_ESPI(intid),
+		  "affinity routing only applies to SPIs/extended SPIs, got intid %u", intid);
+
+	arm_gic_write_irouter(MPIDR_TO_CORE(mpidr), intid);
+}
 
 void arm_gic_irq_set_priority(unsigned int intid, unsigned int prio, uint32_t flags)
 {
