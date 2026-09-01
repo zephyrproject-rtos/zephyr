@@ -454,7 +454,6 @@ Antmicro platforms:
     - kgugala
   files:
     - boards/antmicro/
-    - soc/antmicro/
     - dts/arm/antmicro/
   labels:
     - "platform: Antmicro"
