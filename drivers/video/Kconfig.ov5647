@@ -1,0 +1,12 @@
+# Copyright (C) 2025 Microchip Technology Inc. and its subsidiaries
+# SPDX-License-Identifier: Apache-2.0
+
+config VIDEO_OV5647
+	bool "OV5647 5 Mega-Pixel CMOS image sensor"
+	select I2C
+	select GPIO
+	depends on DT_HAS_OVTI_OV5647_ENABLED
+	default y
+	help
+	  Enable driver for the OV5647 image sensor, which streams 10-bit raw
+	  Bayer frames over MIPI CSI-2.
