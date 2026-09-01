@@ -297,6 +297,7 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 					k_spinlock_key_t key = sys_clock_lock();
 
 					sys_clock_set_timeout(0, true);
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(standby))
 					/* Subtract exit-latency from the programmed
 					 * RTC wakeup to account for PM3 re-entry
 					 * recovery overhead.
@@ -308,6 +309,7 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 					if (wake > latency_ticks) {
 						RTC_SetWakeupCount(RTC, wake - latency_ticks);
 					}
+#endif
 					sys_clock_unlock(key);
 				}
 				/* GDET got enabled when exiting PM3, disable it
