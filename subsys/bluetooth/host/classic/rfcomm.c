@@ -375,6 +375,10 @@ static int rfcomm_send_disc(struct bt_rfcomm_session *session, uint8_t dlci)
 
 static void rfcomm_session_disconnect(struct bt_rfcomm_session *session)
 {
+	if (session == NULL) {
+		return;
+	}
+
 	if (!sys_slist_is_empty(&session->dlcs)) {
 		return;
 	}
@@ -1884,6 +1888,11 @@ int bt_rfcomm_dlc_connect(struct bt_conn *conn, struct bt_rfcomm_dlc *dlc,
 	return 0;
 
 fail:
+	/* rfcomm_dlc_init() armed the RTX timer, so it has to be stopped here.
+	 * Otherwise it fires long after this failure with dlc->session already
+	 * cleared below.
+	 */
+	(void)k_work_cancel_delayable(&dlc->rtx_work);
 	(void)rfcomm_dlcs_remove_dlci(session, dlc->dlci);
 	dlc->state = BT_RFCOMM_STATE_IDLE;
 	dlc->session = NULL;
