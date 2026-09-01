@@ -78,7 +78,7 @@ static void log_codec_cfg(const struct bt_audio_codec_cfg *codec_cfg)
 		}
 
 		ret = bt_audio_codec_cfg_get_frame_dur(codec_cfg);
-		if (ret > 0) {
+		if (ret >= 0) {
 			LOG_INF("\tFrame Duration: %d us",
 				bt_audio_codec_cfg_frame_dur_to_frame_dur_us(ret));
 		}
