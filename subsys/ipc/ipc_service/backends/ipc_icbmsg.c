@@ -621,9 +621,10 @@ static int msg_q_produce(const struct device *instance, uint8_t block_index, int
 	uint32_t active_count;
 	uint32_t idx;
 	int rv = 0;
+	uint8_t slot_entry = block_index;
 
 	if (priority != 0) {
-		block_index |= HI_PRIO_MASK;
+		slot_entry |= HI_PRIO_MASK;
 	}
 
 	K_SPINLOCK(&data->lock) {
@@ -640,7 +641,7 @@ static int msg_q_produce(const struct device *instance, uint8_t block_index, int
 			   heap_packet_from_index(&config->tx, block_index)->header.size);
 		STATS_SET(data->stats, tx_max_active_count,
 			  MAX(data->stats.tx_max_active_count, data->msg_q.tx_active_count));
-		config->tx_msg_q.prod_shmq->slots[idx] = block_index;
+		config->tx_msg_q.prod_shmq->slots[idx] = slot_entry;
 		LOG_DBG("addr:%p Produce index: %d, block_index: %d, active_count: %d",
 			(void *)&config->tx_msg_q.prod_shmq->slots[idx], idx, block_index,
 			active_count);
@@ -1332,7 +1333,7 @@ static int backend_init(const struct device *instance)
 	native_emb_addr_remap((void **)&conf->rx_msg_q.cons_shmq);
 #endif
 
-#if defined(CONFIG_STATS_NAMES) || defined(CONFIG_MULTITHREADING)
+#if defined(CONFIG_STATS) || defined(CONFIG_MULTITHREADING)
 	struct icbmsg_data *data = instance->data;
 #endif
 
