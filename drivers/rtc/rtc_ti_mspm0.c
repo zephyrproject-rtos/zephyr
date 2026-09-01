@@ -18,6 +18,8 @@
 #include <zephyr/sys/__assert.h>
 #include "rtc_utils.h"
 
+#include <zephyr/drivers/rtc/rtc_ti_mspm0.h>
+
 #if defined(CONFIG_RTC_ALARM)
 #define RTC_TI_ALARM_1		0
 #define RTC_TI_ALARM_2		1
@@ -34,6 +36,7 @@ BUILD_ASSERT((RTC_TI_MAX_ALARM != 0),
 #define RTC_MSPM0_CLKCTL_ENABLE			BIT(31)
 
 #define RTC_MSPM0_CTL_BIN			0x0
+#define RTC_MSPM0_CTL_RTCTEVTX_MASK		GENMASK(1, 0)
 
 #define RTC_MSPM0_SEC_BIN_MASK			BIT_MASK(6)
 #define RTC_MSPM0_MIN_BIN_MASK			BIT_MASK(6)
@@ -56,9 +59,12 @@ BUILD_ASSERT((RTC_TI_MAX_ALARM != 0),
 #define RTC_MSPM0_ADAY_WEEK_BIN_ENABLE		BIT(7)
 
 #define RTC_MSPM0_IIDX_RTCRDY			0x1
+#define RTC_MSPM0_IIDX_RTCTEV			0x2
 #define RTC_MSPM0_IIDX_ALARM1			0x3
 #define RTC_MSPM0_IIDX_ALARM2			0x4
 #define RTC_MSPM0_IMASK_RTCRDY			BIT(0)
+#define RTC_MSPM0_IMASK_RTCTEV			BIT(1)
+
 #define RTC_MSPM0_STA_RTCTCRDY_MASK		BIT(1)
 
 #define RTC_MSPM0_CAL_MAX_VALUE			240
@@ -145,7 +151,8 @@ typedef struct {
 
 struct rtc_ti_mspm0_config {
 	rtc_ti_mspm0_reg_t *regs;
-#if defined(CONFIG_RTC_ALARM) || defined(CONFIG_RTC_UPDATE)
+#if defined(CONFIG_RTC_ALARM) || defined(CONFIG_RTC_UPDATE) || \
+    defined(CONFIG_RTC_TI_MSPM0_INTERVAL_TIMER)
 	void (*irq_config_func)(void);
 #endif
 	bool rtc_x;
@@ -168,6 +175,10 @@ struct rtc_ti_mspm0_data {
 #endif
 #if defined(CONFIG_RTC_ALARM)
 	struct rtc_ti_mspm0_alarm rtc_alarm[RTC_TI_MAX_ALARM];
+#endif
+#if defined(CONFIG_RTC_TI_MSPM0_INTERVAL_TIMER)
+	rtc_mspm0_interval_callback interval_cb;
+	void *interval_cb_user_data;
 #endif
 };
 
@@ -442,7 +453,34 @@ static int rtc_ti_mspm0_update_set_callback(const struct device *dev,
 }
 #endif
 
-#if defined(CONFIG_RTC_ALARM) || defined(CONFIG_RTC_UPDATE)
+#if defined(CONFIG_RTC_TI_MSPM0_INTERVAL_TIMER)
+int rtc_mspm0_set_interval_callback(const struct device *dev,
+				    enum rtc_mspm0_interval interval,
+				    rtc_mspm0_interval_callback callback,
+				    void *user_data)
+{
+	const struct rtc_ti_mspm0_config *cfg = dev->config;
+	struct rtc_ti_mspm0_data *data = dev->data;
+
+	K_SPINLOCK(&data->lock) {
+		data->interval_cb = callback;
+		data->interval_cb_user_data = user_data;
+
+		if (callback) {
+			cfg->regs->ctl = (cfg->regs->ctl & ~RTC_MSPM0_CTL_RTCTEVTX_MASK) |
+					FIELD_PREP(RTC_MSPM0_CTL_RTCTEVTX_MASK, interval);
+			cfg->regs->imask |= RTC_MSPM0_IMASK_RTCTEV;
+		} else {
+			cfg->regs->imask &= ~RTC_MSPM0_IMASK_RTCTEV;
+		}
+	}
+
+	return 0;
+}
+#endif
+
+#if defined(CONFIG_RTC_ALARM) || defined(CONFIG_RTC_UPDATE) || \
+    defined(CONFIG_RTC_TI_MSPM0_INTERVAL_TIMER)
 static void rtc_ti_mspm0_isr(const struct device *dev)
 {
 	const struct rtc_ti_mspm0_config *cfg = dev->config;
@@ -455,6 +493,10 @@ static void rtc_ti_mspm0_isr(const struct device *dev)
 #if defined(CONFIG_RTC_UPDATE)
 	rtc_update_callback update_cb = NULL;
 	void *update_cb_data = NULL;
+#endif
+#if defined(CONFIG_RTC_TI_MSPM0_INTERVAL_TIMER)
+	rtc_mspm0_interval_callback interval_cb = NULL;
+	void *interval_cb_data = NULL;
 #endif
 
 	K_SPINLOCK(&data->lock) {
@@ -485,6 +527,12 @@ static void rtc_ti_mspm0_isr(const struct device *dev)
 			}
 			break;
 #endif
+#if defined(CONFIG_RTC_TI_MSPM0_INTERVAL_TIMER)
+		case RTC_MSPM0_IIDX_RTCTEV:
+			interval_cb = data->interval_cb;
+			interval_cb_data = data->interval_cb_user_data;
+			break;
+#endif
 		default:
 			K_SPINLOCK_BREAK;
 		}
@@ -498,6 +546,11 @@ static void rtc_ti_mspm0_isr(const struct device *dev)
 #if defined(CONFIG_RTC_ALARM)
 	if (has_cb) {
 		alarm.callback(dev, alarm_id, alarm.user_data);
+	}
+#endif
+#if defined(CONFIG_RTC_TI_MSPM0_INTERVAL_TIMER)
+	if (interval_cb != NULL) {
+		interval_cb(dev, interval_cb_data);
 	}
 #endif
 }
@@ -563,7 +616,8 @@ static int rtc_ti_mspm0_init(const struct device *dev)
 	/* Set clock format to binary */
 	cfg->regs->ctl = RTC_MSPM0_CTL_BIN;
 
-#if defined(CONFIG_RTC_ALARM) || defined(CONFIG_RTC_UPDATE)
+#if defined(CONFIG_RTC_ALARM) || defined(CONFIG_RTC_UPDATE) || \
+    defined(CONFIG_RTC_TI_MSPM0_INTERVAL_TIMER)
 	cfg->irq_config_func();
 #endif
 
@@ -589,7 +643,8 @@ static DEVICE_API(rtc, rtc_ti_mspm0_driver_api) = {
 #endif
 };
 
-#if defined(CONFIG_RTC_ALARM) || defined(CONFIG_RTC_UPDATE)
+#if defined(CONFIG_RTC_ALARM) || defined(CONFIG_RTC_UPDATE) ||					\
+    defined(CONFIG_RTC_TI_MSPM0_INTERVAL_TIMER)
 #define RTC_TI_MSP_IRQ_FUNC(n)									\
 	static void ti_mspm0_config_irq_##n(void)						\
 	{											\
