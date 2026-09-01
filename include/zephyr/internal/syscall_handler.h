@@ -472,6 +472,22 @@ int k_usermode_string_copy(char *dst, const char *src, size_t maxlen);
 #define K_SYSCALL_MEMORY_WRITE(ptr, size) \
 	K_SYSCALL_MEMORY(ptr, size, 1)
 
+/**
+ * @brief Validate user thread has read and/or write permission for sized array
+ *
+ * Used when the memory region is expressed in terms of number of elements and
+ * each element size, handles any overflow issues with computing the total
+ * array bounds. Otherwise see K_SYSCALL_MEMORY().
+ *
+ * @param ptr Memory area to examine
+ * @param nmemb Number of elements in the array
+ * @param size Size of each array element
+ * @param write If the thread should be able to write to this memory, not just
+ *		read it
+ * @return false on success, true on failure
+ * @note This is an internal API. Do not use unless you are extending
+ *       functionality in the Zephyr tree.
+ */
 #define K_SYSCALL_MEMORY_ARRAY(ptr, nmemb, size, write) \
 	({ \
 		size_t product; \
