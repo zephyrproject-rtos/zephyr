@@ -915,7 +915,7 @@ static void hci_like_rx(void)
 	TC_PRINT("\n");
 }
 
-#define HCI_LIKE_TX_STACK_SIZE 2048
+#define HCI_LIKE_TX_STACK_SIZE 512
 static K_THREAD_STACK_DEFINE(hci_like_tx_thread_stack, HCI_LIKE_TX_STACK_SIZE);
 static struct k_thread hci_like_tx_thread;
 
