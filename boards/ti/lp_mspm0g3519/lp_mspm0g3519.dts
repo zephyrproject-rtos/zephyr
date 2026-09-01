@@ -144,3 +144,7 @@
 	pinctrl-names = "default";
 	status = "okay";
 };
+
+&adc0 {
+	dmas = <&dma 11 32>;
+};
