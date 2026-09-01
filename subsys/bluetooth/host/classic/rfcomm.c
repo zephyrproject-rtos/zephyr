@@ -631,80 +631,6 @@ static void rfcomm_sent(struct bt_conn *conn, void *user_data, int err)
 	}
 }
 
-static void rfcomm_dlc_update_credits(struct bt_rfcomm_dlc *dlc);
-
-static void rfcomm_dlc_tx_worker(struct k_work *work)
-{
-	struct bt_rfcomm_dlc *dlc = CONTAINER_OF(work, struct bt_rfcomm_dlc, tx_work);
-	struct net_buf *buf;
-
-	LOG_DBG("Work for dlc %p state %u", dlc, dlc->state);
-
-	if (dlc->state < BT_RFCOMM_STATE_CONNECTED) {
-		return;
-	}
-
-	if (dlc->state == BT_RFCOMM_STATE_CONNECTED ||
-	    dlc->state == BT_RFCOMM_STATE_USER_DISCONNECT) {
-		if (k_fifo_is_empty(&dlc->tx_queue) == true) {
-			goto user_disconnect;
-		}
-
-		if (rfcomm_check_fc(dlc) == false) {
-			LOG_DBG("FC or credit not available");
-			goto user_disconnect;
-		}
-
-		buf = k_fifo_get(&dlc->tx_queue, K_NO_WAIT);
-		LOG_DBG("Tx buf %p", buf);
-		if (rfcomm_send_cb(dlc->session, buf, rfcomm_sent, dlc) < 0) {
-			/* This fails only if channel is disconnected */
-			dlc->state = BT_RFCOMM_STATE_DISCONNECTED;
-			bt_rfcomm_tx_destroy(dlc, buf);
-			LOG_ERR("Failed to send buffer, disconnected");
-			goto disconnect;
-		}
-
-		if (k_fifo_is_empty(&dlc->tx_queue) == false) {
-			rfcomm_dlc_tx_trigger(dlc);
-			return;
-		}
-
-user_disconnect:
-		if (dlc->state == BT_RFCOMM_STATE_USER_DISCONNECT) {
-			LOG_DBG("Process user disconnect");
-			goto disconnect;
-		}
-
-		/* Update RX credits*/
-		rfcomm_dlc_update_credits(dlc);
-
-		return;
-	}
-
-disconnect:
-	LOG_DBG("dlc %p disconnected - cleaning up", dlc);
-
-	/* Give back any allocated buffers */
-	while ((buf = k_fifo_get(&dlc->tx_queue, K_NO_WAIT))) {
-		bt_rfcomm_tx_destroy(dlc, buf);
-		net_buf_unref(buf);
-	}
-
-	if (dlc->state == BT_RFCOMM_STATE_USER_DISCONNECT) {
-		dlc->state = BT_RFCOMM_STATE_DISCONNECTING;
-	}
-
-	if (dlc->state == BT_RFCOMM_STATE_DISCONNECTING) {
-		rfcomm_send_disc(dlc->session, dlc->dlci);
-		bt_work_reschedule(&dlc->rtx_work, RFCOMM_DISC_TIMEOUT);
-	} else {
-		rfcomm_dlc_destroy(dlc);
-	}
-
-	LOG_DBG("dlc %p exiting", dlc);
-}
-
 static int rfcomm_send_ua(struct bt_rfcomm_session *session, uint8_t dlci)
 {
 	struct bt_rfcomm_hdr *hdr;
@@ -904,42 +830,6 @@ static int rfcomm_send_fcoff(struct bt_rfcomm_session *session, uint8_t cr)
 	return rfcomm_send(session, buf);
 }
 
-static void rfcomm_dlc_connected(struct bt_rfcomm_dlc *dlc)
-{
-	int err;
-
-	dlc->state = BT_RFCOMM_STATE_CONNECTED;
-
-	err = rfcomm_send_msc(dlc, BT_RFCOMM_MSG_CMD_CR, BT_RFCOMM_DEFAULT_V24_SIG);
-	if (err == 0) {
-		atomic_set_bit(&dlc->flags, RFCOMM_FLAG_MSC_FC_CLEARED);
-	}
-
-	if (dlc->session->cfc == BT_RFCOMM_CFC_UNKNOWN) {
-		/* This means PN negotiation is not done for this session and
-		 * can happen only for 1.0b device.
-		 */
-		dlc->session->cfc = BT_RFCOMM_CFC_NOT_SUPPORTED;
-	}
-
-	if (dlc->session->cfc == BT_RFCOMM_CFC_NOT_SUPPORTED) {
-		LOG_DBG("CFC not supported %p", dlc);
-		rfcomm_send_fcon(dlc->session, BT_RFCOMM_MSG_CMD_CR);
-		/* Use tx_credits as binary sem for MSC FC */
-		k_sem_init(&dlc->tx_credits, 0, 1);
-	}
-
-	/* Cancel conn timer */
-	k_work_cancel_delayable(&dlc->rtx_work);
-
-	k_fifo_init(&dlc->tx_queue);
-	k_work_init(&dlc->tx_work, rfcomm_dlc_tx_worker);
-
-	if (dlc->ops && dlc->ops->connected) {
-		dlc->ops->connected(dlc);
-	}
-}
-
 enum security_result {
 	RFCOMM_SECURITY_PASSED,
 	RFCOMM_SECURITY_REJECT,
@@ -1017,52 +907,6 @@ static int rfcomm_dlc_close(struct bt_rfcomm_dlc *dlc)
 	}
 
 	return 0;
-}
-
-static void rfcomm_handle_sabm(struct bt_rfcomm_session *session, uint8_t dlci)
-{
-	if (!dlci) {
-		if (rfcomm_send_ua(session, dlci) < 0) {
-			return;
-		}
-
-		session->state = BT_RFCOMM_STATE_CONNECTED;
-	} else {
-		struct bt_rfcomm_dlc *dlc;
-		enum security_result result;
-
-		dlc = rfcomm_dlcs_lookup_dlci(session, dlci);
-		if (dlc == NULL) {
-			dlc = rfcomm_dlc_accept(session, dlci);
-			if (dlc == NULL) {
-				rfcomm_send_dm(session, dlci);
-				return;
-			}
-		}
-
-		result = rfcomm_dlc_security(dlc);
-		switch (result) {
-		case RFCOMM_SECURITY_PENDING:
-			dlc->state = BT_RFCOMM_STATE_SECURITY_PENDING;
-			return;
-		case RFCOMM_SECURITY_PASSED:
-			break;
-		case RFCOMM_SECURITY_REJECT:
-		default:
-			rfcomm_send_dm(session, dlci);
-			rfcomm_dlc_drop(dlc);
-			return;
-		}
-
-		if (rfcomm_send_ua(session, dlci) < 0) {
-			return;
-		}
-
-		/* Cancel idle timer if any */
-		k_work_cancel_delayable(&session->rtx_work);
-
-		rfcomm_dlc_connected(dlc);
-	}
 }
 
 #define RFCOMM_PN_MAX_RX_CREDITS 7
@@ -1151,6 +995,232 @@ static int rfcomm_dlc_start(struct bt_rfcomm_dlc *dlc)
 	}
 
 	return 0;
+}
+
+static inline uint8_t rfcomm_dlc_get_available_credits(struct bt_rfcomm_dlc *dlc)
+{
+	uint8_t max_credits = RFCOMM_DLC_CREDITS_MAX(dlc);
+	atomic_val_t inprogress_credits = atomic_get(&dlc->rx_credit_inprogress);
+
+	__ASSERT(inprogress_credits >= 0, "Negative inprogress credits");
+	__ASSERT(inprogress_credits <= max_credits, "Inprogress credits exceeds max");
+
+	/* The case only occurs when there is no inprogress receiving buffer, but the app calls
+	 * bt_rfcomm_dlc_recv_complete().
+	 */
+	if (inprogress_credits < 0) {
+		/* In this case, treat as if there is no inprogress receiving buffer */
+		LOG_ERR("rx_credit_inprogress of %p is underflow", dlc);
+		inprogress_credits = 0;
+	}
+
+	return max_credits - inprogress_credits;
+}
+
+static void rfcomm_dlc_fc_check_and_on(struct bt_rfcomm_dlc *dlc)
+{
+	int err;
+
+	if (!atomic_test_and_clear_bit(&dlc->flags, RFCOMM_FLAG_MSC_FC_CLEAR_REQ)) {
+		return;
+	}
+
+	if (atomic_test_and_set_bit(&dlc->flags, RFCOMM_FLAG_MSC_FC_CLEARED)) {
+		return;
+	}
+
+	err = rfcomm_send_msc(dlc, BT_RFCOMM_MSG_CMD_CR, BT_RFCOMM_DEFAULT_V24_SIG);
+	if (err != 0) {
+		atomic_clear_bit(&dlc->flags, RFCOMM_FLAG_MSC_FC_CLEARED);
+		atomic_set_bit(&dlc->flags, RFCOMM_FLAG_MSC_FC_CLEAR_REQ);
+		LOG_ERR("Failed to send MSC with FC cleared (%d)", err);
+	}
+}
+
+static void rfcomm_dlc_update_credits(struct bt_rfcomm_dlc *dlc)
+{
+	uint8_t credits;
+	uint8_t credit_available;
+	int err;
+
+	if (dlc->session->cfc == BT_RFCOMM_CFC_NOT_SUPPORTED) {
+		/* FC Check and on if required */
+		rfcomm_dlc_fc_check_and_on(dlc);
+		return;
+	}
+
+	LOG_DBG("dlc %p credits %u", dlc, dlc->rx_credit);
+
+	/* Only give more credits if it went below the defined threshold */
+	if (dlc->rx_credit > RFCOMM_DLC_CREDITS_THRESHOLD(dlc)) {
+		return;
+	}
+
+	/* Restore credits */
+	credit_available = rfcomm_dlc_get_available_credits(dlc);
+	if (credit_available > dlc->rx_credit) {
+		credits = credit_available - dlc->rx_credit;
+		dlc->rx_credit += credits;
+		err = rfcomm_send_credit(dlc, credits);
+		if (err != 0) {
+			LOG_ERR("Failed to send credit (%d)", err);
+			dlc->rx_credit -= credits;
+		}
+	}
+}
+
+static void rfcomm_dlc_tx_worker(struct k_work *work)
+{
+	struct bt_rfcomm_dlc *dlc = CONTAINER_OF(work, struct bt_rfcomm_dlc, tx_work);
+	struct net_buf *buf;
+
+	LOG_DBG("Work for dlc %p state %u", dlc, dlc->state);
+
+	if (dlc->state < BT_RFCOMM_STATE_CONNECTED) {
+		return;
+	}
+
+	if (dlc->state == BT_RFCOMM_STATE_CONNECTED ||
+	    dlc->state == BT_RFCOMM_STATE_USER_DISCONNECT) {
+		if (k_fifo_is_empty(&dlc->tx_queue) == true) {
+			goto user_disconnect;
+		}
+
+		if (rfcomm_check_fc(dlc) == false) {
+			LOG_DBG("FC or credit not available");
+			goto user_disconnect;
+		}
+
+		buf = k_fifo_get(&dlc->tx_queue, K_NO_WAIT);
+		LOG_DBG("Tx buf %p", buf);
+		if (rfcomm_send_cb(dlc->session, buf, rfcomm_sent, dlc) < 0) {
+			/* This fails only if channel is disconnected */
+			dlc->state = BT_RFCOMM_STATE_DISCONNECTED;
+			bt_rfcomm_tx_destroy(dlc, buf);
+			LOG_ERR("Failed to send buffer, disconnected");
+			goto disconnect;
+		}
+
+		if (k_fifo_is_empty(&dlc->tx_queue) == false) {
+			rfcomm_dlc_tx_trigger(dlc);
+			return;
+		}
+
+user_disconnect:
+		if (dlc->state == BT_RFCOMM_STATE_USER_DISCONNECT) {
+			LOG_DBG("Process user disconnect");
+			goto disconnect;
+		}
+
+		/* Update RX credits*/
+		rfcomm_dlc_update_credits(dlc);
+
+		return;
+	}
+
+disconnect:
+	LOG_DBG("dlc %p disconnected - cleaning up", dlc);
+
+	/* Give back any allocated buffers */
+	while ((buf = k_fifo_get(&dlc->tx_queue, K_NO_WAIT))) {
+		bt_rfcomm_tx_destroy(dlc, buf);
+		net_buf_unref(buf);
+	}
+
+	if (dlc->state == BT_RFCOMM_STATE_USER_DISCONNECT) {
+		dlc->state = BT_RFCOMM_STATE_DISCONNECTING;
+	}
+
+	if (dlc->state == BT_RFCOMM_STATE_DISCONNECTING) {
+		rfcomm_send_disc(dlc->session, dlc->dlci);
+		bt_work_reschedule(&dlc->rtx_work, RFCOMM_DISC_TIMEOUT);
+	} else {
+		rfcomm_dlc_destroy(dlc);
+	}
+
+	LOG_DBG("dlc %p exiting", dlc);
+}
+
+static void rfcomm_dlc_connected(struct bt_rfcomm_dlc *dlc)
+{
+	int err;
+
+	dlc->state = BT_RFCOMM_STATE_CONNECTED;
+
+	err = rfcomm_send_msc(dlc, BT_RFCOMM_MSG_CMD_CR, BT_RFCOMM_DEFAULT_V24_SIG);
+	if (err == 0) {
+		atomic_set_bit(&dlc->flags, RFCOMM_FLAG_MSC_FC_CLEARED);
+	}
+
+	if (dlc->session->cfc == BT_RFCOMM_CFC_UNKNOWN) {
+		/* This means PN negotiation is not done for this session and
+		 * can happen only for 1.0b device.
+		 */
+		dlc->session->cfc = BT_RFCOMM_CFC_NOT_SUPPORTED;
+	}
+
+	if (dlc->session->cfc == BT_RFCOMM_CFC_NOT_SUPPORTED) {
+		LOG_DBG("CFC not supported %p", dlc);
+		rfcomm_send_fcon(dlc->session, BT_RFCOMM_MSG_CMD_CR);
+		/* Use tx_credits as binary sem for MSC FC */
+		k_sem_init(&dlc->tx_credits, 0, 1);
+	}
+
+	/* Cancel conn timer */
+	k_work_cancel_delayable(&dlc->rtx_work);
+
+	k_fifo_init(&dlc->tx_queue);
+	k_work_init(&dlc->tx_work, rfcomm_dlc_tx_worker);
+
+	if (dlc->ops && dlc->ops->connected) {
+		dlc->ops->connected(dlc);
+	}
+}
+
+static void rfcomm_handle_sabm(struct bt_rfcomm_session *session, uint8_t dlci)
+{
+	if (!dlci) {
+		if (rfcomm_send_ua(session, dlci) < 0) {
+			return;
+		}
+
+		session->state = BT_RFCOMM_STATE_CONNECTED;
+	} else {
+		struct bt_rfcomm_dlc *dlc;
+		enum security_result result;
+
+		dlc = rfcomm_dlcs_lookup_dlci(session, dlci);
+		if (dlc == NULL) {
+			dlc = rfcomm_dlc_accept(session, dlci);
+			if (dlc == NULL) {
+				rfcomm_send_dm(session, dlci);
+				return;
+			}
+		}
+
+		result = rfcomm_dlc_security(dlc);
+		switch (result) {
+		case RFCOMM_SECURITY_PENDING:
+			dlc->state = BT_RFCOMM_STATE_SECURITY_PENDING;
+			return;
+		case RFCOMM_SECURITY_PASSED:
+			break;
+		case RFCOMM_SECURITY_REJECT:
+		default:
+			rfcomm_send_dm(session, dlci);
+			rfcomm_dlc_drop(dlc);
+			return;
+		}
+
+		if (rfcomm_send_ua(session, dlci) < 0) {
+			return;
+		}
+
+		/* Cancel idle timer if any */
+		k_work_cancel_delayable(&session->rtx_work);
+
+		rfcomm_dlc_connected(dlc);
+	}
 }
 
 static void rfcomm_handle_ua(struct bt_rfcomm_session *session, uint8_t dlci)
@@ -1549,78 +1619,6 @@ static void rfcomm_handle_msg(struct bt_rfcomm_session *session, struct net_buf 
 		LOG_WRN("Unknown/Unsupported RFCOMM Msg type 0x%02x", msg_type);
 		rfcomm_send_nsc(session, hdr->type);
 		break;
-	}
-}
-
-static inline uint8_t rfcomm_dlc_get_available_credits(struct bt_rfcomm_dlc *dlc)
-{
-	uint8_t max_credits = RFCOMM_DLC_CREDITS_MAX(dlc);
-	atomic_val_t inprogress_credits = atomic_get(&dlc->rx_credit_inprogress);
-
-	__ASSERT(inprogress_credits >= 0, "Negative inprogress credits");
-	__ASSERT(inprogress_credits <= max_credits, "Inprogress credits exceeds max");
-
-	/* The case only occurs when there is no inprogress receiving buffer, but the app calls
-	 * bt_rfcomm_dlc_recv_complete().
-	 */
-	if (inprogress_credits < 0) {
-		/* In this case, treat as if there is no inprogress receiving buffer */
-		LOG_ERR("rx_credit_inprogress of %p is underflow", dlc);
-		inprogress_credits = 0;
-	}
-
-	return max_credits - inprogress_credits;
-}
-
-static void rfcomm_dlc_fc_check_and_on(struct bt_rfcomm_dlc *dlc)
-{
-	int err;
-
-	if (!atomic_test_and_clear_bit(&dlc->flags, RFCOMM_FLAG_MSC_FC_CLEAR_REQ)) {
-		return;
-	}
-
-	if (atomic_test_and_set_bit(&dlc->flags, RFCOMM_FLAG_MSC_FC_CLEARED)) {
-		return;
-	}
-
-	err = rfcomm_send_msc(dlc, BT_RFCOMM_MSG_CMD_CR, BT_RFCOMM_DEFAULT_V24_SIG);
-	if (err != 0) {
-		atomic_clear_bit(&dlc->flags, RFCOMM_FLAG_MSC_FC_CLEARED);
-		atomic_set_bit(&dlc->flags, RFCOMM_FLAG_MSC_FC_CLEAR_REQ);
-		LOG_ERR("Failed to send MSC with FC cleared (%d)", err);
-	}
-}
-
-static void rfcomm_dlc_update_credits(struct bt_rfcomm_dlc *dlc)
-{
-	uint8_t credits;
-	uint8_t credit_available;
-	int err;
-
-	if (dlc->session->cfc == BT_RFCOMM_CFC_NOT_SUPPORTED) {
-		/* FC Check and on if required */
-		rfcomm_dlc_fc_check_and_on(dlc);
-		return;
-	}
-
-	LOG_DBG("dlc %p credits %u", dlc, dlc->rx_credit);
-
-	/* Only give more credits if it went below the defined threshold */
-	if (dlc->rx_credit > RFCOMM_DLC_CREDITS_THRESHOLD(dlc)) {
-		return;
-	}
-
-	/* Restore credits */
-	credit_available = rfcomm_dlc_get_available_credits(dlc);
-	if (credit_available > dlc->rx_credit) {
-		credits = credit_available - dlc->rx_credit;
-		dlc->rx_credit += credits;
-		err = rfcomm_send_credit(dlc, credits);
-		if (err != 0) {
-			LOG_ERR("Failed to send credit (%d)", err);
-			dlc->rx_credit -= credits;
-		}
 	}
 }
 
