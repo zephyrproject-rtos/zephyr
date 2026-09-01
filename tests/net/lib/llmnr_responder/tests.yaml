@@ -6,4 +6,3 @@ common:
 tests:
   net.llmnr:
     min_ram: 21
-    timeout: 60

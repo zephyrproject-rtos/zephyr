@@ -6,4 +6,3 @@ common:
 tests:
   net.mdns.probe:
     min_ram: 21
-    timeout: 600
