@@ -336,6 +336,27 @@ ALIASES               += "driver_ops{1}=\brief \htmlonly <span class=\"mlabel\">
 ALIASES               += "driver_ops_mandatory=\htmlonly<span class=\"op-badge op-req\" title=\"This operation MUST be implemented by the driver.\">REQ</span>\endhtmlonly"
 ALIASES               += "driver_ops_optional=\htmlonly<span class=\"op-badge op-opt\" title=\"This operation MAY optionally be implemented by the driver.\">OPT</span>\endhtmlonly"
 
+# Aliases to help document FFF-based fake drivers. \driver_fake takes the
+# interface group, the Kconfig option and the devicetree compatible (escape
+# its comma as \,). \fake_of takes the driver operation the fake stands in
+# for, as <driver API struct>::<member>.
+ALIASES               += "driver_fake{3}=This is a Fake Function Framework (FFF) implementation of the \ref \1 \
+                                         API, provided for use in tests. It is enabled by \kconfig{\2} and \
+                                         instantiated from \dtcompatible{\3} devicetree nodes. ^^\
+                                         ^^ \
+                                         Each fake below is paired with an FFF control structure named after it \
+                                         with an additional \c _fake suffix, which tests use to set return values, \
+                                         install custom fakes, or inspect call counts and captured arguments. The \
+                                         control structures are not listed here; see \rstref{mocking-fff}. ^^\
+                                         ^^ \
+                                         Use \c return_val for fakes that only report status; a fake with output \
+                                         parameters must be driven with a \c custom_fake, as \c return_val leaves \
+                                         those parameters untouched. ^^\
+                                         ^^ \
+                                         When \kconfig{CONFIG_ZTEST} is enabled, a ztest rule resets every fake \
+                                         before each test case."
+ALIASES               += "fake_of{1}=\brief Fake implementation of the \ref \1 driver operation."
+
 # Requirements traceability (Doxygen 1.16+). The requirements themselves are
 # generated from the reqmgmt module into the directory appended to the INPUT tag
 # below, using the native \requirement command. Code and tests link to them with
