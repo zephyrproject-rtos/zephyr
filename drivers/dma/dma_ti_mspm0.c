@@ -295,18 +295,8 @@ static int dma_ti_mspm0_reload(const struct device *dev, uint32_t channel,
 	}
 
 	data = &dma_data->ch_data[channel];
-	switch (data->direction) {
-	case PERIPHERAL_TO_MEMORY:
-		cfg->regs->dmachan[channel].dmada = dest_addr;
-		break;
-	case MEMORY_TO_PERIPHERAL:
-		cfg->regs->dmachan[channel].dmasa = src_addr;
-		break;
-	default:
-		LOG_ERR("Unsupported data direction");
-		return -ENOTSUP;
-	}
-
+	cfg->regs->dmachan[channel].dmasa = src_addr;
+	cfg->regs->dmachan[channel].dmada = dest_addr;
 	cfg->regs->dmachan[channel].dmasz = size / data->source_data_size;
 	data->busy = true;
 
