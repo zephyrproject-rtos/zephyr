@@ -15,13 +15,11 @@ static const struct device *const entropy_dev =
 static int rand_get(uint8_t *dst, size_t outlen, bool csrand)
 {
 	uint32_t random_num;
-	int ret;
+	int ret = -ENODEV;
 
-	if (!device_is_ready(entropy_dev)) {
-		return -ENODEV;
+	if (device_is_ready(entropy_dev)) {
+		ret = entropy_get_entropy(entropy_dev, dst, outlen);
 	}
-
-	ret = entropy_get_entropy(entropy_dev, dst, outlen);
 
 	if (unlikely(ret < 0)) {
 		/* Don't try to fill the buffer in case of
