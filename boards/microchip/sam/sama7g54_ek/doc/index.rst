@@ -90,6 +90,38 @@ be selected at run time with the ``video format`` shell command.
 The D-PHY configuration clock is derived from the CSI generated clock (GCLK 33),
 which the driver programs to 26.6 MHz from one of the SoC PLLs.
 
+OV5647 camera module
+--------------------
+
+The `Raspberry Pi Camera Module 1`_ (OmniVision OV5647) fits the same connector,
+and an overlay describes it in place of the IMX219, at address 0x36 of ``i2c8``:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/video/capture
+   :board: sama7g54_ek
+   :gen-args: -DEXTRA_DTC_OVERLAY_FILE=boards/microchip/sam/sama7g54_ek/ov5647.overlay
+   :goals: build
+
+Only one of the two sensors can be described at a time, since the CSI-2 receiver
+binds to its source when the image is built.
+
+This sensor streams ``SBGGR10P`` alone, which the pipeline converts just as it
+does the raw formats of the IMX219, and it is cropped out of the middle of its
+2592x1944 pixel array the same way. Its own exposure and gain control run the
+image by default, so it does not need the manual gains the IMX219 does; the
+``video ctrl`` shell command switches either of them to manual, and the manual
+value then picks up where the automatic one left off.
+
+The module sits in the connector with its first row of pixels at the bottom of the
+scene, so the overlay sets ``vertical-flip`` to bring the frames the right way up.
+The sensor flips its pixel array and the window its own processing takes out of it
+together, which leaves the Bayer order the pipeline is told correct, and the
+``video ctrl`` shell command adjusts either axis at run time.
+
+The board supplies the sensor with 24 MHz rather than the 25 MHz it is nominally
+clocked at, so every rate derived from it comes out 4% low: the lanes run at
+420 Mbps and the full resolution reaches 15 frames per second.
+
 USB video device
 ================
 
@@ -142,6 +174,9 @@ SAMA7G54 Evaluation Kit Page:
 
 .. _SAMA7G54-EK User Guide:
     https://ww1.microchip.com/downloads/aemDocuments/documents/MPU32/ProductDocuments/UserGuides/SAMA7G54-EK-User%27s-Guide-DS50003273.pdf
+
+.. _Raspberry Pi Camera Module 1:
+    https://www.raspberrypi.com/documentation/accessories/camera.html
 
 .. _Raspberry Pi Camera Module 2:
     https://www.raspberrypi.com/documentation/accessories/camera.html
