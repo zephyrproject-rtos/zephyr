@@ -35,10 +35,11 @@ config ETH_ENC28J60_CLKRDY_INIT_WAIT_MS
 	depends on ETH_ENC28J60
 	default 2
 	help
-	  Timeout in milliseconds. Maximum time the initialisation
-	  of the driver will wait for the OST to expire, indicated
-	  by the CLKRDY bit set. If timeout driver init will fail
-	  with -ETIMEDOUT.
+	  Timeout in milliseconds for the CLKRDY check on driver
+	  init. After the soft reset CLKRDY is already set on a
+	  working chip (errata DS80349C, issue 2), so this is a check
+	  that the chip answers on the SPI bus. If timeout driver
+	  init will fail with -ETIMEDOUT.
 
 config ETH_ENC28J60_TIMEOUT
 	int "IP buffer timeout"
