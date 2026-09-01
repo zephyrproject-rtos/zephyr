@@ -29,6 +29,7 @@ extern "C" {
  * @kconfig_dep{CONFIG_SYSTEM_TIMER_LPM_COMPANION_COUNTER,CONFIG_SYSTEM_TIMER_LPM_COMPANION_HOOKS}
  *
  * This interface is used when a system timer low-power companion is configured.
+ * It is not available when CONFIG_SYSTEM_TIMER_LPM_COMPANION_NONE=y.
  *
  * If CONFIG_SYSTEM_TIMER_LPM_COMPANION_HOOKS is selected, SoC/platform-specific code
  * provides the implementation of all hooks; otherwise, the implementation is provided
