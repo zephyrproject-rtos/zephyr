@@ -13,3 +13,9 @@ properties:
   channel:
     type: int
     required: true
+
+  tx-dtc:
+    type: boolean
+
+  rx-dtc:
+    type: boolean

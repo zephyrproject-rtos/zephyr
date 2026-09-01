@@ -11,3 +11,13 @@ properties:
   channel:
     type: int
     required: true
+
+  tx-dtc:
+    type: boolean
+    description: |
+      Use DTC (Data Transfer Controller) for TX transfers.
+
+  rx-dtc:
+    type: boolean
+    description: |
+      Use DTC (Data Transfer Controller) for RX transfers.

@@ -8,7 +8,9 @@
  * To run this test on AIK-RA8D1 board on PMOD 1, set S4-1 to UART/SPI position.
  */
 
-&pmod1_spi {
+spi: &pmod1_spi {
+	rx-dtc;
+	tx-dtc;
 	status = "okay";
 
 	slow@0 {
