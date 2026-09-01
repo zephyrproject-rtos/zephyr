@@ -256,7 +256,7 @@ static void rtc_mchp_isr(const struct device *dev)
 #endif /* CONFIG_RTC_ALARM */
 
 #ifdef CONFIG_RTC_UPDATE
-	if (sr & RTC_SCCR_SECCLR_Msk) {
+	if (sr & RTC_SR_SEC_Msk) {
 		regs->RTC_SCCR = RTC_SCCR_SECCLR_Msk;
 		if (data->update_callback != NULL) {
 			data->update_callback(dev, data->update_user_data);
