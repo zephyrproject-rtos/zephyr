@@ -170,7 +170,7 @@
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_lpuart_5>;
 	pinctrl-names = "default";
-	dmas = <&edma 1 44>, <&edma 2 45>;
+	dmas = <&edma 20 44>, <&edma 21 45>;
 	dma-names = "tx", "rx";
 };
 
