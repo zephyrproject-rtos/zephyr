@@ -22,6 +22,7 @@ import yaml
 from elftools.elf.sections import SymbolTableSection
 from twisterlib.error import BuildError
 from twisterlib.harness import Pytest
+from twisterlib.jobserver import JobClient
 from twisterlib.runner import CMake, ExecutionCounter, FilterBuilder, ProjectBuilder, TwisterRunner
 from twisterlib.statuses import TwisterStatus
 from twisterlib.testsuitedata import HarnessConfig
@@ -253,7 +254,7 @@ def test_cmake_parse_generated(mocked_jobserver):
 
 TESTDATA_1_1 = [
     ('linux'),
-    ('nt')
+    ('win32')
 ]
 TESTDATA_1_2 = [
     (0, False, 'dummy out',
@@ -341,14 +342,15 @@ def test_cmake_run_build(
 
     assert expected_results == result
 
-    popen_caller = cmake.jobserver.popen if sys_platform == 'linux' else \
-                   popen_mock
-    popen_caller.assert_called_once_with(
+    # The job server is set on every platform, so run_build goes through it
+    # rather than choosing by platform, and both rows make the same call.
+    cmake.jobserver.popen.assert_called_once_with(
         [os.path.join('dummy', 'cmake'), 'arg1', 'arg2'],
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         cwd=os.path.join('dummy', 'working', 'dir')
     )
+    popen_mock.assert_not_called()
 
     assert cmake.instance.status == expected_status
     assert cmake.instance.reason == expected_reason
@@ -364,7 +366,7 @@ def test_cmake_run_build(
 
 TESTDATA_2_1 = [
     ('linux'),
-    ('nt')
+    ('win32')
 ]
 TESTDATA_2_2 = [
     (True, ['dummy_stage_1', 'ds2'],
@@ -492,14 +494,15 @@ def test_cmake_run_cmake(
 
     assert expected_results == result
 
-    popen_caller = cmake.jobserver.popen if sys_platform == 'linux' else \
-                   popen_mock
-    popen_caller.assert_called_once_with(
+    # The job server is set on every platform, so run_cmake goes through it
+    # rather than choosing by platform, and both rows make the same call.
+    cmake.jobserver.popen.assert_called_once_with(
         expected_cmd,
         stdout=subprocess.PIPE,
         stderr=subprocess.STDOUT,
         cwd=os.path.join('dummy', 'working', 'dir')
     )
+    popen_mock.assert_not_called()
 
     assert cmake.instance.status == expected_status
     assert cmake.instance.reason == expected_reason
@@ -2903,15 +2906,18 @@ def test_projectbuilder_calc_size(
         assert instance_mock.metrics == {}
 
 
+# The rows vary sys.platform alone: it is the whole decision, since
+# sys.platform == 'linux' implies os.name == 'posix'. So the two rows that
+# reach the neutral client name the platforms it is chosen for.
 TESTDATA_17 = [
-    ('linux', 'posix', {'jobs': 4}, True, 32, 'GNUMakeJobClient'),
-    ('linux', 'posix', {'build_only': True}, False, 16, 'GNUMakeJobServer'),
-    ('linux', '???', {}, False, 8, 'JobClient'),
-    ('linux', '???', {'jobs': 4}, False, 4, 'JobClient'),
+    ('linux', {'jobs': 4}, True, 32, 'GNUMakeJobClient'),
+    ('linux', {'build_only': True}, False, 16, 'GNUMakeJobServer'),
+    ('win32', {}, False, 8, 'JobClient'),
+    ('darwin', {'jobs': 4}, False, 4, 'JobClient'),
 ]
 
 @pytest.mark.parametrize(
-    'platform, os_name, options, jobclient_from_environ, expected_jobs,' \
+    'platform, options, jobclient_from_environ, expected_jobs,' \
     ' expected_jobserver',
     TESTDATA_17,
     ids=['GNUMakeJobClient', 'GNUMakeJobServer',
@@ -2920,7 +2926,6 @@ TESTDATA_17 = [
 def test_twisterrunner_run(
     caplog,
     platform,
-    os_name,
     options,
     jobclient_from_environ,
     expected_jobs,
@@ -2987,8 +2992,7 @@ def test_twisterrunner_run(
          mock.patch('twisterlib.runner.JobClient', jobclient_mock), \
          mock.patch('multiprocessing.cpu_count', return_value=8), \
          mock.patch('sys.platform', platform), \
-         mock.patch('time.sleep', mock.Mock()), \
-         mock.patch('os.name', os_name):
+         mock.patch('time.sleep', mock.Mock()):
         tr.run()
 
     assert f'JOBS: {expected_jobs}' in caplog.text
@@ -3001,6 +3005,61 @@ def test_twisterrunner_run(
     }
 
     assert results_mock().error == 0
+
+
+@pytest.mark.parametrize('platform', ['win32', 'darwin'], ids=['windows', 'macos'])
+def test_twisterrunner_run_builds_a_real_jobserver_off_linux(platform):
+    """Off Linux, run() has to leave a job server the pipeline can use.
+
+    The two JobClient rows of TESTDATA_17 put a mock in its place, so they
+    cannot say whether the real one answers what pipeline_mgr and the build
+    steps ask of it. This builds the real one -- and patches none of the
+    GNUMake* names, which exist only on Linux, so it runs on every host.
+    """
+    tr = TwisterRunner({'dummy instance': mock.Mock(metrics={'k': 'v'})},
+                       [mock.Mock()], env=mock.Mock())
+    tr.options.retry_failed = 0
+    tr.options.retry_interval = 0
+    tr.options.retry_build_errors = False
+    tr.options.jobs = None
+    tr.options.build_only = None
+    tr.update_counting_before_pipeline = mock.Mock()
+    tr.execute = mock.Mock()
+    tr.show_brief = mock.Mock()
+
+    manager_mock = mock.Mock()
+    manager_mock().deque = mock.Mock(return_value=deque())
+    manager_mock().get_dict = mock.Mock(return_value={})
+
+    results_mock = mock.Mock()
+    results_mock().iteration = 0
+    results_mock().failed = 0
+    results_mock().error = 0
+    results_mock().total = 1
+    results_mock().filtered_static = 0
+    results_mock().skipped = 0
+
+    def iteration_increment(value=1, decrement=False):
+        results_mock().iteration += value * (-1 if decrement else 1)
+    results_mock().iteration_increment = iteration_increment
+
+    with mock.patch('twisterlib.runner.ExecutionCounter', results_mock), \
+         mock.patch('twisterlib.runner.BaseManager', manager_mock), \
+         mock.patch('multiprocessing.cpu_count', return_value=8), \
+         mock.patch('sys.platform', platform), \
+         mock.patch('time.sleep', mock.Mock()):
+        tr.run()
+
+    # The exact class, not isinstance: GNUMakeJobClient and
+    # GNUMakeJobServer both inherit from JobClient, so isinstance would
+    # accept the two this row is meant to rule out.
+    assert tr.jobserver.__class__ is JobClient
+
+    # What pipeline_mgr wraps every task in: a claim with nothing to release.
+    with tr.jobserver.get_job():
+        pass
+    assert tr.jobserver.env() == {}
+    assert tr.jobserver.pass_fds() == []
 
 
 def test_twisterrunner_update_counting_before_pipeline():
@@ -3205,7 +3264,7 @@ def test_twisterrunner_add_tasks_to_queue(
 
 TESTDATA_19 = [
     ('linux'),
-    ('nt')
+    ('win32')
 ]
 
 @pytest.mark.parametrize(
@@ -3245,8 +3304,9 @@ def test_twisterrunner_pipeline_mgr(mocked_jobserver, platform):
 
     assert len(pb().process.call_args_list) == 5
 
-    if platform == 'linux':
-        tr.jobserver.get_job.assert_called_once()
+    # The job server is set on every platform, so pipeline_mgr always claims
+    # a job: there is no bare-call path for it to take instead.
+    tr.jobserver.get_job.assert_called_once()
 
 
 def test_twisterrunner_execute(caplog):

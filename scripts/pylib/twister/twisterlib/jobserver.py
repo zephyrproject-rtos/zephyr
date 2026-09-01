@@ -2,7 +2,6 @@
 # SPDX-License-Identifier: Apache-2.0
 """Module for job counters, limiting the amount of concurrent executions."""
 
-import fcntl
 import functools
 import logging
 import multiprocessing
@@ -12,6 +11,14 @@ import select
 import selectors
 import subprocess
 import sys
+
+# GNU Make's job server speaks over a POSIX pipe, so fcntl is needed only by
+# the two clients that drive it. JobHandle and JobClient use nothing from it,
+# which is what lets this module import on Windows, the one platform that
+# does not ship fcntl. Keyed on os.name, not sys.platform: macOS and the
+# BSDs are POSIX and do have it, and GNUMakeJobClient uses it there.
+if os.name == 'posix':
+    import fcntl
 
 logger = logging.getLogger('twister')
 
@@ -57,10 +64,21 @@ class JobClient:
         Returns:
             A Popen object.
         """
-        kwargs.setdefault("env", os.environ)
-        kwargs.setdefault("pass_fds", [])
-        kwargs["env"].update(self.env())
-        kwargs["pass_fds"] += self.pass_fds()
+        # Only touched when there is something to share. The base client has
+        # nothing, and off Linux it is the only one built: naming env and
+        # pass_fds anyway would hand the child os.environ instead of the
+        # inherited block, which on Windows is not the same environment --
+        # os.environ upper-cases its keys there, so ProgramFiles(x86)
+        # reaches the child as PROGRAMFILES(X86).
+        env = self.env()
+        if env:
+            kwargs.setdefault("env", os.environ)
+            kwargs["env"].update(env)
+
+        pass_fds = self.pass_fds()
+        if pass_fds:
+            kwargs.setdefault("pass_fds", [])
+            kwargs["pass_fds"] += pass_fds
 
         return subprocess.Popen(argv, **kwargs)
 
