@@ -447,15 +447,16 @@ static int mbedtls_hash_session_setup(const struct device *dev,
 static int mbedtls_hash_session_free(const struct device *dev, struct hash_ctx *ctx)
 {
 	struct mbedtls_shim_session *session = ctx->drv_sessn_state;
+	psa_status_t status;
 
-	if (psa_hash_abort(&session->hash_op) != PSA_SUCCESS) {
+	status = psa_hash_abort(&session->hash_op);
+	if (status != PSA_SUCCESS) {
 		LOG_ERR("PSA hash abort failed");
-		return -EIO;
 	}
 
 	mbedtls_free_session(session);
 
-	return 0;
+	return (status == PSA_SUCCESS) ? 0 : -EIO;
 }
 
 static int mbedtls_query_caps(const struct device *dev)
