@@ -133,6 +133,19 @@ TESTDATA_BUILD_FAILURE = [
         ['main.c:1:1: error: nope is not a thing'],
         'error: nope is not a thing',
     ),
+    # The line before the linker error is what decides the reason, so when the
+    # linker error is the first line there is no line to decide it -- including
+    # when the log ends with text that would have decided it. reports.py
+    # appends the handler's stderr to the build log before parsing, so the last
+    # line can come from a different file entirely.
+    (
+        [LD_RETURNED, 'ninja: build stopped.', OVERFLOWED],
+        LD_RETURNED,
+    ),
+    (
+        [LD_RETURNED, 'ninja: build stopped.', LD_WARNING],
+        LD_RETURNED,
+    ),
     (
         [LD_RETURNED],
         LD_RETURNED,
@@ -154,6 +167,8 @@ TESTDATA_BUILD_FAILURE = [
         'in function before',
         'in function beats overflow',
         'plain error',
+        'linker error first, overflow last',
+        'linker error first, warning last',
         'linker error alone',
         'nothing to report',
     ],
