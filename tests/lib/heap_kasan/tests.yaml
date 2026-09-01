@@ -1,6 +1,8 @@
 tests:
   libraries.heap_kasan:
-    tags: heap asan
+    tags:
+      - heap
+      - asan
     # RX does not support -fsanitize=kernel-address.
     filter: not CONFIG_RX
     integration_platforms:
