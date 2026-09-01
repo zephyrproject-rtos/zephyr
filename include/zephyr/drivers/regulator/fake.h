@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_DRIVERS_REGULATOR_FAKE_H_
-#define ZEPHYR_DRIVERS_REGULATOR_FAKE_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_REGULATOR_FAKE_H_
+#define ZEPHYR_INCLUDE_DRIVERS_REGULATOR_FAKE_H_
 
 #include <zephyr/drivers/regulator.h>
 #include <zephyr/fff.h>
@@ -50,4 +50,4 @@ DECLARE_FAKE_VALUE_FUNC(int, regulator_parent_fake_ship_mode,
 }
 #endif
 
-#endif /* ZEPHYR_TESTS_DRIVERS_CAN_SHELL_FAKE_CAN_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_REGULATOR_FAKE_H_ */
