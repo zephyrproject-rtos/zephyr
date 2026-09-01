@@ -582,6 +582,69 @@ ZTEST(work_1cpu, test_1cpu_running_flush)
 	zassert_equal(rc, 0);
 }
 
+#ifdef CONFIG_OBJ_CORE_SEM
+static int obj_core_count_op(struct k_obj_core *obj_core, void *data)
+{
+	size_t *count = data;
+
+	(*count)++;
+
+	return 0;
+}
+
+static size_t sem_obj_core_count(void)
+{
+	size_t count = 0;
+	struct k_obj_type *obj_type = k_obj_type_find(K_OBJ_TYPE_SEM_ID);
+
+	zassert_not_null(obj_type, "semaphore object type not found");
+	k_obj_type_walk_locked(obj_type, obj_core_count_op, &count);
+
+	return count;
+}
+#endif /* CONFIG_OBJ_CORE_SEM */
+
+/* Single CPU verify the semaphore embedded in a caller-provided (and
+ * typically stack-allocated) k_work_sync is not registered for kernel
+ * object tracking by the flush and cancel paths.
+ */
+ZTEST(work_1cpu, test_1cpu_sync_no_obj_tracking)
+{
+#ifdef CONFIG_OBJ_CORE_SEM
+	int rc;
+	size_t count;
+	struct k_work_sync sync;
+
+	/* Reset state and use the delaying handler */
+	reset_counters();
+	k_work_init(&common_work, delay_handler);
+
+	count = sem_obj_core_count();
+
+	/* Submit to the cooperative queue and flush. */
+	rc = k_work_submit_to_queue(&coophi_queue, &common_work);
+	zassert_equal(rc, 1);
+	zassert_true(k_work_flush(&common_work, &sync));
+	rc = k_sem_take(&sync_sem, K_NO_WAIT);
+	zassert_equal(rc, 0);
+
+	zassert_equal(sem_obj_core_count(), count,
+		      "k_work_sync flusher semaphore linked in type list");
+
+	/* Same check for the cancellation path; the work item has not
+	 * started yet when it is cancelled.
+	 */
+	rc = k_work_submit_to_queue(&coophi_queue, &common_work);
+	zassert_equal(rc, 1);
+	zassert_true(k_work_cancel_sync(&common_work, &sync));
+
+	zassert_equal(sem_obj_core_count(), count,
+		      "k_work_sync canceller semaphore linked in type list");
+#else
+	ztest_test_skip();
+#endif /* CONFIG_OBJ_CORE_SEM */
+}
+
 /* Single CPU schedule a work item and wait for flush. */
 ZTEST(work_1cpu, test_1cpu_delayed_flush)
 {
