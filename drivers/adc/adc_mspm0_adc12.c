@@ -21,6 +21,9 @@ LOG_MODULE_REGISTER(adc_mspm0);
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/dt-bindings/clock/mspm0_clock.h>
 #include <zephyr/drivers/clock_control/mspm0_clock_control.h>
+#ifdef CONFIG_ADC_MSPM0_ADC12_DMA
+#include <zephyr/drivers/dma.h>
+#endif
 
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"
@@ -186,6 +189,8 @@ struct adc_mspm0_regs {
 #define ADC12_CTL2_STARTADD             GENMASK(20, 16)
 #define ADC12_CTL2_STARTADD_VAL_ADDR_00 0U
 #define ADC12_CTL2_ENDADD               GENMASK(28, 24)
+#define ADC12_CTL2_DMAEN                BIT(8)
+#define ADC12_CTL2_SAMPCNT              GENMASK(15, 11)
 
 /* scomp0/scomp1 bits */
 #define ADC12_SCOMP_VAL GENMASK(9, 0)
@@ -256,6 +261,11 @@ struct adc_mspm0_data {
 #ifdef CONFIG_REGULATOR_MSPM0_VREF
 	uint8_t vref_flags;
 #endif
+#ifdef CONFIG_ADC_MSPM0_ADC12_DMA
+	struct dma_config dma_cfg;
+	struct dma_block_config dma_blk_cfg;
+	bool dma_ready;
+#endif
 };
 
 struct adc_mspm0_cfg {
@@ -270,6 +280,11 @@ struct adc_mspm0_cfg {
 	const uint8_t max_result;
 	const uint8_t num_channels;
 	bool auto_pwdn;
+#ifdef CONFIG_ADC_MSPM0_ADC12_DMA
+	const struct device *dma_dev;
+	uint32_t dma_channel;
+	uint32_t dma_slot;
+#endif
 };
 
 static inline uint16_t adc_mspm0_get_mem_result(struct adc_mspm0_regs *regs, uint8_t idx)
@@ -340,6 +355,21 @@ static void adc_mspm0_isr(const struct device *dev)
 	adc_context_on_sampling_done(&data->ctx, dev);
 }
 
+#ifdef CONFIG_ADC_MSPM0_ADC12_DMA
+static void adc_mspm0_dma_cb(const struct device *dma_dev, void *user_data, uint32_t channel,
+			     int status)
+{
+	const struct device *dev = user_data;
+	struct adc_mspm0_data *data = dev->data;
+
+	if (status < 0) {
+		LOG_ERR("ADC DMA transfer error: %d", status);
+	}
+
+	adc_context_on_sampling_done(&data->ctx, dev);
+}
+#endif
+
 static void adc_context_start_sampling(struct adc_context *ctx)
 {
 	struct adc_mspm0_data *data = CONTAINER_OF(ctx, struct adc_mspm0_data, ctx);
@@ -348,8 +378,36 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 	struct adc_mspm0_regs *regs = config->regs;
 	uint32_t memresifg = (1 << data->channel_eoc) << ADC12_CPU_INT_MEMRESIFG0_OFS;
 
-	regs->cpu_int.iclr |= memresifg;
-	regs->cpu_int.imask |= memresifg;
+#ifdef CONFIG_ADC_MSPM0_ADC12_DMA
+	bool use_dma = data->dma_ready;
+
+	if (use_dma) {
+		int ret;
+
+		regs->dma_trig.iclr |= memresifg;
+		regs->dma_trig.imask |= memresifg;
+
+		ret = dma_reload(config->dma_dev, config->dma_channel,
+				  data->dma_blk_cfg.source_address, (uintptr_t)data->buffer,
+				  data->dma_blk_cfg.block_size);
+		if (ret == 0) {
+			ret = dma_start(config->dma_dev, config->dma_channel);
+		}
+
+		use_dma = (ret == 0);
+		if (!use_dma) {
+			LOG_ERR("Failed to arm ADC DMA transfer, falling back to interrupt mode");
+			regs->dma_trig.imask &= ~memresifg;
+		}
+	}
+
+	if (!use_dma)
+#endif
+	{
+		regs->cpu_int.iclr |= memresifg;
+		regs->cpu_int.imask |= memresifg;
+	}
+
 	regs->ctl0 |= ADC12_CTL0_ENC;
 	regs->ctl1 |= ADC12_CTL1_SC;
 }
@@ -639,10 +697,19 @@ static int adc_mspm0_config_sequence(const struct device *dev, const struct adc_
 		ADC12_CTL1_TRIGSRC_VAL_SOFTWARE;
 
 	regs->ctl2 = (regs->ctl2 &
-		      ~(ADC12_CTL2_ENDADD | ADC12_CTL2_STARTADD | ADC12_CTL2_RES | ADC12_CTL2_DF)) |
+		      ~(ADC12_CTL2_ENDADD | ADC12_CTL2_STARTADD | ADC12_CTL2_RES | ADC12_CTL2_DF |
+			ADC12_CTL2_SAMPCNT | ADC12_CTL2_DMAEN)) |
 		     ADC12_CTL2_STARTADD_VAL_ADDR_00 |
 		     FIELD_PREP(ADC12_CTL2_ENDADD, data->channel_eoc) | resolution |
 		     ADC12_CTL2_DF_VAL_UNSIGNED;
+
+#ifdef CONFIG_ADC_MSPM0_ADC12_DMA
+	if (data->dma_ready) {
+		data->dma_blk_cfg.block_size = (data->channel_eoc + 1) * sizeof(uint32_t);
+		regs->ctl2 |= FIELD_PREP(ADC12_CTL2_SAMPCNT, data->channel_eoc + 1) |
+			      ADC12_CTL2_DMAEN;
+	}
+#endif
 
 	return 0;
 }
@@ -776,6 +843,35 @@ static int adc_mspm0_init(const struct device *dev)
 	}
 	config->irq_cfg_func();
 
+#ifdef CONFIG_ADC_MSPM0_ADC12_DMA
+	if (config->dma_dev != NULL && device_is_ready(config->dma_dev) &&
+	    dma_request_channel(config->dma_dev, (void *)&config->dma_channel) >= 0) {
+		data->dma_cfg = (struct dma_config){
+			.channel_direction = PERIPHERAL_TO_MEMORY,
+			.dma_slot = config->dma_slot,
+			.source_data_size = sizeof(uint32_t),
+			.dest_data_size = sizeof(uint16_t),
+			.complete_callback_en = 1,
+			.dma_callback = adc_mspm0_dma_cb,
+			.user_data = (void *)dev,
+			.block_count = 1,
+			.head_block = &data->dma_blk_cfg,
+		};
+		data->dma_blk_cfg.source_address = (uintptr_t)regs + ADC12_ALIAS_OFFSET +
+						    offsetof(struct adc_mspm0_regs, memres);
+		data->dma_blk_cfg.dest_address = data->dma_blk_cfg.source_address;
+		data->dma_blk_cfg.source_addr_adj = DMA_ADDR_ADJ_INCREMENT;
+		data->dma_blk_cfg.dest_addr_adj = DMA_ADDR_ADJ_INCREMENT;
+
+		data->dma_ready =
+			dma_config(config->dma_dev, config->dma_channel, &data->dma_cfg) == 0;
+	}
+
+	if (config->dma_dev != NULL && !data->dma_ready) {
+		LOG_WRN("DMA setup failed, using interrupt-driven ADC reads");
+	}
+#endif
+
 	adc_context_unlock_unconditionally(&data->ctx);
 
 	return 0;
@@ -843,7 +939,14 @@ static DEVICE_API(adc, mspm0_driver_api) = {
 		.auto_pwdn = DT_INST_PROP_OR(index, auto_powerdown, false),                        \
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(index, vref),					   \
 		(.vref_config = DEVICE_DT_GET(DT_PHANDLE(DT_DRV_INST(index), vref)),),		   \
-		(.vref_config = NULL)) };							   \
+		(.vref_config = NULL,))							   \
+		IF_ENABLED(CONFIG_ADC_MSPM0_ADC12_DMA,						   \
+		(COND_CODE_1(DT_INST_NODE_HAS_PROP(index, dmas),				   \
+		(.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_IDX(index, 0)),			   \
+		 .dma_channel = DT_INST_DMAS_CELL_BY_IDX(index, 0, channel),			   \
+		 .dma_slot = DT_INST_DMAS_CELL_BY_IDX(index, 0, trigger),),			   \
+		(.dma_dev = NULL,))))								   \
+	};											   \
 	static struct adc_mspm0_data adc_mspm0_data_##index = {                                    \
 		ADC_CONTEXT_INIT_TIMER(adc_mspm0_data_##index, ctx),                               \
 		ADC_CONTEXT_INIT_LOCK(adc_mspm0_data_##index, ctx),                                \
