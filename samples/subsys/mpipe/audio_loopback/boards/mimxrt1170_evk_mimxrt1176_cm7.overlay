@@ -4,6 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/ {
+	aliases {
+		/* SAI1 carries both directions: the WM8962 is full duplex on it. */
+		i2s-codec-rx = &sai1;
+	};
+};
+
 &sai1 {
 	mclk-output;
 };
