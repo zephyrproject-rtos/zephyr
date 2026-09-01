@@ -7,10 +7,6 @@
 #include <zephyr/kernel.h>
 #include <stdio.h>
 
-/*
- * 0xC00 is CSR cycle
- * 0xC02 is CSR instret
- */
 void user_thread_function(void *p1, void *p2, void *p3)
 {
 	register unsigned long cycle_before, cycle_count;
@@ -22,16 +18,16 @@ void user_thread_function(void *p1, void *p2, void *p3)
 	while (1) {
 		k_sleep(K_MSEC(2000));
 
-		inst_before = csr_read(0xC02);
-		cycle_before = csr_read(0xC00);
+		inst_before = csr_read(instret);
+		cycle_before = csr_read(cycle);
 		/* Explicitly invoke system call. k_current_get fails to benchmark
 		 * properly if CONFIG_CURRENT_THREAD_USE_TLS is enabled since it
 		 * returns the thread-local cached thread ID
 		 */
 		thread = k_sched_current_thread_query();
 
-		cycle_count = csr_read(0xC00);
-		inst_count = csr_read(0xC02);
+		cycle_count = csr_read(cycle);
+		inst_count = csr_read(instret);
 
 		if (cycle_count > cycle_before) {
 			cycle_count -= cycle_before;
