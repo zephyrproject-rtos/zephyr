@@ -398,6 +398,12 @@ static void uaol_intel_adsp_program_format(const struct device *dev, int stream,
 	pcms_ctl.part.mps = sio_credit_size;
 	pcms_ctl.part.pm = DIV_ROUND_UP(payload_size, sio_credit_size);
 	sys_write64(pcms_ctl.full, UAOLxPCMSyCTL_ADDR(dp, stream));
+
+	LOG_INF("stream %d: %uHz/%uch/%ubits, si %uus",
+		stream, sample_rate, channels, sample_bits, service_interval_usec);
+	LOG_INF("          si: %u, ass: %u, asbs: %u, aps: %u, mps: %u, pm: %u",
+		pcms_ctl.part.si, pcms_ctl.part.ass, pcms_ctl.part.asbs, pcms_ctl.part.aps,
+		pcms_ctl.part.mps, pcms_ctl.part.pm);
 }
 
 /*
@@ -424,6 +430,8 @@ static void uaol_intel_adsp_program_rate_adjustment(const struct device *dev, in
 	pcms_ra.part.fcadivm = fcadivm;
 	pcms_ra.part.fcadivn = fcadivn;
 	sys_write32(pcms_ra.full, UAOLxPCMSyRA_ADDR(dp, stream));
+
+	LOG_INF("stream %d: fcadivm: %u, fcadivn: %u", stream, fcadivm, fcadivn);
 }
 
 static uint32_t uaol_intel_adsp_get_sbusy(const struct device *dev, int stream)
@@ -677,9 +685,8 @@ static int uaol_intel_adsp_config(const struct device *dev, int stream, struct u
 	sys_write16(cfg->fifo_start_offset, UAOLxPCMSyFSA_ADDR(dp, stream));
 	sys_write16(cfg->channel_map, UAOLxPCMSyCM_ADDR(dp, stream));
 
-	LOG_DBG("stream %d: FSA 0x%04x, CM 0x%04x, rate %u, chan %u, bits %u, mps %u",
-		stream, cfg->fifo_start_offset, cfg->channel_map, cfg->sample_rate,
-		cfg->channels, cfg->sample_bits, cfg->sio_credit_size);
+	LOG_INF("stream %d: FSA 0x%04x, CM 0x%04x", stream, cfg->fifo_start_offset,
+		cfg->channel_map);
 
 	uaol_intel_adsp_program_format(dev, stream, cfg->sample_rate, cfg->channels,
 				       cfg->sample_bits, cfg->sio_credit_size,
