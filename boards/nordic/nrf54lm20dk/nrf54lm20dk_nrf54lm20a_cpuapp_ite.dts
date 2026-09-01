@@ -1,0 +1,42 @@
+/*
+ * Copyright (c) 2026 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#define USE_NON_SECURE_ADDRESS_MAP 1
+
+#include <nordic/nrf54lm20a_cpuapp.dtsi>
+#include "nrf54lm20_a_b_cpuapp_common.dtsi"
+
+/ {
+	compatible = "nordic,nrf54lm20dk_nrf54lm20a-cpuapp-ite";
+	model = "Nordic nRF54LM20 DK nRF54LM20A Application MCU IronSide TE Non-Secure";
+
+	chosen {
+		zephyr,code-partition = &slot0_partition;
+		zephyr,sram = &sram_ns;
+		zephyr,entropy = &psa_rng;
+	};
+
+	/delete-node/ rng;
+
+	psa_rng: psa-rng {
+		status = "okay";
+	};
+};
+
+/* Writes go through the IronSide TE NVM service instead of RRAMC. */
+&rram_controller {
+	compatible = "nordic,ironside-te-rram-controller";
+};
+
+&uart30 {
+	/* The IronSide DFU agent uses this UART. */
+	status = "disabled";
+};
+
+/* Include default memory partition configuration file */
+#include <vendor/nordic/nrf54lm20a_cpuapp_ite_partition.dtsi>

@@ -11,5 +11,12 @@ if(CONFIG_TFM_FLASH_MERGED_BINARY)
   set_property(TARGET runners_yaml_props_target PROPERTY hex_file tfm_merged.hex)
 endif()
 
+if(CONFIG_BOARD_NRF54LM20DK_NRF54LM20A_CPUAPP_ITE OR
+   CONFIG_BOARD_NRF54LM20DK_NRF54LM20B_CPUAPP_ITE
+)
+  # The only runner that cannot erase IronSide TE out of the device.
+  include(${ZEPHYR_BASE}/boards/common/ironside_te.board.cmake)
+endif()
+
 include(${ZEPHYR_BASE}/boards/common/nrfutil.board.cmake)
 include(${ZEPHYR_BASE}/boards/common/jlink.board.cmake)

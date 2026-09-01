@@ -7,9 +7,13 @@ board:
     variants:
     - name: ns
       cpucluster: cpuapp
+    - name: ite
+      cpucluster: cpuapp
   - name: nrf54lm20b
     variants:
     - name: ns
+      cpucluster: cpuapp
+    - name: ite
       cpucluster: cpuapp
 runners:
   run_once:

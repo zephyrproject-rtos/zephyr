@@ -1,0 +1,22 @@
+identifier: nrf54lm20dk/nrf54lm20b/cpuapp/ite
+name: nRF54lm20-DK-nRF54lm20b-Application-IronSide-TE
+type: mcu
+arch: arm
+toolchain:
+  - gnuarmemb
+  - zephyr
+ram: 475
+flash: 1668
+supported:
+  - adc
+  - counter
+  - dmic
+  - gpio
+  - i2c
+  - i2s
+  - nvs
+  - pwm
+  - spi
+  - usbd
+  - usbh
+vendor: nordic
