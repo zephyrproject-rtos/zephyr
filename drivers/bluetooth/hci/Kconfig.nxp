@@ -142,6 +142,7 @@ choice BT_NXP_MODULE
 
 config BT_NXP_NW612
 	bool "NW612 firmware for NXP IW612 Chipset"
+	select BT_NXP_CTRL_BSP_CAPABLE if NXP_IW61X
 	help
 	  NXP IW612 Chipset supports Wi-Fi? 802.11a/b/g/n/ac/ax + Bluetooth? 5.4
 	  BR/EDR/LE + IEEE802.1.5.4 up to 601 Mbps data rate on Wi-Fi? and 2Mbps
@@ -154,6 +155,7 @@ config BT_NXP_NW612
 
 config BT_NXP_IW416
 	bool "NXP IW416 Chipset"
+	select BT_NXP_CTRL_BSP_CAPABLE if NXP_IW416
 	help
 	  NXP IW416 Chipset supports Wi-Fi4 + Bluetooth5.2
 	  Details of the module could be found on https://www.nxp.com/products/
@@ -162,6 +164,7 @@ config BT_NXP_IW416
 
 config BT_NXP_IW610
 	bool "IW610 firmware for NXP IW610 Chipset"
+	select BT_NXP_CTRL_BSP_CAPABLE if NXP_IW610
 	help
 	  NXP IW610 Chipset supports Wi-Fi™ 802.11a/b/g/n/ac/ax HE20 + Bluetooth®. 5.4
 	  Low Energy + 802.15.4
@@ -170,11 +173,26 @@ config BT_NXP_IW610
 	  dual-band-1x1-wi-fi-6-plus-bluetooth-low-energy-5-4-plus-802-15-4-tri-
 	  radio-solution:IW610
 
+config BT_NXP_EZURIO_NX611
+	bool "Ezurio Sona NX611 firmware for NXP IW611 Chipset"
+	select BT_NXP_CTRL_BSP_CAPABLE if NXP_IW61X
+	help
+	  Ezurio Sona NX611 module is based on the NXP IW611 combo chipset
+	  which supports Wi-Fi 802.11a/b/g/n/ac/ax + Bluetooth 5.4 BR/EDR/LE
+	  up to 600 Mbps PHY data rate on Wi-Fi and 2Mbps PHY data rate on
+	  Bluetooth. Uses Ezurio-qualified firmware.
+
 endchoice # BT_NXP_MODULE
 
 endif # BT_H4_NXP_CTLR
 
-if (BT_NXP_NW612 && NXP_IW61X) || (BT_NXP_IW416 && NXP_IW416) || (BT_NXP_IW610 && NXP_IW610)
+config BT_NXP_CTRL_BSP_CAPABLE
+	bool
+	help
+	  Selected by NXP Bluetooth module options whose firmware supports
+	  Boot-Sleep-Patch (BSP) in Wi-Fi + BT parallel firmware download.
+
+if BT_NXP_CTRL_BSP_CAPABLE
 
 config BT_NXP_CTRL_BSP_TRIGGER
 	bool "Trigger to wakeup BSP enabled NXP BT CPU"
@@ -220,4 +238,4 @@ config BT_NXP_CTRL_BSP_WAIT_TIMEOUT
 	  Maximum time in milliseconds to wait for BT CPU to enter
 	  boot-sleep-patch state before sending the wakeup trigger.
 
-endif # BT_NXP_NW612 || BT_NXP_IW416 || BT_NXP_IW610
+endif # BT_NXP_CTRL_BSP_CAPABLE
