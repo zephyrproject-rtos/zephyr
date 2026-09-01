@@ -5141,7 +5141,6 @@ Octavo Systems Platforms:
     - kgugala
   files:
     - boards/oct/
-    - soc/oct/
   labels:
     - "platform: Octavo Systems"
 
