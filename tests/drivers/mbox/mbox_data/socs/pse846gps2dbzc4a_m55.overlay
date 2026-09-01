@@ -20,7 +20,8 @@
 	};
 
 	mbox-consumer {
-		compatible = "vnd,mbox-consumer";
+		compatible = "zephyr,mbox-consumer";
+		loopback;
 		mboxes = <&mbox0 0>, <&mbox0 0>,
 			 <&mbox0 1>, <&mbox0 1>,
 			 <&mbox0 2>, <&mbox0 2>;
