@@ -19,6 +19,31 @@ function parseMemoryHashParam(hashParams, key, defaultBytes) {
   return kib * MEMORY_KB;
 }
 
+/**
+ * True when the catalog should only take into account the hardware capabilities and devices
+ * that correspond to devicetree nodes enabled (status "okay") on the board.
+ */
+function enabledNodesOnly() {
+  const toggle = document.getElementById("enabled-nodes-only");
+  return toggle ? toggle.checked : false;
+}
+
+/**
+ * Read one of the devicetree-derived attributes ("data-supported-features" or
+ * "data-compatibles") of a board card as a list, honoring the "enabled nodes only" toggle.
+ * Cards without an "-enabled" variant of the attribute (shields, whose capabilities are not
+ * devicetree-derived) always report their full list.
+ */
+function boardDTAttribute(board, attribute) {
+  const enabledValue = enabledNodesOnly() ? board.getAttribute(`${attribute}-enabled`) : null;
+  const value = enabledValue !== null ? enabledValue : board.getAttribute(attribute) || "";
+  return value.split(" ").filter(Boolean);
+}
+
+/* Refresh the hardware capabilities/compatibles suggestion lists (assigned during setup). */
+let refreshHWCapabilitiesList = () => {};
+let refreshCompatiblesList = () => {};
+
 function toggleDisplayMode(btn) {
   const catalog = document.getElementById("catalog");
   catalog.classList.toggle("compact");
@@ -64,8 +89,8 @@ function populateFormFromURL() {
     updateMemorySlider(type);
   });
 
-  // Restore visibility toggles from URL
-  ["show-boards", "show-shields"].forEach((toggle) => {
+  // Restore visibility and devicetree status toggles from URL
+  ["show-boards", "show-shields", "enabled-nodes-only"].forEach((toggle) => {
     if (hashParams.has(toggle)) {
       document.getElementById(toggle).checked = hashParams.get(toggle) === "true";
     }
@@ -137,6 +162,7 @@ function hashIndicatesFilteredCatalogView() {
     if (key === "catalog") return true;
     if (fields.has(key) && value !== "") return true;
     if ((key === "show-boards" || key === "show-shields") && value === "false") return true;
+    if (key === "enabled-nodes-only" && value === "true") return true;
   }
   return false;
 }
@@ -172,6 +198,10 @@ function updateURL() {
     const isChecked = document.getElementById(toggle).checked;
     isChecked ? hashParams.delete(toggle) : hashParams.set(toggle, "false");
   });
+
+  enabledNodesOnly()
+    ? hashParams.set("enabled-nodes-only", "true")
+    : hashParams.delete("enabled-nodes-only");
 
   // Add supported features to URL
   const selectedHWTags = [...document.querySelectorAll("#hwcaps-tags .tag")].map(
@@ -237,14 +267,18 @@ function setupHWCapabilitiesField() {
   const tagInput = document.getElementById("hwcaps-input");
   const datalist = document.getElementById("tag-list");
 
-  const tagCounts = Array.from(document.querySelectorAll(".board-card")).reduce((acc, board) => {
-    (board.getAttribute("data-supported-features") || "").split(" ").forEach((tag) => {
-      acc[tag] = (acc[tag] || 0) + 1;
-    });
-    return acc;
-  }, {});
+  function collectTags() {
+    const tagCounts = Array.from(document.querySelectorAll(".board-card")).reduce((acc, board) => {
+      boardDTAttribute(board, "data-supported-features").forEach((tag) => {
+        acc[tag] = (acc[tag] || 0) + 1;
+      });
+      return acc;
+    }, {});
 
-  const allTags = Object.keys(tagCounts).sort();
+    return Object.keys(tagCounts).sort();
+  }
+
+  let allTags = collectTags();
 
   function addTag(tag) {
     if (selectedTags.includes(tag) || tag === "" || !allTags.includes(tag)) return;
@@ -270,6 +304,7 @@ function setupHWCapabilitiesField() {
 
   function updateDatalist() {
     datalist.innerHTML = "";
+    allTags = collectTags();
     const filteredTags = allTags.filter((tag) => !selectedTags.includes(tag));
 
     filteredTags.forEach((tag) => {
@@ -302,6 +337,7 @@ function setupHWCapabilitiesField() {
     }
   });
 
+  refreshHWCapabilitiesList = updateDatalist;
   updateDatalist();
 }
 
@@ -313,19 +349,23 @@ function setupCompatiblesField() {
   const datalist = document.getElementById("compatibles-list");
 
   // Collect all unique compatibles from boards
-  const allCompatibles = Array.from(document.querySelectorAll(".board-card")).reduce(
-    (acc, board) => {
-      (board.getAttribute("data-compatibles") || "").split(" ").forEach((compat) => {
-        if (compat && !acc.includes(compat)) {
-          acc.push(compat);
-        }
-      });
-      return acc;
-    },
-    [],
-  );
+  function collectCompatibles() {
+    const compatibles = Array.from(document.querySelectorAll(".board-card")).reduce(
+      (acc, board) => {
+        boardDTAttribute(board, "data-compatibles").forEach((compat) => {
+          if (!acc.includes(compat)) {
+            acc.push(compat);
+          }
+        });
+        return acc;
+      },
+      [],
+    );
 
-  allCompatibles.sort();
+    return compatibles.sort();
+  }
+
+  let allCompatibles = collectCompatibles();
 
   function addCompatible(compatible) {
     if (selectedCompatibles.includes(compatible) || compatible === "") return;
@@ -353,6 +393,7 @@ function setupCompatiblesField() {
 
   function updateDatalist() {
     datalist.innerHTML = "";
+    allCompatibles = collectCompatibles();
     const filteredCompatibles = allCompatibles.filter((c) => !selectedCompatibles.includes(c));
 
     filteredCompatibles.forEach((compatible) => {
@@ -379,6 +420,7 @@ function setupCompatiblesField() {
     }
   });
 
+  refreshCompatiblesList = updateDatalist;
   updateDatalist();
 }
 
@@ -436,6 +478,13 @@ document.addEventListener("DOMContentLoaded", function () {
     filterBoards();
   });
 
+  enabledNodesToggle = document.getElementById("enabled-nodes-only");
+  enabledNodesToggle.addEventListener("change", () => {
+    // The suggestion lists depend on the toggle, and refreshing them re-runs the filtering.
+    refreshHWCapabilitiesList();
+    refreshCompatiblesList();
+  });
+
   form.addEventListener("input", function () {
     filterBoards();
   });
@@ -461,6 +510,7 @@ function resetForm() {
 
   document.getElementById("show-boards").checked = true;
   document.getElementById("show-shields").checked = true;
+  document.getElementById("enabled-nodes-only").checked = false;
 
   // Clear supported features
   document.querySelectorAll("#hwcaps-tags .tag").forEach((tag) => tag.remove());
@@ -478,6 +528,9 @@ function resetForm() {
     root.noUiSlider.set([memoryBytesToSlider(0, cfg), memoryBytesToSlider(Infinity, cfg)], false);
     updateMemorySlider(type);
   });
+
+  refreshHWCapabilitiesList();
+  refreshCompatiblesList();
 
   filterBoards();
 }
@@ -800,7 +853,8 @@ function filterBoards() {
     selectedHWTags.length ||
     selectedCompatibles.length ||
     !showBoards ||
-    !showShields
+    !showShields ||
+    enabledNodesOnly()
   ) {
     resetFiltersBtn.classList.remove("btn-disabled");
   } else {
@@ -818,12 +872,8 @@ function filterBoards() {
     const boardTargetMemory = parseBoardTargetMemory(board);
     const boardVendor = board.getAttribute("data-vendor") || "";
     const boardSocs = (board.getAttribute("data-socs") || "").split(" ").filter(Boolean);
-    const boardSupportedFeatures = (board.getAttribute("data-supported-features") || "")
-      .split(" ")
-      .filter(Boolean);
-    const boardCompatibles = (board.getAttribute("data-compatibles") || "")
-      .split(" ")
-      .filter(Boolean);
+    const boardSupportedFeatures = boardDTAttribute(board, "data-supported-features");
+    const boardCompatibles = boardDTAttribute(board, "data-compatibles");
     const isShield = board.classList.contains("shield");
 
     const selectedSocs = [...socSocSelect.selectedOptions].map(({ value }) => value);
