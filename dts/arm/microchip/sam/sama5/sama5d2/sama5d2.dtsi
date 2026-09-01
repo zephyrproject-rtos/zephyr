@@ -68,6 +68,28 @@
 			#clock-cells = <2>;
 		};
 
+		clk32k: clock-controller@f8018050 {
+			compatible = "microchip,sama7g5-sckc";
+			reg = <0xf8018050 0x4>;
+			clocks = <&slow_xtal>;
+			#clock-cells = <1>;
+		};
+
+		rtc: rtc@f80480b0 {
+			compatible = "microchip,rtc-g2";
+			reg = <0xf80480b0 0x30>;
+			interrupt-parent = <&aic>;
+			interrupts = <74 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clk32k 1>;
+			protection = <&syscwp>;
+			status = "disabled";
+		};
+
+		syscwp: syscwp@f8048194 {
+			compatible = "syscon";
+			reg = <0xf8048194 0x8>;
+		};
+
 		aic: interrupt-controller@fc020000 {
 			compatible = "microchip,aic-g1-intc";
 			reg = <0xfc020000 0x100>;
