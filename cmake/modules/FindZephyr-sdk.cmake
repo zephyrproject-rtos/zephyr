@@ -50,14 +50,21 @@ if("${Zephyr-sdk_FIND_COMPONENTS}" STREQUAL "")
 endif()
 
 # Load Zephyr SDK Toolchain.
-# There are three scenarios where Zephyr SDK should be looked up:
-# 1) Zephyr specified as toolchain (ZEPHYR_SDK_INSTALL_DIR still used if defined)
+# There are four scenarios where Zephyr SDK should be looked up:
+# 1) Zephyr specified as toolchain
 # 2) No toolchain specified == Default to Zephyr toolchain
-# Until we completely deprecate it
+# 3) The caller explicitly requires the Zephyr SDK. This is how 3rd party
+#    toolchains that rely on Zephyr SDK host tools, such as iar and arcmwdt,
+#    request it.
+# 4) The installed Zephyr SDKs are listed, which is independent of the toolchain
+#    in use.
+#
+# ZEPHYR_SDK_INSTALL_DIR only selects which Zephyr SDK is used, it does not
+# decide whether one is used.
 if((${ZEPHYR_TOOLCHAIN_VARIANT} MATCHES "^zephyr/?") OR
   (NOT DEFINED ZEPHYR_TOOLCHAIN_VARIANT) OR
-  (DEFINED ZEPHYR_SDK_INSTALL_DIR) OR
-  (Zephyr-sdk_FIND_REQUIRED)
+  (Zephyr-sdk_FIND_REQUIRED) OR
+  (LIST IN_LIST Zephyr-sdk_FIND_COMPONENTS)
 )
 
   # No toolchain was specified, so inform user that we will be searching.
