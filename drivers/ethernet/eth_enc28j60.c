@@ -338,7 +338,7 @@ static void eth_enc28j60_gpio_callback(const struct device *dev,
 
 static int eth_enc28j60_init_buffers(const struct device *dev)
 {
-	uint8_t data_estat;
+	uint8_t data_estat = 0U;
 	const struct eth_enc28j60_config *config = dev->config;
 
 	/* Reception buffers initialization */
@@ -376,19 +376,26 @@ static int eth_enc28j60_init_buffers(const struct device *dev)
 	eth_enc28j60_write_reg(dev, ENC28J60_REG_ERXFCON,
 			       config->hw_rx_filter);
 
-	/* Waiting for OST */
+	/* After a System Reset command CLKRDY is not cleared (errata
+	 * DS80349C, issue 2), so this loop does not wait for the
+	 * oscillator. It is kept as a check that the chip answers on
+	 * the SPI bus, as in the reset sequence of errata issue 19.
+	 * CLKRDY must be set and the unimplemented bit 3 must be clear. A
+	 * chip that reads 0x00 or 0xFF makes the loop time out.
+	 */
 	/* 32 bits for this timer should be fine, rollover not an issue with initialisation */
 	uint32_t start_wait = (uint32_t) k_uptime_get();
 	do {
 		/* If the CLK isn't ready don't wait forever */
 		if ((k_uptime_get_32() - start_wait) > CONFIG_ETH_ENC28J60_CLKRDY_INIT_WAIT_MS) {
-			LOG_ERR("OST wait timed out");
+			LOG_ERR("%s: ESTAT check timed out (0x%02x)", dev->name, data_estat);
 			return -ETIMEDOUT;
 		}
 		/* wait 10.24 useconds */
 		k_busy_wait(D10D24S);
 		eth_enc28j60_read_reg(dev, ENC28J60_REG_ESTAT, &data_estat);
-	} while (!(data_estat & ENC28J60_BIT_ESTAT_CLKRDY));
+	} while (!(data_estat & ENC28J60_BIT_ESTAT_CLKRDY) ||
+		 (data_estat & ENC28J60_BIT_ESTAT_UNIMPL3));
 
 	return 0;
 }
@@ -840,8 +847,10 @@ static int eth_enc28j60_init(const struct device *dev)
 		return -EIO;
 	}
 
-	/* Errata B7/1 */
-	k_busy_wait(D10D24S);
+	/* Errata DS80349C, issue 2. After a System Reset command CLKRDY
+	 * is not cleared and can not be polled. Wait at least 1 ms.
+	 */
+	k_msleep(1);
 
 	/* Apply a random MAC address if requested in DT */
 	if (config->random_mac) {
