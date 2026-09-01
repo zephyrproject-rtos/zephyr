@@ -598,6 +598,7 @@
 			prescaler = <32768>;
 			alarms-count = <2>;
 			alrm-exti-line = <17>;
+			wakeup-source; /* Enable use as system timer companion */
 			status = "disabled";
 
 			bbram: backup_regs {
