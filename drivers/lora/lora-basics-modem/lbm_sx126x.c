@@ -270,7 +270,52 @@ void ral_sx126x_bsp_get_tx_cfg(const void *context,
 	output_params->pa_ramp_time = SX126X_RAMP_40_US;
 	output_params->pa_cfg.pa_lut = 0x01;
 
-	if (config->variant == VARIANT_SX1261) {
+	if (config->variant == VARIANT_STM32WL) {
+		/* Values from ST AN5457, chapter 5.1.2. */
+		if (config->pa_output == SX126X_PA_OUTPUT_RFO_LP) {
+			int8_t max_power = config->rfo_lp_max_power;
+
+			power = MIN(power, max_power);
+			output_params->pa_cfg.device_sel = 0x01;
+			output_params->pa_cfg.hp_max = 0x00;
+			if (max_power == 15) {
+				output_params->pa_cfg.pa_duty_cycle = 0x06;
+				power = 14 - (max_power - power);
+			} else if (max_power == 10) {
+				output_params->pa_cfg.pa_duty_cycle = 0x01;
+				power = 13 - (max_power - power);
+			} else {
+				output_params->pa_cfg.pa_duty_cycle = 0x04;
+				power = 14 - (max_power - power);
+			}
+			power = MAX(power, SX1261_TX_PWR_MIN);
+		} else {
+			int8_t max_power = config->rfo_hp_max_power;
+
+			power = MIN(power, max_power);
+			output_params->pa_cfg.device_sel = 0x00;
+			if (max_power == 20) {
+				output_params->pa_cfg.pa_duty_cycle = 0x03;
+				output_params->pa_cfg.hp_max = 0x05;
+				power = 22 - (max_power - power);
+			} else if (max_power == 17) {
+				output_params->pa_cfg.pa_duty_cycle = 0x02;
+				output_params->pa_cfg.hp_max = 0x03;
+				power = 22 - (max_power - power);
+			} else if (max_power == 14) {
+				output_params->pa_cfg.pa_duty_cycle = 0x02;
+				output_params->pa_cfg.hp_max = 0x02;
+				power = 14 - (max_power - power);
+			} else {
+				output_params->pa_cfg.pa_duty_cycle = 0x04;
+				output_params->pa_cfg.hp_max = 0x07;
+				power = 22 - (max_power - power);
+			}
+			power = MAX(power, SX1262_TX_PWR_MIN);
+		}
+		output_params->chip_output_pwr_in_dbm_configured = power;
+		output_params->chip_output_pwr_in_dbm_expected = power;
+	} else if (config->variant == VARIANT_SX1261) {
 		power = CLAMP(power, SX1261_TX_PWR_MIN, SX1261_TX_PWR_MAX);
 		output_params->pa_cfg.device_sel = 0x01;
 		output_params->chip_output_pwr_in_dbm_configured = power;
@@ -325,7 +370,16 @@ void ral_sx126x_bsp_get_rx_boost_cfg(const void *context, bool *rx_boost_is_acti
 
 void ral_sx126x_bsp_get_ocp_value(const void *context, uint8_t *ocp_in_step_of_2_5_ma)
 {
-	/* Do nothing, let the driver choose the default values */
+	const struct device *dev = context;
+	const struct lbm_sx126x_config *config = dev->config;
+
+	if (config->variant != VARIANT_STM32WL) {
+		/* Let the radio driver choose the default value */
+		return;
+	}
+
+	/* 60 mA on the low-power output, 140 mA on the high-power one. */
+	*ocp_in_step_of_2_5_ma = config->pa_output == SX126X_PA_OUTPUT_RFO_LP ? 0x18 : 0x38;
 }
 
 void ral_sx126x_bsp_get_lora_cad_det_peak(const void *context, ral_lora_sf_t sf, ral_lora_bw_t bw,
@@ -471,28 +525,38 @@ static int sx126x_init(const struct device *dev)
 	return 0;
 }
 
-#define SX126X_DEFINE(node_id, sx_variant)                                                         \
-	static const struct lbm_sx126x_config config_##node_id = {                                 \
-		.lbm_common.ralf = RALF_SX126X_INSTANTIATE(DEVICE_DT_GET(node_id)),                \
-		.lbm_common.force_ldro = DT_PROP(node_id, force_ldro),                             \
-		.lbm_common.dio1 = GPIO_DT_SPEC_GET(node_id, dio1_gpios),                          \
-		.spi = SPI_DT_SPEC_GET(                                                            \
-			node_id, SPI_WORD_SET(8) | SPI_OP_MODE_CONTROLLER | SPI_TRANSFER_MSB),     \
-		.reset = GPIO_DT_SPEC_GET(node_id, reset_gpios),                                   \
-		.busy = GPIO_DT_SPEC_GET(node_id, busy_gpios),                                     \
-		.ant_enable = GPIO_DT_SPEC_GET_OR(node_id, antenna_enable_gpios, {0}),             \
-		.tx_enable = GPIO_DT_SPEC_GET_OR(node_id, tx_enable_gpios, {0}),                   \
-		.rx_enable = GPIO_DT_SPEC_GET_OR(node_id, rx_enable_gpios, {0}),                   \
-		.dio3_tcxo_startup_delay_ms = DT_PROP_OR(node_id, tcxo_power_startup_delay_ms, 0), \
-		.dio3_tcxo_voltage = DT_PROP_OR(node_id, dio3_tcxo_voltage, UINT8_MAX),            \
-		.dio2_rf_switch = DT_PROP(node_id, dio2_tx_enable),                                \
-		.rx_boosted = DT_PROP(node_id, rx_boosted),                                        \
-		.regulator_ldo = DT_PROP(node_id, regulator_ldo),                                  \
-		.variant = sx_variant,                                                             \
-	};                                                                                         \
+#define SX126X_SPI_OPERATION (SPI_WORD_SET(8) | SPI_OP_MODE_CONTROLLER | SPI_TRANSFER_MSB)
+
+/* The properties a radio has wherever the core sits. What is left out is what
+ * only a discrete part reaches over pins: reset, busy and DIO1.
+ */
+#define SX126X_CONFIG_COMMON(node_id)                                                              \
+	.lbm_common.ralf = RALF_SX126X_INSTANTIATE(DEVICE_DT_GET(node_id)),                        \
+	.lbm_common.force_ldro = DT_PROP(node_id, force_ldro),                                     \
+	.spi = SPI_DT_SPEC_GET(node_id, SX126X_SPI_OPERATION),                                     \
+	.ant_enable = GPIO_DT_SPEC_GET_OR(node_id, antenna_enable_gpios, {0}),                     \
+	.tx_enable = GPIO_DT_SPEC_GET_OR(node_id, tx_enable_gpios, {0}),                           \
+	.rx_enable = GPIO_DT_SPEC_GET_OR(node_id, rx_enable_gpios, {0}),                           \
+	.dio3_tcxo_startup_delay_ms = DT_PROP_OR(node_id, tcxo_power_startup_delay_ms, 0),         \
+	.dio3_tcxo_voltage = DT_PROP_OR(node_id, dio3_tcxo_voltage, UINT8_MAX),                    \
+	.dio2_rf_switch = DT_PROP(node_id, dio2_tx_enable),                                        \
+	.rx_boosted = DT_PROP(node_id, rx_boosted),                                                \
+	.regulator_ldo = DT_PROP(node_id, regulator_ldo)
+
+#define SX126X_DEVICE_DEFINE(node_id)                                                              \
 	static struct lbm_sx126x_data data_##node_id;                                              \
 	DEVICE_DT_DEFINE(node_id, sx126x_init, NULL, &data_##node_id, &config_##node_id,           \
 			 POST_KERNEL, CONFIG_LORA_INIT_PRIORITY, &lbm_lora_api)
+
+#define SX126X_DEFINE(node_id, sx_variant)                                                         \
+	static const struct lbm_sx126x_config config_##node_id = {                                 \
+		SX126X_CONFIG_COMMON(node_id),                                                     \
+		.lbm_common.dio1 = GPIO_DT_SPEC_GET(node_id, dio1_gpios),                          \
+		.reset = GPIO_DT_SPEC_GET(node_id, reset_gpios),                                   \
+		.busy = GPIO_DT_SPEC_GET(node_id, busy_gpios),                                     \
+		.variant = sx_variant,                                                             \
+	};                                                                                         \
+	SX126X_DEVICE_DEFINE(node_id)
 
 #define SX1261_DEFINE(node_id) SX126X_DEFINE(node_id, VARIANT_SX1261)
 #define SX1262_DEFINE(node_id) SX126X_DEFINE(node_id, VARIANT_SX1262)
@@ -501,3 +565,15 @@ DT_FOREACH_STATUS_OKAY(semtech_sx1261, SX1261_DEFINE);
 DT_FOREACH_STATUS_OKAY(semtech_sx1262, SX1262_DEFINE);
 DT_FOREACH_STATUS_OKAY(semtech_sx1268, SX1262_DEFINE);
 DT_FOREACH_STATUS_OKAY(semtech_llcc68, SX1262_DEFINE);
+
+#define STM32WL_DEFINE(node_id)                                                                    \
+	static const struct lbm_sx126x_config config_##node_id = {                                 \
+		SX126X_CONFIG_COMMON(node_id),                                                     \
+		.variant = VARIANT_STM32WL,                                                        \
+		.pa_output = DT_ENUM_IDX(node_id, power_amplifier_output),                         \
+		.rfo_lp_max_power = DT_PROP(node_id, rfo_lp_max_power),                            \
+		.rfo_hp_max_power = DT_PROP(node_id, rfo_hp_max_power),                            \
+	};                                                                                         \
+	SX126X_DEVICE_DEFINE(node_id)
+
+DT_FOREACH_STATUS_OKAY(st_stm32wl_subghz_radio, STM32WL_DEFINE);

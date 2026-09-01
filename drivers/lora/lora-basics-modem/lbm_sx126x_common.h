@@ -14,6 +14,9 @@
 
 #include "lbm_common.h"
 
+#define SX126X_PA_OUTPUT_RFO_LP 0
+#define SX126X_PA_OUTPUT_RFO_HP 1
+
 enum sx126x_variant {
 	VARIANT_SX1261,
 	VARIANT_SX1262,
@@ -34,6 +37,10 @@ struct lbm_sx126x_config {
 	bool rx_boosted;
 	bool regulator_ldo;
 	enum sx126x_variant variant;
+	/* STM32WL only, the part has two power amplifier outputs */
+	uint8_t pa_output;
+	int8_t rfo_lp_max_power;
+	int8_t rfo_hp_max_power;
 };
 
 struct lbm_sx126x_data {
