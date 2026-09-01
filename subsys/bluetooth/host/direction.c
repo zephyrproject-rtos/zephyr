@@ -960,10 +960,7 @@ int bt_df_set_adv_cte_tx_param(struct bt_le_ext_adv *adv,
 		return -ENOTSUP;
 	}
 
-	/* Check if BT_ADV_PARAMS_SET is set, because it implies the set
-	 * has already been created.
-	 */
-	if (!atomic_test_bit(adv->flags, BT_ADV_PARAMS_SET)) {
+	if (!atomic_test_bit(adv->flags, BT_ADV_CREATED)) {
 		return -EINVAL;
 	}
 

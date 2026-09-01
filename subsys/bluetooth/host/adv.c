@@ -195,11 +195,12 @@ uint8_t bt_le_ext_adv_get_index(const struct bt_le_ext_adv *adv)
 static struct bt_le_ext_adv *adv_new(void)
 {
 	struct bt_le_ext_adv *adv = NULL;
-	int i;
 
-	for (i = 0; i < ARRAY_SIZE(adv_pool); i++) {
-		if (!atomic_test_bit(adv_pool[i].flags, BT_ADV_CREATED)) {
+	for (size_t i = 0; i < ARRAY_SIZE(adv_pool); i++) {
+		if (!atomic_test_and_set_bit(adv_pool[i].flags, BT_ADV_RESERVED)) {
 			adv = &adv_pool[i];
+			(void)memset(adv, 0, offsetof(struct bt_le_ext_adv, flags));
+			adv->handle = i;
 			break;
 		}
 	}
@@ -207,10 +208,6 @@ static struct bt_le_ext_adv *adv_new(void)
 	if (!adv) {
 		return NULL;
 	}
-
-	(void)memset(adv, 0, sizeof(*adv));
-	atomic_set_bit(adv_pool[i].flags, BT_ADV_CREATED);
-	adv->handle = i;
 
 #if defined(CONFIG_BT_PER_ADV_RSP_REASSEMBLY)
 	net_buf_simple_init_with_data(&adv->pawr_rsp_reassembly.buf,
@@ -225,7 +222,7 @@ static struct bt_le_ext_adv *adv_new(void)
 
 static void adv_delete(struct bt_le_ext_adv *adv)
 {
-	atomic_clear_bit(adv->flags, BT_ADV_CREATED);
+	atomic_clear(adv->flags);
 }
 
 #if defined(CONFIG_BT_BROADCASTER)
@@ -298,7 +295,7 @@ void bt_le_adv_delete_legacy(void)
 {
 #if defined(CONFIG_BT_EXT_ADV)
 	if (bt_dev.adv) {
-		atomic_clear_bit(bt_dev.adv->flags, BT_ADV_CREATED);
+		adv_delete(bt_dev.adv);
 		bt_dev.adv = NULL;
 	}
 #endif
@@ -1230,6 +1227,8 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 
 	atomic_set_bit_to(adv->flags, BT_ADV_RANDOM_ADDR_UPDATED,
 			  own_addr_type == BT_HCI_OWN_ADDR_RANDOM);
+
+	atomic_set_bit(adv->flags, BT_ADV_CREATED);
 
 	return 0;
 }
