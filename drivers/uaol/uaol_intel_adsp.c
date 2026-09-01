@@ -396,7 +396,7 @@ static void uaol_intel_adsp_program_format(const struct device *dev, int stream,
 	pcms_ctl.part.asbs = sample_block_size;
 	pcms_ctl.part.aps = payload_size;
 	pcms_ctl.part.mps = sio_credit_size;
-	pcms_ctl.part.pm = DIV_ROUND_UP(payload_size, sio_credit_size);
+	pcms_ctl.part.pm = DIV_ROUND_UP(sio_credit_size, payload_size);
 	sys_write64(pcms_ctl.full, UAOLxPCMSyCTL_ADDR(dp, stream));
 }
 
