@@ -94,12 +94,12 @@ static int mbedtls_ecb(struct cipher_ctx *ctx, struct cipher_pkt *pkt)
 					    &out_len);
 	}
 
-	pkt->out_len = out_len;
-
 	if (status != PSA_SUCCESS) {
 		LOG_ERR("psa_cipher_[en|de]crypt() failed (%d)", status);
 		return -EINVAL;
 	}
+
+	pkt->out_len = out_len;
 
 	return 0;
 }
