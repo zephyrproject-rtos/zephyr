@@ -592,9 +592,9 @@
 			#size-cells = <0>;
 		};
 
-		can: can@40038000 {
+		can: can@40028000 {
 			compatible = "realtek,bee-can";
-			reg = <0x40038000 0x34c>;
+			reg = <0x40028000 0x34c>;
 			interrupts = <72 1>;
 			clocks = <&cctl APB_CLK(A2C)>;
 			status = "disabled";
