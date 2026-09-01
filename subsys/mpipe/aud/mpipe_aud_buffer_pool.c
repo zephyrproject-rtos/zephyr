@@ -30,8 +30,10 @@ static void mpipe_aud_buffer_pool_release(struct mpipe_aud_buffer_pool *aud_pool
 	memset(aud_pool->blocks, 0, sizeof(aud_pool->blocks));
 
 	if ((aud_pool->mem_slab != NULL) && clear_mem_slab) {
+		/* Keep the app slab pointer (set once via SLAB_PTR, never re-applied);
+		 * detach only its storage so replay can re-init it.
+		 */
 		aud_pool->mem_slab->buffer = NULL;
-		aud_pool->mem_slab = NULL;
 	}
 }
 

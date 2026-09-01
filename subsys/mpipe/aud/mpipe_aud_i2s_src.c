@@ -26,6 +26,9 @@ LOG_MODULE_REGISTER(mpipe_aud_i2s_src, CONFIG_MPIPE_LOG_LEVEL);
 #define AUD_I2S_SRC_CODEC_NODE DT_ALIAS(audio_codec_capture)
 #endif
 
+/* Re-arm attempts for a stalled receiver before giving up on the stream. */
+#define AUD_I2S_SRC_RESTART_TRIES 5
+
 static int (*src_parent_set_property)(struct mpipe_object *, uint32_t, const void *);
 static int (*src_parent_get_property)(struct mpipe_object *, uint32_t, void *);
 
@@ -223,7 +226,20 @@ static int mpipe_aud_i2s_src_acquire_buffer(struct mpipe_buffer_pool *pool, stru
 	int err;
 
 	err = i2s_read(aud_pool->aud_dev, &mem_block, &bytes_used);
+	/* -EIO means the receiver stalled; DROP+START re-arms it and re-primes. */
+	for (int tries = 0; err == -EIO && tries < AUD_I2S_SRC_RESTART_TRIES; tries++) {
+		(void)i2s_trigger(aud_pool->aud_dev, I2S_DIR_RX, I2S_TRIGGER_DROP);
+		if (i2s_trigger(aud_pool->aud_dev, I2S_DIR_RX, I2S_TRIGGER_START) != 0) {
+			break;
+		}
+		LOG_WRN("RX capture stalled, re-armed (try %d)", tries + 1);
+		err = i2s_read(aud_pool->aud_dev, &mem_block, &bytes_used);
+	}
 	if (err < 0) {
+		if (err == -EAGAIN) {
+			/* RX drained after a stop/DROP: a flush, not an error. */
+			return -EPIPE;
+		}
 		LOG_ERR("Unable to read an I2S buffer: %d", err);
 		return err;
 	}
