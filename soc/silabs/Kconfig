@@ -50,6 +50,17 @@ config SILABS_IMAGE_PROPERTIES
 	  verify the application. If Gecko bootloader is used, the Zephyr
 	  application image also needs the data structure.
 
+if PM
+
+config SILABS_PM_LOW_INTERRUPT_LATENCY
+	bool "Low interrupt latency mode"
+	default y
+	help
+	  Enabling low interrupt latency allows interrupts to be executed
+	  before the high frequency clock is restored after sleep.
+
+endif
+
 endif # SOC_FAMILY_SILABS_S1 || SOC_FAMILY_SILABS_S2
 
 if SOC_FAMILY_SILABS_S0 || SOC_FAMILY_SILABS_S1
