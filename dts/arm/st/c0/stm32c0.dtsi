@@ -322,6 +322,7 @@
 			prescaler = <32768>;
 			alarms-count = <1>;
 			alrm-exti-line = <19>;
+			wakeup-source; /* Enable use as system timer companion */
 			status = "disabled";
 		};
 
