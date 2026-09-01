@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef INCLUDE_DRIVERS_PWM_PWM_FAKE_H_
-#define INCLUDE_DRIVERS_PWM_PWM_FAKE_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_PWM_PWM_FAKE_H_
+#define ZEPHYR_INCLUDE_DRIVERS_PWM_PWM_FAKE_H_
 
 #include <zephyr/drivers/pwm.h>
 #include <zephyr/fff.h>
@@ -21,4 +21,4 @@ DECLARE_FAKE_VALUE_FUNC(int, fake_pwm_set_cycles, const struct device *, uint32_
 }
 #endif
 
-#endif /* INCLUDE_DRIVERS_PWM_PWM_FAKE_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_PWM_PWM_FAKE_H_ */
