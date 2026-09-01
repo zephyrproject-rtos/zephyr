@@ -1196,6 +1196,16 @@ Timer
   :c:func:`sys_clock_elapsed` and :c:func:`sys_clock_cycle_get_32` /
   :c:func:`sys_clock_cycle_get_64` (:github:`115844`).
 
+* When :kconfig:option:`SYSTEM_TIMER_LPM_COMPANION_COUNTER` is enabled, the Low-Power
+  Companion counter, selected by the :ref:`generic chosen <devicetree-zephyr-chosen-nodes>`
+  ``zephyr,system-timer-companion``, is checked at build time and must be usable as
+  wake-up source. If not already present, the ``wakeup-source`` property should be
+  added to such nodes to indicate they can be used as wake-up source. (:github:`117274`)
+
+  .. note::
+
+    This behavior was already expected in previous Zephyr releases but never asserted.
+
 USB
 ===
 
