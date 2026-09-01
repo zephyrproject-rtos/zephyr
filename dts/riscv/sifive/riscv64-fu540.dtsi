@@ -38,7 +38,11 @@
 			i-cache-line-size = <0x4000>;
 			reg = <0x0>;
 			riscv,isa-base = "rv64i";
-			riscv,isa-extensions = "i", "m", "a", "c", "zicsr", "zifencei";
+			/*
+			 * Zicntr was ratified long after this SoC taped out, so the manual
+			 * does not use the term. The hardware provides what it covers.
+			 */
+			riscv,isa-extensions = "i", "m", "a", "c", "zicntr", "zicsr", "zifencei";
 
 			hlic0: interrupt-controller {
 				compatible = "riscv,cpu-intc";
@@ -56,7 +60,9 @@
 			d-cache-line-size = <0x8000>;
 			reg = <0x1>;
 			riscv,isa-base = "rv64i";
-			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei";
+			/* See cpu@0 comment. Same for the next CPUs. */
+			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicntr", "zicsr",
+					       "zifencei";
 
 			hlic1: interrupt-controller {
 				compatible = "riscv,cpu-intc";
@@ -75,7 +81,8 @@
 			d-cache-line-size = <0x8000>;
 			reg = <0x2>;
 			riscv,isa-base = "rv64i";
-			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei";
+			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicntr", "zicsr",
+					       "zifencei";
 
 			hlic2: interrupt-controller {
 				compatible = "riscv,cpu-intc";
@@ -94,7 +101,8 @@
 			d-cache-line-size = <0x8000>;
 			reg = <0x3>;
 			riscv,isa-base = "rv64i";
-			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei";
+			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicntr", "zicsr",
+					       "zifencei";
 
 			hlic3: interrupt-controller {
 				compatible = "riscv,cpu-intc";
@@ -113,7 +121,8 @@
 			d-cache-line-size = <0x8000>;
 			reg = <0x4>;
 			riscv,isa-base = "rv64i";
-			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei";
+			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicntr", "zicsr",
+					       "zifencei";
 
 			hlic4: interrupt-controller {
 				compatible = "riscv,cpu-intc";
