@@ -82,7 +82,7 @@ static inline void flush_cache(FLASH_TypeDef *regs)
 
 static int write_dword(const struct device *dev, off_t offset, uint64_t val)
 {
-	volatile uint32_t *flash = (uint32_t *)(offset + FLASH_STM32_BASE_ADDRESS);
+	volatile uint32_t *flash = (uint32_t *)(FLASH_STM32_BASE_ADDRESS + (ptrdiff_t)offset);
 	FLASH_TypeDef *regs = FLASH_STM32_REGS(dev);
 	bool dcache_enabled = false;
 	uint32_t tmp;
@@ -107,7 +107,7 @@ static int write_dword(const struct device *dev, off_t offset, uint64_t val)
 	 */
 	if ((flash[0] != 0xFFFFFFFFUL ||
 	    flash[1] != 0xFFFFFFFFUL) && val != 0UL) {
-		LOG_ERR("Word at offs %ld not erased", (long)offset);
+		LOG_ERR("Word at offs %td not erased", (ptrdiff_t)offset);
 		return -EIO;
 	}
 

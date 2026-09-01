@@ -140,14 +140,15 @@ static void flash_stm32_flush_caches(const struct device *dev, off_t offset, siz
 		regs->ACR |= FLASH_ACR_DCEN;
 	}
 #elif defined(CONFIG_SOC_SERIES_STM32F7X)
-	SCB_InvalidateDCache_by_Addr((uint32_t *)(FLASH_STM32_BASE_ADDRESS + offset), len);
+	SCB_InvalidateDCache_by_Addr((uint32_t *)(FLASH_STM32_BASE_ADDRESS +
+						  (ptrdiff_t)offset), len);
 #endif
 }
 
 static int flash_stm32_read(const struct device *dev, off_t offset, void *data, size_t len)
 {
 	if (!flash_stm32_valid_range(dev, offset, len, false)) {
-		LOG_ERR("Read range invalid. Offset: %ld, len: %zu", (long)offset, len);
+		LOG_ERR("Read range invalid. Offset: %td, len: %zu", (ptrdiff_t)offset, len);
 		return -EINVAL;
 	}
 
@@ -155,7 +156,7 @@ static int flash_stm32_read(const struct device *dev, off_t offset, void *data, 
 		return 0;
 	}
 
-	LOG_DBG("Read offset: %ld, len: %zu", (long)offset, len);
+	LOG_DBG("Read offset: %td, len: %zu", (ptrdiff_t)offset, len);
 
 	memcpy(data, (uint8_t *)FLASH_STM32_BASE_ADDRESS + offset, len);
 
@@ -167,7 +168,7 @@ static int flash_stm32_erase(const struct device *dev, off_t offset, size_t len)
 	int rc;
 
 	if (!flash_stm32_valid_range(dev, offset, len, true)) {
-		LOG_ERR("Erase range invalid. Offset: %ld, len: %zu", (long)offset, len);
+		LOG_ERR("Erase range invalid. Offset: %td, len: %zu", (ptrdiff_t)offset, len);
 		return -EINVAL;
 	}
 
@@ -177,7 +178,7 @@ static int flash_stm32_erase(const struct device *dev, off_t offset, size_t len)
 
 	flash_stm32_sem_take(dev);
 
-	LOG_DBG("Erase offset: %ld, len: %zu", (long)offset, len);
+	LOG_DBG("Erase offset: %td, len: %zu", (ptrdiff_t)offset, len);
 
 	rc = flash_stm32_cr_lock(dev, false);
 	if (rc == 0) {
@@ -202,7 +203,7 @@ static int flash_stm32_write(const struct device *dev, off_t offset, const void 
 	int rc;
 
 	if (!flash_stm32_valid_range(dev, offset, len, true)) {
-		LOG_ERR("Write range invalid. Offset: %ld, len: %zu", (long)offset, len);
+		LOG_ERR("Write range invalid. Offset: %td, len: %zu", (ptrdiff_t)offset, len);
 		return -EINVAL;
 	}
 
@@ -212,7 +213,7 @@ static int flash_stm32_write(const struct device *dev, off_t offset, const void 
 
 	flash_stm32_sem_take(dev);
 
-	LOG_DBG("Write offset: %ld, len: %zu", (long)offset, len);
+	LOG_DBG("Write offset: %td, len: %zu", (ptrdiff_t)offset, len);
 
 	rc = flash_stm32_cr_lock(dev, false);
 	if (rc == 0) {
