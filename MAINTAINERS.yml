@@ -890,6 +890,7 @@ Bluetooth Qualification:
     - bluetooth
     - bluetooth.general
     - bluetooth.tester_bsim
+    - bluetooth.tests.bsim.tester
 
 Board/SoC configuration:
   status: maintained
