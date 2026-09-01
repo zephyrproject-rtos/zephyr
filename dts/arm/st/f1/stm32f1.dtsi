@@ -347,6 +347,7 @@
 			clocks = <&rcc STM32_CLOCK(APB1, 28)>;
 			prescaler = <32768>;
 			alrm-exti-line = <17>;
+			wakeup-source; /* Enable use as system timer companion */
 			status = "disabled";
 		};
 
