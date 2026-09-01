@@ -32,6 +32,12 @@
 #include <zephyr/drivers/dma/dma_esp32.h>
 #endif
 
+#if defined(CONFIG_MSPI_ESP32_PSRAM_DMA) && defined(SOC_GDMA_SUPPORTED) &&                         \
+	defined(SOC_PSRAM_DMA_CAPABLE)
+#include <esp_cache.h>
+#define MSPI_ESP32_PSRAM_DMA 1
+#endif
+
 #include <soc/spi_periph.h>
 
 #include "mspi_esp32.h"
@@ -351,6 +357,33 @@ static void transfer_setup_cmd_addr(const struct mspi_xfer *xfer,
 }
 
 /*
+ * Can the DMA engine be pointed straight at this buffer?
+ *
+ * Internal DRAM always works. GDMA also reaches PSRAM on SoCs advertising
+ * SOC_PSRAM_DMA_CAPABLE, but only for a cache-line aligned address and length:
+ * the cache maintenance around the transfer rounds outwards, so a partial line
+ * at either end would write back or discard data the CPU still owns.
+ */
+static bool dma_reachable(const void *buf, size_t len)
+{
+	if (esp_ptr_dma_capable(buf)) {
+		return true;
+	}
+
+#ifdef MSPI_ESP32_PSRAM_DMA
+	if (esp_ptr_dma_ext_capable(buf)) {
+		size_t line = esp_cache_get_line_size_by_addr(buf);
+
+		return line != 0 && IS_ALIGNED(buf, line) && IS_ALIGNED(len, line);
+	}
+#else
+	ARG_UNUSED(len);
+#endif
+
+	return false;
+}
+
+/*
  * Allocate a single bounce buffer for the data phase and wire it into tc.
  *
  * Since a packet is either TX or RX, only one buffer is ever needed.
@@ -380,7 +413,7 @@ static uint8_t *transfer_prepare_data(const struct device *dev,
 
 	if (packet->dir == MSPI_TX) {
 		uint8_t *src = packet->data_buf;
-		bool need_bounce = config->dma_enabled && !esp_ptr_dma_capable((uint32_t *)src);
+		bool need_bounce = config->dma_enabled && !dma_reachable(src, dma_len);
 
 		if (need_bounce) {
 			buffer = k_aligned_alloc(4, *dma_buf_len);
@@ -674,7 +707,7 @@ static int IRAM_ATTR transfer(const struct device *dev, const struct mspi_xfer *
 	}
 
 	if (config->dma_enabled) {
-		transfer_post_gdma(dev, &tc, dma_len);
+		transfer_post_gdma(dev, &tc, dma_buf_len);
 	} else {
 		spi_hal_fetch_result(hal);
 	}
