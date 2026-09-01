@@ -150,6 +150,7 @@ uart4: &scb4 {
 	power-delay-ms = <1000>;
 	/* Card detect gpios */
 	cd-gpios = <&gpio_prt17 7 GPIO_ACTIVE_HIGH>;
+	no-1-8-v;
 
 	sdmmc {
 		compatible = "zephyr,sdmmc-disk";
