@@ -80,7 +80,7 @@ static int cmd_cpu_lock(const struct shell *sh, size_t argc, char **argv)
 
 	enum pm_state st;
 	uint8_t sub;
-	int err;
+	int err = 0;
 
 	if (pm_state_from_str(argv[1], &st) < 0) {
 		shell_error(sh, "Unknown state: %s", argv[1]);
@@ -130,7 +130,7 @@ static int cmd_cpu_idle(const struct shell *sh, size_t argc, char **argv)
 {
 	ARG_UNUSED(argc);
 
-	int err;
+	int err = 0;
 	uint32_t ms;
 
 	ms = shell_strtoul(argv[1], 0, &err);
