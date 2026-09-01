@@ -300,6 +300,11 @@ Audio Codec
   in-tree drivers have been updated. Application code using the ``audio_codec_...`` APIs is not
   impacted.
 
+* The compatible strings for the WM8904, WM8960, and WM8962 audio codec bindings have been
+  changed from ``wolfson,wm8904``, ``wolfson,wm8960``, ``wolfson,wm8962`` to
+  :dtcompatible:`wlf,wm8904`, :dtcompatible:`wlf,wm8960`, :dtcompatible:`wlf,wm8962`, since
+  ``wlf`` is the correct prefix for Wolfson Microelectronics parts.
+
 Clock Control
 =============
 

@@ -14,9 +14,9 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
 
-LOG_MODULE_REGISTER(wolfson_wm8960, CONFIG_AUDIO_CODEC_LOG_LEVEL);
+LOG_MODULE_REGISTER(wlf_wm8960, CONFIG_AUDIO_CODEC_LOG_LEVEL);
 
-#define DT_DRV_COMPAT wolfson_wm8960
+#define DT_DRV_COMPAT wlf_wm8960
 
 /* WM8960 Register Addresses */
 #define WM8960_LINVOL   0x00

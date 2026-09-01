@@ -108,7 +108,7 @@ i2s1: &flexcomm3 {
 	pinctrl-names = "default";
 
 	audio_codec: wm8904@1a0000000000000000 {
-		compatible = "wolfson,wm8904";
+		compatible = "wlf,wm8904";
 		reg = <0x1a 0 0>;
 		clock-source = "MCLK";
 

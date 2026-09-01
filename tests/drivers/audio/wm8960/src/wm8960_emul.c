@@ -14,9 +14,9 @@
 
 #include "wm8960_emul.h"
 
-LOG_MODULE_REGISTER(wolfson_wm8960_emul, CONFIG_WM8960_EMUL_LOG_LEVEL);
+LOG_MODULE_REGISTER(wlf_wm8960_emul, CONFIG_WM8960_EMUL_LOG_LEVEL);
 
-#define DT_DRV_COMPAT wolfson_wm8960
+#define DT_DRV_COMPAT wlf_wm8960
 
 /* WM8960 Register definitions */
 #define WM8960_REG_LEFT_INPUT_VOLUME    0x00

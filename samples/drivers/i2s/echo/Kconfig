@@ -6,7 +6,7 @@
 source "Kconfig.zephyr"
 
 config I2C
-	default $(dt_compat_on_bus,$(DT_COMPAT_WOLFSON_WM8731),i2c) \
+	default $(dt_compat_on_bus,$(DT_COMPAT_WLF_WM8731),i2c) \
 		|| $(dt_compat_on_bus,$(DT_COMPAT_ADI_MAX9867),i2c)
 
 config SAMPLE_FREQ

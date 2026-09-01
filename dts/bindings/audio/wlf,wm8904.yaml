@@ -5,7 +5,7 @@ description: WM8904 audio codec
 
 include: [i2c-device.yaml]
 
-compatible: "wolfson,wm8904"
+compatible: "wlf,wm8904"
 
 properties:
   reg:

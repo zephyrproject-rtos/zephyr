@@ -5,7 +5,7 @@ description: WM8962 audio codec
 
 include: [i2c-device.yaml]
 
-compatible: "wolfson,wm8962"
+compatible: "wlf,wm8962"
 
 properties:
   reg:

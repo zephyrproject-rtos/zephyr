@@ -7,6 +7,6 @@
 
 description: WM8731 Audio CODEC
 
-compatible: "wolfson,wm8731"
+compatible: "wlf,wm8731"
 
 include: i2c-device.yaml

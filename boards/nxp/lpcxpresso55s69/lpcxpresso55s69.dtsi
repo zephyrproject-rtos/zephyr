@@ -175,7 +175,7 @@ arduino_i2c: &flexcomm4 {
 	};
 
 	audio_codec: wm8904@1a {
-		compatible = "wolfson,wm8904";
+		compatible = "wlf,wm8904";
 		reg = <0x1a>;
 
 		clock-source = "MCLK";

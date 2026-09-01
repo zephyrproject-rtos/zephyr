@@ -295,7 +295,7 @@
 	#size-cells = <0>;
 
 	audio_codec: wm8962@1a {
-		compatible = "wolfson,wm8962";
+		compatible = "wlf,wm8962";
 		reg = <0x1a>;
 		clock-source = "MCLK";
 		clocks = <&clkctl0 MCUX_SAI0_CLK>;

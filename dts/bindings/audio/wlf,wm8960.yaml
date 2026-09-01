@@ -5,7 +5,7 @@ description: Wolfson Microelectronics WM8960 Audio CODEC
 
 include: i2c-device.yaml
 
-compatible: "wolfson,wm8960"
+compatible: "wlf,wm8960"
 
 properties:
   reg:

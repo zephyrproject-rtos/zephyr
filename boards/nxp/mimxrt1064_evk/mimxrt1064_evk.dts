@@ -152,7 +152,7 @@ nxp_parallel_i2c: &lpi2c1 {};
 	};
 
 	audio_codec: wm8960@1a {
-		compatible = "wolfson,wm8960";
+		compatible = "wlf,wm8960";
 		reg = <0x1a>;
 		clocks = <&ccm IMX_CCM_SAI1_CLK 0x2004 4>;
 		clock-names = "mclk";

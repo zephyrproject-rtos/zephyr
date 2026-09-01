@@ -25,7 +25,7 @@
 	#size-cells = <0>;
 
 	wm8960: wm8960@1a {
-		compatible = "wolfson,wm8960";
+		compatible = "wlf,wm8960";
 		reg = <0x1a>;
 		clocks = <&dummy_clock>;
 		status = "okay";

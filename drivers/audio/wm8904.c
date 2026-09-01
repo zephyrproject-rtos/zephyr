@@ -12,11 +12,11 @@
 #include <zephyr/devicetree/clocks.h>
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(wolfson_wm8904, CONFIG_AUDIO_CODEC_LOG_LEVEL);
+LOG_MODULE_REGISTER(wlf_wm8904, CONFIG_AUDIO_CODEC_LOG_LEVEL);
 
 #include "wm8904.h"
 
-#define DT_DRV_COMPAT wolfson_wm8904
+#define DT_DRV_COMPAT wlf_wm8904
 
 struct wm8904_driver_config {
 	struct i2c_dt_spec i2c;

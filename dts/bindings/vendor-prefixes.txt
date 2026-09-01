@@ -813,11 +813,10 @@ winstar	Winstar Display Corp.
 wits	Shenzhen Merrii Technology Co., Ltd. (WITS)
 witte	Witte Technology
 wiznet	WIZnet Co., Ltd.
-wlf	Wolfson Microelectronics
+wlf	Cirrus Logic, Inc. (formerly Wolfson Microelectronics plc)
 wm	Wondermedia Technologies, Inc.
 wnc	Wistron NeWeb Corporation
 wobo	Wobo
-wolfson	Cirrus Logic, Inc. (formerly Wolfson Microelectronics plc)
 worldsemi	Worldsemi Co., Limited
 wurth	Wurth Elektronik
 x-powers	X-Powers

@@ -38,7 +38,7 @@
 	pinctrl-names = "default", "sleep";
 
 	wm8731: wm8731@1a {
-		compatible = "wolfson,wm8731";
+		compatible = "wlf,wm8731";
 		reg = <0x1a>;
 	};
 };
