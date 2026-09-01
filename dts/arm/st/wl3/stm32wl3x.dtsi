@@ -6,6 +6,7 @@
  */
 
 #include <arm/armv6-m.dtsi>
+#include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/clock/stm32wl3_clock.h>
 #include <zephyr/dt-bindings/reset/stm32wl3_reset.h>
@@ -177,6 +178,17 @@
 				 <&rcc STM32_SRC_CLK_ROOT_DIV NO_SEL>;
 			resets = <&rctl STM32_RESET(APB1, 10)>;
 			interrupts = <8 0>;
+			status = "disabled";
+		};
+
+		spi3: spi@41007000 {
+			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x41007000 DT_SIZE_K(1)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 14)>;
+			interrupts = <7 0>;
+			st,spi-data-width = "full-4-to-16-bit";
 			status = "disabled";
 		};
 	};
