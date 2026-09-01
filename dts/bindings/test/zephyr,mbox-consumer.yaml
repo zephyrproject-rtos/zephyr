@@ -41,3 +41,23 @@ properties:
       Messages sent on a "txN" channel are received on the matching
       "rxN" channel by the sending core itself; no remote core is
       involved.
+
+  bidirectional-channels:
+    type: boolean
+    description: |
+      The declared channels can each be used for both sending and
+      receiving, so operations that are undefined on unidirectional
+      channels (sending on an RX channel, registering a callback on a
+      TX channel) do not fail with -ENOSYS.
+
+  mtu:
+    type: int
+    description: |
+      Maximum transfer unit in bytes that mbox_mtu_get() reports for
+      the TX channels. Omit for signalling-only mailboxes (MTU 0).
+
+  remote-busy-detection:
+    type: boolean
+    description: |
+      The sender can detect that the remote has not yet read the last
+      data sent, making mbox_send() fail with -EBUSY meanwhile.
