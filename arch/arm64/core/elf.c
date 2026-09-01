@@ -205,7 +205,7 @@ static int movw_reloc_handler(elf_rela_t *rel, elf_word reloc_type, uintptr_t lo
 			      uintptr_t sym_base_addr)
 {
 	int64_t x;
-	uint32_t imm;
+	uint64_t imm;
 	int lsb = 0; /* LSB of X to be used */
 	bool is_movnz = false;
 	enum aarch64_reloc_type type = AARCH64_RELOC_TYPE_ABS;
