@@ -118,6 +118,12 @@ __net_socket struct websocket_context {
 	/** Is Sec-WebSocket-Accept field correct */
 	uint8_t sec_accept_ok : 1;
 
+	/** How many bytes of the expected Sec-WebSocket-Accept value have
+	 * been matched so far. The parser can hand the value over in more
+	 * than one piece.
+	 */
+	uint8_t sec_accept_matched;
+
 	/** Did we receive all from peer during HTTP handshake */
 	uint8_t all_received : 1;
 
