@@ -234,7 +234,6 @@
 			reg = <0x4042a000 0x2000>;
 			interrupts = <31 0>;
 			#dma-cells = <2>;
-			dma-channels = <7>;
 			status = "disabled";
 		};
 	};
