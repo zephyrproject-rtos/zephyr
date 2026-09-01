@@ -16,21 +16,28 @@
  * @param[in] ctx Network context.
  * @param[in] dest Address of the destination server.
  * @param[in] dest_len Address length of the destination server.
+ * @param[out] leftover Packet holding data that the proxy sent in the same
+ *             segment as the CONNECT reply, or NULL if there was none. The
+ *             caller takes ownership and must queue it ahead of anything that
+ *             arrives later, or release it.
  *
  * @retval 0 or an error code if it was unsuccessful.
  */
 #if defined(CONFIG_SOCKS)
 int net_socks5_connect(struct net_context *ctx,
 		       const struct net_sockaddr *dest,
-		       net_socklen_t dest_len);
+		       net_socklen_t dest_len,
+		       struct net_pkt **leftover);
 #else
 inline int net_socks5_connect(struct net_context *ctx,
 			      const struct net_sockaddr *dest,
-			      net_socklen_t dest_len)
+			      net_socklen_t dest_len,
+			      struct net_pkt **leftover)
 {
 	ARG_UNUSED(ctx);
 	ARG_UNUSED(dest);
 	ARG_UNUSED(dest_len);
+	ARG_UNUSED(leftover);
 
 	return -ENOTSUP;
 }
