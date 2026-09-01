@@ -360,6 +360,15 @@ config RISCV_HART_MASK
 	  i.e. 128, 129, ..(0x80, 8x81, ..), this can be configured to 63 (0x7f)
 	  such that we can extract the bits that start from 0.
 
+config RISCV_USER_COUNTER_ACCESS
+	bool
+	depends on RISCV_ISA_EXT_ZICNTR
+	default y if USERSPACE
+	help
+	  Set mcounteren, and scounteren on harts that implement S-mode, so
+	  that user threads can read the Zicntr counters directly instead of
+	  taking an illegal instruction exception.
+
 config RISCV_PMP
 	bool "RISC-V PMP Support"
 	depends on !RISCV_S_MODE
