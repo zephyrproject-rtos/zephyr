@@ -101,9 +101,9 @@ void mpipe_aud_src_update_caps(struct mpipe_src *src)
 
 /*
  * Buffer count is not a media capability, so it is settled through the
- * buffer pool query instead of caps: the pool is floored at what the source
- * device needs to keep streaming and raised to what downstream must hold in
- * flight, whichever is larger.
+ * buffer pool query instead of caps: the source device and downstream own
+ * blocks from the same slab at the same time, so the pool must cover the
+ * sum of what each requires.
  */
 static int mpipe_aud_src_decide_buffer_pool(struct mpipe_src *src, struct mpipe_dispatch *query)
 {
@@ -128,9 +128,11 @@ static int mpipe_aud_src_decide_buffer_pool(struct mpipe_src *src, struct mpipe_
 		pool_config->min_buffers = 0;
 	}
 
-	/* Raise it to what downstream needs held in flight, if higher */
-	if (qpc != NULL && qpc->min_buffers > pool_config->min_buffers) {
-		pool_config->min_buffers = qpc->min_buffers;
+	/* Source and downstream own blocks from the same slab at the same time,
+	 * so their in-flight requirements are additive rather than alternatives.
+	 */
+	if (qpc != NULL) {
+		pool_config->min_buffers += qpc->min_buffers;
 	}
 
 	return 0;
