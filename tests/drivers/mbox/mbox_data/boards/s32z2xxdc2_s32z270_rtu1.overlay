@@ -6,7 +6,8 @@
 
 / {
 	mbox-consumer {
-		compatible = "vnd,mbox-consumer";
+		compatible = "zephyr,mbox-consumer";
+		loopback;
 		mboxes = <&mru4 0>, <&mru4 0>, <&mru4 1>, <&mru4 1>,
 			 <&mru4 2>, <&mru4 2>, <&mru4 3>, <&mru4 3>;
 		mbox-names = "tx0", "rx0", "tx1", "rx1",

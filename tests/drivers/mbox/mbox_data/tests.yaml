@@ -2,7 +2,7 @@ common:
   tags:
     - drivers
     - mbox
-  filter: dt_compat_enabled("vnd,mbox-consumer")
+  filter: dt_compat_enabled("zephyr,mbox-consumer") or dt_compat_enabled("vnd,mbox-consumer")
 tests:
   drivers.mbox.mbox_data:
     sysbuild: true
@@ -20,5 +20,3 @@ tests:
       - s32z2xxdc2/s32z270/rtu1
       - s32z2xxdc2@D/s32z270/rtu0
       - s32z2xxdc2@D/s32z270/rtu1
-    extra_configs:
-      - CONFIG_TEST_SINGLE_CPU=y
