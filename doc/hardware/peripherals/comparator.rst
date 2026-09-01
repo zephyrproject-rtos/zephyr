@@ -68,3 +68,5 @@ API Reference
 *************
 
 .. doxygengroup:: comparator_interface
+
+.. doxygengroup:: comparator_fake
