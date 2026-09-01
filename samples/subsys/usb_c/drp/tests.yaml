@@ -3,7 +3,9 @@ sample:
 tests:
   sample.usbc.drp:
     depends_on: tcpc
-    tags: usbc drp
+    tags:
+      - usbc
+      - drp
     platform_allow: stm32g081b_eval
     harness: console
     harness_config:
