@@ -53,6 +53,15 @@
   #error Library does not support the specified device
 #endif
 
+#include "dfp_override.h"
+
 #endif /* _ASMLANGUAGE */
+
+/* number of clocks registered */
+#define SOC_NUM_CLOCK_MASTER       2 /* MCK_pres, MCK_div */
+#define SOC_NUM_CLOCK_PROGRAMMABLE 3 /* PCK 0 ~ 2 */
+#define SOC_NUM_CLOCK_SYSTEM       8 /* DDRCK, LCDCK, UHP, UDP, PCK 0 ~ 2, ISCCK */
+#define SOC_NUM_CLOCK_PERIPHERAL   51
+#define SOC_NUM_CLOCK_GENERATED    51
 
 #endif /* __SAMA5D2_SOC__H_ */
