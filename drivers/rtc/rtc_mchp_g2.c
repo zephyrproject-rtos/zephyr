@@ -97,14 +97,20 @@ struct rtc_mchp_data {
 static inline void rtc_mchp_disable_wp(const struct device *syscwp)
 {
 	syscon_write_reg(syscwp, SYSCWP_SYSC_WPMR_REG_OFST,
-			 SYSCWP_SYSC_WPMR_WPKEY_PASSWD | SYSCWP_SYSC_WPMR_WPITEN_0 |
+			 SYSCWP_SYSC_WPMR_WPKEY_PASSWD |
+#ifdef SYSCWP_SYSC_WPMR_WPITEN_0
+			 SYSCWP_SYSC_WPMR_WPITEN_0 |
+#endif /* SYSCWP_SYSC_WPMR_WPITEN_0 */
 			 SYSCWP_SYSC_WPMR_WPEN_0);
 }
 
 static inline void rtc_mchp_enable_wp(const struct device *syscwp)
 {
 	syscon_write_reg(syscwp, SYSCWP_SYSC_WPMR_REG_OFST,
-			 SYSCWP_SYSC_WPMR_WPKEY_PASSWD | SYSCWP_SYSC_WPMR_WPITEN_1 |
+			 SYSCWP_SYSC_WPMR_WPKEY_PASSWD |
+#ifdef SYSCWP_SYSC_WPMR_WPITEN_1
+			 SYSCWP_SYSC_WPMR_WPITEN_1 |
+#endif /* SYSCWP_SYSC_WPMR_WPITEN_1 */
 			 SYSCWP_SYSC_WPMR_WPEN_1);
 }
 
