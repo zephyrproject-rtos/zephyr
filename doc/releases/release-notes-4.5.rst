@@ -615,6 +615,10 @@ New APIs and options
 
   * :c:struct:`sys_ringq` (see :ref:`fixed_size_ringq_api`)
 
+* Timer
+
+  * :c:func:`z_sys_clock_lpm_enter`
+
 * USB Type-C
 
   * :kconfig:option:`CONFIG_USBC_LOG_PD_MSG_NAMES`
