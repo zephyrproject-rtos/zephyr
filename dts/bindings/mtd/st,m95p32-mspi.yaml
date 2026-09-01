@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright 2026 EXALT Technologies
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: ST M95P32 page EEPROM on an MSPI bus
+
+compatible: "st,m95p32"
+
+include: jedec,nor-mspi.yaml
