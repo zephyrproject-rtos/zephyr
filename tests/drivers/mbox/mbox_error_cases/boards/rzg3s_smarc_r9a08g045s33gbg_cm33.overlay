@@ -43,9 +43,10 @@
 	};
 
 	mbox-consumer {
-		compatible = "vnd,mbox-consumer";
-		mboxes = <&mbox1 1>, <&mbox1 4>, <&mbox3 0>, <&mbox3 3>;
-		mbox-names = "remote_valid", "remote_incorrect", "local_valid", "local_incorrect";
+		compatible = "zephyr,mbox-consumer";
+		mboxes = <&mbox1 1>, <&mbox3 0>;
+		mbox-names = "tx0", "rx0";
+		mtu = <4>;
 	};
 };
 
