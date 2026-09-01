@@ -38,6 +38,18 @@ extern "C" {
  */
 
 /**
+ * @brief Low-power companion initialization hook
+ *
+ * System timer drivers must call this function during their initialization.
+ *
+ * @note This is an internal kernel/platform interface. Application code must
+ * not call it.
+ *
+ * @note Implementation of this function by the platform code is optional.
+ */
+void z_sys_clock_lpm_init(void);
+
+/**
  * @brief Prepare low-power companion timer before entry in low-power state
  *
  * Implementations must ensure the system wakes up no later than @p max_lpm_time_us
