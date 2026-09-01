@@ -1,0 +1,89 @@
+# Copyright (c) 2026 Aerlync Labs Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Safety test sensor chain sample"
+
+choice SAMPLE_SAFE_STATE_ACTION
+	prompt "What the safe-state handler returns after a critical failure"
+	default SAMPLE_SAFE_STATE_ACTION_CONTINUE
+	help
+	  The sample overrides safety_test_safe_state(), so the subsystem's own
+	  SAFETY_TEST_DEFAULT_ACTION_* choice does not apply here. This is what
+	  the override returns.
+
+config SAMPLE_SAFE_STATE_ACTION_CONTINUE
+	bool "Continue"
+	help
+	  Log the failure and carry on. With CONFIG_SAFETY_TEST_STRICT_CRITICAL
+	  set the subsystem refuses this and halts instead, which is the pairing
+	  that shows what strict mode is for: one source tree, two behaviours,
+	  selected by configuration alone.
+
+config SAMPLE_SAFE_STATE_ACTION_RESET
+	bool "Reboot"
+	select REBOOT
+	help
+	  Cold reboot. Two reasons to prefer this over halting. The board stays
+	  recoverable, which matters on targets where a halted core cannot be
+	  restarted with the RESET button. And the subsystem does not clear its
+	  __noinit failure record on this path, so the next boot can report what
+	  went wrong, which halting cannot do if you have to pull the power.
+
+	  Expect a boot loop if the failure is still present after the reboot.
+
+config SAMPLE_SAFE_STATE_ACTION_HALT
+	bool "Halt"
+	help
+	  Stop the CPU where it stands. Most faithful to a production safe state,
+	  but on some boards a halted target needs a power cycle rather than a
+	  press of RESET.
+
+endchoice
+
+config SAMPLE_TEMP_MIN_MC
+	int "Lower plausibility bound, millidegrees Celsius"
+	default 10000
+	help
+	  A reading below this fails sensor_plausible. The default assumes an
+	  indoor bench.
+
+config SAMPLE_TEMP_MAX_MC
+	int "Upper plausibility bound, millidegrees Celsius"
+	default 35000
+	help
+	  A reading above this fails sensor_plausible. Sustained finger contact
+	  on the package is enough to cross the default.
+
+config SAMPLE_CLOCK_TOLERANCE_PCT
+	int "clock_xcheck tolerance, percent"
+	default 10
+	range 1 50
+	help
+	  How far the LPTMR's measured rate may sit from its nominal rate before
+	  clock_xcheck fails. The default is a placeholder that avoids false
+	  failures; set it from the FRO16K accuracy figure in the datasheet
+	  before relying on this test.
+
+config SAMPLE_CLOCK_WINDOW_MS
+	int "clock_xcheck measurement window, milliseconds"
+	default 10
+	range 1 1000
+	help
+	  Longer windows reduce quantization error. 10 ms yields roughly 160
+	  LPTMR ticks, so one tick is about 0.6%.
+
+config SAMPLE_IMAGE_CRC
+	hex "Expected CRC-32 of the text region"
+	default 0
+	help
+	  Supplied by the second pass of the two-pass build; see the README.
+	  Left at 0, flash_integrity reports -ENODATA rather than a false
+	  mismatch, so a single-pass build fails honestly instead of silently.
+
+config SAMPLE_RUNTIME_PERIOD_MS
+	int "Runtime loop period, milliseconds"
+	default 2000
+
+endmenu
+
+source "Kconfig.zephyr"
