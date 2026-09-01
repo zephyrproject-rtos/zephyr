@@ -319,7 +319,7 @@ manifest:
       revision: a8ddc544043e72807cf7db532478e1dda734ae7c
       path: modules/lib/lora-basics-modem
     - name: loramac-node
-      revision: fb00b383072518c918e2258b0916c996f2d4eebe
+      revision: 874544f2a8a0212a0cc12e5eea51a024fd3d93d1
       path: modules/lib/loramac-node
     - name: lvgl
       revision: d1fe35d350a1503db2ec7fd4dfff8e0cc26eea7e
