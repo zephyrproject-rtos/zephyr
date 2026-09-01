@@ -353,6 +353,58 @@
 			compatible = "nxp,rdc";
 			reg = <0x303d0000 DT_SIZE_K(64)>;
 		};
+
+		pwm1: pwm@30660000 {
+			compatible = "fsl,imx27-pwm";
+			reg = <0x30660000 DT_SIZE_K(64)>;
+			interrupts = <GIC_SPI 81 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-parent = <&gic>;
+			clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
+			prescaler = <0>;
+			rdc = <(RDC_DOMAIN_PERM(A53_DOMAIN_ID, RDC_DOMAIN_PERM_RW) |
+				RDC_DOMAIN_PERM(M7_DOMAIN_ID, RDC_DOMAIN_PERM_RW))>;
+			#pwm-cells = <2>;
+			status = "disabled";
+		};
+
+		pwm2: pwm@30670000 {
+			compatible = "fsl,imx27-pwm";
+			reg = <0x30670000 DT_SIZE_K(64)>;
+			interrupts = <GIC_SPI 82 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-parent = <&gic>;
+			clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
+			prescaler = <0>;
+			rdc = <(RDC_DOMAIN_PERM(A53_DOMAIN_ID, RDC_DOMAIN_PERM_RW) |
+				RDC_DOMAIN_PERM(M7_DOMAIN_ID, RDC_DOMAIN_PERM_RW))>;
+			#pwm-cells = <2>;
+			status = "disabled";
+		};
+
+		pwm3: pwm@30680000 {
+			compatible = "fsl,imx27-pwm";
+			reg = <0x30680000 DT_SIZE_K(64)>;
+			interrupts = <GIC_SPI 83 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-parent = <&gic>;
+			clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
+			prescaler = <0>;
+			rdc = <(RDC_DOMAIN_PERM(A53_DOMAIN_ID, RDC_DOMAIN_PERM_RW) |
+				RDC_DOMAIN_PERM(M7_DOMAIN_ID, RDC_DOMAIN_PERM_RW))>;
+			#pwm-cells = <2>;
+			status = "disabled";
+		};
+
+		pwm4: pwm@30690000 {
+			compatible = "fsl,imx27-pwm";
+			reg = <0x30690000 DT_SIZE_K(64)>;
+			interrupts = <GIC_SPI 84 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-parent = <&gic>;
+			clocks = <&ccm IMX_CCM_PWM_CLK 0 0>;
+			prescaler = <0>;
+			rdc = <(RDC_DOMAIN_PERM(A53_DOMAIN_ID, RDC_DOMAIN_PERM_RW) |
+				RDC_DOMAIN_PERM(M7_DOMAIN_ID, RDC_DOMAIN_PERM_RW))>;
+			#pwm-cells = <2>;
+			status = "disabled";
+		};
 	};
 };
 
