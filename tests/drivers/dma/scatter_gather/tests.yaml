@@ -34,6 +34,7 @@ tests:
       - kit_pse84_eval/pse846gps2dbzc4a/m33
       - kit_pse84_eval/pse846gps2dbzc4a/m55
       - lp_mspm0g3507
+      - lp_mspm0g3519
     filter: dt_nodelabel_enabled("tst_dma0")
     integration_platforms:
       - intel_adsp/cavs25
