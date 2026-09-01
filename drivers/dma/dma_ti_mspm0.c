@@ -620,6 +620,26 @@ static inline uint32_t dma_ti_mspm0_encode_burst_size(uint32_t burst_size)
 	}
 }
 
+static bool dma_ti_mspm0_chan_filter(const struct device *dev, int channel, void *filter_param)
+{
+	const struct dma_ti_mspm0_config *cfg = dev->config;
+	struct dma_ti_mspm0_data *dma_data = dev->data;
+
+	if (channel >= cfg->dma_max_channels) {
+		return false;
+	}
+
+	if (dma_data->ch_data[channel].busy) {
+		return false;
+	}
+
+	if (filter_param == NULL) {
+		return true;
+	}
+
+	return channel == *(uint32_t *)filter_param;
+}
+
 static int dma_ti_mspm0_init(const struct device *dev)
 {
 	const struct dma_ti_mspm0_config *cfg = dev->config;
@@ -651,6 +671,7 @@ static DEVICE_API(dma, dma_ti_mspm0_api) = {
 	.resume		= dma_ti_mspm0_start,
 	.reload		= dma_ti_mspm0_reload,
 	.get_status	= dma_ti_mspm0_get_status,
+	.chan_filter	= dma_ti_mspm0_chan_filter,
 };
 
 #define MSPM0_DMA_INIT(inst)							\
@@ -674,6 +695,9 @@ static DEVICE_API(dma, dma_ti_mspm0_api) = {
 	static struct dma_ti_mspm0_channel_data					\
 			channel_data_##inst[DT_INST_PROP(inst, dma_channels)];	\
 										\
+	static ATOMIC_DEFINE(dma_channels_atomic_##inst,			\
+			      DT_INST_PROP(inst, dma_channels));		\
+										\
 	static const struct dma_ti_mspm0_config dma_cfg_##inst = {		\
 		.num_full_channels = DT_INST_PROP(inst, ti_num_full_channels),	\
 		.regs		  = (struct dma_mspm0_regs *)DT_INST_REG_ADDR(inst),	\
@@ -684,6 +708,11 @@ static DEVICE_API(dma, dma_ti_mspm0_api) = {
 	};									\
 										\
 	static struct dma_ti_mspm0_data dma_data_##inst = {			\
+		.dma_ctx = {							\
+			.magic	      = DMA_MAGIC,				\
+			.dma_channels = DT_INST_PROP(inst, dma_channels),	\
+			.atomic	      = dma_channels_atomic_##inst,		\
+		},								\
 		.ch_data = channel_data_##inst,					\
 	};									\
 										\
