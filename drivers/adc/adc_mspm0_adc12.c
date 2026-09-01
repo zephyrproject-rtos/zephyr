@@ -321,7 +321,7 @@ static void adc_context_update_buffer_pointer(struct adc_context *ctx, bool repe
 	if (repeat) {
 		data->buffer = data->repeat_buffer;
 	} else {
-		data->buffer++;
+		data->buffer += data->channel_eoc + 1;
 	}
 }
 
