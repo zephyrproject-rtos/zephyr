@@ -169,7 +169,15 @@ static int rtc_mchp_set_time(const struct device *dev, const struct rtc_time *ti
 	/* Request update */
 	regs->RTC_CR = (RTC_CR_UPDTIM_Msk | RTC_CR_UPDCAL_Msk);
 
-	if (WAIT_FOR(((regs->RTC_SR & RTC_SR_ACKUPD_Msk) != 0), 5000, k_busy_wait(1)) == true) {
+	/*
+	 * Wait for the RTC to acknowledge the update request (ACKUPD).
+	 *
+	 * ACKUPD can be set up to ~1 second after UPDTIM/UPDCAL are written,
+	 * because the RTC acknowledges at the next second boundary.
+	 * Use 1100 ms (1,100,000 us) as the timeout to allow a full second
+	 * boundary to elapse with margin.
+	 */
+	if (WAIT_FOR(((regs->RTC_SR & RTC_SR_ACKUPD_Msk) != 0), 1100000, k_busy_wait(1)) == true) {
 		regs->RTC_SCCR = RTC_SCCR_ACKCLR_Msk;
 		regs->RTC_TIMR = rtc_mchp_timr_from_tm(timeptr);
 		regs->RTC_CALR = rtc_mchp_calr_from_tm(timeptr);
