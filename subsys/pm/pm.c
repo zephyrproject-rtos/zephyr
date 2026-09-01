@@ -153,6 +153,7 @@ bool pm_system_suspend(int32_t kernel_ticks)
 
 	if (!pm_policy_state_any_active() && (z_cpus_pm_forced_state[id] == NULL)) {
 		/* Return early if all states are unavailable. */
+		SYS_PORT_TRACING_FUNC_EXIT(pm, system_suspend, kernel_ticks, PM_STATE_ACTIVE);
 		return false;
 	}
 
