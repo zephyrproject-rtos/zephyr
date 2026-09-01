@@ -44,15 +44,10 @@ static int rand_get(uint8_t *dst, size_t outlen, bool csrand)
 		 * still be gathering entropy during early boot situations.
 		 */
 
-		uint32_t len = 0;
-		uint32_t blocksize = 4;
+		size_t len = 0;
 
 		while (len < outlen) {
-			size_t copylen = outlen - len;
-
-			if (copylen > blocksize) {
-				copylen = blocksize;
-			}
+			size_t copylen = MIN(outlen - len, sizeof(random_num));
 
 			random_num = k_cycle_get_32();
 			(void)memcpy(&(dst[len]), &random_num, copylen);
