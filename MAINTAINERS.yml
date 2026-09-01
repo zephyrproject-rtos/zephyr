@@ -713,6 +713,7 @@ Bluetooth Controller:
     - sample.bluetooth.hci_uart_async
     - sample.bluetooth.hci_usb
     - sample.bluetooth.hci_vs_scan_req
+    - tests.bsim.bluetooth
 
 Bluetooth HCI:
   status: maintained
