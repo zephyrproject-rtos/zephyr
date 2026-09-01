@@ -189,6 +189,26 @@ static int on_header_field(struct http_parser *parser, const char *at,
 
 #define MAX_SEC_ACCEPT_LEN 32
 
+/* The parser gives a pointer and a length, and the header value is not
+ * terminated, so it cannot be handed to a %s conversion. Copy the part that
+ * fits and print that instead.
+ */
+static void log_sec_accept_mismatch(struct websocket_context *ctx,
+				    const char *expected, const char *at,
+				    size_t length)
+{
+	if (IS_ENABLED(CONFIG_NET_WEBSOCKET_LOG_LEVEL_DBG)) {
+		char got[MAX_SEC_ACCEPT_LEN];
+		size_t len = MIN(length, sizeof(got) - 1);
+
+		memcpy(got, at, len);
+		got[len] = '\0';
+
+		NET_DBG("[%p] Security keys do not match %s vs %s", ctx,
+			expected, got);
+	}
+}
+
 static int on_header_value(struct http_parser *parser, const char *at,
 			   size_t length)
 {
@@ -210,8 +230,7 @@ static int on_header_value(struct http_parser *parser, const char *at,
 				    WS_SHA1_OUTPUT_LEN);
 		if (ret == 0) {
 			if (strncmp(at, str, length)) {
-				NET_DBG("[%p] Security keys do not match "
-					"%s vs %s", ctx, str, at);
+				log_sec_accept_mismatch(ctx, str, at, length);
 			} else {
 				ctx->sec_accept_ok = true;
 			}
