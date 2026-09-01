@@ -195,3 +195,23 @@ When the Zephyr image is built, you can start it like this:
 .. code-block:: console
 
     build/zephyr/zephyr.exe -attach_uart
+
+Static timeReceiver Setup
+=========================
+
+On networks built after the IEEE 802.1AS automotive profile the bridge sends
+Sync and Follow_Up but no Announce messages, so the default stack never
+selects a time receiver port. Build the sample with the
+:zephyr_file:`samples/net/ethernet/gptp/overlay-static-time-receiver.conf`
+overlay to pin the port to the time-receiver role instead:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/net/ethernet/gptp
+   :board: <board to use>
+   :conf: "prj.conf overlay-static-time-receiver.conf"
+   :goals: build
+   :compact:
+
+This can be tested against linuxptp by running ptp4l as a grandmaster that
+sends no Announce messages, for example with a configuration based on the
+``automotive-master.cfg`` file shipped with linuxptp.
