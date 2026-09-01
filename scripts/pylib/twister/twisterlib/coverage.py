@@ -277,6 +277,8 @@ class Lcov(CoverageTool):
                 "--ignore-errors", "unused,unused",
                 "--ignore-errors", "empty,empty",
                 "--ignore-errors", "mismatch,mismatch",
+                "--ignore-errors", "gcov,gcov",
+                "--ignore-errors", "child,child",
             ]
 
         cmd_str = " ".join(cmd)
