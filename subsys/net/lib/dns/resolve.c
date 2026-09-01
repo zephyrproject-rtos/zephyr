@@ -3212,7 +3212,8 @@ int dns_resolve_init_default(struct dns_resolve_context *ctx)
 		break;
 	}
 
-#if defined(CONFIG_MDNS_RESOLVER) && (MDNS_SERVER_COUNT > 0)
+#if defined(CONFIG_MDNS_RESOLVER) && (MDNS_SERVER_COUNT > 0) && \
+	defined(CONFIG_MDNS_RESOLVER_AUTO_ADD_UNSCOPED)
 #if defined(CONFIG_NET_IPV6) && defined(CONFIG_NET_IPV4)
 	dns_servers[DNS_SERVER_COUNT + 1] = MDNS_IPV6_ADDR;
 	dns_servers[DNS_SERVER_COUNT] = MDNS_IPV4_ADDR;
@@ -3224,7 +3225,7 @@ int dns_resolve_init_default(struct dns_resolve_context *ctx)
 	dns_servers[DNS_SERVER_COUNT] = MDNS_IPV4_ADDR;
 #endif
 #endif /* CONFIG_NET_IPV6 && CONFIG_NET_IPV4 */
-#endif /* MDNS_RESOLVER && MDNS_SERVER_COUNT > 0 */
+#endif /* MDNS_RESOLVER && MDNS_SERVER_COUNT > 0 && MDNS_RESOLVER_AUTO_ADD_UNSCOPED */
 
 #if defined(CONFIG_LLMNR_RESOLVER) && (LLMNR_SERVER_COUNT > 0)
 #if defined(CONFIG_NET_IPV6) && defined(CONFIG_NET_IPV4)
