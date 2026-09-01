@@ -726,6 +726,35 @@ static int read_jedec_id(const struct device *dev, uint8_t *id)
 	return rc;
 }
 
+static int verify_jedec_id(const struct device *dev)
+{
+	const struct flash_mspi_nor_config *dev_config = dev->config;
+	uint8_t id[JESD216_READ_ID_LEN] = {0};
+	int rc;
+
+	if (!dev_config->jedec_id_specified) {
+		return 0;
+	}
+
+	rc = read_jedec_id(dev, id);
+	if (rc < 0) {
+		LOG_ERR("Failed to read JEDEC ID: %d", rc);
+		return rc;
+	}
+
+	if (memcmp(id, dev_config->jedec_id, sizeof(id)) != 0) {
+		LOG_ERR("JEDEC ID mismatch, read: %02x %02x %02x, "
+			"expected: %02x %02x %02x",
+			id[0], id[1], id[2],
+			dev_config->jedec_id[0],
+			dev_config->jedec_id[1],
+			dev_config->jedec_id[2]);
+		return -ENODEV;
+	}
+
+	return 0;
+}
+
 #if defined(CONFIG_FLASH_PAGE_LAYOUT)
 static void api_page_layout(const struct device *dev,
 			     const struct flash_pages_layout **layout,
@@ -1084,7 +1113,8 @@ static int switch_to_target_io_mode(const struct device *dev)
 		return rc;
 	}
 	dev_data->last_applied_cfg = &dev_config->mspi_nor_cfg;
-	return 0;
+
+	return verify_jedec_id(dev);
 }
 
 #if defined(WITH_SUPPLY_GPIO)
@@ -1212,7 +1242,6 @@ static int flash_chip_init(const struct device *dev)
 	const struct flash_mspi_nor_config *dev_config = dev->config;
 	struct flash_mspi_nor_data *dev_data = dev->data;
 	struct mspi_dev_cfg mspi_nor_init_cfg;
-	uint8_t id[JESD216_READ_ID_LEN] = {0};
 	uint16_t dts_cmd = 0;
 	uint32_t sfdp_signature;
 	bool flash_reset = false;
@@ -1341,22 +1370,9 @@ static int flash_chip_init(const struct device *dev)
 	}
 
 
-	if (dev_config->jedec_id_specified) {
-		rc = read_jedec_id(dev, id);
-		if (rc < 0) {
-			LOG_ERR("Failed to read JEDEC ID: %d", rc);
-			return rc;
-		}
-
-		if (memcmp(id, dev_config->jedec_id, sizeof(id)) != 0) {
-			LOG_ERR("JEDEC ID mismatch, read: %02x %02x %02x, "
-				"expected: %02x %02x %02x",
-				id[0], id[1], id[2],
-				dev_config->jedec_id[0],
-				dev_config->jedec_id[1],
-				dev_config->jedec_id[2]);
-			return -ENODEV;
-		}
+	rc = verify_jedec_id(dev);
+	if (rc < 0) {
+		return rc;
 	}
 
 	rc = switch_to_target_io_mode(dev);
