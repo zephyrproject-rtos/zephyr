@@ -1,0 +1,9 @@
+common:
+  tags:
+    - arch
+    - interrupt
+    - smp
+  arch_allow: arm64
+  filter: (CONFIG_MP_MAX_NUM_CPUS > 1) and CONFIG_GIC_V3
+tests:
+  arch.arm64.irq_affinity: {}
