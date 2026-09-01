@@ -16,6 +16,8 @@ LOG_MODULE_REGISTER(ssd16xx);
 #include <zephyr/init.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/mipi_dbi.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/util.h>
 
@@ -280,7 +282,32 @@ static int ssd16xx_update_display(const struct device *dev)
 	return ssd16xx_activate(dev, update_cmd);
 }
 
-static int ssd16xx_blanking_off(const struct device *dev)
+static int ssd16xx_claim(const struct device *dev)
+{
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	return pm_device_runtime_get(dev);
+#else
+	ARG_UNUSED(dev);
+
+	return 0;
+#endif
+}
+
+static void ssd16xx_release(const struct device *dev)
+{
+#ifdef CONFIG_PM_DEVICE_RUNTIME
+	int err;
+
+	err = pm_device_runtime_put_async(dev, K_MSEC(CONFIG_SSD16XX_PM_TIME_BEFORE_SUSPEND));
+	if (err < 0) {
+		LOG_WRN("Failed to schedule suspend: %d", err);
+	}
+#else
+	ARG_UNUSED(dev);
+#endif
+}
+
+static int ssd16xx_blanking_off_impl(const struct device *dev)
 {
 	struct ssd16xx_data *data = dev->data;
 
@@ -292,7 +319,22 @@ static int ssd16xx_blanking_off(const struct device *dev)
 	return 0;
 }
 
-static int ssd16xx_blanking_on(const struct device *dev)
+static int ssd16xx_blanking_off(const struct device *dev)
+{
+	int err;
+
+	err = ssd16xx_claim(dev);
+	if (err < 0) {
+		return err;
+	}
+
+	err = ssd16xx_blanking_off_impl(dev);
+	ssd16xx_release(dev);
+
+	return err;
+}
+
+static int ssd16xx_blanking_on_impl(const struct device *dev)
 {
 	struct ssd16xx_data *data = dev->data;
 
@@ -305,6 +347,21 @@ static int ssd16xx_blanking_on(const struct device *dev)
 	data->blanking_on = true;
 
 	return 0;
+}
+
+static int ssd16xx_blanking_on(const struct device *dev)
+{
+	int err;
+
+	err = ssd16xx_claim(dev);
+	if (err < 0) {
+		return err;
+	}
+
+	err = ssd16xx_blanking_on_impl(dev);
+	ssd16xx_release(dev);
+
+	return err;
 }
 
 static int ssd16xx_set_window(const struct device *dev,
@@ -416,10 +473,8 @@ static int ssd16xx_set_window(const struct device *dev,
 	return 0;
 }
 
-static int ssd16xx_write(const struct device *dev, const uint16_t x,
-			 const uint16_t y,
-			 const struct display_buffer_descriptor *desc,
-			 const void *buf)
+static int ssd16xx_write_impl(const struct device *dev, const uint16_t x, const uint16_t y,
+			      const struct display_buffer_descriptor *desc, const void *buf)
 {
 	const struct ssd16xx_config *config = dev->config;
 	const struct ssd16xx_data *data = dev->data;
@@ -549,12 +604,38 @@ int ssd16xx_read_ram(const struct device *dev, enum ssd16xx_ram ram_type,
 	return 0;
 }
 
+static int ssd16xx_write(const struct device *dev, const uint16_t x, const uint16_t y,
+			 const struct display_buffer_descriptor *desc, const void *buf)
+{
+	int err;
+
+	err = ssd16xx_claim(dev);
+	if (err < 0) {
+		return err;
+	}
+
+	err = ssd16xx_write_impl(dev, x, y, desc, buf);
+	ssd16xx_release(dev);
+
+	return err;
+}
+
 static int ssd16xx_read(const struct device *dev,
 			const uint16_t x, const uint16_t y,
 			const struct display_buffer_descriptor *desc,
 			void *buf)
 {
-	return ssd16xx_read_ram(dev, SSD16XX_RAM_BLACK, x, y, desc, buf);
+	int err;
+
+	err = ssd16xx_claim(dev);
+	if (err < 0) {
+		return err;
+	}
+
+	err = ssd16xx_read_ram(dev, SSD16XX_RAM_BLACK, x, y, desc, buf);
+	ssd16xx_release(dev);
+
+	return err;
 }
 
 static void ssd16xx_get_capabilities(const struct device *dev,
@@ -967,8 +1048,32 @@ static int ssd16xx_init(const struct device *dev)
 		return -EINVAL;
 	}
 
+	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+		/*
+		 * The panel is only powered up on the first display access.
+		 * Until then it stays in the reset state it comes up in.
+		 */
+		pm_device_init_suspended(dev);
+
+		return pm_device_runtime_enable(dev);
+	}
+
 	return ssd16xx_controller_init(dev);
 }
+
+#ifdef CONFIG_PM_DEVICE
+static int ssd16xx_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		return ssd16xx_controller_init(dev);
+	case PM_DEVICE_ACTION_SUSPEND:
+		return ssd16xx_write_uint8(dev, SSD16XX_CMD_SLEEP_MODE, SSD16XX_SLEEP_MODE_DSM2);
+	default:
+		return -ENOTSUP;
+	}
+}
+#endif /* CONFIG_PM_DEVICE */
 
 static DEVICE_API(display, ssd16xx_driver_api) = {
 	.blanking_on = ssd16xx_blanking_on,
@@ -1089,43 +1194,44 @@ static struct ssd16xx_quirks quirks_solomon_ssd1683 = {
 		    (_SSD16XX_PROFILE_PTR(n)),				\
 		    NULL)
 
-#define SSD16XX_DEFINE(n, quirks_ptr)					\
-	SSD16XX_MAKE_ARRAY_OPT(n, softstart);				\
-									\
-	DT_FOREACH_CHILD(n, SSD16XX_PROFILE);				\
-									\
-	static const struct ssd16xx_config ssd16xx_cfg_ ## n = {	\
-		.mipi_dev = DEVICE_DT_GET(DT_PARENT(n)),                \
-		.dbi_config = {                                         \
-			.mode = MIPI_DBI_MODE_SPI_4WIRE,                \
-			.config = MIPI_DBI_SPI_CONFIG_DT(n,             \
-				SPI_OP_MODE_MASTER | SPI_WORD_SET(8) |  \
-				SPI_HOLD_ON_CS | SPI_LOCK_ON, 0),       \
-		},                                                      \
-		.busy_gpio = GPIO_DT_SPEC_GET(n, busy_gpios),		\
-		.quirks = quirks_ptr,					\
-		.height = DT_PROP(n, height),				\
-		.width = DT_PROP(n, width),				\
-		.ram_ping_pong_mode2 = DT_PROP_OR(n, ram_ping_pong_mode2, false),	\
-		.rotation = DT_PROP(n, rotation),			\
-		.tssv = DT_PROP_OR(n, tssv, 0),				\
-		.softstart = SSD16XX_ASSIGN_ARRAY(n, softstart),	\
-		.profiles = {						\
-			[SSD16XX_PROFILE_FULL] =			\
-				SSD16XX_PROFILE_PTR(DT_CHILD(n, full)),	\
-			[SSD16XX_PROFILE_PARTIAL] =			\
-				SSD16XX_PROFILE_PTR(DT_CHILD(n, partial)),\
-		},							\
-	};								\
-									\
-	static struct ssd16xx_data ssd16xx_data_ ## n;			\
-									\
-	DEVICE_DT_DEFINE(n,						\
-			 ssd16xx_init, NULL,				\
-			 &ssd16xx_data_ ## n,				\
-			 &ssd16xx_cfg_ ## n,				\
-			 POST_KERNEL,					\
-			 CONFIG_DISPLAY_INIT_PRIORITY,			\
+#define SSD16XX_DEFINE(n, quirks_ptr)                                                              \
+	SSD16XX_MAKE_ARRAY_OPT(n, softstart);                                                      \
+                                                                                                   \
+	DT_FOREACH_CHILD(n, SSD16XX_PROFILE);                                                      \
+                                                                                                   \
+	static const struct ssd16xx_config ssd16xx_cfg_##n = {                                     \
+		.mipi_dev = DEVICE_DT_GET(DT_PARENT(n)),                                           \
+		.dbi_config =                                                                      \
+			{                                                                          \
+				.mode = MIPI_DBI_MODE_SPI_4WIRE,                                   \
+				.config = MIPI_DBI_SPI_CONFIG_DT(                                  \
+					n,                                                         \
+					SPI_OP_MODE_MASTER | SPI_WORD_SET(8) | SPI_HOLD_ON_CS |    \
+						SPI_LOCK_ON,                                       \
+					0),                                                        \
+			},                                                                         \
+		.busy_gpio = GPIO_DT_SPEC_GET(n, busy_gpios),                                      \
+		.quirks = quirks_ptr,                                                              \
+		.height = DT_PROP(n, height),                                                      \
+		.width = DT_PROP(n, width),                                                        \
+		.ram_ping_pong_mode2 = DT_PROP_OR(n, ram_ping_pong_mode2, false),                  \
+		.rotation = DT_PROP(n, rotation),                                                  \
+		.tssv = DT_PROP_OR(n, tssv, 0),                                                    \
+		.softstart = SSD16XX_ASSIGN_ARRAY(n, softstart),                                   \
+		.profiles =                                                                        \
+			{                                                                          \
+				[SSD16XX_PROFILE_FULL] = SSD16XX_PROFILE_PTR(DT_CHILD(n, full)),   \
+				[SSD16XX_PROFILE_PARTIAL] =                                        \
+					SSD16XX_PROFILE_PTR(DT_CHILD(n, partial)),                 \
+			},                                                                         \
+	};                                                                                         \
+                                                                                                   \
+	static struct ssd16xx_data ssd16xx_data_##n;                                               \
+                                                                                                   \
+	PM_DEVICE_DT_DEFINE(n, ssd16xx_pm_action);                                                 \
+                                                                                                   \
+	DEVICE_DT_DEFINE(n, ssd16xx_init, PM_DEVICE_DT_GET(n), &ssd16xx_data_##n,                  \
+			 &ssd16xx_cfg_##n, POST_KERNEL, CONFIG_DISPLAY_INIT_PRIORITY,              \
 			 &ssd16xx_driver_api)
 
 DT_FOREACH_STATUS_OKAY_VARGS(solomon_ssd1608, SSD16XX_DEFINE,
