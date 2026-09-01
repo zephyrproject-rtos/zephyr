@@ -15,7 +15,7 @@
 #include <zephyr/init.h>
 #include <zephyr/logging/log.h>
 
-LOG_MODULE_REGISTER(stm32_gpu2d, CONFIG_NEOCHROM_GPU2D_LOG_LEVEL);
+LOG_MODULE_REGISTER(stm32_gpu2d, CONFIG_STM32_NEOCHROM_GPU2D_LOG_LEVEL);
 
 struct stm32_gpu2d_cfg {
 	struct stm32_pclken pclken_gpu2d;
@@ -61,5 +61,5 @@ DEVICE_DT_INST_DEFINE(0,
 		      NULL,
 		      &stm32_gpu2d_cfg,
 		      POST_KERNEL,
-		      CONFIG_NEOCHROM_GPU2D_INIT_PRIORITY,
+		      CONFIG_STM32_NEOCHROM_GPU2D_INIT_PRIORITY,
 		      NULL);

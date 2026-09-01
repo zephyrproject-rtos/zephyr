@@ -7,6 +7,8 @@ zephyr_sources(
   soc_config.c
 )
 
+zephyr_sources_ifdef(CONFIG_STM32_NEOCHROM_GPU2D stm32_neochrom_gpu2d.c)
+
 zephyr_sources_ifdef(CONFIG_STM32_BACKUP_SRAM stm32_backup_sram.c)
 zephyr_linker_sources_ifdef(CONFIG_STM32_BACKUP_SRAM SECTIONS stm32_backup_sram.ld)
 

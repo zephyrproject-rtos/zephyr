@@ -47,10 +47,10 @@ endif # VIDEO
 
 if LVGL
 
-if NEOCHROM_GPU2D
+if STM32_NEOCHROM_GPU2D
 
 configdefault LV_ATTRIBUTE_MEM_ALIGN_SIZE
-	default 32 if NEOCHROM_GPU2D
+	default 32 if STM32_NEOCHROM_GPU2D
 
 configdefault LV_Z_NEMA_GFX_MULTI_THREAD
 	default y if LV_USE_NEMA_GFX
@@ -69,7 +69,7 @@ configdefault LV_NEMA_USE_CACHE
 configdefault LV_NEMA_CACHE_HAL_INCLUDE
 	default "stm32n6xx_hal.h"
 
-endif # NEOCHROM_GPU2D
+endif # STM32_NEOCHROM_GPU2D
 
 endif # LVGL
 
