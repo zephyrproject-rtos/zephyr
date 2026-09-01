@@ -36,7 +36,7 @@ struct mbedtls_shim_session {
 
 #define CRYPTO_MAX_SESSION CONFIG_CRYPTO_MBEDTLS_SHIM_MAX_SESSION
 
-struct mbedtls_shim_session mbedtls_sessions[CRYPTO_MAX_SESSION];
+static struct mbedtls_shim_session mbedtls_sessions[CRYPTO_MAX_SESSION];
 
 static K_MUTEX_DEFINE(mbedtls_sessions_lock);
 
@@ -106,7 +106,7 @@ static int mbedtls_ecb(struct cipher_ctx *ctx, struct cipher_pkt *pkt)
 #endif /* CONFIG_PSA_WANT_ALG_ECB_NO_PADDING */
 
 #if CONFIG_PSA_WANT_ALG_CBC_NO_PADDING
-int mbedtls_cbc(struct cipher_ctx *ctx, struct cipher_pkt *pkt, uint8_t *iv)
+static int mbedtls_cbc(struct cipher_ctx *ctx, struct cipher_pkt *pkt, uint8_t *iv)
 {
 	struct mbedtls_shim_session *session = ctx->drv_sessn_state;
 	psa_cipher_operation_t psa_op = PSA_CIPHER_OPERATION_INIT;
