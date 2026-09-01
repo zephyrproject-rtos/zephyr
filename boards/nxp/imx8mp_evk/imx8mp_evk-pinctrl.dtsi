@@ -115,6 +115,15 @@
 		};
 	};
 
+	pwm4_default: pwm4_default {
+		group0 {
+			pinmux = <&iomuxc_sai5_rxfs_pwm_out_pwm4_out>;
+			bias-pull-up;
+			slew-rate = "fast";
+			drive-strength = "x1";
+		};
+	};
+
 	pinmux_i2c3: pinmux_i2c3 {
 		group0 {
 			pinmux = <&iomuxc_i2c3_scl_i2c_scl_i2c3_scl>,
