@@ -374,6 +374,12 @@ int ext2_init_fs(struct ext2_data *fs)
 		return -EINVAL;
 	}
 
+	if (sb->s_inodes_count == 0 ||
+	    sb->s_inodes_count > (uint32_t)(fs->block_size * 8U)) {
+		error_behavior(fs, "s_inodes_count exceeds single-group bitmap capacity");
+		return -EINVAL;
+	}
+
 	set = ext2_bitmap_count_set(BGROUP_INODE_BITMAP(&fs->bgroup), sb->s_inodes_count);
 
 	if (set != sb->s_inodes_count - sb->s_free_inodes_count) {
@@ -1231,6 +1237,122 @@ out:
 	return ret;
 }
 
+/* After ext2_fetch_inode_block(), write @disk_block into the slot that
+ * currently addresses the fetched data block. Direct slots live in i_block[];
+ * indirect slots live in the parent list block (little-endian on disk).
+ */
+static int inode_write_fetched_block_slot(struct ext2_inode *inode, uint32_t disk_block)
+{
+	uint32_t *list;
+
+	if (!(inode->flags & INODE_FETCHED_BLOCK) || inode_current_block(inode) == NULL) {
+		return -EINVAL;
+	}
+
+	if (inode->block_lvl == 0) {
+		inode->i_block[inode->offsets[0]] = disk_block;
+		return 0;
+	}
+
+	list = (uint32_t *)inode->blocks[inode->block_lvl - 1]->data;
+	list[inode->offsets[inode->block_lvl]] = sys_cpu_to_le32(disk_block);
+	return ext2_write_block(inode->i_fs, inode->blocks[inode->block_lvl - 1]);
+}
+
+static int ext2_remove_dir_block(struct ext2_inode *parent, uint32_t blk)
+{
+	int rc;
+	uint32_t block_size = parent->i_fs->block_size;
+	uint32_t last_blk;
+	uint32_t old_disk;
+	uint32_t last_disk = 0;
+
+	if (parent->i_size <= block_size || (parent->i_size % block_size) != 0) {
+		return -EINVAL;
+	}
+
+	last_blk = parent->i_size / block_size - 1;
+	if (blk > last_blk) {
+		return -EINVAL;
+	}
+
+	rc = ext2_fetch_inode_block(parent, blk);
+	if (rc < 0) {
+		return rc;
+	}
+
+	old_disk = inode_current_block(parent)->num;
+	if (old_disk == 0) {
+		return -EINVAL;
+	}
+
+	if (blk != last_blk) {
+		rc = ext2_fetch_inode_block(parent, last_blk);
+		if (rc < 0) {
+			return rc;
+		}
+
+		last_disk = inode_current_block(parent)->num;
+		if (last_disk == 0) {
+			return -EINVAL;
+		}
+
+		rc = ext2_fetch_inode_block(parent, blk);
+		if (rc < 0) {
+			return rc;
+		}
+
+		rc = inode_write_fetched_block_slot(parent, last_disk);
+		if (rc < 0) {
+			return rc;
+		}
+
+		ext2_inode_drop_blocks(parent);
+
+		rc = ext2_fetch_inode_block(parent, last_blk);
+		if (rc < 0) {
+			return rc;
+		}
+
+		rc = inode_write_fetched_block_slot(parent, 0);
+		if (rc < 0) {
+			return rc;
+		}
+	} else {
+		rc = inode_write_fetched_block_slot(parent, 0);
+		if (rc < 0) {
+			return rc;
+		}
+	}
+
+	ext2_inode_drop_blocks(parent);
+
+	rc = ext2_free_block(parent->i_fs, old_disk);
+	if (rc < 0) {
+		return rc;
+	}
+
+	parent->i_size -= block_size;
+	if (parent->i_blocks >= block_size / 512) {
+		parent->i_blocks -= block_size / 512;
+	}
+
+	/* Directory no longer spans the single-indirect range: drop the empty list. */
+	if (parent->i_size <= EXT2_INODE_BLOCK_DIRECT * block_size &&
+	    parent->i_block[EXT2_INODE_BLOCK_1LVL] != 0) {
+		rc = ext2_free_block(parent->i_fs, parent->i_block[EXT2_INODE_BLOCK_1LVL]);
+		if (rc < 0) {
+			return rc;
+		}
+		parent->i_block[EXT2_INODE_BLOCK_1LVL] = 0;
+		if (parent->i_blocks >= block_size / 512) {
+			parent->i_blocks -= block_size / 512;
+		}
+	}
+
+	return ext2_commit_inode(parent);
+}
+
 static int ext2_del_direntry(struct ext2_inode *parent, uint32_t offset)
 {
 	int rc = 0;
@@ -1256,27 +1378,10 @@ static int ext2_del_direntry(struct ext2_inode *parent, uint32_t offset)
 		uint16_t reclen = ext2_get_disk_direntry_reclen(de);
 
 		if (reclen == block_size) {
-			/* Remove whole block */
-
-			uint32_t last_blk = parent->i_size / block_size - 1;
-			uint32_t old_blk = parent->i_block[blk];
-
-			/* move last block in place of removed one. Entries start only at beginning
-			 * of the block, hence we don't have to care to move any entry.
+			/* Remove whole block. Entries start only at the beginning of a
+			 * block, so the last directory block can be moved into this hole.
 			 */
-			parent->i_block[blk] = parent->i_block[last_blk];
-			parent->i_block[last_blk] = 0;
-
-			/* Free removed block */
-			rc = ext2_free_block(parent->i_fs, old_blk);
-			if (rc < 0) {
-				return rc;
-			}
-
-			rc = ext2_commit_inode(parent);
-			if (rc < 0) {
-				return rc;
-			}
+			return ext2_remove_dir_block(parent, blk);
 		} else {
 			/* Move next entry to beginning of block */
 			struct ext2_disk_direntry *next =
@@ -1411,6 +1516,10 @@ int ext2_inode_unlink(struct ext2_inode *parent, struct ext2_inode *inode, uint3
 {
 	int rc;
 
+	if (parent == NULL || inode == NULL) {
+		return -EINVAL;
+	}
+
 	rc = can_unlink(inode);
 	if (rc < 0) {
 		return rc;
@@ -1442,6 +1551,11 @@ int ext2_replace_file(struct ext2_lookup_args *args_from, struct ext2_lookup_arg
 {
 	LOG_DBG("Replace existing directory entry in rename");
 	LOG_DBG("Inode: %d Inode to replace: %d", args_from->inode->i_id, args_to->inode->i_id);
+
+	if (args_from->parent == NULL || args_to->parent == NULL ||
+	    args_from->inode == NULL || args_to->inode == NULL) {
+		return -EINVAL;
+	}
 
 	int rc = 0;
 	struct ext2_disk_direntry *de;
@@ -1499,7 +1613,13 @@ int ext2_replace_file(struct ext2_lookup_args *args_from, struct ext2_lookup_arg
 int ext2_move_file(struct ext2_lookup_args *args_from, struct ext2_lookup_args *args_to)
 {
 	int rc = 0;
-	uint32_t block_size = args_from->parent->i_fs->block_size;
+	uint32_t block_size;
+
+	if (args_from->parent == NULL || args_to->parent == NULL) {
+		return -EINVAL;
+	}
+
+	block_size = args_from->parent->i_fs->block_size;
 
 	struct ext2_inode *fparent = args_from->parent;
 	struct ext2_inode *tparent = args_to->parent;
