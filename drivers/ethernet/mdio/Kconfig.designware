@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 KylinSoft
+# SPDX-License-Identifier: Apache-2.0
+
+config MDIO_DESIGNWARE
+	bool "Synopsys DesignWare standalone MDIO driver"
+	default y
+	depends on DT_HAS_SNPS_DESIGNWARE_MDIO_ENABLED
+	help
+	  Enable MDIO support for Synopsys DesignWare Ethernet MAC instances
+	  that expose a standalone MDIO controller node (snps,designware-mdio).
