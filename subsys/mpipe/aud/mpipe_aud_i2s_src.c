@@ -296,7 +296,7 @@ static int mpipe_aud_i2s_src_start(struct mpipe_buffer_pool *pool)
 	return 0;
 }
 
-static int mpipe_aud_i2s_src_stop(struct mpipe_buffer_pool *pool)
+static int mpipe_aud_i2s_src_stop_capture(struct mpipe_buffer_pool *pool)
 {
 	struct mpipe_aud_buffer_pool *aud_pool =
 		CONTAINER_OF(pool, struct mpipe_aud_buffer_pool, pool);
@@ -306,11 +306,50 @@ static int mpipe_aud_i2s_src_stop(struct mpipe_buffer_pool *pool)
 		(void)i2s_trigger(aud_pool->aud_dev, I2S_DIR_RX, I2S_TRIGGER_DROP);
 	}
 
+	return 0;
+}
+
+static int mpipe_aud_i2s_src_stop(struct mpipe_buffer_pool *pool)
+{
+	struct mpipe_aud_buffer_pool *aud_pool =
+		CONTAINER_OF(pool, struct mpipe_aud_buffer_pool, pool);
+
+	mpipe_aud_i2s_src_stop_capture(pool);
+
 	if (aud_pool->pool_parent_stop != NULL) {
 		return aud_pool->pool_parent_stop(pool);
 	}
 
 	return 0;
+}
+
+static enum mpipe_state_change_return
+mpipe_aud_i2s_src_change_state(struct mpipe_element *self,
+				enum mpipe_state_change transition)
+{
+	struct mpipe_src *src = (struct mpipe_src *)self;
+	enum mpipe_state_change_return ret;
+
+	if (transition == MPIPE_STATE_CHANGE_PLAYING_TO_PAUSED) {
+		if (mpipe_aud_i2s_src_stop_capture(src->pool) != 0) {
+			LOG_ERR("Unable to pause I2S capture");
+			return MPIPE_STATE_CHANGE_FAILURE;
+		}
+	}
+
+	ret = mpipe_src_change_state(self, transition);
+	if (ret != MPIPE_STATE_CHANGE_SUCCESS) {
+		return ret;
+	}
+
+	if (transition == MPIPE_STATE_CHANGE_PAUSED_TO_PLAYING) {
+		if (mpipe_aud_i2s_src_start(src->pool) != 0) {
+			LOG_ERR("Unable to start I2S capture");
+			return MPIPE_STATE_CHANGE_FAILURE;
+		}
+	}
+
+	return MPIPE_STATE_CHANGE_SUCCESS;
 }
 
 int mpipe_aud_i2s_src_init(struct mpipe_aud_i2s_src *aud_i2s_src, uint8_t id,
@@ -344,7 +383,7 @@ int mpipe_aud_i2s_src_init(struct mpipe_aud_i2s_src *aud_i2s_src, uint8_t id,
 
 	src->set_caps = mpipe_aud_i2s_src_set_caps;
 	src->pool->acquire_buffer = mpipe_aud_i2s_src_acquire_buffer;
-	src->pool->start = mpipe_aud_i2s_src_start;
+	self->change_state = mpipe_aud_i2s_src_change_state;
 
 	aud_i2s_src->pool.pool_parent_stop = src->pool->stop;
 	src->pool->stop = mpipe_aud_i2s_src_stop;
