@@ -296,6 +296,14 @@ config NXP_IW611_MURATA_2DL_M2
 	  Detailed information about Type 2DL module you can find on
 	  https://www.murata.com/en-us/products/connectivitymodule/wi-fi-bluetooth/overview/lineup/type2dl
 
+config NXP_IW611_EZURIO_NX611
+	bool "NXP IW611-EZURIO-NX611"
+	help
+	  Ezurio Sona NX611 is a small and very high performance module based
+	  on NXP IW611 combo chipset which supports Wi-Fi 802.11a/b/g/n/ac/ax +
+	  Bluetooth 5.4 BR/EDR/LE up to 600 Mbps PHY data rate on Wi-Fi and
+	  2Mbps PHY data rate on Bluetooth. Uses Ezurio-qualified firmware.
+
 config NXP_IW612_UBX_MAYA_W276_M2
 	bool "NXP IW612-UBX-MAYA-W276-M2"
 	help
