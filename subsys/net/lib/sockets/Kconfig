@@ -364,6 +364,7 @@ config NET_SOCKETS_OFFLOAD_DISPATCHER_CONTEXT_MAX
 
 config NET_SOCKETS_PACKET
 	bool "Packet socket support"
+	depends on NET_NATIVE
 	select NET_CONNECTION_SOCKETS
 	help
 	  This is an initial version of packet socket support (special type
@@ -386,7 +387,7 @@ config NET_SOCKETS_PACKET_DGRAM
 
 config NET_SOCKETS_PACKET_MCAST_MEMBERSHIP
 	bool "Packet socket multicast membership support"
-	depends on NET_SOCKETS_PACKET && NET_NATIVE && NET_L2_ETHERNET
+	depends on NET_SOCKETS_PACKET && NET_L2_ETHERNET
 	help
 	  Add support for ZSOCK_PACKET_ADD_MEMBERSHIP and ZSOCK_PACKET_DROP_MEMBERSHIP
 	  socket options for AF_PACKET sockets. The options operate at layer 2 and tell
