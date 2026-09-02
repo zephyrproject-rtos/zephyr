@@ -17,6 +17,14 @@
 #define CYCLES_PER_BIT 8
 #define SIDESET_BIT_COUNT 2
 
+/*
+ * Both PIO UART FIFO interrupt sources are level sensitive and stay asserted
+ * until the FIFO is drained/filled, so it does not matter which of the PIO
+ * block's two NVIC lines they are routed through. Everything goes through
+ * line 0; line 1 is wired by the PIO parent but otherwise unused for now.
+ */
+#define PIO_UART_IRQ_INDEX 0
+
 struct pio_uart_config {
 	const struct device *piodev;
 	const struct pinctrl_dev_config *pcfg;
@@ -28,6 +36,14 @@ struct pio_uart_config {
 struct pio_uart_data {
 	size_t tx_sm;
 	size_t rx_sm;
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	uart_irq_callback_user_data_t cb;
+	void *cb_data;
+	uint32_t rx_source_mask;
+	uint32_t tx_source_mask;
+	bool tx_irq_en;
+	bool rx_irq_en;
+#endif
 };
 
 RPI_PICO_PIO_DEFINE_PROGRAM(uart_tx, 0, 3,
@@ -111,24 +127,29 @@ static int pio_uart_rx_init(PIO pio, uint32_t sm, uint32_t rx_pin, float div)
 	return 0;
 }
 
+/*
+ * The RX program shifts right with no autopush, so the received byte lands
+ * in the most significant byte of the 4-byte-wide FIFO word. Accessing it
+ * pops the word.
+ */
+static inline uint8_t pio_uart_rx_fifo_get(PIO pio, size_t sm)
+{
+	io_rw_8 *uart_rx_fifo_msb = (io_rw_8 *)&pio->rxf[sm] + 3;
+
+	return *uart_rx_fifo_msb;
+}
+
 static int pio_uart_poll_in(const struct device *dev, unsigned char *c)
 {
 	const struct pio_uart_config *config = dev->config;
 	PIO pio = pio_rpi_pico_get_pio(config->piodev);
 	struct pio_uart_data *data = dev->data;
-	io_rw_8 *uart_rx_fifo_msb;
 
-	/*
-	 * The rx FIFO is 4 bytes wide, add 3 to get the most significant
-	 * byte.
-	 */
-	uart_rx_fifo_msb = (io_rw_8 *)&pio->rxf[data->rx_sm] + 3;
 	if (pio_sm_is_rx_fifo_empty(pio, data->rx_sm)) {
 		return -1;
 	}
 
-	/* Accessing the FIFO pops the read word from it */
-	*c = (char)*uart_rx_fifo_msb;
+	*c = pio_uart_rx_fifo_get(pio, data->rx_sm);
 	return 0;
 }
 
@@ -139,6 +160,166 @@ static void pio_uart_poll_out(const struct device *dev, unsigned char c)
 
 	pio_sm_put_blocking(pio_rpi_pico_get_pio(config->piodev), data->tx_sm, (uint32_t)c);
 }
+
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+
+static int pio_uart_fifo_fill(const struct device *dev, const uint8_t *tx_data, int len)
+{
+	const struct pio_uart_config *config = dev->config;
+	struct pio_uart_data *data = dev->data;
+	PIO pio = pio_rpi_pico_get_pio(config->piodev);
+	int i;
+
+	for (i = 0; i < len && !pio_sm_is_tx_fifo_full(pio, data->tx_sm); i++) {
+		pio->txf[data->tx_sm] = tx_data[i];
+	}
+
+	/*
+	 * TXSTALL is sticky: clear it here so irq_tx_complete() only reports
+	 * completion for frames pushed at or after this fill, not a stale
+	 * stall left over from a previous, already-drained fill.
+	 */
+	pio->fdebug = BIT(PIO_FDEBUG_TXSTALL_LSB + data->tx_sm);
+
+	return i;
+}
+
+static int pio_uart_fifo_read(const struct device *dev, uint8_t *rx_data, const int size)
+{
+	const struct pio_uart_config *config = dev->config;
+	struct pio_uart_data *data = dev->data;
+	PIO pio = pio_rpi_pico_get_pio(config->piodev);
+	int i;
+
+	for (i = 0; i < size && !pio_sm_is_rx_fifo_empty(pio, data->rx_sm); i++) {
+		rx_data[i] = pio_uart_rx_fifo_get(pio, data->rx_sm);
+	}
+
+	return i;
+}
+
+static void pio_uart_irq_tx_enable(const struct device *dev)
+{
+	const struct pio_uart_config *config = dev->config;
+	struct pio_uart_data *data = dev->data;
+
+	data->tx_irq_en = true;
+	pio_rpi_pico_irq_sources_set(config->piodev, PIO_UART_IRQ_INDEX, data->tx_source_mask,
+				     true);
+}
+
+static void pio_uart_irq_tx_disable(const struct device *dev)
+{
+	const struct pio_uart_config *config = dev->config;
+	struct pio_uart_data *data = dev->data;
+
+	data->tx_irq_en = false;
+	pio_rpi_pico_irq_sources_set(config->piodev, PIO_UART_IRQ_INDEX, data->tx_source_mask,
+				     false);
+}
+
+static int pio_uart_irq_tx_ready(const struct device *dev)
+{
+	const struct pio_uart_config *config = dev->config;
+	struct pio_uart_data *data = dev->data;
+	PIO pio = pio_rpi_pico_get_pio(config->piodev);
+
+	return data->tx_irq_en && !pio_sm_is_tx_fifo_full(pio, data->tx_sm);
+}
+
+static int pio_uart_irq_tx_complete(const struct device *dev)
+{
+	const struct pio_uart_config *config = dev->config;
+	struct pio_uart_data *data = dev->data;
+	PIO pio = pio_rpi_pico_get_pio(config->piodev);
+
+	/*
+	 * FIFO empty alone is not enough: the last frame can still be
+	 * shifting out of the OSR (up to ~10 bit-times at 8 cycles/bit).
+	 * TXSTALL only latches once the state machine has actually stalled
+	 * for lack of more data.
+	 */
+	return pio_sm_is_tx_fifo_empty(pio, data->tx_sm) &&
+	      (pio->fdebug & BIT(PIO_FDEBUG_TXSTALL_LSB + data->tx_sm));
+}
+
+static void pio_uart_irq_rx_enable(const struct device *dev)
+{
+	const struct pio_uart_config *config = dev->config;
+	struct pio_uart_data *data = dev->data;
+
+	data->rx_irq_en = true;
+	pio_rpi_pico_irq_sources_set(config->piodev, PIO_UART_IRQ_INDEX, data->rx_source_mask,
+				     true);
+}
+
+static void pio_uart_irq_rx_disable(const struct device *dev)
+{
+	const struct pio_uart_config *config = dev->config;
+	struct pio_uart_data *data = dev->data;
+
+	data->rx_irq_en = false;
+	pio_rpi_pico_irq_sources_set(config->piodev, PIO_UART_IRQ_INDEX, data->rx_source_mask,
+				     false);
+}
+
+static int pio_uart_irq_rx_ready(const struct device *dev)
+{
+	const struct pio_uart_config *config = dev->config;
+	struct pio_uart_data *data = dev->data;
+	PIO pio = pio_rpi_pico_get_pio(config->piodev);
+
+	return data->rx_irq_en && !pio_sm_is_rx_fifo_empty(pio, data->rx_sm);
+}
+
+/* Framing errors are not routed to the NVIC yet, see the plan's Stage 5. */
+static void pio_uart_irq_err_enable(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+}
+
+static void pio_uart_irq_err_disable(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+}
+
+static int pio_uart_irq_is_pending(const struct device *dev)
+{
+	return pio_uart_irq_tx_ready(dev) || pio_uart_irq_rx_ready(dev);
+}
+
+static void pio_uart_irq_update(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+}
+
+static void pio_uart_irq_callback_set(const struct device *dev, uart_irq_callback_user_data_t cb,
+				      void *cb_data)
+{
+	struct pio_uart_data *data = dev->data;
+
+	data->cb = cb;
+	data->cb_data = cb_data;
+}
+
+/*
+ * Both FIFO sources are level sensitive and stay asserted until the
+ * callback drains/fills, so no acknowledge is needed here.
+ */
+static void pio_uart_irq_handler(const struct device *piodev, uint32_t ints, void *user_data)
+{
+	const struct device *dev = user_data;
+	struct pio_uart_data *data = dev->data;
+
+	ARG_UNUSED(piodev);
+	ARG_UNUSED(ints);
+
+	if (data->cb != NULL) {
+		data->cb(dev, data->cb_data);
+	}
+}
+
+#endif /* CONFIG_UART_INTERRUPT_DRIVEN */
 
 static int pio_uart_init(const struct device *dev)
 {
@@ -173,12 +354,40 @@ static int pio_uart_init(const struct device *dev)
 		return retval;
 	}
 
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	data->rx_source_mask = BIT(PIO_INTR_SM0_RXNEMPTY_LSB + rx_sm);
+	data->tx_source_mask = BIT(PIO_INTR_SM0_TXNFULL_LSB + tx_sm);
+
+	retval = pio_rpi_pico_register_irq(config->piodev, PIO_UART_IRQ_INDEX,
+					   data->rx_source_mask | data->tx_source_mask,
+					   pio_uart_irq_handler, (void *)dev);
+	if (retval < 0) {
+		return retval;
+	}
+#endif
+
 	return pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
 }
 
 static DEVICE_API(uart, pio_uart_driver_api) = {
 	.poll_in = pio_uart_poll_in,
 	.poll_out = pio_uart_poll_out,
+#ifdef CONFIG_UART_INTERRUPT_DRIVEN
+	.fifo_fill = pio_uart_fifo_fill,
+	.fifo_read = pio_uart_fifo_read,
+	.irq_tx_enable = pio_uart_irq_tx_enable,
+	.irq_tx_disable = pio_uart_irq_tx_disable,
+	.irq_tx_ready = pio_uart_irq_tx_ready,
+	.irq_tx_complete = pio_uart_irq_tx_complete,
+	.irq_rx_enable = pio_uart_irq_rx_enable,
+	.irq_rx_disable = pio_uart_irq_rx_disable,
+	.irq_rx_ready = pio_uart_irq_rx_ready,
+	.irq_err_enable = pio_uart_irq_err_enable,
+	.irq_err_disable = pio_uart_irq_err_disable,
+	.irq_is_pending = pio_uart_irq_is_pending,
+	.irq_update = pio_uart_irq_update,
+	.irq_callback_set = pio_uart_irq_callback_set,
+#endif
 };
 
 #define PIO_UART_INIT(idx)									\
