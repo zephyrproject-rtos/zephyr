@@ -293,7 +293,11 @@ static inline void uart_mspm0_set_clock(mspm0_uart_regs *regs, uint32_t clk_sel,
 static void uart_mspm0_configure_line(mspm0_uart_regs *regs, uint32_t parity, uint32_t word_length,
 				      uint32_t stop_bits, uint32_t flow_control)
 {
+	/* This driver always operates in FIFO mode. Configure FEN together with
+	 * the other CTL0 fields to avoid transitioning through character mode.
+	 */
 	uint32_t ctl0 = UART_CTL0_MODE_UART | UART_CTL0_RXE_ENABLE | UART_CTL0_TXE_ENABLE |
+			UART_CTL0_FEN_ENABLE |
 			(flow_control & (UART_CTL0_RTSEN_MASK | UART_CTL0_CTSEN_MASK));
 
 	uint32_t lcrh = (parity & (UART_LCRH_PEN_MASK | UART_LCRH_EPS_MASK | UART_LCRH_SPS_MASK)) |
@@ -520,13 +524,6 @@ static int uart_mspm0_install_configuration(const struct device *dev)
 #ifdef CONFIG_PM_DEVICE
 	data->frame_time_us = uart_mspm0_frame_time_us(data);
 #endif
-
-	/* Re-enable FIFOs: uart_mspm0_configure_line() overwrites CTL0 entirely,
-	 * clearing the FEN bit. Always re-enable FIFOs after reconfiguring the
-	 * line control registers so that FIFO-based interrupt thresholds (IFLS)
-	 * remain operative.
-	 */
-	config->regs->ctl0 |= UART_CTL0_FEN_ENABLE;
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	/* Restore FIFO interrupt level select thresholds. These are also wiped
