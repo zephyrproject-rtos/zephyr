@@ -31,4 +31,15 @@
 #define IFX_HPPASS_SAR_TRIG_AC       9 /**< Autonomous controller */
 /** @} */
 
+/**
+ * @name FIFO buffer for a channel's fifo-sel (cy_en_hppass_fifo_t)
+ * @{
+ */
+#define IFX_HPPASS_SAR_FIFO_DISABLED 0 /**< Result is not written to the FIFO */
+#define IFX_HPPASS_SAR_FIFO_0        1 /**< FIFO buffer 0 */
+#define IFX_HPPASS_SAR_FIFO_1        2 /**< FIFO buffer 1 */
+#define IFX_HPPASS_SAR_FIFO_2        3 /**< FIFO buffer 2 */
+#define IFX_HPPASS_SAR_FIFO_3        4 /**< FIFO buffer 3 */
+/** @} */
+
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_ADC_INFINEON_HPPASS_SAR_H_ */
