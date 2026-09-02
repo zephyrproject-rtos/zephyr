@@ -16,7 +16,7 @@ supported:
   - uart
   - gpio
   - netif:eth
-  - usb_device
+  - usbd
   - i2c
   - pwm
   - spi

@@ -25,5 +25,5 @@ supported:
   - watchdog
   - pwm
   - hwinfo
-  - usb_device
+  - usbd
 vendor: u-blox

@@ -13,6 +13,5 @@ flash: 64
 supported:
   - can
   - gpio
-  - usb_device
   - usbd
 vendor: jhoinrch

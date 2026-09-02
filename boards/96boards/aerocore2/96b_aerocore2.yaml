@@ -14,7 +14,7 @@ supported:
   - pwm
   - i2c
   - spi
-  - usb_device
+  - usbd
   - adc
 ram: 256
 flash: 2048

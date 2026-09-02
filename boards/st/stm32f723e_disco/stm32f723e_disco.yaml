@@ -14,6 +14,5 @@ supported:
   - i2c
   - spi
   - arduino_spi
-  - usb_device
   - usbd
 vendor: st

@@ -26,7 +26,7 @@ supported:
   - sdhc
   - spi
   - uart
-  - usb_device
+  - usbd
   - watchdog
   - rtc
 vendor: nxp

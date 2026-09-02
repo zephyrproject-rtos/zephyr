@@ -14,7 +14,6 @@ supported:
   - watchdog
   - i2c
   - spi
-  - usb_device
   - rtc
   - crypto
   - dma

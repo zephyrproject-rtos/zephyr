@@ -13,6 +13,6 @@ supported:
   - spi
   - pwm
   - watchdog
-  - usb_device
+  - usbd
 vendor: nordic
 sysbuild: true

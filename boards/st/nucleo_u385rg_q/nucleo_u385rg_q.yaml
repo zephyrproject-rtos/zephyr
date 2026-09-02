@@ -19,7 +19,6 @@ supported:
   - spi
   - uart
   - usart
-  - usb_device
   - usbd
   - watchdog
   - pwm

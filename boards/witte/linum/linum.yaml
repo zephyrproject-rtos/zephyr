@@ -16,6 +16,6 @@ supported:
   - pwm
   - netif:eth
   - spi
-  - usb_device
+  - usbd
   - can
 vendor: witte

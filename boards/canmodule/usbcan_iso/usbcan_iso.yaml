@@ -11,5 +11,4 @@ flash: 128
 supported:
   - can
   - gpio
-  - usb_device
   - usbd

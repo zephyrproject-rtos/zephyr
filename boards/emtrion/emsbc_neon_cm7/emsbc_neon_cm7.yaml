@@ -23,6 +23,6 @@ supported:
   - kscan:touch
   - adc
   - can
-  - usb_device
+  - usbd
   - eeprom
 vendor: emtrion

@@ -29,7 +29,6 @@ supported:
   - ptp_clock
   - pwm
   - spi
-  - usb_device
   - usbd
   - video
   - watchdog

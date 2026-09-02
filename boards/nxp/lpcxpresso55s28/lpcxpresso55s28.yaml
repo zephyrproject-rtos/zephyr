@@ -24,7 +24,7 @@ supported:
   - gpio
   - i2c
   - spi
-  - usb_device
+  - usbd
   - watchdog
   - gint
 vendor: nxp

@@ -14,7 +14,7 @@ supported:
   - gpio
   - i2c
   - pwm
-  - usb_device
+  - usbd
   - watchdog
   - lora
 vendor: rak

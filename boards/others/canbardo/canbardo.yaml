@@ -14,5 +14,4 @@ supported:
   - can
   - gpio
   - usbd
-  - usb_device
 vendor: others

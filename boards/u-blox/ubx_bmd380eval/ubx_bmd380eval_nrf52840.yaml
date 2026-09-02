@@ -16,7 +16,7 @@ supported:
   - pwm
   - spi
   - qspi
-  - usb_device
+  - usbd
   - watchdog
   - netif:openthread
 vendor: u-blox

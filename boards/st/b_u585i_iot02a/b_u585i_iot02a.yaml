@@ -23,7 +23,6 @@ supported:
   - pwm
   - rtc
   - spi
-  - usb_device
   - usbd
   - watchdog
 vendor: st

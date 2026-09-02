@@ -9,7 +9,7 @@ toolchain:
 supported:
   - i2c
   - gpio
-  - usb_device
+  - usbd
   - watchdog
   - hwinfo
   - dma

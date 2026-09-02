@@ -24,7 +24,6 @@ supported:
   - gpio
   - gint
   - pwm
-  - usb_device
   - usbd
   - watchdog
   - crc

@@ -11,5 +11,5 @@ supported:
   - counter
   - netif:eth
   - ptp_clock
-  - usb_device
+  - usbd
 vendor: olimex
