@@ -259,6 +259,7 @@ REDIRECTS = (
     ('develop/test/pytest', 'develop/twister/pytest'),
     ('develop/test/twister', 'develop/twister/index'),
     ('develop/test/twister_statuses', 'develop/twister/twister_statuses'),
+    ('hardware/peripherals/gpio', 'hardware/peripherals/gpio/index'),
     ('hardware/peripherals/mipi_dbi', 'hardware/peripherals/display/index'),
     ('hardware/peripherals/mipi_dsi', 'hardware/peripherals/display/index'),
     ('samples/bluetooth/bap_broadcast_assistant/README', 'samples/bluetooth/audio/bap_broadcast_assistant/README'),
