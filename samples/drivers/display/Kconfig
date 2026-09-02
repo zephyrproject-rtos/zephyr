@@ -15,11 +15,17 @@ config SAMPLE_BUFFER_ADDR_ALIGN
 
 config SAMPLE_WIDTH_ALIGN
 	int "The update area width alignment"
+	default 24 if ST730X
 	default 8 if UC81XX
+	default 6 if ST7586S
+	default 4 if SSD1322 || SSD1363
+	default 2 if SSD1327_5 || SSD1320 || SH1122
 	default 1
 
 config SAMPLE_HEIGHT_ALIGN
 	int "The update area height alignment"
+	default 8 if ST75256 || ST7567
+	default 2 if ST730X
 	default 1
 
 config HEAP_MEM_POOL_ADD_SIZE_SAMPLE
