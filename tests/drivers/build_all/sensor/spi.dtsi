@@ -559,6 +559,20 @@ test_spi_icm56686: icm56686@42 {
 	gyro-pwr-mode = <2>;
 };
 
+test_spi_bma400: bma400@43 {
+	compatible = "bosch,bma400";
+	reg = <0x43>;
+	spi-max-frequency = <0>;
+	int1-gpios = <&test_gpio 0 0>;
+	wakeup-source;
+	auto-wakeup-en;
+	auto-lowpower-en;
+	auto-lowpower-duration = <200>;
+	auto-lowpower-threshold = <20>;
+	auto-wakeup-threshold = <2>;
+	auto-wakeup-num-of-samples = <0>;
+};
+
 test_spi_iim42653: iim42653@44 {
 	compatible = "invensense,iim42653", "invensense,icm4268x";
 	reg = <0x44>;
