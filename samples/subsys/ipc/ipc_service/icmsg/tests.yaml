@@ -35,7 +35,6 @@ tests:
     integration_platforms:
       - nrf54l15dk/nrf54l15/cpuapp
     extra_args:
-    extra_args:
       - icmsg_SNIPPET=nordic-flpr
       - icmsg_CONFIG_MULTITHREADING=n
       - icmsg_CONFIG_LOG_MODE_MINIMAL=y
