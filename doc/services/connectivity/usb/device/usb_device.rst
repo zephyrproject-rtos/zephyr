@@ -38,8 +38,7 @@ Audio
 
 There is an experimental implementation of the Audio class. It follows specification
 version 1.00 (``bcdADC 0x0100``) and supports synchronous synchronisation type only.
-See :zephyr:code-sample:`usb-audio-headphones-microphone` and
-:zephyr:code-sample:`usb-audio-headset` samples for reference.
+See the :zephyr:code-sample:`uac2-loopback` sample for reference.
 
 Bluetooth HCI USB transport layer
 =================================
