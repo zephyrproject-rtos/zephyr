@@ -794,11 +794,8 @@ int ext2_commit_superblock(struct ext2_data *fs)
 	fill_disk_sblock(disk_sb, &fs->sblock);
 
 	ret = ext2_write_block(fs, b);
-	if (ret < 0) {
-		return ret;
-	}
 	ext2_drop_block(b);
-	return 0;
+	return ret;
 }
 
 int ext2_commit_bg(struct ext2_data *fs)
@@ -822,11 +819,8 @@ int ext2_commit_bg(struct ext2_data *fs)
 	fill_disk_bgroup(disk_bg, bg);
 
 	ret = ext2_write_block(fs, b);
-	if (ret < 0) {
-		return ret;
-	}
 	ext2_drop_block(b);
-	return 0;
+	return ret;
 }
 
 int ext2_commit_inode(struct ext2_inode *inode)
