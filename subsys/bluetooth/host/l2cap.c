@@ -97,6 +97,11 @@ static sys_slist_t servers = SYS_SLIST_STATIC_INIT(&servers);
  * is in use, so that the server object stays valid for its user.
  */
 static K_MUTEX_DEFINE(servers_lock);
+
+struct l2cap_server_chan_count {
+	uint16_t psm;
+	uint16_t count;
+};
 #endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
 
 /* L2CAP signalling channel specific context */
@@ -1298,6 +1303,57 @@ int bt_l2cap_server_register(struct bt_l2cap_server *server)
 	LOG_DBG("PSM 0x%04x", server->psm);
 
 	sys_slist_append(&servers, &server->node);
+
+unlock:
+	k_mutex_unlock(&servers_lock);
+
+	return err;
+}
+
+static void l2cap_server_chan_count(struct bt_conn *conn, void *data)
+{
+	struct l2cap_server_chan_count *count = data;
+	struct bt_l2cap_chan *chan;
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&conn->channels, chan, node) {
+		if (BT_L2CAP_LE_CHAN(chan)->psm == count->psm) {
+			count->count++;
+		}
+	}
+}
+
+int bt_l2cap_server_unregister(struct bt_l2cap_server *server)
+{
+	struct l2cap_server_chan_count count;
+	int err = 0;
+
+	if (server == NULL) {
+		return -EINVAL;
+	}
+
+	/* Blocks while a connection request for this server is being processed,
+	 * so that the server is no longer in use once this returns.
+	 */
+	k_mutex_lock(&servers_lock, K_FOREVER);
+
+	/* Refuse while channels accepted by this server are still connected, so
+	 * that the PSM cannot be handed to another server while they live.
+	 */
+	count.psm = server->psm;
+	count.count = 0;
+	bt_conn_foreach(BT_CONN_TYPE_LE, l2cap_server_chan_count, &count);
+	if (count.count != 0) {
+		LOG_DBG("PSM 0x%04x still has %u channel(s)", server->psm, count.count);
+		err = -EBUSY;
+		goto unlock;
+	}
+
+	if (!sys_slist_find_and_remove(&servers, &server->node)) {
+		err = -ENOENT;
+		goto unlock;
+	}
+
+	LOG_DBG("PSM 0x%04x unregistered", server->psm);
 
 unlock:
 	k_mutex_unlock(&servers_lock);
