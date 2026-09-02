@@ -1,0 +1,48 @@
+/*
+ * SPDX-FileCopyrightText: Copyright Michael Hope <michaelh@juju.nz>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/ch32v20x_30x-pinctrl.h>
+
+&pinctrl {
+	usart2_default: usart2_default {
+		group1 {
+			pinmux = <USART2_TX_PA2_0>;
+			output-high;
+			drive-push-pull;
+			slew-rate = "max-speed-10mhz";
+		};
+		group2 {
+			pinmux = <USART2_RX_PA3_0>;
+			bias-pull-up;
+		};
+	};
+
+	pwm_led_pinctrl: pwm_led_pinctrl {
+		group1 {
+			pinmux = <TIM2_CH4_PB11_3>;
+			output-high;
+			drive-push-pull;
+		};
+	};
+
+	tkey1_default: tkey1_default {
+		touch_l1 {
+			pinmux = <ADC1_A9_PB1_0>;
+		};
+
+		touch_l2 {
+			pinmux = <ADC1_A8_PB0_0>;
+		};
+
+		touch_r2 {
+			pinmux = <ADC1_A7_PA7_0>;
+		};
+
+		touch_r1 {
+			pinmux = <ADC1_A5_PA5_0>;
+		};
+	};
+};

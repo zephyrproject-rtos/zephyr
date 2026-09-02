@@ -1,0 +1,5 @@
+# SPDX-FileCopyrightText: Copyright Michael Hope <michaelh@juju.nz>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_COMU
+	select SOC_CH32V203
