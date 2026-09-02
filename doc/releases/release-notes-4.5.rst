@@ -2112,6 +2112,13 @@ Other notable changes
     cycle-counter read plus an absolute-compare arm. See the
     :ref:`migration guide <migration_4.5>` for how to use it (:github:`115844`).
 
+* Espressif
+
+  * Added experimental SMP support for the ESP32-S3 dual-core SoC, enabled with
+    :kconfig:option:`CONFIG_SMP`. The Wi-Fi task core is selected with
+    :kconfig:option:`CONFIG_ESP32_WIFI_TASK_PINNED_TO_CORE_0`
+    or :kconfig:option:`CONFIG_ESP32_WIFI_TASK_PINNED_TO_CORE_1`.
+
 * Wi-Fi
 
   * Removed the ``samples/net/wifi/test_certs/rsa2k`` enterprise test

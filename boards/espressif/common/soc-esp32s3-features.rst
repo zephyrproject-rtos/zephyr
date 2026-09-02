@@ -82,6 +82,24 @@ and/or exchanging data over OpenAMP framework. See :zephyr:code-sample-category:
    As a mitigation, applications running on the APPCPU may use ESP32 ROM
    functions such as ``ets_printf()`` to emit diagnostic or debug output.
 
+Symmetric Multiprocessing (SMP)
+===============================
+
+The two cores can also run a single Zephyr image as an SMP system. This
+support is experimental. Enable it with:
+
+.. code:: cfg
+
+   CONFIG_SMP=y
+
+The radio firmware expects the Wi-Fi task and its interrupt on the same
+core, so the Wi-Fi driver pins its task to the core selected with
+:kconfig:option:`CONFIG_ESP32_WIFI_TASK_PINNED_TO_CORE_0` (the default) or
+:kconfig:option:`CONFIG_ESP32_WIFI_TASK_PINNED_TO_CORE_1`. The second core is
+started early in the boot sequence so that it is running before the Wi-Fi
+driver initializes. Bluetooth is not available together with
+:kconfig:option:`CONFIG_SMP`, as the Bluetooth host requires a single CPU.
+
 For more information, check the `ESP32-S3 Datasheet`_ or the `ESP32-S3 Technical Reference Manual`_.
 
 .. _`ESP32-S3 Datasheet`: https://www.espressif.com/sites/default/files/documentation/esp32-s3-wroom-1_wroom-1u_datasheet_en.pdf
