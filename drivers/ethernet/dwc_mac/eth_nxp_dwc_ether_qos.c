@@ -199,12 +199,13 @@ int dwmac_platform_init(const struct device *dev)
 			DMA_SYSBUS_MODE_AAL |
 			DMA_SYSBUS_MODE_FB);
 
-	/*
-	 * Set up IRQs (still masked for now). The MAC raises DMA transfer
-	 * completion on the dedicated tx/rx lines and everything else on the
-	 * common line, so all three share the same handler.
-	 */
+	/* Set up IRQs (still masked for now) */
 #if defined(CONFIG_SOC_SERIES_MCXE31X)
+	/*
+	 * The MAC raises DMA transfer completion on the dedicated tx/rx
+	 * lines and everything else on the common line, so all three share
+	 * the same handler.
+	 */
 	NXP_ETH_IRQ_CONNECT(common);
 	NXP_ETH_IRQ_CONNECT(tx);
 	NXP_ETH_IRQ_CONNECT(rx);
