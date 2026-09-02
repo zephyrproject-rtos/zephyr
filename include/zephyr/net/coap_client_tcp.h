@@ -173,6 +173,8 @@ struct coap_client_tcp_internal_request {
 	bool request_ongoing;
 	atomic_t in_callback;
 	struct coap_block_context recv_blk_ctx;
+	uint8_t recv_etag[COAP_ETAG_MAX_LEN];
+	uint8_t recv_etag_len;
 	struct coap_block_context send_blk_ctx;
 	struct coap_client_tcp_request coap_request;
 	struct coap_packet request;
