@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021, 2025 NXP
+ * Copyright (c) 2021, 2025-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -147,6 +147,34 @@ static int mcux_sctimer_new_channel(const struct device *dev,
 	return 0;
 }
 
+/* Hold a channel's output at its inactive level. */
+static void mcux_sctimer_pwm_force_inactive(const struct device *dev, uint32_t channel)
+{
+	const struct pwm_mcux_sctimer_config *config = dev->config;
+	struct pwm_mcux_sctimer_data *data = dev->data;
+	SCT_Type *base = config->base;
+	bool was_running = (base->CTRL & SCT_CTRL_HALT_L_MASK) == 0U;
+
+	/* SCT OUTPUT is only writable while the counter is halted*/
+	if (was_running) {
+		SCTIMER_StopTimer(base, kSCTIMER_Counter_U);
+	}
+
+	base->OUT[channel].SET = 0U;
+	base->OUT[channel].CLR = 0U;
+
+	/* Set the output to inactive State */
+	if (data->channel[channel].level == kSCTIMER_HighTrue) {
+		base->OUTPUT &= ~(1UL << channel);
+	} else {
+		base->OUTPUT |= (1UL << channel);
+	}
+
+	if (was_running) {
+		SCTIMER_StartTimer(base, kSCTIMER_Counter_U);
+	}
+}
+
 static void mcux_sctimer_pwm_update_polarity(const struct device *dev, uint32_t channel)
 {
 	const struct pwm_mcux_sctimer_config *config = dev->config;
@@ -213,25 +241,6 @@ static int mcux_sctimer_pwm_set_cycles(const struct device *dev,
 	}
 
 	duty_cycle = 100 * pulse_cycles / period_cycles;
-
-	if (duty_cycle == 0 && data->configured_chan == 1) {
-		/* Only one channel is active. We can turn off the SCTimer
-		 * global counter.
-		 */
-		SCT_Type *base = config->base;
-
-		/* Stop timer so we can set output directly */
-		SCTIMER_StopTimer(base, kSCTIMER_Counter_U);
-
-		/* Set the output to inactive State */
-		if (data->channel[channel].level == kSCTIMER_HighTrue) {
-			base->OUTPUT &= ~(1UL << channel);
-		} else {
-			base->OUTPUT |= (1UL << channel);
-		}
-
-		return 0;
-	}
 
 	/* SCTimer has some unique restrictions when operation as a PWM output.
 	 * The peripheral is based around a single counter, with a block of
@@ -301,6 +310,11 @@ static int mcux_sctimer_pwm_set_cycles(const struct device *dev,
 		/* Only duty cycle needs to be updated */
 		SCTIMER_UpdatePwmDutycycle(config->base, channel, duty_cycle,
 					   data->event_number[channel]);
+	}
+
+	if (duty_cycle == 0) {
+		/* Must work on the first call for a channel and while others run */
+		mcux_sctimer_pwm_force_inactive(dev, channel);
 	}
 
 	return 0;
