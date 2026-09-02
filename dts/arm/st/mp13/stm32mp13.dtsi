@@ -12,6 +12,7 @@
 #include <zephyr/dt-bindings/clock/stm32mp13_clock.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/dma/stm32_dma.h>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 #include <zephyr/dt-bindings/reset/stm32mp13_reset.h>
 #include <zephyr/dt-bindings/sensor/qdec_stm32.h>
@@ -61,12 +62,75 @@
 			reg = <0x2ffe0000 DT_SIZE_K(128)>;
 		};
 
+		usart1: serial@4c000000 {
+			compatible = "st,stm32-uart";
+			reg = <0x4c000000 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB6, 0)>;
+			resets = <&rctl STM32_RESET(APB6, 0)>;
+			interrupts = <GIC_SPI 38 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		usart2: serial@4c001000 {
+			compatible = "st,stm32-uart";
+			reg = <0x4c001000 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB6, 1)>;
+			resets = <&rctl STM32_RESET(APB6, 1)>;
+			interrupts = <GIC_SPI 39 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		usart3: serial@4000f000 {
+			compatible = "st,stm32-uart";
+			reg = <0x4000f000 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1, 15)>;
+			resets = <&rctl STM32_RESET(APB1, 15)>;
+			interrupts = <GIC_SPI 40 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
 		uart4: serial@40010000 {
 			compatible = "st,stm32-uart";
 			reg = <0x40010000 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 16)>;
 			resets = <&rctl STM32_RESET(APB1, 16)>;
 			interrupts = <GIC_SPI 53 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		uart5: serial@40011000 {
+			compatible = "st,stm32-uart";
+			reg = <0x40011000 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1, 17)>;
+			resets = <&rctl STM32_RESET(APB1, 17)>;
+			interrupts = <GIC_SPI 54 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		usart6: serial@44003000 {
+			compatible = "st,stm32-uart";
+			reg = <0x44003000 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB2, 13)>;
+			resets = <&rctl STM32_RESET(APB2, 13)>;
+			interrupts = <GIC_SPI 72 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		uart7: serial@40018000 {
+			compatible = "st,stm32-uart";
+			reg = <0x40018000 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1, 18)>;
+			resets = <&rctl STM32_RESET(APB1, 18)>;
+			interrupts = <GIC_SPI 83 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		uart8: serial@40019000 {
+			compatible = "st,stm32-uart";
+			reg = <0x40019000 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1, 19)>;
+			resets = <&rctl STM32_RESET(APB1, 19)>;
+			interrupts = <GIC_SPI 84 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			status = "disabled";
 		};
 
