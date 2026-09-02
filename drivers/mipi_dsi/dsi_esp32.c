@@ -187,7 +187,15 @@ static int mipi_dsi_esp32_attach(const struct device *dev, uint8_t channel,
 
 	mipi_dsi_host_ll_enable_video_mode(hal->host, true);
 
-	mipi_dsi_host_ll_set_clock_lane_state(hal->host, MIPI_DSI_LL_CLOCK_LANE_STATE_AUTO);
+	/* The clock lane runs continuously unless the peripheral supports the
+	 * non-continuous behavior (DSI spec 5.6.1), which lets the host stop it
+	 * whenever the data lanes are in low power.
+	 */
+	bool non_continuous_clk = (mdev->mode_flags & MIPI_DSI_CLOCK_NON_CONTINUOUS) != 0;
+
+	mipi_dsi_host_ll_set_clock_lane_state(hal->host, non_continuous_clk
+							  ? MIPI_DSI_LL_CLOCK_LANE_STATE_AUTO
+							  : MIPI_DSI_LL_CLOCK_LANE_STATE_HS);
 
 	mipi_dsi_brg_ll_enable_dpi_output(hal->bridge, true);
 	mipi_dsi_brg_ll_update_dpi_config(hal->bridge);
