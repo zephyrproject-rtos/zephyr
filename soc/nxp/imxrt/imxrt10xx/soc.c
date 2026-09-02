@@ -17,10 +17,6 @@
 #endif
 #include <zephyr/dt-bindings/clock/imx_ccm.h>
 #include <fsl_iomuxc.h>
-#if CONFIG_USB_DC_NXP_EHCI
-#include <usb_phy.h>
-#include <usb.h>
-#endif
 
 #include <zephyr/drivers/misc/flexram/nxp_flexram.h>
 
@@ -32,19 +28,6 @@
 	BUILD_ASSERT(DT_PROP(DT_CHILD(CCM_NODE, podf), clock_div) >= (a) && \
 		     DT_PROP(DT_CHILD(CCM_NODE, podf), clock_div) <= (b), \
 		     #podf " is out of supported range (" #a ", " #b ")")
-
-#if CONFIG_USB_DC_NXP_EHCI
-/* USB PHY configuration */
-#define BOARD_USB_PHY_D_CAL (0x0CU)
-#define BOARD_USB_PHY_TXCAL45DP (0x06U)
-#define BOARD_USB_PHY_TXCAL45DM (0x06U)
-#endif
-
-#if CONFIG_USB_DC_NXP_EHCI
-	usb_phy_config_struct_t usbPhyConfig = {
-		BOARD_USB_PHY_D_CAL, BOARD_USB_PHY_TXCAL45DP, BOARD_USB_PHY_TXCAL45DM,
-	};
-#endif
 
 #ifdef CONFIG_NXP_IMXRT_BOOT_HEADER
 const __imx_boot_data_section BOOT_DATA_T boot_data = {
@@ -235,27 +218,21 @@ __weak void clock_init(void)
 #endif
 
 #if ((DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb1)) && \
-	(CONFIG_USB_DC_NXP_EHCI || CONFIG_UDC_NXP_EHCI)) ||\
+	(CONFIG_UDC_NXP_EHCI)) ||\
 	(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usbh1)) && (CONFIG_UHC_NXP_EHCI)))
 	CLOCK_EnableUsbhs0PhyPllClock(kCLOCK_Usb480M,
 		DT_PROP_BY_PHANDLE(DT_NODELABEL(usb1), clocks, clock_frequency));
 	CLOCK_EnableUsbhs0Clock(kCLOCK_Usb480M,
 		DT_PROP_BY_PHANDLE(DT_NODELABEL(usb1), clocks, clock_frequency));
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb1)) && CONFIG_USB_DC_NXP_EHCI
-	USB_EhciPhyInit(kUSB_ControllerEhci0, CPU_XTAL_CLK_HZ, &usbPhyConfig);
-#endif
 #endif
 
 #if ((DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb2)) && \
-	(CONFIG_USB_DC_NXP_EHCI || CONFIG_UDC_NXP_EHCI)) ||\
+	(CONFIG_UDC_NXP_EHCI)) ||\
 	(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usbh2)) && (CONFIG_UHC_NXP_EHCI)))
 	CLOCK_EnableUsbhs1PhyPllClock(kCLOCK_Usb480M,
 		DT_PROP_BY_PHANDLE(DT_NODELABEL(usb2), clocks, clock_frequency));
 	CLOCK_EnableUsbhs1Clock(kCLOCK_Usb480M,
 		DT_PROP_BY_PHANDLE(DT_NODELABEL(usb2), clocks, clock_frequency));
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb1)) && CONFIG_USB_DC_NXP_EHCI
-	USB_EhciPhyInit(kUSB_ControllerEhci1, CPU_XTAL_CLK_HZ, &usbPhyConfig);
-#endif
 #endif
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usdhc1)) && CONFIG_IMX_USDHC

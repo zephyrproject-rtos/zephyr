@@ -28,7 +28,7 @@
 #endif
 #else
 #define USB_HOST_CONFIG_EHCI (0U)
-#endif /* CONFIG_USB_DC_NXP_EHCI */
+#endif /* CONFIG_UHC_NXP_EHCI */
 
 #ifdef CONFIG_UHC_NXP_KHCI
 #define USB_HOST_CONFIG_KHCI                  (1U)
