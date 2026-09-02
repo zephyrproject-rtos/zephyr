@@ -68,6 +68,10 @@ phy: Network.EthernetPhysicalLayer @ ethernet 0
     AutoNegotiationExpansion: 0x0064
     AutoNegotiationNextPageTransmit: 0x2001
 
+potentiometer: Analog.Potentiometer @ adcM1S2 2
+    minVolt: 0
+    maxVolt: 3.3
+
 sysbus:
     init:
         Tag <0x58024800 4> "PWR_CR1_DBP_SET" 0x100
