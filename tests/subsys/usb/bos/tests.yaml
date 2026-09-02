@@ -1,6 +1,0 @@
-tests:
-  usb.bos:
-    depends_on: usb_device
-    tags:
-      - usb
-      - bos
