@@ -30,6 +30,7 @@ zephyr_library_sources_ifdef(CONFIG_AUDIO_DMIC_STM32_DFSDM dmic_stm32_dfsdm.c)
 zephyr_library_sources_ifdef(CONFIG_AUDIO_DMIC_STM32_MDF dmic_stm32_mdf.c)
 zephyr_library_sources_ifdef(CONFIG_AUDIO_TAS2563 tas2563.c)
 zephyr_library_sources_ifdef(CONFIG_AUDIO_TAS6422DAC tas6422dac.c)
+zephyr_library_sources_ifdef(CONFIG_AUDIO_TLV320AIC3104 tlv320aic3104.c tlv320aic3104_bus.c tlv320aic3104_clock.c tlv320aic3104_dai.c tlv320aic3104_fault.c tlv320aic3104_in.c tlv320aic3104_out.c)
 zephyr_library_sources_ifdef(CONFIG_AUDIO_TLV320AIC3110 tlv320aic3110.c)
 zephyr_library_sources_ifdef(CONFIG_AUDIO_TLV320DAC tlv320dac310x.c)
 # zephyr-keep-sorted-stop
