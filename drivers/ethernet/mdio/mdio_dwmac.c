@@ -9,12 +9,15 @@
 #include <errno.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/clock_control.h>
-#include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/mdio.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/device_mmio.h>
 #include <zephyr/sys/util.h>
+
+#ifdef CONFIG_PINCTRL
+#include <zephyr/drivers/pinctrl.h>
+#endif
 
 #include "../dwc_mac/eth_dwmac_priv.h"
 
