@@ -164,12 +164,12 @@ static bool entropy_stm32_hsem_is_owned(void)
 #define ASSERT_RNG_HSEM_OWNED() \
 	__ASSERT_NO_MSG(!HAS_MULTICORE_SHARED_RNG || entropy_stm32_hsem_is_owned())
 
-static int entropy_stm32_suspend(void)
+static void entropy_stm32_suspend(void)
 {
 	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
 	const struct entropy_stm32_rng_dev_cfg *dev_cfg = dev->config;
 	RNG_TypeDef *rng = dev_cfg->rng;
-	int res;
+	int res = 0;
 
 	entropy_stm32_hsem_acquire();
 
@@ -205,31 +205,37 @@ static int entropy_stm32_suspend(void)
 		entropy_stm32_hsem_release();
 
 		/* PKA needs RNG clock, so exit here if in use */
-		return 0;
+		return;
 	}
 #endif /* PKA && !CONFIG_SOC_SERIES_STM32WB0X */
 
 #ifdef CONFIG_SOC_SERIES_STM32WBAX
 	uint32_t wait_cycles, rng_rate;
 
-	if (clock_control_get_rate(dev_cfg->clock,
+	res = clock_control_get_rate(dev_cfg->clock,
 			(clock_control_subsys_t) &dev_cfg->pclken[0],
-			&rng_rate) < 0) {
-		return -EIO;
+			&rng_rate);
+	if (res == 0) {
+		wait_cycles = SystemCoreClock / rng_rate * 2;
+
+		for (int i = wait_cycles; i >= 0; i--) {
+		}
 	}
 
-	wait_cycles = SystemCoreClock / rng_rate * 2;
-
-	for (int i = wait_cycles; i >= 0; i--) {
-	}
+	/* STM32WBAX contrainsts prevent to disable the clock unless a few
+	 * cycles were spent hence clock disabling below depends on @c res
+	 * value.
+	 */
 #endif /* CONFIG_SOC_SERIES_STM32WBAX */
 
-	res = clock_control_off(dev_cfg->clock,
-			(clock_control_subsys_t)&dev_cfg->pclken[0]);
+	if (res == 0) {
+		/* Disabling the RNG clock is not expected to fail */
+		res = clock_control_off(dev_cfg->clock,
+					(clock_control_subsys_t)&dev_cfg->pclken[0]);
+		__ASSERT_NO_MSG(res == 0);
+	}
 
 	entropy_stm32_hsem_release();
-
-	return res;
 }
 
 static int entropy_stm32_resume(void)
