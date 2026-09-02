@@ -55,6 +55,19 @@ config LORA_GFSK
 	help
 	  Software support for GFSK modulation in addition to LoRa.
 
+config LORA_HAS_GFSK_MODEM
+	bool
+	help
+	  Selected by a driver that implements lora_config_gfsk(). Says that
+	  the radio can be put on the air with GFSK, where LORA_GFSK only
+	  compiles the call in.
+
+config LORA_HAS_RSSI
+	bool
+	help
+	  Selected by a driver that implements lora_rssi(), and with it the
+	  lora_energy_detect() the common code builds on that read.
+
 config LORA_SHELL
 	bool "LoRa Shell"
 	depends on SHELL
