@@ -1,0 +1,99 @@
+/*
+ * SPDX-FileCopyrightText: Copyright Alif Semiconductor
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * On-board peripherals shared by every ensemble_e8_ak board target. Include
+ * this after the SoC dtsi, the cluster dtsi and the board pinctrl dtsi: every
+ * node referenced below comes from one of those.
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/input/input-event-codes.h>
+
+/ {
+	aliases {
+		led0 = &led_red;
+		led1 = &led_blue;
+		led2 = &led_green;
+		sw0 = &joy_center;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		led_red: led_0 {
+			gpios = <&gpio12 3 GPIO_ACTIVE_HIGH>;
+			label = "LED0_R";
+		};
+
+		led_blue: led_1 {
+			gpios = <&gpio12 0 GPIO_ACTIVE_HIGH>;
+			label = "LED0_B";
+		};
+
+		led_green: led_2 {
+			gpios = <&gpio7 4 GPIO_ACTIVE_HIGH>;
+			label = "LED0_G";
+		};
+	};
+
+	gpio_keys {
+		compatible = "gpio-keys";
+		/*
+		 * The DesignWare GPIO driver does not implement both
+		 * edge triggering, which the interrupt driven mode of
+		 * the GPIO keys driver needs.
+		 */
+		polling-mode;
+
+		joy_left: joy_left {
+			gpios = <&lpgpio 0 GPIO_ACTIVE_LOW>;
+			label = "JOY_SW1";
+			zephyr,code = <INPUT_KEY_LEFT>;
+		};
+
+		joy_up: joy_up {
+			gpios = <&lpgpio 1 GPIO_ACTIVE_LOW>;
+			label = "JOY_SW2";
+			zephyr,code = <INPUT_KEY_UP>;
+		};
+
+		joy_down: joy_down {
+			gpios = <&lpgpio 2 GPIO_ACTIVE_LOW>;
+			label = "JOY_SW3";
+			zephyr,code = <INPUT_KEY_DOWN>;
+		};
+
+		joy_right: joy_right {
+			gpios = <&lpgpio 3 GPIO_ACTIVE_LOW>;
+			label = "JOY_SW4";
+			zephyr,code = <INPUT_KEY_RIGHT>;
+		};
+
+		joy_center: joy_center {
+			gpios = <&lpgpio 4 GPIO_ACTIVE_LOW>;
+			label = "JOY_SW5";
+			zephyr,code = <INPUT_KEY_ENTER>;
+		};
+	};
+};
+
+&gpio7 {
+	status = "okay";
+	pinctrl-0 = <&pinctrl_gpio7>;
+	pinctrl-names = "default";
+};
+
+&gpio12 {
+	status = "okay";
+	pinctrl-0 = <&pinctrl_gpio12>;
+	pinctrl-names = "default";
+};
+
+&lpgpio {
+	status = "okay";
+	pinctrl-0 = <&pinctrl_lpgpio>;
+	pinctrl-names = "default";
+};

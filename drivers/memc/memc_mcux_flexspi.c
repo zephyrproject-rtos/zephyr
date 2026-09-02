@@ -493,6 +493,41 @@ FSL_FEATURE_FLEXSPI_SUPPORT_SEPERATE_RXCLKSRC_PORTB
 }
 
 #ifdef CONFIG_PM_DEVICE
+/*
+ * Reset the LUT bookkeeping for one port after a power-domain power-down
+ * so the following memc_flexspi_set_device_config()/probe re-allocates the
+ * port's LUT slot from the correct offset.
+ *
+ * Only the caller's port is cleared: each child device in the domain
+ * re-probes its own port on TURN_ON, and the allocator places it after the
+ * ports that already re-allocated.
+ */
+void memc_flexspi_reset_lut_alloc(const struct device *dev, flexspi_port_t port)
+{
+	struct memc_flexspi_data *data = dev->data;
+	FLEXSPI_Type *base = get_base(dev);
+	uint32_t timeout = CONFIG_MEMC_MCUX_FLEXSPI_WAIT_BUS_IDLE_TIMEOUT;
+
+	if (port >= kFLEXSPI_PortCount) {
+		return;
+	}
+
+	/*
+	 * Wait for the bus to go idle before touching the LUT bookkeeping.
+	 * Bounded (CONFIG_MEMC_MCUX_FLEXSPI_WAIT_BUS_IDLE_TIMEOUT polls) so
+	 * a wedged controller cannot hang the PM wake path forever; if the
+	 * bus never idles, the following probe reports it.
+	 */
+	while (!FLEXSPI_GetBusIdleStatus(base) && (timeout-- > 0U)) {
+	}
+
+	data->port_luts[port].lut_offset = 0;
+	data->port_luts[port].lut_used = 0;
+	data->size[port] = 0;
+}
+#endif /* CONFIG_PM_DEVICE */
+
+#ifdef CONFIG_PM_DEVICE
 static int memc_flexspi_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	struct memc_flexspi_data *data = dev->data;

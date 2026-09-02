@@ -1,0 +1,6 @@
+shields:
+  - name: nxp_m2_2el_2ll_ieee802154
+    full_name: NXP M.2 IW612 IW610 IEEE 802.15.4 SPI RCP Shield
+    vendor: nxp
+    supported_features:
+      - ieee802154

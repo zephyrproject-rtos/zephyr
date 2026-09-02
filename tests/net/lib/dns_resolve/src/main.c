@@ -168,6 +168,12 @@ static inline int get_slot_by_id(struct dns_resolve_context *ctx,
 	return -1;
 }
 
+/* The source port the last two queries left from, so that a test can see
+ * whether it moves. RFC 5452 9.2 asks that it does.
+ */
+static uint16_t query_src_port;
+static uint16_t last_query_src_port;
+
 static bool is_dns_query_packet(struct net_pkt *pkt)
 {
 	struct net_udp_hdr *udp;
@@ -208,6 +214,18 @@ static int sender_iface(const struct device *dev, struct net_pkt *pkt)
 	}
 
 	send_count++;
+
+	if (IS_ENABLED(CONFIG_DNS_RESOLVER_RANDOMIZE_SOURCE_PORT)) {
+		struct net_udp_hdr *udp = net_udp_get_hdr(pkt, NULL);
+
+		/* Only ordinary queries. Multicast DNS and LLMNR are spoken
+		 * from a fixed port on purpose, so theirs does not move.
+		 */
+		if (udp != NULL && net_ntohs(udp->dst_port) == 53U) {
+			last_query_src_port = query_src_port;
+			query_src_port = net_ntohs(udp->src_port);
+		}
+	}
 
 	if (!timeout_query) {
 		struct net_if_test *data = dev->data;
@@ -495,13 +513,13 @@ ZTEST(dns_resolve, test_dns_query_ipv4_server_count)
 			continue;
 		}
 
-		if (ctx->servers[i].dns_server.sa_family == NET_AF_INET6) {
+		if (ctx->servers[i].dns_server_addr.ss_family == NET_AF_INET6) {
 			continue;
 		}
 
 		count++;
 
-		if (net_sin(&ctx->servers[i].dns_server)->sin_port ==
+		if (net_sin(net_sad(&ctx->servers[i].dns_server_addr))->sin_port ==
 		    net_ntohs(53)) {
 			port++;
 		}
@@ -525,13 +543,13 @@ ZTEST(dns_resolve, test_dns_query_ipv6_server_count)
 			continue;
 		}
 
-		if (ctx->servers[i].dns_server.sa_family == NET_AF_INET) {
+		if (ctx->servers[i].dns_server_addr.ss_family == NET_AF_INET) {
 			continue;
 		}
 
 		count++;
 
-		if (net_sin6(&ctx->servers[i].dns_server)->sin6_port ==
+		if (net_sin6(net_sad(&ctx->servers[i].dns_server_addr))->sin6_port ==
 		    net_ntohs(53)) {
 			port++;
 		}
@@ -773,8 +791,8 @@ static void inject_empty_dns_response(struct dns_resolve_context *ctx,
 	ret = ctx->servers[server_idx].dispatcher.cb(
 		&ctx->servers[server_idx].dispatcher,
 		ctx->servers[server_idx].sock,
-		&ctx->servers[server_idx].dns_server,
-		dns_server_addr_len(&ctx->servers[server_idx].dns_server),
+		net_sad(&ctx->servers[server_idx].dns_server_addr),
+		dns_server_addr_len(net_sad(&ctx->servers[server_idx].dns_server_addr)),
 		dns_data, len);
 	zassert_equal(ret, 0, "Cannot inject DNS response");
 
@@ -812,8 +830,8 @@ static void inject_refused_dns_response(struct dns_resolve_context *ctx,
 	ret = ctx->servers[server_idx].dispatcher.cb(
 		&ctx->servers[server_idx].dispatcher,
 		ctx->servers[server_idx].sock,
-		&ctx->servers[server_idx].dns_server,
-		dns_server_addr_len(&ctx->servers[server_idx].dns_server),
+		net_sad(&ctx->servers[server_idx].dns_server_addr),
+		dns_server_addr_len(net_sad(&ctx->servers[server_idx].dns_server_addr)),
 		dns_data, len);
 	zassert_true(ret == 0 || ret == DNS_EAI_FAIL,
 		     "Unexpected REFUSED response status %d", ret);
@@ -877,8 +895,8 @@ static void inject_success_dns_response(struct dns_resolve_context *ctx,
 	ret = ctx->servers[server_idx].dispatcher.cb(
 		&ctx->servers[server_idx].dispatcher,
 		ctx->servers[server_idx].sock,
-		&ctx->servers[server_idx].dns_server,
-		dns_server_addr_len(&ctx->servers[server_idx].dns_server),
+		net_sad(&ctx->servers[server_idx].dns_server_addr),
+		dns_server_addr_len(net_sad(&ctx->servers[server_idx].dns_server_addr)),
 		dns_data, len);
 	zassert_equal(ret, 0, "Cannot inject DNS response");
 
@@ -992,6 +1010,50 @@ ZTEST(dns_resolve, test_dns_query_ipv4)
 	if (k_sem_take(&wait_data2, WAIT_TIME)) {
 		zassert_true(false, "Timeout while waiting data");
 	}
+}
+
+/* RFC 5452 9.2: an off path attacker forging an answer has to guess the
+ * identifier and the source port together. A port that never moves is learned
+ * from any single query, leaving only the identifier to guess.
+ */
+ZTEST(dns_resolve, test_dns_query_source_port_varies)
+{
+	struct observed_status observed;
+	int ret;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_DNS_RESOLVER_RANDOMIZE_SOURCE_PORT);
+
+	timeout_query = false;
+	query_src_port = 0U;
+	last_query_src_port = 0U;
+
+	/* The port is only renewed for a server with nothing outstanding, so
+	 * each lookup has to be seen through to the end before the next.
+	 */
+	for (int i = 0; i < 2; i++) {
+		observed = (struct observed_status){ 0 };
+
+		ret = dns_get_addr_info(NAME4, DNS_QUERY_TYPE_A, &current_dns_id,
+					dns_result_record_cb, &observed, DNS_TIMEOUT);
+		zassert_equal(ret, 0, "Cannot create IPv4 query");
+
+		k_msleep(THREAD_SLEEP);
+
+		while (observed.status != DNS_EAI_ALLDONE) {
+			if (k_sem_take(&wait_data2, WAIT_TIME)) {
+				zassert_true(false, "Timeout while waiting data");
+			}
+		}
+
+		if (i == 0) {
+			zassert_not_equal(query_src_port, 0U, "No query was seen");
+		}
+	}
+
+	zassert_not_equal(query_src_port, last_query_src_port,
+			  "Both queries left from port %u; an observer learns it "
+			  "from the first and need only guess the identifier",
+			  query_src_port);
 }
 
 ZTEST(dns_resolve, test_dns_query_ipv4_timeout_fallback)
@@ -1351,7 +1413,7 @@ void dns_result_numeric_cb(enum dns_resolve_status status,
 
 	if (info && info->ai_family == NET_AF_INET) {
 #if defined(CONFIG_NET_IPV4)
-		if (net_ipv4_addr_cmp(&net_sin(&info->ai_addr)->sin_addr,
+		if (net_ipv4_addr_cmp(&net_sin(net_sad(&info->ai_addr_storage))->sin_addr,
 				      &my_addr2) != true) {
 			zassert_true(false, "IPv4 address does not match");
 		}
@@ -1360,7 +1422,7 @@ void dns_result_numeric_cb(enum dns_resolve_status status,
 
 	if (info && info->ai_family == NET_AF_INET6) {
 #if defined(CONFIG_NET_IPV6)
-		if (net_ipv6_addr_cmp(&net_sin6(&info->ai_addr)->sin6_addr,
+		if (net_ipv6_addr_cmp(&net_sin6(net_sad(&info->ai_addr_storage))->sin6_addr,
 				      &my_addr3) != true) {
 			zassert_true(false, "IPv6 address does not match");
 		}

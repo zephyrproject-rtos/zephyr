@@ -83,6 +83,27 @@ void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf)
 #define HALF_BYTES	(HALF_PAGES * CONFIG_MMU_PAGE_SIZE)
 static const char *nums = "0123456789";
 
+/**
+ * @brief Verify that more anonymous memory than free RAM can be mapped.
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @details
+ * Demand paging is what lets a mapping exceed physical memory: the arena
+ * requested here is deliberately larger than the free RAM by half the backing
+ * store, so it can only be satisfied if the kernel is prepared to page. The
+ * arena created here is the fixture every later case in the suite works on.
+ *
+ * Test steps:
+ * - Query the free memory and request an arena that much plus half the
+ *   spare backing-store capacity.
+ * - Map it with k_mem_map().
+ *
+ * Expected result:
+ * - The over-committed mapping succeeds and returns a usable arena.
+ *
+ * @see k_mem_map()
+ */
 ZTEST(demand_paging, test_map_anon_pages)
 {
 	arena_size = k_mem_free_get() + HALF_BYTES;
@@ -200,21 +221,108 @@ static void touch_anon_pages(bool zig, bool zag)
 	}
 }
 
+/**
+ * @brief Verify that touching the whole arena pages in, evicts and preserves
+ *        data.
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @details
+ * Walking an arena larger than RAM forces the full demand paging cycle:
+ * never-touched pages arrive zeroed, writes fault pages in and push dirty
+ * pages out to the backing store, and everything written must read back
+ * intact after having been evicted and restored. The page fault counter and
+ * the paging statistics -- global and per thread -- confirm the machinery
+ * actually ran instead of the arena silently fitting in RAM.
+ *
+ * Test steps:
+ * - Read the whole arena and check every byte is zero.
+ * - Write each location's own address into it, then read it all back.
+ * - Check the fault count is non-zero and dirty evictions occurred.
+ * - Read the (now unmodified) arena again and check clean evictions occurred.
+ * - Check the same counters in the current thread's statistics.
+ *
+ * Expected result:
+ * - All data survives eviction and page-in, and the fault and eviction
+ *   statistics show the paging happened.
+ *
+ * @see k_mem_paging_stats_get()
+ * @see k_mem_paging_thread_stats_get()
+ * @see k_mem_num_pagefaults_get()
+ */
 ZTEST(demand_paging, test_touch_anon_pages)
 {
 	touch_anon_pages(false, false);
 }
 
+/**
+ * @brief Verify demand paging with reads and writes in opposing directions.
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @details
+ * The same full-arena walk as the linear case, but reading the arena
+ * backwards while writing it forwards. Traversal direction changes which
+ * pages are resident when each access lands, so an eviction policy that only
+ * survives sequential access is caught here.
+ *
+ * Test steps:
+ * - Run the arena walk with reads descending and writes ascending.
+ *
+ * Expected result:
+ * - Identical to the linear case: data survives and the paging statistics
+ *   show faults and evictions.
+ *
+ * @see k_mem_paging_stats_get()
+ */
 ZTEST(demand_paging, test_touch_anon_pages_zigzag1)
 {
 	touch_anon_pages(true, false);
 }
 
+/**
+ * @brief Verify demand paging with the opposite zig-zag pattern.
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @details
+ * The mirror of the first zig-zag case: reads ascend while writes descend,
+ * covering the remaining combination of traversal directions.
+ *
+ * Test steps:
+ * - Run the arena walk with reads ascending and writes descending.
+ *
+ * Expected result:
+ * - Identical to the linear case: data survives and the paging statistics
+ *   show faults and evictions.
+ *
+ * @see k_mem_paging_stats_get()
+ */
 ZTEST(demand_paging, test_touch_anon_pages_zigzag2)
 {
 	touch_anon_pages(false, true);
 }
 
+/**
+ * @brief Verify that unmapping a demand-paged region revokes access.
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @details
+ * k_mem_unmap() on a demand-paged arena has to tear down the whole region,
+ * including pages currently paged out, so any later access faults rather than
+ * resurrecting stale data. The suite's fatal error handler converts the
+ * expected fault into a pass.
+ *
+ * Test steps:
+ * - Unmap the arena with k_mem_unmap().
+ * - Write to the first byte of the former arena.
+ *
+ * Expected result:
+ * - The access faults; the code after it is never reached.
+ *
+ * @see k_mem_unmap()
+ */
 ZTEST(demand_paging, test_unmap_anon_pages)
 {
 	 k_mem_unmap(arena, arena_size);
@@ -259,6 +367,28 @@ static void test_k_mem_page_out(void)
 
 }
 
+/**
+ * @brief Verify that k_mem_page_in() makes a region resident.
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @details
+ * Preemptively paging a region in must leave every page resident, so
+ * touching it afterwards causes no faults at all -- that absence, measured
+ * with interrupts locked so nothing else can fault in between, is the
+ * observable effect of the call.
+ *
+ * Test steps:
+ * - Page half the arena out with k_mem_page_out().
+ * - Page the same range back in with k_mem_page_in().
+ * - With interrupts locked, write the whole range and count the faults.
+ *
+ * Expected result:
+ * - Zero page faults are taken while writing the paged-in range.
+ *
+ * @see k_mem_page_in()
+ * @see k_mem_page_out()
+ */
 ZTEST(demand_paging_api, test_k_mem_page_in)
 {
 	unsigned long faults;
@@ -286,6 +416,28 @@ ZTEST(demand_paging_api, test_k_mem_page_in)
 		      faults);
 }
 
+/**
+ * @brief Verify that k_mem_pin() keeps a region resident under pressure.
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @details
+ * A pinned region must stay resident no matter how much paging traffic the
+ * rest of the arena generates. The rest of the arena, which is larger than
+ * RAM, is written first to force evictions; the pinned range must then be
+ * writable without a single fault.
+ *
+ * Test steps:
+ * - Pin half the arena with k_mem_pin().
+ * - Write the rest of the over-committed arena to force eviction pressure.
+ * - With interrupts locked, write the pinned range and count the faults.
+ * - Unpin the range.
+ *
+ * Expected result:
+ * - Zero page faults are taken in the pinned range despite the pressure.
+ *
+ * @see k_mem_pin()
+ */
 ZTEST(demand_paging_api, test_k_mem_pin)
 {
 	unsigned long faults;
@@ -314,6 +466,30 @@ ZTEST(demand_paging_api, test_k_mem_pin)
 	k_mem_unpin(arena, HALF_BYTES);
 }
 
+/**
+ * @brief Verify that k_mem_unpin() makes a region evictable again.
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @details
+ * Unpinning must fully undo the pin: the region becomes an ordinary evictable
+ * range again. That is shown by re-running the page-out scenario on it --
+ * evicting the range succeeds, writing it back faults once per page, and
+ * paging out more than the backing store can hold still fails with -ENOMEM.
+ *
+ * Test steps:
+ * - Pin and then unpin half the arena.
+ * - Page the range out and check it succeeds.
+ * - With interrupts locked, write the range and count one fault per page.
+ * - Attempt to page out the whole over-committed arena.
+ *
+ * Expected result:
+ * - The unpinned range pages out and faults back in normally, and the
+ *   oversized page-out fails with -ENOMEM.
+ *
+ * @see k_mem_unpin()
+ * @see k_mem_page_out()
+ */
 ZTEST(demand_paging_api, test_k_mem_unpin)
 {
 	/* Pin the memory (which we know works from prior test) */
@@ -326,9 +502,31 @@ ZTEST(demand_paging_api, test_k_mem_unpin)
 	test_k_mem_page_out();
 }
 
-/* Show that even if we map enough anonymous memory to fill the backing
- * store, we can still handle pagefaults.
- * This eats up memory so should be last in the suite.
+/**
+ * @brief Verify that paging still works with the backing store nearly full.
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @details
+ * Filling almost the entire backing store must not wedge the paging
+ * machinery: page faults have to keep being served even when eviction has
+ * nowhere spare to go. Without CONFIG_DEMAND_MAPPING a further mapping must
+ * be refused outright; with it, the mapping succeeds because pages are only
+ * committed when touched. This case consumes the remaining memory, so it
+ * runs in the suite that executes last.
+ *
+ * Test steps:
+ * - Map enough anonymous memory to fill the backing store except one page.
+ * - Attempt one more page mapping and check the configuration-dependent
+ *   outcome.
+ * - With interrupts locked, write both the old arena and the new mapping and
+ *   count the faults.
+ *
+ * Expected result:
+ * - The writes complete with page faults still being handled at capacity.
+ *
+ * @see k_mem_map()
+ * @see k_mem_num_pagefaults_get()
  */
 ZTEST(demand_paging_stat, test_backing_store_capacity)
 {
@@ -367,7 +565,31 @@ ZTEST(demand_paging_stat, test_backing_store_capacity)
 	zassert_not_equal(faults, 0, "should have had some pagefaults");
 }
 
-/* Test if we can get paging statistics under usermode */
+/**
+ * @brief Verify that paging statistics are readable from user mode.
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @details
+ * The statistics queries are system calls, so a user thread must be able to
+ * read both the global and its own per-thread paging counters, and the values
+ * seen through the syscall path must reflect the paging activity earlier
+ * cases generated rather than coming back empty.
+ *
+ * Test steps:
+ * - From a user thread, read the global statistics with
+ *   k_mem_paging_stats_get().
+ * - Read the calling thread's statistics with
+ *   k_mem_paging_thread_stats_get().
+ * - Check the fault and eviction counters in both are non-zero.
+ *
+ * Expected result:
+ * - Both queries succeed from user mode and report the paging activity that
+ *   already took place.
+ *
+ * @see k_mem_paging_stats_get()
+ * @see k_mem_paging_thread_stats_get()
+ */
 ZTEST_USER(demand_paging_stat, test_user_get_stats)
 {
 	struct k_mem_paging_stats_t stats;
@@ -425,7 +647,28 @@ static bool print_histogram(struct k_mem_paging_histogram_t *hist)
 	return has_non_zero;
 }
 
-/* Test if we can get paging timing histograms */
+/**
+ * @brief Verify that paging timing histograms are readable from user mode.
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @details
+ * With CONFIG_DEMAND_PAGING_TIMING_HISTOGRAM the kernel bins the time spent
+ * evicting, paging in and paging out. Each histogram query is a system call,
+ * and after the paging traffic of the earlier cases every histogram must
+ * contain samples.
+ *
+ * Test steps:
+ * - From a user thread, read the eviction, page-in and page-out histograms.
+ * - Check each histogram has at least one non-zero bin.
+ *
+ * Expected result:
+ * - All three histograms are readable from user mode and carry samples.
+ *
+ * @see k_mem_paging_histogram_eviction_get()
+ * @see k_mem_paging_histogram_backing_store_page_in_get()
+ * @see k_mem_paging_histogram_backing_store_page_out_get()
+ */
 ZTEST_USER(demand_paging_stat, test_user_get_hist)
 {
 	struct k_mem_paging_histogram_t hist;

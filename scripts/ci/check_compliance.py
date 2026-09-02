@@ -61,6 +61,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 import list_boards
 import list_hardware
 from get_maintainer import Maintainers, MaintainersError
+from list_undocumented_licenses import undocumented
 
 sys.path.insert(
     0, str(Path(__file__).resolve().parents[2] / "scripts" / "dts" / "python-devicetree" / "src")
@@ -510,10 +511,11 @@ class StyleCheckMixin:
                     changed.update((hunk.target_start, hunk.target_start + 1))
         return changed
 
-    def _check_files(self, tool, file_filter):
+    def _check_files(self, tool, file_filter, extra_args=()):
         # Run 'tool' on each added/modified file matching 'file_filter' and
         # report issues on changed lines only. 'tool' is a Path; file_filter is a
-        # predicate on the file path string.
+        # predicate on the file path string; 'extra_args' are passed to the tool
+        # before the file argument.
         for file in get_files(filter="d"):
             if not file_filter(file):
                 continue
@@ -523,7 +525,7 @@ class StyleCheckMixin:
                 continue
 
             result = subprocess.run(
-                [sys.executable, str(tool), file],
+                [sys.executable, str(tool), *extra_args, file],
                 cwd=GIT_TOP,
                 capture_output=True,
                 text=True,
@@ -830,6 +832,11 @@ class KconfigCheck(ComplianceTest):
     # Kconfig symbol prefix/namespace.
     CONFIG_ = "CONFIG_"
 
+    # Additional guidance appended to the "Undefined Kconfig symbols" failure
+    # message. Subclasses can override this to describe probable causes
+    # specific to the Kconfig tree being checked.
+    UNDEF_SYMBOL_HINT = ""
+
     def run(self):
         kconf = self.parse_kconfig()
 
@@ -964,10 +971,16 @@ class KconfigCheck(ComplianceTest):
                     ).upper()
                     fp.write('config  ' + board_str + '\n')
                     fp.write('\t bool\n')
-                for board_dir in board.directories:
-                    fp.write(
-                        'source "' + (board_dir / ('Kconfig.' + board.name)).as_posix() + '"\n'
-                    )
+                fp.write(
+                    'source "'
+                    + (board.directories[0] / ('Kconfig.' + board.name)).as_posix()
+                    + '"\n'
+                )
+                if len(board.directories) > 1:
+                    for board_dir in board.directories[1:]:
+                        fp.write(
+                            'osource "' + (board_dir / ('Kconfig.' + board.name)).as_posix() + '"\n'
+                        )
 
         with open(kconfig_file, 'w') as fp:
             for board in v2_boards:
@@ -1506,7 +1519,10 @@ https://docs.zephyrproject.org/latest/build/kconfig/tips.html#menuconfig-symbols
         )
 
         if undef_ref_warnings:
-            self.failure(f"Undefined Kconfig symbols:\n\n {undef_ref_warnings}")
+            msg = f"Undefined Kconfig symbols:\n\n {undef_ref_warnings}"
+            if self.UNDEF_SYMBOL_HINT:
+                msg += f"\n\n{self.UNDEF_SYMBOL_HINT}"
+            self.failure(msg)
 
     def check_soc_name_sync(self, kconf):
         root_args = argparse.Namespace(**{'soc_roots': [ZEPHYR_BASE]})
@@ -1712,10 +1728,23 @@ class KconfigHWMv2Check(KconfigBasicCheck):
     """
 
     name = "KconfigHWMv2"
+    doc = zephyr_doc_detail_builder("/hardware/porting/board_porting.html#write-kconfig-files")
 
     # Use dedicated Kconfig board / soc v2 scheme file.
     # This file sources only v2 scheme tree.
     FILENAME = os.path.join(os.path.dirname(__file__), "Kconfig.board.v2")
+
+    UNDEF_SYMBOL_HINT = """\
+This check loads only the board and SoC Kconfig trees (Kconfig.<board> and
+Kconfig.soc files) without the rest of the Zephyr Kconfig tree, because those
+files must be loadable standalone; for example, sysbuild also loads them.
+
+Probable causes of the undefined symbol warnings above:
+- A Kconfig.<board> or Kconfig.soc file references a symbol defined outside
+  the board and SoC Kconfig trees, for example a driver or subsystem symbol.
+  Move the reference to the Kconfig or Kconfig.defconfig file of the board or
+  SoC instead, as those files are only loaded in the full Zephyr Kconfig tree.
+- The symbol name is misspelled, or the file defining it is not sourced."""
 
 
 class SysbuildKconfigCheck(KconfigCheck):
@@ -1966,6 +1995,39 @@ class LicenseAndCopyrightCheck(ComplianceTest):
                 ),
             )
 
+        self._check_documented_exceptions(project, changed_files)
+
+    def _check_documented_exceptions(self, project: Project, changed_files: Iterable) -> None:
+        """Flag non-Apache-2.0 files that are not documented as an exception.
+
+        Zephyr is Apache-2.0 as a whole; per the project charter CC-BY-4.0 is
+        allowed for documentation only. Any other license, or CC-BY-4.0 on a
+        non-documentation file, must be listed on the
+        :ref:`licensing page <zephyr_licensing>`. That page is generated from
+        the ``[[annotations]]`` blocks in ``REUSE.toml`` that carry a
+        ``Zephyr-Description`` key, so such a file is considered documented if and
+        only if it is matched by one of those blocks. The detection itself lives
+        in ``scripts/list_undocumented_licenses.py`` and is shared with that
+        tool and the docs licensing page.
+        """
+        for file, licenses in undocumented(project, changed_files):
+            self.fmtd_failure(
+                "error",
+                "Undocumented license",
+                file,
+                line=1,
+                desc=(
+                    f"File is licensed as {', '.join(sorted(licenses))}, which is not "
+                    "Apache-2.0. Importing code under another license has prerequisites; make "
+                    "sure the steps in "
+                    "https://docs.zephyrproject.org/latest/contribute/guidelines.html"
+                    "#components-using-other-licenses have been followed. Then document the "
+                    "component as an [[annotations]] entry with a 'Zephyr-Description' key in "
+                    "REUSE.toml, so it is listed on the licensing page "
+                    "(https://docs.zephyrproject.org/latest/LICENSING.html)."
+                ),
+            )
+
 
 class GitLint(ComplianceTest):
     """
@@ -2090,6 +2152,10 @@ class CMakeStyle(StyleCheckMixin, ComplianceTest):
     Checks the CMake style of added/modified files against the Zephyr CMake style
     guidelines, using scripts/cmake/cmake_style.py. Only issues on lines touched
     by the change are reported, so pre-existing style is not flagged.
+
+    Downstream projects can extend the mixed-case command allow-list by pointing
+    the CMAKE_STYLE_MIXED_CASE_FILE environment variable at an extra allow-list
+    file (same format as scripts/cmake/cmake_style_mixed_case.txt).
     """
 
     name = "CMakeStyle"
@@ -2104,9 +2170,16 @@ class CMakeStyle(StyleCheckMixin, ComplianceTest):
                 "'pip install tree-sitter tree-sitter-cmake'"
             )
 
+        # Load extensions to the mixed-case command allow-list
+        extra_args = []
+        if path := os.environ.get("CMAKE_STYLE_MIXED_CASE_FILE", None):
+            logging.info(f"Loading extra mixed-case commands from {path}")
+            extra_args += ["--mixed-case-file", path]
+
         self._check_files(
             ZEPHYR_BASE / "scripts" / "cmake" / "cmake_style.py",
             lambda file: file.endswith(".cmake") or Path(file).name == "CMakeLists.txt",
+            extra_args=extra_args,
         )
 
 
@@ -3037,6 +3110,8 @@ def _run_tests_parallel(testcases, jobs, loglevel):
     # 'jobs' is 0). Returns the same tuples as _run_tests_sequential().
     jobs = jobs or os.cpu_count() or 1
     jobs = min(jobs, len(testcases)) or 1
+    if jobs == 1:
+        return _run_tests_sequential(testcases)
 
     # Start the slowest checks first so that they are not left running alone at
     # the end. The Kconfig-based checks each parse a full Kconfig tree.
@@ -3158,16 +3233,16 @@ def parse_args(argv):
         nargs='?',
         type=int,
         const=0,
-        default=None,
+        default=0,
         metavar='N',
         help='''Run the checks in parallel, using N worker processes (one per
-                CPU if N is 0 or omitted). The default is to run the checks
-                sequentially.''',
+                CPU if N is 0 or omitted, which is the default). Pass 1 to run
+                the checks sequentially.''',
     )
 
     args = parser.parse_args(argv)
 
-    if args.parallel is not None and args.parallel < 0:
+    if args.parallel < 0:
         parser.error("argument -p/--parallel: N must be >= 0")
 
     return args
@@ -3231,10 +3306,10 @@ def _main(args):
 
         testcases.append(testcase)
 
-    if args.parallel is not None:
-        results = _run_tests_parallel(testcases, args.parallel, args.loglevel)
-    else:
+    if args.parallel == 1:
         results = _run_tests_sequential(testcases)
+    else:
+        results = _run_tests_parallel(testcases, args.parallel, args.loglevel)
 
     for testcase, case, fmtd_failures in results:
         # Annotate if required

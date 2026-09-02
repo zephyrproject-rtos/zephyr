@@ -50,7 +50,7 @@
 extern "C" {
 #endif
 
-int fnmatch(const char *, const char *, int);
+int fnmatch(const char *pattern, const char *string, int flags);
 
 #ifdef __cplusplus
 }

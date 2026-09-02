@@ -4,6 +4,7 @@
 config SMBUS_ITE_IT51XXX
 	bool "ITE SMBus driver"
 	default y
+	select CRC
 	depends on DT_HAS_ITE_IT51XXX_SMBUS_ENABLED
 	help
 	  Enable ITE SMBus driver.

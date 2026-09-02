@@ -184,6 +184,8 @@
 		spi-max-frequency = <DT_FREQ_M(1)>;
 		spi-cpha;
 		spi-hold-cs;
+		reset-event;
+		req-ll-only;
 		reset-assert-duration-ms = <6>;
 	};
 };

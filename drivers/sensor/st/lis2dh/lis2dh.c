@@ -607,7 +607,7 @@ static int lis2dh_init(const struct device *dev)
 		.bus_init = lis2dh_spi_init,				\
 		.bus_cfg = { .spi = SPI_DT_SPEC_INST_GET(inst,		\
 					SPI_WORD_SET(8) |		\
-					SPI_OP_MODE_MASTER |		\
+					SPI_OP_MODE_CONTROLLER |	\
 					SPI_MODE_CPOL |			\
 					SPI_MODE_CPHA)},		\
 		.hw = { .is_lsm303agr_dev = IS_LSM303AGR_DEV(inst),	\

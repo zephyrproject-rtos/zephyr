@@ -19,7 +19,7 @@ config NRF_GRTC_START_SYSCOUNTER
 config CACHE_NRF_CACHE
 	default y if EXTERNAL_CACHE
 
-config CACHE_MANAGEMENT
+configdefault CACHE_MANAGEMENT
 	default y
 
 choice CACHE_TYPE

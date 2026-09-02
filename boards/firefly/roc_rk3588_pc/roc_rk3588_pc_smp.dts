@@ -4,3 +4,19 @@
  */
 
 #include "roc_rk3588_pc.dts"
+
+&a76_cpu0 {
+	status = "disabled";
+};
+
+&a76_cpu1 {
+	status = "disabled";
+};
+
+&a76_cpu2 {
+	status = "disabled";
+};
+
+&a76_cpu3 {
+	status = "disabled";
+};

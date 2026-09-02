@@ -525,7 +525,7 @@ static int rtc_stm32_get_value_64(const struct device *dev, uint64_t *ticks)
 #ifdef CONFIG_COUNTER_RTC_STM32_SUBSECONDS
 static void rtc_stm32_set_int_pending(void)
 {
-	NVIC_SetPendingIRQ(DT_INST_IRQN(0));
+	k_irq_set_pending(DT_INST_IRQN(0));
 }
 #endif /* CONFIG_COUNTER_RTC_STM32_SUBSECONDS */
 

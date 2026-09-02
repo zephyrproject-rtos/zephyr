@@ -58,9 +58,9 @@
 					#address-cells = <1>;
 					#size-cells = <1>;
 
-					slot_partition0: partition@0 {
+					partition@0 {
 						label = "nor";
-						reg = <0x00000000 DT_SIZE_M(8)>;
+						reg = <0x00000000 DT_SIZE_M(4)>;
 					};
 				};
 			};

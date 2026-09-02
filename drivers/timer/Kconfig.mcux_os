@@ -10,6 +10,7 @@ config MCUX_OS_TIMER
 	select TICKLESS_CAPABLE
 	select TIMER_HAS_64BIT_CYCLE_COUNTER
 	select RESET
+	select SYSTEM_TIMER_HAS_LPM_COMPANION_SUPPORT
 	help
 	  This module implements a kernel device driver for the NXP OS
 	  event timer and provides the standard "system clock driver" interfaces.

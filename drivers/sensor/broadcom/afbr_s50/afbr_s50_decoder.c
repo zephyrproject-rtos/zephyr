@@ -111,6 +111,7 @@ static int afbr_s50_decoder_decode(const uint8_t *buffer,
 
 		/* Result comes encoded in Q9.22 format */
 		out->shift = 9;
+		out->readings[0].timestamp_delta = 0;
 		out->readings[0].value = edata->payload.Bin.Range;
 
 		*fit = 1;

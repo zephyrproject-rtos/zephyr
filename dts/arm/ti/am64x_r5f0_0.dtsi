@@ -6,6 +6,12 @@
 
 #include <ti/am64x_r5.dtsi>
 
+/ {
+	chosen {
+		zephyr,system-timer = &main_timer8;
+	};
+};
+
 &main_mbox2 {
 	usr-id = <0>;
 	status = "okay";
@@ -26,4 +32,8 @@
 	interrupts = <0 64 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
 		     <0 65 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>;
 	interrupt-parent = <&vim>;
+};
+
+&main_timer8 {
+	status = "okay";
 };

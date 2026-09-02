@@ -83,6 +83,7 @@ enum net_mgmt_layer_code {
 	NET_MGMT_LAYER_CODE_PPP        = 0x0B, /**< PPP layer code */
 	NET_MGMT_LAYER_CODE_VIRTUAL    = 0x0C, /**< Virtual network interface layer code */
 	NET_MGMT_LAYER_CODE_WIFI       = 0x0D, /**< Wi-Fi layer code */
+	NET_MGMT_LAYER_CODE_PACKET     = 0x0E, /**< Packet (L2) layer code */
 
 	/* Out of tree code can use the following userX layer codes */
 	NET_MGMT_LAYER_CODE_USER3      = 0x7C, /**< User layer code 3 */
@@ -292,6 +293,7 @@ void net_mgmt_del_event_callback(struct net_mgmt_event_callback *cb);
 #define net_mgmt_del_event_callback(...)
 #endif
 
+#if defined(CONFIG_NET_MGMT_EVENT) || defined(__DOXYGEN__)
 /**
  * @brief Used by the system to notify an event.
  * @param mgmt_event The actual network event code to notify
@@ -305,27 +307,38 @@ void net_mgmt_del_event_callback(struct net_mgmt_event_callback *cb);
  * Note: info and length are disabled if CONFIG_NET_MGMT_EVENT_INFO
  *       is not defined.
  */
-#if defined(CONFIG_NET_MGMT_EVENT)
 void net_mgmt_event_notify_with_info(uint64_t mgmt_event, struct net_if *iface,
 				     const void *info, size_t length);
 #else
-#define net_mgmt_event_notify_with_info(...)
+static inline void net_mgmt_event_notify_with_info(uint64_t mgmt_event, struct net_if *iface,
+						   const void *info, size_t length)
+{
+	ARG_UNUSED(mgmt_event);
+	ARG_UNUSED(iface);
+	ARG_UNUSED(info);
+	ARG_UNUSED(length);
+}
 #endif
 
+#if defined(CONFIG_NET_MGMT_EVENT) || defined(__DOXYGEN__)
 /**
  * @brief Used by the system to notify an event without any additional information.
  * @param mgmt_event The actual network event code to notify
  * @param iface A valid pointer on a struct net_if if only the event is
  *        based on an iface. NULL otherwise.
  */
-#if defined(CONFIG_NET_MGMT_EVENT)
 static inline void net_mgmt_event_notify(uint64_t mgmt_event,
 					 struct net_if *iface)
 {
 	net_mgmt_event_notify_with_info(mgmt_event, iface, NULL, 0);
 }
 #else
-#define net_mgmt_event_notify(...)
+static inline void net_mgmt_event_notify(uint64_t mgmt_event,
+					 struct net_if *iface)
+{
+	ARG_UNUSED(mgmt_event);
+	ARG_UNUSED(iface);
+}
 #endif
 
 /**

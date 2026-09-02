@@ -18,10 +18,10 @@ config SPI_RENESAS_RX_INTERRUPT
 	  Enable Interrupt Support for the RSPI Driver of RX family.
 
 config SPI_RENESAS_RX_USE_HW_SS
-	bool "RX MCU RSPI Hardware Slave Select support"
+	bool "RX MCU RSPI Hardware Chip Select support"
 	default y
 	help
-	  Use Slave Select pin instead of software Slave Select.
+	  Use Chip Select pin instead of software Chip Select.
 
 config SPI_RENESAS_RX_HIGH_SPEED_READ
 	bool "RX MCU RSPI high speed read mode"

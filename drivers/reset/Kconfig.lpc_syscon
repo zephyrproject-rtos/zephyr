@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config RESET_NXP_SYSCON
-	bool "NXP Syscon Reset controller driver"
+	bool "NXP Syscon reset driver"
 	default y
 	depends on DT_HAS_NXP_LPC_SYSCON_RESET_ENABLED
 	help

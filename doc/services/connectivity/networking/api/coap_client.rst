@@ -34,7 +34,7 @@ The following is an example of a CoAP client initialization and request sending:
 
 .. code-block:: c
 
-    static struct coap_client;
+    static struct coap_client client;
     struct coap_client_request req = { 0 };
 
     coap_client_init(&client, NULL);
@@ -95,7 +95,7 @@ the server for a resource that it expects to be large enough to require a blockw
 
 .. code-block:: c
 
-    static struct coap_client;
+    static struct coap_client client;
     struct coap_client_request req = { 0 };
 
     coap_client_init(&client, NULL);
@@ -153,7 +153,7 @@ The callback can then be registered for the PUT/POST request instead of a payloa
     strcpy(req.path, "lorem-ipsum");
     req.fmt = COAP_CONTENT_FORMAT_TEXT_PLAIN;
     req.cb = response_cb;
-    req.payload_cb = lore_ipsum_cb,
+    req.payload_cb = lorem_ipsum_cb,
 
     ret = coap_client_req(&client, sock, &address, &req, -1);
 

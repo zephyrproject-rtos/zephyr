@@ -161,7 +161,7 @@ int z_impl_k_pipe_write(struct k_pipe *pipe, const uint8_t *data, size_t len, k_
 
 	if (unlikely(pipe_resetting(pipe))) {
 		rc = -ECANCELED;
-		goto exit;
+		goto out;
 	}
 
 	for (;;) {
@@ -212,7 +212,7 @@ int z_impl_k_pipe_write(struct k_pipe *pipe, const uint8_t *data, size_t len, k_
 			break;
 		}
 	}
-exit:
+out:
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_pipe, write, pipe, rc);
 	if (need_resched) {
 		z_reschedule(&pipe->lock, key);
@@ -234,7 +234,7 @@ int z_impl_k_pipe_read(struct k_pipe *pipe, uint8_t *data, size_t len, k_timeout
 
 	if (unlikely(pipe_resetting(pipe))) {
 		rc = -ECANCELED;
-		goto exit;
+		goto out;
 	}
 
 	for (;;) {
@@ -262,7 +262,7 @@ int z_impl_k_pipe_read(struct k_pipe *pipe, uint8_t *data, size_t len, k_timeout
 			break;
 		}
 	}
-exit:
+out:
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_pipe, read, pipe, rc);
 	if (need_resched) {
 		z_reschedule(&pipe->lock, key);

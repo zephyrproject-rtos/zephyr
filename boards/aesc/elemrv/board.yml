@@ -1,6 +1,0 @@
-board:
-  name: elemrv
-  full_name: ElemRV-N
-  vendor: aesc
-  socs:
-  - name: elemrv_n

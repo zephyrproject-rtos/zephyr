@@ -111,6 +111,8 @@ inline bool ieee802154_prepare_for_ack(struct net_if *iface, struct net_pkt *pkt
 		struct ieee802154_fcf_seq *fs = (struct ieee802154_fcf_seq *)frag->data;
 		struct ieee802154_context *ctx = net_if_l2_data(iface);
 
+		NET_ASSERT(ctx != NULL);
+
 		ctx->ack_seq = fs->sequence;
 		if (k_sem_count_get(&ctx->ack_lock) == 1U) {
 			k_sem_take(&ctx->ack_lock, K_NO_WAIT);
@@ -125,6 +127,8 @@ inline bool ieee802154_prepare_for_ack(struct net_if *iface, struct net_pkt *pkt
 enum net_verdict ieee802154_handle_ack(struct net_if *iface, struct net_pkt *pkt)
 {
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
+
+	NET_ASSERT(ctx != NULL);
 
 	if (ieee802154_radio_get_hw_capabilities(iface) & IEEE802154_HW_TX_RX_ACK) {
 		__ASSERT_NO_MSG(ctx->ack_seq == 0U);
@@ -155,6 +159,8 @@ inline int ieee802154_wait_for_ack(struct net_if *iface, bool ack_required)
 {
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
 	int ret;
+
+	NET_ASSERT(ctx != NULL);
 
 	if (!ack_required ||
 	    (ieee802154_radio_get_hw_capabilities(iface) & IEEE802154_HW_TX_RX_ACK)) {
@@ -298,6 +304,8 @@ static bool ieee802154_check_dst_addr(struct net_if *iface, struct ieee802154_mh
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
 	bool ret = false;
 
+	NET_ASSERT(ctx != NULL);
+
 	/* Apply filtering requirements from section 6.7.2 c)-e). For a)-b),
 	 * see ieee802154_parse_fcf_seq()
 	 */
@@ -366,12 +374,18 @@ out:
 
 static enum net_verdict ieee802154_recv(struct net_if *iface, struct net_pkt *pkt)
 {
-	const struct ieee802154_radio_api *radio = net_if_get_device(iface)->api;
+	const struct device *dev = net_if_get_device(iface);
+	const struct ieee802154_radio_api *radio;
 	enum net_verdict verdict = NET_CONTINUE;
 	struct ieee802154_fcf_seq *fs;
 	struct ieee802154_mpdu mpdu;
 	bool is_broadcast;
 	size_t ll_hdr_len;
+
+	NET_ASSERT(dev != NULL);
+	NET_ASSERT(dev->api != NULL);
+
+	radio = dev->api;
 
 	/* The IEEE 802.15.4 stack assumes that drivers provide a single-fragment package. */
 	__ASSERT_NO_MSG(pkt->buffer && pkt->buffer->frags == NULL);
@@ -381,7 +395,7 @@ static enum net_verdict ieee802154_recv(struct net_if *iface, struct net_pkt *pk
 	}
 
 	/* validate LL destination address (when IEEE802154_HW_FILTER not available) */
-	if (!(radio->get_capabilities(net_if_get_device(iface)) & IEEE802154_HW_FILTER) &&
+	if (!(radio->get_capabilities(dev) & IEEE802154_HW_FILTER) &&
 	    !ieee802154_check_dst_addr(iface, &mpdu.mhr)) {
 		return NET_DROP;
 	}
@@ -513,6 +527,9 @@ static int ieee802154_send(struct net_if *iface, struct net_pkt *pkt)
 	struct ieee802154_6lo_fragment_ctx frag_ctx;
 #endif
 
+	NET_ASSERT(iface != NULL);
+	NET_ASSERT(ctx != NULL);
+
 	if (frame_buf == NULL) {
 		frame_buf = net_buf_alloc(&tx_frame_buf_pool, K_FOREVER);
 	}
@@ -641,6 +658,8 @@ static int ieee802154_enable(struct net_if *iface, bool state)
 {
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
 
+	NET_ASSERT(ctx != NULL);
+
 	NET_DBG("iface %p %s", iface, state ? "up" : "down");
 
 	k_sem_take(&ctx->ctx_lock, K_FOREVER);
@@ -663,6 +682,8 @@ static enum net_l2_flags ieee802154_flags(struct net_if *iface)
 {
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
 
+	NET_ASSERT(ctx != NULL);
+
 	/* No need for locking as these flags are set once
 	 * during L2 initialization and then never changed.
 	 */
@@ -674,8 +695,14 @@ NET_L2_INIT(IEEE802154_L2, ieee802154_recv, ieee802154_send, ieee802154_enable, 
 void ieee802154_init(struct net_if *iface)
 {
 	struct ieee802154_context *ctx = net_if_l2_data(iface);
-	const uint8_t *eui64_be = net_if_get_link_addr(iface)->addr;
+	struct net_linkaddr *link_addr = net_if_get_link_addr(iface);
 	int16_t tx_power = CONFIG_NET_L2_IEEE802154_RADIO_DFLT_TX_POWER;
+	const uint8_t *eui64_be;
+
+	NET_ASSERT(ctx != NULL);
+	NET_ASSERT(link_addr != NULL);
+
+	eui64_be = link_addr->addr;
 
 	NET_DBG("Initializing IEEE 802.15.4 stack on iface %p", iface);
 

@@ -82,8 +82,10 @@ uint8_t aics_client_notify_handler(struct bt_conn *conn, struct bt_gatt_subscrib
 	if (handle == inst->cli.state_handle) {
 		if (length == sizeof(*state)) {
 			state = (const struct bt_aics_state *)data;
-			LOG_DBG("Inst %p: Gain %d, mute %u, gain_mode %u, counter %u", inst,
-				state->gain, state->mute, state->gain_mode, state->change_counter);
+			LOG_DBG("Inst %p: Gain %d, mute %u, gain_mode %s (0x%02X), counter %u",
+				inst, state->gain, state->mute,
+				bt_aics_mode_to_str(state->gain_mode), state->gain_mode,
+				state->change_counter);
 
 			inst->cli.change_counter = state->change_counter;
 
@@ -152,8 +154,9 @@ static uint8_t aics_client_read_state_cb(struct bt_conn *conn, uint8_t err,
 
 	if (data) {
 		if (length == sizeof(*state)) {
-			LOG_DBG("Gain %d, mute %u, gain_mode %u, counter %u", state->gain,
-				state->mute, state->gain_mode, state->change_counter);
+			LOG_DBG("Gain %d, mute %u, gain_mode %s (0x%02X), counter %u", state->gain,
+				state->mute, bt_aics_mode_to_str(state->gain_mode),
+				state->gain_mode, state->change_counter);
 
 			inst->cli.change_counter = state->change_counter;
 		} else {
@@ -371,8 +374,9 @@ static uint8_t internal_read_state_cb(struct bt_conn *conn, uint8_t err,
 		if (length == sizeof(*state)) {
 			int write_err;
 
-			LOG_DBG("Gain %d, mute %u, gain_mode %u, counter %u", state->gain,
-				state->mute, state->gain_mode, state->change_counter);
+			LOG_DBG("Gain %d, mute %u, gain_mode %s (0x%02X), counter %u", state->gain,
+				state->mute, bt_aics_mode_to_str(state->gain_mode),
+				state->gain_mode, state->change_counter);
 			inst->cli.change_counter = state->change_counter;
 
 			/* clear busy flag to reuse function */

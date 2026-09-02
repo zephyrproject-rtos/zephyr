@@ -17,7 +17,7 @@ configdefault DCACHE_LINE_SIZE
 config GEN_IRQ_VECTOR_TABLE
 	default n
 
-config CACHE_MANAGEMENT
+configdefault CACHE_MANAGEMENT
 	default y
 
 config XTENSA_TIMER

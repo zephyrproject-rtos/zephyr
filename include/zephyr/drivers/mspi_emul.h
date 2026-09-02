@@ -34,7 +34,7 @@ extern "C" {
 struct mspi_emul;
 
 /**
- * Find an emulator present on a MSPI bus
+ * Find an emulator present on an MSPI bus
  *
  * At present the function is used only to find an emulator of the host
  * device. It may be useful in systems with the SPI flash chips.

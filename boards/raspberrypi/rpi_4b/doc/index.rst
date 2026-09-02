@@ -53,18 +53,41 @@ Prepare a TF card with MBR and FAT32. In the root directory of the TF card:
 
    .. code-block:: text
 
-      kernel=zephyr.bin
       arm_64bit=1
+      core_freq=500
+      kernel_address=0x200000
+      kernel=zephyr.bin
       enable_uart=1
       uart_2ndstage=1
+      hdmi_force_hotplug=1
 
-Insert the card and power on the board. You should see the following output on
-the serial console (GPIO 14/15):
+Console connection
+==================
 
-.. code-block:: text
+Connect a 3.3V USB-UART adapter to the Raspberry Pi header:
 
-   *** Booting Zephyr OS build XXXXXXXXXXXX  ***
-   Hello World! Raspberry Pi 4 Model B!
+.. list-table::
+   :header-rows: 1
+
+   * - Adapter
+     - Raspberry Pi header
+   * - GND
+     - 6 (GND)
+   * - Rx
+     - 8 (GPIO 14)
+   * - Tx
+     - 10 (GPIO 15)
+
+Settings: **115200 8N1**, no hardware flow control. Insert the card and power on the board.
+You should see the following output on the serial console (GPIO 14/15):
+
+.. code-block:: console
+
+   *** Booting Zephyr OS build v4.4.0-10192-ge201b84b04e4 ***
+   Secondary CPU core 1 (MPID:0x1) is up
+   Secondary CPU core 2 (MPID:0x2) is up
+   Secondary CPU core 3 (MPID:0x3) is up
+   Hello World! rpi_4b/bcm2711
 
 References
 **********

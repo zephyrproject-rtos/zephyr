@@ -533,9 +533,6 @@ void net_pkt_unref(struct net_pkt *pkt)
 	atomic_val_t ref;
 
 	if (!pkt) {
-#if NET_LOG_LEVEL >= LOG_LEVEL_DBG
-		NET_ERR("*** ERROR *** pkt %p (%s():%d)", pkt, caller, line);
-#endif
 		return;
 	}
 
@@ -1015,9 +1012,24 @@ static struct net_buf *pkt_alloc_buffer(struct net_pkt *pkt,
 	do {
 		struct net_buf *new;
 
-		new = net_buf_alloc_fixed(pool, timeout);
-		if (!new) {
-			goto error;
+		/* An allocation that does not block cannot have consumed any
+		 * of the caller's timeout, so only work out how much of it is
+		 * left when the pool was empty and we actually have to wait.
+		 * That keeps the clock out of the common path: with K_NO_WAIT
+		 * the deadline handling in net_buf_alloc_len() short circuits
+		 * too, so nothing below here reads it either.
+		 */
+		new = net_buf_alloc_fixed(pool, K_NO_WAIT);
+		if (new == NULL) {
+			if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
+				goto error;
+			}
+
+			new = net_buf_alloc_fixed(pool,
+						  sys_timepoint_timeout(end));
+			if (new == NULL) {
+				goto error;
+			}
 		}
 
 		if (!first && !current) {
@@ -1046,8 +1058,6 @@ static struct net_buf *pkt_alloc_buffer(struct net_pkt *pkt,
 
 			size -= current->size;
 		}
-
-		timeout = sys_timepoint_timeout(end);
 
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 		NET_FRAG_CHECK_IF_NOT_IN_USE(new, new->ref + 1);
@@ -1732,7 +1742,6 @@ pkt_alloc_with_buffer(struct k_mem_slab *slab,
 		      k_timeout_t timeout)
 #endif
 {
-	k_timepoint_t end = sys_timepoint_calc(timeout);
 	struct net_pkt *pkt;
 	int ret;
 
@@ -1743,19 +1752,40 @@ pkt_alloc_with_buffer(struct k_mem_slab *slab,
 	NET_DBG("On iface %d (%p) size %zu", net_if_get_by_iface(iface), iface, size);
 #endif /* CONFIG_NET_RAW_MODE */
 
+	/* As in pkt_alloc_buffer(), take the slab without waiting first. When
+	 * that works none of the caller's timeout has gone, so it can be
+	 * handed to the buffer allocation untouched and the clock stays out
+	 * of the common path entirely.
+	 */
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
-	pkt = pkt_alloc_on_iface(slab, iface, timeout, caller, line);
+	pkt = pkt_alloc_on_iface(slab, iface, K_NO_WAIT, caller, line);
 #else
-	pkt = pkt_alloc_on_iface(slab, iface, timeout);
+	pkt = pkt_alloc_on_iface(slab, iface, K_NO_WAIT);
 #endif
 
-	if (!pkt) {
-		return NULL;
+	if (pkt == NULL) {
+		k_timepoint_t end;
+
+		if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
+			return NULL;
+		}
+
+		end = sys_timepoint_calc(timeout);
+
+#if NET_LOG_LEVEL >= LOG_LEVEL_DBG
+		pkt = pkt_alloc_on_iface(slab, iface, timeout, caller, line);
+#else
+		pkt = pkt_alloc_on_iface(slab, iface, timeout);
+#endif
+		if (pkt == NULL) {
+			return NULL;
+		}
+
+		/* Waiting for the slab used up part of the caller's budget. */
+		timeout = sys_timepoint_timeout(end);
 	}
 
 	net_pkt_set_family(pkt, family);
-
-	timeout = sys_timepoint_timeout(end);
 #if NET_LOG_LEVEL >= LOG_LEVEL_DBG
 	ret = net_pkt_alloc_buffer_debug(pkt, size, proto, timeout,
 					 caller, line);

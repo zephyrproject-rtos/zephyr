@@ -41,6 +41,61 @@ const clock_pcfs_config_t pcfs_config = {.maxAllowableIDDchange = NXP_PLL_MAXIDO
 					 .clkSrcFreq = NXP_PLL_CLKSRCFREQ};
 #endif
 
+#define MC_CGM_EMAC_NODE DT_NODELABEL(emac)
+
+/*
+ * The EMAC RX/TX/TS source muxes have to be attached before the MAC leaves
+ * reset, and which source is correct depends on the PHY interface selected in
+ * devicetree. Only set them up on SoCs that have an EMAC and only when it is
+ * actually enabled.
+ */
+#if defined(FSL_FEATURE_CLOCK_HAS_EMAC) && (FSL_FEATURE_CLOCK_HAS_EMAC != 0U) && \
+	DT_NODE_HAS_STATUS_OKAY(MC_CGM_EMAC_NODE)
+#define MC_CGM_HAS_EMAC 1
+
+/*
+ * Clock rates the PHY drives into the SoC, both fixed by IEEE 802.3: RMII
+ * supplies a single 50 MHz reference, MII separate transmit and receive clocks
+ * that run at 25 MHz for 100 Mbps.
+ */
+#define MC_CGM_EMAC_RMII_REF_CLK_HZ 50000000U
+#define MC_CGM_EMAC_MII_CLK_HZ      25000000U
+
+#if DT_ENUM_HAS_VALUE(MC_CGM_EMAC_NODE, phy_connection_type, rmii)
+/*
+ * The one reference clock feeds all three domains, and the MAC clocks its
+ * MII-side logic at half the RMII rate.
+ */
+#define MC_CGM_EMAC_TXPAD_CLK_HZ MC_CGM_EMAC_RMII_REF_CLK_HZ
+#define MC_CGM_EMAC_RXPAD_CLK_HZ 0U
+#define MC_CGM_EMAC_RX_ATTACH    kEMAC_RMII_TX_CLK_to_EMAC_RX
+#define MC_CGM_EMAC_RX_SRC       CLOCK_EMAC_RMII_TX_CLK
+#define MC_CGM_EMAC_TS_ATTACH    kEMAC_RMII_TX_CLK_to_EMAC_TS
+#define MC_CGM_EMAC_TS_SRC       CLOCK_EMAC_RMII_TX_CLK
+#define MC_CGM_EMAC_CLK_DIV      2U
+#elif DT_ENUM_HAS_VALUE(MC_CGM_EMAC_NODE, phy_connection_type, mii)
+/*
+ * The PHY drives the transmit and receive clocks on separate pads, already at
+ * the MII-side rate. The timestamp unit is fed from the transmit clock, which
+ * means it follows the link speed - fine at 100 Mbps, ten times slower at
+ * 10 Mbps.
+ */
+#define MC_CGM_EMAC_TXPAD_CLK_HZ MC_CGM_EMAC_MII_CLK_HZ
+#define MC_CGM_EMAC_RXPAD_CLK_HZ MC_CGM_EMAC_MII_CLK_HZ
+#define MC_CGM_EMAC_RX_ATTACH    kEMAC_RX_CLK_to_EMAC_RX
+#define MC_CGM_EMAC_RX_SRC       CLOCK_EMAC_RX_CLK
+#define MC_CGM_EMAC_TS_ATTACH    kEMAC_RMII_TX_CLK_to_EMAC_TS
+#define MC_CGM_EMAC_TS_SRC       CLOCK_EMAC_RMII_TX_CLK
+#define MC_CGM_EMAC_CLK_DIV      1U
+#else
+#error "Unsupported PHY connection type for the MCXE Ethernet MAC"
+#endif
+
+/* The transmit clock always comes off the same pad, in either mode. */
+#define MC_CGM_EMAC_TX_ATTACH kEMAC_RMII_TX_CLK_to_EMAC_TX
+#define MC_CGM_EMAC_TX_SRC    CLOCK_EMAC_RMII_TX_CLK
+#endif
+
 /*
  * SDK defines FSL_FEATURE_SOC_<IP>_COUNT as `(N)` with parentheses, which
  * breaks Zephyr's LISTIFY (it token-pastes LEN into a macro name and needs
@@ -119,6 +174,9 @@ static const struct mc_cgm_gate_entry mc_cgm_gate_map[] = {
 	LISTIFY(MC_CGM_COUNT(FSL_FEATURE_SOC_I2S_COUNT),
 		MC_CGM_GATE_ENTRY, (,), SAI, Sai),
 #endif
+#if defined(MC_CGM_HAS_EMAC)
+	{ MCUX_EMAC_CLK, kCLOCK_Emac },
+#endif
 };
 
 /*
@@ -189,6 +247,77 @@ static const struct mc_cgm_rate_entry *mc_cgm_lookup_rate(uint32_t subsys)
 	return NULL;
 }
 
+#if defined(MC_CGM_HAS_EMAC)
+/*
+ * SELSTAT sits in the same bits of every mux status register, so one mask
+ * covers all three. Assert it rather than leaving it to chance.
+ */
+#define MC_CGM_EMAC_SELSTAT_MASK MC_CGM_MUX_7_CSS_SELSTAT_MASK
+BUILD_ASSERT(MC_CGM_MUX_8_CSS_SELSTAT_MASK == MC_CGM_EMAC_SELSTAT_MASK);
+BUILD_ASSERT(MC_CGM_MUX_9_CSS_SELSTAT_MASK == MC_CGM_EMAC_SELSTAT_MASK);
+
+/*
+ * Every EMAC clock domain is derived from a clock the PHY drives into the SoC,
+ * so these must run only once the pads are muxed: the glitchless MC_CGM mux
+ * refuses to switch to a source that is not toggling and silently leaves the
+ * domain on FIRC, which is close enough to keep framing packets but far enough
+ * off to corrupt every one of them. CLOCK_AttachClk() reports success either
+ * way, so check the status register.
+ */
+struct mc_cgm_emac_clk {
+	volatile const uint32_t *css;
+	uint32_t src;
+	clock_attach_id_t attach;
+	clock_div_name_t div_name;
+};
+
+static const struct mc_cgm_emac_clk mc_cgm_emac_rx_clk = {
+	.attach = MC_CGM_EMAC_RX_ATTACH,
+	.div_name = kCLOCK_DivEmacRxClk,
+	.css = &MC_CGM->MUX_7_CSS,
+	.src = MC_CGM_EMAC_RX_SRC,
+};
+
+static const struct mc_cgm_emac_clk mc_cgm_emac_tx_clk = {
+	.attach = MC_CGM_EMAC_TX_ATTACH,
+	.div_name = kCLOCK_DivEmacTxClk,
+	.css = &MC_CGM->MUX_8_CSS,
+	.src = MC_CGM_EMAC_TX_SRC,
+};
+
+static const struct mc_cgm_emac_clk mc_cgm_emac_ts_clk = {
+	.attach = MC_CGM_EMAC_TS_ATTACH,
+	.div_name = kCLOCK_DivEmacTsClk,
+	.css = &MC_CGM->MUX_9_CSS,
+	.src = MC_CGM_EMAC_TS_SRC,
+};
+
+static int mc_cgm_emac_attach(const struct mc_cgm_emac_clk *clk)
+{
+	/* Tell the SDK what the PHY drives into the pads; software state only. */
+	CLOCK_SetEmacRmiiTxClkFreq(MC_CGM_EMAC_TXPAD_CLK_HZ);
+	if (MC_CGM_EMAC_RXPAD_CLK_HZ != 0U) {
+		CLOCK_SetEmacRxClkFreq(MC_CGM_EMAC_RXPAD_CLK_HZ);
+	}
+
+	if (CLOCK_AttachClk(clk->attach) != kStatus_Success) {
+		return -EIO;
+	}
+
+	if (FIELD_GET(MC_CGM_EMAC_SELSTAT_MASK, *clk->css) != clk->src) {
+		LOG_ERR("EMAC clock did not switch to source %u; "
+			"is the pin muxed and is the PHY driving it?", clk->src);
+		return -EIO;
+	}
+
+	if (CLOCK_SetClkDiv(clk->div_name, MC_CGM_EMAC_CLK_DIV) != kStatus_Success) {
+		return -EIO;
+	}
+
+	return 0;
+}
+#endif /* defined(MC_CGM_HAS_EMAC) */
+
 static int mc_cgm_clock_control_on(const struct device *dev, clock_control_subsys_t sub_system)
 {
 	uint32_t clock_name = (uint32_t)sub_system;
@@ -209,6 +338,14 @@ static int mc_cgm_clock_control_on(const struct device *dev, clock_control_subsy
 	case MCUX_TEMPSENSE_CLK:
 		CLOCK_EnableClock(kCLOCK_TempSensor);
 		return 0;
+#endif
+#if defined(MC_CGM_HAS_EMAC)
+	case MCUX_EMACRX_CLK:
+		return mc_cgm_emac_attach(&mc_cgm_emac_rx_clk);
+	case MCUX_EMACTX_CLK:
+		return mc_cgm_emac_attach(&mc_cgm_emac_tx_clk);
+	case MCUX_EMACTS_CLK:
+		return mc_cgm_emac_attach(&mc_cgm_emac_ts_clk);
 #endif
 	case MCUX_SIRC_CLK:
 		return 0;
@@ -236,6 +373,12 @@ static int mc_cgm_clock_control_off(const struct device *dev, clock_control_subs
 #if defined(CONFIG_NXP_TEMPSENSE)
 	case MCUX_TEMPSENSE_CLK:
 		CLOCK_DisableClock(kCLOCK_TempSensor);
+		return 0;
+#endif
+#if defined(MC_CGM_HAS_EMAC)
+	case MCUX_EMACRX_CLK:
+	case MCUX_EMACTX_CLK:
+	case MCUX_EMACTS_CLK:
 		return 0;
 #endif
 	case MCUX_SIRC_CLK:
@@ -273,8 +416,23 @@ static int mc_cgm_get_subsys_rate(const struct device *dev, clock_control_subsys
 		*rate = CLOCK_GetCoreClkFreq();
 		return 0;
 	case MCUX_AIPSPLAT_CLK:
+#if defined(MC_CGM_HAS_EMAC)
+	/* The EMAC CSR (register) interface is clocked from AIPS_PLAT_CLK. */
+	case MCUX_EMAC_CLK:
+#endif
 		*rate = CLOCK_GetAipsPlatClkFreq();
 		return 0;
+#if defined(MC_CGM_HAS_EMAC)
+	case MCUX_EMACRX_CLK:
+		*rate = CLOCK_GetEmacRxClkFreq();
+		return 0;
+	case MCUX_EMACTX_CLK:
+		*rate = CLOCK_GetEmacTxClkFreq();
+		return 0;
+	case MCUX_EMACTS_CLK:
+		*rate = CLOCK_GetEmacTsClkFreq();
+		return 0;
+#endif
 	case MCUX_HSE_CLK:
 		*rate = CLOCK_GetHseClkFreq();
 		return 0;

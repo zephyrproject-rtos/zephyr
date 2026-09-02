@@ -13,7 +13,8 @@ int putenv(char *s);
 
 ZTEST(xsi_single_process, test_putenv)
 {
-	char buf[64];
+	/* putenv() does not copy the string, so the buffer must outlive this test */
+	static char buf[64];
 
 	{
 		/* degenerate cases */

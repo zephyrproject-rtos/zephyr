@@ -209,6 +209,11 @@ static int uaol_intel_adsp_set_power(const struct device *dev, bool power)
 
 	dp->is_powered_up = power;
 
+	/* The link power domain retains neither the BDF nor the frame alignment */
+	if (!power) {
+		dp->is_initialized = false;
+	}
+
 	return 0;
 }
 
@@ -663,12 +668,18 @@ static int uaol_intel_adsp_config(const struct device *dev, int stream, struct u
 			goto out;
 		}
 
+		LOG_DBG("link initialized, frame counter aligned");
+
 		dp->is_initialized = true;
 	}
 
 	/* Program the FIFO Start Address Offset and Channel Mapping */
 	sys_write16(cfg->fifo_start_offset, UAOLxPCMSyFSA_ADDR(dp, stream));
 	sys_write16(cfg->channel_map, UAOLxPCMSyCM_ADDR(dp, stream));
+
+	LOG_DBG("stream %d: FSA 0x%04x, CM 0x%04x, rate %u, chan %u, bits %u, mps %u",
+		stream, cfg->fifo_start_offset, cfg->channel_map, cfg->sample_rate,
+		cfg->channels, cfg->sample_bits, cfg->sio_credit_size);
 
 	uaol_intel_adsp_program_format(dev, stream, cfg->sample_rate, cfg->channels,
 				       cfg->sample_bits, cfg->sio_credit_size,

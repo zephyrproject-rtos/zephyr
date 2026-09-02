@@ -484,9 +484,11 @@ static int sw_get_pins(const struct device *dev, uint8_t *const state)
 	const struct sw_config *config = dev->config;
 	uint32_t val;
 
+	*state = 0;
+
 	if (config->reset.port) {
 		val = gpio_pin_get_dt(&config->reset);
-		*state = val ? BIT(SWDP_nRESET_PIN) : 0;
+		*state |= val ? BIT(SWDP_nRESET_PIN) : 0;
 	}
 
 	val = gpio_pin_get_dt(&config->dio);

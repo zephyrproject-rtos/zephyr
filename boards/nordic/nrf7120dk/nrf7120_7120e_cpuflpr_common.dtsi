@@ -1,0 +1,73 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * This file is common to the nRF7120 and nRF7120E SoCs. The SoC specific
+ * cpuflpr DTSI is included by the board target DTS including this file.
+ */
+
+#include "nrf7120dk_common.dtsi"
+
+/ {
+	chosen {
+		zephyr,console = &uart21;
+		zephyr,shell-uart = &uart21;
+		zephyr,code-partition = &cpuflpr_code_partition;
+		zephyr,flash = &cpuflpr_mram;
+		zephyr,sram = &ram03_sram;
+	};
+};
+
+&cpuflpr_mram {
+	partitions {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		cpuflpr_code_partition: partition@0 {
+			compatible = "nordic,mapped-partition";
+			label = "image-0";
+			reg = <0 DT_SIZE_K(116)>;
+		};
+	};
+};
+
+&grtc {
+	owned-channels = <3 4>;
+	status = "okay";
+};
+
+&uart21 {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio2 {
+	status = "okay";
+};
+
+&gpio3 {
+	status = "okay";
+};
+
+&gpio4 {
+	status = "okay";
+};
+
+&gpiote20 {
+	status = "okay";
+};
+
+&gpiote30 {
+	status = "okay";
+};

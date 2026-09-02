@@ -49,7 +49,7 @@ extern "C" {
  *
  * Declare a Separate Chaining Hashmap with control over advanced parameters.
  *
- * @note The allocator @p _alloc is used for allocating internal Hashmap
+ * @note The allocator @p _alloc_func is used for allocating internal Hashmap
  * entries and does not interact with any user-provided keys or values.
  *
  * @param _name Name of the Hashmap.

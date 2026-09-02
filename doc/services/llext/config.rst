@@ -321,12 +321,6 @@ LLEXT subsystem to optimize memory footprint in this case.
            phase. Once the extension is unloaded, the buffer must be reloaded
            before it can be used again in a call to :c:func:`llext_load`.
 
-        .. note::
-
-           This is currently required by the Xtensa architecture. Further
-           information on this topic is available on GitHub issue `#75341
-           <https://github.com/zephyrproject-rtos/zephyr/issues/75341>`_.
-
 .. _llext_symbol_groups:
 
 Symbol Groups

@@ -217,14 +217,14 @@ static __noinline void empty_function(void)
 
 static struct ztest_benchmark ctrl = {
 	.name = "ctrl",
-	.run = empty_function,
 	.iterations = 1000,
+	.run = empty_function,
 };
 
 static struct ztest_benchmark_timed ctrl_timed = {
+	.duration_ms = 100,
 	.name = "ctrl_timed",
 	.run = empty_function,
-	.duration_ms = 100,
 };
 
 void benchmark_main(void)

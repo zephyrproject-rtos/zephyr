@@ -7,11 +7,21 @@ config SOC_SILABS_XG21
 	help
 	  Silicon Labs XG21 Generic Family SoC and modules
 
+config SOC_SERIES_EFR32BG21
+	bool
+	select SOC_SILABS_XG21
+	help
+	  Silicon Labs EFR32BG21 (Blue Gecko) Series MCU
+
 config SOC_SERIES_EFR32MG21
 	bool
 	select SOC_SILABS_XG21
 	help
 	  Silicon Labs EFR32MG21 (Mighty Gecko) Series MCU
+
+config SOC_EFR32BG21B010F1024IM32
+	bool
+	select SOC_SERIES_EFR32BG21
 
 config SOC_EFR32MG21A020F1024IM32
 	bool
@@ -19,6 +29,8 @@ config SOC_EFR32MG21A020F1024IM32
 
 config SOC_SERIES
 	default "efr32mg21" if SOC_SERIES_EFR32MG21
+	default "efr32bg21" if SOC_SERIES_EFR32BG21
 
 config SOC
 	default "efr32mg21a020f1024im32" if SOC_EFR32MG21A020F1024IM32
+	default "efr32bg21b010f1024im32" if SOC_EFR32BG21B010F1024IM32

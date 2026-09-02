@@ -473,7 +473,7 @@ static uint16_t generate_from_isr(uint8_t *buf, uint16_t len)
 	 * to 1 (the bit is set when NVIC pending IRQ status is
 	 * changed from 0 to 1)
 	 */
-	NVIC_ClearPendingIRQ(IRQN);
+	k_irq_clear_pending(IRQN);
 #endif /* !IRQLESS_TRNG */
 
 	do {
@@ -503,7 +503,7 @@ static uint16_t generate_from_isr(uint8_t *buf, uint16_t len)
 
 		ret = random_sample_get(&rnd_sample);
 #if !IRQLESS_TRNG
-		NVIC_ClearPendingIRQ(IRQN);
+		k_irq_clear_pending(IRQN);
 #endif /* !IRQLESS_TRNG */
 
 		if (ret < 0) {

@@ -36,6 +36,8 @@ static const struct flash_parameters flash_stm32_parameters = {
 
 K_SEM_DEFINE(flash_busy, 0, 1);
 
+K_MUTEX_DEFINE(fm_mutex);
+
 static void flash_callback(FM_FlashOp_Status_t status)
 {
 	LOG_DBG("%d", status);
@@ -286,6 +288,22 @@ void flash_stm32wba_page_layout(const struct device *dev, const struct flash_pag
 
 	*layout = &stm32wba_flash_layout;
 	*layout_size = 1;
+}
+
+FM_Cmd_Status_t FM_MutexTake(void)
+{
+	FM_Cmd_Status_t error = FM_OK;
+
+	k_mutex_lock(&fm_mutex, K_FOREVER);
+	return error;
+}
+
+FM_Cmd_Status_t FM_MutexRelease(void)
+{
+	FM_Cmd_Status_t error = FM_OK;
+
+	k_mutex_unlock(&fm_mutex);
+	return error;
 }
 
 static DEVICE_API(flash, flash_stm32_api) = {

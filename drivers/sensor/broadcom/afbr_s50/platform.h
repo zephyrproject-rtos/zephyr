@@ -48,8 +48,8 @@ struct afbr_s50_platform_data {
 			struct {
 				const struct gpio_dt_spec *cs;
 				const struct gpio_dt_spec *clk;
-				const struct gpio_dt_spec *mosi;
-				const struct gpio_dt_spec *miso;
+				const struct gpio_dt_spec *sdi;
+				const struct gpio_dt_spec *sdo;
 			} spi;
 			const struct gpio_dt_spec * const irq;
 		} gpio;
@@ -63,7 +63,7 @@ struct afbr_s50_platform_init_node {
 
 void afbr_s50_platform_init_hooks_add(struct afbr_s50_platform_init_node *node);
 
-int afbr_s50_platform_get_by_id(s2pi_slave_t slave,
+int afbr_s50_platform_get_by_id(s2pi_slave_t peripheral,
 				struct afbr_s50_platform_data **data);
 int afbr_s50_platform_get_by_hnd(argus_hnd_t *hnd,
 				 struct afbr_s50_platform_data **data);

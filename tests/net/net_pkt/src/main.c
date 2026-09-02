@@ -1287,4 +1287,217 @@ ZTEST(net_pkt_test_suite, test_net_pkt_shallow_clone_append_buf_2)
 	test_net_pkt_shallow_clone_append_buf(2);
 }
 
+/* Buffers held to keep the data pool empty while a blocking allocation runs. */
+static struct net_buf *pool_hog;
+
+static struct net_buf *drain_data_pool(struct net_buf_pool *pool)
+{
+	struct net_buf *head = NULL;
+	struct net_buf *buf;
+
+	while ((buf = net_buf_alloc_len(pool, CONFIG_NET_BUF_DATA_SIZE,
+					K_NO_WAIT)) != NULL) {
+		buf->frags = head;
+		head = buf;
+	}
+
+	return head;
+}
+
+static void release_pool_hog(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	if (pool_hog != NULL) {
+		net_buf_unref(pool_hog);
+		pool_hog = NULL;
+	}
+}
+
+static K_WORK_DELAYABLE_DEFINE(pool_hog_work, release_pool_hog);
+
+/* The allocator tries a non-blocking allocation before waiting. Check that a
+ * caller which asked to wait still waits, and still gets its buffers once they
+ * are returned to the pool.
+ */
+ZTEST(net_pkt_test_suite, test_net_pkt_alloc_buffer_blocking_succeeds)
+{
+	struct net_buf_pool *tx_data;
+	struct net_pkt *pkt;
+	int64_t start;
+
+	net_pkt_get_info(NULL, NULL, NULL, &tx_data);
+
+	pool_hog = drain_data_pool(tx_data);
+	zassert_not_null(pool_hog, "Data pool was already empty");
+	zassert_equal(atomic_get(&tx_data->avail_count), 0,
+		      "Data pool not drained");
+
+	k_work_schedule(&pool_hog_work, K_MSEC(50));
+
+	start = k_uptime_get();
+	pkt = net_pkt_alloc_with_buffer(NULL, CONFIG_NET_BUF_DATA_SIZE * 3,
+					NET_AF_UNSPEC, 0, K_MSEC(2000));
+
+	zassert_not_null(pkt, "Blocking allocation failed even though the "
+			      "buffers were returned to the pool");
+	zassert_true(k_uptime_get() - start >= 50,
+		     "Allocation returned without waiting");
+
+	net_pkt_unref(pkt);
+	release_pool_hog(NULL);
+}
+
+/* A caller that asked to wait for a given time must not wait appreciably
+ * longer. The upper bound is the point of this test: it fails if the deadline
+ * is ever restarted per fragment instead of being held across the chain.
+ */
+ZTEST(net_pkt_test_suite, test_net_pkt_alloc_buffer_blocking_times_out)
+{
+	struct net_buf_pool *tx_data;
+	struct net_pkt *pkt;
+	int64_t elapsed;
+
+	net_pkt_get_info(NULL, NULL, NULL, &tx_data);
+
+	pool_hog = drain_data_pool(tx_data);
+	zassert_not_null(pool_hog, "Data pool was already empty");
+
+	elapsed = k_uptime_get();
+	pkt = net_pkt_alloc_with_buffer(NULL, CONFIG_NET_BUF_DATA_SIZE * 3,
+					NET_AF_UNSPEC, 0, K_MSEC(100));
+	elapsed = k_uptime_get() - elapsed;
+
+	zassert_is_null(pkt, "Allocation succeeded with an empty pool");
+	zassert_true(elapsed >= 100, "Allocation gave up after %lld ms",
+		     elapsed);
+	zassert_true(elapsed < 300, "Allocation waited %lld ms for a 100 ms "
+		     "timeout", elapsed);
+
+	release_pool_hog(NULL);
+}
+
+/* Buffers handed back one at a time, so that a multi fragment allocation has
+ * to wait more than once.
+ */
+static struct net_buf *trickle_hog;
+
+static void trickle_release(struct k_work *work)
+{
+	struct net_buf *buf = trickle_hog;
+
+	if (buf == NULL) {
+		return;
+	}
+
+	trickle_hog = buf->frags;
+	buf->frags = NULL;
+	net_buf_unref(buf);
+
+	if (trickle_hog != NULL) {
+		k_work_reschedule(k_work_delayable_from_work(work), K_MSEC(60));
+	}
+}
+
+static K_WORK_DELAYABLE_DEFINE(trickle_work, trickle_release);
+
+/* The timeout is a budget for the whole allocation, not for each fragment of
+ * it. With one buffer coming back every 60 ms, a three fragment allocation
+ * given 100 ms must give up: it can only ever get the first fragment. If the
+ * deadline were restarted for each fragment it would instead collect all
+ * three and return after about 180 ms.
+ */
+ZTEST(net_pkt_test_suite, test_net_pkt_alloc_buffer_deadline_spans_chain)
+{
+	struct net_buf_pool *tx_data;
+	struct net_pkt *pkt;
+	int64_t elapsed;
+
+	net_pkt_get_info(NULL, NULL, NULL, &tx_data);
+
+	trickle_hog = drain_data_pool(tx_data);
+	zassert_not_null(trickle_hog, "Data pool was already empty");
+
+	k_work_schedule(&trickle_work, K_MSEC(60));
+
+	elapsed = k_uptime_get();
+	pkt = net_pkt_alloc_with_buffer(NULL, CONFIG_NET_BUF_DATA_SIZE * 3,
+					NET_AF_UNSPEC, 0, K_MSEC(100));
+	elapsed = k_uptime_get() - elapsed;
+
+	if (pkt != NULL) {
+		net_pkt_unref(pkt);
+	}
+
+	(void)k_work_cancel_delayable(&trickle_work);
+	if (trickle_hog != NULL) {
+		net_buf_unref(trickle_hog);
+		trickle_hog = NULL;
+	}
+
+	zassert_is_null(pkt, "Allocation collected every fragment in %lld ms "
+			"despite a 100 ms timeout, so the deadline is being "
+			"restarted per fragment", elapsed);
+	zassert_true(elapsed < 150, "Allocation waited %lld ms for a 100 ms "
+		     "timeout", elapsed);
+}
+
+/* When only part of the chain can be allocated the buffers taken so far must
+ * go back to the pool.
+ */
+ZTEST(net_pkt_test_suite, test_net_pkt_alloc_buffer_partial_chain)
+{
+	struct net_buf_pool *tx_data;
+	struct net_buf *spare;
+	struct net_pkt *pkt;
+
+	net_pkt_get_info(NULL, NULL, NULL, &tx_data);
+
+	pool_hog = drain_data_pool(tx_data);
+	zassert_not_null(pool_hog, "Data pool was already empty");
+
+	/* Hand one buffer back, so the first fragment succeeds and the
+	 * second one has to give up.
+	 */
+	spare = pool_hog;
+	pool_hog = spare->frags;
+	spare->frags = NULL;
+	net_buf_unref(spare);
+
+	zassert_equal(atomic_get(&tx_data->avail_count), 1,
+		      "Expected exactly one buffer to be available");
+
+	pkt = net_pkt_alloc_with_buffer(NULL, CONFIG_NET_BUF_DATA_SIZE * 3,
+					NET_AF_UNSPEC, 0, K_MSEC(100));
+
+	zassert_is_null(pkt, "Allocation succeeded without enough buffers");
+	zassert_equal(atomic_get(&tx_data->avail_count), 1,
+		      "Partially allocated chain was not returned to the pool");
+
+	release_pool_hog(NULL);
+}
+
+/* A non-blocking caller must still fail immediately on an empty pool, and must
+ * not leak the buffer it probed for.
+ */
+ZTEST(net_pkt_test_suite, test_net_pkt_alloc_buffer_nowait_exhausted)
+{
+	struct net_buf_pool *tx_data;
+	struct net_pkt *pkt;
+
+	net_pkt_get_info(NULL, NULL, NULL, &tx_data);
+
+	pool_hog = drain_data_pool(tx_data);
+	zassert_not_null(pool_hog, "Data pool was already empty");
+
+	pkt = net_pkt_alloc_with_buffer(NULL, CONFIG_NET_BUF_DATA_SIZE,
+					NET_AF_UNSPEC, 0, K_NO_WAIT);
+
+	zassert_is_null(pkt, "Allocation succeeded with an empty pool");
+	zassert_equal(atomic_get(&tx_data->avail_count), 0,
+		      "A failed allocation returned a buffer to the pool");
+
+	release_pool_hog(NULL);
+}
+
 ZTEST_SUITE(net_pkt_test_suite, NULL, NULL, NULL, NULL, NULL);

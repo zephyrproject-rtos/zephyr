@@ -49,8 +49,6 @@ properties:
 
   st,mem-type:
     type: string
-    description: |
-      The type of memory to be supported by the controller.
     enum:
       - "micron"
       - "macronix"
@@ -58,3 +56,11 @@ properties:
       - "macronix_ram"
       - "hyperbus"
       - "apmem_16bits"
+    required: true
+    description: |
+        Selects the memory type programmed into the controller MTYP field.
+
+        - "apmem": AP Memory.
+        - "macronix_ram": Macronix pseudo-static RAM (PSRAM).
+        - "hyperbus": HyperBus/HyperRAM memories.
+        - "apmem_16bits": AP Memory memories using the 16-bit variant.

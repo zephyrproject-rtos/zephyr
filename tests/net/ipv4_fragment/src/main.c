@@ -19,8 +19,11 @@ LOG_MODULE_REGISTER(net_ipv4_test, CONFIG_NET_IPV4_LOG_LEVEL);
 #include <zephyr/net/dummy.h>
 #include <zephyr/net_buf.h>
 #include <zephyr/net/net_ip.h>
+#include <zephyr/net/net_pkt.h>
+#include <zephyr/net/net_core.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/socket.h>
+#include <zephyr/sys/byteorder.h>
 #include <net_private.h>
 #include <ipv4.h>
 #include <udp_internal.h>
@@ -33,9 +36,18 @@ LOG_MODULE_REGISTER(net_ipv4_test, CONFIG_NET_IPV4_LOG_LEVEL);
 #define WAIT_TIME K_MSEC(1100)
 #define ALLOC_TIMEOUT K_MSEC(500)
 
+/* Reassembly error-path test packet parameters */
+#define REASS_ERR_FRAG_PAYLOAD  16
+#define REASS_ERR_UDP_DGRAM_LEN (REASS_ERR_FRAG_PAYLOAD * 3)
+#define REASS_ERR_FRAG_ID       0xA55A
+
 /* Dummy network addresses, 192.168.8.1 and 192.168.8.2 */
 static struct net_in_addr my_addr1 = { { { 0xc0, 0xa8, 0x08, 0x01 } } };
 static struct net_in_addr my_addr2 = { { { 0xc0, 0xa8, 0x08, 0x02 } } };
+
+/* Reassembly error-path test addresses, 192.0.2.1 and 192.0.2.2 */
+static struct net_in_addr reass_err_src_addr = { { { 0xc0, 0x00, 0x02, 0x01 } } };
+static struct net_in_addr reass_err_dst_addr = { { { 0xc0, 0x00, 0x02, 0x02 } } };
 
 /* IPv4 TCP packet header */
 static const unsigned char ipv4_tcp[] = {
@@ -151,6 +163,14 @@ static uint8_t net_iface_dummy_data;
 
 static void net_iface_init(struct net_if *iface);
 static int sender_iface(const struct device *dev, struct net_pkt *pkt);
+static int reass_err_rx_pkt_free_count(void);
+static void reass_err_ipv4_hdr_init(struct net_ipv4_hdr *hdr, uint16_t total_len,
+				    uint16_t offset_bytes, bool more);
+static void reass_err_fault_inject_noncontiguous_ipv4_hdr(struct net_pkt *pkt);
+static struct net_pkt *reass_err_make_udp_fragment(struct net_if *iface,
+						   const uint8_t *udp_dgram,
+						   uint16_t offset, uint16_t payload_len,
+						   bool more);
 
 static struct dummy_api net_iface_api = {
 	.iface_api.init = net_iface_init,
@@ -904,6 +924,145 @@ ZTEST(net_ipv4_fragment, test_do_not_fragment)
 	zassert_equal(upper_layer_total_size, 0,
 		      "Expected data received size mismatch at upper layers");
 	zassert_equal(pkt_recv_size, pkt_recv_expected_size, "Packet size mismatch");
+}
+
+static int reass_err_rx_pkt_free_count(void)
+{
+	struct k_mem_slab *rx = NULL, *tx = NULL;
+	struct net_buf_pool *rx_data = NULL, *tx_data = NULL;
+
+	net_pkt_get_info(&rx, &tx, &rx_data, &tx_data);
+	zassert_not_null(rx);
+	return k_mem_slab_num_free_get(rx);
+}
+
+static void reass_err_ipv4_hdr_init(struct net_ipv4_hdr *hdr, uint16_t total_len,
+				    uint16_t offset_bytes, bool more)
+{
+	uint16_t off;
+
+	memset(hdr, 0, sizeof(*hdr));
+	hdr->vhl = 0x45;
+	hdr->ttl = 64;
+	hdr->proto = NET_IPPROTO_UDP;
+	sys_put_be16(total_len, (uint8_t *)&hdr->len);
+	sys_put_be16(REASS_ERR_FRAG_ID, hdr->id);
+	off = (offset_bytes / 8);
+	if (more) {
+		off |= NET_IPV4_MORE_FRAG_MASK;
+	}
+	sys_put_be16(off, hdr->offset);
+	memcpy(hdr->src, &reass_err_src_addr, sizeof(reass_err_src_addr));
+	memcpy(hdr->dst, &reass_err_dst_addr, sizeof(reass_err_dst_addr));
+}
+
+static void reass_err_fault_inject_noncontiguous_ipv4_hdr(struct net_pkt *pkt)
+{
+	size_t len;
+	uint8_t copy[NET_IPV4H_LEN + REASS_ERR_FRAG_PAYLOAD];
+	struct net_buf *frag;
+	struct net_buf *b0;
+	struct net_buf *b1;
+
+	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(access, struct net_ipv4_hdr);
+
+	len = net_pkt_get_len(pkt);
+	zassert_true(len >= NET_IPV4H_LEN && len <= sizeof(copy));
+	net_pkt_cursor_init(pkt);
+	zassert_ok(net_pkt_read(pkt, copy, len));
+
+	while (pkt->buffer) {
+		frag = pkt->buffer;
+		pkt->buffer = frag->frags;
+		frag->frags = NULL;
+		net_buf_unref(frag);
+	}
+
+	b0 = net_pkt_get_frag(pkt, 10, K_NO_WAIT);
+	zassert_not_null(b0);
+	net_buf_add_mem(b0, copy, 10);
+	net_pkt_frag_add(pkt, b0);
+
+	b1 = net_pkt_get_frag(pkt, len - 10, K_NO_WAIT);
+	zassert_not_null(b1);
+	net_buf_add_mem(b1, copy + 10, len - 10);
+	net_pkt_frag_add(pkt, b1);
+
+	net_pkt_set_overwrite(pkt, true);
+	net_pkt_set_ip_hdr_len(pkt, NET_IPV4H_LEN);
+	net_pkt_cursor_init(pkt);
+
+	zassert_false(net_pkt_is_contiguous(pkt, NET_IPV4H_LEN));
+	zassert_is_null(net_pkt_get_data(pkt, &access));
+}
+
+static struct net_pkt *reass_err_make_udp_fragment(struct net_if *iface,
+						   const uint8_t *udp_dgram,
+						   uint16_t offset, uint16_t payload_len,
+						   bool more)
+{
+	struct net_pkt *pkt;
+	struct net_ipv4_hdr hdr;
+	uint16_t total_len = NET_IPV4H_LEN + payload_len;
+
+	pkt = net_pkt_rx_alloc_with_buffer(iface, total_len, NET_AF_INET, NET_IPPROTO_UDP,
+					   K_NO_WAIT);
+	zassert_not_null(pkt);
+
+	reass_err_ipv4_hdr_init(&hdr, total_len, offset, more);
+	net_pkt_set_ip_hdr_len(pkt, NET_IPV4H_LEN);
+	net_pkt_set_ipv4_opts_len(pkt, 0);
+	net_pkt_set_iface(pkt, iface);
+	net_pkt_set_family(pkt, NET_AF_INET);
+
+	zassert_ok(net_pkt_write(pkt, &hdr, sizeof(hdr)));
+	zassert_ok(net_pkt_write(pkt, udp_dgram + offset, payload_len));
+	net_pkt_cursor_init(pkt);
+
+	return pkt;
+}
+
+ZTEST(net_ipv4_fragment, test_reassembly_error_path_cleanup)
+{
+	struct net_if *iface = net_if_get_default();
+	uint8_t udp_dgram[REASS_ERR_UDP_DGRAM_LEN];
+	struct net_pkt *frag0, *frag1, *frag2;
+	struct net_ipv4_hdr hdr0, hdr1, hdr2;
+	int free_before, free_after;
+	const int allocated = 3;
+
+	zassert_not_null(iface);
+
+	for (int i = 0; i < REASS_ERR_UDP_DGRAM_LEN; i++) {
+		udp_dgram[i] = (uint8_t)i;
+	}
+
+	frag0 = reass_err_make_udp_fragment(iface, udp_dgram, 0, REASS_ERR_FRAG_PAYLOAD, true);
+	frag1 = reass_err_make_udp_fragment(iface, udp_dgram, REASS_ERR_FRAG_PAYLOAD,
+					    REASS_ERR_FRAG_PAYLOAD, true);
+	frag2 = reass_err_make_udp_fragment(iface, udp_dgram, REASS_ERR_FRAG_PAYLOAD * 2,
+					    REASS_ERR_FRAG_PAYLOAD, false);
+
+	zassert_ok(net_pkt_read(frag0, &hdr0, sizeof(hdr0)));
+	net_pkt_cursor_init(frag0);
+	zassert_ok(net_pkt_read(frag1, &hdr1, sizeof(hdr1)));
+	net_pkt_cursor_init(frag1);
+	zassert_ok(net_pkt_read(frag2, &hdr2, sizeof(hdr2)));
+	net_pkt_cursor_init(frag2);
+
+	reass_err_fault_inject_noncontiguous_ipv4_hdr(frag1);
+	free_before = reass_err_rx_pkt_free_count();
+
+	zassert_equal(net_ipv4_handle_fragment_hdr(frag0, &hdr0), NET_OK);
+	zassert_equal(net_ipv4_handle_fragment_hdr(frag1, &hdr1), NET_OK);
+	zassert_equal(net_ipv4_handle_fragment_hdr(frag2, &hdr2), NET_OK);
+
+	free_after = reass_err_rx_pkt_free_count();
+
+	zassert_equal(free_after, free_before + allocated,
+		      "leaked %d of %d fragments (free count %d -> %d)",
+		      free_before + allocated - free_after, allocated,
+		      free_before, free_after);
 }
 
 static void test_pre(void *ptr)

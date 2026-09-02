@@ -308,6 +308,39 @@ static bool validate_rate(enum nrf_wifi_off_raw_tx_tput_mode tput_mode,
 	return true;
 }
 
+static bool validate_chan_band(enum nrf_wifi_off_raw_tx_band band, unsigned int chan)
+{
+	switch (band) {
+	case NRF_WIFI_OFF_RAW_TX_BAND_2GHZ:
+		if (chan < 1 || chan > 14) {
+			LOG_ERR("%s: Channel %u is not a valid 2.4 GHz channel",
+				__func__, chan);
+			return false;
+		}
+		break;
+	case NRF_WIFI_OFF_RAW_TX_BAND_5GHZ:
+		if (chan < 32 || chan > 177) {
+			LOG_ERR("%s: Channel %u is not a valid 5 GHz channel",
+				__func__, chan);
+			return false;
+		}
+		break;
+	case NRF_WIFI_OFF_RAW_TX_BAND_6GHZ:
+		LOG_ERR("%s: 6 GHz band is not supported on nRF70", __func__);
+		return false;
+	case NRF_WIFI_OFF_RAW_TX_BAND_AUTO:
+	default:
+		if ((chan >= 1 && chan <= 14) || (chan >= 32 && chan <= 177)) {
+			break;
+		}
+		LOG_ERR("%s: Channel %u is not valid for AUTO band selection",
+			__func__, chan);
+		return false;
+	}
+
+	return true;
+}
+
 int nrf_wifi_off_raw_tx_conf_update(struct nrf_wifi_off_raw_tx_conf *conf)
 {
 	int ret = -1;
@@ -346,6 +379,11 @@ int nrf_wifi_off_raw_tx_conf_update(struct nrf_wifi_off_raw_tx_conf *conf)
 	if (!validate_rate(conf->tput_mode, conf->rate)) {
 		LOG_ERR("%s Invalid rate. Throughput mode: %d, rate: %d\n", __func__,
 				      conf->tput_mode, conf->rate);
+		goto out;
+	}
+
+	if (!validate_chan_band(conf->band, conf->chan)) {
+		LOG_ERR("%s: Invalid channel or band", __func__);
 		goto out;
 	}
 

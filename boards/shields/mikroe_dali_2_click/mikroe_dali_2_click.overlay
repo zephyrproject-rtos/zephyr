@@ -1,0 +1,27 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileCopyrightText: Copyright (c) 2026 sevenlab engineering GmbH
+ */
+
+/ {
+	aliases {
+		dali = &mikroe_dali2_click;
+	};
+};
+
+/ {
+	mikroe_dali2_click: dali2_click {
+		status = "okay";
+		compatible = "zephyr,dali-pwm";
+
+		rx-gpios = <&mikrobus_header 7 GPIO_ACTIVE_HIGH>;
+		tx-flank-shift-us = <(-46)>;
+		rx-flank-shift-us = <(-68)>;
+
+		/* override the following based on your board */
+		counter = <&timer2>;
+		chan-id-rx = <0>;
+		chan-id-tx = <1>;
+		pwms = <&pwm0 0 PWM_USEC(41) PWM_POLARITY_NORMAL>;
+	};
+};

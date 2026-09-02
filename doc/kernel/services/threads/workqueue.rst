@@ -306,7 +306,7 @@ work item:
 * :c:func:`k_work_cancel_sync()` may be invoked from threads to block until
   the work completes; it will return immediately if the cancellation was
   successful or not necessary (the work wasn't submitted or running).  This
-  can be used after :c:func:`k_work_cancel()` is invoked (from an ISR)` to
+  can be used after :c:func:`k_work_cancel()` is invoked (from an ISR) to
   confirm completion of an ISR-initiated cancellation.
 
 Scheduling a Delayable Work Item
@@ -434,7 +434,7 @@ protected by such a lock to prevent further resubmission, it's safe to do the
 resubmit as long as you're sure that eventually the item will take its lock
 and check that state to determine whether it should do anything.  Where a
 delayable work item is being rescheduled in its handler due to inability to
-take the lock some other self-locking state, such as an atomic flag set by the
+take the lock, some other self-locking state, such as an atomic flag set by the
 application/driver when the cancel is initiated, would be required to detect
 the cancellation and avoid the cancelled work item being submitted again after
 the deadline.

@@ -1002,7 +1002,7 @@ static int rx_disable(const struct device *dev, bool api)
 	async_rx->stoprx_deferred = false;
 	if (async_rx->next_buf != NULL) {
 		nrf_uarte_shorts_disable(uarte, NRF_UARTE_SHORT_ENDRX_STARTRX);
-		if (nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_ENDRX)) {
+		if (!IS_CBWT(dev) && nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_ENDRX)) {
 			/* The short may have already started the next buffer. Stopping it now
 			 * would overwrite RX.AMOUNT before the pending ENDRX is processed.
 			 * RX remains active until that ISR runs, so ENDRX must be serviced
@@ -1685,6 +1685,7 @@ static int count_byte_with_timer_common_init(const struct device *dev)
 
 	ret = nrfx_gppi_conn_alloc(evt, tsk, &async_rx->ppi_h);
 	if (ret < 0) {
+		LOG_ERR("GPPI allocation failed: %d", ret);
 		return ret;
 	}
 
@@ -1845,9 +1846,13 @@ static void notify_uart_rx_rdy(const struct device *dev, size_t len)
 #ifdef UARTE_HAS_FRAME_TIMEOUT
 static uint32_t us_to_bauds(uint32_t baudrate, int32_t timeout)
 {
-	uint64_t bauds = (uint64_t)baudrate * timeout / 1000000;
+	/* Divide baudrate by 1000 to avoid 64 bit division. This approach is not 100% accurate
+	 * but error is insignificant (within few bauds). Precise timeout my be more important
+	 * for higher baudrates but inaccuracy diminishes with higher baudrate.
+	 */
+	uint32_t bauds = ((baudrate / 1000) * timeout) / 1000;
 
-	return MIN((uint32_t)bauds, UARTE_FRAMETIMEOUT_COUNTERTOP_Msk);
+	return MIN(bauds, UARTE_FRAMETIMEOUT_COUNTERTOP_Msk);
 }
 #endif
 
@@ -3305,17 +3310,28 @@ static int uarte_instance_deinit(const struct device *dev)
 
 #define UARTE_TIMER_IRQ_PRIO(idx) DT_IRQ(DT_PHANDLE(UARTE(idx), timer), priority)
 
-#define UARTE_COUNT_BYTES_WITH_TIMER_COMMON_CONFIG(idx)						\
-	.timer_regs = COND_CODE_1(UARTE_HAS_PROP(idx, timer),					\
-		(UARTE_TIMER_REG(DT_PHANDLE(UARTE(idx), timer))),				\
-		(COND_CODE_1(CONFIG_UART_##idx##_NRF_HW_ASYNC,					\
-			     (UARTE_TIMER_REG(UARTE_TIMER_NODE(idx))),				\
-			     (NULL)))),								\
+#define UARTE_IS_CBWT(idx)                                                         \
+	UTIL_AND(IS_ENABLED(CONFIG_UART_##idx##_COUNT_BYTES_WITH_TIMER),           \
+		 IS_ENABLED(CONFIG_UARTE_NRFX_UARTE_COUNT_BYTES_WITH_TIMER))
+
+#define UARTE_IS_CBWT_LEGACY(idx)                                                  \
+	UTIL_AND(IS_ENABLED(CONFIG_UART_##idx##_COUNT_BYTES_WITH_TIMER_LEGACY),    \
+		 IS_ENABLED(CONFIG_UARTE_NRFX_UARTE_COUNT_BYTES_WITH_TIMER_LEGACY))
+
+#define UARTE_USE_TIMER_PROP(idx)                                                  \
+	COND_CODE_1(UTIL_OR(UARTE_IS_CBWT(idx), UARTE_IS_CBWT_LEGACY(idx)),        \
+		    (UARTE_HAS_PROP(idx, timer)), (0))
+
+#define UARTE_COUNT_BYTES_WITH_TIMER_COMMON_CONFIG(idx)                            \
+	.timer_regs = COND_CODE_1(UARTE_USE_TIMER_PROP(idx),                       \
+		(UARTE_TIMER_REG(DT_PHANDLE(UARTE(idx), timer))),                  \
+		(COND_CODE_1(CONFIG_UART_##idx##_NRF_HW_ASYNC,                     \
+			(UARTE_TIMER_REG(UARTE_TIMER_NODE(idx))),                  \
+			(NULL)))),                                                 \
 	.uarte_irqn = DT_IRQN(UARTE(idx)),
 
-
 #define UARTE_COUNT_BYTES_WITH_TIMER_CONFIG(idx)					\
-	IF_ENABLED(UARTE_HAS_PROP(idx, timer),						\
+	IF_ENABLED(UARTE_IS_CBWT(idx),							\
 		(.timer_irqn = UARTE_TIMER_IRQN(idx),					\
 		 .bounce_buf = {							\
 			uart##idx##_bounce_buf,						\
@@ -3323,15 +3339,14 @@ static int uarte_instance_deinit(const struct device *dev)
 		 },									\
 		 .bounce_buf_len = sizeof(uart##idx##_bounce_buf) / 2,			\
 		 .bounce_buf_swap_len = UARTE_BUF_SWAP_LEN(sizeof(uart##idx##_bounce_buf) / 2,\
-				UARTE_US_TO_BYTES(UARTE_PROP(idx, current_speed))),	\
+				UARTE_PROP(idx, current_speed)),	\
 		 .cbwt_data = &uart##idx##_bounce_data,))
 
 #define UARTE_COUNT_BYTES_WITH_TIMER_VALIDATE_CONFIG(idx) \
 	__ASSERT_NO_MSG(UARTE_TIMER_IRQ_PRIO(idx) == DT_IRQ(UARTE(idx), priority))
 
 #define UARTE_TIMER_IRQ_CONNECT(idx, func)						\
-	IF_ENABLED(UTIL_AND(IS_ENABLED(CONFIG_UARTE_NRFX_UARTE_COUNT_BYTES_WITH_TIMER),	\
-			    UARTE_HAS_PROP(idx, timer)),				\
+	IF_ENABLED(UARTE_IS_CBWT(idx),							\
 		(UARTE_COUNT_BYTES_WITH_TIMER_VALIDATE_CONFIG(idx);			\
 		 IRQ_CONNECT(UARTE_TIMER_IRQN(idx), UARTE_TIMER_IRQ_PRIO(idx), func,	\
 			     DEVICE_DT_GET(UARTE(idx)), 0);				\
@@ -3339,8 +3354,7 @@ static int uarte_instance_deinit(const struct device *dev)
 
 /* Macro sets flag to indicate that uart use different interrupt priority than the system clock. */
 #define UARTE_HAS_VAR_PRIO(idx)									\
-	COND_CODE_1(UTIL_AND(IS_ENABLED(CONFIG_UARTE_NRFX_UARTE_COUNT_BYTES_WITH_TIMER),	\
-			    UARTE_HAS_PROP(idx, timer)),					\
+	COND_CODE_1(UARTE_IS_CBWT(idx),								\
 		   (((DT_IRQ(UARTE(idx), priority) != DT_IRQ(DT_NODELABEL(grtc), priority)) ?	\
 		    UARTE_CFG_FLAG_VAR_IRQ : 0)), (0))
 
@@ -3480,22 +3494,26 @@ static int uarte_instance_deinit(const struct device *dev)
  *
  * Macro determines if delayed initialization needs to be applied.
  */
-#define UARTE_INIT_AFTER_GPPI(idx)					       \
-	COND_CODE_1(UTIL_AND(CONFIG_UARTE_NRFX_UARTE_COUNT_BYTES_WITH_TIMER,   \
-			     UARTE_HAS_PROP(idx, timer)),		       \
-		    (UTIL_AND(IS_ENABLED(CONFIG_NRFX_GPPI_SD2PPI_GLOBAL),      \
-			      IS_ENABLED(CONFIG_IRONSIDE_SE_CALL))), (0))
+#define UARTE_INIT_AFTER_GPPI(idx)							\
+	COND_CODE_1(UARTE_IS_CBWT(idx),							\
+		    (UTIL_OR(IS_ENABLED(CONFIG_GPPI_EXT_ALLOCATOR_CLI),			\
+			     UTIL_AND(IS_ENABLED(CONFIG_NRFX_GPPI_SD2PPI_GLOBAL),	\
+				      IS_ENABLED(CONFIG_IRONSIDE_SE_CALL)))), (0))
 
 /* Init phase is delayed to POST_KERNEL if it relies on Ironside+GPPI being ready. */
 #define UARTE_INIT_PHASE(idx)						       \
 	COND_CODE_1(UARTE_INIT_AFTER_GPPI(idx), (POST_KERNEL), (PRE_KERNEL_1))
 
+#define UARTE_INIT_BASE_PRIO COND_CODE_1(CONFIG_GPPI_EXT_ALLOCATOR_CLI,			\
+			(UTIL_INC(UTIL_INC(CONFIG_IPC_SERVICE_REG_BACKEND_PRIORITY))),	\
+			(UTIL_INC(UTIL_INC(CONFIG_IRONSIDE_SE_CALL_INIT_PRIORITY))))
+
 /* If delayed initialization is used then init priority is derived from Ironside
- * communication initialization priority.
+ * communication initialization priority or GPPI external allocator backend priority.
  */
-#define UARTE_INIT_PRIO(idx)						       \
-	COND_CODE_1(UARTE_INIT_AFTER_GPPI(idx),				       \
-		   (UTIL_INC(UTIL_INC(CONFIG_IRONSIDE_SE_CALL_INIT_PRIORITY))),\
+#define UARTE_INIT_PRIO(idx)								\
+	COND_CODE_1(UARTE_INIT_AFTER_GPPI(idx),						\
+		   (UARTE_INIT_BASE_PRIO),						\
 		   (CONFIG_SERIAL_INIT_PRIORITY))
 
 #define UART_NRF_UARTE_DEVICE(idx)					       \
@@ -3504,8 +3522,7 @@ static int uarte_instance_deinit(const struct device *dev)
 	UARTE_INT_DRIVEN(idx);						       \
 	PINCTRL_DT_DEFINE(UARTE(idx));					       \
 	IF_ENABLED(CONFIG_UART_##idx##_ASYNC, (				       \
-		IF_ENABLED(UTIL_AND(IS_ENABLED(CONFIG_UARTE_NRFX_UARTE_COUNT_BYTES_WITH_TIMER), \
-			   UARTE_HAS_PROP(idx, timer)),			       \
+		IF_ENABLED(UARTE_IS_CBWT(idx),				       \
 		(static uint8_t uart##idx##_bounce_buf[CONFIG_UART_NRFX_UARTE_BOUNCE_BUF_LEN] \
 			DMM_MEMORY_SECTION(UARTE(idx));			       \
 		static struct uarte_async_rx_cbwt uart##idx##_bounce_data;     \

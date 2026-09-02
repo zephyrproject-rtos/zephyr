@@ -1233,7 +1233,7 @@ static int pbap_pse_rfcomm_accept(struct bt_conn *conn,
 				  struct bt_goep **goep)
 {
 	struct bt_pbap_pse_rfcomm *pbap_pse_rfcomm;
-	struct bt_pbap_pse *pbap_pse;
+	struct bt_pbap_pse *pbap_pse = NULL;
 	int err;
 
 	pbap_pse_rfcomm = CONTAINER_OF(server, struct bt_pbap_pse_rfcomm, server);
@@ -1246,10 +1246,7 @@ static int pbap_pse_rfcomm_accept(struct bt_conn *conn,
 		return err;
 	}
 
-	if (pbap_pse == NULL) {
-		LOG_WRN("Invalid parameter");
-		return -EINVAL;
-	}
+	__ASSERT(pbap_pse != NULL, "Invalid pbap pse instance");
 
 	pbap_pse->_goep.transport_ops = &pse_rfcomm_transport_ops;
 	BT_GOEP_INIT_V1(&pbap_pse->_goep, &pbap_pse->_goep_transport.v1);
@@ -1265,7 +1262,7 @@ static int pbap_pse_l2cap_accept(struct bt_conn *conn,
 				 struct bt_goep **goep)
 {
 	struct bt_pbap_pse_l2cap *pbap_pse_l2cap;
-	struct bt_pbap_pse *pbap_pse;
+	struct bt_pbap_pse *pbap_pse = NULL;
 	int err;
 
 	pbap_pse_l2cap = CONTAINER_OF(server, struct bt_pbap_pse_l2cap, server);
@@ -1278,10 +1275,7 @@ static int pbap_pse_l2cap_accept(struct bt_conn *conn,
 		return err;
 	}
 
-	if (pbap_pse == NULL) {
-		LOG_WRN("Invalid parameter");
-		return -EINVAL;
-	}
+	__ASSERT(pbap_pse != NULL, "Invalid pbap pse instance");
 
 	pbap_pse->_goep.transport_ops = &pse_l2cap_transport_ops;
 	BT_GOEP_INIT_V2(&pbap_pse->_goep, &pbap_pse->_goep_transport.v2);

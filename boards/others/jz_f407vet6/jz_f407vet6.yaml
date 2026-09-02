@@ -15,6 +15,7 @@ supported:
   - i2c
   - netif:eth
   - nvs
+  - ptp_clock
   - rtc
   - sdhc
   - spi

@@ -129,15 +129,13 @@ properties:
 
   led-slot:
     type: array
-    default: [0, 0, 0, 0]
     description: |
       Set which LED is active in each time slot for Multi-LED mode only.
       0: None (Disabled)
       1: Red LED
       2: InfraRed LED
       3: Green LED (MAX30101 only — not valid for MAX30102)
-      Default set to [0, 0, 0, 0], no LED activated in multi-LED mode.
-      User needs to choose which LED is active for each slot.
+      By default, all available LEDs are activated in multi-LED mode.
       NOTE: If a LED is present on multiple slots, `sensor_channel_get`
       will result in the averaging of the values.
     min-len: 4

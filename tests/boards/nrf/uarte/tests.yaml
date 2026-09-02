@@ -15,3 +15,13 @@ tests:
     integration_platforms:
       - nrf7120dk/nrf7120/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
+
+  boards.nrf.uarte.cbwt:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE=boards/nrf54l15dk_nrf54l15_cpuapp_cbwt.overlay
+    extra_configs:
+      - CONFIG_NRF_UARTE_TEST_CBWT=y
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp
+    integration_platforms:
+      - nrf54l15dk/nrf54l15/cpuapp

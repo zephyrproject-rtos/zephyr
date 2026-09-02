@@ -129,61 +129,6 @@ static int stream_flash_erase_to_append(struct stream_flash_ctx *ctx, size_t siz
 	return rc;
 }
 
-#if defined(CONFIG_STREAM_FLASH_ERASE)
-
-int stream_flash_erase_page(struct stream_flash_ctx *ctx, off_t off)
-{
-#if defined(CONFIG_FLASH_HAS_EXPLICIT_ERASE)
-	int rc;
-	struct flash_pages_info page;
-
-	if (off < ctx->offset || (off - ctx->offset) >= ctx->available) {
-		LOG_ERR("Offset out of designated range");
-		return -ERANGE;
-	}
-
-	/* Do not allow pages that have already been erased */
-	if ((off - ctx->offset) < ctx->erased_up_to) {
-		return -EINVAL;
-	}
-
-#if defined(CONFIG_FLASH_HAS_NO_EXPLICIT_ERASE)
-	/* There are both types of devices */
-	const struct flash_parameters *fparams = flash_get_parameters(ctx->fdev);
-
-	/* Stream flash does not rely on erase, it does it when device needs it */
-	if (!(flash_params_get_erase_cap(fparams) & FLASH_ERASE_C_EXPLICIT)) {
-		return 0;
-	}
-#endif
-	rc = flash_get_page_info_by_offs(ctx->fdev, off, &page);
-	if (rc != 0) {
-		LOG_ERR("Error %d while getting page info", rc);
-		return rc;
-	}
-
-	if (ctx->erased_up_to >= page.start_offset + page.size) {
-		return 0;
-	}
-
-	LOG_DBG("Erasing page at offset 0x%08lx", (long)page.start_offset);
-
-	rc = flash_erase(ctx->fdev, page.start_offset, page.size);
-
-	if (rc != 0) {
-		LOG_ERR("Error %d while erasing page", rc);
-	} else {
-		ctx->erased_up_to = page.start_offset + page.size;
-	}
-
-	return rc;
-#else
-	return 0;
-#endif
-}
-
-#endif /* CONFIG_STREAM_FLASH_ERASE */
-
 static int flash_sync(struct stream_flash_ctx *ctx)
 {
 	int rc = 0;

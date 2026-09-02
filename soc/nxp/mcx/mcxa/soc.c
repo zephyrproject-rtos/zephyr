@@ -23,6 +23,28 @@
 #define MCXA_SPC	((SPC_Type *)DT_REG_ADDR(DT_INST(0, nxp_spc)))
 #endif
 
+#ifdef CONFIG_SOC_MCXA_EARLY_SRAM_ECC_INIT
+__attribute__((naked)) void soc_early_reset_hook(void)
+{
+	__asm__ volatile(
+		"mov r1, pc\n"
+		"tst r1, #0x24000000\n"
+		"bne 2f\n"
+		"ldr r0, =0x20000000\n"
+		"ldr r1, =0x20002000\n"
+		"movs r2, #0\n"
+		"movs r3, #0\n"
+		"movs r4, #0\n"
+		"movs r5, #0\n"
+		"1:\n"
+		"stmia r0!, {r2-r5}\n"
+		"cmp r0, r1\n"
+		"bcc 1b\n"
+		"2:\n"
+		"bx lr\n");
+}
+#endif
+
 #ifdef CONFIG_SOC_RESET_HOOK
 void soc_reset_hook(void)
 {

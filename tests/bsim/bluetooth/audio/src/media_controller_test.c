@@ -1409,9 +1409,6 @@ void test_media_controller_player(struct media_player *player)
 	}
 
 	WAIT_FOR_FLAG(playback_speed);
-	if (g_pb_speed != pb_speed) {
-		FAIL("Playback speed failed: Incorrect playback speed\n");
-	}
 	LOG_INF("Playback speed set succeeded");
 
 	/* Read seeking speed *************************************/

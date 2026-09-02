@@ -39,7 +39,7 @@ if SPI_MCHP_SERCOM
 
 config SPI_MCHP_INTER_CHARACTER_SPACE
 	int "Microchip SERCOM SPI Inter-Character Spacing (in clock cycles)"
-	default 63 if SPI_SLAVE
+	default 63 if SPI_PERIPHERAL
 	default 0
 	range 0 63
 	depends on SOC_FAMILY_MICROCHIP_SAM_D5X_E5X

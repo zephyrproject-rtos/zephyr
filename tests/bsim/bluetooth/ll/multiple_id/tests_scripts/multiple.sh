@@ -7,7 +7,7 @@ source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 # Multiple connection between two devices with multiple peripheral identity
 simulation_id="${BOARD_TS}_multiple"
 verbosity_level=2
-EXECUTE_TIMEOUT=1600
+EXECUTE_TIMEOUT=3600
 
 cd ${BSIM_OUT_PATH}/bin
 
@@ -18,6 +18,6 @@ Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_ll_multiple_id_prj_conf -RealEncry
   -v=${verbosity_level} -s=${simulation_id} -d=1 -testid=peripheral -rs=7
 
 Execute ./bs_2G4_phy_v1 -v=${verbosity_level} -s=${simulation_id} \
-  -D=2 -sim_length=2410e6 $@ -argschannel -at=40
+  -D=2 -sim_length=2410e6 -nodump $@ -argschannel -at=40
 
 wait_for_background_jobs

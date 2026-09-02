@@ -33,7 +33,14 @@ import sys
 # other serious issues.
 # These headers typically already have very specific tracing hooks for all relevant things
 # written by hand so are excluded.
-notracing = ["kernel.h", "zephyr/kernel.h", "errno_private.h", "zephyr/errno_private.h"]
+notracing = [
+    "kernel.h",
+    "zephyr/kernel.h",
+    "sleep.h",
+    "zephyr/sleep.h",
+    "errno_private.h",
+    "zephyr/errno_private.h",
+]
 
 types64 = ["int64_t", "uint64_t"]
 

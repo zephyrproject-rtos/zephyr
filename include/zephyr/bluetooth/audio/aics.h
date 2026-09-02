@@ -85,6 +85,29 @@ extern "C" {
 /** @} */
 
 /**
+ * @brief Convert an AICS gain mode to a human-readable string.
+ *
+ * @param mode  The gain mode (BT_AICS_MODE_*) value.
+ *
+ * @return A string representation of the gain mode.
+ */
+static inline const char *bt_aics_mode_to_str(uint8_t mode)
+{
+	switch (mode) {
+	case BT_AICS_MODE_MANUAL_ONLY:
+		return "Manual only";
+	case BT_AICS_MODE_AUTO_ONLY:
+		return "Auto only";
+	case BT_AICS_MODE_MANUAL:
+		return "Manual";
+	case BT_AICS_MODE_AUTO:
+		return "Auto";
+	default:
+		return "Unknown";
+	}
+}
+
+/**
  * @name Audio Input Control Service input types
  * @{
  */

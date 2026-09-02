@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2026 Analog Devices Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		ltc4286-default-test = &ltc4286_default_test;
+	};
+};
+
+&i2c0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+
+	ltc4286_default_test: ltc4286@40 {
+		compatible = "adi,ltc4286";
+		reg = <0x40>;
+		status = "okay";
+		rsense-uohms = <10000>;
+	};
+};

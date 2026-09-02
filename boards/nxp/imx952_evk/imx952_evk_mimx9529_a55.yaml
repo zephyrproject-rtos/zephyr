@@ -13,6 +13,9 @@ toolchain:
   - cross-compile
 ram: 10240
 supported:
+  - can
+  - gpio
+  - i2c
   - uart
 testing:
   binaries:

@@ -88,6 +88,15 @@ static struct flash_info ext_flash_infos[2] = {
 #define FSPI28AMEN            BIT(4)
 #define SECTOR_ERASE_4KB_UNIT BIT(3)
 
+/* 0xec: Flash Control Register 9 */
+#define SMFI_FLHCTRL9R       (IT51XXX_SMFI_REGS_BASE + 0xec)
+#define EC_PATH_PROTECT_LOCK BIT(4)
+
+/* 0xed: Flash Control Register 10 */
+#define SMFI_FLHCTRL10R        (IT51XXX_SMFI_REGS_BASE + 0xed)
+#define HOST_PATH_PROTECT_LOCK BIT(4)
+#define DBGR_PATH_PROTECT_LOCK BIT(0)
+
 /* 0xa6: Manual Flash 1K Command Control 1 */
 #define SMFI_M1KFLHCTRL1 (IT51XXX_M1K_REGS_BASE + 0x00)
 #define W1S_M1K_PE       BIT(1)
@@ -584,6 +593,79 @@ static int m1k_flash_read_write_protect(const struct device *dev, const bool wri
 
 	return 0;
 }
+
+static int m1k_flash_wr_protect_lock(const struct device *dev, const uintptr_t in, void *out)
+{
+	const struct flash_it51xxx_ex_op_wr_protect_lock *request =
+		(const struct flash_it51xxx_ex_op_wr_protect_lock *)in;
+	struct flash_it51xxx_ex_op_wr_protect_lock *result =
+		(struct flash_it51xxx_ex_op_wr_protect_lock *)out;
+	struct flash_it51xxx_dev_data *data = dev->data;
+	uint8_t ctrl_9_reg_val, ctrl_10_reg_val;
+
+	if (data->flash != FLASH_IT51XXX_INTERNAL) {
+		LOG_ERR("supported internal flash (e-flash) only");
+		return -ENOTSUP;
+	}
+
+	if (request != NULL) {
+		if (request->path == 0 || (request->path & ~PROTECT_PATH_ALL) != 0) {
+			LOG_ERR("invalid path %#x", request->path);
+			return -EINVAL;
+		}
+
+		if (request->path & PROTECT_PATH_EC) {
+			ctrl_9_reg_val = sys_read8(SMFI_FLHCTRL9R);
+			ctrl_9_reg_val |= EC_PATH_PROTECT_LOCK;
+			sys_write8(ctrl_9_reg_val, SMFI_FLHCTRL9R);
+		}
+
+		if (request->path & (PROTECT_PATH_HOST | PROTECT_PATH_DBGR)) {
+			ctrl_10_reg_val = sys_read8(SMFI_FLHCTRL10R);
+
+			if (request->path & PROTECT_PATH_HOST) {
+				ctrl_10_reg_val |= HOST_PATH_PROTECT_LOCK;
+			}
+			if (request->path & PROTECT_PATH_DBGR) {
+				ctrl_10_reg_val |= DBGR_PATH_PROTECT_LOCK;
+			}
+
+			sys_write8(ctrl_10_reg_val, SMFI_FLHCTRL10R);
+		}
+	}
+
+	if (result != NULL) {
+		if (result->path == 0 || (result->path & ~PROTECT_PATH_ALL) != 0) {
+			LOG_ERR("invalid path %#x to get state", result->path);
+			return -EINVAL;
+		}
+
+		ctrl_9_reg_val = sys_read8(SMFI_FLHCTRL9R);
+		ctrl_10_reg_val = sys_read8(SMFI_FLHCTRL10R);
+
+		if (result->path & PROTECT_PATH_EC) {
+			if (!(ctrl_9_reg_val & EC_PATH_PROTECT_LOCK)) {
+				result->is_locked = false;
+				return 0;
+			}
+		}
+		if (result->path & PROTECT_PATH_HOST) {
+			if (!(ctrl_10_reg_val & HOST_PATH_PROTECT_LOCK)) {
+				result->is_locked = false;
+				return 0;
+			}
+		}
+		if (result->path & PROTECT_PATH_DBGR) {
+			if (!(ctrl_10_reg_val & DBGR_PATH_PROTECT_LOCK)) {
+				result->is_locked = false;
+				return 0;
+			}
+		}
+		result->is_locked = true;
+	}
+
+	return 0;
+}
 #endif /* CONFIG_FLASH_EX_OP_ENABLED */
 
 /* Read data from flash */
@@ -792,6 +874,9 @@ static int flash_it51xxx_ex_op(const struct device *dev, uint16_t opcode, const 
 		break;
 	case FLASH_IT51XXX_READ_PROTECT:
 		ret = m1k_flash_read_write_protect(dev, false, in, out);
+		break;
+	case FLASH_IT51XXX_WR_PROTECT_LOCK:
+		ret = m1k_flash_wr_protect_lock(dev, in, out);
 		break;
 	default:
 		return -ENOTSUP;

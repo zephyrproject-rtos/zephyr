@@ -22,7 +22,7 @@ static esp_hosted_config_t esp_hosted_config = {
 
 static esp_hosted_data_t esp_hosted_data = {0};
 
-static int esp_hosted_recv(struct net_if *, void *, size_t);
+static int esp_hosted_recv(struct net_if *iface, void *buf, size_t len);
 
 static size_t esp_hosted_get_iface(const struct device *dev)
 {

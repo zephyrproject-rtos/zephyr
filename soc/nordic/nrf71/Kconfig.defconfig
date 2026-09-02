@@ -15,7 +15,7 @@ config CORTEX_M_SYSTICK
 config CACHE_NRF_CACHE
 	default y
 
-config CACHE_MANAGEMENT
+configdefault CACHE_MANAGEMENT
 	default y
 
 choice CACHE_TYPE

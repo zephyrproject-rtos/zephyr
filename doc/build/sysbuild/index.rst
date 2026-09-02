@@ -915,17 +915,39 @@ Sysbuild but not all preset macros will work as expected.
 
    Using CMake presets with sysbuild requires CMake version 3.27 or higher.
 
-As described in :ref:`sysbuild` then sysbuild is a higher-level build system which means that when
-CMake presets are used together with sysbuild, then the preset is consumed and processed by sysbuild
-itself and result is passed to the application.
+As described in :ref:`sysbuild` sysbuild is a higher-level build system overseeing
+the build of multiple applications. This means for the build process two preset files apply:
+one for the high level sysbuild CMake process and one for the individual application build process.
 
-Running sysbuild with preset.
+The high level sysbuild preset file is located in the application's sysbuild
+configuration folder ``<application>/sysbuild/CMakePresets.json``. See :ref:`sysbuild_application_configuration`.
+You can set variables that apply to sysbuild itself and to all images that are part of the sysbuild project.
+Or use domain specific variables to set variables for a specific image, see :ref:`sysbuild_cmake_namespace`
+
+Example snippet sysbuild preset file:
+
+.. code-block:: json
+
+   "cacheVariables": {
+      "CMAKE_MESSAGE_LOG_LEVEL": "STATUS",
+      "BOARD": "Board name of project",
+      "BOARD_QUALIFIERS": "Qualifier for all applications in the sysbuild project",
+      "<domain>_BOARD_QUALIFIERS": "Board qualifier for a specific domain"
+   }
+
+The application preset file is located in the application's source folder ``<application>/CMakePresets.json``
+and is only used for the build process of the application itself. This is the CMake default behaviour.
+Selecting a preset for a specific application is currently not possible `#111494 <https://github.com/zephyrproject-rtos/zephyr/issues/111494>`_.
+
+Running sysbuild with a preset selection
+========================================
+
+Here is an example of how to run sysbuild with the ``release`` preset:
 
 .. tabs::
 
    .. group-tab:: ``west build``
 
-      Here is an example where preset ``release`` should be used.
       For details, see :ref:`west-multi-domain-builds` in the ``west build documentation``.
 
       .. zephyr-app-commands::
@@ -938,15 +960,13 @@ Running sysbuild with preset.
 
    .. group-tab:: ``cmake``
 
-      Here is an example using CMake and Ninja.
-
       .. code-block:: shell
 
-         APP_DIR=samples/hello_world cmake -Bbuild -GNinja -DBOARD=reel_board share/sysbuild
+         APP_DIR=samples/hello_world cmake -Bbuild -GNinja -DBOARD=reel_board --preset=release share/sysbuild
          ninja -Cbuild
 
-      When using CMake presets with sysbuild then ``APP_DIR`` must be set in environment in order
-      for Sysbuild CMake to be able to include the ``CMakePresets.json`` from the main Zephyr
+      When using CMake presets with sysbuild, ``APP_DIR`` must be set as an environment variable
+      in order for sysbuild's CMake process to be able to include the ``CMakePresets.json`` from the
       application's source directory.
 
 .. note::

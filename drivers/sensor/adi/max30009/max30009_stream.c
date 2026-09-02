@@ -17,9 +17,8 @@ LOG_MODULE_DECLARE(MAX30009);
  */
 static uint32_t max30009_sample_period_ns(const struct device *dev)
 {
-	const struct max30009_dev_config *cfg = dev->config;
 	struct max30009_data *data = dev->data;
-	uint32_t adc_osr = MAX30009_BIOZ_ADC_OSR_BASE << cfg->bioz_cfg.cfg_1.bioz_adc_osr;
+	uint32_t adc_osr = MAX30009_BIOZ_ADC_OSR_BASE << data->bioz_adc_osr_code;
 
 	if (data->bioz_adc_clk <= 0) {
 		return 0;
@@ -122,7 +121,7 @@ static void max30009_flush_rtio(const struct device *dev)
 
 	if (sqe == NULL || complete_op == NULL) {
 		LOG_ERR("Failed to acquire RTIO SQEs");
-		rtio_iodev_sqe_err(data->sqe, -ENOMEM);
+		rtio_sqe_drop_all(data->rtio_ctx);
 		gpio_pin_interrupt_configure_dt(&cfg->interrupt_gpio, GPIO_INT_EDGE_TO_ACTIVE);
 		return;
 	}

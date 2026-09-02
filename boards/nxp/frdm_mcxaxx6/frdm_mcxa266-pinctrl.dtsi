@@ -153,4 +153,44 @@
 			drive-strength = "low";
 		};
 	};
+
+	pinmux_flexio_lcd: pinmux_flexio_lcd {
+		group0 {
+			pinmux = <FLEXIO0_D16_P2_8>,
+				 <FLEXIO0_D17_P2_9>,
+				 <FLEXIO0_D18_P2_10>,
+				 <FLEXIO0_D19_P2_11>,
+				 <FLEXIO0_D20_P3_12>,
+				 <FLEXIO0_D21_P3_13>,
+				 <FLEXIO0_D22_P2_14>,
+				 <FLEXIO0_D23_P1_15>,
+				 <FLEXIO0_D24_P3_24>,
+				 <FLEXIO0_D25_P3_25>,
+				 <FLEXIO0_D26_P2_18>,
+				 <FLEXIO0_D27_P1_19>,
+				 <FLEXIO0_D28_P3_20>,
+				 <FLEXIO0_D29_P3_29>,
+				 <FLEXIO0_D30_P2_22>,
+				 <FLEXIO0_D31_P3_23>;
+			drive-strength = "low";
+			slew-rate = "fast";
+			input-enable;
+		};
+
+		group1 {
+			pinmux = <FLEXIO0_D7_P0_7>;
+			drive-strength = "low";
+			slew-rate = "fast";
+			input-enable;
+			bias-pull-up;
+		};
+
+		group2 {
+			pinmux = <FLEXIO0_D8_P4_0>;
+			drive-strength = "low";
+			slew-rate = "fast";
+			input-enable;
+			bias-pull-up;
+		};
+	};
 };

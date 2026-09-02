@@ -13,7 +13,6 @@ properties:
     const: 2
 
   ngpios:
-    required: true
     const: 8
     description: |
       Number of GPIOs available on port expander.

@@ -522,7 +522,7 @@ struct bt_le_cs_create_config_params {
 struct bt_le_cs_test_cb {
 	/**@brief CS Test Subevent data.
 	 *
-	 * @param[in] Subevent results.
+	 * @param[in] data Subevent results.
 	 */
 	void (*le_cs_test_subevent_data_available)(struct bt_conn_le_cs_subevent_result *data);
 	/**@brief CS Test End Complete. */

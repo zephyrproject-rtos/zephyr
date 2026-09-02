@@ -53,7 +53,7 @@ LOG_MODULE_REGISTER(i2c_ite_enhance, CONFIG_I2C_LOG_LEVEL);
 #define I2C_CQ_CMD_L_P  BIT(5)
 /* E (End) is this device end flag. */
 #define I2C_CQ_CMD_L_E  BIT(4)
-/* LA (Last ACK) is Last ACK in master receiver. */
+/* LA (Last ACK) is Last ACK in controller receiver. */
 #define I2C_CQ_CMD_L_LA BIT(3)
 /* bit[2:0] are number of transfer out or receive data which depends on R/W. */
 #define I2C_CQ_CMD_L_NUM_BIT_2_0 GENMASK(2, 0)
@@ -83,6 +83,7 @@ struct i2c_enhance_config {
 	uint8_t data_hold_time;
 	uint32_t clock_gate_offset;
 	int transfer_timeout_ms;
+	uint32_t scl_sda_low_timeout_ms;
 	bool target_enable;
 	bool target_pio_mode;
 	bool push_pull_recovery;
@@ -194,7 +195,7 @@ enum enhanced_i2c_ctl {
 	E_RX_MODE = 0x80,
 	/* State reset and hardware reset */
 	E_STS_AND_HW_RST = (E_STS_RST | E_HW_RST),
-	/* Generate start condition and transmit slave address */
+	/* Generate start condition and transmit target address */
 	E_START_ID = (E_INT_EN | E_MODE_SEL | E_ACK | E_START | E_HW_RST),
 	/* Generate stop condition */
 	E_FINISH = (E_INT_EN | E_MODE_SEL | E_ACK | E_STOP | E_HW_RST),
@@ -439,6 +440,27 @@ static int enhanced_i2c_error(const struct device *dev)
 }
 
 IT8XXX2_I2C_CODE_IN_RAM
+static void i2c_enhance_set_low_timeout(const struct device *dev)
+{
+	const struct i2c_enhance_config *config = dev->config;
+	uint8_t *base = config->base;
+
+	if (config->scl_sda_low_timeout_ms == 0) {
+		/* Disable the timeout setting when clock/data are in a low state */
+		IT8XXX2_I2C_TO_ARB_ST(base) &=
+			~(IT8XXX2_I2C_SCL_TIMEOUT_EN | IT8XXX2_I2C_SDA_TIMEOUT_EN);
+		/* The IT8XXX2_I2C_TOR register must have a non-zero value
+		 * even if the hardware timeout is disabled.
+		 */
+		IT8XXX2_I2C_TOR(base) = I2C_CLK_LOW_TIMEOUT;
+	} else {
+		IT8XXX2_I2C_TOR(base) = config->scl_sda_low_timeout_ms;
+		IT8XXX2_I2C_TO_ARB_ST(base) |=
+			(IT8XXX2_I2C_SCL_TIMEOUT_EN | IT8XXX2_I2C_SDA_TIMEOUT_EN);
+	}
+}
+
+IT8XXX2_I2C_CODE_IN_RAM
 static void enhanced_i2c_start(const struct device *dev)
 {
 	const struct i2c_enhance_config *config = dev->config;
@@ -448,11 +470,8 @@ static void enhanced_i2c_start(const struct device *dev)
 	i2c_reset(dev);
 	/* Set i2c frequency */
 	i2c_enhanced_port_set_frequency(dev, config->bitrate);
-	/*
-	 * Set time out register.
-	 * I2C D/E/F clock/data low timeout.
-	 */
-	IT8XXX2_I2C_TOR(base) = I2C_CLK_LOW_TIMEOUT;
+	/* Set SCL/SDA low timeout */
+	i2c_enhance_set_low_timeout(dev);
 	/* bit1: Enable enhanced i2c module */
 	IT8XXX2_I2C_CTR1(base) = IT8XXX2_I2C_MDL_EN;
 }
@@ -468,7 +487,7 @@ static void i2c_pio_trans_data(const struct device *dev,
 	uint32_t nack = 0;
 
 	if (first_byte) {
-		/* First byte must be slave address. */
+		/* First byte must be target address. */
 		IT8XXX2_I2C_DTR(base) = trans_data |
 					(direct == RX_DIRECT ? BIT(0) : 0);
 		/* start or repeat start signal. */
@@ -844,8 +863,8 @@ static int enhanced_i2c_cmd_queue_trans(const struct device *dev)
 	IT8XXX2_I2C_CTR(base) = E_STS_AND_HW_RST;
 	/* Set "PSR" registers to decide the i2c speed. */
 	i2c_enhanced_port_set_frequency(dev, config->bitrate);
-	/* Set time out register. port D, E, or F clock/data low timeout. */
-	IT8XXX2_I2C_TOR(base) = I2C_CLK_LOW_TIMEOUT;
+	/* Set SCL/SDA low timeout */
+	i2c_enhance_set_low_timeout(dev);
 
 	if (data->num_msgs == 2) {
 		/* I2C write to read of command queue mode. */
@@ -1177,18 +1196,26 @@ static void target_i2c_isr_pio(const struct device *dev, uint8_t interrupt_statu
 IT8XXX2_I2C_CODE_IN_RAM
 static void target_i2c_isr(const struct device *dev)
 {
+	struct i2c_enhance_data *data = dev->data;
 	const struct i2c_enhance_config *config = dev->config;
 	uint8_t *base = config->base;
 	uint8_t target_status = IT8XXX2_I2C_STR(base);
 
 	/* Any error */
 	if (target_status & E_TARGET_ANY_ERROR) {
+		const struct i2c_target_callbacks *target_cb = data->target_cfg->callbacks;
+
 		/* Hardware reset */
 		IT8XXX2_I2C_CTR(base) |= IT8XXX2_I2C_HALT;
 		/* NACK */
 		IT8XXX2_I2C_CTR(base) &= ~IT8XXX2_I2C_ACK;
 		IT8XXX2_I2C_CTR(base) |= IT8XXX2_I2C_ACK;
 
+		if (target_cb->error) {
+			target_cb->error(data->target_cfg, (target_status & E_TARGET_TMOE)
+								   ? I2C_ERROR_TIMEOUT
+								   : I2C_ERROR_ARBITRATION);
+		}
 		return;
 	}
 
@@ -1284,6 +1311,8 @@ static int i2c_enhance_init(const struct device *dev)
 		IT8XXX2_I2C_DHTR(base) &= ~IT8XXX2_I2C_SOFT_RST;
 		/* reset i2c port */
 		i2c_reset(dev);
+		/* Set SCL/SDA low timeout */
+		i2c_enhance_set_low_timeout(dev);
 		/* bit1, Module enable */
 		IT8XXX2_I2C_CTR1(base) = 0;
 
@@ -1661,6 +1690,10 @@ static DEVICE_API(i2c, i2c_enhance_driver_api) = {
 		.data_hold_time = DT_INST_PROP_OR(inst, data_hold_time, 0),     \
 		.clock_gate_offset = DT_INST_PROP(inst, clock_gate_offset),     \
 		.transfer_timeout_ms = I2C_DT_INST_TRANSFER_TIMEOUT_MS(inst),   \
+		.scl_sda_low_timeout_ms =                                       \
+			DT_INST_PROP_OR(inst,                                   \
+					scl_sda_low_timeout_ms,                 \
+					I2C_CLK_LOW_TIMEOUT),                   \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                   \
 		.target_enable = DT_INST_PROP(inst, target_enable),             \
 		.target_pio_mode = DT_INST_PROP(inst, target_pio_mode),         \

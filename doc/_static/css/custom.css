@@ -149,7 +149,6 @@ hr,
     border-color: var(--hr-color);
 }
 
-
 footer,
 #search-results .context {
     color: var(--footer-color);
@@ -279,12 +278,14 @@ code,
     border-bottom: 1px solid var(--code-background-color) !important;
 }
 
-/* Code literals */
-a.internal code.literal {
+/* Code literals that are links in body content take the link color. Scoped to .rst-content so the
+   navigation sidebar (where code identifiers are section titles, not cross-references) is unaffected
+   and keeps the regular nav text color. */
+.rst-content a.internal code.literal {
     color: var(--link-color);
 }
 
-a.internal:visited code.literal {
+.rst-content a.internal:visited code.literal {
     color: var(--link-color-visited);
 }
 
@@ -506,7 +507,6 @@ kbd, .kbd,
   color: var(--link-color);
 }
 
-
 /* heading tweaks to make document hierarchy easier to grasp */
 
 .rst-content section > h1 {
@@ -529,59 +529,255 @@ kbd, .kbd,
     opacity:50%;
 }
 
-.rst-content section > h2,
-.rst-content section > h3,
-.rst-content section > h4,
-.rst-content section > h5 {
-    font-weight: 500;
-    padding-inline-start: 8px;
-    margin-inline-start: 0px;
-    border-inline-start: 8px solid;
-    padding-top: 0.2em;
-    padding-bottom: 0.2em;
-}
-
 .rst-content section > h2 {
-    border-color: var(--admonition-note-title-background-color);
+    font-size: 1.625rem;
+    font-weight: 600;
+    line-height: 1.2;
+    margin: 3.5rem 0 1rem;
+    padding-inline-start: 12px;
+    border-inline-start: 3px solid var(--heading-accent-color);
 }
 
 .rst-content section > h3 {
-    border-color: var(--admonition-note-background-color);
+    font-size: 1.25rem;
+    font-weight: 600;
+    line-height: 1.3;
+    margin: 2.5rem 0 0.75rem;
+    padding-inline-start: 12px;
+    border-inline-start: 3px solid var(--heading-rule-color);
 }
 
 .rst-content section > h4 {
-    border-color: transparent;
-    font-weight: 400;
+    font-size: 1.0625rem;
+    font-weight: 600;
+    margin: 1.875rem 0 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 9px;
+}
+
+.rst-content section > h4::before {
+    content: '';
+    flex: none;
+    width: 14px;
+    height: 2px;
+    background: var(--footer-color);
 }
 
 .rst-content section > h5 {
-    border-color: transparent;
-    font-weight: 100;
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--body-color);
+    margin: 2rem 0 0.5rem;
 }
 
-/* Definition lists */
-.rst-content dl {
-    border-left: 4px solid var(--admonition-note-background-color);
+/* Consecutive leaf sections are a list of entries — separate them. */
+.rst-content section:has(> h5) + section:has(> h5) > h5 {
+    border-top: 1px solid var(--hr-color);
+    padding-top: 1.75rem;
+    margin-top: 1.75rem;
 }
 
-.rst-content dl:not(.field-list) > dt {
-    position: relative;
-    padding-left: 1rem;
-    line-height: 1.8rem;
-    background: var(--highlight-background-color);
-    border-radius: 0 16px 16px 0;
+/* Section titles that are code identifiers would otherwise render as a small inline-code chip, both
+   in the body and the sidebar. Let the code inherit the surrounding size, weight and color so the
+   heading hierarchy and nav entries stay legible.
+   The code.literal qualifier is what makes `color` stick. */
+.rst-content section > :is(h1, h2, h3, h4, h5, h6) code.literal,
+.wy-menu-vertical a code.literal {
+    font-size: inherit;
+    font-weight: inherit;
+    background: transparent;
+    border: 0;
+    padding: 0;
+    color: inherit;
 }
 
-.rst-content dl:not(.field-list) > dt::before {
-    content: '';
-    position: absolute;
-    left: -10px;
-    top: 6px;
-    width: 16px;
-    height: 16px;
-    background: var(--admonition-note-title-background-color);
-    border-radius: 50%;
-    border: 4px solid var(--content-background-color);
+/* An h5 that is nothing but an identifier is named like one, in the same colour
+   a signature would give it. */
+.rst-content section > h5 > code.literal {
+    color: var(--highlight-function-color);
+    font-weight: 700;
+}
+
+/* Definition lists: three layouts (stacked, fields, entry) and two term
+   flavours (word, code). Stock RTD styles every classed dl as an API
+   signature at (0,8,2), which is why the entry rules below repeat its
+   :not() chain — that chain is an inert filter on the selectors we use. */
+
+/* Exclusions go in :where() so they cost no specificity; otherwise this base
+   rule outranks the component rules below it. */
+
+.rst-content dl:where(:not(.option-list, .footnote, .citation)) {
+    border-left: 0;
+}
+
+.rst-content dl:where(:not(.option-list, .footnote, .citation)) > dt {
+    font-size: 1.0625rem;
+    font-weight: 700;
+    line-height: 1.4;
+    color: var(--term-color);
+    background: none;
+    border-radius: 0;
+    padding: 0;
+    margin: 1.875rem 0 0.1875rem;
+}
+
+.rst-content dl > dt:first-child {
+    margin-top: 0;
+}
+
+.rst-content dl:where(:not(.option-list, .footnote, .citation)) > dt::before {
+    content: none;
+}
+
+.rst-content dl:where(:not(.option-list, .footnote, .citation)) > dd {
+    margin: 0;
+}
+
+.rst-content dl:where(:not(.option-list, .footnote, .citation)) > dd > :last-child {
+    margin-bottom: 0;
+}
+
+/* Fields: a field list and a colon-terminated definition list say the same
+   thing, so they render alike. fit-content() stops a long label eating the row. */
+html.writer-html5 .rst-content dl.field-list,
+.rst-content dl.simple:not(.glossary) {
+    display: grid;
+    grid-template-columns: fit-content(11rem) minmax(0, 1fr);
+    gap: 6px 20px;
+    align-items: baseline;
+}
+
+html.writer-html5 .rst-content dl.field-list > dt,
+.rst-content dl.simple:not(.glossary) > dt {
+    display: block;
+    font-size: 0.9375rem;
+    font-weight: 600;
+    line-height: 1.5;
+    color: var(--footer-color);
+    /* RTD indents a field-list term by 1em, which misaligns it against its
+       own value. */
+    margin: 0;
+    padding: 0;
+}
+
+/* Entry: dt.sig is Sphinx's marker on every object description, so this covers
+   py, cmake, kconfig, c and cpp without a selector per domain. */
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.citation):not(.glossary):not(.simple) > dt.sig {
+    /* Not flex: the py domain emits many sibling spans per signature. */
+    display: block;
+    font-size: 1rem;
+    /* RTD bolds the whole dt; the name should carry the weight, not the
+       parameters. */
+    font-weight: 400;
+    line-height: 1.6;
+    border-radius: 5px;
+    padding: 9px 12px;
+    position: static;
+    /* RTD hard-codes #f0f0f0/#555 for nested object descriptions at (0,14,3);
+       repeating that chain would be unreadable, hence !important. */
+    color: var(--highlight-default-color) !important;
+    background: var(--sig-background-color) !important;
+    border: 1px solid var(--sig-border-color) !important;
+    margin: 0 0 13px !important;
+}
+
+.rst-content dt.sig + dd {
+    margin-left: 1.5rem;
+    padding-left: 1.25rem;
+    border-left: 1px solid var(--hr-color);
+    padding-bottom: 20px;
+    margin-bottom: 24px;
+    border-bottom: 1px solid var(--hr-color);
+}
+
+html.writer-html5 .rst-content dd dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.citation):not(.glossary):not(.simple) > dt.sig {
+    background: none !important;
+    border: 0 !important;
+    border-bottom: 1px solid var(--sig-border-color) !important;
+    border-radius: 0;
+    padding: 0 0 5px;
+    margin: 0 0 10px;
+}
+
+.rst-content dd dt.sig + dd {
+    border-bottom: 0;
+    padding-bottom: 0;
+    margin-bottom: 20px;
+}
+
+.rst-content dl > dt.sig:last-of-type + dd:last-child {
+    border-bottom: 0;
+    padding-bottom: 0;
+    margin-bottom: 0;
+}
+
+html.writer-html5 .rst-content dl[class]:not(.option-list):not(.field-list):not(.footnote):not(.citation):not(.glossary):not(.simple) > dt.sig .headerlink {
+    float: right;
+    margin-left: 12px;
+    color: var(--link-color);
+    opacity: 0.45;
+    visibility: visible;
+}
+
+.rst-content dt.sig:hover .headerlink,
+.rst-content dt.sig .headerlink:focus {
+    opacity: 1;
+}
+
+.rst-content dt.sig + dd dl:not(.field-list) > dt:not(.sig) {
+    justify-self: start;
+    font-family: var(--monospace-font-family);
+    font-size: 0.875rem;
+    font-weight: 500;
+    border: 1px solid var(--code-border-color) !important;
+    border-radius: 3px;
+    padding: 2px 8px;
+    color: var(--highlight-default-color) !important;
+    background: var(--highlight-background-color) !important;
+}
+
+/* Only CMake signatures go through Pygments and land in a .highlight wrapper;
+   other domains emit the same token classes without it, so they came out
+   monochrome. The same variables keep one palette across both. */
+
+.rst-content dt.sig .sig-name,
+.rst-content dt.sig .descname {
+    color: var(--highlight-function-color) !important;
+    font-weight: 700;
+}
+
+.rst-content dt.sig .sig-prename,
+.rst-content dt.sig .descclassname {
+    color: var(--footer-color) !important;
+    font-weight: 400;
+}
+
+.rst-content dt.sig .property,
+.rst-content dt.sig .k {
+    color: var(--highlight-keyword-color);
+}
+
+/* Body colour on purpose: --highlight-type2-color is a near neighbour of
+   --highlight-type-color, so colouring this muddies the annotation. */
+.rst-content dt.sig .sig-param > .n:first-child {
+    color: var(--highlight-default-color);
+}
+
+.rst-content dt.sig .sig-param .n,
+.rst-content dt.sig .sig-return-typehint,
+.rst-content dt.sig .sig-return-typehint .n {
+    color: var(--highlight-type-color);
+}
+
+.rst-content dt.sig .default_value,
+.rst-content dt.sig .m {
+    color: var(--highlight-number-color);
+}
+
+.rst-content dt.sig .o,
+.rst-content dt.sig .sig-return-icon {
+    color: var(--highlight-operator-color);
 }
 
 /* Buttons */
@@ -888,7 +1084,6 @@ kbd, .kbd,
     background-color: var(--admonition-danger-background-color);
 }
 
-
 dark-mode-toggle::part(fieldset) {
   padding-inline: 0.75rem;
   padding-block: 0;
@@ -946,25 +1141,37 @@ div.graphviz > object {
     margin-bottom: 0px;
 }
 
-.rst-content .sidebar dl.field-list {
-    align-items: center;
-    margin-top: 12px !important;
-    margin-bottom: 12px !important;
-    grid-template-columns: auto 1fr !important;
-    padding-right: 1em;
+/* A sidebar card is narrow, so its labels shrink rather than its values: at the
+   body label size, "Architecture:" alone takes half the card. */
+html.writer-html5 .rst-content .sidebar dl.field-list {
+    grid-template-columns: fit-content(5.5rem) minmax(0, 1fr);
+    gap: 9px 12px;
+    align-items: baseline;
+    margin: 12px 0;
+    /* The card has no padding of its own: each child insets itself, and the
+       figure caption above sets the convention at 16px. */
+    padding: 0 16px;
 }
 
-.rst-content .sidebar dl.field-list>dt {
-    background: transparent !important;
+html.writer-html5 .rst-content .sidebar dl.field-list > dt {
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    font-weight: 500;
+    margin: 0;
+    padding: 0;
 }
 
-.rst-content .sidebar dl.field-list>dd {
-    margin-left: 1em;
-    text-overflow: ellipsis;
-    overflow: hidden;
+.rst-content .sidebar dl.field-list > dt .colon {
+    display: none;
 }
 
-.rst-content .sidebar dl.field-list>dd code {
+html.writer-html5 .rst-content .sidebar dl.field-list > dd {
+    margin: 0;
+    overflow-wrap: anywhere;
+}
+
+.rst-content .sidebar dl.field-list > dd code {
     font-size: 0.9em;
 }
 

@@ -226,6 +226,14 @@ do {                                                                    \
 #endif
 
 #define __PRAGMA(...) _Pragma(#__VA_ARGS__)
+
+/**
+ * @brief Request the compiler to fully unroll a loop up to @p n iterations.
+ *
+ * @param n Maximum iteration count (must be a literal integer).
+ */
+#define TOOLCHAIN_PRAGMA_UNROLL(n) __PRAGMA(unroll = n)
+
 #define ARG_UNUSED(x) (void)(x)
 
 #define likely(x)   (__builtin_expect((bool)!!(x), true) != 0L)

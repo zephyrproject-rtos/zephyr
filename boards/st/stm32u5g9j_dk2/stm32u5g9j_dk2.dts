@@ -405,3 +405,7 @@ zephyr_udc0: &usbotg_hs {
 zephyr_jpegenc: &jpeg {
 	status = "okay";
 };
+
+&gpu2d {
+	status = "okay";
+};

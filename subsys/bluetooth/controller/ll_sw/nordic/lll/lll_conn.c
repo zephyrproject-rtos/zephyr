@@ -708,7 +708,8 @@ void lll_conn_isr_tx(void *param)
 	/* Use special API for SOC that requires compensation for PHYEND event delay. */
 
 #if defined(CONFIG_BT_CTLR_PHY)
-	radio_switch_complete_with_delay_compensation_and_tx(lll->phy_rx, 0, lll->phy_tx,
+	radio_switch_complete_with_delay_compensation_and_tx(lll->phy_rx,
+							     PHY_FLAGS_UNUSED, lll->phy_tx,
 							     lll->phy_flags, end_evt_delay);
 #else /* !CONFIG_BT_CTLR_PHY */
 	radio_switch_complete_with_delay_compensation_and_tx(0, 0, 0, 0, end_evt_delay);
@@ -723,9 +724,10 @@ void lll_conn_isr_tx(void *param)
  */
 #if !defined(CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE)
 #if defined(CONFIG_BT_CTLR_PHY)
-	radio_switch_complete_and_tx(lll->phy_rx, 0, lll->phy_tx, lll->phy_flags);
+	radio_switch_complete_and_tx(lll->phy_rx, PHY_FLAGS_UNUSED, lll->phy_tx,
+				     lll->phy_flags);
 #else /* !CONFIG_BT_CTLR_PHY */
-	radio_switch_complete_and_tx(0, 0, 0, 0);
+	radio_switch_complete_and_tx(PHY_LEGACY, PHY_FLAGS_UNUSED, PHY_LEGACY, PHY_FLAGS_UNUSED);
 #endif /* !CONFIG_BT_CTLR_PHY */
 #endif /* !CONFIG_BT_CTLR_DF_PHYEND_OFFSET_COMPENSATION_ENABLE */
 
@@ -774,7 +776,7 @@ void lll_conn_isr_tx(void *param)
 	hcto += cte_len;
 #endif /* CONFIG_BT_CTLR_DF_CONN_CTE_TX */
 #if defined(CONFIG_BT_CTLR_PHY)
-	hcto += radio_rx_chain_delay_get(lll->phy_rx, 1);
+	hcto += radio_rx_chain_delay_get(lll->phy_rx, PHY_FLAGS_S8);
 	hcto += addr_us_get(lll->phy_rx);
 	hcto -= radio_tx_chain_delay_get(lll->phy_tx, lll->phy_flags);
 #else /* !CONFIG_BT_CTLR_PHY */
@@ -864,7 +866,7 @@ void lll_conn_rx_pkt_set(struct lll_conn *lll)
 	phy = 0U;
 #endif /* !CONFIG_BT_CTLR_PHY */
 
-	radio_phy_set(phy, 0);
+	radio_phy_set(phy, PHY_FLAGS_S8);
 
 	if (0) {
 #if defined(CONFIG_BT_CTLR_LE_ENC)

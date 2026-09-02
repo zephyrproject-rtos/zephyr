@@ -19,6 +19,16 @@ tests:
     platform_allow:
       - native_sim
       - native_sim/native/64
+  sample.drivers.lora.build.sx1262.shell:
+    build_only: true
+    extra_args: DTC_OVERLAY_FILE="sx1262.overlay"
+    extra_configs:
+      - CONFIG_SPI=y
+      - CONFIG_SHELL=y
+      - CONFIG_LORA_SHELL=y
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
   sample.drivers.lora.build.sx1262.native:
     build_only: true
     extra_args: DTC_OVERLAY_FILE="sx1262.overlay"

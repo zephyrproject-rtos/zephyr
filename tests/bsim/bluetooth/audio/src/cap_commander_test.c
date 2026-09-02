@@ -1421,6 +1421,48 @@ static void test_main_cap_commander_cancel(void)
 	PASS("Broadcast reception passed\n");
 }
 
+static void test_main_cap_commander_disconnect(void)
+{
+	size_t acceptor_count;
+
+	/* The test consists of N devices
+	 * 1 device is the broadcast source
+	 * 1 device is the CAP commander
+	 * This leaves N - 2 devices for the acceptor
+	 */
+	if (get_dev_cnt() < 3U) {
+		FAIL("Test needs at least 3 devices");
+		return;
+	}
+
+	acceptor_count = get_dev_cnt() - 2U;
+	LOG_DBG("Acceptor count: %zu", acceptor_count);
+
+	init(acceptor_count);
+
+	for (size_t i = 0U; i < acceptor_count; i++) {
+		scan_and_connect();
+
+		WAIT_FOR_FLAG(flag_mtu_exchanged);
+	}
+
+	/* TODO: We should use CSIP to find set members */
+	discover_cas(acceptor_count);
+	discover_bass(acceptor_count);
+
+	pa_sync_to_broadcaster();
+
+	LOG_INF("Attempting reception start on %zu connections", connected_conn_cnt);
+	test_broadcast_reception_start(connected_conns, connected_conn_cnt);
+	WAIT_FOR_FLAG(flag_broadcast_reception_start_failed);
+
+	backchannel_sync_send_all(); /* let others know we have received what we wanted */
+
+	deinit();
+
+	PASS("CAP Commander disconnect passed\n");
+}
+
 static const struct bst_test_instance test_cap_commander[] = {
 	{
 		.test_id = "cap_commander_capture_and_render",
@@ -1445,6 +1487,12 @@ static const struct bst_test_instance test_cap_commander[] = {
 		.test_post_init_f = test_init,
 		.test_tick_f = test_tick,
 		.test_main_f = test_main_cap_commander_cancel,
+	},
+	{
+		.test_id = "cap_commander_disconnect",
+		.test_post_init_f = test_init,
+		.test_tick_f = test_tick,
+		.test_main_f = test_main_cap_commander_disconnect,
 	},
 	BSTEST_END_MARKER,
 };

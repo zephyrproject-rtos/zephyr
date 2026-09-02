@@ -28,6 +28,7 @@ tests:
     extra_configs:
       - CONFIG_ETH_STM32_HAL=n
       - CONFIG_ETH_ESP32=n
+      - CONFIG_ETH_NXP_ENET_QOS=n
     platform_allow:
       - stm32h735g_disco
       - nucleo_h753zi
@@ -37,6 +38,9 @@ tests:
       - stm32h573i_dk
       - esp32_ethernet_kit/esp32/procpu
       - esp32p4x_function_ev_board/esp32p4/hpcore
+      - frdm_mcxn947/mcxn947/cpu0
+      - frdm_mcxa577
+      - frdm_mcxa577/mcxa577/t1s
 
   net.ethernet.build.uart:
     extra_args: DTC_OVERLAY_FILE="uart_devices.overlay"

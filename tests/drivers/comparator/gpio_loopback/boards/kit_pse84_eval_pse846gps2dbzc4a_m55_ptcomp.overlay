@@ -1,6 +1,6 @@
 /*
- * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
- * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -17,6 +17,10 @@
 		/* Connect positive-mux (P15.2) to pin (P15.4) */
 		test-gpios = <&gpio_prt15 4 0>;
 	};
+};
+
+&autanalog {
+	status = "okay";
 };
 
 &ptcomp0 {

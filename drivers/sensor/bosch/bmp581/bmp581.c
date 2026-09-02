@@ -812,7 +812,7 @@ static DEVICE_API(sensor, bmp581_driver_api) = {
 };
 
 /* SPI mode 0 (CPOL=0, CPHA=0). Datasheet supports modes 0 and 3 up to 12 MHz. */
-#define BMP581_SPI_OPERATION (SPI_OP_MODE_MASTER | SPI_WORD_SET(8) | SPI_TRANSFER_MSB)
+#define BMP581_SPI_OPERATION (SPI_OP_MODE_CONTROLLER | SPI_WORD_SET(8) | SPI_TRANSFER_MSB)
 
 #define BMP581_BUS_IODEV_DEFINE(i)                                                                 \
 	COND_CODE_1(DT_INST_ON_BUS(i, i3c),                                                        \

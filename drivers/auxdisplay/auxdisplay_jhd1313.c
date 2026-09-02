@@ -357,7 +357,7 @@ static DEVICE_API(auxdisplay, auxdisplay_jhd1313_auxdisplay_api) = {
 				.brightness.minimum = AUXDISPLAY_LIGHT_NOT_SUPPORTED,              \
 				.brightness.maximum = AUXDISPLAY_LIGHT_NOT_SUPPORTED,              \
 				.backlight.minimum = 0,                                            \
-				.backlight.maximum = ARRAY_SIZE(colour_define),                    \
+				.backlight.maximum = ARRAY_SIZE(colour_define) - 1,                \
 				.custom_characters = 0,                                            \
 			},                                                                         \
 		.bus = I2C_DT_SPEC_INST_GET(inst),                                                 \

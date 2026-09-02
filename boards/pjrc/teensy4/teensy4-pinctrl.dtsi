@@ -509,4 +509,30 @@
 			nxp,speed = "50-mhz";
 		};
 	};
+
+	pinmux_sai1: pinmux_sai1 {
+		group0 {
+			pinmux = <&iomuxc_gpio_b1_01_sai1_tx_data0>,   /* pin 7 */
+				 <&iomuxc_gpio_ad_b1_15_sai1_tx_sync>, /* pin 27 */
+				 <&iomuxc_gpio_ad_b1_14_sai1_tx_bclk>, /* pin 26 */
+				 <&iomuxc_gpio_b1_00_sai1_rx_data0>,   /* pin 8 */
+				 <&iomuxc_gpio_ad_b1_11_sai1_rx_bclk>, /* pin 21 */
+				 <&iomuxc_gpio_ad_b1_10_sai1_rx_sync>; /* pin 20 */
+			drive-strength = "r0-6";
+			slew-rate = "slow";
+			nxp,speed = "100-mhz";
+		};
+	};
+
+	pinmux_sai2: pinmux_sai2 {
+		group0 {
+			pinmux = <&iomuxc_gpio_emc_04_sai2_tx_data>, /* pin 2 */
+				 <&iomuxc_gpio_emc_05_sai2_tx_sync>, /* pin 3 */
+				 <&iomuxc_gpio_emc_06_sai2_tx_bclk>, /* pin 4 */
+				 <&iomuxc_gpio_emc_08_sai2_rx_data>; /* pin 5 */
+			drive-strength = "r0-6";
+			slew-rate = "slow";
+			nxp,speed = "100-mhz";
+		};
+	};
 };

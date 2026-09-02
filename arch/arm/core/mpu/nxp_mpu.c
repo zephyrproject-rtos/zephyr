@@ -20,13 +20,6 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(mpu);
 
-#define NODE_HAS_PROP_AND_OR(node_id, prop) \
-	DT_NODE_HAS_PROP(node_id, prop) ||
-
-BUILD_ASSERT((DT_FOREACH_STATUS_OKAY_NODE_VARGS(
-	      NODE_HAS_PROP_AND_OR, zephyr_memory_region_mpu) false) == false,
-	      "`zephyr,memory-region-mpu` was deprecated in favor of `zephyr,memory-attr`");
-
 /*
  * Global status variable holding the number of HW MPU region indices, which
  * have been reserved by the MPU driver to program the static (fixed) memory

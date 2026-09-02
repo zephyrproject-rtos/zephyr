@@ -156,20 +156,26 @@ config NET_SOCKETS_TLS_PRIORITY
 config NET_SOCKETS_TLS_SET_MAX_FRAGMENT_LENGTH
 	bool "Set Maximum Fragment Length (MFL)"
 	default y
+	depends on MBEDTLS_SSL_MAX_FRAGMENT_LENGTH
 	help
 	  Call mbedtls_ssl_conf_max_frag_len() on created TLS context
 	  configuration, so that Maximum Fragment Length (MFL) will be sent to
 	  peer using RFC 6066 max_fragment_length extension.
 
-	  Maximum Fragment Length (MFL) value is automatically chosen based on
-	  MBEDTLS_SSL_OUT_CONTENT_LEN and MBEDTLS_SSL_IN_CONTENT_LEN mbed TLS
-	  macros (which are configured by CONFIG_MBEDTLS_SSL_IN_CONTENT_LEN and
-	  CONFIG_MBEDTLS_SSL_OUT_CONTENT_LEN in
-	  case of default mbed TLS config). With DTLS, MFL value may be further
-	  limited with NET_SOCKETS_DTLS_MAX_FRAGMENT_LENGTH.
+	  By default, Maximum Fragment Length (MFL) value is automatically
+	  chosen based on MBEDTLS_SSL_OUT_CONTENT_LEN and
+	  MBEDTLS_SSL_IN_CONTENT_LEN mbed TLS macros (which are configured by
+	  CONFIG_MBEDTLS_SSL_IN_CONTENT_LEN and CONFIG_MBEDTLS_SSL_OUT_CONTENT_LEN
+	  in case of default mbed TLS config), with no upper bound exception:
+	  MFL is derived and advertised even if the buffers are already at the
+	  TLS maximum (16384 bytes). This can be overridden per socket with
+	  the TLS_MAX_FRAGMENT_LENGTH socket option. With DTLS, MFL value may
+	  be further limited with NET_SOCKETS_DTLS_MAX_FRAGMENT_LENGTH.
 
 	  This is mostly useful for TLS client side to tell TLS server what is
-	  the maximum supported receive record length.
+	  the maximum supported receive record length. Disable this option to
+	  turn off all MFL handling, both this automatic derivation and the
+	  per-socket TLS_MAX_FRAGMENT_LENGTH override.
 
 config NET_SOCKETS_ENABLE_DTLS
 	bool "DTLS socket support"
@@ -377,6 +383,38 @@ config NET_SOCKETS_PACKET_DGRAM
 	  through a SOCK_DGRAM packet socket get a suitable L2 header based
 	  on the information in the net_sockaddr_ll destination address before
 	  they are queued.
+
+config NET_SOCKETS_PACKET_MCAST_MEMBERSHIP
+	bool "Packet socket multicast membership support"
+	depends on NET_SOCKETS_PACKET && NET_NATIVE && NET_L2_ETHERNET
+	help
+	  Add support for ZSOCK_PACKET_ADD_MEMBERSHIP and ZSOCK_PACKET_DROP_MEMBERSHIP
+	  socket options for AF_PACKET sockets. The options operate at layer 2 and tell
+	  the NIC's receive filter which link-layer multicast addresses to let through.
+	  Ethernet is currently the only link layer that can do this, so the
+	  dependency to it can be relaxed when another one gains the support.
+
+config NET_SOCKETS_PACKET_MCAST_MEMBERSHIP_COUNT
+	int "Number of packet socket multicast group memberships"
+	depends on NET_SOCKETS_PACKET_MCAST_MEMBERSHIP
+	default 2
+	range 1 255
+	help
+	  Maximum number of L2 multicast group memberships that can be active
+	  at the same time. Every successful ZSOCK_PACKET_ADD_MEMBERSHIP for a
+	  group that a socket has not joined yet takes one entry, and the entry
+	  is released by ZSOCK_PACKET_DROP_MEMBERSHIP or when the socket is
+	  closed. The same group joined by two different sockets takes two
+	  entries.
+
+config NET_L2_ETHERNET_MCAST_FILTER_ADD_COUNT_PACKET_SOCKET
+	int
+	depends on NET_SOCKETS_PACKET_MCAST_MEMBERSHIP && NET_L2_ETHERNET
+	default NET_SOCKETS_PACKET_MCAST_MEMBERSHIP_COUNT
+	help
+	  Every packet socket multicast membership needs a link layer
+	  multicast address on an Ethernet interface. Two sockets joining the
+	  same group share one address, so this is an upper bound.
 
 config NET_SOCKETS_INET_RAW
 	bool "AF_INET/AF_INET6 and SOCK_RAW sockets support"

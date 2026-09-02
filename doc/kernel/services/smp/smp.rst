@@ -201,13 +201,14 @@ API.
    two CPUs and two app threads which begin operating simultaneously.
 
 By default the kernel brings up every available CPU during this start-up
-sequence. When :kconfig:option:`CONFIG_SMP_BOOT_DELAY` is enabled the kernel
-skips bringing up the secondary CPUs at initialization, leaving them disabled so
-that architecture, SoC, board, or application code can start them later at run
-time. A deferred CPU is started with :c:func:`k_smp_cpu_start`, which performs
-full per-CPU initialization; :c:func:`k_smp_cpu_resume` is the counterpart used
-to bring a previously stopped CPU back online without repeating one-time
-initialization.
+sequence. A CPU whose devicetree node carries the ``zephyr,deferred-start``
+flag is skipped and left disabled so that architecture, SoC, board, or
+application code can start it later at run time; deferral is per CPU, so a
+system may bring up some secondary CPUs at boot and leave others to be
+started on demand. A deferred CPU is started with :c:func:`k_smp_cpu_start`,
+which performs full per-CPU initialization; :c:func:`k_smp_cpu_resume` is the
+counterpart used to bring a previously stopped CPU back online without
+repeating one-time initialization.
 
 Interprocessor Interrupts
 *************************

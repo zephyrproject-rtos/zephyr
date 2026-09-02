@@ -1,5 +1,5 @@
 zephyr_include_directories(.)
 
-set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld
+set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/include/zephyr/arch/riscv/common/linker.ld
     CACHE INTERNAL "SoC Linker script"
 )

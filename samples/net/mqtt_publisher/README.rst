@@ -185,7 +185,7 @@ try this sample with TLS enabled, by following these steps:
 
 .. code-block:: console
 
-        $ ninja flash
+        $ west flash
 
 TLS offloading
 ==============

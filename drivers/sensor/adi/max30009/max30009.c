@@ -375,6 +375,7 @@ static int max30009_set_bioz_config1(const struct device *dev)
 {
 	int ret;
 	const struct max30009_dev_config *cfg = dev->config;
+	struct max30009_data *data = dev->data;
 	/*
 	 * I/Q channel enables are deliberately left off here. Per the datasheet
 	 * ("Enabling and Disabling the PLL"), BIOZ_I_EN/BIOZ_Q_EN must be set
@@ -392,6 +393,7 @@ static int max30009_set_bioz_config1(const struct device *dev)
 		LOG_ERR("Failed to write BioZ Configuration 1: %d", ret);
 		return ret;
 	}
+	data->bioz_adc_osr_code = cfg->bioz_cfg.cfg_1.bioz_adc_osr;
 	return 0;
 }
 
@@ -1084,6 +1086,41 @@ static const struct max30009_attr_desc *max30009_attr_lookup(uint16_t attr)
 	return NULL;
 }
 
+/**
+ * @brief Check whether another STATUS1 reader is active.
+ *
+ * The PLL lock poll in max30009_pll_set_enable() reads the clear-on-read
+ * STATUS1 register, so it must not run while the stream or trigger paths may
+ * also read STATUS1: the poll would consume their pending events (A_FULL,
+ * FIFO_DATA_RDY) and they would consume the lock bits the poll waits for.
+ *
+ * @param dev Device pointer
+ * @return true if a stream request is pending or a trigger handler is set.
+ */
+static bool max30009_status1_readers_active(const struct device *dev)
+{
+	const struct max30009_data *data = dev->data;
+
+#ifdef CONFIG_MAX30009_STREAM
+	if (data->sqe != NULL) {
+		return true;
+	}
+#endif /* CONFIG_MAX30009_STREAM */
+#ifdef CONFIG_MAX30009_TRIGGER
+	const struct max30009_trigger_data *trig = &data->trig;
+
+	if (trig->drdy_handler != NULL || trig->dc_loff_nl_handler != NULL ||
+	    trig->dc_loff_nh_handler != NULL || trig->dc_loff_pl_handler != NULL ||
+	    trig->dc_loff_ph_handler != NULL || trig->drv_oor_handler != NULL ||
+	    trig->bioz_undr_handler != NULL || trig->bioz_over_handler != NULL ||
+	    trig->lon_handler != NULL) {
+		return true;
+	}
+#endif /* CONFIG_MAX30009_TRIGGER */
+	ARG_UNUSED(data);
+	return false;
+}
+
 static int max30009_attr_set(const struct device *dev, enum sensor_channel chan,
 			     enum sensor_attribute attr, const struct sensor_value *val)
 {
@@ -1121,6 +1158,10 @@ static int max30009_attr_set(const struct device *dev, enum sensor_channel chan,
 
 	/* Acquisition/drive-path fields must be changed with the PLL stopped. */
 	if (desc->flags & MAX30009_ATTR_PLL_OFF) {
+		if (max30009_status1_readers_active(dev)) {
+			return -EBUSY;
+		}
+
 		ret = max30009_pll_set_enable(dev, false);
 		if (ret != 0) {
 			return ret;
@@ -1135,6 +1176,10 @@ static int max30009_attr_set(const struct device *dev, enum sensor_channel chan,
 	}
 	if (ret != 0) {
 		LOG_ERR("Failed to write attr %d: %d", attr, ret);
+	} else if ((uint16_t)attr == SENSOR_ATTR_MAX30009_ADC_OSR) {
+		struct max30009_data *data = dev->data;
+
+		data->bioz_adc_osr_code = reg_val;
 	}
 
 	/* Re-enable the PLL if it was stopped, even when the write failed. */

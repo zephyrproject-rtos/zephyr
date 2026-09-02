@@ -121,7 +121,7 @@ static void fill_upload_params(struct zperf_upload_params *param)
 		      "Failed to parse loopback address");
 
 	memset(param, 0, sizeof(*param));
-	memcpy(&param->peer_addr, &peer, sizeof(peer));
+	memcpy(&param->peer_addr_storage, &peer, sizeof(peer));
 	param->duration_ms = TEST_DURATION_MS;
 	param->packet_size = TEST_PACKET_SIZE;
 	param->rate_kbps = TEST_RATE_KBPS;

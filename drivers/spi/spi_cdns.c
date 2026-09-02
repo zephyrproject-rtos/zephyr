@@ -93,9 +93,9 @@ typedef void (*irq_config_func_t)(void);
  * @param clock_frequency              Peripheral bus clock
  * @param ext_clock                    External clock frequency.
  * @param cs_setup_us                  Array of durations from CS assert to
- *                                     SCLK in us for slaves.
+ *                                     SCLK in us for peripherals.
  * @param cs_hold_us                   Array of durations from CS assert to
- *                                     SCLK in us for slaves.
+ *                                     SCLK in us for peripherals.
  * @param irq_config                   Interrupt configuration function.
  * @param leave_enabled_during_config  Conditionally enable or
  *                                     disable the SPI bus during
@@ -169,7 +169,7 @@ static inline bool spi_cdns_context_configured(const struct device *dev,
 	if (spi_context_configured(&data->ctx, config) &&
 	    (data->config.frequency == config->frequency) &&
 	    (data->config.operation == config->operation) &&
-	    (data->config.slave == config->slave)) {
+	    (data->config.peripheral == config->peripheral)) {
 		return true;
 	}
 
@@ -203,14 +203,14 @@ static inline void spi_cdns_cs_control(const struct device *dev, bool on)
 {
 	struct spi_cdns_data *data = dev->data;
 
-	if (IS_ENABLED(CONFIG_SPI_SLAVE) && spi_context_is_slave(&data->ctx)) {
-		/* Skip slave select assert/de-assert in slave mode */
+	if (IS_ENABLED(CONFIG_SPI_PERIPHERAL) && spi_context_is_peripheral(&data->ctx)) {
+		/* Skip peripheral select assert/de-assert in peripheral mode */
 		return;
 	}
 
 	if (on) {
 		uint32_t val = SPI_CONF_PCSL_MASK &
-			       ~(1 << (SPI_CONF_PCSL_OFFSET + data->ctx.config->slave));
+			       ~(1 << (SPI_CONF_PCSL_OFFSET + data->ctx.config->peripheral));
 		sys_set_mask32(SPI_REG(dev, SPI_CONF), SPI_CONF_PCSL_MASK, val);
 		k_busy_wait(data->ctx.config->cs.delay);
 	} else if (!(data->ctx.config->operation & SPI_HOLD_ON_CS)) {
@@ -322,13 +322,13 @@ static void spi_cdns_recv(const struct device *dev)
 		if (spi_context_rx_buf_on(ctx)) {
 			spi_cdns_rx_store(config, ctx, val, dfs, i);
 
-			/* Slave: advance RX only when a buffer is present */
-			if (spi_context_is_slave(ctx)) {
+			/* Peripheral: advance RX only when a buffer is present */
+			if (spi_context_is_peripheral(ctx)) {
 				spi_context_update_rx(ctx, dfs, 1);
 			}
 		}
-		/* Master: always advance RX per received frame */
-		if (!spi_context_is_slave(ctx)) {
+		/* Controller: always advance RX per received frame */
+		if (!spi_context_is_peripheral(ctx)) {
 			spi_context_update_rx(ctx, dfs, 1);
 		}
 		if (data->fifo_diff > 0) {
@@ -349,7 +349,7 @@ static void spi_cdns_push_data(const struct device *dev)
 	struct spi_cdns_data *data = dev->data;
 	uint32_t tx_entry;
 
-	if (spi_context_is_slave(&data->ctx)) {
+	if (spi_context_is_peripheral(&data->ctx)) {
 		/*
 		 * while tx fifo is not full and there is data to transmit, as we are a target fill
 		 * it up until we are full
@@ -418,8 +418,8 @@ static int spi_cdns_configure(const struct device *dev, const struct spi_config 
 		return -ENOTSUP;
 	}
 
-	if ((config->operation & SPI_OP_MODE_SLAVE) && !IS_ENABLED(CONFIG_SPI_SLAVE)) {
-		LOG_ERR("Kconfig for enable SPI in slave mode is not enabled");
+	if ((config->operation & SPI_OP_MODE_PERIPHERAL) && !IS_ENABLED(CONFIG_SPI_PERIPHERAL)) {
+		LOG_ERR("Kconfig for enable SPI in peripheral mode is not enabled");
 		return -ENOTSUP;
 	}
 
@@ -437,8 +437,8 @@ static int spi_cdns_configure(const struct device *dev, const struct spi_config 
 
 	conf_val = SPI_CONF_PCSL_MASK | SPI_CONF_MCSE;
 
-	/* Configure for Master or Slave */
-	if (config->operation & SPI_OP_MODE_SLAVE) {
+	/* Configure for controller or peripheral */
+	if (config->operation & SPI_OP_MODE_PERIPHERAL) {
 		conf_val &= ~(SPI_CONF_MSEL);
 	} else {
 		conf_val |= SPI_CONF_MSEL;
@@ -534,7 +534,7 @@ static void spi_cdns_isr(const struct device *dev)
 	}
 
 	if (int_status & SPI_INT_TNF) {
-		if (spi_context_is_slave(&data->ctx)) {
+		if (spi_context_is_peripheral(&data->ctx)) {
 			/* Fixed delay due to controller limitation with
 			 * RX_NEMPTY incorrect status
 			 * Xilinx AR:65885 contains more details
@@ -684,8 +684,9 @@ static int spi_cdns_transceive(const struct device *dev, const struct spi_config
 		goto out;
 	}
 
-	/* Set slave TX fifo threshold */
-	if (spi_context_is_slave(&data->ctx) && data->tx_remain_entry > dev_config->tx_fifo_depth) {
+	/* Set peripheral TX fifo threshold */
+	if (spi_context_is_peripheral(&data->ctx) &&
+	    data->tx_remain_entry > dev_config->tx_fifo_depth) {
 		/* Set TX threshold to half FIFO depth
 		 * when transfer size exceeds FIFO depth
 		 */
@@ -711,11 +712,11 @@ static int spi_cdns_transceive(const struct device *dev, const struct spi_config
 		pm_device_busy_clear(dev);
 	}
 
-#ifdef CONFIG_SPI_SLAVE
-	if (spi_context_is_slave(&data->ctx) && !ret) {
+#ifdef CONFIG_SPI_PERIPHERAL
+	if (spi_context_is_peripheral(&data->ctx) && !ret) {
 		ret = data->ctx.recv_frames;
 	}
-#endif /* CONFIG_SPI_SLAVE */
+#endif /* CONFIG_SPI_PERIPHERAL */
 
 out:
 	spi_context_release(&data->ctx, ret);

@@ -735,6 +735,16 @@ at: `Realtek Supported Boards`_
 
    west flash [--runner mpcli] --port /dev/ttyX
 
+
+.. _iar-debug-host-tools:
+.. _runner_iar:
+
+IAR EW & C-Spy Host Tools
+*************************
+
+IAR provides Embedded Workbench and CSpyBat for debugging and flashing. The iar runner works with
+EWARM 10.10 or newer.
+
 .. _AMD Vitis:
    https://www.amd.com/en/products/software/adaptive-socs-and-fpgas/vitis.html
 

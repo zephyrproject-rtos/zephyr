@@ -377,7 +377,7 @@ static int sai_config_set(const struct device *dev,
 
 	ret = pm_device_runtime_get(dev);
 	if (ret < 0) {
-		LOG_ERR("failed to get() SAI device: %d", ret);
+		LOG_ERR_PM_DEVICE_RUNTIME_GET(dev, ret);
 		return ret;
 	}
 
@@ -734,7 +734,7 @@ static int sai_trigger_start(const struct device *dev,
 
 	ret = pm_device_runtime_get(dev);
 	if (ret < 0) {
-		LOG_ERR("failed to get() SAI device: %d", ret);
+		LOG_ERR_PM_DEVICE_RUNTIME_GET(dev, ret);
 		return ret;
 	}
 

@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <nxp/imxrt/nxp_rt1152.dtsi>
+#include <nxp/imxrt/imxrt11xx/nxp_rt1152.dtsi>
 #include "frdm_imxrt1152-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 

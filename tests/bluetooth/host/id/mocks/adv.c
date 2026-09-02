@@ -10,7 +10,7 @@
 
 DEFINE_FAKE_VALUE_FUNC(int, bt_le_adv_set_enable, struct bt_le_ext_adv *, bool);
 DEFINE_FAKE_VALUE_FUNC(struct bt_le_ext_adv *, bt_le_adv_lookup_legacy);
-DEFINE_FAKE_VALUE_FUNC(uint8_t, bt_le_ext_adv_get_index, struct bt_le_ext_adv *);
+DEFINE_FAKE_VALUE_FUNC(uint8_t, bt_le_ext_adv_get_index, const struct bt_le_ext_adv *);
 DEFINE_FAKE_VALUE_FUNC(int, bt_le_adv_set_enable_legacy, struct bt_le_ext_adv *, bool);
 DEFINE_FAKE_VALUE_FUNC(int, bt_le_adv_set_enable_ext, struct bt_le_ext_adv *, bool,
 		       const struct bt_le_ext_adv_start_param *);

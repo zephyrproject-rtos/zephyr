@@ -331,8 +331,8 @@ static int mspi_ambiq_deinit(const struct device *controller)
 
 	ret = pm_device_runtime_get(controller);
 	if (ret) {
-		LOG_INST_ERR(MSPI_LOG_HANDLE(controller), "%u, failed pm_device_runtime_get.",
-							  __LINE__);
+		LOG_INST_ERR_PM_DEVICE_RUNTIME_GET(MSPI_LOG_HANDLE(controller), controller,
+						   __LINE__);
 		goto e_deinit_return;
 	}
 
@@ -651,7 +651,7 @@ static int mspi_ambiq_dev_config(const struct device         *controller,
 
 		ret = pm_device_runtime_get(controller);
 		if (ret) {
-			LOG_INST_ERR(cfg->log, "%u, failed pm_device_runtime_get.", __LINE__);
+			LOG_INST_ERR_PM_DEVICE_RUNTIME_GET(cfg->log, controller, __LINE__);
 			goto e_return;
 		}
 	}
@@ -888,7 +888,7 @@ static int mspi_ambiq_dev_config(const struct device         *controller,
 
 e_return:
 	if (pm_device_runtime_put(controller)) {
-		LOG_INST_ERR(cfg->log, "%u, failed pm_device_runtime_put.", __LINE__);
+		LOG_INST_ERR_PM_DEVICE_RUNTIME_PUT(cfg->log, controller, __LINE__);
 	}
 	k_mutex_unlock(&data->lock);
 	return ret;
@@ -1079,7 +1079,7 @@ static int mspi_ambiq_get_channel_status(const struct device *controller, uint8_
 
 	data->dev_id = NULL;
 	if (pm_device_runtime_put(controller)) {
-		LOG_INST_ERR(cfg->log, "%u, failed pm_device_runtime_put.", __LINE__);
+		LOG_INST_ERR_PM_DEVICE_RUNTIME_PUT(cfg->log, controller, __LINE__);
 	}
 	k_mutex_unlock(&data->lock);
 

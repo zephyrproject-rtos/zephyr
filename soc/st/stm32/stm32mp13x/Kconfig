@@ -4,12 +4,16 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_SERIES_STM32MP13X
+	# Architecture options & CPU model selection
 	select ARM
 	select CPU_CORTEX_A7
-	select HAS_STM32CUBE
-	select CPU_HAS_FPU
-	select SOC_EARLY_INIT_HOOK
+	# Hardware options
 	select ARM_ARCH_TIMER
+	select CPU_HAS_FPU
+	# Software options
+	select KERNEL_DIRECT_MAP if MMU
+	select SOC_EARLY_INIT_HOOK
 	select SYS_CLOCK_EXISTS
 	select XIP
-	select KERNEL_DIRECT_MAP if MMU
+	# STM32-specific options
+	select HAS_STM32CUBE

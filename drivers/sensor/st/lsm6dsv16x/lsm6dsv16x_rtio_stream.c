@@ -20,18 +20,20 @@ static void lsm6dsv16x_config_drdy(const struct device *dev, struct trigger_conf
 {
 	const struct lsm6dsv16x_config *config = dev->config;
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&config->ctx;
-	lsm6dsv16x_pin_int_route_t pin_int = { 0 };
+	lsm6dsv16x_pin_int_route_t pin_int;
 	int16_t buf[3];
 
 	/* dummy read: re-trigger interrupt */
 	lsm6dsv16x_acceleration_raw_get(ctx, buf);
 
-	pin_int.drdy_xl = PROPERTY_ENABLE;
-
-	/* Set pin interrupt */
+	/* Set pin interrupt, preserving already routed sources */
 	if ((config->drdy_pin == 1) || (ON_I3C_BUS(config) && (!I3C_INT_PIN(config)))) {
+		lsm6dsv16x_pin_int1_route_get(ctx, &pin_int);
+		pin_int.drdy_xl = trig_cfg.int_drdy ? PROPERTY_ENABLE : PROPERTY_DISABLE;
 		lsm6dsv16x_pin_int1_route_set(ctx, &pin_int);
 	} else {
+		lsm6dsv16x_pin_int2_route_get(ctx, &pin_int);
+		pin_int.drdy_xl = trig_cfg.int_drdy ? PROPERTY_ENABLE : PROPERTY_DISABLE;
 		lsm6dsv16x_pin_int2_route_set(ctx, &pin_int);
 	}
 }
@@ -82,6 +84,7 @@ static void lsm6dsv16x_config_fifo(const struct device *dev, struct trigger_conf
 	stmdev_ctx_t *ctx = (stmdev_ctx_t *)&config->ctx;
 	uint8_t fifo_wtm = 0;
 	lsm6dsv16x_pin_int_route_t pin_int = { 0 };
+	lsm6dsv16x_pin_int_route_t route;
 	lsm6dsv16x_fifo_xl_batch_t xl_batch = LSM6DSVXXX_DT_XL_NOT_BATCHED;
 	lsm6dsv16x_fifo_gy_batch_t gy_batch = LSM6DSVXXX_DT_GY_NOT_BATCHED;
 	lsm6dsv16x_fifo_temp_batch_t temp_batch = LSM6DSVXXX_DT_TEMP_NOT_BATCHED;
@@ -206,11 +209,17 @@ static void lsm6dsv16x_config_fifo(const struct device *dev, struct trigger_conf
 	lsm6dsv16x_sh_master_set(ctx, PROPERTY_ENABLE);
 #endif /* CONFIG_LSM6DSV16X_SENSORHUB */
 
-	/* Set pin interrupt (fifo_th could be on or off) */
+	/* Set pin interrupt (fifo_th could be on or off), preserving already routed sources */
 	if ((config->drdy_pin == 1) || (ON_I3C_BUS(config) && (!I3C_INT_PIN(config)))) {
-		lsm6dsv16x_pin_int1_route_set(ctx, &pin_int);
+		lsm6dsv16x_pin_int1_route_get(ctx, &route);
+		route.fifo_th = pin_int.fifo_th;
+		route.fifo_full = pin_int.fifo_full;
+		lsm6dsv16x_pin_int1_route_set(ctx, &route);
 	} else {
-		lsm6dsv16x_pin_int2_route_set(ctx, &pin_int);
+		lsm6dsv16x_pin_int2_route_get(ctx, &route);
+		route.fifo_th = pin_int.fifo_th;
+		route.fifo_full = pin_int.fifo_full;
+		lsm6dsv16x_pin_int2_route_set(ctx, &route);
 	}
 }
 
@@ -465,6 +474,11 @@ static void lsm6dsv16x_read_fifo_cb(struct rtio *r, const struct rtio_sqe *sqe,
 	};
 	/* clang-format on */
 
+#if defined(CONFIG_LSM6DSV16X_SENSORHUB)
+	hdr.num_ext_dev = lsm6dsv16x->num_ext_dev;
+	memcpy(hdr.shub_ext, lsm6dsv16x->shub_ext, sizeof(hdr.shub_ext));
+#endif
+
 	memcpy(buf, &hdr, sizeof(hdr));
 	read_buf = buf + sizeof(hdr);
 
@@ -510,9 +524,7 @@ static void lsm6dsv16x_read_status_cb(struct rtio *r, const struct rtio_sqe *sqe
 	ARG_UNUSED(result);
 
 	const struct device *dev = arg;
-#if LSM6DSVXXX_ANY_INST_ON_BUS_STATUS_OKAY(i3c)
 	const struct lsm6dsv16x_config *config = dev->config;
-#endif
 	struct lsm6dsv16x_data *lsm6dsv16x = dev->data;
 	struct rtio *rtio = lsm6dsv16x->rtio_ctx;
 	struct gpio_dt_spec *irq_gpio = lsm6dsv16x->drdy_gpio;
@@ -608,7 +620,8 @@ static void lsm6dsv16x_read_status_cb(struct rtio *r, const struct rtio_sqe *sqe
 		struct lsm6dsv16x_rtio_data hdr = {
 			.header = {
 				.is_fifo = false,
-				.accel_fs_idx = lsm6dsv16x->accel_fs,
+				.accel_fs_idx = LSM6DSV16X_ACCEL_FS_VAL_TO_FS_IDX(
+					config->accel_fs_map[lsm6dsv16x->accel_fs]),
 				.gyro_fs = lsm6dsv16x->gyro_fs,
 				.timestamp = lsm6dsv16x->timestamp,
 			},

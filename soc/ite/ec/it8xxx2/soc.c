@@ -359,7 +359,7 @@ void riscv_idle(enum chip_pll_mode mode, unsigned int key)
 	 * Due to this hardware limitation, SoC should skip entering idle mode if
 	 * the remaining timer value is less than 150µs(safe margin).
 	 */
-	if (ite_ec_timer_block_idle()) {
+	if (ite_it8xxx2_timer_block_idle()) {
 		goto __no_idle;
 	}
 #endif /* defined(CONFIG_I2C_ITE_ENHANCE) && defined(CONFIG_I2C_TARGET_BUFFER_MODE) */

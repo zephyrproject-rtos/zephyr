@@ -300,7 +300,7 @@ static void qspi_acquire(const struct device *dev)
 
 	rc = pm_device_runtime_get(dev);
 	if (rc < 0) {
-		LOG_ERR("pm_device_runtime_get failed: %d", rc);
+		LOG_ERR_PM_DEVICE_RUNTIME_GET(dev, rc);
 	}
 #if defined(CONFIG_MULTITHREADING)
 	/* In multithreading, the driver can call qspi_acquire more than once
@@ -344,7 +344,7 @@ static void qspi_release(const struct device *dev)
 
 	rc = pm_device_runtime_put_async(dev, K_MSEC(ACTIVE_DWELL_MS));
 	if (rc < 0) {
-		LOG_ERR("pm_device_runtime_put failed: %d", rc);
+		LOG_ERR_PM_DEVICE_RUNTIME_PUT(dev, rc);
 	}
 }
 

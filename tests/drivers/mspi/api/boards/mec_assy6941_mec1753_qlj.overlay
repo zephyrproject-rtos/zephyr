@@ -1,0 +1,40 @@
+/*
+ * Copyright (c) 2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		mspi0 = &qspi0;
+	};
+};
+
+&dmac {
+	status = "okay";
+};
+
+&qspi0 {
+	compatible = "microchip,xec-qmspi-controller";
+	status = "okay";
+	op-mode = "MSPI_OP_MODE_CONTROLLER";
+	duplex = "MSPI_HALF_DUPLEX";
+	num-hw-ce = <1>;
+	clock-frequency = <DT_FREQ_M(96)>;
+
+	pinctrl-0 = <&qspi_shd_cs0_n_gpio055 &qspi_shd_cs1_n_gpio002
+		     &qspi_shd_clk_gpio056
+		     &qspi_shd_io0_gpio223 &qspi_shd_io1_gpio224
+		     &qspi_shd_io2_gpio227 &qspi_shd_io3_gpio016>;
+	pinctrl-1 = <&qspi_shd_io3_gpio016_lp &qspi_shd_io2_gpio227_lp
+		     &qspi_shd_io1_gpio224_lp &qspi_shd_io0_gpio223_lp
+		     &qspi_shd_clk_gpio056_lp &qspi_shd_cs0_n_gpio055_lp>;
+	pinctrl-names = "default", "sleep";
+
+	mspi_device: mspi_device@0 {
+		compatible = "zephyr,emul-device-mspi";
+		reg = <0>;
+		mspi-max-frequency = <DT_FREQ_M(24)>;
+		status = "okay";
+	};
+};

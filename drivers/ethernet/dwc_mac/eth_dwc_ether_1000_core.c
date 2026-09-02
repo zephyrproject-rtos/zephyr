@@ -25,8 +25,7 @@ LOG_MODULE_REGISTER(dwmac_core, CONFIG_ETHERNET_LOG_LEVEL);
 #define RX_FRAG_SIZE  CONFIG_NET_BUF_DATA_SIZE
 #define TX_AVAIL_WAIT K_MSEC(1)
 
-#define INC_WRAP(idx, size) ({ (idx) = ((idx) + 1) % (size); })
-#define DEC_WRAP(idx, size) ({ (idx) = ((idx) + (size) - 1) % (size); })
+#define INC_WRAP(idx, size) ((idx) = ((idx) + 1) % (size))
 
 #define TDES0_OWN BIT(31)
 #define TDES0_IC  BIT(30)
@@ -80,6 +79,9 @@ static enum ethernet_hw_caps dwmac_caps(const struct device *dev __unused,
 #endif
 #ifdef CONFIG_ETH_DWC_ETHER_TX_HW_CHECKSUM_EN
 	       | ETHERNET_HW_TX_CHKSUM_OFFLOAD
+#endif
+#ifdef CONFIG_ETH_DWC_ETHER_MULTICAST_FILTER
+	       | ETHERNET_HW_FILTERING
 #endif
 		;
 }
@@ -367,7 +369,8 @@ static void dwmac_rx_refill_desc(const struct device *dev, struct net_buf *frag)
 
 	d->des0 = RDES0_OWN;
 
-	p->rx_desc_head = INC_WRAP(d_idx, NB_RX_DESCS);
+	INC_WRAP(d_idx, NB_RX_DESCS);
+	p->rx_desc_head = d_idx;
 	DWMAC_REG_WRITE(DWMAC_DMARPDR, 0);
 
 	LOG_DBG("desc sem/head/tail=%d/%d/%d %s", k_sem_count_get(&p->free_rx_descs),
@@ -453,6 +456,11 @@ static int dwmac_set_config(const struct device *dev, struct net_if *iface __unu
 		DWMAC_REG_WRITE(DWMAC_MACFFR, reg);
 		break;
 #endif
+#if defined(CONFIG_ETH_DWC_ETHER_MULTICAST_FILTER)
+	case ETHERNET_CONFIG_TYPE_FILTER:
+		dwmac_setup_multicast_filter(dev, &config->filter);
+		break;
+#endif
 	default:
 		return -ENOTSUP;
 	}
@@ -513,8 +521,16 @@ static void dwmac_iface_init(struct net_if *iface)
 	net_if_set_link_addr(iface, p->mac_addr, sizeof(p->mac_addr), NET_LINK_ETHERNET);
 	dwmac_set_mac_addr(dev, p->mac_addr);
 
-	/* Pass all multicast frames */
-	DWMAC_REG_WRITE(DWMAC_MACFFR, DWMAC_REG_READ(DWMAC_MACFFR) | DWMAC_MACFFR_PAM);
+	if (!IS_ENABLED(CONFIG_ETH_DWC_ETHER_MULTICAST_FILTER)) {
+		/* Pass all multicast frames */
+		DWMAC_REG_WRITE(DWMAC_MACFFR, DWMAC_REG_READ(DWMAC_MACFFR) | DWMAC_MACFFR_PAM);
+	} else if (IS_ENABLED(CONFIG_ETH_DWC_ETHER_MULTICAST_FILTER_HASH)) {
+		DWMAC_REG_WRITE(DWMAC_MACFFR, DWMAC_REG_READ(DWMAC_MACFFR) | DWMAC_MACFFR_HM);
+	} else {
+		/* multicast is perfect filtered against the MAC address entries,
+		 * which is the default filter mode
+		 */
+	}
 
 	net_if_carrier_off(iface);
 	if (device_is_ready(cfg->phy_dev)) {

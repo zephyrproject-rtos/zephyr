@@ -6,9 +6,11 @@ toolchain:
   - zephyr
   - gnuarmemb
 supported:
+  - dma
   - gpio
   - uart
   - spi
+  - netif:eth
 ram: 262144
 flash: 262144
 vendor: st

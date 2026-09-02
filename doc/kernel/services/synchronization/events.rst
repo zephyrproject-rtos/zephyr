@@ -134,7 +134,7 @@ of the events are posted in time.
     }
 
 Alternatively, the consumer thread may desire to wait for all the events
-before continuing.
+before continuing using :c:func:`k_event_wait_all`.
 
 .. code-block:: c
 

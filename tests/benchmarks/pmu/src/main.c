@@ -151,7 +151,7 @@ static void pmu_bench_suite_setup(void)
 #ifdef CONFIG_SMP
 	bench_cpu = arch_curr_cpu()->id;
 	/*
-	 * CPU mask APIs cannot pin a running thread (see test_threads_cpu_mask).
+	 * CPU mask APIs cannot pin a running thread (see test_thread_cpu_mask).
 	 * Record the boot CPU and verify it in pmu_bench_begin(); pin helper
 	 * threads to bench_cpu before k_thread_start().
 	 */

@@ -1,0 +1,36 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_ESP32C61
+	bool
+	select SOC_FAMILY_ESPRESSIF_ESP32
+
+config SOC_ESP32C61
+	bool
+	select SOC_SERIES_ESP32C61
+
+#
+# ESP32-C61 silicon revision selection.
+#
+# These are hidden symbols selected by a board's Kconfig.defconfig to
+# declare the minimum supported chip revision. The numeric revision value
+# (major * 100 + minor) is derived from these in the soc Kconfig, which
+# owns the revision-to-build plumbing.
+#
+# v1.0 is the family floor. On v1.1 and above the mspi workaround for the
+# psram burst length is not needed, so builds that target it can drop the
+# workaround.
+#
+config SOC_ESP32C61_REV_1_0
+	bool
+	depends on SOC_ESP32C61
+
+config SOC_ESP32C61_REV_1_1
+	bool
+	depends on SOC_ESP32C61
+
+config SOC_SERIES
+	default "esp32c61" if SOC_SERIES_ESP32C61
+
+config SOC
+	default "esp32c61" if SOC_ESP32C61

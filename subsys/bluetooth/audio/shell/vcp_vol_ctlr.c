@@ -198,8 +198,8 @@ static void vcs_aics_state_cb(struct bt_aics *inst, int err, int8_t gain,
 		bt_shell_error("AICS state get failed (%d) for inst %p",
 			       err, inst);
 	} else {
-		bt_shell_print("AICS inst %p state gain %d, mute %u, mode %u",
-			       inst, gain, mute, mode);
+		bt_shell_print("AICS inst %p state gain %d, mute %u, mode %s (0x%02X)", inst, gain,
+			       mute, bt_aics_mode_to_str(mode), mode);
 	}
 }
 

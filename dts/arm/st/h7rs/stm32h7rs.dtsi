@@ -1008,11 +1008,13 @@
 				 <&rcc STM32_CLOCK(AHB1, 16)>,
 				 <&rcc STM32_CLOCK(AHB1, 17)>;
 			interrupts = <92 0>;
+			snps,multicast-filter-bins = <64>;
+			snps,perfect-filter-entries = <4>;
 			memory-regions = <&sram2>;
 			status = "disabled";
 
 			mdio: mdio {
-				compatible = "st,stm32-mdio", "snps,dwmac-mdio";
+				compatible = "snps,dwmac-mdio";
 				#address-cells = <1>;
 				#size-cells = <0>;
 				status = "disabled";
@@ -1105,6 +1107,34 @@
 			};
 		};
 
+		sai2: sai2@42005c00 {
+			compatible = "st,stm32-sai";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			reg = <0x42005c00 0x400>;
+			ranges;
+			clocks = <&rcc STM32_CLOCK(APB2, 23)>,
+				 <&rcc STM32_SRC_PLL1_Q SAI2_SEL(0)>;
+			clock-names = "sai_ck", "sai_ker_ck";
+			status = "disabled";
+
+			sai2_a: sai2a@42005c04 {
+				reg = <0x42005c04 0x20>;
+				dmas = <&gpdma1 1 65 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+
+			sai2_b: sai2b@42005c24 {
+				reg = <0x42005c24 0x20>;
+				dmas = <&gpdma1 0 66 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+		};
+
 		ltdc: ltdc@50001000 {
 			compatible = "st,stm32-ltdc";
 			reg = <0x50001000 0x400>;
@@ -1135,6 +1165,16 @@
 					bus-type = <VIDEO_BUS_TYPE_PARALLEL>;
 				};
 			};
+		};
+
+		gpu2d: gpu@52014000 {
+			compatible = "st,neochrom-gpu2d";
+			reg = <0x52014000 0x1000>;
+			clocks = <&rcc STM32_CLOCK(AHB5, 20)>;
+			interrupts = <149 0>, <150 0>;
+			interrupt-names = "gpu2d", "gpu2d_er";
+			resets = <&rctl STM32_RESET(AHB5, 20)>;
+			status = "disabled";
 		};
 
 		crc: crc@58024c00 {

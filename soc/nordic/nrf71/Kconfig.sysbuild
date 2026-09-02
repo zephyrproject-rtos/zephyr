@@ -1,7 +1,7 @@
 # Copyright (c) 2026 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_NRF7120_ENGA_CPUFLPR
+if SOC_NRF7120_ENGA_CPUFLPR || SOC_NRF7120E_ENGA_CPUFLPR
 
 config HAS_NORDIC_VPR_LAUNCHER_IMAGE
 	default y

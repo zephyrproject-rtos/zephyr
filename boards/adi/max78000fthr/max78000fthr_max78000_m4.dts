@@ -38,6 +38,35 @@ m4_serial: &cmsis_serial {};
 		sw1 = &pb2;
 		watchdog0 = &wdt0;
 	};
+
+	/* Used for accessing other pins */
+	feather_header: feather_connector {
+		compatible = "adafruit-feather-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <12 0 &gpio0 17 0>,  /* SDA */
+			   <13 0 &gpio0 16 0>,  /* SCL */
+			   <14 0 &gpio3 1 0>,  /* GPIO */
+			   <15 0 &gpio0 19 0>,  /* GPIO */
+			   <16 0 &gpio0 11 0>,   /* GPIO */
+			   <17 0 &gpio0 8 0>,   /* GPIO */
+			   <18 0 &gpio0 9 0>,   /* GPIO */
+			   /* 19 connected to the PMIC */   /* GPIO */
+			   <20 0 &gpio1 6 0>,   /* GPIO */
+			   /* 11 not connected */
+			   <10 0 &gpio2 7 0>,  /* TX */
+			   <9 0 &gpio2 6 0>,   /* RX */
+			   <8 0 &gpio0 6 0>,   /* MISO */
+			   <7 0 &gpio0 5 0>,   /* MOSI */
+			   <6 0 &gpio0 7 0>,   /* SCK */
+			   /* 5 connected to the PMIC */   /* AIN5 */
+			   /* 4 connected to the PMIC */   /* AIN4 */
+			   <3 0 &gpio1 0 0>,   /* AIN3 */
+			   <2 0 &gpio1 1 0>,   /* AIN2 */
+			   <1 0 &gpio2 4 0>,   /* AIN1 */
+			   <0 0 &gpio2 3 0>;   /* AIN0 */
+	};
 };
 
 &cpu1 {
@@ -61,9 +90,25 @@ m4_serial: &cmsis_serial {};
 	status = "okay";
 };
 
-&spi0 {
+&spi0_mosi_p0_5 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+};
+
+&spi0_miso_p0_6 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+};
+
+&spi0_sck_p0_7 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+};
+
+&spi0_ss1_p0_11 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+};
+
+feather_spi: &spi0 {
 	status = "okay";
-	pinctrl-0 = <&spi0_mosi_p0_5 &spi0_miso_p0_6 &spi0_sck_p0_7 &spi0_ss0_p0_4>;
+	pinctrl-0 = <&spi0_mosi_p0_5 &spi0_miso_p0_6 &spi0_sck_p0_7 &spi0_ss1_p0_11>;
 	pinctrl-names = "default";
 };
 

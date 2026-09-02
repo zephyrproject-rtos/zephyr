@@ -449,6 +449,8 @@ static inline void init_iface(struct net_if *iface)
 	const struct device *dev = net_if_get_device(iface);
 	const struct net_if_api *api;
 
+	NET_ASSERT(dev != NULL);
+
 	if (!device_is_ready(dev)) {
 		NET_ERR("Iface %p device not ready", iface);
 		return;
@@ -715,10 +717,11 @@ struct net_if *net_if_get_first_up(void)
 
 static enum net_l2_flags l2_flags_get(struct net_if *iface)
 {
+	const struct net_l2 *l2 = net_if_l2(iface);
 	enum net_l2_flags flags = 0;
 
-	if (net_if_l2(iface) && net_if_l2(iface)->get_flags) {
-		flags = net_if_l2(iface)->get_flags(iface);
+	if (l2 != NULL && l2->get_flags != NULL) {
+		flags = l2->get_flags(iface);
 	}
 
 	return flags;
@@ -2492,15 +2495,15 @@ struct net_if_mcast_addr *net_if_ipv6_maddr_add(struct net_if *iface,
 		return NULL;
 	}
 
-	net_if_lock(iface);
-
-	if (net_if_config_ipv6_get(iface, &ipv6) < 0) {
-		goto out;
-	}
-
 	if (!net_ipv6_is_addr_mcast(addr)) {
 		NET_DBG("Address %s is not a multicast address.",
 			net_sprint_ipv6_addr(addr));
+		return NULL;
+	}
+
+	net_if_lock(iface);
+
+	if (net_if_config_ipv6_get(iface, &ipv6) < 0) {
 		goto out;
 	}
 
@@ -3285,6 +3288,129 @@ void net_if_ipv6_prefix_unset_timer(struct net_if_ipv6_prefix *prefix)
 
 	prefix_timer_remove(prefix);
 }
+
+#if defined(CONFIG_NET_IPV6_ND_RA_TX)
+int net_if_ipv6_prefix_set_advertise(struct net_if *iface,
+				     const struct net_in6_addr *prefix,
+				     uint8_t len, bool advertise)
+{
+	struct net_if_ipv6_prefix *ifprefix;
+	bool send_ra = false;
+	int ret = -ENOENT;
+
+	net_if_lock(iface);
+
+	ifprefix = net_if_ipv6_prefix_lookup(iface, prefix, len);
+	if (ifprefix == NULL) {
+		goto out;
+	}
+
+	ifprefix->is_advertised = advertise;
+	ret = 0;
+
+	send_ra = advertise && iface->config.ip.ipv6 != NULL &&
+		  iface->config.ip.ipv6->is_router && net_if_is_up(iface);
+
+out:
+	net_if_unlock(iface);
+
+	/* Send an advertisement immediately so that downstream hosts pick up
+	 * the change without waiting for the periodic timer. This is done
+	 * without holding net_if_lock() as the TX path may need to take the
+	 * lock of another interface (ABBA).
+	 */
+	if (send_ra) {
+		(void)net_ipv6_send_ra(iface, NULL);
+	}
+
+	return ret;
+}
+
+int net_if_ipv6_router_start(struct net_if *iface)
+{
+	struct net_in6_addr all_routers;
+	struct net_if_ipv6 *ipv6;
+	bool iface_up;
+	int ret = 0;
+
+	net_if_lock(iface);
+
+	ipv6 = iface->config.ip.ipv6;
+	if (ipv6 == NULL) {
+		net_if_unlock(iface);
+		return -ENOTSUP;
+	}
+
+	ipv6->is_router = true;
+	iface_up = net_if_is_up(iface);
+
+	net_if_unlock(iface);
+
+	net_ipv6_ra_update_timer();
+
+	/* Join the all-routers multicast group (ff02::2) so that the interface
+	 * receives Router Solicitations from downstream hosts and can answer
+	 * them with a Router Advertisement (RFC 4861 ch. 2.2 and 6.2.6).
+	 *
+	 * This is done without holding net_if_lock(): net_ipv6_mld_join()
+	 * transmits an MLD report whose TX path locks other interfaces, so
+	 * joining under the lock could deadlock (ABBA). net_ipv6_mld_join() is
+	 * idempotent, so no explicit "already joined" check is needed.
+	 */
+	net_ipv6_addr_create_ll_allrouters_mcast(&all_routers);
+	ret = net_ipv6_mld_join(iface, &all_routers);
+	if (ret == -ENOTSUP) {
+		/* MLD compiled out: still register the address locally so that
+		 * solicitations to it are accepted.
+		 */
+		(void)net_if_ipv6_maddr_add(iface, &all_routers);
+		ret = 0;
+	} else if (ret < 0 && ret != -ENETDOWN) {
+		NET_ERR("Cannot join all routers address for %d (%d)",
+			net_if_get_by_iface(iface), ret);
+	} else {
+		ret = 0;
+	}
+
+	if (iface_up) {
+		(void)net_ipv6_send_ra(iface, NULL);
+	}
+
+	return ret;
+}
+
+int net_if_ipv6_router_stop(struct net_if *iface)
+{
+	struct net_in6_addr all_routers;
+	struct net_if_ipv6 *ipv6;
+
+	net_if_lock(iface);
+
+	ipv6 = iface->config.ip.ipv6;
+	if (ipv6 == NULL) {
+		net_if_unlock(iface);
+		return -ENOTSUP;
+	}
+
+	ipv6->is_router = false;
+	ipv6->ra_pending_at = 0;
+
+	net_if_unlock(iface);
+
+	net_ipv6_ra_update_timer();
+
+	/* Leave the all-routers multicast group joined in router_start().
+	 * Done without net_if_lock() held for the same ABBA reason as the join
+	 * above (net_ipv6_mld_leave() transmits an MLD report).
+	 */
+	net_ipv6_addr_create_ll_allrouters_mcast(&all_routers);
+	if (net_ipv6_mld_leave(iface, &all_routers) == -ENOTSUP) {
+		(void)net_if_ipv6_maddr_rm(iface, &all_routers);
+	}
+
+	return 0;
+}
+#endif /* CONFIG_NET_IPV6_ND_RA_TX */
 
 struct net_if_router *net_if_ipv6_router_lookup(struct net_if *iface,
 						const struct net_in6_addr *addr)
@@ -5338,15 +5464,15 @@ struct net_if_mcast_addr *net_if_ipv4_maddr_add(struct net_if *iface,
 		return NULL;
 	}
 
-	net_if_lock(iface);
-
-	if (net_if_config_ipv4_get(iface, NULL) < 0) {
-		goto out;
-	}
-
 	if (!net_ipv4_is_addr_mcast(addr)) {
 		NET_DBG("Address %s is not a multicast address.",
 			net_sprint_ipv4_addr(addr));
+		return NULL;
+	}
+
+	net_if_lock(iface);
+
+	if (net_if_config_ipv4_get(iface, NULL) < 0) {
 		goto out;
 	}
 
@@ -6155,6 +6281,10 @@ int net_if_addr_unref(struct net_if *iface,
 
 enum net_verdict net_if_recv_data(struct net_if *iface, struct net_pkt *pkt)
 {
+	const struct net_l2 *l2 = net_if_l2(iface);
+
+	NET_ASSERT(l2 != NULL);
+
 	if (IS_ENABLED(CONFIG_NET_PROMISCUOUS_MODE) &&
 	    net_if_is_promisc(iface)) {
 		struct net_pkt *new_pkt;
@@ -6166,7 +6296,7 @@ enum net_verdict net_if_recv_data(struct net_if *iface, struct net_pkt *pkt)
 		}
 	}
 
-	return net_if_l2(iface)->recv(iface, pkt);
+	return l2->recv(iface, pkt);
 }
 
 void net_if_register_link_cb(struct net_if_link_cb *link,
@@ -6308,7 +6438,8 @@ static void notify_iface_up(struct net_if *iface)
 		/* CAN does not require link address. */
 	} else {
 		if (!net_if_is_offloaded(iface)) {
-			NET_ASSERT(net_if_get_link_addr(iface)->len > 0);
+			NET_ASSERT(net_if_get_link_addr(iface) != NULL &&
+				   net_if_get_link_addr(iface)->len > 0);
 		}
 	}
 
@@ -6402,11 +6533,6 @@ static void update_operational_state(struct net_if *iface)
 		goto exit;
 	}
 
-	if (!device_is_ready(net_if_get_device(iface))) {
-		new_state = NET_IF_OPER_LOWERLAYERDOWN;
-		goto exit;
-	}
-
 	if (!net_if_is_carrier_ok(iface)) {
 #if defined(CONFIG_NET_L2_VIRTUAL)
 		if (net_if_l2(iface) == &NET_L2_GET_NAME(VIRTUAL)) {
@@ -6468,6 +6594,7 @@ static void init_igmp(struct net_if *iface)
 
 int net_if_up(struct net_if *iface)
 {
+	const struct device *dev;
 	int status = 0;
 
 	NET_DBG("iface %d (%p)", net_if_get_by_iface(iface), iface);
@@ -6479,30 +6606,19 @@ int net_if_up(struct net_if *iface)
 		goto out;
 	}
 
+	dev = net_if_get_device(iface);
+	NET_ASSERT(dev != NULL);
+
+	/* If the device is not ready it is pointless trying to take it up. */
+	if (!device_is_ready(dev)) {
+		NET_DBG("Device %s (%p) is not ready", dev->name, dev);
+		status = -ENXIO;
+		goto out;
+	}
+
 	/* If the L2 does not support enable just set the flag */
 	if (!net_if_l2(iface) || !net_if_l2(iface)->enable) {
 		goto done;
-	} else {
-		/* If the L2 does not implement enable(), then the network
-		 * device driver cannot implement start(), in which case
-		 * we can do simple check here and not try to bring interface
-		 * up as the device is not ready.
-		 *
-		 * If the network device driver does implement start(), then
-		 * it could bring the interface up when the enable() is called
-		 * few lines below.
-		 */
-		const struct device *dev;
-
-		dev = net_if_get_device(iface);
-		NET_ASSERT(dev);
-
-		/* If the device is not ready it is pointless trying to take it up. */
-		if (!device_is_ready(dev)) {
-			NET_DBG("Device %s (%p) is not ready", dev->name, dev);
-			status = -ENXIO;
-			goto out;
-		}
 	}
 
 	/* Notify L2 to enable the interface. Note that the interface is still down

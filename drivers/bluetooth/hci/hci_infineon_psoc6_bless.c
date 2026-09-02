@@ -42,7 +42,6 @@ static K_SEM_DEFINE(psoc6_bless_rx_sem, 0, 1);
 static K_SEM_DEFINE(psoc6_bless_operation_sem, 1, 1);
 static K_KERNEL_STACK_DEFINE(psoc6_bless_rx_thread_stack, CONFIG_BT_RX_STACK_SIZE);
 static struct k_thread psoc6_bless_rx_thread_data;
-static cy_stc_ble_hci_tx_packet_info_t hci_tx_pkt;
 
 extern void Cy_BLE_EnableLowPowerMode(void);
 
@@ -76,8 +75,12 @@ static const cy_stc_ble_config_t psoc6_bless_config = {
 	.hw = &psoc6_bless_hw_config,
 };
 
-static void psoc6_bless_rx_thread(void *, void *, void *)
+static void psoc6_bless_rx_thread(void *p1, void *p2, void *p3)
 {
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
 	while (true) {
 		k_sem_take(&psoc6_bless_rx_sem, K_MSEC(BLE_THREAD_SEM_TMOUT_MS));
 		Cy_BLE_ProcessEvents();
@@ -151,11 +154,10 @@ static int psoc6_bless_open(const struct device *dev)
 
 static int psoc6_bless_send(const struct device *dev, struct net_buf *buf)
 {
+	cy_stc_ble_hci_tx_packet_info_t hci_tx_pkt = {0};
 	cy_en_ble_api_result_t result;
 
 	ARG_UNUSED(dev);
-
-	memset(&hci_tx_pkt, 0, sizeof(cy_stc_ble_hci_tx_packet_info_t));
 
 	hci_tx_pkt.packetType = net_buf_pull_u8(buf);
 	hci_tx_pkt.dataLength = buf->len;

@@ -64,18 +64,6 @@ LOG_MODULE_REGISTER(stm32_gpioport_mgr);
  */
 
 /*
- * Check that the node is active AND has compatible handled by this driver.
- * It is possible for DT nodes to use a `gpioX` nodelabel despite not being
- * an in-SoC GPIO controller, in which case we would try to instantiate them
- * even though this driver does not know how to handle them.
- */
-#define GPIOPORT_DEVICE_IS_ACTIVE(port)					\
-	UTIL_OR(DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(gpio##port),	\
-					  st_stm32_gpio, okay),		\
-		DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(gpio##port),	\
-					  st_stm32mp2_gpio, okay))
-
-/*
  * Name used for GPIO port devices when not instantiated as implementers
  * of the GPIO API. This differs from the name expected by DEVICE_DT_GET()
  * on purpose to ensure "__device_dts_ord_N not found" errors if a caller
@@ -86,7 +74,7 @@ LOG_MODULE_REGISTER(stm32_gpioport_mgr);
 	CONCAT(dummy_, DT_DEP_ORD(node_id), _, DT_NODE_FULL_NAME_TOKEN(node_id))
 
 #define GET_GPIOPORT_DEVICE_OR_NULL(port)					\
-	COND_CODE_0(GPIOPORT_DEVICE_IS_ACTIVE(port),				\
+	COND_CODE_0(STM32_GPIO_PORT_DEVICE_IS_ACTIVE(port),			\
 		(NULL),								\
 		(COND_CODE_1(CONFIG_GPIO_STM32,					\
 			(DEVICE_DT_GET(DT_NODELABEL(gpio##port))),		\
@@ -94,7 +82,7 @@ LOG_MODULE_REGISTER(stm32_gpioport_mgr);
 
 /* UTIL_INC() is needed because LAST_LIST_ELEM_INDEX() is zero-based */
 #define LAST_ACTIVE_GPIO_PORT_IDX	\
-	UTIL_INC(LAST_LIST_ELEM_INDEX(GPIOPORT_DEVICE_IS_ACTIVE, STM32_GPIO_PORTS_LIST_LWR))
+	UTIL_INC(LAST_LIST_ELEM_INDEX(STM32_GPIO_PORT_DEVICE_IS_ACTIVE, STM32_GPIO_PORTS_LIST_LWR))
 
 #if !defined(CONFIG_GPIO_STM32)
 /*
@@ -102,7 +90,7 @@ LOG_MODULE_REGISTER(stm32_gpioport_mgr);
  * (i.e., if the STM32 GPIO driver is not enabled).
  */
 #define DECLARE_DUMMY_DEVICE_IF_ENABLED(port)					\
-	IF_ENABLED(GPIOPORT_DEVICE_IS_ACTIVE(port),				\
+	IF_ENABLED(STM32_GPIO_PORT_DEVICE_IS_ACTIVE(port),			\
 		(DEVICE_DECLARE(DUMMY_GPIO_NAME(DT_NODELABEL(gpio##port)))))
 FOR_EACH(DECLARE_DUMMY_DEVICE_IF_ENABLED, (;),
 	 GET_ARGS_FIRST_N(LAST_ACTIVE_GPIO_PORT_IDX, STM32_GPIO_PORTS_LIST_LWR));
@@ -403,7 +391,7 @@ __maybe_unused static int stm32_gpioport_init(const struct device *dev)
 			 STM32_PORT##__SUFFIX)
 
 #define GPIO_PORT_DEVICE_INIT_STM32_IF_OKAY(__suffix, __SUFFIX)			\
-	IF_ENABLED(GPIOPORT_DEVICE_IS_ACTIVE(__suffix),				\
+	IF_ENABLED(STM32_GPIO_PORT_DEVICE_IS_ACTIVE(__suffix),				\
 		   (GPIO_PORT_DEVICE_INIT_STM32(__suffix, __SUFFIX)))
 
 #define DEVICE_INIT_IF_OKAY(idx, __suffix)				\

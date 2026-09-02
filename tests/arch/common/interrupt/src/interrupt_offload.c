@@ -131,7 +131,11 @@ static void trigger_offload_interrupt(const bool real_irq, void *work)
 	irq_param.work = work;
 
 	if (real_irq) {
+#ifdef NO_TRIGGER_FROM_SW
+		ztest_test_skip();
+#else
 		trigger_irq(vector_num);
+#endif
 	} else {
 		irq_offload((irq_offload_routine_t)&isr_handler, &irq_param);
 	}

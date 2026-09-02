@@ -11,6 +11,8 @@ flash: 512
 ram: 128
 supported:
   - clock_control
+  - dma
   - gpio
   - pinctrl
+  - uart
 vendor: microchip

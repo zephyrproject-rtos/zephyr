@@ -6,7 +6,9 @@
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32F410_CLOCK_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32F410_CLOCK_H_
 
-#include "stm32f4_clock.h"
+#include <zephyr/dt-bindings/clock/stm32f4_clock.h>
+
+/** @cond INTERNAL_HIDDEN */
 
 /** @brief RCC_DCKCFGR register offset */
 #define DCKCFGR_REG		0x8C
@@ -32,5 +34,7 @@
 #ifdef I2S_SEL
 #undef I2S_SEL
 #endif
+
+/** @endcond */
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32F410_CLOCK_H_ */

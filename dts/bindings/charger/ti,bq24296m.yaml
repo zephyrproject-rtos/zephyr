@@ -1,0 +1,25 @@
+# Copyright 2026 Sacra Systems Private Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  BQ24296M I2C controlled, 1-cell, switch-mode battery charger with
+  power-path management and USB OTG support.
+
+include: ti,bq2429x-common.yaml
+
+compatible: "ti,bq24296m"
+
+examples:
+  - |
+    charger: bq24296m@6b {
+      compatible = "ti,bq24296m";
+      reg = <0x6b>;
+      status = "okay";
+
+      constant-charge-current-max-microamp = <1000000>;
+      constant-charge-voltage-max-microvolt = <4208000>;
+
+      watchdog-timeout-ms = <40000>;
+
+      ce-gpios = <&test_gpio 0 0>;
+    };

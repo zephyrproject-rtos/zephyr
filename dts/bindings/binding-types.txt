@@ -25,18 +25,22 @@ base	Base
 battery	Battery
 biometrics	Biometrics
 bluetooth	Bluetooth
+buzzer	Buzzer
 cache	Cache
 can	CAN (Controller Area Network)
 charger	Charger
 clock	Clock control
+clock-monitor	Clock monitor
 comparator	Comparator
 coredump	Core dump
 counter	Counter
 cpu	CPU (Central Processing Unit)
+cpu_freq	CPU (Central Processing Unit) frequency scaling
 crc	CRC (Cyclic Redundancy Check)
 crypto	Cryptographic accelerator
 dac	DAC (Digital to Analog Converter)
 dai	DAI (Digital Audio Interface)
+dali	DALI (Digital Addressable Lighting Interface)
 debug	Debug
 dfpmcch	DFPMCCH
 dfpmccu	DFPMCCU
@@ -44,6 +48,7 @@ disk	Disk
 display	Display
 dma	DMA (Direct Memory Access)
 dsa	DSA (Distributed Switch Architecture)
+dsp	DSP (Digital Signal Processor)
 edac	EDAC (Error Detection and Correction)
 espi	ESPI (Enhanced Serial Peripheral Interface)
 ethernet	Ethernet
@@ -72,6 +77,7 @@ led	LED (Light Emitting Diode)
 led_strip	LED (Light Emitting Diode) strip
 lora	LoRa
 mbox	Mailbox
+mcumgr	MCUmgr
 mdio	MDIO (Management Data Input/Output)
 memory-controllers	Memory controller
 memory-window	Memory window
@@ -86,6 +92,7 @@ mmu_mpu	MMU (Memory Management Unit) / MPU (Memory Protection Unit)
 modem	Modem
 mspi	Multi-bit SPI (Serial Peripheral Interface)
 mtd	MTD (Memory Technology Device)
+mux	MUX (Multiplexer)
 net	Networking
 nvmem	NVMEM (Non-Volatile Memory)
 opamp	OPAMP (Operational Amplifier)
@@ -98,12 +105,13 @@ peci	PECI (Platform Environment Control Interface)
 phy	PHY
 pinctrl	Pin control
 pm_cpu_ops	Power management CPU operations
+pmci	PMCI (Platform Management Components Intercommunication)
 power	Power management
 power-domain	Power domain
 ppc	PPC architecture
-ppmcie	PMCI (Platform Management Components Interconnect)
 ps2	PS/2 (Personal System/2)
 psi5	PSI5 (Peripheral Sensor Interface, 5th generation)
+pulse-io	Pulse IO
 pwm	PWM (Pulse Width Modulation)
 qspi	QSPI (Quad Serial Peripheral Interface)
 regulator	Regulator

@@ -40,6 +40,18 @@ properties:
       - 7 # ICM566XX_DT_GYRO_FS_31_25
       - 8 # ICM566XX_DT_GYRO_FS_15_625
 
+  apex:
+    type: string
+    default: none
+    enum:
+      - none
+      - pedometer
+      - tilt
+      - smd
+      - wom
+      - tap
+    description: APEX (Advanced Pedometer and Event Detection) features.
+
 include: ["i2c-device.yaml", "invensense,icm566xx-common.yaml"]
 
 examples:

@@ -68,8 +68,8 @@
 
 	pinmux_lpi2c0: pinmux_lpi2c0 {
 		group0 {
-			pinmux = <LPI2C0_SDA_P0_20>,
-				 <LPI2C0_SCL_P0_21>;
+			pinmux = <LPI2C0_SDA_P0_16>,
+				 <LPI2C0_SCL_P0_17>;
 			slew-rate = "fast";
 			drive-strength = "low";
 			input-enable;
@@ -168,6 +168,28 @@
 		};
 	};
 
+	pinmux_flexspi: pinmux_flexspi {
+		group0 {
+			pinmux = <FLEXSPI0_A_SS0_B_P3_0>,
+				 <FLEXSPI0_A_SCLK_P3_7>,
+				 <FLEXSPI0_A_DQS_P3_6>,
+				 <FLEXSPI0_A_DATA0_P3_8>,
+				 <FLEXSPI0_A_DATA1_P3_9>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+
+		group1 {
+			pinmux = <FLEXSPI0_A_DATA2_P3_10>,
+				 <FLEXSPI0_A_DATA3_P3_11>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+			bias-pull-up;
+		};
+	};
+
 	pinmux_flexio_lcd: pinmux_flexio_lcd {
 		group0 {
 			pinmux = <FLEXIO0_D0_P0_8>,
@@ -216,6 +238,15 @@
 			pinmux = <FLEXIO0_D14_P2_6>;
 			drive-strength = "low";
 			slew-rate = "slow";
+		};
+	};
+
+	pinmux_tsi: pinmux_tsi {
+		group0 {
+			pinmux = <TSI0_CH0_P5_3>;
+			drive-strength = "low";
+			slew-rate = "fast";
+			input-enable;
 		};
 	};
 };

@@ -95,9 +95,9 @@ void uart_cb(const struct device *dev, struct uart_event *evt, void *user_data)
 
 int main(void)
 {
-	if (!uart_dev) {
-		printk("Failed to get UART device");
-		return 1;
+	if (!device_is_ready(uart_dev)) {
+		printk("UART device not ready\n");
+		return -ENODEV;
 	}
 
 	/* uart configuration parameters */
@@ -110,10 +110,18 @@ int main(void)
 	}
 
 	/* Configure uart callback */
-	uart_callback_set(uart_dev, uart_cb, NULL);
+	err = uart_callback_set(uart_dev, uart_cb, NULL);
+	if (err < 0) {
+		printk("Failed to set UART callback: %d\n", err);
+		return err;
+	}
 
 	/* enable uart reception */
-	uart_rx_enable(uart_dev, rx_buffer, sizeof(rx_buffer), RECEIVE_TIMEOUT);
+	err = uart_rx_enable(uart_dev, rx_buffer, sizeof(rx_buffer), RECEIVE_TIMEOUT);
+	if (err < 0) {
+		printk("Failed to enable UART reception: %d\n", err);
+		return err;
+	}
 
 	printk("\n Enter message to fill RX buffer size :\n");
 

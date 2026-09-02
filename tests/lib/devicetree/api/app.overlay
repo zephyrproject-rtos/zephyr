@@ -225,16 +225,6 @@
 			status = "okay";
 		};
 
-		test_gpio_4: gpio@1234abcd {
-			compatible = "vnd,gpio-intc-device";
-			reg = <0x1234abcd 0x500>;
-			gpio-controller;
-			#gpio-cells = <0x2>;
-			interrupt-controller;
-			#interrupt-cells = <0x2>;
-			status = "okay";
-		};
-
 		test_i2c: test_i2c1: i2c@11112222 {
 			#address-cells = <1>;
 			#size-cells = <0>;
@@ -521,7 +511,7 @@
 			compatible = "vnd,interrupt-holder-extended";
 			status = "okay";
 			interrupts-extended = <&test_intc 70 7>,
-					      <&test_gpio_4 30 3>,
+					      <&test_intc2 30 3>,
 					      <&test_intc2 42 7>;
 			interrupt-names = "int1", "int2", "int3";
 		};
@@ -874,6 +864,31 @@
 				#size-cells = <1>;
 
 				ranges;
+			};
+		};
+
+		test-dma-ranges {
+			#address-cells = <2>;
+			#size-cells = <1>;
+
+			test_dma_ranges_pcie: pcie@0 {
+				compatible = "vnd,pcie";
+				reg = <0 0 1>;
+				#address-cells = <3>;
+				#size-cells = <2>;
+
+				dma-ranges = <0x1000000 0 0 0 0x3eff0000 0 0x10000>,
+					     <0x2000000 0 0x10000000 0 0x10000000 0 0x2eff0000>,
+					     <0x3000000 0x80 0 0x80 0 0x80 0>;
+			};
+
+			test_dma_ranges_other: other@1 {
+				reg = <0 1 1>;
+				#address-cells = <2>;
+				#size-cells = <1>;
+
+				dma-ranges = <0x0 0x0 0x0 0x3eff0000 0x10000>,
+					     <0x0 0x10000000 0x0 0x10000000 0x2eff0000>;
 			};
 		};
 

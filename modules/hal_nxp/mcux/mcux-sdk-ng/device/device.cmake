@@ -87,6 +87,17 @@ if(CONFIG_SOC_MIMX94398)
   set(CONFIG_MCUX_COMPONENT_driver.elec_spec ON)
 endif()
 
+# Same story on i.MX952: fsl_common_arm.h unconditionally includes
+# "fsl_clock.h" from the device drivers/ folder, and on the Cortex-A55 the
+# clocks are driven over SCMI so driver.clock is not selected above. Enable the
+# header-only memory component, which is what puts that folder on the include
+# path, for the whole device. driver.clock itself cannot be used here: its
+# fsl_clock.c talks to the system manager directly and is not built for SCMI
+# configurations.
+if(CONFIG_SOC_MIMX9529)
+  set(CONFIG_MCUX_COMPONENT_driver.memory ON)
+endif()
+
 # load device variables
 include(${mcux_device_folder}/variable.cmake)
 
@@ -140,16 +151,6 @@ endif()
 
 # Load device files
 mcux_add_cmakelists(${mcux_device_folder})
-
-# i.MX943 Cortex-A ships ca55/exception.c, a weak putc/puts helper that pulls in
-# the SDK debug console (fsl_debug_console.h). That header is not part of
-# hal_nxp and Zephyr provides its own console, so drop the file from the build.
-if(CONFIG_SOC_MIMX94398 AND CONFIG_CPU_CORTEX_A)
-  mcux_project_remove_source(
-    BASE_PATH ${SdkRootDirPath}
-    SOURCES devices/i.MX/i.MX943/MIMX94398/ca55/exception.c
-  )
-endif()
 
 # Workaround for fsl_flexspi_nor_boot link error, remove the one in SDK, use the Zephyr file.
 if(CONFIG_MCUX_COMPONENT_device.boot_header)

@@ -515,6 +515,6 @@
 
 	die_temp: dietemp {
 		compatible = "raspberrypi,pico-temp";
-		status = "disabled";
+		status = "okay";
 	};
 };

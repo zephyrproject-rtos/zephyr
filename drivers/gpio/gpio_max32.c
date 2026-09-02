@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Analog Devices, Inc.
+ * Copyright (c) 2023-2026 Analog Devices, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +11,7 @@
 #include <zephyr/drivers/clock_control/adi_max32_clock_control.h>
 #include <zephyr/dt-bindings/gpio/adi-max32-gpio.h>
 #include <gpio.h>
+#include <wrap_max32_lp.h>
 
 #define DT_DRV_COMPAT adi_max32_gpio
 
@@ -19,6 +20,7 @@ LOG_MODULE_REGISTER(gpio_max32, CONFIG_GPIO_LOG_LEVEL);
 struct max32_gpio_config {
 	struct gpio_driver_config common;
 	mxc_gpio_regs_t *regs;
+	uint8_t idx;
 	const struct device *clock;
 	void (*irq_func)(void);
 	struct max32_perclk perclk;
@@ -158,35 +160,52 @@ static int api_pin_interrupt_configure(const struct device *dev, gpio_pin_t pin,
 		/* clear interrupt flags */
 		MXC_GPIO_ClearFlags(cfg->regs, (MXC_GPIO_GetFlags(cfg->regs) & gpio_cfg.mask));
 
+#ifdef CONFIG_PM
+		MXC_LP_DisableGPIOWakeup(&gpio_cfg);
+		MXC_GPIO_ClearWakeEn(gpio_cfg.port, gpio_cfg.mask);
+#endif /* CONFIG_PM */
+
 		return 0;
 	}
 
 	switch (mode) {
 	case GPIO_INT_MODE_LEVEL:
-		if (trig == GPIO_INT_TRIG_LOW) {
-			MXC_GPIO_IntConfig(&gpio_cfg, MXC_GPIO_INT_LOW);
-		} else if (trig == GPIO_INT_TRIG_HIGH) {
-			MXC_GPIO_IntConfig(&gpio_cfg, MXC_GPIO_INT_HIGH);
-		} else if (trig == GPIO_INT_TRIG_BOTH) {
+		if ((trig & GPIO_INT_TRIG_BOTH) == GPIO_INT_TRIG_BOTH) {
 			MXC_GPIO_IntConfig(&gpio_cfg, MXC_GPIO_INT_BOTH);
+		} else if (trig & GPIO_INT_TRIG_HIGH) {
+			MXC_GPIO_IntConfig(&gpio_cfg, MXC_GPIO_INT_HIGH);
+		} else if (trig & GPIO_INT_TRIG_LOW) {
+			MXC_GPIO_IntConfig(&gpio_cfg, MXC_GPIO_INT_LOW);
 		} else {
+			LOG_ERR("Invalid trigger mode for level interrupt: %08x", trig);
 			return -EINVAL;
 		}
 		break;
 	case GPIO_INT_MODE_EDGE:
-		if (trig == GPIO_INT_TRIG_LOW) {
-			MXC_GPIO_IntConfig(&gpio_cfg, MXC_GPIO_INT_FALLING);
-		} else if (trig == GPIO_INT_TRIG_HIGH) {
-			MXC_GPIO_IntConfig(&gpio_cfg, MXC_GPIO_INT_RISING);
-		} else if (trig == GPIO_INT_TRIG_BOTH) {
+		if ((trig & GPIO_INT_TRIG_BOTH) == GPIO_INT_TRIG_BOTH) {
 			MXC_GPIO_IntConfig(&gpio_cfg, MXC_GPIO_INT_BOTH);
+		} else if (trig & GPIO_INT_TRIG_HIGH) {
+			MXC_GPIO_IntConfig(&gpio_cfg, MXC_GPIO_INT_RISING);
+		} else if (trig & GPIO_INT_TRIG_LOW) {
+			MXC_GPIO_IntConfig(&gpio_cfg, MXC_GPIO_INT_FALLING);
 		} else {
+			LOG_ERR("Invalid trigger mode for edge interrupt: %08x", trig);
 			return -EINVAL;
 		}
 		break;
 	default:
 		return -EINVAL;
 	}
+
+#ifdef CONFIG_PM
+	if (trig & GPIO_INT_TRIG_WAKE) {
+		MXC_LP_EnableGPIOWakeup(&gpio_cfg);
+		MXC_GPIO_SetWakeEn(gpio_cfg.port, gpio_cfg.mask);
+	} else {
+		MXC_LP_DisableGPIOWakeup(&gpio_cfg);
+		MXC_GPIO_ClearWakeEn(gpio_cfg.port, gpio_cfg.mask);
+	}
+#endif /* CONFIG_PM */
 
 	cfg->irq_func();
 	MXC_GPIO_EnableInt(cfg->regs, gpio_cfg.mask);
@@ -222,6 +241,15 @@ static void gpio_max32_isr(const void *param)
 	/* clear interrupt flags */
 	MXC_GPIO_ClearFlags(cfg->regs, flags);
 
+#if defined(CONFIG_PM)
+	unsigned int lp_flags =
+		MXC_LP_GetGPIOWakeupEnable(cfg->idx) & MXC_LP_GetGPIOWakeupStatus(cfg->idx);
+	/* clear wakeup flags */
+	MXC_LP_ClearGPIOWakeupStatus(cfg->idx, lp_flags);
+
+	flags |= lp_flags;
+#endif /* CONFIG_PM */
+
 	gpio_fire_callbacks(&(data->cb_list), dev, flags);
 }
 
@@ -253,6 +281,7 @@ static int gpio_max32_init(const struct device *dev)
 	static const struct max32_gpio_config max32_gpio_config_##_num = {                         \
 		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(_num),                                   \
 		.regs = (mxc_gpio_regs_t *)DT_INST_REG_ADDR(_num),                                 \
+		.idx = MXC_GPIO_GET_IDX((mxc_gpio_regs_t *)DT_INST_REG_ADDR(_num)),                \
 		.irq_func = &gpio_max32_irq_init_##_num,                                           \
 		.clock = DEVICE_DT_GET_OR_NULL(DT_INST_CLOCKS_CTLR(_num)),                         \
 		.perclk.bus = DT_INST_PHA_BY_IDX_OR(_num, clocks, 0, offset, 0),                   \

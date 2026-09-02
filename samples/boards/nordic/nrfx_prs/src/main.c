@@ -307,7 +307,7 @@ static bool background_transfer(const struct device *spi_dev)
 	static const uint8_t tx_buffer[] = "Nordic Semiconductor";
 	static uint8_t rx_buffer[sizeof(tx_buffer)];
 	static const struct spi_config spi_dev_cfg = {
-		.operation = SPI_OP_MODE_MASTER | SPI_WORD_SET(8) |
+		.operation = SPI_OP_MODE_CONTROLLER | SPI_WORD_SET(8) |
 			     SPI_TRANSFER_MSB,
 		.frequency = MHZ(1),
 		.cs = {

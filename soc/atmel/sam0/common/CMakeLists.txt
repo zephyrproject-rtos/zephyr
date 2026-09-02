@@ -25,3 +25,7 @@ zephyr_sources_ifdef(CONFIG_SOC_SERIES_SAME54 soc_samd5x.c)
 zephyr_include_directories(.)
 
 set(SOC_LINKER_SCRIPT ${ZEPHYR_BASE}/include/zephyr/arch/arm/cortex_m/scripts/linker.ld CACHE INTERNAL "")
+
+if(CONFIG_CAN_SAM0 AND (CONFIG_SRAM_SIZE GREATER 64))
+  zephyr_linker_sources(RAM_SECTIONS can_message_ram.ld)
+endif()

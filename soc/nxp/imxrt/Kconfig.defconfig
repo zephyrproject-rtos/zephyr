@@ -84,7 +84,7 @@ if CPU_CORTEX_M7
 
 # Enable cache management features when using M7 core, since these parts
 # have L1 instruction and data caches that should be enabled at boot
-config CACHE_MANAGEMENT
+configdefault CACHE_MANAGEMENT
 	default y
 
 config FLASH_MCUX_FLEXSPI_XIP_MEM

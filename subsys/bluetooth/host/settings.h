@@ -40,6 +40,8 @@ void bt_settings_save_id(void);
 
 int bt_settings_init(void);
 
+void bt_settings_flush(void);
+
 int bt_settings_store_sc(uint8_t id, const bt_addr_le_t *addr, const void *value, size_t val_len);
 int bt_settings_delete_sc(uint8_t id, const bt_addr_le_t *addr);
 

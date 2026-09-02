@@ -22,6 +22,8 @@
 #include <kernel_internal.h>
 #include <zephyr/sys/check.h>
 
+BUILD_ASSERT(SYS_SFLIST_FLAG_BITS >= 1, "k_queue needs one sflist flag bit");
+
 struct alloc_node {
 	sys_sfnode_t node;
 	void *data;
@@ -338,8 +340,6 @@ void *z_impl_k_queue_get(struct k_queue *queue, k_timeout_t timeout)
 		return data;
 	}
 
-	SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_queue, get, queue, timeout);
-
 	if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
 		k_spin_unlock(&queue->lock, key);
 
@@ -347,6 +347,8 @@ void *z_impl_k_queue_get(struct k_queue *queue, k_timeout_t timeout)
 
 		return NULL;
 	}
+
+	SYS_PORT_TRACING_OBJ_FUNC_BLOCKING(k_queue, get, queue, timeout);
 
 	int ret = z_pend_curr(&queue->lock, key, &queue->wait_q, timeout);
 
@@ -356,11 +358,27 @@ void *z_impl_k_queue_get(struct k_queue *queue, k_timeout_t timeout)
 	return (ret != 0) ? NULL : _current->base.swap_data;
 }
 
+/* Remove a queue item by its data pointer and free any wrapper node. */
 bool k_queue_remove(struct k_queue *queue, void *data)
 {
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_queue, remove, queue);
 	k_spinlock_key_t key = k_spin_lock(&queue->lock);
-	bool ret = sys_sflist_find_and_remove(&queue->data_q, (sys_sfnode_t *)data);
+	sys_sfnode_t *prev = NULL;
+	sys_sfnode_t *node = sys_sflist_peek_head(&queue->data_q);
+	bool ret = false;
+
+	while (node != NULL) {
+		void *peeked = z_queue_node_peek(node, false);
+
+		if (peeked == data) {
+			sys_sflist_remove(&queue->data_q, prev, node);
+			(void)z_queue_node_peek(node, true);
+			ret = true;
+			break;
+		}
+		prev = node;
+		node = sys_sflist_peek_next(node);
+	}
 
 	k_spin_unlock(&queue->lock, key);
 

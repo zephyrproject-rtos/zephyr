@@ -382,29 +382,6 @@ static void scan_recv_cb(const struct bt_le_scan_recv_info *info, struct net_buf
 	}
 }
 
-static void stream_started_cb(struct bt_bap_stream *stream)
-{
-	struct audio_test_stream *test_stream = audio_test_stream_from_bap_stream(stream);
-
-	memset(&test_stream->last_info, 0, sizeof(test_stream->last_info));
-	test_stream->rx_cnt = 0U;
-	test_stream->valid_rx_cnt = 0U;
-	test_stream->seq_num = 0U;
-	test_stream->tx_cnt = 0U;
-
-	LOG_DBG("Started stream %p", stream);
-
-	if (bap_stream_tx_can_send(stream)) {
-		int err;
-
-		err = bap_stream_tx_register(stream);
-		if (err != 0) {
-			FAIL("Failed to register stream %p for TX: %d\n", stream, err);
-			return;
-		}
-	}
-}
-
 static void stream_stopped_cb(struct bt_bap_stream *stream, uint8_t reason)
 {
 	LOG_DBG("Stopped stream %p with reason 0x%02X", stream, reason);
@@ -460,7 +437,7 @@ static void init(void)
 		.endpoint = endpoint_cb,
 	};
 	static struct bt_bap_stream_ops stream_ops = {
-		.started = stream_started_cb,
+		.started = bap_common_stream_started_cb,
 		.stopped = stream_stopped_cb,
 		.sent = bap_stream_tx_sent_cb,
 	};

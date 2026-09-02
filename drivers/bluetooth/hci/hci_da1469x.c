@@ -194,7 +194,7 @@ static void rx_isr_start(void)
 {
 	if (rx.deferred) {
 		rx.deferred = false;
-		NVIC_SetPendingIRQ(CMAC2SYS_IRQn);
+		k_irq_set_pending(CMAC2SYS_IRQn);
 	}
 
 	irq_enable(CMAC2SYS_IRQn);

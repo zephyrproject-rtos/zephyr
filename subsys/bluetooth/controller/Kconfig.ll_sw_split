@@ -533,16 +533,6 @@ config BT_CTLR_ADV_EXT_PDU_EXTRA_DATA_MEMORY
 	  must be synchronized with CTEInfo field in extended advertising header
 	  that is part of PDU data.
 
-config BT_CTRL_ADV_ADI_IN_SCAN_RSP
-	bool "Include ADI in AUX_SCAN_RSP PDU [DEPRECATED]"
-	depends on BT_BROADCASTER && BT_CTLR_ADV_EXT
-	select BT_CTLR_ADV_ADI_IN_SCAN_RSP
-	select DEPRECATED
-	help
-	  DEPRECATED: Renamed as BT_CTLR_ADV_ADI_IN_SCAN_RSP.
-
-	  Enable ADI field in AUX_SCAN_RSP PDU.
-
 config BT_CTLR_ADV_ADI_IN_SCAN_RSP
 	bool "Include ADI in AUX_SCAN_RSP PDU"
 	depends on BT_BROADCASTER && BT_CTLR_ADV_EXT
@@ -1092,7 +1082,7 @@ config BT_CTLR_LLCP_COMMON_TX_CTRL_BUF_NUM
 
 config BT_CTLR_LLCP_LOCAL_PROC_CTX_BUF_NUM
 	int "Number of local control procedure contexts to be available across all connections"
-	default 6 if (BT_AUTO_PHY_UPDATE=y || BT_AUTO_DATA_LEN_UPDATE=y) && BT_CTLR_LLCP_CONN < 4
+	default 6 if BT_AUTO_DATA_LEN_UPDATE=y && BT_CTLR_LLCP_CONN < 4
 	default 2 if BT_CTLR_LLCP_CONN = 1
 	default BT_CTLR_LLCP_CONN if BT_CTLR_LLCP_CONN > 1
 	range 2 $(UINT8_MAX)

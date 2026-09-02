@@ -8,6 +8,8 @@ tests:
     platform_allow: cc1352p1_launchxl
   drivers.pwm.gecko.build:
     platform_allow: slwrb4250b
+  drivers.pwm.silabs_series2.build:
+    platform_allow: kg100s_rb4332a
   drivers.pwm.imx.build:
     platform_allow: colibri_imx7d/mcimx7d/m4
   drivers.pwm.litex.build:
@@ -53,6 +55,9 @@ tests:
     platform_allow: mec15xxevb_assy6853
   drivers.pwm.build.xlnx:
     platform_allow: arty_a7/designstart_fpga_cortex_m1
+  drivers.pwm.adi_axi_pwmgen.build:
+    platform_allow: arty_a7/designstart_fpga_cortex_m1
+    extra_args: DTC_OVERLAY_FILE=adi_axi_pwmgen.overlay
   drivers.pwm.build.test:
     platform_allow:
       - qemu_cortex_m3

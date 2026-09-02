@@ -20,6 +20,8 @@
 #include <zephyr/rtio/rtio.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
 
 #include <wrap_max32_spi.h>
 
@@ -73,6 +75,7 @@ struct max32_spi_data {
 #ifdef CONFIG_SPI_RTIO
 	struct spi_rtio *rtio_ctx;
 #endif
+	bool pm_policy_state_lock;
 };
 
 #ifdef CONFIG_SPI_MAX32_DMA
@@ -86,6 +89,30 @@ struct max32_spi_data {
 static void spi_max32_callback(mxc_spi_req_t *req, int error);
 #endif /* CONFIG_SPI_MAX32_INTERRUPT */
 
+static void spi_max32_pm_policy_state_lock_get(const struct device *dev)
+{
+	if (IS_ENABLED(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)) {
+		struct max32_spi_data *data = dev->data;
+
+		if (!data->pm_policy_state_lock) {
+			data->pm_policy_state_lock = true;
+			pm_policy_device_power_lock_get(dev);
+		}
+	}
+}
+
+static void spi_max32_pm_policy_state_lock_put(const struct device *dev)
+{
+	if (IS_ENABLED(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)) {
+		struct max32_spi_data *data = dev->data;
+
+		if (data->pm_policy_state_lock) {
+			data->pm_policy_state_lock = false;
+			pm_policy_device_power_lock_put(dev);
+		}
+	}
+}
+
 static int spi_configure(const struct device *dev, const struct spi_config *config)
 {
 	int ret = 0;
@@ -93,20 +120,21 @@ static int spi_configure(const struct device *dev, const struct spi_config *conf
 	mxc_spi_regs_t *regs = cfg->regs;
 	struct max32_spi_data *data = dev->data;
 
-#ifndef CONFIG_SPI_RTIO
+#if !(defined(CONFIG_SPI_RTIO) || defined(CONFIG_PM_S2RAM))
 	if (spi_context_configured(&data->ctx, config)) {
 		return 0;
 	}
-#endif
+#endif /* !((CONFIG_SPI_RTIO) || (CONFIG_PM_S2RAM)) */
 
 
-	int master_mode = !(SPI_OP_MODE_GET(config->operation) & SPI_OP_MODE_SLAVE);
+	int controller_mode = !(SPI_OP_MODE_GET(config->operation) & SPI_OP_MODE_PERIPHERAL);
 	int quad_mode = 0;
-	int num_slaves = 1;
+	int num_peripherals = 1;
 	int ss_polarity = (config->operation & SPI_CS_ACTIVE_HIGH) ? 1 : 0;
 	unsigned int spi_speed = (unsigned int)config->frequency;
 
-	ret = Wrap_MXC_SPI_Init(regs, master_mode, quad_mode, num_slaves, ss_polarity, spi_speed);
+	ret = Wrap_MXC_SPI_Init(regs, controller_mode, quad_mode, num_peripherals, ss_polarity,
+				spi_speed);
 	if (ret) {
 		return -EINVAL;
 	}
@@ -228,7 +256,7 @@ static void spi_cs_assert(const struct device *dev)
 	struct max32_spi_data *data = dev->data;
 	struct spi_context *ctx = &data->ctx;
 
-	if (spi_context_is_slave(ctx)) {
+	if (spi_context_is_peripheral(ctx)) {
 		return;
 	}
 
@@ -248,7 +276,7 @@ static void spi_cs_deassert(const struct device *dev)
 	struct max32_spi_data *data = dev->data;
 	struct spi_context *ctx = &data->ctx;
 
-	if (spi_context_is_slave(ctx)) {
+	if (spi_context_is_peripheral(ctx)) {
 		return;
 	}
 
@@ -383,7 +411,7 @@ static int spi_max32_transceive(const struct device *dev)
 	}
 #else
 	if ((ctx->config->operation & SPI_HALF_DUPLEX)
-	    || (SPI_OP_MODE_GET(data->ctx.config->operation) & SPI_OP_MODE_SLAVE)
+	    || (SPI_OP_MODE_GET(data->ctx.config->operation) & SPI_OP_MODE_PERIPHERAL)
 #if defined(CONFIG_SPI_EXTENDED_MODES)
 	    || (ctx->config->operation & SPI_LINES_DUAL)
 	    || (ctx->config->operation & SPI_LINES_QUAD)
@@ -420,7 +448,7 @@ static int spi_max32_transceive(const struct device *dev)
 	}
 #endif
 	data->req.spi = cfg->regs;
-	data->req.ssIdx = ctx->config->slave;
+	data->req.ssIdx = ctx->config->peripheral;
 	data->req.ssDeassert = 0;
 	data->req.txCnt = 0;
 	data->req.rxCnt = 0;
@@ -456,7 +484,7 @@ static int spi_max32_transceive(const struct device *dev)
 			return -ENOTSUP;
 		}
 
-		MXC_SPI_SetSlave(cfg->regs, ctx->config->slave);
+		MXC_SPI_SetSlave(cfg->regs, ctx->config->peripheral);
 
 		ret = spi_max32_rx_dma_setup(dev, data->req.rxData, data->req.rxLen,
 					     data->req.rxLen >> dfs_shift, dfs_shift);
@@ -536,8 +564,8 @@ static int transceive(const struct device *dev, const struct spi_config *config,
 	}
 #endif
 
-#ifdef CONFIG_SPI_SLAVE
-	if ((SPI_OP_MODE_GET(config->operation) & SPI_OP_MODE_SLAVE) &&
+#ifdef CONFIG_SPI_PERIPHERAL
+	if ((SPI_OP_MODE_GET(config->operation) & SPI_OP_MODE_PERIPHERAL) &&
 	    ((tx_bufs && tx_bufs->count > 1) || (rx_bufs && rx_bufs->count > 1))) {
 		return -ENOTSUP;
 	}
@@ -546,8 +574,10 @@ static int transceive(const struct device *dev, const struct spi_config *config,
 	spi_context_lock(ctx, async, cb, userdata, config);
 
 #ifndef CONFIG_SPI_RTIO
+	spi_max32_pm_policy_state_lock_get(dev);
 	ret = spi_configure(dev, config);
 	if (ret != 0) {
+		spi_max32_pm_policy_state_lock_put(dev);
 		spi_context_release(ctx, ret);
 		return ret;
 	}
@@ -599,7 +629,15 @@ static int transceive(const struct device *dev, const struct spi_config *config,
 	}
 
 #endif
+
+#ifndef CONFIG_SPI_RTIO
+	if (!async) {
+		spi_max32_pm_policy_state_lock_put(dev);
+	}
+#endif /* CONFIG_SPI_RTIO */
+
 	spi_context_release(ctx, ret);
+
 	return ret;
 }
 
@@ -901,6 +939,8 @@ static int transceive_dma(const struct device *dev, const struct spi_config *con
 	MXC_SPI_ClearTXFIFO(spi);
 	MXC_SPI_ClearRXFIFO(spi);
 
+	spi_max32_pm_policy_state_lock_get(dev);
+
 	ret = dma_get_status(cfg->tx_dma.dev, cfg->tx_dma.channel, &status);
 	if (ret < 0 || status.busy) {
 		ret = ret < 0 ? ret : -EBUSY;
@@ -929,7 +969,7 @@ static int transceive_dma(const struct device *dev, const struct spi_config *con
 	/* Assert the CS line */
 	spi_cs_assert(dev);
 
-	MXC_SPI_SetSlave(cfg->regs, ctx->config->slave);
+	MXC_SPI_SetSlave(cfg->regs, ctx->config->peripheral);
 
 	do {
 		ret = spi_max32_transceive_dma(dev);
@@ -944,6 +984,7 @@ unlock:
 	/* Deassert the CS line */
 	if (!async || ret < 0) {
 		spi_cs_deassert(dev);
+		spi_max32_pm_policy_state_lock_put(dev);
 	}
 
 	spi_context_release(ctx, ret);
@@ -1007,6 +1048,8 @@ static void spi_max32_iodev_complete(const struct device *dev, int status)
 		if (spi_rtio_complete(rtio_ctx, status)) {
 			spi_max32_iodev_prepare_start(dev);
 			spi_max32_iodev_start(dev);
+		} else {
+			spi_max32_pm_policy_state_lock_put(dev);
 		}
 	}
 }
@@ -1016,9 +1059,12 @@ static void api_iodev_submit(const struct device *dev, struct rtio_iodev_sqe *io
 	struct max32_spi_data *data = dev->data;
 	struct spi_rtio *rtio_ctx = data->rtio_ctx;
 
+	spi_max32_pm_policy_state_lock_get(dev);
 	if (spi_rtio_submit(rtio_ctx, iodev_sqe)) {
 		spi_max32_iodev_prepare_start(dev);
 		spi_max32_iodev_start(dev);
+	} else {
+		spi_max32_pm_policy_state_lock_put(dev);
 	}
 }
 #endif
@@ -1073,7 +1119,7 @@ static void spi_max32_callback(mxc_spi_req_t *req, int error)
 	uint8_t dfs;
 
 	dfs = spi_max32_get_dfs_shift(ctx) ? 2 : 1;
-	if (spi_context_is_slave(ctx)) {
+	if (spi_context_is_peripheral(ctx)) {
 		if (spi_context_tx_on(ctx)) {
 			spi_context_update_tx(ctx, dfs, data->req.txCnt);
 		}
@@ -1082,19 +1128,22 @@ static void spi_max32_callback(mxc_spi_req_t *req, int error)
 			spi_context_update_rx(ctx, dfs, data->req.rxCnt);
 		}
 	} else {
-		/* Master connections always assume matching TX/RX */
+		/* Controller connections always assume matching TX/RX */
 		len = spi_context_max_continuous_chunk(ctx);
 		spi_context_update_tx(ctx, dfs, len);
 		spi_context_update_rx(ctx, dfs, len);
 	}
 
 #ifdef CONFIG_SPI_ASYNC
-	if (ctx->asynchronous && ((spi_context_tx_on(ctx) || spi_context_rx_on(ctx)))) {
-		k_work_submit(&data->async_work);
-	} else {
-		if (!(spi_context_tx_on(ctx) || spi_context_rx_on(ctx))) {
+	if (ctx->asynchronous) {
+		if (spi_context_tx_on(ctx) || spi_context_rx_on(ctx)) {
+			k_work_submit(&data->async_work);
+		} else {
 			spi_cs_deassert(dev);
+			spi_max32_pm_policy_state_lock_put(dev);
+			spi_context_complete(ctx, dev, error == E_NO_ERROR ? 0 : -EIO);
 		}
+	} else {
 		spi_context_complete(ctx, dev, error == E_NO_ERROR ? 0 : -EIO);
 	}
 #else
@@ -1113,6 +1162,7 @@ void spi_max32_async_work_handler(struct k_work *work)
 
 	ret = spi_max32_transceive(dev);
 	if (ret) {
+		spi_max32_pm_policy_state_lock_put(dev);
 		spi_context_complete(&data->ctx, dev, -EIO);
 	}
 }
@@ -1182,7 +1232,8 @@ static void spi_max32_isr(const struct device *dev)
 
 	if ((req->txLen == req->txCnt) && (req->rxLen == req->rxCnt)) {
 		MXC_SPI_DisableInt(spi, ADI_MAX32_SPI_INT_EN_TX_THD | ADI_MAX32_SPI_INT_EN_RX_THD);
-		if (spi_context_is_slave(&data->ctx) || (flags & ADI_MAX32_SPI_INT_FL_MST_DONE)) {
+		if (spi_context_is_peripheral(&data->ctx) ||
+		    (flags & ADI_MAX32_SPI_INT_FL_MST_DONE)) {
 			MXC_SPI_DisableInt(spi, ADI_MAX32_SPI_INT_EN_MST_DONE
 						| ADI_MAX32_SPI_INT_EN_TX_EMPTY);
 			spi_max32_callback(req, 0);
@@ -1209,6 +1260,70 @@ static int api_release(const struct device *dev, const struct spi_config *config
 	return 0;
 }
 
+static int spi_max32_pm_resume(const struct max32_spi_config *const cfg)
+{
+	int ret;
+
+	ret = clock_control_on(cfg->clock, (clock_control_subsys_t)&cfg->perclk);
+	if (ret != 0) {
+		LOG_ERR("Cannot enable SPI clock");
+		return ret;
+	}
+
+	ret = pinctrl_apply_state(cfg->pctrl, PINCTRL_STATE_DEFAULT);
+	if (ret) {
+		return ret;
+	}
+
+	return 0;
+}
+
+static int spi_max32_pm_suspend(const struct max32_spi_config *const cfg)
+{
+	int ret;
+
+	/* Move pins to sleep state */
+	ret = pinctrl_apply_state(cfg->pctrl, PINCTRL_STATE_SLEEP);
+	if ((ret < 0) && (ret != -ENOENT)) {
+		return ret;
+	}
+
+	/* Disable clock */
+	ret = clock_control_off(cfg->clock, (clock_control_subsys_t)&cfg->perclk);
+	if (ret != 0) {
+		LOG_ERR("cannot disable SPI clock");
+	}
+
+	return ret;
+}
+
+static int spi_max32_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	int ret;
+	const struct max32_spi_config *cfg = dev->config;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		ret = spi_max32_pm_resume(cfg);
+		if (ret < 0) {
+			return ret;
+		}
+
+		break;
+	case PM_DEVICE_ACTION_SUSPEND:
+		ret = spi_max32_pm_suspend(cfg);
+		if (ret < 0) {
+			return ret;
+		}
+
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
 static int spi_max32_init(const struct device *dev)
 {
 	int ret = 0;
@@ -1222,16 +1337,6 @@ static int spi_max32_init(const struct device *dev)
 
 	MXC_SPI_InitState(regs);
 	MXC_SPI_Shutdown(regs);
-
-	ret = clock_control_on(cfg->clock, (clock_control_subsys_t)&cfg->perclk);
-	if (ret) {
-		return ret;
-	}
-
-	ret = pinctrl_apply_state(cfg->pctrl, PINCTRL_STATE_DEFAULT);
-	if (ret) {
-		return ret;
-	}
 
 	ret = spi_context_cs_configure_all(&data->ctx);
 	if (ret < 0) {
@@ -1259,7 +1364,7 @@ static int spi_max32_init(const struct device *dev)
 
 	spi_context_unlock_unconditionally(&data->ctx);
 
-	return ret;
+	return pm_device_driver_init(dev, spi_max32_pm_action);
 }
 
 /* SPI driver APIs structure */
@@ -1329,9 +1434,10 @@ static DEVICE_API(spi, spi_max32_api) = {
 		SPI_CONTEXT_INIT_LOCK(max32_spi_data_##_num, ctx),                                 \
 		SPI_CONTEXT_INIT_SYNC(max32_spi_data_##_num, ctx),                                 \
 		SPI_CONTEXT_CS_GPIOS_INITIALIZE(DT_DRV_INST(_num), ctx)                            \
-			IF_ENABLED(CONFIG_SPI_RTIO, (.rtio_ctx = &max32_spi_rtio_##_num))};        \
-	SPI_DEVICE_DT_INST_DEFINE(_num, spi_max32_init, NULL, &max32_spi_data_##_num,              \
-				  &max32_spi_config_##_num, PRE_KERNEL_2,                          \
+		IF_ENABLED(CONFIG_SPI_RTIO, (.rtio_ctx = &max32_spi_rtio_##_num))};                \
+	PM_DEVICE_DT_INST_DEFINE(_num, spi_max32_pm_action);                                       \
+	SPI_DEVICE_DT_INST_DEFINE(_num, spi_max32_init, PM_DEVICE_DT_INST_GET(_num),               \
+				  &max32_spi_data_##_num, &max32_spi_config_##_num, PRE_KERNEL_2,  \
 				  CONFIG_SPI_INIT_PRIORITY, &spi_max32_api);
 
 DT_INST_FOREACH_STATUS_OKAY(DEFINE_SPI_MAX32)

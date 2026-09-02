@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 description: |
-    Renesas RZ/A2M SPIBSC NOR FLASH supporting the JEDEC CFI interface
+    Renesas RZ/A2M SPIBSC NOR FLASH controller supporting the JEDEC CFI interface.
 
 compatible: "renesas,rza2m-qspi-spibsc"
 
@@ -10,27 +10,50 @@ include: ["flash-controller.yaml", "jedec,jesd216.yaml"]
 
 on-bus: qspi
 
-properties:
-  reg:
-    required: true
-    description: Flash Memory base address and size in bytes
-
-  erase-block-size:
-    type: int
-    default: 4096
-    description: Address alignment required by flash erase operations
-
-  write-block-size:
-    type: int
-    default: 1
-    description: Address alignment required by flash write operations
-
 examples:
   - |
-    at25ql128a: qspi-nor-flash@20000000 {
+    ext_flash_ctrl: flash-controller@0 {
       compatible = "renesas,rza2m-qspi-spibsc";
-      reg = <0x20000000 DT_SIZE_M(16)>; /* 128 Mbits */
-      write-block-size = <1>;
-      erase-block-size = <4096>;
+      reg = <0>;
       status = "okay";
+      #address-cells = <1>;
+      #size-cells = <1>;
+      ranges = <0x0 0x20000000 DT_SIZE_M(64)>;
+
+      mx25l51245g: qspi-nor-flash@0 {
+        compatible = "soc-nv-flash";
+        reg = <0x0 DT_SIZE_M(64)>;
+        write-block-size = <2>;
+        erase-block-size = <4096>;
+        #address-cells = <1>;
+        #size-cells = <1>;
+        ranges;
+
+        partitions {
+          ranges;
+          #address-cells = <1>;
+          #size-cells = <1>;
+
+          loader_program: partition@0 {
+            compatible = "zephyr,mapped-partition";
+            label = "loader-program";
+            reg = <0x00000000 DT_SIZE_K(56)>;
+            read-only;
+          };
+
+          slot0_partition: partition@e000 {
+            compatible = "zephyr,mapped-partition";
+            label = "image-0";
+            reg = <0x0000e000 DT_SIZE_M(4)>;
+            read-only;
+          };
+
+          storage_partition: partition@40e000 {
+            compatible = "zephyr,mapped-partition";
+            label = "storage";
+            reg = <0x0040e000
+                  (DT_SIZE_M(64) - DT_SIZE_M(4) - DT_SIZE_K(56))>;
+          };
+        };
+      };
     };

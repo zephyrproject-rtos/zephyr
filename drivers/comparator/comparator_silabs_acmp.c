@@ -4,8 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <em_device.h>
-#include <em_acmp.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/comparator.h>
 #include <zephyr/drivers/clock_control.h>
@@ -13,6 +11,8 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/irq.h>
 #include <zephyr/pm/device.h>
+
+#include <sl_hal_acmp.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(silabs_acmp, CONFIG_COMPARATOR_LOG_LEVEL);
@@ -25,7 +25,7 @@ struct acmp_config {
 	const struct device *clock_dev;
 	const struct silabs_clock_control_cmu_config clock_cfg;
 	void (*irq_init)(void);
-	ACMP_Init_TypeDef init;
+	sl_hal_acmp_init_t init;
 	int input_negative;
 	int input_positive;
 };
@@ -54,9 +54,9 @@ static int acmp_pm_action(const struct device *dev, enum pm_device_action action
 			return err;
 		}
 
-		ACMP_Enable(config->base);
+		sl_hal_acmp_enable(config->base);
 	} else if (IS_ENABLED(CONFIG_PM_DEVICE) && (action == PM_DEVICE_ACTION_SUSPEND)) {
-		ACMP_Disable(config->base);
+		sl_hal_acmp_disable(config->base);
 
 		err = clock_control_off(config->clock_dev,
 					(clock_control_subsys_t)&config->clock_cfg);
@@ -93,16 +93,17 @@ static int acmp_init(const struct device *dev)
 	}
 
 	/* Initialize the ACMP */
-	ACMP_Init(config->base, &config->init);
+	sl_hal_acmp_init(config->base, &config->init);
 
 	/* Configure the ACMP Input Channels */
-	ACMP_ChannelSet(config->base, config->input_negative, config->input_positive);
+	sl_hal_acmp_enable(config->base);
+	sl_hal_acmp_set_input(config->base, config->input_negative, config->input_positive);
 
 	/* After initialization, the comparator should not yet be enabled. It was temporarily
 	 * enabled to perform input configuration since the INPUTCTRL register has the SYNC type,
 	 * disable it again here. It will be enabled by the PM resume action.
 	 */
-	ACMP_Disable(config->base);
+	sl_hal_acmp_disable(config->base);
 
 	/* Initialize the irq handler */
 	config->irq_init();
@@ -123,10 +124,10 @@ static int acmp_set_trigger(const struct device *dev, enum comparator_trigger tr
 	struct acmp_data *data = dev->data;
 
 	/* Disable ACMP trigger interrupts */
-	ACMP_IntDisable(config->base, ACMP_IEN_RISE | ACMP_IEN_FALL);
+	sl_hal_acmp_disable_interrupts(config->base, ACMP_IEN_RISE | ACMP_IEN_FALL);
 
 	/* Clear ACMP trigger interrupt flags */
-	ACMP_IntClear(config->base, ACMP_IEN_RISE | ACMP_IEN_FALL);
+	sl_hal_acmp_clear_interrupts(config->base, ACMP_IEN_RISE | ACMP_IEN_FALL);
 
 	switch (trigger) {
 	case COMPARATOR_TRIGGER_BOTH_EDGES:
@@ -149,7 +150,7 @@ static int acmp_set_trigger(const struct device *dev, enum comparator_trigger tr
 	 * callback is set.
 	 */
 	if (data->interrupt_mask && data->callback != NULL) {
-		ACMP_IntEnable(config->base, data->interrupt_mask);
+		sl_hal_acmp_enable_interrupts(config->base, data->interrupt_mask);
 	}
 
 	return 0;
@@ -162,7 +163,7 @@ static int acmp_set_trigger_callback(const struct device *dev, comparator_callba
 	struct acmp_data *data = dev->data;
 
 	/* Disable ACMP trigger interrupts while setting callback */
-	ACMP_IntDisable(config->base, ACMP_IEN_RISE | ACMP_IEN_FALL);
+	sl_hal_acmp_disable_interrupts(config->base, ACMP_IEN_RISE | ACMP_IEN_FALL);
 
 	data->callback = callback;
 	data->user_data = user_data;
@@ -173,7 +174,7 @@ static int acmp_set_trigger_callback(const struct device *dev, comparator_callba
 
 	/* Re-enable currently set ACMP trigger interrupts */
 	if (data->interrupt_mask) {
-		ACMP_IntEnable(config->base, data->interrupt_mask);
+		sl_hal_acmp_enable_interrupts(config->base, data->interrupt_mask);
 	}
 
 	return 0;
@@ -184,8 +185,8 @@ static int acmp_trigger_is_pending(const struct device *dev)
 	const struct acmp_config *config = dev->config;
 	const struct acmp_data *data = dev->data;
 
-	if (ACMP_IntGet(config->base) & data->interrupt_mask) {
-		ACMP_IntClear(config->base, data->interrupt_mask);
+	if (sl_hal_acmp_get_pending_interrupts(config->base) & data->interrupt_mask) {
+		sl_hal_acmp_clear_interrupts(config->base, data->interrupt_mask);
 		return 1;
 	}
 
@@ -197,7 +198,7 @@ static void acmp_irq_handler(const struct device *dev)
 	const struct acmp_config *config = dev->config;
 	struct acmp_data *data = dev->data;
 
-	ACMP_IntClear(config->base, ACMP_IF_RISE | ACMP_IF_FALL);
+	sl_hal_acmp_clear_interrupts(config->base, ACMP_IF_RISE | ACMP_IF_FALL);
 
 	if (data->callback == NULL) {
 		return;
@@ -212,6 +213,16 @@ static DEVICE_API(comparator, acmp_api) = {
 	.set_trigger_callback = acmp_set_trigger_callback,
 	.trigger_is_pending = acmp_trigger_is_pending,
 };
+
+#if defined(_ACMP_CFG_HYSTRISE_MASK)
+#define ACMP_HYSTERESIS(val)                                                                       \
+	.init.hysteresis_rise = (val < 4 ? val : val > 6 ? 0 : (val - 3)),                         \
+	.init.hysteresis_fall = (val < 4 ? val : val < 7 ? 0 : (val - 6))
+#else
+#define ACMP_HYSTERESIS(val)                                                                       \
+	.init.hysteresis = val
+#endif
+
 
 #define ACMP_DEVICE(inst)                                                                          \
 	PINCTRL_DT_INST_DEFINE(inst);                                                              \
@@ -233,13 +244,12 @@ static DEVICE_API(comparator, acmp_api) = {
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst)),                             \
 		.clock_cfg = SILABS_DT_INST_CLOCK_CFG(inst),                                       \
 		.irq_init = acmp_irq_init##inst,                                                   \
-		.init.biasProg = DT_INST_PROP(inst, bias),                                         \
-		.init.inputRange = DT_INST_ENUM_IDX(inst, input_range),                            \
+		.init.bias_prog = DT_INST_PROP(inst, bias),                                        \
+		.init.input_range = DT_INST_ENUM_IDX(inst, input_range),                           \
 		.init.accuracy = DT_INST_ENUM_IDX(inst, accuracy_mode),                            \
-		.init.hysteresisLevel = DT_INST_ENUM_IDX(inst, hysteresis_mode),                   \
-		.init.inactiveValue = false,                                                       \
-		.init.vrefDiv = DT_INST_PROP(inst, vref_divider),                                  \
-		.init.enable = true,                                                               \
+		ACMP_HYSTERESIS(DT_INST_ENUM_IDX(inst, hysteresis_mode)),                          \
+		.init.inactive_value = false,                                                      \
+		.init.vref_div = DT_INST_PROP(inst, vref_divider),                                 \
 		.input_negative = DT_INST_PROP(inst, input_negative),                              \
 		.input_positive = DT_INST_PROP(inst, input_positive),                              \
 	};                                                                                         \

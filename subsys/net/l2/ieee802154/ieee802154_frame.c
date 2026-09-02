@@ -472,6 +472,8 @@ void ieee802154_compute_header_and_authtag_len(struct net_if *iface, struct net_
 
 	ctx = (struct ieee802154_context *)net_if_l2_data(iface);
 
+	NET_ASSERT(ctx != NULL);
+
 	k_sem_take(&ctx->ctx_lock, K_FOREVER);
 
 	sec_ctx = &ctx->sec_ctx;
@@ -890,6 +892,8 @@ struct net_pkt *ieee802154_create_mac_cmd_frame(struct net_if *iface, enum ieee8
 	struct net_pkt *pkt = NULL;
 	uint8_t *p_buf, *p_start;
 
+	NET_ASSERT(ctx != NULL);
+
 	k_sem_take(&ctx->ctx_lock, K_FOREVER);
 
 	/* It would be costly to compute the size when actual frames are never
@@ -972,6 +976,8 @@ bool ieee802154_decipher_data_frame(struct net_if *iface, struct net_pkt *pkt,
 	struct ieee802154_mhr *mhr = &mpdu->mhr;
 	struct ieee802154_address *src;
 	bool ret = false;
+
+	NET_ASSERT(ctx != NULL);
 
 	k_sem_take(&ctx->ctx_lock, K_FOREVER);
 

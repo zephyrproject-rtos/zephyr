@@ -6,10 +6,9 @@ Overview
 The Raspberry Pi Pico 2 and Pico 2W are second-generation products in the Raspberry Pi
 Pico family. From the `Raspberry Pi website <https://www.raspberrypi.com/documentation/microcontrollers/pico-series.html>`_ is referred to as Pico 2.
 
-The Pico 2 supports running code on either a single Cortex-M33 or a Hazard3
-(RISC-V) core.
-
-As with the Pico 1, there's no support for running any code on the second core.
+The RP2350 SoC has two Cortex-M33 cores and two Hazard3 (RISC-V) cores. Zephyr
+supports builds targeting either CPU architecture, but currently runs on one
+core only; running code on the second core is not supported.
 
 Hardware
 ********

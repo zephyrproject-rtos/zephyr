@@ -32,6 +32,14 @@
 #endif
 
 #define MSPI_STM32_WRITE_REG_MAX_TIME          40U
+
+#define MSPI_STM32_IS_SUPPORTED_CHILD(child) \
+DT_NODE_HAS_COMPAT(child, st_nor) || \
+DT_NODE_HAS_COMPAT(child, st_psram_device)
+
+#define MSPI_STM32_HAS_SUPPORTED_CHILD(index) \
+DT_INST_FOREACH_CHILD_STATUS_OKAY(index, MSPI_STM32_IS_SUPPORTED_CHILD)
+
 /*
  * Memory device geometry, taken at compile time from the controller's
  * first status "okay" child node. The STM32 MSPI drivers currently
@@ -59,6 +67,31 @@
 		    (GET_ARG_N(1, DT_INST_FOREACH_CHILD_STATUS_OKAY(index,     \
 					MSPI_STM32_MEM_ADDR_BITS_ENTRY))))
 
+
+#if defined(CONFIG_MSPI_STM32_OSPI)
+
+#define MSPI_STM32_HAL_PREFIX HAL_OSPI_MEMTYPE_
+#define APMEM        APMEMORY
+/* Supported memory types for OSPI */
+#define MSPI_STM32_IS_VALID_MEMTYPE_MICRON        1
+#define MSPI_STM32_IS_VALID_MEMTYPE_MACRONIX      1
+#define MSPI_STM32_IS_VALID_MEMTYPE_APMEMORY      1
+#define MSPI_STM32_IS_VALID_MEMTYPE_MACRONIX_RAM  1
+#define MSPI_STM32_IS_VALID_MEMTYPE_HYPERBUS      1
+/* Explicitly unsupported */
+#define MSPI_STM32_IS_VALID_MEMTYPE_APMEM_16BITS  0
+
+#elif defined(CONFIG_MSPI_STM32_XSPI)
+
+#if defined(CONFIG_STM32_HAL2)
+#define MSPI_STM32_HAL_PREFIX HAL_XSPI_MEMORY_TYPE_
+#else
+#define MSPI_STM32_HAL_PREFIX HAL_XSPI_MEMTYPE_
+#endif
+
+#define APMEM        APMEM
+#endif
+
 /*
  * Memory type token ("st,mem-type" on the child node), upper-cased for
  * pasting onto the HAL memory type macro prefix. Defaults to MICRON,
@@ -72,6 +105,19 @@
 		    (MICRON),                                                  \
 		    (GET_ARG_N(1, DT_INST_FOREACH_CHILD_STATUS_OKAY(index,     \
 					MSPI_STM32_MEMTYPE_TOKEN_ENTRY))))
+
+/* Validation helper */
+#define MSPI_STM32_VALIDATE_MEMTYPE(token)                                     \
+	BUILD_ASSERT(                                                          \
+		UTIL_CAT(MSPI_STM32_IS_VALID_MEMTYPE_, token),                 \
+		"Unsupported st,mem-type for selected MSPI driver"             \
+	)
+
+#define MSPI_STM32_MEMTYPE_TOKEN(index) \
+	MSPI_STM32_INST_MEMTYPE_TOKEN(index)
+
+#define MSPI_STM32_HAL_MEMTYPE(index) \
+	CONCAT(MSPI_STM32_HAL_PREFIX, MSPI_STM32_INST_MEMTYPE_TOKEN(index))
 
 typedef void (*irq_config_func_t)(void);
 
@@ -95,6 +141,11 @@ struct mspi_stm32_conf {
 	const struct stm32_pclken *pclken;
 	const struct pinctrl_dev_config *pcfg;
 	bool dma_specified;
+	uint32_t cs_boundary;
+	bool ssht_enable;
+	/* Raw DCR1 DEVSIZE value: memory address bits - 1 */
+	uint32_t mem_size;
+	uint32_t mem_type;
 	uint32_t ospim_clk_port;
 	uint32_t ospim_dqs_port;
 	uint32_t ospim_ncs_port;
@@ -121,7 +172,11 @@ union mspi_stm32_handle {
 	QSPI_HandleTypeDef qspi;
 #endif
 #ifdef CONFIG_MSPI_STM32_XSPI
+#if defined(CONFIG_STM32_HAL2)
+	hal_xspi_handle_t xspi;
+#else
 	XSPI_HandleTypeDef xspi;
+#endif
 #endif
 };
 
@@ -133,6 +188,7 @@ struct mspi_stm32_data {
 	const struct mspi_dev_id *dev_id;
 	struct k_mutex lock;
 	struct k_sem sync;
+	struct k_sem thread_sem;
 	struct mspi_dev_cfg dev_cfg;
 	struct mspi_memmap_cfg memmap_cfg;
 	struct stm32_stream dma_tx;
@@ -142,8 +198,13 @@ struct mspi_stm32_data {
 	DMA_HandleTypeDef hdma;
 #endif
 #ifdef CONFIG_MSPI_STM32_XSPI
+#if defined(CONFIG_STM32_HAL2)
+	hal_dma_handle_t hdma_tx;
+	hal_dma_handle_t hdma_rx;
+#else
 	DMA_HandleTypeDef hdma_tx;
 	DMA_HandleTypeDef hdma_rx;
+#endif
 #endif
 };
 

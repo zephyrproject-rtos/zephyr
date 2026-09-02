@@ -6,10 +6,18 @@
 /**
  * @file stepper_tmcm3216.h
  * @brief Public API for ADI TMCM-3216 stepper motor controller
+ * @ingroup tmcm3216_stepper_ctrl
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_STEPPER_TMCM3216_H_
 #define ZEPHYR_INCLUDE_DRIVERS_STEPPER_TMCM3216_H_
+
+/**
+ * @brief ADI TMCM-3216 Stepper Controller
+ * @defgroup tmcm3216_stepper_ctrl TMCM-3216 Stepper Controller
+ * @ingroup stepper_interface_ext
+ * @{
+ */
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/stepper/stepper.h>
@@ -62,6 +70,10 @@ int tmcm3216_get_actual_velocity(const struct device *dev, int32_t *velocity);
  * @return 0 on success, negative errno on failure
  */
 int tmcm3216_get_status(const struct device *dev, struct tmcm3216_status *status);
+
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }

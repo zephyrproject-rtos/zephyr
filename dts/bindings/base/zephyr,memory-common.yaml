@@ -19,13 +19,6 @@ properties:
       memory region. The string set here will be specified in parentheses
       after the area name in the linker script.
 
-  zephyr,memory-region-mpu:
-    type: string
-    deprecated: true
-    description: |
-      Signify that this node should result in a dedicated MPU region.
-      Deprecated in favor of 'zephyr,memory-attr'.
-
   zephyr,memory-attr:
     type: int
     description: |

@@ -3,7 +3,7 @@
 
 if SOC_SERIES_SR1XX
 
-config CACHE_MANAGEMENT
+configdefault CACHE_MANAGEMENT
 	default y
 
 config NUM_IRQS

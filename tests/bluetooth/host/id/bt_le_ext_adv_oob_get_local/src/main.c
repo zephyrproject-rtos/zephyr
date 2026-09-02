@@ -90,7 +90,7 @@ ZTEST(bt_le_ext_adv_oob_get_local, test_get_local_out_of_band_information_privac
 
 	atomic_set_bit(bt_dev.flags, BT_DEV_READY);
 	atomic_clear_bit(adv.flags, BT_ADV_USE_IDENTITY);
-	bt_addr_le_copy(&adv.random_addr, BT_RPA_LE_ADDR);
+	bt_addr_le_copy(&adv.adv_addr, BT_RPA_LE_ADDR);
 
 	err = bt_le_ext_adv_oob_get_local(&adv, &oob);
 

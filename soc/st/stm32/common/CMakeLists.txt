@@ -14,7 +14,7 @@ if(NOT CONFIG_DEBUG AND CONFIG_PM)
   zephyr_sources_ifdef(CONFIG_DT_HAS_SWJ_CONNECTOR_ENABLED pm_debug_swj.c)
 endif()
 
-zephyr_sources_ifdef(CONFIG_STM32_WKUP_PINS stm32_wkup_pins.c)
+zephyr_sources_ifdef(CONFIG_STM32_WKUP_PINS pwr_wkupctrl.c)
 zephyr_sources_ifdef(CONFIG_STM32_IOCELL stm32_iocell.c)
 zephyr_sources_ifdef(CONFIG_STM32_XSPIM stm32_xspim.c)
 

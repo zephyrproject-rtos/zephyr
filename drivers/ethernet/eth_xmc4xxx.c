@@ -1024,15 +1024,10 @@ static int eth_xmc4xxx_init(const struct device *dev)
 {
 	struct eth_xmc4xxx_data *dev_data = dev->data;
 	const struct eth_xmc4xxx_config *dev_cfg = dev->config;
-	XMC_ETH_MAC_PORT_CTRL_t port_ctrl;
 	int ret;
 
 	sys_slist_init(&dev_data->tx_frame_list);
 	k_sem_init(&dev_data->tx_desc_sem, NUM_TX_DMA_DESCRIPTORS, NUM_TX_DMA_DESCRIPTORS);
-
-	/* get the port control initialized by MDIO driver */
-	port_ctrl.raw = ETH0_CON->CON;
-	port_ctrl.raw |= dev_cfg->port_ctrl.raw;
 
 	XMC_ETH_MAC_Disable(NULL);
 	ret = pinctrl_apply_state(dev_cfg->pcfg, PINCTRL_STATE_DEFAULT);
@@ -1040,7 +1035,7 @@ static int eth_xmc4xxx_init(const struct device *dev)
 		return ret;
 	}
 
-	XMC_ETH_MAC_SetPortControl(NULL, port_ctrl);
+	XMC_ETH_MAC_SetPortControl(NULL, *dev_cfg->port_ctrl);
 	XMC_ETH_MAC_Enable(NULL);
 
 	ret = eth_xmc4xxx_reset(dev);
@@ -1217,16 +1212,12 @@ static const struct ethernet_api eth_xmc4xxx_api = {
 
 PINCTRL_DT_INST_DEFINE(0);
 
-#if defined(CONFIG_PTP_CLOCK_XMC4XXX)
-DEVICE_DECLARE(xmc4xxx_ptp_clock_0);
-#endif
-
 static struct eth_xmc4xxx_config eth_xmc4xxx_config = {
-	.regs = (ETH_GLOBAL_TypeDef *)DT_REG_ADDR(DT_INST_PARENT(0)),
+	.regs = (ETH_GLOBAL_TypeDef *)DT_INST_REG_ADDR(0),
 	.irq_config_func = eth_xmc4xxx_irq_config,
 	.phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(0, phy_handle)),
 #if defined(CONFIG_PTP_CLOCK_XMC4XXX)
-	.ptp_clock = DEVICE_GET(xmc4xxx_ptp_clock_0),
+	.ptp_clock = DEVICE_DT_GET_ONE(snps_dwmac_ptp_clock),
 #endif
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 	.port_ctrl = {
@@ -1241,6 +1232,7 @@ static struct eth_xmc4xxx_config eth_xmc4xxx_config = {
 		.col = DT_INST_ENUM_IDX_OR(0, col_port_ctrl, 0),
 		.clk_tx = DT_INST_ENUM_IDX_OR(0, tx_clk_port_ctrl, 0),
 		.mode = DT_INST_ENUM_IDX_OR(0, phy_connection_type, 0),
+		.mdio = DT_INST_ENUM_IDX_OR(0, mdi_port_ctrl, 0),
 	}};
 
 static struct eth_xmc4xxx_data eth_xmc4xxx_data = {
@@ -1251,6 +1243,8 @@ ETH_NET_DEVICE_DT_INST_DEFINE(0, eth_xmc4xxx_init, NULL, &eth_xmc4xxx_data, &eth
 			      CONFIG_ETH_INIT_PRIORITY, &eth_xmc4xxx_api, NET_ETH_MTU);
 
 #if defined(CONFIG_PTP_CLOCK_XMC4XXX)
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT snps_dwmac_ptp_clock
 
 static int eth_xmc4xxx_ptp_clock_set(const struct device *dev, struct net_ptp_time *tm)
 {
@@ -1353,8 +1347,7 @@ static DEVICE_API(ptp_clock, ptp_api_xmc4xxx) = {
 	.rate_adjust = eth_xmc4xxx_ptp_clock_rate_adjust,
 };
 
-DEVICE_DEFINE(xmc4xxx_ptp_clock_0, PTP_CLOCK_NAME, NULL,  NULL,
-	      &eth_xmc4xxx_data, &eth_xmc4xxx_config, POST_KERNEL, CONFIG_ETH_INIT_PRIORITY,
-	      &ptp_api_xmc4xxx);
+DEVICE_DT_INST_DEFINE(0, NULL, NULL, &eth_xmc4xxx_data, &eth_xmc4xxx_config, POST_KERNEL,
+		      CONFIG_PTP_CLOCK_INIT_PRIORITY, &ptp_api_xmc4xxx);
 
 #endif /* CONFIG_PTP_CLOCK_XMC4XXX */

@@ -34,6 +34,19 @@ static struct socket_dispatch_table {
 	struct dns_socket_dispatcher *ctx;
 } dispatch_table[ZVFS_OPEN_SIZE];
 
+static uint16_t dns_dispatcher_addr_port(const struct net_sockaddr_storage *addr)
+{
+	if (IS_ENABLED(CONFIG_NET_IPV6) && addr->ss_family == NET_AF_INET6) {
+		return net_sin6(net_sad(addr))->sin6_port;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV4) && addr->ss_family == NET_AF_INET) {
+		return net_sin(net_sad(addr))->sin_port;
+	}
+
+	return 0;
+}
+
 static int dns_dispatch(struct dns_socket_dispatcher *dispatcher,
 			int sock, struct net_sockaddr *addr, size_t addrlen,
 			struct net_buf *dns_data, size_t buf_len)
@@ -51,17 +64,21 @@ static int dns_dispatch(struct dns_socket_dispatcher *dispatcher,
 
 	/* Make sure that we can read DNS id, flags and rcode */
 	if (dns_msg.msg_size < (sizeof(uint16_t) + sizeof(uint16_t))) {
+		NET_WARN("Invalid message size: %d < %zd", dns_msg.msg_size,
+			 (sizeof(uint16_t) + sizeof(uint16_t)));
 		ret = -EINVAL;
 		goto done;
 	}
 
 	if (dns_header_rcode(dns_msg.msg) == DNS_HEADER_REFUSED) {
+		NET_WARN("DNS_HEADER_REFUSED");
 		ret = -EINVAL;
 		goto done;
 	}
 
 	is_query = (dns_header_qr(dns_msg.msg) == DNS_QUERY);
 	if (is_query) {
+		NET_DBG("Received %d byte DNS query message", dns_msg.msg_size);
 		if (dispatcher->type == DNS_SOCKET_RESPONDER) {
 			/* Call the responder callback */
 			ret = dispatcher->cb(dispatcher, sock,
@@ -80,6 +97,7 @@ static int dns_dispatch(struct dns_socket_dispatcher *dispatcher,
 	} else {
 		/* So this was an answer to a query that was made by resolver.
 		 */
+		NET_DBG("Received %d byte DNS answer message", dns_msg.msg_size);
 		if (dispatcher->type == DNS_SOCKET_RESOLVER) {
 			/* Call the resolver callback */
 			ret = dispatcher->cb(dispatcher, sock,
@@ -125,7 +143,7 @@ static int recv_data(struct net_socket_service_event *pev)
 	struct dns_socket_dispatcher *dispatcher;
 	net_socklen_t optlen = sizeof(int);
 	struct net_buf *dns_data = NULL;
-	struct net_sockaddr addr;
+	struct net_sockaddr_storage addr;
 	net_socklen_t addrlen;
 	int family, sock_error;
 	int ret = 0, len;
@@ -176,7 +194,7 @@ static int recv_data(struct net_socket_service_event *pev)
 
 	ret = zsock_recvfrom(pev->event.fd, dns_data->data,
 			     net_buf_max_len(dns_data), 0,
-			     (struct net_sockaddr *)&addr, &addrlen);
+			     net_sad(&addr), &addrlen);
 	if (ret < 0) {
 		ret = -errno;
 		NET_ERR("recv failed on IPv%d socket (%d)",
@@ -187,7 +205,7 @@ static int recv_data(struct net_socket_service_event *pev)
 	len = ret;
 
 	ret = dns_dispatch(dispatcher, pev->event.fd,
-			   (struct net_sockaddr *)&addr, addrlen,
+			   net_sad(&addr), addrlen,
 			   dns_data, len);
 free_buf:
 	if (dns_data) {
@@ -228,14 +246,18 @@ int dns_dispatcher_register(struct dns_socket_dispatcher *ctx)
 	(void)k_mutex_init(&ctx->lock);
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&sockets, entry, next, node) {
+		uint16_t entry_port = dns_dispatcher_addr_port(&entry->local_addr_storage);
+		uint16_t ctx_port = dns_dispatcher_addr_port(&ctx->local_addr_storage);
+		bool ports_match = ctx_port != 0 && ctx_port == entry_port;
+
 		/* Refuse to register context if we have identical context
-		 * already registered.
+		 * already registered. Port 0 means the local port is not
+		 * known, so it cannot be used to tell two contexts apart.
 		 */
 		if (ctx->type == entry->type &&
-		    ctx->local_addr.sa_family == entry->local_addr.sa_family &&
+		    ctx->local_addr_storage.ss_family == entry->local_addr_storage.ss_family &&
 		    ctx->ifindex == entry->ifindex) {
-			if (net_sin(&entry->local_addr)->sin_port ==
-			    net_sin(&ctx->local_addr)->sin_port) {
+			if (ports_match) {
 				dup = true;
 				continue;
 			}
@@ -248,9 +270,8 @@ int dns_dispatcher_register(struct dns_socket_dispatcher *ctx)
 		 * can catch possible duplicates.
 		 */
 		if (found == NULL && ctx->type != entry->type &&
-		    ctx->local_addr.sa_family == entry->local_addr.sa_family) {
-			if (net_sin(&entry->local_addr)->sin_port ==
-			    net_sin(&ctx->local_addr)->sin_port) {
+		    ctx->local_addr_storage.ss_family == entry->local_addr_storage.ss_family) {
+			if (ports_match) {
 				found = entry;
 				continue;
 			}
@@ -299,14 +320,14 @@ int dns_dispatcher_register(struct dns_socket_dispatcher *ctx)
 
 	ctx->buf_timeout = DNS_BUF_TIMEOUT;
 
-	if (ctx->local_addr.sa_family == NET_AF_INET) {
+	if (ctx->local_addr_storage.ss_family == NET_AF_INET) {
 		addrlen = sizeof(struct net_sockaddr_in);
 	} else {
 		addrlen = sizeof(struct net_sockaddr_in6);
 	}
 
 	/* Bind and then register a socket service with this combo */
-	ret = zsock_bind(ctx->sock, &ctx->local_addr, addrlen);
+	ret = zsock_bind(ctx->sock, net_sad(&ctx->local_addr_storage), addrlen);
 	if (ret < 0) {
 		ret = -errno;
 		NET_DBG("Cannot bind DNS socket %d (%d)", ctx->sock, ret);
@@ -314,18 +335,24 @@ int dns_dispatcher_register(struct dns_socket_dispatcher *ctx)
 	}
 
 	/* If port 0 was requested, bind() selected an ephemeral local port.
-	 * Store the actual socket name so later dispatcher registrations do
-	 * not treat distinct resolver sockets as duplicate port-0 sockets.
+	 * Record it so that this dispatcher can be told apart from other
+	 * registrations.
 	 */
-	if (net_sin(&ctx->local_addr)->sin_port == 0) {
+	if (dns_dispatcher_addr_port(&ctx->local_addr_storage) == 0) {
+		struct net_sockaddr_storage local_addr = ctx->local_addr_storage;
 		net_socklen_t socklen = addrlen;
 
-		ret = zsock_getsockname(ctx->sock, &ctx->local_addr, &socklen);
-		if (ret < 0) {
-			ret = -errno;
-			NET_DBG("Cannot get DNS socket %d name (%d)", ctx->sock,
-				ret);
-			goto out;
+		/* The local port is only used to match dispatcher
+		 * registrations, so continue with an unknown port if the
+		 * socket implementation cannot report it. Restore the address
+		 * we bound with, as a failing call may still have written to
+		 * the buffer.
+		 */
+		if (zsock_getsockname(ctx->sock, net_sad(&ctx->local_addr_storage),
+				      &socklen) < 0) {
+			NET_DBG("Cannot get DNS socket %d name (%d), local port unknown",
+				ctx->sock, -errno);
+			ctx->local_addr_storage = local_addr;
 		}
 	}
 
@@ -406,6 +433,16 @@ int dns_dispatcher_unregister(struct dns_socket_dispatcher *ctx)
 
 out:
 	k_mutex_unlock(&lock);
+
+	/*
+	 * dispatch_table[sock] was already cleared above, so no new call into
+	 * recv_data() can pick up this ctx. But a call that already read the
+	 * (still non-NULL) pointer may still be in its critical section,
+	 * holding ctx->lock while it finishes dispatching. Wait for it here so
+	 * the caller can safely reuse/reinit ctx once we return.
+	 */
+	k_mutex_lock(&ctx->lock, K_FOREVER);
+	k_mutex_unlock(&ctx->lock);
 
 	return ret;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Analog Devices, Inc.
+ * Copyright (c) 2023-2026 Analog Devices, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -763,6 +763,10 @@
 
 			/omit-if-no-ref/ lptmr1b_ioa_p3_7: lptmr1b_ioa_p3_7 {
 				pinmux = <MAX32_PINMUX(3, 7, AF2)>;
+			};
+
+			/omit-if-no-ref/ sqwout_p4_1: sqwout_p4_1 {
+				pinmux = <MAX32_PINMUX(4, 1, AF1)>;
 			};
 		};
 	};
@@ -1716,6 +1720,11 @@
 
 	/omit-if-no-ref/ lptmr1b_ioa_p3_7_sleep: lptmr1b_ioa_p3_7_sleep {
 		pinmux = <MAX32_PINMUX(3, 7, AF2)>;
+		low-power-enable;
+	};
+
+	/omit-if-no-ref/ sqwout_p4_1_sleep: sqwout_p4_1_sleep {
+		pinmux = <MAX32_PINMUX(4, 1, AF1)>;
 		low-power-enable;
 	};
 };

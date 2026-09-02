@@ -1081,6 +1081,19 @@ static void bt_gatt_pairing_complete(struct bt_conn *conn, bool bonded)
 		/* Store the ccc and cf data */
 		gatt_store_ccc(conn->id, &(conn->le.dst));
 		bt_gatt_store_cf(conn->id, &conn->le.dst);
+
+		if (IS_ENABLED(CONFIG_BT_GATT_SERVICE_CHANGED)) {
+			struct gatt_sc_cfg *cfg = find_sc_cfg(conn->id, &conn->le.dst);
+
+			/* A client may subscribe to Service Changed before it
+			 * bonds, in which case sc_save() created the entry but
+			 * had no bond to persist it against. Store it now that
+			 * there is one.
+			 */
+			if (cfg != NULL) {
+				sc_store(cfg);
+			}
+		}
 	}
 }
 #endif /* CONFIG_BT_SETTINGS && CONFIG_BT_SMP */
@@ -1204,7 +1217,7 @@ populate:
 static inline void sc_work_submit(k_timeout_t timeout)
 {
 #if defined(CONFIG_BT_GATT_SERVICE_CHANGED)
-	k_work_reschedule(&gatt_sc.work, timeout);
+	bt_work_reschedule(&gatt_sc.work, timeout);
 #endif
 }
 
@@ -1366,8 +1379,8 @@ static void gatt_delayed_store_enqueue(uint8_t id, const bt_addr_le_t *peer_addr
 
 		atomic_set_bit(el->flags, flag);
 
-		k_work_reschedule(&gatt_delayed_store.work,
-				  K_MSEC(CONFIG_BT_SETTINGS_DELAYED_STORE_MS));
+		bt_work_reschedule(&gatt_delayed_store.work,
+				   K_MSEC(CONFIG_BT_SETTINGS_DELAYED_STORE_MS));
 	}
 }
 
@@ -1448,7 +1461,7 @@ void bt_gatt_init(void)
 	if (IS_ENABLED(CONFIG_BT_LONG_WQ)) {
 		bt_long_wq_schedule(&db_hash.work, DB_HASH_TIMEOUT);
 	} else {
-		k_work_schedule(&db_hash.work, DB_HASH_TIMEOUT);
+		bt_work_schedule(&db_hash.work, DB_HASH_TIMEOUT);
 	}
 #endif /* CONFIG_BT_GATT_CACHING */
 
@@ -1536,7 +1549,7 @@ static void db_changed(void)
 	if (IS_ENABLED(CONFIG_BT_LONG_WQ)) {
 		bt_long_wq_reschedule(&db_hash.work, DB_HASH_TIMEOUT);
 	} else {
-		k_work_reschedule(&db_hash.work, DB_HASH_TIMEOUT);
+		bt_work_reschedule(&db_hash.work, DB_HASH_TIMEOUT);
 	}
 
 	for (i = 0; i < ARRAY_SIZE(cf_cfg); i++) {
@@ -2401,11 +2414,10 @@ static int gatt_notify_mult(struct bt_conn *conn, uint16_t handle,
 	LOG_DBG("handle 0x%04x len %u", handle, params->len);
 	gatt_add_nfy_to_buf(*buf, handle, params);
 
-	/* Use `k_work_schedule` to keep the original deadline, instead of
+	/* Use `bt_work_schedule` to keep the original deadline, instead of
 	 * re-setting the timeout whenever a new notification is appended.
 	 */
-	k_work_schedule(&nfy_mult_work,
-			K_MSEC(CONFIG_BT_GATT_NOTIFY_MULTIPLE_FLUSH_MS));
+	bt_work_schedule(&nfy_mult_work, K_MSEC(CONFIG_BT_GATT_NOTIFY_MULTIPLE_FLUSH_MS));
 
 	return 0;
 }
@@ -3610,6 +3622,15 @@ static void call_notify_cb_and_maybe_unsubscribe(struct bt_conn *conn, struct ga
 {
 	struct bt_gatt_subscribe_params *params, *tmp;
 	int err;
+
+	/* Core Specification Vol 3, Part F, Section 3.2.9: the maximum length
+	 * of an attribute value is 512 octets.
+	 */
+	if (length > BT_ATT_MAX_ATTRIBUTE_LEN) {
+		LOG_WRN("Ignoring value with invalid length %u for handle 0x%04x", length,
+			handle);
+		return;
+	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&sub->list, params, tmp, node) {
 		if (handle != params->value_handle) {

@@ -328,9 +328,8 @@
 #define BFP_FLASH_PAGE_EXP(inst) SFDP_FIELD(inst, sfdp_bfp, 11, GENMASK(7, 4))
 
 #define FLASH_PAGE_SIZE_INST(inst) \
-	(BFP_FLASH_PAGE_EXP(inst) \
-	 ? BIT(BFP_FLASH_PAGE_EXP(inst)) \
-	 : SPI_NOR_PAGE_SIZE)
+	DT_INST_PROP_OR(inst, page_size, \
+		(BFP_FLASH_PAGE_EXP(inst) ? BIT(BFP_FLASH_PAGE_EXP(inst)) : SPI_NOR_PAGE_SIZE))
 
 #define SFDP_BUILD_ASSERTS(inst) \
 	BUILD_ASSERT(DT_INST_NODE_HAS_PROP(inst, sfdp_bfp), \
@@ -414,7 +413,8 @@
 
 #define FLASH_SIZE_INST(inst) (DT_INST_PROP(inst, size) / 8)
 
-#define FLASH_PAGE_SIZE_INST(inst) SPI_NOR_PAGE_SIZE
+#define FLASH_PAGE_SIZE_INST(inst) \
+	DT_INST_PROP_OR(inst, page_size, SPI_NOR_PAGE_SIZE)
 
 #define SFDP_BUILD_ASSERTS(inst)
 

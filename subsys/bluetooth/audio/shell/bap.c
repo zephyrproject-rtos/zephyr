@@ -66,8 +66,7 @@
 
 #if defined(CONFIG_BT_BAP_UNICAST)
 
-struct shell_stream unicast_streams[CONFIG_BT_MAX_CONN * MAX(UNICAST_SERVER_STREAM_COUNT,
-							     UNICAST_CLIENT_STREAM_COUNT)] = {0};
+struct shell_stream unicast_streams[CONFIG_BT_ISO_MAX_CHAN] = {0};
 
 #if defined(CONFIG_BT_BAP_UNICAST_CLIENT)
 struct unicast_group default_unicast_group = {0};
@@ -826,39 +825,23 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 
 static uint8_t stream_dir(const struct bt_bap_stream *stream)
 {
-	if (stream->conn) {
-		uint8_t conn_index = bt_conn_index(stream->conn);
+	struct bt_bap_ep_info ep_info;
+	__maybe_unused int err;
 
-#if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0
-		for (size_t i = 0U; i < ARRAY_SIZE(snks[conn_index]); i++) {
-			const struct bt_bap_ep *snk_ep = snks[conn_index][i];
+	__ASSERT(stream != NULL, "Invalid stream");
+	__ASSERT(stream->ep != NULL, "Invalid stream ep");
 
-			if (snk_ep != NULL && stream->ep == snk_ep) {
-				return BT_AUDIO_DIR_SINK;
-			}
-		}
-#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT > 0 */
+	err = bt_bap_ep_get_info(stream->ep, &ep_info);
+	__ASSERT(err == 0, "Failed to get EP info: %d", err);
 
-#if CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0
-		for (size_t i = 0U; i < ARRAY_SIZE(srcs[conn_index]); i++) {
-			const struct bt_bap_ep *src_ep = srcs[conn_index][i];
-
-			if (src_ep != NULL && stream->ep == src_ep) {
-				return BT_AUDIO_DIR_SOURCE;
-			}
-		}
-#endif /* CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT > 0 */
-	}
-
-	__ASSERT(false, "Invalid stream");
-	return 0;
+	return ep_info.dir;
 }
 
 static void print_remote_codec_cap(const struct bt_conn *conn,
 				   const struct bt_audio_codec_cap *codec_cap,
 				   enum bt_audio_dir dir)
 {
-	bt_shell_print("conn %p: codec_cap %p dir 0x%02x", conn, codec_cap, dir);
+	bt_shell_print("conn %p: dir %s (0x%02x)", conn, bt_audio_dir_to_str(dir), dir);
 
 	print_codec_cap(0, codec_cap);
 }
@@ -950,7 +933,7 @@ static void unicast_client_location_cb(struct bt_conn *conn,
 {
 	ARG_UNUSED(conn);
 
-	bt_shell_print("dir %u loc %X", dir, loc);
+	print_dir_audio_location(dir, loc);
 }
 
 static void supported_contexts_cb(struct bt_conn *conn, enum bt_audio_context snk_ctx,
@@ -958,7 +941,7 @@ static void supported_contexts_cb(struct bt_conn *conn, enum bt_audio_context sn
 {
 	ARG_UNUSED(conn);
 
-	bt_shell_print("Supported snk ctx %u src ctx %u", snk_ctx, src_ctx);
+	print_supported_stream_context(snk_ctx, src_ctx);
 }
 
 static void available_contexts_cb(struct bt_conn *conn,
@@ -967,7 +950,7 @@ static void available_contexts_cb(struct bt_conn *conn,
 {
 	ARG_UNUSED(conn);
 
-	bt_shell_print("Available snk ctx %u src ctx %u", snk_ctx, src_ctx);
+	print_available_stream_context(snk_ctx, src_ctx);
 }
 
 static void config_cb(struct bt_bap_stream *stream, enum bt_bap_ascs_rsp_code rsp_code,
@@ -1668,9 +1651,11 @@ static int cmd_list(const struct shell *sh, size_t argc, char *argv[])
 		struct bt_bap_stream *stream = &unicast_streams[i].stream.bap_stream;
 
 		if (stream != NULL && stream->conn != NULL) {
-			shell_print(sh, "  %s#%u: stream %p dir 0x%02x group %p",
+			const enum bt_audio_dir dir = stream_dir(stream);
+
+			shell_print(sh, "  %s#%u: stream %p dir %s (0x%02x) group %p",
 				    stream == default_stream ? "*" : " ", i, stream,
-				    stream_dir(stream), stream->group);
+				    bt_audio_dir_to_str(dir), dir, stream->group);
 		}
 	}
 

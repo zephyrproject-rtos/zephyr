@@ -2,7 +2,7 @@
 
 # Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
 # Copyright (c) 2024 Leon Rinkel <leon@rinkel.me>
-# Copyright (c) 2025 Philipp Steiner <philipp.steiner1987@gmail.com>
+# Copyright (c) 2025 Philipp Steiner
 # SPDX-License-Identifier: Apache-2.0
 
 config HEAP_MEM_POOL_ADD_SIZE_BOARD

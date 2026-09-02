@@ -47,7 +47,8 @@ if(NOT CONFIG_LLEXT_TYPE_ELF_SHAREDLIB)
     list(APPEND ext_names init_fini)
 endif()
 
-if(CONFIG_LLEXT_RODATA_NO_RELOC)
+if(CONFIG_LLEXT_RODATA_NO_RELOC AND NOT CONFIG_XTENSA)
+    # Xtensa linker rejects relocations in .rodata even with -fPIC
     list(APPEND ext_names rodata_no_reloc)
 endif()
 
@@ -107,7 +108,7 @@ get_property(COMPILER_TOPT TARGET compiler PROPERTY linker_script)
 set_ifndef(  TOPT "${COMPILER_TOPT}")
 set_ifndef(  TOPT -Wl,-T) # Use this if the compiler driver doesn't set a value
 
-if(CONFIG_LLEXT_TYPE_ELF_RELOCATABLE AND CONFIG_XTENSA)
+if(CONFIG_LLEXT_TYPE_ELF_RELOCATABLE AND CONFIG_XTENSA AND CONFIG_LLEXT_STORAGE_WRITABLE)
   # Manually fix the pre_located extension's text address at a multiple of 4
   get_target_property(pre_located_target pre_located_ext lib_target)
   get_target_property(pre_located_file pre_located_ext pkg_input)

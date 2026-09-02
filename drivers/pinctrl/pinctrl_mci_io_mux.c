@@ -158,7 +158,7 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt,
 			mci_iomux->S_GPIO |= (0x1 << (gpio_idx - 32));
 			break;
 		case IOMUX_GPIO:
-			if (gpio_idx > 32) {
+			if (gpio_idx >= 32) {
 				mci_iomux->GPIO_GRP1 |= (0x1 << (gpio_idx - 32));
 			} else {
 				mci_iomux->GPIO_GRP0 |= (0x1 << gpio_idx);

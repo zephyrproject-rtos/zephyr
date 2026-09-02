@@ -76,7 +76,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		clk-gpios = <&gpio2 25 (GPIO_ACTIVE_HIGH | MAX32_GPIO_VSEL_VDDIOH)>;
-		mosi-gpios = <&gpio2 24 (GPIO_ACTIVE_HIGH | MAX32_GPIO_VSEL_VDDIOH)>;
+		sdo-gpios = <&gpio2 24 (GPIO_ACTIVE_HIGH | MAX32_GPIO_VSEL_VDDIOH)>;
 		cs-gpios = <&gpio2 11 (GPIO_ACTIVE_LOW | MAX32_GPIO_VSEL_VDDIOH)>;
 	};
 
@@ -91,6 +91,13 @@
 
 &dma0 {
 	status = "okay";
+};
+
+/* I2S0 shares P2.26 through P2.29 with SPI0 and is disabled by default. */
+&i2s0 {
+	pinctrl-0 = <&i2s0c_ws_p2_26 &i2s0c_sdi_p2_27
+		     &i2s0c_sdo_p2_28 &i2s0c_sck_p2_29>;
+	pinctrl-names = "default";
 };
 
 &hpb {

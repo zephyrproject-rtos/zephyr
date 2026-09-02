@@ -14,6 +14,7 @@ LOG_MODULE_REGISTER(modem_chat, CONFIG_MODEM_MODULES_LOG_LEVEL);
 #include <string.h>
 
 #include <zephyr/modem/chat.h>
+#include <zephyr/sys/__assert.h>
 
 #include "modem_workqueue.h"
 
@@ -911,6 +912,8 @@ bool modem_chat_is_running(struct modem_chat *chat)
 int modem_chat_run_script_async(struct modem_chat *chat, const struct modem_chat_script *script)
 {
 	bool script_is_running;
+
+	__ASSERT_NO_MSG(script != NULL);
 
 	if (chat->pipe == NULL) {
 		return -EPERM;

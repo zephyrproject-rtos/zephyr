@@ -42,13 +42,32 @@ static void thread_entry(void *p1, void *p2, void *p3)
 }
 
 /**
- * @brief Test to validate essential flag set/clear
+ * @brief Verify that a thread can mark itself essential and clear it again.
  *
  * @ingroup kernel_thread_tests
  *
- * @see #K_ESSENTIAL(x)
+ * @details
+ * The essential flag is part of a thread's own state and can be turned on and
+ * off at run time, not only at creation. The spawned thread sets the flag,
+ * checks that it reads back as set, clears it and checks again, so what is
+ * validated is the flag the kernel actually recorded. Clearing it also lets
+ * the thread be aborted afterwards without panicking the kernel.
+ *
+ * Test steps:
+ * - Create a thread that calls k_thread_essential_set() and confirms
+ *   k_is_essential() reports it.
+ * - Have the thread clear the flag and confirm it no longer reports.
+ * - Signal the test thread, which then aborts the worker.
+ *
+ * Expected result:
+ * - The flag reads back as set after being set and clear after being cleared,
+ *   and the thread aborts without raising a fatal error.
+ *
+ * @see k_thread_essential_set()
+ * @see k_thread_essential_clear()
+ * @see k_is_essential()
  */
-ZTEST(threads_lifecycle, test_essential_thread_operation)
+ZTEST(threads_lifecycle, test_thread_essential_set_clear)
 {
 	k_tid_t tid = k_thread_create(&kthread_thread, kthread_stack,
 				      STACKSIZE, thread_entry, NULL,
@@ -90,17 +109,30 @@ static void abort_thread_self(void *p1, void *p2, void *p3)
 }
 
 /**
- * @brief Abort an essential thread
- *
- * @details The kernel shall raise a fatal system error if an essential thread
- *          aborts, implement k_sys_fatal_error_handler to handle this error.
+ * @brief Verify that aborting an essential thread raises a fatal error.
  *
  * @ingroup kernel_thread_tests
  *
- * @see #K_ESSENTIAL(x)
+ * @details
+ * An essential thread is one the system cannot continue without, so the kernel
+ * must treat its termination as a fatal system error rather than reclaiming it
+ * quietly. The test installs a fatal error handler that records the event and
+ * lets the system continue, so the abort can be observed instead of halting
+ * the run.
+ *
+ * Test steps:
+ * - Create a thread with the K_ESSENTIAL option and let it start.
+ * - Abort it from the test thread.
+ * - Check the flag recorded by the fatal error handler.
+ *
+ * Expected result:
+ * - The kernel raises a fatal error for the aborted essential thread.
+ *
+ * @see K_ESSENTIAL
+ * @see k_thread_abort()
+ * @see k_sys_fatal_error_handler()
  */
-
-ZTEST(threads_lifecycle, test_essential_thread_abort)
+ZTEST(threads_lifecycle, test_thread_essential_abort_panics)
 {
 	fatal_error_signaled = false;
 	k_thread_create(&kthread_thread1, kthread_stack, STACKSIZE,
@@ -114,16 +146,28 @@ ZTEST(threads_lifecycle, test_essential_thread_abort)
 }
 
 /**
- * @brief Abort an essential thread from itself
- *
- * @details The kernel shall raise a fatal system error if an essential thread
- *          aborts, implement k_sys_fatal_error_handler to handle this error.
+ * @brief Verify that an essential thread aborting itself raises a fatal error.
  *
  * @ingroup kernel_thread_tests
  *
- * @see #K_ESSENTIAL(x)
+ * @details
+ * The same rule has to hold when the essential thread ends itself rather than
+ * being aborted by someone else, which is the harder path: the panic is raised
+ * on the very thread that is going away, so the architecture layer has to
+ * unwind a thread that aborts inside its own fatal error handling.
+ *
+ * Test steps:
+ * - Create a thread with the K_ESSENTIAL option whose entry point returns,
+ *   ending the thread from within itself.
+ * - Wait for the fatal error handler to record the event.
+ *
+ * Expected result:
+ * - The kernel raises a fatal error for the self-terminating essential thread.
+ *
+ * @see K_ESSENTIAL
+ * @see k_sys_fatal_error_handler()
  */
-ZTEST(threads_lifecycle, test_essential_thread_abort_self)
+ZTEST(threads_lifecycle, test_thread_essential_abort_self_panics)
 {
 	/* This test case needs to be able to handle a k_panic() call
 	 * that aborts the current thread inside of the panic handler

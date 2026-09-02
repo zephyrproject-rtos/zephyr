@@ -51,7 +51,7 @@ static void spi_single_init(void)
 {
 	/* configure spi as single mode */
 	spi_cfg_single.frequency = TEST_FREQ_HZ;
-	spi_cfg_single.operation = SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB
+	spi_cfg_single.operation = SPI_OP_MODE_CONTROLLER | SPI_TRANSFER_MSB
 		| SPI_WORD_SET(8) | SPI_LINES_SINGLE;
 
 	zassert_true(device_is_ready(spi_dev), "SPI controller device is not ready");
@@ -277,7 +277,7 @@ static void spi_dual_init(void)
 {
 	/* configure spi dual mode */
 	spi_cfg_dual.frequency = TEST_FREQ_HZ;
-	spi_cfg_dual.operation = SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB
+	spi_cfg_dual.operation = SPI_OP_MODE_CONTROLLER | SPI_TRANSFER_MSB
 		| SPI_WORD_SET(8) | SPI_LINES_DUAL;
 
 	zassert_true(device_is_ready(spi_dev), "SPI controller device is not ready");
@@ -345,7 +345,7 @@ ZTEST_USER(spi, test_spi_dual_read)
 			"Buffer read data is different to write data");
 
 	/* release spi device */
-	spi_cfg_single.operation = SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB
+	spi_cfg_single.operation = SPI_OP_MODE_CONTROLLER | SPI_TRANSFER_MSB
 		| SPI_WORD_SET(8) | SPI_LINES_SINGLE;
 	ret = spi_release(spi_dev, (const struct spi_config *)&spi_cfg_single);
 	zassert_true(ret == 0, "Spi release failure: error %d", ret);
@@ -473,7 +473,7 @@ static void test_spi_quad_write(void)
 
 	/* configure spi quad mode */
 	spi_cfg_quad.frequency = TEST_FREQ_HZ;
-	spi_cfg_quad.operation = SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB
+	spi_cfg_quad.operation = SPI_OP_MODE_CONTROLLER | SPI_TRANSFER_MSB
 		| SPI_WORD_SET(8) | SPI_LINES_QUAD;
 
 	/* write data using spi quad mode */
@@ -519,7 +519,7 @@ static void test_spi_quad_write(void)
 	zassert_true(ret == 0, "Send quad write data spi_transceive failure: "
 			"error %d", ret);
 
-	spi_cfg_single.operation = SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB
+	spi_cfg_single.operation = SPI_OP_MODE_CONTROLLER | SPI_TRANSFER_MSB
 		| SPI_WORD_SET(8) | SPI_LINES_SINGLE;
 	ret = spi_release(spi_dev, (const struct spi_config *)&spi_cfg_single);
 	zassert_true(ret == 0, "Spi release failure: error %d", ret);
@@ -585,7 +585,7 @@ ZTEST_USER(spi_quad, test_spi_quad_read)
 			"Buffer read data is different to write data");
 
 	/* release spi device */
-	spi_cfg_single.operation = SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB
+	spi_cfg_single.operation = SPI_OP_MODE_CONTROLLER | SPI_TRANSFER_MSB
 		| SPI_WORD_SET(8) | SPI_LINES_SINGLE;
 	ret = spi_release(spi_dev, (const struct spi_config *)&spi_cfg_single);
 	zassert_true(ret == 0, "Spi release failure: error %d", ret);
@@ -651,7 +651,7 @@ ZTEST_USER(spi_quad, test_spi_octal_read)
 			"Buffer read data is different to write data");
 
 	/* release spi device */
-	spi_cfg_single.operation = SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB
+	spi_cfg_single.operation = SPI_OP_MODE_CONTROLLER | SPI_TRANSFER_MSB
 		| SPI_WORD_SET(8) | SPI_LINES_SINGLE;
 	ret = spi_release(spi_dev, (const struct spi_config *)&spi_cfg_single);
 	zassert_true(ret == 0, "Spi release failure: error %d", ret);

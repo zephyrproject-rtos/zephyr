@@ -7,6 +7,10 @@
 	status = "okay";
 };
 
+&tint16 {
+	status = "okay";
+};
+
 &gpio18 {
-	irqs = <0 16>;
+	irqs = <&tint16 0>;
 };

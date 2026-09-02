@@ -5,7 +5,7 @@
  */
 
 /* STM32F7 USBPHYC driver */
-#define DT_DRV_COMPAT st_stm32_usbphyc /* Unused; defined for grep-ability */
+#define DT_DRV_COMPAT st_stm32f7_usbphyc /* Unused; defined for grep-ability */
 
 #include <stm32_ll_bus.h>
 

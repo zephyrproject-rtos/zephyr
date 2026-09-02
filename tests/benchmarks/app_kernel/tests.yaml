@@ -20,13 +20,15 @@ tests:
       - CONFIG_OBJ_CORE=y
       - CONFIG_OBJ_CORE_STATS=y
   benchmark.kernel.application.user:
-    extra_args: CONF_FILE=prj_user.conf
+    extra_conf_files:
+      - prj_user.conf
     filter: CONFIG_ARCH_HAS_USERSPACE
     integration_platforms:
       - qemu_x86
       - qemu_cortex_a53
   benchmark.kernel.application.user.objcore.stats:
-    extra_args: CONF_FILE=prj_user.conf
+    extra_conf_files:
+      - prj_user.conf
     filter: CONFIG_ARCH_HAS_USERSPACE
     integration_platforms:
       - qemu_x86
@@ -41,7 +43,8 @@ tests:
     extra_configs:
       - CONFIG_TIMESLICING=y
   benchmark.kernel.application.user.timeslicing:
-    extra_args: CONF_FILE=prj_user.conf
+    extra_conf_files:
+      - prj_user.conf
     filter: CONFIG_ARCH_HAS_USERSPACE
     integration_platforms:
       - mps2/an385

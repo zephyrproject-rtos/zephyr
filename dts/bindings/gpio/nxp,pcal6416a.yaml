@@ -9,5 +9,4 @@ include: nxp,pcal64xxa-base.yaml
 
 properties:
   ngpios:
-    required: true
     const: 16

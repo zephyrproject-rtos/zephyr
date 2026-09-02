@@ -231,6 +231,7 @@ static int udp_upload(int sock, int port,
 {
 	size_t header_size =
 		sizeof(struct zperf_udp_datagram) + sizeof(struct zperf_client_hdr_v1);
+	struct net_sockaddr *peer_addr = net_sad(&param->peer_addr_storage);
 	uint32_t duration_in_ms = param->duration_ms;
 	uint32_t packet_size = param->packet_size;
 	uint32_t rate_in_kbps = param->rate_kbps;
@@ -375,12 +376,12 @@ static int udp_upload(int sock, int port,
 	end_time = k_uptime_ticks();
 	usecs64 = param->unix_offset_us + k_ticks_to_us_floor64(end_time - start_time);
 
-	if (param->peer_addr.sa_family == NET_AF_INET) {
-		if (net_ipv4_is_addr_mcast(&net_sin(&param->peer_addr)->sin_addr)) {
+	if (param->peer_addr_storage.ss_family == NET_AF_INET) {
+		if (net_ipv4_is_addr_mcast(&net_sin(peer_addr)->sin_addr)) {
 			is_mcast_pkt = true;
 		}
-	} else if (param->peer_addr.sa_family == NET_AF_INET6) {
-		if (net_ipv6_is_addr_mcast(&net_sin6(&param->peer_addr)->sin6_addr)) {
+	} else if (param->peer_addr_storage.ss_family == NET_AF_INET6) {
+		if (net_ipv6_is_addr_mcast(&net_sin6(peer_addr)->sin6_addr)) {
 			is_mcast_pkt = true;
 		}
 	} else {
@@ -405,6 +406,7 @@ static int udp_upload(int sock, int port,
 int zperf_udp_upload(const struct zperf_upload_params *param,
 		     struct zperf_results *result)
 {
+	struct net_sockaddr *peer_addr;
 	int port = 0;
 	int sock;
 	int ret;
@@ -414,17 +416,19 @@ int zperf_udp_upload(const struct zperf_upload_params *param,
 		return -EINVAL;
 	}
 
-	if (param->peer_addr.sa_family == NET_AF_INET) {
-		port = net_ntohs(net_sin(&param->peer_addr)->sin_port);
-	} else if (param->peer_addr.sa_family == NET_AF_INET6) {
-		port = net_ntohs(net_sin6(&param->peer_addr)->sin6_port);
+	peer_addr = net_sad(&param->peer_addr_storage);
+
+	if (param->peer_addr_storage.ss_family == NET_AF_INET) {
+		port = net_ntohs(net_sin(peer_addr)->sin_port);
+	} else if (param->peer_addr_storage.ss_family == NET_AF_INET6) {
+		port = net_ntohs(net_sin6(peer_addr)->sin6_port);
 	} else {
 		NET_ERR("Invalid address family (%d)",
-			param->peer_addr.sa_family);
+			param->peer_addr_storage.ss_family);
 		return -EINVAL;
 	}
 
-	sock = zperf_prepare_upload_sock(&param->peer_addr, param->options.tos,
+	sock = zperf_prepare_upload_sock(peer_addr, param->options.tos,
 					 param->options.priority, 0,
 					 NET_IPPROTO_UDP);
 	if (sock < 0) {
@@ -510,7 +514,7 @@ int zperf_udp_upload_async(const struct zperf_upload_params *param,
 	struct session *ses;
 	k_tid_t tid;
 
-	ses = get_free_session(&param->peer_addr, SESSION_UDP);
+	ses = get_free_session(net_sad(&param->peer_addr_storage), SESSION_UDP);
 	if (ses == NULL) {
 		NET_ERR("Cannot get a session!");
 		return -ENOENT;

@@ -14,9 +14,6 @@
 #include <zephyr/sys/atomic.h>
 #include <zephyr/drivers/counter/stm32.h>
 #include <zephyr/drivers/pinctrl.h>
-#if defined(CONFIG_GIC)
-#include <zephyr/drivers/interrupt_controller/gic.h>
-#endif /* CONFIG_GIC */
 #include <stm32_ll_tim.h>
 #include <stm32_ll_rcc.h>
 
@@ -223,22 +220,13 @@ static uint32_t counter_stm32_ticks_sub(uint32_t val, uint32_t old, uint32_t top
 	return (val >= old) ? (val - old) : val + top + 1U - old;
 }
 
-static void counter_stm32_set_pending(unsigned int irq)
-{
-#if defined(CONFIG_GIC)
-	arm_gic_irq_set_pending(irq);
-#else  /* NVIC */
-	NVIC_SetPendingIRQ(irq);
-#endif /* CONFIG_GIC */
-}
-
 static void counter_stm32_counter_stm32_set_cc_int_pending(const struct device *dev, uint8_t chan)
 {
 	const struct counter_stm32_config *config = dev->config;
 	struct counter_stm32_data *data = dev->data;
 
 	atomic_or(&data->cc_int_pending, BIT(chan));
-	counter_stm32_set_pending(config->irqn);
+	k_irq_set_pending(config->irqn);
 }
 
 static int counter_stm32_set_cc(const struct device *dev, uint8_t id,

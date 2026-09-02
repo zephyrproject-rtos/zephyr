@@ -63,43 +63,41 @@ static void conn_handler_cb(struct net_conn *conn, void *user_data)
 #endif
 	struct net_shell_user_data *data = user_data;
 	const struct shell *sh = data->sh;
+	struct net_sockaddr *local = net_sad(&conn->local_addr);
+	struct net_sockaddr *remote = net_sad(&conn->remote_addr);
 	int *count = data->user_data;
 	/* +7 for []:port */
 	char addr_local[ADDR_LEN + 7];
 	char addr_remote[ADDR_LEN + 7] = "";
 
-	if (IS_ENABLED(CONFIG_NET_IPV6) && conn->local_addr.sa_family == NET_AF_INET6) {
+	if (IS_ENABLED(CONFIG_NET_IPV6) && conn->local_addr.ss_family == NET_AF_INET6) {
 		snprintk(addr_local, sizeof(addr_local), "[%s]:%u",
-			 net_sprint_ipv6_addr(
-				 &net_sin6(&conn->local_addr)->sin6_addr),
-			 net_ntohs(net_sin6(&conn->local_addr)->sin6_port));
+			 net_sprint_ipv6_addr(&net_sin6(local)->sin6_addr),
+			 net_ntohs(net_sin6(local)->sin6_port));
 		snprintk(addr_remote, sizeof(addr_remote), "[%s]:%u",
-			 net_sprint_ipv6_addr(
-				 &net_sin6(&conn->remote_addr)->sin6_addr),
-			 net_ntohs(net_sin6(&conn->remote_addr)->sin6_port));
+			 net_sprint_ipv6_addr(&net_sin6(remote)->sin6_addr),
+			 net_ntohs(net_sin6(remote)->sin6_port));
 
-	} else if (IS_ENABLED(CONFIG_NET_IPV4) && conn->local_addr.sa_family == NET_AF_INET) {
+	} else if (IS_ENABLED(CONFIG_NET_IPV4) && conn->local_addr.ss_family == NET_AF_INET) {
 		snprintk(addr_local, sizeof(addr_local), "%s:%d",
-			 net_sprint_ipv4_addr(
-				 &net_sin(&conn->local_addr)->sin_addr),
-			 net_ntohs(net_sin(&conn->local_addr)->sin_port));
+			 net_sprint_ipv4_addr(&net_sin(local)->sin_addr),
+			 net_ntohs(net_sin(local)->sin_port));
 		snprintk(addr_remote, sizeof(addr_remote), "%s:%d",
-			 net_sprint_ipv4_addr(
-				 &net_sin(&conn->remote_addr)->sin_addr),
-			 net_ntohs(net_sin(&conn->remote_addr)->sin_port));
+			 net_sprint_ipv4_addr(&net_sin(remote)->sin_addr),
+			 net_ntohs(net_sin(remote)->sin_port));
 
-	} else if (conn->local_addr.sa_family == NET_AF_UNSPEC) {
+	} else if (conn->local_addr.ss_family == NET_AF_UNSPEC) {
 		snprintk(addr_local, sizeof(addr_local), "AF_UNSPEC");
-	} else if (conn->local_addr.sa_family == NET_AF_PACKET) {
+	} else if (conn->local_addr.ss_family == NET_AF_PACKET) {
 		snprintk(addr_local, sizeof(addr_local), "AF_PACKET");
 	} else {
 		snprintk(addr_local, sizeof(addr_local), "AF_UNK(%d)",
-			 conn->local_addr.sa_family);
+			 conn->local_addr.ss_family);
 	}
 
 	PR("[%2d] %p %p  %s\t%16s\t%16s\n",
 	   (*count) + 1, conn, conn->cb,
-	   net_proto2str(conn->local_addr.sa_family, conn->proto),
+	   net_proto2str(conn->local_addr.ss_family, conn->proto),
 	   addr_local, addr_remote);
 
 	(*count)++;

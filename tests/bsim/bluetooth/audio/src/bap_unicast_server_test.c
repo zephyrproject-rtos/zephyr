@@ -156,15 +156,11 @@ static int lc3_reconfig(struct bt_bap_stream *stream, enum bt_audio_dir dir,
 static int lc3_qos(struct bt_bap_stream *stream, const struct bt_bap_qos_cfg *qos,
 		   struct bt_bap_ascs_rsp *rsp)
 {
-	struct audio_test_stream *test_stream = audio_test_stream_from_bap_stream(stream);
-
 	ARG_UNUSED(rsp);
 
 	LOG_INF("QoS: stream %p qos %p", stream, qos);
 
 	print_qos(qos);
-
-	test_stream->tx_sdu_size = qos->sdu;
 
 	return 0;
 }
@@ -212,9 +208,14 @@ static int lc3_metadata(struct bt_bap_stream *stream, const uint8_t meta[], size
 
 static int lc3_disable(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
 {
+	struct audio_test_stream *test_stream = audio_test_stream_from_bap_stream(stream);
+
 	ARG_UNUSED(rsp);
 
 	LOG_INF("Disable: stream %p", stream);
+
+	/* Mark stream as stopping to not treat lost SDUs as a failure condition */
+	SET_FLAG(test_stream->stopping);
 
 	return 0;
 }
@@ -230,9 +231,14 @@ static int lc3_stop(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
 
 static int lc3_release(struct bt_bap_stream *stream, struct bt_bap_ascs_rsp *rsp)
 {
+	struct audio_test_stream *test_stream = audio_test_stream_from_bap_stream(stream);
+
 	ARG_UNUSED(rsp);
 
 	LOG_INF("Release: stream %p", stream);
+
+	/* Mark stream as stopping to not treat lost SDUs as a failure condition */
+	SET_FLAG(test_stream->stopping);
 
 	return 0;
 }
@@ -299,17 +305,7 @@ static void stream_enabled_cb(struct bt_bap_stream *stream)
 
 static void stream_started_cb(struct bt_bap_stream *stream)
 {
-	LOG_INF("Started: stream %p", stream);
-
-	if (bap_stream_tx_can_send(stream)) {
-		int err;
-
-		err = bap_stream_tx_register(stream);
-		if (err != 0) {
-			FAIL("Failed to register stream %p for TX: %d\n", stream, err);
-			return;
-		}
-	}
+	bap_common_stream_started_cb(stream);
 
 	SET_FLAG(flag_stream_started);
 }
@@ -336,6 +332,7 @@ static struct bt_bap_stream_ops stream_ops = {
 	.stopped = stream_stopped_cb,
 	.recv = bap_stream_rx_recv_cb,
 	.sent = bap_stream_tx_sent_cb,
+	.disconnected = bap_unicast_stream_disconnected_cb,
 };
 
 static void transceive_test_streams(void)

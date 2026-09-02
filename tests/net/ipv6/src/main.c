@@ -1132,7 +1132,7 @@ static void ra_message(void)
 	/* Check if RDNSS was added correctly. */
 	ctx = dns_resolve_get_default();
 	zassert_equal(ctx->state, DNS_RESOLVE_CONTEXT_ACTIVE);
-	dns_server = (struct net_sockaddr_in6 *)&ctx->servers[0].dns_server;
+	dns_server = net_sin6(net_sad(&ctx->servers[0].dns_server_addr));
 	zassert_equal(dns_server->sin6_family, dns_addr.sin6_family);
 	zassert_equal(dns_server->sin6_port, dns_addr.sin6_port);
 	zassert_mem_equal(&dns_server->sin6_addr, &dns_addr.sin6_addr,

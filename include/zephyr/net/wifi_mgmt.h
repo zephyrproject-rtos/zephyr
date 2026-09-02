@@ -64,7 +64,7 @@ extern "C" {
 #define WIFI_MGMT_SKIP_INACTIVITY_POLL IS_ENABLED(CONFIG_WIFI_MGMT_AP_STA_SKIP_INACTIVITY_POLL)
 
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN
-#define WIFI_NAN_MAX_SSI_LEN            128
+#define WIFI_NAN_MAX_SSI_LEN            CONFIG_WIFI_NAN_MAX_SSI_LEN
 #define WIFI_NAN_MAX_SERVICE_NAME_LEN   64
 #define WIFI_NAN_RESP_SIZE              64
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN */
@@ -772,6 +772,7 @@ struct wifi_connect_req_params {
 	 * EAP is a framework for network authentication, commonly used in enterprise Wi-Fi.
 	 * This field allows specifying the protocol version if required by the network.
 	 * Applies to Phase 1 (outer authentication).
+	 * A value of -1 will result in version negotiation.
 	 */
 	int eap_ver;
 
@@ -1640,7 +1641,7 @@ struct wifi_nan_publish_params {
 	/* Service specific information (binary data) */
 	uint8_t ssi[WIFI_NAN_MAX_SSI_LEN];
 	/* Actual length of SSI data */
-	uint8_t ssi_len;
+	uint16_t ssi_len;
 	/* Unsolicited transmission (true by default) */
 	bool unsolicited;
 	/* Solicited transmission (true by default) */
@@ -1655,7 +1656,7 @@ struct wifi_nan_update_publish_params {
 	/* Service specific information (binary data) */
 	uint8_t ssi[WIFI_NAN_MAX_SSI_LEN];
 	/* Actual length of SSI data */
-	uint8_t ssi_len;
+	uint16_t ssi_len;
 };
 
 /** This structure is used to configure wlan nan subscribe parameters */
@@ -1673,7 +1674,7 @@ struct wifi_nan_subscribe_params {
 	/* Service specific information (binary data) */
 	uint8_t ssi[WIFI_NAN_MAX_SSI_LEN];
 	/* Actual length of SSI data */
-	uint8_t ssi_len;
+	uint16_t ssi_len;
 };
 
 /** This structure is used to configure nan transmit parameters */
@@ -1687,7 +1688,7 @@ struct wifi_nan_transmit_params {
 	/* Service specific information (binary data) */
 	uint8_t ssi[WIFI_NAN_MAX_SSI_LEN];
 	/* Actual length of SSI data */
-	uint8_t ssi_len;
+	uint16_t ssi_len;
 };
 
 /** @brief Wi-Fi NAN parameters */
@@ -2404,6 +2405,18 @@ struct wifi_mgmt_ops {
 			struct net_if *iface,
 			struct wifi_p2p_params *params);
 #endif
+	/** Get interface supported roles (static driver capability).
+	 * Read once by the supplicant at interface-add time, and treated
+	 * as a static per-interface property. A driver cannot use it to
+	 * signal a role change at runtime.
+	 *
+	 * @param dev  Pointer to the device structure for the driver instance.
+	 * @param iface Network interface to query.
+	 *
+	 * @return BIT(enum wifi_nm_iface_type) of supported roles.
+	 * Return 0 to let the caller use the default.
+	 */
+	 uint32_t (*get_iface_caps)(const struct device *dev, struct net_if *iface);
 };
 
 /** Wi-Fi management offload API */

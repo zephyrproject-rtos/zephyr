@@ -350,7 +350,11 @@ static int sdmmc_host_start_command(sdmmc_dev_t *sdio_hw, int slot, sdmmc_hw_cmd
 	sdmmc_ll_set_command_arg(sdio_hw, arg);
 	cmd.card_num = slot;
 	cmd.start_command = 1;
-	sdmmc_ll_set_command(sdio_hw, cmd);
+	/* Write the command register with a single 32-bit store. The low-level
+	 * helper copies through memcpy, which the compiler may expand into byte
+	 * stores, and the peripheral bus only accepts word accesses.
+	 */
+	sdio_hw->cmd = cmd;
 
 	return ESP_OK;
 }

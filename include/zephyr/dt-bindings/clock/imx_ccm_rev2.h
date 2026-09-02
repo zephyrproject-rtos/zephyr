@@ -181,6 +181,16 @@
 /** XBAR3 peripheral clock identifier */
 #define IMX_CCM_XBAR3_CLK             0x2902UL
 
+/* ENC (EQDC) */
+/** ENC1/EQDC1 peripheral clock identifier */
+#define IMX_CCM_ENC1_CLK               0x2A00UL
+/** ENC2/EQDC2 peripheral clock identifier */
+#define IMX_CCM_ENC2_CLK               0x2A01UL
+/** ENC3/EQDC3 peripheral clock identifier */
+#define IMX_CCM_ENC3_CLK               0x2A02UL
+/** ENC4/EQDC4 peripheral clock identifier */
+#define IMX_CCM_ENC4_CLK               0x2A03UL
+
 /* QTMR */
 #define IMX_CCM_QTMR_CLK               0x6000UL
 #define IMX_CCM_QTMR1_CLK              0x6000UL

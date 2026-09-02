@@ -8,6 +8,7 @@
 /**
  * @file
  * @brief hawkBit main header file
+ * @ingroup hawkbit
  */
 
 /**

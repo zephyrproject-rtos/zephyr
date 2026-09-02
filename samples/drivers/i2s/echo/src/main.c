@@ -30,12 +30,11 @@
 #define ECHO_DELAY 10
 #endif
 
-#define SAMPLE_FREQUENCY    44100
 #define SAMPLE_BIT_WIDTH    16
 #define BYTES_PER_SAMPLE    sizeof(int16_t)
 #define NUMBER_OF_CHANNELS  2
 /* Such block length provides an echo with the delay of 100ms or 33.33ms */
-#define SAMPLES_PER_BLOCK   ((SAMPLE_FREQUENCY / ECHO_DELAY) * NUMBER_OF_CHANNELS)
+#define SAMPLES_PER_BLOCK   ((CONFIG_SAMPLE_FREQ / ECHO_DELAY) * NUMBER_OF_CHANNELS)
 #define INITIAL_BLOCKS      2
 #define TIMEOUT             1000
 
@@ -147,7 +146,10 @@ static void process_block_data(void *mem_block, uint32_t number_of_samples)
 	if (echo_enabled) {
 		for (int i = 0; i < number_of_samples; ++i) {
 			int16_t *sample = &((int16_t *)mem_block)[i];
-			*sample += echo_block[i];
+			/* Attenuate both paths by 6 dB before mixing. */
+			int32_t mixed_sample = ((int32_t)*sample / 2) + echo_block[i];
+
+			*sample = CLAMP(mixed_sample, INT16_MIN, INT16_MAX);
 			echo_block[i] = (*sample) / 2;
 		}
 
@@ -282,7 +284,7 @@ int main(void)
 #else
 	audio_cfg.dai_cfg.i2s.options = I2S_OPT_FRAME_CLK_TARGET | I2S_OPT_BIT_CLK_TARGET;
 #endif
-	audio_cfg.dai_cfg.i2s.frame_clk_freq = SAMPLE_FREQUENCY;
+	audio_cfg.dai_cfg.i2s.frame_clk_freq = CONFIG_SAMPLE_FREQ;
 	audio_cfg.dai_cfg.i2s.mem_slab = &mem_slab;
 	audio_cfg.dai_cfg.i2s.block_size = BLOCK_SIZE;
 	ret = audio_codec_configure(codec_dev, &audio_cfg);
@@ -322,7 +324,7 @@ int main(void)
 #else
 	config.options = I2S_OPT_FRAME_CLK_CONTROLLER | I2S_OPT_BIT_CLK_CONTROLLER;
 #endif
-	config.frame_clk_freq = SAMPLE_FREQUENCY;
+	config.frame_clk_freq = CONFIG_SAMPLE_FREQ;
 	config.mem_slab = &mem_slab;
 	config.block_size = BLOCK_SIZE;
 	config.timeout = TIMEOUT;

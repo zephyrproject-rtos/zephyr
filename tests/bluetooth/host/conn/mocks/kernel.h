@@ -21,8 +21,6 @@
 	FAKE(k_work_flush)                                                                         \
 	FAKE(k_work_submit)                                                                        \
 	FAKE(k_work_submit_to_queue)                                                               \
-	FAKE(k_work_reschedule)                                                                    \
-	FAKE(k_work_schedule)                                                                      \
 	FAKE(k_queue_init)                                                                         \
 	FAKE(k_queue_append)                                                                       \
 	FAKE(k_queue_is_empty)                                                                     \
@@ -46,8 +44,6 @@ DECLARE_FAKE_VALUE_FUNC(int, k_work_cancel_delayable, struct k_work_delayable *)
 DECLARE_FAKE_VALUE_FUNC(bool, k_work_flush, struct k_work *, struct k_work_sync *);
 DECLARE_FAKE_VALUE_FUNC(int, k_work_submit, struct k_work *);
 DECLARE_FAKE_VALUE_FUNC(int, k_work_submit_to_queue, struct k_work_q *, struct k_work *);
-DECLARE_FAKE_VALUE_FUNC(int, k_work_reschedule, struct k_work_delayable *, k_timeout_t);
-DECLARE_FAKE_VALUE_FUNC(int, k_work_schedule, struct k_work_delayable *, k_timeout_t);
 DECLARE_FAKE_VOID_FUNC(k_queue_init, struct k_queue *);
 DECLARE_FAKE_VOID_FUNC(k_queue_append, struct k_queue *, void *);
 DECLARE_FAKE_VALUE_FUNC(int, k_queue_is_empty, struct k_queue *);

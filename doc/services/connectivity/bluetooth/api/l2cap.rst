@@ -29,7 +29,10 @@ Servers can be registered using :c:func:`bt_l2cap_server_register` API passing
 the :c:struct:`bt_l2cap_server` struct which informs what ``psm`` it should
 listen to, the required security level ``sec_level``, and the callback
 ``accept`` which is called to authorize incoming connection requests and
-allocate channel instances.
+allocate channel instances. The allocated objects must be of type
+:c:struct:`bt_l2cap_le_chan`, with the channel reference returned through the
+``accept`` callback pointing to the object's ``chan`` member, as shown in the
+example below.
 
 .. literalinclude:: ../../../../../samples/bluetooth/l2cap_coc_acceptor/src/main.c
    :language: c
@@ -44,12 +47,15 @@ Fixed Channels
 --------------
 
 The user can also define fixed channels using the :c:macro:`BT_L2CAP_FIXED_CHANNEL_DEFINE`
-macro. Fixed channels are initialized upon connection, and do not support segmentation. An example
-of how to define a fixed channel is shown below.
+macro. Fixed channels are initialized upon connection, and do not support segmentation. Note
+that even though the ``accept`` callback passes the channel reference as a
+:c:struct:`bt_l2cap_chan`, the allocated object must be of type :c:struct:`bt_l2cap_le_chan`,
+with the reference pointing to its ``chan`` member. An example of how to define a fixed
+channel is shown below.
 
 .. code-block:: c
 
-   static struct bt_l2cap_chan fixed_chan[CONFIG_BT_MAX_CONN];
+   static struct bt_l2cap_le_chan fixed_chan[CONFIG_BT_MAX_CONN];
 
    /* Callbacks are assumed to be defined prior. */
    static struct bt_l2cap_chan_ops ops = {
@@ -63,11 +69,11 @@ of how to define a fixed channel is shown below.
    {
        uint8_t conn_index = bt_conn_index(conn);
 
-       *chan = &fixed_chan[conn_index];
-
-       **chan = (struct bt_l2cap_chan){
-           .ops = &ops,
+       fixed_chan[conn_index] = (struct bt_l2cap_le_chan){
+           .chan.ops = &ops,
        };
+
+       *chan = &fixed_chan[conn_index].chan;
 
        return 0;
    }

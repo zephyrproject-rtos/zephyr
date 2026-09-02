@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config RESET_SF32LB
-	bool "SF32LB Reset Controller"
+	bool "SF32LB reset driver"
 	default y
 	depends on DT_HAS_SIFLI_SF32LB_RCC_RCTL_ENABLED
 	help

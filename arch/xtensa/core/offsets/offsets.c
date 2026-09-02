@@ -70,12 +70,13 @@ GEN_OFFSET_SYM(_xtensa_irq_bsa_t, hifi);
 GEN_OFFSET_SYM(_thread_arch_t, psp);
 GEN_OFFSET_SYM(_thread_arch_t, return_ps);
 GEN_OFFSET_SYM(_thread_t, switch_handle);
-#ifdef CONFIG_XTENSA_MMU
-GEN_OFFSET_SYM(_thread_arch_t, ptables);
 
 GEN_OFFSET_SYM(_thread_t, mem_domain_info);
 GEN_OFFSET_SYM(_mem_domain_info_t, mem_domain);
 GEN_OFFSET_SYM(k_mem_domain_t, arch);
+
+#ifdef CONFIG_XTENSA_MMU
+GEN_OFFSET_SYM(_thread_arch_t, ptables);
 
 GEN_OFFSET_SYM(arch_mem_domain_t, reg_asid);
 GEN_OFFSET_SYM(arch_mem_domain_t, reg_ptevaddr);

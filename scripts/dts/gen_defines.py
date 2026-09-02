@@ -313,6 +313,7 @@ def write_special_props(node: edtlib.Node) -> None:
     out_comment("Macros for properties that are special in the specification:")
     write_regs(node)
     write_ranges(node)
+    write_dma_ranges(node)
     write_interrupts(node)
     write_compatibles(node)
     write_status(node)
@@ -366,6 +367,49 @@ def write_ranges(node: edtlib.Node) -> None:
     out_dt_define(
         f"{path_id}_FOREACH_RANGE(fn)",
         " ".join(f"fn(DT_{path_id}, {i})" for i, range in enumerate(node.ranges)),
+    )
+
+
+def write_dma_ranges(node: edtlib.Node) -> None:
+    # dma-ranges property: same packing logic as ranges, but for
+    # DMA (bus <-> parent physical) address translation
+
+    idx_vals = []
+    path_id = node.z_path_id
+
+    if node.dma_ranges is not None:
+        idx_vals.append((f"{path_id}_NUM_DMA_RANGES", len(node.dma_ranges)))
+
+    for i, range in enumerate(node.dma_ranges):
+        idx_vals.append((f"{path_id}_DMA_RANGES_IDX_{i}_EXISTS", 1))
+
+        if "pcie" in node.buses:
+            idx_vals.append((f"{path_id}_DMA_RANGES_IDX_{i}_VAL_CHILD_BUS_FLAGS_EXISTS", 1))
+            idx_macro = f"{path_id}_DMA_RANGES_IDX_{i}_VAL_CHILD_BUS_FLAGS"
+            idx_value = range.child_bus_addr >> ((range.child_bus_cells - 1) * 32)
+            idx_vals.append((idx_macro, f"{idx_value} /* {hex(idx_value)} */"))
+        if range.child_bus_addr is not None:
+            idx_macro = f"{path_id}_DMA_RANGES_IDX_{i}_VAL_CHILD_BUS_ADDRESS"
+            if "pcie" in node.buses:
+                idx_value = range.child_bus_addr & ((1 << (range.child_bus_cells - 1) * 32) - 1)
+            else:
+                idx_value = range.child_bus_addr
+            idx_vals.append((idx_macro, f"{idx_value} /* {hex(idx_value)} */"))
+        if range.parent_bus_addr is not None:
+            idx_macro = f"{path_id}_DMA_RANGES_IDX_{i}_VAL_PARENT_BUS_ADDRESS"
+            idx_vals.append(
+                (idx_macro, f"{range.parent_bus_addr} /* {hex(range.parent_bus_addr)} */")
+            )
+        if range.length is not None:
+            idx_macro = f"{path_id}_DMA_RANGES_IDX_{i}_VAL_LENGTH"
+            idx_vals.append((idx_macro, f"{range.length} /* {hex(range.length)} */"))
+
+    for macro, val in idx_vals:
+        out_dt_define(macro, val)
+
+    out_dt_define(
+        f"{path_id}_FOREACH_DMA_RANGE(fn)",
+        " ".join(f"fn(DT_{path_id}, {i})" for i, range in enumerate(node.dma_ranges)),
     )
 
 
@@ -497,6 +541,14 @@ def write_compatibles(node: edtlib.Node) -> None:
     # Writes a macro for each of the node's compatibles. We don't care
     # about whether edtlib / Zephyr's binding language recognizes
     # them. The compatibles the node provides are what is important.
+
+    if node.matching_compat:
+        as_token = edtlib.str_as_token(node.matching_compat)
+        out_dt_define(f"{node.z_path_id}_BINDING_COMPAT_TOKEN", as_token)
+        out_dt_define(f"{node.z_path_id}_BINDING_COMPAT_UPPER_TOKEN", as_token.upper())
+        out_dt_define(
+            f"{node.z_path_id}_BINDING_COMPAT_UNQUOTED", escape_unquoted(node.matching_compat)
+        )
 
     for i, compat in enumerate(node.compats):
         out_dt_define(f"{node.z_path_id}_COMPAT_MATCHES_{str2ident(compat)}", 1)
@@ -1251,7 +1303,7 @@ def write_global_macros(edt: edtlib.EDT):
 def str2ident(s: str) -> str:
     # Converts 's' to a form suitable for (part of) an identifier
 
-    return re.sub('[-,.@/+]', '_', s.lower())
+    return re.sub('[-,.@/+%]', '_', s.lower())
 
 
 def list2init(values: Iterable[str]) -> str:

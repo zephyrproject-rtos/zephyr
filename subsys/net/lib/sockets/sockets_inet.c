@@ -663,9 +663,11 @@ ssize_t zsock_sendto_ctx(struct net_context *ctx, const void *buf, size_t len,
 	end = sys_timepoint_calc(timeout);
 
 	/* Register the callback before sending in order to receive the response
-	 * from the peer.
+	 * from the peer. Once registered, a context with a connection handler
+	 * needs no update.
 	 */
-	if (!sock_is_eof(ctx)) {
+	if (!sock_is_eof(ctx) &&
+	    (ctx->recv_cb != zsock_received_cb || ctx->conn_handler == NULL)) {
 		status = net_context_recv(ctx, zsock_received_cb,
 					  K_NO_WAIT, ctx->user_data);
 		if (status < 0) {
@@ -2555,6 +2557,13 @@ static int ipv4_multicast_group(struct net_context *ctx, const void *optval,
 		ret = net_ipv4_igmp_leave(iface, &mreqn->imr_multiaddr);
 	}
 
+	if (ret == -ENETDOWN) {
+		/* If the interface is down, we can still return success as the
+		 * join will be performed when the interface comes up.
+		 */
+		return 0;
+	}
+
 	if (ret < 0) {
 		errno  = -ret;
 		return -1;
@@ -2605,6 +2614,13 @@ static int ipv6_multicast_group(struct net_context *ctx, const void *optval,
 		ret = net_ipv6_mld_join(iface, &mreq->ipv6mr_multiaddr);
 	} else {
 		ret = net_ipv6_mld_leave(iface, &mreq->ipv6mr_multiaddr);
+	}
+
+	if (ret == -ENETDOWN) {
+		/* If the interface is down, we can still return success as the
+		 * join will be performed when the interface comes up.
+		 */
+		return 0;
 	}
 
 	if (ret < 0) {

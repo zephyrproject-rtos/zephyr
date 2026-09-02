@@ -203,6 +203,8 @@ static void adxl345_process_fifo_samples_cb(struct rtio *r, const struct rtio_sq
 
 	((struct adxl345_fifo_data *)buf)->fifo_byte_count = read_len;
 
+	uint16_t read_samples = read_len / sample_set_size;
+
 	uint8_t *read_buf = buf + sizeof(*hdr);
 
 	/* Flush completions */
@@ -227,8 +229,9 @@ static void adxl345_process_fifo_samples_cb(struct rtio *r, const struct rtio_sq
 	}
 
 
-	data->fifo_samples = fifo_samples;
-	for (size_t i = 0; i < fifo_samples; i++) {
+	data->fifo_total_bytes = 0;
+	data->fifo_samples = read_samples;
+	for (size_t i = 0; i < read_samples; i++) {
 		struct rtio_sqe *write_fifo_addr = rtio_sqe_acquire(data->rtio_ctx);
 		struct rtio_sqe *read_fifo_data = rtio_sqe_acquire(data->rtio_ctx);
 
@@ -246,7 +249,7 @@ static void adxl345_process_fifo_samples_cb(struct rtio *r, const struct rtio_sq
 		if (cfg->bus_type == ADXL345_BUS_I2C) {
 			read_fifo_data->iodev_flags |= RTIO_IODEV_I2C_STOP | RTIO_IODEV_I2C_RESTART;
 		}
-		if (i == fifo_samples-1) {
+		if (i == read_samples - 1U) {
 			struct rtio_sqe *complete_op = rtio_sqe_acquire(data->rtio_ctx);
 
 			read_fifo_data->flags |= RTIO_SQE_CHAINED;

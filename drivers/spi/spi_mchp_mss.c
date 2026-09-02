@@ -70,8 +70,8 @@ LOG_MODULE_REGISTER(mss_spi, CONFIG_SPI_LOG_LEVEL);
 #define MSS_SPI_SSEL_MASK (0xff)
 #define MSS_SPI_DIRECT    (0x100)
 #define MSS_SPI_SSELOUT   (0x200)
-#define MSS_SPI_MIN_SLAVE (0)
-#define MSS_SPI_MAX_SLAVE (7)
+#define MSS_SPI_MIN_PERIPHERAL (0)
+#define MSS_SPI_MAX_PERIPHERAL (7)
 
 /* SPIST bit definitions */
 #define MSS_SPI_STATUS_ACTIVE                 BIT(14)
@@ -224,14 +224,14 @@ static inline void mss_spi_readwr_fifo(const struct device *dev)
 	}
 }
 
-static inline int mss_spi_select_slave(const struct mss_spi_config *cfg, int cs)
+static inline int mss_spi_select_peripheral(const struct mss_spi_config *cfg, int cs)
 {
-	uint32_t slave;
+	uint32_t peripheral;
 	uint32_t reg = mss_spi_read(cfg, MSS_SPI_REG_SS);
 
-	slave = (cs >= MSS_SPI_MIN_SLAVE && cs <= MSS_SPI_MAX_SLAVE) ? (1 << cs) : 0;
+	peripheral = (cs >= MSS_SPI_MIN_PERIPHERAL && cs <= MSS_SPI_MAX_PERIPHERAL) ? (1 << cs) : 0;
 	reg &= ~MSS_SPI_SSEL_MASK;
-	reg |= slave;
+	reg |= peripheral;
 
 	mss_spi_write(cfg, MSS_SPI_REG_SS, reg);
 
@@ -335,7 +335,7 @@ static int mss_spi_configure(const struct device *dev, const struct spi_config *
 	struct mss_spi_transfer *xfer = &data->xfer;
 	uint32_t control;
 
-	if (spi_cfg->operation & (SPI_TRANSFER_LSB | SPI_OP_MODE_SLAVE | SPI_MODE_LOOP)) {
+	if (spi_cfg->operation & (SPI_TRANSFER_LSB | SPI_OP_MODE_PERIPHERAL | SPI_MODE_LOOP)) {
 		LOG_WRN("not supported operation\n\r");
 		return -ENOTSUP;
 	}
@@ -345,12 +345,12 @@ static int mss_spi_configure(const struct device *dev, const struct spi_config *
 	}
 
 	ctx->config = spi_cfg;
-	mss_spi_select_slave(cfg, spi_cfg->slave);
+	mss_spi_select_peripheral(cfg, spi_cfg->peripheral);
 	control = mss_spi_read(cfg, MSS_SPI_REG_CONTROL);
 
 	/*
 	 * Fill up the default values
-	 * Slave select behaviour set
+	 * Chip select behaviour set
 	 * Fifo depth greater than 4 frames
 	 * Methodology to calculate SPI Clock:
 	 *	0:	SPICLK = 1 / (2 CLK_GEN + 1) , CLK_GEN is from 0 to 15
@@ -440,7 +440,7 @@ static int mss_spi_init(const struct device *dev)
 	control &= ~MSS_SPI_CONTROL_RESET;
 	mss_spi_write(cfg, MSS_SPI_REG_CONTROL, control);
 
-	/* Set master mode */
+	/* Set controller mode */
 	mss_spi_disable_controller(cfg);
 	xfer->control = (MSS_SPI_CONTROL_SPS | MSS_SPI_CONTROL_BIGFIFO | MSS_SPI_CONTROL_MASTER |
 			 MSS_SPI_CONTROL_CLKMODE);

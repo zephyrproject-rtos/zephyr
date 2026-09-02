@@ -399,6 +399,49 @@ static int cmd_smbus_block_read(const struct shell *sh,
 	return 0;
 }
 
+/* smbus pec <device> <0|1> */
+static int cmd_smbus_pec(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev;
+	uint32_t config;
+	int enable;
+	int ret = 0;
+
+	dev = shell_device_get_binding(argv[ARGV_DEV]);
+	if (!dev) {
+		shell_error(sh, "SMBus: Device %s not found", argv[ARGV_DEV]);
+		return -ENODEV;
+	}
+
+	enable = shell_strtol(argv[2], 10, &ret);
+	if (ret) {
+		shell_error(sh, "Failed to parse enable: %d", ret);
+		return ret;
+	}
+
+	ret = smbus_get_config(dev, &config);
+	if (ret < 0) {
+		shell_error(sh, "SMBus: Failed to get config (%d)", ret);
+		return ret;
+	}
+
+	if (enable) {
+		config |= SMBUS_MODE_PEC;
+	} else {
+		config &= ~SMBUS_MODE_PEC;
+	}
+
+	ret = smbus_configure(dev, config);
+	if (ret < 0) {
+		shell_error(sh, "SMBus: Failed to set config (%d)", ret);
+		return ret;
+	}
+
+	shell_print(sh, "PEC %s", enable ? "enabled" : "disabled");
+
+	return 0;
+}
+
 /* Device name autocompletion support */
 static void device_name_get(size_t idx, struct shell_static_entry *entry)
 {
@@ -458,6 +501,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_smbus_cmds,
 		      "SMBus: Block Read command\n"
 		      "Usage: block_read <device> <addr> <cmd>",
 		      cmd_smbus_block_read, 4, 0),
+	SHELL_CMD_ARG(pec, &dsub_device_name,
+		      "SMBus: enable/disable PEC\n"
+		      "Usage: pec <device> <0|1>",
+		      cmd_smbus_pec, 3, 0),
 	SHELL_SUBCMD_SET_END     /* Array terminated. */
 );
 /* clang-format off */

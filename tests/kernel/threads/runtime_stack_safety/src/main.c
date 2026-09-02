@@ -98,7 +98,7 @@ static void suite_teardown(void *fixture)
 
 /**
  * @brief Thread runtime stack safety tests
- * @defgroup tests_kernel_runtime_stack_safety Thread runtime stack safety
+ * @defgroup kernel_runtime_stack_safety_tests Thread runtime stack safety
  * @ingroup all_tests
  * @{
  */
@@ -125,7 +125,7 @@ static void suite_teardown(void *fixture)
  * @see k_thread_runtime_stack_unused_threshold_pct_set()
  * @see k_thread_runtime_stack_unused_threshold_get()
  */
-ZTEST(runtime_stack_safety, test_threshold_pct_set_get)
+ZTEST(runtime_stack_safety, test_stack_safety_threshold_pct_set_get)
 {
 	size_t size = child_thread.stack_info.size;
 
@@ -166,7 +166,7 @@ ZTEST(runtime_stack_safety, test_threshold_pct_set_get)
  * @see k_thread_runtime_stack_unused_threshold_set()
  * @see k_thread_runtime_stack_unused_threshold_get()
  */
-ZTEST(runtime_stack_safety, test_threshold_bytes_set_get)
+ZTEST(runtime_stack_safety, test_stack_safety_threshold_bytes_set_get)
 {
 	size_t size = child_thread.stack_info.size;
 
@@ -208,7 +208,7 @@ ZTEST(runtime_stack_safety, test_threshold_bytes_set_get)
  *
  * @see k_thread_runtime_stack_safety_full_check()
  */
-ZTEST(runtime_stack_safety, test_full_check)
+ZTEST(runtime_stack_safety, test_stack_safety_full_check)
 {
 	size_t size = child_thread.stack_info.size;
 	size_t unused = 0;
@@ -269,7 +269,7 @@ ZTEST(runtime_stack_safety, test_full_check)
  *
  * @see k_thread_runtime_stack_safety_full_check()
  */
-ZTEST(runtime_stack_safety, test_full_check_null_handler)
+ZTEST(runtime_stack_safety, test_stack_safety_full_check_null_handler)
 {
 	size_t size = child_thread.stack_info.size;
 	size_t unused = 0;
@@ -304,7 +304,7 @@ ZTEST(runtime_stack_safety, test_full_check_null_handler)
  * @see k_thread_runtime_stack_safety_threshold_check()
  * @see k_thread_runtime_stack_safety_full_check()
  */
-ZTEST(runtime_stack_safety, test_threshold_check)
+ZTEST(runtime_stack_safety, test_stack_safety_threshold_check)
 {
 	size_t unused_full = 0;
 	size_t unused_abbrev = 0;
@@ -360,7 +360,7 @@ ZTEST(runtime_stack_safety, test_threshold_check)
  * @see k_thread_runtime_stack_unused_threshold_get()
  * @see k_thread_runtime_stack_unused_threshold_pct_set()
  */
-ZTEST_USER(runtime_stack_safety, test_threshold_syscalls)
+ZTEST_USER(runtime_stack_safety, test_stack_safety_threshold_syscalls)
 {
 	struct k_thread *self = k_current_get();
 

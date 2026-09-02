@@ -976,10 +976,12 @@
 					 <&rcc STM32_CLOCK(AHB5, 23)>,
 					 <&rcc STM32_CLOCK(AHB5, 24)>;
 				interrupts = <179 0>;
+				snps,multicast-filter-bins = <64>;
+				snps,perfect-filter-entries = <4>;
 				status = "disabled";
 
 				mdio: mdio {
-					compatible = "st,stm32-mdio";
+					compatible = "snps,dwmac-mdio";
 					#address-cells = <1>;
 					#size-cells = <0>;
 					status = "disabled";
@@ -1467,7 +1469,7 @@
 			};
 
 			usbphyc1: usbphyc@5803fc00 {
-				compatible = "st,stm32-usbphyc";
+				compatible = "st,stm32n6-usbphyc";
 				reg = <0x5803fc00 0x400>;
 				clocks = <&rcc STM32_CLOCK(AHB5, 27)>,
 					 <&rcc STM32_SRC_HSE OTGPHY1_SEL(3)>;
@@ -1476,7 +1478,7 @@
 			};
 
 			usbphyc2: usbphyc@580c0000 {
-				compatible = "st,stm32-usbphyc";
+				compatible = "st,stm32n6-usbphyc";
 				reg = <0x580c0000 0x400>;
 				clocks = <&rcc STM32_CLOCK(AHB5, 28)>,
 					 <&rcc STM32_SRC_HSE OTGPHY2_SEL(3)>;
@@ -1561,6 +1563,16 @@
 					#size-cells = <0>;
 					status = "disabled";
 				};
+			};
+
+			gpu2d: gpu@58034000 {
+				compatible = "st,neochrom-gpu2d";
+				reg = <0x58034000 0x1000>;
+				clocks = <&rcc STM32_CLOCK(AHB5, 20)>;
+				interrupts = <65 0>, <66 0>;
+				interrupt-names = "gpu2d", "gpu2d_er";
+				resets = <&rctl STM32_RESET(AHB5, 20)>;
+				status = "disabled";
 			};
 
 			npu: npu@580e0000 {

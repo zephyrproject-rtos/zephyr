@@ -24,6 +24,8 @@ static inline void i3c_msg_from_rx(const struct rtio_iodev_sqe *iodev_sqe, struc
 		((iodev_sqe->sqe.iodev_flags & RTIO_IODEV_I3C_RESTART) ? I3C_MSG_RESTART : 0) |
 		((iodev_sqe->sqe.iodev_flags & RTIO_IODEV_I3C_HDR) ? I3C_MSG_HDR : 0) |
 		((iodev_sqe->sqe.iodev_flags & RTIO_IODEV_I3C_NBCH) ? I3C_MSG_NBCH : 0) |
+		((iodev_sqe->sqe.iodev_flags & RTIO_IODEV_I3C_NOACK_EXPECTED) ?
+			I3C_MSG_NOACK_EXPECTED : 0) |
 		I3C_MSG_READ;
 }
 
@@ -38,6 +40,8 @@ static inline void i3c_msg_from_tx(const struct rtio_iodev_sqe *iodev_sqe, struc
 		((iodev_sqe->sqe.iodev_flags & RTIO_IODEV_I3C_RESTART) ? I3C_MSG_RESTART : 0) |
 		((iodev_sqe->sqe.iodev_flags & RTIO_IODEV_I3C_HDR) ? I3C_MSG_HDR : 0) |
 		((iodev_sqe->sqe.iodev_flags & RTIO_IODEV_I3C_NBCH) ? I3C_MSG_NBCH : 0) |
+		((iodev_sqe->sqe.iodev_flags & RTIO_IODEV_I3C_NOACK_EXPECTED) ?
+			I3C_MSG_NOACK_EXPECTED : 0) |
 		I3C_MSG_WRITE;
 }
 
@@ -52,6 +56,8 @@ static inline void i3c_msg_from_tiny_tx(const struct rtio_iodev_sqe *iodev_sqe, 
 		((iodev_sqe->sqe.iodev_flags & RTIO_IODEV_I3C_RESTART) ? I3C_MSG_RESTART : 0) |
 		((iodev_sqe->sqe.iodev_flags & RTIO_IODEV_I3C_HDR) ? I3C_MSG_HDR : 0) |
 		((iodev_sqe->sqe.iodev_flags & RTIO_IODEV_I3C_NBCH) ? I3C_MSG_NBCH : 0) |
+		((iodev_sqe->sqe.iodev_flags & RTIO_IODEV_I3C_NOACK_EXPECTED) ?
+			I3C_MSG_NOACK_EXPECTED : 0) |
 		I3C_MSG_WRITE;
 }
 

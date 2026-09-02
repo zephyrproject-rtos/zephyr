@@ -97,15 +97,33 @@
 		spi-bus-width = <OSPI_QUAD_MODE>;
 		data-rate = <OSPI_STR_TRANSFER>;
 		writeoc = "PP_1_1_4";
+
+		/* QSPI external flash mapping */
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x0 0x90000000 DT_SIZE_M(8)>;
+
 		status = "okay";
 
-		partitions {
-			compatible = "fixed-partitions";
+		ext_flash: ext-flash@0 {
+			compatible = "soc-nv-flash";
+			reg = <0x0 DT_SIZE_M(8)>;
+			write-block-size = <1>;
+			erase-block-size = <DT_SIZE_K(4)>;
+
 			#address-cells = <1>;
 			#size-cells = <1>;
+			ranges;
 
-			slot0_partition: partition@0 {
-				reg = <0x00000000 DT_SIZE_M(8)>; /* 64 Mbits */
+			partitions {
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges;
+
+				slot0_partition: partition@0 {
+					compatible = "zephyr,mapped-partition";
+					reg = <0x00000000 DT_SIZE_M(8)>; /* 64 Mbits */
+				};
 			};
 		};
 	};

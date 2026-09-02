@@ -10,6 +10,7 @@ flash: 768
 supported:
   - gpio
   - netif:eth
+  - ptp_clock
   - qspi
 testing:
   ignore_tags:

@@ -15,6 +15,9 @@
 /* Macros used in zephyr-specific config files. */
 #include "nrfx_zephyr_utils.h"
 
+/* Symbols passed to nrfx-based MDK. */
+#include <mdk_config.h>
+
 /* Define nrfx configuration based on Zephyrs KConfigs. */
 #include "nrfx_kconfig.h"
 

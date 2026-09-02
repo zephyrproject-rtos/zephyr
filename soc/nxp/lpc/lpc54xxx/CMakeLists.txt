@@ -6,13 +6,25 @@
 zephyr_library()
 
 zephyr_library_sources(soc.c)
-zephyr_library_sources_ifdef(CONFIG_SOC_RESET_HOOK gcc/startup_LPC54114_cm4.S)
+if(CONFIG_SOC_RESET_HOOK AND CONFIG_SOC_LPC54114)
+  zephyr_library_sources(gcc/startup_LPC54114_cm4.S)
+endif()
 
 zephyr_library_include_directories(
   ${ZEPHYR_BASE}/kernel/include
   ${ZEPHYR_BASE}/arch/${ARCH}/include
   )
 
+
+if(DEFINED CONFIG_LPC54XXX_USB_RAM)
+  zephyr_linker_sources_ifdef(CONFIG_USB_DEVICE_DRIVER SECTIONS usb.ld)
+  zephyr_linker_sources_ifdef(CONFIG_UDC_DRIVER SECTIONS usb.ld)
+  zephyr_linker_sources_ifdef(CONFIG_UHC_DRIVER SECTIONS usb.ld)
+
+  zephyr_compile_definitions_ifdef(CONFIG_USB_DEVICE_DRIVER USB_STACK_USE_DEDICATED_RAM=1)
+  zephyr_compile_definitions_ifdef(CONFIG_UDC_DRIVER USB_STACK_USE_DEDICATED_RAM=1)
+  zephyr_compile_definitions_ifdef(CONFIG_UHC_DRIVER USB_STACK_USE_DEDICATED_RAM=1)
+endif()
 
 # CMSIS SystemInit allows us to skip enabling clock to SRAM2 bank via
 # this compiler definition

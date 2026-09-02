@@ -812,6 +812,30 @@ struct net_ipv6_mreq {
 };
 
 /**
+ * @brief Struct used when setting a packet socket multicast filtering.
+ */
+struct net_packet_mreq {
+	/** Network interface index */
+	int mr_ifindex;
+
+	/** Packet type (action) */
+	uint16_t mr_type;
+
+	/** Address length */
+	uint16_t mr_alen;
+
+	/** Physical layer address */
+	uint8_t mr_address[NET_LINK_ADDR_MAX_LENGTH];
+};
+
+/**
+ * @brief Packet socket multicast filtering types.
+ */
+#define NET_PACKET_MR_MULTICAST 0 /**< Packet will receive only certain multicast packets */
+#define NET_PACKET_MR_PROMISC   1 /**< Packet will receive all packets */
+#define NET_PACKET_MR_ALLMULTI  2 /**< Packet will receive all multicast packets */
+
+/**
  * @brief Incoming IPv6 packet information.
  *
  * Used as ancillary data when calling recvmsg() and IPV6_RECVPKTINFO socket

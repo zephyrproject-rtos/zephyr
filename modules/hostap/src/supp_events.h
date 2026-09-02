@@ -71,7 +71,7 @@ int supplicant_send_wifi_mgmt_disc_event(void *ctx, int reason_code);
 #ifdef CONFIG_AP
 int supplicant_send_wifi_mgmt_ap_status(void *ctx,
 					enum net_event_wifi_cmd event,
-					enum wifi_ap_status);
+					enum wifi_ap_status ap_status);
 int supplicant_send_wifi_mgmt_ap_sta_event(void *ctx,
 					   enum net_event_wifi_cmd event,
 					   void *data);

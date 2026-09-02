@@ -14,6 +14,7 @@ Notes:
 
 REDIRECTS = (
     # zephyr-keep-sorted-start
+    ('boards/aesc/elemrv/doc/index', 'boards/aesc/elemrv_flask_n/doc/index'),
     ('boards/arm/fvp_baser_aemv8r/doc/aarch32', 'boards/arm/fvp_baser_aemv8r/doc/index'),
     ('boards/arm/fvp_baser_aemv8r/doc/aarch64', 'boards/arm/fvp_baser_aemv8r/doc/index'),
     ('boards/arm/fvp_baser_aemv8r/doc/debug-with-arm-ds', 'boards/arm/fvp_baser_aemv8r/doc/index'),
@@ -24,6 +25,7 @@ REDIRECTS = (
     ('boards/rak/rak11720/doc/index', 'boards/rakwireless/rak11720/doc/index'),
     ('boards/rak/rak4631/doc/index', 'boards/rakwireless/rak4631/doc/index'),
     ('boards/rak/rak5010/doc/index', 'boards/rakwireless/rak5010/doc/index'),
+    ('boards/retronix/sparrowhawk_rcar_v4h/doc/sparrow_hawk_rcar_v4h_r52', 'boards/retronix/sparrowhawk_rcar_v4h/doc/index'),
     ('connectivity/bluetooth/api/att', 'services/connectivity/bluetooth/api/att'),
     ('connectivity/bluetooth/api/audio/audio', 'services/connectivity/bluetooth/api/audio/audio'),
     ('connectivity/bluetooth/api/audio/bap', 'services/connectivity/bluetooth/api/audio/bap'),

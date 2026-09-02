@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <nxp/imxrt/nxp_rt1060.dtsi>
+#include <nxp/imxrt/imxrt10xx/nxp_rt1060.dtsi>
 #include "teensy4-pinctrl.dtsi"
 #include <freq.h>
 #include <mem.h>
@@ -179,4 +179,14 @@ zephyr_udc0: &usb1 {
 
 &systick {
 	status = "okay";
+};
+
+&sai1 {
+	pinctrl-0 = <&pinmux_sai1>;
+	pinctrl-names = "default";
+};
+
+&sai2 {
+	pinctrl-0 = <&pinmux_sai2>;
+	pinctrl-names = "default";
 };

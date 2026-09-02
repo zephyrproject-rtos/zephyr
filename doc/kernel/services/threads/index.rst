@@ -518,7 +518,7 @@ The size parameter for the stack must be one of three values:
   ``K_THREAD_STACK`` or ``K_KERNEL_STACK`` family of stack instantiation
   macros.
 - For a stack object defined with the ``K_THREAD_STACK`` family of
-  macros, the return value of :c:macro:`K_THREAD_STACK_SIZEOF()` for that'
+  macros, the return value of :c:macro:`K_THREAD_STACK_SIZEOF()` for that
   object.
 - For a stack object defined with the ``K_KERNEL_STACK`` family of
   macros, the return value of :c:macro:`K_KERNEL_STACK_SIZEOF()` for that

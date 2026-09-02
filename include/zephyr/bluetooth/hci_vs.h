@@ -65,10 +65,10 @@ extern "C" {
 #define BT_HCI_VS_HW_VAR_ESP32H2                0x0006
 #define BT_HCI_VS_HW_VAR_ESP32C5                0x0007 /**< ESP32-C5 hardware variant */
 
-#define BT_HCI_VS_FW_VAR_STANDARD_CTLR          0x0001
-#define BT_HCI_VS_FW_VAR_VS_CTLR                0x0002
-#define BT_HCI_VS_FW_VAR_FW_LOADER              0x0003
-#define BT_HCI_VS_FW_VAR_RESCUE_IMG             0x0004
+#define BT_HCI_VS_FW_VAR_STANDARD_CTLR          0x0000
+#define BT_HCI_VS_FW_VAR_VS_CTLR                0x0001
+#define BT_HCI_VS_FW_VAR_FW_LOADER              0x0002
+#define BT_HCI_VS_FW_VAR_RESCUE_IMG             0x0003
 #define BT_HCI_OP_VS_READ_VERSION_INFO		BT_OP(BT_OGF_VS, 0x0001)
 struct bt_hci_rp_vs_read_version_info {
 	uint8_t  status;

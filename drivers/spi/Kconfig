@@ -56,12 +56,20 @@ config SPI_RTIO_FALLBACK_MSGS
 
 endif # SPI_RTIO
 
-config SPI_SLAVE
-	bool "Slave support [EXPERIMENTAL]"
+config SPI_PERIPHERAL
+	bool "Peripheral support [EXPERIMENTAL]"
 	select EXPERIMENTAL
 	help
-	  Enables Driver SPI slave operations. Slave support depends
-	  on the driver and the hardware it runs on.
+	  Enables Driver SPI peripheral operations. Peripheral support
+	  depends on the driver and the hardware it runs on.
+
+config SPI_SLAVE
+	bool "Peripheral support (deprecated alias) [DEPRECATED]"
+	select DEPRECATED
+	select SPI_PERIPHERAL
+	help
+	  Deprecated alias for SPI_PERIPHERAL. Use SPI_PERIPHERAL
+	  instead.
 
 config SPI_EXTENDED_MODES
 	bool "Extended modes [EXPERIMENTAL]"
@@ -147,6 +155,7 @@ source "drivers/spi/Kconfig.renesas_ra8"
 source "drivers/spi/Kconfig.renesas_rx"
 source "drivers/spi/Kconfig.renesas_rz"
 source "drivers/spi/Kconfig.rpi_pico"
+source "drivers/spi/Kconfig.rts5817"
 source "drivers/spi/Kconfig.rts5912"
 source "drivers/spi/Kconfig.rv32m1_lpspi"
 source "drivers/spi/Kconfig.sam"

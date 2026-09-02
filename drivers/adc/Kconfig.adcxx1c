@@ -1,0 +1,23 @@
+# TI ADCxx1C ADC configuration options
+
+# Copyright (c) 2026 RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_ADCXX1C
+	bool "TI ADC081C/ADC101C/ADC121C (ADCxx1C) I2C ADC family"
+	default y
+	depends on DT_HAS_TI_ADC081C021_ENABLED \
+		|| DT_HAS_TI_ADC081C027_ENABLED \
+		|| DT_HAS_TI_ADC101C021_ENABLED \
+		|| DT_HAS_TI_ADC101C027_ENABLED \
+		|| DT_HAS_TI_ADC121C021_ENABLED \
+		|| DT_HAS_TI_ADC121C027_ENABLED
+	select I2C
+	help
+	  Enable the driver for the Texas Instruments ADCxx1C family of
+	  single-channel I2C ADCs: ADC081C021, ADC081C027, ADC101C021,
+	  ADC101C027, ADC121C021 and ADC121C027.
+
+	  The six devices share one register map and differ only in
+	  resolution (8, 10 or 12 bit) and in the function of one package
+	  pin, so they are all handled by a single driver.

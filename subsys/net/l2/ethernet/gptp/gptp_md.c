@@ -855,6 +855,19 @@ static void gptp_md_sync_send_state_machine(int port)
 	port_ds = GPTP_PORT_DS(port);
 
 	if ((!port_ds->ptt_port_enabled) || !port_ds->as_capable) {
+		/* A Sync waiting here for a transmit timestamp will never be
+		 * given one: the port that was to produce it is down or no
+		 * longer capable. Unregister the callback before dropping
+		 * the packet reference so a late timestamp cannot match the
+		 * packet, then release it, or its reference and the stale
+		 * callback are leaked.
+		 */
+		gptp_sync_timestamp_cb_unregister(port);
+
+		net_pkt_unref(state->sync_ptr);
+		state->sync_ptr = NULL;
+
+		state->md_sync_timestamp_avail = false;
 		state->rcvd_md_sync = false;
 		state->state = GPTP_SYNC_SEND_INITIALIZING;
 

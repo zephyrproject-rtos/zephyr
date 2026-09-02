@@ -42,6 +42,8 @@
 #include <zephyr/toolchain/llvm.h>
 #else
 #include <zephyr/toolchain/gcc.h>
+/* Cadence/Tensilica XCC pragma unroll support is unknown. */
+#undef TOOLCHAIN_PRAGMA_UNROLL
 #endif
 
 #ifdef __clang__

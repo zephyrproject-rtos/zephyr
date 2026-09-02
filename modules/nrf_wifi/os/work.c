@@ -120,8 +120,8 @@ static int workqueue_init(void)
 	return 0;
 }
 
-void work_init(struct zep_work_item *item, void (*callback)(unsigned long),
-		  unsigned long data)
+void work_init(struct zep_work_item *item, void (*callback)(unsigned long callbk_data),
+	       unsigned long data)
 {
 	item->callback = callback;
 	item->data = data;

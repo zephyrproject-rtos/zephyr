@@ -36,8 +36,9 @@ tests:
   # most tests include no_mem_protection.conf, which disables memory protection
   # hardware completely.
   llext.readonly:
-    arch_allow:               # Xtensa needs writable storage
+    arch_allow:
       - arm
+      - xtensa
       - riscv
       - arc
       - x86
@@ -49,8 +50,9 @@ tests:
       - CONFIG_LLEXT_STORAGE_WRITABLE=n
       - CONFIG_LLEXT_RODATA_NO_RELOC=y
   llext.readonly.memblk:
-    arch_allow:               # Xtensa needs writable storage
+    arch_allow:
       - arm
+      - xtensa
       - riscv
       - arc
       - x86
@@ -63,7 +65,8 @@ tests:
       - CONFIG_LLEXT_HEAP_MEMBLK=y
   llext.readonly_mpu:
     arch_allow:
-      - arm # Xtensa needs writable storage, currently not supported on RISC-V
+      - arm # Currently not supported on RISC-V
+      - xtensa
       - arc
     filter: CONFIG_ARCH_HAS_USERSPACE
     extra_configs:
@@ -72,7 +75,8 @@ tests:
       - CONFIG_LLEXT_STORAGE_WRITABLE=n
   llext.readonly_mpu.memblk:
     arch_allow:
-      - arm # Xtensa needs writable storage, currently not supported on RISC-V
+      - arm # Currently not supported on RISC-V
+      - xtensa
       - arc
     filter: CONFIG_ARCH_HAS_USERSPACE and not CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
     extra_configs:
@@ -83,7 +87,8 @@ tests:
       - CONFIG_LLEXT_HEAP_MEMBLK_BLOCK_SIZE=8192
   llext.readonly_mpu.memblk.power_of_two_alignment:
     arch_allow:
-      - arm # Xtensa needs writable storage, currently not supported on RISC-V
+      - arm # Currently not supported on RISC-V
+      - xtensa
       - arc
     filter: CONFIG_ARCH_HAS_USERSPACE and CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT
     extra_configs:

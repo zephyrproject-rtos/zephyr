@@ -21,14 +21,14 @@ Sample Output:
 
 Running TESTSUITE dsp_sharing
 ===================================================================
-START - test_load_store
+START - test_dsp_load_store
 Load and store OK after 0 (high) + 84 (low) tests
 Load and store OK after 100 (high) + 11926 (low) tests
 Load and store OK after 200 (high) + 23767 (low) tests
 Load and store OK after 300 (high) + 35607 (low) tests
 Load and store OK after 400 (high) + 47448 (low) tests
 Load and store OK after 500 (high) + 59287 (low) tests
- PASS - test_load_store in 10.18 seconds
+ PASS - test_dsp_load_store in 10.18 seconds
 ===================================================================
 START - test_calculation
 complex product calculation OK after 50 (high) + 63297 (low) tests (computed -160)
