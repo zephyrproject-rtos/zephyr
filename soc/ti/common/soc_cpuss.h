@@ -3,13 +3,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_SOC_TI_MSPM_COMMON_SOC_CPUSS_H_
-#define ZEPHYR_SOC_TI_MSPM_COMMON_SOC_CPUSS_H_
+#ifndef ZEPHYR_SOC_TI_COMMON_SOC_CPUSS_H_
+#define ZEPHYR_SOC_TI_COMMON_SOC_CPUSS_H_
 
 #include <zephyr/sys/util.h>
 
 /**
- * @brief MSPM CPUSS Register Offsets
+ * @brief TI CPUSS Register Offsets
  *
  * CPU subsystem registers.
  */
@@ -18,4 +18,4 @@
 /* ctl bits */
 #define CPUSS_CTL_ICACHE BIT(1)
 
-#endif /* ZEPHYR_SOC_TI_MSPM_COMMON_SOC_CPUSS_H_ */
+#endif /* ZEPHYR_SOC_TI_COMMON_SOC_CPUSS_H_ */
