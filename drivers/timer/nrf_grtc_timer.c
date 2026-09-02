@@ -52,9 +52,11 @@
 #define COUNTER_SPAN (GRTC_SYSCOUNTERL_VALUE_Msk | ((uint64_t)GRTC_SYSCOUNTERH_VALUE_Msk << 32))
 #define MAX_ABS_TICKS (COUNTER_SPAN / CYC_PER_TICK)
 
-/* To allow use of CCADD we need to limit max cycles to 31 bits. */
-#define MAX_REL_CYCLES BIT_MASK(31)
-#define MAX_REL_TICKS (MAX_REL_CYCLES / CYC_PER_TICK)
+/* Deadlines nearer than this register a system event, so that the system does
+ * not enter a sleep state whose exit latency would overrun them.
+ */
+#define SYS_EVENT_AHEAD_US     1000U
+#define SYS_EVENT_AHEAD_CYCLES k_us_to_cyc_ceil32(SYS_EVENT_AHEAD_US)
 
 #if DT_NODE_HAS_STATUS_OKAY(LFCLK_NODE)
 #define LFCLK_FREQUENCY_HZ DT_PROP(LFCLK_NODE, clock_frequency)
@@ -65,21 +67,12 @@
 	DT_PROP(DT_COMPAT_GET_ANY_STATUS_OKAY(nordic_nrf_clock_lfclk), k32src_frequency)
 #endif
 
-/* Threshold used to determine if there is a risk of unexpected GRTC COMPARE event coming
- * from previous CC value.
- */
-#define LATENCY_THR_TICKS 200
-
 #if defined(CONFIG_TEST)
 const int32_t z_sys_timer_irq_for_test = DT_IRQN(GRTC_NODE);
 #endif
 
 static void sys_clock_timeout_handler(int32_t id, uint64_t cc_val, void *p_context);
 
-static uint64_t last_count; /* Time (SYSCOUNTER value) @last sys_clock_announce() */
-static uint64_t last_elapsed;
-static uint64_t cc_value; /* Value that is expected to be in CC register. */
-static uint64_t expired_cc; /* Value that is expected to be in CC register. */
 static atomic_t int_mask;
 static uint8_t ext_channels_allocated;
 static uint64_t grtc_start_value;
@@ -88,7 +81,12 @@ static nrfx_grtc_channel_t system_clock_channel_data = {
 	.p_context = NULL,
 	.channel = (uint8_t)-1,
 };
-#if defined(CONFIG_NRF_SYS_EVENT_GRTC_CHAN_CNT) && (CONFIG_NRF_SYS_EVENT_GRTC_CHAN_CNT > 0)
+/* Only a kernel timeout is worth waking memory for. On a tickful kernel every
+ * arm is the tick period, always inside the window below, and hinting each one
+ * would hold the wake-ahead channel permanently.
+ */
+#if defined(CONFIG_NRF_SYS_EVENT_GRTC_CHAN_CNT) && defined(CONFIG_TICKLESS_KERNEL) &&              \
+	(CONFIG_NRF_SYS_EVENT_GRTC_CHAN_CNT > 0)
 #define USE_SYS_EVENT 1
 #endif
 static int sys_evt_handle = -1;
@@ -96,11 +94,6 @@ static int sys_evt_handle = -1;
 #define IS_CHANNEL_ALLOWED_ASSERT(chan)                                                            \
 	__ASSERT_NO_MSG((NRFX_GRTC_CONFIG_ALLOWED_CC_CHANNELS_MASK & (1UL << (chan))) &&           \
 			((chan) != system_clock_channel_data.channel))
-
-static inline uint64_t counter_sub(uint64_t a, uint64_t b)
-{
-	return (a - b);
-}
 
 static inline uint64_t counter(void)
 {
@@ -110,29 +103,6 @@ static inline uint64_t counter(void)
 static inline int get_comparator(uint32_t chan, uint64_t *cc)
 {
 	return nrfx_grtc_syscounter_cc_value_read(chan, cc);
-}
-
-/*
- * Program a new callback <value> microseconds in the future
- */
-static void system_timeout_set_relative(uint64_t value)
-{
-	if (value <= NRF_GRTC_SYSCOUNTER_CCADD_MASK) {
-		nrfx_grtc_syscounter_cc_relative_set(&system_clock_channel_data, value, true,
-						     NRFX_GRTC_CC_RELATIVE_SYSCOUNTER);
-	} else {
-		nrfx_grtc_syscounter_cc_absolute_set(&system_clock_channel_data, value + counter(),
-						     true);
-	}
-}
-
-/*
- * Program a new callback in the absolute time given by <value>
- */
-static void system_timeout_set_abs(uint64_t value)
-{
-	nrfx_grtc_syscounter_cc_absolute_set(&system_clock_channel_data, value,
-					     true);
 }
 
 static bool compare_int_lock(int32_t chan)
@@ -160,26 +130,64 @@ static void sys_event_unregister(bool canceled)
 	}
 }
 
+/*
+ * A free-running 52-bit SYSCOUNTER plus a compare channel armed through CCADD
+ * with the SYSCOUNTER as its reference, so the hardware forms CC = SYSCOUNTER +
+ * value itself. That is a delay from now rather than an absolute deadline, a
+ * RELOAD backend, and it takes one store with nothing to read back and race
+ * against.
+ *
+ * Bit 31 of CCADD selects the reference, leaving 31 bits of value, so the
+ * register is narrower than the counter and bounds a single arm rather than
+ * the span the core may leave unannounced. The compare fires once and does
+ * not reload, hence TIMER_CORE_RELOAD_ONE_SHOT.
+ */
+#define TIMER_CORE_BACKEND_RELOAD
+#define TIMER_CORE_RELOAD_ONE_SHOT
+#define TIMER_CORE_COUNTER_WIDTH 52
+#define TIMER_CORE_ALARM_MAX_CYCLES NRF_GRTC_SYSCOUNTER_CCADD_MASK
+
+static inline uint64_t timer_driver_cycle_get(void)
+{
+	return counter();
+}
+
+static void timer_driver_set_reload(uint32_t cycles)
+{
+	sys_event_unregister(true);
+
+	/* nrf_sys_event_register() takes microseconds, not cycles, and predicts
+	 * when the interrupt lands. Reporting it early would have the memory
+	 * woken sooner than needed and put back to sleep before the interrupt,
+	 * so round the conversion up.
+	 */
+	if (IS_ENABLED(USE_SYS_EVENT)) {
+		sys_evt_handle = (cycles <= SYS_EVENT_AHEAD_CYCLES)
+				 ? nrf_sys_event_register(k_cyc_to_us_ceil32(cycles), false) : -1;
+	}
+
+	nrfx_grtc_syscounter_cc_rel_set(system_clock_channel_data.channel, cycles,
+					NRFX_GRTC_CC_RELATIVE_SYSCOUNTER);
+}
+
+#include "system_timer_generic.h"
+
+/* The width above has to be the counter's real one: too narrow and a long
+ * unannounced span aliases, too wide and the masked delta underflows past the
+ * wrap.
+ */
+BUILD_ASSERT(TIMER_CORE_COUNTER_MASK == COUNTER_SPAN,
+	     "TIMER_CORE_COUNTER_WIDTH does not match the SYSCOUNTER width");
+
 static void sys_clock_timeout_handler(int32_t id, uint64_t cc_val, void *p_context)
 {
 	ARG_UNUSED(id);
+	ARG_UNUSED(cc_val);
 	ARG_UNUSED(p_context);
-	uint32_t dticks;
 
 	sys_event_unregister(false);
-	dticks = counter_sub(cc_val, last_count) / CYC_PER_TICK;
-	last_count += (dticks * CYC_PER_TICK);
-	expired_cc = cc_val;
 
-	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		/* protection is not needed because we are in the GRTC interrupt
-		 * so it won't get preempted by the interrupt.
-		 */
-		system_timeout_set_abs(last_count + CYC_PER_TICK);
-	}
-
-	last_elapsed = 0;
-	sys_clock_announce(dticks);
+	timer_core_announce();
 }
 
 int32_t z_nrf_grtc_timer_chan_alloc(void)
@@ -482,27 +490,6 @@ int z_nrf_grtc_wakeup_prepare(uint64_t wake_time_us)
 }
 #endif /* CONFIG_POWEROFF */
 
-uint32_t sys_clock_cycle_get_32(void)
-{
-	return (uint32_t)counter();
-}
-
-uint64_t sys_clock_cycle_get_64(void)
-{
-	return counter();
-}
-
-uint32_t sys_clock_elapsed(void)
-{
-	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		return 0;
-	}
-
-	last_elapsed = counter_sub(counter(), last_count);
-
-	return (uint32_t)(last_elapsed / CYC_PER_TICK);
-}
-
 #if !defined(CONFIG_GEN_SW_ISR_TABLE)
 ISR_DIRECT_DECLARE(nrfx_grtc_direct_irq_handler)
 {
@@ -579,16 +566,18 @@ static int sys_clock_driver_init(void)
 	}
 #endif /* CONFIG_NRF_GRTC_START_SYSCOUNTER */
 
-	last_count = (counter() / CYC_PER_TICK) * CYC_PER_TICK;
-	grtc_start_value = last_count;
-	expired_cc = UINT64_MAX;
+	grtc_start_value = (counter() / CYC_PER_TICK) * CYC_PER_TICK;
+	int_mask = NRFX_GRTC_CONFIG_ALLOWED_CC_CHANNELS_MASK;
+
+	timer_core_init();
+
+	/* Enables the channel interrupt, so it comes after the baseline exists.
+	 * A compare left pending by whoever was driving the counter before would
+	 * otherwise be announced against a zero baseline, which on a counter
+	 * another domain started long ago is an enormous bogus elapse.
+	 */
 	nrfx_grtc_channel_callback_set(system_clock_channel_data.channel,
 				       sys_clock_timeout_handler, NULL);
-
-	int_mask = NRFX_GRTC_CONFIG_ALLOWED_CC_CHANNELS_MASK;
-	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		system_timeout_set_relative(CYC_PER_TICK);
-	}
 
 	return 0;
 }
@@ -640,65 +629,6 @@ static int grtc_post_init(void)
 #else
 	return 0;
 #endif
-}
-
-void sys_clock_set_timeout(uint32_t ticks, bool idle)
-{
-	ARG_UNUSED(idle);
-
-	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		return;
-	}
-
-	bool sys_evt = ticks <= 30;
-	uint32_t ch = system_clock_channel_data.channel;
-
-	sys_event_unregister(true);
-	if ((cc_value == expired_cc) && (ticks <= MAX_REL_TICKS)) {
-		uint32_t cyc = ticks * CYC_PER_TICK;
-
-		if (cyc == 0) {
-			/* GRTC will expire anyway since HW ensures that past value triggers an
-			 * event but we need to ensure to always progress the cc_value as this
-			 * if condition expects that cc_value will change after each call to
-			 * set_timeout function.
-			 */
-			cyc = 1;
-		}
-
-		/* If it's the first timeout setting after previous expiration and timeout
-		 * is short so fast method can be used which utilizes relative CC configuration.
-		 */
-		cc_value += cyc;
-		if (IS_ENABLED(USE_SYS_EVENT)) {
-			sys_evt_handle = sys_evt ? nrf_sys_event_register(cyc, false) : -1;
-		}
-		nrfx_grtc_syscounter_cc_rel_set(ch, cyc, NRFX_GRTC_CC_RELATIVE_COMPARE);
-		return;
-	}
-
-	uint64_t cyc = (uint64_t)ticks * CYC_PER_TICK;
-	bool safe_setting = false;
-	uint64_t prev_cc_val = cc_value;
-	uint64_t now = last_count + last_elapsed;
-
-	cc_value = now + cyc;
-
-	/* In case of timeout abort it may happen that CC is being set to a value
-	 * that later than previous CC. If previous CC value is not far in the
-	 * future, there is a risk that COMPARE event will be triggered for that
-	 * previous CC value. If there is such risk safe procedure must be applied
-	 * which is more time consuming but ensures that there will be no spurious
-	 * event.
-	 */
-	if (prev_cc_val < cc_value) {
-		safe_setting = (int64_t)(prev_cc_val - now) < LATENCY_THR_TICKS;
-	}
-
-	if (IS_ENABLED(USE_SYS_EVENT)) {
-		sys_evt_handle = sys_evt ? nrf_sys_event_abs_register(cc_value, false) : -1;
-	}
-	nrfx_grtc_syscounter_cc_abs_set(ch, cc_value, safe_setting);
 }
 
 #if defined(CONFIG_NRF_GRTC_TIMER_APP_DEFINED_INIT)
