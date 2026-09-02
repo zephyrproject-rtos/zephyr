@@ -3,7 +3,4 @@
 
 if BOARD_RP2350_ZERO
 
-config USB_SELF_POWERED
-	default n
-
 endif # BOARD_RP2350_ZERO

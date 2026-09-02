@@ -6,13 +6,6 @@ config I2C_DW_CLOCK_SPEED
 	default 200
 endif # I2C_DW
 
-if USB_DEVICE_STACK
-config USB_DW_USB_2_0
-	default y
-config USB_DEVICE_DRIVER
-	default y
-endif # USB_DEVICE_STACK
-
 configdefault ETH_DRIVER
 	default y
 
