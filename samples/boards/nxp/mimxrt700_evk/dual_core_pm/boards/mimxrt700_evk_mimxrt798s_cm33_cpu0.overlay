@@ -1,0 +1,27 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&lpi2c15 {
+	status = "disabled";
+};
+
+&pca9422 {
+	status = "disabled";
+};
+
+/ {
+	chosen {
+		zephyr,system-timer-companion = &irtc_wake;
+	};
+};
+
+&rtc0 {
+	status = "okay";
+};
+
+&irtc_wake {
+	status = "okay";
+};

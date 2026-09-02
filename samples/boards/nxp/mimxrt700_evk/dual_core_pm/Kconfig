@@ -1,0 +1,20 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+config SAMPLE_RT700_DUAL_CORE_PM_SLEEP_SECONDS
+	int "Power-mode measurement window in seconds"
+	default 2
+	range 1 3600
+	help
+	  Number of seconds each active, sleep, or deep-sleep test case runs.
+
+config SAMPLE_RT700_DUAL_CORE_PM_SETTLE_SECONDS
+	int "Quiet time between two measurement windows in seconds"
+	default 2
+	range 1 3600
+	help
+	  Number of seconds CPU0 waits after a test case before starting the
+	  next one, so consecutive windows show up as separate plateaus on a
+	  current trace.
