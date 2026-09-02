@@ -20,9 +20,6 @@
 
 LOG_MODULE_REGISTER(dai_uaol_intel_adsp);
 
-#define UAOL_USB_EP_DIRECTION_OUT		0
-#define UAOL_USB_EP_DIRECTION_IN		1
-
 /* maximum payload size of PCM stream when split_ep is on */
 #define UAOL_MPS_SPLIT_EP			188
 
@@ -52,6 +49,21 @@ static const struct device *uaol_get_hw_device(uint32_t index)
 	}
 
 	return uaol_devs[index];
+}
+
+static void dai_uaol_set_ep_info(struct dai_intel_uaol_data *dp,
+				 const struct ipc4_uaol_usb_ep_info *ep_info)
+{
+	/* HW pcms_ctl.part.mps is 11 bits. */
+	uint32_t packet_size = ep_info->usb_mps & 0x7FF;
+
+	dp->hw_cfg.direction = ep_info->direction;
+
+	if (ep_info->direction == UAOL_DIR_PLAYBACK && ep_info->split_ep) {
+		dp->hw_cfg.sio_credit_size = MIN(packet_size, UAOL_MPS_SPLIT_EP);
+	} else {
+		dp->hw_cfg.sio_credit_size = packet_size;
+	}
 }
 
 static int dai_uaol_process_aux_config_data(struct dai_intel_uaol_data *dp,
@@ -128,11 +140,7 @@ static int dai_uaol_process_aux_config_data(struct dai_intel_uaol_data *dp,
 			0;
 	}
 	if (ep_info) {
-		if (ep_info->direction == UAOL_USB_EP_DIRECTION_OUT && ep_info->split_ep) {
-			dp->hw_cfg.sio_credit_size = MIN(ep_info->usb_mps, UAOL_MPS_SPLIT_EP);
-		} else {
-			dp->hw_cfg.sio_credit_size = ep_info->usb_mps;
-		}
+		dai_uaol_set_ep_info(dp, ep_info);
 	}
 	if (art_divider) {
 		dp->hw_cfg.art_divider_m = art_divider->multiplier;
@@ -223,12 +231,7 @@ static int dai_uaol_process_dma_control_data(struct dai_intel_uaol_data *dp,
 				return -EINVAL;
 			}
 			ep_info = (struct ipc4_uaol_usb_ep_info *)tlv->value;
-			if (ep_info->direction == UAOL_USB_EP_DIRECTION_OUT && ep_info->split_ep) {
-				dp->hw_cfg.sio_credit_size =
-					MIN(ep_info->usb_mps, UAOL_MPS_SPLIT_EP);
-			} else {
-				dp->hw_cfg.sio_credit_size = ep_info->usb_mps;
-			}
+			dai_uaol_set_ep_info(dp, ep_info);
 			break;
 		default:
 			break;
