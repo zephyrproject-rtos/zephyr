@@ -470,45 +470,74 @@ static int cmd_adc_read(const struct shell *sh, size_t argc, char **argv)
 	return stop ? 0 : retval;
 }
 
+static void adc_shell_print_acq_time(const struct shell *sh, uint16_t acq_time)
+{
+	const char *unit;
+
+	if (acq_time == ADC_ACQ_TIME_DEFAULT) {
+		shell_print(sh, "Acquisition Time: default");
+		return;
+	}
+
+	if (acq_time == ADC_ACQ_TIME_MAX) {
+		shell_print(sh, "Acquisition Time: max");
+		return;
+	}
+
+	switch (ADC_ACQ_TIME_UNIT(acq_time)) {
+	case ADC_ACQ_TIME_MICROSECONDS:
+		unit = "us";
+		break;
+	case ADC_ACQ_TIME_NANOSECONDS:
+		unit = "ns";
+		break;
+	case ADC_ACQ_TIME_TICKS:
+		unit = "ticks";
+		break;
+	default:
+		shell_print(sh, "Acquisition Time: invalid (%u)", acq_time);
+		return;
+	}
+
+	shell_print(sh, "Acquisition Time: %u %s", (unsigned int)ADC_ACQ_TIME_VALUE(acq_time),
+		    unit);
+}
+
 static int cmd_adc_print(const struct shell *sh, size_t argc, char **argv)
 {
 	/* -1 index of ADC label name */
 	struct adc_hdl *adc = get_adc(argv[-1]);
 
-	shell_print(sh, "%s:\n"
-			   "Gain: %s\n"
-			   "Reference: %s\n"
-			   "Acquisition Time: %u\n"
-			   "Channel ID: %u\n"
-			   "Differential: %u\n"
-			   "Resolution: %u",
-			   adc->dev->name,
-			   chosen_gain,
-			   chosen_reference,
-			   adc->channel_config.acquisition_time,
-			   adc->channel_config.channel_id,
-			   adc->channel_config.differential,
-			   adc->resolution);
+	shell_print(sh,
+		    "%s:\n"
+		    "Gain: %s\n"
+		    "Reference: %s",
+		    adc->dev->name, chosen_gain, chosen_reference);
+
+	adc_shell_print_acq_time(sh, adc->channel_config.acquisition_time);
+
+	shell_print(sh,
+		    "Channel ID: %u\n"
+		    "Differential: %u\n"
+		    "Resolution: %u",
+		    adc->channel_config.channel_id, adc->channel_config.differential,
+		    adc->resolution);
 #if CONFIG_ADC_CONFIGURABLE_INPUTS
-	shell_print(sh, "Input positive: %u",
-		    adc->channel_config.input_positive);
+	shell_print(sh, "Input positive: %u", adc->channel_config.input_positive);
 	if (adc->channel_config.differential != 0) {
-		shell_print(sh, "Input negative: %u",
-			    adc->channel_config.input_negative);
+		shell_print(sh, "Input negative: %u", adc->channel_config.input_negative);
 	}
 #endif
 	return 0;
 }
 
-SHELL_SUBCMD_DICT_SET_CREATE(sub_ref_cmds, cmd_adc_ref,
-	(VDD_1, ADC_REF_VDD_1, "VDD"),
-	(VDD_1_2, ADC_REF_VDD_1_2, "VDD/2"),
-	(VDD_1_3, ADC_REF_VDD_1_3, "VDD/3"),
-	(VDD_1_4, ADC_REF_VDD_1_4, "VDD/4"),
-	(INTERNAL, ADC_REF_INTERNAL, "Internal"),
-	(EXTERNAL_0, ADC_REF_EXTERNAL0, "External, input 0"),
-	(EXTERNAL_1, ADC_REF_EXTERNAL1, "External, input 1")
-);
+SHELL_SUBCMD_DICT_SET_CREATE(sub_ref_cmds, cmd_adc_ref, (VDD_1, ADC_REF_VDD_1, "VDD"),
+			     (VDD_1_2, ADC_REF_VDD_1_2, "VDD/2"),
+			     (VDD_1_3, ADC_REF_VDD_1_3, "VDD/3"),
+			     (VDD_1_4, ADC_REF_VDD_1_4, "VDD/4"),
+			     (INTERNAL, ADC_REF_INTERNAL, "Internal"),
+			     (EXTERNAL_0, ADC_REF_EXTERNAL0, "External, input 0"),
+			     (EXTERNAL_1, ADC_REF_EXTERNAL1, "External, input 1"));
 
 SHELL_SUBCMD_DICT_SET_CREATE(sub_gain_cmds, cmd_adc_gain,
 	(GAIN_1_6, ADC_GAIN_1_6, "x 1/6"),
