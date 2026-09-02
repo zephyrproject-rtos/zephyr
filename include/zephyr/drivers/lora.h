@@ -130,10 +130,98 @@ enum lora_cad_mode {
 };
 
 /**
+ * @brief Modulation the radio is set up for
+ *
+ * These parts carry a second modem alongside the LoRa one. Which fields of
+ * @ref lora_modem_config are read depends on which is selected.
+ */
+enum lora_modulation {
+	/** LoRa spread spectrum */
+	LORA_MODULATION_LORA,
+	/** Gaussian frequency shift keying */
+	LORA_MODULATION_GFSK,
+};
+
+/** @brief Gaussian filter applied to the GFSK transmit pulse */
+enum lora_gfsk_pulse_shape {
+	/** No filtering */
+	LORA_GFSK_PULSE_SHAPE_NONE,
+	/** Gaussian, BT = 0.3 */
+	LORA_GFSK_PULSE_SHAPE_BT_0_3,
+	/** Gaussian, BT = 0.5 */
+	LORA_GFSK_PULSE_SHAPE_BT_0_5,
+	/** Gaussian, BT = 0.7 */
+	LORA_GFSK_PULSE_SHAPE_BT_0_7,
+	/** Gaussian, BT = 1.0 */
+	LORA_GFSK_PULSE_SHAPE_BT_1_0,
+};
+
+/** Longest sync word the GFSK modem will match on, in bytes */
+#define LORA_GFSK_SYNC_WORD_MAX 8
+
+/**
+ * @struct lora_gfsk_config
+ * GFSK settings, read only when @ref lora_modem_config sets
+ * @ref LORA_MODULATION_GFSK
+ */
+struct lora_gfsk_config {
+	/** Bit rate in bits per second */
+	uint32_t bitrate;
+
+	/** Transmit frequency deviation in Hz */
+	uint32_t freq_deviation;
+
+	/**
+	 * Receive bandwidth in Hz, measured across both sidebands.
+	 *
+	 * Radio datasheets state their channel filters this way, so a value
+	 * copied from one needs no conversion. A regulation that states a
+	 * single-sideband figure does: it is half of this.
+	 *
+	 * A radio offers a fixed set of filters, so the driver takes the
+	 * narrowest one that is at least this wide, and refuses the
+	 * configuration when it has none wide enough.
+	 */
+	uint32_t bandwidth;
+
+	/** Pulse shaping filter */
+	enum lora_gfsk_pulse_shape pulse_shape;
+
+	/** Sync word to transmit and to match on */
+	uint8_t sync_word[LORA_GFSK_SYNC_WORD_MAX];
+
+	/** Sync word length in bytes; 0 leaves the sync word out */
+	uint8_t sync_word_len;
+
+	/** Whiten the payload to keep the transmitted spectrum flat */
+	bool whitening;
+
+	/**
+	 * Send and expect a fixed payload length rather than a length byte
+	 * ahead of the payload
+	 */
+	bool fixed_len;
+
+	/** Payload length in bytes, used only when @ref fixed_len is set */
+	uint8_t payload_len;
+};
+
+/**
  * @struct lora_modem_config
  * Structure containing the configuration of a LoRa modem
  */
 struct lora_modem_config {
+	/**
+	 * Modulation to set the radio up for.
+	 *
+	 * Frequency, preamble length, TX power, direction and CRC apply to
+	 * either one. Bandwidth, datarate, coding rate, IQ inversion, sync
+	 * word, public network and the CAD parameters are read only for
+	 * @ref LORA_MODULATION_LORA, and @ref gfsk only for
+	 * @ref LORA_MODULATION_GFSK.
+	 */
+	enum lora_modulation modulation;
+
 	/** Frequency in Hz to use for transceiving */
 	uint32_t frequency;
 
@@ -146,7 +234,7 @@ struct lora_modem_config {
 	/** The coding rate to use for transceiving */
 	enum lora_coding_rate coding_rate;
 
-	/** Length of the preamble */
+	/** Length of the preamble, in symbols for LoRa and in bytes for GFSK */
 	uint16_t preamble_len;
 
 	/** TX-power in dBm to use for transmission */
@@ -182,7 +270,10 @@ struct lora_modem_config {
 	 */
 	bool public_network;
 
-	/** Set to true to disable the 16-bit payload CRC */
+	/**
+	 * Set to true to disable the 16-bit payload CRC. GFSK computes
+	 * CRC-16-CCITT when it is left enabled.
+	 */
 	bool packet_crc_disable;
 
 	/** Channel Activity Detection parameters. */
@@ -205,6 +296,9 @@ struct lora_modem_config {
 		 */
 		uint8_t detection_minimum;
 	} cad;
+
+	/** GFSK settings */
+	struct lora_gfsk_config gfsk;
 };
 
 /**
@@ -303,6 +397,8 @@ typedef int (*lora_api_cad_async)(const struct device *dev, lora_cad_cb cb,
  * @see lora_rssi() for argument descriptions.
  */
 typedef int (*lora_api_rssi)(const struct device *dev, int16_t *rssi);
+
+
 
 /**
  * @typedef lora_api_recv_duty_cycle()
@@ -570,7 +666,8 @@ static inline int lora_rssi(const struct device *dev, int16_t *rssi)
  * @p rssi_threshold, and clear if the window elapses without that happening.
  *
  * Unlike @ref lora_cad this reacts to any energy on the channel, not only to
- * a LoRa preamble. Sensing happens at the bandwidth set by @ref lora_config.
+ * a LoRa preamble. Sensing happens at the bandwidth set by @ref lora_config,
+ * whichever modulation that configured.
  *
  * @note This is a blocking call.
  *

@@ -378,6 +378,11 @@ int sx12xx_lora_recv_async(const struct device *dev, lora_recv_cb cb, void *user
 int sx12xx_lora_config(const struct device *dev,
 		       const struct lora_modem_config *config)
 {
+	if (config->modulation != LORA_MODULATION_LORA) {
+		LOG_ERR("Only LoRa modulation is supported");
+		return -ENOTSUP;
+	}
+
 	bool crc = !config->packet_crc_disable;
 	uint32_t bw_idx;
 	int ret;

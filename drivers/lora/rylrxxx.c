@@ -328,6 +328,11 @@ static int rylr_config(const struct device *dev, const struct lora_modem_config 
 	int err = 0;
 	struct rylr_data *data = dev->data;
 
+	if (config->modulation != LORA_MODULATION_LORA) {
+		LOG_ERR("Only LoRa modulation is supported");
+		return -ENOTSUP;
+	}
+
 	err = k_sem_take(&data->operation_sem, K_NO_WAIT);
 	if (err != 0) {
 		LOG_ERR("error taking operation semaphore: %d", err);
