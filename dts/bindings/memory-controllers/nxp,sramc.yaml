@@ -1,0 +1,133 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP AHB SRAM Controller (SRAMC).
+
+  Controller for an external asynchronous parallel SRAM (or SRAM-like FPGA)
+  interface. The SRAMCR0/SRAMCR1 configuration registers physically reside in
+  the BLK_CTRL_WAKEUPMIX block, so the "reg" of this node points at that block.
+
+  Each chip-select (up to 4, each up to 128 KB) that carries an external SRAM
+  is described as an "mmio-sram" child node whose "reg" is the CS memory window
+  (e.g. CS0 at 0x43880000 on i.MX RT118x). Example:
+
+    sramc: sramc@52420000 {
+        compatible = "nxp,sramc";
+        reg = <0x52420000 0x1000>;
+        pinctrl-0 = <&pinmux_sramc>;
+        pinctrl-names = "default";
+        port-size = "16-bit";
+        address-mode = "admux";
+        #address-cells = <1>;
+        #size-cells = <1>;
+        status = "okay";
+
+        ext_sram: sram@43880000 {
+            compatible = "mmio-sram";
+            reg = <0x43880000 DT_SIZE_K(128)>;
+        };
+    };
+
+compatible: "nxp,sramc"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#address-cells":
+    const: 1
+
+  "#size-cells":
+    const: 1
+
+  turnaround-time:
+    type: int
+    default: 1
+    description: Turnaround time TA. Actual = (TA+1) * granularity. Range 0-15.
+
+  address-hold-time:
+    type: int
+    default: 1
+    description: Address hold time AH. Actual = (AH+1) * granularity. Range 0-15.
+
+  address-setup-time:
+    type: int
+    default: 4
+    description: Address setup time AS. Actual = AS * granularity. Range 0-15.
+
+  ce-hold-time:
+    type: int
+    default: 1
+    description: Chip-enable hold time CEH. Actual = CEH * granularity. Range 0-15.
+
+  ce-setup-time:
+    type: int
+    default: 1
+    description: Chip-enable setup time CES. Actual = CES * granularity. Range 0-15.
+
+  adv-polarity:
+    type: string
+    default: "active-low"
+    enum:
+      - "active-low"
+      - "active-high"
+    description: ADV# signal polarity.
+
+  address-mode:
+    type: string
+    default: "admux"
+    enum:
+      - "admux"       # Address/Data multiplexed
+      - "non-admux"   # Address/Data non-multiplexed
+    description: SRAM address mode.
+
+  port-size:
+    type: string
+    default: "16-bit"
+    enum:
+      - "8-bit"
+      - "16-bit"
+    description: External SRAM data port width.
+
+  bus-timeout-enable:
+    type: boolean
+    description: Enable AHB bus timeout (BTOEN).
+
+  bus-timeout-counter:
+    type: int
+    default: 0
+    description: AHB bus timeout wait cycles BTO. Timeout = BTO * 1024 hclk. Range 0-255.
+
+  # --- SRAMCR1 timing ---
+  prescaler:
+    type: string
+    default: "prescaler-4"
+    enum:
+      - "prescaler-1" # granularity 1 hclk cycle
+      - "prescaler-2" # granularity 2 hclk cycles
+      - "prescaler-3" # granularity 3 hclk cycles
+      - "prescaler-4" # granularity 4 hclk cycles
+    description: Prescaler that sets the timing granularity.
+
+  read-enable-high-time:
+    type: int
+    default: 9
+    description: Read-enable (OE#) high time REH. Actual = (REH+1) * granularity. Range 0-15.
+
+  read-enable-low-time:
+    type: int
+    default: 16
+    description: Read-enable (OE#) low time REL. Actual = (REL+1) * granularity. Range 0-63.
+
+  write-enable-high-time:
+    type: int
+    default: 10
+    description: Write-enable (WE#) high time WEH. Actual = (WEH+1) * granularity. Range 0-15.
+
+  write-enable-low-time:
+    type: int
+    default: 31
+    description: Write-enable (WE#) low time WEL. Actual = (WEL+1) * granularity. Range 0-63.
