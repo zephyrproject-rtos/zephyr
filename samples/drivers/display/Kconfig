@@ -30,6 +30,8 @@ config SAMPLE_HEIGHT_ALIGN
 
 config HEAP_MEM_POOL_ADD_SIZE_SAMPLE
 	int "Sample maximum heap allocated buffer size"
+	default 16384 if SRAM_SIZE < 48
+	default 32768 if SRAM_SIZE < 80
 	default 196608 if QEMU_RAMFB_DISPLAY
 	default 65536
 	help
