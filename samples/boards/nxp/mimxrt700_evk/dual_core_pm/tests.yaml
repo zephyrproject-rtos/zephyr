@@ -1,0 +1,29 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+sample:
+  name: RT700 EVK dual-core power management
+
+common:
+  sysbuild: true
+  tags:
+    - boards
+    - nxp
+    - pm
+  harness: console
+  harness_config:
+    type: multi_line
+    ordered: true
+    regex:
+      - "RT700 dual-core PM sample: CPU0 started on mimxrt700_evk"
+      - "RT700 dual-core PM cases:"
+      - "1: active baseline"
+      - "8: CPU0 deep sleep retention, CPU1 deep sleep"
+  timeout: 180
+
+tests:
+  sample.boards.nxp.rt700_dual_core_pm:
+    platform_allow:
+      - mimxrt700_evk/mimxrt798s/cm33_cpu0
+    integration_platforms:
+      - mimxrt700_evk/mimxrt798s/cm33_cpu0
