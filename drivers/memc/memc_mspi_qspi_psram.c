@@ -21,6 +21,8 @@ LOG_MODULE_REGISTER(memc_mspi_qspi_psram, CONFIG_MEMC_LOG_LEVEL);
  * @brief Supported QPI PSRAM chip variants.
  *
  * Indices 0..N must match the chip-variant enum order in the DT binding.
+ * AUTO makes the driver identify the chip from its Read ID response and
+ * take the parameters from the ID match table.
  * GENERIC is the value used when no chip-variant is specified in DT; the
  * driver then uses standard QPI init commands but reads all transfer
  * parameters (read/write command, rx-dummy, cmd/addr length, CE timing)
@@ -30,6 +32,7 @@ enum qspi_psram_variant {
 	QSPI_PSRAM_VARIANT_ESP64H,
 	QSPI_PSRAM_VARIANT_IS66WVS4M8BLL,
 	QSPI_PSRAM_VARIANT_IS66WVS8M8BLL,
+	QSPI_PSRAM_VARIANT_AUTO,
 	QSPI_PSRAM_VARIANT_GENERIC, /* must be last */
 };
 
@@ -40,6 +43,26 @@ enum qspi_psram_variant {
 #define QSPI_PSRAM_CMD_LEN_1BYTE   1   /* "INSTR_1_BYTE" */
 #define QSPI_PSRAM_ADDR_LEN_3BYTE  3   /* "ADDR_3_BYTE"  */
 
+/*
+ * Read ID response layout is MF ID, KGD, EID[47:0]; five bytes cover every
+ * bit that is stable for a given part (the density code sits in EID[47:45],
+ * the rest of the EID is per-die manufacturing data or reserved).
+ */
+#define QSPI_PSRAM_ID_LEN          5
+#define QSPI_PSRAM_KGD_PASS        0x5D
+#define QSPI_PSRAM_KGD_FAIL        0x55
+
+/* The two ID families on the market; every clone answers with one of these */
+#define QSPI_PSRAM_MF_AP           0x0D  /* AP Memory, Espressif, IPUS, ... */
+#define QSPI_PSRAM_MF_ISSI         0x9D
+
+/*
+ * Worst-grade tCEM per ID family, applied in AUTO mode: the temperature
+ * grade is not readable from the ID (AP: 3 us for the 105 C parts,
+ * ISSI: 1 us above 85 C).
+ */
+#define QSPI_PSRAM_WORST_TCEM_US(mf) (((mf) == QSPI_PSRAM_MF_ISSI) ? 1 : 3)
+
 /**
  * @brief Per-chip parameters sourced from the device datasheet.
  *
@@ -49,9 +72,20 @@ enum qspi_psram_variant {
  * ce-break-config), so none of them has to be given in devicetree.
  *
  * Entries are held in one table indexed by enum qspi_psram_variant, of which
- * a build only carries the parts its devicetree names.
+ * a build only carries the parts its devicetree names; the AUTO variant
+ * carries them all and matches the chip against id/mask at init.
+ *
+ * A Read ID response matches an entry when every bit selected by mask is
+ * equal in id and in the bytes read from the chip. Bits cleared in the mask
+ * are ignored: EID[44:0] is per-die manufacturing data on AP-family parts
+ * and reserved on ISSI, so two chips of the same model differ there.
  */
 struct qspi_psram_chip_params {
+	const char *name;             /* Part or family name for log output    */
+	uint8_t  id[QSPI_PSRAM_ID_LEN];   /* Read ID pattern for AUTO matching */
+	uint8_t  mask[QSPI_PSRAM_ID_LEN]; /* Significant ID bits; a hole left  */
+					  /* by conditional compilation has an */
+					  /* all-zero mask, never matched      */
 	uint32_t size_bits;           /* Capacity in bits, 0 in generic mode   */
 	uint8_t  enter_qpi_cmd;       /* SPI command to enter QPI mode         */
 	uint8_t  exit_qpi_cmd;        /* QPI command to exit back to SPI mode  */
@@ -89,105 +123,141 @@ struct qspi_psram_chip_params {
 #define QSPI_PSRAM_VARIANT_USED(variant)                                          \
 	(DT_INST_FOREACH_STATUS_OKAY_VARGS(QSPI_PSRAM_VARIANT_USED_OR, variant) 0)
 
-#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(chip_variant)
+/* 1 when at least one enabled node selects the AUTO chip variant */
+#define QSPI_PSRAM_AUTO_USED QSPI_PSRAM_VARIANT_USED(auto)
+
+/* 1 when any enabled node needs the chip table: a named part or AUTO */
+#define QSPI_PSRAM_TABLE_USED                                                     \
+	(QSPI_PSRAM_VARIANT_USED(esp64h) ||                                       \
+	 QSPI_PSRAM_VARIANT_USED(is66wvs4m8bll) ||                                \
+	 QSPI_PSRAM_VARIANT_USED(is66wvs8m8bll) ||                                \
+	 QSPI_PSRAM_AUTO_USED)
+
+/*
+ * De-facto standard QPI PSRAM command set and phase layout, shared by both
+ * ID families on the market; the dummy-cycle values are the common datasheet
+ * numbers for operation up to 104 MHz.
+ */
+#define QSPI_PSRAM_STD_QPI_PARAMS                                                 \
+	.enter_qpi_cmd      = 0x35,                                               \
+	.exit_qpi_cmd       = 0xF5,                                               \
+	.qspi_read_cmd      = 0xEB,                                               \
+	.qspi_write_cmd     = 0x38,                                               \
+	.spi_read_cmd       = 0x0B,                                               \
+	.spi_write_cmd      = 0x02,                                               \
+	.reset_en_cmd       = 0x66,                                               \
+	.reset_cmd          = 0x99,                                               \
+	.read_id_cmd        = 0x9F,                                               \
+	.kgd_value          = QSPI_PSRAM_KGD_PASS,                                \
+	.cmd_length         = QSPI_PSRAM_CMD_LEN_1BYTE,                           \
+	.addr_length        = QSPI_PSRAM_ADDR_LEN_3BYTE,                          \
+	.qspi_rx_dummy      = 6,                                                  \
+	.spi_rx_dummy       = 8,                                                  \
+	.default_tx_dummy   = 0,                                                  \
+	.ce_max_burst_bytes = 1024
+
+/*
+ * A family row for AUTO matching: the only ID bits that are stable for a
+ * given part are MF ID, KGD and the density code in EID[47:45] (the top
+ * three bits of ID byte 2), hence the fixed FF FF E0 00 00 mask.
+ * The grade of a detected chip is unknown by definition, so these rows
+ * carry the worst-grade tCEM of their family.
+ */
+#define QSPI_PSRAM_AUTO_ENTRY(fam, mf, density, mbits)                            \
+{                                                                                 \
+	.name = fam " " #mbits " Mbit",                                           \
+	.id   = { (mf), QSPI_PSRAM_KGD_PASS, (density) << 5, 0x00, 0x00 },        \
+	.mask = { 0xFF, 0xFF, 0xE0, 0x00, 0x00 },                                 \
+	.size_bits = (mbits) * 1024U * 1024U,                                     \
+	QSPI_PSRAM_STD_QPI_PARAMS,                                                \
+	.ce_refresh_us = QSPI_PSRAM_WORST_TCEM_US(mf),                            \
+}
+
+#if QSPI_PSRAM_TABLE_USED
 /*
  * Chip parameter table, one entry per supported part. Values come from device
  * datasheets and must not be changed without verifying against the relevant
  * datasheet revision.
  *
- * Only the parts named in devicetree are compiled in; a build that describes
- * the device in devicetree instead drops the table entirely.
+ * Only the parts named in devicetree are compiled in; the AUTO variant pulls
+ * in every entry, and a build that describes the device in devicetree instead
+ * drops the table entirely.
  */
 static const struct qspi_psram_chip_params chip_table[] = {
-#if QSPI_PSRAM_VARIANT_USED(esp64h)
+#if QSPI_PSRAM_VARIANT_USED(esp64h) || QSPI_PSRAM_AUTO_USED
 	[QSPI_PSRAM_VARIANT_ESP64H] = {
 		/* Espressif ESP-PSRAM64H, 64 Mbit (8 MB), 3.3 V / 1.8 V     */
 		/* Datasheet: tCEM = 8 us, page size = 1 KB, tCPH = 50 ns    */
+		.name               = "ESP-PSRAM64H",
+		.id                 = { QSPI_PSRAM_MF_AP, QSPI_PSRAM_KGD_PASS,
+					0x40, 0x00, 0x00 },
+		.mask               = { 0xFF, 0xFF, 0xE0, 0x00, 0x00 },
 		.size_bits          = 64U * 1024U * 1024U,
-		.enter_qpi_cmd      = 0x35,
-		.exit_qpi_cmd       = 0xF5,
-		.qspi_read_cmd      = 0xEB,
-		.qspi_write_cmd     = 0x38,
-		.spi_read_cmd       = 0x0B,
-		.spi_write_cmd      = 0x02,
-		.reset_en_cmd       = 0x66,
-		.reset_cmd          = 0x99,
-		.read_id_cmd        = 0x9F,
-		.kgd_value          = 0x5D,
-		.cmd_length         = QSPI_PSRAM_CMD_LEN_1BYTE,
-		.addr_length        = QSPI_PSRAM_ADDR_LEN_3BYTE,
-		.qspi_rx_dummy      = 6,
-		.spi_rx_dummy       = 8,
-		.default_tx_dummy   = 0,
-		.ce_max_burst_bytes = 1024,
+		QSPI_PSRAM_STD_QPI_PARAMS,
 		.ce_refresh_us      = 8,
 	},
 #endif
-#if QSPI_PSRAM_VARIANT_USED(is66wvs4m8bll)
+#if QSPI_PSRAM_VARIANT_USED(is66wvs4m8bll) || QSPI_PSRAM_AUTO_USED
 	[QSPI_PSRAM_VARIANT_IS66WVS4M8BLL] = {
 		/* ISSI IS66WVS4M8BLL, 32 Mbit (4 MB)                        */
 		/* Datasheet: tCEM = 4 us up to 85 C, page size = 1 KB.      */
 		/* Parts run above 85 C need 1 us and must set ce-break-     */
 		/* config in devicetree instead of using this variant.       */
+		.name               = "IS66WVS4M8BLL",
+		.id                 = { QSPI_PSRAM_MF_ISSI, QSPI_PSRAM_KGD_PASS,
+					0x40, 0x00, 0x00 },
+		.mask               = { 0xFF, 0xFF, 0xE0, 0x00, 0x00 },
 		.size_bits          = 32U * 1024U * 1024U,
-		.enter_qpi_cmd      = 0x35,
-		.exit_qpi_cmd       = 0xF5,
-		.qspi_read_cmd      = 0xEB,
-		.qspi_write_cmd     = 0x38,
-		.spi_read_cmd       = 0x0B,
-		.spi_write_cmd      = 0x02,
-		.reset_en_cmd       = 0x66,
-		.reset_cmd          = 0x99,
-		.read_id_cmd        = 0x9F,
-		.kgd_value          = 0x5D,
-		.cmd_length         = QSPI_PSRAM_CMD_LEN_1BYTE,
-		.addr_length        = QSPI_PSRAM_ADDR_LEN_3BYTE,
-		.qspi_rx_dummy      = 6,
-		.spi_rx_dummy       = 8,
-		.default_tx_dummy   = 0,
-		.ce_max_burst_bytes = 1024,
+		QSPI_PSRAM_STD_QPI_PARAMS,
 		.ce_refresh_us      = 4,
 	},
 #endif
-#if QSPI_PSRAM_VARIANT_USED(is66wvs8m8bll)
+#if QSPI_PSRAM_VARIANT_USED(is66wvs8m8bll) || QSPI_PSRAM_AUTO_USED
 	[QSPI_PSRAM_VARIANT_IS66WVS8M8BLL] = {
 		/* ISSI IS66WVS8M8BLL, 64 Mbit (8 MB)                        */
 		/* Datasheet: tCEM = 4 us up to 85 C, page size = 1 KB.      */
 		/* Parts run above 85 C need 1 us and must set ce-break-     */
 		/* config in devicetree instead of using this variant.       */
+		.name               = "IS66WVS8M8BLL",
+		.id                 = { QSPI_PSRAM_MF_ISSI, QSPI_PSRAM_KGD_PASS,
+					0x60, 0x00, 0x00 },
+		.mask               = { 0xFF, 0xFF, 0xE0, 0x00, 0x00 },
 		.size_bits          = 64U * 1024U * 1024U,
-		.enter_qpi_cmd      = 0x35,
-		.exit_qpi_cmd       = 0xF5,
-		.qspi_read_cmd      = 0xEB,
-		.qspi_write_cmd     = 0x38,
-		.spi_read_cmd       = 0x0B,
-		.spi_write_cmd      = 0x02,
-		.reset_en_cmd       = 0x66,
-		.reset_cmd          = 0x99,
-		.read_id_cmd        = 0x9F,
-		.kgd_value          = 0x5D,
-		.cmd_length         = QSPI_PSRAM_CMD_LEN_1BYTE,
-		.addr_length        = QSPI_PSRAM_ADDR_LEN_3BYTE,
-		.qspi_rx_dummy      = 6,
-		.spi_rx_dummy       = 8,
-		.default_tx_dummy   = 0,
-		.ce_max_burst_bytes = 1024,
+		QSPI_PSRAM_STD_QPI_PARAMS,
 		.ce_refresh_us      = 4,
 	},
 #endif
+#if QSPI_PSRAM_AUTO_USED
+	/*
+	 * Family rows for the densities no named variant covers, reachable
+	 * only through ID matching.
+	 */
+	QSPI_PSRAM_AUTO_ENTRY("AP-family", QSPI_PSRAM_MF_AP,   0x0, 16),
+	QSPI_PSRAM_AUTO_ENTRY("AP-family", QSPI_PSRAM_MF_AP,   0x1, 32),
+	/* Density code of the 128 Mbit APS12804O is unverified on silicon */
+	QSPI_PSRAM_AUTO_ENTRY("AP-family", QSPI_PSRAM_MF_AP,   0x3, 128),
+	QSPI_PSRAM_AUTO_ENTRY("ISSI",      QSPI_PSRAM_MF_ISSI, 0x0, 8),
+	QSPI_PSRAM_AUTO_ENTRY("ISSI",      QSPI_PSRAM_MF_ISSI, 0x1, 16),
+	QSPI_PSRAM_AUTO_ENTRY("ISSI",      QSPI_PSRAM_MF_ISSI, 0x4, 128),
+#endif
 };
 
-BUILD_ASSERT(ARRAY_SIZE(chip_table) <= QSPI_PSRAM_VARIANT_GENERIC,
-	     "chip_table must not hold more entries than the chip-variant enum");
-#endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(chip_variant) */
+#if !QSPI_PSRAM_AUTO_USED
+BUILD_ASSERT(ARRAY_SIZE(chip_table) <= QSPI_PSRAM_VARIANT_AUTO,
+	     "chip_table must only hold entries for concrete chip variants");
+#endif
+#endif /* QSPI_PSRAM_TABLE_USED */
 
 /*
  * Resolve a node to its table entry at build time, so an instance that
  * describes the device in devicetree never pulls the table into the image.
+ * AUTO resolves to NULL: its parameters come from the ID match at run time.
  */
 #define QSPI_PSRAM_CHIP_PARAMS(n)                                                 \
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, chip_variant),                       \
-		    (&chip_table[DT_INST_ENUM_IDX(n, chip_variant)]), (NULL))
+	COND_CODE_1(DT_INST_ENUM_HAS_VALUE(n, chip_variant, auto), (NULL),        \
+		(COND_CODE_1(DT_INST_NODE_HAS_PROP(n, chip_variant),              \
+			     (&chip_table[DT_INST_ENUM_IDX(n, chip_variant)]),    \
+			     (NULL))))
 
 struct memc_mspi_qspi_psram_config {
 	uint32_t                    port;
@@ -205,13 +275,15 @@ struct memc_mspi_qspi_psram_config {
 	bool                        sw_multi_periph;
 	bool                        pm_dev_rt_auto;
 
-	/* Table entry of the chip named in DT, NULL in generic mode */
+	/* Identify the chip from its Read ID response at init */
+	bool                        auto_detect;
+
+	/* Table entry of the chip named in DT, NULL in generic and AUTO modes */
 	const struct qspi_psram_chip_params *chip;
 
 	/*
-	 * Generic-mode init commands. Read with a fallback so the driver also
-	 * works on nodes whose binding is selected by another compatible, such
-	 * as a vendor MSPI device binding listed first.
+	 * Init-phase commands used in generic and AUTO modes, taken from the
+	 * binding defaults unless devicetree overrides them.
 	 */
 	uint8_t                     enter_qpi_cmd;
 	uint8_t                     exit_qpi_cmd;
@@ -321,48 +393,153 @@ static int qspi_psram_reset(const struct device *psram,
 	return 0;
 }
 
-static int qspi_psram_verify_id(const struct device *psram,
-				const struct qspi_psram_chip_params *chip)
+/**
+ * @brief Issue Read ID and fill @p id with the first @p len response bytes.
+ *
+ * Read ID (0x9F) requires a 24-bit don't-care address phase in SPI mode on
+ * every supported chip. The init-phase config has addr_length = 0
+ * (ADDR_DISABLED) for the reset commands which need no address, so it is
+ * overridden for this transaction only.
+ */
+static int qspi_psram_read_id(const struct device *psram, uint8_t read_id_cmd,
+			      uint8_t *id, uint32_t len)
 {
 	struct memc_mspi_qspi_psram_data *data = psram->data;
-	uint8_t id[3] = {0};
 	uint8_t saved_addr_length;
 	int ret;
 
-	/*
-	 * Read ID (0x9F) requires a 24-bit address phase in SPI mode for all
-	 * supported chip variants (IS66WVS4M8BLL, ESP-PSRAM64H, IS66WVS8M8BLL).
-	 * spi_init_cfg has addr_length = 0 (ADDR_DISABLED) for reset commands
-	 * which need no address, so override it here for this transaction only.
-	 */
 	saved_addr_length = data->dev_cfg.addr_length;
 	data->dev_cfg.addr_length = QSPI_PSRAM_ADDR_LEN_3BYTE;
 
-	ret = qspi_psram_command_read(psram, chip->read_id_cmd, 0, id, sizeof(id));
+	ret = qspi_psram_command_read(psram, read_id_cmd, 0, id, len);
 
 	data->dev_cfg.addr_length = saved_addr_length;
 
 	if (ret) {
 		LOG_ERR("Failed to read chip ID");
+	}
+	return ret;
+}
+
+/**
+ * @brief Compare the Read ID response with the part named in devicetree.
+ *
+ * Purely informational: a KGD or identity mismatch is only logged, and the
+ * driver carries on with the devicetree choice. Fitting a chip that fails
+ * these checks may be deliberate, so the decision stays with the user.
+ * Only a failed Read ID transaction is an error.
+ */
+static int qspi_psram_verify_id(const struct device *psram,
+				const struct qspi_psram_chip_params *chip)
+{
+	uint8_t id[QSPI_PSRAM_ID_LEN] = {0};
+	bool identity_ok = true;
+	int ret;
+
+	ret = qspi_psram_read_id(psram, chip->read_id_cmd, id, sizeof(id));
+	if (ret) {
 		return ret;
 	}
 
-	LOG_DBG("PSRAM ID: MF=0x%02X KGD=0x%02X EID=0x%02X", id[0], id[1], id[2]);
+	LOG_DBG("PSRAM ID: %02X %02X %02X %02X %02X", id[0], id[1], id[2], id[3], id[4]);
 
 	if (chip->kgd_value == 0) {
-		/* Generic mode: no expected KGD, log and continue */
+		/* Generic mode: nothing to compare against, log and continue */
 		LOG_INF("Generic PSRAM: skipping KGD check (ID MF=0x%02X KGD=0x%02X EID=0x%02X)",
 			id[0], id[1], id[2]);
 		return 0;
 	}
 
 	if (id[1] != chip->kgd_value) {
-		LOG_ERR("KGD mismatch: expected 0x%02X got 0x%02X", chip->kgd_value, id[1]);
-		return -EIO;
+		LOG_WRN("KGD 0x%02X differs from the expected 0x%02X: the die may have "
+			"failed the factory test", id[1], chip->kgd_value);
+	}
+
+	/* KGD is reported above; compare the remaining significant ID bits */
+	for (size_t i = 0; i < QSPI_PSRAM_ID_LEN; i++) {
+		if (i != 1 && (id[i] & chip->mask[i]) != (chip->id[i] & chip->mask[i])) {
+			identity_ok = false;
+		}
+	}
+	if (!identity_ok) {
+		LOG_WRN("chip-variant says %s (%02X %02X %02X) but the chip answers "
+			"%02X %02X %02X; continuing with the devicetree choice",
+			chip->name, chip->id[0], chip->id[1], chip->id[2],
+			id[0], id[1], id[2]);
 	}
 
 	return 0;
 }
+
+#if QSPI_PSRAM_AUTO_USED
+/**
+ * @brief Identify the chip from its Read ID response.
+ *
+ * Must run in SPI mode after the reset sequence: AP-family parts only
+ * guarantee Read ID as a power-up initialization step, and a chip left in
+ * QPI mode does not decode the command at all.
+ *
+ * On a match @p chip_out points at the parameters of the matched entry.
+ */
+static int qspi_psram_auto_detect(const struct device *psram, uint8_t read_id_cmd,
+				  const struct qspi_psram_chip_params **chip_out)
+{
+	uint8_t id[QSPI_PSRAM_ID_LEN] = {0};
+	bool all_zero = true;
+	bool all_ones = true;
+	int ret;
+
+	ret = qspi_psram_read_id(psram, read_id_cmd, id, sizeof(id));
+	if (ret) {
+		return ret;
+	}
+
+	for (size_t e = 0; e < ARRAY_SIZE(chip_table); e++) {
+		const struct qspi_psram_chip_params *entry = &chip_table[e];
+		bool match = true;
+
+		/*
+		 * A hole left in the table by conditional compilation has an
+		 * all-zero mask and would match any response; the MF bits are
+		 * always significant in a real entry.
+		 */
+		if (entry->mask[0] == 0) {
+			continue;
+		}
+
+		for (size_t i = 0; i < QSPI_PSRAM_ID_LEN; i++) {
+			if ((id[i] & entry->mask[i]) !=
+			    (entry->id[i] & entry->mask[i])) {
+				match = false;
+				break;
+			}
+		}
+
+		if (match) {
+			LOG_INF("Detected %s (ID %02X %02X %02X %02X %02X)",
+				entry->name, id[0], id[1], id[2], id[3], id[4]);
+			*chip_out = entry;
+			return 0;
+		}
+	}
+
+	for (size_t i = 0; i < QSPI_PSRAM_ID_LEN; i++) {
+		all_zero = all_zero && (id[i] == 0x00);
+		all_ones = all_ones && (id[i] == 0xFF);
+	}
+
+	if (all_zero || all_ones) {
+		LOG_ERR("No response from the PSRAM (bus reads 0x%02X)", id[0]);
+	} else if (id[1] == QSPI_PSRAM_KGD_FAIL) {
+		LOG_ERR("PSRAM die failed the factory test (KGD 0x%02X)", id[1]);
+	} else {
+		LOG_ERR("Unknown PSRAM ID: %02X %02X %02X %02X %02X",
+			id[0], id[1], id[2], id[3], id[4]);
+	}
+
+	return -ENODEV;
+}
+#endif /* QSPI_PSRAM_AUTO_USED */
 
 static void qspi_psram_release(const struct device *psram)
 {
@@ -512,8 +689,11 @@ static int qspi_psram_check_dt_cfg(const struct memc_mspi_qspi_psram_config *cfg
 		return -EIO;
 	}
 
-	/* Everything below comes from the chip table for a known variant. */
-	if (cfg->chip != NULL) {
+	/*
+	 * Everything below comes from the chip table for a known variant, or
+	 * from the ID match in AUTO mode.
+	 */
+	if (cfg->chip != NULL || cfg->auto_detect) {
 		return 0;
 	}
 
@@ -542,6 +722,7 @@ static int memc_mspi_qspi_psram_init(const struct device *psram)
 	struct qspi_psram_chip_params generic_params;
 	const struct qspi_psram_chip_params *chip;
 	const bool quad = (cfg->tar_dev_cfg.io_mode == MSPI_IO_MODE_QUAD);
+	bool from_table = (cfg->chip != NULL);
 	uint32_t mem_size;
 	int ret;
 
@@ -549,8 +730,10 @@ static int memc_mspi_qspi_psram_init(const struct device *psram)
 		chip = cfg->chip;
 	} else {
 		/*
-		 * Build chip params from DT-configurable fields; transfer
-		 * commands and CE timing are filled later from tar_dev_cfg.
+		 * Build chip params from DT-configurable fields; in generic
+		 * mode the transfer commands and CE timing are filled later
+		 * from tar_dev_cfg, in AUTO mode the whole struct is replaced
+		 * by the matched table entry below.
 		 */
 		generic_params = (struct qspi_psram_chip_params){
 			.enter_qpi_cmd = cfg->enter_qpi_cmd,
@@ -567,17 +750,6 @@ static int memc_mspi_qspi_psram_init(const struct device *psram)
 		LOG_ERR("MSPI controller not ready");
 		return -ENODEV;
 	}
-
-	/*
-	 * The capacity of a known chip variant is a property of the part, so it
-	 * comes from the chip table; generic mode has to be told in devicetree.
-	 */
-	mem_size = (cfg->chip != NULL) ? (chip->size_bits / 8) : cfg->mem_size;
-	if (mem_size == 0) {
-		LOG_ERR("Generic mode requires size in DT");
-		return -EINVAL;
-	}
-	data->mem_size = mem_size;
 
 	ret = qspi_psram_check_dt_cfg(cfg);
 	if (ret) {
@@ -601,11 +773,40 @@ static int memc_mspi_qspi_psram_init(const struct device *psram)
 		return -EIO;
 	}
 
-	ret = qspi_psram_verify_id(psram, chip);
-	if (ret) {
-		LOG_ERR("PSRAM ID verification failed");
-		return -EIO;
+	if (cfg->auto_detect) {
+#if QSPI_PSRAM_AUTO_USED
+		ret = qspi_psram_auto_detect(psram, chip->read_id_cmd, &chip);
+#else
+		ret = -ENOTSUP;
+#endif
+		if (ret) {
+			LOG_ERR("PSRAM auto detection failed");
+			return ret;
+		}
+		from_table = true;
+	} else {
+		ret = qspi_psram_verify_id(psram, chip);
+		if (ret) {
+			LOG_ERR("Failed to read the PSRAM ID");
+			return -EIO;
+		}
 	}
+
+	/*
+	 * The capacity of a known or detected chip is a property of the part,
+	 * so it comes from the table; generic mode has to be told in
+	 * devicetree.
+	 */
+	mem_size = from_table ? (chip->size_bits / 8) : cfg->mem_size;
+	if (mem_size == 0) {
+		LOG_ERR("Generic mode requires size in DT");
+		return -EINVAL;
+	}
+	if (cfg->auto_detect && cfg->mem_size != 0 && cfg->mem_size != mem_size) {
+		LOG_WRN("DT size %u B differs from the detected %u B; using the detected size",
+			cfg->mem_size, mem_size);
+	}
+	data->mem_size = mem_size;
 
 	/*
 	 * In SPI mode the chip stays as it comes out of reset; QPI needs the
@@ -623,13 +824,13 @@ static int memc_mspi_qspi_psram_init(const struct device *psram)
 
 	/*
 	 * Build the runtime device config from DT target values.
-	 * For known chip variants: override read/write commands and CE timing
-	 * with the datasheet values for the selected bus width, ignoring
-	 * whatever was in DT. For generic mode: all transfer parameters come
-	 * from DT as-is.
+	 * For known and detected chips: override read/write commands and CE
+	 * timing with the datasheet values for the selected bus width,
+	 * ignoring whatever was in DT. For generic mode: all transfer
+	 * parameters come from DT as-is.
 	 */
 	data->dev_cfg = cfg->tar_dev_cfg;
-	if (cfg->chip != NULL) {
+	if (from_table) {
 		data->dev_cfg.read_cmd      = quad ? chip->qspi_read_cmd : chip->spi_read_cmd;
 		data->dev_cfg.write_cmd     = quad ? chip->qspi_write_cmd : chip->spi_write_cmd;
 		data->dev_cfg.cmd_length    = chip->cmd_length;
@@ -638,6 +839,25 @@ static int memc_mspi_qspi_psram_init(const struct device *psram)
 		data->dev_cfg.tx_dummy      = chip->default_tx_dummy;
 		data->dev_cfg.mem_boundary  = chip->ce_max_burst_bytes;
 		data->dev_cfg.time_to_break = chip->ce_refresh_us;
+
+		/*
+		 * The ID does not reveal the temperature grade, so AUTO
+		 * replaces the matched entry's standard-grade CE limit with
+		 * the worst grade of its family. A board that knows its part
+		 * may relax the limits via ce-break-config; each cell is
+		 * taken only when set, so a zero cell keeps the table value
+		 * instead of disabling that protection.
+		 */
+		if (cfg->auto_detect) {
+			data->dev_cfg.time_to_break =
+				QSPI_PSRAM_WORST_TCEM_US(chip->id[0]);
+			if (cfg->tar_dev_cfg.mem_boundary != 0) {
+				data->dev_cfg.mem_boundary = cfg->tar_dev_cfg.mem_boundary;
+			}
+			if (cfg->tar_dev_cfg.time_to_break != 0) {
+				data->dev_cfg.time_to_break = cfg->tar_dev_cfg.time_to_break;
+			}
+		}
 	}
 
 	ret = mspi_dev_config(cfg->bus, &cfg->dev_id,
@@ -757,6 +977,7 @@ static DEVICE_API(memc, memc_mspi_qspi_psram_api) = {
 		.sw_multi_periph    = DT_PROP_OR(DT_INST_BUS(n),                         \
 						 software_multiperipheral, false),       \
 		.pm_dev_rt_auto     = DT_INST_PROP(n, zephyr_pm_device_runtime_auto),    \
+		.auto_detect        = DT_INST_ENUM_HAS_VALUE(n, chip_variant, auto),     \
 		.chip               = QSPI_PSRAM_CHIP_PARAMS(n),                         \
 		.enter_qpi_cmd      = DT_INST_PROP(n, enter_qpi_cmd),                    \
 		.exit_qpi_cmd       = DT_INST_PROP(n, exit_qpi_cmd),                     \

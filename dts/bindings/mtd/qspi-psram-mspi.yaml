@@ -5,11 +5,11 @@
 title: Generic QPI PSRAM device on MSPI bus
 
 description: |
-  Two mutually exclusive operating modes are supported. Pick one - the
+  Three mutually exclusive operating modes are supported. Pick one - the
   device parameters come either from the driver or from devicetree, never
   from both.
 
-  1. Known chip variant (chip-variant is set):
+  1. Known chip variant (chip-variant names a part):
      The driver takes every device parameter from its internal table:
      read/write commands for the selected mspi-io-mode, command and
      address length, rx/tx dummy cycles, CE refresh interval and maximum
@@ -18,7 +18,19 @@ description: |
      mspi-io-mode) only chip-variant is needed.
      Supported chip variants: ESP-PSRAM64H, ISSI IS66WVS4M8BLL, IS66WVS8M8BLL.
 
-  2. Generic mode (chip-variant is omitted):
+  2. Auto detection (chip-variant = "AUTO"):
+     The driver identifies the chip from its Read ID response at init.
+     The ID reveals the ID family (AP Memory and its clones, or ISSI) and
+     the density, which is all any QPI PSRAM on the market exposes; the
+     driver then applies the family command set and the capacity from the
+     ID. The temperature grade is not readable, so the worst-grade CE
+     refresh limit of the family is assumed (AP family 3 us, ISSI 1 us);
+     give ce-break-config to relax it when the grade of the part is
+     known. A size property is not needed by the driver (a differing
+     value only produces a warning), but the MSPI controller may still
+     require one to size its memory-mapped window.
+
+  3. Generic mode (chip-variant is omitted):
      The driver uses the standard de-facto QPI PSRAM init sequence
      (Enter QPI 0x35, Reset 0x66+0x99, Read ID 0x9F, all overridable) but
      skips KGD verification, and takes every device parameter from
@@ -51,13 +63,20 @@ properties:
       - "ESP64H"          # Espressif ESP-PSRAM64H  64 Mbit (8 MB)
       - "IS66WVS4M8BLL"   # ISSI IS66WVS4M8BLL      32 Mbit (4 MB)
       - "IS66WVS8M8BLL"   # ISSI IS66WVS8M8BLL      64 Mbit (8 MB)
+      - "AUTO"            # Identify the chip from its Read ID response
     description: |
       Selects the PSRAM chip variant. The driver then takes all device
       parameters from its internal table and overrides whatever DT holds
       for them, so none of read-command, write-command, command-length,
       address-length, rx-dummy, tx-dummy or ce-break-config needs to be
-      given. Omit this property to use generic mode, in which those
-      parameters must be specified in DT instead.
+      given. The Read ID response is compared with the named part and a
+      KGD or identity mismatch is logged as a warning, but the driver
+      keeps the devicetree choice: the decision stays with the user.
+      AUTO identifies the chip from its Read ID response instead
+      of naming it, with the worst-grade CE timing of the detected family
+      unless ce-break-config overrides it. Omit this property to use
+      generic mode, in which the transfer parameters must be specified
+      in DT instead.
 
   mspi-io-mode:
     description: |
@@ -164,6 +183,19 @@ examples:
         compatible = "qspi-psram";
         reg = <0>;
         chip-variant = "ESP64H";
+        mspi-max-frequency = <DT_FREQ_M(80)>;
+        mspi-io-mode = "MSPI_IO_MODE_QUAD";
+        memmap-config = <1 0 0 0>;
+    };
+  - |
+    /* Unknown part: the driver identifies the chip from its Read ID and
+     * takes size, commands and dummy cycles from its table, assuming the
+     * worst-grade CE timing of the detected family.
+     */
+    psram0: psram@0 {
+        compatible = "qspi-psram";
+        reg = <0>;
+        chip-variant = "AUTO";
         mspi-max-frequency = <DT_FREQ_M(80)>;
         mspi-io-mode = "MSPI_IO_MODE_QUAD";
         memmap-config = <1 0 0 0>;

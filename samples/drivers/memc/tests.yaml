@@ -61,3 +61,13 @@ tests:
     extra_args:
       - platform:b_u585i_iot02a/stm32u585xx:DTC_OVERLAY_FILE=boards/b_u585i_iot02a_mspi_qspi_psram_generic.overlay
       - platform:b_u585i_iot02a/stm32u585xx:EXTRA_CONF_FILE=boards/b_u585i_iot02a_mspi_qspi_psram.conf
+  sample.drivers.memc.stm32_mspi.qspi_psram.auto:
+    tags: mspi
+    build_only: true
+    platform_allow:
+      - b_u585i_iot02a/stm32u585xx
+    integration_platforms:
+      - b_u585i_iot02a
+    extra_args:
+      - platform:b_u585i_iot02a/stm32u585xx:DTC_OVERLAY_FILE=boards/b_u585i_iot02a_mspi_qspi_psram_auto.overlay
+      - platform:b_u585i_iot02a/stm32u585xx:EXTRA_CONF_FILE=boards/b_u585i_iot02a_mspi_qspi_psram.conf
