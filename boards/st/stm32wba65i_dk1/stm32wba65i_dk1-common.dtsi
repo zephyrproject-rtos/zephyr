@@ -179,19 +179,6 @@
 	status = "okay";
 };
 
-&bt_hci_wba {
-	/* Use HASH IRQn as Radio SW IRQ (HASH peripheral must not be enabled!) */
-	interrupts = <66 0>, <61 14>;
-	interrupt-names = "radio", "radio-sw-low";
-};
-
-&ieee802154 {
-	/* Use HASH IRQn as Radio SW IRQ (HASH peripheral must not be enabled!) */
-	interrupts = <66 0>, <61 14>;
-	interrupt-names = "radio", "radio-sw-low";
-	status = "okay";
-};
-
 &aes {
 	status = "okay";
 };
