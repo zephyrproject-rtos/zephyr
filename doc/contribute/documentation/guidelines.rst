@@ -1510,6 +1510,8 @@ of the subsystem (and listed in its ``toctree``), with the following structure:
    that the documentation build detects references to commands that have been renamed or removed.
 #. A "Command reference" section containing a :rst:dir:`zephyr:shell-command-reference` directive.
 
+The :ref:`gpio_shell` page follows this structure.
+
 For a module with only a handful of commands, the same directives can be used in a "Shell commands"
 section of the API documentation page of the subsystem instead.
 
