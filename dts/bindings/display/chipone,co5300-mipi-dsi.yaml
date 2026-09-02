@@ -7,26 +7,3 @@ description: Chipone CO5300 display controller on MIPI DSI bus
 compatible: "chipone,co5300"
 
 include: ["mipi-dsi-device.yaml", "chipone,co5300-common.yaml"]
-
-properties:
-  pitch-align:
-    type: int
-    default: 1
-    description: |
-      The CO5300 driver maintains an internal frame buffer. This property
-      serves for defining a pitch for it that's compliant with the SoC's
-      display controller's requirements.
-
-  addr-align:
-    type: int
-    default: 1
-    description: |
-      The CO5300 driver maintains an internal frame buffer. This property
-      serves for defining an alignment for its address that's compliant
-      with the SoC's display controller's requirements.
-
-  ext-ram:
-    type: phandle
-    description: |
-      Secondary RAM in which the panel controller's frame buffer will
-      be stored. If not defined, the 'zephyr,ram' chosen memory will be used.
