@@ -71,8 +71,10 @@ Programming and Debugging
 The Nano 33 IOT ships the BOSSA compatible UF2 bootloader.  The
 bootloader can be entered by quickly tapping the reset button twice.
 
-Additionally, if :code:`CONFIG_USB_CDC_ACM` is enabled then the bootloader
-will be entered automatically when you run :code:`west flash`.
+Additionally, if :kconfig:option:`CONFIG_CDC_ACM_SERIAL_INITIALIZE_AT_BOOT` is
+enabled then running :code:`west flash` enters the bootloader automatically: the
+default ``bossac`` runner briefly opens the CDC ACM port at 1200 baud, and the
+application reboots into the bootloader. This is only done on Linux and macOS.
 
 Flashing
 ========
