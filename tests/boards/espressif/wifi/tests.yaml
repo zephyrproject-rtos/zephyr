@@ -30,6 +30,9 @@ tests:
     extra_configs:
       - CONFIG_WIFI_TEST_AUTH_MODE_WPA2=y
       - CONFIG_HEAP_MEM_POOL_ADD_SIZE_WIFI_TEST=16384
+      - CONFIG_LOG=y
+      - CONFIG_SOC_LOG_LEVEL_DBG=y
+      - CONFIG_SOC_ESP32_PM_SLEEP_STATS=y
     platform_allow:
       - esp32_devkitc/esp32/procpu
       - esp32s2_devkitc
