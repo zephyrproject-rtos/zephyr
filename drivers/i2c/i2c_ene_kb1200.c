@@ -334,8 +334,9 @@ static DEVICE_API(i2c, i2c_kb1200_api) = {
 #endif
 };
 
-#define KB1200_FSMBM_DEV(inst) DEVICE_DT_INST_GET(inst),
-static const struct device *const fsmbm_devices[] = {DT_INST_FOREACH_STATUS_OKAY(KB1200_FSMBM_DEV)};
+static const struct device *const fsmbm_devices[] = {
+	DT_INST_FOREACH_STATUS_OKAY(DEVICE_DT_INST_GET_COMMA)
+};
 static void i2c_kb1200_isr_wrap(void)
 {
 	for (size_t i = 0; i < ARRAY_SIZE(fsmbm_devices); i++) {

@@ -48,9 +48,8 @@ void mtk_adsp_ipi_signal(const struct device *ipi, uint32_t op)
 	cfg->ipi->int2cirq |= DSP2CPU_IRQ;
 }
 
-#define DEF_DEVPTR(N) DEVICE_DT_INST_GET(N),
 const struct device * const ipi_dev = {
-	DEF_DEVPTR(0)
+	DEVICE_DT_INST_GET_COMMA(0)
 };
 
 static void ipi_handle(const void *arg)

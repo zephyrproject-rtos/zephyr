@@ -195,8 +195,9 @@ static int gpio_si32_init(const struct device *dev)
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_DEVICE_INIT)
 
-#define GPIO_DEVICE_LIST_ENTRY(inst) DEVICE_DT_GET(DT_DRV_INST(inst)),
-static const struct device *gpio_devices[] = {DT_INST_FOREACH_STATUS_OKAY(GPIO_DEVICE_LIST_ENTRY)};
+static const struct device *gpio_devices[] = {
+	DT_INST_FOREACH_STATUS_OKAY(DEVICE_DT_INST_GET_COMMA)
+};
 
 /* The hardware only supports level interrupts, so we have to emulate edge
  * interrupts in this handler.

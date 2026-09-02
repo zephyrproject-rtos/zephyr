@@ -308,9 +308,10 @@ static DEVICE_API(uart, kb1200_uart_api) = {
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 
-/* GPIO module instances */
-#define KB1200_UART_DEV(inst) DEVICE_DT_INST_GET(inst),
-static const struct device *const uart_devices[] = {DT_INST_FOREACH_STATUS_OKAY(KB1200_UART_DEV)};
+/* UART module instances */
+static const struct device *const uart_devices[] = {
+	DT_INST_FOREACH_STATUS_OKAY(DEVICE_DT_INST_GET_COMMA)
+};
 static void kb1200_uart_isr_wrap(const struct device *dev)
 {
 	for (size_t i = 0; i < ARRAY_SIZE(uart_devices); i++) {
