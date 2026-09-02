@@ -1,0 +1,64 @@
+# SPDX-License-Identifier: Apache-2.0
+
+compatible: "tdo,tr230s"
+
+description: |
+  Shanghai Top Display Optoelectronics TR230S display bridge/controller.
+
+  The supported host interface is MIPI DBI Type C using four-wire SPI. The
+  WAIT input is controller-ready flow control and is checked before each
+  controller transaction.
+
+include: [mipi-dbi-spi-device.yaml, display-controller.yaml]
+
+properties:
+  mipi-max-frequency:
+    required: true
+
+  mipi-mode:
+    required: true
+
+  wait-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Controller-ready input. The active logical state means that the TR230S
+      can accept a new controller transaction.
+
+  ready-timeout-ms:
+    type: int
+    default: 0
+    description: |
+      Maximum time to wait for controller readiness. Zero waits indefinitely,
+      matching the manufacturer's STM32 example polling behavior.
+
+  reset-pre-delay-ms:
+    type: int
+    default: 10
+    description: |
+      Delay before asserting hardware reset, in milliseconds. The 10 ms
+      default follows the manufacturer's STM32 example and was validated on
+      hardware; shorter timing did not initialize the tested module reliably.
+
+  reset-pulse-ms:
+    type: int
+    default: 10
+    description: |
+      Hardware-reset pulse width, in milliseconds. The 10 ms default follows
+      the manufacturer's STM32 example and was validated on hardware; shorter
+      timing did not initialize the tested module reliably.
+
+  post-reset-delay-ms:
+    type: int
+    default: 2000
+    description: |
+      Delay after releasing hardware reset, in milliseconds. The 2000 ms
+      default follows the manufacturer's STM32 example and was validated on
+      hardware; shorter timing did not initialize the tested module reliably.
+
+  initial-brightness:
+    type: int
+    required: true
+    description: |
+      Initial non-blanked brightness percentage cached by the driver. A later
+      set_brightness() call replaces this value.
