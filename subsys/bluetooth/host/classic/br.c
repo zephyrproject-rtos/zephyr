@@ -900,6 +900,7 @@ int bt_br_init(void)
 	struct net_buf *buf;
 	struct bt_hci_cp_write_ssp_mode *ssp_cp;
 	struct bt_hci_cp_write_inquiry_mode *inq_cp;
+	struct bt_hci_cp_write_conn_accept_timeout *cat_cp;
 	struct bt_hci_rp_read_default_link_policy_settings *rp;
 	struct net_buf *rsp;
 	int err;
@@ -982,6 +983,22 @@ int bt_br_init(void)
 	net_buf_add_le16(buf, CONFIG_BT_PAGE_TIMEOUT);
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_PAGE_TIMEOUT, buf, NULL);
+	if (err) {
+		return err;
+	}
+
+	/* Set connection accept timeout */
+	buf = bt_hci_cmd_alloc(K_FOREVER);
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cat_cp = net_buf_add(buf, sizeof(*cat_cp));
+	cat_cp->conn_accept_timeout =
+		sys_cpu_to_le16(CONFIG_BT_BR_CONN_ACCEPT_TIMEOUT);
+
+	err = bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_CONN_ACCEPT_TIMEOUT, buf,
+				   NULL);
 	if (err) {
 		return err;
 	}
