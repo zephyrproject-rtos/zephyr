@@ -52,6 +52,7 @@ This script can generate five different output files:
 """
 
 import argparse
+import itertools
 import json
 import math
 import os
@@ -59,12 +60,13 @@ import struct
 import sys
 
 import elftools
+from elftools.dwarf.typeunit import TypeUnit
 from elftools.elf.elffile import ELFFile
 from elftools.elf.sections import SymbolTableSection
 from packaging import version
 
-if version.parse(elftools.__version__) < version.parse('0.24'):
-    sys.exit("pyelftools is out of date, need version 0.24 or later")
+if version.parse(elftools.__version__) < version.parse('0.32'):
+    sys.exit("pyelftools is out of date, need version 0.32 or later")
 
 from collections import OrderedDict
 
@@ -408,13 +410,35 @@ def die_get_name(die):
     return die.attributes["DW_AT_name"].value.decode("utf-8")
 
 
+def die_key(die):
+    if isinstance(die.cu, TypeUnit):
+        return -die.offset - 1
+    return die.offset
+
+
+def die_resolve_ref(die, attribute):
+    try:
+        return die.get_DIE_from_attribute(attribute)
+    except KeyError:
+        return None
+
+
 def die_get_type_offset(die):
     if 'DW_AT_type' not in die.attributes:
         die = die_get_spec(die)
         if not die:
             return None
 
-    return die.attributes["DW_AT_type"].value + die.cu.cu_offset
+    type_die = die_resolve_ref(die, "DW_AT_type")
+    if type_die is None:
+        return None
+
+    if "DW_AT_signature" in type_die.attributes:
+        definition = die_resolve_ref(type_die, "DW_AT_signature")
+        if definition is not None:
+            type_die = definition
+
+    return die_key(type_die)
 
 
 def die_get_byte_size(die):
@@ -426,7 +450,7 @@ def die_get_byte_size(die):
 
 def analyze_die_struct(die):
     name = die_get_name(die) or "<anon>"
-    offset = die.offset
+    offset = die_key(die)
     size = die_get_byte_size(die)
 
     # Incomplete type
@@ -464,7 +488,7 @@ def analyze_die_const(die):
     if not type_offset:
         return
 
-    type_env[die.offset] = ConstType(type_offset)
+    type_env[die_key(die)] = ConstType(type_offset)
 
 
 def _is_constant_form(form):
@@ -512,9 +536,9 @@ def analyze_die_array(die):
             mt = type_env[type_offset]
             if mt.has_kobject() and isinstance(mt, KobjectType) and mt.name == STACK_TYPE:
                 elements.append(1)
-                type_env[die.offset] = ArrayType(die.offset, elements, type_offset)
+                type_env[die_key(die)] = ArrayType(die_key(die), elements, type_offset)
     else:
-        type_env[die.offset] = ArrayType(die.offset, elements, type_offset)
+        type_env[die_key(die)] = ArrayType(die_key(die), elements, type_offset)
 
 
 def analyze_typedef(die):
@@ -523,7 +547,7 @@ def analyze_typedef(die):
     if type_offset not in type_env:
         return
 
-    type_env[die.offset] = type_env[type_offset]
+    type_env[die_key(die)] = type_env[type_offset]
 
 
 def decode_uleb128(data, idx):
@@ -592,8 +616,8 @@ def find_kobjects(elf, syms):
     variables = []
 
     # Step 1: collect all type information.
-    for CU in di.iter_CUs():
-        for die in CU.iter_DIEs():
+    for unit in itertools.chain(di.iter_CUs(), di.iter_TUs()):
+        for die in unit.iter_DIEs():
             # Unions are disregarded, kernel objects should never be union
             # members since the memory is not dedicated to that object and
             # could be something else
