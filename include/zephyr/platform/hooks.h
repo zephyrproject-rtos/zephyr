@@ -119,4 +119,18 @@ void board_late_init_hook(void);
 #define board_late_init_hook() do { } while (0)
 #endif
 
+#if defined(CONFIG_SOC_REBOOT_TO_BOOTLOADER_HOOK) || defined(__DOXYGEN__)
+/**
+ * @brief SoC hook that reboots the device into its bootloader.
+ *
+ * This hook is implemented by the SoC and is called when a subsystem requests
+ * that the device restarts into the bootloader instead of the application,
+ * typically by arming a bootloader-specific magic value and resetting. It is
+ * called from a thread context and is not expected to return.
+ */
+void soc_reboot_to_bootloader_hook(void);
+#else
+#define soc_reboot_to_bootloader_hook() do { } while (0)
+#endif
+
 #endif /* ZEPHYR_INCLUDE_PLATFORM_HOOKS_H_ */
