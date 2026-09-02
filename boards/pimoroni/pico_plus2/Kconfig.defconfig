@@ -3,7 +3,4 @@
 
 if BOARD_PICO_PLUS2
 
-config USB_SELF_POWERED
-	default n
-
 endif # BOARD_PICO_PLUS2
