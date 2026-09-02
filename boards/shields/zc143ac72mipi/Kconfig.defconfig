@@ -23,6 +23,12 @@ choice LV_COLOR_DEPTH
 	default LV_COLOR_DEPTH_16
 endchoice
 
+configdefault LV_Z_AREA_X_ALIGNMENT_WIDTH
+	default 2
+
+configdefault LV_Z_AREA_Y_ALIGNMENT_WIDTH
+	default 2
+
 endif # LVGL
 
 endif # SHIELD_ZC143AC72MIPI
