@@ -576,7 +576,9 @@ static __bflb_critfunc void clock_control_bl70x_l_init_root_as_crystal(const str
 	sys_write32(clock_control_bl70x_l_get_clk(dev), CORECLOCKREGISTER);
 }
 
-static __ramfunc void clock_control_bl70x_l_update_flash_clk(const struct device *dev)
+static __ramfunc void clock_control_bl70x_l_update_flash_clk(const struct device *dev,
+							     const enum bl70x_l_clkid source,
+							     bool final)
 {
 	struct clock_control_bl70x_l_data *data = dev->data;
 	volatile uint32_t tmp;
@@ -592,7 +594,7 @@ static __ramfunc void clock_control_bl70x_l_update_flash_clk(const struct device
 #if !defined(CONFIG_SOC_SERIES_BL70XL)
 	tmp &= GLB_SF_CLK_SEL2_UMSK;
 #endif
-	if (data->flashclk.source == bl70x_l_clkid_clk_dll) {
+	if (source == bl70x_l_clkid_clk_dll) {
 		clk = clock_control_bl70x_l_get_clk(dev);
 #if defined(CONFIG_SOC_SERIES_BL70XL)
 		tmp |= 1U << GLB_SF_CLK_SEL_POS;
@@ -600,7 +602,7 @@ static __ramfunc void clock_control_bl70x_l_update_flash_clk(const struct device
 		tmp |= 0U << GLB_SF_CLK_SEL_POS;
 		tmp |= 0U << GLB_SF_CLK_SEL2_POS;
 #endif
-	} else if (data->flashclk.source == bl70x_l_clkid_clk_crystal) {
+	} else if (source == bl70x_l_clkid_clk_crystal) {
 		clk = clock_control_bl70x_l_get_xclk(dev);
 #if defined(CONFIG_SOC_SERIES_BL70XL)
 		tmp |= 0U << GLB_SF_CLK_SEL_POS;
@@ -617,12 +619,12 @@ static __ramfunc void clock_control_bl70x_l_update_flash_clk(const struct device
 	/* If flash controller will manage flash, set to standard speed
 	 * and let it set the divider.
 	 */
-#if defined(CONFIG_SOC_FLASH_BFLB)
-	clk = DIV_ROUND_CLOSEST(clk, BL70X_L_TARGET_BASIC_CLOCK);
-	tmp |= clamp(clk - 1, 0x0, 0x7) << GLB_SF_CLK_DIV_POS;
-#else
-	tmp |= ((uint32_t)(data->flashclk.divider - 1U)) << GLB_SF_CLK_DIV_POS;
-#endif
+	if (IS_ENABLED(CONFIG_SOC_FLASH_BFLB) || !final) {
+		clk = DIV_ROUND_CLOSEST(clk, BL70X_L_TARGET_BASIC_CLOCK);
+		tmp |= clamp(clk - 1, 0x0, 0x7) << GLB_SF_CLK_DIV_POS;
+	} else {
+		tmp |= ((uint32_t)(data->flashclk.divider - 1U)) << GLB_SF_CLK_DIV_POS;
+	}
 
 	*(volatile uint32_t *)(GLB_BASE + GLB_CLK_CFG2_OFFSET) = tmp;
 
@@ -740,6 +742,8 @@ static __bflb_critfunc int clock_control_bl70x_l_update_clocks(const struct devi
 	clock_control_bl70x_l_set_root_clock_dividers(0, 0);
 	sys_write32(BFLB_RC32M_FREQUENCY, CORECLOCKREGISTER);
 
+	clock_control_bl70x_l_update_flash_clk(dev, bl70x_l_clkid_clk_rc32m, false);
+
 	clock_control_bl70x_l_cache_2T(false);
 
 	ret = clock_control_bl70x_l_update_f32k(dev);
@@ -777,6 +781,8 @@ static __bflb_critfunc int clock_control_bl70x_l_update_clocks(const struct devi
 	} else {
 		/* Root clock already setup as RC32M */
 	}
+
+	clock_control_bl70x_l_update_flash_clk(dev, data->flashclk.source, true);
 
 	ret = clock_control_bl70x_l_clock_trim_32M();
 	if (ret < 0) {
@@ -1021,8 +1027,6 @@ static int clock_control_bl70x_l_init(const struct device *dev)
 	clock_control_bl70x_l_peripheral_clock_init();
 
 	clock_bflb_settle();
-
-	clock_control_bl70x_l_update_flash_clk(dev);
 
 	irq_unlock(key);
 
