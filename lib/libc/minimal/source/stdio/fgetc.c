@@ -8,6 +8,8 @@
 #if defined(CONFIG_ZVFS)
 #include <zephyr/sys/zvfs.h>
 #include <zephyr/sys/zvfs_libc.h>
+
+#include "stdio_fd.h"
 #endif
 
 int fgetc(FILE *stream)
@@ -22,7 +24,7 @@ int fgetc(FILE *stream)
 	}
 
 	fd = zvfs_libc_fileno(stream);
-	if (fd < 3) {
+	if (fd < MINIMAL_STDIO_FD_MIN) {
 		return EOF;
 	}
 

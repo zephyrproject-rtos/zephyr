@@ -9,6 +9,8 @@
 #if defined(CONFIG_ZVFS)
 #include <zephyr/sys/zvfs.h>
 #include <zephyr/sys/zvfs_libc.h>
+
+#include "stdio_fd.h"
 #endif
 
 static int minimal_stream_fd(FILE *stream)
@@ -44,7 +46,7 @@ int fseek(FILE *stream, long offset, int whence)
 		return -1;
 	}
 
-	if (fd < 3) {
+	if (fd < MINIMAL_STDIO_FD_MIN) {
 		errno = ESPIPE;
 		return -1;
 	}
@@ -73,7 +75,7 @@ long ftell(FILE *stream)
 		return -1L;
 	}
 
-	if (fd < 3) {
+	if (fd < MINIMAL_STDIO_FD_MIN) {
 		errno = ESPIPE;
 		return -1L;
 	}

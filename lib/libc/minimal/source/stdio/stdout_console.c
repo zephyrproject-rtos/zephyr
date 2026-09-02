@@ -14,6 +14,8 @@
 #if defined(CONFIG_ZVFS)
 #include <zephyr/sys/zvfs.h>
 #include <zephyr/sys/zvfs_libc.h>
+
+#include "stdio_fd.h"
 #endif
 
 static int _stdout_hook_default(int c)
@@ -86,7 +88,7 @@ static size_t minimal_stream_read(void *ptr, size_t nbyte, FILE *stream)
 #if defined(CONFIG_ZVFS)
 	int fd = zvfs_libc_fileno(stream);
 
-	if (fd < 3) {
+	if (fd < MINIMAL_STDIO_FD_MIN) {
 		return 0;
 	}
 
@@ -105,11 +107,12 @@ static size_t minimal_stream_write(const void *ptr, size_t nbyte, FILE *stream)
 #if defined(CONFIG_ZVFS)
 	int fd = zvfs_libc_fileno(stream);
 
+#if !defined(CONFIG_ZVFS_RESERVE_STDIO_FDS)
 	if (fd == 1 || fd == 2) {
 		return minimal_console_write((const unsigned char *)ptr, nbyte);
 	}
-
-	if (fd >= 3) {
+#endif
+	if (fd >= MINIMAL_STDIO_FD_MIN) {
 		return minimal_zvfs_stream_write(fd, ptr, nbyte);
 	}
 #else
