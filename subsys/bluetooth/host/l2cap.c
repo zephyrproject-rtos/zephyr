@@ -92,6 +92,11 @@ NET_BUF_POOL_FIXED_DEFINE(disc_pool, 1,
 	__l2cap_lookup_ident(conn, ident, req_opcode, true)
 
 static sys_slist_t servers = SYS_SLIST_STATIC_INIT(&servers);
+
+/* Guards @ref servers, and is held for as long as a server looked up from it
+ * is in use, so that the server object stays valid for its user.
+ */
+static K_MUTEX_DEFINE(servers_lock);
 #endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
 
 /* L2CAP signalling channel specific context */
@@ -1206,7 +1211,8 @@ struct bt_l2cap_chan *bt_l2cap_le_lookup_rx_cid(struct bt_conn *conn,
 }
 
 #if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
-struct bt_l2cap_server *bt_l2cap_server_lookup_psm(uint16_t psm)
+/* Caller must hold @ref servers_lock for as long as the result is used. */
+static struct bt_l2cap_server *l2cap_server_lookup_psm(uint16_t psm)
 {
 	struct bt_l2cap_server *server;
 
@@ -1219,36 +1225,62 @@ struct bt_l2cap_server *bt_l2cap_server_lookup_psm(uint16_t psm)
 	return NULL;
 }
 
+bool bt_l2cap_server_is_registered(const struct bt_l2cap_server *server)
+{
+	struct bt_l2cap_server *registered;
+	bool found = false;
+
+	k_mutex_lock(&servers_lock, K_FOREVER);
+
+	SYS_SLIST_FOR_EACH_CONTAINER(&servers, registered, node) {
+		if (registered == server) {
+			found = true;
+			break;
+		}
+	}
+
+	k_mutex_unlock(&servers_lock);
+
+	return found;
+}
+
 int bt_l2cap_server_register(struct bt_l2cap_server *server)
 {
+	int err = 0;
+
 	if (!server->accept) {
 		return -EINVAL;
 	}
 
+	k_mutex_lock(&servers_lock, K_FOREVER);
+
 	if (server->psm) {
 		if (server->psm < L2CAP_LE_PSM_FIXED_START ||
 		    server->psm > L2CAP_LE_PSM_DYN_END) {
-			return -EINVAL;
+			err = -EINVAL;
+			goto unlock;
 		}
 
 		/* Check if given PSM is already in use */
-		if (bt_l2cap_server_lookup_psm(server->psm)) {
+		if (l2cap_server_lookup_psm(server->psm)) {
 			LOG_DBG("PSM already registered");
-			return -EADDRINUSE;
+			err = -EADDRINUSE;
+			goto unlock;
 		}
 	} else {
 		uint16_t psm;
 
 		for (psm = L2CAP_LE_PSM_DYN_START;
 		     psm <= L2CAP_LE_PSM_DYN_END; psm++) {
-			if (!bt_l2cap_server_lookup_psm(psm)) {
+			if (!l2cap_server_lookup_psm(psm)) {
 				break;
 			}
 		}
 
 		if (psm > L2CAP_LE_PSM_DYN_END) {
 			LOG_WRN("No free dynamic PSMs available");
-			return -EADDRNOTAVAIL;
+			err = -EADDRNOTAVAIL;
+			goto unlock;
 		}
 
 		LOG_DBG("Allocated PSM 0x%04x for new server", psm);
@@ -1256,7 +1288,8 @@ int bt_l2cap_server_register(struct bt_l2cap_server *server)
 	}
 
 	if (server->sec_level > BT_SECURITY_L4) {
-		return -EINVAL;
+		err = -EINVAL;
+		goto unlock;
 	} else if (server->sec_level < BT_SECURITY_L1) {
 		/* Level 0 is only applicable for BR/EDR */
 		server->sec_level = BT_SECURITY_L1;
@@ -1266,7 +1299,10 @@ int bt_l2cap_server_register(struct bt_l2cap_server *server)
 
 	sys_slist_append(&servers, &server->node);
 
-	return 0;
+unlock:
+	k_mutex_unlock(&servers_lock);
+
+	return err;
 }
 
 #if defined(CONFIG_BT_L2CAP_SEG_RECV)
@@ -1518,13 +1554,46 @@ static uint16_t l2cap_check_security(struct bt_conn *conn,
 	return BT_L2CAP_LE_ERR_AUTHENTICATION;
 }
 
+/* Look up the server for @p psm and let it accept the channel. The server list
+ * is held locked across accept() so that the server cannot be unregistered
+ * while it is being used.
+ */
+static uint16_t l2cap_le_accept(struct bt_conn *conn, uint16_t psm, uint16_t scid,
+				uint16_t mtu, uint16_t mps, uint16_t credits,
+				struct bt_l2cap_chan **chan)
+{
+	struct bt_l2cap_server *server;
+	uint16_t result;
+
+	k_mutex_lock(&servers_lock, K_FOREVER);
+
+	/* Check if there is a server registered */
+	server = l2cap_server_lookup_psm(psm);
+	if (!server) {
+		result = BT_L2CAP_LE_ERR_PSM_NOT_SUPP;
+		goto unlock;
+	}
+
+	/* Check if connection has minimum required security level */
+	result = l2cap_check_security(conn, server);
+	if (result != BT_L2CAP_LE_SUCCESS) {
+		goto unlock;
+	}
+
+	result = l2cap_chan_accept(conn, server, scid, mtu, mps, credits, chan);
+
+unlock:
+	k_mutex_unlock(&servers_lock);
+
+	return result;
+}
+
 static void le_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 			struct net_buf *buf)
 {
 	struct bt_conn *conn = l2cap->chan.chan.conn;
 	struct bt_l2cap_chan *chan;
 	struct bt_l2cap_le_chan *le_chan;
-	struct bt_l2cap_server *server;
 	struct bt_l2cap_le_conn_req *req = (void *)buf->data;
 	struct bt_l2cap_le_conn_rsp *rsp;
 	uint16_t psm, scid, mtu, mps, credits;
@@ -1563,21 +1632,7 @@ static void le_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 		goto rsp;
 	}
 
-	/* Check if there is a server registered */
-	server = bt_l2cap_server_lookup_psm(psm);
-	if (!server) {
-		result = BT_L2CAP_LE_ERR_PSM_NOT_SUPP;
-		goto rsp;
-	}
-
-	/* Check if connection has minimum required security level */
-	result = l2cap_check_security(conn, server);
-	if (result != BT_L2CAP_LE_SUCCESS) {
-		goto rsp;
-	}
-
-	result = l2cap_chan_accept(conn, server, scid, mtu, mps, credits,
-				   &chan);
+	result = l2cap_le_accept(conn, psm, scid, mtu, mps, credits, &chan);
 	if (result != BT_L2CAP_LE_SUCCESS) {
 		goto rsp;
 	}
@@ -1658,16 +1713,22 @@ static void le_ecred_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 		goto response;
 	}
 
+	/* Hold the server list locked from the lookup until the last accept() has
+	 * returned, so that the server cannot be unregistered while it is in use.
+	 */
+	k_mutex_lock(&servers_lock, K_FOREVER);
+
 	/* Check if there is a server registered */
-	server = bt_l2cap_server_lookup_psm(psm);
+	server = l2cap_server_lookup_psm(psm);
 	if (!server) {
 		result = BT_L2CAP_LE_ERR_PSM_NOT_SUPP;
-		goto response;
+	} else {
+		/* Check if connection has minimum required security level */
+		result = l2cap_check_security(conn, server);
 	}
 
-	/* Check if connection has minimum required security level */
-	result = l2cap_check_security(conn, server);
 	if (result != BT_L2CAP_LE_SUCCESS) {
+		k_mutex_unlock(&servers_lock);
 		goto response;
 	}
 
@@ -1698,6 +1759,8 @@ static void le_ecred_conn_req(struct bt_l2cap *l2cap, uint8_t ident,
 			continue;
 		}
 	}
+	k_mutex_unlock(&servers_lock);
+
 
 response:
 	buf = l2cap_create_le_sig_pdu(BT_L2CAP_ECRED_CONN_RSP, ident,
