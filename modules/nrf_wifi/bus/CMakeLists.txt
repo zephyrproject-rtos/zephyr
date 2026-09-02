@@ -35,16 +35,16 @@ if(CONFIG_NRF70_BUSLIB)
       ${NRF_WIFI_DIR}/os_if/src/osal.c
     )
   endif()
-  zephyr_library_sources_ifdef(CONFIG_NRF70_ON_QSPI
+  zephyr_library_sources(
     rpu_hw_if.c
+  )
+  zephyr_library_sources_ifdef(CONFIG_NRF70_ON_QSPI
     qspi_if.c
   )
   zephyr_library_sources_ifdef(CONFIG_NRF70_ON_SPI
-    rpu_hw_if.c
     spi_if.c
   )
   zephyr_library_sources_ifdef(CONFIG_NRF70_ON_MSPI
-    rpu_hw_if.c
     mspi_if.c
   )
 endif()
