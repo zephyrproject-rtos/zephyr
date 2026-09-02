@@ -319,6 +319,17 @@ int mspi_if_init(struct qspi_config *config)
 		return -ENODEV;
 	}
 
+	if ((data_cfg.io_mode != MSPI_IO_MODE_SINGLE) &&
+	    (data_cfg.io_mode != MSPI_IO_MODE_QUAD_1_4_4)) {
+		LOG_ERR("Unsupported MSPI io-mode %d", data_cfg.io_mode);
+		return -EINVAL;
+	}
+
+	if (data_cfg.data_rate != MSPI_DATA_RATE_SINGLE) {
+		LOG_ERR("Unsupported MSPI data rate %d", data_cfg.data_rate);
+		return -EINVAL;
+	}
+
 	mspi_if_config = config;
 
 	k_sem_init(&mspi_if_config->lock, 1, 1);
