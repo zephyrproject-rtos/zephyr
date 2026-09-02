@@ -62,6 +62,7 @@ jobs:
 
     - name: west setup
       run: |
+        git config --global http.version HTTP/1.1
         west init -l . || true
         west config manifest.group-filter -- +ci,-optional
         west update -o=--depth=1 -n 2>&1 1> west.update.log || west update -o=--depth=1 -n 2>&1 1> west.update2.log

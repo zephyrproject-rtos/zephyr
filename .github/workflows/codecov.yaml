@@ -86,6 +86,7 @@ jobs:
 
       - name: west setup
         run: |
+          git config --global http.version HTTP/1.1
           west init -l . || true
           west update 1> west.update.log || west update 1> west.update-2.log
 

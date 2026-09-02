@@ -230,6 +230,7 @@ jobs:
           cd /opt/bsim_west/bsim
           git fetch -n origin ${BSIM_VERSION}
           git -c advice.detachedHead=false checkout ${BSIM_VERSION}
+          git config --global http.version HTTP/1.1
           west update
           make everything -s -j 8
 
