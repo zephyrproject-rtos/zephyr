@@ -40,9 +40,9 @@ config NET_NATIVE
 	bool "Native network stack support"
 	default y
 	help
-	  Enables Zephyr native IP stack. If you disable this, then
+	  Enables Zephyr native networking stack. If you disable this, then
 	  you need to enable the offloading support if you want to
-	  have IP connectivity.
+	  have connectivity.
 
 # Hidden options for enabling native IPv6/IPv4. Using these options
 # avoids having "defined(CONFIG_NET_IPV6) && defined(CONFIG_NET_NATIVE)"
