@@ -3142,7 +3142,8 @@ event {
 	name = rtio_sqe_cancel;
 	id = 0x16A;
 	fields := struct {
-		uint32_t id;
+		uint16_t index;
+		uint16_t generation;
 	};
 };
 
