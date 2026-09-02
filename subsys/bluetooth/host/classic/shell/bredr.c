@@ -1537,12 +1537,11 @@ static struct bt_sdp_discover_params discov_avrcp_tg = {
 	.pool = &sdp_client_pool,
 };
 
-static struct bt_sdp_discover_params discov;
-
 static int cmd_sdp_find_record(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err;
 	const char *action;
+	struct bt_sdp_discover_params *discov;
 
 	if (!default_conn) {
 		shell_print(sh, "Not connected");
@@ -1550,7 +1549,7 @@ static int cmd_sdp_find_record(const struct shell *sh, size_t argc, char *argv[]
 	}
 
 	if (argc == 1) {
-		discov = discov_general;
+		discov = &discov_general;
 		action = "l2cap";
 		goto discover;
 	}
@@ -1558,19 +1557,19 @@ static int cmd_sdp_find_record(const struct shell *sh, size_t argc, char *argv[]
 	action = argv[1];
 
 	if (!strcmp(action, "HFPAG")) {
-		discov = discov_hfpag;
+		discov = &discov_hfpag;
 	} else if (!strcmp(action, "HFPHF")) {
-		discov = discov_hfphf;
+		discov = &discov_hfphf;
 	} else if (!strcmp(action, "A2SRC")) {
-		discov = discov_a2src;
+		discov = &discov_a2src;
 	} else if (!strcmp(action, "A2SNK")) {
-		discov = discov_a2snk;
+		discov = &discov_a2snk;
 	} else if (!strcmp(action, "AVRCP_CT")) {
-		discov = discov_avrcp_ct;
+		discov = &discov_avrcp_ct;
 	} else if (!strcmp(action, "AVRCP_TG")) {
-		discov = discov_avrcp_tg;
+		discov = &discov_avrcp_tg;
 	} else if (!strcmp(action, "PNP")) {
-		discov = discov_pnp;
+		discov = &discov_pnp;
 	} else {
 		shell_help(sh);
 		return SHELL_CMD_HELP_PRINTED;
@@ -1579,7 +1578,7 @@ static int cmd_sdp_find_record(const struct shell *sh, size_t argc, char *argv[]
 discover:
 	shell_print(sh, "SDP UUID \'%s\' gets applied", action);
 
-	err = bt_sdp_discover(default_conn, &discov);
+	err = bt_sdp_discover(default_conn, discov);
 	if (err) {
 		shell_error(sh, "SDP discovery failed: err %d", err);
 		return -ENOEXEC;
