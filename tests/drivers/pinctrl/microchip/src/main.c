@@ -124,6 +124,9 @@ ZTEST_SUITE(pinctrl_mchp_mec, NULL, NULL, NULL, NULL, NULL);
 #else
 #define MCHP_PINCTRL_FLAG_GET(pincfg, pos) (((pincfg.pinflag) >> pos) & MCHP_PINCTRL_FLAG_MASK)
 
+/* for field checking */
+#define MCHP_PINCTRL_FIELD_GET(pincfg, pos, mask) (((pincfg.pinflag) >> (pos)) & (mask))
+
 ZTEST(pinctrl_mchp, test_pullup_pulldown_none)
 {
 	const struct pinctrl_state *scfg;
@@ -193,7 +196,12 @@ ZTEST(pinctrl_mchp, test_slew_rate)
 
 	scfg = &pcfg->states[0];
 
-	zassert_equal(MCHP_PINCTRL_FLAG_GET(scfg->pins[7], MCHP_PINCTRL_SLEWRATE_POS), 1);
+	zassert_equal(MCHP_PINCTRL_FIELD_GET(scfg->pins[7], MCHP_PINCTRL_SLEWRATE_POS, 0x3), 0);
+	zassert_equal(MCHP_PINCTRL_FIELD_GET(scfg->pins[8], MCHP_PINCTRL_SLEWRATE_POS, 0x3), 1);
+#if DT_NODE_HAS_PROP(DT_CHILD(DT_NODELABEL(test_device_default), group9), slew_rate)
+	zassert_equal(MCHP_PINCTRL_FIELD_GET(scfg->pins[9], MCHP_PINCTRL_SLEWRATE_POS, 0x3), 2);
+	zassert_equal(MCHP_PINCTRL_FIELD_GET(scfg->pins[10], MCHP_PINCTRL_SLEWRATE_POS, 0x3), 3);
+#endif
 }
 #endif /* CONFIG_PIN_SLEW_RATE */
 
