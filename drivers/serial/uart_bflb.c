@@ -14,7 +14,7 @@
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/pm/device.h>
-#include <zephyr/arch/common/sys_io.h>
+#include <zephyr/sys/sys_io.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/irq.h>

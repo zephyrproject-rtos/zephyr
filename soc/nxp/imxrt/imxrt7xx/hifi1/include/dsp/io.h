@@ -10,7 +10,6 @@
 #include <stdint.h>
 #include <soc/memory.h>
 #include <zephyr/sys/sys_io.h>
-#include <zephyr/arch/common/sys_io.h>
 
 static inline uint32_t io_reg_read(uint32_t reg)
 {

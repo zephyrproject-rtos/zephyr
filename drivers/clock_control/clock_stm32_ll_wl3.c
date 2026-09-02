@@ -15,7 +15,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/sys/util.h>
-#include <zephyr/arch/common/sys_io.h>
+#include <zephyr/sys/sys_io.h>
 #include <zephyr/arch/common/sys_bitops.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
