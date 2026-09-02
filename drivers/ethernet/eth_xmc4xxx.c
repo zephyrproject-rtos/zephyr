@@ -1035,7 +1035,7 @@ static int eth_xmc4xxx_init(const struct device *dev)
 		return ret;
 	}
 
-	XMC_ETH_MAC_SetPortControl(NULL, *dev_cfg->port_ctrl);
+	XMC_ETH_MAC_SetPortControl(NULL, dev_cfg->port_ctrl);
 	XMC_ETH_MAC_Enable(NULL);
 
 	ret = eth_xmc4xxx_reset(dev);
