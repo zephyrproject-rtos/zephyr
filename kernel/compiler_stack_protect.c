@@ -36,6 +36,7 @@
  *
  * @satisfies ZEP-SRS-8-12
  * @satisfies ZEP-SRS-8-25
+ * @satisfies ZEP-SRS-8-31
  */
 void _StackCheckHandler(void)
 {
