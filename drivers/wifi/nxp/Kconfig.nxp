@@ -731,6 +731,49 @@ config NXP_WIFI_UAP_WORKAROUND_STICKY_TIM
 
 endif
 
+configdefault WIFI_NM_MAX_MANAGED_INTERFACES
+	default 3 if WIFI_NM_WPA_SUPPLICANT_P2P && WIFI_NM_HOSTAPD_AP
+	default 2 if NXP_WIFI_SOFTAP_SUPPORT
+	default 1
+
+configdefault ZVFS_EVENTFD_MAX
+	default 12 if WIFI_NM_WPA_SUPPLICANT_P2P && WIFI_NM_HOSTAPD_AP
+
+configdefault NET_IF_MAX_IPV6_COUNT
+	default 3 if WIFI_NM_WPA_SUPPLICANT_P2P && WIFI_NM_HOSTAPD_AP
+	default 2 if NXP_WIFI_SOFTAP_SUPPORT
+
+configdefault NET_IF_MAX_IPV4_COUNT
+	default 3 if WIFI_NM_WPA_SUPPLICANT_P2P && WIFI_NM_HOSTAPD_AP
+	default 2 if NXP_WIFI_SOFTAP_SUPPORT
+
+configdefault NET_DHCPV4_SERVER_INSTANCES
+	default 2 if WIFI_NM_WPA_SUPPLICANT_P2P && WIFI_NM_HOSTAPD_AP
+
+configdefault ZVFS_POLL_MAX
+	default 16 if WIFI_NM_WPA_SUPPLICANT_P2P && WIFI_NM_HOSTAPD_AP
+	default 14
+
+if WIFI_NM_WPA_SUPPLICANT_P2P
+
+config NXP_WIFI_P2P_IP_ADDRESS
+	string "NXP P2P AGO mode IP Address"
+	default "192.168.20.1"
+
+config NXP_WIFI_P2P_IP_GATEWAY
+	string "Gateway Address"
+	default "192.168.20.1"
+
+config NXP_WIFI_P2P_IP_MASK
+	string "Network Mask"
+	default "255.255.255.0"
+
+config NXP_WIFI_P2P_IP_BASE
+	string "NXP P2P AGO base address"
+	default "192.168.20.2"
+
+endif
+
 menu "Wi-Fi SDIO Multi Port Aggregation"
 
 config NXP_WIFI_SDIO_MULTI_PORT_RX_AGGR
