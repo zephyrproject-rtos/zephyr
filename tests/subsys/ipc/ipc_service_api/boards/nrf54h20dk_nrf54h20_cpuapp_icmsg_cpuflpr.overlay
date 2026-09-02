@@ -8,20 +8,14 @@
 
 /delete-node/ &ipc0;
 
-ipc0: &cpuapp_cpuflpr_ipc {
-	status = "okay";
+&cpuapp_cpuflpr_ipc {
+	compatible = "zephyr,ipc-icmsg";
+	/delete-property/ tx-blocks;
+	/delete-property/ rx-blocks;
 };
 
 / {
 	aliases {
 		dut-ipc = &cpuapp_cpuflpr_ipc;
 	};
-};
-
-&cpuflpr_vevif {
-	status = "okay";
-};
-
-&cpuapp_bellboard {
-	status = "okay";
 };
