@@ -1128,7 +1128,11 @@ def main():
         max_threads = syms["CONFIG_MAX_THREAD_BYTES"] * 8
         objs = find_kobjects(elf, syms)
         if not objs:
-            sys.stderr.write(f"WARNING: zero kobject found in {args.kernel}\n")
+            sys.exit(
+                f"zero kobjects found in {args.kernel}, "
+                "but a CONFIG_USERSPACE build always has some; "
+                "the DWARF scan likely failed to see the kernel object types"
+            )
 
         if thread_counter > max_threads:
             err = f"Too many thread objects ({thread_counter})\n"
