@@ -164,6 +164,72 @@ static bool entropy_stm32_hsem_is_owned(void)
 #define ASSERT_RNG_HSEM_OWNED() \
 	__ASSERT_NO_MSG(!HAS_MULTICORE_SHARED_RNG || entropy_stm32_hsem_is_owned())
 
+static void configure_rng(void)
+{
+	RNG_TypeDef *rng = TRNG_BASE;
+
+#ifdef STM32_CONDRST_SUPPORT
+	uint32_t desired_nist_cfg = DT_INST_PROP_OR(0, nist_config, 0U);
+	uint32_t desired_htcr = DT_INST_PROP_OR(0, health_test_config, 0U);
+	uint32_t desired_nscr = DT_INST_PROP_OR(0, noise_source_control, 0U);
+	uint32_t cur_nist_cfg = 0U;
+	uint32_t cur_htcr = 0U;
+	uint32_t cur_nscr = 0U;
+
+#if DT_INST_NODE_HAS_PROP(0, nist_config)
+	/*
+	 * Configure the RNG_CR in compliance with the NIST SP800.
+	 * The nist-config is directly copied from the DTS.
+	 * The RNG clock must be 48MHz else the clock DIV is not adapted.
+	 * The RNG_CR_CONDRST is set to 1 at the same time the RNG_CR is written
+	 */
+	cur_nist_cfg = stm32_reg_read_bits(&rng->CR,
+					   (RNG_CR_NISTC | RNG_CR_CLKDIV | RNG_CR_RNG_CONFIG1 |
+					    RNG_CR_RNG_CONFIG2 | RNG_CR_RNG_CONFIG3
+#if defined(RNG_CR_ARDIS)
+				| RNG_CR_ARDIS
+	/* For STM32U5 series, the ARDIS bit7 is considered in the nist-config */
+#endif /* RNG_CR_ARDIS */
+			));
+#endif /* nist_config */
+
+#if DT_INST_NODE_HAS_PROP(0, health_test_config)
+	cur_htcr = LL_RNG_GetHealthConfig(rng);
+#endif /* health_test_config */
+
+#if DT_INST_NODE_HAS_PROP(0, noise_source_control)
+	cur_nscr = LL_RNG_GetNoiseConfig(rng);
+#endif /* noise_source_control */
+
+	if (cur_nist_cfg != desired_nist_cfg || cur_htcr != desired_htcr ||
+	    cur_nscr != desired_nscr) {
+		stm32_reg_modify_bits(&rng->CR, cur_nist_cfg, desired_nist_cfg | RNG_CR_CONDRST);
+
+#if DT_INST_NODE_HAS_PROP(0, health_test_config)
+#if DT_INST_NODE_HAS_PROP(0, health_test_magic)
+		/* On certain series, a magic value must be written first as
+		 * health configuration before the actual configuration value.
+		 */
+		LL_RNG_SetHealthConfig(rng, DT_INST_PROP(0, health_test_magic));
+#endif /* health_test_magic */
+		LL_RNG_SetHealthConfig(rng, desired_htcr);
+#endif /* health_test_config */
+
+#if DT_INST_NODE_HAS_PROP(0, noise_source_control)
+		LL_RNG_SetNoiseConfig(rng, DT_INST_PROP(0, noise_source_control));
+#endif /* noise_source_control */
+
+		LL_RNG_DisableCondReset(rng);
+		/* Wait for conditioning reset process to be completed */
+		while (LL_RNG_IsEnabledCondReset(rng) == 1) {
+		}
+	}
+#endif /* STM32_CONDRST_SUPPORT */
+
+	LL_RNG_Enable(rng);
+	ll_rng_enable_it(rng);
+}
+
 static void entropy_stm32_suspend(void)
 {
 	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
@@ -257,72 +323,6 @@ static void entropy_stm32_resume(void)
 	 */
 	LL_RNG_SetSamplingClockEnableDivider(rng, 0);
 #endif
-	LL_RNG_Enable(rng);
-	ll_rng_enable_it(rng);
-}
-
-static void configure_rng(void)
-{
-	RNG_TypeDef *rng = TRNG_BASE;
-
-#ifdef STM32_CONDRST_SUPPORT
-	uint32_t desired_nist_cfg = DT_INST_PROP_OR(0, nist_config, 0U);
-	uint32_t desired_htcr = DT_INST_PROP_OR(0, health_test_config, 0U);
-	uint32_t desired_nscr = DT_INST_PROP_OR(0, noise_source_control, 0U);
-	uint32_t cur_nist_cfg = 0U;
-	uint32_t cur_htcr = 0U;
-	uint32_t cur_nscr = 0U;
-
-#if DT_INST_NODE_HAS_PROP(0, nist_config)
-	/*
-	 * Configure the RNG_CR in compliance with the NIST SP800.
-	 * The nist-config is directly copied from the DTS.
-	 * The RNG clock must be 48MHz else the clock DIV is not adapted.
-	 * The RNG_CR_CONDRST is set to 1 at the same time the RNG_CR is written
-	 */
-	cur_nist_cfg = stm32_reg_read_bits(&rng->CR,
-					   (RNG_CR_NISTC | RNG_CR_CLKDIV | RNG_CR_RNG_CONFIG1 |
-					    RNG_CR_RNG_CONFIG2 | RNG_CR_RNG_CONFIG3
-#if defined(RNG_CR_ARDIS)
-				| RNG_CR_ARDIS
-	/* For STM32U5 series, the ARDIS bit7 is considered in the nist-config */
-#endif /* RNG_CR_ARDIS */
-			));
-#endif /* nist_config */
-
-#if DT_INST_NODE_HAS_PROP(0, health_test_config)
-	cur_htcr = LL_RNG_GetHealthConfig(rng);
-#endif /* health_test_config */
-
-#if DT_INST_NODE_HAS_PROP(0, noise_source_control)
-	cur_nscr = LL_RNG_GetNoiseConfig(rng);
-#endif /* noise_source_control */
-
-	if (cur_nist_cfg != desired_nist_cfg || cur_htcr != desired_htcr ||
-	    cur_nscr != desired_nscr) {
-		stm32_reg_modify_bits(&rng->CR, cur_nist_cfg, desired_nist_cfg | RNG_CR_CONDRST);
-
-#if DT_INST_NODE_HAS_PROP(0, health_test_config)
-#if DT_INST_NODE_HAS_PROP(0, health_test_magic)
-		/* On certain series, a magic value must be written first as
-		 * health configuration before the actual configuration value.
-		 */
-		LL_RNG_SetHealthConfig(rng, DT_INST_PROP(0, health_test_magic));
-#endif /* health_test_magic */
-		LL_RNG_SetHealthConfig(rng, desired_htcr);
-#endif /* health_test_config */
-
-#if DT_INST_NODE_HAS_PROP(0, noise_source_control)
-		LL_RNG_SetNoiseConfig(rng, DT_INST_PROP(0, noise_source_control));
-#endif /* noise_source_control */
-
-		LL_RNG_DisableCondReset(rng);
-		/* Wait for conditioning reset process to be completed */
-		while (LL_RNG_IsEnabledCondReset(rng) == 1) {
-		}
-	}
-#endif /* STM32_CONDRST_SUPPORT */
-
 	LL_RNG_Enable(rng);
 	ll_rng_enable_it(rng);
 }
