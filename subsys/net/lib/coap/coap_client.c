@@ -17,6 +17,8 @@ LOG_MODULE_DECLARE(net_coap, CONFIG_COAP_LOG_LEVEL);
 #include <zephyr/net/coap.h>
 #include <zephyr/net/coap_client.h>
 
+#include "coap_client_internal.h"
+
 #define COAP_VERSION 1
 #define COAP_SEPARATE_TIMEOUT 6000
 #define COAP_PERIODIC_TIMEOUT 500
@@ -1270,6 +1272,16 @@ static int handle_response(struct coap_client *client, const struct net_sockaddr
 						 coap_client_default_block_size(),
 						 0);
 			internal_req->offset = 0;
+		}
+
+		/* RFC 7959, section 2.4: blocks reassembled into one representation
+		 * must all carry the same ETag.
+		 */
+		ret = coap_client_check_etag(response, block_num == 0, internal_req->recv_etag,
+					     &internal_req->recv_etag_len);
+		if (ret < 0) {
+			LOG_ERR("ETag changed during block-wise transfer");
+			goto fail;
 		}
 
 		ret = coap_update_from_block(response, &internal_req->recv_blk_ctx);
