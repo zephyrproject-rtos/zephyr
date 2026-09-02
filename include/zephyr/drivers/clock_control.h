@@ -145,9 +145,9 @@ typedef int (*clock_control_configure_fn)(const struct device *dev,
  * @driver_ops{Clock Control}
  */
 __subsystem struct clock_control_driver_api {
-	/** @driver_ops_optional @copybrief clock_control_on */
+	/** @driver_ops_mandatory @copybrief clock_control_on */
 	clock_control on;
-	/** @driver_ops_optional @copybrief clock_control_off */
+	/** @driver_ops_mandatory @copybrief clock_control_off */
 	clock_control off;
 	/** @driver_ops_optional @copybrief clock_control_async_on */
 	clock_control_async_on_fn async_on;
@@ -174,7 +174,7 @@ __subsystem struct clock_control_driver_api {
  *
  * @param dev Device structure whose driver controls the clock.
  * @param sys Opaque data representing the clock.
- * @return 0 on success, negative errno on failure.
+ * @return 0 on success (including always-running clocks), negative errno on failure.
  */
 static inline int clock_control_on(const struct device *dev,
 				   clock_control_subsys_t sys)
@@ -196,7 +196,9 @@ static inline int clock_control_on(const struct device *dev,
  *
  * @param dev Device structure whose driver controls the clock
  * @param sys Opaque data representing the clock
- * @return 0 on success, negative errno on failure.
+ * @retval 0 on success.
+ * @retval -ENOTSUP when the clock can't be turned off (e.g. is always running).
+ * @retval <0 other negative errno on failure.
  */
 static inline int clock_control_off(const struct device *dev,
 				    clock_control_subsys_t sys)
