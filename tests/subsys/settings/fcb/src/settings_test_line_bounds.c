@@ -11,9 +11,9 @@
 #define FAKE_RWBS 16U
 #define FAKE_SHORT_READ_LEN 4U
 
-static uint8_t fake_store[64];
+static uint8_t line_bounds_fake_store[64];
 
-static int fake_read_cb_short(void *ctx, off_t off, char *buf, size_t *len)
+static int line_bounds_fake_read_cb_short(void *ctx, off_t off, char *buf, size_t *len)
 {
 	ARG_UNUSED(ctx);
 	ARG_UNUSED(off);
@@ -24,29 +24,30 @@ static int fake_read_cb_short(void *ctx, off_t off, char *buf, size_t *len)
 	return 0;
 }
 
-static int fake_read_cb_full(void *ctx, off_t off, char *buf, size_t *len)
+static int line_bounds_fake_read_cb_full(void *ctx, off_t off, char *buf, size_t *len)
 {
 	ARG_UNUSED(ctx);
 
-	size_t avail = sizeof(fake_store) - MIN(sizeof(fake_store), (size_t)off);
+	size_t avail = sizeof(line_bounds_fake_store) - MIN(sizeof(line_bounds_fake_store),
+							     (size_t)off);
 
 	*len = MIN(*len, avail);
-	memcpy(buf, &fake_store[off], *len);
+	memcpy(buf, &line_bounds_fake_store[off], *len);
 
 	return 0;
 }
 
-static size_t fake_get_len_cb(void *ctx)
+static size_t line_bounds_fake_get_len_cb(void *ctx)
 {
 	ARG_UNUSED(ctx);
 
 	return 4;
 }
 
-static void *line_bounds_setup(void)
+static void *settings_line_bounds_setup(void)
 {
-	for (size_t i = 0; i < sizeof(fake_store); i++) {
-		fake_store[i] = (uint8_t)i;
+	for (size_t i = 0; i < sizeof(line_bounds_fake_store); i++) {
+		line_bounds_fake_store[i] = (uint8_t)i;
 	}
 
 	return NULL;
@@ -56,7 +57,8 @@ ZTEST(settings_line_bounds, test_val_get_len_returns_zero_past_end)
 {
 	size_t len;
 
-	settings_line_io_init(fake_read_cb_short, NULL, fake_get_len_cb, FAKE_RWBS);
+	settings_line_io_init(line_bounds_fake_read_cb_short, NULL, line_bounds_fake_get_len_cb,
+			       FAKE_RWBS);
 
 	len = settings_line_val_get_len(10, NULL);
 
@@ -66,9 +68,11 @@ ZTEST(settings_line_bounds, test_val_get_len_returns_zero_past_end)
 ZTEST(settings_line_bounds, test_raw_read_short_backend_no_overflow)
 {
 	char out[40];
-	size_t len_read = 123;	int rc;
+	size_t len_read = 123;
+	int rc;
 
-	settings_line_io_init(fake_read_cb_short, NULL, fake_get_len_cb, FAKE_RWBS);
+	settings_line_io_init(line_bounds_fake_read_cb_short, NULL, line_bounds_fake_get_len_cb,
+			       FAKE_RWBS);
 
 	rc = settings_line_raw_read(10, out, sizeof(out), &len_read, NULL);
 
@@ -83,13 +87,14 @@ ZTEST(settings_line_bounds, test_raw_read_normal_still_works)
 	size_t len_read = 0;
 	int rc;
 
-	settings_line_io_init(fake_read_cb_full, NULL, fake_get_len_cb, FAKE_RWBS);
+	settings_line_io_init(line_bounds_fake_read_cb_full, NULL, line_bounds_fake_get_len_cb,
+			       FAKE_RWBS);
 
 	rc = settings_line_raw_read(5, out, sizeof(out), &len_read, NULL);
 
 	zassert_equal(rc, 0, "unexpected error %d", rc);
 	zassert_equal(len_read, sizeof(out), "short read, got %zu", len_read);
-	zassert_mem_equal(out, &fake_store[5], sizeof(out));
+	zassert_mem_equal(out, &line_bounds_fake_store[5], sizeof(out));
 }
 
-ZTEST_SUITE(settings_line_bounds, NULL, line_bounds_setup, NULL, NULL, NULL);
+ZTEST_SUITE(settings_line_bounds, NULL, settings_line_bounds_setup, NULL, NULL, NULL);
