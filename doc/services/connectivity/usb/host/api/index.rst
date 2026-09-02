@@ -7,3 +7,4 @@ USB host support APIs
    :maxdepth: 1
 
    uhc.rst
+   usbh_hid.rst
