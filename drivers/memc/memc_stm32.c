@@ -69,6 +69,12 @@ static int memc_stm32_init(const struct device *dev)
 		}
 	}
 
+#if defined(FMC_BCR1_FMCEN)
+	stm32_reg_modify_bits(&FMC_Bank1_R->BTCR[0], FMC_BCR1_FMCEN, FMC_BCR1_FMCEN);
+#elif defined(FMC_CFGR_FMCEN)
+	stm32_reg_modify_bits(&FMC_COMMON_DEVICE->CFGR, FMC_CFGR_FMCEN, FMC_CFGR_FMCEN);
+#endif
+
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_fmc)
 #if (DT_ENUM_IDX(DT_DRV_INST(0), st_mem_swap) == 1)
 	/* sdram-sram */
