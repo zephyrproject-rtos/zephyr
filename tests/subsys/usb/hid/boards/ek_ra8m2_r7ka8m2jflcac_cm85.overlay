@@ -1,0 +1,69 @@
+/*
+ * Copyright (c) 2026 Renesas Electronics Corporation
+ *
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/delete-node/ &zephyr_udc0;
+
+/ {
+	usbh_hid: usbh-hid {
+		compatible = "zephyr,usbh-hid";
+
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		any_hid_device: hid-device@ffffffff {
+			compatible = "zephyr,usbh-hid-device";
+			reg = <0xffffffff>;
+			match-class;
+			in-idle-rate-ms = <0 0>;
+			status = "okay";
+		};
+	};
+
+	hid_keyboard: hid_dev_0 {
+		compatible = "zephyr,hid-device";
+		label = "HID0";
+		protocol-code = "keyboard";
+		in-report-size = <64>;
+		in-polling-period-us = <1000>;
+		out-report-size = <64>;
+		out-polling-period-us = <1000>;
+	};
+};
+
+&ioportd {
+	status = "okay";
+
+	/* Set PD07 to high to enable host mode on USBHS port */
+	usbhs-hog {
+		gpio-hog;
+		gpios = <7 GPIO_ACTIVE_HIGH>;
+		output-high;
+	};
+};
+
+&usbfs {
+	status = "okay";
+	interrupts = <95 1>, <94 1>;
+	interrupt-names = "usbfs-i", "usbfs-r";
+
+	zephyr_udc0: udc {
+		status = "okay";
+		num-bidir-endpoints = <8>;
+		maximum-speed = "high-speed";
+	};
+};
+
+&usbhs {
+	pinctrl-0 = <&usbhs_default>;
+	interrupts = <28 1>;
+	interrupt-names = "usbhs-ir";
+	status = "okay";
+
+	zephyr_uhc0: uhc {
+		status = "okay";
+	};
+};
