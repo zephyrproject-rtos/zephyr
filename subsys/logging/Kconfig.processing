@@ -74,6 +74,7 @@ config LOG_PROCESS_THREAD_STARTUP_DELAY_MS
 
 config LOG_PROCESS_THREAD_SLEEP_MS
 	int "Set internal log processing thread sleep period"
+	default 10 if LOG_BACKEND_IPC_SERVICE
 	default 1000
 	help
 	  Log processing thread sleeps for requested period given in
@@ -96,17 +97,6 @@ config LOG_PROCESS_THREAD_STACK_SIZE
 	help
 	  Set the internal stack size for log processing thread.
 
-config LOG_PROCESSING_LATENCY_US
-	int "Maximum remote message latency (in microseconds)"
-	default 100000
-	depends on LOG_MULTIDOMAIN
-	help
-	  Arbitrary time between log message creation in the remote domain and
-	  processing in the local domain. Higher value increases message processing
-	  latency but increases chances of maintaining correct ordering of the
-	  messages. Option is used only if links are using dedicated buffers
-	  for remote messages.
-
 config LOG_PROCESS_THREAD_CUSTOM_PRIORITY
 	bool "Custom log thread priority"
 	help
@@ -121,6 +111,17 @@ config LOG_PROCESS_THREAD_PRIORITY
 	  When not set the priority is set to K_LOWEST_APPLICATION_THREAD_PRIO.
 
 endif # LOG_PROCESS_THREAD
+
+config LOG_PROCESSING_LATENCY_US
+	int "Maximum remote message latency (in microseconds)"
+	default 10000
+	depends on LOG_MULTIDOMAIN
+	help
+	  Arbitrary time between log message creation in the remote domain and
+	  processing in the local domain. Higher value increases message processing
+	  latency but increases chances of maintaining correct ordering of the
+	  messages. Option is used only if links are using dedicated buffers
+	  for remote messages.
 
 config LOG_BUFFER_SIZE
 	int "Number of bytes dedicated for the logger internal buffer"

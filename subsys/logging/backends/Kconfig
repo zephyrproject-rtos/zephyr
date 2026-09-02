@@ -17,7 +17,7 @@ rsource "Kconfig.spinel"
 rsource "Kconfig.swo"
 rsource "Kconfig.uart"
 rsource "Kconfig.xtensa_sim"
-rsource "Kconfig.multidomain"
+rsource "Kconfig.ipc_service"
 rsource "Kconfig.semihost"
 
 endmenu

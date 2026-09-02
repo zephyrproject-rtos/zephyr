@@ -15,6 +15,7 @@
 #include <zephyr/types.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/logging/log_core.h>
+#include <zephyr/logging/log_link.h>
 #include <zephyr/sys/mpsc_pbuf.h>
 
 #ifdef __cplusplus
@@ -123,13 +124,13 @@ void z_log_msg_commit(struct log_msg *msg);
  * @param[out] backoff Recommended backoff needed to maintain ordering of processed
  * messages. Used only when links are using dedicated buffers.
  */
-union log_msg_generic *z_log_msg_claim(k_timeout_t *backoff);
+union log_msg_generic *z_log_msg_claim(k_timeout_t *backoff, struct log_link **link);
 
 /** @brief Free message.
  *
  * @param msg Message.
  */
-void z_log_msg_free(union log_msg_generic *msg);
+void z_log_msg_free(union log_msg_generic *msg, struct log_link *link);
 
 /** @brief Check if there are any message pending.
  *

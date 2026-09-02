@@ -3,6 +3,8 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include "zephyr/logging/log_msg.h"
+#include <string.h>
 #include <time.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/logging/log_backend.h>
@@ -117,16 +119,12 @@ static log_timestamp_t dummy_timestamp(void);
 static log_timestamp_get_t timestamp_func = dummy_timestamp;
 static uint32_t timestamp_freq;
 static log_timestamp_t proc_latency;
-static log_timestamp_t prev_timestamp;
-static atomic_t unordered_cnt;
 static uint64_t last_failure_report;
 static struct k_spinlock process_lock;
 static atomic_t process_lock_owner_cpu = ATOMIC_INIT(LOG_NO_CPU_OWNER);
+static union log_msg_generic *current_local_msg;
 
-static STRUCT_SECTION_ITERABLE(log_msg_ptr, log_msg_ptr);
-static STRUCT_SECTION_ITERABLE_ALTERNATE(log_mpsc_pbuf, mpsc_pbuf_buffer, log_buffer);
-static struct mpsc_pbuf_buffer *curr_log_buffer;
-
+static struct mpsc_pbuf_buffer log_buffer;
 #ifdef CONFIG_MPSC_PBUF
 static uint32_t __aligned(Z_LOG_MSG_ALIGNMENT)
 	buf32[CONFIG_LOG_BUFFER_SIZE / sizeof(int)];
@@ -154,7 +152,7 @@ COND_CODE_0(CONFIG_LOG_TAG_MAX_LEN, (),
 static char tag[CONFIG_LOG_TAG_MAX_LEN + 1] =
 	COND_CODE_0(CONFIG_LOG_TAG_MAX_LEN, ({}), (CONFIG_LOG_TAG_DEFAULT));
 
-static void msg_process(union log_msg_generic *msg);
+static void msg_process(union log_msg_generic *msg, struct log_link *link);
 
 static log_timestamp_t dummy_timestamp(void)
 {
@@ -166,9 +164,9 @@ log_timestamp_t z_log_timestamp(void)
 	return timestamp_func();
 }
 
-static void z_log_msg_post_finalize(void)
+static void z_log_msg_post_finalize(size_t new_msgs, bool remote)
 {
-	atomic_val_t cnt = atomic_inc(&buffered_cnt);
+	atomic_val_t cnt = atomic_add(&buffered_cnt, new_msgs);
 
 	if (panic_mode) {
 		k_spinlock_key_t key = k_spin_lock(&process_lock);
@@ -432,7 +430,7 @@ int log_set_timestamp_func(log_timestamp_get_t timestamp_getter, uint32_t freq)
 	timestamp_func = timestamp_getter;
 	timestamp_freq = freq;
 	if (CONFIG_LOG_PROCESSING_LATENCY_US) {
-		proc_latency = (freq * CONFIG_LOG_PROCESSING_LATENCY_US) / 1000000;
+		proc_latency = ((uint64_t)freq * CONFIG_LOG_PROCESSING_LATENCY_US) / 1000000;
 	}
 
 	if (IS_ENABLED(CONFIG_LOG_OUTPUT)) {
@@ -508,6 +506,12 @@ static bool msg_filter_check(struct log_backend const *backend,
 	if (level == LOG_LEVEL_NONE) {
 		return true;
 	}
+
+	/* Accept all messages if a single backend is used. */
+	if (log_backend_count_get() == 1) {
+		return true;
+	}
+
 	if (source_id >= 0) {
 		backend_level = log_filter_get(backend, domain_id, source_id, true);
 
@@ -517,8 +521,12 @@ static bool msg_filter_check(struct log_backend const *backend,
 	}
 }
 
-static void msg_process(union log_msg_generic *msg)
+static void msg_process(union log_msg_generic *msg, struct log_link *link)
 {
+	if (IS_ENABLED(CONFIG_LOG_MULTIDOMAIN) && link != NULL) {
+		msg->log.hdr.desc.domain += link->ctrl_blk->domain_offset;
+	}
+
 	STRUCT_SECTION_FOREACH(log_backend, backend) {
 		if (log_backend_is_active(backend) &&
 		    msg_filter_check(backend, msg)) {
@@ -538,13 +546,6 @@ void dropped_notify(void)
 	}
 }
 
-void unordered_notify(void)
-{
-	uint32_t unordered = atomic_set(&unordered_cnt, 0);
-
-	LOG_WRN("%d unordered messages since last report", unordered);
-}
-
 void z_log_notify_backend_enabled(void)
 {
 	/* Wakeup logger thread after attaching first backend. It might be
@@ -557,11 +558,6 @@ void z_log_notify_backend_enabled(void)
 	backend_attached = true;
 }
 
-static inline bool z_log_unordered_pending(void)
-{
-	return IS_ENABLED(CONFIG_LOG_MULTIDOMAIN) && unordered_cnt;
-}
-
 bool z_impl_log_process(void)
 {
 	if (!IS_ENABLED(CONFIG_LOG_MODE_DEFERRED)) {
@@ -569,17 +565,18 @@ bool z_impl_log_process(void)
 	}
 
 	k_timeout_t backoff = K_NO_WAIT;
+	struct log_link *link;
 	union log_msg_generic *msg;
 
 	if (!backend_attached) {
 		return false;
 	}
 
-	msg = z_log_msg_claim(&backoff);
+	msg = z_log_msg_claim(&backoff, &link);
 
 	if (msg) {
-		msg_process(msg);
-		z_log_msg_free(msg);
+		msg_process(msg, link);
+		z_log_msg_free(msg, link);
 		atomic_dec(&buffered_cnt);
 	} else if (CONFIG_LOG_PROCESSING_LATENCY_US > 0 && !K_TIMEOUT_EQ(backoff, K_NO_WAIT)) {
 		/* If backoff is requested, it means that there are pending
@@ -593,16 +590,11 @@ bool z_impl_log_process(void)
 
 	if (IS_ENABLED(CONFIG_LOG_MODE_DEFERRED)) {
 		bool dropped_pend = z_log_dropped_pending();
-		bool unordered_pend = z_log_unordered_pending();
 
-		if ((dropped_pend || unordered_pend) &&
+		if (dropped_pend &&
 		   (k_uptime_get() - last_failure_report) > CONFIG_LOG_FAILURE_REPORT_PERIOD) {
 			if (dropped_pend) {
 				dropped_notify();
-			}
-
-			if (unordered_pend) {
-				unordered_notify();
 			}
 		}
 
@@ -660,7 +652,6 @@ void z_log_msg_init(void)
 {
 #ifdef CONFIG_MPSC_PBUF
 	mpsc_pbuf_init(&log_buffer, &mpsc_config);
-	curr_log_buffer = &log_buffer;
 #endif
 }
 
@@ -715,17 +706,18 @@ struct log_msg *z_log_msg_alloc(uint32_t wlen)
 	return msg_alloc(&log_buffer, wlen);
 }
 
-static void msg_commit(struct mpsc_pbuf_buffer *buffer, struct log_msg *msg)
+void z_log_msg_commit(struct log_msg *msg)
 {
 	union log_msg_generic *m = (union log_msg_generic *)msg;
 	bool lock_acquired;
 
+	msg->hdr.timestamp = timestamp_func();
 	if (IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE)) {
 		k_spinlock_key_t key = {0};
 
 		lock_acquired = process_lock_acquire_if_needed(&key);
 
-		msg_process(m);
+		msg_process(m, NULL);
 
 		process_lock_release_if_needed(lock_acquired, key);
 
@@ -733,15 +725,9 @@ static void msg_commit(struct mpsc_pbuf_buffer *buffer, struct log_msg *msg)
 	}
 
 #ifdef CONFIG_MPSC_PBUF
-	mpsc_pbuf_commit(buffer, &m->buf);
+	mpsc_pbuf_commit(&log_buffer, &m->buf);
 #endif
-	z_log_msg_post_finalize();
-}
-
-void z_log_msg_commit(struct log_msg *msg)
-{
-	msg->hdr.timestamp = timestamp_func();
-	msg_commit(&log_buffer, msg);
+	z_log_msg_post_finalize(1, false);
 }
 
 union log_msg_generic *z_log_msg_local_claim(void)
@@ -755,153 +741,152 @@ union log_msg_generic *z_log_msg_local_claim(void)
 }
 
 /* If there are buffers dedicated for each link, claim the oldest message (lowest timestamp). */
-union log_msg_generic *z_log_msg_claim_oldest(k_timeout_t *backoff)
+union log_msg_generic *z_log_msg_claim_multidomain(k_timeout_t *backoff, struct log_link **msg_link)
 {
+	static log_timestamp_t prev_timestamp;
 	union log_msg_generic *msg = NULL;
-	struct log_msg_ptr *chosen = NULL;
+	union log_msg_generic *out_msg = NULL;
 	log_timestamp_t t_min = sizeof(log_timestamp_t) > sizeof(uint32_t) ?
 				UINT64_MAX : UINT32_MAX;
-	int i = 0;
+	log_timestamp_t t;
+	size_t remote_cnt = 0;
+	size_t remote_link_cnt;
 
-	/* Else iterate on all available buffers and get the oldest message. */
-	STRUCT_SECTION_FOREACH(log_msg_ptr, msg_ptr) {
-		struct log_mpsc_pbuf *buf;
+	STRUCT_SECTION_COUNT(log_link, &remote_link_cnt);
 
-		STRUCT_SECTION_GET(log_mpsc_pbuf, i, &buf);
-
-#ifdef CONFIG_MPSC_PBUF
-		if (msg_ptr->msg == NULL) {
-			msg_ptr->msg = (union log_msg_generic *)mpsc_pbuf_claim(&buf->buf);
-		}
-#endif
-
-		if (msg_ptr->msg) {
-			log_timestamp_t t = log_msg_get_timestamp(&msg_ptr->msg->log);
-
-			if (t < t_min) {
-				t_min = t;
-				msg = msg_ptr->msg;
-				chosen = msg_ptr;
-				curr_log_buffer = &buf->buf;
-			}
-		}
-		i++;
+	if (current_local_msg == NULL) {
+		current_local_msg = z_log_msg_local_claim();
+	}
+	if (current_local_msg != NULL) {
+		*msg_link = NULL;
+		out_msg = current_local_msg;
+		t_min = log_msg_get_timestamp(&current_local_msg->log);
 	}
 
-	if (msg) {
-		if (CONFIG_LOG_PROCESSING_LATENCY_US > 0) {
-			int32_t diff = t_min - (timestamp_func() - proc_latency);
-
-			if (diff > 0) {
-			       /* Entry is too new. Back off for sometime to allow new
-				* remote messages to arrive which may have been captured
-				* earlier (but on other platform). Calculate for how
-				* long processing shall back off.
-				*/
-				if (timestamp_freq == sys_clock_hw_cycles_per_sec()) {
-					*backoff = K_CYC(diff);
-				} else {
-					*backoff = K_CYC((diff * sys_clock_hw_cycles_per_sec()) /
-							timestamp_freq);
-				}
-
-				return NULL;
+	STRUCT_SECTION_FOREACH(log_link, link) {
+		msg = log_link_get_msg(link);
+		if (msg != NULL) {
+			remote_cnt++;
+			t = log_msg_get_timestamp(&msg->log);
+			if (t < t_min) {
+				t_min = t;
+				out_msg = msg;
+				*msg_link = link;
 			}
 		}
+	}
 
-		(*chosen).msg = NULL;
+	if (out_msg == NULL) {
+		if (backoff) {
+			*backoff = K_NO_WAIT;
+		}
+		return NULL;
+	} else if (backoff == NULL) {
+		return out_msg;
+	}
+
+	if (CONFIG_LOG_PROCESSING_LATENCY_US > 0) {
+		int32_t diff = t_min - (timestamp_func() - proc_latency);
+
+		if (diff > 0) {
+		       /* Entry is too new. Back off for sometime to allow new
+			* remote messages to arrive which may have been captured
+			* earlier (but on other platform). Calculate for how
+			* long processing shall back off.
+			*/
+			if (timestamp_freq == sys_clock_hw_cycles_per_sec()) {
+				*backoff = K_CYC(diff);
+			} else {
+				*backoff = K_CYC((diff * sys_clock_hw_cycles_per_sec()) /
+						timestamp_freq);
+			}
+
+			return NULL;
+		}
 	}
 
 	if (t_min < prev_timestamp) {
-		atomic_inc(&unordered_cnt);
+		out_msg->log.hdr.desc.valid = 0;
 	}
 
 	prev_timestamp = t_min;
 
-	return msg;
+	return out_msg;
 }
 
-union log_msg_generic *z_log_msg_claim(k_timeout_t *backoff)
+union log_msg_generic *z_log_msg_claim(k_timeout_t *backoff, struct log_link **link)
 {
-	size_t len;
-
-	STRUCT_SECTION_COUNT(log_mpsc_pbuf, &len);
-
 	/* Use only one buffer if others are not registered. */
-	if (IS_ENABLED(CONFIG_LOG_MULTIDOMAIN) && len > 1) {
-		return z_log_msg_claim_oldest(backoff);
+	if (IS_ENABLED(CONFIG_LOG_MULTIDOMAIN)) {
+		return z_log_msg_claim_multidomain(backoff, link);
 	}
 
 	return z_log_msg_local_claim();
 }
 
-static void msg_free(struct mpsc_pbuf_buffer *buffer, const union log_msg_generic *msg)
+void z_log_msg_free(union log_msg_generic *msg, struct log_link *link)
 {
-#ifdef CONFIG_MPSC_PBUF
-	mpsc_pbuf_free(buffer, &msg->buf);
-#endif
-}
+	if (IS_ENABLED(CONFIG_LOG_MULTIDOMAIN)) {
+		if (link) {
+			log_link_put_msg(link, msg);
+			return;
+		}
 
-void z_log_msg_free(union log_msg_generic *msg)
-{
-	msg_free(curr_log_buffer, msg);
-}
+		current_local_msg = NULL;
+	}
 
-static bool msg_pending(struct mpsc_pbuf_buffer *buffer)
-{
 #ifdef CONFIG_MPSC_PBUF
-	return mpsc_pbuf_is_pending(buffer);
-#else
-	return false;
+	mpsc_pbuf_free(&log_buffer, &msg->buf);
 #endif
 }
 
 bool z_log_msg_pending(void)
 {
-	size_t len;
-	int i = 0;
+	bool pending;
 
-	STRUCT_SECTION_COUNT(log_mpsc_pbuf, &len);
-
-	if (!IS_ENABLED(CONFIG_LOG_MULTIDOMAIN) || (len == 1)) {
-		return msg_pending(&log_buffer);
+	pending = COND_CODE_1(CONFIG_MPSC_PBUF, (mpsc_pbuf_is_pending(&log_buffer)), (false));
+	if (pending) {
+		return true;
 	}
 
-	STRUCT_SECTION_FOREACH(log_msg_ptr, msg_ptr) {
-		struct log_mpsc_pbuf *buf;
-
-		if (msg_ptr->msg) {
+	if (IS_ENABLED(CONFIG_LOG_MULTIDOMAIN)) {
+		if (current_local_msg != NULL) {
 			return true;
 		}
-
-		STRUCT_SECTION_GET(log_mpsc_pbuf, i, &buf);
-
-		if (msg_pending(&buf->buf)) {
-			return true;
+		STRUCT_SECTION_FOREACH(log_link, link) {
+			if (log_link_get_msg(link) != NULL) {
+				return true;
+			}
 		}
-
-		i++;
 	}
 
 	return false;
 }
 
-void z_log_msg_enqueue(const struct log_link *link, const void *data, size_t len)
+void z_log_msg_remote_notify(size_t new_msgs)
 {
-	size_t wlen = DIV_ROUND_UP(ROUND_UP(len, Z_LOG_MSG_ALIGNMENT), sizeof(int));
-	struct mpsc_pbuf_buffer *mpsc_pbuffer = link->mpsc_pbuf ? link->mpsc_pbuf : &log_buffer;
-	struct log_msg *local_msg = msg_alloc(mpsc_pbuffer, wlen);
-
-	if (!local_msg) {
-		z_log_dropped(false);
+	if (!IS_ENABLED(CONFIG_LOG_MULTIDOMAIN)) {
 		return;
 	}
 
-	memcpy((void *)local_msg, data, len);
-	local_msg->hdr.desc.valid = 0;
-	local_msg->hdr.desc.busy = 0;
-	local_msg->hdr.desc.domain += link->ctrl_blk->domain_offset;
-	msg_commit(mpsc_pbuffer, local_msg);
+	/* If in immediate mode, process the message immediately. */
+	if (IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE)) {
+		k_spinlock_key_t key;
+		struct log_link *link;
+		union log_msg_generic *msg;
+		bool lock_acquired = process_lock_acquire_if_needed(&key);
+
+		msg = z_log_msg_claim_multidomain(NULL, &link);
+		msg_process(msg, link);
+		log_link_put_msg(link, msg);
+
+		process_lock_release_if_needed(lock_acquired, key);
+
+		return;
+	}
+
+	/* Notify logging thread that new messages are available. */
+	z_log_msg_post_finalize(new_msgs, true);
 }
 
 const char *z_log_get_tag(void)
