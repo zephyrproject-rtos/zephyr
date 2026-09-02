@@ -7,7 +7,7 @@ menu "Espressif PM Config"
 
 config ESP32_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP
 	bool "Power down CPU in light sleep"
-	depends on ESP32_SOC_PM_SUPPORT_CPU_PD
+	depends on SOC_ESP32_PM_SUPPORT_CPU_PD
 	select ESP32_PM_RESTORE_CACHE_TAGMEM_AFTER_LIGHT_SLEEP if ESP32S3_DATA_CACHE_16KB
 	default y
 	help
@@ -20,7 +20,7 @@ config ESP32_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP
 
 choice ESP32_PM_CPU_RETENTION_STRATEGY
 	prompt "Retentive memory allocation strategy for light sleep"
-	depends on ESP32_SOC_PM_CPU_RETENTION_BY_SW
+	depends on SOC_ESP32_PM_CPU_RETENTION_BY_SW
 	depends on ESP32_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP
 	default ESP32_PM_CPU_RETENTION_DYNAMIC
 
@@ -50,7 +50,7 @@ config ESP32_PM_RESTORE_CACHE_TAGMEM_AFTER_LIGHT_SLEEP
 
 config ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
 	bool "Power down digital peripherals in light sleep (EXPERIMENTAL)"
-	depends on ESP32_SOC_PM_SUPPORT_TOP_PD && ESP32_SOC_PAU_SUPPORTED
+	depends on SOC_ESP32_PM_SUPPORT_TOP_PD && SOC_ESP32_PAU_SUPPORTED
 	select ESP32_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP
 	help
 	  Allow the main digital (TOP) peripheral power domain to switch off
@@ -93,8 +93,8 @@ config ESP32_PM_SLP_IRAM_OPT
 
 config ESP32_SLEEP_POWER_DOWN_FLASH
 	bool "Power down flash supply in light sleep (VDDSDIO path)"
-	depends on ESP32_SOC_PM_SUPPORT_VDDSDIO_PD
-	depends on ESP32_SOC_FLASH_SUPPORTED
+	depends on SOC_ESP32_PM_SUPPORT_VDDSDIO_PD
+	depends on SOC_ESP32_FLASH_SUPPORTED
 	depends on !ESP_SPIRAM
 	select ESP32_PM_SLP_IRAM_OPT
 	help
@@ -107,7 +107,7 @@ config ESP32_SLEEP_POWER_DOWN_FLASH
 
 config ESP32_SLEEP_SET_FLASH_DPD
 	bool "SPI flash deep power-down mode in light sleep"
-	depends on ESP32_SOC_FLASH_SUPPORTED
+	depends on SOC_ESP32_FLASH_SUPPORTED
 	depends on !ESP32_SLEEP_POWER_DOWN_FLASH
 	select ESP32_PM_SLP_IRAM_OPT
 	help

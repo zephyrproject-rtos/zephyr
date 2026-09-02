@@ -606,7 +606,7 @@ static int counter_esp32_capture_setup(const struct device *dev)
 		return ret;
 	}
 
-	/* The capture task always exists on SoCs gated by ESP32_SOC_ETM_SUPPORTED. */
+	/* The capture task always exists on SoCs gated by SOC_ESP32_ETM_SUPPORTED. */
 	task_id = TIMER_LL_ETM_TASK_TABLE(cfg->group, data->hal_ctx.timer_id,
 					  GPTIMER_ETM_TASK_CAPTURE);
 
