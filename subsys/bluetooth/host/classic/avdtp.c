@@ -718,15 +718,14 @@ static void avdtp_discover_rsp(struct bt_avdtp *session, struct net_buf *buf, ui
 
 static struct bt_avdtp_sep *avdtp_get_sep(uint8_t stream_endpoint_id)
 {
-	struct bt_avdtp_sep *sep = NULL;
+	struct bt_avdtp_sep *sep;
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&seps, sep, _node) {
 		if (sep->sep_info.id == stream_endpoint_id) {
-			break;
+			return sep;
 		}
 	}
-
-	return sep;
+	return NULL;
 }
 
 static struct bt_avdtp_sep *avdtp_get_cmd_sep(struct net_buf *buf, uint8_t *error_code,
