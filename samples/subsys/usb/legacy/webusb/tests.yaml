@@ -1,7 +1,0 @@
-sample:
-  name: Web USB
-tests:
-  sample.usb.legacy.webusb:
-    depends_on: usb_device
-    build_only: true
-    tags: usb
