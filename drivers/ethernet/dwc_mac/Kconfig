@@ -42,6 +42,18 @@ config ETH_ESP32_DWC_ETHER_1000
 	help
 	  This enables the Synopsys DesignWare MAC driver for ESP32 SoCs.
 
+config ETH_XMC_DWC_ETHER_1000
+	bool "Driver for DWC Ethernet MAC-based XMC4XXX"
+	depends on !ETH_XMC4XXX
+	depends on SOC_FAMILY_INFINEON_XMC
+	depends on DT_HAS_INFINEON_XMC4XXX_ETHERNET_ENABLED
+	select ETH_DWC_ETHER_1000_CORE
+	select PINCTRL
+	select CLOCK_CONTROL
+	default y
+	help
+	  This enables the Synopsys DesignWare MAC driver for XMC4XXX SoCs.
+
 config ETH_NXP_DWC_ETHER_QOS
 	bool "Driver for DWC Ethernet QoS-based NXP"
 	depends on !ETH_NXP_ENET_QOS
