@@ -8,6 +8,10 @@ zephyr_library_sources_ifdef(CONFIG_LORA_SX126X_NATIVE
   sx126x_hal_common.c
 )
 
+zephyr_library_sources_ifdef(CONFIG_LORA_GFSK
+  sx126x_gfsk.c
+)
+
 zephyr_library_sources_ifdef(CONFIG_LORA_SX126X_NATIVE_STANDALONE
   sx126x_hal.c
 )
