@@ -102,28 +102,6 @@ ITERABLE_SECTION_RAM(scmi_protocol, Z_LINK_ITERABLE_SUBALIGN)
 	ITERABLE_SECTION_RAM(pcie_dev, Z_LINK_ITERABLE_SUBALIGN)
 #endif /* PCIE */
 
-#if defined(CONFIG_USB_DEVICE_STACK)
-	SECTION_DATA_PROLOGUE(usb_descriptor,,SUBALIGN(1))
-	{
-		PLACE_SYMBOL_HERE(__usb_descriptor_start);
-		*(".usb.descriptor")
-		KEEP(*(SORT_BY_NAME(".usb.descriptor*")))
-		PLACE_SYMBOL_HERE(__usb_descriptor_end);
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
-
-	ITERABLE_SECTION_RAM(usb_cfg_data, Z_LINK_ITERABLE_SUBALIGN)
-#endif /* CONFIG_USB_DEVICE_STACK */
-
-#if defined(CONFIG_USB_DEVICE_BOS)
-	SECTION_DATA_PROLOGUE(usb_bos_desc,,SUBALIGN(1))
-	{
-		PLACE_SYMBOL_HERE(__usb_bos_desc_start);
-		*(".usb.bos_desc")
-		KEEP(*(SORT_BY_NAME(".usb.bos_desc*")))
-		PLACE_SYMBOL_HERE(__usb_bos_desc_end);
-	} GROUP_DATA_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
-#endif /* CONFIG_USB_DEVICE_BOS */
-
 #if defined(CONFIG_RTIO)
 	ITERABLE_SECTION_RAM(rtio, Z_LINK_ITERABLE_SUBALIGN)
 	ITERABLE_SECTION_RAM(rtio_pool, Z_LINK_ITERABLE_SUBALIGN)
