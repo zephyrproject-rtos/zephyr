@@ -1099,8 +1099,19 @@ static void port_sync_msg_process(struct ptp_port *port, struct ptp_msg *msg)
 		return;
 	}
 
-	if (port->port_ds.log_sync_interval != msg->header.log_msg_interval) {
-		port->port_ds.log_sync_interval = msg->header.log_msg_interval;
+	/* The interval is only specified for multicast Sync messages. For unicast
+	 * ones it is not applicable, because it is subject to unicast negotiation,
+	 * and the field carries 0x7F (IEEE 1588-2019 Table 42).
+	 */
+	if ((msg->header.flags[0] & PTP_MSG_UNICAST_FLAG) == 0 &&
+	    msg->header.log_msg_interval != DEFAULT_LOG_MSG_INTERVAL) {
+		if (IN_RANGE(msg->header.log_msg_interval,
+			     PTP_LOG_MSG_INTERVAL_MIN, PTP_LOG_MSG_INTERVAL_MAX)) {
+			port->port_ds.log_sync_interval = msg->header.log_msg_interval;
+		} else {
+			LOG_WRN("Port %d ignoring bogus Sync interval 2^%d",
+				port->port_ds.id.port_number, msg->header.log_msg_interval);
+		}
 	}
 
 	if (!port_sync_rx_timestamp_valid(port, msg)) {
