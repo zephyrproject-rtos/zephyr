@@ -94,6 +94,20 @@ the following configuration to the project:
 
 See :zephyr:code-sample-category:`lp-core` folder as code reference.
 
+Symmetric Multiprocessing (SMP)
+===============================
+
+The two HP cores can run a single Zephyr image as an SMP system. This
+support is experimental. Enable it with:
+
+.. code:: cfg
+
+   CONFIG_SMP=y
+
+Both cores share the flash cache, so a flash write or erase stalls the
+other core for its duration. Power management is not available with
+:kconfig:option:`CONFIG_SMP` or when more than one CPU is configured.
+
 For more information, check the `ESP32-P4 Datasheet`_ or the `ESP32-P4 Technical Reference Manual`_.
 
 .. _`ESP32-P4 Datasheet`: https://www.espressif.com/sites/default/files/documentation/esp32-p4_datasheet_en.pdf
