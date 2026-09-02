@@ -4589,8 +4589,6 @@ Native_sim and POSIX arch:
     - boards/native/*.rst
     - drivers/*/*posix*
     - drivers/*/*native*
-    - drivers/*/*/*posix*
-    - drivers/*/*/*native*
     - dts/posix/
     - include/zephyr/arch/posix/
     - scripts/native_simulator/
