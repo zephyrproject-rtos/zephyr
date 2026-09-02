@@ -134,6 +134,7 @@
 #ifndef ZEPHYR_DRIVERS_TIMER_SYSTEM_TIMER_GENERIC_H_
 #define ZEPHYR_DRIVERS_TIMER_SYSTEM_TIMER_GENERIC_H_
 
+#include <zephyr/drivers/timer/system_timer_lpm.h>
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/sys/clock.h>
 #include <zephyr/sys/util.h>
@@ -856,6 +857,9 @@ static inline void timer_core_smp_prime(void)
  */
 static inline void timer_core_init(void)
 {
+#ifndef CONFIG_SYSTEM_TIMER_LPM_COMPANION_NONE
+	z_sys_clock_lpm_init();
+#endif /* !CONFIG_SYSTEM_TIMER_LPM_COMPANION_NONE */
 #ifdef TIMER_CORE_PRECOMPUTE_CYC_PER_TICK
 	/* Rate is known only now (the driver has brought the counter up), so
 	 * fix the cycles-per-tick the tick math will divide by.

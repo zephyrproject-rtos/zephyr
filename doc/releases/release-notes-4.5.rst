@@ -608,6 +608,10 @@ New APIs and options
 
   * :c:struct:`sys_ringq` (see :ref:`fixed_size_ringq_api`)
 
+* Timer
+
+  * :c:func:`z_sys_clock_lpm_enter`
+
 * Zbus
 
   * :kconfig:option:`CONFIG_ZBUS_RUNTIME_CHANNEL_REGISTRATION`
