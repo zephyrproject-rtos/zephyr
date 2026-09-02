@@ -230,14 +230,12 @@ static void configure_rng(void)
 	ll_rng_enable_it(rng);
 }
 
-static void entropy_stm32_suspend(void)
+static void release_rng(void)
 {
 	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
 	const struct entropy_stm32_rng_dev_cfg *dev_cfg = dev->config;
 	RNG_TypeDef *rng = dev_cfg->rng;
 	int res = 0;
-
-	entropy_stm32_hsem_acquire();
 
 	LL_RNG_Disable(rng);
 #if defined(CONFIG_SOC_STM32WB09XX)
@@ -304,12 +302,14 @@ static void entropy_stm32_suspend(void)
 	entropy_stm32_hsem_release();
 }
 
-static void entropy_stm32_resume(void)
+static void acquire_rng(void)
 {
 	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
 	const struct entropy_stm32_rng_dev_cfg *dev_cfg = dev->config;
 	RNG_TypeDef *rng = dev_cfg->rng;
 	__maybe_unused int res;
+
+	entropy_stm32_hsem_acquire();
 
 	/* Enabling the RNG clock is not expected to fail */
 	res = clock_control_on(dev_cfg->clock, (clock_control_subsys_t)&dev_cfg->pclken[0]);
@@ -325,23 +325,11 @@ static void entropy_stm32_resume(void)
 #endif
 	LL_RNG_Enable(rng);
 	ll_rng_enable_it(rng);
-}
-
-static void acquire_rng(void)
-{
-	entropy_stm32_hsem_acquire();
-	entropy_stm32_resume();
 
 #if HAS_MULTICORE_SHARED_RNG
 	/* RNG configuration could have been changed by the other core */
 	configure_rng();
 #endif /* HAS_MULTICORE_SHARED_RNG */
-}
-
-static void release_rng(void)
-{
-	entropy_stm32_suspend();
-	entropy_stm32_hsem_release();
 }
 
 static int entropy_stm32_got_error(RNG_TypeDef *rng)
