@@ -7,6 +7,10 @@
 
 #define DT_DRV_COMPAT st_stm32_ospi_nor
 
+#if defined(CONFIG_SOC_SERIES_STM32U5X)
+#warning "It is highly recommended to move to the MSPI stm32 ospi driver"
+#endif /* CONFIG_SOC_SERIES_STM32U5X */
+
 #include <errno.h>
 #include <zephyr/kernel.h>
 #include <zephyr/toolchain.h>
