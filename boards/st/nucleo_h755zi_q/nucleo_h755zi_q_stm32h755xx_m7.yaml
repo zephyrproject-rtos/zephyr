@@ -19,6 +19,6 @@ supported:
   - i2c
   - pwm
   - netif:eth
-  - usb_device
+  - usbd
   - can
 vendor: st

@@ -27,7 +27,7 @@ supported:
   - pwm
   - spi
   - uart
-  - usb_device
+  - usbd
   - watchdog
   - edac
   - crc

@@ -11,6 +11,5 @@ supported:
   - can
   - counter
   - gpio
-  - usb_device
   - usbd
 vendor: makerbase

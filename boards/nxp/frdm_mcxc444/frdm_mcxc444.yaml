@@ -21,7 +21,6 @@ supported:
   - i2c
   - uart
   - pwm
-  - usb_device
   - usbd
   - watchdog
   - dma

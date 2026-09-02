@@ -19,7 +19,6 @@ supported:
   - spi
   - tsc
   - usart
-  - usb_device
   - usbd
 ram: 32
 flash: 256

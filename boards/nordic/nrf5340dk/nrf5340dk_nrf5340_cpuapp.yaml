@@ -17,7 +17,6 @@ supported:
   - i2s
   - pwm
   - watchdog
-  - usb_device
   - usbd
   - netif:openthread
   - spi

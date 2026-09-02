@@ -25,6 +25,5 @@ supported:
   - ptp_clock
   - spi
   - uart
-  - usb_device
   - usbd
 vendor: phytec

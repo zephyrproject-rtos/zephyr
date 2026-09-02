@@ -16,7 +16,7 @@ supported:
   - gpio
   - pwm
   - counter
-  - usb_device
+  - usbd
   - display
   - memc
   - dma

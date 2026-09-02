@@ -17,7 +17,6 @@ supported:
   - rtc
   - spi
   - watchdog
-  - usb_device
   - usbd
 ram: 24
 flash: 128

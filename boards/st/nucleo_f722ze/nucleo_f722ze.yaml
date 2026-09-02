@@ -18,7 +18,7 @@ supported:
   - i2c
   - quadspi
   - spi
-  - usb_device
+  - usbd
   - rtc
 ram: 192
 flash: 512

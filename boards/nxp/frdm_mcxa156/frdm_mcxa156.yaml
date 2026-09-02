@@ -26,7 +26,6 @@ supported:
   - i3c
   - pwm
   - spi
-  - usb_device
   - usbd
   - watchdog
   - edac

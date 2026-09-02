@@ -17,7 +17,7 @@ supported:
   - counter
   - gpio
   - sdhc
-  - usb_device
+  - usbd
   - netif:eth
   - i2c
 testing:

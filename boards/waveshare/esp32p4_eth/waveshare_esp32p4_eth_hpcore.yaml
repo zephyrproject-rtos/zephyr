@@ -18,5 +18,5 @@ supported:
   - ptp_clock
   - sdhc
   - uart
-  - usb_device
+  - usbd
   - watchdog

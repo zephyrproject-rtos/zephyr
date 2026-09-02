@@ -21,7 +21,6 @@ supported:
   - spi
   - backup_sram
   - watchdog
-  - usb_device
   - can
   - dac
   - dma

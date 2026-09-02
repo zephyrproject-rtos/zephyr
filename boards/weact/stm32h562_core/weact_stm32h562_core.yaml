@@ -14,7 +14,7 @@ supported:
   - uart
   - entropy
   - spi
-  - usb_device
+  - usbd
   - rtc
   - watchdog
 vendor: weact

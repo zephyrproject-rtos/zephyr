@@ -32,7 +32,6 @@ supported:
   - rtc
   - sdhc
   - spi
-  - usb_device
   - usbd
   - watchdog
   - crc

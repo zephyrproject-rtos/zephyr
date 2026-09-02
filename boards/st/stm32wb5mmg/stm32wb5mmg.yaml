@@ -11,5 +11,5 @@ supported:
   - gpio
   - dma
   - uart
-  - usb_device
+  - usbd
 vendor: st
