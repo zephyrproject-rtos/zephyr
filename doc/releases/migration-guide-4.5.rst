@@ -256,6 +256,11 @@ Boards
 * The Nordic nRF53 Kconfig option ``CONFIG_BOARD_ENABLE_CPUNET`` has been removed. Use
   :kconfig:option:`CONFIG_SOC_NRF53_CPUNET_ENABLE` instead.
 
+* The stm32h573i_dk disco kit is now adopting the mspi controller model. This is the
+  first step of the migration to mspi stm32 support. For that board, declare the xspi
+  node as ``st,stm32-xspi-controller`` compatible. The stm32h5 device DTS will be updated
+  once all the target boards are changed.
+
 Device Drivers and Devicetree
 *****************************
 
