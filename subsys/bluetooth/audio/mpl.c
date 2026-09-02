@@ -2014,7 +2014,7 @@ static void set_track_position(int32_t position)
 		 * not be notified when the Media State is set to “Playing” and playback happens
 		 * at a constant speed.
 		 */
-		if (media_player.state != MEDIA_PROXY_STATE_PLAYING) {
+		if (media_player.state != MEDIA_PROXY_STATE_PLAYING || new_pos == 0) {
 			media_proxy_pl_track_position_cb(new_pos);
 		}
 	}
