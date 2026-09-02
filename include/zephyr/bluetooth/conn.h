@@ -2089,39 +2089,50 @@ enum bt_conn_le_cs_procedure_enable_state {
 
 /** CS Test Tone Antenna Config Selection.
  *
+ *  See Bluetooth Core Specification, Vol 6, Part A, Section 5.3
+ *  and Bluetooth Core Specification, Vol 6, Part H, Section 4.7
+ *
  *  These enum values are indices in the following table, where N_AP is the maximum
  *  number of antenna paths (in the range [1, 4]).
  *
- * +--------------+-------------+-------------------+-------------------+--------+
- * | Config Index | Total Paths | Dev A: # Antennas | Dev B: # Antennas | Config |
- * +--------------+-------------+-------------------+-------------------+--------+
- * |            0 |           1 |                 1 |                 1 | 1:1    |
- * |            1 |           2 |                 2 |                 1 | N_AP:1 |
- * |            2 |           3 |                 3 |                 1 | N_AP:1 |
- * |            3 |           4 |                 4 |                 1 | N_AP:1 |
- * |            4 |           2 |                 1 |                 2 | 1:N_AP |
- * |            5 |           3 |                 1 |                 3 | 1:N_AP |
- * |            6 |           4 |                 1 |                 4 | 1:N_AP |
- * |            7 |           4 |                 2 |                 2 | 2:2    |
- * +--------------+-------------+-------------------+-------------------+--------+
+ * +--------------+-------------+-----------------------+-----------------------+--------+
+ * | Config Index | Total Paths | Initiator: # Antennas | Reflector: # Antennas | Config |
+ * +--------------+-------------+-----------------------+-----------------------+--------+
+ * |            0 |           1 |                     1 |                     1 | 1:1    |
+ * |            1 |           2 |                     2 |                     1 | N_AP:1 |
+ * |            2 |           3 |                     3 |                     1 | N_AP:1 |
+ * |            3 |           4 |                     4 |                     1 | N_AP:1 |
+ * |            4 |           2 |                     1 |                     2 | 1:N_AP |
+ * |            5 |           3 |                     1 |                     3 | 1:N_AP |
+ * |            6 |           4 |                     1 |                     4 | 1:N_AP |
+ * |            7 |           4 |                     2 |                     2 | 2:2    |
+ * +--------------+-------------+-----------------------+-----------------------+--------+
  *
  *  There are therefore four groups of possible antenna configurations:
  *
- *  - 1:1 configuration, where both A and B support 1 antenna each
- *  - 1:N_AP configuration, where A supports 1 antenna, B supports N_AP antennas, and
- *    N_AP is a value in the range [2, 4]
- *  - N_AP:1 configuration, where A supports N_AP antennas, B supports 1 antenna, and
- *    N_AP is a value in the range [2, 4]
- *  - 2:2 configuration, where both A and B support 2 antennas and N_AP = 4
+ *  - 1:1 configuration, where both Initiator and Reflector support 1 antenna each
+ *  - 1:N_AP configuration, where Initiator supports 1 antenna, Reflector supports
+ *    N_AP antennas, and N_AP is a value in the range [2, 4]
+ *  - N_AP:1 configuration, where Initiator supports N_AP antennas, Reflector supports
+ *    1 antenna, and N_AP is a value in the range [2, 4]
+ *  - 2:2 configuration, where both Initiator and Reflector support 2 antennas and N_AP = 4
  */
 enum bt_conn_le_cs_tone_antenna_config_selection {
+	/** Initiator (dev A): 1 antenna, Reflector (dev B): 1 antenna */
 	BT_LE_CS_TONE_ANTENNA_CONFIGURATION_A1_B1 = BT_HCI_OP_LE_CS_ACI_0,
+	/** Initiator (dev A): 2 antennas, Reflector (dev B): 1 antenna */
 	BT_LE_CS_TONE_ANTENNA_CONFIGURATION_A2_B1 = BT_HCI_OP_LE_CS_ACI_1,
+	/** Initiator (dev A): 3 antennas, Reflector (dev B): 1 antenna */
 	BT_LE_CS_TONE_ANTENNA_CONFIGURATION_A3_B1 = BT_HCI_OP_LE_CS_ACI_2,
+	/** Initiator (dev A): 4 antennas, Reflector (dev B): 1 antenna */
 	BT_LE_CS_TONE_ANTENNA_CONFIGURATION_A4_B1 = BT_HCI_OP_LE_CS_ACI_3,
+	/** Initiator (dev A): 1 antenna, Reflector (dev B): 2 antennas */
 	BT_LE_CS_TONE_ANTENNA_CONFIGURATION_A1_B2 = BT_HCI_OP_LE_CS_ACI_4,
+	/** Initiator (dev A): 1 antenna, Reflector (dev B): 3 antennas */
 	BT_LE_CS_TONE_ANTENNA_CONFIGURATION_A1_B3 = BT_HCI_OP_LE_CS_ACI_5,
+	/** Initiator (dev A): 1 antenna, Reflector (dev B): 4 antennas */
 	BT_LE_CS_TONE_ANTENNA_CONFIGURATION_A1_B4 = BT_HCI_OP_LE_CS_ACI_6,
+	/** Initiator (dev A): 2 antennas, Reflector (dev B): 2 antennas */
 	BT_LE_CS_TONE_ANTENNA_CONFIGURATION_A2_B2 = BT_HCI_OP_LE_CS_ACI_7,
 };
 
