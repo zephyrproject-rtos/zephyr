@@ -1,11 +1,38 @@
+common:
+  tags:
+    - shell
+    - backend
+    - uart
 tests:
-  shell.backend.uart:
-    min_flash: 64
-    min_ram: 32
-    tags:
-      - shell
-      - backend
-      - uart
+  shell.backend.uart.emul:
     platform_allow:
       - qemu_x86
       - qemu_riscv32
+  shell.backend.uart.async:
+    platform_allow:
+      - nrf54lm20dk/nrf54lm20a/cpuapp
+    harness: ztest
+    harness_config:
+      fixture: uart_loopback
+    depends_on: gpio
+    extra_configs:
+      - CONFIG_EMUL=n
+      - CONFIG_SHELL_BACKEND_SERIAL_API_ASYNC=y
+      - CONFIG_UART_ASYNC_API=y
+      - CONFIG_UART_INTERRUPT_DRIVEN=n
+      - CONFIG_SHELL_BACKEND_SERIAL_ASYNC_RX_BUFFER_SIZE=64
+  shell.backend.uart.interrupt_driven:
+    platform_allow:
+      - nrf54lm20dk/nrf54lm20a/cpuapp
+    harness: ztest
+    harness_config:
+      fixture: uart_loopback
+    depends_on: gpio
+    extra_configs:
+      - CONFIG_EMUL=n
+      - CONFIG_SHELL_BACKEND_SERIAL_API_INTERRUPT_DRIVEN=y
+      - CONFIG_UART_ASYNC_API=y
+      - CONFIG_UART_INTERRUPT_DRIVEN=y
+      # PM device runtime needed to change UART runtime configuration for interrupt driven API.
+      - CONFIG_PM_DEVICE=y
+      - CONFIG_PM_DEVICE_RUNTIME=y
