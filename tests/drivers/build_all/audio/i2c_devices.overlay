@@ -104,6 +104,13 @@
 				vdd-b-supply = <&test_regulator>;
 				vdd-amp-supply = <&test_regulator>;
 			};
+
+			test_i2c_tlv320aic3104: tlv320aic3104@a {
+				compatible = "ti,tlv320aic3104";
+				status = "okay";
+				reg = <0xa>;
+				reset-gpios = <&test_gpio 0 0>;
+			};
 		};
 	};
 };
