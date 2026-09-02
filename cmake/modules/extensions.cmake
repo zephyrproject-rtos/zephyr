@@ -1011,8 +1011,8 @@ See :zephyr_file:`tests/application_development/gen_inc_file` for an example of 
 
 #]=======================================================================]
 function(generate_inc_file
-    source_file    # The source file to be converted to hex
-    generated_file # The generated file
+    source_file
+    generated_file
     )
   add_custom_command(
     OUTPUT ${generated_file}
@@ -1027,12 +1027,36 @@ function(generate_inc_file
     )
 endfunction()
 
+#[=======================================================================[.rst:
+.. cmake:signature:: generate_inc_file_for_gen_target(<target> <source_file> <generated_file> <gen_target> ...)
+
+   Generate a file that can be included into the application at build time, and
+   make a target depend on the target that generates it.
+
+   Use this when a target generating ``generated_file`` already exists. To have
+   one created, use :cmake:command:`generate_inc_file_for_target` instead.
+
+   ``target``
+     The target that depends on the generated file
+
+   ``source_file``
+     The source file to be converted to hex
+
+   ``generated_file``
+     The generated file
+
+   ``gen_target``
+     The target that generates ``generated_file``
+
+   ``...``
+     Extra arguments are passed to file2hex.py
+
+#]=======================================================================]
 function(generate_inc_file_for_gen_target
-    target          # The cmake target that depends on the generated file
-    source_file     # The source file to be converted to hex
-    generated_file  # The generated file
-    gen_target      # The generated file target we depend on
-                    # Any additional arguments are passed on to file2hex.py
+    target
+    source_file
+    generated_file
+    gen_target
     )
   generate_inc_file(${source_file} ${generated_file} ${ARGN})
 
@@ -1042,11 +1066,32 @@ function(generate_inc_file_for_gen_target
   add_dependencies(${target} ${gen_target})
 endfunction()
 
+#[=======================================================================[.rst:
+.. cmake:signature:: generate_inc_file_for_target(<target> <source_file> <generated_file> ...)
+
+   Generate a file that can be included into the application at build time, and
+   make a target depend on it.
+
+   A target is created to run the conversion, and ``target`` is made to depend on
+   it, so that ``generated_file`` exists before anything in ``target`` is built.
+
+   ``target``
+     The target that depends on the generated file
+
+   ``source_file``
+     The source file to be converted to hex
+
+   ``generated_file``
+     The generated file
+
+   ``...``
+     Extra arguments are passed to file2hex.py
+
+#]=======================================================================]
 function(generate_inc_file_for_target
-    target          # The cmake target that depends on the generated file
-    source_file     # The source file to be converted to hex
-    generated_file  # The generated file
-                    # Any additional arguments are passed on to file2hex.py
+    target
+    source_file
+    generated_file
     )
   # Ensure 'generated_file' is generated before 'target' by creating a
   # 'custom_target' for it and setting up a dependency between the two
