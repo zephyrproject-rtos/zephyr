@@ -150,6 +150,22 @@ enum net_request_wifi_cmd {
 	NET_REQUEST_WIFI_CMD_BGSCAN,
 	/** Wi-Fi Direct (P2P) operations*/
 	NET_REQUEST_WIFI_CMD_P2P_OPER,
+#ifdef CONFIG_WIFI_MGMT_RANGING
+	/** Start a ranging (distance) session against one or more peers. */
+	NET_REQUEST_WIFI_CMD_RANGING_START,
+	/** Cancel an ongoing ranging session. */
+	NET_REQUEST_WIFI_CMD_RANGING_CANCEL,
+	/** Enable or disable the local ranging responder role. */
+	NET_REQUEST_WIFI_CMD_RANGING_RESPONDER,
+	/** Read local ranging and location capabilities (synchronous get). */
+	NET_REQUEST_WIFI_CMD_RANGING_CAPS,
+	/** Read a peer's advertised ranging capability (synchronous get). */
+	NET_REQUEST_WIFI_CMD_RANGING_PEER_CAPS,
+#endif /* CONFIG_WIFI_MGMT_RANGING */
+#ifdef CONFIG_WIFI_MGMT_LOCATION
+	/** Get or set this device's advertised location (LCI + civic). */
+	NET_REQUEST_WIFI_CMD_LOCATION_SELF,
+#endif /* CONFIG_WIFI_MGMT_LOCATION */
 	/** @cond INTERNAL_HIDDEN */
 	NET_REQUEST_WIFI_CMD_MAX
 	/** @endcond */
@@ -372,6 +388,50 @@ NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_BGSCAN);
 
 NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_P2P_OPER);
 
+#ifdef CONFIG_WIFI_MGMT_RANGING
+#ifdef CONFIG_WIFI_MGMT_RANGING_INITIATOR
+/** Start a ranging session */
+#define NET_REQUEST_WIFI_RANGING_START					\
+	(NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_RANGING_START)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_RANGING_START);
+
+/** Cancel a ranging session */
+#define NET_REQUEST_WIFI_RANGING_CANCEL					\
+	(NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_RANGING_CANCEL)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_RANGING_CANCEL);
+#endif /* CONFIG_WIFI_MGMT_RANGING_INITIATOR */
+
+#ifdef CONFIG_WIFI_MGMT_RANGING_RESPONDER
+/** Configure the local ranging responder role */
+#define NET_REQUEST_WIFI_RANGING_RESPONDER				\
+	(NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_RANGING_RESPONDER)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_RANGING_RESPONDER);
+#endif /* CONFIG_WIFI_MGMT_RANGING_RESPONDER */
+
+/** Read local ranging and location capabilities */
+#define NET_REQUEST_WIFI_RANGING_CAPS					\
+	(NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_RANGING_CAPS)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_RANGING_CAPS);
+
+/** Read a peer's advertised ranging capability */
+#define NET_REQUEST_WIFI_RANGING_PEER_CAPS				\
+	(NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_RANGING_PEER_CAPS)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_RANGING_PEER_CAPS);
+#endif /* CONFIG_WIFI_MGMT_RANGING */
+
+#ifdef CONFIG_WIFI_MGMT_LOCATION
+/** Get or set the location this device advertises */
+#define NET_REQUEST_WIFI_LOCATION_SELF					\
+	(NET_WIFI_BASE | NET_REQUEST_WIFI_CMD_LOCATION_SELF)
+
+NET_MGMT_DEFINE_REQUEST_HANDLER(NET_REQUEST_WIFI_LOCATION_SELF);
+#endif /* CONFIG_WIFI_MGMT_LOCATION */
+
 /** @cond INTERNAL_HIDDEN */
 
 enum {
@@ -398,6 +458,9 @@ enum {
 	NET_EVENT_WIFI_CMD_NAN_PUBLISH_TERMINATED_VAL,
 	NET_EVENT_WIFI_CMD_NAN_SUBSCRIBE_TERMINATED_VAL,
 	NET_EVENT_WIFI_CMD_NAN_RECEIVE_VAL,
+	NET_EVENT_WIFI_CMD_RANGING_RESULT_VAL,
+	NET_EVENT_WIFI_CMD_RANGING_DONE_VAL,
+	NET_EVENT_WIFI_CMD_LOCATION_RESULT_VAL,
 
 	NET_EVENT_WIFI_CMD_MAX,
 };
@@ -458,6 +521,16 @@ enum net_event_wifi_cmd {
 	NET_MGMT_CMD(NET_EVENT_WIFI_CMD_NAN_SUBSCRIBE_TERMINATED),
 	/** Supplicant specific event */
 	NET_MGMT_CMD(NET_EVENT_WIFI_CMD_NAN_RECEIVE),
+#endif
+#ifdef CONFIG_WIFI_MGMT_RANGING
+	/** Ranging result event */
+	NET_MGMT_CMD(NET_EVENT_WIFI_CMD_RANGING_RESULT),
+	/** Ranging result completion event */
+	NET_MGMT_CMD(NET_EVENT_WIFI_CMD_RANGING_DONE),
+#endif
+#ifdef CONFIG_WIFI_MGMT_LOCATION
+	/** Location command result */
+	NET_MGMT_CMD(NET_EVENT_WIFI_CMD_LOCATION_RESULT),
 #endif
 };
 
@@ -524,6 +597,22 @@ enum net_event_wifi_cmd {
 /** Event emitted for P2P device found event */
 #define NET_EVENT_WIFI_P2P_DEVICE_FOUND				\
 	(NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_P2P_DEVICE_FOUND)
+
+#ifdef CONFIG_WIFI_MGMT_RANGING
+/** Event emitted for a per-peer Wi-Fi ranging result */
+#define NET_EVENT_WIFI_RANGING_RESULT					\
+	(NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_RANGING_RESULT)
+
+/** Event emitted when a Wi-Fi ranging session closes */
+#define NET_EVENT_WIFI_RANGING_DONE					\
+	(NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_RANGING_DONE)
+#endif /* CONFIG_WIFI_MGMT_RANGING */
+
+#ifdef CONFIG_WIFI_MGMT_LOCATION
+/** Event emitted with a peer's decoded coordinates */
+#define NET_EVENT_WIFI_LOCATION_RESULT					\
+	(NET_WIFI_EVENT | NET_EVENT_WIFI_CMD_LOCATION_RESULT)
+#endif /* CONFIG_WIFI_MGMT_LOCATION */
 
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P
 /** Maximum length for P2P device name */
@@ -1337,6 +1426,13 @@ union wifi_mgmt_events {
 	struct wifi_nan_terminated_event nan_subscribe_terminated;
 	struct wifi_nan_receive_event nan_receive;
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN */
+#ifdef CONFIG_WIFI_MGMT_RANGING
+	struct wifi_ranging_result ranging_result;
+	struct wifi_ranging_done ranging_done;
+#endif /* CONFIG_WIFI_MGMT_RANGING */
+#ifdef CONFIG_WIFI_MGMT_LOCATION
+	struct wifi_location location_result;
+#endif /* CONFIG_WIFI_MGMT_LOCATION */
 };
 
 /** @endcond */
@@ -1948,7 +2044,256 @@ enum wifi_ext_capab {
 	WIFI_EXT_CAPAB_TIM_BROADCAST = 18,
 	/** BSS transition management support */
 	WIFI_EXT_CAPAB_BSS_TRANSITION = 19,
+	/** Fine Timing Measurement responder role */
+	WIFI_EXT_CAPAB_FTM_RESPONDER = 70,
+	/** Fine Timing Measurement initiator role */
+	WIFI_EXT_CAPAB_FTM_INITIATOR = 71,
 };
+
+#ifdef CONFIG_WIFI_MGMT_RANGING
+/**
+ * Optional per-peer measurement tuning. All zero means "let the driver choose".
+ * Applications that just want a distance can ignore this whole struct. Fields map
+ * to the Fine Timing Measurement Parameters element, IEEE Std 802.11-2024, 9.4.2.168,
+ * unless noted.
+ */
+struct wifi_ranging_tuning {
+	/**
+	 * Channel width in MHz (20/40/80/160); 0 = driver default. The "bandwidth"
+	 * half of the FTM Parameters "Format And Bandwidth" field; preamble is the
+	 * "format" half. The driver joins the two into the on-air encoding.
+	 */
+	uint16_t bandwidth;
+	/** PHY format (Non-HT/HT/VHT/HE); see enum wifi_ranging_preamble.
+	 *  LEGACY (0) = driver default.
+	 */
+	enum wifi_ranging_preamble preamble;
+	/** Bursts as a power of two (Number of Bursts Exponent); 0 = no preference. */
+	uint8_t bursts_exp;
+	/** Successful measurements per burst (FTMs Per Burst); 0 = no preference. */
+	uint8_t ftms_per_burst;
+	/** Burst duration (Burst Duration field, Table 9-257); 0 = no preference. */
+	uint8_t burst_duration;
+	/** Inter-burst period in units of 100 ms (Burst Period); 0 = no preference. */
+	uint8_t burst_period;
+	/** Request as-soon-as-possible scheduling (ASAP subfield). */
+	bool asap;
+	/**
+	 * Non-ASAP scheduling only: requested delay before the first burst, in TUs.
+	 * Meaningful when asap is false; the responder may revise it during
+	 * negotiation. 0 (or asap set) means start as soon as the responder
+	 * schedules it. See IEEE Std 802.11-2024, 11.21.6.
+	 */
+	uint16_t start_delay;
+	/*
+	 * 802.11az-only tuning. Ignored for WIFI_RANGING_MODE_11MC and by drivers
+	 * without 11az support. Present now so enabling 11az needs no API change
+	 * (section 3.9). See IEEE Std 802.11-2024, 11.21.6 and the Ranging
+	 * Parameters element.
+	 */
+	/** HE-LTF repetitions; 0 = driver default. */
+	uint8_t ltf_reps;
+	/** Use protected (secure HE-LTF) ranging (PASN, IEEE Std 802.11-2024, 12.13). */
+	bool secure_ltf;
+	/** Min time between measurements, TUs; 0 = driver default. */
+	uint16_t min_time_between_meas;
+	/** Max time between measurements, TUs; 0 = driver default. */
+	uint16_t max_time_between_meas;
+};
+
+
+/** Per-peer ranging request. */
+struct wifi_ranging_peer {
+	/** Peer (responder) MAC address. */
+	uint8_t mac[WIFI_MAC_ADDR_LEN];
+	/** Operating band, see enum wifi_frequency_bands. */
+	enum wifi_frequency_bands band;
+	/** Primary channel number. */
+	uint16_t channel;
+	/** Also fetch the peer's LCI/civic location (raises LOCATION_RESULT). */
+	bool request_location;
+	/** Optional measurement tuning; leave zeroed for driver defaults. */
+	struct wifi_ranging_tuning tuning;
+};
+
+/** Ranging session request. */
+struct wifi_ranging_params {
+	/** Caller-chosen session id, echoed on every event and used for cancel. */
+	uint32_t session_id;
+	/** Measurement mode; WIFI_RANGING_MODE_AUTO (0) lets the stack pick based
+	 *  on peer capability (section 3.10).
+	 */
+	enum wifi_ranging_mode mode;
+	/** Number of valid entries in peers[]. */
+	uint8_t num_peers;
+	/** Per-peer requests. */
+	struct wifi_ranging_peer peers[CONFIG_WIFI_MGMT_RANGING_MAX_PEERS];
+	/** Overall session timeout in milliseconds; 0 means driver default. */
+	uint32_t timeout_ms;
+};
+
+/** Per-peer ranging result (distance domain). */
+struct wifi_ranging_result {
+	/** Session id this result belongs to. */
+	uint32_t session_id;
+	/** Peer MAC address. */
+	uint8_t mac[WIFI_MAC_ADDR_LEN];
+	/** Per-peer outcome. */
+	enum wifi_ranging_status status;
+	/** Mode used for this measurement. */
+	enum wifi_ranging_mode mode;
+	/** OR of enum wifi_ranging_result_valid, marks which fields below are set. */
+	uint32_t valid_fields;
+	/** Average round-trip time in picoseconds. */
+	int64_t rtt_ps;
+	/** RTT variance. */
+	int64_t rtt_variance;
+	/** RTT spread (max - min). */
+	int64_t rtt_spread;
+	/** Average distance in millimetres. */
+	int32_t distance_mm;
+	/** Distance variance. */
+	int32_t distance_variance;
+	/** Distance spread (max - min). */
+	int32_t distance_spread;
+	/** Average RSSI in dBm. */
+	int8_t rssi;
+	/** RSSI spread. */
+	int8_t rssi_spread;
+	/** Bursts actually exchanged, as a power of two. */
+	uint8_t num_bursts_exp;
+	/** Measurements per burst actually used. */
+	uint8_t ftms_per_burst;
+};
+
+/** Payload of NET_EVENT_WIFI_RANGING_DONE; closes a session. */
+struct wifi_ranging_done {
+	/** Session id that just finished. */
+	uint32_t session_id;
+	/** Overall session status: 0 on success, negative errno otherwise. */
+	int status;
+	/** Number of per-peer results delivered for this session. */
+	uint8_t num_results;
+};
+#endif /* CONFIG_WIFI_MGMT_RANGING */
+
+#ifdef CONFIG_WIFI_MGMT_LOCATION
+#ifdef CONFIG_WIFI_MGMT_LOCATION_LCI
+/**
+ * Geospatial location from an LCI report. Carried in the Measurement Report
+ * element (IEEE Std 802.11-2024, 9.4.2.20); coordinate encoding per RFC 6225.
+ */
+struct wifi_location_lci {
+	/** Latitude, fixed-point 2's complement, 25 fractional bits (degrees). */
+	int64_t latitude;
+	/** Longitude, same encoding as latitude. */
+	int64_t longitude;
+	/** Altitude, fixed-point per altitude_type. */
+	int32_t altitude;
+	/** Altitude type: 1 = metres, 2 = floors. */
+	uint8_t altitude_type;
+	/** Latitude uncertainty exponent. */
+	uint8_t lat_uncertainty;
+	/** Longitude uncertainty exponent. */
+	uint8_t long_uncertainty;
+	/** Altitude uncertainty exponent. */
+	uint8_t alt_uncertainty;
+};
+#endif /* CONFIG_WIFI_MGMT_LOCATION_LCI */
+
+#ifdef CONFIG_WIFI_MGMT_LOCATION_CIVIC
+/**
+ * Civic address from a Location Civic report. Carried in the Measurement Report
+ * element (IEEE Std 802.11-2024, 9.4.2.20); address format per RFC 4776.
+ */
+struct wifi_location_civic {
+	/** ISO 3166 country code, e.g. "NO". */
+	uint8_t country[2];
+	/** Raw civic address TLVs as received. */
+	uint8_t addr[CONFIG_WIFI_MGMT_LOCATION_CIVIC_MAX_LEN];
+	/** Length of addr in bytes. */
+	uint8_t addr_len;
+};
+#endif /* CONFIG_WIFI_MGMT_LOCATION_CIVIC */
+
+/** Decoded coordinates for one peer (or for self on a GET). */
+struct wifi_location {
+	/** Peer MAC the coordinates belong to. */
+	uint8_t mac[WIFI_MAC_ADDR_LEN];
+#ifdef CONFIG_WIFI_MGMT_LOCATION_LCI
+	/** true if lci is populated. */
+	bool has_lci;
+	/** Geospatial location. */
+	struct wifi_location_lci lci;
+#endif /* CONFIG_WIFI_MGMT_LOCATION_LCI */
+#ifdef CONFIG_WIFI_MGMT_LOCATION_CIVIC
+	/** true if civic is populated. */
+	bool has_civic;
+	/** Civic address. */
+	struct wifi_location_civic civic;
+#endif /* CONFIG_WIFI_MGMT_LOCATION_CIVIC */
+};
+
+/** Get or set the location this device advertises as a responder. */
+struct wifi_location_self_params {
+	/** WIFI_MGMT_GET or WIFI_MGMT_SET. */
+	enum wifi_mgmt_op oper;
+	/** Coordinates to advertise (SET) or read back (GET). */
+	struct wifi_location location;
+};
+#endif /* CONFIG_WIFI_MGMT_LOCATION */
+
+#ifdef CONFIG_WIFI_MGMT_RANGING
+/** Local ranging responder configuration. */
+struct wifi_ranging_responder_params {
+	/** WIFI_MGMT_GET or WIFI_MGMT_SET. */
+	enum wifi_mgmt_op oper;
+	/** Enable or disable responding to ranging requests. */
+	bool enable;
+	/** Channel to respond on; only used for SET. */
+	struct wifi_channel_info chan;
+};
+/** Local device ranging and location capabilities. */
+struct wifi_ranging_caps {
+	/** Can initiate ranging. */
+	bool initiator;
+	/** Can act as a ranging responder. */
+	bool responder;
+	/** Supports 802.11az NGP modes. */
+	bool ngp;
+	/** Supports protected (secure LTF) ranging. */
+	bool secure_ltf;
+	/** Can report or consume LCI. */
+	bool lci;
+	/** Can report or consume civic location. */
+	bool civic;
+	/** Can range while not associated to any AP (section 3.11). */
+	bool unassociated;
+	/** Can range a peer off the current operating channel while associated. */
+	bool off_channel;
+	/** Maximum peers per session. */
+	uint8_t max_peers;
+};
+/**
+ * Peer (responder) ranging capability, learned from the peer's advertised
+ * information (see section 3.10). What a peer supports bounds what an initiator
+ * can ask for: you cannot run 802.11az against an 11mc-only responder.
+ */
+struct wifi_ranging_peer_caps {
+	/** Peer this describes. */
+	uint8_t mac[WIFI_MAC_ADDR_LEN];
+	/** Peer advertises the FTM responder role. */
+	bool ftm_responder;
+	/** Peer supports 802.11az ranging. */
+	bool ngp;
+	/** Peer supports protected (secure LTF) ranging. */
+	bool secure_ltf;
+	/** Peer can return LCI. */
+	bool lci;
+	/** Peer can return civic location. */
+	bool civic;
+};
+#endif /* CONFIG_WIFI_MGMT_RANGING */
 
 #include <zephyr/net/net_if.h>
 
@@ -1971,6 +2316,20 @@ typedef void (*scan_result_cb_t)(struct net_if *iface, int status,
 typedef void (*raw_scan_result_cb_t)(struct net_if *iface, int status,
 				     struct wifi_raw_scan_result *entry);
 #endif /* CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS */
+
+#ifdef CONFIG_WIFI_MGMT_RANGING
+/**
+ * @brief Ranging result callback.
+ *
+ * @param iface      Network interface.
+ * @param session_id Session the result/done belongs to (echoes ranging_start).
+ * @param status     0 while results stream, negative errno on failure.
+ * @param result     One peer's result, or NULL to mark the end of the session.
+ */
+typedef void (*wifi_ranging_result_cb_t)(struct net_if *iface, uint32_t session_id,
+					 int status,
+					 struct wifi_ranging_result *result);
+#endif /* CONFIG_WIFI_MGMT_RANGING */
 
 /** Wi-Fi management API */
 struct wifi_mgmt_ops {
@@ -2417,6 +2776,41 @@ struct wifi_mgmt_ops {
 	 * Return 0 to let the caller use the default.
 	 */
 	 uint32_t (*get_iface_caps)(const struct device *dev, struct net_if *iface);
+
+#ifdef CONFIG_WIFI_MGMT_RANGING
+	/** Start a ranging session; results stream through cb. */
+	int (*ranging_start)(const struct device *dev,
+			     struct net_if *iface,
+			     struct wifi_ranging_params *params,
+			     wifi_ranging_result_cb_t cb);
+	/** Cancel a ranging session and free its resources; session_id == 0 means
+	 *  the sole active session (single-session drivers). Returns -ENOTSUP if the
+	 *  backend cannot abort in flight.
+	 */
+	int (*ranging_cancel)(const struct device *dev,
+			      struct net_if *iface,
+			      uint32_t session_id);
+	/** Configure the local responder role. */
+	int (*ranging_responder)(const struct device *dev,
+				 struct net_if *iface,
+				 struct wifi_ranging_responder_params *params);
+	/** Read local ranging/location capabilities. */
+	int (*ranging_get_caps)(const struct device *dev,
+				struct net_if *iface,
+				struct wifi_ranging_caps *caps);
+	/** Read a peer's advertised ranging capability. The caller sets caps->mac
+	 *  to the peer of interest; the backend answers from cached scan info.
+	 */
+	int (*ranging_get_peer_caps)(const struct device *dev,
+				     struct net_if *iface,
+				     struct wifi_ranging_peer_caps *caps);
+#endif /* CONFIG_WIFI_MGMT_RANGING */
+#ifdef CONFIG_WIFI_MGMT_LOCATION
+	/** Get or set this device's advertised location. */
+	int (*location_self)(const struct device *dev,
+			     struct net_if *iface,
+			     struct wifi_location_self_params *params);
+#endif /* CONFIG_WIFI_MGMT_LOCATION */
 };
 
 /** Wi-Fi management offload API */
@@ -2558,6 +2952,43 @@ void wifi_mgmt_raise_ap_sta_disconnected_event(struct net_if *iface,
 void wifi_mgmt_raise_p2p_device_found_event(struct net_if *iface,
 		struct wifi_p2p_device_info *peer_info);
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_P2P */
+
+#ifdef CONFIG_WIFI_MGMT_RANGING
+/**
+ * @brief Raise a ranging session completion event
+ *
+ * @param iface Network interface
+ * @param done Session outcome
+ */
+void wifi_mgmt_raise_ranging_done_event(struct net_if *iface,
+					struct wifi_ranging_done *done);
+#endif /* CONFIG_WIFI_MGMT_RANGING */
+
+#ifdef CONFIG_WIFI_MGMT_LOCATION
+/**
+ * @brief Decode a received Measurement Report element
+ *
+ * Handles LCI (measurement type 8) and Location Civic (type 11) reports.
+ *
+ * @param report Measurement Report element body
+ * @param report_len Length of @p report in bytes
+ * @param out Decoded coordinates, populated on success
+ *
+ * @return 0 if ok, < 0 if error
+ */
+int wifi_location_parse_measurement_report(const uint8_t *report, size_t report_len,
+					   struct wifi_location *out);
+
+/**
+ * @brief Raise a location result event
+ *
+ * @param iface Network interface
+ * @param location Decoded coordinates
+ */
+void wifi_mgmt_raise_location_result_event(struct net_if *iface,
+					   struct wifi_location *location);
+#endif /* CONFIG_WIFI_MGMT_LOCATION */
+
 
 /**
  * @}
