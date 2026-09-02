@@ -3474,7 +3474,6 @@ ITE Platforms:
     - boards/ite/
     - drivers/sensor/ite/
     - drivers/usb/udc/*it82xx2*.c
-    - drivers/usb/device/*it82xx2*.c
     - drivers/*/*it51xxx*.c
     - drivers/*/*it8xxx2*.c
     - drivers/*/*_ite_*
