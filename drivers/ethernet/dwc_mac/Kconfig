@@ -54,8 +54,8 @@ config ETH_NXP_DWC_ETHER_QOS
 	select CRC
 	default y
 	help
-	  This enables the Synopsys DesignWare MAC driver on NXP MCXE series
-	  SoCs, where the IP is named EMAC.
+	  This enables the Synopsys DesignWare MAC driver on NXP MCX N/MCX A/MCX E31
+	  series SoCs, where the IP is named EMAC.
 
 config ETH_STM32_DWC_ETHER_QOS
 	bool "Driver for DWC Ethernet QoS-based STM32"
