@@ -14,3 +14,9 @@ config RTC_TI_MSPM0_INTERVAL_TIMER
 	help
 	  Enable configurable interval timer (RTCTEV). Generates interrupts
 	  once per minute, hour, at midnight, or at noon.
+
+config RTC_TI_MSPM0_PS_TIMER
+	bool "MSPM0 RTC prescaler timer"
+	depends on RTC_TI_MSPM0
+	help
+	  Enable RT0PS and RT1PS prescaler timer periodic interrupts.

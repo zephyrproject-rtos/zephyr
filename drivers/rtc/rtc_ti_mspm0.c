@@ -37,6 +37,8 @@ BUILD_ASSERT((RTC_TI_MAX_ALARM != 0),
 
 #define RTC_MSPM0_CTL_BIN			0x0
 #define RTC_MSPM0_CTL_RTCTEVTX_MASK		GENMASK(1, 0)
+#define RTC_MSPM0_PSCTL_RT0IP_MASK		GENMASK(4, 2)
+#define RTC_MSPM0_PSCTL_RT1IP_MASK		GENMASK(20, 18)
 
 #define RTC_MSPM0_SEC_BIN_MASK			BIT_MASK(6)
 #define RTC_MSPM0_MIN_BIN_MASK			BIT_MASK(6)
@@ -62,8 +64,12 @@ BUILD_ASSERT((RTC_TI_MAX_ALARM != 0),
 #define RTC_MSPM0_IIDX_RTCTEV			0x2
 #define RTC_MSPM0_IIDX_ALARM1			0x3
 #define RTC_MSPM0_IIDX_ALARM2			0x4
+#define RTC_MSPM0_IIDX_RT0PS			0x5
+#define RTC_MSPM0_IIDX_RT1PS			0x6
 #define RTC_MSPM0_IMASK_RTCRDY			BIT(0)
 #define RTC_MSPM0_IMASK_RTCTEV			BIT(1)
+#define RTC_MSPM0_IMASK_RT0PS			BIT(4)
+#define RTC_MSPM0_IMASK_RT1PS			BIT(5)
 
 #define RTC_MSPM0_STA_RTCTCRDY_MASK		BIT(1)
 
@@ -152,7 +158,7 @@ typedef struct {
 struct rtc_ti_mspm0_config {
 	rtc_ti_mspm0_reg_t *regs;
 #if defined(CONFIG_RTC_ALARM) || defined(CONFIG_RTC_UPDATE) || \
-    defined(CONFIG_RTC_TI_MSPM0_INTERVAL_TIMER)
+    defined(CONFIG_RTC_TI_MSPM0_INTERVAL_TIMER) || defined(CONFIG_RTC_TI_MSPM0_PS_TIMER)
 	void (*irq_config_func)(void);
 #endif
 	bool rtc_x;
@@ -179,6 +185,10 @@ struct rtc_ti_mspm0_data {
 #if defined(CONFIG_RTC_TI_MSPM0_INTERVAL_TIMER)
 	rtc_mspm0_interval_callback interval_cb;
 	void *interval_cb_user_data;
+#endif
+#if defined(CONFIG_RTC_TI_MSPM0_PS_TIMER)
+	rtc_mspm0_ps_callback ps_cb[2];
+	void *ps_cb_user_data[2];
 #endif
 };
 
@@ -479,8 +489,39 @@ int rtc_mspm0_set_interval_callback(const struct device *dev,
 }
 #endif
 
+#if defined(CONFIG_RTC_TI_MSPM0_PS_TIMER)
+int rtc_mspm0_set_ps_callback(const struct device *dev,
+			      enum rtc_mspm0_ps_timer timer,
+			      uint8_t interval,
+			      rtc_mspm0_ps_callback callback,
+			      void *user_data)
+{
+	const struct rtc_ti_mspm0_config *cfg = dev->config;
+	struct rtc_ti_mspm0_data *data = dev->data;
+	uint32_t mask = (timer == RTC_MSPM0_PS_TIMER_0) ?
+			RTC_MSPM0_PSCTL_RT0IP_MASK : RTC_MSPM0_PSCTL_RT1IP_MASK;
+	uint32_t imask_bit = (timer == RTC_MSPM0_PS_TIMER_0) ?
+				RTC_MSPM0_IMASK_RT0PS : RTC_MSPM0_IMASK_RT1PS;
+
+	K_SPINLOCK(&data->lock) {
+		data->ps_cb[timer] = callback;
+		data->ps_cb_user_data[timer] = user_data;
+
+		if (callback) {
+			cfg->regs->psctl = (cfg->regs->psctl & ~mask) |
+						FIELD_PREP(mask, interval);
+			cfg->regs->imask |= imask_bit;
+		} else {
+			cfg->regs->imask &= ~imask_bit;
+		}
+	}
+
+	return 0;
+}
+#endif
+
 #if defined(CONFIG_RTC_ALARM) || defined(CONFIG_RTC_UPDATE) || \
-    defined(CONFIG_RTC_TI_MSPM0_INTERVAL_TIMER)
+    defined(CONFIG_RTC_TI_MSPM0_INTERVAL_TIMER) || defined(CONFIG_RTC_TI_MSPM0_PS_TIMER)
 static void rtc_ti_mspm0_isr(const struct device *dev)
 {
 	const struct rtc_ti_mspm0_config *cfg = dev->config;
@@ -497,6 +538,11 @@ static void rtc_ti_mspm0_isr(const struct device *dev)
 #if defined(CONFIG_RTC_TI_MSPM0_INTERVAL_TIMER)
 	rtc_mspm0_interval_callback interval_cb = NULL;
 	void *interval_cb_data = NULL;
+#endif
+#if defined(CONFIG_RTC_TI_MSPM0_PS_TIMER)
+	rtc_mspm0_ps_callback ps_cb = NULL;
+	void *ps_cb_data = NULL;
+	uint8_t ps_id = 0;
 #endif
 
 	K_SPINLOCK(&data->lock) {
@@ -533,6 +579,18 @@ static void rtc_ti_mspm0_isr(const struct device *dev)
 			interval_cb_data = data->interval_cb_user_data;
 			break;
 #endif
+#if defined(CONFIG_RTC_TI_MSPM0_PS_TIMER)
+		case RTC_MSPM0_IIDX_RT0PS:
+			ps_id = RTC_MSPM0_PS_TIMER_0;
+			ps_cb = data->ps_cb[ps_id];
+			ps_cb_data = data->ps_cb_user_data[ps_id];
+			break;
+		case RTC_MSPM0_IIDX_RT1PS:
+			ps_id = RTC_MSPM0_PS_TIMER_1;
+			ps_cb = data->ps_cb[ps_id];
+			ps_cb_data = data->ps_cb_user_data[ps_id];
+			break;
+#endif
 		default:
 			K_SPINLOCK_BREAK;
 		}
@@ -551,6 +609,11 @@ static void rtc_ti_mspm0_isr(const struct device *dev)
 #if defined(CONFIG_RTC_TI_MSPM0_INTERVAL_TIMER)
 	if (interval_cb != NULL) {
 		interval_cb(dev, interval_cb_data);
+	}
+#endif
+#if defined(CONFIG_RTC_TI_MSPM0_PS_TIMER)
+	if (ps_cb != NULL) {
+		ps_cb(dev, ps_cb_data);
 	}
 #endif
 }
@@ -617,7 +680,7 @@ static int rtc_ti_mspm0_init(const struct device *dev)
 	cfg->regs->ctl = RTC_MSPM0_CTL_BIN;
 
 #if defined(CONFIG_RTC_ALARM) || defined(CONFIG_RTC_UPDATE) || \
-    defined(CONFIG_RTC_TI_MSPM0_INTERVAL_TIMER)
+    defined(CONFIG_RTC_TI_MSPM0_INTERVAL_TIMER) || defined(CONFIG_RTC_TI_MSPM0_PS_TIMER)
 	cfg->irq_config_func();
 #endif
 
@@ -644,7 +707,7 @@ static DEVICE_API(rtc, rtc_ti_mspm0_driver_api) = {
 };
 
 #if defined(CONFIG_RTC_ALARM) || defined(CONFIG_RTC_UPDATE) ||					\
-    defined(CONFIG_RTC_TI_MSPM0_INTERVAL_TIMER)
+    defined(CONFIG_RTC_TI_MSPM0_INTERVAL_TIMER) || defined(CONFIG_RTC_TI_MSPM0_PS_TIMER)
 #define RTC_TI_MSP_IRQ_FUNC(n)									\
 	static void ti_mspm0_config_irq_##n(void)						\
 	{											\
