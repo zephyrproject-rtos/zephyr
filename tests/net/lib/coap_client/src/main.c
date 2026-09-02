@@ -419,6 +419,59 @@ static ssize_t z_impl_zsock_recvfrom_custom_fake_empty_ack(int sock, void *buf, 
 	return sizeof(ack_data);
 }
 
+#define BLOCK2_NUM_BLOCKS     3
+#define BLOCK2_BLOCK_SIZE     64
+#define BLOCK2_LAST_BLOCK_LEN 10
+
+static int block2_serve_cnt;
+static const uint8_t *block2_etags[BLOCK2_NUM_BLOCKS];
+static uint8_t block2_etag_lens[BLOCK2_NUM_BLOCKS];
+static bool block2_got_last_block;
+static size_t block2_bytes_received;
+
+/* Serve a block-wise GET response, one 64-byte block per call, with a
+ * test-controlled ETag option per block (NULL/0 omits the option).
+ */
+static ssize_t z_impl_zsock_recvfrom_custom_fake_block2(int sock, void *buf, size_t max_len,
+							int flags, struct net_sockaddr *src_addr,
+							net_socklen_t *addrlen)
+{
+	struct coap_packet response;
+	uint8_t token[COAP_TOKEN_MAX_LEN] = {0};
+	uint8_t payload[BLOCK2_BLOCK_SIZE];
+	bool more = block2_serve_cnt < (BLOCK2_NUM_BLOCKS - 1);
+	uint16_t payload_len = more ? BLOCK2_BLOCK_SIZE : BLOCK2_LAST_BLOCK_LEN;
+	uint16_t message_id = get_next_pending_message_id();
+
+	zassert_true(block2_serve_cnt < BLOCK2_NUM_BLOCKS, "Too many block requests");
+
+	memset(payload, 'A' + block2_serve_cnt, sizeof(payload));
+
+	zassert_ok(coap_packet_init(&response, buf, max_len, COAP_VERSION_1, COAP_TYPE_ACK,
+				    COAP_TOKEN_MAX_LEN, token, COAP_RESPONSE_CODE_CONTENT,
+				    message_id));
+
+	if (block2_etag_lens[block2_serve_cnt] > 0) {
+		zassert_ok(coap_packet_append_option(&response, COAP_OPTION_ETAG,
+						     block2_etags[block2_serve_cnt],
+						     block2_etag_lens[block2_serve_cnt]));
+	}
+
+	zassert_ok(coap_append_option_int(&response, COAP_OPTION_BLOCK2,
+					  (block2_serve_cnt << 4) | (more ? BIT(3) : 0) |
+						  COAP_BLOCK_64));
+	zassert_ok(coap_packet_append_payload_marker(&response));
+	zassert_ok(coap_packet_append_payload(&response, payload, payload_len));
+
+	restore_token(buf);
+	fill_recv_src_addr(src_addr, addrlen);
+	clear_socket_events(sock, ZSOCK_POLLIN);
+
+	block2_serve_cnt++;
+
+	return response.offset;
+}
+
 static ssize_t z_impl_zsock_recvfrom_custom_fake_rst(int sock, void *buf, size_t max_len, int flags,
 						     struct net_sockaddr *src_addr,
 						     net_socklen_t *addrlen)
@@ -583,6 +636,47 @@ void coap_callback(const struct coap_client_response_data *data, void *user_data
 	}
 }
 
+static void coap_block2_callback(const struct coap_client_response_data *data, void *user_data)
+{
+	LOG_INF("CoAP block2 response callback, %d", data->result_code);
+	last_response_code = data->result_code;
+
+	if (data->result_code >= 0) {
+		block2_bytes_received += data->payload_len;
+	}
+	if (data->last_block) {
+		block2_got_last_block = (data->result_code >= 0);
+		k_sem_give((struct k_sem *)user_data);
+	}
+}
+
+static struct coap_client_request block2_request = {
+	.method = COAP_METHOD_GET,
+	.confirmable = true,
+	.path = TEST_PATH,
+	.cb = coap_block2_callback,
+	.user_data = &sem1,
+};
+
+static void block2_test_start(const uint8_t *const etags[BLOCK2_NUM_BLOCKS],
+			      const uint8_t etag_lens[BLOCK2_NUM_BLOCKS])
+{
+	block2_serve_cnt = 0;
+	block2_bytes_received = 0;
+	block2_got_last_block = false;
+
+	for (int i = 0; i < BLOCK2_NUM_BLOCKS; i++) {
+		block2_etags[i] = etags[i];
+		block2_etag_lens[i] = etag_lens[i];
+	}
+
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_block2;
+
+	zassert_ok(coap_client_req(&client, 0, net_sad(&dst_address), &block2_request, NULL));
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)),
+		   "No final block2 callback");
+}
+
 extern void net_coap_init(void);
 
 static void *suite_setup(void)
@@ -652,6 +746,83 @@ ZTEST(coap_client, test_request_block)
 
 	zassert_equal(coap_client_req(&client, 0, net_sad(&dst_address), &short_request, NULL),
 		      -EAGAIN, "");
+}
+
+ZTEST(coap_client, test_blockwise_recv_etag_consistent)
+{
+	static const uint8_t etag[] = {0xde, 0xad, 0xbe, 0xef};
+	const uint8_t *const etags[BLOCK2_NUM_BLOCKS] = {etag, etag, etag};
+	const uint8_t etag_lens[BLOCK2_NUM_BLOCKS] = {sizeof(etag), sizeof(etag), sizeof(etag)};
+
+	block2_test_start(etags, etag_lens);
+
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT, "Unexpected response");
+	zassert_true(block2_got_last_block, "Transfer did not complete");
+	zassert_equal(block2_serve_cnt, BLOCK2_NUM_BLOCKS, "Unexpected number of blocks");
+	zassert_equal(block2_bytes_received,
+		      (BLOCK2_NUM_BLOCKS - 1) * BLOCK2_BLOCK_SIZE + BLOCK2_LAST_BLOCK_LEN,
+		      "Unexpected payload length");
+}
+
+ZTEST(coap_client, test_blockwise_recv_no_etag)
+{
+	const uint8_t *const etags[BLOCK2_NUM_BLOCKS] = {NULL, NULL, NULL};
+	const uint8_t etag_lens[BLOCK2_NUM_BLOCKS] = {0, 0, 0};
+
+	block2_test_start(etags, etag_lens);
+
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT, "Unexpected response");
+	zassert_true(block2_got_last_block, "Transfer did not complete");
+	zassert_equal(block2_serve_cnt, BLOCK2_NUM_BLOCKS, "Unexpected number of blocks");
+}
+
+ZTEST(coap_client, test_blockwise_recv_etag_changed)
+{
+	static const uint8_t etag_old[] = {0x01, 0x02};
+	static const uint8_t etag_new[] = {0x03, 0x04};
+	const uint8_t *const etags[BLOCK2_NUM_BLOCKS] = {etag_old, etag_new, etag_new};
+	const uint8_t etag_lens[BLOCK2_NUM_BLOCKS] = {sizeof(etag_old), sizeof(etag_new),
+						      sizeof(etag_new)};
+
+	block2_test_start(etags, etag_lens);
+
+	zassert_equal(last_response_code, -EBADMSG, "Transfer should fail on ETag change");
+	zassert_false(block2_got_last_block, "Transfer should not complete");
+	zassert_equal(block2_serve_cnt, 2, "No further blocks should be requested");
+}
+
+ZTEST(coap_client, test_blockwise_recv_etag_malformed_ignored)
+{
+	/* RFC 7252, sections 5.4.1 and 5.4.3: an ETag exceeding 8 bytes is
+	 * treated like an unrecognized elective option and silently ignored,
+	 * so the transfer completes as if no ETag was sent. This path only
+	 * runs for ETags that fit the coap_option value buffer (12 bytes
+	 * here, CONFIG_COAP_EXTENDED_OPTIONS_LEN_VALUE with extended options
+	 * enabled): parse_option() rejects longer values, making the block2
+	 * lookup fail first, and such a response is treated as non-block-wise.
+	 */
+	static const uint8_t etag[] = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09};
+	const uint8_t *const etags[BLOCK2_NUM_BLOCKS] = {etag, etag, etag};
+	const uint8_t etag_lens[BLOCK2_NUM_BLOCKS] = {sizeof(etag), sizeof(etag), sizeof(etag)};
+
+	block2_test_start(etags, etag_lens);
+
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT, "Unexpected response");
+	zassert_true(block2_got_last_block, "Transfer did not complete");
+	zassert_equal(block2_serve_cnt, BLOCK2_NUM_BLOCKS, "Unexpected number of blocks");
+}
+
+ZTEST(coap_client, test_blockwise_recv_etag_lost)
+{
+	static const uint8_t etag[] = {0x01, 0x02};
+	const uint8_t *const etags[BLOCK2_NUM_BLOCKS] = {etag, NULL, NULL};
+	const uint8_t etag_lens[BLOCK2_NUM_BLOCKS] = {sizeof(etag), 0, 0};
+
+	block2_test_start(etags, etag_lens);
+
+	zassert_equal(last_response_code, -EBADMSG, "Transfer should fail on ETag change");
+	zassert_false(block2_got_last_block, "Transfer should not complete");
+	zassert_equal(block2_serve_cnt, 2, "No further blocks should be requested");
 }
 
 ZTEST(coap_client, test_resend_request)
