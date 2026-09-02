@@ -13,9 +13,13 @@ config SAMPLE_BUFFER_ADDR_ALIGN
 	default 8 if DISPLAY_MCUX_ELCDIF
 	default 4
 
-config SAMPLE_PITCH_ALIGN
-	int "The update area pitch alignment"
+config SAMPLE_WIDTH_ALIGN
+	int "The update area width alignment"
 	default 8 if UC81XX
+	default 1
+
+config SAMPLE_HEIGHT_ALIGN
+	int "The update area height alignment"
 	default 1
 
 config HEAP_MEM_POOL_ADD_SIZE_SAMPLE

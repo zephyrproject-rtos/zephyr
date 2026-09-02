@@ -346,7 +346,9 @@ int sample_display_draw(void)
 		rect_w = capabilities.x_resolution;
 	}
 
-	rect_w = ROUND_UP(rect_w, CONFIG_SAMPLE_PITCH_ALIGN);
+	rect_w = ROUND_UP(rect_w, CONFIG_SAMPLE_WIDTH_ALIGN);
+	rect_h = ROUND_UP(rect_h, CONFIG_SAMPLE_HEIGHT_ALIGN);
+	h_step = ROUND_UP(h_step, CONFIG_SAMPLE_HEIGHT_ALIGN);
 
 	buf_size = rect_w * rect_h;
 
@@ -419,7 +421,7 @@ int sample_display_draw(void)
 	(void)memset(buf, bg_color, buf_size);
 
 	buf_desc.buf_size = buf_size;
-	buf_desc.pitch = ROUND_UP(capabilities.x_resolution, CONFIG_SAMPLE_PITCH_ALIGN);
+	buf_desc.pitch = ROUND_UP(capabilities.x_resolution, CONFIG_SAMPLE_WIDTH_ALIGN);
 	buf_desc.width = capabilities.x_resolution;
 	buf_desc.height = h_step;
 
@@ -440,14 +442,14 @@ int sample_display_draw(void)
 		if ((capabilities.y_resolution - idx) < h_step) {
 			buf_desc.height = (capabilities.y_resolution - idx);
 		}
+		/* Fails on setups requiring alignment but where the display size is not aligned */
 		ret = display_write(display_dev, 0, idx, &buf_desc, buf);
 		if (ret < 0) {
-			LOG_ERR("Failed to write to display (error %d)", ret);
-			goto end;
+			LOG_WRN("Failed to write to display (error %d)", ret);
 		}
 	}
 
-	buf_desc.pitch = ROUND_UP(rect_w, CONFIG_SAMPLE_PITCH_ALIGN);
+	buf_desc.pitch = rect_w;
 	buf_desc.width = rect_w;
 	buf_desc.height = rect_h;
 
