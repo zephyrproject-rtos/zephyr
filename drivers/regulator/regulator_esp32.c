@@ -19,6 +19,7 @@ struct regulator_esp32_config {
 
 struct regulator_esp32_data {
 	struct regulator_common_data common;
+	int32_t voltage_uv;
 };
 
 static int regulator_esp32_enable(const struct device *dev)
@@ -44,6 +45,7 @@ static int regulator_esp32_disable(const struct device *dev)
 static int regulator_esp32_set_voltage(const struct device *dev, int32_t min_uv, int32_t max_uv)
 {
 	const struct regulator_esp32_config *config = dev->config;
+	struct regulator_esp32_data *data = dev->data;
 	int voltage_mv = min_uv / 1000;
 	uint8_t dref = 0;
 	uint8_t mul = 0;
@@ -56,16 +58,30 @@ static int regulator_esp32_set_voltage(const struct device *dev, int32_t min_uv,
 
 	ldo_ll_voltage_to_dref_mul(config->ldo_unit, voltage_mv, &dref, &mul, &use_rail);
 	ldo_ll_adjust_voltage(config->ldo_unit, dref, mul, use_rail);
+	data->voltage_uv = voltage_mv * 1000;
 
 	return 0;
 }
 
 static int regulator_esp32_get_voltage(const struct device *dev, int32_t *volt_uv)
 {
-	ARG_UNUSED(dev);
-	ARG_UNUSED(volt_uv);
+	const struct regulator_esp32_config *config = dev->config;
+	struct regulator_esp32_data *data = dev->data;
 
-	return -ENOSYS;
+	/* The hardware provides no voltage readback, so report the last
+	 * voltage set by software. Before any set_voltage call the output
+	 * is unknown; report the lowest allowed voltage so that
+	 * regulator_common_init() does not override the hardware state.
+	 */
+	if (data->voltage_uv != 0) {
+		*volt_uv = data->voltage_uv;
+	} else if (config->common.min_uv > INT32_MIN) {
+		*volt_uv = config->common.min_uv;
+	} else {
+		*volt_uv = 0;
+	}
+
+	return 0;
 }
 
 static DEVICE_API(regulator, regulator_esp32_api) = {
