@@ -12,7 +12,6 @@
 #include <zephyr/drivers/uart/uart_bridge.h>
 #include <zephyr/kernel.h>
 
-#include <zephyr/usb/usb_device.h>
 #include <zephyr/usb/usbd.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(cdc_acm_bridge, LOG_LEVEL_INF);
