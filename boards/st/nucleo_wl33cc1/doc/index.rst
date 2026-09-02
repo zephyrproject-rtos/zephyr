@@ -24,12 +24,7 @@ the SoC reference manual (`RM0511`_).
 Supported Features
 ******************
 
-The following hardware features are currently supported:
-
-- GPIO
-- USART (console via the ST-LINK Virtual COM Port)
-
-Not yet supported: the sub-GHz radio (MR_SubG), ADC, SPI, I2C, timers, RTC,
+Not yet supported: the sub-GHz radio (MR_SubG), ADC, timers, RTC,
 watchdog and low-power modes.
 
 .. zephyr:board-supported-hw::
@@ -40,6 +35,8 @@ Connections and IOs
 Default board configuration:
 
 - USART1 TX/RX : PA1/PA15 (ST-LINK Virtual COM Port)
+- SPI1 NSS/SCK/MISO/MOSI : PB10/PB11/PB8/PB9 (ARDUINO D10/D13/D12/D11)
+- I2C2 SCL/SDA : PA6/PA7 (ARDUINO D15/D14)
 - LD1 (blue)   : PA14
 - LD2 (green)  : PB4
 - LD3 (red)    : PB5
