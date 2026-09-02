@@ -692,6 +692,90 @@ int fs_statvfs(const char *abs_path, struct fs_statvfs *stat)
 	return rc;
 }
 
+int fs_normalize_path(const char *path, char *buf, size_t len)
+{
+	struct fs_mount_t *mp;
+	size_t mp_len;
+	size_t dst_len;
+	size_t src;
+	int rc;
+
+	if ((path == NULL) || (path[0] != '/') || (buf == NULL) || (len == 0)) {
+		LOG_ERR("invalid path or output buffer!!");
+		return -EINVAL;
+	}
+
+	rc = fs_get_mnt_point(&mp, path, &mp_len);
+	if (rc < 0) {
+		LOG_ERR("mount point not found!!");
+		return rc;
+	}
+
+	if (mp_len >= len) {
+		return -ENAMETOOLONG;
+	}
+
+	if (buf != path) {
+		memmove(buf, path, mp_len);
+	}
+
+	if (mp_len == 1) {
+		mp_len = 0;
+	}
+	dst_len = mp_len;
+
+	src = mp_len;
+	while (path[src] != '\0') {
+		size_t seg_start;
+		size_t seg_len;
+
+		while (path[src] == '/') {
+			src++;
+		}
+		if (path[src] == '\0') {
+			break;
+		}
+
+		seg_start = src;
+		while ((path[src] != '\0') && (path[src] != '/')) {
+			src++;
+		}
+		seg_len = src - seg_start;
+
+		if ((seg_len == 1) && (path[seg_start] == '.')) {
+			continue;
+		}
+
+		if ((seg_len == 2) && (path[seg_start] == '.') && (path[seg_start + 1] == '.')) {
+			if (dst_len == mp_len) {
+				LOG_ERR("path escapes above the mount point root!!");
+				return -EINVAL;
+			}
+			while ((dst_len > mp_len) && (buf[dst_len - 1] != '/')) {
+				dst_len--;
+			}
+			dst_len--;
+			continue;
+		}
+
+		if ((dst_len + 1 + seg_len + 1) > len) {
+			return -ENAMETOOLONG;
+		}
+
+		buf[dst_len] = '/';
+		memmove(&buf[dst_len + 1], &path[seg_start], seg_len);
+		dst_len += 1 + seg_len;
+	}
+
+	if (dst_len == 0) {
+		buf[dst_len] = '/';
+		dst_len++;
+	}
+	buf[dst_len] = '\0';
+
+	return 0;
+}
+
 #if defined(CONFIG_FILE_SYSTEM_GC)
 
 int fs_gc(struct fs_mount_t *mp)

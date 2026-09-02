@@ -660,6 +660,41 @@ int fs_stat(const char *path, struct fs_dirent *entry);
 int fs_statvfs(const char *path, struct fs_statvfs *stat);
 
 /**
+ * @brief Normalize a path
+ *
+ * Produces the normalized, absolute form of @p path: repeated and trailing
+ * path separators are collapsed, and "." and ".." components are resolved
+ * textually against the mount point named at the front of @p path. Zephyr
+ * does not support symbolic links, so no link resolution is performed.
+ *
+ * A ".." that would climb back past the mount point root is rejected
+ * rather than clamped at the root, so that a bad path is reported as an
+ * error instead of being silently reinterpreted as a different, shorter
+ * path.
+ *
+ * @p path and @p buf may be the same buffer, to normalize a path in place.
+ * When they are different buffers, they must not overlap.
+ *
+ * On error the contents of @p buf are unspecified. That matters for the
+ * in-place case: a rejected path leaves the caller's own buffer modified.
+ *
+ * @param path Absolute path to normalize
+ * @param buf Buffer to receive the normalized, null-terminated path
+ * @param len Size of @p buf, in bytes
+ *
+ * @retval 0 on success;
+ * @retval -EINVAL when @p path is not an absolute path, when @p buf is NULL
+ *	   or @p len is zero, or when @p path has more ".." components than
+ *	   there are path components to climb back through before reaching
+ *	   the mount point;
+ * @retval -ENOENT when no mount point matches the front of @p path;
+ * @retval -ENAMETOOLONG when @p buf is too small to hold the normalized
+ *	   path;
+ * @retval <0 another negative errno code on error.
+ */
+int fs_normalize_path(const char *path, char *buf, size_t len);
+
+/**
  * @brief Create fresh file system
  *
  * @param fs_type Type of file system to create.
