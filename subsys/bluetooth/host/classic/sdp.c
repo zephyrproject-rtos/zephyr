@@ -2114,7 +2114,11 @@ static void sdp_client_work_handler(struct k_work *work)
 			continue;
 		}
 
-		/* It is for the case that the session is failed to disconnect. */
+		/* There are two cases for this condition:
+		 * Case 1: It is for the case that the session is failed to disconnect,
+		 * Case 2: Avoid to call sdp_client_params_iterator() in the function
+		 *         sdp_client_discover().
+		 */
 		if (session->state == SDP_CLIENT_CONNECTED && session->param == NULL) {
 			/* Get next request and start resolving it */
 			sdp_client_params_iterator(session);
@@ -2481,21 +2485,25 @@ static int sdp_client_discover(struct bt_sdp_client *session)
 		k_spin_unlock(&sdp_client_lock, key);
 	}
 
-	if (session->param != NULL && session->rec_buf == NULL) {
-		session->rec_buf = net_buf_alloc(session->param->pool, K_NO_WAIT);
-		if (session->rec_buf == NULL) {
-			LOG_WRN("Unable to allocate a receive buffer");
-		}
-	}
-
-	if (session->param == NULL || session->rec_buf == NULL) {
-		struct bt_l2cap_chan *chan = &session->chan.chan;
-
-		/* Notify the result */
-		sdp_client_req_not_resolved(chan->conn, session);
-
+	if (session->param == NULL) {
 		/* No pending requests, disconnect channel */
 		return sdp_client_disconnect(session);
+	}
+
+	if (session->rec_buf == NULL) {
+		session->rec_buf = net_buf_alloc(session->param->pool, K_NO_WAIT);
+	}
+
+	if (session->rec_buf == NULL) {
+		LOG_WRN("Unable to allocate a receive buffer");
+
+		/* Notify the result */
+		sdp_client_req_not_resolved(session->chan.chan.conn, session);
+		/* Cleanup current SDP discovery state */
+		sdp_client_req_cleanup(session);
+		/* Trigger client worker to start the next SDP discovery procedure */
+		bt_work_submit(&sdp_client_worker);
+		return 0;
 	}
 
 	switch (session->param->type) {
@@ -2516,8 +2524,10 @@ static int sdp_client_discover(struct bt_sdp_client *session)
 	if (err) {
 		/* Notify the result */
 		sdp_client_req_not_resolved(session->chan.chan.conn, session);
-		/* Get next UUID and start resolving it */
-		sdp_client_params_iterator(session);
+		/* Cleanup current SDP discovery state */
+		sdp_client_req_cleanup(session);
+		/* Trigger client worker to start the next SDP discovery procedure */
+		bt_work_submit(&sdp_client_worker);
 	}
 
 	return 0;
