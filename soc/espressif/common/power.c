@@ -35,6 +35,11 @@ extern esp_err_t sleep_clock_icg_startup_init(void);
 #include <esp_private/sleep_sys_periph.h>
 #endif
 
+#if defined(CONFIG_SOC_ESP32_PM_SLEEP_STATS)
+#include <esp_timer.h>
+#include <pmstats.h>
+#endif
+
 #include <power.h>
 
 #if defined(CONFIG_SOC_SERIES_ESP32P4) && defined(CONFIG_NOCACHE_MEMORY)
@@ -51,6 +56,9 @@ static const struct device *const rtc_dev = DEVICE_DT_GET_OR_NULL(DT_NODELABEL(r
 
 static bool sleep_enabled;
 static uint64_t sleep_time_us;
+#if defined(CONFIG_SOC_ESP32_PM_SLEEP_STATS)
+static uint64_t lpm_deadline_us;
+#endif
 static uint64_t gpio_sleep_hold;
 #if defined(SOC_RTC_SLOW_MEM_SUPPORTED) || defined(SOC_RTC_FAST_MEM_SUPPORTED)
 static RTC_DATA_ATTR uint64_t gpio_was_held;
@@ -210,7 +218,15 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 
 		if (sleep_enabled) {
 			esp32_sleep_gpio_prepare();
+#if defined(CONFIG_SOC_ESP32_PM_SLEEP_STATS)
+			esp32_sleep_stats_before(sleep_time_us,
+						 MIN_RESIDENCY_SLEEP_US + WAKEUP_MARGIN_US,
+						 lpm_deadline_us);
+#endif
 			esp_light_sleep_start();
+#if defined(CONFIG_SOC_ESP32_PM_SLEEP_STATS)
+			esp32_sleep_stats_after();
+#endif
 		}
 		break;
 
@@ -277,6 +293,14 @@ uint64_t esp32_lptim_hook_on_lpm_entry(uint64_t max_lpm_time_us)
 	 * wakeup at pm_state_set() event.
 	 */
 	sleep_time_us = max_lpm_time_us;
+
+#if defined(CONFIG_SOC_ESP32_PM_SLEEP_STATS)
+	/* Anchor the wake deadline here, at low-power-idle entry, so the wake margin
+	 * to the deadline can be measured on wake in the same esp_timer frame without
+	 * the software-latency bias of anchoring later at sleep-start.
+	 */
+	lpm_deadline_us = (uint64_t)esp_timer_get_time() + max_lpm_time_us;
+#endif
 
 	return esp_timer_impl_get_counter_reg();
 }
