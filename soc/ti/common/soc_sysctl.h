@@ -3,13 +3,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_SOC_TI_MSPM_COMMON_SOC_SYSCTL_H_
-#define ZEPHYR_SOC_TI_MSPM_COMMON_SOC_SYSCTL_H_
+#ifndef ZEPHYR_SOC_TI_COMMON_SOC_SYSCTL_H_
+#define ZEPHYR_SOC_TI_COMMON_SOC_SYSCTL_H_
 
 #include <zephyr/sys/util.h>
 
 /**
- * @brief MSPM SYSCTL soclock Register Offsets
+ * @brief TI SYSCTL soclock Register Offsets
  *
  * Offsets are relative to the SYSCTL base (soclock region base = SYSCTL base + 0x1000).
  */
@@ -154,4 +154,4 @@
 #define SYSCTL_EXLFCTL_KEY_VAL    (0x36)
 #define SYSCTL_EXLFCTL_SETUSEEXLF BIT(0)
 
-#endif /* ZEPHYR_SOC_TI_MSPM_COMMON_SOC_SYSCTL_H_ */
+#endif /* ZEPHYR_SOC_TI_COMMON_SOC_SYSCTL_H_ */
