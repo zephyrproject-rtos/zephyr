@@ -152,7 +152,7 @@ manifest:
       groups:
         - hal
     - name: hal_afbr
-      revision: 1abf6947457380934e27f92508ec5532ddedfc6d
+      revision: 83d0a28346f40c8675974346c83bab4cd93d49d5
       path: modules/hal/afbr
       groups:
         - hal
