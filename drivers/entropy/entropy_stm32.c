@@ -238,15 +238,17 @@ static void entropy_stm32_suspend(void)
 	entropy_stm32_hsem_release();
 }
 
-static int entropy_stm32_resume(void)
+static void entropy_stm32_resume(void)
 {
 	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
 	const struct entropy_stm32_rng_dev_cfg *dev_cfg = dev->config;
 	RNG_TypeDef *rng = dev_cfg->rng;
-	int res;
+	__maybe_unused int res;
 
-	res = clock_control_on(dev_cfg->clock,
-			(clock_control_subsys_t)&dev_cfg->pclken[0]);
+	/* Enabling the RNG clock is not expected to fail */
+	res = clock_control_on(dev_cfg->clock, (clock_control_subsys_t)&dev_cfg->pclken[0]);
+	__ASSERT_NO_MSG(res == 0);
+
 #if defined(CONFIG_SOC_STM32WB09XX)
 	/**
 	 * STM32WB09 RNG clock domain runs at (16 MHz / CLKDIV).
@@ -257,8 +259,6 @@ static int entropy_stm32_resume(void)
 #endif
 	LL_RNG_Enable(rng);
 	ll_rng_enable_it(rng);
-
-	return res;
 }
 
 static void configure_rng(void)
