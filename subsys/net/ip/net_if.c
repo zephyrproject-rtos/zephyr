@@ -6080,14 +6080,22 @@ static void remove_ipv6_ifaddr(struct net_if *iface,
 #if defined(CONFIG_NET_IPV6_DAD)
 	if (!net_if_flag_is_set(iface, NET_IF_IPV6_NO_ND)) {
 		k_mutex_lock(&lock, K_FOREVER);
-		if (sys_slist_find_and_remove(&active_dad_timers,
-					      &ifaddr->dad_node)) {
-			/* Address with active DAD timer would still have
-			 * stale entry in the neighbor cache.
-			 */
+		(void)sys_slist_find_and_remove(&active_dad_timers,
+						&ifaddr->dad_node);
+		k_mutex_unlock(&lock);
+
+		/* An address that has not been checked yet still has the
+		 * entry for itself that the solicitation left in the
+		 * neighbour cache. Being on the timer list is not what says
+		 * so: dad_timeout() takes the entry off that list before it
+		 * works on it and does so with the lock released, so an
+		 * address removed just then is on no list at all. Ask the
+		 * address state instead, which is tentative until the check
+		 * is done.
+		 */
+		if (ifaddr->addr_state == NET_ADDR_TENTATIVE) {
 			net_ipv6_nbr_rm(iface, &ifaddr->address.in6_addr);
 		}
-		k_mutex_unlock(&lock);
 	}
 #endif
 
