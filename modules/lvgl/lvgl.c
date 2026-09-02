@@ -62,12 +62,16 @@ struct lvgl_disp_data disp_data[DT_ZEPHYR_DISPLAYS_COUNT] = {{
 #define DISPLAY_HEIGHT(n) DT_PROP(DISPLAY_NODE(n), height)
 
 #if IS_MONOCHROME_DISPLAY
-/* monochrome buffers are expected to have 8 preceding bytes for the color palette */
+/* monochrome buffers are expected to have 8 preceding bytes for the color palette.
+ * Ensure the buffer can hold at least the data necessary for
+ * an aligned line (8 * width pixels on a Vtiled display, so width bytes)
+ * so get_max_row doesn't result in LVGL being able to render less than 1 line.
+ */
 #define BUFFER_SIZE(n)                                                                             \
-	(((CONFIG_LV_Z_VDB_SIZE * ROUND_UP(DISPLAY_WIDTH(n), 8) *                                  \
-	   ROUND_UP(DISPLAY_HEIGHT(n), 8)) /                                                       \
-	  100) / 8 +                                                                               \
-	 8)
+	(MAX(((CONFIG_LV_Z_VDB_SIZE * ROUND_UP(DISPLAY_WIDTH(n), 8) *                              \
+	ROUND_UP(DISPLAY_HEIGHT(n), 8)) / 100) / 8,                                                \
+	ROUND_UP(DISPLAY_WIDTH(n), 8))                                                             \
+	+ 8)
 #else
 #define BUFFER_SIZE(n)                                                                             \
 	(CONFIG_LV_Z_BITS_PER_PIXEL *                                                              \
