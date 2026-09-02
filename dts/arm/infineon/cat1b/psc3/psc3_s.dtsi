@@ -761,7 +761,8 @@
 			adc0: adc@80000 {
 				compatible = "infineon,hppass-sar-adc";
 				reg = <0x00080000 0x10000>;
-				interrupts = <109 4>;
+				interrupts = <109 4>, <139 4>;
+				interrupt-names = "sar", "fifo";
 				#io-channel-cells = <1>;
 				status = "disabled";
 			};
