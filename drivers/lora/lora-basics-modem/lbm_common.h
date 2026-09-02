@@ -47,6 +47,11 @@ struct lbm_lora_data_common {
 	/* Current LoRa parameters */
 	ral_lora_mod_params_t mod_params;
 	ral_lora_pkt_params_t pkt_params;
+	/* Current GFSK parameters */
+	ral_gfsk_mod_params_t gfsk_mod_params;
+	ral_gfsk_pkt_params_t gfsk_pkt_params;
+	/* Whether those, rather than the LoRa ones, describe the radio */
+	bool gfsk;
 	/* Operation complete worker */
 	struct k_work_delayable op_done_work;
 	/* RX state storage */
@@ -71,6 +76,8 @@ struct lbm_lora_data_common {
 	enum lbm_modem_mode modem_mode;
 	/* Radio initialization state */
 	bool radio_initialized;
+	/* Whether the stored parameters still describe the radio */
+	bool configured;
 };
 
 /**
@@ -95,6 +102,22 @@ int lbm_lora_common_init(const struct device *dev);
  * @retval -errno On failure
  */
 int lbm_driver_radio_init(const struct device *dev);
+
+/**
+ * @brief Take the modem for an operation
+ *
+ * @param dev modem to acquire
+ * @retval true if the modem was acquired
+ */
+bool lbm_modem_acquire(const struct device *dev);
+
+/**
+ * @brief Release the modem and put it back to sleep
+ *
+ * @param dev modem to release
+ * @retval true if this call released it
+ */
+bool lbm_modem_release(const struct device *dev);
 
 /**
  * @brief Configure modem for a given mode
@@ -144,6 +167,7 @@ static inline int lbm_optional_dio1_irq_configure_dt(const struct gpio_dt_spec *
 }
 
 /* Common LBM implementation of the LoRa API */
+
 extern const struct lora_driver_api lbm_lora_api;
 
 /**
