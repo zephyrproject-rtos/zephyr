@@ -90,4 +90,13 @@ config BOARD_LATE_INIT_HOOK
 	  A custom board hook board_late_init_hook() is executed after the kernel and
 	  devices are initialized
 
+config SOC_REBOOT_TO_BOOTLOADER_HOOK
+	bool
+	help
+	  Provide a SoC hook that reboots the device into its bootloader.
+
+	  A custom SoC hook soc_reboot_to_bootloader_hook() is executed when a
+	  subsystem requests a restart into the bootloader instead of the
+	  application. This symbol is selected by SoCs that implement the hook.
+
 endmenu
