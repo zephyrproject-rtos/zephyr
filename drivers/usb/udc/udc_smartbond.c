@@ -19,7 +19,6 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/dma.h>
 #include <zephyr/drivers/usb/udc.h>
-#include <zephyr/drivers/usb/usb_dc.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/smartbond_clock_control.h>
 

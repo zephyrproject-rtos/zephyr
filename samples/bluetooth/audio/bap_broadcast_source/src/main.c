@@ -95,8 +95,6 @@ static struct bt_bap_lc3_preset preset_active = BT_BAP_LC3_BROADCAST_PRESET_48_2
 #include "lc3.h"
 
 #if defined(CONFIG_USE_USB_AUDIO_INPUT)
-#include <zephyr/usb/usb_device.h>
-#include <zephyr/usb/class/usb_audio.h>
 #include <zephyr/sys/ring_buffer.h>
 
 #include <sample_usbd.h>
