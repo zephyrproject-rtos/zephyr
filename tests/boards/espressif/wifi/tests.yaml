@@ -52,3 +52,14 @@ tests:
       - esp32s3_devkitc/esp32s3/procpu
       - esp32c3_devkitc
       - esp8684_devkitm
+  esp.wifi.sec.wpa2.smp:
+    tags:
+      - wifi
+      - smp
+    filter: CONFIG_WIFI_ESP32
+    extra_configs:
+      - CONFIG_WIFI_TEST_AUTH_MODE_WPA2=y
+      - CONFIG_SMP=y
+      - CONFIG_SPIN_VALIDATE=y
+    platform_allow:
+      - esp32s3_devkitc/esp32s3/procpu
