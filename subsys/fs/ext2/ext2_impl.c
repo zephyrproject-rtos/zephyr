@@ -709,7 +709,7 @@ ssize_t ext2_inode_read(struct ext2_inode *inode, void *buf, uint32_t offset, si
 	}
 
 	if (rc < 0) {
-		return rc;
+		return read > 0 ? read : rc;
 	}
 	return read;
 }
@@ -748,7 +748,20 @@ ssize_t ext2_inode_write(struct ext2_inode *inode, const void *buf, uint32_t off
 	}
 
 	if (rc < 0) {
-		return rc;
+		if (written == 0) {
+			return rc;
+		}
+
+		/* Preserve the size of data committed before the failed block. */
+		if (offset > inode->i_size) {
+			inode->i_size = offset;
+			rc = ext2_commit_inode(inode);
+			if (rc < 0) {
+				return rc;
+			}
+		}
+
+		return written;
 	}
 
 	if (offset > inode->i_size) {
