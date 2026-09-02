@@ -97,6 +97,22 @@ Implementing Read and Decode
 * MUST implement :c:type:`sensor_get_decoder_t` returning the
   :c:struct:`sensor_decoder_api` for that device type.
 
+Shell commands
+==============
+
+.. zephyr:shell-module:: sensor
+   :kconfig: CONFIG_SENSOR_SHELL
+   :depends: CONFIG_SENSOR
+
+   The ``sensor`` command allows reading the channels of a sensor, getting and setting its
+   attributes, and configuring its triggers through an interactive interface, without having to write
+   a dedicated application. Its subcommands take the name of a sensor device as their first argument,
+   which supports tab completion.
+
+.. rubric:: Command reference
+
+.. zephyr:shell-command-reference::
+
 .. _sensor-api-reference:
 
 API Reference
