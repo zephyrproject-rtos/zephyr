@@ -6,6 +6,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/clock_control/clock_control_adsp.h>
 #include <zephyr/drivers/clock_control.h>
+#include "common_helpers.h"
 
 static int cavs_clock_ctrl_set_rate(const struct device *clk,
 				    clock_control_subsys_t sys,
@@ -25,7 +26,9 @@ static int cavs_clock_ctrl_init(const struct device *dev)
 }
 
 static DEVICE_API(clock_control, cavs_clock_api) = {
-	.set_rate = cavs_clock_ctrl_set_rate
+	.on = clock_control_always_running_clk_on,
+	.off = clock_control_always_running_clk_off,
+	.set_rate = cavs_clock_ctrl_set_rate,
 };
 
 DEVICE_DT_DEFINE(DT_NODELABEL(clkctl), cavs_clock_ctrl_init, NULL,
