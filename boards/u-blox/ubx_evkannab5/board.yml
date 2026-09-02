@@ -1,0 +1,48 @@
+board:
+  name: ubx_evkannab5
+  full_name: EVK-ANNA-B50
+  vendor: u-blox
+  socs:
+    - name: nrf54l15
+      variants:
+        - name: ns
+          cpucluster: cpuapp
+        - name: xip
+          cpucluster: cpuflpr
+runners:
+  run_once:
+    '--recover':
+      - runners:
+          - nrfjprog
+          - nrfutil
+        run: first
+        groups:
+          - boards:
+              - ubx_evkannab5/nrf54l15/cpuapp
+              - ubx_evkannab5/nrf54l15/cpuapp/ns
+              - ubx_evkannab5/nrf54l15/cpuflpr
+              - ubx_evkannab5/nrf54l15/cpuflpr/xip
+    '--erase':
+      - runners:
+          - nrfjprog
+          - jlink
+          - nrfutil
+        run: first
+        groups:
+          - boards:
+              - ubx_evkannab5/nrf54l15/cpuapp
+              - ubx_evkannab5/nrf54l15/cpuapp/ns
+              - ubx_evkannab5/nrf54l15/cpuflpr
+              - ubx_evkannab5/nrf54l15/cpuflpr/xip
+    '--reset':
+      - runners:
+          - nrfjprog
+          - jlink
+          - nrfutil
+        run: last
+        groups:
+          - boards:
+              - ubx_evkannab5/nrf54l15/cpuapp
+              - ubx_evkannab5/nrf54l15/cpuapp/ns
+              - ubx_evkannab5/nrf54l15/cpuflpr
+              - ubx_evkannab5/nrf54l15/cpuflpr/xip
