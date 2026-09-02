@@ -318,9 +318,13 @@ static inline void uart_mspm0_set_clock(mspm0_uart_regs *regs, uint32_t clk_sel,
 
 /* Configure line control: parity, word length, stop bits */
 static void uart_mspm0_configure_line(mspm0_uart_regs *regs, uint32_t parity, uint32_t word_length,
-				      uint32_t stop_bits, uint32_t flow_control)
+				      uint32_t stop_bits, uint32_t flow_control, bool unicommuart)
 {
+	/* Standard UART instances operate in FIFO mode. Configure FEN together with
+	 * the other CTL0 fields to avoid transitioning through character mode.
+	 */
 	uint32_t ctl0 = UART_CTL0_MODE_UART | UART_CTL0_RXE_ENABLE | UART_CTL0_TXE_ENABLE |
+			(unicommuart ? 0U : UART_CTL0_FEN_ENABLE) |
 			(flow_control & (UART_CTL0_RTSEN_MASK | UART_CTL0_CTSEN_MASK));
 
 	uint32_t lcrh = (parity & (UART_LCRH_PEN_MASK | UART_LCRH_EPS_MASK | UART_LCRH_SPS_MASK)) |
@@ -518,11 +522,11 @@ static int uart_mspm0_install_configuration(const struct device *dev)
 	const struct device *clk_dev = DEVICE_DT_GET(DT_NODELABEL(ckm));
 	const struct uart_mspm0_config *config = dev->config;
 	struct uart_mspm0_data *data = dev->data;
+	const bool unicommuart = config->skip_power_on;
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	uint32_t rx_level;
 	uint32_t tx_level;
 #endif
-	const bool unicommuart = config->skip_power_on;
 	uint32_t clock_rate;
 	uint32_t uart_clk;
 	int ret;
@@ -533,7 +537,7 @@ static int uart_mspm0_install_configuration(const struct device *dev)
 	/* Configure line control */
 	uart_mspm0_configure_line(config->regs, data->uart_config.parity,
 				  data->uart_config.word_length, data->uart_config.stop_bits,
-				  data->uart_config.flow_control);
+				  data->uart_config.flow_control, unicommuart);
 
 	/* Get source clock rate */
 	ret = clock_control_get_rate(clk_dev, (struct mspm0_sys_clock *)config->clock_subsys,
@@ -552,15 +556,6 @@ static int uart_mspm0_install_configuration(const struct device *dev)
 #ifdef CONFIG_PM_DEVICE
 	data->frame_time_us = uart_mspm0_frame_time_us(data);
 #endif
-
-	/* Re-enable FIFOs: uart_mspm0_configure_line() overwrites CTL0 entirely,
-	 * clearing the FEN bit. Always re-enable FIFOs after reconfiguring the
-	 * line control registers so that FIFO-based interrupt thresholds (IFLS)
-	 * remain operative. The UNICOMMUART has no FEN bit.
-	 */
-	if (!unicommuart) {
-		config->regs->ctl0 |= UART_CTL0_FEN_ENABLE;
-	}
 
 #ifdef CONFIG_UART_INTERRUPT_DRIVEN
 	/* Restore FIFO interrupt level select thresholds. These are also wiped
