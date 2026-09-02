@@ -6478,6 +6478,7 @@ TI AM13 Platforms:
     - boards/ti/*am13*/
     - dts/arm/ti/am13*/
     - soc/ti/am13*/
+    - soc/ti/mspm_am13/
   labels:
     - "platform: TI AM13"
 
@@ -6527,6 +6528,7 @@ TI MSPM Platforms:
     - Sunil-Hegde
   files:
     - soc/ti/mspm/
+    - soc/ti/mspm_am13/
     - boards/ti/*mspm*/
     - dts/arm/ti/mspm*/
     - dts/bindings/*/*mspm0*
