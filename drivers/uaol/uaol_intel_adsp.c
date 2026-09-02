@@ -378,7 +378,8 @@ static uint8_t uaol_intel_adsp_encode_service_interval(uint32_t service_interval
 static void uaol_intel_adsp_program_format(const struct device *dev, int stream,
 					   uint32_t sample_rate, uint32_t channels,
 					   uint32_t sample_bits, uint32_t sio_credit_size,
-					   uint32_t service_interval_usec)
+					   uint32_t service_interval_usec,
+					   enum uaol_direction direction)
 {
 	struct uaol_intel_adsp_data *dp = dev->data;
 	union UAOLxPCMSyCTL pcms_ctl;
@@ -389,6 +390,20 @@ static void uaol_intel_adsp_program_format(const struct device *dev, int stream,
 	sample_size = sample_bits / 8;
 	sample_block_size = sample_size * channels;
 	payload_size = sample_block_size * ((sample_rate * service_interval_usec) / USEC_PER_SEC);
+
+	if (direction == UAOL_DIR_CAPTURE) {
+		/* Capture streams should ignore the format and capture all available bytes.
+		 * However, sio_credit_size describes only one packet, while a high-speed
+		 * endpoint may provide up to three packets per service interval. The driver
+		 * currently provides the maximum size of a single packet, not the maximum
+		 * payload size. Therefore, infer the maximum payload size by rounding the
+		 * format-derived payload size up to a whole number of packets.
+		 *
+		 * This prevents data loss at sample rates such as 44.1 kHz, where the payload
+		 * size varies between service intervals.
+		 */
+		payload_size = DIV_ROUND_UP(payload_size, sio_credit_size) * sio_credit_size;
+	}
 
 	pcms_ctl.full = sys_read64(UAOLxPCMSyCTL_ADDR(dp, stream));
 	pcms_ctl.part.si = uaol_intel_adsp_encode_service_interval(service_interval_usec);
@@ -690,7 +705,7 @@ static int uaol_intel_adsp_config(const struct device *dev, int stream, struct u
 
 	uaol_intel_adsp_program_format(dev, stream, cfg->sample_rate, cfg->channels,
 				       cfg->sample_bits, cfg->sio_credit_size,
-				       cfg->service_interval);
+				       cfg->service_interval, cfg->direction);
 
 	uaol_intel_adsp_program_rate_adjustment(dev, stream, cfg->sample_rate,
 						cfg->service_interval);
