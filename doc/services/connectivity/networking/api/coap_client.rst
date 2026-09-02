@@ -72,6 +72,14 @@ application through the response callback registered in the request structure.
 As the response can be a blockwise transfer and the client calls the callback once per each
 block, the application should be to process all of the blocks to be able to process the response.
 
+During a blockwise transfer the client compares the ETag option of the received blocks, as
+required by :rfc:`7959`. When the resource representation changes in the middle of the transfer,
+the transfer is aborted and the callback is invoked with ``result_code`` set to ``-EBADMSG``.
+Stricter than the RFC minimum, which only mandates comparing ETags the server provides, the
+transfer is also aborted when the ETag option appears or disappears between blocks, as such a
+mix of tagged and untagged blocks cannot be verified. The application should discard the partial
+data it received and may retry the request.
+
 The following is an example of a very simple response handling function:
 
 .. code-block:: c
