@@ -65,6 +65,14 @@ struct mac_tx_params {
 };
 
 int mac_do_tx_rx(struct lwan_ctx *ctx, const struct mac_tx_params *params);
+
+/*
+ * Listen on a channel where the region asks for it.
+ *
+ * Returns 0 when the channel is clear or the region does not use LBT,
+ * -EBUSY when it is occupied, or a negative errno on failure.
+ */
+int mac_lbt_check(struct lwan_ctx *ctx, uint32_t freq, uint8_t dr_idx);
 void mac_do_join(struct lwan_ctx *ctx, const struct lwan_req *req);
 void mac_do_send(struct lwan_ctx *ctx, const struct lwan_req *req);
 
