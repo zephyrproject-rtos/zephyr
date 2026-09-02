@@ -102,7 +102,7 @@ tests:
       - CONFIG_IPC_SERVICE=y
       - CONFIG_MBOX=y
       - CONFIG_SHELL_REMOTE=y
-      - CONFIG_PBUF_RX_READ_BUF_SIZE=256
       - CONFIG_HEAP_MEM_POOL_SIZE=1024
     extra_args:
       - FILE_SUFFIX=remote_shell
+      - platform:nrf54l:shell_module_SNIPPET=nordic-flpr
