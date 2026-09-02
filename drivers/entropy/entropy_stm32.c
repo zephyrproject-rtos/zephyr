@@ -109,6 +109,7 @@ struct entropy_stm32_rng_dev_data {
 	/* work item that polls TRNG to refill pools */
 	struct k_work_delayable trng_poll_work;
 #endif /* IRQLESS_TRNG */
+	struct k_work_q *filling_wq;
 	atomic_t filling_pools;		/* 1 when pools filling is in progress, 0 otherwise */
 	atomic_t pm_locked;		/* 1 when PM is locked for pool refill, 0 otherwise */
 
@@ -117,6 +118,11 @@ struct entropy_stm32_rng_dev_data {
 };
 
 #define TRNG_BASE ((RNG_TypeDef *)DT_INST_REG_ADDR(0))
+
+#ifdef CONFIG_ENTROPY_STM32_WORKQUEUE
+static K_THREAD_STACK_DEFINE(entropy_stm32_wq_stack, CONFIG_ENTROPY_STM32_WQ_STACK_SIZE);
+static struct k_work_q entropy_stm32_wq;
+#endif
 
 static struct stm32_pclken pclken_rng[] = STM32_DT_INST_CLOCKS(0);
 
@@ -560,7 +566,9 @@ static int start_pool_filling(bool wait)
 
 	acquire_rng();
 #if IRQLESS_TRNG
-	k_work_schedule(&entropy_stm32_rng_data.trng_poll_work, TRNG_GENERATION_DELAY);
+	k_work_schedule_for_queue(entropy_stm32_rng_data.filling_wq,
+				  &entropy_stm32_rng_data.trng_poll_work,
+				  TRNG_GENERATION_DELAY);
 #else /* !IRQLESS_TRNG */
 	irq_enable(IRQN);
 #endif /* IRQLESS_TRNG */
@@ -571,7 +579,7 @@ static void pool_filling_work_handler(struct k_work *work)
 {
 	if (start_pool_filling(false) != 0) {
 		/* RNG could not be acquired, try again */
-		k_work_submit(work);
+		k_work_submit_to_queue(entropy_stm32_rng_data.filling_wq, work);
 	}
 }
 
@@ -674,7 +682,8 @@ static uint16_t rng_pool_get(struct rng_pool *rngp, uint8_t *buf,
 		 * as this is what fills the RNG pools instead of the ISR.
 		 */
 		if (k_is_in_isr() || IRQLESS_TRNG) {
-			k_work_submit(&entropy_stm32_rng_data.filling_work);
+			k_work_submit_to_queue(entropy_stm32_rng_data.filling_wq,
+					       &entropy_stm32_rng_data.filling_work);
 		} else {
 			start_pool_filling(true);
 		}
@@ -918,6 +927,31 @@ static int entropy_stm32_init_hw_rng(const struct entropy_stm32_rng_dev_cfg *dev
 	return 0;
 }
 
+static int entropy_stm32_init_wq(void)
+{
+	struct entropy_stm32_rng_dev_data *dev_data = &entropy_stm32_rng_data;
+
+#ifdef CONFIG_ENTROPY_STM32_WORKQUEUE
+	k_work_queue_init(&entropy_stm32_wq);
+	k_work_queue_start(&entropy_stm32_wq, (k_thread_stack_t *)&entropy_stm32_wq_stack,
+			   K_THREAD_STACK_SIZEOF(entropy_stm32_wq_stack),
+			   CONFIG_ENTROPY_STM32_WQ_PRIO, NULL);
+	k_thread_name_set(entropy_stm32_wq.thread_id, "stm32-rng-pool-filling");
+	dev_data->filling_wq = &entropy_stm32_wq;
+#else
+	dev_data->filling_wq = &k_sys_work_q;
+#endif /* CONFIG_ENTROPY_STM32_WORKQUEUE */
+
+	pool_refill_requested();
+	start_pool_filling(true);
+
+	return 0;
+}
+
+#if !IRQLESS_TRNG
+SYS_INIT(entropy_stm32_init_wq, POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
+#endif /* !IRQLESS_TRNG */
+
 static int entropy_stm32_init(const struct device *dev)
 {
 	const struct entropy_stm32_rng_dev_cfg *dev_cfg = dev->config;
@@ -968,8 +1002,9 @@ static int entropy_stm32_init(const struct device *dev)
 		}
 	}
 
-	pool_refill_requested();
-	start_pool_filling(true);
+	if (IRQLESS_TRNG) {
+		entropy_stm32_init_wq();
+	}
 
 	return 0;
 }
