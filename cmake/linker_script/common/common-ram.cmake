@@ -90,22 +90,6 @@ if(CONFIG_SENSING)
   zephyr_iterable_section(NAME sensing_sensor GROUP ${K_OBJECTS_GROUP} ${XIP_ALIGN_WITH_INPUT})
 endif()
 
-if(CONFIG_USB_DEVICE_STACK)
-  zephyr_linker_section(NAME usb_descriptor GROUP ${K_OBJECTS_GROUP} NOINPUT ${XIP_ALIGN_WITH_INPUT} SUBALIGN 1)
-  zephyr_linker_section_configure(SECTION usb_descriptor
-    KEEP SORT NAME INPUT ".usb.descriptor*"
-  )
-
-  zephyr_iterable_section(NAME usb_cfg_data GROUP ${K_OBJECTS_GROUP} ${XIP_ALIGN_WITH_INPUT})
-endif()
-
-if(CONFIG_USB_DEVICE_BOS)
-  zephyr_linker_section(NAME usb_bos_desc GROUP ${K_OBJECTS_GROUP} NOINPUT ${XIP_ALIGN_WITH_INPUT} SUBALIGN 1)
-  zephyr_linker_section_configure(SECTION usb_data
-    KEEP SORT NAME INPUT ".usb.bos_desc"
-  )
-endif()
-
 if(CONFIG_RTIO)
   zephyr_iterable_section(NAME rtio GROUP ${K_OBJECTS_GROUP} ${XIP_ALIGN_WITH_INPUT})
   zephyr_iterable_section(NAME rtio_iodev GROUP ${K_OBJECTS_GROUP} ${XIP_ALIGN_WITH_INPUT})
@@ -138,7 +122,7 @@ if(CONFIG_PCIE)
   zephyr_iterable_section(NAME pcie_dev GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT})
 endif()
 
-if(CONFIG_USB_DEVICE_STACK OR CONFIG_USB_DEVICE_STACK_NEXT)
+if(CONFIG_USB_DEVICE_STACK_NEXT)
   zephyr_iterable_section(NAME usbd_context GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT})
   zephyr_iterable_section(NAME usbd_class_fs GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT})
   zephyr_iterable_section(NAME usbd_class_hs GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT})

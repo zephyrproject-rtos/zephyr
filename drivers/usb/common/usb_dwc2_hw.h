@@ -1341,24 +1341,6 @@ USB_DWC2_GET_FIELD_DEFINE(pcgcctl_restorevalue, PCGCCTL_RESTOREVALUE)
 USB_DWC2_SET_FIELD_DEFINE(pcgcctl_restorevalue, PCGCCTL_RESTOREVALUE)
 
 /*
- * Device IN/OUT endpoint transfer size register
- * IN at offsets 0x0910 + (0x20 * n), n = 0 .. x,
- * OUT at offsets 0x0B10 + (0x20 * n), n = 0 .. x
- *
- * Note: Legacy definitions for the usb_dc_dw.c driver only.
- */
-#define USB_DWC2_DEPTSIZ_PKT_CNT_POS		19UL
-#define USB_DWC2_DIEPTSIZ0_PKT_CNT_MASK		(0x3 << 19)
-#define USB_DWC2_DIEPTSIZn_PKT_CNT_MASK		(0x3FF << 19)
-#define USB_DWC2_DOEPTSIZn_PKT_CNT_MASK		(0x3FF << 19)
-#define USB_DWC2_DOEPTSIZ0_PKT_CNT_MASK		(0x1 << 19)
-#define USB_DWC2_DOEPTSIZ_SUP_CNT_POS		29UL
-#define USB_DWC2_DOEPTSIZ_SUP_CNT_MASK		(0x3 << 29)
-#define USB_DWC2_DEPTSIZ_XFER_SIZE_POS		0UL
-#define USB_DWC2_DEPTSIZ0_XFER_SIZE_MASK	0x7F
-#define USB_DWC2_DEPTSIZn_XFER_SIZE_MASK	0x7FFFF
-
-/*
  * Device IN endpoint transmit FIFO status register,
  * offsets 0x0918 + (0x20 * n), n = 0 .. x
  */
