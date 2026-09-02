@@ -17,6 +17,7 @@ source "drivers/disk/Kconfig.mmc"
 source "drivers/disk/Kconfig.ram"
 source "drivers/disk/Kconfig.sdmmc"
 source "drivers/disk/Kconfig.virtio_blk"
+source "drivers/disk/Kconfig.virtual_fat_disk"
 # zephyr-keep-sorted-stop
 
 rsource "nvme/Kconfig"

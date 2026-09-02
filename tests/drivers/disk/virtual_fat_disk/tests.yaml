@@ -1,0 +1,5 @@
+tests:
+  drivers.disk.virtual_fat_disk:
+    tags: virtual_fat_disk
+    platform_allow: native_sim
+    harness: ztest
