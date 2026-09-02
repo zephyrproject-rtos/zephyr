@@ -1272,6 +1272,27 @@ Timer
 USB
 ===
 
+* The deprecated legacy USB device stack and USB device controller API have
+  been removed. Applications must migrate to :ref:`USB device support
+  <usb_device_stack_next>` and controller drivers must migrate to the
+  :ref:`USB device controller API <udc_api>`.
+
+  * Replace ``CONFIG_USB_DEVICE_STACK`` with
+    :kconfig:option:`CONFIG_USB_DEVICE_STACK_NEXT`, and replace legacy class
+    Kconfig options and APIs with their ``USBD_*`` counterparts. For example,
+    use :ref:`usbd_hid_device` for HID and :ref:`uac2_device` for USB Audio.
+  * Replace calls such as ``usb_enable()`` and ``usb_disable()`` with the
+    corresponding :ref:`usbd_api` context-based initialization and lifecycle
+    APIs.
+  * Migrate out-of-tree controller drivers from the removed
+    :file:`include/zephyr/drivers/usb/usb_dc.h` API to
+    :file:`include/zephyr/drivers/usb/udc.h`.
+  * The legacy USB samples under :file:`samples/subsys/usb/legacy` have been
+    removed. Use the samples listed in :ref:`usb_device_stack_next`, including
+    :zephyr:code-sample:`uac2-loopback` for a basic USB Audio example.
+  * The ``usb_device`` board metadata feature has been removed. Use ``usbd``
+    to identify boards with Device-next support.
+
 * On STM32N6, the ``clocks`` cell which configures the USBPHYC clock mux has been moved
   from :samp:`usbotg_hs{N}` to :samp:`usbphyc{N}` nodes at SoC DTSI level. Boards which
   use an STM32N6 SoC with custom clock mux configuration must now set the ``clocks``
