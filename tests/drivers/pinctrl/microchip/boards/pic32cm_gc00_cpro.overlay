@@ -1,0 +1,73 @@
+/*
+ * Copyright (c) 2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	test_device: test_device@0 {
+		compatible = "vnd,pinctrl-device";
+		reg = <0x0 0x1>;
+		pinctrl-0 = <&test_device_default>;
+		pinctrl-names = "default";
+	};
+};
+
+&pinctrl {
+	test_device_default: test_device_default {
+		/* Note: the groups are just meant for testing if properties and
+		 * pins are parsed correctly, but do not necessarily represent a
+		 * feasible combination
+		 */
+		group1 {
+			pinmux = <PA0D_SERCOM3_PAD1>,
+				 <PA1D_SERCOM3_PAD2>;
+		};
+
+		group2 {
+			pinmux = <PA3D_SERCOM4_PAD0>;
+			bias-pull-up;
+		};
+
+		group3 {
+			pinmux = <PA4D_SERCOM4_PAD1>;
+			bias-pull-down;
+		};
+
+		group4 {
+			pinmux = <PA15D_SERCOM5_PAD3>;
+			input-enable;
+			output-enable;
+		};
+
+		group5 {
+			pinmux = <PA16D_SERCOM5_PAD0>;
+			drive-strength = <1>;
+		};
+
+		group6 {
+			pinmux = <PA17D_SERCOM5_PAD1>;
+			drive-open-drain;
+		};
+
+		group7 {
+			pinmux = <PA18D_SERCOM5_PAD2>;
+			slew-rate = "fast";
+		};
+
+		group8 {
+			pinmux = <PA19_GPIO>;
+			slew-rate = "slow4";
+		};
+
+		group9 {
+			pinmux = <PA20_GPIO>;
+			slew-rate = "slow8";
+		};
+
+		group10 {
+			pinmux = <PB0_GPIO>;
+			slew-rate = "slow12";
+		};
+	};
+};
