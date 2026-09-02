@@ -33,7 +33,7 @@
 		led2 = &user_led1_blue;
 		sw0 = &user_button_1;
 		sw1 = &user_button_2;
-		watchdog0 = &swt0;
+		watchdog0 = &fs26_wdt;
 		/* For pwm test suites */
 		pwm-0 = &emios0_pwm;
 		pwm-1 = &flexio0_pwm;

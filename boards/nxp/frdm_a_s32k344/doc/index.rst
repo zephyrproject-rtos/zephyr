@@ -21,14 +21,6 @@ Hardware
 
 - `NXP FS26 Safety System Basis Chip`_
 
-- Interfaces
-
-  - Console UART
-  - 6x CAN FD
-  - 100Base-T1 Ethernet
-  - JST-GH connectors and I/O headers for I2C, SPI, GPIO,
-    PWM, etc.
-
 More information about the hardware and design resources can be found at
 `NXP FRDM-A-S32K344`_ website.
 
@@ -225,12 +217,6 @@ interfacing with a `KSZ8091RNDIA`_ 100BASE-T Ethernet PHY.
 
 The Ethernet signals are routed directly to the on-board RJ45 connector (J7),
 enabling robust network communication and evaluation for automotive and industrial applications.
-
-.. todo::
-   The Ethernet PHY devicetree node reuses the microchip,ksz8081 driver, since
-   Zephyr has no dedicated KSZ8091 binding. Both parts share the same base
-   register map; KSZ8091 only adds EEE/WOL on top, which are not used here.
-   Verify Ethernet link-up works on FRDM-A-S32K344 board.
 
 Programming and Debugging
 =========================
