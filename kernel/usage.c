@@ -98,6 +98,16 @@ void z_sched_usage_start(struct k_thread *thread)
 
 void z_sched_usage_stop(void)
 {
+	/* Only this CPU writes usage0, and callers keep local IRQs masked.
+	 * Architecture IRQ entry can call z_sched_usage_stop() before IRQ-exit
+	 * scheduling calls it again through z_sched_usage_switch(), even when
+	 * resuming the same thread. If accounting is already stopped, the
+	 * redundant call has no shared counters to update and needs no lock.
+	 */
+	if (_current_cpu->usage0 == 0U) {
+		return;
+	}
+
 	k_spinlock_key_t k   = k_spin_lock(&usage_lock);
 
 	struct _cpu     *cpu = _current_cpu;
