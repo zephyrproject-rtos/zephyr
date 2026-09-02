@@ -20,11 +20,15 @@
 
 LOG_MODULE_REGISTER(clock_control_mspm0, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
-#if defined(CONFIG_SOC_SERIES_MSPM33C)
+#if defined(CONFIG_SOC_SERIES_MSPM33C) || defined(CONFIG_SOC_SERIES_AM13E)
 #define MSPM0_REQUIRES_SYSPLLPARAM2 1
 #define MSPM0_CONFIGURE_WAIT_STATES 1
 #define MSPM0_HAS_MCLK_DIV2_DIV4    1
 #define MSPM0_MCLK_CANNOT_USE_LFCLK 1
+#endif
+
+#if defined(CONFIG_SOC_SERIES_MSPM33C)
+#define MSPM0_HAS_RAM_WAIT_STATES 1
 #endif
 
 #if defined(CONFIG_SOC_SERIES_MSPM0L) || defined(CONFIG_SOC_SERIES_MSPM0G)
@@ -227,6 +231,8 @@ struct clock_mspm0_config {
 #endif
 #if defined(MSPM0_CONFIGURE_WAIT_STATES)
 	const struct device *fri;
+#endif
+#if defined(MSPM0_HAS_RAM_WAIT_STATES)
 	const struct device *memcfg;
 #endif
 };
@@ -952,14 +958,22 @@ static int clock_mspm0_syspll_load_trim(const struct device *dev, uint32_t floop
 #endif /* MSPM0_HAS_CPUSS */
 
 #if defined(MSPM0_CONFIGURE_WAIT_STATES)
-	ret = syscon_update_bits(
-		cfg->fri, FRI_FRDCNTL_OFFSET,
-		FRI_FRDCNTL_TRIMENGRRWAIT | FRI_FRDCNTL_RWAIT | FRI_FRDCNTL_WS0_MODE,
-		FIELD_PREP(FRI_FRDCNTL_TRIMENGRRWAIT, 2) | FIELD_PREP(FRI_FRDCNTL_RWAIT, 2));
-	if (ret < 0) {
-		return ret;
+	{
+		uint32_t frdcntl_mask = FRI_FRDCNTL_RWAIT | FRI_FRDCNTL_WS0_MODE;
+		uint32_t frdcntl_val = FIELD_PREP(FRI_FRDCNTL_RWAIT, 2);
+
+#if defined(MSPM0_HAS_RAM_WAIT_STATES)
+		frdcntl_mask |= FRI_FRDCNTL_TRIMENGRRWAIT;
+		frdcntl_val |= FIELD_PREP(FRI_FRDCNTL_TRIMENGRRWAIT, 2);
+#endif /* defined(MSPM0_HAS_RAM_WAIT_STATES) */
+
+		ret = syscon_update_bits(cfg->fri, FRI_FRDCNTL_OFFSET, frdcntl_mask, frdcntl_val);
+		if (ret < 0) {
+			return ret;
+		}
 	}
 
+#if defined(MSPM0_HAS_RAM_WAIT_STATES)
 	ret = syscon_update_bits(
 		cfg->memcfg, MEMCFG_RAM_WS_CONFIG_OFFSET,
 		MEMCFG_RAM_WS_CONFIG_ULL_WS_ENABLE | MEMCFG_RAM_WS_CONFIG_GLXMP_0_WS_ENABLE |
@@ -971,6 +985,7 @@ static int clock_mspm0_syspll_load_trim(const struct device *dev, uint32_t floop
 	if (ret < 0) {
 		return ret;
 	}
+#endif /* defined(MSPM0_HAS_RAM_WAIT_STATES) */
 #endif /* defined(MSPM0_CONFIGURE_WAIT_STATES) */
 
 	if (floopin_hz >= MHZ(4) && floopin_hz < MHZ(8)) {
@@ -1878,6 +1893,8 @@ static const struct clock_mspm0_config clock_mspm0_cfg = {
 #endif
 #if defined(MSPM0_CONFIGURE_WAIT_STATES)
 	.fri = DEVICE_DT_GET(DT_PHANDLE(DT_NODELABEL(ckm), fri)),
+#endif
+#if defined(MSPM0_HAS_RAM_WAIT_STATES)
 	.memcfg = DEVICE_DT_GET(DT_PHANDLE(DT_NODELABEL(ckm), memcfg)),
 #endif
 };
