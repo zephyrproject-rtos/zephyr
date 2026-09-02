@@ -47,6 +47,8 @@
 			compatible = "microchip,sam-pmc";
 			reg = <0xf0014000 0x200>;
 			#clock-cells = <2>;
+			clocks = <&clk32k 1>, <&clk32k 0>, <&main_xtal>;
+			clock-names = "td_slck", "md_slck", "main_xtal";
 		};
 
 		clk32k: clock-controller@f8018050 {
@@ -68,8 +70,8 @@
 		pit: timer@f8048030 {
 			compatible = "microchip,pit-g1-timer";
 			reg = <0xf8048030 0x4000>;
-			clocks = <&pmc PMC_TYPE_PERIPHERAL 66>, <&pmc PMC_TYPE_GCK 66>;
-			clock-names = "pclk", "gclk";
+			clocks = <&pmc PMC_TYPE_CORE PMC_MCK>;
+			clock-names = "mck";
 			interrupt-parent = <&aic>;
 			interrupts = <3 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			status = "disabled";
