@@ -144,6 +144,8 @@ struct k_mem_partition;
  *
  * @satisfies ZEP-SRS-8-1
  * @satisfies ZEP-SRS-8-20
+ * @satisfies ZEP-SRS-8-28
+ * @satisfies ZEP-SRS-8-29
  */
 int k_mem_domain_init(struct k_mem_domain *domain, uint8_t num_parts,
 			     struct k_mem_partition *parts[]);
@@ -188,6 +190,8 @@ int k_mem_domain_deinit(struct k_mem_domain *domain);
  *
  * @satisfies ZEP-SRS-8-17
  * @satisfies ZEP-SRS-8-21
+ * @satisfies ZEP-SRS-8-28
+ * @satisfies ZEP-SRS-8-29
  */
 int k_mem_domain_add_partition(struct k_mem_domain *domain,
 				      struct k_mem_partition *part);
@@ -222,6 +226,7 @@ int k_mem_domain_remove_partition(struct k_mem_domain *domain,
  *
  * @satisfies ZEP-SRS-8-23
  * @satisfies ZEP-SRS-8-24
+ * @satisfies ZEP-SRS-8-30
  */
 int k_mem_domain_add_thread(struct k_mem_domain *domain,
 				   k_tid_t thread);

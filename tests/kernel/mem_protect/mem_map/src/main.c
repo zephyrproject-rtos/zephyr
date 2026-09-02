@@ -74,7 +74,7 @@ void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf)
  * - Both aliases show the written data and the read-only write faults.
  *
  * @see k_mem_map_phys_bare()
- * @verifies ZEP-SRS-36-1
+ * @verifies ZEP-SRS-36-17
  */
 ZTEST(mem_map, test_k_mem_map_phys_bare_rw)
 {
@@ -183,7 +183,7 @@ static void transplanted_function(bool *executed)
  * - The executable mapping runs the function; the non-executable one faults.
  *
  * @see k_mem_map_phys_bare()
- * @verifies ZEP-SRS-36-1
+ * @verifies ZEP-SRS-36-17
  */
 ZTEST(mem_map, test_k_mem_map_phys_bare_exec)
 {
@@ -245,7 +245,7 @@ ZTEST(mem_map, test_k_mem_map_phys_bare_exec)
  * - The buffer is unchanged by the act of mapping it.
  *
  * @see k_mem_map_phys_bare()
- * @verifies ZEP-SRS-36-1
+ * @verifies ZEP-SRS-36-17
  */
 ZTEST(mem_map, test_k_mem_map_phys_bare_side_effect)
 {
@@ -290,7 +290,7 @@ ZTEST(mem_map, test_k_mem_map_phys_bare_side_effect)
  * - The read after the unmap faults; the code after it is never reached.
  *
  * @see k_mem_unmap_phys_bare()
- * @verifies ZEP-SRS-36-2
+ * @verifies ZEP-SRS-36-17
  */
 ZTEST(mem_map, test_k_mem_unmap_phys_bare)
 {

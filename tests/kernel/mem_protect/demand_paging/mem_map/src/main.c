@@ -327,7 +327,7 @@ ZTEST(demand_paging, test_touch_anon_pages_zigzag2)
  * - The access faults; the code after it is never reached.
  *
  * @see k_mem_unmap()
- * @verifies ZEP-SRS-36-2
+ * @verifies ZEP-SRS-36-16
  */
 ZTEST(demand_paging, test_unmap_anon_pages)
 {
