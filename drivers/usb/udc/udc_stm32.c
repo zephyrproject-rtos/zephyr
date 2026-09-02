@@ -439,19 +439,15 @@ void HAL_PCD_ISOOUTIncompleteCallback(stm32_pcd_handle_t *hpcd, uint8_t epnum)
 
 void HAL_PCD_ISOINIncompleteCallback(stm32_pcd_handle_t *hpcd, uint8_t epnum)
 {
-	ARG_UNUSED(hpcd);
-	ARG_UNUSED(epnum);
-
-	/* Recovering isochronous IN after an incomplete transfer is a TODO. It
-	 * keeps working today because iso IN is completion-driven: every
-	 * transmitted frame yields a DataInStageCallback that arms the next queued
-	 * buffer, so a missed frame only drops that one packet. Iso OUT gets no
-	 * such completion on a miss (the core disables the endpoint and nothing
-	 * re-arms it), which is why only OUT wedges. A proper IN fix cannot re-arm
-	 * here either: udc_stm32_tx() has already advanced the pending buffer's
-	 * data/len, so it must go through the normal data-in completion path (drop
-	 * the missed frame and arm the next one).
+	/* The OTG core aborts and disables the endpoint on IISOIXFR, then calls this
+	 * instead of HAL_PCD_DataInStageCallback(). Drop the missed frame through the
+	 * normal IN completion path so that the next queued buffer gets armed.
+	 *
+	 * The ST USB IP does not report incomplete isochronous IN transfers, so this
+	 * callback is never invoked for it and HAL_PCD_DataInStageCallback() is called
+	 * as usual.
 	 */
+	HAL_PCD_DataInStageCallback(hpcd, epnum);
 }
 
 void HAL_PCDEx_SetConnectionState(stm32_pcd_handle_t *hpcd, uint8_t state)
