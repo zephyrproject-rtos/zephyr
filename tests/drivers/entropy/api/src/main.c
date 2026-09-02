@@ -32,7 +32,7 @@ static uint8_t entropy_buffer[BUFFER_LENGTH] = {0};
 static uint8_t entropy_buffer[BUFFER_LENGTH] = {0};
 #endif
 
-static int random_entropy(const struct device *dev, char *buffer, char num)
+static int random_entropy(const struct device *dev, char *buffer, char num, bool test_isr)
 {
 	int ret, i;
 	int count = 0;
@@ -45,13 +45,42 @@ static int random_entropy(const struct device *dev, char *buffer, char num)
 	 * outside the passed buffer, and that should never
 	 * happen.
 	 */
-	ret = entropy_get_entropy(dev, buffer, BUFFER_LENGTH - 1);
-	if (ret) {
-		TC_PRINT("Error: entropy_get_entropy failed: %d\n", ret);
-		return TC_FAIL;
+	if (test_isr) {
+		/* 1 sec should be enough to get the samples */
+		k_timepoint_t tp = sys_timepoint_calc(Z_TIMEOUT_MS(1000));
+		int remaining = BUFFER_LENGTH - 1;
+
+		/* Get the random bytes possibly in several calls */
+		do {
+			uint32_t offset = BUFFER_LENGTH - 1 - remaining;
+
+			ret = entropy_get_entropy_isr(dev, buffer + offset, remaining, 0);
+			if (ret < 0) {
+				if (ret ==  -ENOSYS) {
+					TC_PRINT("Skip ISR test: .get_entropy_isr not supported\n");
+					return TC_PASS;
+				}
+
+				TC_PRINT("Error: entropy_get_entropy_isr failed: %d\n", ret);
+				return TC_FAIL;
+			}
+			remaining -= ret;
+
+			if (ret == 0 && sys_timepoint_expired(tp)) {
+				TC_PRINT("Error: Timeout on entropy_get_entropy_isr\n");
+				return TC_FAIL;
+			}
+		} while (remaining > 0);
+	} else {
+		ret = entropy_get_entropy(dev, buffer, BUFFER_LENGTH - 1);
+		if (ret) {
+			TC_PRINT("Error: entropy_get_entropy failed: %d\n", ret);
+			return TC_FAIL;
+		}
 	}
+
 	if (buffer[BUFFER_LENGTH - 1] != num) {
-		TC_PRINT("Error: entropy_get_entropy buffer overflow\n");
+		TC_PRINT("Error: buffer overflow\n");
 		return TC_FAIL;
 	}
 
@@ -73,7 +102,7 @@ static int random_entropy(const struct device *dev, char *buffer, char num)
  * Function invokes the get_entropy callback in driver
  * to get the random data and fill to passed buffer
  */
-static int get_entropy(void)
+static int get_entropy(bool test_isr)
 {
 	const struct device *const dev = entropy_get_default_device();
 	int ret;
@@ -86,7 +115,7 @@ static int get_entropy(void)
 	TC_PRINT("random device is %p, name is %s\n",
 		 dev, dev->name);
 
-	ret = random_entropy(dev, entropy_buffer, 0);
+	ret = random_entropy(dev, entropy_buffer, 0, test_isr);
 
 	/* Check whether 20% or more of buffer still filled with default
 	 * value(0), if yes then recheck again by filling nonzero value(0xa5)
@@ -94,19 +123,25 @@ static int get_entropy(void)
 	 * of buffer filled with value(0xa5) or not.
 	 */
 	if (ret == RECHECK_RANDOM_ENTROPY) {
-		ret = random_entropy(dev, entropy_buffer, 0xa5);
+		ret = random_entropy(dev, entropy_buffer, 0xa5, test_isr);
 		if (ret == RECHECK_RANDOM_ENTROPY) {
 			return TC_FAIL;
 		} else {
 			return ret;
 		}
 	}
+
 	return ret;
 }
 
 ZTEST(entropy_api, test_entropy_get_entropy)
 {
-	zassert_true(get_entropy() == TC_PASS);
+	zassert_true(get_entropy(false) == TC_PASS);
+}
+
+ZTEST(entropy_api, test_entropy_get_entropy_isr)
+{
+	zassert_true(get_entropy(true) == TC_PASS);
 }
 
 void *entropy_api_setup(void)
