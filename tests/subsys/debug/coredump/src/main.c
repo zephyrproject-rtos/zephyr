@@ -12,12 +12,27 @@
 #include <zephyr/debug/gcov.h>
 #endif
 
+#ifdef CONFIG_CPU_CORTEX_M
+#include <zephyr/arch/arm/cortex_m/exception.h>
+
+static volatile uint32_t expected_fault_sp;
+#endif
+
 struct k_thread crash_thread;
 K_THREAD_STACK_DEFINE(crash_stack, CONFIG_MAIN_STACK_SIZE);
 
 void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *pEsf)
 {
 	ARG_UNUSED(pEsf);
+
+#ifdef CONFIG_CPU_CORTEX_M
+	if ((expected_fault_sp != 0U) && (z_arm_coredump_fault_sp == expected_fault_sp)) {
+		printk("fault sp matches: 0x%08x\n", z_arm_coredump_fault_sp);
+	} else {
+		printk("fault sp mismatch: expected 0x%08x, got 0x%08x\n", expected_fault_sp,
+		       z_arm_coredump_fault_sp);
+	}
+#endif
 
 	printk("%s is expected; reason = %u; halting ...\n", __func__, reason);
 
@@ -64,7 +79,12 @@ __no_optimization void func_3(uint32_t *addr)
 	 * builds may crash the system, so use, instead an
 	 * undefined instruction to trigger a CPU fault.
 	 */
-	__asm__ volatile("udf #0" : : : );
+	__asm__ volatile("mov r0, sp\n\t"
+			 "str r0, [%0]\n\t"
+			 "udf #0\n\t"
+			 :
+			 : "l"(&expected_fault_sp)
+			 : "r0", "memory");
 #endif
 }
 
@@ -80,6 +100,14 @@ void func_1(uint32_t *addr)
 
 static void crash_entry(void *p1, void *p2, void *p3)
 {
+#ifdef CONFIG_CPU_CORTEX_M
+	/* Ensure the fault stack pointer is zero. */
+	if (0 != z_arm_coredump_fault_sp) {
+		printk("fault sp should be zero to start, got: 0x%08x\n", z_arm_coredump_fault_sp);
+		return;
+	}
+#endif
+
 	printk("Coredump: %s\n", CONFIG_BOARD);
 
 	func_1(0);
