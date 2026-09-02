@@ -1692,7 +1692,7 @@ static DEVICE_API(i2c, i2c_enhance_driver_api) = {
 		.transfer_timeout_ms = I2C_DT_INST_TRANSFER_TIMEOUT_MS(inst),   \
 		.scl_sda_low_timeout_ms =                                       \
 			DT_INST_PROP_OR(inst,                                   \
-					scl_sda_low_timeout_ms,                 \
+					scl_sda_low_timeout,                    \
 					I2C_CLK_LOW_TIMEOUT),                   \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                   \
 		.target_enable = DT_INST_PROP(inst, target_enable),             \
