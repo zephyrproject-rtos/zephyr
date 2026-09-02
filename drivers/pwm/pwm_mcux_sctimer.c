@@ -93,6 +93,8 @@ struct pwm_mcux_sctimer_data {
 	uint32_t configured_chan;
 #ifdef CONFIG_PWM_CAPTURE
 	uint32_t match_event;
+	/* Channels with a measurement in flight, see mcux_sctimer_update_overflow_irq() */
+	uint32_t overflow_irq_mask;
 	struct pwm_mcux_sctimer_capture_data capture_data[CAPTURE_CHANNEL_COUNT];
 #endif /* CONFIG_PWM_CAPTURE */
 	bool pwm_channel_active;
@@ -479,6 +481,33 @@ static int mcux_sctimer_configure_capture(const struct device *dev,
 	return 0;
 }
 
+/* Arm the counter overflow interrupt only while a measurement is in flight.
+ *
+ * calc_ticks() uses the wrap count as a difference between the two edges, so wraps
+ * before the first edge cancel out. They are not free: match_event is the PWM period
+ * event and nothing disables it until a capture completes, so waiting for an edge that
+ * never arrives turns a short PWM period into an interrupt storm. The event is shared
+ * by all capture channels, hence the bitmask.
+ */
+static void mcux_sctimer_update_overflow_irq(const struct device *dev, uint32_t channel,
+					     bool needed)
+{
+	const struct pwm_mcux_sctimer_config *config = dev->config;
+	struct pwm_mcux_sctimer_data *data = dev->data;
+
+	if (needed) {
+		data->overflow_irq_mask |= (1UL << channel);
+	} else {
+		data->overflow_irq_mask &= ~(1UL << channel);
+	}
+
+	if (data->overflow_irq_mask != 0U) {
+		SCTIMER_EnableInterrupts(config->base, (1 << data->match_event));
+	} else {
+		SCTIMER_DisableInterrupts(config->base, (1 << data->match_event));
+	}
+}
+
 static int mcux_sctimer_enable_capture(const struct device *dev, uint32_t channel)
 {
 	const struct pwm_mcux_sctimer_config *config = dev->config;
@@ -509,11 +538,12 @@ static int mcux_sctimer_enable_capture(const struct device *dev, uint32_t channe
 	status_flags = SCTIMER_GetStatusFlags(config->base);
 	SCTIMER_ClearStatusFlags(config->base, status_flags);
 
-	/* Enable interrupts for capture events and limit */
+	/* Enable interrupts for the capture edges only, the overflow interrupt is armed
+	 * once a first edge has been captured.
+	 */
 	SCTIMER_EnableInterrupts(config->base,
 		(1 << data->capture_data[channel].first_capture_event) |
-		(1 << data->capture_data[channel].second_capture_event) |
-		(1 << data->match_event));
+		(1 << data->capture_data[channel].second_capture_event));
 
 	return 0;
 }
@@ -533,8 +563,9 @@ static int mcux_sctimer_disable_capture(const struct device *dev, uint32_t chann
 		data->capture_data[channel].channel_used = false;
 		SCTIMER_DisableInterrupts(config->base,
 			(1 << data->capture_data[channel].first_capture_event) |
-			(1 << data->capture_data[channel].second_capture_event) |
-			(1 << data->match_event));
+			(1 << data->capture_data[channel].second_capture_event));
+		/* Drop this channel's claim on the shared overflow interrupt */
+		mcux_sctimer_update_overflow_irq(dev, channel, false);
 	}
 
 	/* Stop timer */
@@ -584,6 +615,9 @@ static void mcux_sctimer_capture_first_edge(const struct device *dev, uint32_t c
 	data->capture_data[channel].first_limit_count =
 		data->capture_data[channel].overflow_count;
 	data->capture_data[channel].first_edge_captured = true;
+
+	/* A measurement is now in flight: start counting counter wraps */
+	mcux_sctimer_update_overflow_irq(dev, channel, true);
 }
 
 static void mcux_sctimer_capture_second_edge(const struct device *dev, uint32_t channel)
@@ -598,6 +632,9 @@ static void mcux_sctimer_capture_second_edge(const struct device *dev, uint32_t 
 		data->capture_data[channel].overflow_count;
 	data->capture_data[channel].capture_ready = true;
 	data->capture_data[channel].first_edge_captured = false;
+
+	/* Measurement window closed */
+	mcux_sctimer_update_overflow_irq(dev, channel, false);
 }
 
 static void prepare_next_capture(const struct device *dev, uint32_t channel)
@@ -625,16 +662,21 @@ static void prepare_next_capture(const struct device *dev, uint32_t channel)
 			/* No actions required. */
 		}
 	} else {
-		/* Single capture mode: Disable interrupts */
+		/* Single capture mode: Disable interrupts, overflow handled below */
 		SCTIMER_DisableInterrupts(config->base,
 			(1 << data->capture_data[channel].first_capture_event) |
-			(1 << data->capture_data[channel].second_capture_event) |
-			(1 << data->match_event));
+			(1 << data->capture_data[channel].second_capture_event));
 	}
 
 	/* Clear second capture setting */
 	data->capture_data[channel].second_limit_count = 0;
 	data->capture_data[channel].second_capture_value = 0;
+
+	/* Continuous period capture keeps a measurement in flight by carrying the second
+	 * edge over as the next first edge.
+	 */
+	mcux_sctimer_update_overflow_irq(dev, channel,
+					 data->capture_data[channel].first_edge_captured);
 }
 
 static void mcux_sctimer_process_channel_events(const struct device *dev, uint32_t channel,
@@ -782,6 +824,7 @@ static int mcux_sctimer_pwm_init_common(const struct device *dev)
 	}
 	/* Initialize capture data */
 	data->match_event = EVENT_NOT_SET;
+	data->overflow_irq_mask = 0;
 	for (i = 0; i < CAPTURE_CHANNEL_COUNT; i++) {
 		/* Reset capture state */
 		memset(&data->capture_data[i], 0, sizeof(struct pwm_mcux_sctimer_capture_data));
