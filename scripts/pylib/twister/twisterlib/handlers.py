@@ -868,22 +868,24 @@ class DeviceHandler(Handler):
                     ser_pty_process = self._start_serial_pty(serial_pty, ser_pty_master)
                     ser.open()
                 elif runner == "esp32":
-                    # Apply ESP32-specific RTS/DTR reset logic
-                    logger.debug("Applying ESP32 RTS/DTR reset sequence")
-
-                    # Prepare: IO0=HIGH (DTR=True), EN=HIGH (RTS=False)
-                    ser.dtr = True
-                    ser.rts = False
+                    # Reset ESP32 into application mode after flashing. Boot mode
+                    # is latched from GPIO0 (DTR) when reset (EN/RTS) is released:
+                    # GPIO0 high boots the application, GPIO0 low enters the
+                    # serial bootloader. Keeping GPIO0 high while releasing reset
+                    # ensures the flashed application runs and prints its console
+                    # output for the harness.
+                    logger.debug("Applying ESP32 RTS/DTR reset sequence (app mode)")
 
                     ser.open()
 
-                    # Reset pulse: IO0=LOW (DTR=False), EN=LOW (RTS=True)
+                    # Assert reset: EN low (RTS true), GPIO0 high (DTR false).
                     ser.dtr = False
                     ser.rts = True
                     time.sleep(0.1)
 
-                    # Return to normal boot
+                    # Release reset with GPIO0 high for normal application boot.
                     ser.rts = False
+                    time.sleep(0.5)
                 else:
                     # Wait for serial port to appear after flashing
                     # To keep dependency between flash_timeout proposed 20% of this value
