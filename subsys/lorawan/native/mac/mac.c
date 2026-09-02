@@ -126,6 +126,10 @@ int mac_do_tx_rx(struct lwan_ctx *ctx, const struct mac_tx_params *params)
 		return ret;
 	}
 
+	if (region->clamp_tx_power != NULL) {
+		region->clamp_tx_power(params->tx_freq, &tx_power);
+	}
+
 	LOG_INF("TX: freq=%u dr=%u power=%d", params->tx_freq, params->tx_dr_idx,
 		tx_power);
 
