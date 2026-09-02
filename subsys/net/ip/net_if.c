@@ -6092,14 +6092,20 @@ static void remove_ipv6_ifaddr(struct net_if *iface,
 #if defined(CONFIG_NET_IPV6_DAD)
 	if (!net_if_flag_is_set(iface, NET_IF_IPV6_NO_ND)) {
 		k_mutex_lock(&lock, K_FOREVER);
-		if (sys_slist_find_and_remove(&active_dad_timers,
-					      &ifaddr->dad_node)) {
-			/* Address with active DAD timer would still have
-			 * stale entry in the neighbor cache.
-			 */
+		(void)sys_slist_find_and_remove(&active_dad_timers,
+						&ifaddr->dad_node);
+		k_mutex_unlock(&lock);
+
+		/* A tentative address still has the entry for itself that
+		 * the DAD solicitation left in the neighbour cache, so
+		 * remove it here. The address state is checked rather than
+		 * membership of active_dad_timers, because dad_timeout()
+		 * unlinks the address from that list before it processes it
+		 * with the lock released.
+		 */
+		if (ifaddr->addr_state == NET_ADDR_TENTATIVE) {
 			net_ipv6_nbr_rm(iface, &ifaddr->address.in6_addr);
 		}
-		k_mutex_unlock(&lock);
 	}
 #endif
 
