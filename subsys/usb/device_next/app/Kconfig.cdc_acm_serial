@@ -61,4 +61,22 @@ config CDC_ACM_SERIAL_MAX_POWER
 	help
 	  bMaxPower value in the configuration in 2 mA units.
 
+config CDC_ACM_SERIAL_REBOOT_TO_BOOTLOADER
+	bool "Reboot into the bootloader on a magic DTE rate"
+	depends on SOC_REBOOT_TO_BOOTLOADER_HOOK && UART_USE_RUNTIME_CONFIGURE
+	default y if BOOTLOADER_BOSSA
+	help
+	  Reboot the device into its bootloader when the host sets the DTE rate
+	  to CDC_ACM_SERIAL_REBOOT_DTE_RATE. Arduino style programmers use this
+	  to put a board into programming mode without the user having to press
+	  a button.
+
+config CDC_ACM_SERIAL_REBOOT_DTE_RATE
+	int "DTE rate that triggers the reboot"
+	depends on CDC_ACM_SERIAL_REBOOT_TO_BOOTLOADER
+	default 1200
+	help
+	  DTE rate, in bits per second, that triggers a reboot into the
+	  bootloader. BOSSA compatible bootloaders use 1200.
+
 endif #CDC_ACM_SERIAL_INITIALIZE_AT_BOOT
