@@ -2,10 +2,11 @@
 # SPDX-License-Identifier: Apache-2.0
 
 if(CONFIG_SOC_NRF54LM20A_CPUAPP)
-  board_runner_args(openocd "--cmd-load=nrf54lm20a-load" -c "targets nrf54lm20a.cpu")
+  board_runner_args(openocd "--cmd-load=nrf54l_load" "--cmd-erase=nrf54l_mass_erase"
+                    "--cmd-verify=verify_image" -c "targets nrf54lm20a.cpu")
   board_runner_args(jlink "--device=nRF54LM20A_M33" "--speed=4000")
 elseif(CONFIG_SOC_NRF54LM20A_CPUFLPR)
-  board_runner_args(openocd "--cmd-load=nrf54lm20a-load" -c "targets nrf54lm20a.aux")
+  board_runner_args(openocd "--cmd-load=nrf54l_load" "--cmd-erase=nrf54l_mass_erase" -c "targets nrf54lm20a.aux")
   board_runner_args(jlink "--device=nRF54LM20A_RV32" "--speed=4000")
 endif()
 
