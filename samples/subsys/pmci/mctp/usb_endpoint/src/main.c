@@ -47,12 +47,10 @@ static int enable_usb_device_next(void)
 		return -ENODEV;
 	}
 
-	if (!usbd_can_detect_vbus(mctp_poc_usbd)) {
-		err = usbd_enable(mctp_poc_usbd);
-		if (err) {
-			LOG_ERR("Failed to enable device support");
-			return err;
-		}
+	err = usbd_enable(mctp_poc_usbd);
+	if (err) {
+		LOG_ERR("Failed to enable device support");
+		return err;
 	}
 
 	LOG_INF("USB device support enabled");
