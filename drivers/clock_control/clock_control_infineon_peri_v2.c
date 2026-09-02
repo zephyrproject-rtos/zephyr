@@ -12,6 +12,7 @@
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
 #include <zephyr/sys/util.h>
+#include "clock_control_common.h"
 
 #include <cy_sysclk.h>
 
@@ -261,6 +262,8 @@ static int ifx_peri_init(const struct device *dev)
 }
 
 static DEVICE_API(clock_control, ifx_peri_api) = {
+	.on = clock_control_always_running_clk_on,
+	.off = clock_control_always_running_clk_off,
 	.get_rate = ifx_peri_get_rate,
 	.set_rate = ifx_peri_set_rate,
 };

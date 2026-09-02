@@ -11,6 +11,7 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/clock_control_ifx.h>
+#include "clock_control_common.h"
 
 #include <cy_sysclk.h>
 
@@ -218,6 +219,8 @@ static int ifx_clk_init(const struct device *dev)
 }
 
 static DEVICE_API(clock_control, ifx_clock_control_api) = {
+	.on = clock_control_always_running_clk_on,
+	.off = clock_control_always_running_clk_off,
 	.get_rate = ifx_clk_get_rate,
 };
 
