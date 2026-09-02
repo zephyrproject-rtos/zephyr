@@ -24,6 +24,7 @@
 #include <soc.h>
 #include <errno.h>
 #include <power.h>
+#include <esp_gpio_port.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/dt-bindings/gpio/espressif-esp32-gpio.h>
@@ -103,7 +104,7 @@ static inline bool gpio_pin_is_output_capable(uint32_t pin)
 static int IRAM_ATTR gpio_esp32_config(const struct device *dev, gpio_pin_t pin, gpio_flags_t flags)
 {
 	const struct gpio_esp32_config *const cfg = dev->config;
-	uint32_t io_pin = (uint32_t)pin + ((cfg->gpio_port == 1 && pin < 32) ? 32 : 0);
+	uint32_t io_pin = esp_gpio_port_pad(cfg->gpio_port, pin);
 	uint32_t key;
 	bool gpio_pull;
 	bool rtcio_pull;
@@ -457,7 +458,7 @@ static int gpio_esp32_pin_interrupt_configure(const struct device *port, gpio_pi
 					      enum gpio_int_mode mode, enum gpio_int_trig trig)
 {
 	const struct gpio_esp32_config *const cfg = port->config;
-	uint32_t io_pin = (uint32_t)pin + ((cfg->gpio_port == 1 && pin < 32) ? 32 : 0);
+	uint32_t io_pin = esp_gpio_port_pad(cfg->gpio_port, pin);
 
 	/* Wakeup is configured in gpio_esp32_config(); strip the bit so
 	 * convert_int_type() only sees edge/level trigger bits.
