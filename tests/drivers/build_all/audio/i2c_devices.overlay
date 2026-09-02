@@ -111,6 +111,13 @@
 				status = "okay";
 			};
 
+			test_i2c_tlv320aic3104: tlv320aic3104@b {
+				compatible = "ti,tlv320aic3104";
+				reg = <0xb>;
+				reset-gpios = <&test_gpio 0 0>;
+				status = "okay";
+			};
+
 			test_i2c_tas2560: tas2560@4c {
 				compatible = "ti,tas2560";
 				reg = <0x4c>;
