@@ -15,7 +15,7 @@
 #include "cyw43_spi.h"
 #include "rpi_pico_cyw43_spi.h"
 
-#define DT_DRV_COMPAT raspberrypi_cyw43_wifi
+#define DT_DRV_COMPAT infineon_airoc_wifi
 
 LOG_MODULE_DECLARE(rpi_pico_cyw43_drv, CONFIG_WIFI_LOG_LEVEL);
 
@@ -48,11 +48,11 @@ PINCTRL_DT_INST_DEFINE(0);
 struct cyw43_wifi_dev_config cyw43_wifi_dev_cfg = {
 	.bus_spi = SPI_DT_SPEC_GET(DT_DRV_INST(0), CYW43_WIFI_SPI_OPERATION),
 	.wl_on_gpio = GPIO_DT_SPEC_GET_OR(
-		DT_DRV_INST(0), wl_on_gpios, {0}),
+		DT_DRV_INST(0), wifi_reg_on_gpios, {0}),
 	.bus_select_gpio = GPIO_DT_SPEC_GET_OR(
 		DT_DRV_INST(0), bus_select_gpios, {0}),
 	.host_wake_gpio = GPIO_DT_SPEC_GET_OR(
-		DT_DRV_INST(0), host_wake_gpios, {0}),
+		DT_DRV_INST(0), wifi_host_wake_gpios, {0}),
 	.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(0),
 };
 

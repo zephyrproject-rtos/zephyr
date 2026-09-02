@@ -2,9 +2,10 @@
 # Copyright (c) 2026 Igalia S.L.
 # SPDX-License-Identifier: Apache-2.0
 
-menuconfig WIFI_RPI_PICO_CYW43
+config WIFI_RPI_PICO_CYW43
 	bool "Infineon CYW43 SoC Wifi support for Raspberry Pi Pico W boards"
-	depends on DT_HAS_RASPBERRYPI_CYW43_WIFI_ENABLED
+	depends on DT_HAS_INFINEON_AIROC_WIFI_ENABLED
+	depends on !WIFI_AIROC
 	default y
 	select NET_L2_WIFI_MGMT
 	select NET_L2_ETHERNET

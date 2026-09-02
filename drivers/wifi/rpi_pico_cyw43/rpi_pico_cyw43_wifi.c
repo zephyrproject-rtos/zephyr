@@ -26,7 +26,8 @@ BUILD_ASSERT(CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE >= 2048,
 #include <zephyr/net/dhcpv4_server.h>
 #endif
 
-#define DT_DRV_COMPAT raspberrypi_cyw43_wifi
+#define DT_DRV_COMPAT infineon_airoc_wifi
+
 /*
  * Maximum number of queued CYW43439 IRQ events allowed.
  * NOTE: We'll handle the isr in a bottom half (thread) but interrupts
