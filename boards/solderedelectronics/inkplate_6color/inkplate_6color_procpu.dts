@@ -5,7 +5,7 @@
  */
 /dts-v1/;
 
-#include <espressif/esp32/esp32_wrover_e_n4r8.dtsi>
+#include <espressif/esp32/esp32.dtsi>
 #include "inkplate_6color-pinctrl.dtsi"
 #include <espressif/partitions_0x1000_amp.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
@@ -61,6 +61,15 @@
 		power-gpios = <&pcal6416a 9 GPIO_ACTIVE_HIGH>;
 		skip-calibration;
 	};
+};
+
+&flash0 {
+	reg = <0x0 DT_SIZE_M(4)>;
+	ranges = <0x0 0x0 DT_SIZE_M(4)>;
+};
+
+&psram0 {
+	size = <DT_SIZE_M(8)>;
 };
 
 &adc1 {
@@ -215,10 +224,12 @@
 };
 
 &gpio0 {
+	gpio-reserved-ranges = <6 6>, <16 2>, <20 1>, <24 1>, <28 4>;
 	status = "okay";
 };
 
 &gpio1 {
+	gpio-reserved-ranges = <5 2>;
 	status = "okay";
 };
 

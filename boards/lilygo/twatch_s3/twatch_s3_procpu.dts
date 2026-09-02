@@ -5,7 +5,7 @@
  */
 /dts-v1/;
 
-#include <espressif/esp32s3/esp32s3_r8.dtsi>
+#include <espressif/esp32s3/esp32s3.dtsi>
 #include "twatch_s3-pinctrl.dtsi"
 #include <espressif/partitions_0x0_amp_16M.dtsi>
 #include <zephyr/dt-bindings/pwm/pwm.h>
@@ -85,6 +85,15 @@
 			pwms = <&ledc0 0 PWM_HZ(100) PWM_POLARITY_NORMAL>;
 		};
 	};
+};
+
+&flash0 {
+	reg = <0x0 DT_SIZE_M(16)>;
+	ranges = <0x0 0x0 DT_SIZE_M(16)>;
+};
+
+&psram0 {
+	size = <DT_SIZE_M(8)>;
 };
 
 &ledc0 {
@@ -294,11 +303,6 @@
 
 &esp32_bt_hci {
 	status = "okay";
-};
-
-&flash0 {
-	reg = <0x0 DT_SIZE_M(16)>;
-	ranges = <0x0 0x0 DT_SIZE_M(16)>;
 };
 
 &timer0 {

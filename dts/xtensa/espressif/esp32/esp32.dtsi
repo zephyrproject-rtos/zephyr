@@ -4,9 +4,4 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "esp32s3_common.dtsi"
-
-/* 8MB psram */
-&psram0 {
-	size = <DT_SIZE_M(8)>;
-};
+#include "esp32_common.dtsi"

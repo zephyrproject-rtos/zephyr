@@ -5,7 +5,7 @@
  */
 /dts-v1/;
 
-#include <espressif/esp32s3/esp32s3_wroom_n4.dtsi>
+#include <espressif/esp32s3/esp32s3.dtsi>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <espressif/partitions_0x0_amp.dtsi>
 #include "esp_threadbr-pinctrl.dtsi"
@@ -41,6 +41,11 @@
 			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
+};
+
+&flash0 {
+	reg = <0x0 DT_SIZE_M(4)>;
+	ranges = <0x0 0x0 DT_SIZE_M(4)>;
 };
 
 &usb_serial {
