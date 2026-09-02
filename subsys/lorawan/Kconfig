@@ -44,7 +44,7 @@ config LORAWAN_REGION_EU868
 
 config LORAWAN_REGION_KR920
 	bool "South Korea 920MHz Frequency band"
-	depends on !LORA_MODULE_BACKEND_NATIVE
+	select LORA_GFSK if LORA_MODULE_BACKEND_NATIVE
 
 config LORAWAN_REGION_IN865
 	bool "India 865MHz Frequency band"
