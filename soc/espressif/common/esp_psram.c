@@ -10,7 +10,7 @@
 #include <esp_private/esp_psram_extram.h>
 #include <hal/cache_hal.h>
 #include <zephyr/multi_heap/shared_multi_heap.h>
-#if defined(CONFIG_ESP32_SOC_SPI_MEM_SUPPORT_TIMING_TUNING)
+#if defined(CONFIG_SOC_ESP32_SPI_MEM_SUPPORT_TIMING_TUNING)
 #include <esp_flash.h>
 #include <esp_private/spi_flash_os.h>
 #include <hal/spi_flash_hal.h>
@@ -36,7 +36,7 @@ int esp_psram_smh_init(void)
 	return shared_multi_heap_add(&smh_psram, NULL);
 }
 
-#if defined(CONFIG_ESP32_SOC_SPI_MEM_SUPPORT_TIMING_TUNING)
+#if defined(CONFIG_SOC_ESP32_SPI_MEM_SUPPORT_TIMING_TUNING)
 /*
  * PSRAM timing tuning reprograms the MSPI core clock, which is shared
  * between flash and PSRAM. The esp_flash driver latched the flash
@@ -83,7 +83,7 @@ void esp_init_psram(void)
 		return;
 	}
 
-#if defined(CONFIG_ESP32_SOC_SPI_MEM_SUPPORT_TIMING_TUNING)
+#if defined(CONFIG_SOC_ESP32_SPI_MEM_SUPPORT_TIMING_TUNING)
 	esp_psram_refresh_flash_timing();
 #endif
 

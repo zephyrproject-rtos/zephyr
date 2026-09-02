@@ -3,7 +3,7 @@
 
 config ESP32_ETM
 	bool
-	depends on ESP32_SOC_ETM_SUPPORTED
+	depends on SOC_ESP32_ETM_SUPPORTED
 	help
 	  Espressif Event Task Matrix (ETM) channel allocator. The ETM
 	  routes a peripheral event to a peripheral task in hardware. This
