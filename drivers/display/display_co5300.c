@@ -14,7 +14,6 @@ LOG_MODULE_REGISTER(co5300, CONFIG_DISPLAY_LOG_LEVEL);
 #include <zephyr/display/mipi_display.h>
 #include <zephyr/drivers/display.h>
 #include <zephyr/sys/byteorder.h>
-#include <zephyr/linker/devicetree_regions.h>
 #include <zephyr/drivers/gpio.h>
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(mipi_dsi)
@@ -48,8 +47,7 @@ LOG_MODULE_REGISTER(co5300, CONFIG_DISPLAY_LOG_LEVEL);
 
 typedef int (*co5300_cmd_write_fn)(const struct device *dev, uint8_t cmd, const void *tx_buf,
 				   uint32_t tx_len);
-typedef int (*co5300_display_write_fn)(const struct device *dev, , const uint16_t x,
-				       const uint16_t y,
+typedef int (*co5300_display_write_fn)(const struct device *dev,
 				       const struct display_buffer_descriptor *desc,
 				       const void *buf);
 
@@ -58,7 +56,6 @@ struct co5300_config {
 	const struct device *mipi_dev;
 	uint16_t channel;
 	uint16_t num_of_lanes;
-	uint16_t addr_align;
 #endif
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(mspi)
 	const struct device *mspi_bus;
@@ -82,11 +79,6 @@ struct co5300_data {
 	uint8_t bytes_per_pixel;
 	struct gpio_callback tear_effect_gpio_cb;
 	struct k_sem tear_effect_sem;
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(mipi_dsi)
-	/* Pointer to framebuffer */
-	uint8_t *frame_ptr;
-	uint32_t frame_pitch;
-#endif
 };
 
 static int co5300_set_window(const struct device *dev, const uint16_t x, const uint16_t y,
@@ -116,60 +108,6 @@ static int co5300_set_window(const struct device *dev, const uint16_t x, const u
 }
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(mipi_dsi)
-static void co5300_mipi_dsi_adjust_coordinates(const struct device *dev, const uint16_t x,
-					       const uint16_t y,
-					       const struct display_buffer_descriptor *desc,
-					       const void *buf, uint16_t *local_x,
-					       uint16_t *local_y,
-					       struct display_buffer_descriptor *local_desc)
-{
-	const struct co5300_config *config = dev->config;
-	struct co5300_data *data = dev->data;
-	const uint8_t *src;
-	uint8_t *dst;
-
-	/* Copy the update area to the internal framebuffer */
-	src = buf;
-	dst = data->frame_ptr + (y * data->frame_pitch * data->bytes_per_pixel) +
-	      (x * data->bytes_per_pixel);
-	for (uint16_t row = 0; row < desc->height; row++) {
-		memcpy(dst, src, desc->width * data->bytes_per_pixel);
-		src += desc->pitch * data->bytes_per_pixel;
-		dst += data->frame_pitch * data->bytes_per_pixel;
-	}
-
-	/*
-	 * Initialize descriptor for local frame buffer.
-	 * The start coordinates cannot be odd value for the panel,
-	 * and the address of the framebuffer must be aligned.
-	 */
-	if (y % 2 != 0) {
-		*local_y = y - 1;
-		local_desc->height = desc->height + 1U;
-	} else {
-		*local_y = y;
-		local_desc->height = desc->height;
-	}
-
-	*local_x = x;
-	local_desc->width = desc->width;
-	dst = data->frame_ptr + (*local_y * data->frame_pitch * data->bytes_per_pixel) +
-	      (*local_x * data->bytes_per_pixel);
-
-	while ((*local_x % 2 != 0) || (((uint32_t)dst & (config->addr_align - 1)) != 0U)) {
-		dst -= data->bytes_per_pixel;
-		(*local_x)--;
-		local_desc->width++;
-	}
-
-	/* The width/height of the updated area cannot be odd value either. */
-	local_desc->width = ROUND_UP(local_desc->width, 2U);
-	local_desc->height = ROUND_UP(local_desc->height, 2U);
-	local_desc->pitch = data->frame_pitch;
-	local_desc->frame_incomplete = desc->frame_incomplete;
-	local_desc->buf_size = local_desc->width * local_desc->height * data->bytes_per_pixel;
-}
-
 static int co5300_mipi_dsi_cmd_write(const struct device *dev, uint8_t cmd, const void *tx_buf,
 				     uint32_t tx_len)
 {
@@ -178,53 +116,22 @@ static int co5300_mipi_dsi_cmd_write(const struct device *dev, uint8_t cmd, cons
 	return mipi_dsi_dcs_write(config->mipi_dev, config->channel, cmd, tx_buf, tx_len);
 }
 
-static int co5300_mipi_dsi_display_write(const struct device *dev, const uint16_t x,
-					 const uint16_t y,
+static int co5300_mipi_dsi_display_write(const struct device *dev,
 					 const struct display_buffer_descriptor *desc,
 					 const void *buf)
 {
 	const struct co5300_config *config = dev->config;
 	struct co5300_data *data = dev->data;
-	int ret;
 	struct mipi_dsi_msg msg = {0};
 	uint16_t line_each_sent = 0U;
 	int bytes_written = 0;
-	const uint8_t *src;
-	uint32_t tx_size = 0U;
-	uint16_t local_x, local_y;
-	struct display_buffer_descriptor local_desc = {0};
-
-	/* Copy data to framebuffer and adjust coordinates for even values */
-	co5300_mipi_dsi_adjust_coordinates(dev, x, y, desc, buf, &local_x, &local_y, &local_desc);
-
-	/*
-	 * Set column address of target area. The circular panel actually starts
-	 * to show from row 6, row 0~5 are cut off physically. The actual display
-	 * area is row 6~472 and line 0~466. So adjust coordinates accordingly.
-	 */
-	ret = co5300_set_window(dev, local_x, local_y, &local_desc);
-	if (ret < 0) {
-		LOG_ERR("Could not set window (%d)", ret);
-		return ret;
-	}
-
-	/*
-	 * When writing the to the framebuffer and the tearing effect GPIO is present,
-	 * we need to wait for the tear_effect GPIO semaphore to be released.
-	 */
-	if (config->tear_effect_gpios.port != NULL) {
-		k_sem_take(&data->tear_effect_sem, K_FOREVER);
-	}
+	const uint8_t *src = (const uint8_t *)buf;
+	uint32_t tx_size = desc->height * desc->width * data->bytes_per_pixel;
 
 	/* Start memory write. */
-	/* The address and the total pixel size of the updated area. */
-	src = data->frame_ptr + (local_y * data->frame_pitch * data->bytes_per_pixel) +
-	      (local_x * data->bytes_per_pixel);
-	tx_size = local_desc.buf_size;
-
 	msg.type = MIPI_DSI_DCS_LONG_WRITE;
 	msg.flags = MCUX_DSI_2L_FB_DATA;
-	msg.user_data = &local_desc;
+	msg.user_data = (void *)desc;
 	msg.cmd = MIPI_DCS_WRITE_MEMORY_START;
 
 	while (tx_size > 0) {
@@ -242,10 +149,10 @@ static int co5300_mipi_dsi_display_write(const struct device *dev, const uint16_
 		}
 
 		/* Advance source pointer and decrement remaining */
-		if (local_desc.pitch > local_desc.width) {
-			line_each_sent = bytes_written / (local_desc.width * data->bytes_per_pixel);
-			src += line_each_sent * local_desc.pitch * data->bytes_per_pixel;
-			src += bytes_written % (local_desc.width * data->bytes_per_pixel);
+		if (desc->pitch > desc->width) {
+			line_each_sent = bytes_written / (desc->width * data->bytes_per_pixel);
+			src += line_each_sent * desc->pitch * data->bytes_per_pixel;
+			src += bytes_written % (desc->width * data->bytes_per_pixel);
 		} else {
 			src += bytes_written;
 		}
@@ -383,6 +290,8 @@ static int co5300_write(const struct device *dev, const uint16_t x, const uint16
 			const struct display_buffer_descriptor *desc, const void *buf)
 {
 	const struct co5300_config *config = dev->config;
+	struct co5300_data *data = dev->data;
+	int ret;
 
 	/* Check whether the updated area is outside of the panel frame. */
 	if ((x > config->panel_width) || (y > config->panel_height) ||
@@ -398,7 +307,26 @@ static int co5300_write(const struct device *dev, const uint16_t x, const uint16
 		return -EINVAL;
 	}
 
-	return config->display_write(dev, x, y, desc, buf);
+	/*
+	 * Set column address of target area. The circular panel actually starts
+	 * to show from row 6, row 0~5 are cut off physically. The actual display
+	 * area is row 6~472 and line 0~466. So adjust coordinates accordingly.
+	 */
+	ret = co5300_set_window(dev, x, y, desc);
+	if (ret < 0) {
+		LOG_ERR("Could not set window (%d)", ret);
+		return ret;
+	}
+
+	/*
+	 * When writing the to the framebuffer and the tearing effect GPIO is present,
+	 * we need to wait for the tear_effect GPIO semaphore to be released.
+	 */
+	if (config->tear_effect_gpios.port != NULL) {
+		k_sem_take(&data->tear_effect_sem, K_FOREVER);
+	}
+
+	return config->display_write(dev, desc, buf);
 }
 
 static int co5300_set_brightness(const struct device *dev, const uint8_t contrast)
@@ -665,10 +593,6 @@ static int co5300_init(const struct device *dev)
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(mipi_dsi)
 	struct mipi_dsi_device mdev = {0};
 
-	/* Clear frame buffer. */
-	memset(data->frame_ptr, 0,
-	       config->panel_height * data->frame_pitch * data->bytes_per_pixel);
-
 	/* Attach to MIPI DSI host */
 	mdev.data_lanes = config->num_of_lanes;
 	mdev.pixfmt = data->pixel_format;
@@ -733,19 +657,6 @@ static DEVICE_API(display, co5300_api) = {
 	.set_orientation = co5300_set_orientation,
 };
 
-/* Place the frame buffer in secondary RAM if specified, otherwise use default RAM */
-#define CO5300_FRAMEBUFFER_PLACEMENT(node_id)							\
-	COND_CODE_1(DT_INST_NODE_HAS_PROP(node_id, ext_ram),					\
-	(Z_GENERIC_SECTION(LINKER_DT_NODE_REGION_NAME(DT_INST_PHANDLE(node_id, ext_ram)))), ())
-
-#define CO5300_FRAMEBUFFER_DECL(node_id)							\
-	CO5300_FRAMEBUFFER_PLACEMENT(node_id) static uint8_t					\
-		__aligned(DT_INST_PROP(node_id, addr_align))					\
-		co5300_frame_buffer_##node_id[DT_INST_PROP(node_id, height) * 3U *		\
-		ROUND_UP(DT_INST_PROP(node_id, width), DT_INST_PROP(node_id, pitch_align))]
-
-#define CO5300_FRAMEBUFFER(node_id) co5300_frame_buffer_##node_id
-
 #define CO5300_CONFIG_COMMON(node_id, _cmd_write, _display_write)				\
 	.cmd_write = _cmd_write,								\
 	.display_write = _display_write,							\
@@ -772,49 +683,20 @@ static DEVICE_API(display, co5300_api) = {
 		.mipi_dev = DEVICE_DT_GET(DT_INST_BUS(node_id)),				\
 		.channel = DT_INST_REG_ADDR(node_id),						\
 		.num_of_lanes = DT_INST_PROP_BY_IDX(node_id, data_lanes, 0),			\
-		.addr_align = DT_INST_PROP(node_id, addr_align),				\
 	}
 
 #define CO5300_DATA_MSPI(node_id)								\
-	{											\
-		.pixel_format = DT_INST_PROP(node_id, pixel_format),				\
-		.mspi_dev_config = MSPI_DEVICE_CONFIG_DT_INST(node_id),				\
-	}
-
-#define CO5300_DATA_MIPI_DSI(node_id)								\
-	{											\
-		.pixel_format = DT_INST_PROP(node_id, pixel_format),				\
-		.frame_ptr = CO5300_FRAMEBUFFER(node_id),					\
-		.frame_pitch = ROUND_UP(DT_INST_PROP(node_id, width),				\
-				DT_INST_PROP(node_id, pitch_align)),				\
-	}
-
-#define CO5300_MIPI_DSI_BUILD_ASSERT(node_id)							\
-	BUILD_ASSERT(DT_INST_PROP(node_id, addr_align) != 0 &&					\
-		     (DT_INST_PROP(node_id, addr_align) % 2) == 0,				\
-		     "CO5300: addr_align must not be 0 or odd");				\
-												\
-	BUILD_ASSERT((ROUND_UP(DT_INST_PROP(node_id, width),					\
-			       DT_INST_PROP(node_id, pitch_align)) *				\
-		      (DT_INST_PROP(node_id, pixel_format) == CO5300_PIXFMT_RGB565		\
-		       ? 2U : 3U)) %								\
-		     DT_INST_PROP(node_id, addr_align) == 0,					\
-		     "CO5300: line stride (frame_pitch * bytes_per_pixel) must be"		\
-		     " a multiple of addr_align");						\
+	.mspi_dev_config = MSPI_DEVICE_CONFIG_DT_INST(node_id)
 
 #define CO5300_DEVICE_INIT(node_id)								\
-	COND_CODE_1(DT_INST_ON_BUS(node_id, mipi_dsi),						\
-		    (CO5300_MIPI_DSI_BUILD_ASSERT(node_id)), ())				\
-												\
-	COND_CODE_1(DT_INST_ON_BUS(node_id, mipi_dsi), (CO5300_FRAMEBUFFER_DECL(node_id);), ())	\
-												\
 	static const struct co5300_config co5300_config_##node_id =				\
 		COND_CODE_1(DT_INST_ON_BUS(node_id, mspi), (CO5300_CONFIG_MSPI(node_id)),	\
 			(CO5300_CONFIG_MIPI_DSI(node_id)));					\
 												\
-	static struct co5300_data co5300_data_##node_id =					\
-		COND_CODE_1(DT_INST_ON_BUS(node_id, mspi), (CO5300_DATA_MSPI(node_id)),		\
-			(CO5300_DATA_MIPI_DSI(node_id)));					\
+	static struct co5300_data co5300_data_##node_id = {					\
+		.pixel_format = DT_INST_PROP(node_id, pixel_format),				\
+		COND_CODE_1(DT_INST_ON_BUS(node_id, mspi), (CO5300_DATA_MSPI(node_id)),	())	\
+	};											\
 												\
 	DEVICE_DT_INST_DEFINE(node_id,								\
 			    &co5300_init,							\
