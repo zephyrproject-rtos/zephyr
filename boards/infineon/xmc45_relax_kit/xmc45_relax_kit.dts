@@ -160,6 +160,8 @@
 
 	phy-connection-type = "rmii";
 	phy-handle = <&phy>;
+
+	zephyr,random-mac-address;
 };
 
 &mdio {
