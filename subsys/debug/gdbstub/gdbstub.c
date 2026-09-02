@@ -517,16 +517,18 @@ static int gdb_mem_write_aligned(const uint8_t *buf, uintptr_t addr,
 		/* Write data to memory */
 		*(uint32_t *)mem_ptr = data.u32;
 
-		/* Point to the next aligned datum. */
-		mem_ptr += align;
+		if (remaining > 0) {
+			/* Point to the next aligned datum. */
+			mem_ptr += align;
 
-		if (write_sz != align) {
-			/*
-			 * Since we are not writing a full aligned datum,
-			 * we need to do read-modify-write. Hence reading
-			 * it here before the next hex2bin() call.
-			 */
-			data.u32 = *(uint32_t *)mem_ptr;
+			if (write_sz != align) {
+				/*
+				 * Since we are not writing a full aligned datum,
+				 * we need to do read-modify-write. Hence reading
+				 * it here before the next hex2bin() call.
+				 */
+				data.u32 = *(uint32_t *)mem_ptr;
+			}
 		}
 
 		/*
