@@ -69,6 +69,7 @@ struct co5300_config {
 	const struct gpio_dt_spec backlight_gpios;
 	uint16_t panel_width;
 	uint16_t panel_height;
+	bool red_blue_swap;
 };
 
 struct co5300_data {
