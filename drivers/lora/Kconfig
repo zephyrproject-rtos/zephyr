@@ -46,6 +46,11 @@ module = LORA
 module-str = lora
 source "subsys/logging/Kconfig.template.log_config"
 
+config LORA_GFSK
+	bool "GFSK modulation"
+	help
+	  Software support for GFSK modulation in addition to LoRa.
+
 config LORA_SHELL
 	bool "LoRa Shell"
 	depends on SHELL
