@@ -190,6 +190,20 @@ struct lwan_region_ops {
 				    uint32_t *freq, int32_t *delay_ms);
 
 	/**
+	 * @brief Cap the TX power for one channel.
+	 *
+	 * A plan whose EIRP limit is not the same across its whole
+	 * frequency range needs the cap applied per channel, which
+	 * get_tx_params() cannot do because it never sees the channel.
+	 * Left NULL where one limit covers the plan.
+	 *
+	 * @param freq Frequency the stack is about to transmit on.
+	 * @param power_dbm TX power, lowered in place where the channel
+	 *                  calls for it.
+	 */
+	void (*clamp_tx_power)(uint32_t freq, int8_t *power_dbm);
+
+	/**
 	 * @brief Get the listen-before-talk parameters for a channel.
 	 *
 	 * A region that keeps the air clear with LBT rather than a duty
