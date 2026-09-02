@@ -114,10 +114,12 @@ struct entropy_stm32_rng_dev_data {
 	RNG_POOL_DEFINE(thr, CONFIG_ENTROPY_STM32_THR_POOL_SIZE);
 };
 
+#define TRNG_BASE ((RNG_TypeDef *)DT_INST_REG_ADDR(0))
+
 static struct stm32_pclken pclken_rng[] = STM32_DT_INST_CLOCKS(0);
 
 static struct entropy_stm32_rng_dev_cfg entropy_stm32_rng_config = {
-	.rng = (RNG_TypeDef *)DT_INST_REG_ADDR(0),
+	.rng = TRNG_BASE,
 	.clock = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE),
 	.pclken	= pclken_rng
 };
@@ -247,7 +249,7 @@ static int entropy_stm32_resume(void)
 
 static void configure_rng(void)
 {
-	RNG_TypeDef *rng = entropy_stm32_rng_config.rng;
+	RNG_TypeDef *rng = TRNG_BASE;
 
 #ifdef STM32_CONDRST_SUPPORT
 	uint32_t desired_nist_cfg = DT_INST_PROP_OR(0, nist_config, 0U);
@@ -418,7 +420,7 @@ static int random_sample_get(rng_sample_t *rnd_sample)
 {
 	int retval = -EAGAIN;
 	unsigned int key;
-	RNG_TypeDef *rng = entropy_stm32_rng_config.rng;
+	RNG_TypeDef *rng = TRNG_BASE;
 
 	key = irq_lock();
 
@@ -476,8 +478,8 @@ static uint16_t generate_from_isr(uint8_t *buf, uint16_t len)
 	ASSERT_RNG_HSEM_OWNED();
 
 	/* do not proceed if a Seed error occurred */
-	if (ll_rng_is_active_secs(entropy_stm32_rng_config.rng) ||
-		ll_rng_is_active_seis(entropy_stm32_rng_config.rng)) {
+	if (ll_rng_is_active_secs(TRNG_BASE) ||
+		ll_rng_is_active_seis(TRNG_BASE)) {
 
 		(void)random_sample_get(&rnd_sample); /* this will recover the error */
 
@@ -494,8 +496,7 @@ static uint16_t generate_from_isr(uint8_t *buf, uint16_t len)
 #endif /* !IRQLESS_TRNG */
 
 	do {
-		while (ll_rng_is_active_drdy(
-				entropy_stm32_rng_config.rng) != 1) {
+		while (ll_rng_is_active_drdy(TRNG_BASE) != 1) {
 
 #if !defined(CONFIG_PM_S2RAM)
 #if !IRQLESS_TRNG
@@ -736,11 +737,11 @@ static int perform_pool_refill(void)
 static void trng_poll_work_item(struct k_work *work)
 {
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
-	RNG_TypeDef *rng = entropy_stm32_rng_config.rng;
+	RNG_TypeDef *rng = TRNG_BASE;
 
 	/* Seed error occurred: reset TRNG and try again */
-	if (ll_rng_is_active_secs(entropy_stm32_rng_config.rng) ||
-		ll_rng_is_active_seis(entropy_stm32_rng_config.rng)) {
+	if (ll_rng_is_active_secs(TRNG_BASE) ||
+		ll_rng_is_active_seis(TRNG_BASE)) {
 
 		rng_sample_t dummy;
 		(void)random_sample_get(&dummy); /* this will recover the error */
