@@ -42,7 +42,7 @@ nvic: &cpuapp_nvic {};
 	};
 
 	ipc {
-		ipc0: ipc0 {
+		ipc1: ipc1 {
 			status = "disabled";
 			compatible = "zephyr,ipc-icbmsg";
 			mboxes = <&cpuapp_vevif_rx 20>, <&cpuapp_vevif_tx 21>;

@@ -19,9 +19,14 @@ tests:
     platform_allow:
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54lm20dk/nrf54lm20a/cpuapp
+      - nrf7120dk/nrf7120/cpuapp
     integration_platforms:
       - nrf54l15dk/nrf54l15/cpuapp
-    extra_args: icmsg_SNIPPET=nordic-flpr
+    extra_args:
+      - icmsg_SNIPPET=nordic-flpr
+      - platform:nrf54l:icmsg_EXTRA_DTC_OVERLAY_FILE="boards/nrf54l_cpuapp_icmsg.overlay"
+      - platform:nrf71:icmsg_EXTRA_DTC_OVERLAY_FILE="boards/nrf71_icmsg.overlay"
+      - remote_EXTRA_DTC_OVERLAY_FILE="boards/nrf54l_cpuflpr_icmsg.overlay"
 
   sample.ipc.icmsg.nrf54l_no_multithreading:
     platform_allow:
@@ -30,11 +35,14 @@ tests:
     integration_platforms:
       - nrf54l15dk/nrf54l15/cpuapp
     extra_args:
+    extra_args:
       - icmsg_SNIPPET=nordic-flpr
       - icmsg_CONFIG_MULTITHREADING=n
       - icmsg_CONFIG_LOG_MODE_MINIMAL=y
+      - icmsg_EXTRA_DTC_OVERLAY_FILE="boards/nrf54l_cpuapp_icmsg.overlay"
       - remote_CONFIG_MULTITHREADING=n
       - remote_CONFIG_LOG_MODE_MINIMAL=y
+      - remote_EXTRA_DTC_OVERLAY_FILE="boards/nrf54l_cpuflpr_icmsg.overlay"
 
   sample.ipc.icmsg.nrf54l_remote_no_multithreading:
     platform_allow:
@@ -44,21 +52,22 @@ tests:
       - nrf54l15dk/nrf54l15/cpuapp
     extra_args:
       - icmsg_SNIPPET=nordic-flpr
+      - icmsg_EXTRA_DTC_OVERLAY_FILE="boards/nrf54l_cpuapp_icmsg.overlay"
       - remote_CONFIG_MULTITHREADING=n
       - remote_CONFIG_LOG_MODE_MINIMAL=y
+      - remote_EXTRA_DTC_OVERLAY_FILE="boards/nrf54l_cpuflpr_icmsg.overlay"
 
   sample.ipc.icbmsg.nrf54l:
     platform_allow:
       - nrf54l15dk/nrf54l15/cpuapp
       - nrf54lm20dk/nrf54lm20a/cpuapp
+      - nrf7120dk/nrf7120/cpuapp
     integration_platforms:
       - nrf54l15dk/nrf54l15/cpuapp
     extra_args:
       - icmsg_SNIPPET=nordic-flpr
       - icmsg_CONFIG_IPC_SERVICE_BACKEND_ICBMSG_NUM_EP=1
-      - icmsg_EXTRA_DTC_OVERLAY_FILE="boards/nrf54l_cpuapp_icbmsg.overlay"
       - remote_CONFIG_IPC_SERVICE_BACKEND_ICBMSG_NUM_EP=1
-      - remote_EXTRA_DTC_OVERLAY_FILE="boards/nrf54l_cpuflpr_icbmsg.overlay"
 
   sample.ipc.icbmsg.nrf54l_no_multithreading:
     platform_allow:
@@ -69,11 +78,9 @@ tests:
     extra_args:
       - icmsg_SNIPPET=nordic-flpr
       - icmsg_CONFIG_IPC_SERVICE_BACKEND_ICBMSG_NUM_EP=1
-      - icmsg_EXTRA_DTC_OVERLAY_FILE="boards/nrf54l_cpuapp_icbmsg.overlay"
       - icmsg_CONFIG_MULTITHREADING=n
       - icmsg_CONFIG_LOG_MODE_MINIMAL=y
       - remote_CONFIG_IPC_SERVICE_BACKEND_ICBMSG_NUM_EP=1
-      - remote_EXTRA_DTC_OVERLAY_FILE="boards/nrf54l_cpuflpr_icbmsg.overlay"
       - remote_CONFIG_MULTITHREADING=n
       - remote_CONFIG_LOG_MODE_MINIMAL=y
 
@@ -86,27 +93,6 @@ tests:
     extra_args:
       - icmsg_SNIPPET=nordic-flpr
       - icmsg_CONFIG_IPC_SERVICE_BACKEND_ICBMSG_NUM_EP=1
-      - icmsg_EXTRA_DTC_OVERLAY_FILE="boards/nrf54l_cpuapp_icbmsg.overlay"
       - remote_CONFIG_IPC_SERVICE_BACKEND_ICBMSG_NUM_EP=1
-      - remote_EXTRA_DTC_OVERLAY_FILE="boards/nrf54l_cpuflpr_icbmsg.overlay"
       - remote_CONFIG_MULTITHREADING=n
       - remote_CONFIG_LOG_MODE_MINIMAL=y
-
-  sample.ipc.icmsg.nrf7120:
-    platform_allow:
-      - nrf7120dk/nrf7120/cpuapp
-    integration_platforms:
-      - nrf7120dk/nrf7120/cpuapp
-    extra_args: icmsg_SNIPPET=nordic-flpr
-
-  sample.ipc.icbmsg.nrf7120:
-    platform_allow:
-      - nrf7120dk/nrf7120/cpuapp
-    integration_platforms:
-      - nrf7120dk/nrf7120/cpuapp
-    extra_args:
-      - icmsg_SNIPPET=nordic-flpr
-      - icmsg_CONFIG_IPC_SERVICE_BACKEND_ICBMSG_NUM_EP=1
-      - icmsg_EXTRA_DTC_OVERLAY_FILE="boards/nrf7120dk_nrf7120_cpuapp_icbmsg.overlay"
-      - remote_CONFIG_IPC_SERVICE_BACKEND_ICBMSG_NUM_EP=1
-      - remote_EXTRA_DTC_OVERLAY_FILE="boards/nrf7120dk_nrf7120_cpuflpr_icbmsg.overlay"

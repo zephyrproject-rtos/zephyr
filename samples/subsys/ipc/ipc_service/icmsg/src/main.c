@@ -18,6 +18,12 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(host, LOG_LEVEL_INF);
 
+#if DT_HAS_ALIAS(dut_ipc)
+#define IPC_NODE DT_ALIAS(dut_ipc)
+#else
+#define IPC_NODE DT_NODELABEL(ipc0)
+#endif
+
 #if defined(CONFIG_MULTITHREADING)
 K_SEM_DEFINE(bound_sem, 0, 1);
 #else
@@ -147,7 +153,7 @@ int main(void)
 
 	LOG_INF("IPC-service HOST demo started");
 
-	ipc0_instance = DEVICE_DT_GET(DT_NODELABEL(ipc0));
+	ipc0_instance = DEVICE_DT_GET(IPC_NODE);
 
 	ret = ipc_service_open_instance(ipc0_instance);
 	if ((ret < 0) && (ret != -EALREADY)) {
