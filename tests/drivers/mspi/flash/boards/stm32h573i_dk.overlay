@@ -1,13 +1,12 @@
 /*
- * Copyright (c) 2025 STMicroelectronics
+ * Copyright (c) 2026 STMicroelectronics
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 / {
 	aliases {
-		/* The sample gets the DT_ALIAS(flash0) as the mspi device */
-		flash0 = &ext_flash_ctrl;
+		mspi0 = &xspi1;
 	};
 };
 
