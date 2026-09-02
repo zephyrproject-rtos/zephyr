@@ -136,7 +136,7 @@ __weak void clock_init(void)
 	/* Attach 12 MHz clock to FLEXCOMM0 */
 	CLOCK_AttachClk(kFRO12M_to_FLEXCOMM0);
 
-#if defined(CONFIG_UDC_NXP_IP3511) || defined(CONFIG_USB_DC_NXP_LPCIP3511)
+#if defined(CONFIG_UDC_NXP_IP3511)
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(usbhs), nxp_lpcip3511, okay)
 	/* Turn on the USB1 high-speed PHY. */
 	POWER_DisablePD(kPDRUNCFG_PD_USB1_PHY);

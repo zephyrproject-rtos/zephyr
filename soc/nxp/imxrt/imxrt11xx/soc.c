@@ -33,10 +33,6 @@ LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 	memcpy((uint32_t *)((SEGMENT_LMA_ADDRESS_##n) - ADJUSTED_LMA),                             \
 	       (uint32_t *)(SEGMENT_LMA_ADDRESS_##n), (SEGMENT_SIZE_##n))
 #endif
-#if CONFIG_USB_DC_NXP_EHCI
-#include <usb_phy.h>
-#include <usb.h>
-#endif
 #include <zephyr/drivers/misc/flexram/nxp_flexram.h>
 
 #include <cmsis_core.h>
@@ -73,12 +69,6 @@ LOG_MODULE_REGISTER(soc, CONFIG_SOC_LOG_LEVEL);
 #define MU_BASE   (MU_Type *)DT_REG_ADDR(DT_INST(0, nxp_imx_mu))
 #endif
 
-#if CONFIG_USB_DC_NXP_EHCI /* USB PHY configuration */
-#define BOARD_USB_PHY_D_CAL     (0x07U)
-#define BOARD_USB_PHY_TXCAL45DP (0x06U)
-#define BOARD_USB_PHY_TXCAL45DM (0x06U)
-#endif
-
 static const clock_sys_pll2_config_t sysPll2Config = {
 	/* Denominator of spread spectrum */
 	.mfd = 268435455,
@@ -87,14 +77,6 @@ static const clock_sys_pll2_config_t sysPll2Config = {
 	/* Enable spread spectrum or not */
 	.ssEnable = false,
 };
-
-#if CONFIG_USB_DC_NXP_EHCI
-usb_phy_config_struct_t usbPhyConfig = {
-	BOARD_USB_PHY_D_CAL,
-	BOARD_USB_PHY_TXCAL45DP,
-	BOARD_USB_PHY_TXCAL45DM,
-};
-#endif
 
 #if defined(CONFIG_NXP_IMXRT_BOOT_HEADER) && defined(CONFIG_CPU_CORTEX_M7)
 const __imx_boot_data_section BOOT_DATA_T boot_data = {
@@ -610,24 +592,18 @@ __weak void clock_init(void)
 	CLOCK_SetRootClock(kCLOCK_Root_Gpt1, &rootCfg);
 #endif
 
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb1)) && (CONFIG_USB_DC_NXP_EHCI || CONFIG_UDC_NXP_EHCI)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb1)) && (CONFIG_UDC_NXP_EHCI)
 	CLOCK_EnableUsbhs0PhyPllClock(
 		kCLOCK_Usb480M, DT_PROP_BY_PHANDLE(DT_NODELABEL(usb1), clocks, clock_frequency));
 	CLOCK_EnableUsbhs0Clock(kCLOCK_Usb480M,
 				DT_PROP_BY_PHANDLE(DT_NODELABEL(usb1), clocks, clock_frequency));
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb1)) && CONFIG_USB_DC_NXP_EHCI
-	USB_EhciPhyInit(kUSB_ControllerEhci0, CPU_XTAL_CLK_HZ, &usbPhyConfig);
-#endif
 #endif
 
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb2)) && (CONFIG_USB_DC_NXP_EHCI || CONFIG_UDC_NXP_EHCI)
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb2)) && (CONFIG_UDC_NXP_EHCI)
 	CLOCK_EnableUsbhs1PhyPllClock(
 		kCLOCK_Usb480M, DT_PROP_BY_PHANDLE(DT_NODELABEL(usb2), clocks, clock_frequency));
 	CLOCK_EnableUsbhs1Clock(kCLOCK_Usb480M,
 				DT_PROP_BY_PHANDLE(DT_NODELABEL(usb2), clocks, clock_frequency));
-#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(usb2)) && CONFIG_USB_DC_NXP_EHCI
-	USB_EhciPhyInit(kUSB_ControllerEhci1, CPU_XTAL_CLK_HZ, &usbPhyConfig);
-#endif
 #endif
 
 #if defined(CONFIG_IMX_USDHC)
