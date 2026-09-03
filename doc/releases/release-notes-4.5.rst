@@ -529,6 +529,10 @@ New APIs and options
 * Network
 
   * Add :c:func:`net_eth_set_if_type_wifi` to set the ethernet interface type to Wi-Fi.
+  * Add a public neighbor cache API: :c:func:`net_if_ipv4_nbr_flush` and
+    :c:func:`net_if_ipv6_nbr_flush` drop the neighbors an interface has
+    learned, and :c:func:`net_if_ipv4_nbr_rm` and :c:func:`net_if_ipv6_nbr_rm`
+    remove a single one. On an Ethernet link the IPv4 cache is the ARP cache.
   * Add :c:func:`net_dhcpv4_set_reboot_hint` to seed the DHCPv4 client with a
     previously leased address for INIT-REBOOT.
   * Add an mDNS responder interface policy

@@ -1879,6 +1879,20 @@ void net_if_ipv6_nbr_flush(struct net_if *iface)
 	net_ipv6_nbr_clear_cache(iface);
 }
 
+bool net_if_ipv6_nbr_rm(struct net_if *iface, const struct net_in6_addr *addr)
+{
+	struct net_in6_addr nbr_addr;
+
+	if (addr == NULL) {
+		return false;
+	}
+
+	/* net_ipv6_nbr_rm() still takes the address by non-const pointer. */
+	net_ipaddr_copy(&nbr_addr, addr);
+
+	return net_ipv6_nbr_rm(iface, &nbr_addr);
+}
+
 #endif /* CONFIG_NET_IPV6 */
 
 /* To be called when interface comes up so that all the non-joined multicast
@@ -5658,6 +5672,15 @@ void net_if_ipv4_nbr_flush(struct net_if *iface)
 	 * taken for a NULL interface anyway, so do not take it here.
 	 */
 	net_arp_clear_cache(iface);
+}
+
+bool net_if_ipv4_nbr_rm(struct net_if *iface, const struct net_in_addr *addr)
+{
+	if (addr == NULL) {
+		return false;
+	}
+
+	return net_arp_entry_rm(iface, addr);
 }
 
 #endif /* CONFIG_NET_IPV4 */

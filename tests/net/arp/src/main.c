@@ -924,4 +924,122 @@ ZTEST(arp_fn_tests, test_arp_static_entries_are_not_evicted)
 	zexpect_equal(arp_entry_count(), 0, "Cache is not empty");
 }
 
+/* Removing one address leaves the others alone, and says whether it did
+ * anything.
+ */
+ZTEST(arp_fn_tests, test_arp_entry_rm)
+{
+	struct net_eth_addr hwaddr = { { 0x00, 0x00, 0x5e, 0x00, 0x53, 0x44 } };
+	struct net_in_addr first = { { { 192, 0, 2, 51 } } };
+	struct net_in_addr second = { { { 192, 0, 2, 52 } } };
+	struct net_in_addr unknown = { { { 192, 0, 2, 53 } } };
+	struct net_if *iface;
+
+	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(ETHERNET));
+	zassert_not_null(iface, "No Ethernet interface");
+
+	net_if_ipv4_nbr_flush(NULL);
+
+	net_arp_update(iface, &first, &hwaddr, false, true);
+	net_arp_update(iface, &second, &hwaddr, false, true);
+
+	zassert_true(arp_lookup(&first).found, "First entry was not added");
+	zassert_true(arp_lookup(&second).found, "Second entry was not added");
+
+	zexpect_false(net_if_ipv4_nbr_rm(iface, &unknown),
+		      "Removing an unknown address reported success");
+
+	zexpect_true(net_if_ipv4_nbr_rm(iface, &first),
+		     "Cannot remove the first entry");
+	zexpect_false(arp_lookup(&first).found, "First entry is still there");
+	zexpect_true(arp_lookup(&second).found,
+		     "Second entry was removed as well");
+
+	zexpect_false(net_if_ipv4_nbr_rm(iface, &first),
+		      "Removing the entry twice reported success");
+
+	zexpect_true(net_if_ipv4_nbr_rm(NULL, &second),
+		     "Cannot remove the second entry without an interface");
+
+	zexpect_equal(arp_entry_count(), 0, "Cache is not empty");
+}
+
+/* Queue a packet for an address that nobody has answered for yet, so that the
+ * ARP cache holds a pending entry for it.
+ */
+static void arp_start_resolving(struct net_if *iface,
+				struct net_in_addr *src,
+				struct net_in_addr *dst)
+{
+	struct net_ipv4_hdr *ipv4;
+	struct net_pkt *pkt_arp = NULL;
+	struct net_pkt *pkt;
+	int ret;
+
+	pkt = net_pkt_alloc_with_buffer(iface, sizeof(struct net_ipv4_hdr),
+					NET_AF_INET, 0, K_SECONDS(1));
+	zassert_not_null(pkt, "out of mem");
+
+	(void)net_linkaddr_set(net_pkt_lladdr_src(pkt),
+			       net_if_get_link_addr(iface)->addr,
+			       sizeof(struct net_eth_addr));
+
+	ipv4 = (struct net_ipv4_hdr *)net_buf_add(pkt->buffer,
+						  sizeof(struct net_ipv4_hdr));
+	net_ipv4_addr_copy_raw(ipv4->src, (uint8_t *)src);
+	net_ipv4_addr_copy_raw(ipv4->dst, (uint8_t *)dst);
+
+	net_pkt_set_ll_proto_type(pkt, NET_ETH_PTYPE_IP);
+
+	ret = net_arp_prepare(pkt, dst, NULL, &pkt_arp);
+	zassert_equal(ret, NET_ARP_PKT_REPLACED,
+		      "Resolution of %s did not start (%d)",
+		      net_sprint_ipv4_addr(dst), ret);
+
+	net_pkt_unref(pkt_arp);
+}
+
+/* An address that is still being resolved is removed from the pending list,
+ * which is walked separately from the resolved one.
+ */
+ZTEST(arp_fn_tests, test_arp_entry_rm_pending)
+{
+	struct net_eth_addr hwaddr = { { 0x00, 0x00, 0x5e, 0x00, 0x53, 0x55 } };
+	struct net_in_addr src = { { { 192, 0, 2, 1 } } };
+	struct net_in_addr resolved = { { { 192, 0, 2, 61 } } };
+	struct net_in_addr first = { { { 192, 0, 2, 62 } } };
+	struct net_in_addr second = { { { 192, 0, 2, 63 } } };
+	struct net_if *iface;
+
+	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(ETHERNET));
+	zassert_not_null(iface, "No Ethernet interface");
+
+	net_if_ipv4_nbr_flush(NULL);
+
+	net_arp_update(iface, &resolved, &hwaddr, false, true);
+	zassert_equal(arp_entry_count(), 1, "Resolved entry was not added");
+
+	arp_start_resolving(iface, &src, &first);
+	arp_start_resolving(iface, &src, &second);
+
+	/* Only the resolved entry is in the table, the other two are pending
+	 * and must not be reachable from it.
+	 */
+	zassert_equal(arp_entry_count(), 1, "Pending entries are in the table");
+
+	zexpect_true(net_if_ipv4_nbr_rm(iface, &first),
+		     "Cannot remove the pending entry");
+	zexpect_equal(arp_entry_count(), 1,
+		      "Removing a pending entry disturbed the resolved list");
+
+	zexpect_true(net_if_ipv4_nbr_rm(iface, &second),
+		     "Cannot remove the second pending entry");
+	zexpect_equal(arp_entry_count(), 1,
+		      "Removing a pending entry disturbed the resolved list");
+
+	zexpect_true(net_if_ipv4_nbr_rm(iface, &resolved),
+		     "Cannot remove the resolved entry");
+	zexpect_equal(arp_entry_count(), 0, "Cache is not empty");
+}
+
 ZTEST_SUITE(arp_fn_tests, NULL, NULL, NULL, NULL, NULL);

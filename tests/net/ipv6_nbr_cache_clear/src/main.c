@@ -171,4 +171,43 @@ ZTEST(net_ipv6_nbr_cache_clear, test_public_flush)
 			 "Static neighbor must survive a flush");
 }
 
+/* Per-address removal takes a static neighbor back, which a flush does not,
+ * and reports whether it found anything.
+ */
+ZTEST(net_ipv6_nbr_cache_clear, test_public_rm)
+{
+	struct net_linkaddr lladdr = {
+		.type = NET_LINK_DUMMY,
+		.len = 6,
+		.addr = {0x00, 0x00, 0x5e, 0x00, 0x53, 0xcc},
+	};
+	struct net_if_addr *ifaddr;
+	struct net_nbr *nbr;
+	int ret;
+
+	ret = net_if_up(iface);
+	zassert_ok(ret, "Cannot bring interface up");
+
+	ifaddr = net_if_ipv6_addr_add(iface, &my_addr, NET_ADDR_MANUAL, 0);
+	zassert_not_null(ifaddr, "Cannot add IPv6 address");
+
+	nbr = net_ipv6_nbr_add(iface, &peer_addr, &lladdr, false, NET_IPV6_NBR_STATE_STALE);
+	zassert_not_null(nbr, "Cannot add dynamic neighbor");
+	nbr = net_ipv6_nbr_add(iface, &static_addr, &lladdr, false, NET_IPV6_NBR_STATE_STATIC);
+	zassert_not_null(nbr, "Cannot add static neighbor");
+
+	zexpect_true(net_if_ipv6_nbr_rm(iface, &peer_addr),
+		     "Cannot remove the dynamic neighbor");
+	zexpect_is_null(net_ipv6_nbr_lookup(iface, &peer_addr),
+			"Dynamic neighbor is still there");
+
+	zexpect_false(net_if_ipv6_nbr_rm(iface, &peer_addr),
+		      "Removing the neighbor twice reported success");
+
+	zexpect_true(net_if_ipv6_nbr_rm(NULL, &static_addr),
+		     "Cannot remove the static neighbor without an interface");
+	zexpect_is_null(net_ipv6_nbr_lookup(iface, &static_addr),
+			"Static neighbor is still there");
+}
+
 ZTEST_SUITE(net_ipv6_nbr_cache_clear, NULL, nbr_clear_setup, NULL, nbr_clear_after, NULL);
