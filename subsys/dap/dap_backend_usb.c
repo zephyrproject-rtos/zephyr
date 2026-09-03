@@ -38,8 +38,8 @@ struct dap_func_desc {
 
 struct dap_func_data {
 	struct dap_func_desc *const desc;
-	const struct usb_desc_header **const fs_desc;
-	const struct usb_desc_header **const hs_desc;
+	const struct usb_desc_header *const *const fs_desc;
+	const struct usb_desc_header *const *const hs_desc;
 	struct usbd_desc_node *const iface_str_desc_nd;
 	atomic_t state;
 	struct dap_link_context *dap_link_ctx;
@@ -210,7 +210,7 @@ static int dap_func_init(struct usbd_class_data *c_data)
 	return 0;
 }
 
-struct usbd_class_api dap_func_api = {
+static const struct usbd_class_api dap_func_api = {
 	.request = dap_func_request_handler,
 	.get_desc = dap_func_get_desc,
 	.enable = dap_func_enable,
@@ -280,14 +280,14 @@ static struct dap_func_desc dap_func_desc_##n = {				\
 	},									\
 };										\
 										\
-const static struct usb_desc_header *dap_func_fs_desc_##n[] = {			\
+const static struct usb_desc_header *const dap_func_fs_desc_##n[] = {		\
 	(struct usb_desc_header *) &dap_func_desc_##n.if0,			\
 	(struct usb_desc_header *) &dap_func_desc_##n.if0_out_ep,		\
 	(struct usb_desc_header *) &dap_func_desc_##n.if0_in_ep,		\
 	(struct usb_desc_header *) &dap_func_desc_##n.nil_desc,			\
 };										\
 										\
-const static struct usb_desc_header *dap_func_hs_desc_##n[] = {			\
+const static struct usb_desc_header *const dap_func_hs_desc_##n[] = {		\
 	(struct usb_desc_header *) &dap_func_desc_##n.if0,			\
 	(struct usb_desc_header *) &dap_func_desc_##n.if0_hs_out_ep,		\
 	(struct usb_desc_header *) &dap_func_desc_##n.if0_hs_in_ep,		\
