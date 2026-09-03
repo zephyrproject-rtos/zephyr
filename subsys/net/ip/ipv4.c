@@ -250,6 +250,121 @@ int net_ipv4_parse_hdr_options(struct net_pkt *pkt,
 }
 #endif
 
+#if defined(CONFIG_NET_IPV4_FORWARDING)
+
+struct ipv4_dst_iface_lookup {
+	const struct in_addr *dst;
+	struct net_if *orig_iface;
+	struct net_if *dst_iface;
+};
+
+static void ipv4_dst_iface_cb(struct net_if *iface, void *user_data)
+{
+	struct ipv4_dst_iface_lookup *lookup = (struct ipv4_dst_iface_lookup *)user_data;
+
+	if (lookup->dst_iface != NULL || iface == lookup->orig_iface) {
+		return;
+	}
+
+	/* Must not use net_if_ipv4_select_src_iface(), it falls back to the default interface */
+	if (net_if_ipv4_addr_mask_cmp(iface, lookup->dst)) {
+		lookup->dst_iface = iface;
+	}
+}
+
+/* Forward a unicast packet to the interface that owns its destination subnet */
+static enum net_verdict ipv4_forward_packet(struct net_pkt *pkt, struct net_ipv4_hdr *hdr,
+					    struct net_pkt_data_access *ipv4_access)
+{
+	struct net_if *orig_iface = net_pkt_iface(pkt);
+	struct ipv4_dst_iface_lookup lookup = { 0 };
+	struct in_addr dst;
+	uint32_t chksum;
+	int ret;
+
+	if (net_ipv4_is_addr_mcast_raw(hdr->dst) ||
+	    net_ipv4_is_addr_bcast_raw(orig_iface, hdr->dst) ||
+	    net_ipv4_is_addr_unspecified_raw(hdr->dst) ||
+	    net_ipv4_is_addr_loopback_raw(hdr->dst)) {
+		return NET_DROP;
+	}
+
+	net_ipv4_addr_copy_raw((uint8_t *)&dst, hdr->dst);
+
+	lookup.dst = &dst;
+	lookup.orig_iface = orig_iface;
+	net_if_foreach(ipv4_dst_iface_cb, &lookup);
+
+	if (lookup.dst_iface == NULL) {
+		return NET_DROP;
+	}
+
+	if (hdr->ttl <= 1U) {
+		NET_DBG("DROP: TTL expired while forwarding to %s", net_sprint_ipv4_addr(&dst));
+		return NET_DROP;
+	}
+
+	/* Re-acquire at a known cursor, the header passed in can be a copy on the stack */
+	net_pkt_cursor_init(pkt);
+
+	hdr = (struct net_ipv4_hdr *)net_pkt_get_data(pkt, ipv4_access);
+	if (hdr == NULL) {
+		NET_DBG("DROP: cannot reach the header of a packet to forward");
+		return NET_DROP;
+	}
+
+	hdr->ttl--;
+
+	/* Incremental checksum update, RFC 1624 */
+	chksum = (uint32_t)ntohs(hdr->chksum) + 0x0100U;
+	chksum += (chksum >= 0xFFFFU);
+	hdr->chksum = htons((uint16_t)chksum);
+
+	/* Must write back, hdr can be a copy on the stack */
+	if (net_pkt_set_data(pkt, ipv4_access) < 0) {
+		NET_DBG("DROP: cannot write the forwarded header back");
+		return NET_DROP;
+	}
+
+	net_pkt_cursor_init(pkt);
+
+	net_pkt_set_orig_iface(pkt, orig_iface);
+	net_pkt_set_iface(pkt, lookup.dst_iface);
+	net_pkt_set_forwarding(pkt, true);
+	net_pkt_set_ll_proto_type(pkt, NET_ETH_PTYPE_IP);
+
+	/* Only the source is set here, L2 resolves the next hop */
+	(void)net_linkaddr_set(net_pkt_lladdr_src(pkt), net_pkt_lladdr_if(pkt)->addr,
+			       net_pkt_lladdr_if(pkt)->len);
+
+	NET_DBG("Forwarding %s to iface %d", net_sprint_ipv4_addr(&dst),
+		net_if_get_by_iface(lookup.dst_iface));
+
+	ret = net_send_data(pkt);
+	if (ret < 0) {
+		/* Put the interface back, the caller counts the drop against it */
+		NET_DBG("DROP: cannot forward to iface %d (%d)",
+			net_if_get_by_iface(lookup.dst_iface), ret);
+		net_pkt_set_iface(pkt, orig_iface);
+		net_pkt_set_forwarding(pkt, false);
+
+		return NET_DROP;
+	}
+
+	return NET_OK;
+}
+#else
+static inline enum net_verdict ipv4_forward_packet(struct net_pkt *pkt, struct net_ipv4_hdr *hdr,
+						   struct net_pkt_data_access *ipv4_access)
+{
+	ARG_UNUSED(pkt);
+	ARG_UNUSED(hdr);
+	ARG_UNUSED(ipv4_access);
+
+	return NET_DROP;
+}
+#endif /* CONFIG_NET_IPV4_FORWARDING */
+
 enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 {
 	NET_PKT_DATA_ACCESS_CONTIGUOUS_DEFINE(ipv4_access, struct net_ipv4_hdr);
@@ -373,6 +488,10 @@ enum net_verdict net_ipv4_input(struct net_pkt *pkt)
 		net_dhcpv4_accept_unicast(pkt)))) ||
 	    (hdr->proto == NET_IPPROTO_TCP &&
 	     net_ipv4_is_addr_bcast_raw(net_pkt_iface(pkt), hdr->dst))) {
+		if (ipv4_forward_packet(pkt, hdr, &ipv4_access) == NET_OK) {
+			return NET_OK;
+		}
+
 		NET_DBG("DROP: not for me");
 		goto drop;
 	}

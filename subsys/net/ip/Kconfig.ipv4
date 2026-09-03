@@ -97,6 +97,13 @@ config NET_IPV4_ACCEPT_ZERO_BROADCAST
 	  If set, then accept UDP packets destined to non-standard
 	  0.0.0.0 broadcast address as described in RFC 1122 ch. 3.3.6
 
+config NET_IPV4_FORWARDING
+	bool "Forward IPv4 unicast packets between interfaces"
+	help
+	  If set, forward unicast packets that are not addressed to this device to
+	  the interface whose subnet contains the destination. Only directly
+	  attached subnets are reachable and addresses are not translated.
+
 config NET_IPV4_IGMP
 	bool "Internet Group Management Protocol (IGMPv2) support"
 	select NET_IPV4_HDR_OPTIONS
