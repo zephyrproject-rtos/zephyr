@@ -75,7 +75,7 @@ struct net_dhcpv6_params {
 	uint8_t downstream_count;
 	/** Optional downstream interface indices. When a prefix is delegated
 	 *  (request_prefix), each listed interface is turned into a downstream
-	 *  link of a requesting router (RFC 8415): it is assigned a distinct
+	 *  link of a requesting router (@rfc{8415}): it is assigned a distinct
 	 *  /64 carved from the delegated prefix (the Nth entry gets the Nth
 	 *  /64), which is then advertised via Router Advertisements. Requires
 	 *  @kconfig{CONFIG_NET_IPV6_ND_RA_TX}. A @ref downstream_count of 0 means the
