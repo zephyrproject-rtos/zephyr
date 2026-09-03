@@ -76,19 +76,6 @@ config SOC_FLASH_NRF_TIMEOUT_MULTIPLIER
 	  the multiplication would allow erasing all nRF flash pages in
 	  blocking mode.
 
-config NRF_RRAM_REGION_ADDRESS_RESOLUTION
-	hex
-	default 0x400
-	help
-	  RRAMC's region protection address resolution.
-	  Applies to region with configurable start address.
-
-config NRF_RRAM_REGION_SIZE_UNIT
-	hex
-	default 0x400
-	help
-	  Base unit for the size of RRAMC's region protection.
-
 config NRF_RRAM_THROTTLING_DELAY
 	int "Delay between flash write operations"
 	depends on SOC_FLASH_NRF_THROTTLING
@@ -129,3 +116,16 @@ config NRF_RRAM_FILL_SKIP_IF_FILLED
 	  scanned area.
 
 endif # SOC_FLASH_NRF_RRAM
+
+config NRF_RRAM_REGION_ADDRESS_RESOLUTION
+	hex
+	default 0x400
+	help
+	  RRAMC's region protection address resolution.
+	  Applies to region with configurable start address.
+
+config NRF_RRAM_REGION_SIZE_UNIT
+	hex
+	default 0x400
+	help
+	  Base unit for the size of RRAMC's region protection.
