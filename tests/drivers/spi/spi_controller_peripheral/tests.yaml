@@ -40,6 +40,7 @@ tests:
       - nrf52840dk/nrf52840
     platform_allow:
       - sam_e54_xpro
+      - pic32cz_ca80_cult
 
   drivers.spi.spi_mode1:
     extra_configs:
@@ -49,6 +50,7 @@ tests:
       - nrf52840dk/nrf52840
     platform_allow:
       - sam_e54_xpro
+      - pic32cz_ca80_cult
 
   drivers.spi.spi_mode2:
     extra_configs:
@@ -58,6 +60,7 @@ tests:
       - nrf52840dk/nrf52840
     platform_allow:
       - sam_e54_xpro
+      - pic32cz_ca80_cult
 
   drivers.spi.spi_mode3:
     extra_configs:
@@ -67,6 +70,7 @@ tests:
       - nrf52840dk/nrf52840
     platform_allow:
       - sam_e54_xpro
+      - pic32cz_ca80_cult
 
   drivers.spi.spi_mode0.incorrect_sck_state:
     extra_configs:
@@ -110,6 +114,7 @@ tests:
       - nrf7120dk/nrf7120/cpuapp
     platform_allow:
       - sam_e54_xpro
+      - pic32cz_ca80_cult
 
   drivers.spi.spi_2M666666Hz:
     extra_configs:
@@ -121,6 +126,7 @@ tests:
       - nrf7120dk/nrf7120/cpuapp
     platform_allow:
       - sam_e54_xpro
+      - pic32cz_ca80_cult
 
   drivers.spi.spi_4MHz:
     extra_configs:
@@ -130,6 +136,7 @@ tests:
       - nrf52840dk/nrf52840
     platform_allow:
       - sam_e54_xpro
+      - pic32cz_ca80_cult
 
   drivers.spi.spi_8MHz:
     extra_configs:
@@ -139,6 +146,7 @@ tests:
       - nrf52840dk/nrf52840
     platform_allow:
       - sam_e54_xpro
+      - pic32cz_ca80_cult
 
   drivers.spi.spi_half_duplex:
     extra_args: EXTRA_DTC_OVERLAY_FILE="half-duplex.overlay"
