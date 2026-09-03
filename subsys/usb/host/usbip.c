@@ -216,6 +216,7 @@ static int usbip_submit_req(struct usbip_cmd_node *const cmd_nd, const uint8_t e
 	struct usb_device *const udev = dev_ctx->udev;
 	uint32_t retry = USBIP_SUBMIT_REQ_RETRY_COUNT;
 	struct uhc_transfer *xfer;
+	size_t rec_len = USB_EP_DIR_IS_IN(ep) && buf != NULL ? cmd->submit.length : 0;
 	int ret;
 
 	/*
@@ -225,7 +226,7 @@ static int usbip_submit_req(struct usbip_cmd_node *const cmd_nd, const uint8_t e
 	 * be reworked to take a timeout argument.
 	 */
 	do {
-		xfer = usbh_xfer_alloc(udev, ep, usbip_req_cb, cmd_nd);
+		xfer = usbh_xfer_alloc(udev, ep, rec_len, usbip_req_cb, cmd_nd);
 		if (xfer == NULL) {
 			k_msleep(1);
 		}
