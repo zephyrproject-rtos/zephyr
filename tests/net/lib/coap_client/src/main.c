@@ -574,6 +574,101 @@ static ssize_t z_impl_zsock_recvfrom_custom_fake_observe(int sock, void *buf, si
 	return ret;
 }
 
+static int sent_block2_opts[4];
+static int sent_block2_cnt;
+
+/* Record the block2 option of every sent request */
+static ssize_t z_impl_zsock_sendto_custom_fake_record_block2(int sock, void *buf, size_t len,
+							     int flags,
+							     const struct net_sockaddr *dest_addr,
+							     net_socklen_t addrlen)
+{
+	struct coap_packet req = {0};
+
+	zassert_ok(coap_packet_parse(&req, buf, len, NULL, 0));
+	if (sent_block2_cnt < (int)ARRAY_SIZE(sent_block2_opts)) {
+		sent_block2_opts[sent_block2_cnt++] =
+			coap_get_option_int(&req, COAP_OPTION_BLOCK2);
+	}
+
+	return z_impl_zsock_sendto_custom_fake(sock, buf, len, flags, dest_addr, addrlen);
+}
+
+static ssize_t serve_block2(int sock, void *buf, size_t max_len, struct net_sockaddr *src_addr,
+			    net_socklen_t *addrlen, int block_num, bool more)
+{
+	struct coap_packet response;
+	uint8_t token[COAP_TOKEN_MAX_LEN] = {0};
+	uint8_t payload[CONFIG_COAP_CLIENT_BLOCK_SIZE];
+	uint16_t payload_len = more ? sizeof(payload) : 10U;
+	uint16_t message_id = get_next_pending_message_id();
+
+	memset(payload, 'A' + block_num, sizeof(payload));
+
+	zassert_ok(coap_packet_init(&response, buf, max_len, COAP_VERSION_1, COAP_TYPE_ACK,
+				    COAP_TOKEN_MAX_LEN, token, COAP_RESPONSE_CODE_CONTENT,
+				    message_id));
+	zassert_ok(coap_append_option_int(&response, COAP_OPTION_BLOCK2,
+					  (block_num << 4) | (more ? BIT(3) : 0) |
+						  COAP_BLOCK_256));
+	zassert_ok(coap_packet_append_payload_marker(&response));
+	zassert_ok(coap_packet_append_payload(&response, payload, payload_len));
+
+	restore_token(buf);
+	fill_recv_src_addr(src_addr, addrlen);
+	clear_socket_events(sock, ZSOCK_POLLIN);
+
+	return response.offset;
+}
+
+static ssize_t z_impl_zsock_recvfrom_custom_fake_block2_last(int sock, void *buf, size_t max_len,
+							     int flags,
+							     struct net_sockaddr *src_addr,
+							     net_socklen_t *addrlen)
+{
+	return serve_block2(sock, buf, max_len, src_addr, addrlen, 1, false);
+}
+
+static ssize_t z_impl_zsock_recvfrom_custom_fake_block2_first(int sock, void *buf, size_t max_len,
+							      int flags,
+							      struct net_sockaddr *src_addr,
+							      net_socklen_t *addrlen)
+{
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_block2_last;
+
+	return serve_block2(sock, buf, max_len, src_addr, addrlen, 0, true);
+}
+
+/* A valid plain response whose reported length exceeds the buffer: the
+ * datagram was truncated. Follow up with a block-wise transfer.
+ */
+static ssize_t z_impl_zsock_recvfrom_custom_fake_truncated(int sock, void *buf, size_t max_len,
+							   int flags,
+							   struct net_sockaddr *src_addr,
+							   net_socklen_t *addrlen)
+{
+	struct coap_packet response;
+	uint8_t token[COAP_TOKEN_MAX_LEN] = {0};
+	uint8_t payload[64];
+	uint16_t message_id = get_next_pending_message_id();
+
+	memset(payload, 'T', sizeof(payload));
+
+	zassert_ok(coap_packet_init(&response, buf, max_len, COAP_VERSION_1, COAP_TYPE_ACK,
+				    COAP_TOKEN_MAX_LEN, token, COAP_RESPONSE_CODE_CONTENT,
+				    message_id));
+	zassert_ok(coap_packet_append_payload_marker(&response));
+	zassert_ok(coap_packet_append_payload(&response, payload, sizeof(payload)));
+
+	restore_token(buf);
+	fill_recv_src_addr(src_addr, addrlen);
+	clear_socket_events(sock, ZSOCK_POLLIN);
+
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_block2_first;
+
+	return max_len + 1;
+}
+
 void coap_callback(const struct coap_client_response_data *data, void *user_data)
 {
 	LOG_INF("CoAP response callback, %d", data->result_code);
@@ -652,6 +747,30 @@ ZTEST(coap_client, test_request_block)
 
 	zassert_equal(coap_client_req(&client, 0, net_sad(&dst_address), &short_request, NULL),
 		      -EAGAIN, "");
+}
+
+ZTEST(coap_client, test_truncated_response_retries_blockwise)
+{
+	sent_block2_cnt = 0;
+	memset(sent_block2_opts, 0, sizeof(sent_block2_opts));
+
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_record_block2;
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_truncated;
+
+	zassert_ok(coap_client_req(&client, 0, net_sad(&dst_address), &short_request, NULL));
+
+	/* The retry after the truncated response must carry a block2 option
+	 * requesting block 0, so the server switches to a block-wise response
+	 * instead of repeating the truncated one, and the transfer completes.
+	 */
+	k_sleep(K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS));
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT, "Transfer did not complete");
+	zassert_equal(sent_block2_cnt, 3, "Unexpected number of requests");
+	zassert_equal(sent_block2_opts[0], -ENOENT, "Initial request must not carry block2");
+	zassert_equal(sent_block2_opts[1], COAP_BLOCK_256,
+		      "Retry after truncation must request block 0");
+	zassert_equal(sent_block2_opts[2], (1 << 4) | COAP_BLOCK_256,
+		      "Transfer must continue with block 1");
 }
 
 ZTEST(coap_client, test_resend_request)
