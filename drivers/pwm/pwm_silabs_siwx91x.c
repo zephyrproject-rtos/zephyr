@@ -210,7 +210,7 @@ static int pwm_siwx91x_pm_action(const struct device *dev, enum pm_device_action
 		break;
 	case PM_DEVICE_ACTION_TURN_ON:
 		ret = clock_control_on(config->clock_dev, config->clock_subsys);
-		if (ret) {
+		if (ret != 0 && ret != -EALREADY) {
 			return ret;
 		}
 
@@ -259,7 +259,7 @@ static DEVICE_API(pwm, pwm_siwx91x_driver_api) = {
 	static struct pwm_siwx91x_data pwm_siwx91x_data_##inst;                                    \
 	static const struct pwm_siwx91x_config pwm_config_##inst = {                               \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst)),                             \
-		.clock_subsys = (clock_control_subsys_t)DT_INST_PHA(inst, clocks, clkid),          \
+		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(inst, clkid),          \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                                      \
 		.ch_prescaler = DT_INST_PROP(inst, silabs_ch_prescaler),                           \
 		.pwm_polarity = DT_INST_PROP(inst, silabs_pwm_polarity),                           \
