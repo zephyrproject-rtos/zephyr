@@ -3,3 +3,9 @@ tests:
     min_ram: 16
     tags: net
     depends_on: netif
+  net.coap.wellknown_blockwise:
+    min_ram: 16
+    tags: net
+    depends_on: netif
+    extra_configs:
+      - CONFIG_COAP_WELL_KNOWN_BLOCK_WISE=y
