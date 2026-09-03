@@ -225,6 +225,14 @@
 			drive-strength = "x5";
 		};
 	};
+
+	pwm6_default: pwm6_default {
+		group0 {
+			pinmux = <&iomuxc_gpio_io08_tpm_ch_tpm6_ch0>;
+			slew-rate = "slightly_fast";
+			drive-strength = "x4";
+		};
+	};
 };
 
 &eth2_default_group1 {
