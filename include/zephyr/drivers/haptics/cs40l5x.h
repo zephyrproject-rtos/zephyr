@@ -32,21 +32,6 @@ extern "C" {
  */
 
 /**
- * @brief Attenuation options for triggered haptic effects
- * @details Provide to @ref cs40l5x_configure_trigger().
- */
-enum cs40l5x_attenuation {
-	CS40L5X_ATTENUATION_7DB = -7, /**< Configure haptic effect with 7 dB attenuation */
-	CS40L5X_ATTENUATION_6DB,      /**< Configure haptic effect with 6 dB attenuation */
-	CS40L5X_ATTENUATION_5DB,      /**< Configure haptic effect with 5 dB attenuation */
-	CS40L5X_ATTENUATION_4DB,      /**< Configure haptic effect with 4 dB attenuation */
-	CS40L5X_ATTENUATION_3DB,      /**< Configure haptic effect with 3 dB attenuation */
-	CS40L5X_ATTENUATION_2DB,      /**< Configure haptic effect with 2 dB attenuation */
-	CS40L5X_ATTENUATION_1DB,      /**< Configure haptic effect with 1 dB attenuation */
-	CS40L5X_ATTENUATION_0DB,      /**< Configure haptic effect with no attenuation */
-};
-
-/**
  * @brief Wavetable sources for haptic effects
  */
 enum cs40l5x_source {
@@ -70,15 +55,6 @@ struct cs40l5x_pwle_section {
 };
 
 /**
- * @brief Options for edge-triggered haptics effects
- * @details Provide to @ref cs40l5x_configure_trigger() to specify the edge for haptic effects.
- */
-enum cs40l5x_trigger_edge {
-	CS40L5X_RISING_EDGE,  /**< Configure a rising-edge haptic effect */
-	CS40L5X_FALLING_EDGE, /**< Configure a falling-edge haptic effect */
-};
-
-/**
  * @brief Configure ROM buzz for haptic playback
  *
  * @details With large amplitudes and insufficient power (e.g., in the case of internal boost
@@ -94,25 +70,6 @@ enum cs40l5x_trigger_edge {
  */
 int cs40l5x_configure_buzz(const struct device *const dev, const uint32_t frequency,
 			   const uint8_t level, const uint32_t duration);
-
-/**
- * @brief Configure edge-triggered haptic effect
- *
- * @param[in] dev Pointer to the device structure for haptic device instance
- * @param[in] gpio Pointer to the device structure for the GPIO used as the trigger source
- * @param[in] src Playback source (of type @ref haptics_source)
- * @param[in] cfg Source configuration (of type @ref haptics_config)
- * @param[in] attenuation Attenuation in dB for desired haptic effect
- * @param[in] edge Specify edge (rising or falling) to trigger haptic effects
- *
- * @return 0 on success, negative errno value on failure.
- * @retval -EINVAL Invalid wavetable source and index provided (e.g., index out of bounds).
- * @retval -EIO A control port transaction failed.
- */
-int cs40l5x_configure_trigger(const struct device *const dev, const struct gpio_dt_spec *const gpio,
-			      const enum haptics_source src, const union haptics_config *const cfg,
-			      const enum cs40l5x_attenuation attenuation,
-			      const enum cs40l5x_trigger_edge edge);
 
 /**
  * @brief Upload PCM effect to the specified index
