@@ -18,7 +18,7 @@ config SOC_MIMXRT798S_HIFI4
 	select HAS_MCUX
 
 config MCUX_CORE_SUFFIX
-	default "_hifi4"
+	default "_hifi4" if SOC_MIMXRT798S_HIFI4
 
 config RT798_HIFI4_STACK_SIZE
 	hex "Boot time stack size"
