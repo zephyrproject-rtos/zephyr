@@ -113,8 +113,8 @@ enum msc_bot_state {
 struct msc_bot_ctx {
 	struct usbd_class_data *class_node;
 	struct msc_bot_desc *const desc;
-	const struct usb_desc_header **const fs_desc;
-	const struct usb_desc_header **const hs_desc;
+	const struct usb_desc_header *const *const fs_desc;
+	const struct usb_desc_header *const *const hs_desc;
 	uint8_t *scsi_bufs[MSC_NUM_BUFFERS];
 	atomic_t bits;
 	enum msc_bot_state state;
@@ -883,10 +883,10 @@ static void *msc_bot_get_desc(struct usbd_class_data *const c_data,
 	struct msc_bot_ctx *ctx = usbd_class_get_private(c_data);
 
 	if (USBD_SUPPORTS_HIGH_SPEED && speed == USBD_SPEED_HS) {
-		return ctx->hs_desc;
+		return (void *)ctx->hs_desc;
 	}
 
-	return ctx->fs_desc;
+	return (void *)ctx->fs_desc;
 }
 
 /* Initialization of the class implementation */
@@ -963,14 +963,14 @@ static struct msc_bot_desc msc_bot_desc_##n = {					\
 	},									\
 };										\
 										\
-const static struct usb_desc_header *msc_bot_fs_desc_##n[] = {			\
+const static struct usb_desc_header *const msc_bot_fs_desc_##n[] = {		\
 	(struct usb_desc_header *) &msc_bot_desc_##n.if0,			\
 	(struct usb_desc_header *) &msc_bot_desc_##n.if0_in_ep,			\
 	(struct usb_desc_header *) &msc_bot_desc_##n.if0_out_ep,		\
 	(struct usb_desc_header *) &msc_bot_desc_##n.nil_desc,			\
 };										\
 										\
-const static struct usb_desc_header *msc_bot_hs_desc_##n[] = {			\
+const static struct usb_desc_header *const msc_bot_hs_desc_##n[] = {		\
 	(struct usb_desc_header *) &msc_bot_desc_##n.if0,			\
 	(struct usb_desc_header *) &msc_bot_desc_##n.if0_hs_in_ep,		\
 	(struct usb_desc_header *) &msc_bot_desc_##n.if0_hs_out_ep,		\
@@ -978,7 +978,7 @@ const static struct usb_desc_header *msc_bot_hs_desc_##n[] = {			\
 };
 
 
-struct usbd_class_api msc_bot_api = {
+static const struct usbd_class_api msc_bot_api = {
 	.feature_halt = msc_bot_feature_halt,
 	.control_to_dev = msc_bot_control_to_dev,
 	.control_to_host = msc_bot_control_to_host,

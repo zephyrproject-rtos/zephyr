@@ -67,8 +67,8 @@ struct hid_device_config {
 	struct net_buf_pool *pool_out;
 	struct net_buf_pool *pool_in;
 	struct usbd_desc_node *const if_desc_data;
-	const struct usb_desc_header **fs_desc;
-	const struct usb_desc_header **hs_desc;
+	const struct usb_desc_header *const *fs_desc;
+	const struct usb_desc_header *const *hs_desc;
 };
 
 struct hid_device_data {
@@ -537,10 +537,10 @@ static void *usbd_hid_get_desc(struct usbd_class_data *const c_data,
 	const struct hid_device_config *dcfg = dev->config;
 
 	if (USBD_SUPPORTS_HIGH_SPEED && speed == USBD_SPEED_HS) {
-		return dcfg->hs_desc;
+		return (void *)dcfg->hs_desc;
 	}
 
-	return dcfg->fs_desc;
+	return (void *)dcfg->fs_desc;
 }
 
 static int usbd_hid_init(struct usbd_class_data *const c_data)
@@ -783,7 +783,7 @@ static int hid_device_init(const struct device *dev)
 	return 0;
 }
 
-struct usbd_class_api usbd_hid_api = {
+static const struct usbd_class_api usbd_hid_api = {
 	.request = usbd_hid_request,
 	.update = NULL,
 	.sof = usbd_hid_sof,
@@ -819,7 +819,7 @@ static const struct hid_device_driver_api hid_device_api = {
 		.hs_out_ep = HID_OUT_EP_DEFINE_OR_ZERO(n, 1, 1),		\
 	};									\
 										\
-	const static struct usb_desc_header *hid_fs_desc_##n[] = {		\
+	const static struct usb_desc_header *const hid_fs_desc_##n[] = {	\
 		(struct usb_desc_header *) &hid_desc_##n.if0,			\
 		(struct usb_desc_header *) &hid_desc_##n.hid,			\
 		(struct usb_desc_header *) &hid_desc_##n.in_ep,			\
@@ -827,7 +827,7 @@ static const struct hid_device_driver_api hid_device_api = {
 		NULL,								\
 	};									\
 										\
-	const static struct usb_desc_header *hid_hs_desc_##n[] = {		\
+	const static struct usb_desc_header *const hid_hs_desc_##n[] = {	\
 		(struct usb_desc_header *) &hid_desc_##n.if0,			\
 		(struct usb_desc_header *) &hid_desc_##n.hid,			\
 		(struct usb_desc_header *) &hid_desc_##n.hs_in_ep,		\
@@ -848,7 +848,7 @@ static const struct hid_device_driver_api hid_device_api = {
 		.alt_hs_out_ep = HID_OUT_EP_DEFINE_OR_ZERO(n, 1, 1),		\
 	};									\
 										\
-	const static struct usb_desc_header *hid_fs_desc_##n[] = {		\
+	const static struct usb_desc_header *const hid_fs_desc_##n[] = {	\
 		(struct usb_desc_header *) &hid_desc_##n.if0,			\
 		(struct usb_desc_header *) &hid_desc_##n.hid,			\
 		(struct usb_desc_header *) &hid_desc_##n.in_ep,			\
@@ -856,7 +856,7 @@ static const struct hid_device_driver_api hid_device_api = {
 		NULL,								\
 	};									\
 										\
-	const static struct usb_desc_header *hid_hs_desc_##n[] = {		\
+	const static struct usb_desc_header *const hid_hs_desc_##n[] = {	\
 		(struct usb_desc_header *) &hid_desc_##n.if0,			\
 		(struct usb_desc_header *) &hid_desc_##n.hid,			\
 		(struct usb_desc_header *) &hid_desc_##n.hs_in_ep,		\
