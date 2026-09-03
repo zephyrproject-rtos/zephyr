@@ -937,7 +937,7 @@ static void rx_disable_finalize(const struct device *dev)
 	 * callback we avoid suspending/resuming the device.
 	 */
 	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
-		pm_device_runtime_put_async(dev, K_NO_WAIT);
+		pm_device_runtime_put(dev);
 	}
 }
 
@@ -2447,7 +2447,7 @@ static void txstopped_isr(const struct device *dev)
 	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
 		nrf_uarte_int_disable(uarte, NRF_UARTE_INT_TXSTOPPED_MASK);
 		if (data->flags & UARTE_FLAG_POLL_OUT) {
-			pm_device_runtime_put_async(dev, K_NO_WAIT);
+			pm_device_runtime_put(dev);
 			data->flags &= ~UARTE_FLAG_POLL_OUT;
 		}
 	} else if (LOW_POWER_ENABLED(config)) {
@@ -2513,7 +2513,7 @@ static void txstopped_isr(const struct device *dev)
 	user_callback(dev, &evt);
 
 	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
-		pm_device_runtime_put_async(dev, K_NO_WAIT);
+		pm_device_runtime_put(dev);
 	}
 }
 
