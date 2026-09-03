@@ -178,7 +178,11 @@ int clk_register_generated(pmc_registers_t *const pmc, struct k_spinlock *lock,
 	gck->id = id;
 	gck->pmc = pmc;
 	gck->lock = lock;
-	gck->range = *range;
+
+	if (range != NULL) {
+		gck->range = *range;
+	}
+
 	gck->chg_pid = chg_pid;
 	gck->layout = layout;
 	memcpy(gck->mux_table, mux_table, num_parents * sizeof(mux_table));
