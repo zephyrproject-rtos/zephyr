@@ -254,11 +254,7 @@ ZTEST(device_runtime_api, test_unsupported)
 	zassert_equal(pm_device_runtime_disable(dev), -ENOTSUP, "");
 	zassert_equal(pm_device_runtime_get(dev), 0, "");
 	zassert_equal(pm_device_runtime_put(dev), 0, "");
-#ifdef CONFIG_PM_DEVICE_RUNTIME_ASYNC
 	zassert_equal(pm_device_runtime_put_async(dev, K_NO_WAIT), 0, "");
-#else
-	zassert_equal(pm_device_runtime_put_async(dev, K_NO_WAIT), -ENOSYS, "");
-#endif
 }
 
 int dev_pm_control(const struct device *dev, enum pm_device_action action)
