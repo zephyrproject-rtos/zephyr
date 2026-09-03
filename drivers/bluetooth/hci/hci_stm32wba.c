@@ -306,8 +306,10 @@ uint8_t BLECB_Indication(const uint8_t *data, uint16_t length,
 
 static int bt_hci_stm32wba_send(const struct device *dev, struct net_buf *buf)
 {
+	/* This buffer is used to store command and response, since BleStack_Request does
+	 * not know the length of the buffer, we need to set it to the maximum length
+	 */
 	uint8_t hci_cmd_buf[MAX(BT_BUF_CMD_TX_SIZE, BT_BUF_EVT_SIZE(255U))];
-	struct net_buf *evt_buf = NULL;
 	uint16_t event_length;
 	uint8_t *data;
 	__maybe_unused int unlock_err;
@@ -320,22 +322,9 @@ static int bt_hci_stm32wba_send(const struct device *dev, struct net_buf *buf)
 	}
 
 	if (buf->data[0] == BT_HCI_H4_CMD) {
-		/*
-		 * Get Event Buffer which will be used to store Tx buffer and store
-		 * the response event which is a Command Complete Event or a
-		 * Command Status Event.
-		 */
-		evt_buf = bt_buf_get_evt(BT_HCI_EVT_CMD_COMPLETE, false, K_FOREVER);
-		if (!evt_buf) {
-			LOG_ERR("No available event buffers!");
-			__ASSERT_NO_MSG(evt_buf);
-			err = -ENOMEM;
-			goto done;
-		}
 		if (buf->len > sizeof(hci_cmd_buf)) {
 			LOG_ERR("HCI command length %zu exceeds buffer size %zu",
 				buf->len, sizeof(hci_cmd_buf));
-			net_buf_unref(evt_buf);
 			err = -EMSGSIZE;
 			goto done;
 		}
@@ -348,28 +337,19 @@ static int bt_hci_stm32wba_send(const struct device *dev, struct net_buf *buf)
 	event_length = BleStack_Request(data);
 	LOG_DBG("event_length: %u", event_length);
 
-	if (evt_buf) {
-		if (event_length) {
-			if (event_length > net_buf_tailroom(evt_buf)) {
-				LOG_ERR("HCI event too large for sync event buffer (%u > %zu)",
-					event_length, net_buf_tailroom(evt_buf));
-				net_buf_unref(evt_buf);
-				err = -EMSGSIZE;
-			} else {
-				net_buf_reset(evt_buf);
-				net_buf_add_mem(evt_buf, hci_cmd_buf, event_length);
-				bt_hci_recv(dev, evt_buf);
-			}
-		} else {
-			net_buf_unref(evt_buf);
-		}
+	if (event_length != 0) {
+		err = receive_data(dev, data, (size_t)event_length, NULL, 0);
 	}
-
 done:
 	unlock_err = k_mutex_unlock(&hci_lock);
 	__ASSERT_NO_MSG(unlock_err == 0);
 
-	net_buf_unref(buf);
+	/* Free buffer only if no errors, the caller remains
+	 * responsible for it.
+	 */
+	if (err == 0) {
+		net_buf_unref(buf);
+	}
 
 	return err;
 }
