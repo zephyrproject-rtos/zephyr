@@ -190,6 +190,40 @@ static ssize_t z_impl_zsock_recvfrom_custom_fake_wrong_source(int sock, void *bu
 	return ret;
 }
 
+/* A datagram shorter than a CoAP header, then a valid response */
+static ssize_t z_impl_zsock_recvfrom_custom_fake_runt(int sock, void *buf, size_t max_len,
+						      int flags,
+						      struct net_sockaddr *src_addr,
+						      net_socklen_t *addrlen)
+{
+	((uint8_t *)buf)[0] = 0x60;
+	((uint8_t *)buf)[1] = 0x45;
+
+	fill_recv_src_addr(src_addr, addrlen);
+
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake;
+
+	return 2;
+}
+
+/* A malformed packet (reserved token length 15), then a runt datagram */
+static ssize_t z_impl_zsock_recvfrom_custom_fake_malformed(int sock, void *buf, size_t max_len,
+							   int flags,
+							   struct net_sockaddr *src_addr,
+							   net_socklen_t *addrlen)
+{
+	((uint8_t *)buf)[0] = 0x6F;
+	((uint8_t *)buf)[1] = 0x45;
+	((uint8_t *)buf)[2] = 0x00;
+	((uint8_t *)buf)[3] = 0x00;
+
+	fill_recv_src_addr(src_addr, addrlen);
+
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_runt;
+
+	return 4;
+}
+
 /* Piggybacked response with the right token but a corrupted message ID */
 static ssize_t z_impl_zsock_recvfrom_custom_fake_wrong_mid(int sock, void *buf, size_t max_len,
 							   int flags,
@@ -1801,6 +1835,129 @@ ZTEST(coap_client, test_blockwise_short_block_fails)
 	 */
 	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
 	zassert_equal(last_response_code, -EBADMSG, "Unexpected response");
+}
+
+ZTEST(coap_client, test_malformed_packet_ignored)
+{
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_malformed;
+
+	zassert_ok(coap_client_req(&client, 0, net_sad(&dst_address), &short_request, NULL));
+
+	/* The malformed packet and the runt datagram are dropped without
+	 * cancelling the exchange, and the valid response that follows
+	 * completes it.
+	 */
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT, "Unexpected response");
+}
+
+static int rst_sent_cnt;
+static uint16_t rst_sent_id;
+
+static ssize_t z_impl_zsock_sendto_custom_fake_record_rst(int sock, void *buf, size_t len,
+							  int flags,
+							  const struct net_sockaddr *dest_addr,
+							  net_socklen_t addrlen)
+{
+	const uint8_t *data = buf;
+
+	if (((data[0] >> 4) & 0x3) == COAP_TYPE_RESET) {
+		zassert_equal(len, COAP_FIXED_HEADER_SIZE, "Reset must be Empty");
+		rst_sent_id = ((uint16_t)data[2] << 8) | data[3];
+		rst_sent_cnt++;
+		return len;
+	}
+
+	return z_impl_zsock_sendto_custom_fake(sock, buf, len, flags, dest_addr, addrlen);
+}
+
+/* A zero-length datagram, then a valid response */
+static ssize_t z_impl_zsock_recvfrom_custom_fake_empty(int sock, void *buf, size_t max_len,
+						       int flags, struct net_sockaddr *src_addr,
+						       net_socklen_t *addrlen)
+{
+	fill_recv_src_addr(src_addr, addrlen);
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake;
+
+	return 0;
+}
+
+/* Malformed NON (reserved token length 15), then a zero-length datagram */
+static ssize_t z_impl_zsock_recvfrom_custom_fake_malformed_non(int sock, void *buf,
+							       size_t max_len, int flags,
+							       struct net_sockaddr *src_addr,
+							       net_socklen_t *addrlen)
+{
+	static const uint8_t pkt[] = {0x5F, 0x45, 0x56, 0x78};
+
+	memcpy(buf, pkt, sizeof(pkt));
+	fill_recv_src_addr(src_addr, addrlen);
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_empty;
+
+	return sizeof(pkt);
+}
+
+/* Malformed CON (reserved token length 15), then a malformed NON */
+static ssize_t z_impl_zsock_recvfrom_custom_fake_malformed_con(int sock, void *buf,
+							       size_t max_len, int flags,
+							       struct net_sockaddr *src_addr,
+							       net_socklen_t *addrlen)
+{
+	static const uint8_t pkt[] = {0x4F, 0x45, 0x12, 0x34};
+
+	memcpy(buf, pkt, sizeof(pkt));
+	fill_recv_src_addr(src_addr, addrlen);
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_malformed_non;
+
+	return sizeof(pkt);
+}
+
+/* RFC 7252, sections 4.2 and 4.3: a malformed CON is rejected with a Reset, a
+ * malformed NON is silently ignored, and neither ends the exchange.
+ */
+ZTEST(coap_client, test_malformed_con_rejected)
+{
+	rst_sent_cnt = 0;
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_record_rst;
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_malformed_con;
+
+	zassert_ok(coap_client_req(&client, 0, net_sad(&dst_address), &short_request, NULL));
+
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT, "Unexpected response");
+	zassert_equal(rst_sent_cnt, 1, "Expected one Reset");
+	zassert_equal(rst_sent_id, 0x1234, "Reset must echo the message ID");
+}
+
+/* A truncated datagram that does not parse, then a valid response */
+static ssize_t z_impl_zsock_recvfrom_custom_fake_truncated_con(int sock, void *buf,
+							       size_t max_len, int flags,
+							       struct net_sockaddr *src_addr,
+							       net_socklen_t *addrlen)
+{
+	static const uint8_t pkt[] = {0x4F, 0x45, 0x12, 0x34};
+
+	memcpy(buf, pkt, sizeof(pkt));
+	fill_recv_src_addr(src_addr, addrlen);
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake;
+
+	return max_len + 1;
+}
+
+/* A CON that does not parse because the receive buffer truncated it is not
+ * rejected: it may be well-formed.
+ */
+ZTEST(coap_client, test_truncated_con_not_rejected)
+{
+	rst_sent_cnt = 0;
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_record_rst;
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_truncated_con;
+
+	zassert_ok(coap_client_req(&client, 0, net_sad(&dst_address), &short_request, NULL));
+
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT, "Unexpected response");
+	zassert_equal(rst_sent_cnt, 0, "Truncated message must not be rejected");
 }
 
 ZTEST(coap_client, test_separate_response)

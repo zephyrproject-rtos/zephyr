@@ -893,6 +893,15 @@ static int handle_poll(void)
 				if (ret == -EAGAIN) {
 					continue;
 				}
+				if (ret == -EBADMSG || ret == -EILSEQ) {
+					/* RFC 7252, sections 4.2 and 4.3: a
+					 * malformed message is rejected; it
+					 * must not tear down unrelated
+					 * exchanges.
+					 */
+					LOG_WRN("Dropping malformed packet");
+					continue;
+				}
 				LOG_ERR("Error receiving response");
 				cancel_requests_with(client, -EIO);
 				continue;
@@ -929,6 +938,30 @@ static int handle_poll(void)
 	return 0;
 }
 
+/* RFC 7252, section 4.2: a Confirmable message with a message format error is
+ * rejected with a matching Reset, when its header can be read.
+ */
+static void reject_malformed(struct coap_client *client, const struct net_sockaddr *addr,
+			     net_socklen_t addrlen, size_t len)
+{
+	const uint8_t *buf = client->recv_buf;
+	uint8_t rst_buf[COAP_FIXED_HEADER_SIZE];
+	struct coap_packet rst;
+
+	if (len < COAP_FIXED_HEADER_SIZE || (buf[0] >> 6) != COAP_VERSION_1 ||
+	    ((buf[0] >> 4) & 0x3) != COAP_TYPE_CON) {
+		return;
+	}
+
+	if (coap_packet_init(&rst, rst_buf, sizeof(rst_buf), COAP_VERSION_1, COAP_TYPE_RESET, 0,
+			     NULL, COAP_CODE_EMPTY, ((uint16_t)buf[2] << 8) | buf[3]) < 0) {
+		return;
+	}
+
+	(void)send_request(client->fd, rst.data, rst.offset, 0, addr,
+			   (addr->sa_family != NET_AF_UNSPEC) ? addrlen : 0);
+}
+
 static int recv_response(struct coap_client *client, struct net_sockaddr *addr,
 			 net_socklen_t *addrlen, struct coap_packet *response, bool *truncated)
 {
@@ -949,8 +982,8 @@ static int recv_response(struct coap_client *client, struct net_sockaddr *addr,
 		ret = -errno;
 		return ret;
 	} else if (total_len == 0) {
-		/* Ignore, UDP can be zero length, but it is not CoAP anymore */
-		return 0;
+		/* UDP can be zero length, but it is not CoAP anymore */
+		return -EBADMSG;
 	}
 
 	available_len = MIN(total_len, sizeof(client->recv_buf));
@@ -960,7 +993,16 @@ static int recv_response(struct coap_client *client, struct net_sockaddr *addr,
 
 	ret = coap_packet_parse(response, client->recv_buf, available_len, NULL, 0);
 	if (ret < 0) {
-		LOG_ERR("Invalid data received");
+		LOG_ERR("Invalid data received (%d)", ret);
+		/* A message we truncated may be well-formed */
+		if (!*truncated) {
+			reject_malformed(client, addr, *addrlen, available_len);
+		}
+		/* Normalize parse failures, including datagrams shorter than a
+		 * CoAP header (-EINVAL), so the caller can tell a malformed
+		 * packet from a socket error.
+		 */
+		return -EBADMSG;
 	}
 
 	return ret;
