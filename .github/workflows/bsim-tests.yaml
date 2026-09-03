@@ -23,11 +23,10 @@ on:
       - "modules/openthread/**"
       - "subsys/net/l2/openthread/**"
       - "include/zephyr/net/openthread.h"
+      - "drivers/**nrfx**"
       - "drivers/ieee802154/**"
       - "include/zephyr/net/ieee802154*"
-      - "drivers/serial/*nrfx*"
       - "tests/drivers/uart/**"
-      - "drivers/gpio/*nrfx*"
       - '!**.rst'
 
 permissions:
@@ -106,6 +105,8 @@ jobs:
             scripts/native_simulator/
             tests/bsim/*
             boards/nordic/nrf5*/*dt*
+            drivers/**/*nrfx*
+            drivers/**/*nrfx*/**
             dts/*/nordic/
             modules/mbedtls/**
             modules/hal_nordic/**
