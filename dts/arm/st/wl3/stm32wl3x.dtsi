@@ -100,7 +100,8 @@
 
 	soc {
 		flash: flash-controller@40001000 {
-			compatible = "st,stm32wl3-flash-controller", "st,stm32-flash-controller";
+			/* Flash controller IP is identical to the STM32WB0 one */
+			compatible = "st,stm32wb0-flash-controller", "st,stm32-flash-controller";
 			reg = <0x40001000 DT_SIZE_K(4)>;
 			interrupts = <0 0>;
 			#address-cells = <1>;
