@@ -458,6 +458,36 @@ static ssize_t z_impl_zsock_recvfrom_custom_fake_empty_ack(int sock, void *buf, 
 	return sizeof(ack_data);
 }
 
+/* Piggybacked block2 response with the more bit set but a payload shorter
+ * than the block size.
+ */
+static ssize_t z_impl_zsock_recvfrom_custom_fake_block2_short(int sock, void *buf, size_t max_len,
+							      int flags,
+							      struct net_sockaddr *src_addr,
+							      net_socklen_t *addrlen)
+{
+	struct coap_packet response;
+	uint8_t token[COAP_TOKEN_MAX_LEN] = {0};
+	uint8_t payload[10];
+	uint16_t message_id = get_next_pending_message_id();
+
+	memset(payload, 'A', sizeof(payload));
+
+	zassert_ok(coap_packet_init(&response, buf, max_len, COAP_VERSION_1, COAP_TYPE_ACK,
+				    COAP_TOKEN_MAX_LEN, token, COAP_RESPONSE_CODE_CONTENT,
+				    message_id));
+	zassert_ok(coap_append_option_int(&response, COAP_OPTION_BLOCK2,
+					  BIT(3) | COAP_BLOCK_256));
+	zassert_ok(coap_packet_append_payload_marker(&response));
+	zassert_ok(coap_packet_append_payload(&response, payload, sizeof(payload)));
+
+	restore_token(buf);
+	fill_recv_src_addr(src_addr, addrlen);
+	clear_socket_events(sock, ZSOCK_POLLIN);
+
+	return response.offset;
+}
+
 static ssize_t z_impl_zsock_recvfrom_custom_fake_rst(int sock, void *buf, size_t max_len, int flags,
 						     struct net_sockaddr *src_addr,
 						     net_socklen_t *addrlen)
@@ -869,6 +899,19 @@ ZTEST(coap_client, test_piggybacked_response_wrong_mid_ignored)
 	 */
 	k_sleep(K_MSEC(MORE_THAN_LONG_EXCHANGE_LIFETIME_MS));
 	zassert_equal(last_response_code, -ETIMEDOUT, "Unexpected response");
+}
+
+ZTEST(coap_client, test_blockwise_short_block_fails)
+{
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_block2_short;
+
+	zassert_ok(coap_client_req(&client, 0, net_sad(&dst_address), &short_request, NULL));
+
+	/* RFC 7959, section 2.3: a block with the more bit set whose payload
+	 * does not match the block size fails the transfer.
+	 */
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, -EBADMSG, "Unexpected response");
 }
 
 ZTEST(coap_client, test_separate_response)

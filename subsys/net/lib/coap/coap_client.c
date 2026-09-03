@@ -1314,6 +1314,19 @@ static int handle_response(struct coap_client *client, const struct net_sockaddr
 			goto fail;
 		}
 		coap_next_block(response, &internal_req->recv_blk_ctx);
+
+		/* RFC 7959, section 2.3: with the M bit set, the payload size
+		 * must match the block size exactly, otherwise the transfer
+		 * position desynchronizes. Truncated responses are re-requested
+		 * with a smaller block size instead.
+		 */
+		if (!last_block && !response_truncated &&
+		    payload_len !=
+			    coap_block_size_to_bytes(internal_req->recv_blk_ctx.block_size)) {
+			LOG_ERR("Payload size does not match the block size");
+			ret = -EBADMSG;
+			goto fail;
+		}
 	} else {
 		internal_req->offset = 0;
 		last_block = true;
