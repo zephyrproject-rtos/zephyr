@@ -884,7 +884,7 @@ Bluetooth Qualification:
   tests:
     - bluetooth
     - bluetooth.general
-    - bluetooth.tester_bsim
+    - bluetooth.tester
 
 Board/SoC configuration:
   status: maintained
