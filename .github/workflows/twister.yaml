@@ -78,6 +78,7 @@ jobs:
           rm -fr ".git/rebase-apply"
           git rebase origin/${BASE_REF}
           git log  --pretty=oneline | head -n 10
+          git config --global http.version HTTP/1.1
           west init -l . || true
           west config manifest.group-filter -- +ci,+optional
           west config --global update.narrow true
@@ -188,6 +189,7 @@ jobs:
             git log  --pretty=oneline | head -n 10
           fi
           echo "$HOME/.local/bin" >> $GITHUB_PATH
+          git config --global http.version HTTP/1.1
 
           west init -l . || true
           west config manifest.group-filter -- +ci,+optional
@@ -219,6 +221,7 @@ jobs:
           echo "Manifest points to bsim sha $BSIM_VERSION"
           cd /opt/bsim_west/bsim
           git fetch -n origin ${BSIM_VERSION}
+          git config --global http.version HTTP/1.1
           git -c advice.detachedHead=false checkout ${BSIM_VERSION}
           west update
           make everything -s -j 8

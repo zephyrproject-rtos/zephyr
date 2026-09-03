@@ -76,6 +76,7 @@ jobs:
           rm -fr ".git/rebase-apply"
           git rebase origin/${BASE_REF}
           git log  --pretty=oneline | head -n 10
+          git config --global http.version HTTP/1.1
           west init -l . || true
           west config manifest.group-filter -- +ci
           west config --global update.narrow true
@@ -142,6 +143,7 @@ jobs:
           cd /opt/bsim_west/bsim
           git fetch -n origin ${BSIM_VERSION}
           git -c advice.detachedHead=false checkout ${BSIM_VERSION}
+          git config --global http.version HTTP/1.1
           west update
           make everything -s -j 8
 
