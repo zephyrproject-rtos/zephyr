@@ -1,4 +1,5 @@
 /*
+ * Copyright 2024 Protocentral Electronics
  * Copyright 2025 NXP
  * Copyright (c) 2025 Pavel Maloletkov.
  * Copyright (c) 2026 Muhammad Waleed Badar
@@ -26,9 +27,8 @@ LOG_MODULE_REGISTER(co5300, CONFIG_DISPLAY_LOG_LEVEL);
 #define CO5300_PIXFMT_RGB888 MIPI_DSI_PIXFMT_RGB888
 #endif
 
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(mspi)
-#include <zephyr/drivers/mspi.h>
-
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(mspi) || \
+	DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 #define CO5300_PIXFMT_RGB565 PIXEL_FORMAT_RGB_565
 #define CO5300_PIXFMT_RGB888 PIXEL_FORMAT_RGB_888
 
@@ -36,6 +36,14 @@ LOG_MODULE_REGISTER(co5300, CONFIG_DISPLAY_LOG_LEVEL);
 #define CO5300_SPI_CMD           0x02
 #define CO5300_SPI_WRITE4_PXIEL  0x32
 #define CO5300_SPI_WRITE_TIMEOUT 100
+#endif
+
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(mspi)
+#include <zephyr/drivers/mspi.h>
+#endif
+
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+#include <zephyr/drivers/spi.h>
 #endif
 
 #define CO5300_PAGESET                      0xFE
@@ -61,6 +69,9 @@ struct co5300_config {
 	const struct device *mspi_bus;
 	struct mspi_dev_id dev_id;
 	uint16_t chunk_size;
+#endif
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+	struct spi_dt_spec spi_bus;
 #endif
 	co5300_cmd_write_fn cmd_write;
 	co5300_display_write_fn display_write;
@@ -248,6 +259,41 @@ static int co5300_mspi_display_write(const struct device *dev,
 					buf, framebuf_size);
 }
 #endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(mspi) */
+
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+static int co5300_spi_cmd_write(const struct device *dev, uint8_t cmd,
+				const void *tx_buf, uint32_t tx_len)
+{
+	const struct co5300_config *config = dev->config;
+	struct spi_buf tx_data[3];
+	struct spi_buf_set tx_bufs = {.buffers = tx_data, .count = 2U};
+	uint8_t opcode[2] = {CO5300_SPI_CMD, 00};
+	uint8_t cmd_buf[2] = {cmd, 00};
+
+	tx_data[0].buf = &opcode;
+	tx_data[0].len = 2U;
+	tx_data[1].buf = &cmd_buf;
+	tx_data[1].len = 2U;
+
+	if (tx_buf != NULL && tx_len > 0) {
+		tx_data[2].buf = (void *)tx_buf;
+		tx_data[2].len = tx_len;
+		tx_bufs.count = 3U;
+	}
+
+	return spi_write_dt(&config->spi_bus, &tx_bufs);
+}
+
+static int co5300_spi_display_write(const struct device *dev,
+				    const struct display_buffer_descriptor *desc,
+				    const void *buf)
+{
+	struct co5300_data *data = dev->data;
+	uint32_t framebuf_size = desc->height * desc->width * data->bytes_per_pixel;
+
+	return co5300_spi_cmd_write(dev, MIPI_DCS_WRITE_MEMORY_START, buf, framebuf_size);
+}
+#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
 
 static void co5300_tear_effect_isr_handler(const struct device *gpio_dev, struct gpio_callback *cb,
 					   uint32_t pins)
@@ -533,7 +579,8 @@ static int co5300_configure_panel(const struct device *dev)
 	}
 #endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(mipi_dsi) */
 
-#if DT_ANY_INST_ON_BUS_STATUS_OKAY(mspi)
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(mspi) || \
+	DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 	cmd = 0x80;
 	ret = config->cmd_write(dev, CO5300_SPI_MODE, &cmd, sizeof(cmd));
 	if (ret < 0) {
@@ -588,7 +635,7 @@ static int co5300_configure_panel(const struct device *dev)
 static int co5300_init(const struct device *dev)
 {
 	const struct co5300_config *config = dev->config;
-	struct co5300_data *data = dev->data;
+	__maybe_unused struct co5300_data *data = dev->data;
 	int ret = 0;
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(mipi_dsi)
@@ -668,6 +715,14 @@ static DEVICE_API(display, co5300_api) = {
 	.panel_height = DT_INST_PROP(node_id, height),						\
 	.red_blue_swap = DT_INST_PROP(node_id, red_blue_swap)
 
+#define CO5300_CONFIG_SPI(node_id)								\
+	{											\
+		CO5300_CONFIG_COMMON(node_id, co5300_spi_cmd_write,				\
+				     co5300_spi_display_write),					\
+		.spi_bus = SPI_DT_SPEC_INST_GET(node_id, SPI_OP_MODE_CONTROLLER |		\
+							 SPI_WORD_SET(8))			\
+	}
+
 #define CO5300_CONFIG_MSPI(node_id)								\
 	{											\
 		CO5300_CONFIG_COMMON(node_id, co5300_mspi_cmd_write,				\
@@ -691,8 +746,9 @@ static DEVICE_API(display, co5300_api) = {
 
 #define CO5300_DEVICE_INIT(node_id)								\
 	static const struct co5300_config co5300_config_##node_id =				\
-		COND_CODE_1(DT_INST_ON_BUS(node_id, mspi), (CO5300_CONFIG_MSPI(node_id)),	\
-			(CO5300_CONFIG_MIPI_DSI(node_id)));					\
+	COND_CASE_1(DT_INST_ON_BUS(node_id, mipi_dsi), (CO5300_CONFIG_MIPI_DSI(node_id)),	\
+		    DT_INST_ON_BUS(node_id, mspi), (CO5300_CONFIG_MSPI(node_id)),		\
+		    DT_INST_ON_BUS(node_id, spi), (CO5300_CONFIG_SPI(node_id)), ());		\
 												\
 	static struct co5300_data co5300_data_##node_id = {					\
 		.pixel_format = DT_INST_PROP(node_id, pixel_format),				\
