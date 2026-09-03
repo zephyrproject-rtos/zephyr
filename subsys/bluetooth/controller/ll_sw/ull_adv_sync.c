@@ -94,7 +94,7 @@ static uint8_t ull_adv_sync_remove_adi(struct lll_adv_sync *lll_sync,
 				       struct pdu_adv *pdu);
 #endif /* CONFIG_BT_CTLR_ADV_PERIODIC_ADI_SUPPORT */
 static uint8_t adv_type_check(struct ll_adv_set *adv);
-static inline struct ll_adv_sync_set *sync_acquire(void);
+
 static inline void sync_release(struct ll_adv_sync_set *sync);
 static inline uint16_t sync_handle_get(const struct ll_adv_sync_set *sync);
 static uint32_t sync_time_get(const struct ll_adv_sync_set *sync,
@@ -115,6 +115,9 @@ static void sync_info_offset_fill(struct pdu_adv_sync_info *si,
 static void ticker_op_cb(uint32_t status, void *param);
 #endif /* !CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
 
+static uint8_t ull_adv_pdu_add_modify_acad_data(struct pdu_adv *pdu,
+				 const uint8_t *new_ad,
+				 uint8_t new_ad_len);
 static struct pdu_adv_sync_info *sync_info_get(struct pdu_adv *pdu);
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 		      uint32_t remainder, uint16_t lazy, uint8_t force,
@@ -131,13 +134,25 @@ static void *adv_sync_free;
 
 uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 {
+	/* Call v2 with default parameters for non-PAwR periodic advertising */
+	return ll_adv_sync_param_set_v2(handle, interval, flags,
+					0U, 0U, 0U, 0U, 0U);
+}
+
+uint8_t ll_adv_sync_param_set_v2(uint8_t handle, uint16_t interval, uint16_t flags,
+				  uint8_t num_subevents, uint8_t subevent_interval,
+				  uint8_t response_slot_delay, uint8_t response_slot_spacing,
+				  uint8_t num_response_slots)
+{
 	void *extra_data_prev, *extra_data;
 	struct pdu_adv *pdu_prev, *pdu;
 	struct lll_adv_sync *lll_sync;
 	struct ll_adv_sync_set *sync;
 	struct ll_adv_set *adv;
 	uint8_t err, ter_idx;
-
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC_RSP)
+	bool is_pawr;
+#endif
 	adv = ull_adv_is_created_get(handle);
 	if (!adv) {
 		return BT_HCI_ERR_UNKNOWN_ADV_IDENTIFIER;
@@ -150,13 +165,34 @@ uint8_t ll_adv_sync_param_set(uint8_t handle, uint16_t interval, uint16_t flags)
 		}
 	}
 
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC_RSP)
+	is_pawr = (num_subevents > 0);
+
+	if (is_pawr) {
+		if (num_subevents > BT_HCI_PAWR_SUBEVENT_MAX) {
+			return BT_HCI_ERR_INVALID_PARAM;
+		}
+
+		if (num_response_slots == 0) {
+			return BT_HCI_ERR_INVALID_PARAM;
+		}
+
+		return ull_adv_sync_rsp_param_set(handle, interval, flags, num_subevents, subevent_interval, response_slot_delay, response_slot_spacing, num_response_slots);
+	}
+#else
+	ARG_UNUSED(num_subevents);
+	ARG_UNUSED(subevent_interval);
+	ARG_UNUSED(response_slot_delay);
+	ARG_UNUSED(response_slot_spacing);
+	ARG_UNUSED(num_response_slots);
+#endif
 	lll_sync = adv->lll.sync;
 	if (!lll_sync) {
 		struct pdu_adv *ter_pdu;
 		struct lll_adv *lll;
 		uint8_t chm_last;
 
-		sync = sync_acquire();
+		sync = ull_adv_sync_acquire();
 		if (!sync) {
 			return BT_HCI_ERR_MEM_CAPACITY_EXCEEDED;
 		}
@@ -280,6 +316,11 @@ uint8_t ll_adv_sync_ad_data_set(uint8_t handle, uint8_t op, uint8_t len,
 	if (!lll_sync) {
 		return BT_HCI_ERR_CMD_DISALLOWED;
 	}
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC_RSP)
+	if(lll_sync->is_rsp) {
+		return BT_HCI_ERR_CMD_DISALLOWED;
+	}
+#endif
 
 	sync = HDR_LLL2ULL(lll_sync);
 
@@ -682,7 +723,6 @@ int ull_adv_sync_init(void)
 	if (err) {
 		return err;
 	}
-
 	return 0;
 }
 
@@ -733,7 +773,16 @@ int ull_adv_sync_reset_finalize(void)
 
 	return 0;
 }
+struct ll_adv_sync_set *ull_adv_sync_acquire(void)
+{
+	return mem_acquire(&adv_sync_free);
+}
 
+void ull_adv_sync_release(struct ll_adv_sync_set *sync)
+{
+	lll_adv_sync_data_release(&sync->lll);
+	sync_release(sync);
+}
 struct ll_adv_sync_set *ull_adv_sync_get(uint8_t handle)
 {
 	if (handle >= CONFIG_BT_CTLR_ADV_SYNC_SET) {
@@ -753,11 +802,6 @@ uint16_t ull_adv_sync_lll_handle_get(const struct lll_adv_sync *lll)
 	return sync_handle_get((void *)lll->hdr.parent);
 }
 
-void ull_adv_sync_release(struct ll_adv_sync_set *sync)
-{
-	lll_adv_sync_data_release(&sync->lll);
-	sync_release(sync);
-}
 
 uint32_t ull_adv_sync_time_get(const struct ll_adv_sync_set *sync,
 			       uint8_t pdu_len)
@@ -2441,11 +2485,6 @@ static uint8_t adv_type_check(struct ll_adv_set *adv)
 	return 0;
 }
 
-static inline struct ll_adv_sync_set *sync_acquire(void)
-{
-	return mem_acquire(&adv_sync_free);
-}
-
 static inline void sync_release(struct ll_adv_sync_set *sync)
 {
 	mem_release(sync, &adv_sync_free);
@@ -2680,6 +2719,8 @@ static void mfy_sync_offset_get(void *param)
 	struct lll_adv_sync *lll_sync;
 	struct ll_adv_sync_set *sync;
 	struct pdu_adv_sync_info *si;
+	struct pdu_adv_pawr_timing_info *pti;
+	uint8_t pti_ad[sizeof(*pti) + 2U];
 	uint32_t sync_remainder_us;
 	uint32_t aux_remainder_us;
 	uint32_t ticks_to_expire;
@@ -2772,6 +2813,21 @@ static void mfy_sync_offset_get(void *param)
 		((lll_clock_sca_local_get() <<
 		  PDU_SYNC_INFO_SCA_CHM_SCA_BIT_POS) &
 		 PDU_SYNC_INFO_SCA_CHM_SCA_BIT_MASK);
+
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC_RSP)
+		/** Add pawr timing information */
+	/* Populate the AD data length and opcode */
+	pti_ad[PDU_ADV_DATA_HEADER_LEN_OFFSET] = sizeof(*pti) + 1U;
+	pti_ad[PDU_ADV_DATA_HEADER_TYPE_OFFSET] = PDU_ADV_DATA_TYPE_PAWR_TIMING_INFO;
+	pti = (void *)&pti_ad[PDU_ADV_DATA_HEADER_DATA_OFFSET];
+	(void)memcpy(pti->rsp_aa, lll_sync->rsp_aa,4);
+	pti->num_subevents = lll_sync->num_subevents;
+	pti->subevent_interval = lll_sync->subevent_interval;
+	pti->rsp_slot_delay = lll_sync->response_slot_delay;
+	pti->rsp_slot_spacing = lll_sync->response_slot_spacing;
+	ull_adv_pdu_add_modify_acad_data(pdu,pti_ad,sizeof(*pti) + 2U);
+
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC_RSP */
 }
 
 static void sync_info_offset_fill(struct pdu_adv_sync_info *si,
@@ -2839,13 +2895,162 @@ static struct pdu_adv_sync_info *sync_info_get(struct pdu_adv *pdu)
 	/* return pointer offset to sync_info */
 	return (void *)ptr;
 }
+static uint8_t ull_adv_pdu_add_modify_acad_data(struct pdu_adv *pdu,
+				 const uint8_t *new_ad,
+				 uint8_t new_ad_len)
+{
+	uint8_t ad_len;
+	uint8_t acad_len;
+	uint8_t delta;
+	uint8_t *dptr;
+	uint8_t *dptr_temp;
+	struct pdu_adv_com_ext_adv *hdr = &pdu->adv_ext_ind;
+	if (pdu->len > PDU_AC_EXT_PAYLOAD_SIZE_MAX - delta) {
+		return BT_HCI_ERR_PACKET_TOO_LONG;
+	}
+	if (pdu->adv_ext_ind.ext_hdr_len == 0U){	//No header case
+
+		delta = new_ad_len;
+		/* Add one byte for the header flags */
+		delta++;
+		dptr = pdu->payload + 1U;//1byte:length and advmode
+		/* Make room in ACAD by moving any advertising data back */
+		ad_len = pdu->len - 1U;
+		if (ad_len) {
+			(void)memmove(dptr + delta, dptr, ad_len);
+		}
+		/* Set all extended header flags to 0 */
+		*dptr = 0U;
+		 dptr++;
+		/* Copy in ACAD data */
+		memcpy(dptr, new_ad, new_ad_len);
+		/* Adjust lengths */
+		pdu->len += delta;
+		pdu->adv_ext_ind.ext_hdr_len += delta;
+
+		return 0U;
+	}
+
+	/* Skip to ACAD */
+	dptr = hdr->ext_hdr.data;
+	if (hdr->ext_hdr.adv_addr) {
+		dptr += BDADDR_SIZE;
+	}
+	if (hdr->ext_hdr.tgt_addr) {
+		dptr += BDADDR_SIZE;
+	}
+#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
+	if (hdr->ext_hdr.cte_info) {
+		dptr += sizeof(struct pdu_cte_info);
+	}
+#endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
+	if (hdr->ext_hdr.adi) {
+		dptr += sizeof(struct pdu_adv_adi);
+	}
+	if (hdr->ext_hdr.aux_ptr) {
+		dptr += sizeof(struct pdu_adv_aux_ptr);
+	}
+	if (hdr->ext_hdr.sync_info) {
+		dptr += sizeof(struct pdu_adv_sync_info);
+	}
+	if (hdr->ext_hdr.tx_pwr) {
+		dptr++;
+	}
+	/* ACAD is the remainder of the header, if any left */
+	if ((dptr - hdr->ext_hdr_adv_data) < hdr->ext_hdr_len) {
+		acad_len = hdr->ext_hdr_len - (dptr - hdr->ext_hdr_adv_data);
+		dptr_temp = dptr;
+		/* Find the Channel Map Update Indication */
+		do {
+			/* Pick the length and find the Channel Map Update Indication */
+			ad_len = dptr[PDU_ADV_DATA_HEADER_LEN_OFFSET];
+			if (ad_len &&
+				(dptr[PDU_ADV_DATA_HEADER_TYPE_OFFSET] ==
+				new_ad[PDU_ADV_DATA_HEADER_TYPE_OFFSET])) {
+				/** found exist */
+				break;
+			}
+			/* Add length field size */
+			ad_len += 1U;
+			if (ad_len <= acad_len) {	//<= ?????????
+				acad_len -= ad_len;
+			} else {
+				return BT_HCI_ERR_INVALID_LL_PARAM;
+			}
+			/* Move to next AD data */
+			dptr += ad_len;
+		} while (acad_len);
+
+		if(acad_len)//ACAD  found specical adv type,modify
+		{
+			if((ad_len + 1) <= new_ad_len)	//new ad data is bigger than old one
+			{
+				dptr_temp = dptr;
+				delta = new_ad_len - ad_len - 1U;
+				//dptr = pdu->payload + pdu->adv_ext_ind.ext_hdr_len + 1U;
+				/* Make room in ACAD by moving any remaining data back */
+				ad_len = pdu->len - ( dptr + ad_len + 1 - pdu->payload);
+				if (ad_len) {
+					(void)memmove(dptr + ad_len + 1 + delta, dptr + ad_len + 1, ad_len);
+				}
+				/* Copy in ACAD data */
+				memcpy(dptr_temp, new_ad, new_ad_len);
+				/* Adjust lengths */
+				pdu->len += delta;
+				pdu->adv_ext_ind.ext_hdr_len += delta;
+			}else{
+				dptr_temp = dptr;
+				delta = ad_len + 1 - new_ad_len;
+				/** remaining data */
+				ad_len = pdu->len - ( dptr + ad_len + 1 - pdu->payload);
+				if (ad_len) {
+					(void)memmove(dptr + new_ad_len, dptr + ad_len + 1, ad_len);
+				}
+				/* Copy in ACAD data */
+				memcpy(dptr_temp, new_ad, new_ad_len);
+			}
+
+		}else{	//ACAD not found,add new adv type or insert
+			delta = new_ad_len;
+			dptr_temp = dptr;
+			dptr = pdu->payload + pdu->adv_ext_ind.ext_hdr_len + 1U;
+			/* Make room in ACAD by moving any advertising data back */
+			ad_len = pdu->len - pdu->adv_ext_ind.ext_hdr_len - 1U;
+			if (ad_len) {
+				(void)memmove(dptr + delta, dptr, ad_len);
+			}
+			/* Copy in ACAD data */
+			memcpy(dptr_temp, new_ad, new_ad_len);
+			/* Adjust lengths */
+			pdu->len += delta;
+			pdu->adv_ext_ind.ext_hdr_len += delta;
+		}
+
+	} else {	//No ACAD ,Add
+		delta = new_ad_len;
+		acad_len = 0U;
+		dptr = pdu->payload + pdu->adv_ext_ind.ext_hdr_len + 1U;
+		/* Make room in ACAD by moving any advertising data back */
+		ad_len = pdu->len - pdu->adv_ext_ind.ext_hdr_len - 1U;
+		if (ad_len) {
+			(void)memmove(dptr + delta, dptr, ad_len);
+		}
+		/* Copy in ACAD data */
+		memcpy(dptr, new_ad, new_ad_len);
+		/* Adjust lengths */
+		pdu->len += delta;
+		pdu->adv_ext_ind.ext_hdr_len += delta;
+	}
+	return 0U;
+
+}
 
 static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 		      uint32_t remainder, uint16_t lazy, uint8_t force,
 		      void *param)
 {
 	static memq_link_t link;
-	static struct mayfly mfy = {0, 0, &link, NULL, lll_adv_sync_prepare};
+	static struct mayfly mfy = {0, 0, &link, NULL, NULL};
 	static struct lll_prepare_param p;
 #if defined(CONFIG_BT_CTLR_ADV_ISO) && \
 	defined(CONFIG_BT_TICKER_EXT_EXPIRE_INFO)
@@ -2861,7 +3066,6 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	DEBUG_RADIO_PREPARE_A(1);
 
 	lll = &sync->lll;
-
 	/* Increment prepare reference count */
 	ref = ull_ref_inc(&sync->ull);
 	LL_ASSERT_DBG(ref);
@@ -2886,6 +3090,11 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 	p.force = force;
 	p.param = lll;
 	mfy.param = &p;
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC_RSP)
+	mfy.fp = (sync->lll.is_rsp == 1) ? lll_adv_sync_rsp_prepare : lll_adv_sync_prepare;
+#else
+	mfy.fp = lll_adv_sync_prepare;
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC_RSP */
 
 	/* Kick LLL prepare */
 	ret = mayfly_enqueue(TICKER_USER_ID_ULL_HIGH,
@@ -2898,7 +3107,31 @@ static void ticker_cb(uint32_t ticks_at_expire, uint32_t ticks_drift,
 		ull_adv_iso_offset_get(sync);
 	}
 #endif /* CONFIG_BT_CTLR_ADV_ISO && !CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
+#if defined(CONFIG_BT_CTLR_ADV_PERIODIC_RSP)
+	// if (sync->lll.is_rsp) {
+	// 	struct node_rx_adv_sync_data_req *data_req;
+	// 	struct node_rx_pdu *node_rx;
 
+	// 	node_rx = ull_pdu_rx_alloc_peek(3);
+	// 	if (node_rx) {
+	// 		struct node_rx_ftr *ftr;
+	// 		struct pdu_adv *pdu;
+	// 		struct ll_adv_set *adv;
+
+	// 		ull_pdu_rx_alloc();
+	// 		node_rx->hdr.type = NODE_RX_TYPE_PAWR_DATA_REQUEST;
+	// 		adv = HDR_LLL2ULL(sync->lll.adv);
+	// 		node_rx->hdr.handle = ull_adv_handle_get(adv);
+	// 		data_req = (void *)node_rx->pdu;
+	// 		memset(data_req, 0x00, sizeof(struct node_rx_adv_sync_data_req));
+	// 		data_req->subevent_start = 0;
+	// 		data_req->Subevent_Data_Count = 1;
+
+	// 		ull_rx_put_sched(node_rx->hdr.link, node_rx);
+	// 	}
+
+	// }
+#endif /* CONFIG_BT_CTLR_ADV_PERIODIC_RSP */
 	DEBUG_RADIO_PREPARE_A(1);
 }
 
@@ -2910,3 +3143,366 @@ static void ticker_update_op_cb(uint32_t status, void *param)
 		      (param == ull_disable_mark_get()));
 }
 #endif /* !CONFIG_BT_CTLR_ADV_ISO && CONFIG_BT_TICKER_EXT_EXPIRE_INFO */
+
+#if defined(CONFIG_BT_CTLR_TEST)
+
+#define TEST_PDU_BUF_SIZE 256U
+
+static void test_pawr_ad_make(uint8_t *ad, const struct pdu_adv_pawr_timing_info *pti)
+{
+	ad[PDU_ADV_DATA_HEADER_LEN_OFFSET] = sizeof(*pti) + 1U;
+	ad[PDU_ADV_DATA_HEADER_TYPE_OFFSET] = PDU_ADV_DATA_TYPE_PAWR_TIMING_INFO;
+	memcpy(&ad[PDU_ADV_DATA_HEADER_DATA_OFFSET], pti, sizeof(*pti));
+}
+
+static void test_chm_ad_make(uint8_t *ad)
+{
+	ad[PDU_ADV_DATA_HEADER_LEN_OFFSET] = sizeof(struct pdu_adv_sync_chm_upd_ind) + 1U;
+	ad[PDU_ADV_DATA_HEADER_TYPE_OFFSET] = PDU_ADV_DATA_TYPE_CHANNEL_MAP_UPDATE_IND;
+	memset(&ad[PDU_ADV_DATA_HEADER_DATA_OFFSET], 0xBB,
+	       sizeof(struct pdu_adv_sync_chm_upd_ind));
+}
+
+static void test_pdu_reset(struct pdu_adv *pdu, uint8_t *buf, size_t buf_size)
+{
+	memset(buf, 0, buf_size);
+	memset(pdu, 0, sizeof(*pdu));
+}
+
+static void test_pdu_setup_sync_info_only(struct pdu_adv *pdu)
+{
+	struct pdu_adv_com_ext_adv *hdr = &pdu->adv_ext_ind;
+	uint8_t *dptr;
+
+	dptr = hdr->ext_hdr_adv_data;
+	*dptr = 0x20U; /* sync_info */
+	dptr++;
+
+	memset(dptr, 0xAA, sizeof(struct pdu_adv_sync_info));
+	hdr->ext_hdr_len = 1U + sizeof(struct pdu_adv_sync_info);
+	pdu->len = 1U + hdr->ext_hdr_len;
+}
+
+static void test_pdu_setup_sync_info_with_acad(struct pdu_adv *pdu,
+					      const uint8_t *acad, uint8_t acad_len)
+{
+	struct pdu_adv_com_ext_adv *hdr = &pdu->adv_ext_ind;
+	uint8_t *dptr;
+
+	test_pdu_setup_sync_info_only(pdu);
+	dptr = hdr->ext_hdr_adv_data + hdr->ext_hdr_len;
+	memcpy(dptr, acad, acad_len);
+	hdr->ext_hdr_len += acad_len;
+	pdu->len += acad_len;
+}
+
+static uint8_t *test_acad_find(struct pdu_adv *pdu, uint8_t type)
+{
+	struct pdu_adv_com_ext_adv *hdr = &pdu->adv_ext_ind;
+	uint8_t *dptr = hdr->ext_hdr.data;
+	uint8_t acad_len;
+
+	if (hdr->ext_hdr.adv_addr) {
+		dptr += BDADDR_SIZE;
+	}
+	if (hdr->ext_hdr.tgt_addr) {
+		dptr += BDADDR_SIZE;
+	}
+#if defined(CONFIG_BT_CTLR_DF_ADV_CTE_TX)
+	if (hdr->ext_hdr.cte_info) {
+		dptr += sizeof(struct pdu_cte_info);
+	}
+#endif /* CONFIG_BT_CTLR_DF_ADV_CTE_TX */
+	if (hdr->ext_hdr.adi) {
+		dptr += sizeof(struct pdu_adv_adi);
+	}
+	if (hdr->ext_hdr.aux_ptr) {
+		dptr += sizeof(struct pdu_adv_aux_ptr);
+	}
+	if (hdr->ext_hdr.sync_info) {
+		dptr += sizeof(struct pdu_adv_sync_info);
+	}
+	if (hdr->ext_hdr.tx_pwr) {
+		dptr++;
+	}
+
+	if ((dptr - hdr->ext_hdr_adv_data) >= hdr->ext_hdr_len) {
+		return NULL;
+	}
+
+	acad_len = hdr->ext_hdr_len - (dptr - hdr->ext_hdr_adv_data);
+	while (acad_len) {
+		uint8_t len = dptr[PDU_ADV_DATA_HEADER_LEN_OFFSET];
+
+		if (len && (dptr[PDU_ADV_DATA_HEADER_TYPE_OFFSET] == type)) {
+			return dptr;
+		}
+
+		len += 1U;
+		if (len > acad_len) {
+			return NULL;
+		}
+
+		acad_len -= len;
+		dptr += len;
+	}
+
+	return NULL;
+}
+
+static void test_ull_adv_pdu_add_modify_acad_no_ext_hdr(void)
+{
+	uint8_t pdu_buf[TEST_PDU_BUF_SIZE];
+	struct pdu_adv *pdu = (void *)pdu_buf;
+	struct pdu_adv_pawr_timing_info pti = {
+		.rsp_aa = { 0x11, 0x22, 0x33, 0x44 },
+		.num_subevents = 4U,
+		.subevent_interval = 10U,
+		.rsp_slot_delay = 1U,
+		.rsp_slot_spacing = 2U,
+	};
+	uint8_t ad[sizeof(*pti) + 2U];
+	uint8_t err;
+	uint8_t *found;
+
+	test_pdu_reset(pdu, pdu_buf, sizeof(pdu_buf));
+	pdu->len = 1U;
+	pdu->adv_ext_ind.ext_hdr_len = 0U;
+
+	test_pawr_ad_make(ad, &pti);
+	err = ull_adv_pdu_add_modify_acad_data(pdu, ad, sizeof(ad));
+	LL_ASSERT_ERR(err == 0U);
+	LL_ASSERT_ERR(pdu->len == (1U + sizeof(ad) + 1U));
+	LL_ASSERT_ERR(pdu->adv_ext_ind.ext_hdr_len == (sizeof(ad) + 1U));
+	LL_ASSERT_ERR(pdu->adv_ext_ind.ext_hdr_adv_data[1] == 0U);
+
+	found = test_acad_find(pdu, PDU_ADV_DATA_TYPE_PAWR_TIMING_INFO);
+	LL_ASSERT_ERR(found != NULL);
+	LL_ASSERT_ERR(!memcmp(found, ad, sizeof(ad)));
+}
+
+static void test_ull_adv_pdu_add_modify_acad_no_ext_hdr_with_adv_data(void)
+{
+	uint8_t pdu_buf[TEST_PDU_BUF_SIZE];
+	struct pdu_adv *pdu = (void *)pdu_buf;
+	struct pdu_adv_pawr_timing_info pti = {
+		.rsp_aa = { 0x55, 0x66, 0x77, 0x88 },
+		.num_subevents = 2U,
+		.subevent_interval = 5U,
+		.rsp_slot_delay = 3U,
+		.rsp_slot_spacing = 4U,
+	};
+	uint8_t ad[sizeof(*pti) + 2U];
+	uint8_t err;
+	uint8_t *found;
+	uint8_t *adv_data;
+
+	test_pdu_reset(pdu, pdu_buf, sizeof(pdu_buf));
+	pdu->len = 5U;
+	pdu->adv_ext_ind.ext_hdr_len = 0U;
+	pdu->payload[1] = 0xDEU;
+	pdu->payload[2] = 0xADU;
+	pdu->payload[3] = 0xBEU;
+	pdu->payload[4] = 0xEFU;
+
+	test_pawr_ad_make(ad, &pti);
+	err = ull_adv_pdu_add_modify_acad_data(pdu, ad, sizeof(ad));
+	LL_ASSERT_ERR(err == 0U);
+	LL_ASSERT_ERR(pdu->len == (5U + sizeof(ad) + 1U));
+
+	found = test_acad_find(pdu, PDU_ADV_DATA_TYPE_PAWR_TIMING_INFO);
+	LL_ASSERT_ERR(found != NULL);
+	LL_ASSERT_ERR(!memcmp(found, ad, sizeof(ad)));
+
+	adv_data = pdu->payload + pdu->adv_ext_ind.ext_hdr_len + 1U;
+	LL_ASSERT_ERR(adv_data[0] == 0xDEU);
+	LL_ASSERT_ERR(adv_data[1] == 0xADU);
+	LL_ASSERT_ERR(adv_data[2] == 0xBEU);
+	LL_ASSERT_ERR(adv_data[3] == 0xEFU);
+}
+
+static void test_ull_adv_pdu_add_modify_acad_add_to_sync_info(void)
+{
+	uint8_t pdu_buf[TEST_PDU_BUF_SIZE];
+	struct pdu_adv *pdu = (void *)pdu_buf;
+	struct pdu_adv_pawr_timing_info pti = {
+		.rsp_aa = { 0x01, 0x02, 0x03, 0x04 },
+		.num_subevents = 8U,
+		.subevent_interval = 20U,
+		.rsp_slot_delay = 2U,
+		.rsp_slot_spacing = 6U,
+	};
+	uint8_t ad[sizeof(*pti) + 2U];
+	uint8_t err;
+	uint8_t *found;
+	uint8_t len_before;
+
+	test_pdu_reset(pdu, pdu_buf, sizeof(pdu_buf));
+	test_pdu_setup_sync_info_only(pdu);
+	len_before = pdu->len;
+
+	test_pawr_ad_make(ad, &pti);
+	err = ull_adv_pdu_add_modify_acad_data(pdu, ad, sizeof(ad));
+	LL_ASSERT_ERR(err == 0U);
+	LL_ASSERT_ERR(pdu->len == (len_before + sizeof(ad)));
+	LL_ASSERT_ERR(pdu->adv_ext_ind.ext_hdr_len ==
+		      (1U + sizeof(struct pdu_adv_sync_info) + sizeof(ad)));
+
+	found = test_acad_find(pdu, PDU_ADV_DATA_TYPE_PAWR_TIMING_INFO);
+	LL_ASSERT_ERR(found != NULL);
+	LL_ASSERT_ERR(!memcmp(found, ad, sizeof(ad)));
+}
+
+static void test_ull_adv_pdu_add_modify_acad_modify_same_size(void)
+{
+	uint8_t pdu_buf[TEST_PDU_BUF_SIZE];
+	struct pdu_adv *pdu = (void *)pdu_buf;
+	struct pdu_adv_pawr_timing_info pti_old = {
+		.rsp_aa = { 0x10, 0x20, 0x30, 0x40 },
+		.num_subevents = 1U,
+		.subevent_interval = 1U,
+		.rsp_slot_delay = 1U,
+		.rsp_slot_spacing = 1U,
+	};
+	struct pdu_adv_pawr_timing_info pti_new = {
+		.rsp_aa = { 0xAA, 0xBB, 0xCC, 0xDD },
+		.num_subevents = 6U,
+		.subevent_interval = 12U,
+		.rsp_slot_delay = 4U,
+		.rsp_slot_spacing = 8U,
+	};
+	uint8_t ad_old[sizeof(*pti_old) + 2U];
+	uint8_t ad_new[sizeof(*pti_new) + 2U];
+	uint8_t err;
+	uint8_t *found;
+	uint8_t len_before;
+
+	test_pdu_reset(pdu, pdu_buf, sizeof(pdu_buf));
+	test_pawr_ad_make(ad_old, &pti_old);
+	test_pdu_setup_sync_info_with_acad(pdu, ad_old, sizeof(ad_old));
+	len_before = pdu->len;
+
+	test_pawr_ad_make(ad_new, &pti_new);
+	err = ull_adv_pdu_add_modify_acad_data(pdu, ad_new, sizeof(ad_new));
+	LL_ASSERT_ERR(err == 0U);
+	LL_ASSERT_ERR(pdu->len == len_before);
+
+	found = test_acad_find(pdu, PDU_ADV_DATA_TYPE_PAWR_TIMING_INFO);
+	LL_ASSERT_ERR(found != NULL);
+	LL_ASSERT_ERR(!memcmp(found, ad_new, sizeof(ad_new)));
+}
+
+static void test_ull_adv_pdu_add_modify_acad_modify_larger(void)
+{
+	uint8_t pdu_buf[TEST_PDU_BUF_SIZE];
+	struct pdu_adv *pdu = (void *)pdu_buf;
+	struct pdu_adv_pawr_timing_info pti_new = {
+		.rsp_aa = { 0xF1, 0xF2, 0xF3, 0xF4 },
+		.num_subevents = 16U,
+		.subevent_interval = 32U,
+		.rsp_slot_delay = 5U,
+		.rsp_slot_spacing = 10U,
+	};
+	/* Smaller PAWR ACAD: length field covers type + 2 data bytes only */
+	uint8_t ad_old[] = {
+		3U, PDU_ADV_DATA_TYPE_PAWR_TIMING_INFO, 0x01U, 0x02U,
+	};
+	uint8_t ad_new[sizeof(*pti_new) + 2U];
+	uint8_t err;
+	uint8_t *found;
+	uint8_t len_before;
+
+	test_pdu_reset(pdu, pdu_buf, sizeof(pdu_buf));
+	test_pdu_setup_sync_info_with_acad(pdu, ad_old, sizeof(ad_old));
+	len_before = pdu->len;
+
+	test_pawr_ad_make(ad_new, &pti_new);
+	err = ull_adv_pdu_add_modify_acad_data(pdu, ad_new, sizeof(ad_new));
+	LL_ASSERT_ERR(err == 0U);
+	LL_ASSERT_ERR(pdu->len == (len_before + (sizeof(ad_new) - sizeof(ad_old))));
+
+	found = test_acad_find(pdu, PDU_ADV_DATA_TYPE_PAWR_TIMING_INFO);
+	LL_ASSERT_ERR(found != NULL);
+	LL_ASSERT_ERR(!memcmp(found, ad_new, sizeof(ad_new)));
+}
+
+static void test_ull_adv_pdu_add_modify_acad_modify_smaller(void)
+{
+	uint8_t pdu_buf[TEST_PDU_BUF_SIZE];
+	struct pdu_adv *pdu = (void *)pdu_buf;
+	struct pdu_adv_pawr_timing_info pti_old = {
+		.rsp_aa = { 0x11, 0x22, 0x33, 0x44 },
+		.num_subevents = 8U,
+		.subevent_interval = 16U,
+		.rsp_slot_delay = 7U,
+		.rsp_slot_spacing = 9U,
+	};
+	/* Smaller replacement PAWR ACAD */
+	uint8_t ad_new[] = {
+		3U, PDU_ADV_DATA_TYPE_PAWR_TIMING_INFO, 0x51U, 0x52U,
+	};
+	uint8_t ad_old[sizeof(*pti_old) + 2U];
+	uint8_t err;
+	uint8_t *found;
+
+	test_pdu_reset(pdu, pdu_buf, sizeof(pdu_buf));
+	test_pawr_ad_make(ad_old, &pti_old);
+	test_pdu_setup_sync_info_with_acad(pdu, ad_old, sizeof(ad_old));
+
+	err = ull_adv_pdu_add_modify_acad_data(pdu, ad_new, sizeof(ad_new));
+	LL_ASSERT_ERR(err == 0U);
+
+	found = test_acad_find(pdu, PDU_ADV_DATA_TYPE_PAWR_TIMING_INFO);
+	LL_ASSERT_ERR(found != NULL);
+	LL_ASSERT_ERR(!memcmp(found, ad_new, sizeof(ad_new)));
+}
+
+static void test_ull_adv_pdu_add_modify_acad_add_second_type(void)
+{
+	uint8_t pdu_buf[TEST_PDU_BUF_SIZE];
+	struct pdu_adv *pdu = (void *)pdu_buf;
+	struct pdu_adv_pawr_timing_info pti = {
+		.rsp_aa = { 0x21, 0x22, 0x23, 0x24 },
+		.num_subevents = 3U,
+		.subevent_interval = 6U,
+		.rsp_slot_delay = 2U,
+		.rsp_slot_spacing = 3U,
+	};
+	uint8_t chm_ad[sizeof(struct pdu_adv_sync_chm_upd_ind) + 2U];
+	uint8_t pawr_ad[sizeof(*pti) + 2U];
+	uint8_t err;
+	uint8_t *found_chm;
+	uint8_t *found_pawr;
+	uint8_t len_before;
+
+	test_pdu_reset(pdu, pdu_buf, sizeof(pdu_buf));
+	test_chm_ad_make(chm_ad);
+	test_pdu_setup_sync_info_with_acad(pdu, chm_ad, sizeof(chm_ad));
+	len_before = pdu->len;
+
+	test_pawr_ad_make(pawr_ad, &pti);
+	err = ull_adv_pdu_add_modify_acad_data(pdu, pawr_ad, sizeof(pawr_ad));
+	LL_ASSERT_ERR(err == 0U);
+	LL_ASSERT_ERR(pdu->len == (len_before + sizeof(pawr_ad)));
+
+	found_chm = test_acad_find(pdu, PDU_ADV_DATA_TYPE_CHANNEL_MAP_UPDATE_IND);
+	LL_ASSERT_ERR(found_chm != NULL);
+	LL_ASSERT_ERR(!memcmp(found_chm, chm_ad, sizeof(chm_ad)));
+
+	found_pawr = test_acad_find(pdu, PDU_ADV_DATA_TYPE_PAWR_TIMING_INFO);
+	LL_ASSERT_ERR(found_pawr != NULL);
+	LL_ASSERT_ERR(!memcmp(found_pawr, pawr_ad, sizeof(pawr_ad)));
+}
+
+void ull_adv_pdu_add_modify_acad_data_ut(void)
+{
+	test_ull_adv_pdu_add_modify_acad_no_ext_hdr();
+	test_ull_adv_pdu_add_modify_acad_no_ext_hdr_with_adv_data();
+	test_ull_adv_pdu_add_modify_acad_add_to_sync_info();
+	test_ull_adv_pdu_add_modify_acad_modify_same_size();
+	test_ull_adv_pdu_add_modify_acad_modify_larger();
+	test_ull_adv_pdu_add_modify_acad_modify_smaller();
+	test_ull_adv_pdu_add_modify_acad_add_second_type();
+}
+
+#endif /* CONFIG_BT_CTLR_TEST */
