@@ -652,8 +652,39 @@ static int uart_mspm0_configure(const struct device *dev, const struct uart_conf
 {
 	const struct uart_mspm0_config *config = dev->config;
 	struct uart_mspm0_data *data = dev->data;
-	uint32_t value;
+	struct uart_mspm0_line_config new_config;
+	struct uart_mspm0_line_config previous_config;
+	uint32_t previous_speed;
 	int ret;
+
+	if (cfg->baudrate == 0U) {
+		return -EINVAL;
+	}
+
+	ret = uart_mspm0_translate_in(uart_parity_to_mspm0, ARRAY_SIZE(uart_parity_to_mspm0),
+				      cfg->parity, &new_config.parity);
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = uart_mspm0_translate_in(uart_stop_bits_to_mspm0, ARRAY_SIZE(uart_stop_bits_to_mspm0),
+				      cfg->stop_bits, &new_config.stop_bits);
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = uart_mspm0_translate_in(uart_data_bits_to_mspm0, ARRAY_SIZE(uart_data_bits_to_mspm0),
+				      cfg->data_bits, &new_config.word_length);
+	if (ret != 0) {
+		return ret;
+	}
+
+	ret = uart_mspm0_translate_in(uart_flow_control_to_mspm0,
+				      ARRAY_SIZE(uart_flow_control_to_mspm0), cfg->flow_ctrl,
+				      &new_config.flow_control);
+	if (ret != 0) {
+		return ret;
+	}
 
 	ret = pm_device_runtime_get(dev);
 	if (ret < 0) {
@@ -662,50 +693,21 @@ static int uart_mspm0_configure(const struct device *dev, const struct uart_conf
 
 	UART_MSPM0_DISABLE(config->regs);
 
+	previous_speed = data->current_speed;
+	previous_config = data->uart_config;
 	data->current_speed = cfg->baudrate;
-
-	ret = uart_mspm0_translate_in(uart_parity_to_mspm0, ARRAY_SIZE(uart_parity_to_mspm0),
-				      cfg->parity, &value);
-	if (ret != 0) {
-		goto out;
-	}
-
-	data->uart_config.parity = value;
-
-	ret = uart_mspm0_translate_in(uart_stop_bits_to_mspm0, ARRAY_SIZE(uart_stop_bits_to_mspm0),
-				      cfg->stop_bits, &value);
-	if (ret != 0) {
-		goto out;
-	}
-
-	data->uart_config.stop_bits = value;
-
-	ret = uart_mspm0_translate_in(uart_data_bits_to_mspm0, ARRAY_SIZE(uart_data_bits_to_mspm0),
-				      cfg->data_bits, &value);
-	if (ret != 0) {
-		goto out;
-	}
-
-	data->uart_config.word_length = value;
-
-	ret = uart_mspm0_translate_in(uart_flow_control_to_mspm0,
-				      ARRAY_SIZE(uart_flow_control_to_mspm0), cfg->flow_ctrl,
-				      &value);
-	if (ret != 0) {
-		goto out;
-	}
-
-	data->uart_config.flow_control = value;
+	data->uart_config = new_config;
 
 	ret = uart_mspm0_install_configuration(dev);
 	if (ret != 0) {
+		data->current_speed = previous_speed;
+		data->uart_config = previous_config;
+		(void)uart_mspm0_install_configuration(dev);
 		goto out;
 	}
 
-	UART_MSPM0_ENABLE(config->regs);
-
-	ret = 0;
 out:
+	UART_MSPM0_ENABLE(config->regs);
 	(void)pm_device_runtime_put(dev);
 	return ret;
 }
