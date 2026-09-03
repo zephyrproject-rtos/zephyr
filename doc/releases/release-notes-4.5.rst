@@ -235,9 +235,9 @@ New APIs and options
 
 * Haptics
 
-  * :c:enumerator:`haptics_monitor`
-  * :c:enumerator:`haptics_monitor_type`
-  * :c:enumerator:`haptics_source`
+  * :c:enum:`haptics_monitor`
+  * :c:enum:`haptics_monitor_type`
+  * :c:enum:`haptics_source`
   * :c:enum:`haptics_trigger_type`
   * :c:union:`haptics_config`
   * :c:func:`haptics_calibrate`
