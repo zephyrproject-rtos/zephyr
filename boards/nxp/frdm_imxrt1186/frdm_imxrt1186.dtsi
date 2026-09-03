@@ -263,6 +263,9 @@ p3t1755dp_ard_i2c_interface: &lpi2c3 {};
 	phy0: phy@5 {
 		compatible = "motorcomm,yt8531";
 		reg = <0x5>;
+		reset-gpios = <&gpio1 15 GPIO_ACTIVE_LOW>;
+		reset-assert-duration-us = <10000>;
+		reset-deassertion-timeout-ms = <30>;
 		motorcomm,rx-delay-sel = <13>;
 		motorcomm,tx-delay-sel = <13>;
 		status = "okay";
@@ -271,6 +274,9 @@ p3t1755dp_ard_i2c_interface: &lpi2c3 {};
 	phy2: phy@4 {
 		compatible = "motorcomm,yt8531";
 		reg = <0x4>;
+		reset-gpios = <&gpio1 20 GPIO_ACTIVE_LOW>;
+		reset-assert-duration-us = <10000>;
+		reset-deassertion-timeout-ms = <30>;
 		motorcomm,rx-delay-sel = <13>;
 		motorcomm,tx-delay-sel = <13>;
 		status = "okay";
