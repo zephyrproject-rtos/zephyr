@@ -10,9 +10,9 @@
  */
 
 &i2c0 {
-	status = "okay";
 	pinctrl-0 = <&pinctrl_i2c0>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 mikrobus_i2c: &i2c0 {};

@@ -5,7 +5,6 @@
  */
 
 dut: &uart0 {
-	status = "okay";
 	pinctrl-0 = <&uart0_tx_p0_9 &uart0_rx_p0_10>;
 	pinctrl-names = "default";
 
@@ -15,4 +14,5 @@ dut: &uart0 {
 	current-speed = <115200>;
 	data-bits = <8>;
 	parity = "none";
+	status = "okay";
 };

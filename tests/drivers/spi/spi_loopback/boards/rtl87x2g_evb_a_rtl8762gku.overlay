@@ -16,12 +16,12 @@
 };
 
 &spi0 {
-	status = "okay";
 	pinctrl-0 = <&spi0_default>;
 	pinctrl-names = "default";
 	cs-gpios = <&gpiob 8 GPIO_ACTIVE_LOW>;
 	dmas = <&dma0 5 16 0x10021>, <&dma0 6 17 0xa>;
 	dma-names = "tx", "rx";
+	status = "okay";
 
 	slow@0 {
 		compatible = "test-spi-loopback-slow";

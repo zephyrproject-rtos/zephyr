@@ -6,6 +6,6 @@
  */
 
 &sip_smc {
-	status = "okay";
 	zephyr,num-clients = <16>;
+	status = "okay";
 };

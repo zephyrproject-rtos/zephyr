@@ -11,9 +11,9 @@
 };
 
 &adc0 {
-	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 
 	channel@9 {
 		reg = <9>;
@@ -25,9 +25,9 @@
 };
 
 &adc1 {
-	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 
 	channel@0 {
 		reg = <0>;

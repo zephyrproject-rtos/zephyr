@@ -10,8 +10,8 @@
 #include "am62l_evm_am62l3_a53-pinctrl.dtsi"
 
 / {
-	model = "TI AM62L EVALUATION MODULE (EVM)";
 	compatible = "ti,am62l_evm";
+	model = "TI AM62L EVALUATION MODULE (EVM)";
 
 	chosen {
 		zephyr,console = &main_uart0;
@@ -61,10 +61,10 @@
 };
 
 &main_adc0 {
-	ti,fifo = <0>;
 	pinctrl-0 = <&adc0_ext_trigger0>,
 		    <&adc0_ext_trigger1>;
 	pinctrl-names = "default";
+	ti,fifo = <0>;
 	status = "okay";
 
 	channel@0 {

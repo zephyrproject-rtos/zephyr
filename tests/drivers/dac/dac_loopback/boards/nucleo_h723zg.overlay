@@ -17,14 +17,14 @@
 };
 
 &adc1 {
-	status = "okay";
-	st,adc-clock-source = "SYNC";
-	st,adc-prescaler = <4>;
 	pinctrl-0 = <&adc1_inp3_pa6>;
 	pinctrl-names = "default";
 
 	#address-cells = <1>;
 	#size-cells = <0>;
+	st,adc-clock-source = "SYNC";
+	st,adc-prescaler = <4>;
+	status = "okay";
 
 	channel@3 {
 		reg = <3>;
@@ -36,12 +36,12 @@
 };
 
 &dac1 {
-	status = "okay";
 	pinctrl-0 = <&dac1_out2_pa5>;
 	pinctrl-names = "default";
 
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 
 	channel@2 {
 		reg = <2>;

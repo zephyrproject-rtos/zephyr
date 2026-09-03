@@ -29,15 +29,15 @@
 
 	test_soc_state_domain: test_soc_state_domain {
 		compatible = "power-domain-soc-state-change";
-		status = "okay";
 		onoff-power-states = <&state1 &state2>;
 		#power-domain-cells = <0>;
+		status = "okay";
 	};
 
 	test_dev_soc_state_change: test_dev_soc_state_change {
 		compatible = "test-device-pm";
-		status = "okay";
 		power-domains = <&test_soc_state_domain>;
+		status = "okay";
 	};
 };
 

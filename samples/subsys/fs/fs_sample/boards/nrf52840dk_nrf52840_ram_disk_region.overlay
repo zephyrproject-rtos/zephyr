@@ -36,7 +36,6 @@
 	};
 
 	msc_disk0 {
-		status = "okay";
 		compatible = "zephyr,ram-disk";
 		/* Sample, to make things easier, mounts all FAT
 		 * systems at "SD".
@@ -52,5 +51,6 @@
 		 * region by label we have defined it above.
 		 */
 		ram-region = <&ram_disk>;
+		status = "okay";
 	};
 };

@@ -10,8 +10,8 @@
 
 		test_gpio: gpio@deadbeef {
 			compatible = "vnd,gpio";
-			gpio-controller;
 			reg = <0xdeadbeef 0x1000>;
+			gpio-controller;
 			#gpio-cells = <0x2>;
 			status = "okay";
 		};
@@ -23,9 +23,9 @@
 
 			test_uart_itron: itron {
 				compatible = "noritake,itron";
-				status = "okay";
 				columns = <20>;
 				rows = <2>;
+				status = "okay";
 			};
 		};
 	};

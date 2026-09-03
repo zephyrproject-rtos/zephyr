@@ -16,9 +16,9 @@
 		#size-cells = <0>;
 
 		cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m7";
 			reg = <0>;
+			device_type = "cpu";
 			#address-cells = <1>;
 			#size-cells = <1>;
 
@@ -52,9 +52,9 @@
 		};
 
 		ocram_sys: memory@20200000 {
-			device_type = "memory";
 			compatible = "nxp,imx-sys-bus";
 			reg = <0x20200000 DT_SIZE_K(576)>;
+			device_type = "memory";
 		};
 
 		ocram_s_code: code@180000 {
@@ -63,21 +63,21 @@
 		};
 
 		ocram_s_sys: memory@20180000 {
-			device_type = "memory";
 			compatible = "nxp,imx-sys-bus";
 			reg = <0x20180000 DT_SIZE_K(36)>;
+			device_type = "memory";
 		};
 
 		ddr_code: code@80000000 {
-			device_type = "memory";
 			compatible = "nxp,imx-code-bus";
 			reg = <0x80000000 DT_SIZE_M(2)>;
+			device_type = "memory";
 		};
 
 		ddr_sys: memory@80200000 {
-			device_type = "memory";
 			compatible = "nxp,imx-sys-bus";
 			reg = <0x80200000 DT_SIZE_M(2)>;
+			device_type = "memory";
 		};
 
 		ccm: ccm@30380000 {
@@ -92,8 +92,8 @@
 			status = "okay";
 
 			pinctrl: pinctrl {
-				status = "okay";
 				compatible = "nxp,imx8mp-pinctrl";
+				status = "okay";
 			};
 		};
 
@@ -180,9 +180,9 @@
 
 		i2c1: i2c@30a20000 {
 			compatible = "nxp,ii2c";
+			reg = <0x30a20000 0x10000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x30a20000 0x10000>;
 			interrupts = <35 0>;
 			clocks = <&ccm IMX_CCM_I2C1_CLK 0 0>;
 			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,
@@ -194,9 +194,9 @@
 
 		i2c2: i2c@30a30000 {
 			compatible = "nxp,ii2c";
+			reg = <0x30a30000 0x10000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x30a30000 0x10000>;
 			interrupts = <36 0>;
 			clocks = <&ccm IMX_CCM_I2C2_CLK 0 0>;
 			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,
@@ -208,9 +208,9 @@
 
 		i2c3: i2c@30a40000 {
 			compatible = "nxp,ii2c";
+			reg = <0x30a40000 0x10000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x30a40000 0x10000>;
 			interrupts = <37 0>;
 			clocks = <&ccm IMX_CCM_I2C3_CLK 0 0>;
 			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,
@@ -222,9 +222,9 @@
 
 		i2c4: i2c@30a50000 {
 			compatible = "nxp,ii2c";
+			reg = <0x30a50000 0x10000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x30a50000 0x10000>;
 			interrupts = <38 0>;
 			clocks = <&ccm IMX_CCM_I2C4_CLK 0 0>;
 			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,
@@ -236,9 +236,9 @@
 
 		i2c5: i2c@30ad0000 {
 			compatible = "nxp,ii2c";
+			reg = <0x30ad0000 0x10000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x30ad0000 0x10000>;
 			interrupts = <76 0>;
 			clocks = <&ccm IMX_CCM_I2C5_CLK 0 0>;
 			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,
@@ -250,9 +250,9 @@
 
 		i2c6: i2c@30ae0000 {
 			compatible = "nxp,ii2c";
+			reg = <0x30ae0000 0x10000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x30ae0000 0x10000>;
 			interrupts = <77 0>;
 			clocks = <&ccm IMX_CCM_I2C6_CLK 0 0>;
 			rdc = <(RDC_DOMAIN_PERM(A7_DOMAIN_ID,

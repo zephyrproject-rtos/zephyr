@@ -5,45 +5,45 @@
  */
 
 / {
+	compatible = "lowrisc,opentitan-earlgrey";
 	#address-cells = <0x01>;
 	#size-cells = <0x01>;
-	compatible = "lowrisc,opentitan-earlgrey";
 
 	cpus {
 		#address-cells = <0x01>;
 		#size-cells = <0x00>;
 
 		cpu@0 {
-			device_type = "cpu";
-			reg = <0x00>;
-			status = "okay";
 			compatible = "lowrisc,ibex", "riscv";
+			reg = <0x00>;
+			device_type = "cpu";
 			riscv,isa-base = "rv32i";
 			riscv,isa-extensions = "i", "m", "c", "zicsr", "zifencei",
 					       "zba", "zbb", "zbc", "zbs";
+			status = "okay";
 
 			hlic: interrupt-controller {
+				compatible = "riscv,cpu-intc";
 				#interrupt-cells = <0x01>;
 				interrupt-controller;
-				compatible = "riscv,cpu-intc";
 			};
 		};
 	};
 
 	soc {
-		#address-cells = <0x01>;
-		#size-cells = <0x01>;
 		compatible = "simple-bus";
 		ranges;
+		#address-cells = <0x01>;
+		#size-cells = <0x01>;
 
 		flash0: flash@20000000 {
-			reg = <0x20000000 0x100000>;
 			compatible = "soc-nv-flash";
+			reg = <0x20000000 0x100000>;
 		};
 
 		ram0: memory@10000000 {
-			device_type = "memory";
 			reg = <0x10000000 0x10000>;
+			device_type = "memory";
 		};
 
 		mtimer: timer@40100110 {
@@ -71,38 +71,38 @@
 
 		plic: interrupt-controller@48000000 {
 			compatible = "sifive,plic-1.0.0";
+			reg = <0x48000000 0x04000000>;
 			#address-cells = <0>;
 			#interrupt-cells = <2>;
 			interrupt-controller;
 			interrupts-extended = <&hlic 11>;
-			reg = <0x48000000 0x04000000>;
 			riscv,max-priority = <7>;
 			riscv,ndev = <182>;
 			status = "okay";
 		};
 
 		uart0: serial@40000000 {
-			reg = <0x40000000 0x1000>;
 			compatible = "lowrisc,opentitan-uart";
+			reg = <0x40000000 0x1000>;
 			status = "disabled";
 		};
 
 		spi0: spi@40300000 {
 			compatible = "lowrisc,opentitan-spi";
-			status = "disabled";
 			reg = <0x40300000 0x100>;
 			clock-frequency = <96000000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "disabled";
 		};
 
 		spi1: spi@40310000 {
 			compatible = "lowrisc,opentitan-spi";
-			status = "disabled";
 			reg = <0x40310000 0x100>;
 			clock-frequency = <48000000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "disabled";
 		};
 	};
 };

@@ -11,8 +11,8 @@
 #include "elemrv_flask_h-pinctrl.dtsi"
 
 / {
-	model = "ElemRV Flask-H (ElemRV-H)";
 	compatible = "aesc,elemrv-flask-h";
+	model = "ElemRV Flask-H (ElemRV-H)";
 
 	aliases {
 		led0 = &led0;
@@ -38,9 +38,9 @@
 
 	soc {
 		ocram: memory@80000000 {
-			device_type = "memory";
 			compatible = "mmio-sram";
 			reg = <0x80000000 DT_SIZE_K(8)>;
+			device_type = "memory";
 		};
 	};
 };
@@ -51,10 +51,10 @@
 	flash0: flash@a0000000 {
 		compatible = "soc-nv-flash";
 		reg = <0xa0000000 DT_SIZE_K(512)>;
-		write-block-size = <1>;
-		erase-block-size = <DT_SIZE_K(4)>;
 		/* Map the partition offset space onto the XIP window. */
 		ranges = <0x0 0xa0000000 DT_SIZE_K(512)>;
+		write-block-size = <1>;
+		erase-block-size = <DT_SIZE_K(4)>;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -65,14 +65,14 @@
 
 			boot_partition: partition@0 {
 				compatible = "zephyr,mapped-partition";
-				label = "bootloader";
 				reg = <0x0 DT_SIZE_K(4)>;
+				label = "bootloader";
 			};
 
 			slot0_partition: partition@1000 {
 				compatible = "zephyr,mapped-partition";
-				label = "code";
 				reg = <0x1000 (DT_SIZE_K(512) - DT_SIZE_K(4))>;
+				label = "code";
 			};
 		};
 	};

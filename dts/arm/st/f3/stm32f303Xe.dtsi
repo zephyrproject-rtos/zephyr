@@ -48,8 +48,8 @@
 
 			pwm {
 				compatible = "st,stm32-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 
 			counter {
@@ -77,8 +77,8 @@
 
 			pwm {
 				compatible = "st,stm32-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 
 			counter {
@@ -121,8 +121,8 @@
 
 			pwm {
 				compatible = "st,stm32-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 
 			counter {
@@ -139,8 +139,8 @@
 
 		dma2: dma@40020400 {
 			compatible = "st,stm32-dma-v2bis";
-			#dma-cells = <2>;
 			reg = <0x40020400 0x400>;
+			#dma-cells = <2>;
 			clocks = <&rcc STM32_CLOCK(AHB1, 1)>;
 			interrupts = <56 0>, <57 0>, <58 0>, <59 0>, <60 0>;
 			status = "disabled";
@@ -156,10 +156,10 @@
 
 		i2c3: i2c@40007800 {
 			compatible = "st,stm32-i2c-v2";
+			reg = <0x40007800 0x400>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40007800 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 30)>,
 				 /* I2C clock source should always be defined,
 				  * even for the default value

@@ -72,36 +72,36 @@
 		compatible = "nxp,lpc-ctimer";
 		reg = <0x48000 0x1000>;
 		interrupts = <7 0>;
-		status = "disabled";
 		clk-source = <1>;
 		clocks = <&clkctl1 MCUX_CTIMER5_CLK>;
 		mode = <0>;
 		input = <0>;
 		prescale = <0>;
+		status = "disabled";
 	};
 
 	ctimer6: timer@49000 {
 		compatible = "nxp,lpc-ctimer";
 		reg = <0x49000 0x1000>;
 		interrupts = <8 0>;
-		status = "disabled";
 		clk-source = <1>;
 		clocks = <&clkctl1 MCUX_CTIMER6_CLK>;
 		mode = <0>;
 		input = <0>;
 		prescale = <0>;
+		status = "disabled";
 	};
 
 	ctimer7: timer@4a000 {
 		compatible = "nxp,lpc-ctimer";
 		reg = <0x4a000 0x1000>;
 		interrupts = <9 0>;
-		status = "disabled";
 		clk-source = <1>;
 		clocks = <&clkctl1 MCUX_CTIMER7_CLK>;
 		mode = <0>;
 		input = <0>;
 		prescale = <0>;
+		status = "disabled";
 	};
 
 	syscon1: syscon@42000 {
@@ -118,9 +118,9 @@
 		clk-divider = <2>;
 		clk-divider-slow = <1>;
 		clk-divider-tc = <1>;
-		status = "disabled";
 		#address-cells = <3>;
 		#size-cells = <0>;
+		status = "disabled";
 	};
 
 	i3c3: i3c@57000 {
@@ -131,14 +131,13 @@
 		clk-divider = <2>;
 		clk-divider-slow = <1>;
 		clk-divider-tc = <1>;
-		status = "disabled";
 		#address-cells = <3>;
 		#size-cells = <0>;
+		status = "disabled";
 	};
 
 	gpio8: gpio@320000 {
 		compatible = "nxp,kinetis-gpio";
-		status = "disabled";
 		reg = <0x320000 0x1000>, <0x64000 0x80>;
 		reg-names = "gpio", "iopctl_pio";
 		clocks = <&clkctl1 MCUX_GPIO8_CLK>;
@@ -147,11 +146,11 @@
 		gpio-controller;
 		#gpio-cells = <2>;
 		nxp,kinetis-port = <&gpio8>;
+		status = "disabled";
 	};
 
 	gpio9: gpio@322000 {
 		compatible = "nxp,kinetis-gpio";
-		status = "disabled";
 		reg = <0x322000 0x1000>, <0x64080 0x80>;
 		reg-names = "gpio", "iopctl_pio";
 		clocks = <&clkctl1 MCUX_GPIO9_CLK>;
@@ -160,11 +159,11 @@
 		gpio-controller;
 		#gpio-cells = <2>;
 		nxp,kinetis-port = <&gpio9>;
+		status = "disabled";
 	};
 
 	gpio10: gpio@324000 {
 		compatible = "nxp,kinetis-gpio";
-		status = "disabled";
 		reg = <0x324000 0x1000>, <0x64100 0x80>;
 		reg-names = "gpio", "iopctl_pio";
 		clocks = <&clkctl1 MCUX_GPIO10_CLK>;
@@ -173,19 +172,20 @@
 		gpio-controller;
 		#gpio-cells = <2>;
 		nxp,kinetis-port = <&gpio10>;
+		status = "disabled";
 	};
 
 	flexcomm17: flexcomm@326000 {
 		compatible = "nxp,lp-flexcomm";
 		reg = <0x326000 0x1000>;
-		interrupts = <11 0>;
-		resets = <&rstctl1 NXP_SYSCON_RESET(6, 6)>;
-		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
 		ranges;
+		interrupts = <11 0>;
+		resets = <&rstctl1 NXP_SYSCON_RESET(6, 6)>;
 		#address-cells = <1>;
 		#size-cells = <1>;
+		status = "disabled";
 
 		flexcomm17_lpuart17: serial@326000 {
 			compatible = "nxp,lpuart";
@@ -218,14 +218,14 @@
 	flexcomm18: flexcomm@327000 {
 		compatible = "nxp,lp-flexcomm";
 		reg = <0x327000 0x1000>;
-		interrupts = <12 0>;
-		resets = <&rstctl1 NXP_SYSCON_RESET(6, 7)>;
-		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
 		ranges;
+		interrupts = <12 0>;
+		resets = <&rstctl1 NXP_SYSCON_RESET(6, 7)>;
 		#address-cells = <1>;
 		#size-cells = <1>;
+		status = "disabled";
 
 		flexcomm18_lpuart18: serial@327000 {
 			compatible = "nxp,lpuart";
@@ -258,14 +258,14 @@
 	flexcomm19: flexcomm@328000 {
 		compatible = "nxp,lp-flexcomm";
 		reg = <0x328000 0x1000>;
-		interrupts = <13 0>;
-		resets = <&rstctl1 NXP_SYSCON_RESET(6, 8)>;
-		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
 		ranges;
+		interrupts = <13 0>;
+		resets = <&rstctl1 NXP_SYSCON_RESET(6, 8)>;
 		#address-cells = <1>;
 		#size-cells = <1>;
+		status = "disabled";
 
 		flexcomm19_lpuart19: serial@328000 {
 			compatible = "nxp,lpuart";
@@ -298,14 +298,14 @@
 	flexcomm20: flexcomm@329000 {
 		compatible = "nxp,lp-flexcomm";
 		reg = <0x329000 0x1000>;
-		interrupts = <14 0>;
-		resets = <&rstctl1 NXP_SYSCON_RESET(6, 9)>;
-		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
 		ranges;
+		interrupts = <14 0>;
+		resets = <&rstctl1 NXP_SYSCON_RESET(6, 9)>;
 		#address-cells = <1>;
 		#size-cells = <1>;
+		status = "disabled";
 
 		flexcomm20_lpuart20: serial@329000 {
 			compatible = "nxp,lpuart";
@@ -406,9 +406,9 @@
 
 &xspi2 {
 	compatible = "nxp,xspi";
-	status = "disabled";
 	interrupts = <74 0>;
 	#address-cells = <1>;
 	#size-cells = <0>;
 	clocks = <&clkctl4 MCUX_XSPI2_CLK>;
+	status = "disabled";
 };

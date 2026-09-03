@@ -37,11 +37,11 @@ dev: &i2c1 {
 				regulator-boot-on;
 				regulator-active-discharge = <1>;
 				regulator-allowed-modes = <ADP5360_MODE_HYS ADP5360_MODE_PWM>;
-				adi,enable-stop-pulse;
 				regulator-init-microvolt = <1300000>;
 				regulator-initial-mode = <ADP5360_MODE_PWM>;
 				regulator-max-microvolt = <3750000>;
 				regulator-min-microvolt = <600000>;
+				adi,enable-stop-pulse;
 			};
 
 			buckboost: buckboost {

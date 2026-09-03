@@ -21,9 +21,9 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
+			compatible = "telink,b91", "andestech,andescore-v5", "riscv";
 			reg = <0>;
 			clock-frequency = <24000000>;
-			compatible = "telink,b91", "andestech,andescore-v5", "riscv";
 			riscv,isa-base = "rv32i";
 			riscv,isa-extensions = "i", "m", "a", "c", "f", "zicsr", "zifencei";
 
@@ -37,10 +37,10 @@
 	};
 
 	soc {
-		#address-cells = <1>;
-		#size-cells = <1>;
 		compatible = "telink,telink_b91-soc";
 		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
 
 		ram_ilm: memory@0 {
 			compatible = "mmio-sram";
@@ -80,62 +80,62 @@
 
 		gpioa: gpio@80140300 {
 			compatible = "telink,b91-gpio";
+			reg = <0x80140300 0x08>;
 			gpio-controller;
 			interrupt-parent = <&plic0>;
 			interrupts = <25 1>, <26 1>, <27 1>;
-			reg = <0x80140300 0x08>;
-			status = "disabled";
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		gpiob: gpio@80140308 {
 			compatible = "telink,b91-gpio";
+			reg = <0x80140308 0x08>;
 			gpio-controller;
 			interrupt-parent = <&plic0>;
 			interrupts = <25 1>, <26 1>, <27 1>;
-			reg = <0x80140308 0x08>;
-			status = "disabled";
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		gpioc: gpio@80140310 {
 			compatible = "telink,b91-gpio";
+			reg = <0x80140310 0x08>;
 			gpio-controller;
 			interrupt-parent = <&plic0>;
 			interrupts = <25 1>, <26 1>, <27 1>;
-			reg = <0x80140310 0x08>;
-			status = "disabled";
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		gpiod: gpio@80140318 {
 			compatible = "telink,b91-gpio";
+			reg = <0x80140318 0x08>;
 			gpio-controller;
 			interrupt-parent = <&plic0>;
 			interrupts = <25 1>, <26 1>, <27 1>;
-			reg = <0x80140318 0x08>;
-			status = "disabled";
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		gpioe: gpio@80140320 {
 			compatible = "telink,b91-gpio";
+			reg = <0x80140320 0x08>;
 			gpio-controller;
 			interrupt-parent = <&plic0>;
 			interrupts = <25 1>, <26 1>, <27 1>;
-			reg = <0x80140320 0x08>;
-			status = "disabled";
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		plic0: interrupt-controller@e4000000 {
 			compatible = "sifive,plic-1.0.0";
+			reg = <0xe4000000 0x00210000>;
 			#address-cells = <0>;
 			#interrupt-cells = <2>;
 			interrupt-controller;
 			interrupts-extended = <&hlic 11>;
 			interrupt-parent = <&cpu0>;
-			reg = <0xe4000000 0x00210000>;
 			riscv,max-priority = <3>;
 			riscv,ndev = <63>;
 		};
@@ -174,8 +174,8 @@
 			compatible = "telink,b91-pwm";
 			reg = <0x80140400 0x80>;
 			channels = <6>;
-			status = "disabled";
 			#pwm-cells = <3>;
+			status = "disabled";
 		};
 
 		hspi: spi@81ffffc0 {
@@ -207,15 +207,15 @@
 			reg = <0x80140280 0x40>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			status = "disabled";
 			clock-frequency = <I2C_BITRATE_STANDARD>;
+			status = "disabled";
 		};
 
 		adc: adc@ea {
 			compatible = "telink,b91-adc";
 			reg = <0xea 0x18>;
-			status = "disabled";
 			#io-channel-cells = <1>;
+			status = "disabled";
 		};
 
 		pinctrl: pinctrl@80140330 {

@@ -19,6 +19,7 @@
 };
 
 &adc {
+	compatible = "adi,max32-adc-b-me18", "adi,max32-adc";
 	reg = <0x40034000 0x1000>;
 	pinctrl-0 = <&adc_clk_ext_p0_9>;
 	pinctrl-names = "default";
@@ -31,7 +32,6 @@
 	#size-cells = <0>;
 	#io-channel-cells = <1>;
 	status = "okay";
-	compatible = "adi,max32-adc-b-me18", "adi,max32-adc";
 
 	channel@0 {
 		reg = <0>;

@@ -5,10 +5,10 @@
  */
 
 &cpuapp_cpuflpr_ipc {
-	status = "okay";
 	compatible = "zephyr,ipc-icbmsg";
 	tx-blocks = <15>;
 	rx-blocks = <15>;
+	status = "okay";
 };
 
 / {

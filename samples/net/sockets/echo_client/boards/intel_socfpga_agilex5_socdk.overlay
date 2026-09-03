@@ -9,8 +9,8 @@
  */
 
 &xgmac0 {
-	status = "okay";
 	local-mac-address = [06 00 00 00 00 01];
+	status = "okay";
 };
 
 &mdio0 {

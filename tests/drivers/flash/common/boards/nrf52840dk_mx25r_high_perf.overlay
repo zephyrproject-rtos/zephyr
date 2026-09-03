@@ -6,8 +6,8 @@
 
 &spi2 {
 	compatible = "nordic,nrf-spim";
-	status = "okay";
 	cs-gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	mx25r64: mx25r6435f@0 {
 		compatible = "jedec,spi-nor";

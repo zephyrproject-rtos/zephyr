@@ -23,8 +23,8 @@ nvic: &cpuapp_nvic {};
 
 	soc {
 		compatible = "simple-bus";
-		interrupt-parent = <&cpuapp_nvic>;
 		ranges;
+		interrupt-parent = <&cpuapp_nvic>;
 	};
 
 	psa_rng: psa-rng {
@@ -33,8 +33,8 @@ nvic: &cpuapp_nvic {};
 	};
 
 	rng: rng {
-		status = "okay";
 		compatible = "nordic,nrf-cracen-ctrdrbg";
+		status = "okay";
 	};
 };
 
@@ -46,11 +46,11 @@ nvic: &cpuapp_nvic {};
 	cpuapp_vevif_rx: mailbox@1 {
 		compatible = "nordic,nrf-vevif-event-rx";
 		reg = <0x1 0x1000>;
-		status = "disabled";
 		interrupts = <76 NRF_DEFAULT_IRQ_PRIORITY>;
 		#mbox-cells = <1>;
 		nordic,events = <1>;
 		nordic,events-mask = <0x00100000>;
+		status = "disabled";
 	};
 
 	cpuapp_vevif_tx: mailbox@0 {

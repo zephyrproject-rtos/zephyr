@@ -19,11 +19,11 @@
  */
 &spi2 {
 	compatible = "nordic,nrf-spi";
-	status = "okay";
 	cs-gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
 	pinctrl-0 = <&spi2_default>;
 	pinctrl-1 = <&spi2_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	mx25r64: mx25r6435f@0 {
 		compatible = "jedec,spi-nor";
@@ -48,8 +48,8 @@
 		#size-cells = <1>;
 
 		lfs1_partition: partition@0 {
-			label = "lfs1_partition";
 			reg = <0x00000000 0x00010000>;
+			label = "lfs1_partition";
 		};
 	};
 };

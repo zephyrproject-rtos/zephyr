@@ -10,24 +10,24 @@
 
 		test_gpio: gpio@deadbeef {
 			compatible = "vnd,gpio";
-			gpio-controller;
 			reg = <0xdeadbeef 0x1000>;
+			gpio-controller;
 			#gpio-cells = <0x2>;
 			status = "okay";
 		};
 
 		test_i2c: i2c@11112222 {
-			#address-cells = <1>;
-			#size-cells = <0>;
 			compatible = "vnd,i2c";
 			reg = <0x11112222 0x1000>;
-			status = "okay";
+			#address-cells = <1>;
+			#size-cells = <0>;
 			clock-frequency = <100000>;
+			status = "okay";
 
 			test_mcp7940n: mcp7940n@1 {
 				compatible = "microchip,mcp7940n";
-				status = "okay";
 				reg = <0x1>;
+				status = "okay";
 			};
 
 			test_rv3032: rv3032c7@2 {

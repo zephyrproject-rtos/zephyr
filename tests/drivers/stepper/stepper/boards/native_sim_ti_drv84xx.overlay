@@ -12,11 +12,11 @@
 	};
 
 	ti_drv84xx: ti_drv84xx {
-		status = "okay";
 		compatible = "ti,drv84xx";
 		sleep-gpios = <&gpio2 0 GPIO_ACTIVE_LOW>;
 		en-gpios = <&gpio2 1 0>;
 		m0-gpios = <&gpio3 0 0>;
 		m1-gpios = <&gpio4 1 0>;
+		status = "okay";
 	};
 };

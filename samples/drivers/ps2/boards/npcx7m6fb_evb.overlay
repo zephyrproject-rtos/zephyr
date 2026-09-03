@@ -11,7 +11,7 @@
 };
 
 &ps2_channel0 {
-	status = "okay";
 	pinctrl-0 = <&ps2_0_dat_clk_gp67_70>;
 	pinctrl-names = "default";
+	status = "okay";
 };

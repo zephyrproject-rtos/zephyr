@@ -11,18 +11,18 @@
 };
 
 &die_temp {
-	status = "okay";
 	ts-cal-resolution = <12>;
+	status = "okay";
 };
 
 &adc3 {
-	status = "okay";
 	pinctrl-0 = <>;
 	pinctrl-names = "default";
-	st,adc-clock-source = "SYNC";
-	st,adc-prescaler = <4>;
 	#address-cells = <1>;
 	#size-cells = <0>;
+	st,adc-clock-source = "SYNC";
+	st,adc-prescaler = <4>;
+	status = "okay";
 
 	channel@11 {
 		reg = <0x11>;

@@ -12,8 +12,8 @@
 #include "slwrb4321a-pinctrl.dtsi"
 
 / {
-	model = "Silicon Labs EFM32GG SLWSTK6121A board";
 	compatible = "silabs,slwrb4321a", "silabs,efm32gg11b";
+	model = "Silicon Labs EFM32GG SLWSTK6121A board";
 
 	chosen {
 		zephyr,console = &usart0;

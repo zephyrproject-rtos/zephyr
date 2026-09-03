@@ -26,8 +26,8 @@ pwm_test_center: &tpm0 {
 };
 
 &tpm0 {
-	status = "okay";
 	pinctrl-0 = <&tpm0_default>;
 	pinctrl-names = "default";
 	pwm-mode = <1>;
+	status = "okay";
 };

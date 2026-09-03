@@ -50,21 +50,21 @@
 
 	gic: interrupt-controller@f1010000 {
 		compatible = "arm,gic-400", "arm,gic-v2", "arm,gic";
+		reg = <0 0xf1010000 0 0x1000>,
+		      <0 0xf1020000 0 0x20000>;
 		#interrupt-cells = <4>;
 		#address-cells = <0>;
 		interrupt-controller;
-		reg = <0 0xf1010000 0 0x1000>,
-		      <0 0xf1020000 0 0x20000>;
 		status = "okay";
 	};
 
 	soc: soc {
 		compatible = "simple-bus";
+		ranges;
 		interrupt-parent = <&gic>;
 
 		#address-cells = <2>;
 		#size-cells = <2>;
-		ranges;
 
 		cpg: clock-controller@e6150000 {
 			reg = <0 0xe6150000 0 0x1000>;

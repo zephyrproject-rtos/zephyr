@@ -16,7 +16,6 @@
 
 &qspi0 {
 	compatible = "microchip,xec-qmspi-controller";
-	status = "okay";
 	op-mode = "MSPI_OP_MODE_CONTROLLER";
 	duplex = "MSPI_HALF_DUPLEX";
 	num-hw-ce = <1>; /* must match number of child flash devices */
@@ -30,6 +29,7 @@
 		     &qspi_shd_io1_gpio224_lp &qspi_shd_io0_gpio223_lp
 		     &qspi_shd_clk_gpio056_lp &qspi_shd_cs0_n_gpio055_lp>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	/* Assembly-6791 SPI flash dongle conntected to EVB J18 2x10 with JP87 on 2-3 VTR1(3.3V)
 	 * Dongle has four W25Q128JV 128 megabit 3.3 SPI flash chips

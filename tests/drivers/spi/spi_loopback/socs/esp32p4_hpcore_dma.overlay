@@ -29,10 +29,10 @@
 	dma-enabled;
 	pinctrl-0 = <&spim2_loopback>;
 	pinctrl-names = "default";
-	status = "okay";
 
 	dmas = <&dma_axi 0>, <&dma_axi 1>;
 	dma-names = "rx", "tx";
+	status = "okay";
 
 	slow@0 {
 		compatible = "test-spi-loopback-slow";

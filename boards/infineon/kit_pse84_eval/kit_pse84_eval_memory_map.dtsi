@@ -16,9 +16,9 @@
 	 * - 4 kB allocated to shared memory for each core (cm33_s, cm33 and cm55)
 	 */
 	reserved-memory {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		extended_boot_sram_reserved: memory@34000000 {
 			reg = <0x34000000 DT_SIZE_K(4)>;
@@ -30,8 +30,8 @@
 
 		m33s_code: memory@34002000 {
 			compatible = "zephyr,memory-region", "mmio-sram";
-			zephyr,memory-region = "M33SCODE";
 			reg = <0x34002000 DT_SIZE_K(212)>;
+			zephyr,memory-region = "M33SCODE";
 		};
 
 		m33s_data: memory@34037000 {
@@ -40,8 +40,8 @@
 
 		m33_code: memory@24058000 {
 			compatible = "zephyr,memory-region", "mmio-sram";
-			zephyr,memory-region = "M33CODE";
 			reg = <0x24058000 DT_SIZE_K(404)>;
+			zephyr,memory-region = "M33CODE";
 		};
 
 		m33_data: memory@240bd000 {
@@ -50,20 +50,20 @@
 
 		m33s_allocatable_shared: memory@340fd000 {
 			compatible = "zephyr,memory-region", "mmio-sram";
-			zephyr,memory-region = "SECSHARED";
 			reg = <0x340fd000 DT_SIZE_K(4)>;
+			zephyr,memory-region = "SECSHARED";
 		};
 
 		m33_allocatable_shared: memory@240fe000 {
 			compatible = "zephyr,memory-region", "mmio-sram";
-			zephyr,memory-region = "M33SHARED";
 			reg = <0x240fe000 DT_SIZE_K(4)>;
+			zephyr,memory-region = "M33SHARED";
 		};
 
 		m55_allocatable_shared: memory@240ff000 {
 			compatible = "zephyr,memory-region", "mmio-sram";
-			zephyr,memory-region = "M55SHARED";
 			reg = <0x240ff000 DT_SIZE_K(4)>;
+			zephyr,memory-region = "M55SHARED";
 		};
 
 		m55_data: memory@26100000 {
@@ -84,9 +84,9 @@
 	flash_controller: flash_controller@44460000 {
 		compatible = "infineon,qspi-flash";
 		reg = <0x44460000 0x20000>;
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		pinctrl-0 = <&p1_0_smif0_data0 &p1_1_smif0_data1
 			     &p1_2_smif0_data2 &p1_3_smif0_data3
@@ -101,27 +101,27 @@
 		flash0: flash0@8000000 {
 			compatible = "soc-nv-flash", "infineon,s25fs128s";
 			reg = <0x08000000 DT_SIZE_M(16)>;
+			ranges = <0x0 0x08000000 DT_SIZE_M(16)>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0x08000000 DT_SIZE_M(16)>;
 			write-block-size = <16>;
 			erase-block-size = <65536>;
 
 			partitions {
+				ranges;
 				#address-cells = <1>;
 				#size-cells = <1>;
-				ranges;
 
 				storage_partition: storage@0 {
 					compatible = "zephyr,mapped-partition";
-					label = "storage";
 					reg = <0 DT_SIZE_M(1)>;
+					label = "storage";
 				};
 
 				m33_xip: m33_xip@340400 {
 					compatible = "zephyr,mapped-partition";
-					label = "m33-xip";
 					reg = <0x340400 0x1bfc00>;
+					label = "m33-xip";
 				};
 			};
 		};
@@ -136,27 +136,27 @@
 		flash0_s: flash0_s@18000000 {
 			compatible = "soc-nv-flash";
 			reg = <0x18000000 DT_SIZE_M(16)>;
+			ranges = <0x0 0x18000000 DT_SIZE_M(16)>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0x18000000 DT_SIZE_M(16)>;
 			write-block-size = <16>;
 			erase-block-size = <65536>;
 
 			partitions {
+				ranges;
 				#address-cells = <1>;
 				#size-cells = <1>;
-				ranges;
 
 				m33s_header: m33s_header@100000 {
 					compatible = "zephyr,mapped-partition";
-					label = "m33s-header";
 					reg = <0x100000 0x400>;
+					label = "m33s-header";
 				};
 
 				m33s_xip: m33s_xip@100400 {
 					compatible = "zephyr,mapped-partition";
-					label = "m33s-xip";
 					reg = <0x100400 DT_SIZE_K(2304)>;
+					label = "m33s-xip";
 				};
 			};
 		};
@@ -171,21 +171,21 @@
 		flash0_sahb: flash0_sahb@60000000 {
 			compatible = "soc-nv-flash";
 			reg = <0x60000000 DT_SIZE_M(16)>;
+			ranges = <0x0 0x60000000 DT_SIZE_M(16)>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0x60000000 DT_SIZE_M(16)>;
 			write-block-size = <16>;
 			erase-block-size = <65536>;
 
 			partitions {
+				ranges;
 				#address-cells = <1>;
 				#size-cells = <1>;
-				ranges;
 
 				m55_xip: m55_xip@580000 {
 					compatible = "zephyr,mapped-partition";
-					label = "m55-xip";
 					reg = <0x580000 DT_SIZE_M(2)>;
+					label = "m55-xip";
 				};
 			};
 		};
@@ -200,50 +200,50 @@
 	rram_controller: rram_controller@42200000 {
 		compatible = "infineon,rram-controller";
 		reg = <0x42200000 0x10000>;
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 		status = "okay";
 
 		rram0: rram0@22000000 {
 			compatible = "soc-nv-flash";
 			reg = <0x22000000 DT_SIZE_K(512)>;
+			ranges = <0x0 0x22000000 DT_SIZE_K(512)>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0x22000000 DT_SIZE_K(512)>;
 			write-block-size = <16>;
 			erase-block-size = <16>;
 			status = "okay";
 
 			partitions {
+				ranges;
 				#address-cells = <1>;
 				#size-cells = <1>;
-				ranges;
 
 				reserved_extended_boot: reserved@0 {
 					compatible = "zephyr,mapped-partition";
-					label = "reserved-extended-boot";
 					reg = <0x0 0x11000>;
+					label = "reserved-extended-boot";
 					read-only;
 				};
 
 				boot_partition: boot_partition@11000 {
 					compatible = "zephyr,mapped-partition";
-					label = "mcuboot";
 					reg = <0x11000 0x40000>;
+					label = "mcuboot";
 					read-only;
 				};
 
 				storage_partition_rram: storage_rram@51000 {
 					compatible = "zephyr,mapped-partition";
-					label = "storage-rram";
 					reg = <0x51000 0x12000>;
+					label = "storage-rram";
 				};
 
 				reserved_security: reserved@63000 {
 					compatible = "zephyr,mapped-partition";
-					label = "reserved-security";
 					reg = <0x63000 0x1d000>;
+					label = "reserved-security";
 					read-only;
 				};
 			};

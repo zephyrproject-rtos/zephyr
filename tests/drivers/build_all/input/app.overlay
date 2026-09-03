@@ -30,8 +30,8 @@
 
 		test_gpio: gpio@0 {
 			compatible = "vnd,gpio";
-			gpio-controller;
 			reg = <0x0 0x1000>;
+			gpio-controller;
 			#gpio-cells = <0x2>;
 			status = "okay";
 		};
@@ -66,12 +66,12 @@
 			compatible = "gpio-keys";
 			debounce-interval-ms = <30>;
 
+			polling-mode;
+
 			button_0 {
 				gpios = <&test_gpio 0 0>;
 				zephyr,code = <0>;
 			};
-
-			polling-mode;
 		};
 
 		vs1838b {
@@ -127,9 +127,9 @@
 			compatible = "gpio-qdec";
 			gpios = <&test_gpio 0 0>, <&test_gpio 1 0>;
 			steps-per-period = <4>;
-			zephyr,axis = <0>;
 			sample-time-us = <2000>;
 			idle-timeout-ms = <200>;
+			zephyr,axis = <0>;
 		};
 
 		qdec-gpio-polled {
@@ -138,10 +138,10 @@
 			led-gpios = <&test_gpio 2 0>;
 			led-pre-us = <5>;
 			steps-per-period = <4>;
-			zephyr,axis = <0>;
 			sample-time-us = <2000>;
 			idle-timeout-ms = <200>;
 			idle-poll-time-us = <5000>;
+			zephyr,axis = <0>;
 		};
 
 		analog_axis {
@@ -154,15 +154,15 @@
 				in-deadzone = <8>;
 				in-min = <(-100)>;
 				in-max = <100>;
-				zephyr,axis = <0>;
 				invert-input;
 				invert-output;
+				zephyr,axis = <0>;
 			};
 		};
 
 		longpress: longpress {
-			input = <&longpress>;
 			compatible = "zephyr,input-longpress";
+			input = <&longpress>;
 			input-codes = <0>;
 			short-codes = <0>;
 			long-codes = <0>;
@@ -170,8 +170,8 @@
 		};
 
 		double_tap: doubletap {
-			input = <&double_tap>;
 			compatible = "zephyr,input-double-tap";
+			input = <&double_tap>;
 			input-codes = <0>;
 			double-tap-codes = <0>;
 			double-tap-delay-ms = <0>;
@@ -180,10 +180,10 @@
 		test_uart: uart@55556666 {
 			compatible = "vnd,serial";
 			reg = <0x55556666 0x1000>;
-			status = "okay";
 
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "okay";
 
 			sbus {
 				compatible = "futaba,sbus";
@@ -212,12 +212,12 @@
 		};
 
 		i2c@1 {
-			#address-cells = <1>;
-			#size-cells = <0>;
 			compatible = "vnd,i2c";
 			reg = <0x1 0x1000>;
-			status = "okay";
+			#address-cells = <1>;
+			#size-cells = <0>;
 			clock-frequency = <100000>;
+			status = "okay";
 
 			ft5336@0 {
 				compatible = "focaltech,ft5336";
@@ -271,14 +271,14 @@
 				compatible = "pixart,pat912x";
 				reg = <0x5>;
 				motion-gpios = <&test_gpio 0 0>;
-				zephyr,axis-x = <0>;
-				zephyr,axis-y = <1>;
 				res-x-cpi = <0>;
 				res-y-cpi = <0>;
 				invert-x;
 				invert-y;
 				sleep1-enable;
 				sleep2-enable;
+				zephyr,axis-x = <0>;
+				zephyr,axis-y = <1>;
 			};
 
 			cf1133@6 {
@@ -310,18 +310,18 @@
 			};
 
 			nunchuk@a {
-				reg = <0xa>;
 				compatible = "nintendo,nunchuk";
+				reg = <0xa>;
 			};
 
 			cy8cmbr3xxx@b {
 				compatible = "cypress,cy8cmbr3xxx";
-				status = "okay";
 				reg = <0xb>;
 				int-gpios = <&test_gpio 0 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 				rst-gpios = <&test_gpio 1 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
 				input-codes = <0 1 2 3 4 5 6 7>;
 				proximity-codes = <8>;
+				status = "okay";
 			};
 
 			chsc5x@c {
@@ -354,11 +354,10 @@
 		};
 
 		spi@2 {
-			#address-cells = <1>;
-			#size-cells = <0>;
 			compatible = "vnd,spi";
 			reg = <0x2 0x1000>;
-			status = "okay";
+			#address-cells = <1>;
+			#size-cells = <0>;
 			clock-frequency = <2000000>;
 
 			/* one entry for every devices */
@@ -366,11 +365,12 @@
 				   <&test_gpio 1 0>,
 				   <&test_gpio 2 0>,
 				   <&test_gpio 3 0>;
+			status = "okay";
 
 			xpt2046@0 {
 				compatible = "xptek,xpt2046";
-				spi-max-frequency = <0>;
 				reg = <0x0>;
+				spi-max-frequency = <0>;
 				int-gpios = <&test_gpio 0 0>;
 				touchscreen-size-x = <10>;
 				touchscreen-size-y = <10>;
@@ -382,16 +382,16 @@
 
 			pmw3610@1 {
 				compatible = "pixart,pmw3610";
-				spi-max-frequency = <0>;
 				reg = <0x1>;
+				spi-max-frequency = <0>;
 				motion-gpios = <&test_gpio 0 0>;
 				reset-gpios = <&test_gpio 1 0>;
-				zephyr,axis-x = <0>;
-				zephyr,axis-y = <1>;
 				invert-x;
 				invert-y;
 				force-awake;
 				smart-mode;
+				zephyr,axis-x = <0>;
+				zephyr,axis-y = <1>;
 			};
 
 			pinnacle@2 {
@@ -412,11 +412,11 @@
 				reg = <3>;
 				spi-max-frequency = <0>;
 				motion-gpios = <&test_gpio 0 0>;
-				zephyr,axis-x = <0>;
-				zephyr,axis-y = <1>;
 				invert-x;
 				invert-y;
 				res-cpi = <800>;
+				zephyr,axis-x = <0>;
+				zephyr,axis-y = <1>;
 			};
 		};
 	};

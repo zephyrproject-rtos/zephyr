@@ -17,12 +17,12 @@
 };
 
 &adc2 {
-	st,adc-clock-source = "SYNC";
-	st,adc-prescaler = <4>;
-	status = "okay";
 
 	#address-cells = <1>;
 	#size-cells = <0>;
+	st,adc-clock-source = "SYNC";
+	st,adc-prescaler = <4>;
+	status = "okay";
 
 	channel@10 {
 		reg = <16>;

@@ -33,7 +33,7 @@
 	 * DTB is at 0x47e00000, outside this node.
 	 */
 	ram: memory@40000000 {
-		device_type = "mmio-sram";
 		reg = <0x0 0x40000000 0x0 DT_SIZE_M(96)>;
+		device_type = "mmio-sram";
 	};
 };

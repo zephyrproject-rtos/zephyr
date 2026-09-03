@@ -28,18 +28,18 @@
 
 /* Reserved for the cpuppr image (slow PWM instance). */
 &pwm130 {
-	status = "reserved";
 	interrupt-parent = <&cpuppr_clic>;
 	pinctrl-0 = <&pwm_default>;
 	pinctrl-1 = <&pwm_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "reserved";
 };
 
 /* Reserved for the cpuflpr image (fast PWM instance). */
 &pwm120 {
-	status = "reserved";
 	interrupt-parent = <&cpuflpr_clic>;
 	pinctrl-0 = <&pwm120_default>;
 	pinctrl-1 = <&pwm120_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "reserved";
 };

@@ -10,6 +10,6 @@
 #include "arduino_nano_connector.dtsi"
 
 / {
-	model = "Arduino Nano 33 BLE";
 	compatible = "arduino,arduino_nano_33_ble";
+	model = "Arduino Nano 33 BLE";
 };

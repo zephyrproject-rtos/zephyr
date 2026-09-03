@@ -17,51 +17,51 @@
 		#size-cells = <0>;
 
 		cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-r52";
 			reg = <0>;
+			device_type = "cpu";
 		};
 
 		cpu@1 {
-			device_type = "cpu";
 			compatible = "arm,cortex-r52";
 			reg = <1>;
+			device_type = "cpu";
 		};
 
 		cpu@2 {
-			device_type = "cpu";
 			compatible = "arm,cortex-r52";
 			reg = <2>;
+			device_type = "cpu";
 		};
 
 		cpu@3 {
-			device_type = "cpu";
 			compatible = "arm,cortex-r52";
 			reg = <3>;
+			device_type = "cpu";
 		};
 
 		cpu@4 {
-			device_type = "cpu";
 			compatible = "arm,cortex-r52";
 			reg = <4>;
+			device_type = "cpu";
 		};
 
 		cpu@5 {
-			device_type = "cpu";
 			compatible = "arm,cortex-r52";
 			reg = <5>;
+			device_type = "cpu";
 		};
 
 		cpu@6 {
-			device_type = "cpu";
 			compatible = "arm,cortex-r52";
 			reg = <6>;
+			device_type = "cpu";
 		};
 
 		cpu@7 {
-			device_type = "cpu";
 			compatible = "arm,cortex-r52";
 			reg = <7>;
+			device_type = "cpu";
 		};
 	};
 
@@ -655,16 +655,16 @@
 
 		netc: ethernet@74000000 {
 			reg = <0x74000000 0x1000000>;
+			ranges;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges;
 
 			emdio: mdio@74b60000 {
 				compatible = "nxp,s32-netc-emdio";
 				reg = <0x74b60000 0x1c44>;
-				status = "disabled";
 				#address-cells = <1>;
 				#size-cells = <0>;
+				status = "disabled";
 			};
 
 			enetc_psi0: ethernet@74b00000 {
@@ -723,11 +723,11 @@
 			      <0x47425000 0x1000>,
 			      <0x47427000 0x1000>;
 			reg-names = "sic", "rx_fifo", "rx_fifo_ctrl", "mru";
-			status = "disabled";
 			interrupts = <GIC_SPI 224 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 225 IRQ_TYPE_LEVEL 0xb0>;
 			interrupt-names = "rx_tx_mru", "error";
 			clocks = <&clock NXP_S32_P5_CANXL_PE_CLK>;
+			status = "disabled";
 		};
 
 		canxl1: can@4751b000 {
@@ -737,11 +737,11 @@
 			      <0x47525000 0x1000>,
 			      <0x47527000 0x1000>;
 			reg-names = "sic", "rx_fifo", "rx_fifo_ctrl", "mru";
-			status = "disabled";
 			interrupts = <GIC_SPI 226 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 227 IRQ_TYPE_LEVEL 0xb0>;
 			interrupt-names = "rx_tx_mru", "error";
 			clocks = <&clock NXP_S32_P5_CANXL_PE_CLK>;
+			status = "disabled";
 		};
 
 		flexcan0: can@449a0000 {
@@ -1148,13 +1148,11 @@
 
 		edma0: dma-controller@405d0000 {
 			compatible = "nxp,mcux-edma";
-			nxp,version = <3>;
 			reg = <0x405d0000 0x10000>, <0x405a0000 0x10000>, <0x405b0000 0x100000>;
 			dma-channels = <32>;
 			dma-requests = <64>;
 			dmamux-reg-offset = <3>;
 			#dma-cells = <2>;
-			nxp,mem2mem;
 			interrupts = <GIC_SPI 31 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 32 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 33 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
@@ -1188,18 +1186,18 @@
 				     <GIC_SPI 61 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 62 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 28 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			nxp,version = <3>;
+			nxp,mem2mem;
 			status = "disabled";
 		};
 
 		edma1: dma-controller@40dd0000 {
 			compatible = "nxp,mcux-edma";
-			nxp,version = <3>;
 			reg = <0x40dd0000 0x10000>, <0x40da0000 0x10000>;
 			dma-channels = <16>;
 			dma-requests = <64>;
 			dmamux-reg-offset = <3>;
 			#dma-cells = <2>;
-			nxp,mem2mem;
 			interrupts = <GIC_SPI 65 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 66 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 67 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
@@ -1217,18 +1215,18 @@
 				     <GIC_SPI 79 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 80 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 63 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			nxp,version = <3>;
+			nxp,mem2mem;
 			status = "disabled";
 		};
 
 		edma4: dma-controller@425d0000 {
 			compatible = "nxp,mcux-edma";
-			nxp,version = <3>;
 			reg = <0x425d0000 0x10000>, <0x425a0000 0x10000>;
 			dma-channels = <32>;
 			dma-requests = <64>;
 			dmamux-reg-offset = <3>;
 			#dma-cells = <2>;
-			nxp,mem2mem;
 			interrupts = <GIC_SPI 83 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 84 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 85 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
@@ -1246,18 +1244,18 @@
 				     <GIC_SPI 97 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 98 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 81 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			nxp,version = <3>;
+			nxp,mem2mem;
 			status = "disabled";
 		};
 
 		edma5: dma-controller@42dd0000 {
 			compatible = "nxp,mcux-edma";
-			nxp,version = <3>;
 			reg = <0x42dd0000 0x10000>, <0x42da0000 0x10000>;
 			dma-channels = <32>;
 			dma-requests = <64>;
 			dmamux-reg-offset = <3>;
 			#dma-cells = <2>;
-			nxp,mem2mem;
 			interrupts = <GIC_SPI 101 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 102 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 103 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
@@ -1275,6 +1273,8 @@
 				     <GIC_SPI 115 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 116 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 99 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			nxp,version = <3>;
+			nxp,mem2mem;
 			status = "disabled";
 		};
 

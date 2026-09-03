@@ -34,10 +34,10 @@
 &i2s0 {
 	pinctrl-0 = <&i2s0_loopback>;
 	pinctrl-names = "default";
-	status = "okay";
 
 	dmas = <&dma 2>, <&dma 3>;
 	dma-names = "rx", "tx";
+	status = "okay";
 };
 
 &dma {

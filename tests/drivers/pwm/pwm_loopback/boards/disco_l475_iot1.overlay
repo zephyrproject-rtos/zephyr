@@ -20,9 +20,9 @@
 	status = "okay";
 
 	pwm2: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim2_ch1_pa5>; /* CN1 D13 */
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
@@ -30,31 +30,31 @@
 	status = "okay";
 
 	pwm5: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim5_ch1_pa0>; /* CN3 D1 */
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
 /* 16-Bit timers */
 &timers3 {
-	status = "okay";
 	st,prescaler = <255>;
+	status = "okay";
 
 	pwm3: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim3_ch1_pa6>; /* CN1 D12 */
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
 &timers15 {
-	status = "okay";
 	st,prescaler = <255>;
+	status = "okay";
 
 	pwm15: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim15_ch1_pa2>; /* CN1 D10 */
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };

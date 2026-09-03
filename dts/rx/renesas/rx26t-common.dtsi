@@ -22,18 +22,14 @@
 
 		cpu0: cpu@0 {
 			compatible = "renesas,rxv3";
-			device_type = "cpu";
 			reg = <0>;
+			device_type = "cpu";
 			status = "okay";
 		};
 	};
 
 	icu: interrupt-controller@87000 {
-		#interrupt-cells = <2>;
-		#address-cells = <1>;
-		#size-cells = <1>;
 		compatible = "renesas,rx-icu";
-		interrupt-controller;
 		reg = <0x0087000 0xff>,
 		      <0x0087200 0x1f>,
 		      <0x0087300 0xff>,
@@ -44,6 +40,10 @@
 		      <0x0087580 0x01>,
 		      <0x0087581 0x01>,
 		      <0x0087582 0x01>;
+		#interrupt-cells = <2>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		interrupt-controller;
 		reg-names = "IR", "IER", "IPR", "FIR", "IRQCR", "IRQFLTE", "IRQFLTC0", "NMISR",
 			    "NMIER", "NMICLR";
 
@@ -64,10 +64,10 @@
 	};
 
 	soc {
+		compatible = "simple-bus";
 		#address-cells = <1>;
 		#size-cells = <1>;
 		device_type = "soc";
-		compatible = "simple-bus";
 		interrupt-parent = <&icu>;
 
 		pinctrl: pin-controller@8c11f {
@@ -78,115 +78,111 @@
 
 		pinmux0: pinmux@8c140 {
 			compatible = "renesas,rx-pinmux";
-			#pinmux-cells = <2>;
 			reg = <0x00008c140 0x8>;
+			#pinmux-cells = <2>;
 			status = "okay";
 		};
 
 		pinmux1: pinmux@8c148 {
 			compatible = "renesas,rx-pinmux";
-			#pinmux-cells = <2>;
 			reg = <0x00008c148 0x8>;
+			#pinmux-cells = <2>;
 			status = "okay";
 		};
 
 		pinmux2: pinmux@8c150 {
 			compatible = "renesas,rx-pinmux";
-			#pinmux-cells = <2>;
 			reg = <0x00008c150 0x8>;
+			#pinmux-cells = <2>;
 			status = "okay";
 		};
 
 		pinmux3: pinmux@8c158 {
 			compatible = "renesas,rx-pinmux";
-			#pinmux-cells = <2>;
 			reg = <0x00008c158 0x8>;
+			#pinmux-cells = <2>;
 			status = "okay";
 		};
 
 		pinmux4: pinmux@8c160 {
 			compatible = "renesas,rx-pinmux";
-			#pinmux-cells = <2>;
 			reg = <0x00008c160 0x8>;
+			#pinmux-cells = <2>;
 			status = "okay";
 		};
 
 		pinmux5: pinmux@8c168 {
 			compatible = "renesas,rx-pinmux";
-			#pinmux-cells = <2>;
 			reg = <0x00008c168 0x8>;
+			#pinmux-cells = <2>;
 			status = "okay";
 		};
 
 		pinmux6: pinmux@8c170 {
 			compatible = "renesas,rx-pinmux";
-			#pinmux-cells = <2>;
 			reg = <0x00008c170 0x8>;
+			#pinmux-cells = <2>;
 			status = "okay";
 		};
 
 		pinmux7: pinmux@8c178 {
 			compatible = "renesas,rx-pinmux";
-			#pinmux-cells = <2>;
 			reg = <0x00008c178 0x8>;
+			#pinmux-cells = <2>;
 			status = "okay";
 		};
 
 		pinmux8: pinmux@8c180 {
 			compatible = "renesas,rx-pinmux";
-			#pinmux-cells = <2>;
 			reg = <0x00008c180 0x8>;
+			#pinmux-cells = <2>;
 			status = "okay";
 		};
 
 		pinmux9: pinmux@8c188 {
 			compatible = "renesas,rx-pinmux";
-			#pinmux-cells = <2>;
 			reg = <0x00008c188 0x8>;
+			#pinmux-cells = <2>;
 			status = "okay";
 		};
 
 		pinmuxa: pinmux@8c190 {
 			compatible = "renesas,rx-pinmux";
-			#pinmux-cells = <2>;
 			reg = <0x00008c190 0x8>;
+			#pinmux-cells = <2>;
 			status = "okay";
 		};
 
 		pinmuxb: pinmux@8c198 {
 			compatible = "renesas,rx-pinmux";
-			#pinmux-cells = <2>;
 			reg = <0x00008c198 0x8>;
+			#pinmux-cells = <2>;
 			status = "okay";
 		};
 
 		pinmuxd: pinmux@8c1a8 {
 			compatible = "renesas,rx-pinmux";
-			#pinmux-cells = <2>;
 			reg = <0x00008c1a8 0x8>;
+			#pinmux-cells = <2>;
 			status = "okay";
 		};
 
 		pinmuxe: pinmux@8c1b0 {
 			compatible = "renesas,rx-pinmux";
-			#pinmux-cells = <2>;
 			reg = <0x00008c1b0 0x8>;
+			#pinmux-cells = <2>;
 			status = "okay";
 		};
 
 		pinmuxn: pinmux@8c1f7 {
 			compatible = "renesas,rx-pinmux";
-			#pinmux-cells = <2>;
 			reg = <0x00008c1f7 0x8>;
+			#pinmux-cells = <2>;
 			status = "okay";
 		};
 
 		ioport0: gpio@8c000 {
 			compatible = "renesas,rx-gpio";
-			gpio-controller;
-			#gpio-cells = <0x02>;
-			ngpios = <2>;
-			port = <0>;
 			reg = <0x0008c000 0x01>,
 			      <0x0008c020 0x01>,
 			      <0x0008c040 0x01>,
@@ -194,6 +190,10 @@
 			      <0x0008c080 0x01>,
 			      <0x0008c0c0 0x01>,
 			      <0x0008c0e0 0x01>;
+			gpio-controller;
+			#gpio-cells = <0x02>;
+			ngpios = <2>;
+			port = <0>;
 			reg-names = "PDR", "PODR", "PIDR", "PMR", "ODR0", "PCR", "DSCR";
 			pinmux = <&pinmux0>;
 			status = "disabled";
@@ -201,10 +201,6 @@
 
 		ioport1: gpio@8c001 {
 			compatible = "renesas,rx-gpio";
-			gpio-controller;
-			#gpio-cells = <0x2>;
-			ngpios = <2>;
-			port = <1>;
 			reg = <0x0008c001 0x01>,
 			      <0x0008c021 0x01>,
 			      <0x0008c041 0x01>,
@@ -212,6 +208,10 @@
 			      <0x0008c082 0x01>,
 			      <0x0008c0c1 0x01>,
 			      <0x0008c0e1 0x01>;
+			gpio-controller;
+			#gpio-cells = <0x2>;
+			ngpios = <2>;
+			port = <1>;
 			reg-names = "PDR", "PODR", "PIDR", "PMR", "ODR0", "PCR", "DSCR";
 			pinmux = <&pinmux1>;
 			status = "disabled";
@@ -219,10 +219,6 @@
 
 		ioport2: gpio@8c002 {
 			compatible = "renesas,rx-gpio";
-			gpio-controller;
-			#gpio-cells = <0x2>;
-			ngpios = <6>;
-			port = <2>;
 			reg = <0x0008c002 0x01>,
 			      <0x0008c022 0x01>,
 			      <0x0008c042 0x01>,
@@ -231,6 +227,10 @@
 			      <0x0008c085 0x01>,
 			      <0x0008c0c2 0x01>,
 			      <0x0008c0e2 0x01>;
+			gpio-controller;
+			#gpio-cells = <0x2>;
+			ngpios = <6>;
+			port = <2>;
 			reg-names = "PDR", "PODR", "PIDR", "PMR", "ODR0", "ODR1", "PCR", "DSCR";
 			pinmux = <&pinmux2>;
 			status = "disabled";
@@ -238,10 +238,6 @@
 
 		ioport3: gpio@8c003 {
 			compatible = "renesas,rx-gpio";
-			gpio-controller;
-			#gpio-cells = <0x2>;
-			ngpios = <6>;
-			port = <3>;
 			reg = <0x0008c003 0x01>,
 			      <0x0008c023 0x01>,
 			      <0x0008c043 0x01>,
@@ -250,6 +246,10 @@
 			      <0x0008c087 0x01>,
 			      <0x0008c0c3 0x01>,
 			      <0x0008c0e3 0x01>;
+			gpio-controller;
+			#gpio-cells = <0x2>;
+			ngpios = <6>;
+			port = <3>;
 			reg-names = "PDR", "PODR", "PIDR", "PMR", "ODR0", "ODR1", "PCR", "DSCR";
 			pinmux = <&pinmux3>;
 			status = "disabled";
@@ -257,10 +257,6 @@
 
 		ioport4: gpio@8c004 {
 			compatible = "renesas,rx-gpio";
-			gpio-controller;
-			#gpio-cells = <0x2>;
-			ngpios = <8>;
-			port = <4>;
 			reg = <0x0008c004 0x01>,
 			      <0x0008c024 0x01>,
 			      <0x0008c044 0x01>,
@@ -268,6 +264,10 @@
 			      <0x0008c088 0x01>,
 			      <0x0008c089 0x01>,
 			      <0x0008c0c4 0x01>;
+			gpio-controller;
+			#gpio-cells = <0x2>;
+			ngpios = <8>;
+			port = <4>;
 			reg-names = "PDR", "PODR", "PIDR", "PMR", "ODR0", "ODR1", "PCR";
 			pinmux = <&pinmux4>;
 			status = "disabled";
@@ -275,10 +275,6 @@
 
 		ioport5: gpio@8c005 {
 			compatible = "renesas,rx-gpio";
-			gpio-controller;
-			#gpio-cells = <0x2>;
-			ngpios = <6>;
-			port = <5>;
 			reg = <0x0008c005 0x01>,
 			      <0x0008c025 0x01>,
 			      <0x0008c045 0x01>,
@@ -286,6 +282,10 @@
 			      <0x0008c08a 0x01>,
 			      <0x0008c08b 0x01>,
 			      <0x0008c0c5 0x01>;
+			gpio-controller;
+			#gpio-cells = <0x2>;
+			ngpios = <6>;
+			port = <5>;
 			reg-names = "PDR", "PODR", "PIDR", "PMR", "ODR0", "ODR1", "PCR";
 			pinmux = <&pinmux5>;
 			status = "disabled";
@@ -293,10 +293,6 @@
 
 		ioport6: gpio@8c006 {
 			compatible = "renesas,rx-gpio";
-			gpio-controller;
-			#gpio-cells = <0x2>;
-			ngpios = <6>;
-			port = <6>;
 			reg = <0x0008c006 0x01>,
 			      <0x0008c026 0x01>,
 			      <0x0008c046 0x01>,
@@ -304,6 +300,10 @@
 			      <0x0008c08c 0x01>,
 			      <0x0008c08d 0x01>,
 			      <0x0008c0c6 0x01>;
+			gpio-controller;
+			#gpio-cells = <0x2>;
+			ngpios = <6>;
+			port = <6>;
 			reg-names = "PDR", "PODR", "PIDR", "PMR", "ODR0", "ODR1", "PCR";
 			pinmux = <&pinmux5>;
 			status = "disabled";
@@ -311,10 +311,6 @@
 
 		ioport7: gpio@8c007 {
 			compatible = "renesas,rx-gpio";
-			gpio-controller;
-			#gpio-cells = <0x2>;
-			ngpios = <7>;
-			port = <7>;
 			reg = <0x0008c007 0x01>,
 			      <0x0008c027 0x01>,
 			      <0x0008c047 0x01>,
@@ -324,6 +320,10 @@
 			      <0x0008c0c7 0x01>,
 			      <0x0008c0e7 0x01>,
 			      <0x0008c12f 0x01>;
+			gpio-controller;
+			#gpio-cells = <0x2>;
+			ngpios = <7>;
+			port = <7>;
 			reg-names = "PDR", "PODR", "PIDR", "PMR", "ODR0", "ODR1", "PCR",
 				    "DSCR", "DSCR2";
 			pinmux = <&pinmux7>;
@@ -332,10 +332,6 @@
 
 		ioport8: gpio@8c008 {
 			compatible = "renesas,rx-gpio";
-			gpio-controller;
-			#gpio-cells = <0x2>;
-			ngpios = <3>;
-			port = <8>;
 			reg = <0x0008c008 0x01>,
 			      <0x0008c028 0x01>,
 			      <0x0008c048 0x01>,
@@ -344,6 +340,10 @@
 			      <0x0008c0c8 0x01>,
 			      <0x0008c0e8 0x01>,
 			      <0x0008c130 0x01>;
+			gpio-controller;
+			#gpio-cells = <0x2>;
+			ngpios = <3>;
+			port = <8>;
 			reg-names = "PDR", "PODR", "PIDR", "PMR", "ODR0", "PCR", "DSCR",
 				    "DSCR2";
 			pinmux = <&pinmux8>;
@@ -352,10 +352,6 @@
 
 		ioport9: gpio@8c009 {
 			compatible = "renesas,rx-gpio";
-			gpio-controller;
-			#gpio-cells = <0x2>;
-			ngpios = <7>;
-			port = <9>;
 			reg = <0x0008c009 0x01>,
 			      <0x0008c029 0x01>,
 			      <0x0008c049 0x01>,
@@ -365,6 +361,10 @@
 			      <0x0008c0c9 0x01>,
 			      <0x0008c0e9 0x01>,
 			      <0x0008c131 0x01>;
+			gpio-controller;
+			#gpio-cells = <0x2>;
+			ngpios = <7>;
+			port = <9>;
 			reg-names = "PDR", "PODR", "PIDR", "PMR", "ODR0", "ODR1", "PCR",
 				    "DSCR", "DSCR2";
 			pinmux = <&pinmux9>;
@@ -373,10 +373,6 @@
 
 		ioporta: gpio@8c00a {
 			compatible = "renesas,rx-gpio";
-			gpio-controller;
-			#gpio-cells = <0x2>;
-			ngpios = <6>;
-			port = <10>;
 			reg = <0x0008c00a 0x01>,
 			      <0x0008c02a 0x01>,
 			      <0x0008c04a 0x01>,
@@ -385,6 +381,10 @@
 			      <0x0008c095 0x01>,
 			      <0x0008c0ca 0x01>,
 			      <0x0008c0ea 0x01>;
+			gpio-controller;
+			#gpio-cells = <0x2>;
+			ngpios = <6>;
+			port = <10>;
 			reg-names = "PDR", "PODR", "PIDR", "PMR", "ODR0", "ODR1",
 				    "PCR", "DSCR";
 			pinmux = <&pinmuxa>;
@@ -393,10 +393,6 @@
 
 		ioportb: gpio@8c00b {
 			compatible = "renesas,rx-gpio";
-			gpio-controller;
-			#gpio-cells = <0x2>;
-			ngpios = <8>;
-			port = <11>;
 			reg = <0x0008c00b 0x01>,
 			      <0x0008c02b 0x01>,
 			      <0x0008c04b 0x01>,
@@ -406,6 +402,10 @@
 			      <0x0008c0cb 0x01>,
 			      <0x0008c0eb 0x01>,
 			      <0x0008c133 0x01>;
+			gpio-controller;
+			#gpio-cells = <0x2>;
+			ngpios = <8>;
+			port = <11>;
 			reg-names = "PDR", "PODR", "PIDR", "PMR", "ODR0", "ODR1", "PCR",
 				    "DSCR", "DSCR2";
 			pinmux = <&pinmuxb>;
@@ -414,10 +414,6 @@
 
 		ioportd: gpio@8c00d {
 			compatible = "renesas,rx-gpio";
-			gpio-controller;
-			#gpio-cells = <0x2>;
-			ngpios = <8>;
-			port = <13>;
 			reg = <0x0008c00d 0x01>,
 			      <0x0008c02d 0x01>,
 			      <0x0008c04d 0x01>,
@@ -427,6 +423,10 @@
 			      <0x0008c0cd 0x01>,
 			      <0x0008c0ed 0x01>,
 			      <0x0008c135 0x01>;
+			gpio-controller;
+			#gpio-cells = <0x2>;
+			ngpios = <8>;
+			port = <13>;
 			reg-names = "PDR", "PODR", "PIDR", "PMR", "ODR0", "ODR1", "PCR",
 				    "DSCR", "DSCR2";
 			pinmux = <&pinmuxd>;
@@ -435,10 +435,6 @@
 
 		ioporte: gpio@8c00e {
 			compatible = "renesas,rx-gpio";
-			gpio-controller;
-			#gpio-cells = <0x2>;
-			ngpios = <6>;
-			port = <14>;
 			reg = <0x0008c00e 0x01>,
 			      <0x0008c02e 0x01>,
 			      <0x0008c04e 0x01>,
@@ -447,6 +443,10 @@
 			      <0x0008c09d 0x01>,
 			      <0x0008c0ce 0x01>,
 			      <0x0008c0ee 0x01>;
+			gpio-controller;
+			#gpio-cells = <0x2>;
+			ngpios = <6>;
+			port = <14>;
 			reg-names = "PDR", "PODR", "PIDR", "PMR", "ODR0", "ODR1", "PCR", "DSCR";
 			pinmux = <&pinmuxe>;
 			status = "disabled";
@@ -454,10 +454,6 @@
 
 		ioportn: gpio@8c016 {
 			compatible = "renesas,rx-gpio";
-			gpio-controller;
-			#gpio-cells = <0x2>;
-			ngpios = <2>;
-			port = <23>;
 			reg = <0x0008c016 0x01>,
 			      <0x0008c036 0x01>,
 			      <0x0008c056 0x01>,
@@ -465,6 +461,10 @@
 			      <0x0008c0d6 0x01>,
 			      <0x0008c0f6 0x01>,
 			      <0x0008c0ad 0x01>;
+			gpio-controller;
+			#gpio-cells = <0x2>;
+			ngpios = <2>;
+			port = <23>;
 			reg-names = "PDR", "PODR", "PIDR", "PMR", "PCR", "DSCR", "ODR1";
 			pinmux = <&pinmuxn>;
 			status = "disabled";
@@ -472,10 +472,10 @@
 
 		sci1: sci1@8a020 {
 			compatible = "renesas,rx-sci";
+			reg = <0x8a020 0x20>;
 			interrupts-extended = <&icu 60 1>, <&icu 61 1>,
 					      <&group_irq_bl0 2 1>, <&group_irq_bl0 3 1>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
-			reg = <0x8a020 0x20>;
 			clocks = <&pclkb MSTPB 30>;
 			channel = <1>;
 			dtc = <&dtc>;
@@ -506,10 +506,10 @@
 
 		sci6: sci6@8a0c0 {
 			compatible = "renesas,rx-sci";
+			reg = <0x8a0c0 0x20>;
 			interrupts-extended = <&icu 86 1>, <&icu 87 1>,
 					      <&group_irq_bl0 12 1>, <&group_irq_bl0 13 1>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
-			reg = <0x8a0c0 0x20>;
 			clocks = <&pclkb MSTPB 25>;
 			channel = <6>;
 			dtc = <&dtc>;
@@ -523,10 +523,10 @@
 
 		sci12: sci12@8b300 {
 			compatible = "renesas,rx-sci";
+			reg = <0x8b300 0x20>;
 			interrupts-extended = <&icu 116 1>, <&icu 117 1>,
 					      <&group_irq_bl0 16 1>, <&group_irq_bl0 17 1>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
-			reg = <0x8b300 0x20>;
 			clocks = <&pclkb MSTPB 4>;
 			channel = <12>;
 			dtc = <&dtc>;
@@ -540,9 +540,9 @@
 
 		i2c0: i2c@88300 {
 			compatible = "renesas,rx-i2c";
+			reg = <0x88300 0x20>;
 			#address-cells = <0x1>;
 			#size-cells = <0x0>;
-			reg = <0x88300 0x20>;
 			clocks = <&pclkb MSTPB 21>;
 			channel = <0>;
 			interrupts-extended = <&icu 52 1>, <&icu 53 1>, <&group_irq_bl1 13 1>,
@@ -554,20 +554,20 @@
 
 		cmt: timer@88000 {
 			compatible = "renesas,rx-timer-cmt-start-control";
+			reg = <0x00088000 0x02>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 			clocks = <&pclkb MSTPA 15>;
-			reg = <0x00088000 0x02>;
 			reg-names = "CMSTR0";
 			status = "okay";
 
 			cmt0: timer@88002 {
 				compatible = "renesas,rx-timer-cmt";
-				#address-cells = <1>;
-				#size-cells = <1>;
 				reg = <0x00088002 0x02>,
 				      <0x00088004 0x02>,
 				      <0x00088006 0x02>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 				reg-names = "CMCR", "CMCNT", "CMCOR";
 				interrupts = <28 1>;
 				interrupt-names = "cmi";
@@ -595,10 +595,10 @@
 
 		group_irq_be0: grp_intc@87600 {
 			compatible = "renesas,rx-grp-intc";
-			interrupt-controller;
-			label = "be0";
 			reg = <0x00087600 0x04>,
 			      <0x00087640 0x04>;
+			interrupt-controller;
+			label = "be0";
 			reg-names = "GRP", "GEN";
 			interrupts = <106 4>;
 			#interrupt-cells = <2>;
@@ -607,10 +607,10 @@
 
 		group_irq_bl0: grp_intc@87630 {
 			compatible = "renesas,rx-grp-intc";
-			interrupt-controller;
-			label = "bl0";
 			reg = <0x00087630 0x04>,
 			      <0x00087670 0x04>;
+			interrupt-controller;
+			label = "bl0";
 			reg-names = "GRP", "GEN";
 			interrupts = <110 4>;
 			#interrupt-cells = <2>;
@@ -619,10 +619,10 @@
 
 		group_irq_bl1: grp_intc@87634 {
 			compatible = "renesas,rx-grp-intc";
-			interrupt-controller;
-			label = "bl1";
 			reg = <0x00087634 0x04>,
 			      <0x00087674 0x04>;
+			interrupt-controller;
+			label = "bl1";
 			reg-names = "GRP", "GEN";
 			interrupts = <111 4>;
 			#interrupt-cells = <2>;
@@ -631,10 +631,10 @@
 
 		group_irq_bl2: grp_intc@87638 {
 			compatible = "renesas,rx-grp-intc";
-			interrupt-controller;
-			label = "bl2";
 			reg = <0x00087638 0x04>,
 			      <0x00087678 0x04>;
+			interrupt-controller;
+			label = "bl2";
 			reg-names = "GRP", "GEN";
 			interrupts = <107 4>;
 			#interrupt-cells = <2>;
@@ -643,10 +643,10 @@
 
 		group_irq_al0: grp_intc@87830 {
 			compatible = "renesas,rx-grp-intc";
-			interrupt-controller;
-			label = "al0";
 			reg = <0x00087830 0x04>,
 			      <0x00087870 0x04>;
+			interrupt-controller;
+			label = "al0";
 			reg-names = "GRP", "GEN";
 			interrupts = <112 4>;
 			#interrupt-cells = <2>;
@@ -655,10 +655,10 @@
 
 		group_irq_al1: grp_intc@87834 {
 			compatible = "renesas,rx-grp-intc";
-			interrupt-controller;
-			label = "al1";
 			reg = <0x00087834 0x04>,
 			      <0x00087874 0x04>;
+			interrupt-controller;
+			label = "al1";
 			reg-names = "GRP", "GEN";
 			interrupts = <113 4>;
 			#interrupt-cells = <2>;

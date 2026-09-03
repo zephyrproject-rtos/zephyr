@@ -20,10 +20,10 @@
 		#size-cells = <0>;
 
 		cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-a55";
-			clock-frequency = <DT_FREQ_M(1000)>;
 			reg = <0>;
+			device_type = "cpu";
+			clock-frequency = <DT_FREQ_M(1000)>;
 		};
 	};
 
@@ -71,154 +71,154 @@
 
 			gpio0: gpio@f00 {
 				compatible = "renesas,rz-gpio";
+				reg = <0xf00>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <4>;
-				reg = <0xf00>;
 				status = "disabled";
 			};
 
 			gpio1: gpio@1000 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x1000>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <5>;
-				reg = <0x1000>;
 				status = "disabled";
 			};
 
 			gpio2: gpio@1100 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x1100>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <4>;
-				reg = <0x1100>;
 				status = "disabled";
 			};
 
 			gpio3: gpio@1200 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x1200>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <4>;
-				reg = <0x1200>;
 				status = "disabled";
 			};
 
 			gpio4: gpio@1300 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x1300>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <6>;
-				reg = <0x1300>;
 				status = "disabled";
 			};
 
 			gpio5: gpio@1400 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x1400>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <5>;
-				reg = <0x1400>;
 				status = "disabled";
 			};
 
 			gpio6: gpio@1500 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x1500>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <5>;
-				reg = <0x1500>;
 				status = "disabled";
 			};
 
 			gpio7: gpio@1600 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x1600>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <2>;
-				reg = <0x1600>;
 				status = "disabled";
 			};
 
 			gpio8: gpio@1700 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x1700>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <4>;
-				reg = <0x1700>;
 				status = "disabled";
 			};
 
 			gpio9: gpio@1800 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x1800>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <5>;
-				reg = <0x1800>;
 				status = "disabled";
 			};
 
 			gpio10: gpio@1900 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x1900>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <4>;
-				reg = <0x1900>;
 				status = "disabled";
 			};
 
 			gpio11: gpio@1a00 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x1a00>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <4>;
-				reg = <0x1a00>;
 				status = "disabled";
 			};
 
 			gpio12: gpio@1b00 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x1b00>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <2>;
-				reg = <0x1b00>;
 				status = "disabled";
 			};
 
 			gpio20: gpio@0 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x0>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <6>;
-				reg = <0x0>;
 				status = "disabled";
 			};
 
 			gpio21: gpio@100 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x100>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <3>;
-				reg = <0x100>;
 				status = "disabled";
 			};
 
 			gpio22: gpio@300 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x300>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <5>;
-				reg = <0x300>;
 				status = "disabled";
 			};
 
 			gpio23: gpio@400 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x400>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <2>;
-				reg = <0x400>;
 				status = "disabled";
 			};
 		};
@@ -527,8 +527,8 @@
 
 		scif0: serial@1004b800 {
 			compatible = "renesas,rz-scif-uart";
-			channel = <0>;
 			reg = <0x1004b800 0x400>;
+			channel = <0>;
 			interrupts = <GIC_SPI 380 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 381 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 382 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
@@ -540,8 +540,8 @@
 
 		scif1: serial@1004bc00 {
 			compatible = "renesas,rz-scif-uart";
-			channel = <1>;
 			reg = <0x1004bc00 0x400>;
+			channel = <1>;
 			interrupts = <GIC_SPI 385 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 386 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 387 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
@@ -553,8 +553,8 @@
 
 		scif2: serial@1004c000 {
 			compatible = "renesas,rz-scif-uart";
-			channel = <2>;
 			reg = <0x1004c000 0x400>;
+			channel = <2>;
 			interrupts = <GIC_SPI 390 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 391 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 392 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
@@ -566,8 +566,8 @@
 
 		scif3: serial@1004c400 {
 			compatible = "renesas,rz-scif-uart";
-			channel = <3>;
 			reg = <0x1004c400 0x400>;
+			channel = <3>;
 			interrupts = <GIC_SPI 395 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 396 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 397 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
@@ -579,8 +579,8 @@
 
 		scif4: serial@1004c800 {
 			compatible = "renesas,rz-scif-uart";
-			channel = <4>;
 			reg = <0x1004c800 0x400>;
+			channel = <4>;
 			interrupts = <GIC_SPI 400 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 401 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 402 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,

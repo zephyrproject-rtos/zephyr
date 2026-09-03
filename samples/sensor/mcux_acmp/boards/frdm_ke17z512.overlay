@@ -15,7 +15,7 @@
 };
 
 &cmp0 {
-	status = "okay";
 	pinctrl-0 = <&acmp0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };

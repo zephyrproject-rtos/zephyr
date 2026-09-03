@@ -8,9 +8,9 @@
 / {
 	soc {
 		flash-controller@407e0000 {
+			ranges;
 			flash-hardware-version = <40>;
 			#erase-block-cells = <2>;
-			ranges;
 
 			flash0: flash@0 {
 				compatible = "renesas,ra-nv-code-flash";

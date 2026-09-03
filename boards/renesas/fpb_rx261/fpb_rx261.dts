@@ -13,8 +13,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Renesas FPB-RX261";
 	compatible = "renesas,fpb_rx261";
+	model = "Renesas FPB-RX261";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -114,8 +114,8 @@
 		#size-cells = <1>;
 
 		storage_partition: partition@0 {
-			label = "storage";
 			reg = <0x0 DT_SIZE_K(8)>;
+			label = "storage";
 		};
 	};
 };

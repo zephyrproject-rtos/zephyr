@@ -13,8 +13,8 @@
 #include <intel/elkhart_lake.dtsi>
 
 / {
-	model = "intel_ehl_crb";
 	compatible = "intel,elkhart_lake_crb";
+	model = "intel_ehl_crb";
 
 	chosen {
 		zephyr,sram = &dram0;

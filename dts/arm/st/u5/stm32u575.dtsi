@@ -30,10 +30,10 @@
 
 		sai2: sai2@40015800 {
 			compatible = "st,stm32-sai";
-			#address-cells = <1>;
-			#size-cells = <1>;
 			reg = <0x40015800 0x400>;
 			ranges;
+			#address-cells = <1>;
+			#size-cells = <1>;
 			clocks = <&rcc STM32_CLOCK(APB2, 22)>,
 				 <&rcc STM32_SRC_PLL2_P SAI2_SEL(0)>;
 			clock-names = "sai_ck", "sai_ker_ck";

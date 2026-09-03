@@ -18,31 +18,31 @@
 		#size-cells = <0>;
 
 		cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-a55";
-			enable-method = "psci";
 			reg = <0x0>;
+			device_type = "cpu";
+			enable-method = "psci";
 		};
 
 		cpu@100 {
-			device_type = "cpu";
 			compatible = "arm,cortex-a55";
-			enable-method = "psci";
 			reg = <0x100>;
+			device_type = "cpu";
+			enable-method = "psci";
 		};
 
 		cpu@200 {
-			device_type = "cpu";
 			compatible = "arm,cortex-a76";
-			enable-method = "psci";
 			reg = <0x200>;
+			device_type = "cpu";
+			enable-method = "psci";
 		};
 
 		cpu@300 {
-			device_type = "cpu";
 			compatible = "arm,cortex-a76";
-			enable-method = "psci";
 			reg = <0x300>;
+			device_type = "cpu";
+			enable-method = "psci";
 		};
 	};
 
@@ -52,9 +52,9 @@
 		      <0x1d060000 0x80000>; /* GICR */
 		interrupt-controller;
 		#interrupt-cells = <4>;
-		status = "okay";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		status = "okay";
 
 		its: msi-controller@1d040000 {
 			compatible = "arm,gic-v3-its";
@@ -95,8 +95,8 @@
 	};
 
 	mem0: memory@80100000 {
-		device_type = "memory";
 		reg = <0x80100000 DT_SIZE_M(8)>;
+		device_type = "memory";
 	};
 
 	fpga0: bridges {
@@ -129,8 +129,8 @@
 
 	uart0: uart@10c02000 {
 		compatible = "ns16550";
-		reg-shift = <2>;
 		reg = <0x10c02000 0x100>;
+		reg-shift = <2>;
 		interrupt-parent = <&gic>;
 		interrupts = <GIC_SPI 108 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-names = "irq_0";
@@ -162,10 +162,10 @@
 
 	timer0: timer@10c03000 {
 		compatible = "snps,dw-timers";
+		reg = <0x10c03000 0x100>;
 		interrupt-parent = <&gic>;
 		interrupts = <GIC_SPI 113 IRQ_TYPE_LEVEL
 			      IRQ_DEFAULT_PRIORITY>;
-		reg = <0x10c03000 0x100>;
 		clocks = <&clock INTEL_SOCFPGA_CLOCK_TIMER>;
 		resets = <&reset RSTMGR_SPTIMER0_RSTLINE>;
 		status = "disabled";
@@ -173,10 +173,10 @@
 
 	timer1: timer@10c03100 {
 		compatible = "snps,dw-timers";
+		reg = <0x10c03100 0x100>;
 		interrupt-parent = <&gic>;
 		interrupts = <GIC_SPI 114 IRQ_TYPE_LEVEL
 			      IRQ_DEFAULT_PRIORITY>;
-		reg = <0x10c03100 0x100>;
 		clocks = <&clock INTEL_SOCFPGA_CLOCK_TIMER>;
 		resets = <&reset RSTMGR_SPTIMER1_RSTLINE>;
 		status = "disabled";
@@ -184,10 +184,10 @@
 
 	timer2: timer@10d00000 {
 		compatible = "snps,dw-timers";
+		reg = <0x10d00000 0x100>;
 		interrupt-parent = <&gic>;
 		interrupts = <GIC_SPI 115 IRQ_TYPE_LEVEL
 			      IRQ_DEFAULT_PRIORITY>;
-		reg = <0x10d00000 0x100>;
 		clocks = <&clock INTEL_SOCFPGA_CLOCK_TIMER>;
 		resets = <&reset RSTMGR_L4SYSTIMER0_RSTLINE>;
 		status = "disabled";
@@ -195,10 +195,10 @@
 
 	timer3: timer@10d00100 {
 		compatible = "snps,dw-timers";
+		reg = <0x10d00100 0x100>;
 		interrupt-parent = <&gic>;
 		interrupts = <GIC_SPI 116 IRQ_TYPE_LEVEL
 			      IRQ_DEFAULT_PRIORITY>;
-		reg = <0x10d00100 0x100>;
 		clocks = <&clock INTEL_SOCFPGA_CLOCK_TIMER>;
 		resets = <&reset RSTMGR_L4SYSTIMER1_RSTLINE>;
 	};
@@ -246,8 +246,8 @@
 	sip_smc: smc {
 		compatible = "intel,socfpga-agilex-sip-smc";
 		method = "smc";
-		status = "disabled";
 		zephyr,num-clients = <2>;
+		status = "disabled";
 	};
 
 	/* cadence Nand Flash controller*/
@@ -267,8 +267,8 @@
 
 	dma0: dma@10db0000 {
 		compatible = "snps,designware-dma-axi";
-		#dma-cells = <1>;
 		reg = <0x10db0000 0x1000>;
+		#dma-cells = <1>;
 		interrupt-parent = <&gic>;
 		interrupts = <GIC_SPI 81 IRQ_TYPE_LEVEL
 			      IRQ_DEFAULT_PRIORITY>,
@@ -285,8 +285,8 @@
 
 	dma1: dma@10dc0000 {
 		compatible = "snps,designware-dma-axi";
-		#dma-cells = <1>;
 		reg = <0x10dc0000 0x1000>;
+		#dma-cells = <1>;
 		interrupt-parent = <&gic>;
 		interrupts = <GIC_SPI 166 IRQ_TYPE_LEVEL
 			      IRQ_DEFAULT_PRIORITY>,
@@ -316,11 +316,11 @@
 	};
 
 	mdio0: mdio@10810000 {
+		compatible = "snps,dwcxgmac-mdio";
+		reg = <0x10810000 0x10000>;
 		#address-cells = <1>;
 		#size-cells = <0>;
-		reg = <0x10810000 0x10000>;
 		resets = <&reset RSTMGR_TSN0_RSTLINE>;
-		compatible = "snps,dwcxgmac-mdio";
 		status = "disabled";
 	};
 
@@ -340,11 +340,11 @@
 	};
 
 	mdio1: mdio@10820000 {
+		compatible = "snps,dwcxgmac-mdio";
+		reg = <0x10820000 0x10000>;
 		#address-cells = <1>;
 		#size-cells = <0>;
-		reg = <0x10820000 0x10000>;
 		resets = <&reset RSTMGR_TSN1_RSTLINE>;
-		compatible = "snps,dwcxgmac-mdio";
 		status = "disabled";
 	};
 
@@ -364,11 +364,11 @@
 	};
 
 	mdio2: mdio@10830000 {
+		compatible = "snps,dwcxgmac-mdio";
+		reg = <0x10830000 0x10000>;
 		#address-cells = <1>;
 		#size-cells = <0>;
-		reg = <0x10830000 0x10000>;
 		resets = <&reset RSTMGR_TSN2_RSTLINE>;
-		compatible = "snps,dwcxgmac-mdio";
 		status = "disabled";
 	};
 };

@@ -13,8 +13,8 @@
 #include "st_morpho_connector.dtsi"
 
 / {
-	model = "STMicroelectronics STM32C562RE-NUCLEO board";
 	compatible = "st,stm32c562re-nucleo";
+	model = "STMicroelectronics STM32C562RE-NUCLEO board";
 
 	chosen {
 		zephyr,console = &usart2;
@@ -93,32 +93,32 @@
 
 &flash0 {
 	partitions {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		boot_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(48)>;
+			label = "mcuboot";
 		};
 
 		slot0_partition: partition@c000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-0";
 			reg = <0x0000c000 DT_SIZE_K(216)>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@42000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-1";
 			reg = <0x00042000 DT_SIZE_K(224)>;
+			label = "image-1";
 		};
 
 		storage_partition: partition@7a000 {
 			compatible = "zephyr,mapped-partition";
-			label = "storage";
 			reg = <0x0007a000 DT_SIZE_K(24)>;
+			label = "storage";
 		};
 	};
 };
@@ -205,15 +205,15 @@
 &adc1 {
 	pinctrl-0 = <&adc1_in0_pa0 &adc1_in1_pa1 &adc1_in8_pc0>;
 	pinctrl-names = "default";
-	status = "okay";
 	vref-mv = <3300>;
+	status = "okay";
 };
 
 &adc2 {
 	pinctrl-0 = <&adc2_in6_pb0 &adc2_in5_pc5>;
 	pinctrl-names = "default";
-	status = "okay";
 	vref-mv = <3300>;
+	status = "okay";
 };
 
 &dac1 {

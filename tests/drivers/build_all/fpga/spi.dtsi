@@ -7,7 +7,6 @@
  */
 
 test_spi_fpga_ice40_gpio: ice40@0 {
-	status = "okay";
 	compatible = "lattice,ice40-fpga-bitbang";
 
 	reg = <0>;
@@ -20,10 +19,10 @@ test_spi_fpga_ice40_gpio: ice40@0 {
 	gpios-set-reg = <0>;
 	gpios-clear-reg = <0>;
 	config-delay-us = <3900>;
+	status = "okay";
 };
 
 test_spi_fpga_ice40_spi: ice40@1 {
-	status = "okay";
 	compatible = "lattice,ice40-fpga";
 
 	reg = <1>;
@@ -32,10 +31,10 @@ test_spi_fpga_ice40_spi: ice40@1 {
 	cdone-gpios = <&test_gpio 0 0>;
 	creset-gpios = <&test_gpio 0 0>;
 	config-delay-us = <3900>;
+	status = "okay";
 };
 
 test_spi_fpga_slg47910: slg47910@2 {
-	status = "okay";
 	compatible = "renesas,slg47910";
 
 	reg = <2>;
@@ -44,4 +43,5 @@ test_spi_fpga_slg47910: slg47910@2 {
 	pwr-gpios = <&test_gpio 0 0>;
 	en-gpios = <&test_gpio 0 0>;
 	ss-gpios = <&test_gpio 0 0>;
+	status = "okay";
 };

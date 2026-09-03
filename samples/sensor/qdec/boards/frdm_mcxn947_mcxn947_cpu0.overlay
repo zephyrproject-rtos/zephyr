@@ -44,10 +44,10 @@
 };
 
 &qdc0 {
-	status = "okay";
 	counts-per-revolution = <480>;
 	mux-states = <&inputmux0 0 0x3700002d>,
 		     <&inputmux0 0 0x36c0002f>;
 	pinctrl-0 = <&qdc0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };

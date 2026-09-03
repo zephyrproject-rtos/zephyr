@@ -6,9 +6,9 @@
 #include <freq.h>
 
 / {
+	compatible = "shakti,ganga";
 	#address-cells = <1>;
 	#size-cells = <1>;
-	compatible = "shakti,ganga";
 	model = "Shakti Ganga";
 
 	cpus {
@@ -17,13 +17,13 @@
 		timebase-frequency = <156250>;
 
 		cpu0: cpu@0 {
-			device_type = "cpu";
-			reg = <0>;
 			compatible = "riscv";
-			riscv,isa-base = "rv64i";
-			riscv,isa-extensions = "i", "m", "a", "c", "zicsr", "zifencei";
+			reg = <0>;
+			device_type = "cpu";
 			mmu-type = "riscv,sv39";
 			clock-frequency = <DT_FREQ_M(40)>; /* ganga on Nexys Video runs at 40 MHz */
+			riscv,isa-base = "rv64i";
+			riscv,isa-extensions = "i", "m", "a", "c", "zicsr", "zifencei";
 
 			hlic: interrupt-controller {
 				compatible = "riscv,cpu-intc";
@@ -35,37 +35,37 @@
 	};
 
 	sram0: memory@80000000 {
-		device_type = "memory";
 		reg = <0x80000000 0x10000000>;
+		device_type = "memory";
 	};
 
 	soc {
-		#address-cells = <1>;
-		#size-cells = <1>;
 		compatible = "shakti,ganga-soc", "simple-bus";
 		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
 
 		clint: clint@2000000 {
 			compatible = "sifive,clint0";
+			reg = <0x2000000 0x10000>;
 			interrupts-extended = <&hlic 3 &hlic 7>;
 			interrupt-names = "soft0", "timer0";
-			reg = <0x2000000 0x10000>;
 		};
 
 		mtimer: timer@200bff8 {
 			compatible = "riscv,machine-timer";
-			interrupts-extended = <&hlic 7>;
 			reg = <0x200bff8 0x8 0x2004000 0x8>;
+			interrupts-extended = <&hlic 7>;
 			reg-names = "mtime", "mtimecmp";
 		};
 
 		plic: interrupt-controller@c000000 {
 			compatible = "sifive,plic-1.0.0";
+			reg = <0xc000000 0x4000000>;
 			#interrupt-cells = <2>;
 			#address-cells = <1>;
 			interrupt-controller;
 			interrupts-extended = <&hlic 11>;
-			reg = <0xc000000 0x4000000>;
 			riscv,max-priority = <7>;
 			riscv,ndev = <36>;
 		};

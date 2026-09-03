@@ -35,8 +35,8 @@
 
 			pwm {
 				compatible = "st,stm32-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 
 			counter {
@@ -58,8 +58,8 @@
 
 			pwm {
 				compatible = "st,stm32-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 
 			counter {
@@ -81,8 +81,8 @@
 
 			pwm {
 				compatible = "st,stm32-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 
 			counter {

@@ -10,8 +10,8 @@
 #include <espressif/partitions_0x0_default.dtsi>
 
 / {
-	model = "Adafruit Feather ESP32C6 LPCORE";
 	compatible = "adafruit,feather_esp32c6", "espressif,esp32c6";
+	model = "Adafruit Feather ESP32C6 LPCORE";
 
 	chosen {
 		zephyr,flash = &flash0;
@@ -23,6 +23,6 @@
 };
 
 &lp_uart {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 };

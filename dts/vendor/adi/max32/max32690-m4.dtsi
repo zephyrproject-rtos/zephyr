@@ -123,8 +123,8 @@
 };
 
 &flc1 {
-	status = "okay";
 	interrupts = <87 0>;
+	status = "okay";
 };
 
 &spi0 {

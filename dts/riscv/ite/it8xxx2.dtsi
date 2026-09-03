@@ -30,11 +30,11 @@
 
 		cpu0: cpu@0 {
 			compatible = "ite,riscv-ite", "riscv";
+			reg = <0>;
+			device_type = "cpu";
+			cpu-power-states = <&standby>;
 			riscv,isa-base = "rv32i";
 			riscv,isa-extensions = "i", "a", "c", "zicsr", "zifencei";
-			device_type = "cpu";
-			reg = <0>;
-			cpu-power-states = <&standby>;
 		};
 
 		power-states {
@@ -47,24 +47,24 @@
 	};
 
 	soc {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		bbram: bb-ram@f02200 {
+			compatible = "ite,it8xxx2-bbram";
+			reg = <0x00f02200 0xc0>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			compatible = "ite,it8xxx2-bbram";
 			status = "okay";
-			reg = <0x00f02200 0xc0>;
 		};
 
 		flashctrl: flash-controller@f01000 {
 			compatible = "ite,it8xxx2-flash-controller";
 			reg = <0x00f01000 0x100>;
+			ranges;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges;
 
 			flash0: flash@80000000 {
 				compatible = "soc-nv-flash";
@@ -113,41 +113,41 @@
 		uart1: uart@f02700 {
 			compatible = "ns16550";
 			reg = <0x00f02700 0x0020>;
-			status = "disabled";
 			current-speed = <115200>;
 			clock-frequency = <1843200>;
 			interrupts = <38 IRQ_TYPE_EDGE_RISING>;
 			interrupt-parent = <&intc>;
 			reg-shift = <0>;
+			status = "disabled";
 		};
 
 		uart2: uart@f02800 {
 			compatible = "ns16550";
 			reg = <0x00f02800 0x0020>;
-			status = "disabled";
 			current-speed = <460800>;
 			clock-frequency = <1843200>;
 			interrupts = <39 IRQ_TYPE_EDGE_RISING>;
 			interrupt-parent = <&intc>;
 			reg-shift = <0>;
+			status = "disabled";
 		};
 
 		ite_uart1_wrapper: uartwrapper@f02720 {
 			compatible = "ite,it8xxx2-uart";
 			reg = <0x00f02720 0x0020>;
-			status = "disabled";
 			port-num = <1>;
 			gpios = <&gpiob 0 0>;
 			uart-dev = <&uart1>;
+			status = "disabled";
 		};
 
 		ite_uart2_wrapper: uartwrapper@f02820 {
 			compatible = "ite,it8xxx2-uart";
 			reg = <0x00f02820 0x0020>;
-			status = "disabled";
 			port-num = <2>;
 			gpios = <&gpioh 1 0>;
 			uart-dev = <&uart2>;
+			status = "disabled";
 		};
 
 		timer: timer@f01f10 {
@@ -466,9 +466,9 @@
 			reg = <0x00f03a00 0x30>;
 			interrupts = <171 0>;
 			interrupt-parent = <&intc>;
-			status = "disabled";
 			buffer-rx-size = <256>;
 			buffer-tx-size = <256>;
+			status = "disabled";
 		};
 
 		adc0: adc@f01900 {
@@ -476,8 +476,8 @@
 			reg = <0xf01900 0x45>;
 			interrupts = <8 IRQ_TYPE_NONE>;
 			interrupt-parent = <&intc>;
-			status = "disabled";
 			#io-channel-cells = <1>;
+			status = "disabled";
 		};
 
 		vcmp0: vcmp@f01946 {
@@ -588,9 +588,9 @@
 			       0x00f0180f 1   /* PCSG */
 			       0x00f0180a 1>; /* PWMPOL */
 			channel = <PWM_CHANNEL_0>;
-			status = "disabled";
 			pwmctrl = <&prs>;
 			#pwm-cells = <3>;
+			status = "disabled";
 		};
 
 		pwm1: pwm@f01803 {
@@ -600,9 +600,9 @@
 			       0x00f0180f 1   /* PCSG */
 			       0x00f0180a 1>; /* PWMPOL */
 			channel = <PWM_CHANNEL_1>;
-			status = "disabled";
 			pwmctrl = <&prs>;
 			#pwm-cells = <3>;
+			status = "disabled";
 		};
 
 		pwm2: pwm@f01804 {
@@ -612,9 +612,9 @@
 			       0x00f0180f 1   /* PCSG */
 			       0x00f0180a 1>; /* PWMPOL */
 			channel = <PWM_CHANNEL_2>;
-			status = "disabled";
 			pwmctrl = <&prs>;
 			#pwm-cells = <3>;
+			status = "disabled";
 		};
 
 		pwm3: pwm@f01805 {
@@ -624,9 +624,9 @@
 			       0x00f0180f 1   /* PCSG */
 			       0x00f0180a 1>; /* PWMPOL */
 			channel = <PWM_CHANNEL_3>;
-			status = "disabled";
 			pwmctrl = <&prs>;
 			#pwm-cells = <3>;
+			status = "disabled";
 		};
 
 		pwm4: pwm@f01806 {
@@ -636,9 +636,9 @@
 			       0x00f0180f 1   /* PCSG */
 			       0x00f0180a 1>; /* PWMPOL */
 			channel = <PWM_CHANNEL_4>;
-			status = "disabled";
 			pwmctrl = <&prs>;
 			#pwm-cells = <3>;
+			status = "disabled";
 		};
 
 		pwm5: pwm@f01807 {
@@ -648,9 +648,9 @@
 			       0x00f0180f 1   /* PCSG */
 			       0x00f0180a 1>; /* PWMPOL */
 			channel = <PWM_CHANNEL_5>;
-			status = "disabled";
 			pwmctrl = <&prs>;
 			#pwm-cells = <3>;
+			status = "disabled";
 		};
 
 		pwm6: pwm@f01808 {
@@ -660,9 +660,9 @@
 			       0x00f0180f 1   /* PCSG */
 			       0x00f0180a 1>; /* PWMPOL */
 			channel = <PWM_CHANNEL_6>;
-			status = "disabled";
 			pwmctrl = <&prs>;
 			#pwm-cells = <3>;
+			status = "disabled";
 		};
 
 		pwm7: pwm@f01809 {
@@ -672,9 +672,9 @@
 			       0x00f0180f 1   /* PCSG */
 			       0x00f0180a 1>; /* PWMPOL */
 			channel = <PWM_CHANNEL_7>;
-			status = "disabled";
 			pwmctrl = <&prs>;
 			#pwm-cells = <3>;
+			status = "disabled";
 		};
 
 		tach0: tach@f0181e {
@@ -717,7 +717,6 @@
 			reg = <0x00f01d00 0x29>;
 			interrupt-parent = <&intc>;
 			interrupts = <IT8XXX2_IRQ_WKINTC IRQ_TYPE_LEVEL_HIGH>;
-			status = "disabled";
 			wucctrl = <&wuc_wu30   /* KSI[0] */
 				   &wuc_wu31   /* KSI[1] */
 				   &wuc_wu32   /* KSI[2] */
@@ -728,6 +727,7 @@
 				   &wuc_wu37>; /* KSI[7] */
 			kso16-gpios = <&gpioc 3 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
 			kso17-gpios = <&gpioc 5 (GPIO_OPEN_DRAIN | GPIO_PULL_UP)>;
+			status = "disabled";
 		};
 
 		usbpd0: usbpd@f03700 {

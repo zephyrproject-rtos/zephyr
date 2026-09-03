@@ -19,7 +19,6 @@
 };
 
 dut: &sercom3 {
-	status = "okay";
 	compatible = "atmel,sam0-uart";
 	current-speed = <115200>;
 
@@ -34,4 +33,5 @@ dut: &sercom3 {
 	/* Configure DMA channels for async operation */
 	dmas = <&dmac 10 7>, <&dmac 11 8>;
 	dma-names = "rx", "tx";
+	status = "okay";
 };

@@ -14,10 +14,10 @@
 
 &pwm1 {
 	compatible = "microchip,xec-pwm";
-	status = "okay";
 	pinctrl-0 = <&pwm1_gpio054>;
 	pinctrl-names = "default";
 
 	/* Encode PCR index/bit */
 	pcr-scr = <MCHP_XEC_SCR_ENCODE(1, 20)>;
+	status = "okay";
 };

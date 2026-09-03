@@ -12,11 +12,11 @@
 };
 
 &adc {
-	status = "okay";
 	pinctrl-0 = <&ain3_p2_3 &ain4_p2_4>;
 	pinctrl-names = "default";
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 
 	channel@3 {
 		reg = <3>;

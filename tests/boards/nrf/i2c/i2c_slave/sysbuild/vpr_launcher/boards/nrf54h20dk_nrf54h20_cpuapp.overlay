@@ -35,17 +35,17 @@
 };
 
 &i2c130 {
-	status = "reserved";
 	pinctrl-0 = <&i2c130_default_alt>;
 	pinctrl-1 = <&i2c130_sleep_alt>;
 	pinctrl-names = "default", "sleep";
 	interrupt-parent = <&cpuppr_clic>;
+	status = "reserved";
 };
 
 &i2c131 {
-	status = "reserved";
 	pinctrl-0 = <&i2c131_default_alt>;
 	pinctrl-1 = <&i2c131_sleep_alt>;
 	pinctrl-names = "default", "sleep";
 	interrupt-parent = <&cpuppr_clic>;
+	status = "reserved";
 };

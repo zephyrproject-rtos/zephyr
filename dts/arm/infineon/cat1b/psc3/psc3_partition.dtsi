@@ -8,9 +8,9 @@
 
 / {
 	reserved-memory {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		sram0_s: sram0_s@34000000 {
 			/* Secure image memory */
@@ -26,9 +26,9 @@
 
 &flash0 {
 	partitions {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		slot0_partition: partition@12000000 {
 			compatible = "zephyr,mapped-partition";

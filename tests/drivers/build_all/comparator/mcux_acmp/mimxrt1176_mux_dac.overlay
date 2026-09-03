@@ -16,7 +16,6 @@
 };
 
 &acmp1 {
-	status = "okay";
 	pinctrl-0 = <&acmp1_default>;
 	pinctrl-names = "default";
 
@@ -43,4 +42,5 @@
 	discrete-mode-sample-time = "T1";
 	discrete-mode-phase1-time = "ALT4";
 	discrete-mode-phase2-time = "ALT7";
+	status = "okay";
 };

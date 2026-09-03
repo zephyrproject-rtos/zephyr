@@ -4,6 +4,6 @@
  */
 
 &uart120 {
-	status = "reserved";
 	interrupt-parent = <&cpuflpr_clic>;
+	status = "reserved";
 };

@@ -12,8 +12,8 @@
 &spi0 {
 	bmi_spi: bmi@3 {
 		compatible = "bosch,bmi160";
-		spi-max-frequency = <50000000>;
 		reg = <3>;
+		spi-max-frequency = <50000000>;
 	};
 };
 

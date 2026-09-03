@@ -15,8 +15,8 @@
 };
 
 &port_irq2 {
-	status = "okay";
 	renesas,digital-filtering;
+	status = "okay";
 };
 
 &ioportd {

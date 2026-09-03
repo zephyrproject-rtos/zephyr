@@ -13,13 +13,13 @@
 };
 
 &timer2 {
-	status = "okay";
 	prescaler = <1>;
+	status = "okay";
 
 	pwm2: pwm {
-		status = "okay";
 		pinctrl-0 = <&pwm2_default>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 

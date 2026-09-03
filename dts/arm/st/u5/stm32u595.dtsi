@@ -29,9 +29,9 @@
 		pinctrl: pin-controller@42020000 {
 			gpioj: gpio@42022400 {
 				compatible = "st,stm32-gpio";
+				reg = <0x42022400 0x400>;
 				gpio-controller;
 				#gpio-cells = <2>;
-				reg = <0x42022400 0x400>;
 				clocks = <&rcc STM32_CLOCK(AHB2, 9)>;
 			};
 		};
@@ -47,10 +47,10 @@
 
 		i2c5: i2c@40009800 {
 			compatible = "st,stm32-i2c-v2";
+			reg = <0x40009800 0x400>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40009800 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1_2, 6)>;
 			interrupts = <128 0>, <127 0>;
 			interrupt-names = "event", "error";
@@ -59,10 +59,10 @@
 
 		i2c6: i2c@40009c00 {
 			compatible = "st,stm32-i2c-v2";
+			reg = <0x40009c00 0x400>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40009c00 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1_2, 7)>;
 			interrupts = <130 0>, <129 0>;
 			interrupt-names = "event", "error";
@@ -78,8 +78,8 @@
 			clock-names = "adcx", "adc_ker";
 			interrupts = <37 0>;
 			#io-channel-cells = <1>;
-			st,adc-resolutions = <14 12 10 8>;
 			sampling-times = <5 6 12 20 36 68 391 814>;
+			st,adc-resolutions = <14 12 10 8>;
 			st,adc-clock-source = "ASYNC";
 			st,adc-sequencer = "programmable";
 			st,adc-oversampler = "extended";
@@ -103,8 +103,8 @@
 			clock-names = "adcx", "adc_ker";
 			interrupts = <37 0>;
 			#io-channel-cells = <1>;
-			st,adc-resolutions = <14 12 10 8>;
 			sampling-times = <5 6 12 20 36 68 391 814>;
+			st,adc-resolutions = <14 12 10 8>;
 			st,adc-clock-source = "ASYNC";
 			st,adc-sequencer = "programmable";
 			st,adc-oversampler = "extended";
@@ -124,10 +124,10 @@
 
 		sai2: sai2@40015800 {
 			compatible = "st,stm32-sai";
-			#address-cells = <1>;
-			#size-cells = <1>;
 			reg = <0x40015800 0x400>;
 			ranges;
+			#address-cells = <1>;
+			#size-cells = <1>;
 			clocks = <&rcc STM32_CLOCK(APB2, 22)>,
 				 <&rcc STM32_SRC_PLL2_P SAI2_SEL(0)>;
 			clock-names = "sai_ck", "sai_ker_ck";

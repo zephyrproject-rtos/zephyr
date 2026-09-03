@@ -21,37 +21,37 @@
 
 		cpu0: cpu@0 {
 			compatible = "arm,cortex-a7";
-			device_type = "cpu";
 			reg = <0>;
+			device_type = "cpu";
 		};
 
 		cpu1: cpu@1 {
 			compatible = "arm,cortex-a7";
-			device_type = "cpu";
 			reg = <1>;
+			device_type = "cpu";
 		};
 
 		cpu2: cpu@2 {
 			compatible = "arm,cortex-a7";
-			device_type = "cpu";
 			reg = <2>;
+			device_type = "cpu";
 		};
 
 		cpu3: cpu@3 {
 			compatible = "arm,cortex-a7";
-			device_type = "cpu";
 			reg = <3>;
+			device_type = "cpu";
 		};
 	};
 
 	arch_timer: timer {
 		compatible = "arm,armv8-timer";
-		status = "okay";
 		interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 			     <GIC_PPI 14 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 			     <GIC_PPI 11 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 			     <GIC_PPI 10 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-parent = <&gic>;
+		status = "okay";
 	};
 
 	soc {
@@ -61,12 +61,12 @@
 
 		gic: interrupt-controller@1c81000 {
 			compatible = "arm,gic-400", "arm,gic-v2", "arm,gic";
-			status = "okay";
 			reg = <0x01c81000 0x1000>,
 			      <0x01c82000 0x2000>;
 			interrupt-controller;
 			#interrupt-cells = <4>;
 			#address-cells = <0>;
+			status = "okay";
 		};
 
 		uart0: uart@1c28000 {

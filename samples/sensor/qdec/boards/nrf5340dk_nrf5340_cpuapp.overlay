@@ -35,9 +35,9 @@
 };
 
 &qdec1 {
-	status = "okay";
 	pinctrl-0 = <&qdec_pinctrl>;
 	pinctrl-names = "default";
 	steps = <120>;
 	led-pre = <500>;
+	status = "okay";
 };

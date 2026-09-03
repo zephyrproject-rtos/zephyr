@@ -12,8 +12,8 @@
 #include "ucans32k1sic-pinctrl.dtsi"
 
 / {
-	model = "NXP UCANS32K1SIC";
 	compatible = "nxp,ucans32k1sic";
+	model = "NXP UCANS32K1SIC";
 
 	chosen {
 		zephyr,sram = &sram_l;

@@ -9,8 +9,8 @@
 / {
 	clocks {
 		clk_hsi48: clk-hsi48 {
-			#clock-cells = <0>;
 			compatible = "fixed-clock";
+			#clock-cells = <0>;
 			clock-frequency = <DT_FREQ_M(48)>;
 			status = "disabled";
 		};
@@ -40,9 +40,9 @@
 
 		i2c2: i2c@40005800 {
 			compatible = "st,stm32-i2c-v2";
+			reg = <0x40005800 0x400>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40005800 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 22)>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupts = <33 0>, <34 0>;
@@ -52,9 +52,9 @@
 
 		spi2: spi@40003800 {
 			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
+			reg = <0x40003800 0x400>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40003800 0x400>;
 			interrupts = <36 0>;
 			clocks = <&rcc STM32_CLOCK(APB1, 14)>;
 			st,spi-data-width = "full-4-to-16-bit";

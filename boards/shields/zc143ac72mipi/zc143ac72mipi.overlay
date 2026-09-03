@@ -34,12 +34,11 @@
 };
 
 &zephyr_mipi_dsi {
-	status = "okay";
 	autoinsert-eotp;
 	phy-clock = <319488000>;
+	status = "okay";
 
 	co5300_zc143ac72mipi: co5300@0 {
-		status = "okay";
 		compatible = "chipone,co5300";
 		reg = <0x0>;
 		reset-gpios = <&nxp_mipi_connector 21 GPIO_ACTIVE_HIGH>;
@@ -49,5 +48,6 @@
 		width = <466>;
 		height = <466>;
 		pixel-format = <MIPI_DSI_PIXFMT_RGB565>;
+		status = "okay";
 	};
 };

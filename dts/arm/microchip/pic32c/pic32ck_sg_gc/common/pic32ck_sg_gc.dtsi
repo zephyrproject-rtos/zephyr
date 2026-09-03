@@ -13,9 +13,9 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m33";
 			reg = <0>;
+			device_type = "cpu";
 			#address-cells = <1>;
 			#size-cells = <1>;
 
@@ -29,9 +29,9 @@
 	soc {
 		nvmctrl: flash-controller@44004000 {
 			reg = <0x44004000 0x7c>;
+			ranges;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges;
 
 			flash0: flash@8000000 {
 				compatible = "soc-nv-flash";
@@ -52,9 +52,9 @@
 
 		pinctrl: pinctrl@44800000 {
 			compatible = "microchip,port-g1-pinctrl";
+			ranges = <0x44800000 0x44800000 0x200>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x44800000 0x44800000 0x200>;
 
 			porta: gpio@44800000 {
 				compatible = "microchip,port-g1-gpio";

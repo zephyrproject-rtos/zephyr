@@ -18,16 +18,16 @@
 
 		cpu0: cpu@0 {
 			compatible = "andestech,andescore-v5", "riscv";
-			device_type = "cpu";
 			reg = <0>;
-			status = "okay";
-			riscv,isa-base = "rv32i";
-			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei",
-					       "xandes";
+			device_type = "cpu";
 			mmu-type = "riscv,sv32";
 			clock-frequency = <60000000>;
 			i-cache-line-size = <32>;
 			d-cache-line-size = <32>;
+			riscv,isa-base = "rv32i";
+			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei",
+					       "xandes";
+			status = "okay";
 
 			cpu0_intc: interrupt-controller {
 				compatible = "riscv,cpu-intc";
@@ -39,16 +39,16 @@
 
 		cpu1: cpu@1 {
 			compatible = "andestech,andescore-v5", "riscv";
-			device_type = "cpu";
 			reg = <1>;
-			status = "okay";
-			riscv,isa-base = "rv32i";
-			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei",
-					       "xandes";
+			device_type = "cpu";
 			mmu-type = "riscv,sv32";
 			clock-frequency = <60000000>;
 			i-cache-line-size = <32>;
 			d-cache-line-size = <32>;
+			riscv,isa-base = "rv32i";
+			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei",
+					       "xandes";
+			status = "okay";
 
 			cpu1_intc: interrupt-controller {
 				compatible = "riscv,cpu-intc";
@@ -60,16 +60,16 @@
 
 		cpu2: cpu@2 {
 			compatible = "andestech,andescore-v5", "riscv";
-			device_type = "cpu";
 			reg = <2>;
-			status = "okay";
-			riscv,isa-base = "rv32i";
-			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei",
-					       "xandes";
+			device_type = "cpu";
 			mmu-type = "riscv,sv32";
 			clock-frequency = <60000000>;
 			i-cache-line-size = <32>;
 			d-cache-line-size = <32>;
+			riscv,isa-base = "rv32i";
+			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei",
+					       "xandes";
+			status = "okay";
 
 			cpu2_intc: interrupt-controller {
 				compatible = "riscv,cpu-intc";
@@ -81,16 +81,16 @@
 
 		cpu3: cpu@3 {
 			compatible = "andestech,andescore-v5", "riscv";
-			device_type = "cpu";
 			reg = <3>;
-			status = "okay";
-			riscv,isa-base = "rv32i";
-			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei",
-					       "xandes";
+			device_type = "cpu";
 			mmu-type = "riscv,sv32";
 			clock-frequency = <60000000>;
 			i-cache-line-size = <32>;
 			d-cache-line-size = <32>;
+			riscv,isa-base = "rv32i";
+			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei",
+					       "xandes";
+			status = "okay";
 
 			cpu3_intc: interrupt-controller {
 				compatible = "riscv,cpu-intc";
@@ -102,16 +102,16 @@
 
 		cpu4: cpu@4 {
 			compatible = "andestech,andescore-v5", "riscv";
-			device_type = "cpu";
 			reg = <4>;
-			status = "okay";
-			riscv,isa-base = "rv32i";
-			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei",
-					       "xandes";
+			device_type = "cpu";
 			mmu-type = "riscv,sv32";
 			clock-frequency = <60000000>;
 			i-cache-line-size = <32>;
 			d-cache-line-size = <32>;
+			riscv,isa-base = "rv32i";
+			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei",
+					       "xandes";
+			status = "okay";
 
 			cpu4_intc: interrupt-controller {
 				compatible = "riscv,cpu-intc";
@@ -123,16 +123,16 @@
 
 		cpu5: cpu@5 {
 			compatible = "andestech,andescore-v5", "riscv";
-			device_type = "cpu";
 			reg = <5>;
-			status = "okay";
-			riscv,isa-base = "rv32i";
-			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei",
-					       "xandes";
+			device_type = "cpu";
 			mmu-type = "riscv,sv32";
 			clock-frequency = <60000000>;
 			i-cache-line-size = <32>;
 			d-cache-line-size = <32>;
+			riscv,isa-base = "rv32i";
+			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei",
+					       "xandes";
+			status = "okay";
 
 			cpu5_intc: interrupt-controller {
 				compatible = "riscv,cpu-intc";
@@ -144,16 +144,16 @@
 
 		cpu6: cpu@6 {
 			compatible = "andestech,andescore-v5", "riscv";
-			device_type = "cpu";
 			reg = <6>;
-			status = "okay";
-			riscv,isa-base = "rv32i";
-			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei",
-					       "xandes";
+			device_type = "cpu";
 			mmu-type = "riscv,sv32";
 			clock-frequency = <60000000>;
 			i-cache-line-size = <32>;
 			d-cache-line-size = <32>;
+			riscv,isa-base = "rv32i";
+			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei",
+					       "xandes";
+			status = "okay";
 
 			cpu6_intc: interrupt-controller {
 				compatible = "riscv,cpu-intc";
@@ -165,16 +165,16 @@
 
 		cpu7: cpu@7 {
 			compatible = "andestech,andescore-v5", "riscv";
-			device_type = "cpu";
 			reg = <7>;
-			status = "okay";
-			riscv,isa-base = "rv32i";
-			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei",
-					       "xandes";
+			device_type = "cpu";
 			mmu-type = "riscv,sv32";
 			clock-frequency = <60000000>;
 			i-cache-line-size = <32>;
 			d-cache-line-size = <32>;
+			riscv,isa-base = "rv32i";
+			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei",
+					       "xandes";
+			status = "okay";
 
 			cpu7_intc: interrupt-controller {
 				compatible = "riscv,cpu-intc";
@@ -186,50 +186,50 @@
 	};
 
 	dram: memory@0 {
-		device_type = "memory";
 		compatible = "mmio-sram";
 		reg = <0x00000000 0x40000000>;
+		device_type = "memory";
 	};
 
 	soc {
-		#address-cells = <1>;
-		#size-cells = <1>;
 		compatible = "andestech,ae350";
 		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
 
 		plic0: interrupt-controller@e4000000 {
 			compatible = "sifive,plic-1.0.0", "andestech,nceplic100";
+			reg = <0xe4000000 0x02000000>;
 			#address-cells = <1>;
 			#interrupt-cells = <2>;
 			interrupt-controller;
-			reg = <0xe4000000 0x02000000>;
-			riscv,max-priority = <255>;
-			riscv,ndev = <1023>;
 			interrupts-extended = <&cpu0_intc 11 &cpu1_intc 11
 					       &cpu2_intc 11 &cpu3_intc 11
 					       &cpu4_intc 11 &cpu5_intc 11
 					       &cpu6_intc 11 &cpu7_intc 11>;
+			riscv,max-priority = <255>;
+			riscv,ndev = <1023>;
 		};
 
 		plic_sw: interrupt-controller@e6400000 {
 			compatible = "sifive,plic-1.0.0", "andestech,nceplic100";
+			reg = <0xe6400000 0x00400000>;
 			#address-cells = <1>;
 			#interrupt-cells = <2>;
 			interrupt-controller;
-			reg = <0xe6400000 0x00400000>;
-			riscv,max-priority = <255>;
-			riscv,ndev = <1023>;
 			interrupts-extended = <&cpu0_intc 3 &cpu1_intc 3
 					       &cpu2_intc 3 &cpu3_intc 3
 					       &cpu4_intc 3 &cpu5_intc 3
 					       &cpu6_intc 3 &cpu7_intc 3>;
 
 			#size-cells = <0>;
+			riscv,max-priority = <255>;
+			riscv,ndev = <1023>;
 
 			mbox: mbox-controller@0 {
 				compatible = "andestech,mbox-plic-sw";
-				#mbox-cells = <1>;
 				reg = <0>;
+				#mbox-cells = <1>;
 				interrupts = <9 1>, <10 1>, <11 1>, <12 1>,
 					     <13 1>, <14 1>, <15 1>, <16 1>,
 					     <17 1>, <18 1>, <19 1>, <20 1>,

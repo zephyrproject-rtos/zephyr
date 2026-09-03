@@ -17,9 +17,9 @@
 			compatible = "mmio-sram";
 			reg = <0x20027c00 DT_SIZE_K(96)>;
 			ranges = <0x0 0x20027c00 DT_SIZE_K(96)>;
-			status = "reserved";
 			#address-cells = <1>;
 			#size-cells = <1>;
+			status = "reserved";
 		};
 	};
 };
@@ -48,9 +48,9 @@
 };
 
 &cpuflpr_vpr {
-	status = "okay";
 	execution-memory = <&cpuflpr_sram_code_data>;
 	source-memory = <&cpuflpr_rram>;
+	status = "okay";
 };
 
 &cpuapp_vevif_rx {

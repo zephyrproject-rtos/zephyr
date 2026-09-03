@@ -17,9 +17,9 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m4f";
 			reg = <0>;
+			device_type = "cpu";
 			clock-frequency = <DT_FREQ_M(160)>;
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -107,9 +107,9 @@
 
 		eport0: eport@40019000 {
 			compatible = "focaltech,ft9001-eport", "focaltech,ft9001-gpio";
+			reg = <0x40019000 0x1000>;
 			gpio-controller;
 			#gpio-cells = <2>;
-			reg = <0x40019000 0x1000>;
 			interrupts = <41 0>,
 				     <42 0>,
 				     <43 0>,
@@ -127,9 +127,9 @@
 
 		eport1: eport@4001a000 {
 			compatible = "focaltech,ft9001-eport", "focaltech,ft9001-gpio";
+			reg = <0x4001a000 0x1000>;
 			gpio-controller;
 			#gpio-cells = <2>;
-			reg = <0x4001a000 0x1000>;
 			interrupts = <49 0>,
 				     <50 0>,
 				     <51 0>,
@@ -147,9 +147,9 @@
 
 		eport2: eport@40024000 {
 			compatible = "focaltech,ft9001-eport", "focaltech,ft9001-gpio";
+			reg = <0x40024000 0x1000>;
 			gpio-controller;
 			#gpio-cells = <2>;
-			reg = <0x40024000 0x1000>;
 			interrupts = <92 0>,
 				     <93 0>,
 				     <94 0>,
@@ -167,8 +167,8 @@
 
 		eport3: gpio@40025000 {
 			compatible = "focaltech,ft9001-eport", "focaltech,ft9001-gpio";
-			gpio-controller;
 			reg = <0x40025000 0x1000>;
+			gpio-controller;
 			#gpio-cells = <2>;
 			interrupts = <100 0>,
 				     <101 0>,
@@ -187,9 +187,9 @@
 
 		eport4: eport@40026000 {
 			compatible = "focaltech,ft9001-eport", "focaltech,ft9001-gpio";
+			reg = <0x40026000 0x1000>;
 			gpio-controller;
 			#gpio-cells = <2>;
-			reg = <0x40026000 0x1000>;
 			interrupts = <108 0>,
 				     <109 0>,
 				     <110 0>,
@@ -207,9 +207,9 @@
 
 		eport5: eport@40027000 {
 			compatible = "focaltech,ft9001-eport", "focaltech,ft9001-gpio";
+			reg = <0x40027000 0x1000>;
 			gpio-controller;
 			#gpio-cells = <2>;
-			reg = <0x40027000 0x1000>;
 			interrupts = <116 0>,
 				     <117 0>,
 				     <118 0>,
@@ -227,9 +227,9 @@
 
 		eport6: eport@40028000 {
 			compatible = "focaltech,ft9001-eport", "focaltech,ft9001-gpio";
+			reg = <0x40028000 0x1000>;
 			gpio-controller;
 			#gpio-cells = <2>;
-			reg = <0x40028000 0x1000>;
 			interrupts = <124 0>,
 				     <125 0>,
 				     <126 0>,
@@ -247,9 +247,9 @@
 
 		eport7: eport@40029000 {
 			compatible = "focaltech,ft9001-eport", "focaltech,ft9001-gpio";
+			reg = <0x40029000 0x1000>;
 			gpio-controller;
 			#gpio-cells = <2>;
-			reg = <0x40029000 0x1000>;
 			interrupts = <132 0>,
 				     <133 0>,
 				     <134 0>,

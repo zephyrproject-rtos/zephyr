@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
-	model = "WCH CH32H417EVT";
 	compatible = "wch,ch32h417";
+	model = "WCH CH32H417EVT";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -59,8 +59,8 @@
 };
 
 &usart8 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&usart8_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };

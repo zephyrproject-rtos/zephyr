@@ -14,8 +14,8 @@
 #include <espressif/partitions_0x2000_default_16M.dtsi>
 
 / {
-	model = "Espressif ESP32-P4-Function-EV-Board HP Core";
 	compatible = "espressif,esp32p4";
+	model = "Espressif ESP32-P4-Function-EV-Board HP Core";
 
 	chosen {
 		zephyr,sram = &sramhp;
@@ -59,10 +59,10 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &trng0 {
@@ -74,14 +74,13 @@
 };
 
 &i2c0 {
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	gt911: touch-controller@5d {
 		compatible = "goodix,gt911";
-		status = "okay";
 		reg = <0x5d>;
 		reset-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
 		irq-gpios = <&gpio0 22 GPIO_ACTIVE_HIGH>;
@@ -89,15 +88,16 @@
 		screen-height = <600>;
 		inverted-x;
 		inverted-y;
+		status = "okay";
 	};
 };
 
 &spi2 {
 	#address-cells = <1>;
 	#size-cells = <0>;
-	status = "okay";
 	pinctrl-0 = <&spim2_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &usb_serial {
@@ -150,7 +150,6 @@
 
 &sdhc {
 	sdhc0: sdhc@0 {
-		status = "okay";
 		bus-width = <4>;
 		max-bus-freq = <40000000>;
 		clk-pin = <43>;
@@ -159,6 +158,7 @@
 		d1-pin = <40>;
 		d2-pin = <41>;
 		d3-pin = <42>;
+		status = "okay";
 
 		mmc {
 			compatible = "zephyr,sdmmc-disk";
@@ -168,7 +168,6 @@
 	};
 
 	sdhc1: sdhc@1 {
-		status = "okay";
 		bus-width = <4>;
 		max-bus-freq = <40000000>;
 		clk-pin = <18>;
@@ -179,6 +178,7 @@
 		d3-pin = <17>;
 		#address-cells = <1>;
 		#size-cells = <0>;
+		status = "okay";
 
 		esp_hosted_mcu: esp-hosted-mcu@0 {
 			compatible = "espressif,esp-hosted-mcu";
@@ -211,9 +211,9 @@
 };
 
 &mipi_dsi {
-	status = "okay";
 	phy-clock = <900000000>;
 	dpi-clock-frequency = <48000000>;
+	status = "okay";
 
 	ek79007: panel-controller@0 {
 		compatible = "fitipower,ek79007";
@@ -242,17 +242,17 @@
 };
 
 &dsi_display {
-	status = "okay";
 	pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
 	width = <1024>;
 	height = <600>;
+	status = "okay";
 };
 
 &eth {
-	status = "okay";
 	phy-handle = <&phy>;
 	pinctrl-0 = <&rmii_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 zephyr_udc0: &usb_otg {

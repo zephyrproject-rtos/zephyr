@@ -23,6 +23,6 @@
 };
 
 &dma0 {
-	status = "okay";
 	dma-buf-addr-alignment = <1>;
+	status = "okay";
 };

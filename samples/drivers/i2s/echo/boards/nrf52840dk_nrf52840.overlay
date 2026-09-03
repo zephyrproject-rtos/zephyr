@@ -31,10 +31,10 @@
 };
 
 &i2c0 {
-	status = "okay";
 	pinctrl-0 = <&i2c0_default_alt>;
 	pinctrl-1 = <&i2c0_sleep_alt>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	wm8731: wm8731@1a {
 		compatible = "wolfson,wm8731";
@@ -43,7 +43,7 @@
 };
 
 i2s_rxtx: &i2s0 {
-	status = "okay";
 	pinctrl-0 = <&i2s0_default_alt>;
 	pinctrl-names = "default";
+	status = "okay";
 };

@@ -56,8 +56,8 @@
 };
 
 &vregmain {
-	status = "okay";
 	regulator-initial-mode = <NRF5X_REG_MODE_DCDC>;
+	status = "okay";
 };
 
 &grtc {
@@ -120,16 +120,15 @@ zephyr_udc0: &usbhs {
 };
 
 &spi00 {
-	status = "okay";
 
 	cs-gpios = <&gpio2 5 GPIO_ACTIVE_LOW>;
 	pinctrl-0 = <&spi00_default>;
 	pinctrl-1 = <&spi00_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	py25q64: py25q64ha@0 {
 		compatible = "jedec,spi-nor";
-		status = "disabled";
 		reg = <0>;
 		spi-max-frequency = <133000000>;
 		jedec-id = [85 20 17];
@@ -144,6 +143,7 @@ zephyr_udc0: &usbhs {
 		use-fast-read;
 		hold-gpios = <&gpio2 0 GPIO_ACTIVE_LOW>;
 		wp-gpios = <&gpio2 3 GPIO_ACTIVE_LOW>;
+		status = "disabled";
 	};
 };
 

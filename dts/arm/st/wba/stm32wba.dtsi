@@ -72,9 +72,9 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m33";
 			reg = <0>;
+			device_type = "cpu";
 			/* Do not add &standby here since CONFIG_PM_S2RAM is disabled by default */
 			cpu-power-states = <&stop0 &stop1>;
 			i-cache-line-size = <16>;
@@ -132,38 +132,38 @@
 
 	clocks {
 		clk_hse: clk-hse {
-			#clock-cells = <0>;
 			compatible = "st,stm32wba-hse-clock";
+			#clock-cells = <0>;
 			clock-frequency = <DT_FREQ_M(32)>;
 			hse-trimming = <0x0c>;
 			status = "disabled";
 		};
 
 		clk_hsi: clk-hsi {
-			#clock-cells = <0>;
 			compatible = "fixed-clock";
+			#clock-cells = <0>;
 			clock-frequency = <DT_FREQ_M(16)>;
 			status = "disabled";
 		};
 
 		clk_lse: clk-lse {
-			#clock-cells = <0>;
 			compatible = "st,stm32-lse-clock";
+			#clock-cells = <0>;
 			clock-frequency = <32768>;
 			driving-capability = <1>;
 			status = "disabled";
 		};
 
 		clk_lsi: clk-lsi {
-			#clock-cells = <0>;
 			compatible = "fixed-clock";
+			#clock-cells = <0>;
 			clock-frequency = <DT_FREQ_K(32)>;
 			status = "disabled";
 		};
 
 		pll1: pll: pll {
-			#clock-cells = <0>;
 			compatible = "st,stm32wba-pll-clock";
+			#clock-cells = <0>;
 			status = "disabled";
 		};
 	};
@@ -180,11 +180,11 @@
 		flash: flash-controller@40022000 {
 			compatible = "st,stm32-flash-controller", "st,stm32wba-flash-controller";
 			reg = <0x40022000 0x400>;
+			ranges;
 			interrupts = <6 0>;
 
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges;
 
 			flash0: flash@8000000 {
 				compatible = "st,stm32-nv-flash", "soc-nv-flash";
@@ -231,9 +231,9 @@
 
 		rcc: rcc@46020c00 {
 			compatible = "st,stm32wba-rcc";
+			reg = <0x46020c00 0x400>;
 			clocks-controller;
 			#clock-cells = <2>;
-			reg = <0x46020c00 0x400>;
 
 			rctl: reset-controller {
 				compatible = "st,stm32-rcc-rctl";
@@ -249,11 +249,11 @@
 				compatible = "st,stm32-pwr-wkupctrl";
 				#address-cells = <1>;
 				#size-cells = <0>;
-				status = "disabled";
 
 				st,max-wkup-line-idx = <8>;
 				st,has-multi-source-lines;
 				st,has-pwr-full-pupd;
+				status = "disabled";
 
 				wkup@1 {
 					reg = <0x1>;
@@ -306,10 +306,10 @@
 
 		exti: interrupt-controller@46022000 {
 			compatible = "st,stm32g0-exti", "st,stm32-exti";
+			reg = <0x46022000 0x400>;
 			interrupt-controller;
 			#interrupt-cells = <1>;
 			#address-cells = <0>;
-			reg = <0x46022000 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB7, 1)>;
 			num-lines = <32>;
 			interrupts = <11 0>, <12 0>, <13 0>, <14 0>,
@@ -328,40 +328,40 @@
 
 		pinctrl: pin-controller@42020000 {
 			compatible = "st,stm32-pinctrl";
-			#address-cells = <1>;
-			#size-cells = <1>;
 			reg = <0x42020000 0x2000>;
 			ranges;
+			#address-cells = <1>;
+			#size-cells = <1>;
 
 			gpioa: gpio@42020000 {
 				compatible = "st,stm32-gpio";
+				reg = <0x42020000 0x400>;
 				gpio-controller;
 				#gpio-cells = <2>;
-				reg = <0x42020000 0x400>;
 				clocks = <&rcc STM32_CLOCK(AHB2, 0)>;
 			};
 
 			gpiob: gpio@42020400 {
 				compatible = "st,stm32-gpio";
+				reg = <0x42020400 0x400>;
 				gpio-controller;
 				#gpio-cells = <2>;
-				reg = <0x42020400 0x400>;
 				clocks = <&rcc STM32_CLOCK(AHB2, 1)>;
 			};
 
 			gpioc: gpio@42020800 {
 				compatible = "st,stm32-gpio";
+				reg = <0x42020800 0x400>;
 				gpio-controller;
 				#gpio-cells = <2>;
-				reg = <0x42020800 0x400>;
 				clocks = <&rcc STM32_CLOCK(AHB2, 2)>;
 			};
 
 			gpioh: gpio@42021c00 {
 				compatible = "st,stm32-gpio";
+				reg = <0x42021c00 0x400>;
 				gpio-controller;
 				#gpio-cells = <2>;
-				reg = <0x42021c00 0x400>;
 				clocks = <&rcc STM32_CLOCK(AHB2, 7)>;
 			};
 		};
@@ -402,23 +402,23 @@
 
 		spi3: spi@46002000 {
 			compatible = "st,stm32h7-spi", "st,stm32-spi-fifo", "st,stm32-spi";
+			reg = <0x46002000 0x400>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x46002000 0x400>;
 			interrupts = <63 0>;
 			clocks = <&rcc STM32_CLOCK(APB7, 5)>;
-			st,spi-data-width = "limited-8-16-bit";
 			fifo-size = <8>;
 			fifo-max-transfer-size = <1023>;
+			st,spi-data-width = "limited-8-16-bit";
 			status = "disabled";
 		};
 
 		i2c1: i2c@40005400 {
 			compatible = "st,stm32-i2c-v2";
+			reg = <0x40005400 0x400>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40005400 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 21)>;
 			interrupts = <43 0>, <44 0>;
 			interrupt-names = "event", "error";
@@ -427,10 +427,10 @@
 
 		i2c3: i2c@46002800 {
 			compatible = "st,stm32-i2c-v2";
+			reg = <0x46002800 0x400>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x46002800 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB7, 7)>;
 			interrupts = <54 0>, <55 0>;
 			interrupt-names = "event", "error";
@@ -455,8 +455,8 @@
 
 			pwm {
 				compatible = "st,stm32-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 		};
 
@@ -477,8 +477,8 @@
 
 			pwm {
 				compatible = "st,stm32-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 		};
 
@@ -499,8 +499,8 @@
 
 			pwm {
 				compatible = "st,stm32-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 		};
 
@@ -512,9 +512,9 @@
 			clock-names = "adcx", "adc_ker";
 			interrupts = <65 0>;
 			#io-channel-cells = <1>;
-			st,adc-resolutions = <12 10 8 6>;
 			sampling-times = <2 4 8 13 20 40 80 815>;
 			num-sampling-time-common-channels = <2>;
+			st,adc-resolutions = <12 10 8 6>;
 			st,adc-clock-source = "ASYNC";
 			st,adc-sequencer = "fixed";
 			st,adc-oversampler = "minimal";
@@ -524,9 +524,9 @@
 
 		lptim1: timers@46004400 {
 			compatible = "st,stm32u5-lptim", "st,stm32-lptim";
+			reg = <0x46004400 0x400>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x46004400 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB7, 11)>;
 			resets = <&rctl STM32_RESET(APB7, 11)>;
 			interrupts = <49 0>;
@@ -536,9 +536,9 @@
 
 		lptim2: timers@40009400 {
 			compatible = "st,stm32u5-lptim", "st,stm32-lptim";
+			reg = <0x40009400 0x400>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40009400 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1_2, 5)>;
 			resets = <&rctl STM32_RESET(APB1H, 5)>;
 			interrupts = <50 0>;

@@ -19,27 +19,27 @@
 
 	sram1: memory@10000000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		zephyr,memory-region = "SRAM1";
 		reg = <0x10000000 DT_SIZE_K(64)>;
+		zephyr,memory-region = "SRAM1";
 	};
 
 	sram2: memory@20030000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		zephyr,memory-region = "SRAM2";
 		reg = <0x20030000 DT_SIZE_K(128)>;
+		zephyr,memory-region = "SRAM2";
 	};
 
 	clocks {
 		clk_hsi48: clk-hsi48 {
-			#clock-cells = <0>;
 			compatible = "fixed-clock";
+			#clock-cells = <0>;
 			clock-frequency = <DT_FREQ_M(48)>;
 			status = "disabled";
 		};
 
 		pllsai2: pllsai2 {
-			#clock-cells = <0>;
 			compatible = "st,stm32l4-pll-clock";
+			#clock-cells = <0>;
 			status = "disabled";
 		};
 	};
@@ -67,41 +67,41 @@
 
 			gpiod: gpio@48000c00 {
 				compatible = "st,stm32-gpio";
+				reg = <0x48000c00 0x400>;
 				gpio-controller;
 				#gpio-cells = <2>;
-				reg = <0x48000c00 0x400>;
 				clocks = <&rcc STM32_CLOCK(AHB2, 3)>;
 			};
 
 			gpioe: gpio@48001000 {
 				compatible = "st,stm32-gpio";
+				reg = <0x48001000 0x400>;
 				gpio-controller;
 				#gpio-cells = <2>;
-				reg = <0x48001000 0x400>;
 				clocks = <&rcc STM32_CLOCK(AHB2, 4)>;
 			};
 
 			gpiof: gpio@48001400 {
 				compatible = "st,stm32-gpio";
+				reg = <0x48001400 0x400>;
 				gpio-controller;
 				#gpio-cells = <2>;
-				reg = <0x48001400 0x400>;
 				clocks = <&rcc STM32_CLOCK(AHB2, 5)>;
 			};
 
 			gpiog: gpio@48001800 {
 				compatible = "st,stm32-gpio";
+				reg = <0x48001800 0x400>;
 				gpio-controller;
 				#gpio-cells = <2>;
-				reg = <0x48001800 0x400>;
 				clocks = <&rcc STM32_CLOCK(AHB2, 6)>;
 			};
 
 			gpioi: gpio@48002000 {
 				compatible = "st,stm32-gpio";
+				reg = <0x48002000 0x400>;
 				gpio-controller;
 				#gpio-cells = <2>;
-				reg = <0x48002000 0x400>;
 				clocks = <&rcc STM32_CLOCK(AHB2, 8)>;
 			};
 		};
@@ -135,10 +135,10 @@
 
 		i2c2: i2c@40005800 {
 			compatible = "st,stm32-i2c-v2";
+			reg = <0x40005800 0x400>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40005800 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 22)>;
 			interrupts = <33 0>, <34 0>;
 			interrupt-names = "event", "error";
@@ -147,10 +147,10 @@
 
 		i2c4: i2c@40008400 {
 			compatible = "st,stm32-i2c-v2";
+			reg = <0x40008400 0x400>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40008400 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1_2, 1)>;
 			interrupts = <84 0>, <83 0>;
 			interrupt-names = "event", "error";
@@ -159,9 +159,9 @@
 
 		spi2: spi@40003800 {
 			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
+			reg = <0x40003800 0x400>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40003800 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 14)>;
 			interrupts = <36 0>;
 			st,spi-data-width = "full-4-to-16-bit";
@@ -170,9 +170,9 @@
 
 		spi3: spi@40003c00 {
 			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
+			reg = <0x40003c00 0x400>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40003c00 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 15)>;
 			interrupts = <51 0>;
 			st,spi-data-width = "full-4-to-16-bit";
@@ -192,8 +192,8 @@
 
 			pwm {
 				compatible = "st,stm32-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 
 			counter {
@@ -221,8 +221,8 @@
 
 			pwm {
 				compatible = "st,stm32-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 
 			counter {
@@ -250,8 +250,8 @@
 
 			pwm {
 				compatible = "st,stm32-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 
 			counter {
@@ -279,8 +279,8 @@
 
 			pwm {
 				compatible = "st,stm32-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 
 			counter {
@@ -302,8 +302,8 @@
 
 			pwm {
 				compatible = "st,stm32-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 
 			counter {
@@ -331,8 +331,8 @@
 
 			pwm {
 				compatible = "st,stm32-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 
 			counter {
@@ -384,8 +384,8 @@
 
 		dmamux1: dmamux@40020800 {
 			compatible = "st,stm32-dmamux";
-			#dma-cells = <3>;
 			reg = <0x40020800 0x400>;
+			#dma-cells = <3>;
 			interrupts = <94 0>;
 			clocks = <&rcc STM32_CLOCK(AHB1, 2)>;
 			dma-channels = <14>;
@@ -433,8 +433,8 @@
 			compatible = "st,stm32-dac";
 			reg = <0x40007400 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 29)>;
-			status = "disabled";
 			#io-channel-cells = <1>;
+			status = "disabled";
 		};
 
 		octospi1: spi@a0001000 {
@@ -473,10 +473,10 @@
 
 		sai1: sai1@40015400 {
 			compatible = "st,stm32-sai";
-			#address-cells = <1>;
-			#size-cells = <1>;
 			reg = <0x40015400 0x400>;
 			ranges;
+			#address-cells = <1>;
+			#size-cells = <1>;
 			clocks = <&rcc STM32_CLOCK(APB2, 21)>,
 				 <&rcc STM32_SRC_PLLSAI1_P SAI1_SEL(0)>;
 			clock-names = "sai_ck", "sai_ker_ck";
@@ -501,10 +501,10 @@
 
 		sai2: sai2@40015800 {
 			compatible = "st,stm32-sai";
-			#address-cells = <1>;
-			#size-cells = <1>;
 			reg = <0x40015800 0x400>;
 			ranges;
+			#address-cells = <1>;
+			#size-cells = <1>;
 			clocks = <&rcc STM32_CLOCK(APB2, 22)>,
 				 <&rcc STM32_SRC_PLLSAI1_P SAI2_SEL(0)>;
 			clock-names = "sai_ck", "sai_ker_ck";

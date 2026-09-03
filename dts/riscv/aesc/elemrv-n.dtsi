@@ -11,10 +11,10 @@
 	#size-cells = <1>;
 
 	soc {
-		#address-cells = <1>;
-		#size-cells = <1>;
 		compatible = "aesc,elemrv-n-soc", "simple-bus";
 		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
 
 		gpio0: gpio@f0000000 {
 			compatible = "aesc,gpio";

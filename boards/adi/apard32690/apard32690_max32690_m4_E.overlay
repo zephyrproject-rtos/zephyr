@@ -34,8 +34,8 @@ pmod_spi: &spi3 {
 			#size-cells = <0>;
 
 			ethernet-phy@1 {
-				reg = <0x1>;
 				compatible = "adi,adin2111-phy";
+				reg = <0x1>;
 			};
 		};
 	};

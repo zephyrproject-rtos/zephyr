@@ -58,8 +58,8 @@
 			system-interrupts = <22 2>;
 			gpio-controller;
 			ngpios = <4>;
-			status = "disabled";
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		gpio_prt1: gpio@40310080 {
@@ -68,8 +68,8 @@
 			system-interrupts = <23 2>;
 			gpio-controller;
 			ngpios = <7>;
-			status = "disabled";
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		gpio_prt2: gpio@40310100 {
@@ -78,8 +78,8 @@
 			system-interrupts = <24 2>;
 			gpio-controller;
 			ngpios = <8>;
-			status = "disabled";
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		gpio_prt3: gpio@40310180 {
@@ -88,8 +88,8 @@
 			system-interrupts = <25 2>;
 			gpio-controller;
 			ngpios = <8>;
-			status = "disabled";
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		gpio_prt4: gpio@40310200 {
@@ -98,8 +98,8 @@
 			system-interrupts = <26 2>;
 			gpio-controller;
 			ngpios = <7>;
-			status = "disabled";
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		gpio_prt5: gpio@40310280 {
@@ -108,8 +108,8 @@
 			system-interrupts = <27 2>;
 			gpio-controller;
 			ngpios = <6>;
-			status = "disabled";
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		gpio_prt6: gpio@40310300 {
@@ -118,8 +118,8 @@
 			system-interrupts = <28 2>;
 			gpio-controller;
 			ngpios = <8>;
-			status = "disabled";
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		gpio_prt7: gpio@40310380 {
@@ -128,8 +128,8 @@
 			system-interrupts = <29 2>;
 			gpio-controller;
 			ngpios = <8>;
-			status = "disabled";
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		gpio_prt8: gpio@40310400 {
@@ -138,8 +138,8 @@
 			system-interrupts = <30 2>;
 			gpio-controller;
 			ngpios = <5>;
-			status = "disabled";
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		gpio_prt9: gpio@40310480 {
@@ -148,8 +148,8 @@
 			system-interrupts = <31 2>;
 			gpio-controller;
 			ngpios = <4>;
-			status = "disabled";
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		gpio_prt10: gpio@40310500 {
@@ -158,8 +158,8 @@
 			system-interrupts = <32 2>;
 			gpio-controller;
 			ngpios = <8>;
-			status = "disabled";
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		gpio_prt11: gpio@40310580 {
@@ -168,8 +168,8 @@
 			system-interrupts = <33 2>;
 			gpio-controller;
 			ngpios = <3>;
-			status = "disabled";
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		gpio_prt12: gpio@40310600 {
@@ -178,8 +178,8 @@
 			system-interrupts = <34 2>;
 			gpio-controller;
 			ngpios = <8>;
-			status = "disabled";
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		gpio_prt13: gpio@40310680 {
@@ -188,8 +188,8 @@
 			system-interrupts = <35 2>;
 			gpio-controller;
 			ngpios = <8>;
-			status = "disabled";
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		gpio_prt14: gpio@40310700 {
@@ -198,8 +198,8 @@
 			system-interrupts = <36 2>;
 			gpio-controller;
 			ngpios = <8>;
-			status = "disabled";
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		gpio_prt15: gpio@40310780 {
@@ -208,8 +208,8 @@
 			system-interrupts = <37 2>;
 			gpio-controller;
 			ngpios = <4>;
-			status = "disabled";
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		gpio_prt16: gpio@40310800 {
@@ -218,8 +218,8 @@
 			system-interrupts = <38 2>;
 			gpio-controller;
 			ngpios = <8>;
-			status = "disabled";
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		gpio_prt17: gpio@40310880 {
@@ -228,8 +228,8 @@
 			system-interrupts = <39 2>;
 			gpio-controller;
 			ngpios = <8>;
-			status = "disabled";
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		gpio_prt18: gpio@40310900 {
@@ -238,8 +238,8 @@
 			system-interrupts = <40 2>;
 			gpio-controller;
 			ngpios = <8>;
-			status = "disabled";
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		gpio_prt19: gpio@40310980 {
@@ -248,8 +248,8 @@
 			system-interrupts = <41 2>;
 			gpio-controller;
 			ngpios = <5>;
-			status = "disabled";
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		gpio_prt20: gpio@40310a00 {
@@ -258,8 +258,8 @@
 			system-interrupts = <42 2>;
 			gpio-controller;
 			ngpios = <8>;
-			status = "disabled";
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		gpio_prt21: gpio@40310a80 {
@@ -268,8 +268,8 @@
 			system-interrupts = <43 2>;
 			gpio-controller;
 			ngpios = <8>;
-			status = "disabled";
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		gpio_prt22: gpio@40310b00 {
@@ -278,8 +278,8 @@
 			system-interrupts = <44 2>;
 			gpio-controller;
 			ngpios = <8>;
-			status = "disabled";
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		gpio_prt23: gpio@40310b80 {
@@ -288,8 +288,8 @@
 			system-interrupts = <45 2>;
 			gpio-controller;
 			ngpios = <8>;
-			status = "disabled";
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		gpio_prt24: gpio@40310c00 {
@@ -298,8 +298,8 @@
 			system-interrupts = <52 2>;
 			gpio-controller;
 			ngpios = <5>;
-			status = "disabled";
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		gpio_prt25: gpio@40310c80 {
@@ -308,8 +308,8 @@
 			system-interrupts = <53 2>;
 			gpio-controller;
 			ngpios = <8>;
-			status = "disabled";
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		gpio_prt26: gpio@40310d00 {
@@ -318,8 +318,8 @@
 			system-interrupts = <54 2>;
 			gpio-controller;
 			ngpios = <8>;
-			status = "disabled";
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		gpio_prt27: gpio@40310d80 {
@@ -328,8 +328,8 @@
 			system-interrupts = <55 2>;
 			gpio-controller;
 			ngpios = <8>;
-			status = "disabled";
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		gpio_prt28: gpio@40310e00 {
@@ -338,8 +338,8 @@
 			system-interrupts = <46 2>;
 			gpio-controller;
 			ngpios = <8>;
-			status = "disabled";
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		gpio_prt29: gpio@40310e80 {
@@ -348,8 +348,8 @@
 			system-interrupts = <47 2>;
 			gpio-controller;
 			ngpios = <8>;
-			status = "disabled";
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		gpio_prt30: gpio@40310f00 {
@@ -358,8 +358,8 @@
 			system-interrupts = <48 2>;
 			gpio-controller;
 			ngpios = <4>;
-			status = "disabled";
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		gpio_prt31: gpio@40310f80 {
@@ -368,8 +368,8 @@
 			system-interrupts = <49 2>;
 			gpio-controller;
 			ngpios = <3>;
-			status = "disabled";
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		gpio_prt32: gpio@40311000 {
@@ -378,8 +378,8 @@
 			system-interrupts = <50 2>;
 			gpio-controller;
 			ngpios = <8>;
-			status = "disabled";
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		gpio_prt33: gpio@40311080 {
@@ -388,8 +388,8 @@
 			system-interrupts = <56 2>;
 			gpio-controller;
 			ngpios = <8>;
-			status = "disabled";
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		gpio_prt34: gpio@40311100 {
@@ -398,8 +398,8 @@
 			system-interrupts = <57 2>;
 			gpio-controller;
 			ngpios = <8>;
-			status = "disabled";
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		scb0: scb@40600000 {
@@ -2407,9 +2407,9 @@
 		};
 
 		dma0: dw@40280000 {
-			#dma-cells = <1>;
 			compatible = "infineon,dma";
 			reg = <0x40280000 0x10000>;
+			#dma-cells = <1>;
 			dma-channels = <143>;
 			system-interrupts = <227 6>, /* CH0 */
 					    <228 6>, /* CH1 */
@@ -2558,9 +2558,9 @@
 		};
 
 		dma1: dw@40290000 {
-			#dma-cells = <1>;
 			compatible = "infineon,dma";
 			reg = <0x40290000 0x10000>;
+			#dma-cells = <1>;
 			dma-channels = <65>;
 			system-interrupts = <370 6>, /* CH0 */
 					    <371 6>, /* CH1 */

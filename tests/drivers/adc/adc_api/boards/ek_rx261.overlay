@@ -13,9 +13,9 @@
 &adc {
 	pinctrl-0 = <&adc_default>;
 	pinctrl-names = "default";
-	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 
 	channel@0 {
 		reg = <0>;

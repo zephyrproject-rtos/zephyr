@@ -16,15 +16,15 @@
 
 	cmdq-buffer-location = "SRAM_NO_CACHE";
 	cmdq-buffer-size = <256>;
-
-	status = "okay";
 	ce-gpios = <&gpio32_63 31 GPIO_ACTIVE_LOW>;
 
+	status = "okay";
+
 	mspi_device: mspi_device@0 {
-		status = "okay";
 		compatible = "zephyr,emul-device-mspi";
 		reg = <0x0>;
 		mspi-max-frequency = <48000000>;
+		status = "okay";
 	};
 };
 

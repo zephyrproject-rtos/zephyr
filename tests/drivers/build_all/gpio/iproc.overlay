@@ -23,8 +23,8 @@
 
 			test_gpio_iproc: gpio@c10fee {
 				compatible = "brcm,iproc-gpio";
-				gpio-controller;
 				reg = <0xc10fee 0x4c>;
+				gpio-controller;
 				ngpios = <6>;
 				interrupts = <28 1>;
 				#gpio-cells = <0x2>;

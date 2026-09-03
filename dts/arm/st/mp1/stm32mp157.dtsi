@@ -24,9 +24,9 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m4";
 			reg = <0>;
+			device_type = "cpu";
 		};
 	};
 
@@ -38,15 +38,15 @@
 
 	mcusram: memory1@10000000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		zephyr,memory-region = "MCUSRAM";
 		reg = <0x10000000 DT_SIZE_K(320)>;
+		zephyr,memory-region = "MCUSRAM";
 	};
 
 	clocks {
 		/* NOTE: clocks must be enabled by Cortex-A */
 		clk_hse: clk-hse {
-			#clock-cells = <0>;
 			compatible = "st,stm32-hse-clock";
+			#clock-cells = <0>;
 			status = "disabled";
 		};
 	};
@@ -68,10 +68,10 @@
 
 		exti: interrupt-controller@5000d000 {
 			compatible = "st,stm32g0-exti", "st,stm32-exti";
+			reg = <0x5000d000 0x400>;
 			interrupt-controller;
 			#interrupt-cells = <1>;
 			#address-cells = <0>;
-			reg = <0x5000d000 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB3, 11)>;
 			num-lines = <96>;
 			interrupts = <6 0>, <7 0>, <8 0>, <9 0>,
@@ -194,8 +194,8 @@
 
 		dma1: dma@48000000 {
 			compatible = "st,stm32-dma-v1";
-			#dma-cells = <4>;
 			reg = <0x48000000 0x400>;
+			#dma-cells = <4>;
 			clocks = <&rcc STM32_CLOCK(AHB2, 0)>;
 			interrupts = <11 0>, <12 0>, <13 0>, <14 0>, <15 0>, <16 0>, <17 0>, <47 0>;
 			dma-offset = <0>;
@@ -205,8 +205,8 @@
 
 		dma2: dma@48001000 {
 			compatible = "st,stm32-dma-v1";
-			#dma-cells = <4>;
 			reg = <0x48001000 0x400>;
+			#dma-cells = <4>;
 			clocks = <&rcc STM32_CLOCK(AHB2, 1)>;
 			interrupts = <56 0>, <57 0>, <58 0>, <59 0>, <60 0>, <68 0>, <69 0>, <70 0>;
 			dma-offset = <8>;
@@ -216,8 +216,8 @@
 
 		dmamux: dmamux@48002000 {
 			compatible = "st,stm32-dmamux";
-			#dma-cells = <3>;
 			reg = <0x48002000 0x400>;
+			#dma-cells = <3>;
 			clocks = <&rcc STM32_CLOCK(AHB2, 2)>;
 			interrupts = <102 0>;
 			dma-channels = <16>;
@@ -233,9 +233,9 @@
 			#size-cells = <0>;
 			clocks = <&rcc STM32_CLOCK(APB2, 8)>;
 			interrupts = <35 0>;
-			st,spi-data-width = "full-4-to-32-bit";
 			fifo-size = <16>;
 			fifo-max-transfer-size = <65535>;
+			st,spi-data-width = "full-4-to-32-bit";
 			status = "disabled";
 		};
 
@@ -246,9 +246,9 @@
 			#size-cells = <0>;
 			clocks = <&rcc STM32_CLOCK(APB1, 11)>;
 			interrupts = <36 0>;
-			st,spi-data-width = "full-4-to-32-bit";
 			fifo-size = <16>;
 			fifo-max-transfer-size = <65535>;
+			st,spi-data-width = "full-4-to-32-bit";
 			status = "disabled";
 		};
 
@@ -259,9 +259,9 @@
 			#size-cells = <0>;
 			clocks = <&rcc STM32_CLOCK(APB1, 12)>;
 			interrupts = <51 0>;
-			st,spi-data-width = "full-4-to-32-bit";
 			fifo-size = <16>;
 			fifo-max-transfer-size = <65535>;
+			st,spi-data-width = "full-4-to-32-bit";
 			status = "disabled";
 		};
 
@@ -272,9 +272,9 @@
 			#size-cells = <0>;
 			clocks = <&rcc STM32_CLOCK(APB2, 9)>;
 			interrupts = <84 0>;
-			st,spi-data-width = "full-4-to-16-bit";
 			fifo-size = <8>;
 			fifo-max-transfer-size = <65535>;
+			st,spi-data-width = "full-4-to-16-bit";
 			status = "disabled";
 		};
 
@@ -285,9 +285,9 @@
 			#size-cells = <0>;
 			clocks = <&rcc STM32_CLOCK(APB2, 10)>;
 			interrupts = <85 0>;
-			st,spi-data-width = "full-4-to-16-bit";
 			fifo-size = <8>;
 			fifo-max-transfer-size = <65535>;
+			st,spi-data-width = "full-4-to-16-bit";
 			status = "disabled";
 		};
 
@@ -356,8 +356,8 @@
 
 		i2c5: i2c@40015000 {
 			compatible = "st,stm32-i2c-v2";
-			clock-frequency = <I2C_BITRATE_STANDARD>;
 			reg = <0x40015000 0x400>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			clocks = <&rcc STM32_CLOCK(APB1, 24)>;
@@ -378,8 +378,8 @@
 
 			pwm {
 				compatible = "st,stm32-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 
 			counter {
@@ -400,8 +400,8 @@
 
 			pwm {
 				compatible = "st,stm32-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 
 			counter {

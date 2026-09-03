@@ -15,8 +15,8 @@
 / {
 	soc {
 		flash-controller@407e0000 {
-			flash-hardware-version = <3>;
 			ranges;
+			flash-hardware-version = <3>;
 			#erase-block-cells = <2>;
 
 			flash0: flash@0 {

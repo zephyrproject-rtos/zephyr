@@ -22,9 +22,9 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m33";
 			reg = <0>;
+			device_type = "cpu";
 			clock-frequency = <DT_FREQ_M(200)>;
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -198,442 +198,442 @@
 
 			gpio0: gpio@0 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x0>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <2>;
-				reg = <0x0>;
 				status = "disabled";
 			};
 
 			gpio1: gpio@100 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x100>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <2>;
-				reg = <0x100>;
 				status = "disabled";
 			};
 
 			gpio2: gpio@200 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x200>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <2>;
-				reg = <0x200>;
 				status = "disabled";
 			};
 
 			gpio3: gpio@300 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x300>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <2>;
-				reg = <0x300>;
 				status = "disabled";
 			};
 
 			gpio4: gpio@400 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x400>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <2>;
-				reg = <0x400>;
 				status = "disabled";
 			};
 
 			gpio5: gpio@500 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x500>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <3>;
-				reg = <0x500>;
 				status = "disabled";
 			};
 
 			gpio6: gpio@600 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x600>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <2>;
-				reg = <0x600>;
 				status = "disabled";
 			};
 
 			gpio7: gpio@700 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x700>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <3>;
-				reg = <0x700>;
 				status = "disabled";
 			};
 
 			gpio8: gpio@800 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x800>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <3>;
-				reg = <0x800>;
 				status = "disabled";
 			};
 
 			gpio9: gpio@900 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x900>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <2>;
-				reg = <0x900>;
 				status = "disabled";
 			};
 
 			gpio10: gpio@a00 {
 				compatible = "renesas,rz-gpio";
+				reg = <0xa00>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <2>;
-				reg = <0xa00>;
 				status = "disabled";
 			};
 
 			gpio11: gpio@b00 {
 				compatible = "renesas,rz-gpio";
+				reg = <0xb00>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <2>;
-				reg = <0xb00>;
 				status = "disabled";
 			};
 
 			gpio12: gpio@c00 {
 				compatible = "renesas,rz-gpio";
+				reg = <0xc00>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <2>;
-				reg = <0xc00>;
 				status = "disabled";
 			};
 
 			gpio13: gpio@d00 {
 				compatible = "renesas,rz-gpio";
+				reg = <0xd00>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <3>;
-				reg = <0xd00>;
 				status = "disabled";
 			};
 
 			gpio14: gpio@e00 {
 				compatible = "renesas,rz-gpio";
+				reg = <0xe00>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <2>;
-				reg = <0xe00>;
 				status = "disabled";
 			};
 
 			gpio15: gpio@f00 {
 				compatible = "renesas,rz-gpio";
+				reg = <0xf00>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <2>;
-				reg = <0xf00>;
 				status = "disabled";
 			};
 
 			gpio16: gpio@1000 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x1000>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <2>;
-				reg = <0x1000>;
 				status = "disabled";
 			};
 
 			gpio17: gpio@1100 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x1100>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <3>;
-				reg = <0x1100>;
 				status = "disabled";
 			};
 
 			gpio18: gpio@1200 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x1200>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <2>;
-				reg = <0x1200>;
 				status = "disabled";
 			};
 
 			gpio19: gpio@1300 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x1300>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <2>;
-				reg = <0x1300>;
 				status = "disabled";
 			};
 
 			gpio20: gpio@1400 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x1400>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <3>;
-				reg = <0x1400>;
 				status = "disabled";
 			};
 
 			gpio21: gpio@1500 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x1500>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <2>;
-				reg = <0x1500>;
 				status = "disabled";
 			};
 
 			gpio22: gpio@1600 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x1600>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <2>;
-				reg = <0x1600>;
 				status = "disabled";
 			};
 
 			gpio23: gpio@1700 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x1700>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <2>;
-				reg = <0x1700>;
 				status = "disabled";
 			};
 
 			gpio24: gpio@1800 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x1800>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <2>;
-				reg = <0x1800>;
 				status = "disabled";
 			};
 
 			gpio25: gpio@1900 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x1900>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <2>;
-				reg = <0x1900>;
 				status = "disabled";
 			};
 
 			gpio26: gpio@1a00 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x1a00>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <2>;
-				reg = <0x1a00>;
 				status = "disabled";
 			};
 
 			gpio27: gpio@1b00 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x1b00>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <2>;
-				reg = <0x1b00>;
 				status = "disabled";
 			};
 
 			gpio28: gpio@1c00 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x1c00>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <2>;
-				reg = <0x1c00>;
 				status = "disabled";
 			};
 
 			gpio29: gpio@1d00 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x1d00>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <2>;
-				reg = <0x1d00>;
 				status = "disabled";
 			};
 
 			gpio30: gpio@1e00 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x1e00>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <2>;
-				reg = <0x1e00>;
 				status = "disabled";
 			};
 
 			gpio31: gpio@1f00 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x1f00>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <2>;
-				reg = <0x1f00>;
 				status = "disabled";
 			};
 
 			gpio32: gpio@2000 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x2000>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <2>;
-				reg = <0x2000>;
 				status = "disabled";
 			};
 
 			gpio33: gpio@2100 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x2100>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <2>;
-				reg = <0x2100>;
 				status = "disabled";
 			};
 
 			gpio34: gpio@2200 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x2200>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <2>;
-				reg = <0x2200>;
 				status = "disabled";
 			};
 
 			gpio35: gpio@2300 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x2300>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <2>;
-				reg = <0x2300>;
 				status = "disabled";
 			};
 
 			gpio36: gpio@2400 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x2400>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <2>;
-				reg = <0x2400>;
 				status = "disabled";
 			};
 
 			gpio37: gpio@2500 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x2500>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <3>;
-				reg = <0x2500>;
 				status = "disabled";
 			};
 
 			gpio38: gpio@2600 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x2600>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <2>;
-				reg = <0x2600>;
 				status = "disabled";
 			};
 
 			gpio39: gpio@2700 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x2700>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <3>;
-				reg = <0x2700>;
 				status = "disabled";
 			};
 
 			gpio40: gpio@2800 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x2800>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <3>;
-				reg = <0x2800>;
 				status = "disabled";
 			};
 
 			gpio41: gpio@2900 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x2900>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <2>;
-				reg = <0x2900>;
 				status = "disabled";
 			};
 
 			gpio42: gpio@2a00 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x2a00>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <5>;
-				reg = <0x2a00>;
 				status = "disabled";
 			};
 
 			gpio43: gpio@2b00 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x2b00>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <4>;
-				reg = <0x2b00>;
 				status = "disabled";
 			};
 
 			gpio44: gpio@2c00 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x2c00>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <4>;
-				reg = <0x2c00>;
 				status = "disabled";
 			};
 
 			gpio45: gpio@2d00 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x2d00>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <4>;
-				reg = <0x2d00>;
 				status = "disabled";
 			};
 
 			gpio46: gpio@2e00 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x2e00>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <4>;
-				reg = <0x2e00>;
 				status = "disabled";
 			};
 
 			gpio47: gpio@2f00 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x2f00>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <4>;
-				reg = <0x2f00>;
 				status = "disabled";
 			};
 
 			gpio48: gpio@3000 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x3000>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <5>;
-				reg = <0x3000>;
 				status = "disabled";
 			};
 		};
@@ -680,8 +680,8 @@
 
 		scif0: serial@4004b800 {
 			compatible = "renesas,rz-scif-uart";
-			channel = <0>;
 			reg = <0x4004b800 0x18>;
+			channel = <0>;
 			interrupts = <380 1>, <381 1>, <382 1>, <383 1>, <384 1>;
 			interrupt-names = "eri", "bri", "rxi", "txi", "tei";
 			status = "disabled";
@@ -689,8 +689,8 @@
 
 		scif1: serial@4004bc00 {
 			compatible = "renesas,rz-scif-uart";
-			channel = <1>;
 			reg = <0x4004bc00 0x18>;
+			channel = <1>;
 			interrupts = <385 1>, <386 1>, <387 1>, <388 1>, <389 1>;
 			interrupt-names = "eri", "bri", "rxi", "txi", "tei";
 			status = "disabled";
@@ -698,8 +698,8 @@
 
 		scif2: serial@4004c000 {
 			compatible = "renesas,rz-scif-uart";
-			channel = <2>;
 			reg = <0x4004c000 0x18>;
+			channel = <2>;
 			interrupts = <390 1>, <391 1>, <392 1>, <393 1>, <394 1>;
 			interrupt-names = "eri", "bri", "rxi", "txi", "tei";
 			status = "disabled";
@@ -707,8 +707,8 @@
 
 		scif3: serial@4004c400 {
 			compatible = "renesas,rz-scif-uart";
-			channel = <3>;
 			reg = <0x4004c400 0x18>;
+			channel = <3>;
 			interrupts = <395 1>, <396 1>, <397 1>, <398 1>, <399 1>;
 			interrupt-names = "eri", "bri", "rxi", "txi", "tei";
 			status = "disabled";
@@ -716,8 +716,8 @@
 
 		scif4: serial@4004c800 {
 			compatible = "renesas,rz-scif-uart";
-			channel = <4>;
 			reg = <0x4004c800 0x18>;
+			channel = <4>;
 			interrupts = <400 1>, <401 1>, <402 1>, <403 1>, <404 1>;
 			interrupt-names = "eri", "bri", "rxi", "txi", "tei";
 			status = "disabled";
@@ -1237,11 +1237,11 @@
 
 		i2c0: i2c@40058000 {
 			compatible = "renesas,rz-riic";
+			reg = <0x40058000 DT_SIZE_K(1)>;
 			channel = <0>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40058000 DT_SIZE_K(1)>;
 			interrupts = <348 1>, <349 1>, <350 1>, <351 1>,
 				     <352 1>, <353 1>, <354 1>, <355 1>;
 			interrupt-names = "rxi", "txi", "tei", "naki", "spi", "sti", "ali", "tmoi";
@@ -1250,11 +1250,11 @@
 
 		i2c1: i2c@40058400 {
 			compatible = "renesas,rz-riic";
+			reg = <0x40058400 DT_SIZE_K(1)>;
 			channel = <1>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40058400 DT_SIZE_K(1)>;
 			interrupts = <356 1>, <357 1>, <358 1>, <359 1>,
 				     <360 1>, <361 1>, <362 1>, <363 1>;
 			interrupt-names = "rxi", "txi", "tei", "naki", "spi", "sti", "ali", "tmoi";
@@ -1263,11 +1263,11 @@
 
 		i2c2: i2c@40058800 {
 			compatible = "renesas,rz-riic";
+			reg = <0x40058800 DT_SIZE_K(1)>;
 			channel = <2>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40058800 DT_SIZE_K(1)>;
 			interrupts = <364 1>, <365 1>, <366 1>, <367 1>,
 				     <368 1>, <369 1>, <370 1>, <371 1>;
 			interrupt-names = "rxi", "txi", "tei", "naki", "spi", "sti", "ali", "tmoi";
@@ -1276,11 +1276,11 @@
 
 		i2c3: i2c@40058c00 {
 			compatible = "renesas,rz-riic";
+			reg = <0x40058c00 DT_SIZE_K(1)>;
 			channel = <3>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40058c00 DT_SIZE_K(1)>;
 			interrupts = <372 1>, <373 1>, <374 1>, <375 1>,
 				     <376 1>, <377 1>, <378 1>, <379 1>;
 			interrupt-names = "rxi", "txi", "tei", "naki", "spi", "sti", "ali", "tmoi";
@@ -1290,8 +1290,8 @@
 		/* CA55_0 <-> CM33 */
 		mbox1: mhu@40400020 {
 			compatible = "renesas,rz-mhu-mbox";
-			channel = <1>;
 			reg = <0x40400020 0x20>;
+			channel = <1>;
 			tx-mask = <0x00000002>; /* Channel 1 is for TX */
 			rx-mask = <0x00000001>; /* Channel 0 is for RX */
 			channels-count = <2>;
@@ -1304,8 +1304,8 @@
 		/* CA55_1 <-> CM33 */
 		mbox3: mhu@40400060 {
 			compatible = "renesas,rz-mhu-mbox";
-			channel = <3>;
 			reg = <0x40400060 0x20>;
+			channel = <3>;
 			tx-mask = <0x00000002>; /* Channel 1 is for TX */
 			rx-mask = <0x00000001>; /* Channel 0 is for RX */
 			channels-count = <2>;
@@ -1318,8 +1318,8 @@
 		/* CM33 <-> CA55_0 */
 		mbox4: mhu@40400080 {
 			compatible = "renesas,rz-mhu-mbox";
-			channel = <4>;
 			reg = <0x40400080 0x20>;
+			channel = <4>;
 			tx-mask = <0x00000002>; /* Channel 1 is for TX */
 			rx-mask = <0x00000001>; /* Channel 0 is for RX */
 			channels-count = <2>;
@@ -1332,8 +1332,8 @@
 		/* CM33 <-> CA55_1 */
 		mbox5: mhu@404000a0 {
 			compatible = "renesas,rz-mhu-mbox";
-			channel = <5>;
 			reg = <0x404000a0 0x20>;
+			channel = <5>;
 			tx-mask = <0x00000002>; /* Channel 1 is for TX */
 			rx-mask = <0x00000001>; /* Channel 0 is for RX */
 			channels-count = <2>;

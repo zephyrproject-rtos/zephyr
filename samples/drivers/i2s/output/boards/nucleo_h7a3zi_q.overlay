@@ -56,10 +56,10 @@
  *   };
  */
 &sai2 {
-	status = "okay";
 	clocks = <&rcc STM32_CLOCK(APB2, 23)>,
 		 <&rcc STM32_SRC_PLL2_P SAI2A_SEL(1)>;
 	clock-names = "sai_ck", "sai_ker_ck";
+	status = "okay";
 };
 
 /*
@@ -86,10 +86,10 @@
 	pinctrl-0 = <&sai2_mclk_a_pe0 &sai2_sd_a_pd11
 		     &sai2_fs_a_pd12 &sai2_sck_a_pd13>;
 	pinctrl-names = "default";
-	status = "okay";
 	mclk-enable;
 	mclk-divider = "div-256";
 	dma-names = "tx";
+	status = "okay";
 };
 
 &dma1 {

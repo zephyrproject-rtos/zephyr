@@ -43,21 +43,21 @@
 /delete-node/ &w25q16jvuxim;
 
 &flexspi {
-	status = "okay";
 	reg = <0x402a8000 0x4000>, <0x60000000 DT_SIZE_M(8)>;
+	status = "okay";
 
 	/* WINBOND flash memory*/
 	ext_flash_ctrl: flash-controller@0 {
 		compatible = "nxp,imx-flexspi-nor";
-		size = <DT_SIZE_M(16 * 8)>;
 		reg = <0>;
+		ranges = <0x0 0x60000000 DT_SIZE_M(16)>;
+		size = <DT_SIZE_M(16 * 8)>;
 		spi-max-frequency = <DT_FREQ_M(133)>;
-		status = "okay";
 		jedec-id = [ef 70 18];
 
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges = <0x0 0x60000000 DT_SIZE_M(16)>;
+		status = "okay";
 
 		w25q128jvxgim: flash@0 {
 			compatible = "soc-nv-flash";

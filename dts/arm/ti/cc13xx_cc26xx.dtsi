@@ -21,9 +21,9 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m4";
 			reg = <0>;
+			device_type = "cpu";
 			cpu-power-states = <&idle &standby>;
 		};
 
@@ -70,9 +70,9 @@
 			compatible = "ti,cc13xx-cc26xx-gpio";
 			reg = <0x40022000 0x400>;
 			interrupts = <0 0>;
-			status = "disabled";
 			gpio-controller;
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		trng: random@40028000 {
@@ -170,9 +170,9 @@
 
 		i2c0: i2c@40002000 {
 			compatible = "ti,cc13xx-cc26xx-i2c";
+			reg = <0x40002000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40002000 0x1000>;
 			interrupts = <1 0>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			status = "disabled";
@@ -180,18 +180,18 @@
 
 		spi0: spi@40000000 {
 			compatible = "ti,cc13xx-cc26xx-spi";
+			reg = <0x40000000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40000000 0x1000>;
 			interrupts = <7 0>;
 			status = "disabled";
 		};
 
 		spi1: spi@40008000 {
 			compatible = "ti,cc13xx-cc26xx-spi";
+			reg = <0x40008000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40008000 0x1000>;
 			interrupts = <8 0>;
 			status = "disabled";
 		};
@@ -206,13 +206,13 @@
 
 		radio: radio@40040000 {
 			compatible = "ti,cc13xx-cc26xx-radio";
-			status = "disabled";
 
 			reg = <0x40040000 0x1000
 			       0x40041000 0x2000
 			       0x40043000 0x1000
 			       0x40044000 0x1000>;
 			reg-names = "RFC_PWR", "RFC_DBELL", "RFC_RAT", "RFC_FSCA";
+			status = "disabled";
 
 			ieee802154: ieee802154 {
 				compatible = "ti,cc13xx-cc26xx-ieee802154";
@@ -236,8 +236,8 @@
 			compatible = "ti,cc13xx-cc26xx-adc";
 			reg = <0x400cb008 0x1>;
 			interrupts = <32 0>;  /* interrupt #48 = 32 + 16 */
-			status = "disabled";
 			#io-channel-cells = <1>;
+			status = "disabled";
 		};
 	};
 };

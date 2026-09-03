@@ -80,7 +80,6 @@
 };
 
 dut: &uart134 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart134_alt_default>;
 	pinctrl-1 = <&uart134_alt_sleep>;
@@ -88,16 +87,17 @@ dut: &uart134 {
 	hw-flow-control;
 	timer = <&timer134>;
 	zephyr,pm-device-runtime-auto;
+	status = "okay";
 };
 
 dut_aux: &uart137 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart137_alt_default>;
 	pinctrl-1 = <&uart137_alt_sleep>;
 	pinctrl-names = "default", "sleep";
 	hw-flow-control;
 	zephyr,pm-device-runtime-auto;
+	status = "okay";
 };
 
 &dppic120 {
@@ -121,14 +121,14 @@ dut2: &uart120 {
 };
 
 &timer137 {
-	status = "okay";
 	interrupts = <467 0>;
+	status = "okay";
 };
 
 / {
 	busy-sim {
 		compatible = "vnd,busy-sim";
-		status = "okay";
 		counter = <&timer137>;
+		status = "okay";
 	};
 };

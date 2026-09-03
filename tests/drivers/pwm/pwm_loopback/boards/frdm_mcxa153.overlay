@@ -37,16 +37,15 @@
 };
 
 &ctimer1 {
-	status = "okay";
 	compatible = "nxp,ctimer-pwm";
 	prescaler = <95>;
 	#pwm-cells = <3>;
 	pinctrl-0 = <&pinmux_ctimer1_pwm_out>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &ctimer2 {
-	status = "okay";
 	compatible = "nxp,ctimer-pwm";
 	prescaler = <95>;
 	#pwm-cells = <3>;
@@ -59,4 +58,5 @@
 	mux-states = <&inputmux0 0 0x06000010>;
 	pinctrl-0 = <&pinmux_ctimer2_pwm_cap>;
 	pinctrl-names = "default";
+	status = "okay";
 };

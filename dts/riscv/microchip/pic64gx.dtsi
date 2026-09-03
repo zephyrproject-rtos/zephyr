@@ -16,10 +16,10 @@
 		#size-cells = <0>;
 
 		cpu@0 {
-			clock-frequency = <0>;
 			compatible = "sifive,e51", "riscv";
-			device_type = "cpu";
 			reg = <0x0>;
+			clock-frequency = <0>;
+			device_type = "cpu";
 			riscv,isa-base = "rv64i";
 			riscv,isa-extensions = "i", "m", "a", "c", "zicsr", "zifencei";
 
@@ -32,10 +32,10 @@
 		};
 
 		cpu@1 {
-			clock-frequency = <0>;
 			compatible = "sifive,u54", "riscv";
-			device_type = "cpu";
 			reg = <0x1>;
+			clock-frequency = <0>;
+			device_type = "cpu";
 			riscv,isa-base = "rv64i";
 			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei";
 
@@ -48,10 +48,10 @@
 		};
 
 		cpu@2 {
-			clock-frequency = <0>;
 			compatible = "sifive,u54", "riscv";
-			device_type = "cpu";
 			reg = <0x2>;
+			clock-frequency = <0>;
+			device_type = "cpu";
 			riscv,isa-base = "rv64i";
 			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei";
 
@@ -64,10 +64,10 @@
 		};
 
 		cpu@3 {
-			clock-frequency = <0>;
 			compatible = "sifive,u54", "riscv";
-			device_type = "cpu";
 			reg = <0x3>;
+			clock-frequency = <0>;
+			device_type = "cpu";
 			riscv,isa-base = "rv64i";
 			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei";
 
@@ -80,10 +80,10 @@
 		};
 
 		cpu@4 {
-			clock-frequency = <0>;
 			compatible = "sifive,u54", "riscv";
-			device_type = "cpu";
 			reg = <0x4>;
+			clock-frequency = <0>;
+			device_type = "cpu";
 			riscv,isa-base = "rv64i";
 			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei";
 
@@ -97,13 +97,14 @@
 	};
 
 	soc {
-		#address-cells = <1>;
-		#size-cells = <1>;
 		compatible = "simple-bus";
 		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
 
 		clint: clint@2000000 {
 			compatible = "sifive,clint0";
+			reg = <0x2000000 0x10000>;
 			interrupts-extended = <&hlic0 3
 					       &hlic1 3
 					       &hlic2 3
@@ -111,22 +112,22 @@
 					       &hlic4 3>;
 			interrupt-names = "soft0", "soft1", "soft2", "soft3",
 					  "soft4";
-			reg = <0x2000000 0x10000>;
 		};
 
 		mtimer: timer@200bff8 {
 			compatible = "riscv,machine-timer";
+			reg = <0x200bff8 0x8 0x2004000 0x8>;
 			interrupts-extended = <&hlic0 7
 					       &hlic1 7
 					       &hlic2 7
 					       &hlic3 7
 					       &hlic4 7>;
-			reg = <0x200bff8 0x8 0x2004000 0x8>;
 			reg-names = "mtime", "mtimecmp";
 		};
 
 		plic: interrupt-controller@c000000 {
 			compatible = "sifive,plic-1.0.0";
+			reg = <0x0c000000 0x04000000>;
 			#interrupt-cells = <2>;
 			#address-cells = <1>;
 			interrupt-controller;
@@ -135,7 +136,6 @@
 					       &hlic2 11 &hlic2 9
 					       &hlic3 11 &hlic3 9
 					       &hlic4 11 &hlic4 9>;
-			reg = <0x0c000000 0x04000000>;
 			riscv,max-priority = <7>;
 			riscv,ndev = <185>;
 		};
@@ -197,24 +197,24 @@
 
 		spi0: spi@20108000 {
 			compatible = "microchip,pic64gx-spi", "microchip,mpfs-spi";
+			reg = <0x20108000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x20108000 0x1000>;
 			interrupt-parent = <&plic>;
 			interrupts = <54 1>;
-			status = "disabled";
 			clock-frequency = <150000000>;
+			status = "disabled";
 		};
 
 		spi1: spi@20109000 {
 			compatible = "microchip,pic64gx-spi", "microchip,mpfs-spi";
+			reg = <0x20109000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x20109000 0x1000>;
 			interrupt-parent = <&plic>;
 			interrupts = <55 1>;
-			status = "disabled";
 			clock-frequency = <150000000>;
+			status = "disabled";
 		};
 
 		i2c0: i2c@2010a000 {
@@ -274,24 +274,24 @@
 
 		qspi: spi@21000000 {
 			compatible = "microchip,pic64gx-qspi", "microchip,mpfs-qspi";
+			reg = <0x21000000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x21000000 0x1000>;
 			interrupt-parent = <&plic>;
 			interrupts = <85 1>;
-			status = "disabled";
 			clock-frequency = <150000000>;
+			status = "disabled";
 		};
 
 		syscontroller_qspi: spi@37020100 {
 			compatible = "microchip,pic64gx-qspi", "microchip,mpfs-qspi";
+			reg = <0x37020100 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x37020100 0x1000>;
 			interrupt-parent = <&plic>;
 			interrupts = <110 1>;
-			status = "disabled";
 			clock-frequency = <150000000>;
+			status = "disabled";
 		};
 	};
 };

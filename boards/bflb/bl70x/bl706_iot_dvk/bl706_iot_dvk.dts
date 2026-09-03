@@ -9,8 +9,8 @@
 #include "bl706_iot_dvk-pinctrl.dtsi"
 
 / {
-	model = "Bouffalo Lab BL706-IoT-DVK";
 	compatible = "bflb,bl706-iot-dvk";
+	model = "Bouffalo Lab BL706-IoT-DVK";
 
 	chosen {
 		zephyr,itcm = &itcm;
@@ -53,11 +53,11 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &uart1 {
@@ -80,10 +80,10 @@
 };
 
 zephyr_udc0: &usb0 {
-	status = "okay";
 
 	pinctrl-0 = <&usb_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 #include <../boards/common/usb/cdc_acm_serial.dtsi>

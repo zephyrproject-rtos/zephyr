@@ -14,11 +14,11 @@
 };
 
 &slot0_partition {
-	label = "image-0";
 	reg = <0x12000000 DT_SIZE_K(150)>; /* 150k for secure test application */
+	label = "image-0";
 };
 
 &slot0_ns_partition {
-	label = "image-1";
 	reg = <0x2025800 DT_SIZE_K(106)>; /* 106k for nonsecure test application */
+	label = "image-1";
 };

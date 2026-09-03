@@ -11,8 +11,8 @@
 #include "rak4631_nrf52840-pinctrl.dtsi"
 
 / {
-	model = "RAKWireless RAK4631 WisBlock LPWAN Module with a Nordic NRF52840 SoC";
 	compatible = "nordic,rak4631_nrf52840";
+	model = "RAKWireless RAK4631 WisBlock LPWAN Module with a Nordic NRF52840 SoC";
 
 	chosen {
 		zephyr,console = &uart1;
@@ -75,28 +75,28 @@
 
 &uart0 {
 	compatible = "nordic,nrf-uart";
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &uart1 {
 	compatible = "nordic,nrf-uarte";
 	current-speed = <115200>;
-	status = "okay";
 	pinctrl-0 = <&uart1_default>;
 	pinctrl-1 = <&uart1_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &i2c0 {
 	compatible = "nordic,nrf-twi";
-	status = "okay";
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-1 = <&i2c0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &i2c1 {
@@ -110,12 +110,12 @@
 
 &spi1 {
 	compatible = "nordic,nrf-spi";
-	status = "okay";
 	cs-gpios = <&gpio1 10 GPIO_ACTIVE_LOW>;
 
 	pinctrl-0 = <&spi1_default>;
 	pinctrl-1 = <&spi1_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	lora: lora@0 {
 		compatible = "semtech,sx1262";
@@ -132,10 +132,10 @@
 };
 
 &qspi {
-	status = "okay";
 	pinctrl-0 = <&qspi_default>;
 	pinctrl-1 = <&qspi_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 zephyr_udc0: &usbd {

@@ -11,9 +11,9 @@
 };
 
 &qspi0 {
-	status = "okay";
 	compatible = "microchip,xec-qmspi-ldma";
 	clock-frequency = <12000000>;
+	status = "okay";
 
 	slow@0 {
 		compatible = "test-spi-loopback-slow";

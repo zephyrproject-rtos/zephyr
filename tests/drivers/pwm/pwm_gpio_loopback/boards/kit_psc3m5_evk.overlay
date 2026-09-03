@@ -21,26 +21,26 @@
 	status = "okay";
 
 	pwm1_4: pwm1_4 {
-		status = "okay";
 		clocks = <&peri0_group5_16bit_0>;
 		pinctrl-0 = <&p4_0_pwm1_4>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
 &peri0_group5_16bit_0 {
-	status = "okay";
 	clock-div = <25>;
+	status = "okay";
 };
 
 &tcpwm2_6 {
 	status = "okay";
 
 	pwm2_6: pwm2_6 {
-		status = "okay";
 		clocks = <&peri0_group5_16bit_0>;
 		pinctrl-0 = <&p2_0_pwm2_6>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 

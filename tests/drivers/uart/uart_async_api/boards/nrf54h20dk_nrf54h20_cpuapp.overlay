@@ -7,8 +7,8 @@
 };
 
 &dut2 {
-	status = "okay";
 	memory-regions = <&dma_fast_region>;
+	status = "okay";
 };
 
 &dma_fast_region {

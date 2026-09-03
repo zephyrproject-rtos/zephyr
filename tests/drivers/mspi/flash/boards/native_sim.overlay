@@ -17,7 +17,6 @@
 	software-multiperipheral;
 
 	flash_dummy0: flash_dummy0@0 {
-		status = "okay";
 		compatible = "zephyr,emul-flash";
 		reg = <0x0>;
 		size = <DT_SIZE_K(8*8)>;
@@ -31,10 +30,10 @@
 		address-length = "ADDR_4_BYTE";
 		rx-dummy = <8>;
 		tx-dummy = <0>;
+		status = "okay";
 	};
 
 	flash_dummy1: flash_dummy1@1 {
-		status = "okay";
 		compatible = "zephyr,emul-flash";
 		reg = <0x1>;
 		size = <DT_SIZE_K(8*8)>;
@@ -51,5 +50,6 @@
 		tx-dummy = <5>;
 		memmap-config = <1 0 0 0>;
 		ce-break-config = <1024 4>;
+		status = "okay";
 	};
 };

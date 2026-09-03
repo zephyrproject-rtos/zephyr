@@ -10,8 +10,8 @@
 #include "beagleplay-cc1352p7-pinctrl.dtsi"
 
 / {
-	model = "beagleplay";
 	compatible = "beagle,beagleplay-cc1352p7";
+	model = "beagleplay";
 
 	aliases {
 		led0 = &led0;
@@ -55,12 +55,12 @@
 	 */
 	antenna_mux0: antenna_mux0 {
 		compatible = "skyworks,sky13317";
-		status = "okay";
 		gpios = <&gpio0 29 GPIO_ACTIVE_HIGH>, <&gpio0 30 GPIO_ACTIVE_HIGH>;
 		pinctrl-0 = <&board_ant_tx_pa_off &board_ant_subg_off>;
 		pinctrl-1 = <&board_ant_tx_pa_off &board_ant_subg_on>;
 		pinctrl-2 = <&board_ant_tx_pa_on &board_ant_subg_on>;
 		pinctrl-names = "default", "ant_subg", "ant_subg_pa";
+		status = "okay";
 	};
 };
 
@@ -78,10 +78,10 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_rx_default &uart0_tx_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &rtc {

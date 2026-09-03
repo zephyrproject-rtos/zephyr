@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "VNG VBLUno52 BLE 5.0 board";
 	compatible = "vng,vbluno52";
+	model = "VNG VBLUno52 BLE 5.0 board";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -64,19 +64,19 @@
 };
 
 &uart0 {
-	status = "okay";
 	compatible = "nordic,nrf-uart";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &i2c0 {
 	compatible = "nordic,nrf-twim";
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-1 = <&i2c0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };

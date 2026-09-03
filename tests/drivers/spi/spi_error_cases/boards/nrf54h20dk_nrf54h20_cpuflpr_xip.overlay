@@ -70,24 +70,24 @@
 
 dut_spis: &spis120 {
 	compatible = "nordic,nrf-spis";
-	status = "okay";
 	def-char = <0x00>;
 	pinctrl-0 = <&spis120_default_alt>;
 	pinctrl-1 = <&spis120_sleep_alt>;
 	pinctrl-names = "default", "sleep";
 	memory-regions = <&dma_fast_region>;
+	status = "okay";
 };
 
 &spi120 {
 	compatible = "nordic,nrf-spim";
-	status = "okay";
 	pinctrl-0 = <&spi120_default>;
 	pinctrl-1 = <&spi120_sleep>;
 	pinctrl-names = "default", "sleep";
 	overrun-character = <0x00>;
 	memory-regions = <&dma_fast_region>;
-	zephyr,pm-device-runtime-auto;
 	cs-gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
+	zephyr,pm-device-runtime-auto;
+	status = "okay";
 
 	dut_spi_dt: test-spi-dev@0 {
 		compatible = "vnd,spi-device";

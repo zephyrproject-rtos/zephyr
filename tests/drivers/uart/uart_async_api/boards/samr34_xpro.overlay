@@ -23,7 +23,6 @@
 };
 
 dut: &sercom2 {
-	status = "okay";
 	compatible = "atmel,sam0-uart";
 	current-speed = <115200>;
 
@@ -38,4 +37,5 @@ dut: &sercom2 {
 	/* PAD0 must be configured to allow working loop-back */
 	pinctrl-0 = <&sercom2_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };

@@ -19,6 +19,11 @@
 };
 
 &lpspi3 {
+
+	transfer-delay = <100>;
+	pcs-sck-delay = <100>;
+	sck-pcs-delay = <100>;
+
 	slow@0 {
 		compatible = "test-spi-loopback-slow";
 		reg = <0>;
@@ -30,8 +35,4 @@
 		reg = <0>;
 		spi-max-frequency = <16000000>;
 	};
-
-	transfer-delay = <100>;
-	pcs-sck-delay = <100>;
-	sck-pcs-delay = <100>;
 };

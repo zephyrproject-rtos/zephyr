@@ -33,10 +33,10 @@
 };
 
 &i2c0 {
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	eeprom0: eeprom@54 {
 		compatible = "zephyr,i2c-target-eeprom";
@@ -46,10 +46,10 @@
 };
 
 &i2c1 {
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	pinctrl-0 = <&i2c1_default>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	eeprom1: eeprom@56 {
 		compatible = "zephyr,i2c-target-eeprom";

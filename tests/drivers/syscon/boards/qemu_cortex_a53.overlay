@@ -18,15 +18,15 @@
 
 	syscon: syscon@47000000 {
 		compatible = "syscon";
-		status = "okay";
 		reg = <0 0x47000000 0 0x8>;
 		reg-io-width = <1>;
+		status = "okay";
 	};
 
 	syscon32: syscon@47000008 {
 		compatible = "syscon";
-		status = "okay";
 		reg = <0 0x47000008 0 0x10>;
 		reg-io-width = <4>;
+		status = "okay";
 	};
 };

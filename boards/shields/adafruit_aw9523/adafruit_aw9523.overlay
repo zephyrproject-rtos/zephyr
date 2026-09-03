@@ -8,15 +8,15 @@
 	status = "okay";
 
 	adafruit_aw9523: aw9523b@58 {
-		status = "okay";
-		reg = <0x58>;
 		compatible = "awinic,aw9523b";
+		reg = <0x58>;
+		status = "okay";
 
 		adafruit_aw9523_gpio: aw9523b-gpio {
-			status = "okay";
 			compatible = "awinic,aw9523b-gpio";
 			gpio-controller;
 			#gpio-cells = <2>;
+			status = "okay";
 		};
 	};
 };

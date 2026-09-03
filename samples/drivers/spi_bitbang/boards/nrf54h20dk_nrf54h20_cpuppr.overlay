@@ -12,13 +12,13 @@
 / {
 	spibb0: spibb0 {
 		compatible = "zephyr,spi-bitbang";
-		status = "okay";
 		#address-cells = <1>;
 		#size-cells = <0>;
 		clk-gpios = <&gpio0 0 GPIO_ACTIVE_HIGH>;
 		sdo-gpios = <&gpio0 6 GPIO_ACTIVE_HIGH>;
 		sdi-gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
 		cs-gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
+		status = "okay";
 	};
 };
 
@@ -27,6 +27,6 @@
 };
 
 &gpiote130 {
-	status = "okay";
 	owned-channels = <7>;
+	status = "okay";
 };

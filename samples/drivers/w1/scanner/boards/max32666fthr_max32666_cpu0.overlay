@@ -13,7 +13,7 @@
 };
 
 &w1 {
-	status = "okay";
 	internal-pullup = <1>;
 	external-pullup = <0>;
+	status = "okay";
 };

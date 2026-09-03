@@ -6,13 +6,13 @@
 };
 
 test_timer: &timer131 {
-	status = "okay";
 	interrupts = <419 1>;
+	status = "okay";
 };
 
 &timer130 {
-	status = "okay";
 	prescaler = <0>;
+	status = "okay";
 };
 
 / {

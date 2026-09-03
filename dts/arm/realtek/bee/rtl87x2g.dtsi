@@ -24,16 +24,16 @@
 		#size-cells = <0>;
 
 		cpu: cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m55";
 			reg = <0>;
+			device_type = "cpu";
 		};
 	};
 
 	rom {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		rom_s: memory@0 {
 			/* secure rom code region */
@@ -89,8 +89,8 @@
 	ext_data_ram: memory@200000 {
 		/* Extra data ram region */
 		compatible = "zephyr,memory-region";
-		zephyr,memory-region = "EXTRAM";
 		reg = <0x200000 DT_SIZE_K(16)>;
+		zephyr,memory-region = "EXTRAM";
 	};
 
 	buffer_ram: memory@280000 {
@@ -100,8 +100,8 @@
 
 	clocks {
 		clk_32K_systick: clk-32K-systick {
-			#clock-cells = <0>;
 			compatible = "fixed-clock";
+			#clock-cells = <0>;
 			clock-frequency = <DT_FREQ_K(32)>;
 			status = "okay";
 		};
@@ -141,44 +141,44 @@
 					 */
 					reserved: partition@0 {
 						compatible = "zephyr,mapped-partition";
-						label = "reserved-image";
 						reg = <0x0 DT_SIZE_K(4)>;
+						label = "reserved-image";
 					};
 
 					config_file: partition@1000 {
 						compatible = "zephyr,mapped-partition";
-						label = "config-file-image";
 						reg = <0x1000 DT_SIZE_K(4)>;
+						label = "config-file-image";
 					};
 
 					boot_patch_0: partition@2000 {
 						compatible = "zephyr,mapped-partition";
-						label = "boot-patch-0-image";
 						reg = <0x2000 DT_SIZE_K(32)>;
+						label = "boot-patch-0-image";
 					};
 
 					boot_patch_1: partition@a000 {
 						compatible = "zephyr,mapped-partition";
-						label = "boot-patch-1-image";
 						reg = <0xa000 DT_SIZE_K(32)>;
+						label = "boot-patch-1-image";
 					};
 
 					ota_header: partition@12000 {
 						compatible = "zephyr,mapped-partition";
-						label = "ota-header-image";
 						reg = <0x12000 DT_SIZE_K(4)>;
+						label = "ota-header-image";
 					};
 
 					system_patch: partition@13000 {
 						compatible = "zephyr,mapped-partition";
-						label = "system-patch-image";
 						reg = <0x13000 DT_SIZE_K(32)>;
+						label = "system-patch-image";
 					};
 
 					stack_patch: partition@1b000 {
 						compatible = "zephyr,mapped-partition";
-						label = "stack-patch-image";
 						reg = <0x1b000 DT_SIZE_K(72)>;
+						label = "stack-patch-image";
 					};
 				};
 			};
@@ -205,9 +205,9 @@
 
 		gpioa: gpio@40030000 {
 			compatible = "realtek,bee-gpio";
+			reg = <0x40030000 0x64>;
 			gpio-controller;
 			#gpio-cells = <2>;
-			reg = <0x40030000 0x64>;
 			clocks = <&cctl APB_CLK(GPIOA)>;
 			interrupts = <9 0>, <10 0>, <11 0>, <12 0>, <13 0>, <14 0>;
 			status = "disabled";
@@ -215,9 +215,9 @@
 
 		gpiob: gpio@40030800 {
 			compatible = "realtek,bee-gpio";
+			reg = <0x40030800 0x64>;
 			gpio-controller;
 			#gpio-cells = <2>;
-			reg = <0x40030800 0x64>;
 			clocks = <&cctl APB_CLK(GPIOB)>;
 			interrupts = <15 0>, <16 0>, <17 0>, <18 0>;
 			status = "disabled";
@@ -287,8 +287,8 @@
 
 			pwm {
 				compatible = "realtek,bee-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 		};
 
@@ -306,8 +306,8 @@
 
 			pwm {
 				compatible = "realtek,bee-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 		};
 
@@ -325,8 +325,8 @@
 
 			pwm {
 				compatible = "realtek,bee-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 		};
 
@@ -344,8 +344,8 @@
 
 			pwm {
 				compatible = "realtek,bee-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 		};
 
@@ -363,8 +363,8 @@
 
 			pwm {
 				compatible = "realtek,bee-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 		};
 
@@ -382,8 +382,8 @@
 
 			pwm {
 				compatible = "realtek,bee-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 		};
 
@@ -402,8 +402,8 @@
 
 			pwm {
 				compatible = "realtek,bee-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 		};
 
@@ -421,8 +421,8 @@
 
 			pwm {
 				compatible = "realtek,bee-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 		};
 
@@ -440,8 +440,8 @@
 
 			pwm {
 				compatible = "realtek,bee-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 		};
 
@@ -459,8 +459,8 @@
 
 			pwm {
 				compatible = "realtek,bee-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 		};
 
@@ -566,9 +566,9 @@
 			reg = <0x40013000 0xf0>;
 			interrupts = <41 0>;
 			clocks = <&cctl APB_CLK(SPI0)>;
-			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "disabled";
 		};
 
 		spi0_slave: spi_slave@40013800 {
@@ -576,10 +576,10 @@
 			reg = <0x40013800 0xf0>;
 			interrupts = <43 0>;
 			clocks = <&cctl APB_CLK(SPI0_SLAVE)>;
-			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			is-peripheral;
+			status = "disabled";
 		};
 
 		spi1: spi@40013400 {
@@ -587,9 +587,9 @@
 			reg = <0x40013400 0xf0>;
 			interrupts = <42 0>;
 			clocks = <&cctl APB_CLK(SPI1)>;
-			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "disabled";
 		};
 
 		can: can@40028000 {
@@ -606,8 +606,8 @@
 			interrupts = <57 0>;
 			clocks = <&cctl APB_CLK(ADC)>;
 			channels = <9>;
-			status = "disabled";
 			#io-channel-cells = <1>;
+			status = "disabled";
 		};
 	};
 };

@@ -8,7 +8,6 @@
 #include <zephyr/dt-bindings/adc/mcux-lpadc.h>
 
 &opamp0 {
-	#nxp,opamp-cells = <1>;
 	enable-measure-output;
 	functional-mode = "non_inverting";
 	programmable-gain = "OPAMP_GAIN_1",
@@ -16,6 +15,7 @@
 			    "OPAMP_GAIN_4",
 			    "OPAMP_GAIN_8",
 			    "OPAMP_GAIN_16";
+	#nxp,opamp-cells = <1>;
 };
 
 &dac0 {
@@ -25,9 +25,9 @@
 &lpadc0 {
 	#address-cells = <1>;
 	#size-cells = <0>;
+	ideal-sample-range = <990 2970>; /* 30% - 90% of ADC full scale with Vref=3300V */
 
 	nxp,opamps = <&opamp0 0>;
-	ideal-sample-range = <990 2970>; /* 30% - 90% of ADC full scale with Vref=3300V */
 
 	channel@0 {
 		reg = <0>;

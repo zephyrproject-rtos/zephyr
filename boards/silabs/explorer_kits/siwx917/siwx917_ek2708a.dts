@@ -14,8 +14,8 @@
 #include "siwx917_ek2708a-pinctrl.dtsi"
 
 / {
-	model = "Silicon Labs BRD2708A (SiWx917Y Explorer Kit)";
 	compatible = "silabs,siwx917_ek2708a", "silabs,siwg917";
+	model = "Silicon Labs BRD2708A (SiWx917Y Explorer Kit)";
 
 	chosen {
 		zephyr,bt-hci = &bt_hci0;
@@ -189,6 +189,8 @@
 	pinctrl-names = "default";
 	silabs,adc-ref-voltage = <3300>;
 
+	status = "okay";
+
 	channel@0 {
 		reg = <0>;
 		zephyr,gain = "ADC_GAIN_1";
@@ -197,8 +199,6 @@
 		zephyr,resolution = <12>;
 		zephyr,input-positive = <SIWX91X_ADC_INPUT_HP29>;
 	};
-
-	status = "okay";
 };
 
 mikrobus_i2c: &i2c0 {};

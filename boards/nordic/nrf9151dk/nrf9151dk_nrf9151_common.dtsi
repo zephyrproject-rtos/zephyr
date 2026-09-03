@@ -8,8 +8,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Nordic nRF9151 DK NRF9151";
 	compatible = "nordic,nrf9151-dk-nrf9151";
+	model = "Nordic nRF9151 DK NRF9151";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -79,8 +79,8 @@
 
 	nrf5340_reset: gpio-reset {
 		compatible = "nordic,nrf9151dk-nrf5340-reset";
-		status = "disabled";
 		gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
+		status = "disabled";
 	};
 
 	arduino_header: connector {
@@ -153,59 +153,58 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 arduino_serial: &uart1 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart1_default>;
 	pinctrl-1 = <&uart1_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 arduino_i2c: &i2c2 {
 	compatible = "nordic,nrf-twim";
-	status = "okay";
 	pinctrl-0 = <&i2c2_default>;
 	pinctrl-1 = <&i2c2_sleep>;
 	pinctrl-names = "default", "sleep";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 
 	pcal6408a: pcal6408a@21 {
 		compatible = "nxp,pcal6408a";
-		status = "disabled";
 		reg = <0x21>;
 		gpio-controller;
 		#gpio-cells = <2>;
 		ngpios = <8>;
 		int-gpios = <&gpio0 19 (GPIO_PULL_UP | GPIO_ACTIVE_LOW)>;
+		status = "disabled";
 	};
 };
 
 &pwm0 {
-	status = "okay";
 	pinctrl-0 = <&pwm0_default>;
 	pinctrl-1 = <&pwm0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 arduino_spi: &spi3 {
 	compatible = "nordic,nrf-spim";
-	status = "okay";
 	cs-gpios = <&arduino_header 16 GPIO_ACTIVE_LOW>, /* D10 */
 		   <&gpio0 20 GPIO_ACTIVE_LOW>;
 	pinctrl-0 = <&spi3_default>;
 	pinctrl-1 = <&spi3_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	gd25wb256: gd25wb256e3ir@1 {
 		compatible = "jedec,spi-nor";
-		status = "disabled";
 		reg = <1>;
 		spi-max-frequency = <8000000>;
 		size = <268435456>;
@@ -217,6 +216,7 @@ arduino_spi: &spi3 {
 			    10 d8 00 ff 44 7a c9 fe 83 67 26 62 ec 82 18 44
 			    7a 75 7a 75 04 c4 d5 5c 00 06 74 00 08 50 00 01];
 		jedec-id = [c8 65 19];
+		status = "disabled";
 	};
 };
 

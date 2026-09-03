@@ -13,8 +13,8 @@
 #include "rza3m_ek-pinctrl.dtsi"
 
 / {
-	model = "Renesas RZ/A3M EK";
 	compatible = "renesas,rza3m-ek";
+	model = "Renesas RZ/A3M EK";
 
 	chosen {
 		zephyr,sram = &ddr;
@@ -97,16 +97,16 @@
 			};
 
 			header: partition@20000 {
-				label = "header";
 				compatible = "zephyr,mapped-partition";
 				reg = <0x20000 0x200>;
+				label = "header";
 				read-only;
 			};
 
 			slot0_partition: partition@20200 {
-				label = "image-0";
 				compatible = "zephyr,mapped-partition";
 				reg = <0x20200 (DT_SIZE_M(32) - 0x20200)>;
+				label = "image-0";
 				read-only;
 			};
 		};

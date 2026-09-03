@@ -52,6 +52,6 @@
 		     &sdio_d0_pc8 &sdio_d1_pc9
 		     &sdio_d2_pc10 &sdio_d3_pc11>;
 	pinctrl-names = "default";
-	status = "okay";
 	disk-name = "SD";
+	status = "okay";
 };

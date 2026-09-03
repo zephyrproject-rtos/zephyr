@@ -971,8 +971,8 @@
 			compatible = "nxp,s32-canxl";
 			reg = <0x6a01b000 0x1000>;
 			reg-names = "sic";
-			status = "disabled";
 			clocks = <&clock NXP_S32_CAN_PE_CLK>;
+			status = "disabled";
 		};
 
 		lpe_lpspi0: spi@4217c000 {
@@ -1066,7 +1066,6 @@
 		edma: dma-controller@40410000 {
 			compatible = "nxp,mcux-edma";
 			reg = <0x40410000 0x4000>, <0x4040c000 0x4000>, <0x40a08000 0x4000>;
-			nxp,version = <5>;
 			dma-channels = <32>;
 			dma-requests = <128>;
 			no-error-irq;
@@ -1075,6 +1074,7 @@
 						    0x00030000 0x000c0000 0x00300000 0x00c00000
 						    0x03000000 0x0c000000 0x30000000 0xc0000000>;
 			#dma-cells = <2>;
+			nxp,version = <5>;
 			nxp,mem2mem;
 			nxp,a-on;
 			status = "disabled";

@@ -108,9 +108,9 @@
 		iocon: iocon@40001000 {
 			compatible = "nxp,lpc-iocon";
 			reg = <0x40001000 0x100>;
+			ranges = <0x0 0x40001000 0x100>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0x40001000 0x100>;
 
 			pinctrl: pinctrl {
 				compatible = "nxp,lpc-iocon-pinctrl";

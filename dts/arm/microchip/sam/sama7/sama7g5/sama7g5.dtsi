@@ -12,17 +12,17 @@
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 
 / {
-	model = "Microchip SAMA7G5 family SoC";
 	compatible = "microchip,sama7g5";
+	model = "Microchip SAMA7G5 family SoC";
 
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-a7";
 			reg = <0>;
+			device_type = "cpu";
 		};
 	};
 
@@ -79,9 +79,9 @@
 		pinctrl: pinctrl@e0014000 {
 			compatible = "microchip,sama7g5-pinctrl";
 			reg = <0xe0014000 0x800>;
+			ranges = <0xe0014000 0xe0014000 0x800>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0xe0014000 0xe0014000 0x800>;
 
 			pioa: gpio@e0014000 {
 				compatible = "microchip,sam-pio4";
@@ -160,9 +160,9 @@
 
 		tc1: timer@e0800000 {
 			reg = <0xe0800000 0x100>;
+			ranges = <0x0 0xe0800000 0x100>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0xe0800000 0x100>;
 
 			tc1_ch0: timer@e0800000 {
 				compatible = "microchip,tc-g2-counter";
@@ -367,9 +367,9 @@
 		flx0: flexcom@e1818000 {
 			compatible = "microchip,sam-flexcom";
 			reg = <0xe1818000 0x200>;
+			ranges = <0x0 0xe1818000 0x800>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0xe1818000 0x800>;
 			status = "disabled";
 
 			i2c0: i2c0@600 {
@@ -397,9 +397,9 @@
 		flx1: flexcom@e181c000 {
 			compatible = "microchip,sam-flexcom";
 			reg = <0xe181c000 0x200>;
+			ranges = <0x0 0xe181c000 0x800>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0xe181c000 0x800>;
 			status = "disabled";
 
 			i2c1: i2c1@600 {
@@ -427,9 +427,9 @@
 		flx2: flexcom@e1820000 {
 			compatible = "microchip,sam-flexcom";
 			reg = <0xe1820000 0x200>;
+			ranges = <0x0 0xe1820000 0x800>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0xe1820000 0x800>;
 			status = "disabled";
 
 			i2c2: i2c2@600 {
@@ -457,9 +457,9 @@
 		flx3: flexcom@e1824000 {
 			compatible = "microchip,sam-flexcom";
 			reg = <0xe1824000 0x200>;
+			ranges = <0x0 0xe1824000 0x800>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0xe1824000 0x800>;
 			status = "disabled";
 
 			i2c3: i2c3@600 {
@@ -516,9 +516,9 @@
 		flx4: flexcom@e2018000 {
 			compatible = "microchip,sam-flexcom";
 			reg = <0xe2018000 0x200>;
+			ranges = <0x0 0xe2018000 0x800>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0xe2018000 0x800>;
 			status = "disabled";
 
 			i2c4: i2c4@600 {
@@ -546,9 +546,9 @@
 		flx5: flexcom@e201c000 {
 			compatible = "microchip,sam-flexcom";
 			reg = <0xe201c000 0x200>;
+			ranges = <0x0 0xe201c000 0x800>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0xe201c000 0x800>;
 			status = "disabled";
 
 			i2c5: i2c5@600 {
@@ -576,9 +576,9 @@
 		flx6: flexcom@e2020000 {
 			compatible = "microchip,sam-flexcom";
 			reg = <0xe2020000 0x200>;
+			ranges = <0x0 0xe2020000 0x800>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0xe2020000 0x800>;
 			status = "disabled";
 
 			i2c6: i2c6@600 {
@@ -606,9 +606,9 @@
 		flx7: flexcom@e2024000 {
 			compatible = "microchip,sam-flexcom";
 			reg = <0xe2024000 0x200>;
+			ranges = <0x0 0xe2024000 0x800>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0xe2024000 0x800>;
 			status = "disabled";
 
 			i2c7: i2c7@600 {
@@ -654,9 +654,9 @@
 
 			gmac0_mdio: mdio {
 				compatible = "atmel,sam-mdio";
-				status = "disabled";
 				#address-cells = <1>;
 				#size-cells = <0>;
+				status = "disabled";
 			};
 		};
 
@@ -677,9 +677,9 @@
 
 			gmac1_mdio: mdio {
 				compatible = "atmel,sam-mdio";
-				status = "disabled";
 				#address-cells = <1>;
 				#size-cells = <0>;
+				status = "disabled";
 			};
 		};
 
@@ -717,9 +717,9 @@
 
 		tc0: timer@e2814000 {
 			reg = <0xe2814000 0x100>;
+			ranges = <0x0 0xe2814000 0x100>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0xe2814000 0x100>;
 
 			tc0_ch0: timer@e2814000 {
 				compatible = "microchip,tc-g2-counter";
@@ -752,9 +752,9 @@
 		flx8: flexcom@e2818000 {
 			compatible = "microchip,sam-flexcom";
 			reg = <0xe2818000 0x200>;
+			ranges = <0x0 0xe2818000 0x800>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0xe2818000 0x800>;
 			status = "disabled";
 
 			i2c8: i2c8@600 {
@@ -782,9 +782,9 @@
 		flx9: flexcom@e281c000 {
 			compatible = "microchip,sam-flexcom";
 			reg = <0xe281c000 0x200>;
+			ranges = <0x0 0xe281c000 0x800>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0xe281c000 0x800>;
 			status = "disabled";
 
 			i2c9: i2c9@600 {
@@ -812,9 +812,9 @@
 		flx10: flexcom@e2820000 {
 			compatible = "microchip,sam-flexcom";
 			reg = <0xe2820000 0x200>;
+			ranges = <0x0 0xe2820000 0x800>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0xe2820000 0x800>;
 			status = "disabled";
 
 			i2c10: i2c10@600 {
@@ -842,9 +842,9 @@
 		flx11: flexcom@e2824000 {
 			compatible = "microchip,sam-flexcom";
 			reg = <0xe2824000 0x200>;
+			ranges = <0x0 0xe2824000 0x800>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0xe2824000 0x800>;
 			status = "disabled";
 
 			i2c11: i2c11@600 {

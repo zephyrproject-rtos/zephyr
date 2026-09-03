@@ -24,39 +24,39 @@
 		#size-cells = <0>;
 
 		cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-a55";
 			reg = <0>;
+			device_type = "cpu";
 		};
 
 		cpu@100 {
-			device_type = "cpu";
 			compatible = "arm,cortex-a55";
 			reg = <0x100>;
+			device_type = "cpu";
 		};
 
 		cpu@200 {
-			device_type = "cpu";
 			compatible = "arm,cortex-a55";
 			reg = <0x200>;
+			device_type = "cpu";
 		};
 
 		cpu@300 {
-			device_type = "cpu";
 			compatible = "arm,cortex-a55";
 			reg = <0x300>;
+			device_type = "cpu";
 		};
 
 		cpu@400 {
-			device_type = "cpu";
 			compatible = "arm,cortex-a55";
 			reg = <0x400>;
+			device_type = "cpu";
 		};
 
 		cpu@500 {
-			device_type = "cpu";
 			compatible = "arm,cortex-a55";
 			reg = <0x500>;
+			device_type = "cpu";
 		};
 	};
 
@@ -134,10 +134,10 @@
 
 	lpi2c1: i2c@44340000 {
 		compatible = "nxp,lpi2c";
+		reg = <0x44340000 0x4000>;
 		clock-frequency = <I2C_BITRATE_STANDARD>;
 		#address-cells = <1>;
 		#size-cells = <0>;
-		reg = <0x44340000 0x4000>;
 		interrupts = <GIC_SPI 13 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-names = "irq_0";
 		clocks = <&scmi_clk IMX95_CLK_LPI2C1>;
@@ -198,10 +198,10 @@
 
 	lpi2c2: i2c@44350000 {
 		compatible = "nxp,lpi2c";
+		reg = <0x44350000 0x4000>;
 		clock-frequency = <I2C_BITRATE_STANDARD>;
 		#address-cells = <1>;
 		#size-cells = <0>;
-		reg = <0x44350000 0x4000>;
 		interrupts = <GIC_SPI 14 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-names = "irq_0";
 		clocks = <&scmi_clk IMX95_CLK_LPI2C2>;
@@ -210,10 +210,10 @@
 
 	lpi2c3: i2c@42530000 {
 		compatible = "nxp,lpi2c";
+		reg = <0x42530000 0x4000>;
 		clock-frequency = <I2C_BITRATE_STANDARD>;
 		#address-cells = <1>;
 		#size-cells = <0>;
-		reg = <0x42530000 0x4000>;
 		interrupts = <GIC_SPI 58 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-names = "irq_0";
 		clocks = <&scmi_clk IMX95_CLK_LPI2C3>;
@@ -222,10 +222,10 @@
 
 	lpi2c4: i2c@42540000 {
 		compatible = "nxp,lpi2c";
+		reg = <0x42540000 0x4000>;
 		clock-frequency = <I2C_BITRATE_STANDARD>;
 		#address-cells = <1>;
 		#size-cells = <0>;
-		reg = <0x42540000 0x4000>;
 		interrupts = <GIC_SPI 59 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-names = "irq_0";
 		clocks = <&scmi_clk IMX95_CLK_LPI2C4>;
@@ -234,10 +234,10 @@
 
 	lpi2c5: i2c@426b0000 {
 		compatible = "nxp,lpi2c";
+		reg = <0x426b0000 0x4000>;
 		clock-frequency = <I2C_BITRATE_STANDARD>;
 		#address-cells = <1>;
 		#size-cells = <0>;
-		reg = <0x426b0000 0x4000>;
 		interrupts = <GIC_SPI 181 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-names = "irq_0";
 		clocks = <&scmi_clk IMX95_CLK_LPI2C5>;
@@ -246,10 +246,10 @@
 
 	lpi2c6: i2c@426c0000 {
 		compatible = "nxp,lpi2c";
+		reg = <0x426c0000 0x4000>;
 		clock-frequency = <I2C_BITRATE_STANDARD>;
 		#address-cells = <1>;
 		#size-cells = <0>;
-		reg = <0x426c0000 0x4000>;
 		interrupts = <GIC_SPI 182 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-names = "irq_0";
 		clocks = <&scmi_clk IMX95_CLK_LPI2C6>;
@@ -258,10 +258,10 @@
 
 	lpi2c7: i2c@426d0000 {
 		compatible = "nxp,lpi2c";
+		reg = <0x426d0000 0x4000>;
 		clock-frequency = <I2C_BITRATE_STANDARD>;
 		#address-cells = <1>;
 		#size-cells = <0>;
-		reg = <0x426d0000 0x4000>;
 		interrupts = <GIC_SPI 183 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-names = "irq_0";
 		clocks = <&scmi_clk IMX95_CLK_LPI2C7>;
@@ -270,10 +270,10 @@
 
 	lpi2c8: i2c@426e0000 {
 		compatible = "nxp,lpi2c";
+		reg = <0x426e0000 0x4000>;
 		clock-frequency = <I2C_BITRATE_STANDARD>;
 		#address-cells = <1>;
 		#size-cells = <0>;
-		reg = <0x426e0000 0x4000>;
 		interrupts = <GIC_SPI 184 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-names = "irq_0";
 		clocks = <&scmi_clk IMX95_CLK_LPI2C8>;
@@ -611,17 +611,17 @@
 		reg = <0x4cde0000 0x10000>,
 		      <0x4cdf0000 0x10000>,
 		      <0x4c810000 0x18>;
+		ranges;
 		reg-names = "ierb", "prb", "netcmix";
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		netc: ethernet {
 			compatible = "nxp,imx-netc";
+			ranges;
 			msi-parent = <&its>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges;
 
 			enetc_psi0: ethernet@4cc00000 {
 				compatible = "nxp,imx-netc-psi";

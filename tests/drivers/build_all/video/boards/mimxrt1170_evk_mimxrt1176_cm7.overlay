@@ -17,19 +17,19 @@
 
 		test_gpio: gpio@deadbeef {
 			compatible = "vnd,gpio";
-			gpio-controller;
 			reg = <0xdeadbeef 0x1000>;
+			gpio-controller;
 			#gpio-cells = <0x2>;
 			status = "okay";
 		};
 
 		test_i2c: i2c@11112222 {
-			#address-cells = <1>;
-			#size-cells = <0>;
 			compatible = "vnd,i2c";
 			reg = <0x11112222 0x1000>;
-			status = "okay";
+			#address-cells = <1>;
+			#size-cells = <0>;
 			clock-frequency = <100000>;
+			status = "okay";
 
 			test_i2c_ov5640: ov5640@1 {
 				compatible = "ovti,ov5640";
@@ -50,9 +50,9 @@
 		test_csi: csi@22223333 {
 			compatible = "nxp,imx-csi";
 			reg = <0x22223333 0x4000>;
-			status = "okay";
 			interrupt-parent = <&nvic>;
 			interrupts = <56 1>;
+			status = "okay";
 
 			port {
 				test_csi_ep_in: endpoint {
@@ -64,10 +64,10 @@
 		test_mipi_csi2rx: mipi_csi2rx@33334444 {
 			compatible = "nxp,mipi-csi2rx";
 			reg = <0x33334444 0x200>;
-			status = "okay";
 			clocks = <&ccm IMX_CCM_MIPI_CSI2RX_ROOT_CLK 0 0>,
 				 <&ccm IMX_CCM_MIPI_CSI2RX_UI_CLK 0 0>,
 				 <&ccm IMX_CCM_MIPI_CSI2RX_ESC_CLK 0 0>;
+			status = "okay";
 
 			ports {
 				#address-cells = <1>;

@@ -5,13 +5,13 @@
  */
 
 &gpio6 {
-	status = "okay";
 	zephyr,pm-device-runtime-auto;
+	status = "okay";
 };
 
 &exmif {
-	status = "okay";
 	zephyr,pm-device-runtime-auto;
+	status = "okay";
 };
 
 &mx25uw63 {

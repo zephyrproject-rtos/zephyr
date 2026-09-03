@@ -22,9 +22,9 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m0+";
 			reg = <0>;
+			device_type = "cpu";
 		};
 	};
 
@@ -42,15 +42,15 @@
 		 * However, 50 MHz is also supported.
 		 */
 		clk_hse: clk-hse {
-			#clock-cells = <0>;
 			compatible = "fixed-clock";
+			#clock-cells = <0>;
 			clock-frequency = <DT_FREQ_M(48)>;
 			status = "disabled";
 		};
 
 		clk_hsi: clk-hsi {
-			#clock-cells = <0>;
 			compatible = "fixed-clock";
+			#clock-cells = <0>;
 			clock-frequency = <DT_FREQ_M(64)>;
 			status = "disabled";
 		};
@@ -59,8 +59,8 @@
 		 * Using this node as RCC node input requires HSE to be enabled.
 		 */
 		pll: pll64m {
-			#clock-cells = <0>;
 			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
 			clocks = <&clk_hse>;
 			clock-mult = <4>;
 			clock-div = <3>;
@@ -72,16 +72,16 @@
 		 * 'slow-clock' property of the RCC node.
 		 */
 		clk_lse: clk-lse {
-			#clock-cells = <0>;
 			compatible = "st,stm32-lse-clock";
+			#clock-cells = <0>;
 			clock-frequency = <32768>;
 			driving-capability = <1>;
 			status = "disabled";
 		};
 
 		clk_lsi: clk-lsi {
-			#clock-cells = <0>;
 			compatible = "fixed-clock";
+			#clock-cells = <0>;
 			clock-frequency = <DT_FREQ_K(32)>;
 			status = "disabled";
 		};
@@ -91,8 +91,8 @@
 		 * are stopped, and cannot wake up the SoC, if this is selected as slow-clock!
 		 */
 		clk_16mhz_div512: clk-16mhz-div512 {
-			#clock-cells = <0>;
 			compatible = "fixed-clock";
+			#clock-cells = <0>;
 			clock-frequency = <(DT_FREQ_M(16) / 512)>;
 			status = "disabled";
 		};
@@ -102,10 +102,10 @@
 		flash: flash-controller@40001000 {
 			compatible = "st,stm32wl3-flash-controller", "st,stm32-flash-controller";
 			reg = <0x40001000 DT_SIZE_K(4)>;
+			ranges;
 			interrupts = <0 0>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges;
 
 			st_nvm_user_otp: flash@10001800 {
 				compatible = "st,stm32-nvm-otp";
@@ -136,10 +136,10 @@
 
 		gpio_intc: interrupt-controller@40000000 {
 			compatible = "st,stm32wb0-gpio-intc";
+			reg = <0x40000000 0x40>;
 			interrupt-controller;
 			#interrupt-cells = <1>;
 			#address-cells = <1>;
-			reg = <0x40000000 0x40>;
 			num-lines = <32>;
 			interrupts = <15 0>, <16 0>;
 			interrupt-names = "gpioa", "gpiob";
@@ -148,23 +148,23 @@
 
 		pinctrl: pin-controller@48000000 {
 			compatible = "st,stm32-pinctrl";
+			reg = <0x48000000 DT_SIZE_M(2)>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			reg = <0x48000000 DT_SIZE_M(2)>;
 
 			gpioa: gpio@48000000 {
 				compatible = "st,stm32-gpio";
+				reg = <0x48000000 DT_SIZE_K(1)>;
 				gpio-controller;
 				#gpio-cells = <2>;
-				reg = <0x48000000 DT_SIZE_K(1)>;
 				clocks = <&rcc STM32_CLOCK(AHB0, 2)>;
 			};
 
 			gpiob: gpio@48100000 {
 				compatible = "st,stm32-gpio";
+				reg = <0x48100000 DT_SIZE_K(1)>;
 				gpio-controller;
 				#gpio-cells = <2>;
-				reg = <0x48100000 DT_SIZE_K(1)>;
 				clocks = <&rcc STM32_CLOCK(AHB0, 3)>;
 			};
 		};

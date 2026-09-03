@@ -18,8 +18,8 @@
 	#size-cells = <0>;
 	pinctrl-0 = <&eusart1_default>;
 	pinctrl-names = "default";
-	status = "okay";
 	cs-gpios = <&gpioc 0 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	slow@0 {
 		compatible = "test-spi-loopback-slow";

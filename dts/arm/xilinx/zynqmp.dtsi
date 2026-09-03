@@ -12,8 +12,8 @@
 / {
 	soc {
 		pinctrl: pinctrl@ff180000 {
-			reg = <0xff180000 0xc80>;
 			compatible = "xlnx,pinctrl-zynqmp";
+			reg = <0xff180000 0xc80>;
 		};
 
 		flash0: flash@c0000000 {
@@ -31,24 +31,24 @@
 		uart0: uart@ff000000 {
 			compatible = "xlnx,xuartps";
 			reg = <0xff000000 0x1000>;
-			status = "disabled";
 			interrupts = <GIC_SPI 21 IRQ_TYPE_LEVEL
 				      IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "irq_0";
+			status = "disabled";
 		};
 
 		uart1: uart@ff010000 {
 			compatible = "xlnx,xuartps";
 			reg = <0xff010000 0x1000>;
-			status = "disabled";
 			interrupts = <GIC_SPI 22 IRQ_TYPE_LEVEL
 				      IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "irq_0";
+			status = "disabled";
 		};
 
 		ttc0: timer@ff110000 {
 			compatible = "xlnx,ttcps";
-			status = "disabled";
+			reg = <0xff110000 0x1000>;
 			interrupts = <GIC_SPI 36 IRQ_TYPE_LEVEL
 				      IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 37 IRQ_TYPE_LEVEL
@@ -56,12 +56,12 @@
 				     <GIC_SPI 38 IRQ_TYPE_LEVEL
 				      IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "irq_0", "irq_1", "irq_2";
-			reg = <0xff110000 0x1000>;
+			status = "disabled";
 		};
 
 		ttc1: timer@ff120000 {
 			compatible = "xlnx,ttcps";
-			status = "disabled";
+			reg = <0xff120000 0x1000>;
 			interrupts = <GIC_SPI 39 IRQ_TYPE_LEVEL
 				      IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 40 IRQ_TYPE_LEVEL
@@ -69,12 +69,12 @@
 				     <GIC_SPI 41 IRQ_TYPE_LEVEL
 				      IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "irq_0", "irq_1", "irq_2";
-			reg = <0xff120000 0x1000>;
+			status = "disabled";
 		};
 
 		ttc2: timer@ff130000 {
 			compatible = "xlnx,ttcps";
-			status = "disabled";
+			reg = <0xff130000 0x1000>;
 			interrupts = <GIC_SPI 42 IRQ_TYPE_LEVEL
 				      IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 43 IRQ_TYPE_LEVEL
@@ -82,12 +82,12 @@
 				     <GIC_SPI 44 IRQ_TYPE_LEVEL
 				      IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "irq_0", "irq_1", "irq_2";
-			reg = <0xff130000 0x1000>;
+			status = "disabled";
 		};
 
 		ttc3: timer@ff140000 {
 			compatible = "xlnx,ttcps";
-			status = "disabled";
+			reg = <0xff140000 0x1000>;
 			interrupts = <GIC_SPI 45 IRQ_TYPE_LEVEL
 				      IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 46 IRQ_TYPE_LEVEL
@@ -95,7 +95,7 @@
 				     <GIC_SPI 47 IRQ_TYPE_LEVEL
 				      IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "irq_0", "irq_1", "irq_2";
-			reg = <0xff140000 0x1000>;
+			status = "disabled";
 		};
 
 		gem0: ethernet@ff0b0000 {
@@ -103,7 +103,6 @@
 			reg = <0xff0b0000 0x1000>,
 			      <0xff5e0050 0x4>;
 			reg-names = "mac", "clkc";
-			status = "disabled";
 			interrupts = <GIC_SPI 57 IRQ_TYPE_LEVEL
 				      IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 58 IRQ_TYPE_LEVEL
@@ -119,12 +118,13 @@
 			tx-buffer-size = <1536>;
 			discard-rx-fcs;
 			unicast-hash;
+			status = "disabled";
 
 			gem0_mdio: mdio {
 				compatible = "xlnx,gem-mdio";
-				status = "disabled";
 				#address-cells = <1>;
 				#size-cells = <0>;
+				status = "disabled";
 			};
 		};
 
@@ -133,7 +133,6 @@
 			reg = <0xff0c0000 0x1000>,
 			      <0xff5e0054 0x4>;
 			reg-names = "mac", "clkc";
-			status = "disabled";
 			interrupts = <GIC_SPI 59 IRQ_TYPE_LEVEL
 				      IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 60 IRQ_TYPE_LEVEL
@@ -149,12 +148,13 @@
 			tx-buffer-size = <1536>;
 			discard-rx-fcs;
 			unicast-hash;
+			status = "disabled";
 
 			gem1_mdio: mdio {
 				compatible = "xlnx,gem-mdio";
-				status = "disabled";
 				#address-cells = <1>;
 				#size-cells = <0>;
+				status = "disabled";
 			};
 		};
 
@@ -163,7 +163,6 @@
 			reg = <0xff0d0000 0x1000>,
 			      <0xff5e0058 0x4>;
 			reg-names = "mac", "clkc";
-			status = "disabled";
 			interrupts = <GIC_SPI 61 IRQ_TYPE_LEVEL
 				      IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 62 IRQ_TYPE_LEVEL
@@ -179,12 +178,13 @@
 			tx-buffer-size = <1536>;
 			discard-rx-fcs;
 			unicast-hash;
+			status = "disabled";
 
 			gem2_mdio: mdio {
 				compatible = "xlnx,gem-mdio";
-				status = "disabled";
 				#address-cells = <1>;
 				#size-cells = <0>;
+				status = "disabled";
 			};
 		};
 
@@ -193,7 +193,6 @@
 			reg = <0xff0e0000 0x1000>,
 			      <0xff5e005c 0x4>;
 			reg-names = "mac", "clkc";
-			status = "disabled";
 			interrupts = <GIC_SPI 63 IRQ_TYPE_LEVEL
 				      IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 64 IRQ_TYPE_LEVEL
@@ -209,18 +208,18 @@
 			tx-buffer-size = <1536>;
 			discard-rx-fcs;
 			unicast-hash;
+			status = "disabled";
 
 			gem3_mdio: mdio {
 				compatible = "xlnx,gem-mdio";
-				status = "disabled";
 				#address-cells = <1>;
 				#size-cells = <0>;
+				status = "disabled";
 			};
 		};
 
 		psgpio: gpio@ff0a0000 {
 			compatible = "xlnx,ps-gpio";
-			status = "disabled";
 			reg = <0xff0a0000 0x1000>;
 			interrupts = <GIC_SPI 16 IRQ_TYPE_LEVEL
 				      IRQ_DEFAULT_PRIORITY>;
@@ -228,6 +227,7 @@
 
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "disabled";
 
 			psgpio_bank0: psgpio_bank@0 {
 				compatible = "xlnx,ps-gpio-bank";
@@ -287,37 +287,36 @@
 		i2c0: i2c@ff020000 {
 			compatible = "cdns,i2c";
 			reg = <0xff020000 0x1000>;
-			status = "disabled";
 			interrupts = <GIC_SPI 17 IRQ_TYPE_LEVEL
 				      IRQ_DEFAULT_PRIORITY>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			fifo-depth = <16>;
+			status = "disabled";
 		};
 
 		i2c1: i2c@ff030000 {
 			compatible = "cdns,i2c";
 			reg = <0xff030000 0x1000>;
-			status = "disabled";
 			interrupts = <GIC_SPI 18 IRQ_TYPE_LEVEL
 				      IRQ_DEFAULT_PRIORITY>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			fifo-depth = <16>;
+			status = "disabled";
 		};
 
 		mc: memory-controller@fd070000 {
 			compatible = "xlnx,zynqmp-ddrc-2.40a";
-			status = "disabled";
+			reg = <0xfd070000 0x30000>;
 			interrupts = <GIC_SPI 112 IRQ_TYPE_LEVEL
 				      IRQ_DEFAULT_PRIORITY>;
-			reg = <0xfd070000 0x30000>;
+			status = "disabled";
 		};
 
 		spi0: spi@ff040000 {
 			compatible = "cdns,spi";
 			reg = <0xff040000 0x1000>;
-			status = "disabled";
 			interrupts = <GIC_SPI 19 IRQ_TYPE_LEVEL
 				      IRQ_DEFAULT_PRIORITY>;
 			#address-cells = <1>;
@@ -325,12 +324,12 @@
 			fifo-width = <8>;
 			rx-fifo-depth = <128>;
 			tx-fifo-depth = <128>;
+			status = "disabled";
 		};
 
 		spi1: spi@ff050000 {
 			compatible = "cdns,spi";
 			reg = <0xff050000 0x1000>;
-			status = "disabled";
 			interrupts = <GIC_SPI 20 IRQ_TYPE_LEVEL
 				      IRQ_DEFAULT_PRIORITY>;
 			#address-cells = <1>;
@@ -338,28 +337,29 @@
 			fifo-width = <8>;
 			rx-fifo-depth = <128>;
 			tx-fifo-depth = <128>;
+			status = "disabled";
 		};
 
 		qspi: spi@ff0f0000 {
 			compatible = "xlnx,zynqmp-qspi-1.0";
 			reg = <0xff0f0000 0x1000>;
-			status = "disabled";
 			interrupts = <GIC_SPI 15 IRQ_TYPE_LEVEL
 				      IRQ_DEFAULT_PRIORITY>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "disabled";
 		};
 
 		rtc: rtc@ffa60000 {
 			compatible = "xlnx,zynqmp-rtc";
 			reg = <0xffa60000 0x100>;
-			status = "disabled";
 			interrupts = <GIC_SPI 26 IRQ_TYPE_LEVEL
 				      IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 27 IRQ_TYPE_LEVEL
 				      IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "alarm", "sec";
 			clock-frequency = <32768>;
+			status = "disabled";
 		};
 	};
 };

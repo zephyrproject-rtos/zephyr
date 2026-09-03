@@ -8,7 +8,7 @@
 	};
 
 	rtc: rtc {
-		status = "okay";
 		compatible = "zephyr,rtc-emul";
+		status = "okay";
 	};
 };

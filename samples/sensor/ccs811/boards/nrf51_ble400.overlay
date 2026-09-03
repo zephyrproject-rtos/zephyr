@@ -22,10 +22,10 @@
 };
 
 &i2c0 {
-	status = "okay";
 	pinctrl-0 = <&i2c0_default_alt>;
 	pinctrl-1 = <&i2c0_sleep_alt>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	/* Sparkfun Environment Combo uses second I2C address */
 	ccs811: ccs811@5b {

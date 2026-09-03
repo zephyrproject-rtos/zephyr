@@ -11,10 +11,9 @@
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 
 / {
+	compatible = "rockchip,rk3568";
 	#address-cells = <1>;
 	#size-cells = <1>;
-
-	compatible = "rockchip,rk3568";
 	interrupt-parent = <&gic>;
 
 	cpus {
@@ -22,42 +21,42 @@
 		#size-cells = <0>;
 
 		cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-a55";
-			enable-method = "psci";
 			reg = <0x000>;
+			device_type = "cpu";
+			enable-method = "psci";
 		};
 
 		cpu@100 {
-			device_type = "cpu";
 			compatible = "arm,cortex-a55";
-			enable-method = "psci";
 			reg = <0x100>;
+			device_type = "cpu";
+			enable-method = "psci";
 		};
 
 		cpu@200 {
-			device_type = "cpu";
 			compatible = "arm,cortex-a55";
-			enable-method = "psci";
 			reg = <0x200>;
+			device_type = "cpu";
+			enable-method = "psci";
 		};
 
 		cpu@300 {
-			device_type = "cpu";
 			compatible = "arm,cortex-a55";
-			enable-method = "psci";
 			reg = <0x300>;
+			device_type = "cpu";
+			enable-method = "psci";
 		};
 	};
 
 	gic: interrupt-controller@fd400000 {
-		#address-cells = <1>;
 		compatible = "arm,gic-v3", "arm,gic";
-		#interrupt-cells = <4>;
-		interrupt-controller;
 
 		reg = <0xfd400000 0x10000>, /* GICD */
 		      <0xfd460000 0xc0000>; /* GICR */
+		#address-cells = <1>;
+		#interrupt-cells = <4>;
+		interrupt-controller;
 		status = "okay";
 	};
 

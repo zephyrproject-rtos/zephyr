@@ -13,9 +13,9 @@
 		cpuflpr_sram: memory@20027c00 {
 			compatible = "mmio-sram";
 			reg = <0x20027c00 DT_SIZE_K(96)>;
+			ranges = <0x0 0x20027c00 DT_SIZE_K(96)>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0x20027c00 DT_SIZE_K(96)>;
 		};
 	};
 };

@@ -10,8 +10,8 @@
 
 		test_gpio: gpio@deadbeef {
 			compatible = "vnd,gpio";
-			gpio-controller;
 			reg = <0xdeadbeef 0x1000>;
+			gpio-controller;
 			#gpio-cells = <0x2>;
 			status = "okay";
 		};
@@ -28,73 +28,73 @@
 				#size-cells = <0>;
 
 				ethernet-phy@0 {
-					reg = <0x0>;
 					compatible = "realtek,rtl8211f";
+					reg = <0x0>;
 					status = "okay";
 				};
 
 				ethernet-phy@1 {
-					reg = <0x1>;
 					compatible = "nxp,tja1103";
-					status = "okay";
+					reg = <0x1>;
 					int-gpios = <&test_gpio 0 0>;
 					master-slave = "slave";
+					status = "okay";
 				};
 
 				ethernet-phy@2 {
-					reg = <0x2>;
 					compatible = "microchip,ksz8081";
-					status = "okay";
+					reg = <0x2>;
 					reset-gpios = <&test_gpio 0 0>;
 					int-gpios = <&test_gpio 0 0>;
 					microchip,interface-type = "rmii";
+					status = "okay";
 				};
 
 				ethernet-phy@5 {
-					reg = <0x5>;
 					compatible = "adi,adin1100-phy";
+					reg = <0x5>;
 					status = "okay";
 				};
 
 				ethernet-phy@6 {
-					reg = <0x6>;
 					compatible = "adi,adin2111-phy";
+					reg = <0x6>;
 					status = "okay";
 				};
 
 				ethernet-phy@7 {
-					reg = <0x7>;
 					compatible = "davicom,dm8806-phy";
-					status = "okay";
+					reg = <0x7>;
 					reg-switch = <8>;
 					reset-gpios = <&test_gpio 0 0>;
 					int-gpios = <&test_gpio 0 0>;
 					davicom,interface-type = "rmii";
+					status = "okay";
 				};
 
 				ethernet-phy@8 {
-					reg = <0x8>;
 					compatible = "ti,dp83867";
-					status = "okay";
+					reg = <0x8>;
 					reset-gpios = <&test_gpio 0 0>;
 					int-gpios = <&test_gpio 0 0>;
 					ti,interface-type = "rgmii";
+					status = "okay";
 				};
 
 				ethernet-phy@9 {
-					reg = <0x9>;
 					compatible = "microchip,ksz9131";
-					status = "okay";
+					reg = <0x9>;
 					int-gpios = <&test_gpio 0 0>;
+					status = "okay";
 				};
 
 				ethernet-phy@a {
-					reg = <0xa>;
 					compatible = "ethernet-phy";
-					status = "okay";
+					reg = <0xa>;
 					reset-gpios = <&test_gpio 0 0>;
 					reset-assert-duration-us = <100>;
 					reset-deassertion-timeout-ms = <10>;
+					status = "okay";
 				};
 			};
 		};
@@ -103,9 +103,9 @@
 			compatible = "zephyr,mdio-gpio";
 			mdc-gpios = <&test_gpio 0 0>;
 			mdio-gpios = <&test_gpio 0 0>;
-			status = "okay";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "okay";
 		};
 	};
 };

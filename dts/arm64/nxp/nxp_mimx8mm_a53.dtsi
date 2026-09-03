@@ -25,27 +25,27 @@
 		#size-cells = <0>;
 
 		cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-a53";
 			reg = <0>;
+			device_type = "cpu";
 		};
 
 		cpu@1 {
-			device_type = "cpu";
 			compatible = "arm,cortex-a53";
 			reg = <1>;
+			device_type = "cpu";
 		};
 
 		cpu@2 {
-			device_type = "cpu";
 			compatible = "arm,cortex-a53";
 			reg = <2>;
+			device_type = "cpu";
 		};
 
 		cpu@3 {
-			device_type = "cpu";
 			compatible = "arm,cortex-a53";
 			reg = <3>;
+			device_type = "cpu";
 		};
 	};
 
@@ -181,8 +181,8 @@
 		status = "okay";
 
 		pinctrl: pinctrl {
-			status = "okay";
 			compatible = "nxp,imx8mp-pinctrl";
+			status = "okay";
 		};
 	};
 
@@ -235,9 +235,9 @@
 
 	i2c1: i2c@30a20000 {
 		compatible = "nxp,ii2c";
+		reg = <0x30a20000 0x10000>;
 		#address-cells = <1>;
 		#size-cells = <0>;
-		reg = <0x30a20000 0x10000>;
 		interrupts = <GIC_SPI 35 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-parent = <&gic>;
 		clocks = <&ccm IMX_CCM_I2C1_CLK 0 0>;
@@ -247,9 +247,9 @@
 
 	i2c2: i2c@30a30000 {
 		compatible = "nxp,ii2c";
+		reg = <0x30a30000 0x10000>;
 		#address-cells = <1>;
 		#size-cells = <0>;
-		reg = <0x30a30000 0x10000>;
 		interrupts = <GIC_SPI 36 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-parent = <&gic>;
 		clocks = <&ccm IMX_CCM_I2C2_CLK 0 0>;
@@ -259,9 +259,9 @@
 
 	i2c3: i2c@30a40000 {
 		compatible = "nxp,ii2c";
+		reg = <0x30a40000 0x10000>;
 		#address-cells = <1>;
 		#size-cells = <0>;
-		reg = <0x30a40000 0x10000>;
 		interrupts = <GIC_SPI 37 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-parent = <&gic>;
 		clocks = <&ccm IMX_CCM_I2C3_CLK 0 0>;
@@ -271,9 +271,9 @@
 
 	i2c4: i2c@30a50000 {
 		compatible = "nxp,ii2c";
+		reg = <0x30a50000 0x10000>;
 		#address-cells = <1>;
 		#size-cells = <0>;
-		reg = <0x30a50000 0x10000>;
 		interrupts = <GIC_SPI 38 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-parent = <&gic>;
 		clocks = <&ccm IMX_CCM_I2C4_CLK 0 0>;
@@ -298,8 +298,8 @@
 			interrupts = <GIC_SPI 120 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "COMMON";
 			interrupt-parent = <&gic>;
-			nxp,mdio = <&enet_mdio>;
 			ptp-clock = <&enet_ptp_clock>;
+			nxp,mdio = <&enet_mdio>;
 			status = "disabled";
 		};
 

@@ -18,11 +18,11 @@
 };
 
 &lpcmp0 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpcmp0>;
 	pinctrl-names = "default";
 	positive-mux-input = "IN1"; /* FRDM-MCXA344 J2-17 */
 	negative-mux-input = "DAC";
 	dac-value = <127>;
 	dac-vref-source = "VREFH1";
+	status = "okay";
 };

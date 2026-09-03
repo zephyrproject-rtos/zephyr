@@ -11,8 +11,8 @@
 
 	wd_external: wd_external {
 		compatible = "ti,tps382x";
-		status = "okay";
 		wdi-gpios = <&gpio1 21 GPIO_ACTIVE_LOW>;
+		status = "okay";
 	};
 };
 

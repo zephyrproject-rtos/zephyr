@@ -11,7 +11,7 @@
 };
 
 &mx25r64 {
-	status = "okay";
 	supply-gpios = <&gpio1 3 GPIO_ACTIVE_HIGH>;
 	t-reset-recovery = <10000>;
+	status = "okay";
 };

@@ -33,8 +33,8 @@
 
 			pwm {
 				compatible = "st,stm32-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 
 			counter {
@@ -51,9 +51,9 @@
 
 		spi3: spi@40003c00 {
 			compatible = "st,stm32-spi";
+			reg = <0x40003c00 0x400>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40003c00 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 15)>;
 			interrupts = <47 0>;
 			st,spi-data-width = "limited-8-16-bit";

@@ -10,24 +10,23 @@
 #include <zephyr/dt-bindings/battery/battery.h>
 
 test_adc_mcp9700a: mcp9700a {
-	status = "okay";
 	compatible = "microchip,mcp970x";
 	family = "MCP9700/9700A";
 	io-channels = <&test_adc 0>;
+	status = "okay";
 };
 
 test_voltage: voltage {
-	status = "okay";
 	compatible = "voltage-divider";
 	io-channels = <&test_adc 1>;
 	io-channel-names = "VOLTAGE";
 	output-ohms = <47000>; /* R1 */
 	full-ohms = <(100000 + 47000)>; /* R2 + R1 */
 	power-gpios = <&test_gpio 0 0>;
+	status = "okay";
 };
 
 test_current: current_amp {
-	status = "okay";
 	compatible = "current-sense-amplifier";
 	io-channels = <&test_adc 2>;
 	io-channel-names = "CURRENT_AMP";
@@ -35,6 +34,7 @@ test_current: current_amp {
 	sense-gain-mult = <1>;
 	sense-gain-div = <1>;
 	zero-current-voltage-mv = <0>;
+	status = "okay";
 };
 
 test_current_alt_gain: current_amp_alt_gain {
@@ -47,12 +47,12 @@ test_current_alt_gain: current_amp_alt_gain {
 
 test_composite_fuel_gauge: composite_fuel_gauge {
 	compatible = "zephyr,fuel-gauge-composite";
-	status = "okay";
 	source-primary = <&test_voltage>;
 	source-secondary = <&test_current>;
 	device-chemistry = "lithium-ion-polymer";
 	ocv-capacity-table-0 = <BATTERY_OCV_CURVE_LITHIUM_ION_POLYMER_DEFAULT>;
 	charge-full-design-microamp-hours = <1000000>;
+	status = "okay";
 };
 
 test_adc_emul: adc-emul {
@@ -93,15 +93,15 @@ test_murata_ncp15wb473: murata-ncp15wb473 {
 };
 
 test_omron_d6f_p0001: test-omron-d6f-p0001 {
-	status = "okay";
 	compatible = "omron,d6f-p0001";
 	io-channels = <&test_adc 0>;
+	status = "okay";
 };
 
 test_omron_d6f_p0010: test-omron-d6f-p0010 {
-	status = "okay";
 	compatible = "omron,d6f-p0010";
 	io-channels = <&test_adc 0>;
+	status = "okay";
 };
 
 test_tdk_ntcgxx3jx103x: tdk-ntcgxx3jx103x {
@@ -139,13 +139,13 @@ test_seeed_grove_temperature: seeed-grove-temperature {
 };
 
 test_veaa_x_3: test_veaa_x_3 {
-	status = "okay";
 	compatible = "festo,veaa-x-3";
 	io-channels = <&test_adc 3>;
 	dac = <&test_dac>;
 	dac-channel-id = <2>;
 	dac-resolution = <12>;
 	pressure-range-type = "D2";
+	status = "okay";
 };
 
 test_als_pt19: test_als-pt19 {
@@ -155,8 +155,8 @@ test_als_pt19: test_als-pt19 {
 };
 
 test_nordic_nrf_vbat: test_nordic_nrf_vbat {
-	status = "okay";
 	compatible = "nordic,nrf-vbat";
 	io-channels = <&test_adc 0>;
 	invert-voltage;
+	status = "okay";
 };

@@ -8,22 +8,22 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
+	compatible = "sifive,freedom-u74-arty";
 	#address-cells = <2>;
 	#size-cells = <2>;
-	compatible = "sifive,freedom-u74-arty";
 	model = "sifive,freedom-u74-arty";
 
 	cpus: cpus {
+		compatible = "starfive,fu74-g000";
 		#address-cells = <1>;
 		#size-cells = <0>;
-		compatible = "starfive,fu74-g000";
 
 		cpu@0 {
-			clock-frequency = <0>;
 			compatible = "starfive,rocket0", "riscv";
+			reg = <0>;
+			clock-frequency = <0>;
 			device_type = "cpu";
 			mmu-type = "riscv,sv39";
-			reg = <0>;
 			riscv,isa-base = "rv64i";
 			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei";
 			status = "okay";
@@ -37,11 +37,11 @@
 		};
 
 		cpu@1 {
-			clock-frequency = <0>;
 			compatible = "starfive,rocket0", "riscv";
+			reg = <1>;
+			clock-frequency = <0>;
 			device_type = "cpu";
 			mmu-type = "riscv,sv39";
-			reg = <1>;
 			riscv,isa-base = "rv64i";
 			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei";
 			status = "okay";
@@ -56,28 +56,28 @@
 	};
 
 	ram0: memory@80000000 {
-		device_type = "memory";
 		reg = <0x0 0x80000000 0x2 0x0>;
+		device_type = "memory";
 	};
 
 	soc {
+		compatible = "starfive,freedom-u74-arty", "simple-bus";
+		ranges;
 		#address-cells = <2>;
 		#size-cells = <2>;
 		#clock-cells = <1>;
-		compatible = "starfive,freedom-u74-arty", "simple-bus";
-		ranges;
 
 		cachectrl: cache-controller@2010000 {
+			compatible = "sifive,fu540-c000-ccache", "starfive,ccache0", "cache";
+			/*next-level-cache = <&L40 &L36>;*/
+			reg = <0x0 0x2010000 0x0 0x1000 0x0 0x8000000 0x0 0x2000000>;
 			cache-block-size = <64>;
 			cache-level = <2>;
 			cache-sets = <2048>;
 			cache-size = <2097152>;
 			cache-unified;
-			compatible = "sifive,fu540-c000-ccache", "starfive,ccache0", "cache";
 			interrupt-parent = <&plic>;
 			interrupts = <128 1>, <131 1>, <129 1>, <130 1>;
-			/*next-level-cache = <&L40 &L36>;*/
-			reg = <0x0 0x2010000 0x0 0x1000 0x0 0x8000000 0x0 0x2000000>;
 			reg-names = "control", "sideband";
 		};
 
@@ -95,35 +95,35 @@
 
 		clint: clint@2000000 {
 			compatible = "sifive,clint0";
+			reg = <0x0 0x2000000 0x0 0x10000>;
 			interrupts-extended = <&cpu0intctrl 3 &cpu0intctrl 7
 					       &cpu1intctrl 3 &cpu1intctrl 7>;
-			reg = <0x0 0x2000000 0x0 0x10000>;
 		};
 
 		mtimer: timer@200bff8 {
 			compatible = "riscv,machine-timer";
-			interrupts-extended = <&cpu0intctrl 7 &cpu1intctrl 7>;
 			reg = <0x0 0x200bff8 0x0 0x8 0x0 0x2004000 0x0 0x8>;
+			interrupts-extended = <&cpu0intctrl 7 &cpu1intctrl 7>;
 			reg-names = "mtime", "mtimecmp";
 		};
 
 		plic: plic@c000000 {
 			compatible = "sifive,plic-1.0.0";
+			reg = <0x0 0x0c000000 0x0 0x04000000>;
 			#address-cells = <0>;
 			#interrupt-cells = <2>;
 			interrupt-controller;
 			interrupts-extended = <&cpu0intctrl 11 &cpu0intctrl 9
 					       &cpu1intctrl 11 &cpu1intctrl 9>;
-			reg = <0x0 0x0c000000 0x0 0x04000000>;
 			riscv,max-priority = <7>;
 			riscv,ndev = <127>;
 		};
 
 		uart3: serial@12440000 {
 			compatible = "ns16550", "snps,dw-apb-uart";
+			reg = <0x0 0x12440000 0x0 0x10000>;
 			interrupt-parent = <&plic>;
 			interrupts = <73 1>;
-			reg = <0x0 0x12440000 0x0 0x10000>;
 			reg-shift = <2>;
 			clocks = <&uartclk>, <&apb2clk>;
 			clock-names = "baudclk", "apb_pclk";
@@ -134,9 +134,9 @@
 
 		uart2: serial@12430000 {
 			compatible = "ns16550", "snps,dw-apb-uart";
+			reg = <0x0 0x12430000 0x0 0x10000>;
 			interrupt-parent = <&plic>;
 			interrupts = <72 1>;
-			reg = <0x0 0x12430000 0x0 0x10000>;
 			reg-shift = <2>;
 			clocks = <&uartclk>, <&apb2clk>;
 			clock-names = "baudclk", "apb_pclk";
@@ -147,9 +147,9 @@
 
 		uart1: hs_serial@11880000 {
 			compatible = "ns16550", "snps,dw-apb-uart";
+			reg = <0x0 0x11880000 0x0 0x10000>;
 			interrupt-parent = <&plic>;
 			interrupts = <93 1>;
-			reg = <0x0 0x11880000 0x0 0x10000>;
 			reg-shift = <2>;
 			clocks = <&hs_uartclk>, <&apb1clk>;
 			clock-names = "baudclk", "apb_pclk";
@@ -160,9 +160,9 @@
 
 		uart0: hs_serial@11870000 {
 			compatible = "ns16550", "snps,dw-apb-uart";
+			reg = <0x0 0x11870000 0x0 0x10000>;
 			interrupt-parent = <&plic>;
 			interrupts = <92 1>;
-			reg = <0x0 0x11870000 0x0 0x10000>;
 			reg-shift = <2>;
 			clocks = <&hs_uartclk>, <&apb1clk>;
 			clock-names = "baudclk", "apb_pclk";

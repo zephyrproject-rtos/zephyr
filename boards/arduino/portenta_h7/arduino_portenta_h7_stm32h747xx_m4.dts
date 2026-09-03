@@ -10,10 +10,8 @@
 #include "arduino_portenta_h7-common.dtsi"
 
 / {
-	model = "Arduino Portenta H7 board";
 	compatible = "arduino,portenta-h7";
-
-	/* HW resources are split between CM7 and CM4 */
+	model = "Arduino Portenta H7 board";
 
 	chosen {
 		zephyr,console = &usart1;
@@ -21,6 +19,8 @@
 		zephyr,sram = &sram1;
 		zephyr,flash = &flash1;
 	};
+
+	/* HW resources are split between CM7 and CM4 */
 };
 
 &rcc {

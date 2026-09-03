@@ -5,11 +5,11 @@
  */
 
 &wdt131 {
-	status = "reserved";
 	interrupt-parent = <&cpuppr_clic>;
+	status = "reserved";
 };
 
 &wdt132 {
-	status = "reserved";
 	interrupt-parent = <&cpuflpr_clic>;
+	status = "reserved";
 };

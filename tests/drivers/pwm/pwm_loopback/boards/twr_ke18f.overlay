@@ -33,18 +33,18 @@
 };
 
 &pwt {
-	status = "okay";
 	prescaler = <32>;
 	pinctrl-0 = <&pwt_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &ftm2 {
-	status = "okay";
 	compatible = "nxp,ftm-pwm";
 	prescaler = <128>;
 	#pwm-cells = <3>;
 	pinctrl-0 = <&ftm2_default>;
 	pinctrl-names = "default";
 	clock-source = "fixed";
+	status = "okay";
 };

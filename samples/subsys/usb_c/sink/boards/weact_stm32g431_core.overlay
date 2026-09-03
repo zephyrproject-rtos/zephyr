@@ -25,6 +25,6 @@
 };
 
 &ucpd1 {
-	status = "okay";
 	dead-battery;
+	status = "okay";
 };

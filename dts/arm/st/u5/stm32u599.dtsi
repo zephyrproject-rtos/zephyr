@@ -27,9 +27,9 @@
 
 		mipi_dsi: dsihost@40016c00 {
 			compatible = "st,stm32u5-mipi-dsi", "st,stm32-mipi-dsi";
+			reg = <0x40016c00 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40016c00 0x1000>;
 			clock-names = "dsiclk", "dsisrc", "refclk", "pixelclk";
 			clocks = <&rcc STM32_CLOCK(APB2, 27)>,
 				 <&rcc STM32_SRC_DSIPHY DSI_SEL(1)>,

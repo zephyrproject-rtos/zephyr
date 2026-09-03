@@ -8,9 +8,9 @@
 
 / {
 	sdram0: memory@80000000 {
+		reg = <0x80000000 DT_SIZE_M(64)>;
 		/* MT48LC16M16A2B4-7EIT */
 		device_type = "memory";
-		reg = <0x80000000 DT_SIZE_M(64)>;
 	};
 
 	leds {
@@ -48,39 +48,39 @@
 	eeprom0: eeprom@50 {
 		compatible = "st,m24xxx", "atmel,at24";
 		reg = <0x50>;
-		status = "okay";
 		size = <256>;
 		pagesize = <8>;
 		address-width = <16>;
 		timeout = <5>;
+		status = "okay";
 	};
 };
 
 &enet1g {
-	status = "okay";
 	pinctrl-0 = <&pinmux_enet1g>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &enet1g_mac {
-	status = "okay";
 	phy-handle = <&enet1g_phy>;
 	phy-connection-type = "rgmii";
 	zephyr,random-mac-address;
+	status = "okay";
 };
 
 &enet1g_mdio {
-	status = "okay";
 	pinctrl-0 = <&pinmux_enet1g_mdio>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	enet1g_phy: phy@0 {
 		compatible = "ti,dp83867";
 		reg = <0>;
-		status = "okay";
 		reset-gpios = <&gpio5 2 GPIO_ACTIVE_HIGH>;
 		int-gpios = <&gpio5 15 GPIO_ACTIVE_LOW>;
 		ti,interface-type = "rgmii";
+		status = "okay";
 	};
 };
 
@@ -90,25 +90,25 @@
 };
 
 &flexspi {
-	status = "okay";
+	reg = <0x400cc000 0x4000>, <0x30000000 DT_SIZE_M(16)>;
 	ahb-prefetch;
 	ahb-read-addr-opt;
 	rx-clock-source = <1>;
-	reg = <0x400cc000 0x4000>, <0x30000000 DT_SIZE_M(16)>;
 	reg-names = "reg_base", "ahb";
+	status = "okay";
 
 	ext_flash_ctrl: flash-controller@0 {
 		compatible = "nxp,imx-flexspi-nor";
+		reg = <0>;
+		ranges = <0x0 0x30000000 DT_SIZE_M(16)>;
 		/* MX25U12832FM2I02 is 16MB, 128MBit flash part */
 		size = <DT_SIZE_M(16 * 8)>;
-		reg = <0>;
 		spi-max-frequency = <100000000>;
-		status = "okay";
 		jedec-id = [c2 25 38];
 
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges = <0x0 0x30000000 DT_SIZE_M(16)>;
+		status = "okay";
 
 		mx25u12832f: flash@0 {
 			compatible = "soc-nv-flash";
@@ -122,26 +122,26 @@
 				#size-cells = <1>;
 
 				boot_partition: partition@0 {
-					label = "mcuboot";
 					reg = <0x00000000 DT_SIZE_K(128)>;
+					label = "mcuboot";
 				};
 
 				/* Note slot 0 has one additional sector,
 				 * this is intended for use with the swap move algorithm
 				 */
 				slot0_partition: partition@20000 {
-					label = "image-0";
 					reg = <0x00020000 0x301000>;
+					label = "image-0";
 				};
 
 				slot1_partition: partition@321000 {
-					label = "image-1";
 					reg = <0x00321000 0x300000>;
+					label = "image-1";
 				};
 
 				storage_partition: partition@621000 {
-					label = "storage";
 					reg = <0x00621000 DT_SIZE_K(1984)>;
+					label = "storage";
 				};
 			};
 		};

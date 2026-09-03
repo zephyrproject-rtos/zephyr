@@ -16,15 +16,14 @@ clic: &cpuflpr_clic {};
 / {
 	soc {
 		compatible = "simple-bus";
-		interrupt-parent = <&cpuflpr_clic>;
 		ranges;
+		interrupt-parent = <&cpuflpr_clic>;
 	};
 };
 
 &cpuflpr {
 	cpuflpr_vevif_rx: mailbox {
 		compatible = "nordic,nrf-vevif-task-rx";
-		status = "disabled";
 		interrupt-parent = <&cpuflpr_clic>;
 		interrupts = <16 NRF_DEFAULT_IRQ_PRIORITY>,
 			     <17 NRF_DEFAULT_IRQ_PRIORITY>,
@@ -36,6 +35,7 @@ clic: &cpuflpr_clic {};
 		#mbox-cells = <1>;
 		nordic,tasks = <7>;
 		nordic,tasks-mask = <0x007f0000>;
+		status = "disabled";
 	};
 };
 

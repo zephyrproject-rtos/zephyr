@@ -14,12 +14,12 @@
 &iic0 {
 	interrupts = <88 1>, <87 1>, <86 1>, <85 1>;
 	interrupt-names = "rxi", "txi", "tei", "eri";
-	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
 	clock-frequency = <DT_FREQ_M(1)>;
 	pinctrl-0 = <&iic0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &pinctrl {

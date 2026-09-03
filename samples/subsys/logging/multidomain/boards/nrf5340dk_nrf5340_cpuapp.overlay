@@ -39,8 +39,8 @@
 			status = "okay";
 
 			bt_hci_ipc0: bt_hci_ipc0 {
-				status = "okay";
 				compatible = "zephyr,bt-hci-ipc";
+				status = "okay";
 			};
 		};
 

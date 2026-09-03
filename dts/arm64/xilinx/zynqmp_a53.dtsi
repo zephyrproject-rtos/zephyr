@@ -19,9 +19,9 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-a53";
 			reg = <0x0>;
+			device_type = "cpu";
 			enable-method = "psci";
 		};
 	};
@@ -57,57 +57,57 @@
 		uart0: uart@ff000000 {
 			compatible = "xlnx,xuartps";
 			reg = <0x0 0xff000000 0x0 0x1000>;
-			status = "disabled";
 			interrupts = <GIC_SPI 21 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "irq_0";
+			status = "disabled";
 		};
 
 		uart1: uart@ff010000 {
 			compatible = "xlnx,xuartps";
 			reg = <0x0 0xff010000 0x0 0x1000>;
-			status = "disabled";
 			interrupts = <GIC_SPI 22 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "irq_0";
+			status = "disabled";
 		};
 
 		ttc0: timer@ff110000 {
 			compatible = "xlnx,ttcps";
-			status = "disabled";
+			reg = <0x0 0xff110000 0x0 0x1000>;
 			interrupts = <GIC_SPI 36 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 37 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 38 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "irq_0", "irq_1", "irq_2";
-			reg = <0x0 0xff110000 0x0 0x1000>;
+			status = "disabled";
 		};
 
 		ttc1: timer@ff120000 {
 			compatible = "xlnx,ttcps";
-			status = "disabled";
+			reg = <0x0 0xff120000 0x0 0x1000>;
 			interrupts = <GIC_SPI 39 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 40 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 41 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "irq_0", "irq_1", "irq_2";
-			reg = <0x0 0xff120000 0x0 0x1000>;
+			status = "disabled";
 		};
 
 		ttc2: timer@ff130000 {
 			compatible = "xlnx,ttcps";
-			status = "disabled";
+			reg = <0x0 0xff130000 0x0 0x1000>;
 			interrupts = <GIC_SPI 42 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 43 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 44 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "irq_0", "irq_1", "irq_2";
-			reg = <0x0 0xff130000 0x0 0x1000>;
+			status = "disabled";
 		};
 
 		ttc3: timer@ff140000 {
 			compatible = "xlnx,ttcps";
-			status = "disabled";
+			reg = <0x0 0xff140000 0x0 0x1000>;
 			interrupts = <GIC_SPI 45 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 46 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 47 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "irq_0", "irq_1", "irq_2";
-			reg = <0x0 0xff140000 0x0 0x1000>;
+			status = "disabled";
 		};
 	};
 };

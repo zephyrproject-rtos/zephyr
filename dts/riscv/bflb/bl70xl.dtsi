@@ -33,59 +33,59 @@
 
 	clocks {
 		clk_rc32m: clk-rc32m {
-			#clock-cells = <0>;
 			compatible = "fixed-clock";
+			#clock-cells = <0>;
 			clock-frequency = <BFLB_RC32M_FREQUENCY>;
 		};
 
 		clk_xtal32k: clk-xtal32k {
-			#clock-cells = <0>;
 			compatible = "fixed-clock";
+			#clock-cells = <0>;
 			clock-frequency = <BFLB_F32K_FREQUENCY>;
 			status = "disabled";
 		};
 
 		clk_rc32k: clk-rc32k {
-			#clock-cells = <0>;
 			compatible = "fixed-clock";
+			#clock-cells = <0>;
 			clock-frequency = <BFLB_F32K_FREQUENCY>;
 		};
 
 		clk_f32k: clk-f32k {
-			#clock-cells = <0>;
 			compatible = "bflb,f32k";
+			#clock-cells = <0>;
 			clock-frequency = <BFLB_F32K_FREQUENCY>;
 			clocks = <&clk_rc32k>;
 		};
 
 		clk_crystal: clk-crystal {
-			#clock-cells = <0>;
 			compatible = "fixed-clock";
+			#clock-cells = <0>;
 			clock-frequency = <DT_FREQ_M(32)>;
 		};
 
 		clk_dll: clk-pll {
-			#clock-cells = <1>;
 			compatible = "bflb,bl70x_l-dll";
+			#clock-cells = <1>;
 			clocks = <&clk_crystal>;
 		};
 
 		clk_root: clk-root {
-			#clock-cells = <0>;
 			compatible = "bflb,root-clk";
+			#clock-cells = <0>;
 			clocks = <&clk_dll BL70XL_DLL_128MHZ>;
 			divider = <1>;
 		};
 
 		clk_bclk: clk-bclk {
-			#clock-cells = <0>;
 			compatible = "bflb,bclk";
+			#clock-cells = <0>;
 			divider = <2>;
 		};
 
 		clk_flash: clk-flash {
-			#clock-cells = <0>;
 			compatible = "bflb,flash-clk";
+			#clock-cells = <0>;
 			clocks = <&clk_bclk>;
 			divider = <2>;
 		};
@@ -97,17 +97,17 @@
 		timebase-frequency = <DT_FREQ_M(1)>;
 
 		cpu0: cpu@0 {
-			device_type = "cpu";
 			compatible = "sifive,e24", "riscv";
 			reg = <0>;
+			device_type = "cpu";
+			hardware-exec-breakpoint-count = <4>;
 			riscv,isa-base = "rv32i";
 			riscv,isa-extensions = "i", "m", "a", "f", "c", "zicsr", "zifencei";
-			hardware-exec-breakpoint-count = <4>;
 
 			ictrl: interrupt-controller {
+				compatible = "riscv,cpu-intc";
 				#address-cells = <0>;
 				#interrupt-cells = <1>;
-				compatible = "riscv,cpu-intc";
 				interrupt-controller;
 			};
 		};
@@ -115,9 +115,9 @@
 
 	soc {
 		compatible = "simple-bus";
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		clic: clic@2000000 {
 			compatible = "sifive,clic-draft";
@@ -143,27 +143,27 @@
 		itcm: itcm@22020000 {
 			compatible = "zephyr,memory-region", "mmio-sram";
 			reg = <0x22020000 DT_SIZE_K(16)>;
+			ranges = <0x0 0x22020000 DT_SIZE_K(16)>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0x22020000 DT_SIZE_K(16)>;
 			zephyr,memory-region = "ITCM";
 		};
 
 		retram: memory@40010000 {
 			compatible = "zephyr,memory-region", "mmio-sram";
 			reg = <0x40010000 DT_SIZE_K(4)>;
+			ranges = <0x0 0x40010000 DT_SIZE_K(4)>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0x40010000 DT_SIZE_K(4)>;
 			zephyr,memory-region = "RETRAM";
 		};
 
 		sram0: memory@42024000 {
 			compatible = "mmio-sram";
 			reg = <0x42024000 DT_SIZE_K(64)>;
+			ranges = <0x0 0x42024000 DT_SIZE_K(64)>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0x42024000 DT_SIZE_K(64)>;
 
 			/*
 			 * When BLE is enabled, the hardware reserves exchange
@@ -179,17 +179,17 @@
 			sram0_btle: sram@0 {
 				compatible = "mmio-sram";
 				reg = <0x0 DT_SIZE_K(56)>;
+				ranges = <0x0 0x0 DT_SIZE_K(56)>;
 				#address-cells = <1>;
 				#size-cells = <1>;
-				ranges = <0x0 0x0 DT_SIZE_K(56)>;
 			};
 
 			sram0_btle_em16k: sram_16k@0 {
 				compatible = "mmio-sram";
 				reg = <0x0 DT_SIZE_K(48)>;
+				ranges = <0x0 0x0 DT_SIZE_K(48)>;
 				#address-cells = <1>;
 				#size-cells = <1>;
-				ranges = <0x0 0x0 DT_SIZE_K(48)>;
 			};
 		};
 
@@ -204,11 +204,11 @@
 				compatible = "bflb,bl60x_70x-gpio";
 				reg = <0x40000000 0x1000>;
 				#gpio-cells = <2>;
-				status = "disabled";
 
 				gpio-controller;
 				interrupts = <60 0>;
 				interrupt-parent = <&clic>;
+				status = "disabled";
 			};
 		};
 
@@ -234,10 +234,10 @@
 			#io-channel-cells = <1>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			status = "disabled";
 
 			interrupts = <41 0>;
 			interrupt-parent = <&clic>;
+			status = "disabled";
 		};
 
 		sec_eng_trng: trng@40004000 {
@@ -291,10 +291,10 @@
 			reg = <0x4000a200 0x100>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			status = "disabled";
 
 			interrupts = <43 0>;
 			interrupt-parent = <&clic>;
+			status = "disabled";
 		};
 
 		i2c0: i2c@4000a300 {
@@ -302,39 +302,39 @@
 			reg = <0x4000a300 0x100>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			status = "disabled";
 
 			interrupts = <48 0>;
 			interrupt-parent = <&clic>;
+			status = "disabled";
 		};
 
 		pwm0: pwm@4000a420 {
 			compatible = "bflb,pwm-1";
 			reg = <0x4000a420 0x40>;
 			#pwm-cells = <3>;
-			status = "disabled";
 
 			interrupts = <50 0>;
 			interrupt-parent = <&clic>;
+			status = "disabled";
 		};
 
 		pwm1: pwm@4000a440 {
 			compatible = "bflb,pwm-2";
 			reg = <0x4000a440 0x80>;
 			#pwm-cells = <3>;
-			status = "disabled";
 
 			interrupts = <50 0>;
 			interrupt-parent = <&clic>;
+			status = "disabled";
 		};
 
 		wdt0: watchdog@4000a500 {
 			compatible = "bflb,wdt";
 			reg = <0x4000a500 0x100>;
-			status = "disabled";
 
 			interrupts = <54 0>;
 			interrupt-parent = <&clic>;
+			status = "disabled";
 		};
 
 		sf_ctrl: sf@4000b000 {
@@ -343,10 +343,10 @@
 			ranges;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			status = "okay";
 
 			interrupts = <39 0>;
 			interrupt-parent = <&clic>;
+			status = "okay";
 
 			sf_bank1: flash-controller@23000000 {
 				compatible = "bflb,sf-bank";
@@ -361,11 +361,11 @@
 				 * when not using a pre-existing (ROM) memory region
 				 */
 				compatible = "bflb,sf-bank", "zephyr,memory-region";
-				zephyr,memory-region = "PSRAM";
 				reg = <0x24000000 DT_SIZE_M(16)>;
 				ranges = <0x0 0x24000000 DT_SIZE_M(16)>;
 				#address-cells = <1>;
 				#size-cells = <1>;
+				zephyr,memory-region = "PSRAM";
 				status = "disabled";
 			};
 		};
@@ -375,10 +375,10 @@
 			reg = <0x4000c000 0x1000>;
 			#dma-cells = <2>;
 			dma-channels = <4>;
-			status = "disabled";
 
 			interrupts = <31 0>;
 			interrupt-parent = <&clic>;
+			status = "disabled";
 		};
 
 		powerctrl: power-controller@4000f000 {

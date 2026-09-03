@@ -7,7 +7,6 @@
 #include <zephyr/dt-bindings/comparator/silabs-acmp.h>
 
 &acmp0 {
-	status = "okay";
 
 	bias = <0>;
 	hysteresis-mode = "disabled";
@@ -16,4 +15,5 @@
 	input-positive = <ACMP_INPUT_VSENSE01DIV4>;
 	input-negative = <ACMP_INPUT_VREFDIVAVDD>;
 	vref-divider = <63>;
+	status = "okay";
 };

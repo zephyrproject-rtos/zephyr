@@ -41,7 +41,6 @@
 };
 
 &eqdc1 {
-	status = "okay";
 	pinctrl-0 = <&eqdc1_default>;
 	pinctrl-names = "default";
 	counts-per-revolution = <120>;
@@ -64,4 +63,5 @@
 	 */
 	mux-states = <&xbar1 87 21>,
 		     <&xbar1 88 23>;
+	status = "okay";
 };

@@ -18,8 +18,8 @@
  */
 
 / {
-	model = "STMicroelectronics STM32F756ZG-NUCLEO board";
 	compatible = "st,stm32f756zg-nucleo";
+	model = "STMicroelectronics STM32F756ZG-NUCLEO board";
 
 	chosen {
 		zephyr,console = &usart3;
@@ -123,8 +123,8 @@ zephyr_udc0: &usbotg_fs {
 	pinctrl-names = "default";
 	scl-gpios = <&gpiob 8 GPIO_ACTIVE_HIGH>;
 	sda-gpios = <&gpiob 9 GPIO_ACTIVE_HIGH>;
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &timers1 {
@@ -132,9 +132,9 @@ zephyr_udc0: &usbotg_fs {
 	status = "okay";
 
 	pwm1: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim1_ch3_pe13>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
@@ -146,7 +146,6 @@ zephyr_udc0: &usbotg_fs {
 };
 
 &mac {
-	status = "okay";
 	pinctrl-0 = <&eth_rxd0_pc4
 		     &eth_rxd1_pc5
 		     &eth_ref_clk_pa1
@@ -157,12 +156,13 @@ zephyr_udc0: &usbotg_fs {
 	pinctrl-names = "default";
 	phy-connection-type = "rmii";
 	phy-handle = <&eth_phy>;
+	status = "okay";
 };
 
 &mdio {
-	status = "okay";
 	pinctrl-0 = <&eth_mdio_pa2 &eth_mdc_pc1>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	eth_phy: ethernet-phy@0 {
 		compatible = "ethernet-phy";
@@ -172,9 +172,9 @@ zephyr_udc0: &usbotg_fs {
 
 &flash0 {
 	partitions {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		/*
 		 * 256KB for bootloader. This is too large but
@@ -182,30 +182,30 @@ zephyr_udc0: &usbotg_fs {
 		 */
 		boot_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(256)>;
+			label = "mcuboot";
 			read-only;
 		};
 
 		/* application image slot: 256KB */
 		slot0_partition: partition@40000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-0";
 			reg = <0x00040000 DT_SIZE_K(256)>;
+			label = "image-0";
 		};
 
 		/* backup slot: 256KB */
 		slot1_partition: partition@80000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-1";
 			reg = <0x00080000 DT_SIZE_K(256)>;
+			label = "image-1";
 		};
 
 		/* scratch slot: 256KB */
 		scratch_partition: partition@c0000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-scratch";
 			reg = <0x000c0000 DT_SIZE_K(256)>;
+			label = "image-scratch";
 		};
 	};
 };

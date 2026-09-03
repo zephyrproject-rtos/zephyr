@@ -19,13 +19,13 @@
 };
 
 &tcc1 {
-	status = "okay";
 	compatible = "atmel,sam0-tcc-pwm";
 	prescaler = <4>;
 	#pwm-cells = <2>;
 
 	pinctrl-0 = <&pwm_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &pinctrl {

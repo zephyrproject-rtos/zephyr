@@ -55,9 +55,9 @@
 
 &i2c1 {
 	compatible = "nordic,nrf-twim";
-	zephyr,concat-buf-size = <256>;
 	pinctrl-0 = <&i2c1_default>;
 	pinctrl-1 = <&i2c1_sleep>;
 	pinctrl-names = "default", "sleep";
+	zephyr,concat-buf-size = <256>;
 	status = "okay";
 };

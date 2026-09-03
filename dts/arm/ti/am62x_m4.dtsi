@@ -18,9 +18,9 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m4f";
 			reg = <0>;
+			device_type = "cpu";
 		};
 	};
 
@@ -39,14 +39,14 @@
 
 		/* 192 KB of SRAM (I-Code) */
 		sram_icode: memory@0 {
-			device_type = "memory";
 			reg = <0x00000000 DT_SIZE_K(192)>;
+			device_type = "memory";
 		};
 
 		/* 64 KB of SRAM (D-Code) */
 		sram_dcode: memory@30000 {
-			device_type = "memory";
 			reg = <0x00030000 DT_SIZE_K(64)>;
+			device_type = "memory";
 		};
 	};
 
@@ -69,9 +69,9 @@
 		compatible = "ti,control-module";
 		reg = <0x4080000 DT_SIZE_K(32)>;
 		ranges = <0x00 0x4080000 DT_SIZE_K(32)>;
-		ti,unlock-offsets = <0x1008 0x5008>;
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ti,unlock-offsets = <0x1008 0x5008>;
 
 		pinctrl: pinctrl@4000 {
 			compatible = "ti,k3-pinctrl";

@@ -25,8 +25,8 @@
 };
 
 &pdm20 {
-	status = "okay";
 	pinctrl-0 = <&pdm20_default_test>;
 	pinctrl-names = "default";
 	clock-source = "PCLK32M";
+	status = "okay";
 };

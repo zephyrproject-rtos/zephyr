@@ -11,9 +11,9 @@
 		flashctrl: flash-controller@f01000 {
 			compatible = "ite,it8xxx2-flash-controller";
 			reg = <0x00f01000 0x100>;
+			ranges;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges;
 
 			flash0: flash@80000000 {
 				compatible = "soc-nv-flash";

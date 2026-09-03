@@ -26,18 +26,18 @@
 
 		storage_partition: partition@a6000 {
 			compatible = "zephyr,mapped-partition";
-			label = "storage";
 			reg = <0x000a6000 DT_SIZE_K(128)>;
+			label = "storage";
 		};
 	};
 };
 
 / {
 	msc_disk0 {
-		status = "okay";
 		compatible = "zephyr,flash-disk";
 		partition = <&storage_partition>;
 		disk-name = "SD";
 		cache-size = <512>;
+		status = "okay";
 	};
 };

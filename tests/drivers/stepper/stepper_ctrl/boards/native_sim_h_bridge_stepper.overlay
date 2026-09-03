@@ -13,12 +13,12 @@
 
 	h_bridge_stepper: h-bridge-stepper {
 		compatible = "zephyr,h-bridge-stepper-ctrl";
-		status = "okay";
 		lut-step-gap = <1>;
 		gpios = <&gpio1 0 GPIO_ACTIVE_HIGH>,
 			<&gpio2 0 GPIO_ACTIVE_HIGH>,
 			<&gpio3 0 GPIO_ACTIVE_HIGH>,
 			<&gpio4 0 GPIO_ACTIVE_HIGH>;
 		counter = <&counter0>;
+		status = "okay";
 	};
 };

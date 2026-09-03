@@ -49,8 +49,8 @@
 		 * ADC, so we redefine the resolution for these devices.
 		 */
 		adc3: adc@58026000 {
-			st,adc-resolutions = <12 10 8 6>;
 			sampling-times = <3 7 13 25 48 93 248 641>;
+			st,adc-resolutions = <12 10 8 6>;
 			st,adc-oversampler = "minimal";
 			st,adc-internal-regulator = "startup-sw-delay";
 
@@ -156,8 +156,8 @@
 
 			pwm {
 				compatible = "st,stm32-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 
 			counter {
@@ -185,8 +185,8 @@
 
 			pwm {
 				compatible = "st,stm32-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 
 			counter {
@@ -213,30 +213,30 @@
 
 	/* D1 domain, AXI SRAM (128KB with shared ITCM 192KB as `TCM_AXI_SHARED` is `000`) */
 	sram0: memory@24000000 {
-		reg = <0x24000000 DT_SIZE_K(320)>;
 		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x24000000 DT_SIZE_K(320)>;
 		zephyr,memory-region = "SRAM0";
 	};
 
 	/* D2 domain, AHB SRAM */
 	sram1: memory@30000000 {
-		reg = <0x30000000 DT_SIZE_K(16)>;
 		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x30000000 DT_SIZE_K(16)>;
 		zephyr,memory-region = "SRAM1";
 	};
 
 	/* D2 domain, AHB SRAM */
 	sram2: memory@30004000 {
-		reg = <0x30004000 DT_SIZE_K(16)>;
 		compatible = "zephyr,memory-region", "mmio-sram";
-		zephyr,memory-region = "SRAM2";
+		reg = <0x30004000 DT_SIZE_K(16)>;
 		#memory-region-cells = <0>;
+		zephyr,memory-region = "SRAM2";
 	};
 
 	/* D3 domain, AHB SRAM  */
 	sram4: memory@38000000 {
-		reg = <0x38000000 DT_SIZE_K(16)>;
 		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x38000000 DT_SIZE_K(16)>;
 		zephyr,memory-region = "SRAM4";
 	};
 

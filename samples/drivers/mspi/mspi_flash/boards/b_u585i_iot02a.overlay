@@ -46,12 +46,12 @@
 				mspi-io-mode = "MSPI_IO_MODE_OCTAL";
 				mspi-data-rate = "MSPI_DATA_RATE_DUAL"; /* as first step */
 				mspi-hardware-ce-num = <0>;
-				st,mem-type = "macronix";
 				read-command = <0xee11>;                /* ReaD 4Bytes */
 				command-length = "INSTR_2_BYTE";
 				write-command = <0x12ed>; /* WRite 4Bytes */
 				rx-dummy = <20>;
 				jedec-id = [c2 85 3a];
+				st,mem-type = "macronix";
 				status = "okay";
 
 				partitions {
@@ -60,8 +60,8 @@
 					#size-cells = <1>;
 
 					partition@0 {
-						label = "nor";
 						reg = <0x00000000 DT_SIZE_M(4)>;
+						label = "nor";
 					};
 				};
 			};

@@ -22,15 +22,15 @@
 		#size-cells = <0>;
 
 		cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-a53";
 			reg = <0>;
+			device_type = "cpu";
 		};
 
 		cpu@1 {
-			device_type = "cpu";
 			compatible = "arm,cortex-a53";
 			reg = <1>;
+			device_type = "cpu";
 		};
 	};
 
@@ -42,11 +42,11 @@
 
 		scmi {
 			compatible = "arm,scmi-smc";
-			arm,smc-id = <0x82004000>;
 			shmem = <&scmi_shmem>;
 
 			#address-cells = <1>;
 			#size-cells = <0>;
+			arm,smc-id = <0x82004000>;
 
 			scmi_pds: protocol@11 {
 				compatible = "arm,scmi-power";

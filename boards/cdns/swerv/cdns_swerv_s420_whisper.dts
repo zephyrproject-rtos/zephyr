@@ -21,13 +21,13 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			device_type = "cpu";
 			compatible = "cdns,swerv,s420", "riscv";
+			reg = <0>;
+			device_type = "cpu";
+			clock-frequency = <15000000>;
 			riscv,isa-base = "rv32i";
 			riscv,isa-extensions = "a", "i", "m", "c", "zicsr", "zifencei",
 					       "zbb", "zbc", "zbs";
-			reg = <0>;
-			clock-frequency = <15000000>;
 
 			cpu0intc: interrupt-controller {
 				compatible = "riscv,cpu-intc";
@@ -38,13 +38,13 @@
 		};
 
 		cpu1: cpu@1 {
-			device_type = "cpu";
 			compatible = "cdns,swerv,s420", "riscv";
+			reg = <1>;
+			device_type = "cpu";
+			clock-frequency = <15000000>;
 			riscv,isa-base = "rv32i";
 			riscv,isa-extensions = "a", "i", "m", "c", "zicsr", "zifencei",
 					       "zbb", "zbc", "zbs";
-			reg = <1>;
-			clock-frequency = <15000000>;
 
 			cpu1intc: interrupt-controller {
 				compatible = "riscv,cpu-intc";
@@ -56,11 +56,11 @@
 	};
 
 	soc {
+		compatible = "simple-bus";
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		compatible = "simple-bus";
 		interrupt-parent = <&cpu0intc>;
-		ranges;
 
 		iccm: memory@ee000000 {
 			compatible = "mmio-sram";
@@ -74,10 +74,10 @@
 
 		pic: interrupt-controller@f0100000 {
 			compatible = "cdns,swerv-pic";
+			reg = <0xf0100000 0x00008000>;
 			#address-cells = <1>;
 			#interrupt-cells = <2>;
 			interrupt-controller;
-			reg = <0xf0100000 0x00008000>;
 			riscv,max-priority = <15>;
 		};
 

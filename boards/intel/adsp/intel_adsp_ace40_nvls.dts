@@ -9,8 +9,8 @@
 #include <intel/intel_adsp_ace40_nvls.dtsi>
 
 / {
-	model = "intel_adsp_ace40_nvls";
 	compatible = "intel";
+	model = "intel_adsp_ace40_nvls";
 
 	chosen {
 		zephyr,sram = &sram0;

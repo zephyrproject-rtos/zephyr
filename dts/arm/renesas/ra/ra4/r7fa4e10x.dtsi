@@ -90,10 +90,10 @@
 
 		pwm2: pwm2@40169200 {
 			compatible = "renesas,ra-pwm";
+			reg = <0x40169200 0x100>;
 			divider = <RA_PWM_SOURCE_DIV_1>;
 			channel = <RA_PWM_CHANNEL_2>;
 			clocks = <&pclkd MSTPE 29>;
-			reg = <0x40169200 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
 		};
@@ -105,43 +105,43 @@
 
 		option_setting_ofs0: option-setting-ofs0@100a100 {
 			compatible = "zephyr,memory-region";
-			zephyr,memory-region = "OFS_OFS0_MEMORY";
 			reg = <0x0100a100 0x4>;
+			zephyr,memory-region = "OFS_OFS0_MEMORY";
 			status = "okay";
 		};
 
 		option_setting_ofs1_sec: option-setting-ofs1-sec@100a200 {
 			compatible = "zephyr,memory-region";
-			zephyr,memory-region = "OFS_OFS1_SEC_MEMORY";
 			reg = <0x0100a200 0x4>;
+			zephyr,memory-region = "OFS_OFS1_SEC_MEMORY";
 			status = "okay";
 		};
 
 		option_setting_bps_sec: option-setting-bps-sec@100a240 {
 			compatible = "zephyr,memory-region";
-			zephyr,memory-region = "OFS_BPS_SEC_MEMORY";
 			reg = <0x0100a240 0x4>;
+			zephyr,memory-region = "OFS_BPS_SEC_MEMORY";
 			status = "okay";
 		};
 
 		option_setting_pbps_sec: option-setting-pbps-sec@100a260 {
 			compatible = "zephyr,memory-region";
-			zephyr,memory-region = "OFS_PBPS_SEC_MEMORY";
 			reg = <0x0100a260 0x4>;
+			zephyr,memory-region = "OFS_PBPS_SEC_MEMORY";
 			status = "okay";
 		};
 
 		option_setting_ofs1_sel: option-setting-ofs1-sel@100a280 {
 			compatible = "zephyr,memory-region";
-			zephyr,memory-region = "OFS_OFS1_SEL_MEMORY";
 			reg = <0x0100a280 0x4>;
+			zephyr,memory-region = "OFS_OFS1_SEL_MEMORY";
 			status = "okay";
 		};
 
 		option_setting_bps_sel: option-setting-bps-sel@100a2c0 {
 			compatible = "zephyr,memory-region";
-			zephyr,memory-region = "OFS_BPS_SEL_MEMORY";
 			reg = <0x0100a2c0 0x4>;
+			zephyr,memory-region = "OFS_BPS_SEL_MEMORY";
 			status = "okay";
 		};
 	};

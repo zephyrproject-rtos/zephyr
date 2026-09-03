@@ -5,6 +5,6 @@
  */
 
 &rtc0 {
-	status = "okay";
 	fixed-top;
+	status = "okay";
 };

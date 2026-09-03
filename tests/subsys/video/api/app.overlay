@@ -9,17 +9,17 @@
 		#size-cells = <1>;
 
 		test_i2c: i2c@10002000 {
-			#address-cells = <1>;
-			#size-cells = <0>;
 			compatible = "vnd,i2c";
 			reg = <0x10002000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
 			clock-frequency = <100000>;
 			status = "okay";
 
 			test_video_emul_imager: video_emul_imager@6 {
 				compatible = "zephyr,video-emul-imager";
-				status = "okay";
 				reg = <0x6>;
+				status = "okay";
 
 				port {
 					test_video_emul_imager_ep_out: endpoint {

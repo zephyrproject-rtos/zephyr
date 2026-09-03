@@ -14,9 +14,9 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m4f";
 			reg = <0>;
+			device_type = "cpu";
 			#address-cells = <1>;
 			#size-cells = <1>;
 
@@ -56,12 +56,12 @@
 		gpio: gpio@40005000 {
 			compatible = "quicklogic,eos-s3-gpio";
 			reg = <0x40005000 DT_SIZE_K(4)>;
-			status = "disabled";
 			interrupts = <5 2>;
 			#gpio-cells = <2>;
 			ngpios = <8>;
 			pin-secondary-config = <0x00>;
 			gpio-controller;
+			status = "disabled";
 		};
 
 		pinctrl: pinctrl@40004c00 {

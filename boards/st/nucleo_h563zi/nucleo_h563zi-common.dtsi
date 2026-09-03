@@ -149,9 +149,9 @@
 	status = "okay";
 
 	pwm3: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim3_ch3_pb0>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
@@ -184,12 +184,12 @@
 	/* Zio A0, Zio D35, VBUS_SENSE */
 	pinctrl-0 = <&adc1_inp3_pa6 &adc1_inp15_pa3 &adc1_inp18_pa4>;
 	pinctrl-names = "default";
-	st,adc-clock-source = "ASYNC";
-	st,adc-prescaler = <6>;
-	status = "okay";
 
 	#address-cells = <1>;
 	#size-cells = <0>;
+	st,adc-clock-source = "ASYNC";
+	st,adc-prescaler = <6>;
+	status = "okay";
 
 	channel@12 {
 		reg = <18>;
@@ -219,38 +219,37 @@
 
 &flash0 {
 	partitions {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		boot_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(64)>;
+			label = "mcuboot";
 		};
 
 		slot0_partition: partition@10000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-0";
 			reg = <0x00010000 DT_SIZE_K(960)>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@100000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-1";
 			reg = <0x00100000 DT_SIZE_K(960)>;
+			label = "image-1";
 		};
 
 		storage_partition: partition@1f0000 {
 			compatible = "zephyr,mapped-partition";
-			label = "storage";
 			reg = <0x001f0000 DT_SIZE_K(64)>;
+			label = "storage";
 		};
 	};
 };
 
 &ucpd1 {
-	status = "okay";
 
 	/*
 	 * UCPD is fed ucpd_ker_ck (HSI / 4) which is @ 16MHz. The ucpd_ker_ck goes to
@@ -279,6 +278,7 @@
 	hbitclkdiv = <14>;
 	pinctrl-0 = <&ucpd1_cc1_pb13 &ucpd1_cc2_pb14>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 zephyr_udc0: &usb {

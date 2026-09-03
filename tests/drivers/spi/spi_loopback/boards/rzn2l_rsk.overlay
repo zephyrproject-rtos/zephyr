@@ -7,11 +7,11 @@
 &spi2 {
 	pinctrl-0 = <&spi2_pins>;
 	pinctrl-names = "default";
-	status = "okay";
 
 	dmas = <&dma0 1 RZ_DMA_PERIPH_TO_MEM>,
 	       <&dma0 0 RZ_DMA_MEM_TO_PERIPH>;
 	dma-names = "rx", "tx";
+	status = "okay";
 
 	slow@2 {
 		compatible = "test-spi-loopback-slow";
@@ -27,6 +27,6 @@
 };
 
 &dma0 {
-	status = "okay";
 	dma-buf-addr-alignment = <1>;
+	status = "okay";
 };

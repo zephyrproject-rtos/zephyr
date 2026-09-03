@@ -72,7 +72,6 @@
 };
 
 &qdec1 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_qdec1>;
 	pinctrl-names = "default";
 	counts-per-revolution = <120>;
@@ -82,4 +81,5 @@
 	 */
 	mux-states = <&xbar1 108 38>,
 		     <&xbar1 109 39>;
+	status = "okay";
 };

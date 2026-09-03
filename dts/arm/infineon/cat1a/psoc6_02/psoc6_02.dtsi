@@ -13,15 +13,15 @@
 		#size-cells = <0>;
 
 		cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m0+";
 			reg = <0>;
+			device_type = "cpu";
 		};
 
 		cpu@1 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m4f";
 			reg = <1>;
+			device_type = "cpu";
 		};
 	};
 
@@ -72,8 +72,8 @@
 				interrupts = <0 6>;
 				gpio-controller;
 				ngpios = <6>;
-				status = "disabled";
 				#gpio-cells = <2>;
+				status = "disabled";
 			};
 
 			gpio_prt1: gpio@40310080 {
@@ -82,8 +82,8 @@
 				interrupts = <1 6>;
 				gpio-controller;
 				ngpios = <6>;
-				status = "disabled";
 				#gpio-cells = <2>;
+				status = "disabled";
 			};
 
 			gpio_prt2: gpio@40310100 {
@@ -92,8 +92,8 @@
 				interrupts = <2 6>;
 				gpio-controller;
 				ngpios = <8>;
-				status = "disabled";
 				#gpio-cells = <2>;
+				status = "disabled";
 			};
 
 			gpio_prt3: gpio@40310180 {
@@ -102,8 +102,8 @@
 				interrupts = <3 6>;
 				gpio-controller;
 				ngpios = <6>;
-				status = "disabled";
 				#gpio-cells = <2>;
+				status = "disabled";
 			};
 
 			gpio_prt4: gpio@40310200 {
@@ -112,8 +112,8 @@
 				interrupts = <4 6>;
 				gpio-controller;
 				ngpios = <2>;
-				status = "disabled";
 				#gpio-cells = <2>;
+				status = "disabled";
 			};
 
 			gpio_prt5: gpio@40310280 {
@@ -122,8 +122,8 @@
 				interrupts = <5 6>;
 				gpio-controller;
 				ngpios = <8>;
-				status = "disabled";
 				#gpio-cells = <2>;
+				status = "disabled";
 			};
 
 			gpio_prt6: gpio@40310300 {
@@ -132,8 +132,8 @@
 				interrupts = <6 6>;
 				gpio-controller;
 				ngpios = <8>;
-				status = "disabled";
 				#gpio-cells = <2>;
+				status = "disabled";
 			};
 
 			gpio_prt7: gpio@40310380 {
@@ -142,8 +142,8 @@
 				interrupts = <7 6>;
 				gpio-controller;
 				ngpios = <8>;
-				status = "disabled";
 				#gpio-cells = <2>;
+				status = "disabled";
 			};
 
 			gpio_prt8: gpio@40310400 {
@@ -152,8 +152,8 @@
 				interrupts = <8 6>;
 				gpio-controller;
 				ngpios = <8>;
-				status = "disabled";
 				#gpio-cells = <2>;
+				status = "disabled";
 			};
 
 			gpio_prt9: gpio@40310480 {
@@ -162,8 +162,8 @@
 				interrupts = <9 6>;
 				gpio-controller;
 				ngpios = <8>;
-				status = "disabled";
 				#gpio-cells = <2>;
+				status = "disabled";
 			};
 
 			gpio_prt10: gpio@40310500 {
@@ -172,8 +172,8 @@
 				interrupts = <10 6>;
 				gpio-controller;
 				ngpios = <8>;
-				status = "disabled";
 				#gpio-cells = <2>;
+				status = "disabled";
 			};
 
 			gpio_prt11: gpio@40310580 {
@@ -182,8 +182,8 @@
 				interrupts = <11 6>;
 				gpio-controller;
 				ngpios = <8>;
-				status = "disabled";
 				#gpio-cells = <2>;
+				status = "disabled";
 			};
 
 			gpio_prt12: gpio@40310600 {
@@ -192,8 +192,8 @@
 				interrupts = <12 6>;
 				gpio-controller;
 				ngpios = <8>;
-				status = "disabled";
 				#gpio-cells = <2>;
+				status = "disabled";
 			};
 
 			gpio_prt13: gpio@40310680 {
@@ -202,8 +202,8 @@
 				interrupts = <13 6>;
 				gpio-controller;
 				ngpios = <8>;
-				status = "disabled";
 				#gpio-cells = <2>;
+				status = "disabled";
 			};
 
 			gpio_prt14: gpio@40310700 {
@@ -212,8 +212,8 @@
 				interrupts = <14 6>;
 				gpio-controller;
 				ngpios = <2>;
-				status = "disabled";
 				#gpio-cells = <2>;
+				status = "disabled";
 			};
 		};
 
@@ -351,8 +351,8 @@
 			compatible = "infineon,adc";
 			reg = <0x409d0000 0x10000>;
 			interrupts = <155 6>;
-			status = "disabled";
 			#io-channel-cells = <1>;
+			status = "disabled";
 		};
 
 		watchdog0: watchdog@40260180 {
@@ -626,9 +626,9 @@
 		};
 
 		dma0: dw@40280000 {
-			#dma-cells = <1>;
 			compatible = "infineon,dma";
 			reg = <0x40280000 0x8700>;
+			#dma-cells = <1>;
 			dma-channels = <29>;
 			interrupts = <56 6>,  /* CH0 */
 				     <57 6>,  /* CH1 */
@@ -663,9 +663,9 @@
 		};
 
 		dma1: dw@40290000 {
-			#dma-cells = <1>;
 			compatible = "infineon,dma";
 			reg = <0x40290000 0x8700>;
+			#dma-cells = <1>;
 			dma-channels = <29>;
 			interrupts = <85 6>,  /* CH0 */
 				     <86 6>,  /* CH1 */

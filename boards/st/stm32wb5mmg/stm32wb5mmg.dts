@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "STMicroelectronics STM32WB5MMG Bluetooth module";
 	compatible = "st,stm32wb5mmgh6";
+	model = "STMicroelectronics STM32WB5MMG Bluetooth module";
 
 	chosen {
 		zephyr,console = &usart1;
@@ -75,16 +75,33 @@
 };
 
 zephyr_udc0: &usb {
-	status = "okay";
 	pinctrl-0 = <&usb_dm_pa11 &usb_dp_pa12>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &flash0 {
 	partitions {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
+
+		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x00000000 DT_SIZE_K(48)>;
+			label = "mcuboot";
+		};
+
+		slot0_partition: partition@c000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x0000c000 DT_SIZE_K(400)>;
+			label = "image-0";
+		};
+
+		slot1_partition: partition@70000 {
+			reg = <0x0070000 DT_SIZE_K(404)>;
+			label = "image-1";
+		};
 
 		/*
 		 * Configure partitions while leaving space for M0 BLE f/w
@@ -92,22 +109,5 @@ zephyr_udc0: &usb {
 		 * These FW are expected to be located not before 0x080DB000
 		 * Current partition is using the first 876K of the flash for M4
 		 */
-
-		boot_partition: partition@0 {
-			compatible = "zephyr,mapped-partition";
-			label = "mcuboot";
-			reg = <0x00000000 DT_SIZE_K(48)>;
-		};
-
-		slot0_partition: partition@c000 {
-			compatible = "zephyr,mapped-partition";
-			label = "image-0";
-			reg = <0x0000c000 DT_SIZE_K(400)>;
-		};
-
-		slot1_partition: partition@70000 {
-			label = "image-1";
-			reg = <0x0070000 DT_SIZE_K(404)>;
-		};
 	};
 };

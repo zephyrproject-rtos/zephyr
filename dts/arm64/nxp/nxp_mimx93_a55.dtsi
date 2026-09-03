@@ -21,19 +21,19 @@
 		#size-cells = <0>;
 
 		cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-a55";
-			cpu-power-states = <&idle>;
 			reg = <0>;
+			device_type = "cpu";
+			cpu-power-states = <&idle>;
 			i-cache-line-size = <64>;
 			d-cache-line-size = <64>;
 		};
 
 		cpu@100 {
-			device_type = "cpu";
 			compatible = "arm,cortex-a55";
-			cpu-power-states = <&idle>;
 			reg = <0x100>;
+			device_type = "cpu";
+			cpu-power-states = <&idle>;
 			i-cache-line-size = <64>;
 			d-cache-line-size = <64>;
 		};
@@ -81,8 +81,8 @@
 		status = "okay";
 
 		pinctrl: pinctrl {
-			status = "okay";
 			compatible = "nxp,imx93-pinctrl";
+			status = "okay";
 		};
 	};
 
@@ -266,10 +266,10 @@
 
 	lpi2c1: i2c@44340000 {
 		compatible = "nxp,lpi2c";
+		reg = <0x44340000 0x4000>;
 		clock-frequency = <I2C_BITRATE_STANDARD>;
 		#address-cells = <1>;
 		#size-cells = <0>;
-		reg = <0x44340000 0x4000>;
 		interrupts = <GIC_SPI 13 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-parent = <&gic>;
 		clocks = <&ccm IMX_CCM_LPI2C1_CLK 0x70 6>;
@@ -278,10 +278,10 @@
 
 	lpi2c2: i2c@44350000 {
 		compatible = "nxp,lpi2c";
+		reg = <0x44350000 0x4000>;
 		clock-frequency = <I2C_BITRATE_STANDARD>;
 		#address-cells = <1>;
 		#size-cells = <0>;
-		reg = <0x44350000 0x4000>;
 		interrupts = <GIC_SPI 14 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-parent = <&gic>;
 		clocks = <&ccm IMX_CCM_LPI2C2_CLK 0x70 8>;
@@ -290,10 +290,10 @@
 
 	lpi2c3: i2c@42530000 {
 		compatible = "nxp,lpi2c";
+		reg = <0x42530000 0x4000>;
 		clock-frequency = <I2C_BITRATE_STANDARD>;
 		#address-cells = <1>;
 		#size-cells = <0>;
-		reg = <0x42530000 0x4000>;
 		interrupts = <GIC_SPI 62 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-parent = <&gic>;
 		clocks = <&ccm IMX_CCM_LPI2C3_CLK 0x70 10>;
@@ -302,10 +302,10 @@
 
 	lpi2c4: i2c@42540000 {
 		compatible = "nxp,lpi2c";
+		reg = <0x42540000 0x4000>;
 		clock-frequency = <I2C_BITRATE_STANDARD>;
 		#address-cells = <1>;
 		#size-cells = <0>;
-		reg = <0x42540000 0x4000>;
 		interrupts = <GIC_SPI 63 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-parent = <&gic>;
 		clocks = <&ccm IMX_CCM_LPI2C4_CLK 0x80 24>;
@@ -314,10 +314,10 @@
 
 	lpi2c5: i2c@426b0000 {
 		compatible = "nxp,lpi2c";
+		reg = <0x426b0000 0x4000>;
 		clock-frequency = <I2C_BITRATE_STANDARD>;
 		#address-cells = <1>;
 		#size-cells = <0>;
-		reg = <0x426b0000 0x4000>;
 		interrupts = <GIC_SPI 195 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-parent = <&gic>;
 		clocks = <&ccm IMX_CCM_LPI2C5_CLK 0x80 24>;
@@ -326,10 +326,10 @@
 
 	lpi2c6: i2c@426c0000 {
 		compatible = "nxp,lpi2c";
+		reg = <0x426c0000 0x4000>;
 		clock-frequency = <I2C_BITRATE_STANDARD>;
 		#address-cells = <1>;
 		#size-cells = <0>;
-		reg = <0x426c0000 0x4000>;
 		interrupts = <GIC_SPI 196 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-parent = <&gic>;
 		clocks = <&ccm IMX_CCM_LPI2C6_CLK 0x80 24>;
@@ -338,10 +338,10 @@
 
 	lpi2c7: i2c@426d0000 {
 		compatible = "nxp,lpi2c";
+		reg = <0x426d0000 0x4000>;
 		clock-frequency = <I2C_BITRATE_STANDARD>;
 		#address-cells = <1>;
 		#size-cells = <0>;
-		reg = <0x426d0000 0x4000>;
 		interrupts = <GIC_SPI 197 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-parent = <&gic>;
 		clocks = <&ccm IMX_CCM_LPI2C7_CLK 0x80 24>;
@@ -350,10 +350,10 @@
 
 	lpi2c8: i2c@426e0000 {
 		compatible = "nxp,lpi2c";
+		reg = <0x426e0000 0x4000>;
 		clock-frequency = <I2C_BITRATE_STANDARD>;
 		#address-cells = <1>;
 		#size-cells = <0>;
-		reg = <0x426e0000 0x4000>;
 		interrupts = <GIC_SPI 198 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-parent = <&gic>;
 		clocks = <&ccm IMX_CCM_LPI2C8_CLK 0x80 24>;
@@ -365,10 +365,10 @@
 		reg = <0x44360000 0x4000>;
 		interrupts = <GIC_SPI 16 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-parent = <&gic>;
-		status = "disabled";
 		clocks = <&ccm IMX_CCM_LPSPI1_CLK 0x6c 0>;
 		#address-cells = <1>;
 		#size-cells = <0>;
+		status = "disabled";
 	};
 
 	lpspi2: spi@44370000 {
@@ -376,10 +376,10 @@
 		reg = <0x44370000 0x4000>;
 		interrupts = <GIC_SPI 17 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-parent = <&gic>;
-		status = "disabled";
 		clocks = <&ccm IMX_CCM_LPSPI2_CLK 0x6c 2>;
 		#address-cells = <1>;
 		#size-cells = <0>;
+		status = "disabled";
 	};
 
 	lpspi3: spi@42550000 {
@@ -387,10 +387,10 @@
 		reg = <0x42550000 0x4000>;
 		interrupts = <GIC_SPI 65 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-parent = <&gic>;
-		status = "disabled";
 		clocks = <&ccm IMX_CCM_LPSPI3_CLK 0x6c 4>;
 		#address-cells = <1>;
 		#size-cells = <0>;
+		status = "disabled";
 	};
 
 	lpspi4: spi@42560000 {
@@ -398,10 +398,10 @@
 		reg = <0x42560000 0x4000>;
 		interrupts = <GIC_SPI 66 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-parent = <&gic>;
-		status = "disabled";
 		clocks = <&ccm IMX_CCM_LPSPI4_CLK 0x6c 6>;
 		#address-cells = <1>;
 		#size-cells = <0>;
+		status = "disabled";
 	};
 
 	lpspi5: spi@426f0000 {
@@ -409,10 +409,10 @@
 		reg = <0x426f0000 0x4000>;
 		interrupts = <GIC_SPI 191 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-parent = <&gic>;
-		status = "disabled";
 		clocks = <&ccm IMX_CCM_LPSPI5_CLK 0x6c 6>;
 		#address-cells = <1>;
 		#size-cells = <0>;
+		status = "disabled";
 	};
 
 	lpspi6: spi@42700000 {
@@ -420,10 +420,10 @@
 		reg = <0x42700000 0x4000>;
 		interrupts = <GIC_SPI 192 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-parent = <&gic>;
-		status = "disabled";
 		clocks = <&ccm IMX_CCM_LPSPI6_CLK 0x6c 6>;
 		#address-cells = <1>;
 		#size-cells = <0>;
+		status = "disabled";
 	};
 
 	lpspi7: spi@42710000 {
@@ -431,10 +431,10 @@
 		reg = <0x42710000 0x4000>;
 		interrupts = <GIC_SPI 193 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-parent = <&gic>;
-		status = "disabled";
 		clocks = <&ccm IMX_CCM_LPSPI7_CLK 0x6c 0>;
 		#address-cells = <1>;
 		#size-cells = <0>;
+		status = "disabled";
 	};
 
 	lpspi8: spi@42720000 {
@@ -442,10 +442,10 @@
 		reg = <0x42720000 0x4000>;
 		interrupts = <GIC_SPI 194 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-parent = <&gic>;
-		status = "disabled";
 		clocks = <&ccm IMX_CCM_LPSPI8_CLK 0x6c 2>;
 		#address-cells = <1>;
 		#size-cells = <0>;
+		status = "disabled";
 	};
 
 	flexcan1: can@443a0000 {
@@ -489,10 +489,9 @@
 
 	edma4_2: edma@42000000 {
 		compatible = "nxp,mcux-edma";
-		nxp,version = <4>;
+		reg = <0x42000000 0x400000>;
 		no-error-irq;
 		dma-requests = <159>;
-		reg = <0x42000000 0x400000>;
 		dma-channels = <4>;
 		interrupt-parent = <&gic>;
 		interrupts = <GIC_SPI 128 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
@@ -500,6 +499,7 @@
 			     <GIC_SPI 129 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 			     <GIC_SPI 129 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		#dma-cells = <2>;
+		nxp,version = <4>;
 		status = "disabled";
 	};
 
@@ -519,9 +519,9 @@
 
 	sai3_2: sai@42660000 {
 		compatible = "nxp,mcux-i2s";
+		reg = <0x42660000 DT_SIZE_K(64)>;
 		#address-cells = <1>;
 		#size-cells = <0>;
-		reg = <0x42660000 DT_SIZE_K(64)>;
 		clocks = <&ccm IMX_CCM_SAI3_CLK 0x0 0x0>;
 		clock-names = "mclk1";
 		interrupt-parent = <&gic>;
@@ -572,8 +572,8 @@
 			interrupts = <GIC_SPI 181 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "COMMON";
 			interrupt-parent = <&gic>;
-			nxp,mdio = <&enet_mdio>;
 			ptp-clock = <&enet_ptp_clock>;
+			nxp,mdio = <&enet_mdio>;
 			status = "disabled";
 		};
 

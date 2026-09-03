@@ -76,9 +76,9 @@
 
 		mipi_dsi: dsihost@40346000 {
 			compatible = "renesas,ra-mipi-dsi";
+			reg = <0x40346000 0x2000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40346000 0x2000>;
 			clocks = <&lcdclk MSTPC 10>;
 			status = "disabled";
 		};

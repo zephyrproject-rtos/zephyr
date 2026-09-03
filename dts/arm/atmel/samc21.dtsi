@@ -23,13 +23,13 @@
 			interrupt-names = "resrdy";
 			clocks = <&gclk 34>, <&mclk 0x1c 18>;
 			clock-names = "GCLK", "MCLK";
-			atmel,assigned-clocks = <&gclk 0>;
-			atmel,assigned-clock-names = "GCLK";
-			status = "disabled";
 
 			#io-channel-cells = <1>;
 
 			prescaler = <4>;
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
+			status = "disabled";
 		};
 
 		sercom4: sercom@42001400 {
@@ -61,12 +61,12 @@
 			interrupt-names = "int0";
 			clocks = <&gclk 26>, <&mclk 0x10 8>;
 			clock-names = "GCLK", "MCLK";
+			divider = <1>;
 			atmel,assigned-clocks = <&gclk 7>;
 			atmel,assigned-clock-names = "GCLK";
-			status = "disabled";
 
 			bosch,mram-cfg = <0x0 28 8 6 0 0 1 1>;
-			divider = <1>;
+			status = "disabled";
 		};
 
 		can1: can@42002000 {
@@ -76,25 +76,25 @@
 			interrupt-names = "int0";
 			clocks = <&gclk 27>, <&mclk 0x10 9>;
 			clock-names = "GCLK", "MCLK";
+			divider = <1>;
 			atmel,assigned-clocks = <&gclk 7>;
 			atmel,assigned-clock-names = "GCLK";
-			status = "disabled";
 
 			bosch,mram-cfg = <0x0 28 8 6 0 0 1 1>;
-			divider = <1>;
+			status = "disabled";
 		};
 
 		dac: dac@42005400 {
 			compatible = "atmel,sam0-dac";
 			reg = <0x42005400 0x10>;
 			interrupts = <28 0>;
-			status = "disabled";
 
 			#io-channel-cells = <0>;
 			clocks = <&gclk 36>, <&mclk 0x1c 21>;
 			clock-names = "GCLK", "MCLK";
 			atmel,assigned-clocks = <&gclk 0>;
 			atmel,assigned-clock-names = "GCLK";
+			status = "disabled";
 		};
 	};
 };

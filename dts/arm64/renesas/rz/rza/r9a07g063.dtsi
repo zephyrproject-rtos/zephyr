@@ -25,10 +25,10 @@
 		#size-cells = <0>;
 
 		cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-a55";
-			clock-frequency = <DT_FREQ_M(1000)>;
 			reg = <0>;
+			device_type = "cpu";
+			clock-frequency = <DT_FREQ_M(1000)>;
 		};
 	};
 
@@ -288,180 +288,180 @@
 
 			gpio0: gpio@0 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x0>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <4>;
-				reg = <0x0>;
 				status = "disabled";
 			};
 
 			gpio1: gpio@100 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x100>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <5>;
-				reg = <0x100>;
 				status = "disabled";
 			};
 
 			gpio2: gpio@200 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x200>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <4>;
-				reg = <0x200>;
 				status = "disabled";
 			};
 
 			gpio3: gpio@300 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x300>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <4>;
-				reg = <0x300>;
 				status = "disabled";
 			};
 
 			gpio4: gpio@400 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x400>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <6>;
-				reg = <0x400>;
 				status = "disabled";
 			};
 
 			gpio5: gpio@500 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x500>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <5>;
-				reg = <0x500>;
 				status = "disabled";
 			};
 
 			gpio6: gpio@600 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x600>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <5>;
-				reg = <0x600>;
 				status = "disabled";
 			};
 
 			gpio7: gpio@700 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x700>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <5>;
-				reg = <0x700>;
 				status = "disabled";
 			};
 
 			gpio8: gpio@800 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x800>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <5>;
-				reg = <0x800>;
 				status = "disabled";
 			};
 
 			gpio9: gpio@900 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x900>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <4>;
-				reg = <0x900>;
 				status = "disabled";
 			};
 
 			gpio10: gpio@a00 {
 				compatible = "renesas,rz-gpio";
+				reg = <0xa00>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <5>;
-				reg = <0xa00>;
 				status = "disabled";
 			};
 
 			gpio11: gpio@b00 {
 				compatible = "renesas,rz-gpio";
+				reg = <0xb00>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <4>;
-				reg = <0xb00>;
 				status = "disabled";
 			};
 
 			gpio12: gpio@c00 {
 				compatible = "renesas,rz-gpio";
+				reg = <0xc00>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <2>;
-				reg = <0xc00>;
 				status = "disabled";
 			};
 
 			gpio13: gpio@d00 {
 				compatible = "renesas,rz-gpio";
+				reg = <0xd00>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <5>;
-				reg = <0xd00>;
 				status = "disabled";
 			};
 
 			gpio14: gpio@e00 {
 				compatible = "renesas,rz-gpio";
+				reg = <0xe00>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <3>;
-				reg = <0xe00>;
 				status = "disabled";
 			};
 
 			gpio15: gpio@f00 {
 				compatible = "renesas,rz-gpio";
+				reg = <0xf00>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <4>;
-				reg = <0xf00>;
 				status = "disabled";
 			};
 
 			gpio16: gpio@1000 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x1000>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <2>;
-				reg = <0x1000>;
 				status = "disabled";
 			};
 
 			gpio17: gpio@1100 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x1100>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <4>;
-				reg = <0x1100>;
 				status = "disabled";
 			};
 
 			gpio18: gpio@1200 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x1200>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <6>;
-				reg = <0x1200>;
 				status = "disabled";
 			};
 		};
 
 		scif0: serial@1004b800 {
 			compatible = "renesas,rz-scif-uart";
-			channel = <0>;
 			reg = <0x1004b800 0x400>;
+			channel = <0>;
 			interrupts = <GIC_SPI 380 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 381 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 382 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
@@ -473,8 +473,8 @@
 
 		scif1: serial@1004bc00 {
 			compatible = "renesas,rz-scif-uart";
-			channel = <1>;
 			reg = <0x1004bc00 0x400>;
+			channel = <1>;
 			interrupts = <GIC_SPI 385 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 386 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 387 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
@@ -486,8 +486,8 @@
 
 		scif2: serial@1004c000 {
 			compatible = "renesas,rz-scif-uart";
-			channel = <2>;
 			reg = <0x1004c000 0x400>;
+			channel = <2>;
 			interrupts = <GIC_SPI 390 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 391 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 392 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
@@ -499,8 +499,8 @@
 
 		scif3: serial@1004c400 {
 			compatible = "renesas,rz-scif-uart";
-			channel = <3>;
 			reg = <0x1004c400 0x400>;
+			channel = <3>;
 			interrupts = <GIC_SPI 395 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 396 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 397 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
@@ -512,8 +512,8 @@
 
 		scif4: serial@1004c800 {
 			compatible = "renesas,rz-scif-uart";
-			channel = <4>;
 			reg = <0x1004c800 0x400>;
+			channel = <4>;
 			interrupts = <GIC_SPI 400 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 401 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 402 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
@@ -525,8 +525,8 @@
 
 		mtu0: mtu0@10001290 {
 			compatible = "renesas,rz-mtu";
-			channel = <0>;
 			reg = <0x10001290 0x99>;
+			channel = <0>;
 			interrupts = <GIC_SPI 170 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 171 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 172 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
@@ -547,8 +547,8 @@
 
 		mtu1: mtu1@10001291 {
 			compatible = "renesas,rz-mtu";
-			channel = <1>;
 			reg = <0x10001291 0x11b>;
+			channel = <1>;
 			interrupts = <GIC_SPI 177 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 178 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 179 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
@@ -566,8 +566,8 @@
 
 		mtu2: mtu2@10001292 {
 			compatible = "renesas,rz-mtu";
-			channel = <2>;
 			reg = <0x10001292 0x17b>;
+			channel = <2>;
 			interrupts = <GIC_SPI 181 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 182 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 183 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
@@ -585,8 +585,8 @@
 
 		mtu3: mtu3@10001200 {
 			compatible = "renesas,rz-mtu";
-			channel = <3>;
 			reg = <0x10001200 0x94>;
+			channel = <3>;
 			interrupts = <GIC_SPI 185 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 186 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 187 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
@@ -605,8 +605,8 @@
 
 		mtu4: mtu4@10001201 {
 			compatible = "renesas,rz-mtu";
-			channel = <4>;
 			reg = <0x10001201 0x94>;
+			channel = <4>;
 			interrupts = <GIC_SPI 190 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 191 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 192 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
@@ -625,8 +625,8 @@
 
 		mtu6: mtu6@10001a00 {
 			compatible = "renesas,rz-mtu";
-			channel = <6>;
 			reg = <0x10001a00 0x94>;
+			channel = <6>;
 			interrupts = <GIC_SPI 198 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 199 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 200 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
@@ -645,8 +645,8 @@
 
 		mtu7: mtu7@10001a01 {
 			compatible = "renesas,rz-mtu";
-			channel = <7>;
 			reg = <0x10001a01 0x94>;
+			channel = <7>;
 			interrupts = <GIC_SPI 203 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 204 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 205 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
@@ -1039,11 +1039,11 @@
 
 		i2c0: i2c@10058000 {
 			compatible = "renesas,rz-riic";
+			reg = <0x10058000 DT_SIZE_K(1)>;
 			channel = <0>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x10058000 DT_SIZE_K(1)>;
 			interrupts = <GIC_SPI 348 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 349 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 350 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
@@ -1058,11 +1058,11 @@
 
 		i2c1: i2c@10058400 {
 			compatible = "renesas,rz-riic";
+			reg = <0x10058400 DT_SIZE_K(1)>;
 			channel = <1>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x10058400 DT_SIZE_K(1)>;
 			interrupts = <GIC_SPI 356 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 357 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 358 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
@@ -1077,11 +1077,11 @@
 
 		i2c2: i2c@10058800 {
 			compatible = "renesas,rz-riic";
+			reg = <0x10058800 DT_SIZE_K(1)>;
 			channel = <2>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x10058800 DT_SIZE_K(1)>;
 			interrupts = <GIC_SPI 364 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 365 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 366 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
@@ -1096,11 +1096,11 @@
 
 		i2c3: i2c@10058c00 {
 			compatible = "renesas,rz-riic";
+			reg = <0x10058c00 DT_SIZE_K(1)>;
 			channel = <3>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x10058c00 DT_SIZE_K(1)>;
 			interrupts = <GIC_SPI 372 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 373 IRQ_TYPE_EDGE IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 374 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,

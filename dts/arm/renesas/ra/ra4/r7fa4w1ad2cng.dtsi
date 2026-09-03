@@ -40,9 +40,9 @@
 
 		sci4: sci4@40070080 {
 			compatible = "renesas,ra-sci";
+			reg = <0x40070080 0x20>;
 			interrupts = <16 1>, <17 1>, <18 1>, <19 1>;
 			interrupt-names = "rxi", "txi", "tei", "eri";
-			reg = <0x40070080 0x20>;
 			clocks = <&pclka MSTPB 26>;
 			status = "disabled";
 
@@ -82,10 +82,10 @@
 
 		pwm8: pwm8@40078800 {
 			compatible = "renesas,ra-pwm";
+			reg = <0x40078800 0x100>;
 			divider = <RA_PWM_SOURCE_DIV_1>;
 			channel = <RA_PWM_CHANNEL_8>;
 			clocks = <&pclkd MSTPD 6>;
-			reg = <0x40078800 0x100>;
 			#pwm-cells = <3>;
 			status = "disabled";
 		};

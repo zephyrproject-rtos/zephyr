@@ -11,7 +11,6 @@
 };
 
 &radio {
-	status = "okay";
 	/* This is an example number of antennas that may be available
 	 * on antenna matrix board.
 	 */
@@ -29,4 +28,5 @@
 	dfegpio1-gpios = <&gpio0 5 0>;
 	dfegpio2-gpios = <&gpio0 6 0>;
 	dfegpio3-gpios = <&gpio0 7 0>;
+	status = "okay";
 };

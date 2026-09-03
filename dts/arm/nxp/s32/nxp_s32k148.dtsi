@@ -40,9 +40,9 @@
 				compatible = "nxp,enet-mac";
 				interrupts = <73 0>, <74 0>, <75 0>;
 				interrupt-names = "TX", "RX", "ERR";
-				nxp,mdio = <&enet_mdio>;
 				ptp-clock = <&enet_ptp_clock>;
 				phy-connection-type = "rmii";
+				nxp,mdio = <&enet_mdio>;
 			};
 
 			enet_mdio: mdio {

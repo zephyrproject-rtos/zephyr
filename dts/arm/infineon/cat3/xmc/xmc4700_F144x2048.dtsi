@@ -66,36 +66,36 @@
 &pinctrl {
 	gpio3: gpio@48028300 {
 		compatible = "infineon,xmc4xxx-gpio";
+		reg = <0x48028300 0x100>;
 		gpio-controller;
 		#gpio-cells = <2>;
-		reg = <0x48028300 0x100>;
 		ngpios = <16>;
 		status = "disabled";
 	};
 
 	gpio4: gpio@48028400 {
 		compatible = "infineon,xmc4xxx-gpio";
+		reg = <0x48028400 0x100>;
 		gpio-controller;
 		#gpio-cells = <2>;
-		reg = <0x48028400 0x100>;
 		ngpios = <8>;
 		status = "disabled";
 	};
 
 	gpio5: gpio@48028500 {
 		compatible = "infineon,xmc4xxx-gpio";
+		reg = <0x48028500 0x100>;
 		gpio-controller;
 		#gpio-cells = <2>;
-		reg = <0x48028500 0x100>;
 		ngpios = <12>;
 		status = "disabled";
 	};
 
 	gpio6: gpio@48028600 {
 		compatible = "infineon,xmc4xxx-gpio";
+		reg = <0x48028600 0x100>;
 		gpio-controller;
 		#gpio-cells = <2>;
-		reg = <0x48028600 0x100>;
 		ngpios = <7>;
 		status = "disabled";
 	};

@@ -13,8 +13,8 @@
 
 	clocks {
 		clk_hsi48: clk-hsi48 {
-			#clock-cells = <0>;
 			compatible = "fixed-clock";
+			#clock-cells = <0>;
 			clock-frequency = <DT_FREQ_M(48)>;
 			status = "disabled";
 		};
@@ -55,7 +55,7 @@
 		compatible = "st,stm32-dac";
 		reg = <0x40007400 0x400>;
 		clocks = <&rcc STM32_CLOCK(APB1, 29)>;
-		status = "disabled";
 		#io-channel-cells = <1>;
+		status = "disabled";
 	};
 };

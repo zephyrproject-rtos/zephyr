@@ -66,21 +66,21 @@
 		nvmctrl: nvmctrl@41004000 {
 			compatible = "atmel,sam0-nvmctrl";
 			reg = <0x41004000 0x22>;
+			ranges;
 			interrupts = <5 0>;
 
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges;
 
 			lock-regions = <16>;
 
 			flash0: flash@0 {
 				compatible = "soc-nv-flash";
+				ranges;
 
 				write-block-size = <4>;
 				#address-cells = <1>;
 				#size-cells = <1>;
-				ranges;
 			};
 		};
 
@@ -174,21 +174,21 @@
 			porta: gpio@41004400 {
 				compatible = "atmel,sam0-gpio";
 				reg = <0x41004400 0x80>;
-
-				#atmel,pin-cells = <2>;
 				#gpio-cells = <2>;
 
 				gpio-controller;
+
+				#atmel,pin-cells = <2>;
 			};
 
 			portb: gpio@41004480 {
 				compatible = "atmel,sam0-gpio";
 				reg = <0x41004480 0x80>;
-
-				#atmel,pin-cells = <2>;
 				#gpio-cells = <2>;
 
 				gpio-controller;
+
+				#atmel,pin-cells = <2>;
 			};
 		};
 
@@ -198,28 +198,28 @@
 			interrupts = <3 0>;
 			clocks = <&gclk 4 4>, <&pm 0x18 5>;
 			clock-names = "GCLK", "PM";
-			status = "disabled";
 
 			alarms-count = <1>;
 			cal-constant = <(1024 * 976)>;
+			status = "disabled";
 		};
 
 		adc: adc@42004000 {
 			compatible = "atmel,sam0-adc";
 			reg = <0x42004000 0x2b>;
-			status = "disabled";
 
 			#io-channel-cells = <1>;
 
 			prescaler = <4>;
+			status = "disabled";
 		};
 
 		dac0: dac@42004800 {
 			compatible = "atmel,sam0-dac";
 			reg = <0x42004800 0x10>;
-			status = "disabled";
 
 			#io-channel-cells = <0>;
+			status = "disabled";
 		};
 	};
 };

@@ -3,17 +3,17 @@
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x20017000 DT_SIZE_K(4)>;
 		ranges = <0x0 0x20017000 DT_SIZE_K(4)>;
-		zephyr,memory-region = "RetainedMem";
-		status = "okay";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		zephyr,memory-region = "RetainedMem";
+		status = "okay";
 
 		retainedmem0: retainedmem {
 			compatible = "zephyr,retained-ram";
-			status = "okay";
 			ranges;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			status = "okay";
 		};
 	};
 

@@ -89,27 +89,27 @@
 };
 
 &uart2 {
-	status = "okay";
 	pinctrl-0 = <&pinctrl_uart2>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &gpio4 {
-	status = "okay";
 	pinctrl-0 = <&pinctrl_gpio4>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &gpio5 {
-	status = "okay";
 	pinctrl-0 = <&pinctrl_gpio5>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &i2c1 {
-	status = "okay";
 	pinctrl-0 = <&pinctrl_i2c1>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 mikrobus_i2c: &i2c1 {};

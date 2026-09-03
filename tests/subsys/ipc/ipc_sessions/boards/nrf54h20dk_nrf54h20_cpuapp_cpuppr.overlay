@@ -7,8 +7,8 @@
 /delete-node/ &ipc0;
 
 ipc0: &cpuapp_cpuppr_ipc {
-	status = "okay";
 	unbound = "detect";
+	status = "okay";
 };
 
 &cpuppr_vevif {

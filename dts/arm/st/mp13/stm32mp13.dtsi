@@ -27,15 +27,15 @@
 
 		cpu0: cpu@0 {
 			compatible = "arm,cortex-a7";
-			device_type = "cpu";
 			reg = <0>;
+			device_type = "cpu";
 		};
 	};
 
 	mcos {
 		mco1: mco1 {
-			#clock-cells = <2>;
 			compatible = "st,stm32-clock-mco";
+			#clock-cells = <2>;
 			clocks = <&rcc MCO1CFGR_REG BIT(12)>,
 				 <&rcc STM32_SRC_HSI MCO1_SEL(MCO1_SEL_HSI)>;
 			clock-names = "clken", "clksel";
@@ -43,8 +43,8 @@
 		};
 
 		mco2: mco2 {
-			#clock-cells = <2>;
 			compatible = "st,stm32-clock-mco";
+			#clock-cells = <2>;
 			clocks = <&rcc MCO2CFGR_REG BIT(12)>,
 				 <&rcc STM32_SRC_HSI MCO2_SEL(MCO2_SEL_HSI)>;
 			clock-names = "clken", "clksel";
@@ -57,8 +57,8 @@
 
 		sysram: memory@2ffe0000 {
 			compatible = "zephyr,memory-region", "mmio-sram";
-			zephyr,memory-region = "SYSRAM";
 			reg = <0x2ffe0000 DT_SIZE_K(128)>;
+			zephyr,memory-region = "SYSRAM";
 		};
 
 		uart4: serial@40010000 {
@@ -164,10 +164,10 @@
 
 		exti: interrupt-controller@5000d000 {
 			compatible = "st,stm32g0-exti", "st,stm32-exti";
+			reg = <0x5000d000 0x400>;
 			interrupt-controller;
 			#interrupt-cells = <1>;
 			#address-cells = <0>;
-			reg = <0x5000d000 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB3_S, 0)>;
 			num-lines = <96>;
 			interrupts = <GIC_SPI 6 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
@@ -198,10 +198,9 @@
 
 		dma1: dma@48000000 {
 			compatible = "st,stm32-dma-v1";
-			#dma-cells = <4>;
 			reg = <0x48000000 0x400>;
+			#dma-cells = <4>;
 			clocks = <&rcc STM32_CLOCK(AHB2, 0)>;
-			st,mem2mem;
 			interrupts = <GIC_SPI 11 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 12 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 13 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
@@ -212,15 +211,15 @@
 				     <GIC_SPI 48 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			dma-offset = <0>;
 			dma-requests = <8>;
+			st,mem2mem;
 			status = "disabled";
 		};
 
 		dma2: dma@48001000 {
 			compatible = "st,stm32-dma-v1";
-			#dma-cells = <4>;
 			reg = <0x48001000 0x400>;
+			#dma-cells = <4>;
 			clocks = <&rcc STM32_CLOCK(AHB2, 1)>;
-			st,mem2mem;
 			interrupts = <GIC_SPI 57 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 58 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 59 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
@@ -231,13 +230,14 @@
 				     <GIC_SPI 71 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			dma-offset = <8>;
 			dma-requests = <8>;
+			st,mem2mem;
 			status = "disabled";
 		};
 
 		dmamux1: dmamux@48002000 {
 			compatible = "st,stm32-dmamux";
-			#dma-cells = <3>;
 			reg = <0x48002000 0x400>;
+			#dma-cells = <3>;
 			clocks = <&rcc STM32_CLOCK(AHB2, 2)>;
 			dma-channels = <16>;
 			dma-generators = <8>;
@@ -252,9 +252,9 @@
 			#size-cells = <0>;
 			clocks = <&rcc STM32_CLOCK(APB2, 8)>;
 			interrupts = <GIC_SPI 36 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			st,spi-data-width = "full-4-to-32-bit";
 			fifo-size = <16>;
 			fifo-max-transfer-size = <65535>;
+			st,spi-data-width = "full-4-to-32-bit";
 			status = "disabled";
 		};
 
@@ -265,9 +265,9 @@
 			#size-cells = <0>;
 			clocks = <&rcc STM32_CLOCK(APB1, 11)>;
 			interrupts = <GIC_SPI 37 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			st,spi-data-width = "full-4-to-32-bit";
 			fifo-size = <16>;
 			fifo-max-transfer-size = <65535>;
+			st,spi-data-width = "full-4-to-32-bit";
 			status = "disabled";
 		};
 
@@ -278,9 +278,9 @@
 			#size-cells = <0>;
 			clocks = <&rcc STM32_CLOCK(APB1, 12)>;
 			interrupts = <GIC_SPI 52 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			st,spi-data-width = "full-4-to-32-bit";
 			fifo-size = <16>;
 			fifo-max-transfer-size = <65535>;
+			st,spi-data-width = "full-4-to-32-bit";
 			status = "disabled";
 		};
 
@@ -291,9 +291,9 @@
 			#size-cells = <0>;
 			clocks = <&rcc STM32_CLOCK(APB6, 2)>;
 			interrupts = <GIC_SPI 85 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			st,spi-data-width = "full-4-to-32-bit";
 			fifo-size = <16>;
 			fifo-max-transfer-size = <65535>;
+			st,spi-data-width = "full-4-to-32-bit";
 			status = "disabled";
 		};
 
@@ -304,18 +304,18 @@
 			#size-cells = <0>;
 			clocks = <&rcc STM32_CLOCK(APB6, 3)>;
 			interrupts = <GIC_SPI 86 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			st,spi-data-width = "full-4-to-16-bit";
 			fifo-size = <8>;
 			fifo-max-transfer-size = <65535>;
+			st,spi-data-width = "full-4-to-16-bit";
 			status = "disabled";
 		};
 
 		i2c1: i2c@40012000 {
 			compatible = "st,stm32-i2c-v2";
+			reg = <0x40012000 0x400>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40012000 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 21)>;
 			interrupts = <GIC_SPI 32 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 33 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
@@ -325,10 +325,10 @@
 
 		i2c2: i2c@40013000 {
 			compatible = "st,stm32-i2c-v2";
+			reg = <0x40013000 0x400>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40013000 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB1, 22)>;
 			interrupts = <GIC_SPI 34 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 35 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
@@ -338,10 +338,10 @@
 
 		i2c3: i2c@4c004000 {
 			compatible = "st,stm32-i2c-v2";
+			reg = <0x4c004000 0x400>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x4c004000 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB6, 4)>;
 			interrupts = <GIC_SPI 73 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 74 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
@@ -351,10 +351,10 @@
 
 		i2c4: i2c@4c005000 {
 			compatible = "st,stm32-i2c-v2";
+			reg = <0x4c005000 0x400>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x4c005000 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB6, 5)>;
 			interrupts = <GIC_SPI 93 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 94 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
@@ -364,10 +364,10 @@
 
 		i2c5: i2c@4c006000 {
 			compatible = "st,stm32-i2c-v2";
+			reg = <0x4c006000 0x400>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x4c006000 0x400>;
 			clocks = <&rcc STM32_CLOCK(APB6, 6)>;
 			interrupts = <GIC_SPI 114 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 115 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
@@ -391,8 +391,8 @@
 
 			pwm {
 				compatible = "st,stm32-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 
 			counter {
@@ -420,8 +420,8 @@
 
 			pwm {
 				compatible = "st,stm32-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 
 			counter {
@@ -449,8 +449,8 @@
 
 			pwm {
 				compatible = "st,stm32-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 
 			counter {
@@ -478,8 +478,8 @@
 
 			pwm {
 				compatible = "st,stm32-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 
 			counter {
@@ -507,8 +507,8 @@
 
 			pwm {
 				compatible = "st,stm32-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 
 			counter {
@@ -573,8 +573,8 @@
 
 			pwm {
 				compatible = "st,stm32-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 
 			counter {
@@ -602,8 +602,8 @@
 
 			pwm {
 				compatible = "st,stm32-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 
 			counter {
@@ -625,8 +625,8 @@
 
 			pwm {
 				compatible = "st,stm32-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 
 			counter {
@@ -648,8 +648,8 @@
 
 			pwm {
 				compatible = "st,stm32-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 
 			counter {
@@ -671,8 +671,8 @@
 
 			pwm {
 				compatible = "st,stm32-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 
 			counter {
@@ -694,8 +694,8 @@
 
 			pwm {
 				compatible = "st,stm32-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 
 			counter {
@@ -717,8 +717,8 @@
 
 			pwm {
 				compatible = "st,stm32-pwm";
-				status = "disabled";
 				#pwm-cells = <3>;
+				status = "disabled";
 			};
 
 			counter {
@@ -785,70 +785,70 @@
 
 	ddr_code: memory@c0000000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		zephyr,memory-region = "DDR_CODE";
 		reg = <0xc0000000 0x10000000>;
+		zephyr,memory-region = "DDR_CODE";
 	};
 
 	ddr_data: memory@d0000000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
-		zephyr,memory-region = "DDR_DATA";
 		reg = <0xd0000000 0x10000000>;
+		zephyr,memory-region = "DDR_DATA";
 	};
 
 	clocks {
 		clk_hse: clk-hse {
-			#clock-cells = <0>;
 			compatible = "fixed-clock";
+			#clock-cells = <0>;
 			status = "disabled";
 		};
 
 		clk_hsi: clk-hsi {
-			#clock-cells = <0>;
 			compatible = "fixed-clock";
+			#clock-cells = <0>;
 			status = "disabled";
 		};
 
 		clk_lse: clk-lse {
-			#clock-cells = <0>;
 			compatible = "fixed-clock";
+			#clock-cells = <0>;
 			clock-frequency = <32768>;
 			status = "disabled";
 		};
 
 		clk_lsi: clk-lsi {
-			#clock-cells = <0>;
 			compatible = "fixed-clock";
+			#clock-cells = <0>;
 			clock-frequency = <DT_FREQ_K(32)>;
 			status = "disabled";
 		};
 
 		cpusw: cpusw {
-			#clock-cells = <0>;
 			compatible = "st,stm32mp13-cpu-clock-mux";
+			#clock-cells = <0>;
 			status = "disabled";
 		};
 
 		pll1: pll: pll {
-			#clock-cells = <0>;
 			compatible = "st,stm32mp13-pll-clock";
+			#clock-cells = <0>;
 			status = "disabled";
 		};
 
 		pll2: pll2 {
-			#clock-cells = <0>;
 			compatible = "st,stm32mp13-pll-clock";
+			#clock-cells = <0>;
 			status = "disabled";
 		};
 
 		pll3: pll3 {
-			#clock-cells = <0>;
 			compatible = "st,stm32mp13-pll-clock";
+			#clock-cells = <0>;
 			status = "disabled";
 		};
 
 		pll4: pll4 {
-			#clock-cells = <0>;
 			compatible = "st,stm32mp13-pll-clock";
+			#clock-cells = <0>;
 			status = "disabled";
 		};
 	};

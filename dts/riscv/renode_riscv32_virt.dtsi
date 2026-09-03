@@ -15,10 +15,10 @@
 		#size-cells = <0>;
 
 		cpu@0 {
-			clock-frequency = <0>;
 			compatible = "renode,virt", "riscv";
-			device_type = "cpu";
 			reg = <0>;
+			clock-frequency = <0>;
+			device_type = "cpu";
 			riscv,isa-base = "rv32i";
 			riscv,isa-extensions = "i", "m", "a", "c", "zicsr", "zifencei";
 
@@ -32,10 +32,10 @@
 	};
 
 	soc {
-		#address-cells = <1>;
-		#size-cells = <1>;
 		compatible = "renode,virt-soc", "simple-bus";
 		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
 
 		flash0: flash@80000000 {
 			compatible = "soc-nv-flash";
@@ -49,57 +49,57 @@
 
 		clint: clint@2000000 {
 			compatible = "sifive,clint0";
-			interrupts-extended = <&hlic 3>, <&hlic 7>;
 			reg = <0x2000000 0x10000>;
+			interrupts-extended = <&hlic 3>, <&hlic 7>;
 		};
 
 		mtimer: timer@200bff8 {
 			compatible = "riscv,machine-timer";
-			interrupts-extended = <&hlic 7>;
 			reg = <0x200bff8 0x8 0x2004000 0x8>;
+			interrupts-extended = <&hlic 7>;
 			reg-names = "mtime", "mtimecmp";
 		};
 
 		plic0: interrupt-controller@c000000 {
 			compatible = "sifive,plic-1.0.0";
+			reg = <0xc000000 0x04000000>;
 			#address-cells = <0>;
 			#interrupt-cells = <2>;
 			interrupt-controller;
 			interrupts-extended = <&hlic 11>;
-			reg = <0xc000000 0x04000000>;
 			riscv,max-priority = <1>;
 			riscv,ndev = <1023>;
 		};
 
 		plic1: interrupt-controller@8000000 {
 			compatible = "sifive,plic-1.0.0";
+			reg = <0x8000000 0x04000000>;
 			#address-cells = <0>;
 			#interrupt-cells = <2>;
 			interrupt-controller;
 			interrupts-extended = <&hlic 4>;
-			reg = <0x8000000 0x04000000>;
 			riscv,max-priority = <1>;
 			riscv,ndev = <1023>;
 		};
 
 		uart0: uart@10000000 {
+			compatible = "ns16550";
+			reg = <0x10000000 0x100>;
 			interrupts = <0x0a 1>;
 			interrupt-parent = <&plic0>;
 			clock-frequency = <150000000>;
 			current-speed = <115200>;
-			reg = <0x10000000 0x100>;
-			compatible = "ns16550";
 			reg-shift = <0>;
 			status = "disabled";
 		};
 
 		uart1: uart@10000100 {
+			compatible = "ns16550";
+			reg = <0x10000100 0x100>;
 			interrupts = <0x0a 1>;
 			interrupt-parent = <&plic1>;
 			clock-frequency = <150000000>;
 			current-speed = <115200>;
-			reg = <0x10000100 0x100>;
-			compatible = "ns16550";
 			reg-shift = <0>;
 			status = "disabled";
 		};

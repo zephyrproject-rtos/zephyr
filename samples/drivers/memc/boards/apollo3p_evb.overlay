@@ -23,19 +23,18 @@
 	pinctrl-1 = <&mspi1_sleep>;
 	pinctrl-2 = <&mspi1_psram>;
 	pinctrl-names = "default", "sleep", "psram";
-	status = "okay";
 
 	ce-gpios = <&gpio64_95 5 GPIO_ACTIVE_LOW>,
 		   <&gpio32_63 18 GPIO_ACTIVE_LOW>;
 
 	cmdq-buffer-location = ".mspi_buff";
 	cmdq-buffer-size = <256>;
+	status = "okay";
 
 	aps6404l: aps6404l@0 {
 		compatible = "ambiq,mspi-device", "aps6404l";
-		size = <DT_SIZE_M(64)>;
 		reg = <0>;
-		status = "okay";
+		size = <DT_SIZE_M(64)>;
 		mspi-max-frequency = <48000000>;
 		mspi-io-mode = "MSPI_IO_MODE_QUAD";
 		mspi-data-rate = "MSPI_DATA_RATE_SINGLE";
@@ -50,6 +49,7 @@
 		ce-break-config = <1024 3>;
 		ambiq,timing-config-mask = <3>;
 		ambiq,timing-config = <0 6 0 0 0 0 0 0>;
+		status = "okay";
 	};
 };
 

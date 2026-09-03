@@ -14,8 +14,8 @@
 	status = "okay";
 
 	pwm5: pwm {
-		status = "okay";
 		pinctrl-0 = <&gpt5_pins>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };

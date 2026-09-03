@@ -15,9 +15,9 @@
 
 	hci_uart: hci_uart {
 		compatible = "zephyr,native-tty-uart";
-		status = "okay";
 		current-speed = <2000000>;
 		serial-port = "/dev/ttyACM0";
+		status = "okay";
 
 		bt_hci_uart: bt_hci_uart {
 			compatible = "zephyr,bt-hci-uart";

@@ -33,8 +33,8 @@
 	status = "okay";
 
 	capture: counter {
-		status = "okay";
 		pinctrl-0 = <&tim2_ch1_pa0 &tim2_ch2_pa1>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };

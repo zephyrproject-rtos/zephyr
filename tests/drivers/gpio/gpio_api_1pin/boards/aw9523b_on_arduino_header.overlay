@@ -2,9 +2,9 @@
 	status = "okay";
 
 	aw9523b@58 {
-		status = "okay";
-		reg = <0x58>;
 		compatible = "awinic,aw9523b";
+		reg = <0x58>;
+		status = "okay";
 
 		aw9523_gpio: gpio {
 			compatible = "awinic,aw9523b-gpio";

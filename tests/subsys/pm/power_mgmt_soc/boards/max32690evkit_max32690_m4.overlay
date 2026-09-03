@@ -15,9 +15,9 @@
 };
 
 &lptimer0 {
-	status = "okay";
 	clock-source = <ADI_MAX32_PRPH_CLK_SRC_ERTCO>;
 	wakeup-source;
+	status = "okay";
 
 	counter0: counter {
 		status = "okay";

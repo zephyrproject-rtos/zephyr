@@ -47,8 +47,8 @@
 
 &clk_hse {
 	hse-tcxo;
-	status = "okay";
 	clock-frequency = <DT_FREQ_M(32)>;
+	status = "okay";
 };
 
 &clk_hsi {

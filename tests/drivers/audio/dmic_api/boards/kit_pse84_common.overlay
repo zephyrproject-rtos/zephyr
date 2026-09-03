@@ -15,15 +15,15 @@
 	pinctrl-0 = <&p8_5_pdm3_pdm_clk &p8_6_pdm3_pdm_data>;
 	pinctrl-names = "default";
 	clocks = <&peri1_group1_16_5bit_2>;
-	status = "okay";
 
 	dmas = <&dma0 0>;
 	dma-names = "rx";
+	status = "okay";
 };
 
 &dmic0_ch2 {
-	status = "okay";
 	use-alt-io;
+	status = "okay";
 };
 
 &dmic0_ch3 {
@@ -35,14 +35,14 @@
 };
 
 &clk_hf7 {
-	status = "okay";
 	source-path = <IFX_CLK_HF_IN_CLKPATH3>;
+	status = "okay";
 };
 
 &peri1_group1_16_5bit_2 {
-	status = "okay";
 	clock-div = <2>;
 	div-frac-value = <1>;
+	status = "okay";
 };
 
 &p8_5_pdm3_pdm_clk {

@@ -8,12 +8,11 @@
 &uart20 {
 	compatible = "nordic,nrf-uarte";
 	current-speed = <1000000>;
-	status = "okay";
 	hw-flow-control;
+	status = "okay";
 };
 
 &radio {
-	status = "okay";
 	/* This is an example number of antennas that may be available
 	 * on antenna matrix board.
 	 */
@@ -31,4 +30,5 @@
 	dfegpio1-gpios = <&gpio1 5 0>;
 	dfegpio2-gpios = <&gpio1 6 0>;
 	dfegpio3-gpios = <&gpio1 7 0>;
+	status = "okay";
 };

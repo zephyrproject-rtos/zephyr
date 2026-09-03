@@ -30,9 +30,9 @@
 
 	eth_mac_nvmem_prefix: eth-mac-nvmem-prefix {
 		compatible = "vnd,ethernet";
-		zephyr,mac-address-prefix = [00 33 66];
 		nvmem-cells = <&cell6>;
 		nvmem-cell-names = "mac-address";
+		zephyr,mac-address-prefix = [00 33 66];
 	};
 
 	eth_mac_none: eth-mac-none {

@@ -15,9 +15,9 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			device_type = "cpu";
 			compatible = "snps,arcem";
 			reg = <0>;
+			device_type = "cpu";
 		};
 	};
 
@@ -65,15 +65,15 @@
 	};
 
 	soc {
-		#address-cells = <1>;
-		#size-cells = <1>;
 		compatible = "simple-bus";
 		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
 
 		uart0: uart@80014000 {
 			compatible = "ns16550";
-			clock-frequency = <16000000>;
 			reg = <0x80014000 0x100>;
+			clock-frequency = <16000000>;
 			io-mapped;
 			interrupts = <86 0>;
 			interrupt-parent = <&intc>;
@@ -83,8 +83,8 @@
 
 		uart1: uart@80014100 {
 			compatible = "ns16550";
-			clock-frequency = <16000000>;
 			reg = <0x80014100 0x100>;
+			clock-frequency = <16000000>;
 			io-mapped;
 			interrupts = <87 0>;
 			interrupt-parent = <&intc>;
@@ -94,8 +94,8 @@
 
 		uart2: uart@80014200 {
 			compatible = "ns16550";
-			clock-frequency = <16000000>;
 			reg = <0x80014200 0x1000>;
+			clock-frequency = <16000000>;
 			io-mapped;
 			interrupts = <88 0>;
 			interrupt-parent = <&intc>;
@@ -105,8 +105,8 @@
 
 		uart3: uart@80014300 {
 			compatible = "ns16550";
-			clock-frequency = <144000000>;
 			reg = <0x80014300 0x100>;
+			clock-frequency = <144000000>;
 			io-mapped;
 			interrupts = <89 0>;
 			interrupt-parent = <&intc>;
@@ -190,10 +190,10 @@
 		};
 
 		i2c0: i2c@80012000 {
+			reg = <0x80012000 0x100>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x80012000 0x100>;
 			interrupts = <58 1>, <61 1>, <60 1>, <59 1>;
 			interrupt-names = "error", "stop", "tx", "rx";
 			interrupt-parent = <&intc>;
@@ -202,10 +202,10 @@
 		};
 
 		i2c1: i2c@80012100 {
+			reg = <0x80012100 0x100>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x80012100 0x100>;
 			interrupts = <62 1>, <65 1>, <64 1>, <63 1>;
 			interrupt-names = "error", "stop", "tx", "rx";
 			interrupt-parent = <&intc>;
@@ -214,10 +214,10 @@
 		};
 
 		i2c2: i2c@80012200 {
+			reg = <0x80012200 0x100>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x80012200 0x100>;
 			interrupts = <66 1>, <69 1>, <68 1>, <67 1>;
 			interrupt-names = "error", "stop", "tx", "rx";
 			interrupt-parent = <&intc>;
@@ -227,9 +227,9 @@
 
 		spi0: spi@80010000 {
 			compatible = "snps,designware-spi";
+			reg = <0x80010000 0x100>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x80010000 0x100>;
 			max-xfer-size = <16>;
 			clocks = <&sysclk>;
 			interrupts = <70 2>, <71 2>, <72 2>;
@@ -240,9 +240,9 @@
 
 		spi1: spi@80010100 {
 			compatible = "snps,designware-spi";
+			reg = <0x80010100 0x100>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x80010100 0x100>;
 			max-xfer-size = <16>;
 			clocks = <&sysclk>;
 			interrupts = <74 2>, <75 2>, <76 2>;
@@ -253,9 +253,9 @@
 
 		spi2: spi@80010200 {
 			compatible = "snps,designware-spi";
+			reg = <0x80010200 0x100>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x80010200 0x100>;
 			max-xfer-size = <16>;
 			clocks = <&sysclk>;
 			interrupts = <78 2>, <79 2>, <80 2>;

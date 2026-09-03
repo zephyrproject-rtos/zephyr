@@ -18,16 +18,16 @@
 	status = "okay";
 
 	pwm0_0: pwm0_0 {
-		status = "okay";
 		clocks = <&peri0_group1_16bit_0>;
 		pinctrl-0 = <&p3_4_pwm0_0>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
 &peri0_group1_16bit_0 {
-	status = "okay";
 	clock-div = <9600>;
+	status = "okay";
 };
 
 &pinctrl {

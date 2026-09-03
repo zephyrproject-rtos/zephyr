@@ -26,11 +26,11 @@
 	status = "okay";
 
 	pwm0_1 {
-		clocks = <&peri_clk_div3>;
 		compatible = "infineon,tcpwm-pwm";
-		status = "okay";
+		clocks = <&peri_clk_div3>;
 		pinctrl-0 = <&p7_3_pwm0_1>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 

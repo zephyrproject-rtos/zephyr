@@ -11,8 +11,8 @@
  */
 
 &clk_msi {
-	status = "okay";
 	msi-range = <6>; /* default value */
+	status = "okay";
 };
 
 &pll {

@@ -8,21 +8,21 @@
 #include <freq.h>
 
 / {
+	compatible = "sifive,FU540-C000", "fu540-dev", "sifive-dev";
 	#address-cells = <1>;
 	#size-cells = <1>;
-	compatible = "sifive,FU540-C000", "fu540-dev", "sifive-dev";
 	model = "sifive,FU540";
 
 	clocks {
 		coreclk: core-clk {
-			#clock-cells = <0>;
 			compatible = "fixed-clock";
+			#clock-cells = <0>;
 			clock-frequency = <DT_FREQ_M(1000)>;
 		};
 
 		tlclk: tl-clk {
-			#clock-cells = <0>;
 			compatible = "fixed-factor-clock";
+			#clock-cells = <0>;
 			clocks = <&coreclk>;
 			clock-div = <2>;
 		};
@@ -34,9 +34,9 @@
 
 		cpu@0 {
 			compatible = "sifive,e51", "riscv";
+			reg = <0x0>;
 			device_type = "cpu";
 			i-cache-line-size = <0x4000>;
-			reg = <0x0>;
 			riscv,isa-base = "rv64i";
 			riscv,isa-extensions = "i", "m", "a", "c", "zicsr", "zifencei";
 
@@ -50,11 +50,11 @@
 
 		cpu@1 {
 			compatible = "sifive,u54", "riscv";
+			reg = <0x1>;
 			device_type = "cpu";
 			mmu-type = "riscv,sv39";
 			i-cache-line-size = <0x8000>;
 			d-cache-line-size = <0x8000>;
-			reg = <0x1>;
 			riscv,isa-base = "rv64i";
 			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei";
 
@@ -67,13 +67,13 @@
 		};
 
 		cpu@2 {
-			clock-frequency = <0>;
 			compatible = "sifive,u54", "riscv";
+			reg = <0x2>;
+			clock-frequency = <0>;
 			device_type = "cpu";
 			mmu-type = "riscv,sv39";
 			i-cache-line-size = <0x8000>;
 			d-cache-line-size = <0x8000>;
-			reg = <0x2>;
 			riscv,isa-base = "rv64i";
 			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei";
 
@@ -86,13 +86,13 @@
 		};
 
 		cpu@3 {
-			clock-frequency = <0>;
 			compatible = "sifive,u54", "riscv";
+			reg = <0x3>;
+			clock-frequency = <0>;
 			device_type = "cpu";
 			mmu-type = "riscv,sv39";
 			i-cache-line-size = <0x8000>;
 			d-cache-line-size = <0x8000>;
-			reg = <0x3>;
 			riscv,isa-base = "rv64i";
 			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei";
 
@@ -105,13 +105,13 @@
 		};
 
 		cpu@4 {
-			clock-frequency = <0>;
 			compatible = "sifive,u54", "riscv";
+			reg = <0x4>;
+			clock-frequency = <0>;
 			device_type = "cpu";
 			mmu-type = "riscv,sv39";
 			i-cache-line-size = <0x8000>;
 			d-cache-line-size = <0x8000>;
-			reg = <0x4>;
 			riscv,isa-base = "rv64i";
 			riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei";
 
@@ -125,10 +125,10 @@
 	};
 
 	soc {
-		#address-cells = <1>;
-		#size-cells = <1>;
 		compatible = "fu540-soc", "sifive-soc", "simple-bus";
 		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
 
 		modeselect: rom@1000 {
 			compatible = "sifive,modeselect0";
@@ -180,6 +180,7 @@
 
 		clint: clint@2000000 {
 			compatible = "sifive,clint0";
+			reg = <0x2000000 0x10000>;
 			interrupts-extended = <&hlic0 3 &hlic0 7
 					       &hlic1 3 &hlic1 7
 					       &hlic2 3 &hlic2 7
@@ -188,17 +189,16 @@
 			interrupt-names = "soft0", "timer0", "soft1", "timer1",
 					  "soft2", "timer2", "soft3", "timer3",
 					  "soft4", "timer4";
-			reg = <0x2000000 0x10000>;
 		};
 
 		mtimer: timer@200bff8 {
 			compatible = "riscv,machine-timer";
+			reg = <0x200bff8 0x8 0x2004000 0x8>;
 			interrupts-extended = <&hlic0 7
 					       &hlic1 7
 					       &hlic2 7
 					       &hlic3 7
 					       &hlic4 7>;
-			reg = <0x200bff8 0x8 0x2004000 0x8>;
 			reg-names = "mtime", "mtimecmp";
 		};
 
@@ -210,6 +210,7 @@
 
 		plic: interrupt-controller@c000000 {
 			compatible = "sifive,plic-1.0.0";
+			reg = <0x0c000000 0x04000000>;
 			#interrupt-cells = <2>;
 			#address-cells = <1>;
 			interrupt-controller;
@@ -218,64 +219,65 @@
 					       &hlic2 11 &hlic2 9
 					       &hlic3 11 &hlic3 9
 					       &hlic4 11 &hlic4 9>;
-			reg = <0x0c000000 0x04000000>;
 			riscv,max-priority = <7>;
 			riscv,ndev = <52>;
 		};
 
 		uart0: serial@10010000 {
 			compatible = "sifive,uart0";
+			reg = <0x10010000 0x1000>;
 			interrupt-parent = <&plic>;
 			interrupts = <4 1>;
-			reg = <0x10010000 0x1000>;
 			reg-names = "control";
 			status = "disabled";
 		};
 
 		uart1: serial@10011000 {
 			compatible = "sifive,uart0";
+			reg = <0x10011000 0x1000>;
 			interrupt-parent = <&plic>;
 			interrupts = <5 1>;
-			reg = <0x10011000 0x1000>;
 			reg-names = "control";
 			status = "disabled";
 		};
 
 		spi0: spi@10040000 {
 			compatible = "sifive,spi0";
+			reg = <0x10040000 0x1000 0x20000000 0x10000000>;
 			interrupt-parent = <&plic>;
 			interrupts = <51 1>;
-			reg = <0x10040000 0x1000 0x20000000 0x10000000>;
 			reg-names = "control", "mem";
-			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "disabled";
 		};
 
 		spi1: spi@10041000 {
 			compatible = "sifive,spi0";
+			reg = <0x10041000 0x1000>;
 			interrupt-parent = <&plic>;
 			interrupts = <52 1>;
-			reg = <0x10041000 0x1000>;
 			reg-names = "control";
-			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "disabled";
 		};
 
 		spi2: spi@10050000 {
 			compatible = "sifive,spi0";
+			reg = <0x10050000 0x1000>;
 			interrupt-parent = <&plic>;
 			interrupts = <6 1>;
-			reg = <0x10050000 0x1000>;
 			reg-names = "control";
-			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "disabled";
 		};
 
 		gpio0: gpio@10060000 {
 			compatible = "sifive,gpio0";
+			reg = <0x10060000 0x1000>;
+			ranges;
 			gpio-controller;
 			ngpios = <16>;
 			interrupt-parent = <&plic>;
@@ -283,14 +285,12 @@
 				     <11 1>, <12 1>, <13 1>, <14 1>,
 				     <15 1>, <16 1>, <17 1>, <18 1>,
 				     <19 1>, <20 1>, <21 1>, <22 1>;
-			reg = <0x10060000 0x1000>;
 			reg-names = "control";
-			status = "disabled";
 			#gpio-cells = <2>;
 
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges;
+			status = "disabled";
 		};
 	};
 };

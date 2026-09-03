@@ -19,9 +19,9 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-r52";
 			reg = <0>;
+			device_type = "cpu";
 		};
 	};
 

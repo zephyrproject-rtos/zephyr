@@ -6,7 +6,6 @@
 
 /* Target */
 &i2c0 {
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 	pinctrl-0 = <&i2c0_clk_gpf2_default
 		     &i2c0_data_gpf3_default>;
@@ -14,6 +13,7 @@
 
 	target-enable;
 	target-shared-fifo-mode;
+	status = "okay";
 
 	eeprom0: eeprom@52 {
 		compatible = "zephyr,i2c-target-eeprom";
@@ -28,13 +28,13 @@
 
 /* HOST */
 &i2c4 {
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 	pinctrl-0 = <&i2c4_clk_gpe0_default
 		     &i2c4_data_gpe7_default>;
 	pinctrl-names = "default";
 
 	fifo-enable;   /* FIFO2 */
+	status = "okay";
 
 	eeprom1: eeprom@54 {
 		compatible = "zephyr,i2c-target-eeprom";

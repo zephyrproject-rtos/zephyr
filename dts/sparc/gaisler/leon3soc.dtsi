@@ -23,10 +23,10 @@
 	};
 
 	soc {
-		#address-cells = <1>;
-		#size-cells = <1>;
 		compatible = "gaisler,leon3-soc", "simple-bus";
 		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
 		interrupt-parent = <&irqmp>;
 
 		irqmp: irqmp0@80000200 {
@@ -39,14 +39,14 @@
 
 		timer0: gptimer@80000300 {
 			compatible = "gaisler,gptimer";
-			interrupts = <8>;
 			reg = <0x80000300 0x100>;
+			interrupts = <8>;
 		};
 
 		uart0: apbuart@80000100 {
 			compatible = "gaisler,apbuart";
-			interrupts = <2>;
 			reg = <0x80000100 0x100>;
+			interrupts = <2>;
 			status = "disabled";
 		};
 	};

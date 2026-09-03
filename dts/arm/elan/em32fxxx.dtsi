@@ -17,9 +17,9 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m4";
 			reg = <0>;
+			device_type = "cpu";
 			#address-cells = <1>;
 			#size-cells = <1>;
 
@@ -117,9 +117,9 @@
 
 		em32_flash_controller: flash-controller@40034000 {
 			compatible = "elan,em32-flash-controller";
+			reg = <0x40034000 DT_SIZE_K(4)>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			reg = <0x40034000 DT_SIZE_K(4)>;
 			status = "disabled";
 
 			flash0: flash@10000000 {

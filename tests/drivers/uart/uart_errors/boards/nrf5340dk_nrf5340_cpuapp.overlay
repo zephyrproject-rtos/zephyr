@@ -41,20 +41,20 @@
 };
 
 dut: &uart1 {
-	current-speed = <115200>;
 	compatible = "nordic,nrf-uarte";
-	status = "okay";
+	current-speed = <115200>;
 	pinctrl-0 = <&uart1_default_alt>;
 	pinctrl-1 = <&uart1_sleep_alt>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 dut_aux: &uart2 {
-	current-speed = <115200>;
 	compatible = "nordic,nrf-uarte";
-	status = "okay";
+	current-speed = <115200>;
 	pinctrl-0 = <&uart2_default_alt>;
 	pinctrl-1 = <&uart2_sleep_alt>;
 	pinctrl-names = "default", "sleep";
 	disable-rx;
+	status = "okay";
 };

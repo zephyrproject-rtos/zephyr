@@ -157,10 +157,10 @@
 };
 
 &spi1 {
-	status = "okay";
 	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pa6 &spi1_mosi_pb5>;
 	pinctrl-names = "default";
 	cs-gpios = <&gpiod 14 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+	status = "okay";
 };
 
 &i2c1 {
@@ -168,8 +168,8 @@
 	pinctrl-names = "default";
 	scl-gpios = <&gpiob 8 GPIO_ACTIVE_HIGH>;
 	sda-gpios = <&gpiob 9 GPIO_ACTIVE_HIGH>;
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &fdcan1 {
@@ -223,25 +223,25 @@
 	ext_flash_ctrl: xspi-nor-flash@0 {
 		compatible = "st,stm32-xspi-nor";
 		reg = <0>;
+		ranges = <0x0 0x70000000 DT_SIZE_M(32)>;
 		size = <DT_SIZE_M(256)>; /* 256Mbits */
 		ospi-max-frequency = <DT_FREQ_M(50)>;
 		spi-bus-width = <XSPI_OCTO_MODE>;
 		data-rate = <XSPI_DTR_TRANSFER>;
 		four-byte-opcodes;
-		status = "okay";
 
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges = <0x0 0x70000000 DT_SIZE_M(32)>;
+		status = "okay";
 
 		ext_flash: mx25uw25645: xspi-nor-flash@0 {
 			compatible = "soc-nv-flash";
 			reg = <0x0 DT_SIZE_M(32)>;
+			ranges;
 			write-block-size = <1>;
 			erase-block-size = <DT_SIZE_K(4)>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges;
 		};
 	};
 };

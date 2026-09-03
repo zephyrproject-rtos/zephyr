@@ -9,9 +9,9 @@
 /* 16MB flash */
 &flash0 {
 	reg = <0x0 DT_SIZE_M(16)>;
+	ranges = <0x0 0x0 DT_SIZE_M(16)>;
 	#address-cells = <1>;
 	#size-cells = <1>;
-	ranges = <0x0 0x0 DT_SIZE_M(16)>;
 };
 
 /* 16MB psram */

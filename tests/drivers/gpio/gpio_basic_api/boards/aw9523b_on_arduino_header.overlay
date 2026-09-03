@@ -2,9 +2,9 @@
 	status = "okay";
 
 	aw9523b@58 {
-		status = "okay";
-		reg = <0x58>;
 		compatible = "awinic,aw9523b";
+		reg = <0x58>;
+		status = "okay";
 
 		aw9523_gpio: gpio {
 			compatible = "awinic,aw9523b-gpio";
@@ -19,8 +19,8 @@
 / {
 	resources {
 		compatible = "test-gpio-basic-api";
-		status = "okay";
 		out-gpios = <&aw9523_gpio 8 0>;
 		in-gpios = <&aw9523_gpio 9 0>;
+		status = "okay";
 	};
 };

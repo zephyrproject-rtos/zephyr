@@ -18,12 +18,12 @@
 };
 
 &adc1 {
-	status = "okay";
 	pinctrl-0 = <&adc_in1_pb14>;
 	pinctrl-names = "default";
 
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 
 	channel@1 {
 		reg = <1>;
@@ -35,12 +35,12 @@
 };
 
 &dac1 {
-	status = "okay";
 	pinctrl-0 = <&dac_out1_pa10>;
 	pinctrl-names = "default";
 
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 
 	channel@1 {
 		reg = <1>;

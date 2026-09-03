@@ -26,9 +26,9 @@
 
 	/* Single IPC channel: 4KB + 16KB shared memory for TX+RX */
 	reserved-memory {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		ipc_shm_area_cpuapp_cpuuma: memory@200c0000 {
 			compatible = "mmio-sram";
@@ -66,7 +66,6 @@
 };
 
 &wicr {
-	status = "okay";
 	firmware-lmacinitpc = <&wifi_lmac_rom>;
 	firmware-umacinitpc = <&wifi_umac_rom>;
 	firmware-lmacrompatchaddr = <&wifi_lmac_rom_entry>;
@@ -74,6 +73,7 @@
 	ipcconfig-commandmbox = <&ipc_shm_cpuapp_cpuuma_0>;
 	ipcconfig-eventmbox = <&ipc_shm_cpuuma_cpuapp_0>;
 	ipcconfig-sparembox = <&ipc_shm_sparembox>;
+	status = "okay";
 };
 
 &cpuapp_sram {
@@ -149,11 +149,11 @@
 };
 
 &spi00 {
-	status = "okay";
 	cs-gpios = <&gpio2 5 GPIO_ACTIVE_LOW>;
 	pinctrl-0 = <&spi00_default>;
 	pinctrl-1 = <&spi00_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &adc {
@@ -165,8 +165,6 @@
 };
 
 &wifi {
-	status = "okay";
-	nordic,wifi-xo-freq-offset = <0x0>;
 
 	/* Transmit power ceilings for the nRF7120 DK RF front-end. */
 	wifi-max-tx-pwr-2g-dsss = <21>;
@@ -178,6 +176,7 @@
 	wifi-max-tx-pwr-5g-mid-mcs7 = <13>;
 	wifi-max-tx-pwr-5g-high-mcs0 = <12>;
 	wifi-max-tx-pwr-5g-high-mcs7 = <12>;
+	nordic,wifi-xo-freq-offset = <0x0>;
 
 	/*
 	 * Net antenna gain of the DK RF path, i.e. antenna gain less path loss.
@@ -188,6 +187,7 @@
 	nordic,wifi-ant-gain-5g-band1 = <0>;
 	nordic,wifi-ant-gain-5g-band2 = <0>;
 	nordic,wifi-ant-gain-5g-band3 = <0>;
+	status = "okay";
 };
 
 &audio_auxpll {
@@ -204,12 +204,11 @@
 };
 
 &mspi00 {
-	status = "disabled";
 	op-mode = "MSPI_OP_MODE_CONTROLLER";
+	status = "disabled";
 
 	mx25u25645g: flash@0 {
 		compatible = "jedec,nor";
-		status = "disabled";
 		reg = <0>;
 		jedec-id = [c2 25 39];
 		sfdp-bfp = [e5 20 fb ff ff ff ff 0f 44 eb 08 6b 08 3b 04 bb
@@ -231,12 +230,13 @@
 		mspi-cpp-mode = "MSPI_CPP_MODE_0";
 		mspi-endian = "MSPI_BIG_ENDIAN";
 		mspi-ce-polarity = "MSPI_CE_ACTIVE_LOW";
+		status = "disabled";
 	};
 };
 
 &mspi01 {
-	status = "disabled";
 	op-mode = "MSPI_OP_MODE_CONTROLLER";
+	status = "disabled";
 
 	is66wvs8m8f: memory@0 {
 		compatible = "is66wv";

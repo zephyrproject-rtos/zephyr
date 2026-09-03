@@ -97,8 +97,8 @@
 };
 
 &c40fc {
-	status = "okay";
 	ranges = <0x0 0x00400000 DT_SIZE_K(3920)>;
+	status = "okay";
 
 	flash0: flash@0 {
 		compatible = "nxp,c40-flash";

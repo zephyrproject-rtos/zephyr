@@ -14,8 +14,8 @@
 #include "slwrb4180a-pinctrl.dtsi"
 
 / {
-	model = "Silicon Labs BRD4180A (Mighty Gecko 21 Radio Board)";
 	compatible = "silabs,slwrb4180a", "silabs,efr32mg21";
+	model = "Silicon Labs BRD4180A (Mighty Gecko 21 Radio Board)";
 
 	chosen {
 		zephyr,bt-hci = &bt_hci_silabs;
@@ -204,9 +204,9 @@
 };
 
 &ieee802154 {
-	status = "okay";
 	hfxo = <&hfxo>;
 	sleep-clock = <&lfxo>;
+	status = "okay";
 };
 
 &protimer {

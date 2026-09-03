@@ -13,12 +13,12 @@
 };
 
 &rtc {
-	status = "okay";
 	/*
 	 * prescaler = 1 -> 32 kHz counter rate. The default calendar prescaler
 	 * (16384) would give an unusable ~2 Hz tick.
 	 */
 	prescaler = <1>;
+	status = "okay";
 };
 
 /*

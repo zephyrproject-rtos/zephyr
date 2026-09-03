@@ -23,9 +23,9 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m33";
 			reg = <0>;
+			device_type = "cpu";
 			clock-frequency = <250000000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -231,172 +231,172 @@
 
 			gpio0: gpio@0 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x0>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <4>;
-				reg = <0x0>;
 				status = "disabled";
 			};
 
 			gpio1: gpio@1000 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x1000>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <5>;
-				reg = <0x1000>;
 				status = "disabled";
 			};
 
 			gpio2: gpio@1100 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x1100>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <4>;
-				reg = <0x1100>;
 				status = "disabled";
 			};
 
 			gpio3: gpio@1200 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x1200>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <4>;
-				reg = <0x1200>;
 				status = "disabled";
 			};
 
 			gpio4: gpio@1300 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x1300>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <6>;
-				reg = <0x1300>;
 				status = "disabled";
 			};
 
 			gpio5: gpio@100 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x100>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <5>;
-				reg = <0x100>;
 				status = "disabled";
 			};
 
 			gpio6: gpio@200 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x200>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <5>;
-				reg = <0x200>;
 				status = "disabled";
 			};
 
 			gpio7: gpio@1400 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x1400>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <5>;
-				reg = <0x1400>;
 				status = "disabled";
 			};
 
 			gpio8: gpio@1500 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x1500>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <5>;
-				reg = <0x1500>;
 				status = "disabled";
 			};
 
 			gpio9: gpio@1600 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x1600>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <4>;
-				reg = <0x1600>;
 				status = "disabled";
 			};
 
 			gpio10: gpio@1700 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x1700>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <5>;
-				reg = <0x1700>;
 				status = "disabled";
 			};
 
 			gpio11: gpio@300 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x300>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <4>;
-				reg = <0x300>;
 				status = "disabled";
 			};
 
 			gpio12: gpio@400 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x400>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <2>;
-				reg = <0x400>;
 				status = "disabled";
 			};
 
 			gpio13: gpio@500 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x500>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <5>;
-				reg = <0x500>;
 				status = "disabled";
 			};
 
 			gpio14: gpio@600 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x600>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <3>;
-				reg = <0x600>;
 				status = "disabled";
 			};
 
 			gpio15: gpio@700 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x700>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <4>;
-				reg = <0x700>;
 				status = "disabled";
 			};
 
 			gpio16: gpio@800 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x800>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <2>;
-				reg = <0x800>;
 				status = "disabled";
 			};
 
 			gpio17: gpio@900 {
 				compatible = "renesas,rz-gpio";
+				reg = <0x900>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <4>;
-				reg = <0x900>;
 				status = "disabled";
 			};
 
 			gpio18: gpio@a00 {
 				compatible = "renesas,rz-gpio";
+				reg = <0xa00>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <6>;
-				reg = <0xa00>;
 				status = "disabled";
 			};
 		};
@@ -443,8 +443,8 @@
 
 		scif0: serial@4004b800 {
 			compatible = "renesas,rz-scif-uart";
-			channel = <0>;
 			reg = <0x4004b800 0x18>;
+			channel = <0>;
 			interrupts = <320 1>, <321 1>, <322 1>, <323 1>, <324 1>;
 			interrupt-names = "eri", "bri", "rxi", "txi", "tei";
 			status = "disabled";
@@ -452,8 +452,8 @@
 
 		scif1: serial@4004bc00 {
 			compatible = "renesas,rz-scif-uart";
-			channel = <1>;
 			reg = <0x4004bc00 0x18>;
+			channel = <1>;
 			interrupts = <325 1>, <326 1>, <327 1>, <328 1>, <329 1>;
 			interrupt-names = "eri", "bri", "rxi", "txi", "tei";
 			status = "disabled";
@@ -461,8 +461,8 @@
 
 		scif2: serial@4004c000 {
 			compatible = "renesas,rz-scif-uart";
-			channel = <2>;
 			reg = <0x4004c000 0x18>;
+			channel = <2>;
 			interrupts = <330 1>, <331 1>, <332 1>, <333 1>, <334 1>;
 			interrupt-names = "eri", "bri", "rxi", "txi", "tei";
 			status = "disabled";
@@ -470,8 +470,8 @@
 
 		scif3: serial@4004c400 {
 			compatible = "renesas,rz-scif-uart";
-			channel = <3>;
 			reg = <0x4004c400 0x18>;
+			channel = <3>;
 			interrupts = <335 1>, <336 1>, <337 1>, <338 1>, <339 1>;
 			interrupt-names = "eri", "bri", "rxi", "txi", "tei";
 			status = "disabled";
@@ -479,8 +479,8 @@
 
 		scif4: serial@4004c800 {
 			compatible = "renesas,rz-scif-uart";
-			channel = <4>;
 			reg = <0x4004c800 0x18>;
+			channel = <4>;
 			interrupts = <340 1>, <341 1>, <342 1>, <343 1>, <344 1>;
 			interrupt-names = "eri", "bri", "rxi", "txi", "tei";
 			status = "disabled";
@@ -488,8 +488,8 @@
 
 		scif5: serial@4004e000 {
 			compatible = "renesas,rz-scif-uart";
-			channel = <5>;
 			reg = <0x4004e000 0x18>;
+			channel = <5>;
 			interrupts = <345 1>, <346 1>, <347 1>, <348 1>, <349 1>;
 			interrupt-names = "eri", "bri", "rxi", "txi", "tei";
 			status = "disabled";
@@ -507,8 +507,8 @@
 				channel = <0>;
 				interrupts = <375 1>, <377 1>, <379 1>;
 				interrupt-names = "ch_rec", "ch_err", "ch_trx";
-				status = "disabled";
 				clocks = <&cpg RZ_CLOCK_CANFD(0)>;
+				status = "disabled";
 			};
 
 			canfd1: canfd1 {
@@ -516,18 +516,18 @@
 				channel = <1>;
 				interrupts = <376 1>, <378 1>, <380 1>;
 				interrupt-names = "ch_rec", "ch_err", "ch_trx";
-				status = "disabled";
 				clocks = <&cpg RZ_CLOCK_CANFD(1)>;
+				status = "disabled";
 			};
 		};
 
 		i2c0: i2c@40090000 {
 			compatible = "renesas,rz-riic";
+			reg = <0x40090000 0x15>;
 			channel = <0>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40090000 0x15>;
 			interrupts = <257 1>, <258 1>, <259 1>, <260 1>,
 				     <261 1>, <262 1>, <263 1>, <264 1>;
 			interrupt-names = "tei", "naki", "spi", "sti", "ali", "tmoi", "rxi", "txi";
@@ -536,11 +536,11 @@
 
 		i2c1: i2c@40090400 {
 			compatible = "renesas,rz-riic";
+			reg = <0x40090400 0x15>;
 			channel = <1>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40090400 0x15>;
 			interrupts = <265 1>, <266 1>, <267 1>, <268 1>,
 				     <269 1>, <270 1>, <271 1>, <272 1>;
 			interrupt-names = "tei", "naki", "spi", "sti", "ali", "tmoi", "rxi", "txi";
@@ -549,11 +549,11 @@
 
 		i2c2: i2c@40090800 {
 			compatible = "renesas,rz-riic";
+			reg = <0x40090800 0x15>;
 			channel = <2>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40090800 0x15>;
 			interrupts = <273 1>, <274 1>, <275 1>, <276 1>,
 				     <277 1>, <278 1>, <279 1>, <280 1>;
 			interrupt-names = "tei", "naki", "spi", "sti", "ali", "tmoi", "rxi", "txi";
@@ -562,11 +562,11 @@
 
 		i2c3: i2c@40090c00 {
 			compatible = "renesas,rz-riic";
+			reg = <0x40090c00 0x15>;
 			channel = <3>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40090c00 0x15>;
 			interrupts = <281 1>, <282 1>, <283 1>, <284 1>,
 				     <285 1>, <286 1>, <287 1>, <288 1>;
 			interrupt-names = "tei", "naki", "spi", "sti", "ali", "tmoi", "rxi", "txi";
@@ -1255,8 +1255,8 @@
 		/* CM33 <-> CA55 */
 		mbox1: mhu@50400020 {
 			compatible = "renesas,rz-mhu-mbox";
-			channel = <1>;
 			reg = <0x50400020 0x20>;
+			channel = <1>;
 			tx-mask = <0x00000002>; /* Channel 1 is for TX */
 			rx-mask = <0x00000001>; /* Channel 0 is for RX */
 			channels-count = <2>;
@@ -1269,8 +1269,8 @@
 		/* CM33 <-> CM33_FPU */
 		mbox3: mhu@50400060 {
 			compatible = "renesas,rz-mhu-mbox";
-			channel = <3>;
 			reg = <0x50400060 0x20>;
+			channel = <3>;
 			tx-mask = <0x00000002>; /* Channel 1 is for TX */
 			rx-mask = <0x00000001>; /* Channel 0 is for RX */
 			channels-count = <2>;
@@ -1283,8 +1283,8 @@
 		/* CM33 <-> CA55 */
 		mbox4: mhu@50400080 {
 			compatible = "renesas,rz-mhu-mbox";
-			channel = <4>;
 			reg = <0x50400080 0x20>;
+			channel = <4>;
 			tx-mask = <0x00000002>; /* Channel 1 is for TX */
 			rx-mask = <0x00000001>; /* Channel 0 is for RX */
 			channels-count = <2>;
@@ -1297,8 +1297,8 @@
 		/* CM33 <-> CM33_FPU */
 		mbox5: mhu@504000a0 {
 			compatible = "renesas,rz-mhu-mbox";
-			channel = <5>;
 			reg = <0x504000a0 0x20>;
+			channel = <5>;
 			tx-mask = <0x00000002>; /* Channel 1 is for TX */
 			rx-mask = <0x00000001>; /* Channel 0 is for RX */
 			channels-count = <2>;

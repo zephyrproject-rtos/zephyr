@@ -47,10 +47,10 @@
 		compatible = "gpio-keys";
 
 		user_button: button-1 {
-			status = "okay";
 			label = "User SW4";
 			gpios = <&gpio4 12 (GPIO_PULL_UP | GPIO_ACTIVE_HIGH)>;
 			zephyr,code = <INPUT_KEY_0>;
+			status = "okay";
 		};
 	};
 
@@ -72,10 +72,10 @@
 };
 
 &lpspi2 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpspi2>;
 	pinctrl-1 = <&pinmux_lpspi2_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &lpuart1 {
@@ -93,10 +93,10 @@
 };
 
 &lpi2c3 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpi2c3>;
 	pinctrl-1 = <&pinmux_lpi2c3_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	eeprom0: eeprom@50 {
 		compatible = "atmel,at24";
@@ -141,9 +141,9 @@
 };
 
 &flexcan1 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_flexcan1>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &i3c2 {
@@ -176,6 +176,11 @@ p3t1755dp_ard_i2c_interface: &lpi2c3 {};
 };
 
 &flexspi2 {
+	pinctrl-0 = <&pinmux_flexspi2>;
+	pinctrl-names = "default";
+	ahb-prefetch;
+	ahb-read-addr-opt;
+	rx-clock-source = <1>;
 	/*
 	 * If booting with XIP from FlexSPI flash, the flash memory will be initialized by the
 	 * bootloader in ROM.
@@ -185,38 +190,33 @@ p3t1755dp_ard_i2c_interface: &lpi2c3 {};
 	 * corresponding MPU settings.
 	 */
 	status = "disabled";
-	pinctrl-0 = <&pinmux_flexspi2>;
-	pinctrl-names = "default";
-	ahb-prefetch;
-	ahb-read-addr-opt;
-	rx-clock-source = <1>;
 
 	ext_flash_ctrl: flash-controller@0 {
 		compatible = "nxp,imx-flexspi-nor";
-		size = <DT_SIZE_M(16*8)>;
 		reg = <0>;
+		ranges = <0x0 0x04000000 DT_SIZE_M(16)>;
+		size = <DT_SIZE_M(16*8)>;
 		spi-max-frequency = <DT_FREQ_M(133)>;
-		status = "okay";
 		jedec-id = [ef 40 18];
 
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges = <0x0 0x04000000 DT_SIZE_M(16)>;
+		status = "okay";
 
 		w25q128jv: flash@0 {
 			compatible = "soc-nv-flash";
 			reg = <0x0 DT_SIZE_M(16)>;
+			ranges;
 			erase-block-size = <DT_SIZE_K(4)>;
 			write-block-size = <1>;
 
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges;
 
 			partitions {
+				ranges;
 				#address-cells = <1>;
 				#size-cells = <1>;
-				ranges;
 
 				/*
 				 * Partition sizes must be aligned
@@ -224,26 +224,26 @@ p3t1755dp_ard_i2c_interface: &lpi2c3 {};
 				 */
 				boot_partition: partition@0 {
 					compatible = "zephyr,mapped-partition";
-					label = "mcuboot";
 					reg = <0x00000000 DT_SIZE_K(128)>;
+					label = "mcuboot";
 				};
 
 				slot0_partition: partition@20000 {
 					compatible = "zephyr,mapped-partition";
-					label = "image-0";
 					reg = <0x00020000 DT_SIZE_M(7)>;
+					label = "image-0";
 				};
 
 				slot1_partition: partition@720000 {
 					compatible = "zephyr,mapped-partition";
-					label = "image-1";
 					reg = <0x00720000 DT_SIZE_M(7)>;
+					label = "image-1";
 				};
 
 				storage_partition: partition@e20000 {
 					compatible = "zephyr,mapped-partition";
-					label = "storage";
 					reg = <0x00e20000 (DT_SIZE_M(2) - DT_SIZE_K(128))>;
+					label = "storage";
 				};
 			};
 		};
@@ -324,9 +324,9 @@ p3t1755dp_ard_i2c_interface: &lpi2c3 {};
 };
 
 &flexpwm3_pwm3 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm3>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &sys_ctr {

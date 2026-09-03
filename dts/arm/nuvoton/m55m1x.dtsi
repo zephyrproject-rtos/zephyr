@@ -27,9 +27,9 @@
 		#size-cells = <0>;
 
 		cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m55";
 			reg = <0>;
+			device_type = "cpu";
 		};
 	};
 
@@ -188,102 +188,102 @@
 
 		gpioa: gpio@40229000 {
 			compatible = "nuvoton,numaker-gpio";
+			reg = <0x40229000 0x40>;
 			gpio-controller;
 			#gpio-cells = <2>;
-			reg = <0x40229000 0x40>;
 			clocks = <&pcc NUMAKER_GPIOA_MODULE 0 0>;
-			status = "disabled";
 			interrupts = <20 2>;
+			status = "disabled";
 		};
 
 		gpiob: gpio@40229040 {
 			compatible = "nuvoton,numaker-gpio";
+			reg = <0x40229040 0x40>;
 			gpio-controller;
 			#gpio-cells = <2>;
-			reg = <0x40229040 0x40>;
 			clocks = <&pcc NUMAKER_GPIOB_MODULE 0 0>;
-			status = "disabled";
 			interrupts = <21 2>;
+			status = "disabled";
 		};
 
 		gpioc: gpio@40229080 {
 			compatible = "nuvoton,numaker-gpio";
+			reg = <0x40229080 0x40>;
 			gpio-controller;
 			#gpio-cells = <2>;
-			reg = <0x40229080 0x40>;
 			clocks = <&pcc NUMAKER_GPIOC_MODULE 0 0>;
-			status = "disabled";
 			interrupts = <22 2>;
+			status = "disabled";
 		};
 
 		gpiod: gpio@402290c0 {
 			compatible = "nuvoton,numaker-gpio";
+			reg = <0x402290c0 0x40>;
 			gpio-controller;
 			#gpio-cells = <2>;
-			reg = <0x402290c0 0x40>;
 			clocks = <&pcc NUMAKER_GPIOD_MODULE 0 0>;
-			status = "disabled";
 			interrupts = <23 2>;
+			status = "disabled";
 		};
 
 		gpioe: gpio@40229100 {
 			compatible = "nuvoton,numaker-gpio";
+			reg = <0x40229100 0x40>;
 			gpio-controller;
 			#gpio-cells = <2>;
-			reg = <0x40229100 0x40>;
 			clocks = <&pcc NUMAKER_GPIOE_MODULE 0 0>;
-			status = "disabled";
 			interrupts = <24 2>;
+			status = "disabled";
 		};
 
 		gpiof: gpio@40229140 {
 			compatible = "nuvoton,numaker-gpio";
+			reg = <0x40229140 0x40>;
 			gpio-controller;
 			#gpio-cells = <2>;
-			reg = <0x40229140 0x40>;
 			clocks = <&pcc NUMAKER_GPIOF_MODULE 0 0>;
-			status = "disabled";
 			interrupts = <25 2>;
+			status = "disabled";
 		};
 
 		gpiog: gpio@40229180 {
 			compatible = "nuvoton,numaker-gpio";
+			reg = <0x40229180 0x40>;
 			gpio-controller;
 			#gpio-cells = <2>;
-			reg = <0x40229180 0x40>;
 			clocks = <&pcc NUMAKER_GPIOG_MODULE 0 0>;
-			status = "disabled";
 			interrupts = <26 2>;
+			status = "disabled";
 		};
 
 		gpioh: gpio@402291c0 {
 			compatible = "nuvoton,numaker-gpio";
+			reg = <0x402291c0 0x40>;
 			gpio-controller;
 			#gpio-cells = <2>;
-			reg = <0x402291c0 0x40>;
 			clocks = <&pcc NUMAKER_GPIOH_MODULE 0 0>;
-			status = "disabled";
 			interrupts = <27 2>;
+			status = "disabled";
 		};
 
 		gpioi: gpio@40229200 {
 			compatible = "nuvoton,numaker-gpio";
+			reg = <0x40229200 0x40>;
 			gpio-controller;
 			#gpio-cells = <2>;
-			reg = <0x40229200 0x40>;
 			clocks = <&pcc NUMAKER_GPIOI_MODULE 0 0>;
-			status = "disabled";
 			interrupts = <28 2>;
+			status = "disabled";
 		};
 
 		gpioj: gpio@40229240 {
 			compatible = "nuvoton,numaker-gpio";
+			reg = <0x40229240 0x40>;
 			gpio-controller;
 			#gpio-cells = <2>;
-			reg = <0x40229240 0x40>;
 			clocks = <&pcc NUMAKER_GPIOJ_MODULE 0 0>;
-			status = "disabled";
 			interrupts = <29 2>;
+			status = "disabled";
 		};
 
 		rtc: rtc@40297000 {
@@ -381,50 +381,50 @@
 
 		i2c0: i2c@40248000 {
 			compatible = "nuvoton,numaker-i2c";
-			clock-frequency = <I2C_BITRATE_STANDARD>;
 			reg = <0x40248000 0x800>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupts = <92 0>;
 			resets = <&rst NUMAKER_SYS_I2C0RST>;
 			clocks = <&pcc NUMAKER_I2C0_MODULE 0 0>;
-			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "disabled";
 		};
 
 		i2c1: i2c@40288000 {
 			compatible = "nuvoton,numaker-i2c";
-			clock-frequency = <I2C_BITRATE_STANDARD>;
 			reg = <0x40288000 0x800>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupts = <93 0>;
 			resets = <&rst NUMAKER_SYS_I2C1RST>;
 			clocks = <&pcc NUMAKER_I2C1_MODULE 0 0>;
-			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "disabled";
 		};
 
 		i2c2: i2c@40249000 {
 			compatible = "nuvoton,numaker-i2c";
-			clock-frequency = <I2C_BITRATE_STANDARD>;
 			reg = <0x40249000 0x800>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupts = <94 0>;
 			resets = <&rst NUMAKER_SYS_I2C2RST>;
 			clocks = <&pcc NUMAKER_I2C2_MODULE 0 0>;
-			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "disabled";
 		};
 
 		i2c3: i2c@40289000 {
 			compatible = "nuvoton,numaker-i2c";
-			clock-frequency = <I2C_BITRATE_STANDARD>;
 			reg = <0x40289000 0x800>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupts = <95 0>;
 			resets = <&rst NUMAKER_SYS_I2C3RST>;
 			clocks = <&pcc NUMAKER_I2C3_MODULE 0 0>;
-			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "disabled";
 		};
 
 		eadc0: eadc@40241000 {
@@ -436,8 +436,8 @@
 				  NUMAKER_CLK_EADCSEL_EADC0SEL_PCLK0
 				  NUMAKER_CLK_EADCDIV_EADC0DIV(10)>;
 			channels = <28>;
-			status = "disabled";
 			#io-channel-cells = <1>;
+			status = "disabled";
 		};
 
 		epwm0: epwm@40242000 {
@@ -472,10 +472,10 @@
 			clocks = <&pcc NUMAKER_USBD0_MODULE NUMAKER_CLK_USBSEL_USBSEL_HIRC48M
 				  NUMAKER_CLK_USBDIV_USBDIV(1)>;
 			dma-buffer-size = <1536>;
-			status = "disabled";
 			num-bidir-endpoints = <25>;
 			disallow-iso-in-out-same-number;
 			allow-disable-usb-on-unplug;
+			status = "disabled";
 		};
 
 		hsusbd: hsusbd@40205000 {
@@ -485,9 +485,9 @@
 			resets = <&rst NUMAKER_SYS_HSUSBD0RST>;
 			clocks = <&pcc NUMAKER_HSUSBD0_MODULE 0 0>;
 			dma-buffer-size = <8192>;
-			status = "disabled";
 			/* 2 more for Control OUT/IN */
 			num-bidir-endpoints = <20>;
+			status = "disabled";
 		};
 
 		sdhc0: sdh@40206000 {

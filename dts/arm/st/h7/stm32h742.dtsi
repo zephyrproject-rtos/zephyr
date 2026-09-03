@@ -74,10 +74,10 @@
 
 		sai2: sai2@40015c00 {
 			compatible = "st,stm32-sai";
-			#address-cells = <1>;
-			#size-cells = <1>;
 			reg = <0x40015c00 0x400>;
 			ranges;
+			#address-cells = <1>;
+			#size-cells = <1>;
 			clocks = <&rcc STM32_CLOCK(APB2, 23)>,
 				 <&rcc STM32_SRC_PLL1_Q SAI23_SEL(0)>;
 			clock-names = "sai_ck", "sai_ker_ck";
@@ -119,8 +119,8 @@
 	sram2: memory@30020000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x30020000 DT_SIZE_K(16)>;
-		zephyr,memory-region = "SRAM2";
 		#memory-region-cells = <0>;
+		zephyr,memory-region = "SRAM2";
 	};
 
 	/* System data RAM accessible over AHB bus: SRAM4 in D3 domain  */

@@ -13,27 +13,27 @@
 		#size-cells = <0>;
 
 		cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-r82";
 			reg = <0>;
+			device_type = "cpu";
 		};
 
 		cpu@1 {
-			device_type = "cpu";
 			compatible = "arm,cortex-r82";
 			reg = <1>;
+			device_type = "cpu";
 		};
 
 		cpu@2 {
-			device_type = "cpu";
 			compatible = "arm,cortex-r82";
 			reg = <2>;
+			device_type = "cpu";
 		};
 
 		cpu@3 {
-			device_type = "cpu";
 			compatible = "arm,cortex-r82";
 			reg = <3>;
+			device_type = "cpu";
 		};
 	};
 
@@ -71,37 +71,37 @@
 		uart0: uart@9c090000 {
 			compatible = "arm,pl011";
 			reg = <0x9c090000 0x10000>;
-			status = "disabled";
 			interrupts = <GIC_SPI 5 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "irq_5";
 			clocks = <&uartclk>;
+			status = "disabled";
 		};
 
 		uart1: uart@9c0a0000 {
 			compatible = "arm,pl011";
 			reg = <0x9c0a0000 0x10000>;
-			status = "disabled";
 			interrupts = <GIC_SPI 6 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "irq_6";
 			clocks = <&uartclk>;
+			status = "disabled";
 		};
 
 		uart2: uart@9c0b0000 {
 			compatible = "arm,pl011";
 			reg = <0x9c0b0000 0x10000>;
-			status = "disabled";
 			interrupts = <GIC_SPI 7 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "irq_7";
 			clocks = <&uartclk>;
+			status = "disabled";
 		};
 
 		uart3: uart@9c0c0000 {
 			compatible = "arm,pl011";
 			reg = <0x9c0c0000 0x10000>;
-			status = "disabled";
 			interrupts = <GIC_SPI 8 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "irq_8";
 			clocks = <&uartclk>;
+			status = "disabled";
 		};
 
 		ethernet@9a000000 {
@@ -110,21 +110,21 @@
 			eth: ethernet {
 				compatible = "smsc,lan91c111";
 				interrupts = <GIC_SPI 15 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-				status = "disabled";
 
 				phy-handle = <&phy>;
+				status = "disabled";
 			};
 
 			mdio: mdio {
 				compatible = "smsc,lan91c111-mdio";
-				status = "disabled";
 				#address-cells = <1>;
 				#size-cells = <0>;
+				status = "disabled";
 
 				phy: ethernet-phy@0 {
 					compatible = "ethernet-phy";
-					status = "disabled";
 					reg = <0>;
+					status = "disabled";
 				};
 			};
 		};

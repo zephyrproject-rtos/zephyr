@@ -7,12 +7,12 @@
 &uart2 {
 	pinctrl-0 = <&uart2_default>;
 	pinctrl-names = "default";
-	status = "okay";
 	parity = "none";
 	stop-bits = "1";
 	data-bits = <8>;
 	dmas = <&dma0 2 18 0x10021>, <&dma0 1 19 0xa>;
 	dma-names = "tx", "rx";
+	status = "okay";
 };
 
 &dma0 {

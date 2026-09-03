@@ -9,7 +9,7 @@
 
 	modbus0 {
 		compatible = "zephyr,modbus-serial";
-		status = "okay";
 		de-gpios = <&arduino_header 15 GPIO_ACTIVE_LOW>;	/* D9 */
+		status = "okay";
 	};
 };

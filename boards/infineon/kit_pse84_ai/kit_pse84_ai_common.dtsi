@@ -68,53 +68,53 @@ zephyr_udc0: &usbhs {
 
 uart2: &scb2 {
 	compatible = "infineon,uart";
-	status = "okay";
 	current-speed = <115200>;
 
 	clocks = <&peri0_group1_16bit_1>;
 
 	pinctrl-0 = <&p6_7_scb2_uart_tx &p6_5_scb2_uart_rx>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &peri0_group1_16bit_1 {
-	status = "okay";
 	clock-div = <1>;
+	status = "okay";
 };
 
 i2c0: &scb0 {
+	compatible = "infineon,i2c";
 	#address-cells = <1>;
 	#size-cells = <0>;
-	compatible = "infineon,i2c";
-	status = "okay";
 	clocks = <&peri0_group1_16bit_3>;
 	pinctrl-0 = <&p8_0_scb0_i2c_scl &p8_1_scb0_i2c_sda>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	bosch_bmi270: bmi270@68 {
 		compatible = "bosch,bmi270";
 		reg = <0x68>;
-		status = "okay";
 		irq-gpios = <&gpio_prt7 7 GPIO_ACTIVE_HIGH>, <&gpio_prt6 6 GPIO_ACTIVE_HIGH>;
+		status = "okay";
 	};
 
 	dps368: dps368@77 {
 		compatible = "infineon,dps368", "infineon,dps310";
-		status = "okay";
 		reg = <0x77>;
+		status = "okay";
 	};
 
 	sht4x@44 {
-		status = "okay";
 		compatible = "sensirion,sht4x";
 		reg = <0x44>;
 		repeatability = <2>;
+		status = "okay";
 	};
 };
 
 &peri0_group1_16bit_3 {
-	status = "okay";
 	clock-div = <1000>;
+	status = "okay";
 };
 
 &gpio_prt0 {

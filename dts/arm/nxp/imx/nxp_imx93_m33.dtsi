@@ -16,9 +16,9 @@
 		#size-cells = <0>;
 
 		cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m33";
 			reg = <0>;
+			device_type = "cpu";
 
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -44,10 +44,10 @@
 
 		lpi2c3: i2c@42530000 {
 			compatible = "nxp,lpi2c";
+			reg = <0x42530000 0x4000>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x42530000 0x4000>;
 			interrupts = <62 0>;
 			clocks = <&ccm IMX_CCM_LPI2C3_CLK 0x70 10>;
 			status = "disabled";
@@ -55,10 +55,10 @@
 
 		lpi2c4: i2c@42540000 {
 			compatible = "nxp,lpi2c";
+			reg = <0x42540000 0x4000>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x42540000 0x4000>;
 			interrupts = <63 0>;
 			clocks = <&ccm IMX_CCM_LPI2C4_CLK 0x80 24>;
 			status = "disabled";
@@ -66,10 +66,10 @@
 
 		lpi2c5: i2c@426b0000 {
 			compatible = "nxp,lpi2c";
+			reg = <0x426b0000 0x4000>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x426b0000 0x4000>;
 			interrupts = <195 0>;
 			clocks = <&ccm IMX_CCM_LPI2C5_CLK 0x80 24>;
 			status = "disabled";
@@ -77,10 +77,10 @@
 
 		lpi2c6: i2c@426c0000 {
 			compatible = "nxp,lpi2c";
+			reg = <0x426c0000 0x4000>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x426c0000 0x4000>;
 			interrupts = <196 0>;
 			clocks = <&ccm IMX_CCM_LPI2C6_CLK 0x80 24>;
 			status = "disabled";
@@ -88,10 +88,10 @@
 
 		lpi2c7: i2c@426d0000 {
 			compatible = "nxp,lpi2c";
+			reg = <0x426d0000 0x4000>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x426d0000 0x4000>;
 			interrupts = <197 0>;
 			clocks = <&ccm IMX_CCM_LPI2C7_CLK 0x80 24>;
 			status = "disabled";
@@ -99,10 +99,10 @@
 
 		lpi2c8: i2c@426e0000 {
 			compatible = "nxp,lpi2c";
+			reg = <0x426e0000 0x4000>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x426e0000 0x4000>;
 			interrupts = <198 0>;
 			clocks = <&ccm IMX_CCM_LPI2C8_CLK 0x80 24>;
 			status = "disabled";
@@ -118,10 +118,10 @@
 
 		lpi2c1: i2c@44340000 {
 			compatible = "nxp,lpi2c";
+			reg = <0x44340000 0x4000>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x44340000 0x4000>;
 			interrupts = <13 0>;
 			clocks = <&ccm IMX_CCM_LPI2C1_CLK 0x70 6>;
 			status = "disabled";
@@ -129,10 +129,10 @@
 
 		lpi2c2: i2c@44350000 {
 			compatible = "nxp,lpi2c";
+			reg = <0x44350000 0x4000>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x44350000 0x4000>;
 			interrupts = <14 0>;
 			clocks = <&ccm IMX_CCM_LPI2C2_CLK 0x70 8>;
 			status = "disabled";
@@ -220,8 +220,8 @@
 			status = "okay";
 
 			pinctrl: pinctrl {
-				status = "okay";
 				compatible = "nxp,imx93-pinctrl";
+				status = "okay";
 			};
 		};
 
@@ -273,9 +273,9 @@
 
 		lcdif: display-controller@4ae30000 {
 			compatible = "nxp,imx-lcdifv3";
+			reg = <0x4ae30000 0x10000>;
 			media-axi-clk-rate = <400000000>;
 			media-apb-clk-rate = <133333334>;
-			reg = <0x4ae30000 0x10000>;
 			interrupts = <176 0>;
 			clocks = <&ccm IMX_CCM_MEDIA_DISP_PIX_CLK 0 0>,
 				 <&ccm IMX_CCM_MEDIA_AXI_CLK 0 0>,
@@ -364,9 +364,9 @@
 			compatible = "nxp,sar-adc";
 			reg = <0x44530000 DT_SIZE_K(64)>;
 			interrupts = <219 0>;
-			status = "disabled";
 			#io-channel-cells = <1>;
 			clocks = <&ccm IMX_CCM_SAR_ADC1_CLK 0x0 0>;
+			status = "disabled";
 		};
 
 		video_pll: videopll@44481400 {

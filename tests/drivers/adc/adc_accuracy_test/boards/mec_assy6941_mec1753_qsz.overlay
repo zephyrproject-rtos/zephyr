@@ -21,13 +21,13 @@
 
 &adc0 {
 	compatible = "microchip,xec-adc";
-	status = "okay";
 
 	pinctrl-0 = <&adc03_gpio203>;
 	pinctrl-names = "default";
 
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 
 	channel@3 {
 		reg = <3>;

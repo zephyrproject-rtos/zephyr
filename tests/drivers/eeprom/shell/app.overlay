@@ -9,7 +9,7 @@
 / {
 	fake_eeprom: fake_eeprom {
 		compatible = "zephyr,fake-eeprom";
-		status = "okay";
 		size = <DT_SIZE_K(8)>;
+		status = "okay";
 	};
 };

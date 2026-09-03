@@ -25,11 +25,11 @@
 			portc: gpio@40002900 {
 				compatible = "atmel,sam0-gpio";
 				reg = <0x40002900 0x80>;
-
-				#atmel,pin-cells = <2>;
 				#gpio-cells = <2>;
 
 				gpio-controller;
+
+				#atmel,pin-cells = <2>;
 			};
 		};
 	};
@@ -40,7 +40,6 @@
 &sercom4 {
 	/* SERCOM4 is used to interface with the internal LoRa radio */
 	compatible = "atmel,sam0-spi";
-	status = "disabled";
 
 	#address-cells = <1>;
 	#size-cells = <0>;
@@ -51,11 +50,11 @@
 
 	pinctrl-0 = <&sercom4_default>;
 	pinctrl-names = "default";
+	status = "disabled";
 
 	lora: sx1276@0 {
 		compatible = "semtech,sx1276";
 		reg = <0>;
-		status = "disabled";
 
 		reset-gpios = <&portb 15 GPIO_ACTIVE_LOW>;               /* nRST */
 		dio-gpios = <&portb 16 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>, /* DIO0 */
@@ -65,5 +64,6 @@
 			    <&porta 10 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>, /* DIO4 */
 			    <&portb 0 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>; /* DIO5 */
 		spi-max-frequency = <DT_FREQ_M(10)>;
+		status = "disabled";
 	};
 };

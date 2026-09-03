@@ -33,66 +33,66 @@
 
 	clocks {
 		clk_rc32m: clk-rc32m {
-			#clock-cells = <0>;
 			compatible = "fixed-clock";
+			#clock-cells = <0>;
 			clock-frequency = <BFLB_RC32M_FREQUENCY>;
 			status = "okay";
 		};
 
 		clk_xtal32k: clk-xtal32k {
-			#clock-cells = <0>;
 			compatible = "fixed-clock";
+			#clock-cells = <0>;
 			clock-frequency = <BFLB_F32K_FREQUENCY>;
 			status = "disabled";
 		};
 
 		clk_rc32k: clk-rc32k {
-			#clock-cells = <0>;
 			compatible = "fixed-clock";
+			#clock-cells = <0>;
 			clock-frequency = <BFLB_F32K_FREQUENCY>;
 			status = "okay";
 		};
 
 		clk_f32k: clk-f32k {
-			#clock-cells = <0>;
 			compatible = "bflb,f32k";
+			#clock-cells = <0>;
 			clock-frequency = <BFLB_F32K_FREQUENCY>;
 			clocks = <&clk_rc32k>;
 			status = "okay";
 		};
 
 		clk_crystal: clk-crystal {
-			#clock-cells = <0>;
 			compatible = "fixed-clock";
+			#clock-cells = <0>;
 			clock-frequency = <DT_FREQ_M(32)>;
 			status = "okay";
 		};
 
 		clk_pll: clk-pll {
-			#clock-cells = <1>;
 			compatible = "bflb,bl70x_l-dll";
+			#clock-cells = <1>;
 			clocks = <&clk_crystal>;
 			status = "okay";
 		};
 
 		clk_root: clk-root {
-			#clock-cells = <0>;
 			compatible = "bflb,root-clk";
+			#clock-cells = <0>;
 			clocks = <&clk_pll BL70X_DLL_144MHz>;
 			divider = <1>;
 			status = "okay";
 		};
 
 		clk_bclk: clk-bclk {
-			#clock-cells = <0>;
 			compatible = "bflb,bclk";
+			#clock-cells = <0>;
 			divider = <2>;
 			status = "okay";
 		};
 
 		clk_flash: clk-flash {
-			#clock-cells = <0>;
 			compatible = "bflb,flash-clk";
+			#clock-cells = <0>;
 			clocks = <&clk_bclk>;
 			divider = <2>;
 			status = "okay";
@@ -105,19 +105,19 @@
 		timebase-frequency = <DT_FREQ_M(1)>;
 
 		cpu0: cpu@0 {
-			device_type = "cpu";
 			compatible = "sifive,e24", "riscv";
 			reg = <0>;
-			riscv,isa-base = "rv32i";
-			riscv,isa-extensions = "i", "m", "a", "f", "c", "zicsr", "zifencei";
+			device_type = "cpu";
 			d-cache-line-size = <32>;
 			hardware-exec-breakpoint-count = <4>;
+			riscv,isa-base = "rv32i";
+			riscv,isa-extensions = "i", "m", "a", "f", "c", "zicsr", "zifencei";
 			status = "okay";
 
 			ictrl: interrupt-controller {
+				compatible = "riscv,cpu-intc";
 				#address-cells = <0>;
 				#interrupt-cells = <1>;
-				compatible = "riscv,cpu-intc";
 				interrupt-controller;
 			};
 		};
@@ -125,9 +125,9 @@
 
 	soc {
 		compatible = "simple-bus";
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		clic: clic@2000000 {
 			compatible = "sifive,clic-draft";
@@ -154,9 +154,9 @@
 		itcm: itcm@22014000 {
 			compatible = "zephyr,memory-region", "mmio-sram";
 			reg = <0x22014000 DT_SIZE_K(16)>;
+			ranges = <0x0 0x22014000 DT_SIZE_K(16)>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0x22014000 DT_SIZE_K(16)>;
 			zephyr,memory-region = "ITCM";
 		};
 
@@ -172,11 +172,11 @@
 				compatible = "bflb,bl60x_70x-gpio";
 				reg = <0x40000000 0x1000>;
 				#gpio-cells = <2>;
-				status = "disabled";
 
 				gpio-controller;
 				interrupts = <60 0>;
 				interrupt-parent = <&clic>;
+				status = "disabled";
 			};
 		};
 
@@ -184,7 +184,6 @@
 			compatible = "bflb,bl70x_l-clock-controller", "bflb,clock-controller";
 			reg = <0x40000000 DT_SIZE_K(4)>;
 			#clock-cells = <1>;
-			status = "okay";
 			clocks = <&clk_rc32m>, <&clk_crystal>, <&clk_root>, <&clk_bclk>,
 				 <&clk_rc32k>, <&clk_xtal32k>, <&clk_f32k>,
 				 <&clk_pll BL70X_DLL_144MHz>, <&clk_pll BL70X_DLL_96MHz>,
@@ -195,6 +194,7 @@
 				      "dll_144", "dll_96",
 				      "dll_120", "dll_57",
 				      "flash";
+			status = "okay";
 		};
 
 		adc0: adc@40002000 {
@@ -203,10 +203,10 @@
 			#io-channel-cells = <1>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			status = "disabled";
 
 			interrupts = <41 0>;
 			interrupt-parent = <&clic>;
+			status = "disabled";
 		};
 
 		sec_eng_trng: trng@40004000 {
@@ -238,13 +238,13 @@
 		efuse: efuse@40007000 {
 			compatible = "bflb,efuse";
 			reg = <0x40007000 0x1000>;
-			status = "okay";
 			size = <128>;
+			status = "okay";
 		};
 
 		cache: cache@40009000 {
-			reg = <0x40009000 DT_SIZE_K(4)>;
 			compatible = "bflb,l1c";
+			reg = <0x40009000 DT_SIZE_K(4)>;
 			dcache-ways-disabled = <0>;
 		};
 
@@ -269,10 +269,10 @@
 			reg = <0x4000a300 0x100>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			status = "disabled";
 
 			interrupts = <48 0>;
 			interrupt-parent = <&clic>;
+			status = "disabled";
 		};
 
 		spi0: spi@4000a200 {
@@ -280,29 +280,29 @@
 			reg = <0x4000a200 0x100>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			status = "disabled";
 
 			interrupts = <43 0>;
 			interrupt-parent = <&clic>;
+			status = "disabled";
 		};
 
 		pwm0: pwm@4000a400 {
 			compatible = "bflb,pwm-1";
 			reg = <0x4000a400 0x100>;
 			#pwm-cells = <3>;
-			status = "disabled";
 
 			interrupts = <50 0>;
 			interrupt-parent = <&clic>;
+			status = "disabled";
 		};
 
 		wdt0: watchdog@4000a500 {
 			compatible = "bflb,wdt";
 			reg = <0x4000a500 0x100>;
-			status = "disabled";
 
 			interrupts = <54 0>;
 			interrupt-parent = <&clic>;
+			status = "disabled";
 		};
 
 		timer: timer@4000a500 {
@@ -316,19 +316,19 @@
 			timer0: channel@0 {
 				compatible = "bflb,timer-channel";
 				reg = <0>;
-				status = "disabled";
 
 				interrupts = <52 0>;
 				interrupt-parent = <&clic>;
+				status = "disabled";
 			};
 
 			timer1: channel@1 {
 				compatible = "bflb,timer-channel";
 				reg = <1>;
-				status = "disabled";
 
 				interrupts = <53 0>;
 				interrupt-parent = <&clic>;
+				status = "disabled";
 			};
 		};
 
@@ -337,10 +337,10 @@
 			reg = <0x4000a600 0x100>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			status = "disabled";
 
 			interrupts = <36 0>;
 			interrupt-parent = <&clic>;
+			status = "disabled";
 		};
 
 		sf_ctrl: sf@4000b000 {
@@ -349,10 +349,10 @@
 			ranges;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			status = "okay";
 
 			interrupts = <39 0>;
 			interrupt-parent = <&clic>;
+			status = "okay";
 
 			sf_bank1: flash-controller@23000000 {
 				compatible = "bflb,sf-bank";
@@ -367,11 +367,11 @@
 				 * when not using a pre-existing (ROM) memory region
 				 */
 				compatible = "bflb,sf-bank", "zephyr,memory-region";
-				zephyr,memory-region = "PSRAM";
 				reg = <0x24000000 DT_SIZE_M(16)>;
 				ranges = <0x0 0x24000000 DT_SIZE_M(16)>;
 				#address-cells = <1>;
 				#size-cells = <1>;
+				zephyr,memory-region = "PSRAM";
 				status = "disabled";
 			};
 		};
@@ -398,11 +398,11 @@
 			compatible = "bflb,power-controller";
 			reg = <0x4000f000 0x1000>, <0x4000f000 0x1000>;
 			reg-names = "hbn", "aon";
-			status = "okay";
 
 			interrupts = <67 0>, <68 0>, <69 0>;
 			interrupt-parent = <&clic>;
 			interrupt-names = "hbn0", "hbn1", "bor";
+			status = "okay";
 		};
 
 		reg_soc: regulator-soc@4000f000 {
@@ -432,34 +432,34 @@
 		retram: memory@40010000 {
 			compatible = "zephyr,memory-region", "mmio-sram";
 			reg = <0x40010000 DT_SIZE_K(4)>;
+			ranges = <0x0 0x40010000 DT_SIZE_K(4)>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0x40010000 DT_SIZE_K(4)>;
 			zephyr,memory-region = "RETRAM";
 		};
 
 		sram0: memory@42018000 {
 			compatible = "mmio-sram";
 			reg = <0x42018000 DT_SIZE_K(96)>;
+			ranges = <0x0 0x42018000 DT_SIZE_K(96)>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0x42018000 DT_SIZE_K(96)>;
 
 			/* 88 KB — top 8 KB or 16 KB reserved for BLE exchange memory */
 			sram0_bt: sram@0 {
 				compatible = "mmio-sram";
 				reg = <0x0 DT_SIZE_K(88)>;
+				ranges = <0x0 0x0 DT_SIZE_K(88)>;
 				#address-cells = <1>;
 				#size-cells = <1>;
-				ranges = <0x0 0x0 DT_SIZE_K(88)>;
 			};
 
 			sram0_bt_em16k: sram_16k@0 {
 				compatible = "mmio-sram";
 				reg = <0x0 DT_SIZE_K(80)>;
+				ranges = <0x0 0x0 DT_SIZE_K(80)>;
 				#address-cells = <1>;
 				#size-cells = <1>;
-				ranges = <0x0 0x0 DT_SIZE_K(80)>;
 			};
 		};
 	};

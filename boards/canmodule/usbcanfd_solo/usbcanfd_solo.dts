@@ -8,8 +8,8 @@
 #include <st/g4/stm32g431c(6-8-b)tx-pinctrl.dtsi>
 
 / {
-	model = "USBCANFD SOLO";
 	compatible = "canmodule,usbcanfd-solo";
+	model = "USBCANFD SOLO";
 
 	chosen {
 		zephyr,sram = &sram0;

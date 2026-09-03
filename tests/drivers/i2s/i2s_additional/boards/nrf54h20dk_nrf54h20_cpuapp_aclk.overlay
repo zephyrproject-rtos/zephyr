@@ -5,8 +5,8 @@
  */
 
 &audiopll {
-	status = "okay";
 	frequency = <NRFS_AUDIOPLL_FREQ_AUDIO_48K>;
+	status = "okay";
 };
 
 &tdm130 {

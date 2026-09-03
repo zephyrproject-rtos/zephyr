@@ -75,8 +75,8 @@
 
 		option_setting_osis: option-setting-osis@100a150 {
 			compatible = "zephyr,memory-region";
-			zephyr,memory-region = "OFS_OSIS_MEMORY";
 			reg = <0x0100a150 0x10>;
+			zephyr,memory-region = "OFS_OSIS_MEMORY";
 			status = "okay";
 		};
 	};

@@ -1,7 +1,7 @@
 &dma0 {
+	compatible = "infineon,dma";
 	#address-cells = <1>;
 	#size-cells = <0>;
-	compatible = "infineon,dma";
 	status = "okay";
 };
 

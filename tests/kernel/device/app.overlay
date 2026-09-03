@@ -59,41 +59,41 @@
 	fakedeferdriver@e7000000 {
 		compatible = "fakedeferdriver";
 		reg = <0xe7000000 0x2000>;
-		status = "okay";
 		zephyr,deferred-init;
+		status = "okay";
 	};
 
 	fakedeferdriver@e8000000 {
 		compatible = "fakedeferdriver";
 		reg = <0xe8000000 0x2000>;
-		status = "okay";
 		zephyr,deferred-init;
+		status = "okay";
 	};
 
 	fakedeferdriver@f9000000 {
 		compatible = "fakedeferdriver";
 		reg = <0xf9000000 0x2000>;
-		status = "okay";
 		zephyr,deferred-init;
+		status = "okay";
 	};
 
 	fakedomain_0: fakedomain_0 {
 		compatible = "fakedomain";
-		status = "okay";
 		power-domains = <&fakedomain_2>;
 		#power-domain-cells = <0>;
+		status = "okay";
 	};
 
 	fakedomain_1: fakedomain_1 {
 		compatible = "fakedomain";
-		status = "okay";
 		power-domains = <&fakedomain_0>;
 		#power-domain-cells = <0>;
+		status = "okay";
 	};
 
 	fakedomain_2: fakedomain_2 {
 		compatible = "fakedomain";
-		status = "okay";
 		#power-domain-cells = <0>;
+		status = "okay";
 	};
 };

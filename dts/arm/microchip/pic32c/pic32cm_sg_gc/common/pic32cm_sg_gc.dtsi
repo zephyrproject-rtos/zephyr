@@ -14,9 +14,9 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m23";
 			reg = <0>;
+			device_type = "cpu";
 			#address-cells = <1>;
 			#size-cells = <1>;
 
@@ -39,9 +39,9 @@
 
 		nvmctrl: nvmctrl@44004000 {
 			reg = <0x44004000 0x2000>;
+			ranges;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges;
 
 			boot_flash: flash@8000000 {
 				compatible = "soc-nv-flash";
@@ -115,10 +115,10 @@
 
 		pinctrl: pinctrl@44800000 {
 			compatible = "microchip,port-g1-pinctrl";
-			#address-cells = <1>;
-			#size-cells = <1>;
 			reg = <0x44800000 0x200>;
 			ranges = <0x44800000 0x44800000 0x200>;
+			#address-cells = <1>;
+			#size-cells = <1>;
 
 			porta: gpio@44800000 {
 				compatible = "microchip,port-g1-gpio";

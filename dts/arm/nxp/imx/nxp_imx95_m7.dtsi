@@ -21,11 +21,11 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m7";
+			reg = <0>;
+			device_type = "cpu";
 			clock-frequency = <DT_FREQ_M(800)>;
 			cpu-power-states = <&wait &stop &suspend>;
-			reg = <0>;
 
 			#address-cells = <1>;
 			#size-cells = <1>;
@@ -165,8 +165,8 @@
 			interrupts = <48 0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			status = "disabled";
 			clocks = <&scmi_clk IMX95_CLK_FLEXSPI1>;
+			status = "disabled";
 		};
 
 		gpio1: gpio@47400000 {
@@ -223,7 +223,6 @@
 			compatible = "nxp,mcux-edma";
 			reg = <0x44000000 0x4000>;
 			#dma-cells = <2>;
-			nxp,version = <4>;
 			dma-channels = <32>;
 			dma-requests = <32>;
 			interrupts = <96 0>, <97 0>, <98 0>, <99 0>,
@@ -234,6 +233,7 @@
 				     <116 0>, <117 0>, <118 0>, <119 0>,
 				     <120 0>, <121 0>, <122 0>, <123 0>,
 				     <124 0>, <125 0>, <126 0>;
+			nxp,version = <4>;
 			status = "disabled";
 		};
 
@@ -241,7 +241,6 @@
 			compatible = "nxp,mcux-edma";
 			reg = <0x42000000 0x4000>;
 			#dma-cells = <2>;
-			nxp,version = <5>;
 			dma-channels = <64>;
 			dma-requests = <92>;
 			no-error-irq;
@@ -267,6 +266,7 @@
 						    0x00000000 0x00300000 0x00000000 0x00c00000
 						    0x00000000 0x03000000 0x00000000 0x0c000000
 						    0x00000000 0x30000000 0x00000000 0xc0000000>;
+			nxp,version = <5>;
 			status = "disabled";
 		};
 
@@ -276,8 +276,8 @@
 			interrupts = <73 0>;
 			clocks = <&scmi_clk IMX95_CLK_BUSWAKEUP>;
 			prescaler = <16>;
-			status = "disabled";
 			#pwm-cells = <3>;
+			status = "disabled";
 		};
 
 		tpm4: pwm@424f0000 {
@@ -286,8 +286,8 @@
 			interrupts = <74 0>;
 			clocks = <&scmi_clk IMX95_CLK_TPM4>;
 			prescaler = <16>;
-			status = "disabled";
 			#pwm-cells = <3>;
+			status = "disabled";
 		};
 
 		tpm5: pwm@42500000 {
@@ -296,8 +296,8 @@
 			interrupts = <75 0>;
 			clocks = <&scmi_clk IMX95_CLK_TPM5>;
 			prescaler = <16>;
-			status = "disabled";
 			#pwm-cells = <3>;
+			status = "disabled";
 		};
 
 		tpm6: pwm@42510000 {
@@ -306,16 +306,16 @@
 			interrupts = <76 0>;
 			clocks = <&scmi_clk IMX95_CLK_TPM6>;
 			prescaler = <16>;
-			status = "disabled";
 			#pwm-cells = <3>;
+			status = "disabled";
 		};
 
 		lpi2c3: i2c@42530000 {
 			compatible = "nxp,lpi2c";
+			reg = <0x42530000 0x4000>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x42530000 0x4000>;
 			interrupts = <58 0>;
 			clocks = <&scmi_clk IMX95_CLK_LPI2C3>;
 			status = "disabled";
@@ -323,10 +323,10 @@
 
 		lpi2c4: i2c@42540000 {
 			compatible = "nxp,lpi2c";
+			reg = <0x42540000 0x4000>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x42540000 0x4000>;
 			interrupts = <59 0>;
 			clocks = <&scmi_clk IMX95_CLK_LPI2C4>;
 			status = "disabled";
@@ -337,11 +337,11 @@
 			reg = <0x42550000 0x4000>;
 			interrupts = <61 3>;
 			clocks = <&scmi_clk IMX95_CLK_LPSPI3>;
-			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			tx-fifo-size = <16>;
 			rx-fifo-size = <16>;
+			status = "disabled";
 		};
 
 		lpspi4: spi@42560000 {
@@ -349,11 +349,11 @@
 			reg = <0x42560000 0x4000>;
 			interrupts = <62 3>;
 			clocks = <&scmi_clk IMX95_CLK_LPSPI4>;
-			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			tx-fifo-size = <16>;
 			rx-fifo-size = <16>;
+			status = "disabled";
 		};
 
 		flexcan1: can@443a0000 {
@@ -470,9 +470,9 @@
 			reg = <0x42650000 DT_SIZE_K(64)>;
 			clocks = <&scmi_clk IMX95_CLK_SAI3>;
 			interrupts = <170 0>;
-			nxp,tx-channel = <1>;
 			dmas = <&edma2 4 60>, <&edma2 5 61>;
 			dma-names = "tx", "rx";
+			nxp,tx-channel = <1>;
 			nxp,tx-dma-channel = <4>;
 			nxp,rx-dma-channel = <5>;
 			status = "disabled";
@@ -496,10 +496,10 @@
 
 		lpi2c5: i2c@426b0000 {
 			compatible = "nxp,lpi2c";
+			reg = <0x426b0000 0x4000>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x426b0000 0x4000>;
 			interrupts = <181 0>;
 			clocks = <&scmi_clk IMX95_CLK_LPI2C5>;
 			status = "disabled";
@@ -507,10 +507,10 @@
 
 		lpi2c6: i2c@426c0000 {
 			compatible = "nxp,lpi2c";
+			reg = <0x426c0000 0x4000>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x426c0000 0x4000>;
 			interrupts = <182 0>;
 			clocks = <&scmi_clk IMX95_CLK_LPI2C6>;
 			status = "disabled";
@@ -518,10 +518,10 @@
 
 		lpi2c7: i2c@426d0000 {
 			compatible = "nxp,lpi2c";
+			reg = <0x426d0000 0x4000>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x426d0000 0x4000>;
 			interrupts = <183 0>;
 			clocks = <&scmi_clk IMX95_CLK_LPI2C7>;
 			status = "disabled";
@@ -529,10 +529,10 @@
 
 		lpi2c8: i2c@426e0000 {
 			compatible = "nxp,lpi2c";
+			reg = <0x426e0000 0x4000>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x426e0000 0x4000>;
 			interrupts = <184 0>;
 			clocks = <&scmi_clk IMX95_CLK_LPI2C8>;
 			status = "disabled";
@@ -543,11 +543,11 @@
 			reg = <0x426f0000 0x4000>;
 			interrupts = <177 3>;
 			clocks = <&scmi_clk IMX95_CLK_LPSPI5>;
-			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			tx-fifo-size = <16>;
 			rx-fifo-size = <16>;
+			status = "disabled";
 		};
 
 		lpspi6: spi@42700000 {
@@ -555,11 +555,11 @@
 			reg = <0x42700000 0x4000>;
 			interrupts = <178 3>;
 			clocks = <&scmi_clk IMX95_CLK_LPSPI6>;
-			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			tx-fifo-size = <16>;
 			rx-fifo-size = <16>;
+			status = "disabled";
 		};
 
 		lpspi7: spi@42710000 {
@@ -567,11 +567,11 @@
 			reg = <0x42710000 0x4000>;
 			interrupts = <179 3>;
 			clocks = <&scmi_clk IMX95_CLK_LPSPI7>;
-			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			tx-fifo-size = <16>;
 			rx-fifo-size = <16>;
+			status = "disabled";
 		};
 
 		lpspi8: spi@42720000 {
@@ -579,11 +579,11 @@
 			reg = <0x42720000 0x4000>;
 			interrupts = <180 3>;
 			clocks = <&scmi_clk IMX95_CLK_LPSPI8>;
-			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			tx-fifo-size = <16>;
 			rx-fifo-size = <16>;
+			status = "disabled";
 		};
 
 		tpm1: pwm@44310000 {
@@ -592,8 +592,8 @@
 			interrupts = <29 0>;
 			clocks = <&scmi_clk IMX95_CLK_BUSAON>;
 			prescaler = <16>;
-			status = "disabled";
 			#pwm-cells = <3>;
+			status = "disabled";
 		};
 
 		tpm2: pwm@44320000 {
@@ -602,16 +602,16 @@
 			interrupts = <30 0>;
 			clocks = <&scmi_clk IMX95_CLK_TPM2>;
 			prescaler = <16>;
-			status = "disabled";
 			#pwm-cells = <3>;
+			status = "disabled";
 		};
 
 		lpi2c1: i2c@44340000 {
 			compatible = "nxp,lpi2c";
+			reg = <0x44340000 0x4000>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x44340000 0x4000>;
 			interrupts = <13 0>;
 			clocks = <&scmi_clk IMX95_CLK_LPI2C1>;
 			status = "disabled";
@@ -619,10 +619,10 @@
 
 		lpi2c2: i2c@44350000 {
 			compatible = "nxp,lpi2c";
+			reg = <0x44350000 0x4000>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x44350000 0x4000>;
 			interrupts = <14 0>;
 			clocks = <&scmi_clk IMX95_CLK_LPI2C2>;
 			status = "disabled";
@@ -633,11 +633,11 @@
 			reg = <0x44360000 0x4000>;
 			interrupts = <16 3>;
 			clocks = <&scmi_clk IMX95_CLK_LPSPI1>;
-			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			tx-fifo-size = <16>;
 			rx-fifo-size = <16>;
+			status = "disabled";
 		};
 
 		lpspi2: spi@44370000 {
@@ -645,11 +645,11 @@
 			reg = <0x44370000 0x4000>;
 			interrupts = <17 3>;
 			clocks = <&scmi_clk IMX95_CLK_LPSPI2>;
-			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			tx-fifo-size = <16>;
 			rx-fifo-size = <16>;
+			status = "disabled";
 		};
 
 		lpuart1: serial@44380000 {
@@ -913,9 +913,9 @@
 			reg = <0x4b0b0000 DT_SIZE_K(64)>;
 			#size-cells = <0>;
 			#address-cells = <1>;
+			power-domains = <&disp_mix>;
 			nxp,irq-offset = <874>;
 			nxp,num-irqs = <512>;
-			power-domains = <&disp_mix>;
 			status = "disabled";
 
 			disp_irqsteer_master0: interrupt-controller@0 {
@@ -981,22 +981,22 @@
 
 		dpu: dpu@4b400000 {
 			compatible = "socionext,dpu";
+			reg = <0x4b400000 0x1000>;
 			height = <0>;
 			width = <0>;
-			reg = <0x4b400000 0x1000>;
 			interrupts = <215 0>;
 			status = "disabled";
 		};
 
 		mipi_dsi: mipi-dsi@4acf0000 {
 			compatible = "nxp,mipi-dsi-dwc";
-			nxp,dc = <&dpu>;
+			reg = <0x4acf0000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x4acf0000 0x1000>;
 			interrupt-parent = <&disp_irqsteer_master0>;
 			interrupts = <48 0>;
 			clocks = <&scmi_clk 0>;
+			nxp,dc = <&dpu>;
 			status = "disabled";
 		};
 
@@ -1005,19 +1005,19 @@
 			reg = <0x4cde0000 0x10000>,
 			      <0x4cdf0000 0x10000>,
 			      <0x4c810000 0x18>;
+			ranges;
 			reg-names = "ierb", "prb", "netcmix";
 			#address-cells = <1>;
 			#size-cells = <1>;
 			power-domains = <&netc_mix>;
-			ranges;
 
 			netc: ethernet {
 				compatible = "nxp,imx-netc";
+				ranges;
 				interrupt-parent = <&irqsteer_master0>;
 				interrupts = <13 0>;
 				#address-cells = <1>;
 				#size-cells = <1>;
-				ranges;
 
 				enetc_psi0: ethernet@4cc00000 {
 					compatible = "nxp,imx-netc-psi";

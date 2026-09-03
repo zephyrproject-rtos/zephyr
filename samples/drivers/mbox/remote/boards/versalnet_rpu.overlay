@@ -9,11 +9,11 @@
 
 	rpu0_rpu0_mailbox: mailbox@eb380000 {
 		compatible = "xlnx,mbox-versal-ipi-dest-mailbox";
-		status = "okay";
 		reg = <0xeb380000 0x20>, <0xeb3f0e00 0x1000>;
 		reg-names = "ctrl", "msg";
-		xlnx,ipi-id = <7>;
 		#mbox-cells = <1>;
+		xlnx,ipi-id = <7>;
+		status = "okay";
 	};
 };
 

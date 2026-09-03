@@ -41,17 +41,17 @@
 		};
 
 		test_adc_1: adc@10002000 {
-			reg = <0x10002000 0x1000>;
 			compatible = "vnd,adc";
-			status = "okay";
+			reg = <0x10002000 0x1000>;
 			#io-channel-cells = <1>;
+			status = "okay";
 		};
 
 		test_adc_2: adc@10003000 {
-			reg = <0x10003000 0x1000>;
 			compatible = "vnd,adc";
-			status = "okay";
+			reg = <0x10003000 0x1000>;
 			#io-channel-cells = <1>;
+			status = "okay";
 		};
 
 		test_mbox: mbox {
@@ -78,17 +78,17 @@
 		};
 
 		test_dac_1: dac@10004000 {
-			reg = <0x10004000 0x1000>;
 			compatible = "vnd,dac";
-			status = "okay";
+			reg = <0x10004000 0x1000>;
 			#io-channel-cells = <1>;
+			status = "okay";
 		};
 
 		test_dac_2: dac@10005000 {
-			reg = <0x10005000 0x1000>;
 			compatible = "vnd,dac";
-			status = "okay";
+			reg = <0x10005000 0x1000>;
 			#io-channel-cells = <1>;
+			status = "okay";
 		};
 
 		/* there should only be one of these */
@@ -101,8 +101,8 @@
 		test_hwspinlock: hwspinlock {
 			compatible = "vnd,hwspinlock";
 			#hwlock-cells = <1>;
-			status = "okay";
 			num-locks = <16>;
+			status = "okay";
 		};
 
 		test_hwspinlock_dev: hwspinlock-dev {

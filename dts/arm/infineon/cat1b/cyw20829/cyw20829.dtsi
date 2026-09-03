@@ -33,8 +33,8 @@
 			interrupts = <0 4>;
 			gpio-controller;
 			ngpios = <6>;
-			status = "disabled";
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		gpio_prt1: gpio@40410080 {
@@ -43,8 +43,8 @@
 			interrupts = <1 4>;
 			gpio-controller;
 			ngpios = <7>;
-			status = "disabled";
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		gpio_prt2: gpio@40410100 {
@@ -53,8 +53,8 @@
 			interrupts = <2 4>;
 			gpio-controller;
 			ngpios = <6>;
-			status = "disabled";
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		gpio_prt3: gpio@40410180 {
@@ -63,8 +63,8 @@
 			interrupts = <3 4>;
 			gpio-controller;
 			ngpios = <8>;
-			status = "disabled";
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		gpio_prt4: gpio@40410200 {
@@ -73,8 +73,8 @@
 			interrupts = <4 4>;
 			gpio-controller;
 			ngpios = <2>;
-			status = "disabled";
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		gpio_prt5: gpio@40410280 {
@@ -83,23 +83,23 @@
 			interrupts = <5 4>;
 			gpio-controller;
 			ngpios = <3>;
-			status = "disabled";
 			#gpio-cells = <2>;
+			status = "disabled";
 		};
 
 		adc0: adc@40520000 {
 			compatible = "infineon,adc";
 			reg = <0x40520000 0x264>;
 			interrupts = <67 4>;
-			status = "disabled";
 			#io-channel-cells = <1>;
+			status = "disabled";
 		};
 
 		ipc0: ipc@401d0000 {
 			compatible = "infineon,ipc";
 			reg = <0x401d0000 0x1200>;
-			status = "disabled";
 			#ipc-config-cells = <3>;
+			status = "disabled";
 		};
 
 		scb0: scb@40590000 {
@@ -129,10 +129,10 @@
 		canfd0: canfd@40440000 {
 			compatible = "infineon,canfd-controller";
 			reg = <0x40440000 0x1088>, <0x40450000 0x1000>;
+			ranges;
 			reg-names = "wrapper", "mram";
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges;
 			status = "disabled";
 
 			can0: can@40440000 {
@@ -140,10 +140,10 @@
 				reg = <0x40440000 0x200>, <0x40450000 0x1000>;
 				reg-names = "m_can", "message_ram";
 				clk-dst = <0x10e>;
-				status = "disabled";
-				bosch,mram-cfg = <0x0 15 15 16 0 0 15 15>;
 				interrupts = <64 4>, <65 4>;
 				interrupt-names = "int0", "int1";
+				bosch,mram-cfg = <0x0 15 15 16 0 0 15 15>;
+				status = "disabled";
 			};
 		};
 
@@ -362,9 +362,9 @@
 		};
 
 		dma0: dw@40180000 {
-			#dma-cells = <1>;
 			compatible = "infineon,dma";
 			reg = <0x40180000 0x10000>;
+			#dma-cells = <1>;
 			dma-channels = <16>;
 			interrupts = <19 4>, /* CH0 */
 				     <20 4>, /* CH1 */

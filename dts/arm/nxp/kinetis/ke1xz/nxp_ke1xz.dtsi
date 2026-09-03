@@ -24,8 +24,8 @@
 
 		cpu0: cpu@0 {
 			compatible = "arm,cortex-m0+";
-			clock-frequency = <DT_FREQ_M(72)>;
 			reg = <0>;
+			clock-frequency = <DT_FREQ_M(72)>;
 			cpu-power-states = <&idle &pstop2 &pstop1 &stop>;
 		};
 
@@ -82,15 +82,15 @@
 
 	soc {
 		scg: scg@40064000 {
-			sosc-mode = <KINETIS_SCG_SOSC_MODE_LOW_POWER>;
 			compatible = "nxp,kinetis-scg";
 			reg = <0x40064000 0x1000>;
+			sosc-mode = <KINETIS_SCG_SOSC_MODE_LOW_POWER>;
 			#clock-cells = <1>;
 
 			sosc_clk: sosc_clk {
 				compatible = "fixed-clock";
-				status = "disabled";
 				#clock-cells = <0>;
+				status = "disabled";
 			};
 
 			sirc_clk: sirc_clk {
@@ -184,16 +184,16 @@
 			clocks = <&pcc 0xec KINETIS_PCC_SRC_SIRC_ASYNC>;
 			clk-source = <0>;
 			clk-divider = <1>;
-			status = "disabled";
 			#io-channel-cells = <1>;
+			status = "disabled";
 		};
 
 		ewm0: ewm@40061000 {
 			compatible = "nxp,ewm";
 			reg = <0x40061000 0x6>;
-			status = "disabled";
 			interrupts = <28 0>;
 			clk-divider = <0x0>;
+			status = "disabled";
 		};
 
 		lpuart0: uart@4006a000 {
@@ -283,109 +283,109 @@
 
 		gpios0: gpios0@400ff000 {
 			compatible = "nxp,gpio-cluster";
-			interrupts = <7 2>;
 			reg = <0x400ff000 0x200>;
 			ranges = <0x0 0x400ff000 0x200>;
+			interrupts = <7 2>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 
 			gpioa: gpio@400ff000 {
 				compatible = "nxp,kinetis-gpio";
-				status = "disabled";
 				reg = <0x0 0x40>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				nxp,kinetis-port = <&porta>;
+				status = "disabled";
 			};
 
 			gpioe: gpio@400ff100 {
 				compatible = "nxp,kinetis-gpio";
-				status = "disabled";
 				reg = <0x100 0x40>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				nxp,kinetis-port = <&porte>;
+				status = "disabled";
 			};
 
 			fgpioa: gpio@f8000000 {
 				compatible = "nxp,kinetis-gpio";
-				status = "disabled";
 				reg = <0xf8000000 0x40>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				nxp,kinetis-port = <&porta>;
+				status = "disabled";
 			};
 
 			fgpioe: gpio@f8000100 {
 				compatible = "nxp,kinetis-gpio";
-				status = "disabled";
 				reg = <0xf8000100 0x40>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				nxp,kinetis-port = <&porte>;
+				status = "disabled";
 			};
 		};
 
 		gpios1: gpios1@400ff040 {
 			compatible = "nxp,gpio-cluster";
-			interrupts = <26 2>;
 			reg = <0x400ff040 0x200>;
 			ranges = <0x40 0x400ff040 0x200>;
+			interrupts = <26 2>;
 			#address-cells = <1>;
 			#size-cells = <1>;
 
 			gpiob: gpio@400ff040 {
 				compatible = "nxp,kinetis-gpio";
-				status = "disabled";
 				reg = <0x40 0x40>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				nxp,kinetis-port = <&portb>;
+				status = "disabled";
 			};
 
 			gpioc: gpio@400ff080 {
 				compatible = "nxp,kinetis-gpio";
-				status = "disabled";
 				reg = <0x80 0x40>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				nxp,kinetis-port = <&portc>;
+				status = "disabled";
 			};
 
 			gpiod: gpio@400ff0c0 {
 				compatible = "nxp,kinetis-gpio";
-				status = "disabled";
 				reg = <0xc0 0x40>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				nxp,kinetis-port = <&portd>;
+				status = "disabled";
 			};
 
 			fgpiob: gpio@f8000040 {
 				compatible = "nxp,kinetis-gpio";
-				status = "disabled";
 				reg = <0xf8000040 0x40>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				nxp,kinetis-port = <&portb>;
+				status = "disabled";
 			};
 
 			fgpioc: gpio@f8000080 {
 				compatible = "nxp,kinetis-gpio";
-				status = "disabled";
 				reg = <0xf8000080 0x40>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				nxp,kinetis-port = <&portc>;
+				status = "disabled";
 			};
 
 			fgpiod: gpio@f80000c0 {
 				compatible = "nxp,kinetis-gpio";
-				status = "disabled";
 				reg = <0xf80000c0 0x40>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				nxp,kinetis-port = <&portd>;
+				status = "disabled";
 			};
 		};
 
@@ -394,11 +394,11 @@
 			reg = <0x40037000 0x1000>;
 			interrupts = <22 0>;
 			clocks = <&pcc 0xdc KINETIS_PCC_SRC_SIRC_ASYNC>;
-			status = "disabled";
 			enable-run-in-doze;
 			max-load-value = <0xffffffff>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "disabled";
 
 			lpit0_channel0: lpit_channel@0 {
 				compatible = "nxp,lpit-channel";
@@ -458,17 +458,17 @@
 			interrupts = <29 0>;
 			clocks = <&scg KINETIS_SCG_BUS_CLK>;
 			prescaler = <1>;
-			status = "disabled";
 
 			#pwm-cells = <3>;
+			status = "disabled";
 		};
 
 		lpi2c0: i2c@40066000 {
 			compatible = "nxp,lpi2c";
+			reg = <0x40066000 0x1000>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40066000 0x1000>;
 			interrupts = <8 0>;
 			clocks = <&pcc 0x198 KINETIS_PCC_SRC_FIRC_ASYNC>;
 			status = "disabled";
@@ -476,10 +476,10 @@
 
 		lpi2c1: i2c@40067000 {
 			compatible = "nxp,lpi2c";
+			reg = <0x40067000 0x1000>;
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x40067000 0x1000>;
 			interrupts = <9 0>;
 			clocks = <&pcc 0x19c KINETIS_PCC_SRC_FIRC_ASYNC>;
 			status = "disabled";
@@ -507,11 +507,11 @@
 			reg = <0x4002c000 0x1000>;
 			interrupts = <10 0>;
 			clocks = <&pcc 0xb0 KINETIS_PCC_SRC_FIRC_ASYNC>;
-			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			tx-fifo-size = <4>;
 			rx-fifo-size = <4>;
+			status = "disabled";
 		};
 
 		lpspi1: spi@4002d000 {
@@ -519,33 +519,33 @@
 			reg = <0x4002d000 0x1000>;
 			interrupts = <11 0>;
 			clocks = <&pcc 0xb4 KINETIS_PCC_SRC_FIRC_ASYNC>;
-			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			tx-fifo-size = <4>;
 			rx-fifo-size = <4>;
+			status = "disabled";
 		};
 
 		edma: dma-controller@40008000 {
 			compatible = "nxp,mcux-edma";
-			nxp,version = <2>;
+			reg = <0x40008000 0x1000>, <0x40021000 0x1000>;
 			dma-channels = <8>;
 			dma-requests = <64>;
-			nxp,mem2mem;
-			reg = <0x40008000 0x1000>, <0x40021000 0x1000>;
 			interrupts = <0 0>, <1 0>, <2 0>, <3 0>,
 				     <4 0>;
-			status = "disabled";
 			#dma-cells = <2>;
 			irq-shared-offset = <4>;
+			nxp,version = <2>;
+			nxp,mem2mem;
+			status = "disabled";
 		};
 
 		flexio: flexio@4005a000 {
 			compatible = "nxp,flexio";
 			reg = <0x4005a000 0x1000>;
-			status = "disabled";
 			interrupts = <23 0>;
 			clocks = <&pcc 0x168 KINETIS_PCC_SRC_FIRC_ASYNC>;
+			status = "disabled";
 		};
 
 		pit0: pit@40037000 {
@@ -554,9 +554,9 @@
 			clocks = <&pcc 0x1a8 KINETIS_PCC_SRC_FIRC_ASYNC>;
 			interrupts = <22 0>;
 			max-load-value = <0xffffffff>;
-			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "disabled";
 
 			pit0_channel0: pit0_channel@0 {
 				compatible = "nxp,pit-channel";
@@ -586,9 +586,9 @@
 		tsi0: tsi@40045000 {
 			compatible = "nxp,tsi";
 			reg = <0x40045000 0x1000>;
-			status = "okay";
 			interrupts = <24 0>;
 			clocks = <&scg KINETIS_SCG_BUS_CLK>;
+			status = "okay";
 		};
 
 		smc: smc@4007e000 {

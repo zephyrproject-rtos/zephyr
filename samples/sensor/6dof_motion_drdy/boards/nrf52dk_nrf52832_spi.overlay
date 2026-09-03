@@ -18,8 +18,8 @@
  * Configure 100Hz IMU data reporting
  */
 &arduino_spi {
-	status = "okay";
 	cs-gpios = <&arduino_header 14 GPIO_ACTIVE_LOW>; /* D8 */
+	status = "okay";
 
 	icm42670p: icm42670p@0 {
 		compatible = "invensense,icm42670p";

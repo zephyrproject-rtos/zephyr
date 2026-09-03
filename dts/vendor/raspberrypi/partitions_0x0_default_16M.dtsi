@@ -12,8 +12,8 @@
 
 		code_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
-			label = "code";
 			reg = <0x0 DT_SIZE_M(16)>;
+			label = "code";
 			read-only;
 		};
 	};

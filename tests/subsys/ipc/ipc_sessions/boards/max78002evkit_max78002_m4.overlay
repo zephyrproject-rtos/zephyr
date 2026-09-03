@@ -10,9 +10,9 @@
 
 / {
 	reserved-memory {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		sram_tx: memory@20030000 {
 			reg = <0x20030000 DT_SIZE_K(32)>;

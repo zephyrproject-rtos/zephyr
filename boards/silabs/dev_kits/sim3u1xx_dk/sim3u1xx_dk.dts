@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Silicon Labs SiM3U1xx-B-DK";
 	compatible = "gardena,sim3u1xx-dk", "silabs,sim3u167", "silabs,sim3u";
+	model = "Silicon Labs SiM3U1xx-B-DK";
 
 	aliases {
 		led0 = &led_yellow;

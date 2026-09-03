@@ -5,13 +5,13 @@
  */
 
 &gpio {
-	status = "okay";
 	ngpios = <32>;
+	status = "okay";
 };
 
 &gptmr {
-	status = "okay";
 	prescaler = <2>;
+	status = "okay";
 };
 
 &pwm {
@@ -23,11 +23,11 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <19200>;
+	status = "okay";
 };
 
 &uart1 {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 };

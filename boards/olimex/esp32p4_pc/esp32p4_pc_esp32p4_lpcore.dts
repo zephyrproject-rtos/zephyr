@@ -10,8 +10,8 @@
 #include <espressif/partitions_0x2000_default_16M.dtsi>
 
 / {
-	model = "OLIMEX ESP32-P4-PC LP Core";
 	compatible = "espressif,esp32p4";
+	model = "OLIMEX ESP32-P4-PC LP Core";
 
 	chosen {
 		zephyr,sram = &sramlp;
@@ -23,6 +23,6 @@
 };
 
 &lp_uart {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 };

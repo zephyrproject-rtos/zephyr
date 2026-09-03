@@ -7,9 +7,9 @@
 #include <zephyr/dt-bindings/adc/mcux-lpadc.h>
 
 &lpadc0 {
-	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 
 	channel@0 {
 		reg = <0>;
@@ -23,6 +23,6 @@
 };
 
 &temp0 {
-	status = "okay";
 	io-channels = <&lpadc0 0>;
+	status = "okay";
 };

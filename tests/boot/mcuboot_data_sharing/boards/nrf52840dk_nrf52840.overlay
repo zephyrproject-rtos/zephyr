@@ -13,14 +13,14 @@
 
 		retainedmem {
 			compatible = "zephyr,retained-ram";
-			status = "okay";
 			#address-cells = <1>;
 			#size-cells = <1>;
+			status = "okay";
 
 			boot_info0: boot_info@0 {
 				compatible = "zephyr,retention";
-				status = "okay";
 				reg = <0x0 0x100>;
+				status = "okay";
 			};
 		};
 	};
@@ -44,20 +44,20 @@
 	partitions {
 		boot_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
-			label = "mcuboot";
 			reg = <0x00000000 0x00020000>;
+			label = "mcuboot";
 		};
 
 		slot0_partition: partition@20000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-0";
 			reg = <0x00020000 0x00022000>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@42000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-1";
 			reg = <0x00042000 0x00023000>;
+			label = "image-1";
 		};
 	};
 };

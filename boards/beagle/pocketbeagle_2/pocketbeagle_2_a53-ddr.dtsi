@@ -10,8 +10,8 @@
 	};
 
 	ddr0: memory@80000000 {
-		device_type = "memory";
 		reg = <0x80000000 DT_SIZE_M(512)>;
+		device_type = "memory";
 		#address-cells = <0x1>;
 		#size-cells = <0x1>;
 

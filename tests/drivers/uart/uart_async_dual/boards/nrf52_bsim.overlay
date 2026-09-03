@@ -22,24 +22,24 @@
 };
 
 dut: &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
 	hw-flow-control;
 	zephyr,pm-device-runtime-auto;
+	status = "okay";
 };
 
 &timer0 {
-	status = "okay";
 	interrupts = <8 0>;
+	status = "okay";
 };
 
 / {
 	busy-sim {
 		compatible = "vnd,busy-sim";
-		status = "okay";
 		counter = <&timer0>;
+		status = "okay";
 	};
 };

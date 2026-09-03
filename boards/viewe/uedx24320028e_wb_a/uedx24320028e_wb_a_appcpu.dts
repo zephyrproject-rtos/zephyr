@@ -8,8 +8,8 @@
 #include <espressif/partitions_0x0_amp_16M.dtsi>
 
 / {
-	model = "VIEWE UEDX24320028E-WB-A APPCPU";
 	compatible = "viewe,uedx24320028e-wb-a";
+	model = "VIEWE UEDX24320028E-WB-A APPCPU";
 
 	chosen {
 		zephyr,sram = &sram1;

@@ -5,12 +5,12 @@
  */
 
 &spi1 {
-	status = "okay";
 	pinctrl-0 = <&spi1_default>;
 	pinctrl-names = "default";
 	cs-gpios = <&gpiob 8 GPIO_ACTIVE_LOW>;
 	dmas = <&dma0 0 18 0x10021>, <&dma0 1 19 0xa>;
 	dma-names = "tx", "rx";
+	status = "okay";
 
 	dut_spi_dt: test-spi-dev@0 {
 		compatible = "vnd,spi-device";
@@ -20,11 +20,11 @@
 };
 
 dut_spis: &spi0_slave {
-	status = "okay";
 	dmas = <&dma0 2 20 0x10021>, <&dma0 3 21 0xa>;
 	dma-names = "tx", "rx";
 	pinctrl-0 = <&spi0_slave_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &gpiob {

@@ -4,8 +4,8 @@
  */
 
 &coresight {
-	status = "okay";
 	mode = "stm-tpiu";
 	pinctrl-0 = <&tpiu_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };

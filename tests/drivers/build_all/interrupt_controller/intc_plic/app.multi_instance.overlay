@@ -7,8 +7,7 @@
 / {
 	soc {
 		plic1: interrupt-controller@8000000 {
-			riscv,max-priority = <7>;
-			riscv,ndev = <0x35>;
+			compatible = "sifive,plic-1.0.0";
 			reg = <0x08000000 0x04000000>;
 			interrupts-extended = <&hlic0 0x08
 					       &hlic1 0x08
@@ -19,18 +18,19 @@
 					       &hlic6 0x08
 					       &hlic7 0x08>;
 			interrupt-controller;
-			compatible = "sifive,plic-1.0.0";
 			#address-cells = <0x00>;
 			#interrupt-cells = <0x02>;
+			riscv,max-priority = <7>;
+			riscv,ndev = <0x35>;
 		};
 	};
 
 	uart1: uart@10000100 {
+		compatible = "ns16550";
+		reg = <0x10000100 0x100>;
 		interrupts = <0x0a 1>;
 		interrupt-parent = <&plic1>;
 		clock-frequency = <0x384000>;
-		reg = <0x10000100 0x100>;
-		compatible = "ns16550";
 		reg-shift = <0>;
 	};
 };

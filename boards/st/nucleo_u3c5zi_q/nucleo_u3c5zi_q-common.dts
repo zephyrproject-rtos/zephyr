@@ -94,9 +94,9 @@
 };
 
 &clk_msis {
-	status = "okay";
 	msi-pll-mode;
 	msi-range = <0>; /* 96 MHz */
+	status = "okay";
 };
 
 &rcc {
@@ -135,8 +135,8 @@
 	pinctrl-names = "default";
 	scl-gpios = <&gpiob 8 GPIO_ACTIVE_HIGH>;
 	sda-gpios = <&gpiob 9 GPIO_ACTIVE_HIGH>;
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 /* PA5 is shared between SPI1_SCK and TIM2_CH1 (PWM2). Keep SPI1 enabled by default */

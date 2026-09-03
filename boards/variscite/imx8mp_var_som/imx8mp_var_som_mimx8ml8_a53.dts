@@ -13,8 +13,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Variscite VAR-SOM-MX8M-PLUS A53";
 	compatible = "fsl,mimx8mp";
+	model = "Variscite VAR-SOM-MX8M-PLUS A53";
 
 	chosen {
 		zephyr,console = &uart4;
@@ -66,11 +66,11 @@
 };
 
 &uart4 {
-	status = "okay";
 	current-speed = <115200>;
 	clocks = <&ccm IMX_CCM_UART4_CLK 0x6c 24>;
 	pinctrl-0 = <&uart4_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &gpio3 {

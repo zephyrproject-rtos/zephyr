@@ -15,8 +15,8 @@
 
 	qspi_memory: qspi-memory@90000000 {
 		compatible = "zephyr,memory-region";
-		device_type = "memory";
 		reg = <0x90000000 DT_SIZE_M(256)>;
+		device_type = "memory";
 		zephyr,memory-region = "QSPI";
 		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_FLASH)>;
 	};
@@ -44,7 +44,6 @@
 				compatible = "jedec,nor";
 				reg = <0>;
 				size = <DT_SIZE_M(128)>; /* 128 Mbits */
-				status = "okay";
 
 				mspi-max-frequency = <DT_FREQ_M((72))>;
 				mspi-io-mode = "MSPI_IO_MODE_SINGLE";
@@ -57,6 +56,7 @@
 				rx-dummy = <8>;
 				tx-dummy = <0>;
 				jedec-id = [1f 89 01];
+				status = "okay";
 
 				partitions {
 					compatible = "fixed-partitions";
@@ -64,13 +64,13 @@
 					#size-cells = <1>;
 
 					slot1_partition: partition@0 {
-						label = "image-1";
 						reg = <0x00000000 DT_SIZE_M(1)>;
+						label = "image-1";
 					};
 
 					storage_partition: partition@100000 {
-						label = "storage";
 						reg = <0x00100000 DT_SIZE_M(15)>;
+						label = "storage";
 					};
 				};
 			};

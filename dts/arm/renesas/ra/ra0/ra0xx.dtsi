@@ -16,9 +16,9 @@
 		#size-cells = <0>;
 
 		cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m23";
 			reg = <0>;
+			device_type = "cpu";
 		};
 	};
 
@@ -187,8 +187,8 @@
 
 		option_setting_osis: option-setting-osis@1010018 {
 			compatible = "zephyr,memory-region";
-			zephyr,memory-region = "OFS_OSIS_MEMORY";
 			reg = <0x01010018 0x20>;
+			zephyr,memory-region = "OFS_OSIS_MEMORY";
 			status = "okay";
 		};
 
@@ -237,17 +237,17 @@
 
 				uart0: sau-uart@0 {
 					compatible = "renesas,ra-uart-sau";
+					reg = <0>;
 					interrupts = <20 1>;
 					sau-channels = <&sau_ch00>, <&sau_ch01>;
-					reg = <0>;
 					status = "disabled";
 				};
 
 				uart1: sau-uart@1 {
 					compatible = "renesas,ra-uart-sau";
+					reg = <1>;
 					interrupts = <24 1>;
 					sau-channels = <&sau_ch02>, <&sau_ch03>;
-					reg = <1>;
 					status = "disabled";
 				};
 			};
@@ -282,9 +282,9 @@
 
 				uart2: sau-uart@2 {
 					compatible = "renesas,ra-uart-sau";
+					reg = <2>;
 					interrupts = <14 1>;
 					sau-channels = <&sau_ch10>, <&sau_ch11>;
-					reg = <2>;
 					status = "disabled";
 				};
 			};

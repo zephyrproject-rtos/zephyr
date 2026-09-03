@@ -6,11 +6,11 @@
 #include "nrf54h20dk_nrf54h20_common.dtsi"
 
 &spi131 {
-	status = "reserved";
 	interrupt-parent = <&cpuppr_clic>;
+	status = "reserved";
 };
 
 &uart135 {
-	status = "reserved";
 	interrupt-parent = <&cpuppr_clic>;
+	status = "reserved";
 };

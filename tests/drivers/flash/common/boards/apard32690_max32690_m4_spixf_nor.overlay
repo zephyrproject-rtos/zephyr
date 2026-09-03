@@ -19,8 +19,8 @@
 		#size-cells = <1>;
 
 		storage_partition: partition@0 {
-			label = "storage";
 			reg = <0x0 DT_SIZE_M(1)>;
+			label = "storage";
 		};
 	};
 };

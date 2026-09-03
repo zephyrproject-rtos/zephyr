@@ -7,9 +7,9 @@
 / {
 	pwm0: pwm0 {
 		compatible = "zephyr,fake-pwm";
-		status = "okay";
 		#pwm-cells = <2>;
 		frequency = <10000000>;
+		status = "okay";
 	};
 
 	aliases {

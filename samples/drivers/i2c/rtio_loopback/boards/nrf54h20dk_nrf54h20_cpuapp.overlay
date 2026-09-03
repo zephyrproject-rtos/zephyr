@@ -55,8 +55,8 @@
 	pinctrl-0 = <&i2c130_default>;
 	pinctrl-1 = <&i2c130_sleep>;
 	pinctrl-names = "default", "sleep";
-	zephyr,concat-buf-size = <256>;
 	memory-regions = <&cpuapp_dma_region>;
+	zephyr,concat-buf-size = <256>;
 	status = "okay";
 };
 

@@ -26,7 +26,7 @@
 
 		arch_timer: timer@f8f00200 {
 			compatible = "arm,armv8-timer";
-			status = "okay";
+			reg = <0xf8f00200 0x1c>;
 			interrupt-names = "irq_0", "irq_1", "irq_2", "irq_3";
 			interrupts = <GIC_PPI 13 IRQ_TYPE_EDGE
 				      IRQ_DEFAULT_PRIORITY>,
@@ -36,43 +36,42 @@
 				      IRQ_DEFAULT_PRIORITY>,
 				     <GIC_PPI 10 IRQ_TYPE_EDGE
 				      IRQ_DEFAULT_PRIORITY>;
-			reg = <0xf8f00200 0x1c>;
+			status = "okay";
 		};
 
 		gic: interrupt-controller@f8f01000 {
 			compatible = "arm,gic-v1", "arm,gic";
-			status = "okay";
 			reg = <0xf8f01000 0x1000>,
 			      <0xf8f00100 0x100>;
 			interrupt-controller;
 			#interrupt-cells = <4>;
+			status = "okay";
 		};
 
 		i2c0: i2c@e0004000 {
 			compatible = "cdns,i2c";
 			reg = <0xe0004000 0x1000>;
-			status = "disabled";
 			interrupts = <GIC_SPI 25 IRQ_TYPE_LEVEL
 				      IRQ_DEFAULT_PRIORITY>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			fifo-depth = <16>;
+			status = "disabled";
 		};
 
 		i2c1: i2c@e0005000 {
 			compatible = "cdns,i2c";
 			reg = <0xe0005000 0x1000>;
-			status = "disabled";
 			interrupts = <GIC_SPI 48 IRQ_TYPE_LEVEL
 				      IRQ_DEFAULT_PRIORITY>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			fifo-depth = <16>;
+			status = "disabled";
 		};
 
 		gem0: ethernet@e000b000 {
 			compatible = "xlnx,gem";
-			status = "disabled";
 			reg = <0xe000b000 0x1000>,
 			      <0xf8000140 0x4>;
 			reg-names = "mac", "clkc";
@@ -91,18 +90,18 @@
 			tx-buffer-size = <1536>;
 			discard-rx-fcs;
 			unicast-hash;
+			status = "disabled";
 
 			gem0_mdio: mdio {
 				compatible = "xlnx,gem-mdio";
-				status = "disabled";
 				#address-cells = <1>;
 				#size-cells = <0>;
+				status = "disabled";
 			};
 		};
 
 		gem1: ethernet@e000c000 {
 			compatible = "xlnx,gem";
-			status = "disabled";
 			reg = <0xe000c000 0x1000>,
 			      <0xf8000144 0x4>;
 			reg-names = "mac", "clkc";
@@ -121,37 +120,37 @@
 			tx-buffer-size = <1536>;
 			discard-rx-fcs;
 			unicast-hash;
+			status = "disabled";
 
 			gem1_mdio: mdio {
 				compatible = "xlnx,gem-mdio";
-				status = "disabled";
 				#address-cells = <1>;
 				#size-cells = <0>;
+				status = "disabled";
 			};
 		};
 
 		uart0: uart@e0000000 {
 			compatible = "xlnx,xuartps";
-			status = "disabled";
 			reg = <0xe0000000 0x4c>;
 			interrupts = <GIC_SPI 27 IRQ_TYPE_LEVEL
 				      IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "irq_0";
+			status = "disabled";
 		};
 
 		uart1: uart@e0001000 {
 			compatible = "xlnx,xuartps";
-			status = "disabled";
 			reg = <0xe0001000 0x4c>;
 			interrupts = <GIC_SPI 50 IRQ_TYPE_LEVEL
 				      IRQ_DEFAULT_PRIORITY>;
 			interrupt-names = "irq_0";
+			status = "disabled";
 		};
 
 		spi0: spi@e0006000 {
 			compatible = "cdns,spi";
 			reg = <0xe0006000 0x1000>;
-			status = "disabled";
 			interrupts = <GIC_SPI 26 IRQ_TYPE_LEVEL
 				      IRQ_DEFAULT_PRIORITY>;
 			#address-cells = <1>;
@@ -159,12 +158,12 @@
 			fifo-width = <8>;
 			rx-fifo-depth = <128>;
 			tx-fifo-depth = <128>;
+			status = "disabled";
 		};
 
 		spi1: spi@e0007000 {
 			compatible = "cdns,spi";
 			reg = <0xe0007000 0x1000>;
-			status = "disabled";
 			interrupts = <GIC_SPI 49 IRQ_TYPE_LEVEL
 				      IRQ_DEFAULT_PRIORITY>;
 			#address-cells = <1>;
@@ -172,11 +171,11 @@
 			fifo-width = <8>;
 			rx-fifo-depth = <128>;
 			tx-fifo-depth = <128>;
+			status = "disabled";
 		};
 
 		psgpio: gpio@e000a000 {
 			compatible = "xlnx,ps-gpio";
-			status = "disabled";
 			reg = <0xe000a000 0x1000>;
 			interrupts = <GIC_SPI 20 IRQ_TYPE_LEVEL
 				      IRQ_DEFAULT_PRIORITY>;
@@ -184,6 +183,7 @@
 
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "disabled";
 
 			psgpio_bank0: psgpio_bank@0 {
 				compatible = "xlnx,ps-gpio-bank";
@@ -224,11 +224,11 @@
 	};
 
 	slcr: slcr@f8000000 {
-		#address-cells = <1>;
-		#size-cells = <1>;
 		compatible = "xlnx,zynq-slcr", "syscon";
 		reg = <0xf8000000 0x1000>;
 		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
 
 		pinctrl0: pinctrl@700 {
 			compatible = "xlnx,pinctrl-zynq";

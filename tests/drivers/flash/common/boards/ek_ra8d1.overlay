@@ -13,8 +13,8 @@
 
 		/* Set the 2 last block of storage. */
 		storage_partition: partition@1e8000 {
-			label = "storage";
 			reg = <0x1e8000 DT_SIZE_K(64)>;
+			label = "storage";
 		};
 	};
 };

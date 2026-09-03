@@ -15,7 +15,6 @@
 };
 
 &comp0 {
-	status = "okay";
 	positive-inputs = <2>;
 	pinctrl-0 = <&comp0_out_pa7>;
 	pinctrl-names = "default";
@@ -25,4 +24,5 @@
 	ti,reference-dac-code0 = <128>;
 	ti,filter-enable;
 	ti,filter-delay = <2700>;
+	status = "okay";
 };

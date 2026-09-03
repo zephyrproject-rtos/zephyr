@@ -3,18 +3,18 @@
 #include "nrf54h20dk_nrf54h20_common.dtsi"
 
 &timer020 {
-	status = "okay";
 	prescaler = <7>;
+	status = "okay";
 };
 
 &timer021 {
-	status = "okay";
 	prescaler = <7>;
+	status = "okay";
 };
 
 &timer022 {
-	status = "okay";
 	prescaler = <7>;
+	status = "okay";
 };
 
 &rtc {

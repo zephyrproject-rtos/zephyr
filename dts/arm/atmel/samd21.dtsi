@@ -21,18 +21,18 @@
 			compatible = "atmel,sam0-usb";
 			reg = <0x41005000 0x1000>;
 			interrupts = <7 0>;
-			status = "disabled";
 
 			num-bidir-endpoints = <8>;
+			status = "disabled";
 		};
 
 		dmac: dmac@41004800 {
 			compatible = "atmel,sam0-dmac";
 			reg = <0x41004800 0x50>;
 			interrupts = <6 0>;
-			status = "disabled";
 
 			#dma-cells = <2>;
+			status = "disabled";
 		};
 
 		tc6: tc@42003800 {
@@ -52,12 +52,12 @@
 			interrupts = <15 0>;
 			clocks = <&gclk 26>, <&pm 0x20 8>;
 			clock-names = "GCLK", "PM";
-			atmel,assigned-clocks = <&gclk 0>;
-			atmel,assigned-clock-names = "GCLK";
-			status = "disabled";
 
 			channels = <4>;
 			counter-size = <24>;
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
+			status = "disabled";
 		};
 
 		tcc1: tcc@42002400 {
@@ -66,12 +66,12 @@
 			interrupts = <16 0>;
 			clocks = <&gclk 26>, <&pm 0x20 9>;
 			clock-names = "GCLK", "PM";
-			atmel,assigned-clocks = <&gclk 0>;
-			atmel,assigned-clock-names = "GCLK";
-			status = "disabled";
 
 			channels = <2>;
 			counter-size = <24>;
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
+			status = "disabled";
 		};
 
 		tcc2: tcc@42002800 {
@@ -80,12 +80,12 @@
 			interrupts = <17 0>;
 			clocks = <&gclk 27>, <&pm 0x20 10>;
 			clock-names = "GCLK", "PM";
-			atmel,assigned-clocks = <&gclk 0>;
-			atmel,assigned-clock-names = "GCLK";
-			status = "disabled";
 
 			channels = <2>;
 			counter-size = <16>;
+			atmel,assigned-clocks = <&gclk 0>;
+			atmel,assigned-clock-names = "GCLK";
+			status = "disabled";
 		};
 	};
 };

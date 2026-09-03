@@ -13,7 +13,6 @@
 &adc0 {
 	#address-cells = <1>;
 	#size-cells = <0>;
-	status = "okay";
 
 	pinctrl-0 = <&adc0_default>;
 	pinctrl-names = "default";
@@ -22,6 +21,7 @@
 	startup-time = <64>;
 	settling-time = <3>;
 	tracking-time = <2>;
+	status = "okay";
 
 	/* External ADC(+) */
 	channel@6 { // Connector A1

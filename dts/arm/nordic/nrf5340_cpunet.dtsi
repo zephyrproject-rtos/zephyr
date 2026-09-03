@@ -19,9 +19,9 @@
 		#size-cells = <0>;
 
 		cpu@1 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m33";
 			reg = <1>;
+			device_type = "cpu";
 			#address-cells = <1>;
 			#size-cells = <1>;
 
@@ -46,9 +46,9 @@
 			compatible = "nordic,nrf-uicr";
 			reg = <0x01ff8000 0x1000>;
 			ranges = <0x0 0x01ff8000 0x1000>;
-			status = "okay";
 			#address-cells = <1>;
 			#size-cells = <1>;
+			status = "okay";
 		};
 
 		sram0: memory@20000000 {
@@ -59,9 +59,9 @@
 
 		sram1: memory@21000000 {
 			compatible = "zephyr,memory-region", "mmio-sram";
-			zephyr,memory-region = "SRAM1";
 			#address-cells = <1>;
 			#size-cells = <1>;
+			zephyr,memory-region = "SRAM1";
 		};
 
 		clock: clock@41005000 {
@@ -85,23 +85,23 @@
 			compatible = "nordic,nrf-power";
 			reg = <0x41005000 0x1000>;
 			interrupts = <5 NRF_DEFAULT_IRQ_PRIORITY>;
-			status = "okay";
 			#address-cells = <1>;
 			#size-cells = <1>;
+			status = "okay";
 
 			gpregret1: gpregret1@4100551c {
-				#address-cells = <1>;
-				#size-cells = <1>;
 				compatible = "nordic,nrf-gpregret";
 				reg = <0x4100551c 0x1>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 				status = "okay";
 			};
 
 			gpregret2: gpregret2@41005520 {
-				#address-cells = <1>;
-				#size-cells = <1>;
 				compatible = "nordic,nrf-gpregret";
 				reg = <0x41005520 0x1>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 				status = "okay";
 			};
 		};
@@ -110,11 +110,11 @@
 			compatible = "nordic,nrf-radio";
 			reg = <0x41008000 0x1000>;
 			interrupts = <8 NRF_DEFAULT_IRQ_PRIORITY>;
-			status = "okay";
 			dfe-supported;
 			ieee802154-supported;
 			ble-2mbps-supported;
 			ble-coded-phy-supported;
+			status = "okay";
 
 			ieee802154: ieee802154 {
 				compatible = "nordic,nrf-ieee802154";
@@ -141,8 +141,8 @@
 			compatible = "nordic,nrf-gpiote";
 			reg = <0x4100a000 0x1000>;
 			interrupts = <10 5>;
-			status = "disabled";
 			instance = <0>;
+			status = "disabled";
 		};
 
 		wdt: wdt0: watchdog@4100b000 {
@@ -154,12 +154,12 @@
 
 		timer0: timer@4100c000 {
 			compatible = "nordic,nrf-timer";
-			status = "disabled";
 			reg = <0x4100c000 0x1000>;
 			cc-num = <8>;
 			max-bit-width = <32>;
 			interrupts = <12 NRF_DEFAULT_IRQ_PRIORITY>;
 			prescaler = <0>;
+			status = "disabled";
 		};
 
 		ecb: ecb@4100d000 {
@@ -181,9 +181,9 @@
 		dppic0: dppic: dppic@4100f000 {
 			compatible = "nordic,nrf-dppic";
 			reg = <0x4100f000 0x1000>;
-			status = "okay";
 			channels = <16>;
 			groups = <6>;
+			status = "okay";
 		};
 
 		temp: temp@41010000 {
@@ -219,13 +219,13 @@
 			 *              "nordic,nrf-twis".
 			 */
 			compatible = "nordic,nrf-twim";
+			reg = <0x41013000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x41013000 0x1000>;
 			interrupts = <19 NRF_DEFAULT_IRQ_PRIORITY>;
 			easydma-maxcnt-bits = <16>;
-			status = "disabled";
 			zephyr,pm-device-runtime-auto;
+			status = "disabled";
 		};
 
 		spi0: spi@41013000 {
@@ -236,9 +236,9 @@
 			 *              "nordic,nrf-spis".
 			 */
 			compatible = "nordic,nrf-spim";
+			reg = <0x41013000 0x1000>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			reg = <0x41013000 0x1000>;
 			interrupts = <19 NRF_DEFAULT_IRQ_PRIORITY>;
 			max-frequency = <DT_FREQ_M(8)>;
 			easydma-maxcnt-bits = <16>;
@@ -270,22 +270,22 @@
 
 		timer1: timer@41018000 {
 			compatible = "nordic,nrf-timer";
-			status = "disabled";
 			reg = <0x41018000 0x1000>;
 			cc-num = <8>;
 			max-bit-width = <32>;
 			interrupts = <24 NRF_DEFAULT_IRQ_PRIORITY>;
 			prescaler = <0>;
+			status = "disabled";
 		};
 
 		timer2: timer@41019000 {
 			compatible = "nordic,nrf-timer";
-			status = "disabled";
 			reg = <0x41019000 0x1000>;
 			cc-num = <8>;
 			max-bit-width = <32>;
 			interrupts = <25 NRF_DEFAULT_IRQ_PRIORITY>;
 			prescaler = <0>;
+			status = "disabled";
 		};
 
 		swi0: swi@4101a000 {
@@ -332,13 +332,13 @@
 
 			flash1: flash@1000000 {
 				compatible = "soc-nv-flash";
-				erase-block-size = <2048>;
-				write-block-size = <4>;
 				reg = <0x1000000 DT_SIZE_K(256)>;
 				ranges = <0x0 0x1000000 DT_SIZE_K(256)>;
-				status = "okay";
+				erase-block-size = <2048>;
+				write-block-size = <4>;
 				#address-cells = <1>;
 				#size-cells = <1>;
+				status = "okay";
 			};
 		};
 
@@ -350,23 +350,23 @@
 
 		gpio0: gpio@418c0500 {
 			compatible = "nordic,nrf-gpio";
-			gpio-controller;
 			reg = <0x418c0500 0x300>;
+			gpio-controller;
 			#gpio-cells = <2>;
-			status = "disabled";
 			port = <0>;
 			gpiote-instance = <&gpiote>;
+			status = "disabled";
 		};
 
 		gpio1: gpio@418c0800 {
 			compatible = "nordic,nrf-gpio";
-			gpio-controller;
 			reg = <0x418c0800 0x300>;
+			gpio-controller;
 			#gpio-cells = <2>;
 			ngpios = <16>;
-			status = "disabled";
 			port = <1>;
 			gpiote-instance = <&gpiote>;
+			status = "disabled";
 		};
 	};
 

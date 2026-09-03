@@ -86,8 +86,8 @@
 	peripheral_domain: peripheral-domain {
 		compatible = "power-domain-soc-state-change";
 		#power-domain-cells = <0>;
-		zephyr,disabling-power-states = <&suspend &standby>;
 		onoff-power-states = <&standby>;
+		zephyr,disabling-power-states = <&suspend &standby>;
 	};
 
 	xtal32: xtal32 {
@@ -184,8 +184,8 @@
 	};
 
 	pmu: pmu@31000 {
-		reg = <0x31000 0x130>;
 		compatible = "nxp,rw-pmu";
+		reg = <0x31000 0x130>;
 
 		pin0: pin0 {
 			compatible = "nxp,aon-wakeup-pin";
@@ -203,9 +203,9 @@
 	trng: random@14000 {
 		compatible = "nxp,kinetis-trng";
 		reg = <0x14000 0x1000>;
-		status = "okay";
 		interrupts = <123 0>;
 		power-domains = <&peripheral_domain>;
+		status = "okay";
 	};
 
 	wwdt: watchdog@e000 {
@@ -213,9 +213,9 @@
 		reg = <0xe000 0x1000>;
 		clocks = <&clkctl0 MCUX_WWDT0_CLK>;
 		interrupts = <0 0>;
-		status = "disabled";
 		power-domains = <&peripheral_domain>;
 		clk-divider = <1>;
+		status = "disabled";
 	};
 
 	hsgpio: hsgpio@100000 {
@@ -226,18 +226,18 @@
 
 		hsgpio0: gpio@0 {
 			compatible = "nxp,lpc-gpio-port";
+			reg = <0>;
 			gpio-controller;
 			#gpio-cells = <2>;
-			reg = <0>;
 			int-source = "pint";
 			power-domains = <&peripheral_domain>;
 		};
 
 		hsgpio1: gpio@1 {
 			compatible = "nxp,lpc-gpio-port";
+			reg = <1>;
 			gpio-controller;
 			#gpio-cells = <2>;
-			reg = <1>;
 			int-source = "pint";
 			power-domains = <&peripheral_domain>;
 		};
@@ -271,9 +271,9 @@
 		resets = <&rstctl1 NXP_SYSCON_RESET(0, 8)>;
 		dmas = <&dma0 0>, <&dma0 1>;
 		dma-names = "rx", "tx";
-		zephyr,disabling-power-states = <&suspend &standby>;
 		low-power-states = <&suspend>;
 		power-domains = <&peripheral_domain>;
+		zephyr,disabling-power-states = <&suspend &standby>;
 		status = "disabled";
 	};
 
@@ -286,9 +286,9 @@
 		resets = <&rstctl1 NXP_SYSCON_RESET(0, 9)>;
 		dmas = <&dma0 2>, <&dma0 3>;
 		dma-names = "rx", "tx";
-		zephyr,disabling-power-states = <&suspend &standby>;
 		low-power-states = <&suspend>;
 		power-domains = <&peripheral_domain>;
+		zephyr,disabling-power-states = <&suspend &standby>;
 		status = "disabled";
 	};
 
@@ -301,9 +301,9 @@
 		resets = <&rstctl1 NXP_SYSCON_RESET(0, 10)>;
 		dmas = <&dma0 4>, <&dma0 5>;
 		dma-names = "rx", "tx";
-		zephyr,disabling-power-states = <&suspend &standby>;
 		low-power-states = <&suspend>;
 		power-domains = <&peripheral_domain>;
+		zephyr,disabling-power-states = <&suspend &standby>;
 		status = "disabled";
 	};
 
@@ -316,9 +316,9 @@
 		resets = <&rstctl1 NXP_SYSCON_RESET(0, 11)>;
 		dmas = <&dma0 6>, <&dma0 7>;
 		dma-names = "rx", "tx";
-		zephyr,disabling-power-states = <&suspend &standby>;
 		low-power-states = <&suspend>;
 		power-domains = <&peripheral_domain>;
+		zephyr,disabling-power-states = <&suspend &standby>;
 		status = "disabled";
 	};
 
@@ -337,8 +337,8 @@
 		resets = <&rstctl1 NXP_SYSCON_RESET(0, 22)>;
 		dmas = <&dma0 26>, <&dma0 27>;
 		dma-names = "rx", "tx";
-		zephyr,disabling-power-states = <&suspend &standby>;
 		power-domains = <&peripheral_domain>;
+		zephyr,disabling-power-states = <&suspend &standby>;
 		status = "disabled";
 	};
 
@@ -386,33 +386,33 @@
 		compatible = "nxp,lpc-dma";
 		reg = <0x104000 0x1000>;
 		interrupts = <1 0>;
-		status = "disabled";
 		#dma-cells = <1>;
 		dma-channels = <33>;
 		power-domains = <&peripheral_domain>;
+		status = "disabled";
 	};
 
 	gdma: dma-controller@4014e000 {
 		compatible = "nxp,gdma";
 		reg = <0x4014e000 0x1000>;
 		interrupts = <128 0>;
-		status = "disabled";
 		#dma-cells = <1>;
 		dma-channels = <4>;
 		power-domains = <&peripheral_domain>;
+		status = "disabled";
 	};
 
 	lcdic: lcdic@128000 {
 		compatible = "nxp,lcdic";
 		reg = <0x128000 0x52>;
 		interrupts = <61 0>;
-		status = "disabled";
 		#address-cells = <1>;
 		#size-cells = <0>;
 		clocks = <&clkctl1 MCUX_LCDIC_CLK>;
 		dmas = <&dma0 0>;
-		zephyr,disabling-power-states = <&suspend &standby>;
 		power-domains = <&peripheral_domain>;
+		zephyr,disabling-power-states = <&suspend &standby>;
+		status = "disabled";
 	};
 
 	rtc: rtc@30000 {
@@ -431,52 +431,52 @@
 		compatible = "nxp,lpc-ctimer";
 		reg = <0x28000 0x1000>;
 		interrupts = <10 0>;
-		status = "disabled";
 		clk-source = <1>;
 		clocks = <&clkctl1 MCUX_CTIMER0_CLK>;
 		mode = <0>;
 		input = <0>;
 		prescale = <0>;
 		power-domains = <&peripheral_domain>;
+		status = "disabled";
 	};
 
 	ctimer1: ctimer@29000 {
 		compatible = "nxp,lpc-ctimer";
 		reg = <0x29000 0x1000>;
 		interrupts = <11 0>;
-		status = "disabled";
 		clk-source = <1>;
 		clocks = <&clkctl1 MCUX_CTIMER1_CLK>;
 		mode = <0>;
 		input = <0>;
 		prescale = <0>;
 		power-domains = <&peripheral_domain>;
+		status = "disabled";
 	};
 
 	ctimer2: ctimer@2a000 {
 		compatible = "nxp,lpc-ctimer";
 		reg = <0x2a000 0x1000>;
 		interrupts = <39 0>;
-		status = "disabled";
 		clk-source = <1>;
 		clocks = <&clkctl1 MCUX_CTIMER2_CLK>;
 		mode = <0>;
 		input = <0>;
 		prescale = <0>;
 		power-domains = <&peripheral_domain>;
+		status = "disabled";
 	};
 
 	ctimer3: ctimer@2b000 {
 		compatible = "nxp,lpc-ctimer";
 		reg = <0x2b000 0x1000>;
 		interrupts = <13 0>;
-		status = "disabled";
 		clk-source = <1>;
 		clocks = <&clkctl1 MCUX_CTIMER3_CLK>;
 		mode = <0>;
 		input = <0>;
 		prescale = <0>;
 		power-domains = <&peripheral_domain>;
+		status = "disabled";
 	};
 
 	sctimer: pwm@146000 {
@@ -484,10 +484,10 @@
 		reg = <0x146000 0x1000>;
 		interrupts = <12 0>;
 		clocks = <&clkctl1 MCUX_SCTIMER_CLK>;
-		status = "disabled";
 		prescaler = <8>;
 		#pwm-cells = <3>;
 		power-domains = <&peripheral_domain>;
+		status = "disabled";
 	};
 
 	mrt0: mrt@2d000 {
@@ -565,14 +565,14 @@
 	};
 
 	dmic0: dmic@121000 {
-		#address-cells = <1>;
-		#size-cells = <0>;
 		compatible = "nxp,dmic";
 		reg = <0x121000 0x1000>;
+		#address-cells = <1>;
+		#size-cells = <0>;
 		interrupts = <25 0>;
-		status = "disabled";
 		clocks = <&clkctl1 MCUX_DMIC_CLK>;
 		power-domains = <&peripheral_domain>;
+		status = "disabled";
 
 		pdmc0: dmic-channel@0 {
 			reg = <0>;
@@ -608,27 +608,27 @@
 			compatible = "nxp,gau-adc";
 			reg = <0x38000 0x100>;
 			interrupts = <112 0>;
-			status = "disabled";
 			#io-channel-cells = <1>;
 			power-domains = <&peripheral_domain>;
+			status = "disabled";
 		};
 
 		adc1: gau_adc1@38100 {
 			compatible = "nxp,gau-adc";
 			reg = <0x38100 0x100>;
 			interrupts = <111 0>;
-			status = "disabled";
 			#io-channel-cells = <1>;
 			power-domains = <&peripheral_domain>;
+			status = "disabled";
 		};
 
 		dac0: dac@38200 {
 			compatible = "nxp,gau-dac";
 			reg = <0x38200 0x30>;
 			interrupts = <108 0>;
-			status = "disabled";
 			#io-channel-cells = <1>;
 			power-domains = <&peripheral_domain>;
+			status = "disabled";
 		};
 
 		acomp: acomp@38400 {
@@ -674,26 +674,26 @@
 			compatible = "nxp,enet-mac";
 			interrupts = <115 0>;
 			interrupt-names = "COMMON";
-			nxp,mdio = <&enet_mdio>;
 			ptp-clock = <&enet_ptp_clock>;
-			status = "disabled";
 			power-domains = <&peripheral_domain>;
+			nxp,mdio = <&enet_mdio>;
+			status = "disabled";
 		};
 
 		enet_mdio: mdio {
 			compatible = "nxp,enet-mdio";
-			status = "disabled";
 			#address-cells = <1>;
 			#size-cells = <0>;
 			power-domains = <&peripheral_domain>;
+			status = "disabled";
 		};
 
 		enet_ptp_clock: ptp-clock {
 			compatible = "nxp,enet-ptp-clock";
 			interrupts = <116 0>;
-			status = "disabled";
 			clocks = <&clkctl1 MCUX_ENET_PLL>;
 			power-domains = <&peripheral_domain>;
+			status = "disabled";
 		};
 	};
 
@@ -707,11 +707,11 @@
 
 &flexspi {
 	compatible = "nxp,imx-flexspi";
-	status = "disabled";
 	interrupts = <42 0>;
 	#address-cells = <1>;
 	#size-cells = <0>;
 	clocks = <&clkctl1 MCUX_FLEXSPI_CLK>;
+	status = "disabled";
 };
 
 &nvic {

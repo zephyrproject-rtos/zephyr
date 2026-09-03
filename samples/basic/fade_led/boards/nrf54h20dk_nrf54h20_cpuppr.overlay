@@ -15,8 +15,8 @@
 };
 
 &pwm130 {
-	status = "okay";
 	pinctrl-0 = <&pwm130_default>;
 	pinctrl-1 = <&pwm130_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };

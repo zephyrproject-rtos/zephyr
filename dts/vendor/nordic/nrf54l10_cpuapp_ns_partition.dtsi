@@ -17,19 +17,19 @@
 
 &cpuapp_sram {
 	sram0_s: sram@0 {
-		#address-cells = <1>;
-		#size-cells = <1>;
 		/* Secure image memory */
 		reg = <0x0 DT_SIZE_K(96)>;
 		ranges = <0x0 0x0 DT_SIZE_K(96)>;
+		#address-cells = <1>;
+		#size-cells = <1>;
 	};
 
 	sram0_ns: sram@18000 {
-		#address-cells = <1>;
-		#size-cells = <1>;
 		/* Non-Secure image memory */
 		reg = <0x18000 DT_SIZE_K(96)>;
 		ranges = <0x0 0x18000 DT_SIZE_K(96)>;
+		#address-cells = <1>;
+		#size-cells = <1>;
 	};
 };
 
@@ -47,38 +47,38 @@
 		 */
 		slot0_s_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-0";
 			reg = <0x0000000 DT_SIZE_K(384)>;
+			label = "image-0";
 		};
 
 		tfm_ps_partition: partition@60000 {
 			compatible = "zephyr,mapped-partition";
-			label = "tfm-ps";
 			reg = <0x00060000 DT_SIZE_K(16)>;
+			label = "tfm-ps";
 		};
 
 		tfm_its_partition: partition@64000 {
 			compatible = "zephyr,mapped-partition";
-			label = "tfm-its";
 			reg = <0x00064000 DT_SIZE_K(16)>;
+			label = "tfm-its";
 		};
 
 		tfm_otp_partition: partition@68000 {
 			compatible = "zephyr,mapped-partition";
-			label = "tfm-otp";
 			reg = <0x00068000 DT_SIZE_K(8)>;
+			label = "tfm-otp";
 		};
 
 		slot0_ns_partition: partition@6a000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-0-nonsecure";
 			reg = <0x0006a000 DT_SIZE_K(556)>;
+			label = "image-0-nonsecure";
 		};
 
 		storage_partition: partition@f5000 {
 			compatible = "zephyr,mapped-partition";
-			label = "storage";
 			reg = <0x000f5000 DT_SIZE_K(32)>;
+			label = "storage";
 		};
 	};
 };

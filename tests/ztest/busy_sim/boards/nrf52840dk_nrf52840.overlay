@@ -5,14 +5,14 @@
  */
 
 &timer0 {
-	status = "okay";
 	interrupts = <8 0>;
+	status = "okay";
 };
 
 / {
 	busy-sim {
 		compatible = "vnd,busy-sim";
-		status = "okay";
 		counter = <&timer0>;
+		status = "okay";
 	};
 };

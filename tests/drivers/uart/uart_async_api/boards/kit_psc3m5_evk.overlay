@@ -11,7 +11,6 @@
 
 dut: &scb4 {
 	compatible = "infineon,uart";
-	status = "okay";
 	current-speed = <115200>;
 
 	clocks = <&peri0_group4_16bit_0>;
@@ -21,6 +20,7 @@ dut: &scb4 {
 
 	dmas = <&dma0 0>, <&dma0 1>;
 	dma-names = "tx", "rx";
+	status = "okay";
 };
 
 &p4_3_scb4_uart_tx {
@@ -32,6 +32,6 @@ dut: &scb4 {
 };
 
 &peri0_group4_16bit_0 {
-	status = "okay";
 	clock-div = <103>;
+	status = "okay";
 };

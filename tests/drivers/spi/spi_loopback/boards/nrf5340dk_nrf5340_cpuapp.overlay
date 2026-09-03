@@ -24,13 +24,13 @@
 };
 
 &spi1 {
-	status = "okay";
 	overrun-character = <0x00>;
 	rx-delay = <1>;
 	pinctrl-0 = <&spi1_default>;
 	pinctrl-1 = <&spi1_sleep>;
 	pinctrl-names = "default", "sleep";
 	zephyr,pm-device-runtime-auto;
+	status = "okay";
 
 	slow@0 {
 		compatible = "test-spi-loopback-slow";

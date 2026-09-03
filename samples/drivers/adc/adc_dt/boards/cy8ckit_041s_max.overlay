@@ -54,12 +54,12 @@
 };
 
 &adc0 {
-	status = "okay";
 	vref-src = "internal";  /* Use internal 1.2V reference */
 	pinctrl-0 = <&p2_2_adc &p2_3_adc &p2_0_adc &p2_4_adc>;
 	pinctrl-names = "default";
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 
 	channel@0 {
 		reg = <0>;

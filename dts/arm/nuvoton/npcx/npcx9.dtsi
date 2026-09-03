@@ -395,10 +395,10 @@
 			reg = <0x4000f000 0x120>;
 			interrupts = <18 1>;
 			clocks = <&pcc NPCX_CLOCK_BUS_APB3 NPCX_PWDWN_CTL5 1>;
-			status = "disabled";
 			buffer-rx-size = <128>;
 			buffer-tx-size = <128>;
 			shi-cs-wui = <&wui_io53>;
+			status = "disabled";
 		};
 
 		espi0: espi@4000a000 {

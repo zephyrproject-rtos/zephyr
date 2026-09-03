@@ -16,9 +16,9 @@
 };
 
 &flash0 {
-	status = "okay";
 	reg = <0x10000000 DT_SIZE_M(16)>;
 	ranges = <0x0 0x10000000 DT_SIZE_M(16)>;
+	status = "okay";
 };
 
 &storage_partition {

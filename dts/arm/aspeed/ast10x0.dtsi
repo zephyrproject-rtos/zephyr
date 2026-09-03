@@ -14,9 +14,9 @@
 		#size-cells = <0>;
 
 		cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m4f";
 			reg = <0>;
+			device_type = "cpu";
 		};
 	};
 
@@ -45,8 +45,8 @@
 			reg = <0x7e784000 0x1000>;
 			interrupts = <8 0>;
 			clocks = <&sysclk ASPEED_CLK_UART5>;
-			status = "disabled";
 			reg-shift = <2>;
+			status = "disabled";
 		};
 	};
 };

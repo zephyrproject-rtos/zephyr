@@ -9,8 +9,8 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 
 / {
-	model = "Microchip M2S Hello FPGA Kit";
 	compatible = "microchip,m2s-hello-fpga-kit";
+	model = "Microchip M2S Hello FPGA Kit";
 
 	chosen {
 		zephyr,console = &uart0;

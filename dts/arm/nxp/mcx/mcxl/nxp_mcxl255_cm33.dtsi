@@ -35,9 +35,9 @@
 		clocks = <&syscon MCUX_LPSPI0_CLK>;
 		#address-cells = <1>;
 		#size-cells = <0>;
-		status = "disabled";
 		rx-fifo-size = <4>;
 		tx-fifo-size = <4>;
+		status = "disabled";
 	};
 
 	lpspi1: spi@9d000 {
@@ -47,9 +47,9 @@
 		clocks = <&syscon MCUX_LPSPI1_CLK>;
 		#address-cells = <1>;
 		#size-cells = <0>;
-		status = "disabled";
 		rx-fifo-size = <4>;
 		tx-fifo-size = <4>;
+		status = "disabled";
 	};
 
 	lpi2c0: i2c@9a000 {
@@ -98,8 +98,8 @@
 		reg = <0xc000 0x1000>;
 		interrupts = <60 0>;
 		clocks = <&syscon MCUX_WWDT0_CLK>;
-		status = "disabled";
 		clk-divider = <1>;
+		status = "disabled";
 	};
 };
 

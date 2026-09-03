@@ -27,18 +27,18 @@
 	};
 
 	l2_ram_text: memory@1c010200 {
-		#address-cells = <1>;
-		#size-cells = <1>;
 		compatible = "mmio-sram";
 		reg = <0x1c010200 0x5fe00>;
+		#address-cells = <1>;
+		#size-cells = <1>;
 		status = "okay";
 	};
 
 	l2_ram_data: memory@1c070000 {
-		#address-cells = <1>;
-		#size-cells = <1>;
 		compatible = "mmio-sram";
 		reg = <0x1c070000 0x200000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
 		status = "okay";
 	};
 
@@ -145,12 +145,12 @@
 
 		gpio0: gpio@1a101000 {
 			compatible = "sensry,sy1xx-gpio";
+			reg = <0x1a101000 0x20>;
 			gpio-controller;
 			#gpio-cells = <2>;
-			reg = <0x1a101000 0x20>;
 			pad-cfg = <SY1XX_GPIO0_PAD_CFG0>;
-			status = "okay";
 			ngpios = <32>;
+			status = "okay";
 		};
 
 		spi0: spi@1a102180 {
@@ -225,12 +225,12 @@
 		mdio0: mdio@1a120020 {
 			compatible = "sensry,sy1xx-mdio";
 			reg = <0x1a120020 0x20>;
-			status = "disabled";
 
 			clock-frequency = <450000>;
 
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "disabled";
 		};
 
 		eth0: ethernet@1a120000 {

@@ -10,8 +10,8 @@
 #include <espressif/partitions_0x2000_default_32M.dtsi>
 
 / {
-	model = "ESP32-P4-WIFI6 LP Core";
 	compatible = "espressif,esp32p4";
+	model = "ESP32-P4-WIFI6 LP Core";
 
 	chosen {
 		zephyr,sram = &sramlp;
@@ -23,7 +23,6 @@
 };
 
 &lp_uart {
-	status = "okay";
 	current-speed = <115200>;
 
 	/* SoC default GPIO14/15 are wired to the ESP32-C6 SDIO interface;
@@ -31,4 +30,5 @@
 	 */
 	tx-pin = <5>;
 	rx-pin = <4>;
+	status = "okay";
 };

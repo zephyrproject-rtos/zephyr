@@ -42,36 +42,36 @@
 
 &flash0 {
 	partitions {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
-
-		/* The flash layout defined in the partition nodes below must be synced
-		 * with TF-M flash layout implementation.
-		 */
 
 		boot_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
-			label = "bootstage";
 			reg = <0 DT_SIZE_K(48)>;
+			label = "bootstage";
 		};
 
 		slot0_secure_partition: partition@c000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-secure";
 			reg = <0xc000 DT_SIZE_K(256)>;
+			label = "image-secure";
 		};
 
 		slot0_ns_partition: partition@4c000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-non-secure";
 			reg = <0x4c000 DT_SIZE_K(512)>;
+			label = "image-non-secure";
 		};
 
 		storage_partition: partition@cc000 {
 			compatible = "zephyr,mapped-partition";
-			label = "storage";
 			reg = <0xcc000 (DT_SIZE_M(2) - DT_SIZE_K(48 + 256 + 512))>;
+			label = "storage";
 		};
+
+		/* The flash layout defined in the partition nodes below must be synced
+		 * with TF-M flash layout implementation.
+		 */
 	};
 };

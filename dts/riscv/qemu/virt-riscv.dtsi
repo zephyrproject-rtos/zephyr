@@ -13,9 +13,9 @@
 /dts-v1/;
 
 / {
+	compatible = "riscv-virtio";
 	#address-cells = <0x01>;
 	#size-cells = <0x01>;
-	compatible = "riscv-virtio";
 	model = "riscv-virtio,qemu";
 
 	chosen {
@@ -23,15 +23,15 @@
 	};
 
 	flash@20000000 {
-		bank-width = <0x04>;
-		reg = <0x20000000 0x2000000 0x22000000 0x2000000>;
 		compatible = "cfi-flash";
+		reg = <0x20000000 0x2000000 0x22000000 0x2000000>;
+		bank-width = <0x04>;
 	};
 
 	uart0: uart@10000000 {
-		clock-frequency = <0x384000>;
-		reg = <0x10000000 0x100>;
 		compatible = "ns16550";
+		reg = <0x10000000 0x100>;
+		clock-frequency = <0x384000>;
 		reg-shift = <0>;
 	};
 
@@ -40,10 +40,10 @@
 		#size-cells = <0x00>;
 
 		cpu@0 {
-			device_type = "cpu";
-			reg = <0x00>;
-			status = "okay";
 			compatible = "qemu,riscv-virt", "riscv";
+			reg = <0x00>;
+			device_type = "cpu";
+			status = "okay";
 
 			hlic0: interrupt-controller {
 				compatible = "riscv,cpu-intc";
@@ -54,10 +54,10 @@
 		};
 
 		cpu@1 {
-			device_type = "cpu";
-			reg = <0x01>;
-			status = "okay";
 			compatible = "qemu,riscv-virt", "riscv";
+			reg = <0x01>;
+			device_type = "cpu";
+			status = "okay";
 
 			hlic1: interrupt-controller {
 				compatible = "riscv,cpu-intc";
@@ -68,10 +68,10 @@
 		};
 
 		cpu@2 {
-			device_type = "cpu";
-			reg = <0x02>;
-			status = "okay";
 			compatible = "qemu,riscv-virt", "riscv";
+			reg = <0x02>;
+			device_type = "cpu";
+			status = "okay";
 
 			hlic2: interrupt-controller {
 				compatible = "riscv,cpu-intc";
@@ -82,10 +82,10 @@
 		};
 
 		cpu@3 {
-			device_type = "cpu";
-			reg = <0x03>;
-			status = "okay";
 			compatible = "qemu,riscv-virt", "riscv";
+			reg = <0x03>;
+			device_type = "cpu";
+			status = "okay";
 
 			hlic3: interrupt-controller {
 				compatible = "riscv,cpu-intc";
@@ -96,10 +96,10 @@
 		};
 
 		cpu@4 {
-			device_type = "cpu";
-			reg = <0x04>;
-			status = "okay";
 			compatible = "qemu,riscv-virt", "riscv";
+			reg = <0x04>;
+			device_type = "cpu";
+			status = "okay";
 
 			hlic4: interrupt-controller {
 				compatible = "riscv,cpu-intc";
@@ -110,10 +110,10 @@
 		};
 
 		cpu@5 {
-			device_type = "cpu";
-			reg = <0x05>;
-			status = "okay";
 			compatible = "qemu,riscv-virt", "riscv";
+			reg = <0x05>;
+			device_type = "cpu";
+			status = "okay";
 
 			hlic5: interrupt-controller {
 				compatible = "riscv,cpu-intc";
@@ -124,10 +124,10 @@
 		};
 
 		cpu@6 {
-			device_type = "cpu";
-			reg = <0x06>;
-			status = "okay";
 			compatible = "qemu,riscv-virt", "riscv";
+			reg = <0x06>;
+			device_type = "cpu";
+			status = "okay";
 
 			hlic6: interrupt-controller {
 				compatible = "riscv,cpu-intc";
@@ -138,10 +138,10 @@
 		};
 
 		cpu@7 {
-			device_type = "cpu";
-			reg = <0x07>;
-			status = "okay";
 			compatible = "qemu,riscv-virt", "riscv";
+			reg = <0x07>;
+			device_type = "cpu";
+			status = "okay";
 
 			hlic7: interrupt-controller {
 				compatible = "riscv,cpu-intc";
@@ -153,15 +153,15 @@
 	};
 
 	ram0: memory@80000000 {
-		device_type = "memory";
 		reg = <0x80000000 0x10000000>;
+		device_type = "memory";
 	};
 
 	soc {
-		#address-cells = <0x01>;
-		#size-cells = <0x01>;
 		compatible = "simple-bus";
 		ranges;
+		#address-cells = <0x01>;
+		#size-cells = <0x01>;
 
 		virtio_mmio0: virtio_mmio@10001000 {
 			compatible = "virtio,mmio";
@@ -226,6 +226,7 @@
 
 		mtimer: timer@200bff8 {
 			compatible = "riscv,machine-timer";
+			reg = <0x200bff8 0x8 0x2004000 0x8>;
 			interrupts-extended = <&hlic0 7
 					       &hlic1 7
 					       &hlic2 7
@@ -234,18 +235,17 @@
 					       &hlic5 7
 					       &hlic6 7
 					       &hlic7 7>;
-			reg = <0x200bff8 0x8 0x2004000 0x8>;
 			reg-names = "mtime", "mtimecmp";
 		};
 
 		pcie: pcie@30000000 {
 			compatible = "pci-host-ecam-generic";
-			device_type = "pci";
 			reg = <0x30000000 0x10000000>;
-			#size-cells = <0x02>;
-			#address-cells = <0x03>;
 			ranges = <0x1000000 0x00 0x00 0x3000000 0x00 0x10000
 				  0x2000000 0x00 0x40000000 0x40000000 0x00 0x40000000>;
+			device_type = "pci";
+			#size-cells = <0x02>;
+			#address-cells = <0x03>;
 			#interrupt-cells = <0x01>;
 			bus-range = <0x00 0xff>;
 		};

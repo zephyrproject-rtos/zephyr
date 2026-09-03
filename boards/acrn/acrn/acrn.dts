@@ -14,15 +14,15 @@
 #include <intel/atom.dtsi>
 
 / {
-	model = "ACRN";
 	compatible = "acrn";
+	model = "ACRN";
 
 	cpus {
 		cpu@1 {
-			device_type = "cpu";
 			compatible = "intel,x86_64";
-			d-cache-line-size = <64>;
 			reg = <1>;
+			device_type = "cpu";
+			d-cache-line-size = <64>;
 		};
 	};
 
@@ -38,22 +38,22 @@
 	};
 
 	pcie0: pcie0 {
+		compatible = "pcie-controller";
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		compatible = "pcie-controller";
 		acpi-hid = "PNP0A08";
-		ranges;
 	};
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 &uart1 {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 &cpu {

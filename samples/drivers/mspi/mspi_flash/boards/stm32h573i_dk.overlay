@@ -25,7 +25,6 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			op-mode = "MSPI_OP_MODE_CONTROLLER";
-			status = "okay";
 			pinctrl-0 = <&octospi1_io0_pb1 &octospi1_io1_pd12
 				     &octospi1_io2_pc2 &octospi1_io3_pd13
 				     &octospi1_io4_ph2 &octospi1_io5_ph3
@@ -36,12 +35,12 @@
 			dmas = <&gpdma1 4 57 STM32_DMA_PERIPH_TX
 				&gpdma1 5 57 STM32_DMA_PERIPH_RX>;
 			dma-names = "tx", "rx";
+			status = "okay";
 
 			mx25lm51245: ospi-nor-flash@0 {
 				compatible = "st,nor", "mxicy,mx25u", "jedec,nor";
 				reg = <0>;
 				size = <DT_SIZE_M(512)>; /* 512 Mbits */
-				status = "okay";
 				read-command = <0xee11>;
 				write-command = <0x12ed>;
 				rx-dummy = <20>;
@@ -49,9 +48,10 @@
 				mspi-io-mode = "MSPI_IO_MODE_OCTAL";
 				mspi-data-rate = "MSPI_DATA_RATE_DUAL";
 				mspi-hardware-ce-num = <0>;
-				st,mem-type = "macronix";
 				command-length = "INSTR_2_BYTE";
 				jedec-id = [c2 85 3a];
+				st,mem-type = "macronix";
+				status = "okay";
 
 				partitions {
 					compatible = "fixed-partitions";
@@ -59,8 +59,8 @@
 					#size-cells = <1>;
 
 					partition@0 {
-						label = "nor";
 						reg = <0x00000000 DT_SIZE_M(4)>;
+						label = "nor";
 					};
 				};
 			};

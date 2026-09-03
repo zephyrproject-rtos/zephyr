@@ -59,15 +59,15 @@
 };
 
 &i2c1 {
-	status = "okay";
 	pinctrl-0 = <&i2c1_scl_p0_14 &i2c1_sda_p0_15>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &i2c2 {
-	status = "okay";
 	pinctrl-0 = <&i2c2_scl_p1_14 &i2c2_sda_p1_15>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &trng {
@@ -93,9 +93,9 @@ zephyr_udc0: &usbhs {
 
 &flash0 {
 	partitions {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		code_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
@@ -105,8 +105,8 @@ zephyr_udc0: &usbhs {
 
 		storage_partition: partition@70000 {
 			compatible = "zephyr,mapped-partition";
-			label = "storage";
 			reg = <0x70000 DT_SIZE_K(64)>;
+			label = "storage";
 		};
 	};
 };

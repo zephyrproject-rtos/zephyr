@@ -5,6 +5,6 @@
  */
 
 &mx25uw63 {
-	status = "okay";
 	mspi-max-frequency = <DT_FREQ_M(1)>;
+	status = "okay";
 };

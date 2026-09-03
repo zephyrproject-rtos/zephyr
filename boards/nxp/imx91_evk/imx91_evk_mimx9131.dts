@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "NXP i.MX91 A55";
 	compatible = "fsl,mimx91";
+	model = "NXP i.MX91 A55";
 
 	chosen {
 		zephyr,console = &lpuart1;
@@ -68,10 +68,10 @@
 };
 
 &lpuart1 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart1_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &gpio2 {

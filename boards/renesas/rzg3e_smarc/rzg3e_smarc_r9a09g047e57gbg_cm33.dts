@@ -13,8 +13,8 @@
 #include "rzg3e_smarc-pinctrl.dtsi"
 
 / {
-	model = "Renesas RZ/G3E SMARC";
 	compatible = "renesas,rzg3e-smarc";
+	model = "Renesas RZ/G3E SMARC";
 
 	chosen {
 		zephyr,sram = &sram;

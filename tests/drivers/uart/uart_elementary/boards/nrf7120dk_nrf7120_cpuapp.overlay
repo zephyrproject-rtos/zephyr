@@ -26,10 +26,10 @@
 };
 
 dut: &uart22 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart22_default_alt>;
 	pinctrl-1 = <&uart22_sleep_alt>;
 	pinctrl-names = "default", "sleep";
 	hw-flow-control;
+	status = "okay";
 };

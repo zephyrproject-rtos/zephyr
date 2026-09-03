@@ -36,7 +36,6 @@
 };
 
 &ftm1 {
-	status = "okay";
 	compatible = "nxp,ftm-pwm";
 	clocks = <&scg KINETIS_SCG_SOSC_CLK>;
 	prescaler = <128>;
@@ -44,11 +43,12 @@
 	pinctrl-0 = <&ftm1_default>;
 	pinctrl-names = "default";
 	clock-source = "fixed";
+	status = "okay";
 };
 
 &pwt {
-	status = "okay";
 	prescaler = <32>;
 	pinctrl-0 = <&pwt_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };

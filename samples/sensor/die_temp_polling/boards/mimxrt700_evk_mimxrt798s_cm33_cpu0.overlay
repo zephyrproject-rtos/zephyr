@@ -8,8 +8,8 @@
 #include <zephyr/dt-bindings/adc/mcux-lpadc.h>
 
 &pmc_tmpsns {
-	status = "okay";
 	io-channels = <&lpadc0 0>;
+	status = "okay";
 };
 
 &ocotp {

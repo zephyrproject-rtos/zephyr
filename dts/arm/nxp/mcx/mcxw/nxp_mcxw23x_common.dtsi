@@ -164,9 +164,9 @@
 	iocon: iocon@1000 {
 		compatible = "nxp,lpc-iocon";
 		reg = <0x1000 0x100>;
+		ranges = <0x0 0x1000 0x100>;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges = <0x0 0x1000 0x100>;
 
 		pinctrl: pinctrl {
 			compatible = "nxp,lpc-iocon-pinctrl";
@@ -231,76 +231,76 @@
 		compatible = "nxp,lpc-ctimer";
 		reg = <0x8000 0x1000>;
 		interrupts = <10 1>;
-		status = "disabled";
 		clk-source = <3>;
 		clocks = <&syscon MCUX_CTIMER0_CLK>;
 		mode = <0>;
 		input = <0>;
 		prescale = <0>;
 		zephyr,disabling-power-states = <&suspend &standby>;
+		status = "disabled";
 	};
 
 	ctimer1: ctimer@9000 {
 		compatible = "nxp,lpc-ctimer";
 		reg = <0x9000 0x1000>;
 		interrupts = <11 1>;
-		status = "disabled";
 		clk-source = <3>;
 		clocks = <&syscon MCUX_CTIMER1_CLK>;
 		mode = <0>;
 		input = <0>;
 		prescale = <0>;
 		zephyr,disabling-power-states = <&suspend &standby>;
+		status = "disabled";
 	};
 
 	ctimer2: ctimer@28000 {
 		compatible = "nxp,lpc-ctimer";
 		reg = <0x28000 0x1000>;
 		interrupts = <36 1>;
-		status = "disabled";
 		clk-source = <3>;
 		clocks = <&syscon MCUX_CTIMER2_CLK>;
 		mode = <0>;
 		input = <0>;
 		prescale = <0>;
 		zephyr,disabling-power-states = <&suspend &standby>;
+		status = "disabled";
 	};
 
 	ctimer3: ctimer@29000 {
 		compatible = "nxp,lpc-ctimer";
 		reg = <0x29000 0x1000>;
 		interrupts = <13 1>;
-		status = "disabled";
 		clk-source = <3>;
 		clocks = <&syscon MCUX_CTIMER3_CLK>;
 		mode = <0>;
 		input = <0>;
 		prescale = <0>;
 		zephyr,disabling-power-states = <&suspend &standby>;
+		status = "disabled";
 	};
 
 	ctimer4: ctimer@2a000 {
 		compatible = "nxp,lpc-ctimer";
 		reg = <0x2a000 0x1000>;
 		interrupts = <37 1>;
-		status = "disabled";
 		clk-source = <3>;
 		clocks = <&syscon MCUX_CTIMER4_CLK>;
 		mode = <0>;
 		input = <0>;
 		prescale = <0>;
 		zephyr,disabling-power-states = <&suspend &standby>;
+		status = "disabled";
 	};
 
 	sc_timer: pwm@85000 {
 		compatible = "nxp,sctimer-pwm";
 		reg = <0x85000 0x1000>;
 		interrupts = <12 1>;
-		status = "disabled";
 		clocks = <&syscon MCUX_SCTIMER_CLK>;
 		prescaler = <2>;
-		zephyr,disabling-power-states = <&suspend &standby>;
 		#pwm-cells = <3>;
+		zephyr,disabling-power-states = <&suspend &standby>;
+		status = "disabled";
 	};
 
 	os_timer: timers@2d000 {
@@ -331,8 +331,8 @@
 		resets = <&reset NXP_SYSCON_RESET(1, 12)>;
 		dmas = <&dma0 6 &dma0 7>;
 		dma-names = "rx", "tx";
-		zephyr,disabling-power-states = <&suspend &standby>;
 		power-domains = <&standby_off_domain>;
+		zephyr,disabling-power-states = <&suspend &standby>;
 		status = "disabled";
 	};
 
@@ -344,16 +344,16 @@
 		resets = <&reset NXP_SYSCON_RESET(1, 13)>;
 		dmas = <&dma0 8 &dma0 9>;
 		dma-names = "rx", "tx";
-		zephyr,disabling-power-states = <&suspend &standby>;
 		power-domains = <&standby_off_domain>;
+		zephyr,disabling-power-states = <&suspend &standby>;
 		status = "disabled";
 	};
 
 	trng: random@3a000 {
 		compatible = "nxp,kinetis-trng";
 		reg = <0x3a000 0x1000>;
-		status = "okay";
 		interrupts = <53 1>;
+		status = "okay";
 	};
 
 	dma0: dma-controller@82000 {
@@ -361,10 +361,10 @@
 		reg = <0x82000 0x1000>;
 		interrupts = <1 1>;
 		dma-channels = <23>;
-		zephyr,disabling-power-states = <&suspend &standby>;
 		power-domains = <&standby_off_domain>;
-		status = "disabled";
 		#dma-cells = <1>;
+		zephyr,disabling-power-states = <&suspend &standby>;
+		status = "disabled";
 	};
 
 	dma1: dma-controller@a7000 {
@@ -372,10 +372,10 @@
 		reg = <0xa7000 0x1000>;
 		interrupts = <58 1>;
 		dma-channels = <10>;
-		zephyr,disabling-power-states = <&suspend &standby>;
 		power-domains = <&standby_off_domain>;
-		status = "disabled";
 		#dma-cells = <1>;
+		zephyr,disabling-power-states = <&suspend &standby>;
+		status = "disabled";
 	};
 
 	wwdt0: watchdog@c000 {
@@ -383,8 +383,8 @@
 		reg = <0xc000 0x1000>;
 		clocks = <&syscon MCUX_WWDT0_CLK>;
 		interrupts = <0 1>;
-		status = "disabled";
 		clk-divider = <1>;
+		status = "disabled";
 	};
 
 	hci: hci_ble {
