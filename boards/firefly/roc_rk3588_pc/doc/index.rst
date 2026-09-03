@@ -26,9 +26,9 @@ it provides 6Tops computing power. Zephyr OS is ported to run on it.
     - Supports BT 5.0
   - Display:
 
-    - HDMI 2.1 (8K@60fps)
-    - HDMI 2.0 (4K@60fps)
-    - DP 1.4 (8K@30fps)
+    - HDMI 2.1 (8K at 60 fps)
+    - HDMI 2.0 (4K at 60 fps)
+    - DP 1.4 (8K at 30 fps)
   - USB:
 
     - Two USB 3.0
