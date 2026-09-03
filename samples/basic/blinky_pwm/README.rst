@@ -59,6 +59,8 @@ In these other cases, however, manual wiring is necessary:
      - connect GPIO2 to an LED
    * - :zephyr:board:`esp32c3_devkitm`
      - connect GPIO2 to an LED
+   * - :zephyr:board:`imx943_evk`
+     - connect PWM6 (J47-6) to an LED
 
 Building and Running
 ********************
