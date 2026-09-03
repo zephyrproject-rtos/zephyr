@@ -1496,7 +1496,8 @@ int insert_option(struct coap_packet *cpkt, uint16_t code, const uint8_t *value,
 
 static int update_descriptive_block(struct coap_block_context *ctx,
 				    const struct coap_packet *cpkt,
-				    uint16_t block_code, uint16_t size_code)
+				    uint16_t block_code, uint16_t size_code,
+				    bool allow_bert)
 {
 	size_t new_current;
 	size_t total_size = 0;
@@ -1508,6 +1509,13 @@ static int update_descriptive_block(struct coap_block_context *ctx,
 	}
 
 	if (GET_NUM(block) > MAX_BLOCK_NUM) {
+		return -EINVAL;
+	}
+
+	/* RFC 7959, section 2.2: SZX value 7 is reserved outside reliable
+	 * transports and leads to a 4.00 Bad Request response.
+	 */
+	if (!allow_bert && GET_BLOCK_SIZE(block) == COAP_BLOCK_BERT) {
 		return -EINVAL;
 	}
 
@@ -1553,6 +1561,13 @@ static int update_control_block1(struct coap_block_context *ctx,
 		return -EINVAL;
 	}
 
+	/* RFC 7959, section 2.2: SZX value 7 is reserved outside reliable
+	 * transports and leads to a 4.00 Bad Request response.
+	 */
+	if (GET_BLOCK_SIZE(block) == COAP_BLOCK_BERT) {
+		return -EINVAL;
+	}
+
 	new_current = GET_NUM(block) << (GET_BLOCK_SIZE(block) + 4);
 	if (new_current != ctx->current) {
 		return -EINVAL;
@@ -1585,6 +1600,13 @@ static int update_control_block2(struct coap_block_context *ctx,
 		return -EINVAL;
 	}
 
+	/* RFC 7959, section 2.2: SZX value 7 is reserved outside reliable
+	 * transports and leads to a 4.00 Bad Request response.
+	 */
+	if (GET_BLOCK_SIZE(block) == COAP_BLOCK_BERT) {
+		return -EINVAL;
+	}
+
 	new_current = GET_NUM(block) << (GET_BLOCK_SIZE(block) + 4);
 
 	/* RFC 7959, section 2.4: the M bit has no function in a Block2 request
@@ -1612,7 +1634,8 @@ int coap_update_from_block(const struct coap_packet *cpkt,
 			return r;
 		}
 
-		return update_descriptive_block(ctx, cpkt, COAP_OPTION_BLOCK1, COAP_OPTION_SIZE1);
+		return update_descriptive_block(ctx, cpkt, COAP_OPTION_BLOCK1, COAP_OPTION_SIZE1,
+						false);
 	}
 
 	r = update_control_block1(ctx, cpkt);
@@ -1620,7 +1643,8 @@ int coap_update_from_block(const struct coap_packet *cpkt,
 		return r;
 	}
 
-	return update_descriptive_block(ctx, cpkt, COAP_OPTION_BLOCK2, COAP_OPTION_SIZE2);
+	return update_descriptive_block(ctx, cpkt, COAP_OPTION_BLOCK2, COAP_OPTION_SIZE2,
+					false);
 }
 
 int coap_next_block_for_option(const struct coap_packet *cpkt,
@@ -2630,7 +2654,8 @@ int coap_tcp_update_from_block(const struct coap_packet *cpkt,
 			return r;
 		}
 
-		return update_descriptive_block(ctx, cpkt, COAP_OPTION_BLOCK1, COAP_OPTION_SIZE1);
+		return update_descriptive_block(ctx, cpkt, COAP_OPTION_BLOCK1, COAP_OPTION_SIZE1,
+						true);
 	}
 
 	r = update_control_block1_tcp(ctx, cpkt);
@@ -2638,7 +2663,8 @@ int coap_tcp_update_from_block(const struct coap_packet *cpkt,
 		return r;
 	}
 
-	return update_descriptive_block(ctx, cpkt, COAP_OPTION_BLOCK2, COAP_OPTION_SIZE2);
+	return update_descriptive_block(ctx, cpkt, COAP_OPTION_BLOCK2, COAP_OPTION_SIZE2,
+					true);
 }
 
 static int coap_tcp_next_block_for_option(const struct coap_packet *cpkt,

@@ -1141,6 +1141,34 @@ static ssize_t z_impl_zsock_recvfrom_custom_fake_truncated(int sock, void *buf, 
 	return max_len + 1;
 }
 
+/* Piggybacked block2 response with the reserved SZX value 7 (BERT) */
+static ssize_t z_impl_zsock_recvfrom_custom_fake_block2_bert(int sock, void *buf, size_t max_len,
+							     int flags,
+							     struct net_sockaddr *src_addr,
+							     net_socklen_t *addrlen)
+{
+	struct coap_packet response;
+	uint8_t token[COAP_TOKEN_MAX_LEN] = {0};
+	uint8_t payload[16];
+	uint16_t message_id = get_next_pending_message_id();
+
+	memset(payload, 'B', sizeof(payload));
+
+	zassert_ok(coap_packet_init(&response, buf, max_len, COAP_VERSION_1, COAP_TYPE_ACK,
+				    COAP_TOKEN_MAX_LEN, token, COAP_RESPONSE_CODE_CONTENT,
+				    message_id));
+	zassert_ok(coap_append_option_int(&response, COAP_OPTION_BLOCK2,
+					  BIT(3) | COAP_BLOCK_BERT));
+	zassert_ok(coap_packet_append_payload_marker(&response));
+	zassert_ok(coap_packet_append_payload(&response, payload, sizeof(payload)));
+
+	restore_token(buf);
+	fill_recv_src_addr(src_addr, addrlen);
+	clear_socket_events(sock, ZSOCK_POLLIN);
+
+	return response.offset;
+}
+
 void coap_callback(const struct coap_client_response_data *data, void *user_data)
 {
 	LOG_INF("CoAP response callback, %d", data->result_code);
@@ -1447,6 +1475,19 @@ ZTEST(coap_client, test_blockwise_recv_etag_lost)
 	zassert_equal(block2_serve_cnt, 2, "No further blocks should be requested");
 }
 
+ZTEST(coap_client, test_blockwise_bert_response_fails)
+{
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_block2_bert;
+
+	zassert_ok(coap_client_req(&client, 0, net_sad(&dst_address), &short_request, NULL));
+
+	/* RFC 7959, section 2.2: SZX value 7 is reserved over UDP; the
+	 * exchange fails instead of the payload reaching the application.
+	 */
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, -EINVAL, "Unexpected response");
+}
+
 ZTEST(coap_client, test_resend_request)
 {
 	ssize_t (*sendto_fakes[])(int, void *, size_t, int, const struct net_sockaddr *,
@@ -1537,6 +1578,65 @@ ZTEST(coap_client, test_blockwise_upload_no_stray_block2)
 		zassert_equal(sent_upload_block2_opts[i], -ENOENT,
 			      "Request %d must not carry block2", i);
 	}
+}
+
+static int combined_block1;
+
+static ssize_t z_impl_zsock_sendto_custom_fake_record_block1(int sock, void *buf, size_t len,
+							     int flags,
+							     const struct net_sockaddr *dest_addr,
+							     net_socklen_t addrlen)
+{
+	struct coap_packet req = {0};
+
+	zassert_ok(coap_packet_parse(&req, buf, len, NULL, 0));
+	combined_block1 = coap_get_option_int(&req, COAP_OPTION_BLOCK1);
+
+	return z_impl_zsock_sendto_custom_fake(sock, buf, len, flags, dest_addr, addrlen);
+}
+
+/* Answer the last block of an upload with a 2.04 carrying both the Block1
+ * option and a Block2 option for a single-block response.
+ */
+static ssize_t z_impl_zsock_recvfrom_custom_fake_combined(int sock, void *buf, size_t max_len,
+							  int flags, struct net_sockaddr *src_addr,
+							  net_socklen_t *addrlen)
+{
+	static const uint8_t payload[] = "done";
+	uint8_t token[COAP_TOKEN_MAX_LEN] = {0};
+	struct coap_packet pkt;
+
+	if (GET_MORE(combined_block1)) {
+		return z_impl_zsock_recvfrom_custom_fake(sock, buf, max_len, flags, src_addr,
+							 addrlen);
+	}
+
+	zassert_ok(coap_packet_init(&pkt, buf, max_len, 1, COAP_TYPE_ACK, COAP_TOKEN_MAX_LEN,
+				    token, COAP_RESPONSE_CODE_CHANGED,
+				    get_next_pending_message_id()));
+	zassert_ok(coap_append_option_int(&pkt, COAP_OPTION_BLOCK2, COAP_BLOCK_256));
+	zassert_ok(coap_append_option_int(&pkt, COAP_OPTION_BLOCK1, combined_block1));
+	zassert_ok(coap_packet_append_payload_marker(&pkt));
+	zassert_ok(coap_packet_append_payload(&pkt, payload, sizeof(payload) - 1));
+	restore_token(buf);
+
+	fill_recv_src_addr(src_addr, addrlen);
+	clear_socket_events(sock, ZSOCK_POLLIN);
+
+	return pkt.offset;
+}
+
+ZTEST(coap_client, test_blockwise_upload_combined_block2)
+{
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_record_block1;
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_combined;
+
+	zassert_ok(coap_client_req(&client, 0, net_sad(&dst_address), &long_request, NULL));
+
+	k_sleep(K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS));
+	zassert_true(GET_BLOCK_NUM(combined_block1) > 0, "Payload must span several blocks");
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CHANGED, "Unexpected response (%d)",
+		      last_response_code);
 }
 
 ZTEST(coap_client, test_no_response)
