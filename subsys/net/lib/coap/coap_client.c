@@ -99,6 +99,7 @@ static int receive(int sock, void *buf, size_t max_len, int flags,
 static void reset_internal_request(struct coap_client_internal_request *request)
 {
 	*request = (struct coap_client_internal_request){
+		.last_observe_seq = -1,
 		.last_response_id = -1,
 	};
 }
@@ -1290,6 +1291,32 @@ static int handle_response(struct coap_client *client, const struct net_sockaddr
 
 	if (internal_req->pending.timeout != 0) {
 		coap_pending_clear(&internal_req->pending);
+	}
+
+	/* RFC 7641, section 3.4: the notification sent most recently is the
+	 * freshest, regardless of arrival order. Drop a notification whose
+	 * Observe sequence number is not newer than the last accepted one,
+	 * unless more than 128 seconds passed since that one arrived. A CON
+	 * notification was already acknowledged at the message layer. Block2
+	 * continuations of an accepted notification carry no Observe option
+	 * per RFC 7959, section 2.6; one echoed there anyway must not stall
+	 * the transfer.
+	 */
+	if (internal_req->is_observe) {
+		int seq = coap_get_option_int(response, COAP_OPTION_OBSERVE);
+		int block2 = coap_get_option_int(response, COAP_OPTION_BLOCK2);
+		int64_t now = k_uptime_get();
+
+		if (seq >= 0 && (block2 < 0 || GET_BLOCK_NUM(block2) == 0)) {
+			if (internal_req->last_observe_seq >= 0 &&
+			    !coap_age_is_newer(internal_req->last_observe_seq, seq) &&
+			    (now - internal_req->last_observe_at) <= 128 * MSEC_PER_SEC) {
+				LOG_DBG("Dropping reordered observe notification");
+				return 0;
+			}
+			internal_req->last_observe_seq = seq;
+			internal_req->last_observe_at = now;
+		}
 	}
 
 #if defined(CONFIG_COAP_CLIENT_MULTICAST)

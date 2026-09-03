@@ -84,7 +84,6 @@ static uint8_t data_buf[2][COAP_BUF_SIZE];
 #define COAP_MAX_AGE      0xffffff
 #define COAP_FIRST_AGE    2
 
-extern bool coap_age_is_newer(int v1, int v2);
 
 ZTEST(coap, test_build_empty_pdu)
 {

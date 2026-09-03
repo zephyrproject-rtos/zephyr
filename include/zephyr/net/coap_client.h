@@ -195,6 +195,10 @@ struct coap_client_internal_request {
 
 	/* For GETs with observe option set */
 	bool is_observe;
+	/* Observe option value of the freshest accepted notification, < 0 if none */
+	int last_observe_seq;
+	/* Uptime at which the freshest notification was accepted */
+	int64_t last_observe_at;
 	int last_response_id;
 #if defined(CONFIG_COAP_CLIENT_MULTICAST)
 	bool is_mcast;
