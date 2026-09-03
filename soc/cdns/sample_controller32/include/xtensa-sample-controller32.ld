@@ -446,6 +446,9 @@ SECTIONS
     *(.rodata.*)
     *(.gnu.linkonce.r.*)
     *(.rodata1)
+#if defined(CONFIG_XTENSA_LIBC)
+    *(.clib.rodata)
+#endif
 
     . = ALIGN(4);
     #include <snippets-rodata.ld>
@@ -507,6 +510,10 @@ SECTIONS
     #include <snippets-rwdata.ld>
     . = ALIGN(4);
 
+#if defined(CONFIG_XTENSA_LIBC)
+    *(.clib.data)
+#endif
+
     MPU_SEGMENT_SIZE_ALIGN
 
     __data_end = ABSOLUTE(.);
@@ -540,6 +547,10 @@ SECTIONS
     *(.gnu.linkonce.b.*)
     *(COMMON)
     *(.sram.bss)
+#if defined(CONFIG_XTENSA_LIBC)
+    *(.clib.bss)
+    *(.clib.percpu.bss)
+#endif
     . = ALIGN (8);
     _bss_end = ABSOLUTE(.);
 
