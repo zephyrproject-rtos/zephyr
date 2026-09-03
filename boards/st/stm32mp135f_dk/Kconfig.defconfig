@@ -15,4 +15,10 @@ endif # GPIO_MCP230XX
 configdefault ETH_DRIVER
 	default y
 
+configdefault NET_IF_MAX_IPV4_COUNT
+	default 2
+
+configdefault NET_IF_MAX_IPV6_COUNT
+	default 2
+
 endif # BOARD_STM32MP135F_DK
