@@ -16,6 +16,7 @@ tests:
       - nrf7120dk/nrf7120/cpuapp
     integration_platforms:
       - nrf5340bsim/nrf5340/cpuapp
+      - frdm_mcxl255/mcxl255/cpu0
     harness: console
     harness_config:
       type: multi_line
