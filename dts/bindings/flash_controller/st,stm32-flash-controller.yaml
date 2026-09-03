@@ -16,24 +16,26 @@ properties:
       RDP1 is enabled by comparing it to some hardcoded value. The byte has to
       be different than 0xAA and 0xCC.
 
-  st,supply-microvolt:
+  st,flash-latency:
     type: int
     description: |
-      Actual board VDD supply to the MCU, in microvolts. Must be the
-      minimum VDD over tolerance and ripple, not the nominal value -- the
-      wait-state table provided in the SoC reference manual is only safe
-      at the worst-case (lowest) voltage the board can see. Optional:
-      when absent, flash wait-states are computed from VOS alone.
+      Flash wait-state (LATENCY) count to program directly into the flash
+      controller's access control register, bypassing the vendor VOS-only
+      LL_SetFlashLatency() helper. Optional: when absent, flash wait-states
+      are computed from VOS alone as before (unchanged behavior).
 
-      Only supported on STM32F405xx/407xx/415xx/417xx, where it is used to
-      compute wait-states as per RM0090's voltage-banded table (Rev 21,
-      Table 11: HCLK and actual VDD, not VOS) for applicable products. The
-      value must match constraints defined in the reference manual: must
-      be 2100000 (2.1V) or higher when CONFIG_STM32_FLASH_PREFETCH is
-      enabled, since Table 11's 1.8-2.1V column is characterized by ST
-      only with the flash prefetch buffer disabled (RM0090 Section
-      3.5.1). Other series currently ignore this property if set.
+      Currently only consumed on the STM32F4 series (other series ignore
+      this property if set). No build-time validation is performed against
+      HCLK or supply voltage: the board author is expected to have already
+      consulted their exact part's reference manual wait-state table for
+      the correct value given their actual HCLK and VDD. Consult that
+      table before setting this -- e.g. some parts only characterize their
+      lowest voltage bands with the flash prefetch buffer disabled (see
+      e.g. RM0090 Section 3.5.1 for STM32F405xx/407xx/415xx/417xx);
+      CONFIG_STM32_FLASH_PREFETCH is not touched by this property.
 
-      Useful for boards that run below the nominal 2.7-3.6V range by
-      design (e.g. level-shifted to match a companion SoC's logic level),
-      where VOS alone cannot express the actual latency requirement.
+      Useful for boards that run below the nominal voltage range VOS alone
+      assumes (e.g. level-shifted to match a companion SoC's logic level),
+      where the vendor helper cannot express the actual latency
+      requirement, or more generally whenever the reference manual's
+      wait-state table cannot be reduced to a VOS-only computation.
