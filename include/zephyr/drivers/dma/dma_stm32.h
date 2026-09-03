@@ -121,7 +121,6 @@
 #endif
 /** @endcond */
 
-#ifndef CONFIG_STM32_HAL2
 /** @cond INTERNAL_HIDDEN */
 /**
  * @brief Convert Zephyr DMA configuration to STM32 HAL DMA init structure.
@@ -146,10 +145,36 @@
  * @retval -EINVAL if parameters are invalid or the configuration is inconsistent
  * @retval -ENOTSUP if the configuration cannot be represented with STM32 HAL DMA
  */
-int dma_stm32_zcfg_to_halcfg(const struct device *dma, const struct dma_config *zephyr_config,
-			     DMA_InitTypeDef *hal_config, uint16_t source_addr_adj,
-			     uint16_t dest_addr_adj);
-/** @endcond */
+int dma_stm32_zcfg_to_hal1cfg(const struct device *dma, const struct dma_config *zephyr_config,
+			      DMA_InitTypeDef *hal_config, uint16_t source_addr_adj,
+			      uint16_t dest_addr_adj);
+
+/**
+ * @brief Convert Zephyr DMA configuration to STM32 HAL DMA init structure.
+ *
+ * Works as @a dma_stm32_zcfg_to_hal1cfg() but for HAL2 consumer drivers.
+ *
+ * @warning This function is PRIVATE and intended for STM32 drivers only.  No
+ * guarantee is provided to any external caller.
+ *
+ * @param dma Pointer to the DMA device structure
+ * @param zephyr_config Pointer to Zephyr DMA configuration
+ * @param hdma Pointer to HAL DMA handle structure
+ * @param source_addr_adj Source address adjustment option
+ * @param dest_addr_adj Destination address adjustment option
+ *
+ * @retval 0 on success
+ * @retval -EINVAL if parameters are invalid or the configuration is inconsistent
+ * @retval -ENOTSUP if the configuration cannot be represented with STM32 HAL DMA
+ */
+int dma_stm32_zcfg_to_hal2cfg(const struct device *dma, const struct dma_config *zephyr_config,
+			      hal_dma_handle_t *hdma, uint16_t source_addr_adj,
+			      uint16_t dest_addr_adj);
+#ifdef CONFIG_STM32_HAL2
+#define dma_stm32_zcfg_to_halcfg	dma_stm32_zcfg_to_hal2cfg
+#else
+#define dma_stm32_zcfg_to_halcfg	dma_stm32_zcfg_to_hal1cfg
 #endif /* CONFIG_STM32_HAL2 */
+/** @endcond */
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_DMA_DMA_STM32_H_ */
