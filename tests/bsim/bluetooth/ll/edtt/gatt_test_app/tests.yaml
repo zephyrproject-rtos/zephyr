@@ -9,7 +9,7 @@ common:
     - nrf54l15bsim/nrf54l15/cpuapp
   harness: bsim
 tests:
-  bluetooth.ll.edtt.gatt_test_app:
+  bluetooth.controller.edtt.gatt_test_app:
     harness_config:
       fixture: bsim_multi_test
       bsim_exe_name: tests_bsim_bluetooth_ll_edtt_gatt_test_app_prj_llcp_conf
@@ -18,5 +18,5 @@ tests:
     extra_args:
       CONF_FILE=prj_llcp.conf
     required_applications:
-      - application: bluetooth.ll.edtt.hci_test_app.dut
+      - application: bluetooth.controller.edtt.hci_test_app.dut
         path: ../hci_test_app
