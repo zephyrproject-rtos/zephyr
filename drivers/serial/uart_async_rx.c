@@ -83,7 +83,7 @@ size_t uart_async_rx_data_claim(struct uart_async_rx *rx_data, uint8_t **data, s
 	struct uart_async_rx_buf *buf;
 	int rem;
 
-	if ((rx_data->pending_bytes == 0) || (length == 0)) {
+	if (length == 0) {
 		return 0;
 	}
 
@@ -98,6 +98,10 @@ size_t uart_async_rx_data_claim(struct uart_async_rx *rx_data, uint8_t **data, s
 			break;
 		}
 	} while (1);
+
+	if (rx_data->pending_bytes == 0) {
+		return 0;
+	}
 
 	*data = &buf->buffer[rx_data->rd_idx];
 	rem = buf->wr_idx - rx_data->rd_idx;
