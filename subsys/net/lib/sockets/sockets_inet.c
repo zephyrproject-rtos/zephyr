@@ -53,6 +53,38 @@ static void zsock_received_cb(struct net_context *ctx,
 			      int status,
 			      void *user_data);
 
+#if CONFIG_NET_SOCKETS_RECV_QUEUE_LIMIT > 0
+/* Only drops once the pool is low */
+static bool recv_queue_should_drop(struct net_context *ctx)
+{
+	struct k_mem_slab *rx_slab, *tx_slab;
+	struct net_buf_pool *rx_data, *tx_data;
+	sys_sfnode_t *node;
+	int depth = 0;
+	bool over_limit = false;
+
+	net_pkt_get_info(&rx_slab, &tx_slab, &rx_data, &tx_data);
+
+	if (k_mem_slab_num_free_get(rx_slab) > CONFIG_NET_SOCKETS_RECV_QUEUE_RESERVE) {
+		return false;
+	}
+
+	/* Must hold the scheduler, the reader pops from this same list */
+	k_sched_lock();
+	SYS_SFLIST_FOR_EACH_NODE(&ctx->recv_q._queue.data_q, node) {
+		depth++;
+
+		if (depth >= CONFIG_NET_SOCKETS_RECV_QUEUE_LIMIT) {
+			over_limit = true;
+			break;
+		}
+	}
+	k_sched_unlock();
+
+	return over_limit;
+}
+#endif
+
 static int fifo_wait_non_empty(struct k_fifo *fifo, k_timeout_t timeout)
 {
 	struct k_poll_event events[] = {
@@ -276,6 +308,20 @@ static void zsock_received_cb(struct net_context *ctx,
 	net_pkt_set_eof(pkt, false);
 
 	net_pkt_set_rx_stats_tick(pkt, k_cycle_get_32());
+
+#if CONFIG_NET_SOCKETS_RECV_QUEUE_LIMIT > 0
+	if (recv_queue_should_drop(ctx)) {
+		NET_WARN("ctx=%p at the receive queue limit with the RX pool low, dropping pkt=%p",
+			 ctx, pkt);
+		if (net_context_get_proto(ctx) == IPPROTO_TCP) {
+			net_stats_update_tcp_drop(net_pkt_iface(pkt));
+		} else {
+			net_stats_update_udp_drop(net_pkt_iface(pkt));
+		}
+		net_pkt_unref(pkt);
+		goto unlock;
+	}
+#endif
 
 	k_fifo_put(&ctx->recv_q, pkt);
 

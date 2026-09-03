@@ -457,4 +457,19 @@ config NET_SOCKETS_OBJ_CORE
 	  The net-shell "net sockets" command will use this functionality
 	  to show the socket information.
 
+config NET_SOCKETS_RECV_QUEUE_LIMIT
+	int "Maximum packets queued on a single socket receive queue (0 = unlimited)"
+	default 0
+	help
+	  Bound how many packets one socket can hold, so a stalled reader cannot
+	  absorb every buffer in the global net_pkt pool. 0 is unbounded.
+
+config NET_SOCKETS_RECV_QUEUE_RESERVE
+	int "Free RX packets below which the per-socket limit is enforced"
+	default 10
+	depends on NET_SOCKETS_RECV_QUEUE_LIMIT > 0
+	help
+	  The limit is only applied once free RX buffers fall below this, so a system
+	  that is not short of buffers behaves as it does without it.
+
 endif # NET_SOCKETS
