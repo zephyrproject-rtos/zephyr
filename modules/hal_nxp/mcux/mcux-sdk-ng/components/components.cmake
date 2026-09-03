@@ -16,6 +16,12 @@ if(CONFIG_NXP_FW_LOADER AND NOT CONFIG_BUILD_WITH_TFM)
   set(CONFIG_USE_component_osa_zephyr ON)
 endif()
 
+if(CONFIG_SD_DEV_RW6XX_SDIO)
+  set(CONFIG_MCUX_COMPONENT_component.sdio_dev ON)
+  set(CONFIG_USE_component_osa_zephyr ON)
+  zephyr_compile_definitions(OSA_USED=1U)
+endif()
+
 if(${MCUX_DEVICE} MATCHES "RW61")
   set(CONFIG_USE_component_osa_zephyr ON)
   if(CONFIG_NXP_FW_LOADER)
@@ -32,6 +38,12 @@ endif()
 
 if(CONFIG_USB_DEVICE_DRIVER OR CONFIG_UDC_DRIVER OR CONFIG_UHC_DRIVER OR CONFIG_BT)
   set(CONFIG_USE_component_osa_zephyr ON)
+endif()
+
+if(CONFIG_SD_DEV_RW6XX_SDIO)
+  set(CONFIG_MCUX_COMPONENT_component.sdio_dev ON)
+  set(CONFIG_USE_component_osa_zephyr ON)
+  zephyr_compile_definitions(OSA_USED=1U)
 endif()
 
 if(CONFIG_NXP_RF_IMU)
@@ -97,6 +109,12 @@ add_subdirectory(${MCUX_SDK_NG_DIR}/components/rpmsg
 add_subdirectory(${MCUX_SDK_NG_DIR}/components/imu_adapter
   ${CMAKE_CURRENT_BINARY_DIR}/imu_adapter
   )
+
+if(CONFIG_SD_DEV_RW6XX_SDIO)
+  add_subdirectory(${MCUX_SDK_NG_DIR}/components/sdio_dev
+    ${CMAKE_CURRENT_BINARY_DIR}/sdio_dev
+  )
+endif()
 
 if(${MCUX_DEVICE} MATCHES "RW61")
   add_subdirectory(${MCUX_SDK_NG_DIR}/components/flash/mflash/rdrw612bga
