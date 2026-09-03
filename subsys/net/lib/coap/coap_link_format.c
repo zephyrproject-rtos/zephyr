@@ -322,7 +322,8 @@ static int format_attributes(const char * const *attributes,
 	}
 
 	for (attr = attributes; *attr; attr++) {
-		int attr_len;
+		size_t attr_len;
+		size_t attr_offset;
 
 		res = append_to_coap_pkt(response, ";", 1,
 					 remaining, offset, current);
@@ -336,11 +337,22 @@ static int format_attributes(const char * const *attributes,
 		}
 
 		attr_len = strlen(*attr);
+		attr_offset = *offset;
 
 		res = append_to_coap_pkt(response, *attr, attr_len,
 					 remaining, offset, current);
 		if (!res) {
 			return -ENOMEM;
+		}
+
+		/* The offset advances by less than the attribute length only
+		 * when the attribute was cut short by the block boundary. The
+		 * remainder belongs in the next block, even when this is the
+		 * last attribute of the last resource.
+		 */
+		if (*offset - attr_offset < attr_len) {
+			*more = true;
+			return 0;
 		}
 
 		if (*(attr + 1) && !*remaining) {
