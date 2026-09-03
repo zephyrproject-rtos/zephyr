@@ -44,6 +44,9 @@ extern "C" {
  * Applications can register a callback function (see @ref haptics_register_error_callback()) to
  * handle or recover from error states. The following error types are used to construct a bitmask
  * provided to the application layer at run-time (see @ref haptics_error_callback_t).
+ *
+ * @attention Device-specific error codes must be distinct bit flags continuing from
+ * HAPTICS_ERROR_PRIV_START, e.g., BIT(5), BIT(6), and so forth.
  */
 enum haptics_error_type {
 	HAPTICS_ERROR_OVERCURRENT = BIT(0),     /**< Output overcurrent error */
