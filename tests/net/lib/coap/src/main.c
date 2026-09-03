@@ -84,7 +84,6 @@ static uint8_t data_buf[2][COAP_BUF_SIZE];
 #define COAP_MAX_AGE      0xffffff
 #define COAP_FIRST_AGE    2
 
-extern bool coap_age_is_newer(int v1, int v2);
 
 ZTEST(coap, test_build_empty_pdu)
 {
@@ -2501,6 +2500,40 @@ ZTEST(coap, test_response_matching)
 					response - test_responses, match - matches);
 		}
 	}
+}
+
+static int observe_reply_cnt;
+
+static int count_observe_reply(const struct coap_packet *response, struct coap_reply *reply,
+			       const struct net_sockaddr *from)
+{
+	observe_reply_cnt++;
+
+	return 0;
+}
+
+/* Any first Observe value is accepted, also one at or above 2^23 */
+ZTEST(coap, test_response_first_observe_value)
+{
+	static const uint8_t token[] = {1, 2, 3, 4};
+	struct net_sockaddr from = {0};
+	struct coap_packet req, rsp;
+	struct coap_reply reply = {0};
+	uint8_t req_buf[32], rsp_buf[32];
+
+	zassert_ok(coap_packet_init(&req, req_buf, sizeof(req_buf), COAP_VERSION_1,
+				    COAP_TYPE_CON, sizeof(token), token, COAP_METHOD_GET, 0x1234));
+	coap_reply_init(&reply, &req);
+	reply.reply = count_observe_reply;
+
+	zassert_ok(coap_packet_init(&rsp, rsp_buf, sizeof(rsp_buf), COAP_VERSION_1,
+				    COAP_TYPE_NON_CON, sizeof(token), token,
+				    COAP_RESPONSE_CODE_CONTENT, 0x5678));
+	zassert_ok(coap_append_option_int(&rsp, COAP_OPTION_OBSERVE, 0x800000));
+
+	observe_reply_cnt = 0;
+	zassert_not_null(coap_response_received(&rsp, &from, &reply, 1));
+	zassert_equal(observe_reply_cnt, 1, "First notification dropped");
 }
 
 ZTEST_SUITE(coap, NULL, NULL, NULL, NULL, NULL);

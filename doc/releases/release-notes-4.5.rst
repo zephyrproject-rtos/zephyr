@@ -913,6 +913,8 @@ New APIs and options
     context is active without reading the context internals.
   * Add :c:func:`coap_client_reregister_observe` to refresh an ongoing CoAP
     observation (:rfc:`7641` re-registration) without tearing it down.
+  * Add :c:func:`coap_age_is_newer` to compare CoAP Observe option values for
+    freshness (:rfc:`7641#section-3.4`).
   * :c:func:`net_config_init_clock_via_sntp` to set system clock via SNTP.
   * :c:func:`net_config_sntp_set_server`
 
