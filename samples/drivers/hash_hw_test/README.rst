@@ -1,8 +1,8 @@
 Hash HW Functional + Performance sample
 #######################################
 
-This sample validates SHA-256 correctness and prints simple throughput metrics
-on Zephyr crypto hash drivers.
+This sample validates SHA-256 and, when supported by the selected crypto
+driver, SHA3-512 correctness and prints simple throughput metrics.
 
 What it does
 ************
@@ -12,9 +12,11 @@ What it does
   - SHA-256("abc")
   - SHA-256(64 x 'a') - exactly one full 512-bit block, forcing padding into
     a second block
+  - SHA3-512("abc") and SHA3-512(64 x 'a')
 - Performance checks:
   - Benchmarks SHA-256 at message sizes 64, 256, 1024, 4096, 16384 and 65536
     bytes (with a matching loop count per size, decreasing as the size grows)
+  - Benchmarks SHA3-512 at the same message sizes when supported
   - Each benchmark case prints total cycles, cycles/byte (``cpb``),
     throughput in MB/s and CPU load (``CPU=%``, via ``cpu_load_get()``)
 
@@ -27,10 +29,13 @@ Build for STM32MP135F-DK
 
 Then flash/run with your usual board flow (``west flash`` or board-specific boot).
 
-On STM32MP13, the driver processes SHA-224/SHA-256 in interrupt mode: the
-calling thread blocks on a semaphore given from the HASH ISR instead of
+On STM32MP13, the driver processes SHA-224/SHA-256 and fixed-size SHA-3 in
+interrupt mode: the calling thread blocks on a semaphore given from the HASH ISR instead of
 busy-polling status registers, freeing the CPU while the peripheral
 computes the digest.
+
+SHA3-512 checks are reported as skipped when the selected backend does not
+support the algorithm.
 
 Compare HW vs SW
 ****************

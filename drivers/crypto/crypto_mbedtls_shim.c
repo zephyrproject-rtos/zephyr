@@ -431,6 +431,26 @@ static int mbedtls_hash_session_setup(const struct device *dev,
 		session->psa_alg = PSA_ALG_SHA_512;
 		break;
 #endif
+#if CONFIG_PSA_WANT_ALG_SHA3_224
+	case CRYPTO_HASH_ALGO_SHA3_224:
+		session->psa_alg = PSA_ALG_SHA3_224;
+		break;
+#endif
+#if CONFIG_PSA_WANT_ALG_SHA3_256
+	case CRYPTO_HASH_ALGO_SHA3_256:
+		session->psa_alg = PSA_ALG_SHA3_256;
+		break;
+#endif
+#if CONFIG_PSA_WANT_ALG_SHA3_384
+	case CRYPTO_HASH_ALGO_SHA3_384:
+		session->psa_alg = PSA_ALG_SHA3_384;
+		break;
+#endif
+#if CONFIG_PSA_WANT_ALG_SHA3_512
+	case CRYPTO_HASH_ALGO_SHA3_512:
+		session->psa_alg = PSA_ALG_SHA3_512;
+		break;
+#endif
 	default:
 		LOG_ERR("Unsupported algo: %d", algo);
 		mbedtls_free_session(session);

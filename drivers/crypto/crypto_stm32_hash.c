@@ -27,6 +27,11 @@ LOG_MODULE_REGISTER(crypto_stm32_hash);
 static void stm32_hash_isr(const struct device *dev);
 #endif
 
+#if !defined(CONFIG_STM32_HAL2) && defined(CONFIG_SOC_SERIES_STM32MP13X) && \
+	DT_INST_PROP(0, st_has_sha3_algorithm)
+#define STM32_HASH_USE_SHA3
+#endif
+
 static struct crypto_stm32_hash_session stm32_hash_sessions[CONFIG_CRYPTO_STM32_HASH_MAX_SESSIONS];
 
 static int crypto_stm32_hash_get_unused_session_index(const struct device *dev)
@@ -151,15 +156,46 @@ static int stm32_hash_handler(struct hash_ctx *ctx, struct hash_pkt *pkt, bool f
 #else /* CONFIG_STM32_HAL2 */
 #if defined(STM32_HASH_USE_IT)
 	if ((session->algo == CRYPTO_HASH_ALGO_SHA224) ||
-	    (session->algo == CRYPTO_HASH_ALGO_SHA256)) {
+	    (session->algo == CRYPTO_HASH_ALGO_SHA256)
+#if defined(STM32_HASH_USE_SHA3)
+	    || (session->algo == CRYPTO_HASH_ALGO_SHA3_224) ||
+	    (session->algo == CRYPTO_HASH_ALGO_SHA3_256) ||
+	    (session->algo == CRYPTO_HASH_ALGO_SHA3_384) ||
+	    (session->algo == CRYPTO_HASH_ALGO_SHA3_512)
+#endif /* STM32_HASH_USE_SHA3 */
+	) {
 		k_sem_reset(&data->complete_sem);
 
-		if (session->algo == CRYPTO_HASH_ALGO_SHA224) {
+		switch (session->algo) {
+		case CRYPTO_HASH_ALGO_SHA224:
 			status = HAL_HASHEx_SHA224_Start_IT(&data->hhash, pkt->in_buf, pkt->in_len,
 							    pkt->out_buf);
-		} else {
+			break;
+		case CRYPTO_HASH_ALGO_SHA256:
 			status = HAL_HASHEx_SHA256_Start_IT(&data->hhash, pkt->in_buf, pkt->in_len,
 							    pkt->out_buf);
+			break;
+#if defined(STM32_HASH_USE_SHA3)
+		case CRYPTO_HASH_ALGO_SHA3_224:
+			status = HAL_HASHEx_SHA3_224_Start_IT(&data->hhash, pkt->in_buf,
+							      pkt->in_len, pkt->out_buf);
+			break;
+		case CRYPTO_HASH_ALGO_SHA3_256:
+			status = HAL_HASHEx_SHA3_256_Start_IT(&data->hhash, pkt->in_buf,
+							      pkt->in_len, pkt->out_buf);
+			break;
+		case CRYPTO_HASH_ALGO_SHA3_384:
+			status = HAL_HASHEx_SHA3_384_Start_IT(&data->hhash, pkt->in_buf,
+							      pkt->in_len, pkt->out_buf);
+			break;
+		case CRYPTO_HASH_ALGO_SHA3_512:
+			status = HAL_HASHEx_SHA3_512_Start_IT(&data->hhash, pkt->in_buf,
+							      pkt->in_len, pkt->out_buf);
+			break;
+#endif /* STM32_HASH_USE_SHA3 */
+		default:
+			status = HAL_ERROR;
+			break;
 		}
 
 		if (status == HAL_OK) {
@@ -192,7 +228,7 @@ static int stm32_hash_handler(struct hash_ctx *ctx, struct hash_pkt *pkt, bool f
 		data->hhash.State = HAL_HASH_STATE_READY;
 		data->hhash.Phase = HAL_HASH_PHASE_READY;
 	}
-#endif /* DT_INST_IRQ_HAS_IDX(0, 0) */
+#endif /* STM32_HASH_USE_IT */
 
 	switch (session->algo) {
 	case CRYPTO_HASH_ALGO_SHA224:
@@ -203,6 +239,24 @@ static int stm32_hash_handler(struct hash_ctx *ctx, struct hash_pkt *pkt, bool f
 		status = HAL_HASHEx_SHA256_Start(&data->hhash, pkt->in_buf, pkt->in_len,
 						 pkt->out_buf, HAL_MAX_DELAY);
 		break;
+#if defined(STM32_HASH_USE_SHA3)
+	case CRYPTO_HASH_ALGO_SHA3_224:
+		status = HAL_HASHEx_SHA3_224_Start(&data->hhash, pkt->in_buf, pkt->in_len,
+						   pkt->out_buf, HAL_MAX_DELAY);
+		break;
+	case CRYPTO_HASH_ALGO_SHA3_256:
+		status = HAL_HASHEx_SHA3_256_Start(&data->hhash, pkt->in_buf, pkt->in_len,
+						   pkt->out_buf, HAL_MAX_DELAY);
+		break;
+	case CRYPTO_HASH_ALGO_SHA3_384:
+		status = HAL_HASHEx_SHA3_384_Start(&data->hhash, pkt->in_buf, pkt->in_len,
+						   pkt->out_buf, HAL_MAX_DELAY);
+		break;
+	case CRYPTO_HASH_ALGO_SHA3_512:
+		status = HAL_HASHEx_SHA3_512_Start(&data->hhash, pkt->in_buf, pkt->in_len,
+						   pkt->out_buf, HAL_MAX_DELAY);
+		break;
+#endif /* STM32_HASH_USE_SHA3 */
 #if DT_INST_PROP(0, st_has_sha384_algorithm)
 	case CRYPTO_HASH_ALGO_SHA384:
 		status = HAL_HASHEx_SHA384_Start(&data->hhash, pkt->in_buf, pkt->in_len,
@@ -254,6 +308,12 @@ static int stm32_hash_begin_session(const struct device *dev, struct hash_ctx *c
 	switch (algo) {
 	case CRYPTO_HASH_ALGO_SHA224:
 	case CRYPTO_HASH_ALGO_SHA256:
+#if defined(STM32_HASH_USE_SHA3)
+	case CRYPTO_HASH_ALGO_SHA3_224:
+	case CRYPTO_HASH_ALGO_SHA3_256:
+	case CRYPTO_HASH_ALGO_SHA3_384:
+	case CRYPTO_HASH_ALGO_SHA3_512:
+#endif /* STM32_HASH_USE_SHA3 */
 #if DT_INST_PROP(0, st_has_sha384_algorithm)
 	case CRYPTO_HASH_ALGO_SHA384:
 #endif /* DT_INST_PROP(0, st_has_sha384_algorithm) */

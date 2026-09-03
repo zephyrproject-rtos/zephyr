@@ -772,6 +772,7 @@
 			interrupts = <GIC_SPI 81 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			st,has-sha384-algorithm;
 			st,has-sha512-algorithm;
+			st,has-sha3-algorithm;
 			status = "disabled";
 		};
 
