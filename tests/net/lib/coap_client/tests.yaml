@@ -16,3 +16,11 @@ tests:
     tags:
       - coap
       - net
+  net.coap.client.large_message:
+    platform_allow:
+      - native_sim
+    extra_args:
+      - COAP_CLIENT_MESSAGE_SIZE=512
+    tags:
+      - coap
+      - net
