@@ -260,6 +260,11 @@ struct adc_stm32_data {
 #ifdef CONFIG_ADC_STM32_DMA
 	volatile int dma_error;
 	struct stream dma;
+
+#ifdef CONFIG_ADC_STM32_DMA_EXTERNAL_TRIGGER
+	size_t size;
+	int ext_trigger;
+#endif
 #endif
 #ifdef CONFIG_ADC_STREAM
 	struct rtio_iodev_sqe *sqe;
@@ -340,7 +345,11 @@ static int adc_stm32_dma_start(const struct device *dev,
 	blk_cfg = &dma->dma_blk_cfg;
 
 	/* prepare the block */
+#ifdef CONFIG_ADC_STM32_DMA_EXTERNAL_TRIGGER
+	blk_cfg->block_size = channel_count * data->size;
+#else
 	blk_cfg->block_size = channel_count * sizeof(adc_data_size_t);
+#endif
 
 	/* Source and destination */
 	blk_cfg->source_address = (uint32_t)LL_ADC_DMA_GetRegAddr(adc, LL_ADC_DMA_REG_REGULAR_DATA);
@@ -1205,6 +1214,10 @@ static int start_read(const struct device *dev,
 	data->channel_count = POPCOUNT(data->channels);
 	data->samples_count = 0;
 	data->resolution = sequence->resolution;
+#ifdef CONFIG_ADC_STM32_DMA_EXTERNAL_TRIGGER
+	LL_ADC_REG_SetTriggerSource(config->base, data->ext_trigger);
+	data->size = sequence->buffer_size;
+#endif
 
 	if (data->channel_count == 0) {
 		LOG_ERR("No channels selected");
@@ -2258,6 +2271,14 @@ static DEVICE_API(adc, api_stm32_driver_api) = {
 #endif /* !DT_ANY_INST_HAS_PROP_STATUS_OKAY(st_adc_clock_source) */
 
 
+#ifdef CONFIG_ADC_STM32_DMA_EXTERNAL_TRIGGER
+
+#define INIT_DMA_EXTERNAL_TRIGGER(index)				\
+	.ext_trigger = CONCAT(						\
+		LL_ADC_REG_TRIG_EXT_, DT_INST_STRING_TOKEN(index, st_adc_ext_trigger))
+
+#endif /* CONFIG_ADC_STM32_DMA_EXTERNAL_TRIGGER */
+
 #if defined(CONFIG_ADC_STM32_DMA)
 
 #define ADC_DMA_CHANNEL_INIT(index, src_dev, dest_dev)					\
@@ -2286,7 +2307,9 @@ static DEVICE_API(adc, api_stm32_driver_api) = {
 			STM32_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),			\
 		.dst_addr_increment = STM32_DMA_CONFIG_##dest_dev##_ADDR_INC(		\
 			STM32_DMA_CHANNEL_CONFIG_BY_IDX(index, 0)),			\
-	}
+	},										\
+	COND_CODE_1(IS_ENABLED(CONFIG_ADC_STM32_DMA_EXTERNAL_TRIGGER),			\
+		(INIT_DMA_EXTERNAL_TRIGGER(index)), ())
 
 #else /* CONFIG_ADC_STM32_DMA */
 
