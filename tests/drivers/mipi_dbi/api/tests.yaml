@@ -5,7 +5,9 @@ common:
 
 tests:
   drivers.mipi_dbi.api:
-    filter: dt_nodelabel_enabled("mipi-dbi")
+    filter: dt_nodelabel_enabled("mipi_dbi")
+    integration_platforms:
+      - m5stack_cores3/esp32s3/procpu
   drivers.mipi_dbi.rpi_pico.pio0.single_split:
     platform_allow:
       - rpi_pico/rp2040
