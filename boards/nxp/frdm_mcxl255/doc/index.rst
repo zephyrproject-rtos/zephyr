@@ -61,6 +61,28 @@ CPU1.
 CPU1 standalone build is also supported, but it can be
 run standalone only by a debugger which boots the core.
 
+Multicore applications
+======================
+
+The ``mbox`` and ``mbox_data`` samples are supported for communication
+between CPU0 and CPU1. Build either sample for the CPU0 target with sysbuild;
+the CPU1 image is built automatically:
+
+.. code-block:: console
+
+   west build -p always -b frdm_mcxl255/mcxl255/cpu0 --sysbuild samples/drivers/mbox
+   west flash
+
+To exercise mailbox data transfer instead of notification-only signaling,
+replace ``samples/drivers/mbox`` with ``samples/drivers/mbox_data``.
+
+Shared-memory multicore samples such as OpenAMP and the IPC service
+``static_vrings`` and ``rpmsg_lite`` samples are not supported on this board.
+CPU1 executes from its 32 KiB AON SRAM, which must contain its code, data,
+heap, and stacks. The IPC service remote images consume more than 90 percent
+of that memory and leave insufficient runtime and feature-growth margin.
+No shared-memory IPC region is reserved by the board configuration.
+
 Connections and IOs
 ===================
 
