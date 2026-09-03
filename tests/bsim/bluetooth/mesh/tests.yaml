@@ -11,13 +11,13 @@ tests:
   ###########################
   # Images reused by tests: #
   ###########################
-  tests.bsim.bluetooth.mesh.image:
+  bluetooth.mesh.bsim.image:
     build_only: true
     harness_config:
       fixture: bsim_multi_test
       bsim_exe_name: tests_bsim_bluetooth_mesh_prj_conf
 
-  tests.bsim.bluetooth.mesh.image.pst:
+  bluetooth.mesh.bsim.image.pst:
     build_only: true
     extra_overlay_confs:
       - overlay_pst.conf
@@ -25,7 +25,7 @@ tests:
       fixture: bsim_multi_test
       bsim_exe_name: tests_bsim_bluetooth_mesh_prj_conf_overlay_pst_conf
 
-  tests.bsim.bluetooth.mesh.image.gatt:
+  bluetooth.mesh.bsim.image.gatt:
     build_only: true
     extra_overlay_confs:
       - overlay_gatt.conf
@@ -33,7 +33,7 @@ tests:
       fixture: bsim_multi_test
       bsim_exe_name: tests_bsim_bluetooth_mesh_prj_conf_overlay_gatt_conf
 
-  tests.bsim.bluetooth.mesh.image.gatt_separate:
+  bluetooth.mesh.bsim.image.gatt_separate:
     build_only: true
     extra_overlay_confs:
       - overlay_gatt_separate.conf
@@ -41,7 +41,7 @@ tests:
       fixture: bsim_multi_test
       bsim_exe_name: tests_bsim_bluetooth_mesh_prj_conf_overlay_gatt_separate_conf
 
-  tests.bsim.bluetooth.mesh.image.low_lat:
+  bluetooth.mesh.bsim.image.low_lat:
     build_only: true
     extra_overlay_confs:
       - overlay_low_lat.conf
@@ -49,7 +49,7 @@ tests:
       fixture: bsim_multi_test
       bsim_exe_name: tests_bsim_bluetooth_mesh_prj_conf_overlay_low_lat_conf
 
-  tests.bsim.bluetooth.mesh.image.workq_sys:
+  bluetooth.mesh.bsim.image.workq_sys:
     build_only: true
     extra_overlay_confs:
       - overlay_workq_sys.conf
@@ -57,7 +57,7 @@ tests:
       fixture: bsim_multi_test
       bsim_exe_name: tests_bsim_bluetooth_mesh_prj_conf_overlay_workq_sys_conf
 
-  tests.bsim.bluetooth.mesh.image.multi_adv_sets:
+  bluetooth.mesh.bsim.image.multi_adv_sets:
     build_only: true
     extra_overlay_confs:
       - overlay_multi_adv_sets.conf
@@ -65,7 +65,7 @@ tests:
       fixture: bsim_multi_test
       bsim_exe_name: tests_bsim_bluetooth_mesh_prj_conf_overlay_multi_adv_sets_conf
 
-  tests.bsim.bluetooth.mesh.image.lpn_scan_on:
+  bluetooth.mesh.bsim.image.lpn_scan_on:
     build_only: true
     extra_overlay_confs:
       - overlay_lpn_scan_on.conf
@@ -73,7 +73,7 @@ tests:
       fixture: bsim_multi_test
       bsim_exe_name: tests_bsim_bluetooth_mesh_prj_conf_overlay_lpn_scan_on_conf
 
-  tests.bsim.bluetooth.mesh.image.gatt_workq_sys:
+  bluetooth.mesh.bsim.image.gatt_workq_sys:
     build_only: true
     extra_overlay_confs:
       - overlay_gatt.conf
@@ -82,7 +82,7 @@ tests:
       fixture: bsim_multi_test
       bsim_exe_name: tests_bsim_bluetooth_mesh_prj_conf_overlay_gatt_conf_overlay_workq_sys_conf
 
-  tests.bsim.bluetooth.mesh.image.gatt_low_lat:
+  bluetooth.mesh.bsim.image.gatt_low_lat:
     build_only: true
     extra_overlay_confs:
       - overlay_gatt.conf
@@ -91,7 +91,7 @@ tests:
       fixture: bsim_multi_test
       bsim_exe_name: tests_bsim_bluetooth_mesh_prj_conf_overlay_gatt_conf_overlay_low_lat_conf
 
-  tests.bsim.bluetooth.mesh.image.pst_gatt:
+  bluetooth.mesh.bsim.image.pst_gatt:
     build_only: true
     extra_overlay_confs:
       - overlay_pst.conf
@@ -100,7 +100,7 @@ tests:
       fixture: bsim_multi_test
       bsim_exe_name: tests_bsim_bluetooth_mesh_prj_conf_overlay_pst_conf_overlay_gatt_conf
 
-  tests.bsim.bluetooth.mesh.image.gatt_multi_adv_sets:
+  bluetooth.mesh.bsim.image.gatt_multi_adv_sets:
     build_only: true
     extra_overlay_confs:
       - overlay_gatt.conf
@@ -110,7 +110,7 @@ tests:
       bsim_exe_name: >-
         tests_bsim_bluetooth_mesh_prj_conf_overlay_gatt_conf_overlay_multi_adv_sets_conf
 
-  tests.bsim.bluetooth.mesh.image.pst_gatt_workq_sys:
+  bluetooth.mesh.bsim.image.pst_gatt_workq_sys:
     build_only: true
     extra_overlay_confs:
       - overlay_pst.conf
@@ -125,221 +125,221 @@ tests:
   # Actual tests: #
   #################
 
-  tests.bsim.bluetooth.mesh.access:
+  bluetooth.mesh.bsim.access:
     build: false
     harness_config:
       fixture: bsim_multi_test
       tests_scripts:
         - tests_scripts/access
     required_applications:
-      - application: tests.bsim.bluetooth.mesh.image
+      - application: bluetooth.mesh.bsim.image
 
-  tests.bsim.bluetooth.mesh.advertiser:
+  bluetooth.mesh.bsim.advertiser:
     build: false
     harness_config:
       fixture: bsim_multi_test
       tests_scripts:
         - tests_scripts/advertiser
     required_applications:
-      - application: tests.bsim.bluetooth.mesh.image
-      - application: tests.bsim.bluetooth.mesh.image.gatt
-      - application: tests.bsim.bluetooth.mesh.image.gatt_multi_adv_sets
-      - application: tests.bsim.bluetooth.mesh.image.gatt_separate
-      - application: tests.bsim.bluetooth.mesh.image.gatt_workq_sys
-      - application: tests.bsim.bluetooth.mesh.image.low_lat
-      - application: tests.bsim.bluetooth.mesh.image.multi_adv_sets
-      - application: tests.bsim.bluetooth.mesh.image.workq_sys
+      - application: bluetooth.mesh.bsim.image
+      - application: bluetooth.mesh.bsim.image.gatt
+      - application: bluetooth.mesh.bsim.image.gatt_multi_adv_sets
+      - application: bluetooth.mesh.bsim.image.gatt_separate
+      - application: bluetooth.mesh.bsim.image.gatt_workq_sys
+      - application: bluetooth.mesh.bsim.image.low_lat
+      - application: bluetooth.mesh.bsim.image.multi_adv_sets
+      - application: bluetooth.mesh.bsim.image.workq_sys
 
-  tests.bsim.bluetooth.mesh.beacon:
+  bluetooth.mesh.bsim.beacon:
     build: false
     harness_config:
       fixture: bsim_multi_test
       tests_scripts:
         - tests_scripts/beacon
     required_applications:
-      - application: tests.bsim.bluetooth.mesh.image
+      - application: bluetooth.mesh.bsim.image
 
-  tests.bsim.bluetooth.mesh.blob_mdls:
+  bluetooth.mesh.bsim.blob_mdls:
     build: false
     harness_config:
       fixture: bsim_multi_test
       tests_scripts:
         - tests_scripts/blob_mdls
     required_applications:
-      - application: tests.bsim.bluetooth.mesh.image
-      - application: tests.bsim.bluetooth.mesh.image.pst
+      - application: bluetooth.mesh.bsim.image
+      - application: bluetooth.mesh.bsim.image.pst
 
-  tests.bsim.bluetooth.mesh.bridge:
+  bluetooth.mesh.bsim.bridge:
     build: false
     harness_config:
       fixture: bsim_multi_test
       tests_scripts:
         - tests_scripts/bridge
     required_applications:
-      - application: tests.bsim.bluetooth.mesh.image
-      - application: tests.bsim.bluetooth.mesh.image.pst
+      - application: bluetooth.mesh.bsim.image
+      - application: bluetooth.mesh.bsim.image.pst
 
-  tests.bsim.bluetooth.mesh.cdb:
+  bluetooth.mesh.bsim.cdb:
     build: false
     harness_config:
       fixture: bsim_multi_test
       tests_scripts:
         - tests_scripts/cdb
     required_applications:
-      - application: tests.bsim.bluetooth.mesh.image
+      - application: bluetooth.mesh.bsim.image
 
-  tests.bsim.bluetooth.mesh.comp_data:
+  bluetooth.mesh.bsim.comp_data:
     build: false
     harness_config:
       fixture: bsim_multi_test
       tests_scripts:
         - tests_scripts/comp_data
     required_applications:
-      - application: tests.bsim.bluetooth.mesh.image
+      - application: bluetooth.mesh.bsim.image
 
-  tests.bsim.bluetooth.mesh.dfu:
+  bluetooth.mesh.bsim.dfu:
     build: false
     harness_config:
       fixture: bsim_multi_test
       tests_scripts:
         - tests_scripts/dfu
     required_applications:
-      - application: tests.bsim.bluetooth.mesh.image
-      - application: tests.bsim.bluetooth.mesh.image.pst
+      - application: bluetooth.mesh.bsim.image
+      - application: bluetooth.mesh.bsim.image.pst
 
-  tests.bsim.bluetooth.mesh.friendship:
+  bluetooth.mesh.bsim.friendship:
     build: false
     harness_config:
       fixture: bsim_multi_test
       tests_scripts:
         - tests_scripts/friendship
     required_applications:
-      - application: tests.bsim.bluetooth.mesh.image
-      - application: tests.bsim.bluetooth.mesh.image.low_lat
-      - application: tests.bsim.bluetooth.mesh.image.lpn_scan_on
+      - application: bluetooth.mesh.bsim.image
+      - application: bluetooth.mesh.bsim.image.low_lat
+      - application: bluetooth.mesh.bsim.image.lpn_scan_on
 
-  tests.bsim.bluetooth.mesh.heartbeat:
+  bluetooth.mesh.bsim.heartbeat:
     build: false
     harness_config:
       fixture: bsim_multi_test
       tests_scripts:
         - tests_scripts/heartbeat
     required_applications:
-      - application: tests.bsim.bluetooth.mesh.image
+      - application: bluetooth.mesh.bsim.image
 
-  tests.bsim.bluetooth.mesh.iv_index:
+  bluetooth.mesh.bsim.iv_index:
     build: false
     harness_config:
       fixture: bsim_multi_test
       tests_scripts:
         - tests_scripts/iv_index
     required_applications:
-      - application: tests.bsim.bluetooth.mesh.image
+      - application: bluetooth.mesh.bsim.image
 
-  tests.bsim.bluetooth.mesh.large_comp_data:
+  bluetooth.mesh.bsim.large_comp_data:
     build: false
     harness_config:
       fixture: bsim_multi_test
       tests_scripts:
         - tests_scripts/large_comp_data
     required_applications:
-      - application: tests.bsim.bluetooth.mesh.image.pst
+      - application: bluetooth.mesh.bsim.image.pst
 
-  tests.bsim.bluetooth.mesh.op_agg:
+  bluetooth.mesh.bsim.op_agg:
     build: false
     harness_config:
       fixture: bsim_multi_test
       tests_scripts:
         - tests_scripts/op_agg
     required_applications:
-      - application: tests.bsim.bluetooth.mesh.image
+      - application: bluetooth.mesh.bsim.image
 
-  tests.bsim.bluetooth.mesh.persistence:
+  bluetooth.mesh.bsim.persistence:
     build: false
     harness_config:
       fixture: bsim_multi_test
       tests_scripts:
         - tests_scripts/persistence
     required_applications:
-      - application: tests.bsim.bluetooth.mesh.image.pst
+      - application: bluetooth.mesh.bsim.image.pst
 
-  tests.bsim.bluetooth.mesh.priv_beacon:
+  bluetooth.mesh.bsim.priv_beacon:
     build: false
     harness_config:
       fixture: bsim_multi_test
       tests_scripts:
         - tests_scripts/priv_beacon
     required_applications:
-      - application: tests.bsim.bluetooth.mesh.image
-      - application: tests.bsim.bluetooth.mesh.image.gatt
+      - application: bluetooth.mesh.bsim.image
+      - application: bluetooth.mesh.bsim.image.gatt
 
-  tests.bsim.bluetooth.mesh.provision:
+  bluetooth.mesh.bsim.provision:
     build: false
     harness_config:
       fixture: bsim_multi_test
       tests_scripts:
         - tests_scripts/provision
     required_applications:
-      - application: tests.bsim.bluetooth.mesh.image
-      - application: tests.bsim.bluetooth.mesh.image.gatt
-      - application: tests.bsim.bluetooth.mesh.image.pst
+      - application: bluetooth.mesh.bsim.image
+      - application: bluetooth.mesh.bsim.image.gatt
+      - application: bluetooth.mesh.bsim.image.pst
 
-  tests.bsim.bluetooth.mesh.proxy_sol:
+  bluetooth.mesh.bsim.proxy_sol:
     build: false
     harness_config:
       fixture: bsim_multi_test
       tests_scripts:
         - tests_scripts/proxy_sol
     required_applications:
-      - application: tests.bsim.bluetooth.mesh.image.pst_gatt
-      - application: tests.bsim.bluetooth.mesh.image.pst_gatt_workq_sys
+      - application: bluetooth.mesh.bsim.image.pst_gatt
+      - application: bluetooth.mesh.bsim.image.pst_gatt_workq_sys
 
-  tests.bsim.bluetooth.mesh.replay_cache:
+  bluetooth.mesh.bsim.replay_cache:
     build: false
     harness_config:
       fixture: bsim_multi_test
       tests_scripts:
         - tests_scripts/replay_cache
     required_applications:
-      - application: tests.bsim.bluetooth.mesh.image.pst
+      - application: bluetooth.mesh.bsim.image.pst
 
-  tests.bsim.bluetooth.mesh.sar:
+  bluetooth.mesh.bsim.sar:
     build: false
     harness_config:
       fixture: bsim_multi_test
       tests_scripts:
         - tests_scripts/sar
     required_applications:
-      - application: tests.bsim.bluetooth.mesh.image
-      - application: tests.bsim.bluetooth.mesh.image.pst
+      - application: bluetooth.mesh.bsim.image
+      - application: bluetooth.mesh.bsim.image.pst
 
-  tests.bsim.bluetooth.mesh.scanner:
+  bluetooth.mesh.bsim.scanner:
     build: false
     harness_config:
       fixture: bsim_multi_test
       tests_scripts:
         - tests_scripts/scanner
     required_applications:
-      - application: tests.bsim.bluetooth.mesh.image
+      - application: bluetooth.mesh.bsim.image
 
-  tests.bsim.bluetooth.mesh.suspend:
+  bluetooth.mesh.bsim.suspend:
     build: false
     harness_config:
       fixture: bsim_multi_test
       tests_scripts:
         - tests_scripts/suspend
     required_applications:
-      - application: tests.bsim.bluetooth.mesh.image
-      - application: tests.bsim.bluetooth.mesh.image.gatt
-      - application: tests.bsim.bluetooth.mesh.image.gatt_low_lat
-      - application: tests.bsim.bluetooth.mesh.image.low_lat
+      - application: bluetooth.mesh.bsim.image
+      - application: bluetooth.mesh.bsim.image.gatt
+      - application: bluetooth.mesh.bsim.image.gatt_low_lat
+      - application: bluetooth.mesh.bsim.image.low_lat
 
-  tests.bsim.bluetooth.mesh.transport:
+  bluetooth.mesh.bsim.transport:
     build: false
     harness_config:
       fixture: bsim_multi_test
       tests_scripts:
         - tests_scripts/transport
     required_applications:
-      - application: tests.bsim.bluetooth.mesh.image
-      - application: tests.bsim.bluetooth.mesh.image.low_lat
+      - application: bluetooth.mesh.bsim.image
+      - application: bluetooth.mesh.bsim.image.low_lat
