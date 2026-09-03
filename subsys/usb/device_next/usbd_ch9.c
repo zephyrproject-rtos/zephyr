@@ -589,7 +589,7 @@ static struct net_buf *sreq_get_desc_dev(struct usbd_context *const uds_ctx)
 		head = uds_ctx->fs_desc;
 		break;
 	case USBD_SPEED_HS:
-		head = uds_ctx->hs_desc;
+		head = usbd_get_hs_desc(uds_ctx);
 		break;
 	default:
 		return NULL;
@@ -653,7 +653,7 @@ static struct net_buf *sreq_get_dev_qualifier(struct usbd_context *const uds_ctx
 	/* At Full-Speed we want High-Speed descriptor and vice versa */
 	struct usb_device_descriptor *d_desc =
 		usbd_bus_speed(uds_ctx) == USBD_SPEED_FS ?
-		uds_ctx->hs_desc : uds_ctx->fs_desc;
+		usbd_get_hs_desc(uds_ctx) : uds_ctx->fs_desc;
 	struct usb_device_qualifier_descriptor q_desc = {
 		.bLength = sizeof(struct usb_device_qualifier_descriptor),
 		.bDescriptorType = USB_DESC_DEVICE_QUALIFIER,
@@ -731,7 +731,7 @@ static struct net_buf *sreq_get_desc_bos(struct usbd_context *const uds_ctx)
 		dev_dsc = uds_ctx->fs_desc;
 		break;
 	case USBD_SPEED_HS:
-		dev_dsc = uds_ctx->hs_desc;
+		dev_dsc = usbd_get_hs_desc(uds_ctx);
 		break;
 	default:
 		return NULL;

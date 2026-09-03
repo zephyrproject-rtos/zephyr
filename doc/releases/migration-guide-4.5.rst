@@ -1330,6 +1330,10 @@ USB
   their API struct definitions and switch their API instances to ``DEVICE_API(uhc, ...)``.
   (:github:`108414`)
 
+* The ``hs_configs`` and ``hs_desc`` members of :c:struct:`usbd_context` are only present
+  when the USB device stack is built with High-Speed support. Out-of-tree code accessing
+  them directly must guard the access with ``USBD_SUPPORTS_HIGH_SPEED``. (:github:`118258`)
+
 Video
 =====
 
