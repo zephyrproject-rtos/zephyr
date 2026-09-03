@@ -401,12 +401,31 @@ static void telnet_restart_server(void)
 		sh_telnet->fds[SOCK_ID_CLIENT].fd = -1;
 	}
 
+	/* Must unregister before telnet_init() registers again */
+	(void)net_socket_service_unregister(&telnet_server);
+
 	ret = telnet_init(sh_telnet);
 	if (ret < 0) {
-		LOG_ERR("Telnet fatal error, failed to restart server (%d)", ret);
-		(void)net_socket_service_unregister(&telnet_server);
+#if defined(CONFIG_SHELL_TELNET_RESTART)
+		/* Not fatal, an ordinary boot fails here once */
+		LOG_DBG("Telnet server not ready (%d), retrying in %d ms", ret,
+			CONFIG_SHELL_TELNET_RESTART_RETRY_MS);
+		k_work_reschedule(&sh_telnet->restart_work,
+				  K_MSEC(CONFIG_SHELL_TELNET_RESTART_RETRY_MS));
+#else
+		LOG_ERR("Telnet server could not be restarted (%d)", ret);
+#endif
 	}
 }
+
+#if defined(CONFIG_SHELL_TELNET_RESTART)
+static void telnet_restart_work_handler(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	telnet_restart_server();
+}
+#endif
 
 static void telnet_accept(struct zsock_pollfd *pollfd)
 {
@@ -638,9 +657,19 @@ static int init(const struct shell_transport *transport,
 	sh_telnet->shell_handler = evt_handler;
 	sh_telnet->shell_context = context;
 
+#if defined(CONFIG_SHELL_TELNET_RESTART)
+	/* Must init before telnet_init(), which can schedule a retry immediately. */
+	k_work_init_delayable(&sh_telnet->restart_work, telnet_restart_work_handler);
+#endif
+
 	err = telnet_init(sh_telnet);
 	if (err != 0) {
-		return err;
+		/* The interface may not be up yet */
+		LOG_DBG("Telnet server not ready (%d)", err);
+#if defined(CONFIG_SHELL_TELNET_RESTART)
+		k_work_reschedule(&sh_telnet->restart_work,
+				  K_MSEC(CONFIG_SHELL_TELNET_RESTART_RETRY_MS));
+#endif
 	}
 
 	k_work_init_delayable(&sh_telnet->send_work, telnet_send_prematurely);

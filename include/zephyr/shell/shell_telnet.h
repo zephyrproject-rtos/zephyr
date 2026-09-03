@@ -60,6 +60,11 @@ struct shell_telnet {
 	struct k_work_delayable send_work;
 	struct k_work_sync work_sync;
 
+#if defined(CONFIG_SHELL_TELNET_RESTART)
+	/** Retries the listening socket after the bound interface goes down. */
+	struct k_work_delayable restart_work;
+#endif
+
 	/** If set, no output is sent to the TELNET client. */
 	bool output_lock;
 };

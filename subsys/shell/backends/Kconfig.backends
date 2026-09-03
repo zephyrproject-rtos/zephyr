@@ -553,6 +553,21 @@ config SHELL_TELNET_LINE_BUF_SIZE
 	  A lot of short lines: better reduce this value. On the contrary,
 	  raise it.
 
+config SHELL_TELNET_RESTART
+	bool "Retry the listening socket after it goes down"
+	default y
+	help
+	  If set, reopen the listening socket instead of unregistering the backend
+	  until power cycle.
+
+config SHELL_TELNET_RESTART_RETRY_MS
+	int "Delay in milliseconds between attempts to reopen the socket"
+	default 1000
+	depends on SHELL_TELNET_RESTART
+	help
+	  Default to one second, which is is more than enough time for the socket
+		to be released.
+
 config SHELL_TELNET_SEND_TIMEOUT
 	int "Telnet line send timeout"
 	default 100
