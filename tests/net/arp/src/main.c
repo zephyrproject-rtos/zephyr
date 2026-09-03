@@ -783,4 +783,145 @@ ZTEST(arp_fn_tests, test_bcast_hwaddr_unicast_ipaddr)
 			unicast_ipaddr, true);
 }
 
+struct arp_lookup_result {
+	const struct net_in_addr *ip;
+	struct net_eth_addr eth;
+	bool found;
+	bool is_static;
+};
+
+static void arp_lookup_cb(struct arp_entry *entry, void *user_data)
+{
+	struct arp_lookup_result *result = user_data;
+
+	if (net_ipv4_addr_cmp(&entry->ip, result->ip)) {
+		result->found = true;
+		result->is_static = entry->is_static;
+		memcpy(&result->eth, &entry->eth, sizeof(struct net_eth_addr));
+	}
+}
+
+static struct arp_lookup_result arp_lookup(const struct net_in_addr *ip)
+{
+	struct arp_lookup_result result = { .ip = ip };
+
+	(void)net_arp_foreach(arp_lookup_cb, &result);
+
+	return result;
+}
+
+static void arp_count_cb(struct arp_entry *entry, void *user_data)
+{
+	ARG_UNUSED(entry);
+	ARG_UNUSED(user_data);
+}
+
+static int arp_entry_count(void)
+{
+	return net_arp_foreach(arp_count_cb, NULL);
+}
+
+/* A static entry belongs to the user: it survives a flush, it is not evicted
+ * to make room, and a peer cannot rewrite it by sending us an ARP message.
+ */
+ZTEST(arp_fn_tests, test_arp_static_entry)
+{
+	struct net_eth_addr hwaddr = { { 0x00, 0x00, 0x5e, 0x00, 0x53, 0x11 } };
+	struct net_eth_addr hwaddr2 = { { 0x00, 0x00, 0x5e, 0x00, 0x53, 0x22 } };
+	struct net_in_addr dynamic = { { { 192, 0, 2, 21 } } };
+	struct net_in_addr fixed = { { { 192, 0, 2, 22 } } };
+	struct arp_lookup_result result;
+	struct net_if *iface;
+	int ret;
+
+	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(ETHERNET));
+	zassert_not_null(iface, "No Ethernet interface");
+
+	net_if_ipv4_nbr_flush(NULL);
+
+	net_arp_update(iface, &dynamic, &hwaddr, false, true);
+
+	ret = net_arp_add_static(iface, &fixed, &hwaddr);
+	zassert_ok(ret, "Cannot add a static entry");
+
+	result = arp_lookup(&dynamic);
+	zassert_true(result.found, "Dynamic entry was not added");
+	zexpect_false(result.is_static, "Dynamic entry is marked static");
+
+	result = arp_lookup(&fixed);
+	zassert_true(result.found, "Static entry was not added");
+	zexpect_true(result.is_static, "Static entry is not marked static");
+
+	/* An ARP message from the peer must not change the address we were
+	 * told to use.
+	 */
+	net_arp_update(iface, &fixed, &hwaddr2, false, true);
+	result = arp_lookup(&fixed);
+	zexpect_mem_equal(&result.eth, &hwaddr, sizeof(struct net_eth_addr),
+			  "Static entry was overwritten from the network");
+
+	/* The same message for a dynamic entry must go through. */
+	net_arp_update(iface, &dynamic, &hwaddr2, false, true);
+	result = arp_lookup(&dynamic);
+	zexpect_mem_equal(&result.eth, &hwaddr2, sizeof(struct net_eth_addr),
+			  "Dynamic entry was not updated");
+
+	/* A flush keeps the static entry and drops the dynamic one. */
+	net_if_ipv4_nbr_flush(iface);
+
+	zexpect_false(arp_lookup(&dynamic).found,
+		      "Dynamic entry survived a flush");
+	zexpect_true(arp_lookup(&fixed).found,
+		     "Static entry did not survive a flush");
+
+	zexpect_true(net_arp_entry_rm(iface, &fixed),
+		     "Static entry could not be removed");
+	zexpect_false(arp_lookup(&fixed).found,
+		      "Static entry is still in the cache");
+}
+
+/* Static entries are never evicted, so a table full of them has nothing to
+ * give back and resolution fails instead of throwing one away.
+ */
+ZTEST(arp_fn_tests, test_arp_static_entries_are_not_evicted)
+{
+	struct net_eth_addr hwaddr = { { 0x00, 0x00, 0x5e, 0x00, 0x53, 0x33 } };
+	struct net_in_addr dynamic = { { { 192, 0, 2, 40 } } };
+	struct net_if *iface;
+	int i, ret;
+
+	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(ETHERNET));
+	zassert_not_null(iface, "No Ethernet interface");
+
+	net_if_ipv4_nbr_flush(NULL);
+
+	for (i = 0; i < CONFIG_NET_ARP_TABLE_SIZE; i++) {
+		struct net_in_addr fixed = { { { 192, 0, 2, 30 + i } } };
+
+		ret = net_arp_add_static(iface, &fixed, &hwaddr);
+		zassert_ok(ret, "Cannot add static entry %d", i);
+	}
+
+	zassert_equal(arp_entry_count(), CONFIG_NET_ARP_TABLE_SIZE,
+		      "Not all static entries were added");
+
+	net_arp_update(iface, &dynamic, &hwaddr, false, true);
+	zexpect_false(arp_lookup(&dynamic).found,
+		      "A static entry was evicted to make room");
+
+	/* And a flush still leaves them all in place. */
+	net_if_ipv4_nbr_flush(NULL);
+	zexpect_equal(arp_entry_count(), CONFIG_NET_ARP_TABLE_SIZE,
+		      "Static entries were flushed");
+
+	for (i = 0; i < CONFIG_NET_ARP_TABLE_SIZE; i++) {
+		struct net_in_addr fixed = { { { 192, 0, 2, 30 + i } } };
+
+		zexpect_true(net_arp_entry_rm(NULL, &fixed),
+			     "Cannot remove static entry %d", i);
+	}
+
+	zexpect_equal(arp_entry_count(), 0, "Cache is not empty");
+}
+
 ZTEST_SUITE(arp_fn_tests, NULL, NULL, NULL, NULL, NULL);
