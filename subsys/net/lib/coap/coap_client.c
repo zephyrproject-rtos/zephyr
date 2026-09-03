@@ -1367,8 +1367,14 @@ static int handle_response(struct coap_client *client, const struct net_sockaddr
 			goto fail;
 		}
 
-		ret = coap_update_from_block(response, &internal_req->recv_blk_ctx);
-		if (ret < 0) {
+		/* RFC 7959, section 2.2: SZX 7 is reserved outside reliable transports */
+		if (block_option > 0 && GET_BLOCK_SIZE(block_option) == COAP_BLOCK_BERT) {
+			LOG_ERR("Reserved block size in response");
+			ret = -EINVAL;
+			goto fail;
+		}
+
+		if (coap_update_from_block(response, &internal_req->recv_blk_ctx) < 0) {
 			LOG_ERR("Error updating block context");
 		}
 		coap_next_block(response, &internal_req->recv_blk_ctx);
