@@ -329,6 +329,10 @@ csi_interface: &dcmipp {
 	status = "okay";
 };
 
+&ptp_clock0 {
+	status = "okay";
+};
+
 &mdio0 {
 	pinctrl-0 = <&eth1_mdio_pa2 &eth1_mdc_pg2>;
 	pinctrl-names = "default";
@@ -362,6 +366,10 @@ csi_interface: &dcmipp {
 	nvmem-cells = <&ethernet_mac2_address>;
 	nvmem-cell-names = "mac-address";
 
+	status = "okay";
+};
+
+&ptp_clock1 {
 	status = "okay";
 };
 
