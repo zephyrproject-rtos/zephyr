@@ -14,6 +14,17 @@ tests:
       - esp32p4x_function_ev_board/esp32p4/hpcore
     integration_platforms:
       - esp32s3_devkitc/esp32s3/procpu
+  boards.esp32.cache_coex.smp:
+    platform_allow:
+      - esp32p4x_function_ev_board/esp32p4/hpcore
+    integration_platforms:
+      - esp32p4x_function_ev_board/esp32p4/hpcore
+    tags:
+      - smp
+    extra_configs:
+      - CONFIG_SMP=y
+      - CONFIG_SCHED_CPU_MASK=y
+      - CONFIG_SPIN_VALIDATE=y
   boards.esp32.cache_coex.octal_80m:
     platform_allow:
       - esp32s3_devkitc/esp32s3/procpu

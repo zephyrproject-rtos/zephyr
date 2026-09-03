@@ -6,3 +6,4 @@ find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(cache_coex_test)
 
 target_sources(app PRIVATE src/cache_coex.c)
+target_sources_ifdef(CONFIG_SMP app PRIVATE src/cache_coex_smp.c)
