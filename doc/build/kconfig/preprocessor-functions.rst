@@ -132,6 +132,10 @@ name is specified.
 
    $(shields_list_contains,<shield name>)
 
+Shield names cannot contain whitespace. A space after the comma, as in
+``$(shields_list_contains, foo)``, is stripped and a warning is printed
+so the lookup still matches ``foo``.
+
 
 Example Usage
 =============

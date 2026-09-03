@@ -1211,7 +1211,24 @@ def shields_list_contains(kconf, _, shield):
     Return "n" if cmake environment variable 'SHIELD_AS_LIST' doesn't exist.
     Return "y" if 'shield' is present list obtained after 'SHIELD_AS_LIST'
     has been split using ";" as a separator and "n" otherwise.
+
+    Shield names cannot contain whitespace. A leading or trailing space
+    (from ``$(shields_list_contains, foo)``) is stripped so the lookup
+    uses the intended name, and a warning is printed.
     """
+    stripped = shield.strip()
+    if stripped != shield:
+        _warn(kconf,
+              'searching for shield "{}", did you mean "{}" '
+              '(without a space)'.format(shield, stripped))
+        shield = stripped
+
+    if any(c.isspace() for c in shield):
+        _warn(kconf,
+              'shield name "{}" contains whitespace; shield names '
+              'cannot contain spaces'.format(shield))
+        return "n"
+
     try:
         list = os.environ['SHIELD_AS_LIST']
     except KeyError:
