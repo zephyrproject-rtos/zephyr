@@ -262,7 +262,7 @@ static int process_stored_dump(data_read_cb_t cb, void *cb_arg)
 	}
 
 	/* Verify header signature */
-	if ((hdr.id[0] != 'C') && (hdr.id[1] != 'D')) {
+	if ((hdr.id[0] != 'C') || (hdr.id[1] != 'D')) {
 		ret = 0;
 		goto out;
 	}
@@ -320,7 +320,7 @@ static int get_stored_dump(off_t off, uint8_t *dst, size_t len)
 	}
 
 	/* Verify header signature */
-	if ((hdr.id[0] != 'C') && (hdr.id[1] != 'D')) {
+	if ((hdr.id[0] != 'C') || (hdr.id[1] != 'D')) {
 		ret = 0;
 		goto out;
 	}
