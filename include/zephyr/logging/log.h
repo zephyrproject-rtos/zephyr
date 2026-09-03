@@ -154,23 +154,25 @@ extern "C" {
  */
 #define _LOG_RATELIMIT_CORE(_level, _rate_ms, ...)                                                 \
 	do {                                                                                       \
-		static atomic_t __last_log_time;                                                   \
-		static atomic_t __skipped_count;                                                   \
-		uint32_t __now = k_uptime_get_32();                                                \
-		uint32_t __last = atomic_get(&__last_log_time);                                    \
-		uint32_t __diff = __now - __last;                                                  \
-		if (unlikely(__diff >= (_rate_ms))) {                                              \
-			if (atomic_cas(&__last_log_time, __last, __now)) {                         \
-				uint32_t __skipped = atomic_clear(&__skipped_count);               \
-				if (__skipped > 0) {                                               \
-					Z_LOG(_level, "Skipped %d messages", __skipped);           \
+		if (Z_LOG_CONST_LEVEL_CHECK(_level)) {                                             \
+			static atomic_t __last_log_time;                                           \
+			static atomic_t __skipped_count;                                           \
+			uint32_t __now = k_uptime_get_32();                                        \
+			uint32_t __last = atomic_get(&__last_log_time);                            \
+			uint32_t __diff = __now - __last;                                          \
+			if (unlikely(__diff >= (_rate_ms))) {                                      \
+				if (atomic_cas(&__last_log_time, __last, __now)) {                 \
+					uint32_t __skipped = atomic_clear(&__skipped_count);       \
+					if (__skipped > 0) {                                       \
+						Z_LOG(_level, "Skipped %d messages", __skipped);   \
+					}                                                          \
+					Z_LOG(_level, __VA_ARGS__);                                \
+				} else {                                                           \
+					atomic_inc(&__skipped_count);                              \
 				}                                                                  \
-				Z_LOG(_level, __VA_ARGS__);                                        \
 			} else {                                                                   \
 				atomic_inc(&__skipped_count);                                      \
 			}                                                                          \
-		} else {                                                                           \
-			atomic_inc(&__skipped_count);                                              \
 		}                                                                                  \
 	} while (0)
 
@@ -265,23 +267,26 @@ extern "C" {
  */
 #define _LOG_HEXDUMP_RATELIMIT_CORE(_level, _rate_ms, _data, _length, _str)                        \
 	do {                                                                                       \
-		static atomic_t __last_log_time;                                                   \
-		static atomic_t __skipped_count;                                                   \
-		uint32_t __now = k_uptime_get_32();                                                \
-		uint32_t __last = atomic_get(&__last_log_time);                                    \
-		uint32_t __diff = __now - __last;                                                  \
-		if (unlikely(__diff >= (_rate_ms))) {                                              \
-			if (atomic_cas(&__last_log_time, __last, __now)) {                         \
-				uint32_t __skipped = atomic_clear(&__skipped_count);               \
-				if (__skipped > 0) {                                               \
-					Z_LOG(_level, "Skipped %d hexdump messages", __skipped);   \
+		if (Z_LOG_CONST_LEVEL_CHECK(_level)) {                                             \
+			static atomic_t __last_log_time;                                           \
+			static atomic_t __skipped_count;                                           \
+			uint32_t __now = k_uptime_get_32();                                        \
+			uint32_t __last = atomic_get(&__last_log_time);                            \
+			uint32_t __diff = __now - __last;                                          \
+			if (unlikely(__diff >= (_rate_ms))) {                                      \
+				if (atomic_cas(&__last_log_time, __last, __now)) {                 \
+					uint32_t __skipped = atomic_clear(&__skipped_count);       \
+					if (__skipped > 0) {                                       \
+						Z_LOG(_level, "Skipped %d hexdump messages",       \
+						      __skipped);                                  \
+					}                                                          \
+					Z_LOG_HEXDUMP(_level, _data, _length, _str);               \
+				} else {                                                           \
+					atomic_inc(&__skipped_count);                              \
 				}                                                                  \
-				Z_LOG_HEXDUMP(_level, _data, _length, _str);                       \
 			} else {                                                                   \
 				atomic_inc(&__skipped_count);                                      \
 			}                                                                          \
-		} else {                                                                           \
-			atomic_inc(&__skipped_count);                                              \
 		}                                                                                  \
 	} while (0)
 
