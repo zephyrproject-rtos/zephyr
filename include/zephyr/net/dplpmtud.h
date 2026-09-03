@@ -44,7 +44,7 @@
 extern "C" {
 #endif
 
-/** Default base PLPMTU from RFC 8899/RFC 9000 for UDP-based transports. */
+/** Default base PLPMTU from @rfc{8899}/@rfc{9000} for UDP-based transports. */
 #define NET_DPLPMTUD_BASE_PLPMTU 1200U
 
 /** DPLPMTUD search state. */
