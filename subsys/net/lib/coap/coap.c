@@ -1272,7 +1272,7 @@ int coap_block_transfer_init(struct coap_block_context *ctx,
 
 #define GET_BLOCK_SIZE(v) (((v) & 0x7))
 #define GET_MORE(v) (!!((v) & 0x08))
-#define GET_NUM(v) ((v) >> 4)
+#define GET_NUM(v) ((size_t)((v) >> 4))
 
 #define SET_BLOCK_SIZE(v, b) (v |= ((b) & 0x07))
 #define SET_MORE(v, m) ((v) |= (m) ? 0x08 : 0x00)
