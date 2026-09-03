@@ -198,6 +198,34 @@ static int init_configuration_inst(struct usbd_context *const uds_ctx,
 }
 
 /*
+ * Check whether the given class data has already been initialized by another
+ * class node. The same c_data can be shared by the FS and HS nodes, so its
+ * init callback must only be called once even though the endpoint and
+ * interface assignment is done per node.
+ */
+static bool usbd_class_data_initialized(struct usbd_class_data *const c_data)
+{
+	if (USBD_SUPPORTS_HIGH_SPEED) {
+		STRUCT_SECTION_FOREACH_ALTERNATE(usbd_class_hs,
+						 usbd_class_node, i) {
+			if ((i->c_data == c_data) &&
+			    atomic_test_bit(&i->state, USBD_CCTX_INITIALIZED)) {
+				return true;
+			}
+		}
+	}
+
+	STRUCT_SECTION_FOREACH_ALTERNATE(usbd_class_fs, usbd_class_node, i) {
+		if ((i->c_data == c_data) &&
+		    atomic_test_bit(&i->state, USBD_CCTX_INITIALIZED)) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/*
  * Initialize a device configuration
  *
  * Iterate on a list of all classes in a configuration
@@ -222,10 +250,19 @@ static int init_configuration(struct usbd_context *const uds_ctx,
 			return ret;
 		}
 
-		ret = usbd_class_init(c_nd->c_data);
-		if (ret != 0) {
-			LOG_ERR("Failed to initialize class instance");
-			return ret;
+		/*
+		 * The same c_data may be shared by the FS and HS nodes. Only
+		 * call its init callback once, otherwise it would be called
+		 * more than once for a class registered at both speeds.
+		 */
+		if (!usbd_class_data_initialized(c_nd->c_data)) {
+			ret = usbd_class_init(c_nd->c_data);
+			if (ret != 0) {
+				LOG_ERR("Failed to initialize class instance");
+				return ret;
+			}
+
+			atomic_set_bit(&c_nd->state, USBD_CCTX_INITIALIZED);
 		}
 
 		LOG_DBG("Init class node %p, descriptor length %zu",
