@@ -15,4 +15,5 @@ supported:
   - spi
   - vref
   - counter
+  - dma
 vendor: ti
