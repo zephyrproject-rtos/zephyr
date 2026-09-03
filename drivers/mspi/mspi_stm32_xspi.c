@@ -425,6 +425,7 @@ static int mspi_configure_delay_block(struct mspi_stm32_data *dev_data)
 
 static int mspi_stm32_xspi_dma_init(hal_dma_handle_t *hdma, struct stm32_stream *dma_stream)
 {
+	uint16_t source_addr_adj, dest_addr_adj;
 	hal_dma_direct_xfer_config_t xfer_cfg;
 	int ret;
 
@@ -453,23 +454,17 @@ static int mspi_stm32_xspi_dma_init(hal_dma_handle_t *hdma, struct stm32_stream 
 		return -EIO;
 	}
 
-	/* mspi_stm32_table_* hold LL values, which the hal_dma_* enums alias */
-	xfer_cfg.request = (hal_dma_request_source_t)dma_stream->cfg.dma_slot;
-	xfer_cfg.direction =
-		(hal_dma_direction_t)mspi_stm32_table_direction[dma_stream->cfg.channel_direction];
-	xfer_cfg.src_inc = (dma_stream->src_addr_increment) ? HAL_DMA_SRC_ADDR_INCREMENTED
-							    : HAL_DMA_SRC_ADDR_FIXED;
-	xfer_cfg.dest_inc = (dma_stream->dst_addr_increment) ? HAL_DMA_DEST_ADDR_INCREMENTED
-							     : HAL_DMA_DEST_ADDR_FIXED;
-	xfer_cfg.src_data_width = HAL_DMA_SRC_DATA_WIDTH_BYTE;
-	xfer_cfg.dest_data_width = HAL_DMA_DEST_DATA_WIDTH_BYTE;
-	xfer_cfg.priority =
-		(hal_dma_priority_t)mspi_stm32_table_priority[dma_stream->cfg.channel_priority];
+	source_addr_adj = dma_stream->src_addr_increment ?
+		HAL_DMA_SRC_ADDR_INCREMENTED : HAL_DMA_SRC_ADDR_FIXED;
+	dest_addr_adj = dma_stream->dst_addr_increment ?
+		HAL_DMA_DEST_ADDR_INCREMENTED : HAL_DMA_DEST_ADDR_FIXED;
 
-	if (HAL_DMA_SetConfigDirectXfer(hdma, &xfer_cfg) != HAL_OK) {
-		LOG_ERR("XSPI DMA config failed");
-		return -EIO;
+	ret = dma_stm32_zcfg_to_halcfg(dma_stream->dev, &hal_dma_cfg, &xfer_cfg,
+				       source_addr_adj, dest_addr_adj);
+	if (ret < 0) {
+		return ret;
 	}
+
 
 	LOG_DBG("XSPI with DMA transfer");
 	return 0;

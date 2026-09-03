@@ -106,7 +106,6 @@
 		STM32_DMA_GET_CHANNEL_INSTANCE((reg), (channel) - STM32_DMA_STREAM_OFFSET);
 #endif
 
-#ifndef CONFIG_STM32_HAL2
 /** @cond INTERNAL_HIDDEN */
 /**
  * @brief Convert Zephyr DMA configuration to STM32 HAL DMA init structure.
@@ -131,10 +130,15 @@
  * @retval -EINVAL if parameters are invalid or the configuration is inconsistent
  * @retval -ENOTSUP if the configuration cannot be represented with STM32 HAL DMA
  */
+#ifndef CONFIG_STM32_HAL2
 int dma_stm32_zcfg_to_halcfg(const struct device *dma, const struct dma_config *zephyr_config,
 			     DMA_InitTypeDef *hal_config, uint16_t source_addr_adj,
 			     uint16_t dest_addr_adj);
-/** @endcond */
+#else
+int dma_stm32_zcfg_to_halcfg(const struct device *dma, const struct dma_config *zephyr_config,
+			     hal_dma_handle_t *hdma, hal_dma_direct_xfer_config_t *xfer_cfg,
+			     uint16_t source_addr_adj, uint16_t dest_addr_adj);
 #endif /* CONFIG_STM32_HAL2 */
+/** @endcond */
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_DMA_DMA_STM32_H_ */

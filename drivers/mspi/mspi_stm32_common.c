@@ -94,30 +94,3 @@
 #define MSPI_DMA_PERIPH_TO_MEMORY       DMA_PERIPH_TO_MEMORY
 
 #endif /* CONFIG_STM32_HAL2 */
-
-/* Lookup table to set dma priority from the DTS */
-const uint32_t mspi_stm32_table_priority[] = {
-	MSPI_DMA_PRIORITY_LOW_WEIGHT,
-	MSPI_DMA_PRIORITY_MID_WEIGHT,
-	MSPI_DMA_PRIORITY_HIGH_WEIGHT,
-	MSPI_DMA_PRIORITY_HIGH,
-};
-
-/* Lookup table to set dma channel direction from the DTS */
-const uint32_t mspi_stm32_table_direction[] = {
-	MSPI_DMA_MEMORY_TO_MEMORY,
-	MSPI_DMA_MEMORY_TO_PERIPH,
-	MSPI_DMA_PERIPH_TO_MEMORY,
-};
-
-const uint32_t mspi_stm32_table_src_size[] = {
-	MSPI_DMA_SRC_DATAWIDTH_BYTE,
-	MSPI_DMA_SRC_DATAWIDTH_HALFWORD,
-	MSPI_DMA_SRC_DATAWIDTH_WORD
-};
-
-const uint32_t mspi_stm32_table_dest_size[] = {
-	MSPI_DMA_DEST_DATAWIDTH_BYTE,
-	MSPI_DMA_DEST_DATAWIDTH_HALFWORD,
-	MSPI_DMA_DEST_DATAWIDTH_WORD
-};

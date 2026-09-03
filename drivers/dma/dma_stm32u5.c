@@ -47,6 +47,9 @@ LOG_MODULE_REGISTER(dma_stm32, CONFIG_DMA_LOG_LEVEL);
 #define STM32_DMA_DEST_ADDR_INCREMENTED		LL_DMA_DEST_ADDR_INCREMENTED
 #define STM32_DMA_LINKEDLIST_EXECUTION_Q	LL_DMA_LINKEDLIST_EXECUTION_Q
 #define STM32_DMA_LINKEDLIST_EXECUTION_NODE	LL_DMA_LINKEDLIST_EXECUTION_NODE
+#define STM32_DMA_MEMORY_TO_MEMORY		LL_DMA_DIRECTION_MEMORY_TO_MEMORY
+#define STM32_DMA_MEMORY_TO_PERIPH		LL_DMA_DIRECTION_MEMORY_TO_PERIPH
+#define STM32_DMA_PERIPH_TO_MEMORY		LL_DMA_DIRECTION_PERIPH_TO_MEMORY
 
 /* Macro to give the LL dmax_Channel<y> from the DMAx base and channel 0..12 */
 #define STM32_DMA_GET_CHANNEL(dmax, idx) \
@@ -68,6 +71,9 @@ LOG_MODULE_REGISTER(dma_stm32, CONFIG_DMA_LOG_LEVEL);
 #define STM32_DMA_DEST_ADDR_INCREMENTED		LL_DMA_DEST_INCREMENT
 #define STM32_DMA_LINKEDLIST_EXECUTION_Q	LL_DMA_LSM_FULL_EXECUTION
 #define STM32_DMA_LINKEDLIST_EXECUTION_NODE	LL_DMA_LSM_1LINK_EXECUTION
+#define STM32_DMA_MEMORY_TO_MEMORY		LL_DMA_DIRECTION_MEMORY_TO_MEMORY
+#define STM32_DMA_MEMORY_TO_PERIPH		LL_DMA_DIRECTION_MEMORY_TO_PERIPH
+#define STM32_DMA_PERIPH_TO_MEMORY		LL_DMA_DIRECTION_PERIPH_TO_MEMORY
 
 #define STM32_DMA_GET_CHANNEL(dmax, idx) (dmax), dma_stm32_id_to_stream(idx)
 #endif /* CONFIG_STM32_HAL2 */
@@ -89,6 +95,12 @@ static const uint32_t table_priority[4] = {
 	STM32_DMA_PRIORITY_LOW_WEIGHT_MID,
 	STM32_DMA_PRIORITY_LOW_WEIGHT_HIGH,
 	STM32_DMA_PRIORITY_HIGH,
+};
+
+static const uint32_t table_direction[3] = {
+	STM32_DMA_MEMORY_TO_MEMORY,
+	STM32_DMA_MEMORY_TO_PERIPH,
+	STM32_DMA_PERIPH_TO_MEMORY,
 };
 
 static void dma_stm32_dump_stream_irq(const struct device *dev, uint32_t id)
@@ -516,6 +528,31 @@ int dma_stm32_zcfg_to_halcfg(const struct device *dma, const struct dma_config *
 #ifdef DMA_TCEM_BLOCK_TRANSFER
 	hal_config->TransferEventMode = DMA_TCEM_BLOCK_TRANSFER;
 #endif
+
+	return 0;
+}
+#else
+int dma_stm32_zcfg_to_halcfg(const struct device *dma, const struct dma_config *zephyr_config,
+			     hal_dma_handle_t *hdma, hal_dma_direct_xfer_config_t *xfer_cfg,
+			     uint16_t source_addr_adj, uint16_t dest_addr_adj)
+{
+	__ASSERT_NO_MSG(dma != NULL && zephyr_config != NULL && xfer_cfg != NULL);
+
+	/* mspi_stm32_table_* hold LL values, which the hal_dma_* enums alias */
+	xfer_cfg->request = (hal_dma_request_source_t)zephyr_config->dma_slot;
+	xfer_cfg->direction =
+		(hal_dma_direction_t)table_direction[zephyr_config->channel_direction];
+	xfer_cfg->src_inc = source_addr_adj;
+	xfer_cfg->dest_inc = dest_addr_adj;
+	xfer_cfg->src_data_width = HAL_DMA_SRC_DATA_WIDTH_BYTE;
+	xfer_cfg->dest_data_width = HAL_DMA_DEST_DATA_WIDTH_BYTE;
+	xfer_cfg->priority =
+		(hal_dma_priority_t)table_priority[zephyr_config->channel_priority];
+
+	if (HAL_DMA_SetConfigDirectXfer(hdma, xfer_cfg) != HAL_OK) {
+		LOG_ERR("XSPI DMA config failed");
+		return -EIO;
+	}
 
 	return 0;
 }
