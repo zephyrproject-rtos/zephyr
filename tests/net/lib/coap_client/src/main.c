@@ -67,10 +67,11 @@ static struct coap_client_request long_request = {
 	.user_data = &sem2,
 };
 
-/* Dummy destination addresses */
-static struct net_sockaddr_storage dst_address = {
-	.ss_family = NET_AF_INET,
-};
+/* Destination of the requests; the response fakes fill the same address as
+ * the response source (see recv_src_address), matching the RFC 7252,
+ * section 5.3.2, source endpoint check.
+ */
+static struct net_sockaddr_storage dst_address;
 static struct net_sockaddr_in mcast_address = {
 	.sin_family = NET_AF_INET,
 	.sin_addr = {{{224, 0, 1, 187}}},
@@ -80,6 +81,13 @@ static const struct net_sockaddr_in recv_src_address = {
 	.sin_family = NET_AF_INET,
 	.sin_port = 0x1600,
 	.sin_addr = {{{192, 0, 2, 1}}},
+};
+
+/* A source address the requests were never sent to */
+static const struct net_sockaddr_in recv_wrong_src_address = {
+	.sin_family = NET_AF_INET,
+	.sin_port = 0x1600,
+	.sin_addr = {{{192, 0, 2, 99}}},
 };
 
 static void fill_recv_src_addr(struct net_sockaddr *src_addr, net_socklen_t *addrlen)
@@ -163,6 +171,23 @@ static ssize_t z_impl_zsock_recvfrom_custom_fake(int sock, void *buf, size_t max
 	clear_socket_events(sock, ZSOCK_POLLIN);
 
 	return sizeof(ack_data);
+}
+
+/* Valid piggybacked response, but reported from an address the request was
+ * not sent to.
+ */
+static ssize_t z_impl_zsock_recvfrom_custom_fake_wrong_source(int sock, void *buf, size_t max_len,
+							      int flags,
+							      struct net_sockaddr *src_addr,
+							      net_socklen_t *addrlen)
+{
+	ssize_t ret = z_impl_zsock_recvfrom_custom_fake(sock, buf, max_len, flags, src_addr,
+							addrlen);
+
+	memcpy(src_addr, &recv_wrong_src_address, sizeof(recv_wrong_src_address));
+	*addrlen = sizeof(recv_wrong_src_address);
+
+	return ret;
 }
 
 static ssize_t z_impl_zsock_sendto_custom_fake(int sock, void *buf, size_t len, int flags,
@@ -594,6 +619,11 @@ static void *suite_setup(void)
 	hwtimer_set_rt_ratio(100.0);
 	k_sleep(K_MSEC(1));
 #endif
+	/* Requests go to the same address the response fakes report as the
+	 * response source, so the source endpoint check matches.
+	 */
+	memcpy(&dst_address, &recv_src_address, sizeof(recv_src_address));
+
 	net_coap_init();
 	zassert_ok(coap_client_init(&client, NULL));
 	zassert_ok(coap_client_init(&client2, NULL));
@@ -737,6 +767,25 @@ ZTEST(coap_client, test_no_response)
 
 	zassert_ok(coap_client_req(&client, 0, net_sad(&dst_address), &short_request, &params));
 
+	k_sleep(K_MSEC(MORE_THAN_LONG_EXCHANGE_LIFETIME_MS));
+	zassert_equal(last_response_code, -ETIMEDOUT, "Unexpected response");
+}
+
+ZTEST(coap_client, test_response_from_wrong_source_ignored)
+{
+	struct coap_transmission_parameters params = {
+		.ack_timeout = LONG_ACK_TIMEOUT_MS,
+		.coap_backoff_percent = 200,
+		.max_retransmission = 0
+	};
+
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_wrong_source;
+
+	zassert_ok(coap_client_req(&client, 0, net_sad(&dst_address), &short_request, &params));
+
+	/* The response comes from an address the request was not sent to and
+	 * must not be matched to it; the request times out instead.
+	 */
 	k_sleep(K_MSEC(MORE_THAN_LONG_EXCHANGE_LIFETIME_MS));
 	zassert_equal(last_response_code, -ETIMEDOUT, "Unexpected response");
 }
