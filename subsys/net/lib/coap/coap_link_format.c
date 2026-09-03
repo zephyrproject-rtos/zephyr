@@ -22,21 +22,6 @@ LOG_MODULE_DECLARE(net_coap, CONFIG_COAP_LOG_LEVEL);
 #include <zephyr/net/coap.h>
 #include <zephyr/net/coap_link_format.h>
 
-static inline bool append_u8(struct coap_packet *cpkt, uint8_t data)
-{
-	if (!cpkt) {
-		return false;
-	}
-
-	if (cpkt->max_len - cpkt->offset < 1) {
-		return false;
-	}
-
-	cpkt->data[cpkt->offset++] = data;
-
-	return true;
-}
-
 static inline bool append(struct coap_packet *cpkt, const uint8_t *data, uint16_t len)
 {
 	if (!cpkt || !data) {
@@ -610,6 +595,21 @@ int coap_well_known_core_get_len(struct coap_resource *resources,
 }
 
 #else
+
+static inline bool append_u8(struct coap_packet *cpkt, uint8_t data)
+{
+	if (!cpkt) {
+		return false;
+	}
+
+	if (cpkt->max_len - cpkt->offset < 1) {
+		return false;
+	}
+
+	cpkt->data[cpkt->offset++] = data;
+
+	return true;
+}
 
 static int format_uri(const char * const *path, struct coap_packet *response)
 {
