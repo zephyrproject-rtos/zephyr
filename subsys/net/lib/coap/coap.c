@@ -1545,9 +1545,9 @@ static int update_control_block2(struct coap_block_context *ctx,
 
 	new_current = GET_NUM(block) << (GET_BLOCK_SIZE(block) + 4);
 
-	if (GET_MORE(block)) {
-		return -EINVAL;
-	}
+	/* RFC 7959, section 2.4: the M bit has no function in a Block2 request
+	 * and is ignored on reception.
+	 */
 
 	if (GET_NUM(block) > 0 && GET_BLOCK_SIZE(block) != ctx->block_size) {
 		return -EINVAL;
@@ -2560,9 +2560,9 @@ static int update_control_block2_tcp(struct coap_block_context *ctx,
 
 	new_current = GET_NUM(block) << (MIN(COAP_BLOCK_1024, GET_BLOCK_SIZE(block)) + 4);
 
-	if (GET_MORE(block)) {
-		return -EINVAL;
-	}
+	/* RFC 7959, section 2.4: the M bit has no function in a Block2 request
+	 * and is ignored on reception.
+	 */
 
 	if (GET_NUM(block) > 0 && GET_BLOCK_SIZE(block) != ctx->block_size) {
 		return -EINVAL;

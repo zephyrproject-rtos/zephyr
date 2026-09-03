@@ -793,6 +793,31 @@ ZTEST(coap, test_block2_size)
 	}
 }
 
+ZTEST(coap, test_block2_request_more_bit_ignored)
+{
+	struct coap_block_context ctx;
+	struct coap_packet req;
+	uint8_t data[128];
+	int r;
+
+	/* RFC 7959, section 2.4: the M bit of a Block2 option in a request
+	 * has no function and is ignored by the server.
+	 */
+	r = coap_packet_init(&req, data, sizeof(data), COAP_VERSION_1, COAP_TYPE_CON,
+			     COAP_TOKEN_MAX_LEN, coap_next_token(), COAP_METHOD_GET,
+			     coap_next_id());
+	zassert_equal(r, 0, "Failed to init request");
+
+	r = coap_append_option_int(&req, COAP_OPTION_BLOCK2, (2 << 4) | BIT(3) | COAP_BLOCK_64);
+	zassert_equal(r, 0, "Failed to append block2 option");
+
+	coap_block_transfer_init(&ctx, COAP_BLOCK_64, 256);
+
+	r = coap_update_from_block(&req, &ctx);
+	zassert_equal(r, 0, "M bit in a block2 request must be ignored (%d)", r);
+	zassert_equal(ctx.current, 128, "Unexpected block position");
+}
+
 ZTEST(coap, test_retransmit_second_round)
 {
 	struct coap_packet cpkt;
