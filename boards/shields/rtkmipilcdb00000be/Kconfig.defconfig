@@ -29,11 +29,6 @@ choice LV_Z_RENDERING_MODE
 	default LV_Z_FULL_REFRESH
 endchoice
 
-# Use offloaded render thread
-choice LV_COLOR_DEPTH
-	default LV_COLOR_DEPTH_16
-endchoice
-
 endif # LVGL
 
 endif # DISPLAY
