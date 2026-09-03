@@ -1280,9 +1280,9 @@ starlette==1.4.1 \
     # via
     #   fastapi
     #   sphinx-autobuild
-strictdoc==0.28.1 \
-    --hash=sha256:88e42cad04db7d5f946de390926da8db1e868034b29998392611eab7c64204e4 \
-    --hash=sha256:f33b4fb98b69cbc3ce6774b4e70493062e3d635e599c0f6bc727740e18ef2426
+strictdoc==0.28.3 \
+    --hash=sha256:9200ebcc3faddbb09d9c1b7a7b32a35b4a09cd8067be8ba06f7492c159e22581 \
+    --hash=sha256:b7df5644b81e65521f0809bf780808e859c505603b32244b1c410e19ac52ba19
     # via -r requirements.in
 textx==4.4.0 \
     --hash=sha256:a7b15a4698b503edde631d5227c0d0f6024898a86a7924b5fc741973305f9286 \
@@ -1399,6 +1399,7 @@ typing-extensions==4.16.0 \
     #   python-datauri
     #   selenium
     #   starlette
+    #   strictdoc
     #   typing-inspection
 typing-inspection==0.4.2 \
     --hash=sha256:4ed1cacbdc298c220f1bd249ed5287caa16f34d44ef4e9c3d0cbad5b521545e7 \
