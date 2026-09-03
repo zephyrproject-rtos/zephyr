@@ -1,0 +1,52 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config NXP_UWB_DEVICE
+	bool "NXP UWB Device"
+	default n
+	select SPI
+	select GPIO
+	select SPI_ASYNC
+	help
+	  Enables NXP UWB driver
+
+config NXP_UWB_DEVICE_TX_BUFFER_MAX
+	int "NXP SR250 UWB Driver maximum Tx size"
+	depends on SHIELD_NXP_SR250
+	default 4096
+
+
+choice "NXP_UWB_LOG_LEVEL_CHOICE"
+	prompt "Max compiled-in log level for NXP-UWB"
+	default NXP_UWB_LOG_LEVEL_DEFAULT
+	depends on LOG
+
+config NXP_UWB_LOG_LEVEL_OFF
+	bool "NXP-UWB logging level Off"
+
+config NXP_UWB_LOG_LEVEL_ERR
+	bool "NXP-UWB logging level Error"
+
+config NXP_UWB_LOG_LEVEL_WRN
+	bool "NXP-UWB logging level Warning"
+
+config NXP_UWB_LOG_LEVEL_INF
+	bool "NXP-UWB logging level Info"
+
+config NXP_UWB_LOG_LEVEL_DBG
+	bool "NXP-UWB logging level Debug"
+
+config NXP_UWB_LOG_LEVEL_DEFAULT
+	bool "NXP-UWB logging level Default"
+
+endchoice
+
+config UWB_NXP_LOG_LEVEL
+	int
+	depends on LOG
+	default 0 if NXP_UWB_LOG_LEVEL_OFF
+	default 1 if NXP_UWB_LOG_LEVEL_ERR
+	default 2 if NXP_UWB_LOG_LEVEL_WRN
+	default 3 if NXP_UWB_LOG_LEVEL_INF
+	default 4 if NXP_UWB_LOG_LEVEL_DBG
+	default LOG_DEFAULT_LEVEL if NXP_UWB_LOG_LEVEL_DEFAULT
