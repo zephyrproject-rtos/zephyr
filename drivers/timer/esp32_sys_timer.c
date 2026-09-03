@@ -12,6 +12,7 @@
 #include <esp_private/systimer.h>
 #include <rom/ets_sys.h>
 #include <esp_attr.h>
+#include <esp_private/esp_timer_private.h>
 
 #include <zephyr/drivers/interrupt_controller/intc_esp32.h>
 #include <zephyr/drivers/timer/system_timer.h>
@@ -37,16 +38,24 @@ static systimer_hal_context_t systimer_hal;
 
 static void set_systimer_alarm(uint64_t time)
 {
+	systimer_counter_value_t alarm = {.val = time};
+
+	if (IS_ENABLED(CONFIG_SMP)) {
+		esp_timer_private_lock();
+	}
+
 	systimer_hal_select_alarm_mode(&systimer_hal,
 		SYSTIMER_ALARM_OS_TICK_CORE0, SYSTIMER_ALARM_MODE_ONESHOT);
-
-	systimer_counter_value_t alarm = {.val = time};
 
 	systimer_ll_enable_alarm(systimer_hal.dev, SYSTIMER_ALARM_OS_TICK_CORE0, false);
 	systimer_ll_set_alarm_target(systimer_hal.dev, SYSTIMER_ALARM_OS_TICK_CORE0, alarm.val);
 	systimer_ll_apply_alarm_value(systimer_hal.dev, SYSTIMER_ALARM_OS_TICK_CORE0);
 	systimer_ll_enable_alarm(systimer_hal.dev, SYSTIMER_ALARM_OS_TICK_CORE0, true);
 	systimer_ll_enable_alarm_int(systimer_hal.dev, SYSTIMER_ALARM_OS_TICK_CORE0, true);
+
+	if (IS_ENABLED(CONFIG_SMP)) {
+		esp_timer_private_unlock();
+	}
 }
 
 static uint64_t get_systimer_alarm(void)
