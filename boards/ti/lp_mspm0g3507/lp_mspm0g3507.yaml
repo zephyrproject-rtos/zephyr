@@ -19,4 +19,5 @@ supported:
   - vref
   - trng
   - watchdog
+  - dma
 vendor: ti
