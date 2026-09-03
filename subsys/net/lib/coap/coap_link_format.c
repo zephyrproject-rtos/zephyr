@@ -438,7 +438,7 @@ int coap_well_known_core_get_len(struct coap_resource *resources,
 				 struct coap_packet *response,
 				 uint8_t *data, uint16_t len)
 {
-	static struct coap_block_context ctx;
+	struct coap_block_context ctx;
 	struct coap_option query;
 	unsigned int num_queries;
 	size_t offset;
@@ -447,25 +447,36 @@ int coap_well_known_core_get_len(struct coap_resource *resources,
 	uint16_t id;
 	uint8_t tkl;
 	int r;
+	int block2;
 	bool more = false, first = true;
 
 	if (!resources || !request || !response || !data || !len) {
 		return -EINVAL;
 	}
 
-	if (ctx.total_size == 0) {
-		/* We have to iterate through resources and it's attributes,
-		 * total size is unknown, so initialize it to
-		 * MAX_BLOCK_WISE_TRANSFER_SIZE and update it according to
-		 * offset.
-		 */
-		coap_block_transfer_init(&ctx, default_block_size(),
-					 MAX_BLOCK_WISE_TRANSFER_SIZE);
+	/* The response is regenerated for every block and the block context is
+	 * derived from the request alone, so no state is shared between calls
+	 * and concurrent transfers from different clients stay independent.
+	 * The total size is unknown until the last block; the
+	 * MAX_BLOCK_WISE_TRANSFER_SIZE placeholder keeps the more flag set
+	 * until clear_more_flag() corrects the final block.
+	 */
+	coap_block_transfer_init(&ctx, default_block_size(),
+				 MAX_BLOCK_WISE_TRANSFER_SIZE);
+
+	/* Honor a smaller block size negotiated by the client on an earlier
+	 * block, which coap_update_from_block() would otherwise reject as a
+	 * size mismatch.
+	 */
+	block2 = coap_get_option_int(request, COAP_OPTION_BLOCK2);
+	if (block2 >= 0) {
+		ctx.block_size = MIN((enum coap_block_size)GET_BLOCK_SIZE(block2),
+				     ctx.block_size);
 	}
 
 	r = coap_update_from_block(request, &ctx);
 	if (r < 0) {
-		goto end;
+		return r;
 	}
 
 	id = coap_header_get_id(request);
@@ -476,7 +487,7 @@ int coap_well_known_core_get_len(struct coap_resource *resources,
 	 */
 	r = coap_find_options(request, COAP_OPTION_URI_QUERY, &query, 1);
 	if (r < 0) {
-		goto end;
+		return r;
 	}
 
 	num_queries = r;
@@ -484,23 +495,23 @@ int coap_well_known_core_get_len(struct coap_resource *resources,
 	r = coap_packet_init(response, data, len, COAP_VERSION_1, COAP_TYPE_ACK,
 			     tkl, token, COAP_RESPONSE_CODE_CONTENT, id);
 	if (r < 0) {
-		goto end;
+		return r;
 	}
 
 	r = coap_append_option_int(response, COAP_OPTION_CONTENT_FORMAT,
 				   COAP_CONTENT_FORMAT_APP_LINK_FORMAT);
 	if (r < 0) {
-		goto end;
+		return r;
 	}
 
 	r = coap_append_block2_option(response, &ctx);
 	if (r < 0) {
-		goto end;
+		return r;
 	}
 
 	r = coap_packet_append_payload_marker(response);
 	if (r < 0) {
-		goto end;
+		return r;
 	}
 
 	offset = 0;
@@ -522,14 +533,14 @@ int coap_well_known_core_get_len(struct coap_resource *resources,
 			r = append_to_coap_pkt(response, ",", 1, &remaining,
 					       &offset, ctx.current);
 			if (!r) {
-				goto end;
+				return r;
 			}
 		}
 
 		r = format_resource(&resources[i], response, &remaining, &offset,
 				    ctx.current, &more);
 		if (r < 0) {
-			goto end;
+			return r;
 		}
 	}
 
@@ -537,14 +548,7 @@ int coap_well_known_core_get_len(struct coap_resource *resources,
 	 * appended. So update only 'more' flag.
 	 */
 	if (!more) {
-		ctx.total_size = offset;
 		r = clear_more_flag(response);
-	}
-
-end:
-	/* So it's a last block, reset context */
-	if (!more) {
-		(void)memset(&ctx, 0, sizeof(ctx));
 	}
 
 	return r;
