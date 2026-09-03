@@ -12,6 +12,9 @@
 #include "nrf_clock_calibration.h"
 #include "clock_control_nrf_common.h"
 #include <nrfx_clock_lfclk.h>
+#if IS_ENABLED(CONFIG_NRFX_CLOCK_LFRC)
+#include <nrfx_clock_lfrc.h>
+#endif
 #include <zephyr/logging/log.h>
 #include <zephyr/shell/shell.h>
 #include <zephyr/irq.h>
@@ -177,7 +180,7 @@ static void lfclk_spinwait(enum nrf_lfclk_start_mode mode)
 	}
 }
 
-static void clock_event_handler(nrfx_clock_lfclk_evt_type_t event)
+static void lfclk_clock_event_handler(nrfx_clock_lfclk_evt_type_t event)
 {
 	switch (event) {
 	case NRFX_CLOCK_LFCLK_EVT_LFCLK_STARTED:
@@ -186,7 +189,7 @@ static void clock_event_handler(nrfx_clock_lfclk_evt_type_t event)
 		}
 		common_clkstarted_handle(CLOCK_DEVICE_LFCLK);
 		break;
-#if NRF_CLOCK_HAS_CALIBRATION || NRF_LFRC_HAS_CALIBRATION
+#if NRF_CLOCK_HAS_CALIBRATION
 	case NRFX_CLOCK_LFCLK_EVT_CAL_DONE:
 		if (IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_DRIVER_CALIBRATION)) {
 			z_nrf_clock_calibration_done_handler();
@@ -201,6 +204,25 @@ static void clock_event_handler(nrfx_clock_lfclk_evt_type_t event)
 		break;
 	}
 }
+
+#if IS_ENABLED(CONFIG_NRFX_CLOCK_LFRC) && IS_ENABLED(NRF_LFRC_HAS_CALIBRATION)
+static void lfrc_clock_event_handler(nrfx_clock_lfrc_evt_type_t event)
+{
+	switch (event) {
+	case NRFX_CLOCK_LFRC_EVT_CAL_DONE:
+		if (IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_DRIVER_CALIBRATION)) {
+			z_nrf_clock_calibration_done_handler();
+		} else {
+			/* Should not happen when calibration is disabled. */
+			__ASSERT_NO_MSG(false);
+		}
+		break;
+	default:
+		__ASSERT_NO_MSG(0);
+		break;
+	}
+}
+#endif
 
 static void onoff_start(struct onoff_manager *mgr, onoff_notify_fn notify)
 {
@@ -337,9 +359,21 @@ static int clk_init(const struct device *dev)
 
 	common_connect_irq();
 
-	if (nrfx_clock_lfclk_init(clock_event_handler) != 0) {
+	if (nrfx_clock_lfclk_init(lfclk_clock_event_handler) != 0) {
 		return -EIO;
 	}
+
+#if IS_ENABLED(CONFIG_NRFX_CLOCK_LFRC) && IS_ENABLED(NRF_LFRC_HAS_CALIBRATION)
+	IRQ_CONNECT(DT_IRQN(DT_INST(0, nordic_nrf_lfrc)),
+		    DT_IRQ(DT_INST(0, nordic_nrf_lfrc), priority),
+		    nrfx_clock_lfrc_irq_handler,
+		    NULL, 0);
+	irq_enable(DT_IRQN(DT_INST(0, nordic_nrf_lfrc)));
+
+	if (nrfx_clock_lfrc_init(lfrc_clock_event_handler) != 0) {
+		return -EIO;
+	}
+#endif
 
 	if (IS_ENABLED(CONFIG_CLOCK_CONTROL_NRF_DRIVER_CALIBRATION)) {
 		z_nrf_clock_calibration_init();
