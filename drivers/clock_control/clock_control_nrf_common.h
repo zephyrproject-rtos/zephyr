@@ -8,9 +8,10 @@
 
 #ifndef CONFIG_CLOCK_CONTROL_NRF
 
+#include <zephyr/sys/util_macro.h>
 #include <zephyr/sys/onoff.h>
-#include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/nrf_clock_control.h>
+#include <zephyr/drivers/clock_control.h>
 #include <zephyr/logging/log.h>
 
 #define FLAGS_COMMON_BITS 10
@@ -21,6 +22,7 @@
 #define COMMON_STATUS_MASK       0x7
 #define COMMON_GET_STATUS(flags) (flags & COMMON_STATUS_MASK)
 
+#if (IS_ENABLED(CONFIG_SOC_SERIES_NRF54H) || IS_ENABLED(CONFIG_SOC_SERIES_NRF92))
 struct clock_onoff {
 	struct onoff_manager mgr;
 	onoff_notify_fn notify;
@@ -43,11 +45,15 @@ struct clock_onoff {
 		struct clock_onoff onoff[_onoff_cnt];                                              \
 	}
 
+#endif /* (IS_ENABLED(CONFIG_SOC_SERIES_NRF54H) || IS_ENABLED(CONFIG_SOC_SERIES_NRF92)) */
+
 typedef void (*clk_ctrl_func_t)(void);
 
 typedef struct {
 	const struct device *dev;
+#if CONFIG_CLOCK_CONTROL_NRF_ONOFF
 	struct onoff_manager mgr;
+#endif
 	clock_control_cb_t cb;
 	void *user_data;
 	uint32_t flags;
@@ -67,6 +73,7 @@ struct clock_control_nrf_irq_handler {
 		.handler = _handler,                                                               \
 	}
 
+#if (IS_ENABLED(CONFIG_SOC_SERIES_NRF54H) || IS_ENABLED(CONFIG_SOC_SERIES_NRF92))
 /**
  * @brief Initializes a clock configuration structure.
  *
@@ -120,6 +127,8 @@ void clock_config_update_end(void *clk_cfg, int status);
 
 int api_nosys_on_off(const struct device *dev, clock_control_subsys_t sys);
 
+#endif /* (IS_ENABLED(CONFIG_SOC_SERIES_NRF54H) || IS_ENABLED(CONFIG_SOC_SERIES_NRF92)) */
+
 void common_connect_irq(void);
 
 void common_set_on_state(uint32_t *flags);
@@ -131,9 +140,6 @@ int common_async_start(const struct device *dev, clock_control_cb_t cb, void *us
 		       uint32_t ctx);
 
 int common_stop(const struct device *dev, uint32_t ctx);
-
-void common_onoff_started_callback(const struct device *dev, clock_control_subsys_t sys,
-				   void *user_data);
 
 void common_clkstarted_handle(const struct device *dev);
 
@@ -149,17 +155,15 @@ int common_api_stop(const struct device *dev, clock_control_subsys_t subsys);
 enum clock_control_status common_api_get_status(const struct device *dev,
 				   clock_control_subsys_t subsys);
 
+#if CONFIG_CLOCK_CONTROL_NRF_ONOFF
 int common_api_request(const struct device *dev, const struct nrf_clock_spec *spec,
-	  struct onoff_client *cli);
+		       struct onoff_client *cli);
 
 int common_api_release(const struct device *dev, const struct nrf_clock_spec *spec);
 
 int common_api_cancel_or_release(const struct device *dev, const struct nrf_clock_spec *spec,
-		    struct onoff_client *cli);
-
-void common_onoff_start(struct onoff_manager *manager, onoff_notify_fn notify);
-
-void common_onoff_stop(struct onoff_manager *manager, onoff_notify_fn notify);
+				 struct onoff_client *cli);
+#endif
 
 int common_clk_init(const struct device *dev);
 

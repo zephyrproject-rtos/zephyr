@@ -4,7 +4,6 @@
  */
 
 #include <soc.h>
-#include <zephyr/sys/onoff.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/nrf_clock_control.h>
 #include "nrf_clock_calibration.h"
@@ -141,4 +140,5 @@ static const common_clock_config_t config = {
 };
 
 DEVICE_DT_DEFINE(DT_COMPAT_GET_ANY_STATUS_OKAY(nordic_nrf_clock_hfclk), clk_init, NULL, &data,
-		 &config, PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY, &common_clock_control_api);
+		 &config, PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY,
+		 &common_clock_control_api);
