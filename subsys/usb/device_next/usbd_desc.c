@@ -125,7 +125,7 @@ int usbd_add_descriptor(struct usbd_context *const uds_ctx,
 
 	usbd_device_lock(uds_ctx);
 
-	hs_desc = uds_ctx->hs_desc;
+	hs_desc = usbd_get_hs_desc(uds_ctx);
 	if (USBD_SUPPORTS_HIGH_SPEED && hs_desc == NULL) {
 		ret = -EPERM;
 		goto add_descriptor_error;
