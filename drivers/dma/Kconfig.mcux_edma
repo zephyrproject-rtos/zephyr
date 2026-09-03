@@ -41,12 +41,12 @@ config DMA_MCUX_EDMA_DMAMUX
 	help
 	  Automatically enabled when EDMA device tree node has has-dmamux property.
 
+if DMA_MCUX_EDMA || DMA_MCUX_EDMA_V3 || DMA_MCUX_EDMA_V4
+
 config DMA_MCUX_MAX_DATA_SIZE
 	int
 	default 64 if DMA_MCUX_EDMA_V4 || DMA_MCUX_EDMA_V3
 	default 32
-
-if DMA_MCUX_EDMA || DMA_MCUX_EDMA_V3 || DMA_MCUX_EDMA_V4
 
 config DMA_TCD_QUEUE_SIZE
 	int "number of TCD in a queue for SG mode"
