@@ -1,5 +1,5 @@
 tests:
-  bsim.drivers.gpio.file_backend:
+  drivers.gpio.file_backend:
     tags:
       - drivers
       - gpio
