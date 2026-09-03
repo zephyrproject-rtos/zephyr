@@ -5,7 +5,7 @@
  */
 
 /** @file
- *  @brief DHCPv6 server (prefix delegation), RFC 8415
+ *  @brief DHCPv6 server (prefix delegation), @rfc{8415}
  */
 
 #ifndef ZEPHYR_INCLUDE_NET_DHCPV6_SERVER_H_
