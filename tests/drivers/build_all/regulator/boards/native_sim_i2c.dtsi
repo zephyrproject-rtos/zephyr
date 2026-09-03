@@ -262,3 +262,13 @@ max20362@c {
 
 	ldo {};
 };
+
+tps62873@d {
+	compatible = "ti,tps6287x";
+	reg = <0xd>;
+	input-voltage-microvolt = <5000000>;
+	regulator-init-microvolt = <1100000>;
+	regulator-min-microvolt = <400000>;
+	regulator-max-microvolt = <3350000>;
+	regulator-boot-on;
+};
