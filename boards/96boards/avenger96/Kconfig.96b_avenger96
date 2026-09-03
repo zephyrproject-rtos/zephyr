@@ -2,4 +2,4 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config BOARD_96B_AVENGER96
-	select SOC_STM32MP15_M4
+	select SOC_STM32MP157CXX_M4
