@@ -873,6 +873,15 @@ static int handle_poll(void)
 				if (ret == -EAGAIN) {
 					continue;
 				}
+				if (ret == -EBADMSG || ret == -EILSEQ) {
+					/* RFC 7252, sections 4.2 and 4.3: a
+					 * malformed message is rejected by
+					 * silently ignoring it; it must not
+					 * tear down unrelated exchanges.
+					 */
+					LOG_WRN("Dropping malformed packet");
+					continue;
+				}
 				LOG_ERR("Error receiving response");
 				cancel_requests_with(client, -EIO);
 				continue;
@@ -940,7 +949,12 @@ static int recv_response(struct coap_client *client, struct net_sockaddr *addr,
 
 	ret = coap_packet_parse(response, client->recv_buf, available_len, NULL, 0);
 	if (ret < 0) {
-		LOG_ERR("Invalid data received");
+		LOG_ERR("Invalid data received (%d)", ret);
+		/* Normalize parse failures, including datagrams shorter than a
+		 * CoAP header (-EINVAL), so the caller can tell a malformed
+		 * packet from a socket error.
+		 */
+		return -EBADMSG;
 	}
 
 	return ret;

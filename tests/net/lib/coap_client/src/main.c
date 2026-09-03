@@ -190,6 +190,40 @@ static ssize_t z_impl_zsock_recvfrom_custom_fake_wrong_source(int sock, void *bu
 	return ret;
 }
 
+/* A datagram shorter than a CoAP header, then a valid response */
+static ssize_t z_impl_zsock_recvfrom_custom_fake_runt(int sock, void *buf, size_t max_len,
+						      int flags,
+						      struct net_sockaddr *src_addr,
+						      net_socklen_t *addrlen)
+{
+	((uint8_t *)buf)[0] = 0x60;
+	((uint8_t *)buf)[1] = 0x45;
+
+	fill_recv_src_addr(src_addr, addrlen);
+
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake;
+
+	return 2;
+}
+
+/* A malformed packet (reserved token length 15), then a runt datagram */
+static ssize_t z_impl_zsock_recvfrom_custom_fake_malformed(int sock, void *buf, size_t max_len,
+							   int flags,
+							   struct net_sockaddr *src_addr,
+							   net_socklen_t *addrlen)
+{
+	((uint8_t *)buf)[0] = 0x6F;
+	((uint8_t *)buf)[1] = 0x45;
+	((uint8_t *)buf)[2] = 0x00;
+	((uint8_t *)buf)[3] = 0x00;
+
+	fill_recv_src_addr(src_addr, addrlen);
+
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_runt;
+
+	return 4;
+}
+
 /* Piggybacked response with the right token but a corrupted message ID */
 static ssize_t z_impl_zsock_recvfrom_custom_fake_wrong_mid(int sock, void *buf, size_t max_len,
 							   int flags,
@@ -912,6 +946,20 @@ ZTEST(coap_client, test_blockwise_short_block_fails)
 	 */
 	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
 	zassert_equal(last_response_code, -EBADMSG, "Unexpected response");
+}
+
+ZTEST(coap_client, test_malformed_packet_ignored)
+{
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_malformed;
+
+	zassert_ok(coap_client_req(&client, 0, net_sad(&dst_address), &short_request, NULL));
+
+	/* The malformed packet and the runt datagram are dropped without
+	 * cancelling the exchange, and the valid response that follows
+	 * completes it.
+	 */
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, COAP_RESPONSE_CODE_CONTENT, "Unexpected response");
 }
 
 ZTEST(coap_client, test_separate_response)
