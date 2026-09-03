@@ -284,6 +284,11 @@ Boards
   them have to reference the SoC nodes (``&spi2``, ``&i2c0``, ``&gpio0``,
   ``&gpio1``) directly. (:github:`116956`)
 
+* The STM32MP15 Cortex-M4 SoC Kconfig symbol ``SOC_STM32MP15_M4`` has been renamed to
+  :kconfig:option:`CONFIG_SOC_STM32MP157CXX_M4`. Out-of-tree STM32MP15 boards that selected
+  ``SOC_STM32MP15_M4`` must select :kconfig:option:`CONFIG_SOC_STM32MP157CXX_M4` instead.
+  (:github:`118151`)
+
 Device Drivers and Devicetree
 *****************************
 
