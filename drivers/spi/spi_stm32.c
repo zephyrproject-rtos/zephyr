@@ -2045,7 +2045,14 @@ static int transceive(const struct device *dev,
 	bool use_dma = false;
 
 #if defined(CONFIG_SPI_STM32_DMA)
-	use_dma = (data->dma_tx.dma_dev != NULL) && (data->dma_rx.dma_dev != NULL);
+	if ((SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_CONTROLLER) &&
+	    (config->operation & SPI_HALF_DUPLEX) == 0U) {
+		/* DMA can only be used for full-duplex controller mode */
+		use_dma = (data->dma_tx.dma_dev != NULL) && (data->dma_rx.dma_dev != NULL);
+	} else {
+		LOG_ERR("SPI DMA is only supported for full-duplex controller mode");
+		return -ENOTSUP;
+	}
 #endif /* CONFIG_SPI_STM32_DMA */
 
 	if (tx_bufs == NULL && rx_bufs == NULL) {
