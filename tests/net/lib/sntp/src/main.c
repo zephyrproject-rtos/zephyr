@@ -25,16 +25,9 @@
 
 #include "sntp_pkt.h"
 
-#define SNTP_PORT 123
-
 #define MODE_CLIENT 3
 #define MODE_SERVER 4
 #define VERSION     4
-
-/* Seconds between the NTP epoch and 1 Jan 1970, which parse_response()
- * subtracts when the transmit timestamp's top bit is set.
- */
-#define OFFSET_1970_JAN_1 2208988800U
 
 /* The loopback datagram is delivered inside zsock_sendto(), so it is
  * already waiting by the time the client polls for it.
