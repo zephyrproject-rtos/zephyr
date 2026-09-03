@@ -229,22 +229,18 @@ def to_str(b):
 def get_drives():
     drives = []
     if sys.platform == "win32":
+        # Removable (DriveType 2) FAT volumes, which is what a UF2
+        # bootloader presents. wmic used to answer this, but it was removed
+        # in Windows 11 24H2, so ask PowerShell for the same two properties.
         r = subprocess.check_output(
             [
-                "wmic",
-                "PATH",
-                "Win32_LogicalDisk",
-                "get",
-                "DeviceID,",
-                "VolumeName,",
-                "FileSystem,",
-                "DriveType",
+                "powershell",
+                "-Command",
+                '(Get-WmiObject Win32_LogicalDisk'
+                ' -Filter "DriveType=2 AND FileSystem=\'FAT\'").DeviceID',
             ]
         )
-        for line in to_str(r).split('\n'):
-            words = re.split(r'\s+', line)
-            if len(words) >= 3 and words[1] == "2" and words[2] == "FAT":
-                drives.append(words[0])
+        drives = [line.strip() for line in to_str(r).splitlines() if line.strip()]
     else:
         searchpaths = ["/media"]
         if sys.platform == "darwin":
