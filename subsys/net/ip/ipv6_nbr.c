@@ -325,6 +325,11 @@ bool net_ipv6_nbr_rm(struct net_if *iface, struct net_in6_addr *addr)
 		return false;
 	}
 
+	/* The caller may have left the interface open, so report the removal
+	 * against the one the neighbor was actually found on.
+	 */
+	iface = nbr->iface;
+
 	/* Remove any routes with nbr as nexthop in first place */
 	net_route_ipv6_del_by_nexthop(iface, addr);
 
@@ -356,7 +361,7 @@ void net_ipv6_nbr_clear_cache(struct net_if *iface)
 		struct net_nbr *nbr = get_nbr(i);
 		struct net_in6_addr addr;
 
-		if (!nbr->ref || nbr->iface != iface ||
+		if (nbr->ref == 0 || (iface != NULL && nbr->iface != iface) ||
 		    net_ipv6_nbr_data(nbr)->state == NET_IPV6_NBR_STATE_STATIC) {
 			continue;
 		}
@@ -366,7 +371,7 @@ void net_ipv6_nbr_clear_cache(struct net_if *iface)
 		 * freed entry would be a use-after-free.
 		 */
 		net_ipaddr_copy(&addr, &net_ipv6_nbr_data(nbr)->addr);
-		net_ipv6_nbr_rm(iface, &addr);
+		net_ipv6_nbr_rm(nbr->iface, &addr);
 	}
 
 	net_ipv6_nbr_unlock();
