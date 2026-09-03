@@ -136,7 +136,12 @@ static int cmd_net_arp_add(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	net_arp_update(iface, &ip, &eth, false, true);
+	ret = net_arp_add_static(iface, &ip, &eth);
+	if (ret < 0) {
+		PR_WARNING("Cannot add static ARP entry (%d)\n", ret);
+		return -ENOEXEC;
+	}
+
 	PR("Added static ARP entry %s -> %s on interface %d\n", net_sprint_ipv4_addr(&ip),
 	   net_sprint_ll_addr(eth.addr, sizeof(eth.addr)), net_if_get_by_iface(iface));
 	return 0;

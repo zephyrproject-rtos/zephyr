@@ -81,6 +81,10 @@ struct arp_entry {
 	struct net_in_addr ip;
 	struct net_eth_addr eth;
 	struct k_fifo pending_queue;
+	/* Entry was added by the user and is not removed by a cache flush
+	 * or overwritten by information learned from the network.
+	 */
+	bool is_static;
 };
 
 typedef void (*net_arp_cb_t)(struct arp_entry *entry,
@@ -93,6 +97,21 @@ void net_arp_update(struct net_if *iface, struct net_in_addr *src,
 		    struct net_eth_addr *hwaddr, bool gratuitous,
 		    bool force);
 
+/**
+ * @brief Add a static entry to the ARP cache.
+ *
+ * A static entry survives a cache flush and is not overwritten by the
+ * hardware address seen in a received ARP message.
+ *
+ * @param iface Network interface.
+ * @param addr IPv4 address of the peer.
+ * @param hwaddr Hardware address of the peer.
+ *
+ * @return 0 on success, -ENOMEM if the cache has no room for the entry.
+ */
+int net_arp_add_static(struct net_if *iface, struct net_in_addr *addr,
+		       struct net_eth_addr *hwaddr);
+
 
 #else /* CONFIG_NET_ARP */
 #define net_arp_prepare(_kt, _u1, _u2, _arp) NET_ARP_COMPLETE
@@ -102,6 +121,7 @@ void net_arp_update(struct net_if *iface, struct net_in_addr *src,
 #define net_arp_init(...)
 #define net_arp_clear_pending(...) 0
 #define net_arp_update(...)
+#define net_arp_add_static(...) -ENOTSUP
 
 #endif /* CONFIG_NET_ARP */
 
