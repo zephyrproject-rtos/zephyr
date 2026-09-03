@@ -447,6 +447,8 @@ void bt_hci_inquiry_complete(struct net_buf *buf)
 		LOG_ERR("Failed to complete inquiry");
 	}
 
+	atomic_clear_bit(bt_dev.flags, BT_DEV_INQUIRY_ACTIVE);
+
 	report_discovery_results();
 }
 
@@ -1098,6 +1100,7 @@ int bt_br_discovery_start(const struct bt_br_discovery_param *param,
 	}
 
 	atomic_set_bit(bt_dev.flags, BT_DEV_INQUIRY);
+	atomic_set_bit(bt_dev.flags, BT_DEV_INQUIRY_ACTIVE);
 
 	(void)memset(results, 0, sizeof(*results) * cnt);
 
@@ -1119,9 +1122,14 @@ int bt_br_discovery_stop(void)
 		return -EALREADY;
 	}
 
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_INQUIRY_CANCEL, NULL, NULL);
-	if (err) {
-		return err;
+	if (atomic_test_bit(bt_dev.flags, BT_DEV_INQUIRY_ACTIVE)) {
+		err = bt_hci_cmd_send_sync(BT_HCI_OP_INQUIRY_CANCEL, NULL, NULL);
+		/* The inquiry may have ended while send_sync() was waiting. */
+		if (err && atomic_test_bit(bt_dev.flags, BT_DEV_INQUIRY_ACTIVE)) {
+			return err;
+		}
+
+		atomic_clear_bit(bt_dev.flags, BT_DEV_INQUIRY_ACTIVE);
 	}
 
 	for (i = 0; i < discovery_results_count; i++) {
