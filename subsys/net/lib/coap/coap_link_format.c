@@ -15,6 +15,7 @@ LOG_MODULE_DECLARE(net_coap, CONFIG_COAP_LOG_LEVEL);
 #include <errno.h>
 
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/hash_function.h>
 
 #include <zephyr/sys/printk.h>
 
@@ -178,6 +179,49 @@ static bool match_queries_resource(const struct coap_resource *resource,
 #if defined(CONFIG_COAP_WELL_KNOWN_BLOCK_WISE)
 
 #define MAX_BLOCK_WISE_TRANSFER_SIZE 2048
+
+static uint32_t hash_combine_str(uint32_t seed, const char *str)
+{
+	/* Boost-style hash combine, the constant is the 32-bit golden ratio */
+	return seed ^ (sys_hash32(str, strlen(str)) + 0x9e3779b9U + (seed << 6) + (seed >> 2));
+}
+
+/* The link-format document is regenerated for every block, so derive an ETag
+ * from the inputs that determine its content. It lets clients verify that the
+ * blocks they reassemble belong to the same representation
+ * (RFC 7959, section 2.4).
+ */
+static uint32_t well_known_core_etag(const struct coap_resource *resources, size_t resources_len,
+				     const struct coap_option *query, unsigned int num_queries)
+{
+	uint32_t etag = 0U;
+
+	for (size_t i = 0; i < resources_len; i++) {
+		const struct coap_core_metadata *meta = resources[i].metadata;
+
+		if (!match_queries_resource(&resources[i], query, num_queries)) {
+			continue;
+		}
+
+		for (const char * const *p = resources[i].path; p != NULL && *p != NULL; p++) {
+			etag = hash_combine_str(etag, *p);
+		}
+
+		/* Separate the path segments from the attributes, like ">" does
+		 * in the document, so that a segment moving between the two
+		 * lists, or to the next resource, changes the ETag.
+		 */
+		etag = hash_combine_str(etag, ">");
+
+		if (meta != NULL && meta->attributes != NULL) {
+			for (const char * const *attr = meta->attributes; *attr != NULL; attr++) {
+				etag = hash_combine_str(etag, *attr);
+			}
+		}
+	}
+
+	return etag;
+}
 
 enum coap_block_size default_block_size(void)
 {
@@ -496,6 +540,17 @@ int coap_well_known_core_get_len(struct coap_resource *resources,
 			     tkl, token, COAP_RESPONSE_CODE_CONTENT, id);
 	if (r < 0) {
 		return r;
+	}
+
+	if (IS_ENABLED(CONFIG_SYS_HASH_FUNC32)) {
+		uint32_t etag = well_known_core_etag(resources, resources_len,
+						     &query, num_queries);
+
+		r = coap_packet_append_option(response, COAP_OPTION_ETAG,
+					      (const uint8_t *)&etag, sizeof(etag));
+		if (r < 0) {
+			return r;
+		}
 	}
 
 	r = coap_append_option_int(response, COAP_OPTION_CONTENT_FORMAT,

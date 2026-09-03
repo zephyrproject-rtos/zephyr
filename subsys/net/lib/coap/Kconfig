@@ -20,12 +20,17 @@ config COAP_TEST_API_ENABLE
 
 config COAP_WELL_KNOWN_BLOCK_WISE
 	bool "CoAP ./well-known/core services block wise support"
+	imply SYS_HASH_FUNC32
 	help
 	  This option enables the block wise support of CoAP response
 	  to ./well-known/core request. Without this option all resource's
 	  information will be sent in a single IP packet (can be multiple
 	  fragments depends on MTU size). This will be useful in mesh kind
 	  of networks.
+
+	  When CONFIG_SYS_HASH_FUNC32 is enabled, the responses include an
+	  ETag option, so clients can verify that the blocks they reassemble
+	  belong to the same representation (RFC 7959, section 2.4).
 
 config COAP_WELL_KNOWN_BLOCK_WISE_SIZE
 	int "CoAP ./well-known/core services block wise support"
