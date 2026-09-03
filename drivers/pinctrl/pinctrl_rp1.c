@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2024 Junho Lee <junho@tsnlab.com>
  * Copyright (c) 2025 TOKITA Hiroshi
  *
  * SPDX-License-Identifier: Apache-2.0
@@ -7,7 +8,6 @@
 #define DT_DRV_COMPAT raspberrypi_rp1_pinctrl
 
 #include <zephyr/device.h>
-#include <zephyr/drivers/gpio/gpio_rp1.h>
 #include <zephyr/drivers/pinctrl.h>
 
 #include <zephyr/logging/log.h>
@@ -16,6 +16,60 @@ LOG_MODULE_REGISTER(pinctrl_rp1, CONFIG_PINCTRL_LOG_LEVEL);
 
 #define GPIO_CTRL(base, n) ((base) + (n) * 8 + 4)
 #define PADS_CTRL(base, n) ((base) + (n) * 4)
+
+/* Bit positions and masks for the RP1 GPIO control register. */
+#define GPIO_CTRL_FUNCSEL_SHIFT               0
+#define GPIO_CTRL_FUNCSEL_MASK                (BIT_MASK(5) << GPIO_CTRL_FUNCSEL_SHIFT)
+#define GPIO_CTRL_F_M_SHIFT                   5
+#define GPIO_CTRL_F_M_MASK                    (BIT_MASK(7) << GPIO_CTRL_F_M_SHIFT)
+#define GPIO_CTRL_OUTOVER_SHIFT               12
+#define GPIO_CTRL_OUTOVER_MASK                (BIT_MASK(2) << GPIO_CTRL_OUTOVER_SHIFT)
+#define GPIO_CTRL_OEOVER_SHIFT                14
+#define GPIO_CTRL_OEOVER_MASK                 (BIT_MASK(2) << GPIO_CTRL_OEOVER_SHIFT)
+#define GPIO_CTRL_INOVER_SHIFT                16
+#define GPIO_CTRL_INOVER_MASK                 (BIT_MASK(2) << GPIO_CTRL_INOVER_SHIFT)
+#define GPIO_CTRL_IRQMASK_EDGE_LOW_SHIFT      20
+#define GPIO_CTRL_IRQMASK_EDGE_LOW_MASK       (BIT_MASK(1) << GPIO_CTRL_IRQMASK_EDGE_LOW_SHIFT)
+#define GPIO_CTRL_IRQMASK_EDGE_HIGH_SHIFT     21
+#define GPIO_CTRL_IRQMASK_EDGE_HIGH_MASK      (BIT_MASK(1) << GPIO_CTRL_IRQMASK_EDGE_HIGH_SHIFT)
+#define GPIO_CTRL_IRQMASK_LEVEL_LOW_SHIFT     22
+#define GPIO_CTRL_IRQMASK_LEVEL_LOW_MASK      (BIT_MASK(1) << GPIO_CTRL_IRQMASK_LEVEL_LOW_SHIFT)
+#define GPIO_CTRL_IRQMASK_LEVEL_HIGH_SHIFT    23
+#define GPIO_CTRL_IRQMASK_LEVEL_HIGH_MASK     (BIT_MASK(1) << GPIO_CTRL_IRQMASK_LEVEL_HIGH_SHIFT)
+#define GPIO_CTRL_IRQMASK_F_EDGE_LOW_SHIFT    24
+#define GPIO_CTRL_IRQMASK_F_EDGE_LOW_MASK     (BIT_MASK(1) << GPIO_CTRL_IRQMASK_F_EDGE_LOW_SHIFT)
+#define GPIO_CTRL_IRQMASK_F_EDGE_HIGH_SHIFT   25
+#define GPIO_CTRL_IRQMASK_F_EDGE_HIGH_MASK    (BIT_MASK(1) << GPIO_CTRL_IRQMASK_F_EDGE_HIGH_SHIFT)
+#define GPIO_CTRL_IRQMASK_DB_LEVEL_LOW_SHIFT  26
+#define GPIO_CTRL_IRQMASK_DB_LEVEL_LOW_MASK   (BIT_MASK(1) << GPIO_CTRL_IRQMASK_DB_LEVEL_LOW_SHIFT)
+#define GPIO_CTRL_IRQMASK_DB_LEVEL_HIGH_SHIFT 27
+#define GPIO_CTRL_IRQMASK_DB_LEVEL_HIGH_MASK  (BIT_MASK(1) << GPIO_CTRL_IRQMASK_DB_LEVEL_HIGH_SHIFT)
+#define GPIO_CTRL_IRQRESET_SHIFT              28
+#define GPIO_CTRL_IRQRESET_MASK               (BIT_MASK(1) << GPIO_CTRL_IRQRESET_SHIFT)
+#define GPIO_CTRL_IRQOVER_SHIFT               30
+#define GPIO_CTRL_IRQOVER_MASK                (BIT_MASK(2) << GPIO_CTRL_IRQOVER_SHIFT)
+
+/* Reserved bits in the RP1 GPIO control register. */
+#define GPIO_CTRL_RESERVED_MASK (BIT(29) | BIT(19) | BIT(18))
+
+/* Bit positions and masks for the RP1 pad control register. */
+#define GPIO_PADS_SLEWFAST_SHIFT         0
+#define GPIO_PADS_SLEWFAST_MASK          (BIT_MASK(1) << GPIO_PADS_SLEWFAST_SHIFT)
+#define GPIO_PADS_SCHMITT_ENABLE_SHIFT   1
+#define GPIO_PADS_SCHMITT_ENABLE_MASK    (BIT_MASK(1) << GPIO_PADS_SCHMITT_ENABLE_SHIFT)
+#define GPIO_PADS_PULL_DOWN_ENABLE_SHIFT 2
+#define GPIO_PADS_PULL_DOWN_ENABLE_MASK  (BIT_MASK(1) << GPIO_PADS_PULL_DOWN_ENABLE_SHIFT)
+#define GPIO_PADS_PULL_UP_ENABLE_SHIFT   3
+#define GPIO_PADS_PULL_UP_ENABLE_MASK    (BIT_MASK(1) << GPIO_PADS_PULL_UP_ENABLE_SHIFT)
+#define GPIO_PADS_DRIVE_SHIFT            4
+#define GPIO_PADS_DRIVE_MASK             (BIT_MASK(2) << GPIO_PADS_DRIVE_SHIFT)
+#define GPIO_PADS_INPUT_ENABLE_SHIFT     6
+#define GPIO_PADS_INPUT_ENABLE_MASK      (BIT_MASK(1) << GPIO_PADS_INPUT_ENABLE_SHIFT)
+#define GPIO_PADS_OUTPUT_DISABLE_SHIFT   7
+#define GPIO_PADS_OUTPUT_DISABLE_MASK    (BIT_MASK(1) << GPIO_PADS_OUTPUT_DISABLE_SHIFT)
+
+/* Reserved bits in the RP1 pad control register. */
+#define GPIO_PADS_RESERVED_MASK GENMASK(31, 8)
 
 #define GPIO_CTRL_BITS(reg, val)                                                                   \
 	(((val) << UTIL_CAT(UTIL_CAT(GPIO_CTRL_, reg), _SHIFT)) &                                  \
