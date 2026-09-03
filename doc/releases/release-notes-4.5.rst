@@ -586,6 +586,13 @@ New APIs and options
     Memberships still held when the socket is closed are dropped automatically,
     and :kconfig:option:`CONFIG_NET_SOCKETS_PACKET_MCAST_MEMBERSHIP_COUNT` sets
     how many memberships can be active at the same time.
+  * Add an SNTP server (:kconfig:option:`CONFIG_SNTP_SERVER`) that answers time
+    queries on UDP port 123 on every enabled address family. The application
+    sets the system clock and then tells the server about its clock source with
+    :c:func:`sntp_server_clock_source`; until it does, the server tells clients
+    that its time must not be used. The SNTP client is now selected by
+    :kconfig:option:`CONFIG_SNTP` alone, both share
+    :kconfig:option:`CONFIG_SNTP_LIB`.
 
 * Power Management
 
