@@ -1431,6 +1431,49 @@ ZTEST(coap_client, test_observe_reordered_notification_dropped)
 		      "Reordered notification must be dropped");
 }
 
+ZTEST(coap_client, test_observe_duplicate_registration_rejected)
+{
+	struct coap_client_request req = {
+		.method = COAP_METHOD_GET,
+		.confirmable = true,
+		.path = TEST_PATH,
+		.cb = coap_callback,
+		.options = { {
+			.code = COAP_OPTION_OBSERVE,
+			.value[0] = 0,
+			.len = 1,
+		} },
+		.num_options = 1,
+		.user_data = &sem1,
+	};
+
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_observe;
+
+	zassert_ok(coap_client_req(&client, 0, net_sad(&dst_address), &req, NULL));
+
+	/* RFC 7641, section 3.1: a second registration for the same resource
+	 * of the same server is rejected, also when the path spells the same
+	 * URI with a leading slash.
+	 */
+	zassert_equal(coap_client_req(&client, 0, net_sad(&dst_address), &req, NULL),
+		      -EALREADY, "Duplicate observe registration not rejected");
+
+	strcpy(req.path, "/" TEST_PATH);
+	zassert_equal(coap_client_req(&client, 0, net_sad(&dst_address), &req, NULL),
+		      -EALREADY, "Duplicate registration with a leading slash not rejected");
+
+	/* A Uri-Query option addresses a different resource; the registration
+	 * is not a duplicate.
+	 */
+	strcpy(req.path, TEST_PATH);
+	req.options[1].code = COAP_OPTION_URI_QUERY;
+	req.options[1].len = 3U;
+	memcpy(req.options[1].value, "x=1", 3);
+	req.num_options = 2;
+
+	zassert_ok(coap_client_req(&client, 0, net_sad(&dst_address), &req, NULL));
+}
+
 ZTEST(coap_client, test_observe_deregister_con)
 {
 	struct coap_client_request req = {

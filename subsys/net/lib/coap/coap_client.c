@@ -224,6 +224,87 @@ static enum coap_block_size coap_client_default_block_size(void)
 	return COAP_BLOCK_256;
 }
 
+static bool request_is_observe_register(const struct coap_client_request *req)
+{
+	for (int i = 0; i < req->num_options; i++) {
+		if (req->options[i].code != COAP_OPTION_OBSERVE) {
+			continue;
+		}
+		return req->options[i].len == 0U ||
+		       (req->options[i].len == 1U && req->options[i].value[0] == 0U);
+	}
+
+	return false;
+}
+
+/* Uri-Host, Uri-Port and Uri-Query options change the target resource beyond
+ * what the path spells out.
+ */
+static bool request_has_uri_options(const struct coap_client_request *req)
+{
+	for (int i = 0; i < req->num_options; i++) {
+		switch (req->options[i].code) {
+		case COAP_OPTION_URI_HOST:
+		case COAP_OPTION_URI_PORT:
+		case COAP_OPTION_URI_QUERY:
+			return true;
+		default:
+			break;
+		}
+	}
+
+	return false;
+}
+
+static const char *skip_leading_slashes(const char *path)
+{
+	while (*path == '/') {
+		path++;
+	}
+
+	return path;
+}
+
+/* RFC 7641, section 3.1: a client must not register more than once for the
+ * same target resource of the same server. Only registrations whose target
+ * is fully described by the path and the destination address are compared;
+ * a request carrying Uri-Host, Uri-Port or Uri-Query options addresses a
+ * resource this comparison cannot identify and is never treated as a
+ * duplicate.
+ */
+static bool observe_registration_exists(const struct coap_client *client,
+					const struct coap_client_request *req,
+					const struct net_sockaddr *addr)
+{
+	if (request_has_uri_options(req)) {
+		return false;
+	}
+
+	for (int i = 0; i < CONFIG_COAP_CLIENT_MAX_REQUESTS; i++) {
+		const struct coap_client_internal_request *ir = &client->requests[i];
+
+		if (!ir->request_ongoing || !ir->is_observe) {
+			continue;
+		}
+		if (request_has_uri_options(&ir->coap_request)) {
+			continue;
+		}
+		if (strcmp(skip_leading_slashes(ir->coap_request.path),
+			   skip_leading_slashes(req->path)) != 0) {
+			continue;
+		}
+		if (ir->addrlen == 0U && addr == NULL) {
+			return true;
+		}
+		if (ir->addrlen != 0U && addr != NULL &&
+		    net_sockaddr_cmp((const struct net_sockaddr *)&ir->addr, addr)) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 static int coap_client_init_request(struct coap_client *client, struct coap_client_request *req,
 				    struct coap_client_internal_request *internal_req)
 {
@@ -455,6 +536,12 @@ int coap_client_req(struct coap_client *client, int sock, const struct net_socka
 	}
 
 	k_mutex_lock(&client->lock, K_FOREVER);
+
+	if (request_is_observe_register(req) && observe_registration_exists(client, req, addr)) {
+		LOG_ERR("Observe registration for the resource already ongoing");
+		ret = -EALREADY;
+		goto out;
+	}
 
 	internal_req = get_free_request(client);
 
