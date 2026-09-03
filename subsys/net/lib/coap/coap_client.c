@@ -101,6 +101,7 @@ static int receive(int sock, void *buf, size_t max_len, int flags,
 static void reset_internal_request(struct coap_client_internal_request *request)
 {
 	*request = (struct coap_client_internal_request){
+		.last_observe_seq = -1,
 		.last_response_id = -1,
 	};
 }
@@ -1167,6 +1168,37 @@ static bool select_reply_addr(const struct coap_client_internal_request *interna
 	return true;
 }
 
+static void settle_pending(struct coap_client_internal_request *internal_req,
+			   uint8_t response_type, uint16_t response_id)
+{
+	if (internal_req->pending.timeout == 0) {
+		return;
+	}
+
+	/* An observe slot also receives notifications while a confirmable
+	 * (re-)registration awaits its acknowledgment. Those must not stop its
+	 * retransmission: only the ACK carrying the request's message ID answers
+	 * it. Once retransmissions are over (an empty ACK announced a separate
+	 * response) the next response does, as it does for a non-confirmable
+	 * request, which is never retransmitted and answered by a NON.
+	 */
+	if (!internal_req->is_observe || internal_req->pending.retries == 0 ||
+	    coap_header_get_type(&internal_req->request) == COAP_TYPE_NON_CON ||
+	    (response_type == COAP_TYPE_ACK && response_id == internal_req->pending.id)) {
+		coap_pending_clear(&internal_req->pending);
+	}
+}
+
+static bool response_matches_request_token(const struct coap_client_internal_request *internal_req,
+					   const struct coap_packet *response)
+{
+	uint8_t token[COAP_TOKEN_MAX_LEN];
+	uint8_t tkl = coap_header_get_token(response, token);
+
+	return tkl == internal_req->request_tkl &&
+	       memcmp(token, internal_req->request_token, tkl) == 0;
+}
+
 static int handle_response(struct coap_client *client, const struct net_sockaddr *addr,
 			   net_socklen_t addrlen, const struct coap_packet *response,
 			   bool response_truncated)
@@ -1353,20 +1385,34 @@ static int handle_response(struct coap_client *client, const struct net_sockaddr
 		return 0;
 	}
 
-	if (internal_req->pending.timeout != 0) {
-		/* An observe slot also receives notifications while a confirmable
-		 * (re-)registration awaits its acknowledgment. Those must not stop its
-		 * retransmission: only the ACK carrying the request's message ID answers
-		 * it. Once retransmissions are over (an empty ACK announced a separate
-		 * response) the next response does, as it does for a non-confirmable
-		 * request, which is never retransmitted and answered by a NON.
-		 */
-		if (!internal_req->is_observe || internal_req->pending.retries == 0 ||
-		    coap_header_get_type(&internal_req->request) == COAP_TYPE_NON_CON ||
-		    (response_type == COAP_TYPE_ACK && response_id == internal_req->pending.id)) {
-			coap_pending_clear(&internal_req->pending);
+	/* RFC 7641, section 3.4: drop notifications older than the freshest one.
+	 * Block2 continuations carry no Observe option (RFC 7959, sections 2.6 and 3.4).
+	 * Checked before settling the pending state, which belongs to a Block2
+	 * continuation while one is in flight.
+	 */
+	if (internal_req->is_observe) {
+		int seq = coap_get_option_int(response, COAP_OPTION_OBSERVE);
+		int block2 = coap_get_option_int(response, COAP_OPTION_BLOCK2);
+		int64_t now = k_uptime_get();
+
+		if (seq >= 0 && (block2 < 0 || GET_BLOCK_NUM(block2) == 0)) {
+			if (internal_req->last_observe_seq >= 0 &&
+			    seq != internal_req->last_observe_seq &&
+			    !coap_age_is_newer(internal_req->last_observe_seq, seq) &&
+			    (now - internal_req->last_observe_at) <= 128 * MSEC_PER_SEC) {
+				LOG_DBG("Dropping reordered observe notification");
+				/* A stale answer still acknowledges a (re-)registration */
+				if (response_matches_request_token(internal_req, response)) {
+					settle_pending(internal_req, response_type, response_id);
+				}
+				return 0;
+			}
+			internal_req->last_observe_seq = seq;
+			internal_req->last_observe_at = now;
 		}
 	}
+
+	settle_pending(internal_req, response_type, response_id);
 
 #if defined(CONFIG_COAP_CLIENT_MULTICAST)
 	if (internal_req->is_mcast) {
@@ -1772,13 +1818,13 @@ static int coap_client_observe_resend(struct coap_client *client, struct coap_cl
 
 		internal_req->request = pkt;
 		internal_req->last_id = mid;
+		/* The request is sent with the registration token. A deregister
+		 * response is matched via request_token once is_observe is cleared.
+		 */
+		memcpy(internal_req->request_token, internal_req->observe_token,
+		       internal_req->observe_tkl);
+		internal_req->request_tkl = internal_req->observe_tkl;
 		if (deregister) {
-			/* Match the deregister response via request_token once is_observe
-			 * is cleared.
-			 */
-			memcpy(internal_req->request_token, internal_req->observe_token,
-			       internal_req->observe_tkl);
-			internal_req->request_tkl = internal_req->observe_tkl;
 			internal_req->is_observe = false;
 		}
 

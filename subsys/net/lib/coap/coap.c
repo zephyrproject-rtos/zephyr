@@ -1908,11 +1908,10 @@ size_t coap_pendings_count(struct coap_pending *pendings, size_t len)
 }
 
 /* Reordering according to RFC7641 section 3.4 but without timestamp comparison */
-IF_DISABLED(CONFIG_ZTEST, (static inline))
-bool coap_age_is_newer(int v1, int v2)
+bool coap_age_is_newer(uint32_t v1, uint32_t v2)
 {
-	return (v1 < v2 && v2 - v1 < (1 << 23))
-	    || (v1 > v2 && v1 - v2 > (1 << 23));
+	return (v1 < v2 && v2 - v1 < (1U << 23))
+	    || (v1 > v2 && v1 - v2 > (1U << 23));
 }
 
 static inline void coap_observer_increment_age(struct coap_resource *resource)
@@ -1991,7 +1990,8 @@ struct coap_reply *coap_response_received(
 
 		age = coap_get_option_int(response, COAP_OPTION_OBSERVE);
 		/* handle observed requests only if received in order */
-		if (age == -ENOENT || coap_age_is_newer(r->age, age)) {
+		if (age == -ENOENT ||
+		    (age >= 0 && (r->age < 0 || coap_age_is_newer(r->age, age)))) {
 			r->age = age;
 			if (coap_header_get_code(response) != COAP_RESPONSE_CODE_CONTINUE) {
 handle_reply:
