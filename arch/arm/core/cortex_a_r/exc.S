@@ -41,6 +41,7 @@ GTEXT(z_arm_fault_data)
 GTEXT(z_arm_undef_instruction)
 GTEXT(z_arm_prefetch_abort)
 GTEXT(z_arm_data_abort)
+GDATA(z_arm_coredump_fault_sp)
 
 #ifndef CONFIG_USE_SWITCH
 
@@ -53,19 +54,31 @@ GTEXT(z_arm_data_abort)
 #else
 #define CFI_DABT_FPU_SIZE 0
 #endif
-/* fpu + interrupted SP + __basic_sf (32) */
-#define CFI_DABT_ESF_SIZE (CFI_DABT_FPU_SIZE + 36)
+/* fpu + __basic_sf (32). Prev-mode SP is in z_arm_coredump_fault_sp; the
+ * 256-byte abort stack cannot hold an extra ESF word with FPU_SHARING.
+ */
+#define CFI_DABT_ESF_SIZE (CFI_DABT_FPU_SIZE + 32)
 
 .macro cfi_after_exception_entry
 	.cfi_def_cfa 13, CFI_DABT_ESF_SIZE
-	.cfi_offset 15, -12
-	.cfi_offset 14, -16
-	.cfi_offset 13, -4
-	.cfi_offset 12, -20
-	.cfi_offset 3, -24
-	.cfi_offset 2, -28
-	.cfi_offset 1, -32
-	.cfi_offset 0, -36
+	.cfi_offset 15, -8
+	.cfi_offset 14, -12
+	.cfi_offset 12, -16
+	.cfi_offset 3, -20
+	.cfi_offset 2, -24
+	.cfi_offset 1, -28
+	.cfi_offset 0, -32
+	/*
+	 * Previous-mode SP is *z_arm_coredump_fault_sp. A bare `.long` is
+	 * emitted into .text and would be executed on abort. `.cfi_label`
+	 * plus `.reloc` puts the DW_OP_addr reloc in .debug_frame (GAS and
+	 * LLVM IAS). `\@` keeps the label unique per expansion.
+	 */
+	.cfi_escape 0x16, 13, 6, 0x03
+	.cfi_label .Lcfisp\@
+	.cfi_escape 0, 0, 0, 0
+	.cfi_escape 0x06
+	.reloc .Lcfisp\@, R_ARM_ABS32, z_arm_coredump_fault_sp
 .endm
 
 /*
@@ -95,23 +108,22 @@ GTEXT(z_arm_data_abort)
 	stmia r0, {sp}^
 	ldr r1, [r0]
 2:
+	ldr r2, =z_arm_coredump_fault_sp
+	str r1, [r2]
 .endm
 
 .macro exception_entry mode
 	/*
 	 * ESF on the exception-mode stack (not the thread stack):
-	 *   [fpu] [r0-r3, r12, lr, pc, xpsr] [sp_prev]
-	 * sp_prev sits after __basic_sf so SVC/IRQ frames that omit it
-	 * still match struct arch_esf.basic. lr / sp_prev are the
-	 * interrupted context so GDB CFI can restore a SP-relative
-	 * frame without a frame pointer.
+	 *   [fpu] [r0-r3, r12, lr, pc, xpsr]
+	 * Interrupted LR is written into the iframe; prev-mode SP is
+	 * stored in z_arm_coredump_fault_sp for GDB CFI so the 256-byte
+	 * abort stack is not grown (FPU_SHARING already uses 200 bytes).
 	 */
-	sub sp, #4
 	srsdb sp!, #\mode
 	stmfd sp, {r0-r3, r12, lr}^
 	sub sp, #24
 	exception_capture_prev_sp_lr
-	str r1, [sp, #32]
 
 #if defined(CONFIG_FPU_SHARING)
 	sub sp, #___fpu_t_SIZEOF
@@ -192,12 +204,10 @@ SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_undef_instruction)
 	 * Store r0-r3, r12, lr, lr_und and spsr_und into the stack to
 	 * construct an exception stack frame.
 	 */
-	sub sp, #4
 	srsdb sp!, #MODE_UND
 	stmfd sp, {r0-r3, r12, lr}^
 	sub sp, #24
 	exception_capture_prev_sp_lr
-	str r1, [sp, #32]
 
 	/* Increment exception nesting count */
 	get_cpu r2

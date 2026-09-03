@@ -228,7 +228,7 @@ SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, z_arm_exc_exit)
 #if defined(CONFIG_FPU_SHARING)
 	add sp, sp, #___fpu_t_SIZEOF
 #endif
-	add sp, #36
+	add sp, #32
 
 	/*
 	 * Switch in the next scheduled thread.
@@ -265,14 +265,9 @@ __EXIT_EXC:
 	add sp, sp, #___fpu_t_SIZEOF
 #endif
 	/*
-	 * Restore r0-r3, r12, lr, pc and spsr from the exception stack
-	 * and return to the current thread. Discard the saved interrupted
-	 * SP sitting after xpsr. Abort-mode r0/r1 are scratch; user r0-r3
-	 * were already written back with ldmia ^.
+	 * Restore r0-r3, r12, lr, lr_und and spsr_und from the exception stack
+	 * and return to the current thread.
 	 */
 	ldmia sp, {r0-r3, r12, lr}^
-	ldr r0, [sp, #24]
-	ldr r1, [sp, #28]
-	add sp, #36
-	stmdb sp!, {r0, r1}
+	add sp, #24
 	rfeia sp!
