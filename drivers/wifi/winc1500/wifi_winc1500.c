@@ -19,6 +19,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_l2.h>
 #include <zephyr/net/net_context.h>
+#include <zephyr/net/ethernet.h>
 #include <zephyr/net/net_offload.h>
 #include <zephyr/net/wifi_mgmt.h>
 #include <zephyr/net/conn_mgr/connectivity_wifi_mgmt.h>
@@ -1106,15 +1107,25 @@ static void winc1500_iface_init(struct net_if *iface)
 	net_if_set_link_addr(iface, w1500_data.mac, sizeof(w1500_data.mac),
 			     NET_LINK_ETHERNET);
 
+#ifdef ETH_MODE
+	/* Must set the type, net_if_is_wifi() answers false for a native interface without it */
+	struct ethernet_context *eth_ctx = net_if_l2_data(iface);
+
+	eth_ctx->eth_if_type = L2_ETH_IF_TYPE_WIFI;
+	ethernet_init(iface);
+#else
 	net_if_offload_set(iface, &winc1500_offload);
+#endif
 
 	w1500_data.iface = iface;
 }
 
+#ifndef ETH_MODE
 static enum offloaded_net_if_types winc1500_get_wifi_type(void)
 {
 	return L2_OFFLOADED_NET_IF_TYPE_WIFI;
 }
+#endif /* !ETH_MODE */
 
 static const struct wifi_mgmt_ops winc1500_mgmt_ops = {
 	.scan		= winc1500_mgmt_scan,
@@ -1123,16 +1134,112 @@ static const struct wifi_mgmt_ops winc1500_mgmt_ops = {
 	.ap_enable	= winc1500_mgmt_ap_enable,
 	.ap_disable	= winc1500_mgmt_ap_disable,
 };
+#ifdef ETH_MODE
+static int winc1500_eth_send(const struct device *dev, struct net_pkt *pkt);
+static enum ethernet_hw_caps winc1500_eth_caps(const struct device *dev);
+
+static const struct net_wifi_mgmt_offload winc1500_api = {
+	.wifi_iface.iface_api.init = winc1500_iface_init,
+	.wifi_iface.send = winc1500_eth_send,
+	.wifi_iface.get_capabilities = winc1500_eth_caps,
+	.wifi_mgmt_api = &winc1500_mgmt_ops,
+};
+#else
 static const struct net_wifi_mgmt_offload winc1500_api = {
 	.wifi_iface.iface_api.init = winc1500_iface_init,
 	.wifi_iface.get_type = winc1500_get_wifi_type,
 	.wifi_mgmt_api = &winc1500_mgmt_ops,
 };
+#endif /* ETH_MODE */
+
+#ifdef ETH_MODE
+static uint8_t bypass_rx_buffer[CONFIG_WIFI_WINC1500_MAX_PACKET_SIZE];
+
+static void winc1500_bypass_eth_cb(uint8 u8MsgType, void *pvMsg, void *pvCtrlBuf)
+{
+	tstrM2mIpCtrlBuf *ctrl_buf = (tstrM2mIpCtrlBuf *)pvCtrlBuf;
+	const uint8_t *frame = (const uint8_t *)pvMsg;
+	struct net_pkt *pkt;
+
+	if (u8MsgType != M2M_WIFI_RESP_ETHERNET_RX_PACKET) {
+		return;
+	}
+
+	if (ctrl_buf == NULL || frame == NULL || ctrl_buf->u16DataSize == 0U) {
+		return;
+	}
+
+	if (w1500_data.iface == NULL) {
+		LOG_ERR("Frame received before the interface exists, dropping");
+		return;
+	}
+
+	/* Must be AF_UNSPEC, this is a whole frame and ETHERNET_L2 reads the header itself */
+	pkt = net_pkt_rx_alloc_with_buffer(w1500_data.iface, ctrl_buf->u16DataSize,
+					   AF_UNSPEC, 0, K_MSEC(100));
+	if (pkt == NULL) {
+		LOG_ERR("Could not allocate an rx packet for %u bytes", ctrl_buf->u16DataSize);
+		return;
+	}
+
+	if (net_pkt_write(pkt, frame, ctrl_buf->u16DataSize) < 0) {
+		LOG_ERR("Could not write %u bytes into the rx packet", ctrl_buf->u16DataSize);
+		net_pkt_unref(pkt);
+		return;
+	}
+
+	if (net_recv_data(w1500_data.iface, pkt) < 0) {
+		LOG_ERR("Stack refused a received frame");
+		net_pkt_unref(pkt);
+	}
+}
+
+static int winc1500_eth_send(const struct device *dev, struct net_pkt *pkt)
+{
+	static uint8_t tx_buffer[CONFIG_WIFI_WINC1500_MAX_PACKET_SIZE];
+	size_t length = net_pkt_get_len(pkt);
+
+	ARG_UNUSED(dev);
+
+	if (length > sizeof(tx_buffer)) {
+		LOG_ERR("Frame of %zu bytes exceeds the %zu byte transmit buffer", length,
+			sizeof(tx_buffer));
+		return -EMSGSIZE;
+	}
+
+	if (net_pkt_read(pkt, tx_buffer, length) < 0) {
+		LOG_ERR("Could not read a %zu byte frame into the send buffer", length);
+		return -EIO;
+	}
+
+	if (m2m_wifi_send_ethernet_pkt(tx_buffer, length) != M2M_SUCCESS) {
+		LOG_ERR("m2m_wifi_send_ethernet_pkt failed for %zu bytes", length);
+		return -EIO;
+	}
+
+	return 0;
+}
+
+static enum ethernet_hw_caps winc1500_eth_caps(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+	return ETHERNET_LINK_10BASE | ETHERNET_LINK_100BASE;
+}
+#endif /* ETH_MODE */
 
 static int winc1500_init(const struct device *dev)
 {
 	tstrWifiInitParam param = {
 		.pfAppWifiCb = winc1500_wifi_cb,
+#ifdef ETH_MODE
+		.strEthInitParam = {
+			.pfAppWifiCb = winc1500_wifi_cb,
+			.pfAppEthCb = winc1500_bypass_eth_cb,
+			.au8ethRcvBuf = bypass_rx_buffer,
+			.u16ethRcvBufSize = sizeof(bypass_rx_buffer),
+			.u8EthernetEnable = M2M_WIFI_MODE_ETHERNET,
+		},
+#endif /* ETH_MODE */
 	};
 	unsigned char is_valid;
 	int ret;
@@ -1148,8 +1255,10 @@ static int winc1500_init(const struct device *dev)
 		return -EIO;
 	}
 
+#ifndef ETH_MODE
 	socketInit();
 	registerSocketCallback(winc1500_socket_cb, NULL);
+#endif /* !ETH_MODE */
 
 	if (m2m_wifi_get_otp_mac_address(w1500_data.mac, &is_valid) != M2M_SUCCESS) {
 		LOG_ERR("Failed to get MAC address");
@@ -1186,9 +1295,16 @@ static int winc1500_init(const struct device *dev)
 	return 0;
 }
 
+#ifdef ETH_MODE
+NET_DEVICE_INIT(winc1500, CONFIG_WIFI_WINC1500_NAME,
+		winc1500_init, NULL, &w1500_data, NULL,
+		CONFIG_WIFI_INIT_PRIORITY, &winc1500_api, ETHERNET_L2,
+		NET_L2_GET_CTX_TYPE(ETHERNET_L2), NET_ETH_MTU);
+#else
 NET_DEVICE_OFFLOAD_INIT(winc1500, CONFIG_WIFI_WINC1500_NAME,
 			winc1500_init, NULL, &w1500_data, NULL,
 			CONFIG_WIFI_INIT_PRIORITY, &winc1500_api,
 			CONFIG_WIFI_WINC1500_MAX_PACKET_SIZE);
+#endif /* ETH_MODE */
 
 CONNECTIVITY_WIFI_MGMT_BIND(winc1500);

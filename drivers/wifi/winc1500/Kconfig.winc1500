@@ -67,6 +67,15 @@ config WIFI_WINC1500_OFFLOAD_MAX_SOCKETS
 	  Set the number of sockets that can be managed through the driver
 	  and the chip.
 
+config WIFI_WINC1500_BYPASS_MODE
+	bool "Use ETHERNET bypass mode instead of the WINC TCP/IP stack"
+	select WIFI_USE_NATIVE_NETWORKING
+	select NET_L2_ETHERNET
+	help
+	  Should we exchange raw Ethernet frames with Zephyr instead of using the
+	  WINC TCP/IP stack? Requires the ETH_MODE compile definition, and the
+	  application must supply the interface address and a DHCP server.
+
 choice
 	bool "In which region is the chip running?"
 	default WIFI_WINC1500_REGION_NORTH_AMERICA
