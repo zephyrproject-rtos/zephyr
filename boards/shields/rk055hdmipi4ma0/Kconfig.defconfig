@@ -41,10 +41,6 @@ config LV_DPI_DEF
 config LV_Z_FLUSH_THREAD
 	default y
 
-choice LV_COLOR_DEPTH
-	default LV_COLOR_DEPTH_16
-endchoice
-
 endif # LVGL
 
 endif # SHIELD_RK055HDMIPI4MA0

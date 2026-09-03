@@ -13,10 +13,6 @@ config LV_Z_VDB_SIZE
 config LV_Z_BITS_PER_PIXEL
 	default 24
 
-choice LV_COLOR_DEPTH
-	default LV_COLOR_DEPTH_16
-endchoice
-
 config INPUT
 	default y
 
