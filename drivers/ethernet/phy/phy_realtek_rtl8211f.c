@@ -57,6 +57,9 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define PHY_RT_RTL8211F_INSR_REG                    (0x1DU)
 
 #define PHY_RT_RTL8211F_RESET_HOLD_TIME_MS 10
+#define PHY_RT_RTL8211F_RESET_DEASSERT_TIMEOUT_MS 80
+
+#define ANY_RESET_GPIO DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
 
 enum rt_rtl8211f_rgmii_delay {
 	RT_RTL8211F_RGMII_DELAY_NONE,
@@ -70,7 +73,7 @@ struct rt_rtl8211f_config {
 	const struct device *mdio_dev;
 	enum phy_link_speed default_speeds;
 	enum rt_rtl8211f_rgmii_delay rgmii_delay;
-#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
+#if ANY_RESET_GPIO
 	const struct gpio_dt_spec reset_gpio;
 #endif
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
@@ -128,7 +131,7 @@ static int phy_rt_rtl8211f_reset(const struct device *dev)
 	uint32_t reg_val;
 	int ret;
 
-#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
+#if ANY_RESET_GPIO
 	if (config->reset_gpio.port) {
 		/* Start reset */
 		ret = gpio_pin_set_dt(&config->reset_gpio, 1);
@@ -145,12 +148,12 @@ static int phy_rt_rtl8211f_reset(const struct device *dev)
 			return ret;
 		}
 
-		/* Wait another 30 ms (circuits settling time) before accessing registers */
-		k_busy_wait(USEC_PER_MSEC * 30);
+		/* Wait for circuits settling time before accessing registers */
+		k_msleep(PHY_RT_RTL8211F_RESET_DEASSERT_TIMEOUT_MS);
 
 		goto finalize_reset;
 	}
-#endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios) */
+#endif /* ANY_RESET_GPIO */
 
 	/* Reset PHY using register */
 	ret = phy_rt_rtl8211f_write(dev, MII_BMCR, MII_BMCR_RESET);
@@ -519,7 +522,7 @@ static int phy_rt_rtl8211f_init(const struct device *dev)
 		return ret;
 	}
 
-#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
+#if ANY_RESET_GPIO
 	/* Configure reset pin */
 	if (config->reset_gpio.port) {
 		ret = gpio_pin_configure_dt(&config->reset_gpio, GPIO_OUTPUT_INACTIVE);
@@ -527,7 +530,7 @@ static int phy_rt_rtl8211f_init(const struct device *dev)
 			return ret;
 		}
 	}
-#endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios) */
+#endif /* ANY_RESET_GPIO */
 
 	/* Reset PHY */
 	ret = phy_rt_rtl8211f_reset(dev);
@@ -643,12 +646,12 @@ static DEVICE_API(ethphy, rt_rtl8211f_phy_api) = {
 	.write = phy_rt_rtl8211f_write,
 };
 
-#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
-#define RESET_GPIO(n) \
-		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {0}),
+#if ANY_RESET_GPIO
+#define RESET_GPIO(n)                                                                              \
+	.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {0}),
 #else
 #define RESET_GPIO(n)
-#endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios) */
+#endif /* ANY_RESET_GPIO */
 
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
 #define INTERRUPT_GPIO(n) \
