@@ -12,6 +12,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/uart.h>
 #include <zephyr/irq.h>
@@ -33,6 +34,8 @@ struct uart_aesc_data {
 
 struct uart_aesc_config {
 	DEVICE_MMIO_ROM;
+	const struct device *clock_dev;
+	clock_control_subsys_t clock_subsys;
 	uint64_t sys_clk_freq;
 	uint32_t current_speed;
 	const struct pinctrl_dev_config *pcfg;
@@ -247,6 +250,7 @@ static int uart_aesc_init(const struct device *dev)
 	volatile uintptr_t *base_addr =
 		(volatile uintptr_t *)DEVICE_MMIO_GET(dev);
 	struct uart_aesc_data *data = DEV_DATA(dev);
+	uint32_t clk_freq;
 	int ret;
 
 	LOG_DBG("IP core version: %i.%i.%i.",
@@ -263,7 +267,22 @@ static int uart_aesc_init(const struct device *dev)
 		return ret;
 	}
 
-	sys_write32(cfg->sys_clk_freq / cfg->current_speed / 8,
+	if (cfg->clock_dev != NULL) {
+		if (!device_is_ready(cfg->clock_dev)) {
+			LOG_ERR("clock controller not ready");
+			return -ENODEV;
+		}
+		ret = clock_control_get_rate(cfg->clock_dev, cfg->clock_subsys,
+					     &clk_freq);
+		if (ret < 0) {
+			LOG_ERR("failed to get clock rate");
+			return ret;
+		}
+	} else {
+		clk_freq = (uint32_t)cfg->sys_clk_freq;
+	}
+
+	sys_write32(clk_freq / cfg->current_speed / 8,
 		    data->reg_base + UART_AESC_CLOCK_DIV);
 	sys_write32(7, data->reg_base + UART_AESC_FRAME_CFG);
 	sys_write32(0, data->reg_base + UART_AESC_TX_TRIGGER);
@@ -315,14 +334,20 @@ static DEVICE_API(uart, uart_aesc_driver_api) = {
 #define AESC_UART_IRQ_CFG(no)
 #endif
 
+#define AESC_UART_CLOCK_CFG(no)						     \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(no, clocks),			     \
+		(.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(no)),	     \
+		 .clock_subsys = (clock_control_subsys_t)		     \
+			DT_INST_CLOCKS_CELL(no, domain),),		     \
+		(.sys_clk_freq = DT_INST_PROP(no, clock_frequency),))
+
 #define AESC_UART_INIT(no)						     \
 	PINCTRL_DT_INST_DEFINE(no);					     \
 	AESC_UART_IRQ_INIT(no)						     \
 	static struct uart_aesc_data uart_aesc_dev_data_##no;		     \
 	static const struct uart_aesc_config uart_aesc_dev_cfg_##no = {	     \
 		DEVICE_MMIO_ROM_INIT(DT_DRV_INST(no)),			     \
-		.sys_clk_freq =						     \
-			DT_PROP(DT_INST(no, aesc_uart), clock_frequency),    \
+		AESC_UART_CLOCK_CFG(no)					     \
 		.current_speed =					     \
 			DT_PROP(DT_INST(no, aesc_uart), current_speed),	     \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(no),		     \
