@@ -880,6 +880,16 @@ int media_proxy_ctrl_discover_player(struct bt_conn *conn);
 int media_proxy_ctrl_get_player_name(struct media_player *player);
 
 /**
+ * @brief Set Media Player Name
+ *
+ * @param player   Media player instance pointer
+ * @param name     The new Media Player Name
+ *
+ * @return 0 if success, errno on failure.
+ */
+int media_proxy_ctrl_set_player_name(struct media_player *player, const char *name);
+
+/**
  * @brief Read Icon Object ID
  *
  * Get an ID (48 bit) that can be used to retrieve the Icon
@@ -1279,6 +1289,13 @@ struct media_proxy_pl_calls {
 	 * @return The name of the media player
 	 */
 	const char *(*get_player_name)(void);
+
+	/**
+	 * @brief Set Media Player Name
+	 *
+	 * @param name    The new Media Player Name
+	 */
+	void (*set_player_name)(const char *name);
 
 	/**
 	 * @brief Read Icon Object ID
