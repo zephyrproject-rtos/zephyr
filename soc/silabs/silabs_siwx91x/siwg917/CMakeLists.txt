@@ -14,4 +14,18 @@ zephyr_compile_definitions_ifdef(CONFIG_SOC_SIWG917Y111MGABA
   SLI_SI91X_MCU_EXTERNAL_LDO_FOR_PSRAM=1
 )
 
+# Optional wiring diagram from the build devicetree (see siwx91x_clock_tree_report.py).
+if(CONFIG_CLOCK_CONTROL_SILABS_SIWX91X)
+  add_custom_target(
+    clock_tree
+    COMMAND ${PYTHON_EXECUTABLE}
+            ${CMAKE_CURRENT_SOURCE_DIR}/../siwx91x_clock_tree_report.py
+            --zephyr-base ${ZEPHYR_BASE}
+            --edt-pickle ${EDT_PICKLE}
+    DEPENDS devicetree_target
+    USES_TERMINAL
+    WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+    )
+endif()
+
 set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld CACHE INTERNAL "")
