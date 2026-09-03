@@ -230,7 +230,7 @@ struct coap_service {
  * @brief Define an OSCORE-enabled CoAP service with static resources.
  *
  * Behaves like @ref COAP_SERVICE_DEFINE but additionally wires OSCORE support
- * (RFC 8613) into the service. A per-service OSCORE exchange cache is allocated
+ * (@rfc{8613}) into the service. A per-service OSCORE exchange cache is allocated
  * statically.
  *
  * @note Requires @kconfig{CONFIG_COAP_OSCORE}. When that option is disabled the

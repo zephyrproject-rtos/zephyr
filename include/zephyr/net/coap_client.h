@@ -165,7 +165,7 @@ struct coap_client_request {
 	 * request that accepts multiple responses within the timeout period. After the
 	 * timeout, a final callback with source=NULL signals completion, after which
 	 * no further callbacks will be issued. Multicast requests are always
-	 * non-confirmable (RFC 7252).
+	 * non-confirmable (@rfc{7252}).
 	 *
 	 * @kconfig_dep{CONFIG_COAP_CLIENT_MULTICAST}
 	 */
@@ -283,7 +283,7 @@ void coap_client_cancel_request(struct coap_client *client, struct coap_client_r
  * @brief Deregister matching CoAP observe subscriptions.
  *
  * Sends a GET with Observe option set to 1 (deregister) using the same token as the original
- * observe request, per RFC 7641 Section 3.6. The CON/NON type mirrors the original request.
+ * observe request, per @rfc{7641,section-3.6}. The CON/NON type mirrors the original request.
  *
  * For Confirmable requests the operation is asynchronous: retransmissions are handled by the
  * library and the response callback is invoked with the server's final response once the
@@ -305,7 +305,7 @@ int coap_client_deregister_observe(struct coap_client *client, struct coap_clien
  * @brief Initialise a Block2 option to be added to a request
  *
  * If the application expects a request to require a blockwise transfer, it may preemptively
- * suggest a maximum block size to the server - see RFC7959 Figure 3: Block-Wise GET with Early
+ * suggest a maximum block size to the server - see @rfc{7959} Figure 3: Block-Wise GET with Early
  * Negotiation.
  *
  * This helper function returns a Block2 option to send with the initial request.
