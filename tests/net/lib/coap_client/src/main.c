@@ -511,6 +511,36 @@ static ssize_t z_impl_zsock_recvfrom_custom_fake_block2(int sock, void *buf, siz
 	return response.offset;
 }
 
+/* Piggybacked block2 response with the more bit set but a payload shorter
+ * than the block size.
+ */
+static ssize_t z_impl_zsock_recvfrom_custom_fake_block2_short(int sock, void *buf, size_t max_len,
+							      int flags,
+							      struct net_sockaddr *src_addr,
+							      net_socklen_t *addrlen)
+{
+	struct coap_packet response;
+	uint8_t token[COAP_TOKEN_MAX_LEN] = {0};
+	uint8_t payload[10];
+	uint16_t message_id = get_next_pending_message_id();
+
+	memset(payload, 'A', sizeof(payload));
+
+	zassert_ok(coap_packet_init(&response, buf, max_len, COAP_VERSION_1, COAP_TYPE_ACK,
+				    COAP_TOKEN_MAX_LEN, token, COAP_RESPONSE_CODE_CONTENT,
+				    message_id));
+	zassert_ok(coap_append_option_int(&response, COAP_OPTION_BLOCK2,
+					  BIT(3) | COAP_BLOCK_256));
+	zassert_ok(coap_packet_append_payload_marker(&response));
+	zassert_ok(coap_packet_append_payload(&response, payload, sizeof(payload)));
+
+	restore_token(buf);
+	fill_recv_src_addr(src_addr, addrlen);
+	clear_socket_events(sock, ZSOCK_POLLIN);
+
+	return response.offset;
+}
+
 static ssize_t z_impl_zsock_recvfrom_custom_fake_rst(int sock, void *buf, size_t max_len, int flags,
 						     struct net_sockaddr *src_addr,
 						     net_socklen_t *addrlen)
@@ -1398,6 +1428,62 @@ ZTEST(coap_client, test_truncated_response_retries_blockwise)
 }
 
 
+#if CONFIG_COAP_CLIENT_MESSAGE_SIZE >= 512
+static int large_block_serve_cnt;
+
+/* A 512-byte first block for a client configured with 256-byte blocks,
+ * then a last block at the client's block size.
+ */
+static ssize_t z_impl_zsock_recvfrom_custom_fake_large_block(int sock, void *buf, size_t max_len,
+							     int flags,
+							     struct net_sockaddr *src_addr,
+							     net_socklen_t *addrlen)
+{
+	static uint8_t payload[512];
+	uint8_t token[COAP_TOKEN_MAX_LEN] = {0};
+	bool first = large_block_serve_cnt == 0;
+	struct coap_packet pkt;
+
+	zassert_ok(coap_packet_init(&pkt, buf, max_len, 1, COAP_TYPE_ACK, COAP_TOKEN_MAX_LEN,
+				    token, COAP_RESPONSE_CODE_CONTENT,
+				    get_next_pending_message_id()));
+	zassert_ok(coap_append_option_int(&pkt, COAP_OPTION_BLOCK2,
+					  first ? BIT(3) | COAP_BLOCK_512
+						: (2 << 4) | COAP_BLOCK_256));
+	zassert_ok(coap_packet_append_payload_marker(&pkt));
+	zassert_ok(coap_packet_append_payload(&pkt, payload, first ? sizeof(payload) : 10));
+	restore_token(buf);
+
+	fill_recv_src_addr(src_addr, addrlen);
+	clear_socket_events(sock, ZSOCK_POLLIN);
+	large_block_serve_cnt++;
+
+	return pkt.offset;
+}
+
+/* RFC 7959, section 2.4: the first block may be larger than the client's
+ * block size when the request carried no Block2 option.
+ */
+ZTEST(coap_client, test_blockwise_recv_larger_first_block)
+{
+	large_block_serve_cnt = 0;
+	sent_block2_cnt = 0;
+	block2_bytes_received = 0;
+	block2_got_last_block = false;
+	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_record_block2;
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_large_block;
+
+	zassert_ok(coap_client_req(&client, 0, net_sad(&dst_address), &block2_request, NULL));
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+
+	zassert_true(block2_got_last_block, "Transfer did not complete (%d)",
+		     last_response_code);
+	zassert_equal(block2_bytes_received, 512 + 10, "Unexpected payload length");
+	zassert_equal(sent_block2_opts[1], (2 << 4) | COAP_BLOCK_256,
+		      "Transfer must continue at offset 512");
+}
+#endif
+
 ZTEST(coap_client, test_blockwise_recv_etag_consistent)
 {
 	static const uint8_t etag[] = {0xde, 0xad, 0xbe, 0xef};
@@ -1560,6 +1646,11 @@ ZTEST(coap_client, test_send_large_data)
 
 ZTEST(coap_client, test_blockwise_upload_no_stray_block2)
 {
+	/* Needs a payload larger than one message */
+	if (sizeof(long_payload) - 1 <= CONFIG_COAP_CLIENT_MESSAGE_SIZE) {
+		ztest_test_skip();
+	}
+
 	sent_upload_cnt = 0;
 
 	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_record_blocks;
@@ -1628,6 +1719,11 @@ static ssize_t z_impl_zsock_recvfrom_custom_fake_combined(int sock, void *buf, s
 
 ZTEST(coap_client, test_blockwise_upload_combined_block2)
 {
+	/* Needs a payload larger than one message */
+	if (sizeof(long_payload) - 1 <= CONFIG_COAP_CLIENT_MESSAGE_SIZE) {
+		ztest_test_skip();
+	}
+
 	z_impl_zsock_sendto_fake.custom_fake = z_impl_zsock_sendto_custom_fake_record_block1;
 	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_combined;
 
@@ -1692,6 +1788,19 @@ ZTEST(coap_client, test_piggybacked_response_wrong_mid_ignored)
 	 */
 	k_sleep(K_MSEC(MORE_THAN_LONG_EXCHANGE_LIFETIME_MS));
 	zassert_equal(last_response_code, -ETIMEDOUT, "Unexpected response");
+}
+
+ZTEST(coap_client, test_blockwise_short_block_fails)
+{
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_block2_short;
+
+	zassert_ok(coap_client_req(&client, 0, net_sad(&dst_address), &short_request, NULL));
+
+	/* RFC 7959, section 2.3: a block with the more bit set whose payload
+	 * does not match the block size fails the transfer.
+	 */
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, -EBADMSG, "Unexpected response");
 }
 
 ZTEST(coap_client, test_separate_response)
