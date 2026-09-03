@@ -112,6 +112,19 @@ void net_arp_update(struct net_if *iface, struct net_in_addr *src,
 int net_arp_add_static(struct net_if *iface, struct net_in_addr *addr,
 		       struct net_eth_addr *hwaddr);
 
+/**
+ * @brief Remove one entry from the ARP cache.
+ *
+ * Both resolved and static entries are removed. If the address is still
+ * being resolved, the packets queued on it are dropped.
+ *
+ * @param iface Network interface, or NULL to match any interface.
+ * @param addr IPv4 address of the peer.
+ *
+ * @return True if an entry was removed, false if there was none.
+ */
+bool net_arp_entry_rm(struct net_if *iface, const struct net_in_addr *addr);
+
 
 #else /* CONFIG_NET_ARP */
 #define net_arp_prepare(_kt, _u1, _u2, _arp) NET_ARP_COMPLETE
@@ -122,6 +135,7 @@ int net_arp_add_static(struct net_if *iface, struct net_in_addr *addr,
 #define net_arp_clear_pending(...) 0
 #define net_arp_update(...)
 #define net_arp_add_static(...) -ENOTSUP
+#define net_arp_entry_rm(...) false
 
 #endif /* CONFIG_NET_ARP */
 

@@ -68,9 +68,19 @@ static void arp_entry_cleanup(struct arp_entry *entry, bool pending)
 	(void)memset(&entry->eth, 0, sizeof(struct net_eth_addr));
 }
 
+static void arp_entry_release(sys_slist_t *list, sys_snode_t *prev,
+			      struct arp_entry *entry, bool pending)
+{
+	arp_entry_cleanup(entry, pending);
+
+	sys_slist_remove(list, prev, &entry->node);
+	sys_slist_prepend(&arp_free_entries, &entry->node);
+}
+
+/* A NULL iface matches an entry on any interface. */
 static struct arp_entry *arp_entry_find(sys_slist_t *list,
 					struct net_if *iface,
-					struct net_in_addr *dst,
+					const struct net_in_addr *dst,
 					sys_snode_t **previous)
 {
 	struct arp_entry *entry;
@@ -80,7 +90,7 @@ static struct arp_entry *arp_entry_find(sys_slist_t *list,
 			net_if_get_by_iface(iface), iface,
 			net_sprint_ipv4_addr(&entry->ip));
 
-		if (entry->iface == iface &&
+		if ((iface == NULL || entry->iface == iface) &&
 		    net_ipv4_addr_cmp(&entry->ip, dst)) {
 			NET_DBG("found dst %s",
 				net_sprint_ipv4_addr(dst));
@@ -1031,10 +1041,7 @@ void net_arp_clear_cache(struct net_if *iface)
 			continue;
 		}
 
-		arp_entry_cleanup(entry, false);
-
-		sys_slist_remove(&arp_table, prev, &entry->node);
-		sys_slist_prepend(&arp_free_entries, &entry->node);
+		arp_entry_release(&arp_table, prev, entry, false);
 	}
 
 	prev = NULL;
@@ -1048,10 +1055,7 @@ void net_arp_clear_cache(struct net_if *iface)
 			continue;
 		}
 
-		arp_entry_cleanup(entry, true);
-
-		sys_slist_remove(&arp_pending_entries, prev, &entry->node);
-		sys_slist_prepend(&arp_free_entries, &entry->node);
+		arp_entry_release(&arp_pending_entries, prev, entry, true);
 	}
 
 	if (sys_slist_is_empty(&arp_pending_entries)) {
@@ -1059,6 +1063,43 @@ void net_arp_clear_cache(struct net_if *iface)
 	}
 
 	k_mutex_unlock(&arp_mutex);
+}
+
+bool net_arp_entry_rm(struct net_if *iface, const struct net_in_addr *addr)
+{
+	sys_snode_t *prev = NULL;
+	struct arp_entry *entry;
+	bool removed = false;
+
+	k_mutex_lock(&arp_mutex, K_FOREVER);
+
+	entry = arp_entry_find(&arp_table, iface, addr, &prev);
+	if (entry != NULL) {
+		arp_entry_release(&arp_table, prev, entry, false);
+		removed = true;
+		goto out;
+	}
+
+	/* The address may still be waiting to be resolved, in which case the
+	 * packets queued on it are dropped along with the entry. The walk
+	 * above left prev pointing into the resolved list, so start over.
+	 */
+	prev = NULL;
+
+	entry = arp_entry_find(&arp_pending_entries, iface, addr, &prev);
+	if (entry != NULL) {
+		arp_entry_release(&arp_pending_entries, prev, entry, true);
+		removed = true;
+
+		if (sys_slist_is_empty(&arp_pending_entries)) {
+			k_work_cancel_delayable(&arp_request_timer);
+		}
+	}
+
+out:
+	k_mutex_unlock(&arp_mutex);
+
+	return removed;
 }
 
 int net_arp_clear_pending(struct net_if *iface, struct net_in_addr *dst)
