@@ -334,8 +334,18 @@ struct usbd_cctx_vendor_req {
 	uint8_t len;
 };
 
-/** USB Class instance registered flag */
+/*
+ * Class instance lifecycle state bits. The registered bit is stored per
+ * speed in each `struct usbd_class_node`, while the initialized bit is
+ * stored once per class instance in `struct usbd_class_data`, which may
+ * be shared by the FS and HS nodes.
+ */
+
+/** Flag set in a per-speed class node once its class is registered */
 #define USBD_CCTX_REGISTERED		0
+
+/** Flag set in a class data once its class instance has been initialized */
+#define USBD_CCTX_INITIALIZED		1
 
 struct usbd_class_data;
 
@@ -404,6 +414,8 @@ struct usbd_class_data {
 	const struct usbd_cctx_vendor_req *v_reqs;
 	/** Pointer to private data */
 	void *priv;
+	/** Bitmap of the class instance lifecycle state */
+	atomic_t state;
 };
 
 /**
