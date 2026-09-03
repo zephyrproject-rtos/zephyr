@@ -1274,6 +1274,8 @@ int coap_block_transfer_init(struct coap_block_context *ctx,
 #define GET_MORE(v) (!!((v) & 0x08))
 #define GET_NUM(v) ((size_t)((v) >> 4))
 
+#define MAX_BLOCK_NUM 0xFFFFF
+
 #define SET_BLOCK_SIZE(v, b) (v |= ((b) & 0x07))
 #define SET_MORE(v, m) ((v) |= (m) ? 0x08 : 0x00)
 #define SET_NUM(v, n) ((v) |= ((n) << 4))
@@ -1493,6 +1495,10 @@ static int update_descriptive_block(struct coap_block_context *ctx,
 
 	if (get_option_uint(cpkt, block_code, &block) != 0) {
 		return 0;
+	}
+
+	if (GET_NUM(block) > MAX_BLOCK_NUM) {
+		return -EINVAL;
 	}
 
 	new_current = GET_NUM(block) << (MIN(COAP_BLOCK_1024, GET_BLOCK_SIZE(block)) + 4);
