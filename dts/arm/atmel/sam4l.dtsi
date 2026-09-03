@@ -38,53 +38,41 @@
 		};
 	};
 
-	sram0: memory@20000000 {
-		compatible = "mmio-sram";
-	};
-
-	/**
-	 * HRAM1 are 4k SRAM that can be used by PicoCache or just extra
-	 * memory available.  The PicoCache will be keep disable to ensures
-	 * deterministic behaviour.  That way the extra memory can be
-	 * exclusive for USB descriptors
-	 */
-	sram1: memory@21000000 {
-		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x21000000 DT_SIZE_K(4)>;
-		zephyr,memory-region = "SRAM1";
-	};
-
 	soc {
-		pmc: pmc@400e0000 {
-			compatible = "atmel,sam-pmc";
-			reg = <0x400e0000 0x740>;
-			interrupts = <22 0>;
-			#clock-cells = <2>;
+		uid: device_uid@80020c {
+			compatible = "atmel,sam4l-uid";
+			reg = <0x80020c 0xf>;
 			status = "okay";
 		};
 
-		flashcalw: flash-controller@400a0000 {
-			compatible = "atmel,sam4l-flashcalw-controller";
-			reg = <0x400a0000 0x400>;
-			ranges;
-			interrupts = <0 0>;
+		spi0: spi@40008000 {
+			compatible = "atmel,sam-spi";
+			reg = <0x40008000 0x4000>;
+			interrupts = <54 0>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 1>;
 			#address-cells = <1>;
-			#size-cells = <1>;
-
-			/*
-			 * No driver implemented yet, keeped it disabled
-			 */
+			#size-cells = <0>;
 			status = "disabled";
+		};
 
-			flash0: flash@0 {
-				compatible = "soc-nv-flash";
-				ranges;
+		tc0: tc@40010000 {
+			compatible = "atmel,sam-tc";
+			reg = <0x40010000 0x100>;
+			interrupts = <55 0
+				      56 0
+				      57 0>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 2>;
+			status = "disabled";
+		};
 
-				write-block-size = <8>;
-				erase-block-size = <512>;
-				#address-cells = <1>;
-				#size-cells = <1>;
-			};
+		tc1: tc@40014000 {
+			compatible = "atmel,sam-tc";
+			reg = <0x40014000 0x100>;
+			interrupts = <58 0
+				      59 0
+				      60 0>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 3>;
+			status = "disabled";
 		};
 
 		twim0: twim@40018000 {
@@ -104,38 +92,6 @@
 			clock-frequency = <I2C_BITRATE_STANDARD>;
 			interrupts = <63 0>;
 			clocks = <&pmc PMC_TYPE_PERIPHERAL 6>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			status = "disabled";
-		};
-
-		twim2: twim@40078000 {
-			compatible = "atmel,sam-i2c-twim";
-			reg = <0x40078000 0x4000>;
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			interrupts = <77 0>;
-			clocks = <&pmc PMC_TYPE_PERIPHERAL 21>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			status = "disabled";
-		};
-
-		twim3: twim@4007c000 {
-			compatible = "atmel,sam-i2c-twim";
-			reg = <0x4007c000 0x4000>;
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			interrupts = <78 0>;
-			clocks = <&pmc PMC_TYPE_PERIPHERAL 22>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			status = "disabled";
-		};
-
-		spi0: spi@40008000 {
-			compatible = "atmel,sam-spi";
-			reg = <0x40008000 0x4000>;
-			interrupts = <54 0>;
-			clocks = <&pmc PMC_TYPE_PERIPHERAL 1>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -173,6 +129,60 @@
 			status = "disabled";
 		};
 
+		trng: random@40068000 {
+			compatible = "atmel,sam-trng";
+			reg = <0x40068000 0x4000>;
+			interrupts = <73 0>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 17>;
+			status = "okay";
+		};
+
+		twim2: twim@40078000 {
+			compatible = "atmel,sam-i2c-twim";
+			reg = <0x40078000 0x4000>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			interrupts = <77 0>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 21>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		twim3: twim@4007c000 {
+			compatible = "atmel,sam-i2c-twim";
+			reg = <0x4007c000 0x4000>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			interrupts = <78 0>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 22>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		flashcalw: flash-controller@400a0000 {
+			compatible = "atmel,sam4l-flashcalw-controller";
+			reg = <0x400a0000 0x400>;
+			ranges;
+			interrupts = <0 0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			/*
+			 * No driver implemented yet, keeped it disabled
+			 */
+			status = "disabled";
+
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				ranges;
+
+				write-block-size = <8>;
+				erase-block-size = <512>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+			};
+		};
+
 		usbc: usbd@400a5000 {
 			compatible = "atmel,sam-usbc";
 			reg = <0x400a5000 0x1000>;
@@ -182,6 +192,14 @@
 			num-bidir-endpoints = <8>;
 			clocks = <&pmc PMC_TYPE_PERIPHERAL 101>;
 			status = "disabled";
+		};
+
+		pmc: pmc@400e0000 {
+			compatible = "atmel,sam-pmc";
+			reg = <0x400e0000 0x740>;
+			interrupts = <22 0>;
+			#clock-cells = <2>;
+			status = "okay";
 		};
 
 		pinctrl: pinctrl@400e1000 {
@@ -221,40 +239,6 @@
 			};
 		};
 
-		tc0: tc@40010000 {
-			compatible = "atmel,sam-tc";
-			reg = <0x40010000 0x100>;
-			interrupts = <55 0
-				      56 0
-				      57 0>;
-			clocks = <&pmc PMC_TYPE_PERIPHERAL 2>;
-			status = "disabled";
-		};
-
-		tc1: tc@40014000 {
-			compatible = "atmel,sam-tc";
-			reg = <0x40014000 0x100>;
-			interrupts = <58 0
-				      59 0
-				      60 0>;
-			clocks = <&pmc PMC_TYPE_PERIPHERAL 3>;
-			status = "disabled";
-		};
-
-		trng: random@40068000 {
-			compatible = "atmel,sam-trng";
-			reg = <0x40068000 0x4000>;
-			interrupts = <73 0>;
-			clocks = <&pmc PMC_TYPE_PERIPHERAL 17>;
-			status = "okay";
-		};
-
-		uid: device_uid@80020c {
-			compatible = "atmel,sam4l-uid";
-			reg = <0x80020c 0xf>;
-			status = "okay";
-		};
-
 		wdt: watchdog@400f0c00 {
 			compatible = "atmel,sam4l-watchdog";
 			reg = <0x400f0c00 0x400>;
@@ -262,6 +246,22 @@
 			clocks = <&pmc PMC_TYPE_PERIPHERAL 99>;
 			status = "okay";
 		};
+	};
+
+	sram0: memory@20000000 {
+		compatible = "mmio-sram";
+	};
+
+	/**
+	 * HRAM1 are 4k SRAM that can be used by PicoCache or just extra
+	 * memory available.  The PicoCache will be keep disable to ensures
+	 * deterministic behaviour.  That way the extra memory can be
+	 * exclusive for USB descriptors
+	 */
+	sram1: memory@21000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x21000000 DT_SIZE_K(4)>;
+		zephyr,memory-region = "SRAM1";
 	};
 };
 

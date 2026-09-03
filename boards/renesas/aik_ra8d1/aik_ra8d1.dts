@@ -76,18 +76,18 @@
 		watchdog0 = &wdt;
 	};
 
-	sdram1: sdram@68000000 {
-		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x68000000 DT_SIZE_M(64)>;	/* 512 Mbits */
-		zephyr,memory-region = "SDRAM";
-	};
-
 	dvp_20pin_xclk: cam_clock: pwmclock {
 		compatible = "pwm-clock";
 		#clock-cells = <1>;
 		clock-frequency = <DT_FREQ_M(24)>;
 		pwms = <&pwm3 0 PWM_KHZ(24000) PWM_POLARITY_NORMAL>;
 		status = "disabled";
+	};
+
+	sdram1: sdram@68000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x68000000 DT_SIZE_M(64)>;	/* 512 Mbits */
+		zephyr,memory-region = "SDRAM";
 	};
 };
 

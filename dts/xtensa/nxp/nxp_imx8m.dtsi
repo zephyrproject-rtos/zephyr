@@ -30,18 +30,6 @@
 		};
 	};
 
-	sram0: memory@92400000 {
-		compatible = "mmio-sram";
-		reg = <0x92400000 DT_SIZE_K(512)>;
-		device_type = "memory";
-	};
-
-	sram1: memory@92c00000 {
-		compatible = "mmio-sram";
-		reg = <0x92c00000 DT_SIZE_K(512)>;
-		device_type = "memory";
-	};
-
 	mclk1: mclk {
 		compatible = "fixed-clock";
 		#clock-cells = <0>;
@@ -49,6 +37,39 @@
 	};
 
 	soc {
+		iomuxc: iomuxc@30330000 {
+			compatible = "nxp,imx-iomuxc";
+			reg = <0x30330000 DT_SIZE_K(64)>;
+			status = "okay";
+
+			pinctrl: pinctrl {
+				compatible = "nxp,imx8mp-pinctrl";
+				status = "okay";
+			};
+		};
+
+		ccm: ccm@30380000 {
+			compatible = "nxp,imx-ccm";
+			reg = <0x30380000 DT_SIZE_K(64)>;
+			#clock-cells = <3>;
+		};
+
+		/*
+		 * For now only UART4 is supported and
+		 * tested with the serial driver
+		 */
+		uart4: uart@30a60000 {
+			compatible = "nxp,imx-iuart";
+			reg = <0x30a60000 0x10000>;
+			/* TODO: This INTID is just a dummy
+			 * until we can support UART interrupts
+			 */
+			interrupt-parent = <&master0>;
+			interrupts = <29 0>;
+			clocks = <&ccm IMX_CCM_UART4_CLK 0x6c 24>;
+			status = "disabled";
+		};
+
 		irqsteer: interrupt-controller@30a80000 {
 			compatible = "nxp,irqsteer-intc";
 			reg = <0x30a80000 DT_SIZE_K(64)>;
@@ -82,21 +103,6 @@
 			};
 		};
 
-		ccm: ccm@30380000 {
-			compatible = "nxp,imx-ccm";
-			reg = <0x30380000 DT_SIZE_K(64)>;
-			#clock-cells = <3>;
-		};
-
-		sdma3: dma@30e00000 {
-			compatible = "nxp,sdma";
-			reg = <0x30e00000 DT_SIZE_K(64)>;
-			interrupt-parent = <&master1>;
-			interrupts = <2 0>;
-			#dma-cells = <2>;
-			status = "disabled";
-		};
-
 		sai3: dai@30c30000 {
 			compatible = "nxp,dai-sai";
 			reg = <0x30c30000 DT_SIZE_K(64)>;
@@ -123,30 +129,12 @@
 			status = "disabled";
 		};
 
-		iomuxc: iomuxc@30330000 {
-			compatible = "nxp,imx-iomuxc";
-			reg = <0x30330000 DT_SIZE_K(64)>;
-			status = "okay";
-
-			pinctrl: pinctrl {
-				compatible = "nxp,imx8mp-pinctrl";
-				status = "okay";
-			};
-		};
-
-		/*
-		 * For now only UART4 is supported and
-		 * tested with the serial driver
-		 */
-		uart4: uart@30a60000 {
-			compatible = "nxp,imx-iuart";
-			reg = <0x30a60000 0x10000>;
-			/* TODO: This INTID is just a dummy
-			 * until we can support UART interrupts
-			 */
-			interrupt-parent = <&master0>;
-			interrupts = <29 0>;
-			clocks = <&ccm IMX_CCM_UART4_CLK 0x6c 24>;
+		sdma3: dma@30e00000 {
+			compatible = "nxp,sdma";
+			reg = <0x30e00000 DT_SIZE_K(64)>;
+			interrupt-parent = <&master1>;
+			interrupts = <2 0>;
+			#dma-cells = <2>;
 			status = "disabled";
 		};
 
@@ -158,5 +146,17 @@
 			rdc = <0>;
 			status = "disabled";
 		};
+	};
+
+	sram0: memory@92400000 {
+		compatible = "mmio-sram";
+		reg = <0x92400000 DT_SIZE_K(512)>;
+		device_type = "memory";
+	};
+
+	sram1: memory@92c00000 {
+		compatible = "mmio-sram";
+		reg = <0x92c00000 DT_SIZE_K(512)>;
+		device_type = "memory";
 	};
 };

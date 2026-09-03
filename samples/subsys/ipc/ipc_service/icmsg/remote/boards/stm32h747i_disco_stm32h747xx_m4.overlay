@@ -15,6 +15,15 @@
 	/* Define new memory regions for TX and RX */
 	/delete-node/ memory@38000000;
 
+	ipc0: ipc0 {
+		compatible = "zephyr,ipc-icmsg";
+		tx-region = <&sram_tx>;
+		rx-region = <&sram_rx>;
+		mboxes = <&mailbox 10>, <&mailbox 11>;
+		mbox-names = "tx", "rx";
+		status = "okay";
+	};
+
 	sram_rx: memory@38000000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x38000000 0x08000>;
@@ -27,15 +36,6 @@
 		reg = <0x38008000 0x08000>;
 		zephyr,memory-region = "SRAM_TX";
 		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
-	};
-
-	ipc0: ipc0 {
-		compatible = "zephyr,ipc-icmsg";
-		tx-region = <&sram_tx>;
-		rx-region = <&sram_rx>;
-		mboxes = <&mailbox 10>, <&mailbox 11>;
-		mbox-names = "tx", "rx";
-		status = "okay";
 	};
 };
 

@@ -13,14 +13,6 @@
 		flash0 = &n25q128a;
 	};
 
-	qspi_memory: qspi-memory@90000000 {
-		compatible = "zephyr,memory-region";
-		reg = <0x90000000 DT_SIZE_M(256)>;
-		device_type = "memory";
-		zephyr,memory-region = "QSPI";
-		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_FLASH)>;
-	};
-
 	soc {
 		quadspi: spi@52005000 {
 			compatible = "st,stm32-qspi-controller";
@@ -75,5 +67,13 @@
 				};
 			};
 		};
+	};
+
+	qspi_memory: qspi-memory@90000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x90000000 DT_SIZE_M(256)>;
+		device_type = "memory";
+		zephyr,memory-region = "QSPI";
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_FLASH)>;
 	};
 };

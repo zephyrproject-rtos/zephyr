@@ -28,19 +28,6 @@
 	soc {
 		compatible = "st,stm32f446", "st,stm32f4", "simple-bus";
 
-		i2s1: i2s@40013000 {
-			compatible = "st,stm32-i2s";
-			reg = <0x40013000 0x400>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			clocks = <&rcc STM32_CLOCK(APB2, 12)>;
-			interrupts = <35 0>;
-			dmas = <&dma2 3 3 STM32_DMA_MEM_INC STM32_DMA_FIFO_FULL>,
-			       <&dma2 2 3 STM32_DMA_MEM_INC STM32_DMA_FIFO_FULL>;
-			dma-names = "tx", "rx";
-			status = "disabled";
-		};
-
 		usart3: serial@40004800 {
 			compatible = "st,stm32-usart", "st,stm32-uart";
 			reg = <0x40004800 0x400>;
@@ -88,31 +75,11 @@
 			status = "disabled";
 		};
 
-		usbotg_fs: usb@50000000 {
-			num-bidir-endpoints = <6>;
-			clocks = <&rcc STM32_CLOCK(AHB2, 7)>,
-				 <&rcc STM32_SRC_PLL_Q CK48M_SEL(0)>;
-		};
-
-		usbotg_hs: usb@40040000 {
-			compatible = "st,stm32-otghs";
-			reg = <0x40040000 0x40000>;
-			interrupts = <77 0>, <74 0>, <75 0>;
-			interrupt-names = "otghs", "ep1_out", "ep1_in";
-			num-bidir-endpoints = <9>;
-			ram-size = <4096>;
-			maximum-speed = "full-speed";
-			phys = <&otghs_fs_phy>;
-			clocks = <&rcc STM32_CLOCK(AHB1, 29)>,
-				 <&rcc STM32_SRC_PLL_Q CK48M_SEL(0)>;
-			status = "disabled";
-		};
-
-		backup_sram: memory@40024000 {
-			compatible = "zephyr,memory-region", "st,stm32-backup-sram";
-			reg = <0x40024000 DT_SIZE_K(4)>;
-			clocks = <&rcc STM32_CLOCK(AHB1, 18)>;
-			zephyr,memory-region = "BACKUP_SRAM";
+		dac1: dac@40007400 {
+			compatible = "st,stm32-dac";
+			reg = <0x40007400 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1, 29)>;
+			#io-channel-cells = <1>;
 			status = "disabled";
 		};
 
@@ -150,26 +117,17 @@
 			status = "disabled";
 		};
 
-		dac1: dac@40007400 {
-			compatible = "st,stm32-dac";
-			reg = <0x40007400 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 29)>;
-			#io-channel-cells = <1>;
+		i2s1: i2s@40013000 {
+			compatible = "st,stm32-i2s";
+			reg = <0x40013000 0x400>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&rcc STM32_CLOCK(APB2, 12)>;
+			interrupts = <35 0>;
+			dmas = <&dma2 3 3 STM32_DMA_MEM_INC STM32_DMA_FIFO_FULL>,
+			       <&dma2 2 3 STM32_DMA_MEM_INC STM32_DMA_FIFO_FULL>;
+			dma-names = "tx", "rx";
 			status = "disabled";
-		};
-
-		fmc: memory-controller@a0000000 {
-			compatible = "st,stm32-fmc";
-			reg = <0xa0000000 0x400>;
-			clocks = <&rcc STM32_CLOCK(AHB3, 0)>;
-			status = "disabled";
-
-			sdram: sdram {
-				compatible = "st,stm32-fmc-sdram";
-				#address-cells = <1>;
-				#size-cells = <0>;
-				status = "disabled";
-			};
 		};
 
 		sai1: sai1@40015800 {
@@ -220,6 +178,48 @@
 			sai2_b: sai2b@40015c24 {
 				reg = <0x40015c24 0x20>;
 				dmas = <&dma2 6 3 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH) 0>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+		};
+
+		backup_sram: memory@40024000 {
+			compatible = "zephyr,memory-region", "st,stm32-backup-sram";
+			reg = <0x40024000 DT_SIZE_K(4)>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 18)>;
+			zephyr,memory-region = "BACKUP_SRAM";
+			status = "disabled";
+		};
+
+		usbotg_hs: usb@40040000 {
+			compatible = "st,stm32-otghs";
+			reg = <0x40040000 0x40000>;
+			interrupts = <77 0>, <74 0>, <75 0>;
+			interrupt-names = "otghs", "ep1_out", "ep1_in";
+			num-bidir-endpoints = <9>;
+			ram-size = <4096>;
+			maximum-speed = "full-speed";
+			phys = <&otghs_fs_phy>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 29)>,
+				 <&rcc STM32_SRC_PLL_Q CK48M_SEL(0)>;
+			status = "disabled";
+		};
+
+		usbotg_fs: usb@50000000 {
+			num-bidir-endpoints = <6>;
+			clocks = <&rcc STM32_CLOCK(AHB2, 7)>,
+				 <&rcc STM32_SRC_PLL_Q CK48M_SEL(0)>;
+		};
+
+		fmc: memory-controller@a0000000 {
+			compatible = "st,stm32-fmc";
+			reg = <0xa0000000 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB3, 0)>;
+			status = "disabled";
+
+			sdram: sdram {
+				compatible = "st,stm32-fmc-sdram";
 				#address-cells = <1>;
 				#size-cells = <0>;
 				status = "disabled";

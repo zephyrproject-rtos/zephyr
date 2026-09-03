@@ -25,15 +25,15 @@
 			zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
 		};
 
-		memory: memory@30480000 {
-			ranges = <0x0 0x30480000 0x10000000>;
-		};
-
 		m7_itcm: memory@303c0000 {
 			compatible = "zephyr,memory-region", "mmio-sram";
 			reg = <0x303c0000 DT_SIZE_K(256)>;
 			zephyr,memory-region = "M7_ITCM";
 			zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
+		};
+
+		memory: memory@30480000 {
+			ranges = <0x0 0x30480000 0x10000000>;
 		};
 
 		peripheral: peripheral@50000000 {
@@ -65,19 +65,19 @@
 };
 
 &peripheral {
-	mbox1_a: mbox@4220000 {
+	mbox2_a: mbox@2430000 {
 		compatible = "nxp,mbox-imx-mu";
-		reg = <0x4220000 0x4000>;
-		interrupts = <21 0>;
+		reg = <0x2430000 0x4000>;
+		interrupts = <22 0>;
 		rx-channels = <4>;
 		#mbox-cells = <1>;
 		status = "okay";
 	};
 
-	mbox2_a: mbox@2430000 {
+	mbox1_a: mbox@4220000 {
 		compatible = "nxp,mbox-imx-mu";
-		reg = <0x2430000 0x4000>;
-		interrupts = <22 0>;
+		reg = <0x4220000 0x4000>;
+		interrupts = <21 0>;
 		rx-channels = <4>;
 		#mbox-cells = <1>;
 		status = "okay";

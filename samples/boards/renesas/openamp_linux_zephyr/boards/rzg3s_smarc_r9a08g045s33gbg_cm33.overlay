@@ -27,19 +27,10 @@
 		zephyr,ipc = &mbox_consumer;
 	};
 
-	vring_ctrl0: memory@63000000 {
-		compatible = "mmio-sram";
-		reg = <0x63000000 0x50000>;
-	};
-
-	vring_ctrl1: memory@63050000 {
-		compatible = "mmio-sram";
-		reg = <0x63050000 0x50000>;
-	};
-
-	vring_shm0: memory@63200000 {
-		compatible = "mmio-sram";
-		reg = <0x63200000 0x300000>;
+	mbox_consumer: mbox-consumer {
+		compatible = "vnd,mbox-consumer";
+		mboxes = <&mbox1 1>, <&mbox1 0>;
+		mbox-names = "tx", "rx";
 	};
 
 	rsctbl: memory@62f00000 {
@@ -67,10 +58,19 @@
 		reg = <0x62f01028 0x8>;
 	};
 
-	mbox_consumer: mbox-consumer {
-		compatible = "vnd,mbox-consumer";
-		mboxes = <&mbox1 1>, <&mbox1 0>;
-		mbox-names = "tx", "rx";
+	vring_ctrl0: memory@63000000 {
+		compatible = "mmio-sram";
+		reg = <0x63000000 0x50000>;
+	};
+
+	vring_ctrl1: memory@63050000 {
+		compatible = "mmio-sram";
+		reg = <0x63050000 0x50000>;
+	};
+
+	vring_shm0: memory@63200000 {
+		compatible = "mmio-sram";
+		reg = <0x63200000 0x300000>;
 	};
 };
 

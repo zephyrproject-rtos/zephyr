@@ -56,11 +56,6 @@
 		};
 	};
 
-	sram0: memory@APOLLO2_SRAM {
-		compatible = "mmio-sram";
-		reg = <APOLLO2_SRAM_BASE APOLLO2_SRAM_SIZE>;
-	};
-
 	soc {
 		compatible = "ambiq,apollo2", "ambiq,apollo2x", "simple-bus";
 
@@ -106,6 +101,11 @@
 			compatible = "ambiq,apollo2-pinctrl";
 			reg = <APOLLO2_GPIO_BASE APOLLO2_GPIO_SIZE>;
 		};
+	};
+
+	sram0: memory@APOLLO2_SRAM {
+		compatible = "mmio-sram";
+		reg = <APOLLO2_SRAM_BASE APOLLO2_SRAM_SIZE>;
 	};
 };
 

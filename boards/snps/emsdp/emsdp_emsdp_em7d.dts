@@ -31,12 +31,12 @@
 
 / {
 	soc {
-		uart@f0004000 {
-			interrupts = <107 1>;
-		};
-
 		gpio@f0002000 {
 			interrupts = <85 1>;
+		};
+
+		uart@f0004000 {
+			interrupts = <107 1>;
 		};
 
 		spi@f0008000 {

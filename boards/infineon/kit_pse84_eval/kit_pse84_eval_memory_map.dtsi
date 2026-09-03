@@ -20,6 +20,32 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
+		m33_code: memory@24058000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x24058000 DT_SIZE_K(404)>;
+			zephyr,memory-region = "M33CODE";
+		};
+
+		m33_data: memory@240bd000 {
+			reg = <0x240bd000 DT_SIZE_K(256)>;
+		};
+
+		m33_allocatable_shared: memory@240fe000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x240fe000 DT_SIZE_K(4)>;
+			zephyr,memory-region = "M33SHARED";
+		};
+
+		m55_allocatable_shared: memory@240ff000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x240ff000 DT_SIZE_K(4)>;
+			zephyr,memory-region = "M55SHARED";
+		};
+
+		m55_data: memory@26100000 {
+			reg = <0x26100000 DT_SIZE_K(256)>;
+		};
+
 		extended_boot_sram_reserved: memory@34000000 {
 			reg = <0x34000000 DT_SIZE_K(4)>;
 		};
@@ -38,36 +64,69 @@
 			reg = <0x34037000 DT_SIZE_K(132)>;
 		};
 
-		m33_code: memory@24058000 {
-			compatible = "zephyr,memory-region", "mmio-sram";
-			reg = <0x24058000 DT_SIZE_K(404)>;
-			zephyr,memory-region = "M33CODE";
-		};
-
-		m33_data: memory@240bd000 {
-			reg = <0x240bd000 DT_SIZE_K(256)>;
-		};
-
 		m33s_allocatable_shared: memory@340fd000 {
 			compatible = "zephyr,memory-region", "mmio-sram";
 			reg = <0x340fd000 DT_SIZE_K(4)>;
 			zephyr,memory-region = "SECSHARED";
 		};
+	};
 
-		m33_allocatable_shared: memory@240fe000 {
-			compatible = "zephyr,memory-region", "mmio-sram";
-			reg = <0x240fe000 DT_SIZE_K(4)>;
-			zephyr,memory-region = "M33SHARED";
-		};
+	/* RRAM memory (512 KB) assignment
+	 *   0x00000 - 0x10FFF : reserved-extended-boot (68 KB)
+	 *   0x11000 - 0x50FFF : boot_partition (256 KB) - MCUBoot bootloader
+	 *   0x51000 - 0x62FFF : storage_rram (72 KB)
+	 *   0x63000 - 0x7FFFF : reserved-security (116 KB)
+	 */
+	rram_controller: rram_controller@42200000 {
+		compatible = "infineon,rram-controller";
+		reg = <0x42200000 0x10000>;
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		status = "okay";
 
-		m55_allocatable_shared: memory@240ff000 {
-			compatible = "zephyr,memory-region", "mmio-sram";
-			reg = <0x240ff000 DT_SIZE_K(4)>;
-			zephyr,memory-region = "M55SHARED";
-		};
+		rram0: rram0@22000000 {
+			compatible = "soc-nv-flash";
+			reg = <0x22000000 DT_SIZE_K(512)>;
+			ranges = <0x0 0x22000000 DT_SIZE_K(512)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			write-block-size = <16>;
+			erase-block-size = <16>;
+			status = "okay";
 
-		m55_data: memory@26100000 {
-			reg = <0x26100000 DT_SIZE_K(256)>;
+			partitions {
+				ranges;
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				reserved_extended_boot: reserved@0 {
+					compatible = "zephyr,mapped-partition";
+					reg = <0x0 0x11000>;
+					label = "reserved-extended-boot";
+					read-only;
+				};
+
+				boot_partition: boot_partition@11000 {
+					compatible = "zephyr,mapped-partition";
+					reg = <0x11000 0x40000>;
+					label = "mcuboot";
+					read-only;
+				};
+
+				storage_partition_rram: storage_rram@51000 {
+					compatible = "zephyr,mapped-partition";
+					reg = <0x51000 0x12000>;
+					label = "storage-rram";
+				};
+
+				reserved_security: reserved@63000 {
+					compatible = "zephyr,mapped-partition";
+					reg = <0x63000 0x1d000>;
+					label = "reserved-security";
+					read-only;
+				};
+			};
 		};
 	};
 
@@ -186,65 +245,6 @@
 					compatible = "zephyr,mapped-partition";
 					reg = <0x580000 DT_SIZE_M(2)>;
 					label = "m55-xip";
-				};
-			};
-		};
-	};
-
-	/* RRAM memory (512 KB) assignment
-	 *   0x00000 - 0x10FFF : reserved-extended-boot (68 KB)
-	 *   0x11000 - 0x50FFF : boot_partition (256 KB) - MCUBoot bootloader
-	 *   0x51000 - 0x62FFF : storage_rram (72 KB)
-	 *   0x63000 - 0x7FFFF : reserved-security (116 KB)
-	 */
-	rram_controller: rram_controller@42200000 {
-		compatible = "infineon,rram-controller";
-		reg = <0x42200000 0x10000>;
-		ranges;
-		#address-cells = <1>;
-		#size-cells = <1>;
-		status = "okay";
-
-		rram0: rram0@22000000 {
-			compatible = "soc-nv-flash";
-			reg = <0x22000000 DT_SIZE_K(512)>;
-			ranges = <0x0 0x22000000 DT_SIZE_K(512)>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-			write-block-size = <16>;
-			erase-block-size = <16>;
-			status = "okay";
-
-			partitions {
-				ranges;
-				#address-cells = <1>;
-				#size-cells = <1>;
-
-				reserved_extended_boot: reserved@0 {
-					compatible = "zephyr,mapped-partition";
-					reg = <0x0 0x11000>;
-					label = "reserved-extended-boot";
-					read-only;
-				};
-
-				boot_partition: boot_partition@11000 {
-					compatible = "zephyr,mapped-partition";
-					reg = <0x11000 0x40000>;
-					label = "mcuboot";
-					read-only;
-				};
-
-				storage_partition_rram: storage_rram@51000 {
-					compatible = "zephyr,mapped-partition";
-					reg = <0x51000 0x12000>;
-					label = "storage-rram";
-				};
-
-				reserved_security: reserved@63000 {
-					compatible = "zephyr,mapped-partition";
-					reg = <0x63000 0x1d000>;
-					label = "reserved-security";
-					read-only;
 				};
 			};
 		};

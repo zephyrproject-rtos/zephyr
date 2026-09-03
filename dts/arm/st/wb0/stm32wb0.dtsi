@@ -55,11 +55,6 @@
 		};
 	};
 
-	sram0: memory@20000000 {
-		compatible = "zephyr,memory-region", "mmio-sram";
-		zephyr,memory-region = "SRAM0";
-	};
-
 	clocks {
 		/* High-speed clock nodes
 		 * These nodes must only be used as input to
@@ -124,6 +119,23 @@
 	};
 
 	soc {
+		/* STM32WB0 GPIO interrupt controller
+		 *
+		 * The 'reg' property corresponds to the SYSCFG memory range,
+		 * because that's where the GPIO INTC registers are located.
+		 */
+		gpio_intc: interrupt-controller@40000000 {
+			compatible = "st,stm32wb0-gpio-intc";
+			reg = <0x40000000 64>;
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			#address-cells = <1>;
+			num-lines = <32>;
+			interrupts = <15 0>, <16 0>;
+			interrupt-names = "gpioa", "gpiob";
+			line-ranges = <0 16>, <16 16>;
+		};
+
 		flash: flash-controller@40001000 {
 			compatible = "st,stm32wb0-flash-controller", "st,stm32-flash-controller";
 			reg = <0x40001000 DT_SIZE_K(1)>;
@@ -168,37 +180,77 @@
 			};
 		};
 
-		rcc: rcc@48400000 {
-			compatible = "st,stm32wb0-rcc";
-			reg = <0x48400000 DT_SIZE_K(1)>;
-			#clock-cells = <2>;
-
-			rctl: reset-controller {
-				compatible = "st,stm32-rcc-rctl";
-				#reset-cells = <1>;
-			};
+		iwdg: watchdog@40003000 {
+			compatible = "st,stm32-watchdog";
+			reg = <0x40003000 DT_SIZE_K(1)>;
+			clocks = <&rcc STM32_CLOCK(APB0, 14)>;
+			status = "disabled";
 		};
 
-		pwrc: power@48500000 {
-			compatible = "st,stm32wb0-pwr";
-			reg = <0x48500000 DT_SIZE_K(1)>;
+		rtc: rtc@40004000 {
+			compatible = "st,stm32-rtc";
+			reg = <0x40004000 DT_SIZE_K(1)>;
+			interrupts = <11 0>;
+			clocks = <&rcc STM32_CLOCK(APB0, 12)>;
+			status = "disabled";
 		};
 
-		/* STM32WB0 GPIO interrupt controller
-		 *
-		 * The 'reg' property corresponds to the SYSCFG memory range,
-		 * because that's where the GPIO INTC registers are located.
-		 */
-		gpio_intc: interrupt-controller@40000000 {
-			compatible = "st,stm32wb0-gpio-intc";
-			reg = <0x40000000 64>;
-			interrupt-controller;
-			#interrupt-cells = <1>;
+		i2c1: i2c@41000000 {
+			compatible = "st,stm32-i2c-v2";
+			reg = <0x41000000 DT_SIZE_K(1)>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
 			#address-cells = <1>;
-			num-lines = <32>;
-			interrupts = <15 0>, <16 0>;
-			interrupt-names = "gpioa", "gpiob";
-			line-ranges = <0 16>, <16 16>;
+			#size-cells = <0>;
+			clocks = <&rcc STM32_CLOCK(APB1, 21)>;
+			interrupts = <3 0>;
+			interrupt-names = "combined";
+			status = "disabled";
+		};
+
+		usart1: serial@41004000 {
+			compatible = "st,stm32-usart", "st,stm32-uart";
+			reg = <0x41004000 DT_SIZE_K(1)>;
+
+			clocks = <&rcc STM32_CLOCK(APB1, 10)>;
+			resets = <&rctl STM32_RESET(APB1, 10)>;
+			interrupts = <8 0>;
+			status = "disabled";
+		};
+
+		lpuart1: serial@41005000 {
+			compatible = "st,stm32-lpuart", "st,stm32-uart";
+			reg = <0x41005000 DT_SIZE_K(1)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 8)>;
+			resets = <&rctl STM32_RESET(APB1, 8)>;
+			interrupts = <9 0>;
+			status = "disabled";
+		};
+
+		adc1: adc@41006000 {
+			compatible = "st,stm32wb0-adc";
+			reg = <0x41006000 256>;
+			/* On STM32WB0, the two ADC clock domains (ANALOG / DIGITAL)
+			 * can be controlled independently. Expose this feature to
+			 * the driver by having two `clocks` property entries:
+			 *  - first entry is digital part of ADC block (always-on)
+			 *  - second entry is analog part of ADC block (on-demand)
+			 */
+			clocks = <&rcc STM32_CLOCK(APB1, 4)>,
+				 <&rcc STM32_CLOCK(APB1, 5)>;
+			interrupts = <12 0>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
+
+		spi3: spi@41007000 {
+			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
+			reg = <0x41007000 DT_SIZE_K(1)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&rcc STM32_CLOCK(APB1, 14)>;
+			interrupts = <7 0>;
+			st,spi-data-width = "full-4-to-16-bit";
+			status = "disabled";
 		};
 
 		pinctrl: pin-controller@48000000 {
@@ -225,69 +277,43 @@
 			};
 		};
 
-		rtc: rtc@40004000 {
-			compatible = "st,stm32-rtc";
-			reg = <0x40004000 DT_SIZE_K(1)>;
-			interrupts = <11 0>;
-			clocks = <&rcc STM32_CLOCK(APB0, 12)>;
+		crc: crc@48200000 {
+			compatible = "st,stm32-crc";
+			reg = <0x48200000 DT_SIZE_K(1)>;
+			clocks = <&rcc STM32_CLOCK(AHB0, 12)>;
+			resets = <&rctl STM32_RESET(AHB0, 12)>;
 			status = "disabled";
 		};
 
-		usart1: serial@41004000 {
-			compatible = "st,stm32-usart", "st,stm32-uart";
-			reg = <0x41004000 DT_SIZE_K(1)>;
+		rcc: rcc@48400000 {
+			compatible = "st,stm32wb0-rcc";
+			reg = <0x48400000 DT_SIZE_K(1)>;
+			#clock-cells = <2>;
 
-			clocks = <&rcc STM32_CLOCK(APB1, 10)>;
-			resets = <&rctl STM32_RESET(APB1, 10)>;
-			interrupts = <8 0>;
-			status = "disabled";
+			rctl: reset-controller {
+				compatible = "st,stm32-rcc-rctl";
+				#reset-cells = <1>;
+			};
 		};
 
-		lpuart1: serial@41005000 {
-			compatible = "st,stm32-lpuart", "st,stm32-uart";
-			reg = <0x41005000 DT_SIZE_K(1)>;
-			clocks = <&rcc STM32_CLOCK(APB1, 8)>;
-			resets = <&rctl STM32_RESET(APB1, 8)>;
-			interrupts = <9 0>;
-			status = "disabled";
+		pwrc: power@48500000 {
+			compatible = "st,stm32wb0-pwr";
+			reg = <0x48500000 DT_SIZE_K(1)>;
 		};
 
-		i2c1: i2c@41000000 {
-			compatible = "st,stm32-i2c-v2";
-			reg = <0x41000000 DT_SIZE_K(1)>;
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			clocks = <&rcc STM32_CLOCK(APB1, 21)>;
-			interrupts = <3 0>;
-			interrupt-names = "combined";
-			status = "disabled";
-		};
-
-		spi3: spi@41007000 {
-			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
-			reg = <0x41007000 DT_SIZE_K(1)>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			clocks = <&rcc STM32_CLOCK(APB1, 14)>;
-			interrupts = <7 0>;
-			st,spi-data-width = "full-4-to-16-bit";
-			status = "disabled";
-		};
-
-		adc1: adc@41006000 {
-			compatible = "st,stm32wb0-adc";
-			reg = <0x41006000 256>;
-			/* On STM32WB0, the two ADC clock domains (ANALOG / DIGITAL)
-			 * can be controlled independently. Expose this feature to
-			 * the driver by having two `clocks` property entries:
-			 *  - first entry is digital part of ADC block (always-on)
-			 *  - second entry is analog part of ADC block (on-demand)
-			 */
-			clocks = <&rcc STM32_CLOCK(APB1, 4)>,
-				 <&rcc STM32_CLOCK(APB1, 5)>;
-			interrupts = <12 0>;
-			#io-channel-cells = <1>;
+		/**
+		 * This node is valid for STM32WB05, STM32WB06 and
+		 * STM32WB07, all equipped with the same IRQ-less
+		 * TRNG instance. Since all those properties are
+		 * also valid on STM32SWB09, except "compatible",
+		 * we pretend this node is valid for all SoCs of
+		 * the series and clean up in `stm32wb09.dtsi`.
+		 */
+		rng: rng@48600000 {
+			compatible = "st,stm32-rng-noirq";
+			reg = <0x48600000 DT_SIZE_K(4)>;
+			clocks = <&rcc STM32_CLOCK(AHB0, 18)>;
+			generation-delay-ns = <1250>; /* 1.25us */
 			status = "disabled";
 		};
 
@@ -315,37 +341,6 @@
 			dma-requests = <25>;
 			status = "disabled";
 		};
-
-		/**
-		 * This node is valid for STM32WB05, STM32WB06 and
-		 * STM32WB07, all equipped with the same IRQ-less
-		 * TRNG instance. Since all those properties are
-		 * also valid on STM32SWB09, except "compatible",
-		 * we pretend this node is valid for all SoCs of
-		 * the series and clean up in `stm32wb09.dtsi`.
-		 */
-		rng: rng@48600000 {
-			compatible = "st,stm32-rng-noirq";
-			reg = <0x48600000 DT_SIZE_K(4)>;
-			clocks = <&rcc STM32_CLOCK(AHB0, 18)>;
-			generation-delay-ns = <1250>; /* 1.25us */
-			status = "disabled";
-		};
-
-		iwdg: watchdog@40003000 {
-			compatible = "st,stm32-watchdog";
-			reg = <0x40003000 DT_SIZE_K(1)>;
-			clocks = <&rcc STM32_CLOCK(APB0, 14)>;
-			status = "disabled";
-		};
-
-		crc: crc@48200000 {
-			compatible = "st,stm32-crc";
-			reg = <0x48200000 DT_SIZE_K(1)>;
-			clocks = <&rcc STM32_CLOCK(AHB0, 12)>;
-			resets = <&rctl STM32_RESET(AHB0, 12)>;
-			status = "disabled";
-		};
 	};
 
 	bt_hci_wb0: bt_hci_wb0 {
@@ -366,6 +361,11 @@
 		compensated-timer-freq = <409600>;
 		max-hs-startup-time = <320>;
 		status = "disabled";
+	};
+
+	sram0: memory@20000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		zephyr,memory-region = "SRAM0";
 	};
 };
 

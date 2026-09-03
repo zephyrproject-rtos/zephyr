@@ -151,6 +151,60 @@
 		status = "okay";
 	};
 
+	wdt0: watchdog@3000 {
+		compatible = "adi,max32-watchdog";
+		reg = <0x3000 0x400>;
+		interrupts = <1 0>;
+		clocks = <&gcr ADI_MAX32_CLOCK_BUS1 27>;
+		clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
+		status = "disabled";
+	};
+
+	rtc_counter: rtc_counter@6000 {
+		compatible = "adi,max32-rtc-counter";
+		reg = <0x6000 0x400>;
+		interrupts = <2 0>;
+		status = "disabled";
+	};
+
+	wut0: timer@6400 {
+		compatible = "adi,max32-timer";
+		reg = <0x6400 0x200>;
+		interrupts = <24 0>;
+		prescaler = <1>;
+		status = "disabled";
+
+		counter {
+			compatible = "adi,max32-wut";
+			zephyr,pm-device-runtime-auto;
+			status = "disabled";
+		};
+
+		timer {
+			compatible = "adi,max32-wut-timer";
+			status = "disabled";
+		};
+	};
+
+	wut1: timer@6600 {
+		compatible = "adi,max32-timer";
+		reg = <0x6600 0x200>;
+		interrupts = <25 0>;
+		prescaler = <1>;
+		status = "disabled";
+
+		counter {
+			compatible = "adi,max32-wut";
+			zephyr,pm-device-runtime-auto;
+			status = "disabled";
+		};
+
+		timer {
+			compatible = "adi,max32-wut-timer";
+			status = "disabled";
+		};
+	};
+
 	pinctrl: pin-controller@8000 {
 		compatible = "adi,max32-pinctrl";
 		reg = <0x8000 0x1000>;
@@ -166,43 +220,6 @@
 			interrupts = <14 0>;
 			status = "disabled";
 		};
-	};
-
-	i3c0: i3c@18000 {
-		compatible = "adi,max32-i3c";
-		reg = <0x18000 0x1000>;
-		#address-cells = <3>;
-		#size-cells = <0>;
-		clocks = <&gcr ADI_MAX32_CLOCK_BUS0 13>;
-		interrupts = <10 0>;
-		zephyr,disabling-power-states = <&standby &backup>;
-		status = "disabled";
-	};
-
-	uart0: serial@42000 {
-		compatible = "adi,max32-uart";
-		reg = <0x42000 0x1000>;
-		clocks = <&gcr ADI_MAX32_CLOCK_BUS0 9>;
-		clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
-		interrupts = <11 0>;
-		zephyr,pm-device-runtime-auto;
-		status = "disabled";
-	};
-
-	trng: trng@4d000 {
-		compatible = "adi,max32-trng";
-		reg = <0x4d000 0x1000>;
-		clocks = <&gcr ADI_MAX32_CLOCK_BUS1 2>;
-		status = "disabled";
-	};
-
-	wdt0: watchdog@3000 {
-		compatible = "adi,max32-watchdog";
-		reg = <0x3000 0x400>;
-		interrupts = <1 0>;
-		clocks = <&gcr ADI_MAX32_CLOCK_BUS1 27>;
-		clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
-		status = "disabled";
 	};
 
 	timer0: timer@10000 {
@@ -343,48 +360,24 @@
 		};
 	};
 
-	wut0: timer@6400 {
-		compatible = "adi,max32-timer";
-		reg = <0x6400 0x200>;
-		interrupts = <24 0>;
-		prescaler = <1>;
+	i3c0: i3c@18000 {
+		compatible = "adi,max32-i3c";
+		reg = <0x18000 0x1000>;
+		#address-cells = <3>;
+		#size-cells = <0>;
+		clocks = <&gcr ADI_MAX32_CLOCK_BUS0 13>;
+		interrupts = <10 0>;
+		zephyr,disabling-power-states = <&standby &backup>;
 		status = "disabled";
-
-		counter {
-			compatible = "adi,max32-wut";
-			zephyr,pm-device-runtime-auto;
-			status = "disabled";
-		};
-
-		timer {
-			compatible = "adi,max32-wut-timer";
-			status = "disabled";
-		};
 	};
 
-	wut1: timer@6600 {
-		compatible = "adi,max32-timer";
-		reg = <0x6600 0x200>;
-		interrupts = <25 0>;
-		prescaler = <1>;
-		status = "disabled";
-
-		counter {
-			compatible = "adi,max32-wut";
-			zephyr,pm-device-runtime-auto;
-			status = "disabled";
-		};
-
-		timer {
-			compatible = "adi,max32-wut-timer";
-			status = "disabled";
-		};
-	};
-
-	rtc_counter: rtc_counter@6000 {
-		compatible = "adi,max32-rtc-counter";
-		reg = <0x6000 0x400>;
-		interrupts = <2 0>;
+	uart0: serial@42000 {
+		compatible = "adi,max32-uart";
+		reg = <0x42000 0x1000>;
+		clocks = <&gcr ADI_MAX32_CLOCK_BUS0 9>;
+		clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
+		interrupts = <11 0>;
+		zephyr,pm-device-runtime-auto;
 		status = "disabled";
 	};
 
@@ -396,6 +389,13 @@
 		clocks = <&gcr ADI_MAX32_CLOCK_BUS0 6>;
 		interrupts = <12 0>;
 		zephyr,disabling-power-states = <&standby &backup>;
+		status = "disabled";
+	};
+
+	trng: trng@4d000 {
+		compatible = "adi,max32-trng";
+		reg = <0x4d000 0x1000>;
+		clocks = <&gcr ADI_MAX32_CLOCK_BUS1 2>;
 		status = "disabled";
 	};
 };

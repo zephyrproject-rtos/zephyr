@@ -18,34 +18,22 @@
 			zephyr,memory-region = "OCM_LOW";
 		};
 
-		ocm_high: memory@fffc0000 {
-			compatible = "zephyr,memory-region", "xlnx,zynq-ocm";
-			reg = <0xfffc0000 DT_SIZE_K(256)>;
-			zephyr,memory-region = "OCM_HIGH";
-		};
-
-		arch_timer: timer@f8f00200 {
-			compatible = "arm,armv8-timer";
-			reg = <0xf8f00200 0x1c>;
-			interrupt-names = "irq_0", "irq_1", "irq_2", "irq_3";
-			interrupts = <GIC_PPI 13 IRQ_TYPE_EDGE
-				      IRQ_DEFAULT_PRIORITY>,
-				     <GIC_PPI 14 IRQ_TYPE_EDGE
-				      IRQ_DEFAULT_PRIORITY>,
-				     <GIC_PPI 11 IRQ_TYPE_EDGE
-				      IRQ_DEFAULT_PRIORITY>,
-				     <GIC_PPI 10 IRQ_TYPE_EDGE
+		uart0: uart@e0000000 {
+			compatible = "xlnx,xuartps";
+			reg = <0xe0000000 0x4c>;
+			interrupts = <GIC_SPI 27 IRQ_TYPE_LEVEL
 				      IRQ_DEFAULT_PRIORITY>;
-			status = "okay";
+			interrupt-names = "irq_0";
+			status = "disabled";
 		};
 
-		gic: interrupt-controller@f8f01000 {
-			compatible = "arm,gic-v1", "arm,gic";
-			reg = <0xf8f01000 0x1000>,
-			      <0xf8f00100 0x100>;
-			interrupt-controller;
-			#interrupt-cells = <4>;
-			status = "okay";
+		uart1: uart@e0001000 {
+			compatible = "xlnx,xuartps";
+			reg = <0xe0001000 0x4c>;
+			interrupts = <GIC_SPI 50 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "irq_0";
+			status = "disabled";
 		};
 
 		i2c0: i2c@e0004000 {
@@ -67,84 +55,6 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			fifo-depth = <16>;
-			status = "disabled";
-		};
-
-		gem0: ethernet@e000b000 {
-			compatible = "xlnx,gem";
-			reg = <0xe000b000 0x1000>,
-			      <0xf8000140 0x4>;
-			reg-names = "mac", "clkc";
-			interrupts = <GIC_SPI 22 IRQ_TYPE_LEVEL
-				      IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 23 IRQ_TYPE_LEVEL
-				      IRQ_DEFAULT_PRIORITY>;
-			interrupt-names = "irq_0", "irq_1";
-			amba-ahb-burst-length = <XLNX_GEM_AMBA_AHB_BURST_INCR16>;
-			hw-rx-buffer-size = <XLNX_GEM_HW_RX_BUFFER_SIZE_8KB>;
-			hw-rx-buffer-offset = <0>;
-			hw-tx-buffer-size-full;
-			rx-buffer-descriptors = <32>;
-			tx-buffer-descriptors = <32>;
-			rx-buffer-size = <1536>;
-			tx-buffer-size = <1536>;
-			discard-rx-fcs;
-			unicast-hash;
-			status = "disabled";
-
-			gem0_mdio: mdio {
-				compatible = "xlnx,gem-mdio";
-				#address-cells = <1>;
-				#size-cells = <0>;
-				status = "disabled";
-			};
-		};
-
-		gem1: ethernet@e000c000 {
-			compatible = "xlnx,gem";
-			reg = <0xe000c000 0x1000>,
-			      <0xf8000144 0x4>;
-			reg-names = "mac", "clkc";
-			interrupts = <GIC_SPI 45 IRQ_TYPE_LEVEL
-				      IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 46 IRQ_TYPE_LEVEL
-				      IRQ_DEFAULT_PRIORITY>;
-			interrupt-names = "irq_0", "irq_1";
-			amba-ahb-burst-length = <XLNX_GEM_AMBA_AHB_BURST_INCR16>;
-			hw-rx-buffer-size = <XLNX_GEM_HW_RX_BUFFER_SIZE_8KB>;
-			hw-rx-buffer-offset = <0>;
-			hw-tx-buffer-size-full;
-			rx-buffer-descriptors = <32>;
-			tx-buffer-descriptors = <32>;
-			rx-buffer-size = <1536>;
-			tx-buffer-size = <1536>;
-			discard-rx-fcs;
-			unicast-hash;
-			status = "disabled";
-
-			gem1_mdio: mdio {
-				compatible = "xlnx,gem-mdio";
-				#address-cells = <1>;
-				#size-cells = <0>;
-				status = "disabled";
-			};
-		};
-
-		uart0: uart@e0000000 {
-			compatible = "xlnx,xuartps";
-			reg = <0xe0000000 0x4c>;
-			interrupts = <GIC_SPI 27 IRQ_TYPE_LEVEL
-				      IRQ_DEFAULT_PRIORITY>;
-			interrupt-names = "irq_0";
-			status = "disabled";
-		};
-
-		uart1: uart@e0001000 {
-			compatible = "xlnx,xuartps";
-			reg = <0xe0001000 0x4c>;
-			interrupts = <GIC_SPI 50 IRQ_TYPE_LEVEL
-				      IRQ_DEFAULT_PRIORITY>;
-			interrupt-names = "irq_0";
 			status = "disabled";
 		};
 
@@ -220,6 +130,96 @@
 				ngpios = <32>;
 				status = "okay";
 			};
+		};
+
+		gem0: ethernet@e000b000 {
+			compatible = "xlnx,gem";
+			reg = <0xe000b000 0x1000>,
+			      <0xf8000140 0x4>;
+			reg-names = "mac", "clkc";
+			interrupts = <GIC_SPI 22 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 23 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "irq_0", "irq_1";
+			amba-ahb-burst-length = <XLNX_GEM_AMBA_AHB_BURST_INCR16>;
+			hw-rx-buffer-size = <XLNX_GEM_HW_RX_BUFFER_SIZE_8KB>;
+			hw-rx-buffer-offset = <0>;
+			hw-tx-buffer-size-full;
+			rx-buffer-descriptors = <32>;
+			tx-buffer-descriptors = <32>;
+			rx-buffer-size = <1536>;
+			tx-buffer-size = <1536>;
+			discard-rx-fcs;
+			unicast-hash;
+			status = "disabled";
+
+			gem0_mdio: mdio {
+				compatible = "xlnx,gem-mdio";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+		};
+
+		gem1: ethernet@e000c000 {
+			compatible = "xlnx,gem";
+			reg = <0xe000c000 0x1000>,
+			      <0xf8000144 0x4>;
+			reg-names = "mac", "clkc";
+			interrupts = <GIC_SPI 45 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 46 IRQ_TYPE_LEVEL
+				      IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "irq_0", "irq_1";
+			amba-ahb-burst-length = <XLNX_GEM_AMBA_AHB_BURST_INCR16>;
+			hw-rx-buffer-size = <XLNX_GEM_HW_RX_BUFFER_SIZE_8KB>;
+			hw-rx-buffer-offset = <0>;
+			hw-tx-buffer-size-full;
+			rx-buffer-descriptors = <32>;
+			tx-buffer-descriptors = <32>;
+			rx-buffer-size = <1536>;
+			tx-buffer-size = <1536>;
+			discard-rx-fcs;
+			unicast-hash;
+			status = "disabled";
+
+			gem1_mdio: mdio {
+				compatible = "xlnx,gem-mdio";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+		};
+
+		arch_timer: timer@f8f00200 {
+			compatible = "arm,armv8-timer";
+			reg = <0xf8f00200 0x1c>;
+			interrupt-names = "irq_0", "irq_1", "irq_2", "irq_3";
+			interrupts = <GIC_PPI 13 IRQ_TYPE_EDGE
+				      IRQ_DEFAULT_PRIORITY>,
+				     <GIC_PPI 14 IRQ_TYPE_EDGE
+				      IRQ_DEFAULT_PRIORITY>,
+				     <GIC_PPI 11 IRQ_TYPE_EDGE
+				      IRQ_DEFAULT_PRIORITY>,
+				     <GIC_PPI 10 IRQ_TYPE_EDGE
+				      IRQ_DEFAULT_PRIORITY>;
+			status = "okay";
+		};
+
+		gic: interrupt-controller@f8f01000 {
+			compatible = "arm,gic-v1", "arm,gic";
+			reg = <0xf8f01000 0x1000>,
+			      <0xf8f00100 0x100>;
+			interrupt-controller;
+			#interrupt-cells = <4>;
+			status = "okay";
+		};
+
+		ocm_high: memory@fffc0000 {
+			compatible = "zephyr,memory-region", "xlnx,zynq-ocm";
+			reg = <0xfffc0000 DT_SIZE_K(256)>;
+			zephyr,memory-region = "OCM_HIGH";
 		};
 	};
 

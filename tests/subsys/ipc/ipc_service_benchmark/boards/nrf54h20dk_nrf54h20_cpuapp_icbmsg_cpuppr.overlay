@@ -18,12 +18,12 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			sram_rx: memory@2fc10800 {
-				reg = <0x2fc10800 DT_SIZE_K(2)>;
-			};
-
 			sram_tx: memory@2fc10000 {
 				reg = <0x2fc10000 DT_SIZE_K(2)>;
+			};
+
+			sram_rx: memory@2fc10800 {
+				reg = <0x2fc10800 DT_SIZE_K(2)>;
 			};
 		};
 	};

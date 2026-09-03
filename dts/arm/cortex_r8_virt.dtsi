@@ -28,14 +28,23 @@
 		#size-cells = <1>;
 		interrupt-parent = <&gic>;
 
-		flash0: flash@c0000000 {
-			compatible = "soc-nv-flash";
-			reg = <0xc0000000 0x2000000>;
-		};
-
 		sram0: memory@0 {
 			compatible = "mmio-sram";
 			reg = <0x0 0x4000000>;
+		};
+
+		gic: interrupt-controller@ae001000 {
+			compatible = "arm,gic-v1", "arm,gic";
+			reg = <0xae001000 0x1000>, <0xae000100 0x100>;
+			interrupt-controller;
+			#interrupt-cells = <0x4>;
+			phandle = <0x1>;
+			status = "okay";
+		};
+
+		flash0: flash@c0000000 {
+			compatible = "soc-nv-flash";
+			reg = <0xc0000000 0x2000000>;
 		};
 
 		uart0: uart@ff000000 {
@@ -55,15 +64,6 @@
 				     <0x0 0x26 0x2 0xa0>;
 			interrupt-names = "irq_0", "irq_1", "irq_2";
 			clock-frequency = <5000000>;
-			status = "okay";
-		};
-
-		gic: interrupt-controller@ae001000 {
-			compatible = "arm,gic-v1", "arm,gic";
-			reg = <0xae001000 0x1000>, <0xae000100 0x100>;
-			interrupt-controller;
-			#interrupt-cells = <0x4>;
-			phandle = <0x1>;
 			status = "okay";
 		};
 	};

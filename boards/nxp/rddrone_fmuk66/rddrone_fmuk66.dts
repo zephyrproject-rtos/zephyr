@@ -319,6 +319,12 @@ zephyr_udc0: &usbotg {
 	pinctrl-names = "default";
 	status = "okay";
 
+	bmm150: bmm150@10 {
+		compatible = "bosch,bmm150";
+		reg = <0x10>;
+		status = "okay";
+	};
+
 	/*
 	 * This board does not have a BME280, it has a BMP280.
 	 * The two parts are incredibly similar, so the BME280 driver works for
@@ -327,12 +333,6 @@ zephyr_udc0: &usbotg {
 	bme280@76 {
 		compatible = "bosch,bme280";
 		reg = <0x76>;
-		status = "okay";
-	};
-
-	bmm150: bmm150@10 {
-		compatible = "bosch,bmm150";
-		reg = <0x10>;
 		status = "okay";
 	};
 };

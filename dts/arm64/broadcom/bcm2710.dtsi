@@ -61,14 +61,6 @@
 	};
 
 	soc {
-		local_intc: interrupt-controller@40000000 {
-			compatible = "brcm,bcm2836-l1-intc";
-			reg = <0x40000000 0x100>;
-			interrupt-controller;
-			#interrupt-cells = <3>;
-			status = "okay";
-		};
-
 		armctrl_intc: interrupt-controller@3f00b200 {
 			compatible = "brcm,bcm2835-armctrl-ic";
 			reg = <0x3f00b200 0x200>;
@@ -76,6 +68,14 @@
 			interrupts = <BCM2836_LOCAL_IRQ_GPU IRQ_TYPE_LEVEL 0>;
 			interrupt-controller;
 			#interrupt-cells = <3>;
+			status = "okay";
+		};
+
+		mbox0: mbox@3f00b880 {
+			compatible = "brcm,bcm2711-mbox";
+			reg = <0x3f00b880 0x40>;
+			interrupts = <BCM2835_IRQ_ARM_MAILBOX IRQ_TYPE_LEVEL 0>;
+			#mbox-cells = <1>;
 			status = "okay";
 		};
 
@@ -122,23 +122,6 @@
 			status = "disabled";
 		};
 
-		uart1: uart@3f215040 {
-			compatible = "brcm,bcm283x-aux-uart", "ns16550";
-			reg = <0x3f215040 0x40>;
-			reg-shift = <2>;
-			interrupts = <BCM2835_IRQ_AUX IRQ_TYPE_LEVEL 0>;
-			clock-frequency = <DT_FREQ_M(250)>;
-			status = "disabled";
-		};
-
-		mbox0: mbox@3f00b880 {
-			compatible = "brcm,bcm2711-mbox";
-			reg = <0x3f00b880 0x40>;
-			interrupts = <BCM2835_IRQ_ARM_MAILBOX IRQ_TYPE_LEVEL 0>;
-			#mbox-cells = <1>;
-			status = "okay";
-		};
-
 		/*
 		 * The three BSC masters share BCM2835_IRQ_I2C, so enabling
 		 * more than one at a time trips a build-time IRQ_CONNECT
@@ -151,6 +134,15 @@
 			clocks = <&clk_core>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		uart1: uart@3f215040 {
+			compatible = "brcm,bcm283x-aux-uart", "ns16550";
+			reg = <0x3f215040 0x40>;
+			reg-shift = <2>;
+			interrupts = <BCM2835_IRQ_AUX IRQ_TYPE_LEVEL 0>;
+			clock-frequency = <DT_FREQ_M(250)>;
 			status = "disabled";
 		};
 
@@ -172,6 +164,14 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
+		};
+
+		local_intc: interrupt-controller@40000000 {
+			compatible = "brcm,bcm2836-l1-intc";
+			reg = <0x40000000 0x100>;
+			interrupt-controller;
+			#interrupt-cells = <3>;
+			status = "okay";
 		};
 	};
 };

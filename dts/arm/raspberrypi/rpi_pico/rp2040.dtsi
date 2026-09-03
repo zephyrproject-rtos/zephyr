@@ -189,11 +189,6 @@
 	soc {
 		compatible = "raspberrypi,rp2040", "simple-bus";
 
-		sram0: memory@20000000 {
-			compatible = "mmio-sram";
-			reg = <0x20000000 DT_SIZE_K(264)>;
-		};
-
 		ssi: flash-controller@18000000 {
 			compatible = "raspberrypi,pico-flash-controller";
 			reg = <0x18000000 0xfc>;
@@ -211,10 +206,9 @@
 			};
 		};
 
-		reset: reset-controller@4000c000 {
-			compatible = "raspberrypi,pico-reset";
-			reg = <0x4000c000 DT_SIZE_K(4)>;
-			#reset-cells = <1>;
+		sram0: memory@20000000 {
+			compatible = "mmio-sram";
+			reg = <0x20000000 DT_SIZE_K(264)>;
 		};
 
 		clocks: clock-controller@40008000 {
@@ -237,6 +231,12 @@
 				      "pll_sys", "pll_usb", "xosc", "rosc", "rosc_ph",
 				      "gpin0", "gpin1";
 			status = "okay";
+		};
+
+		reset: reset-controller@4000c000 {
+			compatible = "raspberrypi,pico-reset";
+			reg = <0x4000c000 DT_SIZE_K(4)>;
+			#reset-cells = <1>;
 		};
 
 		gpio0_map: gpio@40014000 {
@@ -306,17 +306,6 @@
 			status = "disabled";
 		};
 
-		adc: adc@4004c000 {
-			compatible = "raspberrypi,pico-adc";
-			reg = <0x4004c000 DT_SIZE_K(4)>;
-			resets = <&reset RPI_PICO_RESETS_RESET_ADC>;
-			clocks = <&clocks RPI_PICO_CLKID_CLK_ADC>;
-			interrupts = <22 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
-			interrupt-names = "adc0";
-			#io-channel-cells = <1>;
-			status = "disabled";
-		};
-
 		i2c0: i2c@40044000 {
 			compatible = "raspberrypi,pico-i2c", "snps,designware-i2c";
 			reg = <0x40044000 DT_SIZE_K(4)>;
@@ -341,21 +330,14 @@
 			status = "disabled";
 		};
 
-		wdt0: watchdog@40058000 {
-			compatible = "raspberrypi,pico-watchdog";
-			reg = <0x40058000 DT_SIZE_K(4)>;
-			clocks = <&clocks RPI_PICO_CLKID_CLK_REF>;
-			status = "disabled";
-		};
-
-		usbd: usbd@50110000 {
-			compatible = "raspberrypi,pico-usbd";
-			reg = <0x50110000 0x10000>;
-			resets = <&reset RPI_PICO_RESETS_RESET_USBCTRL>;
-			clocks = <&clocks RPI_PICO_CLKID_CLK_USB>;
-			interrupts = <5 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
-			interrupt-names = "usbctrl";
-			num-bidir-endpoints = <16>;
+		adc: adc@4004c000 {
+			compatible = "raspberrypi,pico-adc";
+			reg = <0x4004c000 DT_SIZE_K(4)>;
+			resets = <&reset RPI_PICO_RESETS_RESET_ADC>;
+			clocks = <&clocks RPI_PICO_CLKID_CLK_ADC>;
+			interrupts = <22 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
+			interrupt-names = "adc0";
+			#io-channel-cells = <1>;
 			status = "disabled";
 		};
 
@@ -386,6 +368,33 @@
 			status = "disabled";
 		};
 
+		wdt0: watchdog@40058000 {
+			compatible = "raspberrypi,pico-watchdog";
+			reg = <0x40058000 DT_SIZE_K(4)>;
+			clocks = <&clocks RPI_PICO_CLKID_CLK_REF>;
+			status = "disabled";
+		};
+
+		rtc: rtc@4005c000 {
+			compatible = "raspberrypi,pico-rtc";
+			reg = <0x4005c000 DT_SIZE_K(4)>;
+			interrupts = <25 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
+			interrupt-names = "rtc";
+			resets = <&reset RPI_PICO_RESETS_RESET_RTC>;
+			alarms-count = <1>;
+			status = "disabled";
+		};
+
+		vreg: vreg@40064000 {
+			compatible = "raspberrypi,core-supply-regulator";
+			reg = <0x40064000 1>;
+			regulator-always-on;
+			regulator-allowed-modes = <REGULATOR_RPI_PICO_MODE_NORMAL>;
+			raspberrypi,brown-out-detection;
+			raspberrypi,brown-out-threshold = <860000>;
+			status = "disabled";
+		};
+
 		dma: dma@50000000 {
 			compatible = "raspberrypi,pico-dma";
 			reg = <0x50000000 DT_SIZE_K(64)>;
@@ -399,13 +408,14 @@
 			status = "disabled";
 		};
 
-		vreg: vreg@40064000 {
-			compatible = "raspberrypi,core-supply-regulator";
-			reg = <0x40064000 1>;
-			regulator-always-on;
-			regulator-allowed-modes = <REGULATOR_RPI_PICO_MODE_NORMAL>;
-			raspberrypi,brown-out-detection;
-			raspberrypi,brown-out-threshold = <860000>;
+		usbd: usbd@50110000 {
+			compatible = "raspberrypi,pico-usbd";
+			reg = <0x50110000 0x10000>;
+			resets = <&reset RPI_PICO_RESETS_RESET_USBCTRL>;
+			clocks = <&clocks RPI_PICO_CLKID_CLK_USB>;
+			interrupts = <5 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
+			interrupt-names = "usbctrl";
+			num-bidir-endpoints = <16>;
 			status = "disabled";
 		};
 
@@ -428,16 +438,6 @@
 			interrupts = <9 RPI_PICO_DEFAULT_IRQ_PRIORITY>,
 				     <10 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
 			interrupt-names = "irq0", "irq1";
-			status = "disabled";
-		};
-
-		rtc: rtc@4005c000 {
-			compatible = "raspberrypi,pico-rtc";
-			reg = <0x4005c000 DT_SIZE_K(4)>;
-			interrupts = <25 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
-			interrupt-names = "rtc";
-			resets = <&reset RPI_PICO_RESETS_RESET_RTC>;
-			alarms-count = <1>;
 			status = "disabled";
 		};
 

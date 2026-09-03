@@ -26,14 +26,6 @@
 		zephyr,canbus = &fdcan1;
 	};
 
-	sdram1: sdram@c0000000 {
-		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0xc0000000 DT_SIZE_M(8)>;
-		device_type = "memory";
-		zephyr,memory-region = "SDRAM1";
-		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
-	};
-
 	leds: leds {
 		compatible = "gpio-leds";
 
@@ -56,6 +48,14 @@
 	aliases {
 		led0 = &green_led;
 		led1 = &blue_led;
+	};
+
+	sdram1: sdram@c0000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0xc0000000 DT_SIZE_M(8)>;
+		device_type = "memory";
+		zephyr,memory-region = "SDRAM1";
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 	};
 };
 

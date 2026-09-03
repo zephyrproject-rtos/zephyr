@@ -26,10 +26,6 @@
 		};
 	};
 
-	sram0: memory@20000000 {
-		compatible = "mmio-sram";
-	};
-
 	clocks {
 		clk_lfxo: clk-lfxo {
 			compatible = "silabs,series0-lfxo";
@@ -79,67 +75,12 @@
 	};
 
 	soc {
-		cmu: cmu@400c8000 {
-			compatible = "silabs,series0-cmu";
-			reg = <0x400c8000 0x400>;
-			clocks = <&clk_lfxo>, <&clk_lfrco>, <&clk_lfa>, <&clk_lfb>,
-				 <&clk_hfxo>, <&clk_hfrco>, <&clk_hf>;
-			clock-names = "lfxo", "lfrco", "lfa", "lfb", "hfxo", "hfrco", "hf";
-			status = "okay";
-		};
-
-		msc: flash-controller@400c0000 {
-			compatible = "silabs,gecko-flash-controller";
-			reg = <0x400c0000 0x78>;
-			ranges;
-			interrupts = <21 0>;
-
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			flash0: flash@0 {
-				compatible = "soc-nv-flash";
-				#address-cells = <1>;
-				#size-cells = <1>;
-				write-block-size = <4>;
-				erase-block-size = <512>;
-			};
-		};
-
-		usart0: usart@4000c000 { /* USART0 */
-			compatible = "silabs,gecko-usart";
-			reg = <0x4000c000 0x400>;
-			interrupts = <3 0>, <4 0>;
-			interrupt-names = "rx", "tx";
-			peripheral-id = <0>;
-			status = "disabled";
-		};
-
-		usart1: usart@4000c400 { /* USART1 */
-			compatible = "silabs,gecko-usart";
-			reg = <0x4000c400 0x400>;
-			interrupts = <11 0>, <12 0>;
-			interrupt-names = "rx", "tx";
-			peripheral-id = <1>;
-			status = "disabled";
-		};
-
-		leuart0: leuart@40084000 { /* LEUART0 */
-			compatible = "silabs,gecko-leuart";
-			reg = <0x40084000 0x400>;
-			interrupts = <14 0>;
-			peripheral-id = <0>;
-			status = "disabled";
-		};
-
-		i2c0: i2c@4000a000 {
-			compatible = "silabs,gecko-i2c";
-			reg = <0x4000a000 0x400>;
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			interrupts = <8 0>;
-			status = "disabled";
+		pinctrl: pin-controller {
+			/* Pin controller is a "virtual" device since SiLabs SoCs do pin
+			 * control in a distributed way (GPIO registers and PSEL
+			 * registers on each peripheral).
+			 */
+			compatible = "silabs,gecko-pinctrl";
 		};
 
 		gpio@40006100 {
@@ -207,13 +148,72 @@
 			};
 		};
 
-		pinctrl: pin-controller {
-			/* Pin controller is a "virtual" device since SiLabs SoCs do pin
-			 * control in a distributed way (GPIO registers and PSEL
-			 * registers on each peripheral).
-			 */
-			compatible = "silabs,gecko-pinctrl";
+		i2c0: i2c@4000a000 {
+			compatible = "silabs,gecko-i2c";
+			reg = <0x4000a000 0x400>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <8 0>;
+			status = "disabled";
 		};
+
+		usart0: usart@4000c000 { /* USART0 */
+			compatible = "silabs,gecko-usart";
+			reg = <0x4000c000 0x400>;
+			interrupts = <3 0>, <4 0>;
+			interrupt-names = "rx", "tx";
+			peripheral-id = <0>;
+			status = "disabled";
+		};
+
+		usart1: usart@4000c400 { /* USART1 */
+			compatible = "silabs,gecko-usart";
+			reg = <0x4000c400 0x400>;
+			interrupts = <11 0>, <12 0>;
+			interrupt-names = "rx", "tx";
+			peripheral-id = <1>;
+			status = "disabled";
+		};
+
+		leuart0: leuart@40084000 { /* LEUART0 */
+			compatible = "silabs,gecko-leuart";
+			reg = <0x40084000 0x400>;
+			interrupts = <14 0>;
+			peripheral-id = <0>;
+			status = "disabled";
+		};
+
+		msc: flash-controller@400c0000 {
+			compatible = "silabs,gecko-flash-controller";
+			reg = <0x400c0000 0x78>;
+			ranges;
+			interrupts = <21 0>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				#address-cells = <1>;
+				#size-cells = <1>;
+				write-block-size = <4>;
+				erase-block-size = <512>;
+			};
+		};
+
+		cmu: cmu@400c8000 {
+			compatible = "silabs,series0-cmu";
+			reg = <0x400c8000 0x400>;
+			clocks = <&clk_lfxo>, <&clk_lfrco>, <&clk_lfa>, <&clk_lfb>,
+				 <&clk_hfxo>, <&clk_hfrco>, <&clk_hf>;
+			clock-names = "lfxo", "lfrco", "lfa", "lfb", "hfxo", "hfrco", "hf";
+			status = "okay";
+		};
+	};
+
+	sram0: memory@20000000 {
+		compatible = "mmio-sram";
 	};
 };
 

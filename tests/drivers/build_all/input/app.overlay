@@ -12,22 +12,6 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		test_adc: adc@adc0adc0 {
-			compatible = "vnd,adc";
-			reg = <0xadc0adc0 0x1000>;
-			#io-channel-cells = <1>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			status = "okay";
-
-			channel@0 {
-				reg = <0>;
-				zephyr,gain = "ADC_GAIN_1";
-				zephyr,reference = "ADC_REF_VDD_1";
-				zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
-			};
-		};
-
 		test_gpio: gpio@0 {
 			compatible = "vnd,gpio";
 			reg = <0x0 0x1000>;
@@ -175,40 +159,6 @@
 			input-codes = <0>;
 			double-tap-codes = <0>;
 			double-tap-delay-ms = <0>;
-		};
-
-		test_uart: uart@55556666 {
-			compatible = "vnd,serial";
-			reg = <0x55556666 0x1000>;
-
-			#address-cells = <1>;
-			#size-cells = <0>;
-			status = "okay";
-
-			sbus {
-				compatible = "futaba,sbus";
-
-				right_stick_x {
-					channel = <1>;
-					type = <INPUT_EV_ABS>;
-					zephyr,code = <INPUT_ABS_RX>;
-				};
-			};
-
-			usb_kb {
-				compatible = "wch,ch9350l";
-				status = "okay";
-			};
-
-			crsf {
-				compatible = "tbs,crsf";
-
-				right_stick_x {
-					channel = <1>;
-					type = <INPUT_EV_ABS>;
-					zephyr,code = <INPUT_ABS_RX>;
-				};
-			};
 		};
 
 		i2c@1 {
@@ -417,6 +367,56 @@
 				res-cpi = <800>;
 				zephyr,axis-x = <0>;
 				zephyr,axis-y = <1>;
+			};
+		};
+
+		test_uart: uart@55556666 {
+			compatible = "vnd,serial";
+			reg = <0x55556666 0x1000>;
+
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "okay";
+
+			sbus {
+				compatible = "futaba,sbus";
+
+				right_stick_x {
+					channel = <1>;
+					type = <INPUT_EV_ABS>;
+					zephyr,code = <INPUT_ABS_RX>;
+				};
+			};
+
+			usb_kb {
+				compatible = "wch,ch9350l";
+				status = "okay";
+			};
+
+			crsf {
+				compatible = "tbs,crsf";
+
+				right_stick_x {
+					channel = <1>;
+					type = <INPUT_EV_ABS>;
+					zephyr,code = <INPUT_ABS_RX>;
+				};
+			};
+		};
+
+		test_adc: adc@adc0adc0 {
+			compatible = "vnd,adc";
+			reg = <0xadc0adc0 0x1000>;
+			#io-channel-cells = <1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "okay";
+
+			channel@0 {
+				reg = <0>;
+				zephyr,gain = "ADC_GAIN_1";
+				zephyr,reference = "ADC_REF_VDD_1";
+				zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
 			};
 		};
 	};

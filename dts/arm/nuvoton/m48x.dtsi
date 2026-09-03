@@ -24,10 +24,6 @@
 		};
 	};
 
-	sram0: memory@20000000 {
-		compatible = "mmio-sram";
-	};
-
 	flash0: flash@0 {
 		compatible = "serial-flash";
 		erase-block-size = <4096>;
@@ -89,18 +85,18 @@
 	};
 
 	soc {
+		rst: reset-controller@40000000 {
+			compatible = "nuvoton,numaker-rst";
+			reg = <0x40000000 0x20>;
+			#reset-cells = <1>;
+			status = "okay";
+		};
+
 		pinctrl: pinctrl@40000030 {
 			compatible = "nuvoton,numicro-pinctrl";
 			reg = <0x40000030 0x40
 			       0x40000080 0x20>;
 			reg-names = "mfp", "mfos";
-			status = "okay";
-		};
-
-		rst: reset-controller@40000000 {
-			compatible = "nuvoton,numaker-rst";
-			reg = <0x40000000 0x20>;
-			#reset-cells = <1>;
 			status = "okay";
 		};
 
@@ -196,6 +192,14 @@
 			status = "disabled";
 		};
 
+		wdt: watchdog@40040000 {
+			compatible = "nuvoton,numaker-wdt";
+			reg = <0x40040000 0x0c>;
+			interrupts = <8 0>;
+			clocks = <&pcc NUMICRO_WDT_MODULE NUMICRO_CLK_CLKSEL1_WDTSEL_LIRC 0>;
+			status = "disabled";
+		};
+
 		uart0: serial@40070000 {
 			compatible = "nuvoton,numicro-uart";
 			reg = <0x40070000 0x1000>;
@@ -275,14 +279,10 @@
 				  NUMICRO_CLK_CLKDIV4_UART7(1)>;
 			status = "disabled";
 		};
+	};
 
-		wdt: watchdog@40040000 {
-			compatible = "nuvoton,numaker-wdt";
-			reg = <0x40040000 0x0c>;
-			interrupts = <8 0>;
-			clocks = <&pcc NUMICRO_WDT_MODULE NUMICRO_CLK_CLKSEL1_WDTSEL_LIRC 0>;
-			status = "disabled";
-		};
+	sram0: memory@20000000 {
+		compatible = "mmio-sram";
 	};
 };
 

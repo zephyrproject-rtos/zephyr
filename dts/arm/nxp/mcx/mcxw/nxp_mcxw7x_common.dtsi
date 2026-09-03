@@ -67,6 +67,48 @@
 	};
 
 	soc {
+		ctcm: sram@14000000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			ctcm0: code_memory@0 {
+				compatible = "mmio-sram";
+			};
+		};
+
+		stcm: sram@30000000 {
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			stcm0: system_memory@0 {
+				compatible = "mmio-sram";
+			};
+		};
+
+		peripheral: peripheral@50000000 {
+			ranges = <0x0 0x50000000 0x10000000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			pbridge2: pbridge2@0 {
+				ranges;
+				#address-cells = <1>;
+				#size-cells = <1>;
+			};
+
+			fast_peripheral0: fast_peripherals0@8000000 {
+				ranges = <0x0 0x8000000 0x40000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+			};
+
+			fast_peripheral1: fast_peripherals1@8800000 {
+				ranges = <0x0 0x8800000 0x20a000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+			};
+		};
+
 		fmu: memory-controller@50020000 {
 			compatible = "nxp,msf1";
 			reg = <0x50020000 0x30>;
@@ -113,48 +155,6 @@
 				/* padding 8 bytes: next address aligned on write-block-size */
 			};
 		};
-
-		ctcm: sram@14000000 {
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			ctcm0: code_memory@0 {
-				compatible = "mmio-sram";
-			};
-		};
-
-		stcm: sram@30000000 {
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			stcm0: system_memory@0 {
-				compatible = "mmio-sram";
-			};
-		};
-
-		peripheral: peripheral@50000000 {
-			ranges = <0x0 0x50000000 0x10000000>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			pbridge2: pbridge2@0 {
-				ranges;
-				#address-cells = <1>;
-				#size-cells = <1>;
-			};
-
-			fast_peripheral0: fast_peripherals0@8000000 {
-				ranges = <0x0 0x8000000 0x40000>;
-				#address-cells = <1>;
-				#size-cells = <1>;
-			};
-
-			fast_peripheral1: fast_peripherals1@8800000 {
-				ranges = <0x0 0x8800000 0x20a000>;
-				#address-cells = <1>;
-				#size-cells = <1>;
-			};
-		};
 	};
 
 	pinctrl: pinctrl {
@@ -176,10 +176,78 @@
 	#address-cells = <1>;
 	#size-cells = <1>;
 
+	clk_ctrl: clock-controller {
+		compatible = "nxp,mcxw7x-clock";
+		osc32k-mode = <MCXW_CLK_OSC32K_ENABLE>;
+		osc32k-xtal-cap = <MCXW_CLK_OSC32K_CAP_16PF>;
+		osc32k-extal-cap = <MCXW_CLK_OSC32K_CAP_16PF>;
+		firc-mode = <MCXW_CLK_FIRC_ENABLE>;
+		firc-range = <MCXW_CLK_FIRC_RANGE_96MHZ>;
+		sys-clk-src = <MCXW_CLK_SYSTEM_CLK_SRC_FIRC>;
+		sys-clk-div-bus = <1>;
+		sys-clk-div-slow = <4>;
+		sys-clk-div-core = <1>;
+		core-clock-frequency = <DT_FREQ_M(96)>;
+		enable-sosc;
+		sosc-freq = <DT_FREQ_M(32)>;
+		#clock-cells = <1>;
+	};
+
+	nbu: nbu {
+		compatible = "nxp,nbu";
+		interrupts = <48 2>;
+		interrupt-names = "nbu_rx_int";
+		max-tx-power-support = <0 7 10>;
+		/* Max TX power can be overridden by the board */
+		max-tx-power-dbm = <10>;
+		wakeup-source;
+		wakeup-ctrls = <&wuu NXP_WUU_MODULE_2_DMA>;
+	};
+
+	hci: hci_ble {
+		compatible = "nxp,hci-ble";
+	};
+
+	ieee802154: ieee802154 {
+		compatible = "nxp,mcxw-ieee802154";
+	};
+
+	trng: trng {
+		compatible = "nxp,ele-trng";
+	};
+
 	cmc: system-modules@1000 {
 		compatible = "nxp,cmc";
 		reg = <0x1000 0x1000>;
 		interrupts = <1 0>;
+	};
+
+	edma: dma-controller@2000 {
+		compatible = "nxp,mcux-edma";
+		reg = <0x2000 0x140>;
+		#dma-cells = <2>;
+		dma-channels = <16>;
+		dma-requests = <64>;
+		clocks = <&clk_ctrl MCXW_CLOCK(0x410, MCXW_CLK_IP_MUX_NONE,
+					       MCXW_CLK_DIV_NONE,
+					       MCXW_CLK_MODE_ENABLED_LP_STALL)>;
+		interrupts = <2 0>, <3 0>, <4 0>, <5 0>,
+			     <6 0>, <7 0>, <8 0>, <9 0>,
+			     <10 0>, <11 0>, <12 0>, <13 0>,
+			     <14 0>, <15 0>, <16 0>, <17 0>;
+		nxp,version = <3>;
+		status = "disabled";
+	};
+
+	ewm0: ewm@13000 {
+		compatible = "nxp,ewm";
+		reg = <0x13000 0x6>;
+		clocks = <&clk_ctrl MCXW_CLOCK(0x4c, MCXW_CLK_IP_MUX_NONE,
+					       MCXW_CLK_DIV_NONE,
+					       MCXW_CLK_MODE_ENABLED_LP_STALL)>;
+		interrupts = <18 0>;
+		clk-divider = <0x0>;
+		status = "disabled";
 	};
 
 	uid: uid@14810 {
@@ -201,49 +269,61 @@
 		#wakeup-ctrl-cells = <1>;
 	};
 
-	clk_ctrl: clock-controller {
-		compatible = "nxp,mcxw7x-clock";
-		osc32k-mode = <MCXW_CLK_OSC32K_ENABLE>;
-		osc32k-xtal-cap = <MCXW_CLK_OSC32K_CAP_16PF>;
-		osc32k-extal-cap = <MCXW_CLK_OSC32K_CAP_16PF>;
-		firc-mode = <MCXW_CLK_FIRC_ENABLE>;
-		firc-range = <MCXW_CLK_FIRC_RANGE_96MHZ>;
-		sys-clk-src = <MCXW_CLK_SYSTEM_CLK_SRC_FIRC>;
-		sys-clk-div-bus = <1>;
-		sys-clk-div-slow = <4>;
-		sys-clk-div-core = <1>;
-		core-clock-frequency = <DT_FREQ_M(96)>;
-		enable-sosc;
-		sosc-freq = <DT_FREQ_M(32)>;
-		#clock-cells = <1>;
+	wdog0: watchdog@1a000 {
+		compatible = "nxp,wdog32";
+		reg = <0x1a000 10>;
+		interrupts = <23 0>;
+		clk-source = <1>;
+		clk-divider = <1>;
+		status = "okay";
 	};
 
-	porta: pinctrl@42000 {
-		compatible = "nxp,port-pinmux";
-		clocks = <&clk_ctrl MCXW_CLOCK(0x108, MCXW_CLK_IP_MUX_NONE,
-					       MCXW_CLK_DIV_NONE,
-					       MCXW_CLK_MODE_ENABLED_LP_STALL)>;
+	wdog1: watchdog@1b000 {
+		compatible = "nxp,wdog32";
+		reg = <0x1b000 10>;
+		interrupts = <24 0>;
+		clk-source = <1>;
+		clk-divider = <1>;
+		status = "disabled";
 	};
 
-	portb: pinctrl@43000 {
-		compatible = "nxp,port-pinmux";
-		clocks = <&clk_ctrl MCXW_CLOCK(0x10c, MCXW_CLK_IP_MUX_NONE,
+	crc: crc@23000 {
+		compatible = "nxp,crc";
+		reg = <0x23000 0x1000>;
+		clocks = <&clk_ctrl MCXW_CLOCK(0x8c, MCXW_CLK_IP_MUX_NONE,
 					       MCXW_CLK_DIV_NONE,
 					       MCXW_CLK_MODE_ENABLED_LP_STALL)>;
+		status = "disabled";
 	};
 
-	portc: pinctrl@44000 {
-		compatible = "nxp,port-pinmux";
-		clocks = <&clk_ctrl MCXW_CLOCK(0x110, MCXW_CLK_IP_MUX_NONE,
-					       MCXW_CLK_DIV_NONE,
-					       MCXW_CLK_MODE_ENABLED_LP_STALL)>;
+	vbat: vbat@2b000 {
+		compatible = "nxp,vbat";
+		reg = <0x2b000 0x33c>;
+		interrupts = <74 0>;
 	};
 
-	portd: pinctrl@45000 {
-		compatible = "nxp,port-pinmux";
-		clocks = <&clk_ctrl MCXW_CLOCK(0, MCXW_CLK_IP_MUX_NONE,
-					       MCXW_CLK_DIV_NONE,
-					       MCXW_CLK_MODE_ENABLED_LP_STALL)>;
+	lptmr0: timer@2d000 {
+		compatible = "nxp,lptmr";
+		reg = <0x2d000 0x10>;
+		interrupts = <34 0>;
+		clock-frequency = <32768>;
+		clk-source = <2>;
+		prescale-glitch-filter-bypass;
+		resolution = <32>;
+		wakeup-source;
+		wakeup-ctrls = <&wuu NXP_WUU_MODULE_0_INT>;
+		status = "disabled";
+	};
+
+	lptmr1: timer@2e000 {
+		compatible = "nxp,lptmr";
+		reg = <0x2e000 0x10>;
+		interrupts = <35 0>;
+		clock-frequency = <32768>;
+		clk-source = <2>;
+		prescale-glitch-filter-bypass;
+		resolution = <32>;
+		status = "disabled";
 	};
 
 	lpit0: timer@2f000 {
@@ -283,27 +363,34 @@
 		};
 	};
 
-	lpuart0: serial@38000 {
-		compatible = "nxp,lpuart";
-		reg = <0x38000 0x34>;
-		interrupts = <44 0>;
-		clocks = <&clk_ctrl MCXW_CLOCK(0xe0, MCXW_CLK_IP_MUX_FRO_192M_DIV,
-					       MCXW_CLK_DIV_NONE,
-					       MCXW_CLK_MODE_ENABLED_LP_STALL)>;
-		dmas = <&edma 0 32>, <&edma 1 31>;
-		dma-names = "tx", "rx";
+	tstmr0: timer@30000 {
+		compatible = "nxp,tstmr";
+		reg = <0x30000 0x8>;
+		clock-frequency = <DT_FREQ_M(1)>;
 		status = "disabled";
 	};
 
-	lpuart1: serial@39000 {
-		compatible = "nxp,lpuart";
-		reg = <0x39000 0x34>;
-		interrupts = <45 0>;
-		clocks = <&clk_ctrl MCXW_CLOCK(0xe4, MCXW_CLK_IP_MUX_FRO_192M_DIV,
+	tpm0: pwm@31000 {
+		compatible = "nxp,kinetis-tpm";
+		reg = <0x31000 0x88>;
+		interrupts = <37 0>;
+		clocks = <&clk_ctrl MCXW_CLOCK(0xc4, MCXW_CLK_IP_MUX_FRO_192M_DIV,
 					       MCXW_CLK_DIV_NONE,
 					       MCXW_CLK_MODE_ENABLED_LP_STALL)>;
-		dmas = <&edma 2 34>, <&edma 3 33>;
-		dma-names = "tx", "rx";
+		prescaler = <16>;
+		#pwm-cells = <3>;
+		status = "disabled";
+	};
+
+	tpm1: pwm@32000 {
+		compatible = "nxp,kinetis-tpm";
+		reg = <0x32000 0x88>;
+		interrupts = <38 0>;
+		clocks = <&clk_ctrl MCXW_CLOCK(0xc8, MCXW_CLK_IP_MUX_FRO_192M_DIV,
+					       MCXW_CLK_DIV_NONE,
+					       MCXW_CLK_MODE_ENABLED_LP_STALL)>;
+		prescaler = <16>;
+		#pwm-cells = <3>;
 		status = "disabled";
 	};
 
@@ -361,116 +448,44 @@
 		status = "disabled";
 	};
 
-	gpiod: gpio@46000 {
-		compatible = "nxp,kinetis-gpio";
-		reg = <0x46000 0x128>;
-		interrupts = <65 0>, <66 0>;
-		gpio-controller;
-		#gpio-cells = <2>;
-		nxp,kinetis-port = <&portd>;
-		status = "disabled";
-	};
-
-	vbat: vbat@2b000 {
-		compatible = "nxp,vbat";
-		reg = <0x2b000 0x33c>;
-		interrupts = <74 0>;
-	};
-
-	tpm0: pwm@31000 {
-		compatible = "nxp,kinetis-tpm";
-		reg = <0x31000 0x88>;
-		interrupts = <37 0>;
-		clocks = <&clk_ctrl MCXW_CLOCK(0xc4, MCXW_CLK_IP_MUX_FRO_192M_DIV,
+	lpuart0: serial@38000 {
+		compatible = "nxp,lpuart";
+		reg = <0x38000 0x34>;
+		interrupts = <44 0>;
+		clocks = <&clk_ctrl MCXW_CLOCK(0xe0, MCXW_CLK_IP_MUX_FRO_192M_DIV,
 					       MCXW_CLK_DIV_NONE,
 					       MCXW_CLK_MODE_ENABLED_LP_STALL)>;
-		prescaler = <16>;
-		#pwm-cells = <3>;
+		dmas = <&edma 0 32>, <&edma 1 31>;
+		dma-names = "tx", "rx";
 		status = "disabled";
 	};
 
-	tpm1: pwm@32000 {
-		compatible = "nxp,kinetis-tpm";
-		reg = <0x32000 0x88>;
-		interrupts = <38 0>;
-		clocks = <&clk_ctrl MCXW_CLOCK(0xc8, MCXW_CLK_IP_MUX_FRO_192M_DIV,
+	lpuart1: serial@39000 {
+		compatible = "nxp,lpuart";
+		reg = <0x39000 0x34>;
+		interrupts = <45 0>;
+		clocks = <&clk_ctrl MCXW_CLOCK(0xe4, MCXW_CLK_IP_MUX_FRO_192M_DIV,
 					       MCXW_CLK_DIV_NONE,
 					       MCXW_CLK_MODE_ENABLED_LP_STALL)>;
-		prescaler = <16>;
-		#pwm-cells = <3>;
+		dmas = <&edma 2 34>, <&edma 3 33>;
+		dma-names = "tx", "rx";
 		status = "disabled";
 	};
 
-	wdog0: watchdog@1a000 {
-		compatible = "nxp,wdog32";
-		reg = <0x1a000 10>;
-		interrupts = <23 0>;
-		clk-source = <1>;
-		clk-divider = <1>;
-		status = "okay";
-	};
-
-	wdog1: watchdog@1b000 {
-		compatible = "nxp,wdog32";
-		reg = <0x1b000 10>;
-		interrupts = <24 0>;
-		clk-source = <1>;
-		clk-divider = <1>;
+	flexio: flexio@3a000 {
+		compatible = "nxp,flexio";
+		reg = <0x3a000 0x920>;
+		interrupts = <46 0>;
+		clocks = <&clk_ctrl MCXW_CLOCK(0xe8, MCXW_CLK_IP_MUX_FRO_192M_DIV,
+					       MCXW_CLK_DIV_BY_6,
+					       MCXW_CLK_MODE_ENABLED_LP_STALL)>;
 		status = "disabled";
-	};
 
-	lptmr0: timer@2d000 {
-		compatible = "nxp,lptmr";
-		reg = <0x2d000 0x10>;
-		interrupts = <34 0>;
-		clock-frequency = <32768>;
-		clk-source = <2>;
-		prescale-glitch-filter-bypass;
-		resolution = <32>;
-		wakeup-source;
-		wakeup-ctrls = <&wuu NXP_WUU_MODULE_0_INT>;
-		status = "disabled";
-	};
-
-	lptmr1: timer@2e000 {
-		compatible = "nxp,lptmr";
-		reg = <0x2e000 0x10>;
-		interrupts = <35 0>;
-		clock-frequency = <32768>;
-		clk-source = <2>;
-		prescale-glitch-filter-bypass;
-		resolution = <32>;
-		status = "disabled";
-	};
-
-	tstmr0: timer@30000 {
-		compatible = "nxp,tstmr";
-		reg = <0x30000 0x8>;
-		clock-frequency = <DT_FREQ_M(1)>;
-		status = "disabled";
-	};
-
-	nbu: nbu {
-		compatible = "nxp,nbu";
-		interrupts = <48 2>;
-		interrupt-names = "nbu_rx_int";
-		max-tx-power-support = <0 7 10>;
-		/* Max TX power can be overridden by the board */
-		max-tx-power-dbm = <10>;
-		wakeup-source;
-		wakeup-ctrls = <&wuu NXP_WUU_MODULE_2_DMA>;
-	};
-
-	hci: hci_ble {
-		compatible = "nxp,hci-ble";
-	};
-
-	ieee802154: ieee802154 {
-		compatible = "nxp,mcxw-ieee802154";
-	};
-
-	trng: trng {
-		compatible = "nxp,ele-trng";
+		flexio_pwm {
+			compatible = "nxp,flexio-pwm";
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
 	};
 
 	flexcan0: can@3b000 {
@@ -484,6 +499,44 @@
 		clock-names = "clksrc0";
 		clk-source = <0>;
 		number-of-mb = <32>;
+		status = "disabled";
+	};
+
+	porta: pinctrl@42000 {
+		compatible = "nxp,port-pinmux";
+		clocks = <&clk_ctrl MCXW_CLOCK(0x108, MCXW_CLK_IP_MUX_NONE,
+					       MCXW_CLK_DIV_NONE,
+					       MCXW_CLK_MODE_ENABLED_LP_STALL)>;
+	};
+
+	portb: pinctrl@43000 {
+		compatible = "nxp,port-pinmux";
+		clocks = <&clk_ctrl MCXW_CLOCK(0x10c, MCXW_CLK_IP_MUX_NONE,
+					       MCXW_CLK_DIV_NONE,
+					       MCXW_CLK_MODE_ENABLED_LP_STALL)>;
+	};
+
+	portc: pinctrl@44000 {
+		compatible = "nxp,port-pinmux";
+		clocks = <&clk_ctrl MCXW_CLOCK(0x110, MCXW_CLK_IP_MUX_NONE,
+					       MCXW_CLK_DIV_NONE,
+					       MCXW_CLK_MODE_ENABLED_LP_STALL)>;
+	};
+
+	portd: pinctrl@45000 {
+		compatible = "nxp,port-pinmux";
+		clocks = <&clk_ctrl MCXW_CLOCK(0, MCXW_CLK_IP_MUX_NONE,
+					       MCXW_CLK_DIV_NONE,
+					       MCXW_CLK_MODE_ENABLED_LP_STALL)>;
+	};
+
+	gpiod: gpio@46000 {
+		compatible = "nxp,kinetis-gpio";
+		reg = <0x46000 0x128>;
+		interrupts = <65 0>, <66 0>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		nxp,kinetis-port = <&portd>;
 		status = "disabled";
 	};
 
@@ -536,59 +589,6 @@
 			alarms-count = <1>;
 			status = "disabled";
 		};
-	};
-
-	edma: dma-controller@2000 {
-		compatible = "nxp,mcux-edma";
-		reg = <0x2000 0x140>;
-		#dma-cells = <2>;
-		dma-channels = <16>;
-		dma-requests = <64>;
-		clocks = <&clk_ctrl MCXW_CLOCK(0x410, MCXW_CLK_IP_MUX_NONE,
-					       MCXW_CLK_DIV_NONE,
-					       MCXW_CLK_MODE_ENABLED_LP_STALL)>;
-		interrupts = <2 0>, <3 0>, <4 0>, <5 0>,
-			     <6 0>, <7 0>, <8 0>, <9 0>,
-			     <10 0>, <11 0>, <12 0>, <13 0>,
-			     <14 0>, <15 0>, <16 0>, <17 0>;
-		nxp,version = <3>;
-		status = "disabled";
-	};
-
-	ewm0: ewm@13000 {
-		compatible = "nxp,ewm";
-		reg = <0x13000 0x6>;
-		clocks = <&clk_ctrl MCXW_CLOCK(0x4c, MCXW_CLK_IP_MUX_NONE,
-					       MCXW_CLK_DIV_NONE,
-					       MCXW_CLK_MODE_ENABLED_LP_STALL)>;
-		interrupts = <18 0>;
-		clk-divider = <0x0>;
-		status = "disabled";
-	};
-
-	flexio: flexio@3a000 {
-		compatible = "nxp,flexio";
-		reg = <0x3a000 0x920>;
-		interrupts = <46 0>;
-		clocks = <&clk_ctrl MCXW_CLOCK(0xe8, MCXW_CLK_IP_MUX_FRO_192M_DIV,
-					       MCXW_CLK_DIV_BY_6,
-					       MCXW_CLK_MODE_ENABLED_LP_STALL)>;
-		status = "disabled";
-
-		flexio_pwm {
-			compatible = "nxp,flexio-pwm";
-			#pwm-cells = <3>;
-			status = "disabled";
-		};
-	};
-
-	crc: crc@23000 {
-		compatible = "nxp,crc";
-		reg = <0x23000 0x1000>;
-		clocks = <&clk_ctrl MCXW_CLOCK(0x8c, MCXW_CLK_IP_MUX_NONE,
-					       MCXW_CLK_DIV_NONE,
-					       MCXW_CLK_MODE_ENABLED_LP_STALL)>;
-		status = "disabled";
 	};
 };
 

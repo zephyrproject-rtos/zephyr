@@ -43,32 +43,6 @@
 		device_type = "memory";
 	};
 
-	pcc4: clock-controller@29800000 {
-		compatible = "nxp,kinetis-pcc";
-		reg = <0x29800000 DT_SIZE_K(64)>;
-		#clock-cells = <2>;
-	};
-
-	iomuxc1: pinctrl@298c0000 {
-		compatible = "nxp,imx-iomuxc";
-		reg = <0x298c0000 DT_SIZE_K(64)>;
-
-		pinctrl: pinctrl {
-			compatible = "nxp,imx8ulp-pinctrl";
-		};
-	};
-
-	/* note: this was intentionally left without an interrupt
-	 * property because HIFI4 DSP doesn't receive interrupts
-	 * from LPUART7.
-	 */
-	lpuart7: serial@29870000 {
-		compatible = "nxp,lpuart";
-		reg = <0x29870000 DT_SIZE_K(4)>;
-		clocks = <&pcc4 IMX8ULP_CLOCK_LPUART7 0x0>;
-		status = "disabled";
-	};
-
 	tstmr0: timer@2802ac00 {
 		compatible = "nxp,tstmr";
 		reg = <0x2802ac00 0x8>;
@@ -83,13 +57,20 @@
 		status = "disabled";
 	};
 
-	edma2: dma@2d800000 {
-		compatible = "nxp,edma";
-		reg = <0x2d800000 (DT_SIZE_K(64) * 32)>;
-		valid-channels = <0>, <1>, <2>, <3>;
-		interrupt-parent = <&clic>;
-		interrupts = <6 0 0>, <7 0 0>, <8 0 0>, <9 0 0>;
-		#dma-cells = <2>;
+	pcc4: clock-controller@29800000 {
+		compatible = "nxp,kinetis-pcc";
+		reg = <0x29800000 DT_SIZE_K(64)>;
+		#clock-cells = <2>;
+	};
+
+	/* note: this was intentionally left without an interrupt
+	 * property because HIFI4 DSP doesn't receive interrupts
+	 * from LPUART7.
+	 */
+	lpuart7: serial@29870000 {
+		compatible = "nxp,lpuart";
+		reg = <0x29870000 DT_SIZE_K(4)>;
+		clocks = <&pcc4 IMX8ULP_CLOCK_LPUART7 0x0>;
 		status = "disabled";
 	};
 
@@ -104,14 +85,22 @@
 		status = "disabled";
 	};
 
-	sai6: dai@2da90000 {
-		compatible = "nxp,dai-sai";
-		reg = <0x2da90000 DT_SIZE_K(4)>;
+	iomuxc1: pinctrl@298c0000 {
+		compatible = "nxp,imx-iomuxc";
+		reg = <0x298c0000 DT_SIZE_K(64)>;
+
+		pinctrl: pinctrl {
+			compatible = "nxp,imx8ulp-pinctrl";
+		};
+	};
+
+	edma2: dma@2d800000 {
+		compatible = "nxp,edma";
+		reg = <0x2d800000 (DT_SIZE_K(64) * 32)>;
+		valid-channels = <0>, <1>, <2>, <3>;
 		interrupt-parent = <&clic>;
-		interrupts = <24 0 0>;
-		dmas = <&edma2 0 72>, <&edma2 1 71>;
-		dma-names = "tx", "rx";
-		dai-index = <6>;
+		interrupts = <6 0 0>, <7 0 0>, <8 0 0>, <9 0 0>;
+		#dma-cells = <2>;
 		status = "disabled";
 	};
 
@@ -122,6 +111,17 @@
 		interrupts = <15 0 0>;
 		rx-channels = <4>;
 		#mbox-cells = <1>;
+		status = "disabled";
+	};
+
+	sai6: dai@2da90000 {
+		compatible = "nxp,dai-sai";
+		reg = <0x2da90000 DT_SIZE_K(4)>;
+		interrupt-parent = <&clic>;
+		interrupts = <24 0 0>;
+		dmas = <&edma2 0 72>, <&edma2 1 71>;
+		dma-names = "tx", "rx";
+		dai-index = <6>;
 		status = "disabled";
 	};
 };

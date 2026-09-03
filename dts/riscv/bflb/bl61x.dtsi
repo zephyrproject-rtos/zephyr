@@ -148,14 +148,6 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		mtimer: timer@e000bff8 {
-			compatible = "riscv,machine-timer";
-			reg = <0xe000bff8 0x8 0xe0004000 0x8>;
-			reg-names = "mtime", "mtimecmp";
-
-			interrupts-extended = <&clic 7 1>;
-		};
-
 		pinctrl: pin-controller@20000000 {
 			compatible = "bflb,pinctrl";
 			reg = <0x20000000 0x1000>;
@@ -263,50 +255,6 @@
 			status = "disabled";
 		};
 
-		i2c0: i2c@2000a300 {
-			compatible = "bflb,i2c";
-			reg = <0x2000a300 0x100>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-
-			interrupts = <48 1>;
-			interrupt-parent = <&clic>;
-			status = "disabled";
-		};
-
-		irx: irx@2000a600 {
-			compatible = "bflb,irx";
-			reg = <0x2000a600 0x100>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-
-			interrupts = <36 1>;
-			interrupt-parent = <&clic>;
-			status = "disabled";
-		};
-
-		dbi0: dbi@2000a800 {
-			compatible = "bflb,dbi";
-			reg = <0x2000a800 0x100>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-
-			interrupts = <18 1>;
-			interrupt-parent = <&clic>;
-			status = "disabled";
-		};
-
-		i2c1: i2c@2000a900 {
-			compatible = "bflb,i2c";
-			reg = <0x2000a900 0x100>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-
-			interrupts = <55 1>;
-			interrupt-parent = <&clic>;
-			status = "disabled";
-		};
-
 		spi0: spi@2000a200 {
 			compatible = "bflb,spi";
 			reg = <0x2000a200 0x100>;
@@ -314,6 +262,17 @@
 			#size-cells = <0>;
 
 			interrupts = <43 1>;
+			interrupt-parent = <&clic>;
+			status = "disabled";
+		};
+
+		i2c0: i2c@2000a300 {
+			compatible = "bflb,i2c";
+			reg = <0x2000a300 0x100>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			interrupts = <48 1>;
 			interrupt-parent = <&clic>;
 			status = "disabled";
 		};
@@ -362,6 +321,39 @@
 				interrupt-parent = <&clic>;
 				status = "disabled";
 			};
+		};
+
+		irx: irx@2000a600 {
+			compatible = "bflb,irx";
+			reg = <0x2000a600 0x100>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			interrupts = <36 1>;
+			interrupt-parent = <&clic>;
+			status = "disabled";
+		};
+
+		dbi0: dbi@2000a800 {
+			compatible = "bflb,dbi";
+			reg = <0x2000a800 0x100>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			interrupts = <18 1>;
+			interrupt-parent = <&clic>;
+			status = "disabled";
+		};
+
+		i2c1: i2c@2000a900 {
+			compatible = "bflb,i2c";
+			reg = <0x2000a900 0x100>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			interrupts = <55 1>;
+			interrupt-parent = <&clic>;
+			status = "disabled";
 		};
 
 		can0: can@2000aa00 {
@@ -553,6 +545,14 @@
 			#size-cells = <1>;
 			zephyr,memory-region = "PSRAM";
 			status = "disabled";
+		};
+
+		mtimer: timer@e000bff8 {
+			compatible = "riscv,machine-timer";
+			reg = <0xe000bff8 0x8 0xe0004000 0x8>;
+			reg-names = "mtime", "mtimecmp";
+
+			interrupts-extended = <&clic 7 1>;
 		};
 	};
 };

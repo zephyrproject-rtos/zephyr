@@ -33,24 +33,6 @@
 
 / {
 	soc {
-		uart@f0004000 {
-			interrupts = <107 1>;
-		};
-
-		gpio@f0002000 {
-			interrupts = <85 1>;
-		};
-
-		spi@f0008000 {
-			interrupts = <83 1>;
-		};
-
-		spi@f1000000 {
-			interrupts = <84 1>;
-			pinctrl-0 = <&unmuxed_pin>;
-			pinctrl-names = "default";
-		};
-
 		spi@80010000 {
 			interrupts = <63 2>, <64 2>, <65 2>;
 			pinctrl-0 = <&arduino_CFG5_spi>;
@@ -60,6 +42,24 @@
 		spi@80010100 {
 			interrupts = <67 2>, <68 2>, <69 2>;
 			pinctrl-0 = <&pmodA_spi1_cs0>;
+			pinctrl-names = "default";
+		};
+
+		gpio@f0002000 {
+			interrupts = <85 1>;
+		};
+
+		uart@f0004000 {
+			interrupts = <107 1>;
+		};
+
+		spi@f0008000 {
+			interrupts = <83 1>;
+		};
+
+		spi@f1000000 {
+			interrupts = <84 1>;
+			pinctrl-0 = <&unmuxed_pin>;
 			pinctrl-names = "default";
 		};
 	};

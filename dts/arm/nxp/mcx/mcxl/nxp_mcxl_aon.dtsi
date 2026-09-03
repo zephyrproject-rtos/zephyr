@@ -42,19 +42,20 @@
 		clock-frequency = <DT_FREQ_K(2500)>;
 	};
 
-	porta: pinmux@85000 {
-		compatible = "nxp,port-pinmux";
-		reg = <0x85000 0x1000>;
-		clocks = <&root_clock1>;
+	aon_qtmr_clock: aon-qtmr-clock {
+		compatible = "fixed-clock";
+		#clock-cells = <0>;
+		clock-frequency = <2500000>;
 	};
 
-	gpio0: gpio@9f000 {
-		compatible = "nxp,kinetis-gpio";
-		reg = <0x9f000 0x1000>;
-		interrupts = <5 0>;
-		gpio-controller;
-		#gpio-cells = <2>;
-		nxp,kinetis-port = <&porta>;
+	aon_lpi2c0: i2c@80000 {
+		compatible = "nxp,lpi2c";
+		reg = <0x80000 0x1000>;
+		interrupts = <1 0>;
+		clocks = <&root_clock1>;
+		clock-frequency = <I2C_BITRATE_STANDARD>;
+		#address-cells = <1>;
+		#size-cells = <0>;
 		status = "disabled";
 	};
 
@@ -63,15 +64,6 @@
 		reg = <0x82000 0x1000>;
 		interrupts = <3 0>;
 		clocks = <&root_clock1>;
-		status = "disabled";
-	};
-
-	rtc: rtc@9a000 {
-		compatible = "nxp,rtc-analog";
-		reg = <0x9a000 0x1000>;
-		interrupts = <13 0>, <14 0>, <15 0>;
-		interrupt-names = "alarm0", "alarm1", "alarm2";
-		alarms-count = <3>;
 		status = "disabled";
 	};
 
@@ -84,10 +76,10 @@
 		status = "disabled";
 	};
 
-	aon_qtmr_clock: aon-qtmr-clock {
-		compatible = "fixed-clock";
-		#clock-cells = <0>;
-		clock-frequency = <2500000>;
+	porta: pinmux@85000 {
+		compatible = "nxp,port-pinmux";
+		reg = <0x85000 0x1000>;
+		clocks = <&root_clock1>;
 	};
 
 	aon_qtmr0: qtmr@8e000 {
@@ -154,14 +146,22 @@
 		};
 	};
 
-	aon_lpi2c0: i2c@80000 {
-		compatible = "nxp,lpi2c";
-		reg = <0x80000 0x1000>;
-		interrupts = <1 0>;
-		clocks = <&root_clock1>;
-		clock-frequency = <I2C_BITRATE_STANDARD>;
-		#address-cells = <1>;
-		#size-cells = <0>;
+	rtc: rtc@9a000 {
+		compatible = "nxp,rtc-analog";
+		reg = <0x9a000 0x1000>;
+		interrupts = <13 0>, <14 0>, <15 0>;
+		interrupt-names = "alarm0", "alarm1", "alarm2";
+		alarms-count = <3>;
+		status = "disabled";
+	};
+
+	gpio0: gpio@9f000 {
+		compatible = "nxp,kinetis-gpio";
+		reg = <0x9f000 0x1000>;
+		interrupts = <5 0>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		nxp,kinetis-port = <&porta>;
 		status = "disabled";
 	};
 };

@@ -62,19 +62,6 @@
 		};
 	};
 
-	oc_sram: sram@70800000 {
-		compatible = "mmio-sram";
-		reg = <0x70800000 DT_SIZE_K(64)>;
-		ranges = <0x0 0x70800000 0x10000>;
-		#address-cells = <1>;
-		#size-cells = <1>;
-
-		scmi_shmem: sram@0 {
-			compatible = "arm,scmi-shmem";
-			reg = <0x0 0x1000>;
-		};
-	};
-
 	arch_timer: timer {
 		compatible = "arm,armv8-timer";
 		interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
@@ -98,6 +85,19 @@
 			compatible = "arm,gic-v3-its";
 			reg = <0x01820000 0x10000>;
 			status = "okay";
+		};
+	};
+
+	oc_sram: sram@70800000 {
+		compatible = "mmio-sram";
+		reg = <0x70800000 DT_SIZE_K(64)>;
+		ranges = <0x0 0x70800000 0x10000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		scmi_shmem: sram@0 {
+			compatible = "arm,scmi-shmem";
+			reg = <0x0 0x1000>;
 		};
 	};
 };

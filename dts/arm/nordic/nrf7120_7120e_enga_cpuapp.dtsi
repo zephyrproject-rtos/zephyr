@@ -43,6 +43,15 @@ nvic: &cpuapp_nvic {};
 };
 
 &cpuflpr_vpr {
+	cpuapp_vevif_tx: mailbox@0 {
+		compatible = "nordic,nrf-vevif-task-tx";
+		reg = <0x0 0x1000>;
+		#mbox-cells = <1>;
+		nordic,tasks = <7>;
+		nordic,tasks-mask = <0x007f0000>;
+		status = "disabled";
+	};
+
 	cpuapp_vevif_rx: mailbox@1 {
 		compatible = "nordic,nrf-vevif-event-rx";
 		reg = <0x1 0x1000>;
@@ -50,15 +59,6 @@ nvic: &cpuapp_nvic {};
 		#mbox-cells = <1>;
 		nordic,events = <1>;
 		nordic,events-mask = <0x00100000>;
-		status = "disabled";
-	};
-
-	cpuapp_vevif_tx: mailbox@0 {
-		compatible = "nordic,nrf-vevif-task-tx";
-		reg = <0x0 0x1000>;
-		#mbox-cells = <1>;
-		nordic,tasks = <7>;
-		nordic,tasks-mask = <0x007f0000>;
 		status = "disabled";
 	};
 };

@@ -10,6 +10,30 @@
 	soc {
 		compatible = "st,stm32mp211", "st,stm32mp2", "simple-bus";
 
+		i2c1: i2c@40170000 {
+			compatible = "st,stm32-i2c-v2";
+			reg = <0x40170000 DT_SIZE_K(1)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&rcc STM32_CLOCK(I2C1, STM32_CLK)>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			interrupts = <95 0>;
+			interrupt-names = "combined";
+			status = "disabled";
+		};
+
+		i2c2: i2c@40180000 {
+			compatible = "st,stm32-i2c-v2";
+			reg = <0x40180000 DT_SIZE_K(1)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&rcc STM32_CLOCK(I2C2, STM32_CLK)>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			interrupts = <97 0>;
+			interrupt-names = "combined";
+			status = "disabled";
+		};
+
 		exti2: interrupt-controller@442d0000 {
 			compatible = "st,stm32-exti";
 			reg = <0x442d0000 DT_SIZE_K(1)>;
@@ -41,30 +65,6 @@
 			fifo-size = <8>;
 			fifo-max-transfer-size = <65535>;
 			st,spi-data-width = "full-4-to-16-bit";
-			status = "disabled";
-		};
-
-		i2c1: i2c@40170000 {
-			compatible = "st,stm32-i2c-v2";
-			reg = <0x40170000 DT_SIZE_K(1)>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			clocks = <&rcc STM32_CLOCK(I2C1, STM32_CLK)>;
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			interrupts = <95 0>;
-			interrupt-names = "combined";
-			status = "disabled";
-		};
-
-		i2c2: i2c@40180000 {
-			compatible = "st,stm32-i2c-v2";
-			reg = <0x40180000 DT_SIZE_K(1)>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			clocks = <&rcc STM32_CLOCK(I2C2, STM32_CLK)>;
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			interrupts = <97 0>;
-			interrupt-names = "combined";
 			status = "disabled";
 		};
 

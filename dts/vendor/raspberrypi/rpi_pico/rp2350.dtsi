@@ -194,29 +194,6 @@
 			reg = <0x20000000 DT_SIZE_K(520)>;
 		};
 
-		qmi: flash-controller@400d0000 {
-			compatible = "raspberrypi,pico-flash-controller";
-			reg = <0x400d0000 0x54>;
-			ranges;
-
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			flash0: flash@10000000 {
-				compatible = "soc-nv-flash";
-				write-block-size = <1>;
-				erase-block-size = <DT_SIZE_K(4)>;
-				#address-cells = <1>;
-				#size-cells = <1>;
-			};
-		};
-
-		reset: reset-controller@40020000 {
-			compatible = "raspberrypi,pico-reset";
-			reg = <0x40020000 DT_SIZE_K(4)>;
-			#reset-cells = <1>;
-		};
-
 		clocks: clock-controller@40010000 {
 			compatible = "raspberrypi,pico-clock-controller";
 			reg = <0x40010000 DT_SIZE_K(4)
@@ -237,6 +214,12 @@
 				      "pll_sys", "pll_usb", "xosc", "rosc", "rosc_ph",
 				      "gpin0", "gpin1";
 			status = "okay";
+		};
+
+		reset: reset-controller@40020000 {
+			compatible = "raspberrypi,pico-reset";
+			reg = <0x40020000 DT_SIZE_K(4)>;
+			#reset-cells = <1>;
 		};
 
 		gpio0_map: gpio@40028000 {
@@ -395,10 +378,33 @@
 			status = "disabled";
 		};
 
+		qmi: flash-controller@400d0000 {
+			compatible = "raspberrypi,pico-flash-controller";
+			reg = <0x400d0000 0x54>;
+			ranges;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@10000000 {
+				compatible = "soc-nv-flash";
+				write-block-size = <1>;
+				erase-block-size = <DT_SIZE_K(4)>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+			};
+		};
+
 		wdt0: watchdog@400d8000 {
 			compatible = "raspberrypi,pico-watchdog";
 			reg = <0x400d8000 DT_SIZE_K(4)>;
 			clocks = <&clocks RPI_PICO_CLKID_CLK_REF>;
+			status = "disabled";
+		};
+
+		rng: rng@400f0000 {
+			compatible = "raspberrypi,pico-rng";
+			reg = <0x400f0000 DT_SIZE_K(4)>;
 			status = "disabled";
 		};
 
@@ -471,12 +477,6 @@
 			interrupts = <19 RPI_PICO_DEFAULT_IRQ_PRIORITY>,
 				     <20 RPI_PICO_DEFAULT_IRQ_PRIORITY>;
 			interrupt-names = "irq0", "irq1";
-			status = "disabled";
-		};
-
-		rng: rng@400f0000 {
-			compatible = "raspberrypi,pico-rng";
-			reg = <0x400f0000 DT_SIZE_K(4)>;
 			status = "disabled";
 		};
 

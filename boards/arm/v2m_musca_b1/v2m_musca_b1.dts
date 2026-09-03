@@ -62,25 +62,10 @@
 		};
 	};
 
-	flash0: flash@1a000000 {
-		/* Embedded flash */
-		reg = <0x1a000000 0x200000>;
-	};
-
-	sram0: memory@30000000 {
-		compatible = "mmio-sram";
-		reg = <0x30000000 0x80000>;
-	};
-
 	sysclk: system-clock {
 		compatible = "fixed-clock";
 		clock-frequency = <40000000>;
 		#clock-cells = <0>;
-	};
-
-	scc@5010b000 {
-		compatible = "arm,scc";
-		reg = <0x5010b000 0x1000>;
 	};
 
 	soc {
@@ -95,6 +80,21 @@
 
 #include "v2m_musca_b1-common.dtsi"
 		};
+	};
+
+	flash0: flash@1a000000 {
+		/* Embedded flash */
+		reg = <0x1a000000 0x200000>;
+	};
+
+	sram0: memory@30000000 {
+		compatible = "mmio-sram";
+		reg = <0x30000000 0x80000>;
+	};
+
+	scc@5010b000 {
+		compatible = "arm,scc";
+		reg = <0x5010b000 0x1000>;
 	};
 };
 

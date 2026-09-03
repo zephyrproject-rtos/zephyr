@@ -232,15 +232,15 @@
 				#size-cells = <1>;
 			};
 
+			nvm_sw_calib_area: nvm_sw_calib_area@800080 {
+				reg = <0x00800080 0x8>;
+			};
+
 			userrow: nvmuserrow@804000 {
 				compatible = "soc-nv-flash";
 				reg = <0x00804000 0x200>;
 				write-block-size = <8>;
 				erase-block-size = <512>;
-			};
-
-			nvm_sw_calib_area: nvm_sw_calib_area@800080 {
-				reg = <0x00800080 0x8>;
 			};
 		};
 
@@ -386,17 +386,6 @@
 			status = "disabled";
 		};
 
-		ac: ac@42002000 {
-			compatible = "microchip,ac-g1-comparator";
-			reg = <0x42002000 0x26>;
-			interrupts = <122 0>;
-			interrupt-names = "ac";
-			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBC_AC>,
-				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_AC>;
-			clock-names = "mclk", "gclk";
-			status = "disabled";
-		};
-
 		tcc3: tcc@42001000 {
 			compatible = "microchip,tcc-g1";
 			reg = <0x42001000 0x2000>;
@@ -433,6 +422,17 @@
 			status = "disabled";
 		};
 
+		ac: ac@42002000 {
+			compatible = "microchip,ac-g1-comparator";
+			reg = <0x42002000 0x26>;
+			interrupts = <122 0>;
+			interrupt-names = "ac";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBC_AC>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_AC>;
+			clock-names = "mclk", "gclk";
+			status = "disabled";
+		};
+
 		trng: random@42002800 {
 			compatible = "microchip,trng-g1-entropy";
 			reg = <0x42002800 0x24>;
@@ -462,6 +462,18 @@
 			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBD_SERCOM5>,
 				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_SERCOM5_CORE>;
 			clock-names = "mclk", "gclk";
+			status = "disabled";
+		};
+
+		tcc4: tcc@43001000 {
+			compatible = "microchip,tcc-g1";
+			reg = <0x43001000 0x2000>;
+			interrupts = <104 0>, <105 0>, <106 0>;
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBD_TCC4>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_TCC4>;
+			clock-names = "mclk", "gclk";
+			max-bit-width = <16>;
+			channels = <2>;
 			status = "disabled";
 		};
 
@@ -514,18 +526,6 @@
 			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBD_DAC>,
 				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_DAC>;
 			clock-names = "mclk", "gclk";
-			status = "disabled";
-		};
-
-		tcc4: tcc@43001000 {
-			compatible = "microchip,tcc-g1";
-			reg = <0x43001000 0x2000>;
-			interrupts = <104 0>, <105 0>, <106 0>;
-			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBD_TCC4>,
-				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_TCC4>;
-			clock-names = "mclk", "gclk";
-			max-bit-width = <16>;
-			channels = <2>;
 			status = "disabled";
 		};
 	};

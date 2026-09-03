@@ -53,28 +53,6 @@
 		};
 	};
 
-	ddr: memory@60000000 {
-		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x60000000 DT_SIZE_M(16)>;
-		zephyr,memory-region = "DDR";
-		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
-	};
-
-	sram_mcpu0: memory@23000 {
-		compatible = "mmio-sram";
-		reg = <0x23000 DT_SIZE_K(243)>;
-	};
-
-	/*
-	 * This node is defined to enable west flash support.
-	 * The base addr and size depends on ATF-F configuration, which is running on Cortex-A55 and
-	 * loading Zephyr app from xSPI flash.
-	 */
-	spi_flash: memory@80200000 {
-		compatible = "mmio-sram";
-		reg = <0x80200000 DT_SIZE_K(256)>;
-	};
-
 	transceiver0: can-phy0 {
 		compatible = "can-transceiver-gpio";
 		standby-gpios = <&gpio13 0 GPIO_ACTIVE_HIGH>;
@@ -87,6 +65,28 @@
 		standby-gpios = <&gpio13 1 GPIO_ACTIVE_HIGH>;
 		max-bitrate = <8000000>;
 		#phy-cells = <0>;
+	};
+
+	sram_mcpu0: memory@23000 {
+		compatible = "mmio-sram";
+		reg = <0x23000 DT_SIZE_K(243)>;
+	};
+
+	ddr: memory@60000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x60000000 DT_SIZE_M(16)>;
+		zephyr,memory-region = "DDR";
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
+	};
+
+	/*
+	 * This node is defined to enable west flash support.
+	 * The base addr and size depends on ATF-F configuration, which is running on Cortex-A55 and
+	 * loading Zephyr app from xSPI flash.
+	 */
+	spi_flash: memory@80200000 {
+		compatible = "mmio-sram";
+		reg = <0x80200000 DT_SIZE_K(256)>;
 	};
 };
 

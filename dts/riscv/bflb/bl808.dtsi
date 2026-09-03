@@ -461,6 +461,31 @@
 			status = "disabled";
 		};
 
+		dram0: memory@3ef80000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x3ef80000 DT_SIZE_K(512)>;
+			ranges = <0x0 0x3ef80000 DT_SIZE_K(512)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			zephyr,memory-region = "MM_DRAM";
+		};
+
+		vram0: memory@3f000000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x3f000000 DT_SIZE_K(32)>;
+			ranges = <0x0 0x3f000000 DT_SIZE_K(32)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			zephyr,memory-region = "MM_VRAM";
+		};
+
+		psram: memory@50000000 {
+			compatible = "bflb,bl808-psram-uhs", "zephyr,memory-region";
+			reg = <0x50000000 DT_SIZE_M(64)>;
+			page-size = <2048>;
+			zephyr,memory-region = "PSRAM";
+		};
+
 		/* All contiguous fast RAM for M0
 		 * It is kept tightly coupled by this CPU's internal cache
 		 */
@@ -490,31 +515,6 @@
 				#size-cells = <1>;
 				status = "disabled";
 			};
-		};
-
-		dram0: memory@3ef80000 {
-			compatible = "zephyr,memory-region", "mmio-sram";
-			reg = <0x3ef80000 DT_SIZE_K(512)>;
-			ranges = <0x0 0x3ef80000 DT_SIZE_K(512)>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-			zephyr,memory-region = "MM_DRAM";
-		};
-
-		vram0: memory@3f000000 {
-			compatible = "zephyr,memory-region", "mmio-sram";
-			reg = <0x3f000000 DT_SIZE_K(32)>;
-			ranges = <0x0 0x3f000000 DT_SIZE_K(32)>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-			zephyr,memory-region = "MM_VRAM";
-		};
-
-		psram: memory@50000000 {
-			compatible = "bflb,bl808-psram-uhs", "zephyr,memory-region";
-			reg = <0x50000000 DT_SIZE_M(64)>;
-			page-size = <2048>;
-			zephyr,memory-region = "PSRAM";
 		};
 
 		mtimer: timer@e000bff8 {

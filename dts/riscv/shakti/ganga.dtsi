@@ -34,16 +34,31 @@
 		};
 	};
 
-	sram0: memory@80000000 {
-		reg = <0x80000000 0x10000000>;
-		device_type = "memory";
-	};
-
 	soc {
 		compatible = "shakti,ganga-soc", "simple-bus";
 		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
+
+		uart0: serial@11300 {
+			compatible = "shakti,uart";
+			reg = <0x11300 0x100>;
+			clock-frequency = <DT_FREQ_M(40)>;
+			current-speed = <19200>;
+			interrupt-parent = <&plic>;
+			interrupts = <29 1>;
+			status = "disabled";
+		};
+
+		uart1: serial@11400 {
+			compatible = "shakti,uart";
+			reg = <0x11400 0x100>;
+			clock-frequency = <DT_FREQ_M(40)>;
+			current-speed = <19200>;
+			interrupt-parent = <&plic>;
+			interrupts = <30 1>;
+			status = "disabled";
+		};
 
 		clint: clint@2000000 {
 			compatible = "sifive,clint0";
@@ -69,25 +84,10 @@
 			riscv,max-priority = <7>;
 			riscv,ndev = <36>;
 		};
+	};
 
-		uart0: serial@11300 {
-			compatible = "shakti,uart";
-			reg = <0x11300 0x100>;
-			clock-frequency = <DT_FREQ_M(40)>;
-			current-speed = <19200>;
-			interrupt-parent = <&plic>;
-			interrupts = <29 1>;
-			status = "disabled";
-		};
-
-		uart1: serial@11400 {
-			compatible = "shakti,uart";
-			reg = <0x11400 0x100>;
-			clock-frequency = <DT_FREQ_M(40)>;
-			current-speed = <19200>;
-			interrupt-parent = <&plic>;
-			interrupts = <30 1>;
-			status = "disabled";
-		};
+	sram0: memory@80000000 {
+		reg = <0x80000000 0x10000000>;
+		device_type = "memory";
 	};
 };

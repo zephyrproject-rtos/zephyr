@@ -89,14 +89,6 @@
 		};
 	};
 
-	sdram1: sdram@68000000 {
-		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x68000000 DT_SIZE_M(64)>;	/* 512 Mbits */
-		device_type = "memory";
-		zephyr,memory-region = "SDRAM";
-		status = "okay";
-	};
-
 	renesas_mipi_connector: mipi-connector {
 		compatible = "renesas,ra-gpio-mipi-header";
 		#gpio-cells = <2>;
@@ -141,6 +133,14 @@
 	zephyr,user {
 		i3c-pullup-gpios = <&ioportb 2 GPIO_ACTIVE_LOW>,
 				   <&ioport7 11 GPIO_ACTIVE_LOW>;
+	};
+
+	sdram1: sdram@68000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x68000000 DT_SIZE_M(64)>;	/* 512 Mbits */
+		device_type = "memory";
+		zephyr,memory-region = "SDRAM";
+		status = "okay";
 	};
 };
 

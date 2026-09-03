@@ -145,11 +145,6 @@
 	sda-gpios = <&gpioa 8 GPIO_ACTIVE_HIGH>;
 	status = "okay";
 
-	atecc608a@60 {
-		compatible = "atmel,atecc608";
-		reg = <0x60>;
-	};
-
 	eeprom0: eeprom@50 {
 		compatible = "st,m24c64", "st,m24xxx", "atmel,at24";
 		reg = <0x50>;
@@ -167,6 +162,11 @@
 		address-width = <8>;
 		timeout = <5>;
 		wp-gpios = <&gpioa 10 GPIO_ACTIVE_LOW>;
+	};
+
+	atecc608a@60 {
+		compatible = "atmel,atecc608";
+		reg = <0x60>;
 	};
 };
 

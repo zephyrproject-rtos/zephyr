@@ -83,6 +83,70 @@
 	soc {
 		interrupt-parent = <&gic>;
 
+		hse: crypto {
+			compatible = "simple-bus";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			mub0: mu@42200000 {
+				compatible = "nxp,s32-crypto-hse-mu";
+				reg = <0x42200000 0x10000>;
+				status = "disabled";
+			};
+
+			mub1: mu@42210000 {
+				compatible = "nxp,s32-crypto-hse-mu";
+				reg = <0x42210000 0x10000>;
+				status = "disabled";
+			};
+
+			mub2: mu@42220000 {
+				compatible = "nxp,s32-crypto-hse-mu";
+				reg = <0x42220000 0x10000>;
+				status = "disabled";
+			};
+
+			mub3: mu@42230000 {
+				compatible = "nxp,s32-crypto-hse-mu";
+				reg = <0x42230000 0x10000>;
+				status = "disabled";
+			};
+
+			mub4: mu@42240000 {
+				compatible = "nxp,s32-crypto-hse-mu";
+				reg = <0x42240000 0x10000>;
+				status = "disabled";
+			};
+
+			mub5: mu@42250000 {
+				compatible = "nxp,s32-crypto-hse-mu";
+				reg = <0x42250000 0x10000>;
+				status = "disabled";
+			};
+
+			mub6: mu@42260000 {
+				compatible = "nxp,s32-crypto-hse-mu";
+				reg = <0x42260000 0x10000>;
+				status = "disabled";
+			};
+
+			mub7: mu@42270000 {
+				compatible = "nxp,s32-crypto-hse-mu";
+				reg = <0x42270000 0x10000>;
+				status = "disabled";
+			};
+		};
+
+		dram0: memory@31780000 {
+			compatible = "mmio-sram";
+			reg = <0x31780000 DT_SIZE_M(1)>;
+		};
+
+		dram1: memory@35780000 {
+			compatible = "mmio-sram";
+			reg = <0x35780000 DT_SIZE_M(1)>;
+		};
+
 		clock: clock-controller@40030000 {
 			compatible = "nxp,s32-clock";
 			reg = <0x40030000 0x10000>,
@@ -102,24 +166,112 @@
 			status = "okay";
 		};
 
-		gic: interrupt-controller@47800000 {
-			compatible = "arm,gic-v3", "arm,gic";
-			reg = <0x47800000 0x10000>,
-			      <0x47900000 0x80000>;
-			#address-cells = <0>;
-			interrupt-controller;
-			#interrupt-cells = <4>;
-			status = "okay";
+		emios1: emios@400b0000 {
+			compatible = "nxp,s32-emios";
+			reg = <0x400b0000 0x4000>;
+			clocks = <&clock NXP_S32_P0_REG_INTF_CLK>;
+			internal-cnt = <0xffffffff>;
+			interrupts = <GIC_SPI 314 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 315 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 316 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 317 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 318 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 319 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 320 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 321 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 322 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 323 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 324 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 325 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 326 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 327 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 328 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 329 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 330 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 331 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 332 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 333 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 334 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 335 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 336 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 337 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 338 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 339 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 340 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 341 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "1_CH0", "1_CH1", "1_CH2", "1_CH3", "1_CH4",
+					  "1_CH5", "1_CH6", "1_CH7", "1_CH8", "1_CH10",
+					  "1_CH12", "1_CH14", "1_CH16", "1_CH17",
+					  "1_CH18", "1_CH19", "1_CH20", "1_CH21",
+					  "1_CH22", "1_CH23", "1_CH24", "1_CH25",
+					  "1_CH26", "1_CH27", "1_CH28", "1_CH29",
+					  "1_CH30", "1_CH31";
+			status = "disabled";
+
+			master_bus {
+				emios1_bus_a: emios1_bus_a {
+					channel = <23>;
+					bus-type = "BUS_A";
+					channel-mask = <0xff7fffff>;
+					status = "disabled";
+				};
+
+				emios1_bus_b: emios1_bus_b {
+					channel = <0>;
+					bus-type = "BUS_B";
+					channel-mask = <0x000000fe>;
+					status = "disabled";
+				};
+
+				emios1_bus_c: emios1_bus_c {
+					channel = <8>;
+					bus-type = "BUS_C";
+					channel-mask = <0x0000fe00>;
+					status = "disabled";
+				};
+
+				emios1_bus_d: emios1_bus_d {
+					channel = <16>;
+					bus-type = "BUS_D";
+					channel-mask = <0x00fe0000>;
+					status = "disabled";
+				};
+
+				emios1_bus_e: emios1_bus_e {
+					channel = <24>;
+					channel-mask = <0xfe000000>;
+					bus-type = "BUS_E";
+					status = "disabled";
+				};
+			};
+
+			pwm {
+				compatible = "nxp,s32-emios-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
 		};
 
-		dram0: memory@31780000 {
-			compatible = "mmio-sram";
-			reg = <0x31780000 DT_SIZE_M(1)>;
+		spi0: spi@40130000 {
+			compatible = "nxp,s32-spi";
+			reg = <0x40130000 0x10000>;
+			interrupts = <GIC_SPI 191 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clock NXP_S32_SPI0_CLK>;
+			num-cs = <5>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
 		};
 
-		dram1: memory@35780000 {
-			compatible = "mmio-sram";
-			reg = <0x35780000 DT_SIZE_M(1)>;
+		spi1: spi@40140000 {
+			compatible = "nxp,s32-spi";
+			reg = <0x40140000 0x10000>;
+			interrupts = <GIC_SPI 192 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clock NXP_S32_SPI1_CLK>;
+			num-cs = <5>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
 		};
 
 		uart0: uart@40170000 {
@@ -143,6 +295,334 @@
 			reg = <0x40190000 0x1000>;
 			interrupts = <GIC_SPI 214 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			clocks = <&clock NXP_S32_LIN2_CLK>;
+			status = "disabled";
+		};
+
+		psi5_0: psi5@401e0000 {
+			compatible = "nxp,s32-psi5";
+			reg = <0x401e0000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+
+			psi5_0_ch0: ch@0 {
+				reg = <0>;
+				interrupts = <GIC_SPI 347 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+
+				psi5_0_ch0_rx_slot0: slot@0 {
+					reg = <0>;
+					status = "disabled";
+				};
+
+				psi5_0_ch0_rx_slot1: slot@1 {
+					reg = <1>;
+					status = "disabled";
+				};
+
+				psi5_0_ch0_rx_slot2: slot@2 {
+					reg = <2>;
+					status = "disabled";
+				};
+
+				psi5_0_ch0_rx_slot3: slot@3 {
+					reg = <3>;
+					status = "disabled";
+				};
+
+				psi5_0_ch0_rx_slot4: slot@4 {
+					reg = <4>;
+					status = "disabled";
+				};
+
+				psi5_0_ch0_rx_slot5: slot@5 {
+					reg = <5>;
+					status = "disabled";
+				};
+			};
+
+			psi5_0_ch1: ch@1 {
+				reg = <1>;
+				interrupts = <GIC_SPI 353 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+
+				psi5_0_ch1_rx_slot0: slot@0 {
+					reg = <0>;
+					status = "disabled";
+				};
+
+				psi5_0_ch1_rx_slot1: slot@1 {
+					reg = <1>;
+					status = "disabled";
+				};
+
+				psi5_0_ch1_rx_slot2: slot@2 {
+					reg = <2>;
+					status = "disabled";
+				};
+
+				psi5_0_ch1_rx_slot3: slot@3 {
+					reg = <3>;
+					status = "disabled";
+				};
+
+				psi5_0_ch1_rx_slot4: slot@4 {
+					reg = <4>;
+					status = "disabled";
+				};
+
+				psi5_0_ch1_rx_slot5: slot@5 {
+					reg = <5>;
+					status = "disabled";
+				};
+			};
+
+			psi5_0_ch2: ch@2 {
+				reg = <2>;
+				interrupts = <GIC_SPI 359 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+
+				psi5_0_ch2_rx_slot0: slot@0 {
+					reg = <0>;
+					status = "disabled";
+				};
+
+				psi5_0_ch2_rx_slot1: slot@1 {
+					reg = <1>;
+					status = "disabled";
+				};
+
+				psi5_0_ch2_rx_slot2: slot@2 {
+					reg = <2>;
+					status = "disabled";
+				};
+
+				psi5_0_ch2_rx_slot3: slot@3 {
+					reg = <3>;
+					status = "disabled";
+				};
+
+				psi5_0_ch2_rx_slot4: slot@4 {
+					reg = <4>;
+					status = "disabled";
+				};
+
+				psi5_0_ch2_rx_slot5: slot@5 {
+					reg = <5>;
+					status = "disabled";
+				};
+			};
+
+			psi5_0_ch3: ch@3 {
+				reg = <3>;
+				interrupts = <GIC_SPI 365 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+
+				psi5_0_ch3_rx_slot0: slot@0 {
+					reg = <0>;
+					status = "disabled";
+				};
+
+				psi5_0_ch3_rx_slot1: slot@1 {
+					reg = <1>;
+					status = "disabled";
+				};
+
+				psi5_0_ch3_rx_slot2: slot@2 {
+					reg = <2>;
+					status = "disabled";
+				};
+
+				psi5_0_ch3_rx_slot3: slot@3 {
+					reg = <3>;
+					status = "disabled";
+				};
+
+				psi5_0_ch3_rx_slot4: slot@4 {
+					reg = <4>;
+					status = "disabled";
+				};
+
+				psi5_0_ch3_rx_slot5: slot@5 {
+					reg = <5>;
+					status = "disabled";
+				};
+			};
+		};
+
+		sar_adc0: adc@402c0000 {
+			compatible = "nxp,s32-adc-sar";
+			reg = <0x402c0000 0x1000>;
+			interrupts = <GIC_SPI 168 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 169 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 170 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
+
+		sar_adc1: adc@402e0000 {
+			compatible = "nxp,s32-adc-sar";
+			reg = <0x402e0000 0x1000>;
+			interrupts = <GIC_SPI 201 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 202 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 203 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
+
+		uart12: uart@40330000 {
+			compatible = "nxp,s32-linflexd";
+			reg = <0x40330000 0x1000>;
+			interrupts = <GIC_SPI 205 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clock NXP_S32_MSCLIN_CLK>;
+			status = "disabled";
+		};
+
+		dspi0: spi@40340000 {
+			compatible = "nxp,dspi";
+			reg = <0x40340000 0x10000>;
+			interrupts = <GIC_SPI 204 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clock NXP_S32_MSCDSPI_CLK>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		siul2_0: siul2@40520000 {
+			reg = <0x40520000 0x10000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			eirq0: eirq0@40520010 {
+				compatible = "nxp,siul2-eirq";
+				reg = <0x40520010 0xb4>;
+				#address-cells = <0>;
+				interrupts = <GIC_SPI 514 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				interrupt-controller;
+				#interrupt-cells = <2>;
+				status = "disabled";
+			};
+
+			gpiob: gpio@40521700 {
+				compatible = "nxp,siul2-gpio";
+				reg = <0x40521700 0x02>, <0x40520280 0x40>;
+				reg-names = "pgpdo", "mscr";
+				interrupt-parent = <&eirq0>;
+				interrupts = <0 7>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <15>;
+				status = "disabled";
+			};
+
+			gpioa: gpio@40521702 {
+				compatible = "nxp,siul2-gpio";
+				reg = <0x40521702 0x02>, <0x40520240 0x40>;
+				reg-names = "pgpdo", "mscr";
+				interrupt-parent = <&eirq0>;
+				interrupts = <1 1>, <3 0>, <5 2>, <12 3>,
+					     <13 4>, <14 5>, <15 6>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+				status = "disabled";
+			};
+
+			gpioo: gpio@40521716 {
+				compatible = "nxp,siul2-gpio";
+				reg = <0x40521716 0x02>, <0x405204c0 0x40>;
+				reg-names = "pgpdo", "mscr";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <14>;
+				gpio-reserved-ranges = <0 10>;
+				status = "disabled";
+			};
+		};
+
+		edma0: dma-controller@405d0000 {
+			compatible = "nxp,mcux-edma";
+			reg = <0x405d0000 0x10000>, <0x405a0000 0x10000>, <0x405b0000 0x100000>;
+			dma-channels = <32>;
+			dma-requests = <64>;
+			dmamux-reg-offset = <3>;
+			#dma-cells = <2>;
+			interrupts = <GIC_SPI 31 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 32 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 33 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 34 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 35 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 36 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 37 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 38 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 39 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 40 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 41 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 42 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 43 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 44 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 45 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 46 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 47 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 48 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 49 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 50 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 51 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 52 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 53 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 54 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 55 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 56 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 57 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 58 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 59 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 60 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 61 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 62 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 28 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			nxp,version = <3>;
+			nxp,mem2mem;
+			status = "disabled";
+		};
+
+		spi2: spi@40930000 {
+			compatible = "nxp,s32-spi";
+			reg = <0x40930000 0x10000>;
+			interrupts = <GIC_SPI 193 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clock NXP_S32_SPI2_CLK>;
+			num-cs = <5>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spi3: spi@40940000 {
+			compatible = "nxp,s32-spi";
+			reg = <0x40940000 0x10000>;
+			interrupts = <GIC_SPI 194 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clock NXP_S32_SPI3_CLK>;
+			num-cs = <5>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spi4: spi@40950000 {
+			compatible = "nxp,s32-spi";
+			reg = <0x40950000 0x10000>;
+			interrupts = <GIC_SPI 195 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clock NXP_S32_SPI4_CLK>;
+			num-cs = <5>;
+			#address-cells = <1>;
+			#size-cells = <0>;
 			status = "disabled";
 		};
 
@@ -170,110 +650,66 @@
 			status = "disabled";
 		};
 
-		uart6: uart@42170000 {
-			compatible = "nxp,s32-linflexd";
-			reg = <0x42170000 0x1000>;
-			interrupts = <GIC_SPI 218 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			clocks = <&clock NXP_S32_LIN6_CLK>;
-			status = "disabled";
-		};
-
-		uart7: uart@42180000 {
-			compatible = "nxp,s32-linflexd";
-			reg = <0x42180000 0x1000>;
-			interrupts = <GIC_SPI 219 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			clocks = <&clock NXP_S32_LIN7_CLK>;
-			status = "disabled";
-		};
-
-		uart8: uart@42190000 {
-			compatible = "nxp,s32-linflexd";
-			reg = <0x42190000 0x1000>;
-			interrupts = <GIC_SPI 220 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			clocks = <&clock NXP_S32_LIN8_CLK>;
-			status = "disabled";
-		};
-
-		uart9: uart@42980000 {
-			compatible = "nxp,s32-linflexd";
-			reg = <0x42980000 0x1000>;
-			interrupts = <GIC_SPI 221 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			clocks = <&clock NXP_S32_LIN9_CLK>;
-			status = "disabled";
-		};
-
-		uart10: uart@42990000 {
-			compatible = "nxp,s32-linflexd";
-			reg = <0x42990000 0x1000>;
-			interrupts = <GIC_SPI 222 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			clocks = <&clock NXP_S32_LIN10_CLK>;
-			status = "disabled";
-		};
-
-		uart11: uart@429a0000 {
-			compatible = "nxp,s32-linflexd";
-			reg = <0x429a0000 0x1000>;
-			interrupts = <GIC_SPI 223 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			clocks = <&clock NXP_S32_LIN11_CLK>;
-			status = "disabled";
-		};
-
-		uart12: uart@40330000 {
-			compatible = "nxp,s32-linflexd";
-			reg = <0x40330000 0x1000>;
-			interrupts = <GIC_SPI 205 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			clocks = <&clock NXP_S32_MSCLIN_CLK>;
-			status = "disabled";
-		};
-
-		siul2_0: siul2@40520000 {
-			reg = <0x40520000 0x10000>;
+		lpi2c1: i2c@409d0000 {
+			compatible = "nxp,lpi2c";
+			reg = <0x409d0000 0x10000>;
 			#address-cells = <1>;
-			#size-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <GIC_SPI 253 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clock NXP_S32_P1_REG_INTF_CLK>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			status = "disabled";
+		};
 
-			eirq0: eirq0@40520010 {
-				compatible = "nxp,siul2-eirq";
-				reg = <0x40520010 0xb4>;
-				#address-cells = <0>;
-				interrupts = <GIC_SPI 514 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-				interrupt-controller;
-				#interrupt-cells = <2>;
+		sent0: sent@40a50000 {
+			compatible = "nxp,s32-sent";
+			reg = <0x40a50000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <GIC_SPI 428 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 429 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 430 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "fast_msg", "serial_msg", "error";
+			clocks = <&clock NXP_S32_P1_REG_INTF_CLK>;
+			status = "disabled";
+
+			sent0_ch0: ch@0 {
+				reg = <0>;
 				status = "disabled";
 			};
 
-			gpioa: gpio@40521702 {
-				compatible = "nxp,siul2-gpio";
-				reg = <0x40521702 0x02>, <0x40520240 0x40>;
-				reg-names = "pgpdo", "mscr";
-				interrupt-parent = <&eirq0>;
-				interrupts = <1 1>, <3 0>, <5 2>, <12 3>,
-					     <13 4>, <14 5>, <15 6>;
-				gpio-controller;
-				#gpio-cells = <2>;
-				ngpios = <16>;
+			sent0_ch1: ch@1 {
+				reg = <1>;
 				status = "disabled";
 			};
 
-			gpiob: gpio@40521700 {
-				compatible = "nxp,siul2-gpio";
-				reg = <0x40521700 0x02>, <0x40520280 0x40>;
-				reg-names = "pgpdo", "mscr";
-				interrupt-parent = <&eirq0>;
-				interrupts = <0 7>;
-				gpio-controller;
-				#gpio-cells = <2>;
-				ngpios = <15>;
+			sent0_ch2: ch@2 {
+				reg = <2>;
 				status = "disabled";
 			};
 
-			gpioo: gpio@40521716 {
-				compatible = "nxp,siul2-gpio";
-				reg = <0x40521716 0x02>, <0x405204c0 0x40>;
-				reg-names = "pgpdo", "mscr";
-				gpio-controller;
-				#gpio-cells = <2>;
-				ngpios = <14>;
-				gpio-reserved-ranges = <0 10>;
+			sent0_ch3: ch@3 {
+				reg = <3>;
+				status = "disabled";
+			};
+
+			sent0_ch4: ch@4 {
+				reg = <4>;
+				status = "disabled";
+			};
+
+			sent0_ch5: ch@5 {
+				reg = <5>;
+				status = "disabled";
+			};
+
+			sent0_ch6: ch@6 {
+				reg = <6>;
+				status = "disabled";
+			};
+
+			sent0_ch7: ch@7 {
+				reg = <7>;
 				status = "disabled";
 			};
 		};
@@ -306,16 +742,6 @@
 				status = "disabled";
 			};
 
-			gpiod: gpio@40d21706 {
-				compatible = "nxp,siul2-gpio";
-				reg = <0x40d21706 0x02>, <0x40d202c0 0x40>;
-				reg-names = "pgpdo", "mscr";
-				gpio-controller;
-				#gpio-cells = <2>;
-				ngpios = <16>;
-				status = "disabled";
-			};
-
 			gpioe: gpio@40d21704 {
 				compatible = "nxp,siul2-gpio";
 				reg = <0x40d21704 0x02>, <0x40d20300 0x40>;
@@ -326,9 +752,9 @@
 				status = "disabled";
 			};
 
-			gpiof: gpio@40d2170a {
+			gpiod: gpio@40d21706 {
 				compatible = "nxp,siul2-gpio";
-				reg = <0x40d2170a 0x02>, <0x40d20340 0x40>;
+				reg = <0x40d21706 0x02>, <0x40d202c0 0x40>;
 				reg-names = "pgpdo", "mscr";
 				gpio-controller;
 				#gpio-cells = <2>;
@@ -348,10 +774,433 @@
 				ngpios = <12>;
 				status = "disabled";
 			};
+
+			gpiof: gpio@40d2170a {
+				compatible = "nxp,siul2-gpio";
+				reg = <0x40d2170a 0x02>, <0x40d20340 0x40>;
+				reg-names = "pgpdo", "mscr";
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+				status = "disabled";
+			};
+		};
+
+		edma1: dma-controller@40dd0000 {
+			compatible = "nxp,mcux-edma";
+			reg = <0x40dd0000 0x10000>, <0x40da0000 0x10000>;
+			dma-channels = <16>;
+			dma-requests = <64>;
+			dmamux-reg-offset = <3>;
+			#dma-cells = <2>;
+			interrupts = <GIC_SPI 65 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 66 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 67 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 68 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 69 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 70 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 71 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 72 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 73 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 74 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 75 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 76 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 77 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 78 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 79 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 80 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 63 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			nxp,version = <3>;
+			nxp,mem2mem;
+			status = "disabled";
 		};
 
 		siul2_3: siul2@41d20000 {
 			reg = <0x41d20000 0x10000>;
+		};
+
+		sent1: sent@42050000 {
+			compatible = "nxp,s32-sent";
+			reg = <0x42050000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <GIC_SPI 455 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 456 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 457 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "fast_msg", "serial_msg", "error";
+			clocks = <&clock NXP_S32_P4_REG_INTF_CLK>;
+			status = "disabled";
+
+			sent1_ch0: ch@0 {
+				reg = <0>;
+				status = "disabled";
+			};
+
+			sent1_ch1: ch@1 {
+				reg = <1>;
+				status = "disabled";
+			};
+
+			sent1_ch2: ch@2 {
+				reg = <2>;
+				status = "disabled";
+			};
+
+			sent1_ch3: ch@3 {
+				reg = <3>;
+				status = "disabled";
+			};
+
+			sent1_ch4: ch@4 {
+				reg = <4>;
+				status = "disabled";
+			};
+
+			sent1_ch5: ch@5 {
+				reg = <5>;
+				status = "disabled";
+			};
+
+			sent1_ch6: ch@6 {
+				reg = <6>;
+				status = "disabled";
+			};
+
+			sent1_ch7: ch@7 {
+				reg = <7>;
+				status = "disabled";
+			};
+		};
+
+		emios0: emios@420b0000 {
+			compatible = "nxp,s32-emios";
+			reg = <0x420b0000 0x4000>;
+			clocks = <&clock NXP_S32_P4_REG_INTF_CLK>;
+			internal-cnt = <0xffffffff>;
+			interrupts = <GIC_SPI 284 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 285 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 286 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 287 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 288 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 289 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 290 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 291 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 292 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 293 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 294 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 295 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 296 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 297 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 298 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 299 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 300 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 301 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 302 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 303 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 304 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 305 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 306 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 307 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 308 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 309 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 310 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 311 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 312 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "0_CH0", "0_CH1", "0_CH2", "0_CH3", "0_CH4",
+					  "0_CH5", "0_CH6", "0_CH7", "0_CH8", "0_CH9",
+					  "0_CH10", "0_CH12", "0_CH14", "0_CH16",
+					  "0_CH17", "0_CH18", "0_CH19", "0_CH20",
+					  "0_CH21", "0_CH22", "0_CH23", "0_CH24",
+					  "0_CH25", "0_CH26", "0_CH27", "0_CH28",
+					  "0_CH29", "0_CH30", "0_CH31";
+			status = "disabled";
+
+			master_bus {
+				emios0_bus_a: emios0_bus_a {
+					channel = <23>;
+					bus-type = "BUS_A";
+					channel-mask = <0xff7fffff>;
+					status = "disabled";
+				};
+
+				emios0_bus_b: emios0_bus_b {
+					channel = <0>;
+					bus-type = "BUS_B";
+					channel-mask = <0x000000fe>;
+					status = "disabled";
+				};
+
+				emios0_bus_c: emios0_bus_c {
+					channel = <8>;
+					bus-type = "BUS_C";
+					channel-mask = <0x0000fe00>;
+					status = "disabled";
+				};
+
+				emios0_bus_d: emios0_bus_d {
+					channel = <16>;
+					bus-type = "BUS_D";
+					channel-mask = <0x00fe0000>;
+					status = "disabled";
+				};
+
+				emios0_bus_e: emios0_bus_e {
+					channel = <24>;
+					bus-type = "BUS_E";
+					channel-mask = <0xfe000000>;
+					status = "disabled";
+				};
+			};
+
+			pwm {
+				compatible = "nxp,s32-emios-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		spi5: spi@42130000 {
+			compatible = "nxp,s32-spi";
+			reg = <0x42130000 0x10000>;
+			interrupts = <GIC_SPI 196 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clock NXP_S32_SPI5_CLK>;
+			num-cs = <5>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spi6: spi@42140000 {
+			compatible = "nxp,s32-spi";
+			reg = <0x42140000 0x10000>;
+			interrupts = <GIC_SPI 197 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clock NXP_S32_SPI6_CLK>;
+			num-cs = <5>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spi7: spi@42150000 {
+			compatible = "nxp,s32-spi";
+			reg = <0x42150000 0x10000>;
+			interrupts = <GIC_SPI 198 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clock NXP_S32_SPI7_CLK>;
+			num-cs = <5>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		uart6: uart@42170000 {
+			compatible = "nxp,s32-linflexd";
+			reg = <0x42170000 0x1000>;
+			interrupts = <GIC_SPI 218 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clock NXP_S32_LIN6_CLK>;
+			status = "disabled";
+		};
+
+		uart7: uart@42180000 {
+			compatible = "nxp,s32-linflexd";
+			reg = <0x42180000 0x1000>;
+			interrupts = <GIC_SPI 219 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clock NXP_S32_LIN7_CLK>;
+			status = "disabled";
+		};
+
+		uart8: uart@42190000 {
+			compatible = "nxp,s32-linflexd";
+			reg = <0x42190000 0x1000>;
+			interrupts = <GIC_SPI 220 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clock NXP_S32_LIN8_CLK>;
+			status = "disabled";
+		};
+
+		lpi2c2: i2c@421d0000 {
+			compatible = "nxp,lpi2c";
+			reg = <0x421d0000 0x10000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <GIC_SPI 254 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clock NXP_S32_P4_REG_INTF_CLK>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			status = "disabled";
+		};
+
+		psi5_1: psi5@421e0000 {
+			compatible = "nxp,s32-psi5";
+			reg = <0x421e0000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+
+			psi5_1_ch0: ch@0 {
+				reg = <0>;
+				interrupts = <GIC_SPI 371 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+
+				psi5_1_ch0_rx_slot0: slot@0 {
+					reg = <0>;
+					status = "disabled";
+				};
+
+				psi5_1_ch0_rx_slot1: slot@1 {
+					reg = <1>;
+					status = "disabled";
+				};
+
+				psi5_1_ch0_rx_slot2: slot@2 {
+					reg = <2>;
+					status = "disabled";
+				};
+
+				psi5_1_ch0_rx_slot3: slot@3 {
+					reg = <3>;
+					status = "disabled";
+				};
+
+				psi5_1_ch0_rx_slot4: slot@4 {
+					reg = <4>;
+					status = "disabled";
+				};
+
+				psi5_1_ch0_rx_slot5: slot@5 {
+					reg = <5>;
+					status = "disabled";
+				};
+			};
+
+			psi5_1_ch1: ch@1 {
+				reg = <1>;
+				interrupts = <GIC_SPI 377 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+
+				psi5_1_ch1_rx_slot0: slot@0 {
+					reg = <0>;
+					status = "disabled";
+				};
+
+				psi5_1_ch1_rx_slot1: slot@1 {
+					reg = <1>;
+					status = "disabled";
+				};
+
+				psi5_1_ch1_rx_slot2: slot@2 {
+					reg = <2>;
+					status = "disabled";
+				};
+
+				psi5_1_ch1_rx_slot3: slot@3 {
+					reg = <3>;
+					status = "disabled";
+				};
+
+				psi5_1_ch1_rx_slot4: slot@4 {
+					reg = <4>;
+					status = "disabled";
+				};
+
+				psi5_1_ch1_rx_slot5: slot@5 {
+					reg = <5>;
+					status = "disabled";
+				};
+			};
+
+			psi5_1_ch2: ch@2 {
+				reg = <2>;
+				interrupts = <GIC_SPI 383 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+
+				psi5_1_ch2_rx_slot0: slot@0 {
+					reg = <0>;
+					status = "disabled";
+				};
+
+				psi5_1_ch2_rx_slot1: slot@1 {
+					reg = <1>;
+					status = "disabled";
+				};
+
+				psi5_1_ch2_rx_slot2: slot@2 {
+					reg = <2>;
+					status = "disabled";
+				};
+
+				psi5_1_ch2_rx_slot3: slot@3 {
+					reg = <3>;
+					status = "disabled";
+				};
+
+				psi5_1_ch2_rx_slot4: slot@4 {
+					reg = <4>;
+					status = "disabled";
+				};
+
+				psi5_1_ch2_rx_slot5: slot@5 {
+					reg = <5>;
+					status = "disabled";
+				};
+			};
+
+			psi5_1_ch3: ch@3 {
+				reg = <3>;
+				interrupts = <GIC_SPI 389 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+
+				psi5_1_ch3_rx_slot0: slot@0 {
+					reg = <0>;
+					status = "disabled";
+				};
+
+				psi5_1_ch3_rx_slot1: slot@1 {
+					reg = <1>;
+					status = "disabled";
+				};
+
+				psi5_1_ch3_rx_slot2: slot@2 {
+					reg = <2>;
+					status = "disabled";
+				};
+
+				psi5_1_ch3_rx_slot3: slot@3 {
+					reg = <3>;
+					status = "disabled";
+				};
+
+				psi5_1_ch3_rx_slot4: slot@4 {
+					reg = <4>;
+					status = "disabled";
+				};
+
+				psi5_1_ch3_rx_slot5: slot@5 {
+					reg = <5>;
+					status = "disabled";
+				};
+			};
+		};
+
+		qspi0: qspi@42320000 {
+			compatible = "nxp,s32-qspi";
+			reg = <0x42320000 0x4000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		qspi1: qspi@42340000 {
+			compatible = "nxp,s32-qspi";
+			reg = <0x42340000 0x4000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
 		};
 
 		siul2_4: siul2@42520000 {
@@ -380,18 +1229,6 @@
 				status = "disabled";
 			};
 
-			gpioi: gpio@4252170e {
-				compatible = "nxp,siul2-gpio";
-				reg = <0x4252170e 0x02>, <0x425203c0 0x40>;
-				reg-names = "pgpdo", "mscr";
-				interrupt-parent = <&eirq4>;
-				interrupts = <11 0>, <13 1>;
-				gpio-controller;
-				#gpio-cells = <2>;
-				ngpios = <16>;
-				status = "disabled";
-			};
-
 			gpioj: gpio@4252170c {
 				compatible = "nxp,siul2-gpio";
 				reg = <0x4252170c 0x02>, <0x42520400 0x40>;
@@ -404,13 +1241,12 @@
 				status = "disabled";
 			};
 
-			gpiok: gpio@42521712 {
+			gpioi: gpio@4252170e {
 				compatible = "nxp,siul2-gpio";
-				reg = <0x42521712 0x02>, <0x42520440 0x40>;
+				reg = <0x4252170e 0x02>, <0x425203c0 0x40>;
 				reg-names = "pgpdo", "mscr";
 				interrupt-parent = <&eirq4>;
-				interrupts = <4 3>, <6 4>, <9 5>,
-					     <11 6>, <13 7>;
+				interrupts = <11 0>, <13 1>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <16>;
@@ -426,6 +1262,94 @@
 				ngpios = <2>;
 				status = "disabled";
 			};
+
+			gpiok: gpio@42521712 {
+				compatible = "nxp,siul2-gpio";
+				reg = <0x42521712 0x02>, <0x42520440 0x40>;
+				reg-names = "pgpdo", "mscr";
+				interrupt-parent = <&eirq4>;
+				interrupts = <4 3>, <6 4>, <9 5>,
+					     <11 6>, <13 7>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <16>;
+				status = "disabled";
+			};
+		};
+
+		edma4: dma-controller@425d0000 {
+			compatible = "nxp,mcux-edma";
+			reg = <0x425d0000 0x10000>, <0x425a0000 0x10000>;
+			dma-channels = <32>;
+			dma-requests = <64>;
+			dmamux-reg-offset = <3>;
+			#dma-cells = <2>;
+			interrupts = <GIC_SPI 83 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 84 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 85 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 86 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 87 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 88 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 89 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 90 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 91 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 92 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 93 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 94 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 95 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 96 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 97 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 98 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 81 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			nxp,version = <3>;
+			nxp,mem2mem;
+			status = "disabled";
+		};
+
+		spi8: spi@42930000 {
+			compatible = "nxp,s32-spi";
+			reg = <0x42930000 0x10000>;
+			interrupts = <GIC_SPI 199 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clock NXP_S32_SPI8_CLK>;
+			num-cs = <5>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spi9: spi@42940000 {
+			compatible = "nxp,s32-spi";
+			reg = <0x42940000 0x10000>;
+			interrupts = <GIC_SPI 200 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clock NXP_S32_SPI9_CLK>;
+			num-cs = <5>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		uart9: uart@42980000 {
+			compatible = "nxp,s32-linflexd";
+			reg = <0x42980000 0x1000>;
+			interrupts = <GIC_SPI 221 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clock NXP_S32_LIN9_CLK>;
+			status = "disabled";
+		};
+
+		uart10: uart@42990000 {
+			compatible = "nxp,s32-linflexd";
+			reg = <0x42990000 0x1000>;
+			interrupts = <GIC_SPI 222 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clock NXP_S32_LIN10_CLK>;
+			status = "disabled";
+		};
+
+		uart11: uart@429a0000 {
+			compatible = "nxp,s32-linflexd";
+			reg = <0x429a0000 0x1000>;
+			interrupts = <GIC_SPI 223 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&clock NXP_S32_LIN11_CLK>;
+			status = "disabled";
 		};
 
 		siul2_5: siul2@42d20000 {
@@ -469,278 +1393,32 @@
 			};
 		};
 
-		spi0: spi@40130000 {
-			compatible = "nxp,s32-spi";
-			reg = <0x40130000 0x10000>;
-			interrupts = <GIC_SPI 191 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			clocks = <&clock NXP_S32_SPI0_CLK>;
-			num-cs = <5>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			status = "disabled";
-		};
-
-		spi1: spi@40140000 {
-			compatible = "nxp,s32-spi";
-			reg = <0x40140000 0x10000>;
-			interrupts = <GIC_SPI 192 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			clocks = <&clock NXP_S32_SPI1_CLK>;
-			num-cs = <5>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			status = "disabled";
-		};
-
-		spi2: spi@40930000 {
-			compatible = "nxp,s32-spi";
-			reg = <0x40930000 0x10000>;
-			interrupts = <GIC_SPI 193 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			clocks = <&clock NXP_S32_SPI2_CLK>;
-			num-cs = <5>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			status = "disabled";
-		};
-
-		spi3: spi@40940000 {
-			compatible = "nxp,s32-spi";
-			reg = <0x40940000 0x10000>;
-			interrupts = <GIC_SPI 194 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			clocks = <&clock NXP_S32_SPI3_CLK>;
-			num-cs = <5>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			status = "disabled";
-		};
-
-		spi4: spi@40950000 {
-			compatible = "nxp,s32-spi";
-			reg = <0x40950000 0x10000>;
-			interrupts = <GIC_SPI 195 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			clocks = <&clock NXP_S32_SPI4_CLK>;
-			num-cs = <5>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			status = "disabled";
-		};
-
-		spi5: spi@42130000 {
-			compatible = "nxp,s32-spi";
-			reg = <0x42130000 0x10000>;
-			interrupts = <GIC_SPI 196 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			clocks = <&clock NXP_S32_SPI5_CLK>;
-			num-cs = <5>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			status = "disabled";
-		};
-
-		spi6: spi@42140000 {
-			compatible = "nxp,s32-spi";
-			reg = <0x42140000 0x10000>;
-			interrupts = <GIC_SPI 197 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			clocks = <&clock NXP_S32_SPI6_CLK>;
-			num-cs = <5>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			status = "disabled";
-		};
-
-		spi7: spi@42150000 {
-			compatible = "nxp,s32-spi";
-			reg = <0x42150000 0x10000>;
-			interrupts = <GIC_SPI 198 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			clocks = <&clock NXP_S32_SPI7_CLK>;
-			num-cs = <5>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			status = "disabled";
-		};
-
-		spi8: spi@42930000 {
-			compatible = "nxp,s32-spi";
-			reg = <0x42930000 0x10000>;
-			interrupts = <GIC_SPI 199 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			clocks = <&clock NXP_S32_SPI8_CLK>;
-			num-cs = <5>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			status = "disabled";
-		};
-
-		spi9: spi@42940000 {
-			compatible = "nxp,s32-spi";
-			reg = <0x42940000 0x10000>;
-			interrupts = <GIC_SPI 200 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			clocks = <&clock NXP_S32_SPI9_CLK>;
-			num-cs = <5>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			status = "disabled";
-		};
-
-		dspi0: spi@40340000 {
-			compatible = "nxp,dspi";
-			reg = <0x40340000 0x10000>;
-			interrupts = <GIC_SPI 204 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			clocks = <&clock NXP_S32_MSCDSPI_CLK>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			status = "disabled";
-		};
-
-		mru0: mbox@76070000 {
-			compatible = "nxp,s32-mru";
-			reg = <0x76070000 0x10000>;
-			interrupts = <GIC_PPI 1 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			#mbox-cells = <1>;
-			status = "disabled";
-		};
-
-		mru1: mbox@76090000 {
-			compatible = "nxp,s32-mru";
-			reg = <0x76090000 0x10000>;
-			interrupts = <GIC_PPI 1 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			#mbox-cells = <1>;
-			status = "disabled";
-		};
-
-		mru2: mbox@76270000 {
-			compatible = "nxp,s32-mru";
-			reg = <0x76270000 0x10000>;
-			interrupts = <GIC_PPI 1 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			#mbox-cells = <1>;
-			status = "disabled";
-		};
-
-		mru3: mbox@76290000 {
-			compatible = "nxp,s32-mru";
-			reg = <0x76290000 0x10000>;
-			interrupts = <GIC_PPI 1 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			#mbox-cells = <1>;
-			status = "disabled";
-		};
-
-		mru4: mbox@76870000 {
-			compatible = "nxp,s32-mru";
-			reg = <0x76870000 0x10000>;
-			interrupts = <GIC_PPI 1 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			#mbox-cells = <1>;
-			status = "disabled";
-		};
-
-		mru5: mbox@76890000 {
-			compatible = "nxp,s32-mru";
-			reg = <0x76890000 0x10000>;
-			interrupts = <GIC_PPI 1 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			#mbox-cells = <1>;
-			status = "disabled";
-		};
-
-		mru6: mbox@76a70000 {
-			compatible = "nxp,s32-mru";
-			reg = <0x76a70000 0x10000>;
-			interrupts = <GIC_PPI 1 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			#mbox-cells = <1>;
-			status = "disabled";
-		};
-
-		mru7: mbox@76a90000 {
-			compatible = "nxp,s32-mru";
-			reg = <0x76a90000 0x10000>;
-			interrupts = <GIC_PPI 1 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			#mbox-cells = <1>;
-			status = "disabled";
-		};
-
-		netc: ethernet@74000000 {
-			reg = <0x74000000 0x1000000>;
-			ranges;
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			emdio: mdio@74b60000 {
-				compatible = "nxp,s32-netc-emdio";
-				reg = <0x74b60000 0x1c44>;
-				#address-cells = <1>;
-				#size-cells = <0>;
-				status = "disabled";
-			};
-
-			enetc_psi0: ethernet@74b00000 {
-				compatible = "nxp,s32-netc-psi";
-				reg = <0x74b00000 0x10000>;
-				status = "disabled";
-			};
-
-			enetc_vsi1: ethernet@74bc0000 {
-				compatible = "nxp,s32-netc-vsi";
-				reg = <0x74bc0000 0x10000>;
-				status = "disabled";
-			};
-
-			enetc_vsi2: ethernet@74bd0000 {
-				compatible = "nxp,s32-netc-vsi";
-				reg = <0x74bd0000 0x10000>;
-				status = "disabled";
-			};
-
-			enetc_vsi3: ethernet@74be0000 {
-				compatible = "nxp,s32-netc-vsi";
-				reg = <0x74be0000 0x10000>;
-				status = "disabled";
-			};
-
-			enetc_vsi4: ethernet@74bf0000 {
-				compatible = "nxp,s32-netc-vsi";
-				reg = <0x74bf0000 0x10000>;
-				status = "disabled";
-			};
-
-			enetc_vsi5: ethernet@74c00000 {
-				compatible = "nxp,s32-netc-vsi";
-				reg = <0x74c00000 0x10000>;
-				status = "disabled";
-			};
-
-			enetc_vsi6: ethernet@74c10000 {
-				compatible = "nxp,s32-netc-vsi";
-				reg = <0x74c10000 0x10000>;
-				status = "disabled";
-			};
-
-			enetc_vsi7: ethernet@74c20000 {
-				compatible = "nxp,s32-netc-vsi";
-				reg = <0x74c20000 0x10000>;
-				status = "disabled";
-			};
-		};
-
-		canxl0: can@4741b000 {
-			compatible = "nxp,s32-canxl";
-			reg = <0x4741b000 0x1000>,
-			      <0x47423000 0x1000>,
-			      <0x47425000 0x1000>,
-			      <0x47427000 0x1000>;
-			reg-names = "sic", "rx_fifo", "rx_fifo_ctrl", "mru";
-			interrupts = <GIC_SPI 224 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 225 IRQ_TYPE_LEVEL 0xb0>;
-			interrupt-names = "rx_tx_mru", "error";
-			clocks = <&clock NXP_S32_P5_CANXL_PE_CLK>;
-			status = "disabled";
-		};
-
-		canxl1: can@4751b000 {
-			compatible = "nxp,s32-canxl";
-			reg = <0x4751b000 0x1000>,
-			      <0x47523000 0x1000>,
-			      <0x47525000 0x1000>,
-			      <0x47527000 0x1000>;
-			reg-names = "sic", "rx_fifo", "rx_fifo_ctrl", "mru";
-			interrupts = <GIC_SPI 226 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 227 IRQ_TYPE_LEVEL 0xb0>;
-			interrupt-names = "rx_tx_mru", "error";
-			clocks = <&clock NXP_S32_P5_CANXL_PE_CLK>;
+		edma5: dma-controller@42dd0000 {
+			compatible = "nxp,mcux-edma";
+			reg = <0x42dd0000 0x10000>, <0x42da0000 0x10000>;
+			dma-channels = <32>;
+			dma-requests = <64>;
+			dmamux-reg-offset = <3>;
+			#dma-cells = <2>;
+			interrupts = <GIC_SPI 101 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 102 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 103 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 104 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 105 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 106 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 107 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 108 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 109 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 110 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 111 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 112 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 113 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 114 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 115 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 116 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 99 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			nxp,version = <3>;
+			nxp,mem2mem;
 			status = "disabled";
 		};
 
@@ -1104,847 +1782,169 @@
 			status = "disabled";
 		};
 
-		sar_adc0: adc@402c0000 {
-			compatible = "nxp,s32-adc-sar";
-			reg = <0x402c0000 0x1000>;
-			interrupts = <GIC_SPI 168 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 169 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 170 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			#io-channel-cells = <1>;
+		canxl0: can@4741b000 {
+			compatible = "nxp,s32-canxl";
+			reg = <0x4741b000 0x1000>,
+			      <0x47423000 0x1000>,
+			      <0x47425000 0x1000>,
+			      <0x47427000 0x1000>;
+			reg-names = "sic", "rx_fifo", "rx_fifo_ctrl", "mru";
+			interrupts = <GIC_SPI 224 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 225 IRQ_TYPE_LEVEL 0xb0>;
+			interrupt-names = "rx_tx_mru", "error";
+			clocks = <&clock NXP_S32_P5_CANXL_PE_CLK>;
 			status = "disabled";
 		};
 
-		sar_adc1: adc@402e0000 {
-			compatible = "nxp,s32-adc-sar";
-			reg = <0x402e0000 0x1000>;
-			interrupts = <GIC_SPI 201 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 202 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 203 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			#io-channel-cells = <1>;
+		canxl1: can@4751b000 {
+			compatible = "nxp,s32-canxl";
+			reg = <0x4751b000 0x1000>,
+			      <0x47523000 0x1000>,
+			      <0x47525000 0x1000>,
+			      <0x47527000 0x1000>;
+			reg-names = "sic", "rx_fifo", "rx_fifo_ctrl", "mru";
+			interrupts = <GIC_SPI 226 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 227 IRQ_TYPE_LEVEL 0xb0>;
+			interrupt-names = "rx_tx_mru", "error";
+			clocks = <&clock NXP_S32_P5_CANXL_PE_CLK>;
 			status = "disabled";
 		};
 
-		lpi2c1: i2c@409d0000 {
-			compatible = "nxp,lpi2c";
-			reg = <0x409d0000 0x10000>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			interrupts = <GIC_SPI 253 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			clocks = <&clock NXP_S32_P1_REG_INTF_CLK>;
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			status = "disabled";
+		gic: interrupt-controller@47800000 {
+			compatible = "arm,gic-v3", "arm,gic";
+			reg = <0x47800000 0x10000>,
+			      <0x47900000 0x80000>;
+			#address-cells = <0>;
+			interrupt-controller;
+			#interrupt-cells = <4>;
+			status = "okay";
 		};
 
-		lpi2c2: i2c@421d0000 {
-			compatible = "nxp,lpi2c";
-			reg = <0x421d0000 0x10000>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			interrupts = <GIC_SPI 254 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			clocks = <&clock NXP_S32_P4_REG_INTF_CLK>;
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			status = "disabled";
-		};
-
-		edma0: dma-controller@405d0000 {
-			compatible = "nxp,mcux-edma";
-			reg = <0x405d0000 0x10000>, <0x405a0000 0x10000>, <0x405b0000 0x100000>;
-			dma-channels = <32>;
-			dma-requests = <64>;
-			dmamux-reg-offset = <3>;
-			#dma-cells = <2>;
-			interrupts = <GIC_SPI 31 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 32 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 33 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 34 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 35 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 36 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 37 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 38 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 39 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 40 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 41 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 42 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 43 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 44 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 45 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 46 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 47 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 48 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 49 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 50 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 51 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 52 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 53 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 54 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 55 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 56 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 57 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 58 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 59 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 60 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 61 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 62 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 28 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			nxp,version = <3>;
-			nxp,mem2mem;
-			status = "disabled";
-		};
-
-		edma1: dma-controller@40dd0000 {
-			compatible = "nxp,mcux-edma";
-			reg = <0x40dd0000 0x10000>, <0x40da0000 0x10000>;
-			dma-channels = <16>;
-			dma-requests = <64>;
-			dmamux-reg-offset = <3>;
-			#dma-cells = <2>;
-			interrupts = <GIC_SPI 65 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 66 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 67 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 68 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 69 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 70 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 71 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 72 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 73 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 74 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 75 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 76 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 77 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 78 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 79 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 80 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 63 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			nxp,version = <3>;
-			nxp,mem2mem;
-			status = "disabled";
-		};
-
-		edma4: dma-controller@425d0000 {
-			compatible = "nxp,mcux-edma";
-			reg = <0x425d0000 0x10000>, <0x425a0000 0x10000>;
-			dma-channels = <32>;
-			dma-requests = <64>;
-			dmamux-reg-offset = <3>;
-			#dma-cells = <2>;
-			interrupts = <GIC_SPI 83 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 84 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 85 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 86 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 87 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 88 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 89 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 90 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 91 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 92 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 93 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 94 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 95 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 96 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 97 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 98 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 81 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			nxp,version = <3>;
-			nxp,mem2mem;
-			status = "disabled";
-		};
-
-		edma5: dma-controller@42dd0000 {
-			compatible = "nxp,mcux-edma";
-			reg = <0x42dd0000 0x10000>, <0x42da0000 0x10000>;
-			dma-channels = <32>;
-			dma-requests = <64>;
-			dmamux-reg-offset = <3>;
-			#dma-cells = <2>;
-			interrupts = <GIC_SPI 101 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 102 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 103 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 104 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 105 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 106 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 107 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 108 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 109 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 110 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 111 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 112 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 113 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 114 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 115 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 116 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 99 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			nxp,version = <3>;
-			nxp,mem2mem;
-			status = "disabled";
-		};
-
-		emios0: emios@420b0000 {
-			compatible = "nxp,s32-emios";
-			reg = <0x420b0000 0x4000>;
-			clocks = <&clock NXP_S32_P4_REG_INTF_CLK>;
-			internal-cnt = <0xffffffff>;
-			interrupts = <GIC_SPI 284 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 285 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 286 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 287 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 288 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 289 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 290 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 291 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 292 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 293 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 294 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 295 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 296 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 297 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 298 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 299 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 300 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 301 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 302 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 303 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 304 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 305 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 306 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 307 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 308 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 309 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 310 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 311 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 312 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			interrupt-names = "0_CH0", "0_CH1", "0_CH2", "0_CH3", "0_CH4",
-					  "0_CH5", "0_CH6", "0_CH7", "0_CH8", "0_CH9",
-					  "0_CH10", "0_CH12", "0_CH14", "0_CH16",
-					  "0_CH17", "0_CH18", "0_CH19", "0_CH20",
-					  "0_CH21", "0_CH22", "0_CH23", "0_CH24",
-					  "0_CH25", "0_CH26", "0_CH27", "0_CH28",
-					  "0_CH29", "0_CH30", "0_CH31";
-			status = "disabled";
-
-			master_bus {
-				emios0_bus_a: emios0_bus_a {
-					channel = <23>;
-					bus-type = "BUS_A";
-					channel-mask = <0xff7fffff>;
-					status = "disabled";
-				};
-
-				emios0_bus_b: emios0_bus_b {
-					channel = <0>;
-					bus-type = "BUS_B";
-					channel-mask = <0x000000fe>;
-					status = "disabled";
-				};
-
-				emios0_bus_c: emios0_bus_c {
-					channel = <8>;
-					bus-type = "BUS_C";
-					channel-mask = <0x0000fe00>;
-					status = "disabled";
-				};
-
-				emios0_bus_d: emios0_bus_d {
-					channel = <16>;
-					bus-type = "BUS_D";
-					channel-mask = <0x00fe0000>;
-					status = "disabled";
-				};
-
-				emios0_bus_e: emios0_bus_e {
-					channel = <24>;
-					bus-type = "BUS_E";
-					channel-mask = <0xfe000000>;
-					status = "disabled";
-				};
-			};
-
-			pwm {
-				compatible = "nxp,s32-emios-pwm";
-				#pwm-cells = <3>;
-				status = "disabled";
-			};
-		};
-
-		emios1: emios@400b0000 {
-			compatible = "nxp,s32-emios";
-			reg = <0x400b0000 0x4000>;
-			clocks = <&clock NXP_S32_P0_REG_INTF_CLK>;
-			internal-cnt = <0xffffffff>;
-			interrupts = <GIC_SPI 314 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 315 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 316 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 317 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 318 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 319 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 320 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 321 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 322 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 323 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 324 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 325 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 326 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 327 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 328 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 329 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 330 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 331 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 332 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 333 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 334 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 335 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 336 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 337 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 338 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 339 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 340 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 341 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			interrupt-names = "1_CH0", "1_CH1", "1_CH2", "1_CH3", "1_CH4",
-					  "1_CH5", "1_CH6", "1_CH7", "1_CH8", "1_CH10",
-					  "1_CH12", "1_CH14", "1_CH16", "1_CH17",
-					  "1_CH18", "1_CH19", "1_CH20", "1_CH21",
-					  "1_CH22", "1_CH23", "1_CH24", "1_CH25",
-					  "1_CH26", "1_CH27", "1_CH28", "1_CH29",
-					  "1_CH30", "1_CH31";
-			status = "disabled";
-
-			master_bus {
-				emios1_bus_a: emios1_bus_a {
-					channel = <23>;
-					bus-type = "BUS_A";
-					channel-mask = <0xff7fffff>;
-					status = "disabled";
-				};
-
-				emios1_bus_b: emios1_bus_b {
-					channel = <0>;
-					bus-type = "BUS_B";
-					channel-mask = <0x000000fe>;
-					status = "disabled";
-				};
-
-				emios1_bus_c: emios1_bus_c {
-					channel = <8>;
-					bus-type = "BUS_C";
-					channel-mask = <0x0000fe00>;
-					status = "disabled";
-				};
-
-				emios1_bus_d: emios1_bus_d {
-					channel = <16>;
-					bus-type = "BUS_D";
-					channel-mask = <0x00fe0000>;
-					status = "disabled";
-				};
-
-				emios1_bus_e: emios1_bus_e {
-					channel = <24>;
-					channel-mask = <0xfe000000>;
-					bus-type = "BUS_E";
-					status = "disabled";
-				};
-			};
-
-			pwm {
-				compatible = "nxp,s32-emios-pwm";
-				#pwm-cells = <3>;
-				status = "disabled";
-			};
-		};
-
-		qspi0: qspi@42320000 {
-			compatible = "nxp,s32-qspi";
-			reg = <0x42320000 0x4000>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			status = "disabled";
-		};
-
-		qspi1: qspi@42340000 {
-			compatible = "nxp,s32-qspi";
-			reg = <0x42340000 0x4000>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			status = "disabled";
-		};
-
-		sent0: sent@40a50000 {
-			compatible = "nxp,s32-sent";
-			reg = <0x40a50000 0x1000>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			interrupts = <GIC_SPI 428 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 429 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 430 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			interrupt-names = "fast_msg", "serial_msg", "error";
-			clocks = <&clock NXP_S32_P1_REG_INTF_CLK>;
-			status = "disabled";
-
-			sent0_ch0: ch@0 {
-				reg = <0>;
-				status = "disabled";
-			};
-
-			sent0_ch1: ch@1 {
-				reg = <1>;
-				status = "disabled";
-			};
-
-			sent0_ch2: ch@2 {
-				reg = <2>;
-				status = "disabled";
-			};
-
-			sent0_ch3: ch@3 {
-				reg = <3>;
-				status = "disabled";
-			};
-
-			sent0_ch4: ch@4 {
-				reg = <4>;
-				status = "disabled";
-			};
-
-			sent0_ch5: ch@5 {
-				reg = <5>;
-				status = "disabled";
-			};
-
-			sent0_ch6: ch@6 {
-				reg = <6>;
-				status = "disabled";
-			};
-
-			sent0_ch7: ch@7 {
-				reg = <7>;
-				status = "disabled";
-			};
-		};
-
-		sent1: sent@42050000 {
-			compatible = "nxp,s32-sent";
-			reg = <0x42050000 0x1000>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			interrupts = <GIC_SPI 455 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 456 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 457 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			interrupt-names = "fast_msg", "serial_msg", "error";
-			clocks = <&clock NXP_S32_P4_REG_INTF_CLK>;
-			status = "disabled";
-
-			sent1_ch0: ch@0 {
-				reg = <0>;
-				status = "disabled";
-			};
-
-			sent1_ch1: ch@1 {
-				reg = <1>;
-				status = "disabled";
-			};
-
-			sent1_ch2: ch@2 {
-				reg = <2>;
-				status = "disabled";
-			};
-
-			sent1_ch3: ch@3 {
-				reg = <3>;
-				status = "disabled";
-			};
-
-			sent1_ch4: ch@4 {
-				reg = <4>;
-				status = "disabled";
-			};
-
-			sent1_ch5: ch@5 {
-				reg = <5>;
-				status = "disabled";
-			};
-
-			sent1_ch6: ch@6 {
-				reg = <6>;
-				status = "disabled";
-			};
-
-			sent1_ch7: ch@7 {
-				reg = <7>;
-				status = "disabled";
-			};
-		};
-
-		psi5_0: psi5@401e0000 {
-			compatible = "nxp,s32-psi5";
-			reg = <0x401e0000 0x1000>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			status = "disabled";
-
-			psi5_0_ch0: ch@0 {
-				reg = <0>;
-				interrupts = <GIC_SPI 347 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-				#address-cells = <1>;
-				#size-cells = <0>;
-				status = "disabled";
-
-				psi5_0_ch0_rx_slot0: slot@0 {
-					reg = <0>;
-					status = "disabled";
-				};
-
-				psi5_0_ch0_rx_slot1: slot@1 {
-					reg = <1>;
-					status = "disabled";
-				};
-
-				psi5_0_ch0_rx_slot2: slot@2 {
-					reg = <2>;
-					status = "disabled";
-				};
-
-				psi5_0_ch0_rx_slot3: slot@3 {
-					reg = <3>;
-					status = "disabled";
-				};
-
-				psi5_0_ch0_rx_slot4: slot@4 {
-					reg = <4>;
-					status = "disabled";
-				};
-
-				psi5_0_ch0_rx_slot5: slot@5 {
-					reg = <5>;
-					status = "disabled";
-				};
-			};
-
-			psi5_0_ch1: ch@1 {
-				reg = <1>;
-				interrupts = <GIC_SPI 353 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-				#address-cells = <1>;
-				#size-cells = <0>;
-				status = "disabled";
-
-				psi5_0_ch1_rx_slot0: slot@0 {
-					reg = <0>;
-					status = "disabled";
-				};
-
-				psi5_0_ch1_rx_slot1: slot@1 {
-					reg = <1>;
-					status = "disabled";
-				};
-
-				psi5_0_ch1_rx_slot2: slot@2 {
-					reg = <2>;
-					status = "disabled";
-				};
-
-				psi5_0_ch1_rx_slot3: slot@3 {
-					reg = <3>;
-					status = "disabled";
-				};
-
-				psi5_0_ch1_rx_slot4: slot@4 {
-					reg = <4>;
-					status = "disabled";
-				};
-
-				psi5_0_ch1_rx_slot5: slot@5 {
-					reg = <5>;
-					status = "disabled";
-				};
-			};
-
-			psi5_0_ch2: ch@2 {
-				reg = <2>;
-				interrupts = <GIC_SPI 359 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-				#address-cells = <1>;
-				#size-cells = <0>;
-				status = "disabled";
-
-				psi5_0_ch2_rx_slot0: slot@0 {
-					reg = <0>;
-					status = "disabled";
-				};
-
-				psi5_0_ch2_rx_slot1: slot@1 {
-					reg = <1>;
-					status = "disabled";
-				};
-
-				psi5_0_ch2_rx_slot2: slot@2 {
-					reg = <2>;
-					status = "disabled";
-				};
-
-				psi5_0_ch2_rx_slot3: slot@3 {
-					reg = <3>;
-					status = "disabled";
-				};
-
-				psi5_0_ch2_rx_slot4: slot@4 {
-					reg = <4>;
-					status = "disabled";
-				};
-
-				psi5_0_ch2_rx_slot5: slot@5 {
-					reg = <5>;
-					status = "disabled";
-				};
-			};
-
-			psi5_0_ch3: ch@3 {
-				reg = <3>;
-				interrupts = <GIC_SPI 365 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-				#address-cells = <1>;
-				#size-cells = <0>;
-				status = "disabled";
-
-				psi5_0_ch3_rx_slot0: slot@0 {
-					reg = <0>;
-					status = "disabled";
-				};
-
-				psi5_0_ch3_rx_slot1: slot@1 {
-					reg = <1>;
-					status = "disabled";
-				};
-
-				psi5_0_ch3_rx_slot2: slot@2 {
-					reg = <2>;
-					status = "disabled";
-				};
-
-				psi5_0_ch3_rx_slot3: slot@3 {
-					reg = <3>;
-					status = "disabled";
-				};
-
-				psi5_0_ch3_rx_slot4: slot@4 {
-					reg = <4>;
-					status = "disabled";
-				};
-
-				psi5_0_ch3_rx_slot5: slot@5 {
-					reg = <5>;
-					status = "disabled";
-				};
-			};
-		};
-
-		psi5_1: psi5@421e0000 {
-			compatible = "nxp,s32-psi5";
-			reg = <0x421e0000 0x1000>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			status = "disabled";
-
-			psi5_1_ch0: ch@0 {
-				reg = <0>;
-				interrupts = <GIC_SPI 371 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-				#address-cells = <1>;
-				#size-cells = <0>;
-				status = "disabled";
-
-				psi5_1_ch0_rx_slot0: slot@0 {
-					reg = <0>;
-					status = "disabled";
-				};
-
-				psi5_1_ch0_rx_slot1: slot@1 {
-					reg = <1>;
-					status = "disabled";
-				};
-
-				psi5_1_ch0_rx_slot2: slot@2 {
-					reg = <2>;
-					status = "disabled";
-				};
-
-				psi5_1_ch0_rx_slot3: slot@3 {
-					reg = <3>;
-					status = "disabled";
-				};
-
-				psi5_1_ch0_rx_slot4: slot@4 {
-					reg = <4>;
-					status = "disabled";
-				};
-
-				psi5_1_ch0_rx_slot5: slot@5 {
-					reg = <5>;
-					status = "disabled";
-				};
-			};
-
-			psi5_1_ch1: ch@1 {
-				reg = <1>;
-				interrupts = <GIC_SPI 377 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-				#address-cells = <1>;
-				#size-cells = <0>;
-				status = "disabled";
-
-				psi5_1_ch1_rx_slot0: slot@0 {
-					reg = <0>;
-					status = "disabled";
-				};
-
-				psi5_1_ch1_rx_slot1: slot@1 {
-					reg = <1>;
-					status = "disabled";
-				};
-
-				psi5_1_ch1_rx_slot2: slot@2 {
-					reg = <2>;
-					status = "disabled";
-				};
-
-				psi5_1_ch1_rx_slot3: slot@3 {
-					reg = <3>;
-					status = "disabled";
-				};
-
-				psi5_1_ch1_rx_slot4: slot@4 {
-					reg = <4>;
-					status = "disabled";
-				};
-
-				psi5_1_ch1_rx_slot5: slot@5 {
-					reg = <5>;
-					status = "disabled";
-				};
-			};
-
-			psi5_1_ch2: ch@2 {
-				reg = <2>;
-				interrupts = <GIC_SPI 383 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-				#address-cells = <1>;
-				#size-cells = <0>;
-				status = "disabled";
-
-				psi5_1_ch2_rx_slot0: slot@0 {
-					reg = <0>;
-					status = "disabled";
-				};
-
-				psi5_1_ch2_rx_slot1: slot@1 {
-					reg = <1>;
-					status = "disabled";
-				};
-
-				psi5_1_ch2_rx_slot2: slot@2 {
-					reg = <2>;
-					status = "disabled";
-				};
-
-				psi5_1_ch2_rx_slot3: slot@3 {
-					reg = <3>;
-					status = "disabled";
-				};
-
-				psi5_1_ch2_rx_slot4: slot@4 {
-					reg = <4>;
-					status = "disabled";
-				};
-
-				psi5_1_ch2_rx_slot5: slot@5 {
-					reg = <5>;
-					status = "disabled";
-				};
-			};
-
-			psi5_1_ch3: ch@3 {
-				reg = <3>;
-				interrupts = <GIC_SPI 389 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-				#address-cells = <1>;
-				#size-cells = <0>;
-				status = "disabled";
-
-				psi5_1_ch3_rx_slot0: slot@0 {
-					reg = <0>;
-					status = "disabled";
-				};
-
-				psi5_1_ch3_rx_slot1: slot@1 {
-					reg = <1>;
-					status = "disabled";
-				};
-
-				psi5_1_ch3_rx_slot2: slot@2 {
-					reg = <2>;
-					status = "disabled";
-				};
-
-				psi5_1_ch3_rx_slot3: slot@3 {
-					reg = <3>;
-					status = "disabled";
-				};
-
-				psi5_1_ch3_rx_slot4: slot@4 {
-					reg = <4>;
-					status = "disabled";
-				};
-
-				psi5_1_ch3_rx_slot5: slot@5 {
-					reg = <5>;
-					status = "disabled";
-				};
-			};
-		};
-
-		hse: crypto {
-			compatible = "simple-bus";
+		netc: ethernet@74000000 {
+			reg = <0x74000000 0x1000000>;
+			ranges;
 			#address-cells = <1>;
 			#size-cells = <1>;
 
-			mub0: mu@42200000 {
-				compatible = "nxp,s32-crypto-hse-mu";
-				reg = <0x42200000 0x10000>;
+			enetc_psi0: ethernet@74b00000 {
+				compatible = "nxp,s32-netc-psi";
+				reg = <0x74b00000 0x10000>;
 				status = "disabled";
 			};
 
-			mub1: mu@42210000 {
-				compatible = "nxp,s32-crypto-hse-mu";
-				reg = <0x42210000 0x10000>;
+			emdio: mdio@74b60000 {
+				compatible = "nxp,s32-netc-emdio";
+				reg = <0x74b60000 0x1c44>;
+				#address-cells = <1>;
+				#size-cells = <0>;
 				status = "disabled";
 			};
 
-			mub2: mu@42220000 {
-				compatible = "nxp,s32-crypto-hse-mu";
-				reg = <0x42220000 0x10000>;
+			enetc_vsi1: ethernet@74bc0000 {
+				compatible = "nxp,s32-netc-vsi";
+				reg = <0x74bc0000 0x10000>;
 				status = "disabled";
 			};
 
-			mub3: mu@42230000 {
-				compatible = "nxp,s32-crypto-hse-mu";
-				reg = <0x42230000 0x10000>;
+			enetc_vsi2: ethernet@74bd0000 {
+				compatible = "nxp,s32-netc-vsi";
+				reg = <0x74bd0000 0x10000>;
 				status = "disabled";
 			};
 
-			mub4: mu@42240000 {
-				compatible = "nxp,s32-crypto-hse-mu";
-				reg = <0x42240000 0x10000>;
+			enetc_vsi3: ethernet@74be0000 {
+				compatible = "nxp,s32-netc-vsi";
+				reg = <0x74be0000 0x10000>;
 				status = "disabled";
 			};
 
-			mub5: mu@42250000 {
-				compatible = "nxp,s32-crypto-hse-mu";
-				reg = <0x42250000 0x10000>;
+			enetc_vsi4: ethernet@74bf0000 {
+				compatible = "nxp,s32-netc-vsi";
+				reg = <0x74bf0000 0x10000>;
 				status = "disabled";
 			};
 
-			mub6: mu@42260000 {
-				compatible = "nxp,s32-crypto-hse-mu";
-				reg = <0x42260000 0x10000>;
+			enetc_vsi5: ethernet@74c00000 {
+				compatible = "nxp,s32-netc-vsi";
+				reg = <0x74c00000 0x10000>;
 				status = "disabled";
 			};
 
-			mub7: mu@42270000 {
-				compatible = "nxp,s32-crypto-hse-mu";
-				reg = <0x42270000 0x10000>;
+			enetc_vsi6: ethernet@74c10000 {
+				compatible = "nxp,s32-netc-vsi";
+				reg = <0x74c10000 0x10000>;
 				status = "disabled";
 			};
+
+			enetc_vsi7: ethernet@74c20000 {
+				compatible = "nxp,s32-netc-vsi";
+				reg = <0x74c20000 0x10000>;
+				status = "disabled";
+			};
+		};
+
+		mru0: mbox@76070000 {
+			compatible = "nxp,s32-mru";
+			reg = <0x76070000 0x10000>;
+			interrupts = <GIC_PPI 1 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
+		mru1: mbox@76090000 {
+			compatible = "nxp,s32-mru";
+			reg = <0x76090000 0x10000>;
+			interrupts = <GIC_PPI 1 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
+		mru2: mbox@76270000 {
+			compatible = "nxp,s32-mru";
+			reg = <0x76270000 0x10000>;
+			interrupts = <GIC_PPI 1 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
+		mru3: mbox@76290000 {
+			compatible = "nxp,s32-mru";
+			reg = <0x76290000 0x10000>;
+			interrupts = <GIC_PPI 1 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
+		mru4: mbox@76870000 {
+			compatible = "nxp,s32-mru";
+			reg = <0x76870000 0x10000>;
+			interrupts = <GIC_PPI 1 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
+		mru5: mbox@76890000 {
+			compatible = "nxp,s32-mru";
+			reg = <0x76890000 0x10000>;
+			interrupts = <GIC_PPI 1 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
+		mru6: mbox@76a70000 {
+			compatible = "nxp,s32-mru";
+			reg = <0x76a70000 0x10000>;
+			interrupts = <GIC_PPI 1 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
+		mru7: mbox@76a90000 {
+			compatible = "nxp,s32-mru";
+			reg = <0x76a90000 0x10000>;
+			interrupts = <GIC_PPI 1 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			#mbox-cells = <1>;
+			status = "disabled";
 		};
 	};
 };

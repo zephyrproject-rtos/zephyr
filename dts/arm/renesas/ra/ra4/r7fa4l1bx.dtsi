@@ -35,17 +35,226 @@
 	soc {
 		interrupt-parent = <&nvic>;
 
-		elc: elc@40082000 {
-			compatible = "renesas,ra-elc";
-			reg = <0x40082000 0x70>;
-			#renesas-elc-cells = <2>;
-			clocks = <&pclkb MSTPC 14>;
-			status = "disabled";
+		option_setting_ofs0: option-setting-ofs0@100a100 {
+			compatible = "zephyr,memory-region";
+			reg = <0x0100a100 0x4>;
+			zephyr,memory-region = "OFS_OFS0_MEMORY";
+			status = "okay";
+		};
+
+		option_setting_dualsel: option-setting-dualsel@100a110 {
+			compatible = "zephyr,memory-region";
+			reg = <0x0100a110 0x4>;
+			zephyr,memory-region = "OFS_DUALSEL_MEMORY";
+			status = "okay";
+		};
+
+		option_setting_ofs1_sec: option-setting-ofs1-sec@100a200 {
+			compatible = "zephyr,memory-region";
+			reg = <0x0100a200 0x4>;
+			zephyr,memory-region = "OFS_OFS1_SEC_MEMORY";
+			status = "okay";
+		};
+
+		option_setting_banksel_sec: option-setting-banksel-sec@100a210 {
+			compatible = "zephyr,memory-region";
+			reg = <0x0100a210 0x4>;
+			zephyr,memory-region = "OFS_BANKSEL_SEC_MEMORY";
+			status = "okay";
+		};
+
+		option_setting_bps_sec: option-setting-bps-sec@100a240 {
+			compatible = "zephyr,memory-region";
+			reg = <0x0100a240 0xc>;
+			zephyr,memory-region = "OFS_BPS_SEC_MEMORY";
+			status = "okay";
+		};
+
+		option_setting_pbps_sec: option-setting-pbps-sec@100a260 {
+			compatible = "zephyr,memory-region";
+			reg = <0x0100a260 0xc>;
+			zephyr,memory-region = "OFS_PBPS_SEC_MEMORY";
+			status = "okay";
+		};
+
+		option_setting_ofs1_sel: option-setting-ofs1-sel@100a280 {
+			compatible = "zephyr,memory-region";
+			reg = <0x0100a280 0x4>;
+			zephyr,memory-region = "OFS_OFS1_SEL_MEMORY";
+			status = "okay";
+		};
+
+		option_setting_banksel_sel: option-setting-banksel-sel@100a290 {
+			compatible = "zephyr,memory-region";
+			reg = <0x0100a290 0x4>;
+			zephyr,memory-region = "OFS_BANKSEL_SEL_MEMORY";
+			status = "okay";
+		};
+
+		option_setting_bps_sel: option-setting-bps-sel@100a2c0 {
+			compatible = "zephyr,memory-region";
+			reg = <0x0100a2c0 0xc>;
+			zephyr,memory-region = "OFS_BPS_SEL_MEMORY";
+			status = "okay";
 		};
 
 		sram0: memory@20000000 {
 			compatible = "mmio-sram";
 			reg = <0x20000000 DT_SIZE_K(64)>;
+		};
+
+		dma0: dma@40005000 {
+			compatible = "renesas,ra-dma";
+			reg = <0x40005000 0x200>, <0x40005200 0xa0>;
+			reg-names = "channel", "common";
+			clocks = <&iclk MSTPA 22>;
+			dma-channels = <8>;
+			#dma-cells = <2>;
+			status = "disabled";
+		};
+
+		port_irq0: external-interrupt@40006000 {
+			compatible = "renesas,ra-external-interrupt";
+			reg = <0x40006000 0x1>;
+			channel = <0>;
+			#port-irq-cells = <0>;
+			renesas,sample-clock-div = <64>;
+			status = "disabled";
+		};
+
+		port_irq1: external-interrupt@40006001 {
+			compatible = "renesas,ra-external-interrupt";
+			reg = <0x40006001 0x1>;
+			channel = <1>;
+			#port-irq-cells = <0>;
+			renesas,sample-clock-div = <64>;
+			status = "disabled";
+		};
+
+		port_irq2: external-interrupt@40006002 {
+			compatible = "renesas,ra-external-interrupt";
+			reg = <0x40006002 0x1>;
+			channel = <2>;
+			#port-irq-cells = <0>;
+			renesas,sample-clock-div = <64>;
+			status = "disabled";
+		};
+
+		port_irq3: external-interrupt@40006003 {
+			compatible = "renesas,ra-external-interrupt";
+			reg = <0x40006003 0x1>;
+			channel = <3>;
+			#port-irq-cells = <0>;
+			renesas,sample-clock-div = <64>;
+			status = "disabled";
+		};
+
+		port_irq4: external-interrupt@40006004 {
+			compatible = "renesas,ra-external-interrupt";
+			reg = <0x40006004 0x1>;
+			channel = <4>;
+			#port-irq-cells = <0>;
+			renesas,sample-clock-div = <64>;
+			status = "disabled";
+		};
+
+		port_irq5: external-interrupt@40006005 {
+			compatible = "renesas,ra-external-interrupt";
+			reg = <0x40006005 0x1>;
+			channel = <5>;
+			#port-irq-cells = <0>;
+			renesas,sample-clock-div = <64>;
+			status = "disabled";
+		};
+
+		port_irq6: external-interrupt@40006006 {
+			compatible = "renesas,ra-external-interrupt";
+			reg = <0x40006006 0x1>;
+			channel = <6>;
+			#port-irq-cells = <0>;
+			renesas,sample-clock-div = <64>;
+			status = "disabled";
+		};
+
+		port_irq7: external-interrupt@40006007 {
+			compatible = "renesas,ra-external-interrupt";
+			reg = <0x40006007 0x1>;
+			channel = <7>;
+			#port-irq-cells = <0>;
+			renesas,sample-clock-div = <64>;
+			status = "disabled";
+		};
+
+		port_irq8: external-interrupt@40006008 {
+			compatible = "renesas,ra-external-interrupt";
+			reg = <0x40006008 0x1>;
+			channel = <8>;
+			#port-irq-cells = <0>;
+			renesas,sample-clock-div = <64>;
+			status = "disabled";
+		};
+
+		port_irq9: external-interrupt@40006009 {
+			compatible = "renesas,ra-external-interrupt";
+			reg = <0x40006009 0x1>;
+			channel = <9>;
+			#port-irq-cells = <0>;
+			renesas,sample-clock-div = <64>;
+			status = "disabled";
+		};
+
+		port_irq10: external-interrupt@4000600a {
+			compatible = "renesas,ra-external-interrupt";
+			reg = <0x4000600a 0x1>;
+			channel = <10>;
+			#port-irq-cells = <0>;
+			renesas,sample-clock-div = <64>;
+			status = "disabled";
+		};
+
+		port_irq11: external-interrupt@4000600b {
+			compatible = "renesas,ra-external-interrupt";
+			reg = <0x4000600b 0x1>;
+			channel = <11>;
+			#port-irq-cells = <0>;
+			renesas,sample-clock-div = <64>;
+			status = "disabled";
+		};
+
+		port_irq12: external-interrupt@4000600c {
+			compatible = "renesas,ra-external-interrupt";
+			reg = <0x4000600c 0x1>;
+			channel = <12>;
+			#port-irq-cells = <0>;
+			renesas,sample-clock-div = <64>;
+			status = "disabled";
+		};
+
+		port_irq13: external-interrupt@4000600d {
+			compatible = "renesas,ra-external-interrupt";
+			reg = <0x4000600d 0x1>;
+			channel = <13>;
+			#port-irq-cells = <0>;
+			renesas,sample-clock-div = <64>;
+			status = "disabled";
+		};
+
+		port_irq14: external-interrupt@4000600e {
+			compatible = "renesas,ra-external-interrupt";
+			reg = <0x4000600e 0x1>;
+			channel = <14>;
+			#port-irq-cells = <0>;
+			renesas,sample-clock-div = <64>;
+			status = "disabled";
+		};
+
+		port_irq15: external-interrupt@4000600f {
+			compatible = "renesas,ra-external-interrupt";
+			reg = <0x4000600f 0x1>;
+			channel = <15>;
+			#port-irq-cells = <0>;
+			renesas,sample-clock-div = <64>;
+			status = "disabled";
 		};
 
 		ioport0: gpio@4001f000 {
@@ -138,20 +347,110 @@
 			status = "disabled";
 		};
 
-		dma0: dma@40005000 {
-			compatible = "renesas,ra-dma";
-			reg = <0x40005000 0x200>, <0x40005200 0xa0>;
-			reg-names = "channel", "common";
-			clocks = <&iclk MSTPA 22>;
-			dma-channels = <8>;
-			#dma-cells = <2>;
-			status = "disabled";
-		};
-
 		pinctrl: pin-controller@4001f800 {
 			compatible = "renesas,ra-pinctrl-pfs";
 			reg = <0x4001f800 0x3c0>;
 			status = "okay";
+		};
+
+		elc: elc@40082000 {
+			compatible = "renesas,ra-elc";
+			reg = <0x40082000 0x70>;
+			#renesas-elc-cells = <2>;
+			clocks = <&pclkb MSTPC 14>;
+			status = "disabled";
+		};
+
+		rtc: rtc@40083000 {
+			compatible = "renesas,ra-rtc";
+			reg = <0x40083000 0x80>;
+			clocks = <&subclk>;
+			alarms-count = <1>;
+			status = "disabled";
+		};
+
+		wdt: wdt@40083400 {
+			compatible = "renesas,ra-wdt";
+			reg = <0x40083400 0x200>;
+			clocks = <&pclkb 0 0>;
+			status = "disabled";
+		};
+
+		i2s0: ssie@4009d000 {
+			compatible = "renesas,ra-i2s-ssie";
+			reg = <0x4009d000 0x28>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			channel = <0>;
+			clocks = <&pclkb MSTPC 8>;
+			clock-names = "pclk";
+			full-duplex;
+			status = "disabled";
+		};
+
+		iic0: iic0@4009f000 {
+			compatible = "renesas,ra-iic";
+			reg = <0x4009f000 0x100>;
+			channel = <0>;
+			clocks = <&pclkb MSTPB 9>;
+			status = "disabled";
+		};
+
+		canfd_global: canfd_global@400b0000 {
+			compatible = "renesas,ra-canfd-global";
+			reg = <0x400b0000 0x2000>;
+			interrupts = <40 1>, <41 1>;
+			interrupt-names = "rxf", "glerr";
+			clocks = <&pclkb 0 0>, <&pclka 0 0>;
+			clock-names = "opclk", "ramclk";
+			status = "disabled";
+
+			canfd0: canfd0 {
+				compatible = "renesas,ra-canfd";
+				channel = <0>;
+				interrupts = <43 12>, <44 12>, <45 12>;
+				interrupt-names = "err", "tx", "rx";
+				clocks = <&canfdclk MSTPC 27>;
+				clock-names = "dllclk";
+				status = "disabled";
+			};
+		};
+
+		agt0: agtw@400e8000 {
+			compatible = "renesas,ra-agt";
+			reg = <0x400e8000 0x100>;
+			channel = <0>;
+			renesas,count-source = "AGT_CLOCK_LOCO";
+			renesas,prescaler = <0>;
+			renesas,resolution = <32>;
+			status = "disabled";
+
+			counter {
+				compatible = "renesas,ra-agt-counter";
+				status = "disabled";
+			};
+		};
+
+		agt1: agtw@400e8100 {
+			compatible = "renesas,ra-agt";
+			reg = <0x400e8100 0x100>;
+			channel = <1>;
+			renesas,count-source = "AGT_CLOCK_LOCO";
+			renesas,prescaler = <0>;
+			renesas,resolution = <32>;
+			status = "disabled";
+
+			counter {
+				compatible = "renesas,ra-agt-counter";
+				status = "disabled";
+			};
+		};
+
+		crc: crc@40108000 {
+			compatible = "renesas,ra-crc";
+			reg = <0x40108000 0x1000>;
+			clocks = <&pclka MSTPC 1>;
+			status = "disabled";
 		};
 
 		sci0: sci@40118000 {
@@ -360,48 +659,6 @@
 			status = "disabled";
 		};
 
-		adc0: adc@40170000 {
-			compatible = "renesas,ra-adc12";
-			reg = <0x40170000 0x100>;
-			interrupts = <38 1>;
-			interrupt-names = "scanend";
-			unit = <0>;
-			#io-channel-cells = <1>;
-			vref-mv = <3300>;
-			channel-available-mask = <0x3fe007f>;
-			status = "disabled";
-		};
-
-		dac_global: dac_global@40171000 {
-			compatible = "renesas,ra-dac-global";
-			reg = <0x40171000 0x10c4>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			has-davrefcr;
-
-			dac0: dac@0 {
-				compatible = "renesas,ra-dac";
-				reg = <0>;
-				#io-channel-cells = <1>;
-				status = "disabled";
-			};
-		};
-
-		crc: crc@40108000 {
-			compatible = "renesas,ra-crc";
-			reg = <0x40108000 0x1000>;
-			clocks = <&pclka MSTPC 1>;
-			status = "disabled";
-		};
-
-		iic0: iic0@4009f000 {
-			compatible = "renesas,ra-iic";
-			reg = <0x4009f000 0x100>;
-			channel = <0>;
-			clocks = <&pclkb MSTPB 9>;
-			status = "disabled";
-		};
-
 		pwm0: pwm0@40169000 {
 			compatible = "renesas,ra-pwm";
 			reg = <0x40169000 0x100>;
@@ -462,288 +719,31 @@
 			status = "disabled";
 		};
 
-		canfd_global: canfd_global@400b0000 {
-			compatible = "renesas,ra-canfd-global";
-			reg = <0x400b0000 0x2000>;
-			interrupts = <40 1>, <41 1>;
-			interrupt-names = "rxf", "glerr";
-			clocks = <&pclkb 0 0>, <&pclka 0 0>;
-			clock-names = "opclk", "ramclk";
-			status = "disabled";
-
-			canfd0: canfd0 {
-				compatible = "renesas,ra-canfd";
-				channel = <0>;
-				interrupts = <43 12>, <44 12>, <45 12>;
-				interrupt-names = "err", "tx", "rx";
-				clocks = <&canfdclk MSTPC 27>;
-				clock-names = "dllclk";
-				status = "disabled";
-			};
-		};
-
-		port_irq0: external-interrupt@40006000 {
-			compatible = "renesas,ra-external-interrupt";
-			reg = <0x40006000 0x1>;
-			channel = <0>;
-			#port-irq-cells = <0>;
-			renesas,sample-clock-div = <64>;
+		adc0: adc@40170000 {
+			compatible = "renesas,ra-adc12";
+			reg = <0x40170000 0x100>;
+			interrupts = <38 1>;
+			interrupt-names = "scanend";
+			unit = <0>;
+			#io-channel-cells = <1>;
+			vref-mv = <3300>;
+			channel-available-mask = <0x3fe007f>;
 			status = "disabled";
 		};
 
-		port_irq1: external-interrupt@40006001 {
-			compatible = "renesas,ra-external-interrupt";
-			reg = <0x40006001 0x1>;
-			channel = <1>;
-			#port-irq-cells = <0>;
-			renesas,sample-clock-div = <64>;
-			status = "disabled";
-		};
-
-		port_irq2: external-interrupt@40006002 {
-			compatible = "renesas,ra-external-interrupt";
-			reg = <0x40006002 0x1>;
-			channel = <2>;
-			#port-irq-cells = <0>;
-			renesas,sample-clock-div = <64>;
-			status = "disabled";
-		};
-
-		port_irq3: external-interrupt@40006003 {
-			compatible = "renesas,ra-external-interrupt";
-			reg = <0x40006003 0x1>;
-			channel = <3>;
-			#port-irq-cells = <0>;
-			renesas,sample-clock-div = <64>;
-			status = "disabled";
-		};
-
-		port_irq4: external-interrupt@40006004 {
-			compatible = "renesas,ra-external-interrupt";
-			reg = <0x40006004 0x1>;
-			channel = <4>;
-			#port-irq-cells = <0>;
-			renesas,sample-clock-div = <64>;
-			status = "disabled";
-		};
-
-		port_irq5: external-interrupt@40006005 {
-			compatible = "renesas,ra-external-interrupt";
-			reg = <0x40006005 0x1>;
-			channel = <5>;
-			#port-irq-cells = <0>;
-			renesas,sample-clock-div = <64>;
-			status = "disabled";
-		};
-
-		port_irq6: external-interrupt@40006006 {
-			compatible = "renesas,ra-external-interrupt";
-			reg = <0x40006006 0x1>;
-			channel = <6>;
-			#port-irq-cells = <0>;
-			renesas,sample-clock-div = <64>;
-			status = "disabled";
-		};
-
-		port_irq7: external-interrupt@40006007 {
-			compatible = "renesas,ra-external-interrupt";
-			reg = <0x40006007 0x1>;
-			channel = <7>;
-			#port-irq-cells = <0>;
-			renesas,sample-clock-div = <64>;
-			status = "disabled";
-		};
-
-		port_irq8: external-interrupt@40006008 {
-			compatible = "renesas,ra-external-interrupt";
-			reg = <0x40006008 0x1>;
-			channel = <8>;
-			#port-irq-cells = <0>;
-			renesas,sample-clock-div = <64>;
-			status = "disabled";
-		};
-
-		port_irq9: external-interrupt@40006009 {
-			compatible = "renesas,ra-external-interrupt";
-			reg = <0x40006009 0x1>;
-			channel = <9>;
-			#port-irq-cells = <0>;
-			renesas,sample-clock-div = <64>;
-			status = "disabled";
-		};
-
-		port_irq10: external-interrupt@4000600a {
-			compatible = "renesas,ra-external-interrupt";
-			reg = <0x4000600a 0x1>;
-			channel = <10>;
-			#port-irq-cells = <0>;
-			renesas,sample-clock-div = <64>;
-			status = "disabled";
-		};
-
-		port_irq11: external-interrupt@4000600b {
-			compatible = "renesas,ra-external-interrupt";
-			reg = <0x4000600b 0x1>;
-			channel = <11>;
-			#port-irq-cells = <0>;
-			renesas,sample-clock-div = <64>;
-			status = "disabled";
-		};
-
-		port_irq12: external-interrupt@4000600c {
-			compatible = "renesas,ra-external-interrupt";
-			reg = <0x4000600c 0x1>;
-			channel = <12>;
-			#port-irq-cells = <0>;
-			renesas,sample-clock-div = <64>;
-			status = "disabled";
-		};
-
-		port_irq13: external-interrupt@4000600d {
-			compatible = "renesas,ra-external-interrupt";
-			reg = <0x4000600d 0x1>;
-			channel = <13>;
-			#port-irq-cells = <0>;
-			renesas,sample-clock-div = <64>;
-			status = "disabled";
-		};
-
-		port_irq14: external-interrupt@4000600e {
-			compatible = "renesas,ra-external-interrupt";
-			reg = <0x4000600e 0x1>;
-			channel = <14>;
-			#port-irq-cells = <0>;
-			renesas,sample-clock-div = <64>;
-			status = "disabled";
-		};
-
-		port_irq15: external-interrupt@4000600f {
-			compatible = "renesas,ra-external-interrupt";
-			reg = <0x4000600f 0x1>;
-			channel = <15>;
-			#port-irq-cells = <0>;
-			renesas,sample-clock-div = <64>;
-			status = "disabled";
-		};
-
-		wdt: wdt@40083400 {
-			compatible = "renesas,ra-wdt";
-			reg = <0x40083400 0x200>;
-			clocks = <&pclkb 0 0>;
-			status = "disabled";
-		};
-
-		agt0: agtw@400e8000 {
-			compatible = "renesas,ra-agt";
-			reg = <0x400e8000 0x100>;
-			channel = <0>;
-			renesas,count-source = "AGT_CLOCK_LOCO";
-			renesas,prescaler = <0>;
-			renesas,resolution = <32>;
-			status = "disabled";
-
-			counter {
-				compatible = "renesas,ra-agt-counter";
-				status = "disabled";
-			};
-		};
-
-		agt1: agtw@400e8100 {
-			compatible = "renesas,ra-agt";
-			reg = <0x400e8100 0x100>;
-			channel = <1>;
-			renesas,count-source = "AGT_CLOCK_LOCO";
-			renesas,prescaler = <0>;
-			renesas,resolution = <32>;
-			status = "disabled";
-
-			counter {
-				compatible = "renesas,ra-agt-counter";
-				status = "disabled";
-			};
-		};
-
-		i2s0: ssie@4009d000 {
-			compatible = "renesas,ra-i2s-ssie";
-			reg = <0x4009d000 0x28>;
+		dac_global: dac_global@40171000 {
+			compatible = "renesas,ra-dac-global";
+			reg = <0x40171000 0x10c4>;
 			#address-cells = <1>;
 			#size-cells = <0>;
-			channel = <0>;
-			clocks = <&pclkb MSTPC 8>;
-			clock-names = "pclk";
-			full-duplex;
-			status = "disabled";
-		};
+			has-davrefcr;
 
-		rtc: rtc@40083000 {
-			compatible = "renesas,ra-rtc";
-			reg = <0x40083000 0x80>;
-			clocks = <&subclk>;
-			alarms-count = <1>;
-			status = "disabled";
-		};
-
-		option_setting_ofs0: option-setting-ofs0@100a100 {
-			compatible = "zephyr,memory-region";
-			reg = <0x0100a100 0x4>;
-			zephyr,memory-region = "OFS_OFS0_MEMORY";
-			status = "okay";
-		};
-
-		option_setting_dualsel: option-setting-dualsel@100a110 {
-			compatible = "zephyr,memory-region";
-			reg = <0x0100a110 0x4>;
-			zephyr,memory-region = "OFS_DUALSEL_MEMORY";
-			status = "okay";
-		};
-
-		option_setting_ofs1_sec: option-setting-ofs1-sec@100a200 {
-			compatible = "zephyr,memory-region";
-			reg = <0x0100a200 0x4>;
-			zephyr,memory-region = "OFS_OFS1_SEC_MEMORY";
-			status = "okay";
-		};
-
-		option_setting_banksel_sec: option-setting-banksel-sec@100a210 {
-			compatible = "zephyr,memory-region";
-			reg = <0x0100a210 0x4>;
-			zephyr,memory-region = "OFS_BANKSEL_SEC_MEMORY";
-			status = "okay";
-		};
-
-		option_setting_bps_sec: option-setting-bps-sec@100a240 {
-			compatible = "zephyr,memory-region";
-			reg = <0x0100a240 0xc>;
-			zephyr,memory-region = "OFS_BPS_SEC_MEMORY";
-			status = "okay";
-		};
-
-		option_setting_pbps_sec: option-setting-pbps-sec@100a260 {
-			compatible = "zephyr,memory-region";
-			reg = <0x0100a260 0xc>;
-			zephyr,memory-region = "OFS_PBPS_SEC_MEMORY";
-			status = "okay";
-		};
-
-		option_setting_ofs1_sel: option-setting-ofs1-sel@100a280 {
-			compatible = "zephyr,memory-region";
-			reg = <0x0100a280 0x4>;
-			zephyr,memory-region = "OFS_OFS1_SEL_MEMORY";
-			status = "okay";
-		};
-
-		option_setting_banksel_sel: option-setting-banksel-sel@100a290 {
-			compatible = "zephyr,memory-region";
-			reg = <0x0100a290 0x4>;
-			zephyr,memory-region = "OFS_BANKSEL_SEL_MEMORY";
-			status = "okay";
-		};
-
-		option_setting_bps_sel: option-setting-bps-sel@100a2c0 {
-			compatible = "zephyr,memory-region";
-			reg = <0x0100a2c0 0xc>;
-			zephyr,memory-region = "OFS_BPS_SEL_MEMORY";
-			status = "okay";
+			dac0: dac@0 {
+				compatible = "renesas,ra-dac";
+				reg = <0>;
+				#io-channel-cells = <1>;
+				status = "disabled";
+			};
 		};
 	};
 

@@ -48,19 +48,19 @@
 		};
 	};
 
+	aliases {
+		led0 = &led0;
+		sw0 = &button0;
+		watchdog0 = &wdt;
+		sdhc0 = &sdhc1;
+	};
+
 	sdram1: sdram@68000000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x68000000 DT_SIZE_M(32)>;	/* 256 Mbits */
 		device_type = "memory";
 		zephyr,memory-region = "SDRAM";
 		status = "okay";
-	};
-
-	aliases {
-		led0 = &led0;
-		sw0 = &button0;
-		watchdog0 = &wdt;
-		sdhc0 = &sdhc1;
 	};
 };
 

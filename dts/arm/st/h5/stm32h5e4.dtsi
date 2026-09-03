@@ -15,32 +15,6 @@
 	soc {
 		compatible = "st,stm32h5e4", "st,stm32h5", "simple-bus";
 
-		pinctrl: pin-controller@42020000 {
-			gpioh: gpio@42021c00 {
-				compatible = "st,stm32-gpio";
-				reg = <0x42021c00 0x400>;
-				gpio-controller;
-				#gpio-cells = <2>;
-				clocks = <&rcc STM32_CLOCK(AHB2, 7)>;
-			};
-
-			gpioj: gpio@42022400 {
-				compatible = "st,stm32-gpio";
-				reg = <0x42022400 0x400>;
-				gpio-controller;
-				#gpio-cells = <2>;
-				clocks = <&rcc STM32_CLOCK(AHB2, 9)>;
-			};
-
-			gpiok: gpio@42022800 {
-				compatible = "st,stm32-gpio";
-				reg = <0x42022800 0x400>;
-				gpio-controller;
-				#gpio-cells = <2>;
-				clocks = <&rcc STM32_CLOCK(AHB2, 26)>;
-			};
-		};
-
 		sram1: memory@20000000 {
 			compatible = "zephyr,memory-region", "mmio-sram";
 			reg = <0x20000000 DT_SIZE_K(256)>;
@@ -69,6 +43,56 @@
 			compatible = "zephyr,memory-region", "mmio-sram";
 			reg = <0x20120000 DT_SIZE_K(384)>;
 			zephyr,memory-region = "SRAM5";
+		};
+
+		fdcan3: can@4000a000 {
+			compatible = "st,stm32-fdcan";
+			reg = <0x4000a000 0x400>, <0x4000ac00 0x9f0>;
+			reg-names = "m_can", "message_ram";
+			interrupts = <152 0>, <153 0>;
+			interrupt-names = "int0", "int1";
+			/* common clock FDCAN 1 & 2 & 3 */
+			clocks = <&rcc STM32_CLOCK(APB1_2, 9)>,
+				 <&rcc STM32_SRC_HSE FDCAN_SEL(0)>;
+			bosch,mram-cfg = <0x6a0 28 8 3 3 0 3 3>;
+			status = "disabled";
+		};
+
+		ltdc: display-controller@40016c00 {
+			compatible = "st,stm32-ltdc";
+			reg = <0x40016c00 0x1000>;
+			interrupts = <145 0>, <146 0>;
+			interrupt-names = "ltdc", "ltdc_er";
+			clocks = <&rcc STM32_CLOCK(APB2, 27)>,
+				 <&rcc STM32_SRC_PLL3_R LTDC_SEL(0)>;
+			resets = <&rctl STM32_RESET(APB2, 27)>;
+			status = "disabled";
+		};
+
+		pinctrl: pin-controller@42020000 {
+			gpioh: gpio@42021c00 {
+				compatible = "st,stm32-gpio";
+				reg = <0x42021c00 0x400>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				clocks = <&rcc STM32_CLOCK(AHB2, 7)>;
+			};
+
+			gpioj: gpio@42022400 {
+				compatible = "st,stm32-gpio";
+				reg = <0x42022400 0x400>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				clocks = <&rcc STM32_CLOCK(AHB2, 9)>;
+			};
+
+			gpiok: gpio@42022800 {
+				compatible = "st,stm32-gpio";
+				reg = <0x42022800 0x400>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				clocks = <&rcc STM32_CLOCK(AHB2, 26)>;
+			};
 		};
 
 		adc3: adc@4202d800 {
@@ -109,30 +133,6 @@
 			clocks = <&rcc STM32_CLOCK(AHB4, 22)>;
 			io-port-1 = <&xspi1>;
 			io-port-2 = <&xspi2>;
-			status = "disabled";
-		};
-
-		fdcan3: can@4000a000 {
-			compatible = "st,stm32-fdcan";
-			reg = <0x4000a000 0x400>, <0x4000ac00 0x9f0>;
-			reg-names = "m_can", "message_ram";
-			interrupts = <152 0>, <153 0>;
-			interrupt-names = "int0", "int1";
-			/* common clock FDCAN 1 & 2 & 3 */
-			clocks = <&rcc STM32_CLOCK(APB1_2, 9)>,
-				 <&rcc STM32_SRC_HSE FDCAN_SEL(0)>;
-			bosch,mram-cfg = <0x6a0 28 8 3 3 0 3 3>;
-			status = "disabled";
-		};
-
-		ltdc: display-controller@40016c00 {
-			compatible = "st,stm32-ltdc";
-			reg = <0x40016c00 0x1000>;
-			interrupts = <145 0>, <146 0>;
-			interrupt-names = "ltdc", "ltdc_er";
-			clocks = <&rcc STM32_CLOCK(APB2, 27)>,
-				 <&rcc STM32_SRC_PLL3_R LTDC_SEL(0)>;
-			resets = <&rctl STM32_RESET(APB2, 27)>;
 			status = "disabled";
 		};
 

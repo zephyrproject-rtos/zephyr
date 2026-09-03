@@ -50,13 +50,77 @@
 	soc {
 		interrupt-parent = <&gic>;
 
-		gic: interrupt-controller@11900000 {
-			compatible = "arm,gic-v3", "arm,gic";
-			reg = <0x11900000 0x10000>, /* GICD */
-			      <0x11940000 0x20000>; /* GICR */
-			interrupt-controller;
-			#interrupt-cells = <4>;
-			status = "okay";
+		scif0: serial@1004b800 {
+			compatible = "renesas,rz-scif-uart";
+			reg = <0x1004b800 0x400>;
+			channel = <0>;
+			interrupts = <GIC_SPI 380 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 381 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 382 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 383 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 384 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "eri", "bri", "rxi", "txi", "tei";
+			status = "disabled";
+		};
+
+		scif1: serial@1004bc00 {
+			compatible = "renesas,rz-scif-uart";
+			reg = <0x1004bc00 0x400>;
+			channel = <1>;
+			interrupts = <GIC_SPI 385 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 386 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 387 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 388 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 389 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "eri", "bri", "rxi", "txi", "tei";
+			status = "disabled";
+		};
+
+		scif2: serial@1004c000 {
+			compatible = "renesas,rz-scif-uart";
+			reg = <0x1004c000 0x400>;
+			channel = <2>;
+			interrupts = <GIC_SPI 390 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 391 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 392 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 393 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 394 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "eri", "bri", "rxi", "txi", "tei";
+			status = "disabled";
+		};
+
+		scif3: serial@1004c400 {
+			compatible = "renesas,rz-scif-uart";
+			reg = <0x1004c400 0x400>;
+			channel = <3>;
+			interrupts = <GIC_SPI 395 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 396 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 397 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 398 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 399 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "eri", "bri", "rxi", "txi", "tei";
+			status = "disabled";
+		};
+
+		scif4: serial@1004c800 {
+			compatible = "renesas,rz-scif-uart";
+			reg = <0x1004c800 0x400>;
+			channel = <4>;
+			interrupts = <GIC_SPI 400 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 401 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 402 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 403 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+				     <GIC_SPI 404 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "eri", "bri", "rxi", "txi", "tei";
+			status = "disabled";
+		};
+
+		spibsc: spibsc@10060000 {
+			compatible = "renesas,rz-spibsc";
+			reg = <0x10060000 DT_SIZE_K(4)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "disabled";
 		};
 
 		gpio: gpio@11030000 {
@@ -68,6 +132,42 @@
 			reg-names = "base", "p", "pm", "pfc";
 			#address-cells = <1>;
 			#size-cells = <0>;
+
+			gpio20: gpio@0 {
+				compatible = "renesas,rz-gpio";
+				reg = <0x0>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <6>;
+				status = "disabled";
+			};
+
+			gpio21: gpio@100 {
+				compatible = "renesas,rz-gpio";
+				reg = <0x100>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <3>;
+				status = "disabled";
+			};
+
+			gpio22: gpio@300 {
+				compatible = "renesas,rz-gpio";
+				reg = <0x300>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <5>;
+				status = "disabled";
+			};
+
+			gpio23: gpio@400 {
+				compatible = "renesas,rz-gpio";
+				reg = <0x400>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <2>;
+				status = "disabled";
+			};
 
 			gpio0: gpio@f00 {
 				compatible = "renesas,rz-gpio";
@@ -180,42 +280,6 @@
 			gpio12: gpio@1b00 {
 				compatible = "renesas,rz-gpio";
 				reg = <0x1b00>;
-				gpio-controller;
-				#gpio-cells = <2>;
-				ngpios = <2>;
-				status = "disabled";
-			};
-
-			gpio20: gpio@0 {
-				compatible = "renesas,rz-gpio";
-				reg = <0x0>;
-				gpio-controller;
-				#gpio-cells = <2>;
-				ngpios = <6>;
-				status = "disabled";
-			};
-
-			gpio21: gpio@100 {
-				compatible = "renesas,rz-gpio";
-				reg = <0x100>;
-				gpio-controller;
-				#gpio-cells = <2>;
-				ngpios = <3>;
-				status = "disabled";
-			};
-
-			gpio22: gpio@300 {
-				compatible = "renesas,rz-gpio";
-				reg = <0x300>;
-				gpio-controller;
-				#gpio-cells = <2>;
-				ngpios = <5>;
-				status = "disabled";
-			};
-
-			gpio23: gpio@400 {
-				compatible = "renesas,rz-gpio";
-				reg = <0x400>;
 				gpio-controller;
 				#gpio-cells = <2>;
 				ngpios = <2>;
@@ -525,77 +589,13 @@
 			};
 		};
 
-		scif0: serial@1004b800 {
-			compatible = "renesas,rz-scif-uart";
-			reg = <0x1004b800 0x400>;
-			channel = <0>;
-			interrupts = <GIC_SPI 380 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 381 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 382 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 383 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 384 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			interrupt-names = "eri", "bri", "rxi", "txi", "tei";
-			status = "disabled";
-		};
-
-		scif1: serial@1004bc00 {
-			compatible = "renesas,rz-scif-uart";
-			reg = <0x1004bc00 0x400>;
-			channel = <1>;
-			interrupts = <GIC_SPI 385 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 386 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 387 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 388 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 389 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			interrupt-names = "eri", "bri", "rxi", "txi", "tei";
-			status = "disabled";
-		};
-
-		scif2: serial@1004c000 {
-			compatible = "renesas,rz-scif-uart";
-			reg = <0x1004c000 0x400>;
-			channel = <2>;
-			interrupts = <GIC_SPI 390 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 391 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 392 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 393 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 394 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			interrupt-names = "eri", "bri", "rxi", "txi", "tei";
-			status = "disabled";
-		};
-
-		scif3: serial@1004c400 {
-			compatible = "renesas,rz-scif-uart";
-			reg = <0x1004c400 0x400>;
-			channel = <3>;
-			interrupts = <GIC_SPI 395 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 396 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 397 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 398 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 399 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			interrupt-names = "eri", "bri", "rxi", "txi", "tei";
-			status = "disabled";
-		};
-
-		scif4: serial@1004c800 {
-			compatible = "renesas,rz-scif-uart";
-			reg = <0x1004c800 0x400>;
-			channel = <4>;
-			interrupts = <GIC_SPI 400 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 401 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 402 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 403 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
-				     <GIC_SPI 404 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			interrupt-names = "eri", "bri", "rxi", "txi", "tei";
-			status = "disabled";
-		};
-
-		spibsc: spibsc@10060000 {
-			compatible = "renesas,rz-spibsc";
-			reg = <0x10060000 DT_SIZE_K(4)>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-			status = "disabled";
+		gic: interrupt-controller@11900000 {
+			compatible = "arm,gic-v3", "arm,gic";
+			reg = <0x11900000 0x10000>, /* GICD */
+			      <0x11940000 0x20000>; /* GICR */
+			interrupt-controller;
+			#interrupt-cells = <4>;
+			status = "okay";
 		};
 	};
 };

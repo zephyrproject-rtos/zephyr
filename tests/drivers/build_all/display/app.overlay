@@ -20,21 +20,6 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		test_gpio: gpio@deadbeef {
-			compatible = "vnd,gpio";
-			reg = <0xdeadbeef 0x1000>;
-			gpio-controller;
-			#gpio-cells = <0x2>;
-			status = "okay";
-		};
-
-		test_pwm: pwm@deadba11 {
-			compatible = "vnd,pwm";
-			reg = <0xdeadba11 0x1000>;
-			#pwm-cells = <3>;
-			status = "okay";
-		};
-
 		test_mipi_dbi {
 			compatible = "zephyr,mipi-dbi-spi";
 			dc-gpios = <&test_gpio 0 0>;
@@ -731,6 +716,20 @@
 			};
 		};
 
+		test_led_strip_matrix {
+			compatible = "led-strip-matrix";
+
+			led-strips = <&test_led_strip_0>, <&test_led_strip_1>;
+			chain-lengths = <256>, <256>;
+			width = <32>;
+			height = <16>;
+			horizontal-modules = <2>;
+			vertical-modules = <1>;
+			circulative;
+			start-from-right;
+			status = "okay";
+		};
+
 		test_spi: spi@33334444 {
 			compatible = "vnd,spi";
 			reg = <0x33334444 0x1000>;
@@ -755,6 +754,34 @@
 				color-mapping = <LED_COLOR_ID_RED
 						 LED_COLOR_ID_GREEN
 						 LED_COLOR_ID_BLUE>;
+			};
+
+			test_lt7680: lt7680@0 {
+				compatible = "levetop,lt7680";
+				reg = <0>;
+				spi-max-frequency = <30000000>;
+				width = <320>;
+				height = <240>;
+				reset-gpios = <&test_gpio 0 0>;
+				x-offset = <0>;
+				y-offset = <0>;
+				rotation = <180>;
+				reset-delay-ms = <100>;
+
+				display-timings {
+					compatible = "zephyr,panel-timing";
+					clock-frequency = <10000000>;
+					hsync-active = <0>;
+					vsync-active = <0>;
+					de-active = <1>;
+					pixelclk-active = <0>;
+					hback-porch = <140>;
+					hfront-porch = <160>;
+					hsync-len = <20>;
+					vback-porch = <20>;
+					vfront-porch = <12>;
+					vsync-len = <3>;
+				};
 			};
 
 			test_led_strip_1: ws2812_spi@1 {
@@ -800,48 +827,6 @@
 				initial-refresh-waveform = <0>;
 				refresh-waveform = <2>;
 			};
-
-			test_lt7680: lt7680@0 {
-				compatible = "levetop,lt7680";
-				reg = <0>;
-				spi-max-frequency = <30000000>;
-				width = <320>;
-				height = <240>;
-				reset-gpios = <&test_gpio 0 0>;
-				x-offset = <0>;
-				y-offset = <0>;
-				rotation = <180>;
-				reset-delay-ms = <100>;
-
-				display-timings {
-					compatible = "zephyr,panel-timing";
-					clock-frequency = <10000000>;
-					hsync-active = <0>;
-					vsync-active = <0>;
-					de-active = <1>;
-					pixelclk-active = <0>;
-					hback-porch = <140>;
-					hfront-porch = <160>;
-					hsync-len = <20>;
-					vback-porch = <20>;
-					vfront-porch = <12>;
-					vsync-len = <3>;
-				};
-			};
-		};
-
-		test_led_strip_matrix {
-			compatible = "led-strip-matrix";
-
-			led-strips = <&test_led_strip_0>, <&test_led_strip_1>;
-			chain-lengths = <256>, <256>;
-			width = <32>;
-			height = <16>;
-			horizontal-modules = <2>;
-			vertical-modules = <1>;
-			circulative;
-			start-from-right;
-			status = "okay";
 		};
 
 		test_i2c: i2c@60013000 {
@@ -967,6 +952,21 @@
 				phase-length = <0x22>;
 				vcomh-voltage = <0x2>;
 			};
+		};
+
+		test_pwm: pwm@deadba11 {
+			compatible = "vnd,pwm";
+			reg = <0xdeadba11 0x1000>;
+			#pwm-cells = <3>;
+			status = "okay";
+		};
+
+		test_gpio: gpio@deadbeef {
+			compatible = "vnd,gpio";
+			reg = <0xdeadbeef 0x1000>;
+			gpio-controller;
+			#gpio-cells = <0x2>;
+			status = "okay";
 		};
 	};
 };

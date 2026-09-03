@@ -132,6 +132,25 @@
 	pinctrl-names = "default";
 	status = "okay";
 
+	vbatt: vbatt {
+		compatible = "voltage-divider";
+		io-channels = <&m5pm1_adc 1>;
+		output-ohms = <1>;
+		full-ohms = <1>;
+	};
+
+	rx8130ce_rtc: rtc@32 {
+		compatible = "epson,rx8130ce-rtc";
+		reg = <0x32>;
+		irq-gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
+	};
+
+	sht40: sht4x@44 {
+		compatible = "sensirion,sht4x";
+		reg = <0x44>;
+		repeatability = <2>;
+	};
+
 	m5pm1: pmic@6e {
 		compatible = "m5stack,m5pm1";
 		reg = <0x6e>;
@@ -191,25 +210,6 @@
 		m5pm1_wdt: watchdog {
 			compatible = "m5stack,m5pm1-wdt";
 		};
-	};
-
-	sht40: sht4x@44 {
-		compatible = "sensirion,sht4x";
-		reg = <0x44>;
-		repeatability = <2>;
-	};
-
-	rx8130ce_rtc: rtc@32 {
-		compatible = "epson,rx8130ce-rtc";
-		reg = <0x32>;
-		irq-gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
-	};
-
-	vbatt: vbatt {
-		compatible = "voltage-divider";
-		io-channels = <&m5pm1_adc 1>;
-		output-ohms = <1>;
-		full-ohms = <1>;
 	};
 };
 

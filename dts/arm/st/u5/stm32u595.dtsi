@@ -13,28 +13,8 @@
 };
 
 / {
-	sram0: memory@20000000 {
-		/* SRAM1 + SRAM2 + SRAM3 + SRAM5 */
-		reg = <0x20000000 DT_SIZE_K(2496)>;
-	};
-
-	sram1: memory@28000000 {
-		/* SRAM4 */
-		reg = <0x28000000 DT_SIZE_K(16)>;
-	};
-
 	soc {
 		compatible = "st,stm32u595", "st,stm32u5", "simple-bus";
-
-		pinctrl: pin-controller@42020000 {
-			gpioj: gpio@42022400 {
-				compatible = "st,stm32-gpio";
-				reg = <0x42022400 0x400>;
-				gpio-controller;
-				#gpio-cells = <2>;
-				clocks = <&rcc STM32_CLOCK(AHB2, 9)>;
-			};
-		};
 
 		usart6: serial@40006400 {
 			compatible = "st,stm32-usart", "st,stm32-uart";
@@ -67,6 +47,44 @@
 			interrupts = <130 0>, <129 0>;
 			interrupt-names = "event", "error";
 			status = "disabled";
+		};
+
+		sai2: sai2@40015800 {
+			compatible = "st,stm32-sai";
+			reg = <0x40015800 0x400>;
+			ranges;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			clocks = <&rcc STM32_CLOCK(APB2, 22)>,
+				 <&rcc STM32_SRC_PLL2_P SAI2_SEL(0)>;
+			clock-names = "sai_ck", "sai_ker_ck";
+			status = "disabled";
+
+			sai2_a: sai2a@40015804 {
+				reg = <0x40015804 0x20>;
+				dmas = <&gpdma1 1 38 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+
+			sai2_b: sai2b@40015824 {
+				reg = <0x40015824 0x20>;
+				dmas = <&gpdma1 0 39 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+		};
+
+		pinctrl: pin-controller@42020000 {
+			gpioj: gpio@42022400 {
+				compatible = "st,stm32-gpio";
+				reg = <0x42022400 0x400>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				clocks = <&rcc STM32_CLOCK(AHB2, 9)>;
+			};
 		};
 
 		/* Available in STM32U59x/5Ax/5Fx/5Gx SoCs */
@@ -121,34 +139,6 @@
 			health-test-config = <0x92f3>;
 			noise-source-control = <0x1609>;
 		};
-
-		sai2: sai2@40015800 {
-			compatible = "st,stm32-sai";
-			reg = <0x40015800 0x400>;
-			ranges;
-			#address-cells = <1>;
-			#size-cells = <1>;
-			clocks = <&rcc STM32_CLOCK(APB2, 22)>,
-				 <&rcc STM32_SRC_PLL2_P SAI2_SEL(0)>;
-			clock-names = "sai_ck", "sai_ker_ck";
-			status = "disabled";
-
-			sai2_a: sai2a@40015804 {
-				reg = <0x40015804 0x20>;
-				dmas = <&gpdma1 1 38 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
-				#address-cells = <1>;
-				#size-cells = <0>;
-				status = "disabled";
-			};
-
-			sai2_b: sai2b@40015824 {
-				reg = <0x40015824 0x20>;
-				dmas = <&gpdma1 0 39 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
-				#address-cells = <1>;
-				#size-cells = <0>;
-				status = "disabled";
-			};
-		};
 	};
 
 	smbus5: smbus5 {
@@ -165,5 +155,15 @@
 		#size-cells = <0>;
 		i2c = <&i2c6>;
 		status = "disabled";
+	};
+
+	sram0: memory@20000000 {
+		/* SRAM1 + SRAM2 + SRAM3 + SRAM5 */
+		reg = <0x20000000 DT_SIZE_K(2496)>;
+	};
+
+	sram1: memory@28000000 {
+		/* SRAM4 */
+		reg = <0x28000000 DT_SIZE_K(16)>;
 	};
 };

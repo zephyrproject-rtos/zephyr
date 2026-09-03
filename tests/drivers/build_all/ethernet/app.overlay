@@ -8,14 +8,6 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		test_gpio: gpio@deadbeef {
-			compatible = "vnd,gpio";
-			reg = <0xdeadbeef 0x1000>;
-			gpio-controller;
-			#gpio-cells = <0x2>;
-			status = "okay";
-		};
-
 		test_ethernet: ethernet {
 			compatible = "vnd,ethernet";
 
@@ -105,6 +97,14 @@
 			mdio-gpios = <&test_gpio 0 0>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			status = "okay";
+		};
+
+		test_gpio: gpio@deadbeef {
+			compatible = "vnd,gpio";
+			reg = <0xdeadbeef 0x1000>;
+			gpio-controller;
+			#gpio-cells = <0x2>;
 			status = "okay";
 		};
 	};

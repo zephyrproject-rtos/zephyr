@@ -22,20 +22,20 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		/* This configuration assumes the Arm cores are disabled, as
-		 * these base addresses contain the Arm core vector tables if
-		 * they are used.
-		 */
+		zero_riscy_vector_partition: partition@3ff00 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x0003ff00 0x100>;
+		};
 
 		zero_riscy_code_partition: partition@1000000 {
 			compatible = "zephyr,mapped-partition";
 			reg = <0x01000000 0x0003ff00>;
 		};
 
-		zero_riscy_vector_partition: partition@3ff00 {
-			compatible = "zephyr,mapped-partition";
-			reg = <0x0003ff00 0x100>;
-		};
+		/* This configuration assumes the Arm cores are disabled, as
+		 * these base addresses contain the Arm core vector tables if
+		 * they are used.
+		 */
 	};
 };
 

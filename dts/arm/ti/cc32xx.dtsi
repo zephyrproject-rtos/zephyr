@@ -42,10 +42,6 @@
 		};
 	};
 
-	sram0: memory@20000000 {
-		compatible = "mmio-sram";
-	};
-
 	flash0: serial-flash@0 {
 		compatible = "serial-flash";
 	};
@@ -57,30 +53,10 @@
 	};
 
 	soc {
-		uart0: uart@4000c000 {
-			compatible = "ti,cc32xx-uart";
-			reg = <0x4000c000 0x4c>;
-			interrupts = <EXP_UARTA0 3>;
-			clocks = <&sysclk>;
-			status = "disabled";
-		};
-
-		uart1: uart@4000d000 {
-			compatible = "ti,cc32xx-uart";
-			reg = <0x4000d000 0x4c>;
-			interrupts = <EXP_UARTA1 3>;
-			clocks = <&sysclk>;
-			status = "disabled";
-		};
-
-		i2c0: i2c@40020000 {
-			compatible = "ti,cc32xx-i2c";
-			reg = <0x40020000 0xfc8>;
-			clocks = <&sysclk>;
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			interrupts = <EXP_I2CA0 3>;
+		wdt0: watchdog@40000000 {
+			compatible = "ti,cc32xx-watchdog";
+			reg = <0x40000000 0x1000>;
+			interrupts = <EXP_WDT 0>;
 			status = "disabled";
 		};
 
@@ -116,18 +92,30 @@
 			#gpio-cells = <2>;
 		};
 
-		adc0: adc@4402e800 {
-			compatible = "ti,cc32xx-adc";
-			reg = <0x4402e800 0x100>;
-			interrupts = <EXP_ADCCH0 3>, <EXP_ADCCH1 3>, <EXP_ADCCH2 3>, <EXP_ADCCH3 3>;
-			#io-channel-cells = <1>;
+		uart0: uart@4000c000 {
+			compatible = "ti,cc32xx-uart";
+			reg = <0x4000c000 0x4c>;
+			interrupts = <EXP_UARTA0 3>;
+			clocks = <&sysclk>;
 			status = "disabled";
 		};
 
-		wdt0: watchdog@40000000 {
-			compatible = "ti,cc32xx-watchdog";
-			reg = <0x40000000 0x1000>;
-			interrupts = <EXP_WDT 0>;
+		uart1: uart@4000d000 {
+			compatible = "ti,cc32xx-uart";
+			reg = <0x4000d000 0x4c>;
+			interrupts = <EXP_UARTA1 3>;
+			clocks = <&sysclk>;
+			status = "disabled";
+		};
+
+		i2c0: i2c@40020000 {
+			compatible = "ti,cc32xx-i2c";
+			reg = <0x40020000 0xfc8>;
+			clocks = <&sysclk>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <EXP_I2CA0 3>;
 			status = "disabled";
 		};
 
@@ -135,6 +123,18 @@
 			compatible = "ti,cc32xx-pinctrl";
 			reg = <0x4402e0a0 0x80>;
 		};
+
+		adc0: adc@4402e800 {
+			compatible = "ti,cc32xx-adc";
+			reg = <0x4402e800 0x100>;
+			interrupts = <EXP_ADCCH0 3>, <EXP_ADCCH1 3>, <EXP_ADCCH2 3>, <EXP_ADCCH3 3>;
+			#io-channel-cells = <1>;
+			status = "disabled";
+		};
+	};
+
+	sram0: memory@20000000 {
+		compatible = "mmio-sram";
 	};
 };
 

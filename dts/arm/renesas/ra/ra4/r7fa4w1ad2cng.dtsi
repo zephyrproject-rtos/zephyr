@@ -11,31 +11,19 @@
 
 / {
 	soc {
+		trng: trng {
+			compatible = "renesas,ra-sce5-rng";
+			status = "disabled";
+		};
+
 		sram0: memory@20000000 {
 			compatible = "mmio-sram";
 			reg = <0x20000000 DT_SIZE_K(96)>;
 		};
 
-		flash-controller@407e0000 {
-			flash-hardware-version = <3>;
-			#erase-block-cells = <2>;
-
-			flash0: flash@0 {
-				compatible = "renesas,ra-nv-code-flash";
-				reg = <0x0 DT_SIZE_K(512)>;
-				write-block-size = <8>;
-				erase-block-size = <2048>;
-				erase-blocks = <&flash 256 2048>;
-				programming-enable;
-			};
-
-			flash1: flash@40100000 {
-				compatible = "renesas,ra-nv-data-flash";
-				reg = <0x40100000 DT_SIZE_K(8)>;
-				write-block-size = <1>;
-				erase-block-size = <1024>;
-				programming-enable;
-			};
+		adc@4005c000 {
+			interrupts = <20 1>;
+			channel-available-mask = <0x1a0670>;
 		};
 
 		sci4: sci4@40070080 {
@@ -70,16 +58,6 @@
 			};
 		};
 
-		trng: trng {
-			compatible = "renesas,ra-sce5-rng";
-			status = "disabled";
-		};
-
-		adc@4005c000 {
-			interrupts = <20 1>;
-			channel-available-mask = <0x1a0670>;
-		};
-
 		pwm8: pwm8@40078800 {
 			compatible = "renesas,ra-pwm";
 			reg = <0x40078800 0x100>;
@@ -88,6 +66,28 @@
 			clocks = <&pclkd MSTPD 6>;
 			#pwm-cells = <3>;
 			status = "disabled";
+		};
+
+		flash-controller@407e0000 {
+			flash-hardware-version = <3>;
+			#erase-block-cells = <2>;
+
+			flash0: flash@0 {
+				compatible = "renesas,ra-nv-code-flash";
+				reg = <0x0 DT_SIZE_K(512)>;
+				write-block-size = <8>;
+				erase-block-size = <2048>;
+				erase-blocks = <&flash 256 2048>;
+				programming-enable;
+			};
+
+			flash1: flash@40100000 {
+				compatible = "renesas,ra-nv-data-flash";
+				reg = <0x40100000 DT_SIZE_K(8)>;
+				write-block-size = <1>;
+				erase-block-size = <1024>;
+				programming-enable;
+			};
 		};
 	};
 

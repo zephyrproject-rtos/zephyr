@@ -86,28 +86,12 @@
 			reg = <0x2002e000 DT_SIZE_K(16)>;
 		};
 
-		flc1: flash_controller@40029400 {
-			compatible = "adi,max32-flash-controller";
-			reg = <0x40029400 0x400>;
-
-			#address-cells = <1>;
-			#size-cells = <1>;
-			status = "okay";
-
-			flash1: flash@10080000 {
-				compatible = "soc-nv-flash";
-				reg = <0x10080000 DT_SIZE_K(512)>;
-				write-block-size = <16>;
-				erase-block-size = <8192>;
-			};
-		};
-
-		uart3: serial@40145000 {
-			compatible = "adi,max32-uart";
-			reg = <0x40145000 0x1000>;
-			clocks = <&gcr ADI_MAX32_CLOCK_BUS2 2>;
+		wdt1: watchdog@40003400 {
+			compatible = "adi,max32-watchdog";
+			reg = <0x40003400 0x400>;
+			interrupts = <57 0>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS1 5>;
 			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
-			interrupts = <88 0>;
 			status = "disabled";
 		};
 
@@ -122,13 +106,20 @@
 			status = "disabled";
 		};
 
-		wdt1: watchdog@40003400 {
-			compatible = "adi,max32-watchdog";
-			reg = <0x40003400 0x400>;
-			interrupts = <57 0>;
-			clocks = <&gcr ADI_MAX32_CLOCK_BUS1 5>;
-			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
-			status = "disabled";
+		flc1: flash_controller@40029400 {
+			compatible = "adi,max32-flash-controller";
+			reg = <0x40029400 0x400>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "okay";
+
+			flash1: flash@10080000 {
+				compatible = "soc-nv-flash";
+				reg = <0x10080000 DT_SIZE_K(512)>;
+				write-block-size = <16>;
+				erase-block-size = <8192>;
+			};
 		};
 
 		spi0: spi@40046000 {
@@ -158,6 +149,13 @@
 			#size-cells = <0>;
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 8>;
 			interrupts = <18 0>;
+			status = "disabled";
+		};
+
+		rtc_counter: rtc_counter@40106000 {
+			compatible = "adi,max32-rtc-counter";
+			reg = <0x40106000 0x400>;
+			interrupts = <3 0>;
 			status = "disabled";
 		};
 
@@ -191,10 +189,12 @@
 			};
 		};
 
-		rtc_counter: rtc_counter@40106000 {
-			compatible = "adi,max32-rtc-counter";
-			reg = <0x40106000 0x400>;
-			interrupts = <3 0>;
+		uart3: serial@40145000 {
+			compatible = "adi,max32-uart";
+			reg = <0x40145000 0x1000>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS2 2>;
+			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
+			interrupts = <88 0>;
 			status = "disabled";
 		};
 	};

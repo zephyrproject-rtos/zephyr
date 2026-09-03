@@ -64,20 +64,6 @@
 		};
 	};
 
-	gic: interrupt-controller@fe600000 {
-		compatible = "arm,gic-v3", "arm,gic";
-		reg = <0xfe600000 0x10000>, /* GICD */
-		      <0xfe680000 0x100000>; /* GICR */
-		#address-cells = <1>;
-		interrupt-controller;
-		#interrupt-cells = <4>;
-		status = "okay";
-	};
-
-	sram0: memory@10000000 {
-		reg = <0x10000000 DT_SIZE_M(128)>;
-	};
-
 	timer {
 		compatible = "arm,armv8-timer";
 		interrupt-parent = <&gic>;
@@ -89,6 +75,20 @@
 			      IRQ_DEFAULT_PRIORITY>,
 			     <GIC_PPI 10 IRQ_TYPE_LEVEL
 			      IRQ_DEFAULT_PRIORITY>;
+	};
+
+	sram0: memory@10000000 {
+		reg = <0x10000000 DT_SIZE_M(128)>;
+	};
+
+	gic: interrupt-controller@fe600000 {
+		compatible = "arm,gic-v3", "arm,gic";
+		reg = <0xfe600000 0x10000>, /* GICD */
+		      <0xfe680000 0x100000>; /* GICR */
+		#address-cells = <1>;
+		interrupt-controller;
+		#interrupt-cells = <4>;
+		status = "okay";
 	};
 
 	uart2: serial@feb50000 {

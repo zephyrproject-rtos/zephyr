@@ -115,11 +115,31 @@
 			reg = <0x2005c000 DT_SIZE_K(16)>;
 		};
 
-		uart3: serial@40081400 {
-			compatible = "adi,max32-uart";
-			reg = <0x40081400 0x400>;
-			clocks = <&gcr ADI_MAX32_CLOCK_BUS2 4>;
-			clock-source = <ADI_MAX32_PRPH_CLK_SRC_IBRO>;
+		wut0: timer@40006400 {
+			compatible = "adi,max32-timer";
+			reg = <0x40006400 0x400>;
+			prescaler = <1>;
+			status = "disabled";
+
+			counter {
+				compatible = "adi,max32-wut";
+				status = "disabled";
+			};
+		};
+
+		dma0: dma@40028000 {
+			compatible = "adi,max32-dma";
+			reg = <0x40028000 0x1000>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 5>;
+			dma-channels = <4>;
+			#dma-cells = <2>;
+			status = "disabled";
+		};
+
+		w1: w1@4003d000 {
+			compatible = "adi,max32-w1";
+			reg = <0x4003d000 0x1000>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS1 13>;
 			status = "disabled";
 		};
 
@@ -129,15 +149,6 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 6>;
-			status = "disabled";
-		};
-
-		dma0: dma@40028000 {
-			compatible = "adi,max32-dma";
-			reg = <0x40028000 0x1000>;
-			clocks = <&gcr ADI_MAX32_CLOCK_BUS0 5>;
-			dma-channels = <4>;
-			#dma-cells = <2>;
 			status = "disabled";
 		};
 
@@ -189,23 +200,12 @@
 			};
 		};
 
-		w1: w1@4003d000 {
-			compatible = "adi,max32-w1";
-			reg = <0x4003d000 0x1000>;
-			clocks = <&gcr ADI_MAX32_CLOCK_BUS1 13>;
+		uart3: serial@40081400 {
+			compatible = "adi,max32-uart";
+			reg = <0x40081400 0x400>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS2 4>;
+			clock-source = <ADI_MAX32_PRPH_CLK_SRC_IBRO>;
 			status = "disabled";
-		};
-
-		wut0: timer@40006400 {
-			compatible = "adi,max32-timer";
-			reg = <0x40006400 0x400>;
-			prescaler = <1>;
-			status = "disabled";
-
-			counter {
-				compatible = "adi,max32-wut";
-				status = "disabled";
-			};
 		};
 	};
 };

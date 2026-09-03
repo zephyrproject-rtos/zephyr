@@ -45,35 +45,6 @@
 		};
 	};
 
-	intc: ioapic@fec00000 {
-		compatible = "intel,ioapic";
-		reg = <0xfec00000 0x1000>;
-		#address-cells = <1>;
-		#interrupt-cells = <3>;
-		interrupt-controller;
-	};
-
-	intc_loapic: loapic@fee00000 {
-		compatible = "intel,loapic";
-		reg = <0xfee00000 0x1000>;
-		interrupt-controller;
-		#interrupt-cells = <3>;
-		#address-cells = <1>;
-	};
-
-	sram: memory@ff200000 {
-		compatible = "mmio-sram";
-		reg = <0xff200000 DT_SIZE_K(640)>;
-		device_type = "memory";
-	};
-
-	aon: memory@ff800000 {
-		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0xff800000 DT_SIZE_K(8)>;
-		device_type = "memory";
-		zephyr,memory-region = "AON";
-	};
-
 	soc: soc {
 		compatible = "simple-bus";
 		ranges;
@@ -84,53 +55,6 @@
 			      9 IRQ_TYPE_FIXED_LEVEL_HIGH 1
 			      10 IRQ_TYPE_FIXED_LEVEL_HIGH 1>;
 		interrupt-names = "reset_prep", "pcidev", "pmu2ioapic";
-
-		hpet: hpet@4700000 {
-			compatible = "intel,hpet";
-			reg = <0x04700000 0x400>;
-			interrupts = <14 IRQ_TYPE_FIXED_LEVEL_HIGH 2>;
-
-			status = "okay";
-		};
-
-		ipmhost: ipm@4100000 {
-			compatible = "intel,sedi-ipm";
-			reg = <0x4100000 0x1000>;
-			peripheral-id = <0>;
-			interrupts = <0 IRQ_TYPE_LOWEST_LEVEL_HIGH 2>;
-
-			status = "okay";
-		};
-
-		uart0: uart@8100000 {
-			compatible = "intel,sedi-uart";
-			reg = <0x08100000 0x1000>;
-			peripheral-id = <0>;
-			interrupts = <23 IRQ_TYPE_LOWEST_EDGE_RISING 6>;
-			current-speed = <115200>;
-
-			status = "okay";
-		};
-
-		uart1: uart@8102000 {
-			compatible = "intel,sedi-uart";
-			reg = <0x08102000 0x1000>;
-			peripheral-id = <1>;
-			interrupts = <24 IRQ_TYPE_LOWEST_EDGE_RISING 6>;
-			current-speed = <115200>;
-
-			status = "disabled";
-		};
-
-		uart2: uart@8104000 {
-			compatible = "intel,sedi-uart";
-			reg = <0x08104000 0x1000>;
-			peripheral-id = <2>;
-			interrupts = <25 IRQ_TYPE_LOWEST_EDGE_RISING 6>;
-			current-speed = <115200>;
-
-			status = "disabled";
-		};
 
 		i2c0: i2c@0 {
 			compatible = "intel,sedi-i2c";
@@ -180,6 +104,23 @@
 			status = "okay";
 		};
 
+		ipmhost: ipm@4100000 {
+			compatible = "intel,sedi-ipm";
+			reg = <0x4100000 0x1000>;
+			peripheral-id = <0>;
+			interrupts = <0 IRQ_TYPE_LOWEST_LEVEL_HIGH 2>;
+
+			status = "okay";
+		};
+
+		hpet: hpet@4700000 {
+			compatible = "intel,hpet";
+			reg = <0x04700000 0x400>;
+			interrupts = <14 IRQ_TYPE_FIXED_LEVEL_HIGH 2>;
+
+			status = "okay";
+		};
+
 		spi0: spi@8000000 {
 			compatible = "intel,sedi-spi";
 			reg = <0x8000000 0x1000>;
@@ -202,6 +143,36 @@
 			status = "disabled";
 		};
 
+		uart0: uart@8100000 {
+			compatible = "intel,sedi-uart";
+			reg = <0x08100000 0x1000>;
+			peripheral-id = <0>;
+			interrupts = <23 IRQ_TYPE_LOWEST_EDGE_RISING 6>;
+			current-speed = <115200>;
+
+			status = "okay";
+		};
+
+		uart1: uart@8102000 {
+			compatible = "intel,sedi-uart";
+			reg = <0x08102000 0x1000>;
+			peripheral-id = <1>;
+			interrupts = <24 IRQ_TYPE_LOWEST_EDGE_RISING 6>;
+			current-speed = <115200>;
+
+			status = "disabled";
+		};
+
+		uart2: uart@8104000 {
+			compatible = "intel,sedi-uart";
+			reg = <0x08104000 0x1000>;
+			peripheral-id = <2>;
+			interrupts = <25 IRQ_TYPE_LOWEST_EDGE_RISING 6>;
+			current-speed = <115200>;
+
+			status = "disabled";
+		};
+
 		dma0: dma@10100000 {
 			compatible = "intel,sedi-dma";
 			reg = <0x10100000 0x1000>;
@@ -214,5 +185,34 @@
 
 			status = "okay";
 		};
+	};
+
+	intc: ioapic@fec00000 {
+		compatible = "intel,ioapic";
+		reg = <0xfec00000 0x1000>;
+		#address-cells = <1>;
+		#interrupt-cells = <3>;
+		interrupt-controller;
+	};
+
+	intc_loapic: loapic@fee00000 {
+		compatible = "intel,loapic";
+		reg = <0xfee00000 0x1000>;
+		interrupt-controller;
+		#interrupt-cells = <3>;
+		#address-cells = <1>;
+	};
+
+	sram: memory@ff200000 {
+		compatible = "mmio-sram";
+		reg = <0xff200000 DT_SIZE_K(640)>;
+		device_type = "memory";
+	};
+
+	aon: memory@ff800000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0xff800000 DT_SIZE_K(8)>;
+		device_type = "memory";
+		zephyr,memory-region = "AON";
 	};
 };

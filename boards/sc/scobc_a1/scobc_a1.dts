@@ -41,15 +41,15 @@
 			reg = <0x00000000 DT_SIZE_M(4)>;
 		};
 
+		sysreg: sysreg@4f000000 {
+			compatible = "sc,sysreg";
+			reg = <0x4f000000 0x10000>;
+		};
+
 		uartlite0: uartlite@4f010000 {
 			compatible = "xlnx,xps-uartlite-1.00.a";
 			reg = <0x4f010000 0x10000>;
 			interrupts = <0 0>;
-		};
-
-		sysreg: sysreg@4f000000 {
-			compatible = "sc,sysreg";
-			reg = <0x4f000000 0x10000>;
 		};
 
 		sysmon: sysmon@4f040000 {

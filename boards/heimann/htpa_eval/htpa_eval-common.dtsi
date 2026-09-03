@@ -37,16 +37,6 @@
 		zephyr,code-partition = &slot0_partition;
 	};
 
-	extsram0: memory@60000000 {
-		compatible = "zephyr,memory-region";
-		reg = <0x60000000 0x00100000>;
-		device_type = "memory";
-		zephyr,memory-region = "EXTSRAM";
-		zephyr,memory-region-flags = "rw";
-		zephyr,memory-attr = <DT_MEM_ARM_MPU_RAM_NOCACHE>;
-		status = "okay";
-	};
-
 	leds {
 		compatible = "gpio-leds";
 
@@ -122,6 +112,16 @@
 				status = "okay";
 			};
 		};
+	};
+
+	extsram0: memory@60000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x60000000 0x00100000>;
+		device_type = "memory";
+		zephyr,memory-region = "EXTSRAM";
+		zephyr,memory-region-flags = "rw";
+		zephyr,memory-attr = <DT_MEM_ARM_MPU_RAM_NOCACHE>;
+		status = "okay";
 	};
 };
 

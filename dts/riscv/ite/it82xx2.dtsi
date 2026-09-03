@@ -13,32 +13,6 @@
 	};
 
 	soc {
-		sram0: memory@80100000 {
-			compatible = "mmio-sram";
-			reg = <0x80100000 DT_SIZE_K(256)>;
-		};
-
-		intc: interrupt-controller@f03f00 {
-			compatible = "ite,it8xxx2-intc-v2";
-			reg = <0x00f03f00 0x0100>;
-			#address-cells = <0>;
-			#interrupt-cells = <2>;
-			interrupt-controller;
-		};
-
-		twd0: watchdog@f01f80 {
-			compatible = "ite,it8xxx2-watchdog";
-			reg = <0x00f01f80 0x000f>;
-			interrupts = <IT8XXX2_IRQ_TIMER1 IRQ_TYPE_EDGE_RISING   /* Warning timer */
-				      IT8XXX2_IRQ_TIMER2 IRQ_TYPE_EDGE_RISING>; /* One shot timer */
-			interrupt-parent = <&intc>;
-		};
-
-		gpiogcr: gpio-gcr@f03e00 {
-			compatible = "ite,it8xxx2-gpiogcr";
-			reg = <0x00f03e00 0x2f>;
-		};
-
 		gpioa: gpio@f01601 {
 			compatible = "ite,it8xxx2-gpio-v2";
 			reg = <0x00f01601 1   /* GPDR (set) */
@@ -377,72 +351,6 @@
 			#gpio-cells = <2>;
 		};
 
-		gpioksi: gpio@f01d08 {
-			compatible = "ite,it8xxx2-gpio-v2";
-			reg = <0x00f01d08 1   /* GPDR (set) */
-			       0x00f01d09 1   /* GPDMR (get) */
-			       0x00f01d2c 1   /* GPOTR */
-			       NO_FUNC 1      /* P18SCR */
-			       0x00f01d40 8>; /* GPCR */
-			ngpios = <8>;
-			gpio-controller;
-			interrupts = <NO_FUNC 0
-				      NO_FUNC 0
-				      NO_FUNC 0
-				      NO_FUNC 0
-				      NO_FUNC 0
-				      NO_FUNC 0
-				      NO_FUNC 0
-				      NO_FUNC 0>;
-			interrupt-parent = <&intc>;
-			keyboard-controller;
-			#gpio-cells = <2>;
-		};
-
-		gpioksoh: gpio@f01d01 {
-			compatible = "ite,it8xxx2-gpio-v2";
-			reg = <0x00f01d01 1   /* GPDR (set) */
-			       0x00f01d0c 1   /* GPDMR (get) */
-			       0x00f01d2d 1   /* GPOTR */
-			       NO_FUNC 1      /* P18SCR */
-			       0x00f01d50 8>; /* GPCR */
-			ngpios = <8>;
-			gpio-controller;
-			interrupts = <NO_FUNC 0
-				      NO_FUNC 0
-				      NO_FUNC 0
-				      NO_FUNC 0
-				      NO_FUNC 0
-				      NO_FUNC 0
-				      NO_FUNC 0
-				      NO_FUNC 0>;
-			interrupt-parent = <&intc>;
-			keyboard-controller;
-			#gpio-cells = <2>;
-		};
-
-		gpioksol: gpio@f01d00 {
-			compatible = "ite,it8xxx2-gpio-v2";
-			reg = <0x00f01d00 1   /* GPDR (set) */
-			       0x00f01d0f 1   /* GPDMR (get) */
-			       0x00f01d2e 1   /* GPOTR */
-			       NO_FUNC 1      /* P18SCR */
-			       0x00f01d48 8>; /* GPCR */
-			ngpios = <8>;
-			gpio-controller;
-			interrupts = <NO_FUNC 0
-				      NO_FUNC 0
-				      NO_FUNC 0
-				      NO_FUNC 0
-				      NO_FUNC 0
-				      NO_FUNC 0
-				      NO_FUNC 0
-				      NO_FUNC 0>;
-			interrupt-parent = <&intc>;
-			keyboard-controller;
-			#gpio-cells = <2>;
-		};
-
 		pinctrla: pinctrl@f01660 {
 			compatible = "ite,it8xxx2-pinctrl-func";
 			reg = <0x00f01660 8     /* GPCR */
@@ -711,33 +619,6 @@
 			gpio-group;
 		};
 
-		pinctrlksi: pinctrl@f01d40 {
-			compatible = "ite,it8xxx2-pinctrl-func";
-			reg = <0x00f01d40 8   /* KSIGCTRL */
-			       0x00f01d05 1>; /* KSICTRL */
-			pp-od-mask = <NO_FUNC>;
-			pullup-mask = <BIT(2)>;
-			#pinmux-cells = <2>;
-		};
-
-		pinctrlksol: pinctrl@f01d48 {
-			compatible = "ite,it8xxx2-pinctrl-func";
-			reg = <0x00f01d48 8   /* KSOLGCTRL */
-			       0x00f01d02 1>; /* KSOCTRL */
-			pp-od-mask = <BIT(0)>;
-			pullup-mask = <BIT(2)>;
-			#pinmux-cells = <2>;
-		};
-
-		pinctrlksoh: pinctrl@f01d50 {
-			compatible = "ite,it8xxx2-pinctrl-func";
-			reg = <0x00f01d50 8   /* KSOHGCTRL */
-			       0x00f01d02 1>; /* KSOCTRL */
-			pp-od-mask = <BIT(0)>;
-			pullup-mask = <BIT(2)>;
-			#pinmux-cells = <2>;
-		};
-
 		wuc1: wakeup-controller@f01b00 {
 			compatible = "ite,it8xxx2-wuc";
 			reg = <0x00f01b00 1   /* WUEMR1 */
@@ -898,6 +779,158 @@
 			#wuc-cells = <1>;
 		};
 
+		gpioksol: gpio@f01d00 {
+			compatible = "ite,it8xxx2-gpio-v2";
+			reg = <0x00f01d00 1   /* GPDR (set) */
+			       0x00f01d0f 1   /* GPDMR (get) */
+			       0x00f01d2e 1   /* GPOTR */
+			       NO_FUNC 1      /* P18SCR */
+			       0x00f01d48 8>; /* GPCR */
+			ngpios = <8>;
+			gpio-controller;
+			interrupts = <NO_FUNC 0
+				      NO_FUNC 0
+				      NO_FUNC 0
+				      NO_FUNC 0
+				      NO_FUNC 0
+				      NO_FUNC 0
+				      NO_FUNC 0
+				      NO_FUNC 0>;
+			interrupt-parent = <&intc>;
+			keyboard-controller;
+			#gpio-cells = <2>;
+		};
+
+		gpioksoh: gpio@f01d01 {
+			compatible = "ite,it8xxx2-gpio-v2";
+			reg = <0x00f01d01 1   /* GPDR (set) */
+			       0x00f01d0c 1   /* GPDMR (get) */
+			       0x00f01d2d 1   /* GPOTR */
+			       NO_FUNC 1      /* P18SCR */
+			       0x00f01d50 8>; /* GPCR */
+			ngpios = <8>;
+			gpio-controller;
+			interrupts = <NO_FUNC 0
+				      NO_FUNC 0
+				      NO_FUNC 0
+				      NO_FUNC 0
+				      NO_FUNC 0
+				      NO_FUNC 0
+				      NO_FUNC 0
+				      NO_FUNC 0>;
+			interrupt-parent = <&intc>;
+			keyboard-controller;
+			#gpio-cells = <2>;
+		};
+
+		gpioksi: gpio@f01d08 {
+			compatible = "ite,it8xxx2-gpio-v2";
+			reg = <0x00f01d08 1   /* GPDR (set) */
+			       0x00f01d09 1   /* GPDMR (get) */
+			       0x00f01d2c 1   /* GPOTR */
+			       NO_FUNC 1      /* P18SCR */
+			       0x00f01d40 8>; /* GPCR */
+			ngpios = <8>;
+			gpio-controller;
+			interrupts = <NO_FUNC 0
+				      NO_FUNC 0
+				      NO_FUNC 0
+				      NO_FUNC 0
+				      NO_FUNC 0
+				      NO_FUNC 0
+				      NO_FUNC 0
+				      NO_FUNC 0>;
+			interrupt-parent = <&intc>;
+			keyboard-controller;
+			#gpio-cells = <2>;
+		};
+
+		pinctrlksi: pinctrl@f01d40 {
+			compatible = "ite,it8xxx2-pinctrl-func";
+			reg = <0x00f01d40 8   /* KSIGCTRL */
+			       0x00f01d05 1>; /* KSICTRL */
+			pp-od-mask = <NO_FUNC>;
+			pullup-mask = <BIT(2)>;
+			#pinmux-cells = <2>;
+		};
+
+		pinctrlksol: pinctrl@f01d48 {
+			compatible = "ite,it8xxx2-pinctrl-func";
+			reg = <0x00f01d48 8   /* KSOLGCTRL */
+			       0x00f01d02 1>; /* KSOCTRL */
+			pp-od-mask = <BIT(0)>;
+			pullup-mask = <BIT(2)>;
+			#pinmux-cells = <2>;
+		};
+
+		pinctrlksoh: pinctrl@f01d50 {
+			compatible = "ite,it8xxx2-pinctrl-func";
+			reg = <0x00f01d50 8   /* KSOHGCTRL */
+			       0x00f01d02 1>; /* KSOCTRL */
+			pp-od-mask = <BIT(0)>;
+			pullup-mask = <BIT(2)>;
+			#pinmux-cells = <2>;
+		};
+
+		twd0: watchdog@f01f80 {
+			compatible = "ite,it8xxx2-watchdog";
+			reg = <0x00f01f80 0x000f>;
+			interrupts = <IT8XXX2_IRQ_TIMER1 IRQ_TYPE_EDGE_RISING   /* Warning timer */
+				      IT8XXX2_IRQ_TIMER2 IRQ_TYPE_EDGE_RISING>; /* One shot timer */
+			interrupt-parent = <&intc>;
+		};
+
+		spi0: spi@f02600 {
+			compatible = "ite,it8xxx2-spi";
+			reg = <0x00f02600 0x34>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupt-parent = <&intc>;
+			interrupts = <37 IRQ_TYPE_EDGE_RISING>;
+			status = "disabled";
+		};
+
+		ite_uart2_wrapper: uartwrapper@f02820 {
+			compatible = "ite,it8xxx2-uart";
+			reg = <0x00f02820 0x0020>;
+			port-num = <2>;
+			gpios = <&gpiof 0 0>;
+			uart-dev = <&uart2>;
+			status = "disabled";
+		};
+
+		usb0: usbd@f02f00 {
+			compatible = "ite,it82xx2-usb";
+			reg = <0x00f02f00 256>;
+			interrupts = <IT8XXX2_IRQ_USB IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WU90 IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			wucctrl = <&wuc_wu90>;
+			num-bidir-endpoints = <1>;
+			num-in-endpoints = <10>;
+			num-out-endpoints = <5>;
+			status = "disabled";
+		};
+
+		sha0: crypto@f03c00 {
+			compatible = "ite,it8xxx2-sha-v2";
+			reg = <0x00f03c00 0x5>;
+			status = "disabled";
+		};
+
+		gpiogcr: gpio-gcr@f03e00 {
+			compatible = "ite,it8xxx2-gpiogcr";
+			reg = <0x00f03e00 0x2f>;
+		};
+
+		intc: interrupt-controller@f03f00 {
+			compatible = "ite,it8xxx2-intc-v2";
+			reg = <0x00f03f00 0x0100>;
+			#address-cells = <0>;
+			#interrupt-cells = <2>;
+			interrupt-controller;
+		};
+
 		i2c0: i2c@f04300 {
 			compatible = "ite,enhance-i2c";
 			reg = <0x00f04300 0x0080>;
@@ -988,42 +1021,9 @@
 			status = "disabled";
 		};
 
-		ite_uart2_wrapper: uartwrapper@f02820 {
-			compatible = "ite,it8xxx2-uart";
-			reg = <0x00f02820 0x0020>;
-			port-num = <2>;
-			gpios = <&gpiof 0 0>;
-			uart-dev = <&uart2>;
-			status = "disabled";
-		};
-
-		usb0: usbd@f02f00 {
-			compatible = "ite,it82xx2-usb";
-			reg = <0x00f02f00 256>;
-			interrupts = <IT8XXX2_IRQ_USB IRQ_TYPE_LEVEL_HIGH
-				      IT8XXX2_IRQ_WU90 IRQ_TYPE_LEVEL_HIGH>;
-			interrupt-parent = <&intc>;
-			wucctrl = <&wuc_wu90>;
-			num-bidir-endpoints = <1>;
-			num-in-endpoints = <10>;
-			num-out-endpoints = <5>;
-			status = "disabled";
-		};
-
-		sha0: crypto@f03c00 {
-			compatible = "ite,it8xxx2-sha-v2";
-			reg = <0x00f03c00 0x5>;
-			status = "disabled";
-		};
-
-		spi0: spi@f02600 {
-			compatible = "ite,it8xxx2-spi";
-			reg = <0x00f02600 0x34>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			interrupt-parent = <&intc>;
-			interrupts = <37 IRQ_TYPE_EDGE_RISING>;
-			status = "disabled";
+		sram0: memory@80100000 {
+			compatible = "mmio-sram";
+			reg = <0x80100000 DT_SIZE_K(256)>;
 		};
 	};
 };

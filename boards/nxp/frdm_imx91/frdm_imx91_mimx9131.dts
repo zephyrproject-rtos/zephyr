@@ -21,10 +21,6 @@
 		zephyr,canbus = &flexcan2;
 	};
 
-	dram: memory@80000000 {
-		reg = <0x80000000 DT_SIZE_M(1)>;
-	};
-
 	aliases {
 		watchdog0 = &wdog4;
 	};
@@ -46,6 +42,10 @@
 		max-bitrate = <5000000>;
 		#phy-cells = <0>;
 		status = "okay";
+	};
+
+	dram: memory@80000000 {
+		reg = <0x80000000 DT_SIZE_M(1)>;
 	};
 };
 

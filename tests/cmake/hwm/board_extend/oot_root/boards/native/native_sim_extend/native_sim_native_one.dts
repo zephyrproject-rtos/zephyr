@@ -117,32 +117,6 @@
 		status = "okay";
 	};
 
-	i2c0: i2c@100 {
-		compatible = "zephyr,i2c-emul-controller";
-		reg = <0x100 4>;
-		clock-frequency = <I2C_BITRATE_STANDARD>;
-		#address-cells = <1>;
-		#size-cells = <0>;
-		status = "okay";
-	};
-
-	spi0: spi@200 {
-		compatible = "zephyr,spi-emul-controller";
-		reg = <0x200 4>;
-		clock-frequency = <50000000>;
-		#address-cells = <1>;
-		#size-cells = <0>;
-		status = "okay";
-	};
-
-	espi0: espi@300 {
-		compatible = "zephyr,espi-emul-controller";
-		reg = <0x300 4>;
-		#address-cells = <1>;
-		#size-cells = <0>;
-		status = "okay";
-	};
-
 	uart0: uart {
 		compatible = "zephyr,native-pty-uart";
 		/* Dummy current-speed entry to comply with serial
@@ -168,18 +142,6 @@
 
 	counter0: counter {
 		compatible = "zephyr,native-sim-counter";
-		status = "okay";
-	};
-
-	gpio0: gpio@800 {
-		compatible = "zephyr,gpio-emul";
-		reg = <0x800 0x4>;
-		rising-edge;
-		falling-edge;
-		high-level;
-		low-level;
-		gpio-controller;
-		#gpio-cells = <2>;
 		status = "okay";
 	};
 
@@ -225,4 +187,42 @@
 	};
 
 	added-by-native-one {};
+
+	i2c0: i2c@100 {
+		compatible = "zephyr,i2c-emul-controller";
+		reg = <0x100 4>;
+		clock-frequency = <I2C_BITRATE_STANDARD>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "okay";
+	};
+
+	spi0: spi@200 {
+		compatible = "zephyr,spi-emul-controller";
+		reg = <0x200 4>;
+		clock-frequency = <50000000>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "okay";
+	};
+
+	espi0: espi@300 {
+		compatible = "zephyr,espi-emul-controller";
+		reg = <0x300 4>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "okay";
+	};
+
+	gpio0: gpio@800 {
+		compatible = "zephyr,gpio-emul";
+		reg = <0x800 0x4>;
+		rising-edge;
+		falling-edge;
+		high-level;
+		low-level;
+		gpio-controller;
+		#gpio-cells = <2>;
+		status = "okay";
+	};
 };

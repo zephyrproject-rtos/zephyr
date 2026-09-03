@@ -22,102 +22,9 @@
 
 / {
 	soc {
-		sram0: memory@20000000 {
-			compatible = "mmio-sram";
-			reg = <0x20000000 DT_SIZE_K(40)>;
-		};
-
-		ioport8: gpio@40080100 {
-			compatible = "renesas,ra-gpio-ioport";
-			reg = <0x40080100 0x20>;
-			port = <8>;
-			gpio-controller;
-			#gpio-cells = <2>;
-			ngpios = <16>;
-			status = "disabled";
-		};
-
-		flash-controller@407e0000 {
-			flash-hardware-version = <40>;
-			#erase-block-cells = <2>;
-
-			flash0: flash@0 {
-				compatible = "renesas,ra-nv-code-flash";
-				reg = <0x0 DT_SIZE_K(128)>;
-				write-block-size = <128>;
-				erase-block-size = <32768>;
-				erase-blocks = <&flash 8 8192>, <&flash 2 32768>;
-				programming-enable;
-			};
-
-			flash1: flash@8000000 {
-				compatible = "renesas,ra-nv-data-flash";
-				reg = <0x8000000 DT_SIZE_K(4)>;
-				write-block-size = <4>;
-				erase-block-size = <64>;
-				programming-enable;
-				erase-value-undefined;
-			};
-		};
-
-		adc@40170000 {
-			channel-available-mask = <0x139f7>;
-		};
-
-		canfd_global: canfd_global@400b0000 {
-			compatible = "renesas,ra-canfd-global";
-			reg = <0x400b0000 0x2000>;
-			interrupts = <40 1>, <41 1>;
-			interrupt-names = "rxf", "glerr";
-			clocks = <&pclkb 0 0>, <&pclka 0 0>;
-			clock-names = "opclk", "ramclk";
-			dll-max-freq = <DT_FREQ_M(40)>;
-			status = "disabled";
-
-			canfd0: canfd0 {
-				compatible = "renesas,ra-canfd";
-				channel = <0>;
-				interrupts = <43 12>, <44 12>, <45 12>;
-				interrupt-names = "err", "tx", "rx";
-				clocks = <&canfdclk MSTPC 27>;
-				clock-names = "dllclk";
-				status = "disabled";
-			};
-		};
-
 		trng: trng {
 			compatible = "renesas,ra-trng";
 			status = "disabled";
-		};
-
-		agt0: agtw@400e8000 {
-			compatible = "renesas,ra-agt";
-			reg = <0x400e8000 0x100>;
-			channel = <0>;
-			renesas,count-source = "AGT_CLOCK_LOCO";
-			renesas,prescaler = <0>;
-			renesas,resolution = <32>;
-			status = "disabled";
-
-			counter {
-				compatible = "renesas,ra-agt-counter";
-				status = "disabled";
-			};
-		};
-
-		agt1: agtw@400e8100 {
-			compatible = "renesas,ra-agt";
-			reg = <0x400e8100 0x100>;
-			channel = <1>;
-			renesas,count-source = "AGT_CLOCK_LOCO";
-			renesas,prescaler = <0>;
-			renesas,resolution = <32>;
-			status = "disabled";
-
-			counter {
-				compatible = "renesas,ra-agt-counter";
-				status = "disabled";
-			};
 		};
 
 		option_setting_ofs0: option-setting-ofs0@100a100 {
@@ -153,6 +60,99 @@
 			reg = <0x0100a260 0x4>;
 			zephyr,memory-region = "OFS_PBPS_SEC_MEMORY";
 			status = "okay";
+		};
+
+		sram0: memory@20000000 {
+			compatible = "mmio-sram";
+			reg = <0x20000000 DT_SIZE_K(40)>;
+		};
+
+		ioport8: gpio@40080100 {
+			compatible = "renesas,ra-gpio-ioport";
+			reg = <0x40080100 0x20>;
+			port = <8>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+			status = "disabled";
+		};
+
+		canfd_global: canfd_global@400b0000 {
+			compatible = "renesas,ra-canfd-global";
+			reg = <0x400b0000 0x2000>;
+			interrupts = <40 1>, <41 1>;
+			interrupt-names = "rxf", "glerr";
+			clocks = <&pclkb 0 0>, <&pclka 0 0>;
+			clock-names = "opclk", "ramclk";
+			dll-max-freq = <DT_FREQ_M(40)>;
+			status = "disabled";
+
+			canfd0: canfd0 {
+				compatible = "renesas,ra-canfd";
+				channel = <0>;
+				interrupts = <43 12>, <44 12>, <45 12>;
+				interrupt-names = "err", "tx", "rx";
+				clocks = <&canfdclk MSTPC 27>;
+				clock-names = "dllclk";
+				status = "disabled";
+			};
+		};
+
+		agt0: agtw@400e8000 {
+			compatible = "renesas,ra-agt";
+			reg = <0x400e8000 0x100>;
+			channel = <0>;
+			renesas,count-source = "AGT_CLOCK_LOCO";
+			renesas,prescaler = <0>;
+			renesas,resolution = <32>;
+			status = "disabled";
+
+			counter {
+				compatible = "renesas,ra-agt-counter";
+				status = "disabled";
+			};
+		};
+
+		agt1: agtw@400e8100 {
+			compatible = "renesas,ra-agt";
+			reg = <0x400e8100 0x100>;
+			channel = <1>;
+			renesas,count-source = "AGT_CLOCK_LOCO";
+			renesas,prescaler = <0>;
+			renesas,resolution = <32>;
+			status = "disabled";
+
+			counter {
+				compatible = "renesas,ra-agt-counter";
+				status = "disabled";
+			};
+		};
+
+		adc@40170000 {
+			channel-available-mask = <0x139f7>;
+		};
+
+		flash-controller@407e0000 {
+			flash-hardware-version = <40>;
+			#erase-block-cells = <2>;
+
+			flash0: flash@0 {
+				compatible = "renesas,ra-nv-code-flash";
+				reg = <0x0 DT_SIZE_K(128)>;
+				write-block-size = <128>;
+				erase-block-size = <32768>;
+				erase-blocks = <&flash 8 8192>, <&flash 2 32768>;
+				programming-enable;
+			};
+
+			flash1: flash@8000000 {
+				compatible = "renesas,ra-nv-data-flash";
+				reg = <0x8000000 DT_SIZE_K(4)>;
+				write-block-size = <4>;
+				erase-block-size = <64>;
+				programming-enable;
+				erase-value-undefined;
+			};
 		};
 	};
 

@@ -51,44 +51,6 @@
 			status = "disabled";
 		};
 
-		pclkblock: pclkblock@80010 {
-			compatible = "renesas,rx-cgc-pclk-block";
-			reg = <0x00080010 4>, <0x00080014 4>, <0x00080018 4>,
-			      <0x0008001c 4>;
-			reg-names = "MSTPA", "MSTPB", "MSTPC", "MSTPD";
-			#clock-cells = <0>;
-			clocks = <&pll>;
-			status = "okay";
-
-			iclk: iclk {
-				compatible = "renesas,rx-cgc-pclk";
-				div = <1>;
-				#clock-cells = <2>;
-				status = "okay";
-			};
-
-			fclk: fclk {
-				compatible = "renesas,rx-cgc-pclk";
-				div = <2>;
-				#clock-cells = <2>;
-				status = "okay";
-			};
-
-			pclkb: pclkb {
-				compatible = "renesas,rx-cgc-pclk";
-				div = <2>;
-				#clock-cells = <2>;
-				status = "okay";
-			};
-
-			pclkd: pclkd {
-				compatible = "renesas,rx-cgc-pclk";
-				div = <1>;
-				#clock-cells = <2>;
-				status = "okay";
-			};
-		};
-
 		clkout: clkout {
 			compatible = "renesas,rx-cgc-pclk";
 			clocks = <&xtal>;
@@ -131,6 +93,44 @@
 			#clock-cells = <2>;
 			status = "disabled";
 		};
+
+		pclkblock: pclkblock@80010 {
+			compatible = "renesas,rx-cgc-pclk-block";
+			reg = <0x00080010 4>, <0x00080014 4>, <0x00080018 4>,
+			      <0x0008001c 4>;
+			reg-names = "MSTPA", "MSTPB", "MSTPC", "MSTPD";
+			#clock-cells = <0>;
+			clocks = <&pll>;
+			status = "okay";
+
+			iclk: iclk {
+				compatible = "renesas,rx-cgc-pclk";
+				div = <1>;
+				#clock-cells = <2>;
+				status = "okay";
+			};
+
+			fclk: fclk {
+				compatible = "renesas,rx-cgc-pclk";
+				div = <2>;
+				#clock-cells = <2>;
+				status = "okay";
+			};
+
+			pclkb: pclkb {
+				compatible = "renesas,rx-cgc-pclk";
+				div = <2>;
+				#clock-cells = <2>;
+				status = "okay";
+			};
+
+			pclkd: pclkd {
+				compatible = "renesas,rx-cgc-pclk";
+				div = <1>;
+				#clock-cells = <2>;
+				status = "okay";
+			};
+		};
 	};
 
 	soc {
@@ -148,16 +148,6 @@
 			interrupts = <23 1>;
 			interrupt-names = "frdyi";
 
-			code_flash: flash@fffe0000 {
-				compatible = "renesas,rx-nv-flash";
-				reg = <0xfffe0000 DT_SIZE_K(128)>;
-				ranges = <0x0 0xfffe0000 DT_SIZE_K(128)>;
-				#address-cells = <1>;
-				#size-cells = <1>;
-				write-block-size = <8>;
-				erase-block-size = <2048>;
-			};
-
 			data_flash: flash@100000 {
 				compatible = "renesas,rx-nv-flash";
 				reg = <0x00100000 DT_SIZE_K(4)>;
@@ -167,6 +157,16 @@
 				bgo-enable;
 				write-block-size = <1>;
 				erase-block-size = <256>;
+			};
+
+			code_flash: flash@fffe0000 {
+				compatible = "renesas,rx-nv-flash";
+				reg = <0xfffe0000 DT_SIZE_K(128)>;
+				ranges = <0x0 0xfffe0000 DT_SIZE_K(128)>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				write-block-size = <8>;
+				erase-block-size = <2048>;
 			};
 		};
 	};

@@ -29,11 +29,6 @@
 		};
 	};
 
-	sram0: memory@1ffff000 {
-		compatible = "mmio-sram";
-		reg = <0x1ffff000 DT_SIZE_K(16)>;
-	};
-
 	/* Dummy pinctrl node, filled with pin mux options at board level */
 	pinctrl: pinctrl {
 		compatible = "nxp,port-pinctrl";
@@ -58,37 +53,12 @@
 			};
 		};
 
-		mcg: clock-controller@40064000 {
-			compatible = "nxp,kinetis-mcg";
-			reg = <0x40064000 0xd>;
-			#clock-cells = <1>;
-		};
-
-		i2c0: i2c@40066000 {
-			compatible = "nxp,kinetis-i2c";
-			reg = <0x40066000 0x1000>;
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			interrupts = <8 0>;
-			clocks = <&sim KINETIS_SIM_CLOCK(KINETIS_SIM_BUS_CLK, 0x1034, 6)>;
+		adc0: adc@4003b000 {
+			compatible = "nxp,kinetis-adc16";
+			reg = <0x4003b000 0x70>;
+			interrupts = <15 0>;
+			#io-channel-cells = <1>;
 			status = "disabled";
-		};
-
-		i2c1: i2c@40067000 {
-			compatible = "nxp,kinetis-i2c";
-			reg = <0x40067000 0x1000>;
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			interrupts = <9 0>;
-			clocks = <&sim KINETIS_SIM_CLOCK(KINETIS_SIM_BUS_CLK, 0x1034, 7)>;
-			status = "disabled";
-		};
-
-		rcm: rcm@4007f000 {
-			compatible = "nxp,rcm-hwinfo";
-			reg = <0x4007f000 0x1000>;
 		};
 
 		sim: sim@40047000 {
@@ -109,43 +79,6 @@
 				clock-div = <2>;
 				#clock-cells = <0>;
 			};
-		};
-
-		uart0: uart@4006a000 {
-			compatible = "nxp,kinetis-lpsci";
-			reg = <0x4006a000 0xc>;
-			interrupts = <12 0>;
-			clocks = <&sim KINETIS_SIM_CLOCK(KINETIS_SIM_CORESYS_CLK, 0x1034, 10)>;
-
-			status = "disabled";
-		};
-
-		adc0: adc@4003b000 {
-			compatible = "nxp,kinetis-adc16";
-			reg = <0x4003b000 0x70>;
-			interrupts = <15 0>;
-			#io-channel-cells = <1>;
-			status = "disabled";
-		};
-
-		spi0: spi@40076000 {
-			compatible = "nxp,kinetis-l-spi";
-			reg = <0x40076000 0x1000>;
-			clocks = <&sim KINETIS_SIM_CLOCK(KINETIS_SIM_BUS_CLK, 0x1034, 22)>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-
-			status = "disabled";
-		};
-
-		spi1: spi@40077000 {
-			compatible = "nxp,kinetis-l-spi";
-			reg = <0x40077000 0x1000>;
-			clocks = <&sim KINETIS_SIM_CLOCK(KINETIS_SIM_CORESYS_CLK, 0x1034, 23)>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-
-			status = "disabled";
 		};
 
 		porta: pinmux@40049000 {
@@ -176,6 +109,77 @@
 			compatible = "nxp,port-pinmux";
 			reg = <0x4004d000 0xd0>;
 			clocks = <&sim KINETIS_SIM_CLOCK(KINETIS_SIM_BUS_CLK, 0x1038, 13)>;
+		};
+
+		mcg: clock-controller@40064000 {
+			compatible = "nxp,kinetis-mcg";
+			reg = <0x40064000 0xd>;
+			#clock-cells = <1>;
+		};
+
+		i2c0: i2c@40066000 {
+			compatible = "nxp,kinetis-i2c";
+			reg = <0x40066000 0x1000>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <8 0>;
+			clocks = <&sim KINETIS_SIM_CLOCK(KINETIS_SIM_BUS_CLK, 0x1034, 6)>;
+			status = "disabled";
+		};
+
+		i2c1: i2c@40067000 {
+			compatible = "nxp,kinetis-i2c";
+			reg = <0x40067000 0x1000>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <9 0>;
+			clocks = <&sim KINETIS_SIM_CLOCK(KINETIS_SIM_BUS_CLK, 0x1034, 7)>;
+			status = "disabled";
+		};
+
+		uart0: uart@4006a000 {
+			compatible = "nxp,kinetis-lpsci";
+			reg = <0x4006a000 0xc>;
+			interrupts = <12 0>;
+			clocks = <&sim KINETIS_SIM_CLOCK(KINETIS_SIM_CORESYS_CLK, 0x1034, 10)>;
+
+			status = "disabled";
+		};
+
+		usbotg: usbd@40072000 {
+			compatible = "nxp,kinetis-usbd";
+			reg = <0x40072000 0x1000>;
+			interrupts = <24 1>;
+			interrupt-names = "usb_otg";
+			num-bidir-endpoints = <16>;
+			status = "disabled";
+		};
+
+		spi0: spi@40076000 {
+			compatible = "nxp,kinetis-l-spi";
+			reg = <0x40076000 0x1000>;
+			clocks = <&sim KINETIS_SIM_CLOCK(KINETIS_SIM_BUS_CLK, 0x1034, 22)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			status = "disabled";
+		};
+
+		spi1: spi@40077000 {
+			compatible = "nxp,kinetis-l-spi";
+			reg = <0x40077000 0x1000>;
+			clocks = <&sim KINETIS_SIM_CLOCK(KINETIS_SIM_CORESYS_CLK, 0x1034, 23)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			status = "disabled";
+		};
+
+		rcm: rcm@4007f000 {
+			compatible = "nxp,rcm-hwinfo";
+			reg = <0x4007f000 0x1000>;
 		};
 
 		gpioa: gpio@400ff000 {
@@ -224,15 +228,11 @@
 			nxp,kinetis-port = <&porte>;
 			status = "disabled";
 		};
+	};
 
-		usbotg: usbd@40072000 {
-			compatible = "nxp,kinetis-usbd";
-			reg = <0x40072000 0x1000>;
-			interrupts = <24 1>;
-			interrupt-names = "usb_otg";
-			num-bidir-endpoints = <16>;
-			status = "disabled";
-		};
+	sram0: memory@1ffff000 {
+		compatible = "mmio-sram";
+		reg = <0x1ffff000 DT_SIZE_K(16)>;
 	};
 };
 

@@ -35,15 +35,6 @@
 		};
 	};
 
-	flash0: flash@2000b400 {
-		reg = <0x2000b400 0x40000>;
-	};
-
-	sram0: memory@20050000 {
-		compatible = "mmio-sram";
-		reg = <0x20050000 0x10000>;
-	};
-
 	clocks {
 		rc25m: rc25m {
 			compatible = "fixed-clock";
@@ -65,18 +56,28 @@
 		#size-cells = <1>;
 		interrupt-parent = <&nvic>;
 
+		sha0: crypto@40000000 {
+			compatible = "realtek,rts5912-sha";
+			reg = <0x40000000 0x40 0x40001000 932>;
+			reg-names = "sha2", "sha2dma";
+			status = "disabled";
+		};
+
 		bbram: bb-ram@40005000 {
 			compatible = "realtek,rts5912-bbram";
 			reg = <0x40005000 0x100>;
 			status = "okay";
 		};
 
-		sccon: clock-controller@40020000 {
-			compatible = "realtek,rts5912-sccon";
-			reg = <0x40020000 0xf0>;
-			#clock-cells = <2>;
-			clocks = <&rc25m>, <&pll>;
-			clock-names = "rc25m", "pll";
+		wdog: watchdog@4000c000 {
+			compatible = "realtek,rts5912-watchdog";
+			reg = <0x4000c000 0x14>;
+			interrupt-parent = <&nvic>;
+			interrupts = <209 0>;
+			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP2 PERIPH_GRP2_WDT_CLKPWR>;
+			clock-names = "watchdog";
+			clk-divider = <33>;
+			status = "disabled";
 		};
 
 		rtc: rtc@4000c100 {
@@ -84,6 +85,18 @@
 			reg = <0x4000c100 0x20>;
 			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP2 PERIPH_GRP2_RTC_CLKPWR>;
 			clock-names = "rtc";
+			status = "disabled";
+		};
+
+		slwtmr0: slwtmr0@4000c200 {
+			compatible = "realtek,rts5912-slwtimer";
+			reg = <0x4000c200 0x10>;
+			interrupts = <202 0>;
+			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP1 PERIPH_GRP1_SLWTMR0_CLKPWR>;
+			clock-names = "slwtmr";
+			max-value = <0xffffffff>;
+			clock-frequency = <1000000>;
+			prescaler = <0>;
 			status = "disabled";
 		};
 
@@ -165,102 +178,223 @@
 			status = "disabled";
 		};
 
-		espi0: espi0@400b1000 {
-			compatible = "realtek,rts5912-espi";
-
-			reg = <0x400b1000 0x200		/* espi target */
-			       0x400a0400 0x01c		/* port80 */
-			       0x400a0200 0x1c			/* ACPI */
-			       0x400a021c 0x1c			/* PROMT0 */
-			       0x400a0238 0x1c			/* PROMT1 */
-			       0x400a0254 0x1c			/* PROMT2 */
-			       0x400a0270 0x1c			/* PROMT3 */
-			       0x40082000 0x14			/* EMI0 */
-			       0x40082020 0x14			/* EMI1 */
-			       0x40082040 0x14			/* EMI2 */
-			       0x40082060 0x14			/* EMI3 */
-			       0x40082080 0x14			/* EMI4 */
-			       0x400820a0 0x14			/* EMI5 */
-			       0x400820c0 0x14			/* EMI6 */
-			       0x400820e0 0x14			/* EMI7 */
-			       0x400a0100 0x1c			/* KBC */
-			       0x400b1600 0xd0>;		/* MBX */
-			cs-gpios = <RTS5912_GPIO004 0>;
-
-			reg-names = "espi_target", "port80", "acpi", "promt0", "promt1", "promt2",
-				    "promt3", "emi0", "emi1", "emi2", "emi3", "emi4", "emi5",
-				    "emi6", "emi7", "kbc", "mbx";
-
-			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_ESPI_CLKPWR>,
-				 <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_P80_CLKPWR>,
-				 <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_ACPI_CLKPWR>,
-				 <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PMPORT0_CLKPWR>,
-				 <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PMPORT1_CLKPWR>,
-				 <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PMPORT2_CLKPWR>,
-				 <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PMPORT3_CLKPWR>,
-				 <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_EMI0_CLKPWR>,
-				 <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_EMI1_CLKPWR>,
-				 <&sccon RTS5912_SCCON_PERIPH_GRP1 PERIPH_GRP1_EMI2_CLKPWR>,
-				 <&sccon RTS5912_SCCON_PERIPH_GRP1 PERIPH_GRP1_EMI3_CLKPWR>,
-				 <&sccon RTS5912_SCCON_PERIPH_GRP1 PERIPH_GRP1_EMI4_CLKPWR>,
-				 <&sccon RTS5912_SCCON_PERIPH_GRP1 PERIPH_GRP1_EMI5_CLKPWR>,
-				 <&sccon RTS5912_SCCON_PERIPH_GRP1 PERIPH_GRP1_EMI6_CLKPWR>,
-				 <&sccon RTS5912_SCCON_PERIPH_GRP1 PERIPH_GRP1_EMI7_CLKPWR>,
-				 <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_KBC_CLKPWR>;
-
-			clock-names = "espi-target", "port80", "acpi", "promt0", "promt1", "promt2",
-				      "promt3", "emi0", "emi1", "emi2", "emi3", "emi4", "emi5",
-				      "emi6", "emi7", "kbc";
-
-			interrupts = <133 0>, <134 0>, <146 0>,
-				     <145 0>, <144 0>, <143 0>,
-				     <142 0>, <141 0>, <140 0>,
-				     <139 0>, <138 0>, <137 0>,
-				     <136 0>, <135 0>, <154 0>,
-				     <155 0>, <156 0>, <157 0>,
-				     <158 0>, <159 0>, <160 0>,
-				     <161 0>, <162 0>, <163 0>,
-				     <164 0>, <165 0>, <212 0>,
-				     <213 0>, <214 0>, <215 0>,
-				     <216 0>, <217 0>, <218 0>,
-				     <219 0>, <147 0>, <148 0>,
-				     <149 0>, <152 0>, <153 0>,
-				     <166 0>, <220 0>;
-
-			interrupt-names = "bus-rst", "periph-ch", "vw-ch",
-					  "vw-idx2", "vw-idx3", "vw-idx7",
-					  "vw-idx41", "vw-idx42", "vw-idx43",
-					  "vw-idx44", "vw-idx47", "vw-idx4a",
-					  "vw-idx51", "vw-idx61", "kbc_ibf",
-					  "kbc_obe", "acpi_ibf", "acpi_obe",
-					  "promt0_ibf", "promt0_obe", "promt1_ibf",
-					  "promt1_obe", "promt2_ibf", "promt2_obe",
-					  "promt3_ibf", "promt3_obe", "emi0",
-					  "emi1", "emi2", "emi3",
-					  "emi4", "emi5", "emi6",
-					  "emi7", "oob_tx", "oob_rx",
-					  "oob_chg", "maf_tr", "flash_chg",
-					  "port80", "mbx";
-			status = "disabled";
-		};
-
-		slwtmr0: slwtmr0@4000c200 {
-			compatible = "realtek,rts5912-slwtimer";
-			reg = <0x4000c200 0x10>;
-			interrupts = <202 0>;
-			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP1 PERIPH_GRP1_SLWTMR0_CLKPWR>;
-			clock-names = "slwtmr";
-			max-value = <0xffffffff>;
-			clock-frequency = <1000000>;
-			prescaler = <0>;
-			status = "disabled";
-		};
-
 		rtmr: rtmr@4000c500 {
 			compatible = "realtek,rts5912-rtmr";
 			reg = <0x4000c500 0x10>;
 			interrupts = <204 0>;
 			status = "okay";
+		};
+
+		i2c_0: i2c@4000d000 {
+			compatible = "snps,designware-i2c";
+			reg = <0x4000d000 0x154>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			interrupt-parent = <&nvic>;
+			interrupts = <182 1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			lcnt-offset = <35>;
+			hcnt-offset = <35>;
+			i2c-sda-hold-time-ns = <300>;
+			status = "disabled";
+		};
+
+		i2c_1: i2c@4000d200 {
+			compatible = "snps,designware-i2c";
+			reg = <0x4000d200 0x154>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			interrupt-parent = <&nvic>;
+			interrupts = <183 1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			lcnt-offset = <35>;
+			hcnt-offset = <35>;
+			i2c-sda-hold-time-ns = <300>;
+			status = "disabled";
+		};
+
+		i2c_2: i2c@4000d400 {
+			compatible = "snps,designware-i2c";
+			reg = <0x4000d400 0x154>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			interrupt-parent = <&nvic>;
+			interrupts = <184 1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			lcnt-offset = <35>;
+			hcnt-offset = <35>;
+			i2c-sda-hold-time-ns = <300>;
+			status = "disabled";
+		};
+
+		i2c_3: i2c@4000d600 {
+			compatible = "snps,designware-i2c";
+			reg = <0x4000d600 0x154>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			interrupt-parent = <&nvic>;
+			interrupts = <185 1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			lcnt-offset = <35>;
+			hcnt-offset = <35>;
+			i2c-sda-hold-time-ns = <300>;
+			status = "disabled";
+		};
+
+		i2c_4: i2c@4000d800 {
+			compatible = "snps,designware-i2c";
+			reg = <0x4000d800 0x154>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			interrupt-parent = <&nvic>;
+			interrupts = <186 1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			lcnt-offset = <35>;
+			hcnt-offset = <35>;
+			i2c-sda-hold-time-ns = <300>;
+			status = "disabled";
+		};
+
+		i2c_5: i2c@4000da00 {
+			compatible = "snps,designware-i2c";
+			reg = <0x4000da00 0x154>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			interrupt-parent = <&nvic>;
+			interrupts = <187 1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			lcnt-offset = <35>;
+			hcnt-offset = <35>;
+			i2c-sda-hold-time-ns = <300>;
+			status = "disabled";
+		};
+
+		i2c_6: i2c@4000dc00 {
+			compatible = "snps,designware-i2c";
+			reg = <0x4000dc00 0x154>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			interrupt-parent = <&nvic>;
+			interrupts = <188 1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			lcnt-offset = <35>;
+			hcnt-offset = <35>;
+			i2c-sda-hold-time-ns = <300>;
+			status = "disabled";
+		};
+
+		i2c_7: i2c@4000de00 {
+			compatible = "snps,designware-i2c";
+			reg = <0x4000de00 0x154>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			interrupt-parent = <&nvic>;
+			interrupts = <189 1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			lcnt-offset = <35>;
+			hcnt-offset = <35>;
+			i2c-sda-hold-time-ns = <300>;
+			status = "disabled";
+		};
+
+		pwm0: pwm@4000f000 {
+			compatible = "realtek,rts5912-pwm";
+			reg = <0x4000f000 0x0c>;
+			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PWM0_CLKPWR>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm1: pwm@4000f00c {
+			compatible = "realtek,rts5912-pwm";
+			reg = <0x4000f00c 0x0c>;
+			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PWM1_CLKPWR>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm2: pwm@4000f018 {
+			compatible = "realtek,rts5912-pwm";
+			reg = <0x4000f018 0x0c>;
+			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PWM2_CLKPWR>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm3: pwm@4000f024 {
+			compatible = "realtek,rts5912-pwm";
+			reg = <0x4000f024 0x0c>;
+			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PWM3_CLKPWR>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm4: pwm@4000f030 {
+			compatible = "realtek,rts5912-pwm";
+			reg = <0x4000f030 0x0c>;
+			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PWM4_CLKPWR>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm5: pwm@4000f03c {
+			compatible = "realtek,rts5912-pwm";
+			reg = <0x4000f03c 0x0c>;
+			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PWM5_CLKPWR>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm6: pwm@4000f048 {
+			compatible = "realtek,rts5912-pwm";
+			reg = <0x4000f048 0x0c>;
+			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PWM6_CLKPWR>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		pwm7: pwm@4000f054 {
+			compatible = "realtek,rts5912-pwm";
+			reg = <0x4000f054 0x0c>;
+			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PWM7_CLKPWR>;
+			#pwm-cells = <3>;
+			status = "disabled";
+		};
+
+		tach0: tach@4000fd00 {
+			compatible = "realtek,rts5912-tach";
+			reg = <0x4000fd00 0x40>;
+			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_TACH0_CLKPWR>;
+			clock-names = "tacho";
+			interrupts = <192 0>;
+			status = "disabled";
+		};
+
+		tach1: tach@4000fd40 {
+			compatible = "realtek,rts5912-tach";
+			reg = <0x4000fd40 0x40>;
+			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_TACH1_CLKPWR>;
+			clock-names = "tacho";
+			interrupts = <193 0>;
+			status = "disabled";
+		};
+
+		tach2: tach@4000fd80 {
+			compatible = "realtek,rts5912-tach";
+			reg = <0x4000fd80 0x40>;
+			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_TACH2_CLKPWR>;
+			clock-names = "tacho";
+			interrupts = <194 0>;
+			status = "disabled";
+		};
+
+		tach3: tach@4000fdc0 {
+			compatible = "realtek,rts5912-tach";
+			reg = <0x4000fdc0 0x40>;
+			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_TACH3_CLKPWR>;
+			clock-names = "tacho";
+			interrupts = <195 0>;
+			status = "disabled";
 		};
 
 		adc0: adc@4000fe00 {
@@ -272,12 +406,12 @@
 			status = "disabled";
 		};
 
-		spi0: spi@40010400 {
-			compatible = "realtek,rts5912-spi";
-			reg = <0x40010400 0x3c>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			clocks = <&sccon RTS5912_SCCON_SYS 0>;
+		kbd: kbd@40010000 {
+			compatible = "realtek,rts5912-kbd";
+			reg = <0x40010000 0x10>;
+			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_KBM_CLKPWR>;
+			interrupts = <210 0>;
+			interrupt-parent = <&nvic>;
 			status = "disabled";
 		};
 
@@ -298,6 +432,37 @@
 			clock-names = "uart0";
 			uart-dev = <&uart0>;
 			status = "disabled";
+		};
+
+		flash_controller: flash-controller@40010200 {
+			compatible = "realtek,rts5912-flash-controller";
+			reg = <0x40010200 0x200>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			eflash: eflash@60000000 {
+				compatible = "soc-nv-flash";
+				reg = <0x60000000 DT_SIZE_K(1024)>;
+				erase-block-size = <DT_SIZE_K(4)>;
+				write-block-size = <4>;
+			};
+		};
+
+		spi0: spi@40010400 {
+			compatible = "realtek,rts5912-spi";
+			reg = <0x40010400 0x3c>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&sccon RTS5912_SCCON_SYS 0>;
+			status = "disabled";
+		};
+
+		sccon: clock-controller@40020000 {
+			compatible = "realtek,rts5912-sccon";
+			reg = <0x40020000 0xf0>;
+			#clock-cells = <2>;
+			clocks = <&rc25m>, <&pll>;
+			clock-names = "rc25m", "pll";
 		};
 
 		pinctrl: pin-controller@40090000 {
@@ -424,256 +589,82 @@
 			};
 		};
 
-		wdog: watchdog@4000c000 {
-			compatible = "realtek,rts5912-watchdog";
-			reg = <0x4000c000 0x14>;
-			interrupt-parent = <&nvic>;
-			interrupts = <209 0>;
-			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP2 PERIPH_GRP2_WDT_CLKPWR>;
-			clock-names = "watchdog";
-			clk-divider = <33>;
-			status = "disabled";
-		};
+		espi0: espi0@400b1000 {
+			compatible = "realtek,rts5912-espi";
 
-		kbd: kbd@40010000 {
-			compatible = "realtek,rts5912-kbd";
-			reg = <0x40010000 0x10>;
-			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_KBM_CLKPWR>;
-			interrupts = <210 0>;
-			interrupt-parent = <&nvic>;
-			status = "disabled";
-		};
+			reg = <0x400b1000 0x200		/* espi target */
+			       0x400a0400 0x01c		/* port80 */
+			       0x400a0200 0x1c			/* ACPI */
+			       0x400a021c 0x1c			/* PROMT0 */
+			       0x400a0238 0x1c			/* PROMT1 */
+			       0x400a0254 0x1c			/* PROMT2 */
+			       0x400a0270 0x1c			/* PROMT3 */
+			       0x40082000 0x14			/* EMI0 */
+			       0x40082020 0x14			/* EMI1 */
+			       0x40082040 0x14			/* EMI2 */
+			       0x40082060 0x14			/* EMI3 */
+			       0x40082080 0x14			/* EMI4 */
+			       0x400820a0 0x14			/* EMI5 */
+			       0x400820c0 0x14			/* EMI6 */
+			       0x400820e0 0x14			/* EMI7 */
+			       0x400a0100 0x1c			/* KBC */
+			       0x400b1600 0xd0>;		/* MBX */
+			cs-gpios = <RTS5912_GPIO004 0>;
 
-		tach0: tach@4000fd00 {
-			compatible = "realtek,rts5912-tach";
-			reg = <0x4000fd00 0x40>;
-			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_TACH0_CLKPWR>;
-			clock-names = "tacho";
-			interrupts = <192 0>;
-			status = "disabled";
-		};
+			reg-names = "espi_target", "port80", "acpi", "promt0", "promt1", "promt2",
+				    "promt3", "emi0", "emi1", "emi2", "emi3", "emi4", "emi5",
+				    "emi6", "emi7", "kbc", "mbx";
 
-		tach1: tach@4000fd40 {
-			compatible = "realtek,rts5912-tach";
-			reg = <0x4000fd40 0x40>;
-			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_TACH1_CLKPWR>;
-			clock-names = "tacho";
-			interrupts = <193 0>;
-			status = "disabled";
-		};
+			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_ESPI_CLKPWR>,
+				 <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_P80_CLKPWR>,
+				 <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_ACPI_CLKPWR>,
+				 <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PMPORT0_CLKPWR>,
+				 <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PMPORT1_CLKPWR>,
+				 <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PMPORT2_CLKPWR>,
+				 <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PMPORT3_CLKPWR>,
+				 <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_EMI0_CLKPWR>,
+				 <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_EMI1_CLKPWR>,
+				 <&sccon RTS5912_SCCON_PERIPH_GRP1 PERIPH_GRP1_EMI2_CLKPWR>,
+				 <&sccon RTS5912_SCCON_PERIPH_GRP1 PERIPH_GRP1_EMI3_CLKPWR>,
+				 <&sccon RTS5912_SCCON_PERIPH_GRP1 PERIPH_GRP1_EMI4_CLKPWR>,
+				 <&sccon RTS5912_SCCON_PERIPH_GRP1 PERIPH_GRP1_EMI5_CLKPWR>,
+				 <&sccon RTS5912_SCCON_PERIPH_GRP1 PERIPH_GRP1_EMI6_CLKPWR>,
+				 <&sccon RTS5912_SCCON_PERIPH_GRP1 PERIPH_GRP1_EMI7_CLKPWR>,
+				 <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_KBC_CLKPWR>;
 
-		tach2: tach@4000fd80 {
-			compatible = "realtek,rts5912-tach";
-			reg = <0x4000fd80 0x40>;
-			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_TACH2_CLKPWR>;
-			clock-names = "tacho";
-			interrupts = <194 0>;
-			status = "disabled";
-		};
+			clock-names = "espi-target", "port80", "acpi", "promt0", "promt1", "promt2",
+				      "promt3", "emi0", "emi1", "emi2", "emi3", "emi4", "emi5",
+				      "emi6", "emi7", "kbc";
 
-		tach3: tach@4000fdc0 {
-			compatible = "realtek,rts5912-tach";
-			reg = <0x4000fdc0 0x40>;
-			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_TACH3_CLKPWR>;
-			clock-names = "tacho";
-			interrupts = <195 0>;
-			status = "disabled";
-		};
+			interrupts = <133 0>, <134 0>, <146 0>,
+				     <145 0>, <144 0>, <143 0>,
+				     <142 0>, <141 0>, <140 0>,
+				     <139 0>, <138 0>, <137 0>,
+				     <136 0>, <135 0>, <154 0>,
+				     <155 0>, <156 0>, <157 0>,
+				     <158 0>, <159 0>, <160 0>,
+				     <161 0>, <162 0>, <163 0>,
+				     <164 0>, <165 0>, <212 0>,
+				     <213 0>, <214 0>, <215 0>,
+				     <216 0>, <217 0>, <218 0>,
+				     <219 0>, <147 0>, <148 0>,
+				     <149 0>, <152 0>, <153 0>,
+				     <166 0>, <220 0>;
 
-		pwm0: pwm@4000f000 {
-			compatible = "realtek,rts5912-pwm";
-			reg = <0x4000f000 0x0c>;
-			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PWM0_CLKPWR>;
-			#pwm-cells = <3>;
-			status = "disabled";
-		};
-
-		pwm1: pwm@4000f00c {
-			compatible = "realtek,rts5912-pwm";
-			reg = <0x4000f00c 0x0c>;
-			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PWM1_CLKPWR>;
-			#pwm-cells = <3>;
-			status = "disabled";
-		};
-
-		pwm2: pwm@4000f018 {
-			compatible = "realtek,rts5912-pwm";
-			reg = <0x4000f018 0x0c>;
-			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PWM2_CLKPWR>;
-			#pwm-cells = <3>;
-			status = "disabled";
-		};
-
-		pwm3: pwm@4000f024 {
-			compatible = "realtek,rts5912-pwm";
-			reg = <0x4000f024 0x0c>;
-			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PWM3_CLKPWR>;
-			#pwm-cells = <3>;
-			status = "disabled";
-		};
-
-		pwm4: pwm@4000f030 {
-			compatible = "realtek,rts5912-pwm";
-			reg = <0x4000f030 0x0c>;
-			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PWM4_CLKPWR>;
-			#pwm-cells = <3>;
-			status = "disabled";
-		};
-
-		pwm5: pwm@4000f03c {
-			compatible = "realtek,rts5912-pwm";
-			reg = <0x4000f03c 0x0c>;
-			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PWM5_CLKPWR>;
-			#pwm-cells = <3>;
-			status = "disabled";
-		};
-
-		pwm6: pwm@4000f048 {
-			compatible = "realtek,rts5912-pwm";
-			reg = <0x4000f048 0x0c>;
-			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PWM6_CLKPWR>;
-			#pwm-cells = <3>;
-			status = "disabled";
-		};
-
-		pwm7: pwm@4000f054 {
-			compatible = "realtek,rts5912-pwm";
-			reg = <0x4000f054 0x0c>;
-			clocks = <&sccon RTS5912_SCCON_PERIPH_GRP0 PERIPH_GRP0_PWM7_CLKPWR>;
-			#pwm-cells = <3>;
-			status = "disabled";
-		};
-
-		flash_controller: flash-controller@40010200 {
-			compatible = "realtek,rts5912-flash-controller";
-			reg = <0x40010200 0x200>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			eflash: eflash@60000000 {
-				compatible = "soc-nv-flash";
-				reg = <0x60000000 DT_SIZE_K(1024)>;
-				erase-block-size = <DT_SIZE_K(4)>;
-				write-block-size = <4>;
-			};
-		};
-
-		i2c_0: i2c@4000d000 {
-			compatible = "snps,designware-i2c";
-			reg = <0x4000d000 0x154>;
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			interrupt-parent = <&nvic>;
-			interrupts = <182 1>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			lcnt-offset = <35>;
-			hcnt-offset = <35>;
-			i2c-sda-hold-time-ns = <300>;
-			status = "disabled";
-		};
-
-		i2c_1: i2c@4000d200 {
-			compatible = "snps,designware-i2c";
-			reg = <0x4000d200 0x154>;
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			interrupt-parent = <&nvic>;
-			interrupts = <183 1>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			lcnt-offset = <35>;
-			hcnt-offset = <35>;
-			i2c-sda-hold-time-ns = <300>;
-			status = "disabled";
-		};
-
-		i2c_2: i2c@4000d400 {
-			compatible = "snps,designware-i2c";
-			reg = <0x4000d400 0x154>;
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			interrupt-parent = <&nvic>;
-			interrupts = <184 1>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			lcnt-offset = <35>;
-			hcnt-offset = <35>;
-			i2c-sda-hold-time-ns = <300>;
-			status = "disabled";
-		};
-
-		i2c_3: i2c@4000d600 {
-			compatible = "snps,designware-i2c";
-			reg = <0x4000d600 0x154>;
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			interrupt-parent = <&nvic>;
-			interrupts = <185 1>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			lcnt-offset = <35>;
-			hcnt-offset = <35>;
-			i2c-sda-hold-time-ns = <300>;
-			status = "disabled";
-		};
-
-		i2c_4: i2c@4000d800 {
-			compatible = "snps,designware-i2c";
-			reg = <0x4000d800 0x154>;
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			interrupt-parent = <&nvic>;
-			interrupts = <186 1>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			lcnt-offset = <35>;
-			hcnt-offset = <35>;
-			i2c-sda-hold-time-ns = <300>;
-			status = "disabled";
-		};
-
-		i2c_5: i2c@4000da00 {
-			compatible = "snps,designware-i2c";
-			reg = <0x4000da00 0x154>;
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			interrupt-parent = <&nvic>;
-			interrupts = <187 1>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			lcnt-offset = <35>;
-			hcnt-offset = <35>;
-			i2c-sda-hold-time-ns = <300>;
-			status = "disabled";
-		};
-
-		i2c_6: i2c@4000dc00 {
-			compatible = "snps,designware-i2c";
-			reg = <0x4000dc00 0x154>;
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			interrupt-parent = <&nvic>;
-			interrupts = <188 1>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			lcnt-offset = <35>;
-			hcnt-offset = <35>;
-			i2c-sda-hold-time-ns = <300>;
-			status = "disabled";
-		};
-
-		i2c_7: i2c@4000de00 {
-			compatible = "snps,designware-i2c";
-			reg = <0x4000de00 0x154>;
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			interrupt-parent = <&nvic>;
-			interrupts = <189 1>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			lcnt-offset = <35>;
-			hcnt-offset = <35>;
-			i2c-sda-hold-time-ns = <300>;
-			status = "disabled";
-		};
-
-		sha0: crypto@40000000 {
-			compatible = "realtek,rts5912-sha";
-			reg = <0x40000000 0x40 0x40001000 932>;
-			reg-names = "sha2", "sha2dma";
+			interrupt-names = "bus-rst", "periph-ch", "vw-ch",
+					  "vw-idx2", "vw-idx3", "vw-idx7",
+					  "vw-idx41", "vw-idx42", "vw-idx43",
+					  "vw-idx44", "vw-idx47", "vw-idx4a",
+					  "vw-idx51", "vw-idx61", "kbc_ibf",
+					  "kbc_obe", "acpi_ibf", "acpi_obe",
+					  "promt0_ibf", "promt0_obe", "promt1_ibf",
+					  "promt1_obe", "promt2_ibf", "promt2_obe",
+					  "promt3_ibf", "promt3_obe", "emi0",
+					  "emi1", "emi2", "emi3",
+					  "emi4", "emi5", "emi6",
+					  "emi7", "oob_tx", "oob_rx",
+					  "oob_chg", "maf_tr", "flash_chg",
+					  "port80", "mbx";
 			status = "disabled";
 		};
 	};
@@ -787,6 +778,15 @@
 			reg = <0x5>;
 			wkup-pin-mode = "gpio";
 		};
+	};
+
+	flash0: flash@2000b400 {
+		reg = <0x2000b400 0x40000>;
+	};
+
+	sram0: memory@20050000 {
+		compatible = "mmio-sram";
+		reg = <0x20050000 0x10000>;
 	};
 };
 

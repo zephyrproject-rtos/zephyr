@@ -132,6 +132,28 @@
 			};
 		};
 
+		cfg: syscon@5000b000 {
+			compatible = "sifli,sf32lb-cfg", "syscon";
+			reg = <0x5000b000 0x1000>;
+		};
+
+		efuse: otp@5000c000 {
+			compatible = "sifli,sf32lb-efuse";
+			reg = <0x5000c000 0x100>;
+			sifli,pmuc = <&pmuc>;
+			sifli,bank-size = <32>;
+			sifli,bank-offsets = <0x30 0x50 0x70 0x90>;
+			status = "disabled";
+		};
+
+		crypto: crypto@5000d000 {
+			compatible = "sifli,sf32lb-crypto";
+			reg = <0x5000d000 0x1000>;
+			clocks = <&rcc_clk SF32LB52X_CLOCK_AES>;
+			interrupts = <67 0>;
+			status = "disabled";
+		};
+
 		trng: trng@5000f000 {
 			compatible = "sifli,sf32lb-trng";
 			reg = <0x5000f000 0x1000>;
@@ -170,14 +192,6 @@
 			compatible = "sifli,sf32lb-crc";
 			reg = <0x50048000 0x1000>;
 			clocks = <&rcc_clk SF32LB52X_CLOCK_CRC1>;
-			status = "disabled";
-		};
-
-		crypto: crypto@5000d000 {
-			compatible = "sifli,sf32lb-crypto";
-			reg = <0x5000d000 0x1000>;
-			clocks = <&rcc_clk SF32LB52X_CLOCK_AES>;
-			interrupts = <67 0>;
 			status = "disabled";
 		};
 
@@ -220,6 +234,16 @@
 			reg = <0x50086000 0x400>;
 			interrupts = <95 0>;
 			clocks = <&rcc_clk SF32LB52X_CLOCK_USART3>;
+			status = "disabled";
+		};
+
+		gpadc: adc@50087000 {
+			compatible = "sifli,sf32lb-gpadc";
+			reg = <0x50087000 0x1000>;
+			interrupts = <65 0>;
+			clocks = <&rcc_clk SF32LB52X_CLOCK_GPADC>;
+			#io-channel-cells = <1>;
+			sifli,cfg = <&cfg>;
 			status = "disabled";
 		};
 
@@ -340,30 +364,6 @@
 				sifli,pinmuxs = <&pinctrl SF32LB_PORT_PA 0x80>;
 				status = "disabled";
 			};
-		};
-
-		efuse: otp@5000c000 {
-			compatible = "sifli,sf32lb-efuse";
-			reg = <0x5000c000 0x100>;
-			sifli,pmuc = <&pmuc>;
-			sifli,bank-size = <32>;
-			sifli,bank-offsets = <0x30 0x50 0x70 0x90>;
-			status = "disabled";
-		};
-
-		cfg: syscon@5000b000 {
-			compatible = "sifli,sf32lb-cfg", "syscon";
-			reg = <0x5000b000 0x1000>;
-		};
-
-		gpadc: adc@50087000 {
-			compatible = "sifli,sf32lb-gpadc";
-			reg = <0x50087000 0x1000>;
-			interrupts = <65 0>;
-			clocks = <&rcc_clk SF32LB52X_CLOCK_GPADC>;
-			#io-channel-cells = <1>;
-			sifli,cfg = <&cfg>;
-			status = "disabled";
 		};
 
 		gptim2: timers@500b0000 {

@@ -20,22 +20,6 @@
 		};
 	};
 
-	sram0: memory@10000000 {
-		compatible = "mmio-sram";
-	};
-
-	sram1: memory@20000000 {
-		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x20000000 0x800>;
-		zephyr,memory-region = "SRAM1";
-	};
-
-	sram2: memory@20004000 {
-		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x20004000 0x800>;
-		zephyr,memory-region = "SRAM2";
-	};
-
 	soc {
 		flash0: flash@0 {
 			compatible = "soc-nv-flash";
@@ -50,6 +34,34 @@
 			 */
 			size = <(DT_SIZE_K(4) - 64)>;
 			status = "okay";
+		};
+
+		i2c0: i2c@40000000 {
+			compatible = "nxp,lpc11u6x-i2c";
+			reg = <0x40000000 0x40>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&syscon LPC11U6X_CLOCK_I2C0>;
+			interrupts = <15 0>;
+			status = "disabled";
+		};
+
+		uart0: serial@40008000 {
+			compatible = "nxp,lpc11u6x-uart";
+			reg = <0x40008000 0x60>;
+			clocks = <&syscon LPC11U6X_CLOCK_USART0>;
+			interrupts = <21 0>;
+			status = "disabled";
+		};
+
+		i2c1: i2c@40020000 {
+			compatible = "nxp,lpc11u6x-i2c";
+			reg = <0x40020000 0x40>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&syscon LPC11U6X_CLOCK_I2C1>;
+			interrupts = <10 0>;
+			status = "disabled";
 		};
 
 		iocon: iocon@40044000 {
@@ -80,6 +92,44 @@
 				compatible = "nxp,lpc-iocon-pio";
 				reg = <0xf0 0x60>;
 			};
+		};
+
+		syscon: clock-controller@40048000 {
+			compatible = "nxp,lpc11u6x-syscon";
+			reg = <0x40048000 0x400>;
+			#clock-cells = <1>;
+		};
+
+		uart4: serial@4004c000 {
+			compatible = "nxp,lpc11u6x-uart";
+			reg = <0x4004c000 0x30>;
+			clocks = <&syscon LPC11U6X_CLOCK_USART4>;
+			interrupts = <11 0>;
+			status = "disabled";
+		};
+
+		uart1: serial@4006c000 {
+			compatible = "nxp,lpc11u6x-uart";
+			reg = <0x4006c000 0x30>;
+			clocks = <&syscon LPC11U6X_CLOCK_USART1>;
+			interrupts = <11 0>;
+			status = "disabled";
+		};
+
+		uart2: serial@40070000 {
+			compatible = "nxp,lpc11u6x-uart";
+			reg = <0x40070000 0x30>;
+			clocks = <&syscon LPC11U6X_CLOCK_USART2>;
+			interrupts = <12 0>;
+			status = "disabled";
+		};
+
+		uart3: serial@40074000 {
+			compatible = "nxp,lpc11u6x-uart";
+			reg = <0x40074000 0x30>;
+			clocks = <&syscon LPC11U6X_CLOCK_USART3>;
+			interrupts = <12 0>;
+			status = "disabled";
 		};
 
 		/* GPIO0_0 to GPIO0_23 */
@@ -132,72 +182,22 @@
 
 			status = "disabled";
 		};
+	};
 
-		syscon: clock-controller@40048000 {
-			compatible = "nxp,lpc11u6x-syscon";
-			reg = <0x40048000 0x400>;
-			#clock-cells = <1>;
-		};
+	sram0: memory@10000000 {
+		compatible = "mmio-sram";
+	};
 
-		uart0: serial@40008000 {
-			compatible = "nxp,lpc11u6x-uart";
-			reg = <0x40008000 0x60>;
-			clocks = <&syscon LPC11U6X_CLOCK_USART0>;
-			interrupts = <21 0>;
-			status = "disabled";
-		};
+	sram1: memory@20000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x20000000 0x800>;
+		zephyr,memory-region = "SRAM1";
+	};
 
-		uart1: serial@4006c000 {
-			compatible = "nxp,lpc11u6x-uart";
-			reg = <0x4006c000 0x30>;
-			clocks = <&syscon LPC11U6X_CLOCK_USART1>;
-			interrupts = <11 0>;
-			status = "disabled";
-		};
-
-		uart2: serial@40070000 {
-			compatible = "nxp,lpc11u6x-uart";
-			reg = <0x40070000 0x30>;
-			clocks = <&syscon LPC11U6X_CLOCK_USART2>;
-			interrupts = <12 0>;
-			status = "disabled";
-		};
-
-		uart3: serial@40074000 {
-			compatible = "nxp,lpc11u6x-uart";
-			reg = <0x40074000 0x30>;
-			clocks = <&syscon LPC11U6X_CLOCK_USART3>;
-			interrupts = <12 0>;
-			status = "disabled";
-		};
-
-		uart4: serial@4004c000 {
-			compatible = "nxp,lpc11u6x-uart";
-			reg = <0x4004c000 0x30>;
-			clocks = <&syscon LPC11U6X_CLOCK_USART4>;
-			interrupts = <11 0>;
-			status = "disabled";
-		};
-
-		i2c0: i2c@40000000 {
-			compatible = "nxp,lpc11u6x-i2c";
-			reg = <0x40000000 0x40>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			clocks = <&syscon LPC11U6X_CLOCK_I2C0>;
-			interrupts = <15 0>;
-			status = "disabled";
-		};
-
-		i2c1: i2c@40020000 {
-			compatible = "nxp,lpc11u6x-i2c";
-			reg = <0x40020000 0x40>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			clocks = <&syscon LPC11U6X_CLOCK_I2C1>;
-			interrupts = <10 0>;
-			status = "disabled";
-		};
+	sram2: memory@20004000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x20004000 0x800>;
+		zephyr,memory-region = "SRAM2";
 	};
 };
 

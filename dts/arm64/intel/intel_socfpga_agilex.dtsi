@@ -40,15 +40,6 @@
 		};
 	};
 
-	gic: interrupt-controller@fffc1000 {
-		compatible = "arm,gic-v2", "arm,gic";
-		reg = <0xfffc1000 0x1000>,
-		      <0xfffc2000 0x2000>;
-		interrupt-controller;
-		#interrupt-cells = <4>;
-		status = "okay";
-	};
-
 	arch_timer: timer {
 		compatible = "arm,armv8-timer";
 		interrupt-parent = <&gic>;
@@ -62,15 +53,20 @@
 			      IRQ_DEFAULT_PRIORITY>;
 	};
 
-	sysmgr: sysmgr@ffd12000 {
-		compatible = "syscon";
-		reg = <0xffd12000 0x1000>;
+	fpga0: bridges {
+		compatible = "altr,socfpga-agilex-bridge";
 	};
 
-	clock: clock@ffd10000 {
-		compatible = "intel,agilex-clock";
-		reg = <0xffd10000 0x1000>;
-		#clock-cells = <1>;
+	sip_smc: smc {
+		compatible = "intel,socfpga-agilex-sip-smc";
+		method = "smc";
+		zephyr,num-clients = <2>;
+		status = "disabled";
+	};
+
+	mem0: memory@10000000 {
+		reg = <0x10000000 0x200000>;
+		device_type = "memory";
 	};
 
 	/*
@@ -94,15 +90,6 @@
 		status = "disabled";
 	};
 
-	mem0: memory@10000000 {
-		reg = <0x10000000 0x200000>;
-		device_type = "memory";
-	};
-
-	fpga0: bridges {
-		compatible = "altr,socfpga-agilex-bridge";
-	};
-
 	uart0: uart@ffc02000 {
 		compatible = "ns16550";
 		reg = <0xffc02000 0x100>;
@@ -112,13 +99,6 @@
 			      IRQ_DEFAULT_PRIORITY>;
 		interrupt-names = "irq_0";
 		clocks = <&clock INTEL_SOCFPGA_CLOCK_UART>;
-		status = "disabled";
-	};
-
-	sip_smc: smc {
-		compatible = "intel,socfpga-agilex-sip-smc";
-		method = "smc";
-		zephyr,num-clients = <2>;
 		status = "disabled";
 	};
 
@@ -187,5 +167,25 @@
 		reg = <0xffd00500 0x100>;
 		clocks = <&clock INTEL_SOCFPGA_CLOCK_WDT>;
 		status = "disabled";
+	};
+
+	clock: clock@ffd10000 {
+		compatible = "intel,agilex-clock";
+		reg = <0xffd10000 0x1000>;
+		#clock-cells = <1>;
+	};
+
+	sysmgr: sysmgr@ffd12000 {
+		compatible = "syscon";
+		reg = <0xffd12000 0x1000>;
+	};
+
+	gic: interrupt-controller@fffc1000 {
+		compatible = "arm,gic-v2", "arm,gic";
+		reg = <0xfffc1000 0x1000>,
+		      <0xfffc2000 0x2000>;
+		interrupt-controller;
+		#interrupt-cells = <4>;
+		status = "okay";
 	};
 };

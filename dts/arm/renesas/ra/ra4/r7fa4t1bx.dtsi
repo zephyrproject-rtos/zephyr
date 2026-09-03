@@ -19,6 +19,47 @@
 
 / {
 	soc {
+		trng: trng {
+			compatible = "renesas,ra-trng";
+			clocks = <&pclka MSTPC 28>;
+			status = "disabled";
+		};
+
+		option_setting_ofs0: option-setting-ofs0@100a100 {
+			compatible = "zephyr,memory-region";
+			reg = <0x0100a100 0x4>;
+			zephyr,memory-region = "OFS_OFS0_MEMORY";
+			status = "okay";
+		};
+
+		option_setting_osis: option-setting-osis@100a120 {
+			compatible = "zephyr,memory-region";
+			reg = <0x0100a120 0x10>;
+			zephyr,memory-region = "OFS_OSIS_MEMORY";
+			status = "okay";
+		};
+
+		option_setting_ofs1_sec: option-setting-ofs1-sec@100a200 {
+			compatible = "zephyr,memory-region";
+			reg = <0x0100a200 0x4>;
+			zephyr,memory-region = "OFS_OFS1_SEC_MEMORY";
+			status = "okay";
+		};
+
+		option_setting_bps_sec: option-setting-bps-sec@100a240 {
+			compatible = "zephyr,memory-region";
+			reg = <0x0100a240 0x4>;
+			zephyr,memory-region = "OFS_BPS_SEC_MEMORY";
+			status = "okay";
+		};
+
+		option_setting_pbps_sec: option-setting-pbps-sec@100a260 {
+			compatible = "zephyr,memory-region";
+			reg = <0x0100a260 0x4>;
+			zephyr,memory-region = "OFS_PBPS_SEC_MEMORY";
+			status = "okay";
+		};
+
 		sram0: memory@20000000 {
 			compatible = "mmio-sram";
 			reg = <0x20000000 DT_SIZE_K(40)>;
@@ -31,26 +72,6 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			ngpios = <16>;
-			status = "disabled";
-		};
-
-		pwm2: pwm2@40169200 {
-			compatible = "renesas,ra-pwm";
-			reg = <0x40169200 0x100>;
-			divider = <RA_PWM_SOURCE_DIV_1>;
-			channel = <RA_PWM_CHANNEL_2>;
-			clocks = <&pclkd MSTPE 29>;
-			#pwm-cells = <3>;
-			status = "disabled";
-		};
-
-		pwm3: pwm3@40169300 {
-			compatible = "renesas,ra-pwm";
-			reg = <0x40169300 0x100>;
-			divider = <RA_PWM_SOURCE_DIV_1>;
-			channel = <RA_PWM_CHANNEL_3>;
-			clocks = <&pclkd MSTPE 28>;
-			#pwm-cells = <3>;
 			status = "disabled";
 		};
 
@@ -95,45 +116,24 @@
 			};
 		};
 
-		trng: trng {
-			compatible = "renesas,ra-trng";
-			clocks = <&pclka MSTPC 28>;
+		pwm2: pwm2@40169200 {
+			compatible = "renesas,ra-pwm";
+			reg = <0x40169200 0x100>;
+			divider = <RA_PWM_SOURCE_DIV_1>;
+			channel = <RA_PWM_CHANNEL_2>;
+			clocks = <&pclkd MSTPE 29>;
+			#pwm-cells = <3>;
 			status = "disabled";
 		};
 
-		option_setting_ofs0: option-setting-ofs0@100a100 {
-			compatible = "zephyr,memory-region";
-			reg = <0x0100a100 0x4>;
-			zephyr,memory-region = "OFS_OFS0_MEMORY";
-			status = "okay";
-		};
-
-		option_setting_osis: option-setting-osis@100a120 {
-			compatible = "zephyr,memory-region";
-			reg = <0x0100a120 0x10>;
-			zephyr,memory-region = "OFS_OSIS_MEMORY";
-			status = "okay";
-		};
-
-		option_setting_ofs1_sec: option-setting-ofs1-sec@100a200 {
-			compatible = "zephyr,memory-region";
-			reg = <0x0100a200 0x4>;
-			zephyr,memory-region = "OFS_OFS1_SEC_MEMORY";
-			status = "okay";
-		};
-
-		option_setting_bps_sec: option-setting-bps-sec@100a240 {
-			compatible = "zephyr,memory-region";
-			reg = <0x0100a240 0x4>;
-			zephyr,memory-region = "OFS_BPS_SEC_MEMORY";
-			status = "okay";
-		};
-
-		option_setting_pbps_sec: option-setting-pbps-sec@100a260 {
-			compatible = "zephyr,memory-region";
-			reg = <0x0100a260 0x4>;
-			zephyr,memory-region = "OFS_PBPS_SEC_MEMORY";
-			status = "okay";
+		pwm3: pwm3@40169300 {
+			compatible = "renesas,ra-pwm";
+			reg = <0x40169300 0x100>;
+			divider = <RA_PWM_SOURCE_DIV_1>;
+			channel = <RA_PWM_CHANNEL_3>;
+			clocks = <&pclkd MSTPE 28>;
+			#pwm-cells = <3>;
+			status = "disabled";
 		};
 	};
 

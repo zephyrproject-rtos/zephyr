@@ -8,11 +8,6 @@
 #include <mem.h>
 
 / {
-	sram0: sram0@24000000 {
-		compatible = "mmio-sram";
-		reg = <0x24000000 0x100000>;
-	};
-
 	rram {
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -33,11 +28,107 @@
 	};
 
 	soc {
-		npu0: npu@44600000 {
-			compatible = "infineon,edge-npu";
-			reg = <0x44600000 0x1000>;
-			interrupts = <38 4>;
+		dma0: dw@42270000 {
+			compatible = "infineon,dma";
+			reg = <0x42270000 0x10000>;
+			#dma-cells = <1>;
+			dma-channels = <16>;
+			interrupts = <82 4>, /* CH0 */
+				     <83 4>, /* CH1 */
+				     <84 4>, /* CH2 */
+				     <85 4>, /* CH3 */
+				     <86 4>, /* CH4 */
+				     <87 4>, /* CH5 */
+				     <88 4>, /* CH6 */
+				     <89 4>, /* CH7 */
+				     <90 4>, /* CH8 */
+				     <91 4>, /* CH9 */
+				     <92 4>, /* CH10 */
+				     <93 4>, /* CH11 */
+				     <94 4>, /* CH12 */
+				     <95 4>, /* CH13 */
+				     <96 4>, /* CH14 */
+				     <97 4>; /* CH15 */
 			status = "disabled";
+		};
+
+		dma1: dw@42280000 {
+			compatible = "infineon,dma";
+			reg = <0x42280000 0x10000>;
+			#dma-cells = <1>;
+			dma-channels = <16>;
+			interrupts = <181 4>, /* CH0 */
+				     <182 4>, /* CH1 */
+				     <183 4>, /* CH2 */
+				     <184 4>, /* CH3 */
+				     <185 4>, /* CH4 */
+				     <186 4>, /* CH5 */
+				     <187 4>, /* CH6 */
+				     <188 4>, /* CH7 */
+				     <189 4>, /* CH8 */
+				     <190 4>, /* CH9 */
+				     <191 4>, /* CH10 */
+				     <192 4>, /* CH11 */
+				     <193 4>, /* CH12 */
+				     <194 4>, /* CH13 */
+				     <195 4>, /* CH14 */
+				     <196 4>; /* CH15 */
+			status = "disabled";
+		};
+
+		ipc0: ipc@422a0000 {
+			compatible = "infineon,ipc";
+			reg = <0x422a0000 0x1200>;
+			#ipc-config-cells = <3>;
+			status = "disabled";
+		};
+
+		watchdog0: watchdog@4240c000 {
+			compatible = "infineon,watchdog";
+			reg = <0x4240c000 0x180>;
+			interrupts = <54 4>;
+			wakeup-source;
+			status = "disabled";
+		};
+
+		mcwdt0: mcwdt@4240d000 {
+			compatible = "infineon,lp-timer";
+			reg = <0x4240d000 0x40>;
+			interrupts = <55 4>;
+			wakeup-source;
+			status = "disabled";
+		};
+
+		mcwdt1: mcwdt@4240d040 {
+			compatible = "infineon,lp-timer";
+			reg = <0x4240d040 0x40>;
+			interrupts = <0 4>;
+			wakeup-source;
+			status = "disabled";
+		};
+
+		rtc0: rtc@42420000 {
+			compatible = "infineon,rtc";
+			reg = <0x42420000 0x1140>;
+			interrupts = <56 4>;
+			alarms-count = <2>;
+			wakeup-source;
+			status = "disabled";
+		};
+
+		crypto0: crypto@42440000 {
+			compatible = "infineon,mxcrypto";
+			reg = <0x42440000 0x10000>;
+
+			mxcrypto_trng: mxcrypto_trng {
+				compatible = "infineon,mxcrypto-trng";
+				status = "disabled";
+			};
+
+			mxcrypto_crypto: mxcrypto_crypto {
+				compatible = "infineon,mxcrypto-crypto";
+				status = "disabled";
+			};
 		};
 
 		pinctrl: pinctrl@42800000 {
@@ -289,260 +380,6 @@
 			ngpios = <8>;
 			wakeup-source;
 			#gpio-cells = <2>;
-			status = "disabled";
-		};
-
-		lpcomp0: comparator@42880000 {
-			compatible = "infineon,lp-comp";
-			reg = <0x42880000 0x10000>;
-			wakeup-source;
-			status = "disabled";
-
-			lpcomp0_0: lpcomp0-0 {
-				compatible = "infineon,lp-comp-channel";
-				channel = <0>;
-				status = "disabled";
-			};
-
-			lpcomp0_1: lpcomp0-1 {
-				compatible = "infineon,lp-comp-channel";
-				channel = <1>;
-				status = "disabled";
-			};
-		};
-
-		autanalog: analog@42e00000 {
-			compatible = "infineon,autanalog";
-			reg = <0x42e00000 0x100000>;
-			ranges;
-			wakeup-source;
-			interrupts = <57 4>, <58 4>;
-			interrupt-names = "autanalog", "autanalog_fifo";
-			#address-cells = <1>;
-			#size-cells = <1>;
-			status = "disabled";
-
-			ctb0: ctb0@0 {
-				compatible = "infineon,autanalog-ctb";
-				reg = <0x0 0x1000>;
-				#address-cells = <1>;
-				#size-cells = <0>;
-				status = "disabled";
-			};
-
-			ctb1: ctb1@10000 {
-				compatible = "infineon,autanalog-ctb";
-				reg = <0x10000 0x1000>;
-				#address-cells = <1>;
-				#size-cells = <0>;
-				status = "disabled";
-			};
-
-			ptcomp0: ptcomp@40000 {
-				compatible = "infineon,autanalog-ptcomp";
-				reg = <0x40000 0xf00>;
-				#address-cells = <1>;
-				#size-cells = <0>;
-				status = "disabled";
-			};
-
-			dac0: dac0@60000 {
-				compatible = "infineon,autanalog-ctdac";
-				reg = <0x60000 0x1000>;
-				clk-dst = <0x200>;
-				#io-channel-cells = <1>;
-				#address-cells = <1>;
-				#size-cells = <0>;
-				status = "disabled";
-
-				/* FW channel (default) */
-				channel@f {
-					reg = <15>;
-					zephyr,resolution = <12>;
-				};
-			};
-
-			dac1: dac1@70000 {
-				compatible = "infineon,autanalog-ctdac";
-				reg = <0x70000 0x1000>;
-				clk-dst = <0x201>;
-				#io-channel-cells = <1>;
-				#address-cells = <1>;
-				#size-cells = <0>;
-				status = "disabled";
-
-				/* FW channel (default): direct value writes via Zephyr DAC API */
-				channel@f {
-					reg = <15>;
-					zephyr,resolution = <12>;
-				};
-			};
-
-			adc0: adc0@80000 {
-				compatible = "infineon,autanalog-sar-adc";
-				/* Offset within AutAnalog subsystem */
-				reg = <0x80000 0xf20>;
-				#io-channel-cells = <1>;
-				status = "disabled";
-			};
-
-			prb0: prb@e0300 {
-				compatible = "infineon,autanalog-prb";
-				reg = <0xe0300 0x100>;
-				#address-cells = <1>;
-				#size-cells = <0>;
-				status = "disabled";
-			};
-		};
-
-		ipc0: ipc@422a0000 {
-			compatible = "infineon,ipc";
-			reg = <0x422a0000 0x1200>;
-			#ipc-config-cells = <3>;
-			status = "disabled";
-		};
-
-		ipc1: ipc@441d0000 {
-			compatible = "infineon,ipc";
-			reg = <0x441d0000 0x1200>;
-			#ipc-config-cells = <3>;
-			status = "disabled";
-		};
-
-		scb0: scb@42990000 {
-			compatible = "infineon,scb";
-			reg = <0x42990000 0xfd0>;
-			interrupts = <43 4>;
-			clk-dst = <0x100>;
-			wakeup-source;
-			status = "disabled";
-		};
-
-		scb2: scb@429a0000 {
-			compatible = "infineon,scb";
-			reg = <0x429a0000 0xfd0>;
-			interrupts = <143 4>;
-			clk-dst = <0x101>;
-			status = "disabled";
-		};
-
-		scb3: scb@429b0000 {
-			compatible = "infineon,scb";
-			reg = <0x429b0000 0xfd0>;
-			interrupts = <144 4>;
-			clk-dst = <0x102>;
-			status = "disabled";
-		};
-
-		scb4: scb@429c0000 {
-			compatible = "infineon,scb";
-			reg = <0x429c0000 0xfd0>;
-			interrupts = <145 4>;
-			clk-dst = <0x103>;
-			status = "disabled";
-		};
-
-		scb5: scb@429d0000 {
-			compatible = "infineon,scb";
-			reg = <0x429d0000 0xfd0>;
-			interrupts = <146 4>;
-			clk-dst = <0x104>;
-			status = "disabled";
-		};
-
-		scb6: scb@429e0000 {
-			compatible = "infineon,scb";
-			reg = <0x429e0000 0xfd0>;
-			interrupts = <147 4>;
-			clk-dst = <0x105>;
-			status = "disabled";
-		};
-
-		scb7: scb@429f0000 {
-			compatible = "infineon,scb";
-			reg = <0x429f0000 0xfd0>;
-			interrupts = <148 4>;
-			clk-dst = <0x106>;
-			status = "disabled";
-		};
-
-		scb8: scb@42a00000 {
-			compatible = "infineon,scb";
-			reg = <0x42a00000 0xfd0>;
-			interrupts = <149 4>;
-			clk-dst = <0x107>;
-			status = "disabled";
-		};
-
-		scb9: scb@42a10000 {
-			compatible = "infineon,scb";
-			reg = <0x42a10000 0xfd0>;
-			interrupts = <150 4>;
-			clk-dst = <0x108>;
-			status = "disabled";
-		};
-
-		scb10: scb@42a20000 {
-			compatible = "infineon,scb";
-			reg = <0x42a20000 0xfd0>;
-			interrupts = <151 4>;
-			clk-dst = <0x109>;
-			status = "disabled";
-		};
-
-		scb11: scb@42a30000 {
-			compatible = "infineon,scb";
-			reg = <0x42a30000 0xfd0>;
-			interrupts = <152 4>;
-			clk-dst = <0x10a>;
-			status = "disabled";
-		};
-
-		scb1: scb@42d00000 {
-			compatible = "infineon,scb";
-			reg = <0x42d00000 0xfd0>;
-			interrupts = <142 4>;
-			clk-dst = <0x800>;
-			status = "disabled";
-		};
-
-		i3c0: i3c@42a50000 {
-			compatible = "infineon,i3c";
-			reg = <0x42a50000 0x438>;
-			interrupts = <176 4>;
-			status = "disabled";
-		};
-
-		watchdog0: watchdog@4240c000 {
-			compatible = "infineon,watchdog";
-			reg = <0x4240c000 0x180>;
-			interrupts = <54 4>;
-			wakeup-source;
-			status = "disabled";
-		};
-
-		mcwdt0: mcwdt@4240d000 {
-			compatible = "infineon,lp-timer";
-			reg = <0x4240d000 0x40>;
-			interrupts = <55 4>;
-			wakeup-source;
-			status = "disabled";
-		};
-
-		mcwdt1: mcwdt@4240d040 {
-			compatible = "infineon,lp-timer";
-			reg = <0x4240d040 0x40>;
-			interrupts = <0 4>;
-			wakeup-source;
-			status = "disabled";
-		};
-
-		rtc0: rtc@42420000 {
-			compatible = "infineon,rtc";
-			reg = <0x42420000 0x1140>;
-			interrupts = <56 4>;
-			alarms-count = <2>;
-			wakeup-source;
 			status = "disabled";
 		};
 
@@ -1230,6 +1067,213 @@
 			};
 		};
 
+		lpcomp0: comparator@42880000 {
+			compatible = "infineon,lp-comp";
+			reg = <0x42880000 0x10000>;
+			wakeup-source;
+			status = "disabled";
+
+			lpcomp0_0: lpcomp0-0 {
+				compatible = "infineon,lp-comp-channel";
+				channel = <0>;
+				status = "disabled";
+			};
+
+			lpcomp0_1: lpcomp0-1 {
+				compatible = "infineon,lp-comp-channel";
+				channel = <1>;
+				status = "disabled";
+			};
+		};
+
+		scb0: scb@42990000 {
+			compatible = "infineon,scb";
+			reg = <0x42990000 0xfd0>;
+			interrupts = <43 4>;
+			clk-dst = <0x100>;
+			wakeup-source;
+			status = "disabled";
+		};
+
+		scb2: scb@429a0000 {
+			compatible = "infineon,scb";
+			reg = <0x429a0000 0xfd0>;
+			interrupts = <143 4>;
+			clk-dst = <0x101>;
+			status = "disabled";
+		};
+
+		scb3: scb@429b0000 {
+			compatible = "infineon,scb";
+			reg = <0x429b0000 0xfd0>;
+			interrupts = <144 4>;
+			clk-dst = <0x102>;
+			status = "disabled";
+		};
+
+		scb4: scb@429c0000 {
+			compatible = "infineon,scb";
+			reg = <0x429c0000 0xfd0>;
+			interrupts = <145 4>;
+			clk-dst = <0x103>;
+			status = "disabled";
+		};
+
+		scb5: scb@429d0000 {
+			compatible = "infineon,scb";
+			reg = <0x429d0000 0xfd0>;
+			interrupts = <146 4>;
+			clk-dst = <0x104>;
+			status = "disabled";
+		};
+
+		scb6: scb@429e0000 {
+			compatible = "infineon,scb";
+			reg = <0x429e0000 0xfd0>;
+			interrupts = <147 4>;
+			clk-dst = <0x105>;
+			status = "disabled";
+		};
+
+		scb7: scb@429f0000 {
+			compatible = "infineon,scb";
+			reg = <0x429f0000 0xfd0>;
+			interrupts = <148 4>;
+			clk-dst = <0x106>;
+			status = "disabled";
+		};
+
+		scb8: scb@42a00000 {
+			compatible = "infineon,scb";
+			reg = <0x42a00000 0xfd0>;
+			interrupts = <149 4>;
+			clk-dst = <0x107>;
+			status = "disabled";
+		};
+
+		scb9: scb@42a10000 {
+			compatible = "infineon,scb";
+			reg = <0x42a10000 0xfd0>;
+			interrupts = <150 4>;
+			clk-dst = <0x108>;
+			status = "disabled";
+		};
+
+		scb10: scb@42a20000 {
+			compatible = "infineon,scb";
+			reg = <0x42a20000 0xfd0>;
+			interrupts = <151 4>;
+			clk-dst = <0x109>;
+			status = "disabled";
+		};
+
+		scb11: scb@42a30000 {
+			compatible = "infineon,scb";
+			reg = <0x42a30000 0xfd0>;
+			interrupts = <152 4>;
+			clk-dst = <0x10a>;
+			status = "disabled";
+		};
+
+		i3c0: i3c@42a50000 {
+			compatible = "infineon,i3c";
+			reg = <0x42a50000 0x438>;
+			interrupts = <176 4>;
+			status = "disabled";
+		};
+
+		scb1: scb@42d00000 {
+			compatible = "infineon,scb";
+			reg = <0x42d00000 0xfd0>;
+			interrupts = <142 4>;
+			clk-dst = <0x800>;
+			status = "disabled";
+		};
+
+		autanalog: analog@42e00000 {
+			compatible = "infineon,autanalog";
+			reg = <0x42e00000 0x100000>;
+			ranges;
+			wakeup-source;
+			interrupts = <57 4>, <58 4>;
+			interrupt-names = "autanalog", "autanalog_fifo";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "disabled";
+
+			ctb0: ctb0@0 {
+				compatible = "infineon,autanalog-ctb";
+				reg = <0x0 0x1000>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+
+			ctb1: ctb1@10000 {
+				compatible = "infineon,autanalog-ctb";
+				reg = <0x10000 0x1000>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+
+			ptcomp0: ptcomp@40000 {
+				compatible = "infineon,autanalog-ptcomp";
+				reg = <0x40000 0xf00>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+
+			dac0: dac0@60000 {
+				compatible = "infineon,autanalog-ctdac";
+				reg = <0x60000 0x1000>;
+				clk-dst = <0x200>;
+				#io-channel-cells = <1>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+
+				/* FW channel (default) */
+				channel@f {
+					reg = <15>;
+					zephyr,resolution = <12>;
+				};
+			};
+
+			dac1: dac1@70000 {
+				compatible = "infineon,autanalog-ctdac";
+				reg = <0x70000 0x1000>;
+				clk-dst = <0x201>;
+				#io-channel-cells = <1>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+
+				/* FW channel (default): direct value writes via Zephyr DAC API */
+				channel@f {
+					reg = <15>;
+					zephyr,resolution = <12>;
+				};
+			};
+
+			adc0: adc0@80000 {
+				compatible = "infineon,autanalog-sar-adc";
+				/* Offset within AutAnalog subsystem */
+				reg = <0x80000 0xf20>;
+				#io-channel-cells = <1>;
+				status = "disabled";
+			};
+
+			prb0: prb@e0300 {
+				compatible = "infineon,autanalog-prb";
+				reg = <0xe0300 0x100>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+		};
+
 		axidmac: axidmac@441a0000 {
 			compatible = "infineon,mdma";
 			reg = <0x441a0000 0x1800>;
@@ -1242,107 +1286,11 @@
 			status = "disabled";
 		};
 
-		dma0: dw@42270000 {
-			compatible = "infineon,dma";
-			reg = <0x42270000 0x10000>;
-			#dma-cells = <1>;
-			dma-channels = <16>;
-			interrupts = <82 4>, /* CH0 */
-				     <83 4>, /* CH1 */
-				     <84 4>, /* CH2 */
-				     <85 4>, /* CH3 */
-				     <86 4>, /* CH4 */
-				     <87 4>, /* CH5 */
-				     <88 4>, /* CH6 */
-				     <89 4>, /* CH7 */
-				     <90 4>, /* CH8 */
-				     <91 4>, /* CH9 */
-				     <92 4>, /* CH10 */
-				     <93 4>, /* CH11 */
-				     <94 4>, /* CH12 */
-				     <95 4>, /* CH13 */
-				     <96 4>, /* CH14 */
-				     <97 4>; /* CH15 */
+		ipc1: ipc@441d0000 {
+			compatible = "infineon,ipc";
+			reg = <0x441d0000 0x1200>;
+			#ipc-config-cells = <3>;
 			status = "disabled";
-		};
-
-		dma1: dw@42280000 {
-			compatible = "infineon,dma";
-			reg = <0x42280000 0x10000>;
-			#dma-cells = <1>;
-			dma-channels = <16>;
-			interrupts = <181 4>, /* CH0 */
-				     <182 4>, /* CH1 */
-				     <183 4>, /* CH2 */
-				     <184 4>, /* CH3 */
-				     <185 4>, /* CH4 */
-				     <186 4>, /* CH5 */
-				     <187 4>, /* CH6 */
-				     <188 4>, /* CH7 */
-				     <189 4>, /* CH8 */
-				     <190 4>, /* CH9 */
-				     <191 4>, /* CH10 */
-				     <192 4>, /* CH11 */
-				     <193 4>, /* CH12 */
-				     <194 4>, /* CH13 */
-				     <195 4>, /* CH14 */
-				     <196 4>; /* CH15 */
-			status = "disabled";
-		};
-
-		sdhc0: sdhc@44810000 {
-			compatible = "infineon,sdhc-sdio";
-			reg = <0x44810000 0x2000>;
-			interrupts = <155 4>, /* SDIO wakeup interrupt for mxsdhc */
-				     <154 6>; /* Consolidated interrupt for mxsdhc */
-			clk-dst = <0x10200>;
-			status = "disabled";
-		};
-
-		sdhc1: sdhc@44820000 {
-			compatible = "infineon,sdhc-sdio";
-			reg = <0x44820000 0x2000>;
-			interrupts = <157 4>, /* SDIO wakeup interrupt for mxsdhc */
-				     <156 6>; /* Consolidated interrupt for mxsdhc */
-			clk-dst = <0x10300>;
-			status = "disabled";
-		};
-
-		i2s0: tdm@44418000 {
-			compatible = "infineon,i2s";
-			reg = <0x44418000 0x200>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			interrupts = <158 4>, /* RX Structure */
-				     <159 4>; /* TX Structure */
-			clk-dst = <0x00010100>;
-			status = "disabled";
-		};
-
-		i2s1: tdm@44418200 {
-			compatible = "infineon,i2s";
-			reg = <0x44418200 0x200>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			interrupts = <160 4>, /* RX Structure */
-				     <161 4>; /* TX Structure */
-			clk-dst = <0x00010101>;
-			status = "disabled";
-		};
-
-		crypto0: crypto@42440000 {
-			compatible = "infineon,mxcrypto";
-			reg = <0x42440000 0x10000>;
-
-			mxcrypto_trng: mxcrypto_trng {
-				compatible = "infineon,mxcrypto-trng";
-				status = "disabled";
-			};
-
-			mxcrypto_crypto: mxcrypto_crypto {
-				compatible = "infineon,mxcrypto-crypto";
-				status = "disabled";
-			};
 		};
 
 		dmic0: pdm@44400000 {
@@ -1396,6 +1344,53 @@
 			};
 		};
 
+		i2s0: tdm@44418000 {
+			compatible = "infineon,i2s";
+			reg = <0x44418000 0x200>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <158 4>, /* RX Structure */
+				     <159 4>; /* TX Structure */
+			clk-dst = <0x00010100>;
+			status = "disabled";
+		};
+
+		i2s1: tdm@44418200 {
+			compatible = "infineon,i2s";
+			reg = <0x44418200 0x200>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <160 4>, /* RX Structure */
+				     <161 4>; /* TX Structure */
+			clk-dst = <0x00010101>;
+			status = "disabled";
+		};
+
+		npu0: npu@44600000 {
+			compatible = "infineon,edge-npu";
+			reg = <0x44600000 0x1000>;
+			interrupts = <38 4>;
+			status = "disabled";
+		};
+
+		sdhc0: sdhc@44810000 {
+			compatible = "infineon,sdhc-sdio";
+			reg = <0x44810000 0x2000>;
+			interrupts = <155 4>, /* SDIO wakeup interrupt for mxsdhc */
+				     <154 6>; /* Consolidated interrupt for mxsdhc */
+			clk-dst = <0x10200>;
+			status = "disabled";
+		};
+
+		sdhc1: sdhc@44820000 {
+			compatible = "infineon,sdhc-sdio";
+			reg = <0x44820000 0x2000>;
+			interrupts = <157 4>, /* SDIO wakeup interrupt for mxsdhc */
+				     <156 6>; /* Consolidated interrupt for mxsdhc */
+			clk-dst = <0x10300>;
+			status = "disabled";
+		};
+
 		usbhs: usbhs@44900000 {
 			compatible = "infineon,usbhs", "snps,dwc2";
 			reg = <0x44900000 0x40100>;
@@ -1413,5 +1408,10 @@
 			mmio-peri-div = <3>;
 			status = "disabled";
 		};
+	};
+
+	sram0: sram0@24000000 {
+		compatible = "mmio-sram";
+		reg = <0x24000000 0x100000>;
 	};
 };

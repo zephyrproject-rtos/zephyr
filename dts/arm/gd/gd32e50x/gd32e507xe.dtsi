@@ -9,6 +9,57 @@
 
 / {
 	soc {
+		timer11: timer@40001800 {
+			compatible = "gd,gd32-timer";
+			reg = <0x40001800 0x400>;
+			interrupts = <43 0>;
+			interrupt-names = "global";
+			clocks = <&cctl GD32_CLOCK_TIMER11>;
+			resets = <&rctl GD32_RESET_TIMER11>;
+			channels = <2>;
+			status = "disabled";
+
+			pwm {
+				compatible = "gd,gd32-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		timer12: timer@40001c00 {
+			compatible = "gd,gd32-timer";
+			reg = <0x40001c00 0x400>;
+			interrupts = <44 0>;
+			interrupt-names = "global";
+			clocks = <&cctl GD32_CLOCK_TIMER12>;
+			resets = <&rctl GD32_RESET_TIMER12>;
+			channels = <1>;
+			status = "disabled";
+
+			pwm {
+				compatible = "gd,gd32-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
+		timer13: timer@40002000 {
+			compatible = "gd,gd32-timer";
+			reg = <0x40002000 0x400>;
+			interrupts = <45 0>;
+			interrupt-names = "global";
+			clocks = <&cctl GD32_CLOCK_TIMER13>;
+			resets = <&rctl GD32_RESET_TIMER13>;
+			channels = <1>;
+			status = "disabled";
+
+			pwm {
+				compatible = "gd,gd32-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+
 		timer7: timer@40013400 {
 			compatible = "gd,gd32-timer";
 			reg = <0x40013400 0x400>;
@@ -68,57 +119,6 @@
 			interrupt-names = "global";
 			clocks = <&cctl GD32_CLOCK_TIMER10>;
 			resets = <&rctl GD32_RESET_TIMER10>;
-			channels = <1>;
-			status = "disabled";
-
-			pwm {
-				compatible = "gd,gd32-pwm";
-				#pwm-cells = <3>;
-				status = "disabled";
-			};
-		};
-
-		timer11: timer@40001800 {
-			compatible = "gd,gd32-timer";
-			reg = <0x40001800 0x400>;
-			interrupts = <43 0>;
-			interrupt-names = "global";
-			clocks = <&cctl GD32_CLOCK_TIMER11>;
-			resets = <&rctl GD32_RESET_TIMER11>;
-			channels = <2>;
-			status = "disabled";
-
-			pwm {
-				compatible = "gd,gd32-pwm";
-				#pwm-cells = <3>;
-				status = "disabled";
-			};
-		};
-
-		timer12: timer@40001c00 {
-			compatible = "gd,gd32-timer";
-			reg = <0x40001c00 0x400>;
-			interrupts = <44 0>;
-			interrupt-names = "global";
-			clocks = <&cctl GD32_CLOCK_TIMER12>;
-			resets = <&rctl GD32_RESET_TIMER12>;
-			channels = <1>;
-			status = "disabled";
-
-			pwm {
-				compatible = "gd,gd32-pwm";
-				#pwm-cells = <3>;
-				status = "disabled";
-			};
-		};
-
-		timer13: timer@40002000 {
-			compatible = "gd,gd32-timer";
-			reg = <0x40002000 0x400>;
-			interrupts = <45 0>;
-			interrupt-names = "global";
-			clocks = <&cctl GD32_CLOCK_TIMER13>;
-			resets = <&rctl GD32_RESET_TIMER13>;
 			channels = <1>;
 			status = "disabled";
 

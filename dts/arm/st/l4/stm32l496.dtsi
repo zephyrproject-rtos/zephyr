@@ -19,9 +19,14 @@
 	soc {
 		compatible = "st,stm32l496", "st,stm32l4", "simple-bus";
 
-		rng: rng@50060800 {
-			clocks = <&rcc STM32_CLOCK(AHB2, 18)>,
-				 <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
+		can2: can@40006800 {
+			compatible = "st,stm32-bxcan";
+			reg = <0x40006800 0x400>;
+			interrupts = <86 0>, <87 0>, <88 0>, <89 0>;
+			interrupt-names = "TX", "RX0", "RX1", "SCE";
+			clocks = <&rcc STM32_CLOCK(APB1, 26)>; //RCC_APB1ENR1_CAN2EN
+			master-can-reg = <0x40006400>;
+			status = "disabled";
 		};
 
 		i2c4: i2c@40008400 {
@@ -34,6 +39,11 @@
 			interrupts = <83 0>, <84 0>;
 			interrupt-names = "event", "error";
 			status = "disabled";
+		};
+
+		sdmmc1: sdmmc@40012800 {
+			clocks = <&rcc STM32_CLOCK(APB2, 10)>,
+				 <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
 		};
 
 		pinctrl: pin-controller@48000000 {
@@ -49,23 +59,13 @@
 			};
 		};
 
-		can2: can@40006800 {
-			compatible = "st,stm32-bxcan";
-			reg = <0x40006800 0x400>;
-			interrupts = <86 0>, <87 0>, <88 0>, <89 0>;
-			interrupt-names = "TX", "RX0", "RX1", "SCE";
-			clocks = <&rcc STM32_CLOCK(APB1, 26)>; //RCC_APB1ENR1_CAN2EN
-			master-can-reg = <0x40006400>;
-			status = "disabled";
-		};
-
 		usbotg_fs: otgfs@50000000 {
 			clocks = <&rcc STM32_CLOCK(AHB2, 12)>,
 				 <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
 		};
 
-		sdmmc1: sdmmc@40012800 {
-			clocks = <&rcc STM32_CLOCK(APB2, 10)>,
+		rng: rng@50060800 {
+			clocks = <&rcc STM32_CLOCK(AHB2, 18)>,
 				 <&rcc STM32_SRC_HSI48 CLK48_SEL(0)>;
 		};
 	};

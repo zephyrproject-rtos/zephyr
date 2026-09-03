@@ -10,14 +10,6 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		test_gpio: gpio@deadbeef {
-			compatible = "vnd,gpio";
-			reg = <0xdeadbeef 0x1000>;
-			gpio-controller;
-			#gpio-cells = <0x2>;
-			status = "okay";
-		};
-
 		test_i2c: i2c@11112222 {
 			compatible = "vnd,i2c";
 			reg = <0x11112222 0x1000>;
@@ -27,6 +19,23 @@
 			status = "okay";
 
 #include "i2c.dtsi"
+		};
+
+		test_vbatt: vbatt {
+			compatible = "voltage-divider";
+			io-channels = <&test_adc 0>;
+			output-ohms = <180000>;
+			full-ohms = <(1500000 + 180000)>;
+			power-gpios = <&gpio0 16 0>;
+		};
+
+		test_fuel_gauge: fuel_gauge {
+			compatible = "zephyr,fuel-gauge-composite";
+			source-primary = <&test_vbatt>;
+			device-chemistry = "lithium-ion-polymer";
+			ocv-capacity-table-0 = <0>;
+			charge-full-design-microamp-hours = <1350000>;
+			status = "okay";
 		};
 
 		test_adc: adc@adc0adc0 {
@@ -45,20 +54,11 @@
 			};
 		};
 
-		test_vbatt: vbatt {
-			compatible = "voltage-divider";
-			io-channels = <&test_adc 0>;
-			output-ohms = <180000>;
-			full-ohms = <(1500000 + 180000)>;
-			power-gpios = <&gpio0 16 0>;
-		};
-
-		test_fuel_gauge: fuel_gauge {
-			compatible = "zephyr,fuel-gauge-composite";
-			source-primary = <&test_vbatt>;
-			device-chemistry = "lithium-ion-polymer";
-			ocv-capacity-table-0 = <0>;
-			charge-full-design-microamp-hours = <1350000>;
+		test_gpio: gpio@deadbeef {
+			compatible = "vnd,gpio";
+			reg = <0xdeadbeef 0x1000>;
+			gpio-controller;
+			#gpio-cells = <0x2>;
 			status = "okay";
 		};
 	};

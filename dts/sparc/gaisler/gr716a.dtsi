@@ -18,16 +18,6 @@
 		};
 	};
 
-	dram: ram@30000000 {
-		/* tightly coupled data RAM */
-		reg = <0x30000000 0x00010000>;
-	};
-
-	iram: ram@31000000 {
-		/* tightly coupled instruction RAM */
-		reg = <0x31000000 0x00020000>;
-	};
-
 	soc {
 		compatible = "gaisler,gr716-soc", "simple-bus";
 		ranges;
@@ -91,24 +81,6 @@
 			status = "disabled";
 		};
 
-		spim0: spi@fff00100 {
-			compatible = "gaisler,spimctrl";
-			reg = <0xfff00100 0x100>;
-			interrupts = <2 0>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			status = "disabled";
-		};
-
-		spim1: spi@fff00200 {
-			compatible = "gaisler,spimctrl";
-			reg = <0xfff00200 0x100>;
-			interrupts = <2 0>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			status = "disabled";
-		};
-
 		gpio0: gpio@8030c000 {
 			compatible = "gaisler,grgpio";
 			reg = <0x8030c000 0x1000>;
@@ -126,5 +98,33 @@
 			#gpio-cells = <2>;
 			status = "disabled";
 		};
+
+		spim0: spi@fff00100 {
+			compatible = "gaisler,spimctrl";
+			reg = <0xfff00100 0x100>;
+			interrupts = <2 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spim1: spi@fff00200 {
+			compatible = "gaisler,spimctrl";
+			reg = <0xfff00200 0x100>;
+			interrupts = <2 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+	};
+
+	dram: ram@30000000 {
+		/* tightly coupled data RAM */
+		reg = <0x30000000 0x00010000>;
+	};
+
+	iram: ram@31000000 {
+		/* tightly coupled instruction RAM */
+		reg = <0x31000000 0x00020000>;
 	};
 };

@@ -35,6 +35,23 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
+		flash: flash-controller@5008c000 {
+			compatible = "espressif,esp32-flash-controller";
+			reg = <0x5008c000 0x1000>;
+			ranges;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				erase-block-size = <4096>;
+				write-block-size = <4>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				/* reg and ranges are specified in SOC/SIP dtsi */
+			};
+		};
+
 		sramlp: memory@50108000 {
 			compatible = "mmio-sram";
 			reg = <0x50108000 DT_SIZE_K(32)>;
@@ -80,23 +97,6 @@
 			#interrupt-cells = <3>;
 			interrupt-controller;
 			status = "okay";
-		};
-
-		flash: flash-controller@5008c000 {
-			compatible = "espressif,esp32-flash-controller";
-			reg = <0x5008c000 0x1000>;
-			ranges;
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			flash0: flash@0 {
-				compatible = "soc-nv-flash";
-				erase-block-size = <4096>;
-				write-block-size = <4>;
-				#address-cells = <1>;
-				#size-cells = <1>;
-				/* reg and ranges are specified in SOC/SIP dtsi */
-			};
 		};
 
 		lp_uart: uart@50121000 {

@@ -56,15 +56,6 @@
 		#clock-cells = <0>;
 	};
 
-	mbox0: mailbox@29000000 {
-		compatible = "ti,omap-mailbox";
-		reg = <0x29000000 0x200>;
-		interrupts = <50 4>;
-		interrupt-parent = <&nvic>;
-		usr-id = <2>;
-		#mbox-cells = <1>;
-	};
-
 	mcu_padcfg0: syscon@4080000 {
 		compatible = "ti,control-module";
 		reg = <0x4080000 DT_SIZE_K(32)>;
@@ -78,27 +69,6 @@
 			reg = <0x4000 0x88>;
 			status = "okay";
 		};
-	};
-
-	uart0: serial@4a00000 {
-		compatible = "ns16550";
-		reg = <0x04a00000 0x200>;
-		interrupts = <24 4>;
-		interrupt-parent = <&nvic>;
-		clock-frequency = <DT_FREQ_M(48)>;
-		current-speed = <115200>;
-		reg-shift = <2>;
-		status = "disabled";
-	};
-
-	i2c0: i2c@4900000 {
-		compatible = "ti,omap-i2c";
-		reg = <0x04900000 0x100>;
-		interrupts = <17 4>;
-		interrupt-parent = <&nvic>;
-		#address-cells = <1>;
-		#size-cells = <0>;
-		status = "disabled";
 	};
 
 	gpio0: gpio@4201010 {
@@ -115,6 +85,36 @@
 		reg = <0x04880000 0x100>;
 		clock-frequency = <DT_FREQ_M(25)>;
 		status = "disabled";
+	};
+
+	i2c0: i2c@4900000 {
+		compatible = "ti,omap-i2c";
+		reg = <0x04900000 0x100>;
+		interrupts = <17 4>;
+		interrupt-parent = <&nvic>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "disabled";
+	};
+
+	uart0: serial@4a00000 {
+		compatible = "ns16550";
+		reg = <0x04a00000 0x200>;
+		interrupts = <24 4>;
+		interrupt-parent = <&nvic>;
+		clock-frequency = <DT_FREQ_M(48)>;
+		current-speed = <115200>;
+		reg-shift = <2>;
+		status = "disabled";
+	};
+
+	mbox0: mailbox@29000000 {
+		compatible = "ti,omap-mailbox";
+		reg = <0x29000000 0x200>;
+		interrupts = <50 4>;
+		interrupt-parent = <&nvic>;
+		usr-id = <2>;
+		#mbox-cells = <1>;
 	};
 };
 

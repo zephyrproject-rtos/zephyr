@@ -36,14 +36,20 @@
 		#address-cells = <0x01>;
 		#size-cells = <0x01>;
 
+		ram0: memory@10000000 {
+			reg = <0x10000000 0x10000>;
+			device_type = "memory";
+		};
+
 		flash0: flash@20000000 {
 			compatible = "soc-nv-flash";
 			reg = <0x20000000 0x100000>;
 		};
 
-		ram0: memory@10000000 {
-			reg = <0x10000000 0x10000>;
-			device_type = "memory";
+		uart0: serial@40000000 {
+			compatible = "lowrisc,opentitan-uart";
+			reg = <0x40000000 0x1000>;
+			status = "disabled";
 		};
 
 		mtimer: timer@40100110 {
@@ -51,40 +57,6 @@
 			reg = <0x40100110 0x8 0x40100118 0x8>;
 			reg-names = "mtime", "mtimecmp";
 			interrupts-extended = <&hlic 7>;
-		};
-
-		aontimer: aontimer@40470000 {
-			compatible = "lowrisc,opentitan-aontimer";
-			reg = <0x40470000 0x1000>;
-			interrupts = <156 1>;
-			interrupt-names = "wdog_bark";
-			interrupt-parent = <&plic>;
-			clock-frequency = <200000>;
-			status = "disabled";
-		};
-
-		pwrmgr: pwrmgr@40400000 {
-			compatible = "lowrisc,opentitan-pwrmgr";
-			reg = <0x40400000 0x80>;
-			status = "okay";
-		};
-
-		plic: interrupt-controller@48000000 {
-			compatible = "sifive,plic-1.0.0";
-			reg = <0x48000000 0x04000000>;
-			#address-cells = <0>;
-			#interrupt-cells = <2>;
-			interrupt-controller;
-			interrupts-extended = <&hlic 11>;
-			riscv,max-priority = <7>;
-			riscv,ndev = <182>;
-			status = "okay";
-		};
-
-		uart0: serial@40000000 {
-			compatible = "lowrisc,opentitan-uart";
-			reg = <0x40000000 0x1000>;
-			status = "disabled";
 		};
 
 		spi0: spi@40300000 {
@@ -103,6 +75,34 @@
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
+		};
+
+		pwrmgr: pwrmgr@40400000 {
+			compatible = "lowrisc,opentitan-pwrmgr";
+			reg = <0x40400000 0x80>;
+			status = "okay";
+		};
+
+		aontimer: aontimer@40470000 {
+			compatible = "lowrisc,opentitan-aontimer";
+			reg = <0x40470000 0x1000>;
+			interrupts = <156 1>;
+			interrupt-names = "wdog_bark";
+			interrupt-parent = <&plic>;
+			clock-frequency = <200000>;
+			status = "disabled";
+		};
+
+		plic: interrupt-controller@48000000 {
+			compatible = "sifive,plic-1.0.0";
+			reg = <0x48000000 0x04000000>;
+			#address-cells = <0>;
+			#interrupt-cells = <2>;
+			interrupt-controller;
+			interrupts-extended = <&hlic 11>;
+			riscv,max-priority = <7>;
+			riscv,ndev = <182>;
+			status = "okay";
 		};
 	};
 };

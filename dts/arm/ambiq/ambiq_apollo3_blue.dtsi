@@ -62,19 +62,6 @@
 		};
 	};
 
-	/* TCM */
-	tcm: tcm@10000000 {
-		compatible = "zephyr,memory-region";
-		reg = <0x10000000 0x10000>;
-		zephyr,memory-region = "ITCM";
-	};
-
-	/* SRAM */
-	sram0: memory@10010000 {
-		compatible = "mmio-sram";
-		reg = <0x10010000 0x50000>;
-	};
-
 	soc {
 		compatible = "ambiq,apollo3-blue", "ambiq,apollo3x", "simple-bus";
 
@@ -98,11 +85,12 @@
 			};
 		};
 
-		stimer0: stimer@40008140 {
-			compatible = "ambiq,stimer";
-			reg = <0x40008140 0x80>;
-			interrupts = <23 0>;
-			status = "okay";
+		rtc0: rtc@40004240 {
+			compatible = "ambiq,rtc";
+			reg = <0x40004240 0xd0>;
+			interrupts = <2 0>;
+			alarms-count = <1>;
+			status = "disabled";
 		};
 
 		timer0: timer@40008000 {
@@ -257,6 +245,52 @@
 			};
 		};
 
+		stimer0: stimer@40008140 {
+			compatible = "ambiq,stimer";
+			reg = <0x40008140 0x80>;
+			interrupts = <23 0>;
+			status = "okay";
+		};
+
+		pinctrl: pin-controller@40010000 {
+			compatible = "ambiq,apollo3-pinctrl";
+			reg = <0x40010000 0x800>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			gpio: gpio@40010000 {
+				compatible = "ambiq,gpio";
+				reg = <0x40010000>;
+				ranges;
+				gpio-map-mask = <0xffffffe0 0xffffffc0>;
+				gpio-map-pass-thru = <0x1f 0x3f>;
+				gpio-map = <0x00 0x0 &gpio0_31 0x0 0x0
+					    0x20 0x0 &gpio32_63 0x0 0x0>;
+				#gpio-cells = <2>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				gpio0_31: gpio0_31@0 {
+					compatible = "ambiq,gpio-bank";
+					reg = <0>;
+					gpio-controller;
+					#gpio-cells = <2>;
+					interrupts = <13 0>;
+					status = "disabled";
+				};
+
+				gpio32_63: gpio32_63@20 {
+					compatible = "ambiq,gpio-bank";
+					reg = <0x20>;
+					gpio-controller;
+					#gpio-cells = <2>;
+					interrupts = <13 0>;
+					ngpios = <18>;
+					status = "disabled";
+				};
+			};
+		};
+
 		uart0: uart@4001c000 {
 			compatible = "ambiq,pl011-uart", "arm,pl011";
 			reg = <0x4001c000 0x1000>;
@@ -274,6 +308,24 @@
 			interrupt-names = "UART1";
 			clocks = <&uartclk>;
 			zephyr,pm-device-runtime-auto;
+			status = "disabled";
+		};
+
+		mspi0: mspi@40020000 {
+			compatible = "ambiq,mspi-controller";
+			reg = <0x40020000 0x400>;
+			clock-frequency = <48000000>;
+			interrupts = <20 0>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		wdt0: watchdog@40024000 {
+			compatible = "ambiq,watchdog";
+			reg = <0x40024000 0x400>;
+			interrupts = <1 0>;
+			clock-frequency = <16>;
 			status = "disabled";
 		};
 
@@ -429,35 +481,6 @@
 			};
 		};
 
-		adc0: adc@50010000 {
-			compatible = "ambiq,adc";
-			reg = <0x50010000 0x400>;
-			interrupts = <18 0>;
-			interrupt-names = "ADC";
-			channel-count = <10>;
-			internal-vref-mv = <1500>;
-			#io-channel-cells = <1>;
-			status = "disabled";
-		};
-
-		mspi0: mspi@40020000 {
-			compatible = "ambiq,mspi-controller";
-			reg = <0x40020000 0x400>;
-			clock-frequency = <48000000>;
-			interrupts = <20 0>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			status = "disabled";
-		};
-
-		rtc0: rtc@40004240 {
-			compatible = "ambiq,rtc";
-			reg = <0x40004240 0xd0>;
-			interrupts = <2 0>;
-			alarms-count = <1>;
-			status = "disabled";
-		};
-
 		bleif: spi@5000c000 {
 			compatible = "ambiq,spi-bleif";
 			reg = <0x5000c000 0x414>;
@@ -473,52 +496,29 @@
 			};
 		};
 
-		pinctrl: pin-controller@40010000 {
-			compatible = "ambiq,apollo3-pinctrl";
-			reg = <0x40010000 0x800>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-
-			gpio: gpio@40010000 {
-				compatible = "ambiq,gpio";
-				reg = <0x40010000>;
-				ranges;
-				gpio-map-mask = <0xffffffe0 0xffffffc0>;
-				gpio-map-pass-thru = <0x1f 0x3f>;
-				gpio-map = <0x00 0x0 &gpio0_31 0x0 0x0
-					    0x20 0x0 &gpio32_63 0x0 0x0>;
-				#gpio-cells = <2>;
-				#address-cells = <1>;
-				#size-cells = <0>;
-
-				gpio0_31: gpio0_31@0 {
-					compatible = "ambiq,gpio-bank";
-					reg = <0>;
-					gpio-controller;
-					#gpio-cells = <2>;
-					interrupts = <13 0>;
-					status = "disabled";
-				};
-
-				gpio32_63: gpio32_63@20 {
-					compatible = "ambiq,gpio-bank";
-					reg = <0x20>;
-					gpio-controller;
-					#gpio-cells = <2>;
-					interrupts = <13 0>;
-					ngpios = <18>;
-					status = "disabled";
-				};
-			};
-		};
-
-		wdt0: watchdog@40024000 {
-			compatible = "ambiq,watchdog";
-			reg = <0x40024000 0x400>;
-			interrupts = <1 0>;
-			clock-frequency = <16>;
+		adc0: adc@50010000 {
+			compatible = "ambiq,adc";
+			reg = <0x50010000 0x400>;
+			interrupts = <18 0>;
+			interrupt-names = "ADC";
+			channel-count = <10>;
+			internal-vref-mv = <1500>;
+			#io-channel-cells = <1>;
 			status = "disabled";
 		};
+	};
+
+	/* TCM */
+	tcm: tcm@10000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x10000000 0x10000>;
+		zephyr,memory-region = "ITCM";
+	};
+
+	/* SRAM */
+	sram0: memory@10010000 {
+		compatible = "mmio-sram";
+		reg = <0x10010000 0x50000>;
 	};
 };
 

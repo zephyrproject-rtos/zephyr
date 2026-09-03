@@ -15,12 +15,6 @@
 		zephyr,sram = &l2lim;
 	};
 
-	ram0: ram0@80000000 {
-		compatible = "memory";
-		reg = <0x80000000 0xf0000000>;
-		reg-names = "mem";
-	};
-
 	lscon_96b: connector {
 		compatible = "linaro,96b-lscon-1v8";
 		#gpio-cells = <2>;
@@ -38,6 +32,12 @@
 			   <31 0 &gpio0 9 0>,	/* GPIO-J */
 			   <32 0 &gpio0 15 0>;	/* GPIO-K */
 		/* GPIO-L not connected */
+	};
+
+	ram0: ram0@80000000 {
+		compatible = "memory";
+		reg = <0x80000000 0xf0000000>;
+		reg-names = "mem";
 	};
 };
 

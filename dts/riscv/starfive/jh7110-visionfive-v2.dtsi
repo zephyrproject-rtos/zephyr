@@ -95,11 +95,6 @@
 		};
 	};
 
-	l2lim: memory@8000000 {
-		reg = <0x0 0x8000000 0x0 0x200000>;
-		device_type = "memory";
-	};
-
 	soc {
 		compatible = "starfive,jh7110", "simple-bus";
 		ranges;
@@ -180,5 +175,10 @@
 			reg-shift = <2>;
 			status = "disabled";
 		};
+	};
+
+	l2lim: memory@8000000 {
+		reg = <0x0 0x8000000 0x0 0x200000>;
+		device_type = "memory";
 	};
 };

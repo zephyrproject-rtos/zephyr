@@ -107,16 +107,6 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		sram0: memory@8000000 {
-			compatible = "mmio-sram";
-			reg = <0x8000000 0x80000>;
-		};
-
-		sram1: memory@80000000 {
-			compatible = "mmio-sram";
-			reg = <0x80000000 0x800000>;
-		};
-
 		clint: clint@2000000 {
 			compatible = "sifive,clint0";
 			reg = <0x2000000 0x10000>;
@@ -141,6 +131,11 @@
 			reg-names = "mtime", "mtimecmp";
 		};
 
+		sram0: memory@8000000 {
+			compatible = "mmio-sram";
+			reg = <0x8000000 0x80000>;
+		};
+
 		plic: interrupt-controller@c000000 {
 			compatible = "sifive,plic-1.0.0";
 			reg = <0x0c000000 0x04000000>;
@@ -156,13 +151,14 @@
 			riscv,ndev = <186>;
 		};
 
-		mbox: mailbox@37020000 {
-			compatible = "microchip,mpfs-mailbox";
-			reg = <0x37020000 0x58>, <0x2000318c 0x40>,
-			      <0x37020800 0x100>;
+		uart0: uart@20000000 {
+			compatible = "ns16550";
+			reg = <0x20000000 0x1000>;
+			clock-frequency = <150000000>;
+			current-speed = <115200>;
 			interrupt-parent = <&plic>;
-			interrupts = <96 1>;
-			#mbox-cells = <1>;
+			interrupts = <90 1>;
+			reg-shift = <2>;
 			status = "disabled";
 		};
 
@@ -175,17 +171,6 @@
 				#reset-cells = <1>;
 				status = "disabled";
 			};
-		};
-
-		uart0: uart@20000000 {
-			compatible = "ns16550";
-			reg = <0x20000000 0x1000>;
-			clock-frequency = <150000000>;
-			current-speed = <115200>;
-			interrupt-parent = <&plic>;
-			interrupts = <90 1>;
-			reg-shift = <2>;
-			status = "disabled";
 		};
 
 		uart1: uart@20100000 {
@@ -232,17 +217,6 @@
 			status = "disabled";
 		};
 
-		qspi0: spi@21000000 {
-			compatible = "microchip,mpfs-qspi";
-			reg = <0x21000000 0x1000>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			interrupt-parent = <&plic>;
-			interrupts = <85 1>;
-			clock-frequency = <150000000>;
-			status = "disabled";
-		};
-
 		spi1: spi@20109000 {
 			compatible = "microchip,mpfs-spi";
 			reg = <0x20109000 0x1000>;
@@ -254,14 +228,25 @@
 			status = "disabled";
 		};
 
-		syscontroller_qspi: spi@37020100 {
-			compatible = "microchip,mpfs-qspi";
-			reg = <0x37020100 0x1000>;
+		i2c0: i2c@2010a000 {
+			compatible = "microchip,mpfs-i2c";
+			reg = <0x2010a000 0x1000>;
+			interrupt-parent = <&plic>;
+			interrupts = <58 1>;
 			#address-cells = <1>;
 			#size-cells = <0>;
+			clock-frequency = <100000>;
+			status = "disabled";
+		};
+
+		i2c1: i2c@2010b000 {
+			compatible = "microchip,mpfs-i2c";
+			reg = <0x2010b000 0x1000>;
 			interrupt-parent = <&plic>;
-			interrupts = <110 1>;
-			clock-frequency = <150000000>;
+			interrupts = <61 1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clock-frequency = <100000>;
 			status = "disabled";
 		};
 
@@ -298,28 +283,6 @@
 			status = "disabled";
 		};
 
-		i2c0: i2c@2010a000 {
-			compatible = "microchip,mpfs-i2c";
-			reg = <0x2010a000 0x1000>;
-			interrupt-parent = <&plic>;
-			interrupts = <58 1>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			clock-frequency = <100000>;
-			status = "disabled";
-		};
-
-		i2c1: i2c@2010b000 {
-			compatible = "microchip,mpfs-i2c";
-			reg = <0x2010b000 0x1000>;
-			interrupt-parent = <&plic>;
-			interrupts = <61 1>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			clock-frequency = <100000>;
-			status = "disabled";
-		};
-
 		rtc: rtc@20124000 {
 			compatible = "microchip,rtc-mss";
 			reg = <0x20124000 0x1000>;
@@ -329,6 +292,43 @@
 			prescaler = <786432>;
 			alarms-count = <2>;
 			status = "disabled";
+		};
+
+		qspi0: spi@21000000 {
+			compatible = "microchip,mpfs-qspi";
+			reg = <0x21000000 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupt-parent = <&plic>;
+			interrupts = <85 1>;
+			clock-frequency = <150000000>;
+			status = "disabled";
+		};
+
+		mbox: mailbox@37020000 {
+			compatible = "microchip,mpfs-mailbox";
+			reg = <0x37020000 0x58>, <0x2000318c 0x40>,
+			      <0x37020800 0x100>;
+			interrupt-parent = <&plic>;
+			interrupts = <96 1>;
+			#mbox-cells = <1>;
+			status = "disabled";
+		};
+
+		syscontroller_qspi: spi@37020100 {
+			compatible = "microchip,mpfs-qspi";
+			reg = <0x37020100 0x1000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupt-parent = <&plic>;
+			interrupts = <110 1>;
+			clock-frequency = <150000000>;
+			status = "disabled";
+		};
+
+		sram1: memory@80000000 {
+			compatible = "mmio-sram";
+			reg = <0x80000000 0x800000>;
 		};
 	};
 };

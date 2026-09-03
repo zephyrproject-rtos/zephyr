@@ -51,14 +51,6 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		bbram: bb-ram@f02200 {
-			compatible = "ite,it8xxx2-bbram";
-			reg = <0x00f02200 0xc0>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-			status = "okay";
-		};
-
 		flashctrl: flash-controller@f01000 {
 			compatible = "ite,it8xxx2-flash-controller";
 			reg = <0x00f01000 0x100>;
@@ -75,11 +67,6 @@
 				#address-cells = <1>;
 				#size-cells = <1>;
 			};
-		};
-
-		sram0: memory@80100000 {
-			compatible = "mmio-sram";
-			reg = <0x80100000 DT_SIZE_K(60)>;
 		};
 
 		ilm: ilm@f01040 {
@@ -110,64 +97,15 @@
 			       0xf010ce 3>;	/* SCAR23 */
 		};
 
-		uart1: uart@f02700 {
-			compatible = "ns16550";
-			reg = <0x00f02700 0x0020>;
-			current-speed = <115200>;
-			clock-frequency = <1843200>;
-			interrupts = <38 IRQ_TYPE_EDGE_RISING>;
+		rtc0: rtc@f01200 {
+			compatible = "ite,it8xxx2-rtc";
+			reg = <0x00f01200 6   /* EC2I */
+			       0x00f03e00 1   /* GPIOGCR */
+			       0x00f02000 1>; /* GCTRL */
+			interrupts = <IT8XXX2_IRQ_RTCT_ALARM1 IRQ_TYPE_EDGE_RISING
+				      IT8XXX2_IRQ_RTCT_ALARM2 IRQ_TYPE_EDGE_RISING>;
 			interrupt-parent = <&intc>;
-			reg-shift = <0>;
-			status = "disabled";
-		};
-
-		uart2: uart@f02800 {
-			compatible = "ns16550";
-			reg = <0x00f02800 0x0020>;
-			current-speed = <460800>;
-			clock-frequency = <1843200>;
-			interrupts = <39 IRQ_TYPE_EDGE_RISING>;
-			interrupt-parent = <&intc>;
-			reg-shift = <0>;
-			status = "disabled";
-		};
-
-		ite_uart1_wrapper: uartwrapper@f02720 {
-			compatible = "ite,it8xxx2-uart";
-			reg = <0x00f02720 0x0020>;
-			port-num = <1>;
-			gpios = <&gpiob 0 0>;
-			uart-dev = <&uart1>;
-			status = "disabled";
-		};
-
-		ite_uart2_wrapper: uartwrapper@f02820 {
-			compatible = "ite,it8xxx2-uart";
-			reg = <0x00f02820 0x0020>;
-			port-num = <2>;
-			gpios = <&gpioh 1 0>;
-			uart-dev = <&uart2>;
-			status = "disabled";
-		};
-
-		timer: timer@f01f10 {
-			compatible = "ite,it8xxx2-timer";
-			reg = <0x00f01f10 0x0052>;
-			interrupts = <IT8XXX2_IRQ_TIMER3 IRQ_TYPE_EDGE_RISING   /* Event timer */
-				      IT8XXX2_IRQ_TIMER4 IRQ_TYPE_EDGE_RISING   /* Free run timer */
-				      IT8XXX2_IRQ_TIMER5 IRQ_TYPE_EDGE_RISING   /* Busy wait low */
-				      IT8XXX2_IRQ_TIMER6 IRQ_TYPE_EDGE_RISING   /* Busy wait high */
-				      IT8XXX2_IRQ_TIMER7 IRQ_TYPE_EDGE_RISING
-				      IT8XXX2_IRQ_TIMER8 IRQ_TYPE_EDGE_RISING>;
-			interrupt-parent = <&intc>;
-		};
-
-		counter0: counter@f01f30 {
-			compatible = "ite,it8xxx2-counter";
-			reg = <0xf01f30 0x10>;
-			interrupts = <IT8XXX2_IRQ_TIMER7 IRQ_TYPE_EDGE_RISING   /* Alarm timer */
-				      IT8XXX2_IRQ_TIMER8 IRQ_TYPE_EDGE_RISING>; /* Top timer */
-			interrupt-parent = <&intc>;
+			alarms-count = <2>;
 			status = "disabled";
 		};
 
@@ -433,149 +371,6 @@
 			#gpio-cells = <2>;
 		};
 
-		espi0: espi@f03100 {
-			compatible = "ite,it8xxx2-espi";
-			reg = <0x00f03100 0xd8    /* eSPI slave */
-			       0x00f03200 0x9a    /* eSPI VW */
-			       0x00f03300 0xd0    /* eSPI Queue 0 */
-			       0x00f03400 0xc0    /* eSPI Queue 1 */
-			       0x00f01200 6       /* EC2I bridge */
-			       0x00f01300 11      /* Host KBC */
-			       0x00f01500 0x100   /* Host PMC */
-			       0x00f01000 0xd1>;  /* SMFI */
-			interrupts = <IT8XXX2_IRQ_ESPI IRQ_TYPE_LEVEL_HIGH
-				      IT8XXX2_IRQ_ESPI_VW IRQ_TYPE_LEVEL_HIGH
-				      IT8XXX2_IRQ_KBC_IBF IRQ_TYPE_LEVEL_HIGH
-				      IT8XXX2_IRQ_KBC_OBE IRQ_TYPE_LEVEL_HIGH
-				      IT8XXX2_IRQ_PMC1_IBF IRQ_TYPE_LEVEL_HIGH
-				      IT8XXX2_IRQ_PCH_P80 IRQ_TYPE_LEVEL_HIGH
-				      IT8XXX2_IRQ_PMC2_IBF IRQ_TYPE_LEVEL_HIGH
-				      IT8XXX2_IRQ_WKINTD IRQ_TYPE_LEVEL_HIGH
-				      IT8XXX2_IRQ_PMC3_IBF IRQ_TYPE_LEVEL_HIGH
-				      IT8XXX2_IRQ_PMC4_IBF IRQ_TYPE_LEVEL_HIGH
-				      IT8XXX2_IRQ_PMC5_IBF IRQ_TYPE_LEVEL_HIGH>;
-			interrupt-parent = <&intc>;
-			wucctrl = <&wuc_wu42>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-			status = "disabled";
-		};
-
-		shi0: shi@f03a00 {
-			compatible = "ite,it8xxx2-shi";
-			reg = <0x00f03a00 0x30>;
-			interrupts = <171 0>;
-			interrupt-parent = <&intc>;
-			buffer-rx-size = <256>;
-			buffer-tx-size = <256>;
-			status = "disabled";
-		};
-
-		adc0: adc@f01900 {
-			compatible = "ite,it8xxx2-adc";
-			reg = <0xf01900 0x45>;
-			interrupts = <8 IRQ_TYPE_NONE>;
-			interrupt-parent = <&intc>;
-			#io-channel-cells = <1>;
-			status = "disabled";
-		};
-
-		vcmp0: vcmp@f01946 {
-			compatible = "ite,it8xxx2-vcmp";
-			reg = <0xf01946 0x01   /* VCMP0CTL */
-			       0xf01977 0x01   /* VCMP0CSELM */
-			       0xf01937 0x01   /* VCMPSCP */
-			       0xf01947 0x01   /* VCMP0THRDATM */
-			       0xf01948 0x01   /* VCMP0THRDATL */
-			       0xf01945 0x01   /* VCMPSTS */
-			       0xf0196d 0x01>; /* VCMPSTS2 */
-			interrupts = <IT8XXX2_IRQ_V_CMP IRQ_TYPE_LEVEL_HIGH>;
-			interrupt-parent = <&intc>;
-			vcmp-ch = <VCMP_CHANNEL_0>;
-			status = "disabled";
-		};
-
-		vcmp1: vcmp@f01949 {
-			compatible = "ite,it8xxx2-vcmp";
-			reg = <0xf01949 0x01   /* VCMP1CTL */
-			       0xf01978 0x01   /* VCMP1CSELM */
-			       0xf01937 0x01   /* VCMPSCP */
-			       0xf0194a 0x01   /* VCMP1THRDATM */
-			       0xf0194b 0x01   /* VCMP1THRDATL */
-			       0xf01945 0x01   /* VCMPSTS */
-			       0xf0196d 0x01>; /* VCMPSTS2 */
-			interrupts = <IT8XXX2_IRQ_V_CMP IRQ_TYPE_LEVEL_HIGH>;
-			interrupt-parent = <&intc>;
-			vcmp-ch = <VCMP_CHANNEL_1>;
-			status = "disabled";
-		};
-
-		vcmp2: vcmp@f0194c {
-			compatible = "ite,it8xxx2-vcmp";
-			reg = <0xf0194c 0x01   /* VCMP2CTL */
-			       0xf01979 0x01   /* VCMP2CSELM */
-			       0xf01937 0x01   /* VCMPSCP */
-			       0xf0194d 0x01   /* VCMP2THRDATM */
-			       0xf0194e 0x01   /* VCMP2THRDATL */
-			       0xf01945 0x01   /* VCMPSTS */
-			       0xf0196d 0x01>; /* VCMPSTS2 */
-			interrupts = <IT8XXX2_IRQ_V_CMP IRQ_TYPE_LEVEL_HIGH>;
-			interrupt-parent = <&intc>;
-			vcmp-ch = <VCMP_CHANNEL_2>;
-			status = "disabled";
-		};
-
-		vcmp3: vcmp@f0196e {
-			compatible = "ite,it8xxx2-vcmp";
-			reg = <0xf0196e 0x01   /* VCMP3CTL */
-			       0xf0197a 0x01   /* VCMP3CSELM */
-			       0xf01937 0x01   /* VCMPSCP */
-			       0xf0196f 0x01   /* VCMP3THRDATM */
-			       0xf01970 0x01   /* VCMP3THRDATL */
-			       0xf01945 0x01   /* VCMPSTS */
-			       0xf0196d 0x01>; /* VCMPSTS2 */
-			interrupts = <IT8XXX2_IRQ_V_CMP IRQ_TYPE_LEVEL_HIGH>;
-			interrupt-parent = <&intc>;
-			vcmp-ch = <VCMP_CHANNEL_3>;
-			status = "disabled";
-		};
-
-		vcmp4: vcmp@f01971 {
-			compatible = "ite,it8xxx2-vcmp";
-			reg = <0xf01971 0x01   /* VCMP4CTL */
-			       0xf0197b 0x01   /* VCMP4CSELM */
-			       0xf01937 0x01   /* VCMPSCP */
-			       0xf01972 0x01   /* VCMP4THRDATM */
-			       0xf01973 0x01   /* VCMP4THRDATL */
-			       0xf01945 0x01   /* VCMPSTS */
-			       0xf0196d 0x01>; /* VCMPSTS2 */
-			interrupts = <IT8XXX2_IRQ_V_CMP IRQ_TYPE_LEVEL_HIGH>;
-			interrupt-parent = <&intc>;
-			vcmp-ch = <VCMP_CHANNEL_4>;
-			status = "disabled";
-		};
-
-		vcmp5: vcmp@f01974 {
-			compatible = "ite,it8xxx2-vcmp";
-			reg = <0xf01974 0x01   /* VCMP5CTL */
-			       0xf0197c 0x01   /* VCMP5CSELM */
-			       0xf01937 0x01   /* VCMPSCP */
-			       0xf01975 0x01   /* VCMP5THRDATM */
-			       0xf01976 0x01   /* VCMP5THRDATL */
-			       0xf01945 0x01   /* VCMPSTS */
-			       0xf0196d 0x01>; /* VCMPSTS2 */
-			interrupts = <IT8XXX2_IRQ_V_CMP IRQ_TYPE_LEVEL_HIGH>;
-			interrupt-parent = <&intc>;
-			vcmp-ch = <VCMP_CHANNEL_5>;
-			status = "disabled";
-		};
-
-		ecpm: clock-controller@f01e00 {
-			compatible = "ite,it8xxx2-ecpm";
-			reg = <0x00f01e00 0x11>;
-			reg-names = "ecpm";
-		};
-
 		prs: pwmprs@f01800 {
 			compatible = "ite,it8xxx2-pwmprs";
 			reg = <0x00f01800 1>;
@@ -697,18 +492,102 @@
 			status = "disabled";
 		};
 
-		gctrl: general-control@f02000 {
-			compatible = "ite,it8xxx2-gctrl";
-			reg = <0x00f02000 0x100>;
+		adc0: adc@f01900 {
+			compatible = "ite,it8xxx2-adc";
+			reg = <0xf01900 0x45>;
+			interrupts = <8 IRQ_TYPE_NONE>;
+			interrupt-parent = <&intc>;
+			#io-channel-cells = <1>;
+			status = "disabled";
 		};
 
-		peci0: peci@f02c00 {
-			compatible = "ite,it8xxx2-peci";
-			reg = <0x00f02c00 15>;
-			#address-cells = <1>;
-			#size-cells = <0>;
+		vcmp0: vcmp@f01946 {
+			compatible = "ite,it8xxx2-vcmp";
+			reg = <0xf01946 0x01   /* VCMP0CTL */
+			       0xf01977 0x01   /* VCMP0CSELM */
+			       0xf01937 0x01   /* VCMPSCP */
+			       0xf01947 0x01   /* VCMP0THRDATM */
+			       0xf01948 0x01   /* VCMP0THRDATL */
+			       0xf01945 0x01   /* VCMPSTS */
+			       0xf0196d 0x01>; /* VCMPSTS2 */
+			interrupts = <IT8XXX2_IRQ_V_CMP IRQ_TYPE_LEVEL_HIGH>;
 			interrupt-parent = <&intc>;
-			interrupts = <160 IRQ_TYPE_LEVEL_HIGH>;
+			vcmp-ch = <VCMP_CHANNEL_0>;
+			status = "disabled";
+		};
+
+		vcmp1: vcmp@f01949 {
+			compatible = "ite,it8xxx2-vcmp";
+			reg = <0xf01949 0x01   /* VCMP1CTL */
+			       0xf01978 0x01   /* VCMP1CSELM */
+			       0xf01937 0x01   /* VCMPSCP */
+			       0xf0194a 0x01   /* VCMP1THRDATM */
+			       0xf0194b 0x01   /* VCMP1THRDATL */
+			       0xf01945 0x01   /* VCMPSTS */
+			       0xf0196d 0x01>; /* VCMPSTS2 */
+			interrupts = <IT8XXX2_IRQ_V_CMP IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			vcmp-ch = <VCMP_CHANNEL_1>;
+			status = "disabled";
+		};
+
+		vcmp2: vcmp@f0194c {
+			compatible = "ite,it8xxx2-vcmp";
+			reg = <0xf0194c 0x01   /* VCMP2CTL */
+			       0xf01979 0x01   /* VCMP2CSELM */
+			       0xf01937 0x01   /* VCMPSCP */
+			       0xf0194d 0x01   /* VCMP2THRDATM */
+			       0xf0194e 0x01   /* VCMP2THRDATL */
+			       0xf01945 0x01   /* VCMPSTS */
+			       0xf0196d 0x01>; /* VCMPSTS2 */
+			interrupts = <IT8XXX2_IRQ_V_CMP IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			vcmp-ch = <VCMP_CHANNEL_2>;
+			status = "disabled";
+		};
+
+		vcmp3: vcmp@f0196e {
+			compatible = "ite,it8xxx2-vcmp";
+			reg = <0xf0196e 0x01   /* VCMP3CTL */
+			       0xf0197a 0x01   /* VCMP3CSELM */
+			       0xf01937 0x01   /* VCMPSCP */
+			       0xf0196f 0x01   /* VCMP3THRDATM */
+			       0xf01970 0x01   /* VCMP3THRDATL */
+			       0xf01945 0x01   /* VCMPSTS */
+			       0xf0196d 0x01>; /* VCMPSTS2 */
+			interrupts = <IT8XXX2_IRQ_V_CMP IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			vcmp-ch = <VCMP_CHANNEL_3>;
+			status = "disabled";
+		};
+
+		vcmp4: vcmp@f01971 {
+			compatible = "ite,it8xxx2-vcmp";
+			reg = <0xf01971 0x01   /* VCMP4CTL */
+			       0xf0197b 0x01   /* VCMP4CSELM */
+			       0xf01937 0x01   /* VCMPSCP */
+			       0xf01972 0x01   /* VCMP4THRDATM */
+			       0xf01973 0x01   /* VCMP4THRDATL */
+			       0xf01945 0x01   /* VCMPSTS */
+			       0xf0196d 0x01>; /* VCMPSTS2 */
+			interrupts = <IT8XXX2_IRQ_V_CMP IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			vcmp-ch = <VCMP_CHANNEL_4>;
+			status = "disabled";
+		};
+
+		vcmp5: vcmp@f01974 {
+			compatible = "ite,it8xxx2-vcmp";
+			reg = <0xf01974 0x01   /* VCMP5CTL */
+			       0xf0197c 0x01   /* VCMP5CSELM */
+			       0xf01937 0x01   /* VCMPSCP */
+			       0xf01975 0x01   /* VCMP5THRDATM */
+			       0xf01976 0x01   /* VCMP5THRDATL */
+			       0xf01945 0x01   /* VCMPSTS */
+			       0xf0196d 0x01>; /* VCMPSTS2 */
+			interrupts = <IT8XXX2_IRQ_V_CMP IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			vcmp-ch = <VCMP_CHANNEL_5>;
 			status = "disabled";
 		};
 
@@ -730,6 +609,124 @@
 			status = "disabled";
 		};
 
+		ecpm: clock-controller@f01e00 {
+			compatible = "ite,it8xxx2-ecpm";
+			reg = <0x00f01e00 0x11>;
+			reg-names = "ecpm";
+		};
+
+		timer: timer@f01f10 {
+			compatible = "ite,it8xxx2-timer";
+			reg = <0x00f01f10 0x0052>;
+			interrupts = <IT8XXX2_IRQ_TIMER3 IRQ_TYPE_EDGE_RISING   /* Event timer */
+				      IT8XXX2_IRQ_TIMER4 IRQ_TYPE_EDGE_RISING   /* Free run timer */
+				      IT8XXX2_IRQ_TIMER5 IRQ_TYPE_EDGE_RISING   /* Busy wait low */
+				      IT8XXX2_IRQ_TIMER6 IRQ_TYPE_EDGE_RISING   /* Busy wait high */
+				      IT8XXX2_IRQ_TIMER7 IRQ_TYPE_EDGE_RISING
+				      IT8XXX2_IRQ_TIMER8 IRQ_TYPE_EDGE_RISING>;
+			interrupt-parent = <&intc>;
+		};
+
+		counter0: counter@f01f30 {
+			compatible = "ite,it8xxx2-counter";
+			reg = <0xf01f30 0x10>;
+			interrupts = <IT8XXX2_IRQ_TIMER7 IRQ_TYPE_EDGE_RISING   /* Alarm timer */
+				      IT8XXX2_IRQ_TIMER8 IRQ_TYPE_EDGE_RISING>; /* Top timer */
+			interrupt-parent = <&intc>;
+			status = "disabled";
+		};
+
+		gctrl: general-control@f02000 {
+			compatible = "ite,it8xxx2-gctrl";
+			reg = <0x00f02000 0x100>;
+		};
+
+		bbram: bb-ram@f02200 {
+			compatible = "ite,it8xxx2-bbram";
+			reg = <0x00f02200 0xc0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "okay";
+		};
+
+		uart1: uart@f02700 {
+			compatible = "ns16550";
+			reg = <0x00f02700 0x0020>;
+			current-speed = <115200>;
+			clock-frequency = <1843200>;
+			interrupts = <38 IRQ_TYPE_EDGE_RISING>;
+			interrupt-parent = <&intc>;
+			reg-shift = <0>;
+			status = "disabled";
+		};
+
+		ite_uart1_wrapper: uartwrapper@f02720 {
+			compatible = "ite,it8xxx2-uart";
+			reg = <0x00f02720 0x0020>;
+			port-num = <1>;
+			gpios = <&gpiob 0 0>;
+			uart-dev = <&uart1>;
+			status = "disabled";
+		};
+
+		uart2: uart@f02800 {
+			compatible = "ns16550";
+			reg = <0x00f02800 0x0020>;
+			current-speed = <460800>;
+			clock-frequency = <1843200>;
+			interrupts = <39 IRQ_TYPE_EDGE_RISING>;
+			interrupt-parent = <&intc>;
+			reg-shift = <0>;
+			status = "disabled";
+		};
+
+		ite_uart2_wrapper: uartwrapper@f02820 {
+			compatible = "ite,it8xxx2-uart";
+			reg = <0x00f02820 0x0020>;
+			port-num = <2>;
+			gpios = <&gpioh 1 0>;
+			uart-dev = <&uart2>;
+			status = "disabled";
+		};
+
+		peci0: peci@f02c00 {
+			compatible = "ite,it8xxx2-peci";
+			reg = <0x00f02c00 15>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupt-parent = <&intc>;
+			interrupts = <160 IRQ_TYPE_LEVEL_HIGH>;
+			status = "disabled";
+		};
+
+		espi0: espi@f03100 {
+			compatible = "ite,it8xxx2-espi";
+			reg = <0x00f03100 0xd8    /* eSPI slave */
+			       0x00f03200 0x9a    /* eSPI VW */
+			       0x00f03300 0xd0    /* eSPI Queue 0 */
+			       0x00f03400 0xc0    /* eSPI Queue 1 */
+			       0x00f01200 6       /* EC2I bridge */
+			       0x00f01300 11      /* Host KBC */
+			       0x00f01500 0x100   /* Host PMC */
+			       0x00f01000 0xd1>;  /* SMFI */
+			interrupts = <IT8XXX2_IRQ_ESPI IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_ESPI_VW IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_KBC_IBF IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_KBC_OBE IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_PMC1_IBF IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_PCH_P80 IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_PMC2_IBF IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_WKINTD IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_PMC3_IBF IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_PMC4_IBF IRQ_TYPE_LEVEL_HIGH
+				      IT8XXX2_IRQ_PMC5_IBF IRQ_TYPE_LEVEL_HIGH>;
+			interrupt-parent = <&intc>;
+			wucctrl = <&wuc_wu42>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "disabled";
+		};
+
 		usbpd0: usbpd@f03700 {
 			compatible = "ite,it8xxx2-usbpd";
 			reg = <0x00f03700 0x100>;
@@ -742,16 +739,19 @@
 			status = "disabled";
 		};
 
-		rtc0: rtc@f01200 {
-			compatible = "ite,it8xxx2-rtc";
-			reg = <0x00f01200 6   /* EC2I */
-			       0x00f03e00 1   /* GPIOGCR */
-			       0x00f02000 1>; /* GCTRL */
-			interrupts = <IT8XXX2_IRQ_RTCT_ALARM1 IRQ_TYPE_EDGE_RISING
-				      IT8XXX2_IRQ_RTCT_ALARM2 IRQ_TYPE_EDGE_RISING>;
+		shi0: shi@f03a00 {
+			compatible = "ite,it8xxx2-shi";
+			reg = <0x00f03a00 0x30>;
+			interrupts = <171 0>;
 			interrupt-parent = <&intc>;
-			alarms-count = <2>;
+			buffer-rx-size = <256>;
+			buffer-tx-size = <256>;
 			status = "disabled";
+		};
+
+		sram0: memory@80100000 {
+			compatible = "mmio-sram";
+			reg = <0x80100000 DT_SIZE_K(60)>;
 		};
 	};
 };

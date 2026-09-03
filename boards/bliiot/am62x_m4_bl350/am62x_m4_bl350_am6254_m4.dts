@@ -42,6 +42,17 @@
 	};
 
 	/*
+	 * IPC notification transport: IPM over the AM62x MCU mailbox. Linux and
+	 * the M4F kick channel 0/1 to signal each other; OpenAMP uses this to
+	 * notify the peer that a vring has work.
+	 */
+	ipc0: ipc {
+		compatible = "zephyr,mbox-ipm";
+		mboxes = <&mbox0 0>, <&mbox0 1>;
+		mbox-names = "tx", "rx";
+	};
+
+	/*
 	 * OpenAMP rpmsg shared memory — the Linux m4f-dma-memory@9cb00000
 	 * carveout (1 MB). Holds the vrings and rpmsg buffers.
 	 */
@@ -72,17 +83,6 @@
 		reg = <0x9cc01000 (DT_SIZE_M(14) - DT_SIZE_K(4))>;
 		device_type = "memory";
 		zephyr,memory-region = "DDR";
-	};
-
-	/*
-	 * IPC notification transport: IPM over the AM62x MCU mailbox. Linux and
-	 * the M4F kick channel 0/1 to signal each other; OpenAMP uses this to
-	 * notify the peer that a vring has work.
-	 */
-	ipc0: ipc {
-		compatible = "zephyr,mbox-ipm";
-		mboxes = <&mbox0 0>, <&mbox0 1>;
-		mbox-names = "tx", "rx";
 	};
 };
 

@@ -34,10 +34,6 @@
 		};
 	};
 
-	oc_sram: memory@70000000 {
-		reg = <0x70000000 DT_SIZE_K(64)>;
-	};
-
 	arch_timer: timer {
 		compatible = "arm,armv8-timer";
 		interrupts = <GIC_PPI 13 IRQ_TYPE_LEVEL
@@ -49,15 +45,6 @@
 			     <GIC_PPI 10 IRQ_TYPE_LEVEL
 			      IRQ_DEFAULT_PRIORITY>;
 		interrupt-parent = <&gic>;
-	};
-
-	gic: interrupt-controller@1800000 {
-		compatible = "arm,gic-v3", "arm,gic";
-		reg = <0x01800000 0x10000>, /* GICD */
-		      <0x01880000 0xc0000>; /* GICR */
-		interrupt-controller;
-		#interrupt-cells = <4>;
-		status = "okay";
 	};
 
 	main_padcfg0: syscon@f0000 {
@@ -75,6 +62,15 @@
 		};
 	};
 
+	gic: interrupt-controller@1800000 {
+		compatible = "arm,gic-v3", "arm,gic";
+		reg = <0x01800000 0x10000>, /* GICD */
+		      <0x01880000 0xc0000>; /* GICR */
+		interrupt-controller;
+		#interrupt-cells = <4>;
+		status = "okay";
+	};
+
 	mbox0: mailbox0@29000000 {
 		compatible = "ti,omap-mailbox";
 		reg = <0x29000000 0x200>;
@@ -82,6 +78,10 @@
 		interrupt-parent = <&gic>;
 		usr-id = <0>;
 		#mbox-cells = <1>;
+	};
+
+	oc_sram: memory@70000000 {
+		reg = <0x70000000 DT_SIZE_K(64)>;
 	};
 };
 

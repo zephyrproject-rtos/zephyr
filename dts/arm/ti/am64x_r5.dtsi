@@ -35,6 +35,14 @@
 		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 	};
 
+	vim: interrupt-controller@2fff0000 {
+		compatible = "ti,vim";
+		reg = <0x2fff0000 0x4000>;
+		#address-cells = <1>;
+		interrupt-controller;
+		#interrupt-cells = <4>; /* {IRQ/FIQ, IRQ_NUM, IRQ_TYPE, IRQ_PRIO} */
+	};
+
 	btcm: memory@41010000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x41010000 DT_SIZE_K(32)>;
@@ -47,14 +55,6 @@
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x70080000 DT_SIZE_K(256)>;
 		zephyr,memory-region = "SRAM";
-	};
-
-	vim: interrupt-controller@2fff0000 {
-		compatible = "ti,vim";
-		reg = <0x2fff0000 0x4000>;
-		#address-cells = <1>;
-		interrupt-controller;
-		#interrupt-cells = <4>; /* {IRQ/FIQ, IRQ_NUM, IRQ_TYPE, IRQ_PRIO} */
 	};
 };
 

@@ -49,16 +49,6 @@
 		};
 	};
 
-	/*
-	 * The first 2 MiB of LPDDR4 is reserved for VideoCore GPU, which boots
-	 * BCM2711 SoC before control is handed to the ARM core.
-	 */
-	dram0: memory@200000 {
-		compatible = "mmio-sram";
-		reg = <0x200000 DT_SIZE_M(8)>;
-		device_type = "memory";
-	};
-
 	reserved-memory {
 		ranges;
 		#address-cells = <1>;
@@ -106,6 +96,16 @@
 			#power-domain-cells = <0>;
 			power-domain-id = <RPI_POWER_DOMAIN_USB_HCD>;
 		};
+	};
+
+	/*
+	 * The first 2 MiB of LPDDR4 is reserved for VideoCore GPU, which boots
+	 * BCM2711 SoC before control is handed to the ARM core.
+	 */
+	dram0: memory@200000 {
+		compatible = "mmio-sram";
+		reg = <0x200000 DT_SIZE_M(8)>;
+		device_type = "memory";
 	};
 };
 

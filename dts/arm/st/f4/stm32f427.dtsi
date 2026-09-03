@@ -21,30 +21,6 @@
 	soc {
 		compatible = "st,stm32f427", "st,stm32f4", "simple-bus";
 
-		rcc: rcc@40023800 {
-			compatible = "st,stm32f4-rcc";
-		};
-
-		pinctrl: pin-controller@40020000 {
-			reg = <0x40020000 0x2c00>;
-
-			gpioj: gpio@40022400 {
-				compatible = "st,stm32-gpio";
-				reg = <0x40022400 0x400>;
-				gpio-controller;
-				#gpio-cells = <2>;
-				clocks = <&rcc STM32_CLOCK(AHB1, 9)>;
-			};
-
-			gpiok: gpio@40022800 {
-				compatible = "st,stm32-gpio";
-				reg = <0x40022800 0x400>;
-				gpio-controller;
-				#gpio-cells = <2>;
-				clocks = <&rcc STM32_CLOCK(AHB1, 10)>;
-			};
-		};
-
 		uart7: serial@40007800 {
 			compatible = "st,stm32-uart";
 			reg = <0x40007800 0x400>;
@@ -102,20 +78,6 @@
 			status = "disabled";
 		};
 
-		fmc: memory-controller@a0000000 {
-			compatible = "st,stm32-fmc";
-			reg = <0xa0000000 0x400>;
-			clocks = <&rcc STM32_CLOCK(AHB3, 0)>;
-			status = "disabled";
-
-			sdram: sdram {
-				compatible = "st,stm32-fmc-sdram";
-				#address-cells = <1>;
-				#size-cells = <0>;
-				status = "disabled";
-			};
-		};
-
 		sai1: sai1@40015800 {
 			compatible = "st,stm32-sai";
 			reg = <0x40015800 0x400>;
@@ -137,6 +99,44 @@
 			sai1_b: sai1b@40015824 {
 				reg = <0x40015824 0x20>;
 				dmas = <&dma2 5 0 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH) 0>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+		};
+
+		pinctrl: pin-controller@40020000 {
+			reg = <0x40020000 0x2c00>;
+
+			gpioj: gpio@40022400 {
+				compatible = "st,stm32-gpio";
+				reg = <0x40022400 0x400>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				clocks = <&rcc STM32_CLOCK(AHB1, 9)>;
+			};
+
+			gpiok: gpio@40022800 {
+				compatible = "st,stm32-gpio";
+				reg = <0x40022800 0x400>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				clocks = <&rcc STM32_CLOCK(AHB1, 10)>;
+			};
+		};
+
+		rcc: rcc@40023800 {
+			compatible = "st,stm32f4-rcc";
+		};
+
+		fmc: memory-controller@a0000000 {
+			compatible = "st,stm32-fmc";
+			reg = <0xa0000000 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB3, 0)>;
+			status = "disabled";
+
+			sdram: sdram {
+				compatible = "st,stm32-fmc-sdram";
 				#address-cells = <1>;
 				#size-cells = <0>;
 				status = "disabled";

@@ -43,6 +43,12 @@
 			reg = <0x00200000 DT_SIZE_K(128)>;
 		};
 
+		pmc: clock-controller@f0014000 {
+			compatible = "microchip,sam-pmc";
+			reg = <0xf0014000 0x200>;
+			#clock-cells = <2>;
+		};
+
 		uart1: serial@f8020000 {
 			compatible = "microchip,uart-g1";
 			reg = <0xf8020000 0x100>;
@@ -60,12 +66,6 @@
 			interrupt-parent = <&aic>;
 			interrupts = <3 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			status = "disabled";
-		};
-
-		pmc: clock-controller@f0014000 {
-			compatible = "microchip,sam-pmc";
-			reg = <0xf0014000 0x200>;
-			#clock-cells = <2>;
 		};
 
 		aic: interrupt-controller@fc020000 {

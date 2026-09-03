@@ -39,14 +39,6 @@
 		};
 	};
 
-	intc: intc@fffed000 {
-		compatible = "arm,gic-v1", "arm,gic";
-		reg = <0xfffed000 0x1000>,
-		      <0xfffec100 0x100>;
-		#interrupt-cells = <4>;
-		interrupt-controller;
-	};
-
 	soc {
 		compatible = "simple-bus";
 		ranges;
@@ -54,89 +46,6 @@
 		#size-cells = <1>;
 		device_type = "soc";
 		interrupt-parent = <&intc>;
-
-		L2: l2-cache@fffef000 {
-			compatible = "arm,pl330-cache";
-			reg = <0xfffef000 0x1000>;
-			interrupts = <0 38 0x04 IRQ_DEFAULT_PRIORITY>;
-			status = "okay";
-		};
-
-		clkmgr@ffd04000 {
-			compatible = "altr,clk-mgr";
-			reg = <0xffd04000 0x1000>;
-
-			clocks {
-				osc1: osc1 {
-					compatible = "fixed-clock";
-					#clock-cells = <0>;
-				};
-
-				osc2: osc2 {
-					compatible = "fixed-clock";
-					#clock-cells = <0>;
-					clock-frequency = <25000000>;
-				};
-
-				f2s_periph_ref_clk: f2s_periph_ref_clk {
-					compatible = "fixed-clock";
-					#clock-cells = <0>;
-					clock-frequency = <50000000>;
-				};
-
-				f2s_sdram_ref_clk: f2s_sdram_ref_clk {
-					compatible = "fixed-clock";
-					#clock-cells = <0>;
-					clock-frequency = <100000000>;
-				};
-			};
-		};
-
-		sysmgr: sysmgr@ffd08000 {
-			compatible = "altr,sys-mgr", "syscon";
-			reg = <0xffd08000 0x4000>;
-			status = "okay";
-		};
-
-		ocram: sram@ffff0000 {
-			compatible = "zephyr,memory-region", "mmio-sram";
-			reg = <0xffff0000 0x10000>;
-			zephyr,memory-region = "OCRAM";
-		};
-
-		arch_timer: timer@fffec200 {
-			compatible = "arm,armv8-timer";
-			reg = <0xfffec200 0x1c>;
-			interrupt-names = "irq_0", "irq_1", "irq_2", "irq_3";
-			interrupts = <GIC_PPI 13 IRQ_TYPE_EDGE
-				      IRQ_DEFAULT_PRIORITY>,
-				     <GIC_PPI 14 IRQ_TYPE_EDGE
-				      IRQ_DEFAULT_PRIORITY>,
-				     <GIC_PPI 11 IRQ_TYPE_EDGE
-				      IRQ_DEFAULT_PRIORITY>,
-				     <GIC_PPI 10 IRQ_TYPE_EDGE
-				      IRQ_DEFAULT_PRIORITY>;
-			clocks = <&osc1>;
-			status = "okay";
-		};
-
-		uart0: serial0@ffc02000 {
-			compatible = "ns16550", "snps,dw-apb-uart";
-			reg = <0xffc02000 0x1000>;
-			interrupts = <0 162 4 IRQ_DEFAULT_PRIORITY>;
-			reg-shift = <2>;
-			clock-frequency = <100000000>;
-			dma-names = "tx", "rx";
-		};
-
-		uart1: serial1@ffc03000 {
-			compatible = "ns16550", "snps,dw-apb-uart";
-			reg = <0xffc03000 0x1000>;
-			interrupts = <0 163 4 IRQ_DEFAULT_PRIORITY>;
-			reg-shift = <2>;
-			clock-frequency = <100000000>;
-			dma-names = "tx", "rx";
-		};
 
 		gmac0: ethernet@ff700000 {
 			compatible = "snps,ethernet-cyclonev", "snps,dwmac";
@@ -194,6 +103,50 @@
 			status = "disabled";
 		};
 
+		usb0: usb@ffb30000 {
+			compatible = "snps,dwc2";
+			reg = <0xffb30000 0xffff>;
+			interrupts = <0 127 4 IRQ_DEFAULT_PRIORITY>;
+			interrupt-parent = <&intc>;
+			num-out-eps = <16>;
+			num-in-eps = <16>;
+			ghwcfg1 = <0x00000000>;
+			ghwcfg2 = <0x208ffc90>;
+			ghwcfg4 = <0xfe0f0020>;
+			status = "disabled";
+		};
+
+		usb1: usb@ffb40000 {
+			compatible = "snps,dwc2";
+			reg = <0xffb40000 0xffff>;
+			interrupts = <0 128 4 IRQ_DEFAULT_PRIORITY>;
+			interrupt-parent = <&intc>;
+			num-out-eps = <16>;
+			num-in-eps = <16>;
+			ghwcfg1 = <0x00000000>;
+			ghwcfg2 = <0x208ffc90>;
+			ghwcfg4 = <0xfe0f0020>;
+			status = "okay";
+		};
+
+		uart0: serial0@ffc02000 {
+			compatible = "ns16550", "snps,dw-apb-uart";
+			reg = <0xffc02000 0x1000>;
+			interrupts = <0 162 4 IRQ_DEFAULT_PRIORITY>;
+			reg-shift = <2>;
+			clock-frequency = <100000000>;
+			dma-names = "tx", "rx";
+		};
+
+		uart1: serial1@ffc03000 {
+			compatible = "ns16550", "snps,dw-apb-uart";
+			reg = <0xffc03000 0x1000>;
+			interrupts = <0 163 4 IRQ_DEFAULT_PRIORITY>;
+			reg-shift = <2>;
+			clock-frequency = <100000000>;
+			dma-names = "tx", "rx";
+		};
+
 		i2c0: i2c@ffc04000 {
 			compatible = "snps,designware-i2c";
 			reg = <0xffc04000 0x1000>;
@@ -232,29 +185,39 @@
 			status = "disabled";
 		};
 
-		usb0: usb@ffb30000 {
-			compatible = "snps,dwc2";
-			reg = <0xffb30000 0xffff>;
-			interrupts = <0 127 4 IRQ_DEFAULT_PRIORITY>;
-			interrupt-parent = <&intc>;
-			num-out-eps = <16>;
-			num-in-eps = <16>;
-			ghwcfg1 = <0x00000000>;
-			ghwcfg2 = <0x208ffc90>;
-			ghwcfg4 = <0xfe0f0020>;
-			status = "disabled";
+		clkmgr@ffd04000 {
+			compatible = "altr,clk-mgr";
+			reg = <0xffd04000 0x1000>;
+
+			clocks {
+				osc1: osc1 {
+					compatible = "fixed-clock";
+					#clock-cells = <0>;
+				};
+
+				osc2: osc2 {
+					compatible = "fixed-clock";
+					#clock-cells = <0>;
+					clock-frequency = <25000000>;
+				};
+
+				f2s_periph_ref_clk: f2s_periph_ref_clk {
+					compatible = "fixed-clock";
+					#clock-cells = <0>;
+					clock-frequency = <50000000>;
+				};
+
+				f2s_sdram_ref_clk: f2s_sdram_ref_clk {
+					compatible = "fixed-clock";
+					#clock-cells = <0>;
+					clock-frequency = <100000000>;
+				};
+			};
 		};
 
-		usb1: usb@ffb40000 {
-			compatible = "snps,dwc2";
-			reg = <0xffb40000 0xffff>;
-			interrupts = <0 128 4 IRQ_DEFAULT_PRIORITY>;
-			interrupt-parent = <&intc>;
-			num-out-eps = <16>;
-			num-in-eps = <16>;
-			ghwcfg1 = <0x00000000>;
-			ghwcfg2 = <0x208ffc90>;
-			ghwcfg4 = <0xfe0f0020>;
+		sysmgr: sysmgr@ffd08000 {
+			compatible = "altr,sys-mgr", "syscon";
+			reg = <0xffd08000 0x4000>;
 			status = "okay";
 		};
 
@@ -281,5 +244,42 @@
 			clock-frequency = <200000000>;
 			status = "disabled";
 		};
+
+		arch_timer: timer@fffec200 {
+			compatible = "arm,armv8-timer";
+			reg = <0xfffec200 0x1c>;
+			interrupt-names = "irq_0", "irq_1", "irq_2", "irq_3";
+			interrupts = <GIC_PPI 13 IRQ_TYPE_EDGE
+				      IRQ_DEFAULT_PRIORITY>,
+				     <GIC_PPI 14 IRQ_TYPE_EDGE
+				      IRQ_DEFAULT_PRIORITY>,
+				     <GIC_PPI 11 IRQ_TYPE_EDGE
+				      IRQ_DEFAULT_PRIORITY>,
+				     <GIC_PPI 10 IRQ_TYPE_EDGE
+				      IRQ_DEFAULT_PRIORITY>;
+			clocks = <&osc1>;
+			status = "okay";
+		};
+
+		L2: l2-cache@fffef000 {
+			compatible = "arm,pl330-cache";
+			reg = <0xfffef000 0x1000>;
+			interrupts = <0 38 0x04 IRQ_DEFAULT_PRIORITY>;
+			status = "okay";
+		};
+
+		ocram: sram@ffff0000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0xffff0000 0x10000>;
+			zephyr,memory-region = "OCRAM";
+		};
+	};
+
+	intc: intc@fffed000 {
+		compatible = "arm,gic-v1", "arm,gic";
+		reg = <0xfffed000 0x1000>,
+		      <0xfffec100 0x100>;
+		#interrupt-cells = <4>;
+		interrupt-controller;
 	};
 };

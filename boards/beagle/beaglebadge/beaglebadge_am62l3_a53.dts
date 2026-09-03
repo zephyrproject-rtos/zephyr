@@ -32,18 +32,6 @@
 		};
 	};
 
-	ddr0: memory@80000000 {
-		reg = <0x80000000 DT_SIZE_M(256)>;
-		device_type = "memory";
-		#address-cells = <1>;
-		#size-cells = <1>;
-
-		/* The first 32MiB is reserved for firmware (TFA, OP-TEE) */
-		zephyr_ddr: memory@80200000 {
-			reg = <0x80200000 (DT_SIZE_M(256) - DT_SIZE_M(32))>;
-		};
-	};
-
 	buttons {
 		compatible = "gpio-keys";
 
@@ -123,6 +111,18 @@
 			partial {
 				border-waveform = <0x3c>;
 			};
+		};
+	};
+
+	ddr0: memory@80000000 {
+		reg = <0x80000000 DT_SIZE_M(256)>;
+		device_type = "memory";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* The first 32MiB is reserved for firmware (TFA, OP-TEE) */
+		zephyr_ddr: memory@80200000 {
+			reg = <0x80200000 (DT_SIZE_M(256) - DT_SIZE_M(32))>;
 		};
 	};
 };

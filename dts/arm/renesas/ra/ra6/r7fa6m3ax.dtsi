@@ -11,6 +11,31 @@
 
 / {
 	soc {
+		option_setting_ofs0: option-setting-ofs0@400 {
+			compatible = "renesas,ofs-memory";
+			reg = <0x00000400 0x4>;
+			status = "okay";
+		};
+
+		option_setting_ofs1: option-setting-ofs1@404 {
+			compatible = "renesas,ofs-memory";
+			reg = <0x00000404 0x4>;
+			status = "okay";
+		};
+
+		option_setting_secmpu: option-setting-secmpu@408 {
+			compatible = "renesas,ofs-memory";
+			reg = <0x00000408 0x34>;
+			status = "okay";
+		};
+
+		option_setting_osis: option-setting-osis@100a150 {
+			compatible = "zephyr,memory-region";
+			reg = <0x0100a150 0x10>;
+			zephyr,memory-region = "OFS_OSIS_MEMORY";
+			status = "okay";
+		};
+
 		sram0: memory@1ffe0000 {
 			compatible = "mmio-sram";
 			reg = <0x1ffe0000 DT_SIZE_K(640)>;
@@ -54,6 +79,39 @@
 			#gpio-cells = <2>;
 			ngpios = <16>;
 			status = "disabled";
+		};
+
+		iic2: iic2@40053200 {
+			compatible = "renesas,ra-iic";
+			reg = <0x40053200 0x100>;
+			channel = <2>;
+			clocks = <&pclkb MSTPB 7>;
+			max-bitrate-supported = <I2C_BITRATE_FAST>;
+			status = "disabled";
+		};
+
+		adc@4005c000 {
+			channel-available-mask = <0x1f00ff>;
+		};
+
+		adc@4005c200 {
+			channel-available-mask = <0xf00ef>;
+		};
+
+		usbhs: usbhs@40060000 {
+			compatible = "renesas,ra-usbhs";
+			reg = <0x40060000 0x2000>;
+			interrupts = <54 12>;
+			interrupt-names = "usbhs-ir";
+			num-bidir-endpoints = <10>;
+			phys = <&usbhs_phy>;
+			phys-clock = <&uclk>;
+			status = "disabled";
+
+			udc {
+				compatible = "renesas,ra-udc";
+				status = "disabled";
+			};
 		};
 
 		sci5: sci5@400700a0 {
@@ -152,39 +210,6 @@
 			};
 		};
 
-		iic2: iic2@40053200 {
-			compatible = "renesas,ra-iic";
-			reg = <0x40053200 0x100>;
-			channel = <2>;
-			clocks = <&pclkb MSTPB 7>;
-			max-bitrate-supported = <I2C_BITRATE_FAST>;
-			status = "disabled";
-		};
-
-		usbhs: usbhs@40060000 {
-			compatible = "renesas,ra-usbhs";
-			reg = <0x40060000 0x2000>;
-			interrupts = <54 12>;
-			interrupt-names = "usbhs-ir";
-			num-bidir-endpoints = <10>;
-			phys = <&usbhs_phy>;
-			phys-clock = <&uclk>;
-			status = "disabled";
-
-			udc {
-				compatible = "renesas,ra-udc";
-				status = "disabled";
-			};
-		};
-
-		adc@4005c000 {
-			channel-available-mask = <0x1f00ff>;
-		};
-
-		adc@4005c200 {
-			channel-available-mask = <0xf00ef>;
-		};
-
 		pwm13: pwm13@40078d00 {
 			compatible = "renesas,ra-pwm";
 			reg = <0x40078d00 0x100>;
@@ -193,31 +218,6 @@
 			clocks = <&pclkd MSTPD 6>;
 			#pwm-cells = <3>;
 			status = "disabled";
-		};
-
-		option_setting_ofs0: option-setting-ofs0@400 {
-			compatible = "renesas,ofs-memory";
-			reg = <0x00000400 0x4>;
-			status = "okay";
-		};
-
-		option_setting_ofs1: option-setting-ofs1@404 {
-			compatible = "renesas,ofs-memory";
-			reg = <0x00000404 0x4>;
-			status = "okay";
-		};
-
-		option_setting_secmpu: option-setting-secmpu@408 {
-			compatible = "renesas,ofs-memory";
-			reg = <0x00000408 0x34>;
-			status = "okay";
-		};
-
-		option_setting_osis: option-setting-osis@100a150 {
-			compatible = "zephyr,memory-region";
-			reg = <0x0100a150 0x10>;
-			zephyr,memory-region = "OFS_OSIS_MEMORY";
-			status = "okay";
 		};
 	};
 

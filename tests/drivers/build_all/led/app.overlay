@@ -23,13 +23,6 @@
 			};
 		};
 
-		test_dac: dac@dac0dac0 {
-			compatible = "vnd,dac";
-			reg = <0xdac0dac0 0x1000>;
-			#io-channel-cells = <1>;
-			status = "okay";
-		};
-
 		test_dac_leds {
 			compatible = "dac-leds";
 
@@ -44,19 +37,41 @@
 			};
 		};
 
-		test_gpio: gpio@deadbeef {
-			compatible = "vnd,gpio";
-			reg = <0xdeadbeef 0x1000>;
-			gpio-controller;
-			#gpio-cells = <0x2>;
-			status = "okay";
-		};
-
 		test_gpio_leds {
 			compatible = "gpio-leds";
 
 			test_gpio_led0: test_gpio_led_0 {
 				gpios = <&test_gpio 0 0>;
+			};
+		};
+
+		test_pwm_leds {
+			compatible = "pwm-leds";
+			status = "okay";
+
+			test_pwm_led0: test_pwm_led_0 {
+				pwms = <&test_pwm 0 0 0>;
+			};
+
+			test_pwm_led1: test_pwm_led_1 {
+				pwms = <&test_pwm 1 0 0>;
+			};
+		};
+
+		multi-led {
+			compatible = "leds-group-multicolor";
+			leds = <&test_pwm_led0>, <&test_pwm_led1>;
+		};
+
+		native_linux_leds {
+			compatible = "zephyr,native-linux-leds";
+
+			led_0 {
+				path = "dev::a";
+			};
+
+			led_1 {
+				path = "dev::b";
 			};
 		};
 
@@ -224,6 +239,17 @@
 				reg = <0x18>;
 			};
 
+			is31fl3193@18 {
+				compatible = "issi,is31fl3193";
+				reg = <0x18>;
+
+				led_rgb {
+					label = "led_rgb";
+					color-mapping = <0>, <1>, <2>;
+					current-limit = <10>;
+				};
+			};
+
 			lp5860@19 {
 				compatible = "ti,lp5860";
 				reg = <0x19>;
@@ -246,17 +272,6 @@
 					};
 				};
 			};
-
-			is31fl3193@18 {
-				compatible = "issi,is31fl3193";
-				reg = <0x18>;
-
-				led_rgb {
-					label = "led_rgb";
-					color-mapping = <0>, <1>, <2>;
-					current-limit = <10>;
-				};
-			};
 		};
 
 		test_pwm: pwm@12341234 {
@@ -266,34 +281,19 @@
 			status = "okay";
 		};
 
-		test_pwm_leds {
-			compatible = "pwm-leds";
+		test_dac: dac@dac0dac0 {
+			compatible = "vnd,dac";
+			reg = <0xdac0dac0 0x1000>;
+			#io-channel-cells = <1>;
 			status = "okay";
-
-			test_pwm_led0: test_pwm_led_0 {
-				pwms = <&test_pwm 0 0 0>;
-			};
-
-			test_pwm_led1: test_pwm_led_1 {
-				pwms = <&test_pwm 1 0 0>;
-			};
 		};
 
-		multi-led {
-			compatible = "leds-group-multicolor";
-			leds = <&test_pwm_led0>, <&test_pwm_led1>;
-		};
-
-		native_linux_leds {
-			compatible = "zephyr,native-linux-leds";
-
-			led_0 {
-				path = "dev::a";
-			};
-
-			led_1 {
-				path = "dev::b";
-			};
+		test_gpio: gpio@deadbeef {
+			compatible = "vnd,gpio";
+			reg = <0xdeadbeef 0x1000>;
+			gpio-controller;
+			#gpio-cells = <0x2>;
+			status = "okay";
 		};
 	};
 };

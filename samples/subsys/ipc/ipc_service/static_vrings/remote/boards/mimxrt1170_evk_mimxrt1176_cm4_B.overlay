@@ -19,23 +19,6 @@
 		/delete-property/ zephyr,ipc_shm;
 	};
 
-	/* Define memory regions for IPC
-	 * Note that shared memory must have specific MPU attributes set.
-	 */
-	ocram2_ipc0: memory@202c0000 {
-		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x202c0000 DT_SIZE_K(32)>;
-		zephyr,memory-region = "OCRAM2_IPC0";
-		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_IO)>;
-	};
-
-	ocram2_ipc1: memory@202c8000 {
-		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x202c8000 DT_SIZE_K(32)>;
-		zephyr,memory-region = "OCRAM2_IPC1";
-		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_IO)>;
-	};
-
 	soc {
 		/delete-node/ gpt@400f0000;
 
@@ -83,6 +66,23 @@
 			zephyr,buffer-size = <128>;
 			status = "okay";
 		};
+	};
+
+	/* Define memory regions for IPC
+	 * Note that shared memory must have specific MPU attributes set.
+	 */
+	ocram2_ipc0: memory@202c0000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x202c0000 DT_SIZE_K(32)>;
+		zephyr,memory-region = "OCRAM2_IPC0";
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_IO)>;
+	};
+
+	ocram2_ipc1: memory@202c8000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x202c8000 DT_SIZE_K(32)>;
+		zephyr,memory-region = "OCRAM2_IPC1";
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_IO)>;
 	};
 };
 

@@ -168,12 +168,6 @@ arduino_i2c: &flexcomm4 {
 	#address-cells = <1>;
 	#size-cells = <0>;
 
-	mma8652fc: mma8652fc@1d {
-		compatible = "nxp,fxos8700", "nxp,mma8652fc";
-		reg = <0x1d>;
-		int1-gpios = <&gpio1 19 GPIO_ACTIVE_LOW>;
-	};
-
 	audio_codec: wm8904@1a {
 		compatible = "wolfson,wm8904";
 		reg = <0x1a>;
@@ -182,6 +176,12 @@ arduino_i2c: &flexcomm4 {
 
 		clocks = <&syscon MCUX_AUDIO_MCLK>;
 		clock-names = "mclk";
+	};
+
+	mma8652fc: mma8652fc@1d {
+		compatible = "nxp,fxos8700", "nxp,mma8652fc";
+		reg = <0x1d>;
+		int1-gpios = <&gpio1 19 GPIO_ACTIVE_LOW>;
 	};
 };
 

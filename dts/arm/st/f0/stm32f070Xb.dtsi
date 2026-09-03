@@ -6,17 +6,50 @@
 #include <st/f0/stm32f070.dtsi>
 
 / {
-	sram0: memory@20000000 {
-		reg = <0x20000000 DT_SIZE_K(16)>;
-	};
-
 	soc {
-		flash-controller@40022000 {
-			flash0: flash@8000000 {
-				reg = <0x08000000 DT_SIZE_K(128)>;
-				ranges = <0 0x8000000 DT_SIZE_K(128)>;
-				erase-block-size = <2048>;
+		timers6: timers@40001000 {
+			compatible = "st,stm32-timers";
+			reg = <0x40001000 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1, 4)>,
+				 <&rcc STM32_SRC_TIMPCLK1 NO_SEL>;
+			resets = <&rctl STM32_RESET(APB1, 4)>;
+			interrupts = <17 0>;
+			interrupt-names = "global";
+			st,prescaler = <0>;
+			status = "disabled";
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
 			};
+		};
+
+		timers7: timers@40001400 {
+			compatible = "st,stm32-timers";
+			reg = <0x40001400 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1, 5)>,
+				 <&rcc STM32_SRC_TIMPCLK1 NO_SEL>;
+			resets = <&rctl STM32_RESET(APB1, 5)>;
+			interrupts = <18 0>;
+			interrupt-names = "global";
+			st,prescaler = <0>;
+			status = "disabled";
+
+			counter {
+				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
+		};
+
+		spi2: spi@40003800 {
+			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
+			reg = <0x40003800 0x400>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			clocks = <&rcc STM32_CLOCK(APB1, 14)>;
+			interrupts = <26 0>;
+			st,spi-data-width = "full-4-to-16-bit";
+			status = "disabled";
 		};
 
 		/*
@@ -54,48 +87,11 @@
 			status = "disabled";
 		};
 
-		spi2: spi@40003800 {
-			compatible = "st,stm32-spi-fifo", "st,stm32-spi";
-			reg = <0x40003800 0x400>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			clocks = <&rcc STM32_CLOCK(APB1, 14)>;
-			interrupts = <26 0>;
-			st,spi-data-width = "full-4-to-16-bit";
-			status = "disabled";
-		};
-
-		timers6: timers@40001000 {
-			compatible = "st,stm32-timers";
-			reg = <0x40001000 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 4)>,
-				 <&rcc STM32_SRC_TIMPCLK1 NO_SEL>;
-			resets = <&rctl STM32_RESET(APB1, 4)>;
-			interrupts = <17 0>;
-			interrupt-names = "global";
-			st,prescaler = <0>;
-			status = "disabled";
-
-			counter {
-				compatible = "st,stm32-counter";
-				status = "disabled";
-			};
-		};
-
-		timers7: timers@40001400 {
-			compatible = "st,stm32-timers";
-			reg = <0x40001400 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 5)>,
-				 <&rcc STM32_SRC_TIMPCLK1 NO_SEL>;
-			resets = <&rctl STM32_RESET(APB1, 5)>;
-			interrupts = <18 0>;
-			interrupt-names = "global";
-			st,prescaler = <0>;
-			status = "disabled";
-
-			counter {
-				compatible = "st,stm32-counter";
-				status = "disabled";
+		flash-controller@40022000 {
+			flash0: flash@8000000 {
+				reg = <0x08000000 DT_SIZE_K(128)>;
+				ranges = <0 0x8000000 DT_SIZE_K(128)>;
+				erase-block-size = <2048>;
 			};
 		};
 	};
@@ -106,5 +102,9 @@
 		#size-cells = <0>;
 		i2c = <&i2c2>;
 		status = "disabled";
+	};
+
+	sram0: memory@20000000 {
+		reg = <0x20000000 DT_SIZE_K(16)>;
 	};
 };

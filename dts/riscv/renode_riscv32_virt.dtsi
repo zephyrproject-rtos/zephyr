@@ -37,16 +37,6 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		flash0: flash@80000000 {
-			compatible = "soc-nv-flash";
-			reg = <0x80000000 DT_SIZE_M(4)>;
-		};
-
-		sram0: memory@80400000 {
-			compatible = "mmio-sram";
-			reg = <0x80400000 DT_SIZE_M(4)>;
-		};
-
 		clint: clint@2000000 {
 			compatible = "sifive,clint0";
 			reg = <0x2000000 0x10000>;
@@ -60,17 +50,6 @@
 			reg-names = "mtime", "mtimecmp";
 		};
 
-		plic0: interrupt-controller@c000000 {
-			compatible = "sifive,plic-1.0.0";
-			reg = <0xc000000 0x04000000>;
-			#address-cells = <0>;
-			#interrupt-cells = <2>;
-			interrupt-controller;
-			interrupts-extended = <&hlic 11>;
-			riscv,max-priority = <1>;
-			riscv,ndev = <1023>;
-		};
-
 		plic1: interrupt-controller@8000000 {
 			compatible = "sifive,plic-1.0.0";
 			reg = <0x8000000 0x04000000>;
@@ -78,6 +57,17 @@
 			#interrupt-cells = <2>;
 			interrupt-controller;
 			interrupts-extended = <&hlic 4>;
+			riscv,max-priority = <1>;
+			riscv,ndev = <1023>;
+		};
+
+		plic0: interrupt-controller@c000000 {
+			compatible = "sifive,plic-1.0.0";
+			reg = <0xc000000 0x04000000>;
+			#address-cells = <0>;
+			#interrupt-cells = <2>;
+			interrupt-controller;
+			interrupts-extended = <&hlic 11>;
 			riscv,max-priority = <1>;
 			riscv,ndev = <1023>;
 		};
@@ -102,6 +92,16 @@
 			current-speed = <115200>;
 			reg-shift = <0>;
 			status = "disabled";
+		};
+
+		flash0: flash@80000000 {
+			compatible = "soc-nv-flash";
+			reg = <0x80000000 DT_SIZE_M(4)>;
+		};
+
+		sram0: memory@80400000 {
+			compatible = "mmio-sram";
+			reg = <0x80400000 DT_SIZE_M(4)>;
 		};
 	};
 };

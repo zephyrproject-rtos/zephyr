@@ -136,32 +136,6 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		mram1x_controller: mram-controller@5f092000 {
-			compatible = "nordic,mram";
-			reg = <0x5f092000 0x2000>;
-			ranges = <0x0 0xe000000 DT_SIZE_K(8192)>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			mram1x: mram-memory@0 {
-				compatible = "soc-nv-flash";
-				reg = <0x0 DT_SIZE_K(8192)>;
-				ranges;
-				erase-block-size = <4096>;
-				write-block-size = <16>;
-				#address-cells = <1>;
-				#size-cells = <1>;
-
-				mram10: mram-bank@0 {
-					reg = <0 DT_SIZE_K(6144)>;
-				};
-
-				mram11: mram-bank@600000 {
-					reg = <DT_SIZE_K(6144) DT_SIZE_K(2048)>;
-				};
-			};
-		};
-
 		uicr: uicr@fff8000 {
 			compatible = "nordic,nrf-uicr";
 			reg = <0xfff8000 DT_SIZE_K(3)>;
@@ -210,6 +184,11 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 
+			cpuapp_ieee802154: ieee802154 {
+				compatible = "nordic,nrf-ieee802154";
+				status = "disabled";
+			};
+
 			cpuapp_hsfll: clock@d000 {
 				compatible = "nordic,nrf-hsfll-local";
 				reg = <0xd000 0x1000>;
@@ -245,11 +224,6 @@
 				compatible = "nordic,nrf-wdt";
 				reg = <0x15000 0x1000>;
 				interrupts = <21 NRF_DEFAULT_IRQ_PRIORITY>;
-				status = "disabled";
-			};
-
-			cpuapp_ieee802154: ieee802154 {
-				compatible = "nordic,nrf-ieee802154";
 				status = "disabled";
 			};
 
@@ -403,28 +377,6 @@
 				compatible = "nordic,nrf-ecb";
 				reg = <0x3d000 0x1000>;
 				interrupts = <61 NRF_DEFAULT_IRQ_PRIORITY>;
-				status = "disabled";
-			};
-		};
-
-		tdd_peripherals: peripheral@bf000000 {
-			reg = <0xbf000000 0x1000000>;
-			ranges = <0x0 0xbf000000 0x1000000>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			tbm: tbm@3000 {
-				compatible = "nordic,nrf-tbm";
-				reg = <0x3000 0x408>;
-				interrupts = <127 NRF_DEFAULT_IRQ_PRIORITY>;
-				status = "disabled";
-			};
-
-			hsfll200: clock@4000 {
-				compatible = "fixed-clock";
-				reg = <0x4000 0x1000>;
-				#clock-cells = <0>;
-				clock-frequency = <DT_FREQ_M(320)>;
 				status = "disabled";
 			};
 		};
@@ -1285,6 +1237,54 @@
 				endtx-stoptx-supported;
 				frame-timeout-supported;
 				nordic,clockpin-enable = <NRF_FUN_UART_TX>;
+				status = "disabled";
+			};
+		};
+
+		mram1x_controller: mram-controller@5f092000 {
+			compatible = "nordic,mram";
+			reg = <0x5f092000 0x2000>;
+			ranges = <0x0 0xe000000 DT_SIZE_K(8192)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			mram1x: mram-memory@0 {
+				compatible = "soc-nv-flash";
+				reg = <0x0 DT_SIZE_K(8192)>;
+				ranges;
+				erase-block-size = <4096>;
+				write-block-size = <16>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				mram10: mram-bank@0 {
+					reg = <0 DT_SIZE_K(6144)>;
+				};
+
+				mram11: mram-bank@600000 {
+					reg = <DT_SIZE_K(6144) DT_SIZE_K(2048)>;
+				};
+			};
+		};
+
+		tdd_peripherals: peripheral@bf000000 {
+			reg = <0xbf000000 0x1000000>;
+			ranges = <0x0 0xbf000000 0x1000000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			tbm: tbm@3000 {
+				compatible = "nordic,nrf-tbm";
+				reg = <0x3000 0x408>;
+				interrupts = <127 NRF_DEFAULT_IRQ_PRIORITY>;
+				status = "disabled";
+			};
+
+			hsfll200: clock@4000 {
+				compatible = "fixed-clock";
+				reg = <0x4000 0x1000>;
+				#clock-cells = <0>;
+				clock-frequency = <DT_FREQ_M(320)>;
 				status = "disabled";
 			};
 		};

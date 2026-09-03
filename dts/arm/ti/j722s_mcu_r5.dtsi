@@ -39,11 +39,12 @@
 		zephyr,memory-region = "ATCM";
 	};
 
-	btcm: memory@41010000 {
-		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x41010000 DT_SIZE_K(32)>;
-		device_type = "memory";
-		zephyr,memory-region = "BTCM";
+	systick_timer: timer@4800000 {
+		compatible = "ti,am654-timer";
+		reg = <0x04800000 0x70>;
+		interrupts = <0 28 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&vim>;
+		status = "okay";
 	};
 
 	vim: interrupt-controller@7ff0000 {
@@ -55,14 +56,6 @@
 		status = "okay";
 	};
 
-	systick_timer: timer@4800000 {
-		compatible = "ti,am654-timer";
-		reg = <0x04800000 0x70>;
-		interrupts = <0 28 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-		interrupt-parent = <&vim>;
-		status = "okay";
-	};
-
 	mbox1: mailbox@29010000 {
 		compatible = "ti,omap-mailbox";
 		reg = <0x29010000 0x200>;
@@ -71,5 +64,12 @@
 		usr-id = <2>;
 		#mbox-cells = <1>;
 		status = "okay";
+	};
+
+	btcm: memory@41010000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x41010000 DT_SIZE_K(32)>;
+		device_type = "memory";
+		zephyr,memory-region = "BTCM";
 	};
 };

@@ -23,6 +23,79 @@
 	};
 
 	soc {
+		option_setting_ofs0: option-setting-ofs0@400 {
+			compatible = "renesas,ofs-memory";
+			reg = <0x400 0x4>;
+			status = "okay";
+		};
+
+		option_setting_ofs1: option-setting-ofs1@404 {
+			compatible = "renesas,ofs-memory";
+			reg = <0x404 0x4>;
+			status = "okay";
+		};
+
+		option_setting_osis: option-setting-osis@1010018 {
+			compatible = "zephyr,memory-region";
+			reg = <0x01010018 0x20>;
+			zephyr,memory-region = "OFS_OSIS_MEMORY";
+			status = "okay";
+		};
+
+		port_irq0: external-interrupt@40006000 {
+			compatible = "renesas,ra-external-interrupt";
+			reg = <0x40006000 0x1>;
+			channel = <0>;
+			#port-irq-cells = <0>;
+			interrupts = <2 1>;
+			status = "disabled";
+		};
+
+		port_irq1: external-interrupt@40006001 {
+			compatible = "renesas,ra-external-interrupt";
+			reg = <0x40006001 0x1>;
+			channel = <1>;
+			#port-irq-cells = <0>;
+			interrupts = <3 1>;
+			status = "disabled";
+		};
+
+		port_irq2: external-interrupt@40006002 {
+			compatible = "renesas,ra-external-interrupt";
+			reg = <0x40006002 0x1>;
+			channel = <2>;
+			#port-irq-cells = <0>;
+			interrupts = <4 1>;
+			status = "disabled";
+		};
+
+		port_irq3: external-interrupt@40006003 {
+			compatible = "renesas,ra-external-interrupt";
+			reg = <0x40006003 0x1>;
+			channel = <3>;
+			#port-irq-cells = <0>;
+			interrupts = <5 1>;
+			status = "disabled";
+		};
+
+		port_irq4: external-interrupt@40006004 {
+			compatible = "renesas,ra-external-interrupt";
+			reg = <0x40006004 0x1>;
+			channel = <4>;
+			#port-irq-cells = <0>;
+			interrupts = <6 1>;
+			status = "disabled";
+		};
+
+		port_irq5: external-interrupt@40006005 {
+			compatible = "renesas,ra-external-interrupt";
+			reg = <0x40006005 0x1>;
+			channel = <5>;
+			#port-irq-cells = <0>;
+			interrupts = <7 1>;
+			status = "disabled";
+		};
+
 		system: system@4001e000 {
 			compatible = "renesas,ra-system";
 			reg = <0x4001e000 0x700>;
@@ -34,6 +107,13 @@
 			reg = <0x40041000 0x6c>;
 			#renesas-elc-cells = <2>;
 			clocks = <&pclkb MSTPC 14>;
+			status = "disabled";
+		};
+
+		crc: crc@40074000 {
+			compatible = "renesas,ra-crc";
+			reg = <0x40074000 0x16>;
+			clocks = <&pclkb MSTPC 1>;
 			status = "disabled";
 		};
 
@@ -103,95 +183,6 @@
 			status = "okay";
 		};
 
-		flash: flash-controller@407ec000 {
-			compatible = "renesas,ra-flash-lp-controller";
-			reg = <0x407ec000 0x3fd8>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-			interrupts = <11 1>;
-			interrupt-names = "frdyi";
-		};
-
-		crc: crc@40074000 {
-			compatible = "renesas,ra-crc";
-			reg = <0x40074000 0x16>;
-			clocks = <&pclkb MSTPC 1>;
-			status = "disabled";
-		};
-
-		port_irq0: external-interrupt@40006000 {
-			compatible = "renesas,ra-external-interrupt";
-			reg = <0x40006000 0x1>;
-			channel = <0>;
-			#port-irq-cells = <0>;
-			interrupts = <2 1>;
-			status = "disabled";
-		};
-
-		port_irq1: external-interrupt@40006001 {
-			compatible = "renesas,ra-external-interrupt";
-			reg = <0x40006001 0x1>;
-			channel = <1>;
-			#port-irq-cells = <0>;
-			interrupts = <3 1>;
-			status = "disabled";
-		};
-
-		port_irq2: external-interrupt@40006002 {
-			compatible = "renesas,ra-external-interrupt";
-			reg = <0x40006002 0x1>;
-			channel = <2>;
-			#port-irq-cells = <0>;
-			interrupts = <4 1>;
-			status = "disabled";
-		};
-
-		port_irq3: external-interrupt@40006003 {
-			compatible = "renesas,ra-external-interrupt";
-			reg = <0x40006003 0x1>;
-			channel = <3>;
-			#port-irq-cells = <0>;
-			interrupts = <5 1>;
-			status = "disabled";
-		};
-
-		port_irq4: external-interrupt@40006004 {
-			compatible = "renesas,ra-external-interrupt";
-			reg = <0x40006004 0x1>;
-			channel = <4>;
-			#port-irq-cells = <0>;
-			interrupts = <6 1>;
-			status = "disabled";
-		};
-
-		port_irq5: external-interrupt@40006005 {
-			compatible = "renesas,ra-external-interrupt";
-			reg = <0x40006005 0x1>;
-			channel = <5>;
-			#port-irq-cells = <0>;
-			interrupts = <7 1>;
-			status = "disabled";
-		};
-
-		option_setting_ofs0: option-setting-ofs0@400 {
-			compatible = "renesas,ofs-memory";
-			reg = <0x400 0x4>;
-			status = "okay";
-		};
-
-		option_setting_ofs1: option-setting-ofs1@404 {
-			compatible = "renesas,ofs-memory";
-			reg = <0x404 0x4>;
-			status = "okay";
-		};
-
-		option_setting_osis: option-setting-osis@1010018 {
-			compatible = "zephyr,memory-region";
-			reg = <0x01010018 0x20>;
-			zephyr,memory-region = "OFS_OSIS_MEMORY";
-			status = "okay";
-		};
-
 		sau0: sau@400a2000 {
 			compatible = "renesas,ra-sau";
 			reg = <0x400a2000 0x13a>;
@@ -205,6 +196,27 @@
 				interrupts = <18 1>;
 				clocks = <&sau_ck00 MSTPB 6>;
 				#sau-channel-cells = <0>;
+			};
+
+			sau-uart {
+				#address-cells = <1>;
+				#size-cells = <0>;
+
+				uart0: sau-uart@0 {
+					compatible = "renesas,ra-uart-sau";
+					reg = <0>;
+					interrupts = <20 1>;
+					sau-channels = <&sau_ch00>, <&sau_ch01>;
+					status = "disabled";
+				};
+
+				uart1: sau-uart@1 {
+					compatible = "renesas,ra-uart-sau";
+					reg = <1>;
+					interrupts = <24 1>;
+					sau-channels = <&sau_ch02>, <&sau_ch03>;
+					status = "disabled";
+				};
 			};
 
 			sau_ch01: ch@1 {
@@ -230,27 +242,6 @@
 				interrupts = <23 1>;
 				#sau-channel-cells = <0>;
 			};
-
-			sau-uart {
-				#address-cells = <1>;
-				#size-cells = <0>;
-
-				uart0: sau-uart@0 {
-					compatible = "renesas,ra-uart-sau";
-					reg = <0>;
-					interrupts = <20 1>;
-					sau-channels = <&sau_ch00>, <&sau_ch01>;
-					status = "disabled";
-				};
-
-				uart1: sau-uart@1 {
-					compatible = "renesas,ra-uart-sau";
-					reg = <1>;
-					interrupts = <24 1>;
-					sau-channels = <&sau_ch02>, <&sau_ch03>;
-					status = "disabled";
-				};
-			};
 		};
 
 		sau1: sau@400a2200 {
@@ -268,14 +259,6 @@
 				#sau-channel-cells = <0>;
 			};
 
-			sau_ch11: ch@1 {
-				compatible = "renesas,ra-sau-channel";
-				reg = <1>;
-				clocks = <&sau_ck10 MSTPB 7>;
-				interrupts = <13 1>;
-				#sau-channel-cells = <0>;
-			};
-
 			sau-uart {
 				#address-cells = <1>;
 				#size-cells = <0>;
@@ -288,6 +271,23 @@
 					status = "disabled";
 				};
 			};
+
+			sau_ch11: ch@1 {
+				compatible = "renesas,ra-sau-channel";
+				reg = <1>;
+				clocks = <&sau_ck10 MSTPB 7>;
+				interrupts = <13 1>;
+				#sau-channel-cells = <0>;
+			};
+		};
+
+		flash: flash-controller@407ec000 {
+			compatible = "renesas,ra-flash-lp-controller";
+			reg = <0x407ec000 0x3fd8>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			interrupts = <11 1>;
+			interrupt-names = "frdyi";
 		};
 	};
 };

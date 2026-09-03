@@ -24,6 +24,32 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 
+		power-states {
+			// substate-id = <0>; is reserved for "idle", cache powered on
+			idle_cache_retained: idle_cache_retained {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				substate-id = <1>;
+				min-residency-us = <700>;
+				exit-latency-us = <5>;
+			};
+
+			idle_cache_disabled: idle_cache_disabled {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				substate-id = <2>;
+				min-residency-us = <1000>;
+				exit-latency-us = <7>;
+			};
+
+			s2ram: s2ram {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-ram";
+				min-residency-us = <2000>;
+				exit-latency-us = <33>;
+			};
+		};
+
 		cpuapp: cpu@2 {
 			compatible = "arm,cortex-m33";
 			reg = <2>;
@@ -127,32 +153,6 @@
 				nordic,tasks = <32>;
 				nordic,tasks-mask = <0xffff0000>;
 				status = "disabled";
-			};
-		};
-
-		power-states {
-			// substate-id = <0>; is reserved for "idle", cache powered on
-			idle_cache_retained: idle_cache_retained {
-				compatible = "zephyr,power-state";
-				power-state-name = "suspend-to-idle";
-				substate-id = <1>;
-				min-residency-us = <700>;
-				exit-latency-us = <5>;
-			};
-
-			idle_cache_disabled: idle_cache_disabled {
-				compatible = "zephyr,power-state";
-				power-state-name = "suspend-to-idle";
-				substate-id = <2>;
-				min-residency-us = <1000>;
-				exit-latency-us = <7>;
-			};
-
-			s2ram: s2ram {
-				compatible = "zephyr,power-state";
-				power-state-name = "suspend-to-ram";
-				min-residency-us = <2000>;
-				exit-latency-us = <33>;
 			};
 		};
 	};
@@ -269,32 +269,6 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		mram1x_controller: mram-controller@5f092000 {
-			compatible = "nordic,mram";
-			reg = <0x5f092000 0x2000>;
-			ranges = <0x0 0xe000000 DT_SIZE_K(2048)>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			mram1x: mram-memory@0 {
-				compatible = "soc-nv-flash";
-				reg = <0 DT_SIZE_K(2048)>;
-				ranges;
-				erase-block-size = <4096>;
-				write-block-size = <16>;
-				#address-cells = <1>;
-				#size-cells = <1>;
-
-				mram10: mram-bank@0 {
-					reg = <0 DT_SIZE_K(1024)>;
-				};
-
-				mram11: mram-bank@100000 {
-					reg = <DT_SIZE_K(1024) DT_SIZE_K(1024)>;
-				};
-			};
-		};
-
 		uicr: uicr@fff8000 {
 			compatible = "nordic,nrf-uicr";
 			reg = <0xfff8000 DT_SIZE_K(2)>;
@@ -335,6 +309,11 @@
 			ranges = <0x0 0x52000000 0x1000000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+
+			cpuapp_ieee802154: ieee802154 {
+				compatible = "nordic,nrf-ieee802154";
+				status = "disabled";
+			};
 
 			cpuapp_hsfll: clock@d000 {
 				compatible = "nordic,nrf-iron-hsfll-local";
@@ -379,11 +358,6 @@
 			cpuapp_resetinfo: resetinfo@1e000 {
 				compatible = "nordic,nrf-resetinfo";
 				reg = <0x1e000 0x1000>;
-			};
-
-			cpuapp_ieee802154: ieee802154 {
-				compatible = "nordic,nrf-ieee802154";
-				status = "disabled";
 			};
 		};
 
@@ -570,98 +544,6 @@
 				reg = <0x3d000 0x1000>;
 				interrupts = <61 NRF_DEFAULT_IRQ_PRIORITY>;
 				status = "disabled";
-			};
-		};
-
-		tdd_peripherals: peripheral@bf000000 {
-			reg = <0xbf000000 0x1000000>;
-			ranges = <0x0 0xbf000000 0x1000000>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			tbm: tbm@3000 {
-				compatible = "nordic,nrf-tbm";
-				reg = <0x3000 0x408>;
-				interrupts = <127 NRF_DEFAULT_IRQ_PRIORITY>;
-				status = "disabled";
-			};
-
-			hsfll200: clock@4000 {
-				compatible = "fixed-clock";
-				reg = <0x4000 0x1000>;
-				#clock-cells = <0>;
-				clock-frequency = <DT_FREQ_M(320)>;
-				status = "disabled";
-			};
-
-			coresight: coresight@40000 {
-				compatible = "nordic,coresight-nrf";
-				reg = <0x40000 0x11000>;
-				ranges = <0x0 0x40000 0x11000>;
-				#address-cells = <1>;
-				#size-cells = <1>;
-				nordic,clockpin-enable = <NRF_FUN_TPIU_CLOCK>;
-				status = "disabled";
-
-				tsgen: tsgen@1000 {
-					reg = <0x1000 0x1000>;
-				};
-
-				stm: stm@2000 {
-					reg = <0x2000 0x1000>;
-				};
-
-				tpiu: tpiu@3000 {
-					reg = <0x3000 0x1000>;
-				};
-
-				etb: etb@4000 {
-					reg = <0x4000 0x1000>;
-				};
-
-				etr: etr@5000 {
-					reg = <0x5000 0x1000>;
-				};
-
-				cti210: cti@6000 {
-					reg = <0x6000 0x1000>;
-				};
-
-				cti211: cti@7000 {
-					reg = <0x7000 0x1000>;
-				};
-
-				atbreplicator210: atbreplicator@8000 {
-					reg = <0x8000 0x1000>;
-				};
-
-				atbreplicator211: atbreplicator@9000 {
-					reg = <0x9000 0x1000>;
-				};
-
-				atbreplicator212: atbreplicator@a000 {
-					reg = <0xa000 0x1000>;
-				};
-
-				atbreplicator213: atbreplicator@b000 {
-					reg = <0xb000 0x1000>;
-				};
-
-				atbfunnel210: atbfunnel@c000 {
-					reg = <0xc000 0x1000>;
-				};
-
-				atbfunnel211: atbfunnel@d000 {
-					reg = <0xd000 0x1000>;
-				};
-
-				atbfunnel212: atbfunnel@e000 {
-					reg = <0xe000 0x1000>;
-				};
-
-				atbfunnel213: atbfunnel@f000 {
-					reg = <0xf000 0x1000>;
-				};
 			};
 		};
 
@@ -1128,6 +1010,19 @@
 				status = "disabled";
 			};
 
+			tdm130: tdm@992000 {
+				compatible = "nordic,nrf-tdm";
+				reg = <0x992000 0x1000>;
+				easydma-maxcnt-bits = <15>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				interrupts = <402 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&fll16m>;
+				nordic,clockpin-enable = <NRF_FUN_TDM_SCK_M>,
+							 <NRF_FUN_TDM_MCK>;
+				status = "disabled";
+			};
+
 			pdm0: pdm@993000 {
 				compatible = "nordic,nrf-pdm";
 				reg = <0x993000 0x1000>;
@@ -1147,6 +1042,19 @@
 				compatible = "nordic,nrf-qdec";
 				reg = <0x995000 0x1000>;
 				interrupts = <405 NRF_DEFAULT_IRQ_PRIORITY>;
+				status = "disabled";
+			};
+
+			tdm131: tdm@997000 {
+				compatible = "nordic,nrf-tdm";
+				reg = <0x997000 0x1000>;
+				easydma-maxcnt-bits = <15>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				interrupts = <407 NRF_DEFAULT_IRQ_PRIORITY>;
+				clocks = <&fll16m>;
+				nordic,clockpin-enable = <NRF_FUN_TDM_SCK_M>,
+							 <NRF_FUN_TDM_MCK>;
 				status = "disabled";
 			};
 
@@ -1710,31 +1618,123 @@
 				offset = <8>;
 				status = "disabled";
 			};
+		};
 
-			tdm130: tdm@992000 {
-				compatible = "nordic,nrf-tdm";
-				reg = <0x992000 0x1000>;
-				easydma-maxcnt-bits = <15>;
+		mram1x_controller: mram-controller@5f092000 {
+			compatible = "nordic,mram";
+			reg = <0x5f092000 0x2000>;
+			ranges = <0x0 0xe000000 DT_SIZE_K(2048)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			mram1x: mram-memory@0 {
+				compatible = "soc-nv-flash";
+				reg = <0 DT_SIZE_K(2048)>;
+				ranges;
+				erase-block-size = <4096>;
+				write-block-size = <16>;
 				#address-cells = <1>;
-				#size-cells = <0>;
-				interrupts = <402 NRF_DEFAULT_IRQ_PRIORITY>;
-				clocks = <&fll16m>;
-				nordic,clockpin-enable = <NRF_FUN_TDM_SCK_M>,
-							 <NRF_FUN_TDM_MCK>;
+				#size-cells = <1>;
+
+				mram10: mram-bank@0 {
+					reg = <0 DT_SIZE_K(1024)>;
+				};
+
+				mram11: mram-bank@100000 {
+					reg = <DT_SIZE_K(1024) DT_SIZE_K(1024)>;
+				};
+			};
+		};
+
+		tdd_peripherals: peripheral@bf000000 {
+			reg = <0xbf000000 0x1000000>;
+			ranges = <0x0 0xbf000000 0x1000000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			tbm: tbm@3000 {
+				compatible = "nordic,nrf-tbm";
+				reg = <0x3000 0x408>;
+				interrupts = <127 NRF_DEFAULT_IRQ_PRIORITY>;
 				status = "disabled";
 			};
 
-			tdm131: tdm@997000 {
-				compatible = "nordic,nrf-tdm";
-				reg = <0x997000 0x1000>;
-				easydma-maxcnt-bits = <15>;
-				#address-cells = <1>;
-				#size-cells = <0>;
-				interrupts = <407 NRF_DEFAULT_IRQ_PRIORITY>;
-				clocks = <&fll16m>;
-				nordic,clockpin-enable = <NRF_FUN_TDM_SCK_M>,
-							 <NRF_FUN_TDM_MCK>;
+			hsfll200: clock@4000 {
+				compatible = "fixed-clock";
+				reg = <0x4000 0x1000>;
+				#clock-cells = <0>;
+				clock-frequency = <DT_FREQ_M(320)>;
 				status = "disabled";
+			};
+
+			coresight: coresight@40000 {
+				compatible = "nordic,coresight-nrf";
+				reg = <0x40000 0x11000>;
+				ranges = <0x0 0x40000 0x11000>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				nordic,clockpin-enable = <NRF_FUN_TPIU_CLOCK>;
+				status = "disabled";
+
+				tsgen: tsgen@1000 {
+					reg = <0x1000 0x1000>;
+				};
+
+				stm: stm@2000 {
+					reg = <0x2000 0x1000>;
+				};
+
+				tpiu: tpiu@3000 {
+					reg = <0x3000 0x1000>;
+				};
+
+				etb: etb@4000 {
+					reg = <0x4000 0x1000>;
+				};
+
+				etr: etr@5000 {
+					reg = <0x5000 0x1000>;
+				};
+
+				cti210: cti@6000 {
+					reg = <0x6000 0x1000>;
+				};
+
+				cti211: cti@7000 {
+					reg = <0x7000 0x1000>;
+				};
+
+				atbreplicator210: atbreplicator@8000 {
+					reg = <0x8000 0x1000>;
+				};
+
+				atbreplicator211: atbreplicator@9000 {
+					reg = <0x9000 0x1000>;
+				};
+
+				atbreplicator212: atbreplicator@a000 {
+					reg = <0xa000 0x1000>;
+				};
+
+				atbreplicator213: atbreplicator@b000 {
+					reg = <0xb000 0x1000>;
+				};
+
+				atbfunnel210: atbfunnel@c000 {
+					reg = <0xc000 0x1000>;
+				};
+
+				atbfunnel211: atbfunnel@d000 {
+					reg = <0xd000 0x1000>;
+				};
+
+				atbfunnel212: atbfunnel@e000 {
+					reg = <0xe000 0x1000>;
+				};
+
+				atbfunnel213: atbfunnel@f000 {
+					reg = <0xf000 0x1000>;
+				};
 			};
 		};
 	};

@@ -8,6 +8,11 @@
 
 / {
 	soc {
+		trng: trng {
+			compatible = "renesas,ra-sce7-rng";
+			status = "disabled";
+		};
+
 		flash-controller@407e0000 {
 			flash-hardware-version = <40>;
 			#erase-block-cells = <2>;
@@ -29,11 +34,6 @@
 				programming-enable;
 				erase-value-undefined;
 			};
-		};
-
-		trng: trng {
-			compatible = "renesas,ra-sce7-rng";
-			status = "disabled";
 		};
 	};
 };

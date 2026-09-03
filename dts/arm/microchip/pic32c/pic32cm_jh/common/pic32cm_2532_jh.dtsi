@@ -36,6 +36,19 @@
 			};
 		};
 
+		tcc2: tcc@42000c00 {
+			compatible = "microchip,tcc-g1";
+			reg = <0x42002c00 0x80>;
+			interrupts = <19 0>;
+			interrupt-names = "mc3-mc0";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBC_TCC2>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_TCC2>;
+			clock-names = "mclk", "gclk";
+			max-bit-width = <16>;
+			channels = <2>;
+			status = "disabled";
+		};
+
 		tcc0: tcc@42002400 {
 			compatible = "microchip,tcc-g1";
 			reg = <0x42002400 0x80>;
@@ -62,16 +75,16 @@
 			status = "disabled";
 		};
 
-		tcc2: tcc@42000c00 {
-			compatible = "microchip,tcc-g1";
-			reg = <0x42002c00 0x80>;
-			interrupts = <19 0>;
-			interrupt-names = "mc3-mc0";
-			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBC_TCC2>,
-				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_TCC2>;
+		dac: dac@42005000 {
+			compatible = "microchip,dac-g2";
+			reg = <0x42005000 0x15>;
+			interrupts = <28 0>;
+			interrupt-names = "source-0-1";
+			#io-channel-cells = <1>;
+			external-pin-en = <1>;
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBC_DAC>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_DAC>;
 			clock-names = "mclk", "gclk";
-			max-bit-width = <16>;
-			channels = <2>;
 			status = "disabled";
 		};
 
@@ -114,19 +127,6 @@
 			max-bit-width = <16>;
 			prescaler = <1>;
 			channels = <2>;
-			status = "disabled";
-		};
-
-		dac: dac@42005000 {
-			compatible = "microchip,dac-g2";
-			reg = <0x42005000 0x15>;
-			interrupts = <28 0>;
-			interrupt-names = "source-0-1";
-			#io-channel-cells = <1>;
-			external-pin-en = <1>;
-			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_APBC_DAC>,
-				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_DAC>;
-			clock-names = "mclk", "gclk";
 			status = "disabled";
 		};
 	};

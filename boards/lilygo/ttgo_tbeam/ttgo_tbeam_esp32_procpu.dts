@@ -77,20 +77,6 @@
 	pinctrl-names = "default";
 	status = "okay";
 
-	ssd1306_128x64: ssd1306@3c {
-		compatible = "solomon,ssd1306";
-		reg = <0x3c>;
-		width = <128>;
-		height = <64>;
-		segment-offset = <0>;
-		page-offset = <0>;
-		display-offset = <0>;
-		multiplex-ratio = <63>;
-		segment-remap;
-		com-invdir;
-		prechargep = <0x22>;
-	};
-
 	axp2101: axp2101@34 {
 		compatible = "x-powers,axp2101";
 		reg = <0x34>;
@@ -130,6 +116,20 @@
 		fuel_gauge: fuel_gauge {
 			compatible = "x-powers,axp2101-fuel-gauge";
 		};
+	};
+
+	ssd1306_128x64: ssd1306@3c {
+		compatible = "solomon,ssd1306";
+		reg = <0x3c>;
+		width = <128>;
+		height = <64>;
+		segment-offset = <0>;
+		page-offset = <0>;
+		display-offset = <0>;
+		multiplex-ratio = <63>;
+		segment-remap;
+		com-invdir;
+		prechargep = <0x22>;
 	};
 };
 

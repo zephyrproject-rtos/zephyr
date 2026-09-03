@@ -372,6 +372,15 @@
 			#size-cells = <1>;
 			status = "disabled";
 
+			usart0: serial@200 {
+				compatible = "atmel,sam-usart";
+				reg = <0x200 0x200>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 38>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 38 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+
 			i2c0: i2c0@600 {
 				compatible = "atmel,sam-i2c-twi";
 				reg = <0x600 0x200>;
@@ -381,15 +390,6 @@
 				#address-cells = <1>;
 				#size-cells = <0>;
 				clocks = <&pmc PMC_TYPE_PERIPHERAL 38>;
-				status = "disabled";
-			};
-
-			usart0: serial@200 {
-				compatible = "atmel,sam-usart";
-				reg = <0x200 0x200>;
-				clocks = <&pmc PMC_TYPE_PERIPHERAL 38>;
-				interrupt-parent = <&gic>;
-				interrupts = <GIC_SPI 38 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 				status = "disabled";
 			};
 		};
@@ -402,6 +402,15 @@
 			#size-cells = <1>;
 			status = "disabled";
 
+			usart1: serial@200 {
+				compatible = "atmel,sam-usart";
+				reg = <0x200 0x200>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 39>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 39 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+
 			i2c1: i2c1@600 {
 				compatible = "atmel,sam-i2c-twi";
 				reg = <0x600 0x200>;
@@ -411,15 +420,6 @@
 				#address-cells = <1>;
 				#size-cells = <0>;
 				clocks = <&pmc PMC_TYPE_PERIPHERAL 39>;
-				status = "disabled";
-			};
-
-			usart1: serial@200 {
-				compatible = "atmel,sam-usart";
-				reg = <0x200 0x200>;
-				clocks = <&pmc PMC_TYPE_PERIPHERAL 39>;
-				interrupt-parent = <&gic>;
-				interrupts = <GIC_SPI 39 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 				status = "disabled";
 			};
 		};
@@ -432,6 +432,15 @@
 			#size-cells = <1>;
 			status = "disabled";
 
+			usart2: serial@200 {
+				compatible = "atmel,sam-usart";
+				reg = <0x200 0x200>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 40>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 40 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+
 			i2c2: i2c2@600 {
 				compatible = "atmel,sam-i2c-twi";
 				reg = <0x600 0x200>;
@@ -441,15 +450,6 @@
 				#address-cells = <1>;
 				#size-cells = <0>;
 				clocks = <&pmc PMC_TYPE_PERIPHERAL 40>;
-				status = "disabled";
-			};
-
-			usart2: serial@200 {
-				compatible = "atmel,sam-usart";
-				reg = <0x200 0x200>;
-				clocks = <&pmc PMC_TYPE_PERIPHERAL 40>;
-				interrupt-parent = <&gic>;
-				interrupts = <GIC_SPI 40 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 				status = "disabled";
 			};
 		};
@@ -462,6 +462,15 @@
 			#size-cells = <1>;
 			status = "disabled";
 
+			usart3: serial@200 {
+				compatible = "atmel,sam-usart";
+				reg = <0x200 0x200>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 41>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 41 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+
 			i2c3: i2c3@600 {
 				compatible = "atmel,sam-i2c-twi";
 				reg = <0x600 0x200>;
@@ -471,15 +480,6 @@
 				#address-cells = <1>;
 				#size-cells = <0>;
 				clocks = <&pmc PMC_TYPE_PERIPHERAL 41>;
-				status = "disabled";
-			};
-
-			usart3: serial@200 {
-				compatible = "atmel,sam-usart";
-				reg = <0x200 0x200>;
-				clocks = <&pmc PMC_TYPE_PERIPHERAL 41>;
-				interrupt-parent = <&gic>;
-				interrupts = <GIC_SPI 41 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 				status = "disabled";
 			};
 		};
@@ -521,6 +521,15 @@
 			#size-cells = <1>;
 			status = "disabled";
 
+			usart4: serial@200 {
+				compatible = "atmel,sam-usart";
+				reg = <0x200 0x200>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 42>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 42 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+
 			i2c4: i2c4@600 {
 				compatible = "atmel,sam-i2c-twi";
 				reg = <0x600 0x200>;
@@ -530,15 +539,6 @@
 				#address-cells = <1>;
 				#size-cells = <0>;
 				clocks = <&pmc PMC_TYPE_PERIPHERAL 42>;
-				status = "disabled";
-			};
-
-			usart4: serial@200 {
-				compatible = "atmel,sam-usart";
-				reg = <0x200 0x200>;
-				clocks = <&pmc PMC_TYPE_PERIPHERAL 42>;
-				interrupt-parent = <&gic>;
-				interrupts = <GIC_SPI 42 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 				status = "disabled";
 			};
 		};
@@ -551,6 +551,15 @@
 			#size-cells = <1>;
 			status = "disabled";
 
+			usart5: serial@200 {
+				compatible = "atmel,sam-usart";
+				reg = <0x200 0x200>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 43>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 43 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+
 			i2c5: i2c5@600 {
 				compatible = "atmel,sam-i2c-twi";
 				reg = <0x600 0x200>;
@@ -560,15 +569,6 @@
 				#address-cells = <1>;
 				#size-cells = <0>;
 				clocks = <&pmc PMC_TYPE_PERIPHERAL 43>;
-				status = "disabled";
-			};
-
-			usart5: serial@200 {
-				compatible = "atmel,sam-usart";
-				reg = <0x200 0x200>;
-				clocks = <&pmc PMC_TYPE_PERIPHERAL 43>;
-				interrupt-parent = <&gic>;
-				interrupts = <GIC_SPI 43 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 				status = "disabled";
 			};
 		};
@@ -581,6 +581,15 @@
 			#size-cells = <1>;
 			status = "disabled";
 
+			usart6: serial@200 {
+				compatible = "atmel,sam-usart";
+				reg = <0x200 0x200>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 44>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 44 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+
 			i2c6: i2c6@600 {
 				compatible = "atmel,sam-i2c-twi";
 				reg = <0x600 0x200>;
@@ -590,15 +599,6 @@
 				#address-cells = <1>;
 				#size-cells = <0>;
 				clocks = <&pmc PMC_TYPE_PERIPHERAL 44>;
-				status = "disabled";
-			};
-
-			usart6: serial@200 {
-				compatible = "atmel,sam-usart";
-				reg = <0x200 0x200>;
-				clocks = <&pmc PMC_TYPE_PERIPHERAL 44>;
-				interrupt-parent = <&gic>;
-				interrupts = <GIC_SPI 44 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 				status = "disabled";
 			};
 		};
@@ -611,6 +611,15 @@
 			#size-cells = <1>;
 			status = "disabled";
 
+			usart7: serial@200 {
+				compatible = "atmel,sam-usart";
+				reg = <0x200 0x200>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 45>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 45 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+
 			i2c7: i2c7@600 {
 				compatible = "atmel,sam-i2c-twi";
 				reg = <0x600 0x200>;
@@ -620,15 +629,6 @@
 				#address-cells = <1>;
 				#size-cells = <0>;
 				clocks = <&pmc PMC_TYPE_PERIPHERAL 45>;
-				status = "disabled";
-			};
-
-			usart7: serial@200 {
-				compatible = "atmel,sam-usart";
-				reg = <0x200 0x200>;
-				clocks = <&pmc PMC_TYPE_PERIPHERAL 45>;
-				interrupt-parent = <&gic>;
-				interrupts = <GIC_SPI 45 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 				status = "disabled";
 			};
 		};
@@ -757,6 +757,15 @@
 			#size-cells = <1>;
 			status = "disabled";
 
+			usart8: serial@200 {
+				compatible = "atmel,sam-usart";
+				reg = <0x200 0x200>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 46>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 46 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+
 			i2c8: i2c8@600 {
 				compatible = "atmel,sam-i2c-twi";
 				reg = <0x600 0x200>;
@@ -766,15 +775,6 @@
 				#address-cells = <1>;
 				#size-cells = <0>;
 				clocks = <&pmc PMC_TYPE_PERIPHERAL 46>;
-				status = "disabled";
-			};
-
-			usart8: serial@200 {
-				compatible = "atmel,sam-usart";
-				reg = <0x200 0x200>;
-				clocks = <&pmc PMC_TYPE_PERIPHERAL 46>;
-				interrupt-parent = <&gic>;
-				interrupts = <GIC_SPI 46 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 				status = "disabled";
 			};
 		};
@@ -787,6 +787,15 @@
 			#size-cells = <1>;
 			status = "disabled";
 
+			usart9: serial@200 {
+				compatible = "atmel,sam-usart";
+				reg = <0x200 0x200>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 47>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 47 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+
 			i2c9: i2c9@600 {
 				compatible = "atmel,sam-i2c-twi";
 				reg = <0x600 0x200>;
@@ -796,15 +805,6 @@
 				#address-cells = <1>;
 				#size-cells = <0>;
 				clocks = <&pmc PMC_TYPE_PERIPHERAL 47>;
-				status = "disabled";
-			};
-
-			usart9: serial@200 {
-				compatible = "atmel,sam-usart";
-				reg = <0x200 0x200>;
-				clocks = <&pmc PMC_TYPE_PERIPHERAL 47>;
-				interrupt-parent = <&gic>;
-				interrupts = <GIC_SPI 47 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 				status = "disabled";
 			};
 		};
@@ -817,6 +817,15 @@
 			#size-cells = <1>;
 			status = "disabled";
 
+			usart10: serial@200 {
+				compatible = "atmel,sam-usart";
+				reg = <0x200 0x200>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 48>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 48 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				status = "disabled";
+			};
+
 			i2c10: i2c10@600 {
 				compatible = "atmel,sam-i2c-twi";
 				reg = <0x600 0x200>;
@@ -826,15 +835,6 @@
 				#address-cells = <1>;
 				#size-cells = <0>;
 				clocks = <&pmc PMC_TYPE_PERIPHERAL 48>;
-				status = "disabled";
-			};
-
-			usart10: serial@200 {
-				compatible = "atmel,sam-usart";
-				reg = <0x200 0x200>;
-				clocks = <&pmc PMC_TYPE_PERIPHERAL 48>;
-				interrupt-parent = <&gic>;
-				interrupts = <GIC_SPI 48 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 				status = "disabled";
 			};
 		};
@@ -847,15 +847,12 @@
 			#size-cells = <1>;
 			status = "disabled";
 
-			i2c11: i2c11@600 {
-				compatible = "atmel,sam-i2c-twi";
-				reg = <0x600 0x200>;
-				clock-frequency = <I2C_BITRATE_STANDARD>;
+			usart11: serial@200 {
+				compatible = "atmel,sam-usart";
+				reg = <0x200 0x200>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 49>;
 				interrupt-parent = <&gic>;
 				interrupts = <GIC_SPI 49 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-				#address-cells = <1>;
-				#size-cells = <0>;
-				clocks = <&pmc PMC_TYPE_PERIPHERAL 49>;
 				status = "disabled";
 			};
 
@@ -874,12 +871,15 @@
 				status = "disabled";
 			};
 
-			usart11: serial@200 {
-				compatible = "atmel,sam-usart";
-				reg = <0x200 0x200>;
-				clocks = <&pmc PMC_TYPE_PERIPHERAL 49>;
+			i2c11: i2c11@600 {
+				compatible = "atmel,sam-i2c-twi";
+				reg = <0x600 0x200>;
+				clock-frequency = <I2C_BITRATE_STANDARD>;
 				interrupt-parent = <&gic>;
 				interrupts = <GIC_SPI 49 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 49>;
 				status = "disabled";
 			};
 		};

@@ -152,6 +152,15 @@
 			interrupts-extended = <&ictrl 7>;
 		};
 
+		itcm: itcm@22010000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x22010000 DT_SIZE_K(16)>;
+			ranges = <0x0 0x22010000 DT_SIZE_K(16)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			zephyr,memory-region = "ITCM";
+		};
+
 		pinctrl: pin-controller@40000000 {
 			compatible = "bflb,pinctrl";
 			reg = <0x40000000 0x1000>;
@@ -405,15 +414,6 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			zephyr,memory-region = "RETRAM";
-		};
-
-		itcm: itcm@22010000 {
-			compatible = "zephyr,memory-region", "mmio-sram";
-			reg = <0x22010000 DT_SIZE_K(16)>;
-			ranges = <0x0 0x22010000 DT_SIZE_K(16)>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-			zephyr,memory-region = "ITCM";
 		};
 
 		/* All contiguous fast RAM

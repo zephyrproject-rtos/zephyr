@@ -20,11 +20,6 @@
 		zephyr,shell-uart = &scif2;
 	};
 
-	ram: memory@48000000 {
-		reg = <0x0 0x48000000 0x0 DT_SIZE_M(512)>;
-		device_type = "memory";
-	};
-
 	/* These aliases are provided for compatibility with samples */
 	aliases {
 		sdhc0 = &emmc2;
@@ -51,6 +46,11 @@
 		states = <3300000 1>, <1800000 0>;
 
 		regulator-always-on;
+	};
+
+	ram: memory@48000000 {
+		reg = <0x0 0x48000000 0x0 DT_SIZE_M(512)>;
+		device_type = "memory";
 	};
 };
 

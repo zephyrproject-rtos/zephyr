@@ -46,9 +46,17 @@
 		method = "hvc";
 	};
 
-	ram: memory@40000000 {
-		reg = <0x00 0x40000000 0x00 DT_SIZE_M(16)>;
-		device_type = "memory";
+	timer {
+		compatible = "arm,armv8-timer";
+		interrupts = <GIC_PPI 0x0d IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY
+			      GIC_PPI 0x0e IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY
+			      GIC_PPI 0x0b IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-parent = <&gic>;
+	};
+
+	xen_hvc: hvc {
+		compatible = "xen,hvc-uart";
+		status = "okay";
 	};
 
 	gic: interrupt-controller@3001000 {
@@ -59,14 +67,6 @@
 		interrupt-controller;
 	};
 
-	timer {
-		compatible = "arm,armv8-timer";
-		interrupts = <GIC_PPI 0x0d IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY
-			      GIC_PPI 0x0e IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY
-			      GIC_PPI 0x0b IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-		interrupt-parent = <&gic>;
-	};
-
 	hypervisor: hypervisor@38000000 {
 		compatible = "xen,xen";
 		reg = <0x00 0x38000000 0x00 0x1000000>;
@@ -74,8 +74,8 @@
 		interrupt-parent = <&gic>;
 	};
 
-	xen_hvc: hvc {
-		compatible = "xen,hvc-uart";
-		status = "okay";
+	ram: memory@40000000 {
+		reg = <0x00 0x40000000 0x00 DT_SIZE_M(16)>;
+		device_type = "memory";
 	};
 };

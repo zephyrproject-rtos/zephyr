@@ -28,11 +28,6 @@
 		};
 	};
 
-	sram0: memory@20000000 {
-		compatible = "zephyr,memory-region", "mmio-sram";
-		zephyr,memory-region = "SRAM0";
-	};
-
 	clocks {
 		/*
 		 * Default to 48 MHz crystal as this should be the
@@ -99,6 +94,18 @@
 	};
 
 	soc {
+		gpio_intc: interrupt-controller@40000000 {
+			compatible = "st,stm32wb0-gpio-intc";
+			reg = <0x40000000 0x40>;
+			interrupt-controller;
+			#interrupt-cells = <1>;
+			#address-cells = <1>;
+			num-lines = <32>;
+			interrupts = <15 0>, <16 0>;
+			interrupt-names = "gpioa", "gpiob";
+			line-ranges = <0 16>, <16 16>;
+		};
+
 		flash: flash-controller@40001000 {
 			compatible = "st,stm32wl3-flash-controller", "st,stm32-flash-controller";
 			reg = <0x40001000 DT_SIZE_K(4)>;
@@ -123,27 +130,14 @@
 			};
 		};
 
-		rcc: rcc@48400000 {
-			compatible = "st,stm32wl3-rcc";
-			reg = <0x48400000 DT_SIZE_K(1)>;
-			#clock-cells = <2>;
-
-			rctl: reset-controller {
-				compatible = "st,stm32-rcc-rctl";
-				#reset-cells = <1>;
-			};
-		};
-
-		gpio_intc: interrupt-controller@40000000 {
-			compatible = "st,stm32wb0-gpio-intc";
-			reg = <0x40000000 0x40>;
-			interrupt-controller;
-			#interrupt-cells = <1>;
-			#address-cells = <1>;
-			num-lines = <32>;
-			interrupts = <15 0>, <16 0>;
-			interrupt-names = "gpioa", "gpiob";
-			line-ranges = <0 16>, <16 16>;
+		usart1: serial@41004000 {
+			compatible = "st,stm32-usart", "st,stm32-uart";
+			reg = <0x41004000 DT_SIZE_K(1)>;
+			clocks = <&rcc STM32_CLOCK(APB1, 10)>,
+				 <&rcc STM32_SRC_CLK_ROOT_DIV NO_SEL>;
+			resets = <&rctl STM32_RESET(APB1, 10)>;
+			interrupts = <8 0>;
+			status = "disabled";
 		};
 
 		pinctrl: pin-controller@48000000 {
@@ -169,15 +163,21 @@
 			};
 		};
 
-		usart1: serial@41004000 {
-			compatible = "st,stm32-usart", "st,stm32-uart";
-			reg = <0x41004000 DT_SIZE_K(1)>;
-			clocks = <&rcc STM32_CLOCK(APB1, 10)>,
-				 <&rcc STM32_SRC_CLK_ROOT_DIV NO_SEL>;
-			resets = <&rctl STM32_RESET(APB1, 10)>;
-			interrupts = <8 0>;
-			status = "disabled";
+		rcc: rcc@48400000 {
+			compatible = "st,stm32wl3-rcc";
+			reg = <0x48400000 DT_SIZE_K(1)>;
+			#clock-cells = <2>;
+
+			rctl: reset-controller {
+				compatible = "st,stm32-rcc-rctl";
+				#reset-cells = <1>;
+			};
 		};
+	};
+
+	sram0: memory@20000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		zephyr,memory-region = "SRAM0";
 	};
 };
 

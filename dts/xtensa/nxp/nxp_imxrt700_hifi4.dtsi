@@ -42,30 +42,6 @@
 			interrupt-controller;
 		};
 
-		itcm: memory@24020000 {
-			compatible = "mmio-sram";
-
-			reg = <0x24020000 DT_SIZE_K(64)>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			device_type = "memory";
-
-			adsp_reset: memory@24020000 {
-				reg = <0x24020000 DT_SIZE_K(1)>;
-			};
-		};
-
-		dtcm: memory@24000000 {
-			compatible = "mmio-sram";
-
-			reg = <0x24000000 DT_SIZE_K(64)>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			device_type = "memory";
-		};
-
 		sram0: memory@20200000 {
 			compatible = "mmio-sram";
 
@@ -99,6 +75,30 @@
 
 			sram_shared1: memory@20584000 {
 				reg = <0x20584000 DT_SIZE_K(16)>;
+			};
+		};
+
+		dtcm: memory@24000000 {
+			compatible = "mmio-sram";
+
+			reg = <0x24000000 DT_SIZE_K(64)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			device_type = "memory";
+		};
+
+		itcm: memory@24020000 {
+			compatible = "mmio-sram";
+
+			reg = <0x24020000 DT_SIZE_K(64)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			device_type = "memory";
+
+			adsp_reset: memory@24020000 {
+				reg = <0x24020000 DT_SIZE_K(1)>;
 			};
 		};
 
@@ -240,23 +240,6 @@
 		};
 	};
 
-	edma1: dma-controller@160000 {
-
-		compatible = "nxp,mcux-edma";
-
-		reg = <0x160000 0x1000>;
-		#dma-cells = <2>;
-		dma-channels = <8>;
-		dma-requests = <105>;
-
-		interrupts = <19 0 0>, <18 0 0>, <17 0 0>, <16 0 0>,
-			     <15 0 0>, <14 0 0>, <13 0 0>, <12 0 0>;
-		no-error-irq;
-
-		nxp,version = <4>;
-		status = "disabled";
-	};
-
 	sai0: sai@152000 {
 
 		compatible = "nxp,mcux-i2s";
@@ -317,6 +300,23 @@
 		nxp,tx-channel = <1>;
 		nxp,tx-dma-channel = <2>;
 		nxp,rx-dma-channel = <3>;
+		status = "disabled";
+	};
+
+	edma1: dma-controller@160000 {
+
+		compatible = "nxp,mcux-edma";
+
+		reg = <0x160000 0x1000>;
+		#dma-cells = <2>;
+		dma-channels = <8>;
+		dma-requests = <105>;
+
+		interrupts = <19 0 0>, <18 0 0>, <17 0 0>, <16 0 0>,
+			     <15 0 0>, <14 0 0>, <13 0 0>, <12 0 0>;
+		no-error-irq;
+
+		nxp,version = <4>;
 		status = "disabled";
 	};
 

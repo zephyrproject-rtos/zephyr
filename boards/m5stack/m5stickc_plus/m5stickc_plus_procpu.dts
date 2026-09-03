@@ -167,15 +167,15 @@
 		};
 	};
 
-	mpu6886: mpu6886@68 {
-		compatible = "invensense,mpu6050";
-		reg = <0x68>;
-		status = "okay";
-	};
-
 	bm8563: bm8563@51 {
 		compatible = "nxp,pcf8563";
 		reg = <0x51>;
+		status = "okay";
+	};
+
+	mpu6886: mpu6886@68 {
+		compatible = "invensense,mpu6050";
+		reg = <0x68>;
 		status = "okay";
 	};
 };

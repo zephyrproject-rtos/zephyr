@@ -15,6 +15,24 @@
 			reg = <0x20000000 DT_SIZE_K(12)>;
 		};
 
+		pinctrl: pin-controller@40001018 {
+			compatible = "wch,ch570-pinctrl";
+			reg = <0x40001018 4>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			gpioa: gpio@40001090 {
+				compatible = "wch,ch5xx-gpio";
+				reg = <0x40001090 0x2c>;
+				gpio-controller;
+				#gpio-cells = <2>;
+				ngpios = <12>;
+				interrupt-parent = <&pfic>;
+				interrupts = <17>;
+				port = "port-a";
+			};
+		};
+
 		flash: flash-controller@40001800 {
 			compatible = "wch,ch5xx-flash-controller";
 			reg = <0x40001800 0x8>;
@@ -39,24 +57,6 @@
 			interrupt-parent = <&pfic>;
 			interrupts = <27>;
 			status = "disabled";
-		};
-
-		pinctrl: pin-controller@40001018 {
-			compatible = "wch,ch570-pinctrl";
-			reg = <0x40001018 4>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			gpioa: gpio@40001090 {
-				compatible = "wch,ch5xx-gpio";
-				reg = <0x40001090 0x2c>;
-				gpio-controller;
-				#gpio-cells = <2>;
-				ngpios = <12>;
-				interrupt-parent = <&pfic>;
-				interrupts = <17>;
-				port = "port-a";
-			};
 		};
 	};
 };

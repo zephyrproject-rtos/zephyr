@@ -21,6 +21,12 @@
 		};
 	};
 
+	mbox-consumer {
+		compatible = "vnd,mbox-consumer";
+		mboxes = <&mbox1 1>, <&mbox1 4>, <&mbox3 0>, <&mbox3 3>;
+		mbox-names = "remote_valid", "remote_incorrect", "local_valid", "local_incorrect";
+	};
+
 	mhu1_shm: memory@62f01008 {
 		compatible = "mmio-sram";
 		reg = <0x62f01008 0x8>;
@@ -39,12 +45,6 @@
 	mhu5_shm: memory@62f01028 {
 		compatible = "mmio-sram";
 		reg = <0x62f01028 0x8>;
-	};
-
-	mbox-consumer {
-		compatible = "vnd,mbox-consumer";
-		mboxes = <&mbox1 1>, <&mbox1 4>, <&mbox3 0>, <&mbox3 3>;
-		mbox-names = "remote_valid", "remote_incorrect", "local_valid", "local_incorrect";
 	};
 };
 

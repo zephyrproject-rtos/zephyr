@@ -13,45 +13,26 @@
 			status = "disabled";
 		};
 
-		uart0: uart@f1920000 {
-			compatible = "arm,sbsa-uart";
-			reg = <0xf1920000 0x4c>;
-			interrupt-names = "irq_0";
-			interrupts = <GIC_SPI 25 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		ipi_psm: mailbox@eb310000 {
+			compatible = "xlnx,mbox-versal-ipi-mailbox";
+			reg = <0xeb310000 0x20>, <0xeb3f0000 0x1000>;
+			interrupts = <GIC_SPI 61 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			reg-names = "ctrl", "msg";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			xlnx,ipi-id = <0>;
 			status = "disabled";
 		};
 
-		uart1: uart@f1930000 {
-			compatible = "arm,sbsa-uart";
-			reg = <0xf1930000 0x1000>;
-			interrupt-names = "irq_1";
-			interrupts = <GIC_SPI 26 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		ipi_pmc: mailbox@eb320000 {
+			compatible = "xlnx,mbox-versal-ipi-mailbox";
+			reg = <0xeb320000 0x20>, <0xeb3f0200 0x1000>;
+			interrupts = <GIC_SPI 59 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			reg-names = "ctrl", "msg";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			xlnx,ipi-id = <1>;
 			status = "disabled";
-		};
-
-		sdhci0: mmc@f1040000 {
-			compatible = "xlnx,versal-8.9a";
-			reg = <0xf1040000 0x10000>;
-			interrupts = <GIC_SPI 184 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			status = "disabled";
-
-			sdmmc {
-				compatible = "zephyr,sdmmc-disk";
-				disk-name = "sd0";
-			};
-		};
-
-		sdhci1: mmc@f1050000 {
-			compatible = "xlnx,versal-8.9a";
-			reg = <0xf1050000 0x10000>;
-			interrupts = <GIC_SPI 186 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			status = "disabled";
-
-			mmc {
-				compatible = "zephyr,mmc-disk";
-				bus-width = <8>;
-				disk-name = "mmc0";
-			};
 		};
 
 		ipi0: mailbox@eb330000 {
@@ -117,6 +98,17 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			xlnx,ipi-id = <7>;
+			status = "disabled";
+		};
+
+		ipi_pmc_nobuf: mailbox@eb390000 {
+			compatible = "xlnx,mbox-versal-ipi-mailbox";
+			reg = <0xeb390000 0x20>;
+			interrupts = <GIC_SPI 60 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			reg-names = "ctrl";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			xlnx,ipi-id = <8>;
 			status = "disabled";
 		};
 
@@ -197,64 +189,6 @@
 			status = "disabled";
 		};
 
-		ipi_psm: mailbox@eb310000 {
-			compatible = "xlnx,mbox-versal-ipi-mailbox";
-			reg = <0xeb310000 0x20>, <0xeb3f0000 0x1000>;
-			interrupts = <GIC_SPI 61 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			reg-names = "ctrl", "msg";
-			#address-cells = <1>;
-			#size-cells = <1>;
-			xlnx,ipi-id = <0>;
-			status = "disabled";
-		};
-
-		ipi_pmc: mailbox@eb320000 {
-			compatible = "xlnx,mbox-versal-ipi-mailbox";
-			reg = <0xeb320000 0x20>, <0xeb3f0200 0x1000>;
-			interrupts = <GIC_SPI 59 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			reg-names = "ctrl", "msg";
-			#address-cells = <1>;
-			#size-cells = <1>;
-			xlnx,ipi-id = <1>;
-			status = "disabled";
-		};
-
-		ipi_pmc_nobuf: mailbox@eb390000 {
-			compatible = "xlnx,mbox-versal-ipi-mailbox";
-			reg = <0xeb390000 0x20>;
-			interrupts = <GIC_SPI 60 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			reg-names = "ctrl";
-			#address-cells = <1>;
-			#size-cells = <1>;
-			xlnx,ipi-id = <8>;
-			status = "disabled";
-		};
-
-		spi0: spi@f1960000 {
-			compatible = "cdns,spi";
-			reg = <0xf1960000 0x1000>;
-			interrupts = <GIC_SPI 23 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			fifo-width = <8>;
-			rx-fifo-depth = <128>;
-			tx-fifo-depth = <128>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			status = "disabled";
-		};
-
-		spi1: spi@f1970000 {
-			compatible = "cdns,spi";
-			reg = <0xf1970000 0x1000>;
-			interrupts = <GIC_SPI 24 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			fifo-width = <8>;
-			rx-fifo-depth = <128>;
-			tx-fifo-depth = <128>;
-			clock-frequency = <120000000>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			status = "disabled";
-		};
-
 		adma0: dma-controller@ebd00000 {
 			compatible = "xlnx,zynqmp-dma-1.0";
 			reg = <0xebd00000 0x1000>;
@@ -332,6 +266,72 @@
 			interrupts = <GIC_SPI 79 IRQ_TYPE_LEVEL
 				      IRQ_DEFAULT_PRIORITY>;
 			clock-names = "clk_main", "clk_apb";
+			status = "disabled";
+		};
+
+		sdhci0: mmc@f1040000 {
+			compatible = "xlnx,versal-8.9a";
+			reg = <0xf1040000 0x10000>;
+			interrupts = <GIC_SPI 184 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+
+			sdmmc {
+				compatible = "zephyr,sdmmc-disk";
+				disk-name = "sd0";
+			};
+		};
+
+		sdhci1: mmc@f1050000 {
+			compatible = "xlnx,versal-8.9a";
+			reg = <0xf1050000 0x10000>;
+			interrupts = <GIC_SPI 186 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+
+			mmc {
+				compatible = "zephyr,mmc-disk";
+				bus-width = <8>;
+				disk-name = "mmc0";
+			};
+		};
+
+		uart0: uart@f1920000 {
+			compatible = "arm,sbsa-uart";
+			reg = <0xf1920000 0x4c>;
+			interrupt-names = "irq_0";
+			interrupts = <GIC_SPI 25 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		uart1: uart@f1930000 {
+			compatible = "arm,sbsa-uart";
+			reg = <0xf1930000 0x1000>;
+			interrupt-names = "irq_1";
+			interrupts = <GIC_SPI 26 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "disabled";
+		};
+
+		spi0: spi@f1960000 {
+			compatible = "cdns,spi";
+			reg = <0xf1960000 0x1000>;
+			interrupts = <GIC_SPI 23 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			fifo-width = <8>;
+			rx-fifo-depth = <128>;
+			tx-fifo-depth = <128>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+
+		spi1: spi@f1970000 {
+			compatible = "cdns,spi";
+			reg = <0xf1970000 0x1000>;
+			interrupts = <GIC_SPI 24 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			fifo-width = <8>;
+			rx-fifo-depth = <128>;
+			tx-fifo-depth = <128>;
+			clock-frequency = <120000000>;
+			#address-cells = <1>;
+			#size-cells = <0>;
 			status = "disabled";
 		};
 

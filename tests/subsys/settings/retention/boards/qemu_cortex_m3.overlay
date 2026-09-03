@@ -5,6 +5,10 @@
  */
 
 / {
+	chosen {
+		zephyr,settings-partition = &settings_partition0;
+	};
+
 	sram@2000f000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x2000f000 0x1000>;
@@ -27,10 +31,6 @@
 				status = "okay";
 			};
 		};
-	};
-
-	chosen {
-		zephyr,settings-partition = &settings_partition0;
 	};
 };
 

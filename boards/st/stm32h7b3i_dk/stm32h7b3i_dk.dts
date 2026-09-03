@@ -49,22 +49,6 @@
 		};
 	};
 
-	sdram2: sdram@d0000000 {
-		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0xd0000000 DT_SIZE_M(16)>;
-		device_type = "memory";
-		zephyr,memory-region = "SDRAM2";
-		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
-	};
-
-	octo_nor: memory@90000000 {
-		compatible = "zephyr,memory-region";
-		reg = <0x90000000 DT_SIZE_M(64)>;
-		zephyr,memory-region = "EXTMEM";
-		/* The ATTR_MPU_EXTMEM attribute causing a MPU FAULT */
-		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_IO)>;
-	};
-
 	transceiver0: can-phy0 {
 		compatible = "microchip,mcp2562fd", "can-transceiver-gpio";
 		standby-gpios = <&gpioh 8 GPIO_ACTIVE_HIGH>;
@@ -98,6 +82,22 @@
 		led0 = &red_led;
 		led1 = &blue_led;
 		sw0 = &user_button;
+	};
+
+	octo_nor: memory@90000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x90000000 DT_SIZE_M(64)>;
+		zephyr,memory-region = "EXTMEM";
+		/* The ATTR_MPU_EXTMEM attribute causing a MPU FAULT */
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_IO)>;
+	};
+
+	sdram2: sdram@d0000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0xd0000000 DT_SIZE_M(16)>;
+		device_type = "memory";
+		zephyr,memory-region = "SDRAM2";
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 	};
 };
 

@@ -17,17 +17,19 @@
 		};
 	};
 
-	ram0: memory@40000000 {
-		compatible = "mmio-sram";
-		reg = <0x40000000 0x40000000>;
-	};
-
 	soc {
 		compatible = "gaisler,leon3-soc", "simple-bus";
 		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 		interrupt-parent = <&irqmp>;
+
+		uart0: apbuart@80000100 {
+			compatible = "gaisler,apbuart";
+			reg = <0x80000100 0x100>;
+			interrupts = <2>;
+			status = "disabled";
+		};
 
 		irqmp: irqmp0@80000200 {
 			compatible = "gaisler,irqmp";
@@ -42,12 +44,10 @@
 			reg = <0x80000300 0x100>;
 			interrupts = <8>;
 		};
+	};
 
-		uart0: apbuart@80000100 {
-			compatible = "gaisler,apbuart";
-			reg = <0x80000100 0x100>;
-			interrupts = <2>;
-			status = "disabled";
-		};
+	ram0: memory@40000000 {
+		compatible = "mmio-sram";
+		reg = <0x40000000 0x40000000>;
 	};
 };

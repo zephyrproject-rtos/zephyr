@@ -46,6 +46,11 @@
 	};
 
 	soc {
+		bt: bt {
+			compatible = "realtek,ameba-bt-hci";
+			status = "disabled";
+		};
+
 		ram_image2_entry: memory@10003000 {
 			compatible = "zephyr,memory-region";
 			reg = <0x10003000 0x20>;
@@ -247,11 +252,6 @@
 				#address-cells = <1>;
 				#size-cells = <1>;
 			};
-		};
-
-		bt: bt {
-			compatible = "realtek,ameba-bt-hci";
-			status = "disabled";
 		};
 	};
 };

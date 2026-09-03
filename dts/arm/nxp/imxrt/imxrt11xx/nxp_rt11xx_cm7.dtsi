@@ -96,6 +96,13 @@
 			#gpio-cells = <2>;
 		};
 
+		mailbox_a: mailbox@40c48000 {
+			compatible = "nxp,imx-mu";
+			reg = <0x40c48000 0x4000>;
+			interrupts = <118 0>;
+			rdc = <0>;
+		};
+
 		fgpio2: gpio@42008000 {
 			compatible = "nxp,imx-gpio";
 			reg = <0x42008000 0x4000>;
@@ -109,13 +116,6 @@
 			reg = <0x4200c000 0x4000>;
 			gpio-controller;
 			#gpio-cells = <2>;
-		};
-
-		mailbox_a: mailbox@40c48000 {
-			compatible = "nxp,imx-mu";
-			reg = <0x40c48000 0x4000>;
-			interrupts = <118 0>;
-			rdc = <0>;
 		};
 	};
 };

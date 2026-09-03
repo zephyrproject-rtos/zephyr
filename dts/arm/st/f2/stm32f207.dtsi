@@ -10,6 +10,25 @@
 	soc {
 		compatible = "st,stm32f207", "st,stm32f2", "simple-bus";
 
+		can1: can@40006400 {
+			compatible = "st,stm32-bxcan";
+			reg = <0x40006400 0x400>;
+			interrupts = <19 0>, <20 0>, <21 0>, <22 0>;
+			interrupt-names = "TX", "RX0", "RX1", "SCE";
+			clocks = <&rcc STM32_CLOCK(APB1, 25)>;
+			status = "disabled";
+		};
+
+		can2: can@40006800 {
+			compatible = "st,stm32-bxcan";
+			reg = <0x40006800 0x400>;
+			interrupts = <63 0>, <64 0>, <65 0>, <66 0>;
+			interrupt-names = "TX", "RX0", "RX1", "SCE";
+			clocks = <&rcc STM32_CLOCK(APB1, 26)>;
+			master-can-reg = <0x40006400>;
+			status = "disabled";
+		};
+
 		mac: ethernet@40028000 {
 			compatible = "st,stm32-ethernet", "snps,dwmac";
 			reg = <0x40028000 0x8000>;
@@ -33,25 +52,6 @@
 			ptp_clock: ptp-clock {
 				compatible = "snps,dwmac-ptp-clock";
 			};
-		};
-
-		can1: can@40006400 {
-			compatible = "st,stm32-bxcan";
-			reg = <0x40006400 0x400>;
-			interrupts = <19 0>, <20 0>, <21 0>, <22 0>;
-			interrupt-names = "TX", "RX0", "RX1", "SCE";
-			clocks = <&rcc STM32_CLOCK(APB1, 25)>;
-			status = "disabled";
-		};
-
-		can2: can@40006800 {
-			compatible = "st,stm32-bxcan";
-			reg = <0x40006800 0x400>;
-			interrupts = <63 0>, <64 0>, <65 0>, <66 0>;
-			interrupt-names = "TX", "RX0", "RX1", "SCE";
-			clocks = <&rcc STM32_CLOCK(APB1, 26)>;
-			master-can-reg = <0x40006400>;
-			status = "disabled";
 		};
 	};
 };

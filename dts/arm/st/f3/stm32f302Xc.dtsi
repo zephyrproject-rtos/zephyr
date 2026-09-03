@@ -7,18 +7,7 @@
 #include <st/f3/stm32f302.dtsi>
 
 / {
-	sram0: memory@20000000 {
-		reg = <0x20000000 DT_SIZE_K(40)>;
-	};
-
 	soc {
-		flash-controller@40022000 {
-			flash0: flash@8000000 {
-				reg = <0x08000000 DT_SIZE_K(256)>;
-				ranges = <0 0x8000000 DT_SIZE_K(256)>;
-			};
-		};
-
 		timers2: timers@40000000 {
 			clocks = <&rcc STM32_CLOCK(APB1, 0)>,
 				 <&rcc STM32_SRC_TIMPCLK1 TIM2_SEL(0)>;
@@ -82,6 +71,14 @@
 			};
 		};
 
+		uart5: serial@40005000 {
+			compatible = "st,stm32-uart";
+			reg = <0x40005000 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB1, 20)>;
+			interrupts = <53 0>;
+			status = "disabled";
+		};
+
 		dma2: dma@40020400 {
 			compatible = "st,stm32-dma-v2bis";
 			reg = <0x40020400 0x400>;
@@ -91,12 +88,11 @@
 			status = "disabled";
 		};
 
-		uart5: serial@40005000 {
-			compatible = "st,stm32-uart";
-			reg = <0x40005000 0x400>;
-			clocks = <&rcc STM32_CLOCK(APB1, 20)>;
-			interrupts = <53 0>;
-			status = "disabled";
+		flash-controller@40022000 {
+			flash0: flash@8000000 {
+				reg = <0x08000000 DT_SIZE_K(256)>;
+				ranges = <0 0x8000000 DT_SIZE_K(256)>;
+			};
 		};
 
 		pinctrl: pin-controller@48000000 {
@@ -125,6 +121,10 @@
 			st,adc-has-injected-support;
 			status = "disabled";
 		};
+	};
+
+	sram0: memory@20000000 {
+		reg = <0x20000000 DT_SIZE_K(40)>;
 	};
 };
 

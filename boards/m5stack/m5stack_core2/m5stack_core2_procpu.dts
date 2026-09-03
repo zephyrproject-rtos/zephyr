@@ -118,12 +118,6 @@
 	pinctrl-names = "default";
 	status = "okay";
 
-	pfc8563_rtc: pfc8563@51 {
-		compatible = "nxp,pcf8563";
-		reg = <0x51>;
-		status = "okay";
-	};
-
 	axp192_pmic: axp192@34 {
 		compatible = "x-powers,axp192";
 		reg = <0x34>;
@@ -198,6 +192,12 @@
 		swapped-x-y;
 		screen-width = <320>;
 		screen-height = <240>;
+	};
+
+	pfc8563_rtc: pfc8563@51 {
+		compatible = "nxp,pcf8563";
+		reg = <0x51>;
+		status = "okay";
 	};
 };
 

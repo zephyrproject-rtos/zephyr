@@ -36,12 +36,6 @@
 		zephyr,memory-region = "ITCM";
 	};
 
-	dtcm: dtcm@20000000 {
-		compatible = "zephyr,memory-region", "arm,dtcm";
-		reg = <0x20000000 DT_SIZE_K(1536)>;
-		zephyr,memory-region = "DTCM";
-	};
-
 	clocks {
 		syst_aclk: axi-clk {
 			compatible = "fixed-clock";
@@ -93,99 +87,17 @@
 			reg-names = "pinctrl", "lpgpio_pinctrl";
 		};
 
-		uart0: uart@49018000 {
-			compatible = "ns16550";
-			reg = <0x49018000 0x1000>;
-			clocks = <&clockctrl ALIF_UART0_SYST_PCLK>;
-			interrupts = <124 0>;
-			reg-shift = <2>;
-			current-speed = <115200>;
-			status = "disabled";
-		};
-
-		uart1: uart@49019000 {
-			compatible = "ns16550";
-			reg = <0x49019000 0x1000>;
-			clocks = <&clockctrl ALIF_UART1_SYST_PCLK>;
-			interrupts = <125 0>;
-			reg-shift = <2>;
-			current-speed = <115200>;
-			status = "disabled";
-		};
-
-		uart2: uart@4901a000 {
-			compatible = "ns16550";
-			reg = <0x4901a000 0x1000>;
-			clocks = <&clockctrl ALIF_UART2_SYST_PCLK>;
-			interrupts = <126 0>;
-			reg-shift = <2>;
-			current-speed = <115200>;
-			status = "disabled";
-		};
-
-		uart3: uart@4901b000 {
-			compatible = "ns16550";
-			reg = <0x4901b000 0x1000>;
-			clocks = <&clockctrl ALIF_UART3_SYST_PCLK>;
-			interrupts = <127 0>;
-			reg-shift = <2>;
-			current-speed = <115200>;
-			status = "disabled";
-		};
-
-		uart4: uart@4901c000 {
-			compatible = "ns16550";
-			reg = <0x4901c000 0x1000>;
-			clocks = <&clockctrl ALIF_UART4_SYST_PCLK>;
-			interrupts = <128 0>;
-			reg-shift = <2>;
-			current-speed = <115200>;
-			status = "disabled";
-		};
-
-		uart5: uart@4901d000 {
-			compatible = "ns16550";
-			reg = <0x4901d000 0x1000>;
-			clocks = <&clockctrl ALIF_UART5_SYST_PCLK>;
-			interrupts = <129 0>;
-			reg-shift = <2>;
-			current-speed = <115200>;
-			status = "disabled";
-		};
-
 		/*
-		 * DesignWare I2C controllers.
-		 * hcnt-offset / lcnt-offset are the tuning offsets applied on top
-		 * of the values computed from the input clock and target speed.
-		 * Verify against the target board layout and adjust per instance if needed.
+		 * LPGPIO sits in the Always-On domain and is reached through a
+		 * separate pin control region. It is two pins wide.
 		 */
-		i2c0: i2c@49010000 {
-			compatible = "snps,designware-i2c";
-			reg = <0x49010000 0x1000>;
-			clocks = <&clockctrl ALIF_I2C0_SYST_PCLK>;
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			hcnt-offset = <0>;
-			lcnt-offset = <0>;
-			fs-spike-len = <5>;
-			hs-spike-len = <1>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			interrupts = <132 0>;
-			status = "disabled";
-		};
-
-		i2c1: i2c@49011000 {
-			compatible = "snps,designware-i2c";
-			reg = <0x49011000 0x1000>;
-			clocks = <&clockctrl ALIF_I2C1_SYST_PCLK>;
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			hcnt-offset = <0>;
-			lcnt-offset = <0>;
-			fs-spike-len = <5>;
-			hs-spike-len = <1>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			interrupts = <133 0>;
+		lpgpio: gpio@42002000 {
+			compatible = "snps,designware-gpio";
+			reg = <0x42002000 0x1000>;
+			ngpios = <2>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			interrupts = <171 0>, <172 0>;
 			status = "disabled";
 		};
 
@@ -343,18 +255,106 @@
 		};
 
 		/*
-		 * LPGPIO sits in the Always-On domain and is reached through a
-		 * separate pin control region. It is two pins wide.
+		 * DesignWare I2C controllers.
+		 * hcnt-offset / lcnt-offset are the tuning offsets applied on top
+		 * of the values computed from the input clock and target speed.
+		 * Verify against the target board layout and adjust per instance if needed.
 		 */
-		lpgpio: gpio@42002000 {
-			compatible = "snps,designware-gpio";
-			reg = <0x42002000 0x1000>;
-			ngpios = <2>;
-			gpio-controller;
-			#gpio-cells = <2>;
-			interrupts = <171 0>, <172 0>;
+		i2c0: i2c@49010000 {
+			compatible = "snps,designware-i2c";
+			reg = <0x49010000 0x1000>;
+			clocks = <&clockctrl ALIF_I2C0_SYST_PCLK>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			hcnt-offset = <0>;
+			lcnt-offset = <0>;
+			fs-spike-len = <5>;
+			hs-spike-len = <1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <132 0>;
 			status = "disabled";
 		};
+
+		i2c1: i2c@49011000 {
+			compatible = "snps,designware-i2c";
+			reg = <0x49011000 0x1000>;
+			clocks = <&clockctrl ALIF_I2C1_SYST_PCLK>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			hcnt-offset = <0>;
+			lcnt-offset = <0>;
+			fs-spike-len = <5>;
+			hs-spike-len = <1>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <133 0>;
+			status = "disabled";
+		};
+
+		uart0: uart@49018000 {
+			compatible = "ns16550";
+			reg = <0x49018000 0x1000>;
+			clocks = <&clockctrl ALIF_UART0_SYST_PCLK>;
+			interrupts = <124 0>;
+			reg-shift = <2>;
+			current-speed = <115200>;
+			status = "disabled";
+		};
+
+		uart1: uart@49019000 {
+			compatible = "ns16550";
+			reg = <0x49019000 0x1000>;
+			clocks = <&clockctrl ALIF_UART1_SYST_PCLK>;
+			interrupts = <125 0>;
+			reg-shift = <2>;
+			current-speed = <115200>;
+			status = "disabled";
+		};
+
+		uart2: uart@4901a000 {
+			compatible = "ns16550";
+			reg = <0x4901a000 0x1000>;
+			clocks = <&clockctrl ALIF_UART2_SYST_PCLK>;
+			interrupts = <126 0>;
+			reg-shift = <2>;
+			current-speed = <115200>;
+			status = "disabled";
+		};
+
+		uart3: uart@4901b000 {
+			compatible = "ns16550";
+			reg = <0x4901b000 0x1000>;
+			clocks = <&clockctrl ALIF_UART3_SYST_PCLK>;
+			interrupts = <127 0>;
+			reg-shift = <2>;
+			current-speed = <115200>;
+			status = "disabled";
+		};
+
+		uart4: uart@4901c000 {
+			compatible = "ns16550";
+			reg = <0x4901c000 0x1000>;
+			clocks = <&clockctrl ALIF_UART4_SYST_PCLK>;
+			interrupts = <128 0>;
+			reg-shift = <2>;
+			current-speed = <115200>;
+			status = "disabled";
+		};
+
+		uart5: uart@4901d000 {
+			compatible = "ns16550";
+			reg = <0x4901d000 0x1000>;
+			clocks = <&clockctrl ALIF_UART5_SYST_PCLK>;
+			interrupts = <129 0>;
+			reg-shift = <2>;
+			current-speed = <115200>;
+			status = "disabled";
+		};
+	};
+
+	dtcm: dtcm@20000000 {
+		compatible = "zephyr,memory-region", "arm,dtcm";
+		reg = <0x20000000 DT_SIZE_K(1536)>;
+		zephyr,memory-region = "DTCM";
 	};
 };
 

@@ -30,12 +30,6 @@
 		zephyr,flash = &is25wp064;
 	};
 
-	sdram0: memory@80000000 {
-		reg = <0x80000000 DT_SIZE_M(32)>;
-		/* Micron MT48LC16M16A2B4-6AIT:G */
-		device_type = "memory";
-	};
-
 	leds {
 		compatible = "gpio-leds";
 
@@ -53,6 +47,12 @@
 			gpios = <&gpio1 11 0>;
 			label = "RGB B";
 		};
+	};
+
+	sdram0: memory@80000000 {
+		reg = <0x80000000 DT_SIZE_M(32)>;
+		/* Micron MT48LC16M16A2B4-6AIT:G */
+		device_type = "memory";
 	};
 };
 

@@ -77,12 +77,12 @@
 			reg = <0x20024000 DT_SIZE_K(16)>;
 		};
 
-		uart3: serial@40145000 {
-			compatible = "adi,max32-uart";
-			reg = <0x40145000 0x1000>;
-			clocks = <&gcr ADI_MAX32_CLOCK_BUS2 2>;
+		wdt1: watchdog@40003400 {
+			compatible = "adi,max32-watchdog";
+			reg = <0x40003400 0x400>;
+			interrupts = <57 0>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS1 5>;
 			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
-			interrupts = <88 0>;
 			status = "disabled";
 		};
 
@@ -93,15 +93,6 @@
 			interrupts = <28 0>, <29 0>, <30 0>, <31 0>, <68 0>, <69 0>, <70 0>, <71 0>;
 			dma-channels = <8>;
 			#dma-cells = <2>;
-			status = "disabled";
-		};
-
-		wdt1: watchdog@40003400 {
-			compatible = "adi,max32-watchdog";
-			reg = <0x40003400 0x400>;
-			interrupts = <57 0>;
-			clocks = <&gcr ADI_MAX32_CLOCK_BUS1 5>;
-			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
 			status = "disabled";
 		};
 
@@ -135,6 +126,13 @@
 			status = "disabled";
 		};
 
+		rtc_counter: rtc_counter@40106000 {
+			compatible = "adi,max32-rtc-counter";
+			reg = <0x40106000 0x400>;
+			interrupts = <3 0>;
+			status = "disabled";
+		};
+
 		lptimer0: timer@40114000 {
 			compatible = "adi,max32-timer";
 			reg = <0x40114000 0x1000>;
@@ -165,10 +163,12 @@
 			};
 		};
 
-		rtc_counter: rtc_counter@40106000 {
-			compatible = "adi,max32-rtc-counter";
-			reg = <0x40106000 0x400>;
-			interrupts = <3 0>;
+		uart3: serial@40145000 {
+			compatible = "adi,max32-uart";
+			reg = <0x40145000 0x1000>;
+			clocks = <&gcr ADI_MAX32_CLOCK_BUS2 2>;
+			clock-source = <ADI_MAX32_PRPH_CLK_SRC_PCLK>;
+			interrupts = <88 0>;
 			status = "disabled";
 		};
 	};

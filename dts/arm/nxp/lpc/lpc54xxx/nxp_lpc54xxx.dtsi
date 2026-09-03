@@ -38,15 +38,14 @@
 	};
 
 	soc {
-		syscon: syscon@40000000 {
-			compatible = "nxp,lpc-syscon";
-			reg = <0x40000000 0x4000>;
-			#clock-cells = <1>;
-
-			reset: reset {
-				compatible = "nxp,lpc-syscon-reset";
-				#reset-cells = <1>;
-			};
+		/*
+		 * LPC54018: 192K @ 0x04000000
+		 * LPC540xx: 192K @ 0x04000000
+		 * LPC541xx:  32K @ 0x04000000
+		 */
+		sramx: memory@04000000 {
+			compatible = "mmio-sram";
+			reg = <0x04000000 DT_SIZE_K(32)>;
 		};
 
 		/*
@@ -80,28 +79,14 @@
 			zephyr,memory-region = "SRAM2";
 		};
 
-		/*
-		 * LPC54018: 192K @ 0x04000000
-		 * LPC540xx: 192K @ 0x04000000
-		 * LPC541xx:  32K @ 0x04000000
-		 */
-		sramx: memory@04000000 {
-			compatible = "mmio-sram";
-			reg = <0x04000000 DT_SIZE_K(32)>;
-		};
+		syscon: syscon@40000000 {
+			compatible = "nxp,lpc-syscon";
+			reg = <0x40000000 0x4000>;
+			#clock-cells = <1>;
 
-		iap: flash-controller@4009c000 {
-			compatible = "nxp,iap-fmc54";
-			reg = <0x4009c000 0x18>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-			status = "disabled";
-
-			flash0: flash@0 {
-				compatible = "soc-nv-flash";
-				reg = <0 DT_SIZE_K(256)>;
-				erase-block-size = <256>;
-				write-block-size = <256>;
+			reset: reset {
+				compatible = "nxp,lpc-syscon-reset";
+				#reset-cells = <1>;
 			};
 		};
 
@@ -114,29 +99,6 @@
 
 			pinctrl: pinctrl {
 				compatible = "nxp,lpc-iocon-pinctrl";
-			};
-		};
-
-		gpio: gpio@4008c000 {
-			compatible = "nxp,lpc-gpio";
-			reg = <0x4008c000 0x2488>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-
-			gpio0: gpio@0 {
-				compatible = "nxp,lpc-gpio-port";
-				reg = <0>;
-				int-source = "pint";
-				gpio-controller;
-				#gpio-cells = <2>;
-			};
-
-			gpio1: gpio@1 {
-				compatible = "nxp,lpc-gpio-port";
-				reg = <1>;
-				int-source = "pint";
-				gpio-controller;
-				#gpio-cells = <2>;
 			};
 		};
 
@@ -166,13 +128,6 @@
 				     <32 2>, <33 2>, <34 2>, <35 2>;
 			num-lines = <8>;
 			num-inputs = <64>;
-		};
-
-		mailbox0: mailbox@4008b000 {
-			compatible = "nxp,lpc-mailbox";
-			reg = <0x4008b000 0xec>;
-			interrupts = <31 0>;
-			status = "disabled";
 		};
 
 		flexcomm0: flexcomm@40086000 {
@@ -220,6 +175,36 @@
 			status = "disabled";
 		};
 
+		mailbox0: mailbox@4008b000 {
+			compatible = "nxp,lpc-mailbox";
+			reg = <0x4008b000 0xec>;
+			interrupts = <31 0>;
+			status = "disabled";
+		};
+
+		gpio: gpio@4008c000 {
+			compatible = "nxp,lpc-gpio";
+			reg = <0x4008c000 0x2488>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+
+			gpio0: gpio@0 {
+				compatible = "nxp,lpc-gpio-port";
+				reg = <0>;
+				int-source = "pint";
+				gpio-controller;
+				#gpio-cells = <2>;
+			};
+
+			gpio1: gpio@1 {
+				compatible = "nxp,lpc-gpio-port";
+				reg = <1>;
+				int-source = "pint";
+				gpio-controller;
+				#gpio-cells = <2>;
+			};
+		};
+
 		flexcomm5: flexcomm@40096000 {
 			compatible = "nxp,lpc-flexcomm";
 			reg = <0x40096000 0x1000>;
@@ -245,6 +230,21 @@
 			clocks = <&syscon MCUX_FLEXCOMM7_CLK>;
 			resets = <&reset NXP_SYSCON_RESET(1, 18)>;
 			status = "disabled";
+		};
+
+		iap: flash-controller@4009c000 {
+			compatible = "nxp,iap-fmc54";
+			reg = <0x4009c000 0x18>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "disabled";
+
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				reg = <0 DT_SIZE_K(256)>;
+				erase-block-size = <256>;
+				write-block-size = <256>;
+			};
 		};
 	};
 };

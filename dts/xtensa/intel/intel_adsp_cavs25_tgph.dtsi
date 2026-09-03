@@ -21,13 +21,6 @@
 			d-cache-line-size = <64>;
 		};
 
-		cpu1: cpu@1 {
-			compatible = "cdns,tensilica-xtensa-lx6";
-			reg = <1>;
-			device_type = "cpu";
-			cpu-power-states = <&d3>;
-		};
-
 		power-states {
 			/* PM_STATE_SOFT_OFF can be entered only by calling
 			 * pm_state_force. The procedure is triggered by IPC
@@ -40,18 +33,13 @@
 				exit-latency-us = <0>;
 			};
 		};
-	};
 
-	sram0: memory@be000000 {
-		compatible = "mmio-sram";
-		reg = <0xbe000000 DT_SIZE_K(1920)>;
-		device_type = "memory";
-	};
-
-	sram1: memory@be800000 {
-		compatible = "mmio-sram";
-		reg = <0xbe800000 DT_SIZE_K(64)>;
-		device_type = "memory";
+		cpu1: cpu@1 {
+			compatible = "cdns,tensilica-xtensa-lx6";
+			reg = <1>;
+			device_type = "cpu";
+			cpu-power-states = <&d3>;
+		};
 	};
 
 	sysclk: system-clock {
@@ -84,77 +72,10 @@
 		wovcro-supported;
 	};
 
-	IMR1: memory@b0000000 {
-		compatible = "intel,adsp-imr";
-		reg = <0xb0000000 DT_SIZE_M(16)>;
-		block-size = <0x1000>;
-		zephyr,memory-region = "IMR1";
-	};
-
 	soc {
-		lsbpm: lsbpm@71d50 {
-			compatible = "intel,adsp-lsbpm";
-			reg = <0x71d50 0x10>;
-		};
-
-		hsbpm: hsbpm@71d10 {
-			compatible = "intel,adsp-hsbpm";
-			reg = <0x71d10 0x10>;
-		};
-
-		shim: shim@71f00 {
-			compatible = "intel,adsp-shim";
-			reg = <0x71f00 0x100>;
-		};
-
-		mem_window0: mem_window@71a00 {
-			compatible = "intel,adsp-mem-window";
-			reg = <0x71a00 0x8>;
-			offset = <0x4000>;
-			memory = <&sram0>;
-			initialize;
-			read-only;
-		};
-
-		mem_window1: mem_window@71a08 {
-			compatible = "intel,adsp-mem-window";
-			reg = <0x71a08 0x8>;
-			memory = <&sram0>;
-		};
-
-		mem_window2: mem_window@71a10 {
-			compatible = "intel,adsp-mem-window";
-			reg = <0x71a10 0x8>;
-			memory = <&sram0>;
-		};
-
-		mem_window3: mem_window@71a18 {
-			compatible = "intel,adsp-mem-window";
-			reg = <0x71a18 0x8>;
-			memory = <&sram0>;
-			read-only;
-		};
-
 		timer: timer {
 			compatible = "intel,adsp-timer";
 			syscon = <&shim>;
-		};
-
-		sspbase: ssp_base@71c00 {
-			compatible = "intel,cavs-sspbase";
-			reg = <0x71c00 0x100>;
-		};
-
-		l2lm: l2lm@71d00 {
-			compatible = "intel,cavs-l2lm";
-			reg = <0x71d00 0x20>;
-		};
-
-		adsp_host_ipc: cavs_host_ipc@71e00 {
-			compatible = "intel,adsp-host-ipc";
-			reg = <0x71e00 0x30>;
-			interrupts = <7 0 0>;
-			interrupt-parent = <&cavs_intc0>;
 		};
 
 		core_intc: core_intc@0 {
@@ -162,42 +83,6 @@
 			reg = <0x00 0x400>;
 			interrupt-controller;
 			#interrupt-cells = <3>;
-		};
-
-		cavs_intc0: cavs@78800 {
-			compatible = "intel,cavs-intc";
-			reg = <0x78800 0x10>;
-			interrupt-controller;
-			#interrupt-cells = <3>;
-			interrupts = <6 0 0>;
-			interrupt-parent = <&core_intc>;
-		};
-
-		cavs_intc1: cavs@78810 {
-			compatible = "intel,cavs-intc";
-			reg = <0x78810 0x10>;
-			interrupt-controller;
-			#interrupt-cells = <3>;
-			interrupts = <0xa 0 0>;
-			interrupt-parent = <&core_intc>;
-		};
-
-		cavs_intc2: cavs@78820 {
-			compatible = "intel,cavs-intc";
-			reg = <0x78820 0x10>;
-			interrupt-controller;
-			#interrupt-cells = <3>;
-			interrupts = <0xd 0 0>;
-			interrupt-parent = <&core_intc>;
-		};
-
-		cavs_intc3: cavs@78830 {
-			compatible = "intel,cavs-intc";
-			reg = <0x78830 0x10>;
-			interrupt-controller;
-			#interrupt-cells = <3>;
-			interrupts = <0x10 0 0>;
-			interrupt-parent = <&core_intc>;
 		};
 
 		adsp_idc: idc@1200 {
@@ -250,6 +135,66 @@
 			reg = <0x00071000 0x00071200>;
 
 			status = "okay";
+		};
+
+		mem_window0: mem_window@71a00 {
+			compatible = "intel,adsp-mem-window";
+			reg = <0x71a00 0x8>;
+			offset = <0x4000>;
+			memory = <&sram0>;
+			initialize;
+			read-only;
+		};
+
+		mem_window1: mem_window@71a08 {
+			compatible = "intel,adsp-mem-window";
+			reg = <0x71a08 0x8>;
+			memory = <&sram0>;
+		};
+
+		mem_window2: mem_window@71a10 {
+			compatible = "intel,adsp-mem-window";
+			reg = <0x71a10 0x8>;
+			memory = <&sram0>;
+		};
+
+		mem_window3: mem_window@71a18 {
+			compatible = "intel,adsp-mem-window";
+			reg = <0x71a18 0x8>;
+			memory = <&sram0>;
+			read-only;
+		};
+
+		sspbase: ssp_base@71c00 {
+			compatible = "intel,cavs-sspbase";
+			reg = <0x71c00 0x100>;
+		};
+
+		l2lm: l2lm@71d00 {
+			compatible = "intel,cavs-l2lm";
+			reg = <0x71d00 0x20>;
+		};
+
+		hsbpm: hsbpm@71d10 {
+			compatible = "intel,adsp-hsbpm";
+			reg = <0x71d10 0x10>;
+		};
+
+		lsbpm: lsbpm@71d50 {
+			compatible = "intel,adsp-lsbpm";
+			reg = <0x71d50 0x10>;
+		};
+
+		adsp_host_ipc: cavs_host_ipc@71e00 {
+			compatible = "intel,adsp-host-ipc";
+			reg = <0x71e00 0x30>;
+			interrupts = <7 0 0>;
+			interrupt-parent = <&cavs_intc0>;
+		};
+
+		shim: shim@71f00 {
+			compatible = "intel,adsp-shim";
+			reg = <0x71f00 0x100>;
 		};
 
 		ssp0: ssp@77000 {
@@ -313,6 +258,42 @@
 				reg = <0x20>;
 				status = "okay";
 			};
+		};
+
+		cavs_intc0: cavs@78800 {
+			compatible = "intel,cavs-intc";
+			reg = <0x78800 0x10>;
+			interrupt-controller;
+			#interrupt-cells = <3>;
+			interrupts = <6 0 0>;
+			interrupt-parent = <&core_intc>;
+		};
+
+		cavs_intc1: cavs@78810 {
+			compatible = "intel,cavs-intc";
+			reg = <0x78810 0x10>;
+			interrupt-controller;
+			#interrupt-cells = <3>;
+			interrupts = <0xa 0 0>;
+			interrupt-parent = <&core_intc>;
+		};
+
+		cavs_intc2: cavs@78820 {
+			compatible = "intel,cavs-intc";
+			reg = <0x78820 0x10>;
+			interrupt-controller;
+			#interrupt-cells = <3>;
+			interrupts = <0xd 0 0>;
+			interrupt-parent = <&core_intc>;
+		};
+
+		cavs_intc3: cavs@78830 {
+			compatible = "intel,cavs-intc";
+			reg = <0x78830 0x10>;
+			interrupt-controller;
+			#interrupt-cells = <3>;
+			interrupts = <0x10 0 0>;
+			interrupt-parent = <&core_intc>;
 		};
 	};
 
@@ -415,5 +396,24 @@
 			reg = <0x0f>;
 			status = "okay";
 		};
+	};
+
+	IMR1: memory@b0000000 {
+		compatible = "intel,adsp-imr";
+		reg = <0xb0000000 DT_SIZE_M(16)>;
+		block-size = <0x1000>;
+		zephyr,memory-region = "IMR1";
+	};
+
+	sram0: memory@be000000 {
+		compatible = "mmio-sram";
+		reg = <0xbe000000 DT_SIZE_K(1920)>;
+		device_type = "memory";
+	};
+
+	sram1: memory@be800000 {
+		compatible = "mmio-sram";
+		reg = <0xbe800000 DT_SIZE_K(64)>;
+		device_type = "memory";
 	};
 };

@@ -86,12 +86,15 @@
 		};
 	};
 
-	/*
-	 * The memory regions defined below are according to AN521:
-	 * https://documentation-service.arm.com/static/5fa12fe9b1a7c5445f29017f
-	 *
-	 * Please see tables mentioned in individual comments below for details.
-	 */
+	soc {
+		peripheral@50000000 {
+			ranges = <0x0 0x50000000 0x10000000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+#include "mps2_an521-common.dtsi"
+		};
+	};
 
 	ssram1: memory@10000000 {
 		/* Table 3-2, row 6. */
@@ -113,15 +116,12 @@
 		device_type = "memory";
 	};
 
-	soc {
-		peripheral@50000000 {
-			ranges = <0x0 0x50000000 0x10000000>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-#include "mps2_an521-common.dtsi"
-		};
-	};
+	/*
+	 * The memory regions defined below are according to AN521:
+	 * https://documentation-service.arm.com/static/5fa12fe9b1a7c5445f29017f
+	 *
+	 * Please see tables mentioned in individual comments below for details.
+	 */
 };
 
 &nvic {

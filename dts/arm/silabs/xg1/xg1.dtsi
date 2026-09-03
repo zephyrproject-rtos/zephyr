@@ -21,10 +21,6 @@
 		};
 	};
 
-	sram0: memory@20000000 {
-		compatible = "mmio-sram";
-	};
-
 	clocks {
 		clk_lfxo: clk-lfxo {
 			compatible = "silabs,series0-lfxo";
@@ -81,78 +77,6 @@
 	};
 
 	soc {
-		cmu: cmu@400e4000 {
-			compatible = "silabs,series0-cmu";
-			reg = <0x400e4000 0x200>;
-			clocks = <&clk_lfxo>, <&clk_lfrco>, <&clk_lfa>, <&clk_lfb>, <&clk_lfe>,
-				 <&clk_hfxo>, <&clk_hfrco>, <&clk_hf>;
-			clock-names = "lfxo", "lfrco", "lfa", "lfb", "lfe", "hfxo", "hfrco", "hf";
-			status = "okay";
-		};
-
-		msc: flash-controller@400e0000 {
-			compatible = "silabs,gecko-flash-controller";
-			reg = <0x400e0000 0x800>;
-			ranges;
-			interrupts = <24 0>;
-
-			#address-cells = <1>;
-			#size-cells = <1>;
-
-			flash0: flash@0 {
-				compatible = "soc-nv-flash";
-				#address-cells = <1>;
-				#size-cells = <1>;
-				write-block-size = <4>;
-				erase-block-size = <2048>;
-			};
-		};
-
-		usart0: usart@40010000 { /* USART0 */
-			compatible = "silabs,gecko-usart";
-			reg = <0x40010000 0x400>;
-			interrupts = <11 0>, <12 0>;
-			interrupt-names = "rx", "tx";
-			peripheral-id = <0>;
-			status = "disabled";
-		};
-
-		usart1: usart@40010400 { /* USART1 */
-			compatible = "silabs,gecko-usart";
-			reg = <0x40010400 0x400>;
-			interrupts = <19 0>, <20 0>;
-			interrupt-names = "rx", "tx";
-			peripheral-id = <1>;
-			status = "disabled";
-		};
-
-		leuart0: leuart@4004a000 { /* LEUART0 */
-			compatible = "silabs,gecko-leuart";
-			reg = <0x4004a000 0x400>;
-			interrupts = <21 0>;
-			peripheral-id = <0>;
-			status = "disabled";
-		};
-
-		i2c0: i2c@4000c000 {
-			compatible = "silabs,gecko-i2c";
-			reg = <0x4000c000 0x400>;
-			clock-frequency = <I2C_BITRATE_STANDARD>;
-			#address-cells = <1>;
-			#size-cells = <0>;
-			interrupts = <16 0>;
-			status = "disabled";
-		};
-
-		rtcc0: rtcc@40042000 {
-			compatible = "silabs,gecko-rtcc";
-			reg = <0x40042000 0x184>;
-			interrupts = <29 0>;
-			clock-frequency = <32768>;
-			prescaler = <1>;
-			status = "disabled";
-		};
-
 		gpio: gpio@4000a400 {
 			compatible = "silabs,gecko-gpio";
 			reg = <0x4000a000 0x1000>;
@@ -218,11 +142,31 @@
 			};
 		};
 
-		wdog0: wdog@40052000 {
-			compatible = "silabs,gecko-wdog";
-			reg = <0x40052000 0x400>;
+		i2c0: i2c@4000c000 {
+			compatible = "silabs,gecko-i2c";
+			reg = <0x4000c000 0x400>;
+			clock-frequency = <I2C_BITRATE_STANDARD>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			interrupts = <16 0>;
+			status = "disabled";
+		};
+
+		usart0: usart@40010000 { /* USART0 */
+			compatible = "silabs,gecko-usart";
+			reg = <0x40010000 0x400>;
+			interrupts = <11 0>, <12 0>;
+			interrupt-names = "rx", "tx";
 			peripheral-id = <0>;
-			interrupts = <2 0>;
+			status = "disabled";
+		};
+
+		usart1: usart@40010400 { /* USART1 */
+			compatible = "silabs,gecko-usart";
+			reg = <0x40010400 0x400>;
+			interrupts = <19 0>, <20 0>;
+			interrupt-names = "rx", "tx";
+			peripheral-id = <1>;
 			status = "disabled";
 		};
 
@@ -237,6 +181,58 @@
 				status = "disabled";
 			};
 		};
+
+		rtcc0: rtcc@40042000 {
+			compatible = "silabs,gecko-rtcc";
+			reg = <0x40042000 0x184>;
+			interrupts = <29 0>;
+			clock-frequency = <32768>;
+			prescaler = <1>;
+			status = "disabled";
+		};
+
+		leuart0: leuart@4004a000 { /* LEUART0 */
+			compatible = "silabs,gecko-leuart";
+			reg = <0x4004a000 0x400>;
+			interrupts = <21 0>;
+			peripheral-id = <0>;
+			status = "disabled";
+		};
+
+		wdog0: wdog@40052000 {
+			compatible = "silabs,gecko-wdog";
+			reg = <0x40052000 0x400>;
+			peripheral-id = <0>;
+			interrupts = <2 0>;
+			status = "disabled";
+		};
+
+		msc: flash-controller@400e0000 {
+			compatible = "silabs,gecko-flash-controller";
+			reg = <0x400e0000 0x800>;
+			ranges;
+			interrupts = <24 0>;
+
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			flash0: flash@0 {
+				compatible = "soc-nv-flash";
+				#address-cells = <1>;
+				#size-cells = <1>;
+				write-block-size = <4>;
+				erase-block-size = <2048>;
+			};
+		};
+
+		cmu: cmu@400e4000 {
+			compatible = "silabs,series0-cmu";
+			reg = <0x400e4000 0x200>;
+			clocks = <&clk_lfxo>, <&clk_lfrco>, <&clk_lfa>, <&clk_lfb>, <&clk_lfe>,
+				 <&clk_hfxo>, <&clk_hfrco>, <&clk_hf>;
+			clock-names = "lfxo", "lfrco", "lfa", "lfb", "lfe", "hfxo", "hfrco", "hf";
+			status = "okay";
+		};
 	};
 
 	pinctrl: pin-controller {
@@ -245,6 +241,10 @@
 		 * registers on each peripheral).
 		 */
 		compatible = "silabs,gecko-pinctrl";
+	};
+
+	sram0: memory@20000000 {
+		compatible = "mmio-sram";
 	};
 };
 

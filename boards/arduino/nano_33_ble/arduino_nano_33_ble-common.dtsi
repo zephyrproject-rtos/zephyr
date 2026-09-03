@@ -179,14 +179,14 @@ arduino_i2c: &i2c0 {
 	pinctrl-names = "default", "sleep";
 	status = "okay";
 
-	lsm9ds1: lsm9ds1@6b {
-		compatible = "st,lsm9ds1";
-		reg = <0x6b>;
-	};
-
 	lsm9ds1_mag: lsm9ds1_mag@1e {
 		compatible = "st,lsm9ds1_mag";
 		reg = <0x1e>;
+	};
+
+	lsm9ds1: lsm9ds1@6b {
+		compatible = "st,lsm9ds1";
+		reg = <0x6b>;
 	};
 };
 

@@ -17,11 +17,6 @@
 		zephyr,sram = &ram0;
 	};
 
-	ram0: memory@f9000000 {
-		reg = <0xf9000000 DT_SIZE_K(192)>;
-		device_type = "memory";
-	};
-
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -50,35 +45,21 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		plic0: interrupt-controller@f8c00000 {
-			compatible = "sifive,plic-1.0.0";
-			reg = <0xf8c00000 0x0400000>;
-			#address-cells = <0>;
-			#interrupt-cells = <2>;
-			interrupt-controller;
-			interrupts-extended = <&hlic 11>;
-			riscv,max-priority = <3>;
-			riscv,ndev = <32>;
-		};
-
-		clint: clint@f8b00000 {
-			compatible = "sifive,clint0";
-			reg = <0xf8b00000 0x10000>;
-			interrupts-extended = <&hlic 3 &hlic 7>;
-		};
-
-		mtimer: timer@f8b0bff8 {
-			compatible = "riscv,machine-timer";
-			reg = <0xf8b0bff8 0x8 0xf8b04000 0x8>;
-			interrupts-extended = <&hlic 7>;
-			reg-names = "mtime", "mtimecmp";
-		};
-
 		timer0: timer@e0002800 {
 			compatible = "efinix,sapphire-timer0";
 			reg = <0xe0002800 0x40>;
 			interrupt-parent = <&plic0>;
 			interrupts = <19 0>;
+			status = "disabled";
+		};
+
+		uart0: uart@f8010000 {
+			compatible = "efinix,sapphire-uart0";
+			reg = <0xf8010000 0x40>;
+			interrupt-parent = <&plic0>;
+			interrupts = <1 1>;
+			reg-names = "base";
+			current-speed = <115200>;
 			status = "disabled";
 		};
 
@@ -94,14 +75,33 @@
 			status = "disabled";
 		};
 
-		uart0: uart@f8010000 {
-			compatible = "efinix,sapphire-uart0";
-			reg = <0xf8010000 0x40>;
-			interrupt-parent = <&plic0>;
-			interrupts = <1 1>;
-			reg-names = "base";
-			current-speed = <115200>;
-			status = "disabled";
+		clint: clint@f8b00000 {
+			compatible = "sifive,clint0";
+			reg = <0xf8b00000 0x10000>;
+			interrupts-extended = <&hlic 3 &hlic 7>;
 		};
+
+		mtimer: timer@f8b0bff8 {
+			compatible = "riscv,machine-timer";
+			reg = <0xf8b0bff8 0x8 0xf8b04000 0x8>;
+			interrupts-extended = <&hlic 7>;
+			reg-names = "mtime", "mtimecmp";
+		};
+
+		plic0: interrupt-controller@f8c00000 {
+			compatible = "sifive,plic-1.0.0";
+			reg = <0xf8c00000 0x0400000>;
+			#address-cells = <0>;
+			#interrupt-cells = <2>;
+			interrupt-controller;
+			interrupts-extended = <&hlic 11>;
+			riscv,max-priority = <3>;
+			riscv,ndev = <32>;
+		};
+	};
+
+	ram0: memory@f9000000 {
+		reg = <0xf9000000 DT_SIZE_K(192)>;
+		device_type = "memory";
 	};
 };

@@ -20,18 +20,17 @@
 		};
 	};
 
-	/*
-	 * LPC84X have either 8KB or 16KB of SRAM
-	 * that should be taken care in board specific .dtsi
-	 */
-	sram0: memory@10000000 {
-		compatible = "mmio-sram";
-	};
-
 	soc {
 		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
+
+		swm: swm@4000c000 {
+			compatible = "nxp,lpc84x-swm";
+			reg = <0x4000c000 0x4000>;
+			clocks = <&syscon LPC84X_CLK_SWM>;
+			status = "disabled";
+		};
 
 		iap: flash-controller@40040000 {
 			compatible = "nxp,iap-fmc84x";
@@ -54,26 +53,19 @@
 			};
 		};
 
+		iocon: iocon@40044000 {
+			compatible = "nxp,lpc84x-iocon";
+			reg = <0x40044000 0x4000>;
+			clocks = <&syscon LPC84X_CLK_IOCON>;
+			status = "disabled";
+		};
+
 		syscon: syscon@40048000 {
 			compatible = "nxp,lpc84x-clock";
 			reg = <0x40048000 0x4000>;
 			#clock-cells = <1>;
 			frg0-clk-src = "fro";
 			ahb-clk-divider = <1>;
-			status = "disabled";
-		};
-
-		swm: swm@4000c000 {
-			compatible = "nxp,lpc84x-swm";
-			reg = <0x4000c000 0x4000>;
-			clocks = <&syscon LPC84X_CLK_SWM>;
-			status = "disabled";
-		};
-
-		iocon: iocon@40044000 {
-			compatible = "nxp,lpc84x-iocon";
-			reg = <0x40044000 0x4000>;
-			clocks = <&syscon LPC84X_CLK_IOCON>;
 			status = "disabled";
 		};
 
@@ -116,6 +108,14 @@
 			interrupts = <31 0>;
 			status = "disabled";
 		};
+	};
+
+	/*
+	 * LPC84X have either 8KB or 16KB of SRAM
+	 * that should be taken care in board specific .dtsi
+	 */
+	sram0: memory@10000000 {
+		compatible = "mmio-sram";
 	};
 };
 

@@ -70,32 +70,39 @@
 	soc {
 		interrupt-parent = <&gic>;
 
-		gic: interrupt-controller@2f000000 {
-			compatible = "arm,gic-v3", "arm,gic";
-			reg = <0x2f000000 0x10000>, // GICD
-			      <0x2f100000 0x200000>; // GICR
-			interrupt-controller;
-			#interrupt-cells = <4>;
-			#address-cells = <1>;
-			#size-cells = <1>;
-			status = "okay";
+		flash0: flash@0 {
+			compatible = "soc-nv-flash";
+			reg = <0x0 DT_SIZE_K(64)>;
+		};
 
-			its: msi-controller@2f020000 {
-				compatible = "arm,gic-v3-its";
-				reg = <0x2f020000 0x20000>;
-				status = "okay";
+		ethernet@1a000000 {
+			reg = <0x1a000000 0x1000>;
+
+			eth: ethernet {
+				compatible = "smsc,lan91c111";
+				interrupts = <GIC_SPI 15 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+
+				phy-handle = <&phy>;
+				status = "disabled";
+			};
+
+			mdio: mdio {
+				compatible = "smsc,lan91c111-mdio";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+
+				phy: ethernet-phy@0 {
+					compatible = "ethernet-phy";
+					reg = <0>;
+					status = "disabled";
+				};
 			};
 		};
 
 		v2m_sysreg: sysreg@1c010000 {
 			compatible = "arm,vexpress-sysreg";
 			reg = <0x1c010000 0x1000>;
-		};
-
-		pwrc: power-controller@1c100000 {
-			compatible = "arm,fvp-pwrc";
-			reg = <0x1c100000 0x1000>;
-			arm,vexpress-sysreg = <&v2m_sysreg>;
 		};
 
 		uart0: uart@1c090000 {
@@ -134,34 +141,27 @@
 			status = "disabled";
 		};
 
-		ethernet@1a000000 {
-			reg = <0x1a000000 0x1000>;
-
-			eth: ethernet {
-				compatible = "smsc,lan91c111";
-				interrupts = <GIC_SPI 15 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-
-				phy-handle = <&phy>;
-				status = "disabled";
-			};
-
-			mdio: mdio {
-				compatible = "smsc,lan91c111-mdio";
-				#address-cells = <1>;
-				#size-cells = <0>;
-				status = "disabled";
-
-				phy: ethernet-phy@0 {
-					compatible = "ethernet-phy";
-					reg = <0>;
-					status = "disabled";
-				};
-			};
+		pwrc: power-controller@1c100000 {
+			compatible = "arm,fvp-pwrc";
+			reg = <0x1c100000 0x1000>;
+			arm,vexpress-sysreg = <&v2m_sysreg>;
 		};
 
-		flash0: flash@0 {
-			compatible = "soc-nv-flash";
-			reg = <0x0 DT_SIZE_K(64)>;
+		gic: interrupt-controller@2f000000 {
+			compatible = "arm,gic-v3", "arm,gic";
+			reg = <0x2f000000 0x10000>, // GICD
+			      <0x2f100000 0x200000>; // GICR
+			interrupt-controller;
+			#interrupt-cells = <4>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "okay";
+
+			its: msi-controller@2f020000 {
+				compatible = "arm,gic-v3-its";
+				reg = <0x2f020000 0x20000>;
+				status = "okay";
+			};
 		};
 
 		dram0: memory@88000000 {

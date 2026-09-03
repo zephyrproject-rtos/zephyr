@@ -11,9 +11,107 @@
 
 / {
 	soc {
+		trng: trng {
+			compatible = "renesas,ra-sce9-rng";
+			status = "disabled";
+		};
+
+		option_setting_ofs0: option-setting-ofs0@100a100 {
+			compatible = "zephyr,memory-region";
+			reg = <0x0100a100 0x4>;
+			zephyr,memory-region = "OFS_OFS0_MEMORY";
+			status = "okay";
+		};
+
+		option_setting_dualsel: option-setting-dualsel@100a110 {
+			compatible = "zephyr,memory-region";
+			reg = <0x0100a110 0x4>;
+			zephyr,memory-region = "OFS_DUALSEL_MEMORY";
+			status = "okay";
+		};
+
+		option_setting_ofs1_sec: option-setting-ofs1-sec@100a200 {
+			compatible = "zephyr,memory-region";
+			reg = <0x0100a200 0x4>;
+			zephyr,memory-region = "OFS_OFS1_SEC_MEMORY";
+			status = "okay";
+		};
+
+		option_setting_banksel_sec: option-setting-banksel-sec@100a210 {
+			compatible = "zephyr,memory-region";
+			reg = <0x0100a210 0x4>;
+			zephyr,memory-region = "OFS_BANKSEL_SEC_MEMORY";
+			status = "okay";
+		};
+
+		option_setting_bps_sec: option-setting-bps-sec@100a240 {
+			compatible = "zephyr,memory-region";
+			reg = <0x0100a240 0x10>;
+			zephyr,memory-region = "OFS_BPS_SEC_MEMORY";
+			status = "okay";
+		};
+
+		option_setting_pbps_sec: option-setting-pbps-sec@100a260 {
+			compatible = "zephyr,memory-region";
+			reg = <0x0100a260 0x10>;
+			zephyr,memory-region = "OFS_PBPS_SEC_MEMORY";
+			status = "okay";
+		};
+
+		option_setting_ofs1_sel: option-setting-ofs1-sel@100a280 {
+			compatible = "zephyr,memory-region";
+			reg = <0x0100a280 0x4>;
+			zephyr,memory-region = "OFS_OFS1_SEL_MEMORY";
+			status = "okay";
+		};
+
+		option_setting_banksel_sel: option-setting-banksel-sel@100a290 {
+			compatible = "zephyr,memory-region";
+			reg = <0x0100a290 0x4>;
+			zephyr,memory-region = "OFS_BANKSEL_SEL_MEMORY";
+			status = "okay";
+		};
+
+		option_setting_bps_sel: option-setting-bps-sel@100a2c0 {
+			compatible = "zephyr,memory-region";
+			reg = <0x0100a2c0 0x10>;
+			zephyr,memory-region = "OFS_BPS_SEL_MEMORY";
+			status = "okay";
+		};
+
 		sram0: memory@20000000 {
 			compatible = "mmio-sram";
 			reg = <0x20000000 DT_SIZE_K(256)>;
+		};
+
+		ioport6: gpio@400800c0 {
+			compatible = "renesas,ra-gpio-ioport";
+			reg = <0x400800c0 0x20>;
+			port = <6>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+			status = "disabled";
+		};
+
+		ioport7: gpio@400800e0 {
+			compatible = "renesas,ra-gpio-ioport";
+			reg = <0x400800e0 0x20>;
+			port = <7>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+			status = "disabled";
+		};
+
+		ioport8: gpio@40080100 {
+			compatible = "renesas,ra-gpio-ioport";
+			reg = <0x40080100 0x20>;
+			port = <8>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <16>;
+			status = "disabled";
 		};
 
 		sci1: sci1@40118100 {
@@ -272,44 +370,6 @@
 			};
 		};
 
-		adc@40170000 {
-			channel-available-mask = <0x33ff>;
-		};
-
-		adc@40170200 {
-			channel-available-mask = <0x7f0007>;
-		};
-
-		ioport6: gpio@400800c0 {
-			compatible = "renesas,ra-gpio-ioport";
-			reg = <0x400800c0 0x20>;
-			port = <6>;
-			gpio-controller;
-			#gpio-cells = <2>;
-			ngpios = <16>;
-			status = "disabled";
-		};
-
-		ioport7: gpio@400800e0 {
-			compatible = "renesas,ra-gpio-ioport";
-			reg = <0x400800e0 0x20>;
-			port = <7>;
-			gpio-controller;
-			#gpio-cells = <2>;
-			ngpios = <16>;
-			status = "disabled";
-		};
-
-		ioport8: gpio@40080100 {
-			compatible = "renesas,ra-gpio-ioport";
-			reg = <0x40080100 0x20>;
-			port = <8>;
-			gpio-controller;
-			#gpio-cells = <2>;
-			ngpios = <16>;
-			status = "disabled";
-		};
-
 		pwm0: pwm0@40169000 {
 			compatible = "renesas,ra-pwm";
 			reg = <0x40169000 0x100>;
@@ -370,72 +430,12 @@
 			status = "disabled";
 		};
 
-		trng: trng {
-			compatible = "renesas,ra-sce9-rng";
-			status = "disabled";
+		adc@40170000 {
+			channel-available-mask = <0x33ff>;
 		};
 
-		option_setting_ofs0: option-setting-ofs0@100a100 {
-			compatible = "zephyr,memory-region";
-			reg = <0x0100a100 0x4>;
-			zephyr,memory-region = "OFS_OFS0_MEMORY";
-			status = "okay";
-		};
-
-		option_setting_dualsel: option-setting-dualsel@100a110 {
-			compatible = "zephyr,memory-region";
-			reg = <0x0100a110 0x4>;
-			zephyr,memory-region = "OFS_DUALSEL_MEMORY";
-			status = "okay";
-		};
-
-		option_setting_ofs1_sec: option-setting-ofs1-sec@100a200 {
-			compatible = "zephyr,memory-region";
-			reg = <0x0100a200 0x4>;
-			zephyr,memory-region = "OFS_OFS1_SEC_MEMORY";
-			status = "okay";
-		};
-
-		option_setting_banksel_sec: option-setting-banksel-sec@100a210 {
-			compatible = "zephyr,memory-region";
-			reg = <0x0100a210 0x4>;
-			zephyr,memory-region = "OFS_BANKSEL_SEC_MEMORY";
-			status = "okay";
-		};
-
-		option_setting_bps_sec: option-setting-bps-sec@100a240 {
-			compatible = "zephyr,memory-region";
-			reg = <0x0100a240 0x10>;
-			zephyr,memory-region = "OFS_BPS_SEC_MEMORY";
-			status = "okay";
-		};
-
-		option_setting_pbps_sec: option-setting-pbps-sec@100a260 {
-			compatible = "zephyr,memory-region";
-			reg = <0x0100a260 0x10>;
-			zephyr,memory-region = "OFS_PBPS_SEC_MEMORY";
-			status = "okay";
-		};
-
-		option_setting_ofs1_sel: option-setting-ofs1-sel@100a280 {
-			compatible = "zephyr,memory-region";
-			reg = <0x0100a280 0x4>;
-			zephyr,memory-region = "OFS_OFS1_SEL_MEMORY";
-			status = "okay";
-		};
-
-		option_setting_banksel_sel: option-setting-banksel-sel@100a290 {
-			compatible = "zephyr,memory-region";
-			reg = <0x0100a290 0x4>;
-			zephyr,memory-region = "OFS_BANKSEL_SEL_MEMORY";
-			status = "okay";
-		};
-
-		option_setting_bps_sel: option-setting-bps-sel@100a2c0 {
-			compatible = "zephyr,memory-region";
-			reg = <0x0100a2c0 0x10>;
-			zephyr,memory-region = "OFS_BPS_SEL_MEMORY";
-			status = "okay";
+		adc@40170200 {
+			channel-available-mask = <0x7f0007>;
 		};
 	};
 

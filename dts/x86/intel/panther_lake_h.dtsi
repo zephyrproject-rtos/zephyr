@@ -35,22 +35,6 @@
 		device_type = "memory";
 	};
 
-	intc: ioapic@fec00000 {
-		compatible = "intel,ioapic";
-		reg = <0xfec00000 0x1000>;
-		#address-cells = <1>;
-		#interrupt-cells = <3>;
-		interrupt-controller;
-	};
-
-	intc_loapic: loapic@fee00000 {
-		compatible = "intel,loapic";
-		reg = <0xfee00000 0x1000>;
-		interrupt-controller;
-		#interrupt-cells = <3>;
-		#address-cells = <1>;
-	};
-
 	acpi {
 		gpio_a: gpio_a {
 			acpi-hid = "INTC10BC";
@@ -368,34 +352,6 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
-		vtd: vtd@fed91000 {
-			compatible = "intel,vt-d";
-			reg = <0xfed91000 0x1000>;
-			status = "okay";
-		};
-
-		uart_ec_0: uart@3f8 {
-			compatible = "ns16550";
-			reg = <0x000003f8 0x100>;
-			clock-frequency = <1843200>;
-			interrupts = <4 IRQ_TYPE_LOWEST_EDGE_RISING 3>;
-			interrupt-parent = <&intc>;
-			reg-shift = <0>;
-			io-mapped;
-			status = "disabled";
-		};
-
-		pwm0: pwm@5d0000 {
-			compatible = "intel,blinky-pwm";
-			reg = <0x5d0000 0x500>;
-			reg-upper32 = <0x40>;
-			reg-offset = <0x434>;
-			clock-frequency = <32768>;
-			max-pins = <1>;
-			#pwm-cells = <2>;
-			status = "disabled";
-		};
-
 		mfd: mfd@70 {
 			compatible = "motorola,mc146818-mfd";
 			reg = <0x70 0x01 0x71 0x01 0x72 0x01 0x73 0x01>;
@@ -418,6 +374,34 @@
 			};
 		};
 
+		uart_ec_0: uart@3f8 {
+			compatible = "ns16550";
+			reg = <0x000003f8 0x100>;
+			clock-frequency = <1843200>;
+			interrupts = <4 IRQ_TYPE_LOWEST_EDGE_RISING 3>;
+			interrupt-parent = <&intc>;
+			reg-shift = <0>;
+			io-mapped;
+			status = "disabled";
+		};
+
+		tco_wdt: tco_wdt@400 {
+			compatible = "intel,tco-wdt";
+			reg = <0x0400 0x20>;
+			status = "disabled";
+		};
+
+		pwm0: pwm@5d0000 {
+			compatible = "intel,blinky-pwm";
+			reg = <0x5d0000 0x500>;
+			reg-upper32 = <0x40>;
+			reg-offset = <0x434>;
+			clock-frequency = <32768>;
+			max-pins = <1>;
+			#pwm-cells = <2>;
+			status = "disabled";
+		};
+
 		tgpio: tgpio@fe001200 {
 			compatible = "intel,timeaware-gpio";
 			reg = <0xfe001200 0x100>;
@@ -435,10 +419,26 @@
 			status = "disabled";
 		};
 
-		tco_wdt: tco_wdt@400 {
-			compatible = "intel,tco-wdt";
-			reg = <0x0400 0x20>;
-			status = "disabled";
+		vtd: vtd@fed91000 {
+			compatible = "intel,vt-d";
+			reg = <0xfed91000 0x1000>;
+			status = "okay";
 		};
+	};
+
+	intc: ioapic@fec00000 {
+		compatible = "intel,ioapic";
+		reg = <0xfec00000 0x1000>;
+		#address-cells = <1>;
+		#interrupt-cells = <3>;
+		interrupt-controller;
+	};
+
+	intc_loapic: loapic@fee00000 {
+		compatible = "intel,loapic";
+		reg = <0xfee00000 0x1000>;
+		interrupt-controller;
+		#interrupt-cells = <3>;
+		#address-cells = <1>;
 	};
 };
