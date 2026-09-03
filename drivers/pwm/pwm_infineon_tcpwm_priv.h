@@ -13,8 +13,8 @@
  * is always 0.
  */
 
-#if !defined(ZEPHYR_INCLUDE_DRIVERS_TIMER_IFX_TCPWM_TIMER_H)
-#define ZEPHYR_INCLUDE_DRIVERS_TIMER_IFX_TCPWM_TIMER_H
+#if !defined(ZEPHYR_DRIVERS_PWM_PWM_INFINEON_TCPWM_PRIV_H_)
+#define ZEPHYR_DRIVERS_PWM_PWM_INFINEON_TCPWM_PRIV_H_
 
 #include <stdint.h>
 #include "cy_tcpwm.h"
@@ -158,4 +158,4 @@
 	cy_en_tcpwm_status_t Cy_TCPWM_PWM_Configure_Dithering((TCPWM_Type *)ADDRESS, 0, MODE,      \
 							      PERIOD, DUTY, LIMITER)
 /** @endcond */
-#endif /* ZEPHYR_INCLUDE_DRIVERS_TIMER_IFX_TCPWM_TIMER_H */
+#endif /* ZEPHYR_DRIVERS_PWM_PWM_INFINEON_TCPWM_PRIV_H_ */

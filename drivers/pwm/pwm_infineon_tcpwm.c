@@ -16,13 +16,14 @@
 #include <zephyr/pm/device.h>
 
 #include <infineon_kconfig.h>
-#include <zephyr/drivers/timer/ifx_tcpwm.h>
 #include <zephyr/dt-bindings/pwm/pwm_ifx_tcpwm.h>
 #include <zephyr/drivers/clock_control/clock_control_ifx_cat1.h>
 
 #include <cy_tcpwm_pwm.h>
 #include <cy_gpio.h>
 #include <cy_sysclk.h>
+
+#include "pwm_infineon_tcpwm_priv.h"
 
 #include <zephyr/logging/log.h>
 

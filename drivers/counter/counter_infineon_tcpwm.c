@@ -13,7 +13,6 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/pm/device.h>
 #include <infineon_kconfig.h>
-#include <zephyr/drivers/timer/ifx_tcpwm.h>
 #include <zephyr/dt-bindings/pinctrl/ifx_cat1-pinctrl.h>
 #include <zephyr/drivers/clock_control/clock_control_ifx_cat1.h>
 #include <zephyr/irq.h>
@@ -23,6 +22,8 @@
 LOG_MODULE_REGISTER(ifx_tcpwm_counter, CONFIG_COUNTER_LOG_LEVEL);
 
 #include <cy_sysclk.h>
+
+#include "pwm_infineon_tcpwm_priv.h"
 #include <cy_tcpwm_counter.h>
 
 struct ifx_tcpwm_counter_config {
