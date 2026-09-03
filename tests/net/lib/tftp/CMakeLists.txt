@@ -8,4 +8,4 @@ project(tftp_client)
 
 target_include_directories(app PRIVATE ${ZEPHYR_BASE}/subsys/net/ip)
 target_include_directories(app PRIVATE ${ZEPHYR_BASE}/subsys/net/lib/tftp)
-target_sources(app PRIVATE src/main.c src/make_request.c)
+target_sources(app PRIVATE src/main.c src/make_request.c src/error_response.c)
