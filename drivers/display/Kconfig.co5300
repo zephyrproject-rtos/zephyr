@@ -7,5 +7,6 @@ config CO5300
 	depends on DT_HAS_CHIPONE_CO5300_ENABLED
 	select MIPI_DSI if $(dt_compat_on_bus,$(DT_COMPAT_CHIPONE_CO5300),mipi-dsi)
 	select MSPI if $(dt_compat_on_bus,$(DT_COMPAT_CHIPONE_CO5300),mspi)
+	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_CHIPONE_CO5300),spi)
 	help
 	  Enable driver for CO5300 display controller
