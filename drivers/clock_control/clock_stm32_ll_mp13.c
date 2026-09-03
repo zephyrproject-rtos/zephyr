@@ -124,6 +124,7 @@ static int stm32_clock_control_get_subsys_rate(const struct device *dev,
 					       clock_control_subsys_t sub_system, uint32_t *rate)
 {
 	struct stm32_pclken *pclken = (struct stm32_pclken *)sub_system;
+	LL_RCC_ClocksTypeDef clocks;
 
 	ARG_UNUSED(dev);
 
@@ -172,6 +173,23 @@ static int stm32_clock_control_get_subsys_rate(const struct device *dev,
 			break;
 		case LL_APB6_GRP1_PERIPH_SPI5:
 			*rate = LL_RCC_GetSPIClockFreq(LL_RCC_SPI5_CLKSOURCE);
+			break;
+		default:
+			return -ENOTSUP;
+		}
+		break;
+	case STM32_CLOCK_BUS_AHB6:
+		switch (pclken->enr) {
+		case LL_AHB6_GRP1_PERIPH_ETH1MAC:
+		case LL_AHB6_GRP1_PERIPH_ETH2MAC:
+			LL_RCC_GetSystemClocksFreq(&clocks);
+			*rate = clocks.HCLK6_Frequency;
+			break;
+		case LL_AHB6_GRP1_PERIPH_ETH1CK:
+			*rate = LL_RCC_GetETHClockFreq(LL_RCC_ETH1_CLKSOURCE);
+			break;
+		case LL_AHB6_GRP1_PERIPH_ETH2CK:
+			*rate = LL_RCC_GetETHClockFreq(LL_RCC_ETH2_CLKSOURCE);
 			break;
 		default:
 			return -ENOTSUP;
