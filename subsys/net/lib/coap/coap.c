@@ -1478,6 +1478,13 @@ static int update_descriptive_block(struct coap_block_context *ctx,
 		return 0;
 	}
 
+	/* RFC 7959, section 2.2: SZX value 7 is reserved outside reliable
+	 * transports and leads to a 4.00 Bad Request response.
+	 */
+	if (block >= 0 && GET_BLOCK_SIZE(block) == COAP_BLOCK_BERT) {
+		return -EINVAL;
+	}
+
 	if (size && ctx->total_size && ctx->total_size != size) {
 		return -EINVAL;
 	}
@@ -1512,6 +1519,13 @@ static int update_control_block1(struct coap_block_context *ctx,
 		return -EINVAL;
 	}
 
+	/* RFC 7959, section 2.2: SZX value 7 is reserved outside reliable
+	 * transports and leads to a 4.00 Bad Request response.
+	 */
+	if (GET_BLOCK_SIZE(block) == COAP_BLOCK_BERT) {
+		return -EINVAL;
+	}
+
 	new_current = GET_NUM(block) << (GET_BLOCK_SIZE(block) + 4);
 	if (new_current != ctx->current) {
 		return -EINVAL;
@@ -1540,6 +1554,13 @@ static int update_control_block2(struct coap_block_context *ctx,
 	}
 
 	if (block < 0) {
+		return -EINVAL;
+	}
+
+	/* RFC 7959, section 2.2: SZX value 7 is reserved outside reliable
+	 * transports and leads to a 4.00 Bad Request response.
+	 */
+	if (GET_BLOCK_SIZE(block) == COAP_BLOCK_BERT) {
 		return -EINVAL;
 	}
 

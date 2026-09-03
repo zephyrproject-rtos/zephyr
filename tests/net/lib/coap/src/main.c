@@ -818,6 +818,43 @@ ZTEST(coap, test_block2_request_more_bit_ignored)
 	zassert_equal(ctx.current, 128, "Unexpected block position");
 }
 
+ZTEST(coap, test_block_bert_rejected_over_udp)
+{
+	struct coap_block_context ctx;
+	struct coap_packet pkt;
+	uint8_t data[128];
+	int r;
+
+	/* RFC 7959, section 2.2: SZX value 7 is reserved outside reliable
+	 * transports and leads to a 4.00 Bad Request response. A request with
+	 * a BERT block2 option is rejected by the server-side update.
+	 */
+	r = coap_packet_init(&pkt, data, sizeof(data), COAP_VERSION_1, COAP_TYPE_CON,
+			     COAP_TOKEN_MAX_LEN, coap_next_token(), COAP_METHOD_GET,
+			     coap_next_id());
+	zassert_equal(r, 0, "Failed to init request");
+
+	r = coap_append_option_int(&pkt, COAP_OPTION_BLOCK2, (1 << 4) | COAP_BLOCK_BERT);
+	zassert_equal(r, 0, "Failed to append block2 option");
+
+	coap_block_transfer_init(&ctx, COAP_BLOCK_1024, 4096);
+	zassert_equal(coap_update_from_block(&pkt, &ctx), -EINVAL,
+		      "BERT block size in a request must be rejected over UDP");
+
+	/* The same applies to the client side receiving a BERT response */
+	r = coap_packet_init(&pkt, data, sizeof(data), COAP_VERSION_1, COAP_TYPE_ACK,
+			     COAP_TOKEN_MAX_LEN, coap_next_token(),
+			     COAP_RESPONSE_CODE_CONTENT, coap_next_id());
+	zassert_equal(r, 0, "Failed to init response");
+
+	r = coap_append_option_int(&pkt, COAP_OPTION_BLOCK2, BIT(3) | COAP_BLOCK_BERT);
+	zassert_equal(r, 0, "Failed to append block2 option");
+
+	coap_block_transfer_init(&ctx, COAP_BLOCK_1024, 4096);
+	zassert_equal(coap_update_from_block(&pkt, &ctx), -EINVAL,
+		      "BERT block size in a response must be rejected over UDP");
+}
+
 ZTEST(coap, test_retransmit_second_round)
 {
 	struct coap_packet cpkt;

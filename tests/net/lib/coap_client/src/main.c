@@ -620,6 +620,34 @@ static ssize_t z_impl_zsock_recvfrom_custom_fake_observe(int sock, void *buf, si
 	return ret;
 }
 
+/* Piggybacked block2 response with the reserved SZX value 7 (BERT) */
+static ssize_t z_impl_zsock_recvfrom_custom_fake_block2_bert(int sock, void *buf, size_t max_len,
+							     int flags,
+							     struct net_sockaddr *src_addr,
+							     net_socklen_t *addrlen)
+{
+	struct coap_packet response;
+	uint8_t token[COAP_TOKEN_MAX_LEN] = {0};
+	uint8_t payload[16];
+	uint16_t message_id = get_next_pending_message_id();
+
+	memset(payload, 'B', sizeof(payload));
+
+	zassert_ok(coap_packet_init(&response, buf, max_len, COAP_VERSION_1, COAP_TYPE_ACK,
+				    COAP_TOKEN_MAX_LEN, token, COAP_RESPONSE_CODE_CONTENT,
+				    message_id));
+	zassert_ok(coap_append_option_int(&response, COAP_OPTION_BLOCK2,
+					  BIT(3) | COAP_BLOCK_BERT));
+	zassert_ok(coap_packet_append_payload_marker(&response));
+	zassert_ok(coap_packet_append_payload(&response, payload, sizeof(payload)));
+
+	restore_token(buf);
+	fill_recv_src_addr(src_addr, addrlen);
+	clear_socket_events(sock, ZSOCK_POLLIN);
+
+	return response.offset;
+}
+
 void coap_callback(const struct coap_client_response_data *data, void *user_data)
 {
 	LOG_INF("CoAP response callback, %d", data->result_code);
@@ -703,6 +731,19 @@ ZTEST(coap_client, test_request_block)
 
 	zassert_equal(coap_client_req(&client, 0, net_sad(&dst_address), &short_request, NULL),
 		      -EAGAIN, "");
+}
+
+ZTEST(coap_client, test_blockwise_bert_response_fails)
+{
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_block2_bert;
+
+	zassert_ok(coap_client_req(&client, 0, net_sad(&dst_address), &short_request, NULL));
+
+	/* RFC 7959, section 2.2: SZX value 7 is reserved over UDP; the
+	 * exchange fails instead of the payload reaching the application.
+	 */
+	zassert_ok(k_sem_take(&sem1, K_MSEC(MORE_THAN_EXCHANGE_LIFETIME_MS)));
+	zassert_equal(last_response_code, -EINVAL, "Unexpected response");
 }
 
 ZTEST(coap_client, test_resend_request)
