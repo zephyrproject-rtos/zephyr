@@ -37,6 +37,13 @@ if(CONFIG_BUILD_WITH_TFM)
     message(FATAL_ERROR "No supported board selected.")
   endif()
 
+  # Let a board supply crypto algorithms/modules its chosen TFM_PROFILE omits,
+  # without patching the vendored TF-M platform tree.
+  if(EXISTS ${BOARD_DIR}/tfm_extra_crypto_config.h)
+    set_property(TARGET zephyr_property_target APPEND PROPERTY TFM_CMAKE_OPTIONS
+      -DTFM_TF_PSA_CRYPTO_PLATFORM_EXTRA_CONFIG_PATH=${BOARD_DIR}/tfm_extra_crypto_config.h)
+  endif()
+
 endif()
 
 if(CONFIG_CPU_CORTEX_M33 AND CONFIG_TRUSTED_EXECUTION_SECURE)
