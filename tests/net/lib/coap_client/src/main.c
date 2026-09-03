@@ -190,6 +190,20 @@ static ssize_t z_impl_zsock_recvfrom_custom_fake_wrong_source(int sock, void *bu
 	return ret;
 }
 
+/* Piggybacked response with the right token but a corrupted message ID */
+static ssize_t z_impl_zsock_recvfrom_custom_fake_wrong_mid(int sock, void *buf, size_t max_len,
+							   int flags,
+							   struct net_sockaddr *src_addr,
+							   net_socklen_t *addrlen)
+{
+	ssize_t ret = z_impl_zsock_recvfrom_custom_fake(sock, buf, max_len, flags, src_addr,
+							addrlen);
+
+	((uint8_t *)buf)[3] ^= 0xFF;
+
+	return ret;
+}
+
 static ssize_t z_impl_zsock_sendto_custom_fake(int sock, void *buf, size_t len, int flags,
 					       const struct net_sockaddr *dest_addr,
 					       net_socklen_t addrlen)
@@ -594,6 +608,13 @@ static ssize_t z_impl_zsock_recvfrom_custom_fake_observe(int sock, void *buf, si
 	int ret = z_impl_zsock_recvfrom_custom_fake_duplicate_response(sock, buf, max_len, flags,
 								       src_addr, addrlen);
 
+	/* Notifications are Non-confirmable messages with a fresh message ID;
+	 * an Acknowledgment type would have to echo a request's message ID
+	 * (RFC 7252, section 4.4).
+	 */
+	((uint8_t *)buf)[0] = (COAP_VERSION_1 << 6) | (COAP_TYPE_NON_CON << 4) |
+			      COAP_TOKEN_MAX_LEN;
+
 	set_next_pending_message_id(get_next_pending_message_id() + 1);
 	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_observe;
 	return ret;
@@ -785,6 +806,25 @@ ZTEST(coap_client, test_response_from_wrong_source_ignored)
 
 	/* The response comes from an address the request was not sent to and
 	 * must not be matched to it; the request times out instead.
+	 */
+	k_sleep(K_MSEC(MORE_THAN_LONG_EXCHANGE_LIFETIME_MS));
+	zassert_equal(last_response_code, -ETIMEDOUT, "Unexpected response");
+}
+
+ZTEST(coap_client, test_piggybacked_response_wrong_mid_ignored)
+{
+	struct coap_transmission_parameters params = {
+		.ack_timeout = LONG_ACK_TIMEOUT_MS,
+		.coap_backoff_percent = 200,
+		.max_retransmission = 0
+	};
+
+	z_impl_zsock_recvfrom_fake.custom_fake = z_impl_zsock_recvfrom_custom_fake_wrong_mid;
+
+	zassert_ok(coap_client_req(&client, 0, net_sad(&dst_address), &short_request, &params));
+
+	/* An Acknowledgment whose message ID does not match the request must
+	 * not be accepted on the token alone; the request times out instead.
 	 */
 	k_sleep(K_MSEC(MORE_THAN_LONG_EXCHANGE_LIFETIME_MS));
 	zassert_equal(last_response_code, -ETIMEDOUT, "Unexpected response");

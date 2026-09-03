@@ -1158,6 +1158,15 @@ static int handle_response(struct coap_client *client, const struct net_sockaddr
 		return 0;
 	}
 
+	/* RFC 7252, section 5.3.2: for a piggybacked response, the message ID
+	 * of the Acknowledgment must match the request in addition to the
+	 * token. Separate CON/NON responses carry their own message ID.
+	 */
+	if (response_type == COAP_TYPE_ACK && response_id != (uint16_t)internal_req->last_id) {
+		LOG_WRN("Piggybacked response ID mismatch, dropping");
+		return 0;
+	}
+
 	/* Snapshot the slot's keep-alive flags before dropping the lock for the
 	 * callback below: a concurrent coap_client_deregister_observe() may clear
 	 * is_observe while we are in the callback, which must not retroactively
