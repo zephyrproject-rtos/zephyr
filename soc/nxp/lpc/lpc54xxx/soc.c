@@ -253,10 +253,45 @@ SYS_INIT(nxp_lpc54xxx_init, PRE_KERNEL_1, 0);
  * assembly. Cores without that routine (the LPC54114 M0 and the LPC54628)
  * install a reset hook here to call it instead.
  */
+#if defined(CONFIG_SOC_LPC54628) && defined(CONFIG_SOC_SERIES_LPC54XXX_SRAM_CLOCKS)
+
+/*
+ * SRAM2 and SRAM3 are not clocked out of reset; SystemInit() turns them on.
+ * A board that describes the banks as one region - lpcxpresso54628 gives sram0
+ * all 160K of SRAM0..SRAM3 - lets the linker place z_main_stack past the 96K
+ * that SRAM0 and SRAM1 hold, so the boot stack can land in memory that is not
+ * clocked yet. SystemInit() cannot fix that from there: its own prologue
+ * pushes to that stack before it reaches the write.
+ *
+ * Ungate the banks first, then tail-call SystemInit, so neither step touches
+ * the stack. A naked function is needed because a prologue would otherwise run
+ * before the store. The MCUXpresso SDK does the same in the first instructions
+ * of its reset handler, which Zephyr does not use. A build that turns the banks
+ * off through SOC_SERIES_LPC54XXX_SRAM_CLOCKS keeps the plain call, and has to
+ * keep its stack out of them.
+ */
+__attribute__((naked)) void soc_reset_hook(void)
+{
+	__asm__ volatile("ldr r0, =%[set]\n"
+			 "movs r1, %[banks]\n"
+			 "str r1, [r0]\n"
+			 "b %[init]\n"
+			 :
+			 : [set] "i"(&SYSCON->AHBCLKCTRLSET[0]),
+			   [banks] "i"(SYSCON_AHBCLKCTRL_SRAM1_MASK |
+				       SYSCON_AHBCLKCTRL_SRAM2_MASK |
+				       SYSCON_AHBCLKCTRL_SRAM3_MASK),
+			   [init] "i"(SystemInit));
+}
+
+#else
+
 void soc_reset_hook(void)
 {
 	SystemInit();
 }
+
+#endif /* CONFIG_SOC_LPC54628 && CONFIG_SOC_SERIES_LPC54XXX_SRAM_CLOCKS */
 
 #endif /* CONFIG_SOC_RESET_HOOK */
 
