@@ -143,7 +143,7 @@ struct net_if_addr {
 	uint8_t is_mesh_local : 1;
 
 	/** Is this IP address temporary and generated for example by
-	 * IPv6 privacy extension (RFC 8981)
+	 * IPv6 privacy extension (@rfc{8981})
 	 */
 	uint8_t is_temporary : 1;
 
@@ -309,7 +309,7 @@ enum net_if_flag {
 /** @endcond */
 };
 
-/** @brief Network interface operational status (RFC 2863). */
+/** @brief Network interface operational status (@rfc{2863}). */
 enum net_if_oper_state {
 	NET_IF_OPER_UNKNOWN,        /**< Initial (unknown) value */
 	NET_IF_OPER_NOTPRESENT,     /**< Hardware missing */
@@ -347,13 +347,13 @@ struct net_if_ipv6 {
 	/** Prefixes */
 	struct net_if_ipv6_prefix prefix[NET_IF_MAX_IPV6_PREFIX];
 
-	/** Default reachable time (RFC 4861, page 52) */
+	/** Default reachable time (@rfc{4861,page-52}) */
 	uint32_t base_reachable_time;
 
-	/** Reachable time (RFC 4861, page 20) */
+	/** Reachable time (@rfc{4861,page-20}) */
 	uint32_t reachable_time;
 
-	/** Retransmit timer (RFC 4861, page 52) */
+	/** Retransmit timer (@rfc{4861,page-52}) */
 	uint32_t retrans_timer;
 
 #if defined(CONFIG_NET_IPV6_IID_STABLE)
@@ -367,7 +367,7 @@ struct net_if_ipv6 {
 #endif /* CONFIG_NET_IPV6_IID_STABLE */
 
 #if defined(CONFIG_NET_IPV6_PE)
-	/** Privacy extension DESYNC_FACTOR value from RFC 8981 ch 3.4.
+	/** Privacy extension DESYNC_FACTOR value from @rfc{8981,section-3.4}.
 	 * "DESYNC_FACTOR is a random value within the range 0 - MAX_DESYNC_FACTOR.
 	 * It is computed every time a temporary address is created.
 	 */
@@ -440,7 +440,7 @@ struct net_if_dhcpv6 {
 	uint64_t t2;
 
 	/** The time when the last lease expires (terminates rebinding,
-	 *  DHCPv6 RFC8415, ch. 18.2.5). Absolute time, milliseconds.
+	 *  DHCPv6 @rfc{8415,section-18.2.5}). Absolute time, milliseconds.
 	 */
 	uint64_t expire;
 
@@ -735,7 +735,7 @@ struct net_if_dev {
 	net_socket_create_t socket_offload;
 #endif /* CONFIG_NET_SOCKETS_OFFLOAD */
 
-	/** RFC 2863 operational status */
+	/** @rfc{2863} operational status */
 	enum net_if_oper_state oper_state;
 
 	/** Last time the operational state was changed.
@@ -795,7 +795,7 @@ struct net_if {
 	struct k_mutex tx_lock;
 
 	/** Network interface specific flags */
-	/** Enable IPv6 privacy extension (RFC 8981), this is enabled
+	/** Enable IPv6 privacy extension (@rfc{8981}), this is enabled
 	 * by default if PE support is enabled in configuration.
 	 */
 	uint8_t pe_enabled : 1;
@@ -1367,7 +1367,7 @@ static inline void net_if_stop_rs(struct net_if *iface)
  * Neighbor Discovery process about an active link to a specific neighbor.
  * By signaling a recent "forward progress" event, such as the reception of
  * an ACK, this function can help reduce unnecessary ND traffic as per the
- * guidelines in RFC 4861 (section 7.3).
+ * guidelines in @rfc{4861,section-7.3}.
  *
  * @param iface A pointer to the network interface.
  * @param ipv6_addr Pointer to the IPv6 address of the neighbor node.
@@ -2190,10 +2190,10 @@ static inline void net_if_ipv6_set_mcast_hop_limit(struct net_if *iface,
  * @brief Maximum IPv6 base reachable time in milliseconds.
  *
  * Upper bound for the base reachable time, matching the AdvReachableTime limit
- * from RFC 4861 section 6.2.1. Values passed to
+ * from @rfc{4861,section-6.2.1}. Values passed to
  * @ref net_if_ipv6_set_base_reachable_time above this are clamped. This also
  * keeps @ref net_if_ipv6_calc_reachable_time from overflowing when it scales
- * the value by the RFC 4861 random factor.
+ * the value by the @rfc{4861} random factor.
  */
 #define NET_IPV6_MAX_REACHABLE_TIME 3600000U
 
@@ -2389,7 +2389,7 @@ static inline const struct net_in6_addr *net_if_ipv6_select_src_addr(
  * @param iface Interface that was used when packet was received.
  * If the interface is not known, then NULL can be given.
  * @param dst IPv6 destination address
- * @param flags Hint from the related socket. See RFC 5014 for value details.
+ * @param flags Hint from the related socket. See @rfc{5014} for value details.
  *
  * @return Pointer to IPv6 address to use, NULL if no IPv6 address
  * could be found.
