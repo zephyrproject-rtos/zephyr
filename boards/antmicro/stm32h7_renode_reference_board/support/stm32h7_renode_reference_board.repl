@@ -34,6 +34,8 @@ sw4: Miscellaneous.Button @ gpioPortG 10
 
 veml7700: Sensors.VEML7700 @ i2c1 0x10
 
+iis2mdc: Sensors.IIS2MDC @ i2c1 0x1E
+
 tmp108: Sensors.TMP108 @ i2c1 0x48
 
 lps25hb: Sensors.LPS25HB @ i2c1 0x5D
