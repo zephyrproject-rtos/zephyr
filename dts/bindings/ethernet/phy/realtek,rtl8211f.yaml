@@ -5,7 +5,9 @@ description: Realtek RTL8211F Ethernet PHY device
 
 compatible: "realtek,rtl8211f"
 
-include: ethernet-phy-common.yaml
+include:
+  - name: ethernet-phy-common.yaml
+  - name: ethernet-phy-reset-gpios.yaml
 
 properties:
   reset-gpios:
