@@ -1,7 +1,7 @@
 /*
- * Copyright (c) 2017 Linaro Limited
- * Copyright (c) 2019 Intel Corporation
- *
+ * SPDX-FileCopyrightText: Copyright (c) 2017 Linaro Limited
+ * SPDX-FileCopyrightText: Copyright (c) 2019 Intel Corporation
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
  * SPDX-License-Identifier: Apache-2.0
  */
 
