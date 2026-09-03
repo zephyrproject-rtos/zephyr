@@ -248,7 +248,7 @@ class CMakeCache:
     def load(self, cache_file):
         entries = []
         with open(cache_file, 'r', encoding="utf-8") as cache:
-            for line_no, line in enumerate(cache):
+            for line_no, line in enumerate(cache, start=1):
                 entry = CMakeCacheEntry.from_line(line, line_no)
                 if entry:
                     entries.append(entry)
