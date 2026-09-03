@@ -13,6 +13,7 @@
 #include <zephyr/drivers/dma.h>
 #include <zephyr/dt-bindings/interrupt-controller/mchp-xec-ecia.h>
 #include <zephyr/pm/device.h>
+#include <zephyr/pm/policy.h>
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/sys/util_macro.h>
 
@@ -167,6 +168,13 @@ struct dma_xec_channel {
 struct dma_xec_data {
 	struct dma_context ctx;
 	struct dma_xec_channel *channels;
+#ifdef CONFIG_PM_DEVICE
+	/* One bit per channel: set while that channel has a transfer in
+	 * flight, blocking CONFIG_PM_DEVICE-managed suspend-to-idle and
+	 * suspend-to-ram.
+	 */
+	atomic_t *pm_policy_state_flags;
+#endif
 };
 
 static inline mm_reg_t xec_chan_regs(mm_reg_t regs, uint32_t chan)
@@ -251,6 +259,33 @@ static bool xec_dma_chan_is_busy(mm_reg_t chregs)
 
 	return false;
 }
+
+#ifdef CONFIG_PM_DEVICE
+/* Block CONFIG_PM_DEVICE-managed suspend while channel has a
+ * transfer in flight. Locks both suspend-to-idle and suspend-to-ram: a
+ * DMA channel can be feeding any of the SoC's peripherals (I2C, UART,
+ * QMSPI, ...), and those peripheral drivers have no visibility into a
+ * hardware-flow-controlled transfer being driven on their behalf, so the
+ * DMA channel is the only place that reliably knows a transfer is active.
+ * Locking a state a board's devicetree does not declare is a no-op
+ * (policy_state_lock.c only tracks DT-declared states).
+ */
+static void dma_xec_pm_policy_state_lock_get(struct dma_xec_data *data, uint32_t channel)
+{
+	if (atomic_test_and_set_bit(data->pm_policy_state_flags, channel) == 0) {
+		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+		pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
+	}
+}
+
+static void dma_xec_pm_policy_state_lock_put(struct dma_xec_data *data, uint32_t channel)
+{
+	if (atomic_test_and_clear_bit(data->pm_policy_state_flags, channel) == 1) {
+		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
+		pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
+	}
+}
+#endif /* CONFIG_PM_DEVICE */
 
 static void dma_xec_chan_reset(const struct device *dev, uint32_t chan)
 {
@@ -619,6 +654,10 @@ static int dma_xec_start(const struct device *dev, uint32_t channel)
 	 * and trip the run bit.
 	 */
 
+#ifdef CONFIG_PM_DEVICE
+	dma_xec_pm_policy_state_lock_get(data, channel);
+#endif
+
 	sys_set_bit(chregs + XEC_DMA_CHAN_ACTV, XEC_DMA_CHAN_ACTV_EN_POS);
 	sys_write32(XEC_DMA_CHAN_ISTATUS_MSK, chregs + XEC_DMA_CHAN_ISTATUS);
 	sys_write32(BIT(XEC_DMA_CHAN_IES_BERR_POS) | BIT(XEC_DMA_CHAN_IES_DONE_POS),
@@ -662,6 +701,14 @@ static int dma_xec_stop(const struct device *dev, uint32_t channel)
 	sys_clear_bits(chregs + XEC_DMA_CHAN_CTRL,
 		       (BIT(XEC_DMA_CHAN_CTRL_HWFL_RUN_POS) | BIT(XEC_DMA_CHAN_CTRL_SWFL_GO_POS) |
 			BIT(XEC_DMA_CHAN_CTRL_ABORT_POS)));
+
+#ifdef CONFIG_PM_DEVICE
+	/* No-op if the channel already completed and the ISR terminal path
+	 * released the lock first; covers the explicit-abort case and cyclic
+	 * transfers, which never self-release.
+	 */
+	dma_xec_pm_policy_state_lock_put(dev->data, channel);
+#endif
 
 	return 0;
 }
@@ -824,11 +871,14 @@ static DEVICE_API(dma, dma_xec_api) = {
 };
 
 #ifdef CONFIG_PM_DEVICE
-/* TODO - DMA block has one PCR SLP_EN and one CLK_REQ.
- * If any channel is running the block's CLK_REQ is asserted.
- * CLK_REQ will not clear until all channels are done or disabled.
- * Clearing the DMA Main activate will kill DMA transactions resulting
- * possible data corruption and HW flow control device malfunctions.
+/* DMA block has one PCR SLP_EN and one CLK_REQ shared by all channels.
+ * Clearing the Main activate bit while a channel is still running would
+ * kill an in-flight DMA transaction (possible data corruption and HW flow
+ * control device malfunction). Safe to do unconditionally here: every
+ * channel holds dma_xec_pm_policy_state_lock_get() for the duration of its
+ * transfer, which blocks both PM_STATE_SUSPEND_TO_IDLE and
+ * PM_STATE_SUSPEND_TO_RAM (and therefore this action) system-wide while any
+ * channel is active.
  */
 static int dmac_xec_pm_action(const struct device *dev,
 			      enum pm_device_action action)
@@ -843,6 +893,7 @@ static int dmac_xec_pm_action(const struct device *dev,
 		break;
 
 	case PM_DEVICE_ACTION_SUSPEND:
+		sys_clear_bit(regs + XEC_DMA_MAIN_CTRL, XEC_DMA_MAIN_CTRL_EN_POS);
 		break;
 
 	default:
@@ -921,6 +972,10 @@ static void dma_xec_irq_handler(const struct device *dev, uint32_t channel)
 
 	/* Terminal: error, or DONE of the final block in a non-cyclic chain. */
 	sys_write32(0u, regs + XEC_DMA_CHAN_IENABLE);
+
+#ifdef CONFIG_PM_DEVICE
+	dma_xec_pm_policy_state_lock_put(data, channel);
+#endif
 
 	if (sts & BIT(XEC_DMA_CHAN_IES_BERR_POS)) {/* Bus Error? */
 		cb_status = -EIO;
@@ -1001,12 +1056,16 @@ static int dma_xec_init(const struct device *dev)
                                                                                                    \
 	static struct dma_xec_channel dma_xec_ctrl##i##_chans[DT_INST_PROP(i, dma_channels)];      \
 	ATOMIC_DEFINE(dma_xec_atomic##i, DT_INST_PROP(i, dma_channels));                           \
+	IF_ENABLED(CONFIG_PM_DEVICE,                                                               \
+		(ATOMIC_DEFINE(dma_xec_pm_flags##i, DT_INST_PROP(i, dma_channels));))              \
                                                                                                    \
 	static struct dma_xec_data dma_xec_data##i = {                                             \
 		.ctx.magic = DMA_MAGIC,                                                            \
 		.ctx.dma_channels = DT_INST_PROP(i, dma_channels),                                 \
 		.ctx.atomic = dma_xec_atomic##i,                                                   \
 		.channels = dma_xec_ctrl##i##_chans,                                               \
+		IF_ENABLED(CONFIG_PM_DEVICE,                                                       \
+			(.pm_policy_state_flags = dma_xec_pm_flags##i,))                          \
 	};                                                                                         \
                                                                                                    \
 	DMA_XEC_IRQ_CONNECT(i)                                                                     \
