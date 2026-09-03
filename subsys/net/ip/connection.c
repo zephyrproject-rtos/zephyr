@@ -135,20 +135,21 @@ static struct net_conn *conn_get_unused(void)
 	return CONTAINER_OF(node, struct net_conn, node);
 }
 
+/* Delivery walks conns[] under the lock and trusts the fields of any slot
+ * flagged in use, so the flag only changes under the lock.
+ */
 static void conn_set_used(struct net_conn *conn)
 {
-	conn->flags |= NET_CONN_IN_USE;
-
 	k_mutex_lock(&conn_lock, K_FOREVER);
+	conn->flags |= NET_CONN_IN_USE;
 	sys_slist_prepend(&conn_used, &conn->node);
 	k_mutex_unlock(&conn_lock);
 }
 
 static void conn_set_unused(struct net_conn *conn)
 {
-	(void)memset(conn, 0, sizeof(*conn));
-
 	k_mutex_lock(&conn_lock, K_FOREVER);
+	(void)memset(conn, 0, sizeof(*conn));
 	sys_slist_prepend(&conn_unused, &conn->node);
 	k_mutex_unlock(&conn_lock);
 }
@@ -435,9 +436,9 @@ int net_conn_register(uint16_t proto, enum net_sock_type type, uint8_t family,
 		*handle = (struct net_conn_handle *)conn;
 	}
 
-	conn_set_used(conn);
-
 	conn->v6only = net_context_is_v6only_set(context);
+
+	conn_set_used(conn);
 
 	conn_register_debug(conn, remote_port, local_port);
 
@@ -609,8 +610,12 @@ static bool is_iface_matching(struct net_conn *conn, struct net_pkt *pkt)
 }
 
 #if defined(CONFIG_NET_SOCKETS_PACKET) || defined(CONFIG_NET_SOCKETS_INET_RAW)
+/* Called with the connection lock released: the socket layer takes its own
+ * locks in the callback, and a concurrent close() holds those while waiting
+ * for the connection lock.
+ */
 static void conn_raw_socket_deliver(struct net_pkt *pkt, struct net_conn *conn,
-				    bool is_ip)
+				    net_conn_cb_t cb, void *user_data, bool is_ip)
 {
 	struct net_pkt *raw_pkt;
 	struct net_pkt_cursor cur;
@@ -619,7 +624,7 @@ static void conn_raw_socket_deliver(struct net_pkt *pkt, struct net_conn *conn,
 	net_pkt_cursor_init(pkt);
 
 	NET_DBG("[%p] raw%s match found cb %p ud %p", conn, is_ip ? " IP" : "",
-		conn->cb, conn->user_data);
+		cb, user_data);
 
 	raw_pkt = net_pkt_clone(pkt, K_MSEC(CONFIG_NET_CONN_PACKET_CLONE_TIMEOUT));
 	if (raw_pkt == NULL) {
@@ -630,7 +635,7 @@ static void conn_raw_socket_deliver(struct net_pkt *pkt, struct net_conn *conn,
 		goto out;
 	}
 
-	if (conn->cb(conn, raw_pkt, NULL, NULL, conn->user_data) == NET_DROP) {
+	if (cb(conn, raw_pkt, NULL, NULL, user_data) == NET_DROP) {
 		if (!is_ip) {
 			net_stats_update_raw_drop(net_pkt_iface(pkt));
 		}
@@ -649,7 +654,6 @@ out:
 void net_conn_packet_input(struct net_pkt *pkt, uint16_t proto, enum net_sock_type type)
 {
 	struct net_sockaddr_ll *local;
-	struct net_conn *conn;
 
 	/* Only accept input with NET_AF_PACKET family. */
 	if (net_pkt_family(pkt) != NET_AF_PACKET) {
@@ -661,7 +665,17 @@ void net_conn_packet_input(struct net_pkt *pkt, uint16_t proto, enum net_sock_ty
 
 	k_mutex_lock(&conn_lock, K_FOREVER);
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&conn_used, conn, node) {
+	/* Walk the array, not the used list: the lock is released around each
+	 * delivery and (un)registration in the meantime must not break the walk.
+	 */
+	ARRAY_FOR_EACH_PTR(conns, conn) {
+		net_conn_cb_t cb;
+		void *user_data;
+
+		if ((conn->flags & NET_CONN_IN_USE) == 0U) {
+			continue;
+		}
+
 		if (!is_iface_matching(conn, pkt)) {
 			continue; /* wrong interface */
 		}
@@ -702,8 +716,12 @@ void net_conn_packet_input(struct net_pkt *pkt, uint16_t proto, enum net_sock_ty
 			}
 		}
 
-		conn_raw_socket_deliver(pkt, conn, false);
+		cb = conn->cb;
+		user_data = conn->user_data;
 
+		k_mutex_unlock(&conn_lock);
+		conn_raw_socket_deliver(pkt, conn, cb, user_data, false);
+		k_mutex_lock(&conn_lock, K_FOREVER);
 	}
 
 	k_mutex_unlock(&conn_lock);
@@ -724,7 +742,6 @@ enum net_verdict net_conn_raw_ip_input(struct net_pkt *pkt,
 				       uint8_t proto)
 {
 	uint8_t pkt_family = net_pkt_family(pkt);
-	struct net_conn *conn;
 
 	if (pkt_family != NET_AF_INET && pkt_family != NET_AF_INET6) {
 		return NET_CONTINUE;
@@ -736,7 +753,17 @@ enum net_verdict net_conn_raw_ip_input(struct net_pkt *pkt,
 
 	k_mutex_lock(&conn_lock, K_FOREVER);
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&conn_used, conn, node) {
+	/* Walk the array, not the used list: the lock is released around each
+	 * delivery and (un)registration in the meantime must not break the walk.
+	 */
+	ARRAY_FOR_EACH_PTR(conns, conn) {
+		net_conn_cb_t cb;
+		void *user_data;
+
+		if ((conn->flags & NET_CONN_IN_USE) == 0U) {
+			continue;
+		}
+
 		if (!is_iface_matching(conn, pkt)) {
 			continue; /* wrong interface */
 		}
@@ -760,7 +787,12 @@ enum net_verdict net_conn_raw_ip_input(struct net_pkt *pkt,
 			continue; /* wrong local address */
 		}
 
-		conn_raw_socket_deliver(pkt, conn, true);
+		cb = conn->cb;
+		user_data = conn->user_data;
+
+		k_mutex_unlock(&conn_lock);
+		conn_raw_socket_deliver(pkt, conn, cb, user_data, true);
+		k_mutex_lock(&conn_lock, K_FOREVER);
 	}
 
 	k_mutex_unlock(&conn_lock);
@@ -853,6 +885,94 @@ enum net_verdict net_conn_can_input(struct net_pkt *pkt, uint8_t proto)
 }
 #endif /* defined(CONFIG_NET_SOCKETS_CAN) */
 
+/* Check whether a TCP or UDP connection matches the packet's protocol,
+ * interface, family, ports and addresses.
+ */
+static bool conn_input_match(struct net_conn *conn, struct net_pkt *pkt,
+			     union net_ip_header *ip_hdr, uint8_t proto,
+			     uint16_t src_port, uint16_t dst_port)
+{
+	uint8_t pkt_family = net_pkt_family(pkt);
+	struct net_sockaddr *conn_local = net_sad(&conn->local_addr);
+	struct net_sockaddr *conn_remote = net_sad(&conn->remote_addr);
+
+	/* Is the candidate connection matching the packet's protocol within the family? */
+	if (conn->proto != proto) {
+		return false; /* wrong protocol */
+	}
+
+	/* Is the candidate connection matching the packet's interface? */
+	if (!is_iface_matching(conn, pkt)) {
+		return false; /* wrong interface */
+	}
+
+	/* Is the candidate connection matching the packet's protocol family? */
+	if (conn->family != NET_AF_UNSPEC && conn->family != pkt_family) {
+		if (IS_ENABLED(CONFIG_NET_IPV4_MAPPING_TO_IPV6)) {
+			if (!(conn->family == NET_AF_INET6 && pkt_family == NET_AF_INET &&
+			      !conn->v6only && conn->type != NET_SOCK_RAW)) {
+				return false;
+			}
+		} else {
+			return false; /* wrong protocol family */
+		}
+
+		/* We might have a match for v4-to-v6 mapping, check more */
+	}
+
+	/* Apply protocol-specific matching criteria... */
+	uint8_t conn_family = conn->family;
+
+	if (!((IS_ENABLED(CONFIG_NET_UDP) || IS_ENABLED(CONFIG_NET_TCP)) &&
+	      (conn_family == NET_AF_INET || conn_family == NET_AF_INET6 ||
+	       conn_family == NET_AF_UNSPEC))) {
+		return false;
+	}
+
+	/* Is the candidate connection matching the packet's TCP/UDP
+	 * address and port?
+	 */
+	if ((conn->flags & NET_CONN_REMOTE_PORT_SPEC) != 0 &&
+	    net_sin(conn_remote)->sin_port != src_port) {
+		return false; /* wrong remote port */
+	}
+
+	if ((conn->flags & NET_CONN_LOCAL_PORT_SPEC) != 0 &&
+	    net_sin(conn_local)->sin_port != dst_port) {
+		return false; /* wrong local port */
+	}
+
+	if ((conn->flags & NET_CONN_REMOTE_ADDR_SET) != 0 &&
+	    !conn_addr_cmp(pkt, ip_hdr, conn_remote, true)) {
+		return false; /* wrong remote address */
+	}
+
+	if ((conn->flags & NET_CONN_LOCAL_ADDR_SET) != 0 &&
+	    !conn_addr_cmp(pkt, ip_hdr, conn_local, false)) {
+
+		/* Check if we could do a v4-mapping-to-v6 and the IPv6 socket
+		 * has no IPV6_V6ONLY option set and if the local IPV6 address
+		 * is unspecified, then we could accept a connection from IPv4
+		 * address by mapping it to IPv6 address.
+		 */
+		if (IS_ENABLED(CONFIG_NET_IPV4_MAPPING_TO_IPV6)) {
+			if (!(conn->family == NET_AF_INET6 &&
+			      pkt_family == NET_AF_INET &&
+			      !conn->v6only &&
+			      net_ipv6_is_addr_unspecified(
+				      &net_sin6(conn_local)->sin6_addr))) {
+				return false; /* wrong local address */
+			}
+		} else {
+			return false; /* wrong local address */
+		}
+
+		/* We might have a match for v4-to-v6 mapping */
+	}
+
+	return true;
+}
+
 enum net_verdict net_conn_input(struct net_pkt *pkt,
 				union net_ip_header *ip_hdr,
 				uint8_t proto,
@@ -898,7 +1018,6 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 	bool is_mcast_pkt = false;
 	bool mcast_pkt_delivered = false;
 	bool is_bcast_pkt = false;
-	struct net_conn *conn;
 	net_conn_cb_t cb = NULL;
 	void *user_data = NULL;
 
@@ -918,126 +1037,68 @@ enum net_verdict net_conn_input(struct net_pkt *pkt,
 
 	k_mutex_lock(&conn_lock, K_FOREVER);
 
-	SYS_SLIST_FOR_EACH_CONTAINER(&conn_used, conn, node) {
-		struct net_sockaddr *conn_local = net_sad(&conn->local_addr);
-		struct net_sockaddr *conn_remote = net_sad(&conn->remote_addr);
+	if (is_mcast_pkt) {
+		/* Deliver a multicast packet to every matching connection, each
+		 * one getting its own clone. Walk the array, not the used list:
+		 * the lock is released around each delivery, as the callback
+		 * takes socket locks that a concurrent close() holds while
+		 * waiting for the connection lock.
+		 */
+		ARRAY_FOR_EACH_PTR(conns, conn) {
+			net_conn_cb_t mcast_cb;
+			void *mcast_user_data;
+			struct net_pkt *mcast_pkt;
 
-		/* Is the candidate connection matching the packet's protocol within the family? */
-		if (conn->proto != proto) {
-			continue; /* wrong protocol */
-		}
+			if ((conn->flags & NET_CONN_IN_USE) == 0U ||
+			    !conn_input_match(conn, pkt, ip_hdr, proto, src_port, dst_port)) {
+				continue;
+			}
 
-		/* Is the candidate connection matching the packet's interface? */
-		if (!is_iface_matching(conn, pkt)) {
-			continue; /* wrong interface */
-		}
+			mcast_cb = conn->cb;
+			mcast_user_data = conn->user_data;
 
-		/* Is the candidate connection matching the packet's protocol family? */
-		if (conn->family != NET_AF_UNSPEC && conn->family != pkt_family) {
-			if (IS_ENABLED(CONFIG_NET_IPV4_MAPPING_TO_IPV6)) {
-				if (!(conn->family == NET_AF_INET6 && pkt_family == NET_AF_INET &&
-				      !conn->v6only && conn->type != NET_SOCK_RAW)) {
-					continue;
-				}
+			k_mutex_unlock(&conn_lock);
+
+			NET_DBG("[%p] mcast match found cb %p ud %p", conn, mcast_cb,
+				mcast_user_data);
+
+			mcast_pkt = net_pkt_clone(
+				pkt, K_MSEC(CONFIG_NET_CONN_PACKET_CLONE_TIMEOUT));
+			if (mcast_pkt == NULL) {
+				goto drop;
+			}
+
+			if (mcast_cb(conn, mcast_pkt, ip_hdr, proto_hdr, mcast_user_data) ==
+			    NET_DROP) {
+				net_stats_update_per_proto_drop(pkt_iface, proto);
+				net_pkt_unref(mcast_pkt);
 			} else {
-				continue; /* wrong protocol family */
+				net_stats_update_per_proto_recv(pkt_iface, proto);
 			}
 
-			/* We might have a match for v4-to-v6 mapping, check more */
+			mcast_pkt_delivered = true;
+
+			k_mutex_lock(&conn_lock, K_FOREVER);
 		}
+	} else {
+		struct net_conn *conn;
 
-		/* Apply protocol-specific matching criteria... */
-		uint8_t conn_family = conn->family;
-
-		if ((IS_ENABLED(CONFIG_NET_UDP) || IS_ENABLED(CONFIG_NET_TCP)) &&
-		    (conn_family == NET_AF_INET || conn_family == NET_AF_INET6 ||
-		     conn_family == NET_AF_UNSPEC)) {
-			/* Is the candidate connection matching the packet's TCP/UDP
-			 * address and port?
-			 */
-			if ((conn->flags & NET_CONN_REMOTE_PORT_SPEC) != 0 &&
-			    net_sin(conn_remote)->sin_port != src_port) {
-				continue; /* wrong remote port */
+		SYS_SLIST_FOR_EACH_CONTAINER(&conn_used, conn, node) {
+			if (!conn_input_match(conn, pkt, ip_hdr, proto, src_port, dst_port)) {
+				continue;
 			}
 
-			if ((conn->flags & NET_CONN_LOCAL_PORT_SPEC) != 0 &&
-			    net_sin(conn_local)->sin_port != dst_port) {
-				continue; /* wrong local port */
-			}
-
-			if ((conn->flags & NET_CONN_REMOTE_ADDR_SET) != 0 &&
-			    !conn_addr_cmp(pkt, ip_hdr, conn_remote, true)) {
-				continue; /* wrong remote address */
-			}
-
-			if ((conn->flags & NET_CONN_LOCAL_ADDR_SET) != 0 &&
-			    !conn_addr_cmp(pkt, ip_hdr, conn_local, false)) {
-
-				/* Check if we could do a v4-mapping-to-v6 and the IPv6 socket
-				 * has no IPV6_V6ONLY option set and if the local IPV6 address
-				 * is unspecified, then we could accept a connection from IPv4
-				 * address by mapping it to IPv6 address.
-				 */
-				if (IS_ENABLED(CONFIG_NET_IPV4_MAPPING_TO_IPV6)) {
-					if (!(conn->family == NET_AF_INET6 &&
-					      pkt_family == NET_AF_INET &&
-					      !conn->v6only &&
-					      net_ipv6_is_addr_unspecified(
-						      &net_sin6(conn_local)->sin6_addr))) {
-						continue; /* wrong local address */
-					}
-				} else {
-					continue; /* wrong local address */
-				}
-
-				/* We might have a match for v4-to-v6 mapping,
-				 * continue with rank checking.
-				 */
-			}
-
+			/* Found a match, but maybe not yet the best */
 			if (best_rank < NET_CONN_RANK(conn->flags)) {
-				struct net_pkt *mcast_pkt;
-
-				if (!is_mcast_pkt) {
-					best_rank = NET_CONN_RANK(conn->flags);
-					best_match = conn;
-
-					continue; /* found a match - but maybe not yet the best */
-				}
-
-				/* If we have a multicast packet, and we found
-				 * a match, then deliver the packet immediately
-				 * to the handler. As there might be several
-				 * sockets interested about these, we need to
-				 * clone the received pkt.
-				 */
-
-				NET_DBG("[%p] mcast match found cb %p ud %p", conn, conn->cb,
-					conn->user_data);
-
-				mcast_pkt = net_pkt_clone(
-					pkt, K_MSEC(CONFIG_NET_CONN_PACKET_CLONE_TIMEOUT));
-				if (!mcast_pkt) {
-					k_mutex_unlock(&conn_lock);
-					goto drop;
-				}
-
-				if (conn->cb(conn, mcast_pkt, ip_hdr, proto_hdr, conn->user_data) ==
-				    NET_DROP) {
-					net_stats_update_per_proto_drop(pkt_iface, proto);
-					net_pkt_unref(mcast_pkt);
-				} else {
-					net_stats_update_per_proto_recv(pkt_iface, proto);
-				}
-
-				mcast_pkt_delivered = true;
+				best_rank = NET_CONN_RANK(conn->flags);
+				best_match = conn;
 			}
 		}
-	} /* loop end */
 
-	if (best_match != NULL) {
-		cb = best_match->cb;
-		user_data = best_match->user_data;
+		if (best_match != NULL) {
+			cb = best_match->cb;
+			user_data = best_match->user_data;
+		}
 	}
 
 	k_mutex_unlock(&conn_lock);

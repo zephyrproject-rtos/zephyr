@@ -274,6 +274,16 @@ static void zsock_received_cb(struct net_context *ctx,
 		(void)k_mutex_lock(ctx->cond.lock, K_FOREVER);
 	}
 
+	if (!net_context_is_used(ctx)) {
+		/* close() released the context while this waited for the
+		 * descriptor lock, after it flushed the queue.
+		 */
+		NET_DBG("%sctx=%p, pkt=%p, st=%d, user_data=%p",
+			"DROP: ", ctx, pkt, status, user_data);
+		net_pkt_unref(pkt);
+		goto unlock;
+	}
+
 	NET_DBG("%sctx=%p, pkt=%p, st=%d, user_data=%p", "", ctx, pkt, status,
 		user_data);
 
