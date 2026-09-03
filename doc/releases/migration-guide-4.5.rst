@@ -132,6 +132,14 @@ Kernel
 Boards
 ******
 
+* On NXP LPC54xxx, ``CONFIG_LPC54XXX_SRAM2_CLOCK`` has been replaced by
+  ``CONFIG_SOC_SERIES_LPC54XXX_SRAM_CLOCKS``. The old name fitted while the
+  LPC54114 was the only SoC in the series, where CMSIS ``SystemInit()`` enables
+  just SRAM2. On the LPC546xx it enables SRAM2 and SRAM3, so the option now
+  covers more than the one bank it was named after. Both default to ``y``. A
+  configuration that assigned the old symbol has to be updated, and fails to
+  build until it is.
+
 * On RP2040 and RP2350, the ``vreg`` node (:dtcompatible:`raspberrypi,core-supply-regulator`) is
   now ``disabled`` by default instead of ``okay``. Out-of-tree boards that need this regulator
   must set ``status = "okay"`` on the ``&vreg`` node.
