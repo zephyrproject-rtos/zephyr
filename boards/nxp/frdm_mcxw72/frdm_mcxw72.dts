@@ -88,7 +88,7 @@
 			   <ARDUINO_HEADER_R3_D5 0 &gpioc 1 0>,
 			   <ARDUINO_HEADER_R3_D6 0 &gpioa 20 0>,
 			   <ARDUINO_HEADER_R3_D7 0 &gpioa 21 0>,
-			   <ARDUINO_HEADER_R3_D8 0 &gpioc 4 0>,
+			   <ARDUINO_HEADER_R3_D8 0 &gpioc 0 0>,
 			   <ARDUINO_HEADER_R3_D9 0 &gpioa 18 0>,
 			   <ARDUINO_HEADER_R3_D10 0 &gpiob 0 0>,
 			   <ARDUINO_HEADER_R3_D11 0 &gpiob 3 0>,
@@ -108,6 +108,10 @@
 };
 
 &gpioc {
+	status = "okay";
+};
+
+&gpiod {
 	status = "okay";
 };
 
@@ -185,6 +189,8 @@
 	pinctrl-names = "default";
 };
 
+arduino_spi: &lpspi1 {};
+
 &flexcan0 {
 	status = "okay";
 	pinctrl-0 = <&pinmux_flexcan>;
@@ -219,6 +225,8 @@
 		reg = <0x19>;
 	};
 };
+
+arduino_i2c: &lpi2c1 {};
 
 &edma {
 	status = "okay";
