@@ -1136,6 +1136,14 @@ void net_arp_init(void)
 {
 	int i;
 
+	/* Start from a known state so that calling this more than once, as a
+	 * test does to get a clean cache, rebuilds the lists instead of
+	 * linking the same entries into them again.
+	 */
+	sys_slist_init(&arp_free_entries);
+	sys_slist_init(&arp_pending_entries);
+	sys_slist_init(&arp_table);
+
 	for (i = 0; i < CONFIG_NET_ARP_TABLE_SIZE; i++) {
 		/* Inserting entry as free with initialised packet queue */
 		k_fifo_init(&arp_entries[i].pending_queue);
