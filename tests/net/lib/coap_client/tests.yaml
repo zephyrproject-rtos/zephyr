@@ -8,3 +8,11 @@ tests:
     tags:
       - coap
       - net
+  net.coap.client.no_multicast:
+    platform_allow:
+      - native_sim
+    extra_args:
+      - COAP_CLIENT_NO_MULTICAST=y
+    tags:
+      - coap
+      - net

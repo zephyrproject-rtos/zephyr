@@ -61,7 +61,8 @@ static int handle_response(struct coap_client *client, const struct net_sockaddr
 			   net_socklen_t addrlen, const struct coap_packet *response,
 			   bool response_truncated);
 static struct coap_client_internal_request *get_request_with_mid(struct coap_client *client,
-								 uint16_t mid);
+								 uint16_t mid,
+								 const struct net_sockaddr *from);
 
 static int send_request(int sock, const void *buf, size_t len, int flags,
 			const struct net_sockaddr *dest_addr, net_socklen_t addrlen)
@@ -1009,8 +1010,35 @@ static int send_rst(int sock_fd, const struct net_sockaddr *addr, net_socklen_t 
 	return 0;
 }
 
+/* RFC 7252, sections 4.4 and 5.3.2: the source endpoint of a response,
+ * Acknowledgment or Reset must match the destination endpoint of the
+ * request. The check is skipped when either address is unknown (connected
+ * sockets) and for multicast requests, whose responses arrive from the
+ * group members' unicast addresses.
+ */
+static bool source_matches_request(const struct coap_client_internal_request *internal_req,
+				   const struct net_sockaddr *from)
+{
+	if (internal_req->addrlen == 0U || from == NULL || from->sa_family == NET_AF_UNSPEC) {
+		return true;
+	}
+
+	if (internal_req->addr.ss_family == NET_AF_INET &&
+	    net_ipv4_is_addr_mcast(&net_sin(net_sad(&internal_req->addr))->sin_addr)) {
+		return true;
+	}
+
+	if (internal_req->addr.ss_family == NET_AF_INET6 &&
+	    net_ipv6_is_addr_mcast(&net_sin6(net_sad(&internal_req->addr))->sin6_addr)) {
+		return true;
+	}
+
+	return net_sockaddr_cmp((const struct net_sockaddr *)&internal_req->addr, from);
+}
+
 static struct coap_client_internal_request *get_request_with_token(
-	struct coap_client *client, const struct coap_packet *resp)
+	struct coap_client *client, const struct coap_packet *resp,
+	const struct net_sockaddr *from)
 {
 
 	uint8_t response_token[COAP_TOKEN_MAX_LEN];
@@ -1031,7 +1059,8 @@ static struct coap_client_internal_request *get_request_with_token(
 		 */
 		if (internal_req->request_tkl != 0 &&
 		    internal_req->request_tkl == response_tkl &&
-		    memcmp(&internal_req->request_token, &response_token, response_tkl) == 0) {
+		    memcmp(&internal_req->request_token, &response_token, response_tkl) == 0 &&
+		    source_matches_request(internal_req, from)) {
 			return internal_req;
 		}
 
@@ -1041,7 +1070,8 @@ static struct coap_client_internal_request *get_request_with_token(
 		 */
 		if (internal_req->is_observe && internal_req->observe_tkl != 0 &&
 		    internal_req->observe_tkl == response_tkl &&
-		    memcmp(&internal_req->observe_token, &response_token, response_tkl) == 0) {
+		    memcmp(&internal_req->observe_token, &response_token, response_tkl) == 0 &&
+		    source_matches_request(internal_req, from)) {
 			return internal_req;
 		}
 	}
@@ -1050,11 +1080,13 @@ static struct coap_client_internal_request *get_request_with_token(
 }
 
 static struct coap_client_internal_request *get_request_with_mid(struct coap_client *client,
-								 uint16_t mid)
+								 uint16_t mid,
+								 const struct net_sockaddr *from)
 {
 	for (int i = 0; i < CONFIG_COAP_CLIENT_MAX_REQUESTS; i++) {
 		if (client->requests[i].request_ongoing) {
-			if (client->requests[i].last_id == (int)mid) {
+			if (client->requests[i].last_id == (int)mid &&
+			    source_matches_request(&client->requests[i], from)) {
 				return &client->requests[i];
 			}
 		}
@@ -1119,7 +1151,7 @@ static int handle_response(struct coap_client *client, const struct net_sockaddr
 	const uint8_t *payload = coap_packet_get_payload(response, &payload_len);
 
 	if (response_type == COAP_TYPE_RESET) {
-		internal_req = get_request_with_mid(client, response_id);
+		internal_req = get_request_with_mid(client, response_id, addr);
 		if (!internal_req) {
 			LOG_WRN("No matching request for RESET");
 			return 0;
@@ -1132,7 +1164,7 @@ static int handle_response(struct coap_client *client, const struct net_sockaddr
 	/* Separate response coming */
 	if (payload_len == 0 && response_type == COAP_TYPE_ACK &&
 	    response_code == COAP_CODE_EMPTY) {
-		internal_req = get_request_with_mid(client, response_id);
+		internal_req = get_request_with_mid(client, response_id, addr);
 		if (internal_req == NULL) {
 			LOG_WRN("No matching request for ACK");
 			return 0;
@@ -1147,7 +1179,7 @@ static int handle_response(struct coap_client *client, const struct net_sockaddr
 		return 1;
 	}
 
-	internal_req = get_request_with_token(client, response);
+	internal_req = get_request_with_token(client, response, addr);
 	if (!internal_req) {
 		LOG_WRN("No matching request for response");
 		if (response_type != COAP_TYPE_ACK) {
