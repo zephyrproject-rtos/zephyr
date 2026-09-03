@@ -3,15 +3,7 @@
 USB
 ###
 
-**Legacy USB device support**
-
-.. toctree::
-   :maxdepth: 1
-
-   device/usb_device.rst
-   device/api/index.rst
-
-**USB support**
+**USB device and host support**
 
 .. toctree::
    :maxdepth: 1

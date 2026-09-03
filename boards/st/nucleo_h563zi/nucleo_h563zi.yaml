@@ -22,7 +22,7 @@ supported:
   - netif:eth
   - counter
   - spi
-  - usb_device
+  - usbd
   - rtc
   - i2c
   - i3c

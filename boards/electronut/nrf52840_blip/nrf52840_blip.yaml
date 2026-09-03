@@ -8,6 +8,6 @@ toolchain:
 supported:
   - adc
   - i2c
-  - usb_device
+  - usbd
   - bluetooth
 vendor: electronutlabs

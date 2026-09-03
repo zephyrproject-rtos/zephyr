@@ -11,7 +11,6 @@ supported:
   - adc
   - dma
   - usart
-  - usb_device
   - usbd
   - spi
 ram: 192

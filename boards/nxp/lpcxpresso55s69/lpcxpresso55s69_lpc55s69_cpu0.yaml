@@ -26,7 +26,7 @@ supported:
   - i2s
   - spi
   - sdhc
-  - usb_device
+  - usbd
   - watchdog
   - rtc
   - gint

@@ -18,7 +18,6 @@ supported:
   - rtc
   - spi
   - uart
-  - usb_device
   - usbd
 vendor: st
 variants:

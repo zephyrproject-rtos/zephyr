@@ -192,7 +192,6 @@ limited compatibility:
    :header: "Driver class", "Driver name", "Driver Kconfig", "libC choices"
 
    "Bluetooth", ":ref:`Userchan <nsim_bt_host_cont>`", ":kconfig:option:`CONFIG_BT_USERCHAN`", "Host and pico libC"
-   "USB", ":ref:`USB native posix <nsim_per_usb>`", ":kconfig:option:`CONFIG_USB_NATIVE_POSIX`", "Host libC"
 
 Cross-compiling native_sim
 **************************
@@ -455,13 +454,6 @@ Here are more details on the peripherals that are currently provided with this b
   This alternative option is mainly aimed for testing Bluetooth connectivity over
   a virtual Bluetooth controller that does not depend on the Linux Bluetooth
   stack and its HCI interface.
-
-.. _nsim_per_usb:
-
-**USB controller**
-  It's possible to use the Virtual USB controller working over USB/IP
-  protocol. More information can be found in
-  :ref:`Testing USB over USP/IP in native_sim <testing_USB_native_sim>`.
 
 .. _nsim_per_disp_sdl:
 

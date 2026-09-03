@@ -16,7 +16,7 @@ supported:
   - adc
   - arduino_i2c
   - arduino_spi
-  - usb_device
+  - usbd
   - bluetooth
   - gpio
   - i2c

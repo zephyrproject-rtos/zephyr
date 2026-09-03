@@ -15,5 +15,5 @@ supported:
   - arduino_spi
   - gpio
   - arduino_gpio
-  - usb_device
+  - usbd
 vendor: st

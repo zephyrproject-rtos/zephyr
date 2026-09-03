@@ -216,7 +216,7 @@ static inline void gclk_main_configure(void)
 	GCLK->GENCTRL[0].bit.SRC = GCLK_GENCTRL_SRC_DFLL48M_Val;
 }
 
-#if !CONFIG_USB_DC_SAM0
+#if !CONFIG_UDC_SAM0
 #define gclk_usb_configure()
 #else
 static inline void gclk_usb_configure(void)

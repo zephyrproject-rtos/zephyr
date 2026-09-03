@@ -12,7 +12,6 @@
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/spi.h>
 #include <zephyr/drivers/sensor.h>
-#include <zephyr/usb/usb_device.h>
 #include <zephyr/drivers/uart.h>
 
 #include <stdio.h>

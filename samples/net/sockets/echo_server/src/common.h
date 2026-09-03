@@ -83,11 +83,11 @@ static inline int init_ws(void)
 }
 #endif /* CONFIG_NET_SAMPLE_WEBSOCKET_CONSOLE */
 
-#if defined(CONFIG_USB_DEVICE_STACK) || defined(CONFIG_USB_DEVICE_STACK_NEXT)
+#if defined(CONFIG_USB_DEVICE_STACK_NEXT)
 int init_usb(void);
 #else
 static inline int init_usb(void)
 {
 	return 0;
 }
-#endif /* CONFIG_USB_DEVICE_STACK */
+#endif /* CONFIG_USB_DEVICE_STACK_NEXT */

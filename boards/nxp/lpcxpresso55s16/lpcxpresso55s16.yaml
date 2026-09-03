@@ -24,7 +24,6 @@ supported:
   - gpio
   - i2c
   - spi
-  - usb_device
   - usbd
   - gint
   - watchdog

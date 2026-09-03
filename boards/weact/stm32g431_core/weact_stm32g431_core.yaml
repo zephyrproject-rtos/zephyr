@@ -14,6 +14,6 @@ supported:
   - pinctrl
   - tcpc
   - uart
-  - usb_device
+  - usbd
   - watchdog
 vendor: weact

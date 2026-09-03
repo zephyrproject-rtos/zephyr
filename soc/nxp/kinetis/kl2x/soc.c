@@ -73,7 +73,7 @@ __weak void clock_init(void)
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(uart0))
 	CLOCK_SetLpsci0Clock(LPSCI0SRC_MCGFLLCLK);
 #endif
-#if CONFIG_USB_KINETIS || CONFIG_UDC_KINETIS
+#if CONFIG_UDC_KINETIS
 	CLOCK_EnableUsbfs0Clock(kCLOCK_UsbSrcPll0,
 				DT_PROP(DT_PATH(cpus, cpu_0), clock_frequency));
 #endif

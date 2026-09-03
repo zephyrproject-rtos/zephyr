@@ -13,6 +13,5 @@ supported:
   - adc
   - backup_sram
   - crc
-  - usb_device
   - usbd
 vendor: segger

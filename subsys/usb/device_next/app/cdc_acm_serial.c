@@ -9,6 +9,8 @@
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/platform/hooks.h>
 #include <zephyr/usb/usbd.h>
 
 #include <zephyr/logging/log.h>
@@ -72,6 +74,41 @@ static int register_cdc_acm_0(struct usbd_context *const uds_ctx,
 					   USB_BCC_MISCELLANEOUS, 0x02, 0x01);
 }
 
+#if defined(CONFIG_CDC_ACM_SERIAL_REBOOT_TO_BOOTLOADER)
+static void cdc_acm_serial_reboot(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	/* Detach from the bus so that the host does not see an unresponsive
+	 * device while the bootloader starts.
+	 */
+	(void)usbd_disable(&cdc_acm_serial);
+
+	soc_reboot_to_bootloader_hook();
+}
+
+static K_WORK_DEFINE(cdc_acm_serial_reboot_work, cdc_acm_serial_reboot);
+
+static void cdc_acm_serial_msg_cb(struct usbd_context *const ctx,
+				  const struct usbd_msg *const msg)
+{
+	struct uart_config cfg;
+
+	ARG_UNUSED(ctx);
+
+	if (msg->type != USBD_MSG_CDC_ACM_LINE_CODING) {
+		return;
+	}
+
+	if (uart_config_get(msg->dev, &cfg) == 0 &&
+	    cfg.baudrate == CONFIG_CDC_ACM_SERIAL_REBOOT_DTE_RATE) {
+		/* This callback may run in the device stack context, where
+		 * usbd_disable() would deadlock.
+		 */
+		(void)k_work_submit(&cdc_acm_serial_reboot_work);
+	}
+}
+#endif /* CONFIG_CDC_ACM_SERIAL_REBOOT_TO_BOOTLOADER */
 
 static int cdc_acm_serial_init_device(void)
 {
@@ -115,6 +152,14 @@ static int cdc_acm_serial_init_device(void)
 	if (err) {
 		return err;
 	}
+
+	IF_ENABLED(CONFIG_CDC_ACM_SERIAL_REBOOT_TO_BOOTLOADER, (
+		err = usbd_msg_register_cb(&cdc_acm_serial, cdc_acm_serial_msg_cb);
+		if (err) {
+			LOG_ERR("Failed to register %s (%d)", "message callback", err);
+			return err;
+		}
+	))
 
 	err = usbd_init(&cdc_acm_serial);
 	if (err) {

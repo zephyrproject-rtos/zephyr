@@ -16,7 +16,6 @@ supported:
   - pwm
   - adc
   - watchdog
-  - usb_device
   - nvs
   - rtc
   - usbd

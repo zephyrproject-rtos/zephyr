@@ -15,7 +15,7 @@ supported:
   - i2c
   - pwm
   - adc
-  - usb_device
+  - usbd
   - watchdog
   - micromod_gpio
   - micromod_uart

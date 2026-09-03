@@ -23,6 +23,5 @@ supported:
   - qspi
   - spi
   - uart
-  - usb_device
   - usbd
 vendor: antmicro

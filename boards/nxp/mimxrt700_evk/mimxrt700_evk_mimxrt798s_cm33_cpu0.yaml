@@ -21,7 +21,7 @@ supported:
   - sdhc
   - spi
   - adc
-  - usb_device
+  - usbd
   - usbh
   - watchdog
   - hwinfo

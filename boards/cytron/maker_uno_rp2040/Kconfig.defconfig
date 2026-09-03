@@ -10,7 +10,4 @@ config I2C_DW_CLOCK_SPEED
 
 endif # I2C_DW
 
-config USB_SELF_POWERED
-	default n
-
 endif # BOARD_MAKER_UNO_RP2040

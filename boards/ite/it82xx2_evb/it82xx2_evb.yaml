@@ -13,7 +13,7 @@ supported:
   - adc
   - espi
   - gpio
-  - usb_device
+  - usbd
   - i2c
   - pm
   - pwm

@@ -14,5 +14,5 @@ supported:
   - pwm
   - watchdog
   - adc
-  - usb_device
+  - usbd
 vendor: waveshare

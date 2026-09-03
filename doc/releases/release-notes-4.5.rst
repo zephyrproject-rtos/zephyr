@@ -262,6 +262,13 @@ Removed APIs and options
 
     * ``stream_flash_erase_page()``
 
+* USB
+
+    * The deprecated legacy USB device stack, controller drivers, class APIs,
+      Kconfig options, and public headers have been removed. Use
+      :ref:`usb_device_stack_next` and :ref:`udc_api` instead. See the migration
+      guide for details.
+
 * ZTest
 
     * ``CONFIG_ZTEST_SHUFFLE_SUITE_REPEAT_COUNT``
@@ -1739,6 +1746,7 @@ New Samples
 * :zephyr:code-sample:`tmc6460`
 * :zephyr:code-sample:`tracing-pipeline`
 * :zephyr:code-sample:`tsn-switch`
+* :zephyr:code-sample:`uac2-loopback`
 * :zephyr:code-sample:`wifi-ble-provisioning`
 * :zephyr:code-sample:`wifi-mesh`
 * :zephyr:code-sample:`wifi-mesh-ip`

@@ -17,7 +17,7 @@ flash: 8192
 supported:
   - counter
   - gpio
-  - usb_device
+  - usbd
 testing:
   ignore_tags:
     - net

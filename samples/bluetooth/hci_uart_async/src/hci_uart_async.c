@@ -19,8 +19,6 @@
 #include <zephyr/init.h>
 #include <zephyr/drivers/uart.h>
 
-#include <zephyr/usb/usb_device.h>
-
 #include <zephyr/net_buf.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/l2cap.h>
