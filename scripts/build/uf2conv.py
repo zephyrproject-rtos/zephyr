@@ -155,9 +155,11 @@ def convert_to_uf2(file_content):
 
 
 class Block:
-    def __init__(self, addr):
+    def __init__(self, addr, default_data=0xFF):
         self.addr = addr
-        self.bytes = bytearray(256)
+        # 0xFF is what erased flash reads as on most MCUs, so a byte the
+        # hex file does not mention is left as the device would have it.
+        self.bytes = bytearray([default_data] * 256)
 
     def encode(self, blockno, numblocks):
         global familyid
