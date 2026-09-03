@@ -223,11 +223,12 @@ static enum coap_block_size coap_client_default_block_size(void)
 }
 
 static int coap_client_init_request(struct coap_client *client, struct coap_client_request *req,
-				    struct coap_client_internal_request *internal_req)
+				    struct coap_client_internal_request *internal_req,
+				    bool request_block2)
 {
 	int ret = 0;
 	int i;
-	bool block2 = false;
+	bool block2 = request_block2;
 
 	memset(internal_req->send_buf, 0, sizeof(internal_req->send_buf));
 
@@ -265,9 +266,13 @@ static int coap_client_init_request(struct coap_client *client, struct coap_clie
 		}
 	}
 
-	/* Blockwise receive ongoing, request next block. */
-	if (internal_req->recv_blk_ctx.current > 0) {
-		block2 = true;
+	/* Blockwise receive ongoing, request the current block. The caller
+	 * decides: the context position is zero both before any transfer and
+	 * after a truncated response, where the retry must carry a block2
+	 * option so the server switches to a block-wise response instead of
+	 * repeating the truncated one.
+	 */
+	if (block2) {
 		ret = coap_append_block2_option(&internal_req->request,
 						&internal_req->recv_blk_ctx);
 
@@ -510,7 +515,7 @@ int coap_client_req(struct coap_client *client, int sock, const struct net_socka
 	}
 #endif
 
-	ret = coap_client_init_request(client, req, internal_req);
+	ret = coap_client_init_request(client, req, internal_req, false);
 	if (ret < 0) {
 		LOG_ERR("Failed to initialize coap request");
 		goto release;
@@ -1145,8 +1150,15 @@ static int handle_response(struct coap_client *client, const struct net_sockaddr
 	if (find_echo_option(response, &client->echo_option)) {
 		 /* Resend request with echo option */
 		if (response_code == COAP_RESPONSE_CODE_UNAUTHORIZED) {
+			/* Rebuild the previous request as it was sent: it still
+			 * holds whether a block2 option was carried.
+			 */
+			bool request_block2 =
+				coap_get_option_int(&internal_req->request,
+						    COAP_OPTION_BLOCK2) >= 0;
+
 			ret = coap_client_init_request(client, &internal_req->coap_request,
-						       internal_req);
+						       internal_req, request_block2);
 
 			if (ret < 0) {
 				LOG_ERR("Error creating a CoAP request");
@@ -1353,7 +1365,8 @@ static int handle_response(struct coap_client *client, const struct net_sockaddr
 
 	/* If this wasn't last block, send the next request */
 	if (blockwise_transfer && !last_block) {
-		ret = coap_client_init_request(client, &internal_req->coap_request, internal_req);
+		ret = coap_client_init_request(client, &internal_req->coap_request, internal_req,
+					       true);
 
 		if (ret < 0) {
 			LOG_ERR("Error creating a CoAP request");
