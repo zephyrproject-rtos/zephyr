@@ -480,7 +480,6 @@ int pm_device_runtime_put(const struct device *dev)
 
 int pm_device_runtime_put_async(const struct device *dev, k_timeout_t delay)
 {
-#ifdef CONFIG_PM_DEVICE_RUNTIME_ASYNC
 	int ret;
 
 	if (dev->pm_base == NULL) {
@@ -496,15 +495,16 @@ int pm_device_runtime_put_async(const struct device *dev, k_timeout_t delay)
 
 		k_spin_unlock(&pm_sync->lock, k);
 	} else {
+#ifdef CONFIG_PM_DEVICE_RUNTIME_ASYNC
 		ret = runtime_suspend(dev, true, delay);
+#else
+		LOG_WRN("Function not available");
+		return -ENOSYS;
+#endif /* CONFIG_PM_DEVICE_RUNTIME_ASYNC */
 	}
 	SYS_PORT_TRACING_FUNC_EXIT(pm, device_runtime_put_async, dev, delay, ret);
 
 	return ret;
-#else
-	LOG_WRN("Function not available");
-	return -ENOSYS;
-#endif /* CONFIG_PM_DEVICE_RUNTIME_ASYNC */
 }
 
 __boot_func
