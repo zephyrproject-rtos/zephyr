@@ -83,6 +83,17 @@ struct sys_clone_args {
 	 * caller's mask).
 	 */
 	const struct k_sig_set *sigmask;
+	/**
+	 * Argument and environment vectors for a process-tier clone, or NULL.
+	 * With @a argv set, both vectors are copied into the child's own
+	 * memory and the leader is entered as entry(argv, envp, argc) with
+	 * copies that live as long as the process; @a p1, @a p2 and @a p3
+	 * are ignored. Invalid with SYS_CLONE_THREAD or SYS_CLONE_VM_COPY.
+	 * The copies are bounded by @kconfig{CONFIG_SYS_PROCESS_ARG_BYTES}.
+	 */
+	char *const *argv;
+	/** Environment vector, NULL-terminated; only meaningful with @a argv */
+	char *const *envp;
 };
 
 /**
@@ -100,6 +111,7 @@ struct sys_clone_args {
  * @retval -EINVAL if @a args is invalid (including unsupported flags)
  * @retval -EAGAIN if no process record is available
  * @retval -EBUSY if @a args->thread still leads an unreaped process
+ * @retval -E2BIG if @a args->argv and @a args->envp exceed the argument budget
  * @retval -ENOTSUP for a process-tier clone without @kconfig{CONFIG_SYS_PROCESS}
  */
 __syscall int sys_clone(const struct sys_clone_args *args, k_pid_t *child);

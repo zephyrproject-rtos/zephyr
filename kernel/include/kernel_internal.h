@@ -245,6 +245,18 @@ static inline void z_process_mmap_drop(struct k_process *proc)
 }
 #endif /* CONFIG_ZVFS_MMAP && CONFIG_PROCESS */
 
+#ifdef CONFIG_PROCESS
+#ifdef CONFIG_SYS_PROCESS
+/* release a staged argument block the leader never consumed (lib/os) */
+void z_process_args_drop(struct k_process *proc);
+#else
+static inline void z_process_args_drop(struct k_process *proc)
+{
+	ARG_UNUSED(proc);
+}
+#endif /* CONFIG_SYS_PROCESS */
+#endif /* CONFIG_PROCESS */
+
 #ifdef CONFIG_USERSPACE
 /* permission-principal index management and the reap-time sweep */
 int16_t z_process_perm_index_alloc(void);

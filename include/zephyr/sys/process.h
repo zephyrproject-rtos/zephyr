@@ -121,6 +121,24 @@ __syscall int sys_setpgid(k_pid_t pid, k_pgrp_t pgrp);
 __syscall int sys_fork(k_pid_t *child);
 
 /**
+ * @brief Claim the vectors staged for the calling process by sys_clone()
+ *
+ * Copies the argument and environment vectors given to sys_clone() into
+ * @a buf, laid out as argv (argc + 1 pointers), envp (NULL-terminated), then
+ * the strings, all relocated to @a buf, returns the entry point the process
+ * was created with in @a entry, and releases the staged copy. The leader's
+ * entry trampoline calls this once; the vectors then live as long as @a buf
+ * does.
+ *
+ * @param entry receives the entry point to run
+ * @param buf destination, at least @kconfig{CONFIG_SYS_PROCESS_ARG_BYTES} bytes
+ * @param size size of @a buf, in bytes
+ * @retval argc (non-negative) on success
+ * @retval -ENOENT if nothing is staged for the calling process, or no entry is set
+ * @retval -E2BIG if @a buf is too small for the staged vectors
+ */
+__syscall int sys_process_args(k_thread_entry_t *entry, void *buf, size_t size);
+/**
  * @}
  */
 

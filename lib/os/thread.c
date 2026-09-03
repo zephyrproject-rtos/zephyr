@@ -604,6 +604,8 @@ static int thread_create_clone(struct k_thread **th, k_thread_stack_t *stack,
 	args.prio = prio;
 	args.options = options;
 	args.sigmask = NULL;
+	args.argv = NULL;
+	args.envp = NULL;
 
 	ret = z_impl_sys_clone(&args, &child);
 	if (ret == 0) {

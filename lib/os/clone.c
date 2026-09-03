@@ -11,6 +11,7 @@
  */
 
 #include <errno.h>
+#include <string.h>
 
 #include <zephyr/kernel.h>
 #include <zephyr/internal/syscall_handler.h>
@@ -125,6 +126,13 @@ int z_impl_sys_clone(const struct sys_clone_args *args, k_pid_t *child)
 	    (!IS_ENABLED(CONFIG_SIGNAL) || ((args->flags & SYS_CLONE_VM_COPY) != 0U))) {
 		return -EINVAL;
 	}
+	if ((args->argv == NULL) && (args->envp != NULL)) {
+		return -EINVAL;
+	}
+	/* staged vectors are for a plain process clone only */
+	if ((args->argv != NULL) && ((args->flags & ~SYS_CLONE_PAUSED) != 0U)) {
+		return -EINVAL;
+	}
 	if ((args->flags & SYS_CLONE_VM_COPY) != 0U) {
 		return z_sys_clone_vm_copy(args, child);
 	}
@@ -151,11 +159,89 @@ int z_impl_sys_clone(const struct sys_clone_args *args, k_pid_t *child)
 }
 
 #ifdef CONFIG_USERSPACE
+#ifdef CONFIG_SYS_PROCESS
+/* kernel copies of a user vector: the table and each string, budget-bounded */
+static void clone_vec_free(char **vec)
+{
+	for (int i = 0; (vec != NULL) && (vec[i] != NULL); i++) {
+		k_free(vec[i]);
+	}
+	k_free(vec);
+}
+
+static int clone_vec_from_user(char *const *uvec, char ***out, size_t *budget)
+{
+	char **vec;
+	int n = 0;
+
+	*out = NULL;
+	if (uvec == NULL) {
+		return 0;
+	}
+	if (K_HEAP_MEM_POOL_SIZE == 0) {
+		/* nowhere to stage the vectors until the leader claims them */
+		return -ENOTSUP;
+	}
+	for (;; n++) {
+		char *p;
+
+		K_OOPS(K_SYSCALL_MEMORY_READ(&uvec[n], sizeof(p)));
+		p = uvec[n];
+		if (p == NULL) {
+			break;
+		}
+		if ((n + 1) * sizeof(char *) > *budget) {
+			return -E2BIG;
+		}
+	}
+	vec = k_calloc((size_t)n + 1, sizeof(char *));
+	if (vec == NULL) {
+		return -ENOMEM;
+	}
+	*budget -= (size_t)(n + 1) * sizeof(char *);
+	for (int i = 0; i < n; i++) {
+		vec[i] = k_usermode_string_alloc_copy(uvec[i], *budget);
+		if (vec[i] == NULL) {
+			clone_vec_free(vec);
+			return -E2BIG;
+		}
+		*budget -= strlen(vec[i]) + 1;
+	}
+	*out = vec;
+
+	return 0;
+}
+
+static int clone_user_vectors(struct sys_clone_args *copy)
+{
+	/* one budget for both vectors, matching the staging bound */
+	size_t budget = CONFIG_SYS_PROCESS_ARG_BYTES;
+	char **argv = NULL;
+	char **envp = NULL;
+	int ret;
+
+	ret = clone_vec_from_user(copy->argv, &argv, &budget);
+	if (ret == 0) {
+		ret = clone_vec_from_user(copy->envp, &envp, &budget);
+	}
+	if (ret < 0) {
+		clone_vec_free(argv);
+		return ret;
+	}
+	copy->argv = argv;
+	copy->envp = envp;
+
+	return 0;
+}
+
+#endif /* CONFIG_SYS_PROCESS */
+
 static inline int z_vrfy_sys_clone(const struct sys_clone_args *args, k_pid_t *child)
 {
 	struct sys_clone_args copy;
 	size_t total_size, stack_obj_size;
 	struct k_object *stack_object;
+	int ret;
 #ifdef CONFIG_SIGNAL
 	struct k_sig_set mask_copy;
 #endif /* CONFIG_SIGNAL */
@@ -179,7 +265,21 @@ static inline int z_vrfy_sys_clone(const struct sys_clone_args *args, k_pid_t *c
 		K_OOPS(K_SYSCALL_VERIFY(_is_valid_prio(copy.prio, NULL)));
 		K_OOPS(K_SYSCALL_VERIFY(z_is_prio_lower_or_equal(copy.prio, _current->base.prio)));
 
+#ifdef CONFIG_SYS_PROCESS
+		if (copy.argv != NULL) {
+			ret = clone_user_vectors(&copy);
+			if (ret < 0) {
+				return ret;
+			}
+		}
+		ret = z_impl_sys_clone(&copy, child);
+		clone_vec_free((char **)copy.argv);
+		clone_vec_free((char **)copy.envp);
+
+		return ret;
+#else
 		return z_impl_sys_clone(&copy, child);
+#endif /* CONFIG_SYS_PROCESS */
 	}
 
 	/* mirror z_vrfy_k_thread_create(): the thread is created via k_thread_create() */
@@ -206,7 +306,22 @@ static inline int z_vrfy_sys_clone(const struct sys_clone_args *args, k_pid_t *c
 	K_OOPS(K_SYSCALL_VERIFY(_is_valid_prio(copy.prio, NULL)));
 	K_OOPS(K_SYSCALL_VERIFY(z_is_prio_lower_or_equal(copy.prio, _current->base.prio)));
 
+#ifdef CONFIG_SYS_PROCESS
+	if (copy.argv != NULL) {
+		ret = clone_user_vectors(&copy);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+	ret = z_impl_sys_clone(&copy, child);
+	clone_vec_free((char **)copy.argv);
+	clone_vec_free((char **)copy.envp);
+
+	return ret;
+#else
+	ARG_UNUSED(ret);
 	return z_impl_sys_clone(&copy, child);
+#endif /* CONFIG_SYS_PROCESS */
 }
 #include <zephyr/syscalls/sys_clone_mrsh.c>
 #endif /* CONFIG_USERSPACE */

@@ -45,6 +45,16 @@ config SYS_PROCESS_MAX
 	  system heap. The default (0) disables dynamic process records
 	  entirely.
 
+config SYS_PROCESS_ARG_BYTES
+	int "Argument budget of a process-tier clone, in bytes"
+	default 512
+	help
+	  Upper bound on the argument and environment vectors sys_clone()
+	  copies into a child created with argv set: the pointer tables and
+	  the strings together. The copy is placed at the base of the
+	  leader's stack and reduces its usable size by that much. Larger
+	  vectors fail with -E2BIG.
+
 config SYS_PROCESS_IDS
 	int "Maximum number of simultaneously numbered processes"
 	default 16

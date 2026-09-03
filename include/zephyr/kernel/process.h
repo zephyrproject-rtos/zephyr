@@ -297,6 +297,10 @@ struct k_process {
 	/** Per-process descriptor table (system layer); NULL shares the boot table */
 	void *fds;
 #endif /* CONFIG_ZVFS_FDTABLE */
+#ifdef CONFIG_SYS_PROCESS
+	/** Argument block staged for the leader (system layer), until consumed */
+	void *args;
+#endif /* CONFIG_SYS_PROCESS */
 	/** @endcond */
 };
 

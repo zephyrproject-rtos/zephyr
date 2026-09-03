@@ -739,6 +739,8 @@ static int vm_clone_range(struct vm_clone_ctx *ctx, uintptr_t start, size_t size
 	if (ret < 0) {
 		leader_discard(args, tid);
 		z_process_fds_drop(proc);
+		z_process_args_drop(proc);
+		z_process_args_drop(proc);
 		(void)z_process_record_free(proc);
 		return -EAGAIN;
 	}
@@ -1093,6 +1095,142 @@ int z_sys_clone_vm_copy(const struct sys_clone_args *args, k_pid_t *child)
 #endif /* CONFIG_PROCESS_VM */
 }
 
+/*
+ * Vectors handed to a process-tier clone are copied into the child's own
+ * memory: the leader's trampoline reserves the room in a frame that lives as
+ * long as the process and claims the staged copy with sys_process_args().
+ * Until claimed the block hangs off the record, so a child aborted before its
+ * first instruction does not leak it.
+ */
+struct clone_argblock {
+	k_thread_entry_t entry;
+	int argc;
+	int envc;
+	size_t bytes;
+	char data[];
+};
+
+static int clone_vec_count(char *const *vec, size_t *strs)
+{
+	int n = 0;
+
+	for (; (vec != NULL) && (vec[n] != NULL); n++) {
+		*strs += strlen(vec[n]) + 1;
+	}
+
+	return n;
+}
+
+/* the tables hold offsets into the block until relocated into the claimant's buffer */
+static void clone_vec_pack(char *const *vec, int n, char **tab, char *data, size_t *off)
+{
+	for (int i = 0; i < n; i++) {
+		size_t len = strlen(vec[i]) + 1;
+
+		tab[i] = (char *)*off;
+		(void)memcpy(&data[*off], vec[i], len);
+		*off += len;
+	}
+	tab[n] = NULL;
+}
+
+static int clone_argblock_pack(const struct sys_clone_args *args, struct clone_argblock **out)
+{
+	size_t strs = 0;
+	int argc = clone_vec_count(args->argv, &strs);
+	int envc = clone_vec_count(args->envp, &strs);
+	size_t tables = (size_t)(argc + envc + 2) * sizeof(char *);
+	size_t bytes = tables + strs;
+	struct clone_argblock *blk;
+
+	if (bytes > CONFIG_SYS_PROCESS_ARG_BYTES) {
+		return -E2BIG;
+	}
+
+	if (K_HEAP_MEM_POOL_SIZE == 0) {
+		/* nowhere to stage the block until the leader claims it */
+		return -ENOTSUP;
+	}
+
+	blk = k_malloc(sizeof(*blk) + bytes);
+	if (blk == NULL) {
+		return -ENOMEM;
+	}
+
+	blk->entry = args->entry;
+	blk->argc = argc;
+	blk->envc = envc;
+	blk->bytes = bytes;
+	clone_vec_pack(args->argv, argc, (char **)blk->data, blk->data, &tables);
+	clone_vec_pack(args->envp, envc, &((char **)blk->data)[argc + 1], blk->data, &tables);
+
+	*out = blk;
+
+	return 0;
+}
+
+void z_process_args_drop(struct k_process *proc)
+{
+	k_free(proc->args);
+	proc->args = NULL;
+}
+
+int z_impl_sys_process_args(k_thread_entry_t *entry, void *buf, size_t size)
+{
+	struct clone_argblock *blk = _current->process->args;
+	char *base = buf;
+	char **argv = buf;
+	int argc;
+
+	if ((blk == NULL) || (blk->entry == NULL)) {
+		return -ENOENT;
+	}
+	if (blk->bytes > size) {
+		return -E2BIG;
+	}
+	*entry = blk->entry;
+
+	(void)memcpy(base, blk->data, blk->bytes);
+	for (int i = 0; i < blk->argc; i++) {
+		argv[i] = base + (uintptr_t)argv[i];
+	}
+	for (int i = 0; i < blk->envc; i++) {
+		argv[blk->argc + 1 + i] = base + (uintptr_t)argv[blk->argc + 1 + i];
+	}
+	argc = blk->argc;
+	_current->process->args = NULL;
+	k_free(blk);
+
+	return argc;
+}
+
+#ifdef CONFIG_USERSPACE
+static inline int z_vrfy_sys_process_args(k_thread_entry_t *entry, void *buf, size_t size)
+{
+	K_OOPS(K_SYSCALL_MEMORY_WRITE(entry, sizeof(*entry)));
+	K_OOPS(K_SYSCALL_MEMORY_WRITE(buf, size));
+	return z_impl_sys_process_args(entry, buf, size);
+}
+#include <zephyr/syscalls/sys_process_args_mrsh.c>
+#endif /* CONFIG_USERSPACE */
+
+/* the leader's trampoline, in whichever mode the child was asked for */
+static void process_leader_entry(void *p1, void *p2, void *p3)
+{
+	k_thread_entry_t entry = NULL;
+	/* this frame never returns: the vectors live here for the process's lifetime */
+	char buf[CONFIG_SYS_PROCESS_ARG_BYTES] __aligned(sizeof(char *));
+	char **argv = (char **)buf;
+	int argc = sys_process_args(&entry, buf, sizeof(buf));
+
+	ARG_UNUSED(p1);
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	__ASSERT_NO_MSG(argc >= 0);
+	entry(argv, &argv[argc + 1], (void *)(uintptr_t)argc);
+}
+
 #ifdef CONFIG_SYS_THREAD
 /* a leader without a caller-supplied k_thread is drawn from the system pool */
 static int leader_create(const struct sys_clone_args *args, k_thread_entry_t entry, void *p1,
@@ -1140,15 +1278,34 @@ int z_sys_clone_process(const struct sys_clone_args *args, k_pid_t *child)
 	int ret;
 	k_tid_t tid;
 	struct k_process *proc;
+	struct clone_argblock *blk = NULL;
+	k_thread_entry_t entry = args->entry;
+	void *p1 = args->p1;
+	void *p2 = args->p2;
+	void *p3 = args->p3;
+
+	if (args->argv != NULL) {
+		ret = clone_argblock_pack(args, &blk);
+		if (ret < 0) {
+			return ret;
+		}
+		entry = process_leader_entry;
+		p1 = NULL;
+		p2 = NULL;
+		p3 = NULL;
+	}
 
 	proc = record_alloc();
 	if (proc == NULL) {
+		k_free(blk);
 		return -EAGAIN;
 	}
+	proc->args = blk;
 
 	/* create the leader paused; k_process_init() re-homes it */
-	ret = leader_create(args, args->entry, args->p1, args->p2, args->p3, &tid);
+	ret = leader_create(args, entry, p1, p2, p3, &tid);
 	if (ret < 0) {
+		z_process_args_drop(proc);
 		(void)z_process_record_free(proc);
 		return ret;
 	}
@@ -1157,6 +1314,7 @@ int z_sys_clone_process(const struct sys_clone_args *args, k_pid_t *child)
 	ret = z_zvfs_fds_clone(proc, tid);
 	if (ret < 0) {
 		leader_discard(args, tid);
+		z_process_args_drop(proc);
 		(void)z_process_record_free(proc);
 		return ret;
 	}
