@@ -972,6 +972,7 @@ static void intc_connect_irq_event(IRQn_Type irq, IRQSELn_Type event)
 		.channel_scheduling = DMAC_CHANNEL_SCHEDULING_FIXED,                               \
 		.p_callback = g_spi##n##_##dir##_transfer_callback,                                \
 		.p_context = NULL,                                                                 \
+		.p_reg = (void *)DT_REG_ADDR(DT_INST_DMAS_CTLR_BY_NAME(n, dir)),                   \
 	}
 
 #else /* USE_RZ_FSP_DMAC_B */
@@ -1009,6 +1010,7 @@ static void intc_connect_irq_event(IRQn_Type irq, IRQSELn_Type event)
 		.dreq_input_pin = 0x7F,                                                            \
 		.ack_output_pin = 0x7F,                                                            \
 		.tend_output_pin = 0x7F,                                                           \
+		.p_reg = (void *)DT_REG_ADDR(DT_INST_DMAS_CTLR_BY_NAME(n, dir)),                   \
 	}
 #endif /* CONFIG_USE_RZ_FSP_DMAC */
 
@@ -1109,6 +1111,7 @@ static void intc_connect_irq_event(IRQn_Type irq, IRQSELn_Type event)
 		.transmit_fifo_threshold = 0,                                                      \
 		.receive_fifo_threshold = 0,                                                       \
 		.receive_data_ready_detect_adjustment = 0,                                         \
+		.p_reg = (void *)(DT_INST_REG_ADDR(n)),                                            \
 	};                                                                                         \
 	IF_ENABLED(CONFIG_SPI_RENESAS_RZ_DMA,                                           \
 		(IF_ENABLED(DT_NODE_HAS_PROP(DT_DRV_INST(n), dmas),                     \
@@ -1130,7 +1133,7 @@ static void intc_connect_irq_event(IRQn_Type irq, IRQSELn_Type event)
 		.mode_fault = SPI_MODE_FAULT_ERROR_ENABLE,                                         \
 		.bit_order = SPI_BIT_ORDER_MSB_FIRST,                                              \
 		.p_callback = spi_callback,                                                        \
-		.p_context = DEVICE_DT_INST_GET(n),                                                \
+		.p_context = (void *)DEVICE_DT_INST_GET(n),                                        \
 		.p_extend = &g_spi_##n##_cfg_extend,                                               \
 		.tei_irq = DT_INST_IRQ_BY_NAME(n, tei, irq),                                       \
 		.tei_ipl = DT_INST_IRQ_BY_NAME(n, tei, priority),                                  \
