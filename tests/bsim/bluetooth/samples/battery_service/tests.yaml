@@ -1,5 +1,5 @@
 tests:
-  tests.bsim.bluetooth.samples.battery_service:
+  bluetooth.samples.battery_service:
     tags:
       - bluetooth
     depends_on: bsim
