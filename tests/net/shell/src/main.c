@@ -196,6 +196,15 @@ ZTEST(net_shell_test_suite, test_net_shell)
 	/* There is no foobar command */
 	ret = shell_execute_cmd(NULL, "net foobar");
 	zassert_equal(ret, 1, "");
+
+	/* The cache flushing commands are registered even when the
+	 * corresponding cache is not built in.
+	 */
+	ret = shell_execute_cmd(NULL, "net nbr flush");
+	zexpect_equal(ret, 0, "");
+
+	ret = shell_execute_cmd(NULL, "net arp flush");
+	zexpect_equal(ret, 0, "");
 }
 
 ZTEST_SUITE(net_shell_test_suite, NULL, test_setup, NULL, NULL, NULL);

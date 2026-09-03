@@ -27,7 +27,7 @@ static int cmd_net_nbr_rm(const struct shell *sh, size_t argc, char *argv[])
 		return -ENOEXEC;
 	}
 
-	if (!net_ipv6_nbr_rm(NULL, &addr)) {
+	if (!net_if_ipv6_nbr_rm(NULL, &addr)) {
 		PR_WARNING("Cannot remove neighbor %s\n",
 			   net_sprint_ipv6_addr(&addr));
 		return -ENOEXEC;
@@ -38,6 +38,23 @@ static int cmd_net_nbr_rm(const struct shell *sh, size_t argc, char *argv[])
 	ARG_UNUSED(sh);
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
+
+	PR_INFO("Native IPv6 not enabled.\n");
+#endif
+
+	return 0;
+}
+
+static int cmd_net_nbr_flush(const struct shell *sh, size_t argc, char *argv[])
+{
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+#if defined(CONFIG_NET_NATIVE_IPV6)
+	PR("Flushing neighbor cache.\n");
+	net_if_ipv6_nbr_flush(NULL);
+#else
+	ARG_UNUSED(sh);
 
 	PR_INFO("Native IPv6 not enabled.\n");
 #endif
@@ -194,6 +211,10 @@ static void nbr_address_get(size_t idx, struct shell_static_entry *entry)
 #endif /* CONFIG_NET_NATIVE_IPV6 && CONFIG_NET_SHELL_DYN_CMD_COMPLETION */
 
 SHELL_STATIC_SUBCMD_SET_CREATE(net_cmd_nbr,
+	SHELL_CMD(flush, NULL,
+		  SHELL_HELP("Remove the learned neighbors from the cache. "
+			     "Statically added neighbors are kept.", ""),
+		  cmd_net_nbr_flush),
 	SHELL_CMD(rm, NBR_ADDRESS_CMD,
 		  SHELL_HELP("Removes neighbor from cache", "<address>"),
 		  cmd_net_nbr_rm),
