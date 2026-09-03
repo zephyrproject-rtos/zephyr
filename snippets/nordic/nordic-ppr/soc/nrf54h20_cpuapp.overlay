@@ -7,3 +7,15 @@
 	status = "reserved";
 	interrupt-parent = <&cpuppr_clic>;
 };
+
+&cpuapp_cpuppr_ipc {
+	status = "okay";
+};
+
+&cpuppr_vevif {
+	status = "okay";
+};
+
+&cpuapp_bellboard {
+	status = "okay";
+};
