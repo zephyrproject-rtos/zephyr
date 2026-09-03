@@ -233,6 +233,17 @@ config NXP_IW416_MURATA_1XK_M2
 	  Detailed information about Type 1XK module you can find on
 	  https://www.murata.com/en-us/products/connectivitymodule/wi-fi-bluetooth/overview/lineup/type1xk
 
+config NXP_IW416_UBX_MAYA_W1_USD
+	bool "NXP IW416-UBX-MAYA-W1-USD"
+	help
+	  u-blox MAYA-W1 series is a small and high performance module based on
+	  NXP IW416 combo chipset which supports Wi-Fi 802.11a/b/g/n +
+	  Bluetooth 5.2 BR/EDR/LE up to 150 Mbps PHY data rate on Wi-Fi and
+	  3Mbps PHY data rate on Bluetooth.
+
+	  Detailed information about EVK-MAYA-W1 you can find on
+	  https://www.u-blox.com/en/product/maya-w1-series
+
 endchoice
 
 choice NXP_IW61X_MODULE
@@ -284,6 +295,46 @@ config NXP_IW611_MURATA_2DL_M2
 
 	  Detailed information about Type 2DL module you can find on
 	  https://www.murata.com/en-us/products/connectivitymodule/wi-fi-bluetooth/overview/lineup/type2dl
+
+config NXP_IW612_UBX_MAYA_W276_M2
+	bool "NXP IW612-UBX-MAYA-W276-M2"
+	help
+	  u-blox MAYA-W276 is a small and very high performance module based on
+	  NXP IW612 combo chipset which supports Wi-Fi 802.11a/b/g/n/ac/ax +
+	  Bluetooth 5.3 BR/EDR/LE + 802.15.4.
+
+	  Detailed information about MAYA-W2 series you can find on
+	  https://www.u-blox.com/en/product/maya-w2-series
+
+config NXP_IW611_UBX_JODY_W5_USD
+	bool "NXP AW611-UBX-JODY-W5-USD"
+	help
+	  u-blox JODY-W5 is a small and very high performance module based on
+	  NXP AW611 combo chipset which supports Wi-Fi 802.11a/b/g/n/ac/ax +
+	  Bluetooth 5.3 BR/EDR/LE.
+
+	  Detailed information about JODY-W5 series you can find on
+	  https://www.u-blox.com/en/product/jody-w5-series
+
+config NXP_AW611_UBX_JODY_W5_M2
+	bool "NXP IW611-UBX-JODY-W5-M2"
+	help
+	  u-blox JODY-W5 is a small and very high performance module based on
+	  NXP AW611 combo chipset which supports Wi-Fi 802.11a/b/g/n/ac/ax +
+	  Bluetooth 5.3 BR/EDR/LE.
+
+	  Detailed information about JODY-W5 series you can find on
+	  https://www.u-blox.com/en/product/jody-w5-series
+
+config NXP_IW612_QUECTEL_FGS060N_USD
+	bool "NXP IW612-QUECTEL-FGS060N"
+	help
+	  Quectel FGS060N is a small and very high performance module based on
+	  NXP IW612 combo chipset which supports Wi-Fi 802.11a/b/g/n/ac/ax +
+	  Bluetooth 5.3 BR/EDR/LE + 802.15.4.
+
+	  Detailed information about FGS060N module you can find on
+	  https://www.quectel.com/product/wifi-bt-fgs060n
 
 endchoice
 
