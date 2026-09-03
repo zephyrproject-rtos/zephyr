@@ -32,7 +32,8 @@
  *   TIMER_CORE_BACKEND_RELOAD
  *	A timer that fires after a given delay and then reloads by itself,
  *	like a down-counter. On a ticking (not tickless) kernel, the driver
- *	sets it to one tick at init and the core leaves it alone.
+ *	sets it to one tick at init and the core leaves it alone, unless
+ *	TIMER_CORE_RELOAD_ONE_SHOT says the hardware can't reload by itself.
  *
  * If the alarm only works with its interrupt enabled, enable it in the arming
  * function. The core doesn't track interrupt masking.
@@ -96,6 +97,11 @@
  *
  *   TIMER_CORE_ALARM_MIN_CYCLES   (RELOAD)
  *	Smallest reload, in cycles. Defaults to 1.
+ *
+ *   TIMER_CORE_RELOAD_ONE_SHOT   (RELOAD)
+ *	Define it when the timer fires once and doesn't reload by itself.
+ *	On a ticking kernel the core then arms it at init and again from
+ *	each announce, as it does for a compare.
  *
  *   TIMER_CORE_ALARM_LEAD_CYCLES   (COMPARE_EXACT)
  *	How far ahead of the counter a compare value must be to be caught.
@@ -549,10 +555,11 @@ static void timer_core_announce_from(k_spinlock_key_t key)
 	timer_core_catchup = false;
 #endif
 
-#if !defined(TIMER_CORE_BACKEND_RELOAD)
+#if !defined(TIMER_CORE_BACKEND_RELOAD) || defined(TIMER_CORE_RELOAD_ONE_SHOT)
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		/* Ticking kernel: arm the next tick. A reload counter reloads
-		 * by itself.
+		/* Ticking kernel: arm the next tick, from the baseline just
+		 * advanced above. A reload counter that reloads by itself
+		 * needs nothing.
 		 */
 		timer_core_arm(1);
 	}
@@ -744,12 +751,13 @@ static inline void timer_core_init(void)
 	timer_core_last_cycle = seed * TIMER_CORE_CYC_PER_TICK;
 	timer_core_last_elapsed = 0;
 
-#if defined(TIMER_CORE_BACKEND_RELOAD)
+#if defined(TIMER_CORE_BACKEND_RELOAD) && !defined(TIMER_CORE_RELOAD_ONE_SHOT)
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		/* Ticking kernel: the driver set the hardware to reload every
 		 * tick, and it is never rewritten. Arming here would load the
 		 * fraction of a tick left after the seed above, and that would
-		 * stick as the period.
+		 * stick as the period. A one-shot timer wants exactly that
+		 * fraction: it puts the first interrupt on a tick boundary.
 		 */
 		return;
 	}
