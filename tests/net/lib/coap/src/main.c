@@ -188,6 +188,31 @@ ZTEST(coap, test_parse_empty_pdu)
 	zassert_equal(id, 0U, "Packet id doesn't match reference");
 }
 
+ZTEST(coap, test_parse_malformed_empty_message)
+{
+	/* RFC 7252, section 4.1: an Empty message has the token length set to
+	 * zero and no bytes after the message ID.
+	 */
+	uint8_t empty_with_token[] = { 0x62, 0x00, 0x12, 0x34, 0xde, 0xad };
+	uint8_t empty_with_extra[] = { 0x60, 0x00, 0x12, 0x34, 0xff, 0x42 };
+	uint8_t empty_ok[] = { 0x60, 0x00, 0x12, 0x34 };
+	struct coap_packet cpkt;
+	uint8_t *data = data_buf[0];
+	int r;
+
+	memcpy(data, empty_with_token, sizeof(empty_with_token));
+	r = coap_packet_parse(&cpkt, data, sizeof(empty_with_token), NULL, 0);
+	zassert_equal(r, -EBADMSG, "Empty message with a token not rejected");
+
+	memcpy(data, empty_with_extra, sizeof(empty_with_extra));
+	r = coap_packet_parse(&cpkt, data, sizeof(empty_with_extra), NULL, 0);
+	zassert_equal(r, -EBADMSG, "Empty message with a payload not rejected");
+
+	memcpy(data, empty_ok, sizeof(empty_ok));
+	r = coap_packet_parse(&cpkt, data, sizeof(empty_ok), NULL, 0);
+	zassert_equal(r, 0, "Well-formed Empty message rejected");
+}
+
 /* 1 option, No payload (No payload marker) */
 ZTEST(coap, test_parse_empty_pdu_1)
 {

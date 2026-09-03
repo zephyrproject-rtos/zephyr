@@ -797,6 +797,13 @@ int coap_packet_parse(struct coap_packet *cpkt, uint8_t *data, uint16_t len,
 		return -EBADMSG;
 	}
 
+	/* RFC 7252, section 4.1: an Empty message has the token length set to
+	 * zero and no bytes after the message ID.
+	 */
+	if (data[1] == COAP_CODE_EMPTY && (tkl != 0U || len > BASIC_HEADER_SIZE)) {
+		return -EBADMSG;
+	}
+
 	cpkt->hdr_len = BASIC_HEADER_SIZE + tkl;
 	if (cpkt->hdr_len > len) {
 		return -EBADMSG;

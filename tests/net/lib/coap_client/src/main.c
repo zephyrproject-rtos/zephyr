@@ -475,8 +475,8 @@ static ssize_t z_impl_zsock_recvfrom_custom_fake_empty_ack(int sock, void *buf, 
 {
 	uint16_t last_message_id = 0;
 
-	static uint8_t ack_data[] = {0x60, 0x00, 0x00, 0x00, 0x00, 0x00,
-				     0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+	/* RFC 7252, section 4.1: an Empty message is exactly four bytes */
+	static uint8_t ack_data[] = {0x60, 0x00, 0x00, 0x00};
 
 	last_message_id = get_next_pending_message_id();
 
@@ -528,8 +528,8 @@ static ssize_t z_impl_zsock_recvfrom_custom_fake_rst(int sock, void *buf, size_t
 {
 	uint16_t last_message_id = 0;
 
-	static uint8_t rst_data[] = {0x70, 0x00, 0x00, 0x00, 0x00, 0x00,
-				     0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+	/* RFC 7252, section 4.1: an Empty message is exactly four bytes */
+	static uint8_t rst_data[] = {0x70, 0x00, 0x00, 0x00};
 
 	last_message_id = get_next_pending_message_id();
 
