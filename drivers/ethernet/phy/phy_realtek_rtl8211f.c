@@ -131,7 +131,7 @@ static int phy_rt_rtl8211f_reset(const struct device *dev)
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
 	if (config->reset_gpio.port) {
 		/* Start reset */
-		ret = gpio_pin_set_dt(&config->reset_gpio, 0);
+		ret = gpio_pin_set_dt(&config->reset_gpio, 1);
 		if (ret) {
 			return ret;
 		}
@@ -140,7 +140,7 @@ static int phy_rt_rtl8211f_reset(const struct device *dev)
 		k_busy_wait(USEC_PER_MSEC * PHY_RT_RTL8211F_RESET_HOLD_TIME_MS);
 
 		/* Reset over */
-		ret = gpio_pin_set_dt(&config->reset_gpio, 1);
+		ret = gpio_pin_set_dt(&config->reset_gpio, 0);
 		if (ret) {
 			return ret;
 		}
@@ -522,7 +522,7 @@ static int phy_rt_rtl8211f_init(const struct device *dev)
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
 	/* Configure reset pin */
 	if (config->reset_gpio.port) {
-		ret = gpio_pin_configure_dt(&config->reset_gpio, GPIO_OUTPUT_ACTIVE);
+		ret = gpio_pin_configure_dt(&config->reset_gpio, GPIO_OUTPUT_INACTIVE);
 		if (ret) {
 			return ret;
 		}
