@@ -31,6 +31,12 @@ extern "C" {
 
 struct fido2_transport;
 
+/** @brief FIDO BLE service UUID value. */
+#define FIDO2_BLE_SERVICE_UUID_VAL 0xFFFDU
+
+/** @brief FIDO Pairing mode bit position. */
+#define FIDO2_BLE_SERVICE_DATA_PAIRING_MODE BIT(7)
+
 /** @brief Transport progress status codes. */
 enum fido2_wire_status {
 	/** The authenticator is waiting for a user presence gesture. */
@@ -52,14 +58,20 @@ enum fido2_wire_status {
  * @param cid       Transport channel ID associated with the received message.
  * @param buf       Received data payload.
  * @param len       Length of the received data in bytes.
+ *
+ * @retval 0 If successful.
+ * @retval -EMSGSIZE If message is too large for message queue.
+ * @retval -ENOBUFS If message queue is full.
  */
-typedef void (*fido2_transport_recv_cb_t)(const struct fido2_transport *transport, uint32_t cid,
-					  const uint8_t *buf, size_t len);
+typedef int (*fido2_transport_recv_cb_t)(const struct fido2_transport *transport, uint32_t cid,
+					 const uint8_t *buf, size_t len);
 
 /**
  * @brief Callback invoked when a transport receives a cancel command.
+ *
+ * @param transport Transport instance that received the cancel command.
  */
-typedef void (*fido2_transport_cancel_cb_t)(void);
+typedef void (*fido2_transport_cancel_cb_t)(const struct fido2_transport *transport);
 
 /** @brief Transport driver API callbacks. */
 struct fido2_transport_api {
