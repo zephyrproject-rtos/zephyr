@@ -61,30 +61,10 @@
 		};
 	};
 
-	mram0: mram@1a000000 {
-		/* Internal code eMRAM */
-		reg = <0x1a000000 0x200000>;
-	};
-
-	flash0: flash@10200000 {
-		/* External QSPI flash */
-		reg = <0x10200000 0x2000000>;
-	};
-
-	sram0: memory@30000000 {
-		compatible = "mmio-sram";
-		reg = <0x30000000 0x80000>;
-	};
-
 	sysclk: system-clock {
 		compatible = "fixed-clock";
 		clock-frequency = <50000000>;
 		#clock-cells = <0>;
-	};
-
-	scc@5010b000 {
-		compatible = "arm,scc";
-		reg = <0x5010b000 0x1000>;
 	};
 
 	soc {
@@ -95,6 +75,26 @@
 
 #include "v2m_musca_s1-common.dtsi"
 		};
+	};
+
+	flash0: flash@10200000 {
+		/* External QSPI flash */
+		reg = <0x10200000 0x2000000>;
+	};
+
+	mram0: mram@1a000000 {
+		/* Internal code eMRAM */
+		reg = <0x1a000000 0x200000>;
+	};
+
+	sram0: memory@30000000 {
+		compatible = "mmio-sram";
+		reg = <0x30000000 0x80000>;
+	};
+
+	scc@5010b000 {
+		compatible = "arm,scc";
+		reg = <0x5010b000 0x1000>;
 	};
 };
 

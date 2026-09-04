@@ -67,6 +67,15 @@
 	soc {
 		interrupt-parent = <&gic>;
 
+		uart0: uart@1a510000 {
+			compatible = "arm,pl011";
+			reg = <0x1a510000 0x1000>;
+			interrupts = <GIC_SPI 32 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			interrupt-names = "irq_32";
+			clocks = <&uartclk>;
+			status = "disabled";
+		};
+
 		gic: interrupt-controller@1c000000 {
 			compatible = "arm,gic-v3", "arm,gic";
 			reg = <0x1c000000 0x10000>, /* GICD */
@@ -76,15 +85,6 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			status = "okay";
-		};
-
-		uart0: uart@1a510000 {
-			compatible = "arm,pl011";
-			reg = <0x1a510000 0x1000>;
-			interrupts = <GIC_SPI 32 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
-			interrupt-names = "irq_32";
-			clocks = <&uartclk>;
-			status = "disabled";
 		};
 
 		dram0: memory@80000000 {

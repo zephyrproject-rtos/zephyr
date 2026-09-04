@@ -31,42 +31,6 @@
 		};
 	};
 
-	atcm0: memory@ee000000 {
-		compatible = "mmio-sram";
-		reg = <0xee000000 0x8000>;
-		status = "disabled";
-	};
-
-	btcm0: memory@ee100000 {
-		compatible = "mmio-sram";
-		reg = <0xee100000 0x8000>;
-		status = "disabled";
-	};
-
-	ctcm0: memory@ee200000 {
-		compatible = "mmio-sram";
-		reg = <0xee200000 0x8000>;
-		status = "disabled";
-	};
-
-	atcm1: memory@ee400000 {
-		compatible = "mmio-sram";
-		reg = <0xee400000 0x8000>;
-		status = "disabled";
-	};
-
-	btcm1: memory@ee500000 {
-		compatible = "mmio-sram";
-		reg = <0xee500000 0x8000>;
-		status = "disabled";
-	};
-
-	ctcm1: memory@ee600000 {
-		compatible = "mmio-sram";
-		reg = <0xee600000 0x8000>;
-		status = "disabled";
-	};
-
 	arch_timer: timer {
 		compatible = "arm,armv8-timer";
 		interrupt-parent = <&gic>;
@@ -81,17 +45,6 @@
 		 */
 		clock-frequency = <62500000>;
 		status = "okay";
-	};
-
-	sram0: memory@10000000 {
-		compatible = "mmio-sram";
-		reg = <0x10000000 0x00080000>;
-	};
-
-	ddr0: memory@20000000 {
-		compatible = "mmio-sram";
-		reg = <0x20000000 0xc0000000>;
-		status = "disabled";
 	};
 
 	sysclk: system-clock {
@@ -112,15 +65,6 @@
 
 		#address-cells = <1>;
 		#size-cells = <1>;
-
-		gic: interrupt-controller@f0000000 {
-			compatible = "arm,gic-v3", "arm,gic";
-			reg = <0xf0000000 0x10000>,
-			      <0xf0100000 0xa0000>;
-			interrupt-controller;
-			#interrupt-cells = <4>;
-			status = "okay";
-		};
 
 		peripherals: bus@e0000000 {
 			compatible = "simple-bus";
@@ -316,6 +260,62 @@
 				status = "disabled";
 			};
 		};
+
+		gic: interrupt-controller@f0000000 {
+			compatible = "arm,gic-v3", "arm,gic";
+			reg = <0xf0000000 0x10000>,
+			      <0xf0100000 0xa0000>;
+			interrupt-controller;
+			#interrupt-cells = <4>;
+			status = "okay";
+		};
+	};
+
+	sram0: memory@10000000 {
+		compatible = "mmio-sram";
+		reg = <0x10000000 0x00080000>;
+	};
+
+	ddr0: memory@20000000 {
+		compatible = "mmio-sram";
+		reg = <0x20000000 0xc0000000>;
+		status = "disabled";
+	};
+
+	atcm0: memory@ee000000 {
+		compatible = "mmio-sram";
+		reg = <0xee000000 0x8000>;
+		status = "disabled";
+	};
+
+	btcm0: memory@ee100000 {
+		compatible = "mmio-sram";
+		reg = <0xee100000 0x8000>;
+		status = "disabled";
+	};
+
+	ctcm0: memory@ee200000 {
+		compatible = "mmio-sram";
+		reg = <0xee200000 0x8000>;
+		status = "disabled";
+	};
+
+	atcm1: memory@ee400000 {
+		compatible = "mmio-sram";
+		reg = <0xee400000 0x8000>;
+		status = "disabled";
+	};
+
+	btcm1: memory@ee500000 {
+		compatible = "mmio-sram";
+		reg = <0xee500000 0x8000>;
+		status = "disabled";
+	};
+
+	ctcm1: memory@ee600000 {
+		compatible = "mmio-sram";
+		reg = <0xee600000 0x8000>;
+		status = "disabled";
 	};
 };
 
