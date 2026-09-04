@@ -1608,6 +1608,7 @@ New Drivers
   * :dtcompatible:`realtek,bee-aon-qdec` (:github:`105129`)
   * :dtcompatible:`realtek,bee-basic-qdec` (:github:`105129`)
   * :dtcompatible:`realtek,bee-qdec` (:github:`105129`)
+  * :dtcompatible:`sensirion,stc31` (:github:`114458`)
   * :dtcompatible:`sensylink,cht8315` (:github:`106391`)
   * :dtcompatible:`st,stm32-vddcore` (:github:`108053`)
   * :dtcompatible:`ti,fdc1004` (:github:`107233`)
