@@ -10,8 +10,8 @@
 #include "esp32s3_devkitc-pinctrl.dtsi"
 
 / {
-	model = "Espressif ESP32S3-DevkitC APPCPU";
 	compatible = "espressif,esp32s3";
+	model = "Espressif ESP32S3-DevkitC APPCPU";
 
 	chosen {
 		zephyr,sram = &sram1;

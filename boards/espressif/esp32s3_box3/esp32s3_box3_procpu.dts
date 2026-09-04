@@ -13,8 +13,8 @@
 #include "esp32s3_box3-pinctrl.dtsi"
 
 / {
-	model = "Espressif ESP32S3-BOX-3 PROCPU";
 	compatible = "espressif,esp32s3";
+	model = "Espressif ESP32S3-BOX-3 PROCPU";
 
 	aliases {
 		watchdog0 = &wdt0;
@@ -79,16 +79,16 @@
 &spi2 {
 	#address-cells = <1>;
 	#size-cells = <0>;
-	status = "okay";
 	pinctrl-0 = <&spim2_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &i2c0 {
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	gt911: gt911@5d {
 		compatible = "goodix,gt911";
