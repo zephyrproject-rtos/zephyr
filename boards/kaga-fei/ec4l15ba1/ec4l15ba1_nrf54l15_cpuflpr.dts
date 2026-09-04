@@ -10,8 +10,8 @@
 #include "ec4l15ba1_common.dtsi"
 
 / {
-	model = "KAGA FEI EC4L15BA1 nRF54L15 FLPR MCU";
 	compatible = "kaga-fei,ec4l15ba1_nrf54l15-cpuflpr";
+	model = "KAGA FEI EC4L15BA1 nRF54L15 FLPR MCU";
 
 	chosen {
 		zephyr,console = &uart30;
@@ -24,14 +24,14 @@
 
 &cpuflpr_rram {
 	partitions {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		cpuflpr_code_partition: partition@0 {
-			label = "image-0";
 			compatible = "zephyr,mapped-partition";
 			reg = <0x0 DT_SIZE_K(96)>;
+			label = "image-0";
 		};
 	};
 };
