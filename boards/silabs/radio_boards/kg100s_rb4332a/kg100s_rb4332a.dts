@@ -11,8 +11,8 @@
 #include "kg100s_rb4332a-pinctrl.dtsi"
 
 / {
-	model = "Silicon Labs BRD4332A (KG100S Radio Board)";
 	compatible = "silabs,kg100s", "silabs,efr32mg21";
+	model = "Silicon Labs BRD4332A (KG100S Radio Board)";
 
 	chosen {
 		zephyr,bt-hci = &bt_hci_silabs;
@@ -94,9 +94,9 @@
 
 &flash0 {
 	partitions {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		boot_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
