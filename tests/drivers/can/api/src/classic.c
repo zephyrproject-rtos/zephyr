@@ -738,7 +738,6 @@ ZTEST_USER(can_classic, test_max_ext_filters)
 	add_remove_max_filters(true);
 }
 
-#if defined(CONFIG_USERSPACE) && defined(CONFIG_DYNAMIC_OBJECTS)
 /**
  * @brief Test that a dynamically allocated message queue is rejected from user mode.
  *
@@ -754,6 +753,8 @@ ZTEST_USER(can_classic, test_add_rx_filter_msgq_dynamic)
 	struct k_msgq *msgq;
 	int err;
 
+	Z_TEST_SKIP_IFNDEF(CONFIG_DYNAMIC_OBJECTS);
+
 	msgq = k_object_alloc(K_OBJ_MSGQ);
 	zassert_not_null(msgq, "failed to allocate message queue object");
 
@@ -765,7 +766,6 @@ ZTEST_USER(can_classic, test_add_rx_filter_msgq_dynamic)
 
 	zassert_unreachable("dynamically allocated message queue was accepted");
 }
-#endif /* CONFIG_USERSPACE && CONFIG_DYNAMIC_OBJECTS */
 
 /**
  * @brief Test that no message is received when nothing was sent.
