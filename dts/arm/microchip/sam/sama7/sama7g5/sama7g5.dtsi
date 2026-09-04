@@ -871,6 +871,7 @@
 				clock-names = "pclk";
 				#address-cells = <1>;
 				#size-cells = <0>;
+				fifo-size = <32>;
 				status = "disabled";
 			};
 
