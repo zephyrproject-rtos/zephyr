@@ -27,21 +27,6 @@
 		zephyr,touch = &gt911;
 	};
 
-	sdram1: memory@c0000000 {
-		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0xc0000000 0x00600000>; /* Use 6 MB  MAX 32MB */
-		device_type = "memory";
-		zephyr,memory-region = "SDRAM1";
-		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
-	};
-
-	ext_memory: memory@90000000 {
-		compatible = "zephyr,memory-region";
-		reg = <0x90000000 DT_SIZE_M(8)>; /* 8MB QSPI Flash */
-		zephyr,memory-region = "EXTMEM";
-		zephyr,memory-attr = <DT_MEM_ARM_MPU_FLASH>;
-	};
-
 	leds {
 		compatible = "gpio-leds";
 
@@ -70,6 +55,21 @@
 		led0 = &red_led;
 		led1 = &blue_led;
 		sw0 = &user_button;
+	};
+
+	ext_memory: memory@90000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x90000000 DT_SIZE_M(8)>; /* 8MB QSPI Flash */
+		zephyr,memory-region = "EXTMEM";
+		zephyr,memory-attr = <DT_MEM_ARM_MPU_FLASH>;
+	};
+
+	sdram1: memory@c0000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0xc0000000 0x00600000>; /* Use 6 MB  MAX 32MB */
+		device_type = "memory";
+		zephyr,memory-region = "SDRAM1";
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 	};
 };
 
