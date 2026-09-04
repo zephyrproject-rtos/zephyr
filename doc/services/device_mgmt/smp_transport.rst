@@ -28,6 +28,43 @@ split among several packets. Since GATT guarantees ordered delivery of
 packets, the SMP header in the first fragment contains sufficient information
 for reassembly.
 
+.. _mcumgr_smp_transport_ble_client:
+
+Client transport
+================
+
+:kconfig:option:`CONFIG_MCUMGR_TRANSPORT_BT` is the GATT server side of the SMP service.
+:kconfig:option:`CONFIG_MCUMGR_TRANSPORT_BT_CLIENT` is the experimental GATT client side, which
+lets the MCUmgr SMP client (:kconfig:option:`CONFIG_SMP_CLIENT`) manage a peer that runs the SMP
+service. Both can be enabled in the same image.
+
+The SMP Bluetooth server transport contains a GATT client of its own, used only to forward
+packets for :ref:`transport management <mcumgr_smp_group_11>` bridges on connections that the
+bridge itself opens. The SMP client cannot use it: packets sent on the server transport are
+notified to the connection recorded in the packet, which SMP client requests do not carry.
+
+The application establishes the connection and attaches the transport to it:
+
+.. code-block:: c
+
+   static struct smp_client_object smp_client;
+
+   int rc;
+
+   rc = smp_client_object_init(&smp_client, SMP_BLUETOOTH_CLIENT_TRANSPORT);
+   if (rc == 0) {
+       rc = smp_bt_client_attach(conn, K_SECONDS(5));
+   }
+
+:c:func:`smp_bt_client_attach` discovers the SMP service and subscribes to its notifications
+before it returns, so it must not be called from a work queue. The target is released by
+:c:func:`smp_bt_client_detach` or when the peer disconnects. One target can be attached at a
+time.
+
+Requests the peer sends over the transport are served by the management groups the image
+enables, as on every other transport. Restrict the groups or use the MCUmgr management hooks
+described in :ref:`mcumgr_callbacks` if that is not wanted.
+
 .. _mcumgr_smp_transport_uart:
 
 UART/serial and console
@@ -224,3 +261,5 @@ API Reference
 *************
 
 .. doxygengroup:: mcumgr_transport_smp
+
+.. doxygengroup:: mcumgr_transport_bt_client

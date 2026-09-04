@@ -720,6 +720,12 @@ New APIs and options
       :kconfig:option:`CONFIG_MCUMGR_GRP_TRANSPORT_GROUP_ID_CUSTOM_FUNCTION` and
       :kconfig:option:`CONFIG_MCUMGR_GRP_TRANSPORT_INFO_FUNCTIONS`.
 
+    * Added experimental Bluetooth client MCUmgr SMP transport, which lets the SMP client
+      manage a peer that runs the SMP service:
+      :kconfig:option:`CONFIG_MCUMGR_TRANSPORT_BT_CLIENT`,
+      :c:enumerator:`SMP_BLUETOOTH_CLIENT_TRANSPORT`, :c:func:`smp_bt_client_attach`,
+      :c:func:`smp_bt_client_detach` and :c:func:`smp_bt_client_is_attached`.
+
 * Modem
 
   * :c:enumerator:`CELLULAR_MODEM_INFO_SERIAL_NUMBER`

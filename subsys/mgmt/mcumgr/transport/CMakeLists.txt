@@ -16,6 +16,9 @@ zephyr_library_sources_ifdef(CONFIG_MCUMGR_TRANSPORT_REASSEMBLY
 zephyr_library_sources_ifdef(CONFIG_MCUMGR_TRANSPORT_BT
   src/smp_bt.c
 )
+zephyr_library_sources_ifdef(CONFIG_MCUMGR_TRANSPORT_BT_CLIENT
+  src/smp_bt_client.c
+)
 zephyr_library_sources_ifdef(CONFIG_MCUMGR_TRANSPORT_SHELL
   src/smp_shell.c
 )
