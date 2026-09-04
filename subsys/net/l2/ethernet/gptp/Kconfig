@@ -76,6 +76,15 @@ config NET_GPTP_NUM_PORTS
 	  Configures the gPTP stack to work with the given number of ports.
 	  The port concept is the same thing as network interface.
 
+config NET_L2_ETHERNET_MCAST_FILTER_ADD_COUNT_GPTP
+	int
+	default 1
+	help
+	  gPTP listens to one link layer multicast address, the nearest
+	  bridge group address 01:80:C2:00:00:0E, on every one of its ports.
+	  The addresses are tracked per network interface, so one entry is
+	  enough regardless of the number of ports.
+
 config NET_GPTP_NEIGHBOR_PROP_DELAY_THR
 	int "Set neighbor propagation delay threshold (ns)"
 	default 100000
