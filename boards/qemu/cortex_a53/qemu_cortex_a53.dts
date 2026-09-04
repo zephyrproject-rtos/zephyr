@@ -28,11 +28,6 @@
 	};
 
 	soc {
-		sram0: memory@40000000 {
-			compatible = "mmio-sram";
-			reg = <0x0 0x40000000 0x0 DT_SIZE_M(128)>;
-		};
-
 		virtio_mmio0: virtio_mmio@a000000 {
 			compatible = "virtio,mmio";
 			reg = <0x0 0xa000000 0x0 0x200>;
@@ -256,12 +251,11 @@
 			interrupts = <GIC_SPI 47 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			status = "disabled";
 		};
-	};
 
-	fwcfg0: fw-cfg@9020000 {
-		compatible = "qemu,fw-cfg-mmio";
-		reg = <0x0 0x09020000 0x0 0x18>;
-		status = "okay";
+		sram0: memory@40000000 {
+			compatible = "mmio-sram";
+			reg = <0x0 0x40000000 0x0 DT_SIZE_M(128)>;
+		};
 	};
 
 	reserved-memory {
@@ -281,6 +275,12 @@
 		memory-region = <&ramfb_mem>;
 		width = <1024>;
 		height = <768>;
+		status = "okay";
+	};
+
+	fwcfg0: fw-cfg@9020000 {
+		compatible = "qemu,fw-cfg-mmio";
+		reg = <0x0 0x09020000 0x0 0x18>;
 		status = "okay";
 	};
 };

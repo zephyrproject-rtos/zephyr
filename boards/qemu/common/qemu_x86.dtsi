@@ -27,11 +27,6 @@
 	compatible = "qemu,x86_emulator";
 	model = "QEMU X86 emulator";
 
-	flash0: flash@500000 {
-		compatible = "soc-nv-flash";
-		reg = <0x00500000 DT_FLASH_SIZE>;
-	};
-
 	aliases {
 		uart-0 = &uart0;
 		uart-1 = &uart1;
@@ -142,12 +137,6 @@
 		compatible = "zephyr,ieee802154-uart-pipe";
 	};
 
-	fwcfg0: fw-cfg@510 {
-		compatible = "qemu,fw-cfg-ioport";
-		reg = <0x510 0x18>;
-		status = "okay";
-	};
-
 	reserved-memory {
 		ranges;
 		#address-cells = <1>;
@@ -166,6 +155,17 @@
 		width = <1024>;
 		height = <768>;
 		status = "okay";
+	};
+
+	fwcfg0: fw-cfg@510 {
+		compatible = "qemu,fw-cfg-ioport";
+		reg = <0x510 0x18>;
+		status = "okay";
+	};
+
+	flash0: flash@500000 {
+		compatible = "soc-nv-flash";
+		reg = <0x00500000 DT_FLASH_SIZE>;
 	};
 };
 
