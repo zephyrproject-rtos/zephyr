@@ -93,6 +93,7 @@ tests:
       - sam_e54_xpro
       - s32k5xxcvb/s32k566/m7
       - s32k5xxcvb/s32k566/r52
+      - lp_mspm33c321a/mspm33c321a
     integration_platforms:
       - max32690evkit/max32690/m4
       - nrf54l15dk/nrf54l15/cpuapp
