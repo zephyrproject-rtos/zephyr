@@ -30,6 +30,7 @@ static const struct power_res_map compute_res_map[PWR_RES_COUNT] = {
 	PWR_RES_MAP_SLEEPCON0_ONLY
 };
 
+#if defined(CONFIG_PM)
 #if IS_ENABLED(CONFIG_SOC_MIMXRT7XX_PM_XIP_HANDOVER)
 #define COMPUTE_KEEP_XIP_RES	PWR_RES(PWR_RES_VDDN_COM)
 #else
@@ -95,7 +96,23 @@ static const struct power_mode_desc compute_dsr = {
 	},
 	.pmic_mode = 1U,
 };
+#endif /* CONFIG_PM */
 
+#if defined(CONFIG_POWEROFF)
+static const struct power_mode_desc compute_dpd = {
+	.low_power_mode = LP_DPD,
+	.keep = {0},
+	.pmic_mode = 2U,
+};
+
+static const struct power_mode_desc compute_fdpd = {
+	.low_power_mode = LP_FDPD,
+	.keep = {0},
+	.pmic_mode = 3U,
+};
+#endif /* CONFIG_POWEROFF */
+
+#if defined(CONFIG_PM) || defined(CONFIG_POWEROFF)
 AT_QUICKACCESS_SECTION_CODE(static void
 compute_arm_shared_clock_pdr_ignores(const struct power_request *req))
 {
@@ -180,6 +197,7 @@ static const struct power_domain compute_domain = {
 #endif
 };
 
+#if defined(CONFIG_PM)
 AT_QUICKACCESS_SECTION_CODE(void power_enter_deep_sleep(void))
 {
 	power_enter_common(&compute_domain, &compute_deep_sleep);
@@ -189,3 +207,12 @@ AT_QUICKACCESS_SECTION_CODE(void power_enter_dsr(void))
 {
 	power_enter_common(&compute_domain, &compute_dsr);
 }
+#endif /* CONFIG_PM */
+
+#if defined(CONFIG_POWEROFF)
+AT_QUICKACCESS_SECTION_CODE(void power_enter_deep_power_down(bool full))
+{
+	power_enter_common(&compute_domain, full ? &compute_fdpd : &compute_dpd);
+}
+#endif /* CONFIG_POWEROFF */
+#endif /* CONFIG_PM || CONFIG_POWEROFF */
