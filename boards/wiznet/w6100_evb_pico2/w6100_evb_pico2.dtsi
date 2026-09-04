@@ -95,8 +95,8 @@
 		/* Reserved memory for the second stage bootloader */
 		second_stage_bootloader: partition@0 {
 			compatible = "zephyr,mapped-partition";
-			label = "second_stage_bootloader";
 			reg = <0x00000000 0x100>;
+			label = "second_stage_bootloader";
 			read-only;
 		};
 
@@ -106,8 +106,8 @@
 		 */
 		code_partition: partition@100 {
 			compatible = "zephyr,mapped-partition";
-			label = "code-partition";
 			reg = <0x100 (DT_SIZE_M(2) - 0x100)>;
+			label = "code-partition";
 			read-only;
 		};
 	};
@@ -115,9 +115,9 @@
 
 &uart0 {
 	current-speed = <115200>;
-	status = "okay";
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &gpio0 {
@@ -126,10 +126,10 @@
 
 &spi0 {
 	clock-frequency = <DT_FREQ_M(8)>;
-	status = "okay";
 	pinctrl-0 = <&spi0_default>;
 	pinctrl-names = "default";
 	cs-gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	ethernet: w6100@0 {
 		compatible = "wiznet,w6100";
