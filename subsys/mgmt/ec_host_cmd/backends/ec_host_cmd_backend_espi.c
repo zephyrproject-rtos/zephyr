@@ -58,7 +58,7 @@ static void espi_handler(const struct device *dev, struct espi_callback *cb,
 	/* tx stores the shared memory buf pointer and size, so use it */
 	const struct ec_host_cmd_request_header *rx_header = hc_espi->tx->buf;
 	const size_t shared_size = hc_espi->tx->len_max;
-	const uint16_t rx_valid_data_size = rx_header->data_len + RX_HEADER_SIZE;
+	const size_t rx_valid_data_size = (size_t)rx_header->data_len + RX_HEADER_SIZE;
 
 	if (event_type != ESPI_PERIPHERAL_EC_HOST_CMD) {
 		return;

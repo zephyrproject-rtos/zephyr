@@ -86,7 +86,7 @@ static int64_t suppressed_cmds_deadline = CONFIG_EC_HOST_CMD_LOG_SUPPRESSED_INTE
 static size_t suppressed_cmds_number;
 #endif /* CONFIG_EC_HOST_CMD_LOG_SUPPRESSED */
 
-static uint8_t cal_checksum(const uint8_t *const buffer, const uint16_t size)
+static uint8_t cal_checksum(const uint8_t *const buffer, const size_t size)
 {
 	uint8_t checksum = 0;
 
@@ -227,13 +227,13 @@ static enum ec_host_cmd_status verify_rx(struct ec_host_cmd_rx_ctx *rx)
 		return EC_HOST_CMD_INVALID_HEADER;
 	}
 
-	const uint16_t rx_valid_data_size = rx_header->data_len + RX_HEADER_SIZE;
+	const size_t rx_valid_data_size = (size_t)rx_header->data_len + RX_HEADER_SIZE;
 	/*
 	 * Ensure we received at least as much data as is expected.
 	 * It is okay to receive more since some hardware interfaces
 	 * add on extra padding bytes at the end.
 	 */
-	if (rx->len < rx_valid_data_size) {
+	if (rx_valid_data_size > rx->len_max || rx->len < rx_valid_data_size) {
 		return EC_HOST_CMD_REQUEST_TRUNCATED;
 	}
 
@@ -273,7 +273,7 @@ static enum ec_host_cmd_status prepare_response(struct ec_host_cmd_tx_buf *tx, u
 	tx_header->data_len = len;
 	tx_header->reserved = 0;
 
-	const uint16_t tx_valid_data_size = tx_header->data_len + TX_HEADER_SIZE;
+	const size_t tx_valid_data_size = (size_t)tx_header->data_len + TX_HEADER_SIZE;
 
 	if (tx_valid_data_size > tx->len_max) {
 		return EC_HOST_CMD_INVALID_RESPONSE;

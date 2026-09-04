@@ -116,7 +116,7 @@ struct ec_host_cmd_usb_ctx {
 	struct k_work_delayable reset_work;
 };
 
-static int expected_request_len(const struct ec_host_cmd_request_header *header)
+static size_t expected_request_len(const struct ec_host_cmd_request_header *header)
 {
 	/* Check host request version */
 	if (header->prtcl_ver != EC_HOST_REQUEST_VERSION) {
@@ -128,7 +128,7 @@ static int expected_request_len(const struct ec_host_cmd_request_header *header)
 		return 0;
 	}
 
-	return sizeof(*header) + header->data_len;
+	return sizeof(*header) + (size_t)header->data_len;
 }
 
 static inline uint8_t ec_host_cmd_get_out_ep(struct usbd_class_data *const c_data)
