@@ -10,8 +10,8 @@
 #include "esp32c6_lcd_1_47_hpcore-pinctrl.dtsi"
 
 / {
-	model = "Waveshare ESP32-C6-LCD-1.47 HP Core";
 	compatible = "waveshare,esp32c6-lcd-1.47", "espressif,esp32c6";
+	model = "Waveshare ESP32-C6-LCD-1.47 HP Core";
 
 	chosen {
 		zephyr,sram = &sramhp;
@@ -53,10 +53,10 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &wifi {
