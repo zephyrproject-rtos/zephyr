@@ -1,0 +1,40 @@
+#
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright (c) 2026 Jeff Welder
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+# CONFIG_BT is not set, so the Bluetooth host is not built and src/gatt_stub.c provides
+# the GATT client API. The symbols the transport depends on are inside "if BT" and are
+# forced here, as in tests/bluetooth/audio.
+
+config BT_CONN
+	bool
+	default y
+
+config BT_CENTRAL
+	bool
+	default y
+
+config BT_GATT_CLIENT
+	bool
+	default y
+
+config BT_MAX_CONN
+	int
+	default 2
+
+config BT_MAX_PAIRED
+	int
+	default 1
+
+config BT_ATT_TX_COUNT
+	int
+	default 3
+
+config BT_L2CAP_TX_MTU
+	int
+	default 247
+
+source "Kconfig.zephyr"
