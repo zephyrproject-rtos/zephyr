@@ -155,6 +155,7 @@ struct modem_cellular_data {
 	enum cellular_registration_status registration_status_gsm;
 	enum cellular_registration_status registration_status_gprs;
 	enum cellular_registration_status registration_status_lte;
+	enum cellular_registration_status registration_status_5g;
 	enum cellular_access_technology access_tech;
 	uint8_t rssi;
 	uint8_t rsrp;
