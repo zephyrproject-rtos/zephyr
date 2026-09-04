@@ -169,6 +169,12 @@ config HAS_MCUX_SYSCON_LPCAC
 	help
 	  Set if the SYSCON LPCAC module is present on the SoC.
 
+config HAS_MCUX_SGI_PKC
+	bool
+	help
+	  Set if the SGI PKC (Secure Gateway Interface - Public Key
+	  Cryptography) accelerator is present on the SoC.
+
 config HAS_MCUX_SYSINIT_DISABLE_WDOG
 	bool
 	help
