@@ -50,4 +50,31 @@ configdefault ICACHE_LINE_SIZE
 
 endif # HAS_MCUX_SYSCON_LPCAC
 
+if MBEDTLS_PSA_CRYPTO_C
+
+config PSA_CRYPTO_DRIVER_SGI_PKC
+	bool
+	# Only enable the SGI PKC driver on MCXA parts that actually have the SGI
+	# IP and a matching SGI_PKC platform mapping below.
+	default y if SOC_MCXA266 || SOC_MCXA366 || SOC_MCXA577
+	select SGI_PKC
+	select SGI_PKC_PLATFORM_MCXA if SOC_MCXA266 || SOC_MCXA366
+	select SGI_PKC_PLATFORM_MCXA5 if SOC_MCXA577
+
+if PSA_CRYPTO_DRIVER_SGI_PKC
+
+# The SGI PKC builds its CPU and PKC "workareas" in the stack frame of the calling thread.
+# These are defaults only, so an application remains free to lower or raise them.
+configdefault MAIN_STACK_SIZE
+	default 4096
+
+configdefault SYSTEM_WORKQUEUE_STACK_SIZE
+	default 2048
+
+endif # PSA_CRYPTO_DRIVER_SGI_PKC
+
+endif # MBEDTLS_PSA_CRYPTO_C
+
 endif # SOC_FAMILY_MCXA
+
+
