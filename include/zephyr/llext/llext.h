@@ -67,6 +67,13 @@ enum llext_mem {
 /* Number of memory partitions used by LLEXT */
 #define LLEXT_MEM_PARTITIONS (LLEXT_MEM_BSS+1)
 
+/** Allocation blocks of an extension with @kconfig{CONFIG_LLEXT_REGION_BLOCKS} */
+enum llext_block {
+	LLEXT_BLOCK_RX,		/**< Executable code and read-only data */
+	LLEXT_BLOCK_RW,		/**< Initialized and uninitialized data */
+	LLEXT_BLOCK_COUNT,	/**< Number of blocks */
+};
+
 #ifdef CONFIG_LLEXT_RODATA_NO_RELOC
 /* Section name for read-only data kept in flash */
 #define LLEXT_SECT_RODATA_NO_RELOC llext.rodata.noreloc
@@ -134,6 +141,13 @@ struct llext {
 
 	/** Size of each stored region */
 	size_t mem_size[LLEXT_MEM_COUNT];
+
+#ifdef CONFIG_LLEXT_REGION_BLOCKS
+	/** Blocks holding the program regions, see @ref llext_block */
+	void *blocks[LLEXT_BLOCK_COUNT];
+	/** Size of each block */
+	size_t block_size[LLEXT_BLOCK_COUNT];
+#endif
 
 	/** Total llext allocation size */
 	size_t alloc_size;

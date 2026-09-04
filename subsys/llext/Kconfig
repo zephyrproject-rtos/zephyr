@@ -43,6 +43,15 @@ config LLEXT_TYPE_ELF_SHAREDLIB
 
 endchoice
 
+config LLEXT_REGION_BLOCKS
+	bool "Allocate extension regions as two blocks"
+	help
+	  Place an extension's executable and read-only regions in one
+	  allocation and its writable regions in another, each sized and
+	  aligned for the memory protection unit as a whole. An extension
+	  then costs two memory partitions instead of one per region, which
+	  is what lets a process image fit an MPU with few regions.
+
 config LLEXT_HEAP_DYNAMIC
 	bool "Do not allocate static LLEXT heap"
 	help

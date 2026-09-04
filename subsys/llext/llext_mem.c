@@ -66,6 +66,181 @@ static void llext_init_mem_part(struct llext *ext, enum llext_mem mem_idx,
 	LOG_DBG("region %d: start %#zx, size %zd", mem_idx, (size_t)start, len);
 }
 
+/*
+ * Calculate the minimum size and alignment that can satisfy MMU/MPU
+ * requirements for a range of program-accessible memory.
+ */
+static void llext_protected_alloc(uintptr_t *alloc, uintptr_t *align)
+{
+	if (IS_ENABLED(CONFIG_MMU)) {
+		/* MMU targets map memory in page-sized chunks. Round
+		 * the region to multiples of those.
+		 */
+		*alloc = ROUND_UP(*alloc, LLEXT_PAGE_SIZE);
+		*align = MAX(*align, LLEXT_PAGE_SIZE);
+	} else if (IS_ENABLED(CONFIG_USERSPACE)) {
+		if (IS_ENABLED(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT)) {
+			/* Some MPU architectures (ARMv7-M, older ARC) require regions
+			 * to be sized and aligned to the same power of two.
+			 */
+			uintptr_t block_sz = MAX(MAX(*alloc, *align), LLEXT_PAGE_SIZE);
+
+			block_sz = 1 << LOG2CEIL(block_sz); /* align to next power of two */
+			*alloc = block_sz;
+			*align = block_sz;
+		} else if (IS_ENABLED(CONFIG_ARM_MPU) || IS_ENABLED(CONFIG_ARC_MPU)) {
+			/* ARMv8-M and newer ARC MPUs use 32-byte alignment. */
+			*alloc = ROUND_UP(*alloc, LLEXT_PAGE_SIZE);
+			*align = MAX(*align, LLEXT_PAGE_SIZE);
+		} else if (IS_ENABLED(CONFIG_RISCV_PMP)) {
+			/* PMP ranges start and end on a granule */
+			*alloc = ROUND_UP(*alloc, LLEXT_PMP_GRANULARITY);
+			*align = MAX(*align, LLEXT_PMP_GRANULARITY);
+		}
+	}
+}
+
+/* Read a region's contents into its (already assigned) memory */
+static int llext_copy_region_data(struct llext_loader *ldr, struct llext *ext,
+				  enum llext_mem mem_idx)
+{
+	elf_shdr_t *region = ldr->sects + mem_idx;
+	int ret;
+
+	if (region->sh_type == SHT_NOBITS) {
+		memset(ext->mem[mem_idx], 0, region->sh_size);
+		return 0;
+	}
+
+	uintptr_t base = (uintptr_t)ext->mem[mem_idx];
+	size_t offset = region->sh_offset;
+	size_t length = region->sh_size;
+
+	if (region->sh_flags & SHF_ALLOC) {
+		/* zero out any prepad bytes, not part of the data area */
+		size_t prepad = region->sh_info;
+
+		memset((void *)base, 0, prepad);
+		base += prepad;
+		offset += prepad;
+		length -= prepad;
+	}
+
+	/* actual data area without prepad bytes */
+	ret = llext_seek(ldr, offset);
+	if (ret != 0) {
+		return ret;
+	}
+
+	return llext_read(ldr, (void *)base, length);
+}
+
+#ifdef CONFIG_LLEXT_REGION_BLOCKS
+static enum llext_block llext_region_block(const elf_shdr_t *region)
+{
+	return (region->sh_flags & SHF_WRITE) ? LLEXT_BLOCK_RW : LLEXT_BLOCK_RX;
+}
+
+/*
+ * Lay the program regions out in two blocks, executable/read-only and
+ * writable, and allocate each block as one protected range.
+ */
+static int llext_alloc_blocks(struct llext_loader *ldr, struct llext *ext)
+{
+	uintptr_t size[LLEXT_BLOCK_COUNT] = {0};
+	uintptr_t align[LLEXT_BLOCK_COUNT] = {0};
+	uintptr_t offset[LLEXT_MEM_PARTITIONS] = {0};
+
+	for (enum llext_mem mem_idx = 0; mem_idx < LLEXT_MEM_PARTITIONS; mem_idx++) {
+		elf_shdr_t *region = ldr->sects + mem_idx;
+		enum llext_block b = llext_region_block(region);
+		uintptr_t a = MAX(region->sh_addralign, 1);
+
+		if (region->sh_size == 0 || ext->mem[mem_idx] != NULL) {
+			continue;
+		}
+		offset[mem_idx] = ROUND_UP(size[b], a);
+		size[b] = offset[mem_idx] + region->sh_size;
+		align[b] = MAX(align[b], a);
+	}
+
+	for (enum llext_block b = 0; b < LLEXT_BLOCK_COUNT; b++) {
+		if (size[b] == 0) {
+			continue;
+		}
+		llext_protected_alloc(&size[b], &align[b]);
+#ifdef CONFIG_LLEXT_HEAP_MEMBLK
+		size[b] = ROUND_UP(size[b], CONFIG_LLEXT_HEAP_MEMBLK_BLOCK_SIZE);
+#endif
+		if (b == LLEXT_BLOCK_RX) {
+			ext->blocks[b] = llext_aligned_alloc_instr(ext, align[b], size[b]);
+		} else {
+			ext->blocks[b] = llext_aligned_alloc_data(ext, align[b], size[b]);
+		}
+		if (ext->blocks[b] == NULL) {
+			LOG_ERR("Failed allocating %zd bytes %zd-aligned for block %d",
+				(size_t)size[b], (size_t)align[b], b);
+			return -ENOMEM;
+		}
+		ext->block_size[b] = size[b];
+		ext->alloc_size += size[b];
+#ifdef CONFIG_USERSPACE
+		{
+			/* one partition per block: TEXT stands for RX, DATA for RW */
+			bool rx = (b == LLEXT_BLOCK_RX);
+			struct k_mem_partition *part =
+				&ext->mem_parts[rx ? LLEXT_MEM_TEXT : LLEXT_MEM_DATA];
+
+			part->start = (uintptr_t)ext->blocks[b];
+			part->size = size[b];
+			part->attr = rx ? K_MEM_PARTITION_P_RX_U_RX : K_MEM_PARTITION_P_RW_U_RW;
+		}
+#endif
+		LOG_DBG("block %d: start %p, size %zd", b, ext->blocks[b], (size_t)size[b]);
+	}
+
+	for (enum llext_mem mem_idx = 0; mem_idx < LLEXT_MEM_PARTITIONS; mem_idx++) {
+		elf_shdr_t *region = ldr->sects + mem_idx;
+
+		if (region->sh_size == 0 || ext->mem[mem_idx] != NULL) {
+			continue;
+		}
+		ext->mem[mem_idx] = (uint8_t *)ext->blocks[llext_region_block(region)] +
+				    offset[mem_idx];
+		ext->mem_size[mem_idx] = region->sh_size;
+		ext->mem_on_heap[mem_idx] = false;
+	}
+
+	return 0;
+}
+
+static void llext_free_blocks(struct llext *ext)
+{
+	for (enum llext_block b = 0; b < LLEXT_BLOCK_COUNT; b++) {
+		if (ext->blocks[b] == NULL) {
+			continue;
+		}
+#ifdef CONFIG_MMU
+		if (ext->mmu_permissions_set && b == LLEXT_BLOCK_RX) {
+			k_mem_update_flags(ext->blocks[b], ext->block_size[b], K_MEM_PERM_RW);
+		}
+#endif
+		if (b == LLEXT_BLOCK_RX) {
+			llext_free_instr(ext, ext->blocks[b]);
+		} else {
+			llext_free_data(ext, ext->blocks[b]);
+		}
+		ext->blocks[b] = NULL;
+		ext->block_size[b] = 0;
+	}
+	for (enum llext_mem mem_idx = 0; mem_idx < LLEXT_MEM_PARTITIONS; mem_idx++) {
+		if (!ext->mem_on_heap[mem_idx]) {
+			ext->mem[mem_idx] = NULL;
+		}
+	}
+}
+#endif /* CONFIG_LLEXT_REGION_BLOCKS */
+
 static int llext_copy_region(struct llext_loader *ldr, struct llext *ext,
 			      enum llext_mem mem_idx, const struct llext_load_param *ldr_parm)
 {
@@ -85,41 +260,7 @@ static int llext_copy_region(struct llext_loader *ldr, struct llext *ext,
 	 * program-accessible data (not to string tables, for example).
 	 */
 	if (region->sh_flags & SHF_ALLOC) {
-		if (IS_ENABLED(CONFIG_MMU)) {
-			/* MMU targets map memory in page-sized chunks. Round
-			 * the region to multiples of those.
-			 */
-			region_alloc = ROUND_UP(region_alloc, LLEXT_PAGE_SIZE);
-			region_align = MAX(region_align, LLEXT_PAGE_SIZE);
-		} else if (IS_ENABLED(CONFIG_USERSPACE)) {
-			if (IS_ENABLED(CONFIG_MPU_REQUIRES_POWER_OF_TWO_ALIGNMENT)) {
-				/* Some MPU architectures (ARMv7-M, older ARC) require regions
-				 * to be sized and aligned to the same power of two.
-				 */
-				uintptr_t block_sz =
-					max3(region_alloc, region_align, LLEXT_PAGE_SIZE);
-
-				block_sz = 1 << LOG2CEIL(block_sz); /* align to next power of two */
-				region_alloc = block_sz;
-				region_align = block_sz;
-			} else if (IS_ENABLED(CONFIG_ARM_MPU) || IS_ENABLED(CONFIG_ARC_MPU)) {
-				/* ARMv8-M and newer ARC MPUs use 32-byte alignment. */
-				region_alloc = ROUND_UP(region_alloc, LLEXT_PAGE_SIZE);
-				region_align = MAX(region_align, LLEXT_PAGE_SIZE);
-			} else if (IS_ENABLED(CONFIG_RISCV_PMP)) {
-				/*
-				 * RISC-V PMP regions only need to be sized and
-				 * aligned to the PMP granularity; TOR matching
-				 * removes any power-of-two requirement.
-				 */
-				region_alloc = ROUND_UP(region_alloc, LLEXT_PMP_GRANULARITY);
-				region_align = MAX(region_align, LLEXT_PMP_GRANULARITY);
-			} else {
-				LOG_ERR("region %d: no memory protection alignment "
-					"rule for this architecture", mem_idx);
-				return -ENOTSUP;
-			}
-		}
+		llext_protected_alloc(&region_alloc, &region_align);
 	}
 
 	if (ldr->storage == LLEXT_STORAGE_WRITABLE ||           /* writable storage         */
@@ -211,33 +352,9 @@ static int llext_copy_region(struct llext_loader *ldr, struct llext *ext,
 	llext_init_mem_part(ext, mem_idx, (uintptr_t)ext->mem[mem_idx],
 		region_alloc);
 
-	if (region->sh_type == SHT_NOBITS) {
-		memset(ext->mem[mem_idx], 0, region->sh_size);
-	} else {
-		uintptr_t base = (uintptr_t)ext->mem[mem_idx];
-		size_t offset = region->sh_offset;
-		size_t length = region->sh_size;
-
-		if (region->sh_flags & SHF_ALLOC) {
-			/* zero out any prepad bytes, not part of the data area */
-			size_t prepad = region->sh_info;
-
-			memset((void *)base, 0, prepad);
-			base += prepad;
-			offset += prepad;
-			length -= prepad;
-		}
-
-		/* actual data area without prepad bytes */
-		ret = llext_seek(ldr, offset);
-		if (ret != 0) {
-			goto err;
-		}
-
-		ret = llext_read(ldr, (void *)base, length);
-		if (ret != 0) {
-			goto err;
-		}
+	ret = llext_copy_region_data(ldr, ext, mem_idx);
+	if (ret != 0) {
+		goto err;
 	}
 
 	ext->mem_on_heap[mem_idx] = true;
@@ -271,8 +388,27 @@ int llext_copy_strings(struct llext_loader *ldr, struct llext *ext,
 int llext_copy_regions(struct llext_loader *ldr, struct llext *ext,
 		       const struct llext_load_param *ldr_parm)
 {
+#ifdef CONFIG_LLEXT_REGION_BLOCKS
+	if (!ldr_parm->pre_located) {
+		int ret = llext_alloc_blocks(ldr, ext);
+
+		if (ret < 0) {
+			return ret;
+		}
+		for (enum llext_mem mem_idx = 0; mem_idx < LLEXT_MEM_PARTITIONS; mem_idx++) {
+			if (ext->mem[mem_idx] == NULL || ext->mem_on_heap[mem_idx]) {
+				continue;
+			}
+			ret = llext_copy_region_data(ldr, ext, mem_idx);
+			if (ret < 0) {
+				return ret;
+			}
+		}
+	}
+#endif /* CONFIG_LLEXT_REGION_BLOCKS */
+
 	for (enum llext_mem mem_idx = 0; mem_idx < LLEXT_MEM_COUNT; mem_idx++) {
-		/* strings have already been copied */
+		/* strings and block-placed regions have already been copied */
 		if (ext->mem[mem_idx]) {
 			continue;
 		}
@@ -315,10 +451,20 @@ void llext_adjust_mmu_permissions(struct llext *ext)
 	size_t size;
 	uint32_t flags;
 
+#ifdef CONFIG_LLEXT_REGION_BLOCKS
+	if (ext->blocks[LLEXT_BLOCK_RX] != NULL) {
+		addr = ext->blocks[LLEXT_BLOCK_RX];
+		size = ext->block_size[LLEXT_BLOCK_RX];
+		sys_cache_instr_invd_range(addr, size);
+		sys_cache_data_flush_range(addr, size);
+		k_mem_update_flags(addr, size, K_MEM_PERM_EXEC);
+	}
+#endif /* CONFIG_LLEXT_REGION_BLOCKS */
+
 	for (enum llext_mem mem_idx = 0; mem_idx < LLEXT_MEM_PARTITIONS; mem_idx++) {
 		addr = ext->mem[mem_idx];
 		size = ROUND_UP(ext->mem_size[mem_idx], LLEXT_PAGE_SIZE);
-		if (size == 0) {
+		if (size == 0 || !ext->mem_on_heap[mem_idx]) {
 			continue;
 		}
 		switch (mem_idx) {
@@ -354,9 +500,13 @@ void llext_adjust_mmu_permissions(struct llext *ext)
 
 void llext_free_regions(struct llext *ext)
 {
+#ifdef CONFIG_LLEXT_REGION_BLOCKS
+	llext_free_blocks(ext);
+#endif /* CONFIG_LLEXT_REGION_BLOCKS */
+
 	for (int i = 0; i < LLEXT_MEM_COUNT; i++) {
 #ifdef CONFIG_MMU
-		if (ext->mmu_permissions_set && ext->mem_size[i] != 0 &&
+		if (ext->mmu_permissions_set && ext->mem_size[i] != 0 && ext->mem_on_heap[i] &&
 		    (i == LLEXT_MEM_TEXT || i == LLEXT_MEM_RODATA
 #ifdef CONFIG_LLEXT_VENEERS
 		     || i == LLEXT_MEM_VENEER
@@ -394,7 +544,7 @@ int llext_add_domain(struct llext *ext, struct k_mem_domain *domain)
 	int ret = 0;
 
 	for (int i = 0; i < LLEXT_MEM_PARTITIONS; i++) {
-		if (ext->mem_size[i] == 0) {
+		if (ext->mem_parts[i].size == 0) {
 			continue;
 		}
 		ret = k_mem_domain_add_partition(domain, &ext->mem_parts[i]);
