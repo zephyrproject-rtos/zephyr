@@ -1567,19 +1567,24 @@ static int mcp251xfd_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	if (gpio_pin_configure_dt(&dev_cfg->int_gpio_dt, GPIO_INPUT) < 0) {
-		LOG_ERR("Unable to configure GPIO pin");
+	ret = gpio_pin_configure_dt(&dev_cfg->int_gpio_dt, GPIO_INPUT);
+	if (ret < 0) {
+		LOG_ERR("Failed to configure GPIO interrupt pin [%d]", ret);
 		return -EINVAL;
 	}
 
 	gpio_init_callback(&dev_data->int_gpio_cb, mcp251xfd_int_gpio_callback,
 			   BIT(dev_cfg->int_gpio_dt.pin));
 
-	if (gpio_add_callback_dt(&dev_cfg->int_gpio_dt, &dev_data->int_gpio_cb) < 0) {
+	ret = gpio_add_callback_dt(&dev_cfg->int_gpio_dt, &dev_data->int_gpio_cb);
+	if (ret < 0) {
+		LOG_ERR("Failed to add GPIO interrupt callback [%d]", ret);
 		return -EINVAL;
 	}
 
-	if (gpio_pin_interrupt_configure_dt(&dev_cfg->int_gpio_dt, GPIO_INT_LEVEL_ACTIVE) < 0) {
+	ret = gpio_pin_interrupt_configure_dt(&dev_cfg->int_gpio_dt, GPIO_INT_LEVEL_ACTIVE);
+	if (ret < 0) {
+		LOG_ERR("Failed to configure level-triggered GPIO interrupt [%d]", ret);
 		return -EINVAL;
 	}
 
