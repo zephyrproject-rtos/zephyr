@@ -10,13 +10,18 @@
 
 #define DT_DRV_COMPAT nordic_nrf93m1
 
+struct nrf93m1_modem_cellular_config {
+	/** UART bus is configured with RTS/CTS hardware flow control */
+	bool bus_has_hwfc;
+};
+
 struct nrf93m1_modem_cellular_data {
 	/** Common modem data */
 	struct modem_cellular_data data;
 	/** Vendor specific data */
 
-	/** IFC already correctly configured */
-	bool ifc_configured;
+	/** HWFC already enabled */
+	bool hwfc_enabled;
 };
 BUILD_ASSERT(offsetof(struct nrf93m1_modem_cellular_data, data) == 0,
 	     "Common data must be at start of struct");
@@ -137,7 +142,7 @@ static void nrf93m1_on_ifc(struct modem_chat *chat, char **argv, uint16_t argc, 
 	 * If the configuration is already correct, we can skip the delay that needs to be
 	 * respected while the interface is reconfigured.
 	 */
-	vendor_data->ifc_configured =
+	vendor_data->hwfc_enabled =
 		(argc == 3) && (strtol(argv[1], NULL, 10) == 2) && (strtol(argv[2], NULL, 10) == 2);
 }
 
@@ -146,8 +151,13 @@ static bool nrf93m1_ifc_required(void *user_data)
 	struct modem_cellular_data *data = (struct modem_cellular_data *)user_data;
 	struct nrf93m1_modem_cellular_data *vendor_data =
 		CONTAINER_OF(data, struct nrf93m1_modem_cellular_data, data);
+	const struct modem_cellular_config *config = data->dev->config;
+	const struct nrf93m1_modem_cellular_config *vendor_config = config->vendor_specific;
 
-	return !vendor_data->ifc_configured;
+	/* IFC configuration should only be sent if the bus supports HWFC and it is not already
+	 * enabled.
+	 */
+	return vendor_config->bus_has_hwfc && !vendor_data->hwfc_enabled;
 }
 
 static const struct modem_cellular_vendor_config nrf93m1_vendor = {
@@ -177,10 +187,14 @@ static const struct modem_cellular_vendor_config nrf93m1_vendor = {
 #define MODEM_CELLULAR_DEVICE_NORDIC_NRF93M1(inst)                                                 \
 	MODEM_DT_INST_PPP_DEFINE(inst, MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 1500, 1500);     \
                                                                                                    \
+	static const struct nrf93m1_modem_cellular_config nrf93m1_vendor_cfg##inst = {             \
+		.bus_has_hwfc = DT_PROP(DT_INST_BUS(inst), hw_flow_control),                       \
+	};                                                                                         \
+                                                                                                   \
 	static struct nrf93m1_modem_cellular_data MODEM_CELLULAR_INST_NAME(data, inst);            \
                                                                                                    \
 	MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst, (user_pipe_0, 3), (user_pipe_1, 4))        \
                                                                                                    \
-	MODEM_CELLULAR_DEFINE_INSTANCE(inst, &nrf93m1_vendor, NULL)
+	MODEM_CELLULAR_DEFINE_INSTANCE(inst, &nrf93m1_vendor, &nrf93m1_vendor_cfg##inst)
 
 DT_INST_FOREACH_STATUS_OKAY(MODEM_CELLULAR_DEVICE_NORDIC_NRF93M1)
