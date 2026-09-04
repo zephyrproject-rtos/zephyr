@@ -1,0 +1,19 @@
+# Copyright (c) 2026 KylinSoft Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+title: Rockchip RK3588 CRU Clock Controller
+
+description: |
+  Clock gate controller for the Rockchip RK3588 CRU. Clock IDs are defined
+  in include/zephyr/dt-bindings/clock/rk3588-cru.h.
+
+compatible: "rockchip,rk3588-cru-clk"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  "#clock-cells":
+    const: 1
+
+clock-cells:
+  - clkid
