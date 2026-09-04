@@ -11,7 +11,8 @@ The Pico 2 supports running code on either a single Cortex-M33 or a Hazard3
 
 The Pico 2 also supports AMP configurations with a Cortex-M33 CPU0 and either
 a Cortex-M33 or Hazard3 CPU1. CPU1 can execute from SRAM or XIP flash when both
-cores are Cortex-M33. A Hazard3 CPU1 executes from SRAM.
+cores are Cortex-M33. The current Hazard3 CPU1 target supports execution from
+SRAM; XIP support has not yet been implemented.
 
 Hardware
 ********

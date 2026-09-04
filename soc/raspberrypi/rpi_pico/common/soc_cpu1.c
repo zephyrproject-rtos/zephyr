@@ -52,7 +52,7 @@ BUILD_ASSERT((DT_PARTITION_EXISTS(DT_PHANDLE(CPU1_LAUNCHER_NODE, source_memory))
 
 #define CPU1_STACK_ADDR DT_REG_ADDR(DT_PHANDLE(CPU1_LAUNCHER_NODE, stack_memory))
 #define CPU1_STACK_SIZE DT_REG_SIZE(DT_PHANDLE(CPU1_LAUNCHER_NODE, stack_memory))
-#define CPU1_ARCH_RISCV DT_ENUM_HAS_VALUE(CPU1_LAUNCHER_NODE, architecture, riscv)
+#define CPU1_ARCH_RISCV DT_NODE_HAS_COMPAT(CPU1_NODE, riscv)
 
 static int rpi_pico_mailbox_put_timeout(sio_hw_t *const sio_regs, uint32_t value)
 {
@@ -212,7 +212,8 @@ static int rpi_pico_boot_cpu1(sio_hw_t *const sio_regs, uint32_t vector_table_ad
 	/* We synchronise with CPU1 and then we can hand over the memory addresses. */
 	uint32_t cmds[] = {0, 0, 1, vector_table_addr, stack_ptr, pc};
 	uint32_t seq = 0;
-	uint32_t attempts = 0;
+	int64_t deadline = k_uptime_get() +
+			   DIV_ROUND_UP(CONFIG_SOC_RPI_PICO_CPU1_ENABLE_TIMEOUT_US, USEC_PER_MSEC);
 
 	do {
 		uint32_t cmd = cmds[seq], rsp;
@@ -231,8 +232,8 @@ static int rpi_pico_boot_cpu1(sio_hw_t *const sio_regs, uint32_t vector_table_ad
 		}
 
 		seq = (cmd == rsp) ? seq + 1 : 0;
-		if (++attempts > ARRAY_SIZE(cmds) * 4U) {
-			return -EIO;
+		if (k_uptime_get() >= deadline) {
+			return -ETIMEDOUT;
 		}
 	} while (seq < ARRAY_SIZE(cmds));
 
@@ -247,6 +248,7 @@ void soc_late_init_hook(void)
 	uint32_t cpu1_image_base = CPU1_EXEC_ADDR;
 
 #if CPU1_ARCH_RISCV
+	/* RISC-V images establish their own interrupt stack in __initialize. */
 	uint32_t cpu1_vector = cpu1_image_base;
 	uint32_t cpu1_sp = CPU1_STACK_ADDR + CPU1_STACK_SIZE;
 	uint32_t cpu1_pc = cpu1_image_base;

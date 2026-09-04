@@ -13,12 +13,15 @@
 
 	cpu1-launcher {
 		compatible = "raspberrypi,pico-pcbs";
-		architecture = "riscv";
 		execution-memory = <&sram0_cpu1>;
 		stack-memory = <&sram0_cpu1>;
 		source-memory = <&cpu1_slot0_partition>;
 		status = "okay";
 	};
+};
+
+&cpu1 {
+	compatible = "riscv";
 };
 
 &flash0 {

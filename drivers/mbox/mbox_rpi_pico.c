@@ -10,7 +10,6 @@
 #include <zephyr/irq.h>
 /* pico-sdk includes */
 #include <hardware/structs/sio.h>
-#include <hardware/sync.h>
 #include <zephyr/drivers/misc/mbox_rpi_pico/mbox_rpi_pico.h>
 
 #define DT_DRV_COMPAT raspberrypi_pico_mbox
@@ -59,7 +58,6 @@ static int rpi_pico_mbox_send(const struct device *dev,
 	if (msg == NULL) {
 		LOG_DBG("CPU %d: send IP signal", mbox_sio_hw->cpuid);
 		rpi_pico_mbox_write(mbox_sio_hw, 0);
-		__sev();
 		return 0;
 	}
 
@@ -68,7 +66,6 @@ static int rpi_pico_mbox_send(const struct device *dev,
 	}
 	LOG_DBG("CPU %d: send IP data: %d", mbox_sio_hw->cpuid, *((int *)msg->data));
 	rpi_pico_mbox_write(mbox_sio_hw, *((uint32_t *)(msg->data)));
-	__sev();
 
 	return 0;
 }

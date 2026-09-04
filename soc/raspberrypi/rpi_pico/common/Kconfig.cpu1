@@ -36,6 +36,6 @@ config SOC_RPI_PICO_CPU1_ENABLE_TIMEOUT_US
 	range 1 10000000
 	help
 	  Maximum time to wait for each power-state or inter-processor FIFO
-	  transition while launching CPU1.
+	  transition, and for the overall boot handshake, while launching CPU1.
 
 endif # SOC_RPI_PICO_CPU1_ENABLE
