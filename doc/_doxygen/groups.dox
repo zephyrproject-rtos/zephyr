@@ -77,6 +77,12 @@
 @{
 @}
 
+@defgroup sensor_interface_ext_excelitas Excelitas Technologies
+@ingroup sensor_interface_ext
+@brief Device-specific extensions for sensors from Excelitas Technologies.
+@{
+@}
+
 @defgroup sensor_interface_ext_fintek Fintek
 @ingroup sensor_interface_ext
 @brief Device-specific extensions for sensors from Fintek.

@@ -1,0 +1,144 @@
+# Copyright (c) 2026 BayLibre, SAS
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Excelitas CaliPile TPiS 1S 1385 infrared thermopile sensor.
+
+  Product page:
+    https://www.excelitas.com/fr/product/tpis-1s-1385-calipile-sensor-smd
+
+compatible: "excelitas,tpi1s1385"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  int-gpios:
+    type: phandle-array
+    description: |
+      GPIO wired to the open drain active low INT pin of the sensor.
+
+  slp1:
+    type: int
+    default: 11
+    description: |
+      Select code for the low pass filter LP1 time constant. This field
+      occupies bits 3:0 of register 0x14. The binary codes 0110 and 0111
+      are reserved by the datasheet and therefore not accepted. The
+      datasheet recommends the value 11 (one second) for the presence
+      detection use case.
+    enum:
+      - 0   # 512 s
+      - 1   # 256 s
+      - 2   # 128 s
+      - 3   # 64 s
+      - 4   # 32 s
+      - 5   # 16 s
+      - 8   # 8 s
+      - 9   # 4 s
+      - 10  # 2 s
+      - 11  # 1 s
+      - 12  # 0.5 s
+      - 13  # 0.25 s
+
+  slp2:
+    type: int
+    default: 8
+    description: |
+      Select code for the low pass filter LP2 time constant. This field
+      occupies bits 7:4 of register 0x14. The binary codes 0110 and 0111
+      are reserved by the datasheet and therefore not accepted. The
+      datasheet recommends the value 8 (eight seconds) for the presence
+      detection use case.
+    enum:
+      - 0   # 512 s
+      - 1   # 256 s
+      - 2   # 128 s
+      - 3   # 64 s
+      - 4   # 32 s
+      - 5   # 16 s
+      - 8   # 8 s
+      - 9   # 4 s
+      - 10  # 2 s
+      - 11  # 1 s
+      - 12  # 0.5 s
+      - 13  # 0.25 s
+
+  slp3:
+    type: int
+    default: 10
+    description: |
+      Select code for the low pass filter LP3 time constant. This field
+      occupies bits 3:0 of register 0x15. The binary codes 0110 and 0111
+      are reserved by the datasheet and therefore not accepted. The
+      datasheet recommends the value 10 (two seconds) for the ambient
+      temperature shock detection use case.
+    enum:
+      - 0   # 512 s
+      - 1   # 256 s
+      - 2   # 128 s
+      - 3   # 64 s
+      - 4   # 32 s
+      - 5   # 16 s
+      - 8   # 8 s
+      - 9   # 4 s
+      - 10  # 2 s
+      - 11  # 1 s
+      - 12  # 0.5 s
+      - 13  # 0.25 s
+
+  src-select:
+    type: int
+    min: 0
+    max: 3
+    default: 1
+    description: |
+      Selects the pair of signals subtracted to produce the presence
+      counter. This field occupies bits 3:2 of register 0x1A. The value 0
+      selects TPobject minus TPobjLP2. The value 1 selects TPobjLP1 minus
+      TPobjLP2 and is the recommended combination. The value 2 selects
+      TPobject minus TPobjLP2 frozen. The value 3 selects TPobjLP1 minus
+      TPobjLP2 frozen.
+
+  cycle-time:
+    type: int
+    min: 0
+    max: 3
+    default: 2
+    description: |
+      Cycle time used for the motion differentiation. This field occupies
+      bits 1:0 of register 0x1A. The value 0 selects 30 ms, the value 1
+      selects 60 ms, the value 2 selects 120 ms and is the recommended
+      setting, and the value 3 selects 140 ms.
+
+  tpot-direction-falls-below:
+    type: boolean
+    description: |
+      Fire the TPOT interrupt when TPobject falls below the threshold
+      instead of when it exceeds it. This drives bit 4 of register 0x1A.
+
+  presence-threshold:
+    type: int
+    min: 0
+    max: 255
+    default: 50
+    description: |
+      Unsigned eight bit threshold written to register 0x16. Accepted
+      values run from 0 to 255. The datasheet recommends 50.
+
+  motion-threshold:
+    type: int
+    min: 0
+    max: 255
+    default: 10
+    description: |
+      Unsigned eight bit threshold written to register 0x17. Accepted
+      values run from 0 to 255. The datasheet recommends 10.
+
+  amb-shock-threshold:
+    type: int
+    min: 0
+    max: 255
+    default: 10
+    description: |
+      Unsigned eight bit threshold written to register 0x18. Accepted
+      values run from 0 to 255. The datasheet recommends 10.

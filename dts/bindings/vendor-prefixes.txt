@@ -249,6 +249,7 @@ everlight	Everlight Electronics Co. Ltd.
 everspin	Everspin Technologies, Inc.
 evervision	Evervision Electronics Co. Ltd.
 exar	Exar Corporation
+excelitas	Excelitas Technologies Corp.
 excito	Excito
 ezchip	EZchip Semiconductor
 ezurio	Ezurio
