@@ -8,8 +8,8 @@
 #include <st/h7/stm32h743zitx-pinctrl.dtsi>
 
 / {
-	model = "SEGGER NAND Flash Evaluator";
 	compatible = "segger,nandeval-h743zi";
+	model = "SEGGER NAND Flash Evaluator";
 
 	chosen {
 		zephyr,sram = &sram0;
