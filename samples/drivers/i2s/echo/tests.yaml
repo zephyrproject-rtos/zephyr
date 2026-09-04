@@ -16,7 +16,7 @@ tests:
         - "I2S echo sample"
     extra_configs:
       - CONFIG_CLOCK_CONTROL_NRF=y
-      - CONFIG_DEPRECATION_TEST=y
+      - CONFIG_WARN_DEPRECATED=n
 
   sample.drivers.i2s.echo:
     tags: i2s

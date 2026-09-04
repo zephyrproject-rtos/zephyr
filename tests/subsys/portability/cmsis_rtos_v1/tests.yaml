@@ -17,6 +17,6 @@ tests:
     min_flash: 34
     extra_configs:
       - CONFIG_CLOCK_CONTROL_NRF=y
-      - CONFIG_DEPRECATION_TEST=y
+      - CONFIG_WARN_DEPRECATED=n
     integration_platforms:
       - native_sim
