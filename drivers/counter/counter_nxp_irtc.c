@@ -20,20 +20,11 @@ LOG_MODULE_REGISTER(nxp_irtc_counter, CONFIG_COUNTER_LOG_LEVEL);
 #define NXP_IRTC_OSC_FREQ 32768U
 #define NXP_IRTC_OSC_DIV  32U
 
-/* True for the instance chosen as the system-timer low-power companion. */
-#if DT_HAS_CHOSEN(zephyr_system_timer_companion)
-#define NXP_IRTC_IS_COMPANION(n)						\
-	DT_SAME_NODE(DT_DRV_INST(n), DT_CHOSEN(zephyr_system_timer_companion))
-#else
-#define NXP_IRTC_IS_COMPANION(n) 0
-#endif
-
 struct nxp_irtc_counter_config {
 	struct counter_config_info info;
 	RTC_Type *base;
 	void (*irq_config_func)(const struct device *dev);
 	struct wuc_dt_spec wuc;
-	bool is_companion;
 	bool wakeup_source;
 	/* Enable the OSC_DIV_ENA /32 prescaler (1024 Hz vs raw 32768 Hz). */
 	bool osc_div;
@@ -66,18 +57,12 @@ static inline bool nxp_irtc_is_wakeup_source(const struct device *dev)
 }
 
 /*
- * Arm the wakeup controller so the alarm can wake the SoC: for the system-timer
- * companion (which arms via the tickless idle path with no run-time enable), or
- * when enabled as a wakeup source at run time (pm_device_wakeup_enable()).
+ * Arm the wakeup controller so the alarm can wake the SoC, when the counter is
+ * enabled as a wakeup source at run time (pm_device_wakeup_enable()).
  */
 static inline bool nxp_irtc_wake_via_wuc(const struct device *dev)
 {
-	const struct counter_config_info *info = dev->config;
-	const struct nxp_irtc_counter_config *config =
-		CONTAINER_OF(info, struct nxp_irtc_counter_config, info);
-
-	return nxp_irtc_is_wakeup_source(dev) &&
-	       (config->is_companion || pm_device_wakeup_is_enabled(dev));
+	return nxp_irtc_is_wakeup_source(dev) && pm_device_wakeup_is_enabled(dev);
 }
 
 /*
@@ -408,7 +393,6 @@ static DEVICE_API(counter, nxp_irtc_counter_driver_api) = {
 		.base = (RTC_Type *)DT_REG_ADDR(DT_INST_PARENT(n)),                                \
 		.irq_config_func = nxp_irtc_counter_irq_config_##n,                                \
 		NXP_IRTC_COUNTER_WUC_INIT(n)                                                       \
-		.is_companion = NXP_IRTC_IS_COMPANION(n),                                          \
 		.wakeup_source = DT_INST_PROP_OR(n, wakeup_source, 0),                             \
 		.osc_div = DT_INST_PROP(n, osc_div),                                               \
 		.info =                                                                            \
