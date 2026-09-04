@@ -68,7 +68,7 @@ static const struct modem_cellular_vendor_config quectel_eg915u_vendor = {
 	/* clang-format on */
 	.chat_delimiter = "\r",
 	.chat_filter = "\n",
-	.power_pulse_duration_ms = 2000,
+	.power_pulse_duration_ms = 3100,
 	.reset_pulse_duration_ms = 500,
 	.startup_time_ms = 15000,
 	.shutdown_time_ms = 3000,
