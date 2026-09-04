@@ -9,6 +9,7 @@
 int main(void)
 {
 	printf("Hello World! %s\n", CONFIG_BOARD_TARGET);
+	printf("Hello World! %s\n", "RTK_JACK");
 
 	return 0;
 }
