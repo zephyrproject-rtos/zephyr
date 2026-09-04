@@ -29,7 +29,7 @@
 #include <zephyr/sys/clock.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/types.h>
 
 #include "bstests.h"
@@ -137,14 +137,16 @@ void backchannel_sync_clear_all(void);
 struct audio_test_stream {
 	struct bt_cap_stream stream;
 
+	/* TX */
 	uint16_t seq_num;
 	size_t tx_cnt;
-	uint16_t tx_sdu_size;
 
+	/* RX */
 	struct bt_iso_recv_info last_info;
 	size_t rx_cnt;
 	size_t valid_rx_cnt;
 	atomic_t flag_audio_received;
+	atomic_t stopping;
 	bool last_rx_failed;
 };
 

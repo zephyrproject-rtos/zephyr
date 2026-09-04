@@ -1,0 +1,10 @@
+# Copyright (c) 2026 Liu Changjie
+# SPDX-License-Identifier: Apache-2.0
+
+config PINCTRL_WCH_H41X_AFIO
+	bool "WCH AFIO pin controller driver for CH32H41x"
+	default y
+	depends on DT_HAS_WCH_H41X_AFIO_ENABLED
+	help
+	  WCH CH32H41x AFIO pin controller driver (per-pin alternate function
+	  mux model).

@@ -1,7 +1,7 @@
 /*
  * SPDX-FileCopyrightText: Copyright (c) 2022 Intel Corporation
- * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
- * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,7 @@
 /**
  * @file
  * @brief Real-Time IO device API for moving bytes with low effort
+ * @ingroup rtio
  *
  * RTIO is a context for asynchronous batch operations using a submission and completion queue.
  *
@@ -85,18 +86,16 @@ struct rtio {
 	struct k_sem *consume_sem;
 #endif
 
-	/* Total number of completions */
+	/** Total number of completions */
 	atomic_t cq_count;
 
-	/* Number of completions that were unable to be submitted with results
-	 * due to the cq spsc being full
-	 */
+	/** Number of completions dropped because no CQE was available */
 	atomic_t xcqcnt;
 
-	/* Submission queue object pool with free list */
+	/** Submission queue object pool with free list */
 	struct rtio_sqe_pool *sqe_pool;
 
-	/* Complete queue object pool with free list */
+	/** Completion queue object pool with free list */
 	struct rtio_cqe_pool *cqe_pool;
 
 #ifdef CONFIG_RTIO_SYS_MEM_BLOCKS
@@ -104,10 +103,10 @@ struct rtio {
 	struct sys_mem_blocks *block_pool;
 #endif
 
-	/* Submission queue */
+	/** Submission queue */
 	struct mpsc sq;
 
-	/* Completion queue */
+	/** Completion queue */
 	struct mpsc cq;
 };
 
@@ -189,6 +188,8 @@ static inline uint16_t __rtio_compute_mempool_block_index(const struct rtio *r, 
 }
 #endif
 
+/** @cond INTERNAL_HIDDEN */
+
 static inline int rtio_block_pool_alloc(struct rtio *r, size_t min_sz,
 					  size_t max_sz, uint8_t **buf, uint32_t *buf_len)
 {
@@ -243,6 +244,8 @@ static inline void rtio_block_pool_free(struct rtio *r, void *buf, uint32_t buf_
 #endif
 }
 
+/** @endcond */
+
 
 /** The memory partition associated with all RTIO context information */
 extern struct k_mem_partition rtio_partition;
@@ -288,8 +291,8 @@ extern struct k_mem_partition rtio_partition;
 /* @cond ignore */
 #define Z_RTIO_BLOCK_POOL_DEFINE(name, blk_sz, blk_cnt, blk_align)                                 \
 	RTIO_BMEM uint8_t __aligned(WB_UP(blk_align))                                              \
-	CONCAT(_block_pool_, name)[blk_cnt*WB_UP(blk_sz)];                                         \
-	_SYS_MEM_BLOCKS_DEFINE_WITH_EXT_BUF(name, WB_UP(blk_sz), blk_cnt,                          \
+	CONCAT(_block_pool_, name)[(blk_cnt) * WB_UP(blk_sz)];                                     \
+	_SYS_MEM_BLOCKS_DEFINE_WITH_EXT_BUF(name, WB_UP(blk_sz), (blk_cnt),                        \
 					    CONCAT(_block_pool_, name),	RTIO_DMEM)
 
 /* @endcond */
@@ -645,9 +648,13 @@ static inline int z_impl_rtio_cqe_get_mempool_buffer(const struct rtio *r, struc
 #endif
 }
 
+/** @cond INTERNAL_HIDDEN */
+
 void rtio_executor_submit(struct rtio *r);
 void rtio_executor_ok(struct rtio_iodev_sqe *iodev_sqe, int result);
 void rtio_executor_err(struct rtio_iodev_sqe *iodev_sqe, int result);
+
+/** @endcond */
 
 /**
  * @brief Inform the executor of a submission completion with success
@@ -826,6 +833,13 @@ static inline void rtio_access_grant(struct rtio *r, struct k_thread *t)
 #ifdef CONFIG_RTIO_CONSUME_SEM
 	k_object_access_grant(r->consume_sem, t);
 #endif
+
+#ifdef CONFIG_RTIO_OP_DELAY
+	/* Delay submissions are dispatched to the shared timeout iodev, so a thread
+	 * allowed to use this context must also be able to reference it.
+	 */
+	k_object_access_grant(&rtio_timeout_iodev, t);
+#endif
 }
 
 
@@ -845,6 +859,10 @@ static inline void rtio_access_revoke(struct rtio *r, struct k_thread *t)
 
 #ifdef CONFIG_RTIO_CONSUME_SEM
 	k_object_access_revoke(r->consume_sem, t);
+#endif
+
+#ifdef CONFIG_RTIO_OP_DELAY
+	k_object_access_revoke(&rtio_timeout_iodev, t);
 #endif
 }
 

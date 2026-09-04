@@ -14,7 +14,7 @@ endif()
 # Continue to prepare the build environment
 zephyr_include_directories(include)
 
-if(NOT CONFIG_MCUBOOT AND NOT CONFIG_SOC_ESP32_APPCPU AND NOT CONFIG_SOC_ESP32S3_APPCPU)
+if(NOT CONFIG_MCUBOOT AND NOT CONFIG_SOC_ESP32_APPCPU_TARGET)
   zephyr_sources_ifdef(CONFIG_ESP_SPIRAM esp_psram.c)
 endif()
 
@@ -126,7 +126,7 @@ endif()
 
 if(CONFIG_MCUBOOT)
   set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/../${CONFIG_SOC}/mcuboot.ld CACHE INTERNAL "")
-elseif(CONFIG_SOC_ESP32_APPCPU OR CONFIG_SOC_ESP32S3_APPCPU)
+elseif(CONFIG_SOC_ESP32_APPCPU_TARGET)
   set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/../${CONFIG_SOC}/default_appcpu.ld CACHE INTERNAL "")
 elseif(CONFIG_SOC_ESP32C5_LPCORE OR CONFIG_SOC_ESP32C6_LPCORE OR CONFIG_SOC_ESP32P4_LPCORE)
   set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/../${CONFIG_SOC}/default_lpcore.ld CACHE INTERNAL "")
@@ -137,3 +137,7 @@ endif()
 zephyr_sources_ifdef(CONFIG_ESP32_LCD_CAM esp_lcd_cam.c)
 zephyr_sources_ifdef(CONFIG_ESP32_ETM esp_etm_alloc.c)
 zephyr_sources(instr_mem.c)
+
+if(CONFIG_SOC_HAS_TIMING_FUNCTIONS AND NOT CONFIG_BOARD_HAS_TIMING_FUNCTIONS)
+  zephyr_sources_ifdef(CONFIG_TIMING_FUNCTIONS soc_timing.c)
+endif()

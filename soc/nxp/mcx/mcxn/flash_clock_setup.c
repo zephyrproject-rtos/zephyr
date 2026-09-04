@@ -33,5 +33,4 @@ void flexspi_clock_safe_config(void)
 	/* Switch FLEXSPI to FRO_HF */
 	SYSCON->FLEXSPICLKSEL = 3;
 #endif /* ! CONFIG_TRUSTED_EXECUTION_NONSECURE */
-
 }

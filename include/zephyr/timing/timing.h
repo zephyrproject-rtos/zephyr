@@ -17,6 +17,8 @@ extern "C" {
 /**
  * @brief Timing Measurement APIs
  * @defgroup timing_api Timing Measurement APIs
+ * @since 2.4
+ * @version 1.0.0
  * @ingroup os_services
  *
  * The timing measurement APIs can be used to obtain execution

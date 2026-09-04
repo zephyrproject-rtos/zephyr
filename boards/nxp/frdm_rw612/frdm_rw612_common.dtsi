@@ -157,6 +157,7 @@ mikrobus_serial: &flexcomm0 {};
 		reg = <0>;
 		size = <DT_SIZE_M(64 * 8)>;
 		status = "okay";
+		power-domains = <&peripheral_domain>;
 		jedec-id = [ef 40 20];
 		spi-max-frequency = <DT_FREQ_M(104)>;
 
@@ -439,4 +440,8 @@ nxp_pmod_touch_panel_i2c: &arduino_i2c {
 &standby {
 	exit-latency-us = <13460>;
 	min-residency-us = <1690>;
+};
+
+&powerquad {
+	status = "okay";
 };

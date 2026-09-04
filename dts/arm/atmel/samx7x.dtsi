@@ -2,6 +2,7 @@
  * Copyright (c) 2017 Piotr Mienkowski
  * Copyright (c) 2017 Justin Watson
  * Copyright (c) 2026 Gerson Fernando Budke <nandojve@gmail.com>
+ * Copyright (c) 2026 Microchip Technology Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -366,11 +367,14 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			#erase-block-cells = <2>;
+			ranges;
 
 			flash0: flash@400000 {
 				compatible = "atmel,sam-flash", "soc-nv-flash";
 				write-block-size = <16>;
 				erase-block-size = <8192>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 			};
 		};
 

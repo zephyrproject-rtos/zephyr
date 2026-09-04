@@ -30,6 +30,10 @@
 #include <zephyr/sys/math_extras.h>
 #include <zephyr/sys/slist.h>
 
+#if defined(CONFIG_COAP_OSCORE)
+struct coap_oscore_context;
+#endif /* defined(CONFIG_COAP_OSCORE) */
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -41,36 +45,37 @@ extern "C" {
  * they know how to format them correctly. The only restriction is
  * that all options must be added to a packet in numeric order.
  *
- * Refer to RFC 7252, section 12.2 for more information.
+ * Refer to @rfc{7252,section-12.2} for more information.
  */
 enum coap_option_num {
 	COAP_OPTION_IF_MATCH = 1,        /**< If-Match */
 	COAP_OPTION_URI_HOST = 3,        /**< Uri-Host */
 	COAP_OPTION_ETAG = 4,            /**< ETag */
 	COAP_OPTION_IF_NONE_MATCH = 5,   /**< If-None-Match */
-	COAP_OPTION_OBSERVE = 6,         /**< Observe (RFC 7641) */
+	COAP_OPTION_OBSERVE = 6,         /**< Observe (@rfc{7641}) */
 	COAP_OPTION_URI_PORT = 7,        /**< Uri-Port */
 	COAP_OPTION_LOCATION_PATH = 8,   /**< Location-Path */
+	COAP_OPTION_OSCORE = 9,          /**< OSCORE (@rfc{8613}) */
 	COAP_OPTION_URI_PATH = 11,       /**< Uri-Path */
 	COAP_OPTION_CONTENT_FORMAT = 12, /**< Content-Format */
 	COAP_OPTION_MAX_AGE = 14,        /**< Max-Age */
 	COAP_OPTION_URI_QUERY = 15,      /**< Uri-Query */
 	COAP_OPTION_ACCEPT = 17,         /**< Accept */
 	COAP_OPTION_LOCATION_QUERY = 20, /**< Location-Query */
-	COAP_OPTION_BLOCK2 = 23,         /**< Block2 (RFC 7959) */
-	COAP_OPTION_BLOCK1 = 27,         /**< Block1 (RFC 7959) */
-	COAP_OPTION_SIZE2 = 28,          /**< Size2 (RFC 7959) */
+	COAP_OPTION_BLOCK2 = 23,         /**< Block2 (@rfc{7959}) */
+	COAP_OPTION_BLOCK1 = 27,         /**< Block1 (@rfc{7959}) */
+	COAP_OPTION_SIZE2 = 28,          /**< Size2 (@rfc{7959}) */
 	COAP_OPTION_PROXY_URI = 35,      /**< Proxy-Uri */
 	COAP_OPTION_PROXY_SCHEME = 39,   /**< Proxy-Scheme */
 	COAP_OPTION_SIZE1 = 60,          /**< Size1 */
-	COAP_OPTION_ECHO = 252,          /**< Echo (RFC 9175) */
-	COAP_OPTION_NO_RESPONSE = 258,   /**< No-Response (RFC 7967) */
-	COAP_OPTION_REQUEST_TAG = 292,   /**< Request-Tag (RFC 9175) */
-	COAP_OPTION_SIGNAL_701_MMS = 2,  /**< Signal 7.01 Max message size (RFC 8323) */
-	COAP_OPTION_SIGNAL_701_BWT = 4,	 /**< Signal 7.01 Block-wise transfer (RFC 8323) */
-	COAP_OPTION_SIGNAL_704_ALT_ADDR = 2, /**< Signal 7.04 Alternative-Address (RFC 8323) */
-	COAP_OPTION_SIGNAL_704_HOLD_OFF = 4, /**< Signal 7.04 Hold-Off (RFC 8323) */
-	COAP_OPTION_SIGNAL_705_BAD_CSM = 2   /**< Signal 7.05 Bad-CSM-Option (RFC 8323) */
+	COAP_OPTION_ECHO = 252,          /**< Echo (@rfc{9175}) */
+	COAP_OPTION_NO_RESPONSE = 258,   /**< No-Response (@rfc{7967}) */
+	COAP_OPTION_REQUEST_TAG = 292,   /**< Request-Tag (@rfc{9175}) */
+	COAP_OPTION_SIGNAL_701_MMS = 2,  /**< Signal 7.01 Max message size (@rfc{8323}) */
+	COAP_OPTION_SIGNAL_701_BWT = 4,	 /**< Signal 7.01 Block-wise transfer (@rfc{8323}) */
+	COAP_OPTION_SIGNAL_704_ALT_ADDR = 2, /**< Signal 7.04 Alternative-Address (@rfc{8323}) */
+	COAP_OPTION_SIGNAL_704_HOLD_OFF = 4, /**< Signal 7.04 Hold-Off (@rfc{8323}) */
+	COAP_OPTION_SIGNAL_705_BAD_CSM = 2   /**< Signal 7.05 Bad-CSM-Option (@rfc{8323}) */
 };
 
 /**
@@ -144,7 +149,7 @@ enum coap_msgtype {
  *
  * To be used when creating a response.
  *
- * Refer to RFC 7252, section 12.1.2 for more information.
+ * Refer to @rfc{7252,section-12.1.2} for more information.
  */
 enum coap_response_code {
 	/** 2.01 - Created */
@@ -175,7 +180,7 @@ enum coap_response_code {
 	COAP_RESPONSE_CODE_NOT_ACCEPTABLE = COAP_MAKE_RESPONSE_CODE(4, 6),
 	/** 4.08 - Request Entity Incomplete */
 	COAP_RESPONSE_CODE_INCOMPLETE = COAP_MAKE_RESPONSE_CODE(4, 8),
-	/** 4.12 - Precondition Failed */
+	/** 4.09 - Conflict */
 	COAP_RESPONSE_CODE_CONFLICT = COAP_MAKE_RESPONSE_CODE(4, 9),
 	/** 4.12 - Precondition Failed */
 	COAP_RESPONSE_CODE_PRECONDITION_FAILED = COAP_MAKE_RESPONSE_CODE(4, 12),
@@ -255,7 +260,7 @@ enum coap_content_format {
  * @brief Set of No-Response option values for CoAP.
  *
  * To be used when encoding or decoding a No-Response option defined
- * in RFC 7967.
+ * in @rfc{7967}.
  */
 enum coap_no_response {
 	COAP_NO_RESPONSE_SUPPRESS_2_XX = 0x02,
@@ -334,6 +339,13 @@ struct coap_observer {
 	uint8_t token[8];
 	/** Extended token length */
 	uint8_t tkl;
+#if defined(CONFIG_COAP_OSCORE) || defined(__DOXYGEN__)
+	/**
+	 * Not-NULL if the observer is OSCORE protected
+	 * @kconfig_dep{CONFIG_COAP_OSCORE}
+	 */
+	struct coap_oscore_context *oscore_ctx;
+#endif
 };
 
 /**
@@ -352,6 +364,13 @@ struct coap_packet {
 	 * @kconfig_dep{CONFIG_COAP_KEEP_USER_DATA}
 	 */
 	void *user_data;
+#endif
+#if defined(CONFIG_COAP_OSCORE) || defined(__DOXYGEN__)
+	/**
+	 * Not-NULL if the packet was received OSCORE protected
+	 * @kconfig_dep{CONFIG_COAP_OSCORE}
+	 */
+	struct coap_oscore_context *oscore_ctx;
 #endif
 };
 
@@ -404,7 +423,13 @@ struct coap_transmission_parameters {
  * @brief Represents a request awaiting for an acknowledgment (ACK).
  */
 struct coap_pending {
-	struct net_sockaddr addr; /**< Remote address */
+	/** CoAP remote address storage */
+	union {
+/** @cond INTERNAL_HIDDEN */
+		struct net_sockaddr addr; /**< Remote address. Use the addr_storage instead. */
+/** @endcond */
+		struct net_sockaddr_storage addr_storage; /**< Remote address storage */
+	};
 	int64_t t0;           /**< Time when the request was sent */
 	uint32_t timeout;     /**< Timeout in ms */
 	uint16_t id;          /**< Message id */
@@ -762,11 +787,9 @@ int coap_handle_request(struct coap_packet *cpkt,
 
 /**
  * Represents the size of each block that will be transferred using
- * block-wise transfers [RFC7959]:
+ * block-wise transfers (@rfc{7959}):
  *
  * Each entry maps directly to the value that is used in the wire.
- *
- * https://tools.ietf.org/html/rfc7959
  */
 enum coap_block_size {
 	COAP_BLOCK_16,   /**< 16-byte block size */
@@ -776,7 +799,7 @@ enum coap_block_size {
 	COAP_BLOCK_256,  /**< 256-byte block size */
 	COAP_BLOCK_512,  /**< 512-byte block size */
 	COAP_BLOCK_1024, /**< 1024-byte block size */
-	COAP_BLOCK_BERT, /**< BERT block size (RFC 8323) - acts like 1024 for calculations */
+	COAP_BLOCK_BERT, /**< BERT block size (@rfc{8323}) - acts like 1024 for calculations */
 };
 
 /**
@@ -1037,6 +1060,24 @@ void coap_observer_init(struct coap_observer *observer,
 			const struct coap_packet *request,
 			const struct net_sockaddr *addr);
 
+#if defined(CONFIG_COAP_OSCORE) || defined(__DOXYGEN__)
+/**
+ * @brief Indicates that the remote device referenced by @a addr, with
+ * @a request, wants to observe a resource. As well as indicates if the
+ * remote device is sending OSCORE protected.
+ *
+ * @kconfig_dep{CONFIG_COAP_OSCORE}
+ *
+ * @param observer Observer to be initialized
+ * @param request Request on which the observer will be based
+ * @param addr Address of the remote device
+ * @param oscore_ctx OSCORE context to be used for the observer
+ */
+void coap_observer_init_oscore(struct coap_observer *observer, const struct coap_packet *request,
+			       const struct net_sockaddr *addr,
+			       struct coap_oscore_context *oscore_ctx);
+#endif /* CONFIG_COAP_OSCORE */
+
 /**
  * @brief After the observer is initialized, associate the observer
  * with an resource.
@@ -1189,8 +1230,8 @@ struct coap_reply *coap_reply_next_unused(
  * coap_pending_clear().
  *
  * @param response The received response
- * @param pendings Pointer to the array of #coap_reply structures
- * @param len Size of the array of #coap_reply structures
+ * @param pendings Pointer to the array of #coap_pending structures
+ * @param len Size of the array of #coap_pending structures
  *
  * @return pointer to the associated #coap_pending structure, NULL in
  * case none could be found.
@@ -1314,6 +1355,25 @@ struct coap_transmission_parameters coap_get_transmission_parameters(void);
  * @param params Pointer to the transmission parameters structure.
  */
 void coap_set_transmission_parameters(const struct coap_transmission_parameters *params);
+
+/**
+ * @brief Check if a CoAP packet contains unsupported critical options.
+ *
+ * This function checks if a parsed CoAP packet contains any critical options
+ * that this build does not support. Per @rfc{7252,section-5.4.1}, unrecognized
+ * critical options must cause the message to be rejected.
+ *
+ * Currently checks for:
+ * - OSCORE option (9) when CONFIG_COAP_OSCORE is not enabled
+ *
+ * @param cpkt Parsed CoAP packet to check
+ * @param opt Pointer to store the option number of the first unsupported critical option found
+ *
+ * @retval 0 No unsupported critical options found
+ * @retval -ENOTSUP Unsupported critical option found, option number stored in *opt
+ * @retval -EINVAL Invalid input parameters
+ */
+int coap_check_unsupported_critical_options(const struct coap_packet *cpkt, uint16_t *opt);
 
 /**
  * @brief Returns the token (if any) in the CoAP TCP packet.

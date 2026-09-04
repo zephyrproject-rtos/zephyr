@@ -29,6 +29,7 @@
 		zephyr,code-partition = &slot0_partition;
 		zephyr,bt-hci = &esp32_bt_hci;
 		zephyr,display = &ili9342c;
+		zephyr,touch = &gt911;
 	};
 
 	buttons {
@@ -81,6 +82,21 @@
 	status = "okay";
 	pinctrl-0 = <&spim2_default>;
 	pinctrl-names = "default";
+};
+
+&i2c0 {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	pinctrl-0 = <&i2c0_default>;
+	pinctrl-names = "default";
+
+	gt911: gt911@5d {
+		compatible = "goodix,gt911";
+		reg = <0x5d>;
+		irq-gpios = <&gpio0 3 GPIO_ACTIVE_HIGH>;
+		alt-addr = <0x14>;
+		status = "okay";
+	};
 };
 
 &gpio0 {

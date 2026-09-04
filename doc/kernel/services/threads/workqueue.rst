@@ -32,31 +32,6 @@ A workqueue must be initialized before it can be used. This sets its queue to
 empty and spawns the workqueue's thread.  The thread runs forever, but sleeps
 when no work items are available.
 
-.. note::
-   The behavior described here is changed from the Zephyr workqueue
-   implementation used prior to release 2.6.  Among the changes are:
-
-   * Precise tracking of the status of cancelled work items, so that the
-     caller need not be concerned that an item may be processing when the
-     cancellation returns.  Checking of return values on cancellation is still
-     required.
-   * Direct submission of delayable work items to the queue with
-     :c:macro:`K_NO_WAIT` rather than always going through the timeout API,
-     which could introduce delays.
-   * The ability to wait until a work item has completed or a queue has been
-     drained.
-   * Finer control of behavior when scheduling a delayable work item,
-     specifically allowing a previous deadline to remain unchanged when a work
-     item is scheduled again.
-   * Safe handling of work item resubmission when the item is being processed
-     on another workqueue.
-
-   Using the return values of :c:func:`k_work_busy_get()` or
-   :c:func:`k_work_is_pending()`, or measurements of remaining time until
-   delayable work is scheduled, should be avoided to prevent race conditions
-   of the type observed with the previous implementation.  See also `Workqueue
-   Best Practices`_.
-
 Work Item Lifecycle
 ********************
 
@@ -331,7 +306,7 @@ work item:
 * :c:func:`k_work_cancel_sync()` may be invoked from threads to block until
   the work completes; it will return immediately if the cancellation was
   successful or not necessary (the work wasn't submitted or running).  This
-  can be used after :c:func:`k_work_cancel()` is invoked (from an ISR)` to
+  can be used after :c:func:`k_work_cancel()` is invoked (from an ISR) to
   confirm completion of an ISR-initiated cancellation.
 
 Scheduling a Delayable Work Item
@@ -459,7 +434,7 @@ protected by such a lock to prevent further resubmission, it's safe to do the
 resubmit as long as you're sure that eventually the item will take its lock
 and check that state to determine whether it should do anything.  Where a
 delayable work item is being rescheduled in its handler due to inability to
-take the lock some other self-locking state, such as an atomic flag set by the
+take the lock, some other self-locking state, such as an atomic flag set by the
 application/driver when the cancel is initiated, would be required to detect
 the cancellation and avoid the cancelled work item being submitted again after
 the deadline.

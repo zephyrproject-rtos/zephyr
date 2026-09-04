@@ -1548,7 +1548,11 @@ static void clock_control_bl61x_peripheral_clock_init(void)
 	regval |= (1 << 22);
 	sys_write32(regval, GLB_BASE + GLB_CGEN_CFG2_OFFSET);
 
-	clock_control_bl61x_uart_set_clock(true, 0, 2);
+	/*
+	 * BCLK / 4 = 20 MHz. Must divide evenly into standard CAN bitrates:
+	 * the BL61x CAN controller core clock is the UART clock / 2.
+	 */
+	clock_control_bl61x_uart_set_clock(true, 0, 3);
 }
 
 static int clock_control_bl61x_on(const struct device *dev, clock_control_subsys_t sys)

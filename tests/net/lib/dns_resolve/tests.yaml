@@ -21,6 +21,17 @@ tests:
       - CONFIG_MDNS_RESPONDER=n
       - CONFIG_NET_IPV6_MLD=y
       - CONFIG_NET_IPV4_IGMP=y
+  net.mdns.resolve.query_all_servers:
+    extra_configs:
+      - CONFIG_MDNS_RESOLVER=y
+      - CONFIG_MDNS_RESPONDER=n
+      - CONFIG_NET_IPV6_MLD=y
+      - CONFIG_NET_IPV4_IGMP=y
+      - CONFIG_DNS_RESOLVER_QUERY_ALL_AVAILABLE_SERVERS=y
+  net.llmnr.resolve.query_all_servers:
+    extra_configs:
+      - CONFIG_LLMNR_RESOLVER=y
+      - CONFIG_DNS_RESOLVER_QUERY_ALL_AVAILABLE_SERVERS=y
   net.dns.resolve.hostname:
     extra_configs:
       - CONFIG_NET_HOSTNAME_ENABLE=y
@@ -36,3 +47,6 @@ tests:
   net.dns.resolve.query_all_servers:
     extra_configs:
       - CONFIG_DNS_RESOLVER_QUERY_ALL_AVAILABLE_SERVERS=y
+  net.dns.resolve.no_additional_bufs:
+    extra_configs:
+      - CONFIG_DNS_RESOLVER_ADDITIONAL_BUF_CTR=0

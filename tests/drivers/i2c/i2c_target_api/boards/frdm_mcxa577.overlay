@@ -5,11 +5,15 @@
  */
 
 /* To test this sample, connect
- * LPI2C0 SCL(J2-20)  -->  LPI2C3 SCL(J5-5)
- * LPI2C0 SDA(J2-18)  -->  LPI2C3 SDA(J5-6)
+ * LPI2C0 SCL(J9-9)  -->  LPI2C3 SCL(J5-5)
+ * LPI2C0 SDA(J9-10)  -->  LPI2C3 SDA(J5-6)
  */
 
 &lpi2c0 {
+	scl-gpios = <&gpio0 17 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+	sda-gpios = <&gpio0 16 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+	recover-bus-on-init;
+
 	eeprom0: eeprom@54 {
 		compatible = "zephyr,i2c-target-eeprom";
 		reg = <0x54>;
@@ -18,6 +22,10 @@
 };
 
 &lpi2c3 {
+	scl-gpios = <&gpio3 21 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+	sda-gpios = <&gpio3 20 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+	recover-bus-on-init;
+
 	eeprom1: eeprom@56 {
 		compatible = "zephyr,i2c-target-eeprom";
 		reg = <0x56>;

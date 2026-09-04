@@ -234,12 +234,13 @@ static int adc_ambiq_start_read(const struct device *dev, const struct adc_seque
 		return -EINVAL;
 	}
 
+	active_channels = POPCOUNT(sequence->channels);
+
 	error = adc_ambiq_check_buffer_size(sequence, active_channels);
 	if (error < 0) {
 		return error;
 	}
 
-	active_channels = POPCOUNT(sequence->channels);
 	if (active_channels > AMBIQ_ADC_SLOT_NUMBER) {
 		LOG_ERR("Too many channels for sequencer. Max: %d", AMBIQ_ADC_SLOT_NUMBER);
 		return -ENOTSUP;
@@ -347,7 +348,7 @@ static int adc_ambiq_read(const struct device *dev, const struct adc_sequence *s
 
 	error = pm_device_runtime_get(dev);
 	if (error < 0) {
-		LOG_ERR("Failed to get device runtime PM state");
+		LOG_ERR_PM_DEVICE_RUNTIME_GET(dev, error);
 		adc_context_release(&data->ctx, error);
 		return error;
 	}

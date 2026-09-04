@@ -10,8 +10,8 @@
 #include <zephyr/linker/linker-defs.h>
 #include <riscv/csr.h>
 
-#include "soc/soc.h"
-#include "cache.h"
+#include <soc/soc.h>
+#include <cache.h>
 
 #define TEST_PATTERN_A 0xA5A5A5A5U
 

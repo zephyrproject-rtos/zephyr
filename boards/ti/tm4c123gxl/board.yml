@@ -1,0 +1,6 @@
+board:
+  name: tm4c123gxl
+  full_name: TI Tiva C Series TM4C123G LaunchPad
+  vendor: ti
+  socs:
+    - name: ti_tm4c123gh6pm

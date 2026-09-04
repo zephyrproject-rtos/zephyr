@@ -659,6 +659,14 @@ before opening a new Pull Request:
 
    ./scripts/ci/check_compliance.py -c <commit range>
 
+The checks run in parallel, using one worker process per CPU. Pass ``-p N`` to
+limit the number of worker processes to ``N``, or ``-p 1`` to run the checks
+sequentially.
+
+.. code-block:: bash
+
+   ./scripts/ci/check_compliance.py -p 1 -c <commit range>
+
 .. note::
    On Windows if the .pl extension has not yet been associated with an
    application, then the first time a .pl file is run without specifying an

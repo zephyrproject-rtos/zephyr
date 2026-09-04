@@ -578,19 +578,31 @@
 		};
 
 		eth: eth@3ff69000 {
-			compatible = "espressif,esp32-eth";
-			reg = <0x3ff69000 0x2000>;
+			compatible = "espressif,esp32-eth", "snps,dwmac";
+			reg = <0x3ff69000 0x2000>, <0x3ff6a000 0x1000>, <0x3ff69000 0x800>;
+			reg-names = "base", "mac", "dma";
 			interrupts = <ETH_MAC_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
 			interrupt-parent = <&intc>;
 			clocks = <&clock ESP32_EMAC_MODULE>;
+			snps,perfect-filter-entries = <9>;
 			status = "disabled";
 
 			mdio: mdio {
-				compatible = "espressif,esp32-mdio";
+				compatible = "snps,dwmac-mdio";
 				status = "disabled";
 				#address-cells = <1>;
 				#size-cells = <0>;
 			};
+		};
+
+		rmt: rmt@3ff56000 {
+			compatible = "espressif,esp32-rmt";
+			#pulse-io-cells = <1>;
+			reg = <0x3ff56000 0x1000>;
+			interrupts = <RMT_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupt-parent = <&intc>;
+			clocks = <&clock ESP32_RMT_MODULE>;
+			status = "disabled";
 		};
 	};
 };

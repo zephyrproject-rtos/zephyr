@@ -132,7 +132,7 @@ struct bt_ascs_ase_cp {
 
 struct bt_ascs_config {
 	/* ASE ID */
-	uint8_t  ase;
+	uint8_t ase_id;
 	/* Target latency */
 	uint8_t  latency;
 	/* Target PHY */
@@ -155,7 +155,7 @@ struct bt_ascs_config_op {
 #define BT_ASCS_QOS_OP                   0x02U
 struct bt_ascs_qos {
 	/* ASE ID */
-	uint8_t  ase;
+	uint8_t ase_id;
 	/* CIG ID*/
 	uint8_t  cig;
 	/* CIG ID*/
@@ -186,7 +186,7 @@ struct bt_ascs_qos_op {
 #define BT_ASCS_ENABLE_OP                0x03U
 struct bt_ascs_metadata {
 	/* ASE ID */
-	uint8_t  ase;
+	uint8_t ase_id;
 	/* Metadata length */
 	uint8_t  len;
 	/* LTV-formatted Metadata */
@@ -205,7 +205,7 @@ struct bt_ascs_start_op {
 	/* Number of ASEs */
 	uint8_t  num_ases;
 	/* ASE IDs */
-	uint8_t  ase[];
+	uint8_t ase_ids[];
 } __packed;
 
 #define BT_ASCS_DISABLE_OP               0x05U
@@ -213,7 +213,7 @@ struct bt_ascs_disable_op {
 	/* Number of ASEs */
 	uint8_t  num_ases;
 	/* ASE IDs */
-	uint8_t  ase[];
+	uint8_t ase_ids[];
 } __packed;
 
 #define BT_ASCS_STOP_OP                  0x06U
@@ -221,7 +221,7 @@ struct bt_ascs_stop_op {
 	/* Number of ASEs */
 	uint8_t  num_ases;
 	/* ASE IDs */
-	uint8_t  ase[];
+	uint8_t ase_ids[];
 } __packed;
 
 #define BT_ASCS_METADATA_OP              0x07U
@@ -236,13 +236,13 @@ struct bt_ascs_metadata_op {
 struct bt_ascs_release_op {
 	/* Number of ASEs */
 	uint8_t  num_ases;
-	/* Ase IDs */
-	uint8_t  ase[];
+	/* ASE IDs */
+	uint8_t ase_ids[];
 } __packed;
 
 struct bt_ascs_cp_ase_rsp {
 	/* ASE ID */
-	uint8_t  id;
+	uint8_t ase_id;
 	/* Response code */
 	uint8_t  code;
 	/* Response reason */

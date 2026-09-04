@@ -188,11 +188,15 @@ static int rtc_sam_get_time(const struct device *dev, struct rtc_time *timeptr)
 
 static void rtc_sam_isr(const struct device *dev)
 {
+#if defined(CONFIG_RTC_ALARM) || defined(CONFIG_RTC_UPDATE)
 	struct rtc_sam_data *data = dev->data;
 	const struct rtc_sam_config *config = dev->config;
 	Rtc *regs = config->regs;
 
 	uint32_t sr = regs->RTC_SR;
+#else
+	ARG_UNUSED(dev);
+#endif
 
 #ifdef CONFIG_RTC_ALARM
 	if (sr & RTC_SR_ALARM) {

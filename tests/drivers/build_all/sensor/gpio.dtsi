@@ -29,3 +29,13 @@ test_gpio_tach_gpio: tach-gpio {
 	gpios = <&test_gpio 0 0>;
 	pulses-per-round = <1>;
 };
+
+test_gpio_s9706: s9706 {
+	compatible = "hamamatsu,s9706";
+	range-gpios = <&test_gpio 0 0>;
+	gate-gpios = <&test_gpio 1 0>;
+	clk-gpios = <&test_gpio 2 0>;
+	data-gpios = <&test_gpio 3 0>;
+	max-frequency = <1500000>;
+	integration-time = <5000>;
+};

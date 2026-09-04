@@ -15,3 +15,11 @@ properties:
 
   interrupts:
     required: true
+    # Do not set min-len/max-len due to DT parsing process issues.
+    # Rely on interrupt-names for the consistency.
+
+  interrupt-names:
+    required: true
+    enum: ["radio", "radio-sw-low"]
+    min-len: 2
+    max-len: 2

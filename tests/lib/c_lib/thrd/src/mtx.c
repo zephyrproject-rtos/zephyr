@@ -9,7 +9,7 @@
 #include <stdint.h>
 #include <threads.h>
 
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/ztest.h>
 
 static const int valid_mtx_types[] = {

@@ -79,17 +79,10 @@ static int siwx91x_bt_open(const struct device *dev)
 
 static int siwx91x_bt_setup(const struct device *dev, const struct bt_hci_setup_params *params)
 {
-	const struct hci_config *hci_config = dev->config;
 	int err = rsi_bt_driver_send_tx_pwr_vs_cmd(dev, BT_LE_MODE, RSI_BLE_PWR_INX);
 
 	if (err < 0) {
 		LOG_ERR("Failed to send RF power config command: %d", err);
-		return err;
-	}
-
-	err = siwx91x_nwp_apply_power_profile(hci_config->nwp_dev, NULL);
-	if (err < 0) {
-		LOG_ERR("Failed to set power profile: %d", err);
 		return err;
 	}
 

@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: Test display controller providing width/height for phandle sourcing
+
+compatible: "test-display"
+
+include: display-controller.yaml

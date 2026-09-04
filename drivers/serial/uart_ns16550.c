@@ -45,7 +45,8 @@
 LOG_MODULE_REGISTER(uart_ns16550, CONFIG_UART_LOG_LEVEL);
 
 #define UART_NS16550_PCP_ENABLED DT_ANY_INST_HAS_PROP_STATUS_OKAY(pcp)
-#define UART_NS16550_DLF_ENABLED DT_ANY_INST_HAS_PROP_STATUS_OKAY(dlf)
+#define UART_NS16550_DLF_ENABLED UTIL_OR(DT_ANY_INST_HAS_PROP_STATUS_OKAY(dlf), \
+				DT_ANY_INST_HAS_BOOL_STATUS_OKAY(dlf_auto))
 #define UART_NS16550_DMAS_ENABLED DT_ANY_INST_HAS_PROP_STATUS_OKAY(dmas)
 
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(pcie)
@@ -101,6 +102,7 @@ LOG_MODULE_REGISTER(uart_ns16550, CONFIG_UART_LOG_LEVEL);
 #define REG_DLF 0xC0  /* Divisor Latch Fraction         */
 #define REG_PCP 0x200 /* PRV_CLOCK_PARAMS (Apollo Lake) */
 #define REG_MDR1 0x08 /* Mode control reg. (TI_K3) */
+#define REG_BRD1 0x10 /* Baud rate divisor. (BCM283x) */
 
 #if defined(CONFIG_UART_NS16550_INTEL_LPSS_DMA)
 #define REG_LPSS_SRC_TRAN 0xAF8 /* SRC Transfer LPSS DMA */
@@ -154,6 +156,11 @@ LOG_MODULE_REGISTER(uart_ns16550, CONFIG_UART_LOG_LEVEL);
 #define MDR1_FIR_MODE					(5)
 #define MDR1_CIR_MODE					(6)
 #define MDR1_DISABLE					(7)
+
+/* Modes available for BCM283x Auxiliary UART module */
+
+#define MDR1_RX_EN				     BIT(0)
+#define MDR1_TX_EN				     BIT(1)
 
 /*
  * Per PC16550D (Literature Number: SNLS378B):
@@ -261,6 +268,7 @@ LOG_MODULE_REGISTER(uart_ns16550, CONFIG_UART_LOG_LEVEL);
 #define LSR(dev) (get_port(dev) + (REG_LSR * reg_interval(dev)))
 #define MSR(dev) (get_port(dev) + (REG_MSR * reg_interval(dev)))
 #define MDR1(dev) (get_port(dev) + (REG_MDR1 * reg_interval(dev)))
+#define BRD1(dev) (get_port(dev) + (REG_BRD1 * reg_interval(dev)))
 #define USR(dev) (get_port(dev) + REG_USR)
 #define DLF(dev) (get_port(dev) + REG_DLF)
 #define PCP(dev) (get_port(dev) + REG_PCP)
@@ -358,6 +366,9 @@ struct uart_ns16550_dev_config {
 #endif
 #if UART_NS16550_RESET_ENABLED
 	struct reset_dt_spec reset_spec;
+#endif
+#if UART_NS16550_DLF_ENABLED
+	bool dlf_auto;
 #endif
 	bool loopback;
 };
@@ -505,13 +516,56 @@ static uint32_t get_uart_baudrate_divisor(const struct device *dev,
 					  uint32_t baud_rate,
 					  uint32_t pclk)
 {
+#ifdef CONFIG_UART_NS16550_BCM283X_AUX
+	ARG_UNUSED(dev);
+
+	return ((pclk / (baud_rate * 8)) - 1);
+#elif UART_NS16550_DLF_ENABLED
+	struct uart_ns16550_dev_data * const dev_data = dev->data;
+
+	/* Calculate baud rate divisor taking fractional parameter into account. */
+	return ((pclk + (baud_rate * (8 - dev_data->dlf))) / baud_rate) >> 4;
+#else
 	ARG_UNUSED(dev);
 	/*
 	 * calculate baud rate divisor. a variant of
 	 * (uint32_t)(pclk / (16.0 * baud_rate) + 0.5)
 	 */
 	return ((pclk + (baud_rate << 3)) / baud_rate) >> 4;
+#endif
 }
+
+#if UART_NS16550_DLF_ENABLED
+/*
+ * Calculate the integer divisor and DLF value together to reduce baudrate
+ * error. The DW_apb_uart DLF register provides 1/64-divisor resolution:
+ *
+ *     divisor = DLL/DLH + DLF / 64
+ */
+#define DLF_RESOLUTION 64U
+
+static uint32_t get_uart_baudrate_divisor_dlf(uint32_t baud_rate, uint32_t pclk,
+					      uint8_t *dlf_out)
+{
+	/* Fixed-point target divisor, scaled by DLF_RESOLUTION. */
+	uint64_t scaled = ((uint64_t)pclk * DLF_RESOLUTION + (baud_rate << 3)) /
+			   (baud_rate << 4);
+	uint32_t divisor = (uint32_t)(scaled / DLF_RESOLUTION);
+	uint32_t dlf = (uint32_t)(scaled % DLF_RESOLUTION);
+
+	if (divisor == 0U) {
+		/*
+		 * The requested baud rate requires a divisor below 1. Clamp it to 1
+		 * to avoid writing 0 to DLL/DLH, which disables the baud-rate generator.
+		 */
+		divisor = 1U;
+		dlf = 0U;
+	}
+
+	*dlf_out = (uint8_t)dlf;
+	return divisor;
+}
+#endif /* UART_NS16550_DLF_ENABLED */
 
 #ifdef CONFIG_UART_NS16550_ITE_HIGH_SPEED_BAUDRATE
 static uint32_t get_ite_uart_baudrate_divisor(const struct device *dev,
@@ -570,12 +624,25 @@ static void set_baud_rate(const struct device *dev, uint32_t baud_rate, uint32_t
 #else
 		divisor = get_uart_baudrate_divisor(dev, baud_rate, pclk);
 #endif
+
+#if UART_NS16550_DLF_ENABLED
+		if (dev_cfg->dlf_auto) {
+			divisor = get_uart_baudrate_divisor_dlf(baud_rate, pclk,
+								&dev_data->dlf);
+			ns16550_outbyte(dev_cfg, DLF(dev), dev_data->dlf);
+		}
+#endif
+
 		/* set the DLAB to access the baud rate divisor registers */
 		lcr_cache = ns16550_inbyte(dev_cfg, LCR(dev));
 		ns16550_outbyte(dev_cfg, LCR(dev), LCR_DLAB | lcr_cache);
+
+#ifdef CONFIG_UART_NS16550_BCM283X_AUX
+		ns16550_outbyte(dev_cfg, BRD1(dev), (unsigned char)(divisor & 0xff));
+#else
 		ns16550_outbyte(dev_cfg, BRDL(dev), (unsigned char)(divisor & 0xff));
 		ns16550_outbyte(dev_cfg, BRDH(dev), (unsigned char)((divisor >> 8) & 0xff));
-
+#endif
 		/* restore the DLAB to access the baud rate divisor registers */
 		ns16550_outbyte(dev_cfg, LCR(dev), lcr_cache);
 
@@ -935,6 +1002,10 @@ static int uart_ns16550_init(const struct device *dev)
 	dev_cfg->irq_config_func(dev);
 #endif
 
+#ifdef CONFIG_UART_NS16550_BCM283X_AUX
+	ns16550_outbyte(dev_cfg, MDR1(dev), (MDR1_RX_EN | MDR1_TX_EN));
+#endif
+
 	/* clear the port */
 	(void)ns16550_read_char(dev, &c);
 	ns16550_outbyte(dev_cfg, FCR(dev), (FCR_RCVRCLR | FCR_XMITCLR));
@@ -1035,6 +1106,15 @@ static int uart_ns16550_fifo_fill(const struct device *dev,
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
 	for (i = 0; (i < size) && (i < data->fifo_size); i++) {
+		/* uart_ns16550_irq_tx_ready() reports the DW8250 ready as soon
+		 * as its TX FIFO has room, not only when it is empty, so the
+		 * FIFO may already hold data here. Bytes written to a full
+		 * FIFO are lost: stop as soon as it fills up.
+		 */
+		if (IS_ENABLED(CONFIG_UART_NS16550_DW8250_DW_APB) &&
+		    (ns16550_inbyte(dev_cfg, USR(dev)) & USR_TFNF) == 0) {
+			break;
+		}
 		ns16550_outbyte(dev_cfg, THR(dev), tx_data[i]);
 	}
 
@@ -2070,6 +2150,8 @@ static DEVICE_API(uart, uart_ns16550_driver_api) = {
 			(.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),))              \
 		IF_ENABLED(DT_INST_NODE_HAS_PROP(n, resets),                         \
 			(.reset_spec = RESET_DT_SPEC_INST_GET(n),))                  \
+		IF_ENABLED(UART_NS16550_DLF_ENABLED,                                 \
+			(.dlf_auto = DT_INST_PROP(n, dlf_auto),))                    \
 		.loopback = DT_INST_PROP(n, loopback),
 
 #define UART_NS16550_COMMON_DEV_DATA_INITIALIZER(n)                                  \

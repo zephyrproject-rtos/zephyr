@@ -1,0 +1,25 @@
+# Copyright (c) 2026 Process Mission
+# SPDX-License-Identifier: Apache-2.0
+
+# Platform Configuration
+CONFIG_ARM_ARCH_TIMER=y
+
+# Serial Drivers
+CONFIG_SERIAL=y
+
+# Enable console
+CONFIG_CONSOLE=y
+CONFIG_UART_CONSOLE=y
+
+# ARMv8 NS world with cache management
+CONFIG_ARMV8_A_NS=y
+CONFIG_CACHE_MANAGEMENT=y
+
+CONFIG_TICKLESS_KERNEL=y
+
+# SMP support
+CONFIG_SMP=y
+CONFIG_MP_MAX_NUM_CPUS=8
+
+# PSCI support
+CONFIG_PM_CPU_OPS=y

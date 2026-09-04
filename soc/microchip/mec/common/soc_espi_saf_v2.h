@@ -30,10 +30,10 @@
 #define MCHP_SAF_FLASH_CONSEC_READ_TIMEOUT 2u
 #define MCHP_SAF_FLASH_SUS_CHK_DELAY       0u
 
-/* Default SAF Map of eSPI TAG numbers to master numbers */
-#define MCHP_SAF_TAG_MAP0_DFLT 0x23221100u
-#define MCHP_SAF_TAG_MAP1_DFLT 0x77677767u
-#define MCHP_SAF_TAG_MAP2_DFLT 0x00000005u
+/* Default TAF Map of eSPI TAG numbers to external Controller numbers */
+#define MCHP_TAF_TAG_MAP0_DFLT 0x23221100u
+#define MCHP_TAF_TAG_MAP1_DFLT 0x77677767u
+#define MCHP_TAF_TAG_MAP2_DFLT 0x00000005u
 
 /*
  * Default QMSPI clock divider and chip select timing.
@@ -66,28 +66,6 @@
 #define MCHP_SAF_POLL_STS_START_DESCR 14u
 #define MCHP_SAF_POLL_STS_END_DESCR   15u
 #define MCHP_SAF_NUM_GENERIC_DESCR    4u
-
-/* QMSPI Control and Descriptor register fields */
-#ifndef MCHP_QMSPI_COMPAT_REGS
-#define MCHP_QMSPI_C_IFM_1X         0
-#define MCHP_QMSPI_C_IFM_2X         0x01u
-#define MCHP_QMSPI_C_IFM_4X         0x02u
-#define MCHP_QMSPI_C_TX_DIS         0
-#define MCHP_QMSPI_C_TX_DATA        0x04u
-#define MCHP_QMSPI_C_TX_ZEROS       0x08u
-#define MCHP_QMSPI_C_TX_ONES        0x0cu
-#define MCHP_QMSPI_C_RX_EN          BIT(6)
-#define MCHP_QMSPI_C_TX_DMA_DIS     0
-#define MCHP_QMSPI_C_RX_DIS         0
-#define MCHP_QMSPI_C_RX_DMA_DIS     0
-#define MCHP_QMSPI_C_RX_LDMA_CH0    (1u << 7)
-#define MCHP_QMSPI_C_NO_CLOSE       0
-#define MCHP_QMSPI_C_CLOSE          BIT(9)
-#define MCHP_QMSPI_C_DESCR_LAST     BIT(16)
-#define MCHP_QMSPI_C_XFR_UNITS_1    0x400u
-#define MCHP_QMSPI_C_NEXT_DESCR(nd) ((uint32_t)((nd) & 0xfu) << 12)
-#define MCHP_QMSPI_C_XFR_NUNITS(n)  (((uint32_t)(n) & 0x7fffu) << 17)
-#endif /* MCHP_QMSPI_COMPAT_REGS */
 
 /* QMSPI descriptors 12-15 for all SPI flash devices */
 
@@ -357,6 +335,8 @@
  */
 #define MCHP_SAF_HW_CFG_TAGMAP_USE BIT(31)
 
+#define MCHP_ESPI_TAF_TAGMAP_MAX 3U
+
 #define MCHP_SAF_VER_1 0
 #define MCHP_SAF_VER_2 1
 
@@ -369,7 +349,7 @@ struct espi_saf_hw_cfg {
 	uint16_t flash_pd_timeout;
 	uint16_t flash_pd_min_interval;
 	uint32_t generic_descr[MCHP_SAF_NUM_GENERIC_DESCR];
-	uint32_t tag_map[MCHP_ESPI_SAF_TAGMAP_MAX];
+	uint32_t tag_map[MCHP_ESPI_TAF_TAGMAP_MAX];
 };
 
 /*

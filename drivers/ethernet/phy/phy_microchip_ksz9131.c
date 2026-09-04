@@ -6,6 +6,12 @@
 
 #define DT_DRV_COMPAT microchip_ksz9131
 
+/* Support for LAN8840 using the same driver */
+#ifdef CONFIG_DT_HAS_MICROCHIP_LAN8840_ENABLED
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT microchip_lan8840
+#endif
+
 #include <errno.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
@@ -17,6 +23,11 @@
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(phy_mchp_ksz9131, CONFIG_PHY_LOG_LEVEL);
+
+BUILD_ASSERT(!(IS_ENABLED(CONFIG_DT_HAS_MICROCHIP_KSZ9131_ENABLED) &&
+		IS_ENABLED(CONFIG_DT_HAS_MICROCHIP_LAN8840_ENABLED)),
+		"This driver cannot support KSZ9131 and LAN8840 at the same time."
+);
 
 #include "phy_mii.h"
 
@@ -64,9 +75,16 @@ struct mchp_ksz9131_data {
 #define PHY_ID_KSZ9131     0x00221640
 #define PHY_ID_KSZ9131_MSK (~0xF)
 
+#define PHY_ID_LAN8840     0x00221650
+#define PHY_ID_LAN8840_MSK (~0xF)
+
 #define PHY_KSZ9131_ICS_REG               0x1B
 #define PHY_KSZ9131_ICS_LINK_DOWN_IE_MASK BIT(10)
 #define PHY_KSZ9131_ICS_LINK_UP_IE_MASK   BIT(8)
+
+#define PHY_LAN8840_ICS_REG               0x18
+#define PHY_LAN8840_ICS_LINK_DOWN_IE_MASK BIT(2)
+#define PHY_LAN8840_ICS_LINK_UP_IE_MASK   BIT(0)
 
 #define USING_INTERRUPT_GPIO							\
 		UTIL_OR(DT_ALL_INST_HAS_PROP_STATUS_OKAY(int_gpios),		\
@@ -155,7 +173,8 @@ static int phy_check_ksz9131_id(const struct device *dev)
 	}
 	phy_id |= value;
 
-	if ((phy_id & PHY_ID_KSZ9131_MSK) != PHY_ID_KSZ9131) {
+	if (((phy_id & PHY_ID_KSZ9131_MSK) != PHY_ID_KSZ9131) &&
+		((phy_id & PHY_ID_LAN8840_MSK) != PHY_ID_LAN8840)) {
 		LOG_ERR("PHY (%d) ID 0x%X not as expected", cfg->phy_addr, phy_id);
 		return -EINVAL;
 	}
@@ -213,18 +232,28 @@ static int phy_mchp_ksz9131_clear_interrupt(struct mchp_ksz9131_data *data)
 static int phy_mchp_ksz9131_config_interrupt(const struct device *dev)
 {
 	struct mchp_ksz9131_data *data = dev->data;
+	uint16_t reg_ics;
+	uint16_t reg_msk;
 	uint16_t reg_val;
 	int ret;
 
+	if (IS_ENABLED(CONFIG_DT_HAS_MICROCHIP_LAN8840_ENABLED)) {
+		reg_ics = PHY_LAN8840_ICS_REG;
+		reg_msk = PHY_LAN8840_ICS_LINK_UP_IE_MASK | PHY_LAN8840_ICS_LINK_DOWN_IE_MASK;
+	} else {
+		reg_ics = PHY_KSZ9131_ICS_REG;
+		reg_msk = PHY_KSZ9131_ICS_LINK_UP_IE_MASK | PHY_KSZ9131_ICS_LINK_DOWN_IE_MASK;
+	}
+
 	/* Read Interrupt Control/Status register to write back */
-	ret = ksz9131_read(dev, PHY_KSZ9131_ICS_REG, &reg_val);
+	ret = ksz9131_read(dev, reg_ics, &reg_val);
 	if (ret < 0) {
 		return ret;
 	}
-	reg_val |= PHY_KSZ9131_ICS_LINK_UP_IE_MASK | PHY_KSZ9131_ICS_LINK_DOWN_IE_MASK;
+	reg_val |= reg_msk;
 
 	/* Write settings to Interrupt Control/Status register */
-	ret = ksz9131_write(dev, PHY_KSZ9131_ICS_REG, reg_val);
+	ret = ksz9131_write(dev, reg_ics, reg_val);
 	if (ret < 0) {
 		return ret;
 	}

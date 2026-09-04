@@ -8,6 +8,7 @@ compatible: "st,stm32-vrefbuf"
 include:
   - name: base.yaml
   - name: reset-device.yaml
+  - name: nvmem-consumer.yaml
   - name: regulator.yaml
     property-allowlist:
       - regulator-name
@@ -26,6 +27,16 @@ properties:
 
   resets:
     description: Optional VREFBUF reset line (present on some STM32 series).
+
+  nvmem-cells:
+    description: |
+      NVMEM cells for VREFBUF trimming data
+
+      Each entry points to the NVMEM cells containing trimming data for the corresponding
+      voltage scale (in the same order as `ref-voltages`; for example, the first entry
+      (index 0) corresponds to trimming data to use when Scale 0 is selected).
+
+      If present, this property must have the same number of entries as `ref-voltages`.
 
   ref-voltages:
     type: array

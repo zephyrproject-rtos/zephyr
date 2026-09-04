@@ -1,19 +1,17 @@
 .. zephyr:code-sample:: memc
    :name: Memory controller (MEMC) driver
 
-   Access memory-mapped external RAM
+   Read and write external memory
 
 Overview
 ********
 
-This sample can be used with any memory controller driver that
-memory maps external RAM. It is intended to demonstrate
-the ability to read and write from the memory mapped region.
+This sample demonstrates reading and writing external memory through a
+memory controller driver. It works with both memory-mapped drivers and
+drivers implementing the MEMC subsystem API (``<zephyr/drivers/memc.h>``).
 
-Note that the chosen region (set by ``sram-ext`` dt alias node) should not
-overlap with memory used for XIP or SRAM by the application, as the sample
-would overwrite this data
-
+The memory region is referenced via the ``sram-ext`` or ``psram0``
+devicetree alias and must not overlap with memory used by the application.
 
 Building and Running
 ********************
@@ -36,7 +34,7 @@ Sample Output
 .. code-block:: console
 
   *** Booting Zephyr OS build zephyr-v3.2.0-2686-gd52d828c2bdc ***
-  Writing to memory region with base 0x38000000, size 0x800000
+  Writing to memory, size 0x800000
 
   Check (0/8191) passed!
   Check (1/8191) passed!

@@ -12,11 +12,20 @@
 #include <zephyr/devicetree/clocks.h>
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(wolfson_wm8904);
+LOG_MODULE_REGISTER(wolfson_wm8904, CONFIG_AUDIO_CODEC_LOG_LEVEL);
 
 #include "wm8904.h"
 
 #define DT_DRV_COMPAT wolfson_wm8904
+
+enum mic_bias_select {
+	MIC_BIAS_AVDD_9_10,
+	MIC_BIAS_AVDD_10_9,
+	MIC_BIAS_AVDD_7_6,
+	MIC_BIAS_AVDD_4_3,
+	MIC_BIAS_AVDD_3_2,
+	MIC_BIAS_DISABLED
+};
 
 struct wm8904_driver_config {
 	struct i2c_dt_spec i2c;
@@ -24,6 +33,8 @@ struct wm8904_driver_config {
 	const struct device *mclk_dev;
 	clock_control_subsys_t mclk_name;
 	int fs_ratio;
+	int in_pga_sel;
+	enum mic_bias_select mic_bias_sel;
 };
 
 struct wm8904_driver_data {
@@ -460,6 +471,15 @@ static int wm8904_configure(const struct device *dev, struct audio_codec_cfg *cf
 	 */
 	wm8904_write_reg(dev, WM8904_REG_CLK_RATES_0, 0xA45F);
 
+	if (dev_cfg->mic_bias_sel != MIC_BIAS_DISABLED) {
+		/* MICBIAS_SEL */
+		wm8904_write_reg(dev, WM8904_REG_MIC_BIAS_CONTROL_1,
+				 dev_cfg->mic_bias_sel & WM8904_REGMASK_MICBIAS_SEL);
+
+		/* MICBIAS_ENA=1 */
+		wm8904_write_reg(dev, WM8904_REG_MIC_BIAS_CONTROL_0, WM8904_REGMASK_MICBIAS_ENA);
+	}
+
 	/* INL_ENA=1, INR ENA=1 */
 	wm8904_write_reg(dev, WM8904_REG_POWER_MGMT_0, 0x0003);
 
@@ -731,8 +751,10 @@ static void wm8904_configure_output(const struct device *dev)
 
 static void wm8904_configure_input(const struct device *dev)
 {
-	wm8904_route_input(dev, AUDIO_CHANNEL_FRONT_LEFT, 2);
-	wm8904_route_input(dev, AUDIO_CHANNEL_FRONT_RIGHT, 2);
+	const struct wm8904_driver_config *const dev_cfg = DEV_CFG(dev);
+
+	wm8904_route_input(dev, AUDIO_CHANNEL_FRONT_LEFT, dev_cfg->in_pga_sel);
+	wm8904_route_input(dev, AUDIO_CHANNEL_FRONT_RIGHT, dev_cfg->in_pga_sel);
 
 	wm8904_in_volume_config(dev, AUDIO_CHANNEL_ALL, WM8904_INPUT_VOLUME_DEFAULT);
 	wm8904_in_mute_config(dev, AUDIO_CHANNEL_ALL, false);
@@ -758,7 +780,10 @@ static DEVICE_API(audio_codec, wm8904_driver_api) = {
 		.mclk_name = COND_CODE_1(DT_INST_CLOCKS_HAS_NAME(n, mclk),                         \
 			((clock_control_subsys_t)DT_INST_CLOCKS_CELL_BY_NAME(n, mclk, name)),      \
 			(NULL)),                                                                   \
-		.fs_ratio = DT_INST_PROP_OR(n, fs_ratio, 0)};                                      \
+		.fs_ratio = DT_INST_PROP_OR(n, fs_ratio, 0),                                       \
+		.in_pga_sel = DT_INST_PROP_OR(n, input_pga_select, 2),                             \
+		.mic_bias_sel = CONCAT(MIC_BIAS_,                                                  \
+			DT_INST_STRING_UPPER_TOKEN_OR(n, wolfson_mic_bias_voltage, DISABLED))};    \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(n, NULL, NULL, &wm8904_device_data_##n, &wm8904_device_config_##n,   \
 			      POST_KERNEL, CONFIG_AUDIO_CODEC_INIT_PRIORITY, &wm8904_driver_api);

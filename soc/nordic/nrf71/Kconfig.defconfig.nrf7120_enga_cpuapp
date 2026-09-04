@@ -3,9 +3,9 @@
 # Copyright (c) 2025 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_NRF7120_ENGA_CPUAPP
+if SOC_NRF7120_ENGA_CPUAPP || SOC_NRF7120E_ENGA_CPUAPP
 
 config NUM_IRQS
 	default 304
 
-endif # SOC_NRF7120_ENGA_CPUAPP
+endif # SOC_NRF7120_ENGA_CPUAPP || SOC_NRF7120E_ENGA_CPUAPP

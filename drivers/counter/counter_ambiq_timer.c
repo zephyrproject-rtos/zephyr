@@ -6,6 +6,7 @@
 
 #define DT_DRV_COMPAT ambiq_counter
 
+#include <zephyr/irq.h>
 #include <zephyr/drivers/counter.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/kernel.h>
@@ -53,7 +54,7 @@ static void counter_irq_config_func(void)
 	global_irq_init = false;
 
 	/* Shared irq config default to ctimer0. */
-	NVIC_ClearPendingIRQ(CTIMER_IRQn);
+	k_irq_clear_pending(CTIMER_IRQn);
 	IRQ_CONNECT(CTIMER_IRQn, DT_IRQ(DT_INST_PARENT(0), priority), counter_ambiq_isr,
 		    DEVICE_DT_INST_GET(0), 0);
 	irq_enable(CTIMER_IRQn);
@@ -430,7 +431,7 @@ static void counter_ambiq_isr(void *arg)
 #define AMBIQ_COUNTER_CONFIG_FUNC(idx)                                                             \
 	static void counter_irq_config_func_##idx(void)                                            \
 	{                                                                                          \
-		NVIC_ClearPendingIRQ(DT_IRQN(DT_INST_PARENT(idx)));                                \
+		k_irq_clear_pending(DT_IRQN(DT_INST_PARENT(idx)));                                \
 		IRQ_CONNECT(DT_IRQN(DT_INST_PARENT(idx)), DT_IRQ(DT_INST_PARENT(idx), priority),   \
 			    counter_ambiq_isr, DEVICE_DT_INST_GET(idx), 0);                        \
 		irq_enable(DT_IRQN(DT_INST_PARENT(idx)));                                          \

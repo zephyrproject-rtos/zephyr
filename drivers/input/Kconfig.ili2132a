@@ -6,5 +6,6 @@ config INPUT_ILI2132A
 	default y
 	depends on DT_HAS_ILITEK_ILI2132A_ENABLED
 	select I2C
+	select INPUT_TOUCH
 	help
 	  Enable driver for ilitek ili2132a touch controller

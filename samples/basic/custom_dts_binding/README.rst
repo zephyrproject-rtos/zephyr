@@ -42,6 +42,9 @@ Afterwards, the sample can be built and executed for the ``<board>`` as follows:
 
 For demonstration purposes, some boards use the GPIO pin of the built-in LED.
 
+On :zephyr:board:`native_sim`, the pin is provided by the emulated GPIO
+controller, so the sample can be run without any hardware.
+
 Sample output
 =============
 

@@ -1578,7 +1578,7 @@ ZTEST(test_utils_fn, test_linkaddr_handling)
 
 ZTEST(test_utils_fn, test_parse_ipv4_overflow)
 {
-	struct net_sockaddr_storage saddr;
+	struct net_sockaddr_storage saddr = {};
 	struct net_sockaddr *addr = net_sad(&saddr);
 	bool ret;
 
@@ -1732,7 +1732,7 @@ ZTEST(test_utils_fn, test_parse_ipv4_overflow)
 
 ZTEST(test_utils_fn, test_parse_ipv6_overflow)
 {
-	struct net_sockaddr_storage saddr;
+	struct net_sockaddr_storage saddr = {};
 	struct net_sockaddr *addr = net_sad(&saddr);
 	bool ret;
 

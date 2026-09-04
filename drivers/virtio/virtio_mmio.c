@@ -22,6 +22,9 @@ LOG_MODULE_REGISTER(virtio_mmio, CONFIG_VIRTIO_LOG_LEVEL);
 #define VIRTIO_MMIO_SUPPORTED_VERSION 2
 #define VIRTIO_MMIO_INVALID_DEVICE_ID 0
 
+/* number of 32-bit words needed to hold all negotiable feature bits */
+#define VIRTIO_MMIO_FEATURE_WORDS (DEV_TYPE_FEAT_RANGE_1_END / 32 + 1)
+
 #define DEV_CFG(dev)  ((const struct virtio_mmio_config *)(dev)->config)
 #define DEV_DATA(dev) ((struct virtio_mmio_data *)(dev)->data)
 
@@ -30,6 +33,9 @@ struct virtio_mmio_data {
 
 	struct virtq *virtqueues;
 	uint16_t virtqueue_count;
+
+	/* shadow of the write-only DRIVER_FEATURES register */
+	uint32_t driver_features[VIRTIO_MMIO_FEATURE_WORDS];
 
 	struct k_spinlock isr_lock;
 	struct k_spinlock notify_lock;
@@ -119,17 +125,24 @@ static bool virtio_mmio_read_device_feature_bit(const struct device *dev, int bi
 
 static void virtio_mmio_write_driver_feature_bit(const struct device *dev, int bit, bool value)
 {
-	const uint32_t mask = sys_cpu_to_le32(BIT(bit % 32));
+	struct virtio_mmio_data *data = dev->data;
+	const uint32_t word_n = bit / 32;
+	const uint32_t mask = BIT(bit % 32);
 
-	virtio_mmio_write32(dev, VIRTIO_MMIO_DRIVER_FEATURES_SEL, bit / 32);
-
-	const uint32_t regval = virtio_mmio_read32(dev, VIRTIO_MMIO_DRIVER_FEATURES);
-
+	/*
+	 * DRIVER_FEATURES is a write-only register (see spec 4.2.2.2), so the
+	 * feature bits have to be accumulated in a driver-side shadow and
+	 * written as complete words; a read-modify-write of the register
+	 * would erase every bit previously written to the same word.
+	 */
 	if (value) {
-		virtio_mmio_write32(dev, VIRTIO_MMIO_DRIVER_FEATURES, regval | mask);
+		data->driver_features[word_n] |= mask;
 	} else {
-		virtio_mmio_write32(dev, VIRTIO_MMIO_DRIVER_FEATURES, regval & ~mask);
+		data->driver_features[word_n] &= ~mask;
 	}
+
+	virtio_mmio_write32(dev, VIRTIO_MMIO_DRIVER_FEATURES_SEL, word_n);
+	virtio_mmio_write32(dev, VIRTIO_MMIO_DRIVER_FEATURES, data->driver_features[word_n]);
 }
 
 static bool virtio_mmio_read_status_bit(const struct device *dev, int bit)
@@ -174,7 +187,7 @@ static void virtio_mmio_reset(const struct device *dev)
 {
 	virtio_mmio_write32(dev, VIRTIO_MMIO_STATUS, 0);
 
-	while (virtio_mmio_read_status_bit(dev, VIRTIO_MMIO_STATUS) != 0) {
+	while (virtio_mmio_read32(dev, VIRTIO_MMIO_STATUS) != 0) {
 	}
 }
 

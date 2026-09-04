@@ -186,7 +186,7 @@ static void mfd_rv3032_work_cb(struct k_work *work)
 	}
 
 	/* Temperature Low/High Flags - SENSORS */
-	if ((status & RV3032_STATUS_TLF) || (status & RV3032_STATUS_THF)) {
+	if (status & (RV3032_STATUS_TLF | RV3032_STATUS_THF)) {
 		ret = mfd_rv3032_clear_status(data->dev, RV3032_STATUS_TLF | RV3032_STATUS_THF);
 		mfd_rv3032_fire_child_callback(data, RV3032_DEV_SENSOR);
 		LOG_DBG("(STATUS) Temperature Low/High Flag (%x)\n", status);

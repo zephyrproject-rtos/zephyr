@@ -6,6 +6,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/portability/cmsis_types.h>
+#include <zephyr/sys/check.h>
 #include <string.h>
 #include "wrapper.h"
 
@@ -40,7 +41,9 @@ osMutexId_t osMutexNew(const osMutexAttr_t *attr)
 	__ASSERT(!(attr->attr_bits & osMutexRobust), "Zephyr does not support osMutexRobust.\n");
 
 	if (attr->cb_mem != NULL) {
-		__ASSERT(attr->cb_size == sizeof(struct cmsis_rtos_mutex_cb), "Invalid cb_size\n");
+		CHECKIF(attr->cb_size < sizeof(struct cmsis_rtos_mutex_cb)) {
+			return NULL;
+		}
 		mutex = (struct cmsis_rtos_mutex_cb *)attr->cb_mem;
 	} else if (k_mem_slab_alloc(&cmsis_rtos_mutex_cb_slab, (void **)&mutex, K_MSEC(100)) != 0) {
 		return NULL;

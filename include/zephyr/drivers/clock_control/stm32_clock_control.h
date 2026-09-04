@@ -91,6 +91,8 @@
 #include <zephyr/dt-bindings/clock/stm32u5_clock.h>
 #elif defined(CONFIG_SOC_SERIES_STM32WBAX)
 #include <zephyr/dt-bindings/clock/stm32wba_clock.h>
+#elif defined(CONFIG_SOC_SERIES_STM32WL3X)
+#include <zephyr/dt-bindings/clock/stm32wl3_clock.h>
 #else
 #include <zephyr/dt-bindings/clock/stm32_clock.h>
 #endif
@@ -460,6 +462,9 @@
 #if DT_SAME_NODE(DT_PLL2_CLOCKS_CTRL, DT_NODELABEL(clk_hsi))
 #define STM32_PLL2_SRC_HSI	1
 #endif
+#if DT_SAME_NODE(DT_PLL2_CLOCKS_CTRL, DT_NODELABEL(clk_csi))
+#define STM32_PLL2_SRC_CSI	1
+#endif
 #if DT_SAME_NODE(DT_PLL2_CLOCKS_CTRL, DT_NODELABEL(clk_hse))
 #define STM32_PLL2_SRC_HSE	1
 #endif
@@ -478,6 +483,9 @@
 #endif
 #if DT_SAME_NODE(DT_PLL3_CLOCKS_CTRL, DT_NODELABEL(clk_hsi))
 #define STM32_PLL3_SRC_HSI	1
+#endif
+#if DT_SAME_NODE(DT_PLL3_CLOCKS_CTRL, DT_NODELABEL(clk_csi))
+#define STM32_PLL3_SRC_CSI	1
 #endif
 #if DT_SAME_NODE(DT_PLL3_CLOCKS_CTRL, DT_NODELABEL(clk_hse))
 #define STM32_PLL3_SRC_HSE	1

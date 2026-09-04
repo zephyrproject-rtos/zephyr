@@ -7,7 +7,7 @@
 
 if BOARD_STM32H7S78_DK
 
-configdefault NET_L2_ETHERNET
+configdefault ETH_DRIVER
 	default y
 
 # MEMC needs to be enabled in order to store
@@ -30,5 +30,49 @@ config INPUT_GT911_INTERRUPT
 	default y
 
 endif # INPUT
+
+# Enable Neochrom GPU2D graphic acceleration using nemaGFX
+if LVGL
+
+# Let LVGL fully handle the buffers
+configdefault STM32_LTDC_FB_NUM
+	default 0
+
+configdefault LV_Z_VDB_ZEPHYR_REGION
+	default y
+configdefault LV_Z_VDB_ZEPHYR_REGION_NAME
+	default "PSRAM"
+configdefault LV_Z_DOUBLE_VDB
+	default y
+
+choice LV_Z_RENDERING_MODE
+	default LV_Z_DIRECT_RENDERING
+endchoice
+
+if NEOCHROM_GPU2D
+
+configdefault LV_ATTRIBUTE_MEM_ALIGN_SIZE
+	default 32
+
+configdefault LV_Z_NEMA_GFX_MULTI_THREAD
+	default y if LV_USE_NEMA_GFX
+
+choice LV_USE_NEMA_HAL
+	default LV_NEMA_HAL_CUSTOM
+endchoice
+
+choice LV_USE_NEMA_LIB
+	default LV_NEMA_LIB_M7
+endchoice
+
+config LV_NEMA_USE_CACHE
+	default y
+
+config LV_NEMA_CACHE_HAL_INCLUDE
+	default "stm32h7rsxx.h"
+
+endif # NEOCHROM_GPU2D
+
+endif # LVGL
 
 endif # BOARD_STM32H7S78_DK

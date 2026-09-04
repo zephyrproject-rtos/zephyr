@@ -189,7 +189,7 @@ static int qmspi_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	if (config->operation & (SPI_TRANSFER_LSB | SPI_OP_MODE_SLAVE
+	if (config->operation & (SPI_TRANSFER_LSB | SPI_OP_MODE_PERIPHERAL
 				 | SPI_MODE_LOOP)) {
 		return -ENOTSUP;
 	}

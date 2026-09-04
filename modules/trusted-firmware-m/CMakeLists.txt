@@ -221,9 +221,17 @@ if(CONFIG_BUILD_WITH_TFM)
   # TODO: Add support for cross-compile toolchain variant
   # TODO: Enforce GCC version check against TF-M compiler requirements
   if(${ZEPHYR_TOOLCHAIN_VARIANT} STREQUAL "zephyr")
-    set(TFM_TOOLCHAIN_FILE "toolchain_GNUARM.cmake")
-    set(TFM_TOOLCHAIN_PREFIX "arm-zephyr-eabi")
-    set(TFM_TOOLCHAIN_PATH ${ZEPHYR_SDK_INSTALL_DIR}/gnu/arm-zephyr-eabi/bin)
+    if(${TOOLCHAIN_VARIANT_COMPILER} STREQUAL "gnu")
+      set(TFM_TOOLCHAIN_FILE "toolchain_GNUARM.cmake")
+      set(TFM_TOOLCHAIN_PREFIX "arm-zephyr-eabi")
+      set(TFM_TOOLCHAIN_PATH ${ZEPHYR_SDK_INSTALL_DIR}/gnu/arm-zephyr-eabi/bin)
+    elseif(${TOOLCHAIN_VARIANT_COMPILER} STREQUAL "llvm")
+      set(TFM_TOOLCHAIN_FILE "toolchain_ATFE.cmake")
+      set(TFM_TOOLCHAIN_PREFIX "arm-none-eabi")
+      set(TFM_TOOLCHAIN_PATH ${ZEPHYR_SDK_INSTALL_DIR}/llvm/bin)
+    else()
+      message(FATAL_ERROR "Unsupported TOOLCHAIN_VARIANT_COMPILER: ${TOOLCHAIN_VARIANT_COMPILER}")
+    endif()
   elseif(${ZEPHYR_TOOLCHAIN_VARIANT} STREQUAL "gnuarmemb")
     set(TFM_TOOLCHAIN_FILE "toolchain_GNUARM.cmake")
     set(TFM_TOOLCHAIN_PREFIX "arm-none-eabi")
@@ -277,11 +285,16 @@ if(CONFIG_BUILD_WITH_TFM)
     )
   endif()
 
-  # By default TF-M installs TF-PSA-Crypto include files in the build directory,
-  # but this will duplicate what's already provided by the TF-PSA-Crypto library
-  # itself. Disable this, unless CONFIG_TFM_USE_NS_APP is set because in that
-  # case the NS app is built in a completely different way than what Zephyr does.
-  if(NOT CONFIG_TFM_USE_NS_APP)
+  if(CONFIG_TFM_INSTALL_TF_PSA_CRYPTO_HEADERS)
+    # The PSA Crypto client headers are the ones installed by TF-M. TF-M
+    # exports the matching configuration through its "psa_crypto_config" CMake
+    # target, but Zephyr does not consume TF-M's CMake targets, so set the same
+    # definitions here.
+    zephyr_compile_definitions(
+      TFM_PSA_CRYPTO_CLIENT_ONLY
+      TF_PSA_CRYPTO_CONFIG_FILE="${TFM_INTERFACE_INCLUDE_DIR}/mbedtls/tf_psa_crypto_config.h"
+    )
+  else()
     list(APPEND TFM_CMAKE_ARGS -DTFM_INSTALL_TF_PSA_CRYPTO_HEADERS=OFF)
   endif()
 
@@ -307,7 +320,8 @@ if(CONFIG_BUILD_WITH_TFM)
     COMMAND ${CMAKE_COMMAND}
       -G${CMAKE_GENERATOR}
       -DTFM_TOOLCHAIN_FILE=${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}/${TFM_TOOLCHAIN_FILE}
-      -DCROSS_COMPILE=${TFM_TOOLCHAIN_PATH}/${TFM_TOOLCHAIN_PREFIX}
+      -DCMAKE_PROGRAM_PATH=${TFM_TOOLCHAIN_PATH}
+      -DCROSS_COMPILE=${TFM_TOOLCHAIN_PREFIX}
       -DCMAKE_BUILD_TYPE=${TFM_CMAKE_BUILD_TYPE}
       -DTFM_PLATFORM=${CONFIG_TFM_BOARD}
       -DCONFIG_TFM_BUILD_LOG_QUIET=ON

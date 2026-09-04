@@ -12,14 +12,14 @@
 
 #include <zephyr/bluetooth/conn.h>
 
-#include "common/assert.h"
+#include <common/assert.h>
 
 #include <zephyr/bluetooth/classic/sdp.h>
 #include <zephyr/bluetooth/classic/goep.h>
 #include <zephyr/bluetooth/classic/bip.h>
 
-#include "host/hci_core.h"
-#include "host/conn_internal.h"
+#include <host/hci_core.h>
+#include <host/conn_internal.h>
 #include "l2cap_br_internal.h"
 #include "obex_internal.h"
 
@@ -105,7 +105,7 @@ static int bip_rfcomm_accept(struct bt_conn *conn, struct bt_goep_transport_rfco
 			     struct bt_goep **goep)
 {
 	struct bt_bip_rfcomm_server *bip_server = BIP_RFDCOMM_SERVER(server);
-	struct bt_bip *bip;
+	struct bt_bip *bip = NULL;
 	int err;
 
 	if (bip_server->accept == NULL) {
@@ -118,10 +118,7 @@ static int bip_rfcomm_accept(struct bt_conn *conn, struct bt_goep_transport_rfco
 		return err;
 	}
 
-	if (bip == NULL || bip->ops == NULL) {
-		LOG_ERR("Invalid bip instance");
-		return -EINVAL;
-	}
+	__ASSERT(bip != NULL && bip->ops != NULL, "Invalid bip instance");
 
 	bip->role = BT_BIP_ROLE_RESPONDER;
 	bip->goep.transport_ops = &bip_rfcomm_ops;
@@ -247,7 +244,7 @@ static int bip_l2cap_accept(struct bt_conn *conn, struct bt_goep_transport_l2cap
 			    struct bt_goep **goep)
 {
 	struct bt_bip_l2cap_server *bip_server = BIP_L2CAP_SERVER(server);
-	struct bt_bip *bip;
+	struct bt_bip *bip = NULL;
 	int err;
 
 	if (bip_server->accept == NULL) {
@@ -260,10 +257,7 @@ static int bip_l2cap_accept(struct bt_conn *conn, struct bt_goep_transport_l2cap
 		return err;
 	}
 
-	if (bip == NULL || bip->ops == NULL) {
-		LOG_WRN("Invalid parameter");
-		return -EINVAL;
-	}
+	__ASSERT(bip != NULL && bip->ops != NULL, "Invalid bip instance");
 
 	bip->role = BT_BIP_ROLE_RESPONDER;
 	bip->goep.transport_ops = &bip_l2cap_ops;
@@ -1345,11 +1339,12 @@ static int bt_bip_client_connect(struct bt_bip *bip, struct bt_bip_client *clien
 		return -EINVAL;
 	}
 
+	if (bip->role == BT_BIP_ROLE_RESPONDER) {
+		LOG_ERR("Invalid role responder");
+		return -EINVAL;
+	}
+
 	if (is_bip_primary_connect(type)) {
-		if (bip->role == BT_BIP_ROLE_RESPONDER) {
-			LOG_ERR("Invalid role responder");
-			return -EINVAL;
-		}
 
 		if (primary_server != NULL) {
 			LOG_ERR("primary server should be NULL");
@@ -1363,11 +1358,6 @@ static int bt_bip_client_connect(struct bt_bip *bip, struct bt_bip_client *clien
 		}
 	} else {
 		struct bt_bip *primary_bip;
-
-		if (bip->role == BT_BIP_ROLE_INITIATOR) {
-			LOG_ERR("Invalid role initiator");
-			return -EINVAL;
-		}
 
 		if (primary_server == NULL || primary_server->_bip == NULL) {
 			LOG_ERR("Invalid primary client");
@@ -1651,9 +1641,9 @@ int bt_bip_disconnect_rsp(struct bt_bip_server *server, uint8_t rsp_code, struct
 		return -EINVAL;
 	}
 
-	err = bt_obex_disconnect_rsp(&server->_server, rsp_code, NULL);
+	err = bt_obex_disconnect_rsp(&server->_server, rsp_code, buf);
 	if (err != 0) {
-		LOG_ERR("Failed to send conn rsp %d", err);
+		LOG_ERR("Failed to send disconnect rsp %d", err);
 		return err;
 	}
 

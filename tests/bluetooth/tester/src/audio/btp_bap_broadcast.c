@@ -367,7 +367,7 @@ static int stream_bis_codec_data_set(bool set_bis_chan_alloc, bool derive_bis_ch
 				     uint8_t *codec_data,
 				     struct bt_bap_broadcast_source_stream_param *stream_param)
 {
-	enum bt_audio_location bis_chan_alloc = chan_alloc;
+	enum bt_audio_location bis_chan_alloc;
 	int err;
 
 	/* Leave the per-BIS codec data empty when no channel allocation shall be
@@ -379,6 +379,8 @@ static int stream_bis_codec_data_set(bool set_bis_chan_alloc, bool derive_bis_ch
 
 		return 0;
 	}
+
+	bis_chan_alloc = chan_alloc;
 
 	/* Reuse the subgroup channel allocation unless there is an unambiguous
 	 * 1:1 mapping between channel bits and BISes and we can derive a unique
@@ -408,7 +410,7 @@ static int setup_broadcast_source(uint8_t streams_per_subgroup, uint8_t subgroup
 				  struct bt_audio_codec_cfg *codec_cfg)
 {
 	int err;
-	enum bt_audio_location chan_alloc;
+	enum bt_audio_location chan_alloc = BT_AUDIO_LOCATION_MONO_AUDIO;
 	bool derive_bis_chan_alloc = false;
 	bool set_bis_chan_alloc = false;
 	struct bt_bap_broadcast_source_stream_param
@@ -428,22 +430,24 @@ static int setup_broadcast_source(uint8_t streams_per_subgroup, uint8_t subgroup
 	 */
 	memcpy(&source->streams[0].codec_cfg, codec_cfg, sizeof(*codec_cfg));
 
-	err = bt_audio_codec_cfg_get_chan_allocation(codec_cfg, &chan_alloc, false);
-	if (err == 0 && streams_per_subgroup > 1U) {
-		size_t chan_alloc_count = sys_count_bits(&chan_alloc, sizeof(chan_alloc));
+	if (codec_cfg->id == BT_HCI_CODING_FORMAT_LC3) {
+		err = bt_audio_codec_cfg_get_chan_allocation(codec_cfg, &chan_alloc, false);
+		if (err == 0 && streams_per_subgroup > 1U) {
+			size_t chan_alloc_count = sys_count_bits(&chan_alloc, sizeof(chan_alloc));
 
-		/* Always set BIS channel allocation when source allocation is
-		 * present. Only derive a unique per-BIS allocation when there is an
-		 * unambiguous 1:1 mapping between channel bits and BISes.
-		 */
-		if ((chan_alloc != BT_AUDIO_LOCATION_MONO_AUDIO) &&
-		    (chan_alloc_count == streams_per_subgroup)) {
-			derive_bis_chan_alloc = true;
+			/* Always set BIS channel allocation when source allocation is
+			 * present. Only derive a unique per-BIS allocation when there is an
+			 * unambiguous 1:1 mapping between channel bits and BISes.
+			 */
+			if ((chan_alloc != BT_AUDIO_LOCATION_MONO_AUDIO) &&
+			    (chan_alloc_count == streams_per_subgroup)) {
+				derive_bis_chan_alloc = true;
+			}
+
+			set_bis_chan_alloc = true;
+		} else if (err == 0) {
+			set_bis_chan_alloc = true;
 		}
-
-		set_bis_chan_alloc = true;
-	} else if (err == 0) {
-		set_bis_chan_alloc = true;
 	}
 
 	for (size_t i = 0U; i < subgroups; i++) {
@@ -496,6 +500,56 @@ static int setup_broadcast_source(uint8_t streams_per_subgroup, uint8_t subgroup
 	}
 
 	return 0;
+}
+
+static void cleanup_broadcast_source_setup(struct btp_bap_broadcast_local_source *source)
+{
+	int err;
+	bool cleanup_failed = false;
+
+	if (source == NULL) {
+		return;
+	}
+
+	if (source->ext_adv != NULL) {
+		err = bt_le_ext_adv_delete(source->ext_adv);
+		if (err != 0) {
+			LOG_ERR("Failed to delete extended advertising instance: %d", err);
+			cleanup_failed = true;
+		} else {
+			err = tester_gap_clear_adv_instance(source->ext_adv);
+			if (err != 0) {
+				LOG_ERR("Failed to clear extended advertising instance: %d", err);
+				cleanup_failed = true;
+			} else {
+				source->ext_adv = NULL;
+			}
+		}
+	}
+
+	if (source->bap_broadcast != NULL) {
+		err = bt_bap_broadcast_source_delete(source->bap_broadcast);
+		if (err != 0) {
+			LOG_ERR("Failed to delete broadcast source: %d", err);
+			cleanup_failed = true;
+		} else {
+			source->bap_broadcast = NULL;
+		}
+	}
+
+	if (cleanup_failed) {
+		/* Keep the local source allocated when partial teardown fails so we do
+		 * not lose ext_adv/broadcast handles that may still be valid. This
+		 * allows a later release/reset path to retry cleanup.
+		 */
+		LOG_ERR("Failed to fully clean up broadcast source setup state");
+		return;
+	}
+
+	err = btp_bap_broadcast_local_source_free(source);
+	if (err != 0) {
+		LOG_ERR("Failed to free local source: %d", err);
+	}
 }
 
 uint8_t btp_bap_broadcast_source_setup(const void *cmd, uint16_t cmd_len, void *rsp,
@@ -565,6 +619,7 @@ uint8_t btp_bap_broadcast_source_setup(const void *cmd, uint16_t cmd_len, void *
 	err = setup_broadcast_source(cp->streams_per_subgroup, cp->subgroups, source, &codec_cfg);
 	if (err != 0) {
 		LOG_DBG("Unable to setup broadcast source: %d", err);
+		cleanup_broadcast_source_setup(source);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -583,18 +638,21 @@ uint8_t btp_bap_broadcast_source_setup(const void *cmd, uint16_t cmd_len, void *
 					     &source->ext_adv);
 	if (err != 0) {
 		LOG_DBG("Failed to create extended advertising instance: %d", err);
+		cleanup_broadcast_source_setup(source);
 		return BTP_STATUS_FAILED;
 	}
 
 	err = tester_gap_padv_configure(source->ext_adv, &per_adv_param);
 	if (err != 0) {
 		LOG_DBG("Failed to configure periodic advertising: %d", err);
+		cleanup_broadcast_source_setup(source);
 		return BTP_STATUS_FAILED;
 	}
 
 	err = bt_bap_broadcast_source_get_base(source->bap_broadcast, &base_buf);
 	if (err != 0) {
 		LOG_DBG("Failed to get encoded BASE: %d\n", err);
+		cleanup_broadcast_source_setup(source);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -604,6 +662,7 @@ uint8_t btp_bap_broadcast_source_setup(const void *cmd, uint16_t cmd_len, void *
 	per_ad->data = base_buf.data;
 	err = tester_gap_padv_set_data(source->ext_adv, per_ad, 1);
 	if (err != 0) {
+		cleanup_broadcast_source_setup(source);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -679,6 +738,7 @@ uint8_t btp_bap_broadcast_source_setup_v2(const void *cmd, uint16_t cmd_len, voi
 	err = setup_broadcast_source(cp->streams_per_subgroup, cp->subgroups, source, &codec_cfg);
 	if (err != 0) {
 		LOG_DBG("Unable to setup broadcast source: %d", err);
+		cleanup_broadcast_source_setup(source);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -697,18 +757,21 @@ uint8_t btp_bap_broadcast_source_setup_v2(const void *cmd, uint16_t cmd_len, voi
 					     &source->ext_adv);
 	if (err != 0) {
 		LOG_DBG("Failed to create extended advertising instance: %d", err);
+		cleanup_broadcast_source_setup(source);
 		return BTP_STATUS_FAILED;
 	}
 
 	err = tester_gap_padv_configure(source->ext_adv, &per_adv_param);
 	if (err != 0) {
 		LOG_DBG("Failed to configure periodic advertising: %d", err);
+		cleanup_broadcast_source_setup(source);
 		return BTP_STATUS_FAILED;
 	}
 
 	err = bt_bap_broadcast_source_get_base(source->bap_broadcast, &base_buf);
 	if (err != 0) {
 		LOG_DBG("Failed to get encoded BASE: %d", err);
+		cleanup_broadcast_source_setup(source);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -719,6 +782,7 @@ uint8_t btp_bap_broadcast_source_setup_v2(const void *cmd, uint16_t cmd_len, voi
 	err = tester_gap_padv_set_data(source->ext_adv, per_ad, 1);
 	if (err != 0) {
 		LOG_DBG("Failed to set periodic advertising data: %d", err);
+		cleanup_broadcast_source_setup(source);
 		return BTP_STATUS_FAILED;
 	}
 
@@ -1249,7 +1313,7 @@ btp_send_broadcast_receive_state_ev(struct bt_conn *conn,
 	for (uint8_t i = 0U; i < ev->num_subgroups; i++) {
 		const struct bt_bap_bass_subgroup *subgroup = &state->subgroups[i];
 
-		sys_put_le32(subgroup->bis_sync >> 1, ptr);
+		sys_put_le32(subgroup->bis_sync, ptr);
 		ptr += sizeof(subgroup->bis_sync);
 		*ptr = subgroup->metadata_len;
 		ptr += sizeof(subgroup->metadata_len);
@@ -1575,6 +1639,8 @@ uint8_t btp_bap_broadcast_sink_sync(const void *cmd, uint16_t cmd_len, void *rsp
 		}
 
 		err = pa_sync_past(conn, cp->sync_timeout);
+
+		bt_conn_unref(conn);
 	} else {
 		/* We scanned on our own or the Broadcast Assistant does not support PAST transfer.
 		 * Let's sync to the Broadcaster PA without PAST.
@@ -1809,6 +1875,8 @@ uint8_t btp_bap_broadcast_discover_scan_delegators(const void *cmd, uint16_t cmd
 
 	err = bt_bap_broadcast_assistant_discover(conn);
 
+	bt_conn_unref(conn);
+
 	return BTP_STATUS_VAL(err);
 }
 
@@ -1831,6 +1899,8 @@ uint8_t btp_bap_broadcast_assistant_scan_start(const void *cmd, uint16_t cmd_len
 	}
 
 	err = bt_bap_broadcast_assistant_scan_start(conn, true);
+
+	bt_conn_unref(conn);
 
 	return BTP_STATUS_VAL(err);
 }
@@ -1855,6 +1925,8 @@ uint8_t btp_bap_broadcast_assistant_scan_stop(const void *cmd, uint16_t cmd_len,
 
 	err = bt_bap_broadcast_assistant_scan_stop(conn);
 
+	bt_conn_unref(conn);
+
 	return BTP_STATUS_VAL(err);
 }
 
@@ -1872,11 +1944,6 @@ uint8_t btp_bap_broadcast_assistant_add_src(const void *cmd, uint16_t cmd_len, v
 	ARG_UNUSED(rsp_len);
 
 	LOG_DBG("");
-
-	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
-	if (!conn) {
-		return BTP_STATUS_FAILED;
-	}
 
 	memset(delegator_subgroups, 0, sizeof(delegator_subgroups));
 	bt_addr_le_copy(&param.addr, &cp->broadcaster_address);
@@ -1900,7 +1967,15 @@ uint8_t btp_bap_broadcast_assistant_add_src(const void *cmd, uint16_t cmd_len, v
 		ptr += subgroup->metadata_len;
 	}
 
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
+	if (!conn) {
+		return BTP_STATUS_FAILED;
+	}
+
 	err = bt_bap_broadcast_assistant_add_src(conn, &param);
+
+	bt_conn_unref(conn);
+
 	if (err != 0) {
 		LOG_DBG("err %d", err);
 
@@ -1930,6 +2005,8 @@ uint8_t btp_bap_broadcast_assistant_remove_src(const void *cmd, uint16_t cmd_len
 
 	err = bt_bap_broadcast_assistant_rem_src(conn, cp->src_id);
 
+	bt_conn_unref(conn);
+
 	return BTP_STATUS_VAL(err);
 }
 
@@ -1947,11 +2024,6 @@ uint8_t btp_bap_broadcast_assistant_modify_src(const void *cmd, uint16_t cmd_len
 	ARG_UNUSED(rsp_len);
 
 	LOG_DBG("");
-
-	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
-	if (!conn) {
-		return BTP_STATUS_FAILED;
-	}
 
 	memset(delegator_subgroups, 0, sizeof(delegator_subgroups));
 	param.src_id = cp->src_id;
@@ -1973,7 +2045,14 @@ uint8_t btp_bap_broadcast_assistant_modify_src(const void *cmd, uint16_t cmd_len
 		ptr += subgroup->metadata_len;
 	}
 
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
+	if (!conn) {
+		return BTP_STATUS_FAILED;
+	}
+
 	err = bt_bap_broadcast_assistant_mod_src(conn, &param);
+
+	bt_conn_unref(conn);
 
 	return BTP_STATUS_VAL(err);
 }
@@ -1997,6 +2076,9 @@ uint8_t btp_bap_broadcast_assistant_set_broadcast_code(const void *cmd, uint16_t
 	}
 
 	err = bt_bap_broadcast_assistant_set_broadcast_code(conn, cp->src_id, cp->broadcast_code);
+
+	bt_conn_unref(conn);
+
 	if (err != 0) {
 		LOG_DBG("err %d", err);
 		return BTP_STATUS_FAILED;
@@ -2020,11 +2102,6 @@ uint8_t btp_bap_broadcast_assistant_send_past(const void *cmd, uint16_t cmd_len,
 
 	LOG_DBG("");
 
-	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
-	if (!conn) {
-		return BTP_STATUS_FAILED;
-	}
-
 	pa_sync = tester_gap_padv_get();
 	if (!pa_sync) {
 		LOG_DBG("Could not send PAST to Scan Delegator");
@@ -2039,7 +2116,15 @@ uint8_t btp_bap_broadcast_assistant_send_past(const void *cmd, uint16_t cmd_len,
 	 */
 	service_data = cp->src_id << 8;
 
+	conn = bt_conn_lookup_addr_le(BT_ID_DEFAULT, &cp->address);
+	if (!conn) {
+		return BTP_STATUS_FAILED;
+	}
+
 	err = bt_le_per_adv_sync_transfer(pa_sync, conn, service_data);
+
+	bt_conn_unref(conn);
+
 	if (err != 0) {
 		LOG_DBG("Could not transfer periodic adv sync: %d", err);
 

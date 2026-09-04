@@ -151,6 +151,18 @@ static int put_string(struct lwm2m_output_context *out,
 {
 	int ret;
 
+	if (buflen == 0) {
+		/* Remove the payload marker (0xFF) that was appended before this writer was called,
+		 * to avoid sending a malformed CoAP packet with a payload marker but no payload.
+		 */
+		struct coap_packet *cpkt = out->out_cpkt;
+
+		if (cpkt->offset > 0 && cpkt->data[cpkt->offset - 1] == 0xFF) {
+			cpkt->offset--;
+		}
+		return 0;
+	}
+
 	ret = buf_append(CPKT_BUF_WRITE(out->out_cpkt), buf, buflen);
 	if (ret < 0) {
 		return ret;

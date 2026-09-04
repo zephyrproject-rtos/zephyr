@@ -101,8 +101,8 @@ static K_SEM_DEFINE(sem_broadcast_stopped, 1U, 1U);
 static K_SEM_DEFINE(sem_receive_state_updated, 0U, 1U);
 static K_SEM_DEFINE(sem_streams, 0U, CAP_STREAM_TX_MAX);
 
-static void stream_configured_cb(struct bt_bap_stream *stream,
-				 const struct bt_bap_qos_cfg_pref *pref)
+static void stream_codec_configured_cb(struct bt_bap_stream *stream,
+				       const struct bt_bap_qos_cfg_pref *pref)
 {
 	LOG_INF("Configured stream %p", stream);
 
@@ -112,7 +112,7 @@ static void stream_configured_cb(struct bt_bap_stream *stream,
 		pref->latency, pref->pd_min, pref->pd_max, pref->pref_pd_min, pref->pref_pd_max);
 }
 
-static void stream_qos_set_cb(struct bt_bap_stream *stream)
+static void stream_qos_configured_cb(struct bt_bap_stream *stream)
 {
 	LOG_INF("QoS set stream %p", stream);
 }
@@ -1071,8 +1071,8 @@ static int init_cap_handover(void)
 		.recv = scan_recv_cb,
 	};
 	static struct bt_bap_stream_ops stream_ops = {
-		.configured = stream_configured_cb,
-		.qos_set = stream_qos_set_cb,
+		.codec_configured = stream_codec_configured_cb,
+		.qos_configured = stream_qos_configured_cb,
 		.enabled = stream_enabled_cb,
 		.started = stream_started_cb,
 		.metadata_updated = stream_metadata_updated_cb,

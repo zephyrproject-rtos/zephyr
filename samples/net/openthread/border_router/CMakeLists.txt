@@ -1,11 +1,15 @@
 # SPDX-License-Identifier: Apache-2.0
 
-cmake_minimum_required(VERSION 3.20.0)
+cmake_minimum_required(VERSION 3.28.0)
 
 find_package(Zephyr REQUIRED HINTS $ENV{ZEPHYR_BASE})
 project(openthread_border_router)
 
 FILE(GLOB app_sources src/main.c)
+
+target_sources_ifdef(CONFIG_SHIELD_NXP_M2_2EL_2LL_IEEE802154 app PRIVATE
+    boards/mimxrt1060_evk_mimxrt1062_qspi_C/src/iw61x_init.c
+)
 
 # add Web Server source files
 if(CONFIG_OTBR_WEB_SERVER)

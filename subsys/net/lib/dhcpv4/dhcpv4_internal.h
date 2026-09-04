@@ -93,6 +93,14 @@ struct dhcp_msg {
 /* Maximum number of REQUEST retransmits before reverting to DISCOVER. */
 #define DHCPV4_MAX_NUMBER_OF_ATTEMPTS	3
 
+/* Maximum number of INIT-REBOOT REQUEST retransmits before reverting to DISCOVER */
+#ifdef CONFIG_NET_DHCPV4_INIT_REBOOT_ATTEMPTS
+#define DHCPV4_INIT_REBOOT_MAX_ATTEMPTS	CONFIG_NET_DHCPV4_INIT_REBOOT_ATTEMPTS
+#else
+/* INIT-REBOOT support is disabled; the state is never entered. */
+#define DHCPV4_INIT_REBOOT_MAX_ATTEMPTS	0
+#endif
+
 /* Initial message retry timeout (s).  This timeout increases
  * exponentially on each retransmit.
  * RFC2131 4.1

@@ -1,0 +1,99 @@
+/*
+ * Copyright (c) 2026 Microchip Technology Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		spi0 = &qspi0;
+	};
+
+	board_power: resources {
+		compatible = "intel-rvp,board-power";
+		pwrg-gpios = <MCHP_GPIO_DECODE_012 GPIO_ACTIVE_HIGH>;
+		rsm-gpios = <MCHP_GPIO_DECODE_054 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&espi0 {
+	compatible = "microchip,xec-espi-v2";
+	pinctrl-0 = <&espi_reset_n_gpio061 &espi_alert_n_gpio063
+		     &espi_clk_gpio065 &espi_cs_n_gpio066
+		     &espi_io0_gpio070 &espi_io1_gpio071
+		     &espi_io2_gpio072 &espi_io3_gpio073>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&espi_taf0 {
+	compatible = "microchip,xec-espi-saf-v2";
+	status = "okay";
+};
+
+/* eSPI peripheral channel child devices */
+&kbc0 {
+	status = "okay";
+};
+
+&acpi_ec0 {
+	status = "okay";
+};
+
+&acpi_ec1 {
+	status = "okay";
+};
+
+&emi0 {
+	status = "okay";
+};
+
+&p80bd0 {
+	status = "okay";
+};
+
+/* Enable Target to Controller Virtual Wires GPIO 0 - 3 */
+&vw_t2c_gpio_0 {
+	status = "okay";
+	reset-state = "1";
+	reset-source = "ESPI_RESET";
+};
+
+&vw_t2c_gpio_1 {
+	status = "okay";
+	reset-state = "1";
+	reset-source = "ESPI_RESET";
+};
+
+&vw_t2c_gpio_2 {
+	status = "okay";
+	reset-state = "1";
+	reset-source = "ESPI_RESET";
+};
+
+&vw_t2c_gpio_3 {
+	status = "okay";
+	reset-state = "1";
+	reset-source = "ESPI_RESET";
+};
+
+&qspi0 {
+	compatible = "microchip,xec-qmspi-ldma";
+	status = "okay";
+	clock-frequency = <24000000>;
+	pinctrl-0 = <&qspi_shd_cs0_n_gpio055 &qspi_shd_clk_gpio056
+		     &qspi_shd_io0_gpio223 &qspi_shd_io1_gpio224
+		     &qspi_shd_io2_gpio227 &qspi_shd_io3_gpio016>;
+	pinctrl-names = "default";
+
+	spi_flash0: spi_flash@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(24)>;
+		jedec-id = [ef 60 18]; /* W25Q128-FW 1.8V part */
+		size = <DT_SIZE_M(16)>;
+		page-size = <256>;
+		use-fast-read;
+		quad-enable-requirements = "S2B1v4";
+	};
+};

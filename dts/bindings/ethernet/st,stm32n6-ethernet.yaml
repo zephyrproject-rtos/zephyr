@@ -9,4 +9,4 @@ description: |
 
 compatible: "st,stm32n6-ethernet"
 
-include: st,stm32-ethernet-common.yaml
+include: st,stm32-ethernet.yaml

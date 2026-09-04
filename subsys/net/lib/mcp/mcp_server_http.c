@@ -866,10 +866,8 @@ static int mcp_server_http_resource_handler(struct http_client_ctx *client,
 #if defined(CONFIG_MCP_HTTP_LOG_ADDRESS)
 
 #if defined(CONFIG_NET_IPV4)
-static struct net_mgmt_event_callback net_addr4_cb;
-
-static void net_addr4_event_handler(struct net_mgmt_event_callback *cb,
-				    uint64_t mgmt_event, struct net_if *iface)
+static void net_addr4_event_handler(uint64_t mgmt_event, struct net_if *iface, void *info __unused,
+				    size_t info_length __unused, void *user_data __unused)
 {
 	char addr_str[INET_ADDRSTRLEN];
 	struct net_in_addr *addr4;
@@ -886,13 +884,14 @@ static void net_addr4_event_handler(struct net_mgmt_event_callback *cb,
 			net_if_get_by_iface(iface));
 	}
 }
+
+NET_MGMT_REGISTER_EVENT_HANDLER(mcp_server_http_ipv4_events, NET_EVENT_IPV4_ADDR_ADD,
+				net_addr4_event_handler, NULL);
 #endif
 
 #if defined(CONFIG_NET_IPV6)
-static struct net_mgmt_event_callback net_addr6_cb;
-
-static void net_addr6_event_handler(struct net_mgmt_event_callback *cb,
-				    uint64_t mgmt_event, struct net_if *iface)
+static void net_addr6_event_handler(uint64_t mgmt_event, struct net_if *iface, void *info __unused,
+				    size_t info_length __unused, void *user_data __unused)
 {
 	char addr_str[INET6_ADDRSTRLEN];
 	const struct net_in6_addr *addr6;
@@ -909,26 +908,10 @@ static void net_addr6_event_handler(struct net_mgmt_event_callback *cb,
 			net_if_get_by_iface(iface));
 	}
 }
-#endif
 
-static int mcp_http_log_address_init(void)
-{
-#if defined(CONFIG_NET_IPV4)
-	net_mgmt_init_event_callback(&net_addr4_cb, net_addr4_event_handler,
-				     NET_EVENT_IPV4_ADDR_ADD);
-	net_mgmt_add_event_callback(&net_addr4_cb);
+NET_MGMT_REGISTER_EVENT_HANDLER(mcp_server_http_ipv6_events, NET_EVENT_IPV6_ADDR_ADD,
+				net_addr6_event_handler, NULL);
 #endif
-#if defined(CONFIG_NET_IPV6)
-	net_mgmt_init_event_callback(&net_addr6_cb, net_addr6_event_handler,
-				     NET_EVENT_IPV6_ADDR_ADD);
-	net_mgmt_add_event_callback(&net_addr6_cb);
-#endif
-	return 0;
-}
-
-SYS_INIT(mcp_http_log_address_init, APPLICATION,
-	CONFIG_KERNEL_INIT_PRIORITY_DEFAULT);
-
 #endif /* CONFIG_MCP_HTTP_LOG_ADDRESS */
 
 /*******************************************************************************

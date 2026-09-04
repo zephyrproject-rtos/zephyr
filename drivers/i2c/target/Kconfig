@@ -13,6 +13,11 @@ menuconfig I2C_TARGET
 
 if I2C_TARGET
 
+config I2C_TARGET_REGSET_LIB
+	bool
+	help
+	  I2C target regset library support.
+
 config I2C_TARGET_INIT_PRIORITY
 	int "Init priority"
 	default 60
@@ -27,6 +32,7 @@ config I2C_TARGET_BUFFER_MODE
 
 # zephyr-keep-sorted-start
 source "drivers/i2c/target/Kconfig.eeprom"
+source "drivers/i2c/target/Kconfig.tmp103"
 # zephyr-keep-sorted-stop
 
 endif # I2C_TARGET

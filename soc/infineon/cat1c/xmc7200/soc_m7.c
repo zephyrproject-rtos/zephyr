@@ -17,7 +17,8 @@
 
 __attribute__((section(".dtcm_bss"))) struct _isr_table_entry sys_int_table[CPUSS_SYSTEM_INT_NR];
 
-void enable_sys_int(uint32_t int_num, uint32_t priority, void (*isr)(const void *), const void *arg)
+void enable_sys_int(uint32_t int_num, uint32_t priority, void (*isr)(const void *param),
+		    const void *arg)
 {
 	/* IRQ_PRIO_LOWEST = 6 */
 	if (priority <= IRQ_PRIO_LOWEST) {

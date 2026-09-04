@@ -11,12 +11,35 @@
 			low-power-enable;
 		};
 	};
+
+	pwm120_default: pwm120_default {
+		group1 {
+			psels = <NRF_PSEL(PWM_OUT0, 7, 0)>;
+		};
+	};
+
+	pwm120_sleep: pwm120_sleep {
+		group1 {
+			psels = <NRF_PSEL(PWM_OUT0, 7, 0)>;
+			low-power-enable;
+		};
+	};
 };
 
+/* Reserved for the cpuppr image (slow PWM instance). */
 &pwm130 {
 	status = "reserved";
 	interrupt-parent = <&cpuppr_clic>;
 	pinctrl-0 = <&pwm_default>;
 	pinctrl-1 = <&pwm_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+/* Reserved for the cpuflpr image (fast PWM instance). */
+&pwm120 {
+	status = "reserved";
+	interrupt-parent = <&cpuflpr_clic>;
+	pinctrl-0 = <&pwm120_default>;
+	pinctrl-1 = <&pwm120_sleep>;
 	pinctrl-names = "default", "sleep";
 };

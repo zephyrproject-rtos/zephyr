@@ -32,7 +32,7 @@ increments its count, unless the count is already equal to the limit.
 
 A semaphore may be **taken** by a thread. Taking the semaphore
 decrements its count, unless the semaphore is unavailable (i.e. at zero).
-When a semaphore is unavailable a thread may choose to wait for it to be given.
+When a semaphore is unavailable, a thread may choose to wait for it to be given.
 Any number of threads may wait on an unavailable semaphore simultaneously.
 When the semaphore is given, it is taken by the highest priority thread
 that has waited longest.
@@ -122,7 +122,7 @@ Suggested Uses
 
 Use a semaphore to control access to a set of resources by multiple threads.
 
-Use a semaphore to synchronize processing between a producing and consuming
+Use a semaphore to synchronize processing between producing and consuming
 threads or ISRs.
 
 Configuration Options
@@ -140,8 +140,8 @@ API Reference
 User Mode Semaphore API Reference
 *********************************
 
-The sys_sem exists in user memory working as counter semaphore for user mode
-thread when user mode enabled. When user mode isn't enabled, sys_sem behaves
-like k_sem.
+The :c:struct:`sys_sem` exists in user memory, working as counter semaphore for user mode
+threads, when user mode is enabled. When user mode isn't enabled, :c:struct:`sys_sem` behaves
+like :c:struct:`k_sem`.
 
 .. doxygengroup:: user_semaphore_apis

@@ -196,7 +196,9 @@ The device support **Legacy Roaming**, which comprises the following procedures:
 
 **Current Design**:
 
-   - **BG Scan**: Performed using the Scan API.
+   - **BG Scan**: Performed using the Scan API. The channel parameter in the
+     Scan API is ignored during BG Scan. Channels used for BG Scan are derived
+     from the first foreground scan.
 
    - **Roaming Configuration**: Configured during the first BG Scan. Roaming
      parameters are managed through **Kconfig** options.

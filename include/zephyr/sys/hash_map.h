@@ -33,7 +33,7 @@ extern "C" {
  *
  * Declare a Hashmap with control over advanced parameters.
  *
- * @note The allocator @p _alloc is used for allocating internal Hashmap
+ * @note The allocator @p _alloc_func is used for allocating internal Hashmap
  * entries and does not interact with any user-provided keys or values.
  *
  * @param _name Name of the Hashmap.
@@ -61,7 +61,7 @@ extern "C" {
  *
  * Declare a Hashmap statically with control over advanced parameters.
  *
- * @note The allocator @p _alloc is used for allocating internal Hashmap
+ * @note The allocator @p _alloc_func is used for allocating internal Hashmap
  * entries and does not interact with any user-provided keys or values.
  *
  * @param _name Name of the Hashmap.
@@ -266,7 +266,7 @@ static inline bool sys_hashmap_is_empty(const struct sys_hashmap *map)
  * @brief Query the load factor of @p map
  *
  * @note To convert the load factor to a floating-point value use
- * `sys_hash_load_factor(map) / 100.0f`.
+ * `sys_hashmap_load_factor(map) / 100.0f`.
  *
  * @param map Hashmap to query
  *

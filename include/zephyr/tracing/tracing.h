@@ -56,6 +56,8 @@
  * running on a host to visualize the inner-working of the kernel and various other subsystems.
  *
  * @defgroup subsys_tracing Tracing
+ * @since 1.13
+ * @version 0.8.0
  * @ingroup os_services
  * @{
  */

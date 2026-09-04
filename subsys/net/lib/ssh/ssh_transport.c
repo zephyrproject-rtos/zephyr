@@ -19,6 +19,7 @@ LOG_MODULE_REGISTER(ssh, CONFIG_SSH_LOG_LEVEL);
 
 #include <zephyr/random/random.h>
 #include <zephyr/zvfs/eventfd.h>
+#include <zephyr/sys/minmax.h>
 
 #include <psa/crypto.h>
 
@@ -265,8 +266,7 @@ int ssh_transport_input(struct ssh_transport *transport)
 	switch (transport->recv_state) {
 	case SSH_RECV_STATE_IDENTITY_INIT: {
 		*rx_pkt = (struct ssh_payload) {
-			.size = MIN(sizeof(transport->rx_buf),
-				    SSH_IDENTITY_MAX_LEN),
+			.size = min(sizeof(transport->rx_buf), SSH_IDENTITY_MAX_LEN),
 			.len = 0,
 			.data = transport->rx_buf
 		};
@@ -667,19 +667,19 @@ int update_channels(struct ssh_transport *transport)
 		/* Send any pending data */
 		while (channel->tx_window_rem > 0 && !ring_buf_is_empty(&channel->tx_ring_buf)) {
 			uint8_t *data;
-			uint32_t len = MIN(channel->tx_mtu, channel->tx_window_rem);
+			uint32_t len = min(channel->tx_mtu, channel->tx_window_rem);
 			struct ssh_channel_event event;
 
 			/* Assuming up to 256 bytes overhead for headers and random padding */
 			BUILD_ASSERT(sizeof(transport->tx_buf) > 256);
 
-			len = MIN(len, sizeof(transport->tx_buf) - 256);
-			len = ring_buf_get_claim(&channel->tx_ring_buf, &data, len);
+			len = min(len, sizeof(transport->tx_buf) - 256);
+			len = min(ring_buf_get_ptr(&channel->tx_ring_buf, &data, 0), len);
 			channel->tx_window_rem -= len;
 
 			ret = ssh_connection_send_channel_data(
 				transport, channel->remote_channel, data, len);
-			ring_buf_get_finish(&channel->tx_ring_buf, len);
+			ring_buf_consume(&channel->tx_ring_buf, len);
 			if (ret != 0) {
 				/* Close channel? */
 				break;
@@ -694,20 +694,20 @@ int update_channels(struct ssh_transport *transport)
 		while (channel->tx_window_rem > 0 &&
 		       !ring_buf_is_empty(&channel->tx_stderr_ring_buf)) {
 			uint8_t *data;
-			uint32_t len = MIN(channel->tx_mtu, channel->tx_window_rem);
+			uint32_t len = min(channel->tx_mtu, channel->tx_window_rem);
 			struct ssh_channel_event event;
 
 			/* Assuming up to 256 bytes overhead for headers and random padding */
 			BUILD_ASSERT(sizeof(transport->tx_buf) > 256);
 
-			len = MIN(len, sizeof(transport->tx_buf) - 256);
-			len = ring_buf_get_claim(&channel->tx_stderr_ring_buf, &data, len);
+			len = min(len, sizeof(transport->tx_buf) - 256);
+			len = min(ring_buf_get_ptr(&channel->tx_stderr_ring_buf, &data, 0), len);
 			channel->tx_window_rem -= len;
 
 			ret = ssh_connection_send_channel_extended_data(
 				transport, channel->remote_channel,
 				SSH_EXTENDED_DATA_STDERR, data, len);
-			ring_buf_get_finish(&channel->tx_stderr_ring_buf, len);
+			ring_buf_consume(&channel->tx_stderr_ring_buf, len);
 			if (ret != 0) {
 				/* Close channel? */
 				break;
@@ -723,7 +723,7 @@ int update_channels(struct ssh_transport *transport)
 		if (channel->rx_window_rem == 0) {
 			uint32_t available_space;
 
-			available_space = MIN(ring_buf_space_get(&channel->rx_ring_buf),
+			available_space = min(ring_buf_space_get(&channel->rx_ring_buf),
 					      ring_buf_space_get(&channel->rx_stderr_ring_buf));
 			if (available_space > 0) {
 				channel->rx_window_rem = available_space;

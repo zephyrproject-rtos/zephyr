@@ -17,6 +17,8 @@ supported:
   - adc
   - counter
   - rtc_counter
+  - feather_i2c
+  - feather_spi
   - pwm
   - flash
 ram: 64

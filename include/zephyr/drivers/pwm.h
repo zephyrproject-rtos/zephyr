@@ -34,7 +34,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/sys/math_extras.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/toolchain.h>
@@ -448,7 +448,7 @@ struct pwm_event_callback;
  * support.
  *
  * @param[in] dev PWM device instance.
- * @param callback Original struct gpio_callback owning this handler.
+ * @param callback Original struct pwm_event_callback owning this handler.
  * @param channel PWM channel.
  * @param events Event mask. See @ref PWM_EVENT_TYPES.
  *

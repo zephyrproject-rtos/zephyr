@@ -9,14 +9,17 @@ supported:
   - arduino_serial
   - arduino_spi
   - adc
+  - backup_sram
   - can
   - counter
   - crc
   - dma
+  - dmic
   - i2c
   - gpio
   - memc
   - netif:eth
+  - ptp_clock
   - pwm
   - rtc
   - spi

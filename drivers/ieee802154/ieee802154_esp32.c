@@ -56,8 +56,8 @@ struct ieee802154_esp32_rx_msg {
 
 static struct ieee802154_esp32_data esp32_data;
 
-K_MSGQ_DEFINE(ieee802154_esp32_rx_msgq, sizeof(struct ieee802154_esp32_rx_msg),
-	      CONFIG_IEEE802154_ESP32_RX_BUFFER_SIZE, 4);
+K_MSGQ_DEFINE_STATIC_TYPE(ieee802154_esp32_rx_msgq, struct ieee802154_esp32_rx_msg,
+			  CONFIG_IEEE802154_ESP32_RX_BUFFER_SIZE);
 
 static void ieee802154_esp32_rx_deliver(const struct ieee802154_esp32_rx_msg *rx)
 {
@@ -79,6 +79,14 @@ static void ieee802154_esp32_rx_deliver(const struct ieee802154_esp32_rx_msg *rx
 	 * the end of a valid frame is replaced with RSSI and LQI values.
 	 * Zephyr L2 expects only valid frames, so checksum is not needed for a re-check.
 	 */
+	/* raw[0] is the PHR; reject a length that cannot hold the FCS before
+	 * subtracting it.
+	 */
+	if (raw[0] < IEEE802154_FCS_LENGTH) {
+		LOG_ERR("Invalid frame length %u", raw[0]);
+		return;
+	}
+
 	if (IS_ENABLED(CONFIG_IEEE802154_L2_PKT_INCL_FCS)) {
 		len = raw[0];
 	} else {
@@ -86,7 +94,10 @@ static void ieee802154_esp32_rx_deliver(const struct ieee802154_esp32_rx_msg *rx
 	}
 
 #ifdef CONFIG_NET_BUF_DATA_SIZE
-	__ASSERT_NO_MSG(len <= CONFIG_NET_BUF_DATA_SIZE);
+	if (len > CONFIG_NET_BUF_DATA_SIZE) {
+		LOG_ERR("Frame too long: %u", len);
+		return;
+	}
 #endif
 
 	payload = raw + 1;
@@ -320,6 +331,7 @@ free_net_ack:
 free_esp_ack:
 	esp_ieee802154_receive_handle_done(data->ack_frame);
 	data->ack_frame = NULL;
+	data->ack_frame_info = NULL;
 
 	return err;
 }
@@ -330,6 +342,7 @@ void IRAM_ATTR esp_ieee802154_transmit_done(const uint8_t *tx_frame, const uint8
 {
 	esp32_data.ack_frame = ack_frame;
 	esp32_data.ack_frame_info = ack_frame_info;
+	esp32_data.tx_error = ESP_IEEE802154_TX_ERR_NONE;
 
 	k_sem_give(&esp32_data.tx_wait);
 }
@@ -337,6 +350,8 @@ void IRAM_ATTR esp_ieee802154_transmit_done(const uint8_t *tx_frame, const uint8
 /* override weak function in components/ieee802154/esp_ieee802154.c of ESP-IDF */
 void IRAM_ATTR esp_ieee802154_transmit_failed(const uint8_t *frame, esp_ieee802154_tx_error_t error)
 {
+	esp32_data.tx_error = error;
+
 	k_sem_give(&esp32_data.tx_wait);
 }
 
@@ -360,6 +375,14 @@ static int esp32_tx(const struct device *dev, enum ieee802154_tx_mode tx_mode, s
 	memcpy(data->tx_psdu + 1, payload, payload_len);
 
 	k_sem_reset(&data->tx_wait);
+	data->tx_error = ESP_IEEE802154_TX_ERR_NONE;
+
+	/* Start from a clean state: a transmission that times out never reaches
+	 * handle_ack(), so pointers from the previous transmission would
+	 * otherwise stay live and be released a second time.
+	 */
+	data->ack_frame = NULL;
+	data->ack_frame_info = NULL;
 
 	switch (tx_mode) {
 	case IEEE802154_TX_MODE_DIRECT:
@@ -399,11 +422,27 @@ static int esp32_tx(const struct device *dev, enum ieee802154_tx_mode tx_mode, s
 
 	if (err != 0) {
 		LOG_ERR("TX timeout");
-	} else {
-		handle_ack(data);
+		return -EIO;
 	}
 
-	return err == 0 ? 0 : -EIO;
+	switch (data->tx_error) {
+	case ESP_IEEE802154_TX_ERR_NONE:
+		break;
+	case ESP_IEEE802154_TX_ERR_CCA_BUSY:
+	case ESP_IEEE802154_TX_ERR_COEXIST:
+		return -EBUSY;
+	case ESP_IEEE802154_TX_ERR_NO_ACK:
+	case ESP_IEEE802154_TX_ERR_INVALID_ACK:
+		return -ENOMSG;
+	case ESP_IEEE802154_TX_ERR_SECURITY:
+		return -EINVAL;
+	default:
+		return -EIO;
+	}
+
+	handle_ack(data);
+
+	return 0;
 }
 
 static int esp32_start(const struct device *dev)
@@ -430,41 +469,54 @@ static int esp32_stop(const struct device *dev)
 	return 0;
 }
 
-/* override weak function in components/ieee802154/esp_ieee802154.c of ESP-IDF */
+static void esp32_ed_scan_work_handler(struct k_work *work)
+{
+	energy_scan_done_cb_t callback = esp32_data.energy_scan_done;
+	int8_t power;
+
+	ARG_UNUSED(work);
+
+	if (callback == NULL) {
+		LOG_WRN("No callback available");
+		return;
+	}
+
+	power = esp32_data.ed_scan_power;
+	esp32_data.energy_scan_done = NULL;
+	callback(net_if_get_device(esp32_data.iface), power);
+}
+
+/* Override weak function in components/ieee802154/esp_ieee802154.c of ESP-IDF */
 void IRAM_ATTR esp_ieee802154_energy_detect_done(int8_t power)
 {
-	energy_scan_done_cb_t callback;
-	const struct device *dev;
-
 	if (esp32_data.energy_scan_done == NULL) {
 		return;
 	}
 
-	callback = esp32_data.energy_scan_done;
-	esp32_data.energy_scan_done = NULL;
-	dev = net_if_get_device(esp32_data.iface);
-	callback(dev, power);
+	/* Defer the user callback so the caller stays responsive. */
+	esp32_data.ed_scan_power = power;
+	k_work_submit(&esp32_data.ed_scan_work);
 }
 
 static int esp32_ed_scan(const struct device *dev, uint16_t duration, energy_scan_done_cb_t done_cb)
 {
 	ARG_UNUSED(dev);
 
-	int err = 0;
-
-	if (esp32_data.energy_scan_done == NULL) {
-		esp32_data.energy_scan_done = done_cb;
-
-		/* The duration of energy detection, in symbol unit (16 us) */
-		if (esp_ieee802154_energy_detect(duration * USEC_PER_MSEC / US_PER_SYMBOL) != 0) {
-			esp32_data.energy_scan_done = NULL;
-			err = -EBUSY;
-		}
-	} else {
-		err = -EALREADY;
+	if (esp32_data.energy_scan_done) {
+		return -EALREADY;
 	}
 
-	return err;
+	esp32_data.energy_scan_done = done_cb;
+
+	/* Duration in symbol units (16 us); the channel noise floor is reported
+	 * asynchronously via esp_ieee802154_energy_detect_done().
+	 */
+	if (esp_ieee802154_energy_detect(duration * USEC_PER_MSEC / US_PER_SYMBOL) != 0) {
+		esp32_data.energy_scan_done = NULL;
+		return -EBUSY;
+	}
+
+	return 0;
 }
 
 static int esp32_configure(const struct device *dev, enum ieee802154_config_type type,
@@ -508,6 +560,7 @@ static int esp32_init(const struct device *dev)
 
 	k_sem_init(&data->cca_wait, 0, 1);
 	k_sem_init(&data->tx_wait, 0, 1);
+	k_work_init(&data->ed_scan_work, esp32_ed_scan_work_handler);
 
 	if (esp_ieee802154_enable() != 0) {
 		LOG_ERR("IEEE 802154 enabling failed!");

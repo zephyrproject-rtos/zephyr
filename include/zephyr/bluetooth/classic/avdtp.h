@@ -60,7 +60,7 @@ enum bt_avdtp_err_code {
 	/** The format of Multiplexing Service Capability is not correct */
 	BT_AVDTP_BAD_MULTIPLEXING_FORMAT = 0x28,
 	/** Configuration not supported */
-	BT_AVDTP_UNSUPPORTED_CONFIGURAION = 0x29,
+	BT_AVDTP_UNSUPPORTED_CONFIGURATION = 0x29,
 	/** Indicates that the ACP state machine is in an invalid state in order to process the
 	 * signal. This also includes the situation when an INT receives a request for the
 	 * same command that it is currently expecting a response

@@ -37,17 +37,20 @@
 
 &flash0 {
 	partitions {
-		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		slot0_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-0";
 			reg = <0x0 DT_SIZE_K(60)>;
 		};
 
-		storage_partition: partition@bfff000 {
+		storage_partition: partition@f000 {
+			compatible = "zephyr,mapped-partition";
 			label = "storage";
-			reg = <0x0bfff000 DT_SIZE_K(4)>;
+			reg = <0xf000 DT_SIZE_K(4)>;
 		};
 	};
 };

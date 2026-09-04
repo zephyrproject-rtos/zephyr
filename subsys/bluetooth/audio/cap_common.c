@@ -107,7 +107,7 @@ void bt_cap_common_set_handover_active(void)
 	atomic_set_bit(active_proc.proc_state_flags, BT_CAP_COMMON_PROC_STATE_HANDOVER);
 }
 
-bool bt_cap_common_handover_is_active(void)
+bool bt_cap_common_active_proc_is_handover(void)
 {
 	return atomic_test_bit(active_proc.proc_state_flags, BT_CAP_COMMON_PROC_STATE_HANDOVER);
 }
@@ -187,7 +187,7 @@ void bt_cap_common_abort_proc(struct bt_conn *conn, int err)
 }
 
 #if defined(CONFIG_BT_CAP_INITIATOR_UNICAST)
-static bool active_proc_is_initiator(void)
+bool bt_cap_common_active_proc_is_initiator(void)
 {
 	switch (active_proc.proc_type) {
 	case BT_CAP_COMMON_PROC_TYPE_START:
@@ -201,7 +201,7 @@ static bool active_proc_is_initiator(void)
 #endif /* CONFIG_BT_CAP_INITIATOR_UNICAST */
 
 #if defined(CONFIG_BT_CAP_COMMANDER)
-static bool active_proc_is_commander(void)
+bool bt_cap_common_active_proc_is_commander(void)
 {
 	switch (active_proc.proc_type) {
 	case BT_CAP_COMMON_PROC_TYPE_VOLUME_CHANGE:
@@ -227,14 +227,14 @@ bool bt_cap_common_conn_in_active_proc(const struct bt_conn *conn)
 
 	for (size_t i = 0U; i < active_proc.proc_initiated_cnt; i++) {
 #if defined(CONFIG_BT_CAP_INITIATOR_UNICAST)
-		if (active_proc_is_initiator()) {
+		if (bt_cap_common_active_proc_is_initiator()) {
 			if (active_proc.proc_param.initiator[i].stream->bap_stream.conn == conn) {
 				return true;
 			}
 		}
 #endif /* CONFIG_BT_CAP_INITIATOR_UNICAST */
 #if defined(CONFIG_BT_CAP_COMMANDER)
-		if (active_proc_is_commander()) {
+		if (bt_cap_common_active_proc_is_commander()) {
 			if (active_proc.proc_param.commander[i].conn == conn) {
 				return true;
 			}
@@ -252,7 +252,7 @@ bool bt_cap_common_stream_in_active_proc(const struct bt_cap_stream *cap_stream)
 	}
 
 #if defined(CONFIG_BT_CAP_INITIATOR_UNICAST)
-	if (active_proc_is_initiator()) {
+	if (bt_cap_common_active_proc_is_initiator()) {
 		for (size_t i = 0U; i < active_proc.proc_cnt; i++) {
 			if (active_proc.proc_param.initiator[i].stream == cap_stream) {
 				return true;
@@ -264,22 +264,65 @@ bool bt_cap_common_stream_in_active_proc(const struct bt_cap_stream *cap_stream)
 	return false;
 }
 
-void bt_cap_common_disconnected(struct bt_conn *conn, uint8_t reason)
+static void bt_cap_common_disconnected(struct bt_conn *conn, uint8_t reason)
 {
+	struct bt_cap_common_proc *active_proc_ptr = bt_cap_common_get_active_proc();
 	struct bt_cap_common_client *client = bt_cap_common_get_client_by_acl(conn);
 
 	ARG_UNUSED(reason);
 
 	LOG_DBG("conn %p disconnected", conn);
 
-	if (client->conn != NULL) {
-		bt_conn_unref(client->conn);
-	}
+	bt_conn_drop(&client->conn);
 	(void)memset(client, 0, sizeof(*client));
 
 	if (bt_cap_common_conn_in_active_proc(conn)) {
 		bt_cap_common_abort_proc(conn, -ECONNRESET);
+
+#if defined(CONFIG_BT_CAP_INITIATOR_UNICAST)
+		if (bt_cap_common_active_proc_is_initiator()) {
+			/* For Initiator procedures, we may have multiple procedures per connection,
+			 * so loop through and count the ones that we consider "done"
+			 */
+			for (size_t i = 0U; i < active_proc_ptr->proc_initiated_cnt; i++) {
+				struct bt_cap_initiator_proc_param *proc_param =
+					&active_proc_ptr->proc_param.initiator[i];
+
+				if (proc_param->in_progress &&
+				    proc_param->stream->bap_stream.conn == conn) {
+					proc_param->in_progress = false;
+					active_proc_ptr->proc_done_cnt++;
+					/* bap_stream.conn will be cleared by BAP */
+				}
+			}
+
+			if (bt_cap_common_proc_all_handled()) {
+				cap_initiator_unicast_audio_proc_complete(active_proc_ptr);
+				return;
+			}
+		}
+#endif /* CONFIG_BT_CAP_INITIATOR_UNICAST */
+#if defined(CONFIG_BT_CAP_COMMANDER)
+		if (bt_cap_common_active_proc_is_commander()) {
+			/* For Commander procedures there is a 1:1 between number of procedures and
+			 * connections, so we always just increment by 1
+			 */
+			for (size_t i = 0U; i < active_proc_ptr->proc_initiated_cnt; i++) {
+				if (active_proc.proc_param.commander[i].conn == conn) {
+					active_proc.proc_param.commander[i].conn = NULL;
+					active_proc_ptr->proc_done_cnt++;
+				}
+			}
+
+			if (bt_cap_common_proc_all_handled()) {
+				cap_commander_proc_complete(active_proc_ptr);
+				return;
+			}
+		}
+#endif /* CONFIG_BT_CAP_INITIATOR_UNICAST */
 	}
+
+	bt_cap_common_unlock_proc();
 }
 
 BT_CONN_CB_DEFINE(conn_callbacks) = {

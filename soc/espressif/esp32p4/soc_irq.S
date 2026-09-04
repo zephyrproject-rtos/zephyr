@@ -30,28 +30,21 @@ SECTION_FUNC(exception.other, __soc_handle_irq)
 /*
  * ESP32-P4 CLIC context save/restore.
  *
- * On CLIC, mret restores mintstatus.mil from mcause.mpil ONLY when
- * mcause.interrupt (bit 31) is set. With RISCV_ALWAYS_SWITCH_THROUGH_ECALL,
- * context switches use ecall which saves mcause with bit 31 clear. When
- * this mcause is restored before mret, the hardware skips mil restore,
- * leaving it stuck at the ISR level and blocking same-level interrupts.
+ * On CLIC, mret restores mintstatus.mil from mcause.mpil only when
+ * mcause.interrupt (bit 31) is set. On ESP32-P4, an mret whose
+ * mcause.interrupt does not match the current trap's entry type corrupts
+ * the CLIC state: after a mismatched mret out of an exception-entered
+ * trap (e.g. ecall-based context switch), the illegal-instruction
+ * exception is never delivered again.
  *
- * Save: clear mpil for exceptions so mret restores mil to 0.
- * Restore: force bit 31 so mret always restores mil from mpil.
- *
- * Same workaround as Nuclei ECLIC (soc/gd/gd32/gd32vf103/soc_irq.S).
+ * Hence mcause.interrupt is forced to match the entry type: cleared on
+ * exception entry (mil is already 0), set on interrupt entry, with mpil
+ * cleared for exception-saved frames so they resume at mil 0.
  */
 
 SECTION_FUNC(exception.other, __soc_save_context)
 
 	csrr t0, mcause
-	bltz t0, 1f
-	/* Exception path: zero out mcause.mpil (bits [23:16]) so the
-	 * subsequent mret restores mintstatus.mil to 0.
-	 */
-	li t1, 0xFF00FFFF
-	and t0, t0, t1
-1:
 	sw t0, __soc_esf_t_mcause_OFFSET(a0)
 #ifdef SOC_HAS_MINTTHRESH
 	/* Save mintthresh (CSR 0x347): per-context interrupt threshold. */
@@ -68,10 +61,20 @@ SECTION_FUNC(exception.other, __soc_restore_context)
 	csrw 0x347, t0
 #endif
 	lw t0, __soc_esf_t_mcause_OFFSET(a0)
-	/* Force mcause.interrupt (bit 31) so mret reloads mintstatus.mil
-	 * from mcause.mpil regardless of the saved trap type.
+	/* live mcause = entry type of this trap */
+	csrr t2, mcause
+	bltz t2, 1f
+	/* Exception-entered: keep mcause.interrupt clear; mil stays 0. */
+	li t1, ~RISCV_MCAUSE_IRQ_BIT
+	and t0, t0, t1
+	j 2f
+1:	/* Interrupt-entered: set mcause.interrupt so mret reloads
+	 * mil from mpil; exception-saved frames resume at mil 0.
 	 */
-	li t1, 1 << RISCV_MCAUSE_IRQ_POS
+	bltz t0, 2f
+	li t1, 0xFF00FFFF
+	and t0, t0, t1
+	li t1, RISCV_MCAUSE_IRQ_BIT
 	or t0, t0, t1
-	csrw mcause, t0
+2:	csrw mcause, t0
 	ret

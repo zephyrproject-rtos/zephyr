@@ -9,6 +9,7 @@
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/input/input.h>
+#include <zephyr/input/input_touch.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/sys/byteorder.h>
 
@@ -27,10 +28,13 @@ struct ili2132a_data {
 };
 
 struct ili2132a_config {
+	struct input_touchscreen_common_config common;
 	struct i2c_dt_spec i2c;
 	struct gpio_dt_spec rst;
 	struct gpio_dt_spec irq;
 };
+
+INPUT_TOUCH_STRUCT_CHECK(struct ili2132a_config);
 
 static void gpio_isr(const struct device *dev, struct gpio_callback *cb, uint32_t pin)
 {
@@ -55,8 +59,7 @@ static void ili2132a_process(const struct device *dev)
 	if (buf[TIP] & IS_TOUCHED_BIT) {
 		x = sys_get_le16(&buf[X_COORD]);
 		y = sys_get_le16(&buf[Y_COORD]);
-		input_report_abs(dev, INPUT_ABS_X, x, false, K_FOREVER);
-		input_report_abs(dev, INPUT_ABS_Y, y, false, K_FOREVER);
+		input_touchscreen_report_pos(dev, x, y, K_FOREVER);
 		input_report_key(dev, INPUT_BTN_TOUCH, 1, true, K_FOREVER);
 	} else {
 		input_report_key(dev, INPUT_BTN_TOUCH, 0, true, K_FOREVER);
@@ -129,6 +132,7 @@ static int ili2132a_init(const struct device *dev)
 }
 #define ILI2132A_INIT(index)                                                                       \
 	static const struct ili2132a_config ili2132a_config_##index = {                            \
+		.common = INPUT_TOUCH_DT_INST_COMMON_CONFIG_INIT(index),                           \
 		.i2c = I2C_DT_SPEC_INST_GET(index),                                                \
 		.rst = GPIO_DT_SPEC_INST_GET(index, rst_gpios),                                    \
 		.irq = GPIO_DT_SPEC_INST_GET(index, irq_gpios),                                    \

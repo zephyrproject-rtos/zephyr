@@ -57,6 +57,6 @@
 	revolution-count-mode = <1>;
 	prescaler = <15>;
 	input-filter-period = <1>;
-	inputmux-connections = <&inputmux0 0 0x37000022>,
-			       <&inputmux0 0 0x36c0001d>;
+	mux-states = <&inputmux0 0 0x37000022>,
+		     <&inputmux0 0 0x36c0001d>;
 };

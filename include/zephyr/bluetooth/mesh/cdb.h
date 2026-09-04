@@ -193,7 +193,7 @@ void bt_mesh_cdb_node_del(struct bt_mesh_cdb_node *node, bool store);
  *  Assigns the node a new address and clears the previous persistent storage
  *  entry.
  *
- *  @param node The node to be deleted.
+ *  @param node The node to be updated.
  *  @param addr New unicast address for the node.
  *  @param num_elem Updated number of elements in the node.
  */

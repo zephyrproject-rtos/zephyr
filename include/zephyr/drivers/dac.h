@@ -111,10 +111,10 @@ struct dac_channel_cfg {
  * @return Static initializer for an dac_channel_cfg structure.
  */
 #define DAC_CHANNEL_CFG_DT(node_id) { \
+	.channel_id       = DT_REG_ADDR(node_id),                      \
 	.resolution       = DT_PROP_OR(node_id, zephyr_resolution, 0), \
 	.buffered         = DT_PROP(node_id, zephyr_buffered),         \
 	.internal         = DT_PROP(node_id, zephyr_internal),         \
-	.channel_id       = DT_REG_ADDR(node_id),                      \
 }
 
 /**
@@ -443,38 +443,35 @@ struct dac_dt_spec {
 	DAC_DT_SPEC_GET_OR(DT_DRV_INST(inst), default_value)
 
 /**
- * @cond INTERNAL_HIDDEN
- *
- * For internal use only, skip these in public documentation.
+ * @def_driverbackendgroup{DAC,dac_interface}
+ * @{
  */
 
-/*
- * Type definition of DAC API function for configuring a channel.
+/**
+ * @brief Type definition of DAC API function for configuring a channel.
  * See dac_channel_setup() for argument descriptions.
  */
 typedef int (*dac_api_channel_setup)(const struct device *dev,
 				     const struct dac_channel_cfg *channel_cfg);
 
-/*
- * Type definition of DAC API function for setting a write request.
+/**
+ * @brief Type definition of DAC API function for setting a write request.
  * See dac_write_value() for argument descriptions.
  */
 typedef int (*dac_api_write_value)(const struct device *dev,
 				    uint8_t channel, uint32_t value);
 
-/*
- * DAC driver API
- *
- * This is the mandatory API any DAC driver needs to expose.
+/**
+ * @driver_ops{DAC}
  */
 __subsystem struct dac_driver_api {
+	/** @driver_ops_mandatory @copybrief dac_channel_setup */
 	dac_api_channel_setup channel_setup;
+	/** @driver_ops_mandatory @copybrief dac_write_value */
 	dac_api_write_value   write_value;
 };
 
-/**
- * @endcond
- */
+/** @} */
 
 /**
  * @brief Configure a DAC channel.
@@ -585,7 +582,7 @@ static inline int dac_millivolts_to_raw(uint32_t ref_mv, uint8_t resolution, uin
 	uint64_t dac_mv = (((uint64_t)*valp) << resolution) / (uint64_t)ref_mv;
 
 	if (dac_mv > (1UL << resolution)) {
-		__ASSERT_MSG_INFO("conversion result is out of range");
+		__ASSERT(false, "conversion result is out of range");
 		return -ERANGE;
 	}
 
@@ -595,7 +592,7 @@ static inline int dac_millivolts_to_raw(uint32_t ref_mv, uint8_t resolution, uin
 }
 
 /**
- * @brief Convert a raw DAC value to microvolts.
+ * @brief Convert a microvolts value to a raw DAC value.
  *
  * @see dac_x_to_raw_fn
  */
@@ -604,7 +601,7 @@ static inline int dac_microvolts_to_raw(uint32_t ref_mv, uint8_t resolution, uin
 	uint64_t dac_uv = (((uint64_t)*valp) << resolution) / (uint64_t)ref_mv / (uint64_t)1000;
 
 	if (dac_uv > (1UL << resolution)) {
-		__ASSERT_MSG_INFO("conversion result is out of range");
+		__ASSERT(false, "conversion result is out of range");
 		return -ERANGE;
 	}
 

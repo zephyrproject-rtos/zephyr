@@ -101,7 +101,7 @@ typedef void (*coap_client_response_cb_t)(const struct coap_client_response_data
  * payload pointer, payload size and information whether more data blocks are expected.
  * Setting the @p last_block parameter to false on the initial callback call triggers
  * a block transfer upload. The library will keep calling the callback until the
- * @p last_block parameter is set to false.
+ * @p last_block parameter is set to true.
  *
  * @note If block transfer is used, the application is expected to provide full blocks of
  * payload. Only the final block (i.e. when @p last_block is set to true) can be shorter

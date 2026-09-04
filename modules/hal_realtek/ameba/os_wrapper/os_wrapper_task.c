@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "os_wrapper.h"
+#include <os_wrapper.h>
 #include <zephyr/kernel_structs.h>
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(os_if_task);
@@ -72,7 +72,7 @@ int rtos_sched_get_state(void)
 	return RTOS_SCHED_RUNNING;
 }
 
-int rtos_task_create(rtos_task_t *pp_handle, const char *p_name, void (*p_routine)(void *),
+int rtos_task_create(rtos_task_t *pp_handle, const char *p_name, void (*p_routine)(void *p_param),
 		     void *p_param, uint16_t stack_size_in_byte, uint16_t priority)
 {
 	k_tid_t p_thread;

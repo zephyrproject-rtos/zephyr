@@ -239,12 +239,24 @@
 			reg = <0x0 DT_SIZE_M(32)>;
 			write-block-size = <1>;
 			erase-block-size = <DT_SIZE_K(4)>;
-
-			partitions {
-				compatible = "fixed-partitions";
-				#address-cells = <1>;
-				#size-cells = <1>;
-			};
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
 		};
 	};
+};
+
+zephyr_udc0: &usbotg_hs {
+	pinctrl-0 = <&usb_otg_hs_dm_pm5 &usb_otg_hs_dp_pm6>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&usbphyc {
+	/*
+	 * There is no need to change `clocks` because
+	 * we use the default configuration after reset:
+	 *  USBPHYC kernel clock = HSE @ 24 MHz
+	 */
+	status = "okay";
 };

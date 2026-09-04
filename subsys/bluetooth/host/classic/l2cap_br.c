@@ -21,13 +21,11 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/classic/l2cap_br.h>
 
-#include "host/buf_view.h"
-#include "host/hci_core.h"
-#include "host/conn_internal.h"
-#include "host/keys.h"
+#include <host/buf_view.h>
+#include <host/hci_core.h>
+#include <host/conn_internal.h>
+#include <host/keys.h>
 #include "l2cap_br_internal.h"
-#include "avdtp_internal.h"
-#include "a2dp_internal.h"
 #include "avctp_internal.h"
 #include "avrcp_internal.h"
 #include "did_internal.h"
@@ -370,6 +368,13 @@ static void l2cap_br_rtx_timeout(struct k_work *work)
 {
 	struct bt_l2cap_br_chan *chan = BR_CHAN_RTX(work);
 
+	if (chan->chan.conn == NULL || chan->chan.conn->state != BT_CONN_CONNECTED) {
+		/* The ACL connection is already gone; there is nothing left
+		 * for the timeout to act on.
+		 */
+		return;
+	}
+
 	LOG_WRN("chan %p timeout", chan);
 
 	if (chan->rx.cid == BT_L2CAP_CID_BR_SIG) {
@@ -415,6 +420,13 @@ static bool chan_has_data(struct bt_l2cap_br_chan *br_chan)
 
 static void raise_data_ready(struct bt_l2cap_br_chan *br_chan)
 {
+	/* The l2cap_data_ready list is only ever modified under the host
+	 * lock: here (append, any thread context), in cancel_data_ready()
+	 * (remove, any thread context) and in lower_data_ready() (remove,
+	 * TX processor context, which holds the lock across the whole pass).
+	 */
+	bt_dev_lock();
+
 	if (!atomic_set(&br_chan->_pdu_ready_lock, 1)) {
 		sys_slist_append(&br_chan->chan.conn->l2cap_data_ready,
 				 &br_chan->_pdu_ready);
@@ -423,13 +435,22 @@ static void raise_data_ready(struct bt_l2cap_br_chan *br_chan)
 		LOG_DBG("data ready already");
 	}
 
+	bt_dev_unlock();
+
 	bt_conn_data_ready(br_chan->chan.conn);
 }
 
 static void lower_data_ready(struct bt_l2cap_br_chan *br_chan)
 {
 	struct bt_conn *conn = br_chan->chan.conn;
-	__maybe_unused sys_snode_t *s = sys_slist_get(&conn->l2cap_data_ready);
+	__maybe_unused sys_snode_t *s;
+
+	/* Only called from the TX processor, which holds the host lock
+	 * across the whole processing pass.
+	 */
+	BT_DEV_LOCK_ASSERT();
+
+	s = sys_slist_get(&conn->l2cap_data_ready);
 
 	__ASSERT_NO_MSG(s == &br_chan->_pdu_ready);
 
@@ -442,10 +463,18 @@ static void cancel_data_ready(struct bt_l2cap_br_chan *br_chan)
 {
 	struct bt_conn *conn = br_chan->chan.conn;
 
+	/* Take the host lock as this function can be called from any
+	 * thread context and the data ready list must not be modified
+	 * while we are removing the channel from it (see raise_data_ready()).
+	 */
+	bt_dev_lock();
+
 	sys_slist_find_and_remove(&conn->l2cap_data_ready,
 				  &br_chan->_pdu_ready);
 
 	atomic_set(&br_chan->_pdu_ready_lock, 0);
+
+	bt_dev_unlock();
 }
 
 #if defined(CONFIG_BT_L2CAP_RET_FC)
@@ -521,29 +550,29 @@ static void l2cap_br_start_timer(struct bt_l2cap_br_chan *br_chan, enum l2cap_br
 	if (type == BT_L2CAP_BR_TIMER_RET) {
 		if (!atomic_test_and_set_bit(br_chan->flags, L2CAP_FLAG_RET_TIMER)) {
 			k_work_cancel_delayable(&br_chan->monitor_work);
-			k_work_schedule(&br_chan->ret_work, K_MSEC(br_chan->tx.ret_timeout));
+			bt_work_schedule(&br_chan->ret_work, K_MSEC(br_chan->tx.ret_timeout));
 			LOG_DBG("Start ret timer");
 		} else {
 			if (!restart) {
 				return;
 			}
 
-			k_work_reschedule(&br_chan->ret_work, K_MSEC(br_chan->tx.ret_timeout));
+			bt_work_reschedule(&br_chan->ret_work, K_MSEC(br_chan->tx.ret_timeout));
 			LOG_DBG("Restart ret timer");
 		}
 	} else {
 		if (atomic_test_and_clear_bit(br_chan->flags, L2CAP_FLAG_RET_TIMER)) {
 			k_work_cancel_delayable(&br_chan->ret_work);
-			k_work_schedule(&br_chan->monitor_work,
-					K_MSEC(br_chan->tx.monitor_timeout));
+			bt_work_schedule(&br_chan->monitor_work,
+					 K_MSEC(br_chan->tx.monitor_timeout));
 			LOG_DBG("Start monitor timer");
 		} else {
 			if (!restart) {
 				return;
 			}
 
-			k_work_reschedule(&br_chan->monitor_work,
-					  K_MSEC(br_chan->tx.monitor_timeout));
+			bt_work_reschedule(&br_chan->monitor_work,
+					   K_MSEC(br_chan->tx.monitor_timeout));
 			LOG_DBG("Restart monitor timer");
 		}
 	}
@@ -781,7 +810,9 @@ static void l2cap_br_ret_timeout(struct k_work *work)
 	uint16_t expected_ack_seq;
 
 	if (!br_chan->chan.conn || br_chan->chan.conn->state != BT_CONN_CONNECTED) {
-		/* ACL connection is broken. */
+		/* The ACL connection may have been disconnected while this
+		 * work item was pending. Nothing to do in that case.
+		 */
 		return;
 	}
 
@@ -792,7 +823,7 @@ static void l2cap_br_ret_timeout(struct k_work *work)
 
 	/* Restart the timer */
 	if (atomic_test_bit(br_chan->flags, L2CAP_FLAG_RET_TIMER)) {
-		k_work_schedule(&br_chan->ret_work, K_MSEC(br_chan->tx.ret_timeout));
+		bt_work_schedule(&br_chan->ret_work, K_MSEC(br_chan->tx.ret_timeout));
 	}
 
 	LOG_DBG("chan %p retransmission timeout", br_chan);
@@ -845,7 +876,9 @@ static void l2cap_br_monitor_timeout(struct k_work *work)
 	struct bt_l2cap_br_chan *br_chan = BR_CHAN_MONITOR(work);
 
 	if (!br_chan->chan.conn || br_chan->chan.conn->state != BT_CONN_CONNECTED) {
-		/* ACL connection is broken. */
+		/* The ACL connection may have been disconnected while this
+		 * work item was pending. Nothing to do in that case.
+		 */
 		return;
 	}
 
@@ -856,7 +889,7 @@ static void l2cap_br_monitor_timeout(struct k_work *work)
 
 	/* Restart the timer */
 	if (!atomic_test_bit(br_chan->flags, L2CAP_FLAG_RET_TIMER)) {
-		k_work_schedule(&br_chan->monitor_work, K_MSEC(br_chan->tx.monitor_timeout));
+		bt_work_schedule(&br_chan->monitor_work, K_MSEC(br_chan->tx.monitor_timeout));
 	}
 
 	LOG_DBG("chan %p monitor timeout", br_chan);
@@ -905,8 +938,9 @@ static bool l2cap_br_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 	/* All dynamic channels have the destroy handler which makes sure that
 	 * the RTX work structure is properly released with a cancel sync.
 	 * The fixed signal channel is only removed when disconnected and the
-	 * disconnected handler is always called from the workqueue itself so
-	 * canceling from there should always succeed.
+	 * disconnected handler is always called from the Bluetooth workqueue,
+	 * which the RTX work also runs on, so canceling from there should
+	 * always succeed.
 	 */
 	k_work_init_delayable(&ch->rtx_work, l2cap_br_rtx_timeout);
 #if defined(CONFIG_BT_L2CAP_RET_FC)
@@ -1043,7 +1077,7 @@ static void l2cap_br_chan_send_req(struct bt_l2cap_br_chan *chan,
 	 * final expiration, when the response is received, or the physical
 	 * link is lost.
 	 */
-	k_work_reschedule(&chan->rtx_work, timeout);
+	bt_work_reschedule(&chan->rtx_work, timeout);
 }
 
 #if defined(CONFIG_BT_L2CAP_RET_FC)
@@ -1222,6 +1256,19 @@ static struct net_buf *l2cap_br_get_next_sdu(struct bt_l2cap_br_chan *br_chan)
 	return NULL;
 }
 
+static bool l2cap_br_retransmit_is_required(struct bt_l2cap_br_chan *br_chan)
+{
+	struct bt_l2cap_br_window *tx_win, *next;
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&br_chan->_pdu_outstanding, tx_win, next, node) {
+		if (tx_win->retransmit) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 static bool l2cap_br_send_i_frame(struct bt_l2cap_br_chan *br_chan, struct net_buf *sdu)
 {
 	if (atomic_test_bit(br_chan->flags, L2CAP_FLAG_REMOTE_BUSY)) {
@@ -1235,11 +1282,13 @@ static bool l2cap_br_send_i_frame(struct bt_l2cap_br_chan *br_chan, struct net_b
 	}
 
 	if (atomic_test_bit(br_chan->flags, L2CAP_FLAG_RET_I_FRAME)) {
-		return true;
+		if (sys_slist_peek_head(&br_chan->_pdu_outstanding) != NULL) {
+			return true;
+		}
 	}
 
 	if (atomic_test_bit(br_chan->flags, L2CAP_FLAG_RET_I_FRAMES)) {
-		return true;
+		return l2cap_br_retransmit_is_required(br_chan);
 	}
 
 	if (atomic_test_bit(br_chan->flags, L2CAP_FLAG_SEND_FRAME_P)) {
@@ -2833,7 +2882,16 @@ static void l2cap_br_conn_req(struct bt_l2cap_br *l2cap, uint8_t ident,
 	br_chan->required_sec_level = server->sec_level;
 	br_chan->psm = psm;
 
-	l2cap_br_chan_add(conn, chan, l2cap_br_chan_destroy);
+	if (!l2cap_br_chan_add(conn, chan, l2cap_br_chan_destroy)) {
+		/* Give the channel the server just accepted back to it,
+		 * following the normal channel lifecycle so that the server
+		 * knows the channel object is no longer in use.
+		 */
+		bt_l2cap_br_chan_del(chan);
+		result = BT_L2CAP_BR_ERR_NO_RESOURCES;
+		goto no_chan;
+	}
+
 	BR_CHAN(chan)->tx.cid = scid;
 	br_chan->ident = ident;
 	bt_l2cap_br_chan_set_state(chan, BT_L2CAP_CONNECTING);
@@ -4569,6 +4627,40 @@ done:
 }
 #endif /* CONFIG_BT_L2CAP_RET_FC */
 
+static void l2cap_br_config_rsp_sent_cb(struct bt_conn *conn, void *user_data, int err)
+{
+	uint16_t scid = POINTER_TO_UINT(user_data);
+	struct bt_l2cap_chan *chan;
+
+	chan = bt_l2cap_br_lookup_tx_cid(conn, scid);
+	if (chan == NULL) {
+		return;
+	}
+
+	if (err != 0) {
+		LOG_ERR("Config response of chan %p failed to send (%d)", BR_CHAN(chan), err);
+		l2cap_br_chan_disconn(chan);
+		return;
+	}
+
+	atomic_set_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_RCONF_DONE);
+
+	if (!atomic_test_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_LCONF_DONE)) {
+		LOG_DBG("Local config req is not done");
+		return;
+	}
+
+	if (BR_CHAN(chan)->state == BT_L2CAP_CONFIG) {
+		LOG_DBG("scid 0x%04x rx MTU %u dcid 0x%04x tx MTU %u", BR_CHAN(chan)->rx.cid,
+			BR_CHAN(chan)->rx.mtu, BR_CHAN(chan)->tx.cid, BR_CHAN(chan)->tx.mtu);
+
+		bt_l2cap_br_chan_set_state(chan, BT_L2CAP_CONNECTED);
+		if (chan->ops != NULL && chan->ops->connected != NULL) {
+			chan->ops->connected(chan);
+		}
+	}
+}
+
 static void l2cap_br_conf_req(struct bt_l2cap_br *l2cap, uint8_t ident, uint16_t len,
 			      struct net_buf *buf)
 {
@@ -4580,6 +4672,7 @@ static void l2cap_br_conf_req(struct bt_l2cap_br *l2cap, uint8_t ident, uint16_t
 	struct bt_l2cap_conf_opt *opt = NULL;
 	uint16_t flags, dcid, opt_len, hint, result = BT_L2CAP_CONF_SUCCESS;
 	struct net_buf *rsp_buf;
+	int err;
 
 	if (len < sizeof(*req)) {
 		LOG_ERR("Too small L2CAP conf req packet size");
@@ -4730,9 +4823,8 @@ send_rsp:
 
 	hdr->len = sys_cpu_to_le16(rsp_buf->len - sizeof(*hdr));
 
-	l2cap_send(conn, BT_L2CAP_CID_BR_SIG, rsp_buf);
-
 	if (result != BT_L2CAP_CONF_SUCCESS) {
+		l2cap_send(conn, BT_L2CAP_CID_BR_SIG, rsp_buf);
 		return;
 	}
 
@@ -4751,17 +4843,12 @@ send_rsp:
 	}
 #endif /* CONFIG_BT_L2CAP_RET_FC */
 
-	atomic_set_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_RCONF_DONE);
-
-	if (atomic_test_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_LCONF_DONE) &&
-	    BR_CHAN(chan)->state == BT_L2CAP_CONFIG) {
-		LOG_DBG("scid 0x%04x rx MTU %u dcid 0x%04x tx MTU %u", BR_CHAN(chan)->rx.cid,
-			BR_CHAN(chan)->rx.mtu, BR_CHAN(chan)->tx.cid, BR_CHAN(chan)->tx.mtu);
-
-		bt_l2cap_br_chan_set_state(chan, BT_L2CAP_CONNECTED);
-		if (chan->ops && chan->ops->connected) {
-			chan->ops->connected(chan);
-		}
+	err = bt_l2cap_br_send_cb(conn, BT_L2CAP_CID_BR_SIG, rsp_buf, l2cap_br_config_rsp_sent_cb,
+				  UINT_TO_POINTER(BR_CHAN(chan)->tx.cid));
+	if (err != 0) {
+		LOG_ERR("Failed to send config response of chan %p (%d)", BR_CHAN(chan), err);
+		net_buf_unref(rsp_buf);
+		l2cap_br_chan_disconn(chan);
 	}
 }
 
@@ -4849,8 +4936,9 @@ static void l2cap_br_disconnected(struct bt_l2cap_chan *chan)
 
 	if (atomic_test_and_clear_bit(br_chan->flags, L2CAP_FLAG_SIG_INFO_PENDING)) {
 		/* Cancel RTX work on signal channel.
-		 * Disconnected callback is always called from system workqueue
-		 * so this should always succeed.
+		 * Disconnected callback is always called from the Bluetooth
+		 * workqueue, which the RTX work also runs on, so this should
+		 * always succeed.
 		 */
 		(void)k_work_cancel_delayable(&br_chan->rtx_work);
 		br_chan->ident = 0;
@@ -5085,7 +5173,7 @@ static void l2cap_br_conn_rsp(struct bt_l2cap_br *l2cap, uint8_t ident, struct n
 		break;
 	case BT_L2CAP_BR_PENDING:
 		br_chan->ident = ident;
-		k_work_reschedule(&br_chan->rtx_work, L2CAP_BR_CONN_TIMEOUT);
+		bt_work_reschedule(&br_chan->rtx_work, L2CAP_BR_CONN_TIMEOUT);
 		break;
 	default:
 		l2cap_br_chan_cleanup(chan);
@@ -6390,19 +6478,11 @@ void bt_l2cap_br_init(void)
 		bt_rfcomm_init();
 	}
 
-	if (IS_ENABLED(CONFIG_BT_AVDTP)) {
-		bt_avdtp_init();
-	}
-
 	if (IS_ENABLED(CONFIG_BT_AVCTP)) {
 		bt_avctp_init();
 	}
 
 	bt_sdp_init();
-
-	if (IS_ENABLED(CONFIG_BT_A2DP)) {
-		bt_a2dp_init();
-	}
 
 	if (IS_ENABLED(CONFIG_BT_AVRCP)) {
 		bt_avrcp_init();
@@ -6493,7 +6573,7 @@ int bt_l2cap_br_echo_req(struct bt_conn *conn, struct net_buf *buf)
 
 	err = bt_l2cap_br_send_cb(conn, BT_L2CAP_CID_BR_SIG, buf, NULL, NULL);
 	if (err == 0) {
-		k_work_reschedule(&BR_CHAN(chan)->rtx_work, L2CAP_BR_ECHO_TIMEOUT);
+		bt_work_reschedule(&BR_CHAN(chan)->rtx_work, L2CAP_BR_ECHO_TIMEOUT);
 	}
 
 	return err;

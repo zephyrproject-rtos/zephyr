@@ -737,7 +737,7 @@ static int mcp2515_get_state(const struct device *dev, enum can_state *state,
 			*state = CAN_STATE_STOPPED;
 		} else if (eflg & MCP2515_EFLG_TXBO) {
 			*state = CAN_STATE_BUS_OFF;
-		} else if ((eflg & MCP2515_EFLG_RXEP) || (eflg & MCP2515_EFLG_TXEP)) {
+		} else if (eflg & (MCP2515_EFLG_RXEP | MCP2515_EFLG_TXEP)) {
 			*state = CAN_STATE_ERROR_PASSIVE;
 		} else if (eflg & MCP2515_EFLG_EWARN) {
 			*state = CAN_STATE_ERROR_WARNING;

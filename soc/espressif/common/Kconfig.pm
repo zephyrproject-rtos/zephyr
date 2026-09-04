@@ -76,6 +76,9 @@ config ESP32_PM_ESP_SLEEP_POWER_DOWN_CPU
 	bool
 	default y if ESP32_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP
 
+config SOC_ESP32_PM_SLP_DEFAULT_PARAMS_OPT
+	bool
+
 config ESP32_TIMER_IN_IRAM
 	bool
 
@@ -136,5 +139,9 @@ config ESP32_SLEEP_SPI_FLASH_EXIT_DPD_MODE_DELAY
 	  Time CS must stay high after the exit-DPD command (tRES1 in datasheets).
 
 endmenu # Espressif PM Config
+
+config HEAP_MEM_POOL_ADD_SIZE_ESP32_PM
+	int
+	default 16384 if ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
 
 endif # SOC_FAMILY_ESPRESSIF_ESP32

@@ -8,8 +8,8 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/storage/flash_map.h>
 
-#include "bootloader_flash_priv.h"
-#include "ulp_lp_core.h"
+#include <bootloader_flash_priv.h>
+#include <ulp_lp_core.h>
 #include <esp_sleep.h>
 
 LOG_MODULE_REGISTER(lp_core_loader, CONFIG_KERNEL_LOG_LEVEL);

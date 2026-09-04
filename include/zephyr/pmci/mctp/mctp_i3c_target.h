@@ -5,6 +5,12 @@
  *
  */
 
+/**
+ * @file
+ * @brief MCTP bus binding over I3C using IBI signaling, target side.
+ * @ingroup mctp
+ */
+
 #ifndef ZEPHYR_INCLUDE_PMCI_MCTP_MCTP_I3C_TARGET_H_
 #define ZEPHYR_INCLUDE_PMCI_MCTP_MCTP_I3C_TARGET_H_
 
@@ -24,11 +30,13 @@ struct mctp_binding_i3c_target {
 	const struct device *i3c;
 	struct i3c_target_config i3c_target_cfg;
 	uint8_t endpoint_id;
+	uint8_t dynamic_addr;
 	struct mctp_pktbuf *tx_pkt;
 	struct k_sem *tx_lock;
 	struct k_sem *tx_complete;
 	struct mctp_pktbuf *rx_pkt;
 	uint8_t tx_storage[MCTP_PKTBUF_SIZE(MCTP_I3C_MAX_PKT_SIZE)] PKTBUF_STORAGE_ALIGN;
+	uint8_t tx_ptr;
 	/** @endcond INTERNAL_HIDDEN */
 };
 

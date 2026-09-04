@@ -1,6 +1,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
-cmake_minimum_required(VERSION 3.20.0)
+cmake_minimum_required(VERSION 3.28.0)
 
 include(extensions)
 include(west)
@@ -71,6 +71,7 @@ list(APPEND INCL_GENERATED_HEADERS
   ${INCL_GENERATED_SYSCALL_DIR}/log_core.h
   ${INCL_GENERATED_SYSCALL_DIR}/log_ctrl.h
   ${INCL_GENERATED_SYSCALL_DIR}/log_msg.h
+  ${INCL_GENERATED_SYSCALL_DIR}/sleep.h
   ${INCL_GENERATED_SYSCALL_DIR}/sys_clock.h
 )
 

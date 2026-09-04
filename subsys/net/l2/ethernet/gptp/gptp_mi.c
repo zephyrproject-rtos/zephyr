@@ -640,6 +640,11 @@ static void gptp_mi_site_ss_send_to_pss(void)
 	state = &GPTP_STATE()->site_ss;
 
 	for (port = GPTP_PORT_START; port <= GPTP_PORT_END; port++) {
+		/* gptp_add_port() never registers more ports than the per-port
+		 * arrays can hold, so this only makes that bound explicit.
+		 */
+		NET_ASSERT(GPTP_PORT_INDEX(port) < CONFIG_NET_GPTP_NUM_PORTS);
+
 		pss_send = &GPTP_PORT_STATE(port)->pss_send;
 		pss_send->pss_sync_ptr = &state->pss_send;
 		pss_send->rcvd_pss_sync = true;

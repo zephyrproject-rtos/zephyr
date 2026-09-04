@@ -24,6 +24,10 @@ config ST67W611M1_SCAN_RESULT_MAX_NUMBER
 	int "Max number of scan results"
 	default 12
 
+config ST67W611M1_WIFI_STA_SAP_MODE
+	bool "SoftAP mode on top of STA mode"
+	default y if WIFI_USAGE_MODE_STA_AP
+
 config ST67W611M1_WORKQ_THREAD_PRIORITY
 	int "Priority of the work queue thread"
 	default 7
@@ -68,7 +72,22 @@ config ST67W611M1_SPI_PKT_MEM_SLAB_COUNT
 	int "Max number of SPI pkts"
 	default 12
 
+config ST67W611M1_WIFI_AUTO_CONNECT
+	bool "Auto-connect to a stored access point at boot"
+	help
+	  Controls the module's power-on auto-connect (AT+CWAUTOCONN). When
+	  enabled, the module reconnects to the last provisioned access point
+	  automatically at startup. Disable to leave connection management to
+	  the Wi-Fi management API. The setting is only written when it differs
+	  from the module's current value, as the module persists it to flash.
+
 configdefault NET_MGMT_EVENT_STACK_SIZE
 	default 2048
+
+configdefault NET_IF_MAX_IPV4_COUNT
+	default 2 if ST67W611M1_WIFI_STA_SAP_MODE
+
+configdefault NET_IF_MAX_IPV6_COUNT
+	default 2 if ST67W611M1_WIFI_STA_SAP_MODE
 
 endif # WIFI_ST67W611M1

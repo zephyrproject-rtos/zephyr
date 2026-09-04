@@ -10,8 +10,8 @@
  * @brief Header file for the SCMI Power Domain Protocol.
  */
 
-#ifndef _INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_SCMI_POWER_H_
-#define _INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_SCMI_POWER_H_
+#ifndef ZEPHYR_INCLUDE_DRIVERS_FIRMWARE_SCMI_POWER_H_
+#define ZEPHYR_INCLUDE_DRIVERS_FIRMWARE_SCMI_POWER_H_
 
 #include <zephyr/drivers/firmware/scmi/protocol.h>
 
@@ -101,4 +101,4 @@ int scmi_power_state_get(uint32_t domain_id, uint32_t *power_state);
  * @}
  */
 
-#endif /* _INCLUDE_ZEPHYR_DRIVERS_FIRMWARE_SCMI_POWER_H_ */
+#endif /* ZEPHYR_INCLUDE_DRIVERS_FIRMWARE_SCMI_POWER_H_ */

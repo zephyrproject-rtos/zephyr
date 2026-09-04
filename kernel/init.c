@@ -53,9 +53,9 @@ atomic_t _cpus_active;
 
 /* init/main and idle threads */
 K_THREAD_STACK_DEFINE(z_main_stack, CONFIG_MAIN_STACK_SIZE);
-struct k_thread z_main_thread;
 
 #ifdef CONFIG_MULTITHREADING
+struct k_thread z_main_thread;
 struct k_thread z_idle_threads[CONFIG_MP_MAX_NUM_CPUS];
 
 static K_KERNEL_STACK_ARRAY_DEFINE(z_idle_stacks,
@@ -90,23 +90,17 @@ static void z_init_static_threads(void)
 #endif /* CONFIG_USERSPACE */
 
 	/*
-	 * Non-legacy static threads may be started immediately or
+	 * Static threads may be started immediately or
 	 * after a previously specified delay. Even though the
 	 * scheduler is locked, ticks can still be delivered and
 	 * processed. Take a sched lock to prevent them from running
 	 * until they are all started.
-	 *
-	 * Note that static threads defined using the legacy API have a
-	 * delay of K_FOREVER.
 	 */
 	k_sched_lock();
 	STRUCT_SECTION_FOREACH(_static_thread_data, thread_data) {
 		k_timeout_t init_delay = Z_THREAD_INIT_DELAY(thread_data);
 
-		if (!K_TIMEOUT_EQ(init_delay, K_FOREVER)) {
-			thread_schedule_new(thread_data->init_thread,
-					    init_delay);
-		}
+		thread_schedule_new(thread_data->init_thread, init_delay);
 	}
 	k_sched_unlock();
 }
@@ -324,9 +318,11 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 #endif /* CONFIG_KERNEL_COHERENCE */
 
 #ifdef CONFIG_SMP
-	if (!IS_ENABLED(CONFIG_SMP_BOOT_DELAY)) {
-		z_smp_init();
-	}
+	/* Start the secondary CPUs; CPUs whose devicetree node carries
+	 * zephyr,deferred-start are skipped and left for a run-time
+	 * k_smp_cpu_start()/k_smp_cpu_resume().
+	 */
+	z_smp_init();
 	z_sys_init_run_level(INIT_LEVEL_SMP);
 #endif /* CONFIG_SMP */
 
@@ -335,7 +331,7 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 #endif /* CONFIG_MMU */
 
 #ifdef CONFIG_BOOTARGS
-	extern int main(int, char **);
+	extern int main(int argc, char **argv);
 	extern char **sys_boot_prepare_main_args(int *argc);
 
 	int argc = 0;
@@ -347,8 +343,10 @@ static void bg_thread_main(void *unused1, void *unused2, void *unused3)
 	(void)main();
 #endif /* CONFIG_BOOTARGS */
 
+#ifdef CONFIG_MULTITHREADING
 	/* Mark non-essential since main() has no more work to do */
 	z_thread_essential_clear(&z_main_thread);
+#endif
 
 #ifdef CONFIG_COVERAGE_DUMP
 	/* Dump coverage data once the main() has exited. */

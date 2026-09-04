@@ -16,7 +16,7 @@
 #include <zephyr/timing/timing.h>
 #include <cortex_m/dwt.h>
 #include <cmsis_core.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 
 /**
  * @brief Return the current frequency of the cycle counter

@@ -118,16 +118,22 @@ int main(void)
 	audio_cfg.dai_cfg.i2s.word_size = SAMPLE_BIT_WIDTH;
 	audio_cfg.dai_cfg.i2s.channels = 2;
 	audio_cfg.dai_cfg.i2s.format = I2S_FMT_DATA_FORMAT_I2S;
-#ifdef CONFIG_USE_CODEC_CLOCK
-	audio_cfg.dai_cfg.i2s.options = I2S_OPT_FRAME_CLK_CONTROLLER | I2S_OPT_BIT_CLK_CONTROLLER;
+#ifdef CONFIG_SAMPLE_USE_CODEC_CLOCK
+	audio_cfg.dai_cfg.i2s.options = I2S_OPT_FRAME_CLK_CONTROLLER |
+					 I2S_OPT_BIT_CLK_CONTROLLER;
 #else
-	audio_cfg.dai_cfg.i2s.options = I2S_OPT_FRAME_CLK_TARGET | I2S_OPT_BIT_CLK_TARGET;
+	audio_cfg.dai_cfg.i2s.options = I2S_OPT_FRAME_CLK_TARGET |
+					 I2S_OPT_BIT_CLK_TARGET;
 #endif
 	audio_cfg.dai_cfg.i2s.frame_clk_freq = SAMPLE_FREQUENCY;
 	audio_cfg.dai_cfg.i2s.mem_slab = &mem_slab;
 	audio_cfg.dai_cfg.i2s.block_size = BLOCK_SIZE;
 	audio_cfg.mclk_freq = CONFIG_I2S_MCLK_FREQUENCY;
-	audio_codec_configure(codec_dev, &audio_cfg);
+	ret = audio_codec_configure(codec_dev, &audio_cfg);
+	if (ret < 0) {
+		printk("Failed to configure codec: %d\n", ret);
+		return ret;
+	}
 	k_msleep(1000);
 	audio_codec_start_output(codec_dev);
 
@@ -151,7 +157,7 @@ int main(void)
 	config.word_size = SAMPLE_BIT_WIDTH;
 	config.channels = NUMBER_OF_CHANNELS;
 	config.format = I2S_FMT_DATA_FORMAT_I2S;
-#ifdef CONFIG_USE_CODEC_CLOCK
+#ifdef CONFIG_SAMPLE_USE_CODEC_CLOCK
 	config.options = I2S_OPT_BIT_CLK_TARGET | I2S_OPT_FRAME_CLK_TARGET;
 #else
 	config.options = I2S_OPT_BIT_CLK_CONTROLLER | I2S_OPT_FRAME_CLK_CONTROLLER;

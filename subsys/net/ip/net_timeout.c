@@ -5,7 +5,7 @@
  */
 
 #include <zephyr/net/net_timeout.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 
 void net_timeout_set(struct net_timeout *timeout,
 		     uint32_t lifetime,

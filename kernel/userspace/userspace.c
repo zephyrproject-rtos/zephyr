@@ -75,9 +75,13 @@ static struct k_spinlock obj_lock;         /* kobj struct data */
 
 #ifdef CONFIG_DYNAMIC_OBJECTS
 extern uint8_t _thread_idx_map[CONFIG_MAX_THREAD_BYTES];
+
+extern int z_msgq_cleanup(struct k_msgq *q, bool locked);
+extern int z_stack_cleanup(struct k_stack *stack, bool locked);
+extern int z_timer_cleanup(struct k_timer *timer, bool locked);
 #endif /* CONFIG_DYNAMIC_OBJECTS */
 
-static void clear_perms_cb(struct k_object *ko, void *ctx_ptr);
+static void unref_check(struct k_object *ko, uintptr_t index, bool locked);
 
 const char *otype_to_str(enum k_objects otype)
 {
@@ -254,6 +258,13 @@ static struct dyn_obj *dyn_object_find(const void *obj)
 	return node;
 }
 
+static void clear_perms_cb(struct k_object *ko, void *ctx_ptr)
+{
+	uintptr_t id = (uintptr_t)ctx_ptr;
+
+	unref_check(ko, id, false);
+}
+
 /**
  * @internal
  *
@@ -365,6 +376,14 @@ static struct k_object *dynamic_object_create(enum k_objects otype, size_t align
 		}
 
 		adjusted_size = STACK_ELEMENT_DATA_SIZE(size);
+		if (adjusted_size < size) {
+			/* The size adjustment above overflowed, which would
+			 * hand out an allocation smaller than requested.
+			 */
+			k_free(dyn);
+			return NULL;
+		}
+
 		dyn->data = z_thread_aligned_alloc(DYN_OBJ_DATA_ALIGN_K_THREAD_STACK,
 						     adjusted_size);
 		if (dyn->data == NULL) {
@@ -402,7 +421,14 @@ static struct k_object *dynamic_object_create(enum k_objects otype, size_t align
 		dyn->kobj.data.stack_size = adjusted_size;
 #endif /* CONFIG_GEN_PRIV_STACKS */
 	} else {
-		dyn->data = z_thread_aligned_alloc(align, obj_size_get(otype) + size);
+		size_t total_size = obj_size_get(otype) + size;
+
+		if (total_size < size) {
+			k_free(dyn);
+			return NULL;
+		}
+
+		dyn->data = z_thread_aligned_alloc(align, total_size);
 		if (dyn->data == NULL) {
 			k_free(dyn);
 			return NULL;
@@ -606,11 +632,14 @@ void k_object_wordlist_foreach(_wordlist_cb_func_t func, void *context)
 Z_GENERIC_SECTION(.kobject_data.text.dummies)
 __weak struct k_object *z_object_gperf_find(const void *obj)
 {
+	ARG_UNUSED(obj);
 	return NULL;
 }
 Z_GENERIC_SECTION(.kobject_data.text.dummies)
 __weak void z_object_gperf_wordlist_foreach(_wordlist_cb_func_t func, void *context)
 {
+	ARG_UNUSED(func);
+	ARG_UNUSED(context);
 }
 #else
 Z_GENERIC_SECTION(.kobject_data.text.dummies)
@@ -640,8 +669,11 @@ static unsigned int thread_index_get(struct k_thread *thread)
 /* Caller must hold lists_lock for the duration of this call so that the
  * sys_dlist_remove() below is mutually exclusive with concurrent
  * obj_list traversal in k_object_wordlist_foreach() on another CPU.
+ *
+ * Note: The 'locked' parameter in this function refers to the scheduler's
+ * spinlock.
  */
-static void unref_check(struct k_object *ko, uintptr_t index)
+static void unref_check(struct k_object *ko, uintptr_t index, bool locked)
 {
 	k_spinlock_key_t key = k_spin_lock(&obj_lock);
 
@@ -672,10 +704,10 @@ static void unref_check(struct k_object *ko, uintptr_t index)
 	 */
 	switch (ko->type) {
 	case K_OBJ_MSGQ:
-		k_msgq_cleanup((struct k_msgq *)ko->name);
+		(void)z_msgq_cleanup((struct k_msgq *)ko->name, locked);
 		break;
 	case K_OBJ_STACK:
-		k_stack_cleanup((struct k_stack *)ko->name);
+		(void)z_stack_cleanup((struct k_stack *)ko->name, locked);
 		break;
 	case K_OBJ_TIMER:
 		/* k_timer_cleanup() does not check whether the timer has
@@ -684,7 +716,7 @@ static void unref_check(struct k_object *ko, uintptr_t index)
 		 * explicitly here.
 		 */
 		if ((ko->flags & K_OBJ_FLAG_INITIALIZED) != 0U) {
-			k_timer_cleanup((struct k_timer *)ko->name);
+			(void)z_timer_cleanup((struct k_timer *)ko->name, locked);
 		}
 		break;
 	default:
@@ -744,27 +776,34 @@ void k_thread_perms_clear(struct k_object *ko, struct k_thread *thread)
 #ifdef CONFIG_DYNAMIC_OBJECTS
 		k_spinlock_key_t key = k_spin_lock(&lists_lock);
 
-		unref_check(ko, index);
+		unref_check(ko, index, false);
 		k_spin_unlock(&lists_lock, key);
 #else
-		unref_check(ko, index);
+		unref_check(ko, index, false);
 #endif /* CONFIG_DYNAMIC_OBJECTS */
 	}
 }
 
-static void clear_perms_cb(struct k_object *ko, void *ctx_ptr)
+static void clear_perms_cb_locked(struct k_object *ko, void *ctx_ptr)
 {
 	uintptr_t id = (uintptr_t)ctx_ptr;
 
-	unref_check(ko, id);
+	unref_check(ko, id, true);
 }
 
+/*
+ * The only place where this routine is presently used in the Zephyr tree
+ * is in halt_thread() when a thread is being aborted and the scheduler's
+ * spinlock is held. The knowledge that the scheduler's spinlock is held must
+ * be passed down to the lower layers so that they do not try to reacquire the
+ * spinlock (leading to deadlock).
+ */
 void k_thread_perms_all_clear(struct k_thread *thread)
 {
 	uintptr_t index = thread_index_get(thread);
 
 	if ((int)index != -1) {
-		k_object_wordlist_foreach(clear_perms_cb, (void *)index);
+		k_object_wordlist_foreach(clear_perms_cb_locked, (void *)index);
 	}
 }
 

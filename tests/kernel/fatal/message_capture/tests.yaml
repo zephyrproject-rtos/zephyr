@@ -1,10 +1,28 @@
+common:
+  ignore_faults: true
+  harness: ztest
+  tags:
+    - kernel
+    - fatal
 tests:
-  kernel.logging.message_capture:
-    tags: kernel
-    harness: console
-    harness_config:
-      type: multi_line
-      ordered: false
-      regex:
-        - "Current thread: (.*)"
-        - "Caught system error -- reason (.*)"
+  kernel.fatal.message_capture.no_logging:
+    extra_configs:
+      - CONFIG_TEST_LOGGING_DEFAULTS=n
+      - CONFIG_LOG=n
+    integration_platforms:
+      - mps2/an385
+      - qemu_riscv32
+      - qemu_riscv64
+      - native_sim
+  kernel.fatal.message_capture.logging:
+    # LOG_MODE_IMMEDIATE is required for the log backend route: the test's
+    # logging defaults would otherwise resolve the mode to LOG_MODE_MINIMAL
+    # (which routes through printk) on everything but ARCH_POSIX, and deferred
+    # messages would not reach the backend before capture is stopped.
+    extra_configs:
+      - CONFIG_LOG_MODE_IMMEDIATE=y
+    integration_platforms:
+      - mps2/an385
+      - qemu_riscv32
+      - qemu_riscv64
+      - native_sim

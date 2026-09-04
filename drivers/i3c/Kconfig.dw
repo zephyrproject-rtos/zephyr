@@ -1,4 +1,5 @@
 # Copyright (c) 2023 Meta Platforms, Inc. and its affiliates.
+# Copyright (c) 2026 Microchip Technology Inc.
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -9,11 +10,14 @@ source "subsys/logging/Kconfig.template.log_config"
 menuconfig I3C_DW
 	bool "DW I3C support"
 	select I3C_IBI_WORKQUEUE if I3C_USE_IBI && I3C_CONTROLLER
-	depends on DT_HAS_SNPS_DESIGNWARE_I3C_ENABLED
+	depends on DT_HAS_SNPS_DESIGNWARE_I3C_ENABLED || DT_HAS_MICROCHIP_XEC_I3C_ENABLED
 	depends on CLOCK_CONTROL
 	default y
 	help
-	  Enable the Synopsys Designware I3C driver
+	  Enable the Synopsys DesignWare I3C driver. Supports the upstream
+	  snps,designware-i3c compatible and the Microchip XEC variant
+	  microchip,xec-i3c, which is the same IP behind an XEC wrapper adding
+	  ECIA interrupt routing and a HOST_CFG port-select register.
 
 if I3C_DW
 

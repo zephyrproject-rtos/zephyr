@@ -29,6 +29,10 @@
 	bt_hci_bflb: bt-hci {
 		compatible = "bflb,bt-hci";
 		status = "disabled";
+
+		interrupts = <61 0>, <62 0>, <72 0>;
+		interrupt-names = "dm", "bt", "ble";
+		interrupt-parent = <&clic>;
 	};
 
 	clocks {
@@ -360,6 +364,15 @@
 			};
 		};
 
+		can0: can@2000aa00 {
+			compatible = "bflb,bl61x-can";
+			reg = <0x2000aa00 0x100>;
+			status = "disabled";
+
+			interrupts = <46 1>;
+			interrupt-parent = <&clic>;
+		};
+
 		sf_ctrl: sf@2000b000 {
 			compatible = "bflb,sf-controller";
 			reg = <0x2000b000 0x1000>;
@@ -470,7 +483,7 @@
 		};
 
 		wifi0: wifi@24b08000 {
-			compatible = "bflb,bl61x-wifi";
+			compatible = "bflb,wifi6";
 			reg = <0x24b08000 0x1000>;
 			interrupts = <70 1>, <79 1>;
 			interrupt-names = "wifi", "wifi-ipc";

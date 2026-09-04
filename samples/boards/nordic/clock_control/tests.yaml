@@ -1,8 +1,6 @@
 sample:
   name: Clock control sample
 common:
-  platform_allow:
-    - nrf54h20dk/nrf54h20/cpuapp
   harness: console
   harness_config:
     type: one_line
@@ -13,31 +11,43 @@ common:
 tests:
   sample.boards.nrf.clock_control.fll16m:
     filter: dt_nodelabel_enabled("fll16m")
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
     extra_args:
       - CONF_FILE="configs/fll16m.conf"
       - DTC_OVERLAY_FILE="configs/fll16m.overlay"
   sample.boards.nrf.clock_control.lfclk:
     filter: dt_nodelabel_enabled("lfclk")
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
     extra_args:
       - CONF_FILE="configs/lfclk.conf"
       - DTC_OVERLAY_FILE="configs/lfclk.overlay"
   sample.boards.nrf.clock_control.uart135:
     filter: dt_nodelabel_enabled("uart135")
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
     extra_args:
       - CONF_FILE="configs/uart135.conf"
       - DTC_OVERLAY_FILE="configs/uart135.overlay"
   sample.boards.nrf.clock_control.cpuapp_hsfll:
     filter: dt_nodelabel_enabled("cpuapp_hsfll")
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
     extra_args:
       - CONF_FILE="configs/cpuapp_hsfll.conf"
       - DTC_OVERLAY_FILE="configs/cpuapp_hsfll.overlay"
   sample.boards.nrf.clock_control.global_hsfll:
     filter: dt_nodelabel_enabled("hsfll120")
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
     extra_args:
       - CONF_FILE="configs/global_hsfll.conf"
       - DTC_OVERLAY_FILE="configs/global_hsfll.overlay"
   sample.boards.nrf.clock_control.global_hsfll.req_low_freq_n:
     filter: dt_nodelabel_enabled("hsfll120")
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
     extra_configs:
       - CONFIG_CLOCK_CONTROL_NRF_HSFLL_GLOBAL_REQ_LOW_FREQ=n
     extra_args:
@@ -45,6 +55,50 @@ tests:
       - DTC_OVERLAY_FILE="configs/global_hsfll.overlay"
   sample.boards.nrf.clock_control.audiopll:
     filter: dt_nodelabel_enabled("audiopll")
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
     extra_args:
       - CONF_FILE="configs/audiopll.conf"
       - DTC_OVERLAY_FILE="configs/audiopll.overlay"
+  sample.boards.nrfx.clock_control.hfclk:
+    filter: dt_nodelabel_enabled("hfclk")
+    platform_allow:
+      - nrf52840dk/nrf52840
+    extra_args:
+      - CONF_FILE="configs/nrfx_clock.conf"
+      - DTC_OVERLAY_FILE="configs/nrfx_hfclk.overlay"
+  sample.boards.nrfx.clock_control.lfclk:
+    filter: dt_nodelabel_enabled("lfclk")
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp
+    extra_args:
+      - CONF_FILE="configs/nrfx_clock.conf"
+      - DTC_OVERLAY_FILE="configs/nrfx_lfclk.overlay"
+  sample.boards.nrfx.clock_control.xo:
+    filter: dt_nodelabel_enabled("xo")
+    platform_allow:
+      - nrf54l15dk/nrf54l15/cpuapp
+    extra_args:
+      - CONF_FILE="configs/nrfx_clock.conf"
+      - DTC_OVERLAY_FILE="configs/nrfx_xo.overlay"
+  sample.boards.nrfx.clock_control.hfclk192m:
+    filter: dt_nodelabel_enabled("hfclk192m")
+    platform_allow:
+      - nrf5340dk/nrf5340/cpuapp
+    extra_args:
+      - CONF_FILE="configs/nrfx_clock.conf"
+      - DTC_OVERLAY_FILE="configs/nrfx_hfclk192m.overlay"
+  sample.boards.nrfx.clock_control.xo24m:
+    filter: dt_nodelabel_enabled("xo24m")
+    platform_allow:
+      - nrf54lm20dk/nrf54lm20b/cpuapp
+    extra_args:
+      - CONF_FILE="configs/nrfx_clock.conf"
+      - DTC_OVERLAY_FILE="configs/nrfx_xo24m.overlay"
+  sample.boards.nrfx.clock_control.hfclkaudio:
+    filter: dt_nodelabel_enabled("hfclkaudio")
+    platform_allow:
+      - nrf5340dk/nrf5340/cpuapp
+    extra_args:
+      - CONF_FILE="configs/nrfx_clock.conf"
+      - DTC_OVERLAY_FILE="configs/nrfx_hfclkaudio.overlay"

@@ -234,9 +234,6 @@ nxp_8080_touch_panel_i2c: &flexcomm2_lpi2c2 {
 &enet {
 	pinctrl-0 = <&pinmux_enet_qos>;
 	pinctrl-names = "default";
-};
-
-&enet_mac {
 	phy-connection-type = "rmii";
 	zephyr,random-mac-address;
 	phy-handle = <&phy>;
@@ -313,4 +310,19 @@ zephyr_mipi_dbi_parallel: &flexio0_lcd {
 
 &crc {
 	status = "okay";
+};
+
+&powerquad {
+	status = "okay";
+};
+
+&tsi0 {
+	pinctrl-0 = <&pinmux_tsi>;
+	pinctrl-names = "default";
+
+	channel-mask = <0x80000>;
+	input-codes = <INPUT_BTN_3>;
+	touch-threshold = <5>;
+	release-threshold = <2>;
+	scan-period-ms = <50>;
 };

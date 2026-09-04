@@ -9,15 +9,15 @@
 #include <zephyr/logging/log.h>
 #include <sample_usbd.h>
 
-#include "usbh_ch9.h"
-#include "usbh_class.h"
-#include "usbh_class_api.h"
-#include "usbh_desc.h"
-#include "usbh_device.h"
-#include "usbh_device.h"
-#include "usbh_host.h"
+#include <usbh_ch9.h>
+#include <usbh_class.h>
+#include <usbh_class_api.h>
+#include <usbh_desc.h>
+#include <usbh_device.h>
+#include <usbh_device.h>
+#include <usbh_host.h>
 
-#include "usbh_test_common.h"
+#include <usbh_test_common.h>
 
 LOG_MODULE_REGISTER(usbh_test, LOG_LEVEL_INF);
 

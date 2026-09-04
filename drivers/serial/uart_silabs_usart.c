@@ -167,17 +167,18 @@ static int uart_silabs_err_check(const struct device *dev)
 
 	if (flags & USART_IF_RXOF) {
 		err |= UART_ERROR_OVERRUN;
+		USART_IntClear(config->base, USART_IF_RXOF);
 	}
 
 	if (flags & USART_IF_PERR) {
 		err |= UART_ERROR_PARITY;
+		USART_IntClear(config->base, USART_IF_PERR);
 	}
 
 	if (flags & USART_IF_FERR) {
 		err |= UART_ERROR_FRAMING;
+		USART_IntClear(config->base, USART_IF_FERR);
 	}
-
-	USART_IntClear(config->base, USART_IF_RXOF | USART_IF_PERR | USART_IF_FERR);
 
 	return err;
 }
@@ -212,7 +213,7 @@ static void uart_silabs_irq_tx_enable(const struct device *dev)
 	const struct uart_silabs_config *config = dev->config;
 
 	(void)uart_silabs_pm_lock_get(dev, UART_SILABS_PM_LOCK_TX);
-	USART_IntEnable(config->base, USART_IEN_TXBL | USART_IEN_TXC);
+	USART_IntEnable(config->base, USART_IEN_TXBL);
 }
 
 static void uart_silabs_irq_tx_disable(const struct device *dev)
@@ -220,6 +221,7 @@ static void uart_silabs_irq_tx_disable(const struct device *dev)
 	const struct uart_silabs_config *config = dev->config;
 
 	USART_IntDisable(config->base, USART_IEN_TXBL | USART_IEN_TXC);
+	USART_IntClear(config->base, USART_IF_TXC);
 	(void)uart_silabs_pm_lock_put(dev, UART_SILABS_PM_LOCK_TX);
 }
 
@@ -228,9 +230,12 @@ static int uart_silabs_irq_tx_complete(const struct device *dev)
 	const struct uart_silabs_config *config = dev->config;
 	uint32_t flags = USART_IntGet(config->base);
 
-	USART_IntClear(config->base, USART_IF_TXC);
+	if (flags & USART_IF_TXC) {
+		USART_IntClear(config->base, USART_IF_TXC);
+		return 1;
+	}
 
-	return !!(flags & USART_IF_TXC);
+	return 0;
 }
 
 static int uart_silabs_irq_tx_ready(const struct device *dev)
@@ -882,71 +887,6 @@ static inline USART_HwFlowControl_TypeDef uart_silabs_cfg2ll_hwctrl(
 	}
 
 	return usartHwFlowControlNone;
-}
-
-static inline enum uart_config_parity uart_silabs_ll2cfg_parity(USART_Parity_TypeDef parity)
-{
-	switch (parity) {
-	case usartOddParity:
-		return UART_CFG_PARITY_ODD;
-	case usartEvenParity:
-		return UART_CFG_PARITY_EVEN;
-	case usartNoParity:
-	default:
-		return UART_CFG_PARITY_NONE;
-	}
-}
-
-static inline enum uart_config_stop_bits uart_silabs_ll2cfg_stopbits(USART_Stopbits_TypeDef sb)
-{
-	switch (sb) {
-	case usartStopbits0p5:
-		return UART_CFG_STOP_BITS_0_5;
-	case usartStopbits1:
-		return UART_CFG_STOP_BITS_1;
-	case usartStopbits1p5:
-		return UART_CFG_STOP_BITS_1_5;
-	case usartStopbits2:
-		return UART_CFG_STOP_BITS_2;
-	default:
-		return UART_CFG_STOP_BITS_1;
-	}
-}
-
-static inline enum uart_config_data_bits uart_silabs_ll2cfg_databits(USART_Databits_TypeDef db,
-								    USART_Parity_TypeDef p)
-{
-	switch (db) {
-	case usartDatabits7:
-		if (p == usartNoParity) {
-			return UART_CFG_DATA_BITS_7;
-		} else {
-			return UART_CFG_DATA_BITS_6;
-		}
-	case usartDatabits9:
-		if (p == usartNoParity) {
-			return UART_CFG_DATA_BITS_9;
-		} else {
-			return UART_CFG_DATA_BITS_8;
-		}
-	case usartDatabits8:
-	default:
-		if (p == usartNoParity) {
-			return UART_CFG_DATA_BITS_8;
-		} else {
-			return UART_CFG_DATA_BITS_7;
-		}
-	}
-}
-
-static inline enum uart_config_flow_control uart_silabs_ll2cfg_hwctrl(
-	USART_HwFlowControl_TypeDef fc)
-{
-	if (fc == usartHwFlowControlCtsAndRts) {
-		return UART_CFG_FLOW_CTRL_RTS_CTS;
-	}
-
-	return UART_CFG_FLOW_CTRL_NONE;
 }
 
 static void uart_silabs_configure_peripheral(const struct device *dev, bool enable)

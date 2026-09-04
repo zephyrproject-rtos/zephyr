@@ -32,8 +32,8 @@
 
 #include <zephyr/shell/shell.h>
 
-#include "host/shell/bt.h"
-#include "common/bt_shell_private.h"
+#include <host/shell/bt.h>
+#include <common/bt_shell_private.h>
 
 #if defined(CONFIG_BT_CONN)
 /* Connection context for BR/EDR legacy pairing in sec mode 3 */

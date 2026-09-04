@@ -104,10 +104,7 @@ def add_parser_common(command, parser_adder=None, parser=None):
                        help='override default runner from --build-dir')
     group.add_argument('--domain', action='append',
                        help='execute runner only for given domain')
-    rebuild_group = group.add_mutually_exclusive_group()
-    rebuild_group.add_argument('--skip-rebuild', action='store_true',
-                       help='(deprecated) do not invoke cmake')
-    rebuild_group.add_argument('--rebuild', action=argparse.BooleanOptionalAction,
+    group.add_argument('--rebuild', action=argparse.BooleanOptionalAction,
                        help='manually specify to reinvoke cmake or not')
 
     group = parser.add_argument_group(
@@ -544,10 +541,6 @@ def load_cmake_cache(build_dir, args):
 def skip_rebuild(command, args):
     if args.rebuild is not None:
         return not args.rebuild
-
-    if args.skip_rebuild:
-        command.wrn("--skip-rebuild is deprecated. Please use --no-rebuild instead")
-        return True
 
     rebuild_config = command.config.getboolean(f'{command.name}.rebuild', default=None)
 

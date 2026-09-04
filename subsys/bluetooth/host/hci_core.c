@@ -42,7 +42,7 @@
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/__assert.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/toolchain.h>
 #include <soc.h>
 
@@ -116,10 +116,44 @@ void bt_tx_irq_raise(void);
 /* Stacks for the threads */
 static void rx_work_handler(struct k_work *work);
 static K_WORK_DEFINE(rx_work, rx_work_handler);
-#if defined(CONFIG_BT_RECV_WORKQ_BT)
+/* General purpose Bluetooth workqueue. It processes incoming low priority HCI
+ * packets (high priority events are handled synchronously in the context of the
+ * bt_recv() caller) as well as the host's internal delayed and immediate work
+ * items, keeping them off the shared system workqueue.
+ */
 static struct k_work_q bt_workq;
 static K_KERNEL_STACK_DEFINE(rx_thread_stack, CONFIG_BT_RX_STACK_SIZE);
-#endif /* CONFIG_BT_RECV_WORKQ_BT */
+
+int bt_work_submit(struct k_work *work)
+{
+	return k_work_submit_to_queue(&bt_workq, work);
+}
+
+int bt_work_schedule(struct k_work_delayable *work, k_timeout_t delay)
+{
+	return k_work_schedule_for_queue(&bt_workq, work, delay);
+}
+
+int bt_work_reschedule(struct k_work_delayable *work, k_timeout_t delay)
+{
+	return k_work_reschedule_for_queue(&bt_workq, work, delay);
+}
+
+static void bt_workq_start(void)
+{
+	static bool bt_workq_started;
+
+	if (bt_workq_started) {
+		return;
+	}
+
+	k_work_queue_init(&bt_workq);
+	k_work_queue_start(&bt_workq, rx_thread_stack, CONFIG_BT_RX_STACK_SIZE,
+			   K_PRIO_COOP(CONFIG_BT_RX_PRIO), NULL);
+	k_thread_name_set(bt_workq.thread_id, "BT RX WQ");
+
+	bt_workq_started = true;
+}
 
 static void init_work(struct k_work *work);
 
@@ -132,6 +166,7 @@ struct bt_dev bt_dev = {
 	.appearance = CONFIG_BT_DEVICE_APPEARANCE,
 #endif
 	.hci = BT_HCI_DEV,
+	.lock = Z_MUTEX_INITIALIZER(bt_dev.lock),
 };
 
 static bt_ready_cb_t ready_cb;
@@ -286,6 +321,11 @@ __weak void bt_testing_trace_event_acl_pool_destroy(struct net_buf *buf)
 #endif
 
 #if defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL)
+static bool drv_quirk_no_flow_control(void)
+{
+	return ((BT_HCI_QUIRKS & BT_HCI_QUIRK_NO_FLOW_CONTROL) != 0);
+}
+
 void bt_hci_host_num_completed_packets(struct net_buf *buf)
 {
 	struct bt_hci_cp_host_num_completed_packets *cp;
@@ -301,7 +341,7 @@ void bt_hci_host_num_completed_packets(struct net_buf *buf)
 	net_buf_destroy(buf);
 
 	/* Do nothing if controller to host flow control is not supported */
-	if (!BT_CMD_TEST(bt_dev.supported_commands, 10, 5)) {
+	if (drv_quirk_no_flow_control() || !BT_CMD_TEST(bt_dev.supported_commands, 10, 5)) {
 		return;
 	}
 
@@ -361,9 +401,42 @@ struct net_buf *bt_hci_cmd_alloc(k_timeout_t timeout)
 	return buf;
 }
 
+/* Drop every queued command once the HCI transport has been closed,
+ * completing synchronous senders with an error.
+ */
+static void hci_cmd_queue_purge(void)
+{
+	struct net_buf *buf;
+
+	while (true) {
+		buf = k_fifo_get(&bt_dev.cmd_tx_queue, K_NO_WAIT);
+		if (buf == NULL) {
+			break;
+		}
+
+		LOG_WRN("Dropping queued command 0x%04x: HCI transport closed", cmd(buf)->opcode);
+
+		if (cmd(buf)->sync != NULL) {
+			cmd(buf)->status = BT_HCI_ERR_UNSPECIFIED;
+			k_sem_give(cmd(buf)->sync);
+		}
+
+		net_buf_unref(buf);
+	}
+}
+
 int bt_hci_cmd_send(uint16_t opcode, struct net_buf *buf)
 {
 	struct bt_hci_cmd_hdr *hdr;
+
+	/* Make sure the HCI transport is open before attempting anything else */
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_OPEN)) {
+		if (buf != NULL) {
+			net_buf_unref(buf);
+		}
+
+		return -EHOSTDOWN;
+	}
 
 	if (buf != NULL) {
 		/* Check for sufficient headeroom, which can only happen if the user passes a
@@ -406,6 +479,19 @@ int bt_hci_cmd_send(uint16_t opcode, struct net_buf *buf)
 	}
 
 	k_fifo_put(&bt_dev.cmd_tx_queue, buf);
+
+	/* bt_disable() clears BT_DEV_OPEN before purging the queue, so a
+	 * command queued by a sender that passed the check above just before
+	 * the transport was closed is either found by that purge or seen
+	 * here: take it back and fail the call. If the purge got to it first
+	 * it completes the command like any other queued one.
+	 */
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_OPEN) &&
+	    k_queue_remove(&bt_dev.cmd_tx_queue._queue, buf)) {
+		net_buf_unref(buf);
+		return -EHOSTDOWN;
+	}
+
 	bt_tx_irq_raise();
 
 	return 0;
@@ -473,6 +559,14 @@ int bt_hci_cmd_send_sync(uint16_t opcode, struct net_buf *buf,
 			 * Example: 0x0c03 represents HCI_Reset command.
 			 */
 			__maybe_unused bool success = process_pending_cmd(HCI_CMD_TIMEOUT);
+
+			if (!atomic_test_bit(bt_dev.flags, BT_DEV_OPEN)) {
+				/* The transport was closed while draining: the queue
+				 * has been purged, completing this command with an
+				 * error, so there is nothing left to send.
+				 */
+				break;
+			}
 
 			BT_ASSERT_MSG(success, "command opcode 0x%04x timeout", opcode);
 		} while (buf != cmd);
@@ -637,6 +731,7 @@ static void hci_num_completed_packets(struct net_buf *buf)
 
 		while (count--) {
 			sys_snode_t *node;
+			unsigned int key;
 
 			/* move the next TX context from the `pending` list to
 			 * the `complete` list.
@@ -651,7 +746,12 @@ static void hci_num_completed_packets(struct net_buf *buf)
 
 			k_sem_give(bt_conn_get_pkts(conn));
 
+			/* The `complete` list is consumed from another context,
+			 * which uses the same lock.
+			 */
+			key = irq_lock();
 			sys_slist_append(&conn->tx_complete, node);
+			irq_unlock(key);
 
 			/* align the `pending` value */
 			__ASSERT_NO_MSG(atomic_get(&conn->in_ll));
@@ -738,7 +838,6 @@ int bt_le_create_conn_ext(const struct bt_conn *conn)
 	bool use_filter = false;
 	struct net_buf *buf;
 	uint8_t own_addr_type;
-	uint8_t num_phys;
 	int err;
 
 	if (IS_ENABLED(CONFIG_BT_FILTER_ACCEPT_LIST)) {
@@ -749,11 +848,6 @@ int bt_le_create_conn_ext(const struct bt_conn *conn)
 	if (err) {
 		return err;
 	}
-
-	num_phys = (!(bt_dev.create_param.options &
-		      BT_CONN_LE_OPT_NO_1M) ? 1 : 0) +
-		   ((bt_dev.create_param.options &
-		      BT_CONN_LE_OPT_CODED) ? 1 : 0);
 
 	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
@@ -1219,7 +1313,8 @@ int bt_le_set_phy(struct bt_conn *conn, uint8_t all_phys,
 	return bt_hci_cmd_send_sync(BT_HCI_OP_LE_SET_PHY, buf, NULL);
 }
 
-static struct bt_conn *find_pending_connect(uint8_t role, bt_addr_le_t *peer_addr)
+static struct bt_conn *find_pending_connect(uint8_t role, const bt_addr_le_t *peer_addr,
+					    const struct bt_le_ext_adv *ext_adv)
 {
 	struct bt_conn *conn;
 
@@ -1240,6 +1335,33 @@ static struct bt_conn *find_pending_connect(uint8_t role, bt_addr_le_t *peer_add
 	}
 
 	if (IS_ENABLED(CONFIG_BT_PERIPHERAL) && role == BT_HCI_ROLE_PERIPHERAL) {
+		/* Do not fall back between directed and undirected pending connections
+		 * when the terminating advertising set is known. Such a fallback can
+		 * consume a reservation belonging to another active set.
+		 */
+		if (ext_adv != NULL) {
+			if (bt_addr_le_eq(&ext_adv->target_addr, BT_ADDR_LE_ANY)) {
+				/* Having multiple same-identity undirected reservations and
+				 * finding the first one that might not have been the one that
+				 * was used to initiate the connection is not a problem.
+				 * Undirected reservations have no advertising-set association
+				 * or per-set state, so any matching reservation can
+				 * be consumed; one remains for each other enabled set.
+				 */
+				return bt_conn_lookup_state_le(ext_adv->id, BT_ADDR_LE_NONE,
+							       BT_CONN_ADV_CONNECTABLE);
+			}
+
+			return bt_conn_lookup_state_le(ext_adv->id, &ext_adv->target_addr,
+						       BT_CONN_ADV_DIR_CONNECTABLE);
+		}
+
+		/* In case there is no advertising handle, there can be at most one
+		 * relevant peripheral advertiser. This is the case for legacy
+		 * advertising, or when the controller does not support extended
+		 * advertising. In this case, we can fall back to the legacy lookup
+		 * behaviour.
+		 */
 		conn = bt_conn_lookup_state_le(bt_dev.adv_conn_id, peer_addr,
 					       BT_CONN_ADV_DIR_CONNECTABLE);
 		if (!conn) {
@@ -1264,7 +1386,7 @@ static void le_conn_complete_cancel(uint8_t err)
 	 * There is no need to check ID address as only one
 	 * connection in central role can be in pending state.
 	 */
-	conn = find_pending_connect(BT_HCI_ROLE_CENTRAL, NULL);
+	conn = find_pending_connect(BT_HCI_ROLE_CENTRAL, NULL, NULL);
 	if (!conn) {
 		LOG_ERR("No pending central connection");
 		return;
@@ -1324,7 +1446,7 @@ static void le_conn_complete_adv_timeout(void)
 		/* There is no need to check ID address as only one
 		 * connection in peripheral role can be in pending state.
 		 */
-		conn = find_pending_connect(BT_HCI_ROLE_PERIPHERAL, NULL);
+		conn = find_pending_connect(BT_HCI_ROLE_PERIPHERAL, NULL, NULL);
 		if (!conn) {
 			LOG_ERR("No pending peripheral connection");
 			return;
@@ -1365,7 +1487,7 @@ static void enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 		return;
 	}
 #endif
-	bt_hci_le_enh_conn_complete(evt);
+	bt_hci_le_enh_conn_complete(evt, NULL);
 }
 
 static void translate_addrs(bt_addr_le_t *peer_addr, bt_addr_le_t *id_addr,
@@ -1403,7 +1525,8 @@ static void update_conn(struct bt_conn *conn, const bt_addr_le_t *id_addr,
 #endif
 }
 
-void bt_hci_le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
+void bt_hci_le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt,
+				 const struct bt_le_ext_adv *ext_adv)
 {
 	__ASSERT_NO_MSG(evt->status == BT_HCI_ERR_SUCCESS);
 
@@ -1422,10 +1545,13 @@ void bt_hci_le_enh_conn_complete(struct bt_hci_evt_le_enh_conn_complete *evt)
 	bt_id_pending_keys_update();
 #endif
 
-	id = evt->role == BT_HCI_ROLE_PERIPHERAL ? bt_dev.adv_conn_id : BT_ID_DEFAULT;
+	id = BT_ID_DEFAULT;
+	if (evt->role == BT_HCI_ROLE_PERIPHERAL) {
+		id = ext_adv != NULL ? ext_adv->id : bt_dev.adv_conn_id;
+	}
 	translate_addrs(&peer_addr, &id_addr, evt, id);
 
-	conn = find_pending_connect(evt->role, &id_addr);
+	conn = find_pending_connect(evt->role, &id_addr, ext_adv);
 
 	if (IS_ENABLED(CONFIG_BT_CENTRAL) &&
 	    evt->role == BT_HCI_ROLE_CENTRAL) {
@@ -2075,8 +2201,8 @@ static void le_conn_update_complete(struct net_buf *buf)
 			   evt->status == BT_HCI_ERR_UNSUPP_LL_PARAM_VAL &&
 			   conn->le.conn_param_retry_countdown) {
 			conn->le.conn_param_retry_countdown--;
-			k_work_schedule(&conn->deferred_work,
-					K_MSEC(CONFIG_BT_CONN_PARAM_RETRY_TIMEOUT));
+			bt_work_schedule(&conn->deferred_work,
+					 K_MSEC(CONFIG_BT_CONN_PARAM_RETRY_TIMEOUT));
 		} else {
 			if (IS_ENABLED(CONFIG_BT_USER_CONN_PARAM_REJECTED)) {
 				/* A host-initiated (auto) update is only reported as a
@@ -2118,6 +2244,11 @@ static int set_flow_control(void)
 	struct bt_hci_cp_host_buffer_size *hbs;
 	struct net_buf *buf;
 	int err;
+
+	if (drv_quirk_no_flow_control()) {
+		LOG_WRN("Controller to host flow control disabled by quirk");
+		return 0;
+	}
 
 	/* Check if host flow control is actually supported */
 	if (!BT_CMD_TEST(bt_dev.supported_commands, 10, 5)) {
@@ -4181,10 +4312,17 @@ static const char *vs_fw_variant(uint8_t variant)
 {
 	static const char * const var_str[] = {
 		"Standard Bluetooth controller",
-		"Vendor specific controller",
+		"Vendor specific Bluetooth Controller",
 		"Firmware loader",
 		"Rescue image",
 	};
+
+	/* The Zephyr controller responds with the standard variant and The
+	 * Linux Foundation company identifier.
+	 */
+	if (variant == BT_HCI_VS_FW_VAR_STANDARD_CTLR && bt_dev.manufacturer == BT_COMP_ID_LF) {
+		return "Zephyr Bluetooth Controller";
+	}
 
 	if (variant < ARRAY_SIZE(var_str)) {
 		return var_str[variant];
@@ -4238,8 +4376,9 @@ static void hci_vs_init(void)
 		vs_hw_variant(sys_le16_to_cpu(rp.info->hw_platform),
 			      sys_le16_to_cpu(rp.info->hw_variant)),
 		sys_le16_to_cpu(rp.info->hw_variant));
-	LOG_INF("Firmware: %s (0x%02x) Version %u.%u Build %u", vs_fw_variant(rp.info->fw_variant),
-		rp.info->fw_variant, rp.info->fw_version, sys_le16_to_cpu(rp.info->fw_revision),
+	LOG_INF("Controller: %s (0x%02x) manufacturer 0x%04x Version %u.%u Build %u",
+		vs_fw_variant(rp.info->fw_variant), rp.info->fw_variant, bt_dev.manufacturer,
+		rp.info->fw_version, sys_le16_to_cpu(rp.info->fw_revision),
 		sys_le32_to_cpu(rp.info->fw_build));
 
 	net_buf_unref(rsp);
@@ -4261,28 +4400,6 @@ static void hci_vs_init(void)
 	rp.cmds = (void *)rsp->data;
 	memcpy(bt_dev.vs_commands, rp.cmds->commands, BT_DEV_VS_CMDS_MAX);
 	net_buf_unref(rsp);
-
-	if (BT_VS_CMD_SUP_FEAT(bt_dev.vs_commands)) {
-		err = bt_hci_cmd_send_sync(BT_HCI_OP_VS_READ_SUPPORTED_FEATURES,
-					   NULL, &rsp);
-		if (err) {
-			LOG_WRN("Failed to read supported vendor features");
-			return;
-		}
-
-		if (IS_ENABLED(CONFIG_BT_HCI_VS_EXT_DETECT) &&
-		    rsp->len !=
-		    sizeof(struct bt_hci_rp_vs_read_supported_features)) {
-			LOG_WRN("Invalid Vendor HCI extensions");
-			net_buf_unref(rsp);
-			return;
-		}
-
-		rp.feat = (void *)rsp->data;
-		memcpy(bt_dev.vs_features, rp.feat->features,
-		       BT_DEV_VS_FEAT_MAX);
-		net_buf_unref(rsp);
-	}
 }
 
 static int hci_vs_write_bd_addr(bt_addr_t *bdaddr)
@@ -4498,15 +4615,27 @@ static void hci_event_prio(struct net_buf *buf)
 	}
 }
 
+/* Whether bt_disable() is tearing down low-priority RX processing, meaning
+ * that RX packets must no longer be queued or dispatched. Not true in the
+ * failed-disable recovery states, where BT_DEV_READY gets restored.
+ */
+static bool rx_teardown_active(void)
+{
+	return atomic_test_bit(bt_dev.flags, BT_DEV_DISABLING) &&
+	       !atomic_test_bit(bt_dev.flags, BT_DEV_READY);
+}
+
 static void rx_queue_put(struct net_buf *buf)
 {
+	if (rx_teardown_active()) {
+		net_buf_unref(buf);
+		return;
+	}
+
 	net_buf_slist_put(&bt_dev.rx_queue, buf);
 
-#if defined(CONFIG_BT_RECV_WORKQ_SYS)
-	const int err = k_work_submit(&rx_work);
-#elif defined(CONFIG_BT_RECV_WORKQ_BT)
-	const int err = k_work_submit_to_queue(&bt_workq, &rx_work);
-#endif /* CONFIG_BT_RECV_WORKQ_SYS */
+	const int err = bt_work_submit(&rx_work);
+
 	if (err < 0) {
 		LOG_ERR("Could not submit rx_work: %d", err);
 	}
@@ -4514,7 +4643,7 @@ static void rx_queue_put(struct net_buf *buf)
 
 static int bt_recv_unsafe(struct net_buf *buf)
 {
-	/* Don't pull the type, snice we still need it in the rx queue */
+	/* Don't pull the type, since we still need it in the rx queue */
 	uint8_t type = buf->data[0];
 
 	bt_monitor_send(bt_monitor_opcode(type, BT_MONITOR_RX), buf->data + 1, buf->len - 1);
@@ -4589,15 +4718,34 @@ static int bt_recv(const struct device *dev, struct net_buf *buf)
 	return err;
 }
 
-void bt_finalize_init(void)
+/* Complete the enable transition started by bt_enable(), whatever its
+ * outcome: BT_DEV_ENABLING is cleared in every case, so that bt_enable()
+ * and bt_disable() can be called again, while the stack is marked ready
+ * only when the initialization succeeded. Called once per transition,
+ * either from bt_init() or, when the identity comes from settings, from
+ * the settings commit handler.
+ */
+void bt_finalize_init(int err)
 {
-	atomic_set_bit(bt_dev.flags, BT_DEV_READY);
-
-	if (IS_ENABLED(CONFIG_BT_OBSERVER)) {
-		bt_scan_reset();
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_ENABLING)) {
+		return;
 	}
 
-	bt_dev_show_info();
+	if (err == 0) {
+		if (IS_ENABLED(CONFIG_BT_OBSERVER)) {
+			bt_scan_reset();
+		}
+
+		bt_dev_show_info();
+
+		/* Publish BT_DEV_READY before clearing BT_DEV_ENABLING, so that
+		 * bt_disable() always finds the stack either still enabling or
+		 * ready, never in between.
+		 */
+		atomic_set_bit(bt_dev.flags, BT_DEV_READY);
+	}
+
+	atomic_clear_bit(bt_dev.flags, BT_DEV_ENABLING);
 }
 
 static int bt_init(void)
@@ -4606,20 +4754,20 @@ static int bt_init(void)
 
 	err = hci_init();
 	if (err) {
-		return err;
+		goto done;
 	}
 
 	if (IS_ENABLED(CONFIG_BT_CONN)) {
 		err = bt_conn_init();
 		if (err) {
-			return err;
+			goto done;
 		}
 	}
 
 	if (IS_ENABLED(CONFIG_BT_ISO)) {
 		err = bt_conn_iso_init();
 		if (err) {
-			return err;
+			goto done;
 		}
 	}
 
@@ -4632,8 +4780,9 @@ static int bt_init(void)
 		atomic_set_bit(bt_dev.flags, BT_DEV_PRESET_ID);
 	}
 
-	bt_finalize_init();
-	return 0;
+done:
+	bt_finalize_init(err);
+	return err;
 }
 
 static void init_work(struct k_work *work)
@@ -4656,6 +4805,15 @@ static void rx_work_handler(struct k_work *work)
 	LOG_DBG("Getting net_buf from queue");
 	buf = net_buf_slist_get(&bt_dev.rx_queue);
 	if (!buf) {
+		return;
+	}
+
+	if (rx_teardown_active()) {
+		/* Drop the packet rather than dispatch it towards a transport
+		 * that is being torn down. No need to resubmit the work:
+		 * bt_disable() purges whatever remains on the queue.
+		 */
+		net_buf_unref(buf);
 		return;
 	}
 
@@ -4689,32 +4847,19 @@ static void rx_work_handler(struct k_work *work)
 	 * we used a while() loop with a k_yield() statement.
 	 */
 	if (!sys_slist_is_empty(&bt_dev.rx_queue)) {
-
-#if defined(CONFIG_BT_RECV_WORKQ_SYS)
-		err = k_work_submit(&rx_work);
-#elif defined(CONFIG_BT_RECV_WORKQ_BT)
-		err = k_work_submit_to_queue(&bt_workq, &rx_work);
-#endif
+		err = bt_work_submit(&rx_work);
 		if (err < 0) {
 			LOG_ERR("Could not submit rx_work: %d", err);
 		}
 	}
 }
 
-#if defined(CONFIG_BT_TESTING)
-k_tid_t bt_testing_tx_tid_get(void)
-{
-	/* We now TX everything from the syswq */
-	return k_sys_work_q.thread_id;
-}
-
-#if defined(CONFIG_BT_ISO)
+#if defined(CONFIG_BT_TESTING) && defined(CONFIG_BT_ISO)
 void bt_testing_set_iso_mtu(uint16_t mtu)
 {
 	bt_dev.le.iso_mtu = mtu;
 }
-#endif /* CONFIG_BT_ISO */
-#endif /* CONFIG_BT_TESTING */
+#endif /* CONFIG_BT_TESTING && CONFIG_BT_ISO */
 
 int bt_enable(bt_ready_cb_t cb)
 {
@@ -4725,28 +4870,44 @@ int bt_enable(bt_ready_cb_t cb)
 		return -ENODEV;
 	}
 
+	if (atomic_test_and_set_bit(bt_dev.flags, BT_DEV_ENABLING)) {
+		return -EALREADY;
+	}
+
+	if (atomic_test_bit(bt_dev.flags, BT_DEV_DISABLING)) {
+		err = -EAGAIN;
+		goto failed;
+	}
+
 	if (!device_is_ready(bt_dev.hci)) {
 		LOG_ERR("HCI driver is not ready");
-		return -ENODEV;
+		err = -ENODEV;
+		goto failed;
 	}
 
 	bt_monitor_new_index(BT_MONITOR_TYPE_PRIMARY, BT_HCI_BUS, BT_ADDR_ANY, BT_HCI_NAME);
 
-	atomic_clear_bit(bt_dev.flags, BT_DEV_DISABLE);
-
-	if (atomic_test_and_set_bit(bt_dev.flags, BT_DEV_ENABLE)) {
-		return -EALREADY;
+	if (atomic_test_bit(bt_dev.flags, BT_DEV_OPEN)) {
+		err = -EALREADY;
+		goto failed;
 	}
+
+	/* Keep the queue alive across enable/disable cycles because delayable
+	 * host work may outlive an individual cycle.
+	 */
+	bt_workq_start();
 
 	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
 		err = bt_settings_init();
 		if (err) {
-			return err;
+			goto failed;
 		}
 	} else if (IS_ENABLED(CONFIG_BT_DEVICE_NAME_DYNAMIC)) {
 		err = bt_set_name(CONFIG_BT_DEVICE_NAME);
 		if (err) {
 			LOG_WRN("Failed to set device name (%d)", err);
+			/* Not a critical error, so continue with initialization. */
+			err = 0;
 		}
 	}
 
@@ -4763,20 +4924,13 @@ int bt_enable(bt_ready_cb_t cb)
 	}
 	k_fifo_init(&bt_dev.cmd_tx_queue);
 
-#if defined(CONFIG_BT_RECV_WORKQ_BT)
-	/* RX thread */
-	k_work_queue_init(&bt_workq);
-	k_work_queue_start(&bt_workq, rx_thread_stack,
-			   CONFIG_BT_RX_STACK_SIZE,
-			   K_PRIO_COOP(CONFIG_BT_RX_PRIO), NULL);
-	k_thread_name_set(bt_workq.thread_id, "BT RX WQ");
-#endif
-
 	err = bt_hci_open(bt_dev.hci, bt_recv);
 	if (err) {
 		LOG_ERR("HCI driver open failed (%d)", err);
-		return err;
+		goto failed;
 	}
+
+	atomic_set_bit(bt_dev.flags, BT_DEV_OPEN);
 
 	bt_monitor_send(BT_MONITOR_OPEN_INDEX, NULL, 0);
 
@@ -4786,18 +4940,37 @@ int bt_enable(bt_ready_cb_t cb)
 
 	k_work_submit(&bt_dev.init);
 	return 0;
+
+failed:
+	atomic_clear_bit(bt_dev.flags, BT_DEV_ENABLING);
+	return err;
 }
 
 int bt_disable(void)
 {
+	struct net_buf *buf;
+	bool was_ready;
 	int err;
 
-	if (atomic_test_and_set_bit(bt_dev.flags, BT_DEV_DISABLE)) {
+	if (atomic_test_and_set_bit(bt_dev.flags, BT_DEV_DISABLING)) {
 		return -EALREADY;
 	}
 
-	/* Clear BT_DEV_READY before disabling HCI link */
-	atomic_clear_bit(bt_dev.flags, BT_DEV_READY);
+	if (atomic_test_bit(bt_dev.flags, BT_DEV_ENABLING)) {
+		atomic_clear_bit(bt_dev.flags, BT_DEV_DISABLING);
+		return -EAGAIN;
+	}
+
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_OPEN)) {
+		atomic_clear_bit(bt_dev.flags, BT_DEV_DISABLING);
+		return -EALREADY;
+	}
+
+	/* Clear BT_DEV_READY before disabling HCI link. It is not set if
+	 * bt_enable() failed after opening the transport, in which case a
+	 * failed disable must not set it either.
+	 */
+	was_ready = atomic_test_and_clear_bit(bt_dev.flags, BT_DEV_READY);
 
 #if defined(CONFIG_BT_BROADCASTER)
 	bt_adv_reset_adv_pool();
@@ -4811,6 +4984,51 @@ int bt_disable(void)
 	bt_periodic_sync_disable();
 #endif /* CONFIG_BT_PER_ADV_SYNC */
 
+	/* Stop low-priority RX processing before resetting and closing the
+	 * transport: new packets are no longer queued (see
+	 * rx_teardown_active()), already-queued ones are discarded here, and
+	 * an in-flight RX work item is waited for while the transport is
+	 * still able to serve any HCI commands it may issue. High-priority
+	 * (RECV_PRIO) events are unaffected, as the HCI Reset below relies on
+	 * them. The workqueue itself is kept running, since delayable host
+	 * work may remain scheduled across an enable/disable cycle.
+	 */
+	buf = net_buf_slist_get(&bt_dev.rx_queue);
+	while (buf != NULL) {
+		net_buf_unref(buf);
+		buf = net_buf_slist_get(&bt_dev.rx_queue);
+	}
+
+	if (k_current_get() == bt_workq.thread_id) {
+		(void)k_work_cancel(&rx_work);
+	} else {
+		struct k_work_sync sync;
+
+		(void)k_work_cancel_sync(&rx_work, &sync);
+	}
+
+	/* Reset the Controller */
+	if (!drv_quirk_no_reset()) {
+
+		err = bt_hci_cmd_send_sync(BT_HCI_OP_RESET, NULL, NULL);
+		if (err) {
+			LOG_ERR("Failed to reset BLE controller");
+			if (was_ready) {
+				atomic_set_bit(bt_dev.flags, BT_DEV_READY);
+			}
+			atomic_clear_bit(bt_dev.flags, BT_DEV_DISABLING);
+			return err;
+		}
+
+		hci_reset_complete();
+	}
+
+	/* Tear down the connections only after the controller has been reset:
+	 * until then it still owns the packets in flight and reports their
+	 * completion, which must find the TX bookkeeping intact. What is left
+	 * afterwards is completed by the host with an error. Neither the ISO
+	 * nor the connection cleanup sends HCI commands.
+	 */
 	if (IS_ENABLED(CONFIG_BT_ISO)) {
 		bt_iso_reset();
 	}
@@ -4823,41 +5041,30 @@ int bt_disable(void)
 	disconnected_handles_reset();
 #endif /* CONFIG_BT_CONN */
 
-	/* Reset the Controller */
-	if (!drv_quirk_no_reset()) {
-
-		err = bt_hci_cmd_send_sync(BT_HCI_OP_RESET, NULL, NULL);
-		if (err) {
-			LOG_ERR("Failed to reset BLE controller");
-			return err;
-		}
-
-		hci_reset_complete();
-	}
+	/* Mark the transport closed before purging the command queue: a
+	 * command queued after this point is taken back by its sender (see
+	 * bt_hci_cmd_send()), so nothing is left behind for the next enable.
+	 */
+	atomic_clear_bit(bt_dev.flags, BT_DEV_OPEN);
+	hci_cmd_queue_purge();
 
 	err = bt_hci_close(bt_dev.hci);
-	if (err == -ENOSYS) {
-		atomic_clear_bit(bt_dev.flags, BT_DEV_DISABLE);
-		atomic_set_bit(bt_dev.flags, BT_DEV_READY);
-		return -ENOTSUP;
-	}
-
 	if (err) {
-		LOG_ERR("HCI driver close failed (%d)", err);
-
-		/* Re-enable BT_DEV_READY to avoid inconsistent stack state */
-		atomic_set_bit(bt_dev.flags, BT_DEV_READY);
-
+		/* Re-enable state bits to avoid inconsistent stack state */
+		atomic_set_bit(bt_dev.flags, BT_DEV_OPEN);
+		if (was_ready) {
+			atomic_set_bit(bt_dev.flags, BT_DEV_READY);
+		}
+		atomic_clear_bit(bt_dev.flags, BT_DEV_DISABLING);
 		return err;
 	}
 
-#if defined(CONFIG_BT_RECV_WORKQ_BT)
-	/* Abort RX thread */
-	k_thread_abort(bt_workq.thread_id);
-#endif
-
 	/* Some functions rely on checking this bitfield */
 	memset(bt_dev.supported_commands, 0x00, sizeof(bt_dev.supported_commands));
+
+	if (IS_ENABLED(CONFIG_BT_SETTINGS)) {
+		bt_settings_flush();
+	}
 
 	/* Reset IDs and corresponding keys. */
 	bt_dev.id_count = 0;
@@ -4871,10 +5078,7 @@ int bt_disable(void)
 
 	bt_monitor_send(BT_MONITOR_CLOSE_INDEX, NULL, 0);
 
-	/* Clear BT_DEV_ENABLE here to prevent early bt_enable() calls, before disable is
-	 * completed.
-	 */
-	atomic_clear_bit(bt_dev.flags, BT_DEV_ENABLE);
+	atomic_clear_bit(bt_dev.flags, BT_DEV_DISABLING);
 
 	return 0;
 }
@@ -5161,6 +5365,11 @@ int bt_configure_data_path(uint8_t dir, uint8_t id, uint8_t vs_config_len,
 /* Return `true` if a command was processed/sent */
 static bool process_pending_cmd(k_timeout_t timeout)
 {
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_OPEN)) {
+		hci_cmd_queue_purge();
+		return false;
+	}
+
 	if (!k_fifo_is_empty(&bt_dev.cmd_tx_queue)) {
 		if (k_sem_take(&bt_dev.ncmd_sem, timeout) == 0) {
 			hci_core_send_cmd();
@@ -5175,13 +5384,21 @@ static void tx_processor(struct k_work *item)
 {
 	LOG_DBG("TX process start");
 
-	/* Historically, the code in process_pending_cmd() and
-	 * bt_conn_tx_processor() has been invoked only from
-	 * cooperative threads. For now, we assume their
-	 * implementations rely on this and ensure the current
-	 * thread is cooperative.
+	/* The whole TX processing pass (command and data processors) runs
+	 * under the host lock, which replaces the historical reliance on
+	 * cooperative scheduling (k_sched_lock). This serializes it against
+	 * bt_conn_data_ready()/l2cap raise/cancel_data_ready() and the other
+	 * host-lock sections.
+	 *
+	 * Ordering rule: no code may wait, while holding the host lock,
+	 * on anything produced by the HCI prio path (ncmd_sem, command
+	 * completion). All resource acquisitions on this path are K_NO_WAIT.
+	 * Note that the HCI driver's send() is called with the lock held;
+	 * drivers that deliver events synchronously from send() (e.g. the
+	 * native controller) re-enter bt_recv() on this thread, which is
+	 * fine since the lock is recursive.
 	 */
-	k_sched_lock();
+	bt_dev_lock();
 
 	if (process_pending_cmd(K_NO_WAIT)) {
 		/* If we processed a command, let the scheduler run before
@@ -5197,7 +5414,7 @@ static void tx_processor(struct k_work *item)
 	}
 
 exit:
-	k_sched_unlock();
+	bt_dev_unlock();
 }
 
 /**

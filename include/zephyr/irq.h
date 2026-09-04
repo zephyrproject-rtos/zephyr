@@ -15,6 +15,8 @@
 #include <zephyr/arch/cpu.h>
 
 #ifndef _ASMLANGUAGE
+#include <limits.h>
+#include <stdbool.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 
@@ -316,6 +318,181 @@ void z_smp_global_unlock(unsigned int key);
  * @return interrupt enable state, true or false
  */
 #define irq_is_enabled(irq) arch_irq_is_enabled(irq)
+
+/*
+ * Namespaced equivalents of the interrupt APIs above. New code should
+ * prefer these. The unprefixed names remain fully supported and must stay
+ * function-like macros: vendor HAL headers declare functions with those
+ * names, and a macro coexists with such a declaration where a function
+ * definition would conflict.
+ */
+
+/**
+ * @brief Lock interrupts; namespaced equivalent of irq_lock().
+ *
+ * @return An architecture-dependent lock-out key to pass to k_irq_unlock().
+ */
+static ALWAYS_INLINE unsigned int k_irq_lock(void)
+{
+	return irq_lock();
+}
+
+/**
+ * @brief Unlock interrupts; namespaced equivalent of irq_unlock().
+ *
+ * @param key Lock-out key returned by k_irq_lock().
+ */
+static ALWAYS_INLINE void k_irq_unlock(unsigned int key)
+{
+	irq_unlock(key);
+}
+
+/**
+ * @brief Enable an IRQ; namespaced equivalent of irq_enable().
+ *
+ * @param irq IRQ line.
+ */
+static ALWAYS_INLINE void k_irq_enable(unsigned int irq)
+{
+	irq_enable(irq);
+}
+
+/**
+ * @brief Disable an IRQ; namespaced equivalent of irq_disable().
+ *
+ * @param irq IRQ line.
+ */
+static ALWAYS_INLINE void k_irq_disable(unsigned int irq)
+{
+	irq_disable(irq);
+}
+
+/**
+ * @brief Get IRQ enable state; namespaced equivalent of irq_is_enabled().
+ *
+ * @param irq IRQ line.
+ *
+ * @return interrupt enable state, true or false
+ */
+static ALWAYS_INLINE int k_irq_is_enabled(unsigned int irq)
+{
+	return irq_is_enabled(irq);
+}
+
+/**
+ * @brief Configure a dynamic interrupt; namespaced equivalent of
+ *        irq_connect_dynamic().
+ *
+ * @param irq IRQ line number
+ * @param priority Interrupt priority
+ * @param routine Interrupt service routine
+ * @param parameter ISR parameter
+ * @param flags Arch-specific IRQ configuration flags
+ *
+ * @return The vector assigned to this interrupt
+ */
+static ALWAYS_INLINE int k_irq_connect_dynamic(unsigned int irq, unsigned int priority,
+					       void (*routine)(const void *parameter),
+					       const void *parameter, uint32_t flags)
+{
+	return irq_connect_dynamic(irq, priority, routine, parameter, flags);
+}
+
+/**
+ * @brief Disconnect a dynamic interrupt; namespaced equivalent of
+ *        irq_disconnect_dynamic().
+ *
+ * @param irq IRQ line number
+ * @param priority Interrupt priority
+ * @param routine Interrupt service routine
+ * @param parameter ISR parameter
+ * @param flags Arch-specific IRQ configuration flags
+ *
+ * @return 0 in case of success, negative value otherwise
+ */
+static ALWAYS_INLINE int k_irq_disconnect_dynamic(unsigned int irq, unsigned int priority,
+						  void (*routine)(const void *parameter),
+						  const void *parameter, uint32_t flags)
+{
+	return irq_disconnect_dynamic(irq, priority, routine, parameter, flags);
+}
+
+#if defined(CONFIG_ARCH_HAS_IRQ_PENDING_OPS) || defined(__DOXYGEN__)
+/**
+ * @brief Clear the pending state of an IRQ.
+ *
+ * Discard a latched, not yet serviced interrupt from source @a irq. Only the
+ * controller's latched state is affected: a level-triggered line still
+ * asserted by the peripheral pends again immediately.
+ *
+ * @kconfig_dep{CONFIG_ARCH_HAS_IRQ_PENDING_OPS}
+ *
+ * @param irq IRQ line.
+ */
+static ALWAYS_INLINE void k_irq_clear_pending(unsigned int irq)
+{
+	arch_irq_clear_pending(irq);
+}
+
+/**
+ * @brief Set the pending state of an IRQ.
+ *
+ * Latch source @a irq in the interrupt controller as if the hardware had
+ * raised it. The peripheral behind @a irq knows nothing about a
+ * software-raised interrupt.
+ *
+ * @kconfig_dep{CONFIG_ARCH_HAS_IRQ_PENDING_OPS}
+ *
+ * @param irq IRQ line.
+ */
+static ALWAYS_INLINE void k_irq_set_pending(unsigned int irq)
+{
+	arch_irq_set_pending(irq);
+}
+
+/**
+ * @brief Get IRQ pending state.
+ *
+ * Report whether an interrupt from source @a irq is latched in the interrupt
+ * controller and has not been serviced yet. The result is a momentary
+ * snapshot.
+ *
+ * @kconfig_dep{CONFIG_ARCH_HAS_IRQ_PENDING_OPS}
+ *
+ * @param irq IRQ line.
+ *
+ * @return interrupt pending state, true or false
+ */
+static ALWAYS_INLINE bool k_irq_is_pending(unsigned int irq)
+{
+	return arch_irq_is_pending(irq);
+}
+#endif /* CONFIG_ARCH_HAS_IRQ_PENDING_OPS */
+
+#if defined(CONFIG_ARCH_HAS_IRQ_GET_ACTIVE) || defined(__DOXYGEN__)
+/**
+ * @brief Value returned by k_irq_get_active() outside interrupt context.
+ */
+#define K_IRQ_ACTIVE_NONE UINT_MAX
+
+/**
+ * @brief Get the IRQ currently being serviced on this CPU.
+ *
+ * Report the interrupt line whose handler is executing on the current CPU,
+ * the innermost one when interrupts nest. Only hardware interrupts
+ * dispatched through the architecture interrupt path are reported;
+ * irq_offload() handlers and CPU exceptions are not.
+ *
+ * @kconfig_dep{CONFIG_ARCH_HAS_IRQ_GET_ACTIVE}
+ *
+ * @return the active IRQ line, or @ref K_IRQ_ACTIVE_NONE if no interrupt is
+ *         being serviced
+ */
+static ALWAYS_INLINE unsigned int k_irq_get_active(void)
+{
+	return arch_irq_get_active();
+}
+#endif /* CONFIG_ARCH_HAS_IRQ_GET_ACTIVE */
 
 /**
  * @}

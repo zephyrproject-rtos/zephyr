@@ -12,12 +12,14 @@
 #include <zephyr/bluetooth/conn.h>
 #include <zephyr/bluetooth/gatt.h>
 #include <zephyr/bluetooth/hci_types.h>
-#include <zephyr/sys/printk.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/toolchain.h>
 
 #include "bstests.h"
 #include "common.h"
 #include "common/bt_str.h"
+
+LOG_MODULE_REGISTER(csip_notify_client_test);
 
 extern enum bst_result_t bst_result;
 
@@ -58,7 +60,7 @@ static void test_main(void)
 {
 	int err;
 
-	printk("Enabling Bluetooth\n");
+	LOG_INF("Enabling Bluetooth");
 	err = bt_enable(NULL);
 	if (err != 0) {
 		FAIL("Bluetooth enable failed (err %d)\n", err);
@@ -71,21 +73,20 @@ static void test_main(void)
 		FAIL("Failed to register CSIP callbacks (err %d)\n", err);
 		return;
 	}
-
-	printk("Starting scan\n");
+	LOG_INF("Starting scan");
 	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, NULL);
 	if (err != 0) {
 		FAIL("Could not start scanning (err %d)\n", err);
 		return;
 	}
 
-	printk("Waiting for connect\n");
+	LOG_INF("Waiting for connect");
 	WAIT_FOR_FLAG(flag_connected);
 
-	printk("Raising security\n");
+	LOG_INF("Raising security");
 	update_security(default_conn);
 
-	printk("Starting Discovery\n");
+	LOG_INF("Starting Discovery");
 	err = bt_csip_set_coordinator_discover(default_conn);
 	if (err != 0) {
 		FAIL("Could not start discovery (err %d)\n", err);
@@ -93,7 +94,7 @@ static void test_main(void)
 	}
 	WAIT_FOR_FLAG(flag_csip_set_lock_discovered);
 
-	printk("Waiting for all notifications to be received\n");
+	LOG_INF("Waiting for all notifications to be received");
 
 	WAIT_FOR_FLAG(flag_all_notifications_received);
 
@@ -106,23 +107,23 @@ static void test_main(void)
 	UNSET_FLAG(flag_all_notifications_received);
 	UNSET_FLAG(flag_csip_set_lock_discovered);
 
-	printk("Waiting for disconnect\n");
+	LOG_INF("Waiting for disconnect");
 	WAIT_FOR_UNSET_FLAG(flag_connected);
 
-	printk("Starting scan\n");
+	LOG_INF("Starting scan");
 	err = bt_le_scan_start(BT_LE_SCAN_PASSIVE, NULL);
 	if (err != 0) {
 		FAIL("Could not start scanning (err %d)\n", err);
 		return;
 	}
 
-	printk("Waiting for reconnect\n");
+	LOG_INF("Waiting for reconnect");
 	WAIT_FOR_FLAG(flag_connected);
 
-	printk("Raising security\n");
+	LOG_INF("Raising security");
 	update_security(default_conn);
 
-	printk("Starting Discovery\n");
+	LOG_INF("Starting Discovery");
 	err = bt_csip_set_coordinator_discover(default_conn);
 	if (err != 0) {
 		FAIL("Could not start discovery (err %d)\n", err);
@@ -130,7 +131,7 @@ static void test_main(void)
 	}
 	WAIT_FOR_FLAG(flag_csip_set_lock_discovered);
 
-	printk("Waiting for all notifications to be received\n");
+	LOG_INF("Waiting for all notifications to be received");
 	WAIT_FOR_FLAG(flag_all_notifications_received);
 
 	err = bt_conn_disconnect(default_conn, BT_HCI_ERR_REMOTE_USER_TERM_CONN);

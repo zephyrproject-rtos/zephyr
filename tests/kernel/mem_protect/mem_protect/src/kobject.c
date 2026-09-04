@@ -33,11 +33,27 @@ static void kobject_access_grant_user_part(void *p1, void *p2, void *p3)
 }
 
 /**
- * @brief Test access to a invalid semaphore who's address is NULL
+ * @brief Verify that a grant covers only properly initialized objects.
  *
  * @ingroup kernel_memprotect_tests
  *
- * @see k_thread_access_grant(), k_thread_user_mode_enter()
+ * @details
+ * k_thread_access_grant() records permission per object, but permission alone
+ * is not enough: the object must also be a valid, initialized kernel object
+ * of the right type. The granted set here includes a semaphore pointer of the
+ * wrong provenance; using it from user mode must fault even though it was
+ * granted alongside two genuine objects.
+ *
+ * Test steps:
+ * - Grant the current thread a semaphore, a mutex and the bogus semaphore
+ *   pointer.
+ * - Drop to user mode and take the bogus semaphore.
+ *
+ * Expected result:
+ * - The take faults rather than operating on the invalid object.
+ *
+ * @see k_thread_access_grant()
+ * @see k_thread_user_mode_enter()
  */
 ZTEST(mem_protect_kobj, test_kobject_access_grant)
 {
@@ -212,11 +228,26 @@ static void kobject_revoke_access_user_part(void *p1, void *p2, void *p3)
 }
 
 /**
- * @brief Test access revoke
+ * @brief Verify that revoking an object stops inheriting threads using it.
  *
  * @ingroup kernel_memprotect_tests
  *
- * @see k_thread_access_grant(), k_object_access_revoke()
+ * @details
+ * A child created with K_INHERIT_PERMS receives the parent's grants at
+ * creation time. After the parent revokes its own access to the semaphore, a
+ * second child created the same way must no longer receive it: the same
+ * operation that succeeded in the first child has to fault in the second.
+ *
+ * Test steps:
+ * - Grant the semaphore and spawn a child that uses it successfully.
+ * - Revoke the parent's access with k_object_access_revoke().
+ * - Spawn a second child that attempts the same use.
+ *
+ * Expected result:
+ * - The first child succeeds; the second faults on the revoked object.
+ *
+ * @see k_object_access_revoke()
+ * @see k_thread_access_grant()
  */
 ZTEST(mem_protect_kobj, test_kobject_revoke_access)
 {
@@ -259,11 +290,26 @@ static void kobject_grant_access_extra_entry(void *p1, void *p2, void *p3)
 }
 
 /**
- * @brief Test access revoke
+ * @brief Verify that one user thread can grant an object to another.
  *
  * @ingroup kernel_memprotect_tests
  *
- * @see k_thread_access_grant(), k_object_access_revoke()
+ * @details
+ * A user thread holding permission on an object and on another thread may
+ * pass the object on: the child grants the semaphore to a second thread,
+ * which must then be able to use it. Granting requires permission on both
+ * the object and the receiving thread, so a pass shows the user-mode grant
+ * path checks and propagates correctly.
+ *
+ * Test steps:
+ * - Grant the parent the semaphore and the extra thread object.
+ * - Spawn a child that grants the semaphore to the extra thread.
+ * - Spawn the extra thread and have it use the semaphore.
+ *
+ * Expected result:
+ * - The extra thread uses the semaphore granted to it by the child.
+ *
+ * @see k_object_access_grant()
  */
 ZTEST(mem_protect_kobj, test_kobject_grant_access_kobj)
 {
@@ -339,11 +385,23 @@ static void release_from_user_child(void *p1, void *p2, void *p3)
 }
 
 /**
- * @brief Test revoke permission of a k_object from userspace
+ * @brief Verify that a user thread can release its own object permission.
  *
  * @ingroup kernel_memprotect_tests
  *
- * @see k_thread_access_grant(), k_object_release()
+ * @details
+ * k_object_release() is the user-mode self-revocation: after the child drops
+ * its permission on the semaphore, its next use of the object must fault,
+ * within the same thread that just used it successfully.
+ *
+ * Test steps:
+ * - Grant the semaphore and spawn a child that uses it.
+ * - Have the child release the semaphore and try to use it again.
+ *
+ * Expected result:
+ * - The use before the release succeeds and the one after it faults.
+ *
+ * @see k_object_release()
  */
 ZTEST(mem_protect_kobj, test_kobject_release_from_user)
 {
@@ -527,12 +585,25 @@ ZTEST(mem_protect_kobj, test_thread_has_residual_permissions)
 
 /****************************************************************************/
 /**
- * @brief Test grant access to a valid kobject but invalid thread id
+ * @brief Verify that grants to an uninitialized thread object are inert.
  *
  * @ingroup kernel_memprotect_tests
  *
- * @see k_object_access_grant(), k_object_access_revoke(),
- * k_object_find()
+ * @details
+ * Granting or revoking an object for a thread structure that was never
+ * initialized as a thread must not blow up, and must not turn that structure
+ * into a valid thread object either: validating it afterwards still fails.
+ *
+ * Test steps:
+ * - Grant and then revoke the semaphore for an uninitialized k_thread.
+ * - Validate the structure as a thread object with K_SYSCALL_OBJ().
+ *
+ * Expected result:
+ * - The calls complete without side effects and the structure still fails
+ *   validation.
+ *
+ * @see k_object_access_grant()
+ * @see k_object_access_revoke()
  */
 ZTEST(mem_protect_kobj, test_kobject_access_grant_to_invalid_thread)
 {
@@ -592,9 +663,22 @@ static void without_init_with_access_child(void *p1, void *p2, void *p3)
 }
 
 /**
- * @brief Test syscall on a kobject which is not initialized and has access
+ * @brief Verify that permission does not substitute for initialization.
  *
  * @ingroup kernel_memprotect_tests
+ *
+ * @details
+ * The counterpart of the without-access case: here the child holds a valid
+ * grant on the semaphore, but the object was never initialized. The syscall
+ * boundary checks initialization separately from permission, so the use must
+ * still fault.
+ *
+ * Test steps:
+ * - Grant the never-initialized semaphore to the current thread.
+ * - Spawn a child that inherits the grant and takes the semaphore.
+ *
+ * Expected result:
+ * - The take faults on the uninitialized object despite the valid grant.
  *
  * @see k_thread_access_grant()
  */
@@ -637,9 +721,24 @@ static void reinitialize_thread_kobj_child(void *p1, void *p2, void *p3)
 
 }
 /**
- * @brief Test to reinitialize the k_thread object
+ * @brief Verify that a user thread cannot reinitialize a running thread.
  *
  * @ingroup kernel_memprotect_tests
+ *
+ * @details
+ * k_thread_create() on a thread object that is already alive would rewrite
+ * live kernel state. From user mode the syscall boundary must refuse it: the
+ * child attempts to create a thread over an object that is currently running
+ * and has to fault.
+ *
+ * Test steps:
+ * - Spawn a child user thread.
+ * - Have it call k_thread_create() on an in-use thread object.
+ *
+ * Expected result:
+ * - The attempt faults instead of reinitializing the live thread.
+ *
+ * @see k_thread_create()
  */
 ZTEST(mem_protect_kobj, test_kobject_reinitialize_thread_kobj)
 {
@@ -967,9 +1066,24 @@ static void essential_thread_from_user_child(void *p1, void *p2, void *p3)
 	zassert_unreachable("k_object validation failure in k thread create");
 }
 /**
- * @brief Create a new essential thread from user.
+ * @brief Verify that a user thread cannot create an essential thread.
  *
  * @ingroup kernel_memprotect_tests
+ *
+ * @details
+ * Aborting an essential thread panics the kernel, so minting one from user
+ * mode would let unprivileged code plant a landmine. The child's attempt to
+ * create a thread with K_ESSENTIAL must fault at the syscall boundary.
+ *
+ * Test steps:
+ * - Spawn a child user thread granted a spare thread object and stack.
+ * - Have it call k_thread_create() with the K_ESSENTIAL option.
+ *
+ * Expected result:
+ * - The attempt faults instead of creating an essential thread.
+ *
+ * @see k_thread_create()
+ * @see K_ESSENTIAL
  */
 ZTEST(mem_protect_kobj, test_create_new_essential_thread_from_user)
 {

@@ -9,3 +9,7 @@ tests:
   net.udp.preempt:
     extra_configs:
       - CONFIG_NET_TC_THREAD_PREEMPTIVE=y
+  net.udp.options:
+    extra_configs:
+      - CONFIG_NET_TC_THREAD_COOPERATIVE=y
+      - CONFIG_NET_UDP_OPTIONS=y

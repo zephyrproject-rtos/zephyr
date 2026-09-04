@@ -172,13 +172,13 @@ void ite_intc_irq_polarity_set(unsigned int irq, unsigned int flags)
 	g = irq / MAX_REGISR_IRQ_NUM;
 	i = irq % MAX_REGISR_IRQ_NUM;
 	tri = reg_ipolr[g];
-	if ((flags&IRQ_TYPE_LEVEL_HIGH) || (flags&IRQ_TYPE_EDGE_RISING)) {
+	if (flags & (IRQ_TYPE_LEVEL_HIGH | IRQ_TYPE_EDGE_RISING)) {
 		CLEAR_MASK(*tri, BIT(i));
 	} else {
 		SET_MASK(*tri, BIT(i));
 	}
 	tri = reg_ielmr[g];
-	if ((flags&IRQ_TYPE_LEVEL_LOW) || (flags&IRQ_TYPE_LEVEL_HIGH)) {
+	if (flags & (IRQ_TYPE_LEVEL_LOW | IRQ_TYPE_LEVEL_HIGH)) {
 		CLEAR_MASK(*tri, BIT(i));
 	} else {
 		SET_MASK(*tri, BIT(i));

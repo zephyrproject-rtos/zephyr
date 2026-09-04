@@ -451,13 +451,13 @@ respectively. Both boards have NXP SoCs from the same Kinetis SoC family, the
 K6X.
 
 Common devicetree definitions for K6X are stored in :zephyr_file:`nxp_k6x.dtsi
-<dts/arm/nxp/kinetis/nxp_k6x.dtsi>`, which is included by both board
-:file:`.dts` files. :zephyr_file:`nxp_k6x.dtsi<dts/arm/nxp/kinetis/nxp_k6x.dtsi>`
+<dts/arm/nxp/kinetis/k6x/nxp_k6x.dtsi>`, which is included by both board
+:file:`.dts` files. :zephyr_file:`nxp_k6x.dtsi<dts/arm/nxp/kinetis/k6x/nxp_k6x.dtsi>`
 in turn includes
 :zephyr_file:`armv7-m.dtsi<dts/arm/armv7-m.dtsi>`, which has common definitions
 for Arm v7-M cores.
 
-Since :zephyr_file:`nxp_k6x.dtsi<dts/arm/nxp/kinetis/nxp_k6x.dtsi>` is meant to be
+Since :zephyr_file:`nxp_k6x.dtsi<dts/arm/nxp/kinetis/k6x/nxp_k6x.dtsi>` is meant to be
 generic across K6X-based boards, it leaves many devices disabled by default
 using ``status`` properties.  For example, there is a CAN controller defined as
 follows (with unimportant parts skipped):
@@ -623,6 +623,33 @@ For example:
 For ``west flash`` to work, see :ref:`flash-and-debug-support` below. You can
 also just flash :file:`build/zephyr/zephyr.elf`, :file:`zephyr.hex`, or
 :file:`zephyr.bin` with any other tools you prefer.
+
+Before submitting a board upstream, verify that every board target you add can
+pass the project's minimum open source test suite using only code from the
+mainline Zephyr repository and its modules. The suite currently consists of:
+
+- :file:`samples/philosophers`
+- :file:`tests/kernel`
+
+For example, build the suite for a board target with:
+
+.. code-block:: console
+
+   west twister -p plank -T samples/philosophers -T tests/kernel
+
+For boards with multiple SoCs, CPU clusters, variants, or revisions, repeat the
+test suite for each new board target. A :zephyr:code-sample:`hello_world` build
+is also recommended as a quick smoke check, for example:
+
+.. code-block:: console
+
+   west build -p always -b plank/soc1/foo samples/hello_world
+   west build -p always -b plank@1.0.0/soc1/foo samples/hello_world
+
+Use :ref:`sysbuild` if the board target requires it. When using board testing
+metadata, such as ``testing: only_tags`` in the board target YAML file, make
+sure the target is still validated against the minimum test suite in local
+testing or CI.
 
 .. _porting-general-recommendations:
 
@@ -898,8 +925,8 @@ The :makevar:`BOARD_REVISION` variable holds the revision value specified by the
 user.
 
 To signal to the build system that it should use a different revision than the
-one specified by the user, :file:`revision.cmake` can set the variable
-``ACTIVE_BOARD_REVISION`` to the revision to use instead. The corresponding
+one specified by the user, :file:`revision.cmake` can set the CMake variable
+:cmake:variable:`ACTIVE_BOARD_REVISION` to the revision to use instead. The corresponding
 Kconfig files and devicetree overlays must be named
 :file:`<board>_<ACTIVE_BOARD_REVISION>_defconfig` and
 :file:`<board>_<ACTIVE_BOARD_REVISION>.overlay`.

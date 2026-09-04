@@ -6,15 +6,15 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#ifndef ZEPHYR_INCLUDE_MODEM_UBX_H_
+#define ZEPHYR_INCLUDE_MODEM_UBX_H_
+
 #include <zephyr/kernel.h>
 #include <zephyr/types.h>
 #include <zephyr/sys/atomic.h>
 
 #include <zephyr/modem/pipe.h>
 #include <zephyr/modem/ubx/protocol.h>
-
-#ifndef ZEPHYR_MODEM_UBX_
-#define ZEPHYR_MODEM_UBX_
 
 #ifdef __cplusplus
 extern "C" {
@@ -78,6 +78,8 @@ struct modem_ubx {
 	struct modem_pipe *pipe;
 	struct k_work process_work;
 	struct k_sem script_stopped_sem;
+	/** Signal that the script has been transmitted */
+	struct k_sem script_sent_sem;
 	struct k_sem script_running_sem;
 	struct {
 		const struct modem_ubx_match *array;
@@ -160,4 +162,4 @@ int modem_ubx_run_script_for_each(struct modem_ubx *ubx, struct modem_ubx_script
 }
 #endif
 
-#endif /* ZEPHYR_MODEM_UBX_ */
+#endif /* ZEPHYR_INCLUDE_MODEM_UBX_H_ */

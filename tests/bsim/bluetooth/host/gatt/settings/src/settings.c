@@ -13,7 +13,7 @@
 #include <zephyr/settings/settings.h>
 #include <zephyr/types.h>
 #include "errno.h"
-#include "argparse.h"
+#include "bsim_args_runner.h"
 #include "posix_native_task.h"
 #include "nsi_host_trampolines.h"
 

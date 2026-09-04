@@ -7,6 +7,9 @@
 #include <zephyr/kernel.h>
 #include <stdio.h>
 #include <zephyr/sys/printk.h>
+#ifdef CONFIG_OPENTHREAD_SHELL_DEFERRED_OUTPUT
+#include <zephyr/sys/ring_buffer.h>
+#endif
 #include <zephyr/shell/shell.h>
 #include <zephyr/shell/shell_uart.h>
 
@@ -24,6 +27,52 @@ static char rx_buffer[OT_SHELL_BUFFER_SIZE];
 static const struct shell *shell_p;
 static bool is_shell_initialized;
 
+#ifdef CONFIG_OPENTHREAD_SHELL_DEFERRED_OUTPUT
+/*
+ * Deferred console output - avoids blocking the OT thread on synchronous
+ * shell UART writes. Also eliminates the ABBA deadlock risk between
+ * OT mutex and shell mutex.
+ *
+ * The OT CLI emits output as many small fragments via consecutive
+ * ot_console_cb calls. We accumulate them into a character ring buffer
+ * and drain it from the system workqueue, emitting one shell_fprintf per
+ * complete line.
+ */
+RING_BUF_DECLARE(ot_console_ring_buf, CONFIG_OPENTHREAD_SHELL_DEFERRED_OUTPUT_BUF_SIZE);
+static struct k_work deferred_print_work;
+
+static void deferred_print_handler(struct k_work *work)
+{
+	char line[256];
+	uint32_t pos = 0;
+	uint8_t c;
+
+	ARG_UNUSED(work);
+
+	if (shell_p == NULL) {
+		ring_buf_reset(&ot_console_ring_buf);
+		return;
+	}
+
+	while (ring_buf_get(&ot_console_ring_buf, &c, 1) == 1) {
+		if (pos < sizeof(line) - 1) {
+			line[pos++] = (char)c;
+		}
+		if (c == '\n' || pos >= sizeof(line) - 1) {
+			line[pos] = '\0';
+			shell_fprintf(shell_p, SHELL_NORMAL, "%s", line);
+			pos = 0;
+		}
+	}
+
+	/* Flush any remaining partial line (no trailing newline). */
+	if (pos > 0) {
+		line[pos] = '\0';
+		shell_fprintf(shell_p, SHELL_NORMAL, "%s", line);
+	}
+}
+#endif /* CONFIG_OPENTHREAD_SHELL_DEFERRED_OUTPUT */
+
 static int ot_console_cb(void *context, const char *format, va_list arg)
 {
 	ARG_UNUSED(context);
@@ -32,7 +81,20 @@ static int ot_console_cb(void *context, const char *format, va_list arg)
 		return 0;
 	}
 
+#ifdef CONFIG_OPENTHREAD_SHELL_DEFERRED_OUTPUT
+	char tmp[256];
+	uint32_t len;
+
+	len = (uint32_t)vsnprintk(tmp, sizeof(tmp), format, arg);
+	if (len >= sizeof(tmp)) {
+		len = sizeof(tmp) - 1;
+	}
+
+	ring_buf_put(&ot_console_ring_buf, (uint8_t *)tmp, len);
+	k_work_submit(&deferred_print_work);
+#else
 	shell_vfprintf(shell_p, SHELL_NORMAL, format, arg);
+#endif
 
 	return 0;
 }
@@ -91,6 +153,10 @@ void platformShellInit(otInstance *aInstance)
 	} else {
 		shell_p = NULL;
 	}
+
+#ifdef CONFIG_OPENTHREAD_SHELL_DEFERRED_OUTPUT
+	k_work_init(&deferred_print_work, deferred_print_handler);
+#endif
 
 	otCliInit(aInstance, ot_console_cb, NULL);
 	is_shell_initialized = true;

@@ -1,7 +1,7 @@
 /*
  * SPDX-FileCopyrightText: Copyright (c) 2022 Intel Corporation
- * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
- * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -9,6 +9,7 @@
 /**
  * @file
  * @brief RTIO Submission Queue Events and Related Functions
+ * @ingroup rtio
  */
 
 
@@ -235,6 +236,11 @@ extern "C" {
 #define RTIO_IODEV_I3C_NBCH BIT(4)
 
 /**
+ * @brief Equivalent to the I3C_MSG_NOACK_EXPECTED
+ */
+#define RTIO_IODEV_I3C_NOACK_EXPECTED BIT(5)
+
+/**
  * @brief I3C HDR Mode Mask
  */
 #define RTIO_IODEV_I3C_HDR_MODE_MASK GENMASK(15, 8)
@@ -321,6 +327,7 @@ struct rtio_sqe {
 	 */
 	void *userdata;
 
+	/** Operation specific arguments, selected by the op code */
 	union {
 
 		/** OP_TX */
@@ -343,7 +350,7 @@ struct rtio_sqe {
 
 		/** OP_CALLBACK */
 		struct {
-			rtio_callback_t callback;
+			rtio_callback_t callback; /**< Function to run */
 			void *arg0; /**< Last argument given to callback */
 		} callback;
 
@@ -357,8 +364,8 @@ struct rtio_sqe {
 #ifdef CONFIG_RTIO_OP_DELAY
 		/** OP_DELAY */
 		struct {
-			k_timeout_t timeout; /**< Delay timeout. */
-			struct _timeout to; /**< Timeout struct. Used internally. */
+			k_timeout_t timeout; /**< Delay timeout (input). */
+			k_timepoint_t expiry; /**< Absolute expiration. Used internally. */
 		} delay;
 #endif
 
@@ -368,8 +375,8 @@ struct rtio_sqe {
 		/** OP_I3C_CONFIGURE */
 		struct {
 			/* enum i3c_config_type type; */
-			int type;
-			void *config;
+			int type; /**< Configuration type, an enum i3c_config_type value */
+			void *config; /**< Configuration to apply */
 		} i3c_config;
 
 		/** OP_I3C_CCC */
@@ -378,8 +385,10 @@ struct rtio_sqe {
 
 		/** OP_AWAIT */
 		struct {
+			/** @cond INTERNAL_HIDDEN */
 			atomic_t ok;
-			rtio_signaled_t callback;
+			/** @endcond */
+			rtio_signaled_t callback; /**< Function to run once signaled */
 			void *userdata;
 		} await;
 	};
@@ -392,10 +401,10 @@ struct rtio_sqe {
  * May be cast safely to and from a rtio_sqe as they occupy the same memory provided by the pool
  */
 struct rtio_iodev_sqe {
-	struct rtio_sqe sqe;
-	struct mpsc_node q;
-	struct rtio_iodev_sqe *next;
-	struct rtio *r;
+	struct rtio_sqe sqe; /**< Submission this entry carries */
+	struct mpsc_node q; /**< Link used to enqueue this entry */
+	struct rtio_iodev_sqe *next; /**< Next entry in the chain or transaction, NULL if last */
+	struct rtio *r; /**< RTIO context the submission belongs to */
 };
 
 
@@ -408,7 +417,7 @@ struct rtio_iodev_sqe {
 #define RTIO_CACHE_LINE_SIZE 64
 #endif
 BUILD_ASSERT(sizeof(struct rtio_iodev_sqe) <= RTIO_CACHE_LINE_SIZE,
-	"RTIO performs best when the submissions queue entries are less than a cache line")
+	"RTIO performs best when the submissions queue entries are less than a cache line");
 #endif
 /** @endcond */
 
@@ -475,6 +484,13 @@ static inline void rtio_sqe_prep_read_with_pool(struct rtio_sqe *sqe,
 	sqe->flags = RTIO_SQE_MEMPOOL_BUFFER;
 }
 
+/**
+ * @brief Prepare a multishot read op submission with context's mempool
+ *
+ * The submission keeps producing completions until it is canceled.
+ *
+ * @see rtio_sqe_prep_read_with_pool()
+ */
 static inline void rtio_sqe_prep_read_multishot(struct rtio_sqe *sqe,
 						const struct rtio_iodev *iodev, int8_t prio,
 						void *userdata)
@@ -668,6 +684,14 @@ static inline void rtio_sqe_prep_await_executor(struct rtio_sqe *sqe, int8_t pri
  * @param userdata User supplied pointer to associated data
  */
 #ifdef CONFIG_RTIO_OP_DELAY
+/**
+ * @brief Default timeout iodev backing RTIO_OP_DELAY submissions
+ *
+ * Delay operations are handled by a subsystem-provided timeout iodev rather
+ * than as an executor special case. See subsys/rtio/rtio_timeout.c.
+ */
+extern struct rtio_iodev rtio_timeout_iodev;
+
 static inline void rtio_sqe_prep_delay(struct rtio_sqe *sqe,
 				       k_timeout_t timeout,
 				       void *userdata)
@@ -675,7 +699,7 @@ static inline void rtio_sqe_prep_delay(struct rtio_sqe *sqe,
 	memset(sqe, 0, sizeof(struct rtio_sqe));
 	sqe->op = RTIO_OP_DELAY;
 	sqe->prio = 0;
-	sqe->iodev = NULL;
+	sqe->iodev = &rtio_timeout_iodev;
 	sqe->delay.timeout = timeout;
 	sqe->userdata = userdata;
 }

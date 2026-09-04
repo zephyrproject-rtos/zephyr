@@ -145,6 +145,7 @@ static int call_work(struct zsock_pollfd *pev, struct net_socket_service_event *
 {
 	int ret = 0;
 	int fd = pev->fd;
+	short events = pev->events;
 
 	/* Mark the global fd non pollable so that we do not
 	 * call the callback second time.
@@ -154,8 +155,10 @@ static int call_work(struct zsock_pollfd *pev, struct net_socket_service_event *
 	/* Synchronous call */
 	net_socket_service_callback(event);
 
-	/* Restore the fd so that new data can be re-triggered */
-	pev->fd = fd;
+	/* Re-arm only if the callback did not reconfigure this event. */
+	if ((event->event.fd == fd) && (event->event.events == events)) {
+		pev->fd = fd;
+	}
 
 	return ret;
 }
@@ -168,6 +171,12 @@ static int trigger_work(struct zsock_pollfd *pev)
 	svc = find_svc_and_event(pev, &event);
 	if (svc == NULL) {
 		return -ENOENT;
+	}
+
+	/* An earlier callback may have reconfigured this event. */
+	if (event->event.events != pev->events) {
+		pev->fd = -1;
+		return 0;
 	}
 
 	event->svc = svc;

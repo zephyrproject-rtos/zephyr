@@ -31,6 +31,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_NET_DHCPV4_LOG_LEVEL);
 
 #include "ipv4.h"
 #include "udp_internal.h"
+#include "dhcpv4/dhcpv4_internal.h"
 
 #include <zephyr/tc_util.h>
 #include <zephyr/ztest.h>
@@ -335,9 +336,19 @@ struct dhcp_client_msg {
 
 static uint32_t offer_xid;
 static uint32_t request_xid;
+/* How many discovers to swallow before answering, so that the client is made
+ * to retransmit, and what identifiers those retransmissions carried.
+ */
+static int discovers_to_drop;
+static int discovers_seen;
+static uint32_t discover_xids[4];
 static bool strict_dhcp_server;
 static bool discover_req_included_dns;
 static bool init_reboot_req_included_dns;
+static bool init_reboot_request_seen;
+static bool reject_init_reboot;
+static bool drop_init_reboot;
+static uint8_t init_reboot_request_count;
 
 #define EVT_ADDR_ADD        BIT(0)
 #define EVT_ADDR_DEL        BIT(1)
@@ -357,6 +368,7 @@ static bool init_reboot_req_included_dns;
 #define EVT_DNS_SERVER1_DEL BIT(15)
 #define EVT_DNS_SERVER2_DEL BIT(16)
 #define EVT_DNS_SERVER3_DEL BIT(17)
+#define EVT_DHCP_NAK        BIT(18)
 
 static K_EVENT_DEFINE(events);
 
@@ -367,9 +379,16 @@ static void dhcp_test_reset_iface(struct net_if *iface)
 	k_event_set(&events, 0U);
 	offer_xid = 0U;
 	request_xid = 0U;
+	discovers_to_drop = 0;
+	discovers_seen = 0;
+	memset(discover_xids, 0, sizeof(discover_xids));
 	strict_dhcp_server = false;
 	discover_req_included_dns = false;
 	init_reboot_req_included_dns = false;
+	init_reboot_request_seen = false;
+	reject_init_reboot = false;
+	drop_init_reboot = false;
+	init_reboot_request_count = 0U;
 }
 
 static void dhcpv4_tests_before(void *fixture)
@@ -508,6 +527,54 @@ fail:
 	return NULL;
 }
 
+static struct net_pkt *prepare_dhcp_nak(struct net_if *iface, uint32_t xid)
+{
+	static const uint8_t cookie[] = { 0x63, 0x82, 0x53, 0x63 };
+	struct dhcp_msg msg = { 0 };
+	uint8_t empty_buf[SIZE_OF_FILE] = { 0 };
+	struct net_pkt *pkt;
+
+	pkt = net_pkt_alloc_with_buffer(iface, DHCPV4_MESSAGE_SIZE, NET_AF_INET,
+					NET_IPPROTO_UDP, K_FOREVER);
+	if (pkt == NULL) {
+		return NULL;
+	}
+
+	net_pkt_set_ipv4_ttl(pkt, 0xFF);
+
+	if (net_ipv4_create(pkt, &server_addr, &client_addr) ||
+	    net_udp_create(pkt, net_htons(SERVER_PORT), net_htons(CLIENT_PORT))) {
+		goto fail;
+	}
+
+	msg.op = DHCPV4_MSG_BOOT_REPLY;
+	msg.htype = HARDWARE_ETHERNET_TYPE;
+	msg.hlen = net_if_get_link_addr(iface)->len;
+	msg.xid = net_htonl(xid);
+	memcpy(msg.chaddr, net_if_get_link_addr(iface)->addr,
+	       net_if_get_link_addr(iface)->len);
+
+	if (net_pkt_write(pkt, &msg, sizeof(msg)) ||
+	    net_pkt_write(pkt, empty_buf, SIZE_OF_SNAME) ||
+	    net_pkt_write(pkt, empty_buf, SIZE_OF_FILE) ||
+	    net_pkt_write(pkt, cookie, sizeof(cookie)) ||
+	    net_pkt_write_u8(pkt, DHCPV4_OPTIONS_MSG_TYPE) ||
+	    net_pkt_write_u8(pkt, 1) ||
+	    net_pkt_write_u8(pkt, NET_DHCPV4_MSG_TYPE_NAK) ||
+	    net_pkt_write_u8(pkt, DHCPV4_OPTIONS_END)) {
+		goto fail;
+	}
+
+	net_pkt_cursor_init(pkt);
+	net_ipv4_finalize(pkt, NET_IPPROTO_UDP);
+
+	return pkt;
+
+fail:
+	net_pkt_unref(pkt);
+	return NULL;
+}
+
 static bool dhcp_msg_req_list_contains(const struct dhcp_client_msg *msg, uint8_t option)
 {
 	for (uint8_t i = 0; i < msg->req_options_cnt; i++) {
@@ -629,6 +696,18 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 				dhcp_msg_req_list_contains(&msg, OPTION_DNS_SERVER);
 		}
 
+		if (discovers_seen < ARRAY_SIZE(discover_xids)) {
+			discover_xids[discovers_seen] = msg.xid;
+		}
+		discovers_seen++;
+
+		if (discovers_to_drop > 0) {
+			/* Say nothing, so that the client retransmits. */
+			discovers_to_drop--;
+			net_pkt_unref(pkt);
+			return 0;
+		}
+
 		/* Reply with DHCPv4 offer message */
 		rpkt = prepare_dhcp_offer(net_pkt_iface(pkt), msg.xid);
 		if (!rpkt) {
@@ -637,9 +716,23 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 		k_event_post(&events, EVT_DHCP_OFFER);
 	} else if (msg.type == REQUEST) {
 		bool include_dns;
+		bool nak_reply;
 
 		dns_requested = dhcp_msg_req_list_contains(&msg, OPTION_DNS_SERVER);
 		is_init_reboot = msg.has_requested_ip && !msg.has_server_id;
+		init_reboot_request_seen |= is_init_reboot;
+		if (is_init_reboot) {
+			init_reboot_request_count++;
+		}
+
+		if (drop_init_reboot && is_init_reboot) {
+			/* Emulate a server (e.g. on a different network) that
+			 * silently ignores the foreign-subnet REQUEST instead of
+			 * NAKing it, forcing the client to time out and fall back
+			 * to DISCOVER.
+			 */
+			return 0;
+		}
 
 		if (strict_dhcp_server && is_init_reboot) {
 			init_reboot_req_included_dns = dns_requested;
@@ -648,12 +741,17 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 			include_dns = true;
 		}
 
-		/* Reply with DHCPv4 ACK */
-		rpkt = prepare_dhcp_ack(net_pkt_iface(pkt), msg.xid, include_dns);
+		nak_reply = reject_init_reboot && is_init_reboot;
+
+		if (nak_reply) {
+			rpkt = prepare_dhcp_nak(net_pkt_iface(pkt), msg.xid);
+		} else {
+			rpkt = prepare_dhcp_ack(net_pkt_iface(pkt), msg.xid, include_dns);
+		}
 		if (!rpkt) {
 			return -EINVAL;
 		}
-		k_event_post(&events, EVT_DHCP_ACK);
+		k_event_post(&events, nak_reply ? EVT_DHCP_NAK : EVT_DHCP_ACK);
 	} else {
 		/* Invalid message type received */
 		return -EINVAL;
@@ -997,6 +1095,97 @@ ZTEST(dhcpv4_tests, test_dhcp)
 	}
 }
 
+ZTEST(dhcpv4_tests, test_init_reboot_hint)
+{
+	const struct net_in_addr requested_ip = {{{10, 237, 72, 158}}};
+	struct net_if *iface;
+	uint32_t evt;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_DHCPV4_INIT_REBOOT);
+
+	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
+	zassert_not_null(iface, "Interface not available");
+
+	zassert_ok(net_dhcpv4_set_reboot_hint(iface, &requested_ip));
+
+	net_dhcpv4_start(iface);
+
+	evt = k_event_wait(&events, EVT_DHCP_OFFER | EVT_DHCP_ACK, false, WAIT_TIME);
+	zassert_equal(evt, EVT_DHCP_ACK, "Expected INIT-REBOOT ACK only %08x", evt);
+	zassert_true(init_reboot_request_seen, "INIT-REBOOT REQUEST was not sent");
+
+	net_dhcpv4_stop(iface);
+}
+
+ZTEST(dhcpv4_tests, test_init_reboot_nak_restarts_discovery)
+{
+	struct net_if *iface;
+	uint32_t evt;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_DHCPV4_INIT_REBOOT);
+
+	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
+	zassert_not_null(iface, "Interface not available");
+
+	iface->config.dhcpv4.requested_ip = (struct net_in_addr){{{10, 237, 72, 158}}};
+	iface->config.dhcpv4.request_server_addr.s_addr = NET_INADDR_ANY;
+	reject_init_reboot = true;
+
+	net_dhcpv4_start(iface);
+
+	evt = k_event_wait(&events, EVT_DHCP_NAK, false, WAIT_TIME);
+	zassert_equal(evt, EVT_DHCP_NAK, "Missing INIT-REBOOT NAK %08x", evt);
+
+	evt = k_event_wait_all(&events, EVT_DHCP_OFFER | EVT_DHCP_ACK, false, WAIT_TIME);
+	zassert_equal(evt, EVT_DHCP_OFFER | EVT_DHCP_ACK,
+		      "INIT-REBOOT NAK did not restart discovery %08x", evt);
+
+	net_dhcpv4_stop(iface);
+}
+
+ZTEST(dhcpv4_tests, test_init_reboot_unanswered_falls_back_to_discover)
+{
+	/* Worst-case INIT-REBOOT backoff is 4 + 8 + ... = 4 * (2^N - 1) seconds
+	 * for N attempts, plus per-attempt randomisation and the follow-up
+	 * DISCOVER round. native_sim fast-forwards idle time, so this large
+	 * timeout costs no wall-clock.
+	 */
+	const struct net_in_addr requested_ip = {{{10, 237, 72, 158}}};
+	const k_timeout_t fallback_wait = K_SECONDS(
+		4 * (BIT(DHCPV4_INIT_REBOOT_MAX_ATTEMPTS) - 1) +
+		DHCPV4_INIT_REBOOT_MAX_ATTEMPTS + 5);
+	struct net_if *iface;
+	uint32_t evt;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_DHCPV4_INIT_REBOOT);
+
+	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
+	zassert_not_null(iface, "Interface not available");
+
+	/* Emulate a network change: a stale lease drives INIT-REBOOT, but the
+	 * new network's server silently drops the foreign-subnet REQUEST.
+	 */
+	zassert_ok(net_dhcpv4_set_reboot_hint(iface, &requested_ip));
+	drop_init_reboot = true;
+
+	net_dhcpv4_start(iface);
+
+	/* An OFFER is only produced in response to a DISCOVER, so its arrival
+	 * proves the client abandoned INIT-REBOOT and restarted configuration
+	 * rather than retransmitting the REQUEST for the full attempt budget.
+	 */
+	evt = k_event_wait_all(&events, EVT_DHCP_OFFER | EVT_DHCP_ACK, false,
+			       fallback_wait);
+	zassert_equal(evt, EVT_DHCP_OFFER | EVT_DHCP_ACK,
+		      "Unanswered INIT-REBOOT did not fall back to DISCOVER %08x", evt);
+	zassert_true(init_reboot_request_seen, "INIT-REBOOT REQUEST was not sent");
+	zassert_equal(init_reboot_request_count, DHCPV4_INIT_REBOOT_MAX_ATTEMPTS,
+		      "Expected %d INIT-REBOOT attempt(s) before fallback, got %d",
+		      DHCPV4_INIT_REBOOT_MAX_ATTEMPTS, init_reboot_request_count);
+
+	net_dhcpv4_stop(iface);
+}
+
 #if IS_ENABLED(CONFIG_NET_DHCPV4_INIT_REBOOT) && \
 	IS_ENABLED(CONFIG_NET_DHCPV4_RESTART_ON_IF_UP) && \
 	IS_ENABLED(CONFIG_NET_DHCPV4_DNS_SERVER_VIA_INTERFACE)
@@ -1091,4 +1280,44 @@ ZTEST(dhcpv4_tests, test_init_reboot_dns_after_iface_down)
 #endif
 
 /**test case main entry */
+/* RFC 2131 4.1: one transaction identifier for every message of a
+ * transaction. A retransmitted discover is the same transaction, so a server
+ * that has already seen the first one has to be able to recognise the second
+ * as a repeat rather than as another client asking.
+ *
+ * Every discover is dropped, so the exchange never completes and this leaves
+ * neither a lease nor a set of DNS servers behind for whatever runs next.
+ */
+ZTEST(dhcpv4_tests, test_discover_retransmission_keeps_xid)
+{
+	/* Long enough for two retransmissions: the backoff is four seconds,
+	 * then eight, plus a second of randomisation each. native_sim
+	 * fast-forwards idle time, so this costs no wall clock.
+	 */
+	const k_timeout_t settle = K_SECONDS(4 + 8 + 4);
+	struct net_if *iface;
+
+	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
+	zassert_not_null(iface, "Interface not available");
+
+	discovers_to_drop = ARRAY_SIZE(discover_xids);
+
+	net_dhcpv4_start(iface);
+	k_sleep(settle);
+	net_dhcpv4_stop(iface);
+
+	zassert_true(discovers_seen >= 3,
+		     "Expected the client to retransmit, saw %d discover(s)",
+		     discovers_seen);
+
+	zassert_not_equal(discover_xids[0], 0U, "Transaction identifier is zero");
+
+	for (int i = 1; i < MIN(discovers_seen, ARRAY_SIZE(discover_xids)); i++) {
+		zassert_equal(discover_xids[i], discover_xids[0],
+			      "Discover %d carries xid 0x%08x, the first carried "
+			      "0x%08x; a retransmission is the same transaction",
+			      i, discover_xids[i], discover_xids[0]);
+	}
+}
+
 ZTEST_SUITE(dhcpv4_tests, NULL, NULL, dhcpv4_tests_before, NULL, NULL);

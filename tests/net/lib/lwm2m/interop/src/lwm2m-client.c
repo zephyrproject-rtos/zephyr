@@ -17,7 +17,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/net/socket.h>
 #include "lwm2m_rd_client.h"
 
-#define APP_BANNER "Run LWM2M client"
+#define APP_BANNER "Run LwM2M client"
 
 #define WAIT_TIME	K_SECONDS(10)
 #define CONNECT_TIME	K_SECONDS(10)

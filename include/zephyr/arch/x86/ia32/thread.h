@@ -62,16 +62,9 @@ struct _callee_saved {
 	unsigned long esp;
 
 	/*
-	 * The following registers are considered non-volatile, i.e.
-	 * callee-save,
-	 * but their values are pushed onto the stack rather than stored in the
-	 * TCS
-	 * structure:
-	 *
-	 *  unsigned long ebp;
-	 *  unsigned long ebx;
-	 *  unsigned long esi;
-	 *  unsigned long edi;
+	 * The EBP, EBX, ESI and EDI registers are also considered
+	 * non-volatile, i.e. callee-save, but their values are pushed onto
+	 * the stack rather than stored in the TCS structure.
 	 */
 
 };

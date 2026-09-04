@@ -14,6 +14,8 @@
  * @file
  * @brief Service Discovery Protocol (SDP)
  * @defgroup bt_sdp Service Discovery Protocol (SDP)
+ * @since 1.6
+ * @version 0.1.0
  * @ingroup bluetooth
  * @{
  */
@@ -206,6 +208,8 @@ extern "C" {
 #define BT_SDP_ATTR_HID_SUPERVISION_TIMEOUT     0x020c /**< HID Supervision Timeout */
 #define BT_SDP_ATTR_HID_NORMALLY_CONNECTABLE    0x020d /**< HID Normally Connectable */
 #define BT_SDP_ATTR_HID_BOOT_DEVICE             0x020e /**< HID Boot Device */
+#define BT_SDP_ATTR_HID_SSR_HOST_MAX_LATENCY    0x020f /**< HID SSR Host Max Latency */
+#define BT_SDP_ATTR_HID_SSR_HOST_MIN_TIMEOUT    0x0210 /**< HID SSR Host Min Timeout */
 /**
  * @}
  */
@@ -721,16 +725,25 @@ int bt_sdp_discover(struct bt_conn *conn,
 
 /** @brief Release waiting SDP discovery request.
  *
- *  It can cancel valid waiting SDP client request identified by SDP discovery
- *  parameters object.
+ *  Cancels a waiting SDP client request identified by the SDP discovery
+ *  parameters object, i.e. one that was queued with bt_sdp_discover() but
+ *  whose resolution has not started yet. On success the discovery callback
+ *  will not be called for the request and the parameters object may be
+ *  reused immediately.
+ *
+ *  A request that is already being resolved cannot be canceled; in that
+ *  case -EINPROGRESS is returned and the callback will still be called.
  *
  * @param conn Object identifying connection to remote.
  * @param params SDP discovery parameters.
  *
- * @return 0 in case of success or negative value in case of error.
+ * @retval 0 The request was canceled.
+ * @retval -EINVAL @p conn or @p params is NULL.
+ * @retval -EINPROGRESS The request is already being resolved.
+ * @retval -ESRCH No such request is waiting.
  */
 int bt_sdp_discover_cancel(struct bt_conn *conn,
-			   const struct bt_sdp_discover_params *params);
+			   struct bt_sdp_discover_params *params);
 
 
 /* Helper types & functions for SDP client to get essential data from server */

@@ -628,7 +628,7 @@
 			compatible = "st,stm32-dma-v1";
 			#dma-cells = <4>;
 			reg = <0x40026000 0x400>;
-			interrupts = <11 0 12 0 13 0 14 0 15 0 16 0 17 0 47 0>;
+			interrupts = <11 0>, <12 0>, <13 0>, <14 0>, <15 0>, <16 0>, <17 0>, <47 0>;
 			clocks = <&rcc STM32_CLOCK(AHB1, 21)>;
 			status = "disabled";
 		};
@@ -637,7 +637,7 @@
 			compatible = "st,stm32-dma-v1";
 			#dma-cells = <4>;
 			reg = <0x40026400 0x400>;
-			interrupts = <56 0 57 0 58 0 59 0 60 0 68 0 69 0 70 0>;
+			interrupts = <56 0>, <57 0>, <58 0>, <59 0>, <60 0>, <68 0>, <69 0>, <70 0>;
 			clocks = <&rcc STM32_CLOCK(AHB1, 22)>;
 			st,mem2mem;
 			status = "disabled";
@@ -652,21 +652,24 @@
 			interrupts = <49 0>;
 			status = "disabled";
 		};
-	};
 
-	pwr: power@40007000 {
-		compatible = "st,stm32-pwr";
-		reg = <0x40007000 0x400>; /* PWR register bank */
-		status = "disabled";
+		pwr: power@40007000 {
+			compatible = "st,stm32-pwr";
+			reg = <0x40007000 0x400>; /* PWR register bank */
 
-		wkup-pins-nb = <1>;
+			wakeup-controller {
+				compatible = "st,stm32f1-pwr-wkupctrl", "st,stm32-pwr-wkupctrl";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
 
-		#address-cells = <1>;
-		#size-cells = <0>;
+				st,max-wkup-line-idx = <1>;
 
-		wkup-pin@1 {
-			reg = <0x1>;
-			wkup-gpios = <&gpioa 0 STM32_PWR_WKUP_PIN_NOT_MUXED>;
+				wkup@1 {
+					reg = <0x1>;
+					wkup-gpios = <&gpioa 0 STM32_PWR_WKUP_PIN_NOT_MUXED>;
+				};
+			};
 		};
 	};
 

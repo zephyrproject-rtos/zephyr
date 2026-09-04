@@ -58,6 +58,7 @@
 #define TOOLCHAIN_WARNING_USED_BUT_MARKED_UNUSED        "-Wused-but-marked-unused"
 #define TOOLCHAIN_WARNING_UNALIGNED_ACCESS              "-Wunaligned-access"
 #define TOOLCHAIN_WARNING_ARM_INTERRUPT_VFP_CLOBBER     "-Warm-interrupt-vfp-clobber"
+#define TOOLCHAIN_WARNING_DEPRECATED_DECLARATIONS       "-Wdeprecated-declarations"
 /** @endcond */
 
 #define TOOLCHAIN_DISABLE_CLANG_WARNING(warning) _TOOLCHAIN_DISABLE_WARNING(clang, warning)

@@ -30,6 +30,34 @@ enum icm45686_stream_state {
 	ICM45686_STREAM_BUSY = 2,
 };
 
+/*
+ * Both ignore paths in icm45686_event_handler can recur on every interrupt
+ * while a stream is stalled. Logging each occurrence floods the backend and
+ * can starve the very threads that would clear the stall, so count the
+ * occurrences and emit at most one summary per second.
+ */
+static void icm45686_report_ignored_events(struct icm45686_data *data)
+{
+	int64_t now = k_uptime_get();
+	uint32_t busy;
+	uint32_t no_sub;
+
+	if (now < data->stream.ignore_stats.report_deadline) {
+		return;
+	}
+	data->stream.ignore_stats.report_deadline = now + 1000;
+
+	busy = (uint32_t)atomic_set(&data->stream.ignore_stats.busy_ignored, 0);
+	no_sub = (uint32_t)atomic_set(&data->stream.ignore_stats.no_submission_ignored, 0);
+
+	if (busy != 0U) {
+		LOG_WRN("Ignored %u interrupt(s): event while a stream was in progress", busy);
+	}
+	if (no_sub != 0U) {
+		LOG_WRN("Ignored %u interrupt(s): callback before a streaming submission", no_sub);
+	}
+}
+
 static struct sensor_stream_trigger *get_read_config_trigger(const struct sensor_read_config *cfg,
 							     enum sensor_trigger_type trig)
 {
@@ -148,6 +176,8 @@ static void icm45686_complete_handler(struct rtio *ctx, const struct rtio_sqe *s
 	buf->header.events = REG_INT1_STATUS0_DRDY(data->stream.data.events.drdy) |
 			     REG_INT1_STATUS0_FIFO_THS(data->stream.data.events.fifo_ths) |
 			     REG_INT1_STATUS0_FIFO_FULL(data->stream.data.events.fifo_full);
+	buf->header.accel_odr = cfg->settings.accel.odr;
+	buf->header.gyro_odr = cfg->settings.gyro.odr;
 
 	if (should_flush_fifo(read_cfg, int_status)) {
 		uint8_t write_reg = REG_FIFO_CONFIG2_FIFO_FLUSH(true) |
@@ -185,13 +215,18 @@ static void icm45686_event_handler(const struct device *dev)
 {
 	struct icm45686_data *data = dev->data;
 	const struct icm45686_config *cfg = dev->config;
-	const struct sensor_read_config *read_cfg = data->stream.iodev_sqe->sqe.iodev->data;
+	const struct sensor_read_config *read_cfg;
 	uint8_t val = 0;
 	uint64_t cycles;
 	int err;
 
-	if (!data->stream.iodev_sqe ||
-	    FIELD_GET(RTIO_SQE_CANCELED, data->stream.iodev_sqe->sqe.flags)) {
+	if (!data->stream.iodev_sqe) {
+		(void)atomic_inc(&data->stream.ignore_stats.no_submission_ignored);
+		icm45686_report_ignored_events(data);
+		return;
+	}
+
+	if (FIELD_GET(RTIO_SQE_CANCELED, data->stream.iodev_sqe->sqe.flags)) {
 		LOG_WRN("Callback triggered with no streaming submission - Disabling interrupts");
 		(void)atomic_set(&data->stream.state, ICM45686_STREAM_OFF);
 		(void)gpio_pin_interrupt_configure_dt(&cfg->int_gpio, GPIO_INT_DISABLE);
@@ -209,9 +244,16 @@ static void icm45686_event_handler(const struct device *dev)
 		data->stream.settings.enabled.fifo_full = false;
 		return;
 	}
+	read_cfg = data->stream.iodev_sqe->sqe.iodev->data;
 
 	if (atomic_cas(&data->stream.state, ICM45686_STREAM_ON, ICM45686_STREAM_BUSY) == false) {
-		LOG_WRN("Event handler triggered while a stream is in progress! Ignoring");
+		/*
+		 * A data-ready edge arrived while the previous readout was still
+		 * in flight. Drop the event but intentionally leave the DRDY
+		 * interrupt armed so the next edge after completion is serviced.
+		 */
+		(void)atomic_inc(&data->stream.ignore_stats.busy_ignored);
+		icm45686_report_ignored_events(data);
 		return;
 	}
 
@@ -504,6 +546,26 @@ void icm45686_stream_submit(const struct device *dev, struct rtio_iodev_sqe *iod
 				icm45686_stream_result(dev, err);
 				return;
 			}
+
+			/* Enable per-packet hardware timestamp insertion (20-byte hires packets).
+			 * Use 16μs resolution so that batches up to ~500ms fit in the signed
+			 * 16-bit delta used for correlation in the decoder.
+			 */
+			val = REG_FIFO_CONFIG4_TMST_FSYNC_EN(true);
+			err = icm45686_reg_write_rtio(&data->bus, FIFO_CONFIG4, &val, 1);
+			if (err) {
+				LOG_ERR("Failed to enable FIFO timestamp: %d", err);
+				icm45686_stream_result(dev, err);
+				return;
+			}
+
+			val = REG_TMST_WOM_CONFIG_TMST_RESOL(1); /* 16μs */
+			err = icm45686_reg_write_rtio(&data->bus, TMST_WOM_CONFIG, &val, 1);
+			if (err) {
+				LOG_ERR("Failed to set timestamp resolution: %d", err);
+				icm45686_stream_result(dev, err);
+				return;
+			}
 		}
 	}
 	(void)gpio_pin_interrupt_configure_dt(&cfg->int_gpio, GPIO_INT_EDGE_TO_ACTIVE);
@@ -548,6 +610,7 @@ int icm45686_stream_init(const struct device *dev)
 			LOG_ERR("Failed to configure interrupt");
 		}
 
+		memset(&int_config, INV_IMU_DISABLE, sizeof(int_config));
 		err = icm456xx_set_config_int(&data->driver, INV_IMU_INT1, &int_config);
 		if (err) {
 			LOG_ERR("Failed to disable all INTs");

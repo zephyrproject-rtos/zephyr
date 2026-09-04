@@ -5,7 +5,7 @@ description: NXP SCTimer PWM
 
 compatible: "nxp,sctimer-pwm"
 
-include: [pwm-controller.yaml, pinctrl-device.yaml, base.yaml]
+include: [pwm-controller.yaml, pinctrl-device.yaml, base.yaml, mux-consumer.yaml]
 
 properties:
   prescaler:
@@ -22,22 +22,19 @@ properties:
       - 64
       - 128
 
-  input-channels:
-    type: array
+  mux-states:
+    type: phandle-array
     description: |
-      Array of SCTimer input channel numbers that are configured for capture.
-      Each element represents an input channel (0-7 for most NXP SoCs).
-      Example: <0 1 2> configures IN0, IN1, and IN2.
-
-  inputmux-connections:
-    type: array
-    description: |
-      Array of INPUTMUX connection types for each input channel.
-      Each element corresponds to the input channel at the same index in input-channels.
-      Values map to device-specific inputmux_connection_t enum values from
-      fsl_inputmux_connections.h, take LPC55S36 as example:
-      - 0: kINPUTMUX_SctGpioInAToSct0 (GPIO to SCT input A)
-      - 1: kINPUTMUX_SctGpioInBToSct0 (GPIO to SCT input B)
+      INPUTMUX routing for the SCTimer capture inputs. Optional; only needed
+      when PWM capture is used. Each entry is <&inputmuxN index connection>:
+        - &inputmuxN is the INPUTMUX mux controller providing the route
+        - index is the SCTimer input channel number (0-7 for most NXP SoCs)
+        - connection is an inputmux_connection_t value from
+          fsl_inputmux_connections.h. Take LPC55S36 as example:
+          - 0: kINPUTMUX_SctGpioInAToSct0 (GPIO to SCT input A)
+          - 1: kINPUTMUX_SctGpioInBToSct0 (GPIO to SCT input B)
+      Example (route SCT input channel 1 via INPUTMUX0):
+        mux-states = <&inputmux0 1 0>;
 
   out-init-state:
     type: int

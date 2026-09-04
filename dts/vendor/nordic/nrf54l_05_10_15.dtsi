@@ -44,7 +44,8 @@
 			device_type = "cpu";
 			clocks = <&hfpll>;
 			riscv,isa-base = "rv32e";
-			riscv,isa-extensions = "e", "m", "c", "zicsr";
+			riscv,isa-extensions = "e", "m", "c", "zicsr",
+					       "zba", "zbb", "zbc", "zbs", "zcb";
 			nordic,bus-width = <32>;
 		};
 	};
@@ -198,6 +199,7 @@
 				ngpios = <11>;
 				status = "disabled";
 				port = <2>;
+				hspadctrl-supported;
 			};
 
 			timer00: timer@55000 {
@@ -657,6 +659,18 @@
 				reg = <0x10e000 0x1000>;
 				interrupts = <261 NRF_DEFAULT_IRQ_PRIORITY>;
 				status = "disabled";
+
+				xo: xo {
+					compatible = "nordic,nrf-clock-xo";
+					status = "disabled";
+					clock-frequency = <DT_FREQ_M(32)>;
+					#clock-cells = <0>;
+				};
+
+				lfclk: lfclk {
+					compatible = "nordic,nrf-clock-lfclk";
+					status = "disabled";
+				};
 			};
 
 			power: power@10e000 {

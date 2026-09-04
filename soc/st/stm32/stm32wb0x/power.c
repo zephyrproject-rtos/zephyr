@@ -14,7 +14,7 @@
  */
 #include <zephyr/kernel.h>
 #include <zephyr/pm/pm.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/init.h>
 #include <zephyr/arch/common/pm_s2ram.h>
 

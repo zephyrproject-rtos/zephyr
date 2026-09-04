@@ -335,7 +335,7 @@ static uint32_t numicro_scc_set_pll_freq(const struct numicro_scc_config *config
 			       (min_nr - 1UL) << CLK_PLLCTL_INDIV_Pos | (min_nf - 2UL);
 
 	/* Wait for PLL clock stable */
-	while (config->regs->STATUS & CLK_STATUS_PLLSTB_Msk) {
+	while ((config->regs->STATUS & CLK_STATUS_PLLSTB_Msk) == 0) {
 	}
 
 	/* Actual PLL output clock frequency */
@@ -431,7 +431,7 @@ static int numicro_scc_init(const struct device *dev)
 
 	if (DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_lxt))) {
 		ret = numicro_scc_start_clock_source(config, CLK_PWRCTL_LXTEN_Pos,
-						     CLK_PWRCTL_HIRCEN_Pos);
+						     CLK_STATUS_LXTSTB_Pos);
 		if (ret < 0) {
 			LOG_WRN("Failed to get LXT stable");
 		}

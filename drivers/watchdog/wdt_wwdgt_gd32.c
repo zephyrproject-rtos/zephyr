@@ -12,7 +12,7 @@
 #include <zephyr/drivers/watchdog.h>
 #include <zephyr/irq.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 
 #include <gd32_wwdgt.h>
 

@@ -26,6 +26,26 @@ SECTION_FUNC(vectors, __start)
 
 	.option norvc;
 
+#ifdef CONFIG_SOC_IT8XXX2_UART_TX_STRATPPING_PIN
+	la t0, IT8XXX2_GPIO_GPCR_EC_UART_TX
+	li t1, 0x84
+	sb t1, 0(t0)
+	lb t1, 0(t0)
+	la t0, IT8XXX2_GPIO_GPDMR_EC_UART_TX
+	lb t1, 0(t0)
+	andi t1,t1,IT8XXX2_GPIO_PIN_EC_UART_TX
+	bnez t1, __is_in_dbgr
+__loop:
+	j .
+__is_in_dbgr:
+#ifdef CONFIG_SOC_IT8XXX2_REG_SET_V2
+	la t0, 0xf04001
+	lb t1, 0(t0)
+	andi t1,t1,0x2
+	bnez t1, __loop
+#endif
+#endif /* CONFIG_SOC_IT8XXX2_UART_TX_STRATPPING_PIN */
+
 #ifdef CONFIG_SOC_IT8XXX2_JTAG_DEBUG_INTERFACE
 	/* Enable JTAG debug interface */
 	la t0, IT8XXX2_GCTRL_PMER3

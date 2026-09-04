@@ -51,17 +51,17 @@ ctimer1_pwm: &ctimer1 {
 		compatible = "pwm-leds";
 
 		pwm_led0: pwm_led_0 {
-			pwms = <&ctimer0_pwm 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+			pwms = <&ctimer0_pwm 0 PWM_KHZ(1) PWM_POLARITY_NORMAL>;
 			label = "RED";
 		};
 
 		pwm_led1: pwm_led_1 {
-			pwms = <&ctimer0_pwm 3 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+			pwms = <&ctimer0_pwm 3 PWM_KHZ(1) PWM_POLARITY_NORMAL>;
 			label = "GREEN";
 		};
 
 		pwm_led2: pwm_led_2 {
-			pwms = <&ctimer1_pwm 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+			pwms = <&ctimer1_pwm 0 PWM_KHZ(1) PWM_POLARITY_NORMAL>;
 			label = "BLUE";
 		};
 	};

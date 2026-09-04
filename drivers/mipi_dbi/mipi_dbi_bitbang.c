@@ -190,11 +190,11 @@ static int mipi_dbi_bitbang_reset(const struct device *dev, k_timeout_t delay)
 static int mipi_dbi_bitbang_init(const struct device *dev)
 {
 	const struct mipi_dbi_bitbang_config *config = dev->config;
+	struct mipi_dbi_bitbang_data *data = dev->data;
 	const char *failed_pin = NULL;
 	int ret = 0;
-#if MIPI_DBI_8_BIT_MODE
-	struct mipi_dbi_bitbang_data *data = dev->data;
-#endif
+
+	k_mutex_init(&data->lock);
 
 	if (gpio_is_ready_dt(&config->cmd_data)) {
 		ret = gpio_pin_configure_dt(&config->cmd_data, GPIO_OUTPUT_ACTIVE);

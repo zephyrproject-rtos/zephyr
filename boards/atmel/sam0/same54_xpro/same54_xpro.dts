@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2019 Benjamin Valentin
  * # Copyright (c) 2024-2025 Gerson Fernando Budke <nandojve@gmail.com>
+ * Copyright (c) 2026 Microchip Technology Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -198,9 +199,9 @@ zephyr_udc0: &usb0 {
 
 &flash0 {
 	partitions {
-		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		/*
 		 * The final 16 KiB is reserved for the application.
@@ -208,6 +209,7 @@ zephyr_udc0: &usb0 {
 		 * if enabled.
 		 */
 		storage_partition: partition@fc000 {
+			compatible = "zephyr,mapped-partition";
 			label = "storage";
 			reg = <0x000fc000 0x00004000>;
 		};

@@ -32,6 +32,7 @@
 		sw0 = &button0;
 		rtc = &rtc;
 		sdhc0 = &sdhc1;
+		eeprom-0 = &eeprom;
 	};
 
 	leds {
@@ -157,24 +158,32 @@
 
 &flash0 {
 	partitions {
-		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			label = "mcuboot";
 			reg = <0x00000000 0x00010000>;  /* 64 KB bootloader */
 			read-only;
 		};
 
 		slot0_partition: partition@10000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-0";
 			reg = <0x00010000 0x00070000>;  /* 448 KB primary app slot */
 		};
 
 		slot1_partition: partition@80000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-1";
 			reg = <0x00080000 0x00070000>;  /* 448 KB secondary app slot */
 		};
 
 		storage_partition: partition@f0000 {
+			compatible = "zephyr,mapped-partition";
+			label = "storage";
 			reg = <0x000f0000 0x00010000>;  /* 64 KB storage area */
 		};
 	};
@@ -209,10 +218,11 @@
 
 		fdpll0 {
 			subsystem = <CLOCK_MCHP_FDPLL_ID_FDPLL0>;
-			fdpll-divider-ratio-int = <19>;
+			fdpll-divider-ratio-int = <119>;
 			fdpll-lock-bypass-en = <1>;
 			fdpll-wakeup-fast-en = <1>;
 			fdpll-src = "xosc1";
+			fdpll-xosc-clock-divider = <5>;
 			fdpll-en = <1>;
 		};
 	};
@@ -245,6 +255,14 @@
 			gclkgen-run-in-standby-en = <1>;
 			gclkgen-en = <1>;
 		};
+
+		gclkgen2 {
+			subsystem = <CLOCK_MCHP_GCLKGEN_ID_GEN2>;
+			gclkgen-div-factor = <3>;
+			gclkgen-src = "fdpll0";
+			gclkgen-run-in-standby-en = <1>;
+			gclkgen-en = <1>;
+		};
 	};
 
 	gclkperiph: gclkperiph {
@@ -272,6 +290,12 @@
 		dac {
 			subsystem = <CLOCK_MCHP_GCLKPERIPH_ID_DAC>;
 			gclkperiph-src = "gclk1";
+			gclkperiph-en = <0>;
+		};
+
+		sercom7 {
+			subsystem = <CLOCK_MCHP_GCLKPERIPH_ID_SERCOM7_CORE>;
+			gclkperiph-src = "gclk2";
 			gclkperiph-en = <0>;
 		};
 	};
@@ -357,19 +381,18 @@
 
 &sercom6 {
 	compatible = "microchip,sercom-g1-spi";
-
 	dipo = <3>;
 	dopo = <0>;
-
 	#address-cells = <1>;
 	#size-cells = <0>;
-
 	pinctrl-0 = <&sercom6_spi_default>;
 	pinctrl-names = "default";
+	dmas = <&dmac 12 0x10>, <&dmac 13 0x11>;
+	dma-names = "rx", "tx";
 	status = "okay";
 };
 
-&sercom7 {
+i2c0: &sercom7 {
 	compatible = "microchip,sercom-g1-i2c";
 	#address-cells = <1>;
 	#size-cells = <0>;
@@ -380,7 +403,16 @@
 	dma-names = "rx", "tx";
 	status = "okay";
 
-	eeprom: eeprom@5e {
+	eeprom: eeprom@56 {
+		compatible = "atmel,at24", "atmel,24mac402";
+		reg = <0x56>;
+		size = <256>;
+		pagesize = <16>;
+		address-width = <8>;
+		timeout = <5>;
+	};
+
+	eeprom_mac: eeprom@5e {
 		compatible = "atmel,at24", "atmel,24mac402";
 		reg = <0x5e>;
 		size = <256>;

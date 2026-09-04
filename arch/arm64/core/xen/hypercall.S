@@ -3,10 +3,11 @@
  * Copyright (c) 2021-2023 EPAM Systems
  */
 
+#include <xen/public/xen.h>
+#include <xen/public/arch-arm.h>
+
 #include <zephyr/toolchain.h>
 #include <zephyr/linker/sections.h>
-#include <zephyr/xen/public/arch-arm.h>
-#include <zephyr/xen/public/xen.h>
 
 #define HYPERCALL(hypercall)			\
 GTEXT(HYPERVISOR_##hypercall);			\
@@ -25,6 +26,8 @@ HYPERCALL(hvm_op);
 HYPERCALL(memory_op);
 HYPERCALL(dm_op);
 HYPERCALL(xen_version);
+HYPERCALL(vcpu_op);
+HYPERCALL(xsm_op);
 
 #ifdef CONFIG_XEN_DOM0
 HYPERCALL(domctl);

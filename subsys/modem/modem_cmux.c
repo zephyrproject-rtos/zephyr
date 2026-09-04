@@ -413,9 +413,13 @@ static void modem_cmux_log_frame(const struct modem_cmux_frame *frame,
 				 const char *action, size_t hexdump_len)
 {
 	LOG_DBG("%s ch:%u cr:%u pf:%u type:%s dlen:%u", action, frame->dlci_address,
-		frame->cr, frame->pf, modem_cmux_frame_type_to_str(frame->type), frame->data_len);
+		frame->cr, frame->pf, modem_cmux_frame_type_to_str(frame->type),
+		frame->data_len + frame->tx_extra_len);
 	if (hexdump_len > 0) {
 		LOG_HEXDUMP_DBG(frame->data, hexdump_len, "data:");
+	}
+	if (frame->tx_extra_len > 0) {
+		LOG_HEXDUMP_DBG(frame->tx_extra, frame->tx_extra_len, "data:");
 	}
 }
 #else
@@ -563,12 +567,18 @@ static uint16_t modem_cmux_transmit_frame(struct modem_cmux *cmux,
 	uint8_t buf[MODEM_CMUX_HEADER_SIZE];
 	uint8_t fcs;
 	uint16_t space;
+	uint16_t tx_len = frame->data_len + frame->tx_extra_len;
+	uint16_t real_extra_len;
+	uint16_t real_len;
 	uint16_t data_len;
 	uint16_t buf_idx;
 
 	space = ring_buf_space_get(&cmux->transmit_rb) - MODEM_CMUX_HEADER_SIZE;
-	data_len = MIN(space, frame->data_len);
+	data_len = MIN(space, tx_len);
 	data_len = MIN(data_len, CONFIG_MODEM_CMUX_MTU);
+
+	real_len = MIN(frame->data_len, data_len);
+	real_extra_len = data_len - real_len;
 
 	/* SOF */
 	buf[0] = MODEM_CMUX_SOF;
@@ -593,17 +603,22 @@ static uint16_t modem_cmux_transmit_frame(struct modem_cmux *cmux,
 	fcs = crc8_rohc(MODEM_CMUX_FCS_INIT_VALUE, &buf[1], (buf_idx - 1));
 
 	/* FCS final */
-	if (frame->type == MODEM_CMUX_FRAME_TYPE_UIH) {
-		fcs = 0xFF - fcs;
-	} else {
-		fcs = 0xFF - crc8_rohc(fcs, frame->data, data_len);
+	if (frame->type != MODEM_CMUX_FRAME_TYPE_UIH) {
+		fcs = crc8_rohc(fcs, frame->data, real_len);
+		if (real_extra_len > 0) {
+			fcs = crc8_rohc(fcs, frame->tx_extra, real_extra_len);
+		}
 	}
+	fcs = 0xFF - fcs;
 
 	/* Frame header */
 	ring_buf_put(&cmux->transmit_rb, buf, buf_idx);
 
 	/* Data */
-	ring_buf_put(&cmux->transmit_rb, frame->data, data_len);
+	ring_buf_put(&cmux->transmit_rb, frame->data, real_len);
+	if (real_extra_len > 0) {
+		ring_buf_put(&cmux->transmit_rb, frame->tx_extra, real_extra_len);
+	}
 
 	/* FCS and EOF will be put on the same call */
 	buf[0] = fcs;
@@ -1754,11 +1769,11 @@ static void modem_cmux_transmit_handler(struct k_work *item)
 			break;
 		}
 
-		reserved_size = ring_buf_get_claim(&cmux->transmit_rb, &reserved, UINT32_MAX);
+		reserved_size = ring_buf_get_ptr(&cmux->transmit_rb,
+						 &reserved, 0);
 
 		ret = modem_pipe_transmit(cmux->pipe, reserved, reserved_size);
 		if (ret < 0) {
-			ring_buf_get_finish(&cmux->transmit_rb, 0);
 			if (ret != -EPERM) {
 				LOG_ERR("Failed to %s %u bytes. (%d)",
 					"transmit", reserved_size, ret);
@@ -1766,7 +1781,7 @@ static void modem_cmux_transmit_handler(struct k_work *item)
 			break;
 		}
 
-		ring_buf_get_finish(&cmux->transmit_rb, (uint32_t)ret);
+		ring_buf_consume(&cmux->transmit_rb, (uint32_t)ret);
 
 		if (ret < reserved_size) {
 			LOG_DBG("Transmitted only %u out of %u bytes at once.", ret, reserved_size);
@@ -1932,7 +1947,9 @@ static int modem_cmux_dlci_pipe_api_open(void *data)
 	return 0;
 }
 
-static int modem_cmux_dlci_pipe_api_transmit(void *data, const uint8_t *buf, size_t size)
+static int modem_cmux_dlci_pipe_api_transmit_chain(void *data,
+						   const struct modem_pipe_data_fragment *frags,
+						   size_t num_frags)
 {
 	struct modem_cmux_dlci *dlci = (struct modem_cmux_dlci *)data;
 	struct modem_cmux *cmux = dlci->cmux;
@@ -1941,7 +1958,7 @@ static int modem_cmux_dlci_pipe_api_transmit(void *data, const uint8_t *buf, siz
 		return -EPERM;
 	}
 
-	if (size == 0 || buf == NULL) {
+	if (frags[0].size == 0 || frags[0].data == NULL) {
 		/* Allow empty transmit request to wake up CMUX */
 		runtime_pm_keepalive(cmux);
 		k_work_reschedule(&cmux->transmit_work, K_NO_WAIT);
@@ -1952,13 +1969,19 @@ static int modem_cmux_dlci_pipe_api_transmit(void *data, const uint8_t *buf, siz
 		return 0;
 	}
 
+	/* The CMUX frame object also supports reception, using `data_fragment` internally would
+	 * be a large change with little benefit. Support up to two buffers with `chain`, which
+	 * supports the common `modem_chat` usage.
+	 */
 	struct modem_cmux_frame frame = {
 		.dlci_address = dlci->dlci_address,
 		.cr = cmux->initiator,
 		.pf = false,
 		.type = MODEM_CMUX_FRAME_TYPE_UIH,
-		.data = buf,
-		.data_len = size,
+		.data = frags[0].data,
+		.tx_extra = num_frags > 1 ? frags[1].data : NULL,
+		.data_len = frags[0].size,
+		.tx_extra_len = num_frags > 1 ? frags[1].size : 0,
 	};
 
 	return modem_cmux_transmit_data_frame(cmux, &frame);
@@ -2013,7 +2036,7 @@ static int modem_cmux_dlci_pipe_api_close(void *data)
 
 static const struct modem_pipe_api modem_cmux_dlci_pipe_api = {
 	.open = modem_cmux_dlci_pipe_api_open,
-	.transmit = modem_cmux_dlci_pipe_api_transmit,
+	.transmit_chain = modem_cmux_dlci_pipe_api_transmit_chain,
 	.receive = modem_cmux_dlci_pipe_api_receive,
 	.close = modem_cmux_dlci_pipe_api_close,
 };
@@ -2161,7 +2184,7 @@ struct modem_pipe *modem_cmux_dlci_init(struct modem_cmux *cmux, struct modem_cm
 	__ASSERT_NO_MSG(config != NULL);
 	__ASSERT_NO_MSG(config->dlci_address < 64);
 	__ASSERT_NO_MSG(config->receive_buf != NULL);
-	__ASSERT_NO_MSG(config->receive_buf_size >= 126);
+	__ASSERT_NO_MSG(config->receive_buf_size >= MODEM_CMUX_RX_BUFFER_SIZE_MIN);
 
 	memset(dlci, 0x00, sizeof(*dlci));
 	dlci->cmux = cmux;

@@ -397,9 +397,15 @@ static inline int _zbus_vded_exec(const struct zbus_channel *chan, k_timepoint_t
 	struct zbus_channel_observation_mask *observation_mask;
 
 #if defined(CONFIG_ZBUS_MSG_SUBSCRIBER)
-	struct net_buf_pool *pool =
-		COND_CODE_1(CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_ISOLATION,
-			    (chan->data->msg_subscriber_pool), (&_zbus_msg_subscribers_pool));
+	/* Always the common subscriber pool */
+	struct net_buf_pool *pool = &_zbus_msg_subscribers_pool;
+
+#if defined(CONFIG_ZBUS_MSG_SUBSCRIBER_NET_BUF_POOL_ISOLATION)
+	/* Channel specific pool if set, otherwise common pool */
+	if (chan->data->msg_subscriber_pool != NULL) {
+		pool = chan->data->msg_subscriber_pool;
+	}
+#endif
 
 	buf = _zbus_create_net_buf(pool, zbus_chan_msg_size(chan), sys_timepoint_timeout(end_time));
 

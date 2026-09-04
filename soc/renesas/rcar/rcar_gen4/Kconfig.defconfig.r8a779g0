@@ -2,7 +2,7 @@
 # Copyright (c) 2025 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
 
-if SOC_R8A779G0_R52
+if SOC_R8A779G0_R52 || SOC_R8A779G0_A76
 
 config NUM_IRQS
 	default 991

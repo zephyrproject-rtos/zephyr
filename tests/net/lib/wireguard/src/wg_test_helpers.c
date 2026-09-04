@@ -39,6 +39,8 @@ int wg_psa_aead_encrypt(uint8_t *dst, const uint8_t *src, size_t src_len,
 int wg_process_data_message(struct wg_iface_context *ctx, struct wg_peer *peer,
 			    struct msg_transport_data *data_hdr, struct net_pkt *pkt,
 			    size_t ip_udp_hdr_len, struct net_sockaddr *addr);
+int handle_transport_data(struct wg_peer *peer, struct net_sockaddr *peer_addr,
+			  struct net_pkt *pkt, size_t ip_udp_hdr_len, size_t data_len);
 
 /* Preallocated peer pool / active list, exported via ZTESTABLE_STATIC. */
 extern sys_slist_t peer_list;
@@ -276,6 +278,76 @@ out:
 	net_pkt_unref(pkt);
 
 	return ret;
+}
+
+int wireguard_test_clear_session(int peer_id)
+{
+	struct wg_peer *peer;
+
+	peer = peer_lookup_by_id(peer_id);
+	if (peer == NULL) {
+		return -ENOENT;
+	}
+
+	keypair_destroy(&peer->session.keypair.prev);
+	keypair_destroy(&peer->session.keypair.current);
+	keypair_destroy(&peer->session.keypair.next);
+
+	peer->handshake.is_valid = false;
+	peer->send_handshake = false;
+	peer->first_valid = false;
+
+	return 0;
+}
+
+int wireguard_test_inject_stale_session(int peer_id, const struct net_sockaddr *src,
+					uint32_t receiver)
+{
+	struct msg_transport_data hdr;
+	struct net_pkt *pkt = NULL;
+	struct wg_peer *peer;
+	int ret;
+
+	if (src == NULL) {
+		return -EINVAL;
+	}
+
+	peer = peer_lookup_by_id(peer_id);
+	if (peer == NULL) {
+		return -ENOENT;
+	}
+
+	pkt = net_pkt_alloc_with_buffer(peer->iface, sizeof(hdr), NET_AF_UNSPEC, 0,
+					PKT_ALLOC_WAIT_TIME);
+	if (pkt == NULL) {
+		return -ENOMEM;
+	}
+
+	hdr.type = MESSAGE_TRANSPORT_DATA;
+	hdr.reserved[0] = hdr.reserved[1] = hdr.reserved[2] = 0;
+	hdr.receiver = receiver;
+	sys_put_le64(0ULL, hdr.counter);
+
+	ret = net_pkt_write(pkt, &hdr, sizeof(hdr));
+	if (ret < 0) {
+		goto out;
+	}
+
+	net_pkt_cursor_init(pkt);
+
+	ret = handle_transport_data(peer, (struct net_sockaddr *)src, pkt, 0, 0);
+
+out:
+	net_pkt_unref(pkt);
+
+	return ret;
+}
+
+bool wireguard_test_peer_send_handshake(int peer_id)
+{
+	struct wg_peer *peer = peer_lookup_by_id(peer_id);
+
+	return peer != NULL ? peer->send_handshake : false;
 }
 
 int wireguard_test_get_stats(int peer_id, struct net_stats_vpn *stats)

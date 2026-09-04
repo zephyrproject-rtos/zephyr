@@ -33,11 +33,32 @@ config OPENTHREAD_NETWORKKEY
 config OPENTHREAD_JOINER_AUTOSTART
 	bool "Automatic joiner start"
 	depends on OPENTHREAD_JOINER
+	help
+	  Start the Thread commissioning joiner during initialization when the
+	  device has no stored operational dataset.
+
+	  The joiner authenticates with any in-range commissioner that presents
+	  the configured PSKd, and then enables Thread with whatever dataset
+	  that commissioner supplies. CONFIG_OPENTHREAD_JOINER_PSKD must be set
+	  to a credential that is not known to anyone else before enabling this.
 
 config OPENTHREAD_JOINER_PSKD
-	string "Default pre shared key for the Joiner"
+	string "Pre-Shared Key for the Joiner (PSKd)"
 	depends on OPENTHREAD_JOINER_AUTOSTART
-	default "J01NME"
+	help
+	  Joining Device Credential used by CONFIG_OPENTHREAD_JOINER_AUTOSTART,
+	  encoded as 6 to 32 uppercase alphanumeric characters (0-9 and A-Z
+	  excluding I, O, Q and Z). There is deliberately no default value; the
+	  build fails until one is set.
+
+	  The PSKd is the only thing that authenticates the network a device
+	  joins, and the Thread specification requires it to be unique per
+	  device and shared only with the intended commissioner. A value set
+	  here is compiled into the image and is therefore identical on every
+	  unit running that firmware, so this option is suitable for development
+	  only. Product firmware should read a per-device PSKd from factory data
+	  and call otJoinerStart() from the application instead of enabling
+	  CONFIG_OPENTHREAD_JOINER_AUTOSTART.
 
 choice OPENTHREAD_DEVICE_TYPE
 	prompt "OpenThread device type"
@@ -154,6 +175,38 @@ config OPENTHREAD_CLI_MAX_LINE_LENGTH
 	int "The maximum size of the CLI line in bytes"
 	range 16 $(UINT16_MAX)
 	default 384
+
+config OPENTHREAD_SHELL_DEFERRED_OUTPUT
+	bool "Deferred OpenThread CLI shell output"
+	depends on SHELL
+	help
+	  Defer OpenThread CLI console output to the system workqueue instead
+	  of writing it synchronously from the OpenThread thread. Output is
+	  accumulated in a ring buffer and drained line by line from the
+	  workqueue. This avoids blocking the OpenThread thread on synchronous
+	  shell UART writes and eliminates the ABBA deadlock risk between the
+	  OpenThread mutex and the shell mutex.
+
+config OPENTHREAD_SHELL_DEFERRED_OUTPUT_BUF_SIZE
+	int "Deferred OpenThread CLI shell output ring buffer size"
+	depends on OPENTHREAD_SHELL_DEFERRED_OUTPUT
+	default 4096
+	help
+	  Size in bytes of the ring buffer used to hold deferred OpenThread CLI
+	  console output before it is drained by the system workqueue. Verbose
+	  commands (e.g. "router table", "netdata show") can emit large bursts,
+	  so keep this large enough to avoid dropping output.
+
+config OPENTHREAD_CLI_LINK_METRICS_ENH_ACK_VERBOSE
+	bool "Unsolicited CLI output of Link Metrics data from Enhanced-ACK frames"
+	depends on OPENTHREAD_LINK_METRICS_INITIATOR
+	help
+	  Enable unsolicited CLI output of Link Metrics data received in
+	  Enhanced-ACK frames. When disabled (default), Link Metrics data is
+	  still processed internally and queryable via "linkmetrics show".
+	  Enabling this option adds CLI output calls inside the time-critical
+	  MAC transmit-done path, which on platforms with synchronous/blocking
+	  CLI transport may break SED fast-poll timing.
 
 config OPENTHREAD_IP6_MAX_EXT_UCAST_ADDRS
 	int "The maximum number of supported IPv6 addresses allows to be externally added"

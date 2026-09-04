@@ -299,7 +299,7 @@ Suggested Uses
 
 Use cooperative threads for device drivers and other performance-critical work.
 
-Use cooperative threads to implement mutually exclusion without the need
+Use cooperative threads to implement mutual exclusion without the need
 for a kernel object, such as a mutex.
 
 Use preemptive threads to give priority to time-sensitive processing
@@ -339,10 +339,10 @@ Implementation
 Making the CPU idle
 ===================
 
-Making the CPU idle is simple: call the k_cpu_idle() API. The CPU will stop
+Making the CPU idle is simple: call the :c:func:`k_cpu_idle` API. The CPU will stop
 executing instructions until an event occurs. Most likely, the function will
 be called within a loop. Note that in certain architectures, upon return,
-k_cpu_idle() unconditionally unmasks interrupts.
+:c:func:`k_cpu_idle` unconditionally unmasks interrupts.
 
 .. code-block:: c
 
@@ -377,13 +377,13 @@ Making the CPU idle in an atomic fashion
 ========================================
 
 It is possible that there is a need to do some work atomically before making
-the CPU idle. In such a case, k_cpu_atomic_idle() should be used instead.
+the CPU idle. In such a case, :c:func:`k_cpu_atomic_idle` should be used instead.
 
 In fact, there is a race condition in the previous example: the interrupt could
 occur between the time the semaphore is taken, finding out it is not available
 and making the CPU idle again. In some systems, this can cause the CPU to idle
 until *another* interrupt occurs, which might be *never*, thus hanging the
-system completely. To prevent this, k_cpu_atomic_idle() should have been used,
+system completely. To prevent this, :c:func:`k_cpu_atomic_idle` should have been used,
 like in this example.
 
 .. code-block:: c
@@ -427,10 +427,10 @@ like in this example.
 Suggested Uses
 **************
 
-Use k_cpu_atomic_idle() when a thread has to do some real work in addition to
+Use :c:func:`k_cpu_atomic_idle` when a thread has to do some real work in addition to
 idling the CPU to wait for an event. See example above.
 
-Use k_cpu_idle() only when a thread is only responsible for idling the CPU,
+Use :c:func:`k_cpu_idle` only when a thread is only responsible for idling the CPU,
 i.e. not doing any real work, like in this example below.
 
 .. code-block:: c

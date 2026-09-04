@@ -13,7 +13,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/time_units.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/drivers/uart.h>
 
 LOG_MODULE_REGISTER(futaba_sbus, CONFIG_INPUT_LOG_LEVEL);

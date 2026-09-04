@@ -225,9 +225,10 @@ If you are using :ref:`sysbuild`, see :ref:`sysbuild_dedicated_image_build_targe
 
 The ``puncover`` target will start a local web server on ``localhost:5000`` by default.
 The host IP and port the HTTP server runs on can be changed by setting the environment
-variables ``PUNCOVER_HOST`` and ``PUNCOVER_PORT``.
+variables ``PUNCOVER_HOST`` and ``PUNCOVER_PORT``. Further arguments to puncover can be
+provided by defining them in ``EXTRA_PUNCOVER_ARGS``.
 
-To view worst-case stack usage analysis, build this with the
+To view worst-case stack usage analysis in the interactive web app, build with the
 :kconfig:option:`CONFIG_STACK_USAGE` enabled.
 
 .. zephyr-app-commands::
@@ -235,7 +236,46 @@ To view worst-case stack usage analysis, build this with the
     :zephyr-app: samples/hello_world
     :board: reel_board
     :goals: puncover
-    :gen-args: -DCONFIG_STACK_USAGE=y
+    :gen-args: -DCONFIG_STACK_USAGE=y -DCONFIG_CALLGRAPH_INFO=y
+
+If you want a report in a JSON file about the worst-case stack usages found, without launching
+the web app you can add the option ``--generate-report --non-interactive --report-type json``
+for non-interactive use. And add all functions you are interested in the report by adding each
+as an argument in the form of ``--report-max-static-stack-usage FUNCTION_NAME:::MAXIMAL_STACK_SIZE``
+for example to export ``log_process_thread_func``, ``shell_thread``, ``bg_thread_main`` and
+``work_queue_main`` this would look like this:
+
+.. zephyr-app-commands::
+    :tool: all
+    :zephyr-app: samples/hello_world
+    :board: reel_board
+    :goals: puncover
+    :gen-args: -DCONFIG_STACK_USAGE=y -DCONFIG_CALLGRAPH_INFO=y -DEXTRA_PUNCOVER_ARGS="--generate-report;--non-interactive;--report-type;json;--report-max-static-stack-usage;log_process_thread_func:::832;--report-max-static-stack-usage;shell_thread:::4160;--report-max-static-stack-usage;bg_thread_main:::2112;--report-max-static-stack-usage;work_queue_main:::1088;--report-filename;$PWD/report"
+
+All arguments can also for better maintainability and overview be put in a yaml config:
+
+.. code-block:: yaml
+
+      elf_file: ~/zephyrproject/zephyr/samples/net/mqtt_publisher/build/zephyr/zephyr.elf
+      gcc-tools-base: ~/zephyr-sdk-1.0.1/gnu/arm-zephyr-eabi/bin/arm-zephyr-eabi-
+      src_root: ~/zephyrproject/zephyr
+      build_dir: ~/zephyrproject/zephyr/samples/net/mqtt_publisher/build
+      generate-report: true
+      non-interactive: true
+      report-type: json
+      report-max-static-stack-usage:
+         - log_process_thread_func:::832
+         - shell_thread:::4160
+         - bg_thread_main:::2112
+         - work_queue_main:::1088
+         - mgmt_event_work_handler:::896
+
+.. zephyr-app-commands::
+    :tool: all
+    :zephyr-app: samples/hello_world
+    :board: reel_board
+    :goals: puncover
+    :gen-args: -DCONFIG_STACK_USAGE=y -DCONFIG_CALLGRAPH_INFO=y -DEXTRA_PUNCOVER_ARGS="-c puncover_config.yaml"
 
 
 .. _data_structure_tools:

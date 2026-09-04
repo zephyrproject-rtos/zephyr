@@ -6,6 +6,7 @@ config AUDIO_DMIC_NATIVE_SIM
 	bool "Native simulator DMIC driver"
 	depends on DT_HAS_ZEPHYR_NATIVE_SIM_DMIC_ENABLED
 	default y
+	select NATIVE_USE_NSI_ERRNO
 	help
 	  Enable the native simulator DMIC driver.
 

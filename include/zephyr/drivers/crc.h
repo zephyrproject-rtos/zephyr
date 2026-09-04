@@ -25,6 +25,8 @@ extern "C" {
 /**
  * @brief Interfaces for Cyclic Redundancy Check (CRC) devices.
  * @defgroup crc_interface CRC driver APIs
+ * @since 4.3
+ * @version 0.1.0
  * @ingroup io_interfaces
  * @{
  */

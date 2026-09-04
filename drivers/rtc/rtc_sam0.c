@@ -485,7 +485,7 @@ static int rtc_sam0_get_calibration(const struct device *dev, int32_t *calibrati
 	if (correction == 0) {
 		*calibration = 0;
 	} else {
-		*calibration = (correction * 1000000000) / cfg->cal_constant;
+		*calibration = ((int64_t)correction * 1000000000) / cfg->cal_constant;
 	}
 
 	if (regs->FREQCORR.bit.SIGN) {

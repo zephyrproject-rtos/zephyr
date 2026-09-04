@@ -96,6 +96,10 @@ class VirtiofsSidecar(Sidecar):
         self._virtiofsd_proc = None
         self._virtiofsd_log = None
 
+    def host_ready(self) -> bool:
+        """The test cannot run without a virtiofsd binary on the host."""
+        return self.virtiofsd_bin is not None
+
     def cmake_env(self, build_dir: str) -> dict[str, str]:
         # The static vhost-user-fs device lives in the test's
         # CONFIG_QEMU_EXTRA_FLAGS; inject only the dynamic -chardev socket path

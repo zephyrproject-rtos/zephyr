@@ -68,13 +68,6 @@ config OBJ_CORE_MSGQ
 	  When enabled, this option integrates message queues into the object
 	  core framework.
 
-config OBJ_CORE_SEM
-	bool "Integrate semaphores into object core framework"
-	default y
-	help
-	  When enabled, this option integrates semaphores into the object core
-	  framework.
-
 config OBJ_CORE_PIPE
 	bool "Integrate pipe into object core framework"
 	default y

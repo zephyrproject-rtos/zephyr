@@ -285,7 +285,35 @@ TAB_SIZE               = 8
 # with the commands \{ and \} for these it is advised to use the version @{ and
 # @} or use a double escape (\\{ and \\})
 
-ALIASES                = "kconfig{1}=\c \1" \
+# The kconfig, dtcompatible and rstref aliases expand to HTML placeholders
+# that are resolved into links pointing back to the Sphinx-based documentation
+# (e.g. docs.zephyrproject.org) by the 'zephyr.doxyxref' Sphinx extension (see
+# doc/_extensions/zephyr/doxyxref.py). When left unresolved, the placeholders
+# gracefully degrade to plain text.
+#
+# - kconfig{1}:      reference a Kconfig option, e.g. @kconfig{CONFIG_GPIO}
+# - kconfig_regex{1}: reference all Kconfig options matching a regular
+#                    expression, linking to the Kconfig search page, e.g.
+#                    @kconfig_regex{CONFIG_SECURE_STORAGE_ITS_.*_CUSTOM}
+# - dtcompatible{1}: reference a Devicetree binding by compatible string,
+#                    e.g. @dtcompatible{zephyr\,input-longpress} (note the
+#                    escaped comma)
+# - rstref{1}:       reference any Sphinx ':ref:' target, with optional custom
+#                    text, e.g. @rstref{coding_guidelines} or
+#                    @rstref{the coding guidelines <coding_guidelines>}
+# - rfc{1}:          reference an IETF RFC by number, e.g. @rfc{7519} (a plain
+#                    hyperlink, unlike the placeholders above)
+# - rfc{2}:          same, with an anchor, e.g. @rfc{8613,section-3.1},
+#                    @rfc{8613,appendix-B.1.2} or @rfc{9175,figure-2}
+#                    (no whitespace after the comma, as it would become part
+#                    of the anchor)
+
+ALIASES                = "kconfig{1}=\htmlonly<code class='doxyxref' data-stype='kconfig:option' data-starget='\1'>\1</code>\endhtmlonly" \
+                         "kconfig_regex{1}=\htmlonly<code class='doxyxref' data-stype='kconfig:option-regex' data-starget='\1'>\1</code>\endhtmlonly" \
+                         "dtcompatible{1}=\htmlonly<code class='doxyxref' data-stype='std:dtcompatible' data-starget='\1'>\1</code>\endhtmlonly" \
+                         "rstref{1}=\htmlonly<span class='doxyxref' data-stype='std:ref' data-starget='\1'>\1</span>\endhtmlonly" \
+                         "rfc{1}=[RFC \1](https://datatracker.ietf.org/doc/html/rfc\1)" \
+                         "rfc{2}=[RFC \1, \2](https://datatracker.ietf.org/doc/html/rfc\1#\2)" \
                          "kconfig_dep{1}=\attention Available only when the following Kconfig option is enabled: \kconfig{\1}." \
                          "kconfig_dep{2}=\attention Available only when the following Kconfig options are enabled: \kconfig{\1}, \kconfig{\2}." \
                          "kconfig_dep{3}=\attention Available only when the following Kconfig options are enabled: \kconfig{\1}, \kconfig{\2}, \kconfig{\3}." \
@@ -315,6 +343,35 @@ ALIASES               += "driver_ops{1}=\brief \htmlonly <span class=\"mlabel\">
                                         \see DEVICE_API()"
 ALIASES               += "driver_ops_mandatory=\htmlonly<span class=\"op-badge op-req\" title=\"This operation MUST be implemented by the driver.\">REQ</span>\endhtmlonly"
 ALIASES               += "driver_ops_optional=\htmlonly<span class=\"op-badge op-opt\" title=\"This operation MAY optionally be implemented by the driver.\">OPT</span>\endhtmlonly"
+
+# Aliases to help document FFF-based fake drivers. \driver_fake takes the
+# interface group, the Kconfig option and the devicetree compatible (escape
+# its comma as \,). \fake_of takes the driver operation the fake stands in
+# for, as <driver API struct>::<member>.
+ALIASES               += "driver_fake{3}=This is a Fake Function Framework (FFF) implementation of the \ref \1 \
+                                         API, provided for use in tests. It is enabled by \kconfig{\2} and \
+                                         instantiated from \dtcompatible{\3} devicetree nodes. ^^\
+                                         ^^ \
+                                         Each fake below is paired with an FFF control structure named after it \
+                                         with an additional \c _fake suffix, which tests use to set return values, \
+                                         install custom fakes, or inspect call counts and captured arguments. The \
+                                         control structures are not listed here; see \rstref{mocking-fff}. ^^\
+                                         ^^ \
+                                         Use \c return_val for fakes that only report status; a fake with output \
+                                         parameters must be driven with a \c custom_fake, as \c return_val leaves \
+                                         those parameters untouched. ^^\
+                                         ^^ \
+                                         When \kconfig{CONFIG_ZTEST} is enabled, a ztest rule resets every fake \
+                                         before each test case."
+ALIASES               += "fake_of{1}=\brief Fake implementation of the \ref \1 driver operation."
+
+# Requirements traceability (Doxygen 1.16+). The requirements themselves are
+# generated from the reqmgmt module into the directory appended to the INPUT tag
+# below, using the native \requirement command. Code and tests link to them with
+# \satisfies / \verifies.
+
+GENERATE_REQUIREMENTS  = YES
+REQ_TRACEABILITY_INFO  = YES
 
 # Set the OPTIMIZE_OUTPUT_FOR_C tag to YES if your project consists of C sources
 # only. Doxygen will then generate output that is more tailored for C. For
@@ -450,7 +507,7 @@ BUILTIN_STL_SUPPORT    = NO
 # enable parsing support.
 # The default value is: NO.
 
-CPP_CLI_SUPPORT        = YES
+CPP_CLI_SUPPORT        = NO
 
 # Set the SIP_SUPPORT tag to YES if your project consists of sip (see:
 # https://www.riverbankcomputing.com/software) sources only. Doxygen will parse
@@ -1044,6 +1101,7 @@ INPUT                  = @ZEPHYR_BASE@/doc/_doxygen/mainpage.md \
                          @ZEPHYR_BASE@/subsys/testsuite/ztest/include/ \
                          @ZEPHYR_BASE@/subsys/secure_storage/include/ \
                          @ZEPHYR_BASE@/modules/openthread/include/openthread.h \
+                         @DOXY_REQ_INPUT@ \
 
 # This tag can be used to specify the character encoding of the source files
 # that Doxygen parses. Internally Doxygen uses the UTF-8 encoding. Doxygen uses
@@ -1086,7 +1144,8 @@ INPUT_FILE_ENCODING    =
 FILE_PATTERNS          = *.c \
                          *.h \
                          *.S \
-                         *.md
+                         *.md \
+                         *.dox
 
 # The RECURSIVE tag can be used to specify whether or not subdirectories should
 # be searched for input files as well.
@@ -1102,6 +1161,7 @@ RECURSIVE              = YES
 # run.
 
 EXCLUDE                = @ZEPHYR_BASE@/include/zephyr/portability/cmsis_os.h \
+                         @ZEPHYR_BASE@/subsys/testsuite/include/zephyr/fff.h \
                          @ZEPHYR_BASE@/include/zephyr/portability/cmsis_os2.h \
                          @ZEPHYR_BASE@/include/zephyr/arch/arc/ \
                          @ZEPHYR_BASE@/include/zephyr/arch/arm/ \
@@ -1573,7 +1633,7 @@ HTML_INDEX_NUM_ENTRIES = 100
 # The default value is: NO.
 # This tag requires that the tag GENERATE_HTML is set to YES.
 
-GENERATE_DOCSET        = YES
+GENERATE_DOCSET        = NO
 
 # This tag determines the name of the docset feed. A documentation feed provides
 # an umbrella under which multiple documentation sets from a single provider
@@ -1639,7 +1699,7 @@ GENERATE_HTMLHELP      = NO
 # written to the html output directory.
 # This tag requires that the tag GENERATE_HTMLHELP is set to YES.
 
-CHM_FILE               = NO
+CHM_FILE               =
 
 # The HHC_LOCATION tag can be used to specify the location (absolute path
 # including file name) of the HTML help compiler (hhc.exe). If non-empty,
@@ -2376,7 +2436,7 @@ XML_OUTPUT             = xml
 # The default value is: YES.
 # This tag requires that the tag GENERATE_XML is set to YES.
 
-XML_PROGRAMLISTING     = YES
+XML_PROGRAMLISTING     = NO
 
 # If the XML_NS_MEMB_FILE_SCOPE tag is set to YES, Doxygen will include
 # namespace members in file scope as well, matching the HTML output.
@@ -2594,10 +2654,14 @@ PREDEFINED             = __DOXYGEN__ \
                          __syscall_always_inline= \
                          __must_check= \
                          "ATOMIC_DEFINE(x, y)=atomic_t x[ATOMIC_BITMAP_SIZE(y)]" \
+                         "DECLARE_FAKE_VALUE_FUNC(ret,name,...)=ret name(__VA_ARGS__)" \
+                         "DECLARE_FAKE_VOID_FUNC(name,...)=void name(__VA_ARGS__)" \
                          "ZTEST(suite, fn)=void fn(void)" \
                          "ZTEST_USER(suite, fn)=void fn(void)" \
                          "ZTEST_USER_F(suite, fn)=void fn(void)" \
-                         "ZTEST_F(suite, fn)=void fn(void)"
+                         "ZTEST_F(suite, fn)=void fn(void)" \
+                         "ZTEST_P(suite, fn)=void fn(void)" \
+                         "ZTEST_USER_P(suite, fn)=void fn(void)"
 
 # If the MACRO_EXPANSION and EXPAND_ONLY_PREDEF tags are set to YES then this
 # tag can be used to specify a list of macro names that should be expanded. The
@@ -3007,15 +3071,6 @@ DOT_GRAPH_MAX_NODES    = 50
 # This tag requires that the tag HAVE_DOT is set to YES.
 
 MAX_DOT_GRAPH_DEPTH    = 0
-
-# Set the DOT_MULTI_TARGETS tag to YES to allow dot to generate multiple output
-# files in one run (i.e. multiple -o and -T options on the command line). This
-# makes dot run faster, but since only newer versions of dot (>1.8.10) support
-# this, this feature is disabled by default.
-# The default value is: NO.
-# This tag requires that the tag HAVE_DOT is set to YES.
-
-DOT_MULTI_TARGETS      = NO
 
 # If the GENERATE_LEGEND tag is set to YES Doxygen will generate a legend page
 # explaining the meaning of the various boxes and arrows in the dot generated

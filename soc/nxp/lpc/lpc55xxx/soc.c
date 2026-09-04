@@ -11,6 +11,7 @@
  * hardware for the nxp_lpc55s69 platform.
  */
 
+#include <zephyr/irq.h>
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
 #include <zephyr/init.h>
@@ -47,6 +48,13 @@ static uint32_t ExternalClockFrequency;
 #define TO_CTIMER_CLOCK_SOURCE(inst, val) TO_CLOCK_ATTACH_ID(inst, val)
 #define TO_CLOCK_ATTACH_ID(inst, val) MUX_A(CM_CTIMERCLKSEL##inst, val)
 #define CTIMER_CLOCK_SETUP(node_id) CLOCK_AttachClk(CTIMER_CLOCK_SOURCE(node_id));
+
+#if defined(CONFIG_SOC_LPC55S36)
+#define CTIMER_CLOCK_DIV_NAME(inst) kCLOCK_DivCtimer##inst##Clk
+#define CTIMER_CLOCK_DIV_ID(inst) CTIMER_CLOCK_DIV_NAME(inst)
+#define CTIMER_CLOCK_DIV_SETUP(node_id) \
+	CLOCK_SetClkDiv(CTIMER_CLOCK_DIV_ID(DT_CLOCKS_CELL(node_id, name)), 1U, false);
+#endif /* CONFIG_SOC_LPC55S36 */
 
 #ifdef CONFIG_INIT_PLL0
 const pll_setup_t pll0Setup = {
@@ -312,8 +320,8 @@ __weak void clock_init(void)
 #if DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(usbhfs), nxp_uhc_ohci, okay)
 	/* set BOD VBAT level to 1.65V */
 	POWER_SetBodVbatLevel(kPOWER_BodVbatLevel1650mv, kPOWER_BodHystLevel50mv, false);
-	NVIC_ClearPendingIRQ(USB0_IRQn);
-	NVIC_ClearPendingIRQ(USB0_NEEDCLK_IRQn);
+	k_irq_clear_pending(USB0_IRQn);
+	k_irq_clear_pending(USB0_NEEDCLK_IRQn);
 	/*< Turn on USB Phy */
 #if defined(CONFIG_SOC_LPC55S36)
 	POWER_DisablePD(kPDRUNCFG_PD_USBFSPHY);
@@ -352,6 +360,11 @@ __weak void clock_init(void)
 DT_FOREACH_STATUS_OKAY(nxp_lpc_ctimer, CTIMER_CLOCK_SETUP)
 
 DT_FOREACH_STATUS_OKAY(nxp_ctimer_pwm, CTIMER_CLOCK_SETUP)
+
+#if defined(CONFIG_SOC_LPC55S36)
+	DT_FOREACH_STATUS_OKAY(nxp_lpc_ctimer, CTIMER_CLOCK_DIV_SETUP)
+	DT_FOREACH_STATUS_OKAY(nxp_ctimer_pwm, CTIMER_CLOCK_DIV_SETUP)
+#endif /* CONFIG_SOC_LPC55S36 */
 
 #if (DT_NODE_HAS_COMPAT_STATUS(DT_NODELABEL(flexcomm6), nxp_lpc_i2s, okay))
 #if defined(CONFIG_SOC_LPC55S36)

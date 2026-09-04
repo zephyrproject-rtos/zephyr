@@ -1101,9 +1101,14 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 			if (params->security == WIFI_SECURITY_TYPE_EAP_PEAP_MSCHAPV2 ||
 			    params->security == WIFI_SECURITY_TYPE_EAP_PEAP_GTC ||
 			    params->security == WIFI_SECURITY_TYPE_EAP_PEAP_TLS) {
-				snprintk(phase1, sizeof(phase1),
-					 "peapver=%d peaplabel=0 crypto_binding=0",
-					 params->eap_ver);
+				if (params->eap_ver == -1) {
+					snprintk(phase1, sizeof(phase1),
+						"peaplabel=0 crypto_binding=0");
+				} else {
+					snprintk(phase1, sizeof(phase1),
+						"peapver=%d peaplabel=0 crypto_binding=0",
+						params->eap_ver);
+				}
 
 				if (!wpa_cli_cmd_v("set_network %d phase1 \"%s\"", resp.network_id,
 						   &phase1[0])) {
@@ -1153,9 +1158,9 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 				}
 			}
 
-			if (false == ((params->security == WIFI_SECURITY_TYPE_EAP_PEAP_MSCHAPV2 ||
-			    params->security == WIFI_SECURITY_TYPE_EAP_TTLS_MSCHAPV2) &&
-			    (!params->verify_peer_cert))) {
+			if (false == (params->security == WIFI_SECURITY_TYPE_EAP_PEAP_MSCHAPV2 ||
+			    params->security == WIFI_SECURITY_TYPE_EAP_TTLS_MSCHAPV2 ||
+				params->security == WIFI_SECURITY_TYPE_EAP_PEAP_GTC)) {
 				if (wpas_config_process_blob(wpa_s->conf, "ca_cert",
 						   enterprise_creds.ca_cert,
 						   enterprise_creds.ca_cert_len)) {
@@ -1166,71 +1171,85 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 						   resp.network_id)) {
 					goto out;
 				}
-			}
 
-			if (wpas_config_process_blob(wpa_s->conf, "client_cert",
-					   enterprise_creds.client_cert,
-					   enterprise_creds.client_cert_len)) {
-				goto out;
-			}
+				if (wpas_config_process_blob(wpa_s->conf, "client_cert",
+						enterprise_creds.client_cert,
+						enterprise_creds.client_cert_len)) {
+					goto out;
+				}
 
-			if (!wpa_cli_cmd_v("set_network %d client_cert \"blob://client_cert\"",
-					   resp.network_id)) {
-				goto out;
-			}
+				if (!wpa_cli_cmd_v("set_network %d client_cert \"blob://client_cert\"",
+						resp.network_id)) {
+					goto out;
+				}
 
-			if (wpas_config_process_blob(wpa_s->conf, "private_key",
-					   enterprise_creds.client_key,
-					   enterprise_creds.client_key_len)) {
-				goto out;
-			}
+				if (wpas_config_process_blob(wpa_s->conf, "private_key",
+						enterprise_creds.client_key,
+						enterprise_creds.client_key_len)) {
+					goto out;
+				}
 
-			if (!wpa_cli_cmd_v("set_network %d private_key \"blob://private_key\"",
-					   resp.network_id)) {
-				goto out;
-			}
+				if (!wpa_cli_cmd_v("set_network %d private_key \"blob://private_key\"",
+						resp.network_id)) {
+					goto out;
+				}
 
-			if (!wpa_cli_cmd_v("set_network %d private_key_passwd \"%s\"",
-					   resp.network_id, params->key_passwd)) {
-				goto out;
-			}
+				if (!wpa_cli_cmd_v("set_network %d private_key_passwd \"%s\"",
+						resp.network_id, params->key_passwd)) {
+					goto out;
+				}
 
-			if (wpas_config_process_blob(wpa_s->conf, "ca_cert2",
-						     enterprise_creds.ca_cert2,
-						     enterprise_creds.ca_cert2_len)) {
-				goto out;
-			}
+				if (wpas_config_process_blob(wpa_s->conf, "ca_cert2",
+								enterprise_creds.ca_cert2,
+								enterprise_creds.ca_cert2_len)) {
+					goto out;
+				}
 
-			if (!wpa_cli_cmd_v("set_network %d ca_cert2 \"blob://ca_cert2\"",
-					   resp.network_id)) {
-				goto out;
-			}
+				if (!wpa_cli_cmd_v("set_network %d ca_cert2 \"blob://ca_cert2\"",
+						resp.network_id)) {
+					goto out;
+				}
 
-			if (wpas_config_process_blob(wpa_s->conf, "client_cert2",
-						     enterprise_creds.client_cert2,
-						     enterprise_creds.client_cert2_len)) {
-				goto out;
-			}
+				if (wpas_config_process_blob(wpa_s->conf, "client_cert2",
+							enterprise_creds.client_cert2,
+							enterprise_creds.client_cert2_len)) {
+					goto out;
+				}
 
-			if (!wpa_cli_cmd_v("set_network %d client_cert2 \"blob://client_cert2\"",
-					   resp.network_id)) {
-				goto out;
-			}
+				if (!wpa_cli_cmd_v("set_network %d client_cert2 \"blob://client_cert2\"",
+						resp.network_id)) {
+					goto out;
+				}
 
-			if (wpas_config_process_blob(wpa_s->conf, "private_key2",
-						     enterprise_creds.client_key2,
-						     enterprise_creds.client_key2_len)) {
-				goto out;
-			}
+				if (wpas_config_process_blob(wpa_s->conf, "private_key2",
+								enterprise_creds.client_key2,
+								enterprise_creds.client_key2_len)) {
+					goto out;
+				}
 
-			if (!wpa_cli_cmd_v("set_network %d private_key2 \"blob://private_key2\"",
-					   resp.network_id)) {
-				goto out;
-			}
+				if (!wpa_cli_cmd_v("set_network %d private_key2 \"blob://private_key2\"",
+						resp.network_id)) {
+					goto out;
+				}
 
-			if (!wpa_cli_cmd_v("set_network %d private_key2_passwd \"%s\"",
-					   resp.network_id, params->key2_passwd)) {
-				goto out;
+				if (!wpa_cli_cmd_v("set_network %d private_key2_passwd \"%s\"",
+						resp.network_id, params->key2_passwd)) {
+					goto out;
+				}
+			} else if (params->verify_peer_cert) {
+				/* If we're using MSCHAPV2 and we're
+				 * requested a CA cert valid, load it
+				 */
+				if (wpas_config_process_blob(wpa_s->conf, "ca_cert",
+						enterprise_creds.ca_cert,
+						enterprise_creds.ca_cert_len)) {
+					goto out;
+				}
+
+				if (!wpa_cli_cmd_v("set_network %d ca_cert \"blob://ca_cert\"",
+						resp.network_id)) {
+					goto out;
+				}
 			}
 #endif
 #ifdef CONFIG_WEP
@@ -1518,6 +1537,17 @@ int supplicant_disconnect(const struct device *dev __unused, struct net_if *ifac
 
 enum wifi_mfp_options get_mfp(enum mfp_options supp_mfp_option)
 {
+	/*
+	 * MGMT_FRAME_PROTECTION_DEFAULT is not an enum mfp_options member, so
+	 * it has to be checked before the switch. It marks a network with no
+	 * explicit ieee80211w setting, whose effective value is only known
+	 * after resolving it against the global "pmf" setting, the key
+	 * management and the driver capabilities (see wpas_get_ssid_pmf()).
+	 */
+	if (supp_mfp_option == MGMT_FRAME_PROTECTION_DEFAULT) {
+		return WIFI_MFP_UNKNOWN;
+	}
+
 	switch (supp_mfp_option) {
 	case NO_MGMT_FRAME_PROTECTION:
 		return WIFI_MFP_DISABLE;
@@ -1622,7 +1652,12 @@ int supplicant_status(const struct device *dev __unused, struct net_if *iface,
 			}
 		}
 #endif
-		status->mfp = get_mfp(ssid->ieee80211w);
+		/*
+		 * Resolve a network without an explicit ieee80211w setting
+		 * (MGMT_FRAME_PROTECTION_DEFAULT) the same way the supplicant
+		 * does when associating.
+		 */
+		status->mfp = get_mfp(wpas_get_ssid_pmf(wpa_s, ssid));
 		ieee80211_freq_to_chan(wpa_s->assoc_freq, &channel);
 		status->channel = channel;
 
@@ -1865,21 +1900,58 @@ int supplicant_candidate_scan(const struct device *dev __unused, struct net_if *
 	char *end = pos + SUPPLICANT_CANDIDATE_SCAN_CMD_BUF_SIZE;
 	int freq = 0;
 	struct wpa_supplicant *wpa_s;
+	int cur_freq = 0;
+	bool first = true;
 
 	wpa_s = get_wpa_s_handle(iface);
 	if (!wpa_s) {
 		return -1;
 	}
 
+	/*
+	 * Include the current connected AP's frequency in the scan so that
+	 * wpa_supplicant's BSS cache has an up-to-date entry for the current
+	 * AP after the scan completes.
+	 *
+	 * Without this, wpa_supplicant_need_to_roam() (events.c) hits one of
+	 * two early-return paths that bypass need_to_roam_within_ess():
+	 *
+	 *   1. current_bss == NULL  (cache entry expired / not refreshed)
+	 *   2. selected->last_update_idx > current_bss->last_update_idx
+	 *      (candidate was seen in this scan round, current AP was not)
+	 *
+	 * Both cases cause an unconditional roam regardless of RSSI delta,
+	 * potentially associating to a much weaker AP.
+	 */
+	if (wpa_s->current_bss) {
+		cur_freq = wpa_s->current_bss->freq;
+	}
+
 	strcpy(pos, "freq=");
 	pos += 5;
+
+	/* Add current AP frequency first */
+	if (cur_freq > 0) {
+		pos += snprintf(pos, end - pos, "%d", cur_freq);
+		first = false;
+	}
+
+	/* Add neighbor report channels, skipping duplicates */
 	while (params->band_chan[i].channel) {
-		if (i > 0) {
+		freq = chan_to_freq(params->band_chan[i].channel);
+		i++;
+		if (freq <= 0) {
+			continue;
+		}
+		/* Skip if this neighbor channel is the same as current AP */
+		if (freq == cur_freq) {
+			continue;
+		}
+		if (!first) {
 			pos += snprintf(pos, end - pos, ",");
 		}
-		freq = chan_to_freq(params->band_chan[i].channel);
 		pos += snprintf(pos, end - pos, "%d", freq);
-		i++;
+		first = false;
 	}
 
 	if (!wpa_cli_cmd_v("scan %s", cmd)) {

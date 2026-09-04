@@ -5,7 +5,7 @@ Building, Flashing and Debugging
 
 Zephyr provides several :ref:`west extension commands <west-extensions>` for
 building, flashing, and interacting with Zephyr programs running on a board:
-``build``, ``flash``, ``debug``, ``debugserver`` and ``attach``.
+``build``, ``flash``, ``debug``, ``debugserver``, ``rtt``, and ``attach``.
 
 For information on adding board support for the flashing and debugging
 commands, see :ref:`flash-and-debug-support` in the board porting guide.
@@ -459,9 +459,6 @@ your board::
 
   west flash
 
-Without options, the behavior is the same as ``ninja flash`` (or
-``make flash``, etc.).
-
 To specify the build directory, use ``--build-dir`` (or ``-d``)::
 
   west flash --build-dir path/to/build/directory
@@ -599,9 +596,6 @@ To attach a debugger to your board and open up a local network port
 you can connect a debugger to (e.g. an IDE debugger)::
 
   west debugserver
-
-Without options, the behavior is the same as ``ninja debug`` and
-``ninja debugserver`` (or ``make debug``, etc.).
 
 To specify the build directory, use ``--build-dir`` (or ``-d``)::
 

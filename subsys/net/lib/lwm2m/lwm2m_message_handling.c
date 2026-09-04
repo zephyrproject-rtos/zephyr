@@ -674,7 +674,8 @@ int lwm2m_init_message(struct lwm2m_message *msg)
 		goto cleanup_unlock;
 	}
 
-	r = coap_pending_init(msg->pending, &msg->cpkt, &msg->ctx->remote_addr, NULL);
+	r = coap_pending_init(msg->pending, &msg->cpkt,
+			      net_sad(&msg->ctx->remote_addr_storage), NULL);
 	if (r < 0) {
 		LOG_ERR("Unable to initialize a pending "
 			"retransmission (err:%d).",
@@ -1035,7 +1036,7 @@ static int lwm2m_write_handler_opaque(struct lwm2m_engine_obj_inst *obj_inst,
 					       last_pkt_block && last_block, opaque_ctx.len,
 					       opaque_ctx.offset);
 			if (ret < 0) {
-				/* -EEXIST will generate Bad Request LWM2M response. */
+				/* -EEXIST will generate Bad Request LwM2M response. */
 				return -EEXIST;
 			}
 
@@ -1102,6 +1103,7 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst, struct lwm2m_eng
 		/* Get block_ctx for total_size (might be zero) */
 		total_size = msg->in.block_ctx->ctx.total_size;
 		offset = msg->in.block_ctx->opaque.offset;
+		last_block = msg->in.block_ctx->last_block;
 
 		LOG_DBG("BLOCK1: total:%zu current:%zu"
 			" last:%u",
@@ -1267,7 +1269,7 @@ int lwm2m_write_handler(struct lwm2m_engine_obj_inst *obj_inst, struct lwm2m_eng
 					       res_inst->res_inst_id, write_buf, len, last_block,
 					       total_size, offset);
 			if (ret < 0) {
-				/* -EEXIST will generate Bad Request LWM2M response. */
+				/* -EEXIST will generate Bad Request LwM2M response. */
 				return -EEXIST;
 			}
 
@@ -2115,15 +2117,18 @@ static int parse_write_op(struct lwm2m_message *msg, uint16_t format)
 			free_block_ctx(block_ctx);
 
 			r = init_block_ctx(&msg->path, &block_ctx);
+		}
+
+		if (block_ctx == NULL) {
+			LOG_ERR("Cannot find block context");
+			return r < 0 ? r : -ENOMEM;
+		}
+
+		if (block_num == 0) {
 			/* If we have already parsed the packet, we can handle the block size
 			 * given by the server.
 			 */
 			block_ctx->ctx.block_size = block_size;
-		}
-
-		if (r < 0) {
-			LOG_ERR("Cannot find block context");
-			return r;
 		}
 
 		msg->in.block_ctx = block_ctx;
@@ -2669,7 +2674,8 @@ static int lwm2m_response_promote_to_con(struct lwm2m_message *msg)
 		return -ENOMEM;
 	}
 
-	ret = coap_pending_init(msg->pending, &msg->cpkt, &msg->ctx->remote_addr, NULL);
+	ret = coap_pending_init(msg->pending, &msg->cpkt,
+				net_sad(&msg->ctx->remote_addr_storage), NULL);
 	if (ret < 0) {
 		LOG_ERR("Unable to initialize a pending "
 			"retransmission (err:%d).",
@@ -3018,6 +3024,10 @@ static int notify_message_reply_cb(const struct coap_packet *response, struct co
 		sprint_token(reply->token, reply->tkl));
 
 	msg = find_msg(NULL, reply);
+	if (msg == NULL) {
+		LOG_ERR("Orphaned reply %p.", reply);
+		return 0;
+	}
 
 	/* remove observer on COAP_TYPE_RESET */
 	if (type == COAP_TYPE_RESET) {
@@ -3137,7 +3147,8 @@ msg_init:
 		LOG_DBG("[%s] NOTIFY MSG START: %u/%u/%u(%u) token:'%s' [%s] %lld",
 			obs->resource_update ? "MANUAL" : "AUTO", path->obj_id, path->obj_inst_id,
 			path->res_id, path->level, sprint_token(obs->token, obs->tkl),
-			lwm2m_sprint_ip_addr(&ctx->remote_addr), (long long)k_uptime_get());
+			lwm2m_sprint_ip_addr(net_sad(&ctx->remote_addr_storage)),
+			(long long)k_uptime_get());
 
 		obj_inst = get_engine_obj_inst(path->obj_id, path->obj_inst_id);
 		if (!obj_inst) {
@@ -3149,7 +3160,8 @@ msg_init:
 	} else {
 		LOG_DBG("[%s] NOTIFY MSG START: (Composite)) token:'%s' [%s] %lld",
 			obs->resource_update ? "MANUAL" : "AUTO",
-			sprint_token(obs->token, obs->tkl), lwm2m_sprint_ip_addr(&ctx->remote_addr),
+			sprint_token(obs->token, obs->tkl),
+			lwm2m_sprint_ip_addr(net_sad(&ctx->remote_addr_storage)),
 			(long long)k_uptime_get());
 	}
 
@@ -3373,17 +3385,17 @@ int lwm2m_parse_peerinfo(char *url, struct lwm2m_ctx *client_ctx, bool is_firmwa
 	url[off + len] = '\0';
 
 	/* initialize remote_addr */
-	(void)memset(&client_ctx->remote_addr, 0, sizeof(client_ctx->remote_addr));
+	(void)memset(&client_ctx->remote_addr_storage, 0, sizeof(client_ctx->remote_addr_storage));
 
 	/* try and set IP address directly */
-	client_ctx->remote_addr.sa_family = NET_AF_INET6;
+	client_ctx->remote_addr_storage.ss_family = NET_AF_INET6;
 	ret = net_addr_pton(NET_AF_INET6, url + off,
-			    &((struct net_sockaddr_in6 *)&client_ctx->remote_addr)->sin6_addr);
+			&((struct net_sockaddr_in6 *)&client_ctx->remote_addr_storage)->sin6_addr);
 	/* Try to parse again using NET_AF_INET */
 	if (ret < 0) {
-		client_ctx->remote_addr.sa_family = NET_AF_INET;
+		client_ctx->remote_addr_storage.ss_family = NET_AF_INET;
 		ret = net_addr_pton(NET_AF_INET, url + off,
-				&((struct net_sockaddr_in *)&client_ctx->remote_addr)->sin_addr);
+			&((struct net_sockaddr_in *)&client_ctx->remote_addr_storage)->sin_addr);
 	}
 
 	if (ret < 0) {
@@ -3406,8 +3418,19 @@ int lwm2m_parse_peerinfo(char *url, struct lwm2m_ctx *client_ctx, bool is_firmwa
 			goto cleanup;
 		}
 
-		memcpy(&client_ctx->remote_addr, res->ai_addr, sizeof(client_ctx->remote_addr));
-		client_ctx->remote_addr.sa_family = res->ai_family;
+		if (res->ai_addrlen > sizeof(client_ctx->remote_addr_storage)) {
+			LOG_DBG("Resolved address does not fit (%u > %zu)", res->ai_addrlen,
+				sizeof(client_ctx->remote_addr_storage));
+			zsock_freeaddrinfo(res);
+			ret = -EINVAL;
+			goto cleanup;
+		}
+
+		/* net_addr_pton() above may have left a partial address behind. */
+		(void)memset(&client_ctx->remote_addr_storage, 0,
+			     sizeof(client_ctx->remote_addr_storage));
+		memcpy(&client_ctx->remote_addr_storage, res->ai_addr, res->ai_addrlen);
+		client_ctx->remote_addr_storage.ss_family = res->ai_family;
 		zsock_freeaddrinfo(res);
 #if defined(CONFIG_LWM2M_DTLS_SUPPORT)
 		/** copy url pointer to be used in socket */
@@ -3421,10 +3444,12 @@ int lwm2m_parse_peerinfo(char *url, struct lwm2m_ctx *client_ctx, bool is_firmwa
 	}
 
 	/* set port */
-	if (client_ctx->remote_addr.sa_family == NET_AF_INET6) {
-		net_sin6(&client_ctx->remote_addr)->sin6_port = net_htons(parser.port);
-	} else if (client_ctx->remote_addr.sa_family == NET_AF_INET) {
-		net_sin(&client_ctx->remote_addr)->sin_port = net_htons(parser.port);
+	if (client_ctx->remote_addr_storage.ss_family == NET_AF_INET6) {
+		net_sin6(net_sad(&client_ctx->remote_addr_storage))->sin6_port =
+			net_htons(parser.port);
+	} else if (client_ctx->remote_addr_storage.ss_family == NET_AF_INET) {
+		net_sin(net_sad(&client_ctx->remote_addr_storage))->sin_port =
+			net_htons(parser.port);
 	} else {
 		ret = -EPROTONOSUPPORT;
 	}

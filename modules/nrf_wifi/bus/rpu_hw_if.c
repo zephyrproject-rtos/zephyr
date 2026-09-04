@@ -17,6 +17,7 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/dt-bindings/gpio/nordic-nrf-gpio.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/drivers/regulator.h>
 #include <zephyr/drivers/wifi/nrf_wifi/bus/rpu_hw_if.h>
 #include <zephyr/drivers/wifi/nrf_wifi/bus/qspi_if.h>
 
@@ -37,14 +38,29 @@ GPIO_DT_SPEC_GET(NRF7002_NODE, iovdd_ctrl_gpios);
 
 #elif DT_NODE_HAS_PROP(NRF7002_NODE, iovdd_regulator)
 
-#include <zephyr/drivers/regulator.h>
-
 static const struct device *iovdd_regulator =
 DEVICE_DT_GET(DT_PHANDLE(NRF7002_NODE, iovdd_regulator));
 
 #else
 #error "nRF70 device either needs iovdd-ctrl-gpios or iovdd-regulator property"
 #endif
+
+/* Always defined so the code below builds regardless of the devicetree. The
+ * GPIO port and the regulator device are NULL when the matching property is
+ * absent.
+ */
+static const struct gpio_dt_spec supply_spec =
+GPIO_DT_SPEC_GET_OR(NRF7002_NODE, supply_gpios, {0});
+
+static const struct device *vin_supply =
+DEVICE_DT_GET_OR_NULL(DT_PHANDLE(NRF7002_NODE, vin_supply));
+
+/* Tracks whether this driver holds a reference on vin_supply, so a failed
+ * power-up only releases what it actually requested. The regulator may be
+ * shared with other consumers, where regulator_is_enabled() says nothing
+ * about who enabled it.
+ */
+static bool vin_supply_enabled;
 
 static const struct gpio_dt_spec bucken_spec =
 GPIO_DT_SPEC_GET(NRF7002_NODE, bucken_gpios);
@@ -212,6 +228,11 @@ static int rpu_gpio_config_early(void)
 		return -ENODEV;
 	}
 
+	if (IS_ENABLED(CONFIG_NRF70_SUPPLY_GPIO) && !device_is_ready(supply_spec.port)) {
+		LOG_ERR("SUPPLY GPIO %s is not ready", supply_spec.port->name);
+		return -ENODEV;
+	}
+
 	/* Configure BUCKEN as output in inactive (low) state to prevent
 	 * floating pin from accidentally powering the module.
 	 */
@@ -233,6 +254,18 @@ static int rpu_gpio_config_early(void)
 		return ret;
 	}
 #endif
+
+	if (IS_ENABLED(CONFIG_NRF70_SUPPLY_GPIO)) {
+		/* Configure SUPPLY as output in inactive (low) state to prevent
+		 * floating pin from accidentally powering the module.
+		 */
+		ret = gpio_pin_configure_dt(&supply_spec, GPIO_OUTPUT_INACTIVE);
+		if (ret) {
+			LOG_ERR("SUPPLY GPIO configuration failed...");
+			gpio_pin_configure_dt(&supply_spec, GPIO_DISCONNECTED);
+			return ret;
+		}
+	}
 
 	return 0;
 }
@@ -279,6 +312,16 @@ static int rpu_gpio_config(void)
 {
 	int ret;
 
+	if (IS_ENABLED(CONFIG_NRF70_VIN_SUPPLY) && !device_is_ready(vin_supply)) {
+		LOG_ERR("VIN supply regulator is not ready");
+		return -ENODEV;
+	}
+
+	if (IS_ENABLED(CONFIG_NRF70_SUPPLY_GPIO) && !device_is_ready(supply_spec.port)) {
+		LOG_ERR("SUPPLY GPIO %s is not ready", supply_spec.port->name);
+		return -ENODEV;
+	}
+
 #ifdef NRF70_IOVDD_GPIO
 	if (!device_is_ready(iovdd_ctrl_spec.port)) {
 		LOG_ERR("IOVDD GPIO %s is not ready", iovdd_ctrl_spec.port->name);
@@ -291,14 +334,27 @@ static int rpu_gpio_config(void)
 		return -ENODEV;
 	}
 
-	ret = gpio_pin_configure_dt(&bucken_spec, (GPIO_OUTPUT | NRF_GPIO_DRIVE_H0H1));
+	if (IS_ENABLED(CONFIG_NRF70_SUPPLY_GPIO)) {
+		/* GPIO_INPUT keeps the input buffer connected so the pin state
+		 * can be read back.
+		 */
+		ret = gpio_pin_configure_dt(&supply_spec, (GPIO_OUTPUT | GPIO_INPUT));
+		if (ret) {
+			LOG_ERR("SUPPLY GPIO configuration failed...");
+			gpio_pin_configure_dt(&supply_spec, GPIO_DISCONNECTED);
+			return ret;
+		}
+	}
+
+	ret = gpio_pin_configure_dt(&bucken_spec,
+				     (GPIO_OUTPUT | GPIO_INPUT | NRF_GPIO_DRIVE_H0H1));
 	if (ret) {
 		LOG_ERR("BUCKEN GPIO configuration failed...");
 		return ret;
 	}
 
 #ifdef NRF70_IOVDD_GPIO
-	ret = gpio_pin_configure_dt(&iovdd_ctrl_spec, GPIO_OUTPUT);
+	ret = gpio_pin_configure_dt(&iovdd_ctrl_spec, (GPIO_OUTPUT | GPIO_INPUT));
 	if (ret) {
 		LOG_ERR("IOVDD GPIO configuration failed...");
 		gpio_pin_configure_dt(&bucken_spec, GPIO_DISCONNECTED);
@@ -329,6 +385,14 @@ static int rpu_gpio_remove(void)
 	}
 #endif
 
+	if (IS_ENABLED(CONFIG_NRF70_SUPPLY_GPIO)) {
+		ret = gpio_pin_configure_dt(&supply_spec, GPIO_DISCONNECTED);
+		if (ret) {
+			LOG_ERR("SUPPLY GPIO remove failed...");
+			return ret;
+		}
+	}
+
 	LOG_DBG("GPIO remove done...\n");
 	return ret;
 }
@@ -336,6 +400,29 @@ static int rpu_gpio_remove(void)
 static int rpu_pwron(void)
 {
 	int ret;
+
+	/* The regulator must be requested before the supply GPIO is activated. */
+	if (IS_ENABLED(CONFIG_NRF70_VIN_SUPPLY)) {
+		ret = regulator_enable(vin_supply);
+		if (ret) {
+			LOG_ERR("VIN supply enable failed...");
+			return ret;
+		}
+		vin_supply_enabled = true;
+	}
+
+	if (IS_ENABLED(CONFIG_NRF70_SUPPLY_GPIO)) {
+		ret = gpio_pin_set_dt(&supply_spec, 1);
+		if (ret) {
+			LOG_ERR("SUPPLY GPIO set failed...");
+			return ret;
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_NRF70_SUPPLY)) {
+		/* Settling time for SUPPLY */
+		k_msleep(DT_PROP(NRF7002_NODE, supply_power_up_delay_ms));
+	}
 
 	ret = gpio_pin_set_dt(&bucken_spec, 1);
 	if (ret) {
@@ -357,6 +444,13 @@ static int rpu_pwron(void)
 	}
 	/* Settling time for IOVDD */
 	k_msleep(DT_PROP(NRF7002_NODE, iovdd_power_up_delay_ms));
+
+	if (IS_ENABLED(CONFIG_NRF70_SUPPLY_GPIO)) {
+		LOG_DBG("Supply GPIO = %d", gpio_pin_get_dt(&supply_spec));
+	}
+	if (IS_ENABLED(CONFIG_NRF70_VIN_SUPPLY)) {
+		LOG_DBG("Vin supply = %d", regulator_is_enabled(vin_supply) ? 1 : 0);
+	}
 
 #ifdef NRF70_IOVDD_GPIO
 	if ((bucken_spec.port == iovdd_ctrl_spec.port) &&
@@ -398,7 +492,40 @@ static int rpu_pwroff(void)
 		return ret;
 	}
 
+	/* The supply GPIO must be inactive before releasing the regulator. */
+	if (IS_ENABLED(CONFIG_NRF70_SUPPLY_GPIO)) {
+		ret = gpio_pin_set_dt(&supply_spec, 0); /* SUPPLY = 0 */
+		if (ret) {
+			LOG_ERR("SUPPLY GPIO set failed...");
+			return ret;
+		}
+	}
+
+	if (IS_ENABLED(CONFIG_NRF70_VIN_SUPPLY)) {
+		ret = regulator_disable(vin_supply);
+		if (ret) {
+			LOG_ERR("VIN supply disable failed...");
+			return ret;
+		}
+		vin_supply_enabled = false;
+	}
+
 	return ret;
+}
+
+/* Release the supply rail after a failed power-up. Errors are ignored, there is
+ * nothing left to do about them on that path.
+ */
+static void rpu_supply_off(void)
+{
+	if (IS_ENABLED(CONFIG_NRF70_SUPPLY_GPIO)) {
+		gpio_pin_set_dt(&supply_spec, 0);
+	}
+
+	if (IS_ENABLED(CONFIG_NRF70_VIN_SUPPLY) && vin_supply_enabled) {
+		regulator_disable(vin_supply);
+		vin_supply_enabled = false;
+	}
 }
 
 int rpu_read(unsigned int addr, void *data, int len)
@@ -607,6 +734,7 @@ int rpu_init(void)
 #endif
 	ret = rpu_pwron();
 	if (ret) {
+		rpu_supply_off();
 #ifdef CONFIG_NRF70_SR_COEX_RF_SWITCH
 		goto remove_sr_gpio;
 #else

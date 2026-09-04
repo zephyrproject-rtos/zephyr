@@ -9,6 +9,10 @@
 
 #include "clock_control_esp32_priv.h"
 
+#if defined(CONFIG_SOC_SERIES_ESP32P4)
+#include <esp_private/esp_clk_tree_common.h>
+#endif
+
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(clock_control, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
@@ -22,7 +26,7 @@ static enum clock_control_status clock_control_esp32_get_status(const struct dev
 		return CLOCK_CONTROL_STATUS_UNKNOWN;
 	}
 
-#if defined(CONFIG_SOC_SERIES_ESP32P4)
+#if defined(CONFIG_SOC_SERIES_ESP32P4) || defined(CONFIG_SOC_SERIES_ESP32C61)
 	return CLOCK_CONTROL_STATUS_UNKNOWN;
 #else
 	uint32_t clk_en_reg = periph_ll_get_clk_en_reg((shared_periph_module_t)module_id);
@@ -51,7 +55,7 @@ static int clock_control_esp32_on(const struct device *dev, clock_control_subsys
 	int module_id = (int)sys;
 
 	if (module_id < ESP32_MODULE_MAX) {
-#if !defined(CONFIG_SOC_SERIES_ESP32P4)
+#if !defined(CONFIG_SOC_SERIES_ESP32P4) && !defined(CONFIG_SOC_SERIES_ESP32C61)
 		periph_module_enable((shared_periph_module_t)module_id);
 #endif
 	} else {
@@ -70,7 +74,7 @@ static int clock_control_esp32_off(const struct device *dev, clock_control_subsy
 	int module_id = (int)sys;
 
 	if (module_id < ESP32_MODULE_MAX) {
-#if !defined(CONFIG_SOC_SERIES_ESP32P4)
+#if !defined(CONFIG_SOC_SERIES_ESP32P4) && !defined(CONFIG_SOC_SERIES_ESP32C61)
 		periph_module_disable((shared_periph_module_t)module_id);
 #endif
 	} else {
@@ -98,6 +102,15 @@ static int clock_control_esp32_get_rate(const struct device *dev, clock_control_
 	case ESP32_CLOCK_CONTROL_SUBSYS_RTC_SLOW_NOMINAL:
 		*rate = esp_clk_tree_lp_slow_get_freq_hz(ESP_CLK_TREE_SRC_FREQ_PRECISION_APPROX);
 		break;
+#if defined(ESP32_EMAC_PTP_MODULE)
+	case ESP32_EMAC_PTP_MODULE:
+		if (esp_clk_tree_src_get_freq_hz(EMAC_PTP_CLK_SRC_DEFAULT,
+						 ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED,
+						 rate) != ESP_OK) {
+			return -EINVAL;
+		}
+		break;
+#endif
 	default:
 		*rate = clk_hal_cpu_get_freq_hz();
 	}
@@ -137,7 +150,7 @@ static int clock_control_esp32_configure(const struct device *dev, clock_control
 
 static int clock_control_esp32_init(const struct device *dev)
 {
-#if !defined(CONFIG_SOC_ESP32_APPCPU) && !defined(CONFIG_SOC_ESP32S3_APPCPU)
+#if !defined(CONFIG_SOC_ESP32_APPCPU_TARGET)
 	const struct esp32_clock_config *cfg = dev->config;
 	int ret;
 
@@ -156,6 +169,16 @@ static int clock_control_esp32_init(const struct device *dev)
 		LOG_ERR("Failed to configure RTC clock");
 		return ret;
 	}
+
+#if defined(CONFIG_SOC_SERIES_ESP32P4)
+	/* Until this runs, esp_clk_tree_enable_src() is a no-op and the PLL
+	 * reference branches keep their cold-boot state. On esp32p4 the 80 MHz
+	 * branch comes up gated, leaving the timers without a functional clock.
+	 * Run it here rather than in early boot, where gating the branches
+	 * stalls the flash bus.
+	 */
+	esp_clk_tree_initialize();
+#endif
 
 	esp_perip_clk_init();
 

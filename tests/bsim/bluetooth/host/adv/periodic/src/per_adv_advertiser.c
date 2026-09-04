@@ -7,7 +7,7 @@
 #include <errno.h>
 #include <zephyr/kernel.h>
 #include <zephyr/types.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/sys/printk.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/hci.h>

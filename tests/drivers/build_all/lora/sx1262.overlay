@@ -4,6 +4,10 @@
  */
 
 / {
+	aliases {
+		lora0 = &test_semtech_sx1262;
+	};
+
 	test {
 		#address-cells = <1>;
 		#size-cells = <1>;

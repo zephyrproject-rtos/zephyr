@@ -33,6 +33,8 @@ extern "C" {
  * @file
  *
  * @defgroup coredump_apis Coredump APIs
+ * @since 2.4
+ * @version 1.0.0
  * @ingroup debug
  * @brief Coredump APIs
  * @{

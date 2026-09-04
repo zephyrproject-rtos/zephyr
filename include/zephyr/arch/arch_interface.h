@@ -412,6 +412,38 @@ void arch_irq_enable(unsigned int irq);
  */
 int arch_irq_is_enabled(unsigned int irq);
 
+#if defined(CONFIG_ARCH_HAS_IRQ_PENDING_OPS) || defined(__DOXYGEN__)
+/**
+ * Clear the pending state of the specified interrupt line
+ *
+ * @see k_irq_clear_pending()
+ */
+void arch_irq_clear_pending(unsigned int irq);
+
+/**
+ * Set the pending state of the specified interrupt line
+ *
+ * @see k_irq_set_pending()
+ */
+void arch_irq_set_pending(unsigned int irq);
+
+/**
+ * Test if the specified interrupt line is pending
+ *
+ * @see k_irq_is_pending()
+ */
+bool arch_irq_is_pending(unsigned int irq);
+#endif
+
+#if defined(CONFIG_ARCH_HAS_IRQ_GET_ACTIVE) || defined(__DOXYGEN__)
+/**
+ * Report the interrupt line being serviced on the current CPU
+ *
+ * @see k_irq_get_active()
+ */
+unsigned int arch_irq_get_active(void);
+#endif
+
 /**
  * Arch-specific hook to install a dynamic interrupt.
  *
@@ -717,6 +749,38 @@ static inline unsigned int arch_num_cpus(void);
 
 /** @} */
 
+
+/**
+ * @addtogroup arch-mmu
+ * @{
+ */
+
+/**
+ * Get the physical address mapped at a virtual address.
+ *
+ * The query is answered from the caller's currently active page tables.
+ * Only mappings that are active in the caller's context are reliably
+ * reported: a virtual address whose mapping is not part of that context
+ * (for example memory belonging to a memory domain that is not currently
+ * active, or per-context data pages such as the scratch page) may be
+ * reported as unmapped or resolve differently. Calling this function on
+ * such addresses is undefined behavior.
+ *
+ * From an implementation standpoint, only the currently installed page
+ * tables need to be consulted, without iterating over other page tables
+ * in the system: anything legitimately queried through this API maps
+ * identically in all of them.
+ *
+ * @param virt Page-aligned virtual address
+ * @param[out] phys Mapped physical address (can be NULL if only checking
+ *                  if virtual address is mapped)
+ *
+ * @retval 0 if mapping is found and valid
+ * @retval -EFAULT if virtual address is not mapped
+ */
+int arch_page_phys_get(void *virt, uintptr_t *phys);
+
+/** @} */
 
 /**
  * @defgroup arch-userspace Architecture-specific userspace APIs

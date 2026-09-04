@@ -18,4 +18,31 @@ config SOC_FAMILY_MAX32_SECURE_SOC_KEY_PATH
 	  Path to the private key used to sign the image. This is used by the
 	  signing tool to sign the image.
 
+choice SOC_FAMILY_MAX32_SECURE_SOC_SIGNING_ALGO
+	prompt "Secure SoC signing algorithm"
+	default SOC_FAMILY_MAX32_SECURE_SOC_SIGNING_ALGO_RSA2048
+	help
+	  Signing algorithm used for secure boot image signing. Set for each
+	  SoC in Kconfig.defconfig files.
+
+config SOC_FAMILY_MAX32_SECURE_SOC_SIGNING_ALGO_RSA2048
+	bool "Secure SoC signing algorithm RSA2048"
+	help
+	  RSA2048 is the signing algorithm for this SoC.
+
+config SOC_FAMILY_MAX32_SECURE_SOC_SIGNING_ALGO_ECDSA256
+	bool "Secure SoC signing algorithm ECDSA256"
+	help
+	  ECDSA256 is the signing algorithm for this SoC.
+
+endchoice
+
+config SOC_FAMILY_MAX32_SECURE_SOC_SIGNATURE_SECTION_SIZE
+	int
+	default 256 if SOC_FAMILY_MAX32_SECURE_SOC_SIGNING_ALGO_RSA2048
+	default 64 if SOC_FAMILY_MAX32_SECURE_SOC_SIGNING_ALGO_ECDSA256
+	help
+	  Size of the signature section reserved during linking. This is determined
+	  by the selected signing algorithm.
+
 endif

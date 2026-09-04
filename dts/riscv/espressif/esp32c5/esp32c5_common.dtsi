@@ -94,6 +94,14 @@
 		status = "disabled";
 	};
 
+	ana_cmpr0: ana_cmpr0 {
+		compatible = "espressif,esp32-ana-cmpr";
+		unit = <0>;
+		interrupts = <GPIO_EXT_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+		interrupt-parent = <&intc>;
+		status = "disabled";
+	};
+
 	soc {
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -470,6 +478,16 @@
 			reg = <0x60088000 0x1000>;
 			clocks = <&clock ESP32_AES_MODULE>;
 			status = "okay";
+		};
+
+		rmt: rmt@60006000 {
+			compatible = "espressif,esp32-rmt";
+			#pulse-io-cells = <1>;
+			reg = <0x60006000 0x1000>;
+			interrupts = <RMT_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupt-parent = <&intc>;
+			clocks = <&clock ESP32_RMT_MODULE>;
+			status = "disabled";
 		};
 	};
 };

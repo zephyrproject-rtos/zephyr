@@ -13,3 +13,9 @@
 &sram0 {
 	reg = <0x20004000 0x4000>;
 };
+
+&lptmr0 {
+	status = "okay";
+	clock-frequency = <16384>;
+	timer-mode-sel = <0>;
+};

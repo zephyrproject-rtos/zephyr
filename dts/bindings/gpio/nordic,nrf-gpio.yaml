@@ -42,6 +42,21 @@ properties:
     description: |
       Enable latch detect mode for this GPIO port.
 
+  hspadctrl-supported:
+    type: boolean
+    description: |
+      High-Speed pad control supported for GPIO port.
+
+  hs-bias:
+    type: int
+    min: 0
+    max: 3
+    default: 3
+    description: |
+      Slew setting for GPIO port. Default to highest/fastest value as recommended by datasheet.
+      Available if hspadctrl is supported for GPIO port, indicated by the hspadctrl-supported
+      property.
+
 gpio-cells:
   - pin
   - flags

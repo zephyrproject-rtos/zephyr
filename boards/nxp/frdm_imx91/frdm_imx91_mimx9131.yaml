@@ -13,11 +13,14 @@ toolchain:
   - cross-compile
 ram: 1024
 supported:
+  - bluetooth
   - can
   - counter
   - net
+  - sdhc
   - uart
   - watchdog
+  - wifi
 testing:
   binaries:
     - flash.bin

@@ -21,7 +21,4 @@ endchoice
 
 endif # SERIAL
 
-configdefault RTC_INIT_PRIORITY
-	default 70 if RTC_COUNTER
-
 endif # SOC_SERIES_AM62LX

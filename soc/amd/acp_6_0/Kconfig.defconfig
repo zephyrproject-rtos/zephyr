@@ -5,7 +5,7 @@ if SOC_ACP_6_0
 configdefault DCACHE_LINE_SIZE
 	default 128
 
-config CACHE_MANAGEMENT
+configdefault CACHE_MANAGEMENT
 	default n
 
 config XTENSA_TIMER

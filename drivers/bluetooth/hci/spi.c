@@ -47,9 +47,9 @@ LOG_MODULE_REGISTER(bt_driver);
 /* Max SPI buffer length for transceive operations.
  *
  * Buffer size needs to be at least the size of the larger RX/TX buffer
- * required by the SPI slave, as the legacy spi_transceive requires both RX/TX
- * to be the same length. Size also needs to be compatible with the
- * slave device used (e.g. nRF5X max buffer length for SPIS is 255).
+ * required by the SPI peripheral, as the legacy spi_transceive requires both
+ * RX/TX to be the same length. Size also needs to be compatible with the
+ * peripheral device used (e.g. nRF5X max buffer length for SPIS is 255).
  */
 #define SPI_MAX_MSG_LEN		255 /* As defined by X-NUCLEO-IDB04A1 BSP */
 
@@ -82,7 +82,7 @@ static K_KERNEL_STACK_DEFINE(spi_rx_stack, CONFIG_BT_DRV_RX_STACK_SIZE);
 static struct k_thread spi_rx_thread_data;
 
 static const struct spi_dt_spec bus = SPI_DT_SPEC_INST_GET(
-	0, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8));
+	0, SPI_OP_MODE_CONTROLLER | SPI_TRANSFER_MSB | SPI_WORD_SET(8));
 
 static struct spi_buf spi_tx_buf;
 static struct spi_buf spi_rx_buf;
@@ -141,8 +141,8 @@ static bool bt_spi_handle_vendor_evt(uint8_t *msg)
 
 static int bt_spi_get_header(uint8_t op, uint16_t *size)
 {
-	uint8_t header_master[5] = {op, 0, 0, 0, 0};
-	uint8_t header_slave[5];
+	uint8_t header_controller[5] = {op, 0, 0, 0, 0};
+	uint8_t header_peripheral[5];
 	bool reading = (op == SPI_READ);
 	bool loop_cond;
 	uint8_t size_offset;
@@ -156,21 +156,21 @@ static int bt_spi_get_header(uint8_t op, uint16_t *size)
 	}
 
 	do {
-		ret = bt_spi_transceive(header_master, 5, header_slave, 5);
+		ret = bt_spi_transceive(header_controller, 5, header_peripheral, 5);
 		if (ret) {
 			break;
 		}
 		if (reading) {
 			/* When reading, keep looping if there is not yet any data */
-			loop_cond = header_slave[STATUS_HEADER_TOREAD] == 0U;
+			loop_cond = header_peripheral[STATUS_HEADER_TOREAD] == 0U;
 		} else {
 			/* When writing, keep looping if all bytes are zero */
-			loop_cond = ((header_slave[1] | header_slave[2] | header_slave[3] |
-					header_slave[4]) == 0U);
+			loop_cond = ((header_peripheral[1] | header_peripheral[2] |
+				      header_peripheral[3] | header_peripheral[4]) == 0U);
 		}
-	} while ((header_slave[STATUS_HEADER_READY] != READY_NOW) || loop_cond);
+	} while ((header_peripheral[STATUS_HEADER_READY] != READY_NOW) || loop_cond);
 
-	*size = (reading ? header_slave[size_offset] : SPI_MAX_MSG_LEN);
+	*size = (reading ? header_peripheral[size_offset] : SPI_MAX_MSG_LEN);
 
 	return ret;
 }

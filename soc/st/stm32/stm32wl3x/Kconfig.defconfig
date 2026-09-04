@@ -1,0 +1,14 @@
+# STMicroelectronics STM32WL3 MCU series
+
+# Copyright (c) 2026 Anders Frandsen <anfran@anfran.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_STM32WL3X
+
+# STM32WL30x/31x/33x must be exposed as STM32WL3XX at HAL level.
+# FIXME: not currently possible. "stm32wl33" is used temporarily
+# instead as it is recognized as STM32WL3XX due to a legacy alias.
+configdefault STM32CUBE_SOC_NAME_OVERRIDE
+	default "stm32wl33" if SOC_STM32WL30XX || SOC_STM32WL31XX || SOC_STM32WL33XX
+
+endif # SOC_SERIES_STM32WL3X

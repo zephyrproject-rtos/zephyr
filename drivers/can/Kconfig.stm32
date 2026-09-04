@@ -53,6 +53,7 @@ config CAN_STM32_FDCAN
 	default y
 	depends on DT_HAS_ST_STM32_FDCAN_ENABLED
 	select CAN_MCAN
+	select CAN_MCAN_FIXED_MRAM_LAYOUT
 	select PINCTRL
 
 if CAN_STM32_FDCAN

@@ -14,7 +14,6 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/dt-bindings/clock/nrf-auxpll.h>
-#include "clock_control_nrf2_common.h"
 
 #include <hal/nrf_auxpll.h>
 
@@ -122,6 +121,14 @@ static void onoff_stop_auxpll(struct onoff_manager *mgr, onoff_notify_fn notify)
 
 	clock_control_nrf_auxpll_off(dev_data);
 	notify(mgr, 0);
+}
+
+static int api_nosys_on_off(const struct device *dev, clock_control_subsys_t sys)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(sys);
+
+	return -ENOSYS;
 }
 
 static int api_request_auxpll(const struct device *dev,

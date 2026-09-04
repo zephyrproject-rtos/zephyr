@@ -30,7 +30,6 @@
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,display = &ssd1306_128x64;
-		zephyr,sdhc = &sdhc1;
 	};
 
 	leds {

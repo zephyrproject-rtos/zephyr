@@ -79,7 +79,7 @@ can be disabled if not needed.
   Both :zephyr:code-sample:`coap-client` and :zephyr:code-sample:`coap-server` sample
   applications are provided.
 
-* **LWM2M** OMA Lightweight Machine-to-Machine Protocol
+* **LwM2M** OMA Lightweight Machine-to-Machine Protocol
   (`LwM2M specification 1.0.2`_) is supported via the "Bootstrap", "Client
   Registration", "Device Management & Service Enablement" and "Information
   Reporting" interfaces.  The required core LwM2M objects are implemented as

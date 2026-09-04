@@ -1,0 +1,16 @@
+common:
+  platform_allow:
+    - adp_xc7k/ae350
+  filter: CONFIG_CUSTOM_STACK_GUARD
+  ignore_faults: true
+  tags:
+    - kernel
+    - riscv
+
+tests:
+  arch.riscv.custom-stack-guard.no-mt.main-stack-overflow:
+    extra_configs:
+      - CONFIG_MULTITHREADING=n
+  arch.riscv.custom-stack-guard.mt.thread-stack-overflow:
+    extra_configs:
+      - CONFIG_MULTITHREADING=y

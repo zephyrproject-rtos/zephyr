@@ -75,7 +75,12 @@
  * cache is at the bottom, so usable RAM ends at the ROM reserved region.
  */
 #if defined(CONFIG_SOC_ESP32P4_REV_1_3)
-#define DRAM_HW_USER_END (HPSRAM_BASE + HPSRAM_TOTAL_SIZE - L2_CACHE_SIZE)
+/* HP SRAM base and size as plain literals: start.S needs this expression to
+ * survive the assembler, which cannot evaluate devicetree macros.
+ */
+#define HPSRAM_LOW       0x4ff00000
+#define HPSRAM_TOTAL     0xc0000
+#define DRAM_HW_USER_END (HPSRAM_LOW + HPSRAM_TOTAL - L2_CACHE_SIZE)
 #else
 #define DRAM_HW_USER_END DRAM_ROM_RESERVED_START
 #endif

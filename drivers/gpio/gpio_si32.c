@@ -6,6 +6,7 @@
 
 #define DT_DRV_COMPAT silabs_si32_gpio
 
+#include <zephyr/irq.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/gpio/gpio_utils.h>
@@ -183,10 +184,7 @@ static int gpio_si32_init(const struct device *dev)
 
 #define GPIO_DEVICE_INIT(inst)                                                                     \
 	static const struct gpio_si32_config gpio_si32_cfg_##inst = {                              \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_NGPIOS(16U),              \
-			},                                                                         \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(inst),                                   \
 		.base = (SI32_PBSTD_A_Type *)DT_INST_REG_ADDR(inst),                               \
 		.disable_pullups = DT_INST_PROP(inst, disable_pullups),                            \
 	};                                                                                         \
@@ -208,7 +206,7 @@ static void gpio_si32_irq_handler(const struct device *arg)
 	ARG_UNUSED(arg);
 
 	irq_disable(PMATCH_IRQn);
-	NVIC_ClearPendingIRQ(PMATCH_IRQn);
+	k_irq_clear_pending(PMATCH_IRQn);
 
 	for (size_t i = 0; i < ARRAY_SIZE(gpio_devices); i++) {
 		const struct device *dev = gpio_devices[i];

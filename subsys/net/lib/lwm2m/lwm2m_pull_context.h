@@ -10,7 +10,7 @@
 
 #include <stdio.h>
 #include <zephyr/net/lwm2m.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 
 #define LWM2M_PACKAGE_URI_LEN CONFIG_LWM2M_SWMGMT_PACKAGE_URI_LEN
 
@@ -24,7 +24,7 @@ struct requesting_object {
 };
 
 /*
- * The pull context is also used in the LWM2M's Software Management object.
+ * The pull context is also used in the LwM2M's Software Management object.
  * This means that the transfer needs to know if it's used for firmware or
  * something else.
  */

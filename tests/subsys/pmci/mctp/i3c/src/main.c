@@ -6,6 +6,7 @@
 
 #include <zephyr/types.h>
 #include <zephyr/kernel.h>
+#include <errno.h>
 #include <libmctp.h>
 #include <zephyr/pmci/mctp/mctp_i3c_controller.h>
 #include <zephyr/pmci/mctp/mctp_i3c_target.h>
@@ -21,6 +22,9 @@ K_SEM_DEFINE(mctp_rx, 0, 1);
 
 static const struct device *i3c_controller = DEVICE_DT_GET(DT_NODELABEL(i3c_controller));
 static const struct device *mctp_endpoint0 = DEVICE_DT_GET(DT_NODELABEL(mctp_endpoint0));
+
+K_THREAD_STACK_DEFINE(target_reply_workq_stack, 1024);
+static struct k_work_q target_reply_workq;
 
 struct reply_data {
 	struct k_work work;
@@ -71,7 +75,7 @@ static void rx_message_target(uint8_t eid, bool tag_owner, uint8_t msg_tag, void
 	zassert_ok(memcmp(msg, "ping", sizeof("ping")));
 
 	reply_handler.eid = eid;
-	k_work_submit(&reply_handler.work);
+	k_work_submit_to_queue(&target_reply_workq, &reply_handler.work);
 }
 
 static void rx_message_target_big_msg(uint8_t eid, bool tag_owner, uint8_t msg_tag, void *data,
@@ -88,7 +92,7 @@ static void rx_message_target_big_msg(uint8_t eid, bool tag_owner, uint8_t msg_t
 	zassert_ok(memcmp(msg, big_message, sizeof(big_message)));
 
 	reply_handler.eid = eid;
-	k_work_submit(&reply_handler.work);
+	k_work_submit_to_queue(&target_reply_workq, &reply_handler.work);
 }
 
 static struct mctp *init_target(void (*rx_callback)(uint8_t eid, bool tag_owner, uint8_t msg_tag,
@@ -140,6 +144,20 @@ static void rx_message_big(uint8_t eid, bool tag_owner, uint8_t msg_tag, void *d
 static void *suite_setup(void)
 {
 	int rc;
+	const struct device *i3c_target = mctp_i3c_target.i3c;
+
+	k_work_queue_init(&target_reply_workq);
+	k_work_queue_start(&target_reply_workq, target_reply_workq_stack,
+			   K_THREAD_STACK_SIZEOF(target_reply_workq_stack),
+			   CONFIG_SYSTEM_WORKQUEUE_PRIORITY, NULL);
+
+	/* Some boards use deferred init for I3C devices while others initialize
+	 * them during system boot. Treat both as valid setup states.
+	 */
+	rc = device_init(i3c_target);
+	if (rc != 0 && rc != -EALREADY) {
+		zassert_ok(rc, "Failed to initialize I3C target device");
+	}
 
 	/* The I3C target must be registered with the hardware before the
 	 * controller initializes. On NPCX4, the controller sends a target
@@ -150,14 +168,18 @@ static void *suite_setup(void)
 	 * init_target() will later re-register the same pointer, which is
 	 * idempotent on the NPCX driver.
 	 */
-	rc = i3c_target_register(mctp_i3c_target.i3c, &mctp_i3c_target.i3c_target_cfg);
+	rc = i3c_target_register(i3c_target, &mctp_i3c_target.i3c_target_cfg);
 	zassert_ok(rc, "Failed to pre-register I3C target");
 
 	rc = device_init(i3c_controller);
-	zassert_ok(rc, "Failed to initialize I3C controller device");
+	if (rc != 0 && rc != -EALREADY) {
+		zassert_ok(rc, "Failed to initialize I3C controller device");
+	}
 
 	rc = device_init(mctp_endpoint0);
-	zassert_ok(rc, "Failed to initialize MCTP endpoint device");
+	if (rc != 0 && rc != -EALREADY) {
+		zassert_ok(rc, "Failed to initialize MCTP endpoint device");
+	}
 
 	return NULL;
 }

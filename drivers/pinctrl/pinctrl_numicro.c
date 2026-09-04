@@ -76,7 +76,7 @@ static int gpio_configure(const pinctrl_soc_pin_t *pin)
 		     ((pin->input_debounce ? 1 : 0) << pin_idx);
 	port->SMTEN = (port->SMTEN & ~BIT(pin_idx)) |
 		      ((pin->schmitt_trigger ? 1 : 0) << pin_idx);
-	port->DINOFF = (port->SMTEN & ~DINOFF_MASK(pin_idx)) |
+	port->DINOFF = (port->DINOFF & ~DINOFF_MASK(pin_idx)) |
 		       ((pin->input_disable ? 1 : 0) << DINOFF_PIN_SHIFT(pin_idx));
 	port->PUSEL = (port->PUSEL & ~PUSEL_MASK(pin_idx)) |
 		      (bias << PUSEL_PIN_SHIFT(pin_idx));

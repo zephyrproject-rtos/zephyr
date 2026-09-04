@@ -16,6 +16,10 @@
 		ranges = <0x34000000 0x24000000 DT_SIZE_M(2)>;
 	};
 
+	memory@3c000000 {
+		ranges = <0x3c000000 0x2c000000 DT_SIZE_K(8)>;
+	};
+
 	soc {
 		peripherals@40000000 {
 			ranges = <0x50000000 0x40000000 DT_SIZE_M(256)>,

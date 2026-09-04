@@ -13,15 +13,6 @@
 /** Maximum number of algorithms in pubKeyCredParams */
 #define FIDO2_MAX_ALGORITHMS 8
 
-/** Maximum PIN auth param size across all supported protocols */
-#define FIDO2_CBOR_PIN_AUTH_MAX_SIZE 32
-
-/** Maximum encrypted PIN size */
-#define FIDO2_CBOR_PIN_ENC_MAX_SIZE 80
-
-/** Encrypted PIN hash size */
-#define FIDO2_CBOR_PIN_HASH_ENC_SIZE 32
-
 /** Number of attestation statement format identifiers */
 #define FIDO2_CBOR_MAX_ATTESTATION_FORMATS 4
 
@@ -77,7 +68,7 @@ struct fido2_make_credential_params {
 	/** Whether options.uv was present */
 	bool has_uv_option;
 	/** 0x08: pinUvAuthParam */
-	uint8_t pin_uv_auth_param[FIDO2_CBOR_PIN_AUTH_MAX_SIZE];
+	uint8_t pin_uv_auth_param[FIDO2_PIN_AUTH_MAX_SIZE];
 	/** Length of pinUvAuthParam (0 = probe, 16 = P1, 32 = P2) */
 	size_t pin_uv_auth_param_len;
 	/** Whether pinUvAuthParam key was present */
@@ -120,7 +111,7 @@ struct fido2_get_assertion_params {
 	/** Whether options.uv was present */
 	bool has_uv_option;
 	/** 0x06: pinUvAuthParam */
-	uint8_t pin_uv_auth_param[FIDO2_CBOR_PIN_AUTH_MAX_SIZE];
+	uint8_t pin_uv_auth_param[FIDO2_PIN_AUTH_MAX_SIZE];
 	/** Length of pinUvAuthParam (0 = probe, 16 = P1, 32 = P2) */
 	size_t pin_uv_auth_param_len;
 	/** Whether pinUvAuthParam key was present */
@@ -157,19 +148,19 @@ struct fido2_client_pin_params {
 	/** Whether keyAgreement was present */
 	bool has_key_agreement;
 	/** 0x04: pinUvAuthParam */
-	uint8_t pin_uv_auth_param[FIDO2_CBOR_PIN_AUTH_MAX_SIZE];
+	uint8_t pin_uv_auth_param[FIDO2_PIN_AUTH_MAX_SIZE];
 	/** Length of pinUvAuthParam */
 	size_t pin_uv_auth_param_len;
 	/** Whether pinUvAuthParam was present */
 	bool has_pin_uv_auth_param;
 	/** 0x05: newPinEnc */
-	uint8_t new_pin_enc[FIDO2_CBOR_PIN_ENC_MAX_SIZE];
+	uint8_t new_pin_enc[FIDO2_PIN_ENC_MAX_SIZE];
 	/** newPinEnc len */
 	size_t new_pin_enc_len;
 	/** Whether newPinEnc was present */
 	bool has_new_pin_enc;
 	/** 0x06: pinHashEnc */
-	uint8_t pin_hash_enc[FIDO2_CBOR_PIN_HASH_ENC_SIZE];
+	uint8_t pin_hash_enc[FIDO2_PIN_HASH_ENC_MAX_SIZE];
 	/** pinHashEnc len */
 	size_t pin_hash_enc_len;
 	/** Whether pinHashEnc was present */

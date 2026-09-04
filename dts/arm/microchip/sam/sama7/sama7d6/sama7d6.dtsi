@@ -19,6 +19,10 @@
 		rtc = &rtc;
 	};
 
+	chosen {
+		zephyr,entropy = &trng;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -221,6 +225,42 @@
 			status = "disabled";
 		};
 
+		ethernet@e1618000 {
+			compatible = "microchip,sam-ethernet-controller";
+			reg = <0xe1618000 0x4000>;
+			clocks = <&pmc PMC_TYPE_GCK 46>;
+
+			gmac0: ethernet {
+				compatible = "atmel,sam-gmac";
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 46 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					     <GIC_SPI 144 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					     <GIC_SPI 145 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					     <GIC_SPI 146 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					     <GIC_SPI 147 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
+					     <GIC_SPI 148 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				interrupt-names = "gmac", "q1", "q2", "q3", "q4", "q5";
+				num-queues = <6>;
+				status = "disabled";
+			};
+
+			gmac0_mdio: mdio {
+				compatible = "atmel,sam-mdio";
+				status = "disabled";
+				#address-cells = <1>;
+				#size-cells = <0>;
+			};
+		};
+
+		trng: rng@e160c000 {
+			compatible = "microchip,trng-g2-entropy";
+			reg = <0xe160c000 0x100>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 92 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 92>;
+			status = "disabled";
+		};
+
 		pit64b0: timer@e1800000 {
 			compatible = "microchip,sam-pit64b", "microchip,sam9x60-pit64b";
 			reg = <0xe1800000 0x4000>;
@@ -228,6 +268,16 @@
 			clock-names = "pclk", "gclk";
 			interrupt-parent = <&gic>;
 			interrupts = <GIC_SPI 66 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		};
+
+		pwm: pwm@e1818000 {
+			compatible = "microchip,pwm-g1";
+			reg = <0xe1818000 0x4000>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 72 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 72>;
+			#pwm-cells = <3>;
+			status = "disabled";
 		};
 
 		flx0: flexcom@e1820000 {

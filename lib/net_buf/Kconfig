@@ -49,6 +49,22 @@ config NET_BUF_POOL_USAGE
 	  * total size of the pool is calculated
 	  * pool name is stored and can be shown in debugging prints
 
+config NET_BUF_HARDENING
+	bool "Network buffer runtime integrity checks"
+	help
+	  Enable always-on (not assert-gated) integrity checks on the network
+	  buffer length/pointer fields before mutating a buffer. A buffer whose
+	  len/data have been corrupted so that they no longer fit within the
+	  buffer's own storage (e.g. len wrapped to a large value, or data moved
+	  outside __buf..__buf+size) is rejected fail-closed: the mutating
+	  operation returns NULL instead of reading or writing out of bounds.
+
+	  This turns a would-be out-of-bounds access (in particular the
+	  tailroom-underflow -> net_buf_add() overflow) into a controlled
+	  failure. It adds a small runtime cost to net_buf_simple_add()/push()/
+	  pull()/remove() and is intended for security-sensitive builds; leave
+	  disabled to keep the fast path assert-only.
+
 config NET_BUF_ALIGNMENT
 	int "Network buffer alignment restriction"
 	default 0

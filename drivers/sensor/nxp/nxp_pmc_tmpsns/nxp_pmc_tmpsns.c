@@ -210,7 +210,7 @@ static DEVICE_API(sensor, nxp_pmc_tmpsns_api) = {
 		.adc_seq = {									\
 			.channels = BIT(DT_INST_IO_CHANNELS_INPUT(inst)),			\
 			.buffer = &_CONCAT(nxp_pmc_tmpsns_data, inst).buffer,			\
-			.buffer_size = sizeof(_CONCAT(nxp_pmc_tmpsns_data, inst)),		\
+			.buffer_size = sizeof(_CONCAT(nxp_pmc_tmpsns_data, inst).buffer),	\
 			.resolution = 16,							\
 			.oversampling = 7,							\
 		},										\

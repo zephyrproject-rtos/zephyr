@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2025 Philipp Steiner <philipp.steiner1987@gmail.com>
+ * Copyright (c) 2025 Philipp Steiner
  *
  * SPDX-License-Identifier: Apache-2.0
  *
@@ -474,7 +474,7 @@ static int lc709203f_init(const struct device *dev)
 
 	if (config->thermistor) {
 		LOG_DBG("Set temperature mode: %d", config->thermistor_mode);
-		lc709203f_set_temp_mode(dev, config->thermistor_mode);
+		ret = lc709203f_set_temp_mode(dev, config->thermistor_mode);
 		if (ret) {
 			LOG_ERR("Failed to set temperature mode: %d", ret);
 		}

@@ -275,7 +275,7 @@ static int prepare_cb(struct lll_prepare_param *p)
 	radio_tmr_tifs_set(cis_lll->tifs_us);
 
 #if defined(CONFIG_BT_CTLR_PHY)
-	radio_switch_complete_and_tx(cis_lll->rx.phy, 0U, cis_lll->tx.phy,
+	radio_switch_complete_and_tx(cis_lll->rx.phy, PHY_FLAGS_UNUSED, cis_lll->tx.phy,
 				     cis_lll->tx.phy_flags);
 #else /* !CONFIG_BT_CTLR_PHY */
 	radio_switch_complete_and_tx(0U, 0U, 0U, 0U);
@@ -642,6 +642,18 @@ static void isr_rx(void *param)
 			}
 #endif /* CONFIG_BT_CTLR_LE_ENC */
 
+			/* Discard the received PDU, whether unencrypted or the
+			 * decrypted, with length that exceeds the configured
+			 * maximum receive data length used to setup the radio
+			 * packet reception.
+			 */
+			if (pdu_rx->len > cis_lll->rx.max_pdu) {
+				radio_isr_set(isr_done, param);
+				radio_disable();
+
+				return;
+			}
+
 			/* Enqueue Rx ISO PDU */
 			node_rx->hdr.type = NODE_RX_TYPE_ISO_PDU;
 			node_rx->hdr.handle = cis_lll->handle;
@@ -974,7 +986,7 @@ static void isr_tx(void *param)
 	radio_tmr_tifs_set(cis_lll->tifs_us);
 
 #if defined(CONFIG_BT_CTLR_PHY)
-	radio_switch_complete_and_tx(cis_lll->rx.phy, 0U, cis_lll->tx.phy,
+	radio_switch_complete_and_tx(cis_lll->rx.phy, PHY_FLAGS_UNUSED, cis_lll->tx.phy,
 				     cis_lll->tx.phy_flags);
 #else /* !CONFIG_BT_CTLR_PHY */
 	radio_switch_complete_and_tx(0U, 0U, 0U, 0U);
@@ -1207,7 +1219,7 @@ static void isr_prepare_subevent_common(void *param)
 	radio_tmr_tifs_set(cis_lll->tifs_us);
 
 #if defined(CONFIG_BT_CTLR_PHY)
-	radio_switch_complete_and_tx(cis_lll->rx.phy, 0U, cis_lll->tx.phy,
+	radio_switch_complete_and_tx(cis_lll->rx.phy, PHY_FLAGS_UNUSED, cis_lll->tx.phy,
 				     cis_lll->tx.phy_flags);
 #else /* !CONFIG_BT_CTLR_PHY */
 	radio_switch_complete_and_tx(0U, 0U, 0U, 0U);

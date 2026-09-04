@@ -7,7 +7,11 @@
 #ifndef ZEPHYR_INCLUDE_TOOLCHAIN_IAR_H_
 #define ZEPHYR_INCLUDE_TOOLCHAIN_IAR_H_
 
-#define TOOLCHAIN_HAS_PRAGMA_DIAG
+#ifndef ZEPHYR_INCLUDE_TOOLCHAIN_H_
+#error Please do not include toolchain-specific headers directly, use <zephyr/toolchain.h> instead
+#endif
+
+#define TOOLCHAIN_HAS_PRAGMA_DIAG 1
 
 #define _TOOLCHAIN_DISABLE_WARNING(warning) TOOLCHAIN_PRAGMA(diag_suppress = warning)
 #define _TOOLCHAIN_ENABLE_WARNING(warning)  TOOLCHAIN_PRAGMA(diag_default = warning)
@@ -64,6 +68,17 @@
  */
 #ifndef TOOLCHAIN_WARNING_DELETE_NON_VIRTUAL_DTOR
 #define TOOLCHAIN_WARNING_DELETE_NON_VIRTUAL_DTOR Pe001
+#endif
+
+/**
+ * @def TOOLCHAIN_WARNING_DEPRECATED_DECLARATIONS
+ * @brief Toolchain-specific warning for deprecated declarations
+ *
+ * Use this as an argument to the @ref TOOLCHAIN_DISABLE_WARNING and
+ * @ref TOOLCHAIN_ENABLE_WARNING family of macros.
+ */
+#ifndef TOOLCHAIN_WARNING_DEPRECATED_DECLARATIONS
+#define TOOLCHAIN_WARNING_DEPRECATED_DECLARATIONS Pe1215
 #endif
 
 /**
@@ -135,8 +150,5 @@
 #ifdef __ICCARM__
 #include "iar/iccarm.h"
 #endif
-#ifdef __ICCRISCV__
-#include "iar/iccriscv.h"
-#endif
 
-#endif /* ZEPHYR_INCLUDE_TOOLCHAIN_ICCARM_H_ */
+#endif /* ZEPHYR_INCLUDE_TOOLCHAIN_IAR_H_ */

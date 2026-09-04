@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "hw_init.h"
+#include <hw_init.h>
 #include <stdint.h>
 #include <esp_cpu.h>
 #include <soc/rtc.h>

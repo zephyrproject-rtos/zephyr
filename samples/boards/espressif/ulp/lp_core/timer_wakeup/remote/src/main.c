@@ -5,9 +5,9 @@
  */
 
 #include <stdint.h>
-#include "ulp_lp_core_utils.h"
-#include "ulp_lp_core_memory_shared.h"
-#include "ulp_lp_core_lp_timer_shared.h"
+#include <ulp_lp_core_utils.h>
+#include <ulp_lp_core_memory_shared.h>
+#include <ulp_lp_core_lp_timer_shared.h>
 
 int main(void)
 {

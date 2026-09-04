@@ -784,6 +784,9 @@ void tcp_server_block_thread(void *vps_sock, void *unused2, void *unused3)
 			chunk_size = remain;
 		}
 
+		/* Validate that peeking doesn't affect the next recv */
+		recved = zsock_recv(new_sock, buffer, 1, ZSOCK_MSG_PEEK);
+
 		recved = zsock_recv(new_sock, buffer, chunk_size, 0);
 
 		zassert(recved > 0, "received bigger then 0",

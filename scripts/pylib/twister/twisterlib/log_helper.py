@@ -65,6 +65,32 @@ def setup_logging(outdir, log_file, log_level, timestamps):
     logger.addHandler(file_handler)
 
 
+def mute_console_logging():
+    '''Detach the console (stream) handlers from the twister logger.
+
+    File handlers are kept, so everything still lands in twister.log. Used
+    while a full-screen UI (--console-monitor) owns the terminal. Returns
+    the removed handlers for restore_console_logging().
+    '''
+    logger = logging.getLogger("twister")
+    muted = [
+        handler for handler in logger.handlers
+        if isinstance(handler, logging.StreamHandler)
+        and not isinstance(handler, logging.FileHandler)
+    ]
+    for handler in muted:
+        logger.removeHandler(handler)
+    return muted
+
+
+def restore_console_logging(handlers):
+    '''Re-attach handlers previously removed by mute_console_logging().'''
+    logger = logging.getLogger("twister")
+    for handler in handlers:
+        if handler not in logger.handlers:
+            logger.addHandler(handler)
+
+
 def close_logging():
     logger = logging.getLogger("twister")
     handlers = logger.handlers[:]

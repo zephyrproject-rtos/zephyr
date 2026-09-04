@@ -184,8 +184,9 @@ static int st7735r_write(const struct device *dev,
 	struct display_buffer_descriptor mipi_desc;
 
 	__ASSERT(desc->width <= desc->pitch, "Pitch is smaller than width");
-	__ASSERT((desc->pitch * ST7735R_PIXEL_SIZE * desc->height)
-		 <= desc->buf_size, "Input buffer too small");
+	__ASSERT(((((size_t)desc->height - 1U) * desc->pitch + desc->width) *
+		  ST7735R_PIXEL_SIZE) <= desc->buf_size,
+		 "Input buffer too small");
 
 	LOG_DBG("Writing %dx%d (w,h) @ %dx%d (x,y)",
 		desc->width, desc->height, x, y);
@@ -198,7 +199,7 @@ static int st7735r_write(const struct device *dev,
 		write_h = 1U;
 		nbr_of_writes = desc->height;
 		mipi_desc.height = 1;
-		mipi_desc.buf_size = desc->pitch * ST7735R_PIXEL_SIZE;
+		mipi_desc.buf_size = desc->width * ST7735R_PIXEL_SIZE;
 	} else {
 		write_h = desc->height;
 		nbr_of_writes = 1U;
@@ -493,7 +494,7 @@ static DEVICE_API(display, st7735r_api) = {
 	const static struct st7735r_config st7735r_config_ ## inst = {		\
 		.mipi_dev = DEVICE_DT_GET(DT_INST_PARENT(inst)),		\
 		.dbi_config = MIPI_DBI_CONFIG_DT_INST(inst,			\
-				SPI_OP_MODE_MASTER |				\
+				SPI_OP_MODE_CONTROLLER |			\
 				((DT_INST_STRING_UPPER_TOKEN(inst, mipi_mode) == \
 				 MIPI_DBI_MODE_SPI_4WIRE) ? SPI_WORD_SET(8) :	\
 				 SPI_WORD_SET(9)) |				\

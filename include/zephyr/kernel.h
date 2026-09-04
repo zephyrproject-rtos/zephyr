@@ -20,6 +20,7 @@
 #include <stdbool.h>
 #include <zephyr/toolchain.h>
 #include <zephyr/tracing/tracing_macros.h>
+#include <zephyr/sleep.h>
 #include <zephyr/sys/mem_stats.h>
 #include <zephyr/sys/iterable_sections.h>
 #include <zephyr/sys/ring_buffer.h>
@@ -745,57 +746,6 @@ void k_thread_system_pool_assign(struct k_thread *thread);
 __syscall int k_thread_join(struct k_thread *thread, k_timeout_t timeout);
 
 /**
- * @brief Put the current thread to sleep.
- *
- * This routine puts the current thread to sleep for @a duration,
- * specified as a k_timeout_t object.
- *
- * @param timeout Desired duration of sleep.
- *
- * @return Zero if the requested time has elapsed or the time left to
- * sleep rounded up to the nearest millisecond (e.g. if the thread was
- * awoken by the \ref k_wakeup call).  Will be clamped to INT_MAX in
- * the case where the remaining time is unrepresentable in an int32_t.
- * If @a timeout is K_FOREVER and the thread is woken early via
- * k_wakeup(), -1 is returned.
- */
-__syscall int32_t k_sleep(k_timeout_t timeout);
-
-/**
- * @brief Put the current thread to sleep.
- *
- * This routine puts the current thread to sleep for @a duration milliseconds.
- *
- * @param ms Number of milliseconds to sleep.
- *
- * @return Zero if the requested time has elapsed or if the thread was woken up
- * by the \ref k_wakeup call, the time left to sleep rounded up to the nearest
- * millisecond.
- */
-static inline int32_t k_msleep(int32_t ms)
-{
-	return k_sleep(Z_TIMEOUT_MS(ms));
-}
-
-/**
- * @brief Put the current thread to sleep with microsecond resolution.
- *
- * This function is unlikely to work as expected without kernel tuning.
- * In particular, because the lower bound on the duration of a sleep is
- * the duration of a tick, @kconfig{CONFIG_SYS_CLOCK_TICKS_PER_SEC} must be
- * adjusted to achieve the resolution desired. The implications of doing
- * this must be understood before attempting to use k_usleep(). Use with
- * caution.
- *
- * @param us Number of microseconds to sleep.
- *
- * @return Zero if the requested time has elapsed or if the thread was woken up
- * by the \ref k_wakeup call, the time left to sleep rounded up to the nearest
- * microsecond.
- */
-__syscall int32_t k_usleep(int32_t us);
-
-/**
  * @brief Cause the current thread to busy wait.
  *
  * This routine causes the current thread to execute a "do nothing" loop for
@@ -928,8 +878,9 @@ static inline k_tid_t k_current_get(void)
  * off all kernel queues it is part of (i.e. the ready queue, the timeout
  * queue, or a kernel object wait queue). However, any kernel resources the
  * thread might currently own (such as mutexes or memory blocks) are not
- * released. It is the responsibility of the caller of this routine to ensure
- * all necessary cleanup is performed.
+ * released. If priority inheritance is enabled, the thread's held mutex
+ * list will also be left in an inconsistent state. It is the responsibility
+ * of the caller of this routine to ensure all necessary cleanup is performed.
  *
  * After k_thread_abort() returns, the thread is guaranteed not to be
  * running or to become runnable anywhere on the system.  Normally
@@ -2437,8 +2388,8 @@ __syscall void k_queue_cancel_wait(struct k_queue *queue);
  * @brief Append an element to the end of a queue.
  *
  * This routine appends a data item to @a queue. A queue data item must be
- * aligned on a word boundary, and the first word of the item is reserved
- * for the kernel's use.
+ * aligned as required for a pointer, and its first pointer-sized field is
+ * reserved for the kernel's use.
  *
  * @isr_ok
  *
@@ -2469,8 +2420,8 @@ __syscall int32_t k_queue_alloc_append(struct k_queue *queue, void *data);
  * @brief Prepend an element to a queue.
  *
  * This routine prepends a data item to @a queue. A queue data item must be
- * aligned on a word boundary, and the first word of the item is reserved
- * for the kernel's use.
+ * aligned as required for a pointer, and its first pointer-sized field is
+ * reserved for the kernel's use.
  *
  * @isr_ok
  *
@@ -2501,8 +2452,8 @@ __syscall int32_t k_queue_alloc_prepend(struct k_queue *queue, void *data);
  * @brief Inserts an element to a queue.
  *
  * This routine inserts a data item to @a queue after previous item. A queue
- * data item must be aligned on a word boundary, and the first word of
- * the item is reserved for the kernel's use.
+ * data item must be aligned as required for a pointer, and its first
+ * pointer-sized field is reserved for the kernel's use.
  *
  * @isr_ok
  *
@@ -2516,8 +2467,8 @@ void k_queue_insert(struct k_queue *queue, void *prev, void *data);
  * @brief Atomically append a list of elements to a queue.
  *
  * This routine adds a list of data items to @a queue in one operation.
- * The data items must be in a singly-linked list, with the first word
- * in each data item pointing to the next data item; the list must be
+ * The data items must be in a singly-linked list, with the first pointer-sized
+ * field in each data item pointing to the next data item; the list must be
  * NULL-terminated.
  *
  * @isr_ok
@@ -2554,8 +2505,8 @@ int k_queue_merge_slist(struct k_queue *queue, sys_slist_t *list);
 /**
  * @brief Get an element from a queue.
  *
- * This routine removes first data item from @a queue. The first word of the
- * data item is reserved for the kernel's use.
+ * This routine removes first data item from @a queue. The first pointer-sized
+ * field of the data item is reserved for the kernel's use.
  *
  * @note @a timeout must be set to K_NO_WAIT if called from ISR.
  *
@@ -2573,9 +2524,9 @@ __syscall void *k_queue_get(struct k_queue *queue, k_timeout_t timeout);
 /**
  * @brief Remove an element from a queue.
  *
- * This routine removes data item from @a queue. The first word of the
- * data item is reserved for the kernel's use. Removing elements from k_queue
- * rely on sys_slist_find_and_remove which is not a constant time operation.
+ * This routine removes data item from @a queue. The first pointer-sized field
+ * of the data item is reserved for the kernel's use. Removing elements from
+ * k_queue rely on sys_slist_find_and_remove which is not a constant time operation.
  *
  * @isr_ok
  *
@@ -2589,9 +2540,9 @@ bool k_queue_remove(struct k_queue *queue, void *data);
 /**
  * @brief Append an element to a queue only if it's not present already.
  *
- * This routine appends data item to @a queue. The first word of the data
- * item is reserved for the kernel's use. Appending elements to k_queue
- * relies on sys_slist_is_node_in_list which is not a constant time operation.
+ * This routine appends data item to @a queue. The first pointer-sized field of
+ * the data item is reserved for the kernel's use. Appending elements to
+ * k_queue relies on sys_slist_is_node_in_list which is not a constant time operation.
  *
  * @isr_ok
  *
@@ -3087,8 +3038,8 @@ struct k_fifo {
 /**
  * @brief Add an element to a FIFO queue.
  *
- * This routine adds a data item to @a fifo. A FIFO data item must be
- * aligned on a word boundary, and the first word of the item is reserved
+ * This routine adds a data item to @a fifo. A FIFO data item must be aligned
+ * as required for a pointer, and its first pointer-sized field is reserved
  * for the kernel's use.
  *
  * @isr_ok
@@ -3133,8 +3084,8 @@ struct k_fifo {
  * @brief Atomically add a list of elements to a FIFO.
  *
  * This routine adds a list of data items to @a fifo in one operation.
- * The data items must be in a singly-linked list, with the first word of
- * each data item pointing to the next data item; the list must be
+ * The data items must be in a singly-linked list, with the first pointer-sized
+ * field in each data item pointing to the next data item; the list must be
  * NULL-terminated.
  *
  * @isr_ok
@@ -3180,7 +3131,8 @@ struct k_fifo {
  * @brief Get an element from a FIFO queue.
  *
  * This routine removes a data item from @a fifo in a "first in, first out"
- * manner. The first word of the data item is reserved for the kernel's use.
+ * manner. The first pointer-sized field of the data item is reserved for the
+ * kernel's use.
  *
  * @note @a timeout must be set to K_NO_WAIT if called from ISR.
  *
@@ -3327,7 +3279,7 @@ struct k_lifo {
  * @brief Add an element to a LIFO queue.
  *
  * This routine adds a data item to @a lifo. A LIFO queue data item must be
- * aligned on a word boundary, and the first word of the item is
+ * aligned as required for a pointer, and its first pointer-sized field is
  * reserved for the kernel's use.
  *
  * @isr_ok
@@ -3372,7 +3324,8 @@ struct k_lifo {
  * @brief Get an element from a LIFO queue.
  *
  * This routine removes a data item from @a LIFO in a "last in, first out"
- * manner. The first word of the data item is reserved for the kernel's use.
+ * manner. The first pointer-sized field of the data item is reserved for the
+ * kernel's use.
  *
  * @note @a timeout must be set to K_NO_WAIT if called from ISR.
  *
@@ -3581,8 +3534,10 @@ struct k_mutex {
 	/** Current lock count */
 	uint32_t lock_count;
 
-	/** Original thread priority */
-	int owner_orig_prio;
+#if Z_MUTEX_PI_ENABLED
+	/** Node for linking this mutex into the owner thread's held_mutexes list */
+	sys_snode_t held_node;
+#endif /* Z_MUTEX_PI_ENABLED */
 
 	SYS_PORT_TRACING_TRACKING_FIELD(k_mutex)
 
@@ -3597,12 +3552,18 @@ struct k_mutex {
 /**
  * @cond INTERNAL_HIDDEN
  */
+#if Z_MUTEX_PI_ENABLED
+#define Z_MUTEX_HELD_NODE_INIT	.held_node = {NULL},
+#else
+#define Z_MUTEX_HELD_NODE_INIT
+#endif
+
 #define Z_MUTEX_INITIALIZER(obj) \
 	{ \
 	.wait_q = Z_WAIT_Q_INIT(&(obj).wait_q), \
 	.owner = NULL, \
 	.lock_count = 0, \
-	.owner_orig_prio = K_LOWEST_APPLICATION_THREAD_PRIO, \
+	Z_MUTEX_HELD_NODE_INIT \
 	}
 /**
  * INTERNAL_HIDDEN @endcond
@@ -5259,14 +5220,14 @@ int k_work_poll_submit_to_queue(struct k_work_q *work_q,
  *
  * Submitting a previously submitted triggered work item that is still
  * waiting for the event cancels the existing submission and reschedules it
- * the using the new event list. Note that this behavior is inherently subject
+ * using the new event list. Note that this behavior is inherently subject
  * to race conditions with the pre-existing triggered work item and work queue,
  * so care must be taken to synchronize such resubmissions externally.
  *
  * @isr_ok
  *
  * @warning
- * Provided array of events as well as a triggered work item must not be
+ * The provided array of events as well as a triggered work item must not be
  * modified until the item has been processed by the workqueue.
  *
  * @param work Address of delayed work item.
@@ -5399,6 +5360,10 @@ struct k_msgq_attrs {
  *
  * @code extern struct k_msgq <name>; @endcode
  *
+ * @note This macro cannot be used together with a static keyword.
+ *       If such a use-case is desired, use @ref K_MSGQ_DEFINE_STATIC
+ *       instead.
+ *
  * @param q_name Name of the message queue.
  * @param q_msg_size Message size (in bytes).
  * @param q_max_msgs Maximum number of messages that can be queued.
@@ -5411,6 +5376,62 @@ struct k_msgq_attrs {
 	STRUCT_SECTION_ITERABLE(k_msgq, q_name) =			\
 	       Z_MSGQ_INITIALIZER(q_name, _k_fifo_buf_##q_name,	\
 				  (q_msg_size), (q_max_msgs))
+
+/**
+ * @brief Statically define and initialize a message queue in a private (static) scope.
+ *
+ * The message queue's ring buffer contains space for @a q_max_msgs messages,
+ * each of which is @a q_msg_size bytes long. Alignment of the message queue's
+ * ring buffer is not necessary, setting @a q_align to 1 is sufficient.
+ *
+ * @param q_name Name of the message queue.
+ * @param q_msg_size Message size (in bytes).
+ * @param q_max_msgs Maximum number of messages that can be queued.
+ * @param q_align Alignment of the message queue's ring buffer (power of 2).
+ *
+ */
+#define K_MSGQ_DEFINE_STATIC(q_name, q_msg_size, q_max_msgs, q_align)	\
+	static char __noinit __aligned(q_align)				\
+		_k_fifo_buf_##q_name[(q_max_msgs) * (q_msg_size)];	\
+	static STRUCT_SECTION_ITERABLE(k_msgq, q_name) =		\
+		Z_MSGQ_INITIALIZER(q_name, _k_fifo_buf_##q_name,	\
+				  (q_msg_size), (q_max_msgs))
+
+/**
+ * @brief Statically define and initialize a message queue for messages of a given type.
+ *
+ * The message queue's ring buffer contains space for @a q_max_msgs messages,
+ * each of which is the size of @a type.
+ *
+ * The message queue can be accessed outside the module where it is defined
+ * using:
+ *
+ * @code extern struct k_msgq <name>; @endcode
+ *
+ * @note This macro cannot be used together with a static keyword.
+ *       If such a use-case is desired, use @ref K_MSGQ_DEFINE_STATIC_TYPE
+ *       instead.
+ *
+ * @param q_name Name of the message queue.
+ * @param q_msg_type Type of each message.
+ * @param q_max_msgs Maximum number of messages that can be queued.
+ */
+#define K_MSGQ_DEFINE_TYPE(q_name, q_msg_type, q_max_msgs) \
+	K_MSGQ_DEFINE(q_name, sizeof(q_msg_type), q_max_msgs, __alignof(q_msg_type))
+
+/**
+ * @brief Statically define and initialize a message queue for messages of a given type in a
+ * private (static) scope.
+ *
+ * The message queue's ring buffer contains space for @a q_max_msgs messages,
+ * each of which is the size of @a type.
+ *
+ * @param q_name Name of the message queue.
+ * @param q_msg_type Type of each message.
+ * @param q_max_msgs Maximum number of messages that can be queued.
+ */
+#define K_MSGQ_DEFINE_STATIC_TYPE(q_name, q_msg_type, q_max_msgs) \
+	K_MSGQ_DEFINE_STATIC(q_name, sizeof(q_msg_type), q_max_msgs, __alignof(q_msg_type))
 
 /**
  * @brief Initialize a message queue.
@@ -6746,6 +6767,8 @@ enum _poll_states_bits {
 #define K_POLL_TYPE_DATA_AVAILABLE Z_POLL_TYPE_BIT(_POLL_TYPE_DATA_AVAILABLE)
 /** Poll for data becoming available in a FIFO. */
 #define K_POLL_TYPE_FIFO_DATA_AVAILABLE K_POLL_TYPE_DATA_AVAILABLE
+/** Poll for data becoming available in a LIFO. */
+#define K_POLL_TYPE_LIFO_DATA_AVAILABLE K_POLL_TYPE_DATA_AVAILABLE
 /** Poll for data becoming available in a message queue. */
 #define K_POLL_TYPE_MSGQ_DATA_AVAILABLE Z_POLL_TYPE_BIT(_POLL_TYPE_MSGQ_DATA_AVAILABLE)
 /** Poll for data becoming available in a pipe. */
@@ -6779,6 +6802,8 @@ enum k_poll_modes {
 #define K_POLL_STATE_DATA_AVAILABLE Z_POLL_STATE_BIT(_POLL_STATE_DATA_AVAILABLE)
 /** Data became available in a FIFO. */
 #define K_POLL_STATE_FIFO_DATA_AVAILABLE K_POLL_STATE_DATA_AVAILABLE
+/** Data became available in a LIFO. */
+#define K_POLL_STATE_LIFO_DATA_AVAILABLE K_POLL_STATE_DATA_AVAILABLE
 /** Data became available in a message queue. */
 #define K_POLL_STATE_MSGQ_DATA_AVAILABLE Z_POLL_STATE_BIT(_POLL_STATE_MSGQ_DATA_AVAILABLE)
 /** Data became available in a pipe. */
@@ -6871,6 +6896,8 @@ struct k_poll_event {
 		struct k_sem *sem, *_typed_K_POLL_TYPE_SEM_AVAILABLE;
 		/** FIFO being polled. */
 		struct k_fifo *fifo, *_typed_K_POLL_TYPE_FIFO_DATA_AVAILABLE;
+		/** LIFO being polled. */
+		struct k_lifo *lifo, *_typed_K_POLL_TYPE_LIFO_DATA_AVAILABLE;
 		/** Queue being polled. */
 		struct k_queue *queue, *_typed_K_POLL_TYPE_DATA_AVAILABLE;
 		/** Message queue being polled. */
@@ -7098,11 +7125,11 @@ static inline void k_cpu_atomic_idle(unsigned int key)
 #define z_except_reason(reason)	ARCH_EXCEPT(reason)
 #else
 
-#if !defined(CONFIG_ASSERT_NO_FILE_INFO)
-#define __EXCEPT_LOC() __ASSERT_PRINT("@ %s:%d\n", __FILE__, __LINE__)
+#if defined(CONFIG_PRINTK) && !defined(CONFIG_ASSERT_NO_FILE_INFO)
+#define __EXCEPT_LOC() printk("@ %s:%d\n", __FILE__, __LINE__)
 #else
 #define __EXCEPT_LOC()
-#endif
+#endif /* CONFIG_PRINTK */
 
 /* NOTE: This is the implementation for arches that do not implement
  * ARCH_EXCEPT() to generate a real CPU exception.
@@ -7265,7 +7292,7 @@ int k_thread_runtime_stats_all_get(k_thread_runtime_stats_t *stats);
  *
  * @param cpu The cpu number
  * @param stats Pointer to struct to copy statistics into.
- * @return -EINVAL if null pointers, otherwise 0
+ * @return -EINVAL if null pointers or invalid cpu, otherwise 0
  */
 int k_thread_runtime_stats_cpu_get(int cpu, k_thread_runtime_stats_t *stats);
 

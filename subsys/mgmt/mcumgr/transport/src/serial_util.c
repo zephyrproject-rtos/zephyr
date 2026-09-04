@@ -42,6 +42,11 @@ static int mcumgr_serial_extract_len(struct mcumgr_serial_rx_ctxt *rx_ctxt)
 	}
 
 	rx_ctxt->pkt_len = net_buf_pull_be16(rx_ctxt->nb);
+
+	if (rx_ctxt->pkt_len <= sizeof(uint16_t)) {
+		return -EINVAL;
+	}
+
 	return 0;
 }
 
@@ -153,7 +158,7 @@ struct net_buf *mcumgr_serial_process_frag(struct mcumgr_serial_rx_ctxt *rx_ctxt
 			return NULL;
 		}
 
-		op = sys_be16_to_cpu(*(uint16_t *)frag);
+		op = sys_get_be16(frag);
 		switch (op) {
 		case MCUMGR_SERIAL_HDR_PKT:
 			net_buf_reset(rx_ctxt->nb);

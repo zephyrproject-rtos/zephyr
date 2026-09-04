@@ -41,6 +41,10 @@ static void thread_func(void *p1, void *p2, void *p3)
 	int buf_len = 8*id + 8;
 	uint8_t *buf = alloca(buf_len);
 
+	for (int i = 0; i < buf_len; i++) {
+		buf[i] = (uint8_t)id*16 + i; /* Initialize to anything */
+	}
+
 	while (1) {
 		LOG_INF("test string printed %d %d %p", 1, 2, k_current_get());
 		LOG_HEXDUMP_INF(buf, buf_len, "data:");

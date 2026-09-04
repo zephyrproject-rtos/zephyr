@@ -9,25 +9,23 @@
 
 / {
 	soc {
-		eth: ethernet@40028000 {
+		eth: mac: ethernet@40028000 {
 			reg = <0x40028000 0x2000>;
-			compatible = "wch,ethernet-controller";
+			compatible = "wch,ethernet", "snps,dwmac";
 			clocks = <&rcc CH32V20X_V30X_CLOCK_ETHMAC>,
 				 <&rcc CH32V20X_V30X_CLOCK_ETHMACTX>,
 				 <&rcc CH32V20X_V30X_CLOCK_ETHMACRX>;
 			clock-names = "mac", "tx", "rx";
-
-			mac: ethernet {
-				compatible = "wch,ethernet";
-				interrupt-parent = <&pfic>;
-				interrupts = <77>, <78>;
-				internal-phy-pllmul = "15";
-				internal-phy-prediv = "2";
-				status = "disabled";
-			};
+			interrupt-parent = <&pfic>;
+			interrupts = <77>, <78>;
+			internal-phy-pllmul = "15";
+			internal-phy-prediv = "2";
+			snps,multicast-filter-bins = <64>;
+			snps,perfect-filter-entries = <4>;
+			status = "disabled";
 
 			mdio: mdio {
-				compatible = "wch,mdio";
+				compatible = "snps,dwmac-mdio";
 				#address-cells = <1>;
 				#size-cells = <0>;
 				status = "disabled";
@@ -49,6 +47,7 @@
 			compatible = "wch,usart";
 			reg = <0x40004400 0x20>;
 			clocks = <&rcc CH32V20X_V30X_CLOCK_USART2>;
+			resets = <&rctl CH32_RESET(APB1, 17)>;
 			interrupt-parent = <&pfic>;
 			interrupts = <54>;
 			status = "disabled";
@@ -58,6 +57,7 @@
 			compatible = "wch,usart";
 			reg = <0x40004800 0x20>;
 			clocks = <&rcc CH32V20X_V30X_CLOCK_USART3>;
+			resets = <&rctl CH32_RESET(APB1, 18)>;
 			interrupt-parent = <&pfic>;
 			interrupts = <55>;
 			status = "disabled";
@@ -67,6 +67,7 @@
 			compatible = "wch,usart";
 			reg = <0x40004c00 0x20>;
 			clocks = <&rcc CH32V20X_V30X_CLOCK_USART4>;
+			resets = <&rctl CH32_RESET(APB1, 19)>;
 			interrupt-parent = <&pfic>;
 			interrupts = <68>;
 			status = "disabled";
@@ -76,6 +77,7 @@
 			compatible = "wch,usart";
 			reg = <0x40005000 0x20>;
 			clocks = <&rcc CH32V20X_V30X_CLOCK_USART5>;
+			resets = <&rctl CH32_RESET(APB1, 20)>;
 			interrupt-parent = <&pfic>;
 			interrupts = <69>;
 			status = "disabled";
@@ -85,6 +87,7 @@
 			compatible = "wch,usart";
 			reg = <0x40001800 0x20>;
 			clocks = <&rcc CH32V20X_V30X_CLOCK_USART6>;
+			resets = <&rctl CH32_RESET(APB1, 6)>;
 			interrupt-parent = <&pfic>;
 			interrupts = <87>;
 			status = "disabled";
@@ -94,6 +97,7 @@
 			compatible = "wch,usart";
 			reg = <0x40001c00 0x20>;
 			clocks = <&rcc CH32V20X_V30X_CLOCK_USART7>;
+			resets = <&rctl CH32_RESET(APB1, 7)>;
 			interrupt-parent = <&pfic>;
 			interrupts = <88>;
 			status = "disabled";
@@ -103,6 +107,7 @@
 			compatible = "wch,usart";
 			reg = <0x40002000 0x20>;
 			clocks = <&rcc CH32V20X_V30X_CLOCK_USART8>;
+			resets = <&rctl CH32_RESET(APB1, 8)>;
 			interrupt-parent = <&pfic>;
 			interrupts = <89>;
 			status = "disabled";

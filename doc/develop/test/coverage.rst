@@ -140,13 +140,13 @@ For example, you may invoke:
 
 .. code-block:: console
 
-    $ twister --coverage -p qemu_x86 -T tests/kernel
+    $ west twister --coverage -p qemu_x86 -T tests/kernel
 
 or:
 
 .. code-block:: console
 
-    $ twister --coverage -p native_sim -T tests/bluetooth
+    $ west twister --coverage -p native_sim -T tests/bluetooth
 
 which will produce ``twister-out/coverage/index.html`` report as well as
 the coverage data collected by ``gcovr`` tool in ``twister-out/coverage.json``.
@@ -161,7 +161,7 @@ command line option, for example:
 
 .. code-block:: console
 
-   $ $ZEPHYR_BASE/scripts/twister --coverage -p native_sim --coverage-basedir $ZEPHYR_BASE -T your_project_dir
+   $ west twister --coverage -p native_sim --coverage-basedir $ZEPHYR_BASE -T your_project_dir
 
 .. note::
 
@@ -177,7 +177,7 @@ toolchain and require a different board:
 
 .. code-block:: console
 
-   $ twister --coverage -p unit_testing -T tests/unit
+   $ west twister --coverage -p unit_testing -T tests/unit
 
 which produces a report in the same location as non-unit testing.
 
@@ -190,7 +190,7 @@ answer "which tests exercised line X of ``foo.c``" -- pass ``--coverage-per-test
 
 .. code-block:: console
 
-   $ twister -p mps2/an385 -T tests/kernel --coverage --coverage-tool lcov \
+   $ west twister -p mps2/an385 -T tests/kernel --coverage --coverage-tool lcov \
        --coverage-per-test
 
 This enables :kconfig:option:`CONFIG_ZTEST_COVERAGE_PER_TEST`, which resets the

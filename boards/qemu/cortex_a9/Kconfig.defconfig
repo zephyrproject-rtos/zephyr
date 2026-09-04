@@ -24,7 +24,7 @@ config LOG_PROCESS_THREAD_STACK_SIZE
 
 endif # LOG_PROCESS_THREAD
 
-configdefault NET_L2_ETHERNET
+configdefault ETH_DRIVER
 	default y
 
 configdefault NET_TX_STACK_SIZE

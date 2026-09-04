@@ -1078,7 +1078,7 @@ static inline int tmag5273_init_sensor_settings(const struct tmag5273_config *dr
 	case TMAG5273_DT_ANGLE_MAG_NONE:
 		__fallthrough;
 	default:
-		regdata |= TMAG5273_ANGLE_EN_POS;
+		regdata |= TMAG5273_ANGLE_EN_NONE;
 		break;
 	}
 

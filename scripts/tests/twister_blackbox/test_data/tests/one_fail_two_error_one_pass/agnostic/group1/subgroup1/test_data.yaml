@@ -2,6 +2,7 @@ tests:
   one_fail_two_error_one_pass.agnostic.group1.subgroup1:
     platform_allow:
       - native_sim
+      - native_sim/native/64
       - qemu_x86
       - qemu_x86_64
     integration_platforms:

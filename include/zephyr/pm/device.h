@@ -25,6 +25,8 @@ extern "C" {
 /**
  * @brief Device Power Management API
  * @defgroup subsys_pm_device Device
+ * @since 2.7
+ * @version 1.0.0
  * @ingroup subsys_pm
  * @{
  */
@@ -56,6 +58,8 @@ enum pm_device_flag {
 	PM_DEVICE_FLAG_RUNTIME_AUTO,
 	/** Indicates that device runtime PM supports suspending and resuming from any context. */
 	PM_DEVICE_FLAG_ISR_SAFE,
+	/** Indicates the device was suspended by its power domain and must be resumed by it. */
+	PM_DEVICE_FLAG_PD_SUSPENDED,
 };
 
 /** @endcond */

@@ -7,6 +7,7 @@
 /**
  * @file
  * @brief hawkBit autohandler header file
+ * @ingroup hawkbit_autohandler
  */
 
 /**

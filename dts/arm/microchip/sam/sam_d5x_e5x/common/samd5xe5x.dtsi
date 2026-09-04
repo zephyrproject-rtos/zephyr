@@ -212,11 +212,15 @@
 			lock-regions = <32>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			ranges;
 
 			flash0: flash@0 {
 				compatible = "soc-nv-flash";
 				write-block-size = <8>;
 				erase-block-size = <8192>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges;
 			};
 
 			userrow: nvmuserrow@804000 {

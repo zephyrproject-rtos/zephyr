@@ -85,7 +85,8 @@ static int block_payload_cb(size_t offset, const uint8_t **payload, size_t *len,
 		return -EINVAL;
 	}
 
-	*payload = LOREM_IPSUM_SHORT + offset;
+	*payload = LOREM_IPSUM_SHORT;
+	*payload += (intptr_t)offset;
 
 	data_left = LOREM_IPSUM_SHORT_STRLEN - offset;
 	if (data_left <= *len) {

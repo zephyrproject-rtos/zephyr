@@ -6,3 +6,4 @@ toolchain:
 vendor: sc
 supported:
   - uart
+  - sdhc

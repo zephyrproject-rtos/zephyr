@@ -8,16 +8,31 @@ tests:
     integration_platforms:
       - native_sim
       - native_sim/native/64
-    filter: dt_nodelabel_enabled("tst_dma0")
+    filter: dt_nodelabel_enabled("tst_dma0") or dt_node_has_prop("/zephyr,user", "dma-test-devs")
   drivers.dma.chan_blen_transfer.low_footprint:
     tags:
       - dma
     min_ram: 12
     depends_on:
       - dma
-    filter: dt_nodelabel_enabled("tst_dma0")
+    filter: dt_nodelabel_enabled("tst_dma0") or dt_node_has_prop("/zephyr,user", "dma-test-devs")
     platform_allow:
       - nucleo_c031c6
       - sam_e54_xpro
       - pic32cm_jh01_cpro
       - pic32cm_pl10_cnano
+      - pic32cm_gc00_cpro
+  drivers.dma.ifx_axidmac.chan_blen_transfer:
+    tags:
+      - dma
+    depends_on:
+      - dma
+    filter: dt_nodelabel_enabled("tst_dma0") and CONFIG_DMA_INFINEON_MDMA
+    extra_args: DTC_OVERLAY_FILE="socs/pse8x_axi.overlay"
+    extra_configs:
+      - CONFIG_NOCACHE_MEMORY=y
+    platform_allow:
+      - kit_pse84_ai/pse846gps2dbzc4a/m33
+      - kit_pse84_ai/pse846gps2dbzc4a/m55
+      - kit_pse84_eval/pse846gps2dbzc4a/m33
+      - kit_pse84_eval/pse846gps2dbzc4a/m55

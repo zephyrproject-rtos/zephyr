@@ -73,6 +73,16 @@ static int stm32_hash_handler(struct hash_ctx *ctx, struct hash_pkt *pkt, bool f
 	case CRYPTO_HASH_ALGO_SHA256:
 		hash_cfg.algorithm = HAL_HASH_ALGO_SHA256;
 		break;
+#if DT_INST_PROP(0, st_has_sha384_algorithm)
+	case CRYPTO_HASH_ALGO_SHA384:
+		hash_cfg.algorithm = HAL_HASH_ALGO_SHA384;
+		break;
+#endif /* DT_INST_PROP(0, st_has_sha384_algorithm) */
+#if DT_INST_PROP(0, st_has_sha512_algorithm)
+	case CRYPTO_HASH_ALGO_SHA512:
+		hash_cfg.algorithm = HAL_HASH_ALGO_SHA512;
+		break;
+#endif /* DT_INST_PROP(0, st_has_sha512_algorithm) */
 	default:
 		k_sem_give(&data->device_sem);
 		LOG_ERR("Unsupported algorithm in handler: %d", session->algo);
@@ -95,6 +105,43 @@ static int stm32_hash_handler(struct hash_ctx *ctx, struct hash_pkt *pkt, bool f
 	status = HAL_HASH_Compute(&data->hhash, pkt->in_buf, pkt->in_len, pkt->out_buf,
 				  UINT32_MAX, &digest_size, HAL_MAX_DELAY);
 	UNUSED(digest_size);
+#elif defined(HAL_HASH_VERSION) && HAL_HASH_VERSION == 200
+	HASH_ConfigTypeDef hash_cfg = {
+		.DataType = HASH_BYTE_SWAP,
+	};
+
+	switch (session->algo) {
+	case CRYPTO_HASH_ALGO_SHA224:
+		hash_cfg.Algorithm = HASH_ALGOSELECTION_SHA224;
+		break;
+	case CRYPTO_HASH_ALGO_SHA256:
+		hash_cfg.Algorithm = HASH_ALGOSELECTION_SHA256;
+		break;
+#if DT_INST_PROP(0, st_has_sha384_algorithm)
+	case CRYPTO_HASH_ALGO_SHA384:
+		hash_cfg.Algorithm = HASH_ALGOSELECTION_SHA384;
+		break;
+#endif /* DT_INST_PROP(0, st_has_sha384_algorithm) */
+#if DT_INST_PROP(0, st_has_sha512_algorithm)
+	case CRYPTO_HASH_ALGO_SHA512:
+		hash_cfg.Algorithm = HASH_ALGOSELECTION_SHA512;
+		break;
+#endif /* DT_INST_PROP(0, st_has_sha512_algorithm) */
+	default:
+		k_sem_give(&data->device_sem);
+		LOG_ERR("Unsupported algorithm in handler: %d", session->algo);
+		return -ENOTSUP;
+	}
+
+	status = HAL_HASH_SetConfig(&data->hhash, &hash_cfg);
+	if (status != HAL_OK) {
+		k_sem_give(&data->device_sem);
+		LOG_ERR("HAL_HASH_SetConfig failed: %d", status);
+		return -EIO;
+	}
+
+	status = HAL_HASH_Start(&data->hhash, pkt->in_buf, pkt->in_len, pkt->out_buf,
+				  HAL_MAX_DELAY);
 #else /* CONFIG_STM32_HAL2 */
 	switch (session->algo) {
 	case CRYPTO_HASH_ALGO_SHA224:
@@ -105,6 +152,18 @@ static int stm32_hash_handler(struct hash_ctx *ctx, struct hash_pkt *pkt, bool f
 		status = HAL_HASHEx_SHA256_Start(&data->hhash, pkt->in_buf, pkt->in_len,
 						 pkt->out_buf, HAL_MAX_DELAY);
 		break;
+#if DT_INST_PROP(0, st_has_sha384_algorithm)
+	case CRYPTO_HASH_ALGO_SHA384:
+		status = HAL_HASHEx_SHA384_Start(&data->hhash, pkt->in_buf, pkt->in_len,
+						 pkt->out_buf, HAL_MAX_DELAY);
+		break;
+#endif /* DT_INST_PROP(0, st_has_sha384_algorithm) */
+#if DT_INST_PROP(0, st_has_sha512_algorithm)
+	case CRYPTO_HASH_ALGO_SHA512:
+		status = HAL_HASHEx_SHA512_Start(&data->hhash, pkt->in_buf, pkt->in_len,
+						 pkt->out_buf, HAL_MAX_DELAY);
+		break;
+#endif /* DT_INST_PROP(0, st_has_sha512_algorithm) */
 	default:
 		k_sem_give(&data->device_sem);
 		LOG_ERR("Unsupported algorithm in handler: %d", session->algo);
@@ -132,6 +191,12 @@ static int stm32_hash_begin_session(const struct device *dev, struct hash_ctx *c
 	switch (algo) {
 	case CRYPTO_HASH_ALGO_SHA224:
 	case CRYPTO_HASH_ALGO_SHA256:
+#if DT_INST_PROP(0, st_has_sha384_algorithm)
+	case CRYPTO_HASH_ALGO_SHA384:
+#endif /* DT_INST_PROP(0, st_has_sha384_algorithm) */
+#if DT_INST_PROP(0, st_has_sha512_algorithm)
+	case CRYPTO_HASH_ALGO_SHA512:
+#endif /* DT_INST_PROP(0, st_has_sha512_algorithm) */
 		break;
 	default:
 		LOG_ERR("Unsupported hash algorithm: %d", algo);
@@ -201,6 +266,12 @@ static int crypto_stm32_hash_init(const struct device *dev)
 	 * so don't bother configuring "DataType" here since
 	 * it will be overwritten later.
 	 */
+#elif defined(HAL_HASH_VERSION) && HAL_HASH_VERSION == 200
+	data->hhash.Instance = cfg->base;
+	if (HAL_HASH_Init(&data->hhash) != HAL_OK) {
+		LOG_ERR("Peripheral init error");
+		return -EIO;
+	}
 #else /* CONFIG_STM32_HAL2 */
 	data->hhash.Init.DataType = HASH_DATATYPE_8B;
 	if (HAL_HASH_Init(&data->hhash) != HAL_OK) {
@@ -221,6 +292,7 @@ static DEVICE_API(crypto, stm32_hash_funcs) = {
 static struct crypto_stm32_hash_data crypto_stm32_hash_dev_data = {0};
 
 static const struct crypto_stm32_hash_config crypto_stm32_hash_dev_config = {
+	.base = (void *)DT_INST_REG_ADDR(0),
 	.reset = RESET_DT_SPEC_INST_GET(0),
 	.pclken = STM32_DT_INST_CLOCK_INFO(0),
 };

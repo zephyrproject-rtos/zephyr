@@ -67,24 +67,17 @@ config HAPTICS_CS40L5X_CLICK_COMPENSATION
 	help
 	  Enable click compensation for haptic effects.
 
-config HAPTICS_CS40L5X_CUSTOM_EFFECTS
-	bool "Custom Haptics Sources (PCM/PWLE)"
+config HAPTICS_CS40L5X_RTH_EFFECTS
+	bool "PCM and PWLE effects"
 	default y
 	help
-	  Enable upload and playback of custom PCM and PWLE waveforms.
+	  Enable upload and playback of PCM and PWLE waveforms.
 
 config HAPTICS_CS40L5X_DYNAMIC_F0
 	bool "Dynamic F0"
 	default y
 	help
 	  Enable dynamic F0 compensation for haptic effects.
-
-config HAPTICS_CS40L5X_DSP_LOGGER
-	bool "DSP Logging"
-	default y
-	help
-	  Enable runtime configuration of the DSP logger, which can
-	  report back EMF, voltage, and voltage boost information.
 
 config HAPTICS_CS40L5X_PM_ACTIVE_TIMEOUT_MS
 	int "Active Timeout"

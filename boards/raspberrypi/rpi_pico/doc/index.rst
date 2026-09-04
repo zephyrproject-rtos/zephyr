@@ -9,6 +9,9 @@ a USB connector, and an SWD interface.
 
 The Pico W additionally contains an `Infineon CYW43439`_ 2.4 GHz Wi-Fi/Bluetooth module.
 
+The RP2040 has two Cortex-M0+ cores. Zephyr currently runs on one core only;
+running code on the second core is not supported.
+
 The USB bootloader allows the ability to flash without any adapter,
 in a drag-and-drop manner.
 It is also possible to flash and debug the boards with their SWD interface,

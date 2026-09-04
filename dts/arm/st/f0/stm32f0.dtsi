@@ -400,7 +400,7 @@
 			#dma-cells = <2>;
 			reg = <0x40020000 0x400>;
 			clocks = <&rcc STM32_CLOCK(AHB1, 0)>;
-			interrupts = <9 0 10 0 10 0 11 0 11 0>;
+			interrupts = <9 0>, <10 0>, <10 0>, <11 0>, <11 0>;
 			status = "disabled";
 		};
 

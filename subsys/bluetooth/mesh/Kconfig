@@ -1071,23 +1071,6 @@ config BT_MESH_BLOB_IO_FLASH
 
 if BT_MESH_BLOB_IO_FLASH
 
-config BT_MESH_BLOB_IO_FLASH_WITHOUT_ERASE
-	bool "BLOB flash support for devices without erase [DEPRECATED]"
-	default n
-	depends on FLASH_HAS_NO_EXPLICIT_ERASE
-	select DEPRECATED
-	help
-	  This option is deprecated and is no longer used by the BLOB IO Flash module.
-
-config BT_MESH_BLOB_IO_FLASH_WITH_ERASE
-	bool "BLOB flash support for devices with erase [DEPRECATED]"
-	default n
-	depends on FLASH_HAS_EXPLICIT_ERASE
-	depends on FLASH_PAGE_LAYOUT
-	select DEPRECATED
-	help
-	  This option is deprecated and is no longer used by the BLOB IO Flash module.
-
 config BT_MESH_BLOB_IO_FLASH_WRITE_BLOCK_SIZE_MAX
 	int "Maximum supported write block size"
 	default 4
@@ -1616,6 +1599,19 @@ config BT_MESH_LPN_ESTABLISHMENT
 	  is that the node may miss out on messages intended for it
 	  until it has successfully set up Friendship with a Friend
 	  node.
+
+config BT_MESH_LPN_OFFER_WAIT_TIMEOUT
+	int "Time to wait for Friend Offers after a Friend Request"
+	default 1000
+	range 100 10000
+	help
+	  Time in milliseconds that the Low Power node waits for Friend Offer
+	  messages, starting 100 ms after the Friend Request was sent. The
+	  Bluetooth Mesh Protocol specification recommends listening for up to
+	  1 second. When BT_MESH_LPN_ESTABLISHMENT is enabled, this is also the
+	  duration for which the scanner is kept enabled. If no acceptable
+	  Friend Offer is received, the next Friend Request is sent after
+	  BT_MESH_LPN_RETRY_TIMEOUT.
 
 config BT_MESH_LPN_AUTO
 	bool "Automatically start looking for Friend nodes once provisioned"

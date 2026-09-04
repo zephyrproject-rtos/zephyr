@@ -1,0 +1,30 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config DISK_DRIVER_MEMC_RAM
+	bool "MEMC RAM disk"
+	depends on DT_HAS_ZEPHYR_MEMC_RAM_DISK_ENABLED
+	select MEMC
+	default y
+	help
+	  Disk driver backed by an external RAM device accessed
+	  through the MEMC subsystem API. Sector read/write
+	  operations are translated to memc_read()/memc_write()
+	  calls on the linked MEMC device.
+
+if DISK_DRIVER_MEMC_RAM
+
+config MEMC_RAMDISK_INIT_PRIORITY
+	int "MEMC RAM disk init priority"
+	default MEMC_INIT_PRIORITY
+	help
+	  Init priority for the MEMC RAM disk driver.
+	  Must be at least CONFIG_MEMC_INIT_PRIORITY to ensure
+	  the backing MEMC device is available when this driver
+	  initializes.
+
+module = MEMC_RAMDISK
+module-str = memc_ramdisk
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # DISK_DRIVER_MEMC_RAM

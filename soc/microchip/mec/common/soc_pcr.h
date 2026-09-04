@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef _SOC_MCHP_PCR_H_
-#define _SOC_MCHP_PCR_H_
+#ifndef _SOC_MICROCHIP_MEC_COMMON_SOC_PCR_H_
+#define _SOC_MICROCHIP_MEC_COMMON_SOC_PCR_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -22,24 +22,27 @@ extern "C" {
  */
 #define MCHP_XEC_ENC_PCR_SCR(slp_idx, bitpos) (((slp_idx) & 0x7u) | (((bitpos) & 0x1fu) << 3))
 
-#define MCHP_XEC_PCR_SCR_ENCODE(slp_idx, bitpos, domain)                                           \
-	((((uint32_t)(domain) & 0xff) << 24) | (((bitpos) & 0x1f) << 3) |                          \
+#define MCHP_XEC_PCR_SCR_ENCODE(slp_idx, bitpos, clkid)                                            \
+	((((uint32_t)(clkid) & 0xff) << 24) | (((bitpos) & 0x1f) << 3) |                           \
 	 ((uint32_t)(slp_idx) & 0x7))
 
 #define MCHP_XEC_PCR_SCR_GET_IDX(e)    ((e) & 0x7u)
 #define MCHP_XEC_PCR_SCR_GET_BITPOS(e) (((e) & 0xf8u) >> 3)
 
-/* cpu clock divider */
+/* CPU (processor) clock divider. The set of supported divider values is
+ * part specific: MEC15xx supports 3 (and not 2), while MEC172x/174x/175x
+ * support 2 (and not 3). 1, 4, 16 and 48 are common to all parts.
+ */
 #define MCHP_XEC_CLK_CPU_MASK       GENMASK(7, 0)
 #define MCHP_XEC_CLK_CPU_CLK_DIV_1  1u
 #define MCHP_XEC_CLK_CPU_CLK_DIV_2  2u
+#define MCHP_XEC_CLK_CPU_CLK_DIV_3  3u
 #define MCHP_XEC_CLK_CPU_CLK_DIV_4  4u
-#define MCHP_XEC_CLK_CPU_CLK_DIV_8  8u
 #define MCHP_XEC_CLK_CPU_CLK_DIV_16 16u
 #define MCHP_XEC_CLK_CPU_CLK_DIV_48 48u
 
 /* slow clock divider */
-#define MCHP_XEC_CLK_SLOW_MASK         GENMASK(8, 0)
+#define MCHP_XEC_CLK_SLOW_MASK         GENMASK(9, 0)
 #define MCHP_XEC_CLK_SLOW_CLK_DIV_100K 480u
 
 #define MCHP_XEC_CLK_SRC_POS  24
@@ -49,6 +52,20 @@ extern "C" {
 
 #define MCHP_XEC_CLK_SRC_SET(v, c)                                                                 \
 	(((v) & ~MCHP_XEC_CLK_SRC_MASK) | (((c) << MCHP_XEC_CLK_SRC_POS) & MCHP_XEC_CLK_SRC_MASK))
+
+enum xec_pll_clk32k_src {
+	XEC_PLL_CLK32K_SRC_NONE = 0,
+	XEC_PLL_CLK32K_SRC_SI,
+	XEC_PLL_CLK32K_SRC_XTAL,
+	XEC_PLL_CLK32K_SRC_PIN,
+};
+
+enum xec_periph_clk32k_src {
+	XEC_PERIPH_CLK32K_SRC_SI_SI,
+	XEC_PERIPH_CLK32K_SRC_XTAL_XTAL,
+	XEC_PERIPH_CLK32K_SRC_PIN_SI,
+	XEC_PERIPH_CLK32K_SRC_PIN_XTAL,
+};
 
 /*
  * b[31:24] = clock source
@@ -94,8 +111,11 @@ static ALWAYS_INLINE int soc_xec_pcr_clk_req(uint8_t enc_pcr_scr)
 
 void soc_xec_pcr_reset_en(uint16_t enc_pcr_scr);
 
+int soc_xec_pcr_cpu_clk_div_set(uint8_t cpu_clk_div);
+int soc_xec_pcr_cpu_clk_div_get(uint8_t *cpu_clk_div);
+
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* _SOC_MCHP_PCR_H_ */
+#endif /* _SOC_MICROCHIP_MEC_COMMON_SOC_PCR_H_ */

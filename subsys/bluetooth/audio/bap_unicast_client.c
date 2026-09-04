@@ -163,7 +163,8 @@ static void unicast_client_ep_set_status(const struct bt_conn *conn, struct bt_b
 static int unicast_client_send_start(struct bt_bap_ep *ep)
 {
 	if (ep->receiver_ready != true || ep->dir != BT_AUDIO_DIR_SOURCE) {
-		LOG_DBG("Invalid ep %p %u %s", ep, ep->receiver_ready, bt_audio_dir_str(ep->dir));
+		LOG_DBG("Invalid ep %p %u %s", ep, ep->receiver_ready,
+			bt_audio_dir_to_str(ep->dir));
 
 		return -EINVAL;
 	}
@@ -325,25 +326,27 @@ static void unicast_client_ep_iso_sent(struct bt_iso_chan *chan)
 static void unicast_client_ep_iso_connected(struct bt_bap_ep *ep)
 {
 	const struct bt_bap_stream_ops *stream_ops;
-	struct bt_bap_stream *stream;
+	struct bt_bap_stream *stream = ep->stream;
 
-	if (ep->unicast_group != NULL) {
-		ep->unicast_group->has_been_connected = true;
+	if (stream == NULL) {
+		LOG_ERR("No stream for ep %p", ep);
+		return;
 	}
+
+	if (stream->group == NULL) {
+		LOG_ERR("No group for stream %p for ep %p", stream, ep);
+		return;
+	}
+
+	((struct bt_bap_unicast_group *)stream->group)->has_been_connected = true;
 
 	if (ep->state != BT_BAP_EP_STATE_QOS_CONFIGURED && ep->state != BT_BAP_EP_STATE_ENABLING) {
 		LOG_DBG("endpoint in invalid state: %s", bt_bap_ep_state_str(ep->state));
 		return;
 	}
 
-	stream = ep->stream;
-	if (stream == NULL) {
-		LOG_ERR("No stream for ep %p", ep);
-		return;
-	}
-
-	LOG_DBG("stream %p ep %p dir %s receiver_ready %u", stream, ep, bt_audio_dir_str(ep->dir),
-		ep->receiver_ready);
+	LOG_DBG("stream %p ep %p dir %s receiver_ready %u", stream, ep,
+		bt_audio_dir_to_str(ep->dir), ep->receiver_ready);
 
 #if defined(CONFIG_BT_BAP_DEBUG_STREAM_SEQ_NUM)
 	/* reset sequence number */
@@ -487,7 +490,7 @@ static void unicast_client_ep_init(struct bt_bap_ep *ep, uint16_t handle, uint8_
 {
 	struct bt_bap_unicast_client_ep *client_ep;
 
-	LOG_DBG("ep %p dir %s handle 0x%04x", ep, bt_audio_dir_str(dir), handle);
+	LOG_DBG("ep %p dir %s handle 0x%04x", ep, bt_audio_dir_to_str(dir), handle);
 
 	client_ep = CONTAINER_OF(ep, struct bt_bap_unicast_client_ep, ep);
 
@@ -844,7 +847,7 @@ static void unicast_client_ep_qos_update(struct bt_bap_ep *ep,
 {
 	struct bt_iso_chan_io_qos *iso_io_qos;
 
-	LOG_DBG("ep %p dir %s bap_iso %p", ep, bt_audio_dir_str(ep->dir), ep->iso);
+	LOG_DBG("ep %p dir %s bap_iso %p", ep, bt_audio_dir_to_str(ep->dir), ep->iso);
 
 	if (ep->dir == BT_AUDIO_DIR_SOURCE) {
 		/* If the endpoint is a source, then we need to
@@ -956,7 +959,7 @@ static bool unicast_client_ep_config_state(struct bt_bap_ep *ep, struct net_buf_
 
 	LOG_DBG("dir %s unframed_supported 0x%02x phy 0x%02x rtn %u "
 		"latency %u pd_min %u pd_max %u pref_pd_min %u pref_pd_max %u codec 0x%02x ",
-		bt_audio_dir_str(ep->dir), pref->unframed_supported, pref->phy, pref->rtn,
+		bt_audio_dir_to_str(ep->dir), pref->unframed_supported, pref->phy, pref->rtn,
 		pref->latency, pref->pd_min, pref->pd_max, pref->pref_pd_min, pref->pref_pd_max,
 		cfg->codec.id);
 
@@ -1018,7 +1021,7 @@ static bool unicast_client_ep_qos_state(struct bt_bap_ep *ep, struct net_buf_sim
 
 	LOG_DBG("dir %s cig 0x%02x cis 0x%02x codec 0x%02x interval %u "
 		"framing 0x%02x phy 0x%02x rtn %u latency %u pd %u",
-		bt_audio_dir_str(dir), ep->cig_id, ep->cis_id, stream->codec_cfg->id,
+		bt_audio_dir_to_str(dir), ep->cig_id, ep->cis_id, stream->codec_cfg->id,
 		ep->qos.interval, ep->qos.framing, ep->qos.phy, ep->qos.rtn, ep->qos.latency,
 		ep->qos.pd);
 
@@ -1089,7 +1092,8 @@ static bool unicast_client_ep_enabling_state(struct bt_bap_ep *ep, struct net_bu
 
 	metadata = net_buf_simple_pull_mem(buf, enable->metadata_len);
 
-	LOG_DBG("dir %s cig 0x%02x cis 0x%02x", bt_audio_dir_str(ep->dir), ep->cig_id, ep->cis_id);
+	LOG_DBG("dir %s cig 0x%02x cis 0x%02x", bt_audio_dir_to_str(ep->dir), ep->cig_id,
+		ep->cis_id);
 
 	unicast_client_ep_set_metadata(ep, metadata, enable->metadata_len);
 
@@ -1124,7 +1128,8 @@ static bool unicast_client_ep_streaming_state(struct bt_bap_ep *ep, struct net_b
 
 	metadata = net_buf_simple_pull_mem(buf, stream_status->metadata_len);
 
-	LOG_DBG("dir %s cig 0x%02x cis 0x%02x", bt_audio_dir_str(ep->dir), ep->cig_id, ep->cis_id);
+	LOG_DBG("dir %s cig 0x%02x cis 0x%02x", bt_audio_dir_to_str(ep->dir), ep->cig_id,
+		ep->cis_id);
 
 	unicast_client_ep_set_metadata(ep, metadata, stream_status->metadata_len);
 
@@ -1160,7 +1165,8 @@ static bool unicast_client_ep_disabling_state(struct bt_bap_ep *ep, struct net_b
 		return false;
 	}
 
-	LOG_DBG("dir %s cig 0x%02x cis 0x%02x", bt_audio_dir_str(ep->dir), ep->cig_id, ep->cis_id);
+	LOG_DBG("dir %s cig 0x%02x cis 0x%02x", bt_audio_dir_to_str(ep->dir), ep->cig_id,
+		ep->cis_id);
 
 	return true;
 }
@@ -1179,7 +1185,7 @@ static bool unicast_client_ep_releasing_state(struct bt_bap_ep *ep, struct net_b
 		return false;
 	}
 
-	LOG_DBG("dir %s", bt_audio_dir_str(ep->dir));
+	LOG_DBG("dir %s", bt_audio_dir_to_str(ep->dir));
 
 	if (bt_bap_stream_can_disconnect(stream)) {
 		/* The Unicast Client shall terminate any CIS established for
@@ -1215,19 +1221,6 @@ static void unicast_client_ep_notify_app(struct bt_bap_stream *stream, bool stat
 		return;
 	}
 
-	/* Call the `stopped` callback if we leave the BT_BAP_EP_STATE_STREAMING state for any
-	 * reason, except if the new state is BT_BAP_EP_STATE_IDLE as that indicates a disconnect
-	 * that is handled by unicast_client_ep_set_status
-	 */
-	if (state_changed && new_state != BT_BAP_EP_STATE_IDLE &&
-	    old_state == BT_BAP_EP_STATE_STREAMING) {
-		if (ops->stopped != NULL) {
-			ops->stopped(stream, reason);
-		} else {
-			LOG_WRN("No callback for stopped set");
-		}
-	}
-
 	switch (new_state) {
 	case BT_BAP_EP_STATE_IDLE:
 		if (ops->released != NULL) {
@@ -1239,24 +1232,28 @@ static void unicast_client_ep_notify_app(struct bt_bap_stream *stream, bool stat
 	case BT_BAP_EP_STATE_CODEC_CONFIGURED:
 
 		/* Notify upper layer */
-		if (ops->configured != NULL) {
-			ops->configured(stream, &stream->ep->qos_pref);
+		if (ops->codec_configured != NULL) {
+			ops->codec_configured(stream, &stream->ep->qos_pref);
 		} else {
-			LOG_WRN("No callback for configured set");
+			LOG_WRN("No callback for codec_configured set");
 		}
 		break;
 	case BT_BAP_EP_STATE_QOS_CONFIGURED:
 		if (dir == BT_AUDIO_DIR_SINK) {
-			if (ops->disabled != NULL) {
-				/* If the old state was enabling or streaming, then the sink
-				 * ASE has been disabled. Since the sink ASE does not have a
-				 * disabling state, we can check if by comparing the old_state
-				 */
-				const bool disabled = old_state == BT_BAP_EP_STATE_ENABLING ||
-						      old_state == BT_BAP_EP_STATE_STREAMING;
+			/* If the old state was enabling or streaming, then the sink
+			 * ASE has been disabled. Since the sink ASE does not have a
+			 * disabling state, we can check if by comparing the old_state
+			 */
+			const bool disabled = old_state == BT_BAP_EP_STATE_ENABLING ||
+					      old_state == BT_BAP_EP_STATE_STREAMING;
 
-				if (disabled) {
+			if (disabled) {
+				if (ops->disabled != NULL) {
 					ops->disabled(stream);
+				}
+
+				if (ops->stopped != NULL) {
+					ops->stopped(stream, reason);
 				}
 			}
 		} else if (dir == BT_AUDIO_DIR_SOURCE) {
@@ -1271,10 +1268,10 @@ static void unicast_client_ep_notify_app(struct bt_bap_stream *stream, bool stat
 			__ASSERT(false, "Invalid dir: %d", dir);
 		}
 
-		if (ops->qos_set != NULL) {
-			ops->qos_set(stream);
+		if (ops->qos_configured != NULL) {
+			ops->qos_configured(stream);
 		} else {
-			LOG_WRN("No callback for qos_set set");
+			LOG_WRN("No callback for qos_configured set");
 		}
 		break;
 	case BT_BAP_EP_STATE_ENABLING:
@@ -1317,7 +1314,18 @@ static void unicast_client_ep_notify_app(struct bt_bap_stream *stream, bool stat
 		}
 		break;
 	case BT_BAP_EP_STATE_RELEASING:
-		/* no callback for releasing state */
+		/* Call the `disable` `stopped` callback if we leave the BT_BAP_EP_STATE_STREAMING
+		 * state for any reason
+		 */
+		if (state_changed && old_state == BT_BAP_EP_STATE_STREAMING) {
+			if (ops->disabled != NULL) {
+				ops->disabled(stream);
+			}
+
+			if (ops->stopped != NULL) {
+				ops->stopped(stream, reason);
+			}
+		}
 		break;
 	default:
 		LOG_WRN("Unexpected new_state: %d", new_state);
@@ -1417,7 +1425,7 @@ static void unicast_client_ep_set_status(const struct bt_conn *conn, struct bt_b
 	}
 
 	LOG_DBG("ep %p handle 0x%04x id 0x%02x dir %s state %s -> %s", ep, client_ep->handle,
-		ep->id, bt_audio_dir_str(ep->dir), bt_bap_ep_state_str(old_state),
+		ep->id, bt_audio_dir_to_str(ep->dir), bt_bap_ep_state_str(old_state),
 		bt_bap_ep_state_str(ep->state));
 
 	trigger_callback = false;
@@ -1622,13 +1630,13 @@ static uint8_t unicast_client_cp_notify(struct bt_conn *conn,
 
 		LOG_DBG("op %s (0x%02x) id 0x%02x code %s (0x%02x) "
 			"reason %s (0x%02x)",
-			bt_ascs_op_str(rsp->op), rsp->op, ase_rsp->id,
+			bt_ascs_op_str(rsp->op), rsp->op, ase_rsp->ase_id,
 			bt_ascs_rsp_str(ase_rsp->code), ase_rsp->code,
 			bt_ascs_reason_str(ase_rsp->reason), ase_rsp->reason);
 
-		stream = audio_stream_by_ep_id(conn, ase_rsp->id);
+		stream = audio_stream_by_ep_id(conn, ase_rsp->ase_id);
 		if (stream == NULL) {
-			LOG_DBG("Could not find stream by id %u", ase_rsp->id);
+			LOG_DBG("Could not find stream by id %u", ase_rsp->ase_id);
 
 			continue;
 		} else {
@@ -1729,7 +1737,8 @@ static uint8_t unicast_client_ase_ntf_read_func(struct bt_conn *conn, uint8_t er
 
 	ep = unicast_client_ep_get(conn, client->dir, handle);
 	if (!ep) {
-		LOG_DBG("Unknown %s ep for handle 0x%04X", bt_audio_dir_str(client->dir), handle);
+		LOG_DBG("Unknown %s ep for handle 0x%04X", bt_audio_dir_to_str(client->dir),
+			handle);
 		clear_and_reset_if_long_read(conn, buf);
 	} else {
 		/* Set reason in case this exits the streaming state, unless already set */
@@ -1976,10 +1985,11 @@ static int unicast_client_ep_config(struct bt_bap_ep *ep, struct net_buf_simple 
 		return -EINVAL;
 	}
 
-	LOG_DBG("id 0x%02x dir %s codec 0x%02x", ep->id, bt_audio_dir_str(ep->dir), codec_cfg->id);
+	LOG_DBG("id 0x%02x dir %s codec 0x%02x", ep->id, bt_audio_dir_to_str(ep->dir),
+		codec_cfg->id);
 
 	req = net_buf_simple_add(buf, sizeof(*req));
-	req->ase = ep->id;
+	req->ase_id = ep->id;
 	req->latency = codec_cfg->target_latency;
 	req->phy = codec_cfg->target_phy;
 	req->codec.id = codec_cfg->id;
@@ -2018,7 +2028,7 @@ static int unicast_client_add_qos(struct bt_bap_ep *ep, struct net_buf_simple *b
 	}
 
 	req = net_buf_simple_add(buf, sizeof(*req));
-	req->ase = ep->id;
+	req->ase_id = ep->id;
 	req->cig = conn_iso->info.unicast.cig_id;
 	req->cis = conn_iso->info.unicast.cis_id;
 	sys_put_le24(qos->interval, req->interval);
@@ -2046,7 +2056,7 @@ static int unicast_client_ep_enable(struct bt_bap_ep *ep, struct net_buf_simple 
 	LOG_DBG("id 0x%02x", ep->id);
 
 	req = net_buf_simple_add(buf, sizeof(*req));
-	req->ase = ep->id;
+	req->ase_id = ep->id;
 
 	req->len = meta_len;
 	net_buf_simple_add_mem(buf, meta, meta_len);
@@ -2068,7 +2078,7 @@ static int unicast_client_ep_metadata(struct bt_bap_ep *ep, struct net_buf_simpl
 	LOG_DBG("id 0x%02x", ep->id);
 
 	req = net_buf_simple_add(buf, sizeof(*req));
-	req->ase = ep->id;
+	req->ase_id = ep->id;
 
 	req->len = meta_len;
 	net_buf_simple_add_mem(buf, meta, meta_len);
@@ -2820,36 +2830,52 @@ static bool valid_unicast_group_stream_param(const struct bt_bap_unicast_group *
 		if (cig_param->c_to_p_interval == 0) {
 			cig_param->c_to_p_interval = qos->interval;
 		} else if (cig_param->c_to_p_interval != qos->interval) {
+			LOG_DBG("Group %p c_to_p_interval does not match stream %p: %u != %u",
+				unicast_group, param->stream, cig_param->c_to_p_interval,
+				qos->interval);
 			return false;
 		}
 
 		if (cig_param->c_to_p_latency == 0) {
 			cig_param->c_to_p_latency = qos->latency;
 		} else if (cig_param->c_to_p_latency != qos->latency) {
+			LOG_DBG("Group %p c_to_p_latency does not match stream %p: %u != %u",
+				unicast_group, param->stream, cig_param->c_to_p_latency,
+				qos->latency);
 			return false;
 		}
 
 		if (*pd == BT_BAP_PD_UNSET) {
 			*pd = qos->pd;
 		} else if (*pd != qos->pd) {
+			LOG_DBG("Group %p sink PD does not match stream %p: %u != %u",
+				unicast_group, param->stream, *pd, qos->pd);
 			return false;
 		}
 	} else {
 		if (cig_param->p_to_c_interval == 0) {
 			cig_param->p_to_c_interval = qos->interval;
 		} else if (cig_param->p_to_c_interval != qos->interval) {
+			LOG_DBG("Group %p p_to_c_interval does not match stream %p: %u != %u",
+				unicast_group, param->stream, cig_param->p_to_c_interval,
+				qos->interval);
 			return false;
 		}
 
 		if (cig_param->p_to_c_latency == 0) {
 			cig_param->p_to_c_latency = qos->latency;
 		} else if (cig_param->p_to_c_latency != qos->latency) {
+			LOG_DBG("Group %p p_to_c_latency does not match stream %p: %u != %u",
+				unicast_group, param->stream, cig_param->p_to_c_latency,
+				qos->latency);
 			return false;
 		}
 
 		if (*pd == BT_BAP_PD_UNSET) {
 			*pd = qos->pd;
 		} else if (*pd != qos->pd) {
+			LOG_DBG("Group %p source PD does not match stream %p: %u != %u",
+				unicast_group, param->stream, *pd, qos->pd);
 			return false;
 		}
 	}
@@ -2864,6 +2890,8 @@ static bool valid_unicast_group_stream_param(const struct bt_bap_unicast_group *
 		    cig_param->framing != BT_ISO_FRAMING_UNFRAMED) ||
 		   (qos->framing == BT_BAP_QOS_CFG_FRAMING_FRAMED &&
 		    cig_param->framing != BT_ISO_FRAMING_FRAMED)) {
+		LOG_DBG("Group %p framing does not match stream %p: %u != %u", unicast_group,
+			param->stream, cig_param->framing, qos->framing);
 		return false;
 	}
 
@@ -2879,6 +2907,11 @@ valid_group_stream_pair_param(const struct bt_bap_unicast_group *unicast_group,
 
 	if (pair_param == NULL) {
 		LOG_DBG("pair_param is NULL");
+		return false;
+	}
+
+	if (pair_param->rx_param == NULL && pair_param->tx_param == NULL) {
+		LOG_DBG("pair_param->rx_param and pair_param->tx_param are NULL");
 		return false;
 	}
 
@@ -3047,6 +3080,13 @@ int bt_bap_unicast_group_reconfig(struct bt_bap_unicast_group *unicast_group,
 		struct bt_bap_unicast_group_stream_pair_param *stream_param = &param->params[i];
 		struct bt_bap_unicast_group_stream_param *rx_param = stream_param->rx_param;
 		struct bt_bap_unicast_group_stream_param *tx_param = stream_param->tx_param;
+
+		unicast_group->cig_param.packing = param->packing;
+		IF_ENABLED(CONFIG_BT_ISO_TEST_PARAMS, ({
+			unicast_group->cig_param.c_to_p_ft = param->c_to_p_ft;
+			unicast_group->cig_param.p_to_c_ft = param->p_to_c_ft;
+			unicast_group->cig_param.iso_interval = param->iso_interval;
+		}));
 
 		if (rx_param != NULL) {
 			struct bt_bap_iso *bap_iso =
@@ -3261,6 +3301,23 @@ int bt_bap_unicast_group_get_info(const struct bt_bap_unicast_group *unicast_gro
 
 	info->sink_pd = unicast_group->sink_pd;
 	info->source_pd = unicast_group->source_pd;
+	info->c_to_p_interval = unicast_group->cig_param.c_to_p_interval;
+	info->p_to_c_interval = unicast_group->cig_param.p_to_c_interval;
+	info->c_to_p_latency = unicast_group->cig_param.c_to_p_latency;
+	info->p_to_c_latency = unicast_group->cig_param.p_to_c_latency;
+	/* The framing is stored as the ISO value, so it is converted back to the BAP value */
+	if (unicast_group->cig_param.framing == BT_ISO_FRAMING_FRAMED) {
+		info->framing = BT_BAP_QOS_CFG_FRAMING_FRAMED;
+	} else {
+		info->framing = BT_BAP_QOS_CFG_FRAMING_UNFRAMED;
+	}
+	info->packing = unicast_group->cig_param.packing;
+	info->has_been_connected = unicast_group->has_been_connected;
+	IF_ENABLED(CONFIG_BT_ISO_TEST_PARAMS, ({
+		info->c_to_p_ft = unicast_group->cig_param.c_to_p_ft;
+		info->p_to_c_ft = unicast_group->cig_param.p_to_c_ft;
+		info->iso_interval = unicast_group->cig_param.iso_interval;
+	}));
 
 	return 0;
 }
@@ -3946,7 +4003,7 @@ static uint8_t unicast_client_ase_discover_cb(struct bt_conn *conn, const struct
 	memset(discover, 0, sizeof(*discover));
 
 	LOG_DBG("conn %p attr %p handle 0x%04x dir %s", conn, attr, value_handle,
-		bt_audio_dir_str(client->dir));
+		bt_audio_dir_to_str(client->dir));
 
 	client->read_params.func = unicast_client_ase_read_func;
 	client->read_params.handle_count = 1U;
@@ -4178,7 +4235,7 @@ static uint8_t unicast_client_pacs_location_read_func(struct bt_conn *conn, uint
 
 	if (err != 0 || data == NULL || length != sizeof(location)) {
 		LOG_DBG("Unable to read PACS location for dir %s: %u, %p, %u",
-			bt_audio_dir_str(client->dir), err, data, length);
+			bt_audio_dir_to_str(client->dir), err, data, length);
 
 		if (err == BT_ATT_ERR_SUCCESS) {
 			err = BT_ATT_ERR_INVALID_ATTRIBUTE_LEN;
@@ -4192,7 +4249,7 @@ static uint8_t unicast_client_pacs_location_read_func(struct bt_conn *conn, uint
 	net_buf_simple_init_with_data(&buf, (void *)data, length);
 	location = net_buf_simple_pull_le32(&buf);
 
-	LOG_DBG("dir %s loc %X", bt_audio_dir_str(client->dir), location);
+	LOG_DBG("dir %s loc %X", bt_audio_dir_to_str(client->dir), location);
 
 	unicast_client_notify_location(conn, client->dir, (enum bt_audio_location)location);
 
@@ -4241,7 +4298,7 @@ static uint8_t unicast_client_pacs_location_notify_cb(struct bt_conn *conn,
 	net_buf_simple_init_with_data(&buf, (void *)data, length);
 	location = net_buf_simple_pull_le32(&buf);
 
-	LOG_DBG("dir %s loc %X", bt_audio_dir_str(dir), location);
+	LOG_DBG("dir %s loc %X", bt_audio_dir_to_str(dir), location);
 
 	unicast_client_notify_location(conn, dir, (enum bt_audio_location)location);
 
@@ -4332,7 +4389,7 @@ static int unicast_client_pacs_location_discover(struct bt_conn *conn)
 {
 	struct unicast_client *client = &uni_cli_insts[bt_conn_index(conn)];
 
-	LOG_DBG("conn %p dir %s", conn, bt_audio_dir_str(client->dir));
+	LOG_DBG("conn %p dir %s", conn, bt_audio_dir_to_str(client->dir));
 
 	if (client->dir == BT_AUDIO_DIR_SINK) {
 		client->disc_params.uuid = pacs_snk_loc_uuid;
@@ -4671,7 +4728,7 @@ static uint8_t unicast_client_pac_discover_cb(struct bt_conn *conn, const struct
 	int err;
 
 	if (attr == NULL) {
-		LOG_DBG("Unable to find %s PAC", bt_audio_dir_str(client->dir));
+		LOG_DBG("Unable to find %s PAC", bt_audio_dir_to_str(client->dir));
 
 		unicast_client_discover_complete(conn, BT_ATT_ERR_ATTRIBUTE_NOT_FOUND);
 
@@ -4683,7 +4740,7 @@ static uint8_t unicast_client_pac_discover_cb(struct bt_conn *conn, const struct
 	memset(discover, 0, sizeof(*discover));
 
 	LOG_DBG("conn %p attr %p handle 0x%04x dir %s", conn, attr, value_handle,
-		bt_audio_dir_str(client->dir));
+		bt_audio_dir_to_str(client->dir));
 
 	/* TODO: Subscribe to PAC */
 

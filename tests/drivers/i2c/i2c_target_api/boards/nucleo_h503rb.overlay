@@ -13,11 +13,16 @@
  * Short Pin PB7 to PB4, and PB6 to PB5, for the test to pass.
  */
 
-&i2c1 {
+#define IC2_TEST_0_DMA_TX <&gpdma1 0 13 STM32_DMA_PERIPH_TX>
+#define IC2_TEST_0_DMA_RX <&gpdma1 1 12 STM32_DMA_PERIPH_RX>
+
+i2c_test_0: &i2c1 {
 	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
 	pinctrl-names = "default";
 	scl-gpios = <&gpiob 6 GPIO_ACTIVE_HIGH>;
 	sda-gpios = <&gpiob 7 GPIO_ACTIVE_HIGH>;
+	dmas = IC2_TEST_0_DMA_TX, IC2_TEST_0_DMA_RX;
+	dma-names = "tx", "rx";
 	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 
@@ -29,11 +34,16 @@
 	};
 };
 
-&i2c2 {
+#define IC2_TEST_1_DMA_TX <&gpdma1 2 16 STM32_DMA_PERIPH_TX>
+#define IC2_TEST_1_DMA_RX <&gpdma1 3 15 STM32_DMA_PERIPH_RX>
+
+i2c_test_1: &i2c2 {
 	pinctrl-0 = <&i2c2_scl_pb5 &i2c2_sda_pb4>;
 	pinctrl-names = "default";
 	scl-gpios = <&gpiob 5 GPIO_ACTIVE_HIGH>;
 	sda-gpios = <&gpiob 4 GPIO_ACTIVE_HIGH>;
+	dmas = IC2_TEST_1_DMA_TX, IC2_TEST_1_DMA_RX;
+	dma-names = "tx", "rx";
 	clock-frequency = <I2C_BITRATE_FAST>;
 	status = "okay";
 
@@ -43,4 +53,8 @@
 		address-width = <16>;
 		size = <1024>;
 	};
+};
+
+&gpdma1 {
+	status = "okay";
 };

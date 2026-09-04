@@ -2,10 +2,10 @@
   "version": 7,
   "cmakeMinimumRequired": {
     "major": 3,
-    "minor": 27,
+    "minor": 28,
     "patch": 0
   },
   "include": [
-    "$penv{APP_DIR}/CMakePresets.json"
+    "$penv{APP_DIR}/sysbuild/CMakePresets.json"
   ]
 }

@@ -902,6 +902,8 @@ int media_proxy_ctrl_get_icon_id(struct media_player *player);
  * Get a URL to the media player's icon.
  *
  * @param player   Media player instance pointer
+ *
+ * @return 0 if success, errno on failure.
  */
 int media_proxy_ctrl_get_icon_url(struct media_player *player);
 
@@ -1488,7 +1490,7 @@ struct media_proxy_pl_calls {
 	/**
 	 * @brief Read Playing Order
 	 *
-	 * return The media player's current playing order
+	 * @return The media player's current playing order
 	 */
 	uint8_t (*get_playing_order)(void);
 

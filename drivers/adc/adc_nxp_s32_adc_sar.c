@@ -140,7 +140,7 @@ static int adc_nxp_s32_validate_buffer_size(const struct device *dev,
 	}
 
 	if (sequence->buffer_size < needed_size) {
-		return -ENOSPC;
+		return -ENOMEM;
 	}
 
 	return 0;

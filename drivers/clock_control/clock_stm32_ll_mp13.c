@@ -37,7 +37,10 @@ int enabled_clock(uint32_t src_clk)
 	    (src_clk == STM32_SRC_PLL3_R && IS_ENABLED(STM32_PLL3_R_ENABLED)) ||
 	    (src_clk == STM32_SRC_PLL4_P && IS_ENABLED(STM32_PLL4_P_ENABLED)) ||
 	    (src_clk == STM32_SRC_PLL4_Q && IS_ENABLED(STM32_PLL4_Q_ENABLED)) ||
-	    (src_clk == STM32_SRC_PLL4_R && IS_ENABLED(STM32_PLL4_R_ENABLED))) {
+	    (src_clk == STM32_SRC_PLL4_R && IS_ENABLED(STM32_PLL4_R_ENABLED)) ||
+	    (src_clk == STM32_SRC_TIMPCLK1) ||
+	    (src_clk == STM32_SRC_TIMPCLK2) ||
+	    (src_clk == STM32_SRC_TIMPCLK6)) {
 		return 0;
 	}
 
@@ -105,6 +108,11 @@ static int stm32_clock_control_configure(const struct device *dev,
 		return err;
 	}
 
+	if (pclken->enr == NO_SEL) {
+		/* Domain clock is fixed. Nothing to set. Exit */
+		return 0;
+	}
+
 	stm32_reg_modify_bits((uint32_t *)(DT_REG_ADDR(DT_NODELABEL(rcc)) + reg),
 			      STM32_DT_CLKSEL_MASK_GET(enr) << shift,
 			      STM32_DT_CLKSEL_VAL_GET(enr) << shift);
@@ -168,6 +176,15 @@ static int stm32_clock_control_get_subsys_rate(const struct device *dev,
 		default:
 			return -ENOTSUP;
 		}
+		break;
+	case STM32_SRC_TIMPCLK1:
+		*rate = LL_RCC_GetTIMGClockFreq(LL_RCC_TIMG1PRES);
+		break;
+	case STM32_SRC_TIMPCLK2:
+		*rate = LL_RCC_GetTIMGClockFreq(LL_RCC_TIMG2PRES);
+		break;
+	case STM32_SRC_TIMPCLK6:
+		*rate = LL_RCC_GetTIMGClockFreq(LL_RCC_TIMG3PRES);
 		break;
 	default:
 		return -ENOTSUP;

@@ -4,14 +4,16 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <xen/public/xen.h>
+#include <xen/public/io/console.h>
+#include <xen/public/sched.h>
+
 #include <zephyr/arch/arm64/hypercall.h>
 #include <zephyr/xen/console.h>
 #include <zephyr/xen/events.h>
 #include <zephyr/xen/generic.h>
 #include <zephyr/xen/hvm.h>
-#include <zephyr/xen/public/io/console.h>
-#include <zephyr/xen/public/sched.h>
-#include <zephyr/xen/public/xen.h>
+#include <zephyr/xen/sched.h>
 
 #include <zephyr/device.h>
 #include <zephyr/init.h>
@@ -122,7 +124,7 @@ static int xen_hvc_fifo_fill(const struct device *dev, const uint8_t *tx_data,
 
 		if (len) {
 			/* Need to be able to read it from another domain */
-			HYPERVISOR_sched_op(SCHEDOP_yield, NULL);
+			xen_sched_yield();
 		}
 	}
 

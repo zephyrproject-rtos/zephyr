@@ -29,7 +29,7 @@ jobs:
       group: zephyr-runner-v2-linux-x64-4xlarge
     timeout-minutes: 60
     container:
-      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.29.2.20260422
+      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.29.3.20260727
       options: '--entrypoint /bin/bash'
     outputs:
       subset: ${{ steps.output-services.outputs.subset }}
@@ -38,7 +38,7 @@ jobs:
       testplan: ${{ steps.test-plan.outputs.has_testplan }}
     env:
       MATRIX_SIZE: 10
-      PUSH_MATRIX_SIZE: 25
+      PUSH_MATRIX_SIZE: 30
       WEEKLY_MATRIX_SIZE: 200
       TESTS_PER_BUILDER: 900
       BASE_REF: ${{ github.base_ref }}
@@ -65,7 +65,7 @@ jobs:
 
       - name: Checkout
         if: github.event_name == 'pull_request'
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
@@ -85,7 +85,7 @@ jobs:
 
       - name: Set up Python
         if: github.event_name == 'pull_request'
-        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: 3.12
           cache: pip
@@ -156,7 +156,7 @@ jobs:
     needs: twister-build-prep
     if: needs.twister-build-prep.outputs.size != 0
     container:
-      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.29.2.20260422
+      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.29.3.20260727
       options: '--entrypoint /bin/bash'
     strategy:
       fail-fast: false
@@ -198,7 +198,7 @@ jobs:
           git remote set-url origin ${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}
 
       - name: Checkout
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
@@ -230,6 +230,7 @@ jobs:
           cd /opt/bsim_west/bsim
           git fetch -n origin ${BSIM_VERSION}
           git -c advice.detachedHead=false checkout ${BSIM_VERSION}
+          git config --global http.version HTTP/1.1
           west update
           make everything -s -j 8
 
@@ -286,6 +287,11 @@ jobs:
             fi
           fi
 
+          if [ ! -f twister-out/twister.json ]; then
+            echo "Twister did not produce a twister.json file, something went wrong."
+            exit 1
+          fi
+
       - name: Print ccache stats
         if: always()
         run: |
@@ -299,6 +305,7 @@ jobs:
           if-no-files-found: ignore
           path: |
             twister-out/twister.xml
+            twister-out/twister.log
             twister-out/twister.json
             module_tests/twister.xml
             testplan.json
@@ -316,14 +323,14 @@ jobs:
 
     steps:
       - name: Check out source code
-        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ github.event.pull_request.head.sha }}
           fetch-depth: 0
           persist-credentials: false
 
       - name: Set up Python
-        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
         with:
           python-version: 3.12
           cache: pip

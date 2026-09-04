@@ -748,8 +748,8 @@ static int spi_pw_configure(const struct device *dev,
 	}
 
 	/* Verify if requested op mode is relevant to this controller */
-	if (config->operation & SPI_OP_MODE_SLAVE) {
-		LOG_ERR("Slave mode not supported");
+	if (config->operation & SPI_OP_MODE_PERIPHERAL) {
+		LOG_ERR("Peripheral mode not supported");
 		return -ENOTSUP;
 	}
 

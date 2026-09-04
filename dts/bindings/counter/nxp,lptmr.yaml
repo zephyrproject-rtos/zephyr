@@ -15,14 +15,6 @@ properties:
     required: true
     description: Counter clock frequency
 
-  prescaler:
-    type: int
-    deprecated: true
-    description: |
-      This property has been deprecated and replaced by prescale-glitch-filter.
-      It no longer has any functional impact. Any value assigned to this property
-      will be disregarded. Consequently, the prescaler will be bypassed.
-
   clk-source:
     type: int
     required: true

@@ -1,10 +1,16 @@
-# Copyright (C) 2025 Microchip Technology Inc. and its subsidiaries
+# Copyright (C) 2025-2026 Microchip Technology Inc. and its subsidiaries
 #
 # SPDX-License-Identifier: Apache-2.0
 #
 
+title: Microchip SCKC
+
 description: |
   Microchip SAM Slow Clock Controller (SCKC)
+
+  This driver supports following hardware peripherals:
+    - module name="SCKC" id="11073" version="0"
+    - module name="SCKC" id="11073" version="G"
 
 compatible: "microchip,sama7g5-sckc"
 
@@ -13,6 +19,19 @@ include: [clock-controller.yaml, base.yaml]
 properties:
   reg:
     required: true
+
+  slow-rc-frequency:
+    type: int
+    default: 64000
+    description: |
+      This property describes the frequency of the enbedded Slow RC Oscillator.
+
+  osc-sel-pos:
+    type: int
+    default: 24
+    description: |
+      This property describes which bit of SCKC_CR register acts as the Slow
+      Clock Sector.
 
   "#clock-cells":
     const: 1

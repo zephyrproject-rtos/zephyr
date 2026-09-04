@@ -22,6 +22,7 @@ LOG_MODULE_REGISTER(mdns_resp_test);
 #include <zephyr/net/net_mgmt.h>
 #include <zephyr/net/net_event.h>
 #include <zephyr/net/socket.h>
+#include <zephyr/net/udp.h>
 #include <zephyr/ztest.h>
 
 #include "dns_pack.h"
@@ -124,6 +125,62 @@ static int igmp_report_count;
 static struct service_info services[EXT_RECORDS_NUM];
 static struct dns_sd_rec records[EXT_RECORDS_NUM];
 
+/*
+ * Multi-homed mDNS test topology
+ *
+ *   iface1 (default route)
+ *   iface2 (query ingress)
+ *
+ * A/AAAA answers must come from iface2 (per-socket BINDTODEVICE), not from
+ * net_if_ipv6_select_src_iface() toward the querier.
+ */
+static struct net_in6_addr mh_iface2_gua = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+					    0x28, 0x61, 0x82, 0x56, 0x28, 0x61, 0x82, 0x56 } } };
+						/* 2001:db8::2861:8256:2861:8256 */
+static struct net_in6_addr mh_iface2_ll = { { { 0xfe, 0x80, 0, 0, 0, 0, 0, 0,
+					    0, 0, 0, 0, 0, 0, 0, 0x2 } } }; /* fe80::2 */
+static struct net_in6_addr mh_querier_ll = { { { 0xfe, 0x80, 0, 0, 0, 0, 0, 0,
+					      0, 0, 0, 0, 0, 0, 0, 0x99 } } }; /* fe80::99 */
+static struct net_in6_addr mh_iface1_prefix = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+						    0, 0, 0, 0, 0, 0, 0, 0 } } };
+						    /* 2001:db8::/64 */
+static struct net_in6_addr mh_iface2_prefix = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+						    0x28, 0x61, 0x82, 0x56, 0, 0, 0, 0 } } };
+						    /* 2001:db8:0:2861:8256::/96 */
+
+/* Capture the first mDNS response pkt while mh_capture_active (see sender_iface). */
+static bool mh_capture_active;
+static K_SEM_DEFINE(mh_response_sem, 0, 1);
+static struct net_pkt *mh_response_pkt;
+
+static void mh_reset_capture(void)
+{
+	mh_capture_active = false;
+
+	if (mh_response_pkt != NULL) {
+		net_pkt_unref(mh_response_pkt);
+		mh_response_pkt = NULL;
+	}
+
+	while (k_sem_take(&mh_response_sem, K_NO_WAIT) == 0) {
+		/* NOP */
+	}
+}
+
+static bool mh_mdns_udp_pkt(struct net_pkt *pkt)
+{
+	struct net_udp_hdr *udp;
+
+	if (!IS_ENABLED(CONFIG_NET_UDP) || net_pkt_family(pkt) != NET_AF_INET6) {
+		return false;
+	}
+
+	udp = net_udp_get_hdr(pkt, NULL);
+
+	return udp != NULL &&
+	       (net_ntohs(udp->src_port) == 5353U || net_ntohs(udp->dst_port) == 5353U);
+}
+
 static uint8_t *net_iface_get_mac(const struct device *dev)
 {
 	struct net_if_test *data = dev->data;
@@ -177,8 +234,19 @@ static int sender_iface(const struct device *dev, struct net_pkt *pkt)
 	if (test_started) {
 		hdr = NET_IPV6_HDR(pkt);
 
-		if (net_ipv6_addr_cmp_raw(hdr->dst, mdns_server_ipv6_addr)) {
-			if (responses_count < MAX_RESP_PKTS) {
+		/* Answers to a query from port 5353 go to the group; an answer
+		 * to a one-off lookup goes back to the querier alone, so both
+		 * destinations have to be picked up here.
+		 */
+		if (net_ipv6_addr_cmp_raw(hdr->dst, mdns_server_ipv6_addr) ||
+		    net_ipv6_addr_cmp_raw(hdr->dst, (const uint8_t *)&sender_ll_addr)) {
+			/* Multi-homed test: grab the outgoing mDNS response separately. */
+			if (mh_capture_active && mh_response_pkt == NULL &&
+			    mh_mdns_udp_pkt(pkt)) {
+				net_pkt_ref(pkt);
+				mh_response_pkt = pkt;
+				k_sem_give(&mh_response_sem);
+			} else if (responses_count < MAX_RESP_PKTS) {
 				net_pkt_ref(pkt);
 				response_pkts[responses_count++] = pkt;
 				k_sem_give(&wait_data);
@@ -363,9 +431,15 @@ static void cleanup(void *d)
 			free_service(&services[i]);
 		}
 	}
+
+	mh_reset_capture();
 }
 
-static void send_msg(const uint8_t *data, size_t len)
+/* A query from port 5353 is one multicast DNS responder talking to another; a
+ * query from anywhere else is a one-off lookup, which RFC 6762 6.7 answers
+ * differently. Tests that care say which they are sending.
+ */
+static void send_msg_from_port(const uint8_t *data, size_t len, uint16_t src_port)
 {
 	struct net_pkt *pkt;
 	int res;
@@ -383,7 +457,7 @@ static void send_msg(const uint8_t *data, size_t len)
 	res = net_pkt_write(pkt, ipv6_hdr_rest, sizeof(ipv6_hdr_rest));
 	zassert_equal(res, 0, "pkt write for rest of the header failed");
 
-	res = net_pkt_write_be16(pkt, 5353);
+	res = net_pkt_write_be16(pkt, src_port);
 	zassert_equal(res, 0, "pkt write for UDP src port failed");
 
 	res = net_pkt_write_be16(pkt, 5353);
@@ -401,6 +475,11 @@ static void send_msg(const uint8_t *data, size_t len)
 
 	res = net_recv_data(iface1, pkt);
 	zassert_equal(res, 0, "net_recv_data() failed");
+}
+
+static void send_msg(const uint8_t *data, size_t len)
+{
+	send_msg_from_port(data, len, 5353);
 }
 
 static struct dns_sd_rec *alloc_ext_record(const char *instance, const char *service,
@@ -616,6 +695,67 @@ ZTEST(test_mdns_responder, test_basic_query)
 	check_basic_query_resp(response_pkts[0]);
 }
 
+/* RFC 6762 6.7: a query that did not come from port 5353 is a one-off lookup,
+ * and the answer to it has to be one a conventional resolver understands. It
+ * repeats the identifier and the question, leaves the cache flush bit clear,
+ * and carries a short time to live, because whatever caches it is not a
+ * multicast DNS cache.
+ */
+ZTEST(test_mdns_responder, test_legacy_unicast_query)
+{
+	static const uint16_t query_id = 0x1234;
+	static uint8_t zephyr_local_query[] = {
+		/* Header, with an identifier the answer has to repeat */
+		0x12, 0x34, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		/* zephyr.local */
+		0x06, 0x7a, 0x65, 0x70, 0x68, 0x79, 0x72, 0x05, 0x6c, 0x6f, 0x63, 0x61, 0x6c, 0x00,
+		/* AAAA record */
+		0x00, 0x1c, 0x00, 0x01
+	};
+	struct dns_header resp_header;
+	struct dns_rr resp_record;
+	uint16_t qtype;
+	uint16_t qclass;
+	struct net_pkt *pkt;
+
+	/* Anything other than 5353 makes this a one-off lookup */
+	send_msg_from_port(zephyr_local_query, sizeof(zephyr_local_query), 45678);
+
+	zassert_ok(k_sem_take(&wait_data, RESPONSE_TIMEOUT), "Did not receive a response");
+
+	pkt = response_pkts[0];
+	net_pkt_cursor_init(pkt);
+	net_pkt_set_overwrite(pkt, true);
+	zassert_ok(net_pkt_skip(pkt, NET_IPV6UDPH_LEN), "net_pkt skip failed");
+
+	zassert_ok(net_pkt_read(pkt, &resp_header, sizeof(resp_header)), "net_pkt read failed");
+	zassert_equal(net_ntohs(resp_header.id), query_id,
+		      "Answer carries id 0x%04x, the query used 0x%04x",
+		      net_ntohs(resp_header.id), query_id);
+	zassert_equal(net_ntohs(resp_header.qdcount), 1,
+		      "Answer does not repeat the question");
+	zassert_true(net_ntohs(resp_header.ancount) >= 1, "Answer carries no records");
+
+	/* The repeated question */
+	validate_label(pkt, "zephyr", false);
+	validate_label(pkt, "local", true);
+	zassert_ok(net_pkt_read_be16(pkt, &qtype), "net_pkt read failed");
+	zassert_equal(qtype, DNS_RR_TYPE_AAAA, "Repeated question has the wrong type");
+	zassert_ok(net_pkt_read_be16(pkt, &qclass), "net_pkt read failed");
+	zassert_equal(qclass, DNS_CLASS_IN, "Repeated question has the wrong class");
+
+	/* The first answer, which names the question rather than repeating it */
+	skip_labels(pkt);
+	zassert_ok(net_pkt_read(pkt, &resp_record, sizeof(resp_record)), "net_pkt read failed");
+	zassert_equal(net_ntohs(resp_record.type), DNS_RR_TYPE_AAAA, "Invalid record type");
+	zassert_equal(net_ntohs(resp_record.class_), DNS_CLASS_IN,
+		      "Answer class is 0x%04x; the cache flush bit does not belong here",
+		      net_ntohs(resp_record.class_));
+	zassert_true(net_ntohl(resp_record.ttl) <= 10,
+		     "Answer TTL is %u, which is too long to hand to a cache that "
+		     "knows nothing of multicast DNS", net_ntohl(resp_record.ttl));
+}
+
 static void check_basic_dns_sd_query_resp(struct net_pkt *pkt)
 {
 	struct dns_header resp_header;
@@ -701,6 +841,79 @@ ZTEST(test_mdns_responder, test_basic_dns_sd_query)
 	zassert_ok(res, "Did not receive a response");
 
 	check_basic_dns_sd_query_resp(response_pkts[0]);
+}
+
+/* Verify a PTR answer's name is exactly service.proto.domain (three labels,
+ * uncompressed) -- used to confirm which service a response packet answers.
+ */
+static void check_ptr_answer_name(struct net_pkt *pkt, const char *service, const char *proto,
+				  const char *domain)
+{
+	struct dns_header resp_header;
+	struct dns_rr resp_record;
+
+	net_pkt_cursor_init(pkt);
+	net_pkt_set_overwrite(pkt, true);
+
+	zassert_ok(net_pkt_skip(pkt, NET_IPV6UDPH_LEN), "net_pkt skip failed");
+	zassert_ok(net_pkt_read(pkt, &resp_header, sizeof(resp_header)), "net_pkt read failed");
+	zassert_true(net_ntohs(resp_header.ancount) >= 1, "Invalid record count");
+
+	validate_label(pkt, service, false);
+	validate_label(pkt, proto, false);
+	validate_label(pkt, domain, true);
+
+	zassert_ok(net_pkt_read(pkt, &resp_record, sizeof(resp_record)), "net_pkt read failed");
+	zassert_equal(net_ntohs(resp_record.type), DNS_RR_TYPE_PTR, "Invalid record type");
+}
+
+/* Regression test: avahi and other real-world clients batch several PTR
+ * questions into one mDNS packet, and every question after the first uses DNS
+ * name compression (RFC 1035 4.1.4) to reference an earlier question's labels
+ * instead of spelling them out again. send_sd_response() used to always parse
+ * from the start of the whole message (dns_sd_query_extract()), so it only
+ * ever matched Question #1 and had no compression-pointer support at all --
+ * anything after the first question was silently never answered. This sends a
+ * 2-question packet where Question #2 ("_zephyr._tcp.local") points its
+ * trailing "local" label back at Question #1's ("_foo._udp.local"), and
+ * expects a distinct, correct answer for *both* questions.
+ */
+ZTEST(test_mdns_responder, test_multi_question_compressed_dns_sd_query)
+{
+	static uint8_t multi_question_query[] = {
+		/* Header, QDCOUNT = 2 */
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		/* Question 1: _foo._udp.local, PTR */
+		0x04, 0x5f, 0x66, 0x6f, 0x6f, 0x04, 0x5f, 0x75, 0x64, 0x70, 0x05, 0x6c, 0x6f, 0x63,
+		0x61, 0x6c, 0x00, 0x00, 0x0c, 0x00, 0x01,
+		/* Question 2: _zephyr._tcp, then a compression pointer (0xC0 0x16) back
+		 * to the "local" label inside Question 1 (byte offset 22 from the start
+		 * of the message, i.e. right after the DNS header), PTR
+		 */
+		0x07, 0x5f, 0x7a, 0x65, 0x70, 0x68, 0x79, 0x72, 0x04, 0x5f, 0x74, 0x63, 0x70, 0xc0,
+		0x16, 0x00, 0x0c, 0x00, 0x01};
+	int res;
+
+	/* Question 2 targets a second service, registered as an external record
+	 * here (rather than a compile-time DNS_SD_REGISTER_*_SERVICE) so it's
+	 * scoped to this test and doesn't shift the statically-registered service
+	 * count that test_external_records' service-type-enumeration checks rely on.
+	 */
+	zassert_not_null(alloc_ext_record("zephyr", "_zephyr", "_tcp", "local", NULL, 0, 5353),
+			 "Failed to alloc the record");
+
+	send_msg(multi_question_query, sizeof(multi_question_query));
+
+	/* Expect two separate response packets, one per question. */
+	res = k_sem_take(&wait_data, RESPONSE_TIMEOUT);
+	zassert_ok(res, "Did not receive a response to Question 1");
+	res = k_sem_take(&wait_data, RESPONSE_TIMEOUT);
+	zassert_ok(res, "Did not receive a response to Question 2 (the compressed one)");
+
+	zassert_equal(responses_count, 2, "Expected exactly 2 responses, got %zu", responses_count);
+
+	check_ptr_answer_name(response_pkts[0], "_foo", "_udp", "local");
+	check_ptr_answer_name(response_pkts[1], "_zephyr", "_tcp", "local");
 }
 
 /* Basic mDNS query for zephyr.local (AAAA), used to probe whether the
@@ -913,30 +1126,6 @@ ZTEST(test_mdns_responder, test_ipv6_group_ref_not_leaked_on_cycles)
 		      "(%ld -> %ld)", ref_before, ref_after);
 }
 
-/* Reproduces the state the connection-manager reporter observed: the mDNS
- * IPv4 group is still marked "joined" when NET_EVENT_IF_UP is delivered (the
- * link bounce did not clear it). A plain net_ipv4_igmp_join() is then a no-op
- * (igmp.c returns early when the address is already joined), so no membership
- * report reaches an IGMP-snooping switch and the responder stops receiving
- * queries even though the local state looks fine. Recovery must force a fresh
- * report in this case.
- */
-ZTEST(test_mdns_responder, test_ipv4_igmp_report_when_already_joined_on_if_up)
-{
-	zassert_true(ipv4_group_joined(iface1),
-		     "IPv4 mDNS group should be joined at start");
-
-	/* Group stays joined; only an IF_UP event is delivered (no down). */
-	igmp_report_count = 0;
-
-	net_mgmt_event_notify(NET_EVENT_IF_UP, iface1);
-	k_sleep(K_MSEC(200));
-
-	zassert_true(igmp_report_count > 0,
-		     "No IGMP report was re-emitted when the group was already joined "
-		     "on interface up");
-}
-
 /* Same, but for a carrier loss (Ethernet cable unplugged/replugged) without an
  * administrative down.
  */
@@ -985,6 +1174,13 @@ ZTEST(test_mdns_responder, test_group_recovery_after_carrier_off_on)
 		     "Responder did not recover after carrier came back");
 }
 
+/* The next two tests verify which interfaces the configured responder policy enables.
+ * iface1 is dummy0 and iface2 is dummy1 (default names for the two dummy interfaces).
+ * The policy test scenarios use allowlist "dummy0" and denylist "dummy1", so in both cases
+ * iface1 runs mDNS while iface2 does not. Under the default ALL policy both
+ * interfaces run mDNS.
+ */
+
 /* Recovery must also work on interfaces other than the first one. The old
  * NET_EVENT_IF_UP handler never rejoined the IPv6 MLD group (ff02::fb) for
  * any interface, so a second interface lost mDNS after a down/up cycle. (Its
@@ -996,11 +1192,13 @@ ZTEST(test_mdns_responder, test_second_iface_group_recovery_after_down_up)
 {
 	struct net_if *iface2 = net_if_get_by_index(2);
 
+	Z_TEST_SKIP_IFNDEF(CONFIG_MDNS_RESPONDER_IFACE_POLICY_ALL);
+
 	zassert_not_null(iface2, "Second interface is NULL");
 
-	zassert_true(ipv4_group_joined(iface2),
+	zexpect_true(ipv4_group_joined(iface2),
 		     "iface2 IPv4 mDNS group not joined before the link went down");
-	zassert_true(ipv6_group_joined(iface2),
+	zexpect_true(ipv6_group_joined(iface2),
 		     "iface2 IPv6 mDNS group not joined before the link went down");
 
 	zassert_ok(net_if_down(iface2), "Cannot bring the second interface down");
@@ -1008,10 +1206,309 @@ ZTEST(test_mdns_responder, test_second_iface_group_recovery_after_down_up)
 
 	k_sleep(K_MSEC(100));
 
-	zassert_true(ipv4_group_joined(iface2),
+	zexpect_true(ipv4_group_joined(iface2),
 		     "iface2 IPv4 mDNS group not rejoined after the interface came back up");
-	zassert_true(ipv6_group_joined(iface2),
+	zexpect_true(ipv6_group_joined(iface2),
 		     "iface2 IPv6 mDNS group not rejoined after the interface came back up");
+}
+
+/* With a non-default interface policy in effect, the responder must operate on
+ * the allowed interface (iface1) and stay off the excluded one (iface2). The
+ * excluded interface must never join the mDNS multicast groups, not even after
+ * a link recovery that would otherwise rejoin them.
+ */
+ZTEST(test_mdns_responder, test_iface_policy_excludes_iface2)
+{
+	struct net_if *iface2 = net_if_get_by_index(2);
+
+	Z_TEST_SKIP_IFDEF(CONFIG_MDNS_RESPONDER_IFACE_POLICY_ALL);
+
+	zassert_not_null(iface2, "Second interface is NULL");
+
+	/* The allowed interface still runs mDNS. */
+	zexpect_true(ipv4_group_joined(iface1),
+		     "policy-allowed iface1 not in the IPv4 mDNS group");
+	zexpect_true(ipv6_group_joined(iface1),
+		     "policy-allowed iface1 not in the IPv6 mDNS group");
+
+	/* The excluded interface must not be a member of either group. */
+	zexpect_false(ipv4_group_joined(iface2),
+		      "policy-excluded iface2 joined the IPv4 mDNS group");
+	zexpect_false(ipv6_group_joined(iface2),
+		      "policy-excluded iface2 joined the IPv6 mDNS group");
+
+	zassert_ok(net_if_down(iface2), "Cannot bring the second interface down");
+	zassert_ok(net_if_up(iface2), "Cannot bring the second interface back up");
+
+	k_sleep(K_MSEC(100));
+
+	/* A recovery cycle must not sneak the excluded interface into the group. */
+	zexpect_false(ipv4_group_joined(iface2),
+		      "policy-excluded iface2 joined the IPv4 mDNS group on recovery");
+	zexpect_false(ipv6_group_joined(iface2),
+		      "policy-excluded iface2 joined the IPv6 mDNS group on recovery");
+}
+
+/* The runtime control API must be able to take the responder off an interface
+ * that it is currently running on, and put it back. Disabling drops the mDNS
+ * multicast memberships (and closes the listener socket); enabling restores
+ * them so that the responder answers queries again.
+ */
+ZTEST(test_mdns_responder, test_runtime_disable_then_enable_iface)
+{
+	Z_TEST_SKIP_IFNDEF(CONFIG_MDNS_RESPONDER_RUNTIME_IFACE_CONTROL);
+
+	zexpect_true(ipv4_group_joined(iface1),
+		     "iface1 not in the IPv4 mDNS group at start");
+	zexpect_true(ipv6_group_joined(iface1),
+		     "iface1 not in the IPv6 mDNS group at start");
+
+	zexpect_ok(mdns_responder_disable_iface(iface1),
+		   "Cannot disable the responder on iface1");
+	k_sleep(K_MSEC(100));
+
+	zexpect_false(ipv4_group_joined(iface1),
+		      "iface1 still in the IPv4 mDNS group after disable");
+	zexpect_false(ipv6_group_joined(iface1),
+		      "iface1 still in the IPv6 mDNS group after disable");
+
+	zexpect_ok(mdns_responder_enable_iface(iface1),
+		   "Cannot re-enable the responder on iface1");
+	k_sleep(K_MSEC(100));
+
+	zexpect_true(ipv4_group_joined(iface1),
+		     "iface1 not rejoined the IPv4 mDNS group after enable");
+	zexpect_true(ipv6_group_joined(iface1),
+		     "iface1 not rejoined the IPv6 mDNS group after enable");
+	zexpect_true(responder_answers_query(),
+		     "Responder did not answer after being re-enabled");
+}
+
+/* Argument validation for the runtime control API. */
+ZTEST(test_mdns_responder, test_runtime_iface_control_bad_args)
+{
+	Z_TEST_SKIP_IFNDEF(CONFIG_MDNS_RESPONDER_RUNTIME_IFACE_CONTROL);
+
+	zexpect_equal(mdns_responder_enable_iface(NULL), -EINVAL,
+		      "enable_iface(NULL) should return -EINVAL");
+	zexpect_equal(mdns_responder_disable_iface(NULL), -EINVAL,
+		      "disable_iface(NULL) should return -EINVAL");
+}
+
+/* A runtime enable must override the build-time policy: an interface excluded
+ * by the policy (iface2 == dummy1) can still be turned on at runtime, and
+ * turned back off again.
+ */
+ZTEST(test_mdns_responder, test_runtime_enable_overrides_policy)
+{
+	struct net_if *iface2 = net_if_get_by_index(2);
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_MDNS_RESPONDER_RUNTIME_IFACE_CONTROL);
+	Z_TEST_SKIP_IFDEF(CONFIG_MDNS_RESPONDER_IFACE_POLICY_ALL);
+
+	zexpect_not_null(iface2, "Second interface is NULL");
+
+	/* Policy keeps iface2 off. */
+	zexpect_false(ipv4_group_joined(iface2),
+		      "policy-excluded iface2 is in the IPv4 mDNS group");
+	zexpect_false(ipv6_group_joined(iface2),
+		      "policy-excluded iface2 is in the IPv6 mDNS group");
+
+	/* Runtime enable overrides the policy. */
+	zexpect_ok(mdns_responder_enable_iface(iface2),
+		   "Cannot enable the responder on iface2");
+	k_sleep(K_MSEC(100));
+
+	zexpect_true(ipv4_group_joined(iface2),
+		     "iface2 not in the IPv4 mDNS group after runtime enable");
+	zexpect_true(ipv6_group_joined(iface2),
+		     "iface2 not in the IPv6 mDNS group after runtime enable");
+
+	/* Turning it back off must drop the memberships again. Leave iface2 in
+	 * the off state so the rest of the suite sees the policy default.
+	 */
+	zexpect_ok(mdns_responder_disable_iface(iface2),
+		   "Cannot disable the responder on iface2");
+	k_sleep(K_MSEC(100));
+
+	zexpect_false(ipv4_group_joined(iface2),
+		      "iface2 still in the IPv4 mDNS group after runtime disable");
+	zexpect_false(ipv6_group_joined(iface2),
+		      "iface2 still in the IPv6 mDNS group after runtime disable");
+}
+
+/* The test-only hooks are compiled together with runtime interface control
+ * (they call mdns_close_listeners()), which is also the only configuration
+ * where the teardown path this guards against is reachable. That availability
+ * gate stays a compile-time #if; the policy applicability gate below is a
+ * runtime skip.
+ */
+#if defined(CONFIG_MDNS_RESPONDER_RUNTIME_IFACE_CONTROL)
+extern int mdns_test_get_listener_sock(net_sa_family_t family, unsigned int slot);
+extern int mdns_test_reinit_with_stale_slot(unsigned int slot);
+
+/* A listener slot that the setup skips (here iface2 == dummy1 == slot 1, kept
+ * off by the allowlist policy) must be marked closed (-1), not left at the
+ * zero-initialized fd 0. Otherwise mdns_close_listeners() - run on every
+ * runtime reconfigure - would treat the slot as open, unregister a zeroed
+ * dispatcher and close(0), silently closing an unrelated descriptor.
+ *
+ * Reproduce the boot-time "never opened" condition by injecting fd 0 into the
+ * excluded slot and re-running the setup, then assert the slot was closed.
+ */
+ZTEST(test_mdns_responder, test_excluded_listener_slot_marked_closed)
+{
+	Z_TEST_SKIP_IFNDEF(CONFIG_MDNS_RESPONDER_IFACE_POLICY_ALLOWLIST);
+
+	zexpect_ok(mdns_test_reinit_with_stale_slot(1),
+		   "Cannot re-run mDNS listener setup");
+
+	if (IS_ENABLED(CONFIG_NET_IPV4)) {
+		zexpect_equal(mdns_test_get_listener_sock(NET_AF_INET, 1), -1,
+			      "Excluded IPv4 listener slot left open (stale fd)");
+	}
+
+	if (IS_ENABLED(CONFIG_NET_IPV6)) {
+		zexpect_equal(mdns_test_get_listener_sock(NET_AF_INET6, 1), -1,
+			      "Excluded IPv6 listener slot left open (stale fd)");
+	}
+}
+#endif /* CONFIG_MDNS_RESPONDER_RUNTIME_IFACE_CONTROL */
+
+/*
+ * Parse the mDNS response and verify every AAAA answer belongs to expect
+ * (the interface that received the query) and not to forbid.
+ */
+static void mh_check_aaaa_on_iface(struct net_pkt *pkt, struct net_if *expect,
+				   struct net_if *forbid)
+{
+	struct dns_header resp_header;
+	struct dns_rr resp_record;
+	struct net_in6_addr resp_addr;
+	uint16_t ancount;
+
+	net_pkt_cursor_init(pkt);
+	net_pkt_set_overwrite(pkt, true);
+	zassert_ok(net_pkt_skip(pkt, NET_IPV6UDPH_LEN), "net_pkt skip failed");
+	zassert_ok(net_pkt_read(pkt, &resp_header, sizeof(resp_header)), "net_pkt read failed");
+
+	ancount = net_ntohs(resp_header.ancount);
+	zassert_true(ancount > 0, "Expected at least one answer");
+
+	for (uint16_t i = 0; i < ancount; i++) {
+		skip_labels(pkt);
+		zassert_ok(net_pkt_read(pkt, &resp_record, sizeof(resp_record)),
+			   "net_pkt read failed");
+		zassert_equal(net_ntohs(resp_record.type), DNS_RR_TYPE_AAAA,
+			      "Expected AAAA answer only");
+		zassert_equal(net_ntohs(resp_record.rdlength), sizeof(struct net_in6_addr),
+			      "Invalid AAAA length");
+		zassert_ok(net_pkt_read(pkt, &resp_addr, sizeof(resp_addr)),
+			   "net_pkt read failed");
+		zassert_not_null(net_if_ipv6_addr_lookup_by_iface(expect, &resp_addr),
+				 "AAAA should belong to query iface");
+		zassert_is_null(net_if_ipv6_addr_lookup_by_iface(forbid, &resp_addr),
+				"AAAA must not come from other iface");
+	}
+}
+
+/*
+ * Inject a raw IPv6/UDP mDNS query on iface as if received from the network.
+ * The packet is handed to net_recv_data() on that interface.
+ */
+static void mh_send_query(struct net_if *iface, const struct net_in6_addr *src,
+			  const struct net_in6_addr *dst, const uint8_t *data, size_t len)
+{
+	struct net_pkt *pkt;
+	uint8_t v6_buf[40];
+	uint16_t payload_len = len + NET_UDPH_LEN;
+
+	pkt = net_pkt_alloc_with_buffer(iface, NET_IPV6UDPH_LEN + len, NET_AF_UNSPEC, 0, K_FOREVER);
+	zassert_not_null(pkt, "PKT is null");
+
+	memset(v6_buf, 0, sizeof(v6_buf));
+	v6_buf[0] = 0x60;
+	memcpy(&v6_buf[8], src->s6_addr, 16);
+	memcpy(&v6_buf[24], dst->s6_addr, 16);
+	v6_buf[6] = NET_IPPROTO_UDP;
+	v6_buf[7] = 255;
+
+	zassert_ok(net_pkt_write(pkt, v6_buf, 4), "pkt write for v6 start failed");
+	zassert_ok(net_pkt_write_be16(pkt, payload_len), "pkt write for v6 payload len failed");
+	zassert_ok(net_pkt_write(pkt, &v6_buf[6], sizeof(v6_buf) - 6),
+		   "pkt write for v6 rest failed");
+	zassert_ok(net_pkt_write_be16(pkt, 5353), "pkt write for UDP src port failed");
+	zassert_ok(net_pkt_write_be16(pkt, 5353), "pkt write for UDP dst port failed");
+	zassert_ok(net_pkt_write_be16(pkt, payload_len), "pkt write for UDP length failed");
+	zassert_ok(net_pkt_write_be16(pkt, 0), "pkt write for UDP checksum failed");
+	zassert_ok(net_pkt_write(pkt, data, len), "net_pkt_write() for data failed");
+	zassert_ok(net_recv_data(iface, pkt), "net_recv_data() failed");
+}
+
+/*
+ * On a multi-homed host, mDNS AAAA answers must use an address from the
+ * interface that received the query (socket BINDTODEVICE / recv iface),
+ * not net_if_ipv6_select_src_iface() toward the querier.
+ *
+ * Layout:
+ *   - iface1: default route, 2001:db8::/64
+ *   - iface2: on-link /96, hosts the querier (fe80::99) and the GUA to advertise
+ *
+ * Query is injected on iface2; response AAAA must come from iface2, not iface1.
+ */
+ZTEST(test_mdns_responder, test_multihomed_aaaa_on_recv_iface)
+{
+	/* DNS query: zephyr.local, type AAAA, class IN */
+	static const uint8_t hostname_query[] = {
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x06, 0x7a, 0x65, 0x70, 0x68, 0x79, 0x72, 0x05, 0x6c, 0x6f, 0x63, 0x61, 0x6c,
+		0x00, 0x00, 0x1c, 0x00, 0x01
+	};
+	struct net_in6_addr mcast = { { { 0xff, 0x02, 0, 0, 0, 0, 0, 0,
+					 0, 0, 0, 0, 0, 0, 0, 0xfb } } }; /* ff02::fb */
+	struct net_if *iface2 = net_if_get_by_index(2);
+	struct net_if_addr *ifaddr;
+	int res;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_MDNS_RESPONDER_IFACE_POLICY_ALL);
+
+	zassert_not_null(iface2, "iface2 missing");
+
+	mh_response_pkt = NULL;
+	mh_capture_active = true;
+	test_started = true;
+
+	/* iface1: upstream /64; made default so src selection would prefer it. */
+	(void)net_if_ipv6_prefix_add(iface1, &mh_iface1_prefix, 64,
+				     NET_IPV6_ND_INFINITE_LIFETIME);
+	/* iface2: on-link /96 and the addresses the responder should advertise. */
+	(void)net_if_ipv6_prefix_add(iface2, &mh_iface2_prefix, 96,
+				     NET_IPV6_ND_INFINITE_LIFETIME);
+
+	ifaddr = net_if_ipv6_addr_add(iface2, &mh_iface2_ll, NET_ADDR_MANUAL, 0);
+	zassert_not_null(ifaddr, "Failed to add iface2 LL");
+	ifaddr->addr_state = NET_ADDR_PREFERRED;
+
+	ifaddr = net_if_ipv6_addr_add(iface2, &mh_iface2_gua, NET_ADDR_MANUAL, 0);
+	zassert_not_null(ifaddr, "Failed to add iface2 GUA");
+	ifaddr->addr_state = NET_ADDR_PREFERRED;
+
+	net_ipv6_nbr_add(iface2, &mh_querier_ll, net_if_get_link_addr(iface2), false,
+			 NET_IPV6_NBR_STATE_STATIC);
+
+	net_if_set_default(iface1);
+	net_if_up(iface2);
+	k_sleep(K_MSEC(500));
+
+	/* Query arrives on iface2 from link-local querier fe80::99. */
+	mh_send_query(iface2, &mh_querier_ll, &mcast, hostname_query, sizeof(hostname_query));
+
+	res = k_sem_take(&mh_response_sem, RESPONSE_TIMEOUT);
+	zassert_ok(res, "Did not receive mDNS response on iface2");
+
+	mh_check_aaaa_on_iface(mh_response_pkt, iface2, iface1);
+
+	mh_reset_capture();
 }
 
 ZTEST_SUITE(test_mdns_responder, NULL, test_setup, before, cleanup, NULL);

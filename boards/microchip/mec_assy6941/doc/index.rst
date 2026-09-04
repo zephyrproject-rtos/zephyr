@@ -185,6 +185,15 @@ Configuration options are:
 	2. 2-pin SWD plus SWO. Connect JP12 jumpers for JTAG_TDO, JTAG_TMS, and JTAG_CLK. JTAG_TDI is available to use as GPIO145.
 	3. 2-pin SWD only. Connect JP12 jumpers for JTAG_TMS and JTAG_CLK. JTAG_TDI and JTAG_TDO are available as GPIO145 and GPIO146 respectively
 
+User button and LED
+-------------------
+
+The :zephyr:code-sample:`button` sample uses GPIO106 as a user button and GPIO156
+to drive an LED. Configure the following jumpers to route these signals:
+
+	* ``JP19 1-2`` Mux GPIO106 to ``JP71.3`` (button input).
+	* ``JP149 1-2`` Connect GPIO156 to ``LED7`` (LED output).
+
 Jumper settings for MEC174x/MEC175x 176WFBGA Socket DC Assy 6942 Rev A0p1
 =========================================================================
 

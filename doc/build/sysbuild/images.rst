@@ -283,7 +283,8 @@ configuration values, multiple can be used per image, the configuration should b
 different images to correctly configure them based upon options set in sysbuild. MCUboot
 configuration options are configured in both the application the MCUboot image using this method
 which allows sysbuild to be the central location for things like the signing key which are then
-kept in-sync in the main application bootloader images.
+kept in-sync in the main application bootloader images. See :ref:`build-signing-keys` for setting
+the key to an absolute path or a CMake variable such as ``${APP_DIR}``.
 
 Inside image configuration scripts, the ``ZCMAKE_APPLICATION`` variable is set to the name of the
 application being configured, the ``set_config_*`` sysbuild CMake functions can be used to set

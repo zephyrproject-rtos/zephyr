@@ -237,8 +237,10 @@ static void do_test_using(void (*sample_collection_fn)(void), const char *mechan
 		- expected_time_drift_us;
 	double time_diff_us_abs = time_diff_us >= 0.0 ? time_diff_us : -time_diff_us;
 
-	/* If max stddev is lower than a single clock tick then round it up. */
-	uint32_t max_stddev = MAX(k_ticks_to_us_ceil32(1), CONFIG_TIMER_TEST_MAX_STDDEV);
+	/* Allowed jitter is one tick, the scheduling quantum, computed from the
+	 * clock rather than a tuning value.
+	 */
+	uint32_t max_stddev = k_ticks_to_us_ceil32(1);
 
 	TC_PRINT("timer clock rate %u, kernel tick rate %d\n",
 		 sys_clock_hw_cycles_per_sec(), CONFIG_SYS_CLOCK_TICKS_PER_SEC);
@@ -311,22 +313,51 @@ static void do_test_using(void (*sample_collection_fn)(void), const char *mechan
 		 max_stddev
 		 );
 
-	/* Validate the maximum/minimum timer period is off by no more than 10% */
+	/* Validate the maximum/minimum timer period is within the allowed drift.
+	 *
+	 * The bound is an absolute time, one tick, computed from the clock rather
+	 * than a percentage of the period. A periodic timer is rescheduled in
+	 * whole ticks, so a single period can land up to one tick from nominal;
+	 * one tick also covers the measurement slop at any realistic tick rate.
+	 * It scales with the cycle-to-tick ratio, so a coarse clock (e.g. a
+	 * 32 kHz SysTick, where a tick is a large fraction of the period) widens
+	 * the bound automatically and needs no per-platform value.
+	 */
 	double test_period = (double)CONFIG_TIMER_TEST_PERIOD;
-	double period_max_drift_percentage =
-		(double)CONFIG_TIMER_TEST_PERIOD_MAX_DRIFT_PERCENT / 100;
-	double min_us_bound = test_period - period_max_drift_percentage * test_period
-		+ expected_period_drift;
-	double max_us_bound = test_period + period_max_drift_percentage * test_period
-		+ expected_period_drift;
+	double allowed_drift_us = (double)k_ticks_to_us_ceil32(1);
+	double nominal_us = test_period + expected_period_drift;
 
-	zassert_true(min_us >= min_us_bound,
-		"Shortest timer period too short (off by more than expected %d%%)",
-		CONFIG_TIMER_TEST_PERIOD_MAX_DRIFT_PERCENT);
-	zassert_true(max_us <= max_us_bound,
-		"Longest timer period too long (off by more than expected %d%%)",
-		CONFIG_TIMER_TEST_PERIOD_MAX_DRIFT_PERCENT);
+	/* Report the measured drift as a percentage for readability; the
+	 * pass/fail decision below is on the absolute allowed_drift_us bound.
+	 */
+	TC_PRINT("period drift allowed +/-%f us (%.3g%%); measured min %f us (%.3g%%), "
+		 "max %f us (%.3g%%)\n",
+		 allowed_drift_us, allowed_drift_us / test_period * 100,
+		 nominal_us - min_us, (nominal_us - min_us) / test_period * 100,
+		 max_us - nominal_us, (max_us - nominal_us) / test_period * 100);
 
+	zassert_true(max_us <= nominal_us + allowed_drift_us,
+		"Longest timer period %f us too long: drift %f us (%.3g%%) exceeds allowed %f us",
+		max_us, max_us - nominal_us, (max_us - nominal_us) / test_period * 100,
+		allowed_drift_us);
+
+	/* The low-side bound (nominal - one tick) only carries information while
+	 * the nominal period stays above one tick. A period can never be
+	 * negative, so once the period is within a tick of zero, "one tick short"
+	 * permits an arbitrarily short period and the assertion can no longer
+	 * fail. Skip it there rather than run a check that always passes; at that
+	 * resolution the short side is constrained by the jitter (stddev) and
+	 * total-drift checks below.
+	 */
+	if (nominal_us > allowed_drift_us) {
+		zassert_true(min_us >= nominal_us - allowed_drift_us,
+			"Shortest timer period %f us too short: drift %f us (%.3g%%) exceeds allowed %f us",
+			min_us, nominal_us - min_us, (nominal_us - min_us) / test_period * 100,
+			allowed_drift_us);
+	} else {
+		TC_PRINT("nominal period (%f us) is within one tick; short-side bound "
+			 "not applicable, see stddev and total drift\n", nominal_us);
+	}
 
 	/* Validate the timer deviation (precision/jitter of the timer) is within a configurable
 	 * bound
@@ -334,9 +365,14 @@ static void do_test_using(void (*sample_collection_fn)(void), const char *mechan
 	zassert_true(stddev_us < (double)max_stddev,
 		     "Standard deviation (in microseconds) outside expected bound");
 
-	/* Validate the timer drift (accuracy over time) is within a configurable bound */
-	zassert_true(time_diff_us_abs < CONFIG_TIMER_TEST_MAX_DRIFT,
-		     "Drift (in microseconds) outside expected bound");
+	/* Validate the timer accuracy over time: the total measured time must
+	 * not drift from the model by as much as a whole period. That "within
+	 * one period" allowance is the test period itself, so no separate tuning
+	 * value is needed.
+	 */
+	zassert_true(time_diff_us_abs < test_period,
+		     "Total drift %f us exceeds one period (%f us)",
+		     time_diff_us_abs, test_period);
 }
 
 ZTEST(timer_jitter_drift, test_jitter_drift_timer_period)

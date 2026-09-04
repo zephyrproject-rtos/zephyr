@@ -85,7 +85,7 @@ int sx126x_hal_set_dio1_callback(const struct device *dev,
 	data->dio1_callback = callback;
 
 	if (callback != NULL) {
-		NVIC_ClearPendingIRQ(DT_INST_IRQN(0));
+		k_irq_clear_pending(DT_INST_IRQN(0));
 		irq_enable(DT_INST_IRQN(0));
 	} else {
 		irq_disable(DT_INST_IRQN(0));
@@ -105,7 +105,7 @@ void sx126x_hal_dio1_irq_enable(const struct device *dev)
 	 * can wake the radio from a duty-cycle sleep phase and
 	 * abort the cycle.
 	 */
-	NVIC_ClearPendingIRQ(DT_INST_IRQN(0));
+	k_irq_clear_pending(DT_INST_IRQN(0));
 	irq_enable(DT_INST_IRQN(0));
 }
 

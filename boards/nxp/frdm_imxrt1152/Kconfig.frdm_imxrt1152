@@ -1,0 +1,5 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_FRDM_IMXRT1152
+	select SOC_PART_NUMBER_MIMXRT1152XHM8B

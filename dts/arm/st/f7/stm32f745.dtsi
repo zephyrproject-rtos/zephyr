@@ -77,7 +77,7 @@
 		};
 
 		mac: ethernet@40028000 {
-			compatible = "st,stm32-ethernet";
+			compatible = "st,stm32-ethernet", "snps,dwmac";
 			reg = <0x40028000 0x8000>;
 			clock-names = "stm-eth", "mac-clk-tx", "mac-clk-rx", "mac-clk-ptp";
 			clocks = <&rcc STM32_CLOCK(AHB1, 25)>,
@@ -85,13 +85,19 @@
 				 <&rcc STM32_CLOCK(AHB1, 27)>,
 				 <&rcc STM32_CLOCK(AHB1, 28)>;
 			interrupts = <61 0>;
+			snps,multicast-filter-bins = <64>;
+			snps,perfect-filter-entries = <4>;
 			status = "disabled";
 
 			mdio: mdio {
-				compatible = "st,stm32-mdio", "snps,dwmac-mdio";
+				compatible = "snps,dwmac-mdio";
 				#address-cells = <1>;
 				#size-cells = <0>;
 				status = "disabled";
+			};
+
+			ptp_clock: ptp-clock {
+				compatible = "snps,dwmac-ptp-clock";
 			};
 		};
 	};

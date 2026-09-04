@@ -6,7 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <nxp/lpc/LPC55S16JBD100-pinctrl.h>
+#include <nxp/lpc/lpc55xxx/pinctrl/LPC55S16JBD100-pinctrl.h>
 
 &pinctrl {
 	pinmux_can0: pinmux_can0 {

@@ -6,9 +6,10 @@
 
 #define DT_DRV_COMPAT realtek_bee_core_wdt
 
+#include <zephyr/irq.h>
 #include <zephyr/drivers/watchdog.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 
 #if defined(CONFIG_SOC_SERIES_RTL87X2G)
 #include <rtl_wdt.h>
@@ -74,7 +75,7 @@ static int core_wdt_bee_setup(const struct device *dev, uint8_t options)
 {
 	struct core_wdt_bee_data *data = dev->data;
 
-	if ((options & WDT_OPT_PAUSE_IN_SLEEP) || (options & WDT_OPT_PAUSE_HALTED_BY_DBG)) {
+	if (options & (WDT_OPT_PAUSE_IN_SLEEP | WDT_OPT_PAUSE_HALTED_BY_DBG)) {
 		return -ENOTSUP;
 	}
 
@@ -180,7 +181,7 @@ static int core_wdt_bee_init(const struct device *dev)
 	nvic_init_struct.NVIC_IRQChannelPriority = 0;
 	NVIC_Init(&nvic_init_struct);
 #else
-	NVIC_ClearPendingIRQ(config->irq_num);
+	k_irq_clear_pending(config->irq_num);
 	config->cfg_func();
 #endif
 

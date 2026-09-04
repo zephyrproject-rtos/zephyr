@@ -23,7 +23,7 @@ is implemented using plain buffers. Users of the API create sockets
 for communication and pass the buffer to the library for parsing and other
 purposes. The library itself doesn't create any sockets for users.
 
-On top of CoAP, Zephyr has support for LWM2M "Lightweight Machine 2 Machine"
+On top of CoAP, Zephyr has support for LwM2M "Lightweight Machine 2 Machine"
 protocol, a simple, low-cost remote management and service enablement mechanism.
 See :ref:`lwm2m_interface` for more information.
 
@@ -33,8 +33,13 @@ Supported RFCs:
 - :rfc:`6690` - Constrained RESTful Environments (CoRE) Link Format
 - :rfc:`7959` - Block-Wise Transfers in the Constrained Application Protocol (CoAP)
 - :rfc:`7641` - Observing Resources in the Constrained Application Protocol (CoAP)
+- :rfc:`8613` - Object Security for Constrained RESTful Environments (OSCORE)
 
 .. note:: Not all parts of these RFCs are supported. Features are supported based on Zephyr requirements.
+
+The Zephyr CoAP library also supports Object Security for Constrained RESTful
+Environments (OSCORE) as specified in :rfc:`8613`. See :ref:`coap_oscore_interface`
+for more information.
 
 Sample Usage
 ************

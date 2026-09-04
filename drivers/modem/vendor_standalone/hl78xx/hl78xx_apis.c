@@ -995,6 +995,16 @@ int hl78xx_api_func_get_modem_info(const struct device *dev, enum hl78xx_modem_i
 		*(uint32_t *)info = data->status.uart.current_baudrate;
 		k_mutex_unlock(&data->api_lock);
 		return 0;
+
+	case HL78XX_MODEM_INFO_FW_VERSION:
+		if (size < sizeof(data->identity.fw_version)) {
+			return -EINVAL;
+		}
+
+		k_mutex_lock(&data->api_lock, K_FOREVER);
+		safe_strncpy((char *)info, (const char *)data->identity.fw_version, size);
+		k_mutex_unlock(&data->api_lock);
+		return 0;
 	default:
 		return -ENOTSUP;
 	}

@@ -38,6 +38,25 @@ are tested on this board:
 - :ref:`lcd_par_s035` - supports the Display interface.  This board uses the
   MIPI_DBI interface of the shield, connected to the FlexIO on-chip peripheral.
 
+Display Support
+***************
+
+The frdm_mcxa577 board supports the following in-tree display module(s).
+
+NXP LCD_PAR_S035
+================
+
+The :ref:`lcd_par_s035` connects to the board's LCD socket, and is driven over
+the MIPI_DBI 8080 parallel interface using the FlexIO on-chip peripheral. The
+display sample can be built for this module like so:
+
+.. zephyr-app-commands::
+   :board: frdm_mcxa577
+   :shield: lcd_par_s035_8080
+   :zephyr-app: samples/drivers/display
+   :goals: build
+   :compact:
+
 Connections and IOs
 ===================
 

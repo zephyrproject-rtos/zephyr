@@ -1,0 +1,6 @@
+board:
+  name: rh02_plus_2026
+  full_name: RH02 Plus (2026)
+  vendor: jhoinrch
+  socs:
+    - name: stm32g431xx

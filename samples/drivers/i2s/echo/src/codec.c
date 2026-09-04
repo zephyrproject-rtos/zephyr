@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2021 Nordic Semiconductor ASA
  * Copyright (c) 2025 Croxel Inc
+ * Copyright The Zephyr Project Contributors
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -11,6 +12,10 @@
 #include <zephyr/drivers/i2c.h>
 
 #if DT_ON_BUS(WM8731_NODE, i2c)
+
+#if CONFIG_SAMPLE_FREQ != 44100
+#error "The WM8731 configuration supports only a 44.1 kHz sample frequency"
+#endif
 
 #define WM8731_I2C_NODE DT_BUS(WM8731_NODE)
 #define WM8731_I2C_ADDR DT_REG_ADDR(WM8731_NODE)
@@ -176,6 +181,16 @@ bool init_wm8731_i2c(void)
 #define MAX9867_NI_LOWER_OTHER   0x00
 #define MAX9867_NI_LOWER_44p1KHZ 0x33
 
+#if CONFIG_SAMPLE_FREQ == 44100
+#define MAX9867_NI_UPPER MAX9867_NI_UPPER_44p1KHZ
+#define MAX9867_NI_LOWER MAX9867_NI_LOWER_44p1KHZ
+#elif CONFIG_SAMPLE_FREQ == 48000
+#define MAX9867_NI_UPPER MAX9867_NI_UPPER_48KHZ
+#define MAX9867_NI_LOWER MAX9867_NI_LOWER_OTHER
+#else
+#error "The MAX9867 configuration supports only 44.1 kHz and 48 kHz sample frequencies"
+#endif
+
 /* MAX9867_08_DAI_FORMAT */
 #define MAX9867_MAS    (1 << 7)
 #define MAX9867_WCI    (1 << 6)
@@ -195,14 +210,16 @@ bool init_wm8731_i2c(void)
  * MAX9867_0E_LVL_LINE_IN_LEFT
  * MAX9867_0F_LVL_LINE_IN_RIGHT
  */
-#define MAX9867_LI_MUTE     (1 << 6)
-#define MAX9867_LI_GAIN_POS 0
+#define MAX9867_LI_MUTE         (1 << 6)
+#define MAX9867_LI_GAIN_POS     0
+#define MAX9867_LI_GAIN_NEG_6DB 0x0F
 
 /*
  * MAX9867_10_VOL_LEFT
  * MAX9867_11_VOL_RIGHT
  */
-#define MAX9867_VOL_POS 0
+#define MAX9867_VOL_POS     0
+#define MAX9867_VOL_GAIN_0DB 0x09
 
 /* MAX9867_14_ADC_INPUT */
 #define MAX9867_MXINL_POS       6
@@ -218,8 +235,14 @@ bool init_wm8731_i2c(void)
 
 /* MAX9867_16_MODE */
 #define MAX9867_HPMODE_POS          0
+#define MAX9867_STEREO_CAPLESS      2
 #define MAX9867_STEREO_SE_CLICKLESS 4
-#define MAX9867_MONO_SE_CLICKLESS   5
+
+#if DT_PROP(MAX9867_NODE, adi_stereo_capacitorless_output)
+#define MAX9867_HEADPHONE_MODE MAX9867_STEREO_CAPLESS
+#else
+#define MAX9867_HEADPHONE_MODE MAX9867_STEREO_SE_CLICKLESS
+#endif
 
 /* MAX9867_17_PWR_SYS */
 #define MAX9867_SHDN  (1 << 7)
@@ -229,6 +252,17 @@ bool init_wm8731_i2c(void)
 #define MAX9867_DAREN (1 << 2)
 #define MAX9867_ADLEN (1 << 1)
 #define MAX9867_ADREN (1 << 0)
+
+#if DT_PROP(MAX9867_NODE, adi_use_line_in)
+#define MAX9867_MIC_CONFIG 0
+#define MAX9867_ADC_INPUT_CONFIG                                                                   \
+	((MAX9867_MXIN_LINE << MAX9867_MXINL_POS) | (MAX9867_MXIN_LINE << MAX9867_MXINR_POS))
+#define MAX9867_INPUT_POWER (MAX9867_LNLEN | MAX9867_LNREN | MAX9867_ADLEN | MAX9867_ADREN)
+#else
+#define MAX9867_MIC_CONFIG       (0x1 << MAX9867_DIGMICR_POS)
+#define MAX9867_ADC_INPUT_CONFIG 0
+#define MAX9867_INPUT_POWER      MAX9867_ADLEN
+#endif
 
 bool init_max9867_i2c(void)
 {
@@ -267,28 +301,32 @@ bool init_max9867_i2c(void)
 		 * 20MHz. Set prescaler, FREQ field is 0 for Normal or PLL mode, < 20MHz.
 		 */
 		{MAX9867_05_SYS_CLK, 0x01 << MAX9867_PSCLK_POS},
-		/* Configure codec to generate 48kHz sampling frequency in controller mode */
-		{MAX9867_06_CLK_HIGH, MAX9867_NI_UPPER_44p1KHZ},
-		{MAX9867_07_CLK_LOW, MAX9867_NI_LOWER_44p1KHZ},
+		/* Configure the sampling frequency in controller mode. */
+		{MAX9867_06_CLK_HIGH, MAX9867_NI_UPPER},
+		{MAX9867_07_CLK_LOW, MAX9867_NI_LOWER},
 		{MAX9867_09_DAI_CLOCK, MAX9867_BSEL_PCLK_DIV8},
 		/* I2S format */
 		{MAX9867_08_DAI_FORMAT, MAX9867_MAS | MAX9867_DLY | MAX9867_HIZOFF},
 		/* */
 		{MAX9867_0A_DIG_FILTER, 0xA2},
-		/* Select Digital microphone input */
-		{MAX9867_15_MIC, ((0x1 << MAX9867_DIGMICR_POS))},
+		/* Select the digital microphone or line input. */
+		{MAX9867_15_MIC, MAX9867_MIC_CONFIG},
+		{MAX9867_14_ADC_INPUT, MAX9867_ADC_INPUT_CONFIG},
 		/* ADC level */
 		{MAX9867_0D_LVL_ADC, (3 << MAX9867_AVL_POS) | (3 << MAX9867_AVR_POS)},
-		/*Set line-in level, disconnect line input from playback amplifiers */
-		{MAX9867_0E_LVL_LINE_IN_LEFT, (0x0C << MAX9867_LI_GAIN_POS) | MAX9867_LI_MUTE},
-		{MAX9867_0F_LVL_LINE_IN_RIGHT, (0x0C << MAX9867_LI_GAIN_POS) | MAX9867_LI_MUTE},
-		/* Headphone mode */
-		{MAX9867_16_MODE, MAX9867_STEREO_SE_CLICKLESS << MAX9867_HPMODE_POS},
-		/* Set playback volume */
-		{MAX9867_10_VOL_LEFT, 0x04 << MAX9867_VOL_POS},
-		{MAX9867_11_VOL_RIGHT, 0x04 << MAX9867_VOL_POS},
+		/* Set line-in level, disconnect line input from playback amplifiers. */
+		{MAX9867_0E_LVL_LINE_IN_LEFT,
+		 (MAX9867_LI_GAIN_NEG_6DB << MAX9867_LI_GAIN_POS) | MAX9867_LI_MUTE},
+		{MAX9867_0F_LVL_LINE_IN_RIGHT,
+		 (MAX9867_LI_GAIN_NEG_6DB << MAX9867_LI_GAIN_POS) | MAX9867_LI_MUTE},
+		/* Configure the headphone output mode. */
+		{MAX9867_16_MODE, MAX9867_HEADPHONE_MODE << MAX9867_HPMODE_POS},
+		/* Set the nominal playback gain to 0 dB. */
+		{MAX9867_10_VOL_LEFT, MAX9867_VOL_GAIN_0DB << MAX9867_VOL_POS},
+		{MAX9867_11_VOL_RIGHT, MAX9867_VOL_GAIN_0DB << MAX9867_VOL_POS},
 		/* Enable */
-		{MAX9867_17_PWR_SYS, MAX9867_SHDN | MAX9867_DALEN | MAX9867_DAREN | MAX9867_ADLEN},
+		{MAX9867_17_PWR_SYS,
+		 MAX9867_SHDN | MAX9867_DALEN | MAX9867_DAREN | MAX9867_INPUT_POWER},
 	};
 
 	if (!device_is_ready(i2c_dev)) {

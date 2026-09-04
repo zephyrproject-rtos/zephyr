@@ -5,6 +5,12 @@
  *
  */
 
+/**
+ * @file
+ * @brief MCTP bus binding over I2C with GPIO signaling, target side.
+ * @ingroup mctp
+ */
+
 #ifndef ZEPHYR_INCLUDE_PMCI_MCTP_MCTP_I2C_GPIO_TARGET_H_
 #define ZEPHYR_INCLUDE_PMCI_MCTP_MCTP_I2C_GPIO_TARGET_H_
 

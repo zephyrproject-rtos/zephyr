@@ -13,7 +13,7 @@
 #ifndef ZEPHYR_XEN_DMOP_H_
 #define ZEPHYR_XEN_DMOP_H_
 
-#include <zephyr/xen/public/hvm/dm_op.h>
+#include <xen/public/hvm/dm_op.h>
 
 /**
  * @defgroup xen_device_model Xen device model

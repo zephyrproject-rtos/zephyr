@@ -60,7 +60,7 @@ struct wuc_dt_spec {
  *	         .id = 10
  *	 }
  *
- * The 'wuc' field must still be checked for readiness, e.g. using
+ * The 'dev' field must still be checked for readiness, e.g. using
  * device_is_ready(). It is an error to use this macro unless the node
  * exists, has the given property, and that property specifies a wakeup
  * controller wakeup source id as shown above.

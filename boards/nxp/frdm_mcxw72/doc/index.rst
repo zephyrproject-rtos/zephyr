@@ -37,7 +37,14 @@ achieved by running the following command:
 
 .. code-block:: console
 
-   west blobs fetch hal_nxp
+   west blobs fetch hal_nxp -l "mcxw72"
+
+.. note::
+
+   The ``-l`` option takes a Python regular expression that is matched against
+   each blob's path. Passing ``"mcxw72"`` limits the download to the blobs
+   required by this board instead of fetching every NXP blob. Omit the option
+   (``west blobs fetch hal_nxp``) to fetch all NXP blobs.
 
 Programming and Debugging
 *************************

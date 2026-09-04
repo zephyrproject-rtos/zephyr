@@ -25,7 +25,6 @@ properties:
     const: 2
 
   ngpios:
-    required: true
     const: 6
     description: |
       Number of GPIOs available on axp192.

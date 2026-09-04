@@ -15,13 +15,13 @@
 #include <string.h>
 #include <errno.h>
 
-#include "hal/sha_hal.h"
-#include "hal/sha_ll.h"
-#include "hal/sha_types.h"
-#include "soc/soc_caps.h"
+#include <hal/sha_hal.h>
+#include <hal/sha_ll.h>
+#include <hal/sha_types.h>
+#include <soc/soc_caps.h>
 
 #if !SOC_SHA_SUPPORT_RESUME
-#include "soc/hwcrypto_reg.h"
+#include <soc/hwcrypto_reg.h>
 #endif
 
 LOG_MODULE_REGISTER(esp32_sha, CONFIG_CRYPTO_LOG_LEVEL);

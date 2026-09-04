@@ -54,7 +54,8 @@ static const uint16_t port_line_mapping[DT_INST_PROP_LEN(0, port_line_mapping)] 
 
 int intc_xmc4xxx_gpio_enable_interrupt(int port_id, int pin, enum gpio_int_mode mode,
 				       enum gpio_int_trig trig,
-				       void (*fn)(const struct device *, int), void *user_data)
+				       void (*fn)(const struct device *dev, int pin),
+				       void *user_data)
 {
 	const struct device *dev = DEVICE_DT_INST_GET(0);
 	struct intc_xmc4xxx_data *data = dev->data;

@@ -429,7 +429,7 @@ static inline bool i2c_bflb_errored(const struct device *dev)
 	const struct i2c_bflb_cfg *config = dev->config;
 	uint32_t tmp = sys_read32(config->base + I2C_INT_STS_OFFSET);
 
-	return (tmp & I2C_ARB_INT) != 0 || (tmp & I2C_FER_INT) != 0;
+	return (tmp & (I2C_ARB_INT | I2C_FER_INT)) != 0;
 }
 
 static int i2c_bflb_write(const struct device *dev, uint8_t *buf, uint8_t len)
@@ -758,7 +758,8 @@ static int i2c_bflb_deinit(const struct device *dev)
 	sys_write32(tmp, config->base + I2C_INT_STS_OFFSET);
 
 	/* disable clocks */
-#if defined(CONFIG_SOC_SERIES_BL61X) || defined(CONFIG_SOC_SERIES_BL808)
+#if defined(CONFIG_SOC_SERIES_BL61X) || defined(CONFIG_SOC_SERIES_BL808) \
+	|| defined(CONFIG_SOC_SERIES_BL616CL)
 	tmp = sys_read32(GLB_BASE + GLB_I2C_CFG0_OFFSET);
 	tmp &= GLB_I2C_CLK_EN_UMSK;
 	sys_write32(tmp, GLB_BASE + GLB_I2C_CFG0_OFFSET);

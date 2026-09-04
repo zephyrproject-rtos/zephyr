@@ -14,7 +14,6 @@
 #include <zephyr/sys/atomic.h>
 #include <zephyr/drivers/counter/stm32.h>
 #include <zephyr/drivers/pinctrl.h>
-
 #include <stm32_ll_tim.h>
 #include <stm32_ll_rcc.h>
 
@@ -227,7 +226,7 @@ static void counter_stm32_counter_stm32_set_cc_int_pending(const struct device *
 	struct counter_stm32_data *data = dev->data;
 
 	atomic_or(&data->cc_int_pending, BIT(chan));
-	NVIC_SetPendingIRQ(config->irqn);
+	k_irq_set_pending(config->irqn);
 }
 
 static int counter_stm32_set_cc(const struct device *dev, uint8_t id,
@@ -860,11 +859,18 @@ static void counter_stm32_irq_handler_global(const struct device *dev)
 /** TIMx instance from DT */
 #define TIM(idx) ((TIM_TypeDef *)DT_REG_ADDR(TIMER(idx)))
 
+#if defined(CONFIG_GIC)
+#define COUNTER_STM32_GET_IRQ_FLAGS(index, name) DT_IRQ_BY_NAME(TIMER(index), name, flags)
+#else /* NVIC */
+#define COUNTER_STM32_GET_IRQ_FLAGS(index, name) 0
+#endif /* CONFIG_GIC */
+
 #define IRQ_CONNECT_AND_ENABLE_BY_NAME(index, name)				\
 {										\
 	IRQ_CONNECT(DT_IRQ_BY_NAME(TIMER(index), name, irq),			\
 		    DT_IRQ_BY_NAME(TIMER(index), name, priority),		\
-		    counter_stm32_irq_handler_##name, DEVICE_DT_INST_GET(index), 0);	\
+		    counter_stm32_irq_handler_##name, DEVICE_DT_INST_GET(index),	\
+		    COUNTER_STM32_GET_IRQ_FLAGS(index, name));			\
 	irq_enable(DT_IRQ_BY_NAME(TIMER(index), name, irq));			\
 }
 

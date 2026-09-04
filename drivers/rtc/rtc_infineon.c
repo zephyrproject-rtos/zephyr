@@ -1,6 +1,6 @@
 /*
- * Copyright (c) 2024 Cypress Semiconductor Corporation (an Infineon company) or
- * an affiliate of Cypress Semiconductor Corporation
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -78,8 +78,8 @@ static cy_stc_syspm_callback_t _ifx_cat1_rtc_pm_cb = {
 
 #define _IFX_CAT1_RTC_WAIT_ONE_MS() Cy_SysLib_Delay(_IFX_CAT1_RTC_RETRY_DELAY_MS);
 
-/* Internal macro to validate RTC year parameter falls within 21st century */
-#define IFX_CAT1_RTC_VALID_CENTURY(year) ((year) >= _IFX_CAT1_RTC_INIT_CENTURY)
+/* Internal macro to validate RTC year parameter */
+#define IFX_CAT1_RTC_VALID_CENTURY(year) ((year) >= _IFX_CAT1_RTC_TM_YEAR_BASE)
 
 #define MAX_IFX_CAT1_CAL (60)
 
@@ -143,7 +143,10 @@ static void _ifx_cat1_rtc_from_pdl_time(cy_stc_rtc_config_t *pdlTime, const int 
 	 * driver.
 	 */
 	z_time->tm_mon = (int)(pdlTime->month - 1u);
-	z_time->tm_wday = (int)(pdlTime->dayOfWeek - 1u);
+
+	/* pdlTime->dayOfWeek is incorrect for years <2000 - redo calculation */
+	z_time->tm_wday =
+		(int)(Cy_RTC_ConvertDayOfWeek(pdlTime->date, pdlTime->month, (uint32_t)year) - 1u);
 
 	/* year day not known in pdl RTC structure without conversion */
 	z_time->tm_yday = -1;

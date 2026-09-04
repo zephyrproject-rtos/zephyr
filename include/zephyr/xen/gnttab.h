@@ -16,7 +16,7 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#include <zephyr/xen/public/grant_table.h>
+#include <xen/public/grant_table.h>
 
 /**
  * @defgroup xen_grant_tables Xen grant tables
@@ -134,6 +134,22 @@ int gnttab_map_refs(struct gnttab_map_grant_ref *map_ops, unsigned int count);
  * field.
  */
 int gnttab_unmap_refs(struct gnttab_unmap_grant_ref *unmap_ops, unsigned int count);
+
+/**
+ * @brief Query current and maximum grant table size for a domain.
+ *
+ * @kconfig_dep{CONFIG_XEN_GRANT_TABLE}
+ *
+ * @param dom Domain whose grant table size should be queried. Use
+ *        ``DOMID_SELF`` for the calling domain.
+ * @param nr_frames Storage where Xen writes the current frame count.
+ * @param max_nr_frames Storage where Xen writes the maximum frame count.
+ * @param status Storage where Xen writes the ``GNTST_*`` operation status.
+ *
+ * @return Zero on hypercall success, negative errno value on failure.
+ */
+int gnttab_query_size(domid_t dom, uint32_t *nr_frames, uint32_t *max_nr_frames,
+		      int16_t *status);
 
 /**
  * @brief Convert a Xen grant-table status into readable text.

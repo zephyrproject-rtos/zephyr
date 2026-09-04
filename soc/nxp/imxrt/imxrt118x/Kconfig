@@ -39,6 +39,43 @@ config SOC_MIMXRT1186_CM7
 	select CPU_CORTEX_M7
 	select HAS_MCUX_CACHE
 
+config SOC_MIMXRT1185_CM33
+	select CPU_CORTEX_M33
+	select HAS_MCUX_XCACHE
+	select CACHE_MANAGEMENT
+
+config SOC_MIMXRT1185_CM7
+	select CPU_CORTEX_M7
+	select HAS_MCUX_CACHE
+
+config SOC_MIMXRT118C_CM33
+	select CPU_CORTEX_M33
+	select HAS_MCUX_XCACHE
+	select CACHE_MANAGEMENT
+
+config SOC_MIMXRT118C_CM7
+	select CPU_CORTEX_M7
+	select HAS_MCUX_CACHE
+
+config SOC_MIMXRT1187_CM33
+	select CPU_CORTEX_M33
+	select HAS_MCUX_XCACHE
+	select CACHE_MANAGEMENT
+
+config SOC_MIMXRT1187_CM7
+	select CPU_CORTEX_M7
+	select HAS_MCUX_CACHE
+
+config SOC_MIMXRT1182
+	select CPU_CORTEX_M33
+	select HAS_MCUX_XCACHE
+	select CACHE_MANAGEMENT
+
+config SOC_MIMXRT1181
+	select CPU_CORTEX_M33
+	select HAS_MCUX_XCACHE
+	select CACHE_MANAGEMENT
+
 if SOC_SERIES_IMXRT118X
 
 config IMAGE_CONTAINER_OFFSET
@@ -61,9 +98,11 @@ config CONTAINER_USER_IMAGE_OFFSET
 	  start address, please don't forget to modify CONTAINER_USER_IMAGE_OFFSET
 	  value, this will make ROM could get the user image start address.
 
+# Single-core parts (RT1182/RT1181) have no core suffix in their
+# HAL device files (e.g. MIMXRT1182.h, not MIMXRT1182_cm33.h)
 config MCUX_CORE_SUFFIX
 	default "_cm7" if CPU_CORTEX_M7
-	default "_cm33" if CPU_CORTEX_M33
+	default "_cm33" if CPU_CORTEX_M33 && !SOC_MIMXRT1182 && !SOC_MIMXRT1181
 
 config TRDC_MCUX_TRDC
 	default y

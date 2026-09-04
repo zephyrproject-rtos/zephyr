@@ -17,6 +17,7 @@
 #ifndef ZEPHYR_INCLUDE_ARCH_RISCV_ARCH_H_
 #define ZEPHYR_INCLUDE_ARCH_RISCV_ARCH_H_
 
+#include <zephyr/arch/riscv/bit_rev.h>
 #include <zephyr/arch/riscv/thread.h>
 #include <zephyr/arch/exception.h>
 #include <zephyr/arch/riscv/irq.h>

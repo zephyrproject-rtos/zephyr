@@ -81,4 +81,5 @@ ZTEST(bayes_f32, test_gaussian_naive_bayes_predict_f32)
 	/* Free output buffers */
 	free(output_probs_buf);
 	free(output_preds_buf);
+	free(temp);
 }

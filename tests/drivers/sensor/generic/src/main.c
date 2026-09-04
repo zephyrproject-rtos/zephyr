@@ -502,6 +502,107 @@ ZTEST(sensor_api, test_sensor_unit_conversion)
 			"the result does not match");
 	zassert_equal(sensor_value_to_micro(&data), 5432109876543LL,
 			"the result does not match");
+
+	struct sensor_value data2, out;
+
+	/* Testing sensor_value additions */
+	data.val1 = 0;
+	data.val2 = 500000;
+	data2.val1 = 0;
+	data2.val2 = 500000;
+	ret = sensor_value_add(&data, &data2, &out);
+	zassert_equal(ret, 0, "success expected");
+	zassert_equal(out.val1, 1, "the result does not match");
+	zassert_equal(out.val2, 0, "the result does not match");
+
+	data.val1 = 1;
+	data.val2 = 0;
+	data2.val1 = 0;
+	data2.val2 = -250000;
+	ret = sensor_value_add(&data, &data2, &out);
+	zassert_equal(ret, 0, "success expected");
+	zassert_equal(out.val1, 0, "the result does not match");
+	zassert_equal(out.val2, 750000, "the result does not match");
+
+	/* Testing sensor_value subtractions */
+	data.val1 = 1;
+	data.val2 = 0;
+	data2.val1 = 0;
+	data2.val2 = 250000;
+	ret = sensor_value_subtract(&data, &data2, &out);
+	zassert_equal(ret, 0, "success expected");
+	zassert_equal(out.val1, 0, "the result does not match");
+	zassert_equal(out.val2, 750000, "the result does not match");
+
+	data.val1 = 0;
+	data.val2 = -250000;
+	data2.val1 = 1;
+	data2.val2 = 0;
+	ret = sensor_value_subtract(&data, &data2, &out);
+	zassert_equal(ret, 0, "success expected");
+	zassert_equal(out.val1, -1, "the result does not match");
+	zassert_equal(out.val2, -250000, "the result does not match");
+
+	/* Testing sensor_value multiplications */
+	data.val1 = 1;
+	data.val2 = 500000;
+	data2.val1 = 2;
+	data2.val2 = 0;
+	ret = sensor_value_multiply(&data, &data2, &out);
+	zassert_equal(ret, 0, "success expected");
+	zassert_equal(out.val1, 3, "the result does not match");
+	zassert_equal(out.val2, 0, "the result does not match");
+
+	data.val1 = 0;
+	data.val2 = 500000;
+	data2.val1 = 0;
+	data2.val2 = -500000;
+	ret = sensor_value_multiply(&data, &data2, &out);
+	zassert_equal(ret, 0, "success expected");
+	zassert_equal(out.val1, 0, "the result does not match");
+	zassert_equal(out.val2, -250000, "the result does not match");
+
+	/* Testing sensor_value scaling */
+	data.val1 = 0;
+	data.val2 = 750000;
+	ret = sensor_value_scale(&data, 2, &out);
+	zassert_equal(ret, 0, "success expected");
+	zassert_equal(out.val1, 1, "the result does not match");
+	zassert_equal(out.val2, 500000, "the result does not match");
+
+	data.val1 = -1;
+	data.val2 = -500000;
+	ret = sensor_value_scale(&data, -3, &out);
+	zassert_equal(ret, 0, "success expected");
+	zassert_equal(out.val1, 4, "the result does not match");
+	zassert_equal(out.val2, 500000, "the result does not match");
+
+	/* Testing out-of-range edge cases for sensor_value arithmetic functions */
+	data.val1 = INT32_MAX;
+	data.val2 = 999999;
+	data2.val1 = 0;
+	data2.val2 = 1;
+	ret = sensor_value_add(&data, &data2, &out);
+	zassert_equal(ret, -ERANGE, "range error expected");
+
+	data.val1 = INT32_MIN;
+	data.val2 = -999999;
+	data2.val1 = 0;
+	data2.val2 = 1;
+	ret = sensor_value_subtract(&data, &data2, &out);
+	zassert_equal(ret, -ERANGE, "range error expected");
+
+	data.val1 = INT32_MAX;
+	data.val2 = 0;
+	data2.val1 = 2;
+	data2.val2 = 0;
+	ret = sensor_value_multiply(&data, &data2, &out);
+	zassert_equal(ret, -ERANGE, "range error expected");
+
+	data.val1 = INT32_MAX;
+	data.val2 = 0;
+	ret = sensor_value_scale(&data, 2, &out);
+	zassert_equal(ret, -ERANGE, "range error expected");
 }
 
 ZTEST_SUITE(sensor_api, NULL, NULL, ztest_simple_1cpu_before, ztest_simple_1cpu_after, NULL);

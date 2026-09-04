@@ -656,7 +656,7 @@ static int aic26_init(const struct device *dev)
 	return 0;
 }
 
-DEVICE_API(audio_codec, aic26_api) = {
+static DEVICE_API(audio_codec, aic26_api) = {
 	.configure        = aic26_configure,
 	.start_output     = aic26_start_output,
 	.stop_output      = aic26_stop_output,
@@ -669,7 +669,7 @@ DEVICE_API(audio_codec, aic26_api) = {
 									\
 	static const struct tlv320aic26_config aic26_cfg_##n = {	\
 		.spi = SPI_DT_SPEC_INST_GET(n,				\
-			SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB |		\
+			SPI_OP_MODE_CONTROLLER | SPI_TRANSFER_MSB |		\
 			SPI_MODE_CPHA | SPI_WORD_SET(8)),		\
 		.mclk_freq = DT_INST_PROP(n, mclk_frequency),		\
 	};								\

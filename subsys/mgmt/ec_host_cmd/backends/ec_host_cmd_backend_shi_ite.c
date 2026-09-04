@@ -286,24 +286,27 @@ static int shi_ite_host_request_expected_size(const struct ec_host_cmd_request_h
 static void shi_ite_parse_header(const struct device *dev)
 {
 	struct shi_it8xxx2_data *data = dev->data;
-	struct ec_host_cmd_request_header *r = (struct ec_host_cmd_request_header *)data->in_msg;
+	struct ec_host_cmd_request_header r;
 
-	/* Store request data from Rx FIFO to in_msg buffer (rx_ctx->buf) */
-	shi_ite_host_request_data(data->in_msg, sizeof(*r));
+	/* Store request header from Rx FIFO to local buffer */
+	shi_ite_host_request_data((uint8_t *)&r, sizeof(r));
 
 	/* Protocol version 3 */
-	if (r->prtcl_ver == EC_HOST_REQUEST_VERSION) {
+	if (r.prtcl_ver == EC_HOST_REQUEST_VERSION) {
 		/* Check how big the packet should be */
-		data->rx_ctx->len = shi_ite_host_request_expected_size(r);
+		data->rx_ctx->len = shi_ite_host_request_expected_size(&r);
 
 		if (data->rx_ctx->len == 0 || data->rx_ctx->len > sizeof(data->in_msg)) {
 			shi_ite_bad_received_data(dev, data->rx_ctx->len);
 			return;
 		}
 
+		/* Copy verified header to in_msg buffer */
+		memcpy(data->in_msg, &r, sizeof(r));
+
 		/* Store request data from Rx FIFO to in_msg buffer */
-		shi_ite_host_request_data(data->rx_ctx->buf + sizeof(*r),
-					  data->rx_ctx->len - sizeof(*r));
+		shi_ite_host_request_data(data->rx_ctx->buf + sizeof(r),
+					  data->rx_ctx->len - sizeof(r));
 
 		ec_host_cmd_rx_notify();
 	} else {
@@ -344,6 +347,11 @@ static void shi_ite_int_handler(const struct device *dev)
 	if (IT83XX_SPI_RX_VLISR & IT83XX_SPI_RVLI) {
 		/* write clear slave status */
 		IT83XX_SPI_RX_VLISR = IT83XX_SPI_RVLI;
+		if (data->shi_state != SHI_STATE_READY_TO_RECV &&
+		    data->shi_state != SHI_STATE_RECEIVING) {
+			LOG_ERR("Received SPI RVLI in invalid state %d", data->shi_state);
+			return;
+		}
 		/* Move to processing state */
 		shi_ite_set_state(data, SHI_STATE_PROCESSING);
 		/* Parse header for version of spi-protocol */
@@ -355,15 +363,15 @@ void shi_ite_cs_callback(const struct device *port, struct gpio_callback *cb, gp
 {
 	struct shi_it8xxx2_data *data = CONTAINER_OF(cb, struct shi_it8xxx2_data, cs_cb);
 
-	if (data->shi_state == SHI_STATE_DISABLED) {
+	if (data->shi_state != SHI_STATE_READY_TO_RECV) {
 		return;
 	}
 
 	/* Prevent the MCU from sleeping during the transmission */
 	shi_ite_pm_policy_state_lock_get(data, SHI_ITE_PM_POLICY_FLAG);
 
-	/* Move to processing state */
-	shi_ite_set_state(data, SHI_STATE_PROCESSING);
+	/* Move to receiving state */
+	shi_ite_set_state(data, SHI_STATE_RECEIVING);
 }
 
 static int shi_ite_init_registers(const struct device *dev)
@@ -511,14 +519,27 @@ PINCTRL_DT_INST_DEFINE(0);
 #ifdef CONFIG_PM_DEVICE
 static int shi_ite_pm_cb(const struct device *dev, enum pm_device_action action)
 {
+	const struct shi_it8xxx2_cfg *cfg = dev->config;
 	struct shi_it8xxx2_data *data = dev->data;
-	int ret = 0;
+	int ret;
 
 	switch (action) {
 	case PM_DEVICE_ACTION_SUSPEND:
 		shi_ite_set_state(data, SHI_STATE_DISABLED);
+
+		ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_SLEEP);
+		if (ret < 0) {
+			LOG_ERR("%s: Failed to configure gpio pins", dev->name);
+			return ret;
+		}
 		break;
 	case PM_DEVICE_ACTION_RESUME:
+		ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+		if (ret < 0) {
+			LOG_ERR("%s: Failed to configure SHI pins", dev->name);
+			return ret;
+		}
+
 		shi_ite_set_state(data, SHI_STATE_READY_TO_RECV);
 		break;
 	default:
@@ -526,12 +547,15 @@ static int shi_ite_pm_cb(const struct device *dev, enum pm_device_action action)
 		break;
 	}
 
-	return ret;
+	return 0;
 }
 #endif
 
 /* Assume only one peripheral */
 PM_DEVICE_DT_INST_DEFINE(0, shi_ite_pm_cb);
+
+BUILD_ASSERT(!IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME) || IS_ENABLED(CONFIG_PM_DEVICE_SYSTEM_MANAGED),
+	     "CONFIG_PM_DEVICE_SYSTEM_MANAGED must be enabled when using CONFIG_PM_DEVICE_RUNTIME");
 
 static const struct ec_host_cmd_backend_api ec_host_cmd_api = {
 	.init = shi_ite_backend_init,

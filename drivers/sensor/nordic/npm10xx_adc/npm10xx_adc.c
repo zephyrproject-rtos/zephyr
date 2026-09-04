@@ -458,7 +458,7 @@ static int npm10xx_sensor_init(const struct device *dev)
 	}
 
 	data->caldis = 15 * ADC_RESULT(cal_regs[0], cal_regs[2], BAT_CALLSBS_DISLSB_Msk) - 1024;
-	data->calchg = 15 * ADC_RESULT(cal_regs[1], cal_regs[2], BAT_CALLSBS_DISLSB_Msk) - 1024;
+	data->calchg = 15 * ADC_RESULT(cal_regs[1], cal_regs[2], BAT_CALLSBS_CHGLSB_Msk) - 1024;
 
 	if (data->caldis < 0 || data->calchg < 0) {
 		LOG_ERR("Read invalid calibrations for battery current");

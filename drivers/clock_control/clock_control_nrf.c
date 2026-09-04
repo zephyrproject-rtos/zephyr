@@ -252,7 +252,8 @@ static void clkstarted_handle(const struct device *dev,
 			      enum clock_control_nrf_type type)
 {
 #if CONFIG_CLOCK_CONTROL_NRF_HFINT_CALIBRATION
-	if (NRF_ERRATA_DYNAMIC_CHECK(54L, 30) && (type == CLOCK_CONTROL_NRF_TYPE_HFCLK)) {
+	if ((NRF_ERRATA_DYNAMIC_CHECK(54L, 30) || NRF_ERRATA_DYNAMIC_CHECK(71, 30)) &&
+	    (type == CLOCK_CONTROL_NRF_TYPE_HFCLK)) {
 		nrf54l_errata_30_workaround();
 	}
 #endif
@@ -630,7 +631,7 @@ static void lfclk_spinwait(enum nrf_lfclk_start_mode mode)
 		return;
 	}
 
-	can_sleep = !k_is_in_isr() && !k_is_pre_kernel();
+	can_sleep = IS_ENABLED(CONFIG_MULTITHREADING) && !k_is_in_isr() && !k_is_pre_kernel();
 
 	nrf_clock_int_disable(NRF_CLOCK, NRF_CLOCK_INT_LF_STARTED_MASK);
 

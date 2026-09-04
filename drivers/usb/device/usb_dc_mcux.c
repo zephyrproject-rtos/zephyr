@@ -12,20 +12,20 @@
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/pinctrl.h>
-#include "usb.h"
-#include "usb_device.h"
-#include "usb_device_config.h"
-#include "usb_device_dci.h"
+#include <usb.h>
+#include <usb_device.h>
+#include <usb_device_config.h>
+#include <usb_device_dci.h>
 
 #ifdef CONFIG_USB_DC_NXP_EHCI
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT nxp_ehci
-#include "usb_device_ehci.h"
+#include <usb_device_ehci.h>
 #endif
 #ifdef CONFIG_USB_DC_NXP_LPCIP3511
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT nxp_lpcip3511
-#include "usb_device_lpcip3511.h"
+#include <usb_device_lpcip3511.h>
 #endif
 #ifdef CONFIG_HAS_MCUX_CACHE
 #include <fsl_cache.h>
@@ -143,8 +143,8 @@ static struct usb_ep_ctrl_data s_ep_ctrl[NUM_OF_EP_MAX];
 static struct usb_dc_state dev_state;
 
 /* Message queue for the usb thread */
-K_MSGQ_DEFINE(usb_dc_msgq, sizeof(usb_device_callback_message_struct_t),
-	CONFIG_USB_DC_MSG_QUEUE_LEN, 4);
+K_MSGQ_DEFINE_STATIC_TYPE(usb_dc_msgq, usb_device_callback_message_struct_t,
+	CONFIG_USB_DC_MSG_QUEUE_LEN);
 
 #if defined(CONFIG_USB_DC_NXP_EHCI)
 /* EHCI device driver interface */

@@ -92,11 +92,27 @@ void create_thread(bool is_front, bool is_user)
 #endif /* CONFIG_THREAD_STACK_MEM_MAPPED */
 
 /**
- * @brief Test faulting on front guard page
+ * @brief Verify that the front guard page of a mapped stack faults.
  *
  * @ingroup kernel_memprotect_tests
+ *
+ * @details
+ * A memory-mapped thread stack is surrounded by unmapped guard pages, so an
+ * access that runs off either end of the stack faults immediately instead of
+ * corrupting whatever happens to be adjacent. The spawned thread deliberately
+ * touches the middle of the front guard page; the fault is the expected outcome,
+ * and running past the access fails the test. Skipped when
+ * CONFIG_THREAD_STACK_MEM_MAPPED is not enabled.
+ * Test steps:
+ * - Create a kernel thread on a memory-mapped stack and record the mapped
+ *   stack's address and size.
+ * - In the thread, write to the middle of the front guard page.
+ *
+ * Expected result:
+ * - The write faults on the guard page and the thread is terminated; the code
+ *   after the write is never reached.
  */
-ZTEST(stackprot_mapped_stack, test_guard_page_front)
+ZTEST(stackprot_mapped_stack, test_stackprot_guard_page_front)
 {
 #ifdef CONFIG_THREAD_STACK_MEM_MAPPED
 	create_thread(true, false);
@@ -106,11 +122,27 @@ ZTEST(stackprot_mapped_stack, test_guard_page_front)
 }
 
 /**
- * @brief Test faulting on rear guard page
+ * @brief Verify that the rear guard page of a mapped stack faults.
  *
  * @ingroup kernel_memprotect_tests
+ *
+ * @details
+ * A memory-mapped thread stack is surrounded by unmapped guard pages, so an
+ * access that runs off either end of the stack faults immediately instead of
+ * corrupting whatever happens to be adjacent. The spawned thread deliberately
+ * touches the middle of the rear guard page; the fault is the expected outcome,
+ * and running past the access fails the test. Skipped when
+ * CONFIG_THREAD_STACK_MEM_MAPPED is not enabled.
+ * Test steps:
+ * - Create a kernel thread on a memory-mapped stack and record the mapped
+ *   stack's address and size.
+ * - In the thread, write to the middle of the rear guard page.
+ *
+ * Expected result:
+ * - The write faults on the guard page and the thread is terminated; the code
+ *   after the write is never reached.
  */
-ZTEST(stackprot_mapped_stack, test_guard_page_rear)
+ZTEST(stackprot_mapped_stack, test_stackprot_guard_page_rear)
 {
 #ifdef CONFIG_THREAD_STACK_MEM_MAPPED
 	create_thread(false, false);
@@ -120,11 +152,27 @@ ZTEST(stackprot_mapped_stack, test_guard_page_rear)
 }
 
 /**
- * @brief Test faulting on front guard page in user mode
+ * @brief Verify that the front guard page faults for a user thread.
  *
  * @ingroup kernel_memprotect_tests
+ *
+ * @details
+ * A memory-mapped thread stack is surrounded by unmapped guard pages, so an
+ * access that runs off either end of the stack faults immediately instead of
+ * corrupting whatever happens to be adjacent. The spawned thread deliberately
+ * touches the middle of the front guard page; the fault is the expected outcome,
+ * and running past the access fails the test. Skipped when
+ * CONFIG_THREAD_STACK_MEM_MAPPED is not enabled.
+ * Test steps:
+ * - Create a user thread on a memory-mapped stack and record the mapped
+ *   stack's address and size.
+ * - In the thread, write to the middle of the front guard page.
+ *
+ * Expected result:
+ * - The write faults on the guard page and the thread is terminated; the code
+ *   after the write is never reached.
  */
-ZTEST(stackprot_mapped_stack, test_guard_page_front_user)
+ZTEST(stackprot_mapped_stack, test_stackprot_guard_page_front_user)
 {
 #ifdef CONFIG_THREAD_STACK_MEM_MAPPED
 	create_thread(true, true);
@@ -134,11 +182,27 @@ ZTEST(stackprot_mapped_stack, test_guard_page_front_user)
 }
 
 /**
- * @brief Test faulting on rear guard page in user mode
+ * @brief Verify that the rear guard page faults for a user thread.
  *
  * @ingroup kernel_memprotect_tests
+ *
+ * @details
+ * A memory-mapped thread stack is surrounded by unmapped guard pages, so an
+ * access that runs off either end of the stack faults immediately instead of
+ * corrupting whatever happens to be adjacent. The spawned thread deliberately
+ * touches the middle of the rear guard page; the fault is the expected outcome,
+ * and running past the access fails the test. Skipped when
+ * CONFIG_THREAD_STACK_MEM_MAPPED is not enabled.
+ * Test steps:
+ * - Create a user thread on a memory-mapped stack and record the mapped
+ *   stack's address and size.
+ * - In the thread, write to the middle of the rear guard page.
+ *
+ * Expected result:
+ * - The write faults on the guard page and the thread is terminated; the code
+ *   after the write is never reached.
  */
-ZTEST(stackprot_mapped_stack, test_guard_page_rear_user)
+ZTEST(stackprot_mapped_stack, test_stackprot_guard_page_rear_user)
 {
 #ifdef CONFIG_THREAD_STACK_MEM_MAPPED
 	create_thread(false, true);

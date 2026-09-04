@@ -15,8 +15,8 @@
 #include <zephyr/modem/pipe.h>
 #include <zephyr/modem/stats.h>
 
-#ifndef ZEPHYR_MODEM_PPP_
-#define ZEPHYR_MODEM_PPP_
+#ifndef ZEPHYR_INCLUDE_MODEM_PPP_H_
+#define ZEPHYR_INCLUDE_MODEM_PPP_H_
 
 #ifdef __cplusplus
 extern "C" {
@@ -49,6 +49,7 @@ enum modem_ppp_receive_state {
 	/* Searching for start of frame and header */
 	MODEM_PPP_RECEIVE_STATE_HDR_SOF = 0,
 	MODEM_PPP_RECEIVE_STATE_HDR_FF,
+	MODEM_PPP_RECEIVE_STATE_HDR_FF_UNESCAPE,
 	MODEM_PPP_RECEIVE_STATE_HDR_CTRL_UNESCAPE,
 	MODEM_PPP_RECEIVE_STATE_HDR_CTRL,
 	/* Writing bytes to network packet */
@@ -222,4 +223,4 @@ int modem_ppp_init_internal(const struct device *dev);
 }
 #endif
 
-#endif /* ZEPHYR_MODEM_PPP_ */
+#endif /* ZEPHYR_INCLUDE_MODEM_PPP_H_ */

@@ -40,7 +40,7 @@ int fxas21002_read_spi(const struct device *dev,
 	const struct fxas21002_config *cfg = dev->config;
 
 	/* Reads must clock out a dummy byte after sending the address. */
-	uint8_t reg_buf[2] = { DIR_READ(reg), 0 };
+	uint8_t reg_buf[3] = { DIR_READ(reg), 0, 0 };
 	const struct spi_buf buf[2] = {
 		{ .buf = reg_buf, .len = 3 },
 		{ .buf = data, .len = length }
@@ -452,7 +452,7 @@ static DEVICE_API(sensor, fxas21002_driver_api) = {
 
 #define FXAS21002_CONFIG_SPI(inst)								\
 		.bus_cfg = {.spi = SPI_DT_SPEC_INST_GET(inst,					\
-			SPI_OP_MODE_MASTER | SPI_WORD_SET(8)) },				\
+			SPI_OP_MODE_CONTROLLER | SPI_WORD_SET(8)) },				\
 		.ops = &fxas21002_spi_ops,							\
 		.reset_gpio = GPIO_DT_SPEC_INST_GET(inst, reset_gpios),				\
 		.inst_on_bus = FXAS21002_BUS_SPI,						\

@@ -6,8 +6,9 @@
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32WB0_CLOCK_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32WB0_CLOCK_H_
 
-/** Define system & low-speed clocks */
-#include "stm32_common_clocks.h"
+#include <zephyr/dt-bindings/clock/stm32_common_clocks.h>
+
+/** @cond INTERNAL_HIDDEN */
 
 /** Other fixed clocks.
  * - CLKSLOWMUX: used to query slow clock tree frequency
@@ -41,5 +42,7 @@
 #define SPI2_I2S2_SEL(val)	STM32_DT_CLOCK_SELECT((val), 22, 22, CFGR_REG)
 /* `msb` is only 22 for WB06/WB07, but a single definition with msb=23 is acceptable */
 #define SPI3_I2S3_SEL(val)	STM32_DT_CLOCK_SELECT((val), 23, 22, CFGR_REG)
+
+/** @endcond */
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32WB0_CLOCK_H_ */

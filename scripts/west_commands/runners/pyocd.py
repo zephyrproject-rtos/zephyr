@@ -78,7 +78,7 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
 
     @classmethod
     def capabilities(cls):
-        return RunnerCaps(commands={'flash', 'debug', 'debugserver', 'attach', 'rtt'},
+        return RunnerCaps(commands={'flash', 'debug', 'debugserver', 'attach', 'rtt', 'reset'},
                           dev_id=True, flash_addr=True, erase=True, skip_load=True,
                           tool_opt=True, rtt=True)
 
@@ -130,12 +130,6 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
             frequency=args.frequency,
             tool_opt=args.tool_opt)
 
-        daparg = os.environ.get('PYOCD_DAPARG')
-        if not ret.daparg_args and daparg:
-            ret.logger.warning('PYOCD_DAPARG is deprecated; use --daparg')
-            ret.logger.debug(f'--daparg={daparg} via PYOCD_DAPARG')
-            ret.daparg_args = ['-da', daparg]
-
         return ret
 
     def port_args(self):
@@ -145,10 +139,25 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
         self.require(self.pyocd)
         if command == 'rtt':
             self.rtt(**kwargs)
+        elif command == 'reset':
+            self.reset(**kwargs)
         elif command == 'flash':
             self.flash(**kwargs)
         else:
             self.debug_debugserver(command, **kwargs)
+
+    def reset(self, **kwargs):
+        cmd = ([self.pyocd] +
+               ['reset'] +
+               self.pyocd_config_args +
+               self.daparg_args +
+               self.target_args +
+               self.board_args +
+               self.frequency_args +
+               self.tool_opt_args +
+               self.flash_extra)
+
+        self.check_call(cmd)
 
     def flash(self, **kwargs):
         # Use hex, bin or elf file provided by the buildsystem.

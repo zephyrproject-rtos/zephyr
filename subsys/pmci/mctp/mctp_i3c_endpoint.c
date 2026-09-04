@@ -9,6 +9,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/i3c.h>
 #include <zephyr/pmci/mctp/mctp_i3c_endpoint.h>
+#include <zephyr/pmci/mctp/mctp_i3c_pec.h>
 #include <zephyr/logging/log.h>
 
 LOG_MODULE_REGISTER(mctp_i3c_endpoint, CONFIG_MCTP_LOG_LEVEL);

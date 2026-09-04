@@ -9,8 +9,17 @@
 #include <zephyr/drivers/i2s.h>
 #include "i2s_api_test.h"
 
-K_MEM_SLAB_DEFINE(rx_mem_slab, BLOCK_SIZE, NUM_RX_BLOCKS, 32);
-K_MEM_SLAB_DEFINE(tx_mem_slab, BLOCK_SIZE, NUM_TX_BLOCKS, 32);
+/* Cache-line align the blocks so cache maintenance on one block cannot
+ * corrupt a neighbouring block
+ */
+#ifdef CONFIG_DCACHE_LINE_SIZE
+#define SLAB_ALIGN MAX(32, CONFIG_DCACHE_LINE_SIZE)
+#else
+#define SLAB_ALIGN 32
+#endif
+
+K_MEM_SLAB_DEFINE(rx_mem_slab, BLOCK_SIZE, NUM_RX_BLOCKS, SLAB_ALIGN);
+K_MEM_SLAB_DEFINE(tx_mem_slab, BLOCK_SIZE, NUM_TX_BLOCKS, SLAB_ALIGN);
 
 /* The data_l represent a sine wave */
 ZTEST_DMEM int16_t data_l[SAMPLE_NO] = {

@@ -317,6 +317,18 @@ typedef int16_t device_handle_t;
 #define DEVICE_DT_GET(node_id) (&DEVICE_DT_NAME_GET(node_id))
 
 /**
+ * @brief Like @ref DEVICE_DT_GET, with a trailing comma.
+ *
+ * This is convenient for use with devicetree iteration macros like
+ * @ref DT_FOREACH_STATUS_OKAY.
+ *
+ * @param node_id A devicetree node identifier
+ *
+ * @return A pointer to the device object created for that node, followed by a comma
+ */
+#define DEVICE_DT_GET_COMMA(node_id) DEVICE_DT_GET(node_id),
+
+/**
  * @brief Get a @ref device reference for an instance of a `DT_DRV_COMPAT`
  * compatible.
  *
@@ -889,6 +901,30 @@ __syscall bool device_is_ready(const struct device *dev);
  */
 #define LOG_ERR_DEVICE_NOT_READY(dev) \
 	LOG_ERR("%s device not ready", (dev) ? (dev)->name : "(null)")
+
+/**
+ * @brief Writes a "device not ready" warning message to the log for the logging instance.
+ *
+ * @details Writes a "device not ready" warning message to the log using the
+ * device name as reference, meant to be used in device_is_ready checks.
+ *
+ * @param _log_inst pointer to the log structure associated with the instance.
+ * @param dev pointer to a struct device.
+ */
+#define LOG_INST_WRN_DEVICE_NOT_READY(_log_inst, dev) \
+	LOG_INST_WRN(_log_inst, "%s device not ready", (dev) ? (dev)->name : "(null)")
+
+/**
+ * @brief Writes a "device not ready" error message to the log for the logging instance.
+ *
+ * @details Writes a "device not ready" error message to the log using the
+ * device name as reference, meant to be used in device_is_ready checks.
+ *
+ * @param _log_inst pointer to the log structure associated with the instance.
+ * @param dev pointer to a struct device.
+ */
+#define LOG_INST_ERR_DEVICE_NOT_READY(_log_inst, dev) \
+	LOG_INST_ERR(_log_inst, "%s device not ready", (dev) ? (dev)->name : "(null)")
 
 /**
  * @brief Initialize a device.

@@ -129,19 +129,19 @@
 #define ESP_I2CEXT1_SDA_OUT 71 /**< I2C1 SDA output */
 
 /* I2S0 */
-#define ESP_I2S0_O_BCK_IN  72 /**< I2S0 output BCK input */
-#define ESP_I2S0_O_BCK_OUT 72 /**< I2S0 output BCK output */
-#define ESP_I2S0_MCLK_IN   73 /**< I2S0 MCLK input */
-#define ESP_I2S0_MCLK_OUT  73 /**< I2S0 MCLK output */
-#define ESP_I2S0_O_WS_IN   74 /**< I2S0 output WS input */
-#define ESP_I2S0_O_WS_OUT  74 /**< I2S0 output WS output */
-#define ESP_I2S0_I_SD_IN   75 /**< I2S0 input SD input */
-#define ESP_I2S0_O_SD_OUT  76 /**< I2S0 output SD output */
-#define ESP_I2S0_O_SD1_OUT 77 /**< I2S0 output SD1 output */
-#define ESP_I2S0_I_BCK_IN  78 /**< I2S0 input BCK input */
-#define ESP_I2S0_I_BCK_OUT 78 /**< I2S0 input BCK output */
-#define ESP_I2S0_I_WS_IN   79 /**< I2S0 input WS input */
-#define ESP_I2S0_I_WS_OUT  79 /**< I2S0 input WS output */
+#define ESP_I2S0_O_BCK_IN  25 /**< I2S0 output BCK input */
+#define ESP_I2S0_O_BCK_OUT 25 /**< I2S0 output BCK output */
+#define ESP_I2S0_MCLK_IN   26 /**< I2S0 MCLK input */
+#define ESP_I2S0_MCLK_OUT  26 /**< I2S0 MCLK output */
+#define ESP_I2S0_O_WS_IN   27 /**< I2S0 output WS input */
+#define ESP_I2S0_O_WS_OUT  27 /**< I2S0 output WS output */
+#define ESP_I2S0_I_SD_IN   28 /**< I2S0 input SD input */
+#define ESP_I2S0_O_SD_OUT  28 /**< I2S0 output SD output */
+#define ESP_I2S0_O_SD1_OUT 43 /**< I2S0 output SD1 output */
+#define ESP_I2S0_I_BCK_IN  29 /**< I2S0 input BCK input */
+#define ESP_I2S0_I_BCK_OUT 29 /**< I2S0 input BCK output */
+#define ESP_I2S0_I_WS_IN   30 /**< I2S0 input WS input */
+#define ESP_I2S0_I_WS_OUT  30 /**< I2S0 input WS output */
 
 /* TWAI1 */
 #define ESP_TWAI1_RX 83 /**< TWAI1 RX input */
@@ -152,25 +152,48 @@
 #define ESP_TWAI2_TX 86 /**< TWAI2 TX output */
 
 /* MCPWM0 */
-#define ESP_PWM0_SYNC0_IN 89 /**< MCPWM0 sync 0 input */
-#define ESP_PWM0_OUT0A    89 /**< MCPWM0 output 0A */
-#define ESP_PWM0_SYNC1_IN 90 /**< MCPWM0 sync 1 input */
-#define ESP_PWM0_OUT0B    90 /**< MCPWM0 output 0B */
-#define ESP_PWM0_SYNC2_IN 91 /**< MCPWM0 sync 2 input */
-#define ESP_PWM0_OUT1A    91 /**< MCPWM0 output 1A */
-#define ESP_PWM0_F0_IN    92 /**< MCPWM0 fault 0 input */
-#define ESP_PWM0_OUT1B    92 /**< MCPWM0 output 1B */
-#define ESP_PWM0_F1_IN    93 /**< MCPWM0 fault 1 input */
-#define ESP_PWM0_OUT2A    93 /**< MCPWM0 output 2A */
-#define ESP_PWM0_F2_IN    94 /**< MCPWM0 fault 2 input */
-#define ESP_PWM0_OUT2B    94 /**< MCPWM0 output 2B */
-#define ESP_PWM0_CAP0_IN  95 /**< MCPWM0 capture 0 input */
-#define ESP_PWM0_CAP1_IN  96 /**< MCPWM0 capture 1 input */
-#define ESP_PWM0_CAP2_IN  97 /**< MCPWM0 capture 2 input */
+#define ESP_PWM0_SYNC0_IN  89 /**< MCPWM0 sync 0 input */
+#define ESP_PWM0_OUT0A     89 /**< MCPWM0 output 0A */
+#define ESP_PWM0_CH0_A_OUT 89 /**< MCPWM0 output 0A */
+#define ESP_PWM0_SYNC1_IN  90 /**< MCPWM0 sync 1 input */
+#define ESP_PWM0_OUT0B     90 /**< MCPWM0 output 0B */
+#define ESP_PWM0_CH0_B_OUT 90 /**< MCPWM0 output 0B */
+#define ESP_PWM0_SYNC2_IN  91 /**< MCPWM0 sync 2 input */
+#define ESP_PWM0_OUT1A     91 /**< MCPWM0 output 1A */
+#define ESP_PWM0_CH1_A_OUT 91 /**< MCPWM0 output 1A */
+#define ESP_PWM0_F0_IN     92 /**< MCPWM0 fault 0 input */
+#define ESP_PWM0_OUT1B     92 /**< MCPWM0 output 1B */
+#define ESP_PWM0_CH1_B_OUT 92 /**< MCPWM0 output 1B */
+#define ESP_PWM0_F1_IN     93 /**< MCPWM0 fault 1 input */
+#define ESP_PWM0_OUT2A     93 /**< MCPWM0 output 2A */
+#define ESP_PWM0_CH2_A_OUT 93 /**< MCPWM0 output 2A */
+#define ESP_PWM0_F2_IN     94 /**< MCPWM0 fault 2 input */
+#define ESP_PWM0_OUT2B     94 /**< MCPWM0 output 2B */
+#define ESP_PWM0_CH2_B_OUT 94 /**< MCPWM0 output 2B */
+#define ESP_PWM0_CAP0_IN   95 /**< MCPWM0 capture 0 input */
+#define ESP_PWM0_CAP1_IN   96 /**< MCPWM0 capture 1 input */
+#define ESP_PWM0_CAP2_IN   97 /**< MCPWM0 capture 2 input */
+
+/* MCPWM1 */
+#define ESP_PWM1_CH0_A_OUT 95  /**< MCPWM1 output 0A */
+#define ESP_PWM1_CH0_B_OUT 96  /**< MCPWM1 output 0B */
+#define ESP_PWM1_CH1_A_OUT 97  /**< MCPWM1 output 1A */
+#define ESP_PWM1_SYNC0_IN  98  /**< MCPWM1 sync 0 input */
+#define ESP_PWM1_CH1_B_OUT 98  /**< MCPWM1 output 1B */
+#define ESP_PWM1_SYNC1_IN  99  /**< MCPWM1 sync 1 input */
+#define ESP_PWM1_CH2_A_OUT 99  /**< MCPWM1 output 2A */
+#define ESP_PWM1_SYNC2_IN  100 /**< MCPWM1 sync 2 input */
+#define ESP_PWM1_CH2_B_OUT 100 /**< MCPWM1 output 2B */
+#define ESP_PWM1_F0_IN     101 /**< MCPWM1 fault 0 input */
+#define ESP_PWM1_F1_IN     102 /**< MCPWM1 fault 1 input */
+#define ESP_PWM1_F2_IN     103 /**< MCPWM1 fault 2 input */
+#define ESP_PWM1_CAP0_IN   104 /**< MCPWM1 capture 0 input */
+#define ESP_PWM1_CAP1_IN   105 /**< MCPWM1 capture 1 input */
+#define ESP_PWM1_CAP2_IN   106 /**< MCPWM1 capture 2 input */
 
 /* TWAI0 */
-#define ESP_TWAI0_RX 97 /**< TWAI0 RX input */
-#define ESP_TWAI0_TX 96 /**< TWAI0 TX output */
+#define ESP_TWAI0_RX 80 /**< TWAI0 RX input */
+#define ESP_TWAI0_TX 80 /**< TWAI0 TX output */
 
 /* LEDC */
 #define ESP_LEDC_LS_SIG_OUT0 126 /**< LEDC low-speed signal output 0 */
@@ -182,9 +205,55 @@
 #define ESP_LEDC_LS_SIG_OUT6 132 /**< LEDC low-speed signal output 6 */
 #define ESP_LEDC_LS_SIG_OUT7 133 /**< LEDC low-speed signal output 7 */
 
+/* PCNT */
+#define ESP_PCNT_SIG_CH0_IN0  141 /**< PCNT unit 0 channel 0 signal input */
+#define ESP_PCNT_SIG_CH0_IN1  142 /**< PCNT unit 1 channel 0 signal input */
+#define ESP_PCNT_SIG_CH0_IN2  143 /**< PCNT unit 2 channel 0 signal input */
+#define ESP_PCNT_SIG_CH0_IN3  144 /**< PCNT unit 3 channel 0 signal input */
+#define ESP_PCNT_SIG_CH1_IN0  145 /**< PCNT unit 0 channel 1 signal input */
+#define ESP_PCNT_SIG_CH1_IN1  146 /**< PCNT unit 1 channel 1 signal input */
+#define ESP_PCNT_SIG_CH1_IN2  147 /**< PCNT unit 2 channel 1 signal input */
+#define ESP_PCNT_SIG_CH1_IN3  148 /**< PCNT unit 3 channel 1 signal input */
+#define ESP_PCNT_CTRL_CH0_IN0 149 /**< PCNT unit 0 channel 0 control input */
+#define ESP_PCNT_CTRL_CH0_IN1 150 /**< PCNT unit 1 channel 0 control input */
+#define ESP_PCNT_CTRL_CH0_IN2 151 /**< PCNT unit 2 channel 0 control input */
+#define ESP_PCNT_CTRL_CH0_IN3 152 /**< PCNT unit 3 channel 0 control input */
+#define ESP_PCNT_CTRL_CH1_IN0 153 /**< PCNT unit 0 channel 1 control input */
+#define ESP_PCNT_CTRL_CH1_IN1 154 /**< PCNT unit 1 channel 1 control input */
+#define ESP_PCNT_CTRL_CH1_IN2 155 /**< PCNT unit 2 channel 1 control input */
+#define ESP_PCNT_CTRL_CH1_IN3 156 /**< PCNT unit 3 channel 1 control input */
+
 /* EMAC */
 #define ESP_EMAC_MDI_I 107 /**< EMAC MDIO data input */
 #define ESP_EMAC_MDC_O 108 /**< EMAC MDIO clock output */
 #define ESP_EMAC_MDO_O 109 /**< EMAC MDIO data output */
+
+/* PCNT */
+#define ESP_PCNT_SIG_CH0_IN0  141 /**< PCNT unit 0 channel 0 pulse input */
+#define ESP_PCNT_SIG_CH0_IN1  142 /**< PCNT unit 1 channel 0 pulse input */
+#define ESP_PCNT_SIG_CH0_IN2  143 /**< PCNT unit 2 channel 0 pulse input */
+#define ESP_PCNT_SIG_CH0_IN3  144 /**< PCNT unit 3 channel 0 pulse input */
+#define ESP_PCNT_SIG_CH1_IN0  145 /**< PCNT unit 0 channel 1 pulse input */
+#define ESP_PCNT_SIG_CH1_IN1  146 /**< PCNT unit 1 channel 1 pulse input */
+#define ESP_PCNT_SIG_CH1_IN2  147 /**< PCNT unit 2 channel 1 pulse input */
+#define ESP_PCNT_SIG_CH1_IN3  148 /**< PCNT unit 3 channel 1 pulse input */
+#define ESP_PCNT_CTRL_CH0_IN0 149 /**< PCNT unit 0 channel 0 control input */
+#define ESP_PCNT_CTRL_CH0_IN1 150 /**< PCNT unit 1 channel 0 control input */
+#define ESP_PCNT_CTRL_CH0_IN2 151 /**< PCNT unit 2 channel 0 control input */
+#define ESP_PCNT_CTRL_CH0_IN3 152 /**< PCNT unit 3 channel 0 control input */
+#define ESP_PCNT_CTRL_CH1_IN0 153 /**< PCNT unit 0 channel 1 control input */
+#define ESP_PCNT_CTRL_CH1_IN1 154 /**< PCNT unit 1 channel 1 control input */
+#define ESP_PCNT_CTRL_CH1_IN2 155 /**< PCNT unit 2 channel 1 control input */
+#define ESP_PCNT_CTRL_CH1_IN3 156 /**< PCNT unit 3 channel 1 control input */
+
+/* RMT */
+#define ESP_RMT_SIG_IN0  246 /**< RMT channel 0 input */
+#define ESP_RMT_SIG_OUT0 246 /**< RMT channel 0 output */
+#define ESP_RMT_SIG_IN1  247 /**< RMT channel 1 input */
+#define ESP_RMT_SIG_OUT1 247 /**< RMT channel 1 output */
+#define ESP_RMT_SIG_IN2  248 /**< RMT channel 2 input */
+#define ESP_RMT_SIG_OUT2 248 /**< RMT channel 2 output */
+#define ESP_RMT_SIG_IN3  249 /**< RMT channel 3 input */
+#define ESP_RMT_SIG_OUT3 249 /**< RMT channel 3 output */
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_ESP32P4_GPIO_SIGMAP_H_ */

@@ -20,3 +20,5 @@ supported:
   - uart
   - watchdog
   - counter
+  - gpio
+  - rtc

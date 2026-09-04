@@ -18,6 +18,7 @@
 #include <adi_tmc5xxx_common.h>
 
 #include "tmc51xx.h"
+#include "tmc51xx_reg.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(tmc51xx, CONFIG_STEPPER_LOG_LEVEL);
@@ -508,7 +509,7 @@ static int tmc51xx_init(const struct device *dev)
 /* Initializes a struct tmc51xx_config for an instance on a SPI bus. */
 #define TMC51XX_CONFIG_SPI(inst)                                                                   \
 	.comm_type = TMC_COMM_SPI,                                                                 \
-	.bus.spi = SPI_DT_SPEC_INST_GET(inst, (SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB |             \
+	.bus.spi = SPI_DT_SPEC_INST_GET(inst, (SPI_OP_MODE_CONTROLLER | SPI_TRANSFER_MSB |         \
 					       SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_WORD_SET(8))),  \
 	.bus_io = &tmc51xx_spi_bus_io,                                                             \
 	.diag0_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, diag0_gpios, {0})

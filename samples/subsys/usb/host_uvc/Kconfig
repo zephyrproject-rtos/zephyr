@@ -7,28 +7,27 @@ menu "Video capture configuration"
 
 config APP_VIDEO_FRAME_HEIGHT
 	int "Height of the video frame"
-	default 0
+	default 240
 	help
-	  Height of the video frame. If set to 0, the default height is used.
+	  Height of the video frame.
 
 config APP_VIDEO_FRAME_WIDTH
 	int "Width of the video frame"
-	default 0
+	default 320
 	help
-	  Width of the video frame. If set to 0, the default width is used.
+	  Width of the video frame.
 
 config APP_VIDEO_TARGET_FPS
 	int "Target frame rate for video capture"
-	default 0
+	default 15
 	help
-	  Target frame rate (FPS) for video capture. If set to 0, the device
-	  default frame rate is used. This value will be used to configure
-	  the video device's frame interval settings.
+	  Target frame rate (FPS) for video capture.
 
 config APP_VIDEO_PIXEL_FORMAT
 	string "Pixel format of the video frame"
+	default "YUYV"
 	help
-	  Pixel format of the video frame. If not set, the default pixel format is used.
+	  Pixel format of the video frame.
 
 endmenu
 

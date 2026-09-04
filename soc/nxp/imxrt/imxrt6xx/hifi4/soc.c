@@ -28,29 +28,23 @@ __weak void mimxrt685s_hifi4_irq_init(void)
 	 * - IRQ 10 (SEL 5):  GPIO_INT0_IRQ3
 	 * - IRQ 11 (SEL 6):  GPIO_INT0_IRQ4
 	 * - IRQ 12 (SEL 7):  GPIO_INT0_IRQ5
-	 * - IRQ 13 (SEL 8):  GPIO_INT0_IRQ6
-	 * - IRQ 14 (SEL 9):  GPIO_INT0_IRQ7
-	 * - IRQ 15 (SEL 10): HSGPIO_INT0
+	 * - IRQ 13 (SEL 8):  MRT0
+	 * - IRQ 14 (SEL 9):  WDT1
+	 * - IRQ 15 (SEL 10): RTC
 	 *
 	 * L2:
-	 * - IRQ 16 (SEL 11): MRT0
-	 * - IRQ 17 (SEL 12): WDT1
-	 * - IRQ 18 (SEL 13): RTC
-	 * - IRQ 19 (SEL 14): CT32BIT0
-	 * - IRQ 20 (SEL 15): CT32BIT1
-	 * - IRQ 21 (SEL 16): CT32BIT2
-	 * - IRQ 22 (SEL 17): CT32BIT3
-	 * - IRQ 23 (SEL 18): CT32BIT4
+	 * - IRQ 16 (SEL 11): UTICK0
+	 * - IRQ 17 (SEL 12): HWVAD0
+	 * - IRQ 18 (SEL 13): Flexcomm 5 (SPI)
+	 * - IRQ 19 (SEL 14): MU
+	 * - IRQ 20 (SEL 15): DMIC
+	 * - IRQ 21 (SEL 16): DMA1
+	 * - IRQ 22 (SEL 17): Flexcomm 3 (I2S TX)
+	 * - IRQ 23 (SEL 18): Flexcomm 1 (I2S RX)
 	 *
 	 * L3: (highest priority)
-	 * - IRQ 24 (SEL 19): UTICK0
-	 * - IRQ 25 (SEL 20): HWVAD0
-	 * - IRQ 26 (SEL 21): Flexcomm 5 (SPI)
-	 * - IRQ 27 (SEL 22): MU
-	 * - IRQ 28 (SEL 23): DMIC
-	 * - IRQ 29 (SEL 24): DMA1
-	 * - IRQ 30 (SEL 25): Flexcomm 3 (I2S TX)
-	 * - IRQ 31 (SEL 26): Flexcomm 1 (I2S RX)
+	 * - IRQ 24 - 31 (SEL 19 - 26): Unmapped.
+	 *   Don't use - these IRQs are above XCHAL_EXCM_LEVEL. (issue #41039)
 	 */
 
 	INPUTMUX_Init(INPUTMUX);
@@ -63,27 +57,18 @@ __weak void mimxrt685s_hifi4_irq_init(void)
 	INPUTMUX_AttachSignal(INPUTMUX, 5, kINPUTMUX_GpioInt3ToDspInterrupt);
 	INPUTMUX_AttachSignal(INPUTMUX, 6, kINPUTMUX_GpioInt4ToDspInterrupt);
 	INPUTMUX_AttachSignal(INPUTMUX, 7, kINPUTMUX_GpioInt5ToDspInterrupt);
-	INPUTMUX_AttachSignal(INPUTMUX, 8, kINPUTMUX_GpioInt6ToDspInterrupt);
-	INPUTMUX_AttachSignal(INPUTMUX, 9, kINPUTMUX_GpioInt7ToDspInterrupt);
-	INPUTMUX_AttachSignal(INPUTMUX, 10, kINPUTMUX_NsHsGpioInt0ToDspInterrupt);
+	INPUTMUX_AttachSignal(INPUTMUX, 8, kINPUTMUX_Mrt0ToDspInterrupt);
+	INPUTMUX_AttachSignal(INPUTMUX, 9, kINPUTMUX_Wdt1ToDspInterrupt);
+	INPUTMUX_AttachSignal(INPUTMUX, 10, kINPUTMUX_RtcToDspInterrupt);
 
-	INPUTMUX_AttachSignal(INPUTMUX, 11, kINPUTMUX_Mrt0ToDspInterrupt);
-	INPUTMUX_AttachSignal(INPUTMUX, 12, kINPUTMUX_Wdt1ToDspInterrupt);
-	INPUTMUX_AttachSignal(INPUTMUX, 13, kINPUTMUX_RtcToDspInterrupt);
-	INPUTMUX_AttachSignal(INPUTMUX, 14, kINPUTMUX_Ctimer0ToDspInterrupt);
-	INPUTMUX_AttachSignal(INPUTMUX, 15, kINPUTMUX_Ctimer1ToDspInterrupt);
-	INPUTMUX_AttachSignal(INPUTMUX, 16, kINPUTMUX_Ctimer2ToDspInterrupt);
-	INPUTMUX_AttachSignal(INPUTMUX, 17, kINPUTMUX_Ctimer3ToDspInterrupt);
-	INPUTMUX_AttachSignal(INPUTMUX, 18, kINPUTMUX_Ctimer4ToDspInterrupt);
-
-	INPUTMUX_AttachSignal(INPUTMUX, 19, kINPUTMUX_Utick0ToDspInterrupt);
-	INPUTMUX_AttachSignal(INPUTMUX, 20, kINPUTMUX_Hwvad0ToDspInterrupt);
-	INPUTMUX_AttachSignal(INPUTMUX, 21, kINPUTMUX_Flexcomm5ToDspInterrupt);
-	INPUTMUX_AttachSignal(INPUTMUX, 22, kINPUTMUX_MuBToDspInterrupt);
-	INPUTMUX_AttachSignal(INPUTMUX, 23, kINPUTMUX_Dmic0ToDspInterrupt);
-	INPUTMUX_AttachSignal(INPUTMUX, 24, kINPUTMUX_Dmac1ToDspInterrupt);
-	INPUTMUX_AttachSignal(INPUTMUX, 25, kINPUTMUX_Flexcomm3ToDspInterrupt);
-	INPUTMUX_AttachSignal(INPUTMUX, 26, kINPUTMUX_Flexcomm1ToDspInterrupt);
+	INPUTMUX_AttachSignal(INPUTMUX, 11, kINPUTMUX_Utick0ToDspInterrupt);
+	INPUTMUX_AttachSignal(INPUTMUX, 12, kINPUTMUX_Hwvad0ToDspInterrupt);
+	INPUTMUX_AttachSignal(INPUTMUX, 13, kINPUTMUX_Flexcomm5ToDspInterrupt);
+	INPUTMUX_AttachSignal(INPUTMUX, 14, kINPUTMUX_MuBToDspInterrupt);
+	INPUTMUX_AttachSignal(INPUTMUX, 15, kINPUTMUX_Dmic0ToDspInterrupt);
+	INPUTMUX_AttachSignal(INPUTMUX, 16, kINPUTMUX_Dmac1ToDspInterrupt);
+	INPUTMUX_AttachSignal(INPUTMUX, 17, kINPUTMUX_Flexcomm3ToDspInterrupt);
+	INPUTMUX_AttachSignal(INPUTMUX, 18, kINPUTMUX_Flexcomm1ToDspInterrupt);
 
 	INPUTMUX_Deinit(INPUTMUX);
 }

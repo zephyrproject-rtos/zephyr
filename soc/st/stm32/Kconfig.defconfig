@@ -162,7 +162,7 @@ config VIDEO_BUFFER_POOL_ALIGN
 	default 16 if VIDEO_STM32_DCMIPP
 
 config STM32_BACKUP_PROTECTION
-	default y if !SOC_SERIES_STM32C0X && !SOC_SERIES_STM32WB0X
+	default y if !SOC_SERIES_STM32C0X && !SOC_SERIES_STM32WB0X && !SOC_SERIES_STM32WL3X
 
 # Default LVGL configuration, closely linked to how the display (LTDC)
 # interface is being configured
@@ -224,8 +224,13 @@ if CRYPTO_STM32
 # AES CCM with up to 14 bytes of Additional Data (AD)
 config HEAP_MEM_POOL_ADD_SIZE_CRYPTO_STM32
 	int
-	default 16 if $(dt_nodelabel_enabled,cryp) && $(dt_nodelabel_has_prop,cryp,gcm-ccm-supported)
+	default 16 if $(dt_nodelabel_enabled,cryp) && $(dt_nodelabel_bool_prop,cryp,gcm-ccm-supported)
 
 endif # CRYPTO_STM32
+
+# All STM32 targets expect a 1024 bytes header when MCUboot is embedded.
+# All STM32 targets in TF-M expect a 1024 bytes header, BL2 being embedded or not.
+configdefault ROM_START_OFFSET
+	default 0x400 if BOOTLOADER_MCUBOOT || BUILD_WITH_TFM
 
 endif # SOC_FAMILY_STM32

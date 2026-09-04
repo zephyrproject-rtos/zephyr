@@ -12,6 +12,7 @@
 #include <zephyr/dt-bindings/pwm/stm32_pwm.h>
 #include <zephyr/dt-bindings/dma/stm32_dma.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/power/stm32_pwr.h>
 #include <zephyr/dt-bindings/reset/stm32u0_reset.h>
 #include <zephyr/dt-bindings/sensor/qdec_stm32.h>
 #include <freq.h>
@@ -253,6 +254,51 @@
 			};
 		};
 
+		pwr: power@40007000 {
+			compatible = "st,stm32-pwr";
+			reg = <0x40007000 0x400>;
+
+			wakeup-controller {
+				compatible = "st,stm32-pwr-wkupctrl";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+
+				st,max-wkup-line-idx = <7>;
+				st,has-pwr-full-pupd;
+
+				wkup@1 {
+					reg = <0x1>;
+					wkup-gpios = <&gpioa 0 STM32_PWR_WKUP_PIN_NOT_MUXED>;
+				};
+
+				wkup@2 {
+					reg = <0x2>;
+					wkup-gpios = <&gpioc 13 STM32_PWR_WKUP_PIN_NOT_MUXED>;
+				};
+
+				wkup@3 {
+					reg = <0x3>;
+					wkup-gpios = <&gpioa 1 STM32_PWR_WKUP_PIN_NOT_MUXED>;
+				};
+
+				wkup@4 {
+					reg = <0x4>;
+					wkup-gpios = <&gpioa 2 STM32_PWR_WKUP_PIN_NOT_MUXED>;
+				};
+
+				wkup@5 {
+					reg = <0x5>;
+					wkup-gpios = <&gpioc 5 STM32_PWR_WKUP_PIN_NOT_MUXED>;
+				};
+
+				wkup@7 {
+					reg = <0x7>;
+					wkup-gpios = <&gpiob 15 STM32_PWR_WKUP_PIN_NOT_MUXED>;
+				};
+			};
+		};
+
 		usart1: serial@40013800 {
 			compatible = "st,stm32-usart", "st,stm32-uart";
 			reg = <0x40013800 0x400>;
@@ -386,7 +432,7 @@
 			compatible = "st,stm32-dma-v2";
 			#dma-cells = <3>;
 			reg = <0x40020000 0x400>;
-			interrupts = <9 0 10 0 10 0 11 0 11 0 11 0 11 0>;
+			interrupts = <9 0>, <10 0>, <10 0>, <11 0>, <11 0>, <11 0>, <11 0>;
 			clocks = <&rcc STM32_CLOCK(AHB1, 0)>;
 			dma-requests = <7>;
 			dma-offset = <0>;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Analog Devices, Inc.
+ * Copyright (c) 2023-2026 Analog Devices, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -30,8 +30,9 @@ BUILD_ASSERT(DT_HAS_CHOSEN(zephyr_code_rv32_partition),
 struct k_timer max32_soc_timer;
 void max32_soc_timer_callback(struct k_timer *timer_id)
 {
-	/* Allow the system to enter standby */
+	/* Allow the system to enter standby and backup mode */
 	pm_policy_state_lock_put(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
 }
 #endif /* defined(MAX32_STANDBY_DELAY) && (MAX32_STANDBY_DELAY > 0) */
 
@@ -96,8 +97,9 @@ void soc_early_init_hook(void)
 
 	/* Temporarily prevent  the system from entering standby to prevent debug lockout */
 #if defined(CONFIG_MAX32_STANDBY_DELAY) && (CONFIG_MAX32_STANDBY_DELAY > 0)
-	/* Prevent the system from entering standby mode */
+	/* Prevent the system from entering standby and backup mode */
 	pm_policy_state_lock_get(PM_STATE_STANDBY, PM_ALL_SUBSTATES);
+	pm_policy_state_lock_get(PM_STATE_SUSPEND_TO_RAM, PM_ALL_SUBSTATES);
 
 	/* Start a one-shot timer to put the pm lock */
 	k_timer_init(&max32_soc_timer, max32_soc_timer_callback, NULL);

@@ -44,3 +44,28 @@ child-binding:
       description: |
         Accepted plus/minus deviation of the measured frequency from
         measure-expected-hz, in parts-per-million.
+
+    switch-reference:
+      type: int
+      default: 0
+      description: |
+        Alternate reference-clock cookie (opaque, back-end specific) for the
+        set_source() test. When non-zero, the suite switches the reference to
+        this source, reconfigures, and asserts the same target still measures
+        within tolerance of measure-expected-hz.
+
+    switch-target:
+      type: int
+      default: 0
+      description: |
+        Alternate target-clock cookie for the set_source() test. When non-zero,
+        the suite switches the target to this source, reconfigures, and
+        re-measures - the measured value becomes this target's frequency.
+
+    switch-target-expected-hz:
+      type: int
+      default: 0
+      description: |
+        Expected measured frequency (Hz) after switching the target to
+        switch-target. When non-zero, the measured value must lie within
+        measure-tolerance-ppm of it. 0 only logs the measured value.

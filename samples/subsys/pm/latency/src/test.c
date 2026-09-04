@@ -8,7 +8,7 @@
 
 #include <zephyr/logging/log.h>
 #include <zephyr/pm/policy.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 
 LOG_MODULE_REGISTER(dev_test, CONFIG_APP_LOG_LEVEL);
 

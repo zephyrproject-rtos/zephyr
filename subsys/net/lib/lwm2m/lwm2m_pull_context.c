@@ -205,7 +205,7 @@ static int transfer_request(struct coap_block_context *ctx, uint8_t *token, uint
 	/* send request */
 	ret = lwm2m_send_message_async(msg);
 	if (ret < 0) {
-		LOG_ERR("Error sending LWM2M packet (err:%d).", ret);
+		LOG_ERR("Error sending LwM2M packet (err:%d).", ret);
 		goto cleanup;
 	}
 

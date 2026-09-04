@@ -5,6 +5,10 @@ if BOARD_FRDM_IMX91
 
 config GPIO
 	default y if IMX_USDHC
+	default y if WIFI_NXP
+
+config IMX_USDHC
+	default y if WIFI_NXP
 
 if CAN
 

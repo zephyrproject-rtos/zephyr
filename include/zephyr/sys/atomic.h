@@ -37,6 +37,9 @@ extern "C" {
 # ifdef CONFIG_XTENSA
 /* Not all Xtensa toolchains support GCC-style atomic intrinsics */
 # include <zephyr/arch/xtensa/atomic_xtensa.h>
+# elif defined(CONFIG_ARC)
+/* MWDT ignores the memory-order argument of the atomic builtins */
+# include <zephyr/arch/arc/atomic_arc.h>
 # else
 /* Other arch specific implementation */
 # include <zephyr/sys/atomic_arch.h>
@@ -268,6 +271,15 @@ static inline void atomic_set_bit_to(atomic_t *target, int bit, bool val)
 		(void)atomic_and(ATOMIC_ELEM(target, bit), ~mask);
 	}
 }
+
+/*
+ * The declarations below exist only so that Doxygen has a single place to
+ * document the low-level atomic API.  Every backend selected above already
+ * declares these functions, and does so with internal linkage when they are
+ * static inline, so repeating them here unqualified would violate MISRA
+ * C:2012 Rule 8.8.
+ */
+#ifdef __DOXYGEN__
 
 /**
  * @brief Atomic compare-and-set.
@@ -501,6 +513,8 @@ atomic_val_t atomic_and(atomic_t *target, atomic_val_t value);
  * @return Previous value of @a target.
  */
 atomic_val_t atomic_nand(atomic_t *target, atomic_val_t value);
+
+#endif /* __DOXYGEN__ */
 
 /**
  * @}

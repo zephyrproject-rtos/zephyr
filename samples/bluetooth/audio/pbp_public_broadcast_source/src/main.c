@@ -1,6 +1,8 @@
 /*
  * Copyright 2023 NXP
  * Copyright (c) 2024 Nordic Semiconductor ASA
+ * Copyright (c) 2026 Infineon Technologies AG,
+ * or an affiliate of Infineon Technologies AG.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -76,6 +78,7 @@ struct bt_cap_initiator_broadcast_create_param create_param;
 struct bt_cap_broadcast_source *broadcast_source;
 static struct k_work_delayable audio_send_work;
 struct bt_le_ext_adv *ext_adv;
+static volatile bool stopping;
 
 static void broadcast_started_cb(struct bt_bap_stream *stream)
 {
@@ -101,6 +104,10 @@ static void broadcast_sent_cb(struct bt_bap_stream *stream)
 	static uint32_t seq_num;
 	struct net_buf *buf;
 	int ret;
+
+	if (stopping) {
+		return;
+	}
 
 	if (broadcast_preset_48_2_1.qos.sdu > CONFIG_BT_ISO_TX_MTU) {
 		printk("Invalid SDU %u for the MTU: %d", broadcast_preset_48_2_1.qos.sdu,
@@ -329,6 +336,7 @@ static int reset(void)
 {
 	k_sem_reset(&sem_broadcast_started);
 	k_sem_reset(&sem_broadcast_stopped);
+	stopping = false;
 
 	return 0;
 }
@@ -385,13 +393,6 @@ void cap_initiator_setup(void)
 			return;
 		}
 
-		err = bt_cap_initiator_broadcast_audio_start(broadcast_source, ext_adv);
-		if (err != 0) {
-			printk("Unable to start broadcast source: %d\n", err);
-
-			return;
-		}
-
 		err = setup_extended_adv_data(broadcast_source, ext_adv);
 		if (err != 0) {
 			printk("Unable to setup extended advertising data: %d\n", err);
@@ -405,6 +406,14 @@ void cap_initiator_setup(void)
 
 			return;
 		}
+
+		err = bt_cap_initiator_broadcast_audio_start(broadcast_source, ext_adv);
+		if (err != 0) {
+			printk("Unable to start broadcast source: %d\n", err);
+
+			return;
+		}
+
 		err = k_sem_take(&sem_broadcast_started, K_FOREVER);
 		__ASSERT_NO_MSG(err == 0);
 
@@ -415,6 +424,12 @@ void cap_initiator_setup(void)
 
 		/* Keeping running for a little while */
 		k_sleep(K_SECONDS(15U));
+
+		/* Stop scheduling new SDUs before tearing down the stream */
+		struct k_work_sync sync;
+
+		stopping = true;
+		(void)k_work_cancel_delayable_sync(&audio_send_work, &sync);
 
 		err = bt_cap_initiator_broadcast_audio_stop(broadcast_source);
 		if (err != 0) {

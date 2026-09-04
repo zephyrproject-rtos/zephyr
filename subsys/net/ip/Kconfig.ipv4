@@ -33,6 +33,15 @@ config NET_IF_MCAST_IPV4_ADDR_COUNT
 	default 2 if NET_IPV4_IGMP
 	default 1
 
+config NET_L2_ETHERNET_MCAST_FILTER_ADD_COUNT_IPV4
+	int
+	depends on NET_L2_ETHERNET
+	default NET_IF_MCAST_IPV4_ADDR_COUNT
+	help
+	  Every joined IPv4 multicast address needs a link layer multicast
+	  address on an Ethernet interface. Several IPv4 addresses can map to
+	  the same link layer address, so this is an upper bound.
+
 config NET_IPV4_DEFAULT_NETMASK
 	int "The default netmask length for registered IPv4 addresses"
 	range 1 32

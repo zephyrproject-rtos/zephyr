@@ -1,6 +1,6 @@
 /*
- * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
- * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -720,7 +720,7 @@ static DEVICE_API(dmic, dmic_ops) = {
 			    DEVICE_DT_INST_GET(index), 0);                                         \
 	}                                                                                          \
                                                                                                    \
-	K_MSGQ_DEFINE(dmic_msgq##index, sizeof(void *), CONFIG_DMIC_INFINEON_QUEUE_SIZE, 1);       \
+	K_MSGQ_DEFINE_STATIC_TYPE(dmic_msgq##index, void *, CONFIG_DMIC_INFINEON_QUEUE_SIZE);      \
                                                                                                    \
 	PINCTRL_DT_INST_DEFINE(index);                                                             \
                                                                                                    \

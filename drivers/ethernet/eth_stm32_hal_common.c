@@ -224,8 +224,6 @@ static void eth_iface_init(struct net_if *iface)
 
 	net_if_carrier_off(iface);
 
-	net_lldp_set_lldpdu(iface);
-
 	if (device_is_ready(cfg->phy_dev)) {
 		phy_link_callback_set(cfg->phy_dev, phy_link_state_changed, (void *)dev);
 	} else {

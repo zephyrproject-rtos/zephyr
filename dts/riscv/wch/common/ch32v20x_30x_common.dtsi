@@ -10,6 +10,7 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/clock/ch32v20x_30x-clocks.h>
+#include <zephyr/dt-bindings/reset/ch32v20x_30x-reset.h>
 
 / {
 	chosen {
@@ -52,15 +53,18 @@
 		};
 
 		flash: flash-controller@40022000 {
-			compatible = "wch,ch32v20x_30x-flash-controller";
+			compatible = "wch,ch32v-flash-controller";
 			reg = <0x40022000 0x400>;
 			ranges;
+			erase-value = <0xe339>;
 
 			#address-cells = <1>;
 			#size-cells = <1>;
 
 			flash0: flash@8000000 {
 				compatible = "soc-nv-flash";
+				erase-block-size = <256>;
+				write-block-size = <256>;
 				ranges = <0x0 0x08000000 DT_SIZE_K(480)>;
 
 				#address-cells = <1>;
@@ -142,6 +146,7 @@
 			compatible = "wch,usart";
 			reg = <0x40013800 0x20>;
 			clocks = <&rcc CH32V20X_V30X_CLOCK_USART1>;
+			resets = <&rctl CH32_RESET(APB2, 14)>;
 			interrupt-parent = <&pfic>;
 			interrupts = <53>;
 			status = "disabled";
@@ -174,6 +179,11 @@
 			reg = <0x40021000 16>;
 			#clock-cells = <1>;
 			status = "okay";
+
+			rctl: reset-controller {
+				compatible = "wch,ch32-rcc-rctl";
+				#reset-cells = <1>;
+			};
 		};
 
 		rng: rng@40023c00 {
@@ -278,6 +288,11 @@
 				#pwm-cells = <3>;
 				status = "disabled";
 			};
+		};
+
+		esig: esig@1ffff7e0 {
+			compatible = "wch,esig";
+			reg = <0x1ffff7e0 0x20>;
 		};
 	};
 };

@@ -35,7 +35,6 @@
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,display = &st7306;
-		zephyr,sdhc = &sdhc0;
 		zephyr,bt-hci = &esp32_bt_hci;
 	};
 

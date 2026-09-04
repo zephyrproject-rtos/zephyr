@@ -12,6 +12,7 @@ config SOC_SERIES_MEC175X
 	select HAS_SWO
 	select HAS_PM
 	select SOC_PREP_HOOK
+	select HAS_MCHP_MEC_I3C
 
 if SOC_SERIES_MEC175X
 

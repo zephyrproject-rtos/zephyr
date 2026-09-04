@@ -7,6 +7,7 @@
 /**
  * @file
  * @brief FIDO2 credential storage API.
+ * @ingroup fido2
  */
 
 #ifndef ZEPHYR_INCLUDE_AUTHENTICATION_FIDO2_FIDO2_STORAGE_H_

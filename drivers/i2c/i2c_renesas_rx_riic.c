@@ -66,7 +66,7 @@ struct i2c_rx_data {
 
 	/* Msgs to send and receive */
 	struct i2c_msg *msgs;
-	uint8_t slv_addr;
+	uint8_t target_addr;
 	uint8_t num_msgs;
 	uint8_t num_processed_msgs;
 #endif
@@ -200,7 +200,7 @@ static void riic_eei_isr(const struct device *dev)
 
 		static uint8_t first_byte;
 
-		first_byte = data->slv_addr << 1;
+		first_byte = data->target_addr << 1;
 		if ((data->msgs[data->num_processed_msgs].flags & I2C_MSG_RW_MASK) ==
 		    I2C_MSG_WRITE) {
 			first_byte &= W_CODE;
@@ -538,7 +538,7 @@ static int run_rx_transfer(const struct device *dev, struct i2c_msg *msgs, uint8
 	while (data->p_regs->ICCR2.BIT.BBSY == 1) {
 	}
 	/** Store msgs info */
-	data->slv_addr = addr;
+	data->target_addr = addr;
 	data->msgs = msgs;
 	data->num_msgs = num_msgs;
 	data->num_processed_msgs = 0;
@@ -555,7 +555,7 @@ static int run_rx_transfer(const struct device *dev, struct i2c_msg *msgs, uint8
 #else
 	if (addr == 0x00) {
 		/* Enter transmission pattern 4 */
-		LOG_DBG("RDP RX I2C master transmit pattern 4\n");
+		LOG_DBG("RDP RX I2C controller transmit pattern 4\n");
 		setup_rdp_info(data, NULL, 0, NULL, 0, NULL);
 		rdp_ret = R_RIIC_MasterSend(&data->rdp_info);
 		goto transfer_blocking;
@@ -563,14 +563,14 @@ static int run_rx_transfer(const struct device *dev, struct i2c_msg *msgs, uint8
 
 	if (num_msgs == 1) {
 		if (msgs[0].flags & I2C_MSG_READ) {
-			/* Enter master reception pattern 1 */
-			LOG_DBG("RDP RX I2C master reception pattern 1\n");
+			/* Enter controller reception pattern 1 */
+			LOG_DBG("RDP RX I2C controller reception pattern 1\n");
 			setup_rdp_info(data, NULL, 0, msgs[0].buf, msgs[0].len, &addr);
 			rdp_ret = R_RIIC_MasterReceive(&data->rdp_info);
 			goto transfer_blocking;
 		} else {
-			/* Enter master transmission pattern 2/3 */
-			LOG_DBG("RDP RX I2C master transmit pattern 2/3\n");
+			/* Enter controller transmission pattern 2/3 */
+			LOG_DBG("RDP RX I2C controller transmit pattern 2/3\n");
 			setup_rdp_info(data, NULL, 0, msgs[0].len ? msgs[0].buf : NULL, msgs[0].len,
 				       &addr);
 			rdp_ret = R_RIIC_MasterSend(&data->rdp_info);
@@ -582,15 +582,15 @@ static int run_rx_transfer(const struct device *dev, struct i2c_msg *msgs, uint8
 		}
 
 		if (msgs[1].flags & I2C_MSG_READ) {
-			/* Enter master reception pattern 2 */
-			LOG_DBG("RDP RX I2C master reception pattern 2\n");
+			/* Enter controller reception pattern 2 */
+			LOG_DBG("RDP RX I2C controller reception pattern 2\n");
 			setup_rdp_info(data, msgs[0].buf, msgs[0].len, msgs[1].buf, msgs[1].len,
 				       &addr);
 			rdp_ret = R_RIIC_MasterReceive(&data->rdp_info);
 			goto transfer_blocking;
 		} else {
-			/* Enter master transmission pattern 1 */
-			LOG_DBG("RDP RX I2C master transmit pattern 1\n");
+			/* Enter controller transmission pattern 1 */
+			LOG_DBG("RDP RX I2C controller transmit pattern 1\n");
 			setup_rdp_info(data, msgs[0].buf, msgs[0].len, msgs[1].buf, msgs[1].len,
 				       &addr);
 			rdp_ret = R_RIIC_MasterSend(&data->rdp_info);
@@ -603,13 +603,13 @@ unsupport_pattern:
 	LOG_DBG("%s: \"Not a generic pattern ...\" !\n", __func__);
 	for (uint8_t i = 0; i < num_msgs; i++) {
 		if (msgs[i].flags & I2C_MSG_READ) {
-			/* Enter master reception pattern 1 */
-			LOG_DBG("RDP RX I2C master reception pattern 1\n");
+			/* Enter controller reception pattern 1 */
+			LOG_DBG("RDP RX I2C controller reception pattern 1\n");
 			setup_rdp_info(data, NULL, 0, msgs[i].buf, msgs[i].len, &addr);
 			rdp_ret = R_RIIC_MasterReceive(&data->rdp_info);
 		} else {
-			/* Enter master transmission pattern 2 */
-			LOG_DBG("RDP RX I2C master transmit pattern 2/3\n");
+			/* Enter controller transmission pattern 2 */
+			LOG_DBG("RDP RX I2C controller transmit pattern 2/3\n");
 			setup_rdp_info(data, NULL, 0, (msgs[i].len) ? msgs[i].buf : NULL,
 				       msgs[i].len, &addr);
 			rdp_ret = R_RIIC_MasterSend(&data->rdp_info);
@@ -664,7 +664,7 @@ static int i2c_rx_init(const struct device *dev)
 	ret = R_RIIC_Open(&data->rdp_info);
 
 	if (ret) {
-		LOG_ERR("Open i2c master failed.");
+		LOG_ERR("Open i2c controller failed.");
 		return -EIO;
 	}
 
@@ -682,7 +682,7 @@ static int i2c_rx_configure(const struct device *dev, uint32_t dev_config)
 
 	/* Validate input */
 	if (!(dev_config & I2C_MODE_CONTROLLER)) {
-		LOG_ERR("Only I2C Master mode supported.");
+		LOG_ERR("Only I2C Controller mode supported.");
 		return -ENOTSUP;
 	}
 	if (dev_config & I2C_ADDR_10_BITS) {
@@ -862,7 +862,7 @@ static DEVICE_API(i2c, i2c_rx_driver_api) = {
 			.num_blocks = 0,                                                           \
 			.length = 0,                                                               \
 	},                                                                                         \
-	.slv_addr = 0x00,                                                                          \
+	.target_addr = 0x00,                                                                       \
 	.msgs = NULL,                                                                              \
 	.num_msgs = 0,                                                                             \
 	.num_processed_msgs = 0,

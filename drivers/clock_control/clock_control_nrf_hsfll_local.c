@@ -5,12 +5,12 @@
 
 #define DT_DRV_COMPAT nordic_nrf_hsfll_local
 
-#include "clock_control_nrf2_common.h"
+#include "clock_control_nrf_common.h"
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/clock_control/nrf_clock_control.h>
 
 #include <zephyr/logging/log.h>
-LOG_MODULE_DECLARE(clock_control_nrf2, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
+LOG_MODULE_REGISTER(clock_control_nrf_hsfll_local, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
 /* TODO: add support for other HSFLLs */
 BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 1,

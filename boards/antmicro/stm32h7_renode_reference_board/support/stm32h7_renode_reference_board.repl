@@ -38,6 +38,8 @@ tmp108: Sensors.TMP108 @ i2c1 0x48
 
 lps25hb: Sensors.LPS25HB @ i2c1 0x5D
 
+lsm6dso: Sensors.LSM6DSO_IMU @ i2c1 0x6A
+
 usart2:
     frequency: 200000000
 
@@ -47,7 +49,7 @@ timer3:
 watchdog:
     frequency: 32000
 
-qspiFlash: SPI.Micron_MT25Q @ qspi
+qspiFlash: SPI.ISSI_IS25WP @ qspi
     underlyingMemory: flashMem
 
 flashMem: Memory.MappedMemory @ sysbus 0x90000000
@@ -55,6 +57,16 @@ flashMem: Memory.MappedMemory @ sysbus 0x90000000
 
 dwt: Miscellaneous.DWT @ sysbus 0xE0001000
     frequency: 72000000
+
+phy: Network.EthernetPhysicalLayer @ ethernet 0
+    BasicControl: 0x3100
+    BasicStatus: 0x782D
+    Id1: 0x0007
+    Id2: 0xC130
+    AutoNegotiationAdvertisement: 0x01E1
+    AutoNegotiationLinkPartnerBasePageAbility: 0x0001
+    AutoNegotiationExpansion: 0x0064
+    AutoNegotiationNextPageTransmit: 0x2001
 
 sysbus:
     init:

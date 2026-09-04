@@ -1,6 +1,6 @@
 /*
- * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
- * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -95,6 +95,9 @@ typedef struct {
  */
 #define Z_PINCTRL_CAT1_PINMUX_INIT(node_id) DT_PROP(node_id, pinmux)
 
+/* maps to "half" drive strength in the infineon pinctrl binding */
+#define SOC_GPIO_DEFAULT_DRIVE_STRENGTH_IDX (1U)
+
 /**
  * @brief Utility macro to initialize pincfg field in #pinctrl_pin_t.
  * @param node_id Node identifier.
@@ -110,7 +113,7 @@ typedef struct {
 	 (DT_PROP(node_id, infineon_cfgout3_mode) << SOC_GPIO_CFGOUT3_POS) |                       \
 	 (DT_ENUM_IDX_OR(node_id, infineon_cfgout3_pullup_ohms, 0)                                 \
 	  << SOC_GPIO_CFGOUT3_PULLUP_POS)) |                                                       \
-		(DT_ENUM_IDX_OR(node_id, drive_strength, CY_GPIO_DRIVE_1_2)                        \
+		(DT_ENUM_IDX_OR(node_id, drive_strength, SOC_GPIO_DEFAULT_DRIVE_STRENGTH_IDX)      \
 		 << SOC_GPIO_DRIVESTRENGTH_POS)
 
 /**

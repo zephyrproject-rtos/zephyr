@@ -977,11 +977,12 @@ ZTEST(cbprintf_package, test_cbprintf_package_convert_static)
 	uint32_t copy_flags = CBPRINTF_PACKAGE_CONVERT_RW_STR;
 
 	clen = cbprintf_package_convert(spackage, slen, NULL, 0, copy_flags, NULL, 0);
-	zassert_true(clen >= 0);
-	zassert_true((size_t)clen == slen + sizeof(test_str1) + 1/*null*/ - 2 /* arg+ro idx gone*/);
+	size_t exp_len = slen + strlen(test_str1) + 1/*null*/ - 2 /* arg+ro idx gone*/;
+
+	zassert_equal((size_t)clen, exp_len, "clen:%d exp_len:%zu", clen, exp_len);
 
 	clen = cbprintf_package_convert(spackage, slen, convert_cb, &ctx, copy_flags, NULL, 0);
-	zassert_true(clen > 0);
+	zassert_equal((size_t)clen, exp_len, "clen:%d exp_len:%zu", clen, exp_len);
 	zassert_true(ctx.null);
 	zassert_equal((int)ctx.offset, clen);
 

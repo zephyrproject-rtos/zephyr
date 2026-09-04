@@ -10,7 +10,7 @@
 #include <stdint.h>
 #include <time.h>
 
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/sys/timeutil.h>
 
 /* arbitrary magic numbers used for testing */

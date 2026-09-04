@@ -5,6 +5,7 @@ config WSEN_HIDS_2525020210002
 	bool "WSEN-HIDS-2525020210002 humidity sensor"
 	default y
 	depends on DT_HAS_WE_WSEN_HIDS_2525020210002_ENABLED
+	depends on ZEPHYR_HAL_WURTHELEKTRONIK_MODULE
 	select I2C
 	select HAS_WESENSORS
 	help

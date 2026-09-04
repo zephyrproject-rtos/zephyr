@@ -11,7 +11,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/linker/devicetree_regions.h>
 #include <zephyr/sys/poweroff.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 
 #include <fsl_power.h>
 

@@ -1,3 +1,5 @@
+.. _virtio:
+
 Virtual I/O (VIRTIO)
 ##########################
 
@@ -125,8 +127,8 @@ will be invoked once the device returns the given descriptor chain. After that, 
 
 Guest-side Virtio drivers
 *************************
-Currently Zephyr provides drivers for Virtio over PCI and Virtio over MMIO and drivers for two devices using virtio - virtiofs, used
-to access the filesystem of the host and virtio-entropy, used as an entropy source.
+Currently Zephyr provides drivers for Virtio over PCI and Virtio over MMIO and drivers for three devices using virtio - virtiofs, used
+to access the filesystem of the host, virtio-entropy, used as an entropy source, and virtio-blk, used to access a block device.
 
 Virtiofs
 =========
@@ -140,6 +142,13 @@ Virtio-entropy
 ==============
 This driver allows using virtio-entropy as an entropy source in Zephyr. The operation of this device is simple - the driver places a
 buffer in the virtqueue and receives it back, filled with random data.
+
+Virtio-blk
+==========
+This driver exposes a virtio-blk block device to Zephyr's disk access layer, so it can be used through the
+:ref:`Disk Access API <disk_access_api>` and, on top of it, a filesystem. It keeps a single request in flight, submitting a descriptor
+chain made of a request header, the caller's data buffer as one or more scatter-gather segments, and a status byte. See
+:ref:`disk_virtio_blk` for details.
 
 Virtio samples
 **************

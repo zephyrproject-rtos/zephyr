@@ -20,3 +20,11 @@ properties:
       Input pin. The pulse received on this pin corresponds to
       the duration between the ultrasonic pulse emission and
       the reception of its "echo".
+
+  echo-timeout-ms:
+    type: int
+    default: 10
+    description: |
+      Maximum time the driver waits for the echo to return.
+      Default value of 10ms is equivalent to approx. 1.5m maximum range.
+      Measurements with no target will abort when timeout is reached.

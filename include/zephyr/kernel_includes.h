@@ -35,7 +35,7 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/arch/cpu.h>
 #include <zephyr/sys/rb.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/spinlock.h>
 #include <zephyr/fatal.h>
 #include <zephyr/irq.h>

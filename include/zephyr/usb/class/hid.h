@@ -325,8 +325,8 @@ extern "C" {
 /**
  * @brief Define HID Logical Maximum item with the data length of two bytes.
  *
- * @param a Minimum value lower byte
- * @param b Minimum value higher byte
+ * @param a Maximum value lower byte
+ * @param b Maximum value higher byte
  * @return  HID Logical Maximum item
  */
 #define HID_LOGICAL_MAX16(a, b)		\
@@ -347,10 +347,10 @@ extern "C" {
 /**
  * @brief Define HID Logical Maximum item with the data length of four bytes.
  *
- * @param a Minimum value lower byte
- * @param b Minimum value low middle byte
- * @param c Minimum value high middle byte
- * @param d Minimum value higher byte
+ * @param a Maximum value lower byte
+ * @param b Maximum value low middle byte
+ * @param c Maximum value high middle byte
+ * @param d Maximum value higher byte
  * @return  HID Logical Maximum item
  */
 #define HID_LOGICAL_MAX32(a, b, c, d)	\

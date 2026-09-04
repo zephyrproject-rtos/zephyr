@@ -11,10 +11,6 @@ properties:
   reg:
     required: true
 
-  num-locks:
-    type: int
-    required: true
-
   reg-width:
     type: int
     enum:

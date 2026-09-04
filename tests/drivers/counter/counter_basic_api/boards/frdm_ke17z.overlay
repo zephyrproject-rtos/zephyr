@@ -8,7 +8,7 @@
 	status = "okay";
 	compatible = "nxp,ftm";
 	prescaler = <128>;
-	clocks = <&scg KINETIS_SCG_FIRC_CLK>;
+	clocks = <&scg KINETIS_SCG_CORESYS_CLK>;
 	clock-source = "system";
 };
 

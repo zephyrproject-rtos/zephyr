@@ -260,7 +260,7 @@ static int driver_deinit(const struct device *dev)
 		)										\
 	};											\
 												\
-	SPI_NRFX_COMMON_DEFINE(inst, &CONCAT(data, inst));					\
+	SPI_NRFX_COMMON_DEFINE(inst, &CONCAT(data, inst).common.spim);				\
 												\
 	static const struct driver_config CONCAT(config, inst) = {				\
 		.common = SPI_NRFX_COMMON_CONFIG_INIT(						\

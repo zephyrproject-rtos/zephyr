@@ -643,6 +643,11 @@ static void update_proc_done_cnt(struct bt_cap_common_proc *active_proc)
 			enum bt_bap_ep_state state;
 
 			proc_param = &active_proc->proc_param.initiator[i];
+
+			if (proc_param->in_progress) {
+				continue;
+			}
+
 			cap_stream = proc_param->stream;
 			bap_stream = &cap_stream->bap_stream;
 
@@ -1006,8 +1011,7 @@ bool bt_cap_initiator_valid_unicast_group_param(const struct bt_cap_unicast_grou
 
 struct cap_to_bap_unicast_params {
 	struct bt_bap_unicast_group_stream_param
-		stream_params[CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SNK_COUNT +
-			      CONFIG_BT_BAP_UNICAST_CLIENT_ASE_SRC_COUNT];
+		stream_params[CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT * 2U];
 	struct bt_bap_unicast_group_stream_pair_param
 		pair_params[CONFIG_BT_BAP_UNICAST_CLIENT_GROUP_STREAM_COUNT];
 	struct bt_bap_unicast_group_param group_param;
@@ -1067,15 +1071,16 @@ static void cap_to_bap_unicast_group_param(const struct bt_cap_unicast_group_par
 }
 
 int bt_cap_unicast_group_create(const struct bt_cap_unicast_group_param *param,
-				struct bt_cap_unicast_group **unicast_group)
+				struct bt_cap_unicast_group **out_unicast_group)
 {
+	struct bt_cap_unicast_group *unicast_group = NULL;
 	struct cap_to_bap_unicast_params bap_param = {0};
 	int err;
 
 	static K_MUTEX_DEFINE(list_mutex);
 
-	if (unicast_group == NULL) {
-		LOG_DBG("unicast_group is NULL");
+	if (out_unicast_group == NULL) {
+		LOG_DBG("out_unicast_group is NULL");
 		return -EINVAL;
 	}
 
@@ -1083,17 +1088,17 @@ int bt_cap_unicast_group_create(const struct bt_cap_unicast_group_param *param,
 		return -EINVAL;
 	}
 
-	*unicast_group = NULL;
+	*out_unicast_group = NULL;
 
 	(void)k_mutex_lock(&list_mutex, K_FOREVER);
 	for (size_t i = 0U; i < ARRAY_SIZE(unicast_groups); i++) {
 		if (unicast_groups[i].bap_unicast_group == NULL) {
-			*unicast_group = &unicast_groups[i];
+			unicast_group = &unicast_groups[i];
 			break;
 		}
 	}
 
-	if (*unicast_group == NULL) {
+	if (unicast_group == NULL) {
 		LOG_DBG("Could not allocate more unicast groups");
 		(void)k_mutex_unlock(&list_mutex);
 		return -ENOMEM;
@@ -1103,9 +1108,11 @@ int bt_cap_unicast_group_create(const struct bt_cap_unicast_group_param *param,
 	cap_to_bap_unicast_group_param(param, &bap_param);
 
 	err = bt_bap_unicast_group_create(&bap_param.group_param,
-					  &(*unicast_group)->bap_unicast_group);
+					  &unicast_group->bap_unicast_group);
 	if (err != 0) {
 		LOG_DBG("Failed to create unicast group: %d", err);
+	} else {
+		*out_unicast_group = unicast_group;
 	}
 	(void)k_mutex_unlock(&list_mutex);
 
@@ -1358,7 +1365,7 @@ bool bt_cap_initiator_valid_unicast_audio_start_param(
 	return true;
 }
 
-static void cap_initiator_unicast_audio_proc_complete(struct bt_cap_common_proc *active_proc)
+void cap_initiator_unicast_audio_proc_complete(struct bt_cap_common_proc *active_proc)
 {
 	enum bt_cap_common_proc_type proc_type;
 	struct bt_conn *failed_conn;
@@ -1368,7 +1375,7 @@ static void cap_initiator_unicast_audio_proc_complete(struct bt_cap_common_proc 
 	err = active_proc->err;
 	proc_type = active_proc->proc_type;
 
-	if (IS_ENABLED(CONFIG_BT_CAP_HANDOVER) && bt_cap_common_handover_is_active()) {
+	if (IS_ENABLED(CONFIG_BT_CAP_HANDOVER) && bt_cap_common_active_proc_is_handover()) {
 		/* Clear initiator parameters. Normally this is done just before the
 		 * application callbacks with bt_cap_common_clear_proc, but
 		 * since that is not happening here, we clear them manually. They
@@ -2270,12 +2277,34 @@ int bt_cap_initiator_unicast_audio_update(const struct bt_cap_unicast_audio_upda
 	struct bt_cap_initiator_proc_param *proc_param;
 	struct bt_cap_common_proc *active_proc;
 	struct bt_bap_stream *bap_stream;
+	bool metadata_is_set = true;
 	const uint8_t *meta;
 	size_t meta_len;
 	int err;
 
 	if (!valid_unicast_audio_update_param(param)) {
 		return -EINVAL;
+	}
+
+	for (size_t i = 0U; i < param->count; i++) {
+		const struct bt_cap_unicast_audio_update_stream_param *stream_param =
+			&param->stream_params[i];
+		const struct bt_cap_stream *cap_stream = stream_param->stream;
+
+		if (!util_eq(cap_stream->bap_stream.codec_cfg->meta,
+			     cap_stream->bap_stream.codec_cfg->meta_len, stream_param->meta,
+			     stream_param->meta_len)) {
+
+			metadata_is_set = false;
+			break;
+		}
+
+		LOG_DBG("param->stream_params[%zu].meta is already set for stream %p", i,
+			cap_stream);
+	}
+
+	if (metadata_is_set) {
+		return -EALREADY;
 	}
 
 	active_proc = bt_cap_common_get_active_proc();
@@ -2336,6 +2365,15 @@ int bt_cap_initiator_unicast_audio_cancel(void)
 		LOG_DBG("No CAP procedure is in progress");
 
 		return -EALREADY;
+	}
+
+	if ((IS_ENABLED(CONFIG_BT_CAP_HANDOVER) && bt_cap_common_active_proc_is_handover()) ||
+	    !bt_cap_common_active_proc_is_initiator()) {
+		bt_cap_common_unlock_proc();
+
+		LOG_DBG("No CAP initiator procedure is in progress");
+
+		return -EOPNOTSUPP;
 	}
 
 	bt_cap_common_abort_proc(NULL, -ECANCELED);

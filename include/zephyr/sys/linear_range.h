@@ -9,8 +9,8 @@
  * @ingroup linear_range
  */
 
-#ifndef INCLUDE_ZEPHYR_SYS_LINEAR_RANGE_H_
-#define INCLUDE_ZEPHYR_SYS_LINEAR_RANGE_H_
+#ifndef ZEPHYR_INCLUDE_SYS_LINEAR_RANGE_H_
+#define ZEPHYR_INCLUDE_SYS_LINEAR_RANGE_H_
 
 #include <errno.h>
 #include <stdint.h>
@@ -24,6 +24,8 @@ extern "C" {
 
 /**
  * @defgroup linear_range Linear Range
+ * @since 3.3
+ * @version 1.0.0
  * @ingroup utilities
  *
  * The linear range API maps values in a linear range to a range index. A linear
@@ -344,4 +346,4 @@ static inline int linear_range_group_get_win_index(const struct linear_range *r,
 }
 #endif
 
-#endif /* INCLUDE_ZEPHYR_SYS_LINEAR_RANGE_H_ */
+#endif /* ZEPHYR_INCLUDE_SYS_LINEAR_RANGE_H_ */

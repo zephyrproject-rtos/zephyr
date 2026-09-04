@@ -43,6 +43,7 @@
 				compatible = "st,psram-device", "aps-z8";
 				reg = <0>;
 				size = <DT_SIZE_M(128)>;
+				st,mem-type = "apmem";
 				mspi-max-frequency = <DT_FREQ_M(200)>;
 				mspi-io-mode = "MSPI_IO_MODE_OCTAL";
 				mspi-data-rate = "MSPI_DATA_RATE_S_D_D";

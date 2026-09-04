@@ -56,15 +56,23 @@ int step_work_timing_source_update(const struct device *dev, const uint64_t micr
 int step_work_timing_source_start(const struct device *dev)
 {
 	struct gpio_stepper_common_data *data = dev->data;
+	int ret;
 
-	return k_work_reschedule(&data->stepper_dwork, stepper_movement_delay(dev));
+	ret = k_work_reschedule(&data->stepper_dwork, stepper_movement_delay(dev));
+	if (ret < 0) {
+		return ret;
+	}
+
+	return 0;
 }
 
 int step_work_timing_source_stop(const struct device *dev)
 {
 	struct gpio_stepper_common_data *data = dev->data;
 
-	return k_work_cancel_delayable(&data->stepper_dwork);
+	(void)k_work_cancel_delayable(&data->stepper_dwork);
+
+	return 0;
 }
 
 bool step_work_timing_source_needs_reschedule(const struct device *dev)

@@ -31,6 +31,7 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/time_units.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/sys/util_utf8.h>
@@ -1436,7 +1437,7 @@ static void current_calls_cfg_changed(const struct bt_gatt_attr *attr, uint16_t 
 	LOG_DBG("Index %u: value 0x%04x", inst_index(inst), value);
 
 	if (value == 0U) {
-		int err = k_mutex_lock(&tbs_mutex, K_FOREVER);
+		int err = k_mutex_lock(&tbs_mutex, MUTEX_TIMEOUT);
 
 		if (err != 0) {
 			LOG_DBG("Failed to lock mutex: %d", err);
@@ -1631,7 +1632,7 @@ static void call_state_cfg_changed(const struct bt_gatt_attr *attr, uint16_t val
 	LOG_DBG("Index %u: value 0x%04x", inst_index(inst), value);
 
 	if (value == 0U) {
-		int err = k_mutex_lock(&tbs_mutex, K_FOREVER);
+		int err = k_mutex_lock(&tbs_mutex, MUTEX_TIMEOUT);
 
 		if (err != 0) {
 			LOG_DBG("Failed to lock mutex: %d", err);
@@ -3229,6 +3230,7 @@ int bt_tbs_set_signal_strength(uint8_t bearer_index, uint8_t new_signal_strength
 {
 	struct tbs_inst *inst = inst_lookup_index(bearer_index);
 	uint32_t timer_status;
+	int err;
 
 	if (new_signal_strength > BT_TBS_SIGNAL_STRENGTH_MAX &&
 	    new_signal_strength != BT_TBS_SIGNAL_STRENGTH_UNKNOWN) {
@@ -3237,19 +3239,27 @@ int bt_tbs_set_signal_strength(uint8_t bearer_index, uint8_t new_signal_strength
 		return -EINVAL;
 	}
 
-	if (inst->signal_strength == new_signal_strength) {
-		return 0;
+	err = k_mutex_lock(&tbs_mutex, K_NO_WAIT);
+	if (err != 0) {
+		LOG_DBG("Failed to lock mutex");
+		return -EBUSY;
 	}
 
-	inst->signal_strength = new_signal_strength;
-	inst->pending_signal_strength_notification = true;
+	if (inst->signal_strength != new_signal_strength) {
+		inst->signal_strength = new_signal_strength;
+		inst->pending_signal_strength_notification = true;
 
-	timer_status = k_work_delayable_remaining_get(&inst->reporting_interval_work);
-	if (timer_status == 0U) {
-		k_work_reschedule(&inst->reporting_interval_work, K_NO_WAIT);
+		timer_status = k_work_delayable_remaining_get(&inst->reporting_interval_work);
+		if (timer_status == 0U) {
+			k_work_reschedule(&inst->reporting_interval_work, K_NO_WAIT);
+		}
+
+		LOG_DBG("Index %u: Reporting signal strength in %u ms", bearer_index,
+			k_ticks_to_ms_ceil32(timer_status));
 	}
 
-	LOG_DBG("Index %u: Reporting signal strength in %d ms", bearer_index, timer_status);
+	err = k_mutex_unlock(&tbs_mutex);
+	__ASSERT(err == 0, "Failed to unlock mutex: %d", err);
 
 	return 0;
 }

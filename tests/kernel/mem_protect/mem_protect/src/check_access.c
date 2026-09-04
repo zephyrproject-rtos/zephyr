@@ -10,7 +10,29 @@ K_SEM_DEFINE(obj_access, 0, 1);
 K_SEM_DEFINE(obj_no_access, 0, 1);
 int no_obj;
 
-ZTEST_USER(userspace_access_check, test_access)
+/**
+ * @brief Verify that k_object_access_check() reports the caller's rights.
+ *
+ * @ingroup kernel_memprotect_tests
+ *
+ * @details
+ * The check call lets a user thread ask, without side effects, whether it may
+ * use an object. Each answer must match the actual state: granted object,
+ * object never granted, address that is no kernel object, and the thread's
+ * own thread object, which every thread implicitly owns.
+ *
+ * Test steps:
+ * - Check a semaphore granted during suite setup.
+ * - Check a semaphore that was never granted.
+ * - Check an address that is not a kernel object.
+ * - Check the calling thread's own thread object.
+ *
+ * Expected result:
+ * - The calls return 0, -EPERM, -EBADF and 0 respectively.
+ *
+ * @see k_object_access_check()
+ */
+ZTEST_USER(userspace_access_check, test_kobject_access_check)
 {
 	zexpect_equal(k_object_access_check(&obj_access), 0, "should have access but doesn't");
 	zexpect_equal(k_object_access_check(&obj_no_access), -EPERM,

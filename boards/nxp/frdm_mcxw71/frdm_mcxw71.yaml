@@ -31,4 +31,5 @@ supported:
   - watchdog
   - netif:openthread
   - rtc
+  - crc
 vendor: nxp

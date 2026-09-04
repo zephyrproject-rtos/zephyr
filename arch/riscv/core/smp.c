@@ -60,9 +60,23 @@ void arch_secondary_cpu_init(int hartid)
 	for (i = 0; i < CONFIG_MP_MAX_NUM_CPUS; i++) {
 		if (_kernel.cpus[i].arch.hartid == hartid) {
 			cpu_num = i;
+			break;
 		}
 	}
+
 	csr_write(mscratch, &_kernel.cpus[cpu_num]);
+
+	/*
+	 * The no-match check must sit after the mscratch write:
+	 * arch_curr_cpu() reads mscratch, so the fatal path needs the
+	 * per-CPU pointer set first. Note that on the no-match path
+	 * cpu_num is still 0, so the panic is reported against whatever
+	 * CPU 0 is running.
+	 */
+	if (i >= CONFIG_MP_MAX_NUM_CPUS) {
+		k_panic();
+	}
+
 #ifdef CONFIG_SMP
 	_kernel.cpus[cpu_num].arch.online = true;
 #endif

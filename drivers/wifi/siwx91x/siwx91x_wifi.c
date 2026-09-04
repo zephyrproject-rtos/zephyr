@@ -336,7 +336,7 @@ static int siwx91x_set_config(const struct device *dev,
 			filter_info.command_type = SL_WIFI_MULTICAST_MAC_CLEAR_BIT;
 		}
 
-		status = sl_wifi_configure_multicast_filter(&filter_info);
+		status = sli_wifi_configure_multicast_filter(&filter_info);
 		if (status != SL_STATUS_OK) {
 			LOG_ERR("Failed to %s multicast filter: 0x%x",
 				config->filter.set ? "add" : "remove", status);
@@ -524,6 +524,7 @@ static void siwx91x_iface_init(struct net_if *iface)
 
 	sidev->state = WIFI_STATE_INTERFACE_DISABLED;
 	sidev->iface = iface;
+	k_work_init(&sidev->on_join_work, siwx91x_on_join_work);
 
 	sl_wifi_set_callback_v2(SL_WIFI_SCAN_RESULT_EVENTS, siwx91x_on_scan, sidev);
 	sl_wifi_set_callback_v2(SL_WIFI_JOIN_EVENTS, siwx91x_on_join, sidev);

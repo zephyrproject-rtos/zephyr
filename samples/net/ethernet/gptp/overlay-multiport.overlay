@@ -1,0 +1,28 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Two gPTP ports map to two TAP interfaces: zeth0 and zeth1.
+ * Use together with overlay-multiport.conf (CONFIG_NET_GPTP_NUM_PORTS=2).
+ */
+
+&zeth0 {
+	host-interface = "zeth0";
+};
+
+/ {
+	zeth1: zeth1 {
+		compatible = "zephyr,native-tap";
+		status = "okay";
+		zephyr,random-mac-address;
+		zephyr,mac-address-prefix = [00 00 5e 00 53];
+		host-interface = "zeth1";
+
+		ptp_clock1: ptp_clock {
+			compatible = "zephyr,native-ptp-clock";
+			status = "okay";
+		};
+	};
+};

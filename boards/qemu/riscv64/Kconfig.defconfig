@@ -12,7 +12,7 @@ config HAS_COVERAGE_SUPPORT
 config QEMU_ICOUNT_SHIFT
 	default 6 if QEMU_ICOUNT
 
-configdefault NET_L2_ETHERNET
+configdefault ETH_DRIVER
 	default y
 
 configdefault NET_QEMU_DEVICE_EXTRA_ARGS

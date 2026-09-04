@@ -1131,7 +1131,7 @@ static inline int sensor_stream(const struct rtio_iodev *iodev, struct rtio *ctx
 /**
  * @brief Blocking one shot read of samples from a sensor into a buffer
  *
- * Using @p cfg, read data from the device by using the provided RTIO context
+ * Using @p iodev, read data from the device by using the provided RTIO context
  * @p ctx. This call will generate a @ref rtio_sqe that will be given the provided buffer. The call
  * will wait for the read to complete before returning to the caller.
  *
@@ -1174,7 +1174,7 @@ static inline int sensor_read(const struct rtio_iodev *iodev, struct rtio *ctx, 
 /**
  * @brief One shot non-blocking read with pool allocated buffer
  *
- * Using @p cfg, read one snapshot of data from the device by using the provided RTIO context
+ * Using @p iodev, read one snapshot of data from the device by using the provided RTIO context
  * @p ctx. This call will generate a @ref rtio_sqe that will leverage the RTIO's internal
  * mempool when the time comes to service the read.
  *
@@ -1682,6 +1682,125 @@ static inline int sensor_value_from_micro(struct sensor_value *val, int64_t micr
 
 	val->val1 = (int32_t)(micro / 1000000LL);
 	val->val2 = (int32_t)(micro % 1000000LL);
+
+	return 0;
+}
+
+/**
+ * @brief Helper function for adding two struct sensor_value.
+ *
+ * @param inp1 The first addend.
+ * @param inp2 The second addend.
+ * @param out Resulting sum.
+ * @return 0 if successful, negative errno code if failure.
+ */
+static inline int sensor_value_add(struct sensor_value *inp1, struct sensor_value *inp2,
+				   struct sensor_value *out)
+{
+	int64_t val1 = (int64_t)inp1->val1 + (int64_t)inp2->val1;
+	int32_t val2 = inp1->val2 + inp2->val2;
+
+	if (val2 >= 1000000LL || (val1 < 0 && val2 > 0)) {
+		val1 += 1;
+		val2 -= 1000000LL;
+	} else if (val2 <= -1000000LL || (val1 > 0 && val2 < 0)) {
+		val1 -= 1;
+		val2 += 1000000LL;
+	}
+
+	if (!IN_RANGE(val1, INT32_MIN, INT32_MAX)) {
+		return -ERANGE;
+	}
+
+	out->val1 = val1;
+	out->val2 = val2;
+
+	return 0;
+}
+
+/**
+ * @brief Helper function for subtracting two struct sensor_value.
+ *
+ * @param inp1 The minuend.
+ * @param inp2 The subtrahend.
+ * @param out Resulting difference.
+ * @return 0 if successful, negative errno code if failure.
+ */
+static inline int sensor_value_subtract(struct sensor_value *inp1, struct sensor_value *inp2,
+					struct sensor_value *out)
+{
+	int64_t val1 = (int64_t)inp1->val1 - (int64_t)inp2->val1;
+	int32_t val2 = inp1->val2 - inp2->val2;
+
+	if (val2 >= 1000000LL || (val1 < 0 && val2 > 0)) {
+		val1 += 1;
+		val2 -= 1000000LL;
+	} else if (val2 <= -1000000LL || (val1 > 0 && val2 < 0)) {
+		val1 -= 1;
+		val2 += 1000000LL;
+	}
+
+	if (!IN_RANGE(val1, INT32_MIN, INT32_MAX)) {
+		return -ERANGE;
+	}
+
+	out->val1 = val1;
+	out->val2 = val2;
+
+	return 0;
+}
+
+/**
+ * @brief Helper function for multiplying two struct sensor_value.
+ *
+ * @param inp1 The first factor.
+ * @param inp2 The second factor.
+ * @param out Resulting product.
+ * @return 0 if successful, negative errno code if failure.
+ */
+static inline int sensor_value_multiply(struct sensor_value *inp1, struct sensor_value *inp2,
+					struct sensor_value *out)
+{
+	int64_t val1 = (int64_t)inp1->val1 * inp2->val1;
+	int64_t val2 = (int64_t)inp1->val1 * inp2->val2 + (int64_t)inp1->val2 * inp2->val1 +
+		       ((int64_t)inp1->val2 * inp2->val2) / 1000000LL;
+
+	val1 += val2 / 1000000LL;
+	val2 %= 1000000LL;
+
+	if (!IN_RANGE(val1, INT32_MIN, INT32_MAX)) {
+		return -ERANGE;
+	}
+
+	out->val1 = val1;
+	out->val2 = val2;
+
+	return 0;
+}
+
+/**
+ * @brief Helper function for scaling a struct sensor_value.
+ *
+ * @param inp A pointer to a sensor_value struct.
+ * @param scalar An integer scalar.
+ * @param out Scaled output.
+ * @return 0 if successful, negative errno code if failure.
+ */
+static inline int sensor_value_scale(struct sensor_value *inp, int32_t scalar,
+				     struct sensor_value *out)
+{
+	int64_t val1 = (int64_t)inp->val1 * scalar;
+	int64_t val2 = (int64_t)inp->val2 * scalar;
+
+	val1 += val2 / 1000000LL;
+	val2 %= 1000000LL;
+
+	if (!IN_RANGE(val1, INT32_MIN, INT32_MAX)) {
+		return -ERANGE;
+	}
+
+	out->val1 = val1;
+	out->val2 = val2;
 
 	return 0;
 }

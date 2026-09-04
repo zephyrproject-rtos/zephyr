@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2020-2025 Gerson Fernando Budke <nandojve@gmail.com>
+ * Copyright (c) 2026 Microchip Technology Inc.
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -71,16 +72,18 @@
 
 &flash0 {
 	partitions {
-		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			label = "sam-ba";
-			reg = <0x000000000 0x00004000>;
+			reg = <0x00000000 0x00004000>;
 		};
 
 		code_partition: partition@4000 {
+			compatible = "zephyr,mapped-partition";
 			label = "image";
 			reg = <0x00004000 0x0003c000>;
 		};

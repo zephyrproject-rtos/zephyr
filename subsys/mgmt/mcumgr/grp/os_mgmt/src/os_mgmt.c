@@ -565,8 +565,7 @@ os_mgmt_mcumgr_params(struct smp_streamer *ctxt)
 #define BOOTLOADER_MODE MCUBOOT_MODE_UPGRADE_ONLY
 #elif defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_USING_OFFSET)
 #define BOOTLOADER_MODE MCUBOOT_MODE_SWAP_USING_OFFSET
-#elif defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_USING_MOVE) || \
-defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_WITHOUT_SCRATCH)
+#elif defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_USING_MOVE)
 #define BOOTLOADER_MODE MCUBOOT_MODE_SWAP_USING_MOVE
 #elif defined(CONFIG_MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP)
 #define BOOTLOADER_MODE MCUBOOT_MODE_DIRECT_XIP
@@ -908,13 +907,7 @@ static int os_mgmt_info(struct smp_streamer *ctxt)
 
 	if (format_bitmask & OS_MGMT_INFO_FORMAT_HARDWARE_PLATFORM) {
 		rc = snprintf(&output[output_length], (sizeof(output) - output_length),
-#ifdef CONFIG_MCUMGR_GRP_OS_INFO_HARDWARE_INFO_SHORT_HARDWARE_PLATFORM
-			      (prior_output == true ? " %s%s%s" : "%s%s%s"), CONFIG_BOARD,
-			      (sizeof(CONFIG_BOARD_REVISION) > 1 ? "@" : ""),
-			      CONFIG_BOARD_REVISION);
-#else
 			      (prior_output == true ? " %s" : "%s"), CONFIG_BOARD_TARGET);
-#endif
 
 		if (rc < 0 || rc >= (sizeof(output) - output_length)) {
 			goto fail;

@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_SYS_SPSC_LOCKFREE_H_
-#define ZEPHYR_SYS_SPSC_LOCKFREE_H_
+#ifndef ZEPHYR_INCLUDE_SYS_SPSC_LOCKFREE_H_
+#define ZEPHYR_INCLUDE_SYS_SPSC_LOCKFREE_H_
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -330,4 +330,4 @@ struct spsc {
  * @}
  */
 
-#endif /* ZEPHYR_SYS_SPSC_LOCKFREE_H_ */
+#endif /* ZEPHYR_INCLUDE_SYS_SPSC_LOCKFREE_H_ */

@@ -14,7 +14,7 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
 #include <zephyr/irq.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/pm/device.h>
 #include <fsl_wwdt.h>
 #include <fsl_clock.h>
@@ -330,7 +330,7 @@ static DEVICE_API(wdt, mcux_wwdt_api) = {
 		/* Defensive: clear any peripheral status and NVIC pending */                      \
 		WWDT_ClearStatusFlags((WWDT_Type *)DT_INST_REG_ADDR(id),                           \
 			      WWDT_GetStatusFlags((WWDT_Type *)DT_INST_REG_ADDR(id)));             \
-		NVIC_ClearPendingIRQ(DT_INST_IRQN(id));                                            \
+		k_irq_clear_pending(DT_INST_IRQN(id));                                            \
 		irq_enable(DT_INST_IRQN(id));                                                      \
 	}
 

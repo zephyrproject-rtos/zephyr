@@ -1,0 +1,11 @@
+# Copyright (c) 2026, Realtek Semiconductor Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Realtek Bee family SHA-256 hardware accelerator.
+
+  Supports one-shot SHA-256 calculation on Realtek Bee family SoCs.
+
+compatible: "realtek,bee-sha256"
+
+include: base.yaml

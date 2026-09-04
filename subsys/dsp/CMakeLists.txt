@@ -3,3 +3,4 @@
 
 add_subdirectory_ifdef(CONFIG_DSP_BACKEND_CMSIS cmsis)
 add_subdirectory_ifdef(CONFIG_DSP_BACKEND_ARCMWDT arcmwdt)
+add_subdirectory_ifdef(CONFIG_DSP_BACKEND_POWERQUAD powerquad)

@@ -68,7 +68,7 @@ properties:
     description: |
       Enable 3-wire mode
 
-      Use MOSI for both sending and receiving data
+      Use SDO for both sending and receiving data
 
   dma-enabled:
     type: boolean
@@ -118,4 +118,4 @@ properties:
   line-idle-low:
     type: boolean
     description: |
-      Default MISO and MOSI pins GPIO level when idle. Defaults to high by default.
+      Default SDI and SDO pins GPIO level when idle. Defaults to high by default.

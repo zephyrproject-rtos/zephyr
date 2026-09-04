@@ -205,6 +205,28 @@ static bool modem_ppp_is_byte_expected(uint8_t byte, uint8_t expected_byte)
 	return false;
 }
 
+static void modem_ppp_start_acfc_frame(struct modem_ppp *ppp, uint8_t byte)
+{
+	ppp->rx_pkt = net_pkt_rx_alloc_with_buffer(ppp->iface, CONFIG_MODEM_PPP_NET_BUF_FRAG_SIZE,
+						   NET_AF_UNSPEC, 0, K_NO_WAIT);
+	if (ppp->rx_pkt == NULL) {
+		LOG_WRN("Dropped frame, no net_pkt available");
+		ppp->receive_state = MODEM_PPP_RECEIVE_STATE_HDR_SOF;
+		return;
+	}
+
+	net_pkt_cursor_init(ppp->rx_pkt);
+	if (net_pkt_write_u8(ppp->rx_pkt, byte) < 0) {
+		net_pkt_unref(ppp->rx_pkt);
+		ppp->rx_pkt = NULL;
+		ppp->receive_state = MODEM_PPP_RECEIVE_STATE_HDR_SOF;
+		return;
+	}
+
+	LOG_DBG("Receiving ACFC PPP frame");
+	ppp->receive_state = MODEM_PPP_RECEIVE_STATE_WRITING;
+}
+
 static void modem_ppp_process_received_byte(struct modem_ppp *ppp, uint8_t byte)
 {
 	switch (ppp->receive_state) {
@@ -214,7 +236,7 @@ static void modem_ppp_process_received_byte(struct modem_ppp *ppp, uint8_t byte)
 				LOG_WRN("Received 'NO CARRIER' event");
 				ppp->receive_state = MODEM_PPP_RECEIVE_STATE_HDR_SOF;
 				atomic_set_bit(&ppp->state, MODEM_PPP_STATE_DEAD_BIT);
-				/* TODO: Notify L2 PPP that link is dead */
+				net_if_carrier_off(ppp->iface);
 			}
 			break;
 		}
@@ -241,11 +263,30 @@ static void modem_ppp_process_received_byte(struct modem_ppp *ppp, uint8_t byte)
 			ppp->receive_offset = 1;
 			break;
 		}
-		if (modem_ppp_is_byte_expected(byte, 0xFF)) {
+		if (byte == 0xFF) {
 			ppp->receive_state = MODEM_PPP_RECEIVE_STATE_HDR_CTRL;
-		} else {
-			ppp->receive_state = MODEM_PPP_RECEIVE_STATE_HDR_SOF;
+			break;
 		}
+		if (byte == MODEM_PPP_CODE_ESCAPE) {
+			ppp->receive_state = MODEM_PPP_RECEIVE_STATE_HDR_FF_UNESCAPE;
+			break;
+		}
+		modem_ppp_start_acfc_frame(ppp, byte);
+		break;
+
+	case MODEM_PPP_RECEIVE_STATE_HDR_FF_UNESCAPE:
+		if (byte == MODEM_PPP_CODE_DELIMITER) {
+			/* 7D 7E is an aborted frame, look for the next one */
+			ppp->receive_state = MODEM_PPP_RECEIVE_STATE_HDR_FF;
+			break;
+		}
+		byte ^= MODEM_PPP_VALUE_ESCAPE;
+		if (byte == 0xFF) {
+			/* Escaped Address field, not an ACFC frame */
+			ppp->receive_state = MODEM_PPP_RECEIVE_STATE_HDR_CTRL;
+			break;
+		}
+		modem_ppp_start_acfc_frame(ppp, byte);
 		break;
 
 	case MODEM_PPP_RECEIVE_STATE_HDR_CTRL_UNESCAPE:
@@ -405,11 +446,11 @@ static void modem_ppp_send_handler(struct k_work *item)
 		}
 
 		/* Claim as much space as possible */
-		reserved_size = ring_buf_put_claim(&ppp->transmit_rb, &reserved, UINT32_MAX);
+		reserved_size = ring_buf_put_ptr(&ppp->transmit_rb, &reserved, 0);
 		/* Push wrapped data into claimed buffer */
 		pushed = modem_ppp_wrap(ppp, reserved, reserved_size);
 		/* Limit claimed data to what was actually pushed */
-		ring_buf_put_finish(&ppp->transmit_rb, pushed);
+		ring_buf_commit(&ppp->transmit_rb, pushed);
 
 		if (ppp->transmit_state == MODEM_PPP_TRANSMIT_STATE_IDLE) {
 			net_pkt_unref(ppp->tx_pkt);
@@ -422,15 +463,14 @@ static void modem_ppp_send_handler(struct k_work *item)
 #endif
 
 	while (!ring_buf_is_empty(&ppp->transmit_rb)) {
-		reserved_size = ring_buf_get_claim(&ppp->transmit_rb, &reserved, UINT32_MAX);
+		reserved_size = ring_buf_get_ptr(&ppp->transmit_rb, &reserved, 0);
 
 		ret = modem_pipe_transmit(ppp->pipe, reserved, reserved_size);
 		if (ret < 0) {
-			ring_buf_get_finish(&ppp->transmit_rb, 0);
 			break;
 		}
 
-		ring_buf_get_finish(&ppp->transmit_rb, (uint32_t)ret);
+		ring_buf_consume(&ppp->transmit_rb, (uint32_t)ret);
 
 		if (ret < reserved_size) {
 			break;
@@ -581,6 +621,7 @@ int modem_ppp_attach(struct modem_ppp *ppp, struct modem_pipe *pipe)
 
 	atomic_clear(&ppp->state);
 	atomic_set_bit(&ppp->state, MODEM_PPP_STATE_ATTACHED_BIT);
+	net_if_carrier_on(ppp->iface);
 	return 0;
 }
 
@@ -598,6 +639,7 @@ void modem_ppp_release(struct modem_ppp *ppp)
 		return;
 	}
 
+	net_if_carrier_off(ppp->iface);
 	modem_pipe_release(ppp->pipe);
 	k_work_cancel_sync(&ppp->send_work, &sync);
 	k_work_cancel_sync(&ppp->process_work, &sync);

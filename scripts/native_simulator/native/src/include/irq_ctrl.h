@@ -31,6 +31,7 @@ uint32_t hw_irq_ctrl_change_lock(uint32_t new_lock);
 uint64_t hw_irq_ctrl_get_irq_status(void);
 void hw_irq_ctrl_disable_irq(unsigned int irq);
 int hw_irq_ctrl_is_irq_enabled(unsigned int irq);
+int hw_irq_ctrl_is_irq_pending(unsigned int irq);
 void hw_irq_ctrl_clear_irq(unsigned int irq);
 void hw_irq_ctrl_enable_irq(unsigned int irq);
 void hw_irq_ctrl_set_irq(unsigned int irq);

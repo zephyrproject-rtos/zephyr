@@ -5,7 +5,7 @@
 
 if BOARD_FRDM_RW612
 
-configdefault NET_L2_ETHERNET
+configdefault ETH_DRIVER
 	default y if DT_HAS_NXP_ENET_MAC_ENABLED
 
 if LVGL

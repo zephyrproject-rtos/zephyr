@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include "platform/include/tfm_platform_system.h"
-#include "cmsis.h"
-#include "tfm_platform_hal_ioctl.h"
-#include "tfm_ioctl_core_api.h"
+#include <platform/include/tfm_platform_system.h>
+#include <cmsis.h>
+#include <tfm_platform_hal_ioctl.h>
+#include <tfm_ioctl_core_api.h>
 
 void tfm_platform_hal_system_reset(void)
 {
@@ -30,6 +30,10 @@ enum tfm_platform_err_t tfm_platform_hal_ioctl(tfm_platform_ioctl_req_t request,
 
 
 	/* Board specific IOCTL services */
+#if defined(TFM_NRF_RAM_CTRL_SERVICE)
+	case TFM_PLATFORM_IOCTL_RAM_CTRL_SERVICE:
+		return tfm_platform_hal_ram_ctrl_service(in_vec, out_vec);
+#endif
 
 	/* Not a supported IOCTL service.*/
 	default:

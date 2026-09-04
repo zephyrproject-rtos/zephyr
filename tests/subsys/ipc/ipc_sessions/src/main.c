@@ -214,14 +214,14 @@ ZTEST(ipc_sessions, test_reboot)
 
 	int ret;
 	struct test_ipc_event_state ev;
-	static const struct ipc_test_cmd_reboot cmd_rebond = { { IPC_TEST_CMD_REBOOT }, 10 };
+	static const struct ipc_test_cmd_reboot cmd_reboot = { { IPC_TEST_CMD_REBOOT }, 10 };
 
 	zassert_not_ok(data_queue_is_empty(&ipc_data_queue),
 		       "IPC data queue contains unexpected data");
 	/* Sending data */
-	ret = ipc_service_send(&ep, &cmd_rebond, sizeof(cmd_rebond));
-	zassert_equal(ret, sizeof(cmd_rebond), "ipc_service_send failed: %d, expected: %u", ret,
-		      sizeof(cmd_rebond));
+	ret = ipc_service_send(&ep, &cmd_reboot, sizeof(cmd_reboot));
+	zassert_equal(ret, sizeof(cmd_reboot), "ipc_service_send failed: %d, expected: %u", ret,
+		      sizeof(cmd_reboot));
 	/* Waiting for IPC to unbound */
 	ret = k_msgq_get(&ipc_events, &ev, K_MSEC(1000));
 	zassert_ok(ret, "No IPC unbound event on time");
@@ -248,7 +248,7 @@ ZTEST(ipc_sessions, test_rebond)
 
 	int ret;
 	struct test_ipc_event_state ev;
-	static const struct ipc_test_cmd_reboot cmd_rebond = { { IPC_TEST_CMD_REBOND }, 10 };
+	static const struct ipc_test_cmd_rebond cmd_rebond = { { IPC_TEST_CMD_REBOND }, 10 };
 
 	zassert_not_ok(data_queue_is_empty(&ipc_data_queue),
 		       "IPC data queue contains unexpected data");

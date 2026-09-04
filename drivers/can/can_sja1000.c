@@ -369,6 +369,7 @@ int can_sja1000_send(const struct device *dev, const struct can_frame *frame, k_
 		     can_tx_callback_t callback, void *user_data)
 {
 	struct can_sja1000_data *data = dev->data;
+	k_spinlock_key_t key;
 	uint8_t cmr;
 	uint8_t sr;
 
@@ -404,8 +405,6 @@ int can_sja1000_send(const struct device *dev, const struct can_frame *frame, k_
 	data->tx_callback = callback;
 	data->tx_user_data = user_data;
 
-	can_sja1000_write_frame(dev, frame);
-
 	if ((data->common.mode & CAN_MODE_LOOPBACK) != 0) {
 		cmr = CAN_SJA1000_CMR_SRR;
 	} else {
@@ -416,7 +415,10 @@ int can_sja1000_send(const struct device *dev, const struct can_frame *frame, k_
 		cmr |= CAN_SJA1000_CMR_AT;
 	}
 
+	key = k_spin_lock(&data->buf_lock);
+	can_sja1000_write_frame(dev, frame);
 	can_sja1000_write_reg(dev, CAN_SJA1000_CMR, cmr);
+	k_spin_unlock(&data->buf_lock, key);
 
 	return 0;
 }
@@ -561,7 +563,11 @@ static void can_sja1000_handle_receive_irq(const struct device *dev)
 	uint8_t sr;
 
 	do {
+		k_spinlock_key_t key = k_spin_lock(&data->buf_lock);
+
 		can_sja1000_read_frame(dev, &frame);
+		can_sja1000_write_reg(dev, CAN_SJA1000_CMR, CAN_SJA1000_CMR_RRB);
+		k_spin_unlock(&data->buf_lock, key);
 
 #ifndef CONFIG_CAN_ACCEPT_RTR
 		if ((frame.flags & CAN_FRAME_RTR) == 0U) {
@@ -582,7 +588,6 @@ static void can_sja1000_handle_receive_irq(const struct device *dev)
 		}
 #endif /* !CONFIG_CAN_ACCEPT_RTR */
 
-		can_sja1000_write_reg(dev, CAN_SJA1000_CMR, CAN_SJA1000_CMR_RRB);
 		sr = can_sja1000_read_reg(dev, CAN_SJA1000_SR);
 	} while ((sr & CAN_SJA1000_SR_RBS) != 0);
 }

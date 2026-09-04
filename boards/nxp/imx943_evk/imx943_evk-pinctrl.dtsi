@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <nxp/nxp_imx/mimx94398avkm-pinctrl.dtsi>
+#include <nxp/imx/pinctrl/mimx94398avkm-pinctrl.dtsi>
 
 &pinctrl {
 	emdio_default: emdio_default {
@@ -201,6 +201,17 @@
 				 <&iomuxc_sai1_txd0_sai_tx_data_sai1_tx_data0>,
 				 <&iomuxc_sai1_txfs_sai_tx_sync_sai1_tx_sync>;
 			bias-pull-up;
+			slew-rate = "slightly_fast";
+			drive-strength = "x4";
+		};
+	};
+
+	lpspi3_default: lpspi3_default {
+		group0 {
+			pinmux = <&iomuxc_gpio_io08_lpspi_pcs_lpspi3_pcs0>,
+				 <&iomuxc_gpio_io09_lpspi_sin_lpspi3_sin>,
+				 <&iomuxc_gpio_io10_lpspi_sout_lpspi3_sout>,
+				 <&iomuxc_gpio_io11_lpspi_sck_lpspi3_sck>;
 			slew-rate = "slightly_fast";
 			drive-strength = "x4";
 		};

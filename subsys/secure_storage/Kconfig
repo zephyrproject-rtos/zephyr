@@ -24,6 +24,18 @@ module = SECURE_STORAGE
 module-str = secure_storage
 source "subsys/logging/Kconfig.template.log_config"
 
+config SECURE_STORAGE_INIT_PRIORITY
+	int "Initialization priority"
+	depends on SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_SETTINGS || \
+		SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_ZMS || \
+		(SECURE_STORAGE_ITS_TRANSFORM_IMPLEMENTATION_AEAD && \
+		!SECURE_STORAGE_ITS_TRANSFORM_AEAD_NO_INSECURE_KEY_WARNING)
+	default APPLICATION_INIT_PRIORITY
+	range 0 99
+	help
+	  Initialization priority for the secure storage components that are
+	  initialized at boot time with the APPLICATION level.
+
 config SECURE_STORAGE_64_BIT_UID
 	bool "Make psa_storage_uid_t 64-bit"
 	help

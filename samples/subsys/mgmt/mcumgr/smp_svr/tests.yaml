@@ -9,6 +9,8 @@ tests:
     harness: bluetooth
     tags: bluetooth
     extra_args: EXTRA_CONF_FILE="bt.conf"
+    extra_configs:
+      - CONFIG_CLOCK_CONTROL_NRF=n
     platform_allow:
       - nrf52dk/nrf52832
       - nrf52840dk/nrf52840
@@ -213,4 +215,17 @@ tests:
     platform_allow:
       - nrf52840dk/nrf52840
     integration_platforms:
+      - nrf52840dk/nrf52840
+  sample.mcumgr.smp_svr.bt.legacy_nrf_clock:
+    harness: bluetooth
+    tags: bluetooth
+    extra_args: EXTRA_CONF_FILE="bt.conf"
+    extra_configs:
+      - CONFIG_CLOCK_CONTROL_NRF=y
+      - CONFIG_DEPRECATION_TEST=y
+    platform_allow:
+      - nrf52dk/nrf52832
+      - nrf52840dk/nrf52840
+    integration_platforms:
+      - nrf52dk/nrf52832
       - nrf52840dk/nrf52840

@@ -12,7 +12,7 @@
 #include <zephyr/sys/mpsc_pbuf.h>
 #include <zephyr/logging/log_link.h>
 #include <zephyr/sys/printk.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/sys/clock.h>
 #include <zephyr/init.h>
 #include <zephyr/sys/__assert.h>
@@ -721,7 +721,8 @@ static void msg_commit(struct mpsc_pbuf_buffer *buffer, struct log_msg *msg)
 	bool lock_acquired;
 
 	if (IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE)) {
-		k_spinlock_key_t key;
+		k_spinlock_key_t key = {0};
+
 		lock_acquired = process_lock_acquire_if_needed(&key);
 
 		msg_process(m);
@@ -976,11 +977,19 @@ static void log_process_thread_func(void *dummy1, void *dummy2, void *dummy3)
 	uint32_t links_active_mask = 0xFFFFFFFF;
 	uint8_t domain_offset = 0;
 	uint32_t activate_mask = z_log_init(false, false);
-	/* If some backends are not activated yet set periodical thread wake up
-	 * to poll backends for readiness. Period is set arbitrary.
-	 * If all backends are ready periodic wake up is not needed.
-	 */
-	k_timeout_t timeout = (activate_mask != 0) ? K_MSEC(50) : K_FOREVER;
+	k_timeout_t timeout;
+
+	if (IS_ENABLED(CONFIG_LOG_MULTIDOMAIN) || (activate_mask != 0)) {
+		/* When multidomain is enabled, start in periodic polling
+		 * mode to check for link readiness.
+		 * If some backends are not activated yet, set periodical thread wake up
+		 * to poll backends for readiness. Period is set arbitrarily.
+		 */
+		timeout = K_MSEC(50);
+	} else {
+		/* If all backends are ready, periodic wake up is not needed. */
+		timeout = K_FOREVER;
+	}
 	bool processed_any = false;
 	thread_set(k_current_get());
 
@@ -990,7 +999,7 @@ static void log_process_thread_func(void *dummy1, void *dummy2, void *dummy3)
 	while (true) {
 		if (activate_mask) {
 			activate_mask = activate_foreach_backend(activate_mask);
-			if (!activate_mask) {
+			if (!activate_mask && !IS_ENABLED(CONFIG_LOG_MULTIDOMAIN)) {
 				/* Periodic wake up no longer needed since all
 				 * backends are ready.
 				 */
@@ -1002,6 +1011,12 @@ static void log_process_thread_func(void *dummy1, void *dummy2, void *dummy3)
 		if (IS_ENABLED(CONFIG_LOG_MULTIDOMAIN) && links_active_mask) {
 			links_active_mask =
 				z_log_links_activate(links_active_mask, &domain_offset);
+			if (!links_active_mask && !activate_mask) {
+				/* Periodic wake up no longer needed since all
+				 * backends and links are ready.
+				 */
+				timeout = K_FOREVER;
+			}
 		}
 
 

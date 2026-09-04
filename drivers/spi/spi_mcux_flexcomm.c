@@ -18,7 +18,7 @@
 #include <zephyr/drivers/dma/dma_mcux_lpc.h>
 #endif
 #include <zephyr/drivers/pinctrl.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/irq.h>
 #include <zephyr/drivers/reset.h>
 
@@ -214,13 +214,13 @@ static int spi_mcux_configure(const struct device *dev,
 	}
 
 	/*
-	 * Do master or slave initialisation, depending on the
+	 * Do controller or peripheral initialisation, depending on the
 	 * mode requested.
 	 */
-	if (SPI_OP_MODE_GET(spi_cfg->operation) == SPI_OP_MODE_MASTER) {
-		spi_master_config_t master_config;
+	if (SPI_OP_MODE_GET(spi_cfg->operation) == SPI_OP_MODE_CONTROLLER) {
+		spi_master_config_t controller_config;
 
-		SPI_MasterGetDefaultConfig(&master_config);
+		SPI_MasterGetDefaultConfig(&controller_config);
 
 		if (!device_is_ready(config->clock_dev)) {
 			LOG_ERR("clock control device not ready");
@@ -233,41 +233,41 @@ static int spi_mcux_configure(const struct device *dev,
 			return -EINVAL;
 		}
 
-		uint8_t max_slave = SPI_CHIP_SELECT_COUNT;
+		uint8_t max_peripheral = SPI_CHIP_SELECT_COUNT;
 
 #ifndef DT_SPI_CTX_HAS_NO_CS_GPIOS
-		max_slave = MAX(max_slave, ctx->num_cs_gpios);
+		max_peripheral = MAX(max_peripheral, ctx->num_cs_gpios);
 #endif
-		max_slave -= 1;
+		max_peripheral -= 1;
 
-		if (spi_cfg->slave > max_slave) {
-			LOG_ERR("Slave %d is greater than max %d",
-				    spi_cfg->slave, max_slave);
+		if (spi_cfg->peripheral > max_peripheral) {
+			LOG_ERR("Peripheral %d is greater than max %d",
+				    spi_cfg->peripheral, max_peripheral);
 			return -EINVAL;
 		}
 
-		master_config.sselNum = spi_cfg->slave;
-		master_config.sselPol = kSPI_SpolActiveAllLow;
-		master_config.dataWidth = data->word_size_bits - 1;
+		controller_config.sselNum = spi_cfg->peripheral;
+		controller_config.sselPol = kSPI_SpolActiveAllLow;
+		controller_config.dataWidth = data->word_size_bits - 1;
 
-		master_config.polarity =
+		controller_config.polarity =
 			(SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPOL)
 			? kSPI_ClockPolarityActiveLow
 			: kSPI_ClockPolarityActiveHigh;
 
-		master_config.phase =
+		controller_config.phase =
 			(SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPHA)
 			? kSPI_ClockPhaseSecondEdge
 			: kSPI_ClockPhaseFirstEdge;
 
-		master_config.direction =
+		controller_config.direction =
 			(spi_cfg->operation & SPI_TRANSFER_LSB)
 			? kSPI_LsbFirst
 			: kSPI_MsbFirst;
 
-		master_config.baudRate_Bps = spi_cfg->frequency;
+		controller_config.baudRate_Bps = spi_cfg->frequency;
 
-		spi_delay_config_t *delayConfig = &master_config.delayConfig;
+		spi_delay_config_t *delayConfig = &controller_config.delayConfig;
 
 		delayConfig->preDelay = spi_clock_cycles(config->pre_delay,
 							spi_cfg->frequency);
@@ -278,7 +278,7 @@ static int spi_mcux_configure(const struct device *dev,
 		delayConfig->transferDelay = spi_clock_cycles(config->transfer_delay,
 							spi_cfg->frequency);
 
-		SPI_MasterInit(base, &master_config, clock_freq);
+		SPI_MasterInit(base, &controller_config, clock_freq);
 
 #ifndef CONFIG_SPI_MCUX_FLEXCOMM_DMA
 		SPI_SetDummyData(base, (uint8_t)config->def_char);
@@ -289,30 +289,30 @@ static int spi_mcux_configure(const struct device *dev,
 
 		ctx->config = spi_cfg;
 	} else {
-		spi_slave_config_t slave_config;
+		spi_slave_config_t peripheral_config;
 
-		SPI_SlaveGetDefaultConfig(&slave_config);
+		SPI_SlaveGetDefaultConfig(&peripheral_config);
 
-		slave_config.polarity =
+		peripheral_config.polarity =
 			(SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPOL)
 			? kSPI_ClockPolarityActiveLow
 			: kSPI_ClockPolarityActiveHigh;
 
-		slave_config.phase =
+		peripheral_config.phase =
 			(SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPHA)
 			? kSPI_ClockPhaseSecondEdge
 			: kSPI_ClockPhaseFirstEdge;
 
-		slave_config.direction =
+		peripheral_config.direction =
 			(spi_cfg->operation & SPI_TRANSFER_LSB)
 			? kSPI_LsbFirst
 			: kSPI_MsbFirst;
 
 		/* SS pin active low */
-		slave_config.sselPol = kSPI_SpolActiveAllLow;
-		slave_config.dataWidth = data->word_size_bits - 1;
+		peripheral_config.sselPol = kSPI_SpolActiveAllLow;
+		peripheral_config.dataWidth = data->word_size_bits - 1;
 
-		SPI_SlaveInit(base, &slave_config);
+		SPI_SlaveInit(base, &peripheral_config);
 
 #ifndef CONFIG_SPI_MCUX_FLEXCOMM_DMA
 		SPI_SetDummyData(base, (uint8_t)config->def_char);
@@ -371,7 +371,7 @@ static uint32_t spi_mcux_get_tx_word(uint32_t value, const struct spi_config *sp
 				     uint8_t word_size)
 {
 	value |= ((uint32_t)SPI_DEASSERT_ALL &
-		  (~(uint32_t)SPI_DEASSERTNUM_SSEL((uint32_t)spi_cfg->slave)));
+		  (~(uint32_t)SPI_DEASSERTNUM_SSEL((uint32_t)spi_cfg->peripheral)));
 	/* set width of data - range asserted at entry */
 	value |= SPI_FIFOWR_LEN(word_size - 1);
 	return value;
@@ -433,7 +433,11 @@ static int spi_mcux_dma_tx_load(const struct device *dev, const struct spi_confi
 		}
 		blk_cfg->source_address = (uint32_t)&data->last_word;
 		blk_cfg->source_addr_adj = DMA_ADDR_ADJ_NO_CHANGE;
-		blk_cfg->block_size = data->word_size_bytes;
+		/* The last word is always 32 bits to include the EOT flag.
+		 * There are some special handling in the dma driver that will ensure
+		 * that the last transfer width is 32bit.
+		 */
+		blk_cfg->block_size = sizeof(uint32_t);
 		blk_cfg->next_block = NULL;
 	} else {
 		blk_cfg->block_size = len * data->word_size_bytes;

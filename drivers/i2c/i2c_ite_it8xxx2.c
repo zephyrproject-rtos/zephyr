@@ -766,7 +766,7 @@ int __soc_ram_code i2c_tran_read(const struct device *dev)
 					   IT8XXX2_SMB_SMHEN;
 		/*
 		 * bit0, Direction of the host transfer.
-		 * bit[1:7}, Address of the targeted slave.
+		 * bit[1:7}, Address of the target.
 		 */
 		IT8XXX2_SMB_TRASLA(base) = (uint8_t)(data->addr_16bit << 1) |
 					   IT8XXX2_SMB_DIR;
@@ -848,7 +848,7 @@ int __soc_ram_code i2c_tran_write(const struct device *dev)
 					   IT8XXX2_SMB_SMHEN;
 		/*
 		 * bit0, Direction of the host transfer.
-		 * bit[1:7}, Address of the targeted slave.
+		 * bit[1:7}, Address of the target.
 		 */
 		IT8XXX2_SMB_TRASLA(base) = (uint8_t)data->addr_16bit << 1;
 		/* Send first byte */
@@ -1123,13 +1123,13 @@ static int i2c_it8xxx2_init(const struct device *dev)
 	 * bit1, Enable to communicate with I2C device
 	 *		  and support I2C-compatible cycles.
 	 * bit4, This bit controls the reset mechanism
-	 *		  of SMBus master to handle the SMDAT
+	 *		  of SMBus controller to handle the SMDAT
 	 *		  line low if 25ms reg timeout.
 	 */
 	IT8XXX2_SMB_HOCTL2(base) = IT8XXX2_SMB_SMD_TO_EN | IT8XXX2_SMB_SMHEN;
 	/*
 	 * bit1, Kill SMBus host transaction.
-	 * bit0, Enable the interrupt for the master interface.
+	 * bit0, Enable the interrupt for the controller interface.
 	 */
 	IT8XXX2_SMB_HOCTL(base) = IT8XXX2_SMB_KILL | IT8XXX2_SMB_SMHEN;
 	IT8XXX2_SMB_HOCTL(base) = IT8XXX2_SMB_SMHEN;
@@ -1310,7 +1310,7 @@ DT_INST_FOREACH_STATUS_OKAY(I2C_IT8XXX2_CHECK_SUPPORTED_CLOCK)
 		.scl_gpios = GPIO_DT_SPEC_INST_GET(inst, scl_gpios),            \
 		.sda_gpios = GPIO_DT_SPEC_INST_GET(inst, sda_gpios),            \
 		.clock_gate_offset = DT_INST_PROP(inst, clock_gate_offset),     \
-		.transfer_timeout_ms = DT_INST_PROP(inst, transfer_timeout_ms), \
+		.transfer_timeout_ms = I2C_DT_INST_TRANSFER_TIMEOUT_MS(inst),   \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                   \
 		.fifo_enable = DT_INST_PROP(inst, fifo_enable),                 \
 		.push_pull_recovery = DT_INST_PROP(inst, push_pull_recovery),   \

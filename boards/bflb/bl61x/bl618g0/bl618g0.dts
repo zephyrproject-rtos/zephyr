@@ -23,6 +23,7 @@
 		zephyr,shell-uart = &uart0;
 		zephyr,entropy = &sec_eng_trng;
 		zephyr,bt-hci = &bt_hci_bflb;
+		zephyr,canbus = &can0;
 	};
 
 	aliases {
@@ -128,6 +129,13 @@
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+};
+
+&can0 {
+	status = "okay";
+
+	pinctrl-0 = <&can0_default>;
+	pinctrl-names = "default";
 };
 
 &gpio0 {

@@ -16,4 +16,44 @@
 			pinmux = <PIN_P5_3__UART2_TX_B>;
 		};
 	};
+
+	pinctrl_i2c0: pinctrl_i2c0 {
+		group0 {
+			pinmux = <PIN_P7_0__I2C0_SDA_C>,
+				 <PIN_P7_1__I2C0_SCL_C>;
+			input-enable;
+			drive-strength = <12>;
+		};
+	};
+
+	pinctrl_i2c1: pinctrl_i2c1 {
+		group0 {
+			pinmux = <PIN_P7_2__I2C1_SDA_C>,
+				 <PIN_P7_3__I2C1_SCL_C>;
+			input-enable;
+			drive-strength = <12>;
+		};
+	};
+
+	pinctrl_gpio4: pinctrl_gpio4 {
+		group0 {
+			/* Multicolor LED0: blue on P4_3, green on P4_5, red on P4_7 */
+			pinmux = <PIN_P4_3__GPIO>,
+				 <PIN_P4_5__GPIO>,
+				 <PIN_P4_7__GPIO>;
+		};
+	};
+
+	pinctrl_gpio5: pinctrl_gpio5 {
+		group0 {
+			/* Navigation joystick JOY_SW1 to JOY_SW5 on SW3 */
+			pinmux = <PIN_P5_0__GPIO>,
+				 <PIN_P5_4__GPIO>,
+				 <PIN_P5_5__GPIO>,
+				 <PIN_P5_6__GPIO>,
+				 <PIN_P5_7__GPIO>;
+			input-enable;
+			bias-pull-up;
+		};
+	};
 };

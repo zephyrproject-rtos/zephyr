@@ -14,11 +14,13 @@
 #include <zephyr/bluetooth/audio/vcp.h>
 #include <zephyr/bluetooth/audio/vocs.h>
 #include <zephyr/bluetooth/bluetooth.h>
-#include <zephyr/sys/printk.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/toolchain.h>
 
 #include "bstests.h"
 #include "common.h"
+
+LOG_MODULE_REGISTER(vcp_vol_ctlr_test);
 
 #ifdef CONFIG_BT_VCP_VOL_CTLR
 #define VOCS_DESC_SIZE 64U
@@ -118,7 +120,7 @@ static void vocs_description_cb(struct bt_vocs *inst, int err,
 	}
 
 	if (strlen(description) > sizeof(g_vocs_desc) - 1) {
-		printk("Warning: VOCS description (%zu) is larger than buffer (%zu)\n",
+		LOG_WRN("VOCS description (%zu) is larger than buffer (%zu)",
 		       strlen(description), sizeof(g_vocs_desc) - 1);
 	}
 
@@ -214,7 +216,7 @@ static void aics_description_cb(struct bt_aics *inst, int err,
 	}
 
 	if (strlen(description) > sizeof(g_aics_desc) - 1) {
-		printk("Warning: AICS description (%zu) is larger than buffer (%zu)\n",
+		LOG_WRN("AICS description (%zu) is larger than buffer (%zu)",
 		       strlen(description), sizeof(g_aics_desc) - 1);
 	}
 
@@ -275,7 +277,7 @@ static void test_aics_deactivate(void)
 	}
 
 	/* Valid behavior */
-	printk("Attempting to deactivate AICS\n");
+	LOG_INF("Attempting to deactivate AICS");
 	err = bt_aics_deactivate(vcp_included.aics[0]);
 	if (err == 0) {
 		FAIL("bt_aics_deactivate as client instance did not fail");
@@ -295,7 +297,7 @@ static void test_aics_activate(void)
 	}
 
 	/* Valid behavior */
-	printk("Attempting to activate AICS\n");
+	LOG_INF("Attempting to activate AICS");
 	err = bt_aics_activate(vcp_included.aics[0]);
 	if (err == 0) {
 		FAIL("bt_aics_activate as client instance did not fail");
@@ -315,7 +317,7 @@ static void test_aics_state_get(void)
 	}
 
 	/* Valid behavior */
-	printk("Getting AICS state\n");
+	LOG_INF("Getting AICS state");
 	g_cb = false;
 
 	err = bt_aics_state_get(vcp_included.aics[0]);
@@ -325,7 +327,7 @@ static void test_aics_state_get(void)
 	}
 
 	WAIT_FOR_COND(g_cb);
-	printk("AICS state get\n");
+	LOG_INF("AICS state get");
 }
 
 static void aics_gain_setting_get(void)
@@ -340,7 +342,7 @@ static void aics_gain_setting_get(void)
 	}
 
 	/* Valid behavior */
-	printk("Getting AICS gain setting\n");
+	LOG_INF("Getting AICS gain setting");
 	g_cb = false;
 
 	err = bt_aics_gain_setting_get(vcp_included.aics[0]);
@@ -350,7 +352,7 @@ static void aics_gain_setting_get(void)
 	}
 
 	WAIT_FOR_COND(g_cb);
-	printk("AICS gain setting get\n");
+	LOG_INF("AICS gain setting get");
 }
 
 static void aics_type_get(void)
@@ -366,7 +368,7 @@ static void aics_type_get(void)
 	}
 
 	/* Valid behavior */
-	printk("Getting AICS input type\n");
+	LOG_INF("Getting AICS input type");
 
 	err = bt_aics_type_get(vcp_included.aics[0]);
 	if (err != 0) {
@@ -376,7 +378,7 @@ static void aics_type_get(void)
 
 	/* Expect and wait for input_type from init */
 	WAIT_FOR_COND(expected_input_type == g_aics_input_type);
-	printk("AICS input type get\n");
+	LOG_INF("AICS input type get");
 }
 
 static void aics_status_get(void)
@@ -391,7 +393,7 @@ static void aics_status_get(void)
 	}
 
 	/* Valid behavior */
-	printk("Getting AICS status\n");
+	LOG_INF("Getting AICS status");
 	g_cb = false;
 
 	err = bt_aics_status_get(vcp_included.aics[0]);
@@ -401,7 +403,7 @@ static void aics_status_get(void)
 	}
 
 	WAIT_FOR_COND(g_cb);
-	printk("AICS status get\n");
+	LOG_INF("AICS status get");
 }
 
 static void aics_get_description(void)
@@ -416,7 +418,7 @@ static void aics_get_description(void)
 	}
 
 	/* Valid behavior */
-	printk("Getting AICS description\n");
+	LOG_INF("Getting AICS description");
 	g_cb = false;
 
 	err = bt_aics_description_get(vcp_included.aics[0]);
@@ -426,7 +428,7 @@ static void aics_get_description(void)
 	}
 
 	WAIT_FOR_COND(g_cb);
-	printk("AICS description get\n");
+	LOG_INF("AICS description get");
 }
 
 static void test_aics_mute(void)
@@ -442,7 +444,7 @@ static void test_aics_mute(void)
 	}
 
 	/* Valid behavior */
-	printk("Setting AICS mute\n");
+	LOG_INF("Setting AICS mute");
 	g_write_complete = false;
 
 	err = bt_aics_mute(vcp_included.aics[0]);
@@ -452,7 +454,7 @@ static void test_aics_mute(void)
 	}
 
 	WAIT_FOR_COND(g_write_complete && expected_input_mute == g_aics_input_mute);
-	printk("AICS mute set\n");
+	LOG_INF("AICS mute set");
 }
 
 static void test_aics_unmute(void)
@@ -468,7 +470,7 @@ static void test_aics_unmute(void)
 	}
 
 	/* Valid behavior */
-	printk("Setting AICS unmute\n");
+	LOG_INF("Setting AICS unmute");
 	g_write_complete = false;
 
 	err = bt_aics_unmute(vcp_included.aics[0]);
@@ -478,7 +480,7 @@ static void test_aics_unmute(void)
 	}
 
 	WAIT_FOR_COND(g_write_complete && expected_input_mute == g_aics_input_mute);
-	printk("AICS unmute set\n");
+	LOG_INF("AICS unmute set");
 }
 
 static void test_aics_automatic_gain_set(void)
@@ -494,7 +496,7 @@ static void test_aics_automatic_gain_set(void)
 	}
 
 	/* Valid behavior */
-	printk("Setting AICS auto mode\n");
+	LOG_INF("Setting AICS auto mode");
 	g_write_complete = false;
 
 	err = bt_aics_automatic_gain_set(vcp_included.aics[0]);
@@ -504,7 +506,7 @@ static void test_aics_automatic_gain_set(void)
 	}
 
 	WAIT_FOR_COND(g_write_complete && expected_mode == g_aics_mode);
-	printk("AICS auto mode set\n");
+	LOG_INF("AICS auto mode set");
 }
 
 static void test_aics_manual_gain_set(void)
@@ -520,7 +522,7 @@ static void test_aics_manual_gain_set(void)
 	}
 
 	/* Valid behavior */
-	printk("Setting AICS manual mode\n");
+	LOG_INF("Setting AICS manual mode");
 	g_write_complete = false;
 
 	err = bt_aics_manual_gain_set(vcp_included.aics[0]);
@@ -530,7 +532,7 @@ static void test_aics_manual_gain_set(void)
 	}
 
 	WAIT_FOR_COND(g_write_complete && expected_mode == g_aics_mode);
-	printk("AICS manual mode set\n");
+	LOG_INF("AICS manual mode set");
 }
 
 static void test_aics_gain_set(void)
@@ -546,7 +548,7 @@ static void test_aics_gain_set(void)
 	}
 
 	/* Valid behavior */
-	printk("Setting AICS gain\n");
+	LOG_INF("Setting AICS gain");
 	g_write_complete = false;
 
 	err = bt_aics_gain_set(vcp_included.aics[0], expected_gain);
@@ -556,7 +558,7 @@ static void test_aics_gain_set(void)
 	}
 
 	WAIT_FOR_COND(g_write_complete && expected_gain == g_aics_gain);
-	printk("AICS gain set\n");
+	LOG_INF("AICS gain set");
 }
 
 static void test_aics_description_set(void)
@@ -578,7 +580,7 @@ static void test_aics_description_set(void)
 	}
 
 	/* Valid behavior */
-	printk("Setting AICS Description\n");
+	LOG_INF("Setting AICS Description");
 	g_cb = false;
 
 	err = bt_aics_description_set(vcp_included.aics[0], expected_aics_desc);
@@ -589,7 +591,7 @@ static void test_aics_description_set(void)
 
 	WAIT_FOR_COND(g_cb &&
 		      strncmp(expected_aics_desc, g_aics_desc, strlen(expected_aics_desc)) == 0);
-	printk("AICS Description set\n");
+	LOG_INF("AICS Description set");
 }
 
 static void test_aics(void)
@@ -621,7 +623,7 @@ static void test_vocs_state_get(void)
 	}
 
 	/* Valid behavior */
-	printk("Getting VOCS state\n");
+	LOG_INF("Getting VOCS state");
 	g_cb = false;
 
 	err = bt_vocs_state_get(vcp_included.vocs[0]);
@@ -631,7 +633,7 @@ static void test_vocs_state_get(void)
 	}
 
 	WAIT_FOR_COND(g_cb);
-	printk("VOCS state get\n");
+	LOG_INF("VOCS state get");
 }
 
 static void test_vocs_location_get(void)
@@ -646,7 +648,7 @@ static void test_vocs_location_get(void)
 	}
 
 	/* Valid behavior */
-	printk("Getting VOCS location\n");
+	LOG_INF("Getting VOCS location");
 	g_cb = false;
 
 	err = bt_vocs_location_get(vcp_included.vocs[0]);
@@ -656,7 +658,7 @@ static void test_vocs_location_get(void)
 	}
 
 	WAIT_FOR_COND(g_cb);
-	printk("VOCS location get\n");
+	LOG_INF("VOCS location get");
 }
 
 static void test_vocs_description_get(void)
@@ -671,7 +673,7 @@ static void test_vocs_description_get(void)
 	}
 
 	/* Valid behavior */
-	printk("Getting VOCS description\n");
+	LOG_INF("Getting VOCS description");
 	g_cb = false;
 
 	err = bt_vocs_description_get(vcp_included.vocs[0]);
@@ -681,7 +683,7 @@ static void test_vocs_description_get(void)
 	}
 
 	WAIT_FOR_COND(g_cb);
-	printk("VOCS description get\n");
+	LOG_INF("VOCS description get");
 }
 
 static void test_vocs_location_set(void)
@@ -706,7 +708,7 @@ static void test_vocs_location_set(void)
 	}
 
 	/* Valid behavior */
-	printk("Setting VOCS location\n");
+	LOG_INF("Setting VOCS location");
 
 	err = bt_vocs_location_set(vcp_included.vocs[0], expected_location);
 	if (err != 0) {
@@ -715,7 +717,7 @@ static void test_vocs_location_set(void)
 	}
 
 	WAIT_FOR_COND(expected_location == g_vocs_location);
-	printk("VOCS location set\n");
+	LOG_INF("VOCS location set");
 }
 
 static void test_vocs_state_set(void)
@@ -748,7 +750,7 @@ static void test_vocs_state_set(void)
 	}
 
 	/* Valid behavior */
-	printk("Setting VOCS state\n");
+	LOG_INF("Setting VOCS state");
 	g_write_complete = false;
 
 	err = bt_vocs_state_set(vcp_included.vocs[0], expected_offset);
@@ -758,7 +760,7 @@ static void test_vocs_state_set(void)
 	}
 
 	WAIT_FOR_COND(g_write_complete && expected_offset == g_vocs_offset);
-	printk("VOCS state set\n");
+	LOG_INF("VOCS state set");
 }
 
 static void test_vocs_description_set(void)
@@ -780,7 +782,7 @@ static void test_vocs_description_set(void)
 	}
 
 	/* Valid behavior */
-	printk("Setting VOCS description\n");
+	LOG_INF("Setting VOCS description");
 	g_cb = false;
 
 	err = bt_vocs_description_set(vcp_included.vocs[0], expected_vocs_desc);
@@ -791,7 +793,7 @@ static void test_vocs_description_set(void)
 
 	WAIT_FOR_COND(g_cb &&
 		      strncmp(expected_vocs_desc, g_vocs_desc, strlen(expected_vocs_desc)) == 0);
-	printk("VOCS description set\n");
+	LOG_INF("VOCS description set");
 }
 
 static void test_vocs(void)
@@ -918,7 +920,7 @@ static void test_conn_get(void)
 	}
 
 	/* Valid behavior */
-	printk("Getting VCP volume controller conn\n");
+	LOG_INF("Getting VCP volume controller conn");
 
 	err = bt_vcp_vol_ctlr_conn_get(vol_ctlr, &cached_conn);
 	if (err != 0) {
@@ -931,7 +933,7 @@ static void test_conn_get(void)
 		return;
 	}
 
-	printk("Got VCP volume controller conn\n");
+	LOG_INF("Got VCP volume controller conn");
 }
 
 static void test_read_state(void)
@@ -946,7 +948,7 @@ static void test_read_state(void)
 	}
 
 	/* Valid behavior */
-	printk("Getting VCP volume state\n");
+	LOG_INF("Getting VCP volume state");
 	g_cb = false;
 
 	err = bt_vcp_vol_ctlr_read_state(vol_ctlr);
@@ -956,7 +958,7 @@ static void test_read_state(void)
 	}
 
 	WAIT_FOR_COND(g_cb);
-	printk("VCP volume get\n");
+	LOG_INF("VCP volume get");
 }
 
 static void test_read_flags(void)
@@ -971,7 +973,7 @@ static void test_read_flags(void)
 	}
 
 	/* Valid behavior */
-	printk("Getting VCP flags\n");
+	LOG_INF("Getting VCP flags");
 	g_cb = false;
 
 	err = bt_vcp_vol_ctlr_read_flags(vol_ctlr);
@@ -981,7 +983,7 @@ static void test_read_flags(void)
 	}
 
 	WAIT_FOR_COND(g_cb);
-	printk("VCP flags get\n");
+	LOG_INF("VCP flags get");
 }
 
 static void test_set_vol(void)
@@ -1006,7 +1008,7 @@ static void test_set_vol(void)
 	}
 
 	WAIT_FOR_COND(g_volume == expected_volume && g_cb && g_write_complete);
-	printk("VCP volume set\n");
+	LOG_INF("VCP volume set");
 }
 
 static void test_vol_down(void)
@@ -1022,7 +1024,7 @@ static void test_vol_down(void)
 	}
 
 	/* Valid behavior */
-	printk("Downing VCP volume\n");
+	LOG_INF("Downing VCP volume");
 	g_write_complete = g_cb = false;
 
 	err = bt_vcp_vol_ctlr_vol_down(vol_ctlr);
@@ -1033,7 +1035,7 @@ static void test_vol_down(void)
 
 	WAIT_FOR_COND(previous_volume == 0U ||
 		      (g_volume < previous_volume && g_cb && g_write_complete));
-	printk("VCP volume downed\n");
+	LOG_INF("VCP volume downed");
 }
 
 static void test_vol_up(void)
@@ -1049,7 +1051,7 @@ static void test_vol_up(void)
 	}
 
 	/* Valid behavior */
-	printk("Upping VCP volume\n");
+	LOG_INF("Upping VCP volume");
 	g_write_complete = g_cb = false;
 
 	err = bt_vcp_vol_ctlr_vol_up(vol_ctlr);
@@ -1060,7 +1062,7 @@ static void test_vol_up(void)
 
 	WAIT_FOR_COND(previous_volume == UINT8_MAX ||
 		      (g_volume > previous_volume && g_cb && g_write_complete));
-	printk("VCP volume upped\n");
+	LOG_INF("VCP volume upped");
 }
 
 static void test_mute(void)
@@ -1076,7 +1078,7 @@ static void test_mute(void)
 	}
 
 	/* Valid behavior */
-	printk("Muting VCP\n");
+	LOG_INF("Muting VCP");
 	g_write_complete = g_cb = false;
 
 	err = bt_vcp_vol_ctlr_mute(vol_ctlr);
@@ -1086,7 +1088,7 @@ static void test_mute(void)
 	}
 
 	WAIT_FOR_COND(g_mute == expected_mute && g_cb && g_write_complete);
-	printk("VCP muted\n");
+	LOG_INF("VCP muted");
 }
 
 static void test_unmute_vol_down(void)
@@ -1103,7 +1105,7 @@ static void test_unmute_vol_down(void)
 	}
 
 	/* Valid behavior */
-	printk("Downing and unmuting VCP\n");
+	LOG_INF("Downing and unmuting VCP");
 	g_write_complete = g_cb = false;
 
 	err = bt_vcp_vol_ctlr_unmute_vol_down(vol_ctlr);
@@ -1116,7 +1118,7 @@ static void test_unmute_vol_down(void)
 		      expected_mute == g_mute &&
 		      g_cb &&
 		      g_write_complete);
-	printk("VCP volume downed and unmuted\n");
+	LOG_INF("VCP volume downed and unmuted");
 }
 
 static void test_unmute_vol_up(void)
@@ -1133,7 +1135,7 @@ static void test_unmute_vol_up(void)
 	}
 
 	/* Valid behavior */
-	printk("Upping and unmuting VCP\n");
+	LOG_INF("Upping and unmuting VCP");
 	g_write_complete = g_cb = false;
 
 	err = bt_vcp_vol_ctlr_unmute_vol_up(vol_ctlr);
@@ -1146,7 +1148,7 @@ static void test_unmute_vol_up(void)
 		      g_mute == expected_mute &&
 		      g_cb &&
 		      g_write_complete);
-	printk("VCP volume upped and unmuted\n");
+	LOG_INF("VCP volume upped and unmuted");
 }
 
 static void test_unmute(void)
@@ -1162,7 +1164,7 @@ static void test_unmute(void)
 	}
 
 	/* Valid behavior */
-	printk("Unmuting VCP\n");
+	LOG_INF("Unmuting VCP");
 	g_write_complete = g_cb = false;
 
 	err = bt_vcp_vol_ctlr_unmute(vol_ctlr);
@@ -1172,7 +1174,7 @@ static void test_unmute(void)
 	}
 
 	WAIT_FOR_COND(g_mute == expected_mute && g_cb && g_write_complete);
-	printk("VCP volume unmuted\n");
+	LOG_INF("VCP volume unmuted");
 }
 
 static void test_main(void)
@@ -1194,7 +1196,7 @@ static void test_main(void)
 		return;
 	}
 
-	printk("Scanning successfully started\n");
+	LOG_INF("Scanning successfully started");
 
 	WAIT_FOR_FLAG(flag_connected);
 

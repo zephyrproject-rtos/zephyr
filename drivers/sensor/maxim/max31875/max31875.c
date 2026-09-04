@@ -142,7 +142,7 @@ static int max31875_attr_set(const struct device *dev,
 			return -ENOTSUP;
 		}
 
-		ret = max31875_update_config(dev, MAX31875_DATA_FORMAT_SHIFT, value);
+		ret = max31875_update_config(dev, BIT(MAX31875_DATA_FORMAT_SHIFT), value);
 		if (ret < 0) {
 			LOG_ERR("Failed to set attribute!");
 			return ret;

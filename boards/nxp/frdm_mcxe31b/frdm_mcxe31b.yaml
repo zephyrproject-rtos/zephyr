@@ -14,10 +14,15 @@ supported:
   - arduino_gpio
   - can
   - gpio
+  - ptp_clock
   - rtc
   - dma
   - watchdog
   - adc
   - hwinfo
+  - i2c
+  - pwm
+  - i2s
   - spi
+  - netif:eth
 vendor: nxp

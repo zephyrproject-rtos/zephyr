@@ -33,7 +33,7 @@ __weak void *__dso_handle;
  *
  * @retval 0 on success.
  */
-int __cxa_atexit(void (*destructor)(void *), void *objptr, void *dso)
+int __cxa_atexit(void (*destructor)(void *obj), void *objptr, void *dso)
 {
 	ARG_UNUSED(destructor);
 	ARG_UNUSED(objptr);

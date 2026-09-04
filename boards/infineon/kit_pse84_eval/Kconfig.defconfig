@@ -1,5 +1,5 @@
-# SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
-# or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
 #
 # SPDX-License-Identifier: Apache-2.0
 
@@ -11,7 +11,7 @@ choice AIROC_PART
 endchoice
 
 choice CYW55500_MODULE
-	default CYW55513IUBG_SM
+	default CYW55513_MOD_PSE84_SOM
 endchoice
 
 # Heap Pool Size
@@ -44,4 +44,4 @@ config CLOCK_CONTROL
 endif
 
 config FLASH_FILL_BUFFER_SIZE
-	default 256 if FLASH
+	default 16 if FLASH

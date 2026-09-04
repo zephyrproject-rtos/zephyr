@@ -10,8 +10,8 @@
  * @ingroup pinctrl_apollo5
  */
 
-#ifndef __APOLLO5_PINCTRL_H__
-#define __APOLLO5_PINCTRL_H__
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_AMBIQ_APOLLO5_PINCTRL_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_AMBIQ_APOLLO5_PINCTRL_H_
 
 /**
  * @addtogroup ambiq_pinctrl Ambiq pin control helpers
@@ -61,4 +61,4 @@
 
 /** @} */
 
-#endif /* __APOLLO5_PINCTRL_H__ */
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_AMBIQ_APOLLO5_PINCTRL_H_ */

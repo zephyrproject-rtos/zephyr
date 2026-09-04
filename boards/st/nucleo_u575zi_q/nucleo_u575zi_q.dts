@@ -84,3 +84,10 @@
 &die_temp {
 	status = "okay";
 };
+
+&octospi1 {
+	pinctrl-0 = <&octospim_p1_clk_pb10 &octospim_p1_ncs_pa2
+		     &octospim_p1_io0_pe12 &octospim_p1_io1_pb0
+		     &octospim_p1_io2_pe14 &octospim_p1_io3_pe15>;
+	pinctrl-names = "default";
+};

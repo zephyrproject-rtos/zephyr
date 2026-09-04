@@ -604,8 +604,7 @@ static bool edma_channel_filter(const struct device *dev, int chan_id, void *par
 	if (chan->pd_dev) {
 		ret = pm_device_runtime_get(chan->pd_dev);
 		if (ret < 0) {
-			LOG_ERR("failed to PM get channel %d PD dev: %d",
-				chan_id, ret);
+			LOG_ERR_PM_DEVICE_RUNTIME_GET(chan->pd_dev, ret);
 			return false;
 		}
 	}
@@ -652,8 +651,7 @@ static void edma_channel_release(const struct device *dev, uint32_t chan_id)
 	if (chan->pd_dev) {
 		ret = pm_device_runtime_put(chan->pd_dev);
 		if (ret < 0) {
-			LOG_ERR("failed to PM put channel %d PD dev: %d",
-				chan_id, ret);
+			LOG_ERR_PM_DEVICE_RUNTIME_PUT(chan->pd_dev, ret);
 		}
 	}
 

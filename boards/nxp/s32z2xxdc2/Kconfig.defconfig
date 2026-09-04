@@ -23,7 +23,7 @@ config SHELL_STACK_SIZE
 
 endif # SHELL
 
-configdefault NET_L2_ETHERNET
+configdefault ETH_DRIVER
 	default y  if !NET_LOOPBACK && !NET_TEST
 
 if XIP

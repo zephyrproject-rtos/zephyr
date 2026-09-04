@@ -281,4 +281,13 @@ config ILM_MAX_SIZE
 	default SRAM_SIZE if SRAM_DEPRECATED_KCONFIG_SET
 	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_SRAM),0,K)
 
+config SOC_IT8XXX2_UART_TX_STRATPPING_PIN
+	bool "Add support software strapping pin"
+	help
+	  Use the EC UART TX pin as a software strapping pin for flash recovery.
+	  When UART TX is pulled low during reset, the SoC enters an early infinite
+	  loop before the firmware can enable the hardware watchdog or enter a
+	  crash/bootloop. This allows the recovery programmer to reliably enter
+	  DBGR mode and recover the EC flash.
+
 endif # SOC_SERIES_IT8XXX2

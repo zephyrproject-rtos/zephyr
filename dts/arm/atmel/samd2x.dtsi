@@ -1,6 +1,7 @@
 /*
  * Copyright (c) 2017 Google LLC.
  * Copyright (c) 2024-2025 Gerson Fernando Budke <nandojve@gmail.com>
+ * Copyright (c) 2026 Microchip Technology Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -79,7 +80,7 @@
 				write-block-size = <4>;
 				#address-cells = <1>;
 				#size-cells = <1>;
-				/* reg and ranges are specified in samx2xx1x dtsi */
+				ranges;
 			};
 		};
 

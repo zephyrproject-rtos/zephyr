@@ -38,10 +38,11 @@ For more information on these and other related configuration options, see:
 
 - :kconfig:option:`SB_CONFIG_BOOTLOADER_MCUBOOT`: build the application for loading by MCUboot
 - :kconfig:option:`SB_CONFIG_BOOT_SIGNATURE_KEY_FILE`: the key file, or a comma-separated list of
-  key files, to use when signing images. If you have your own key, change this appropriately.
-  When a list is given, MCUboot embeds the public half of every key and accepts an image
-  signed with any of them; the first entry also signs the application, and every entry
-  past the first must be a public-only PEM of the same signature type
+  key files, to use when signing images. If you have your own key, change this appropriately; see
+  :ref:`build-signing-keys` for using an absolute path or a CMake variable such as ``${APP_DIR}``.
+  When a list is given, MCUboot embeds the public half of every key and accepts an image signed
+  with any of them; the first entry also signs the application, and every entry past the first
+  must be a public-only PEM of the same signature type for ``imgtool``.
 - :kconfig:option:`CONFIG_MCUBOOT_EXTRA_IMGTOOL_ARGS`: optional additional command line arguments
   for ``imgtool``
 - :kconfig:option:`CONFIG_MCUBOOT_GENERATE_CONFIRMED_IMAGE`: also generate a confirmed image,
@@ -71,6 +72,64 @@ should see something like this on your device's serial console when you run
 Whether ``west flash`` supports this feature depends on your runner. The ``nrfjprog`` and
 ``pyocd`` runners work with the above flow. If your runner does not support this flow and you
 would like it to, please send a patch or file an issue for adding support.
+
+.. _build-signing-keys:
+
+Signing key files
+*****************
+
+When building with sysbuild, :kconfig:option:`SB_CONFIG_BOOT_SIGNATURE_KEY_FILE` selects the key
+used to sign images. Its value is propagated to two images:
+
+- the application image, as :kconfig:option:`CONFIG_MCUBOOT_SIGNATURE_KEY_FILE`, which ``imgtool``
+  uses to sign the application; and
+- the MCUboot image, as ``CONFIG_BOOT_SIGNATURE_KEY_FILE``, whose public part is built into the
+  bootloader so it can verify that signature.
+
+.. warning::
+
+   The default value points at one of the insecure development keys bundled with MCUboot (for
+   example :file:`root-ec-p256.pem`). These keys are public — they ship with every Zephyr and
+   MCUboot checkout — so they are only suitable for development and testing. For anything else,
+   generate your own key and keep the private key out of any repository or build directory that
+   you do not control.
+
+How sysbuild resolves the key file path
+=======================================
+
+The value of :kconfig:option:`SB_CONFIG_BOOT_SIGNATURE_KEY_FILE` is processed with CMake's
+``string(CONFIGURE)`` command, so any ``${VARIABLE}`` reference it contains is expanded as a CMake
+variable before the path is used. After expansion, an absolute path is used as-is; a relative path
+is resolved by each image independently:
+
+.. list-table::
+   :header-rows: 1
+   :widths: 35 65
+
+   * - Image
+     - Search order for a relative path
+   * - Application (:kconfig:option:`CONFIG_MCUBOOT_SIGNATURE_KEY_FILE`)
+     - ``APPLICATION_CONFIG_DIR``, then the west workspace topdir (``WEST_TOPDIR``)
+   * - MCUboot (``CONFIG_BOOT_SIGNATURE_KEY_FILE``)
+     - ``APPLICATION_CONFIG_DIR``, then the MCUboot module directory
+
+.. warning::
+
+   Each image resolves a relative path against a different base, so a bare relative path points at
+   a different file for each image and usually fails to build. Do not use one: give an absolute
+   path, or anchor the path with a CMake variable.
+
+``${APP_DIR}`` (the main application's source directory) is the recommended anchor: it keeps the
+key inside your own application, and both images resolve it to the same file. Any CMake variable
+available when the value is expanded may be used:
+
+.. code-block:: cfg
+
+   # sysbuild.conf
+   SB_CONFIG_BOOT_SIGNATURE_KEY_FILE="${APP_DIR}/keys/my-signing-key.pem"
+
+The same resolution rules apply to the optional encryption key file
+(:kconfig:option:`CONFIG_MCUBOOT_ENCRYPTION_KEY_FILE`).
 
 .. _west-extending-signing:
 

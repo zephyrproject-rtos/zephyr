@@ -4,10 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <nxp/mcx/MCXN947VDF-pinctrl.h>
+#include <nxp/mcx/mcxn/pinctrl/MCXN947VDF-pinctrl.h>
 
-&arduino_serial {
-	status = "disabled";
+/ {
+	chosen {
+		zephyr,uart-pipe = &flexcomm4_lpuart4;
+	};
 };
 
 &m2_hci_bt_uart {

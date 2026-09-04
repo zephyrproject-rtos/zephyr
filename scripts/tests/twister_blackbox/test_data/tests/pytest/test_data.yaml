@@ -2,6 +2,7 @@ tests:
   sample.twister.pytest:
     platform_allow:
       - native_sim
+      - native_sim/native/64
     harness: pytest
     harness_config:
       pytest_args: ["--custom-pytest-arg", "foo", "--cmdopt", "."]

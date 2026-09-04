@@ -320,7 +320,7 @@ void lll_scan_aux_isr_aux_setup(void *param)
 	/* setup tIFS switching */
 	radio_tmr_tifs_set(EVENT_IFS_US);
 	/* TODO: for passive scanning use complete_and_disable */
-	radio_switch_complete_and_tx(phy_aux, 0, phy_aux, 1);
+	radio_switch_complete_and_tx(phy_aux, PHY_FLAGS_UNUSED, phy_aux, PHY_FLAGS_S8);
 
 	/* TODO: skip filtering if AdvA was already found in previous PDU */
 
@@ -524,7 +524,8 @@ static int prepare_cb(struct lll_prepare_param *p)
 	/* setup tIFS switching */
 	radio_tmr_tifs_set(EVENT_IFS_US);
 	/* TODO: for passive scanning use complete_and_disable */
-	radio_switch_complete_and_tx(lll_aux->phy, 0, lll_aux->phy, 1);
+	radio_switch_complete_and_tx(lll_aux->phy, PHY_FLAGS_UNUSED, lll_aux->phy,
+				     PHY_FLAGS_S8);
 
 	/* TODO: skip filtering if AdvA was already found in previous PDU */
 
@@ -862,7 +863,12 @@ static void isr_rx(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 	}
 
 	pdu = (void *)node_rx->pdu;
-	if (unlikely((pdu->type != PDU_ADV_TYPE_EXT_IND) || !pdu->len)) {
+	if (unlikely((pdu->type != PDU_ADV_TYPE_EXT_IND) || !pdu->len ||
+		     (pdu->len > LL_EXT_OCTETS_RX_MAX))) {
+		/* Discard received PDU with length that exceeds the configured
+		 * maximum receive data length used to setup the radio packet
+		 * reception.
+		 */
 		err = -EINVAL;
 
 		goto isr_rx_do_close;
@@ -1415,7 +1421,7 @@ static int isr_rx_pdu(struct lll_scan *lll, struct lll_scan_aux *lll_aux,
 	return -EINVAL;
 }
 
-static void isr_tx(struct lll_scan_aux *lll_aux, void (*isr)(void *), void *param)
+static void isr_tx(struct lll_scan_aux *lll_aux, void (*isr)(void *arg), void *param)
 {
 	struct node_rx_pdu *node_rx_prof;
 	struct node_rx_pdu *node_rx;

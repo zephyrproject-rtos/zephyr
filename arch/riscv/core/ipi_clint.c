@@ -83,9 +83,10 @@ void arch_spin_relax(void)
 	if (atomic_test_and_clear_bit(pending_ipi, IPI_FPU_FLUSH)) {
 		/*
 		 * We may not be in IRQ context here hence cannot use
-		 * arch_flush_local_fpu() directly.
+		 * arch_flush_local_fpu() directly. Use the helper that
+		 * flushes the FPU context without altering thread options.
 		 */
-		arch_float_disable(_current_cpu->arch.fpu_owner);
+		z_riscv_fpu_flush_thread(_current_cpu->arch.fpu_owner);
 	}
 }
 #endif /* CONFIG_FPU_SHARING */

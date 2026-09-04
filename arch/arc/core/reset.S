@@ -175,7 +175,13 @@ _secondary_core_wait:
 	ld r1, [arc_cpu_wake_flag]
 	brne r0, r1, _secondary_core_wait
 
+	/* acquire: arc_cpu_sp must not be read before the flag was observed */
+	dmb ARC_DMB_LOAD
 	LDR sp, arc_cpu_sp
+	/* the arc_cpu_sp read must complete before the primary core sees the
+	 * acknowledgment below, as it reuses arc_cpu_sp for the next core
+	 */
+	dmb ARC_DMB_LOAD_STORE
 	/* signal primary core that secondary core runs */
 	st 0, [arc_cpu_wake_flag]
 

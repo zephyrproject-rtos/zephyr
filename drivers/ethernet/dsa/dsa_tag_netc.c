@@ -129,7 +129,7 @@ struct net_pkt *dsa_tag_netc_xmit(struct net_if *iface, struct net_pkt *pkt)
 	void *tag;
 
 	/* Tag is inserted after DMAC/SMAC fields. Decide header size per tag type. */
-	if (net_ntohs(NET_ETH_HDR(pkt)->type) == NET_ETH_PTYPE_PTP) {
+	if (net_pkt_is_tx_timestamping(pkt)) {
 		header_len += sizeof(struct netc_switch_tag_port_two_step_ts);
 	} else {
 		header_len += sizeof(struct netc_switch_tag_port_no_ts);
@@ -151,7 +151,7 @@ struct net_pkt *dsa_tag_netc_xmit(struct net_if *iface, struct net_pkt *pkt)
 
 #ifdef CONFIG_NET_L2_PTP_TIMESTAMPING
 	/* Enable two-step timestamping for gPTP. */
-	if (net_ntohs(NET_ETH_HDR(pkt)->type) == NET_ETH_PTYPE_PTP) {
+	if (net_pkt_is_tx_timestamping(pkt)) {
 
 		/* Utilize control block for timestamp request ID */
 		((struct netc_switch_tag_port_two_step_ts *)tag)->ts_req_id = pkt->cb.cb[0] & 0xf;

@@ -12,21 +12,34 @@
 	};
 };
 
+/* GPIO35-37 and GPIO47-48 belong to the octal flash/PSRAM bus on the
+ * devkitc variants with OPI memory; muxing i2s there kills XIP before
+ * the console comes up. Use free header pins instead and keep spi2/3
+ * away from them.
+ */
 &i2s0_default {
 	group1 {
-		pinmux = <I2S0_O_WS_GPIO36>,
-			 <I2S0_O_BCK_GPIO37>;
+		pinmux = <I2S0_O_WS_GPIO2>,
+			 <I2S0_O_BCK_GPIO3>;
 	};
 
 	group2 {
-		pinmux = <I2S0_O_SD_GPIO48>;
+		pinmux = <I2S0_O_SD_GPIO4>;
 		input-enable;
 	};
 
 	group3 {
-		pinmux = <I2S0_I_SD_GPIO48>;
+		pinmux = <I2S0_I_SD_GPIO4>;
 		output-enable;
 	};
+};
+
+&spi2 {
+	status = "disabled";
+};
+
+&spi3 {
+	status = "disabled";
 };
 
 &i2s0 {

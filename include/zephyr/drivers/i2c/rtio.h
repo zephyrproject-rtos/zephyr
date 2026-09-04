@@ -43,6 +43,16 @@ struct i2c_rtio {
 	};
 
 /**
+ * @brief Callback to start the pending I2C operation
+ *
+ * @param dev I2C bus
+ * @param status Output return code of the operation if the function returns
+ * false (i.e. message completed synchronously), otherwise output value is meaningless
+ * @retval true if an asynchronous operation is started, false otherwise
+ */
+typedef bool (*i2c_rtio_cb_run_sync_start_async)(const struct device *dev, int *status);
+
+/**
  * @brief Copy an array of i2c_msgs to rtio submissions and a transaction
  *
  * @retval sqe Last sqe setup in the copy
@@ -107,6 +117,32 @@ int i2c_rtio_transfer(struct i2c_rtio *ctx, struct i2c_msg *msgs, uint8_t num_ms
  * See i2c_recover().
  */
 int i2c_rtio_recover(struct i2c_rtio *ctx);
+
+/**
+ * @brief Process synchronous operations until an asynchronous operation
+ * is started or there are no more queued operations.
+ *
+ * @param dev I2C bus
+ * @param ctx I2C RTIO driver context
+ * @param cb Callback to process a synchronous operation or start an async operation
+ *
+ * @retval true if an asynchronous message is started, false otherwise.
+ */
+static inline bool i2c_rtio_run_sync_start_async(const struct device *dev, struct i2c_rtio *ctx,
+						 i2c_rtio_cb_run_sync_start_async cb)
+{
+	int status;
+
+	__ASSERT_NO_MSG(cb != NULL);
+
+	while (!cb(dev, &status)) {
+		if (!i2c_rtio_complete(ctx, status)) {
+			return false;
+		}
+	}
+
+	return true;
+}
 
 #ifdef __cplusplus
 }

@@ -34,6 +34,7 @@ runs:
         BASE_REF: ${{ inputs.base-ref }}
         GROUP_FILTER: ${{ inputs.group-filter }}
       run: |
+        git config --global http.version HTTP/1.1
         if [ "${{ github.event_name }}" = "pull_request" ]; then
           git config --global user.email "bot@zephyrproject.org"
           git config --global user.name "Zephyr Builder"

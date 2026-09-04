@@ -199,6 +199,7 @@ unlock_out:
 out:
 	return ret;
 #else  /* CONFIG_ARCH_MEM_DOMAIN_SUPPORTS_DEINIT */
+	ARG_UNUSED(domain);
 	return -ENOTSUP;
 #endif /* CONFIG_ARCH_MEM_DOMAIN_SUPPORTS_DEINIT */
 }
@@ -360,7 +361,7 @@ void z_mem_domain_init_thread(struct k_thread *thread)
 	k_spin_unlock(&z_mem_domain_lock, key);
 }
 
-/* Called when thread aborts during teardown tasks. _sched_spinlock is held */
+/* Called when thread aborts during teardown tasks. The scheduler's spinlock is held */
 void z_mem_domain_exit_thread(struct k_thread *thread)
 {
 	int ret;

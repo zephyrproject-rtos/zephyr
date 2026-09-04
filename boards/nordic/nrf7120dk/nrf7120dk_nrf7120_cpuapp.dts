@@ -6,7 +6,8 @@
 
 /dts-v1/;
 
-#include "nrf7120_cpuapp_common.dtsi"
+#include <nordic/nrf7120_enga_cpuapp.dtsi>
+#include "nrf7120_7120e_cpuapp_common.dtsi"
 
 / {
 	compatible = "nordic,nrf7120dk_nrf7120-cpuapp";

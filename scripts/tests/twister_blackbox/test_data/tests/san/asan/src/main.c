@@ -14,17 +14,23 @@
 
 ZTEST_SUITE(a1_1_tests, NULL, NULL, NULL, NULL, NULL);
 
-int *ptr;
+/* A volatile index defeats GCC's static -Warray-bounds analysis.
+ * Direct array indexing (not a libc call) bypasses _FORTIFY_SOURCE so
+ * the write lands in malloc's alignment padding without crashing.
+ * ASan adds an 8-byte red-zone past the allocation and aborts on any
+ * out-of-bounds access.
+ */
+static volatile int oob_idx = 10;
 
 int helper(void)
 {
 	char *s = malloc(10);
 
 	strcpy(s, "123456789");
-	s[9] = '0';
-	free(s);
-	strcpy(s, "Hello");
+	/* One byte past the declared allocation - heap-buffer-overflow. */
+	s[oob_idx] = '\0';
 	printf("string is: %s\n", s);
+	free(s);
 
 	return 0;
 }

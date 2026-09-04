@@ -1,5 +1,6 @@
 common:
   harness: net
+  depends_on: eth
   tags:
     - net
     - gptp
@@ -17,6 +18,12 @@ tests:
       - nucleo_h743zi
       - nucleo_h753zi
       - nucleo_h745zi_q/stm32h745xx/m7
-    depends_on: eth
     integration_platforms:
       - frdm_k64f
+  sample.net.gptp.multiport:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    extra_args:
+      - EXTRA_CONF_FILE=overlay-multiport.conf
+      - EXTRA_DTC_OVERLAY_FILE=overlay-multiport.overlay

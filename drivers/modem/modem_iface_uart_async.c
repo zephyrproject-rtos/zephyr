@@ -116,7 +116,7 @@ static int modem_iface_uart_async_write(struct modem_iface *iface,
 	}
 
 	/* Start the transmission */
-	rc = uart_tx(iface->dev, buf, size, SYS_FOREVER_MS);
+	rc = uart_tx(iface->dev, buf, size, SYS_FOREVER_US);
 	if (rc >= 0) {
 		/* Wait until the transmission completes */
 		data = iface->iface_data;

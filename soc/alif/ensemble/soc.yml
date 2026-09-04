@@ -25,3 +25,8 @@ family:
               - name: apss
               - name: rtss_he
               - name: rtss_hp
+          - name: ae822fa0e5597bs0
+            cpuclusters:
+              - name: apss
+              - name: rtss_he
+              - name: rtss_hp

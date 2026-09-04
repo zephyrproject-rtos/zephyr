@@ -16,6 +16,8 @@
 #endif /* CONFIG_GIC */
 #include <fsl_lptmr.h>
 #include <zephyr/spinlock.h>
+#include <zephyr/drivers/wuc.h>
+#include <zephyr/pm/device.h>
 
 /*
  * Skip the instance reserved as the system timer via zephyr,system-timer.
@@ -26,6 +28,14 @@
 		(DT_SAME_NODE(DT_INST(n, nxp_lptmr),			\
 			      DT_CHOSEN(zephyr_system_timer))),		\
 		(0))
+
+/* True for the instance chosen as the system-timer low-power companion. */
+#if DT_HAS_CHOSEN(zephyr_system_timer_companion)
+#define COUNTER_MCUX_LPTMR_IS_COMPANION(n)				\
+	DT_SAME_NODE(DT_DRV_INST(n), DT_CHOSEN(zephyr_system_timer_companion))
+#else
+#define COUNTER_MCUX_LPTMR_IS_COMPANION(n) 0
+#endif /* DT_HAS_CHOSEN(zephyr_system_timer_companion) */
 
 #define COUNTER_MCUX_LPTMR_COUNT_USABLE(n) + (!COUNTER_MCUX_LPTMR_IS_SYSTEM_TIMER(n))
 
@@ -46,6 +56,9 @@ struct mcux_lptmr_config {
 	lptmr_pin_polarity_t polarity;
 	unsigned int irqn;
 	void (*irq_config_func)(const struct device *dev);
+	struct wuc_dt_spec wuc;
+	bool is_companion;
+	bool wakeup_source;
 };
 
 static ALWAYS_INLINE void irq_set_pending(unsigned int irq)
@@ -112,6 +125,14 @@ static int mcux_lptmr_get_value(const struct device *dev, uint32_t *ticks)
 }
 
 #if defined(CONFIG_COUNTER_MCUX_LPTMR_ALARM)
+/* True when the LPTMR is a wakeup source routed to a wakeup controller. */
+static ALWAYS_INLINE bool mcux_lptmr_is_wakeup_source(const struct device *dev)
+{
+	const struct mcux_lptmr_config *config = dev->config;
+
+	return config->wakeup_source && IS_ENABLED(CONFIG_WUC) && (config->wuc.dev != NULL);
+}
+
 static int mcux_lptmr_set_alarm(const struct device *dev, uint8_t chan_id,
 				const struct counter_alarm_cfg *alarm_cfg)
 {
@@ -166,6 +187,20 @@ static int mcux_lptmr_set_alarm(const struct device *dev, uint8_t chan_id,
 		return ret;
 	}
 
+	/*
+	 * Arm the wakeup controller so the alarm can wake the SoC: for the
+	 * system-timer companion, or when enabled as a wakeup source at run time.
+	 */
+	if (mcux_lptmr_is_wakeup_source(dev) &&
+	    (config->is_companion || pm_device_wakeup_is_enabled(dev))) {
+		int err = wuc_enable_wakeup_source_dt(&config->wuc);
+
+		if (err != 0) {
+			k_spin_unlock(&data->lock, key);
+			return err;
+		}
+	}
+
 	data->alarm_callback = alarm_cfg->callback;
 	data->alarm_user_data = alarm_cfg->user_data;
 	data->alarm_active = true;
@@ -213,6 +248,7 @@ static int mcux_lptmr_cancel_alarm(const struct device *dev, uint8_t chan_id)
 	const struct mcux_lptmr_config *config = dev->config;
 	struct mcux_lptmr_data *data = dev->data;
 	k_spinlock_key_t key;
+	int err = 0;
 
 	if (chan_id >= config->info.channels) {
 		return -EINVAL;
@@ -231,6 +267,10 @@ static int mcux_lptmr_cancel_alarm(const struct device *dev, uint8_t chan_id)
 	data->alarm_sw_pending = false;
 	data->alarm_active = false;
 
+	if (mcux_lptmr_is_wakeup_source(dev)) {
+		err = wuc_disable_wakeup_source_dt(&config->wuc);
+	}
+
 	k_spin_unlock(&data->lock, key);
 
 	LPTMR_StopTimer(config->base);
@@ -241,7 +281,7 @@ static int mcux_lptmr_cancel_alarm(const struct device *dev, uint8_t chan_id)
 	LPTMR_SetTimerPeriod(config->base, config->info.max_top_value);
 	LPTMR_ClearStatusFlags(config->base, kLPTMR_TimerCompareFlag);
 
-	return 0;
+	return err;
 }
 
 static uint32_t mcux_lptmr_get_guard_period(const struct device *dev, uint32_t flags)
@@ -403,6 +443,10 @@ static void mcux_lptmr_isr(const struct device *dev)
 		data->alarm_sw_pending = false;
 		data->alarm_active = false;
 
+		if (mcux_lptmr_is_wakeup_source(dev)) {
+			(void)wuc_disable_wakeup_source_dt(&config->wuc);
+		}
+
 		k_spin_unlock(&data->lock, key);
 
 		uint32_t current_count = sw_pending ? 0U :
@@ -456,6 +500,20 @@ static int mcux_lptmr_reset(const struct device *dev)
 	return 0;
 }
 
+static int mcux_lptmr_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	ARG_UNUSED(dev);
+
+	/* No device power state to manage; needed only to register a pm_device. */
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+	case PM_DEVICE_ACTION_SUSPEND:
+		return 0;
+	default:
+		return -ENOTSUP;
+	}
+}
+
 static int mcux_lptmr_init(const struct device *dev)
 {
 	const struct mcux_lptmr_config *config = dev->config;
@@ -479,7 +537,7 @@ static int mcux_lptmr_init(const struct device *dev)
 
 	config->irq_config_func(dev);
 
-	return 0;
+	return pm_device_driver_init(dev, mcux_lptmr_pm_action);
 }
 
 static DEVICE_API(counter, mcux_lptmr_driver_api) = {
@@ -566,9 +624,15 @@ static DEVICE_API(counter, mcux_lptmr_driver_api) = {
 			MCUX_LPTMR_PRESCALE_GLITCH_VAL(n),			\
 		.irqn = DT_INST_IRQN(n),					\
 		.irq_config_func = mcux_lptmr_irq_config_##n,			\
+		.wuc = COND_CODE_1(CONFIG_WUC,					\
+			(WUC_DT_SPEC_GET_OR(DT_DRV_INST(n), {0})), ({0})),	\
+		.is_companion = COUNTER_MCUX_LPTMR_IS_COMPANION(n),		\
+		.wakeup_source = DT_INST_PROP_OR(n, wakeup_source, 0),		\
 	};									\
 										\
-	DEVICE_DT_INST_DEFINE(n, &mcux_lptmr_init, NULL,			\
+	PM_DEVICE_DT_INST_DEFINE(n, mcux_lptmr_pm_action);			\
+										\
+	DEVICE_DT_INST_DEFINE(n, &mcux_lptmr_init, PM_DEVICE_DT_INST_GET(n),	\
 		&mcux_lptmr_data_##n,						\
 		&mcux_lptmr_config_##n,						\
 		POST_KERNEL, CONFIG_COUNTER_INIT_PRIORITY,			\

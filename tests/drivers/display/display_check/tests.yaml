@@ -78,7 +78,7 @@ tests:
       - platform:lpcxpresso55s69/lpc55s69/cpu0:SHIELD=adafruit_2_8_tft_touch_v2
       - platform:nrf52840dk/nrf52840:SHIELD=ssd1306_128x32
       - platform:frdm_k64f/mk64f12:SHIELD=ssd1306_128x64
-      - platform:mimxrt685_evk/mimxrt685/cm33:SHIELD=waveshare_epaper_gdeh0213b1
+      - platform:mimxrt685_evk/mimxrt685s/cm33:SHIELD=waveshare_epaper_gdeh0213b1
       - platform:nucleo_l433rc_p/stm32l433xx:SHIELD=waveshare_epaper_gdew042t2
       - platform:nrf52dk/nrf52832:SHIELD=st7789v_tl019fqv01
       - platform:mimxrt1010_evk/mimxrt1011:SHIELD=st7789v_waveshare_240x240
@@ -95,8 +95,10 @@ tests:
       - platform:mimxrt1040_evk/mimxrt1042:SHIELD=rk043fn66hs_ctg
       - platform:frdm_mcxn947/mcxn947/cpu0:SHIELD=lcd_par_s035_8080
       - platform:mcx_n9xx_evk/mcxn947/cpu0:SHIELD=lcd_par_s035_8080
+      - platform:mcx_n5xx_evk/mcxn547/cpu0:SHIELD=lcd_par_s035_8080
       - platform:frdm_mcxn236/mcxn236:SHIELD=lcd_par_s035_8080
       - platform:frdm_mcxa156/mcxa156:SHIELD=lcd_par_s035_8080
+      - platform:frdm_mcxa577/mcxa577:SHIELD=lcd_par_s035_8080
       - platform:frdm_rw612/rw612:SHIELD=lcd_par_s035_spi
       - platform:ek_ra8d1:SHIELD=rtkmipilcdb00000be
       - platform:ek_ra8d1:SHIELD=rtk7eka6m3b00001bu

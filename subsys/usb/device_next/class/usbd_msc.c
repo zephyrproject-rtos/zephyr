@@ -79,7 +79,7 @@ struct msc_event {
 };
 
 /* Each instance has 2 endpoints and can receive bulk only reset command */
-K_MSGQ_DEFINE(msc_msgq, sizeof(struct msc_event), MSC_NUM_INSTANCES * 3, 4);
+K_MSGQ_DEFINE_STATIC_TYPE(msc_msgq, struct msc_event, MSC_NUM_INSTANCES * 3);
 
 /* Make supported vendor request visible for the device stack */
 static const struct usbd_cctx_vendor_req msc_bot_vregs =

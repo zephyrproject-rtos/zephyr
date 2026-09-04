@@ -11,6 +11,7 @@ endif()
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_MDIO_ADIN2111 mdio_adin2111.c)
 zephyr_library_sources_ifdef(CONFIG_MDIO_ATMEL_SAM mdio_sam.c)
+zephyr_library_sources_ifdef(CONFIG_MDIO_BCMGENET mdio_bcmgenet.c)
 zephyr_library_sources_ifdef(CONFIG_MDIO_DWCXGMAC mdio_dwcxgmac.c)
 zephyr_library_sources_ifdef(CONFIG_MDIO_DWMAC mdio_dwmac.c)
 zephyr_library_sources_ifdef(CONFIG_MDIO_ESP32 mdio_esp32.c)

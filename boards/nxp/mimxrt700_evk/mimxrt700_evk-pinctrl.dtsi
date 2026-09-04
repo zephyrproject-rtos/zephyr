@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <nxp/nxp_imx/rt/MIMXRT798SGFOB-pinctrl.h>
+#include <nxp/imxrt/imxrt7xx/pinctrl/MIMXRT798SGFOB-pinctrl.h>
 
 &pinctrl {
 	pinmux_flexcomm0_lpuart: pinmux_flexcomm0_lpuart {
@@ -292,6 +292,16 @@
 				 <LCD_DBI_RWDX_PIO2_3>;
 			slew-rate = "normal";
 			drive-strength = "normal";
+		};
+	};
+
+	pinmux_micfil: pinmux_micfil {
+		group0 {
+			pinmux = <PDM_CLK_PIO10_8>,
+				 <PDM_DATA0_PIO10_9>;
+			slew-rate = "normal";
+			drive-strength = "normal";
+			input-enable;
 		};
 	};
 };

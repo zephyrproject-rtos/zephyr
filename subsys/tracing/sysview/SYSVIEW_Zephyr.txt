@@ -97,9 +97,7 @@ TaskState 0xBF 1=dummy, 2=Waiting, 4=New, 8=Terminated, 16=Suspended, 32=Termina
 93  timer->expiry_fn           timer=%I
 94  timer->stop_fn             timer=%I
 
-95  k_sleep                    msec=%u ms | Returns %u
-96  k_msleep                   msec=%u ms | Returns %u
-97  k_usleep                   usec=%u us | Returns %u
+169 k_sleep_ticks              ticks=%u | Returns %u
 
 98  k_thread_priority_set      thread=%t, priority=%u
 99  k_thread_wakeup

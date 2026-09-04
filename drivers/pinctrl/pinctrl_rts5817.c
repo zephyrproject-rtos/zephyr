@@ -7,7 +7,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/dt-bindings/pinctrl/rts5817_pinctrl.h>
-#include "pinctrl_rts5817.h"
+#include "pinctrl_reg.h"
 
 #define PAD_CFG_SIZE 0x40
 

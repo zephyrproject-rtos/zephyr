@@ -6,9 +6,93 @@
 
 /dts-v1/;
 #include <silabs/xg24/efr32mg24b220f1536im48.dtsi>
-#include "xg24_rb418xc.dtsi"
+#include "xg24_common.dtsi"
+#include "xg24_rb4187c-pinctrl.dtsi"
 
 / {
 	model = "Silicon Labs EFR32xG24 2.4 GHz 20 dBm Radio Board (xG24-RB4187C, BRD4187C)";
 	compatible = "silabs,xg24_rb4187c", "silabs,efr32mg24";
+};
+
+&led0 {
+	gpios = <&gpiob 2 GPIO_ACTIVE_HIGH>;
+};
+
+&led1 {
+	gpios = <&gpiob 4 GPIO_ACTIVE_HIGH>;
+};
+
+&pwm_led0 {
+	pwms = <&timer0_pwm 0 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+};
+
+&pwm_led1 {
+	pwms = <&timer0_pwm 1 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+};
+
+&button0 {
+	gpios = <&gpiob 1 GPIO_ACTIVE_LOW>;
+};
+
+&button1 {
+	gpios = <&gpiob 3 GPIO_ACTIVE_LOW>;
+};
+
+&sensor_enable {
+	enable-gpios = <&gpiod 3 GPIO_ACTIVE_HIGH>;
+};
+
+&exp_header {
+	gpio-map = <3 0 &gpiob 5 0>,
+		   <4 0 &gpioc 1 0>,
+		   <5 0 &gpioa 0 0>,
+		   <6 0 &gpioc 2 0>,
+		   <7 0 &gpioa 5 0>,
+		   <8 0 &gpioc 3 0>,
+		   <9 0 &gpiod 2 0>,
+		   <10 0 &gpioc 0 0>,
+		   <11 0 &gpioa 6 0>,
+		   <12 0 &gpioa 8 0>,
+		   <13 0 &gpioa 7 0>,
+		   <14 0 &gpioa 9 0>,
+		   <15 0 &gpioc 5 0>,
+		   <16 0 &gpioc 7 0>;
+};
+
+&hfxo {
+	ctune = <95>;
+	precision = <50>;
+};
+
+&lfxo {
+	ctune = <44>;
+};
+
+&eusart1 {
+	cs-gpios = <&gpioc 8 GPIO_ACTIVE_HIGH>, <&gpioc 4 GPIO_ACTIVE_LOW>;
+};
+
+&ls0xx_ls013b7dh03 {
+	disp-en-gpios = <&gpioc 9 GPIO_ACTIVE_HIGH>;
+	extcomin-gpios = <&gpioc 6 GPIO_ACTIVE_HIGH>;
+};
+
+&timer1 {
+	status = "okay";
+
+	timer1_counter: counter {
+		status = "okay";
+	};
+};
+
+&gpiob {
+	board-controller-enable {
+		gpio-hog;
+		gpios = <0 GPIO_ACTIVE_HIGH>;
+		output-high;
+	};
+};
+
+&dcdc {
+	silabs,pfmx-peak-current-milliamp = <100>;
 };

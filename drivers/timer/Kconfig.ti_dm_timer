@@ -1,12 +1,16 @@
 # Copyright (C) 2023 BeagleBoard.org Foundation
 # Copyright (C) 2023 S Prashanth
+# Copyright (C) 2026 Siemens Mobility GmbH
 #
 # SPDX-License-Identifier: Apache-2.0
+
+DT_CHOSEN_Z_SYSTEM_TIMER := zephyr,system-timer
 
 config TI_DM_TIMER
 	bool "TI Dual-Mode Timer"
 	default y
-	depends on DT_HAS_TI_AM654_TIMER_ENABLED
+	depends on $(dt_chosen_has_compat,$(DT_CHOSEN_Z_SYSTEM_TIMER),$(DT_COMPAT_TI_AM654_TIMER))
+	depends on $(dt_chosen_enabled,$(DT_CHOSEN_Z_SYSTEM_TIMER))
 	select TICKLESS_CAPABLE
 	select SYSCON if $(dt_compat_any_has_prop,$(DT_COMPAT_TI_AM654_TIMER),clksel)
 	help

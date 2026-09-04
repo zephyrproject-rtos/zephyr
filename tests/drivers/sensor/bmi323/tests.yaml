@@ -1,0 +1,12 @@
+# Copyright (c) 2026 Chaogui Deng
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.sensor.bmi323:
+    tags:
+      - drivers
+      - sensor
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim

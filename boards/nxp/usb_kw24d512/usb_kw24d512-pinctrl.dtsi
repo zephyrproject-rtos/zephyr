@@ -6,7 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <nxp/kinetis/MKW24D512VHA5-pinctrl.h>
+#include <nxp/kinetis/kwx/pinctrl/MKW24D512VHA5-pinctrl.h>
 
 &pinctrl {
 	uart0_default: uart0_default {

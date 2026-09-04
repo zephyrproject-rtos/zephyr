@@ -8,6 +8,7 @@
 /**
  * @file
  * @brief IEEE 802.11 protocol and general Wi-Fi definitions.
+ * @ingroup wifi_mgmt
  */
 
 /**
@@ -119,11 +120,15 @@ enum wifi_security_type {
 	WIFI_SECURITY_TYPE_WEP_SHARED,
 	/** Opportunistic Wireless Encryption (OWE) security. */
 	WIFI_SECURITY_TYPE_OWE,
+	/** WPA2-PSK-SHA384 security. */
+	WIFI_SECURITY_TYPE_PSK_SHA384,
+	/** FT-PSK-SHA384 security. */
+	WIFI_SECURITY_TYPE_FT_PSK_SHA384,
 
 	/** @cond INTERNAL_HIDDEN */
 	__WIFI_SECURITY_TYPE_AFTER_LAST,
-	WIFI_SECURITY_TYPE_MAX = WIFI_SECURITY_TYPE_OWE,
-	WIFI_SECURITY_TYPE_UNKNOWN
+	WIFI_SECURITY_TYPE_MAX = WIFI_SECURITY_TYPE_FT_PSK_SHA384,
+	WIFI_SECURITY_TYPE_UNKNOWN = __WIFI_SECURITY_TYPE_AFTER_LAST
 	/** @endcond */
 };
 
@@ -175,6 +180,7 @@ enum wifi_wpa3_enterprise_type {
 	/** @endcond */
 };
 
+/** @brief EAP TLS cipher types. */
 enum wifi_eap_tls_cipher_type {
 	/** EAP TLS with NONE */
 	WIFI_EAP_TLS_NONE,
@@ -210,6 +216,7 @@ enum wifi_group_mgmt_cipher_type {
 	WPA_CAPA_ENC_BIP_GMAC_256,
 };
 
+/** @brief Cipher capability and name description. */
 struct wifi_cipher_desc {
 	/** Cipher capability. */
 	unsigned int capa;
@@ -217,6 +224,7 @@ struct wifi_cipher_desc {
 	char *name;
 };
 
+/** @brief EAP cipher configuration. */
 struct wifi_eap_cipher_config {
 	/** Key management type string. */
 	char *key_mgmt;
@@ -232,6 +240,7 @@ struct wifi_eap_cipher_config {
 	char *tls_flags;
 };
 
+/** @brief EAP method configuration. */
 struct wifi_eap_config {
 	/**  Security type. */
 	enum wifi_security_type type;
@@ -284,6 +293,9 @@ enum wifi_frequency_bands {
 	/** 6 GHz band (Wi-Fi 6E, also extends to 7GHz). */
 	WIFI_FREQ_BAND_6_GHZ,
 
+	/** Sub-1GHz band (Wi-Fi HaLow, 802.11ah)*/
+	WIFI_FREQ_BAND_SUB_1_GHZ,
+
 	/** Number of frequency bands available. */
 	__WIFI_FREQ_BAND_AFTER_LAST,
 	/** Highest frequency band available. */
@@ -306,6 +318,15 @@ enum wifi_frequency_bandwidths {
 	/** 80 MHz. */
 	WIFI_FREQ_BANDWIDTH_80MHZ,
 
+	/** 1 MHz. (Sub-1GHz channels only) */
+	WIFI_FREQ_BANDWIDTH_1MHZ,
+	/** 2 MHz. (Sub-1GHz channels only) */
+	WIFI_FREQ_BANDWIDTH_2MHZ,
+	/** 4 MHz. (Sub-1GHz channels only) */
+	WIFI_FREQ_BANDWIDTH_4MHZ,
+	/** 8 MHz. (Sub-1GHz channels only) */
+	WIFI_FREQ_BANDWIDTH_8MHZ,
+
 	/** Number of frequency bandwidths available. */
 	__WIFI_FREQ_BANDWIDTH_AFTER_LAST,
 	/** Highest frequency bandwidth available. */
@@ -314,6 +335,7 @@ enum wifi_frequency_bandwidths {
 	WIFI_FREQ_BANDWIDTH_UNKNOWN
 };
 
+/** Helper function to get user-friendly frequency bandwidth name. */
 const char *wifi_bandwidth_txt(enum wifi_frequency_bandwidths bandwidth);
 
 /** Max SSID length */

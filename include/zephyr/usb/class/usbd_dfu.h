@@ -147,6 +147,7 @@ struct usbd_dfu_image {
  *
  * @param id     Identifier by which the linker sorts registered images
  * @param iname  Image name as used in interface descriptor
+ * @param ipriv  Pointer to private data passed to the callbacks
  * @param iread  Image read callback
  * @param iwrite Image write callback
  * @param inext  Notify/confirm next state

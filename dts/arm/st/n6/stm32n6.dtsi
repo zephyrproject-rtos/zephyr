@@ -62,6 +62,18 @@
 		};
 	};
 
+	backup_sram: memory@3c000000 {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		compatible = "zephyr,memory-region", "st,stm32-backup-sram";
+		reg = <0x3c000000 DT_SIZE_K(8)>;
+		ranges = <0x3c000000 0x3c000000 DT_SIZE_K(8)>;
+		clocks = <&rcc STM32_CLOCK(MEM, 6)>;
+		zephyr,memory-region = "BACKUP_SRAM";
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
+		status = "disabled";
+	};
+
 	clocks {
 		clk_hse: clk-hse {
 			#clock-cells = <0>;
@@ -390,7 +402,7 @@
 				#address-cells = <1>;
 				#size-cells = <1>;
 				reg = <0x56020000 0x4400>;
-				ranges = <0x56020000 0x56020000 0x4400>;
+				ranges;
 
 				gpioa: gpio@56020000 {
 					compatible = "st,stm32-gpio";
@@ -867,10 +879,24 @@
 				#dma-cells = <3>;
 				reg = <0x50021000 0x1000>;
 				clocks = <&rcc STM32_CLOCK(AHB1, 4)>;
-				interrupts = <84 0 85 0 86 0 87 0 88 0 89 0 90 0 91 0
-					      92 0 93 0 94 0 95 0 96 0 97 0 98 0 99 0>;
+				interrupts = <84 0>, <85 0>, <86 0>, <87 0>, <88 0>, <89 0>,
+					     <90 0>, <91 0>, <92 0>, <93 0>, <94 0>, <95 0>,
+					     <96 0>, <97 0>, <98 0>, <99 0>;
 				dma-channels = <16>;
-				dma-requests = <144>;
+				dma-requests = <145>;
+				status = "disabled";
+			};
+
+			hpdma1: dma@58020000 {
+				compatible = "st,stm32u5-dma";
+				#dma-cells = <3>;
+				reg = <0x58020000 0x1000>;
+				clocks = <&rcc STM32_CLOCK(AHB5, 0)>;
+				interrupts = <68 0>, <69 0>, <70 0>, <71 0>, <72 0>, <73 0>,
+					     <74 0>, <75 0>, <76 0>, <77 0>, <78 0>, <79 0>,
+					     <80 0>, <81 0>, <82 0>, <83 0>;
+				dma-channels = <16>;
+				dma-requests = <145>;
 				status = "disabled";
 			};
 
@@ -943,20 +969,26 @@
 
 			mac: ethernet@58036000 {
 				compatible = "st,stm32n6-ethernet", "st,stm32h7-ethernet",
-					     "st,stm32-ethernet";
+					     "st,stm32-ethernet", "snps,dwmac";
 				reg = <0x58036000 0x8000>;
 				clock-names = "stm-eth", "mac-clk-tx", "mac-clk-rx";
 				clocks = <&rcc STM32_CLOCK(AHB5, 22)>,
 					 <&rcc STM32_CLOCK(AHB5, 23)>,
 					 <&rcc STM32_CLOCK(AHB5, 24)>;
 				interrupts = <179 0>;
+				snps,multicast-filter-bins = <64>;
+				snps,perfect-filter-entries = <4>;
 				status = "disabled";
 
 				mdio: mdio {
-					compatible = "st,stm32-mdio";
+					compatible = "snps,dwmac-mdio";
 					#address-cells = <1>;
 					#size-cells = <0>;
 					status = "disabled";
+				};
+
+				ptp_clock: ptp-clock {
+					compatible = "snps,dwmac-ptp-clock";
 				};
 			};
 
@@ -1437,18 +1469,20 @@
 			};
 
 			usbphyc1: usbphyc@5803fc00 {
-				compatible = "st,stm32-usbphyc";
+				compatible = "st,stm32n6-usbphyc";
 				reg = <0x5803fc00 0x400>;
 				clocks = <&rcc STM32_CLOCK(AHB5, 27)>,
 					 <&rcc STM32_SRC_HSE OTGPHY1_SEL(3)>;
+				clock-names = "gate", "mux";
 				#phy-cells = <0>;
 			};
 
 			usbphyc2: usbphyc@580c0000 {
-				compatible = "st,stm32-usbphyc";
+				compatible = "st,stm32n6-usbphyc";
 				reg = <0x580c0000 0x400>;
 				clocks = <&rcc STM32_CLOCK(AHB5, 28)>,
 					 <&rcc STM32_SRC_HSE OTGPHY2_SEL(3)>;
+				clock-names = "gate", "mux";
 				#phy-cells = <0>;
 			};
 
@@ -1478,12 +1512,13 @@
 				#address-cells = <1>;
 				#size-cells = <1>;
 				reg = <0x52005800 0x400>;
-				ranges = <0x0 0x52005800 0x400>;
+				ranges;
 				clocks = <&rcc STM32_CLOCK(APB2, 21)>;
+				clock-names = "sai_ck";
 				status = "disabled";
 
-				sai1_a: sai1a@4 {
-					reg = <0x4 0x20>;
+				sai1_a: sai1a@52005804 {
+					reg = <0x52005804 0x20>;
 					dmas = <&gpdma1 1 91
 						(STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
 					#address-cells = <1>;
@@ -1491,8 +1526,8 @@
 					status = "disabled";
 				};
 
-				sai1_b: sai1b@24 {
-					reg = <0x24 0x20>;
+				sai1_b: sai1b@52005824 {
+					reg = <0x52005824 0x20>;
 					dmas = <&gpdma1 0 92
 						(STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
 					#address-cells = <1>;
@@ -1506,12 +1541,13 @@
 				#address-cells = <1>;
 				#size-cells = <1>;
 				reg = <0x52005c00 0x400>;
-				ranges = <0x0 0x52005c00 0x400>;
+				ranges;
 				clocks = <&rcc STM32_CLOCK(APB2, 22)>;
+				clock-names = "sai_ck";
 				status = "disabled";
 
-				sai2_a: sai2a@4 {
-					reg = <0x4 0x20>;
+				sai2_a: sai2a@52005c04 {
+					reg = <0x52005c04 0x20>;
 					dmas = <&gpdma1 3 93
 						(STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
 					#address-cells = <1>;
@@ -1519,14 +1555,24 @@
 					status = "disabled";
 				};
 
-				sai2_b: sai2b@24 {
-					reg = <0x24 0x20>;
+				sai2_b: sai2b@52005c24 {
+					reg = <0x52005c24 0x20>;
 					dmas = <&gpdma1 2 94
 						(STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
 					#address-cells = <1>;
 					#size-cells = <0>;
 					status = "disabled";
 				};
+			};
+
+			gpu2d: gpu@58034000 {
+				compatible = "st,neochrom-gpu2d";
+				reg = <0x58034000 0x1000>;
+				clocks = <&rcc STM32_CLOCK(AHB5, 20)>;
+				interrupts = <65 0>, <66 0>;
+				interrupt-names = "gpu2d", "gpu2d_er";
+				resets = <&rctl STM32_RESET(AHB5, 20)>;
+				status = "disabled";
 			};
 
 			npu: npu@580e0000 {
@@ -1584,6 +1630,54 @@
 				clocks = <&rcc STM32_CLOCK(AHB4, 19)>;
 				resets = <&rctl STM32_RESET(AHB4, 19)>;
 				status = "disabled";
+			};
+
+			mdf1: mdf@52025000 {
+				compatible = "st,stm32-mdf";
+				reg = <0x52025000 0x1000>;
+				clocks = <&rcc STM32_CLOCK(AHB2, 16)>;
+				clock-names = "pclk";
+				resets = <&rctl STM32_RESET(AHB2, 16)>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+				ranges;
+				status = "disabled";
+
+				filter@52025080 {
+					reg = <0x52025080 0x80>;
+					interrupts = <142 0>;
+					status = "disabled";
+				};
+
+				filter@52025100 {
+					reg = <0x52025100 0x80>;
+					interrupts = <143 0>;
+					status = "disabled";
+				};
+
+				filter@52025180 {
+					reg = <0x52025180 0x80>;
+					interrupts = <144 0>;
+					status = "disabled";
+				};
+
+				filter@52025200 {
+					reg = <0x52025200 0x80>;
+					interrupts = <145 0>;
+					status = "disabled";
+				};
+
+				filter@52025280 {
+					reg = <0x52025280 0x80>;
+					interrupts = <146 0>;
+					status = "disabled";
+				};
+
+				filter@52025300 {
+					reg = <0x52025300 0x80>;
+					interrupts = <147 0>;
+					status = "disabled";
+				};
 			};
 
 			dma2d: dma@58021000 {

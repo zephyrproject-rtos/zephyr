@@ -3,7 +3,7 @@
 
 config SOC_RK3588
 	select ARM64
-	select CPU_CORTEX_A55
+	select CPU_CORTEX_A76_A55
 	select ARM_ARCH_TIMER
 
 config SOC_PART_NUMBER

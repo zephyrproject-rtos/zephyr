@@ -63,6 +63,8 @@ static void ll_rcc_clear_reset_flags(void)
 #endif /* CONFIG_SOC_SERIES_STM32C5X */
 }
 
+/* Cortex-M4 on dual core STM32H7xx MCUs cannot access system memory */
+#if !defined(CONFIG_SOC_SERIES_STM32H7X) || !defined(CONFIG_CPU_CORTEX_M4)
 ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 {
 	struct stm32_uid dev_id;
@@ -91,6 +93,7 @@ ssize_t z_impl_hwinfo_get_device_id(uint8_t *buffer, size_t length)
 
 	return length;
 }
+#endif /* !CONFIG_SOC_SERIES_STM32H7X || !CONFIG_CPU_CORTEX_M4 */
 
 #if defined(CONFIG_SOC_SERIES_STM32WBAX) || \
 	defined(CONFIG_SOC_SERIES_STM32WBX) || \

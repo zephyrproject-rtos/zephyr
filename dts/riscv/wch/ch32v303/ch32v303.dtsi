@@ -24,6 +24,7 @@
 			compatible = "wch,usart";
 			reg = <0x40004400 0x20>;
 			clocks = <&rcc CH32V20X_V30X_CLOCK_USART2>;
+			resets = <&rctl CH32_RESET(APB1, 17)>;
 			interrupt-parent = <&pfic>;
 			interrupts = <54>;
 			status = "disabled";
@@ -33,6 +34,7 @@
 			compatible = "wch,usart";
 			reg = <0x40004800 0x20>;
 			clocks = <&rcc CH32V20X_V30X_CLOCK_USART3>;
+			resets = <&rctl CH32_RESET(APB1, 18)>;
 			interrupt-parent = <&pfic>;
 			interrupts = <55>;
 			status = "disabled";

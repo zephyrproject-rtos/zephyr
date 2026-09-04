@@ -30,7 +30,7 @@
 #include <zephyr/sys/util.h>
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/util_macro.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/toolchain.h>
 
 #include "buf_view.h"
@@ -395,8 +395,9 @@ static bool l2cap_chan_add(struct bt_conn *conn, struct bt_l2cap_chan *chan,
 	/* All dynamic channels have the destroy handler which makes sure that
 	 * the RTX work structure is properly released with a cancel sync.
 	 * The fixed signal channel is only removed when disconnected and the
-	 * disconnected handler is always called from the workqueue itself so
-	 * canceling from there should always succeed.
+	 * disconnected handler is always called from the Bluetooth workqueue,
+	 * which the RTX work also runs on, so canceling from there should
+	 * always succeed.
 	 */
 	k_work_init_delayable(&le_chan->rtx_work, l2cap_rtx_timeout);
 
@@ -538,7 +539,7 @@ static void l2cap_chan_send_req(struct bt_l2cap_chan *chan,
 	 * final expiration, when the response is received, or the physical
 	 * link is lost.
 	 */
-	k_work_reschedule(&(BT_L2CAP_LE_CHAN(chan)->rtx_work), timeout);
+	bt_work_reschedule(&(BT_L2CAP_LE_CHAN(chan)->rtx_work), timeout);
 }
 
 static int l2cap_le_conn_req(struct bt_l2cap_le_chan *ch)
@@ -582,8 +583,8 @@ static int l2cap_ecred_conn_req(struct bt_l2cap_chan **chan, int channels)
 	struct bt_l2cap_le_chan *ch;
 	int i;
 	uint8_t ident;
-	uint16_t req_psm;
-	uint16_t req_mtu;
+	__maybe_unused uint16_t req_psm;
+	__maybe_unused uint16_t req_mtu;
 
 	if (!chan || !channels) {
 		return -EINVAL;
@@ -719,11 +720,12 @@ static void raise_data_ready(struct bt_l2cap_le_chan *le_chan)
 {
 	__maybe_unused bool added;
 
-	/* This function is the only function which accesses l2cap_data_ready list that can be
-	 * called from a preemptive thread context, therefore requires a critical section to ensure
-	 * that the data ready list is not modified while we are checking and appending to it.
+	/* The l2cap_data_ready list is only ever modified under the host
+	 * lock: here (append, any thread context), in cancel_data_ready()
+	 * (remove, any thread context) and in lower_data_ready() (remove,
+	 * TX processor context, which holds the lock across the whole pass).
 	 */
-	k_sched_lock();
+	bt_dev_lock();
 
 	if (!sys_slist_find(&le_chan->chan.conn->l2cap_data_ready,
 				 &le_chan->_pdu_ready, NULL)) {
@@ -735,7 +737,7 @@ static void raise_data_ready(struct bt_l2cap_le_chan *le_chan)
 		added = false;
 	}
 
-	k_sched_unlock();
+	bt_dev_unlock();
 
 	LOG_DBG("L2CAP channel %p data ready %s", le_chan, added ? "added" : "already added");
 
@@ -745,7 +747,14 @@ static void raise_data_ready(struct bt_l2cap_le_chan *le_chan)
 static void lower_data_ready(struct bt_l2cap_le_chan *le_chan)
 {
 	struct bt_conn *conn = le_chan->chan.conn;
-	__maybe_unused sys_snode_t *s = sys_slist_get(&conn->l2cap_data_ready);
+	__maybe_unused sys_snode_t *s;
+
+	/* Only called from the TX processor, which holds the host lock
+	 * across the whole processing pass.
+	 */
+	BT_DEV_LOCK_ASSERT();
+
+	s = sys_slist_get(&conn->l2cap_data_ready);
 
 	LOG_DBG("%p", le_chan);
 
@@ -758,16 +767,16 @@ static void cancel_data_ready(struct bt_l2cap_le_chan *le_chan)
 
 	LOG_DBG("%p", le_chan);
 
-	/* Use critical section here as this function can be called from
-	 * a preemptive thread context and we need to ensure that the data ready list is not
-	 * modified while we are removing the channel from it.
+	/* Take the host lock as this function can be called from any
+	 * thread context and the data ready list must not be modified
+	 * while we are removing the channel from it (see raise_data_ready()).
 	 */
-	k_sched_lock();
+	bt_dev_lock();
 
 	sys_slist_find_and_remove(&conn->l2cap_data_ready,
 				  &le_chan->_pdu_ready);
 
-	k_sched_unlock();
+	bt_dev_unlock();
 }
 
 int bt_l2cap_send_pdu(struct bt_l2cap_le_chan *le_chan, struct net_buf *pdu,
@@ -1385,6 +1394,11 @@ static void l2cap_chan_destroy(struct bt_l2cap_chan *chan)
 	} else {
 		k_work_cancel_delayable(&le_chan->rtx_work);
 	}
+
+	/* Make sure the RX work is not left queued with a reference to a
+	 * channel object that may be freed or re-used after this call.
+	 */
+	(void)k_work_cancel(&le_chan->rx_work);
 
 	/* Remove buffers on the SDU RX queue */
 	while ((buf = k_fifo_get(&le_chan->rx_queue, K_NO_WAIT))) {
@@ -2845,7 +2859,7 @@ static void l2cap_chan_recv_queue(struct bt_l2cap_le_chan *chan,
 	}
 
 	k_fifo_put(&chan->rx_queue, buf);
-	k_work_submit(&chan->rx_work);
+	bt_work_submit(&chan->rx_work);
 }
 #endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
 
@@ -2942,8 +2956,9 @@ static void l2cap_disconnected(struct bt_l2cap_chan *chan)
 
 #if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
 	/* Cancel RTX work on signal channel.
-	 * Disconnected callback is always called from system workqueue
-	 * so this should always succeed.
+	 * Disconnected callback is always called from the Bluetooth
+	 * workqueue, which the RTX work also runs on, so this should
+	 * always succeed.
 	 */
 	(void)k_work_cancel_delayable(&le_chan->rtx_work);
 #endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */

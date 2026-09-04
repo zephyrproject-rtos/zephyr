@@ -7,7 +7,7 @@
 #include <zephyr/kernel.h>
 
 #include <zephyr/sys/printk.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <stdio.h>
 
 #include <zephyr/device.h>

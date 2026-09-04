@@ -50,6 +50,7 @@ COND_CODE_1(CONFIG_EC_HOST_CMD_HANDLER_TX_BUFFER_DEF,
 
 #ifdef CONFIG_EC_HOST_CMD_DEDICATED_THREAD
 static K_KERNEL_STACK_DEFINE(hc_stack, CONFIG_EC_HOST_CMD_HANDLER_STACK_SIZE);
+static struct k_thread hc_thread;
 #endif /* CONFIG_EC_HOST_CMD_DEDICATED_THREAD */
 
 static struct ec_host_cmd ec_host_cmd = {
@@ -464,6 +465,7 @@ FUNC_NORETURN static void ec_host_cmd_thread(void *hc_handle, void *arg2, void *
 #ifndef CONFIG_EC_HOST_CMD_DEDICATED_THREAD
 FUNC_NORETURN void ec_host_cmd_task(void)
 {
+	ec_host_cmd.thread = k_current_get();
 	ec_host_cmd_thread(&ec_host_cmd, NULL, NULL);
 }
 #endif
@@ -518,10 +520,11 @@ int ec_host_cmd_init(struct ec_host_cmd_backend *backend)
 	}
 
 #ifdef CONFIG_EC_HOST_CMD_DEDICATED_THREAD
-	k_thread_create(&hc->thread, hc_stack, CONFIG_EC_HOST_CMD_HANDLER_STACK_SIZE,
-			ec_host_cmd_thread, (void *)hc, NULL, NULL, CONFIG_EC_HOST_CMD_HANDLER_PRIO,
-			0, K_NO_WAIT);
-	k_thread_name_set(&hc->thread, "ec_host_cmd");
+	hc->thread = k_thread_create(&hc_thread, hc_stack,
+				     CONFIG_EC_HOST_CMD_HANDLER_STACK_SIZE,
+				     ec_host_cmd_thread, (void *)hc, NULL, NULL,
+				     CONFIG_EC_HOST_CMD_HANDLER_PRIO, 0, K_NO_WAIT);
+	k_thread_name_set(hc->thread, "ec_host_cmd");
 #endif /* CONFIG_EC_HOST_CMD_DEDICATED_THREAD */
 
 	return 0;

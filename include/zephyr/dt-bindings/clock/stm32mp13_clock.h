@@ -6,9 +6,9 @@
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32MP13_CLOCK_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32MP13_CLOCK_H_
 
-/** @cond INTERNAL_HIDDEN */
+#include <zephyr/dt-bindings/clock/stm32_common_clocks.h>
 
-#include "stm32_common_clocks.h"
+/** @cond INTERNAL_HIDDEN */
 
 /** System clock */
 /* defined in stm32_common_clocks.h */
@@ -27,6 +27,11 @@
 #define STM32_SRC_PLL4_P	(STM32_SRC_PLL3_R + 1)
 #define STM32_SRC_PLL4_Q	(STM32_SRC_PLL4_P + 1)
 #define STM32_SRC_PLL4_R	(STM32_SRC_PLL4_Q + 1)
+
+/** Timer group kernel clocks */
+#define STM32_SRC_TIMPCLK1	(STM32_SRC_PLL4_R + 1)
+#define STM32_SRC_TIMPCLK2	(STM32_SRC_TIMPCLK1 + 1)
+#define STM32_SRC_TIMPCLK6	(STM32_SRC_TIMPCLK2 + 1)
 
 /** Bus clocks */
 #define STM32_CLOCK_BUS_APB1    0x700

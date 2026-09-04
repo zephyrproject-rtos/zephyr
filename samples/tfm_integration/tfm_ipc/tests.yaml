@@ -49,7 +49,6 @@ tests:
       - nrf9160dk/nrf9160/ns
       - nucleo_l552ze_q/stm32l552xx/ns
       - stm32l562e_dk/stm32l562xx/ns
-      - v2m_musca_s1/musca_s1/ns
       - bl5340_dvk/nrf5340/cpuapp/ns
       - frdm_mcxn947/mcxn947/cpu0/ns
       - frdm_mcxa577/mcxa577/ns

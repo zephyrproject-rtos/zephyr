@@ -17,7 +17,7 @@
 
 #include "pcm1681.h"
 
-LOG_MODULE_REGISTER(pcm1681);
+LOG_MODULE_REGISTER(pcm1681, CONFIG_AUDIO_CODEC_LOG_LEVEL);
 
 union pcm1681_bus_spec {
 	struct i2c_dt_spec i2c;
@@ -378,7 +378,8 @@ static int pcm1681_init(const struct device *dev)
 #define PCM1681_CONFIG_SPI(inst)                                                                   \
 	.bus_spec =                                                                                \
 		{                                                                                  \
-			.spi = SPI_DT_SPEC_INST_GET(inst, SPI_OP_MODE_SLAVE | SPI_WORD_SET(8)),    \
+			.spi = SPI_DT_SPEC_INST_GET(inst,                                          \
+						    SPI_OP_MODE_PERIPHERAL | SPI_WORD_SET(8)),     \
 	},                                                                                         \
 	.bus_io = {                                                                                \
 		.is_ready = pcm1681_spi_is_ready,                                                  \

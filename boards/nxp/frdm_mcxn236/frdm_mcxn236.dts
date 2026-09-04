@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <nxp/mcx/nxp_mcxn23x.dtsi>
+#include <nxp/mcx/mcxn/nxp_mcxn23x.dtsi>
 #include "frdm_mcxn236-pinctrl.dtsi"
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
@@ -141,6 +141,14 @@
 };
 
 &gpio4 {
+	status = "okay";
+};
+
+&gpio3 {
+	status = "okay";
+};
+
+&gpio2 {
 	status = "okay";
 };
 
@@ -328,7 +336,7 @@ nxp_8080_touch_panel_i2c: &flexcomm2_lpi2c2 {
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 };
 
-&flexcomm3_lpspi3 {
+arduino_spi: &flexcomm3_lpspi3 {
 	pinctrl-0 = <&pinmux_flexcomm3_lpspi>;
 	pinctrl-names = "default";
 };
@@ -481,5 +489,13 @@ dvp_20pin_interface: &video_sdma {};
 };
 
 &otpc {
+	status = "okay";
+};
+
+&inputmux0 {
+	status = "okay";
+};
+
+&freqme0 {
 	status = "okay";
 };

@@ -40,7 +40,7 @@ static struct fido2_msg rx_enqueue_msg;
 /* Reused to minimize thread stack usage. */
 static struct fido2_msg rx_dequeue_msg;
 
-K_MSGQ_DEFINE(fido2_msgq, sizeof(struct fido2_msg), 2, 4);
+K_MSGQ_DEFINE_STATIC_TYPE(fido2_msgq, struct fido2_msg, 2);
 
 static K_THREAD_STACK_DEFINE(fido2_stack, CONFIG_FIDO2_THREAD_STACK_SIZE);
 static struct k_thread fido2_thread;
@@ -803,8 +803,16 @@ static enum fido2_status handle_client_pin(uint8_t *cbor_in, size_t cbor_in_len,
 			cp_params.key_agreement_len, cp_params.new_pin_enc,
 			cp_params.new_pin_enc_len, cp_params.pin_uv_auth_param);
 	case FIDO2_CLIENTPIN_CHANGE_PIN:
-		/* TODO */
-		return FIDO2_ERR_INVALID_SUBCOMMAND;
+		if (!cp_params.has_pin_uv_auth_protocol || !cp_params.has_pin_uv_auth_param ||
+		    !cp_params.has_new_pin_enc || !cp_params.has_pin_hash_enc ||
+		    !cp_params.has_key_agreement) {
+			return FIDO2_ERR_MISSING_PARAMETER;
+		}
+		return fido2_clientpin_cmd_change_pin(
+			cp_params.pin_uv_auth_protocol, cp_params.key_agreement,
+			cp_params.key_agreement_len, cp_params.pin_hash_enc,
+			cp_params.pin_hash_enc_len, cp_params.new_pin_enc,
+			cp_params.new_pin_enc_len, cp_params.pin_uv_auth_param);
 	case FIDO2_CLIENTPIN_GET_PIN_TOKEN: /* Backwards compatibility */
 		if (!cp_params.has_pin_uv_auth_protocol || !cp_params.has_key_agreement ||
 		    !cp_params.has_pin_hash_enc) {

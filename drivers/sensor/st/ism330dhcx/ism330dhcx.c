@@ -577,8 +577,7 @@ static inline void ism330dhcx_hum_convert(const struct device *dev, struct senso
 	rh /= (ht->x1 - ht->x0);
 
 	/* convert humidity to integer and fractional part */
-	val->val1 = rh;
-	val->val2 = rh * 1000000;
+	sensor_value_from_float(val, rh);
 }
 
 static inline void ism330dhcx_press_convert(const struct device *dev, struct sensor_value *val)
@@ -798,7 +797,7 @@ static int ism330dhcx_init(const struct device *dev)
 		.gyro_range = DT_INST_PROP(inst, gyro_range),					\
 		COND_CODE_1(DT_INST_ON_BUS(inst, spi),						\
 			    (.bus_init = ism330dhcx_spi_init,					\
-			     .spi = SPI_DT_SPEC_INST_GET(inst, SPI_OP_MODE_MASTER |		\
+			     .spi = SPI_DT_SPEC_INST_GET(inst, SPI_OP_MODE_CONTROLLER |		\
 							 SPI_MODE_CPOL | SPI_MODE_CPHA |	\
 							 SPI_WORD_SET(8)),),			\
 			    ())									\

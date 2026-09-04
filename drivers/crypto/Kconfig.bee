@@ -1,0 +1,39 @@
+# Copyright (c) 2026, Realtek Semiconductor Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config CRYPTO_BEE_AES
+	bool "Realtek Bee AES hardware accelerator"
+	default y
+	depends on DT_HAS_REALTEK_BEE_AES_ENABLED
+	help
+	  Enable the AES hardware accelerator driver for Realtek Bee family
+	  SoCs (RTL8752H, RTL87x2G). Supports AES-128 and AES-256 in ECB,
+	  CBC, and CTR modes.
+
+if CRYPTO_BEE_AES
+
+config CRYPTO_BEE_AES_SESSIONS_MAX
+	int "Maximum number of concurrent AES sessions"
+	default 4
+	range 1 32
+	help
+	  Maximum number of concurrent AES cipher sessions. Each session
+	  uses approximately 64 bytes of RAM.
+
+config CRYPTO_BEE_AES_SWAP_BUF
+	bool
+	default y if SOC_SERIES_RTL8752H
+	help
+	  Enable byte swapping before and after calling the AES hardware engine.
+	  RTL8752H requires this to match the hardware engine word order, while
+	  RTL87x2G accepts buffers in normal byte order and should leave this off.
+
+endif # CRYPTO_BEE_AES
+
+config CRYPTO_BEE_SHA256
+	bool "Realtek Bee SHA-256 hardware accelerator"
+	default y
+	depends on DT_HAS_REALTEK_BEE_SHA256_ENABLED
+	help
+	  Enable the SHA-256 hardware accelerator driver for Realtek Bee
+	  SoCs (RTL8752H, RTL87x2G). Supports one-shot SHA-256 calculation.

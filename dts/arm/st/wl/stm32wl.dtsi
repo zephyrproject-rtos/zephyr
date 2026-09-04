@@ -386,7 +386,6 @@
 			clocks = <&rcc STM32_CLOCK(APB3, 0)>;
 			st,spi-data-width = "full-4-to-16-bit";
 			status = "disabled";
-			use-subghzspi-nss;
 
 			radio@0 {
 				compatible = "st,stm32wl-subghz-radio";
@@ -537,7 +536,7 @@
 			compatible = "st,stm32-dma-v2";
 			#dma-cells = <3>;
 			reg = <0x40020000 0x400>;
-			interrupts = <11 0 12 0 13 0 14 0 15 0 16 0 17 0>;
+			interrupts = <11 0>, <12 0>, <13 0>, <14 0>, <15 0>, <16 0>, <17 0>;
 			clocks = <&rcc STM32_CLOCK(AHB1, 0)>;
 			dma-requests = <7>;
 			dma-offset = <0>;
@@ -548,7 +547,7 @@
 			compatible = "st,stm32-dma-v2";
 			#dma-cells = <3>;
 			reg = <0x40020400 0x400>;
-			interrupts = <54 0 55 0 56 0 57 0 58 0 59 0 60 0>;
+			interrupts = <54 0>, <55 0>, <56 0>, <57 0>, <58 0>, <59 0>, <60 0>;
 			clocks = <&rcc STM32_CLOCK(AHB1, 1)>;
 			dma-requests = <7>;
 			dma-offset = <7>;
@@ -570,28 +569,30 @@
 		pwr: power@58000400 {
 			compatible = "st,stm32-pwr";
 			reg = <0x58000400 0x400>; /* PWR register bank */
-			status = "disabled";
 
-			wkup-pins-nb = <3>; /* 3 system wake-up pins */
-			wkup-pins-pol;
-			wkup-pins-pupd;
+			wakeup-controller {
+				compatible = "st,stm32-pwr-wkupctrl";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
 
-			#address-cells = <1>;
-			#size-cells = <0>;
+				st,max-wkup-line-idx = <3>;
+				st,has-pwr-full-pupd;
 
-			wkup-pin@1 {
-				reg = <0x1>;
-				wkup-gpios = <&gpioa 0 STM32_PWR_WKUP_PIN_NOT_MUXED>;
-			};
+				wkup@1 {
+					reg = <0x1>;
+					wkup-gpios = <&gpioa 0 STM32_PWR_WKUP_PIN_NOT_MUXED>;
+				};
 
-			wkup-pin@2 {
-				reg = <0x2>;
-				wkup-gpios = <&gpioc 13 STM32_PWR_WKUP_PIN_NOT_MUXED>;
-			};
+				wkup@2 {
+					reg = <0x2>;
+					wkup-gpios = <&gpioc 13 STM32_PWR_WKUP_PIN_NOT_MUXED>;
+				};
 
-			wkup-pin@3 {
-				reg = <0x3>;
-				wkup-gpios = <&gpiob 3 STM32_PWR_WKUP_PIN_NOT_MUXED>;
+				wkup@3 {
+					reg = <0x3>;
+					wkup-gpios = <&gpiob 3 STM32_PWR_WKUP_PIN_NOT_MUXED>;
+				};
 			};
 		};
 

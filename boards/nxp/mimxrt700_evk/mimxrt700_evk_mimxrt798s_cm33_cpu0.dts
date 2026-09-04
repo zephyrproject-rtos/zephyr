@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <nxp/imxrt/nxp_rt7xx_cm33_cpu0.dtsi>
+#include <nxp/imxrt/imxrt7xx/nxp_rt7xx_cm33_cpu0.dtsi>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include "mimxrt700_evk-pinctrl.dtsi"
@@ -140,6 +140,14 @@
 };
 
 &edma0 {
+	status = "okay";
+};
+
+&inputmux0 {
+	status = "okay";
+};
+
+&freqme0 {
 	status = "okay";
 };
 
@@ -552,4 +560,10 @@ p3t1755dp_ard_i2c_interface: &flexcomm8_lpi2c8 {};
 
 &crc {
 	status = "okay";
+};
+
+&micfil {
+	status = "okay";
+	pinctrl-0 = <&pinmux_micfil>;
+	pinctrl-names = "default";
 };

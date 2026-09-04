@@ -60,6 +60,33 @@ config NET_L2_PPP_OPTION_MRU
 	help
 	  Enable support for LCP MRU option.
 
+config NET_L2_PPP_OPTION_PFC
+	bool "LCP Protocol-Field-Compression (PFC) option support"
+	help
+	  Enable LCP negotiation of Protocol-Field-Compression (RFC 1661,
+	  option 7). This advertises to the peer that a Protocol field
+	  compressed to a single octet, which is possible for protocol numbers
+	  below 0x0100, is acceptable, and records a matching request from the
+	  peer in the PPP context.
+
+	  This option only controls the LCP exchange. Reception does not depend
+	  on it, the receiver always accepts both the compressed and the
+	  uncompressed form. Compressing the Protocol field on transmit is not
+	  implemented.
+
+config NET_L2_PPP_OPTION_ACFC
+	bool "LCP Address-and-Control-Field-Compression (ACFC) option support"
+	help
+	  Enable LCP negotiation of Address-and-Control-Field-Compression
+	  (RFC 1661, option 8). This advertises to the peer that frames without
+	  the Address (0xFF) and Control (0x03) fields are acceptable, and
+	  records a matching request from the peer in the PPP context.
+
+	  This option only controls the LCP exchange. Reception does not depend
+	  on it, the receiver decompresses the fields as described in RFC 1662
+	  ch. 3.2 and accepts both forms. Omitting the fields on transmit is
+	  not implemented.
+
 config NET_L2_PPP_OPTION_SERVE_IP
 	bool "Serve IP address to peer"
 	help

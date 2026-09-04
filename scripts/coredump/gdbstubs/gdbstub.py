@@ -185,18 +185,39 @@ class GdbStub(abc.ABC):
 
                 size_t_size = self.elffile.get_kernel_thread_info_size_t_size()
 
-                # First, find and store the thread that _kernel considers current
+                # First, find and store the thread each CPU considers current.
+                # On SMP targets whose offsets table includes CPU_STRIDE/
+                # NUM_CPUS this is one thread per CPU; older or non-SMP
+                # targets don't have those two entries
+                # (get_kernel_thread_info_offset() returns None), so this
+                # degrades to the original single-CPU behavior.
                 k_curr_thread_offset = self.elffile.get_kernel_thread_info_offset(
                     ThreadInfoOffset.THREAD_INFO_OFFSET_K_CURR_THREAD
                 )
-                curr_thread_ptr_bytes = threads_metadata_data[
-                    k_curr_thread_offset : (k_curr_thread_offset + size_t_size)
-                ]
-                curr_thread_ptr = int.from_bytes(curr_thread_ptr_bytes, "little")
-                self.thread_ptrs.append(curr_thread_ptr)
+                cpu_stride = self.elffile.get_kernel_thread_info_offset(
+                    ThreadInfoOffset.THREAD_INFO_OFFSET_CPU_STRIDE
+                )
+                num_cpus = self.elffile.get_kernel_thread_info_offset(
+                    ThreadInfoOffset.THREAD_INFO_OFFSET_NUM_CPUS
+                )
+                if cpu_stride is None or num_cpus is None:
+                    cpu_stride = 0
+                    num_cpus = 1
 
-                thread_count = 1
-                response = b"m1"
+                curr_thread_ptrs = list()
+                for cpu in range(num_cpus):
+                    offset = k_curr_thread_offset + cpu * cpu_stride
+                    ptr_bytes = threads_metadata_data[offset : (offset + size_t_size)]
+                    ptr = int.from_bytes(ptr_bytes, "little")
+                    if ptr != 0 and ptr not in curr_thread_ptrs:
+                        curr_thread_ptrs.append(ptr)
+
+                self.thread_ptrs.extend(curr_thread_ptrs)
+
+                thread_count = len(curr_thread_ptrs)
+                response = b"m" + bytes(f'{1:x}', 'ascii')
+                for i in range(2, thread_count + 1):
+                    response += b"," + bytes(f'{i:x}', 'ascii')
 
                 # Next, find the pointer to the linked list of threads in the _kernel struct
                 k_threads_offset = self.elffile.get_kernel_thread_info_offset(
@@ -207,10 +228,10 @@ class GdbStub(abc.ABC):
                 ]
                 thread_ptr = int.from_bytes(thread_ptr_bytes, "little")
 
-                if thread_ptr != curr_thread_ptr:
+                if thread_ptr not in curr_thread_ptrs:
                     self.thread_ptrs.append(thread_ptr)
                     thread_count += 1
-                    response += b"," + bytes(str(thread_count), 'ascii')
+                    response += b"," + bytes(f'{thread_count:x}', 'ascii')
 
                 # Next walk the linked list, counting the number of threads and construct
                 # the response for qfThreadInfo along the way
@@ -228,7 +249,7 @@ class GdbStub(abc.ABC):
                             thread_ptr = None
                             continue
 
-                        if thread_ptr != curr_thread_ptr:
+                        if thread_ptr not in curr_thread_ptrs:
                             self.thread_ptrs.append(thread_ptr)
                             thread_count += 1
                             response += b"," + bytes(f'{thread_count:x}', 'ascii')
@@ -249,7 +270,10 @@ class GdbStub(abc.ABC):
                     thread_index_str += chr(pkt[n])
 
                 thread_id = int(thread_index_str, 16)
-                if len(self.thread_ptrs) > thread_id:
+                # thread_id is 1-based and indexed below as thread_id - 1, so the
+                # last valid id equals len(self.thread_ptrs); use >= to include it
+                # (a bare > dropped the final thread's name/state in info threads).
+                if len(self.thread_ptrs) >= thread_id:
                     thread_info_bytes += b'name: '
                     thread_ptr = self.thread_ptrs[thread_id - 1]
                     t_name_offset = self.elffile.get_kernel_thread_info_offset(

@@ -7,6 +7,9 @@ tests:
   drivers.rtc.build.sf32lb:
     platform_allow:
       - sf32lb52_devkit_lcd
+  drivers.rtc.build.nxp_irtc:
+    platform_allow:
+      - frdm_mcxn947/mcxn947/cpu0
   drivers.rtc.build.pcf8523:
     depends_on:
       - arduino_spi

@@ -1001,21 +1001,27 @@
 		};
 
 		mac: ethernet@40028000 {
-			compatible = "st,stm32h7-ethernet", "st,stm32-ethernet";
+			compatible = "st,stm32h7-ethernet", "st,stm32-ethernet", "snps,dwmac";
 			reg = <0x40028000 0x8000>;
 			clock-names = "stm-eth", "mac-clk-tx", "mac-clk-rx";
 			clocks = <&rcc STM32_CLOCK(AHB1, 15)>,
 				 <&rcc STM32_CLOCK(AHB1, 16)>,
 				 <&rcc STM32_CLOCK(AHB1, 17)>;
 			interrupts = <92 0>;
+			snps,multicast-filter-bins = <64>;
+			snps,perfect-filter-entries = <4>;
 			memory-regions = <&sram2>;
 			status = "disabled";
 
 			mdio: mdio {
-				compatible = "st,stm32-mdio", "snps,dwmac-mdio";
+				compatible = "snps,dwmac-mdio";
 				#address-cells = <1>;
 				#size-cells = <0>;
 				status = "disabled";
+			};
+
+			ptp_clock: ptp-clock {
+				compatible = "snps,dwmac-ptp-clock";
 			};
 		};
 
@@ -1033,13 +1039,27 @@
 			status = "disabled";
 		};
 
+		usbotg_hs: usb@40040000 {
+			compatible = "st,stm32-otghs";
+			reg = <0x40040000 0x40000>;
+			interrupts = <91 0>;
+			interrupt-names = "otghs";
+			num-bidir-endpoints = <9>;
+			ram-size = <4096>;
+			maximum-speed = "high-speed";
+			phys = <&usbphyc>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 25)>;
+			status = "disabled";
+		};
+
 		gpdma1: dma@40021000 {
 			compatible = "st,stm32u5-dma";
 			#dma-cells = <3>;
 			reg = <0x40021000 0x1000>;
 			clocks = <&rcc STM32_CLOCK(AHB1, 4)>;
-			interrupts = <39 0 40 0 41 0 42 0 43 0 44 0 45 0 46 0
-				      133 0 134 0 135 0 136 0 137 0 138 0 139 0 140 0>;
+			interrupts = <39 0>, <40 0>, <41 0>, <42 0>, <43 0>, <44 0>, <45 0>, <46 0>,
+				     <133 0>, <134 0>, <135 0>, <136 0>, <137 0>, <138 0>, <139 0>,
+				     <140 0>;
 			dma-channels = <16>;
 			dma-requests = <109>;
 			status = "disabled";
@@ -1064,22 +1084,51 @@
 			#address-cells = <1>;
 			#size-cells = <1>;
 			reg = <0x42005800 0x400>;
-			ranges = <0x0 0x42005800 0x400>;
+			ranges;
 			clocks = <&rcc STM32_CLOCK(APB2, 22)>,
 				 <&rcc STM32_SRC_PLL3_P SAI1_SEL(0)>;
+			clock-names = "sai_ck", "sai_ker_ck";
 			status = "disabled";
 
-			sai1_a: sai1a@4 {
-				reg = <0x4 0x20>;
+			sai1_a: sai1a@42005804 {
+				reg = <0x42005804 0x20>;
 				dmas = <&gpdma1 1 63 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
 				#address-cells = <1>;
 				#size-cells = <0>;
 				status = "disabled";
 			};
 
-			sai1_b: sai1b@24 {
-				reg = <0x24 0x20>;
+			sai1_b: sai1b@42005824 {
+				reg = <0x42005824 0x20>;
 				dmas = <&gpdma1 0 64 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+		};
+
+		sai2: sai2@42005c00 {
+			compatible = "st,stm32-sai";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			reg = <0x42005c00 0x400>;
+			ranges;
+			clocks = <&rcc STM32_CLOCK(APB2, 23)>,
+				 <&rcc STM32_SRC_PLL1_Q SAI2_SEL(0)>;
+			clock-names = "sai_ck", "sai_ker_ck";
+			status = "disabled";
+
+			sai2_a: sai2a@42005c04 {
+				reg = <0x42005c04 0x20>;
+				dmas = <&gpdma1 1 65 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+
+			sai2_b: sai2b@42005c24 {
+				reg = <0x42005c24 0x20>;
+				dmas = <&gpdma1 0 66 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
 				#address-cells = <1>;
 				#size-cells = <0>;
 				status = "disabled";
@@ -1116,6 +1165,16 @@
 					bus-type = <VIDEO_BUS_TYPE_PARALLEL>;
 				};
 			};
+		};
+
+		gpu2d: gpu@52014000 {
+			compatible = "st,neochrom-gpu2d";
+			reg = <0x52014000 0x1000>;
+			clocks = <&rcc STM32_CLOCK(AHB5, 20)>;
+			interrupts = <149 0>, <150 0>;
+			interrupt-names = "gpu2d", "gpu2d_er";
+			resets = <&rctl STM32_RESET(AHB5, 20)>;
+			status = "disabled";
 		};
 
 		crc: crc@58024c00 {
@@ -1156,6 +1215,16 @@
 	otgfs_phy: otgfs_phy {
 		compatible = "usb-nop-xceiv";
 		#phy-cells = <0>;
+	};
+
+	usbphyc: usbphyc {
+		compatible = "st,stm32-usbphyc";
+		#phy-cells = <0>;
+		clocks = <&rcc STM32_CLOCK(AHB1, 26)>,
+			 <&rcc STM32_SRC_HSE USBPHYC_SEL(0)>,
+			 <&rcc STM32_SRC_HSE USBREFCK_SEL(10)>;
+		clock-names = "gate", "mux", "fsel";
+		status = "disabled";
 	};
 
 	die_temp: dietemp {

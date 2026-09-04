@@ -36,6 +36,7 @@ static void setup_instance(const struct device *dev, clock_control_subsys_t subs
 	k_busy_wait(1000);
 	do {
 		err = clock_control_off(dev, subsys);
+#if defined(CONFIG_CLOCK_CONTROL_NRF)
 #if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_clock)
 		if (err == -EPERM) {
 			struct onoff_manager *mgr =
@@ -47,15 +48,26 @@ static void setup_instance(const struct device *dev, clock_control_subsys_t subs
 			}
 		}
 #endif
+#else
+#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_clock)
+		if (err == -EPERM) {
+			err = nrf_clock_control_release(dev, NULL);
+			if (err >= 0) {
+				break;
+			}
+		}
+#endif
+#endif
 	} while (clock_control_get_status(dev, subsys) !=
 			CLOCK_CONTROL_STATUS_OFF);
 
-	LOG_INF("setup done");
+	LOG_INF("setup done: %s", dev->name);
 }
 
 static void tear_down_instance(const struct device *dev,
 				clock_control_subsys_t subsys)
 {
+#if defined(CONFIG_CLOCK_CONTROL_NRF)
 #if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_clock)
 	/* Turn on LF clock using onoff service if it is disabled. */
 	const struct device *const clk = DEVICE_DT_GET_ONE(nordic_nrf_clock);
@@ -79,6 +91,30 @@ static void tear_down_instance(const struct device *dev,
 	}
 	zassert_true(err >= 0, "");
 #endif
+#else
+#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_clock_lfclk)
+	/* Turn on LF clock using onoff service if it is disabled. */
+	const struct device *const clk = DEVICE_DT_GET_ONE(nordic_nrf_clock_lfclk);
+	struct onoff_client cli;
+	int err;
+
+	zassert_true(device_is_ready(clk), "Clock dev is not ready");
+
+	if (clock_control_get_status(clk, NULL) !=
+		CLOCK_CONTROL_STATUS_OFF) {
+		return;
+	}
+
+	sys_notify_init_spinwait(&cli.notify);
+	err = nrf_clock_control_request(clk, NULL, &cli);
+	zassert_true(err >= 0, "");
+
+	while (sys_notify_fetch_result(&cli.notify, &err) < 0) {
+		/*empty*/
+	}
+	zassert_true(err >= 0, "");
+#endif
+#endif /* defined(CONFIG_CLOCK_CONTROL_NRF) */
 }
 
 static void test_with_single_instance(const struct device *dev,

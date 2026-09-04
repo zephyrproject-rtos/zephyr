@@ -107,7 +107,7 @@ static int sb_tsi_emul_set_channel(const struct emul *target, struct sensor_chan
 	int32_t millicelsius;
 	int32_t reg_value;
 
-	if (ch.chan_type != SENSOR_CHAN_AMBIENT_TEMP && ch.chan_idx != 0) {
+	if (ch.chan_type != SENSOR_CHAN_AMBIENT_TEMP || ch.chan_idx != 0) {
 		return -ENOTSUP;
 	}
 

@@ -16,6 +16,9 @@ supported:
   - counter
   - gpio
   - net
+  - netif:eth
+  - ptp_clock
+  - spi
   - uart
 testing:
   binaries:

@@ -3,17 +3,17 @@
 
 if SOC_ACP_7_0
 
-config DCACHE
+configdefault DCACHE
 	default y
 
 choice CACHE_TYPE
 	default ARCH_CACHE
 endchoice
 
-config DCACHE_LINE_SIZE
+configdefault DCACHE_LINE_SIZE
 	default 128
 
-config CACHE_MANAGEMENT
+configdefault CACHE_MANAGEMENT
 	default y
 
 config XTENSA_TIMER

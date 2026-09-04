@@ -220,7 +220,7 @@ static struct net_buf *lb_control_to_host(struct usbd_class_data *c_data,
 
 		net_buf_add_mem(buf, lb_buf, len);
 
-		LOG_WRN("Device-to-Host, wLength %u | %zu", setup->wLength, len);
+		LOG_WRN("Device-to-Host, wLength %u | %u", setup->wLength, len);
 
 		return buf;
 	}

@@ -89,7 +89,7 @@ def process_line(line, fp):
     if m:
         v = version.parse(m.groups()[0])
         v_lo = version.parse("3.0")
-        v_hi = version.parse("3.1")
+        v_hi = version.parse("3.3")
         if v < v_lo or v > v_hi:
             warn(f"gperf {v} is not tested, versions {v_lo} through {v_hi} supported")
 

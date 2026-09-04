@@ -59,6 +59,14 @@
 				reg = <0x1>;
 				#io-channel-cells = <1>;
 			};
+
+			test_rv3028: rv3028@52 {
+				compatible = "microcrystal,rv3028";
+				reg = <0x52>;
+				int-gpios = <&test_gpio 0 0>;
+				backup-switch-mode = "disabled";
+				status = "okay";
+			};
 		};
 
 		test_uart: uart@55556666 {

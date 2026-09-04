@@ -159,9 +159,29 @@ static OSPI_RegularCmdTypeDef mspi_stm32_ospi_prepare_cmd(uint8_t cfg_mode, uint
 		cmd_tmp.AddressMode = HAL_OSPI_ADDRESS_4_LINES;
 		cmd_tmp.DataMode = HAL_OSPI_DATA_4_LINES;
 		break;
+	case MSPI_IO_MODE_QUAD_1_4_4:
+		cmd_tmp.InstructionMode = HAL_OSPI_INSTRUCTION_1_LINE;
+		cmd_tmp.AddressMode = HAL_OSPI_ADDRESS_4_LINES;
+		cmd_tmp.DataMode = HAL_OSPI_DATA_4_LINES;
+		break;
+	case MSPI_IO_MODE_QUAD_1_1_4:
+		cmd_tmp.InstructionMode = HAL_OSPI_INSTRUCTION_1_LINE;
+		cmd_tmp.AddressMode = HAL_OSPI_ADDRESS_1_LINE;
+		cmd_tmp.DataMode = HAL_OSPI_DATA_4_LINES;
+		break;
 	case MSPI_IO_MODE_DUAL:
 		cmd_tmp.InstructionMode = HAL_OSPI_INSTRUCTION_2_LINES;
 		cmd_tmp.AddressMode = HAL_OSPI_ADDRESS_2_LINES;
+		cmd_tmp.DataMode = HAL_OSPI_DATA_2_LINES;
+		break;
+	case MSPI_IO_MODE_DUAL_1_2_2:
+		cmd_tmp.InstructionMode = HAL_OSPI_INSTRUCTION_1_LINE;
+		cmd_tmp.AddressMode = HAL_OSPI_ADDRESS_2_LINES;
+		cmd_tmp.DataMode = HAL_OSPI_DATA_2_LINES;
+		break;
+	case MSPI_IO_MODE_DUAL_1_1_2:
+		cmd_tmp.InstructionMode = HAL_OSPI_INSTRUCTION_1_LINE;
+		cmd_tmp.AddressMode = HAL_OSPI_ADDRESS_1_LINE;
 		cmd_tmp.DataMode = HAL_OSPI_DATA_2_LINES;
 		break;
 	default:
@@ -361,7 +381,8 @@ static int mspi_stm32_ospi_access(const struct device *dev, const struct mspi_xf
 		cmd.DataMode = HAL_OSPI_DATA_NONE;
 	}
 
-	if ((cmd.Instruction == MSPI_NOR_CMD_WREN) || (cmd.Instruction == MSPI_NOR_OCMD_WREN)) {
+	if (dev_data->ctx.xfer.addr_length == 0) {
+		/* Commands without an address phase, e.g. RDID or WREN */
 		cmd.AddressMode = HAL_OSPI_ADDRESS_NONE;
 	}
 
@@ -728,6 +749,10 @@ static int mspi_stm32_ospi_dev_config(const struct device *controller,
 	bool locked = false;
 
 	if (data->dev_id != dev_id) {
+		/* The controller lock is taken here and kept for the whole
+		 * session, until the device releases it through
+		 * mspi_get_channel_status().
+		 */
 		if (k_mutex_lock(&data->lock, K_MSEC(CONFIG_MSPI_COMPLETION_TIMEOUT_TOLERANCE))) {
 			LOG_ERR("MSPI config failed to access controller.");
 			return -EBUSY;
@@ -741,26 +766,29 @@ static int mspi_stm32_ospi_dev_config(const struct device *controller,
 		goto e_return;
 	}
 
-	if (param_mask == MSPI_DEVICE_CONFIG_NONE && !cfg->mspicfg.sw_multi_periph) {
-		/* Nothing to do but saving the device ID */
-		data->dev_id = dev_id;
-		goto e_return;
-	}
-
 	/*
 	 * The SFDP is able to change the addr_length 4bytes or 3bytes
 	 * this is reflected by the serial_cfg
 	 */
 	data->dev_id = dev_id;
+
+	if (param_mask == MSPI_DEVICE_CONFIG_NONE && !cfg->mspicfg.sw_multi_periph) {
+		return 0;
+	}
+
 	/* Go on with other parameters if supported */
 	if (mspi_stm32_ospi_dev_cfg_save(controller, param_mask, dev_cfg) != 0) {
 		LOG_ERR("failed to set device config");
 		ret = -EIO;
+		goto e_return;
 	}
+
+	return 0;
 
 e_return:
 
 	if (locked) {
+		data->dev_id = NULL;
 		k_mutex_unlock(&data->lock);
 	}
 
@@ -823,18 +851,21 @@ static int mspi_stm32_ospi_memmap_config(const struct device *controller,
 static int mspi_stm32_ospi_get_channel_status(const struct device *controller, uint8_t ch)
 {
 	struct mspi_stm32_data *dev_data = controller->data;
-	int ret = 0;
 
 	ARG_UNUSED(ch);
 
 	if (mspi_stm32_ospi_is_inp(controller) ||
 	    __HAL_OSPI_GET_FLAG(&dev_data->hmspi.ospi, HAL_OSPI_FLAG_BUSY) == SET) {
-		ret = -EBUSY;
+		return -EBUSY;
 	}
 
+	/* The controller is idle: end the session started by
+	 * mspi_dev_config() and release the controller lock.
+	 */
 	dev_data->dev_id = NULL;
+	k_mutex_unlock(&dev_data->lock);
 
-	return ret;
+	return 0;
 }
 
 static int mspi_stm32_ospi_pio_transceive(const struct device *controller,
@@ -1282,6 +1313,8 @@ static int mspi_stm32_ospi_config(const struct mspi_dt_spec *spec)
 	}
 
 	if (config->re_init) {
+		/* Force-release a session that may still hold the lock */
+		dev_data->dev_id = NULL;
 		k_mutex_unlock(&dev_data->lock);
 	}
 end:
@@ -1445,6 +1478,12 @@ static int mspi_stm32_ospi_pm_action(const struct device *dev, enum pm_device_ac
 #define MSPI_STM32_INIT(index)                                                                     \
 	BUILD_ASSERT(OSPI_INST_NUM(index) != 0,                                                    \
 		     "Unsupported OSPI instance: DTS node must be octospi1 or octospi2");          \
+                                                                                                   \
+	BUILD_ASSERT(MSPI_STM32_HAS_SUPPORTED_CHILD(index),                                        \
+		     "MSPI controller must have a child with compatible st,nor/st,psram-device");  \
+                                                                                                   \
+	MSPI_STM32_VALIDATE_MEMTYPE(MSPI_STM32_MEMTYPE_TOKEN(index));                              \
+                                                                                                   \
 	static const struct stm32_pclken pclken_##index[] = STM32_DT_INST_CLOCKS(index);           \
                                                                                                    \
 	PINCTRL_DT_INST_DEFINE(index);                                                             \
@@ -1482,6 +1521,8 @@ static int mspi_stm32_ospi_pm_action(const struct device *dev, enum pm_device_ac
 				.ChipSelectHighTime = 1,                                           \
 				.ClockMode = HAL_OSPI_CLOCK_MODE_0,                                \
 				.ChipSelectBoundary = DT_INST_PROP(index, st_csbound),             \
+				.DeviceSize = MSPI_STM32_INST_MEM_ADDR_BITS(index, 26),            \
+				.MemoryType = MSPI_STM32_HAL_MEMTYPE(index),                       \
 				.FreeRunningClock = HAL_OSPI_FREERUNCLK_DISABLE,                   \
 			},                                                                         \
 		},                                                                                 \

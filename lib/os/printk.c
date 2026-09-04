@@ -64,6 +64,21 @@ printk_hook_fn_t __printk_get_hook(void)
 	return _char_out;
 }
 
+#if defined(CONFIG_PRINTK_SYNC)
+/*
+ * Latched by printk_panic(). Plain bool, not an atomic: one way only, and
+ * a reader that misses the update just takes the lock as before.
+ */
+static bool panic_mode;
+#endif
+
+void printk_panic(void)
+{
+#if defined(CONFIG_PRINTK_SYNC)
+	panic_mode = true;
+#endif
+}
+
 struct buf_out_context {
 #ifdef CONFIG_PICOLIBC
 	FILE file;
@@ -97,6 +112,71 @@ static int char_out(int c, void *ctx_p)
 	return _char_out(c);
 }
 
+/*
+ * Format straight to the platform's character output hook, through a
+ * private unbuffered stream. Never stdout, never the logging subsystem,
+ * so no shared buffer and no lock of our own.
+ */
+static void vprintk_core(const char *fmt, va_list ap)
+{
+#ifdef CONFIG_PICOLIBC
+	FILE console = FDEV_SETUP_STREAM((int(*)(char, FILE *))char_out,
+					 NULL, NULL, _FDEV_SETUP_WRITE);
+	(void) vfprintf(&console, fmt, ap);
+#else
+	cbvprintf(char_out, NULL, fmt, ap);
+#endif
+}
+
+/*
+ * Format from user mode. The character output hook lives in kernel memory
+ * and cannot be reached from a user thread, so buffer here and hand the
+ * result to the kernel through k_str_out().
+ */
+static void vprintk_user(const char *fmt, va_list ap)
+{
+	struct buf_out_context ctx = {
+#ifdef CONFIG_PICOLIBC
+		.file = FDEV_SETUP_STREAM((int(*)(char, FILE *))buf_char_out,
+					  NULL, NULL, _FDEV_SETUP_WRITE),
+#else
+		0
+#endif
+	};
+
+#ifdef CONFIG_PICOLIBC
+	(void) vfprintf(&ctx.file, fmt, ap);
+#else
+	cbvprintf(buf_char_out, &ctx, fmt, ap);
+#endif
+	if (ctx.buf_count) {
+		buf_flush(&ctx);
+	}
+}
+
+void vprintk_unlocked(const char *fmt, va_list ap)
+{
+	if (k_is_user_context()) {
+		vprintk_user(fmt, ap);
+		return;
+	}
+
+	vprintk_core(fmt, ap);
+}
+EXPORT_SYMBOL(vprintk_unlocked);
+
+void printk_unlocked(const char *fmt, ...)
+{
+	va_list ap;
+
+	va_start(ap, fmt);
+
+	vprintk_unlocked(fmt, ap);
+
+	va_end(ap);
+}
+EXPORT_SYMBOL(printk_unlocked);
+
 void vprintk(const char *fmt, va_list ap)
 {
 	if (IS_ENABLED(CONFIG_LOG_PRINTK)) {
@@ -105,57 +185,45 @@ void vprintk(const char *fmt, va_list ap)
 	}
 
 	if (k_is_user_context()) {
-		struct buf_out_context ctx = {
-#ifdef CONFIG_PICOLIBC
-			.file = FDEV_SETUP_STREAM((int(*)(char, FILE *))buf_char_out,
-						  NULL, NULL, _FDEV_SETUP_WRITE),
-#else
-			0
-#endif
-		};
-
-#ifdef CONFIG_PICOLIBC
-		(void) vfprintf(&ctx.file, fmt, ap);
-#else
-		cbvprintf(buf_char_out, &ctx, fmt, ap);
-#endif
-		if (ctx.buf_count) {
-			buf_flush(&ctx);
-		}
+		vprintk_user(fmt, ap);
 	} else {
 		compiler_barrier();
 #ifdef CONFIG_PRINTK_SYNC
-		k_spinlock_key_t key = k_spin_lock(&lock);
-#endif
+		if (!panic_mode) {
+			k_spinlock_key_t key = k_spin_lock(&lock);
 
-#ifdef CONFIG_PICOLIBC
-		FILE console = FDEV_SETUP_STREAM((int(*)(char, FILE *))char_out,
-						 NULL, NULL, _FDEV_SETUP_WRITE);
-		(void) vfprintf(&console, fmt, ap);
+			vprintk_core(fmt, ap);
+			k_spin_unlock(&lock, key);
+		} else {
+			vprintk_core(fmt, ap);
+		}
 #else
-		cbvprintf(char_out, NULL, fmt, ap);
-#endif
-
-#ifdef CONFIG_PRINTK_SYNC
-		k_spin_unlock(&lock, key);
+		vprintk_core(fmt, ap);
 #endif
 	}
 }
 EXPORT_SYMBOL(vprintk);
 
-void z_impl_k_str_out(char *c, size_t n)
+static void str_out_chars(const char *c, size_t n)
 {
-	size_t i;
-#ifdef CONFIG_PRINTK_SYNC
-	k_spinlock_key_t key = k_spin_lock(&lock);
-#endif
-
-	for (i = 0; i < n; i++) {
+	for (size_t i = 0; i < n; i++) {
 		_char_out(c[i]);
 	}
+}
 
+void z_impl_k_str_out(char *c, size_t n)
+{
 #ifdef CONFIG_PRINTK_SYNC
-	k_spin_unlock(&lock, key);
+	if (!panic_mode) {
+		k_spinlock_key_t key = k_spin_lock(&lock);
+
+		str_out_chars(c, n);
+		k_spin_unlock(&lock, key);
+	} else {
+		str_out_chars(c, n);
+	}
+#else
+	str_out_chars(c, n);
 #endif
 }
 

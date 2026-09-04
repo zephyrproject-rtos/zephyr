@@ -278,6 +278,56 @@ def test_harness_process_test(line, fault, fail_on_fault, cap_cov, exp_stat, exp
     assert harness.recording == []
 
 
+def test_harness_process_test_fault_is_logged_with_a_prefix():
+    """A fault is emitted through the logging subsystem, so the marker is
+    surrounded by a timestamp and a module name rather than being a line of
+    its own."""
+    harness = Harness()
+    harness.status = TwisterStatus.NONE
+    harness.fail_on_fault = True
+
+    harness.process_test(
+        "[00:00:02.130,000] <err> os: >>> ZEPHYR FATAL ERROR 0: CPU exception on CPU 0"
+    )
+
+    assert harness.fault
+
+
+def test_harness_process_test_fault_after_run_passed():
+    """A fault reported once the test has already announced success still
+    fails the run."""
+    harness = Harness()
+    harness.status = TwisterStatus.NONE
+    harness.fail_on_fault = True
+
+    harness.process_test("PROJECT EXECUTION SUCCESSFUL")
+    assert harness.status == TwisterStatus.PASS
+
+    harness.process_test(
+        "[00:00:02.130,000] <err> os: >>> ZEPHYR FATAL ERROR 0: CPU exception on CPU 0"
+    )
+
+    assert harness.fault
+    assert harness.status == TwisterStatus.FAIL
+    assert harness.reason == "Fault detected while running test"
+
+
+def test_harness_process_test_fault_after_run_passed_ignored():
+    """Tests that fault on purpose opt out with ignore_faults, and keep their
+    PASS even when the fault comes last."""
+    harness = Harness()
+    harness.status = TwisterStatus.NONE
+    harness.fail_on_fault = False
+
+    harness.process_test("PROJECT EXECUTION SUCCESSFUL")
+    harness.process_test(
+        "[00:00:02.130,000] <err> os: >>> ZEPHYR FATAL ERROR 0: CPU exception on CPU 0"
+    )
+
+    assert not harness.fault
+    assert harness.status == TwisterStatus.PASS
+
+
 def test_robot_configure(tmp_path):
     # Arrange
     mock_platform = mock.Mock()
@@ -384,13 +434,12 @@ def test_robot_run_robot_test(tmp_path, caplog, exp_out, returncode, expected_st
     robot.option = option
     robot.instance = instance
     proc_mock = mock.Mock(
-        returncode=returncode, communicate=mock.Mock(return_value=(b"output", None))
+        returncode=returncode,
+        communicate=mock.Mock(return_value=(b"output", None)),
     )
-    popen_mock = mock.Mock(
-        return_value=mock.Mock(
-            __enter__=mock.Mock(return_value=proc_mock), __exit__=mock.Mock()
-        )
-    )
+    proc_mock.__enter__ = mock.Mock(return_value=proc_mock)
+    proc_mock.__exit__ = mock.Mock()
+    popen_mock = mock.Mock(return_value=proc_mock)
 
     # Act
     with mock.patch("subprocess.Popen", popen_mock) as mock.mock_popen, mock.patch(
@@ -562,16 +611,15 @@ def test_pytest__generate_parameters_for_hardware(tmp_path):
     assert pytest_test.pytest_params.flash_command == "flash_command"
 
 
-def test_pytest__update_command_with_env_dependencies():
-    cmd = ["cmd"]
+def test_pytest_get_run_env():
     pytest_test = Pytest()
-    mock.patch.object(Pytest, "PYTEST_PLUGIN_INSTALLED", False)
 
     # Act
-    result_cmd, _ = pytest_test._update_command_with_env_dependencies(cmd)
+    with mock.patch("twisterlib.harness.PYTEST_PLUGIN_INSTALLED", False):
+        env = pytest_test._get_run_env()
 
     # Assert
-    assert result_cmd == ["cmd", "-p", "twister_harness.plugin"]
+    assert "pytest-twister-harness" in env["PYTHONPATH"]
 
 
 def test_pytest_run(tmp_path, caplog):

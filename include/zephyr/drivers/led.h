@@ -53,6 +53,11 @@ struct led_info {
 };
 
 /**
+ * @def_driverbackendgroup{LED,led_interface}
+ * @{
+ */
+
+/**
  * @brief Callback API for blinking an LED
  *
  * @see led_blink() for argument descriptions.
@@ -100,7 +105,7 @@ typedef int (*led_api_off)(const struct device *dev, uint32_t led);
 /**
  * @brief Callback API for writing a strip of LED channels
  *
- * @see led_api_write_channels() for arguments descriptions.
+ * @see led_write_channels() for arguments descriptions.
  */
 typedef int (*led_api_write_channels)(const struct device *dev,
 				      uint32_t start_channel,
@@ -108,19 +113,43 @@ typedef int (*led_api_write_channels)(const struct device *dev,
 				      const uint8_t *buf);
 
 /**
- * @brief LED driver API
+ * @driver_ops{LED}
+ *
+ * @note A driver must implement at least @ref led_driver_api.set_brightness, or both
+ * @ref led_driver_api.on and @ref led_driver_api.off. The subsystem emulates each of these
+ * operations with the other(s) when it is not provided.
  */
 __subsystem struct led_driver_api {
-	/* Mandatory callbacks, either on/off or set_brightness. */
+	/**
+	 * @driver_ops_optional @copybrief led_on
+	 *
+	 * Mandatory if @ref led_driver_api.set_brightness is not implemented.
+	 */
 	led_api_on on;
+	/**
+	 * @driver_ops_optional @copybrief led_off
+	 *
+	 * Mandatory if @ref led_driver_api.set_brightness is not implemented.
+	 */
 	led_api_off off;
+	/**
+	 * @driver_ops_optional @copybrief led_set_brightness
+	 *
+	 * Mandatory if @ref led_driver_api.on and @ref led_driver_api.off are not
+	 * implemented.
+	 */
 	led_api_set_brightness set_brightness;
-	/* Optional callbacks. */
+	/** @driver_ops_optional @copybrief led_blink */
 	led_api_blink blink;
+	/** @driver_ops_optional @copybrief led_get_info */
 	led_api_get_info get_info;
+	/** @driver_ops_optional @copybrief led_set_color */
 	led_api_set_color set_color;
+	/** @driver_ops_optional @copybrief led_write_channels */
 	led_api_write_channels write_channels;
 };
+
+/** @} */
 
 /**
  * @brief Blink an LED

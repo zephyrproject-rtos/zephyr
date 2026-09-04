@@ -508,7 +508,8 @@ static int mspi_stm32_qspi_access(const struct device *dev, const struct mspi_xf
 		cmd.DataMode = QSPI_DATA_NONE;
 	}
 
-	if (cmd.Instruction == MSPI_NOR_CMD_WREN) {
+	if (dev_data->ctx.xfer.addr_length == 0) {
+		/* Commands without an address phase, e.g. RDID or WREN */
 		cmd.AddressMode = QSPI_ADDRESS_NONE;
 	}
 
@@ -961,6 +962,10 @@ static int mspi_stm32_qspi_dev_config(const struct device *controller,
 
 	/* Check if device ID has changed and lock accordingly */
 	if (data->dev_id != dev_id) {
+		/* The controller lock is taken here and kept for the whole
+		 * session, until the device releases it through
+		 * mspi_get_channel_status().
+		 */
 		if (k_mutex_lock(&data->lock, K_MSEC(CONFIG_MSPI_COMPLETION_TIMEOUT_TOLERANCE))) {
 			LOG_ERR("Failed to acquire lock for device config");
 			return -EBUSY;
@@ -974,21 +979,25 @@ static int mspi_stm32_qspi_dev_config(const struct device *controller,
 		goto e_return;
 	}
 
+	data->dev_id = dev_id;
+
 	if (param_mask == MSPI_DEVICE_CONFIG_NONE && !cfg->mspicfg.sw_multi_periph) {
 		/* Nothing to do but saving the device ID */
-		data->dev_id = dev_id;
-		goto e_return;
+		return 0;
 	}
 
-	data->dev_id = dev_id;
 	/* Validate and save device configuration */
 	ret = mspi_stm32_qspi_dev_cfg_save(controller, param_mask, dev_cfg);
 	if (ret != 0) {
 		LOG_ERR("failed to change device cfg");
+		goto e_return;
 	}
+
+	return 0;
 
 e_return:
 	if (locked) {
+		data->dev_id = NULL;
 		k_mutex_unlock(&data->lock);
 	}
 
@@ -1019,7 +1028,7 @@ static int mspi_stm32_qspi_memmap_config(const struct device *controller,
 
 	ret = pm_device_runtime_get(controller);
 	if (ret != 0) {
-		LOG_ERR("%u, pm_device_runtime_get() failed: %d", __LINE__, ret);
+		LOG_ERR_PM_DEVICE_RUNTIME_GET(controller, __LINE__);
 		return ret;
 	}
 
@@ -1039,7 +1048,7 @@ static int mspi_stm32_qspi_memmap_config(const struct device *controller,
 
 	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 	if (pm_device_runtime_put(controller)) {
-		LOG_ERR("%u, pm_device_runtime_put() failed", __LINE__);
+		LOG_ERR_PM_DEVICE_RUNTIME_PUT(controller, __LINE__);
 	}
 
 	return ret;
@@ -1058,17 +1067,20 @@ static int mspi_stm32_qspi_get_channel_status(const struct device *controller, u
 {
 	struct mspi_stm32_data *data = controller->data;
 	QSPI_HandleTypeDef *hmspi = &data->hmspi.qspi;
-	int ret = 0;
 
 	ARG_UNUSED(ch);
 
 	if (mspi_is_inp(controller) || (hmspi->Instance->SR & QUADSPI_SR_BUSY) != 0) {
-		ret = -EBUSY;
+		return -EBUSY;
 	}
 
+	/* The controller is idle: end the session started by
+	 * mspi_dev_config() and release the controller lock.
+	 */
 	data->dev_id = NULL;
+	k_mutex_unlock(&data->lock);
 
-	return ret;
+	return 0;
 }
 
 /**

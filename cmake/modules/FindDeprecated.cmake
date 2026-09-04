@@ -37,6 +37,21 @@ if("${Deprecated_FIND_COMPONENTS}" STREQUAL "")
   message(WARNING "find_package(Deprecated) missing required COMPONENTS keyword")
 endif()
 
+if("soc_vars" IN_LIST Deprecated_FIND_COMPONENTS)
+  # This code has been deprecated after Zephyr 4.4
+  list(REMOVE_ITEM Deprecated_FIND_COMPONENTS soc_vars)
+  set(SOC_NAME   ${CONFIG_SOC})
+  set(SOC_SERIES ${CONFIG_SOC_SERIES})
+  set(SOC_FAMILY ${CONFIG_SOC_FAMILY})
+  set(SOC_V2_DIR ${SOC_FULL_DIR})
+
+  # Adds a watch for these deprecated variables to emit a warning
+  variable_watch(SOC_NAME deprecated_soc_var)
+  variable_watch(SOC_SERIES deprecated_soc_var)
+  variable_watch(SOC_FAMILY deprecated_soc_var)
+  variable_watch(SOC_V2_DIR deprecated_soc_var)
+endif()
+
 if(NOT "${Deprecated_FIND_COMPONENTS}" STREQUAL "")
   message(STATUS "The following deprecated component(s) could not be found: "
     "${Deprecated_FIND_COMPONENTS}")

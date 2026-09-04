@@ -116,4 +116,4 @@ core identities and paths via the environment, for example:
    export TOOLCHAIN_VER=RI-2021.6-linux
    export ZEPHYR_TOOLCHAIN_VARIANT=xt-clang
    export XTENSA_TOOLCHAIN_PATH=$XTENSA_TOOLS_ROOT/install/tools
-   west build -b mt8186_adsp samples/hello_world
+   west build -b mt8186/mt8186/adsp samples/hello_world

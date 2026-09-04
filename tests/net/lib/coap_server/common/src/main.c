@@ -8,6 +8,8 @@
 
 #include <zephyr/ztest.h>
 #include <zephyr/net/coap_service.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/socket.h>
 
 static int coap_method1(struct coap_resource *resource, struct coap_packet *request,
 			struct net_sockaddr *addr, net_socklen_t addr_len)
@@ -337,6 +339,55 @@ ZTEST(coap_service, test_COAP_RESOURCE_DEFINE)
 				"res (%p) not equal to &resource_4 (%p)", res, &resource_4);
 		}
 	}
+}
+
+/*
+ * Regression test: a confirmable message whose retransmission fails to send
+ * (for example the network interface goes down while awaiting the ACK) must
+ * not trip an assertion in the CoAP server thread; it used to kernel-panic
+ * with ASSERTION FAIL [ret == pending->len] once zsock_sendto() returned
+ * -ENETDOWN.
+ */
+ZTEST(coap_service, test_retransmit_send_failure_no_assert)
+{
+	struct net_if *iface = net_if_get_default();
+	struct coap_transmission_parameters params = coap_get_transmission_parameters();
+	struct net_sockaddr_in6 dst = {
+		.sin6_family = NET_AF_INET6,
+		.sin6_port = net_htons(5684),
+	};
+	struct coap_packet cpkt;
+	uint8_t buf[64];
+
+	zassert_equal(zsock_inet_pton(NET_AF_INET6, "::1", &dst.sin6_addr), 1);
+
+	/* Wait for the CoAP service to start */
+	for (int i = 0; i < 100 && coap_service_is_running(&service_A) != 1; i++) {
+		k_sleep(K_MSEC(10));
+	}
+	zassert_equal(coap_service_is_running(&service_A), 1);
+
+	/* Use short retransmission timeouts so the test finishes quickly */
+	params.ack_timeout = 50;
+	params.coap_backoff_percent = 200;
+	params.max_retransmission = 2;
+
+	zassert_ok(coap_packet_init(&cpkt, buf, sizeof(buf), COAP_VERSION_1, COAP_TYPE_CON, 0,
+				    NULL, COAP_METHOD_GET, coap_next_id()));
+
+	/* Sending a confirmable packet queues it for retransmission */
+	zassert_ok(coap_service_send(&service_A, &cpkt, (struct net_sockaddr *)&dst,
+				     sizeof(dst), &params));
+
+	/* Take the interface down so the pending retransmissions fail to send */
+	zassert_ok(net_if_down(iface));
+
+	/* Let the whole retransmission schedule expire while the interface is
+	 * down; each attempt fails with -ENETDOWN in the CoAP server thread.
+	 */
+	k_sleep(K_MSEC(500));
+
+	zassert_ok(net_if_up(iface));
 }
 
 ZTEST_SUITE(coap_service, NULL, NULL, NULL, NULL, NULL);

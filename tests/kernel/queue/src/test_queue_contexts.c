@@ -654,6 +654,48 @@ ZTEST(queue_api, test_queue_alloc)
 	tqueue_alloc(&queue);
 }
 
+/**
+ * @brief Verify k_queue_remove works with alloc_append/alloc_prepend data.
+ *
+ * @details
+ * k_queue_alloc_append() and k_queue_alloc_prepend() wrap the data in an
+ * internal alloc_node before inserting it into the queue. k_queue_remove()
+ * must locate and remove such entries by comparing against the original data
+ * pointer, not the alloc_node wrapper address.
+ *
+ * @ingroup tests_kernel_queue
+ *
+ * @see k_queue_alloc_append()
+ * @see k_queue_alloc_prepend()
+ * @see k_queue_remove()
+ */
+ZTEST(queue_api, test_queue_alloc_remove)
+{
+	/* Verify both alloc append and alloc prepend entries can be removed. */
+	static qdata_t alloc_remove_data = { .data = 0x42, .allocated = false };
+	static qdata_t alloc_prepend_data = { .data = 0x43, .allocated = false };
+
+	k_queue_init(&queue);
+
+	k_thread_heap_assign(k_current_get(), &mem_pool_pass);
+
+	/* Append and remove an alloc append entry. */
+	zassert_ok(k_queue_alloc_append(&queue, &alloc_remove_data),
+		   "alloc_append failed");
+	zassert_true(k_queue_remove(&queue, &alloc_remove_data),
+		     "k_queue_remove failed after alloc_append");
+
+	/* Prepend and remove an alloc prepend entry. */
+	zassert_ok(k_queue_alloc_prepend(&queue, &alloc_prepend_data),
+		   "alloc_prepend failed");
+	zassert_true(k_queue_remove(&queue, &alloc_prepend_data),
+		     "k_queue_remove failed after alloc_prepend");
+
+	/* The queue must be empty after both removals. */
+	zassert_true(k_queue_is_empty(&queue),
+		     "Queue should be empty after removals");
+}
+
 
 /* Does nothing but read items out of the queue and verify that they
  * are non-null.  Two such threads will be created.

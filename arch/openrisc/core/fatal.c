@@ -11,6 +11,17 @@ LOG_MODULE_DECLARE(os, CONFIG_KERNEL_LOG_LEVEL);
 FUNC_NORETURN void z_openrisc_fatal_error(unsigned int reason,
 					  const struct arch_esf *esf)
 {
+	/* This handler reports through LOG_ERR() rather than
+	 * EXCEPTION_DUMP(), so it does not get the printk() switch that the
+	 * latter performs. Do it here instead, which is safe because this
+	 * function never returns: an entry that can resume must not switch,
+	 * or a recoverable fault would cost printk its locking for good.
+	 *
+	 * Moving the dumps below to EXCEPTION_DUMP(), as every other
+	 * architecture does, would make this call unnecessary.
+	 */
+	printk_panic();
+
 #ifdef CONFIG_EXCEPTION_DEBUG
 	if (esf != NULL) {
 		LOG_ERR("epcr: 0x%08x esr: 0x%08x", esf->epcr, esf->esr);

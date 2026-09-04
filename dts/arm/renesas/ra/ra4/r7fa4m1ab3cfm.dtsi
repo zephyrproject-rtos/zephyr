@@ -16,15 +16,19 @@
 	soc {
 		flash-controller@407e0000 {
 			flash-hardware-version = <3>;
+			ranges;
 			#erase-block-cells = <2>;
 
 			flash0: flash@0 {
-				compatible = "renesas,ra-nv-code-flash";
+				compatible = "renesas,ra-nv-code-flash", "soc-nv-flash";
 				reg = <0x0 DT_SIZE_K(256)>;
+				ranges = <0x0 0x0 DT_SIZE_K(256)>;
 				write-block-size = <8>;
 				erase-block-size = <2048>;
 				erase-blocks = <&flash 128 2048>;
 				programming-enable;
+				#address-cells = <1>;
+				#size-cells = <1>;
 			};
 
 			flash1: flash@40100000 {

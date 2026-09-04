@@ -8,7 +8,7 @@
 
 #include <zephyr/init.h>
 #include <zephyr/arch/cpu.h>
-#include <zephyr/sys_clock.h>
+#include <zephyr/sys/clock.h>
 #include <stdbool.h>
 #include <zephyr/tc_util.h>
 #include <zephyr/ztest.h>

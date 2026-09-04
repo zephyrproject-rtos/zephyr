@@ -41,7 +41,7 @@ static int rts_fp_wdt_setup(const struct device *dev, uint8_t options)
 {
 	uint32_t value;
 
-	if ((options & WDT_OPT_PAUSE_IN_SLEEP) || (options & WDT_OPT_PAUSE_HALTED_BY_DBG)) {
+	if (options & (WDT_OPT_PAUSE_IN_SLEEP | WDT_OPT_PAUSE_HALTED_BY_DBG)) {
 		LOG_ERR("Pause in sleep or halted by dbg is not supported");
 		return -ENOTSUP;
 	}
