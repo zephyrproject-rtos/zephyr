@@ -117,6 +117,7 @@ static enum test_case_no {
 	TEST_SERVER_ACK_VALIDATION = 20,
 	TEST_SERVER_FIN_ACK_AFTER_DATA = 21,
 	TEST_SERVER_RST_ON_CLOSED_PORT_FIN = 22,
+	TEST_ADVERTISED_RECV_WINDOW = 23,
 } test_case_no;
 
 static enum test_state t_state;
@@ -129,6 +130,7 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt);
 static void handle_client_test(net_sa_family_t af, struct tcphdr *th);
 static void handle_server_test(net_sa_family_t af, struct tcphdr *th);
 static void handle_syn_resend(void);
+static void handle_advertised_recv_window(struct tcphdr *th);
 static void handle_syn_rst_ack(net_sa_family_t af, struct tcphdr *th);
 static void handle_client_fin_wait_2_test(net_sa_family_t af, struct tcphdr *th);
 static void handle_client_fin_wait_2_failure_test(net_sa_family_t af, struct tcphdr *th);
@@ -509,6 +511,9 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 		break;
 	case TEST_CLIENT_SYN_RESEND:
 		handle_syn_resend();
+		break;
+	case TEST_ADVERTISED_RECV_WINDOW:
+		handle_advertised_recv_window(&th);
 		break;
 	case TEST_CLIENT_FIN_WAIT_2_IPV4:
 		handle_client_fin_wait_2_test(net_pkt_family(pkt), &th);
@@ -1140,6 +1145,49 @@ ZTEST(net_tcp, test_client_syn_resend)
 	zassert_true(ret < 0, "Connect on no response from peer");
 
 	/* test handler will release the sem once it receives SYN again */
+	test_sem_take(K_MSEC(500), __LINE__);
+
+	net_context_put(ctx);
+}
+
+static void handle_advertised_recv_window(struct tcphdr *th)
+{
+	test_verify_flags(th, SYN);
+
+	zassert_not_equal(net_ntohs(th_win(th)), 0, "Advertised receive window is zero");
+
+	test_sem_give();
+}
+
+/* Test case scenario IPv4
+ *   send SYN,
+ *   expect the advertised receive window to be usable.
+ *
+ * The window is derived from the buffer pool but travels in a 16 bit header
+ * field, so a pool that works out to 65536 has to be capped rather than
+ * truncated to zero.
+ */
+ZTEST(net_tcp, test_advertised_recv_window)
+{
+	struct net_context *ctx;
+	int ret;
+
+	t_state = T_SYN;
+	test_case_no = TEST_ADVERTISED_RECV_WINDOW;
+	seq = ack = 0;
+
+	ret = net_context_get(NET_AF_INET, NET_SOCK_STREAM, NET_IPPROTO_TCP, &ctx);
+	zassert_equal(ret, 0, "Failed to get net_context");
+
+	net_context_ref(ctx);
+
+	/* The peer never answers, so the connect itself is expected to fail.
+	 * All this test needs is the SYN the stack puts on the wire.
+	 */
+	ret = net_context_connect(ctx, (struct net_sockaddr *)&peer_addr_s,
+				  sizeof(struct net_sockaddr_in), NULL, K_MSEC(150), NULL);
+	zassert_true(ret < 0, "Connect on no response from peer");
+
 	test_sem_take(K_MSEC(500), __LINE__);
 
 	net_context_put(ctx);
