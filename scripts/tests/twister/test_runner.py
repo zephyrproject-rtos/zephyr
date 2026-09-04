@@ -3299,3 +3299,29 @@ def test_twisterrunner_get_cmake_filter_stages(filter, expected_result):
     result = TwisterRunner.get_cmake_filter_stages(filter)
 
     assert sorted(result) == sorted(expected_result)
+
+
+TESTDATA_21 = [
+    ([], False, False),
+    (['full'], False, False),
+    (['dts'], False, True),
+    (['kconfig'], False, False),
+    (['dts', 'kconfig'], False, True),
+    (['kconfig'], True, True),
+    (['full'], True, False),
+]
+
+@pytest.mark.parametrize(
+    'filter_stages, sysbuild, expected_result',
+    TESTDATA_21,
+    ids=['none', 'full', 'dts', 'kconfig', 'dts+kconfig',
+         'kconfig sysbuild', 'full sysbuild']
+)
+def test_twisterrunner_filter_before_configuring(
+    filter_stages,
+    sysbuild,
+    expected_result
+):
+    instance = mock.Mock(filter_stages=filter_stages, sysbuild=sysbuild)
+
+    assert TwisterRunner.filter_before_configuring(instance) == expected_result

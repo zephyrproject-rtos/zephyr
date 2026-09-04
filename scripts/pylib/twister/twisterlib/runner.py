@@ -2149,7 +2149,7 @@ class TwisterRunner:
                         processing_queue.append({"op": "report", "test": instance})
                 elif test_only and instance.run:
                     processing_queue.append({"op": "run", "test": instance})
-                elif instance.filter_stages and "full" not in instance.filter_stages:
+                elif self.filter_before_configuring(instance):
                     processing_queue.append({"op": "filter", "test": instance})
                 else:
                     cache_file = os.path.join(instance.build_dir, "CMakeCache.txt")
@@ -2234,6 +2234,23 @@ class TwisterRunner:
                 p.terminate()
             return True
         return False
+
+    @staticmethod
+    def filter_before_configuring(instance):
+        """Whether resolving a filter up front is worth what it costs.
+
+        It skips configuring the instances the filter excludes, and costs
+        the filter stages on every instance. Kconfig costs nearly as much
+        as a configuration, so it only wins on a filter that excludes four
+        instances in five. Real ones exclude far fewer. Sysbuild is the
+        exception: its filter stages cover one application, the
+        configuration they save covers every image.
+        """
+        stages = instance.filter_stages
+        if not stages or "full" in stages:
+            return False
+
+        return stages != ["kconfig"] or instance.sysbuild
 
     @staticmethod
     def get_cmake_filter_stages(filt):
