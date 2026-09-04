@@ -146,11 +146,11 @@ enum wifi_wep_key_type {
 enum wifi_eap_type {
 	/** No EPA  security. */
 	WIFI_EAP_TYPE_NONE = 0,
-	/** EPA GTC security, refer to rfc3748 chapter 5. */
+	/** EPA GTC security, refer to @rfc{3748,section-5}. */
 	WIFI_EAP_TYPE_GTC = 6,
-	/** EPA TLS security, refer to rfc5216. */
+	/** EPA TLS security, refer to @rfc{5216}. */
 	WIFI_EAP_TYPE_TLS = 13,
-	/** EPA TTLS security, refer to rfc5281. */
+	/** EPA TTLS security, refer to @rfc{5281}. */
 	WIFI_EAP_TYPE_TTLS = 21,
 	/** EPA PEAP security, refer to draft-josefsson-pppext-eap-tls-eap-06.txt. */
 	WIFI_EAP_TYPE_PEAP = 25,

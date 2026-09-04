@@ -39,7 +39,7 @@ extern "C" {
 
 /**
  * @brief List of FTP server reply codes
- * Reference RFC959 FTP Transfer Protocol
+ * Reference @rfc{959} File Transfer Protocol
  */
 enum ftp_reply_code {
 	/* 100 Series	The requested action is being initiated, expect another

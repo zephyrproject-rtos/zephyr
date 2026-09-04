@@ -21,7 +21,7 @@ enum net_ipv4_autoconf_state {
 struct net_if;
 
 /**
- * @brief Start IPv4 autoconfiguration RFC 3927: IPv4 Link Local
+ * @brief Start IPv4 autoconfiguration @rfc{3927}: IPv4 Link Local
  *
  * @details Start IPv4 IP autoconfiguration
  *

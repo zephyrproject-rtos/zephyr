@@ -791,7 +791,7 @@ __syscall int z_zsock_getaddrinfo_internal(const char *host,
 #define ZSOCK_AI_ADDRCONFIG 0x20
 /** Assume service (port) is numeric */
 #define ZSOCK_AI_NUMERICSERV 0x400
-/** Extra flags present (see RFC 5014) */
+/** Extra flags present (see @rfc{5014}) */
 #define ZSOCK_AI_EXTFLAGS 0x800
 /** @} */
 
@@ -1033,7 +1033,7 @@ int zsock_sendmsg_all(int sock, const struct net_msghdr *msg, int flags,
  */
 /* Socket options for NET_IPPROTO_UDP level */
 
-/** Enable/disable all UDP options (int boolean), these are from RFC 9868 */
+/** Enable/disable all UDP options (int boolean), these are from @rfc{9868} */
 #define ZSOCK_UDP_OPT      1
 /** Enable/disable UDP OCS (int boolean) */
 #define ZSOCK_UDP_OPT_OCS  2
@@ -1061,7 +1061,7 @@ int zsock_sendmsg_all(int sock, const struct net_msghdr *msg, int flags,
 #define ZSOCK_UDP_OPT_UENC 13
 /** Enable/disable UDP UEXP option (int boolean) */
 #define ZSOCK_UDP_OPT_UEXP 14
-/** Enable/disable DPLPMTUD over UDP options, RFC 9869 (int boolean) */
+/** Enable/disable DPLPMTUD over UDP options, @rfc{9869} (int boolean) */
 #define ZSOCK_UDP_OPT_DPLPMTUD 15
 /** Let the application echo REQ->RES itself instead of the stack (int boolean) */
 #define ZSOCK_UDP_OPT_DPLPMTUD_APP_RESPOND 16
@@ -1203,7 +1203,7 @@ int zsock_sendmsg_all(int sock, const struct net_msghdr *msg, int flags,
 
 /** Pass an IPV6_RECVPKTINFO ancillary message that contains a
  *  in6_pktinfo structure that supplies some information about the
- *  incoming packet. See RFC 3542.
+ *  incoming packet. See @rfc{3542}.
  */
 #define ZSOCK_IPV6_RECVPKTINFO 49
 
@@ -1211,14 +1211,14 @@ int zsock_sendmsg_all(int sock, const struct net_msghdr *msg, int flags,
 #define ZSOCK_IPV6_PKTINFO 50
 
 /** Pass an IPV6_RECVHOPLIMIT ancillary message that contains information
- *  about the hop limit of the incoming packet. See RFC 3542.
+ *  about the hop limit of the incoming packet. See @rfc{3542}.
  */
 #define ZSOCK_IPV6_RECVHOPLIMIT 51
 
 /** Set or receive the hoplimit value for an outgoing packet. */
 #define ZSOCK_IPV6_HOPLIMIT 52
 
-/** RFC5014: Source address selection. */
+/** @rfc{5014}: Source address selection. */
 #define ZSOCK_IPV6_ADDR_PREFERENCES   72
 
 /** Prefer temporary address as source. */

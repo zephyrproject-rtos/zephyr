@@ -51,10 +51,10 @@ enum net_dhcpv4_state {
 /**
  * @brief DHCPv4 message types
  *
- * These enumerations represent RFC2131 defined msy type codes, hence
- * they should not be renumbered.
+ * These enumerations represent the message type codes defined in
+ * @rfc{2132,section-9.6}, hence they should not be renumbered.
  *
- * Additions, removald and reorders in this definition must be reflected
+ * Additions, removals and reorders in this definition must be reflected
  * within corresponding changes to net_dhcpv4_msg_type_name.
  */
 enum net_dhcpv4_msg_type {
