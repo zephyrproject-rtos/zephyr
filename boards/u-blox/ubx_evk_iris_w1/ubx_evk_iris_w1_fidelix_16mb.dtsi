@@ -11,47 +11,47 @@
 };
 
 &ext_flash_ctrl {
+	ranges = <0x0 0x18000000 DT_SIZE_M(16)>;
 	/* Fidelix FM25Q128A - 16MB / 128Mbit */
 	size = <DT_SIZE_M(16 * 8)>;
-	ranges = <0x0 0x18000000 DT_SIZE_M(16)>;
 
 	fm25q128a: flash@0 {
 		compatible = "soc-nv-flash";
 		reg = <0x0 DT_SIZE_M(16)>;
+		ranges;
 		erase-block-size = <DT_SIZE_K(4)>;
 		write-block-size = <1>;
 
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		partitions {
+			ranges;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges;
 
 			boot_partition: partition@0 {
 				compatible = "zephyr,mapped-partition";
-				label = "mcuboot";
 				reg = <0x00000000 DT_SIZE_K(128)>;
+				label = "mcuboot";
 			};
 
 			slot0_partition: partition@20000 {
 				compatible = "zephyr,mapped-partition";
-				label = "image-0";
 				reg = <0x00020000 DT_SIZE_M(6)>;
+				label = "image-0";
 			};
 
 			slot1_partition: partition@620000 {
 				compatible = "zephyr,mapped-partition";
-				label = "image-1";
 				reg = <0x00620000 DT_SIZE_M(6)>;
+				label = "image-1";
 			};
 
 			storage_partition: partition@c20000 {
 				compatible = "zephyr,mapped-partition";
-				label = "storage";
 				reg = <0x00c20000 (DT_SIZE_M(4) - DT_SIZE_K(128))>;
+				label = "storage";
 			};
 		};
 	};
