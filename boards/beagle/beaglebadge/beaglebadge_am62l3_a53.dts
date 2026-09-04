@@ -12,8 +12,8 @@
 #include "beaglebadge_am62l3_a53-pinctrl.dtsi"
 
 / {
-	model = "BeagleBoard.org BeagleBadge";
 	compatible = "beagle,beaglebadge";
+	model = "BeagleBoard.org BeagleBadge";
 
 	chosen {
 		zephyr,console = &main_uart0;
@@ -33,8 +33,8 @@
 	};
 
 	ddr0: memory@80000000 {
-		device_type = "memory";
 		reg = <0x80000000 DT_SIZE_M(256)>;
+		device_type = "memory";
 		#address-cells = <1>;
 		#size-cells = <1>;
 
@@ -108,8 +108,8 @@
 
 		display: ssd1683fb@0 {
 			compatible = "gooddisplay,gdey042t81", "solomon,ssd1681";
-			mipi-max-frequency = <4000000>;
 			reg = <0>;
+			mipi-max-frequency = <4000000>;
 			width = <400>;
 			height = <300>;
 			busy-gpios = <&main_gpio0 39 GPIO_ACTIVE_HIGH>;

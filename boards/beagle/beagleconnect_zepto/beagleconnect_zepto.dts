@@ -13,8 +13,8 @@
 #include <dt-bindings/pinctrl/mspm0-pinctrl.h>
 
 / {
-	model = "BeagleBoard.org BeagleConnect Zepto";
 	compatible = "beagle,beagleconnect_zepto_mspm0l1117";
+	model = "BeagleBoard.org BeagleConnect Zepto";
 
 	aliases {
 		led0 = &led0;
@@ -71,9 +71,9 @@
 };
 
 &uart0 {
-	status = "okay";
 	pinctrl-names = "default";
 	pinctrl-0 = <&uart0_tx &uart0_rx>;
+	status = "okay";
 };
 
 &gpioa {

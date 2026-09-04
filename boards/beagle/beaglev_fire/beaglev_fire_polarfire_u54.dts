@@ -2,8 +2,8 @@
 #include "beaglev_fire_common.dtsi"
 
 / {
-	model = "beagle,beaglev-fire";
 	compatible = "beagle,beaglev-fire", "microchip,mpfs";
+	model = "beagle,beaglev-fire";
 
 	cpus {
 		cpu@0 {

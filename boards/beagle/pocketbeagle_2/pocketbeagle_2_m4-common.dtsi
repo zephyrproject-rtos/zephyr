@@ -27,8 +27,8 @@
 
 	cpus {
 		cpu@0 {
-			status = "okay";
 			clock-frequency = <400000000>;
+			status = "okay";
 		};
 	};
 

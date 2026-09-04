@@ -10,6 +10,6 @@
 #include "pocketbeagle_2_a53-ddr.dtsi"
 
 / {
-	model = "BeagleBoard.org PocketBeagle 2";
 	compatible = "beagle,pocketbeagle_2_am6254_a53";
+	model = "BeagleBoard.org PocketBeagle 2";
 };
