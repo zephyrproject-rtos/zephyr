@@ -136,8 +136,14 @@
 		};
 
 		usbd: usbd@40038000 {
-			compatible = "elan,elandev-usbd";
+			compatible = "elan,em32-usbd";
 			reg = <0x40038000 0x1000>;
+			clocks = <&clk_apb EM32_GATE_PCLKG_AIP>,
+				 <&clk_apb EM32_GATE_PCLKG_UDC>,
+				 <&clk_apb EM32_GATE_PCLKG_ATRIM>;
+			clock-names = "aip", "udc", "atrim";
+			interrupts = <4 0>, <5 0>, <6 0>, <7 0>, <8 0>, <9 0>;
+			interrupt-names = "setup", "suspend", "resume", "reset", "ep-in", "ep-out";
 			num-bidir-endpoints = <5>;
 			status = "disabled";
 		};
