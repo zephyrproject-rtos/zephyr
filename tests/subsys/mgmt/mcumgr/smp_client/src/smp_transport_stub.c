@@ -15,6 +15,9 @@
 static struct smp_transport smpt_test;
 static struct smp_client_transport_entry smp_client_transport;
 
+/* Transport no client is registered on */
+static struct smp_transport smpt_other;
+
 /* Stubbed functions */
 
 void smp_transport_read_hdr(const struct net_buf *nb, struct smp_hdr *dst_hdr)
@@ -48,4 +51,9 @@ void stub_smp_client_transport_register(void)
 	smp_client_transport.smpt = &smpt_test;
 	smp_client_transport.smpt_type = SMP_SERIAL_TRANSPORT;
 	smp_client_transport_register(&smp_client_transport);
+}
+
+struct smp_transport *stub_smp_other_transport_get(void)
+{
+	return &smpt_other;
 }
