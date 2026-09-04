@@ -13,6 +13,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
+#include <time.h>
 
 #include <zephyr/bluetooth/addr.h>
 #include <zephyr/bluetooth/buf.h>
@@ -24,11 +25,11 @@
 #include <zephyr/logging/log_core.h>
 #include <zephyr/logging/log_msg.h>
 #include <zephyr/logging/log_output.h>
-#include <zephyr/logging/log_ctrl.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/atomic_types.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/clock.h>
 #include <zephyr/sys/printk-hooks.h>
 #include <zephyr/sys/libc-hooks.h>
 #include <zephyr/drivers/uart.h>
@@ -315,26 +316,45 @@ static void restore_drops(const struct bt_monitor_hdr *hdr)
 	}
 }
 
-static log_timestamp_t monitor_ts_get(void)
+/* Convert microseconds to the monitor timestamp resolution */
+static uint64_t monitor_ts_from_us(uint64_t us)
 {
-	uint64_t cycle;
-
-	if (IS_ENABLED(CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER)) {
-		cycle = k_cycle_get_64();
-	} else {
-		cycle = k_cycle_get_32();
-	}
-
-	/* Convert to 1/10th of a millisecond via microseconds, rather than
-	 * dividing by hw_cycles / MONITOR_TS_FREQ: the latter truncates badly
-	 * for cycle rates that are not a multiple of MONITOR_TS_FREQ (e.g.
-	 * 32768 Hz yields a divisor of 3 instead of 3.2768, making the
-	 * timestamps run 9.2% fast).
-	 */
-	return (log_timestamp_t)(k_cyc_to_us_floor64(cycle) / (USEC_PER_MSEC / 10U));
+	return us / (USEC_PER_SEC / MONITOR_TS_FREQ);
 }
 
-static inline void encode_hdr(struct bt_monitor_hdr *hdr, log_timestamp_t timestamp,
+/* Timestamp for HCI packets, on the same time base as the logging core's
+ * clock so that log messages (converted in monitor_log_process()) and
+ * packets can be compared: the real-time clock when the logging core uses
+ * it, otherwise the system timer that the logging core's default clock
+ * also runs off. Conversions go via microseconds rather than dividing by
+ * hw_cycles / MONITOR_TS_FREQ: the latter truncates badly for cycle rates
+ * that are not a multiple of MONITOR_TS_FREQ (e.g. 32768 Hz yields a
+ * divisor of 3 instead of 3.2768, making the timestamps run 9.2% fast).
+ */
+static uint64_t monitor_ts_get(void)
+{
+	struct timespec ts;
+	uint64_t us;
+
+	if (IS_ENABLED(CONFIG_LOG_TIMESTAMP_USE_REALTIME) &&
+	    sys_clock_gettime(SYS_CLOCK_REALTIME, &ts) == 0) {
+		us = ((uint64_t)ts.tv_sec * USEC_PER_SEC) + (ts.tv_nsec / NSEC_PER_USEC);
+	} else if (IS_ENABLED(CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER)) {
+		us = k_cyc_to_us_floor64(k_cycle_get_64());
+	} else if (sys_clock_hw_cycles_per_sec() > USEC_PER_SEC) {
+		/* A 32-bit cycle counter this fast wraps within minutes, so
+		 * use the tick counter instead, like the logging core does
+		 * (it uses uptime for cycle rates above 1 MHz).
+		 */
+		us = k_ticks_to_us_floor64(k_uptime_ticks());
+	} else {
+		us = k_cyc_to_us_floor64(k_cycle_get_32());
+	}
+
+	return monitor_ts_from_us(us);
+}
+
+static inline void encode_hdr(struct bt_monitor_hdr *hdr, uint64_t timestamp,
 			      uint16_t opcode, uint16_t len)
 {
 	struct bt_monitor_ts32 *ts;
@@ -483,6 +503,7 @@ static void monitor_log_process(const struct log_backend *const backend,
 	struct bt_monitor_user_logging user_log;
 	struct monitor_log_ctx ctx;
 	struct bt_monitor_hdr hdr;
+	uint64_t ts_us;
 	static const char id[] = "bt";
 	struct bt_monitor_data frags[] = {
 		{ &hdr, 0 },    /* Length known only after encode_hdr() */
@@ -498,13 +519,23 @@ static void monitor_log_process(const struct log_backend *const backend,
 	log_output_msg_process(&monitor_log_output, &msg->log,
 			       LOG_OUTPUT_FLAG_CRLF_NONE);
 
+	/* The message is stamped by the logging core's clock, which runs on
+	 * the same time base as monitor_ts_get() but at its own rate.
+	 * Registering monitor_ts_get() as the logging timestamp source
+	 * instead is not an option: this backend is only initialized once
+	 * the logging subsystem starts up (from the logging thread by
+	 * default), so everything logged before that (boot banner, driver and
+	 * Bluetooth initialization) would already be stamped at the original
+	 * rate, with no way to tell such messages apart.
+	 */
+	ts_us = log_output_timestamp_to_us(log_msg_get_timestamp(&msg->log));
+
 	if (atomic_test_and_set_bit(&flags, BT_LOG_BUSY)) {
 		drop_add(BT_MONITOR_USER_LOGGING);
 		return;
 	}
 
-	encode_hdr(&hdr, log_msg_get_timestamp(&msg->log),
-		   BT_MONITOR_USER_LOGGING,
+	encode_hdr(&hdr, monitor_ts_from_us(ts_us), BT_MONITOR_USER_LOGGING,
 		   sizeof(user_log) + sizeof(id) + ctx.total_len + 1);
 
 	user_log.priority = monitor_priority_get(log_msg_get_level(&msg->log));
@@ -570,15 +601,9 @@ static void monitor_log_panic(const struct log_backend *const backend)
 #endif
 }
 
-static void monitor_log_init(const struct log_backend *const backend)
-{
-	log_set_timestamp_func(monitor_ts_get, MONITOR_TS_FREQ);
-}
-
 static const struct log_backend_api monitor_log_api = {
 	.process = monitor_log_process,
 	.panic = monitor_log_panic,
-	.init = monitor_log_init,
 };
 
 LOG_BACKEND_DEFINE(bt_monitor, monitor_log_api, true);
