@@ -1900,6 +1900,16 @@ MCUmgr
   :ref:`mcumgr_os_application_info` command now always reports the board target as hardware
   platform; the pre-4.3 board and board revision output is no longer available.
 
+* :c:func:`smp_client_single_response` takes the SMP transport the response arrived on as its
+  first argument, so that a response can only complete a command that was sent on that same
+  transport. Callers outside the SMP stack, which are expected to be rare, need to pass the
+  transport; an SMP client has it in ``smp_client->smpt``.
+
+  A response is also now required to carry the same management group and command id as the
+  command it completes, where a matching sequence number and operation used to be enough. A
+  client that relied on a response completing a command it does not answer will see that
+  command time out and retry instead.
+
 Random
 ======
 

@@ -181,7 +181,8 @@ static void smp_client_cmd_req_free(struct smp_client_cmd_req *cmd_req)
 	}
 }
 
-static struct smp_client_cmd_req *smp_client_response_discover(const struct smp_hdr *res_hdr)
+static struct smp_client_cmd_req *smp_client_response_discover(const struct smp_transport *smpt,
+							       const struct smp_hdr *res_hdr)
 {
 	struct smp_hdr smp_header;
 	enum mcumgr_op_t response;
@@ -192,6 +193,17 @@ static struct smp_client_cmd_req *smp_client_response_discover(const struct smp_
 	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&smp_client_data.cmd_list, cmd_req, node) {
+		/* A response is only an answer to a command that went out on the same
+		 * transport. Without this the sequence number, which is eight bits and
+		 * per client rather than per transport, is the only thing standing
+		 * between a pending command and a response injected by whoever else can
+		 * reach this device on another transport. It is also the cheapest and
+		 * most selective of the tests, so it runs before the header is parsed.
+		 */
+		if (cmd_req->smp_client->smpt != smpt) {
+			continue;
+		}
+
 		smp_read_hdr(cmd_req->nb, &smp_header);
 		if (smp_header.nh_op == MGMT_OP_READ) {
 			response = MGMT_OP_READ_RSP;
@@ -202,6 +214,19 @@ static struct smp_client_cmd_req *smp_client_response_discover(const struct smp_
 		if (smp_header.nh_seq != res_hdr->nh_seq) {
 			continue;
 		} else if (res_hdr->nh_op != response) {
+			continue;
+		}
+
+		/* The sequence number wraps every 256 commands and every group client
+		 * on a device shares this one command list, so the sequence number
+		 * alone does not tell one pending command from another. None of the
+		 * response callbacks re-check the group or the command they asked for,
+		 * which makes this the only place a mismatch can be caught. An error
+		 * response carries the request's group and id, so matching on them does
+		 * not lose it.
+		 */
+		if (smp_header.nh_group != res_hdr->nh_group ||
+		    smp_header.nh_id != res_hdr->nh_id) {
 			continue;
 		}
 
@@ -224,14 +249,15 @@ int smp_client_object_init(struct smp_client_object *smp_client, int smp_type)
 	return MGMT_ERR_EOK;
 }
 
-int smp_client_single_response(struct net_buf *nb, const struct smp_hdr *res_hdr)
+int smp_client_single_response(const struct smp_transport *smpt, struct net_buf *nb,
+			       const struct smp_hdr *res_hdr)
 {
 	struct smp_client_cmd_req *cmd_req;
 	smp_client_res_fn cb;
 	void *user_data;
 
 	/* Discover request for incoming response */
-	cmd_req = smp_client_response_discover(res_hdr);
+	cmd_req = smp_client_response_discover(smpt, res_hdr);
 	LOG_DBG("Response Header len %d, flags %d OP: %d group %d id %d seq %d", res_hdr->nh_len,
 		res_hdr->nh_flags, res_hdr->nh_op, res_hdr->nh_group, res_hdr->nh_id,
 		res_hdr->nh_seq);
