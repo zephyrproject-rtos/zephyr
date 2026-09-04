@@ -91,6 +91,13 @@ i2c0: &scb0 {
 	pinctrl-names = "default";
 	status = "okay";
 
+	sht4x@44 {
+		compatible = "sensirion,sht4x";
+		reg = <0x44>;
+		repeatability = <2>;
+		status = "okay";
+	};
+
 	bosch_bmi270: bmi270@68 {
 		compatible = "bosch,bmi270";
 		reg = <0x68>;
@@ -101,13 +108,6 @@ i2c0: &scb0 {
 	dps368: dps368@77 {
 		compatible = "infineon,dps368", "infineon,dps310";
 		reg = <0x77>;
-		status = "okay";
-	};
-
-	sht4x@44 {
-		compatible = "sensirion,sht4x";
-		reg = <0x44>;
-		repeatability = <2>;
 		status = "okay";
 	};
 };
