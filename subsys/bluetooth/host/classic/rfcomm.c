@@ -1243,6 +1243,9 @@ static void rfcomm_dlc_connected(struct bt_rfcomm_dlc *dlc)
 	err = rfcomm_send_msc(dlc, BT_RFCOMM_MSG_CMD_CR, BT_RFCOMM_DEFAULT_V24_SIG);
 	if (err == 0) {
 		atomic_set_bit(&dlc->flags, RFCOMM_FLAG_MSC_FC_CLEARED);
+	} else {
+		LOG_ERR("Failed to send msc on dlc %p (%d)", dlc, err);
+		atomic_set_bit(&dlc->flags, RFCOMM_FLAG_MSC_FC_CLEAR_REQ);
 	}
 
 	if (dlc->session->cfc == BT_RFCOMM_CFC_UNKNOWN) {
