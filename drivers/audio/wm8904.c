@@ -34,6 +34,7 @@ struct wm8904_driver_config {
 	clock_control_subsys_t mclk_name;
 	int fs_ratio;
 	int in_pga_sel;
+	int in_pga_vol;
 	enum mic_bias_select mic_bias_sel;
 };
 
@@ -64,7 +65,7 @@ static void wm8904_soft_reset(const struct device *dev);
 
 static void wm8904_configure_output(const struct device *dev);
 
-static void wm8904_configure_input(const struct device *dev);
+static void wm8904_in_pga_config(const struct device *dev);
 
 static int wm8904_protocol_config(const struct device *dev, audio_dai_type_t dai_type)
 {
@@ -259,12 +260,8 @@ static int wm8904_out_mute_config(const struct device *dev, audio_channel_t chan
 	return wm8904_out_update(dev, channel, val, mask);
 }
 
-static int wm8904_in_update(
-	const struct device *dev,
-	audio_channel_t channel,
-	uint16_t mask,
-	uint16_t val
-)
+static int wm8904_in_pga_update_channel(const struct device *dev, audio_channel_t channel,
+					uint16_t mask, uint16_t val)
 {
 	switch (channel) {
 	case AUDIO_CHANNEL_FRONT_LEFT:
@@ -285,20 +282,49 @@ static int wm8904_in_update(
 	}
 }
 
-static int wm8904_in_volume_config(const struct device *dev, audio_channel_t channel, int volume)
+static int wm8904_in_pga_vol_config(const struct device *dev, int volume)
 {
-	const uint16_t val = WM8904_REGVAL_IN_VOL(0, volume);
-	const uint16_t mask = WM8904_REGMASK_IN_VOLUME;
+	const uint16_t val = WM8904_REGVAL_IN_PGA_VOL(0, volume);
+	const uint16_t mask = WM8904_REGMASK_IN_PGA_VOLUME;
 
-	return wm8904_in_update(dev, channel, mask, val);
+	return wm8904_in_pga_update_channel(dev, AUDIO_CHANNEL_ALL, mask, val);
 }
 
-static int wm8904_in_mute_config(const struct device *dev, audio_channel_t channel, bool mute)
+static int wm8904_in_pga_mute_channel_config(const struct device *dev, audio_channel_t channel,
+					     bool mute)
 {
-	const uint16_t val = WM8904_REGVAL_IN_VOL(mute, 0);
-	const uint16_t mask = WM8904_REGMASK_IN_MUTE;
+	const uint16_t val = WM8904_REGVAL_IN_PGA_VOL(mute, 0);
+	const uint16_t mask = WM8904_REGMASK_IN_PGA_MUTE;
 
-	return wm8904_in_update(dev, channel, mask, val);
+	return wm8904_in_pga_update_channel(dev, channel, mask, val);
+}
+
+static int wm8904_in_volume_config(const struct device *dev, audio_channel_t channel, int volume)
+{
+	const uint16_t mask = WM8904_REGMASK_IN_VOL | WM8904_REGMASK_IN_VU;
+
+	switch (channel) {
+	case AUDIO_CHANNEL_FRONT_LEFT:
+		wm8904_update_reg(dev, WM8904_REG_ADC_DIGITAL_VOLUME_LEFT, mask,
+				  WM8904_REGVAL_IN_VOL(1, volume));
+		return 0;
+
+	case AUDIO_CHANNEL_FRONT_RIGHT:
+		wm8904_update_reg(dev, WM8904_REG_ADC_DIGITAL_VOLUME_RIGHT, mask,
+				  WM8904_REGVAL_IN_VOL(1, volume));
+		return 0;
+
+	case AUDIO_CHANNEL_ALL:
+		wm8904_update_reg(dev, WM8904_REG_ADC_DIGITAL_VOLUME_LEFT, mask,
+				  WM8904_REGVAL_IN_VOL(0, volume));
+		wm8904_update_reg(dev, WM8904_REG_ADC_DIGITAL_VOLUME_RIGHT, mask,
+				  WM8904_REGVAL_IN_VOL(1, volume));
+
+		return 0;
+
+	default:
+		return -EINVAL;
+	}
 }
 
 static int wm8904_route_input(const struct device *dev, audio_channel_t channel, uint32_t input)
@@ -569,12 +595,12 @@ static int wm8904_configure(const struct device *dev, struct audio_codec_cfg *cf
 		break;
 
 	case AUDIO_ROUTE_CAPTURE:
-		wm8904_configure_input(dev);
+		wm8904_in_pga_config(dev);
 		break;
 
 	case AUDIO_ROUTE_PLAYBACK_CAPTURE:
 		wm8904_configure_output(dev);
-		wm8904_configure_input(dev);
+		wm8904_in_pga_config(dev);
 		break;
 
 	default:
@@ -648,7 +674,7 @@ static int wm8904_set_property(const struct device *dev, audio_property_t proper
 		return wm8904_in_volume_config(dev, channel, val.vol);
 
 	case AUDIO_PROPERTY_INPUT_MUTE:
-		return wm8904_in_mute_config(dev, channel, val.mute);
+		return wm8904_in_pga_mute_channel_config(dev, channel, val.mute);
 
 	case AUDIO_PROPERTY_EQ_GAIN: {
 		struct audio_codec_eq_cfg *eq = &val.eq;
@@ -749,15 +775,15 @@ static void wm8904_configure_output(const struct device *dev)
 	wm8904_apply_properties(dev);
 }
 
-static void wm8904_configure_input(const struct device *dev)
+static void wm8904_in_pga_config(const struct device *dev)
 {
 	const struct wm8904_driver_config *const dev_cfg = DEV_CFG(dev);
 
 	wm8904_route_input(dev, AUDIO_CHANNEL_FRONT_LEFT, dev_cfg->in_pga_sel);
 	wm8904_route_input(dev, AUDIO_CHANNEL_FRONT_RIGHT, dev_cfg->in_pga_sel);
 
-	wm8904_in_volume_config(dev, AUDIO_CHANNEL_ALL, WM8904_INPUT_VOLUME_DEFAULT);
-	wm8904_in_mute_config(dev, AUDIO_CHANNEL_ALL, false);
+	wm8904_in_pga_vol_config(dev, dev_cfg->in_pga_vol);
+	wm8904_in_pga_mute_channel_config(dev, AUDIO_CHANNEL_ALL, false);
 }
 
 static DEVICE_API(audio_codec, wm8904_driver_api) = {
@@ -782,6 +808,7 @@ static DEVICE_API(audio_codec, wm8904_driver_api) = {
 			(NULL)),                                                                   \
 		.fs_ratio = DT_INST_PROP_OR(n, fs_ratio, 0),                                       \
 		.in_pga_sel = DT_INST_PROP_OR(n, input_pga_select, 2),                             \
+		.in_pga_vol = DT_INST_PROP_OR(n, input_pga_volume, 5),                             \
 		.mic_bias_sel = CONCAT(MIC_BIAS_,                                                  \
 			DT_INST_STRING_UPPER_TOKEN_OR(n, wolfson_mic_bias_voltage, DISABLED))};    \
                                                                                                    \
