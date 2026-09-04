@@ -550,12 +550,14 @@ config COMPILER_WARNINGS_AS_ERRORS
 	  Turn on "warning as error" toolchain flags
 
 config DEPRECATION_TEST
-	bool "Indicate test for deprecated feature"
+	bool "Indicate test for deprecated feature [DEPRECATED]"
+	select DEPRECATED
 	help
 	  This option is selected by tests which check functionality of
 	  deprecated features. It ensures that COMPILER_WARNINGS_AS_ERRORS
 	  is not selected as that would generate errors when the deprecated
-	  features are used.
+	  features are used. This Kconfig is deprecated, set
+	  ``CONFIG_WARN_DEPRECATED`` to ``n`` instead.
 
 config COMPILER_SAVE_TEMPS
 	bool "Save temporary object files"
@@ -1050,9 +1052,9 @@ config DEPRECATED
 	  https://docs.zephyrproject.org/latest/develop/api/api_lifecycle.html#deprecated
 
 config WARN_DEPRECATED
-	bool
+	bool "Warn on deprecated usage"
 	default y
-	prompt "Warn on deprecated usage"
+	depends on !DEPRECATION_TEST
 	help
 	  Print a warning when the Kconfig tree is parsed if any deprecated
 	  features are enabled, or at compile time, when deprecated macros or
