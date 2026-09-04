@@ -24,9 +24,9 @@
 	};
 
 	reserved-memory {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		ramfb_mem: framebuffer@8fc00000 {
 			reg = <0x8fc00000 0x00400000>; /* 4 MiB */

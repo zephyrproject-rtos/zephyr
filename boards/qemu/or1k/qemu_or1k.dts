@@ -5,8 +5,8 @@
 #include "skeleton.dtsi"
 
 / {
-	model = "QEMU OpenRISC 1000 virt";
 	compatible = "opencores,or1ksim";
+	model = "QEMU OpenRISC 1000 virt";
 	interrupt-parent = <&pic>;
 
 	chosen {
@@ -20,23 +20,23 @@
 		#size-cells = <0>;
 
 		cpu@0 {
-			device_type = "cpu";
 			compatible = "opencores,or1200-rtlsvn481";
 			reg = <0>;
+			device_type = "cpu";
 			clock-frequency = <20000000>;
 
 			pic: interrupt-controller {
-				#interrupt-cells = <1>;
 				compatible = "opencores,or1k-pic-level";
+				#interrupt-cells = <1>;
 				interrupt-controller;
 			};
 		};
 	};
 
 	sram0: memory@0 {
-		device_type = "memory";
 		compatible = "mmio-sram";
 		reg = <0x00000000 0x08000000>;
+		device_type = "memory";
 	};
 
 	uart0: serial@90000000 {

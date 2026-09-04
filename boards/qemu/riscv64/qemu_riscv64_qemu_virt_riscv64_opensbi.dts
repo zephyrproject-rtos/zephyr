@@ -27,8 +27,8 @@
 	 * QEMU virt machine provides (0x90000000).
 	 */
 	sram: memory@80200000 {
-		device_type = "memory";
 		reg = <0x80200000 0x0fe00000>;
+		device_type = "memory";
 	};
 };
 

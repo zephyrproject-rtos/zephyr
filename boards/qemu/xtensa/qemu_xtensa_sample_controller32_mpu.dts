@@ -9,8 +9,8 @@
 #include "sample_controller32.dtsi"
 
 / {
-	model = "qemu_xtensa_mpu";
 	compatible = "cdns,xtensa-sample-controller32";
+	model = "qemu_xtensa_mpu";
 
 	chosen {
 		zephyr,sram = &sram0;
