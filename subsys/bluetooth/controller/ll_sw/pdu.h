@@ -271,7 +271,7 @@
 
 /* Advertising Data Types in ACAD */
 #define PDU_ADV_DATA_TYPE_CHANNEL_MAP_UPDATE_IND 0x28
-
+#define PDU_ADV_DATA_TYPE_PAWR_TIMING_INFO       0x32
 /*
  * Macros to return correct Data Channel PDU time
  * Note: formula is valid for 1M, 2M and Coded S8
@@ -548,6 +548,8 @@ enum pdu_adv_type {
 	PDU_ADV_TYPE_AUX_SCAN_RSP = PDU_ADV_TYPE_EXT_IND,
 	PDU_ADV_TYPE_AUX_SYNC_IND = PDU_ADV_TYPE_EXT_IND,
 	PDU_ADV_TYPE_AUX_CHAIN_IND = PDU_ADV_TYPE_EXT_IND,
+	PDU_ADV_TYPE_AUX_SYNC_SUBEVENT_IND = PDU_ADV_TYPE_EXT_IND,
+	PDU_ADV_TYPE_AUX_SYNC_SUBEVENT_RSP = PDU_ADV_TYPE_EXT_IND,
 	PDU_ADV_TYPE_AUX_CONNECT_RSP = 0x08,
 } __packed;
 
@@ -1252,6 +1254,13 @@ struct pdu_big_info {
 #define PDU_BIG_INFO_MAX_SDU_SET(bi, val) \
 	util_set_bits(&(bi)->sdu_packed[2], 4, 12, val)
 
+struct pdu_adv_pawr_timing_info {
+	uint8_t  rsp_aa[4];
+	uint8_t  num_subevents;
+	uint8_t  subevent_interval;
+	uint8_t  rsp_slot_delay;
+	uint8_t  rsp_slot_spacing;
+} __packed;
 struct pdu_dtm {
 #ifdef CONFIG_LITTLE_ENDIAN
 	uint8_t type:4;
