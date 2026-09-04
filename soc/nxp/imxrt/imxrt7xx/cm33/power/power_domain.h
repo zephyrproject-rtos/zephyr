@@ -19,12 +19,14 @@ struct power_domain;
 struct power_mode_desc;
 
 /*
- * Which PDSLEEPCFG0 mode bit a low power mode asserts. The bits are mutually
+ * Which PDSLEEPCFG0 mode bit a low power mode asserts. The four are mutually
  * exclusive in hardware, so they are one field rather than independent flags.
  */
 enum low_power_mode {
 	LP_DEEP_SLEEP = 0,	/* no mode bit */
 	LP_DSR,			/* FDSR */
+	LP_DPD,			/* DPD */
+	LP_FDPD,		/* FDPD */
 };
 
 /*
@@ -61,9 +63,9 @@ struct power_domain {
 	 * wake-up event (RM 31.3.3: "the power domain containing the controlling
 	 * SLEEPCON instance must remain powered ... VDD2_COM must be powered to
 	 * allow SLEEPCON0 to wake VDD2_COMP"). power_keepalive_collect() adds it to
-	 * every mode, so no mode has to remember to. PWR_RES_NONE when the rail is
-	 * not one of this driver's resources -- SLEEPCON1 sits in VDD1_SENSE, which
-	 * no PDSLEEPCFG0 field of PMC1 controls.
+	 * every mode that returns, so no mode has to remember to. PWR_RES_NONE when
+	 * the rail is not one of this driver's resources -- SLEEPCON1 sits in
+	 * VDD1_SENSE, which no PDSLEEPCFG0 field of PMC1 controls.
 	 */
 	enum power_resource res_sleepcon_rail;
 
@@ -167,9 +169,23 @@ struct power_mode_desc {
 };
 
 /*
+ * DPD and FDPD exit through a cold boot; every other mode resumes after WFI.
+ *
+ * Two things follow from returning, and neither has a mode of its own: the arch
+ * hooks have CPU state worth saving, and the SLEEPCON has to stay powered to see
+ * the wake-up event. A mode that did one without the other would either resume on
+ * clobbered state or hold a rail up for a wake-up that never comes.
+ */
+static inline bool power_mode_returns(const struct power_mode_desc *mode)
+{
+	return mode->low_power_mode < LP_DPD;
+}
+
+/*
  * Build the resolved request for (domain, mode): the mode's compile-time base,
- * plus the SLEEPCON rail, closed over res_deps[]. This is the single seam where
- * device runtime PM will later fold in per-device retention requirements.
+ * plus the SLEEPCON rail when the mode returns, closed over res_deps[]. This is
+ * the single seam where device runtime PM will later fold in per-device retention
+ * requirements.
  */
 struct power_request power_keepalive_collect(const struct power_domain *dom,
 					     const struct power_mode_desc *mode);
