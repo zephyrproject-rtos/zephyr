@@ -14,8 +14,8 @@
 	status = "okay";
 
 	adafruit_max17048: max17048@36 {
-		status = "okay";
 		compatible = "maxim,max17048";
 		reg = <0x36>;
+		status = "okay";
 	};
 };

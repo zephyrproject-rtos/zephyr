@@ -14,8 +14,8 @@
 	status = "okay";
 
 	mpu6886_m5stack_core2_ext: mbus_mpu6886@68 {
-		status = "okay";
 		compatible = "invensense,mpu6050";
 		reg = <0x68>;
+		status = "okay";
 	};
 };

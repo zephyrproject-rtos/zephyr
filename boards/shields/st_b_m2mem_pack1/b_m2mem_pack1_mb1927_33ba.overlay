@@ -15,7 +15,6 @@
 		compatible = "mxicy,mx25u", "jedec,nor";
 		reg = <0>;
 		size = <DT_SIZE_M(512)>; /* 512 Mbits */
-		status = "okay";
 
 		mspi-max-frequency = <DT_FREQ_M(50)>;
 		mspi-io-mode = "MSPI_IO_MODE_OCTAL";
@@ -29,6 +28,7 @@
 		jedec-id = [c2 85 3a];
 
 		reset-gpios = <&m2mem_ldo_en M2MEM_CONNECTOR_GPIO_LDO_EN GPIO_ACTIVE_LOW>;
+		status = "okay";
 
 		partitions {
 			compatible = "fixed-partitions";
@@ -36,8 +36,8 @@
 			#size-cells = <1>;
 
 			m2mem_flash0: partition@0 {
-				label = "storage";
 				reg = <0x0 DT_SIZE_M(64)>;
+				label = "storage";
 			};
 		};
 	};

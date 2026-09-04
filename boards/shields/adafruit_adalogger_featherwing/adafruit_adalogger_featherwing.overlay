@@ -12,8 +12,8 @@
 };
 
 &feather_spi {
-	status = "okay";
 	cs-gpios = <&feather_header 17 GPIO_ACTIVE_LOW>; /* D10 */
+	status = "okay";
 
 	sdhc0_adafruit_adalogger_featherwing: sdhc@0 {
 		compatible = "zephyr,sdhc-spi-slot";

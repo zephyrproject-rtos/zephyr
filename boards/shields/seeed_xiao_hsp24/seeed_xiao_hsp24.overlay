@@ -12,8 +12,8 @@
 };
 
 &xiao_serial {
-	status = "okay";
 	current-speed = <256000>;
+	status = "okay";
 
 	seeed_xiao_hsp24: hsp24 {
 		compatible = "iclegend,s3km1110";
