@@ -2137,8 +2137,7 @@ class TwisterRunner:
                 instance.filter_stages = []
                 if instance.testsuite.filter:
                     instance.filter_stages = self.get_cmake_filter_stages(
-                        instance.testsuite.filter,
-                        expr_parser.reserved.keys()
+                        instance.testsuite.filter
                     )
 
                 if not instance.testsuite.build:
@@ -2237,39 +2236,27 @@ class TwisterRunner:
         return False
 
     @staticmethod
-    def get_cmake_filter_stages(filt, logic_keys):
-        """Analyze filter expressions from test yaml
-        and decide if dts and/or kconfig based filtering will be needed.
+    def get_cmake_filter_stages(filt):
+        """Decide which CMake stages a filter expression needs.
+
+        A 'dt_' function needs the 'dts' stage, a CONFIG symbol needs
+        'kconfig'. Anything else - a CMake cache entry, ARCH, PLATFORM, an
+        environment variable - is only known once a build is configured.
+        That is what "full" asks for.
         """
-        dts_required = False
-        kconfig_required = False
-        full_required = False
-        filter_stages = []
-
-        # Compress args in expressions like "function('x', 'y')"
-        # so they are not split when splitting by whitespaces
-        filt = filt.replace(", ", ",")
-        # Remove logic words
-        for k in logic_keys:
-            filt = filt.replace(f"{k} ", "")
-        # Remove brackets
-        filt = filt.replace("(", "")
-        filt = filt.replace(")", "")
-        # Splite by whitespaces
-        filt = filt.split()
-        for expression in filt:
-            if expression.startswith("dt_"):
-                dts_required = True
-            elif expression.startswith("CONFIG"):
-                kconfig_required = True
-            else:
-                full_required = True
-
-        if full_required:
+        try:
+            symbols = expr_parser.symbols(filt)
+        except SyntaxError:
+            # Let the filter evaluation itself report what is wrong with it.
             return ["full"]
-        if dts_required:
+
+        if any(not s.startswith(("dt_", "CONFIG")) for s in symbols):
+            return ["full"]
+
+        filter_stages = []
+        if any(s.startswith("dt_") for s in symbols):
             filter_stages.append("dts")
-        if kconfig_required:
+        if any(s.startswith("CONFIG") for s in symbols):
             filter_stages.append("kconfig")
 
         return filter_stages
