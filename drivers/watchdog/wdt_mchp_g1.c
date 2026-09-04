@@ -122,6 +122,7 @@ static int wdt_enable(wdt_registers_t *regs, bool enable)
 	return ret;
 }
 
+#if defined(WDT_CTRLA_RUNSTDBY_Msk)
 static inline void wdt_runstandby_enable(wdt_registers_t *regs)
 {
 	uint32_t retry_count = 0;
@@ -135,6 +136,7 @@ static inline void wdt_runstandby_enable(wdt_registers_t *regs)
 		}
 	}
 }
+#endif /* WDT_CTRLA_RUNSTDBY_Msk */
 
 /*
  * Function to get the period index for a given timeout value.
@@ -556,10 +558,11 @@ static int wdt_mchp_init(const struct device *wdt_dev)
 	mchp_wdt_data->installed_timeout_cnt = 0;
 	mchp_wdt_cfg->irq_config_func(wdt_dev);
 
+#if defined(WDT_CTRLA_RUNSTDBY_Msk)
 	if (mchp_wdt_cfg->run_in_standby) {
 		wdt_runstandby_enable(mchp_wdt_cfg->regs);
 	}
-
+#endif /* WDT_CTRLA_RUNSTDBY_Msk */
 	return 0;
 }
 
