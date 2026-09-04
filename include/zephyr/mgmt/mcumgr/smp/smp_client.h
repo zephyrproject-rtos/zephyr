@@ -92,13 +92,18 @@ typedef int (*smp_client_res_fn)(struct net_buf *nb, void *user_data);
 /**
  * @brief SMP client response handler.
  *
- * @param nb response net_buf
- * @param res_hdr Parsed SMP header
+ * A response only completes a pending command that was sent on @p smpt and has the
+ * same group and command id.
  *
- * @return 0 on success.
- * @return @ref mcumgr_err_t code on failure.
+ * @param smpt SMP transport the response was received on.
+ * @param nb Response net_buf.
+ * @param res_hdr Parsed SMP header, in host byte order.
+ *
+ * @retval MGMT_ERR_EOK The response completed a pending command.
+ * @retval MGMT_ERR_ENOENT No pending command with a callback matches the response.
  */
-int smp_client_single_response(struct net_buf *nb, const struct smp_hdr *res_hdr);
+int smp_client_single_response(const struct smp_transport *smpt, struct net_buf *nb,
+			       const struct smp_hdr *res_hdr);
 
 /**
  * @brief Allocate buffer and initialize with SMP header.
