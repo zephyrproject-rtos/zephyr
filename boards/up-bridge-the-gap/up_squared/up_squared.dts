@@ -13,8 +13,8 @@
 #include <intel/apollo_lake.dtsi>
 
 / {
-	model = "up_squared";
 	compatible = "aaeon,up_squared";
+	model = "up_squared";
 
 	aliases {
 		i2c-0 = &i2c0;
@@ -35,17 +35,17 @@
 		#size-cells = <0>;
 
 		cpu@0 {
-			device_type = "cpu";
 			compatible = "intel,apollo-lake", "intel,x86_64";
-			d-cache-line-size = <64>;
 			reg = <0>;
+			device_type = "cpu";
+			d-cache-line-size = <64>;
 		};
 
 		cpu@1 {
-			device_type = "cpu";
 			compatible = "intel,apollo-lake", "intel,x86_64";
-			d-cache-line-size = <64>;
 			reg = <1>;
+			device_type = "cpu";
+			d-cache-line-size = <64>;
 		};
 	};
 };
