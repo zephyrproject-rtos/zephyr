@@ -16,6 +16,7 @@ extern "C" {
 
 void smp_transport_read_hdr(const struct net_buf *nb, struct smp_hdr *dst_hdr);
 void stub_smp_client_transport_register(void);
+struct smp_transport *stub_smp_other_transport_get(void);
 
 #ifdef __cplusplus
 }
