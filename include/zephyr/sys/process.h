@@ -197,6 +197,22 @@ __syscall int sys_exec_load(k_pid_t child, const char *path);
 __syscall int sys_exec_start(k_thread_entry_t entry, char *const *argv, char *const *envp);
 
 /**
+ * @brief The calling process's private C library area
+ *
+ * An image process loaded with @kconfig{CONFIG_SYS_PROCESS_STATE_AREA} set
+ * owns a writable area of that size inside its image's block, for the C
+ * library's per-process state: the malloc arena and the standard streams.
+ * The area is zeroed at load; the C library lays it out and initializes it
+ * on first use.
+ *
+ * @param area receives the area's start
+ * @param size receives its size, in bytes
+ * @retval 0 on success
+ * @retval -ENOENT if the calling process shares the boot image's C library state
+ */
+__syscall int sys_process_state_area(void **area, size_t *size);
+
+/**
  * @}
  */
 

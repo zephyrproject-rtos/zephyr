@@ -66,6 +66,16 @@ config SYS_PROCESS_EXEC
 	  child's memory domain and the extension is unloaded when the process
 	  is reaped.
 
+config SYS_PROCESS_STATE_AREA
+	int "Per-process state area of an image process, in bytes"
+	depends on SYS_PROCESS_EXEC && USERSPACE
+	default 0
+	help
+	  Size of the writable area appended to a user-mode image process's
+	  RW block for the C library's per-process state: its malloc arena
+	  and standard streams. 0 leaves image processes sharing the boot
+	  image's C library state.
+
 config SYS_PROCESS_EXEC_PATH_MAX
 	int "Maximum image path length for sys_exec_load()"
 	depends on SYS_PROCESS_EXEC

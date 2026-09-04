@@ -4,6 +4,7 @@ zephyr_system_include_directories(include)
 
 zephyr_library()
 zephyr_library_property(ALLOW_EMPTY TRUE)
+zephyr_library_sources(source/process.c)
 zephyr_library_sources_ifdef(CONFIG_COMMON_LIBC_ABORT source/stdlib/abort.c)
 zephyr_library_sources_ifdef(CONFIG_COMMON_LIBC_ASCTIME source/time/asctime.c)
 zephyr_library_sources_ifdef(CONFIG_COMMON_LIBC_GMTIME_R source/time/gmtime_r.c)

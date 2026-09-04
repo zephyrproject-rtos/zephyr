@@ -106,6 +106,15 @@ extern struct k_mem_partition z_libc_partition;
 /* C library memory partitions */
 #define Z_LIBC_DATA K_APP_DMEM(z_libc_partition)
 
+/**
+ * @brief An image process is about to enter its main()
+ *
+ * Called by the process leader trampoline with the vectors the process was
+ * entered with, before main(); records what the C library's per-process
+ * state needs of them. A no-op without per-process C library state.
+ */
+void z_process_state_start(int argc, char **argv, char **envp);
+
 #ifdef __cplusplus
 }
 #endif

@@ -310,6 +310,10 @@ struct k_process {
 	void *image;
 	/** Extension loaded for a pending exec of the leader (system layer), or NULL */
 	void *image_next;
+	/** The process's private per-process state area (system layer), NULL when shared */
+	void *state_area;
+	/** Size of the private per-process state area */
+	size_t state_area_size;
 #endif /* CONFIG_SYS_PROCESS_EXEC */
 	/** @endcond */
 };

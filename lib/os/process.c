@@ -1320,6 +1320,7 @@ static void process_leader_entry(void *p1, void *p2, void *p3)
 #ifdef CONFIG_SYS_PROCESS_EXEC
 	if (start.main != NULL) {
 		/* the image ABI: a normal return from main() is exit(status) */
+		z_process_state_start(argc, argv, &argv[argc + 1]);
 		exit(start.main(argc, argv, &argv[argc + 1]));
 	}
 #endif /* CONFIG_SYS_PROCESS_EXEC */
@@ -1330,17 +1331,18 @@ static void process_leader_entry(void *p1, void *p2, void *p3)
 /*
  * A user-mode process owns a memory domain. A process entered at a base-image
  * function mirrors its creator's partitions; a process whose image
- * sys_exec_load() brings in gets only the C library's shared state, and its
- * image's blocks on top: three partitions, which is what MPU parts with few
- * regions can afford. Arch domain state (page tables) is not reclaimable, so
- * pool domains are initialized once and emptied for reuse.
+ * sys_exec_load() brings in gets the system's shared partitions, those of
+ * the default domain (the C library's state, and whatever the application
+ * added there for every user thread), and its image's two blocks on top.
+ * Arch domain state (page tables) is not reclaimable, so pool domains are
+ * initialized once and emptied for reuse.
  */
 static struct k_mem_domain domain_pool[RECORD_POOL_MAX];
 static uint8_t domain_state[RECORD_POOL_MAX]; /* 0 free, 1 used, 2 free but initialized */
 
 enum process_domain_base {
 	PROCESS_DOMAIN_MIRROR,	/* the creator's partitions: base-image code */
-	PROCESS_DOMAIN_LIBC,	/* the C library's shared state: an image process */
+	PROCESS_DOMAIN_SYSTEM,	/* the default domain's partitions: an image process */
 	PROCESS_DOMAIN_EMPTY,	/* nothing: a kernel-mode process on an MPU part */
 };
 
@@ -1403,21 +1405,22 @@ static struct k_mem_domain *process_domain_alloc(enum process_domain_base base,
 				goto err;
 			}
 		}
-	} else if (base == PROCESS_DOMAIN_LIBC) {
-		struct k_mem_partition *libc[] = {
-#if Z_LIBC_PARTITION_EXISTS
-			&z_libc_partition,
-#endif
-#if Z_MALLOC_PARTITION_EXISTS
-			&z_malloc_partition,
-#endif
-		};
+	} else if (base == PROCESS_DOMAIN_SYSTEM) {
+		struct k_mem_domain *sys = &k_mem_domain_default;
 
-		for (size_t i = 0; i < ARRAY_SIZE(libc); i++) {
-			if (libc[i]->size == 0U) {
+		for (uint8_t i = 0; i < CONFIG_MAX_DOMAIN_PARTITIONS; i++) {
+			struct k_mem_partition *part = &sys->partitions[i];
+
+			if (part->size == 0U) {
 				continue;
 			}
-			ret = k_mem_domain_add_partition(d, libc[i]);
+#if Z_MALLOC_PARTITION_EXISTS && (CONFIG_SYS_PROCESS_STATE_AREA > 0)
+			/* a process with its own arena has no business in the boot arena */
+			if (part->start == z_malloc_partition.start) {
+				continue;
+			}
+#endif /* Z_MALLOC_PARTITION_EXISTS && CONFIG_SYS_PROCESS_STATE_AREA */
+			ret = k_mem_domain_add_partition(d, part);
 			if (ret != 0) {
 				goto err;
 			}
@@ -1444,7 +1447,7 @@ static void process_domain_release(struct k_mem_domain *d)
 
 static int process_domain_create(struct k_process *proc, bool mirror)
 {
-	enum process_domain_base base = mirror ? PROCESS_DOMAIN_MIRROR : PROCESS_DOMAIN_LIBC;
+	enum process_domain_base base = mirror ? PROCESS_DOMAIN_MIRROR : PROCESS_DOMAIN_SYSTEM;
 	struct k_mem_domain *d = process_domain_alloc(base, _current->mem_domain_info.mem_domain);
 
 	if (d == NULL) {
@@ -1523,6 +1526,42 @@ static void image_bury(struct llext *ext)
 	__ASSERT(buried, "image graveyard full");
 }
 
+/* the C library area an image carries, if the load asked for one */
+static void process_state_from_image(struct k_process *proc, struct llext *ext)
+{
+	proc->state_area = NULL;
+	proc->state_area_size = 0;
+#ifdef CONFIG_LLEXT_REGION_BLOCKS
+	if ((ext != NULL) && (ext->rw_extra_size != 0)) {
+		proc->state_area = (uint8_t *)ext->blocks[LLEXT_BLOCK_RW] + ext->rw_extra_offset;
+		proc->state_area_size = ext->block_size[LLEXT_BLOCK_RW] - ext->rw_extra_offset;
+	}
+#endif /* CONFIG_LLEXT_REGION_BLOCKS */
+}
+
+int z_impl_sys_process_state_area(void **area, size_t *size)
+{
+	struct k_process *proc = _current->process;
+
+	if ((proc == NULL) || (proc->state_area == NULL)) {
+		return -ENOENT;
+	}
+	*area = proc->state_area;
+	*size = proc->state_area_size;
+
+	return 0;
+}
+
+#ifdef CONFIG_USERSPACE
+static inline int z_vrfy_sys_process_state_area(void **area, size_t *size)
+{
+	K_OOPS(K_SYSCALL_MEMORY_WRITE(area, sizeof(*area)));
+	K_OOPS(K_SYSCALL_MEMORY_WRITE(size, sizeof(*size)));
+	return z_impl_sys_process_state_area(area, size);
+}
+#include <zephyr/syscalls/sys_process_state_area_mrsh.c>
+#endif /* CONFIG_USERSPACE */
+
 void z_process_image_drop(struct k_process *proc)
 {
 	struct llext *ext = proc->image;
@@ -1530,6 +1569,8 @@ void z_process_image_drop(struct k_process *proc)
 
 	proc->image = NULL;
 	proc->image_next = NULL;
+	proc->state_area = NULL;
+	proc->state_area_size = 0;
 	image_bury(ext);
 	image_bury(next);
 }
@@ -1651,6 +1692,13 @@ int z_impl_sys_exec_load(k_pid_t child, const char *path)
 	/* images of already-reaped processes give their memory back first */
 	image_graveyard_drain();
 
+#if defined(CONFIG_USERSPACE) && (CONFIG_SYS_PROCESS_STATE_AREA > 0)
+	if ((child->base.user_options & K_USER) != 0U) {
+		/* a user-mode image process owns its C library state */
+		param.rw_extra = CONFIG_SYS_PROCESS_STATE_AREA;
+	}
+#endif /* CONFIG_USERSPACE && CONFIG_SYS_PROCESS_STATE_AREA */
+
 	ret = llext_load(&fldr.loader, name, &ext, &param);
 	if (ret < 0) {
 		return (ret == -ENOMEM) ? -ENOMEM : -ENOENT;
@@ -1701,6 +1749,7 @@ int z_impl_sys_exec_load(k_pid_t child, const char *path)
 		}
 	} else {
 		proc->image = ext;
+		process_state_from_image(proc, ext);
 		*(const void **)&blk->start.main = main_sym;
 	}
 
@@ -1735,6 +1784,21 @@ int z_impl_sys_exec_load(k_pid_t child, const char *path)
 	ARG_UNUSED(path);
 	return -ENOTSUP;
 }
+
+int z_impl_sys_process_state_area(void **area, size_t *size)
+{
+	ARG_UNUSED(area);
+	ARG_UNUSED(size);
+	return -ENOENT;
+}
+
+#ifdef CONFIG_USERSPACE
+static inline int z_vrfy_sys_process_state_area(void **area, size_t *size)
+{
+	return z_impl_sys_process_state_area(area, size);
+}
+#include <zephyr/syscalls/sys_process_state_area_mrsh.c>
+#endif /* CONFIG_USERSPACE */
 
 #ifdef CONFIG_USERSPACE
 static inline int z_vrfy_sys_exec_load(k_pid_t child, const char *path)
@@ -1816,6 +1880,7 @@ static int exec_start(k_thread_entry_t entry, char *const *argv, char *const *en
 
 		proc->image = proc->image_next;
 		proc->image_next = NULL;
+		process_state_from_image(proc, proc->image);
 #ifdef CONFIG_USERSPACE
 		if (proc->domain_next != NULL) {
 			/* the switch: the old domain, old image and all, is retired */
@@ -1952,6 +2017,8 @@ int z_sys_clone_process(const struct sys_clone_args *args, k_pid_t *child)
 #ifdef CONFIG_SYS_PROCESS_EXEC
 	proc->image = NULL;
 	proc->image_next = NULL;
+	proc->state_area = NULL;
+	proc->state_area_size = 0;
 #endif /* CONFIG_SYS_PROCESS_EXEC */
 
 	/* create the leader paused; k_process_init() re-homes it */

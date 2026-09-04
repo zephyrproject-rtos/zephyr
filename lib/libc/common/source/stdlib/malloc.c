@@ -125,6 +125,35 @@ Z_LIBC_DATA static struct sys_heap z_malloc_heap;
 SYS_HEAP_KASAN_ENABLE(z_malloc_heap, HEAP_SIZE);
 #endif /* CONFIG_SYS_HEAP_KASAN_MALLOC && HEAP_STATIC */
 
+#if defined(CONFIG_SYS_PROCESS_EXEC) && defined(CONFIG_USERSPACE) && \
+	(CONFIG_SYS_PROCESS_STATE_AREA > 0)
+#define MALLOC_PROCESS_HEAP 1
+#include <zephyr/sys/process_state.h>
+
+/*
+ * An image process owns its heap (see process_state_get()) for its user-mode execution;
+ * privileged execution on its behalf (a syscall) allocates from the boot heap, whose
+ * buffers it may be resizing.
+ */
+static inline struct process_state *malloc_process(void)
+{
+	return k_is_user_context() ? process_state_get() : NULL;
+}
+
+static inline struct sys_heap *malloc_heap(void)
+{
+	struct process_state *lp = malloc_process();
+
+	return (lp != NULL) ? &lp->heap : &z_malloc_heap;
+}
+#else
+#define MALLOC_PROCESS_HEAP 0
+static inline struct sys_heap *malloc_heap(void)
+{
+	return &z_malloc_heap;
+}
+#endif /* CONFIG_SYS_PROCESS_EXEC && CONFIG_USERSPACE && CONFIG_SYS_PROCESS_STATE_AREA */
+
 #ifdef CONFIG_MULTITHREADING
 Z_LIBC_DATA SYS_MUTEX_DEFINE(z_malloc_heap_mutex);
 
@@ -132,6 +161,14 @@ static inline void
 malloc_lock(void) {
 	int lock_ret;
 
+#if MALLOC_PROCESS_HEAP
+	struct process_state *lp = malloc_process();
+
+	if (lp != NULL) {
+		process_state_heap_lock(lp);
+		return;
+	}
+#endif /* MALLOC_PROCESS_HEAP */
 	lock_ret = sys_mutex_lock(&z_malloc_heap_mutex, K_FOREVER);
 	__ASSERT_NO_MSG(lock_ret == 0);
 }
@@ -139,6 +176,14 @@ malloc_lock(void) {
 static inline void
 malloc_unlock(void)
 {
+#if MALLOC_PROCESS_HEAP
+	struct process_state *lp = malloc_process();
+
+	if (lp != NULL) {
+		process_state_heap_unlock(lp);
+		return;
+	}
+#endif /* MALLOC_PROCESS_HEAP */
 	(void) sys_mutex_unlock(&z_malloc_heap_mutex);
 }
 #else
@@ -152,8 +197,8 @@ void *malloc(size_t size)
 
 	malloc_lock();
 
-	if (z_malloc_heap.heap != NULL) {
-		ret = sys_heap_aligned_alloc(&z_malloc_heap, __alignof__(z_max_align_t), size);
+	if (malloc_heap()->heap != NULL) {
+		ret = sys_heap_aligned_alloc(malloc_heap(), __alignof__(z_max_align_t), size);
 	}
 	if (ret == NULL && size != 0) {
 		errno = ENOMEM;
@@ -170,8 +215,8 @@ void *aligned_alloc(size_t alignment, size_t size)
 
 	malloc_lock();
 
-	if (z_malloc_heap.heap != NULL) {
-		ret = sys_heap_aligned_alloc(&z_malloc_heap, alignment, size);
+	if (malloc_heap()->heap != NULL) {
+		ret = sys_heap_aligned_alloc(malloc_heap(), alignment, size);
 	}
 	if (ret == NULL && size != 0) {
 		errno = ENOMEM;
@@ -268,8 +313,8 @@ void *realloc(void *ptr, size_t requested_size)
 
 	malloc_lock();
 
-	if (z_malloc_heap.heap != NULL) {
-		ret = sys_heap_aligned_realloc(&z_malloc_heap, ptr, __alignof__(z_max_align_t),
+	if (malloc_heap()->heap != NULL) {
+		ret = sys_heap_aligned_realloc(malloc_heap(), ptr, __alignof__(z_max_align_t),
 					       requested_size);
 	}
 
@@ -285,7 +330,7 @@ void *realloc(void *ptr, size_t requested_size)
 void free(void *ptr)
 {
 	malloc_lock();
-	sys_heap_free(&z_malloc_heap, ptr);
+	sys_heap_free(malloc_heap(), ptr);
 	malloc_unlock();
 }
 
@@ -297,7 +342,7 @@ int malloc_runtime_stats_get(struct sys_memory_stats *stats)
 
 	malloc_lock();
 
-	ret = sys_heap_runtime_stats_get(&z_malloc_heap, stats);
+	ret = sys_heap_runtime_stats_get(malloc_heap(), stats);
 
 	malloc_unlock();
 
