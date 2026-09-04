@@ -8,7 +8,16 @@ target_sources(app PRIVATE
   src/main.c
   src/vcp_vol_renderer.c
   src/bap_unicast_sr.c
+)
+
+add_subdirectory(${ZEPHYR_BASE}/samples/bluetooth/audio/common
+                 ${CMAKE_BINARY_DIR}/bt_audio_common)
+
+target_sources_ifdef(CONFIG_TMAP_PERIPHERAL_ROLE_CT app PRIVATE
   src/ccp_call_ctrl.c
+)
+
+target_sources_ifdef(CONFIG_TMAP_PERIPHERAL_ROLE_UMR app PRIVATE
   src/mcp_ctlr.c
 )
 

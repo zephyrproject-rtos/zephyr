@@ -23,3 +23,43 @@ tests:
       - CONFIG_TMAP_PERIPHERAL_SET_RANK=2
     integration_platforms:
       - qemu_cortex_m3
+  sample.bluetooth.audio.tmap_peripheral.stereo:
+    build_only: true
+    platform_allow:
+      - qemu_cortex_m3
+      - native_sim
+    tags: bluetooth
+    extra_configs:
+      - CONFIG_TMAP_PERIPHERAL_STEREO=y
+    integration_platforms:
+      - native_sim
+  sample.bluetooth.audio.tmap_peripheral.passive_sink:
+    build_only: true
+    platform_allow:
+      - qemu_cortex_m3
+      - native_sim
+    tags: bluetooth
+    extra_configs:
+      - CONFIG_TMAP_PERIPHERAL_AUTO_CTRL=n
+    integration_platforms:
+      - native_sim
+  sample.bluetooth.audio.tmap_peripheral.ct_only:
+    build_only: true
+    platform_allow:
+      - qemu_cortex_m3
+      - native_sim
+    tags: bluetooth
+    extra_configs:
+      - CONFIG_TMAP_PERIPHERAL_ROLE_UMR=n
+    integration_platforms:
+      - native_sim
+  sample.bluetooth.audio.tmap_peripheral.umr_only:
+    build_only: true
+    platform_allow:
+      - qemu_cortex_m3
+      - native_sim
+    tags: bluetooth
+    extra_configs:
+      - CONFIG_TMAP_PERIPHERAL_ROLE_CT=n
+    integration_platforms:
+      - native_sim
