@@ -22,18 +22,18 @@
 		zephyr,code-partition = &slot0_partition;
 	};
 
+	aliases {
+		led0 = &red_led;
+		led1 = &green_led;
+		sw0 = &user_button;
+	};
+
 	sdram1: sdram@c0000000 {
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0xc0000000 DT_SIZE_M(8)>;
 		device_type = "memory";
 		zephyr,memory-region = "SDRAM1";
 		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
-	};
-
-	aliases {
-		led0 = &red_led;
-		led1 = &green_led;
-		sw0 = &user_button;
 	};
 };
 
