@@ -1,0 +1,27 @@
+#
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright (c) 2026 Jeff Welder
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+common:
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+    - qemu_x86
+    - qemu_cortex_m3
+  integration_platforms:
+    - native_sim
+  tags:
+    - mgmt
+    - mcumgr
+    - transport
+    - bluetooth
+tests:
+  mgmt.mcumgr.transport.bluetooth_client:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="no_hci.overlay"
+  mgmt.mcumgr.transport.bluetooth_client.all:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="no_hci.overlay"
+      - EXTRA_CONF_FILE="bt_client_all.conf"
