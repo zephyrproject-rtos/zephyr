@@ -1692,3 +1692,10 @@ test_i2c_ltc4286: ltc4286@da {
 	power-good-gpios = <&test_gpio 0 0>;
 	alert-gpios = <&test_gpio 0 0>;
 };
+
+test_i2c_d7s: d7s@db {
+	compatible = "omron,d7s";
+	reg = <0xdb>;
+	int1-gpios = <&test_gpio 0 0>;
+	int2-gpios = <&test_gpio 0 0>;
+};

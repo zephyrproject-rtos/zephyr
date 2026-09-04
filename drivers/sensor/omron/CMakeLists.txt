@@ -4,4 +4,5 @@
 # zephyr-keep-sorted-start
 add_subdirectory_ifdef(CONFIG_2SMPB_02E 2smpb_02e)
 add_subdirectory_ifdef(CONFIG_D6F d6f)
+add_subdirectory_ifdef(CONFIG_D7S d7s)
 # zephyr-keep-sorted-stop
