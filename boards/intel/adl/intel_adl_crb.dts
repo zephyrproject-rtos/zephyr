@@ -7,8 +7,8 @@
 #include "intel_adl.dts"
 
 / {
-	model = "Intel Alder Lake CRB";
 	compatible = "intel,alder-lake-crb";
+	model = "Intel Alder Lake CRB";
 
 	chosen {
 		zephyr,console = &uart0;

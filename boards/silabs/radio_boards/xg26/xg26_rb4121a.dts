@@ -9,8 +9,8 @@
 #include "xg26_rb41xxa.dtsi"
 
 / {
-	model = "Silicon Labs EFR32xG26 2.4 GHz +20 dBm Radio Board (xG26-RB4121A, BRD4121A)";
 	compatible = "silabs,xg26_rb4121a", "silabs,efr32mg26";
+	model = "Silicon Labs EFR32xG26 2.4 GHz +20 dBm Radio Board (xG26-RB4121A, BRD4121A)";
 };
 
 &radio {

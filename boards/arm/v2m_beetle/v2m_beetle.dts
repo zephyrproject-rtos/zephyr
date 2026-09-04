@@ -24,14 +24,9 @@
 
 		cpu@0 {
 			compatible = "arm,cortex-m3";
-			clock-frequency = <24000000>;
 			reg = <0>;
+			clock-frequency = <24000000>;
 		};
-	};
-
-	sram0: memory@20000000 {
-		compatible = "mmio-sram";
-		reg = <0x20000000 0x20000>;
 	};
 
 	flash0: flash@0 {
@@ -46,6 +41,11 @@
 	};
 
 	soc {
+		pinctrl: pinctrl {
+			compatible = "arm,mps3-pinctrl";
+			status = "okay";
+		};
+
 		timer0: timer@40000000 {
 			compatible = "arm,cmsdk-timer";
 			reg = <0x40000000 0x1000>;
@@ -89,8 +89,8 @@
 
 		wdog0: wdog@40008000 {
 			compatible = "arm,cmsdk-watchdog";
-			clocks = <&sysclk>;
 			reg = <0x40008000 0x1000>;
+			clocks = <&sysclk>;
 		};
 
 		gpio0: gpio@40010000 {
@@ -134,11 +134,11 @@
 			reg = <0x4001f000 0x1000>;
 			#clock-cells = <0>;
 		};
+	};
 
-		pinctrl: pinctrl {
-			compatible = "arm,mps3-pinctrl";
-			status = "okay";
-		};
+	sram0: memory@20000000 {
+		compatible = "mmio-sram";
+		reg = <0x20000000 0x20000>;
 	};
 };
 

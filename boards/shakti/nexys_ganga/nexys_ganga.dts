@@ -8,8 +8,8 @@
 #include <shakti/ganga.dtsi>
 
 / {
-	model = "Nexys Video Shakti Ganga";
 	compatible = "shakti,ganga";
+	model = "Nexys Video Shakti Ganga";
 
 	chosen {
 		zephyr,console = &uart0;

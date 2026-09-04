@@ -12,8 +12,8 @@
 #include "stm32h7_renode_reference_board-pinctrl.dtsi"
 
 / {
-	model = "Antmicro STM32H7 Renode Reference Platform";
 	compatible = "antmicro,stm32h7_renode_reference_board";
+	model = "Antmicro STM32H7 Renode Reference Platform";
 
 	chosen {
 		zephyr,crc = &crc;
@@ -212,9 +212,9 @@
 };
 
 &usart2 {
-	status = "okay";
 	pinctrl-0 = <&usart2_tx_pd5 &usart2_rx_pa3>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 zephyr_udc0: &usbotg_fs {
@@ -226,9 +226,9 @@ zephyr_udc0: &usbotg_fs {
 &fdcan1 {
 	pinctrl-0 = <&fdcan1_rx_pd0 &fdcan1_tx_pd1>;
 	pinctrl-names = "default";
+	phys = <&can_phy1>;
 
 	status = "okay";
-	phys = <&can_phy1>;
 };
 
 &fdcan2 {
@@ -236,9 +236,9 @@ zephyr_udc0: &usbotg_fs {
 		 <&rcc STM32_SRC_PLL2_Q FDCAN_SEL(2)>;
 	pinctrl-0 = <&fdcan2_rx_pb12 &fdcan2_tx_pb13>;
 	pinctrl-names = "default";
+	phys = <&can_phy2>;
 
 	status = "okay";
-	phys = <&can_phy2>;
 };
 
 &timers3 {
@@ -246,17 +246,17 @@ zephyr_udc0: &usbotg_fs {
 	status = "okay";
 
 	pwm3: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim3_ch1_pb4 &tim3_ch2_pc7 &tim3_ch3_pc8 &tim3_ch4_pb1>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
 &i2c1 {
-	status = "okay";
 	pinctrl-0 = <&i2c1_scl_pb6 &i2c1_sda_pb7>;
 	pinctrl-names = "default";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 
 	veml7700: veml7700@10 {
 		compatible = "vishay,veml7700";
@@ -295,20 +295,20 @@ zephyr_udc0: &usbotg_fs {
 };
 
 &i2c2 {
-	status = "okay";
 	pinctrl-0 = <&i2c2_scl_pf1 &i2c2_sda_pf0>;
 	pinctrl-names = "default";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &adc1 {
-	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
 	pinctrl-0 = <&adc1_inp2_pf11>;
 	pinctrl-names = "default";
 	st,adc-clock-source = "SYNC";
 	st,adc-prescaler = <4>;
+	status = "okay";
 
 	pot1: channel@2 {
 		reg = <2>;
@@ -320,7 +320,6 @@ zephyr_udc0: &usbotg_fs {
 };
 
 &mac {
-	status = "okay";
 	pinctrl-0 = <&eth_rxd0_pc4
 		     &eth_rxd1_pc5
 		     &eth_ref_clk_pa1
@@ -331,12 +330,13 @@ zephyr_udc0: &usbotg_fs {
 	pinctrl-names = "default";
 	phy-connection-type = "rmii";
 	phy-handle = <&eth_phy>;
+	status = "okay";
 };
 
 &mdio {
-	status = "okay";
 	pinctrl-0 = <&eth_mdio_pa2 &eth_mdc_pc1>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	eth_phy: ethernet-phy@0 {
 		compatible = "ethernet-phy";
@@ -367,8 +367,8 @@ zephyr_udc0: &usbotg_fs {
 			#size-cells = <1>;
 
 			storage_partition: partition@0 {
-				label = "storage";
 				reg = <0x0 DT_SIZE_M(64)>;
+				label = "storage";
 			};
 		};
 	};
@@ -383,23 +383,23 @@ zephyr_udc0: &usbotg_fs {
 		/* 128KB for bootloader */
 		boot_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(128)>;
+			label = "mcuboot";
 			read-only;
 		};
 
 		/* application image slot: 384KB */
 		slot0_partition: partition@20000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-0";
 			reg = <0x00020000 DT_SIZE_K(384)>;
+			label = "image-0";
 		};
 
 		/* backup slot: 512KB */
 		slot1_partition: partition@80000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-1";
 			reg = <0x00080000 DT_SIZE_K(512)>;
+			label = "image-1";
 		};
 	};
 };

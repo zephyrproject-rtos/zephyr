@@ -16,8 +16,8 @@
 };
 
 &arduino_i2c {
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 
 	eeprom0_x_nucleo_eeprma2: eeprom@54 {
 		/* M24C02-FMC6TG aka U1 (2 kbit eeprom in DFN8 package) */
@@ -62,24 +62,10 @@
 };
 
 &arduino_spi {
-	status = "okay";
 	cs-gpios = <&arduino_header ARDUINO_HEADER_R3_D2 GPIO_ACTIVE_LOW>, /* U5: eeprom4 */
 		   <&arduino_header ARDUINO_HEADER_R3_D9 GPIO_ACTIVE_LOW>, /* U6: eeprom5 */
 		   <&arduino_header ARDUINO_HEADER_R3_D10 GPIO_ACTIVE_LOW>; /* U7: eeprom6 */
-
-	/*
-	 * All chip select pins have an on board 10k pull-up resistor to VCC,
-	 * and are connected to their respective arduino pins via a normally
-	 * closed solder bridge.
-	 *
-	 * All hold pins are connected to VCC with a 10k pull-up, and
-	 * have a connection to arduino pin A3 on CN8 via an open solder bridge.
-	 *
-	 * All write-protect pins are connected to J11 with a 10k pull-up
-	 * resistor. Where they can either be torn to VCC or GND.
-	 * Additionally they are connected to arduino pin A0 on CN8
-	 * via an open solder bridge.
-	 */
+	status = "okay";
 
 	eeprom4_x_nucleo_eeprma2: eeprom_m95040@0 {
 		/* M95040-RMC6TG aka U5 (4 kbit eeprom in DFN8 package) */
@@ -123,6 +109,20 @@
 		/* if solder-bridge closed: arduino A0 pin on CN8 can wp */
 		/* wp-gpios = <&arduino_header ARDUINO_HEADER_R3_A0 GPIO_ACTIVE_LOW>; */
 	};
+
+	/*
+	 * All chip select pins have an on board 10k pull-up resistor to VCC,
+	 * and are connected to their respective arduino pins via a normally
+	 * closed solder bridge.
+	 *
+	 * All hold pins are connected to VCC with a 10k pull-up, and
+	 * have a connection to arduino pin A3 on CN8 via an open solder bridge.
+	 *
+	 * All write-protect pins are connected to J11 with a 10k pull-up
+	 * resistor. Where they can either be torn to VCC or GND.
+	 * Additionally they are connected to arduino pin A0 on CN8
+	 * via an open solder bridge.
+	 */
 
 	/* U8: unpopulated SO8N footprint for any M95 SPI EEPROM */
 };

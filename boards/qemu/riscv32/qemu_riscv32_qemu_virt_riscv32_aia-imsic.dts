@@ -9,8 +9,8 @@
 #include <qemu/virt-riscv-aia.dtsi>
 
 / {
-	model = "QEMU RISC-V virt (AIA APLIC+IMSIC)";
 	compatible = "qemu,virt-riscv32-aia-imsic";
+	model = "QEMU RISC-V virt (AIA APLIC+IMSIC)";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -32,10 +32,10 @@
 	imsic0: interrupt-controller@24000000 {
 		compatible = "riscv,imsic";
 		reg = <0x24000000 0x1000>;
-		riscv,num-ids = <256>;
-		riscv,hart-id = <0>;
 		interrupt-controller;
 		#interrupt-cells = <1>;
+		riscv,num-ids = <256>;
+		riscv,hart-id = <0>;
 		status = "okay";
 	};
 };

@@ -16,8 +16,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "kit_pse84_eval";
 	compatible = "kit_pse84_eval";
+	model = "kit_pse84_eval";
 
 	aliases {
 		led0 = &led_red;
@@ -53,12 +53,11 @@
 };
 
 &peri1_group2_8bit_0 {
-	status = "okay";
 	clock-div = <2>;
+	status = "okay";
 };
 
 &sdhc0 {
-	status = "okay";
 
 	/* SDIO pins */
 	pinctrl-0 = <&p21_0_sdhc0_card_cmd &p12_0_sdhc0_clk_card &p12_1_sdhc0_card_dat_3to0
@@ -72,26 +71,26 @@
 	min-bus-freq = <400000>;
 	power-delay-ms = <1000>;
 	no-1-8-v;
+	status = "okay";
 
 	/* Wi-Fi configuration */
 	airoc-wifi {
-		status = "okay";
 		compatible = "infineon,airoc-wifi";
 
 		/* Wi-Fi control gpios */
 		wifi-reg-on-gpios = <&gpio_prt11 6 GPIO_ACTIVE_HIGH>;
 		wifi-host-wake-gpios = <&gpio_prt11 4 GPIO_ACTIVE_HIGH>;
+		status = "okay";
 	};
 };
 
 &peri0_group1_16_5bit_0 {
-	status = "okay";
 	clock-div = <1>;
+	status = "okay";
 };
 
 uart4: &scb4 {
 	compatible = "infineon,uart";
-	status = "okay";
 
 	current-speed = <115200>;
 
@@ -104,16 +103,17 @@ uart4: &scb4 {
 
 	/* HW Flow control must be enabled for HCI H4 */
 	hw-flow-control;
+	status = "okay";
 
 	bt_hci_uart: bt_hci_uart {
 		compatible = "zephyr,bt-hci-uart";
 
 		cyw55513 {
-			status = "okay";
 			compatible = "infineon,bt-hci-uart";
 			bt-reg-on-gpios = <&gpio_prt11 0 GPIO_ACTIVE_HIGH>;
 			fw-download-speed = <115200>;
 			hci-operation-speed = <115200>;
+			status = "okay";
 		};
 	};
 };

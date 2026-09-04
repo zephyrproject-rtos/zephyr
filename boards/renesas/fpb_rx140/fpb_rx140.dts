@@ -13,8 +13,8 @@
 #include <zephyr/dt-bindings/adc/adc.h>
 
 / {
-	model = "Renesas FPB-RX140 KIT";
 	compatible = "renesas,fpb_rx140";
+	model = "Renesas FPB-RX140 KIT";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -82,9 +82,9 @@
 };
 
 &mtu1 {
-	status = "okay";
 	pinctrl-0 = <&pwm1_default>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	pwm1: pwm {
 		status = "okay";
@@ -122,8 +122,8 @@
 		#size-cells = <1>;
 
 		storage_partition: partition@0 {
-			label = "storage";
 			reg = <0x0 DT_SIZE_K(8)>;
+			label = "storage";
 		};
 	};
 };

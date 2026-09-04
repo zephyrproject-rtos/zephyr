@@ -9,8 +9,8 @@
 #include "dt_bl10_devkit-pinctrl.dtsi"
 
 / {
-	model = "2.4GHz Wi-Fi and BLE coexistence Module Development Kit";
 	compatible = "bflb,bl602";
+	model = "2.4GHz Wi-Fi and BLE coexistence Module Development Kit";
 
 	chosen {
 		zephyr,flash = &is25lp128;
@@ -56,32 +56,32 @@
 
 			boot_header_partition: partition@0 {
 				compatible = "zephyr,mapped-partition";
-				label = "boot_header";
 				reg = <0x00000000 0x2000>;
+				label = "boot_header";
 				read-only;
 			};
 
 			slot0_partition: partition@2000 {
 				compatible = "zephyr,mapped-partition";
-				label = "image-0";
 				reg = <0x00002000 (0x00100000 - 0x2000)>;
+				label = "image-0";
 				read-only;
 			};
 
 			storage_partition: partition@100000 {
 				compatible = "zephyr,mapped-partition";
-				label = "storage";
 				reg = <0x00100000 0xf00000>;
+				label = "storage";
 			};
 		};
 	};
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };

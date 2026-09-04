@@ -10,83 +10,83 @@
 #include "nsim-flat-mem.dtsi"
 
 / {
-	model = "snps,nsim_hs";
 	compatible = "snps,nsim_hs";
+	model = "snps,nsim_hs";
 
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
 
 		cpu@0 {
-			device_type = "cpu";
 			compatible = "snps,arcv3-hs";
 			reg = <0>;
+			device_type = "cpu";
 		};
 
 		cpu@1 {
-			device_type = "cpu";
 			compatible = "snps,arcv3-hs";
 			reg = <1>;
+			device_type = "cpu";
 		};
 
 		cpu@2 {
-			device_type = "cpu";
 			compatible = "snps,arcv3-hs";
 			reg = <2>;
+			device_type = "cpu";
 		};
 
 		cpu@3 {
-			device_type = "cpu";
 			compatible = "snps,arcv3-hs";
 			reg = <3>;
+			device_type = "cpu";
 		};
 
 		cpu@4 {
-			device_type = "cpu";
 			compatible = "snps,arcv3-hs";
 			reg = <4>;
+			device_type = "cpu";
 		};
 
 		cpu@5 {
-			device_type = "cpu";
 			compatible = "snps,arcv3-hs";
 			reg = <5>;
+			device_type = "cpu";
 		};
 
 		cpu@6 {
-			device_type = "cpu";
 			compatible = "snps,arcv3-hs";
 			reg = <6>;
+			device_type = "cpu";
 		};
 
 		cpu@7 {
-			device_type = "cpu";
 			compatible = "snps,arcv3-hs";
 			reg = <7>;
+			device_type = "cpu";
 		};
 
 		cpu@8 {
-			device_type = "cpu";
 			compatible = "snps,arcv3-hs";
 			reg = <8>;
+			device_type = "cpu";
 		};
 
 		cpu@9 {
-			device_type = "cpu";
 			compatible = "snps,arcv3-hs";
 			reg = <9>;
+			device_type = "cpu";
 		};
 
 		cpu@a {
-			device_type = "cpu";
 			compatible = "snps,arcv3-hs";
 			reg = <10>;
+			device_type = "cpu";
 		};
 
 		cpu@b {
-			device_type = "cpu";
 			compatible = "snps,arcv3-hs";
 			reg = <11>;
+			device_type = "cpu";
 		};
 	};
 };

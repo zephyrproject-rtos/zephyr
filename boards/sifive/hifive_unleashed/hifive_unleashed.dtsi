@@ -15,12 +15,6 @@
 		zephyr,sram = &l2lim;
 	};
 
-	ram0: ram0@80000000 {
-		compatible = "memory";
-		reg = <0x80000000 0xf0000000>;
-		reg-names = "mem";
-	};
-
 	lscon_96b: connector {
 		compatible = "linaro,96b-lscon-1v8";
 		#gpio-cells = <2>;
@@ -39,11 +33,17 @@
 			   <32 0 &gpio0 15 0>;	/* GPIO-K */
 		/* GPIO-L not connected */
 	};
+
+	ram0: ram0@80000000 {
+		compatible = "memory";
+		reg = <0x80000000 0xf0000000>;
+		reg-names = "mem";
+	};
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 /* disabled (used by Flash ROM by default) */
@@ -52,11 +52,11 @@
 
 	flash0: flash@0 {
 		compatible = "issi,is25wp256d", "jedec,spi-nor";
-		status = "disabled";
+		reg = <0>;
 		size = <33554432>;
 		jedec-id = [96 60 18];
-		reg = <0>;
 		spi-max-frequency = <133000000>;
+		status = "disabled";
 	};
 };
 

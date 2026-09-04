@@ -13,8 +13,8 @@
 #include <zephyr/dt-bindings/lora/sx126x.h>
 
 / {
-	model = "T-Watch S3 PROCPU";
 	compatible = "espressif,esp32s3";
+	model = "T-Watch S3 PROCPU";
 
 	aliases {
 		i2c-0 = &i2c0;
@@ -49,9 +49,9 @@
 
 		st7789v: st7789v@0 {
 			compatible = "sitronix,st7789v";
+			reg = <0>;
 			mipi-max-frequency = <20000000>;
 			mipi-mode = "MIPI_DBI_MODE_SPI_4WIRE";
-			reg = <0>;
 			width = <240>;
 			height = <240>;
 			x-offset = <0>;
@@ -90,9 +90,9 @@
 &ledc0 {
 	#address-cells = <1>;
 	#size-cells = <0>;
-	status = "okay";
 	pinctrl-0 = <&ledc0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	channel0@0 {
 		reg = <0x0>;
@@ -103,10 +103,10 @@
 &spi2 {
 	#address-cells = <1>;
 	#size-cells = <0>;
-	status = "okay";
 	pinctrl-0 = <&spim2_default>;
 	pinctrl-names = "default";
 	cs-gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	lora0: lora@0 {
 		compatible = "semtech,sx1262";
@@ -124,9 +124,9 @@
 &spi3 {
 	#address-cells = <1>;
 	#size-cells = <0>;
-	status = "okay";
 	pinctrl-0 = <&spim3_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &i2c0 {
@@ -135,24 +135,11 @@
 	pinctrl-names = "default";
 	status = "okay";
 
-	pfc8563_rtc: pfc8563@51 {
-		compatible = "nxp,pcf8563";
-		reg = <0x51>;
-		status = "okay";
-	};
-
 	bma423: bma423@19 {
 		compatible = "bosch,bma4xx";
 		reg = <0x19>;
-		status = "okay";
 		int1-gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
-	};
-
-	haptic: drv2605@5a {
-		compatible = "ti,drv2605";
-		reg = <0x5a>;
 		status = "okay";
-		actuator-mode = "ERM";
 	};
 
 	axp2101@34 {
@@ -252,6 +239,19 @@
 		fuel_gauge: fuel_gauge {
 			compatible = "x-powers,axp2101-fuel-gauge";
 		};
+	};
+
+	pfc8563_rtc: pfc8563@51 {
+		compatible = "nxp,pcf8563";
+		reg = <0x51>;
+		status = "okay";
+	};
+
+	haptic: drv2605@5a {
+		compatible = "ti,drv2605";
+		reg = <0x5a>;
+		actuator-mode = "ERM";
+		status = "okay";
 	};
 };
 

@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "STMicroelectronics STM32WBA55CG-NUCLEO board";
 	compatible = "st,stm32wba55cg-nucleo";
+	model = "STMicroelectronics STM32WBA55CG-NUCLEO board";
 
 	chosen {
 		zephyr,bt-c2h-uart = &usart1;
@@ -23,17 +23,6 @@
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,system-timer = &lptim1;
-	};
-
-	/*
-	 * Reserve a fixed retained RAM window for the S2RAM CPU context so both
-	 * the application and MCUboot place `_cpu_context` at the same physical
-	 * address.
-	 */
-	pm_s2ram: memory@2001ffe0 {
-		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x2001ffe0 0x20>;
-		zephyr,memory-region = "PM_S2RAM";
 	};
 
 	leds: leds {
@@ -98,6 +87,17 @@
 		mcuboot-button0 = &user_button_1;
 		die-temp0 = &die_temp;
 	};
+
+	/*
+	 * Reserve a fixed retained RAM window for the S2RAM CPU context so both
+	 * the application and MCUboot place `_cpu_context` at the same physical
+	 * address.
+	 */
+	pm_s2ram: memory@2001ffe0 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x2001ffe0 0x20>;
+		zephyr,memory-region = "PM_S2RAM";
+	};
 };
 
 &sram0 {
@@ -142,10 +142,10 @@
 };
 
 &rtc {
-	status = "okay";
 	clocks = <&rcc STM32_CLOCK(APB7, 21)>,
 		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
 	prescaler = <32768>;
+	status = "okay";
 };
 
 &usart1 {
@@ -187,8 +187,8 @@
 	pinctrl-names = "default";
 	scl-gpios = <&gpiob 2 GPIO_ACTIVE_HIGH>;
 	sda-gpios = <&gpiob 1 GPIO_ACTIVE_HIGH>;
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &adc4 {
@@ -208,9 +208,9 @@
 	status = "okay";
 
 	pwm3: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim3_ch2_pa9>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
@@ -244,32 +244,32 @@
 
 &flash0 {
 	partitions {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		boot_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(64)>;
+			label = "mcuboot";
 		};
 
 		slot0_partition: partition@10000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-0";
 			reg = <0x00010000 DT_SIZE_K(448)>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@80000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-1";
 			reg = <0x00080000 DT_SIZE_K(456)>;
+			label = "image-1";
 		};
 
 		storage_partition: partition@f2000 {
 			compatible = "zephyr,mapped-partition";
-			label = "storage";
 			reg = <0x000f2000 DT_SIZE_K(56)>;
+			label = "storage";
 		};
 	};
 };

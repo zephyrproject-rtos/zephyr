@@ -14,7 +14,6 @@
 &spi00 {
 	p25q64: p25q64sl@0 {
 		compatible = "jedec,spi-nor";
-		status = "okay";
 		reg = <0>;
 		spi-max-frequency = <8000000>;
 		jedec-id = [85 60 17];
@@ -23,5 +22,6 @@
 		t-enter-dpd = <3000>;
 		t-exit-dpd = <35000>;
 		reset-gpios = <&gpio2 0 GPIO_ACTIVE_LOW>;
+		status = "okay";
 	};
 };

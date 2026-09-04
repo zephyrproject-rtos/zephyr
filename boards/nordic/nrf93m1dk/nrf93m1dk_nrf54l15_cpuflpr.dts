@@ -9,8 +9,8 @@
 #include "nrf93m1dk_nrf54l15-pinctrl.dtsi"
 
 / {
-	model = "Nordic nRF93M1 DK nRF54L15 FLPR MCU";
 	compatible = "nordic,nrf93m1dk_nrf54l15-cpuflpr";
+	model = "Nordic nRF93M1 DK nRF54L15 FLPR MCU";
 
 	leds {
 		compatible = "gpio-leds";
@@ -68,14 +68,14 @@
 
 &cpuflpr_rram {
 	partitions {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		cpuflpr_code_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-0";
 			reg = <0x0 DT_SIZE_K(96)>;
+			label = "image-0";
 		};
 	};
 };
@@ -86,11 +86,11 @@
 };
 
 &uart20 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart20_default>;
 	pinctrl-1 = <&uart20_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &gpio0 {

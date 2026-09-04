@@ -9,8 +9,8 @@
 #include "96b_meerkat96-pinctrl.dtsi"
 
 / {
-	model = "Meerkat96 Board";
 	compatible = "novtech,imx7d-meerkat96";
+	model = "Meerkat96 Board";
 
 	chosen {
 		zephyr,flash = &tcml_code;
@@ -52,11 +52,11 @@
 };
 
 &uart1 {
-	status = "okay";
 	current-speed = <115200>;
 	modem-mode = <0>;
 	pinctrl-0 = <&uart1_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &gpio1 {

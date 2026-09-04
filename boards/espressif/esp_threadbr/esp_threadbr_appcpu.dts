@@ -10,8 +10,8 @@
 #include <espressif/partitions_0x0_amp.dtsi>
 
 / {
-	model = "Espressif ESP Thread Border Router / ZigBee Gateway APPCPU";
 	compatible = "espressif,esp32s3";
+	model = "Espressif ESP Thread Border Router / ZigBee Gateway APPCPU";
 
 	chosen {
 		zephyr,sram = &sram1;

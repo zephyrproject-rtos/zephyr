@@ -11,8 +11,8 @@
 #include <espressif/esp32s3/esp32s3_wroom_n16r16.dtsi>
 
 / {
-	model = "Espressif ESP32S3-BOX-3 APPCPU";
 	compatible = "espressif,esp32s3";
+	model = "Espressif ESP32S3-BOX-3 APPCPU";
 
 	chosen {
 		zephyr,sram = &sram1;

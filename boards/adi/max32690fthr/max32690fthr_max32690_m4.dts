@@ -12,8 +12,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Analog Devices MAX32690FTHR";
 	compatible = "adi,max32690fthr";
+	model = "Analog Devices MAX32690FTHR";
 
 	chosen {
 		zephyr,code-partition = &code_partition;
@@ -136,15 +136,15 @@ feather_serial: &uart2 {
 };
 
 feather_i2c: &i2c0 {
-	status = "okay";
 	pinctrl-0 = <&i2c0a_scl_p2_8 &i2c0a_sda_p2_7>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 feather_spi: &spi0 {
-	status = "okay";
 	pinctrl-0 = <&spi0b_mosi_p2_28 &spi0b_miso_p2_27 &spi0b_sck_p2_29>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 zephyr_udc0: &usbhs {
@@ -153,20 +153,20 @@ zephyr_udc0: &usbhs {
 
 &flash0 {
 	partitions {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		code_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-m4";
 			reg = <0x0 DT_SIZE_K(3008)>;
+			label = "image-m4";
 		};
 
 		storage_partition: partition@2f0000 {
 			compatible = "zephyr,mapped-partition";
-			label = "storage";
 			reg = <0x2f0000 DT_SIZE_K(64)>;
+			label = "storage";
 		};
 	};
 };

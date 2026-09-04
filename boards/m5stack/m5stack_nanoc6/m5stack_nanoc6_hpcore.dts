@@ -15,8 +15,8 @@
 #include <zephyr/dt-bindings/led/worldsemi_ws2812c.h>
 
 / {
-	model = "m5stack_nanoc6";
 	compatible = "m5stack,nanoc6";
+	model = "m5stack_nanoc6";
 
 	chosen {
 		zephyr,sram = &sramhp;
@@ -75,19 +75,19 @@
 };
 
 &i2c0 {
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &spi2 {
 	#address-cells = <1>;
 	#size-cells = <0>;
-	status = "okay";
 	line-idle-low;
 	pinctrl-0 = <&spim2_ws2812_led>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	status_rgb_led: ws2812@0 {
 		compatible = "worldsemi,ws2812-spi";

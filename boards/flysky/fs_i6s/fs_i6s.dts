@@ -14,8 +14,8 @@
 #include <zephyr/dt-bindings/pwm/pwm.h>
 
 / {
-	model = "FlySky FS-i6S Controller";
 	compatible = "flysky,fs_i6s";
+	model = "FlySky FS-i6S Controller";
 
 	chosen {
 		zephyr,console = &usart1;
@@ -222,10 +222,6 @@
 	pinctrl-names = "default";
 	#address-cells = <1>;
 	#size-cells = <0>;
-	status = "okay";
-
-	st,adc-clock-source = "SYNC";
-	st,adc-prescaler = <4>;
 
 	dmas = <&dma1 1
 		(STM32_DMA_PERIPH_TO_MEMORY | STM32_DMA_MEM_INC | STM32_DMA_PRIORITY_HIGH |
@@ -233,6 +229,10 @@
 	dma-names = "dmamux";
 
 	vref-mv = <3300>;
+
+	st,adc-clock-source = "SYNC";
+	st,adc-prescaler = <4>;
+	status = "okay";
 
 	channel@0 {
 		reg = <0>;
@@ -328,8 +328,8 @@
 	pinctrl-names = "default";
 	scl-gpios = <&gpiob 8 GPIO_ACTIVE_HIGH>;
 	sda-gpios = <&gpiob 9 GPIO_ACTIVE_HIGH>;
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 
 	ft6236: ft5336@38 {
 		compatible = "focaltech,ft5336";
@@ -354,9 +354,9 @@
 	status = "okay";
 
 	pwm1: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim1_ch1_pa8>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 

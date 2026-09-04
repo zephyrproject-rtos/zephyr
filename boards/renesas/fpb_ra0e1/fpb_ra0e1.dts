@@ -11,8 +11,8 @@
 #include "fpb_ra0e1-pinctrl.dtsi"
 
 / {
-	model = "Renesas FPB-RA0E1";
 	compatible = "renesas,ra0e1", "renesas,ra";
+	model = "Renesas FPB-RA0E1";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -70,13 +70,13 @@
 &flash1 {
 	partitions {
 		compatible = "fixed-partitions";
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		storage_partition: partition@0 {
-			label = "storage";
 			reg = <0x0 DT_SIZE_K(1)>;
+			label = "storage";
 		};
 	};
 };

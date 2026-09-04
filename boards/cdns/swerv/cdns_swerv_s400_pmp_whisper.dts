@@ -21,13 +21,13 @@
 		#size-cells = <0>;
 
 		cpu0: cpu@0 {
-			device_type = "cpu";
 			compatible = "cdns,swerv,s400", "riscv";
+			reg = <0>;
+			device_type = "cpu";
+			clock-frequency = <15000000>;
 			riscv,isa-base = "rv32i";
 			riscv,isa-extensions = "i", "m", "c", "zicsr", "zifencei",
 					       "zba", "zbb", "zbc", "zbs";
-			reg = <0>;
-			clock-frequency = <15000000>;
 
 			cpu0intc: interrupt-controller {
 				compatible = "riscv,cpu-intc";
@@ -39,35 +39,11 @@
 	};
 
 	soc {
+		compatible = "simple-bus";
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		compatible = "simple-bus";
 		interrupt-parent = <&cpu0intc>;
-		ranges;
-
-		iccm: memory@ee000000 {
-			compatible = "mmio-sram";
-			reg = <0xee000000 0x02000000>;
-		};
-
-		dccm: memory@f4000000 {
-			compatible = "mmio-sram";
-			reg = <0xf4000000 0x02000000>;
-		};
-
-		pic: interrupt-controller@f00c0000 {
-			compatible = "cdns,swerv-pic";
-			#address-cells = <1>;
-			#interrupt-cells = <2>;
-			interrupt-controller;
-			reg = <0xf00c0000 0x00008000>;
-			riscv,max-priority = <15>;
-
-			/* Need to wait for usable PIC implementation in whisper
-			 * when PMP is enabled.
-			 */
-			status = "disabled";
-		};
 
 		timer: timer@44a00000 {
 			compatible = "riscv,machine-timer";
@@ -80,6 +56,30 @@
 			reg = <0xd0580000 0x00000004>;
 
 			status = "okay";
+		};
+
+		iccm: memory@ee000000 {
+			compatible = "mmio-sram";
+			reg = <0xee000000 0x02000000>;
+		};
+
+		pic: interrupt-controller@f00c0000 {
+			compatible = "cdns,swerv-pic";
+			reg = <0xf00c0000 0x00008000>;
+			#address-cells = <1>;
+			#interrupt-cells = <2>;
+			interrupt-controller;
+			riscv,max-priority = <15>;
+
+			/* Need to wait for usable PIC implementation in whisper
+			 * when PMP is enabled.
+			 */
+			status = "disabled";
+		};
+
+		dccm: memory@f4000000 {
+			compatible = "mmio-sram";
+			reg = <0xf4000000 0x02000000>;
 		};
 	};
 };

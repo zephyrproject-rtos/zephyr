@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "PIC32CM GC00 Curiosity Pro";
 	compatible = "microchip,pic32cm_gc00_cpro";
+	model = "PIC32CM GC00 Curiosity Pro";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -62,34 +62,34 @@
 
 &boot_flash {
 	partitions {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		boot_partition: partition@0 {
-			label = "boot_flash";
 			compatible = "zephyr,mapped-partition";
 			reg = <0x0 DT_SIZE_K(16)>;
+			label = "boot_flash";
 		};
 	};
 };
 
 &program_flash {
 	partitions {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		code_partition: partition@0 {
-			label = "program_flash";
 			compatible = "zephyr,mapped-partition";
 			reg = <0x0 DT_SIZE_K(496)>;
+			label = "program_flash";
 		};
 
 		storage_partition: partition@7c000 {
-			label = "storage";
 			compatible = "zephyr,mapped-partition";
 			reg = <0x7c000 DT_SIZE_K(16)>;
+			label = "storage";
 		};
 	};
 };

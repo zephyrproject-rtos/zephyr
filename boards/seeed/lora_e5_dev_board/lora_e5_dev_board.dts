@@ -9,8 +9,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Seeed Studio LoRa-E5 Dev Board";
 	compatible = "seeed,lora-e5-dev-board";
+	model = "Seeed Studio LoRa-E5 Dev Board";
 
 	chosen {
 		zephyr,console = &usart1;
@@ -83,9 +83,9 @@
 };
 
 &lptim1 {
-	status = "okay";
 	clocks = <&rcc STM32_CLOCK(APB1, 31)>,
 		 <&rcc STM32_SRC_LSI LPTIM1_SEL(1)>;
+	status = "okay";
 };
 
 &clk_lsi {
@@ -93,8 +93,8 @@
 };
 
 &clk_msi {
-	status = "okay";
 	msi-range = <11>;
+	status = "okay";
 };
 
 &rcc {
@@ -133,8 +133,8 @@
 	pinctrl-names = "default";
 	scl-gpios = <&gpiob 15 GPIO_ACTIVE_HIGH>;
 	sda-gpios = <&gpioa 15 GPIO_ACTIVE_HIGH>;
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 
 	/* LM75ADP temperature sensor on addr 0x48 */
 };
@@ -178,34 +178,34 @@ zephyr_i2c: &i2c2 {};
 
 &flash0 {
 	partitions {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		boot_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(32)>;
+			label = "mcuboot";
 			read-only;
 		};
 
 		slot0_partition: partition@8000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-0";
 			reg = <0x00008000 DT_SIZE_K(104)>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@22000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-1";
 			reg = <0x00022000 DT_SIZE_K(104)>;
+			label = "image-1";
 		};
 
 		/* 16KB (8x2kB pages) of storage at the end of the flash */
 		storage_partition: partition@3c000 {
 			compatible = "zephyr,mapped-partition";
-			label = "storage";
 			reg = <0x0003c000 DT_SIZE_K(16)>;
+			label = "storage";
 		};
 	};
 };

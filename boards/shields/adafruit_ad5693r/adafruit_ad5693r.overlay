@@ -16,9 +16,9 @@
 	status = "okay";
 
 	dac_adafruit_ad5693r: dac@4c {
-		status = "okay";
 		compatible = "adi,ad5693";
 		reg = <0x4c>;
 		#io-channel-cells = <1>;
+		status = "okay";
 	};
 };

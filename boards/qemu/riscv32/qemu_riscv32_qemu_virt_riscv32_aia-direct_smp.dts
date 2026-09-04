@@ -8,8 +8,8 @@
 #include <qemu/virt-riscv-aia.dtsi>
 
 / {
-	model = "QEMU RISC-V virt (AIA - APLIC Direct Delivery Mode - SMP)";
 	compatible = "qemu,virt-riscv32-aia-direct-smp";
+	model = "QEMU RISC-V virt (AIA - APLIC Direct Delivery Mode - SMP)";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -26,6 +26,6 @@
 };
 
 &aplic {
-	riscv,max-priority = <3>;
 	interrupts-extended = <&hlic0 0x0b &hlic1 0x0b>;
+	riscv,max-priority = <3>;
 };

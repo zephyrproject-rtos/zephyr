@@ -10,8 +10,8 @@
 #include "bl704l_dvk-pinctrl.dtsi"
 
 / {
-	model = "BL704L Development Board";
 	compatible = "bflb,bl704l";
+	model = "BL704L Development Board";
 
 	chosen {
 		zephyr,flash = &gd25wq16e;
@@ -91,8 +91,8 @@
 
 		st7305: st7305@0 {
 			compatible = "sitronix,st7305";
-			mipi-max-frequency = <30000000>;
 			reg = <0>;
+			mipi-max-frequency = <30000000>;
 			width = <120>;
 			height = <250>;
 			start-line = <0>;
@@ -154,22 +154,22 @@
 
 			boot_header_partition: partition@0 {
 				compatible = "zephyr,mapped-partition";
-				label = "boot_header";
 				reg = <0x00000000 0x2000>;
+				label = "boot_header";
 				read-only;
 			};
 
 			slot0_partition: partition@2000 {
 				compatible = "zephyr,mapped-partition";
-				label = "image-0";
 				reg = <0x00002000 (DT_SIZE_K(1536) - 0x2000)>;
+				label = "image-0";
 				read-only;
 			};
 
 			storage_partition: partition@180000 {
 				compatible = "zephyr,mapped-partition";
-				label = "storage";
 				reg = <0x00180000 DT_SIZE_K(512)>;
+				label = "storage";
 			};
 		};
 	};
@@ -180,20 +180,20 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &i2c0 {
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	temp_humidity: htu21d@40 {
 		compatible = "meas,htu21d";
@@ -202,12 +202,12 @@
 };
 
 &spi0 {
-	status = "okay";
 
 	cs-gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
 
 	pinctrl-0 = <&spi0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &wdt0 {

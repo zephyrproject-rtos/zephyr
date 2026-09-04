@@ -125,9 +125,9 @@
 };
 
 &clk_msi {
-	status = "okay";
 	msi-range = <6>;
 	msi-pll-mode;
+	status = "okay";
 };
 
 &clk_lse {
@@ -177,14 +177,8 @@
 	pinctrl-names = "default";
 	scl-gpios = <&gpiob 6 GPIO_ACTIVE_HIGH>;
 	sda-gpios = <&gpiob 7 GPIO_ACTIVE_HIGH>;
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
-
-	lsm6dso: lsm6dso@6a {
-		compatible = "st,lsm6dso";
-		reg = <0x6a>;
-		irq-gpios = <&gpiof 3 GPIO_ACTIVE_HIGH>;
-	};
+	status = "okay";
 
 	ft5336: ft5336@38 {
 		compatible = "focaltech,ft5336";
@@ -194,6 +188,12 @@
 		inverted-y;
 		screen-width = <240>;
 		screen-height = <240>;
+	};
+
+	lsm6dso: lsm6dso@6a {
+		compatible = "st,lsm6dso";
+		reg = <0x6a>;
+		irq-gpios = <&gpiof 3 GPIO_ACTIVE_HIGH>;
 	};
 };
 
@@ -239,7 +239,6 @@
 		spi-bus-width = <OSPI_SPI_MODE>;
 		data-rate = <OSPI_STR_TRANSFER>;
 		four-byte-opcodes;
-		status = "okay";
 		sfdp-bfp = [53 46 44 50 06 01 02 ff
 			    00 06 01 10 30 00 00 ff
 			    c2 00 01 04 10 01 00 ff
@@ -265,6 +264,7 @@
 			    00 00 00 00 00 00 00 00
 			    00 00 00 00 00 00 00 00
 			    7f ef ff ff 21 5c dc ff];
+		status = "okay";
 	};
 };
 
@@ -272,16 +272,16 @@
 	status = "okay";
 
 	pwm2: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim2_ch1_pa0>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
 &dac1 {
-	status = "okay";
 	pinctrl-0 = <&dac1_out1_pa4>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &adc1 {
@@ -310,7 +310,6 @@ zephyr_udc0: &usb {
 };
 
 &sdmmc1 {
-	status = "okay";
 	disk-name = "SD";
 	pinctrl-0 = <&sdmmc1_d0_pc8
 		     &sdmmc1_d1_pc9
@@ -322,6 +321,7 @@ zephyr_udc0: &usb {
 	pinctrl-names = "default";
 	idma;
 	cd-gpios = <&gpiof 2 GPIO_ACTIVE_LOW>;
+	status = "okay";
 };
 
 &vref {

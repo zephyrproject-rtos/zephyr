@@ -9,8 +9,8 @@
 #include <espressif/partitions_0x2000_default_8M.dtsi>
 
 / {
-	model = "Espressif ESP32C5-DevKitC-1 LP Core";
 	compatible = "espressif,esp32c5";
+	model = "Espressif ESP32C5-DevKitC-1 LP Core";
 
 	chosen {
 		zephyr,flash = &flash0;
@@ -22,6 +22,6 @@
 };
 
 &lp_uart {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 };

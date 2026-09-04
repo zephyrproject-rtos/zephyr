@@ -11,8 +11,8 @@
 #include "stm32h757i_eval.dtsi"
 
 / {
-	model = "STMicroelectronics STM32H757I EVAL board";
 	compatible = "st,stm32h757i-eval";
+	model = "STMicroelectronics STM32H757I EVAL board";
 
 	/* HW resources are split between CM7 and CM4 */
 	chosen {

@@ -10,8 +10,8 @@
 #include <st/f0/stm32f091c(b-c)ux-pinctrl.dtsi>
 
 / {
-	model = "Barth Elektronik STG-800 lococube mini-PLC";
 	compatible = "barth,stg_800";
+	model = "Barth Elektronik STG-800 lococube mini-PLC";
 
 	zephyr,user {
 		io-channels = <&adc1 0>, <&adc1 1>, <&adc1 2>;
@@ -109,12 +109,12 @@
 
 	eeprom0: eeprom@50 {
 		compatible = "atmel,at24";
-		status = "okay";
 		reg = <0x50>;
 		size = <DT_SIZE_K(8)>;
 		address-width = <16>;
 		timeout = <10>;
 		pagesize = <32>;
+		status = "okay";
 	};
 };
 
@@ -131,12 +131,12 @@
 &adc1 {
 	pinctrl-0 = <&adc_in0_pa0 &adc_in1_pa1 &adc_in2_pa2>;
 	pinctrl-names = "default";
-	st,adc-clock-source = "SYNC";
-	st,adc-prescaler = <4>;
-	status = "okay";
 
 	#address-cells = <1>;
 	#size-cells = <0>;
+	st,adc-clock-source = "SYNC";
+	st,adc-prescaler = <4>;
+	status = "okay";
 
 	channel@0 {
 		reg = <0x0>;
@@ -176,32 +176,32 @@
 
 &flash0 {
 	partitions {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		boot_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(48)>;
+			label = "mcuboot";
 		};
 
 		slot0_partition: partition@c000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-0";
 			reg = <0x0000c000 DT_SIZE_K(100)>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@25000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-1";
 			reg = <0x00025000 DT_SIZE_K(102)>;
+			label = "image-1";
 		};
 
 		storage_partition: partition@3e800 {
 			compatible = "zephyr,mapped-partition";
-			label = "storage";
 			reg = <0x0003e800 DT_SIZE_K(6)>;
+			label = "storage";
 		};
 	};
 };

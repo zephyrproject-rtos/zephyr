@@ -48,9 +48,9 @@
 		#size-cells = <0>;
 
 		cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m33";
 			reg = <0>;
+			device_type = "cpu";
 			#address-cells = <1>;
 			#size-cells = <1>;
 
@@ -61,9 +61,20 @@
 		};
 	};
 
-	mram0: mram@1a000000 {
-		/* Internal code eMRAM */
-		reg = <0x1a000000 0x200000>;
+	sysclk: system-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <50000000>;
+		#clock-cells = <0>;
+	};
+
+	soc {
+		peripheral@50000000 {
+			ranges = <0x0 0x50000000 0x10000000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+#include "v2m_musca_s1-common.dtsi"
+		};
 	};
 
 	flash0: flash@10200000 {
@@ -71,30 +82,19 @@
 		reg = <0x10200000 0x2000000>;
 	};
 
+	mram0: mram@1a000000 {
+		/* Internal code eMRAM */
+		reg = <0x1a000000 0x200000>;
+	};
+
 	sram0: memory@30000000 {
 		compatible = "mmio-sram";
 		reg = <0x30000000 0x80000>;
 	};
 
-	sysclk: system-clock {
-		compatible = "fixed-clock";
-		clock-frequency = <50000000>;
-		#clock-cells = <0>;
-	};
-
 	scc@5010b000 {
 		compatible = "arm,scc";
 		reg = <0x5010b000 0x1000>;
-	};
-
-	soc {
-		peripheral@50000000 {
-			#address-cells = <1>;
-			#size-cells = <1>;
-			ranges = <0x0 0x50000000 0x10000000>;
-
-#include "v2m_musca_s1-common.dtsi"
-		};
 	};
 };
 

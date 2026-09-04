@@ -11,8 +11,8 @@
 #include "adafruit_feather_esp32s3-pinctrl.dtsi"
 
 / {
-	model = "Adafruit Feather ESP32S3 APPCPU";
 	compatible = "adafruit,feather_esp32s3", "espressif,esp32s3";
+	model = "Adafruit Feather ESP32S3 APPCPU";
 
 	chosen {
 		zephyr,sram = &sram1;

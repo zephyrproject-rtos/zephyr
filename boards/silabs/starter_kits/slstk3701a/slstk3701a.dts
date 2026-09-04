@@ -11,8 +11,8 @@
 #include "slstk3701a-pinctrl.dtsi"
 
 / {
-	model = "Silicon Labs EFM32GG11 SLSTK3701A board";
 	compatible = "silabs,slstk3701a", "silabs,efm32gg11b";
+	model = "Silicon Labs EFM32GG11 SLSTK3701A board";
 
 	chosen {
 		zephyr,console = &usart4;

@@ -12,8 +12,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "STMicroelectronics STM32G070RB-NUCLEO board";
 	compatible = "st,stm32g070rb-nucleo";
+	model = "STMicroelectronics STM32G070RB-NUCLEO board";
 
 	chosen {
 		zephyr,console = &usart2;
@@ -104,9 +104,9 @@
 	status = "okay";
 
 	pwm3: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim3_ch1_pa6>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
@@ -115,8 +115,8 @@
 	pinctrl-names = "default";
 	scl-gpios = <&gpiob 8 GPIO_ACTIVE_HIGH>;
 	sda-gpios = <&gpiob 9 GPIO_ACTIVE_HIGH>;
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &i2c2 {
@@ -124,8 +124,8 @@
 	pinctrl-names = "default";
 	scl-gpios = <&gpioa 11 GPIO_ACTIVE_HIGH>;
 	sda-gpios = <&gpioa 12 GPIO_ACTIVE_HIGH>;
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &spi1 {
@@ -145,10 +145,10 @@
 &adc1 {
 	pinctrl-0 = <&adc1_in0_pa0 &adc1_in1_pa1>;
 	pinctrl-names = "default";
+	vref-mv = <3300>;
 	st,adc-clock-source = "SYNC";
 	st,adc-prescaler = <4>;
 	status = "okay";
-	vref-mv = <3300>;
 };
 
 &die_temp {
@@ -157,15 +157,15 @@
 
 &flash0 {
 	partitions {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		/* Set 4KB of storage at the end of 128KB flash */
 		storage_partition: partition@1f000 {
 			compatible = "zephyr,mapped-partition";
-			label = "storage";
 			reg = <0x0001f000 DT_SIZE_K(4)>;
+			label = "storage";
 		};
 	};
 };

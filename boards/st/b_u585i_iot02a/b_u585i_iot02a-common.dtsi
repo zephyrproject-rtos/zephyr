@@ -66,9 +66,9 @@
 };
 
 &clk_msis {
-	status = "okay";
 	msi-range = <4>;
 	msi-pll-mode;
+	status = "okay";
 };
 
 &pll1 {
@@ -117,24 +117,24 @@
 };
 
 &timers4 {
-	status = "okay";
 	st,prescaler = <1>;
+	status = "okay";
 
 	pwm4: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim4_ch1_pb6>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
 &timers3 {
-	status = "okay";
 	st,prescaler = <255>;
+	status = "okay";
 
 	pwm3: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim3_ch2_pe4>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
@@ -175,17 +175,17 @@
 	ext_flash_ctrl: ospi-flash-controller@0 {
 		compatible = "st,stm32-ospi-nor";
 		reg = <0>;
+
+		ranges = <0x0 0x70000000 DT_SIZE_M(64)>; /* Ext Flash mem-mapped to 0x70000000 */
 		size = <DT_SIZE_M(512)>; /* 512 Megabits */
 		ospi-max-frequency = <DT_FREQ_M(50)>;
 		spi-bus-width = <OSPI_OPI_MODE>;
 		data-rate = <OSPI_DTR_TRANSFER>;
 		four-byte-opcodes;
-		status = "okay";
 
 		#address-cells = <1>;
 		#size-cells = <1>;
-
-		ranges = <0x0 0x70000000 DT_SIZE_M(64)>; /* Ext Flash mem-mapped to 0x70000000 */
+		status = "okay";
 
 		ext_flash: mx25lm51245: ext-flash@0 {
 			compatible = "soc-nv-flash";
@@ -201,8 +201,8 @@
 	pinctrl-names = "default";
 	scl-gpios = <&gpiob 8 GPIO_ACTIVE_HIGH>;
 	sda-gpios = <&gpiob 9 GPIO_ACTIVE_HIGH>;
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &i2c2 {
@@ -210,8 +210,8 @@
 	pinctrl-names = "default";
 	scl-gpios = <&gpioh 4 GPIO_ACTIVE_HIGH>;
 	sda-gpios = <&gpioh 5 GPIO_ACTIVE_HIGH>;
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 
 	veml6030@10 {
 		compatible = "vishay,veml7700";
@@ -225,10 +225,14 @@
 		drdy-gpios = <&gpiod 10 GPIO_ACTIVE_HIGH>;
 	};
 
-	ism330dhcx@6b {
-		compatible = "st,ism330dhcx";
-		reg = <0x6b>;
-		drdy-gpios = <&gpioe 11 GPIO_ACTIVE_HIGH>;
+	eeprom0: eeprom@56 {
+		compatible = "atmel,at24";
+		reg = <0x56>;
+		size = <DT_SIZE_K(32)>;
+		pagesize = <64>;
+		address-width = <16>;
+		timeout = <5>;
+		status = "okay";
 	};
 
 	lps22hh@5d {
@@ -237,19 +241,15 @@
 		drdy-gpios = <&gpiog 2 GPIO_ACTIVE_HIGH>;
 	};
 
-	eeprom0: eeprom@56 {
-		compatible = "atmel,at24";
-		reg = <0x56>;
-		status = "okay";
-		size = <DT_SIZE_K(32)>;
-		pagesize = <64>;
-		address-width = <16>;
-		timeout = <5>;
-	};
-
 	hts221@5f {
 		compatible = "st,hts221";
 		reg = <0x5f>;
+	};
+
+	ism330dhcx@6b {
+		compatible = "st,ism330dhcx";
+		reg = <0x6b>;
+		drdy-gpios = <&gpioe 11 GPIO_ACTIVE_HIGH>;
 	};
 };
 

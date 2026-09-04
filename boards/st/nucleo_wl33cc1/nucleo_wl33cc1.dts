@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "STMicroelectronics NUCLEO-WL33CC1 board";
 	compatible = "st,nucleo-wl33cc1";
+	model = "STMicroelectronics NUCLEO-WL33CC1 board";
 
 	chosen {
 		zephyr,console = &usart1;

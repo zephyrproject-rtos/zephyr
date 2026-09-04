@@ -12,8 +12,8 @@
 #include "rzv2h_evk-pinctrl.dtsi"
 
 / {
-	model = "Renesas RZ/V2H EVK";
 	compatible = "renesas,rzv2h-evk";
+	model = "Renesas RZ/V2H EVK";
 
 	aliases {
 		led0 = &led5;
@@ -40,14 +40,14 @@
 		};
 	};
 
-	ddr: memory@80000000 {
-		compatible = "mmio-sram";
-		reg = <0x80000000 DT_SIZE_M(256)>;
-	};
-
 	sram: memory@8003000 {
 		compatible = "mmio-sram";
 		reg = <0x08003000 0xfbfff>;
+	};
+
+	ddr: memory@80000000 {
+		compatible = "mmio-sram";
+		reg = <0x80000000 DT_SIZE_M(256)>;
 	};
 };
 

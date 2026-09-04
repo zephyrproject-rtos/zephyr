@@ -12,8 +12,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "The Infineon PSOC™ Control C3M5 Evaluation Kit";
 	compatible = "infineon,kit_psc3m5_evk", "infineon,PSC3M5";
+	model = "The Infineon PSOC™ Control C3M5 Evaluation Kit";
 
 	aliases {
 		led0 = &user_led0;
@@ -84,23 +84,23 @@
 
 uart3: &scb3 {
 	compatible = "infineon,uart";
-	status = "okay";
 	current-speed = <115200>;
 
 	clocks = <&peri0_group4_8bit_0>;
 
 	pinctrl-0 = <&p6_3_scb3_uart_tx &p6_2_scb3_uart_rx &p6_1_scb3_uart_rts &p6_0_scb3_uart_cts>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &peri0_group4_8bit_0 {
-	status = "okay";
 	clock-div = <86>;
+	status = "okay";
 };
 
 &peri0_group4_16_5bit_0 {
-	status = "okay";
 	clock-div = <1>;
+	status = "okay";
 };
 
 &canfd0 {
@@ -108,10 +108,10 @@ uart3: &scb3 {
 };
 
 &can1 {
-	status = "okay";
 	clocks = <&peri0_group4_16_5bit_0>;
 	pinctrl-0 = <&p5_2_can1_rx &p5_3_can1_tx>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &watchdog0 {
@@ -141,7 +141,6 @@ uart3: &scb3 {
  * dpll_lp0 is set to "okay".
  */
 &dpll_lp0 {
-	status = "okay";
 	clock-frequency = <180000000>;
 
 	feedback-div = <45>;
@@ -149,6 +148,7 @@ uart3: &scb3 {
 	output-div = <2>;
 	fraction-div = <0>;
 	dco-mode-enable;
+	status = "okay";
 };
 
 /* This dpll_lp1 is on "clock path" 2. So HF clocks sourced
@@ -156,7 +156,6 @@ uart3: &scb3 {
  * dpll_lp1 is set to "okay".
  */
 &dpll_lp1 {
-	status = "okay";
 	clock-frequency = <240000000>;
 
 	feedback-div = <60>;
@@ -164,6 +163,7 @@ uart3: &scb3 {
 	output-div = <2>;
 	fraction-div = <0>;
 	dco-mode-enable;
+	status = "okay";
 };
 
 &path_mux0 {
@@ -237,8 +237,8 @@ uart3: &scb3 {
 };
 
 &peri0_group5_16bit_0 {
-	status = "okay";
 	clock-div = <2>;
+	status = "okay";
 };
 
 &adc0 {
@@ -246,8 +246,8 @@ uart3: &scb3 {
 };
 
 &csg0 {
-	status = "okay";
 	clocks = <&peri0_group5_16bit_0>;
+	status = "okay";
 };
 
 &dac0 {
@@ -271,31 +271,31 @@ uart3: &scb3 {
 };
 
 &comp0 {
-	status = "okay";
 	positive-input = "ain-pa";
 	negative-input = "dac";
+	status = "okay";
 };
 
 &comp1 {
-	status = "okay";
 	positive-input = "ain-pa";
 	negative-input = "dac";
+	status = "okay";
 };
 
 &comp2 {
-	status = "okay";
 	positive-input = "ain-pa";
 	negative-input = "dac";
+	status = "okay";
 };
 
 &comp3 {
-	status = "okay";
 	positive-input = "ain-pa";
 	negative-input = "dac";
+	status = "okay";
 };
 
 &comp4 {
-	status = "okay";
 	positive-input = "ain-pa";
 	negative-input = "dac";
+	status = "okay";
 };

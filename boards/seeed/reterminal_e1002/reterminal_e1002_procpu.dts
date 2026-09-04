@@ -17,8 +17,8 @@
 #include "reterminal_e1002-pinctrl.dtsi"
 
 / {
-	model = "Seeed Studio reTerminal E1002 PROCPU";
 	compatible = "seeed,reterminal-e1002";
+	model = "Seeed Studio reTerminal E1002 PROCPU";
 
 	chosen {
 		zephyr,sram = &sram1;
@@ -111,8 +111,8 @@
 
 		epd_ed2208_gca: ed2208_gca@1 {
 			compatible = "eink,el073tf1", "eink,ed2208-gca";
-			mipi-max-frequency = <DT_FREQ_M(4)>;
 			reg = <1>;
+			mipi-max-frequency = <DT_FREQ_M(4)>;
 			width = <800>;
 			height = <480>;
 			busy-gpios = <&gpio0 13 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
@@ -142,44 +142,44 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &uart1 {
-	status = "disabled";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart1_default>;
 	pinctrl-names = "default";
+	status = "disabled";
 };
 
 &i2c0 {
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	sht40_temp: sht4x@44 {
-		status = "okay";
 		compatible = "sensirion,sht4x";
 		reg = <0x44>;
 		repeatability = <2>;
+		status = "okay";
 	};
 
 	pfc8563_rtc: pfc8563@51 {
-		status = "okay";
 		compatible = "nxp,pcf8563";
 		reg = <0x51>;
+		status = "okay";
 	};
 };
 
 &i2c1 {
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	pinctrl-0 = <&i2c1_default>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	charger: sy6974b@6b {
 		compatible = "silergy,sy6974b";
@@ -190,11 +190,11 @@
 };
 
 &ledc0 {
-	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
 	pinctrl-0 = <&ledc0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	channel0@0 {
 		reg = <0x0>;
@@ -213,19 +213,19 @@
 &spi2 {
 	#address-cells = <1>;
 	#size-cells = <0>;
-	status = "okay";
 	pinctrl-0 = <&spim2_default>;
 	pinctrl-names = "default";
 	cs-gpios = <&gpio0 14 GPIO_ACTIVE_LOW>, <&gpio0 10 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	sdcard0: sdhc@0 {
 		compatible = "zephyr,sdhc-spi-slot";
 		reg = <0>;
-		status = "okay";
 		spi-max-frequency = <DT_FREQ_M(20)>;
 		pwr-gpios = <&gpio0 16 GPIO_ACTIVE_HIGH>;
 		cd-gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
 		power-delay-ms = <5>;
+		status = "okay";
 
 		mmc {
 			compatible = "zephyr,sdmmc-disk";
@@ -236,9 +236,9 @@
 };
 
 &adc0 {
-	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 
 	channel@0 {
 		reg = <0>;

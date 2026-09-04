@@ -9,8 +9,8 @@
 #include <st/f0/stm32f072c(8-b)tx-pinctrl.dtsi>
 
 / {
-	model = "Jhoinrch RH02";
 	compatible = "jhoinrch,rh02";
+	model = "Jhoinrch RH02";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -39,9 +39,9 @@
 };
 
 &clk_hse {
+	clock-frequency = <DT_FREQ_M(24)>;
 	/* External 24 MHz crystal used to drive PLL */
 	status = "okay";
-	clock-frequency = <DT_FREQ_M(24)>;
 };
 
 /* Adjust the PLL for a SYSTEM Clock of 48 MHz  */

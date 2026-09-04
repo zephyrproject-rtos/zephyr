@@ -12,8 +12,8 @@
 #include <espressif/partitions_0x2000_default_8M.dtsi>
 
 / {
-	model = "Espressif ESP32C5-DevKitC-1 HP Core";
 	compatible = "espressif,esp32c5";
+	model = "Espressif ESP32C5-DevKitC-1 HP Core";
 
 	chosen {
 		zephyr,sram = &sramhp;
@@ -42,10 +42,10 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &trng0 {
@@ -53,20 +53,20 @@
 };
 
 &i2c0 {
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 	sda-gpios = <&gpio0 6 GPIO_OPEN_DRAIN>;
 	scl-gpios = <&gpio0 7 GPIO_OPEN_DRAIN>;
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &spi2 {
 	#address-cells = <1>;
 	#size-cells = <0>;
-	status = "okay";
 	pinctrl-0 = <&spim2_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &i2s {
@@ -95,7 +95,7 @@
 };
 
 &twai0 {
-	status = "okay";
 	pinctrl-0 = <&twai0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };

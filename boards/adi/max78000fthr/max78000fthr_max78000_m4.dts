@@ -17,8 +17,8 @@
 m4_serial: &cmsis_serial {};
 
 / {
-	model = "Analog Devices MAX78000FTHR";
 	compatible = "adi,max78000fthr";
+	model = "Analog Devices MAX78000FTHR";
 
 	chosen {
 		zephyr,console = &m4_serial;
@@ -107,9 +107,9 @@ m4_serial: &cmsis_serial {};
 };
 
 feather_spi: &spi0 {
-	status = "okay";
 	pinctrl-0 = <&spi0_mosi_p0_5 &spi0_miso_p0_6 &spi0_sck_p0_7 &spi0_ss1_p0_11>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &dma0 {

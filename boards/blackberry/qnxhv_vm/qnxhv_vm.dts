@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 
 / {
-	model = "QNX Hypervisor Virtual Machine";
 	compatible = "blackberry,qnxhv_vm";
+	model = "QNX Hypervisor Virtual Machine";
 
 	chosen {
 		zephyr,sram = &sram0;
@@ -26,10 +26,10 @@
 		#size-cells = <0x00>;
 
 		cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,armv8";
-			enable-method = "psci";
 			reg = <0x00>;
+			device_type = "cpu";
+			enable-method = "psci";
 		};
 	};
 
@@ -48,20 +48,6 @@
 		#address-cells = <2>;
 		#size-cells = <2>;
 		interrupt-parent = <&gic>;
-
-		sram0: memory@80000000 {
-			compatible = "mmio-sram";
-			reg = <0x0 0x80000000 0x0 DT_SIZE_M(128)>;
-		};
-
-		gic: interrupt-controller@2c001000 {
-			compatible = "arm,gic-v2", "arm,gic";
-			reg = <0x00 0x2c001000 0x00 0x00001000>,
-			      <0x00 0x2c002000 0x00 0x00002000>;
-			interrupt-controller;
-			#interrupt-cells = <4>;
-			status = "okay";
-		};
 
 		timer: timer {
 			compatible = "arm,armv8-timer";
@@ -83,6 +69,18 @@
 			status = "okay";
 		};
 
+		virtio_mmio@1c0e0000 {
+			compatible = "virtio,mmio";
+			reg = <0x0 0x1c0e0000 0x0 0x1000>;
+			interrupts = <GIC_SPI 11 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			status = "okay";
+
+			virtio_entropy: virtio-entropy {
+				compatible = "virtio,device4";
+				status = "okay";
+			};
+		};
+
 		virtio_mmio@20000000 {
 			compatible = "virtio,mmio";
 			reg = <0x0 0x20000000 0x0 0x1000>;
@@ -95,16 +93,18 @@
 			};
 		};
 
-		virtio_mmio@1c0e0000 {
-			compatible = "virtio,mmio";
-			reg = <0x0 0x1c0e0000 0x0 0x1000>;
-			interrupts = <GIC_SPI 11 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		gic: interrupt-controller@2c001000 {
+			compatible = "arm,gic-v2", "arm,gic";
+			reg = <0x00 0x2c001000 0x00 0x00001000>,
+			      <0x00 0x2c002000 0x00 0x00002000>;
+			interrupt-controller;
+			#interrupt-cells = <4>;
 			status = "okay";
+		};
 
-			virtio_entropy: virtio-entropy {
-				compatible = "virtio,device4";
-				status = "okay";
-			};
+		sram0: memory@80000000 {
+			compatible = "mmio-sram";
+			reg = <0x0 0x80000000 0x0 DT_SIZE_M(128)>;
 		};
 	};
 };

@@ -49,9 +49,9 @@
 		#size-cells = <0>;
 
 		cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m33";
 			reg = <0>;
+			device_type = "cpu";
 			#address-cells = <1>;
 			#size-cells = <1>;
 
@@ -59,6 +59,26 @@
 				compatible = "arm,armv8m-mpu";
 				reg = <0xe000ed90 0x40>;
 			};
+		};
+	};
+
+	sysclk: system-clock {
+		compatible = "fixed-clock";
+		clock-frequency = <40000000>;
+		#clock-cells = <0>;
+	};
+
+	soc {
+		peripheral@50000000 {
+			ranges = <0x0 0x50000000 0x10000000>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			pinctrl: pinctrl {
+				compatible = "arm,v2m_musca_b1-pinctrl";
+			};
+
+#include "v2m_musca_b1-common.dtsi"
 		};
 	};
 
@@ -72,29 +92,9 @@
 		reg = <0x30000000 0x80000>;
 	};
 
-	sysclk: system-clock {
-		compatible = "fixed-clock";
-		clock-frequency = <40000000>;
-		#clock-cells = <0>;
-	};
-
 	scc@5010b000 {
 		compatible = "arm,scc";
 		reg = <0x5010b000 0x1000>;
-	};
-
-	soc {
-		peripheral@50000000 {
-			#address-cells = <1>;
-			#size-cells = <1>;
-			ranges = <0x0 0x50000000 0x10000000>;
-
-			pinctrl: pinctrl {
-				compatible = "arm,v2m_musca_b1-pinctrl";
-			};
-
-#include "v2m_musca_b1-common.dtsi"
-		};
 	};
 };
 

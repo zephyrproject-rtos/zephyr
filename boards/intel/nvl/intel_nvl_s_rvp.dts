@@ -12,8 +12,8 @@
 #include <intel/nova_lake_s.dtsi>
 
 / {
-	model = "intel_nvl_s_rvp";
 	compatible = "intel,nova-lake-rvp";
+	model = "intel_nvl_s_rvp";
 
 	chosen {
 		zephyr,sram = &dram0;

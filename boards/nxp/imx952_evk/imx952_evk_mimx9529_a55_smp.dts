@@ -9,8 +9,8 @@
 #include "imx952_evk_mimx9529_a55.dts"
 
 / {
-	model = "NXP i.MX952 A55";
 	compatible = "fsl,mimx952";
+	model = "NXP i.MX952 A55";
 
 	chosen {
 		zephyr,console = &lpuart1;

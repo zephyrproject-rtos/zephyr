@@ -12,8 +12,8 @@
 #include "st_morpho_connector.dtsi"
 
 / {
-	model = "STMicroelectronics STM32C5A3ZG-NUCLEO board";
 	compatible = "st,stm32c5a3zg-nucleo";
+	model = "STMicroelectronics STM32C5A3ZG-NUCLEO board";
 
 	chosen {
 		zephyr,canbus = &fdcan1;
@@ -149,32 +149,32 @@
 
 &flash0 {
 	partitions {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		boot_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(48)>;
+			label = "mcuboot";
 		};
 
 		slot0_partition: partition@c000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-0";
 			reg = <0x0000c000 DT_SIZE_K(472)>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@82000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-1";
 			reg = <0x00082000 DT_SIZE_K(480)>;
+			label = "image-1";
 		};
 
 		storage_partition: partition@fa000 {
 			compatible = "zephyr,mapped-partition";
-			label = "storage";
 			reg = <0x000fa000 DT_SIZE_K(24)>;
+			label = "storage";
 		};
 	};
 };

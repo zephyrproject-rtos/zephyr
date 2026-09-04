@@ -18,8 +18,8 @@
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
 
 / {
-	model = "XENVM";
 	compatible = "xen,xenvm";
+	model = "XENVM";
 	interrupt-parent = <&gic>;
 	#address-cells = <0x02>;
 	#size-cells = <0x02>;
@@ -34,29 +34,16 @@
 		#size-cells = <0x00>;
 
 		cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,armv8";
-			enable-method = "psci";
 			reg = <0x00>;
+			device_type = "cpu";
+			enable-method = "psci";
 		};
 	};
 
 	psci {
 		compatible = "arm,psci-1.0", "arm,psci-0.2", "arm,psci";
 		method = "hvc";
-	};
-
-	ram: memory@40000000 {
-		device_type = "memory";
-		reg = <0x00 0x40000000 0x00 DT_SIZE_M(16)>;
-	};
-
-	gic: interrupt-controller@3001000 {
-		compatible = "arm,gic-v2", "arm,gic";
-		#interrupt-cells = <0x04>;
-		#address-cells = <0x00>;
-		interrupt-controller;
-		reg = <0x00 0x3001000 0x00 0x1000 0x00 0x3002000 0x00 0x2000>;
 	};
 
 	timer {
@@ -67,6 +54,19 @@
 		interrupt-parent = <&gic>;
 	};
 
+	xen_hvc: hvc {
+		compatible = "xen,hvc-uart";
+		status = "okay";
+	};
+
+	gic: interrupt-controller@3001000 {
+		compatible = "arm,gic-v2", "arm,gic";
+		reg = <0x00 0x3001000 0x00 0x1000 0x00 0x3002000 0x00 0x2000>;
+		#interrupt-cells = <0x04>;
+		#address-cells = <0x00>;
+		interrupt-controller;
+	};
+
 	hypervisor: hypervisor@38000000 {
 		compatible = "xen,xen";
 		reg = <0x00 0x38000000 0x00 0x1000000>;
@@ -74,8 +74,8 @@
 		interrupt-parent = <&gic>;
 	};
 
-	xen_hvc: hvc {
-		compatible = "xen,hvc-uart";
-		status = "okay";
+	ram: memory@40000000 {
+		reg = <0x00 0x40000000 0x00 DT_SIZE_M(16)>;
+		device_type = "memory";
 	};
 };

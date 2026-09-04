@@ -10,8 +10,8 @@
 #include "am62x_m4_bl350_am6254_m4-pinctrl.dtsi"
 
 / {
-	model = "BLIIoT ARMxy BL350";
 	compatible = "bliiot,am62x-m4-bl350", "ti,am625";
+	model = "BLIIoT ARMxy BL350";
 
 	chosen {
 		/*
@@ -36,42 +36,9 @@
 
 	cpus {
 		cpu@0 {
-			status = "okay";
 			clock-frequency = <400000000>;
+			status = "okay";
 		};
-	};
-
-	/*
-	 * OpenAMP rpmsg shared memory — the Linux m4f-dma-memory@9cb00000
-	 * carveout (1 MB). Holds the vrings and rpmsg buffers.
-	 */
-	ipc_shm: memory@9cb00000 {
-		device_type = "memory";
-		compatible = "mmio-sram";
-		reg = <0x9cb00000 DT_SIZE_M(1)>;
-	};
-
-	/*
-	 * OpenAMP resource table — start of the Linux m4f-memory@9cc00000
-	 * carveout. Linux remoteproc reads it to learn the vdev/vring
-	 * configuration and publishes the allocated vring addresses back here.
-	 */
-	rsc_table: memory@9cc00000 {
-		device_type = "memory";
-		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x9cc00000 DT_SIZE_K(4)>;
-		zephyr,memory-region = "RSC_TABLE";
-	};
-
-	/*
-	 * Remainder of the m4f-memory carveout (~14 MB), exposed as extra RAM
-	 * (zephyr,sram1) for buffers that do not fit the 64 KB D-Code SRAM.
-	 */
-	ddr_ext: memory@9cc01000 {
-		device_type = "memory";
-		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x9cc01000 (DT_SIZE_M(14) - DT_SIZE_K(4))>;
-		zephyr,memory-region = "DDR";
 	};
 
 	/*
@@ -83,6 +50,39 @@
 		compatible = "zephyr,mbox-ipm";
 		mboxes = <&mbox0 0>, <&mbox0 1>;
 		mbox-names = "tx", "rx";
+	};
+
+	/*
+	 * OpenAMP rpmsg shared memory — the Linux m4f-dma-memory@9cb00000
+	 * carveout (1 MB). Holds the vrings and rpmsg buffers.
+	 */
+	ipc_shm: memory@9cb00000 {
+		compatible = "mmio-sram";
+		reg = <0x9cb00000 DT_SIZE_M(1)>;
+		device_type = "memory";
+	};
+
+	/*
+	 * OpenAMP resource table — start of the Linux m4f-memory@9cc00000
+	 * carveout. Linux remoteproc reads it to learn the vdev/vring
+	 * configuration and publishes the allocated vring addresses back here.
+	 */
+	rsc_table: memory@9cc00000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x9cc00000 DT_SIZE_K(4)>;
+		device_type = "memory";
+		zephyr,memory-region = "RSC_TABLE";
+	};
+
+	/*
+	 * Remainder of the m4f-memory carveout (~14 MB), exposed as extra RAM
+	 * (zephyr,sram1) for buffers that do not fit the 64 KB D-Code SRAM.
+	 */
+	ddr_ext: memory@9cc01000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x9cc01000 (DT_SIZE_M(14) - DT_SIZE_K(4))>;
+		device_type = "memory";
+		zephyr,memory-region = "DDR";
 	};
 };
 

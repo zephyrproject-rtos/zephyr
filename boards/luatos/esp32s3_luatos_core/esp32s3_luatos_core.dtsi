@@ -36,10 +36,10 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &gpio0 {
@@ -65,17 +65,17 @@
 &spi2 {
 	#address-cells = <1>;
 	#size-cells = <0>;
-	status = "okay";
 	pinctrl-0 = <&spim2_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &spi3 {
 	#address-cells = <1>;
 	#size-cells = <0>;
-	status = "okay";
 	pinctrl-0 = <&spim3_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &twai {

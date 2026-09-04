@@ -9,8 +9,8 @@
 #include <efinix/sapphire_soc.dtsi>
 
 / {
-	model = "Efinix Titanium Ti60 F225";
 	compatible = "efinix,titanium-ti60-f225";
+	model = "Efinix Titanium Ti60 F225";
 
 	chosen {
 		zephyr,console = &uart0;
@@ -43,8 +43,8 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 &gpio0 {

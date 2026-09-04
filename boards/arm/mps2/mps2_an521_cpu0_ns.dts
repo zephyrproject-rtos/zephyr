@@ -66,9 +66,9 @@
 		#size-cells = <0>;
 
 		cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m33";
 			reg = <0>;
+			device_type = "cpu";
 			#address-cells = <1>;
 			#size-cells = <1>;
 
@@ -79,31 +79,11 @@
 		};
 	};
 
-	/*
-	 * The memory regions defined below are according to AN521:
-	 * https://documentation-service.arm.com/static/5fa12fe9b1a7c5445f29017f
-	 *
-	 * Please see tables mentioned in individual comments below for details.
-	 */
-
 	ssram1: memory@0 {
 		/* Table 3-2, row 1. */
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0x0 DT_SIZE_M(4)>;
 		zephyr,memory-region = "SSRAM1";
-	};
-
-	ssram2_3: memory@28000000 {
-		/* Table 3-4, rows 8 and 9. */
-		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x28000000 DT_SIZE_M(4)>;
-		zephyr,memory-region = "SSRAM2_3";
-	};
-
-	psram: memory@80000000 {
-		/* Table 3-6, row 1. */
-		device_type = "memory";
-		reg = <0x80000000 DT_SIZE_M(16)>;
 	};
 
 	/*
@@ -114,9 +94,9 @@
 	 * this approach and should describe the hardware correctly.
 	 */
 	fake_flash_controller {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		fake_flash0: flash@0 {
 			compatible = "soc-nv-flash";
@@ -171,13 +151,33 @@
 
 	soc {
 		peripheral@40000000 {
+			ranges = <0x0 0x40000000 0x10000000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0x40000000 0x10000000>;
 
 #include "mps2_an521-common.dtsi"
 		};
 	};
+
+	ssram2_3: memory@28000000 {
+		/* Table 3-4, rows 8 and 9. */
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x28000000 DT_SIZE_M(4)>;
+		zephyr,memory-region = "SSRAM2_3";
+	};
+
+	psram: memory@80000000 {
+		reg = <0x80000000 DT_SIZE_M(16)>;
+		/* Table 3-6, row 1. */
+		device_type = "memory";
+	};
+
+	/*
+	 * The memory regions defined below are according to AN521:
+	 * https://documentation-service.arm.com/static/5fa12fe9b1a7c5445f29017f
+	 *
+	 * Please see tables mentioned in individual comments below for details.
+	 */
 };
 
 &nvic {

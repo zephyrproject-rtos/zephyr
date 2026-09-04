@@ -13,8 +13,8 @@
 #include <zephyr/dt-bindings/wuc/wuc_nxp_wuu.h>
 
 / {
-	model = "NXP FRDM_MCXA344 board";
 	compatible = "nxp,mcxa344", "nxp,mcx";
+	model = "NXP FRDM_MCXA344 board";
 
 	aliases {
 		led0 = &red_led;
@@ -65,9 +65,9 @@
 		user_button_2: button_2 {
 			label = "User SW2";
 			gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;
-			zephyr,code = <INPUT_KEY_0>;
 			/* SW2 wakes via WUU external pin 9. */
 			wakeup-ctrls = <&wuu NXP_WUU_PIN_9_FALLING_INT>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 
 		user_button_3: button_3 {
@@ -130,32 +130,32 @@
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(16)>;
+			label = "mcuboot";
 			read-only;
 		};
 
 		slot0_partition: partition@4000 {
-			label = "image-0";
 			reg = <0x00004000 DT_SIZE_K(100)>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@1d000 {
-			label = "image-1";
 			reg = <0x0001d000 DT_SIZE_K(100)>;
+			label = "image-1";
 		};
 
 		storage_partition: partition@36000 {
-			label = "storage";
 			reg = <0x00036000 DT_SIZE_K(28)>;
+			label = "storage";
 		};
 	};
 };
 
 &flexcan0 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_flexcan0>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &gpio0 {
@@ -179,27 +179,27 @@
 };
 
 &lpadc0 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpadc0>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &lpi2c0 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpi2c0>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &lpi2c1 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpi2c1>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &lpspi1 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpspi1>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &lptmr0 {
@@ -207,10 +207,10 @@
 };
 
 &lpuart2 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_lpuart2>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &wwdt0 {
@@ -242,9 +242,9 @@
 };
 
 &flexpwm0_pwm0 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_flexpwm0_pwm0>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 /*

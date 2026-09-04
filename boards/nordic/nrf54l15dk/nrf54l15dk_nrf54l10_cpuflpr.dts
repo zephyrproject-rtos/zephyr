@@ -9,8 +9,8 @@
 #include "nrf54l15dk_common.dtsi"
 
 / {
-	model = "Nordic nRF54L15 DK nRF54L10 FLPR MCU";
 	compatible = "nordic,nrf54l15dk_nrf54l10-cpuflpr";
+	model = "Nordic nRF54L15 DK nRF54L10 FLPR MCU";
 
 	chosen {
 		zephyr,console = &uart30;
@@ -23,14 +23,14 @@
 
 &cpuflpr_rram {
 	partitions {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		cpuflpr_code_partition: partition@0 {
-			label = "image-0";
 			compatible = "zephyr,mapped-partition";
 			reg = <0x0 DT_SIZE_K(64)>;
+			label = "image-0";
 		};
 	};
 };

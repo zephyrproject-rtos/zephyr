@@ -51,9 +51,9 @@
 		user_button_2: button_2 {
 			label = "User SW2";
 			gpios = <&gpio3 17 GPIO_ACTIVE_LOW>;
-			zephyr,code = <INPUT_KEY_0>;
 			/* P3_17 reaches the core as WUU external pin 26. */
 			wakeup-ctrls = <&wuu NXP_WUU_PIN_26_FALLING_INT>;
+			zephyr,code = <INPUT_KEY_0>;
 		};
 
 		user_button_3: button_3 {
@@ -145,41 +145,41 @@
 };
 
 &lpuart1 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_lpuart1>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &lpuart2 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_lpuart2>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &lpadc0 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpadc0>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &lpspi2 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpspi2>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &lpi2c0 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpi2c0>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &lpi2c3 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_lpi2c3>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &ctimer0 {
@@ -209,30 +209,29 @@
 		#size-cells = <1>;
 
 		boot_partition: partition@0 {
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(128)>;
+			label = "mcuboot";
 			read-only;
 		};
 
 		slot0_partition: partition@20000 {
-			label = "image-0";
 			reg = <0x00020000 DT_SIZE_K(896)>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@100000 {
-			label = "image-1";
 			reg = <0x00100000 DT_SIZE_K(896)>;
+			label = "image-1";
 		};
 
 		storage_partition: partition@1e0000 {
-			label = "storage";
 			reg = <0x001e0000 DT_SIZE_K(128)>;
+			label = "storage";
 		};
 	};
 };
 
 &flexspi {
-	status = "okay";
 	pinctrl-0 = <&pinmux_flexspi>;
 	pinctrl-names = "default";
 	ahb-prefetch;
@@ -241,13 +240,14 @@
 	ahb-read-addr-opt;
 	combination-mode;
 	rx-clock-source = <1>;
+	status = "okay";
 
 	/* WINBOND W25Q64JV flash memory */
 	ext_flash_ctrl: flash-controller@0 {
 		compatible = "nxp,imx-flexspi-nor";
-		status = "okay";
-		size = <DT_SIZE_M(64)>;
 		reg = <0>;
+		ranges = <0x0 0x90000000 DT_SIZE_M(8)>;
+		size = <DT_SIZE_M(64)>;
 		spi-max-frequency = <DT_FREQ_M(133)>;
 		jedec-id = [ef 40 17];
 		cs-interval-unit = <1>;
@@ -259,16 +259,16 @@
 
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges = <0x0 0x90000000 DT_SIZE_M(8)>;
+		status = "okay";
 
 		w25q64: flash@0 {
 			compatible = "soc-nv-flash";
 			reg = <0x0 DT_SIZE_M(8)>;
+			ranges;
 			erase-block-size = <DT_SIZE_K(4)>;
 			write-block-size = <1>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges;
 
 			partitions {
 				#address-cells = <1>;
@@ -276,26 +276,26 @@
 
 				ext_boot_partition: partition@0 {
 					compatible = "zephyr,mapped-partition";
-					label = "ext-mcuboot";
 					reg = <0x00000000 DT_SIZE_K(80)>;
+					label = "ext-mcuboot";
 				};
 
 				ext_slot0_partition: partition@14000 {
 					compatible = "zephyr,mapped-partition";
-					label = "ext-image-0";
 					reg = <0x00014000 DT_SIZE_M(3)>;
+					label = "ext-image-0";
 				};
 
 				ext_slot1_partition: partition@314000 {
 					compatible = "zephyr,mapped-partition";
-					label = "ext-image-1";
 					reg = <0x00314000 DT_SIZE_M(3)>;
+					label = "ext-image-1";
 				};
 
 				ext_storage_partition: partition@614000 {
 					compatible = "zephyr,mapped-partition";
-					label = "ext-storage";
 					reg = <0x00614000 DT_SIZE_K(1968)>;
+					label = "ext-storage";
 				};
 			};
 		};
@@ -303,12 +303,12 @@
 };
 
 &enet {
-	status = "okay";
 	pinctrl-0 = <&pinmux_enet_qos>;
 	pinctrl-names = "default";
 	phy-connection-type = "rmii";
-	zephyr,random-mac-address;
 	phy-handle = <&phy>;
+	zephyr,random-mac-address;
+	status = "okay";
 };
 
 &enet_mdio {
@@ -346,24 +346,24 @@
 };
 
 &flexcan0 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_flexcan0>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &rtc {
-	status = "okay";
 	clock-src = <1>;
+	status = "okay";
 };
 
 &i3c0 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_i3c0>;
 	pinctrl-names = "default";
 
 	i2c-scl-hz = <DT_FREQ_K(400)>;
 	i3c-scl-hz = <DT_FREQ_M(4)>;
 	i3c-od-scl-hz = <DT_FREQ_K(1500)>;
+	status = "okay";
 
 	p3t1755: p3t1755@4800000236152a0090 {
 		compatible = "nxp,p3t1755";
@@ -377,7 +377,6 @@
 };
 
 &tsi0 {
-	status = "okay";
 	pinctrl-0 = <&pinmux_tsi>;
 	pinctrl-names = "default";
 	/* On-board electrode E2 is wired to TSI0_CH0 (P5_3). */
@@ -386,6 +385,7 @@
 	touch-threshold = <100>;
 	release-threshold = <50>;
 	scan-period-ms = <50>;
+	status = "okay";
 };
 
 &smartdma {

@@ -17,22 +17,6 @@
 		zephyr,display = &ltdc;
 	};
 
-	sdram2: sdram@d0000000 {
-		compatible = "zephyr,memory-region", "mmio-sram";
-		device_type = "memory";
-		/* 128Mbit, but only half is available by HW design */
-		reg = <0xd0000000 DT_SIZE_M(8)>;
-		zephyr,memory-region = "SDRAM2";
-		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
-	};
-
-	ext_flash_mem: memory@90000000 {
-		compatible = "zephyr,memory-region";
-		reg = <0x90000000 DT_SIZE_M(128)>; /* 128MB */
-		zephyr,memory-region = "EXT_FLASH";
-		zephyr,memory-attr = <DT_MEM_ARM_MPU_FLASH>;
-	};
-
 	leds {
 		compatible = "gpio-leds";
 
@@ -64,6 +48,22 @@
 		sw0 = &user_button;
 		die-temp0 = &die_temp;
 	};
+
+	ext_flash_mem: memory@90000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x90000000 DT_SIZE_M(128)>; /* 128MB */
+		zephyr,memory-region = "EXT_FLASH";
+		zephyr,memory-attr = <DT_MEM_ARM_MPU_FLASH>;
+	};
+
+	sdram2: sdram@d0000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		/* 128Mbit, but only half is available by HW design */
+		reg = <0xd0000000 DT_SIZE_M(8)>;
+		device_type = "memory";
+		zephyr,memory-region = "SDRAM2";
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
+	};
 };
 
 &clk_hse {
@@ -93,7 +93,6 @@
 	disp-on-gpios = <&gpiod 7 GPIO_ACTIVE_HIGH>;
 
 	ext-sdram = <&sdram2>;
-	status = "okay";
 
 	clocks = <&rcc STM32_CLOCK(APB3, 3)>,
 		 <&rcc STM32_SRC_PLL3_R NO_SEL>;
@@ -101,6 +100,11 @@
 	width = <480>;
 	height = <272>;
 	pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
+
+	def-back-color-red = <0xff>;
+	def-back-color-green = <0xff>;
+	def-back-color-blue = <0xff>;
+	status = "okay";
 
 	display-timings {
 		compatible = "zephyr,panel-timing";
@@ -115,10 +119,6 @@
 		hfront-porch = <8>;
 		vfront-porch = <4>;
 	};
-
-	def-back-color-red = <0xff>;
-	def-back-color-green = <0xff>;
-	def-back-color-blue = <0xff>;
 };
 
 &pll {
@@ -181,6 +181,7 @@
 	ext_flash_ctrl: qspi-flash-controller@0 {
 		compatible = "st,stm32-qspi-nor";
 		reg = <0>;
+		ranges = <0x0 0x90000000 DT_SIZE_M(128)>;
 		size = <DT_SIZE_M(512)>; /* 64MB for each Flash */
 		qspi-max-frequency = <72000000>;
 		cs-high-time = <4>; /* >= 50 ns */
@@ -190,7 +191,6 @@
 		/* QSPI external flash mapping */
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges = <0x0 0x90000000 DT_SIZE_M(128)>;
 
 		status = "okay";
 
@@ -199,11 +199,11 @@
 		ext_flash: mt25ql512ab: ext-flash@0 {
 			compatible = "soc-nv-flash";
 			reg = <0x0 DT_SIZE_M(128)>; /* 128MB total in dual-flash mode */
+			ranges;
 			write-block-size = <1>; /* 1byte=4bits*2 in dual-flash mode */
 			erase-block-size = <DT_SIZE_K(8)>; /* 4KB*2 in dual-flash mode */
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges;
 		};
 	};
 };
@@ -224,11 +224,11 @@
 	status = "okay";
 
 	sdram {
-		status = "okay";
 		power-up-delay = <100>;
 		num-auto-refresh = <8>;
 		mode-register = <0x230>;
 		refresh-rate = <0x603>;
+		status = "okay";
 
 		bank@1 {
 			reg = <1>;

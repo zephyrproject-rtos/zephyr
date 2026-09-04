@@ -24,13 +24,8 @@
 #include <zephyr/dt-bindings/pcie/pcie.h>
 
 / {
-	model = "QEMU X86 emulator";
 	compatible = "qemu,x86_emulator";
-
-	flash0: flash@500000 {
-		compatible = "soc-nv-flash";
-		reg = <0x00500000 DT_FLASH_SIZE>;
-	};
+	model = "QEMU X86 emulator";
 
 	aliases {
 		uart-0 = &uart0;
@@ -57,19 +52,19 @@
 	};
 
 	pcie0: pcie0 {
+		compatible = "pcie-controller";
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		compatible = "pcie-controller";
 		acpi-hid = "PNP0A08";
-		ranges;
 
 		can0: can0 {
 			compatible = "kvaser,pcican";
-			status = "okay";
 			vendor-id = <0x10e8>;
 			device-id = <0x8406>;
 			interrupts = <11 IRQ_TYPE_LOWEST_LEVEL_LOW 3>;
 			interrupt-parent = <&intc>;
+			status = "okay";
 
 			can-transceiver {
 				max-bitrate = <1000000>;
@@ -124,34 +119,28 @@
 	};
 
 	eeprom1: eeprom1 {
-		status = "okay";
 		compatible = "zephyr,emu-eeprom";
 		size = <DT_SIZE_K(4)>;
 		pagesize = <DT_SIZE_K(8)>;
 		partition = <&eepromemu_partition>;
 		rambuf;
+		status = "okay";
 	};
 
 	eeprom0: eeprom0 {
-		status = "okay";
 		compatible = "zephyr,sim-eeprom";
 		size = <DT_SIZE_K(4)>;
+		status = "okay";
 	};
 
 	ieee802154: ieee802154 {
 		compatible = "zephyr,ieee802154-uart-pipe";
 	};
 
-	fwcfg0: fw-cfg@510 {
-		compatible = "qemu,fw-cfg-ioport";
-		reg = <0x510 0x18>;
-		status = "okay";
-	};
-
 	reserved-memory {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		ramfb_mem: framebuffer@1c00000 {
 			reg = <0x01c00000 0x00400000>; /* 4 MiB */
@@ -167,16 +156,27 @@
 		height = <768>;
 		status = "okay";
 	};
+
+	fwcfg0: fw-cfg@510 {
+		compatible = "qemu,fw-cfg-ioport";
+		reg = <0x510 0x18>;
+		status = "okay";
+	};
+
+	flash0: flash@500000 {
+		compatible = "soc-nv-flash";
+		reg = <0x00500000 DT_FLASH_SIZE>;
+	};
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 &uart1 {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 
 	bt_hci_uart: bt_hci_uart {
 		compatible = "zephyr,bt-hci-uart";
@@ -200,26 +200,26 @@
 		 */
 		storage_partition: partition@1000 {
 			compatible = "zephyr,mapped-partition";
-			label = "storage";
 			reg = <0x00001000 0x00010000>;
+			label = "storage";
 		};
 
 		slot0_partition: partition@11000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-0";
 			reg = <0x00011000 0x00010000>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@21000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-1";
 			reg = <0x00021000 0x00010000>;
+			label = "image-1";
 		};
 
 		eepromemu_partition: partition@31000 {
 			compatible = "zephyr,mapped-partition";
-			label = "eeprom-emu";
 			reg = <0x00031000 0x00010000>;
+			label = "eeprom-emu";
 		};
 	};
 };

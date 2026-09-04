@@ -9,8 +9,8 @@
 #include <espressif/partitions_0x0_default.dtsi>
 
 / {
-	model = "Waveshare ESP32-C6-LCD-1.47 LP Core";
 	compatible = "espressif,esp32c6";
+	model = "Waveshare ESP32-C6-LCD-1.47 LP Core";
 
 	chosen {
 		zephyr,flash = &flash0;
@@ -22,6 +22,6 @@
 };
 
 &lp_uart {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 };

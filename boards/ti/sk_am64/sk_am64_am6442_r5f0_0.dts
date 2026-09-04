@@ -10,8 +10,8 @@
 #include <ti/am64x_r5f0_0.dtsi>
 
 / {
-	model = "TI AM64x STARTER KIT (SK) R5F";
 	compatible = "ti,am64x_sk_r5f0_0", "ti,am6442";
+	model = "TI AM64x STARTER KIT (SK) R5F";
 
 	chosen {
 		zephyr,sram = &ddr1;
@@ -23,6 +23,12 @@
 		cpu@0 {
 			status = "okay";
 		};
+	};
+
+	ipc0: ipc {
+		compatible = "zephyr,mbox-ipm";
+		mboxes = <&main_mbox2 0>, <&main_mbox2 1>;
+		mbox-names = "tx", "rx";
 	};
 
 	ddr0: memory@a0000000 {
@@ -40,11 +46,5 @@
 		compatible = "zephyr,memory-region", "mmio-sram";
 		reg = <0xa0101000 (DT_SIZE_M(15) - DT_SIZE_K(4))>;
 		zephyr,memory-region = "DRAM";
-	};
-
-	ipc0: ipc {
-		compatible = "zephyr,mbox-ipm";
-		mboxes = <&main_mbox2 0>, <&main_mbox2 1>;
-		mbox-names = "tx", "rx";
 	};
 };

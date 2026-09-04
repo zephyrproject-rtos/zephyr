@@ -10,8 +10,8 @@
 #include <espressif/partitions_0x0_amp_8M.dtsi>
 
 / {
-	model = "Heltec Wi-Fi Lora32 V3 APPCPU";
 	compatible = "espressif,esp32s3";
+	model = "Heltec Wi-Fi Lora32 V3 APPCPU";
 
 	chosen {
 		zephyr,sram = &sram1;

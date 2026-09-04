@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/pinctrl/gecko-pinctrl-s1.h>
 
 / {
-	model = "Silicon Labs EFM32TG STK3300 board";
 	compatible = "silabs,efm32tg_stk3300", "silabs,efm32tg";
+	model = "Silicon Labs EFM32TG STK3300 board";
 
 	chosen {
 		zephyr,console = &usart1;

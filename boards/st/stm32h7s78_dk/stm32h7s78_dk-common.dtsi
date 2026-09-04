@@ -26,13 +26,6 @@
 		zephyr,canbus = &fdcan1;
 	};
 
-	psram: memory@90000000 {
-		compatible = "zephyr,memory-region";
-		reg = <0x90000000 DT_SIZE_M(32)>;
-		zephyr,memory-region = "PSRAM";
-		zephyr,memory-attr = <DT_MEM_ARM_MPU_RAM>;
-	};
-
 	leds {
 		compatible = "gpio-leds";
 
@@ -106,6 +99,13 @@
 		reg = <0x70000000 DT_SIZE_M(128)>;
 		zephyr,memory-region = "EXTMEM";
 		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_FLASH)>;
+	};
+
+	psram: memory@90000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x90000000 DT_SIZE_M(32)>;
+		zephyr,memory-region = "PSRAM";
+		zephyr,memory-attr = <DT_MEM_ARM_MPU_RAM>;
 	};
 };
 
@@ -191,9 +191,9 @@
 	status = "okay";
 
 	pwm2: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim2_ch4_pa3>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
@@ -202,9 +202,9 @@
 	status = "okay";
 
 	pwm3: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim3_ch2_pb5>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
@@ -341,26 +341,26 @@ st_cam_i2c: &i2c1 {
 	ext_flash_ctrl: xspi-nor-flash@0 {
 		compatible = "st,stm32-xspi-nor";
 		reg = <0>;
+		ranges = <0x0 0x70000000 DT_SIZE_M(128)>;
 		size = <DT_SIZE_M(1024)>; /* 1 Gbits */
 		ospi-max-frequency = <DT_FREQ_M(50)>;
 		spi-bus-width = <XSPI_OCTO_MODE>;
 		data-rate = <XSPI_DTR_TRANSFER>;
 		four-byte-opcodes;
-		status = "okay";
 
 		/* XSPI external flash mapping */
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges = <0x0 0x70000000 DT_SIZE_M(128)>;
+		status = "okay";
 
 		ext_flash: mx66uw1g45: ext-flash@0 {
 			compatible = "soc-nv-flash";
 			reg = <0x0 DT_SIZE_M(128)>;
+			ranges;
 			write-block-size = <1>;
 			erase-block-size = <DT_SIZE_K(4)>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges;
 		};
 	};
 };
@@ -434,11 +434,15 @@ zephyr_udc0: &usb1 {};
 	bl-ctrl-gpios = <&gpiog 15 GPIO_ACTIVE_HIGH>;
 	ext-sdram = <&psram>;
 
-	status = "okay";
-
 	width = <800>;
 	height = <480>;
 	pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
+
+	def-back-color-red = <0xff>;
+	def-back-color-green = <0xff>;
+	def-back-color-blue = <0xff>;
+
+	status = "okay";
 
 	display-timings {
 		compatible = "zephyr,panel-timing";
@@ -453,10 +457,6 @@ zephyr_udc0: &usb1 {};
 		hfront-porch = <8>;
 		vfront-porch = <8>;
 	};
-
-	def-back-color-red = <0xff>;
-	def-back-color-green = <0xff>;
-	def-back-color-blue = <0xff>;
 };
 
 st_cam_dvp: &dcmipp {

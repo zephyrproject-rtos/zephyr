@@ -114,18 +114,18 @@
 
 &i2c1 {
 	compatible = "nordic,nrf-twim";
-	status = "okay";
 	pinctrl-0 = <&i2c1_default>;
 	pinctrl-1 = <&i2c1_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &uart1 {
@@ -137,26 +137,26 @@
 };
 
 &pwm0 {
-	status = "okay";
 	pinctrl-0 = <&pwm0_default>;
 	pinctrl-1 = <&pwm0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &qspi {
-	status = "okay";
 	pinctrl-0 = <&qspi_default>;
 	pinctrl-1 = <&qspi_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &spi4 {
 	compatible = "nordic,nrf-spim";
-	status = "okay";
 	cs-gpios = <&gpio0 11 0>;
 	pinctrl-0 = <&spi4_default>;
 	pinctrl-1 = <&spi4_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &ieee802154 {

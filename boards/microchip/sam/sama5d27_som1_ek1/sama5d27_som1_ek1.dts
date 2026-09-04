@@ -10,8 +10,8 @@
 #include <microchip/sam/sama5/sama5d2/sama5d27som1.dtsi>
 
 / {
-	model = "SAMA5D27-SOM1-EK1 board";
 	compatible = "microchip,sama5d27_som1_ek1", "microchip,sama5d2", "microchip,sama5";
+	model = "SAMA5D27-SOM1-EK1 board";
 
 	chosen {
 		zephyr,console = &uart1;

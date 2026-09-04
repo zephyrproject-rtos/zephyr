@@ -10,8 +10,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Ruiside Electronic ART-Pi2 board";
 	compatible = "ruiside,art-pi2";
+	model = "Ruiside Electronic ART-Pi2 board";
 
 	chosen {
 		zephyr,console = &uart4;

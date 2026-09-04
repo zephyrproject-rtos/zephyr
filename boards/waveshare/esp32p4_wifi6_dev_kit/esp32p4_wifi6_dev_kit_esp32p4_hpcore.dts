@@ -12,8 +12,8 @@
 #include <espressif/partitions_0x2000_default_16M.dtsi>
 
 / {
-	model = "Waveshare ESP32-P4-WIFI6-Dev-Kit HP Core";
 	compatible = "espressif,esp32p4";
+	model = "Waveshare ESP32-P4-WIFI6-Dev-Kit HP Core";
 
 	chosen {
 		zephyr,sram = &sramhp;
@@ -50,23 +50,23 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &i2c0 {
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &i2s0 {
-	status = "disabled";
 	pinctrl-0 = <&i2s0_default>;
 	pinctrl-names = "default";
+	status = "disabled";
 };
 
 &spi2 {
@@ -106,13 +106,12 @@ zephyr_udc0: &usb_otg {
 };
 
 &usb_serial {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 };
 
 &sdhc {
 	sdhc0: sdhc@0 {
-		status = "okay";
 		bus-width = <4>;
 		max-bus-freq = <40000000>;
 		/* GPIO45: SD card power enable (active-low) */
@@ -123,6 +122,7 @@ zephyr_udc0: &usb_otg {
 		d1-pin = <40>;
 		d2-pin = <41>;
 		d3-pin = <42>;
+		status = "okay";
 
 		mmc {
 			compatible = "zephyr,sdmmc-disk";
@@ -136,7 +136,6 @@ zephyr_udc0: &usb_otg {
 	 * clk=18, cmd=19, d0-d3=14-17, with 51K pull-ups on the C6 side).
 	 */
 	sdhc1: sdhc@1 {
-		status = "disabled";
 		bus-width = <4>;
 		clk-pin = <18>;
 		cmd-pin = <19>;
@@ -144,6 +143,7 @@ zephyr_udc0: &usb_otg {
 		d1-pin = <15>;
 		d2-pin = <16>;
 		d3-pin = <17>;
+		status = "disabled";
 	};
 };
 
@@ -191,8 +191,8 @@ zephyr_udc0: &usb_otg {
 };
 
 &eth {
-	status = "okay";
 	phy-handle = <&phy>;
 	pinctrl-0 = <&rmii_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
