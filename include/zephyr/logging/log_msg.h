@@ -54,6 +54,12 @@ typedef uint64_t log_timestamp_t;
 typedef uint32_t log_timestamp_t;
 #endif
 
+/** @brief Determine if architecture supports double word instructions with 32 bit alignment. */
+#if (defined(CONFIG_RISCV) || defined(CONFIG_X86) || defined(CONFIG_CPU_CORTEX_A) || \
+	(defined(CONFIG_CPU_CORTEX_M) && !defined(ARMV6_M_ARMV8_M_BASELINE)))
+#define ARCH_DOUBLE_WORD_32BIT_ALIGNMENT 1
+#endif
+
 /**
  * @brief Log message
  * @defgroup log_msg Log messages
@@ -62,22 +68,52 @@ typedef uint32_t log_timestamp_t;
  */
 
 /** @cond INTERNAL_HIDDEN */
+/** @brief Standard log message type. */
 #define Z_LOG_MSG_LOG 0
+
+/** @brief Compressed log message type (0-2 32 bit word arguments). */
+#define Z_LOG_MSG_COMPRESSED 1
 
 #define Z_LOG_MSG_PACKAGE_BITS 11
 
+#define Z_LOG_MSG_COMPRESSED_STRING_OFF_BITS 16
+
+#define Z_LOG_MSG_COMPRESSED_SOURCE_ID_BITS 8
+
 #define Z_LOG_MSG_MAX_PACKAGE BIT_MASK(Z_LOG_MSG_PACKAGE_BITS)
 
-#define LOG_MSG_GENERIC_HDR \
-	MPSC_PBUF_HDR;\
+/** @brief Generic part of the logging message header. */
+#define LOG_MSG_GENERIC_HDR               \
+	/** MPSC packet buffer header. */ \
+	MPSC_PBUF_HDR;                    \
+	/** Log message type. */          \
 	uint32_t type:1
 
 struct log_msg_desc {
+	/** Header with type and MPSC packet buffer part. */
 	LOG_MSG_GENERIC_HDR;
+	/** Domain ID. */
 	uint32_t domain:3;
+	/** Log level. */
 	uint32_t level:3;
+	/** Package length. */
 	uint32_t package_len:Z_LOG_MSG_PACKAGE_BITS;
+	/** Data length. */
 	uint32_t data_len:12;
+};
+
+/** @brief Compressed log message descriptor. */
+struct log_msg_desc_compressed {
+	/** Header with type and MPSC packet buffer part. */
+	LOG_MSG_GENERIC_HDR;
+	/** Log level. */
+	uint32_t level:3;
+	/** Number of arguments (0-2). */
+	uint32_t args:2;
+	/** Index of the source structure in the log_source memory section. */
+	uint32_t source_id: Z_LOG_MSG_COMPRESSED_SOURCE_ID_BITS;
+	/** Offset of the string in the memory section. */
+	uint32_t string_off: Z_LOG_MSG_COMPRESSED_STRING_OFF_BITS;
 };
 
 union log_msg_source {
@@ -105,6 +141,39 @@ struct log_msg_hdr {
 	uint8_t core_id;
 #endif
 };
+
+/** @brief Compressed log message. */
+struct log_msg_compressed {
+	/** Descriptor with information like level, source, string and number of arguments. */
+	struct log_msg_desc_compressed desc;
+#if defined(CONFIG_LOG_TIMESTAMP_64BIT)
+	/* If timestamp is 64 bit then there is a gap here and we can put one argument. */
+	uint32_t arg0;
+#endif
+	/** Timestamp. */
+	log_timestamp_t timestamp;
+#if defined(CONFIG_LOG_THREAD_ID_PREFIX)
+	/** Thread ID. */
+	void *tid;
+#endif
+#if defined(CONFIG_LOG_CORE_ID_PREFIX)
+	/** Core ID */
+	uint8_t core_id;
+#endif
+	/** Optional arguments. */
+#if !defined(CONFIG_LOG_TIMESTAMP_64BIT)
+	uint32_t arg0;
+#endif
+	uint32_t arg1;
+};
+
+/** @brief Maximum size of the compressed log message after conversion to generic log message. */
+#define LOG_COMPRESSED_MSG_TO_STD_MAX_SIZE \
+	(sizeof(struct log_msg) + \
+	 sizeof(struct cbprintf_package_hdr_ext) + \
+	 sizeof(uint32_t) * 2 + \
+	 (IS_ENABLED(CONFIG_LOG_MSG_APPEND_RO_STRING_LOC) ? 1 : 0))
+
 /* Messages are aligned to alignment required by cbprintf package. */
 #define Z_LOG_MSG_ALIGNMENT CBPRINTF_PACKAGE_ALIGNMENT
 
@@ -130,10 +199,16 @@ struct log_msg_generic_hdr {
 	LOG_MSG_GENERIC_HDR;
 };
 
+/** @brief Generic log message union. */
 union log_msg_generic {
+	/** MPSC packet buffer header. */
 	union mpsc_pbuf_generic buf;
+	/** Generic log message header. */
 	struct log_msg_generic_hdr generic;
+	/** Standard log message. */
 	struct log_msg log;
+	/** Compressed log message. */
+	struct log_msg_compressed compressed;
 };
 
 /** @brief Method used for creating a log message.
@@ -755,6 +830,26 @@ static inline uint32_t log_msg_get_total_wlen(const struct log_msg_desc desc)
 	return Z_LOG_MSG_ALIGNED_WLEN(desc.package_len, desc.data_len);
 }
 
+/** @brief Get length of the compressed log message.
+ *
+ * @param msg Message.
+ *
+ * @return Length in 32 bit words.
+ */
+static inline size_t log_msg_compressed_get_wlen(const struct log_msg_compressed *msg)
+{
+#if defined(CONFIG_LOG_TIMESTAMP_64BIT)
+	if (msg->desc.args < 2) {
+		return offsetof(struct log_msg_compressed, arg1) / sizeof(uint32_t);
+	}
+	return ROUND_UP(sizeof(struct log_msg_compressed), Z_LOG_MSG_ALIGNMENT) / sizeof(uint32_t);
+#else
+	size_t wlen = offsetof(struct log_msg_compressed, arg0) / sizeof(uint32_t) + msg->desc.args;
+
+	return ROUND_UP(wlen, Z_LOG_MSG_ALIGNMENT / sizeof(uint32_t));
+#endif
+}
+
 /** @brief Get length of the log item.
  *
  * @param item Item.
@@ -771,7 +866,7 @@ static inline uint32_t log_msg_generic_get_wlen(const union mpsc_pbuf_generic *i
 		return log_msg_get_total_wlen(msg->hdr.desc);
 	}
 
-	return 0;
+	return log_msg_compressed_get_wlen((const struct log_msg_compressed *)generic_msg);
 }
 
 /** @brief Get log message domain ID.
@@ -887,6 +982,13 @@ static inline uint8_t *log_msg_get_package(struct log_msg *msg, size_t *len)
 
 	return msg->data;
 }
+
+/** @brief Convert compressed log message to generic log message.
+ *
+ * @param[in] msg Compressed message.
+ * @param[out] std_msg Generic message to be filled.
+ */
+void z_log_msg_compressed_to_generic(struct log_msg_compressed *msg, struct log_msg *std_msg);
 
 /**
  * @}
