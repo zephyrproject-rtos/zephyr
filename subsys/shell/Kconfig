@@ -434,7 +434,7 @@ config SHELL_REMOTE_EP_NAME
 
 config SHELL_REMOTE_TIMEOUT_MS
 	int "Shell remote timeout in milliseconds"
-	default 100
+	default 5000
 	help
 	  The timeout in milliseconds for the IPC communication.
 
