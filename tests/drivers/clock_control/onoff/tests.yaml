@@ -28,7 +28,7 @@ tests:
       - clock_control
     extra_configs:
       - CONFIG_CLOCK_CONTROL_NRF=y
-      - CONFIG_DEPRECATION_TEST=y
+      - CONFIG_WARN_DEPRECATED=n
     platform_allow:
       - nrf51dk/nrf51822
       - nrf52dk/nrf52832

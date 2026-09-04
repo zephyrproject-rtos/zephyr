@@ -12,7 +12,7 @@ tests:
       - nrf52840dk/nrf52840
     extra_configs:
       - CONFIG_CLOCK_CONTROL_NRF=y
-      - CONFIG_DEPRECATION_TEST=y
+      - CONFIG_WARN_DEPRECATED=n
 
   sample.boards.nrf.clock_skew:
     build_only: true
