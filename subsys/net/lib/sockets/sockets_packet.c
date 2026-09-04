@@ -720,14 +720,6 @@ static int mcast_membership_add(struct net_context *ctx, struct net_if *iface,
 
 	ret = mcast_membership_l2(iface, addr, true);
 	if (ret < 0) {
-		/* The group was not joined, so give the entry back. The L2 is
-		 * told to leave the group as well, as it takes the address
-		 * into use before it programs it and keeps it if the device
-		 * refuses. Leaving a group that was never joined is harmless,
-		 * it just fails with -ENOENT.
-		 */
-		(void)mcast_membership_l2(iface, addr, false);
-
 		k_mutex_lock(&mcast_lock, K_FOREVER);
 
 		if (free_entry->ctx == ctx &&
