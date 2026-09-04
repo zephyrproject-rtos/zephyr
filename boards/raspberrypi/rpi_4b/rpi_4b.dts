@@ -17,8 +17,8 @@
 #include <zephyr/dt-bindings/i2c/i2c.h>
 
 / {
-	model = "Raspberry Pi 4 Model B";
 	compatible = "raspberrypi,4-model-b", "brcm,bcm2711";
+	model = "Raspberry Pi 4 Model B";
 
 	aliases {
 		led0 = &led_act;
@@ -54,15 +54,15 @@
 	 * BCM2711 SoC before control is handed to the ARM core.
 	 */
 	dram0: memory@200000 {
-		device_type = "memory";
 		compatible = "mmio-sram";
 		reg = <0x200000 DT_SIZE_M(8)>;
+		device_type = "memory";
 	};
 
 	reserved-memory {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		/* VideoCore shared memory region is mapped downward from 0x40000000. */
 		vc_mem: memory@3f800000 {
@@ -140,8 +140,8 @@
 };
 
 &eth0 {
-	zephyr,random-mac-address;
 	phy-handle = <&phy1>;
+	zephyr,random-mac-address;
 	status = "okay";
 };
 
