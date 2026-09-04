@@ -499,22 +499,14 @@ SHELL_SUBCMD_DICT_SET_CREATE(sub_ref_cmds, cmd_adc_ref, (VDD_1, ADC_REF_VDD_1, "
 			     (EXTERNAL_0, ADC_REF_EXTERNAL0, "External, input 0"),
 			     (EXTERNAL_1, ADC_REF_EXTERNAL1, "External, input 1"));
 
-SHELL_SUBCMD_DICT_SET_CREATE(sub_gain_cmds, cmd_adc_gain,
-	(GAIN_1_6, ADC_GAIN_1_6, "x 1/6"),
-	(GAIN_1_5, ADC_GAIN_1_5, "x 1/5"),
-	(GAIN_1_4, ADC_GAIN_1_4, "x 1/4"),
-	(GAIN_1_3, ADC_GAIN_1_3, "x 1/3"),
-	(GAIN_1_2, ADC_GAIN_1_2, "x 1/2"),
-	(GAIN_2_3, ADC_GAIN_2_3, "x 2/3"),
-	(GAIN_1, ADC_GAIN_1, "x 1"),
-	(GAIN_2, ADC_GAIN_2, "x 2"),
-	(GAIN_3, ADC_GAIN_3, "x 3"),
-	(GAIN_4, ADC_GAIN_4, "x 4"),
-	(GAIN_8, ADC_GAIN_8, "x 8"),
-	(GAIN_16, ADC_GAIN_16, "x 16"),
-	(GAIN_32, ADC_GAIN_32, "x 32"),
-	(GAIN_64, ADC_GAIN_64, "x 64")
-);
+SHELL_SUBCMD_DICT_SET_CREATE(sub_gain_cmds, cmd_adc_gain, (GAIN_1_8, ADC_GAIN_1_8, "x 1/8"),
+			     (GAIN_1_6, ADC_GAIN_1_6, "x 1/6"), (GAIN_1_5, ADC_GAIN_1_5, "x 1/5"),
+			     (GAIN_1_4, ADC_GAIN_1_4, "x 1/4"), (GAIN_1_3, ADC_GAIN_1_3, "x 1/3"),
+			     (GAIN_1_2, ADC_GAIN_1_2, "x 1/2"), (GAIN_2_3, ADC_GAIN_2_3, "x 2/3"),
+			     (GAIN_1, ADC_GAIN_1, "x 1"), (GAIN_2, ADC_GAIN_2, "x 2"),
+			     (GAIN_3, ADC_GAIN_3, "x 3"), (GAIN_4, ADC_GAIN_4, "x 4"),
+			     (GAIN_8, ADC_GAIN_8, "x 8"), (GAIN_16, ADC_GAIN_16, "x 16"),
+			     (GAIN_32, ADC_GAIN_32, "x 32"), (GAIN_64, ADC_GAIN_64, "x 64"));
 
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_channel_cmds,
 	SHELL_CMD_ARG(id, NULL, CMD_HELP_CH_ID, cmd_adc_ch_id, 2, 0),
