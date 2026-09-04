@@ -2386,9 +2386,9 @@ if((CMAKE_BUILD_TYPE IN_LIST build_types) AND (NOT NO_BUILD_TYPE_WARNING))
   # optimization flag is present in that string.
   # To avoid false-positive matches, the flag must either be matched first
   # or last in string, or come after / followed by minimum a space.
-  if(NOT (CMAKE_C_FLAGS_${CMAKE_BUILD_TYPE_uppercase} MATCHES "(^| )${OPTIMIZATION_FLAG}($| )"))
+  if(NOT (CMAKE_C_FLAGS_${CMAKE_BUILD_TYPE_uppercase} MATCHES "(^| )${COMPILER_OPTIMIZATION_FLAG}($| )"))
     message(WARNING "
-      The CMake build type was set to '${CMAKE_BUILD_TYPE}', but the optimization flag was set to '${OPTIMIZATION_FLAG}'.
+      The CMake build type was set to '${CMAKE_BUILD_TYPE}', but the optimization flag was set to '${COMPILER_OPTIMIZATION_FLAG}'.
       This may be intentional and the warning can be turned off by setting the CMake variable 'NO_BUILD_TYPE_WARNING'"
       )
   endif()
