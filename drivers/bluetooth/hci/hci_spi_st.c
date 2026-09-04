@@ -693,10 +693,16 @@ static int bt_spi_open(const struct device *dev)
 	}
 
 #if defined(CONFIG_BT_HCI_RAW) && defined(CONFIG_BT_BLUENRG_ACI)
-	/* force BlueNRG to be on controller mode */
-	uint8_t data = 1;
+	if (DT_INST_PROP_OR(0, req_ll_only, false)) {
+		/* force BlueNRG to be on controller mode */
+		uint8_t data = 1;
 
-	bt_spi_send_aci_config(BLUENRG_CONFIG_LL_ONLY_OFFSET, &data, 1);
+		err = bt_spi_send_aci_config(BLUENRG_CONFIG_LL_ONLY_OFFSET, &data, 1);
+		if (err != 0) {
+			LOG_ERR("Failed to set BlueNRG LL-only mode (%d)", err);
+			return err;
+		}
+	}
 #endif /* CONFIG_BT_HCI_RAW && CONFIG_BT_BLUENRG_ACI */
 	return 0;
 }
