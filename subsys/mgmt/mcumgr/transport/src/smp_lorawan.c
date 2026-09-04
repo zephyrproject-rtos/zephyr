@@ -239,7 +239,9 @@ static void smp_lorawan_start(void)
 
 #ifdef CONFIG_SMP_CLIENT
 	if (rc == 0) {
-		smp_client_transport_register(&smp_lorawan_client_transport);
+		if (smp_client_transport_register(&smp_lorawan_client_transport) != 0) {
+			LOG_ERR("SMP LoRaWAN client transport type already claimed");
+		}
 	}
 #endif
 

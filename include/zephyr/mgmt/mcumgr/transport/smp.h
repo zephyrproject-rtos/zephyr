@@ -352,8 +352,12 @@ void smp_rx_clear(struct smp_transport *zst);
  * @brief Register a Zephyr SMP transport object for client.
  *
  * @param entry	The transport to construct.
+ *
+ * @retval 0 Transport registered.
+ * @retval -EEXIST Another transport has already claimed the type of @p entry, which is not
+ *         registered.
  */
-void smp_client_transport_register(struct smp_client_transport_entry *entry);
+int smp_client_transport_register(struct smp_client_transport_entry *entry);
 
 /**
  * @brief Discover a registered SMP transport client object.

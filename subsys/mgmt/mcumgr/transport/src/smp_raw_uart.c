@@ -228,7 +228,7 @@ static int smp_raw_uart_init(void)
 	if (rc == 0) {
 		uart_mcumgr_register(smp_raw_uart_process_frag);
 #if defined(CONFIG_SMP_CLIENT) || defined(CONFIG_MCUMGR_GRP_TRANSPORT)
-		smp_client_transport_register(&smp_raw_uart_client_transport);
+		(void)smp_client_transport_register(&smp_raw_uart_client_transport);
 #endif
 	}
 

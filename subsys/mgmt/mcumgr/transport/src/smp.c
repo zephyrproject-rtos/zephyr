@@ -223,15 +223,16 @@ bool smp_client_transport_foreach(mgmt_client_transport_cb_t user_cb, void *user
 	return true;
 }
 
-void smp_client_transport_register(struct smp_client_transport_entry *entry)
+int smp_client_transport_register(struct smp_client_transport_entry *entry)
 {
 	if (smp_client_transport_get(entry->smpt_type)) {
 		/* Already in list */
-		return;
+		return -EEXIST;
 	}
 
 	sys_slist_append(&smp_transport_clients, &entry->node);
 
+	return 0;
 }
 #endif /* CONFIG_SMP_CLIENT || CONFIG_MCUMGR_GRP_TRANSPORT */
 

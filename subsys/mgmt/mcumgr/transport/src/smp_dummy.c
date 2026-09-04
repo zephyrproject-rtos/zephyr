@@ -304,7 +304,7 @@ static int smp_dummy_init(void)
 	dummy_mgumgr_recv_cb = smp_dummy_rx_frag;
 
 #if defined(CONFIG_SMP_CLIENT) || defined(CONFIG_MCUMGR_GRP_TRANSPORT)
-	smp_client_transport_register(&smp_client_transport);
+	(void)smp_client_transport_register(&smp_client_transport);
 #endif
 
 	return 0;

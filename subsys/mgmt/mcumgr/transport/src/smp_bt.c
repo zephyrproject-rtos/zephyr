@@ -1392,7 +1392,9 @@ static void smp_bt_setup(void)
 
 #if defined(CONFIG_SMP_CLIENT) || defined(CONFIG_MCUMGR_GRP_TRANSPORT)
 	if (rc == 0) {
-		smp_client_transport_register(&smp_client_transport);
+		if (smp_client_transport_register(&smp_client_transport) != 0) {
+			LOG_ERR("SMP Bluetooth transport type already claimed");
+		}
 	}
 #endif
 

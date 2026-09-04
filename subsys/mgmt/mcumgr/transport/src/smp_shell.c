@@ -342,7 +342,9 @@ int smp_shell_init(void)
 	rc = smp_transport_init(&smp_shell_transport);
 #if defined(CONFIG_SMP_CLIENT) || defined(CONFIG_MCUMGR_GRP_TRANSPORT)
 	if (rc == 0) {
-		smp_client_transport_register(&smp_client_transport);
+		if (smp_client_transport_register(&smp_client_transport) != 0) {
+			LOG_ERR("SMP shell client transport type already claimed");
+		}
 	}
 #endif
 

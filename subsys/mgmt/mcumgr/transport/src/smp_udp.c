@@ -455,7 +455,10 @@ static void smp_udp_start(void)
 	if (rc == 0) {
 		smp_udp_configs.ipv4_transport.smpt = &smp_udp_configs.ipv4.smp_transport;
 		smp_udp_configs.ipv4_transport.smpt_type = SMP_UDP_IPV4_TRANSPORT;
-		smp_client_transport_register(&smp_udp_configs.ipv4_transport);
+
+		if (smp_client_transport_register(&smp_udp_configs.ipv4_transport) != 0) {
+			LOG_ERR("SMP UDP IPv4 client transport type already claimed");
+		}
 	}
 #endif
 	if (rc) {
@@ -478,7 +481,10 @@ static void smp_udp_start(void)
 	if (rc == 0) {
 		smp_udp_configs.ipv6_transport.smpt = &smp_udp_configs.ipv6.smp_transport;
 		smp_udp_configs.ipv6_transport.smpt_type = SMP_UDP_IPV6_TRANSPORT;
-		smp_client_transport_register(&smp_udp_configs.ipv6_transport);
+
+		if (smp_client_transport_register(&smp_udp_configs.ipv6_transport) != 0) {
+			LOG_ERR("SMP UDP IPv6 client transport type already claimed");
+		}
 	}
 #endif
 
