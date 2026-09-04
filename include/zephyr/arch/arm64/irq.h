@@ -85,6 +85,23 @@ bool z_soc_irq_is_pending(unsigned int irq);
 #define z_arm64_irq_priority_set(irq, prio, flags)	\
 	z_soc_irq_priority_set(irq, prio, flags)
 
+#ifdef CONFIG_SMP
+/*
+ * IPI hooks between arch/arm64/core/smp.c and the SoC layer. The SoC
+ * supplies the transport (soc_* below, weak no-op defaults in smp.c)
+ * and connects the arch-owned handlers to its IPI interrupt.
+ */
+void soc_sched_ipi(uint64_t target_mpidr);
+void sched_ipi_handler(const void *unused);
+
+#ifdef CONFIG_FPU_SHARING
+void soc_flush_fpu_ipi(uint64_t target_mpidr);
+bool soc_fpu_ipi_is_pending(void);
+void soc_fpu_ipi_clear_pending(void);
+void flush_fpu_ipi_handler(const void *unused);
+#endif /* CONFIG_FPU_SHARING */
+#endif /* CONFIG_SMP */
+
 #endif /* !CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
 
 extern void z_arm64_interrupt_init(void);
