@@ -21,12 +21,12 @@ posts a `cross-referenced` event into upstream issue/PR `#NNNNN`. Maintainers wa
 
 | Form | Autolinks? |
 |------|-----------|
-| `#118249` | **Yes** |
-| `GH-118249` | **Yes** |
-| `https://github.com/zephyrproject-rtos/zephyr/pull/118249` | **Yes** |
-| `Fixes #118249`, `Closes #118249` | **Yes** — and also tries to close the issue on merge |
-| `PR 118249`, `upstream 118249`, `issue 118249` (bare digits, no `#`) | No |
-| Branch name `...-for-PR-118249` | No |
+| `#NNNNN` | **Yes** |
+| `GH-NNNNN` | **Yes** |
+| `https://github.com/zephyrproject-rtos/zephyr/pull/NNNNN` | **Yes** |
+| `Fixes #NNNNN`, `Closes #NNNNN` | **Yes** — and also tries to close the issue on merge |
+| `PR NNNNN`, `upstream NNNNN`, `issue NNNNN` (bare digits, no `#`) | No |
+| Branch name `...-for-PR-NNNNN` | No |
 | The digits appearing inside a tracked **file**'s contents | No |
 
 ## When to flag
@@ -71,17 +71,17 @@ Rewrite the reference so it carries the same information without autolinking. Pr
 
 | Before | After |
 |--------|-------|
-| `skills: add personas for PR #118249 review` | `skills: add STM32 reviewer personas` |
-| `Reviewers of the STM32F730 PR #118249:` | `Reviewers of the STM32F730 DTS/SoC PR:` |
-| `Fixes #118249` (fork-internal branch) | delete the line |
-| `See https://github.com/zephyrproject-rtos/zephyr/pull/118249` | `See upstream PR 118249` |
+| `skills: add personas for PR #NNNNN review` | `skills: add STM32 reviewer personas` |
+| `Reviewers of the STM32F730 PR #NNNNN:` | `Reviewers of the STM32F730 DTS/SoC PR:` |
+| `Fixes #NNNNN` (fork-internal branch) | delete the line |
+| `See https://github.com/zephyrproject-rtos/zephyr/pull/NNNNN` | `See upstream PR NNNNN` (no `#`) |
 
 To rewrite messages already committed (safe for a topic branch; the tree is unchanged):
 
 ```bash
 git branch backup-before-msg-rewrite
 FILTER_BRANCH_SQUELCH_WARNING=1 git filter-branch -f \
-  --msg-filter 'sed -E "s/ *\(?#118249\)?//g"' origin/main..HEAD
+  --msg-filter 'sed -E "s/ *\(?#NNNNN\)?//g"' origin/main..HEAD   # NNNNN = the real number
 git diff backup-before-msg-rewrite HEAD --stat   # must be empty
 git push --force-with-lease origin HEAD:<branch>
 ```
@@ -97,17 +97,33 @@ These are cheap to catch in the same pass (GitLint enforces most of them in CI):
 - `Signed-off-by:` line present and matching the author — required by the Zephyr DCO check
 - One logical change per commit; no "fix review comments" commits left unsquashed
 
+## Reporting rule — do not leak while reporting
+
+Your own findings are a leak vector. A review naming the offending reference gets pasted into a PR
+comment often enough (`--comment` modes, review bots, a human copying your output) that writing it
+in linking form re-creates the exact event you are flagging.
+
+So when you report:
+
+- **Always wrap the reference in a code span** — `` `#NNNNN` ``. GitHub does not autolink inside
+  code spans or fenced code blocks, so a backticked reference is inert everywhere.
+- **Or drop the `#`** — `upstream PR NNNNN` carries the same information and cannot link.
+- **Never** write a bare `#NNNNN` or a full `github.com/zephyrproject-rtos/zephyr/pull/NNNNN` URL in
+  prose, a heading, or a bullet.
+
+This applies to the orchestrator's synthesized review too, not just this lens's raw output.
+
 ## Output format
 
 ```
 ### Upstream Reference Leaks
 > Blocking if the PR is fork-internal — the backlink cannot be retracted once pushed.
 
-- **[commit <sha> subject]** `#118249` will post a cross-reference into upstream PR 118249 — reword to `<suggestion>`
-- **[PR title]** `#118249` → `<suggestion>`
+- **[commit <sha> subject]** `#NNNNN` will post a cross-reference into upstream PR NNNNN — reword to `<suggestion>`
+- **[PR title]** `#NNNNN` → `<suggestion>`
 
 ### Already Posted
-- Cross-reference to upstream #118249 posted at <timestamp>; editing will not remove it. Only deleting the fork repo would.
+- Cross-reference to upstream `#NNNNN` posted at <timestamp>; editing will not remove it. Only deleting the fork repo would.
 
 ### Commit Message Nits
 - **[commit <sha>]** Subject 84 chars (limit 72) / missing Signed-off-by / body not wrapped
