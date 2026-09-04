@@ -55,6 +55,22 @@ struct k_sig_set;
  * Without @ref SYS_CLONE_THREAD the initial thread becomes the new process's
  * thread group leader: its handle is the new process's @ref k_pid_t.
  */
+/** Descriptor actions a staged child applies to its own table before its entry */
+enum sys_clone_fd_op {
+	SYS_CLONE_FD_OPEN,	/**< open(path, oflag, mode) as fd */
+	SYS_CLONE_FD_DUP2,	/**< dup2(fd, newfd) */
+	SYS_CLONE_FD_CLOSE,	/**< close(fd) */
+};
+
+struct sys_clone_fd_action {
+	enum sys_clone_fd_op op;
+	int fd;
+	int newfd;
+	int oflag;
+	int mode;
+	const char *path;
+};
+
 struct sys_clone_args {
 	/** SYS_CLONE_* flags; zero clones nothing from the caller */
 	uint64_t flags;
@@ -94,6 +110,15 @@ struct sys_clone_args {
 	char *const *argv;
 	/** Environment vector, NULL-terminated; only meaningful with @a argv */
 	char *const *envp;
+	/**
+	 * Descriptor actions the child applies in order on its own table
+	 * before entering; only meaningful with @a argv. Copied like the
+	 * vectors, within the same budget; a failing action exits the child
+	 * with status 127.
+	 */
+	const struct sys_clone_fd_action *fd_actions;
+	/** Number of entries in @a fd_actions */
+	size_t fd_actions_len;
 };
 
 /**

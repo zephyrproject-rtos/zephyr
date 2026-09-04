@@ -8,11 +8,14 @@
 #define ZEPHYR_LIB_OS_SYS_PROCESS_PRIV_H_
 
 #include <zephyr/kernel.h>
+#include <zephyr/sys/thread.h>
 
 #ifdef CONFIG_USERSPACE
 /* kernel copies of a user-mode caller's argv/envp, bounded by CONFIG_SYS_PROCESS_ARG_BYTES */
 int z_clone_user_vectors(char *const **argv, char *const **envp);
 void z_clone_vec_free(char **vec);
+int z_clone_user_fd_actions(const struct sys_clone_fd_action **acts, size_t n);
+void z_clone_fd_actions_free(struct sys_clone_fd_action *acts, size_t n);
 #endif /* CONFIG_USERSPACE */
 
 #endif /* ZEPHYR_LIB_OS_SYS_PROCESS_PRIV_H_ */

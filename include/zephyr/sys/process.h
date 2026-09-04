@@ -126,6 +126,10 @@ struct sys_process_start {
 	k_thread_entry_t entry;
 	/** main() of an image loaded by sys_exec_load(), or NULL */
 	int (*main)(int argc, char **argv, char **envp);
+	/** Descriptor actions to apply before entering, relocated into the buffer */
+	const struct sys_clone_fd_action *fd_actions;
+	/** Number of entries in @a fd_actions */
+	size_t fd_actions_len;
 };
 
 /**

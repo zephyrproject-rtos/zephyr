@@ -127,7 +127,7 @@ int z_impl_sys_clone(const struct sys_clone_args *args, k_pid_t *child)
 	    (!IS_ENABLED(CONFIG_SIGNAL) || ((args->flags & SYS_CLONE_VM_COPY) != 0U))) {
 		return -EINVAL;
 	}
-	if ((args->argv == NULL) && (args->envp != NULL)) {
+	if ((args->argv == NULL) && ((args->envp != NULL) || (args->fd_actions_len != 0))) {
 		return -EINVAL;
 	}
 	/* staged vectors are for a plain process clone only */
@@ -236,6 +236,46 @@ int z_clone_user_vectors(char *const **argv, char *const **envp)
 	return 0;
 }
 
+void z_clone_fd_actions_free(struct sys_clone_fd_action *acts, size_t n)
+{
+	for (size_t i = 0; (acts != NULL) && (i < n); i++) {
+		k_free((void *)acts[i].path);
+	}
+	k_free(acts);
+}
+
+int z_clone_user_fd_actions(const struct sys_clone_fd_action **acts, size_t n)
+{
+	struct sys_clone_fd_action *kacts;
+
+	if ((*acts == NULL) || (n == 0)) {
+		*acts = NULL;
+		return 0;
+	}
+	if (n * sizeof(*kacts) > CONFIG_SYS_PROCESS_ARG_BYTES) {
+		return -E2BIG;
+	}
+	kacts = k_usermode_alloc_from_copy(*acts, n * sizeof(*kacts));
+	if (kacts == NULL) {
+		return -EFAULT;
+	}
+	for (size_t i = 0; i < n; i++) {
+		const char *upath = kacts[i].path;
+
+		kacts[i].path = NULL;
+		if (kacts[i].op != SYS_CLONE_FD_OPEN) {
+			continue;
+		}
+		kacts[i].path = k_usermode_string_alloc_copy(upath, CONFIG_SYS_PROCESS_ARG_BYTES);
+		if (kacts[i].path == NULL) {
+			z_clone_fd_actions_free(kacts, n);
+			return -E2BIG;
+		}
+	}
+	*acts = kacts;
+
+	return 0;
+}
 #endif /* CONFIG_SYS_PROCESS */
 
 static inline int z_vrfy_sys_clone(const struct sys_clone_args *args, k_pid_t *child)
@@ -273,10 +313,21 @@ static inline int z_vrfy_sys_clone(const struct sys_clone_args *args, k_pid_t *c
 			if (ret < 0) {
 				return ret;
 			}
+			ret = z_clone_user_fd_actions(&copy.fd_actions, copy.fd_actions_len);
+			if (ret < 0) {
+				z_clone_vec_free((char **)copy.argv);
+				z_clone_vec_free((char **)copy.envp);
+				return ret;
+			}
+		} else {
+			copy.fd_actions = NULL;
+			copy.fd_actions_len = 0;
 		}
 		ret = z_impl_sys_clone(&copy, child);
 		z_clone_vec_free((char **)copy.argv);
 		z_clone_vec_free((char **)copy.envp);
+		z_clone_fd_actions_free((struct sys_clone_fd_action *)copy.fd_actions,
+					copy.fd_actions_len);
 
 		return ret;
 #else
@@ -314,10 +365,20 @@ static inline int z_vrfy_sys_clone(const struct sys_clone_args *args, k_pid_t *c
 		if (ret < 0) {
 			return ret;
 		}
+		ret = z_clone_user_fd_actions(&copy.fd_actions, copy.fd_actions_len);
+		if (ret < 0) {
+			z_clone_vec_free((char **)copy.argv);
+			z_clone_vec_free((char **)copy.envp);
+			return ret;
+		}
+	} else {
+		copy.fd_actions = NULL;
+		copy.fd_actions_len = 0;
 	}
 	ret = z_impl_sys_clone(&copy, child);
 	z_clone_vec_free((char **)copy.argv);
 	z_clone_vec_free((char **)copy.envp);
+	z_clone_fd_actions_free((struct sys_clone_fd_action *)copy.fd_actions, copy.fd_actions_len);
 
 	return ret;
 #else

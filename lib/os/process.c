@@ -14,6 +14,7 @@
  */
 
 #include <errno.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include <zephyr/init.h>
@@ -25,6 +26,8 @@
 #include <zephyr/sys/process.h>
 #include <zephyr/sys/libc-hooks.h>
 #include <zephyr/sys/thread.h>
+#include <zephyr/sys/zvfs.h>
+#include <zephyr/sys/zvfs_fs.h>
 #include <kernel_internal.h>
 #include "sys_process_priv.h"
 #ifdef CONFIG_SYS_PROCESS_EXEC
@@ -1116,6 +1119,8 @@ struct clone_argblock {
 	int argc;
 	int envc;
 	size_t bytes;
+	size_t nactions;
+	size_t actions_off;	/* struct sys_clone_fd_action[] in data, paths as offsets */
 	char data[];
 };
 
@@ -1149,9 +1154,17 @@ static int clone_argblock_pack(const struct sys_clone_args *args, struct clone_a
 	int argc = clone_vec_count(args->argv, &strs);
 	int envc = clone_vec_count(args->envp, &strs);
 	size_t tables = (size_t)(argc + envc + 2) * sizeof(char *);
-	size_t bytes = tables + strs;
+	size_t actions_off = ROUND_UP(tables + strs, __alignof(struct sys_clone_fd_action));
+	size_t paths = 0;
+	size_t bytes;
 	struct clone_argblock *blk;
 
+	for (size_t i = 0; i < args->fd_actions_len; i++) {
+		if (args->fd_actions[i].path != NULL) {
+			paths += strlen(args->fd_actions[i].path) + 1;
+		}
+	}
+	bytes = actions_off + args->fd_actions_len * sizeof(struct sys_clone_fd_action) + paths;
 	if (bytes > CONFIG_SYS_PROCESS_ARG_BYTES) {
 		return -E2BIG;
 	}
@@ -1171,8 +1184,26 @@ static int clone_argblock_pack(const struct sys_clone_args *args, struct clone_a
 	blk->argc = argc;
 	blk->envc = envc;
 	blk->bytes = bytes;
+	blk->nactions = args->fd_actions_len;
+	blk->actions_off = actions_off;
 	clone_vec_pack(args->argv, argc, (char **)blk->data, blk->data, &tables);
 	clone_vec_pack(args->envp, envc, &((char **)blk->data)[argc + 1], blk->data, &tables);
+	if (args->fd_actions_len != 0) {
+		struct sys_clone_fd_action *acts = (void *)&blk->data[actions_off];
+		size_t off = actions_off + args->fd_actions_len * sizeof(*acts);
+
+		for (size_t i = 0; i < args->fd_actions_len; i++) {
+			acts[i] = args->fd_actions[i];
+			if (acts[i].path != NULL) {
+				size_t len = strlen(acts[i].path) + 1;
+
+				(void)memcpy(&blk->data[off], acts[i].path, len);
+				/* relocated by the claimant, like the vector strings */
+				acts[i].path = (const char *)off;
+				off += len;
+			}
+		}
+	}
 
 	*out = blk;
 
@@ -1207,6 +1238,20 @@ int z_impl_sys_process_args(struct sys_process_start *start, void *buf, size_t s
 	for (int i = 0; i < blk->envc; i++) {
 		argv[blk->argc + 1 + i] = base + (uintptr_t)argv[blk->argc + 1 + i];
 	}
+	if (blk->nactions != 0) {
+		struct sys_clone_fd_action *acts = (void *)&base[blk->actions_off];
+
+		for (size_t i = 0; i < blk->nactions; i++) {
+			if (acts[i].path != NULL) {
+				acts[i].path = base + (uintptr_t)acts[i].path;
+			}
+		}
+		start->fd_actions = acts;
+		start->fd_actions_len = blk->nactions;
+	} else {
+		start->fd_actions = NULL;
+		start->fd_actions_len = 0;
+	}
 	argc = blk->argc;
 	_current->process->args = NULL;
 	k_free(blk);
@@ -1238,6 +1283,40 @@ static void process_leader_entry(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p3);
 
 	__ASSERT_NO_MSG(argc >= 0);
+	if (!IS_ENABLED(CONFIG_ZVFS_FDTABLE) && (start.fd_actions_len != 0)) {
+		/* no descriptor layer to apply them on */
+		exit(127);
+	}
+	/* the descriptor actions asked for at creation, on this process's own table */
+	for (size_t i = 0; IS_ENABLED(CONFIG_ZVFS_FDTABLE) && (i < start.fd_actions_len); i++) {
+		const struct sys_clone_fd_action *a = &start.fd_actions[i];
+		int fd;
+
+		switch (a->op) {
+		case SYS_CLONE_FD_OPEN:
+			fd = zvfs_open(a->path, a->oflag, a->mode);
+			if (fd < 0) {
+				exit(127);
+			}
+			if (fd != a->fd) {
+				if (zvfs_dup2(fd, a->fd) < 0) {
+					exit(127);
+				}
+				(void)zvfs_close(fd);
+			}
+			break;
+		case SYS_CLONE_FD_DUP2:
+			if (zvfs_dup2(a->fd, a->newfd) < 0) {
+				exit(127);
+			}
+			break;
+		case SYS_CLONE_FD_CLOSE:
+			(void)zvfs_close(a->fd);
+			break;
+		default:
+			exit(127);
+		}
+	}
 #ifdef CONFIG_SYS_PROCESS_EXEC
 	if (start.main != NULL) {
 		/* the image ABI: a normal return from main() is exit(status) */
