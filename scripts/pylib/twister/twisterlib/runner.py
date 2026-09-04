@@ -2137,8 +2137,7 @@ class TwisterRunner:
                 instance.filter_stages = []
                 if instance.testsuite.filter:
                     instance.filter_stages = self.get_cmake_filter_stages(
-                        instance.testsuite.filter,
-                        expr_parser.reserved.keys()
+                        instance.testsuite.filter
                     )
 
                 if not instance.testsuite.build:
@@ -2150,7 +2149,7 @@ class TwisterRunner:
                         processing_queue.append({"op": "report", "test": instance})
                 elif test_only and instance.run:
                     processing_queue.append({"op": "run", "test": instance})
-                elif instance.filter_stages and "full" not in instance.filter_stages:
+                elif self.filter_before_configuring(instance):
                     processing_queue.append({"op": "filter", "test": instance})
                 else:
                     cache_file = os.path.join(instance.build_dir, "CMakeCache.txt")
@@ -2237,39 +2236,44 @@ class TwisterRunner:
         return False
 
     @staticmethod
-    def get_cmake_filter_stages(filt, logic_keys):
-        """Analyze filter expressions from test yaml
-        and decide if dts and/or kconfig based filtering will be needed.
+    def filter_before_configuring(instance):
+        """Whether resolving a filter up front is worth what it costs.
+
+        It skips configuring the instances the filter excludes, and costs
+        the filter stages on every instance. Kconfig costs nearly as much
+        as a configuration, so it only wins on a filter that excludes four
+        instances in five. Real ones exclude far fewer. Sysbuild is the
+        exception: its filter stages cover one application, the
+        configuration they save covers every image.
         """
-        dts_required = False
-        kconfig_required = False
-        full_required = False
-        filter_stages = []
+        stages = instance.filter_stages
+        if not stages or "full" in stages:
+            return False
 
-        # Compress args in expressions like "function('x', 'y')"
-        # so they are not split when splitting by whitespaces
-        filt = filt.replace(", ", ",")
-        # Remove logic words
-        for k in logic_keys:
-            filt = filt.replace(f"{k} ", "")
-        # Remove brackets
-        filt = filt.replace("(", "")
-        filt = filt.replace(")", "")
-        # Splite by whitespaces
-        filt = filt.split()
-        for expression in filt:
-            if expression.startswith("dt_"):
-                dts_required = True
-            elif expression.startswith("CONFIG"):
-                kconfig_required = True
-            else:
-                full_required = True
+        return stages != ["kconfig"] or instance.sysbuild
 
-        if full_required:
+    @staticmethod
+    def get_cmake_filter_stages(filt):
+        """Decide which CMake stages a filter expression needs.
+
+        A 'dt_' function needs the 'dts' stage, a CONFIG symbol needs
+        'kconfig'. Anything else - a CMake cache entry, ARCH, PLATFORM, an
+        environment variable - is only known once a build is configured.
+        That is what "full" asks for.
+        """
+        try:
+            symbols = expr_parser.symbols(filt)
+        except SyntaxError:
+            # Let the filter evaluation itself report what is wrong with it.
             return ["full"]
-        if dts_required:
+
+        if any(not s.startswith(("dt_", "CONFIG")) for s in symbols):
+            return ["full"]
+
+        filter_stages = []
+        if any(s.startswith("dt_") for s in symbols):
             filter_stages.append("dts")
-        if kconfig_required:
+        if any(s.startswith("CONFIG") for s in symbols):
             filter_stages.append("kconfig")
 
         return filter_stages
