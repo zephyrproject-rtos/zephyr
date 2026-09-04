@@ -33,7 +33,10 @@ static void siwx91x_report_scan_res(struct siwx91x_dev *sidev, sl_wifi_scan_resu
 	};
 	struct wifi_scan_result tmp = {
 		.channel = result->scan_info[item].rf_channel,
-		.rssi = result->scan_info[item].rssi_val,
+		/* WiSeConnect reports rssi_val as an unsigned magnitude, while
+		 * struct wifi_scan_result expects signed dBm.
+		 */
+		.rssi = -result->scan_info[item].rssi_val,
 		.ssid_length = strlen(result->scan_info[item].ssid),
 		.mac_length = sizeof(result->scan_info[item].bssid),
 		.security = WIFI_SECURITY_TYPE_UNKNOWN,
