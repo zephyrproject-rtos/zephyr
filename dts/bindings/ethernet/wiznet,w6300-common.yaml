@@ -1,0 +1,26 @@
+# Copyright (c) 2025 WIZnet Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Common properties for the WIZnet W6300 standalone 10/100BASE-T Ethernet
+    controller, shared by the SPI and MSPI (QSPI) variants of the binding.
+
+include: ethernet-controller.yaml
+
+properties:
+  int-gpios:
+    type: phandle-array
+    required: true
+    description: Interrupt pin.
+
+      The interrupt pin of W6300 is active low.
+      If connected directly the MCU pin should be configured
+      as active low.
+
+  reset-gpios:
+    type: phandle-array
+    description: Reset pin.
+
+      The reset pin of W6300 is active low.
+      If connected directly the MCU pin should be configured
+      as active low.
