@@ -1692,3 +1692,8 @@ test_i2c_ltc4286: ltc4286@da {
 	power-good-gpios = <&test_gpio 0 0>;
 	alert-gpios = <&test_gpio 0 0>;
 };
+
+test_i2c_tlv493d: tlv493d@db {
+	compatible = "infineon,tlv493d";
+	reg = <0xd9>;
+};
