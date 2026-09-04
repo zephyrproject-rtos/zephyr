@@ -454,7 +454,6 @@ Antmicro platforms:
     - kgugala
   files:
     - boards/antmicro/
-    - soc/antmicro/
     - dts/arm/antmicro/
   labels:
     - "platform: Antmicro"
@@ -5113,7 +5112,6 @@ Octavo Systems Platforms:
     - kgugala
   files:
     - boards/oct/
-    - soc/oct/
   labels:
     - "platform: Octavo Systems"
 
