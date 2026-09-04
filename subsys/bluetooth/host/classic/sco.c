@@ -452,6 +452,7 @@ static int sco_setup_sync_conn(struct bt_conn *sco_conn)
 struct bt_conn *bt_conn_create_sco(const bt_addr_t *peer, struct bt_sco_chan *chan)
 {
 	struct bt_conn *sco_conn;
+	struct bt_conn *acl;
 	int link_type;
 
 	sco_conn = bt_conn_lookup_addr_sco(peer);
@@ -466,11 +467,19 @@ struct bt_conn *bt_conn_create_sco(const bt_addr_t *peer, struct bt_sco_chan *ch
 		}
 	}
 
-	if (BT_FEAT_LMP_ESCO_CAPABLE(bt_dev.features)) {
+	acl = bt_conn_lookup_addr_br(peer);
+	if (!acl) {
+		return NULL;
+	}
+
+	if (BT_FEAT_LMP_ESCO_CAPABLE(bt_dev.features) &&
+	    BT_FEAT_LMP_ESCO_CAPABLE(acl->br.features)) {
 		link_type = BT_HCI_ESCO;
 	} else {
 		link_type = BT_HCI_SCO;
 	}
+
+	bt_conn_unref(acl);
 
 	sco_conn = bt_conn_add_sco(peer, link_type);
 	if (!sco_conn) {
