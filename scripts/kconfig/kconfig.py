@@ -268,6 +268,9 @@ def check_deprecated(kconf):
             selector_name = split_expr(selector, AND)[0].name
             warn(f'Deprecated symbol {selector_name} is enabled.')
 
+        if kconf.syms.get('COMPILER_WARNINGS_AS_ERRORS', kconf.y).tri_value == 2 and \
+            len(selectors) > 0:
+            err("Aborting due to Kconfig deprecation warnings")
 
 def check_experimental(kconf):
     experimental = kconf.syms.get('EXPERIMENTAL')
