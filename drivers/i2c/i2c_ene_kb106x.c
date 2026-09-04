@@ -334,11 +334,10 @@ static DEVICE_API(i2c, i2c_kb106x_api) = {
 #endif
 };
 
-#define KB106X_FSMBM_DEV(inst) DEVICE_DT_INST_GET(inst),
 static void i2c_kb106x_isr_wrap(const void *unused)
 {
 	static const struct device *const fsmbm_devices[] = {
-		DT_INST_FOREACH_STATUS_OKAY(KB106X_FSMBM_DEV)};
+		DT_INST_FOREACH_STATUS_OKAY(DEVICE_DT_INST_GET_COMMA)};
 	ARG_UNUSED(unused);
 
 	for (size_t i = 0; i < ARRAY_SIZE(fsmbm_devices); i++) {

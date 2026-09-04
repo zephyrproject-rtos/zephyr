@@ -26,9 +26,8 @@ struct pd_gpio_monitor_data {
 };
 
 #ifdef CONFIG_POWER_DOMAIN_GPIO_MONITOR_INITIAL_READ
-#define DOMAIN_DEV(inst) DEVICE_DT_INST_GET(inst),
 static const struct device *const domain_devs[] = {
-	DT_INST_FOREACH_STATUS_OKAY(DOMAIN_DEV)
+	DT_INST_FOREACH_STATUS_OKAY(DEVICE_DT_INST_GET_COMMA)
 };
 #endif
 

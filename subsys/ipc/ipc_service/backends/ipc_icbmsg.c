@@ -1560,14 +1560,12 @@ static void icbmsg_print_instance_stats(const struct shell *sh, const struct dev
 		    data->stats.rx_data_count);
 }
 
-#define ICBMSG_DEVICE(i) DEVICE_DT_INST_GET(i),
-
 static int cmd_icbmsg_stats(const struct shell *sh, size_t argc, char **argv)
 {
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 	static const struct device *const icbmsg_devices[] = {
-		DT_INST_FOREACH_STATUS_OKAY(ICBMSG_DEVICE)};
+		DT_INST_FOREACH_STATUS_OKAY(DEVICE_DT_INST_GET_COMMA)};
 
 	for (size_t i = 0; i < ARRAY_SIZE(icbmsg_devices); i++) {
 		if (!device_is_ready(icbmsg_devices[i])) {
