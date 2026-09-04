@@ -379,10 +379,21 @@ int zsock_connect_ctx(struct net_context *ctx, const struct net_sockaddr *addr,
 
 #if defined(CONFIG_SOCKS)
 	if (net_context_is_proxy_enabled(ctx)) {
-		ret = net_socks5_connect(ctx, addr, addrlen);
+		struct net_pkt *leftover = NULL;
+
+		ret = net_socks5_connect(ctx, addr, addrlen, &leftover);
 		if (ret < 0) {
 			errno = -ret;
 			return -1;
+		}
+
+		/* Data that came in behind the CONNECT reply has to be queued
+		 * before the receive callback is installed, so that it stays
+		 * ahead of whatever arrives next.
+		 */
+		if (leftover != NULL) {
+			zsock_received_cb(ctx, leftover, NULL, NULL, 0,
+					  ctx->user_data);
 		}
 
 		if (!sock_is_eof(ctx)) {
