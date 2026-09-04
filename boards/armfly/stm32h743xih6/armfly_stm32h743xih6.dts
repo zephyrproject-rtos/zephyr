@@ -27,30 +27,6 @@
 		zephyr,touch = &gt911;
 	};
 
-	sdram1: sdram@c0000000 {
-		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0xc0000000 DT_SIZE_M(32)>;
-		device_type = "memory";
-		zephyr,memory-region = "SDRAM1";
-	};
-
-	fmc_extio: memory@60000000 {
-		compatible = "zephyr,memory-region";
-		reg = <0x60000000 DT_SIZE_K(64)>;
-		zephyr,memory-region = "FMC_EXTIO";
-		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_IO)>;
-	};
-
-	latch_gpio: gpio@60001000 {
-		compatible = "gpio-mmio-latch";
-		reg = <0x60001000 0x4>;
-		gpio-controller;
-		#gpio-cells = <2>;
-		ngpios = <32>;
-		initial-output = <0x00000f14>;
-		status = "disabled";
-	};
-
 	leds: leds {
 		compatible = "gpio-leds";
 		status = "disabled";
@@ -142,6 +118,30 @@
 			label = "lcd_backlight_pwm";
 		};
 	};
+
+	fmc_extio: memory@60000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x60000000 DT_SIZE_K(64)>;
+		zephyr,memory-region = "FMC_EXTIO";
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_IO)>;
+	};
+
+	latch_gpio: gpio@60001000 {
+		compatible = "gpio-mmio-latch";
+		reg = <0x60001000 0x4>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <32>;
+		initial-output = <0x00000f14>;
+		status = "disabled";
+	};
+
+	sdram1: sdram@c0000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0xc0000000 DT_SIZE_M(32)>;
+		device_type = "memory";
+		zephyr,memory-region = "SDRAM1";
+	};
 };
 
 &clk_lsi {
@@ -221,6 +221,24 @@
 	clock-frequency = <I2C_BITRATE_FAST>;
 	status = "okay";
 
+	bh1750: bh1750@23 {
+		compatible = "rohm,bh1750";
+		reg = <0x23>;
+		resolution = <1>;
+		mtreg = <69>;
+		status = "okay";
+	};
+
+	eeprom0: eeprom@50 {
+		compatible = "atmel,at24";
+		reg = <0x50>;
+		size = <DT_SIZE_K(16)>;
+		pagesize = <64>;
+		address-width = <16>;
+		timeout = <5>;
+		status = "okay";
+	};
+
 	gt911: gt911@5d {
 		compatible = "goodix,gt911";
 		reg = <0x5d>;
@@ -237,28 +255,10 @@
 		status = "okay";
 	};
 
-	bh1750: bh1750@23 {
-		compatible = "rohm,bh1750";
-		reg = <0x23>;
-		resolution = <1>;
-		mtreg = <69>;
-		status = "okay";
-	};
-
 	bmp180: bmp180@77 {
 		compatible = "bosch,bmp180";
 		reg = <0x77>;
 		osr-press = <3>;
-		status = "okay";
-	};
-
-	eeprom0: eeprom@50 {
-		compatible = "atmel,at24";
-		reg = <0x50>;
-		size = <DT_SIZE_K(16)>;
-		pagesize = <64>;
-		address-width = <16>;
-		timeout = <5>;
 		status = "okay";
 	};
 };
