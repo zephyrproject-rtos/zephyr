@@ -290,6 +290,8 @@ struct k_process {
 	int16_t perm_index;
 	/** Memory domain of a user-mode process (system layer); NULL shares the creator's */
 	struct k_mem_domain *domain;
+	/** Domain prepared for a pending exec of the leader (system layer), or NULL */
+	struct k_mem_domain *domain_next;
 #endif /* CONFIG_USERSPACE */
 #ifdef CONFIG_PROCESS_VM
 	/** Cloned address-space context (system layer), or NULL */
@@ -306,6 +308,8 @@ struct k_process {
 #ifdef CONFIG_SYS_PROCESS_EXEC
 	/** Loaded extension backing the process image (system layer), or NULL */
 	void *image;
+	/** Extension loaded for a pending exec of the leader (system layer), or NULL */
+	void *image_next;
 #endif /* CONFIG_SYS_PROCESS_EXEC */
 	/** @endcond */
 };

@@ -18,6 +18,7 @@
 #include <zephyr/sys/process.h>
 #include <zephyr/sys/thread.h>
 #include <ksched.h>
+#include "sys_process_priv.h"
 
 /* process-tier providers (process.c); this dispatch is their only consumer */
 #ifdef CONFIG_SYS_PROCESS
@@ -162,7 +163,7 @@ int z_impl_sys_clone(const struct sys_clone_args *args, k_pid_t *child)
 #ifdef CONFIG_USERSPACE
 #ifdef CONFIG_SYS_PROCESS
 /* kernel copies of a user vector: the table and each string, budget-bounded */
-static void clone_vec_free(char **vec)
+void z_clone_vec_free(char **vec)
 {
 	for (int i = 0; (vec != NULL) && (vec[i] != NULL); i++) {
 		k_free(vec[i]);
@@ -203,7 +204,7 @@ static int clone_vec_from_user(char *const *uvec, char ***out, size_t *budget)
 	for (int i = 0; i < n; i++) {
 		vec[i] = k_usermode_string_alloc_copy(uvec[i], *budget);
 		if (vec[i] == NULL) {
-			clone_vec_free(vec);
+			z_clone_vec_free(vec);
 			return -E2BIG;
 		}
 		*budget -= strlen(vec[i]) + 1;
@@ -213,24 +214,24 @@ static int clone_vec_from_user(char *const *uvec, char ***out, size_t *budget)
 	return 0;
 }
 
-static int clone_user_vectors(struct sys_clone_args *copy)
+int z_clone_user_vectors(char *const **argv, char *const **envp)
 {
 	/* one budget for both vectors, matching the staging bound */
 	size_t budget = CONFIG_SYS_PROCESS_ARG_BYTES;
-	char **argv = NULL;
-	char **envp = NULL;
+	char **kargv = NULL;
+	char **kenvp = NULL;
 	int ret;
 
-	ret = clone_vec_from_user(copy->argv, &argv, &budget);
+	ret = clone_vec_from_user(*argv, &kargv, &budget);
 	if (ret == 0) {
-		ret = clone_vec_from_user(copy->envp, &envp, &budget);
+		ret = clone_vec_from_user(*envp, &kenvp, &budget);
 	}
 	if (ret < 0) {
-		clone_vec_free(argv);
+		z_clone_vec_free(kargv);
 		return ret;
 	}
-	copy->argv = argv;
-	copy->envp = envp;
+	*argv = (char *const *)kargv;
+	*envp = (char *const *)kenvp;
 
 	return 0;
 }
@@ -268,14 +269,14 @@ static inline int z_vrfy_sys_clone(const struct sys_clone_args *args, k_pid_t *c
 
 #ifdef CONFIG_SYS_PROCESS
 		if (copy.argv != NULL) {
-			ret = clone_user_vectors(&copy);
+			ret = z_clone_user_vectors(&copy.argv, &copy.envp);
 			if (ret < 0) {
 				return ret;
 			}
 		}
 		ret = z_impl_sys_clone(&copy, child);
-		clone_vec_free((char **)copy.argv);
-		clone_vec_free((char **)copy.envp);
+		z_clone_vec_free((char **)copy.argv);
+		z_clone_vec_free((char **)copy.envp);
 
 		return ret;
 #else
@@ -309,14 +310,14 @@ static inline int z_vrfy_sys_clone(const struct sys_clone_args *args, k_pid_t *c
 
 #ifdef CONFIG_SYS_PROCESS
 	if (copy.argv != NULL) {
-		ret = clone_user_vectors(&copy);
+		ret = z_clone_user_vectors(&copy.argv, &copy.envp);
 		if (ret < 0) {
 			return ret;
 		}
 	}
 	ret = z_impl_sys_clone(&copy, child);
-	clone_vec_free((char **)copy.argv);
-	clone_vec_free((char **)copy.envp);
+	z_clone_vec_free((char **)copy.argv);
+	z_clone_vec_free((char **)copy.envp);
 
 	return ret;
 #else

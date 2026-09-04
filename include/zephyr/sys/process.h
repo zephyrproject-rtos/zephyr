@@ -158,14 +158,39 @@ __syscall int sys_process_args(struct sys_process_start *start, void *buf, size_
  * is the process's exit status. The extension is unloaded when the process
  * is reaped. Requires @kconfig{CONFIG_SYS_PROCESS_EXEC}.
  *
+ * With @a child the calling thread, itself the leader of its process, the
+ * image is loaded as the pending image of the caller's own process, to be
+ * entered by sys_exec_start(); a pending image not started is unloaded at
+ * reap or replaced by the next load.
+ *
  * @retval 0 on success
- * @retval -ESRCH if @a child is not a paused, argument-staged child of the caller
+ * @retval -ESRCH if @a child is neither a paused, argument-staged child of the
+ *         caller nor the calling leader
  * @retval -ENOENT if @a path cannot be loaded
  * @retval -ENOEXEC if the image exports no main()
  * @retval -ENOMEM if memory, the domain, or the name space is exhausted
  * @retval -ENOTSUP without @kconfig{CONFIG_SYS_PROCESS_EXEC}
  */
 __syscall int sys_exec_load(k_pid_t child, const char *path);
+
+/**
+ * @brief Replace the calling process's image
+ *
+ * Stages @a argv and @a envp for the caller's process, replaces its image
+ * with the pending one loaded by sys_exec_load() (unloading the previous
+ * image), and restarts the calling leader thread on a fresh stack in the
+ * mode it runs in, entering @a entry as entry(argv, envp, argc) or, with
+ * @a entry NULL, the pending image's main(argc, argv, envp). Does not return
+ * on success. Descriptors marked close-on-exec are closed; every other member
+ * thread must already be gone, and signal disposition semantics of exec are
+ * the caller's business before this call. Requires @kconfig{CONFIG_SYS_PROCESS}.
+ *
+ * @retval -EINVAL if the caller is not its process's leader
+ * @retval -ENOENT if @a entry is NULL and no image is pending
+ * @retval -E2BIG if the vectors exceed @kconfig{CONFIG_SYS_PROCESS_ARG_BYTES}
+ * @retval -ENOMEM if the vectors cannot be staged
+ */
+__syscall int sys_exec_start(k_thread_entry_t entry, char *const *argv, char *const *envp);
 
 /**
  * @}
