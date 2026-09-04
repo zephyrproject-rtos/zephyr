@@ -12,8 +12,8 @@
 #include <espressif/partitions_0x0_default.dtsi>
 
 / {
-	model = "ICEV Wireless";
 	compatible = "espressif,esp32c3";
+	model = "ICEV Wireless";
 
 	chosen {
 		zephyr,sram = &sram1;
@@ -73,11 +73,11 @@
 };
 
 &spi2 {
-	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
 	pinctrl-0 = <&spim2_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &gpio0 {
