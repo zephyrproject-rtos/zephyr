@@ -40,13 +40,15 @@ properties:
 
 examples:
   - |
+    #include <zephyr/dt-bindings/input/hid-codes.h>
+
     /* gpio0 has to be a zephyr,gpio-emul device */
     &gpio0 {
       ngpios = <3>;
 
       sdl_gpio {
         compatible = "zephyr,gpio-emul-sdl";
-        scancodes = <30 31 32>;
+        scancodes = <HID_KEY_1 HID_KEY_2 HID_KEY_3>;
       };
     };
 
