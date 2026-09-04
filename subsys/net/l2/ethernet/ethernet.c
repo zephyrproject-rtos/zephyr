@@ -394,7 +394,11 @@ out:
 	if (program) {
 		ret = ethernet_mcast_filter_set(iface, addr, true);
 		if (ret == -ENOTSUP) {
-			ret = 0;
+			return 0;
+		}
+
+		if (ret < 0) {
+			(void)net_eth_mcast_addr_rm(iface, addr);
 		}
 	}
 
