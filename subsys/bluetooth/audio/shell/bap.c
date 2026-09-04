@@ -219,6 +219,9 @@ void bap_foreach_stream(void (*func)(struct shell_stream *sh_stream, void *data)
 }
 
 #if defined(CONFIG_LIBLC3)
+#define LC3_THREAD_PRIO 10
+BUILD_ASSERT(K_LOWEST_APPLICATION_THREAD_PRIO >= LC3_THREAD_PRIO);
+
 #include <lc3.h>
 
 static int get_lc3_chan_alloc_from_index(const struct shell_stream *sh_stream, uint8_t index,
@@ -3985,7 +3988,7 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 #if defined(CONFIG_LIBLC3)
 #if defined(CONFIG_BT_AUDIO_RX)
 	static K_KERNEL_STACK_DEFINE(lc3_decoder_thread_stack, 4096);
-	const int lc3_decoder_thread_prio = K_PRIO_PREEMPT(5);
+	const int lc3_decoder_thread_prio = K_PRIO_PREEMPT(LC3_THREAD_PRIO);
 	static struct k_thread lc3_decoder_thread;
 
 	k_thread_create(&lc3_decoder_thread, lc3_decoder_thread_stack,
@@ -3996,7 +3999,7 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 
 #if defined(CONFIG_BT_AUDIO_TX)
 	static K_KERNEL_STACK_DEFINE(lc3_encoder_thread_stack, 4096);
-	const int lc3_encoder_thread_prio = K_PRIO_PREEMPT(5);
+	const int lc3_encoder_thread_prio = K_PRIO_PREEMPT(LC3_THREAD_PRIO);
 	static struct k_thread lc3_encoder_thread;
 
 	k_thread_create(&lc3_encoder_thread, lc3_encoder_thread_stack,
