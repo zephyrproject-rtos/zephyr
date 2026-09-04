@@ -3436,6 +3436,7 @@ int supplicant_p2p_oper(const struct device *dev __unused, struct net_if *iface,
 		break;
 	}
 
+
 	case WIFI_P2P_GROUP_ADD: {
 		int len = 0;
 
@@ -3700,6 +3701,49 @@ int supplicant_p2p_oper(const struct device *dev __unused, struct net_if *iface,
 				   "P2P persistent_remove: invalid id %d",
 				   params->persistent_remove.id);
 			return -EINVAL;
+		}
+		ret = 0;
+		break;
+	}
+	case WIFI_P2P_INIT: {
+		if (strlen(params->device_name) == 0) {
+			snprintk(cmd_buf, sizeof(cmd_buf), "P2P_INIT");
+		} else {
+			snprintk(cmd_buf, sizeof(cmd_buf), "P2P_INIT name=%s",
+				params->device_name);
+		}
+		ret = zephyr_wpa_cli_cmd_resp_noprint(wpa_s->ctrl_conn, cmd_buf, resp_buf);
+		if (ret < 0) {
+			wpa_printf(MSG_ERROR, "P2P_INIT command failed: %d", ret);
+			return -EIO;
+		}
+		ret = 0;
+		break;
+	}
+	case WIFI_P2P_DISCONNECT: {
+		snprintk(cmd_buf, sizeof(cmd_buf), "P2P_DISCONNECT");
+		ret = zephyr_wpa_cli_cmd_resp_noprint(wpa_s->ctrl_conn, cmd_buf, resp_buf);
+
+		if (ret < 0) {
+			wpa_printf(MSG_ERROR, "P2P_DISCONNECT command failed: %d", ret);
+			return -EIO;
+		}
+		wpa_printf(MSG_ERROR, "P2P_DISCONNECT command status: %d", ret);
+		break;
+	}
+	case WIFI_P2P_STATUS: {
+		snprintk(cmd_buf, sizeof(cmd_buf), "P2P_STATUS");
+		if (params->status.buf == NULL ||
+		    params->status.buf_size == 0) {
+			wpa_printf(MSG_ERROR,
+				   "P2P_STATUS: buffer not provided");
+			return -EINVAL;
+		}
+		ret = zephyr_wpa_cli_cmd_resp_noprint(wpa_s->ctrl_conn,
+								cmd_buf, params->status.buf);
+		if (ret < 0) {
+			wpa_printf(MSG_ERROR, "P2P_STATUS command failed: %d", ret);
+			return -EIO;
 		}
 		ret = 0;
 		break;
