@@ -79,6 +79,7 @@ config ETH_STM32_DWC_ETHER_QOS
 	select ETH_DWC_ETHER_QOS_CORE
 	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
 	select PINCTRL
+	select RESET
 	select HWINFO
 	select CRC
 	default y
@@ -98,6 +99,7 @@ config ETH_STM32_DWC_ETHER_1000
 	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT \
 				 && !$(dt_chosen_enabled,$(DT_CHOSEN_Z_DTCM))
 	select PINCTRL
+	select RESET
 	select HWINFO
 	select CRC
 	default y
