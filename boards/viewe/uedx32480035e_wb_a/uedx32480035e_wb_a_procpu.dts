@@ -176,6 +176,11 @@
 	pinctrl-0 = <&spim2_default>;
 	pinctrl-names = "default";
 	cs-gpios = <&gpio1 10 GPIO_ACTIVE_LOW>; /* IO42 */
+
+	dma-enabled;
+	dma-host = <0>;
+	dmas = <&dma 0>, <&dma 1>;
+	dma-names = "tx", "rx";
 };
 
 &spi3 {
