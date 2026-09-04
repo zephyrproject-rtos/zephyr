@@ -1,0 +1,41 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * External-PHY Ethernet (MII) opt-in overlay for frdm_mcxa577.
+ *
+ * ENET and its external PHY are disabled by default in the board dtsi so that
+ * ordinary samples keep the on-board MCU-Link VCOM console on LPUART1
+ * (P1_8/P1_9). This overlay enables the external-PHY MII ENET for networking
+ * applications. MII needs P1_8/P1_9 for ENET0_TXD2/TXD3 (the only balls that
+ * carry those signals), which are the LPUART1 VCOM pins, so enabling ENET also
+ * disables LPUART1 and moves the console/shell to LPUART2 (Arduino D0/D1
+ * header). The on-board VCOM is therefore not available while ENET is enabled.
+ */
+
+&enet {
+	status = "okay";
+};
+
+&enet_mdio {
+	status = "okay";
+
+	phy: ethernet-phy@0 {
+		status = "okay";
+	};
+};
+
+&lpuart1 {
+	status = "disabled";
+};
+
+&lpuart2 {
+	status = "okay";
+};
+
+/ {
+	chosen {
+		zephyr,console = &lpuart2;
+		zephyr,shell-uart = &lpuart2;
+	};
+};
