@@ -1972,6 +1972,7 @@ New Samples
 * :zephyr:code-sample:`rpi-board-info`
 * :zephyr:code-sample:`rpmsg-lite`
 * :zephyr:code-sample:`rw612_pm_flash_check`
+* :zephyr:code-sample:`smp-bt-client`
 * :zephyr:code-sample:`spi-rtio-loopback`
 * :zephyr:code-sample:`ssh-server-client`
 * :zephyr:code-sample:`sx9500`

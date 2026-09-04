@@ -1,0 +1,29 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-FileCopyrightText: Copyright (c) 2026 Jeff Welder
+# SPDX-License-Identifier: Apache-2.0
+
+sample:
+  name: SMP client (Bluetooth)
+  description: Upload a firmware image from a file system to a Bluetooth peer running smp_svr
+common:
+  tags:
+    - mgmt
+    - mcumgr
+    - bluetooth
+  # Needs a second board running smp_svr, so it is only built
+  harness: bluetooth
+  platform_allow:
+    - nrf52840dk/nrf52840
+    - nrf54lm20dk/nrf54lm20a/cpuapp
+  integration_platforms:
+    - nrf54lm20dk/nrf54lm20a/cpuapp
+tests:
+  sample.mcumgr.smp_bt_client: {}
+  sample.mcumgr.smp_bt_client.fs_shell:
+    extra_configs:
+      - CONFIG_BASE64=y
+      - CONFIG_SHELL=y
+      - CONFIG_SHELL_BACKEND_SERIAL=y
+      - CONFIG_MCUMGR_TRANSPORT_SHELL=y
+      - CONFIG_MCUMGR_GRP_FS=y
+      - CONFIG_SYSTEM_WORKQUEUE_STACK_SIZE=2304
