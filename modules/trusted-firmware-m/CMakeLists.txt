@@ -92,6 +92,12 @@ if(CONFIG_BUILD_WITH_TFM)
   if(CONFIG_TFM_PROFILE)
     list(APPEND TFM_CMAKE_ARGS -DTFM_PROFILE=${CONFIG_TFM_PROFILE})
   endif()
+  # Let a board supply crypto algorithms/modules its chosen TFM_PROFILE omits,
+  # without patching the vendored TF-M platform tree.
+  if(EXISTS ${BOARD_DIR}/tfm_extra_crypto_config.h)
+    list(APPEND TFM_CMAKE_ARGS
+      -DTFM_TF_PSA_CRYPTO_PLATFORM_EXTRA_CONFIG_PATH=${BOARD_DIR}/tfm_extra_crypto_config.h)
+  endif()
   if(CONFIG_TFM_CMAKE_BUILD_TYPE_RELEASE)
     set(TFM_CMAKE_BUILD_TYPE "Release")
   elseif(CONFIG_TFM_CMAKE_BUILD_TYPE_MINSIZEREL)
