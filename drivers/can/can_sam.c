@@ -228,13 +228,17 @@ static void config_can_##inst##_irq(void)                                       
 #define CAN_SAM_CLOCK_DIVIDER_DEFINE(inst)							\
 		IF_ENABLED(CONFIG_SOC_SERIES_SAMX7X, (.divider = DT_INST_PROP(inst, divider),))
 
+#define CAN_INSTANCE_BY_NAME(inst)					\
+	((DT_INST_REG_ADDR_BY_NAME(inst, m_can) - MCAN0_BASE_ADDRESS) / 0x4000U)
+
 #define CAN_SAM_CFG_INST(inst)						\
 	CAN_MCAN_DT_INST_CALLBACKS_DEFINE(inst, can_sam_cbs_##inst);	\
 	CAN_SAM_MRAM_DEFINE(inst)					\
 									\
 	static const struct can_sam_config can_sam_cfg_##inst = {	\
 		.base = CAN_MCAN_DT_INST_MCAN_ADDR(inst),		\
-		.instance = inst,					\
+		IF_ENABLED(DT_INST_REG_HAS_NAME(inst, sram_sel),	\
+			(.instance = CAN_INSTANCE_BY_NAME(inst),))	\
 		CAN_SAM_MEMORY_DEFINE(inst)				\
 		.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(inst),		\
 		CAN_SAM_CLOCK_DIVIDER_DEFINE(inst)			\
