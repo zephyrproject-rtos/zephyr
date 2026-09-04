@@ -1,0 +1,16 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Enable the native_sim Wi-Fi driver and bind it to the host "zwifi"
+ * interface created by the net-tools mac80211_hwsim setup.
+ */
+/ {
+	wifi0: wifi {
+		compatible = "zephyr,native-sim-wifi";
+		host-interface = "zwifi";
+		zephyr,random-mac-address;
+	};
+};
