@@ -10,8 +10,8 @@
 #include "arduino_nicla_vision.dtsi"
 
 / {
-	model = "Arduino Nicla Vision Board (M4)";
 	compatible = "arduino,nicla-vision";
+	model = "Arduino Nicla Vision Board (M4)";
 
 	chosen {
 		zephyr,console = &uart4;
@@ -30,8 +30,8 @@
 };
 
 &uart4 {
-	status = "okay";
 	pinctrl-0 = <&uart4_tx_pb9 &uart4_rx_pb8>;
 	pinctrl-names = "default";
 	current-speed = <115200>;
+	status = "okay";
 };
