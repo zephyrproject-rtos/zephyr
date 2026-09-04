@@ -965,6 +965,77 @@ def test_test_handle(
         assert test_obj.instance.testcases[1].status == exp_status
 
 
+ZTEST_P_LOG = [
+    "Running TESTSUITE dummy_suite",
+    "START - test_param[vals/one]",
+    " PASS - test_param[vals/one] in 0.010 seconds",
+    "START - test_param[vals/two]",
+    " FAIL - test_param[vals/two] in 0.020 seconds",
+    "TESTSUITE dummy_suite failed",
+    "------ TESTSUITE SUMMARY START ------",
+    "SUITE FAIL -  50.00% [dummy_suite]: pass = 1, fail = 1, skip = 0, total = 2"
+    " duration = 0.030 seconds",
+    " - FAIL - [dummy_suite.test_param] duration = 0.030 seconds",
+    "------ TESTSUITE SUMMARY END ------",
+]
+
+
+@pytest.mark.parametrize(
+    "scanned",
+    [True, False],
+    ids=["scanned parent case", "unknown parent case"],
+)
+def test_test_handle_parameterized(tmp_path, scanned):
+    """A ZTEST_P invocation 'name[instance/param]' is registered as a subcase
+    of the case named in the suite summary, whether or not that case was
+    found by the static scan."""
+    mock_platform = mock.Mock()
+    mock_platform.name = "mock_platform"
+    mock_platform.normalized_name = "mock_platform"
+
+    mock_testsuite = mock.Mock(id="dummy.test_id", testcases=[])
+    mock_testsuite.name = "dummy_suite/dummy.test_id"
+    mock_testsuite.harness_config = {}
+    mock_testsuite.ztest_suite_names = ["dummy_suite"]
+    mock_testsuite.detailed_test_id = True
+    mock_testsuite.source_dir_rel = "dummy_suite"
+    mock_testsuite.compose_case_name.side_effect = (
+        lambda tc_name: TestSuite.compose_case_name(mock_testsuite, tc_name)
+    )
+    if scanned:
+        parent = "dummy.test_id.dummy_suite.param"
+        mock_testsuite.testcases = [TestCase(parent)]
+    else:
+        parent = "dummy.test_id.param"
+
+    with mock.patch('twisterlib.testsuite.TestSuite.get_unique', return_value="dummy_suite"):
+        instance = TestInstance(
+            testsuite=mock_testsuite, platform=mock_platform, toolchain='zephyr',
+            outdir=tmp_path / "ztest_out"
+        )
+    instance.handler = mock.Mock(options=mock.Mock(verbose=0), type_str="handler_type")
+
+    harness = Test()
+    harness.configure(instance)
+    harness.id = "dummy.test_id"
+
+    process_logs(harness, ZTEST_P_LOG)
+
+    assert harness.ztest
+    assert {tc.name: tc.status for tc in instance.testcases} == {
+        parent: TwisterStatus.FAIL,
+        f"{parent}[vals/one]": TwisterStatus.PASS,
+        f"{parent}[vals/two]": TwisterStatus.FAIL,
+    }
+    assert instance.get_case_by_name(f"{parent}[vals/one]").duration == 0.01
+    assert instance.get_case_by_name(f"{parent}[vals/two]").duration == 0.02
+    assert instance.get_case_by_name(parent).duration == 0.03
+    assert harness.started_cases == {
+        f"{parent}[vals/one]": {'count': 0},
+        f"{parent}[vals/two]": {'count': 0},
+    }
+
+
 @pytest.fixture
 def gtest(tmp_path):
     mock_platform = mock.Mock()

@@ -541,8 +541,10 @@ instantiated multiple times with different value sets:
    ZTEST_INSTANTIATE_TEST_SUITE_P(big,   my_suite, test_multiply, big_factor_vals);
 
 The first argument (``small`` / ``big``) is an arbitrary unique identifier within
-the compilation unit; it is recorded in the test metadata but does not affect test
-naming as reported by Twister.
+the compilation unit.  Each invocation is reported as ``test_name[instance/N]``,
+or as ``test_name[instance/label]`` when the value set provides a ``name_cb``;
+Twister records these as subcases of the ``suite.test_name`` case, so a label
+must not contain whitespace.
 
 Retrieving the current parameter
 ----------------------------------
