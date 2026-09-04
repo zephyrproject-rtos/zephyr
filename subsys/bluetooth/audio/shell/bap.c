@@ -176,7 +176,12 @@ static const struct named_lc3_preset lc3_broadcast_presets[] = {
 };
 
 static bool initialized;
-static unsigned long bap_stats_interval = 1000U;
+static size_t bap_stats_interval = 1000U;
+
+__maybe_unused static bool should_print_by_stats(size_t counter)
+{
+	return bap_stats_interval > 0U && (counter % bap_stats_interval) == 0U;
+}
 
 struct shell_stream *shell_stream_from_bap_stream(struct bt_bap_stream *bap_stream)
 {
@@ -399,7 +404,7 @@ static bool encode_frame(struct shell_stream *sh_stream, uint8_t index, size_t f
 				    AUDIO_TONE_FREQUENCY_HZ, sh_stream->lc3_freq_hz);
 	}
 
-	if ((sh_stream->tx.encoded_cnt % bap_stats_interval) == 0) {
+	if (should_print_by_stats(sh_stream->tx.encoded_cnt)) {
 		bt_shell_print("[%zu]: Encoding frame of size %u (%u/%u)",
 			       sh_stream->tx.encoded_cnt, octets_per_frame, frame_cnt + 1,
 			       total_frames);
@@ -502,7 +507,7 @@ static void lc3_audio_send_data(struct shell_stream *sh_stream)
 		return;
 	}
 
-	if ((sh_stream->tx.lc3_sdu_cnt % bap_stats_interval) == 0U) {
+	if (should_print_by_stats(sh_stream->tx.lc3_sdu_cnt)) {
 		bt_shell_info("[%zu]: stream %p : TX LC3: %zu (seq_num %u)",
 			      sh_stream->tx.lc3_sdu_cnt, bap_stream, tx_sdu_len,
 			      sh_stream->tx.seq_num);
@@ -2596,13 +2601,13 @@ static bool decode_frame(struct lc3_data *data, size_t frame_cnt)
 	if (data->do_plc) {
 		iso_data = NULL; /* perform PLC */
 
-		if ((sh_stream->rx.decoded_cnt % bap_stats_interval) == 0) {
+		if (should_print_by_stats(sh_stream->rx.decoded_cnt)) {
 			bt_shell_print("[%zu]: Performing PLC", sh_stream->rx.decoded_cnt);
 		}
 	} else {
 		iso_data = net_buf_pull_mem(data->buf, octets_per_frame);
 
-		if ((sh_stream->rx.decoded_cnt % bap_stats_interval) == 0) {
+		if (should_print_by_stats(sh_stream->rx.decoded_cnt)) {
 			bt_shell_print("[%zu]: Decoding frame of size %u (%u/%u)",
 				       sh_stream->rx.decoded_cnt, octets_per_frame, frame_cnt + 1,
 				       total_frames);
@@ -2757,7 +2762,7 @@ static void audio_recv(struct bt_bap_stream *stream,
 		sh_stream->rx.lost_pkts++;
 	}
 
-	if ((sh_stream->rx.rx_cnt % bap_stats_interval) == 0) {
+	if (should_print_by_stats(sh_stream->rx.rx_cnt)) {
 		bt_shell_print(
 			"[%zu]: Incoming audio on stream %p len %u ts %u seq_num %u flags %u "
 			"(valid %zu, dup ts %zu, dup psn %zu, err_pkts %zu, lost_pkts %zu, "
@@ -4165,7 +4170,7 @@ static int cmd_stop_sine(const struct shell *sh, size_t argc, char *argv[])
 static int cmd_bap_stats(const struct shell *sh, size_t argc, char *argv[])
 {
 	if (argc == 1) {
-		shell_info(sh, "Current stats interval: %lu", bap_stats_interval);
+		shell_info(sh, "Current stats interval: %zu", bap_stats_interval);
 	} else {
 		int err = 0;
 		unsigned long interval;
@@ -4177,8 +4182,8 @@ static int cmd_bap_stats(const struct shell *sh, size_t argc, char *argv[])
 			return -ENOEXEC;
 		}
 
-		if (interval == 0U) {
-			shell_error(sh, "Interval cannot be 0");
+		if (interval > SIZE_MAX) {
+			shell_error(sh, "Invalid interval (max: %zu): %lu", SIZE_MAX, interval);
 
 			return -ENOEXEC;
 		}
@@ -4299,9 +4304,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 		      1, 1),
 #endif /* GENERATE_SINE_SUPPORTED */
 #endif /* CONFIG_BT_AUDIO_TX */
-	SHELL_CMD_ARG(bap_stats, NULL,
-		      "Sets or gets the statistics reporting interval in # of packets",
-		      cmd_bap_stats, 1, 1),
+	SHELL_CMD_ARG(
+		stats, NULL,
+		"Sets or gets the statistics reporting interval in # of packets (set 0 to disable)",
+		cmd_bap_stats, 1, 1),
 	SHELL_COND_CMD_ARG(CONFIG_BT_PACS, set_location, NULL,
 			   "<direction: sink, source> <location bitmask>", cmd_set_loc, 3, 0),
 	SHELL_COND_CMD_ARG(CONFIG_BT_PACS, set_context, NULL,
