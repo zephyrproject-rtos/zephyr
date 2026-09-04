@@ -87,6 +87,6 @@ static const struct modem_cellular_vendor_config telit_lex10q1_vendor = {
                                                                                                    \
 	MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst, (user_pipe_0, 3))                          \
                                                                                                    \
-	MODEM_CELLULAR_DEFINE_INSTANCE(inst, &telit_lex10q1_vendor);
+	MODEM_CELLULAR_DEFINE_INSTANCE(inst, &telit_lex10q1_vendor, NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(MODEM_CELLULAR_DEVICE_TELIT_LEX10Q1)

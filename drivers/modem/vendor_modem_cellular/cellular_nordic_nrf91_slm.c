@@ -84,6 +84,6 @@ static const struct modem_cellular_vendor_config nrf91_slm_vendor = {
                                                                                                    \
 	MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst, (gnss_pipe, 3))                            \
                                                                                                    \
-	MODEM_CELLULAR_DEFINE_INSTANCE(inst, &nrf91_slm_vendor)
+	MODEM_CELLULAR_DEFINE_INSTANCE(inst, &nrf91_slm_vendor, NULL)
 
 DT_INST_FOREACH_STATUS_OKAY(MODEM_CELLULAR_DEVICE_NORDIC_NRF91_SLM)
