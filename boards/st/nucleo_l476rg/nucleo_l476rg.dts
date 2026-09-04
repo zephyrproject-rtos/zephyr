@@ -12,8 +12,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "STMicroelectronics STM32L476RG-NUCLEO board";
 	compatible = "st,stm32l476rg-nucleo";
+	model = "STMicroelectronics STM32L476RG-NUCLEO board";
 
 	chosen {
 		zephyr,console = &usart2;
@@ -119,8 +119,8 @@
 	pinctrl-names = "default";
 	scl-gpios = <&gpioc 0 GPIO_ACTIVE_HIGH>;
 	sda-gpios = <&gpioc 1 GPIO_ACTIVE_HIGH>;
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &spi1 {
@@ -149,9 +149,9 @@
 	status = "okay";
 
 	pwm2: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim2_ch3_pb10>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
@@ -160,9 +160,9 @@
 	status = "okay";
 
 	pwm3: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim3_ch1_pb4>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
@@ -190,15 +190,15 @@
 
 &flash0 {
 	partitions {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		/* Set 32KB of storage at the end of 1024KB flash */
 		storage_partition: partition@f8000 {
 			compatible = "zephyr,mapped-partition";
-			label = "storage";
 			reg = <0x000f8000 DT_SIZE_K(32)>;
+			label = "storage";
 		};
 	};
 };

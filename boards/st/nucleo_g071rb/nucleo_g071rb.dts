@@ -13,8 +13,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "STMicroelectronics STM32G071RB-NUCLEO board";
 	compatible = "st,stm32g071rb-nucleo";
+	model = "STMicroelectronics STM32G071RB-NUCLEO board";
 
 	chosen {
 		zephyr,console = &usart2;
@@ -113,9 +113,9 @@
 	status = "okay";
 
 	pwm3: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim3_ch1_pa6>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
@@ -124,8 +124,8 @@
 	pinctrl-names = "default";
 	scl-gpios = <&gpiob 8 GPIO_ACTIVE_HIGH>;
 	sda-gpios = <&gpiob 9 GPIO_ACTIVE_HIGH>;
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &i2c2 {
@@ -133,8 +133,8 @@
 	pinctrl-names = "default";
 	scl-gpios = <&gpioa 11 GPIO_ACTIVE_HIGH>;
 	sda-gpios = <&gpioa 12 GPIO_ACTIVE_HIGH>;
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &spi1 {
@@ -157,16 +157,16 @@
 	clock-names = "adcx", "adc_ker";
 	pinctrl-0 = <&adc1_in0_pa0 &adc1_in1_pa1>;
 	pinctrl-names = "default";
+	vref-mv = <3300>;
 	st,adc-clock-source = "ASYNC";
 	st,adc-prescaler = <4>;
 	status = "okay";
-	vref-mv = <3300>;
 };
 
 &dac1 {
-	status = "okay";
 	pinctrl-0 = <&dac1_out1_pa4>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &die_temp {
@@ -175,32 +175,32 @@
 
 &flash0 {
 	partitions {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		boot_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
-			label = "mcuboot";
 			reg = <0x00000000 DT_SIZE_K(36)>;
+			label = "mcuboot";
 		};
 
 		slot0_partition: partition@9000 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-0";
 			reg = <0x00009000 DT_SIZE_K(42)>;
+			label = "image-0";
 		};
 
 		slot1_partition: partition@13800 {
 			compatible = "zephyr,mapped-partition";
-			label = "image-1";
 			reg = <0x00013800 DT_SIZE_K(44)>;
+			label = "image-1";
 		};
 
 		storage_partition: partition@1e800 {
 			compatible = "zephyr,mapped-partition";
-			label = "storage";
 			reg = <0x0001e800 DT_SIZE_K(6)>;
+			label = "storage";
 		};
 	};
 };

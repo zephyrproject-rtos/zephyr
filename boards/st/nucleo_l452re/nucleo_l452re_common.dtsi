@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "STMicroelectronics STM32L452RE-NUCLEO board";
 	compatible = "st,stm32l452re-nucleo";
+	model = "STMicroelectronics STM32L452RE-NUCLEO board";
 
 	chosen {
 		zephyr,console = &usart2;
@@ -96,9 +96,9 @@
 	status = "okay";
 
 	pwm2: pwm {
-		status = "okay";
 		pinctrl-0 = <&tim2_ch1_pa0>;
 		pinctrl-names = "default";
+		status = "okay";
 	};
 };
 
@@ -116,15 +116,15 @@
 
 &flash0 {
 	partitions {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		/* Reserve the final 16 KiB for file system partition */
 		storage_partition: partition@7c000 {
 			compatible = "zephyr,mapped-partition";
-			label = "storage";
 			reg = <0x0007c000 0x00004000>;
+			label = "storage";
 		};
 	};
 };

@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "STMicroelectronics STM32WBA65RI-NUCLEO board";
 	compatible = "st,stm32wba65ri-nucleo";
+	model = "STMicroelectronics STM32WBA65RI-NUCLEO board";
 
 	chosen {
 		zephyr,bt-c2h-uart = &usart1;
@@ -114,10 +114,10 @@
 };
 
 &rtc {
-	status = "okay";
 	clocks = <&rcc STM32_CLOCK(APB7, 21)>,
 		 <&rcc STM32_SRC_LSE RTC_SEL(1)>;
 	prescaler = <32768>;
+	status = "okay";
 };
 
 &usart1 {
@@ -142,8 +142,8 @@
 	pinctrl-names = "default";
 	scl-gpios = <&gpiob 2 GPIO_ACTIVE_HIGH>;
 	sda-gpios = <&gpiob 1 GPIO_ACTIVE_HIGH>;
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
 
 &adc4 {

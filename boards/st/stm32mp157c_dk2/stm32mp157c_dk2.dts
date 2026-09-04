@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "STMicroelectronics STM32MP157-DK2 board";
 	compatible = "st,stm32mp157c-dk2";
+	model = "STMicroelectronics STM32MP157-DK2 board";
 
 	chosen {
 		/*
@@ -107,6 +107,6 @@
 	pinctrl-names = "default";
 	scl-gpios = <&gpioa 11 GPIO_ACTIVE_HIGH>;
 	sda-gpios = <&gpioa 12 GPIO_ACTIVE_HIGH>;
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
+	status = "okay";
 };
