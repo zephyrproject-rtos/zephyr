@@ -2612,6 +2612,17 @@ Documentation Infrastructure:
   tests:
     - sample.drivers.espi.ps2
 
+"Drivers: PSE":
+  status: maintained
+  maintainers:
+    - stolniceanuiustin
+  files:
+    - drivers/ethernet/pse/
+    - include/zephyr/drivers/pse.h
+    - dts/bindings/pse/
+  labels:
+    - "area: PSE"
+
 "Drivers: PSI5":
   status: maintained
   maintainers:
