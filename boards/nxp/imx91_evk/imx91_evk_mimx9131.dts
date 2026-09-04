@@ -21,10 +21,6 @@
 		zephyr,sram = &dram;
 	};
 
-	dram: memory@80000000 {
-		reg = <0x80000000 DT_SIZE_M(1)>;
-	};
-
 	aliases {
 		led0 = &led_r;
 		led1 = &led_g;
@@ -64,6 +60,10 @@
 			gpios = <&gpio2 24 GPIO_ACTIVE_LOW>;
 			zephyr,code = <INPUT_KEY_1>;
 		};
+	};
+
+	dram: memory@80000000 {
+		reg = <0x80000000 DT_SIZE_M(1)>;
 	};
 };
 

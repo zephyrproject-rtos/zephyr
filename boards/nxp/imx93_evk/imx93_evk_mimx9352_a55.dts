@@ -28,10 +28,6 @@
 		};
 	};
 
-	dram: memory@d0000000 {
-		reg = <0xd0000000 DT_SIZE_M(1)>;
-	};
-
 	aliases {
 		led0 = &led_r;
 		led1 = &led_g;
@@ -91,6 +87,10 @@
 		#phy-cells = <0>;
 		status = "okay";
 	};
+
+	dram: memory@d0000000 {
+		reg = <0xd0000000 DT_SIZE_M(1)>;
+	};
 };
 
 &enet {
@@ -147,6 +147,16 @@
 	pinctrl-names = "default";
 	status = "okay";
 
+	gpio_exp1: pcal6524@22 {
+		compatible = "nxp,pcal6524";
+		reg = <0x22>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <24>;
+		int-gpios = <&gpio3 27 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
+		status = "okay";
+	};
+
 	mfd0: adp5585@34 {
 		compatible = "adi,adp5585";
 		reg = <0x34>;
@@ -165,16 +175,6 @@
 			 *   GPIO Pin C0~C4 are gpio8~12
 			 */
 		};
-	};
-
-	gpio_exp1: pcal6524@22 {
-		compatible = "nxp,pcal6524";
-		reg = <0x22>;
-		gpio-controller;
-		#gpio-cells = <2>;
-		ngpios = <24>;
-		int-gpios = <&gpio3 27 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>;
-		status = "okay";
 	};
 };
 
