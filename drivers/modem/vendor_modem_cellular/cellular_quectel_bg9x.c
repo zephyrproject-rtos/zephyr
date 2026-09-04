@@ -33,7 +33,9 @@ MODEM_CHAT_SCRIPT_DEFINE(quectel_bg9x_init_chat_script, quectel_bg9x_init_chat_s
 			 abort_matches, modem_cellular_chat_callback_handler, 10);
 
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(quectel_bg9x_dial_chat_script_cmds,
-			      MODEM_CHAT_SCRIPT_CMD_RESP("ATD*99***1#", connect_match));
+			      MODEM_CHAT_SCRIPT_CMD_RESP(
+				"ATD*99***" STRINGIFY(CONFIG_MODEM_CELLULAR_PDP_CONTEXT_ID) "#",
+				connect_match));
 
 MODEM_CHAT_SCRIPT_DEFINE(quectel_bg9x_dial_chat_script, quectel_bg9x_dial_chat_script_cmds,
 			 dial_abort_matches, modem_cellular_chat_callback_handler, 10);
