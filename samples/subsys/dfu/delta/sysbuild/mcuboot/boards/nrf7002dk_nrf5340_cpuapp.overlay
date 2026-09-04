@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2026 Clovis Corde
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,code-partition = &boot_partition;
+	};
+};
+
+&slot0_partition {
+	reg = <0x10000 DT_SIZE_K(416)>;
+};
+
+&slot1_partition {
+	reg = <0x78000 DT_SIZE_K(416)>;
+};
