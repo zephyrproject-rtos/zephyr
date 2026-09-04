@@ -229,4 +229,19 @@
 
 #endif /* CONFIG_SOC_SILABS_XG29 */
 
+#ifdef CONFIG_SOC_SILABS_SIX301
+
+#if DT_ENUM_HAS_VALUE(DT_NODELABEL(radio), pa_2p4ghz, hp) ||                                       \
+	DT_ENUM_HAS_VALUE(DT_NODELABEL(radio), pa_2p4ghz, highest)
+#include "sl_rail_util_pa_dbm_powersetting_mapping_table_10dbm.h"
+#elif DT_ENUM_HAS_VALUE(DT_NODELABEL(radio), pa_2p4ghz, lp)
+#include "sl_rail_util_pa_dbm_powersetting_mapping_table_0dbm.h"
+#elif DT_ENUM_HAS_VALUE(DT_NODELABEL(radio), pa_2p4ghz, auto)
+#include "sl_rail_util_pa_dbm_powersetting_mapping_table_automode_0_10dbm.h"
+#else
+#error "Unknown 2.4 GHz PA configuration"
+#endif
+
+#endif /* CONFIG_SOC_SILABS_SIX301 */
+
 #endif /* SL_RAIL_UTIL_PA_TABLES_CONFIG_H */

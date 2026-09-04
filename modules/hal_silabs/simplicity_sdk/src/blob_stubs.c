@@ -263,6 +263,10 @@ void RDMAILBOX_IRQHandler(void)
 {
 }
 
+void SYSMBLPW0CPU_IRQHandler(void)
+{
+}
+
 /* RAIL timer API stubs (e.g. for counter_silabs_protimer when no blobs) */
 sl_rail_time_t sl_rail_get_time(sl_rail_handle_t rail_handle)
 {
@@ -307,6 +311,11 @@ sl_rail_status_t sl_rail_start_scheduled_cca_csma_tx(sl_rail_handle_t rail_handl
 	const sl_rail_scheduled_tx_config_t *p_scheduled_tx_config,
 	const sl_rail_csma_config_t *p_csma_config,
 	const sl_rail_scheduler_info_t *p_scheduler_info)
+{
+	return SL_RAIL_STATUS_NO_ERROR;
+}
+
+sl_rail_status_t sl_rail_copy_device_info(sl_rail_handle_t radio_handle)
 {
 	return SL_RAIL_STATUS_NO_ERROR;
 }

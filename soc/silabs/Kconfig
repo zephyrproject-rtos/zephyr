@@ -11,7 +11,7 @@ config SILABS_SHELL
 	  Hidden option that enables the "silabs" shell command namespace.
 	  Selected by any Silicon Labs SoC feature that registers a subcommand.
 
-if SOC_FAMILY_SILABS_S1 || SOC_FAMILY_SILABS_S2
+if SOC_FAMILY_SILABS_S1 || SOC_FAMILY_SILABS_S2 || SOC_FAMILY_SILABS_S3
 
 config SOC_GECKO_HAS_RADIO
 	bool
@@ -37,7 +37,58 @@ config SOC_GECKO_CUSTOM_RADIO_PHY
 	  management, sending and receiving packets on radio phy. User has
 	  to provide the radio_config.c and radio_config.h files for the phy.
 
-endif # SOC_FAMILY_SILABS_S1 || SOC_FAMILY_SILABS_S2
+config SILABS_DEVICE_IS_MODULE
+	bool
+	default n
+
+config SILABS_IMAGE_PROPERTIES
+	bool "Include application properties data structure in image"
+	default y if MCUBOOT
+	help
+	  Include the Silicon Labs application properties data structure in the
+	  the firmware image. This allows the SE and Gecko bootloader to access
+	  information about the image, such as its version and capabilities. If
+	  MCUboot is used, only the MCUboot image itself needs the image
+	  properties data structure to enable the SE to perform secure boot
+	  verification of the bootloader. MCUboot uses its own TLV format to
+	  verify the application. If Gecko bootloader is used, the Zephyr
+	  application image also needs the data structure.
+
+if PM
+
+config SILABS_PM_LOW_INTERRUPT_LATENCY
+	bool "Low interrupt latency mode"
+	default y
+	help
+	  Enabling low interrupt latency allows interrupts to be executed
+	  before the high frequency clock is restored after sleep.
+
+endif
+
+# Hardware capability flags (auto-detected from Device Tree)
+# Bluetooth 5.0
+config SILABS_HAS_RADIO_BLE_2M
+	def_bool $(dt_nodelabel_bool_prop,radio,ble-2mbps-supported)
+
+config SILABS_HAS_RADIO_BLE_CODED
+	def_bool $(dt_nodelabel_bool_prop,radio,ble-coded-phy-supported)
+
+# Bluetooth 5.1
+config SILABS_HAS_RADIO_CTE_TX
+	def_bool $(dt_nodelabel_bool_prop,radio,ble-cte-tx-supported)
+
+config SILABS_HAS_RADIO_CTE_RX
+	def_bool $(dt_nodelabel_bool_prop,radio,ble-cte-rx-supported) && SILABS_HAS_RADIO_CTE_TX
+
+# Bluetooth 6.0
+config SILABS_HAS_RADIO_CS
+	def_bool $(dt_nodelabel_bool_prop,radio,ble-cs-supported)
+
+# Vendor-specific
+config SILABS_HAS_RADIO_TX_HIGH_POWER
+	def_bool $(dt_nodelabel_bool_prop,radio,radio-tx-high-power-supported)
+
+endif # SOC_FAMILY_SILABS_S1 || SOC_FAMILY_SILABS_S2 || SOC_FAMILY_SILABS_S3
 
 if SOC_FAMILY_SILABS_S0 || SOC_FAMILY_SILABS_S1
 

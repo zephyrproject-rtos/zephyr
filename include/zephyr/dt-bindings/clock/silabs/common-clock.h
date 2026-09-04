@@ -14,11 +14,11 @@
 #define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_SILABS_COMMON_CLOCK_H_
 
 /**
- * @defgroup clock_control_dt_silabs Silicon Labs Series 2 Devicetree helpers
+ * @defgroup clock_control_dt_silabs Silicon Labs Series 2 and 3 Devicetree helpers
  * @ingroup clock_control_interface
  *
- * @details Devicetree macros for clock enables and clock branches on Silicon Labs Series 2 devices,
- * for use with the <tt>silabs,series-clock</tt> binding.
+ * @details Devicetree macros for clock enables and clock branches on Silicon Labs Series 2 and 3
+ * devices, for use with the <tt>silabs,series-clock</tt> binding.
  *
  * @c CLOCK_BRANCH_* macros represent clock branches, while @c CLOCK_* macros represent clock
  * enables.
@@ -68,7 +68,14 @@
 #define CLOCK_BRANCH_USB0CLK      33
 #define CLOCK_BRANCH_FLPLLREFCLK  34
 #define CLOCK_BRANCH_PDM0CLK      35
-#define CLOCK_BRANCH_INVALID      36
+#define CLOCK_BRANCH_CAN0CLK      36
+#define CLOCK_BRANCH_CAN1CLK      37
+#define CLOCK_BRANCH_HCLKDIVN     38
+#define CLOCK_BRANCH_CPUCLK       39
+#define CLOCK_BRANCH_ADC0CLK      40
+#define CLOCK_BRANCH_ADC1CLK      41
+#define CLOCK_BRANCH_LEDSINK0CLK  42
+#define CLOCK_BRANCH_INVALID      43
 
 #define CLOCK_BIT_MASK 0x03FUL
 #define CLOCK_REG_MASK 0x1C0UL
