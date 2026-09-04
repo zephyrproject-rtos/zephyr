@@ -92,3 +92,28 @@ module-str = stm32_xpsim
 source "subsys/logging/Kconfig.template.log_config"
 
 endif # STM32_XSPIM
+
+config STM32_NEOCHROM_GPU2D
+	bool "STM32 NeoChrom GPU2D support"
+	depends on DT_HAS_ST_NEOCHROM_GPU2D_ENABLED
+	select RESET
+	select USE_STM32_HAL_GPU2D
+	default y
+	help
+	  Enable support for STM32 NeoChrom GPU2D accelerator.
+	  This driver provides low-level access to the GPU2D hardware
+	  and is used by NemaGFX for hardware-accelerated rendering.
+
+if STM32_NEOCHROM_GPU2D
+
+config STM32_NEOCHROM_GPU2D_INIT_PRIORITY
+	int "NeoChrom GPU2D device init priority"
+	default 90
+	help
+	  Neochrom gpu2d device initialization priority.
+
+module = STM32_NEOCHROM_GPU2D
+module-str = stm32_neochrom_gpu2d
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # STM32_NEOCHROM_GPU2D

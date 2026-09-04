@@ -49,7 +49,7 @@ choice LV_Z_RENDERING_MODE
 	default LV_Z_DIRECT_RENDERING
 endchoice
 
-if NEOCHROM_GPU2D
+if STM32_NEOCHROM_GPU2D
 
 configdefault LV_ATTRIBUTE_MEM_ALIGN_SIZE
 	default 32
@@ -71,7 +71,7 @@ config LV_NEMA_USE_CACHE
 config LV_NEMA_CACHE_HAL_INCLUDE
 	default "stm32h7rsxx.h"
 
-endif # NEOCHROM_GPU2D
+endif # STM32_NEOCHROM_GPU2D
 
 endif # LVGL
 
