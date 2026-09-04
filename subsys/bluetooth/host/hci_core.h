@@ -80,6 +80,8 @@ enum {
 	BT_DEV_ISCAN,
 	BT_DEV_PSCAN,
 	BT_DEV_INQUIRY,
+	/* The inquiry itself. BT_DEV_INQUIRY also covers name resolution. */
+	BT_DEV_INQUIRY_ACTIVE,
 	BT_DEV_LIMITED_DISCOVERABLE_MODE,
 #endif /* CONFIG_BT_CLASSIC */
 
