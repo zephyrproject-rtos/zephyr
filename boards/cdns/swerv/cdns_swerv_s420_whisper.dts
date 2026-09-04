@@ -62,14 +62,27 @@
 		#size-cells = <1>;
 		interrupt-parent = <&cpu0intc>;
 
+		swint: swint@2000000 {
+			reg = <0x02000000 0x08>;
+		};
+
+		timer: timer@80001020 {
+			compatible = "riscv,machine-timer";
+			reg = <0x80001020 0x8 0x80001028 0x8>;
+			reg-names = "mtime", "mtimecmp";
+			interrupts-extended = <&cpu0intc 7
+					       &cpu1intc 7>;
+		};
+
+		whisper_consoleio: whisper-consoleio@80002000 {
+			reg = <0x80002000 0x00000004>;
+
+			status = "okay";
+		};
+
 		iccm: memory@ee000000 {
 			compatible = "mmio-sram";
 			reg = <0xee000000 0x02000000>;
-		};
-
-		dccm: memory@f4000000 {
-			compatible = "mmio-sram";
-			reg = <0xf4000000 0x02000000>;
 		};
 
 		pic: interrupt-controller@f0100000 {
@@ -81,22 +94,9 @@
 			riscv,max-priority = <15>;
 		};
 
-		timer: timer@80001020 {
-			compatible = "riscv,machine-timer";
-			reg = <0x80001020 0x8 0x80001028 0x8>;
-			reg-names = "mtime", "mtimecmp";
-			interrupts-extended = <&cpu0intc 7
-					       &cpu1intc 7>;
-		};
-
-		swint: swint@2000000 {
-			reg = <0x02000000 0x08>;
-		};
-
-		whisper_consoleio: whisper-consoleio@80002000 {
-			reg = <0x80002000 0x00000004>;
-
-			status = "okay";
+		dccm: memory@f4000000 {
+			compatible = "mmio-sram";
+			reg = <0xf4000000 0x02000000>;
 		};
 	};
 };
