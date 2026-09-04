@@ -9,8 +9,8 @@
 #include <egis/egis_et171.dtsi>
 
 / {
-	model = "Egis ET171C";
 	compatible = "egis,egis_et171";
+	model = "Egis ET171C";
 
 	aliases {
 		watchdog0 = &wdt;
@@ -60,9 +60,9 @@
 };
 
 &uart0 {
-	status = "okay";
 	clock-frequency = <18037518>;
 	current-speed = <38400>;
+	status = "okay";
 };
 
 &gpio0 {
