@@ -4,6 +4,7 @@
 zephyr_include_directories(.)
 
 zephyr_sources_ifdef(CONFIG_SOC_MIMXRT7XX_PM_XIP_HANDOVER     power_xip.c)
+zephyr_sources_ifdef(CONFIG_SOC_IMXRT7XX_POWER_DOMAIN_COMPUTE power_modes_compute.c)
 
 # Shared low-power entry sequence and the resource dependency closure, used by
 # both domain modules. This directory is only added for PM or POWEROFF builds, so
