@@ -171,11 +171,18 @@ static int tcp_pkt_linearize(struct net_pkt *pkt, size_t pos, size_t len)
 
 		len2 -= pull_len;
 		net_buf_pull(second, pull_len);
-		next = second->frags;
+
+		/* Only discard an emptied buffer. Detach its frag chain first:
+		 * net_buf_unref() frees the entire frags list, which would
+		 * otherwise drop remaining payload buffers still needed below.
+		 * If second still has data, it holds leftover payload - keep it.
+		 */
 		if (second->len == 0) {
+			next = second->frags;
+			second->frags = NULL;
 			net_buf_unref(second);
+			second = next;
 		}
-		second = next;
 	}
 
 	buf->frags = second;
