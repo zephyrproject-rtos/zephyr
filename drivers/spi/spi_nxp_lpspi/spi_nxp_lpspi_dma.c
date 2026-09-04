@@ -9,8 +9,46 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_DECLARE(spi_lpspi, CONFIG_SPI_LOG_LEVEL);
 
+#include <zephyr/cache.h>
 #include <zephyr/drivers/dma.h>
 #include "spi_nxp_lpspi_priv.h"
+
+/*
+ * eDMA is not coherent with the D-cache and nothing else in the path does
+ * cache maintenance, so a buffer in cached RAM is transferred stale.
+ */
+static void lpspi_dma_cache_clean_tx(const struct spi_buf_set *tx_bufs)
+{
+	if (!IS_ENABLED(CONFIG_DCACHE) || tx_bufs == NULL) {
+		return;
+	}
+
+	for (size_t i = 0; i < tx_bufs->count; i++) {
+		const struct spi_buf *buf = &tx_bufs->buffers[i];
+
+		if (buf->buf != NULL && buf->len != 0) {
+			sys_cache_data_flush_range((void *)buf->buf, buf->len);
+		}
+	}
+}
+
+static void lpspi_dma_cache_invd_rx(const struct spi_buf_set *rx_bufs)
+{
+	if (!IS_ENABLED(CONFIG_DCACHE) || rx_bufs == NULL) {
+		return;
+	}
+
+	for (size_t i = 0; i < rx_bufs->count; i++) {
+		const struct spi_buf *buf = &rx_bufs->buffers[i];
+
+		if (buf->buf != NULL && buf->len != 0) {
+			/* Clean too: a buffer not aligned to the line size
+			 * shares its first and last lines with other data
+			 */
+			sys_cache_data_flush_and_invd_range(buf->buf, buf->len);
+		}
+	}
+}
 
 /* These states indicate what's the status of RX and TX, also synchronization
  * status of DMA size of the next DMA transfer.
@@ -48,7 +86,39 @@ struct spi_nxp_dma_data {
 	 * size once and update the buffer pointers at the same time.
 	 */
 	size_t synchronize_dma_size;
+	/* kept for the cache invalidate at the end of the transfer */
+	const struct spi_buf_set *rx_bufs;
+	/* receive masked in TCR, so no RX DMA and no RX callback */
+	bool rx_masked;
 };
+
+/*
+ * TCR is loaded from the transmit FIFO, so a read taken while the FIFO is
+ * loading a new command word returns a value that was never programmed.
+ * Read until two reads agree, as LPSPI_GetTcr() in the HAL does.
+ */
+static uint32_t lpspi_read_tcr(LPSPI_Type *base)
+{
+	uint32_t previous = base->TCR;
+	int attempts = 16;
+
+	while (attempts-- > 0) {
+		uint32_t current;
+
+		/* ERR050606: touch another register between TCR reads */
+		(void)base->SR;
+		current = base->TCR;
+
+		if (current == previous) {
+			return current;
+		}
+
+		previous = current;
+	}
+
+	LOG_WRN("TCR did not read back consistently");
+	return previous;
+}
 
 /*
  * Issue a TCR (Transmit Command Register) command to properly end RX DMA transfers
@@ -80,7 +150,7 @@ static void spi_mcux_issue_TCR(const struct device *dev)
 	 * On a newer LPSPI version, only issue TCR when hold on CS feature is disabled.
 	 */
 	if (major_ver < 2 || !(spi_cfg->operation & SPI_HOLD_ON_CS)) {
-		base->TCR &= ~LPSPI_TCR_CONTC_MASK;
+		base->TCR = lpspi_read_tcr(base) & ~LPSPI_TCR_CONTC_MASK;
 	}
 }
 
@@ -173,14 +243,16 @@ static int lpspi_dma_rxtx_load(const struct device *dev)
 		return ret;
 	}
 
-	ret = lpspi_dma_rx_load(dev, ctx->rx_buf, dma_size);
-	if (ret != 0) {
-		return ret;
-	}
+	if (!dma_data->rx_masked) {
+		ret = lpspi_dma_rx_load(dev, ctx->rx_buf, dma_size);
+		if (ret != 0) {
+			return ret;
+		}
 
-	ret = dma_start(rx->dma_dev, rx->channel);
-	if (ret != 0) {
-		return ret;
+		ret = dma_start(rx->dma_dev, rx->channel);
+		if (ret != 0) {
+			return ret;
+		}
 	}
 
 	ret = dma_start(tx->dma_dev, tx->channel);
@@ -189,6 +261,30 @@ static int lpspi_dma_rxtx_load(const struct device *dev)
 	}
 
 	return dma_size;
+}
+
+/*
+ * The last word is still in the shift register once the TX FIFO reports
+ * empty, so poll the module busy flag as well before calling a transfer done.
+ */
+static void lpspi_wait_transfer_complete(const struct device *dev)
+{
+	LPSPI_Type *base = (LPSPI_Type *)DEVICE_MMIO_NAMED_GET(dev, reg_base);
+	int cycle_limit = CONFIG_SPI_NXP_LPSPI_TXFIFO_WAIT_CYCLES;
+	bool limit_wait = cycle_limit > 0;
+
+	(void)lpspi_wait_tx_fifo_empty(dev);
+
+	while (base->SR & LPSPI_SR_MBF_MASK) {
+		if (!limit_wait) {
+			continue;
+		}
+
+		if (cycle_limit-- < 0) {
+			LOG_WRN("Timed out waiting for LPSPI to go idle");
+			return;
+		}
+	}
 }
 
 static void lpspi_dma_callback(const struct device *dev, void *arg, uint32_t channel, int status)
@@ -217,7 +313,9 @@ static void lpspi_dma_callback(const struct device *dev, void *arg, uint32_t cha
 	switch (dma_data->state) {
 	case LPSPI_TRANSFER_STATE_ONGOING:
 		spi_context_update_tx(ctx, 1, tx->dma_blk_cfg.block_size);
-		spi_context_update_rx(ctx, 1, rx->dma_blk_cfg.block_size);
+		if (!dma_data->rx_masked) {
+			spi_context_update_rx(ctx, 1, rx->dma_blk_cfg.block_size);
+		}
 		/* Calculate next DMA transfer size */
 		dma_data->synchronize_dma_size = spi_context_max_continuous_chunk(ctx);
 		LOG_DBG("tx len:%d rx len:%d next dma size:%d",	ctx->tx_len, ctx->rx_len,
@@ -246,8 +344,16 @@ static void lpspi_dma_callback(const struct device *dev, void *arg, uint32_t cha
 			/* This is the end of the transfer. */
 			if (channel == dma_data->dma_tx.channel) {
 				spi_mcux_issue_TCR(spi_dev);
-				dma_data->state = LPSPI_TRANSFER_STATE_TX_DONE;
 				base->DER &= ~LPSPI_DER_TDDE_MASK;
+				/* No RX DMA means no second callback */
+				if (dma_data->rx_masked) {
+					dma_data->state = LPSPI_TRANSFER_STATE_RX_TX_DONE;
+					lpspi_wait_transfer_complete(spi_dev);
+					spi_context_cs_control(ctx, false);
+					spi_context_complete(ctx, spi_dev, 0);
+					return;
+				}
+				dma_data->state = LPSPI_TRANSFER_STATE_TX_DONE;
 			} else {
 				dma_data->state = LPSPI_TRANSFER_STATE_RX_DONE;
 				base->DER &= ~LPSPI_DER_RDDE_MASK;
@@ -276,9 +382,16 @@ static void lpspi_dma_callback(const struct device *dev, void *arg, uint32_t cha
 	case LPSPI_TRANSFER_STATE_TX_DONE:
 	case LPSPI_TRANSFER_STATE_RX_DONE:
 		dma_data->state = LPSPI_TRANSFER_STATE_RX_TX_DONE;
-		/* TX and RX both done here. */
-		spi_context_complete(ctx, spi_dev, 0);
+		/* Deselect before waking the waiter, which may start the next
+		 * transfer straight away
+		 */
+		lpspi_wait_transfer_complete(spi_dev);
 		spi_context_cs_control(ctx, false);
+		/* Not after spi_context_wait_for_completion(), which does not
+		 * wait for an asynchronous transfer
+		 */
+		lpspi_dma_cache_invd_rx(dma_data->rx_bufs);
+		spi_context_complete(ctx, spi_dev, 0);
 		break;
 
 	default:
@@ -291,8 +404,13 @@ static void lpspi_dma_callback(const struct device *dev, void *arg, uint32_t cha
 	return;
 error:
 	LOG_ERR("DMA callback error with channel %d.", channel);
-	spi_context_complete(ctx, spi_dev, ret);
+	/* Same ordering as the success path, but without waiting for a bus that
+	 * has already failed
+	 */
 	spi_context_cs_control(ctx, false);
+	/* The DMA may have written part of the RX data before failing */
+	lpspi_dma_cache_invd_rx(dma_data->rx_bufs);
+	spi_context_complete(ctx, spi_dev, ret);
 }
 
 static int transceive_dma(const struct device *dev, const struct spi_config *spi_cfg,
@@ -319,8 +437,26 @@ static int transceive_dma(const struct device *dev, const struct spi_config *spi
 		return -ENOTSUP;
 	}
 
-	/* Always use continuous mode to satisfy SPI API requirements. */
-	base->TCR |= LPSPI_TCR_CONT_MASK | LPSPI_TCR_CONTC_MASK;
+	/*
+	 * Ending a continuous transfer needs a command word with CONTC clear,
+	 * and such a word ends the frame at the current word, ignoring FRAMESZ
+	 * (RM rev 5, table 70-2). Every frame after the first would end early.
+	 */
+	{
+		uint32_t tcr = lpspi_read_tcr(base) &
+			       ~(LPSPI_TCR_CONT_MASK | LPSPI_TCR_CONTC_MASK | LPSPI_TCR_RXMSK_MASK);
+
+		/*
+		 * Without RXMSK the receive FIFO fills with data that is only
+		 * discarded, and overflows under load. SR[REF] then aborts the
+		 * transfer, which the driver does not notice.
+		 */
+		dma_data->rx_masked = !spi_context_rx_buf_on(ctx);
+		if (dma_data->rx_masked) {
+			tcr |= LPSPI_TCR_RXMSK_MASK;
+		}
+		base->TCR = tcr;
+	}
 
 	/* Please set both watermarks as 0 because there are some synchronize requirements
 	 * between RX and TX on RT platform. TX and RX DMA callback must be called in interleaved
@@ -328,6 +464,10 @@ static int transceive_dma(const struct device *dev, const struct spi_config *spi
 	 */
 	base->FCR = LPSPI_FCR_TXWATER(0) | LPSPI_FCR_RXWATER(0);
 	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
+
+	/* The source does not change in flight, so one clean covers every chunk */
+	lpspi_dma_cache_clean_tx(tx_bufs);
+	dma_data->rx_bufs = rx_bufs;
 
 	/* Set next dma size is invalid. */
 	dma_data->synchronize_dma_size = 0;
@@ -349,6 +489,7 @@ static int transceive_dma(const struct device *dev, const struct spi_config *spi
 	if (ret) {
 		spi_context_cs_control(ctx, false);
 	}
+
 out:
 	spi_context_release(ctx, ret);
 	return ret;
