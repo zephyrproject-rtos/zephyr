@@ -38,16 +38,16 @@
 };
 
 &grtc {
-	status = "okay";
 	owned-channels = <5>;
+	status = "okay";
 };
 
 &uart135 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart135_default>;
 	pinctrl-1 = <&uart135_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &uart136 {

@@ -23,14 +23,14 @@
 
 &cpuflpr_mram {
 	partitions {
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
-		ranges;
 
 		cpuflpr_code_partition: partition@0 {
 			compatible = "nordic,mapped-partition";
-			label = "image-0";
 			reg = <0 DT_SIZE_K(116)>;
+			label = "image-0";
 		};
 	};
 };
