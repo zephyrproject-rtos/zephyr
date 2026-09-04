@@ -57,12 +57,18 @@
 /**
  *  Register all interrupt controller with the intc table
  */
-/* Helper to calculate the stride for each intc in the ISR table */
-#define INTC_COUNT(n) (n * CONFIG_MAX_IRQ_PER_AGGREGATOR)
-#define INTC_1_OFFSET INTC_COUNT(1)
-#define INTC_2_OFFSET INTC_COUNT(2)
-#define INTC_3_OFFSET INTC_COUNT(3)
-#define INTC_4_OFFSET INTC_COUNT(4)
+/* Helpers to calculate the stride for each intc in the ISR table: the first
+ * L2-sized window is left to the level 1 IRQs, then the L2 windows, then the
+ * L3 windows (which may have a different size than the L2 ones).
+ */
+#define INTC_L2_COUNT(n) ((n) * CONFIG_MAX_IRQ_PER_2ND_LEVEL_AGGREGATOR)
+#define INTC_L3_COUNT(n)                                                                           \
+	(INTC_L2_COUNT(1 + CONFIG_NUM_2ND_LEVEL_AGGREGATORS) +                                     \
+	 ((n) * CONFIG_MAX_IRQ_PER_3RD_LEVEL_AGGREGATOR))
+#define INTC_1_OFFSET INTC_L2_COUNT(1)
+#define INTC_2_OFFSET INTC_L2_COUNT(2)
+#define INTC_3_OFFSET INTC_L3_COUNT(0)
+#define INTC_4_OFFSET INTC_L3_COUNT(1)
 IRQ_PARENT_ENTRY_DEFINE(intc_l2_1, INTC_1_DEV, INTC_1_IRQN, INTC_1_OFFSET, 2);
 IRQ_PARENT_ENTRY_DEFINE(intc_l2_2, INTC_2_DEV, INTC_2_IRQN, INTC_2_OFFSET, 2);
 IRQ_PARENT_ENTRY_DEFINE(intc_l3_3, INTC_3_DEV, INTC_3_IRQN, INTC_3_OFFSET, 3);
@@ -127,15 +133,15 @@ ZTEST(intc_multi_level_backend, test_table_idx_from_irq)
 		zassert_equal(z_get_sw_isr_table_idx(unhandled_irqn),
 			      unhandled_irqn - CONFIG_GEN_IRQ_START_VECTOR);
 
-		/* local_irq exceeded CONFIG_MAX_IRQ_PER_AGGREGATOR */
-		const unsigned int local_irq = CONFIG_MAX_IRQ_PER_AGGREGATOR + 1;
+		/* local_irq exceeded CONFIG_MAX_IRQ_PER_2ND_LEVEL_AGGREGATOR */
+		const unsigned int local_irq = CONFIG_MAX_IRQ_PER_2ND_LEVEL_AGGREGATOR + 1;
 		const unsigned int overflown_irqn = IRQ_TO_L2(local_irq) | INTC_1_IRQN;
 
 		zassert_equal(z_get_sw_isr_table_idx(overflown_irqn),
 			      local_irq + INTC_1_OFFSET - CONFIG_GEN_IRQ_START_VECTOR);
 
 		/* Overflow SW ISR table */
-		const unsigned int local_irq2 = (CONFIG_MAX_IRQ_PER_AGGREGATOR - 1);
+		const unsigned int local_irq2 = (CONFIG_MAX_IRQ_PER_3RD_LEVEL_AGGREGATOR - 1);
 		const unsigned int overflown_irqn2 = IRQ_TO_L3(local_irq2) | INTC_4_IRQN;
 
 		zassert_equal(z_get_sw_isr_table_idx(overflown_irqn2),
