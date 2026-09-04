@@ -155,6 +155,9 @@ struct bt_rfcomm_dlc {
 	 */
 	struct k_work_delayable rtx_work;
 
+	/** Work for retransmission. */
+	struct k_work_delayable retry_work;
+
 	/** Queue for outgoing data.
 	 *
 	 *  Holds net_buf fragments waiting to be transmitted over this DLC.

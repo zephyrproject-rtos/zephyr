@@ -30,6 +30,7 @@ struct bt_rfcomm_session {
 	uint8_t state;
 	bt_rfcomm_role_t role;
 	bt_rfcomm_cfc_t cfc;
+	atomic_t flags;
 };
 
 enum {
@@ -216,4 +217,9 @@ void bt_rfcomm_init(void);
 enum {
 	RFCOMM_FLAG_MSC_FC_CLEARED = 0,
 	RFCOMM_FLAG_MSC_FC_CLEAR_REQ = 1,
+};
+
+enum {
+	RFCOMM_SESSION_FLAG_FC_ON = 0,
+	RFCOMM_SESSION_FLAG_FC_ON_REQ = 1,
 };
