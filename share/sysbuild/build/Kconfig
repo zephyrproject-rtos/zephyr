@@ -7,6 +7,13 @@ config COMPILER_WARNINGS_AS_ERRORS
 	help
 	  Turn on "warning as error" toolchain flags for all images if set.
 
+config DEPRECATED_KCONFIGS_AS_ERRORS
+	bool "Treat deprecated Kconfigs as errors"
+	depends on WARN_DEPRECATED
+	help
+	  Will cause build system to throw failures if deprecated Kconfigs are enabled in a build.
+	  Will also propagate to all images if enabled
+
 config MERGED_HEX_FILES
 	bool "Create merged hex files"
 	help

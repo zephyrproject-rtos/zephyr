@@ -548,7 +548,13 @@ config LTO_SINGLE_THREADED
 config COMPILER_WARNINGS_AS_ERRORS
 	bool "Treat warnings as errors"
 	help
-	  Turn on "warning as error" toolchain flags
+	  Turn on "warning as error" toolchain flags.
+
+config DEPRECATED_KCONFIGS_AS_ERRORS
+	bool "Treat deprecated Kconfigs as errors"
+	depends on WARN_DEPRECATED
+	help
+	  Will cause build system to throw failures if deprecated Kconfigs are enabled in a build.
 
 config DEPRECATION_TEST
 	bool "Indicate test for deprecated feature [DEPRECATED]"
