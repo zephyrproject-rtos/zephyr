@@ -21,3 +21,11 @@ tests:
     extra_configs:
       - CONFIG_LOG_RATELIMIT=n
       - CONFIG_LOG_RATELIMIT_FALLBACK_LOG=y
+  # Build with the module level below most of the call sites, so that the
+  # rate limiting bookkeeping has to compile out rather than just the
+  # message it guards.
+  logging.log_ratelimited.filtered:
+    build_only: true
+    extra_configs:
+      - CONFIG_LOG_RATELIMIT_INTERVAL_MS=1000
+      - CONFIG_LOG_DEFAULT_LEVEL=1
