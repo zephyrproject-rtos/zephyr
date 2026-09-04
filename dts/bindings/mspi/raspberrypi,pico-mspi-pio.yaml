@@ -1,0 +1,89 @@
+# Copyright (c) 2026 WIZnet Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Raspberry Pi Pico (RP2040/RP2350) PIO-based MSPI controller.
+
+  Implements MSPI_IO_MODE_QUAD_1_4_4: a 1-wire serial instruction byte
+  followed by 4-wire quad address, dummy, and data phases.
+
+  The node must be a child of a PIO device node (&pio0 or &pio1).
+
+  The state machine spends four cycles on every SCLK period, so a device's
+  mspi-max-frequency has to stay at or below clk_sys / 4: 37.5 MHz on the
+  RP2350 and 31.25 MHz on the RP2040.  The controller rejects a device
+  configuration it cannot clock.
+
+  Example:
+
+    &pio0 {
+      mspi0: mspi0 {
+        compatible = "raspberrypi,pico-mspi-pio";
+        clocks = <&clocks RPI_PICO_CLKID_CLK_SYS>;
+        #address-cells = <1>;
+        #size-cells = <0>;
+        pinctrl-0 = <&pio0_qspi_default>;
+        pinctrl-names = "default";
+        clk-gpios = <&gpio0 17 GPIO_ACTIVE_HIGH>;
+        io0-gpios = <&gpio0 18 GPIO_ACTIVE_HIGH>;
+        io1-gpios = <&gpio0 19 GPIO_ACTIVE_HIGH>;
+        io2-gpios = <&gpio0 20 GPIO_ACTIVE_HIGH>;
+        io3-gpios = <&gpio0 21 GPIO_ACTIVE_HIGH>;
+        ce-gpios = <&gpio0 16 GPIO_ACTIVE_LOW>;
+        status = "okay";
+
+        w6300: w6300@0 {
+          compatible = "wiznet,w6300";
+          reg = <0>;
+          mspi-max-frequency = <33000000>;
+          mspi-io-mode = "MSPI_IO_MODE_QUAD_1_4_4";
+          ...
+        };
+      };
+    };
+
+compatible: "raspberrypi,pico-mspi-pio"
+
+include: [mspi-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  clk-gpios:
+    type: phandle-array
+    required: true
+    description: SPI clock (SCLK) GPIO.
+
+  io0-gpios:
+    type: phandle-array
+    required: true
+    description: Data line IO0 (MOSI in single-wire mode).
+
+  io1-gpios:
+    type: phandle-array
+    required: true
+    description: Data line IO1 (MISO in single-wire mode).
+
+  io2-gpios:
+    type: phandle-array
+    required: true
+    description: Data line IO2.  Must be io0 pin + 2.
+
+  io3-gpios:
+    type: phandle-array
+    required: true
+    description: Data line IO3.  Must be io0 pin + 3.
+
+  clocks:
+    required: true
+    description: Clock source for computing the PIO clock divider.
+
+  dmas:
+    required: true
+    description: |
+      TX and RX DMA channels used to feed and drain the PIO FIFOs.
+      Only the channel cell is used; the data request line is derived at
+      runtime from the PIO state machine the driver is given, so the slot
+      cell is ignored.
+
+  dma-names:
+    required: true
+    description: Must be "tx" and "rx".
