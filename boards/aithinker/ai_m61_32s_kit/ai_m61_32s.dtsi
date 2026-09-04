@@ -9,8 +9,8 @@
 #include "ai_m61_32s-pinctrl.dtsi"
 
 / {
-	model = "Ai-Thinker M61-32S Module";
 	compatible = "bflb,bl618";
+	model = "Ai-Thinker M61-32S Module";
 
 	chosen {
 		zephyr,flash = &flash0;
@@ -65,34 +65,34 @@
 
 			boot_header_partition: partition@0 {
 				compatible = "zephyr,mapped-partition";
-				label = "boot_header";
 				reg = <0x00000000 0x2000>;
+				label = "boot_header";
 				read-only;
 			};
 
 			slot0_partition: partition@2000 {
 				compatible = "zephyr,mapped-partition";
-				label = "image-0";
 				reg = <0x00002000 (0x00200000 - 0x2000)>;
+				label = "image-0";
 				read-only;
 			};
 
 			storage_partition: partition@200000 {
 				compatible = "zephyr,mapped-partition";
-				label = "storage";
 				reg = <0x00200000 0x600000>;
+				label = "storage";
 			};
 		};
 	};
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &gpio0 {
