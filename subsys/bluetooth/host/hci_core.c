@@ -1301,7 +1301,10 @@ int bt_hci_disconnect(uint16_t handle, uint8_t reason)
 	disconn->handle = sys_cpu_to_le16(handle);
 	disconn->reason = reason;
 
-	return bt_hci_cmd_send_sync(BT_HCI_OP_DISCONNECT, buf, NULL);
+	/* Fire-and-forget: the response carries nothing to act on, and a
+	 * failure status is logged by hci_cmd_done().
+	 */
+	return bt_hci_cmd_send(BT_HCI_OP_DISCONNECT, buf);
 }
 
 static uint16_t disconnected_handles[CONFIG_BT_MAX_CONN];
