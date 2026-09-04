@@ -169,7 +169,7 @@ ZTEST(interrupt_feature, test_nested_isr)
 #if defined(IRQ0_LINE) && defined(IRQ1_LINE)
 	IRQ_CONNECT(IRQ0_LINE, IRQ0_PRIO, isr0, 0, 0);
 	IRQ_CONNECT(IRQ1_LINE, IRQ1_PRIO, isr1, 0, 0);
-#else
+#elif defined(CONFIG_DYNAMIC_INTERRUPTS)
 	arch_irq_connect_dynamic(irq_line_0, IRQ0_PRIO, isr0, NULL, 0);
 	arch_irq_connect_dynamic(irq_line_1, IRQ1_PRIO, isr1, NULL, 0);
 #endif

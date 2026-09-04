@@ -29,6 +29,15 @@ tests:
       - native_sim
     extra_configs:
       - CONFIG_KERNEL_BIN_NAME="A_kconfig_value_with_a_utf8_char_in_it_Bøe_"
+  buildsystem.isr_table_switch:
+    build_only: true
+    platform_allow:
+      - nucleo_f746zg
+      - nrf54l15dk/nrf54l15/cpuflpr
+    extra_configs:
+      # A generated switch-case table cannot be patched at runtime
+      - CONFIG_DYNAMIC_INTERRUPTS=n
+      - CONFIG_GEN_SW_ISR_TABLE_SWITCH=y
   buildsystem.lto.picolibc_module:
     build_only: true
     platform_allow:

@@ -68,6 +68,16 @@ tests:
     integration_platforms:
       - qemu_x86
       - mps2/an385
+  kernel.common.isr_table_switch:
+    platform_key:
+      - arch
+    filter: CONFIG_GEN_SW_ISR_TABLE_SWITCH_SUPPORTED
+    extra_configs:
+      # A generated switch-case table cannot be patched at runtime
+      - CONFIG_DYNAMIC_INTERRUPTS=n
+      - CONFIG_GEN_SW_ISR_TABLE_SWITCH=y
+    integration_platforms:
+      - mps2/an385
   kernel.common.lto:
     platform_key:
       - arch
