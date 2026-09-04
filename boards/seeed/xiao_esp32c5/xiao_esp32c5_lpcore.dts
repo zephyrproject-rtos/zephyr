@@ -8,8 +8,8 @@
 #include <espressif/partitions_0x2000_default_8M.dtsi>
 
 / {
-	model = "Seeed XIAO ESP32C5 LP Core";
 	compatible = "seeed,xiao-esp32c5";
+	model = "Seeed XIAO ESP32C5 LP Core";
 
 	chosen {
 		zephyr,flash = &flash0;
@@ -21,6 +21,6 @@
 };
 
 &lp_uart {
-	status = "okay";
 	current-speed = <115200>;
+	status = "okay";
 };

@@ -15,8 +15,8 @@
 #include "reterminal_e1003-pinctrl.dtsi"
 
 / {
-	model = "Seeed Studio reTerminal E1003 PROCPU";
 	compatible = "seeed,reterminal-e1003";
+	model = "Seeed Studio reTerminal E1003 PROCPU";
 
 	chosen {
 		zephyr,sram = &sram1;
@@ -111,36 +111,36 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &uart1 {
-	status = "disabled";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart1_default>;
 	pinctrl-names = "default";
+	status = "disabled";
 };
 
 &i2c0 {
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	sht40_temp: sht4x@44 {
-		status = "okay";
 		compatible = "sensirion,sht4x";
 		reg = <0x44>;
 		repeatability = <2>;
+		status = "okay";
 	};
 
 	pcf8563_rtc: pcf8563@51 {
-		status = "okay";
 		compatible = "nxp,pcf8563";
 		reg = <0x51>;
+		status = "okay";
 	};
 
 	gt911_touch: gt911@5d {
@@ -159,11 +159,11 @@
 };
 
 &ledc0 {
-	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
 	pinctrl-0 = <&ledc0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	channel0@0 {
 		reg = <0x0>;
@@ -182,19 +182,19 @@
 &spi2 {
 	#address-cells = <1>;
 	#size-cells = <0>;
-	status = "okay";
 	pinctrl-0 = <&spim2_default>;
 	pinctrl-names = "default";
 	cs-gpios = <&gpio0 14 GPIO_ACTIVE_LOW>, <&gpio0 10 GPIO_ACTIVE_LOW>;
+	status = "okay";
 
 	sdcard0: sdhc@0 {
 		compatible = "zephyr,sdhc-spi-slot";
 		reg = <0>;
-		status = "okay";
 		spi-max-frequency = <DT_FREQ_M(20)>;
 		pwr-gpios = <&gpio1 7 GPIO_ACTIVE_HIGH>;
 		cd-gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
 		power-delay-ms = <5>;
+		status = "okay";
 
 		mmc {
 			compatible = "zephyr,sdmmc-disk";
@@ -206,7 +206,6 @@
 	it8951_epd: it8951@1 {
 		compatible = "ite,it8951";
 		reg = <1>;
-		status = "okay";
 		spi-max-frequency = <DT_FREQ_M(10)>;
 		width = <1872>;
 		height = <1404>;
@@ -219,13 +218,14 @@
 		initial-refresh-waveform = <0>;
 		refresh-waveform = <2>;
 		h-mirror;
+		status = "okay";
 	};
 };
 
 &adc0 {
-	status = "okay";
 	#address-cells = <1>;
 	#size-cells = <0>;
+	status = "okay";
 
 	channel@0 {
 		reg = <0>;
