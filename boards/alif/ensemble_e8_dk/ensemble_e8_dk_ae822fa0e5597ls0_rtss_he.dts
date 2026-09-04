@@ -24,7 +24,7 @@
 };
 
 &uart2 {
-	status = "okay";
 	pinctrl-0 = <&pinctrl_uart2>;
 	pinctrl-names = "default";
+	status = "okay";
 };
