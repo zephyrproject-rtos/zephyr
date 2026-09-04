@@ -17,8 +17,8 @@
 #include "uedx32480035e_wb_a-pinctrl.dtsi"
 
 / {
-	model = "VIEWE UEDX32480035E-WB-A PROCPU";
 	compatible = "viewe,uedx32480035e_wb_a", "espressif,esp32s3";
+	model = "VIEWE UEDX32480035E-WB-A PROCPU";
 
 	chosen {
 		zephyr,sram = &sram1;
@@ -64,17 +64,16 @@
 
 	mipi_dbi {
 		compatible = "zephyr,mipi-dbi-spi";
-		status = "okay";
 		#address-cells = <1>;
 		#size-cells = <0>;
 		spi-dev = <&spi2>;
 		dc-gpios = <&gpio1 9 GPIO_ACTIVE_HIGH>;
 		reset-gpios = <&gpio1 7 GPIO_ACTIVE_LOW>;
 		write-only;
+		status = "okay";
 
 		st7796s: st7796s@0 {
 			compatible = "sitronix,st7796s";
-			status = "okay";
 			reg = <0>;
 			mipi-max-frequency = <DT_FREQ_M(80)>;
 			width = <320>;
@@ -92,6 +91,7 @@
 			pgc = [f0 19 20 10 11 0a 46 44 57 09 1a 1b 2a 2d];
 			ngc = [f0 12 1a 0a 0c 18 45 44 56 3f 15 11 24 26];
 			madctl = <0x48>;
+			status = "okay";
 		};
 	};
 };
@@ -149,42 +149,42 @@
 };
 
 &uart0 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &i2c0 {
-	status = "okay";
 	clock-frequency = <I2C_BITRATE_FAST>;
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	chsc6x: chsc6x@2e {
-		status = "okay";
 		compatible = "chipsemi,chsc6540";
 		reg = <0x2e>;
 		irq-gpios = <&gpio0 4 GPIO_ACTIVE_LOW>;
+		status = "okay";
 	};
 };
 
 &spi2 {
 	#address-cells = <1>;
 	#size-cells = <0>;
-	status = "okay";
 	pinctrl-0 = <&spim2_default>;
 	pinctrl-names = "default";
 	cs-gpios = <&gpio1 10 GPIO_ACTIVE_LOW>; /* IO42 */
+	status = "okay";
 };
 
 &spi3 {
 	#address-cells = <1>;
 	#size-cells = <0>;
-	status = "okay";
 	pinctrl-0 = <&spim3_ws2812_led>;
 	pinctrl-names = "default";
 	line-idle-low;
+	status = "okay";
 
 	rgb_led: ws2812@0 {
 		compatible = "worldsemi,ws2812-spi";
@@ -201,11 +201,11 @@
 
 &sdhc {
 	sdhc0: sdhc@0 {
-		status = "okay";
 		pinctrl-0 = <&sdhc0_default>;
 		pinctrl-names = "default";
 		max-bus-freq = <52000000>;
 		bus-width = <4>;
+		status = "okay";
 
 		mmc {
 			compatible = "zephyr,sdmmc-disk";
