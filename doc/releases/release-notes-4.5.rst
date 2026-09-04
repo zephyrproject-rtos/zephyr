@@ -1682,6 +1682,11 @@ New Drivers
   * :dtcompatible:`st,st67w611m1` (:github:`111583`)
   * :dtcompatible:`zephyr,wifi-hwsim` (:github:`111236`)
 
+* Sensors
+
+  * :dtcompatible:`st,lps33hw` - STMicroelectronics LPS33HW I2C
+    pressure and temperature sensor.
+
 New Samples
 ***********
 
