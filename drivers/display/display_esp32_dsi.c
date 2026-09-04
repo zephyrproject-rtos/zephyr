@@ -35,7 +35,7 @@ struct display_esp32_dsi_config {
 	uint8_t irq_flags;
 	uint16_t width;
 	uint16_t height;
-	uint8_t pixel_format;
+	uint32_t pixel_format;
 };
 
 struct display_esp32_dsi_data {
