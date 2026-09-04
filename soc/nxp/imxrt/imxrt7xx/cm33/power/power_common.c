@@ -6,10 +6,10 @@
  * Shared RT7xx CM33 low-power entry sequence.
  *
  * One power_enter_common() drives every (domain, mode) pair: deep sleep and DSR on
- * the Compute domain and deep sleep on Sense. The per-domain and per-mode facts
- * arrive as data (struct power_domain / struct power_mode_desc); this file owns the
- * sequencing and the one resource -> register translation, so the two domains
- * cannot drift apart.
+ * the Compute domain, deep sleep on Sense, and DPD/FDPD on either. The per-domain
+ * and per-mode facts arrive as data (struct power_domain / struct power_mode_desc);
+ * this file owns the sequencing and the one resource -> register translation, so
+ * the two domains cannot drift apart.
  *
  * The translation is a single loop over enum power_resource. A mode says which
  * resources it needs; power_keepalive_collect() closes that over the dependency
@@ -36,7 +36,9 @@
  * re-applied from the mode descriptor. PMICMODE is in the set because the
  * regulator ops program it right after the commit.
  */
-#define PDSLPCFG0_MODE_BITS (PMC_PDSLEEPCFG0_FDSR_MASK | PMC_PDSLEEPCFG0_PMICMODE_MASK)
+#define PDSLPCFG0_MODE_BITS (\
+	PMC_PDSLEEPCFG0_FDSR_MASK | PMC_PDSLEEPCFG0_DPD_MASK | PMC_PDSLEEPCFG0_FDPD_MASK | \
+	PMC_PDSLEEPCFG0_PMICMODE_MASK)
 
 /*
  * Translate the resolved request into the PDSLEEPCFG/SLEEPCFG registers.
@@ -100,6 +102,21 @@ static void power_commit(const struct power_domain *dom, const struct power_mode
 	case LP_DSR:
 		mode_bits |= PMC_PDSLEEPCFG0_FDSR_MASK;
 		break;
+	case LP_DPD:
+		mode_bits |= PMC_PDSLEEPCFG0_DPD_MASK;
+		break;
+	case LP_FDPD:
+		mode_bits |= PMC_PDSLEEPCFG0_FDPD_MASK;
+		/*
+		 * FDPD leaves the voltage references in high-power mode by default so
+		 * that a rising VDD1V8 can wake the chip, which makes FDPD draw more
+		 * than plain DPD. Nothing here uses that wake-up path, so put the band
+		 * gap in low-power mode instead. Cleared by every cold reset -
+		 * including the FDPD wake-up itself - hence set on every entry.
+		 * (Read-only in the Sense slot copy, where the write is a no-op.)
+		 */
+		SOC_PMC->POWERCFG |= PMC_POWERCFG_FDPDBGLP_MASK;
+		break;
 	case LP_DEEP_SLEEP:
 	default:
 		break;
@@ -126,6 +143,15 @@ static void power_commit(const struct power_domain *dom, const struct power_mode
 			       off[PWR_REG_PDSLP4];
 	SOC_PMC->PDSLEEPCFG5 = (SOC_PMC->PDSLEEPCFG5 & ~managed[PWR_REG_PDSLP5]) |
 			       off[PWR_REG_PDSLP5];
+
+	/*
+	 * DPD (not FDPD) keeps VDD1V8 alive across the cold boot; clear the DSR
+	 * request bits in the run config so they cannot leak into the boot state.
+	 */
+	if (mode->low_power_mode == LP_DPD) {
+		SOC_PMC->PDRUNCFG0 &= ~(PMC_PDRUNCFG0_V2NMED_DSR_MASK |
+					PMC_PDRUNCFG0_VNCOM_DSR_MASK);
+	}
 }
 
 /*
@@ -179,7 +205,7 @@ static void pmc_clear_event_flags(void)
 /*
  * Disable LVD/AGDET-driven resets across the window: the regulator LP switch
  * briefly dips the rail and would otherwise be mistaken for a brown-out. Returns
- * the saved CTRL for restore.
+ * the saved CTRL for restore (poweroff paths do not restore).
  */
 static uint32_t lvd_save_disable(void)
 {
@@ -244,9 +270,10 @@ struct power_request power_keepalive_collect(const struct power_domain *dom,
 	/*
 	 * RM 31.3.3: the rail holding the SLEEPCON that has to see the wake-up
 	 * event must stay powered. Adding it here rather than in each mode's keep
-	 * set means a mode cannot forget it.
+	 * set means a mode cannot forget it, and a mode that never comes back
+	 * (DPD/FDPD) does not pay for it.
 	 */
-	if (dom->res_sleepcon_rail != PWR_RES_NONE) {
+	if (power_mode_returns(mode) && dom->res_sleepcon_rail != PWR_RES_NONE) {
 		power_request_add(&req, dom->res_sleepcon_rail);
 	}
 
@@ -291,6 +318,19 @@ struct power_request power_keepalive_collect(const struct power_domain *dom,
 	power_resolve(&req);
 
 	return req;
+}
+
+/*
+ * Mask interrupts for the low-power window the way arch_pm_state_set_prepare()
+ * does, minus the CONFIG_PM-only context save. BASEPRI inhibits WFI from
+ * observing the wake event, so PRIMASK takes over as the IRQ lock.
+ */
+static ALWAYS_INLINE void pm_mask_irqs_for_wfi(void)
+{
+	__disable_irq();
+	__set_BASEPRI(0);
+	__DSB();
+	__ISB();
 }
 
 AT_QUICKACCESS_SECTION_CODE(void power_enter_common(const struct power_domain *dom,
@@ -342,11 +382,32 @@ AT_QUICKACCESS_SECTION_CODE(void power_enter_common(const struct power_domain *d
 	const soc_clock_pdr_fn arm_shared_pdr_ignores = dom->arm_shared_clock_pdr_ignores;
 	void (*xip_suspend)(bool, bool) = dom->xip_suspend;
 	void (*xip_resume)(void) = dom->xip_resume;
+	const bool returns = power_mode_returns(mode);
 
-	/* Deep sleep / DSR return, so save arch state (and, on XIP, hand the XSPI
-	 * over) around WFI.
+	/*
+	 * Deep sleep / DSR return, so save arch state (and, on XIP, hand the XSPI
+	 * over) around WFI. DPD/FDPD are one-way: there is no state to save, so
+	 * they only mask interrupts.
+	 *
+	 * arch_pm_state_set_prepare()/_finish() exist only under CONFIG_PM -- both
+	 * the weak fallback in arch/common/pm.c and the Cortex-M override in
+	 * cortex_m/cpu_idle.c are CONFIG_PM-gated -- while this file also builds
+	 * for POWEROFF-only configs. Testing `returns` at run time is not enough,
+	 * the reference still has to resolve at link time, so the calls need a
+	 * compile-time guard. A POWEROFF-only build only ever gets here through
+	 * DPD/FDPD, which do not return anyway.
 	 */
-	unsigned int key = arch_pm_state_set_prepare();
+	unsigned int key = 0;
+
+#if defined(CONFIG_PM)
+	if (returns) {
+		key = arch_pm_state_set_prepare();
+	} else {
+		pm_mask_irqs_for_wfi();
+	}
+#else
+	pm_mask_irqs_for_wfi();
+#endif
 
 	if (xip_suspend != NULL) {
 		/*
@@ -374,11 +435,22 @@ AT_QUICKACCESS_SECTION_CODE(void power_enter_common(const struct power_domain *d
 
 	__WFI();
 
+	if (!returns) {
+		/* DPD/FDPD power the domain off; WFI never returns (cold boot). */
+		CODE_UNREACHABLE;
+		return;
+	}
+
 	if (xip_resume != NULL) {
 		xip_resume();
 	}
 
+#if defined(CONFIG_PM)
+	/* Only modes that return get here, and those all took the hooks above. */
 	arch_pm_state_set_finish(key);
+#else
+	ARG_UNUSED(key);
+#endif
 	lvd_restore(saved_ctrl);
 
 	SCB->SCR &= ~SCB_SCR_SLEEPDEEP_Msk;

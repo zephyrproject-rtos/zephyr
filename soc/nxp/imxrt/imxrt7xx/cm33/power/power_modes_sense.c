@@ -25,6 +25,7 @@ static const struct power_res_map sense_res_map[PWR_RES_COUNT] = {
 	PWR_RES_MAP_SLEEPCON_SHARED
 };
 
+#if defined(CONFIG_PM)
 /*
  * CPU1 executes from RAM, so its main SRAM partitions must be retained or the image
  * is gone on wake. POWER_SRAM_KEEPALIVE covers that: it unions this image's text
@@ -41,7 +42,23 @@ static const struct power_mode_desc sense_deep_sleep = {
 	},
 	.pmic_mode = 1U,
 };
+#endif /* CONFIG_PM */
 
+#if defined(CONFIG_POWEROFF)
+static const struct power_mode_desc sense_dpd = {
+	.low_power_mode = LP_DPD,
+	.keep = {0},
+	.pmic_mode = 2U,
+};
+
+static const struct power_mode_desc sense_fdpd = {
+	.low_power_mode = LP_FDPD,
+	.keep = {0},
+	.pmic_mode = 3U,
+};
+#endif /* CONFIG_POWEROFF */
+
+#if defined(CONFIG_PM) || defined(CONFIG_POWEROFF)
 static void sense_arm_shared_clock_pdr_ignores(const struct power_request *req)
 {
 	ARG_UNUSED(req);
@@ -60,7 +77,17 @@ static const struct power_domain sense_domain = {
 	.xip_resume = NULL,
 };
 
+#if defined(CONFIG_PM)
 void power_enter_deep_sleep(void)
 {
 	power_enter_common(&sense_domain, &sense_deep_sleep);
 }
+#endif /* CONFIG_PM */
+
+#if defined(CONFIG_POWEROFF)
+void power_enter_deep_power_down(bool full)
+{
+	power_enter_common(&sense_domain, full ? &sense_fdpd : &sense_dpd);
+}
+#endif /* CONFIG_POWEROFF */
+#endif /* CONFIG_PM || CONFIG_POWEROFF */
