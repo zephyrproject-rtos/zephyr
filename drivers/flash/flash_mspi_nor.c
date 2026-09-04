@@ -736,7 +736,31 @@ static int api_read_jedec_id(const struct device *dev, uint8_t *id)
 
 	return rc;
 }
-#endif /* CONFIG_FLASH_JESD216_API  */
+#endif /* CONFIG_FLASH_JESD216_API */
+
+#if defined(CONFIG_FLASH_EX_OP_ENABLED)
+static int api_ex_op(const struct device *dev, uint16_t code,
+		     const uintptr_t in, void *out)
+{
+	const struct flash_mspi_nor_config *dev_config = dev->config;
+	int rc;
+
+	if ((dev_config->quirks == NULL) ||
+	    (dev_config->quirks->ex_op == NULL)) {
+		return -ENOTSUP;
+	}
+
+	rc = acquire(dev);
+	if (rc < 0) {
+		return rc;
+	}
+
+	rc = dev_config->quirks->ex_op(dev, code, in, out);
+	release(dev);
+
+	return rc;
+}
+#endif /* CONFIG_FLASH_EX_OP_ENABLED */
 
 #if defined(WITH_DPD)
 static int enter_dpd(const struct device *const dev)
@@ -1481,6 +1505,9 @@ static DEVICE_API(flash, drv_api) = {
 #if defined(CONFIG_FLASH_JESD216_API)
 	.sfdp_read = api_sfdp_read,
 	.read_jedec_id = api_read_jedec_id,
+#endif
+#if defined(CONFIG_FLASH_EX_OP_ENABLED)
+	.ex_op = api_ex_op,
 #endif
 };
 
