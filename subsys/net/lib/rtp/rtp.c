@@ -298,8 +298,6 @@ int rtp_session_init(struct rtp_session *session, struct net_if *iface,
 		return ret;
 	}
 
-	session->ssrc = sys_rand32_get();
-
 	return k_mutex_init(&session->lock);
 }
 
