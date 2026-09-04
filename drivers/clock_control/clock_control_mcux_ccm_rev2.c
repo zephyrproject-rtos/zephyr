@@ -441,7 +441,7 @@ static int mcux_ccm_get_subsys_rate(const struct device *dev,
 		break;
 #endif
 
-#if defined(CONFIG_ETH_NXP_IMX_NETC)
+#if (defined(CONFIG_ETH_NXP_IMX_NETC) || defined(CONFIG_MDIO_NXP_IMX_NETC))
 	case IMX_CCM_NETC_CLK:
 		clock_root = kCLOCK_Root_Netc;
 		break;
