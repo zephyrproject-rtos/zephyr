@@ -428,14 +428,40 @@ static int32_t counter_mchp_set_alarm(const struct device *const dev, const uint
 			tcc_counter_alarm_irq_enable(cfg->regs, max_channels, chan_id);
 		}
 	} else {
+		uint32_t remaining;
+
 		ticks = tcc_counter_ticks_add(count_value, ticks, top_value);
 
 		/* Update compare value*/
 		data->channel_data[chan_id].compare_value = ticks;
 		tcc_counter_set_compare(cfg->regs, chan_id, ticks);
 
-		/* Enable interrupt at compare match */
-		tcc_counter_alarm_irq_enable(cfg->regs, max_channels, chan_id);
+		/*
+		 * Writing compare needs a TCC_SYNCBUSY wait, which on a fast
+		 * enough clock can take more than one tick - long enough for a
+		 * short relative alarm to already be past once armed, and a
+		 * missed compare won't match again until the counter wraps.
+		 * Re-read before enabling the interrupt: remaining == 0 or
+		 * greater than requested means the target was missed, so
+		 * report it as a late alarm rather than let it go a period.
+		 */
+		(void)tcc_counter_get_count(cfg->regs, &count_value);
+		remaining = tcc_counter_ticks_sub(ticks, count_value, top_value);
+
+		if ((remaining == 0U) || (remaining > alarm_cfg->ticks)) {
+			tcc_counter_alarm_irq_clear(cfg->regs, max_channels, chan_id);
+
+			data->late_alarm_flag = true;
+			data->late_alarm_channel = chan_id;
+#if defined(CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH)
+			NVIC_SetPendingIRQ(cfg->irq_line);
+#else
+			NVIC_SetPendingIRQ(cfg->channel_irq_map->comp_irq_line[chan_id]);
+#endif /* CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH */
+		} else {
+			/* Enable interrupt at compare match */
+			tcc_counter_alarm_irq_enable(cfg->regs, max_channels, chan_id);
+		}
 	}
 
 	return ret_val;
@@ -602,7 +628,13 @@ static int32_t counter_mchp_init(const struct device *const dev)
 	tcc_counter_init(cfg->regs, cfg->prescaler, cfg->max_channels, cfg->max_bit_width);
 	cfg->irq_config_func(dev);
 
-	return ret_val;
+	/*
+	 * -EALREADY from either call above is not a failure: on a part where
+	 * two TCC instances share one GCLK channel, whichever of the PWM and
+	 * counter drivers inits second sees it. pwm_mchp_tcc_g1.c normalizes
+	 * the same value.
+	 */
+	return (ret_val == -EALREADY) ? 0 : ret_val;
 }
 
 static inline void counter_mchp_channel_irq_handle(const struct device *const dev, uint8_t channel)
