@@ -190,6 +190,26 @@ zephyr_udc0: &usbotg_fs {
 	status = "okay";
 };
 
+&quadspi {
+	pinctrl-0 = <&quadspi_clk_pb2 &quadspi_bk1_ncs_pb6
+		     &quadspi_bk1_io0_pd11 &quadspi_bk1_io1_pd12
+		     &quadspi_bk1_io2_pe2 &quadspi_bk1_io3_pd13>;
+	pinctrl-names = "default";
+
+	mx_flash: flash@0 {
+		compatible = "st,stm32-qspi-nor";
+		reg = <0>;
+		status = "disabled";
+	};
+};
+
+&fmc {
+	pinctrl-0 = <&fmc_d0_pd14 &fmc_d1_pd15 &fmc_d2_pd0 &fmc_d3_pd1
+		     &fmc_d4_pe7 &fmc_d5_pe8 &fmc_d6_pe9 &fmc_d7_pe10
+		     &fmc_nwe_pd5 &fmc_noe_pd4 &fmc_ne1_pd7 &fmc_a20_pe4>;
+	pinctrl-names = "default";
+};
+
 &flash0 {
 	partitions {
 		#address-cells = <1>;

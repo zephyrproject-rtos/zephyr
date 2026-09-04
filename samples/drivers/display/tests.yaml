@@ -95,3 +95,5 @@ tests:
       - platform:mimxrt595_evk/mimxrt595s/cm33:SHIELD=g1120b0mipi
       - platform:stm32h747i_disco/stm32h747xx/m7:SHIELD=st_b_lcd40_dsi1_mb1166_a09
       - platform:mimxrt1040_evk/mimxrt1064:SHIELD=rk043fn02h_ct
+      - platform:nucleo_u575zi_q/stm32u575xx:SHIELD=x_nucleo_gfx02z1_az2
+      - platform:nucleo_f446ze/stm32f446xx:SHIELD=x_nucleo_gfx02z1_az2
