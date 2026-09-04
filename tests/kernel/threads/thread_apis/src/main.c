@@ -202,6 +202,112 @@ ZTEST(threads_lifecycle, test_thread_name_get_set)
 	k_thread_abort(tid);
 }
 
+/**
+ * @ingroup kernel_thread_tests
+ * @brief Test that a truncated thread name copy is still terminated
+ *
+ * @details k_thread_name_copy() is built on strncpy(), which writes no
+ * terminator when the name is at least as long as the destination. A caller
+ * handed such a buffer would read off the end of it looking for one.
+ *
+ * @see k_thread_name_copy(), k_thread_name_set()
+ */
+ZTEST(threads_lifecycle, test_thread_name_copy_truncated)
+{
+	char buf[4];
+	k_tid_t self = k_current_get();
+	int ret;
+
+	ret = k_thread_name_set(self, "abcdefgh");
+	zassert_equal(ret, 0, "k_thread_name_set() failed");
+
+	(void)memset(buf, 'X', sizeof(buf));
+	ret = k_thread_name_copy(self, buf, sizeof(buf));
+	zassert_equal(ret, 0, "couldn't copy thread name");
+
+	zassert_equal(buf[sizeof(buf) - 1], '\0',
+		      "truncated name was not terminated");
+	zassert_equal(strlen(buf), sizeof(buf) - 1,
+		      "truncated name has the wrong length");
+
+	/* Other tests in this suite expect to control this thread's name. */
+	(void)k_thread_name_set(self, "parent_thread");
+}
+
+/* Two names of different lengths, so that a copy which mixes them together is
+ * recognisably neither.
+ */
+#define NAME_RACE_SHORT "race_a"
+#define NAME_RACE_LONG  "race_bbbbb"
+#define NAME_RACE_ITERATIONS 20000
+
+static volatile bool name_race_stop;
+
+static void thread_name_race_entry(void *p1, void *p2, void *p3)
+{
+	k_tid_t target = (k_tid_t)p1;
+
+	ARG_UNUSED(p2);
+	ARG_UNUSED(p3);
+
+	for (int i = 0; (i < NAME_RACE_ITERATIONS) && !name_race_stop; i++) {
+		(void)k_thread_name_set(target, NAME_RACE_SHORT);
+		(void)k_thread_name_set(target, NAME_RACE_LONG);
+	}
+}
+
+/**
+ * @ingroup kernel_thread_tests
+ * @brief Test that renaming a running thread never yields a torn name
+ *
+ * @details Renaming rewrites the name buffer in place. Copying the name of a
+ * thread being renamed concurrently must still return one whole name or the
+ * other, never a splice of the two. On SMP the two run on different CPUs and
+ * genuinely overlap.
+ *
+ * @see k_thread_name_copy(), k_thread_name_set()
+ */
+ZTEST(threads_lifecycle, test_thread_name_race)
+{
+	char buf[CONFIG_THREAD_MAX_NAME_LEN];
+	k_tid_t self = k_current_get();
+	k_tid_t tid;
+	int ret;
+
+	name_race_stop = false;
+
+	/* ztest names the current thread after the test being run, so put one
+	 * of the two expected names in place before the reader starts looking.
+	 */
+	ret = k_thread_name_set(self, NAME_RACE_SHORT);
+	zassert_equal(ret, 0, "k_thread_name_set() failed");
+
+	/* Same priority as the reader and deliberately never yielding, so that
+	 * on an SMP build the two hammer the name from two CPUs at once, which
+	 * is the only way the window between the writes is actually hit. Both
+	 * loops are bounded, so on a single CPU the renamer simply runs to
+	 * completion in its turn rather than starving anyone.
+	 */
+	tid = k_thread_create(&tdata_name, tstack_name, STACK_SIZE,
+			      thread_name_race_entry, self, NULL, NULL,
+			      k_thread_priority_get(self), 0, K_NO_WAIT);
+
+	for (int i = 0; i < NAME_RACE_ITERATIONS; i++) {
+		ret = k_thread_name_copy(self, buf, sizeof(buf));
+		zassert_equal(ret, 0, "couldn't copy thread name");
+
+		zassert_true((strcmp(buf, NAME_RACE_SHORT) == 0) ||
+			     (strcmp(buf, NAME_RACE_LONG) == 0),
+			     "torn thread name observed: '%s'", buf);
+	}
+
+	name_race_stop = true;
+	zassert_equal(k_thread_join(tid, K_SECONDS(5)), 0, "renamer did not exit");
+
+	/* Other tests in this suite expect to control this thread's name. */
+	(void)k_thread_name_set(self, "parent_thread");
+}
+
 #ifdef CONFIG_USERSPACE
 static char unreadable_string[64];
 static char not_my_buffer[CONFIG_THREAD_MAX_NAME_LEN];

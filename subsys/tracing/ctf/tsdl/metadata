@@ -7,18 +7,64 @@ typealias integer { size = 32; align = 8; signed = true; } := int32_t;
 typealias integer { size = 64; align = 8; signed = false; } := uint64_t;
 typealias integer { size = 8; align = 8; signed = false; encoding = ASCII; } := ctf_bounded_string_t;
 
+/* The tracing clock. Declaring it is what lets a reader order and merge events
+ * by time; without a clock block the timestamp is just an integer field and
+ * streams cannot be correlated at all. Zephyr emits the timestamp already
+ * converted to nanoseconds, so the clock runs at 1 GHz by definition. It is not
+ * absolute: it counts from an arbitrary origin near boot, not from the epoch.
+ */
+clock {
+	name = zephyr;
+	description = "Zephyr tracing clock, in nanoseconds since an arbitrary origin";
+	freq = 1000000000;
+	precision = 1;
+	offset_s = 0;
+	absolute = false;
+};
+
+typealias integer {
+	size = 64; align = 8; signed = false;
+	map = clock.zephyr.value;
+} := uint64_clock_t;
+
 struct event_header {
-	uint64_t timestamp;
+	uint64_clock_t timestamp;
 	uint16_t id;
+};
+
+/* Events are gathered into fixed-size packets, one sequence of them per CPU.
+ * content_size is what makes that possible: it is written when a packet is
+ * closed and tells the reader where the events stop and the tail padding
+ * begins, so the size never has to be known in advance.
+ *
+ * cpu_id names the CPU that produced the packet. For a backend that carries
+ * one link, every CPU's packets travel interleaved on it and cpu_id is what
+ * lets the host split them back into one file per CPU.
+ */
+struct packet_header {
+	uint32_t magic;
+	uint32_t stream_id;
+};
+
+struct packet_context {
+	uint64_clock_t timestamp_begin;
+	uint64_clock_t timestamp_end;
+	uint32_t content_size;
+	uint32_t packet_size;
+	uint32_t events_discarded;
+	uint8_t cpu_id;
 };
 
 trace {
 	major = 1;
 	minor = 8;
 	byte_order = le;
+	packet.header := struct packet_header;
 };
 
 stream {
+	id = 0;
+	packet.context := struct packet_context;
 	event.header := struct event_header;
 };
 
@@ -51,6 +97,23 @@ event {
 event {
 	name = k_sleep_exit;
 	id = 0x80;
+	fields := struct {
+		uint32_t timeout;
+		int32_t ret;
+	};
+};
+
+event {
+	name = k_sleep_ticks_enter;
+	id = 0x184;
+	fields := struct {
+		uint32_t timeout;
+	};
+};
+
+event {
+	name = k_sleep_ticks_exit;
+	id = 0x185;
 	fields := struct {
 		uint32_t timeout;
 		int32_t ret;

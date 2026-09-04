@@ -533,20 +533,31 @@ To get started, the simplest way is to use the CTF format with the
 
 .. zephyr-app-commands::
    :tool: all
-   :zephyr-app: samples/subsys/tracing
+   :zephyr-app: samples/subsys/tracing/basic
    :board: native_sim
-   :gen-args: -DCONF_FILE=prj_native_ctf.conf
+   :gen-args: -DEXTRA_CONF_FILE=prj_native_ctf.conf
    :goals: build
+
+The ``prj_*.conf`` files are overlays on top of the sample's ``prj.conf``, so
+they have to be applied with ``EXTRA_CONF_FILE``; passing them as ``CONF_FILE``
+replaces the baseline instead and produces an image with tracing disabled.
 
 You can then run the resulting binary with the option ``-trace-file`` to generate
 the tracing data::
 
-    mkdir data
+    ./build/zephyr/zephyr.exe -trace-file=channel0_0
+
+Split the capture into one file per CPU and add the metadata beside them::
+
+    $ZEPHYR_BASE/scripts/tracing/split_ctf_streams.py -i channel0_0 -o data/
     cp $ZEPHYR_BASE/subsys/tracing/ctf/tsdl/metadata data/
-    ./build/zephyr/zephyr.exe -trace-file=data/channel0_0
 
 The resulting CTF output can be visualized using babeltrace or TraceCompass
 by pointing the tool to the ``data`` directory with the metadata and trace files.
+
+Events are gathered into fixed-size CTF packets and each CPU produces its own
+stream, so on an SMP system the reader merges the per-CPU streams into a single
+timeline and every event carries the ``cpu_id`` of the CPU that emitted it.
 
 Using RAM backend
 =================

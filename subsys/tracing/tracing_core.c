@@ -18,6 +18,16 @@
 #include <tracing_core.h>
 #include <tracing_buffer.h>
 #include <tracing_backend.h>
+#ifdef CONFIG_TRACING_CTF
+#include <tracing_stream.h>
+#define TRACING_STREAM_HAS_DATA() tracing_stream_has_data()
+#define TRACING_STREAM_DRAIN()    tracing_stream_drain()
+#else
+#define TRACING_STREAM_HAS_DATA() false
+#define TRACING_STREAM_DRAIN()                                                                     \
+	do {                                                                                       \
+	} while (false)
+#endif
 #ifdef CONFIG_TRACING_CTF_TIMESTAMP
 #include <zephyr/timing/timing.h>
 #endif
@@ -61,12 +71,21 @@ static void tracing_thread_func(void *dummy1, void *dummy2, void *dummy3)
 	tracing_thread_tid = k_current_get();
 
 	while (true) {
+		/*
+		 * CTF produces into the per-CPU packet streams; every other
+		 * format produces into the shared buffer. Drain whichever has
+		 * something, so both can be built.
+		 */
+		if (TRACING_STREAM_HAS_DATA()) {
+			TRACING_STREAM_DRAIN();
+		}
+
 		while (true) {
 			len = ring_buf_get_ptr(rb, &buf, 0);
 			if (len == 0) {
 				break;
 			}
-			tracing_buffer_handle(buf, len);
+			tracing_buffer_handle(0U, buf, len);
 			ring_buf_consume(rb, len);
 		}
 		k_sem_take(&tracing_thread_sem, K_FOREVER);
@@ -92,6 +111,9 @@ void tracing_set_enabled(bool enable)
 static int tracing_init(void)
 {
 	tracing_buffer_init();
+#ifdef CONFIG_TRACING_CTF
+	tracing_stream_init();
+#endif
 
 	/*
 	 * Output goes to the configured backend (CONFIG_TRACING_BACKEND_NAME) plus
@@ -181,6 +203,13 @@ bool is_tracing_enabled(void)
 	return atomic_get(&tracing_state) == TRACING_ENABLE;
 }
 
+#ifdef CONFIG_TRACING_CTF_TIMESTAMP
+uint64_t tracing_timestamp_get(void)
+{
+	return timing_ns_get();
+}
+#endif
+
 void tracing_cmd_handle(uint8_t *buf, uint32_t length)
 {
 	if (strncmp(buf, TRACING_CMD_ENABLE, length) == 0) {
@@ -190,9 +219,9 @@ void tracing_cmd_handle(uint8_t *buf, uint32_t length)
 	}
 }
 
-void tracing_buffer_handle(uint8_t *data, uint32_t length)
+void tracing_buffer_handle(uint8_t stream_id, uint8_t *data, uint32_t length)
 {
-	tracing_backend_output(primary_backend, data, length);
+	tracing_backend_output(primary_backend, stream_id, data, length);
 
 	if (!multiple_backends) {
 		return;
@@ -200,7 +229,7 @@ void tracing_buffer_handle(uint8_t *data, uint32_t length)
 
 	STRUCT_SECTION_FOREACH(tracing_backend, backend) {
 		if (strcmp(backend->name, CONFIG_TRACING_BACKEND_NAME) != 0) {
-			tracing_backend_output(backend, data, length);
+			tracing_backend_output(backend, stream_id, data, length);
 		}
 	}
 }
@@ -217,7 +246,17 @@ uint32_t tracing_packet_drop_count_get(void)
 
 int tracing_backends_flush(void)
 {
-	int ret = tracing_backend_flush(primary_backend);
+	int ret;
+
+#ifdef CONFIG_TRACING_CTF
+	/* Close any partly filled packet first, so a flush actually
+	 * yields every event produced so far and not just the packets
+	 * that happened to fill up.
+	 */
+	tracing_stream_flush();
+#endif
+
+	ret = tracing_backend_flush(primary_backend);
 
 	if (multiple_backends) {
 		STRUCT_SECTION_FOREACH(tracing_backend, backend) {

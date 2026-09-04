@@ -51,6 +51,11 @@ if(CONFIG_TRACING_CORE)
     CONFIG_TRACING_SHELL
     tracing_shell.c
     )
+
+  zephyr_sources_ifdef(
+    CONFIG_TRACING_CTF
+    tracing_stream.c
+    )
 endif()
 
 zephyr_sources(
