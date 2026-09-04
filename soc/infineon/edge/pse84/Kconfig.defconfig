@@ -20,12 +20,11 @@ choice SYSTEM_TIMER_LPM_COMPANION
 	default SYSTEM_TIMER_LPM_COMPANION_HOOKS if PM
 endchoice
 
-# During deepsleep, HF clocks stop so SysTick freezes. For DS-RAM the
-# SysTick hardware is fully reset on warm boot. In both cases the systick
-# driver must disable SysTick before idle and restart it on wake so that
-# the companion timer is the sole time reference across the sleep.
+# SysTick freezes in every deepsleep-class state (HF clocks stop; DS-RAM also
+# resets it on warm boot), so the driver stops it before idle and restarts it on
+# wake, leaving the companion as the sole time reference.
 config SYSTEM_TIMER_RESET_BY_LPM
-	default y if PM_S2RAM
+	default y if PM
 
 choice NULL_POINTER_EXCEPTION_DETECTION
 	default NULL_POINTER_EXCEPTION_DETECTION_NONE
