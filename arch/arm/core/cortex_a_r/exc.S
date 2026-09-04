@@ -257,7 +257,16 @@ SECTION_SUBSEC_FUNC(TEXT, _HandlerModeExit, z_arm_cortex_ar_exit_exc)
 	 * and return to the current thread.
 	 */
 	pop {r0-r3, r12, lr}
+
+#ifdef CONFIG_ARMV5
+	ldr r0, [sp, #4]
+	msr cpsr_cxsf, r0
+	ldr r0, [sp, #-24]
+	add sp, sp, #8
+	ldr pc, [sp, #-8]
+#else
 	rfeia sp!
+#endif
 
 /**
  * @brief Undefined instruction exception handler
@@ -278,9 +287,14 @@ SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_undef_instruction)
 	subne lr, #2	/* Thumb (T_BIT) */
 	pop {r0}
 
+#ifdef CONFIG_ARMV5
+	/* exception undefined instruction not handled */
+	b .
+#else
 	z_arm_cortex_ar_enter_exc
 	bl z_arm_fault_undef_instruction
 	b z_arm_cortex_ar_exit_exc
+#endif
 
 /**
  * @brief Prefetch abort exception handler
@@ -294,9 +308,14 @@ SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_prefetch_abort)
 	 * prefetch abort exceptions.
 	 */
 	sub lr, #4
+#ifdef CONFIG_ARMV5
+	/* exception perfetch abort not handled */
+	b .
+#else
 	z_arm_cortex_ar_enter_exc
 	bl z_arm_fault_prefetch
 	b z_arm_cortex_ar_exit_exc
+#endif
 
 /**
  * @brief Data abort exception handler
@@ -308,8 +327,13 @@ SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_prefetch_abort)
 SECTION_SUBSEC_FUNC(TEXT, __exc, z_arm_data_abort)
 	sub lr, #8
 
+#ifdef CONFIG_ARMV5
+	/* exception data abort not handled */
+	b .
+#else
 	z_arm_cortex_ar_enter_exc
 	bl z_arm_fault_data
 	b z_arm_cortex_ar_exit_exc
+#endif
 
 #endif

@@ -1,0 +1,6 @@
+board:
+  name: sam9x75_curiosity
+  full_name: SAM9X75 Curiosity LAN Kit
+  vendor: microchip
+  socs:
+    - name: sam9x75
