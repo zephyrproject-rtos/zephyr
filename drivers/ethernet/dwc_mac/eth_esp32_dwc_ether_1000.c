@@ -129,14 +129,19 @@ int dwmac_platform_init(const struct device *dev)
 	DWMAC_REG_WRITE(DWMAC_DMAOMR, DWMAC_DMAOMR_OSF | FIELD_PREP(DWMAC_DMAOMR_RTC, 0x3));
 #endif
 
-	/* Configure ISR */
-	ret = esp_intr_alloc(DT_INST_IRQ_BY_IDX(0, 0, irq),
-			     ESP_PRIO_TO_FLAGS(DT_INST_IRQ_BY_IDX(0, 0, priority)) |
-				     ESP_INT_FLAGS_CHECK(DT_INST_IRQ_BY_IDX(0, 0, flags)),
-			     (intr_handler_t)dwmac_isr, (void *)(uintptr_t)dev, NULL);
-	if (ret != 0) {
-		return -EIO;
-	}
+	/* Configure ISR. Pre-multilevel path, kept for reference:
+	 *
+	 * ret = esp_intr_alloc(DT_INST_IRQ_BY_IDX(0, 0, irq),
+	 *                      ESP_PRIO_TO_FLAGS(DT_INST_IRQ_BY_IDX(0, 0, priority)) |
+	 *                              ESP_INT_FLAGS_CHECK(DT_INST_IRQ_BY_IDX(0, 0, flags)),
+	 *                      (intr_handler_t)dwmac_isr, (void *)(uintptr_t)dev, NULL);
+	 * if (ret != 0) {
+	 *         return -EIO;
+	 * }
+	 */
+	IRQ_CONNECT(DT_INST_IRQN_BY_IDX(0, 0), IRQ_DEFAULT_PRIORITY, dwmac_isr,
+		    DEVICE_DT_INST_GET(0), 0);
+	irq_enable(DT_INST_IRQN_BY_IDX(0, 0));
 
 	ret = net_eth_mac_load(&mac_cfg, p->mac_addr);
 	if (ret == -ENODATA) {

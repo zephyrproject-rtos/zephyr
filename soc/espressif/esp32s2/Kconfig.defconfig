@@ -21,4 +21,60 @@ endchoice
 
 endif # PM && TICKLESS_KERNEL
 
+config SHARED_IRQ_MAX_NUM_CLIENTS
+	default 10
+
+# Multi-level interrupt hierarchy
+#   L1 = intc            : CPU interrupt line
+#   L2 = <periph>_intmux : INTMUX aggregator (peripheral sources -> one CPU line)
+
+config MULTI_LEVEL_INTERRUPTS
+	default y
+
+config 2ND_LEVEL_INTERRUPTS
+	default y
+
+config 1ST_LEVEL_INTERRUPT_BITS
+	default 8
+
+config 2ND_LEVEL_INTERRUPT_BITS
+	default 8
+
+config 2ND_LVL_ISR_TBL_OFFSET
+	default 32
+
+# The whole interrupt matrix is one aggregator whose window is indexed by the
+# INTMUX source, so it must span every source (MAX_INTR_SOURCE).
+config MAX_IRQ_PER_2ND_LEVEL_AGGREGATOR
+	default 95
+
+config NUM_2ND_LEVEL_AGGREGATORS
+	default 1
+
+# That single aggregator is the interrupt matrix, so its window is indexed by
+# the source number rather than by an aggregator slot.
+config INTERRUPT_MATRIX_LAYOUT
+	default y
+
+config 2ND_LVL_INTR_00_OFFSET
+	default 32
+
+# Level-3: the RTC_CNTL peripherals share RTC_CORE_INTR_SOURCE and are demuxed
+# by rtc_intc (see the SoC dtsi). Window base is the end of the level-2 window.
+config 3RD_LEVEL_INTERRUPTS
+	default y
+
+config 3RD_LEVEL_INTERRUPT_BITS
+	default 8
+
+config NUM_3RD_LEVEL_AGGREGATORS
+	default 1
+
+# Upper bound on a flag's bit number, and the slots reserved per aggregator.
+config MAX_IRQ_PER_3RD_LEVEL_AGGREGATOR
+	default 32
+
+config 3RD_LVL_ISR_TBL_OFFSET
+	default 127
+
 endif # SOC_SERIES_ESP32S2
