@@ -80,6 +80,6 @@ static const struct modem_cellular_vendor_config u_blox_sara_r5_vendor = {
                                                                                                    \
 	MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst, (gnss_pipe, 4), (user_pipe_0, 3))          \
                                                                                                    \
-	MODEM_CELLULAR_DEFINE_INSTANCE(inst, &u_blox_sara_r5_vendor)
+	MODEM_CELLULAR_DEFINE_INSTANCE(inst, &u_blox_sara_r5_vendor, NULL)
 
 DT_INST_FOREACH_STATUS_OKAY(MODEM_CELLULAR_DEVICE_U_BLOX_SARA_R5)
