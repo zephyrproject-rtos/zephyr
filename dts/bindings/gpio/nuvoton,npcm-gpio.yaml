@@ -1,0 +1,67 @@
+# Copyright (c) 2024 Nuvoton Technology Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Nuvoton NPCM GPIO port.
+
+  Each node represents an 8-bit port and its direction, level, pull-resistor, and output-type
+  registers. GPIO interrupts are routed through one Multi-Input Wake-Up (MIWU) group. The
+  group's eight inputs correspond to the port's pins and it has a dedicated NVIC line. The
+  driver programs the group directly, so a separate MIWU driver is not required.
+
+  This binding does not configure pin multiplexing. To reclaim a pin whose reset function is
+  not GPIO, reference its pin_gpioNN_gpio function from a pin group and assign that group to
+  this node's pinctrl-0 property. The driver applies the state during initialization.
+
+  Example, port 6 with GPIO62 and GPIO65 reclaimed from RSTOUT0 and SLP_S5:
+
+    &pinctrl {
+      gpio62_65_gpio: gpio62-65-gpio {
+        g62 { pinmux = <&pin_gpio62_gpio>; };
+        g65 { pinmux = <&pin_gpio65_gpio>; };
+      };
+    };
+
+    &gpio6 {
+      pinctrl-0 = <&gpio62_65_gpio>;
+      pinctrl-names = "default";
+    };
+
+  Pull resistors on output pins take effect only in open-drain mode. The driver enables
+  GPIO_OUT_PULLEN in SCFG during initialization so GPIO_PULL_UP with GPIO_OPEN_DRAIN works
+  as defined by the GPIO API.
+
+compatible: "nuvoton,npcm-gpio"
+
+include: [gpio-controller.yaml, pinctrl-device.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+    description: NVIC line assigned to the port's MIWU input group.
+
+  nuvoton,miwu:
+    type: phandle
+    required: true
+    description: MIWU module containing the port's input group.
+
+  nuvoton,wui-group:
+    type: int
+    required: true
+    enum: [1, 2, 3, 4, 5, 6, 7, 8]
+    description: Port input group in the MIWU module, using the datasheet numbering.
+
+  nuvoton,scfg:
+    type: phandle
+    required: true
+    description: System Configuration block that holds GPIO_OUT_PULLEN.
+
+  "#gpio-cells":
+    const: 2
+
+gpio-cells:
+  - pin
+  - flags
