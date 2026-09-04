@@ -55,6 +55,152 @@
 			reg-names = "pmc", "cdcg";
 		};
 
+		gpio0: gpio@40081000 {
+			compatible = "nuvoton,npcm-gpio";
+			reg = <0x40081000 0x2000>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <8>;
+			nuvoton,scfg = <&scfg>;
+		};
+
+		gpio1: gpio@40083000 {
+			compatible = "nuvoton,npcm-gpio";
+			reg = <0x40083000 0x2000>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <8>;
+			nuvoton,scfg = <&scfg>;
+		};
+
+		gpio2: gpio@40085000 {
+			compatible = "nuvoton,npcm-gpio";
+			reg = <0x40085000 0x2000>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <8>;
+			nuvoton,scfg = <&scfg>;
+		};
+
+		gpio3: gpio@40087000 {
+			compatible = "nuvoton,npcm-gpio";
+			reg = <0x40087000 0x2000>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <8>;
+			nuvoton,scfg = <&scfg>;
+		};
+
+		gpio4: gpio@40089000 {
+			compatible = "nuvoton,npcm-gpio";
+			reg = <0x40089000 0x2000>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <8>;
+			nuvoton,scfg = <&scfg>;
+		};
+
+		gpio5: gpio@4008b000 {
+			compatible = "nuvoton,npcm-gpio";
+			reg = <0x4008b000 0x2000>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <8>;
+			nuvoton,scfg = <&scfg>;
+		};
+
+		gpio6: gpio@4008d000 {
+			compatible = "nuvoton,npcm-gpio";
+			reg = <0x4008d000 0x2000>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <8>;
+			nuvoton,scfg = <&scfg>;
+		};
+
+		gpio7: gpio@4008f000 {
+			compatible = "nuvoton,npcm-gpio";
+			reg = <0x4008f000 0x2000>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <8>;
+			nuvoton,scfg = <&scfg>;
+		};
+
+		gpio8: gpio@40091000 {
+			compatible = "nuvoton,npcm-gpio";
+			reg = <0x40091000 0x2000>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <8>;
+			nuvoton,scfg = <&scfg>;
+		};
+
+		gpio9: gpio@40093000 {
+			compatible = "nuvoton,npcm-gpio";
+			reg = <0x40093000 0x2000>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <8>;
+			nuvoton,scfg = <&scfg>;
+		};
+
+		gpioa: gpio@40095000 {
+			compatible = "nuvoton,npcm-gpio";
+			reg = <0x40095000 0x2000>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <8>;
+			nuvoton,scfg = <&scfg>;
+		};
+
+		gpiob: gpio@40097000 {
+			compatible = "nuvoton,npcm-gpio";
+			reg = <0x40097000 0x2000>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <8>;
+			nuvoton,scfg = <&scfg>;
+		};
+
+		gpioc: gpio@40099000 {
+			compatible = "nuvoton,npcm-gpio";
+			reg = <0x40099000 0x2000>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <8>;
+			nuvoton,scfg = <&scfg>;
+		};
+
+		gpiod: gpio@4009b000 {
+			compatible = "nuvoton,npcm-gpio";
+			reg = <0x4009b000 0x2000>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <8>;
+			nuvoton,scfg = <&scfg>;
+		};
+
+		gpioe: gpio@4009d000 {
+			compatible = "nuvoton,npcm-gpio";
+			reg = <0x4009d000 0x2000>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <8>;
+			gpio-reserved-ranges = <7 1>;
+			nuvoton,scfg = <&scfg>;
+		};
+
+		gpiof: gpio@4009f000 {
+			compatible = "nuvoton,npcm-gpio";
+			reg = <0x4009f000 0x2000>;
+			gpio-controller;
+			#gpio-cells = <2>;
+			ngpios = <8>;
+			gpio-reserved-ranges = <4 4>;
+			nuvoton,scfg = <&scfg>;
+		};
+
 		scfg: syscon@400c3000 {
 			compatible = "nuvoton,npcm-scfg", "syscon";
 			/* System Configuration (SCFG) */
