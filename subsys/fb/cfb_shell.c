@@ -59,6 +59,9 @@ static int cmd_cfb_print(const struct shell *sh, int col, int row, char *str)
 	uint8_t ppt;
 
 	ppt = cfb_get_display_parameter(dev, CFB_DISPLAY_PPT);
+	if (ppt < 0) {
+		shell_error(sh, "Failed to get display parameter=%d", ppt);
+	}
 
 	err = cfb_framebuffer_clear(dev, false);
 	if (err) {
@@ -370,14 +373,24 @@ static int cmd_get_fonts(const struct shell *sh, size_t argc, char *argv[])
 	int err = 0;
 	uint8_t font_height;
 	uint8_t font_width;
+	int numof_fonts;
 
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
+	numof_fonts = cfb_get_numof_fonts(dev);
+	if (numof_fonts < 0) {
+		shell_error(sh, "Failed to get fonts: %d", numof_fonts);
+		return numof_fonts;
+	}
+
 	for (int idx = 0; idx < cfb_get_numof_fonts(dev); idx++) {
-		if (cfb_get_font_size(dev, idx, &font_width, &font_height)) {
+		err = cfb_get_font_size(dev, idx, &font_width, &font_height);
+
+		if (err) {
 			break;
 		}
+
 		shell_print(sh, "idx=%d height=%d width=%d", idx,
 			    font_height, font_width);
 	}
@@ -397,6 +410,20 @@ static int cmd_get_device(const struct shell *sh, size_t argc, char *argv[])
 	return err;
 }
 
+static int print_display_param(const struct shell *sh, const enum cfb_display_param param)
+{
+	const int err = cfb_get_display_parameter(dev, param);
+
+	if (err < 0) {
+		shell_error(sh, "Failed to get parameter %s: %d", param_name[param], err);
+		return err;
+	}
+
+	shell_print(sh, "param: %s=%d", param_name[param], err);
+
+	return 0;
+}
+
 static int cmd_get_param_all(const struct shell *sh, size_t argc,
 			     char *argv[])
 {
@@ -404,9 +431,11 @@ static int cmd_get_param_all(const struct shell *sh, size_t argc,
 	ARG_UNUSED(argv);
 
 	for (unsigned int i = 0; i <= CFB_DISPLAY_COLS; i++) {
-		shell_print(sh, "param: %s=%d", param_name[i],
-				cfb_get_display_parameter(dev, i));
+		const int err = print_display_param(sh, (enum cfb_display_param)i);
 
+		if (err < 0) {
+			return err;
+		}
 	}
 
 	return 0;
@@ -418,10 +447,7 @@ static int cmd_get_param_height(const struct shell *sh, size_t argc,
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	shell_print(sh, "param: %s=%d", param_name[CFB_DISPLAY_HEIGHT],
-		    cfb_get_display_parameter(dev, CFB_DISPLAY_HEIGHT));
-
-	return 0;
+	return print_display_param(sh, CFB_DISPLAY_HEIGHT);
 }
 
 static int cmd_get_param_width(const struct shell *sh, size_t argc,
@@ -430,10 +456,7 @@ static int cmd_get_param_width(const struct shell *sh, size_t argc,
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	shell_print(sh, "param: %s=%d", param_name[CFB_DISPLAY_WIDTH],
-		    cfb_get_display_parameter(dev, CFB_DISPLAY_WIDTH));
-
-	return 0;
+	return print_display_param(sh, CFB_DISPLAY_WIDTH);
 }
 
 static int cmd_get_param_ppt(const struct shell *sh, size_t argc,
@@ -442,10 +465,7 @@ static int cmd_get_param_ppt(const struct shell *sh, size_t argc,
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	shell_print(sh, "param: %s=%d", param_name[CFB_DISPLAY_PPT],
-		    cfb_get_display_parameter(dev, CFB_DISPLAY_PPT));
-
-	return 0;
+	return print_display_param(sh, CFB_DISPLAY_PPT);
 }
 
 static int cmd_get_param_rows(const struct shell *sh, size_t argc,
@@ -454,10 +474,7 @@ static int cmd_get_param_rows(const struct shell *sh, size_t argc,
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	shell_print(sh, "param: %s=%d", param_name[CFB_DISPLAY_ROWS],
-		    cfb_get_display_parameter(dev, CFB_DISPLAY_ROWS));
-
-	return 0;
+	return print_display_param(sh, CFB_DISPLAY_ROWS);
 }
 
 static int cmd_get_param_cols(const struct shell *sh, size_t argc,
@@ -466,10 +483,7 @@ static int cmd_get_param_cols(const struct shell *sh, size_t argc,
 	ARG_UNUSED(argc);
 	ARG_UNUSED(argv);
 
-	shell_print(sh, "param: %s=%d", param_name[CFB_DISPLAY_COLS],
-		    cfb_get_display_parameter(dev, CFB_DISPLAY_COLS));
-
-	return 0;
+	return print_display_param(sh, CFB_DISPLAY_COLS);
 }
 
 static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
@@ -498,7 +512,7 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 
 	err = cfb_framebuffer_init(dev);
 	if (err) {
-		shell_error(sh, "Framebuffer initialization failed!");
+		shell_error(sh, "Framebuffer initialization failed: %d", err);
 		return err;
 	}
 
