@@ -47,6 +47,27 @@ static uint16_t dns_dispatcher_addr_port(const struct net_sockaddr_storage *addr
 	return 0;
 }
 
+/* Can resolver and responder share the same UDP port (e.g. mDNS 5353)?
+ *
+ * Pairing lets the second registration reuse the first socket. Refuse it
+ * only when both sides are scoped to different interfaces: each side is
+ * then bound to its own link and pairing them would mix wrong-interface
+ * answers.
+ *
+ * When one side is unscoped (ifindex 0) it must keep pairing even on a
+ * multi-interface host. Refusing is not a benign "stay independent"
+ * outcome: the refused side falls through to bind the shared port, which
+ * fails against the already-bound peer (these sockets do not use
+ * SO_REUSEPORT), and an unpaired responder socket drops any response it
+ * receives. The unscoped side pairing with an arbitrary interface's peer
+ * is a known limitation, but it keeps registration working.
+ */
+static bool dns_dispatcher_can_pair(const struct dns_socket_dispatcher *a,
+				    const struct dns_socket_dispatcher *b)
+{
+	return a->ifindex == 0 || b->ifindex == 0 || a->ifindex == b->ifindex;
+}
+
 static int dns_dispatch(struct dns_socket_dispatcher *dispatcher,
 			int sock, struct net_sockaddr *addr, size_t addrlen,
 			struct net_buf *dns_data, size_t buf_len)
@@ -271,7 +292,11 @@ int dns_dispatcher_register(struct dns_socket_dispatcher *ctx)
 		 */
 		if (found == NULL && ctx->type != entry->type &&
 		    ctx->local_addr_storage.ss_family == entry->local_addr_storage.ss_family) {
-			if (ports_match) {
+			/* Resolver/responder socket sharing (e.g. mDNS UDP/5353):
+			 * same port is not enough on multi-homed hosts — pair
+			 * only when both sides listen on the same link.
+			 */
+			if (ports_match && dns_dispatcher_can_pair(ctx, entry)) {
 				found = entry;
 				continue;
 			}
