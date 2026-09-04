@@ -430,6 +430,14 @@ New APIs and options
     * :c:member:`bt_bap_unicast_group_info.c_to_p_ft`
     * :c:member:`bt_bap_unicast_group_info.p_to_c_ft`
     * :c:member:`bt_bap_unicast_group_info.iso_interval`
+    * :c:member:`bt_cap_initiator_cb.unicast_start_codec_configured`
+    * :c:member:`bt_cap_initiator_cb.unicast_start_qos_configured`
+    * :c:member:`bt_cap_initiator_cb.unicast_start_enabled`
+    * :c:member:`bt_cap_initiator_cb.unicast_start_connected`
+    * :c:member:`bt_cap_initiator_cb.unicast_start_started`
+    * :c:member:`bt_cap_initiator_cb.unicast_stop_disabled`
+    * :c:member:`bt_cap_initiator_cb.unicast_stop_stopped`
+    * :c:member:`bt_cap_initiator_cb.unicast_stop_released`
     * :c:func:`bt_vocs_client_free_instance`
 
   * Host
