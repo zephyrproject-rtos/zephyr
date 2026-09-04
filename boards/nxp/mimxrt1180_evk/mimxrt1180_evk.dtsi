@@ -53,30 +53,45 @@
 	phy0: phy@2 {
 		compatible = "ethernet-phy";
 		reg = <0x2>;
+		reset-gpios = <&gpio4 25 GPIO_ACTIVE_LOW>;
+		reset-assert-duration-us = <10000>;
+		reset-deassertion-timeout-ms = <30>;
 		status = "okay";
 	};
 
 	phy1: phy@5 {
 		compatible = "realtek,rtl8211f";
 		reg = <0x5>;
+		reset-gpios = <&gpio6 13 GPIO_ACTIVE_LOW>;
+		reset-assert-duration-us = <10000>;
+		reset-deassertion-timeout-ms = <50>;
 		status = "okay";
 	};
 
 	phy2: phy@4 {
 		compatible = "realtek,rtl8211f";
 		reg = <0x4>;
+		reset-gpios = <&gpio4 28 GPIO_ACTIVE_LOW>;
+		reset-assert-duration-us = <10000>;
+		reset-deassertion-timeout-ms = <50>;
 		status = "okay";
 	};
 
 	phy3: phy@7 {
 		compatible = "realtek,rtl8211f";
 		reg = <0x7>;
+		reset-gpios = <&gpio6 15 GPIO_ACTIVE_LOW>;
+		reset-assert-duration-us = <10000>;
+		reset-deassertion-timeout-ms = <50>;
 		status = "okay";
 	};
 
 	phy4: phy@3 {
 		compatible = "ethernet-phy";
 		reg = <0x3>;
+		reset-gpios = <&gpio4 13 GPIO_ACTIVE_LOW>;
+		reset-assert-duration-us = <10000>;
+		reset-deassertion-timeout-ms = <30>;
 		status = "okay";
 	};
 };
@@ -182,6 +197,10 @@
 };
 
 &gpio4 {
+	status = "okay";
+};
+
+&gpio6 {
 	status = "okay";
 };
 

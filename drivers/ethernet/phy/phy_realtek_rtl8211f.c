@@ -57,6 +57,9 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define PHY_RT_RTL8211F_INSR_REG                    (0x1DU)
 
 #define PHY_RT_RTL8211F_RESET_HOLD_TIME_MS 10
+#define PHY_RT_RTL8211F_RESET_DEASSERT_TIMEOUT_MS 30
+
+#define ANY_RESET_GPIO DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
 
 enum rt_rtl8211f_rgmii_delay {
 	RT_RTL8211F_RGMII_DELAY_NONE,
@@ -70,8 +73,10 @@ struct rt_rtl8211f_config {
 	const struct device *mdio_dev;
 	enum phy_link_speed default_speeds;
 	enum rt_rtl8211f_rgmii_delay rgmii_delay;
-#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
+#if ANY_RESET_GPIO
 	const struct gpio_dt_spec reset_gpio;
+	uint32_t reset_assert_duration_us;
+	uint32_t reset_deassertion_timeout_ms;
 #endif
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
 	const struct gpio_dt_spec interrupt_gpio;
@@ -128,29 +133,29 @@ static int phy_rt_rtl8211f_reset(const struct device *dev)
 	uint32_t reg_val;
 	int ret;
 
-#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
+#if ANY_RESET_GPIO
 	if (config->reset_gpio.port) {
 		/* Start reset */
-		ret = gpio_pin_set_dt(&config->reset_gpio, 0);
-		if (ret) {
-			return ret;
-		}
-
-		/* Hold reset for the minimum time specified by datasheet */
-		k_busy_wait(USEC_PER_MSEC * PHY_RT_RTL8211F_RESET_HOLD_TIME_MS);
-
-		/* Reset over */
 		ret = gpio_pin_set_dt(&config->reset_gpio, 1);
 		if (ret) {
 			return ret;
 		}
 
-		/* Wait another 30 ms (circuits settling time) before accessing registers */
-		k_busy_wait(USEC_PER_MSEC * 30);
+		/* Hold reset for the minimum time specified by datasheet */
+		k_busy_wait(config->reset_assert_duration_us);
+
+		/* Reset over */
+		ret = gpio_pin_set_dt(&config->reset_gpio, 0);
+		if (ret) {
+			return ret;
+		}
+
+		/* Wait for circuits settling time before accessing registers */
+		k_msleep(config->reset_deassertion_timeout_ms);
 
 		goto finalize_reset;
 	}
-#endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios) */
+#endif /* ANY_RESET_GPIO */
 
 	/* Reset PHY using register */
 	ret = phy_rt_rtl8211f_write(dev, MII_BMCR, MII_BMCR_RESET);
@@ -519,7 +524,7 @@ static int phy_rt_rtl8211f_init(const struct device *dev)
 		return ret;
 	}
 
-#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
+#if ANY_RESET_GPIO
 	/* Configure reset pin */
 	if (config->reset_gpio.port) {
 		ret = gpio_pin_configure_dt(&config->reset_gpio, GPIO_OUTPUT_ACTIVE);
@@ -527,7 +532,7 @@ static int phy_rt_rtl8211f_init(const struct device *dev)
 			return ret;
 		}
 	}
-#endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios) */
+#endif /* ANY_RESET_GPIO */
 
 	/* Reset PHY */
 	ret = phy_rt_rtl8211f_reset(dev);
@@ -643,12 +648,17 @@ static DEVICE_API(ethphy, rt_rtl8211f_phy_api) = {
 	.write = phy_rt_rtl8211f_write,
 };
 
-#if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
-#define RESET_GPIO(n) \
-		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {0}),
+#if ANY_RESET_GPIO
+#define RESET_GPIO(n)                                                                              \
+	.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(n, reset_gpios, {0}),                               \
+	.reset_assert_duration_us =                                                                \
+		DT_INST_PROP_OR(n, reset_assert_duration_us,                                       \
+				(USEC_PER_MSEC * PHY_RT_RTL8211F_RESET_HOLD_TIME_MS)),             \
+	.reset_deassertion_timeout_ms = DT_INST_PROP_OR(                                           \
+		n, reset_deassertion_timeout_ms, PHY_RT_RTL8211F_RESET_DEASSERT_TIMEOUT_MS),
 #else
 #define RESET_GPIO(n)
-#endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios) */
+#endif /* ANY_RESET_GPIO */
 
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
 #define INTERRUPT_GPIO(n) \
