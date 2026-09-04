@@ -1,0 +1,18 @@
+#
+# Copyright NXP 2026
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: Native simulator UWB Module Support
+
+compatible: "zephyr,native-uwb-device"
+
+include: [uwb-uci.yaml]
+
+properties:
+  uwb-uci-name:
+    default: "UWB Native Sim"
+
+  uwb-uci-bus:
+    default: "virtual"
