@@ -4736,6 +4736,11 @@ void bt_finalize_init(int err)
 			bt_scan_reset();
 		}
 
+#if !defined(CONFIG_BT_EXT_ADV)
+		/* Always consider the advertising set created for legacy adv */
+		atomic_set_bit(bt_dev.adv.flags, BT_ADV_CREATED);
+#endif /* !CONFIG_BT_EXT_ADV */
+
 		bt_dev_show_info();
 
 		/* Publish BT_DEV_READY before clearing BT_DEV_ENABLING, so that
