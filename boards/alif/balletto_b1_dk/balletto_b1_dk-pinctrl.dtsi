@@ -6,7 +6,7 @@
 #include <zephyr/dt-bindings/pinctrl/alif-balletto-b1-pinctrl.h>
 
 &pinctrl {
-	pinctrl_uart2: pinctrl_uart2 {
+	uart2_default: uart2_default {
 		group0 {
 			pinmux = <PIN_P5_2__UART2_RX_B>;
 			input-enable;
@@ -17,7 +17,7 @@
 		};
 	};
 
-	pinctrl_i2c0: pinctrl_i2c0 {
+	i2c0_default: i2c0_default {
 		group0 {
 			pinmux = <PIN_P7_0__I2C0_SDA_C>,
 				 <PIN_P7_1__I2C0_SCL_C>;
@@ -26,7 +26,7 @@
 		};
 	};
 
-	pinctrl_i2c1: pinctrl_i2c1 {
+	i2c1_default: i2c1_default {
 		group0 {
 			pinmux = <PIN_P7_2__I2C1_SDA_C>,
 				 <PIN_P7_3__I2C1_SCL_C>;
@@ -35,7 +35,7 @@
 		};
 	};
 
-	pinctrl_gpio4: pinctrl_gpio4 {
+	gpio4_default: gpio4_default {
 		group0 {
 			/* Multicolor LED0: blue on P4_3, green on P4_5, red on P4_7 */
 			pinmux = <PIN_P4_3__GPIO>,
@@ -44,7 +44,7 @@
 		};
 	};
 
-	pinctrl_gpio5: pinctrl_gpio5 {
+	gpio5_default: gpio5_default {
 		group0 {
 			/* Navigation joystick JOY_SW1 to JOY_SW5 on SW3 */
 			pinmux = <PIN_P5_0__GPIO>,

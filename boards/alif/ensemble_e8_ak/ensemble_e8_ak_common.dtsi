@@ -82,18 +82,18 @@
 
 &gpio7 {
 	status = "okay";
-	pinctrl-0 = <&pinctrl_gpio7>;
+	pinctrl-0 = <&gpio7_default>;
 	pinctrl-names = "default";
 };
 
 &gpio12 {
 	status = "okay";
-	pinctrl-0 = <&pinctrl_gpio12>;
+	pinctrl-0 = <&gpio12_default>;
 	pinctrl-names = "default";
 };
 
 &lpgpio {
 	status = "okay";
-	pinctrl-0 = <&pinctrl_lpgpio>;
+	pinctrl-0 = <&lpgpio_default>;
 	pinctrl-names = "default";
 };

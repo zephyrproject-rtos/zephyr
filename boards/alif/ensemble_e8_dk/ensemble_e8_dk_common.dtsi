@@ -100,31 +100,31 @@
 
 &gpio6 {
 	status = "okay";
-	pinctrl-0 = <&pinctrl_gpio6>;
+	pinctrl-0 = <&gpio6_default>;
 	pinctrl-names = "default";
 };
 
 &gpio7 {
 	status = "okay";
-	pinctrl-0 = <&pinctrl_gpio7>;
+	pinctrl-0 = <&gpio7_default>;
 	pinctrl-names = "default";
 };
 
 &gpio12 {
 	status = "okay";
-	pinctrl-0 = <&pinctrl_gpio12>;
+	pinctrl-0 = <&gpio12_default>;
 	pinctrl-names = "default";
 };
 
 &lpgpio {
 	status = "okay";
-	pinctrl-0 = <&pinctrl_lpgpio>;
+	pinctrl-0 = <&lpgpio_default>;
 	pinctrl-names = "default";
 };
 
 &i2c0 {
 	status = "okay";
-	pinctrl-0 = <&pinctrl_i2c0>;
+	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
 };
 
