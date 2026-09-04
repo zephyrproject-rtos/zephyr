@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "Renesas Ironhide board";
 	compatible = "renesas,ironhide-x5h-r52";
+	model = "Renesas Ironhide board";
 
 	chosen {
 		zephyr,sram = &sram0;

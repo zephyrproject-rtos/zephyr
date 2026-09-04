@@ -12,8 +12,8 @@
 #include "rzv2h_evk-pinctrl.dtsi"
 
 / {
-	model = "Renesas RZ/V2H EVK";
 	compatible = "renesas,rzv2h-evk";
+	model = "Renesas RZ/V2H EVK";
 
 	aliases {
 		led0 = &led5;
