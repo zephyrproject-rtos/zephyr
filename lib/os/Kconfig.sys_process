@@ -55,6 +55,22 @@ config SYS_PROCESS_ARG_BYTES
 	  leader's stack and reduces its usable size by that much. Larger
 	  vectors fail with -E2BIG.
 
+config SYS_PROCESS_EXEC
+	bool "Load process images from the file system"
+	depends on LLEXT && FILE_SYSTEM
+	select LLEXT_REGION_BLOCKS if USERSPACE
+	help
+	  sys_exec_load(): load a linkable loadable extension from the file
+	  system as the image of a paused child created by sys_clone() with
+	  staged arguments and no entry point. The image's regions join the
+	  child's memory domain and the extension is unloaded when the process
+	  is reaped.
+
+config SYS_PROCESS_EXEC_PATH_MAX
+	int "Maximum image path length for sys_exec_load()"
+	depends on SYS_PROCESS_EXEC
+	default 128
+
 config SYS_PROCESS_IDS
 	int "Maximum number of simultaneously numbered processes"
 	default 16

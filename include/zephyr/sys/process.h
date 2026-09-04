@@ -120,6 +120,14 @@ __syscall int sys_setpgid(k_pid_t pid, k_pgrp_t pgrp);
  */
 __syscall int sys_fork(k_pid_t *child);
 
+/** How a process created with staged arguments is entered */
+struct sys_process_start {
+	/** Entry given to sys_clone(), entered as entry(argv, envp, argc), or NULL */
+	k_thread_entry_t entry;
+	/** main() of an image loaded by sys_exec_load(), or NULL */
+	int (*main)(int argc, char **argv, char **envp);
+};
+
 /**
  * @brief Claim the vectors staged for the calling process by sys_clone()
  *
@@ -130,14 +138,35 @@ __syscall int sys_fork(k_pid_t *child);
  * entry trampoline calls this once; the vectors then live as long as @a buf
  * does.
  *
- * @param entry receives the entry point to run
+ * @param start receives how to enter the image: @ref sys_process_start
  * @param buf destination, at least @kconfig{CONFIG_SYS_PROCESS_ARG_BYTES} bytes
  * @param size size of @a buf, in bytes
  * @retval argc (non-negative) on success
  * @retval -ENOENT if nothing is staged for the calling process, or no entry is set
  * @retval -E2BIG if @a buf is too small for the staged vectors
  */
-__syscall int sys_process_args(k_thread_entry_t *entry, void *buf, size_t size);
+__syscall int sys_process_args(struct sys_process_start *start, void *buf, size_t size);
+
+/**
+ * @brief Load a file system image as a paused child's process image
+ *
+ * Loads the extension at @a path, maps its regions into the child's memory
+ * domain, and sets its exported main() as the entry the child starts with;
+ * the child must be a not-yet-started child of the caller created by
+ * sys_clone() with staged arguments and no entry point. The image's main()
+ * receives the staged vectors as main(argc, argv, envp) and its return value
+ * is the process's exit status. The extension is unloaded when the process
+ * is reaped. Requires @kconfig{CONFIG_SYS_PROCESS_EXEC}.
+ *
+ * @retval 0 on success
+ * @retval -ESRCH if @a child is not a paused, argument-staged child of the caller
+ * @retval -ENOENT if @a path cannot be loaded
+ * @retval -ENOEXEC if the image exports no main()
+ * @retval -ENOMEM if memory, the domain, or the name space is exhausted
+ * @retval -ENOTSUP without @kconfig{CONFIG_SYS_PROCESS_EXEC}
+ */
+__syscall int sys_exec_load(k_pid_t child, const char *path);
+
 /**
  * @}
  */

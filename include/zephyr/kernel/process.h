@@ -288,6 +288,8 @@ struct k_process {
 #ifdef CONFIG_USERSPACE
 	/** Permission-principal index; every member thread holds it */
 	int16_t perm_index;
+	/** Memory domain of a user-mode process (system layer); NULL shares the creator's */
+	struct k_mem_domain *domain;
 #endif /* CONFIG_USERSPACE */
 #ifdef CONFIG_PROCESS_VM
 	/** Cloned address-space context (system layer), or NULL */
@@ -301,6 +303,10 @@ struct k_process {
 	/** Argument block staged for the leader (system layer), until consumed */
 	void *args;
 #endif /* CONFIG_SYS_PROCESS */
+#ifdef CONFIG_SYS_PROCESS_EXEC
+	/** Loaded extension backing the process image (system layer), or NULL */
+	void *image;
+#endif /* CONFIG_SYS_PROCESS_EXEC */
 	/** @endcond */
 };
 

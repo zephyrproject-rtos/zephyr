@@ -249,12 +249,28 @@ static inline void z_process_mmap_drop(struct k_process *proc)
 #ifdef CONFIG_SYS_PROCESS
 /* release a staged argument block the leader never consumed (lib/os) */
 void z_process_args_drop(struct k_process *proc);
+/* return a user-mode process's memory domain to the system layer */
+void z_process_domain_drop(struct k_process *proc);
 #else
 static inline void z_process_args_drop(struct k_process *proc)
 {
 	ARG_UNUSED(proc);
 }
+
+static inline void z_process_domain_drop(struct k_process *proc)
+{
+	ARG_UNUSED(proc);
+}
 #endif /* CONFIG_SYS_PROCESS */
+#ifdef CONFIG_SYS_PROCESS_EXEC
+/* unload the extension backing a reaped process's image (lib/os) */
+void z_process_image_drop(struct k_process *proc);
+#else
+static inline void z_process_image_drop(struct k_process *proc)
+{
+	ARG_UNUSED(proc);
+}
+#endif /* CONFIG_SYS_PROCESS_EXEC */
 #endif /* CONFIG_PROCESS */
 
 #ifdef CONFIG_USERSPACE

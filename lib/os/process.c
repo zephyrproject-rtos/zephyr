@@ -23,8 +23,14 @@
 #include <zephyr/sys/elastipool.h>
 #include <zephyr/sys/internal/fdtable_priv.h>
 #include <zephyr/sys/process.h>
+#include <zephyr/sys/libc-hooks.h>
 #include <zephyr/sys/thread.h>
 #include <kernel_internal.h>
+#ifdef CONFIG_SYS_PROCESS_EXEC
+#include <stdlib.h>
+#include <zephyr/llext/llext.h>
+#include <zephyr/llext/fs_loader.h>
+#endif /* CONFIG_SYS_PROCESS_EXEC */
 #include <ksched.h>
 
 STRUCT_SECTION_START_EXTERN(k_process);
@@ -739,6 +745,8 @@ static int vm_clone_range(struct vm_clone_ctx *ctx, uintptr_t start, size_t size
 	if (ret < 0) {
 		leader_discard(args, tid);
 		z_process_fds_drop(proc);
+		z_process_domain_drop(proc);
+		z_process_domain_drop(proc);
 		z_process_args_drop(proc);
 		z_process_args_drop(proc);
 		(void)z_process_record_free(proc);
@@ -1103,7 +1111,7 @@ int z_sys_clone_vm_copy(const struct sys_clone_args *args, k_pid_t *child)
  * first instruction does not leak it.
  */
 struct clone_argblock {
-	k_thread_entry_t entry;
+	struct sys_process_start start;
 	int argc;
 	int envc;
 	size_t bytes;
@@ -1157,7 +1165,8 @@ static int clone_argblock_pack(const struct sys_clone_args *args, struct clone_a
 		return -ENOMEM;
 	}
 
-	blk->entry = args->entry;
+	blk->start.entry = args->entry;
+	blk->start.main = NULL;
 	blk->argc = argc;
 	blk->envc = envc;
 	blk->bytes = bytes;
@@ -1175,20 +1184,20 @@ void z_process_args_drop(struct k_process *proc)
 	proc->args = NULL;
 }
 
-int z_impl_sys_process_args(k_thread_entry_t *entry, void *buf, size_t size)
+int z_impl_sys_process_args(struct sys_process_start *start, void *buf, size_t size)
 {
 	struct clone_argblock *blk = _current->process->args;
 	char *base = buf;
 	char **argv = buf;
 	int argc;
 
-	if ((blk == NULL) || (blk->entry == NULL)) {
+	if ((blk == NULL) || ((blk->start.entry == NULL) && (blk->start.main == NULL))) {
 		return -ENOENT;
 	}
 	if (blk->bytes > size) {
 		return -E2BIG;
 	}
-	*entry = blk->entry;
+	*start = blk->start;
 
 	(void)memcpy(base, blk->data, blk->bytes);
 	for (int i = 0; i < blk->argc; i++) {
@@ -1205,11 +1214,11 @@ int z_impl_sys_process_args(k_thread_entry_t *entry, void *buf, size_t size)
 }
 
 #ifdef CONFIG_USERSPACE
-static inline int z_vrfy_sys_process_args(k_thread_entry_t *entry, void *buf, size_t size)
+static inline int z_vrfy_sys_process_args(struct sys_process_start *start, void *buf, size_t size)
 {
-	K_OOPS(K_SYSCALL_MEMORY_WRITE(entry, sizeof(*entry)));
+	K_OOPS(K_SYSCALL_MEMORY_WRITE(start, sizeof(*start)));
 	K_OOPS(K_SYSCALL_MEMORY_WRITE(buf, size));
-	return z_impl_sys_process_args(entry, buf, size);
+	return z_impl_sys_process_args(start, buf, size);
 }
 #include <zephyr/syscalls/sys_process_args_mrsh.c>
 #endif /* CONFIG_USERSPACE */
@@ -1217,19 +1226,256 @@ static inline int z_vrfy_sys_process_args(k_thread_entry_t *entry, void *buf, si
 /* the leader's trampoline, in whichever mode the child was asked for */
 static void process_leader_entry(void *p1, void *p2, void *p3)
 {
-	k_thread_entry_t entry = NULL;
+	struct sys_process_start start = {0};
 	/* this frame never returns: the vectors live here for the process's lifetime */
 	char buf[CONFIG_SYS_PROCESS_ARG_BYTES] __aligned(sizeof(char *));
 	char **argv = (char **)buf;
-	int argc = sys_process_args(&entry, buf, sizeof(buf));
+	int argc = sys_process_args(&start, buf, sizeof(buf));
 
 	ARG_UNUSED(p1);
 	ARG_UNUSED(p2);
 	ARG_UNUSED(p3);
 
 	__ASSERT_NO_MSG(argc >= 0);
-	entry(argv, &argv[argc + 1], (void *)(uintptr_t)argc);
+#ifdef CONFIG_SYS_PROCESS_EXEC
+	if (start.main != NULL) {
+		/* the image ABI: a normal return from main() is exit(status) */
+		exit(start.main(argc, argv, &argv[argc + 1]));
+	}
+#endif /* CONFIG_SYS_PROCESS_EXEC */
+	start.entry(argv, &argv[argc + 1], (void *)(uintptr_t)argc);
 }
+
+#ifdef CONFIG_USERSPACE
+/*
+ * A user-mode process owns a memory domain. A process entered at a base-image
+ * function mirrors its creator's partitions; a process whose image
+ * sys_exec_load() brings in gets only the C library's shared state, and its
+ * image's blocks on top: three partitions, which is what MPU parts with few
+ * regions can afford. Arch domain state (page tables) is not reclaimable, so
+ * pool domains are initialized once and emptied for reuse.
+ */
+static struct k_mem_domain domain_pool[RECORD_POOL_MAX];
+static uint8_t domain_state[RECORD_POOL_MAX]; /* 0 free, 1 used, 2 free but initialized */
+
+static int process_domain_create(struct k_process *proc, bool mirror)
+{
+	struct k_mem_domain *src = _current->mem_domain_info.mem_domain;
+	struct k_mem_domain *d = NULL;
+	bool initialized = false;
+	size_t slot = 0;
+	int ret;
+
+	K_SPINLOCK(&pool_lock) {
+		for (size_t i = 0; i < ARRAY_SIZE(domain_pool); i++) {
+			if (domain_state[i] != 1U) {
+				initialized = (domain_state[i] == 2U);
+				domain_state[i] = 1U;
+				d = &domain_pool[i];
+				slot = i;
+				K_SPINLOCK_BREAK;
+			}
+		}
+	}
+	if (d == NULL) {
+		return -ENOMEM;
+	}
+
+	if (initialized) {
+		while (d->num_partitions > 0U) {
+			struct k_mem_partition *part = NULL;
+
+			for (uint8_t i = 0; i < CONFIG_MAX_DOMAIN_PARTITIONS; i++) {
+				if (d->partitions[i].size != 0U) {
+					part = &d->partitions[i];
+					break;
+				}
+			}
+			if ((part == NULL) || (k_mem_domain_remove_partition(d, part) != 0)) {
+				break;
+			}
+		}
+	} else {
+		ret = k_mem_domain_init(d, 0, NULL);
+		if (ret != 0) {
+			K_SPINLOCK(&pool_lock) {
+				domain_state[slot] = 0U;
+			}
+			return ret;
+		}
+	}
+
+	if (mirror) {
+		for (uint8_t i = 0; (src != NULL) && (i < CONFIG_MAX_DOMAIN_PARTITIONS); i++) {
+			struct k_mem_partition *part = &src->partitions[i];
+
+			if (part->size == 0U) {
+				continue;
+			}
+			ret = k_mem_domain_add_partition(d, part);
+			if (ret != 0) {
+				goto err;
+			}
+		}
+	} else {
+		struct k_mem_partition *libc[] = {
+#if Z_LIBC_PARTITION_EXISTS
+			&z_libc_partition,
+#endif
+#if Z_MALLOC_PARTITION_EXISTS
+			&z_malloc_partition,
+#endif
+		};
+
+		for (size_t i = 0; i < ARRAY_SIZE(libc); i++) {
+			if (libc[i]->size == 0U) {
+				continue;
+			}
+			ret = k_mem_domain_add_partition(d, libc[i]);
+			if (ret != 0) {
+				goto err;
+			}
+		}
+	}
+
+	proc->domain = d;
+
+	return 0;
+
+err:
+	K_SPINLOCK(&pool_lock) {
+		domain_state[slot] = 2U;
+	}
+	return ret;
+}
+
+void z_process_domain_drop(struct k_process *proc)
+{
+	if (proc->domain != NULL) {
+		size_t slot = (size_t)(proc->domain - domain_pool);
+
+		K_SPINLOCK(&pool_lock) {
+			domain_state[slot] = 2U;
+		}
+		proc->domain = NULL;
+	}
+}
+#else
+void z_process_domain_drop(struct k_process *proc)
+{
+	ARG_UNUSED(proc);
+}
+#endif /* CONFIG_USERSPACE */
+
+#ifdef CONFIG_SYS_PROCESS_EXEC
+void z_process_image_drop(struct k_process *proc)
+{
+	struct llext *ext = proc->image;
+
+	if (ext != NULL) {
+		proc->image = NULL;
+		(void)llext_unload(&ext);
+	}
+}
+
+int z_impl_sys_exec_load(k_pid_t child, const char *path)
+{
+	static atomic_t exec_instance;
+	struct llext_fs_loader fldr = LLEXT_FS_LOADER(path);
+	struct llext_load_param param = LLEXT_LOAD_PARAM_DEFAULT;
+	struct llext *ext = NULL;
+	struct k_process *proc = child->process;
+	struct clone_argblock *blk;
+	char name[LLEXT_MAX_NAME_LEN + 1];
+	char suffix[8];
+	const char *base;
+	const void *main_sym;
+	int ret;
+
+	/* a paused, argument-staged child of the caller that has no entry yet */
+	if ((proc == NULL) || (proc->leader != child) || (proc->parent != _current->process) ||
+	    (proc->args == NULL) || (proc->image != NULL) ||
+	    !z_is_thread_prevented_from_running(child)) {
+		return -ESRCH;
+	}
+	blk = proc->args;
+	if ((blk->start.entry != NULL) || (blk->start.main != NULL)) {
+		return -ESRCH;
+	}
+
+	/*
+	 * Each load is a private instance named by the path's last component
+	 * plus an instance number: llext shares loaded extensions by name,
+	 * which would hand this process another running image's globals.
+	 */
+	base = strrchr(path, '/');
+	base = (base == NULL) ? path : (base + 1);
+	(void)snprintf(suffix, sizeof(suffix), ".%x",
+		       (unsigned int)atomic_inc(&exec_instance) & 0xffffU);
+	(void)snprintf(name, sizeof(name), "%.*s%s", (int)(LLEXT_MAX_NAME_LEN - strlen(suffix)),
+		       base, suffix);
+
+	ret = llext_load(&fldr.loader, name, &ext, &param);
+	if (ret < 0) {
+		return (ret == -ENOMEM) ? -ENOMEM : -ENOENT;
+	}
+
+	main_sym = llext_find_sym(&ext->exp_tab, "main");
+	if (main_sym == NULL) {
+		(void)llext_unload(&ext);
+		return -ENOEXEC;
+	}
+
+#ifdef CONFIG_USERSPACE
+	if (proc->domain != NULL) {
+		ret = llext_add_domain(ext, proc->domain);
+		if (ret != 0) {
+			(void)llext_unload(&ext);
+			return -ENOMEM;
+		}
+	}
+#endif /* CONFIG_USERSPACE */
+
+	proc->image = ext;
+	*(const void **)&blk->start.main = main_sym;
+
+	return 0;
+}
+
+#ifdef CONFIG_USERSPACE
+static inline int z_vrfy_sys_exec_load(k_pid_t child, const char *path)
+{
+	char *kpath;
+	int ret;
+
+	K_OOPS(K_SYSCALL_OBJ(child, K_OBJ_THREAD));
+	kpath = k_usermode_string_alloc_copy(path, CONFIG_SYS_PROCESS_EXEC_PATH_MAX);
+	if (kpath == NULL) {
+		return -ENAMETOOLONG;
+	}
+	ret = z_impl_sys_exec_load(child, kpath);
+	k_free(kpath);
+
+	return ret;
+}
+#include <zephyr/syscalls/sys_exec_load_mrsh.c>
+#endif /* CONFIG_USERSPACE */
+#else
+int z_impl_sys_exec_load(k_pid_t child, const char *path)
+{
+	ARG_UNUSED(child);
+	ARG_UNUSED(path);
+	return -ENOTSUP;
+}
+
+#ifdef CONFIG_USERSPACE
+static inline int z_vrfy_sys_exec_load(k_pid_t child, const char *path)
+{
+	return z_impl_sys_exec_load(child, path);
+}
+#include <zephyr/syscalls/sys_exec_load_mrsh.c>
+#endif /* CONFIG_USERSPACE */
+#endif /* CONFIG_SYS_PROCESS_EXEC */
 
 #ifdef CONFIG_SYS_THREAD
 /* a leader without a caller-supplied k_thread is drawn from the system pool */
@@ -1301,6 +1547,9 @@ int z_sys_clone_process(const struct sys_clone_args *args, k_pid_t *child)
 		return -EAGAIN;
 	}
 	proc->args = blk;
+#ifdef CONFIG_SYS_PROCESS_EXEC
+	proc->image = NULL;
+#endif /* CONFIG_SYS_PROCESS_EXEC */
 
 	/* create the leader paused; k_process_init() re-homes it */
 	ret = leader_create(args, entry, p1, p2, p3, &tid);
@@ -1310,10 +1559,29 @@ int z_sys_clone_process(const struct sys_clone_args *args, k_pid_t *child)
 		return ret;
 	}
 
+#ifdef CONFIG_USERSPACE
+	proc->domain = NULL;
+	if ((args->options & K_USER) != 0U) {
+		/* a user-mode process owns its domain; see process_domain_create() */
+		ret = process_domain_create(proc, args->entry != NULL);
+		if (ret == 0) {
+			ret = k_mem_domain_add_thread(proc->domain, tid);
+		}
+		if (ret < 0) {
+			leader_discard(args, tid);
+			z_process_domain_drop(proc);
+			z_process_args_drop(proc);
+			(void)z_process_record_free(proc);
+			return ret;
+		}
+	}
+#endif /* CONFIG_USERSPACE */
+
 	/* the child's descriptor table: a copy of the caller's */
 	ret = z_zvfs_fds_clone(proc, tid);
 	if (ret < 0) {
 		leader_discard(args, tid);
+		z_process_domain_drop(proc);
 		z_process_args_drop(proc);
 		(void)z_process_record_free(proc);
 		return ret;

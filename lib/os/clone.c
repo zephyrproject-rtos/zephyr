@@ -136,7 +136,8 @@ int z_impl_sys_clone(const struct sys_clone_args *args, k_pid_t *child)
 	if ((args->flags & SYS_CLONE_VM_COPY) != 0U) {
 		return z_sys_clone_vm_copy(args, child);
 	}
-	if (args->entry == NULL) {
+	/* an argument-staged child may take its entry from sys_exec_load() later */
+	if ((args->entry == NULL) && (args->argv == NULL)) {
 		return -EINVAL;
 	}
 	if ((args->thread != NULL) && ((args->stack == NULL) || (args->stack_size == 0))) {
