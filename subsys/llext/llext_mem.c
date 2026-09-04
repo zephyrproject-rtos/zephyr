@@ -145,7 +145,8 @@ static enum llext_block llext_region_block(const elf_shdr_t *region)
  * Lay the program regions out in two blocks, executable/read-only and
  * writable, and allocate each block as one protected range.
  */
-static int llext_alloc_blocks(struct llext_loader *ldr, struct llext *ext)
+static int llext_alloc_blocks(struct llext_loader *ldr, struct llext *ext,
+			      const struct llext_load_param *ldr_parm)
 {
 	uintptr_t size[LLEXT_BLOCK_COUNT] = {0};
 	uintptr_t align[LLEXT_BLOCK_COUNT] = {0};
@@ -162,6 +163,15 @@ static int llext_alloc_blocks(struct llext_loader *ldr, struct llext *ext)
 		offset[mem_idx] = ROUND_UP(size[b], a);
 		size[b] = offset[mem_idx] + region->sh_size;
 		align[b] = MAX(align[b], a);
+	}
+
+	ext->rw_extra_offset = 0;
+	ext->rw_extra_size = ldr_parm->rw_extra;
+	if (ldr_parm->rw_extra != 0) {
+		/* the caller's area follows the writable regions, pointer-aligned */
+		ext->rw_extra_offset = ROUND_UP(size[LLEXT_BLOCK_RW], sizeof(void *));
+		size[LLEXT_BLOCK_RW] = ext->rw_extra_offset + ldr_parm->rw_extra;
+		align[LLEXT_BLOCK_RW] = MAX(align[LLEXT_BLOCK_RW], sizeof(void *));
 	}
 
 	for (enum llext_block b = 0; b < LLEXT_BLOCK_COUNT; b++) {
@@ -184,6 +194,10 @@ static int llext_alloc_blocks(struct llext_loader *ldr, struct llext *ext)
 		}
 		ext->block_size[b] = size[b];
 		ext->alloc_size += size[b];
+		if ((b == LLEXT_BLOCK_RW) && (ldr_parm->rw_extra != 0)) {
+			memset((uint8_t *)ext->blocks[b] + ext->rw_extra_offset, 0,
+			       size[b] - ext->rw_extra_offset);
+		}
 #ifdef CONFIG_USERSPACE
 		{
 			/* one partition per block: TEXT stands for RX, DATA for RW */
@@ -390,7 +404,7 @@ int llext_copy_regions(struct llext_loader *ldr, struct llext *ext,
 {
 #ifdef CONFIG_LLEXT_REGION_BLOCKS
 	if (!ldr_parm->pre_located) {
-		int ret = llext_alloc_blocks(ldr, ext);
+		int ret = llext_alloc_blocks(ldr, ext, ldr_parm);
 
 		if (ret < 0) {
 			return ret;

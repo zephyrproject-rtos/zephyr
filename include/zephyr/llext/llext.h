@@ -147,6 +147,10 @@ struct llext {
 	void *blocks[LLEXT_BLOCK_COUNT];
 	/** Size of each block */
 	size_t block_size[LLEXT_BLOCK_COUNT];
+	/** Offset in the RW block of the extra area requested at load */
+	size_t rw_extra_offset;
+	/** Size of that area, 0 when none was requested */
+	size_t rw_extra_size;
 #endif
 
 	/** Total llext allocation size */
@@ -217,6 +221,13 @@ static inline unsigned int llext_section_count(const struct llext *ext)
 struct llext_load_param {
 	/** Perform local relocation */
 	bool relocate_local;
+
+	/**
+	 * Extra writable bytes to append to the extension's RW block, for the
+	 * loader's caller (@kconfig{CONFIG_LLEXT_REGION_BLOCKS}); found at
+	 * @c rw_extra_offset into the block, zeroed.
+	 */
+	size_t rw_extra;
 
 	/**
 	 * Use the virtual symbol addresses from the ELF, not addresses within
