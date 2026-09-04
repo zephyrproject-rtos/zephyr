@@ -453,8 +453,8 @@ static int bt_hci_stm32wba_open(const struct device *dev)
 
 static int bt_hci_stm32wba_close(const struct device *dev)
 {
-	int err = 0;
 	uint8_t aci_reset_cmd[9];
+	int err;
 
 	ARG_UNUSED(dev);
 
@@ -468,7 +468,16 @@ static int bt_hci_stm32wba_close(const struct device *dev)
 	aci_reset_cmd[7] = (uint8_t)(CFG_BLE_OPTIONS >> 16);
 	aci_reset_cmd[8] = (uint8_t)(CFG_BLE_OPTIONS >> 24);
 
+	err = k_mutex_lock(&hci_lock, K_FOREVER);
+	if (err != 0) {
+		LOG_ERR("Failed to lock the controller (%d)", err);
+		return err;
+	}
+
 	BleStack_Request(aci_reset_cmd);
+
+	err = k_mutex_unlock(&hci_lock);
+	__ASSERT_NO_MSG(err == 0);
 
 	bt_hci_state = BT_HCI_STATE_CLOSED;
 
@@ -487,7 +496,7 @@ static int bt_hci_stm32wba_close(const struct device *dev)
 	__HAL_RCC_RADIO_CLK_SLEEP_DISABLE();
 #endif
 
-	return err;
+	return 0;
 }
 
 #if defined(CONFIG_BT_HCI_SETUP)
@@ -539,6 +548,7 @@ static int bt_hci_stm32wba_setup(const struct device *dev,
 	bt_addr_t *uid_addr;
 	uint8_t aci_set_ble_addr_cmd[12];
 	uint16_t event_length;
+	int err;
 
 	ARG_UNUSED(dev);
 
@@ -560,7 +570,17 @@ static int bt_hci_stm32wba_setup(const struct device *dev,
 		memcpy(&aci_set_ble_addr_cmd[6], &(params->public_addr), 6);
 	}
 
+	err = k_mutex_lock(&hci_lock, K_FOREVER);
+	if (err != 0) {
+		LOG_ERR("Failed to lock the controller (%d)", err);
+		return err;
+	}
+
 	event_length = BleStack_Request(aci_set_ble_addr_cmd);
+
+	err = k_mutex_unlock(&hci_lock);
+	__ASSERT_NO_MSG(err == 0);
+
 	if (event_length) {
 		/* Get the return status from the event */
 		uint8_t evt_status;
