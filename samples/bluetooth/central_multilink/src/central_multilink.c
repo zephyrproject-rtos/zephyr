@@ -36,6 +36,47 @@ static uint8_t conn_count_max;
 static uint8_t volatile conn_count;
 static bool volatile is_disconnecting;
 
+#define RSSI_MIN  -75
+
+struct connData {
+	bool inUse;
+	bt_addr_le_t addr;
+} connData[CONFIG_BT_MAX_CONN] = {};
+
+static void insertConn(struct bt_conn* conn)
+{
+	for (uint8_t i = 0; i < CONFIG_BT_MAX_CONN; i++) {
+		if (!connData[i].inUse) {
+			connData[i].addr = * (bt_conn_get_dst(conn));
+			connData[i].inUse = true;
+			return;
+		}
+	}
+}
+
+static void removeConn(struct bt_conn* conn)
+{
+	bt_addr_le_t* dst = bt_conn_get_dst(conn);
+
+	for (uint8_t i=0; i < CONFIG_BT_MAX_CONN; i++) {
+		if (connData[i].inUse && bt_addr_le_eq(dst, &connData[i].addr)) {
+			connData[i].inUse = false;
+			return;
+		}
+	}
+}
+
+static bool hasDest(const bt_addr_le_t* dst)
+{
+	for (uint8_t i = 0; i < CONFIG_BT_MAX_CONN; i++) {
+		if (connData[i].inUse && bt_addr_le_eq(dst, &connData[i].addr)) {
+			return true;
+		}
+	}
+	return false;
+}
+
+
 static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 			 struct net_buf_simple *ad)
 {
@@ -67,13 +108,18 @@ static void device_found(const bt_addr_le_t *addr, int8_t rssi, uint8_t type,
 		return;
 	}
 
-	bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
-	printk("Device found: %s (RSSI %d)\n", addr_str, rssi);
 
 	/* connect only to devices in close proximity */
-	if (rssi < -50) {
+	if (rssi < RSSI_MIN) {
 		return;
 	}
+
+	if (hasDest(addr)) {
+		return;
+	}
+
+	bt_addr_le_to_str(addr, addr_str, sizeof(addr_str));
+	printk("Device found: %s (RSSI %d)\n", addr_str, rssi);
 
 	err = bt_le_scan_stop();
 	if (err != 0) {
@@ -146,6 +192,11 @@ static void connected(struct bt_conn *conn, uint8_t reason)
 
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
+	if (conn != conn_connecting) {
+		printk("Unexpected connection %p to %s\n", conn, addr);
+		return;
+	}
+
 	if (reason) {
 		printk("Failed to connect to %s (%u)\n", addr, reason);
 
@@ -158,12 +209,14 @@ static void connected(struct bt_conn *conn, uint8_t reason)
 
 	conn_connecting = NULL;
 
+	insertConn(conn);
+
 	conn_count++;
 	if (conn_count < conn_count_max) {
 		start_scan();
 	}
 
-	printk("Connected (%u): %s\n", conn_count, addr);
+	printk("Connected (%u): %s (%p)\n", conn_count, addr, conn);
 
 #if defined(CONFIG_BT_SMP)
 	int err = bt_conn_set_security(conn, BT_SECURITY_L2);
@@ -185,6 +238,8 @@ static void disconnected(struct bt_conn *conn, uint8_t reason)
 	bt_addr_le_to_str(bt_conn_get_dst(conn), addr, sizeof(addr));
 
 	printk("Disconnected: %s, reason 0x%02x %s\n", addr, reason, bt_hci_err_to_str(reason));
+
+	removeConn(conn);
 
 	bt_conn_unref(conn);
 
