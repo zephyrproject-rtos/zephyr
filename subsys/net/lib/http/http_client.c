@@ -169,9 +169,15 @@ static void print_header_field(size_t len, const char *str)
 			len = sizeof(output) - 1;
 		}
 
-		snprintk(output, len + 1, "%s", str);
+		/* The parser gives a pointer and a length, and the field is
+		 * not terminated, so it cannot be handed to a %s conversion.
+		 * The size argument of snprintk() bounds the output only, the
+		 * source is still measured with strlen().
+		 */
+		memcpy(output, str, len);
+		output[len] = '\0';
 
-		NET_DBG("[%zd] %s", len, output);
+		NET_DBG("[%zu] %s", len, output);
 	}
 }
 
