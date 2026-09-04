@@ -216,6 +216,8 @@ static int counter_mspm0_init(const struct device *dev)
 	DL_Timer_setClockConfig(config->base,
 				(DL_Timer_ClockConfig *)&config->clk_config);
 	DL_Timer_initTimerMode(config->base, &tim_config);
+	DL_Timer_setLoadValue(config->base, config->counter_info.max_top_value);
+
 	DL_Timer_setCounterRepeatMode(config->base,
 				      DL_TIMER_REPEAT_MODE_ENABLED);
 
