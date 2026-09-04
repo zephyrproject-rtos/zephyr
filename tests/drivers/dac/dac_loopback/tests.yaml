@@ -19,6 +19,12 @@ tests:
       - xg24_dk2601b
       - xg24_ek2703a
       - xg24_rb4187c
+  drivers.dac.loopback.dac0_chan0_adc0_chan4:
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="dac0-channel0-adc0-channel4.overlay"
+    platform_allow:
+      - lp_mspm0g3507
+      - lp_mspm0g3519
   drivers.dac.loopback.dac1_chan1_adc1_chan0:
     extra_args:
       - EXTRA_DTC_OVERLAY_FILE="dac1-channel1-adc1-channel0.overlay"
