@@ -373,7 +373,11 @@ static int bt_spi_bluenrg_setup(const struct device *dev,
 		/* force BlueNRG to be on controller mode */
 		uint8_t data = 1;
 
-		bt_spi_send_aci_config(BLUENRG_CONFIG_LL_ONLY_OFFSET, &data, 1);
+		ret = bt_spi_send_aci_config(BLUENRG_CONFIG_LL_ONLY_OFFSET, &data, 1);
+		if (ret != 0) {
+			LOG_ERR("Failed to set BlueNRG LL-only mode (%d)", ret);
+			return ret;
+		}
 	}
 
 	if (!bt_addr_eq(addr, BT_ADDR_NONE) && !bt_addr_eq(addr, BT_ADDR_ANY)) {
