@@ -9,8 +9,8 @@
 #include <ti/am13/am13e23019.dtsi>
 
 / {
-	model = "TI AM13E230X Launchpad";
 	compatible = "ti,am13e23019";
+	model = "TI AM13E230X Launchpad";
 
 	chosen {
 		zephyr,sram = &sram0_1_2;
