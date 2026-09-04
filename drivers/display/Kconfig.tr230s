@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright 2026 A Blue Thing In The Cloud SLU
+# SPDX-License-Identifier: Apache-2.0
+
+config TR230S
+	bool "Shanghai TDO TR230S display controller"
+	default y
+	depends on DT_HAS_TDO_TR230S_ENABLED
+	select MIPI_DBI
+	help
+	  Enable the display driver for the Shanghai Top Display
+	  Optoelectronics TR230S display bridge/controller using Zephyr's
+	  MIPI DBI interface.
