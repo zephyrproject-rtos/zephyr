@@ -41,3 +41,7 @@ if(CONFIG_WIFI_NXP)
 endif()
 
 add_subdirectory(${ZEPHYR_CURRENT_MODULE_DIR}/zephyr/src hal_nxp)
+
+if (CONFIG_MBEDTLS_PSA_CRYPTO_C)
+add_subdirectory(nxp_crypto_hal)
+endif()
