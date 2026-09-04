@@ -14,6 +14,7 @@
 #ifndef ZEPHYR_INCLUDE_SYS_UTIL_H_
 #define ZEPHYR_INCLUDE_SYS_UTIL_H_
 
+#include <zephyr/arch/cpu.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/toolchain.h>
 
@@ -1124,6 +1125,23 @@ static ALWAYS_INLINE uint64_t sys_lcm_s(int32_t a, int32_t b)
 #else
 #define ZTESTABLE_STATIC static
 #endif
+
+/**
+ * @brief Execute a counted NOP delay loop.
+ *
+ * Executes @p count NOP instructions in a tight loop. The loop is
+ * unrolled at compile time when the count is known, producing
+ * cycle-accurate delays suitable for bit-bang timing.
+ *
+ * @param count Number of NOP instructions to execute.
+ */
+#define SYS_DELAY_NOPS(count) \
+	do { \
+		TOOLCHAIN_PRAGMA_UNROLL(count) \
+		for (unsigned int _nop_i = 0; _nop_i < (unsigned int)(count); _nop_i++) { \
+			arch_nop(); \
+		} \
+	} while (0)
 
 /**
  * @}
