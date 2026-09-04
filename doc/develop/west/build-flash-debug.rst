@@ -400,8 +400,10 @@ You can :ref:`configure <west-config-cmd>` ``west build`` using these options.
          - ``board``: The board name
          - ``source_dir``: Path to the CMake source directory, relative to the
            current working directory. If the current working directory is
-           inside the source directory, this is an empty string. If no source
-           directory is specified, it defaults to current working directory.
+           inside the source directory, this is an empty string, as it is on
+           Windows for a source directory on another drive, which has no
+           relative path to the current one. If no source directory is
+           specified, it defaults to current working directory.
            E.g. if ``west build ../app`` is run from ``<west_topdir>/app1``,
            ``source_dir`` resolves to ``../app`` (which is the relative path
            to the current working dir).
