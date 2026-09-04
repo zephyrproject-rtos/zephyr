@@ -1,0 +1,63 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  MBOX test consumer.
+
+  Declares the mailbox channels a platform provides for exercising the
+  MBOX API. Unlike the test-only "vnd,mbox-consumer" compatible, this
+  node may be placed in a board or SoC devicetree, so MBOX tests can run
+  on the platform without a per-board test overlay.
+
+  Channels are listed in transmit/receive pairs named "txN"/"rxN",
+  starting at pair 0:
+
+    mbox-consumer {
+            compatible = "zephyr,mbox-consumer";
+            mboxes = <&mbox 0>, <&mbox 1>, <&mbox 2>, <&mbox 3>;
+            mbox-names = "tx0", "rx0", "tx1", "rx1";
+    };
+
+  Data sent on a "txN" channel must reach the core running the test
+  peer, which answers on the matching "rxN" channel. On platforms where
+  both ends of every pair are instead serviced by the core under test
+  itself (no remote core relaying messages), set the "loopback" property
+  so tests know sent data comes back unmodified.
+
+compatible: "zephyr,mbox-consumer"
+
+include: base.yaml
+
+properties:
+  mboxes:
+    required: true
+
+  mbox-names:
+    required: true
+
+  loopback:
+    type: boolean
+    description: |
+      Messages sent on a "txN" channel are received on the matching
+      "rxN" channel by the sending core itself; no remote core is
+      involved.
+
+  bidirectional-channels:
+    type: boolean
+    description: |
+      The declared channels can each be used for both sending and
+      receiving, so operations that are undefined on unidirectional
+      channels (sending on an RX channel, registering a callback on a
+      TX channel) do not fail with -ENOSYS.
+
+  mtu:
+    type: int
+    description: |
+      Maximum transfer unit in bytes that mbox_mtu_get() reports for
+      the TX channels. Omit for signalling-only mailboxes (MTU 0).
+
+  remote-busy-detection:
+    type: boolean
+    description: |
+      The sender can detect that the remote has not yet read the last
+      data sent, making mbox_send() fail with -EBUSY meanwhile.

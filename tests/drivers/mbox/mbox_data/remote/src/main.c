@@ -18,14 +18,41 @@ static uint32_t g_mbox_received_channel;
 #define TX_CHANNEL_INDEX 0
 #define RX_CHANNEL_INDEX 1
 
-#define CHANNEL_ENTRY(_i, ...)                                                                     \
+#if DT_HAS_COMPAT_STATUS_OKAY(zephyr_mbox_consumer)
+#define MBOX_CONSUMER_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(zephyr_mbox_consumer)
+#elif DT_HAS_COMPAT_STATUS_OKAY(vnd_mbox_consumer)
+#define MBOX_CONSUMER_NODE DT_COMPAT_GET_ANY_STATUS_OKAY(vnd_mbox_consumer)
+#else
+#error "No zephyr,mbox-consumer or vnd,mbox-consumer node in the devicetree"
+#endif
+
+BUILD_ASSERT(DT_PROP_LEN(MBOX_CONSUMER_NODE, mboxes) % 2 == 0,
+	     "mboxes must contain tx/rx channel pairs");
+
+#define CHANNELS_TO_TEST (DT_PROP_LEN(MBOX_CONSUMER_NODE, mboxes) / 2)
+
+#if CHANNELS_TO_TEST > 4
+#error "The test suite covers at most 4 tx/rx channel pairs"
+#endif
+
+#define CHANNEL_ENTRY(_i)                                                                          \
 	{                                                                                          \
-		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), CONCAT(tx, _i)),                          \
-		MBOX_DT_SPEC_GET(DT_PATH(mbox_consumer), CONCAT(rx, _i)),                          \
+		MBOX_DT_SPEC_GET(MBOX_CONSUMER_NODE, CONCAT(tx, _i)),                              \
+		MBOX_DT_SPEC_GET(MBOX_CONSUMER_NODE, CONCAT(rx, _i)),                              \
 	}
 
-static const struct mbox_dt_spec channels[CONFIG_CHANNELS_TO_TEST][2] = {
-	LISTIFY(CONFIG_CHANNELS_TO_TEST, CHANNEL_ENTRY, (,)) };
+static const struct mbox_dt_spec channels[CHANNELS_TO_TEST][2] = {
+	CHANNEL_ENTRY(0),
+#if CHANNELS_TO_TEST >= 2
+	CHANNEL_ENTRY(1),
+#endif
+#if CHANNELS_TO_TEST >= 3
+	CHANNEL_ENTRY(2),
+#endif
+#if CHANNELS_TO_TEST >= 4
+	CHANNEL_ENTRY(3),
+#endif
+};
 
 static void callback(const struct device *dev, uint32_t channel, void *user_data,
 		     struct mbox_msg *data)
