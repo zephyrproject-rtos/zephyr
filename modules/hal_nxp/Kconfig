@@ -11,3 +11,4 @@ config ZEPHYR_HAL_NXP_MODULE
 rsource "imx/Kconfig.imx"
 rsource "s32/Kconfig.nxp_s32"
 rsource "mcux/Kconfig.mcux"
+rsource "nxp_crypto_hal/Kconfig"

@@ -1,0 +1,10 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+rsource "Kconfig.els_pkc"
+rsource "Kconfig.psa_crypto_driver"
+rsource "Kconfig.sgi_pkc"
+
+config TF_PSA_CRYPTO_DISPATCH_DIR
+	default "$(ZEPHYR_HAL_NXP_MODULE_DIR)/nxp_crypto_hal/mbedtls/dispatch" \
+		if MCUX_PSA_CRYPTO_DRIVER_ELS_PKC || PSA_CRYPTO_DRIVER_SGI_PKC

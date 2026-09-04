@@ -50,4 +50,16 @@ configdefault ICACHE_LINE_SIZE
 
 endif # HAS_MCUX_SYSCON_LPCAC
 
+if HAS_MCUX_SGI_PKC && MBEDTLS_PSA_CRYPTO_C
+
+# The SGI PKC builds its CPU and PKC "workareas" in the stack frame of the calling thread.
+# These are defaults only, so an application remains free to lower or raise them.
+configdefault MAIN_STACK_SIZE
+	default 4096
+
+configdefault SYSTEM_WORKQUEUE_STACK_SIZE
+	default 2048
+
+endif # HAS_MCUX_SGI_PKC && MBEDTLS_PSA_CRYPTO_C
+
 endif # SOC_FAMILY_MCXA
