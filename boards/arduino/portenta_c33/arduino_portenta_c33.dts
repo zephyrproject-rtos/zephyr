@@ -70,6 +70,16 @@
 	};
 };
 
+&sci4 {
+	pinctrl-0 = <&sci4_spi_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	sci4_spi: spi {
+		status = "okay";
+	};
+};
+
 &sci8 {
 	pinctrl-0 = <&sci8_default>;
 	pinctrl-names = "default";
