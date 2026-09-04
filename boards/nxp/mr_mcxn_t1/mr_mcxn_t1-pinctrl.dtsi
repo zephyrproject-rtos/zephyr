@@ -1,0 +1,258 @@
+/*
+ * SPDX-FileCopyrightText: 2024-2025 NXP
+ * SPDX-FileCopyrightText: 2026 CogniPilot Foundation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include <nxp/mcx/MCXN947VDF-pinctrl.h>
+
+&pinctrl {
+	pinmux_flexcomm1_lpuart: pinmux_flexcomm1_lpuart {
+		group0 {
+			pinmux = <FC1_P0_PIO0_24>,
+				 <FC1_P1_PIO0_25>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+	};
+
+	/* Stacking header: optical flow AFBR-S50 SPI */
+	pinmux_flexcomm3_lpspi: pinmux_flexcomm3_lpspi {
+		group0 {
+			pinmux = <FC3_P0_PIO1_0>,
+				 <FC3_P1_PIO1_1>,
+				 <FC3_P2_PIO1_2>,
+				 <FC3_P3_PIO1_3>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+	};
+
+	/* Stacking header: optical flow AFBR-S50 bit-bang init state */
+	pinmux_flexcomm3_lpspi_gpio: pinmux_flexcomm3_lpspi_gpio {
+		group0 {
+			pinmux = <PIO1_0>,
+				 <PIO1_1>,
+				 <PIO1_2>,
+				 <PIO1_3>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+	};
+
+	/* Stacking header: GNSS corrections UART (FC3) */
+	pinmux_flexcomm3_lpuart: pinmux_flexcomm3_lpuart {
+		group0 {
+			pinmux = <FC3_P0_PIO1_0>,
+				 <FC3_P1_PIO1_1>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+	};
+
+	/* Stacking header: flex IO expansion I2C (FC3) */
+	pinmux_flexcomm3_lpi2c: pinmux_flexcomm3_lpi2c {
+		group0 {
+			pinmux = <FC3_P0_PIO1_0>,
+				 <FC3_P1_PIO1_1>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+			bias-pull-up;
+			drive-open-drain;
+		};
+	};
+
+	/* Stacking header: GNSS RM3100 magnetometer I2C (FC4) */
+	pinmux_flexcomm4_lpi2c: pinmux_flexcomm4_lpi2c {
+		group0 {
+			pinmux = <FC4_P0_PIO1_8>,
+				 <FC4_P1_PIO1_9>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+			drive-open-drain;
+		};
+	};
+
+	/* Stacking header: optical flow ICM-42688 SPI (FC6) */
+	pinmux_flexcomm6_lpspi: pinmux_flexcomm6_lpspi {
+		group0 {
+			pinmux = <FC6_P0_PIO3_1>,
+				 <FC6_P1_PIO3_6>,
+				 <FC6_P2_PIO3_10>,
+				 <FC6_P3_PIO3_11>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+	};
+
+	/* Stacking header: optical flow ICM-45686 SPI (FC7) */
+	pinmux_flexcomm7_lpspi: pinmux_flexcomm7_lpspi {
+		group0 {
+			pinmux = <FC7_P0_PIO3_2>,
+				 <FC7_P1_PIO3_3>,
+				 <FC7_P2_PIO3_4>,
+				 <FC7_P3_PIO3_5>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+	};
+
+	/* Stacking header: GNSS primary UART (FC7) */
+	pinmux_flexcomm7_lpuart: pinmux_flexcomm7_lpuart {
+		group0 {
+			pinmux = <FC7_P0_PIO3_2>,
+				 <FC7_P1_PIO3_3>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+	};
+
+	/* On-board hub IMU SPI (FC8) */
+	pinmux_flexcomm8_lpspi: pinmux_flexcomm8_lpspi {
+		group0 {
+			pinmux = <FC8_P0_PIO3_14>,
+				 <FC8_P1_PIO3_15>,
+				 <FC8_P2_PIO3_16>,
+				 <FC8_P3_PIO3_17>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+	};
+
+	/* Stacking header: optical flow PAA3905 SPI (FC9) */
+	pinmux_flexcomm9_lpspi: pinmux_flexcomm9_lpspi {
+		group0 {
+			pinmux = <FC9_P0_PIO2_4>,
+				 <FC9_P1_PIO2_3>,
+				 <FC9_P2_PIO2_5>,
+				 <FC9_P3_PIO2_2>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+	};
+
+	/* Stacking header: flex IO UART0 with flow control (FC0) */
+	pinmux_flexcomm0_lpuart: pinmux_flexcomm0_lpuart {
+		group0 {
+			pinmux = <FC0_P0_PIO0_16>,
+				 <FC0_P1_PIO0_17>,
+				 <FC0_P2_PIO0_18>,
+				 <FC0_P3_PIO0_7>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+	};
+
+	/* Stacking header: flex IO UART2 with flow control (FC2) */
+	pinmux_flexcomm2_lpuart: pinmux_flexcomm2_lpuart {
+		group0 {
+			pinmux = <FC2_P0_PIO4_0>,
+				 <FC2_P1_PIO4_1>,
+				 <FC2_P2_PIO4_2>,
+				 <FC2_P3_PIO4_3>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+	};
+
+	/* Stacking header: flex IO FlexPWM0 channels */
+	pinmux_flexpwm0_pwm0: pinmux_flexpwm0_pwm0 {
+		group0 {
+			pinmux = <PWM0_A0_PIO3_0>,
+				 <PWM0_B1_PIO3_7>,
+				 <PWM0_B2_PIO3_9>,
+				 <PWM0_B3_PIO3_11>;
+			slew-rate = "fast";
+			drive-strength = "low";
+		};
+	};
+
+	/* Stacking header: flex IO FlexPWM1 channels */
+	pinmux_flexpwm1_pwm0: pinmux_flexpwm1_pwm0 {
+		group0 {
+			pinmux = <PWM1_A2_PIO2_2>,
+				 <PWM1_B0_PIO2_7>,
+				 <PWM1_B1_PIO2_5>,
+				 <PWM1_B3_PIO2_1>;
+			slew-rate = "fast";
+			drive-strength = "low";
+		};
+	};
+
+	pinmux_flexio_spi0: pinmux_flexio_spi0 {
+		group0 {
+			pinmux = <FLEXIO0_D0_PIO0_8>,
+				 <FLEXIO0_D1_PIO0_9>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+	};
+
+	pinmux_enet_qos: pinmux_enet_qos {
+		mdio_group {
+			pinmux = <ENET0_MDC_PIO1_20>,
+				 <ENET0_MDIO_PIO1_21>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+			bias-pull-up;
+		};
+
+		mac_group {
+			pinmux = <ENET0_RXDV_PIO1_13>,
+				 <ENET0_RXD0_PIO1_14>,
+				 <ENET0_RXD1_PIO1_15>,
+				 <ENET0_TX_CLK_PIO1_4>,
+				 <ENET0_TXEN_PIO1_5>,
+				 <ENET0_TXD0_PIO1_6>,
+				 <ENET0_TXD1_PIO1_7>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+	};
+
+	pinmux_flexcan0: pinmux_flexcan0 {
+		group0 {
+			pinmux = <CAN0_TXD_PIO4_13>,
+				 <CAN0_RXD_PIO4_12>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+	};
+
+	pinmux_flexcan1: pinmux_flexcan1 {
+		group0 {
+			pinmux = <CAN1_TXD_PIO4_16>,
+				 <CAN1_RXD_PIO4_15>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+		};
+	};
+
+	pinmux_i3c0: pinmux_i3c0 {
+		group0 {
+			pinmux = <I3C0_SDA_PIO0_20>,
+				 <I3C0_SCL_PIO0_21>;
+			slew-rate = "fast";
+			drive-strength = "low";
+			input-enable;
+			bias-pull-up;
+		};
+	};
+};
