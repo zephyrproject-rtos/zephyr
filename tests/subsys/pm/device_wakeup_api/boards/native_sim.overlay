@@ -10,7 +10,29 @@
 				compatible = "zephyr,power-state";
 				power-state-name = "suspend-to-ram";
 			};
+
+			/*
+			 * Not in cpu-power-states: only ever named by
+			 * zephyr,wakeup-power-states below.
+			 */
+			state1: state1 {
+				compatible = "zephyr,power-state";
+				power-state-name = "standby";
+			};
 		};
+	};
+
+	gpio1: gpio_emul1 {
+		compatible = "zephyr,gpio-emul";
+		gpio-controller;
+		#gpio-cells = <2>;
+		rising-edge;
+		falling-edge;
+		high-level;
+		low-level;
+		wakeup-source;
+		zephyr,wakeup-power-states = <&state1>;
+		status = "okay";
 	};
 };
 

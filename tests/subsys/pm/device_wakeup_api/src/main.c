@@ -11,6 +11,9 @@
 
 static const struct device *const dev =
 	DEVICE_DT_GET(DT_NODELABEL(gpio0));
+/* Same, but wake capable only from state1, which the CPU never enters. */
+static const struct device *const dev_narrow =
+	DEVICE_DT_GET(DT_NODELABEL(gpio1));
 static uint8_t sleep_count;
 
 
@@ -91,6 +94,32 @@ ZTEST(wakeup_device_1cpu, test_wakeup_device_api)
 
 	ret = pm_device_wakeup_is_enabled(dev);
 	zassert_false(ret, "Wakeup source is enabled");
+}
+
+ZTEST(wakeup_device_1cpu, test_wakeup_device_api_per_state)
+{
+	zassert_true(device_is_ready(dev_narrow), "Device not ready");
+
+	/* No zephyr,wakeup-power-states: capable from every state, which is
+	 * what pm_device_wakeup_is_capable() has always reported.
+	 */
+	zassert_true(pm_device_wakeup_is_capable(dev), "Device not marked as capable");
+	zassert_true(pm_device_wakeup_is_capable_for_state(dev, PM_STATE_SUSPEND_TO_RAM, 0),
+		     "Device without the property must be capable from every state");
+	zassert_true(pm_device_wakeup_is_capable_for_state(dev, PM_STATE_STANDBY, 0),
+		     "Device without the property must be capable from every state");
+
+	/* zephyr,wakeup-power-states = <&state1>, i.e. standby only. */
+	zassert_true(pm_device_wakeup_is_capable(dev_narrow), "Device not marked as capable");
+	zassert_true(pm_device_wakeup_is_capable_for_state(dev_narrow, PM_STATE_STANDBY, 0),
+		     "Device must be capable from a listed state");
+	zassert_false(pm_device_wakeup_is_capable_for_state(dev_narrow,
+							    PM_STATE_SUSPEND_TO_RAM, 0),
+		      "Device must not be capable from an unlisted state");
+
+	/* A device that is not wake capable at all is capable from no state. */
+	(void)pm_device_wakeup_enable(dev_narrow, false);
+	zassert_false(pm_device_wakeup_is_enabled(dev_narrow), "Wakeup source is enabled");
 }
 
 ZTEST(wakeup_device_1cpu, test_wakeup_device_system_pm)

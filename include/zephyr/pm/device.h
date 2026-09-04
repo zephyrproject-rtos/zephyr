@@ -15,6 +15,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/kernel.h>
+#include <zephyr/pm/state.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/iterable_sections.h>
 
@@ -647,6 +648,25 @@ bool pm_device_wakeup_is_enabled(const struct device *dev);
 bool pm_device_wakeup_is_capable(const struct device *dev);
 
 /**
+ * @brief Check if a device is wake up capable from a given power state
+ *
+ * Answers whether @p dev, when enabled as a wake up source, can wake the
+ * system from @p state / @p substate_id. A device that does not describe
+ * `zephyr,wakeup-power-states` in devicetree is capable from every state, so
+ * for it this returns the same answer as pm_device_wakeup_is_capable().
+ *
+ * @param dev Device instance.
+ * @param state Power state.
+ * @param substate_id Power substate id.
+ *
+ * @retval true Device can wake the system up from this state.
+ * @retval false Device cannot wake the system up from this state.
+ */
+bool pm_device_wakeup_is_capable_for_state(const struct device *dev,
+					   enum pm_state state,
+					   uint8_t substate_id);
+
+/**
  * @brief Check if the device is on a switchable power domain.
  *
  * @param dev Device instance.
@@ -788,6 +808,16 @@ static inline bool pm_device_wakeup_is_enabled(const struct device *dev)
 static inline bool pm_device_wakeup_is_capable(const struct device *dev)
 {
 	ARG_UNUSED(dev);
+	return false;
+}
+
+static inline bool pm_device_wakeup_is_capable_for_state(const struct device *dev,
+							 enum pm_state state,
+							 uint8_t substate_id)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(state);
+	ARG_UNUSED(substate_id);
 	return false;
 }
 static inline bool pm_device_on_power_domain(const struct device *dev)

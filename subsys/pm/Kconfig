@@ -250,6 +250,20 @@ config PM_DEVICE_SYSTEM_MANAGED
 	  the core wakes up from low power mode all suspended devices
 	  are resumed.
 
+config PM_DEVICE_WAKEUP_POWER_STATES
+	bool "Per-power-state wake up capability"
+	depends on PM && PM_DEVICE_SYSTEM_MANAGED
+	help
+	  Honour the zephyr,wakeup-power-states devicetree property, which
+	  names the power states a device can wake the system from.
+
+	  A device enabled as a wake up source is normally kept active for
+	  every power state. With this option, a device that lists states is
+	  only kept active for those, and is suspended like any other device
+	  for the rest. Devices without the property are unaffected.
+
+	  Off by default because it costs a state list in every device's PM
+	  data, and only boards that describe the property need it.
 
 endif # PM_DEVICE
 
