@@ -22,6 +22,8 @@
  * @{
  */
 
+#include <stdbool.h>
+
 #include <zephyr/kernel.h>
 #include <zephyr/net/net_ip.h>
 #include <zephyr/net/http/parser.h>
@@ -90,6 +92,10 @@ typedef int (*http_header_cb_t)(int sock,
  * @typedef http_response_cb_t
  * @brief Callback used when data is received from the server.
  *
+ * The callback may run several times for one received buffer, for example
+ * once per chunk of a chunked body. Each call carries one contiguous
+ * fragment in @c body_frag_start and @c body_frag_len.
+ *
  * @param rsp HTTP response information
  * @param final_data Does this data buffer contain all the data or
  *        is there still more data to come.
@@ -141,7 +147,11 @@ struct http_response {
 	 *          body_frag_start
 	 *
 	 * body_frag_start >= recv_buf
-	 * body_frag_len = data_len - (body_frag_start - recv_buf)
+	 *
+	 * The relation body_frag_len = data_len - (body_frag_start - recv_buf)
+	 * only holds for the last fragment reported from a receive buffer. A
+	 * chunked body may report several fragments from one buffer, each one
+	 * covering the payload of a single chunk.
 	 */
 	/** Start address of the body fragment contained in the recv_buf */
 	uint8_t *body_frag_start;
@@ -231,6 +241,9 @@ struct http_client_internal_data {
 
 	/** HTTP socket */
 	int sock;
+
+	/** Set when the response callback aborted the transfer */
+	bool aborted;
 };
 
 /**
