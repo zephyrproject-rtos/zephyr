@@ -265,6 +265,37 @@ static int usbd_class_remove(struct usbd_context *const uds_ctx,
 	return 0;
 }
 
+/*
+ * Check whether the given class data is still referenced by any registered
+ * class node. The same c_data can be shared by the FS and HS nodes, so
+ * shutdown and uds_ctx cleanup must only happen once the last registered
+ * reference is removed.
+ */
+static bool usbd_class_data_registered(struct usbd_class_data *const c_data)
+{
+	/* TODO: The use of atomic here does not make this code thread safe.
+	 * The atomic should be changed to something else.
+	 */
+	if (USBD_SUPPORTS_HIGH_SPEED) {
+		STRUCT_SECTION_FOREACH_ALTERNATE(usbd_class_hs,
+						 usbd_class_node, i) {
+			if ((i->c_data == c_data) &&
+			    atomic_test_bit(&i->state, USBD_CCTX_REGISTERED)) {
+				return true;
+			}
+		}
+	}
+
+	STRUCT_SECTION_FOREACH_ALTERNATE(usbd_class_fs, usbd_class_node, i) {
+		if ((i->c_data == c_data) &&
+		    atomic_test_bit(&i->state, USBD_CCTX_REGISTERED)) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
 int usbd_class_remove_all(struct usbd_context *const uds_ctx,
 			  const enum usbd_speed speed,
 			  const uint8_t cfg)
@@ -281,8 +312,19 @@ int usbd_class_remove_all(struct usbd_context *const uds_ctx,
 	while ((node = sys_slist_get(&cfg_nd->class_list))) {
 		c_nd = CONTAINER_OF(node, struct usbd_class_node, node);
 		atomic_clear_bit(&c_nd->state, USBD_CCTX_REGISTERED);
-		usbd_class_shutdown(c_nd->c_data);
-		c_nd->c_data->uds_ctx = NULL;
+		atomic_clear_bit(&c_nd->state, USBD_CCTX_INITIALIZED);
+
+		/*
+		 * The same c_data may be shared by the FS and HS nodes. Only
+		 * shut it down and clear its context when the last registered
+		 * reference is gone, otherwise shutdown would be called more
+		 * than once.
+		 */
+		if (!usbd_class_data_registered(c_nd->c_data)) {
+			usbd_class_shutdown(c_nd->c_data);
+			c_nd->c_data->uds_ctx = NULL;
+		}
+
 		LOG_DBG("Remove class node %p from configuration %u", c_nd, cfg);
 	}
 
@@ -404,7 +446,6 @@ int usbd_unregister_class(struct usbd_context *const uds_ctx,
 {
 	struct usbd_class_node *c_nd;
 	struct usbd_class_data *c_data;
-	bool can_release_data = true;
 	int ret;
 
 	c_nd = usbd_class_node_get(name, speed);
@@ -428,35 +469,19 @@ int usbd_unregister_class(struct usbd_context *const uds_ctx,
 		goto unregister_class_error;
 	}
 
-	/* TODO: The use of atomic here does not make this code thread safe.
-	 * The atomic should be changed to something else.
-	 */
-	if (USBD_SUPPORTS_HIGH_SPEED && speed == USBD_SPEED_HS) {
-		STRUCT_SECTION_FOREACH_ALTERNATE(usbd_class_hs,
-						 usbd_class_node, i) {
-			if ((i->c_data == c_nd->c_data) &&
-			    atomic_test_bit(&i->state, USBD_CCTX_REGISTERED)) {
-				can_release_data = false;
-				break;
-			}
-		}
-	} else {
-		STRUCT_SECTION_FOREACH_ALTERNATE(usbd_class_fs,
-						 usbd_class_node, i) {
-			if ((i->c_data == c_nd->c_data) &&
-			    atomic_test_bit(&i->state, USBD_CCTX_REGISTERED)) {
-				can_release_data = false;
-				break;
-			}
-		}
-	}
-
 	ret = usbd_class_remove(uds_ctx, c_nd, speed, cfg);
 	if (ret == 0) {
 		atomic_clear_bit(&c_nd->state, USBD_CCTX_REGISTERED);
-		usbd_class_shutdown(c_nd->c_data);
+		atomic_clear_bit(&c_nd->state, USBD_CCTX_INITIALIZED);
 
-		if (can_release_data) {
+		/*
+		 * The same c_data may be shared by the FS and HS nodes. Only
+		 * shut it down and release its context when no other registered
+		 * node references it, otherwise shutdown would be called more
+		 * than once.
+		 */
+		if (!usbd_class_data_registered(c_data)) {
+			usbd_class_shutdown(c_data);
 			c_data->uds_ctx = NULL;
 		}
 	}

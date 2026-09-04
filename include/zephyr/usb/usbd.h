@@ -337,6 +337,9 @@ struct usbd_cctx_vendor_req {
 /** USB Class instance registered flag */
 #define USBD_CCTX_REGISTERED		0
 
+/** USB Class instance initialized flag */
+#define USBD_CCTX_INITIALIZED		1
+
 struct usbd_class_data;
 
 /**
