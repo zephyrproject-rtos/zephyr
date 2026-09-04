@@ -19,10 +19,16 @@ config CPU_CORTEX_A
 	# callee_saved.sp_elx, so THREAD_STACK_TOP cannot rely on the saved SP.
 	# Dump the full stack allocation instead (matches RISC-V and Xtensa).
 	select ARCH_SUPPORTS_COREDUMP_STACK_PTR if !SMP
+	select ARCH_HAS_GDBSTUB
 	imply FPU
 	imply FPU_SHARING
 	help
 	  This option signifies the use of a CPU of the Cortex-A family.
+
+config GDBSTUB_BUF_SZ
+	# GDB aarch64 g-packet: x0-x30/sp/pc/cpsr + v0-v31/fpsr/fpcr
+	# (788 bytes binary -> 1576 hex chars). Leave headroom for framing.
+	default 2048 if GDBSTUB
 
 config CPU_AARCH64_CORTEX_R
 	bool
