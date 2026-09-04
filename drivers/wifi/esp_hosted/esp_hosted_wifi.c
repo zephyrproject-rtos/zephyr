@@ -201,12 +201,27 @@ static void esp_hosted_event_task(const struct device *dev, void *p2, void *p3)
 		}
 		case ESP_HOSTED_PRIV_IF: {
 			esp_hosted_event_t *ev = (esp_hosted_event_t *)frame->payload;
+			uint8_t vals[ESP_PRIV_FW_DATA] = {0};
 
-			if (frame->priv_pkt_type == ESP_PACKET_TYPE_EVENT &&
-			    ev->event_type == ESP_PRIV_EVENT_INIT && ev->event_len > 8) {
-				LOG_INF("chip id %d spi_mhz %d caps 0x%x", ev->event_data[2],
-					ev->event_data[5], ev->event_data[8]);
+			if (frame->priv_pkt_type != ESP_PACKET_TYPE_EVENT ||
+			    ev->event_type != ESP_PRIV_EVENT_INIT ||
+			    frame->len < sizeof(*ev) + ev->event_len) {
+				continue;
 			}
+
+			/* A list of {tag, length, value} triplets. Which tags are
+			 * present varies between firmware versions.
+			 */
+			for (size_t i = 0; i + 3 <= ev->event_len; i += 2 + ev->event_data[i + 1]) {
+				uint8_t tag = ev->event_data[i];
+
+				if (tag < ARRAY_SIZE(vals) && ev->event_data[i + 1] == 1) {
+					vals[tag] = ev->event_data[i + 2];
+				}
+			}
+
+			LOG_INF("chip id %d spi_mhz %d caps 0x%x", vals[ESP_PRIV_FIRMWARE_CHIP_ID],
+				vals[ESP_PRIV_SPI_CLK_MHZ], vals[ESP_PRIV_CAPABILITY]);
 			continue;
 		}
 		case ESP_HOSTED_SERIAL_IF: /* Requires further processing */
@@ -653,6 +668,16 @@ static int esp_hosted_dev_init(const struct device *dev)
 		 data->fw_version.major1, data->fw_version.major2, data->fw_version.minor,
 		 data->fw_version.rev_patch1, data->fw_version.rev_patch2);
 	LOG_INF("firmware version: v%s", data->fw_version.str);
+
+	/*
+	 * Both firmwares boot in WIFI_MODE_NULL, leaving the mode to the host.
+	 * The driver registers a STA and a SoftAP interface, so ask for APSTA.
+	 */
+	ctrl_msg = (CtrlMsg)CtrlMsg_init_zero;
+	ctrl_msg.req_set_wifi_mode.mode = Ctrl_WifiMode_APSTA;
+	if (esp_hosted_ctrl(dev, CtrlMsgId_Req_SetWifiMode, &ctrl_msg, ESP_HOSTED_SYNC_TIMEOUT)) {
+		LOG_WRN("failed to set wifi mode");
+	}
 
 	/* Set MAC addresses. */
 	for (size_t i = 0; i < 2; i++) {
