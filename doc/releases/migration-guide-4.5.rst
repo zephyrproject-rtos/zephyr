@@ -1577,6 +1577,11 @@ Bluetooth Services
 Networking
 **********
 
+* The HTTP client response callback (:c:type:`http_response_cb_t`) may now be
+  invoked more than once for a single received buffer, once per body fragment,
+  for example once per chunk of a chunked response. Applications that assumed a
+  single callback per receive must append every fragment they are handed.
+
 * The ``struct dns_server`` type nested in :c:struct:`dns_resolve_context` has been
   renamed to ``struct dns_server_info``. A C++ class member cannot share the name of
   its enclosing class, so the old tag made ``<zephyr/net/dns_resolve.h>`` impossible to

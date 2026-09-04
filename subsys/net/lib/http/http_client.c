@@ -290,11 +290,30 @@ static int on_header_value(struct http_parser *parser, const char *at,
 	return 0;
 }
 
+static int http_report_progress(struct http_request *req);
+
 static int on_body(struct http_parser *parser, const char *at, size_t length)
 {
 	struct http_request *req = CONTAINER_OF(parser,
 						struct http_request,
 						internal.parser);
+
+	/* A chunked body yields one fragment per chunk, separated by the chunk
+	 * framing, so a single receive buffer can hold several of them. Hand
+	 * a pending fragment to the application before starting a new one,
+	 * otherwise only the last one would be reported.
+	 */
+	if (req->internal.response.body_frag_start != NULL &&
+	    req->internal.response.body_frag_start +
+	    req->internal.response.body_frag_len != (const uint8_t *)at) {
+		if (http_report_progress(req) < 0) {
+			req->internal.aborted = true;
+			return -1;
+		}
+
+		req->internal.response.body_frag_start = NULL;
+		req->internal.response.body_frag_len = 0;
+	}
 
 	req->internal.response.body_found = 1;
 	req->internal.response.processed += length;
@@ -307,13 +326,12 @@ static int on_body(struct http_parser *parser, const char *at, size_t length)
 		req->internal.response.http_cb->on_body(parser, at, length);
 	}
 
-	/* Reset the body_frag_start pointer for each fragment. */
-	if (!req->internal.response.body_frag_start) {
+	if (req->internal.response.body_frag_start == NULL) {
 		req->internal.response.body_frag_start = (uint8_t *)at;
+		req->internal.response.body_frag_len = length;
+	} else {
+		req->internal.response.body_frag_len += length;
 	}
-
-	/* Use the parser-decoded length. */
-	req->internal.response.body_frag_len = length;
 
 	return 0;
 }
@@ -545,6 +563,11 @@ static int http_wait_data(int sock, struct http_request *req, const k_timepoint_
 				goto error;
 			}
 
+			if (req->internal.aborted) {
+				LOG_DBG("Connection aborted by the application");
+				return -ECONNABORTED;
+			}
+
 			if (req->internal.parser.http_errno != HPE_OK) {
 				LOG_ERR("HTTP parsing error, %d",
 					req->internal.parser.http_errno);
@@ -652,6 +675,7 @@ int http_client_req(int sock, struct http_request *req,
 	req->internal.response.recv_buf_len = req->recv_buf_len;
 	req->internal.user_data = user_data;
 	req->internal.sock = sock;
+	req->internal.aborted = false;
 
 	method = http_method_str(req->method);
 
