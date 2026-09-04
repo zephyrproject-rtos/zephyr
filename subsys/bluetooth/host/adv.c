@@ -1,10 +1,11 @@
 /*
- * Copyright (c) 2017-2021 Nordic Semiconductor ASA
+ * Copyright (c) 2017-2026 Nordic Semiconductor ASA
  * Copyright (c) 2015-2016 Intel Corporation
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <errno.h>
+#include <stdbool.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <string.h>
@@ -195,11 +196,12 @@ uint8_t bt_le_ext_adv_get_index(const struct bt_le_ext_adv *adv)
 static struct bt_le_ext_adv *adv_new(void)
 {
 	struct bt_le_ext_adv *adv = NULL;
-	int i;
 
-	for (i = 0; i < ARRAY_SIZE(adv_pool); i++) {
-		if (!atomic_test_bit(adv_pool[i].flags, BT_ADV_CREATED)) {
+	for (size_t i = 0; i < ARRAY_SIZE(adv_pool); i++) {
+		if (!atomic_test_and_set_bit(adv_pool[i].flags, BT_ADV_RESERVED)) {
 			adv = &adv_pool[i];
+			(void)memset(adv, 0, offsetof(struct bt_le_ext_adv, flags));
+			adv->handle = i;
 			break;
 		}
 	}
@@ -207,10 +209,6 @@ static struct bt_le_ext_adv *adv_new(void)
 	if (!adv) {
 		return NULL;
 	}
-
-	(void)memset(adv, 0, sizeof(*adv));
-	atomic_set_bit(adv_pool[i].flags, BT_ADV_CREATED);
-	adv->handle = i;
 
 #if defined(CONFIG_BT_PER_ADV_RSP_REASSEMBLY)
 	net_buf_simple_init_with_data(&adv->pawr_rsp_reassembly.buf,
@@ -225,7 +223,7 @@ static struct bt_le_ext_adv *adv_new(void)
 
 static void adv_delete(struct bt_le_ext_adv *adv)
 {
-	atomic_clear_bit(adv->flags, BT_ADV_CREATED);
+	atomic_clear(adv->flags);
 }
 
 #if defined(CONFIG_BT_BROADCASTER)
@@ -241,29 +239,67 @@ struct bt_le_ext_adv *bt_hci_adv_lookup_handle(uint8_t handle)
 #endif /* CONFIG_BT_BROADCASTER */
 #endif /* defined(CONFIG_BT_EXT_ADV) */
 
-void bt_le_ext_adv_foreach(void (*func)(struct bt_le_ext_adv *adv, void *data),
+void bt_adv_foreach(bool (*func)(struct bt_le_ext_adv *adv, void *data),
 			   void *data)
 {
 #if defined(CONFIG_BT_EXT_ADV)
 	for (size_t i = 0; i < ARRAY_SIZE(adv_pool); i++) {
 		if (atomic_test_bit(adv_pool[i].flags, BT_ADV_CREATED)) {
-			func(&adv_pool[i], data);
+			if (!func(&adv_pool[i], data)) {
+				return;
+			}
 		}
 	}
 #else
-	func(&bt_dev.adv, data);
+	if (atomic_test_bit(bt_dev.adv.flags, BT_ADV_CREATED)) {
+		(void)func(&bt_dev.adv, data);
+	}
 #endif /* defined(CONFIG_BT_EXT_ADV) */
 }
 
-static void clear_ext_adv_instance(struct bt_le_ext_adv *adv, void *data)
+struct le_ext_adv_foreach_cb_data {
+	bt_le_ext_adv_foreach_cb func;
+	void *data;
+	bool stopped;
+};
+
+static bool le_ext_adv_foreach_cb(struct bt_le_ext_adv *adv, void *data)
+{
+	struct le_ext_adv_foreach_cb_data *cb_data = data;
+
+	cb_data->stopped = !cb_data->func(adv, cb_data->data);
+
+	return !cb_data->stopped;
+}
+
+int bt_le_ext_adv_foreach(bt_le_ext_adv_foreach_cb func, void *data)
+{
+	if (func == NULL) {
+		return -EINVAL;
+	}
+
+	struct le_ext_adv_foreach_cb_data cb_data = {
+		.func = func,
+		.data = data,
+		.stopped = false,
+	};
+
+	bt_adv_foreach(le_ext_adv_foreach_cb, &cb_data);
+
+	return cb_data.stopped ? -ECANCELED : 0;
+}
+
+static bool clear_ext_adv_instance(struct bt_le_ext_adv *adv, void *data)
 {
 	bt_le_lim_adv_cancel_timeout(adv);
 	memset(adv, 0, sizeof(*adv));
+
+	return true;
 }
 
 void bt_adv_reset_adv_pool(void)
 {
-	bt_le_ext_adv_foreach(clear_ext_adv_instance, NULL);
+	bt_adv_foreach(clear_ext_adv_instance, NULL);
 	(void)memset(&bt_dev.adv, 0, sizeof(bt_dev.adv));
 }
 
@@ -278,6 +314,16 @@ static int adv_create_legacy(void)
 	if (bt_dev.adv == NULL) {
 		return -ENOMEM;
 	}
+
+	if (!BT_DEV_FEAT_LE_EXT_ADV(bt_dev.le.features)) {
+		/* If the controller does not support extended advertising but the host does, then
+		 * we use the legacy advertising events that do not have a separate create step
+		 * before starting when we call `adv_start_legacy`.
+		 * To treat the legacy (and only) advertising the same way as we treat it when
+		 * `CONFIG_BT_EXT_ADV=n` then we need to set the `BT_ADV_CREATED` bit here
+		 */
+		atomic_set_bit(bt_dev.adv->flags, BT_ADV_CREATED);
+	}
 #endif
 	return 0;
 }
@@ -286,7 +332,7 @@ void bt_le_adv_delete_legacy(void)
 {
 #if defined(CONFIG_BT_EXT_ADV)
 	if (bt_dev.adv) {
-		atomic_clear_bit(bt_dev.adv->flags, BT_ADV_CREATED);
+		adv_delete(bt_dev.adv);
 		bt_dev.adv = NULL;
 	}
 #endif
@@ -1218,6 +1264,8 @@ static int le_ext_adv_param_set(struct bt_le_ext_adv *adv,
 
 	atomic_set_bit_to(adv->flags, BT_ADV_RANDOM_ADDR_UPDATED,
 			  own_addr_type == BT_HCI_OWN_ADDR_RANDOM);
+
+	atomic_set_bit(adv->flags, BT_ADV_CREATED);
 
 	return 0;
 }
