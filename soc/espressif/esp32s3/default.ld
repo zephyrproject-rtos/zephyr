@@ -189,7 +189,7 @@ SECTIONS
      */
     LONG(ADDR(.rtc.text))
     LONG(LOADADDR(.rtc.text))
-    LONG(SIZEOF(.rtc.text))
+    LONG(LOADADDR(.rtc.force_fast) + SIZEOF(.rtc.force_fast) - LOADADDR(.rtc.text))
 
     /* RTC_DRAM metadata:
      * 11. Destination address (VMA) for RTC_DRAM region
@@ -198,7 +198,7 @@ SECTIONS
      */
     LONG(ADDR(.rtc.data))
     LONG(LOADADDR(.rtc.data))
-    LONG(SIZEOF(.rtc.data))
+    LONG(LOADADDR(.rtc.force_slow) + SIZEOF(.rtc.force_slow) - LOADADDR(.rtc.data))
 
     /* IROM metadata:
      * 14. Destination address (VMA) for IROM region
@@ -227,7 +227,7 @@ SECTIONS
   /* --- START OF RTC --- */
 
   /* RTC fast memory holds RTC wake stub code */
-  .rtc.text :
+  .rtc.text : ALIGN_WITH_INPUT
   {
     . = ALIGN(4);
     _rtc_text_start = ABSOLUTE(.);
@@ -243,7 +243,7 @@ SECTIONS
    * It holds data marked with RTC_FAST_ATTR attribute.
    * See the file "esp_attr.h" for more information.
    */
-  .rtc.force_fast :
+  .rtc.force_fast : ALIGN_WITH_INPUT
   {
     . = ALIGN(4);
     _rtc_force_fast_start = ABSOLUTE(.);
@@ -255,13 +255,26 @@ SECTIONS
   /* RTC data section holds data marked with
    * RTC_DATA_ATTR, RTC_RODATA_ATTR attributes.
    */
-  .rtc.data :
+  .rtc.data : ALIGN_WITH_INPUT
   {
   . = ALIGN(4);
     _rtc_data_start = ABSOLUTE(.);
     *(.rtc.data .rtc.data.*)
     *(.rtc.rodata .rtc.rodata.*)
     _rtc_data_end = ABSOLUTE(.);
+  } GROUP_DATA_LINK_IN(rtc_slow_seg, ROMABLE_REGION)
+
+  /* This section located in RTC SLOW Memory area.
+   * It holds data marked with RTC_SLOW_ATTR attribute.
+   * See the file "esp_attr.h" for more information.
+   */
+  .rtc.force_slow : ALIGN_WITH_INPUT
+  {
+    . = ALIGN(4);
+    _rtc_force_slow_start = ABSOLUTE(.);
+    *(.rtc.force_slow .rtc.force_slow.*)
+    . = ALIGN(4);
+    _rtc_force_slow_end = ABSOLUTE(.);
   } GROUP_DATA_LINK_IN(rtc_slow_seg, ROMABLE_REGION)
 
   .rtc.bss (NOLOAD) :
@@ -282,19 +295,6 @@ SECTIONS
     *(.rtc_noinit .rtc_noinit.*)
     . = ALIGN(4) ;
   } GROUP_LINK_IN(rtc_slow_seg)
-
-  /* This section located in RTC SLOW Memory area.
-   * It holds data marked with RTC_SLOW_ATTR attribute.
-   * See the file "esp_attr.h" for more information.
-   */
-  .rtc.force_slow :
-  {
-    . = ALIGN(4);
-    _rtc_force_slow_start = ABSOLUTE(.);
-    *(.rtc.force_slow .rtc.force_slow.*)
-    . = ALIGN(4);
-    _rtc_force_slow_end = ABSOLUTE(.);
-  } GROUP_DATA_LINK_IN(rtc_slow_seg, ROMABLE_REGION)
 
  /**
    * This section holds RTC data that should have fixed addresses.
@@ -318,6 +318,19 @@ SECTIONS
   /* Get size of rtc slow data based on rtc_data_location alias */
   _rtc_slow_length = (_rtc_force_slow_end - _rtc_data_start);
   _rtc_fast_length = (_rtc_force_fast_end - _rtc_fast_start);
+
+  /* The RTC_IRAM load descriptor above spans .rtc.text through .rtc.force_fast and the
+   * RTC_DRAM one spans .rtc.data through .rtc.force_slow, so the bootloader can only
+   * place those sections correctly while the VMA and LMA layouts of each span agree.
+   * ALIGN_WITH_INPUT on the loadable RTC sections keeps them in step; this catches any
+   * future change that reintroduces a skew.
+   */
+  ASSERT((LOADADDR(.rtc.force_fast) + SIZEOF(.rtc.force_fast) - LOADADDR(.rtc.text)) ==
+         (ADDR(.rtc.force_fast) + SIZEOF(.rtc.force_fast) - ADDR(.rtc.text)),
+         "RTC FAST loadable sections must be contiguous with equal VMA and LMA offsets")
+  ASSERT((LOADADDR(.rtc.force_slow) + SIZEOF(.rtc.force_slow) - LOADADDR(.rtc.data)) ==
+         (ADDR(.rtc.force_slow) + SIZEOF(.rtc.force_slow) - ADDR(.rtc.data)),
+         "RTC SLOW loadable sections must be contiguous with equal VMA and LMA offsets")
 
   /* --- END OF RTC --- */
 
