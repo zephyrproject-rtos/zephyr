@@ -24,18 +24,6 @@
 		zephyr,code-partition = &slot0_partition;
 	};
 
-	ddr: memory@40200000 {
-		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x40200000 (DT_SIZE_M(128) - 0x200000)>;
-		zephyr,memory-region = "DDR";
-	};
-
-	sram: memory@1e000 {
-		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x1e000 DT_SIZE_K(72)>;
-		zephyr,memory-region = "SRAM";
-	};
-
 	aliases {
 		led0 = &led1;
 		sw0 = &sw1;
@@ -74,6 +62,18 @@
 			gpios = <&gpio11 1 GPIO_ACTIVE_HIGH>;
 			zephyr,code = <INPUT_KEY_1>;
 		};
+	};
+
+	sram: memory@1e000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x1e000 DT_SIZE_K(72)>;
+		zephyr,memory-region = "SRAM";
+	};
+
+	ddr: memory@40200000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x40200000 (DT_SIZE_M(128) - 0x200000)>;
+		zephyr,memory-region = "DDR";
 	};
 };
 

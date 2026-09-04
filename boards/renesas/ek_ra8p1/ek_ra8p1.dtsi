@@ -48,20 +48,20 @@
 		};
 	};
 
-	sdram1: sdram@68000000 {
-		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0x68000000 DT_SIZE_M(64)>;
-		device_type = "memory";
-		zephyr,memory-region = "SDRAM";
-		status = "okay";
-	};
-
 	arducam_ffc_40pin_connector: arducam-ffc-40pin-connector {
 		compatible = "arducam,ffc-40pin-connector";
 		#gpio-cells = <2>;
 		gpio-map-mask = <0xffffffff 0xffffffc0>;
 		gpio-map-pass-thru = <0x0 0x3f>;
 		gpio-map = <ARDUCAM_FFC_40PIN_RESET 0 &ioport7 9 0>;
+	};
+
+	sdram1: sdram@68000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x68000000 DT_SIZE_M(64)>;
+		device_type = "memory";
+		zephyr,memory-region = "SDRAM";
+		status = "okay";
 	};
 };
 
