@@ -561,6 +561,29 @@ int llext_add_domain(struct llext *ext, struct k_mem_domain *domain)
 #endif
 }
 
+int llext_remove_domain(struct llext *ext, struct k_mem_domain *domain)
+{
+#ifdef CONFIG_USERSPACE
+	int ret = 0;
+
+	for (int i = 0; i < LLEXT_MEM_PARTITIONS; i++) {
+		if (ext->mem_parts[i].size == 0) {
+			continue;
+		}
+		ret = k_mem_domain_remove_partition(domain, &ext->mem_parts[i]);
+		if (ret != 0) {
+			LOG_ERR("Failed removing memory partition %d from domain %p",
+				i, domain);
+			return ret;
+		}
+	}
+
+	return ret;
+#else
+	return -ENOSYS;
+#endif
+}
+
 int llext_heap_init_harvard(void *instr_mem, size_t instr_bytes, void *data_mem, size_t data_bytes)
 {
 #if !defined(CONFIG_LLEXT_HEAP_DYNAMIC) || !defined(CONFIG_HARVARD)

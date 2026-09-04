@@ -419,6 +419,16 @@ int llext_call_fn(struct llext *ext, const char *sym_name);
 int llext_add_domain(struct llext *ext, struct k_mem_domain *domain);
 
 /**
+ * @brief Remove the known memory partitions of the extension from a memory domain
+ *
+ * @param[in] ext Extension to remove partitions from
+ * @param[in] domain Memory domain to remove partitions from
+ * @returns 0 on success, or a negative error code.
+ * @retval -ENOSYS Option @kconfig{CONFIG_USERSPACE} is not enabled or supported.
+ */
+int llext_remove_domain(struct llext *ext, struct k_mem_domain *domain);
+
+/**
  * @brief Architecture specific opcode update function
  *
  * ELF files include sections describing a series of _relocations_, which are
