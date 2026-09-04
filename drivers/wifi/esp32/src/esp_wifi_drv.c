@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2020 Espressif Systems (Shanghai) Co., Ltd.
+ * Copyright (c) 2020-2026 Espressif Systems (Shanghai) Co., Ltd.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -20,7 +20,9 @@ LOG_MODULE_REGISTER(esp32_wifi, CONFIG_WIFI_LOG_LEVEL);
 #include <zephyr/net/wifi_nm.h>
 #endif
 #include <zephyr/device.h>
+#include <zephyr/pm/device.h>
 #include <soc.h>
+#include <esp_private/sleep_modem.h>
 #include <esp_private/wifi.h>
 #include <esp_event.h>
 #include <esp_rom_sys.h>
@@ -136,7 +138,32 @@ struct esp32_wifi_event {
 K_MSGQ_DEFINE(esp32_wifi_event_msgq, sizeof(struct esp32_wifi_event),
 	      CONFIG_ESP32_WIFI_EVENT_QUEUE_SIZE, 4);
 
+/*
+ * Set the station IPv4 address in the Wi-Fi stack. The address is only reported
+ * when it is usable and the station is associated. A static address is usually
+ * set before the connection, so the connect handler calls this as well.
+ */
+static void esp32_wifi_set_sta_ip(void)
+{
+	if (esp32_data.state != ESP32_STA_CONNECTED) {
+		return;
+	}
+
+	if (net_if_ipv4_get_global_addr(esp32_wifi_iface, NET_ADDR_PREFERRED) == NULL) {
+		return;
+	}
+
+	esp_wifi_internal_set_sta_ip();
+}
+
+#if defined(CONFIG_NET_IPV4)
 #if defined(CONFIG_WIFI_STA_AUTO_DHCPV4)
+#define ESP32_WIFI_IPV4_EVENT_MASK                                                                 \
+	(NET_EVENT_IPV4_ADDR_ADD | NET_EVENT_IPV4_ACD_SUCCEED | NET_EVENT_IPV4_DHCP_BOUND)
+#else
+#define ESP32_WIFI_IPV4_EVENT_MASK (NET_EVENT_IPV4_ADDR_ADD | NET_EVENT_IPV4_ACD_SUCCEED)
+#endif
+
 static void wifi_event_handler(uint64_t mgmt_event, struct net_if *iface, void *info __unused,
 				size_t info_length __unused, void *user_data __unused)
 {
@@ -145,17 +172,23 @@ static void wifi_event_handler(uint64_t mgmt_event, struct net_if *iface, void *
 	}
 
 	switch (mgmt_event) {
+	case NET_EVENT_IPV4_ADDR_ADD:
+	case NET_EVENT_IPV4_ACD_SUCCEED:
+		esp32_wifi_set_sta_ip();
+		break;
+#if defined(CONFIG_WIFI_STA_AUTO_DHCPV4)
 	case NET_EVENT_IPV4_DHCP_BOUND:
 		wifi_mgmt_raise_connect_result_event(iface, WIFI_STATUS_CONN_SUCCESS);
 		break;
+#endif
 	default:
 		break;
 	}
 }
 
-NET_MGMT_REGISTER_EVENT_HANDLER(esp32_wifi_events, NET_EVENT_IPV4_DHCP_BOUND, wifi_event_handler,
+NET_MGMT_REGISTER_EVENT_HANDLER(esp32_wifi_events, ESP32_WIFI_IPV4_EVENT_MASK, wifi_event_handler,
 				NULL);
-#endif /* CONFIG_WIFI_STA_AUTO_DHCPV4 */
+#endif /* CONFIG_NET_IPV4 */
 
 static void esp32_wifi_tx_done(uint8_t ifidx, uint8_t *data __unused, uint16_t *data_len __unused,
 			       bool status __unused)
@@ -472,6 +505,7 @@ static void esp_wifi_handle_sta_connect_event(void *event_data)
 	ARG_UNUSED(event_data);
 	esp32_data.state = ESP32_STA_CONNECTED;
 	net_if_dormant_off(esp32_wifi_iface);
+	esp32_wifi_set_sta_ip();
 #if defined(CONFIG_WIFI_STA_AUTO_DHCPV4)
 	net_dhcpv4_start(esp32_wifi_iface);
 #else
@@ -1837,6 +1871,49 @@ static int esp32_wifi_reset_stats(const struct device *dev __unused,
 }
 #endif
 
+static int esp32_wifi_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		break;
+
+	case PM_DEVICE_ACTION_SUSPEND:
+#if defined(SOC_WIFI_HW_TSF)
+		if (esp_wifi_internal_is_tsf_active()) {
+			/* Reject sleep while TSF is active (timing critical) */
+			return -EBUSY;
+		}
+#endif
+#if defined(CONFIG_ESP32_WIFI_ENHANCED_LIGHT_SLEEP)
+		if (sleep_modem_wifi_modem_state_skip_light_sleep()) {
+			/* Block the system from entering sleep before modem link done */
+			return -EBUSY;
+		}
+#endif
+		break;
+
+	case PM_DEVICE_ACTION_TURN_ON:
+#if defined(CONFIG_PM)
+		/* Register the Wi-Fi modem sleep configuration. Advanced DTIM
+		 * sleep (ESP32_WIFI_ENHANCED_LIGHT_SLEEP) and default sleep
+		 * timing parameters (SOC_ESP32_PM_SLP_DEFAULT_PARAMS_OPT) are
+		 * applied inside when those options are enabled.
+		 */
+		sleep_modem_configure(CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ,
+				      CONFIG_ESP_DEFAULT_CPU_FREQ_MHZ, true);
+#endif
+		break;
+
+	case PM_DEVICE_ACTION_TURN_OFF:
+		break;
+
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
 static int esp32_wifi_dev_init(const struct device *dev)
 {
 #if CONFIG_SOC_SERIES_ESP32S2 || CONFIG_SOC_SERIES_ESP32C3
@@ -1877,7 +1954,7 @@ static int esp32_wifi_dev_init(const struct device *dev)
 		return -EIO;
 	}
 
-	return 0;
+	return pm_device_driver_init(dev, esp32_wifi_pm_action);
 }
 
 static int esp32_wifi_set_config(const struct device *dev __unused,
@@ -1940,11 +2017,11 @@ static const struct net_wifi_mgmt_offload esp32_api = {
 	.wifi_mgmt_api = &esp32_wifi_mgmt,
 };
 
-NET_DEVICE_DT_INST_DEFINE(0,
-		esp32_wifi_dev_init, NULL,
-		&esp32_data, NULL, CONFIG_WIFI_INIT_PRIORITY,
-		&esp32_api, ETHERNET_L2,
-		NET_L2_GET_CTX_TYPE(ETHERNET_L2), NET_ETH_MTU);
+PM_DEVICE_DT_INST_DEFINE(0, esp32_wifi_pm_action);
+
+NET_DEVICE_DT_INST_DEFINE(0, esp32_wifi_dev_init, PM_DEVICE_DT_INST_GET(0), &esp32_data, NULL,
+			  CONFIG_WIFI_INIT_PRIORITY, &esp32_api, ETHERNET_L2,
+			  NET_L2_GET_CTX_TYPE(ETHERNET_L2), NET_ETH_MTU);
 
 #if defined(CONFIG_ESP32_WIFI_AP_STA_MODE)
 NET_DEVICE_DT_INST_ADD_IFACE(0, ETHERNET_L2, NET_L2_GET_CTX_TYPE(ETHERNET_L2), NET_ETH_MTU, 1);

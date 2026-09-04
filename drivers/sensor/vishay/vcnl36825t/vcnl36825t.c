@@ -188,12 +188,17 @@ static int vcnl36825t_sample_fetch(const struct device *dev, enum sensor_channel
 static int vcnl36825t_channel_get(const struct device *dev, enum sensor_channel chan,
 				  struct sensor_value *val)
 {
+	const struct vcnl36825t_config *config = dev->config;
 	struct vcnl36825t_data *data = dev->data;
 
 	switch (chan) {
 	case SENSOR_CHAN_ALL:
 	case SENSOR_CHAN_PROX:
-		val->val1 = data->proximity & VCNL36825T_OS_DATA_MSK;
+		if (config->high_dynamic_output) {
+			val->val1 = data->proximity;
+		} else {
+			val->val1 = data->proximity & VCNL36825T_OS_DATA_MSK;
+		}
 		val->val2 = 0;
 		break;
 	default:

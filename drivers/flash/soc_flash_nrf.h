@@ -82,6 +82,28 @@ int nrf_flash_sync_init(void);
 void nrf_flash_sync_set_context(uint32_t duration);
 
 /**
+ * Request a minimum spacing between consecutive execution windows.
+ *
+ * Used to spread the flash controller write current over time (throttling)
+ * while radio synchronization is active: the flash driver emits one write
+ * block per execution window and asks the backend to delay the next window by
+ * at least @p delay_us microseconds after the previous one has ended. This is
+ * how the throttling delay is realized on backends whose execution windows run
+ * in interrupt context, where sleeping in the flash operation itself is
+ * illegal.
+ *
+ * The setting applies to the next @ref nrf_flash_sync_exe() continuation and
+ * may be updated between execution windows. A backend that cannot control the
+ * inter-window spacing is free to treat this as a no-op (a @c __weak default
+ * that does exactly that is provided by the flash driver).
+ *
+ * @param delay_us Minimum delay between the end of one execution window and the
+ *                 start of the next [us]. Zero requests the next window as
+ *                 early as possible.
+ */
+void nrf_flash_sync_set_delay(uint32_t delay_us);
+
+/**
  * Check if the operation need to be run synchronous with radio.
  *
  * @retval True if operation need to be run synchronously, otherwise False

@@ -326,6 +326,12 @@ void board_early_init_hook(void)
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(enet))
 	CLOCK_AttachClk(kNONE_to_ENETRMII);
 	CLOCK_EnableClock(kCLOCK_GateENET0);
+#if defined(CONFIG_PTP_CLOCK_DWC_MAC)
+	/* Attach PLL1 (200 MHz) to the ENET QoS PTP reference clock. */
+	CLOCK_AttachClk(kPll1Clk_to_ENETPTPREF);
+	CLOCK_SetClockDiv(kCLOCK_DivE1588, 1u);
+	CLOCK_EnableClock(kCLOCK_GateE1588);
+#endif
 	RESET_PeripheralReset(kENET0_RST_SHIFT_RSTn);
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(t1s))
 	/* TENBASET_PHY needs 100 MHz clock */

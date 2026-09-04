@@ -53,9 +53,9 @@ static int spi_cc13xx_cc26xx_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	/* Slave mode has not been implemented */
-	if (SPI_OP_MODE_GET(config->operation) != SPI_OP_MODE_MASTER) {
-		LOG_ERR("Slave mode is not supported");
+	/* Peripheral mode has not been implemented */
+	if (SPI_OP_MODE_GET(config->operation) != SPI_OP_MODE_CONTROLLER) {
+		LOG_ERR("Peripheral mode is not supported");
 		return -ENOTSUP;
 	}
 
@@ -88,7 +88,7 @@ static int spi_cc13xx_cc26xx_configure(const struct device *dev,
 	}
 
 	if (2 * config->frequency > CPU_FREQ) {
-		LOG_ERR("Frequency greater than supported in master mode");
+		LOG_ERR("Frequency greater than supported in controller mode");
 		return -EINVAL;
 	}
 

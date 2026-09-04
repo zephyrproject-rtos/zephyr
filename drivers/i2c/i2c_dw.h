@@ -54,21 +54,21 @@ typedef int (*i2c_api_check_bus_t)(const struct device *dev);
 #define I2C_DW_STUCK_ERR_MASK (I2C_DW_SCL_STUCK | I2C_DW_SDA_STUCK | I2C_DW_USER_ABRT)
 
 #ifdef CONFIG_I2C_DW_EXTENDED_SUPPORT
-#define DW_ENABLE_TX_INT_I2C_MASTER                                                                \
+#define DW_ENABLE_TX_INT_I2C_CONTROLLER                                                            \
 	(DW_INTR_STAT_TX_OVER | DW_INTR_STAT_TX_EMPTY | DW_INTR_STAT_TX_ABRT |                     \
 	 DW_INTR_STAT_STOP_DET | DW_INTR_STAT_SCL_STUCK_LOW)
 #else
-#define DW_ENABLE_TX_INT_I2C_MASTER                                                                \
+#define DW_ENABLE_TX_INT_I2C_CONTROLLER                                                            \
 	(DW_INTR_STAT_TX_OVER | DW_INTR_STAT_TX_EMPTY | DW_INTR_STAT_TX_ABRT |                     \
 	 DW_INTR_STAT_STOP_DET)
 #endif
-#define DW_ENABLE_RX_INT_I2C_MASTER                                                                \
+#define DW_ENABLE_RX_INT_I2C_CONTROLLER                                                            \
 	(DW_INTR_STAT_RX_UNDER | DW_INTR_STAT_RX_OVER | DW_INTR_STAT_RX_FULL |                     \
 	 DW_INTR_STAT_STOP_DET)
 
-#define DW_ENABLE_TX_INT_I2C_SLAVE                                                                 \
+#define DW_ENABLE_TX_INT_I2C_TARGET                                                                \
 	(DW_INTR_STAT_RD_REQ | DW_INTR_STAT_TX_ABRT | DW_INTR_STAT_STOP_DET)
-#define DW_ENABLE_RX_INT_I2C_SLAVE (DW_INTR_STAT_RX_FULL | DW_INTR_STAT_STOP_DET)
+#define DW_ENABLE_RX_INT_I2C_TARGET (DW_INTR_STAT_RX_FULL | DW_INTR_STAT_STOP_DET)
 
 #define DW_DISABLE_ALL_I2C_INT 0x00000000
 
@@ -153,7 +153,9 @@ struct i2c_dw_rom_config {
 	uint32_t bitrate;
 	uint32_t sda_hold_tx;
 	uint32_t sda_hold_rx;
+#ifdef CONFIG_I2C_RTS5912
 	uint32_t irqnumber;
+#endif
 	int16_t lcnt_offset;
 	int16_t hcnt_offset;
 	uint8_t fs_spk_len;
@@ -210,7 +212,7 @@ struct i2c_dw_dev_config {
 	bool xfr_status;
 #endif
 
-	struct i2c_target_config *slave_cfg;
+	struct i2c_target_config *target_cfg;
 
 	i2c_api_recover_bus_t recover_bus_cb;
 	struct device *recover_bus_dev;

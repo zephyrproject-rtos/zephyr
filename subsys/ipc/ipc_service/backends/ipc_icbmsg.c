@@ -482,7 +482,7 @@ static int heap_alloc_tx_buffer(const struct device *instance, struct ept_data *
 	}
 
 	while (true) {
-		int off;
+		int off = 0;
 
 		K_SPINLOCK(&data->lock) {
 			off = bitmask_find_gap(data->tx_usage_mask, num_blocks,
@@ -621,9 +621,10 @@ static int msg_q_produce(const struct device *instance, uint8_t block_index, int
 	uint32_t active_count;
 	uint32_t idx;
 	int rv = 0;
+	uint8_t slot_entry = block_index;
 
 	if (priority != 0) {
-		block_index |= HI_PRIO_MASK;
+		slot_entry |= HI_PRIO_MASK;
 	}
 
 	K_SPINLOCK(&data->lock) {
@@ -640,7 +641,7 @@ static int msg_q_produce(const struct device *instance, uint8_t block_index, int
 			   heap_packet_from_index(&config->tx, block_index)->header.size);
 		STATS_SET(data->stats, tx_max_active_count,
 			  MAX(data->stats.tx_max_active_count, data->msg_q.tx_active_count));
-		config->tx_msg_q.prod_shmq->slots[idx] = block_index;
+		config->tx_msg_q.prod_shmq->slots[idx] = slot_entry;
 		LOG_DBG("addr:%p Produce index: %d, block_index: %d, active_count: %d",
 			(void *)&config->tx_msg_q.prod_shmq->slots[idx], idx, block_index,
 			active_count);
@@ -1332,7 +1333,7 @@ static int backend_init(const struct device *instance)
 	native_emb_addr_remap((void **)&conf->rx_msg_q.cons_shmq);
 #endif
 
-#if defined(CONFIG_STATS_NAMES) || defined(CONFIG_MULTITHREADING)
+#if defined(CONFIG_STATS) || defined(CONFIG_MULTITHREADING)
 	struct icbmsg_data *data = instance->data;
 #endif
 
@@ -1470,8 +1471,8 @@ const static struct ipc_service_backend backend_ops = {
 			},                                                                         \
 		.bound_packet =                                                                    \
 			BOUND_PACKET_INIT(DT_INST_PROP(i, tx_blocks), DT_INST_PROP(i, rx_blocks)), \
-		IF_ENABLED(CONFIG_STATS_NAMES,                                              \
-			   (.stats_name = STRINGIFY(ipc_icbmsg_##i),)) };         \
+		IF_ENABLED(CONFIG_STATS,                                                           \
+			   (.stats_name = STRINGIFY(ipc_icbmsg_##i),)) };                          \
 	BUILD_ASSERT(IS_ALIGNED(GET_MEM_ADDR_INST(i, tx), GET_CACHE_ALIGNMENT(i)),                 \
 		     "TX producer queue is not aligned to cache alignment");                       \
 	BUILD_ASSERT(IS_ALIGNED(GET_MEM_ADDR_INST(i, rx), GET_CACHE_ALIGNMENT(i)),                 \

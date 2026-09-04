@@ -20,6 +20,7 @@ supported:
   - i2c
   - netif:eth
   - octospi
+  - ptp_clock
   - pwm
   - rtc
   - sdhc

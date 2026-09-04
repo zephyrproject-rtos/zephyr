@@ -29,7 +29,6 @@
 
 #include <zephyr/audio/codec.h>
 #include <zephyr/device.h>
-#include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/sensor.h>
 #include <zephyr/sys/__assert.h>
 
@@ -277,9 +276,8 @@ __subsystem struct haptics_driver_api {
  * @param[in] dev Pointer to the device structure for the haptic device instance
  * @param[in] routine Device-specific calibration routine, refer to the device's header file
  *
- * @retval 0 if successful
+ * @return 0 on success, negative errno value on failure.
  * @retval -ENOSYS if not implemented
- * @retval <0 if failed
  */
 __syscall int haptics_calibrate(const struct device *dev, const uint32_t routine);
 
@@ -300,7 +298,7 @@ static inline int z_impl_haptics_calibrate(const struct device *dev, const uint3
  * Some haptic drivers may require enabling an integrated sensor using @ref haptics_monitor_set()
  * before values can be read from the device. Refer to device drivers for implementation details.
  *
- * Note: Requesting readings from all sensors simultaneously (e.g., setting @p monitor to
+ * @note Requesting readings from all sensors simultaneously (e.g., setting @p monitor to
  * HAPTICS_MONITOR_ALL) is invalid.
  *
  * @param[in] dev Pointer to the device structure for the haptic device instance
@@ -308,9 +306,8 @@ static inline int z_impl_haptics_calibrate(const struct device *dev, const uint3
  * @param[in] type Type of sensor reading (of type @ref haptics_monitor_type)
  * @param[out] val Sensor reading (of type @ref sensor_value)
  *
- * @retval 0 if successful
+ * @return 0 on success, negative errno value on failure.
  * @retval -ENOSYS if not implemented
- * @retval <0 if failed
  */
 __syscall int haptics_monitor_get(const struct device *dev, const enum haptics_monitor monitor,
 				  const enum haptics_monitor_type type,
@@ -343,9 +340,8 @@ static inline int z_impl_haptics_monitor_get(const struct device *dev,
  * @param[in] monitor Sensing option (of type @ref haptics_monitor)
  * @param[in] enable True if enabling integrated sensing, false if disabling
  *
- * @retval 0 if successful
+ * @return 0 on success, negative errno value on failure.
  * @retval -ENOSYS if not implemented
- * @retval <0 if failed
  */
 __syscall int haptics_monitor_set(const struct device *dev, const enum haptics_monitor monitor,
 				  const bool enable);
@@ -369,9 +365,8 @@ static inline int z_impl_haptics_monitor_set(const struct device *dev,
  * @param[in] cb Callback function (of type @ref haptics_error_callback_t)
  * @param[in] user_data User data to be provided back to the application via the callback
  *
- * @retval 0 if successful
+ * @return 0 on success, negative errno value on failure.
  * @retval -ENOSYS if not implemented
- * @retval <0 if failed
  */
 static inline int haptics_register_error_callback(const struct device *dev,
 						  haptics_error_callback_t cb,
@@ -395,15 +390,14 @@ static inline int haptics_register_error_callback(const struct device *dev,
  * If unused, there is no uniform default playback source across haptic drivers, so behavior is up
  * to the particular device driver. Refer to device drivers for implementation details.
  *
- * Note: Some playback sources do not require any additional configuration details, in which case
+ * @note Some playback sources do not require any additional configuration details, in which case
  * @p cfg should be set to NULL.
  *
  * @param[in] dev Pointer to the device structure for the haptic device instance
  * @param[in] src Playback source (of type @ref haptics_source)
  * @param[in] cfg Source configuration (of type @ref haptics_config) or NULL
  *
- * @retval 0 if successful
- * @retval <0 if failed
+ * @return 0 on success, negative errno value on failure.
  */
 __syscall int haptics_select_source(const struct device *dev, const enum haptics_source src,
 				    const union haptics_config *const cfg);
@@ -431,11 +425,10 @@ static inline int z_impl_haptics_select_source(const struct device *dev,
  * @param[in] dev Pointer to the device structure for the haptic device instance
  * @param[in] src Playback source (of type @ref haptics_source)
  * @param[in] cfg Source configuration (of type @ref haptics_config) or NULL
- * @param[in] level Device-specific output level value, rfer to the device driver for details
+ * @param[in] level Device-specific output level value, refer to the device driver for details
  *
- * @retval 0 if successful
+ * @return 0 on success, negative errno value on failure.
  * @retval -ENOSYS if not implemented
- * @retval <0 if failed
  */
 __syscall int haptics_set_level(const struct device *dev, const enum haptics_source src,
 				const union haptics_config *const cfg, const uint32_t level);
@@ -461,8 +454,7 @@ static inline int z_impl_haptics_set_level(const struct device *dev, const enum 
  *
  * @param[in] dev Pointer to the device structure for the haptic device instance
  *
- * @retval 0 if successful
- * @retval <0 if failed
+ * @return 0 on success, negative errno value on failure.
  */
 __syscall int haptics_start_output(const struct device *dev);
 
@@ -482,8 +474,7 @@ static inline int z_impl_haptics_start_output(const struct device *dev)
  *
  * @param[in] dev Pointer to the device structure for the haptic device instance
  *
- * @retval 0 if successful
- * @retval <0 if failed
+ * @return 0 on success, negative errno value on failure.
  */
 __syscall int haptics_stop_output(const struct device *dev);
 
@@ -502,16 +493,15 @@ static inline int z_impl_haptics_stop_output(const struct device *dev)
  * Most haptic drivers play samples streamed over a control port at a fixed sample rate. Refer to
  * device drivers for implementation details.
  *
- * Note: HAPTICS_SOURCE_CONTROL_PORT should be provided to @ref haptics_select_source() before
+ * @note HAPTICS_SOURCE_CONTROL_PORT should be provided to @ref haptics_select_source() before
  * calling this function.
  *
  * @param[in] dev Pointer to the device structure for the haptic device instance
  * @param[in] samples Pointer to an array of 8-bit samples
  * @param[in] len Number of samples to write
  *
- * @retval 0 if successful
+ * @return 0 on success, negative errno value on failure.
  * @retval -ENOSYS if not implemented
- * @retval <0 if failed
  */
 __syscall int haptics_stream_samples(const struct device *dev, const uint8_t *const samples,
 				     const size_t len);

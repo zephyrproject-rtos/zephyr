@@ -747,7 +747,20 @@ static int sys_clock_driver_init(void)
 		    rtc_nrf_isr, 0, 0);
 	irq_enable(RTC_IRQn);
 
-	nrfy_rtc_task_trigger(RTC, NRF_RTC_TASK_CLEAR);
+	/* The CLEAR task takes up to 46 us to take effect (nRF52840 Product
+	 * Specification, RTC "TASK and EVENT jitter/delay"). If a bootloader
+	 * left the RTC running and START follows before then, the counter
+	 * still holds its old value when timer_core_init() reads it, which
+	 * gets treated as a wrap and pushes the first timeout far into the
+	 * future. Only clear and wait when the counter holds such a value:
+	 * on a cold boot, and on the simulated targets where tasks take
+	 * effect immediately, it reads zero and the wait would only shift
+	 * the tick phase.
+	 */
+	if (nrfy_rtc_counter_get(RTC) != 0) {
+		nrfy_rtc_task_trigger(RTC, NRF_RTC_TASK_CLEAR);
+		k_busy_wait(46);
+	}
 	nrfy_rtc_task_trigger(RTC, NRF_RTC_TASK_START);
 
 	int_mask = BIT_MASK(CHAN_COUNT);

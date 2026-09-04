@@ -10,6 +10,7 @@ ram: 512
 flash: 1024
 supported:
   - gpio
+  - ptp_clock
   - spi
   - netif:eth
   - qspi

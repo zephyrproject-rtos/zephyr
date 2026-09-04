@@ -881,6 +881,7 @@ config NXP_WIFI_CSI_AMI
 config NXP_WIFI_WLS
 	bool "Wireless Location Service"
 	select FPU
+	default y if (NXP_IW61X && WIFI_NM_WPA_SUPPLICANT)
 	depends on NXP_WIFI_CSI
 	help
 	  Enable/Disable Wireless Location Service(WLS) feature.
@@ -1296,28 +1297,19 @@ config NXP_WIFI_ENABLE_WARNING_LOGS
 	  recommended to keep it enabled during development, to quickly
 	  localize problems.
 
-config NXP_WIFI_DEBUG_BUILD
-	bool "Debug build"
-	depends on WIFI_LOG_LEVEL_DBG
-	help
-	  If you enable this the debug options will be
-	  enabled. Asserts will be also be enabled.
-
-config NXP_WIFI_OS_DEBUG
-	bool "OS debug"
-	depends on NXP_WIFI_DEBUG_BUILD
-	help
-	  If you enable this the OS abstraction APIs debugs will be enabled.
-
 config NXP_WIFI_NET_DEBUG
 	bool "NET debug"
-	depends on NXP_WIFI_DEBUG_BUILD
 	help
 	  If you enable this the network driver abstraction APIs debugs will be enabled.
 
+config NXP_WIFI_SUPP_DEBUG
+	bool "Supplicant interface debug"
+	default y if WIFI_NM_WPA_SUPPLICANT_LOG_LEVEL_DBG
+	help
+	  If you enable this the supplicant interface debugs will be enabled.
+
 config NXP_WIFI_WLCMGR_DEBUG
 	bool "Wireless Connection Manager"
-	depends on NXP_WIFI_DEBUG_BUILD
 	help
 	  If you enable this the WLAN Connection Manager APIs debugs will be enabled.
 

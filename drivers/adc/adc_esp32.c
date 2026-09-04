@@ -9,10 +9,12 @@
 #include <esp_clk_tree.h>
 #include <esp_private/sar_periph_ctrl.h>
 #include <esp_private/adc_share_hw_ctrl.h>
+#include <esp_private/regi2c_ctrl.h>
 
 #include "adc_esp32.h"
 
 #include <zephyr/drivers/gpio.h>
+#include <esp_gpio_port.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(adc_esp32, CONFIG_ADC_LOG_LEVEL);
@@ -150,6 +152,7 @@ static int adc_esp32_read(const struct device *dev, const struct adc_sequence *s
 	}
 #else
 	uint32_t acq_raw;
+	bool valid;
 
 	if (seq->channels > BIT(channel_id)) {
 		LOG_ERR("Multi-channel readings not supported");
@@ -166,13 +169,23 @@ static int adc_esp32_read(const struct device *dev, const struct adc_sequence *s
 		return -ENOTSUP;
 	}
 
+	adc_lock_acquire(data->hal.unit);
+	ANALOG_CLOCK_ENABLE();
+
 	adc_oneshot_hal_setup(&data->hal, channel_id);
 
 #if SOC_ADC_CALIBRATION_V1_SUPPORTED
 	adc_set_hw_calibration_code(data->hal.unit, data->attenuation[channel_id]);
 #endif /* SOC_ADC_CALIBRATION_V1_SUPPORTED */
 
-	adc_oneshot_hal_convert(&data->hal, &acq_raw);
+	valid = adc_oneshot_hal_convert(&data->hal, &acq_raw);
+
+	ANALOG_CLOCK_DISABLE();
+	adc_lock_release(data->hal.unit);
+
+	if (!valid) {
+		return -ETIMEDOUT;
+	}
 
 	if (data->cal_handle[channel_id]) {
 		if (data->meas_ref_internal > 0) {
@@ -331,6 +344,15 @@ static int adc_esp32_channel_setup(const struct device *dev, const struct adc_ch
 		.pin = io_num,
 	};
 
+	if (esp_gpio_pad_port(io_num) != 0) {
+		if (conf->gpio_port1 == NULL) {
+			LOG_ERR("No GPIO port for io (%d)", io_num);
+			return -ENOTSUP;
+		}
+		gpio.port = conf->gpio_port1;
+		gpio.pin = esp_gpio_pad_pin(io_num);
+	}
+
 	err = gpio_pin_configure_dt(&gpio, GPIO_DISCONNECTED);
 
 	if (err) {
@@ -359,8 +381,9 @@ static int adc_esp32_init(const struct device *dev)
 	esp_clk_tree_src_get_freq_hz(ADC_DIGI_CLK_SRC_DEFAULT,
 				     ESP_CLK_TREE_SRC_FREQ_PRECISION_CACHED, &clock_src_hz);
 
-	if (!device_is_ready(conf->gpio_port)) {
-		LOG_ERR("gpio0 port not ready");
+	if (!device_is_ready(conf->gpio_port) ||
+	    (conf->gpio_port1 != NULL && !device_is_ready(conf->gpio_port1))) {
+		LOG_ERR("GPIO port not ready");
 		return -ENODEV;
 	}
 
@@ -376,6 +399,7 @@ static int adc_esp32_init(const struct device *dev)
 		.work_mode = ADC_HAL_SINGLE_READ_MODE,
 		.clk_src = ADC_DIGI_CLK_SRC_DEFAULT,
 		.clk_src_freq_hz = clock_src_hz,
+		.conv_timeout_us = CONFIG_ADC_ESP32_CONVERSION_TIMEOUT_US,
 	};
 
 	adc_oneshot_hal_init(&data->hal, &config);
@@ -428,6 +452,7 @@ static DEVICE_API(adc, api_esp32_driver_api) = {
 		.unit = DT_PROP(DT_DRV_INST(inst), unit) - 1,                                      \
 		.channel_count = DT_PROP(DT_DRV_INST(inst), channel_count),                        \
 		.gpio_port = DEVICE_DT_GET(DT_NODELABEL(gpio0)),                                   \
+		.gpio_port1 = DEVICE_DT_GET_OR_NULL(DT_NODELABEL(gpio1)),                          \
 		ADC_ESP32_CONF_INIT(inst)};                                                        \
                                                                                                    \
 	static struct adc_esp32_data adc_esp32_data_##inst = {                                     \

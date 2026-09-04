@@ -28,7 +28,6 @@ struct counter_alarm_cfg cntr_alarm_cfg2;
 
 /* clang-format off */
 
-#define DEVICE_DT_GET_AND_COMMA(node_id) DEVICE_DT_GET(node_id),
 #define DEVICE_DT_GET_AND_COMMA_IF_NOT_SYSTEM_TIMER(node_id) \
 	COND_CODE_1(DT_HAS_CHOSEN(zephyr_system_timer), \
 		(COND_CODE_1(DT_SAME_NODE(node_id, DT_CHOSEN(zephyr_system_timer)), \
@@ -36,7 +35,7 @@ struct counter_alarm_cfg cntr_alarm_cfg2;
 		(DEVICE_DT_GET(node_id),))
 /* Generate a list of devices for all instances of the "compat" */
 #define DEVS_FOR_DT_COMPAT(compat) \
-	DT_FOREACH_STATUS_OKAY(compat, DEVICE_DT_GET_AND_COMMA)
+	DT_FOREACH_STATUS_OKAY(compat, DEVICE_DT_GET_COMMA)
 
 static const struct device *const devices[] = {
 #ifdef CONFIG_COUNTER_NRF_TIMER

@@ -134,6 +134,17 @@ config QEMU_EXTRA_FLAGS
 	  to setup devices, for example to allocate interface for Zephyr
 	  GDBstub over serial with `-serial tcp:127.0.0.1:5678,server`
 
+config QEMU_DEVICE_LOADER
+	bool "QEMU device loader"
+	depends on QEMU_TARGET
+	help
+	  When enabled, QEMU will use the device loader functionality to load
+	  the ELF file instead of the "-kernel" option. On certain architectures,
+	  such as RISC-V, QEMU is designed to load the lowest address of
+	  the ELF rather than the entry point within the ELF. This option is
+	  used to enable logic at the board.cmake level that uses "-device,loader"
+	  rather than "-kernel" for loading
+
 config QEMU_VIRTIO_BLK_LOGICAL_BLOCK_SIZE
 	int "QEMU virtio-blk logical block size"
 	depends on QEMU_TARGET && DISK_DRIVER_VIRTIO_BLK

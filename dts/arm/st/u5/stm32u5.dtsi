@@ -717,12 +717,6 @@
 			interrupt-names = "global";
 			status = "disabled";
 
-			pwm {
-				compatible = "st,stm32-pwm";
-				status = "disabled";
-				#pwm-cells = <3>;
-			};
-
 			counter {
 				compatible = "st,stm32-counter";
 				status = "disabled";
@@ -738,12 +732,6 @@
 			interrupts = <50 0>;
 			interrupt-names = "global";
 			status = "disabled";
-
-			pwm {
-				compatible = "st,stm32-pwm";
-				status = "disabled";
-				#pwm-cells = <3>;
-			};
 
 			counter {
 				compatible = "st,stm32-counter";
@@ -1068,6 +1056,16 @@
 			reg = <0x40023000 0x400>;
 			clocks = <&rcc STM32_CLOCK(AHB1, 12)>;
 			resets = <&rctl STM32_RESET(AHB1, 12)>;
+			status = "disabled";
+		};
+
+		gpu2d: gpu@4002f000 {
+			compatible = "st,neochrom-gpu2d";
+			reg = <0x4002f000 0x1000>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 20)>;
+			interrupts = <132 0>, <133 0>;
+			interrupt-names = "gpu2d", "gpu2d_er";
+			resets = <&rctl STM32_RESET(AHB1, 20)>;
 			status = "disabled";
 		};
 	};

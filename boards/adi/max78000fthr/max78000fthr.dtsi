@@ -139,25 +139,25 @@ feather_i2c: &i2c1 {
 		m4_partition: partition@0 {
 			compatible = "zephyr,mapped-partition";
 			label = "image-m4";
-			reg = <0x0 DT_SIZE_K(224)>;
+			reg = <0x0 DT_SIZE_K(256)>;
 		};
 
-		m4_storage_partition: partition@38000 {
+		m4_storage_partition: partition@40000 {
 			compatible = "zephyr,mapped-partition";
 			label = "storage-m4";
-			reg = <0x38000 DT_SIZE_K(32)>;
-		};
-
-		rv32_partition: partition@40000 {
-			compatible = "zephyr,mapped-partition";
-			label = "image-rv32";
 			reg = <0x40000 DT_SIZE_K(64)>;
 		};
 
-		rv32_storage_partition: partition@50000 {
+		rv32_partition: partition@50000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-rv32";
+			reg = <0x50000 DT_SIZE_K(128)>;
+		};
+
+		rv32_storage_partition: partition@70000 {
 			compatible = "zephyr,mapped-partition";
 			label = "storage-rv32";
-			reg = <0x50000 DT_SIZE_K(32)>;
+			reg = <0x70000 DT_SIZE_K(64)>;
 		};
 	};
 };

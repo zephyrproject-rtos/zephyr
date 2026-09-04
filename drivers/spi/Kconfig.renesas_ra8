@@ -27,9 +27,9 @@ config SPI_B_RA_DTC
 	  Enable the SPI DTC mode for SPI instances
 
 config SPI_B_USE_HW_SS
-	bool "RA MCU SPI B Hardware Slave Select support"
+	bool "RA MCU SPI B Hardware Chip Select support"
 	default y
 	help
-	  Use Slave Select pin instead of software Slave Select.
+	  Use Chip Select pin instead of software Chip Select.
 
 endif # RA_SPI_B

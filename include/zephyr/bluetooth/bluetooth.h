@@ -212,6 +212,14 @@ struct bt_le_per_adv_response_info {
  * @note Must point to valid memory during the lifetime of the advertising set.
  *
  * @note Used in @ref bt_le_ext_adv_create.
+ *
+ * @note The callbacks are invoked from a thread context, never from an
+ *       ISR. Whether a callback is invoked from a context internal to
+ *       the stack or synchronously from within the API call that
+ *       triggers it, and from which context, is not part of the API and
+ *       may change between releases. See
+ *       @rstref{Callback execution contexts <bluetooth_callback_contexts>}
+ *       for the hazards of blocking in a callback and their mitigations.
  */
 struct bt_le_ext_adv_cb {
 	/**
@@ -290,6 +298,13 @@ struct bt_le_ext_adv_cb {
 	 * @brief The Controller indicates that one or more synced devices have
 	 * responded to a periodic advertising subevent indication.
 	 *
+	 * A response may be fragmented across several controller reports. When
+	 * @kconfig{CONFIG_BT_PER_ADV_RSP_REASSEMBLY} is enabled, the host
+	 * reassembles the fragments and delivers the complete response in a
+	 * single callback. If it is disabled, partial reports are discarded
+	 * and only reports already marked as "complete" by the controller are
+	 * forwarded to the application.
+	 *
 	 * @param adv  The advertising set object.
 	 * @param info Information about the responses received.
 	 * @param buf  The received data. NULL if the controller reported
@@ -326,9 +341,14 @@ typedef void (*bt_ready_cb_t)(int err);
  * earlier.
  *
  * @param cb Callback to notify completion or NULL to perform the
- * enabling synchronously. The callback is called from the system workqueue.
+ * enabling synchronously. The callback is called from a thread context
+ * internal to the stack, never from an ISR; see
+ * @rstref{Callback execution contexts <bluetooth_callback_contexts>}.
  *
- * @return Zero on success or (negative) error code otherwise.
+ * @return 0 on success, negative errno value on failure.
+ * @retval -EALREADY Bluetooth is already enabled, or being enabled.
+ * @retval -EAGAIN Bluetooth is being disabled; retry once bt_disable() has returned.
+ * @retval -ENODEV The HCI driver is not ready.
  */
 int bt_enable(bt_ready_cb_t cb);
 
@@ -336,6 +356,10 @@ int bt_enable(bt_ready_cb_t cb);
  * @brief Disable Bluetooth
  *
  * Disable Bluetooth. Can't be called before bt_enable has completed.
+ *
+ * When bt_enable() was called with a ready callback the initialization runs
+ * asynchronously. If bt_disable() is called before the ready callback fires,
+ * it returns -EAGAIN. The caller should retry after the ready callback.
  *
  * This API will clear all configured identity addresses and keys that are not persistently
  * stored with @kconfig{CONFIG_BT_SETTINGS}. These can be restored
@@ -349,7 +373,10 @@ int bt_enable(bt_ready_cb_t cb);
  *
  * Close and release HCI resources. Result is architecture dependent.
  *
- * @return Zero on success or (negative) error code otherwise.
+ * @return 0 on success, negative errno value on failure.
+ * @retval -EALREADY Bluetooth is already disabled, or being disabled.
+ * @retval -EAGAIN Bluetooth is still being enabled, which with @kconfig{CONFIG_BT_SETTINGS}
+ *                 includes loading the Bluetooth settings; retry once bt_is_ready() returns true.
  */
 int bt_disable(void);
 
@@ -1491,7 +1518,7 @@ int bt_le_ext_adv_delete(struct bt_le_ext_adv *adv);
  * @return Index of the advertising set object.
  * The range of the returned value is 0..@kconfig{CONFIG_BT_EXT_ADV_MAX_ADV_SET}-1
  */
-uint8_t bt_le_ext_adv_get_index(struct bt_le_ext_adv *adv);
+uint8_t bt_le_ext_adv_get_index(const struct bt_le_ext_adv *adv);
 
 /** Advertising states. */
 enum bt_le_ext_adv_state {
@@ -1525,7 +1552,26 @@ struct bt_le_ext_adv_info {
 	/** Advertising Set ID */
 	uint8_t                    sid;
 
-	/** Current local advertising address used. */
+	/** @brief Current local advertising address used.
+	 *
+	 *  The address the set advertises with, whether that is an identity
+	 *  address, a static random address, an RPA or an NRPA. For a set
+	 *  advertising with an RPA this is the RPA itself, not the identity
+	 *  address it resolves to. The value is determined when the
+	 *  advertising parameters are set, so it is only meaningful once
+	 *  bt_le_ext_adv_create() or bt_le_ext_adv_update_param() has
+	 *  succeeded, and reads as @ref BT_ADDR_LE_ANY before that.
+	 *
+	 *  The pointer is valid for as long as the advertising set object
+	 *  itself, i.e. until bt_le_ext_adv_delete(), and tracks the set
+	 *  across reconfiguration and private address rotation. Copy the
+	 *  address if it is needed beyond that.
+	 *
+	 *  @note If the set was configured to let the controller resolve the
+	 *  address against its resolving list, the controller may substitute a
+	 *  locally generated RPA that the host cannot observe. The configured
+	 *  fallback address is reported in that case.
+	 */
 	const bt_addr_le_t         *addr;
 
 	/** Extended advertising state. */
@@ -1836,6 +1882,14 @@ struct bt_le_per_adv_sync_state_info {
  * advertising.
  *
  * @note Used in @ref bt_le_per_adv_sync_cb_register function.
+ *
+ * @note The callbacks are invoked from a thread context, never from an
+ *       ISR. Whether a callback is invoked from a context internal to
+ *       the stack or synchronously from within the API call that
+ *       triggers it, and from which context, is not part of the API and
+ *       may change between releases. See
+ *       @rstref{Callback execution contexts <bluetooth_callback_contexts>}
+ *       for the hazards of blocking in a callback and their mitigations.
  */
 
 struct bt_le_per_adv_sync_cb {
@@ -2486,7 +2540,16 @@ struct bt_le_scan_recv_info {
 	uint8_t secondary_phy;
 };
 
-/** Listener context for (LE) scanning. */
+/** Listener context for (LE) scanning.
+ *
+ * @note The callbacks are invoked from a thread context, never from an
+ *       ISR. Whether a callback is invoked from a context internal to
+ *       the stack or synchronously from within the API call that
+ *       triggers it, and from which context, is not part of the API and
+ *       may change between releases. See
+ *       @rstref{Callback execution contexts <bluetooth_callback_contexts>}
+ *       for the hazards of blocking in a callback and their mitigations.
+ */
 struct bt_le_scan_cb {
 
 	/**
@@ -2643,6 +2706,7 @@ int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb);
  *
  * @return Zero on success or error code otherwise, positive in case of
  *         protocol error or negative (POSIX) in case of stack internal error.
+ * @retval -EBUSY The scanner is being started or stopped in a different thread.
  */
 int bt_le_scan_stop(void);
 

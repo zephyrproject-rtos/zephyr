@@ -26,8 +26,8 @@ LOG_MODULE_REGISTER(esp_hosted_mcu_spi, CONFIG_ESP_HOSTED_MCU_LOG_LEVEL);
  * it.
  */
 #define ESP_HOSTED_MCU_SPI_CONFIG                                                                  \
-	(SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8) | SPI_MODE_CPOL | SPI_MODE_CPHA | \
-	 SPI_FULL_DUPLEX)
+	(SPI_OP_MODE_CONTROLLER | SPI_TRANSFER_MSB | SPI_WORD_SET(8) | SPI_MODE_CPOL |             \
+	 SPI_MODE_CPHA | SPI_FULL_DUPLEX)
 
 /* Bound on how long the coprocessor may take to raise the handshake line (ms). */
 #define ESP_HOSTED_MCU_SPI_HANDSHAKE_TIMEOUT (100)

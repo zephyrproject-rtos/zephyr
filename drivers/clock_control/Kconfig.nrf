@@ -10,6 +10,15 @@ config CLOCK_CONTROL_NRF_FORCE_ALT
 	  This option can be enabled to force an alternative implementation
 	  of the clock control driver.
 
+config CLOCK_CONTROL_NRF_ONOFF
+	bool "Onoff manager related functionality"
+	default y
+	select ONOFF
+	help
+	  Enables onoff related functionality for clock control nrf.
+	  If your application does not use onoff manager,
+	  this config can be disabled to reduce image size.
+
 menuconfig CLOCK_CONTROL_NRF
 	bool "NRF Clock controller support"
 	default n
@@ -118,47 +127,47 @@ endif # CLOCK_CONTROL_NRF
 
 config CLOCK_CONTROL_NRF_COMMON
 	bool
-	select ONOFF
 
 if !CLOCK_CONTROL_NRF
 
 config CLOCK_CONTROL_NRF_HFCLK
-	bool "NRF HFCLK driver support"
+	bool
 	depends on DT_HAS_NORDIC_NRF_CLOCK_HFCLK_ENABLED
 	select CLOCK_CONTROL_NRF_COMMON
 	select NRFX_CLOCK_HFCLK if !CLOCK_CONTROL_NRF_FORCE_ALT
 	default y
 
 config CLOCK_CONTROL_NRF_HFCLK192M
-	bool "NRF HFCLK192M driver support"
+	bool
 	depends on DT_HAS_NORDIC_NRF_CLOCK_HFCLK192M_ENABLED
 	select CLOCK_CONTROL_NRF_COMMON
 	select NRFX_CLOCK_HFCLK192M if !CLOCK_CONTROL_NRF_FORCE_ALT
 	default y
 
 config CLOCK_CONTROL_NRF_HFCLKAUDIO
-	bool "NRF HFCLKAUDIO driver support"
+	bool
 	depends on DT_HAS_NORDIC_NRF_CLOCK_HFCLKAUDIO_ENABLED
 	select CLOCK_CONTROL_NRF_COMMON
 	select NRFX_CLOCK_HFCLKAUDIO if !CLOCK_CONTROL_NRF_FORCE_ALT
 	default y
 
 config CLOCK_CONTROL_NRF_LFCLK
-	bool "NRF LFCLK driver support"
+	bool
 	depends on DT_HAS_NORDIC_NRF_CLOCK_LFCLK_ENABLED
+	select CLOCK_CONTROL_NRF_ONOFF if $(dt_node_str_prop_equals,$(dt_nodelabel_path,lfclk),k32src,synth)
 	select CLOCK_CONTROL_NRF_COMMON
 	select NRFX_CLOCK_LFCLK if !CLOCK_CONTROL_NRF_FORCE_ALT
 	default y
 
 config CLOCK_CONTROL_NRF_XO
-	bool "NRF XO driver support"
+	bool
 	depends on DT_HAS_NORDIC_NRF_CLOCK_XO_ENABLED
 	select CLOCK_CONTROL_NRF_COMMON
 	select NRFX_CLOCK_XO if !CLOCK_CONTROL_NRF_FORCE_ALT
 	default y
 
 config CLOCK_CONTROL_NRF_XO24M
-	bool "NRF XO242M driver support"
+	bool
 	depends on DT_HAS_NORDIC_NRF_CLOCK_XO24M_ENABLED
 	select CLOCK_CONTROL_NRF_COMMON
 	select NRFX_CLOCK_XO24M if !CLOCK_CONTROL_NRF_FORCE_ALT
@@ -250,6 +259,7 @@ config CLOCK_CONTROL_NRF_HFINT_CALIBRATION
 	bool "HFINT clock calibration"
 	depends on DT_HAS_NORDIC_NRF54L_HFXO_ENABLED
 	depends on !TRUSTED_EXECUTION_NONSECURE
+	select CLOCK_CONTROL_NRF_ONOFF
 	select EXPERIMENTAL
 	help
 	  Enables calibration of HFINT clock on every start of HFXO clock.
@@ -281,6 +291,7 @@ config CLOCK_CONTROL_NRF_HSFLL_GLOBAL
 	select NRFS
 	select NRFS_GDFS_SERVICE_ENABLED
 	select CLOCK_CONTROL_NRF_COMMON
+	select CLOCK_CONTROL_NRF_ONOFF
 	default y
 
 if CLOCK_CONTROL_NRF_HSFLL_GLOBAL
@@ -317,18 +328,21 @@ config CLOCK_CONTROL_NRFS_AUDIOPLL
 	select NRFS
 	select NRFS_AUDIOPLL_SERVICE_ENABLED
 	select CLOCK_CONTROL_NRF_COMMON
+	select CLOCK_CONTROL_NRF_ONOFF
 	default y
 
 config CLOCK_CONTROL_NRF_FLL16M
 	bool "NRF FLL16M driver support"
 	depends on DT_HAS_NORDIC_NRF_FLL16M_ENABLED
 	select CLOCK_CONTROL_NRF_COMMON
+	select CLOCK_CONTROL_NRF_ONOFF
 	default y
 
 config CLOCK_CONTROL_NRF54H_HFXO
 	bool "NRF54H HFXO driver support"
 	depends on DT_HAS_NORDIC_NRF54H_HFXO_ENABLED
 	select CLOCK_CONTROL_NRF_COMMON
+	select CLOCK_CONTROL_NRF_ONOFF
 	default y
 
 config CLOCK_CONTROL_NRF_HSFLL_LOCAL
@@ -337,6 +351,7 @@ config CLOCK_CONTROL_NRF_HSFLL_LOCAL
 	select NRFS
 	select NRFS_DVFS_LOCAL_DOMAIN
 	select CLOCK_CONTROL_NRF_COMMON
+	select CLOCK_CONTROL_NRF_ONOFF
 	default y
 
 if CLOCK_CONTROL_NRF_HSFLL_LOCAL
@@ -357,6 +372,7 @@ config CLOCK_CONTROL_NRF_IRON_HSFLL_LOCAL
 	depends on DT_HAS_NORDIC_NRF_IRON_HSFLL_LOCAL_ENABLED
 	select IRONSIDE_SE_DVFS
 	select CLOCK_CONTROL_NRF_COMMON
+	select CLOCK_CONTROL_NRF_ONOFF
 	default y
 
 if CLOCK_CONTROL_NRF_IRON_HSFLL_LOCAL
@@ -378,6 +394,7 @@ config CLOCK_CONTROL_NRFS_LFCLK
 	select NRFS
 	select NRFS_CLOCK_SERVICE_ENABLED
 	select CLOCK_CONTROL_NRF_COMMON
+	select CLOCK_CONTROL_NRF_ONOFF
 	default y
 
 if CLOCK_CONTROL_NRFS_LFCLK

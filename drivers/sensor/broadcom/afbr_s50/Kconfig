@@ -15,3 +15,13 @@ config AFBR_S50
 	select PINCTRL_NON_STATIC
 	help
 	  Enable driver for the AFBR-S50 Time-of-Flight sensor.
+
+if AFBR_S50
+
+configdefault RTIO_WORKQ_THREADS_POOL_STACK_SIZE
+	default 4096
+
+configdefault MAIN_STACK_SIZE
+	default 4096
+
+endif

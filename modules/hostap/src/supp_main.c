@@ -42,6 +42,19 @@ static K_THREAD_STACK_DEFINE(iface_wq_stack, CONFIG_WIFI_NM_WPA_SUPPLICANT_WQ_ST
 #include "eloop.h"
 #include "wpa_supplicant/config.h"
 #include "wpa_supplicant_i.h"
+
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_PRINT_PMK
+/* struct wpa_sm is private to rsn_supp, pulled in only for this debug-only
+ * print. wpa_i.h is not self-contained - it needs struct wpa_sm_ctx,
+ * struct wpa_sm_mlo and enum wpa_rsn_override (all in wpa.h), matching the
+ * exact preamble wpa.c itself uses right before including wpa_i.h.
+ */
+#include "rsn_supp/wpa.h"
+#include "preauth.h"
+#include "pmksa_cache.h"
+#include "rsn_supp/wpa_i.h"
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_PRINT_PMK */
+
 #include "fst/fst.h"
 #include "wpa_cli_zephyr.h"
 #include "ctrl_iface_zephyr.h"
@@ -238,6 +251,15 @@ static void zephyr_wpa_supplicant_msg(void *ctx, const char *txt, size_t len)
 
 	/* Only interested in CTRL-EVENTs */
 	if (strncmp(txt, "CTRL-EVENT", 10) == 0) {
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_PRINT_PMK
+		if (strncmp(txt, "CTRL-EVENT-CONNECTED", 20) == 0 && wpa_s->wpa) {
+			char pmk_hex[2 * PMK_LEN_MAX + 1];
+
+			wpa_snprintf_hex(pmk_hex, sizeof(pmk_hex),
+					 wpa_s->wpa->pmk, wpa_s->wpa->pmk_len);
+			wpa_printf(MSG_ERROR, "WPA: PMK = %s", pmk_hex);
+		}
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_PRINT_PMK */
 		if (strncmp(txt, "CTRL-EVENT-SIGNAL-CHANGE", 24) == 0) {
 			supplicant_send_wifi_mgmt_event(wpa_s->ifname,
 						NET_EVENT_WIFI_CMD_SIGNAL_CHANGE,

@@ -125,6 +125,19 @@ config WIFI_NM_WPA_SUPPLICANT_DEBUG_SHOW_KEYS
 	  development or debugging. Key material should never be logged in production
 	  systems as it can compromise network security.
 
+config WIFI_NM_WPA_SUPPLICANT_PRINT_PMK
+	bool "Print PMK once per successful handshake"
+	select EXPERIMENTAL
+	help
+	  Prints the PMK (as a hex string) once per completed 4-way handshake,
+	  independent of WIFI_NM_WPA_SUPPLICANT_DEBUG_LEVEL and
+	  WIFI_NM_WPA_SUPPLICANT_DEBUG_SHOW_KEYS. Intended for capturing the PMK
+	  needed to decrypt an over-the-air Wi-Fi capture, without the log
+	  volume that comes with enabling full supplicant debug output.
+
+	  WARNING: This is a security risk and should only be enabled during
+	  development or debugging.
+
 if WIFI_NM_WPA_SUPPLICANT_LOG_LEVEL_DBG
 # hostap debug is very verbose and despite large log buffer sizes
 # log messages can be lost. So, we set the log mode to immediate
@@ -527,6 +540,7 @@ config WIFI_NM_WPA_SUPPLICANT_NAN
 config WIFI_NAN_MAX_SSI_LEN
 	int "Maximum length of NAN service specific info"
 	depends on WIFI_NM_WPA_SUPPLICANT_NAN
+	range 1 65535
 	default 128
 	help
 	  Maximum NAN Service Specific Info (SSI) payload length in bytes.

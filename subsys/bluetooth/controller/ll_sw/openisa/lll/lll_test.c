@@ -157,7 +157,7 @@ static void isr_rx(void *param)
 	}
 }
 
-static uint8_t init(uint8_t chan, uint8_t phy, void (*isr)(void *))
+static uint8_t init(uint8_t chan, uint8_t phy, void (*isr)(void *param))
 {
 	int err;
 

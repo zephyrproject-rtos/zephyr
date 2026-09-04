@@ -347,6 +347,9 @@ enum i3c_data_rate {
 /** Skip I3C broadcast header. Private Transfers only. */
 #define I3C_MSG_NBCH			BIT(4)
 
+/** NACK is expected from target */
+#define I3C_MSG_NOACK_EXPECTED		BIT(5)
+
 /** I3C HDR Mode 0 */
 #define I3C_MSG_HDR_MODE0		BIT(0)
 
@@ -2011,6 +2014,8 @@ static inline int z_impl_i3c_do_ccc_cb(const struct device *dev,
  * @retval 0 on success.
  * @retval -EBUSY Bus is busy.
  * @retval -EIO General input / output error.
+ * @retval -ENODATA If message has flag I3C_MSG_NOACK_EXPECTED set and
+ *		    the target NACK the transfer.
  */
 __syscall int i3c_transfer(struct i3c_device_desc *target,
 			   struct i3c_msg *msgs, uint8_t num_msgs);

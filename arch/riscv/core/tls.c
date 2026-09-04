@@ -11,10 +11,15 @@
 #include <zephyr/app_memory/app_memdomain.h>
 #include <zephyr/sys/util.h>
 
+static inline FUNC_NO_STACK_PROTECTOR size_t z_tls_data_size_aligned(void)
+{
+	return ROUND_UP(z_tls_data_size(), ARCH_STACK_PTR_ALIGN);
+}
+
 /* Non-inline wrapper for z_tls_data_size(), required for calling from assembly. */
 size_t FUNC_NO_STACK_PROTECTOR z_tls_data_size_asm(void)
 {
-	return z_tls_data_size();
+	return z_tls_data_size_aligned();
 }
 
 size_t arch_tls_stack_setup(struct k_thread *new_thread, char *stack_ptr)
@@ -27,7 +32,7 @@ size_t arch_tls_stack_setup(struct k_thread *new_thread, char *stack_ptr)
 	 * Since we are populating things backwards, setup the TLS data/bss
 	 * area first.
 	 */
-	stack_ptr -= z_tls_data_size();
+	stack_ptr -= z_tls_data_size_aligned();
 	z_tls_copy(stack_ptr);
 
 	/*

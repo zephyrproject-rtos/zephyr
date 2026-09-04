@@ -116,7 +116,7 @@ jobs:
         run: python3 scripts/ci/sarif_summary.py results-${{ matrix.sanitizer }}.sarif
 
       - name: Upload SARIF to code scanning
-        uses: github/codeql-action/upload-sarif@5595ccaf912efad79be6eef63a5619ff05969be3 # v4.37.6
+        uses: github/codeql-action/upload-sarif@ff2f1c621b7f889edc0d3c761ac2e6a3f8cdb0dd # v4.37.7
         with:
           sarif_file: results-${{ matrix.sanitizer }}.sarif
           # One category per sanitizer. They report disjoint rule sets, and a

@@ -1,0 +1,17 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Silicon Laboratories Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <silabs/siwg917m111mgtba.dtsi>
+
+/ {
+	soc {
+		compatible = "silabs,siwg917y111mgaba", "silabs,siwg917m111mgtba",
+			     "silabs,siwg917", "silabs,siwx91x", "simple-bus";
+	};
+};
+
+&uulpgpio {
+	gpio-reserved-ranges = <3 1>;
+};

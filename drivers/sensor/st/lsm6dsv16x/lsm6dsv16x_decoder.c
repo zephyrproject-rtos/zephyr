@@ -257,7 +257,11 @@ static int lsm6dsv16x_decoder_get_frame_count(const uint8_t *buffer,
 		case LSM6DSV16X_SENSORHUB_SLAVE2_TAG:
 		case LSM6DSV16X_SENSORHUB_SLAVE3_TAG: {
 			uint8_t k = fifo_tag - LSM6DSV16X_SENSORHUB_SLAVE1_TAG;
-			enum sensor_channel ctype = lsm6dsv16x_shub_type(k);
+			enum sensor_channel ctype = SENSOR_CHAN_COMMON_COUNT;
+
+			if (k < edata->num_ext_dev) {
+				ctype = lsm6dsv16x_shub_type(edata->shub_ext[k]);
+			}
 
 			switch (ctype) {
 			case SENSOR_CHAN_MAGN_XYZ:
@@ -618,7 +622,11 @@ static int lsm6dsv16x_decode_fifo(const uint8_t *buffer, struct sensor_chan_spec
 		case LSM6DSV16X_SENSORHUB_SLAVE2_TAG:
 		case LSM6DSV16X_SENSORHUB_SLAVE3_TAG: {
 			uint8_t k = fifo_tag - LSM6DSV16X_SENSORHUB_SLAVE1_TAG;
-			enum sensor_channel ctype = lsm6dsv16x_shub_type(k);
+			enum sensor_channel ctype = SENSOR_CHAN_COMMON_COUNT;
+
+			if (k < edata->num_ext_dev) {
+				ctype = lsm6dsv16x_shub_type(edata->shub_ext[k]);
+			}
 
 			if ((uintptr_t)buffer < *fit) {
 				/* This frame was already decoded, move on to the next frame */

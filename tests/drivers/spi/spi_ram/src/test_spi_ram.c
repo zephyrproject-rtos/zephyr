@@ -9,7 +9,7 @@
  * @addtogroup t_spi_basic
  * @{
  * @defgroup t_spi_read_write test_spi_read_write
- * @brief TestPurpose: verify SPI master can read and write to FM25W256 SPI F-RAM
+ * @brief TestPurpose: verify SPI controller can read and write to FM25W256 SPI F-RAM
  * @}
  */
 
@@ -66,7 +66,7 @@
 static struct spi_config spi_cfg = {
 	.frequency = FRAM_SPI_FREQ_HZ,
 	.operation = SPI_WORD_SET(8) | SPI_TRANSFER_MSB,
-	.slave = 0,
+	.peripheral = 0,
 	.cs = {
 		.gpio = GPIO_DT_SPEC_GET_BY_IDX(SPI_DEV_NODE, cs_gpios, 0),
 		.delay = 10U, /* 10 µs CS setup/hold — aids analyzer capture */

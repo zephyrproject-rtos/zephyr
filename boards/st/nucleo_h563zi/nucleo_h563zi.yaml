@@ -13,6 +13,7 @@ supported:
   - backup_sram
   - can
   - gpio
+  - ptp_clock
   - uart
   - entropy
   - adc

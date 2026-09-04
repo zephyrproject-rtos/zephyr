@@ -13,6 +13,8 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/linear_range.h>
 
+#include "mfd_npm10xx.h"
+
 LOG_MODULE_REGISTER(regulator_npm10xx, CONFIG_REGULATOR_LOG_LEVEL);
 
 /* RESET ship task register offset and mask */
@@ -156,7 +158,6 @@ enum npm10xx_source {
 };
 
 struct regulator_npm10xx_gpio_config {
-	bool in_use;
 	uint8_t pin;
 	gpio_dt_flags_t flags;
 };
@@ -168,9 +169,9 @@ struct regulator_npm10xx_pconfig {
 
 struct regulator_npm10xx_config {
 	struct regulator_common_config common;
+	const struct device *mfd;
 	struct i2c_dt_spec i2c;
 	enum npm10xx_source source;
-	/* NOTE: gpio_config fields currently have no effect. To be implemented after GPIO driver */
 	struct regulator_npm10xx_gpio_config enable_gpio_config;
 	struct regulator_npm10xx_gpio_config pwr_mode_gpio_config;
 	struct regulator_npm10xx_gpio_config alt_vout_gpio_config;
@@ -188,9 +189,12 @@ struct regulator_npm10xx_data {
 };
 
 /* Helper functions */
-static int set_gpio_ctrl(const struct regulator_npm10xx_config *config, regulator_mode_t mode)
+static inline int set_gpio_ctrl(const struct regulator_npm10xx_config *config,
+				regulator_mode_t mode)
 {
 	uint8_t reg = 0U;
+	uint8_t usage;
+	int ret;
 
 	if (!(mode & NPM10XX_REG_GPIO_Msk)) {
 		return 0;
@@ -202,31 +206,92 @@ static int set_gpio_ctrl(const struct regulator_npm10xx_config *config, regulato
 	}
 
 	if (mode & NPM10XX_REG_GPIO_EN) {
+		if (config->enable_gpio_config.pin == UINT8_MAX) {
+			LOG_ERR("Invalid mode %u (no enable-gpio-config in Devicetree)", mode);
+			return -EINVAL;
+		}
+
+		usage = config->source == NPM10XX_SOURCE_BUCK  ? NPM10_PIN_BUCK_EN
+			: config->source == NPM10XX_SOURCE_LDO ? NPM10_PIN_LDO_EN
+							       : NPM10_PIN_LDSW_EN;
+
+		ret = mfd_npm10xx_pin_configure(config->mfd, config->enable_gpio_config.pin, usage,
+						config->enable_gpio_config.flags | GPIO_INPUT);
+		if (ret < 0) {
+			LOG_ERR("Failed to configure pin %u for regulator enable control",
+				config->enable_gpio_config.pin);
+			return ret;
+		}
+
 		reg |= REG_GPIO_ENABLE_Msk;
 	}
+
 	if (mode & NPM10XX_BUCK_GPIO_PWRMODE) {
+		if (config->pwr_mode_gpio_config.pin == UINT8_MAX ||
+		    config->source != NPM10XX_SOURCE_BUCK) {
+			LOG_ERR("Invalid mode %u (no pwr-mode-gpio-config in Devicetree, or wrong "
+				"regulator)",
+				mode);
+			return -EINVAL;
+		}
+
+		ret = mfd_npm10xx_pin_configure(config->mfd, config->pwr_mode_gpio_config.pin,
+						NPM10_PIN_BUCK_MODE,
+						config->pwr_mode_gpio_config.flags | GPIO_INPUT);
+		if (ret < 0) {
+			LOG_ERR("Failed to configure pin %u for buck mode control",
+				config->pwr_mode_gpio_config.pin);
+			return ret;
+		}
+
 		reg |= BUCK_GPIO_PWRMODE_Msk;
 	}
+
 	if (mode & NPM10XX_BUCK_GPIO_ALTVOUT) {
+		if (config->alt_vout_gpio_config.pin == UINT8_MAX ||
+		    config->source != NPM10XX_SOURCE_BUCK) {
+			LOG_ERR("Invalid mode %u (no alternate-vout-gpio-config in Devicetree, or "
+				"wrong regulator)",
+				mode);
+			return -EINVAL;
+		}
+
+		ret = mfd_npm10xx_pin_configure(config->mfd, config->alt_vout_gpio_config.pin,
+						NPM10_PIN_BUCK_VOUT,
+						config->alt_vout_gpio_config.flags | GPIO_INPUT);
+		if (ret < 0) {
+			LOG_ERR("Failed to configure pin %u for buck alternate VOUT control",
+				config->alt_vout_gpio_config.pin);
+			return ret;
+		}
+
 		reg |= BUCK_GPIO_ALTVOUT_Msk;
 	}
 
 	switch (config->source) {
 	case NPM10XX_SOURCE_BUCK:
-		return i2c_reg_write_byte_dt(&config->i2c, NPM10_BUCK_GPIO, reg);
+		ret = i2c_reg_write_byte_dt(&config->i2c, NPM10_BUCK_GPIO, reg);
+		if (ret < 0) {
+			return ret;
+		}
+		if (reg & REG_GPIO_ENABLE_Msk) {
+			return i2c_reg_write_byte_dt(&config->i2c, NPM10_BUCK_SET,
+						     BUCK_SETCLR_ENASEL_Msk);
+		}
+		return 0;
 
 	case NPM10XX_SOURCE_LDO:
-		if (reg > 1U) {
-			LOG_ERR("invalid mode for the LDO regulator");
-			return -EINVAL;
+		__ASSERT_NO_MSG(reg <= 1U);
+
+		ret = i2c_reg_write_byte_dt(&config->i2c, NPM10_LDO1_GPIO, reg);
+		if (ret < 0) {
+			return ret;
 		}
-		return i2c_reg_write_byte_dt(&config->i2c, NPM10_LDO1_GPIO, reg);
+		return i2c_reg_write_byte_dt(&config->i2c, NPM10_LDO1_SET, LDO1_SETCLR_ENASEL_Msk);
 
 	case NPM10XX_SOURCE_LDSW:
-		if (reg > 1U) {
-			LOG_ERR("invalid mode for the LOADSW regulator");
-			return -EINVAL;
-		}
+		__ASSERT_NO_MSG(reg <= 1U);
+
 		return i2c_reg_write_byte_dt(&config->i2c, NPM10_LOADSW2_GPIO, reg);
 
 	default:
@@ -1035,19 +1100,17 @@ static DEVICE_API(regulator, regulator_npm10xx_driver_api) = {
 	.get_active_discharge = regulator_npm10xx_get_active_discharge,
 };
 
-#define GPIO_CONFIG_DEFINE(node_id, prop)                                                          \
-	COND_CODE_1(DT_NODE_HAS_PROP(node_id, prop),                                               \
-		({1, DT_PROP_BY_IDX(node_id, prop, 0), DT_PROP_BY_IDX(node_id, prop, 1)}), ({0}))
-
 #define REGULATOR_NPM10XX_DEFINE(node_id, id, src)                                                 \
 	static struct regulator_npm10xx_data regulator_data_##id;                                  \
 	static const struct regulator_npm10xx_config regulator_config_##id = {                     \
 		.common = REGULATOR_DT_COMMON_CONFIG_INIT(node_id),                                \
+		.mfd = DEVICE_DT_GET(DT_GPARENT(node_id)),                                         \
 		.i2c = I2C_DT_SPEC_GET(DT_GPARENT(node_id)),                                       \
 		.source = src,                                                                     \
-		.enable_gpio_config = GPIO_CONFIG_DEFINE(node_id, enable_gpio_config),             \
-		.pwr_mode_gpio_config = GPIO_CONFIG_DEFINE(node_id, pwr_mode_gpio_config),         \
-		.alt_vout_gpio_config = GPIO_CONFIG_DEFINE(node_id, alternate_vout_gpio_config),   \
+		.enable_gpio_config = DT_PROP_OR(node_id, enable_gpio_config, {UINT8_MAX}),        \
+		.pwr_mode_gpio_config = DT_PROP_OR(node_id, pwr_mode_gpio_config, {UINT8_MAX}),    \
+		.alt_vout_gpio_config =                                                            \
+			DT_PROP_OR(node_id, alternate_vout_gpio_config, {UINT8_MAX}),              \
 		.alternate_uv = DT_PROP_OR(node_id, regulator_alternate_microvolt, INT32_MIN),     \
 		.passthru = DT_PROP(node_id, regulator_allow_bypass),                              \
 		.oc_protection = DT_PROP(node_id, regulator_over_current_protection),              \

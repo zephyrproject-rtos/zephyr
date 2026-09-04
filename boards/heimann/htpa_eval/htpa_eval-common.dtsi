@@ -109,8 +109,7 @@
 
 			ext_sram_bus: ext-sram@0 {
 				reg = <0>;
-				/* this needs: PR #112329 */
-				/* atmel,smc-data-bus-width = <16>; */
+				atmel,smc-data-bus-width = <16>;
 				atmel,smc-write-mode = "nwe";
 				atmel,smc-read-mode = "nrd";
 				atmel,smc-setup-timing = <1 1 1 1>;

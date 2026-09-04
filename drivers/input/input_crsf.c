@@ -324,18 +324,35 @@ static void input_crsf_input_report_thread(const struct device *dev, void *dummy
 	}
 }
 
+static inline void crsf_reset_parser(struct input_crsf_data *data)
+{
+	data->rx_state = RX_STATE_SYNC;
+	data->xfer_bytes = 0;
+	data->payload_remaining = 0;
+}
+
 /*
  * Byte Processor: Implements State Machine
- * Called by the Async Callback
+ * Called by the Async Callback in UART ISR context.
  */
 static void crsf_process_bytes(const struct device *dev, uint8_t *bytes, size_t len)
 {
 	struct input_crsf_data *const data = dev->data;
 
+	/* A chunk larger than one RX DMA buffer cannot come from this driver's RX path. */
+	if (bytes == NULL || len == 0 || len > CRSF_RX_BUF_SIZE) {
+		LOG_DBG("Dropping invalid CRSF chunk (len %zu)", len);
+		return;
+	}
+
 	for (int offset = 0; offset < len; offset++) {
 		switch (data->rx_state) {
 		case RX_STATE_SYNC:
 			/* logic: waiting for [SYNC, LEN, TYPE] sequence or just SYNC validation */
+			if (data->xfer_bytes >= sizeof(data->rd_data)) {
+				crsf_reset_parser(data);
+				break;
+			}
 			data->rd_data[data->xfer_bytes++] = bytes[offset];
 
 			if (data->rd_data[0] != CRSF_SYNC_BYTE) {
@@ -358,7 +375,16 @@ static void crsf_process_bytes(const struct device *dev, uint8_t *bytes, size_t 
 			break;
 
 		case RX_STATE_TYPE:
+			/* Len promised a type byte; if the counter is spent, reframe. */
+			if (data->payload_remaining == 0) {
+				crsf_reset_parser(data);
+				break;
+			}
 			if (is_crsf_whitelisted(bytes[offset])) {
+				if (data->xfer_bytes >= sizeof(data->rd_data)) {
+					crsf_reset_parser(data);
+					break;
+				}
 				data->rx_state = RX_STATE_DATA;
 				data->rd_data[data->xfer_bytes++] = bytes[offset];
 				data->payload_remaining--;
@@ -370,17 +396,30 @@ static void crsf_process_bytes(const struct device *dev, uint8_t *bytes, size_t 
 			break;
 
 		case RX_STATE_IGNORE: {
+			/* Nothing left to skip but we never reframed: framing slip. */
+			if (data->payload_remaining == 0) {
+				crsf_reset_parser(data);
+				break;
+			}
 			data->payload_remaining--;
 
 			/* If we've skipped everything, reset to SYNC */
 			if (data->payload_remaining == 0) {
-				data->rx_state = RX_STATE_SYNC;
-				data->xfer_bytes = 0;
+				crsf_reset_parser(data);
 			}
 			break;
 		}
 
 		case RX_STATE_DATA:
+			/* Expected payload/CRC byte but the counter is already spent. */
+			if (data->payload_remaining == 0) {
+				crsf_reset_parser(data);
+				break;
+			}
+			if (data->xfer_bytes >= sizeof(data->rd_data)) {
+				crsf_reset_parser(data);
+				break;
+			}
 			data->rd_data[data->xfer_bytes++] = bytes[offset];
 			data->payload_remaining--;
 
@@ -392,8 +431,7 @@ static void crsf_process_bytes(const struct device *dev, uint8_t *bytes, size_t 
 				k_msgq_put(&data->rx_queue, data->rd_data, K_NO_WAIT);
 
 				/* Reset for next frame */
-				data->rx_state = RX_STATE_SYNC;
-				data->xfer_bytes = 0;
+				crsf_reset_parser(data);
 			}
 			break;
 		}
@@ -421,13 +459,28 @@ static void crsf_uart_callback(const struct device *uart_dev, struct uart_event 
 		LOG_ERR("CRSF TX Aborted");
 		break;
 
-	case UART_RX_RDY:
+	case UART_RX_RDY: {
+		uint8_t *rx_buf = evt->data.rx.buf;
+		size_t rx_off = evt->data.rx.offset;
+		size_t rx_len = evt->data.rx.len;
+
+		/*
+		 * The window must name one of our two RX buffers and stay inside
+		 * it, or the async event is corrupt and gets dropped.
+		 */
+		if ((rx_buf != data->rx_buf_a && rx_buf != data->rx_buf_b) || rx_len == 0 ||
+		    rx_off > CRSF_RX_BUF_SIZE || rx_len > (size_t)CRSF_RX_BUF_SIZE - rx_off) {
+			LOG_DBG("Dropping out-of-range CRSF RX window");
+			break;
+		}
+
 #ifdef CRSF_INVALIDATE_CACHE
-		arch_dcache_invd_range(&evt->data.rx.buf[evt->data.rx.offset], evt->data.rx.len);
+		arch_dcache_invd_range(&rx_buf[rx_off], rx_len);
 #endif
 		/* Process received data chunk */
-		crsf_process_bytes(dev, &evt->data.rx.buf[evt->data.rx.offset], evt->data.rx.len);
+		crsf_process_bytes(dev, &rx_buf[rx_off], rx_len);
 		break;
+	}
 
 	case UART_RX_BUF_REQUEST:
 		/* Provide the next buffer to keep reception continuous */

@@ -2,6 +2,10 @@
 # SPDX-License-Identifier: Apache-2.0
 
 # Emulated virtio-blk disk, backed by a raw disk image created at build time.
+#
+# Boards say where the device goes by setting QEMU_VIRTIO_BLK_TRANSPORT to the
+# device property picking their transport, "bus=virtio-mmio-bus.4" or
+# "addr=06.0" for example, matching the devicetree.
 
 if(CONFIG_DISK_DRIVER_VIRTIO_BLK)
   if(qemu_alternate_path)
@@ -23,13 +27,21 @@ if(CONFIG_DISK_DRIVER_VIRTIO_BLK)
   )
 
   if(CONFIG_VIRTIO_PCI)
-    set(virtio_blk_pci_dev "virtio-blk-pci,drive=vblk")
-    set(blk_size ${CONFIG_QEMU_VIRTIO_BLK_LOGICAL_BLOCK_SIZE})
-    # QEMU requires physical_block_size >= logical_block_size.
-    set(virtio_blk_pci_dev
-      "${virtio_blk_pci_dev},logical_block_size=${blk_size},physical_block_size=${blk_size}")
-    qemu_append_extra_flags(-device ${virtio_blk_pci_dev})
+    set(virtio_blk_dev "virtio-blk-pci,drive=vblk")
+  else()
+    set(virtio_blk_dev "virtio-blk-device,drive=vblk")
   endif()
+
+  if(QEMU_VIRTIO_BLK_TRANSPORT)
+    string(APPEND virtio_blk_dev ",${QEMU_VIRTIO_BLK_TRANSPORT}")
+  endif()
+
+  # QEMU requires physical_block_size >= logical_block_size.
+  set(blk_size ${CONFIG_QEMU_VIRTIO_BLK_LOGICAL_BLOCK_SIZE})
+  string(APPEND virtio_blk_dev
+    ",logical_block_size=${blk_size},physical_block_size=${blk_size}")
+
+  qemu_append_extra_flags(-device ${virtio_blk_dev})
 
   add_custom_target(qemu_virtio_blk_disk
     COMMAND

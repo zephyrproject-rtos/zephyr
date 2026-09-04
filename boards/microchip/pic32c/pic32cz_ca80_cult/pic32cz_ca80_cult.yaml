@@ -17,4 +17,5 @@ supported:
   - i2c
   - pinctrl
   - uart
+  - watchdog
 vendor: microchip

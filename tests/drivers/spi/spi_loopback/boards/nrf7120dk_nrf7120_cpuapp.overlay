@@ -11,8 +11,8 @@
 
 / {
 	zephyr,user {
-		miso-gpios = <&gpio1 7 GPIO_ACTIVE_HIGH>;
-		mosi-gpios = <&gpio1 12 GPIO_ACTIVE_HIGH>;
+		sdi-gpios = <&gpio1 7 GPIO_ACTIVE_HIGH>;
+		sdo-gpios = <&gpio1 12 GPIO_ACTIVE_HIGH>;
 		cs-loopback-gpios = <&gpio1 5 0>;
 	};
 };

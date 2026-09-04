@@ -9,6 +9,10 @@
 #include <zephyr/dt-bindings/clock/mchp_pic32cz_ca_clock.h>
 
 / {
+	aliases {
+		watchdog0 = &wdt;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -118,6 +122,20 @@
 				compatible = "microchip,pic32cz-ca-mclkperiph";
 				#clock-cells = <1>;
 			};
+		};
+
+		wdt: watchdog@44070000 {
+			compatible = "microchip,wdt-g1";
+			reg = <0x44070000 13>;
+			interrupts = <14 0>;
+			interrupt-names = "wdt-ew";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_WDT>;
+			clock-names = "mclk";
+			max-installable-timeout-count = <1>;
+			max-timeout-window = <0x4000>;
+			max-timeout-window-mode = <0x8000>;
+			min-window-limit = <0x8>;
+			status = "disabled";
 		};
 
 		pinctrl: pinctrl@44840000 {

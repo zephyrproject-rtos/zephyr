@@ -21,6 +21,7 @@ supported:
   - gpio
   - hwinfo
   - i2c
+  - netif:eth
   - interrupt_controller
   - pinctrl
   - pwm

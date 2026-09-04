@@ -18,6 +18,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/util.h>
 
 LOG_MODULE_REGISTER(mchp_aes, CONFIG_CRYPTO_LOG_LEVEL);
 
@@ -109,6 +110,8 @@ static int mchp_aes_process(struct cipher_ctx *ctx, int32_t in_len, const uint8_
 	aes_registers_t *const regs = cfg->regs;
 	struct crypto_mchp_aes_data *data = ctx->device->data;
 	volatile uint32_t val;
+	int32_t full_blocks;
+	int32_t remainder;
 
 	k_mutex_lock(&data->aes_lock, K_FOREVER);
 
@@ -126,13 +129,30 @@ static int mchp_aes_process(struct cipher_ctx *ctx, int32_t in_len, const uint8_
 	}
 
 	*out_len = 0;
-	for (int i = 0; i < in_len; i += 16) {
+	full_blocks = ROUND_DOWN(in_len, 16);
+	for (int i = 0; i < full_blocks; i += 16) {
 		aes_write_input(regs, in_buf + i);
 		regs->AES_CR = AES_CR_START_Msk;
 		while ((regs->AES_ISR & AES_ISR_DATRDY_Msk) != AES_ISR_DATRDY_Msk) {
 		}
 		aes_read_output(regs, out_buf + i);
 		*out_len += 16;
+	}
+
+	/* Handle trailing partial block (only valid for stream cipher modes like CTR) */
+	remainder = in_len % 16;
+	if (remainder > 0) {
+		uint8_t tmp_in[16] = {0};
+		uint8_t tmp_out[16];
+
+		memcpy(tmp_in, in_buf + full_blocks, remainder);
+		aes_write_input(regs, tmp_in);
+		regs->AES_CR = AES_CR_START_Msk;
+		while ((regs->AES_ISR & AES_ISR_DATRDY_Msk) != AES_ISR_DATRDY_Msk) {
+		}
+		aes_read_output(regs, tmp_out);
+		memcpy(out_buf + full_blocks, tmp_out, remainder);
+		*out_len += remainder;
 	}
 
 	k_mutex_unlock(&data->aes_lock);

@@ -2388,8 +2388,8 @@ __syscall void k_queue_cancel_wait(struct k_queue *queue);
  * @brief Append an element to the end of a queue.
  *
  * This routine appends a data item to @a queue. A queue data item must be
- * aligned on a word boundary, and the first word of the item is reserved
- * for the kernel's use.
+ * aligned as required for a pointer, and its first pointer-sized field is
+ * reserved for the kernel's use.
  *
  * @isr_ok
  *
@@ -2420,8 +2420,8 @@ __syscall int32_t k_queue_alloc_append(struct k_queue *queue, void *data);
  * @brief Prepend an element to a queue.
  *
  * This routine prepends a data item to @a queue. A queue data item must be
- * aligned on a word boundary, and the first word of the item is reserved
- * for the kernel's use.
+ * aligned as required for a pointer, and its first pointer-sized field is
+ * reserved for the kernel's use.
  *
  * @isr_ok
  *
@@ -2452,8 +2452,8 @@ __syscall int32_t k_queue_alloc_prepend(struct k_queue *queue, void *data);
  * @brief Inserts an element to a queue.
  *
  * This routine inserts a data item to @a queue after previous item. A queue
- * data item must be aligned on a word boundary, and the first word of
- * the item is reserved for the kernel's use.
+ * data item must be aligned as required for a pointer, and its first
+ * pointer-sized field is reserved for the kernel's use.
  *
  * @isr_ok
  *
@@ -2467,8 +2467,8 @@ void k_queue_insert(struct k_queue *queue, void *prev, void *data);
  * @brief Atomically append a list of elements to a queue.
  *
  * This routine adds a list of data items to @a queue in one operation.
- * The data items must be in a singly-linked list, with the first word
- * in each data item pointing to the next data item; the list must be
+ * The data items must be in a singly-linked list, with the first pointer-sized
+ * field in each data item pointing to the next data item; the list must be
  * NULL-terminated.
  *
  * @isr_ok
@@ -2505,8 +2505,8 @@ int k_queue_merge_slist(struct k_queue *queue, sys_slist_t *list);
 /**
  * @brief Get an element from a queue.
  *
- * This routine removes first data item from @a queue. The first word of the
- * data item is reserved for the kernel's use.
+ * This routine removes first data item from @a queue. The first pointer-sized
+ * field of the data item is reserved for the kernel's use.
  *
  * @note @a timeout must be set to K_NO_WAIT if called from ISR.
  *
@@ -2524,9 +2524,9 @@ __syscall void *k_queue_get(struct k_queue *queue, k_timeout_t timeout);
 /**
  * @brief Remove an element from a queue.
  *
- * This routine removes data item from @a queue. The first word of the
- * data item is reserved for the kernel's use. Removing elements from k_queue
- * rely on sys_slist_find_and_remove which is not a constant time operation.
+ * This routine removes data item from @a queue. The first pointer-sized field
+ * of the data item is reserved for the kernel's use. Removing elements from
+ * k_queue rely on sys_slist_find_and_remove which is not a constant time operation.
  *
  * @isr_ok
  *
@@ -2540,9 +2540,9 @@ bool k_queue_remove(struct k_queue *queue, void *data);
 /**
  * @brief Append an element to a queue only if it's not present already.
  *
- * This routine appends data item to @a queue. The first word of the data
- * item is reserved for the kernel's use. Appending elements to k_queue
- * relies on sys_slist_is_node_in_list which is not a constant time operation.
+ * This routine appends data item to @a queue. The first pointer-sized field of
+ * the data item is reserved for the kernel's use. Appending elements to
+ * k_queue relies on sys_slist_is_node_in_list which is not a constant time operation.
  *
  * @isr_ok
  *
@@ -3038,8 +3038,8 @@ struct k_fifo {
 /**
  * @brief Add an element to a FIFO queue.
  *
- * This routine adds a data item to @a fifo. A FIFO data item must be
- * aligned on a word boundary, and the first word of the item is reserved
+ * This routine adds a data item to @a fifo. A FIFO data item must be aligned
+ * as required for a pointer, and its first pointer-sized field is reserved
  * for the kernel's use.
  *
  * @isr_ok
@@ -3084,8 +3084,8 @@ struct k_fifo {
  * @brief Atomically add a list of elements to a FIFO.
  *
  * This routine adds a list of data items to @a fifo in one operation.
- * The data items must be in a singly-linked list, with the first word of
- * each data item pointing to the next data item; the list must be
+ * The data items must be in a singly-linked list, with the first pointer-sized
+ * field in each data item pointing to the next data item; the list must be
  * NULL-terminated.
  *
  * @isr_ok
@@ -3131,7 +3131,8 @@ struct k_fifo {
  * @brief Get an element from a FIFO queue.
  *
  * This routine removes a data item from @a fifo in a "first in, first out"
- * manner. The first word of the data item is reserved for the kernel's use.
+ * manner. The first pointer-sized field of the data item is reserved for the
+ * kernel's use.
  *
  * @note @a timeout must be set to K_NO_WAIT if called from ISR.
  *
@@ -3278,7 +3279,7 @@ struct k_lifo {
  * @brief Add an element to a LIFO queue.
  *
  * This routine adds a data item to @a lifo. A LIFO queue data item must be
- * aligned on a word boundary, and the first word of the item is
+ * aligned as required for a pointer, and its first pointer-sized field is
  * reserved for the kernel's use.
  *
  * @isr_ok
@@ -3323,7 +3324,8 @@ struct k_lifo {
  * @brief Get an element from a LIFO queue.
  *
  * This routine removes a data item from @a LIFO in a "last in, first out"
- * manner. The first word of the data item is reserved for the kernel's use.
+ * manner. The first pointer-sized field of the data item is reserved for the
+ * kernel's use.
  *
  * @note @a timeout must be set to K_NO_WAIT if called from ISR.
  *
@@ -5218,14 +5220,14 @@ int k_work_poll_submit_to_queue(struct k_work_q *work_q,
  *
  * Submitting a previously submitted triggered work item that is still
  * waiting for the event cancels the existing submission and reschedules it
- * the using the new event list. Note that this behavior is inherently subject
+ * using the new event list. Note that this behavior is inherently subject
  * to race conditions with the pre-existing triggered work item and work queue,
  * so care must be taken to synchronize such resubmissions externally.
  *
  * @isr_ok
  *
  * @warning
- * Provided array of events as well as a triggered work item must not be
+ * The provided array of events as well as a triggered work item must not be
  * modified until the item has been processed by the workqueue.
  *
  * @param work Address of delayed work item.

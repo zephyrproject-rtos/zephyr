@@ -22,7 +22,6 @@ LOG_MODULE_REGISTER(can_mspm0_canfd, CONFIG_CAN_LOG_LEVEL);
 #define DT_DRV_COMPAT ti_mspm0_canfd
 
 #define MSPM0_MCAN_REVID_SCHEME_INVALID		0x00
-#define MSPM0_MCAN_MRBA				0x8000
 
 #define MSPM0_MCAN_DIV_RATIO_1			1
 #define MSPM0_MCAN_DIV_RATIO_2			2
@@ -45,9 +44,11 @@ LOG_MODULE_REGISTER(can_mspm0_canfd, CONFIG_CAN_LOG_LEVEL);
 
 struct can_mspm0_canfd_config {
 	MCAN_Regs *ti_canfd_base;
+	const struct device *clock_dev;
 	const struct mspm0_sys_clock *clock_subsys;
 	mm_reg_t mcan_base;
 	mem_addr_t mram;
+	uintptr_t mrba;
 	const struct pinctrl_dev_config *pinctrl;
 	void (*irq_cfg_func)(void);
 
@@ -100,11 +101,11 @@ static int can_mspm0_canfd_get_core_clock(const struct device *dev, uint32_t *ra
 {
 	const struct can_mcan_config *mcan_config = dev->config;
 	const struct can_mspm0_canfd_config *config = mcan_config->custom;
-	const struct device *clk_dev = DEVICE_DT_GET(DT_NODELABEL(ckm));
 	uint32_t clock_rate, clk_div;
 	int ret;
 
-	ret = clock_control_get_rate(clk_dev, (struct mspm0_sys_clock *)config->clock_subsys,
+	ret = clock_control_get_rate(config->clock_dev,
+				     (struct mspm0_sys_clock *)config->clock_subsys,
 				     &clock_rate);
 	if (ret < 0) {
 		return ret;
@@ -182,7 +183,7 @@ static int can_mspm0_canfd_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	ret = can_mcan_configure_mram(dev, MSPM0_MCAN_MRBA, config->mram);
+	ret = can_mcan_configure_mram(dev, config->mrba, config->mram);
 	if (ret != 0) {
 		return ret;
 	}
@@ -208,17 +209,22 @@ static void can_mspm0_canfd_isr(const struct device *dev)
 	volatile uint32_t *eoi =
 		&config->ti_canfd_base->MCANSS.TI_WRAPPER.PROCESSORS.MCANSS_REGS.MCANSS_EOI;
 
-	switch (DL_MCAN_getPendingInterrupt(config->ti_canfd_base)) {
-	case DL_MCAN_IIDX_LINE0:
-		can_mcan_line_0_isr(dev);
-		*eoi = DL_MCAN_INTR_SRC_MCAN_LINE_0;
-		break;
-	case DL_MCAN_IIDX_LINE1:
-		can_mcan_line_1_isr(dev);
-		*eoi = DL_MCAN_INTR_SRC_MCAN_LINE_1;
-		break;
-	default:
-		break;
+	/* MCANSS muxes LINE0 and LINE1 onto a single CPU IRQ via IIDX.
+	 * Loop up to the number of lines so both can be drained per entry.
+	 */
+	for (int i = 0; i < 2; i++) {
+		switch (DL_MCAN_getPendingInterrupt(config->ti_canfd_base)) {
+		case DL_MCAN_IIDX_LINE0:
+			can_mcan_line_0_isr(dev);
+			*eoi = DL_MCAN_INTR_SRC_MCAN_LINE_0;
+			break;
+		case DL_MCAN_IIDX_LINE1:
+			can_mcan_line_1_isr(dev);
+			*eoi = DL_MCAN_INTR_SRC_MCAN_LINE_1;
+			break;
+		default:
+			return;
+		}
 	}
 }
 
@@ -278,6 +284,7 @@ static const struct can_mcan_ops can_mspm0_canfd_ops = {
 												\
 	static const struct can_mspm0_canfd_config can_mspm0_canfd_cfg_##inst = {		\
 		.ti_canfd_base = (MCAN_Regs *)DT_REG_ADDR_BY_NAME(DT_DRV_INST(inst), ti_canfd),	\
+		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst)),				\
 		.clock_subsys = &can_mspm0_canfd_sys_clock_##inst,				\
 		.clock_cfg = {									\
 			.clockSel = MSPM0_MCAN_CLK_SEL,						\
@@ -285,6 +292,7 @@ static const struct can_mcan_ops can_mspm0_canfd_ops = {
 		},										\
 		.mcan_base = CAN_MCAN_DT_INST_MCAN_ADDR(inst),					\
 		.mram = CAN_MCAN_DT_INST_MRAM_ADDR(inst),					\
+		.mrba = CAN_MCAN_DT_INST_MRBA(inst),						\
 		.irq_cfg_func = can_mspm0_canfd_irq_cfg_##inst,					\
 		.pinctrl = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),				\
 	};											\

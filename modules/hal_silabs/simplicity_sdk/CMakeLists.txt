@@ -128,8 +128,18 @@ if(CONFIG_SOC_GECKO_HAS_RADIO)
         endif()
       endif()
       set(PHY_DIR ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_built_in_phys/efr32xg${SILABS_DEVICE_FAMILY_NUMBER})
-      zephyr_library_sources_ifdef(CONFIG_BT_SILABS_EFR32 ${PHY_DIR}/sl_rail_ble_config${phy_suffix}.c)
-      zephyr_library_sources_ifdef(CONFIG_IEEE802154_SILABS_EFR32 ${PHY_DIR}/sl_rail_ieee802154_config${phy_suffix}.c)
+
+      # sl_rail_util_built_in_phys.c provides strong definitions of the PHY pointers for
+      # every protocol the device supports, overriding the weak fallbacks in the RAIL
+      # library. Core RAIL objects reference those pointers regardless of which protocol
+      # is enabled, so the configuration of every supported protocol must be compiled,
+      # including protocols Zephyr has no support for. Unused configurations are
+      # discarded by the linker.
+      foreach(phy ble ieee802154 zwave sidewalk rfsense_ook)
+        if(EXISTS ${PHY_DIR}/sl_rail_${phy}_config${phy_suffix}.c)
+          zephyr_library_sources(${PHY_DIR}/sl_rail_${phy}_config${phy_suffix}.c)
+        endif()
+      endforeach()
     endif()
 
     # PA curve for the modules comes from their config archive - omit the compilation of the SoC curves on modules

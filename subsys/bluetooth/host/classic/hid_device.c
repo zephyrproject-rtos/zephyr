@@ -46,6 +46,13 @@ LOG_MODULE_REGISTER(bt_hid_device);
 /* Timeout for INTR channel connection after CTRL is established (seconds) */
 #define HID_INTR_CONN_TIMEOUT K_SECONDS(30)
 
+/* Fallback timeout after a device-initiated Virtual Cable Unplug PDU is sent.
+ * After sending VC unplug the initiator waits for the remote to tear down the
+ * L2CAP channels. This timer only fires as a safety net when the remote never
+ * disconnects, so the local link is not left up forever.
+ */
+#define HID_VCU_DISCONNECT_TIMEOUT K_SECONDS(5)
+
 /* Dedicated buffer pool for HANDSHAKE responses.  HANDSHAKE is a mandatory
  * protocol response (HID spec v1.1.2 Section 3.2) that must not fail due to
  * buffer contention with data traffic.  2 buffers covers back-to-back error
@@ -371,11 +378,17 @@ static void hid_intr_timeout_handler(struct k_work *work)
 
 static void hid_vcu_disconnect_work(struct k_work *work)
 {
-	struct bt_hid_device *hid = CONTAINER_OF(work, struct bt_hid_device, vcu_disconnect);
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct bt_hid_device *hid = CONTAINER_OF(dwork, struct bt_hid_device, vcu_disconnect);
 	int err;
 
-	LOG_DBG("VCU disconnect");
+	LOG_DBG("VCU disconnect fallback timeout");
 
+	/* After a device-initiated VC unplug the initiator waits for the remote
+	 * to disconnect the L2CAP channels. This handler only runs when that
+	 * fallback timer expires because the
+	 * remote never disconnected; tear the link down locally as a safety net.
+	 */
 	err = bt_hid_device_disconnect(hid);
 	if (err != 0) {
 		LOG_WRN("VCU disconnect failed (%d)", err);
@@ -643,13 +656,13 @@ static void bt_hid_session_init(struct bt_hid_device *hid, enum bt_hid_role role
 	hid->intr_connected = false;
 
 	k_work_init_delayable(&hid->intr_timeout, hid_intr_timeout_handler);
-	k_work_init(&hid->vcu_disconnect, hid_vcu_disconnect_work);
+	k_work_init_delayable(&hid->vcu_disconnect, hid_vcu_disconnect_work);
 }
 
 static void bt_hid_device_cleanup(struct bt_hid_device *hid)
 {
 	k_work_cancel_delayable(&hid->intr_timeout);
-	k_work_cancel(&hid->vcu_disconnect);
+	k_work_cancel_delayable(&hid->vcu_disconnect);
 
 	/* HID spec v1.1.2 Section 2.1.2: default protocol mode is Report
 	 * Protocol Mode. Reset on disconnect for next connection.
@@ -908,17 +921,25 @@ static void virtual_cable_unplug_tx_cb(struct bt_conn *conn, void *user_data, in
 
 	hid = (struct bt_hid_device *)user_data;
 
-	/* VC unplug is a one-way teardown of the HID connection: disconnect
-	 * regardless of the send result. If the PDU failed to reach the
-	 * controller the host may not see the unplug, but the local link must
-	 * still be torn down. Defer the disconnect to the Bluetooth workqueue
-	 * because this callback runs in the TX context.
+	/* After a device-initiated VC unplug the initiator sends the PDU and
+	 * then waits for the remote to tear down the L2CAP channels; it must not
+	 * disconnect the channels itself. Arm a
+	 * fallback timer so the local link is still torn down if the remote never
+	 * disconnects. If the remote disconnects first (spec-correct behavior),
+	 * cleanup cancels this pending work.
+	 *
+	 * If the PDU send failed the remote may never have seen the unplug, so
+	 * disconnect immediately rather than waiting for a remote that will not
+	 * act. The work is deferred to the Bluetooth workqueue because this
+	 * callback runs in the TX context.
 	 */
 	if (err != 0) {
 		LOG_WRN("VCU control message send failed (%d)", err);
+		bt_work_schedule(&hid->vcu_disconnect, K_NO_WAIT);
+		return;
 	}
 
-	bt_work_submit(&hid->vcu_disconnect);
+	bt_work_schedule(&hid->vcu_disconnect, HID_VCU_DISCONNECT_TIMEOUT);
 }
 
 int bt_hid_device_virtual_cable_unplug(struct bt_hid_device *hid)

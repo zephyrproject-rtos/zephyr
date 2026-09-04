@@ -351,6 +351,22 @@ config WAITQ_SIMPLE
 
 endchoice # WAITQ_ALGORITHM
 
+config SEM_LOCK_STRIPES
+	int "Number of semaphore spinlock stripes" if SMP
+	default 1
+	range 1 256
+	help
+	  Number of spinlocks used to synchronize semaphore operations. This
+	  value must be a power of two. The default is one system-wide lock,
+	  which preserves the existing semaphore behavior and memory footprint.
+	  Non-SMP systems always use one lock.
+
+	  Additional stripes reduce serialization and hash collisions on SMP
+	  systems at the cost of additional static memory. Stripes are not
+	  individually cache-line aligned. With 4-byte spinlocks and a 64-byte
+	  cache line, 16 stripes fit within a single cache line. Increasing the
+	  count beyond 16 can also reduce cache-line contention.
+
 menu "Misc Kernel related options"
 
 config CURRENT_THREAD_USE_NO_TLS
@@ -819,6 +835,22 @@ config TIMEOUT_BACKEND_BUCKET
 	  is on demand against the actual next event, so it imposes no
 	  tickless-idle floor. Requires 64-bit timeouts.
 
+config TIMEOUT_BACKEND_SKIPLIST
+	bool "Skip list [EXPERIMENTAL]"
+	depends on TIMEOUT_64BIT
+	select EXPERIMENTAL
+	help
+	  A Pugh skip list keyed on absolute expiry tick. Expected insertion
+	  and arbitrary removal are O(log n), the earliest timeout is O(1),
+	  and there is no capacity limit. Same-tick firing order is FIFO.
+	  Each pending timeout carries CONFIG_TIMEOUT_SKIPLIST_MAX_LEVEL
+	  forward pointers, sized for the worst case although the expected
+	  height is 2. At the default 8 levels struct _timeout is 88 bytes
+	  on a 64-bit target, against 32 for the delta list and 24 for the
+	  min-heap, and every k_thread, k_timer and delayable work item
+	  pays it. Requires 64-bit timeouts. Consider this when many
+	  timeouts are pending and a bounded heap is undesirable.
+
 endchoice # TIMEOUT_BACKEND
 
 config TIMEOUT_BUCKET_LISTS
@@ -833,6 +865,19 @@ config TIMEOUT_BUCKET_LISTS
 	  the O(1) window at the cost of more static RAM (one list head each).
 	  Below 8 the plain delta-list backend is likely the better choice. The
 	  occupancy bitmap is a uint32_t for up to 32 buckets, a uint64_t beyond.
+
+config TIMEOUT_SKIPLIST_MAX_LEVEL
+	int "Maximum skip-list height"
+	depends on TIMEOUT_BACKEND_SKIPLIST
+	default 8
+	range 4 16
+	help
+	  Maximum number of forward-pointer levels in each timeout node.
+	  Height is drawn from a geometric(1/2) distribution, so expected
+	  search cost is O(log n) as long as this is at least log2 of the
+	  peak number of pending timeouts. Each extra level adds one pointer
+	  to every struct _timeout (k_timer, k_thread, delayable work, ...).
+	  8 levels cover a few hundred concurrent timeouts comfortably.
 
 config TIMEOUT_HEAP_MAX_ENTRIES
 	int "Maximum simultaneous pending timeouts in the heap"

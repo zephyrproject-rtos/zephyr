@@ -80,6 +80,12 @@ struct bt_spp_endpoint {
 
 	/** Connection state (atomic) */
 	atomic_t state;
+
+	/** Hold the credit for incoming data */
+	bool hold_credit;
+
+	/** FIFO for storing received data if hold_credit is enabled */
+	struct k_fifo rx_fifo;
 };
 
 struct bt_spp_client {
@@ -247,17 +253,32 @@ static void bt_spp_connected(struct bt_rfcomm_dlc *dlci)
 static void bt_spp_disconnected(struct bt_rfcomm_dlc *dlci)
 {
 	struct bt_spp_endpoint *ep = SPP_EP_FROM_DLC(dlci);
+	struct net_buf *buf;
 
 	atomic_set(&ep->state, SPP_STATE_DISCONNECTED);
 	bt_shell_print("SPP: disconnected (ep=%p)", ep);
+
+	buf = k_fifo_get(&ep->rx_fifo, K_NO_WAIT);
+	while (buf != NULL) {
+		net_buf_unref(buf);
+		buf = k_fifo_get(&ep->rx_fifo, K_NO_WAIT);
+	}
 }
 
-static void bt_spp_recv(struct bt_rfcomm_dlc *dlci, struct net_buf *buf)
+static int bt_spp_recv(struct bt_rfcomm_dlc *dlci, struct net_buf *buf)
 {
 	struct bt_spp_endpoint *ep = SPP_EP_FROM_DLC(dlci);
 
 	bt_shell_print("SPP: rx data (ep=%p, len=%u)", ep, (unsigned int)buf->len);
 	bt_shell_hexdump(buf->data, buf->len);
+
+	if (!ep->hold_credit) {
+		return 0;
+	}
+
+	k_fifo_put(&ep->rx_fifo, buf);
+
+	return -EINPROGRESS;
 }
 
 static int spp_sdp_set_uuid(const struct bt_uuid *uuid)
@@ -317,6 +338,7 @@ static int bt_spp_accept(struct bt_conn *conn, struct bt_rfcomm_server *server,
 	}
 
 	atomic_set(&spp->ep.state, SPP_STATE_CONNECTING);
+	k_fifo_init(&spp->ep.rx_fifo);
 	spp->ep.rfcomm_dlc.ops = &spp_rfcomm_ops;
 	spp->ep.rfcomm_dlc.mtu = SPP_RFCOMM_MTU;
 	spp->ep.rfcomm_dlc.required_sec_level = BT_SECURITY_L2;
@@ -348,11 +370,26 @@ static int bt_spp_server_register(struct bt_spp_server *server)
 	return 0;
 }
 
+static int spp_credit_limit_parse(const char *argv)
+{
+	int err = 0;
+	unsigned long value;
+
+	value = shell_strtoul(argv, 0, &err);
+	if (err != 0 || value > UINT8_MAX) {
+		bt_shell_error("SPP: invalid credit limit:%s", argv);
+		return -EINVAL;
+	}
+
+	return value;
+}
+
 static int cmd_spp_register_with_uuid(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err;
 	struct bt_uuid_any uuid_any;
 	const char *uuid = argv[1];
+	uint8_t credit_limit = 0;
 
 	if (default_spp_server.rfcomm_server.channel != 0) {
 		shell_error(sh, "SPP: server already registered");
@@ -369,6 +406,20 @@ static int cmd_spp_register_with_uuid(const struct shell *sh, size_t argc, char 
 		return -ENOEXEC;
 	}
 
+	if (argc > 2) {
+		err = spp_credit_limit_parse(argv[2]);
+		if (err < 0) {
+			return err;
+		}
+		credit_limit = (uint8_t)err;
+	}
+	default_spp_server.ep.rfcomm_dlc.rx_credit_limit = credit_limit;
+
+	if (argc > 3 && strcmp("hold_credit", argv[3]) == 0) {
+		default_spp_server.ep.hold_credit = true;
+	} else {
+		default_spp_server.ep.hold_credit = false;
+	}
 	default_spp_server.sdp_record = &spp_sdp_rec;
 
 	err = bt_spp_server_register(&default_spp_server);
@@ -388,6 +439,7 @@ static int cmd_spp_register_with_channel(const struct shell *sh, size_t argc, ch
 {
 	int err;
 	uint8_t channel = 0;
+	uint8_t credit_limit = 0;
 
 	if (default_spp_server.rfcomm_server.channel != 0) {
 		shell_error(sh, "SPP: server already registered");
@@ -398,6 +450,21 @@ static int cmd_spp_register_with_channel(const struct shell *sh, size_t argc, ch
 	if (err < 0) {
 		shell_error(sh, "SPP: invalid RFCOMM channel:%s", argv[1]);
 		return -EINVAL;
+	}
+
+	if (argc > 2) {
+		err = spp_credit_limit_parse(argv[2]);
+		if (err < 0) {
+			return err;
+		}
+		credit_limit = (uint8_t)err;
+	}
+	default_spp_server.ep.rfcomm_dlc.rx_credit_limit = credit_limit;
+
+	if (argc > 3 && strcmp("hold_credit", argv[3]) == 0) {
+		default_spp_server.ep.hold_credit = true;
+	} else {
+		default_spp_server.ep.hold_credit = false;
 	}
 
 	(void)spp_sdp_set_uuid(BT_UUID_DECLARE_16(BT_SDP_SERIAL_PORT_SVCLASS));
@@ -423,6 +490,7 @@ static int bt_spp_connect_rfcomm(struct bt_conn *conn, struct bt_spp_endpoint *e
 {
 	int err;
 
+	k_fifo_init(&ep->rx_fifo);
 	ep->rfcomm_dlc.ops = &spp_rfcomm_ops;
 	ep->rfcomm_dlc.mtu = SPP_RFCOMM_MTU;
 	ep->rfcomm_dlc.required_sec_level = BT_SECURITY_L2;
@@ -518,6 +586,7 @@ static int bt_spp_connect(struct bt_conn *conn, struct bt_spp_client *spp)
 static int cmd_spp_connect_by_uuid(const struct shell *sh, size_t argc, char *argv[])
 {
 	int err;
+	uint8_t credit_limit = 0;
 
 	if (default_conn == NULL) {
 		shell_error(sh, "SPP: no default connection");
@@ -535,6 +604,20 @@ static int cmd_spp_connect_by_uuid(const struct shell *sh, size_t argc, char *ar
 		return -EALREADY;
 	}
 
+	if (argc > 2) {
+		err = spp_credit_limit_parse(argv[2]);
+		if (err < 0) {
+			return err;
+		}
+		credit_limit = (uint8_t)err;
+	}
+	default_spp_client.ep.rfcomm_dlc.rx_credit_limit = credit_limit;
+
+	if (argc > 3 && strcmp("hold_credit", argv[3]) == 0) {
+		default_spp_client.ep.hold_credit = true;
+	} else {
+		default_spp_client.ep.hold_credit = false;
+	}
 	default_spp_client.ep.mode = BT_SPP_MODE_UUID;
 	default_spp_client.ep.uuid = &spp_uuid.uuid;
 
@@ -555,6 +638,7 @@ static int cmd_spp_connect_by_channel(const struct shell *sh, size_t argc, char 
 {
 	int err;
 	uint8_t channel = 0;
+	uint8_t credit_limit = 0;
 
 	if (default_conn == NULL) {
 		shell_error(sh, "SPP: no default connection");
@@ -573,6 +657,20 @@ static int cmd_spp_connect_by_channel(const struct shell *sh, size_t argc, char 
 		return -EALREADY;
 	}
 
+	if (argc > 2) {
+		err = spp_credit_limit_parse(argv[2]);
+		if (err < 0) {
+			return err;
+		}
+		credit_limit = (uint8_t)err;
+	}
+	default_spp_client.ep.rfcomm_dlc.rx_credit_limit = credit_limit;
+
+	if (argc > 3 && strcmp("hold_credit", argv[3]) == 0) {
+		default_spp_client.ep.hold_credit = true;
+	} else {
+		default_spp_client.ep.hold_credit = false;
+	}
 	default_spp_client.ep.mode = BT_SPP_MODE_CHANNEL;
 	default_spp_client.ep.channel = channel;
 
@@ -714,21 +812,51 @@ static int cmd_spp_rls(const struct shell *sh, size_t argc, char *argv[])
 	return 0;
 }
 
+static int cmd_spp_recv_complete(const struct shell *sh, size_t argc, char *argv[])
+{
+	int err;
+	struct bt_spp_endpoint *ep;
+	struct net_buf *buf;
+
+	ep = bt_spp_get_active_ep();
+	if (ep == NULL) {
+		shell_error(sh, "SPP: no active connection");
+		return -ENOEXEC;
+	}
+
+	buf = k_fifo_get(&ep->rx_fifo, K_NO_WAIT);
+	if (buf == NULL) {
+		shell_error(sh, "SPP: no inprogress buffer");
+		return -ENOEXEC;
+	}
+
+	err = bt_rfcomm_dlc_recv_complete(&ep->rfcomm_dlc, buf);
+	if (err != 0) {
+		shell_error(sh, "SPP: fail to call recv_complete (%d)", err);
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(
 	spp_cmds,
-	SHELL_CMD_ARG(register_with_channel, NULL, "<channel>",
-		      cmd_spp_register_with_channel, 2, 0),
+	SHELL_CMD_ARG(register_with_channel, NULL, "<channel> [limited credit value] [hold_credit]",
+		      cmd_spp_register_with_channel, 2, 2),
 	SHELL_CMD_ARG(register_with_uuid, NULL,
-		      "<bt-uuid16|bt-uuid32|bt-uuid128> e.g. 1101 or 00001101-0000-1000-8000-00805F9B34FB",
-		      cmd_spp_register_with_uuid, 2, 0),
-	SHELL_CMD_ARG(connect_by_channel, NULL, "<channel>",
-		      cmd_spp_connect_by_channel, 2, 0),
+		      "<bt-uuid16(e.g. 1101)|bt-uuid32|bt-uuid128(e.g. "
+		      "00001101-0000-1000-8000-00805F9B34FB)> [limited credit value] [hold_credit]",
+		      cmd_spp_register_with_uuid, 2, 2),
+	SHELL_CMD_ARG(connect_by_channel, NULL, "<channel> [limited credit value] [hold_credit]",
+		      cmd_spp_connect_by_channel, 2, 2),
 	SHELL_CMD_ARG(connect_by_uuid, NULL,
-		      "<bt-uuid16|bt-uuid32|bt-uuid128> e.g. 1101 or 00001101-0000-1000-8000-00805F9B34FB",
-		      cmd_spp_connect_by_uuid, 2, 0),
+		      "<bt-uuid16(e.g. 1101)|bt-uuid32|bt-uuid128(e.g. "
+		      "00001101-0000-1000-8000-00805F9B34FB)> [limited credit value] [hold_credit]",
+		      cmd_spp_connect_by_uuid, 2, 2),
 	SHELL_CMD_ARG(send, NULL, "send [length of packet(s)]", cmd_spp_send, 1, 1),
 	SHELL_CMD_ARG(rls, NULL, "[overrun|parity|framing]", cmd_spp_rls, 1, 1),
 	SHELL_CMD_ARG(disconnect, NULL, HELP_NONE, cmd_spp_disconnect, 1, 0),
+	SHELL_CMD_ARG(recv_complete, NULL, HELP_NONE, cmd_spp_recv_complete, 1, 0),
 	SHELL_SUBCMD_SET_END
 );
 

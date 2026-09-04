@@ -1,0 +1,54 @@
+# STM32U5G9J-DK2 DISCOVERY KIT board configuration
+#
+# Copyright (c) 2026 STMicroelectronics
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+if BOARD_STM32U5G9J_DK2
+
+if INPUT
+
+config INPUT_GT911_INTERRUPT
+	default y
+
+endif # INPUT
+
+# Enable Neochrom GPU2D graphic acceleration using nemaGFX
+if LVGL
+
+# Let LVGL fully handle the buffers
+configdefault STM32_LTDC_FB_NUM
+	default 0
+
+configdefault LV_Z_DOUBLE_VDB
+	default y
+
+choice LV_Z_RENDERING_MODE
+	default LV_Z_DIRECT_RENDERING
+endchoice
+
+if NEOCHROM_GPU2D
+
+config LV_ATTRIBUTE_MEM_ALIGN_SIZE
+	default 32
+
+config LV_Z_NEMA_GFX_MULTI_THREAD
+	default y if LV_USE_NEMA_GFX
+
+choice LV_USE_NEMA_HAL
+	default LV_NEMA_HAL_CUSTOM
+endchoice
+
+choice LV_USE_NEMA_LIB
+	default LV_NEMA_LIB_M33_REVC
+endchoice
+
+config LV_NEMA_CACHE_HAL_INCLUDE
+	default "stm32u5xx.h"
+
+endif # NEOCHROM_GPU2D
+
+endif # LVGL
+
+endif # BOARD_STM32U5G9J_DK2

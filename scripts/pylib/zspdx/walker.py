@@ -152,6 +152,11 @@ class Walker:
         # queue of pending source file paths to create, process and assign
         self.pending_sources = []
 
+        # blob declarations from the modules' module.yml files, keyed by the
+        # blob's absolute path; used to enrich matching Files with the blob's
+        # provenance metadata (url, version, sha256, ...)
+        self.module_blobs = {}
+
         # queue of pending relationship data to create, process and assign
         # Format: (from_type, from_identifier, to_type, to_identifier, relationship_type)
         # Types: "component", "file"
@@ -350,7 +355,10 @@ class Walker:
         cmake_reply_dir_path = os.path.join(self.cfg.build_dir, ".cmake", "api", "v1", "reply")
         if not os.path.exists(cmake_reply_dir_path):
             _logger.error(f'cmake api reply directory {cmake_reply_dir_path} does not exist')
-            _logger.error('was query directory created before cmake build ran?')
+            _logger.error(
+                're-run CMake with CONFIG_BUILD_OUTPUT_META enabled so the build '
+                'requests the file-based API reply'
+            )
             return None
         if not os.path.isdir(cmake_reply_dir_path):
             _logger.error(
@@ -616,7 +624,33 @@ class Walker:
             self.doc_zephyr.add_described_component(module_component)
             self.component_zephyr_modules[module_name] = module_component
 
+            self.collect_module_blobs(module_path)
+
         return True
+
+    # load a module's blob declarations from its module.yml, keyed by the
+    # blob's absolute path (blobs live under <module>/zephyr/blobs/, see the
+    # "Binary Blobs" section of the modules documentation)
+    def collect_module_blobs(self, module_path):
+        for module_yml in ("module.yml", "module.yaml"):
+            module_yml_path = os.path.join(module_path, "zephyr", module_yml)
+            if os.path.isfile(module_yml_path):
+                break
+        else:
+            return
+
+        try:
+            with open(module_yml_path) as f:
+                meta = yaml.safe_load(f)
+        except (OSError, yaml.YAMLError):
+            _logger.warning(f"failed to load module metadata from {module_yml_path}", exc_info=True)
+            return
+
+        for blob in (meta or {}).get("blobs", []):
+            blob_abspath = os.path.normpath(
+                os.path.join(module_path, "zephyr", "blobs", blob.get("path", ""))
+            )
+            self.module_blobs[blob_abspath] = blob
 
     def setup_sdk_component(self):
         """Set up SDK sources component."""
@@ -775,6 +809,7 @@ class Walker:
                 # get its source files if build file is found
                 if bf:
                     self.collect_pending_source_files(cfg_target, component, bf)
+                    self.collect_linked_libraries(cfg_target, component, bf)
             else:
                 _logger.debug(f"  - target {cfg_target.name} has no build artifacts")
 
@@ -944,6 +979,75 @@ class Walker:
             src_abspath = os.path.join(self.cm.paths_source, src.path)
         return get_c_includes(self.compiler_path, src_abspath, cg)
 
+    # collect prebuilt libraries (e.g. vendor blobs) linked into this target,
+    # from the target's link command fragments. The codemodel only expresses
+    # libraries built by other targets as dependencies; prebuilt libraries only
+    # show up on the link command line, either as a path (libraries linked as
+    # imported targets, the way hal_stm32 links most of its binary blobs) or as
+    # an -lNAME / -l:FILENAME flag to be resolved against -L search directories
+    # (the way hal_espressif and hal_stm32's STM32WB0 BLE stack link theirs).
+    # call with:
+    #   1) ConfigTarget
+    #   2) Component for that target
+    #   3) build File for that target
+    def collect_linked_libraries(self, cfg_target, component, bf):
+        lib_dirs = []
+        lib_names = []
+        lib_paths = []
+
+        for fragment in cfg_target.target.link_command_fragments:
+            frag = fragment.fragment.strip().strip('"')
+            if not frag:
+                continue
+            if frag.startswith("-L"):
+                # a search path; -L flags are also found in "libraries" role
+                # fragments when passed through zephyr_link_libraries()
+                lib_dirs.append(frag[2:].strip().strip('"'))
+            elif fragment.role != "libraries":
+                continue
+            elif frag.startswith("-l"):
+                lib_names.append(frag[2:].strip())
+            elif not frag.startswith("-"):
+                lib_paths.append(frag)
+
+        candidates = []
+        for path in lib_paths:
+            if not os.path.isabs(path):
+                path = os.path.join(self.cm.paths_build, path)
+            candidates.append(os.path.normpath(path))
+
+        # resolve -lNAME against the search directories, like the linker would;
+        # names only found in the toolchain's own implicit directories (e.g.
+        # -lgcc) are left out
+        for name in lib_names:
+            # GNU ld's -l:FILENAME form names the file verbatim, while plain
+            # -lNAME expands to libNAME.a
+            filename = name[1:] if name.startswith(":") else f"lib{name}.a"
+            for lib_dir in lib_dirs:
+                if not os.path.isabs(lib_dir):
+                    lib_dir = os.path.join(self.cm.paths_build, lib_dir)
+                candidate = os.path.normpath(os.path.join(lib_dir, filename))
+                if os.path.isfile(candidate):
+                    candidates.append(candidate)
+                    break
+
+        seen = set()
+        for lib_abspath in candidates:
+            if lib_abspath in seen:
+                continue
+            seen.add(lib_abspath)
+
+            # libraries built by this build are already covered by the
+            # target dependency relationships
+            if self._is_within(lib_abspath, self.cm.paths_build):
+                continue
+            if not os.path.isfile(lib_abspath):
+                continue
+
+            _logger.debug(f"    - add pending linked library {lib_abspath}")
+            self.pending_sources.append((lib_abspath, component))
+            self.pending_relationships.append(("file", bf.path, "file", lib_abspath, "STATIC_LINK"))
+
     # collect relationships for dependencies of this target Component
     # call with:
     #   1) all ConfigTargets from CodeModel
@@ -1011,7 +1115,15 @@ class Walker:
                 continue
 
             # create File and assign it to the Component
-            self.sbom_graph.add_file(SBOMFile(path=src_abspath), owning_component)
+            sbom_file = SBOMFile(path=src_abspath)
+
+            # if this file is a blob declared by its module, carry the blob's
+            # provenance metadata along
+            blob = self.module_blobs.get(src_abspath)
+            if blob:
+                sbom_file.metadata["blob"] = blob
+
+            self.sbom_graph.add_file(sbom_file, owning_component)
 
     # figure out which Component should own the given file based on path
     def _is_within(self, src_abspath, base_dir):

@@ -80,7 +80,7 @@ static int cmd_cpu_lock(const struct shell *sh, size_t argc, char **argv)
 
 	enum pm_state st;
 	uint8_t sub;
-	int err;
+	int err = 0;
 
 	if (pm_state_from_str(argv[1], &st) < 0) {
 		shell_error(sh, "Unknown state: %s", argv[1]);
@@ -130,7 +130,7 @@ static int cmd_cpu_idle(const struct shell *sh, size_t argc, char **argv)
 {
 	ARG_UNUSED(argc);
 
-	int err;
+	int err = 0;
 	uint32_t ms;
 
 	ms = shell_strtoul(argv[1], 0, &err);
@@ -153,9 +153,9 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 	SHELL_CMD_ARG(available, NULL,
 		SHELL_HELP("Show availability/locks for each state", ""), cmd_cpu_available, 1, 0),
 	SHELL_CMD_ARG(lock,      NULL,
-		SHELL_HELP("Lock a state", "<state> <substate>"), cmd_cpu_lock, 2, 1),
+		SHELL_HELP("Lock a state", "<state> <substate>"), cmd_cpu_lock, 3, 0),
 	SHELL_CMD_ARG(unlock,    NULL,
-		SHELL_HELP("Unlock a state", "<state> <substate>"), cmd_cpu_unlock, 2, 1),
+		SHELL_HELP("Unlock a state", "<state> <substate>"), cmd_cpu_unlock, 3, 0),
 	SHELL_CMD_ARG(idle,      NULL,
 		SHELL_HELP("Sleep current thread to let PM work", "<ms>"), cmd_cpu_idle, 2, 0),
 	SHELL_SUBCMD_SET_END

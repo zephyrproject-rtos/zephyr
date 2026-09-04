@@ -6,7 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <nxp/kinetis/MKL25Z128VLK4-pinctrl.h>
+#include <nxp/kinetis/kl2x/pinctrl/MKL25Z128VLK4-pinctrl.h>
 
 &pinctrl {
 	adc0_default: adc0_default {
@@ -30,6 +30,26 @@
 		group0 {
 			pinmux = <UART0_RX_PTA1>,
 				 <UART0_TX_PTA2>;
+			drive-strength = "low";
+			slew-rate = "slow";
+		};
+	};
+
+	spi0_default: spi0_default {
+		group0 {
+			pinmux = <SPI0_SCK_PTC5>,
+				 <SPI0_MOSI_PTC6>,
+				 <SPI0_MISO_PTC7>;
+			drive-strength = "low";
+			slew-rate = "slow";
+		};
+	};
+
+	spi1_default: spi1_default {
+		group0 {
+			pinmux = <SPI1_SCK_PTE2>,
+				 <SPI1_MOSI_PTE1>,
+				 <SPI1_MISO_PTE3>;
 			drive-strength = "low";
 			slew-rate = "slow";
 		};

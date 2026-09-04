@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config I2C_RENESAS_RZ_RIIC
-	bool "Renesas RZ I2C RIIC Master"
+	bool "Renesas RZ I2C RIIC Controller"
 	default y
 	depends on DT_HAS_RENESAS_RZ_RIIC_ENABLED
 	select USE_RZ_FSP_RIIC_MASTER
@@ -11,7 +11,7 @@ config I2C_RENESAS_RZ_RIIC
 	  Enable Renesas RZ I2C RIIC Driver.
 
 config I2C_RENESAS_RZ_IIC
-	bool "Renesas RZ I2C IIC Master"
+	bool "Renesas RZ I2C IIC Controller"
 	default y
 	depends on DT_HAS_RENESAS_RZ_IIC_ENABLED
 	select USE_RZ_FSP_IIC_MASTER

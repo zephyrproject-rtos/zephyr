@@ -3,10 +3,11 @@
 
 menuconfig NET_L2_ETHERNET
 	bool "Ethernet support"
+	default y if ETH_DRIVER
 	help
-	  Add support for Ethernet, enabling selecting relevant hardware drivers.
-	  If NET_SLIP_TAP is selected, NET_L2_ETHERNET will enable to fully
-	  simulate Ethernet through SLIP.
+	  Add support for the Ethernet L2 layer. If NET_SLIP_TAP is
+	  selected, NET_L2_ETHERNET will enable to fully simulate
+	  Ethernet through SLIP.
 
 if NET_L2_ETHERNET
 

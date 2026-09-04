@@ -143,7 +143,7 @@ static int spi_config(const struct device *dev, const struct spi_config *config)
 		}
 	}
 
-	if (config->operation & SPI_OP_MODE_MASTER) {
+	if (config->operation & SPI_OP_MODE_CONTROLLER) {
 		LOG_ERR("Controller mode not supported");
 		return -ENOTSUP;
 	}
@@ -174,11 +174,16 @@ static int spi_config(const struct device *dev, const struct spi_config *config)
 	data->ios_cfg.pui8SRAMBuffer = ambiq_spid_sram_buffer,
 	data->ios_cfg.ui32SRAMBufferCap = AMBIQ_SPID_TX_BUFSIZE_MAX,
 
-	ctx->config = config;
+	ctx->config = NULL;
 
 	ret = am_hal_ios_configure(data->ios_handler, &data->ios_cfg);
+	if (ret != AM_HAL_STATUS_SUCCESS) {
+		return -EIO;
+	}
 
-	return ret;
+	ctx->config = config;
+
+	return 0;
 }
 
 static int spi_ambiq_xfer(const struct device *dev, const struct spi_config *config)
@@ -276,6 +281,7 @@ static int spi_ambiq_transceive(const struct device *dev, const struct spi_confi
 				const struct spi_buf_set *rx_bufs)
 {
 	struct spi_ambiq_data *data = dev->data;
+	int pm_ret;
 	int ret;
 
 	if (!tx_bufs && !rx_bufs) {
@@ -285,6 +291,7 @@ static int spi_ambiq_transceive(const struct device *dev, const struct spi_confi
 	ret = pm_device_runtime_get(dev);
 	if (ret < 0) {
 		LOG_ERR_PM_DEVICE_RUNTIME_GET(dev, ret);
+		return ret;
 	}
 
 	/* context setup */
@@ -292,22 +299,22 @@ static int spi_ambiq_transceive(const struct device *dev, const struct spi_confi
 
 	ret = spi_config(dev, config);
 	if (ret) {
-		spi_context_release(&data->ctx, ret);
-		return ret;
+		goto end;
 	}
 
 	spi_context_buffers_setup(&data->ctx, tx_bufs, rx_bufs, 1);
 
 	ret = spi_ambiq_xfer(dev, config);
 
+end:
 	spi_context_release(&data->ctx, ret);
 
 	/* Use async put to avoid useless device suspension/resumption
 	 * when doing consecutive transmission.
 	 */
-	ret = pm_device_runtime_put_async(dev, K_MSEC(2));
-	if (ret < 0) {
-		LOG_ERR_PM_DEVICE_RUNTIME_PUT(dev, ret);
+	pm_ret = pm_device_runtime_put_async(dev, K_MSEC(2));
+	if (pm_ret < 0) {
+		LOG_ERR_PM_DEVICE_RUNTIME_PUT(dev, pm_ret);
 	}
 
 	return ret;

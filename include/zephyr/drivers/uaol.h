@@ -24,6 +24,12 @@ struct uaol_capabilities {
 	uint32_t max_rx_fifo_size;       /**< Max RX FIFO size */
 };
 
+/** @brief UAOL stream/endpoint direction. */
+enum uaol_direction {
+	UAOL_DIR_PLAYBACK = 0, /**< Host-to-device USB endpoint */
+	UAOL_DIR_CAPTURE  = 1, /**< Device-to-host USB endpoint */
+};
+
 /** @brief UAOL stream configuration data. */
 struct uaol_config {
 	uint8_t xhci_bus;                /**< xHCI controller bus */
@@ -38,6 +44,7 @@ struct uaol_config {
 	uint32_t sio_credit_size;        /**< SIO credit packet size in bytes */
 	uint16_t fifo_start_offset;      /**< UAOL FIFO start address offset */
 	uint16_t channel_map;            /**< HDA link stream and channels mapping for UAOL FIFO */
+	enum uaol_direction direction;   /**< USB stream/endpoint direction */
 };
 
 /** @brief UAOL stream endpoint table entry. */

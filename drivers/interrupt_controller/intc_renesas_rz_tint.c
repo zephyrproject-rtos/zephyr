@@ -8,6 +8,7 @@
 
 #include <zephyr/device.h>
 #include <zephyr/irq.h>
+#include <zephyr/spinlock.h>
 #include <zephyr/drivers/interrupt_controller/gic.h>
 #include <zephyr/drivers/interrupt_controller/intc_rz_tint.h>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
@@ -59,6 +60,9 @@ DEVICE_MMIO_TOPLEVEL_STATIC(intc_regs, DT_NODELABEL(intc));
 #define REG_INTSEL_WRITE(base, irq, v) sys_write32((v), INTSEL(base) + (OFFSET(irq) / 3) * 4)
 #define REG_INTSEL_SPIk_SEL_MASK(irq)  (BIT_MASK(10) << ((OFFSET(irq) % 3) * 10))
 
+/* data->gpioint value for a tint channel that is not connected to a GPIO pin yet */
+#define GPIOINT_UNASSIGNED 0xFFU
+
 struct intc_rz_tint_config {
 	uint8_t tint;
 	uint8_t max_gpioint;
@@ -76,7 +80,15 @@ struct intc_rz_tint_data {
 };
 
 static const uint8_t gpioint_table[] = DT_PROP(DT_NODELABEL(intc), gpioint_table);
+static struct k_spinlock lock;
+#if defined(CONFIG_ASSERT)
+static bool used_gpioint[DT_PROP(DT_NODELABEL(intc), max_gpioint) + 1];
+#endif
 
+/* Helper function to read TINT status
+ * V2H, V2N: TSTATn bit of TSCTR register
+ * Others: TSTATSn bit of TSCR register
+ */
 static inline bool intc_rz_tint_status_read(mem_addr_t base, uint8_t tint)
 {
 #ifdef CONFIG_RENESAS_RZ_TINT_SUPPORT_STATUS_CLEAR_REG
@@ -87,6 +99,10 @@ static inline bool intc_rz_tint_status_read(mem_addr_t base, uint8_t tint)
 #endif /* CONFIG_RENESAS_RZ_TINT_SUPPORT_STATUS_CLEAR_REG */
 }
 
+/* Helper function to clear TINT status
+ * V2H, V2N: TCLRn bit of TSCLR register
+ * Others: TSTATSn bit of TSCR register
+ */
 static inline void intc_rz_tint_status_clear(mem_addr_t base, uint8_t tint)
 {
 #ifdef CONFIG_RENESAS_RZ_TINT_SUPPORT_STATUS_CLEAR_REG
@@ -97,19 +113,27 @@ static inline void intc_rz_tint_status_clear(mem_addr_t base, uint8_t tint)
 #endif /* CONFIG_RENESAS_RZ_TINT_SUPPORT_STATUS_CLEAR_REG */
 }
 
+/* Helper function to perform the process of clearing the interrupt status after changing
+ * the setting as per User's manual "Precaution when Changing Interrupt Settings".
+ */
 static inline void intc_rz_tint_clear_irq_status(const struct device *dev)
 {
 	const struct intc_rz_tint_config *config = dev->config;
 	mem_addr_t base = INTC_BASE;
 	uint8_t tint = config->tint;
 
-	intc_rz_tint_status_clear(base, tint);
-
-	/*
-	 * User's manual: Clear Timing of Interrupt Cause
-	 * Dummy read is required after write
+	/* As per TSCLR register (V2H, V2N, G3E) and TSCR register (A3x, G2x, G3S, V2L)
+	 * Only clear TINTn status flags when it is 1. Otherwise, writing has no effect
 	 */
-	(void)intc_rz_tint_status_read(base, tint);
+	if (intc_rz_tint_status_read(base, tint)) {
+		intc_rz_tint_status_clear(base, tint);
+
+		/*
+		 * User's manual: Clear Timing of Interrupt Cause
+		 * Dummy read is required after write
+		 */
+		(void)intc_rz_tint_status_read(base, tint);
+	}
 }
 
 int intc_rz_tint_enable(const struct device *dev)
@@ -135,10 +159,9 @@ int intc_rz_tint_set_type(const struct device *dev, enum intc_rz_tint_trigger tr
 	const struct intc_rz_tint_config *config = dev->config;
 	struct intc_rz_tint_data *data = dev->data;
 	uint8_t tint = config->tint;
-	uint32_t flags = IRQ_TYPE_LEVEL;
 	uint32_t set = 0;
 	mem_addr_t base = INTC_BASE;
-	uint32_t reg_val = REG_TITSR_READ(base, tint);
+	uint32_t reg_val;
 
 	switch (trig) {
 	case RZ_TINT_FAILING_EDGE:
@@ -158,30 +181,37 @@ int intc_rz_tint_set_type(const struct device *dev, enum intc_rz_tint_trigger tr
 		return -ENOTSUP;
 	}
 
-	/* Select interrupt type */
-	reg_val = (reg_val & ~REG_TITSR_TITSEL_MASK(tint)) |
-		  FIELD_PREP(REG_TITSR_TITSEL_MASK(tint), set);
-	REG_TITSR_WRITE(base, tint, reg_val);
+	K_SPINLOCK(&lock) {
+		/* Select interrupt type */
+		reg_val = REG_TITSR_READ(base, tint);
+		reg_val = (reg_val & ~REG_TITSR_TITSEL_MASK(tint)) |
+			  FIELD_PREP(REG_TITSR_TITSEL_MASK(tint), set);
+		REG_TITSR_WRITE(base, tint, reg_val);
 
-	/*
-	 * User's manual: Precaution when Changing Interrupt Settings
-	 * When changing the TINT interrupt detection method to the edge type,
-	 * write 0 to the TSTATn bit of TSCR.
-	 */
-	if ((trig == RZ_TINT_RISING_EDGE) || (trig == RZ_TINT_FAILING_EDGE)) {
-		flags = IRQ_TYPE_EDGE;
-		intc_rz_tint_clear_irq_status(dev);
-	}
+		/*
+		 * User's manual: Precaution when Changing Interrupt Settings
+		 * When changing the TINT interrupt detection method to the edge type,
+		 * write 0 to the TSTATn bit of TSCR.
+		 */
+		if ((trig == RZ_TINT_RISING_EDGE) || (trig == RZ_TINT_FAILING_EDGE)) {
+			intc_rz_tint_clear_irq_status(dev);
+		}
 
-	/* Set interrupt type for GIC, and clear pending interrupt */
+		/* Set interrupt type for GIC, and clear pending interrupt */
 #ifdef CONFIG_GIC
-	arm_gic_irq_set_priority(config->irq, config->prio, flags);
-	arm_gic_irq_clear_pending(config->irq);
+#if defined(CONFIG_SOC_SERIES_RZV2H)
+		uint32_t flags = ((trig == RZ_TINT_RISING_EDGE) || (trig == RZ_TINT_FAILING_EDGE))
+				 ? IRQ_TYPE_EDGE : IRQ_TYPE_LEVEL;
+
+		arm_gic_irq_set_priority(config->irq, config->prio, flags);
+#endif
+		arm_gic_irq_clear_pending(config->irq);
 #else
-	NVIC_ClearPendingIRQ(config->irq);
+		NVIC_ClearPendingIRQ(config->irq);
 #endif
 
-	data->trigger_type = trig;
+		data->trigger_type = trig;
+	}
 
 	return 0;
 }
@@ -244,20 +274,38 @@ int intc_rz_tint_connect(const struct device *dev, uint8_t port, uint8_t pin)
 	/* Map to GPIOINT */
 	uint8_t gpioint = gpioint_table[port] + pin;
 
-	if (gpioint > config->max_gpioint) {
-		return -EINVAL;
+	__ASSERT(gpioint <= config->max_gpioint,
+		 "port %u pin %u maps to gpioint %u, out of range (max %u)", port, pin, gpioint,
+		 config->max_gpioint);
+
+	K_SPINLOCK(&lock) {
+		uint32_t reg_val;
+
+		/* Already mapped, no need to remap and return successfully */
+		if (data->gpioint == gpioint) {
+			K_SPINLOCK_BREAK;
+		}
+
+		__ASSERT(data->gpioint == GPIOINT_UNASSIGNED,
+			 "tint %u already assigned to port %u pin %u", tint,
+			 data->port, data->pin);
+		__ASSERT(!used_gpioint[gpioint],
+			 "port %u pin %u (gpioint %u) already assigned to another tint", port,
+			 pin, gpioint);
+#if defined(CONFIG_ASSERT)
+		used_gpioint[gpioint] = true;
+#endif
+
+		reg_val = REG_TSSR_READ(base, tint);
+		reg_val &= ~(REG_TSSR_TSSEL_MASK(tint) | REG_TSSR_TIEN_MASK(tint));
+		reg_val |= FIELD_PREP(REG_TSSR_TSSEL_MASK(tint), gpioint);
+		reg_val |= FIELD_PREP(REG_TSSR_TIEN_MASK(tint), 1U);
+		REG_TSSR_WRITE(base, tint, reg_val);
+
+		data->gpioint = gpioint;
+		data->port = port;
+		data->pin = pin;
 	}
-
-	uint32_t reg_val = REG_TSSR_READ(base, tint);
-
-	reg_val &= ~(REG_TSSR_TSSEL_MASK(tint) | REG_TSSR_TIEN_MASK(tint));
-	reg_val |= FIELD_PREP(REG_TSSR_TSSEL_MASK(tint), gpioint);
-	reg_val |= FIELD_PREP(REG_TSSR_TIEN_MASK(tint), 1U);
-	REG_TSSR_WRITE(base, tint, reg_val);
-
-	data->gpioint = gpioint;
-	data->port = port;
-	data->pin = pin;
 
 	return 0;
 }
@@ -285,6 +333,7 @@ int intc_rz_tint_set_callback(const struct device *dev, intc_rz_tint_callback_t 
 		.max_gpioint = DT_PROP(DT_INST_PARENT(index), max_gpioint),                        \
 	};                                                                                         \
 	struct intc_rz_tint_data intc_rz_tint_data##index = {                                      \
+		.gpioint = GPIOINT_UNASSIGNED,                                                     \
 		.trigger_type = DT_INST_ENUM_IDX_OR(index, trigger_type, 0),                       \
 	};                                                                                         \
 	static int intc_rz_tint_init##index(const struct device *dev)                              \

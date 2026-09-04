@@ -26,7 +26,16 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(AFBR_S50, CONFIG_SENSOR_LOG_LEVEL);
 
+enum afbr_s50_st {
+	AFBR_S50_ST_IDLE,
+	AFBR_S50_ST_RUNNING,
+	AFBR_S50_ST_STOPPING,
+};
+
 struct afbr_s50_data {
+	atomic_t st; /* enum afbr_s50_st */
+	/** Consecutive failed reinitialization attempts in the recovery path. */
+	uint8_t recovery_attempts;
 	/** RTIO section was included in the device data struct since the Argus
 	 * API does not support passing a parameter to get through the async
 	 * handler. Therefore, we're getting it through object composition:
@@ -52,8 +61,8 @@ struct afbr_s50_config {
 	struct {
 		struct gpio_dt_spec cs;
 		struct gpio_dt_spec clk;
-		struct gpio_dt_spec mosi;
-		struct gpio_dt_spec miso;
+		struct gpio_dt_spec sdi;
+		struct gpio_dt_spec sdo;
 		struct gpio_dt_spec irq;
 	} gpio;
 	struct {
@@ -63,24 +72,158 @@ struct afbr_s50_config {
 	} settings;
 };
 
+static int configure_device(const struct device *dev)
+{
+	struct afbr_s50_data *data = dev->data;
+	const struct afbr_s50_config *cfg = dev->config;
+	status_t status;
+
+	status = Argus_SetConfigurationDFMMode(data->platform.argus.handle,
+					       cfg->settings.dual_freq_mode);
+	if (status != STATUS_OK) {
+		LOG_ERR("Failed to set DFM mode: %d", status);
+		return -EIO;
+	}
+
+	uint32_t period_us = USEC_PER_SEC / cfg->settings.odr;
+
+	status = Argus_SetConfigurationFrameTime(data->platform.argus.handle,
+						 period_us);
+	if (status != STATUS_OK) {
+		LOG_ERR("Failed to set frame time: %d", status);
+		return -EIO;
+	}
+	return 0;
+}
+
+static int initialize_sequence(const struct device *dev)
+{
+	struct afbr_s50_data *data = dev->data;
+	const struct afbr_s50_config *cfg = dev->config;
+	status_t status;
+
+	data->platform.argus.handle = Argus_CreateHandle();
+	if (data->platform.argus.handle == NULL) {
+		LOG_ERR("Failed to create handle");
+		return -ENOMEM;
+	}
+
+	status = Argus_InitMode(data->platform.argus.handle,
+				data->platform.argus.id,
+				cfg->settings.measurement_mode);
+	if (status != STATUS_OK) {
+		LOG_ERR("Failed to initialize device");
+		return -EIO;
+	}
+
+	return configure_device(dev);
+}
+
+static int reinitialize_sequence(const struct device *dev)
+{
+	struct afbr_s50_data *data = dev->data;
+	status_t status;
+
+	status = Argus_StopMeasurementTimer(data->platform.argus.handle);
+	if (status != STATUS_OK) {
+		LOG_ERR("Failed to stop timer");
+		return -EIO;
+	}
+
+	status = Argus_Reinit(data->platform.argus.handle);
+	if (status != STATUS_OK) {
+		LOG_ERR("Failed to reinit");
+		return -EIO;
+	}
+
+	return configure_device(dev);
+}
+
+static inline void submit_sync_item(struct rtio_iodev_sqe *iodev_sqe, rtio_work_submit_t handler)
+{
+	/** RTIO workqueue used since the description of Argus_EvaluateResult()
+	 * discourages its use in the callback context as it may be blocking
+	 * while in ISR context.
+	 */
+	struct rtio_work_req *req;
+
+	CHECKIF(!iodev_sqe) {
+		LOG_ERR("No submission to hand over to the work-queue");
+		return;
+	}
+
+	req = rtio_work_req_alloc();
+
+	CHECKIF(!req) {
+		LOG_ERR("RTIO work item allocation failed. Consider to increase "
+			"CONFIG_RTIO_WORKQ_POOL_ITEMS");
+		return;
+	}
+	rtio_work_req_submit(req, iodev_sqe, handler);
+}
+
+/** Cap on consecutive reinitialization attempts before the recovery gives
+ * up, and the base delay it backs off by between attempts. A detached or
+ * dead device would otherwise reinitialize forever on the RTIO workqueue.
+ */
+#define AFBR_S50_RECOVERY_MAX_ATTEMPTS 5U
+#define AFBR_S50_RECOVERY_BACKOFF_MS   10U
+
+static void handle_recovery(struct rtio_iodev_sqe *iodev_sqe)
+{
+	const struct sensor_read_config *cfg = iodev_sqe->sqe.iodev->data;
+	const struct device *dev = cfg->sensor;
+	struct afbr_s50_data *data = dev->data;
+	int err;
+
+	err = reinitialize_sequence(dev);
+	CHECKIF(err != 0) {
+		data->recovery_attempts++;
+		if (data->recovery_attempts >= AFBR_S50_RECOVERY_MAX_ATTEMPTS) {
+			LOG_ERR("Recovery failed after %u attempts: %d", data->recovery_attempts,
+				err);
+			data->recovery_attempts = 0;
+			(void)atomic_set(&data->st, AFBR_S50_ST_IDLE);
+			data->rtio.iodev_sqe = NULL;
+			rtio_iodev_sqe_err(iodev_sqe, -EIO);
+			return;
+		}
+		LOG_ERR("Failed to reinitialize (attempt %u): %d", data->recovery_attempts, err);
+		k_sleep(K_MSEC(AFBR_S50_RECOVERY_BACKOFF_MS * data->recovery_attempts));
+		submit_sync_item(iodev_sqe, handle_recovery);
+		return;
+	}
+
+	data->recovery_attempts = 0;
+	(void)atomic_set(&data->st, AFBR_S50_ST_IDLE);
+	data->rtio.iodev_sqe = NULL;
+	rtio_iodev_sqe_ok(iodev_sqe, 0);
+}
+
 static inline void handle_error_on_result(struct afbr_s50_data *data, int result)
 {
 	struct rtio_iodev_sqe *iodev_sqe = data->rtio.iodev_sqe;
-	status_t status;
 
-	(void)Argus_StopMeasurementTimer(data->platform.argus.handle);
-	do {
-		/** Flush the existing data moving forward so the
-		 * internal buffers can be re-used afterwards.
+	CHECKIF(!iodev_sqe) {
+		/** No submission is checked out, so there is nothing to report
+		 * the error on and no way to reach the device: the recovery
+		 * work item gets there through the submission. Return to idle
+		 * so the next submission is accepted and can recover.
 		 */
-		status = Argus_EvaluateData(data->platform.argus.handle, &data->buf);
-	} while (status == STATUS_OK);
+		LOG_ERR("Error reported with no submission in progress: %d", result);
+		(void)atomic_set(&data->st, AFBR_S50_ST_IDLE);
+		return;
+	}
 
-	data->rtio.iodev_sqe = NULL;
-	rtio_iodev_sqe_err(iodev_sqe, result);
+	if (atomic_set(&data->st, AFBR_S50_ST_STOPPING) != AFBR_S50_ST_STOPPING) {
+		submit_sync_item(iodev_sqe, handle_recovery);
+	} else {
+		data->rtio.iodev_sqe = NULL;
+		rtio_iodev_sqe_err(iodev_sqe, result);
+	}
 }
 
-static void data_ready_work_handler(struct rtio_iodev_sqe *iodev_sqe)
+static void handle_data_ready(struct rtio_iodev_sqe *iodev_sqe)
 {
 	const struct sensor_read_config *cfg = iodev_sqe->sqe.iodev->data;
 	const struct device *dev = cfg->sensor;
@@ -128,16 +271,7 @@ static void data_ready_work_handler(struct rtio_iodev_sqe *iodev_sqe)
 		LOG_WRN("Overrun. More pending data than what we've served.");
 	}
 
-	/** After freeing the buffer with EvaluateData, decide whether to
-	 * cancel future submissions.
-	 */
-	if (FIELD_GET(RTIO_SQE_CANCELED, iodev_sqe->sqe.flags) &&
-	    Argus_IsTimerMeasurementActive(data->platform.argus.handle)) {
-		LOG_WRN("OP cancelled. Stopping stream");
-
-		(void)Argus_StopMeasurementTimer(data->platform.argus.handle);
-	}
-
+	(void)atomic_set(&data->st, AFBR_S50_ST_IDLE);
 	data->rtio.iodev_sqe = NULL;
 	rtio_iodev_sqe_ok(iodev_sqe, 0);
 }
@@ -163,25 +297,19 @@ static status_t data_ready_callback(status_t status, argus_hnd_t *hnd)
 
 	if (status != STATUS_OK) {
 		LOG_ERR("Measurement failed: %d", status);
-		handle_error_on_result(data, -EIO);
-		return status;
+		err = -EIO;
+	} else if (iodev_sqe == NULL || FIELD_GET(RTIO_SQE_CANCELED, iodev_sqe->sqe.flags)) {
+		LOG_WRN("SQE canceled. Discarding result");
+		err = -ECANCELED;
+	} else {
+		err = 0;
 	}
 
-	/** RTIO workqueue used since the description of Argus_EvaluateResult()
-	 * discourages its use in the callback context as it may be blocking
-	 * while in ISR context.
-	 */
-	struct rtio_work_req *req = rtio_work_req_alloc();
-
-	CHECKIF(!req) {
-		LOG_ERR("RTIO work item allocation failed. Consider to increase "
-			"CONFIG_RTIO_WORKQ_POOL_ITEMS");
-		handle_error_on_result(data, -ENOMEM);
+	if (err != 0) {
+		submit_sync_item(iodev_sqe, handle_recovery);
 		return ERROR_FAIL;
 	}
-
-	rtio_work_req_submit(req, iodev_sqe, data_ready_work_handler);
-
+	submit_sync_item(iodev_sqe, handle_data_ready);
 	return STATUS_OK;
 }
 
@@ -191,23 +319,21 @@ static void afbr_s50_submit_single_shot(const struct device *dev,
 	struct afbr_s50_data *data = dev->data;
 
 	/** If there's an op in process, reject ignore requests */
-	if (data->rtio.iodev_sqe != NULL &&
-	    FIELD_GET(RTIO_SQE_CANCELED, data->rtio.iodev_sqe->sqe.flags) == 0) {
+	if (atomic_get(&data->st) != AFBR_S50_ST_IDLE) {
 		LOG_WRN("Operation in progress. Rejecting request");
-
 		rtio_iodev_sqe_err(iodev_sqe, -EBUSY);
 		return;
 	}
-	data->rtio.iodev_sqe = iodev_sqe;
-
 	status_t status = Argus_TriggerMeasurement(data->platform.argus.handle,
 						   data_ready_callback);
+
 	if (status != STATUS_OK) {
 		LOG_ERR("Argus_TriggerMeasurement failed: %d", status);
-
-		data->rtio.iodev_sqe = NULL;
 		rtio_iodev_sqe_err(iodev_sqe, -EIO);
+		return;
 	}
+	data->rtio.iodev_sqe = iodev_sqe;
+	(void)atomic_set(&data->st, AFBR_S50_ST_RUNNING);
 }
 
 static void afbr_s50_submit_streaming(const struct device *dev,
@@ -216,23 +342,21 @@ static void afbr_s50_submit_streaming(const struct device *dev,
 	struct afbr_s50_data *data = dev->data;
 	const struct sensor_read_config *read_cfg = iodev_sqe->sqe.iodev->data;
 
-	/** If there's an op in process, reject ignore requests */
-	if (data->rtio.iodev_sqe != NULL &&
-	    FIELD_GET(RTIO_SQE_CANCELED, data->rtio.iodev_sqe->sqe.flags) == 0) {
-		LOG_WRN("Operation in progress");
-
-		rtio_iodev_sqe_err(iodev_sqe, -EBUSY);
-		return;
-	}
-	data->rtio.iodev_sqe = iodev_sqe;
-
-	CHECKIF(read_cfg->triggers->trigger != SENSOR_TRIG_DATA_READY ||
-		read_cfg->count != 1 ||
+	CHECKIF(read_cfg->triggers->trigger != SENSOR_TRIG_DATA_READY || read_cfg->count != 1 ||
 		read_cfg->triggers->opt != SENSOR_STREAM_DATA_INCLUDE) {
 		LOG_ERR("Invalid trigger for streaming mode");
-
-		data->rtio.iodev_sqe = NULL;
 		rtio_iodev_sqe_err(iodev_sqe, -EINVAL);
+		return;
+	}
+	if (atomic_get(&data->st) == AFBR_S50_ST_STOPPING) {
+		LOG_WRN("Stopping existing stream. Please try again");
+		rtio_iodev_sqe_err(iodev_sqe, -EAGAIN);
+		return;
+	}
+	if (data->rtio.iodev_sqe != NULL &&
+	    !FIELD_GET(RTIO_SQE_CANCELED, data->rtio.iodev_sqe->sqe.flags)) {
+		LOG_WRN("On-going SQE. Attempting recovery sequence...");
+		handle_error_on_result(data, -ECANCELED);
 		return;
 	}
 
@@ -245,11 +369,12 @@ static void afbr_s50_submit_streaming(const struct device *dev,
 
 		if (status != STATUS_OK) {
 			LOG_ERR("Argus_TriggerMeasurement failed: %d", status);
-
-			data->rtio.iodev_sqe = NULL;
 			rtio_iodev_sqe_err(iodev_sqe, -EIO);
+			return;
 		}
 	}
+	data->rtio.iodev_sqe = iodev_sqe;
+	(void)atomic_set(&data->st, AFBR_S50_ST_RUNNING);
 }
 
 static void afbr_s50_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe)
@@ -293,8 +418,6 @@ int afbr_s50_platform_init(struct afbr_s50_platform_data *platform_data)
 static int afbr_s50_init(const struct device *dev)
 {
 	struct afbr_s50_data *data = dev->data;
-	const struct afbr_s50_config *cfg = dev->config;
-	status_t status;
 	int err;
 
 	err = afbr_s50_platform_init(&data->platform);
@@ -302,39 +425,7 @@ static int afbr_s50_init(const struct device *dev)
 		LOG_ERR("Failed to initialize platform hooks: %d", err);
 		return err;
 	}
-
-	data->platform.argus.handle = Argus_CreateHandle();
-	if (data->platform.argus.handle == NULL) {
-		LOG_ERR("Failed to create handle");
-		return -ENOMEM;
-	}
-
-	/** InitMode */
-	status = Argus_InitMode(data->platform.argus.handle,
-				data->platform.argus.id,
-				cfg->settings.measurement_mode);
-	if (status != STATUS_OK) {
-		LOG_ERR("Failed to initialize device");
-		return -EIO;
-	}
-
-	status = Argus_SetConfigurationDFMMode(data->platform.argus.handle,
-					       cfg->settings.dual_freq_mode);
-	if (status != STATUS_OK) {
-		LOG_ERR("Failed to set DFM mode: %d", status);
-		return -EIO;
-	}
-
-	uint32_t period_us = USEC_PER_SEC / cfg->settings.odr;
-
-	status = Argus_SetConfigurationFrameTime(data->platform.argus.handle,
-						 period_us);
-	if (status != STATUS_OK) {
-		LOG_ERR("Failed to set frame time: %d", status);
-		return -EIO;
-	}
-
-	return 0;
+	return initialize_sequence(dev);
 }
 
 /** Macrobatics to get a list of compatible sensors in order to map them back
@@ -346,13 +437,13 @@ const static struct device *afbr_s50_list[] = {
 	DT_INST_FOREACH_STATUS_OKAY(AFBR_S50_LIST)
 };
 
-int afbr_s50_platform_get_by_id(s2pi_slave_t slave,
+int afbr_s50_platform_get_by_id(s2pi_slave_t peripheral,
 				struct afbr_s50_platform_data **data)
 {
 	for (size_t i = 0 ; i < ARRAY_SIZE(afbr_s50_list) ; i++) {
 		struct afbr_s50_data *drv_data = afbr_s50_list[i]->data;
 
-		if (drv_data->platform.argus.id == slave) {
+		if (drv_data->platform.argus.id == peripheral) {
 			*data = &drv_data->platform;
 			return 0;
 		}
@@ -376,7 +467,7 @@ int afbr_s50_platform_get_by_hnd(argus_hnd_t *hnd,
 	return -ENODEV;
 }
 
-BUILD_ASSERT(CONFIG_MAIN_STACK_SIZE >= 4096,
+BUILD_ASSERT(CONFIG_MAIN_STACK_SIZE >= 4096 && CONFIG_RTIO_WORKQ_THREADS_POOL_STACK_SIZE >= 4096,
 	     "AFBR S50 driver requires a stack size of at least 4096 bytes to properly initialize");
 
 #define AFBR_S50_INIT(inst)									   \
@@ -394,15 +485,19 @@ BUILD_ASSERT(CONFIG_MAIN_STACK_SIZE >= 4096,
 	RTIO_DEFINE(afbr_s50_rtio_ctx_##inst, 8, 8);						   \
 	SPI_DT_IODEV_DEFINE(afbr_s50_bus_##inst,						   \
 			    DT_DRV_INST(inst),							   \
-			    SPI_OP_MODE_MASTER | SPI_WORD_SET(8) | SPI_TRANSFER_MSB |		   \
+			    SPI_OP_MODE_CONTROLLER | SPI_WORD_SET(8) | SPI_TRANSFER_MSB |	   \
 			    SPI_MODE_CPOL | SPI_MODE_CPHA);					   \
 												   \
 	static const struct afbr_s50_config afbr_s50_cfg_##inst = {				   \
 		.gpio = {									   \
 			.irq = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {0}),			   \
 			.clk = GPIO_DT_SPEC_INST_GET_OR(inst, spi_sck_gpios, {0}),		   \
-			.miso = GPIO_DT_SPEC_INST_GET_OR(inst, spi_miso_gpios, {0}),		   \
-			.mosi = GPIO_DT_SPEC_INST_GET_OR(inst, spi_mosi_gpios, {0}),		   \
+			.sdo = COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, spi_sdo_gpios),		   \
+					   (GPIO_DT_SPEC_INST_GET(inst, spi_sdo_gpios)),	   \
+					   (GPIO_DT_SPEC_INST_GET_OR(inst, spi_miso_gpios, {0}))), \
+			.sdi = COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, spi_sdi_gpios),		   \
+					   (GPIO_DT_SPEC_INST_GET(inst, spi_sdi_gpios)),	   \
+					   (GPIO_DT_SPEC_INST_GET_OR(inst, spi_mosi_gpios, {0}))), \
 		},										   \
 		.settings = {									   \
 			.odr = DT_INST_PROP(inst, odr),						   \
@@ -414,6 +509,7 @@ BUILD_ASSERT(CONFIG_MAIN_STACK_SIZE >= 4096,
 	PINCTRL_DT_DEV_CONFIG_DECLARE(DT_INST_PARENT(inst));					   \
 												   \
 	static struct afbr_s50_data afbr_s50_data_##inst = {					   \
+		.st = AFBR_S50_ST_IDLE,								   \
 		.platform = {									   \
 			.argus.id = inst + 1,							   \
 			.s2pi = {								   \
@@ -427,8 +523,8 @@ BUILD_ASSERT(CONFIG_MAIN_STACK_SIZE >= 4096,
 						.cs =						   \
 						&_spi_dt_spec_##afbr_s50_bus_##inst.config.cs.gpio,\
 						.clk = &afbr_s50_cfg_##inst.gpio.clk,		   \
-						.mosi = &afbr_s50_cfg_##inst.gpio.mosi,		   \
-						.miso = &afbr_s50_cfg_##inst.gpio.miso,		   \
+						.sdi = &afbr_s50_cfg_##inst.gpio.sdi,		   \
+						.sdo = &afbr_s50_cfg_##inst.gpio.sdo,		   \
 					},							   \
 					.irq = &afbr_s50_cfg_##inst.gpio.irq,			   \
 				},								   \

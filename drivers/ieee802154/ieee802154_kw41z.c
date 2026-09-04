@@ -1061,7 +1061,7 @@ static int kw41z_init(const struct device *dev)
 	ZLL->PHY_CTRL &= ~ZLL_PHY_CTRL_TRCV_MSK_MASK;
 
 	/* Configure Radio IRQ */
-	NVIC_ClearPendingIRQ(Radio_1_IRQn);
+	k_irq_clear_pending(Radio_1_IRQn);
 	IRQ_CONNECT(Radio_1_IRQn, RADIO_0_IRQ_PRIO, kw41z_isr, 0, 0);
 
 	return 0;

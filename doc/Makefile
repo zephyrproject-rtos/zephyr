@@ -30,7 +30,7 @@ SKIP_TAGS = \
 # ------------------------------------------------------------------------------
 # Documentation targets
 
-.PHONY: configure clean html html-fast html-minimal html-live html-live-fast latex pdf doxygen doxygen-coverage doxygen-coverage-json
+.PHONY: configure clean html html-fast html-minimal html-live html-live-fast latex pdf doxygen doxygen-xml doxygen-coverage doxygen-coverage-json
 
 html-fast:
 	${MAKE} html DT_TURBO_MODE=1 HW_FEATURES_TURBO_MODE=1
@@ -49,7 +49,7 @@ doxygen-coverage doxygen-coverage-json:
 	${MAKE} configure DOXYGEN_FORCE_SINGLE_THREAD=1
 	cmake --build ${BUILDDIR} --target $@
 
-html html-live latex pdf linkcheck doxygen: configure
+html html-live latex pdf linkcheck doxygen doxygen-xml: configure
 	cmake --build ${BUILDDIR} --target $@
 
 configure:

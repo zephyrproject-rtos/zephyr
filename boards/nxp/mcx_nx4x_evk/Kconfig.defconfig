@@ -3,7 +3,7 @@
 
 if BOARD_MCX_N9XX_EVK || BOARD_MCX_N5XX_EVK
 
-configdefault NET_L2_ETHERNET
+configdefault ETH_DRIVER
 	default y
 
 if SD_STACK

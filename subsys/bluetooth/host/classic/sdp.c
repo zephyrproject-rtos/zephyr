@@ -84,6 +84,18 @@ NET_BUF_POOL_FIXED_DEFINE(sdp_pool, CONFIG_BT_MAX_CONN, BT_L2CAP_BUF_SIZE(SDP_MT
 
 #define SDP_CLIENT_MTU 64
 
+/*
+ * Largest encoded AttributeIDList a request PDU can carry. The PDU parameters have to fit in
+ * SDP_DATA_MTU together with a ServiceSearchPattern holding a 128-bit UUID (2-byte sequence
+ * header, 1-byte UUID header, 16-byte UUID), the 2-byte MaximumAttributeByteCount and a
+ * ContinuationState of the maximum length (1-byte length, BT_SDP_MAX_PDU_CSTATE_LEN bytes of
+ * state). A ServiceAttribute request carries a 4-byte ServiceRecordHandle instead of the search
+ * pattern, so the bound holds for it as well. The resulting size is documented at
+ * bt_sdp_attribute_id_list::count.
+ */
+#define SDP_CLIENT_ATTR_ID_LIST_MAX_LEN                                                            \
+	(SDP_DATA_MTU - (2 + 1 + BT_UUID_SIZE_128) - 2 - (1 + BT_SDP_MAX_PDU_CSTATE_LEN))
+
 #define SDP_SA_MAX_ATTR_BYTE_COUNT 0xffff
 #define SDP_SA_MIN_ATTR_BYTE_COUNT 0x0007
 
@@ -1747,6 +1759,7 @@ static void sdp_client_params_iterator(struct bt_sdp_client *session)
 	struct bt_l2cap_chan *chan = &session->chan.chan;
 	struct bt_sdp_discover_params *param, *tmp;
 
+	k_sem_take(&session->sem_lock, K_FOREVER);
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&session->reqs, param, tmp, _node) {
 		if (param != session->param) {
 			continue;
@@ -1766,7 +1779,6 @@ static void sdp_client_params_iterator(struct bt_sdp_client *session)
 		/* Clear received length */
 		session->recv_len = 0;
 
-		k_sem_take(&session->sem_lock, K_FOREVER);
 		/* Check if there's valid next UUID */
 		if (!sys_slist_is_empty(&session->reqs)) {
 			k_sem_give(&session->sem_lock);
@@ -1778,8 +1790,9 @@ static void sdp_client_params_iterator(struct bt_sdp_client *session)
 		session->state = SDP_CLIENT_DISCONNECTING;
 		k_sem_give(&session->sem_lock);
 		bt_l2cap_chan_disconnect(chan);
-		break;
+		return;
 	}
+	k_sem_give(&session->sem_lock);
 }
 
 static int sdp_client_get_total(struct bt_sdp_client *session, struct net_buf *buf, uint16_t *total,
@@ -2049,9 +2062,6 @@ static int sdp_client_ss_search(struct bt_sdp_client *session,
 	struct net_buf *buf;
 	uint8_t uuid128[BT_UUID_SIZE_128];
 
-	/* Update context param directly. */
-	session->param = param;
-
 	buf = bt_sdp_create_pdu();
 
 	/* BT_SDP_SEQ8 means length of sequence is on additional next byte */
@@ -2103,9 +2113,10 @@ static int sdp_client_ss_search(struct bt_sdp_client *session,
 	return bt_sdp_send(&session->chan.chan, buf, BT_SDP_SVC_SEARCH_REQ, session->tid);
 }
 
-static uint16_t sdp_client_get_attribute_id_list_len(struct bt_sdp_attribute_id_list *ids)
+/* Encoded size of the AttributeIDList elements, excluding the sequence header */
+static size_t sdp_client_get_attribute_id_list_len(const struct bt_sdp_attribute_id_list *ids)
 {
-	uint16_t len = 0;
+	size_t len = 0;
 
 	if (ids == NULL || ids->count == 0) {
 		return sizeof(uint8_t) + sizeof(uint32_t);
@@ -2122,11 +2133,23 @@ static uint16_t sdp_client_get_attribute_id_list_len(struct bt_sdp_attribute_id_
 	return len;
 }
 
-static void sdp_client_add_attribute_id(struct net_buf *buf, struct bt_sdp_attribute_id_list *ids)
+/* Size of the sequence header of an AttributeIDList with @p len bytes of elements */
+static size_t sdp_client_get_attribute_id_list_hdr_len(size_t len)
 {
-	uint16_t len;
+	if (len > UINT8_MAX) {
+		return sizeof(uint8_t) + sizeof(uint16_t);
+	}
 
-	len = sdp_client_get_attribute_id_list_len(ids);
+	return sizeof(uint8_t) + sizeof(uint8_t);
+}
+
+/*
+ * Add the AttributeIDList to the PDU. @p len is the size of its elements as returned by
+ * sdp_client_get_attribute_id_list_len(), which the caller has checked against the tailroom.
+ */
+static void sdp_client_add_attribute_id(struct net_buf *buf,
+					const struct bt_sdp_attribute_id_list *ids, size_t len)
+{
 	/*
 	 * Sequence definition where data is sequence of elements and where
 	 * additional next byte points the size of elements within
@@ -2164,20 +2187,11 @@ static void sdp_client_add_attribute_id(struct net_buf *buf, struct bt_sdp_attri
 	}
 }
 
-static uint16_t sdp_client_get_total_len(struct bt_sdp_client *session,
-					 const struct bt_sdp_discover_params *param)
+/* Size of the AttributeIDList and the ContinuationState of the next request */
+static size_t sdp_client_get_total_len(const struct bt_sdp_client *session, size_t ids_len)
 {
-	uint16_t len;
-
-	len = sdp_client_get_attribute_id_list_len(param->ids);
-	if (len > UINT8_MAX) {
-		len += sizeof(uint8_t) + sizeof(uint16_t);
-	} else {
-		len += sizeof(uint8_t) + sizeof(uint8_t);
-	}
-	len += sizeof(session->cstate.length) + session->cstate.length;
-
-	return len;
+	return sdp_client_get_attribute_id_list_hdr_len(ids_len) + ids_len +
+	       sizeof(session->cstate.length) + session->cstate.length;
 }
 
 /* ServiceAttribute PDU, ref to BT Core 5.4, Vol 3, part B, 4.6.1 */
@@ -2186,9 +2200,7 @@ static int sdp_client_sa_search(struct bt_sdp_client *session,
 {
 	struct net_buf *buf;
 	uint16_t len;
-
-	/* Update context param directly. */
-	session->param = param;
+	size_t ids_len;
 
 	len = net_buf_tailroom(session->rec_buf);
 	if (!SDP_SA_ATTR_BYTE_IN_RANGE(len)) {
@@ -2205,15 +2217,15 @@ static int sdp_client_sa_search(struct bt_sdp_client *session,
 	net_buf_add_be16(buf, len);
 
 	/* Check the tailroom of the buffer */
-	len = sdp_client_get_total_len(session, param);
-	if (len > net_buf_tailroom(buf)) {
+	ids_len = sdp_client_get_attribute_id_list_len(param->ids);
+	if (sdp_client_get_total_len(session, ids_len) > net_buf_tailroom(buf)) {
 		LOG_ERR("No space to add attribute ID");
 		net_buf_unref(buf);
 		return -ENOMEM;
 	}
 
 	/* Add attribute ID List */
-	sdp_client_add_attribute_id(buf, param->ids);
+	sdp_client_add_attribute_id(buf, param->ids, ids_len);
 
 	/*
 	 * Update and validate PDU ContinuationState. Initial SSA Request has
@@ -2240,9 +2252,7 @@ static int sdp_client_ssa_search(struct bt_sdp_client *session,
 	struct net_buf *buf;
 	uint8_t uuid128[BT_UUID_SIZE_128];
 	uint16_t len;
-
-	/* Update context param directly. */
-	session->param = param;
+	size_t ids_len;
 
 	len = net_buf_tailroom(session->rec_buf);
 	if (!SDP_SSA_ATTR_BYTE_IN_RANGE(len)) {
@@ -2303,15 +2313,15 @@ static int sdp_client_ssa_search(struct bt_sdp_client *session,
 	net_buf_add_be16(buf, len);
 
 	/* Check the tailroom of the buffer */
-	len = sdp_client_get_total_len(session, param);
-	if (len > net_buf_tailroom(buf)) {
+	ids_len = sdp_client_get_attribute_id_list_len(param->ids);
+	if (sdp_client_get_total_len(session, ids_len) > net_buf_tailroom(buf)) {
 		LOG_ERR("No space to add attribute ID");
 		net_buf_unref(buf);
 		return -ENOMEM;
 	}
 
 	/* Add attribute ID List */
-	sdp_client_add_attribute_id(buf, param->ids);
+	sdp_client_add_attribute_id(buf, param->ids, ids_len);
 
 	/*
 	 * Update and validate PDU ContinuationState. Initial SSA Request has
@@ -2367,6 +2377,13 @@ static int sdp_client_discover(struct bt_sdp_client *session)
 		/* No UUID items, disconnect channel */
 		return bt_l2cap_chan_disconnect(chan);
 	}
+
+	/* Activate the request while holding the lock, so that a concurrent
+	 * bt_sdp_discover_cancel() either sees it as still waiting and
+	 * removes it before the request PDU goes out, or sees it as the
+	 * active one and refuses to cancel it.
+	 */
+	session->param = param;
 	k_sem_give(&session->sem_lock);
 
 	switch (param->type) {
@@ -2703,6 +2720,13 @@ static struct net_buf *sdp_client_alloc_buf(struct bt_l2cap_chan *chan)
 	LOG_DBG("session %p chan %p", session, chan);
 
 	session->param = GET_PARAM(sys_slist_peek_head(&session->reqs));
+	if (session->param == NULL) {
+		/* All requests were canceled while the channel was being
+		 * established. Returning NULL makes sdp_client_connected()
+		 * disconnect the channel.
+		 */
+		return NULL;
+	}
 
 	buf = net_buf_alloc(session->param->pool, K_NO_WAIT);
 	if (buf == NULL) {
@@ -2763,24 +2787,29 @@ static void sdp_client_clean_after_release(struct bt_sdp_client *session)
 
 static void sdp_client_disconnected(struct bt_l2cap_chan *chan)
 {
-	struct bt_sdp_discover_params *param, *tmp;
-
 	struct bt_sdp_client *session = SDP_CLIENT_CHAN(chan);
+	sys_snode_t *node;
 
 	LOG_DBG("session %p chan %p disconnected", session, chan);
 
 	/* The disconnecting may be triggered by acl disconnection or failed sdp connecting */
 	k_sem_take(&session->sem_lock, K_FOREVER);
 	session->state = SDP_CLIENT_DISCONNECTING;
-	k_sem_give(&session->sem_lock);
 
-	/* callback all the sdp reqs */
-	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&session->reqs, param, tmp, _node) {
-		session->param = param;
+	/* callback all the sdp reqs; each node is popped while holding the
+	 * lock, so that a concurrent bt_sdp_discover_cancel() either removes
+	 * a request before its callback is called here, or does not find it
+	 * at all.
+	 */
+	node = sys_slist_get(&session->reqs);
+	while (node != NULL) {
+		session->param = GET_PARAM(node);
+		k_sem_give(&session->sem_lock);
 		sdp_client_notify_result(session, UUID_NOT_RESOLVED);
-		/* Remove already callbacked UUID node */
-		sys_slist_find_and_remove(&session->reqs, &param->_node);
+		k_sem_take(&session->sem_lock, K_FOREVER);
+		node = sys_slist_get(&session->reqs);
 	}
+	k_sem_give(&session->sem_lock);
 
 	net_buf_drop(&session->rec_buf);
 
@@ -2905,6 +2934,8 @@ static int sdp_client_discovery_start(struct bt_conn *conn,
 int bt_sdp_discover(struct bt_conn *conn,
 		    struct bt_sdp_discover_params *params)
 {
+	size_t ids_len;
+
 	if (params == NULL || params->uuid == NULL || params->func == NULL ||
 	    params->pool == NULL ||
 	    (params->ids != NULL && params->ids->count != 0 && params->ids->ranges == NULL)) {
@@ -2926,7 +2957,58 @@ int bt_sdp_discover(struct bt_conn *conn,
 		}
 	}
 
+	ids_len = sdp_client_get_attribute_id_list_len(params->ids);
+	if (sdp_client_get_attribute_id_list_hdr_len(ids_len) + ids_len >
+	    SDP_CLIENT_ATTR_ID_LIST_MAX_LEN) {
+		LOG_WRN("Attribute ID list of %zu bytes does not fit in a request PDU", ids_len);
+		return -EINVAL;
+	}
+
 	return sdp_client_discovery_start(conn, params);
+}
+
+int bt_sdp_discover_cancel(struct bt_conn *conn,
+			   struct bt_sdp_discover_params *params)
+{
+	struct bt_sdp_client *session;
+	sys_snode_t *node;
+	size_t index;
+	bool found;
+
+	if (conn == NULL || params == NULL) {
+		LOG_WRN("Invalid user params");
+		return -EINVAL;
+	}
+
+	index = (size_t)bt_conn_index(conn);
+	__ASSERT(index < ARRAY_SIZE(bt_sdp_client_pool), "ACL CONN index is out of bounds");
+
+	session = &bt_sdp_client_pool[index];
+
+	k_sem_take(&session->sem_lock, K_FOREVER);
+
+	if (session->param == params) {
+		/* The request is being resolved: a request PDU is out and its
+		 * response may already be under processing, so it is too late
+		 * to keep the callback from being called.
+		 */
+		k_sem_give(&session->sem_lock);
+		return -EINPROGRESS;
+	}
+
+	node = &params->_node;
+	found = sys_slist_find_and_remove(&session->reqs, node);
+	if (!found) {
+		found = sys_slist_find_and_remove(&session->reqs_next, node);
+	}
+
+	k_sem_give(&session->sem_lock);
+
+	if (!found) {
+		return -ESRCH;
+	}
+
+	return 0;
 }
 
 /* Helper getting length of data determined by DTD for integers */

@@ -50,7 +50,8 @@ config RESERVE_RTC_MEM
 
 config SOC_ESP32_ENABLE_PVT
 	bool "Auto adjust hp & lp voltage using pvt function"
-	depends on SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32C6 || SOC_SERIES_ESP32P4
+	depends on SOC_SERIES_ESP32C5 || SOC_SERIES_ESP32C6 || SOC_SERIES_ESP32C61 || \
+		SOC_SERIES_ESP32P4
 	default n if SOC_SERIES_ESP32C6
 	default y
 	help

@@ -822,6 +822,16 @@ void gptp_send_sync(int port, struct net_pkt *pkt)
 	net_if_queue_tx(net_pkt_iface(pkt), pkt);
 }
 
+void gptp_sync_timestamp_cb_unregister(int port)
+{
+	if (!sync_cb_registered[port - 1]) {
+		return;
+	}
+
+	net_if_unregister_timestamp_cb(&sync_timestamp_cb[port - 1]);
+	sync_cb_registered[port - 1] = false;
+}
+
 void gptp_send_follow_up(int port, struct net_pkt *pkt)
 {
 	GPTP_STATS_INC(port, tx_fup_count);

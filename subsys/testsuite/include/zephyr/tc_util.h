@@ -44,12 +44,27 @@
  *
  * TC_RUNID is any string, that will be converted to a string literal.
  */
+/**
+ * @def TC_PRINT_RUNID_START
+ * @brief Report a Run ID when a test image starts executing
+ *
+ * Counterpart of TC_PRINT_RUNID emitted at the beginning of a run, so
+ * that one run's output is bracketed by two Run ID markers. A start
+ * marker observed while output of an earlier run is still pending
+ * tells a log parser that the device restarted and that the pending
+ * output is stale, without depending on the optional boot banner.
+ *
+ * Prints ``RunID started: <TC_RUNID>`` when \c TC_RUNID is defined,
+ * nothing otherwise.
+ */
 #define TC_STR_HELPER(x) #x
 #define TC_STR(x) TC_STR_HELPER(x)
 #ifdef TC_RUNID
 #define TC_PRINT_RUNID PRINT_DATA("RunID: " TC_STR(TC_RUNID) "\n")
+#define TC_PRINT_RUNID_START PRINT_DATA("RunID started: " TC_STR(TC_RUNID) "\n")
 #else
 #define TC_PRINT_RUNID do {} while (false)
+#define TC_PRINT_RUNID_START do {} while (false)
 #endif
 
 #ifndef PRINT_LINE

@@ -28,9 +28,9 @@ static ALWAYS_INLINE void mcxn_update_system_timer_hz(uint32_t new_hz)
 #if defined(CONFIG_CORTEX_M_SYSTICK)
 #if !defined(CONFIG_SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE)
 #error "MCXN CPU_FREQ with SysTick requires CONFIG_SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE"
-#endif
+#endif /* ! CONFIG_SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE */
 	z_sys_clock_hw_cycles_per_sec_update((uint32_t)SystemCoreClock);
-#endif
+#endif /* CONFIG_CORTEX_M_SYSTICK */
 }
 
 /* MCXN frequency levels. */

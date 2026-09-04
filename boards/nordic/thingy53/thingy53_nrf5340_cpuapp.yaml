@@ -8,7 +8,7 @@ toolchain:
 ram: 448
 flash: 1024
 supported:
-  - ble
+  - bluetooth
   - gpio
   - i2c
   - pwm

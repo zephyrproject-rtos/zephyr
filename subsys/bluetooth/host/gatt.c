@@ -1081,6 +1081,19 @@ static void bt_gatt_pairing_complete(struct bt_conn *conn, bool bonded)
 		/* Store the ccc and cf data */
 		gatt_store_ccc(conn->id, &(conn->le.dst));
 		bt_gatt_store_cf(conn->id, &conn->le.dst);
+
+		if (IS_ENABLED(CONFIG_BT_GATT_SERVICE_CHANGED)) {
+			struct gatt_sc_cfg *cfg = find_sc_cfg(conn->id, &conn->le.dst);
+
+			/* A client may subscribe to Service Changed before it
+			 * bonds, in which case sc_save() created the entry but
+			 * had no bond to persist it against. Store it now that
+			 * there is one.
+			 */
+			if (cfg != NULL) {
+				sc_store(cfg);
+			}
+		}
 	}
 }
 #endif /* CONFIG_BT_SETTINGS && CONFIG_BT_SMP */
@@ -1163,6 +1176,8 @@ static int gatt_register(struct bt_gatt_service *svc)
 	uint16_t handle, last_handle;
 	struct bt_gatt_attr *attrs = svc->attrs;
 	uint16_t count = svc->attr_count;
+
+	BT_DEV_LOCK_ASSERT();
 
 	if (sys_slist_is_empty(&db)) {
 		handle = last_static_handle;
@@ -1647,17 +1662,26 @@ int bt_gatt_service_register(struct bt_gatt_service *svc)
 		return -EALREADY;
 	}
 
+	bt_dev_lock();
+
+	/* The RX-path readers of the database (the ATT request handlers
+	 * iterating the attributes) do not take the host lock and rely on
+	 * cooperative scheduling: hold the scheduler lock as well so that
+	 * they cannot preempt a preemptible caller mid-update.
+	 */
 	k_sched_lock();
 
 	err = gatt_register(svc);
 	if (err < 0) {
 		k_sched_unlock();
+		bt_dev_unlock();
 		return err;
 	}
 
 	/* Don't submit any work until the stack is initialized */
 	if (!atomic_test_bit(gatt_flags, GATT_INITIALIZED)) {
 		k_sched_unlock();
+		bt_dev_unlock();
 		return 0;
 	}
 
@@ -1667,6 +1691,7 @@ int bt_gatt_service_register(struct bt_gatt_service *svc)
 	db_changed();
 
 	k_sched_unlock();
+	bt_dev_unlock();
 
 	return 0;
 }
@@ -1685,17 +1710,24 @@ int bt_gatt_service_unregister(struct bt_gatt_service *svc)
 	sc_start_handle = svc->attrs[0].handle;
 	sc_end_handle = svc->attrs[svc->attr_count - 1].handle;
 
+	bt_dev_lock();
+
+	/* See bt_gatt_service_register() for why the scheduler lock is
+	 * held as well.
+	 */
 	k_sched_lock();
 
 	err = gatt_unregister(svc);
 	if (err) {
 		k_sched_unlock();
+		bt_dev_unlock();
 		return err;
 	}
 
 	/* Don't submit any work until the stack is initialized */
 	if (!atomic_test_bit(gatt_flags, GATT_INITIALIZED)) {
 		k_sched_unlock();
+		bt_dev_unlock();
 		return 0;
 	}
 
@@ -1704,6 +1736,7 @@ int bt_gatt_service_unregister(struct bt_gatt_service *svc)
 	db_changed();
 
 	k_sched_unlock();
+	bt_dev_unlock();
 
 	return 0;
 }
@@ -1713,7 +1746,7 @@ bool bt_gatt_service_is_registered(const struct bt_gatt_service *svc)
 	bool registered = false;
 	sys_snode_t *node;
 
-	k_sched_lock();
+	bt_dev_lock();
 	SYS_SLIST_FOR_EACH_NODE(&db, node) {
 		if (&svc->node == node) {
 			registered = true;
@@ -1721,7 +1754,7 @@ bool bt_gatt_service_is_registered(const struct bt_gatt_service *svc)
 		}
 	}
 
-	k_sched_unlock();
+	bt_dev_unlock();
 
 	return registered;
 }
@@ -3609,6 +3642,15 @@ static void call_notify_cb_and_maybe_unsubscribe(struct bt_conn *conn, struct ga
 {
 	struct bt_gatt_subscribe_params *params, *tmp;
 	int err;
+
+	/* Core Specification Vol 3, Part F, Section 3.2.9: the maximum length
+	 * of an attribute value is 512 octets.
+	 */
+	if (length > BT_ATT_MAX_ATTRIBUTE_LEN) {
+		LOG_WRN("Ignoring value with invalid length %u for handle 0x%04x", length,
+			handle);
+		return;
+	}
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&sub->list, params, tmp, node) {
 		if (handle != params->value_handle) {
@@ -5608,6 +5650,13 @@ void bt_gatt_cancel(struct bt_conn *conn, void *params)
 	struct bt_att_req *req;
 	bt_att_func_t func = NULL;
 
+	bt_dev_lock();
+
+	/* att_handle_rsp() processes the request state on the RX workqueue
+	 * without the host lock, relying on cooperative scheduling: hold the
+	 * scheduler lock as well so that it cannot preempt a preemptible
+	 * caller mid-cancel.
+	 */
 	k_sched_lock();
 
 	req = bt_att_find_req_by_user_data(conn, params);
@@ -5617,6 +5666,7 @@ void bt_gatt_cancel(struct bt_conn *conn, void *params)
 	}
 
 	k_sched_unlock();
+	bt_dev_unlock();
 
 	if (func) {
 		func(conn, BT_ATT_ERR_UNLIKELY, NULL, 0, params);

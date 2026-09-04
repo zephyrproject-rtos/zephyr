@@ -367,11 +367,6 @@ timer3: timer@40000c60 {
 	status = "disabled";
 };
 
-/*
- * NOTE: When RTOS timer used as kernel timer, timer4 used
- * to provide high speed busy wait counter. Keep disabled to
- * prevent counter driver from claiming it.
- */
 timer4: timer@40000c80 {
 	compatible = "microchip,xec-timer";
 	clock-frequency = <48000000>;
@@ -384,6 +379,11 @@ timer4: timer@40000c80 {
 	status = "disabled";
 };
 
+/*
+ * NOTE: When RTOS timer used as kernel timer, timer5 used
+ * to provide high speed busy wait counter. Keep disabled to
+ * prevent counter driver from claiming it.
+ */
 timer5: timer@40000ca0 {
 	compatible = "microchip,xec-timer";
 	clock-frequency = <48000000>;

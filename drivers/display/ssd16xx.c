@@ -1099,7 +1099,7 @@ static struct ssd16xx_quirks quirks_solomon_ssd1683 = {
 		.dbi_config = {                                         \
 			.mode = MIPI_DBI_MODE_SPI_4WIRE,                \
 			.config = MIPI_DBI_SPI_CONFIG_DT(n,             \
-				SPI_OP_MODE_MASTER | SPI_WORD_SET(8) |  \
+				SPI_OP_MODE_CONTROLLER | SPI_WORD_SET(8) | \
 				SPI_HOLD_ON_CS | SPI_LOCK_ON, 0),       \
 		},                                                      \
 		.busy_gpio = GPIO_DT_SPEC_GET(n, busy_gpios),		\

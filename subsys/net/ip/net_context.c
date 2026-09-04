@@ -1270,19 +1270,19 @@ int net_context_bind(struct net_context *context, const struct net_sockaddr *add
 
 static inline struct net_context *find_context(void *conn_handler)
 {
-	int i;
+	struct net_conn *conn = conn_handler;
+	struct net_context *context = conn->context;
 
-	for (i = 0; i < NET_MAX_CONTEXT; i++) {
-		if (!net_context_is_used(&contexts[i])) {
-			continue;
-		}
-
-		if (contexts[i].conn_handler == conn_handler) {
-			return &contexts[i];
-		}
+	/* The connection already points back at its owning context; just
+	 * apply the same validity checks the previous linear scan of
+	 * contexts[] performed.
+	 */
+	if (context == NULL || !net_context_is_used(context) ||
+	    context->conn_handler != conn_handler) {
+		return NULL;
 	}
 
-	return NULL;
+	return context;
 }
 
 int net_context_listen(struct net_context *context, int backlog)

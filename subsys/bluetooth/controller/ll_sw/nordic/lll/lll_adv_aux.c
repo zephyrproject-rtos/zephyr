@@ -599,7 +599,11 @@ static void isr_tx_rx(void *param)
 
 	/* setup tIFS switching */
 	radio_tmr_tifs_set(EVENT_IFS_US);
-	radio_switch_complete_and_tx(lll->phy_s, 0, lll->phy_s, lll->phy_flags);
+	/* The RX coding is determined by the radio; TX uses the selected
+	 * advertising coding scheme.
+	 */
+	radio_switch_complete_and_tx(lll->phy_s, PHY_FLAGS_UNUSED, lll->phy_s,
+				     lll->phy_flags);
 
 	/* setup Rx buffer */
 	node_rx = ull_pdu_rx_alloc_peek(1);

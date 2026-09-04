@@ -30,20 +30,14 @@ static bool failed_expectation;
 #ifdef CONFIG_ZTEST_SHUFFLE
 #include <time.h>
 #include <zephyr/random/random.h>
-#ifndef CONFIG_ZTEST_REPEAT
-#define NUM_ITER_PER_SUITE CONFIG_ZTEST_SHUFFLE_SUITE_REPEAT_COUNT
-#define NUM_ITER_PER_TEST  CONFIG_ZTEST_SHUFFLE_TEST_REPEAT_COUNT
-#endif
 #endif /* CONFIG_ZTEST_SHUFFLE */
 
 #ifdef CONFIG_ZTEST_REPEAT
 #define NUM_ITER_PER_SUITE CONFIG_ZTEST_SUITE_REPEAT_COUNT
 #define NUM_ITER_PER_TEST  CONFIG_ZTEST_TEST_REPEAT_COUNT
 #else
-#ifndef CONFIG_ZTEST_SHUFFLE
 #define NUM_ITER_PER_SUITE 1
 #define NUM_ITER_PER_TEST  1
-#endif
 #endif
 
 #ifdef CONFIG_ZTEST_COVERAGE_RESET_BEFORE_TESTS
@@ -1353,6 +1347,7 @@ void __weak test_main(void)
 #ifdef ZTEST_UNITTEST
 int main(void)
 {
+	TC_PRINT_RUNID_START;
 	z_init_mock();
 	test_main();
 	end_report();
@@ -1606,6 +1601,7 @@ int main(void)
 #endif
 #endif /* CONFIG_USERSPACE */
 
+	TC_PRINT_RUNID_START;
 	z_init_mock();
 #ifndef CONFIG_ZTEST_SHELL
 	test_main();

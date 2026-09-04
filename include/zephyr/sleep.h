@@ -99,7 +99,7 @@ __syscall k_ticks_t k_sleep_ticks(k_timeout_t timeout);
 	(((t) / Z_SLEEP_TICK_HZ) * (to_hz) +                                \
 	 DIV_ROUND_UP(((t) % Z_SLEEP_TICK_HZ) * (to_hz), Z_SLEEP_TICK_HZ))
 
-static inline int32_t z_sleep_ticks_to_int32_ms(k_ticks_t ticks)
+static ALWAYS_INLINE int32_t z_sleep_ticks_to_int32_ms(k_ticks_t ticks)
 {
 	uint32_t t = (uint32_t)ticks;
 
@@ -137,7 +137,7 @@ static inline int32_t z_sleep_ticks_to_int32_ms(k_ticks_t ticks)
  * With A = rem * 1000 = q * hz + r, ceil(A * 1000 / hz) is exactly
  * q * 1000 + ceil(r * 1000 / hz), and r < hz keeps the second step in range.
  */
-static inline int32_t z_sleep_ticks_to_int32_us_split(uint32_t t)
+static ALWAYS_INLINE int32_t z_sleep_ticks_to_int32_us_split(uint32_t t)
 {
 	uint32_t sec = t / Z_SLEEP_TICK_HZ;
 	uint32_t rem = (t % Z_SLEEP_TICK_HZ) * USEC_PER_MSEC;
@@ -148,7 +148,7 @@ static inline int32_t z_sleep_ticks_to_int32_us_split(uint32_t t)
 			 DIV_ROUND_UP(r * USEC_PER_MSEC, Z_SLEEP_TICK_HZ));
 }
 
-static inline int32_t z_sleep_ticks_to_int32_us(k_ticks_t ticks)
+static ALWAYS_INLINE int32_t z_sleep_ticks_to_int32_us(k_ticks_t ticks)
 {
 	uint32_t t = (uint32_t)ticks;
 
@@ -201,7 +201,7 @@ static inline int32_t z_sleep_ticks_to_int32_us(k_ticks_t ticks)
  * If @a timeout is K_FOREVER and the thread is woken early via
  * k_wakeup(), -1 is returned.
  */
-static inline int32_t k_sleep(k_timeout_t timeout)
+static ALWAYS_INLINE int32_t k_sleep(k_timeout_t timeout)
 {
 	k_ticks_t ticks = k_sleep_ticks(timeout);
 
@@ -224,7 +224,7 @@ static inline int32_t k_sleep(k_timeout_t timeout)
  * by the \ref k_wakeup call, the time left to sleep rounded up to the nearest
  * millisecond.
  */
-static inline int32_t k_msleep(int32_t ms)
+static ALWAYS_INLINE int32_t k_msleep(int32_t ms)
 {
 	return k_sleep(Z_TIMEOUT_MS(ms));
 }
@@ -245,7 +245,7 @@ static inline int32_t k_msleep(int32_t ms)
  * by the \ref k_wakeup call, the time left to sleep rounded up to the nearest
  * microsecond.
  */
-static inline int32_t k_usleep(int32_t us)
+static ALWAYS_INLINE int32_t k_usleep(int32_t us)
 {
 	k_ticks_t ticks = k_sleep_ticks(Z_TIMEOUT_US(us));
 

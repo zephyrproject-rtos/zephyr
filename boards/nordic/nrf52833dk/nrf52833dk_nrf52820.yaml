@@ -10,7 +10,7 @@ flash: 256
 supported:
   - usb_device
   - usbd
-  - ble
+  - bluetooth
   - gpio
   - watchdog
   - counter

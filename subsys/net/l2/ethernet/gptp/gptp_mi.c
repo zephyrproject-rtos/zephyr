@@ -764,8 +764,14 @@ static void gptp_update_local_port_clock(void)
 
 	port_ds = GPTP_PORT_DS(port);
 
-	/* Check if the last neighbor rate ratio can still be used */
-	if (!port_ds->neighbor_rate_ratio_valid) {
+	/* Check if the last neighbor rate ratio can still be used. A static
+	 * time receiver cannot require it: the upstream bridge may never
+	 * answer Pdelay requests, in which case the ratio keeps its initial
+	 * value of 1.0 and the clock is disciplined on every Sync and
+	 * Follow_Up pair instead of once per Pdelay measurement.
+	 */
+	if (!IS_ENABLED(CONFIG_NET_GPTP_STATIC_TIME_RECEIVER) &&
+	    !port_ds->neighbor_rate_ratio_valid) {
 		return;
 	}
 
@@ -916,7 +922,8 @@ static void gptp_mi_clk_master_sync_offset_state_machine(void)
 	}
 }
 
-#if defined(CONFIG_NET_GPTP_GM_CAPABLE)
+#if defined(CONFIG_NET_GPTP_GM_CAPABLE) && \
+	!defined(CONFIG_NET_GPTP_STATIC_TIME_RECEIVER)
 static inline void gptp_mi_setup_sync_send_time(void)
 {
 	struct gptp_clk_master_sync_snd_state *state;
@@ -1910,9 +1917,42 @@ static void gptp_set_selected_tree(void)
 	GPTP_GLOBAL_DS()->selected_array = ~0;
 }
 
+#if defined(CONFIG_NET_GPTP_STATIC_TIME_RECEIVER)
+static void gptp_mi_port_role_static_time_receiver(void)
+{
+	int port;
+
+	/* Static port roles, no BMCA: every port is a time receiver. The
+	 * grandmaster is whichever time-aware system originates the Sync
+	 * stream received on the port, even though it never sends an
+	 * Announce.
+	 */
+	for (port = GPTP_PORT_START; port <= GPTP_PORT_END; port++) {
+		gptp_change_port_state(port, GPTP_PORT_SLAVE);
+	}
+
+	/* Port 0 carries the role of the time-aware system itself, which
+	 * is passive on a system that is synchronized through one of its
+	 * ports.
+	 */
+	gptp_change_port_state(0, GPTP_PORT_PASSIVE);
+
+	/* SiteSyncSync forwards a received PortSyncSync to ClockSlaveSync
+	 * only while a grandmaster is present. The grandmaster is static
+	 * here, it just never announces itself.
+	 */
+	GPTP_GLOBAL_DS()->gm_present = true;
+}
+#endif
+
 static void gptp_mi_port_role_selection_state_machine(void)
 {
 	struct gptp_port_role_selection_state *state;
+
+#if defined(CONFIG_NET_GPTP_STATIC_TIME_RECEIVER)
+	gptp_mi_port_role_static_time_receiver();
+	return;
+#endif
 
 	state = &GPTP_STATE()->pr_sel;
 
@@ -2020,6 +2060,27 @@ void gptp_mi_port_sync_state_machines(int port)
 
 void gptp_mi_port_bmca_state_machines(int port)
 {
+#if defined(CONFIG_NET_GPTP_STATIC_TIME_RECEIVER)
+	struct gptp_port_announce_receive_state *pa_rcv;
+	struct gptp_port_bmca_data *bmca_data;
+
+	pa_rcv = &GPTP_PORT_STATE(port)->pa_rcv;
+	bmca_data = GPTP_PORT_BMCA_DATA(port);
+
+	/* Static port roles, no BMCA: a received Announce is dropped
+	 * without qualification and no Announce is ever transmitted.
+	 */
+	pa_rcv->rcvd_announce = false;
+	bmca_data->rcvd_msg = false;
+
+	if (bmca_data->rcvd_announce_ptr != NULL) {
+		net_pkt_unref(bmca_data->rcvd_announce_ptr);
+		bmca_data->rcvd_announce_ptr = NULL;
+	}
+
+	return;
+#endif
+
 	gptp_mi_port_announce_receive_state_machine(port);
 	gptp_mi_port_announce_information_state_machine(port);
 	gptp_mi_port_announce_transmit_state_machine(port);
@@ -2031,7 +2092,8 @@ void gptp_mi_state_machines(void)
 	gptp_mi_clk_slave_sync_state_machine();
 	gptp_mi_port_role_selection_state_machine();
 	gptp_mi_clk_master_sync_offset_state_machine();
-#if defined(CONFIG_NET_GPTP_GM_CAPABLE)
+#if defined(CONFIG_NET_GPTP_GM_CAPABLE) && \
+	!defined(CONFIG_NET_GPTP_STATIC_TIME_RECEIVER)
 	/*
 	 * Only call ClockMasterSyncSend state machine in case a Grand Master clock
 	 * is present and is this time aware system.

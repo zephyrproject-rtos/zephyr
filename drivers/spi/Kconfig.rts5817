@@ -10,7 +10,7 @@ config SPI_RTS5817
 	help
 	  This option enables the SPI controller wrapper driver for RTS5817.
 	  The wrapper sits on top of the DesignWare SSI core (spi_dw) and
-	  drives DMA-based transfers via the master control register block.
+	  drives DMA-based transfers via the controller register block.
 
 if SPI_RTS5817
 

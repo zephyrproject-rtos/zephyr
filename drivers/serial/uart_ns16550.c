@@ -1106,6 +1106,15 @@ static int uart_ns16550_fifo_fill(const struct device *dev,
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
 
 	for (i = 0; (i < size) && (i < data->fifo_size); i++) {
+		/* uart_ns16550_irq_tx_ready() reports the DW8250 ready as soon
+		 * as its TX FIFO has room, not only when it is empty, so the
+		 * FIFO may already hold data here. Bytes written to a full
+		 * FIFO are lost: stop as soon as it fills up.
+		 */
+		if (IS_ENABLED(CONFIG_UART_NS16550_DW8250_DW_APB) &&
+		    (ns16550_inbyte(dev_cfg, USR(dev)) & USR_TFNF) == 0) {
+			break;
+		}
 		ns16550_outbyte(dev_cfg, THR(dev), tx_data[i]);
 	}
 

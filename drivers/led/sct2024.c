@@ -214,7 +214,7 @@ static bool sct2024_is_oe_pin_defined(const struct device *dev)
 	}; \
 	static const struct sct2024_cfg sct2024_cfg_##inst = { \
 		.spi = SPI_DT_SPEC_INST_GET(inst, \
-			SPI_OP_MODE_MASTER | SPI_WORD_SET(8) | SPI_TRANSFER_MSB), \
+			SPI_OP_MODE_CONTROLLER | SPI_WORD_SET(8) | SPI_TRANSFER_MSB), \
 		.la_pin = GPIO_DT_SPEC_GET(DT_DRV_INST(inst), la_gpios), \
 		.oe_pin = GPIO_DT_SPEC_GET_OR(DT_DRV_INST(inst), oe_gpios, {0}), \
 		.leds_info = sct2024_leds_##inst, \

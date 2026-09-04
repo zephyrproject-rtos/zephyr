@@ -654,7 +654,13 @@ struct bt_sdp_attribute_id_range {
 
 /** @brief SDP attribute ID list for Service Attribute and Service Search Attribute transactions */
 struct bt_sdp_attribute_id_list {
-	/** Count of the SDP attribute ID range */
+	/**
+	 * Count of the SDP attribute ID range
+	 *
+	 * The encoded list has to fit in an SDP request PDU: a range is encoded in 5 bytes, a
+	 * single attribute ID (equal beginning and ending) in 3 bytes, and the list including its
+	 * 2-byte header is limited to 162 bytes. bt_sdp_discover() rejects longer lists.
+	 */
 	size_t count;
 	/** Attribute ID range array list */
 	struct bt_sdp_attribute_id_range *ranges;
@@ -717,7 +723,9 @@ struct bt_sdp_discover_params {
  * @param conn Object identifying connection to remote.
  * @param params SDP discovery parameters.
  *
- * @return 0 in case of success or negative value in case of error.
+ * @retval 0 Success.
+ * @retval -EINVAL Invalid @p params, or an attribute ID list that does not fit in a request PDU.
+ * @return Other negative error code on failure to set up the SDP channel.
  */
 
 int bt_sdp_discover(struct bt_conn *conn,
@@ -725,16 +733,25 @@ int bt_sdp_discover(struct bt_conn *conn,
 
 /** @brief Release waiting SDP discovery request.
  *
- *  It can cancel valid waiting SDP client request identified by SDP discovery
- *  parameters object.
+ *  Cancels a waiting SDP client request identified by the SDP discovery
+ *  parameters object, i.e. one that was queued with bt_sdp_discover() but
+ *  whose resolution has not started yet. On success the discovery callback
+ *  will not be called for the request and the parameters object may be
+ *  reused immediately.
+ *
+ *  A request that is already being resolved cannot be canceled; in that
+ *  case -EINPROGRESS is returned and the callback will still be called.
  *
  * @param conn Object identifying connection to remote.
  * @param params SDP discovery parameters.
  *
- * @return 0 in case of success or negative value in case of error.
+ * @retval 0 The request was canceled.
+ * @retval -EINVAL @p conn or @p params is NULL.
+ * @retval -EINPROGRESS The request is already being resolved.
+ * @retval -ESRCH No such request is waiting.
  */
 int bt_sdp_discover_cancel(struct bt_conn *conn,
-			   const struct bt_sdp_discover_params *params);
+			   struct bt_sdp_discover_params *params);
 
 
 /* Helper types & functions for SDP client to get essential data from server */

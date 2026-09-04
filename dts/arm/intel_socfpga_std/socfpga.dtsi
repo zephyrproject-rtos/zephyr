@@ -143,6 +143,8 @@
 			reg = <0xff700000 0x2000>;
 			interrupts = <0 115 4 IRQ_DEFAULT_PRIORITY>;
 			emac-index = <0>;
+			snps,multicast-filter-bins = <256>;
+			snps,perfect-filter-entries = <128>;
 			status = "disabled";
 		};
 
@@ -151,6 +153,8 @@
 			reg = <0xff702000 0x2000>;
 			interrupts = <0 120 4 IRQ_DEFAULT_PRIORITY>;
 			emac-index = <1>;
+			snps,multicast-filter-bins = <256>;
+			snps,perfect-filter-entries = <128>;
 			status = "disabled";
 		};
 

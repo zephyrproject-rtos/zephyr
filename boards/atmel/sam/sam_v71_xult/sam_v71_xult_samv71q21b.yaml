@@ -19,6 +19,7 @@ supported:
   - hwinfo
   - gpio
   - i2s
+  - ptp_clock
   - pwm
   - netif:eth
   - rtc

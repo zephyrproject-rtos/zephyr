@@ -25,6 +25,13 @@ LOG_MODULE_REGISTER(ptp_port, CONFIG_PTP_LOG_LEVEL);
 
 #define DEFAULT_LOG_MSG_INTERVAL (0x7F)
 
+/* Sanity bounds for message intervals advertised by a remote PTP Instance. The
+ * values are used as shift counts when arming the timers, so they must never be
+ * adopted unchecked.
+ */
+#define PTP_LOG_MSG_INTERVAL_MIN (-10)
+#define PTP_LOG_MSG_INTERVAL_MAX 22
+
 #define PORT_DELAY_REQ_CLEAR_TO (3 * NSEC_PER_SEC)
 
 #define PTP_LOG_MIN_PDELAY_REQ_INTERVAL_MIN (-7)
@@ -94,6 +101,108 @@ static int port_msg_send(struct ptp_port *port, struct ptp_msg *msg, enum ptp_so
 
 	return ptp_transport_send(port, msg, idx);
 }
+
+static int port_msg_sendto(struct ptp_port *port, struct ptp_msg *msg, enum ptp_socket idx)
+{
+	ptp_msg_pre_send(msg);
+
+	return ptp_transport_sendto(port, msg, idx);
+}
+
+#if defined(CONFIG_PTP_NETWORK_MODE_HYBRID)
+static void port_hybrid_fallback_reset(struct ptp_port *port __maybe_unused)
+{
+#if !defined(CONFIG_PTP_NETWORK_MODE_HYBRID_NO_FALLBACK)
+	port->hybrid_unanswered = 0;
+	port->hybrid_fallback_active = false;
+#endif
+}
+
+static void port_hybrid_tt_addr_update(struct ptp_port *port, struct ptp_msg *msg)
+{
+#if !defined(CONFIG_PTP_NETWORK_MODE_HYBRID_NO_FALLBACK)
+	if (!port->tt_addr_valid ||
+	    !ptp_port_id_eq(&port->tt_id, &msg->header.src_port_id)) {
+		/* A new timeTransmitter was selected, give unicast Delay_Req
+		 * messages another try.
+		 */
+		port->tt_id = msg->header.src_port_id;
+		port_hybrid_fallback_reset(port);
+	}
+#endif
+
+	memcpy(&port->tt_addr, &msg->addr, sizeof(port->tt_addr));
+	port->tt_addr_valid = true;
+}
+
+static void port_hybrid_tt_addr_invalidate(struct ptp_port *port)
+{
+	port->tt_addr_valid = false;
+	port_hybrid_fallback_reset(port);
+}
+
+static void port_hybrid_delay_resp_received(struct ptp_port *port __maybe_unused)
+{
+#if !defined(CONFIG_PTP_NETWORK_MODE_HYBRID_NO_FALLBACK)
+	port->hybrid_unanswered = 0;
+#endif
+}
+
+static bool port_hybrid_delay_req_prepare(struct ptp_port *port, struct ptp_msg *msg)
+{
+	if (!port->tt_addr_valid) {
+		return false;
+	}
+
+#if !defined(CONFIG_PTP_NETWORK_MODE_HYBRID_NO_FALLBACK)
+	if (port->hybrid_fallback_active) {
+		return false;
+	}
+
+	if (port->hybrid_unanswered >= CONFIG_PTP_HYBRID_FALLBACK_ATTEMPTS) {
+		LOG_WRN("Port %d timeTransmitter does not respond to unicast Delay_Req, "
+			"falling back to multicast",
+			port->port_ds.id.port_number);
+		port->hybrid_fallback_active = true;
+		return false;
+	}
+#endif
+
+	msg->header.flags[0] |= PTP_MSG_UNICAST_FLAG;
+	memcpy(&msg->addr, &port->tt_addr, sizeof(msg->addr));
+
+	return true;
+}
+
+static void port_hybrid_delay_req_sent(struct ptp_port *port __maybe_unused)
+{
+#if !defined(CONFIG_PTP_NETWORK_MODE_HYBRID_NO_FALLBACK)
+	port->hybrid_unanswered++;
+#endif
+}
+#else
+static void port_hybrid_tt_addr_update(struct ptp_port *port __unused, struct ptp_msg *msg __unused)
+{
+}
+
+static void port_hybrid_tt_addr_invalidate(struct ptp_port *port __unused)
+{
+}
+
+static void port_hybrid_delay_resp_received(struct ptp_port *port __unused)
+{
+}
+
+static bool port_hybrid_delay_req_prepare(struct ptp_port *port __unused,
+					  struct ptp_msg *msg __unused)
+{
+	return false;
+}
+
+static void port_hybrid_delay_req_sent(struct ptp_port *port __unused)
+{
+}
+#endif /* CONFIG_PTP_NETWORK_MODE_HYBRID */
 
 static void port_timer_set_timeout(struct k_timer *timer, uint8_t factor, int8_t log_seconds)
 {
@@ -645,7 +754,14 @@ static int port_delay_req_msg_transmit(struct ptp_port *port)
 	}
 
 	sys_slist_append(&port->delay_req_list, &msg->node);
-	ret = port_msg_send(port, msg, PTP_SOCKET_EVENT);
+	if (port_hybrid_delay_req_prepare(port, msg)) {
+		ret = port_msg_sendto(port, msg, PTP_SOCKET_EVENT);
+		if (ret >= 0) {
+			port_hybrid_delay_req_sent(port);
+		}
+	} else {
+		ret = port_msg_send(port, msg, PTP_SOCKET_EVENT);
+	}
 	if (ret < 0) {
 		sys_slist_find_and_remove(&port->delay_req_list, &msg->node);
 		ptp_msg_unref(msg);
@@ -1068,11 +1184,14 @@ static int port_delay_req_msg_process(struct ptp_port *port, struct ptp_msg *msg
 	resp->delay_resp.req_port_id = msg->header.src_port_id;
 
 	if (msg->header.flags[0] & PTP_MSG_UNICAST_FLAG) {
-		/* TODO handle unicast messages */
+		/* Respond directly to the requesting timeReceiver. */
 		resp->header.flags[0] |= PTP_MSG_UNICAST_FLAG;
+		resp->header.log_msg_interval = DEFAULT_LOG_MSG_INTERVAL;
+		memcpy(&resp->addr, &msg->addr, sizeof(resp->addr));
+		ret = port_msg_sendto(port, resp, PTP_SOCKET_EVENT);
+	} else {
+		ret = port_msg_send(port, resp, PTP_SOCKET_EVENT);
 	}
-
-	ret = port_msg_send(port, resp, PTP_SOCKET_EVENT);
 	ptp_msg_unref(resp);
 
 	if (ret < 0) {
@@ -1122,6 +1241,25 @@ static void port_delay_resp_msg_process(struct ptp_port *port, struct ptp_msg *m
 
 	sys_slist_remove(&port->delay_req_list, prev, &req->node);
 	ptp_msg_unref(req);
+
+	port_hybrid_delay_resp_received(port);
+
+	if (msg->header.log_msg_interval == DEFAULT_LOG_MSG_INTERVAL) {
+		/* 0x7F means the interval is not applicable, because it is subject
+		 * to unicast negotiation (IEEE 1588-2019 Table 42). A
+		 * timeTransmitter answering unicast Delay_Req messages may instead
+		 * advertise its preferred interval (RFC 9760, section 7.2), so the
+		 * field is evaluated for unicast Delay_Resp messages as well.
+		 */
+		return;
+	}
+
+	if (msg->header.log_msg_interval < PTP_LOG_MSG_INTERVAL_MIN ||
+	    msg->header.log_msg_interval > PTP_LOG_MSG_INTERVAL_MAX) {
+		LOG_WRN("Port %d ignoring bogus Delay_Req interval 2^%d",
+			port->port_ds.id.port_number, msg->header.log_msg_interval);
+		return;
+	}
 
 	port->port_ds.log_min_delay_req_interval = msg->header.log_msg_interval;
 }
@@ -1542,6 +1680,7 @@ static void port_disable(struct ptp_port *port)
 	port_clear_delay_req(port);
 	port_pdelay_clear_exchange(port);
 	port_pdelay_reset_measurement(port);
+	port_hybrid_tt_addr_invalidate(port);
 
 	net_if_unregister_timestamp_cb(&port->sync_ts_cb);
 	net_if_unregister_timestamp_cb(&port->delay_req_ts_cb);
@@ -1676,6 +1815,7 @@ void ptp_port_init(struct net_if *iface, void *user_data)
 	port->pdelay_prev_resp_origin_ns = 0;
 	port->pdelay_prev_resp_ingress_ns = 0;
 	port->pdelay_prev_rate_sample_valid = false;
+	port_hybrid_tt_addr_invalidate(port);
 
 	port_ds_init(port);
 	sys_slist_init(&port->foreign_list);
@@ -1831,6 +1971,7 @@ void ptp_port_event_handle(struct ptp_port *port, enum ptp_port_event event, boo
 		}
 		port_clear_delay_req(port);
 		port_pdelay_clear_exchange(port);
+		port_hybrid_tt_addr_invalidate(port);
 		__fallthrough;
 	case PTP_PS_TIME_RECEIVER:
 		port_timer_set_timeout_random(&port->timers.announce,
@@ -1947,6 +2088,7 @@ enum ptp_port_event ptp_port_timer_event_gen(struct ptp_port *port, struct k_tim
 
 			port_delay_req_cleanup(port);
 			port_pdelay_clear_request_exchange(port);
+			port_hybrid_tt_addr_invalidate(port);
 			port_timer_set_timeout_random(&port->timers.announce,
 						      port->port_ds.announce_receipt_timeout,
 						      1,
@@ -2089,6 +2231,12 @@ int ptp_port_update_current_time_transmitter(struct ptp_port *port, struct ptp_m
 	    !ptp_port_id_eq(&msg->header.src_port_id, &foreign->dataset.sender)) {
 		return ptp_port_add_foreign_tt(port, msg);
 	}
+
+	/* The timeTransmitter address for unicast Delay_Req is learned only from
+	 * Announce messages, the source addresses of Sync and Follow_Up messages
+	 * might have been replaced by the address of a Transparent Clock.
+	 */
+	port_hybrid_tt_addr_update(port, msg);
 
 	foreign_clock_cleanup(foreign);
 

@@ -26,6 +26,7 @@ supported:
   - i2c
   - mipi_dsi
   - netif:eth
+  - ptp_clock
   - pwm
   - spi
   - usb_device

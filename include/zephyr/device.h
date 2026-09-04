@@ -317,6 +317,18 @@ typedef int16_t device_handle_t;
 #define DEVICE_DT_GET(node_id) (&DEVICE_DT_NAME_GET(node_id))
 
 /**
+ * @brief Like @ref DEVICE_DT_GET, with a trailing comma.
+ *
+ * This is convenient for use with devicetree iteration macros like
+ * @ref DT_FOREACH_STATUS_OKAY.
+ *
+ * @param node_id A devicetree node identifier
+ *
+ * @return A pointer to the device object created for that node, followed by a comma
+ */
+#define DEVICE_DT_GET_COMMA(node_id) DEVICE_DT_GET(node_id),
+
+/**
  * @brief Get a @ref device reference for an instance of a `DT_DRV_COMPAT`
  * compatible.
  *

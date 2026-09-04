@@ -12,6 +12,7 @@ config MODEM_CELLULAR
 	select MODEM_PIPELINK
 	select MODEM_BACKEND_UART
 	select UART_USE_RUNTIME_CONFIGURE
+	select PM_DEVICE_DRIVER_NEEDS_DEDICATED_WQ if PM_DEVICE_RUNTIME
 	select RING_BUFFER
 	select NET_L2_PPP_OPTION_MRU
 	select NET_L2_PPP_PAP
@@ -26,7 +27,8 @@ config MODEM_CELLULAR
 		DT_HAS_SQN_GM02S_ENABLED || DT_HAS_QUECTEL_EG800Q_ENABLED || \
 		DT_HAS_SIMCOM_A76XX_ENABLED || DT_HAS_FIBOCOM_LE250_ENABLED || \
 		DT_HAS_TRASNA_LEXI_R10_ENABLED || DT_HAS_QUECTEL_EG915U_ENABLED || \
-		DT_HAS_NORDIC_NRF93M1_ENABLED || DT_HAS_NORDIC_NRF91_SM_V2_ENABLED)
+		DT_HAS_NORDIC_NRF93M1_ENABLED || DT_HAS_NORDIC_NRF91_SM_V2_ENABLED || \
+		DT_HAS_QUECTEL_BG770_ENABLED)
 	help
 	  This driver uses the generic 3gpp AT commands, along
 	  with the standard protocols CMUX and PPP, to configure
@@ -45,6 +47,24 @@ config MODEM_CELLULAR_STATS
 	  losses, command failures, recoveries, ...) and expose them through
 	  cellular_get_stats(). Adds a small amount of RAM per instance and a
 	  few increments on existing code paths.
+
+config MODEM_CELLULAR_ON_DEMAND_CONNECT
+	bool "Dial the data call on demand (net_if admin up/down)"
+	select MODEM_DEDICATED_WORKQUEUE
+	help
+	  Dial the PPP data call on demand instead of during power-up. Once the
+	  modem is up it parks in a resting state and dials only when a consumer
+	  admits the PPP interface (net_if_up()), hanging the call up again on
+	  net_if_down(), so a connectivity layer can map connect/disconnect onto a
+	  real dial / hang-up and re-dial after a disconnect.
+
+	  Selects MODEM_DEDICATED_WORKQUEUE, which the hang-up path requires (see
+	  modem_cellular.c for why).
+
+	  Only for modems whose vendor configuration provides no network chat
+	  script; enabling it for one that does makes the driver fail to
+	  initialize (-ENOTSUP), as such a modem dials on registration regardless
+	  of the PPP interface admin state.
 
 config MODEM_CELLULAR_INIT_PRIORITY
 	int "Cellular modem driver initialization priority"

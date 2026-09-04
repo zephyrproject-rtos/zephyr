@@ -11,3 +11,4 @@ vendor: muselab
 supported:
   - uart
   - gpio
+  - comparator

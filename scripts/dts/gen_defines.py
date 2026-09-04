@@ -542,6 +542,14 @@ def write_compatibles(node: edtlib.Node) -> None:
     # about whether edtlib / Zephyr's binding language recognizes
     # them. The compatibles the node provides are what is important.
 
+    if node.matching_compat:
+        as_token = edtlib.str_as_token(node.matching_compat)
+        out_dt_define(f"{node.z_path_id}_BINDING_COMPAT_TOKEN", as_token)
+        out_dt_define(f"{node.z_path_id}_BINDING_COMPAT_UPPER_TOKEN", as_token.upper())
+        out_dt_define(
+            f"{node.z_path_id}_BINDING_COMPAT_UNQUOTED", escape_unquoted(node.matching_compat)
+        )
+
     for i, compat in enumerate(node.compats):
         out_dt_define(f"{node.z_path_id}_COMPAT_MATCHES_{str2ident(compat)}", 1)
 
@@ -1295,7 +1303,7 @@ def write_global_macros(edt: edtlib.EDT):
 def str2ident(s: str) -> str:
     # Converts 's' to a form suitable for (part of) an identifier
 
-    return re.sub('[-,.@/+]', '_', s.lower())
+    return re.sub('[-,.@/+%]', '_', s.lower())
 
 
 def list2init(values: Iterable[str]) -> str:

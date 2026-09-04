@@ -70,7 +70,7 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 	case PM_STATE_SUSPEND_TO_RAM:
 		mcxn_pm_suspend_to_ram();
 		break;
-#endif
+#endif /* CONFIG_PM_S2RAM */
 
 	default:
 		break;
@@ -82,7 +82,7 @@ __weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 	ARG_UNUSED(substate_id);
 #if !defined(CONFIG_PM_S2RAM)
 	ARG_UNUSED(state);
-#endif
+#endif /* ! CONFIG_PM_S2RAM */
 
 	if ((SCB->SCR & SCB_SCR_SLEEPDEEP_Msk) == SCB_SCR_SLEEPDEEP_Msk) {
 		SCB->SCR &= ~SCB_SCR_SLEEPDEEP_Msk;
@@ -94,7 +94,7 @@ __weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 	if (state == PM_STATE_SUSPEND_TO_RAM) {
 		SPC_ClearPeriphIOIsolationFlag(MCXN_SPC_ADDR);
 	}
-#endif
+#endif /* CONFIG_PM_S2RAM */
 
 	SPC_ClearPowerDomainLowPowerRequestFlag(MCXN_SPC_ADDR, kSPC_PowerDomain0);
 	SPC_ClearPowerDomainLowPowerRequestFlag(MCXN_SPC_ADDR, kSPC_PowerDomain1);

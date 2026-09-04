@@ -33,8 +33,9 @@ choice LV_COLOR_DEPTH
 	default LV_COLOR_DEPTH_24
 endchoice
 
-config LV_Z_FULL_REFRESH
-	default y
+choice LV_Z_RENDERING_MODE
+	default LV_Z_FULL_REFRESH
+endchoice
 
 config LV_Z_VDB_CUSTOM_SECTION
 	default y

@@ -94,6 +94,14 @@ enum bt_gatt_perm {
 	 *  not set, prepare writes are accepted by default (subject to normal
 	 *  write permissions).
 	 *
+	 *  @note Unlike the other values of this enum, this is not an access
+	 *  check: clearing it does not make the GATT layer reject prepare
+	 *  writes. Every value that gets queued is passed to the write
+	 *  callback when the client executes the write, so an attribute that
+	 *  cannot accept a prepared write has to reject it from its write
+	 *  callback: at prepare time if this permission is set, and otherwise
+	 *  at execution.
+	 *
 	 *  Do not confuse this with @ref BT_GATT_CEP_RELIABLE_WRITE, which is
 	 *  a Characteristic Extended Property bit from the specification.
 	 */
@@ -127,6 +135,10 @@ enum bt_gatt_attr_write_flag {
 	 *
 	 * If set, write callback should only check if the device is
 	 * authorized but no data shall be written.
+	 *
+	 * Only delivered for attributes that set
+	 * @ref BT_GATT_PERM_PREPARE_WRITE. See that permission for why its
+	 * absence does not mean prepared writes are rejected.
 	 */
 	BT_GATT_WRITE_FLAG_PREPARE = BIT(0),
 
@@ -168,6 +180,11 @@ struct bt_gatt_attr;
  *
  *  @note The GATT server propagates the return value from this
  *  method back to the remote client.
+ *
+ *  @note When the stack invokes this method to serve a remote
+ *  operation it does so from a thread context chosen by the
+ *  stack, never from an ISR, and the implementation should not
+ *  block.
  *
  *  @param conn   The connection that is requesting to read.
  *                NULL if local.
@@ -211,6 +228,11 @@ typedef ssize_t (*bt_gatt_attr_read_func_t)(struct bt_conn *conn,
  *
  *  @note The GATT server propagates the return value from this
  *  method back to the remote client.
+ *
+ *  @note When the stack invokes this method to serve a remote
+ *  operation it does so from a thread context chosen by the
+ *  stack, never from an ISR, and the implementation should not
+ *  block.
  *
  *  @param conn   The connection that is requesting to write
  *  @param attr   The attribute that's being written
@@ -1086,9 +1108,6 @@ struct bt_gatt_ccc_cfg {
 	uint16_t value;
 };
 
-/** Macro to keep old name for deprecation period. */
-#define _bt_gatt_ccc bt_gatt_ccc_managed_user_data __DEPRECATED_MACRO
-
 /** @brief Internal representation of CCC value.
  *
  * @note Only use this as an argument for @ref BT_GATT_CCC_MANAGED
@@ -1184,9 +1203,6 @@ ssize_t bt_gatt_attr_read_ccc(struct bt_conn *conn,
 ssize_t bt_gatt_attr_write_ccc(struct bt_conn *conn,
 			       const struct bt_gatt_attr *attr, const void *buf,
 			       uint16_t len, uint16_t offset, uint8_t flags);
-
-/** Macro to keep old name for deprecation period. */
-#define BT_GATT_CCC_INITIALIZER BT_GATT_CCC_MANAGED_USER_DATA_INIT __DEPRECATED_MACRO
 
 /**
  *  @brief Initialize Client Characteristic Configuration Declaration Macro.
@@ -1430,7 +1446,8 @@ struct bt_gatt_notify_params {
  *  With the addition that after sending the notification the
  *  callback function will be called.
  *
- *  The callback is run from System Workqueue context.
+ *  The callback runs in a thread context, never in an ISR; see
+ *  @rstref{Callback execution contexts <bluetooth_callback_contexts>}.
  *  When called from the System Workqueue context this API will not wait for
  *  resources for the callback but instead return an error.
  *
@@ -1725,7 +1742,8 @@ uint16_t bt_gatt_get_uatt_mtu(struct bt_conn *conn);
  *
  *  Used with @ref bt_gatt_exchange_mtu function to initiate an MTU exchange. The
  *  response is handled in the callback @p func, which is called upon
- *  completion from the Bluetooth RX thread.
+ *  completion in a thread context, never in an ISR; see
+ *  @rstref{Callback execution contexts <bluetooth_callback_contexts>}.
  *
  *  @p params must remain valid until the callback executes.
  */
@@ -1742,9 +1760,10 @@ struct bt_gatt_exchange_params {
  *
  *  As the response comes in callback @p params->func, for example
  *  @ref bt_gatt_get_mtu can be invoked in the mtu_exchange-callback to read
- *  out the new negotiated ATT connection MTU. The callback is run from the
- *  context of the Bluetooth RX thread and @p params must remain
- *  valid until start of callback.
+ *  out the new negotiated ATT connection MTU. The callback runs in a thread
+ *  context, never in an ISR; see
+ *  @rstref{Callback execution contexts <bluetooth_callback_contexts>}.
+ *  @p params must remain valid until start of callback.
  *
  *  @param conn Connection object.
  *  @param params Exchange MTU parameters.
@@ -1920,8 +1939,10 @@ struct bt_gatt_discover_params {
  *  For each attribute found the callback is called which can then decide
  *  whether to continue discovering or stop.
  *
- *  The Response comes in callback @p params->func. The callback is run from
- *  the BT RX thread. @p params must remain valid until start of callback where
+ *  The Response comes in callback @p params->func. The callback runs in
+ *  a thread context, never in an ISR; see
+ *  @rstref{Callback execution contexts <bluetooth_callback_contexts>}.
+ *  @p params must remain valid until start of callback where
  *  iter `attr` is `NULL` or callback will return `BT_GATT_ITER_STOP`.
  *
  *  @param conn Connection object.
@@ -2054,8 +2075,9 @@ struct bt_gatt_read_params {
  *  Note that the effect of returning @ref BT_GATT_ITER_CONTINUE from the
  *  callback varies depending on the type of read operation.
  *
- *  The Response comes in callback @p params->func. The callback is run from
- *  the context of the Bluetooth RX thread.
+ *  The Response comes in callback @p params->func. The callback runs in
+ *  a thread context, never in an ISR; see
+ *  @rstref{Callback execution contexts <bluetooth_callback_contexts>}.
  *  @p params must remain valid until start of callback.
  *  If the received data length is invalid, the callback @p params->func will
  *  called with the error @ref BT_ATT_ERR_INVALID_PDU.
@@ -2105,8 +2127,9 @@ struct bt_gatt_write_params {
 
 /** @brief Write Attribute Value by handle
  *
- *  The Response comes in callback @p params->func. The callback is run from
- *  the context of the Bluetooth RX thread.
+ *  The Response comes in callback @p params->func. The callback runs in
+ *  a thread context, never in an ISR; see
+ *  @rstref{Callback execution contexts <bluetooth_callback_contexts>}.
  *  @p params must remain valid until start of callback.
  *
  *  @param conn Connection object.
@@ -2128,7 +2151,8 @@ int bt_gatt_write(struct bt_conn *conn, struct bt_gatt_write_params *params);
  *  With the addition that after sending the write the callback function will be
  *  called.
  *
- *  The callback is run from System Workqueue context.
+ *  The callback runs in a thread context, never in an ISR; see
+ *  @rstref{Callback execution contexts <bluetooth_callback_contexts>}.
  *  When called from the System Workqueue context this API will not wait for
  *  resources for the callback but instead return an error.
  *
@@ -2312,10 +2336,10 @@ struct bt_gatt_subscribe_params {
  *  this callback. Notification callback with NULL data will not be called if
  *  subscription was removed by this method.
  *
- *  The Response comes in callback @p params->subscribe. The callback is run from
- *  the context of the Bluetooth RX thread.
- *  The Notification callback @p params->notify is also called from the BT RX
- *  thread.
+ *  The Response comes in callback @p params->subscribe, and notifications in
+ *  @p params->notify. Both callbacks run in a thread context, never in an
+ *  ISR; see
+ *  @rstref{Callback execution contexts <bluetooth_callback_contexts>}.
  *
  *  @note Notifications are asynchronous therefore the @p params must remain
  *        valid while subscribed and cannot be reused for additional subscriptions
@@ -2366,8 +2390,9 @@ int bt_gatt_resubscribe(uint8_t id, const bt_addr_le_t *peer,
  *  will be called if subscription was removed by this call, until then the
  *  parameters cannot be reused.
  *
- *  The Response comes in callback @p params->func. The callback is run from
- *  the BT RX thread.
+ *  The Response comes in callback @p params->notify with NULL data,
+ *  either from within this function or from a thread context chosen by
+ *  the stack.
  *
  *  @param conn Connection object.
  *  @param params Subscribe parameters. The parameters shall be a @ref bt_gatt_subscribe_params from

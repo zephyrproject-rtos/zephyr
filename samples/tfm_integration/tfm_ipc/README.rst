@@ -197,11 +197,11 @@ the MCUboot bootloader image binary (``bl2.hex``).
 
 Finally, flash the concatenated TF-M + Zephyr binary.
 
-   Example, for nRF9160, using ``cmake`` and ``ninja``
+   Example, for nRF9160
 
    .. code-block:: bash
 
-      ninja flash
+      west flash
 
 On BL5340:
 ==========

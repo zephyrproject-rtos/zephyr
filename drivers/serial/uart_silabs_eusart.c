@@ -898,19 +898,6 @@ static sl_hal_eusart_parity_t eusart_cfg2ll_parity(enum uart_config_parity parit
 	}
 }
 
-static inline enum uart_config_parity eusart_ll2cfg_parity(sl_hal_eusart_parity_t parity)
-{
-	switch (parity) {
-	case SL_HAL_EUSART_ODD_PARITY:
-		return UART_CFG_PARITY_ODD;
-	case SL_HAL_EUSART_EVEN_PARITY:
-		return UART_CFG_PARITY_EVEN;
-	case SL_HAL_EUSART_NO_PARITY:
-	default:
-		return UART_CFG_PARITY_NONE;
-	}
-}
-
 static sl_hal_eusart_stop_bits_t eusart_cfg2ll_stopbits(enum uart_config_stop_bits sb)
 {
 	switch (sb) {
@@ -924,22 +911,6 @@ static sl_hal_eusart_stop_bits_t eusart_cfg2ll_stopbits(enum uart_config_stop_bi
 		return SL_HAL_EUSART_STOP_BITS_1P5;
 	default:
 		return SL_HAL_EUSART_STOP_BITS_1;
-	}
-}
-
-static inline enum uart_config_stop_bits eusart_ll2cfg_stopbits(sl_hal_eusart_stop_bits_t sb)
-{
-	switch (sb) {
-	case SL_HAL_EUSART_STOP_BITS_0P5:
-		return UART_CFG_STOP_BITS_0_5;
-	case SL_HAL_EUSART_STOP_BITS_1:
-		return UART_CFG_STOP_BITS_1;
-	case SL_HAL_EUSART_STOP_BITS_1P5:
-		return UART_CFG_STOP_BITS_1_5;
-	case SL_HAL_EUSART_STOP_BITS_2:
-		return UART_CFG_STOP_BITS_2;
-	default:
-		return UART_CFG_STOP_BITS_1;
 	}
 }
 
@@ -966,32 +937,6 @@ static sl_hal_eusart_data_bits_t eusart_cfg2ll_databits(enum uart_config_data_bi
 	}
 }
 
-static inline enum uart_config_data_bits eusart_ll2cfg_databits(sl_hal_eusart_data_bits_t db,
-								sl_hal_eusart_parity_t p)
-{
-	switch (db) {
-	case SL_HAL_EUSART_DATA_BITS_7:
-		if (p == SL_HAL_EUSART_NO_PARITY) {
-			return UART_CFG_DATA_BITS_7;
-		} else {
-			return UART_CFG_DATA_BITS_6;
-		}
-	case SL_HAL_EUSART_DATA_BITS_9:
-		if (p == SL_HAL_EUSART_NO_PARITY) {
-			return UART_CFG_DATA_BITS_9;
-		} else {
-			return UART_CFG_DATA_BITS_8;
-		}
-	case SL_HAL_EUSART_DATA_BITS_8:
-	default:
-		if (p == SL_HAL_EUSART_NO_PARITY) {
-			return UART_CFG_DATA_BITS_8;
-		} else {
-			return UART_CFG_DATA_BITS_7;
-		}
-	}
-}
-
 static sl_hal_eusart_hw_flow_control_t eusart_cfg2ll_hwctrl(enum uart_config_flow_control fc)
 {
 	if (fc == UART_CFG_FLOW_CTRL_RTS_CTS) {
@@ -999,15 +944,6 @@ static sl_hal_eusart_hw_flow_control_t eusart_cfg2ll_hwctrl(enum uart_config_flo
 	}
 
 	return SL_HAL_EUSART_HW_FLOW_CONTROL_NONE;
-}
-
-static inline enum uart_config_flow_control eusart_ll2cfg_hwctrl(sl_hal_eusart_hw_flow_control_t fc)
-{
-	if (fc == SL_HAL_EUSART_HW_FLOW_CONTROL_CTS_RTS) {
-		return UART_CFG_FLOW_CTRL_RTS_CTS;
-	}
-
-	return UART_CFG_FLOW_CTRL_NONE;
 }
 
 static int eusart_configure_peripheral(const struct device *dev, bool enable)

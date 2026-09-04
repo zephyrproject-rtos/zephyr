@@ -64,6 +64,8 @@ tmp_res_file=tmp.xml
 
 if [[ -v BOARD ]]; then
 	export FAILURE_EXTRA_INFO=" on ${BOARD}"
+else
+  export FAILURE_EXTRA_INFO=""
 fi
 
 all_cases_a=( $all_cases )

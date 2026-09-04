@@ -1158,9 +1158,9 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 				}
 			}
 
-			if (false == ((params->security == WIFI_SECURITY_TYPE_EAP_PEAP_MSCHAPV2 ||
-			    params->security == WIFI_SECURITY_TYPE_EAP_TTLS_MSCHAPV2) &&
-			    (!params->verify_peer_cert))) {
+			if (false == (params->security == WIFI_SECURITY_TYPE_EAP_PEAP_MSCHAPV2 ||
+			    params->security == WIFI_SECURITY_TYPE_EAP_TTLS_MSCHAPV2 ||
+				params->security == WIFI_SECURITY_TYPE_EAP_PEAP_GTC)) {
 				if (wpas_config_process_blob(wpa_s->conf, "ca_cert",
 						   enterprise_creds.ca_cert,
 						   enterprise_creds.ca_cert_len)) {
@@ -1171,71 +1171,85 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 						   resp.network_id)) {
 					goto out;
 				}
-			}
 
-			if (wpas_config_process_blob(wpa_s->conf, "client_cert",
-					   enterprise_creds.client_cert,
-					   enterprise_creds.client_cert_len)) {
-				goto out;
-			}
+				if (wpas_config_process_blob(wpa_s->conf, "client_cert",
+						enterprise_creds.client_cert,
+						enterprise_creds.client_cert_len)) {
+					goto out;
+				}
 
-			if (!wpa_cli_cmd_v("set_network %d client_cert \"blob://client_cert\"",
-					   resp.network_id)) {
-				goto out;
-			}
+				if (!wpa_cli_cmd_v("set_network %d client_cert \"blob://client_cert\"",
+						resp.network_id)) {
+					goto out;
+				}
 
-			if (wpas_config_process_blob(wpa_s->conf, "private_key",
-					   enterprise_creds.client_key,
-					   enterprise_creds.client_key_len)) {
-				goto out;
-			}
+				if (wpas_config_process_blob(wpa_s->conf, "private_key",
+						enterprise_creds.client_key,
+						enterprise_creds.client_key_len)) {
+					goto out;
+				}
 
-			if (!wpa_cli_cmd_v("set_network %d private_key \"blob://private_key\"",
-					   resp.network_id)) {
-				goto out;
-			}
+				if (!wpa_cli_cmd_v("set_network %d private_key \"blob://private_key\"",
+						resp.network_id)) {
+					goto out;
+				}
 
-			if (!wpa_cli_cmd_v("set_network %d private_key_passwd \"%s\"",
-					   resp.network_id, params->key_passwd)) {
-				goto out;
-			}
+				if (!wpa_cli_cmd_v("set_network %d private_key_passwd \"%s\"",
+						resp.network_id, params->key_passwd)) {
+					goto out;
+				}
 
-			if (wpas_config_process_blob(wpa_s->conf, "ca_cert2",
-						     enterprise_creds.ca_cert2,
-						     enterprise_creds.ca_cert2_len)) {
-				goto out;
-			}
+				if (wpas_config_process_blob(wpa_s->conf, "ca_cert2",
+								enterprise_creds.ca_cert2,
+								enterprise_creds.ca_cert2_len)) {
+					goto out;
+				}
 
-			if (!wpa_cli_cmd_v("set_network %d ca_cert2 \"blob://ca_cert2\"",
-					   resp.network_id)) {
-				goto out;
-			}
+				if (!wpa_cli_cmd_v("set_network %d ca_cert2 \"blob://ca_cert2\"",
+						resp.network_id)) {
+					goto out;
+				}
 
-			if (wpas_config_process_blob(wpa_s->conf, "client_cert2",
-						     enterprise_creds.client_cert2,
-						     enterprise_creds.client_cert2_len)) {
-				goto out;
-			}
+				if (wpas_config_process_blob(wpa_s->conf, "client_cert2",
+							enterprise_creds.client_cert2,
+							enterprise_creds.client_cert2_len)) {
+					goto out;
+				}
 
-			if (!wpa_cli_cmd_v("set_network %d client_cert2 \"blob://client_cert2\"",
-					   resp.network_id)) {
-				goto out;
-			}
+				if (!wpa_cli_cmd_v("set_network %d client_cert2 \"blob://client_cert2\"",
+						resp.network_id)) {
+					goto out;
+				}
 
-			if (wpas_config_process_blob(wpa_s->conf, "private_key2",
-						     enterprise_creds.client_key2,
-						     enterprise_creds.client_key2_len)) {
-				goto out;
-			}
+				if (wpas_config_process_blob(wpa_s->conf, "private_key2",
+								enterprise_creds.client_key2,
+								enterprise_creds.client_key2_len)) {
+					goto out;
+				}
 
-			if (!wpa_cli_cmd_v("set_network %d private_key2 \"blob://private_key2\"",
-					   resp.network_id)) {
-				goto out;
-			}
+				if (!wpa_cli_cmd_v("set_network %d private_key2 \"blob://private_key2\"",
+						resp.network_id)) {
+					goto out;
+				}
 
-			if (!wpa_cli_cmd_v("set_network %d private_key2_passwd \"%s\"",
-					   resp.network_id, params->key2_passwd)) {
-				goto out;
+				if (!wpa_cli_cmd_v("set_network %d private_key2_passwd \"%s\"",
+						resp.network_id, params->key2_passwd)) {
+					goto out;
+				}
+			} else if (params->verify_peer_cert) {
+				/* If we're using MSCHAPV2 and we're
+				 * requested a CA cert valid, load it
+				 */
+				if (wpas_config_process_blob(wpa_s->conf, "ca_cert",
+						enterprise_creds.ca_cert,
+						enterprise_creds.ca_cert_len)) {
+					goto out;
+				}
+
+				if (!wpa_cli_cmd_v("set_network %d ca_cert \"blob://ca_cert\"",
+						resp.network_id)) {
+					goto out;
+				}
 			}
 #endif
 #ifdef CONFIG_WEP
@@ -1886,21 +1900,58 @@ int supplicant_candidate_scan(const struct device *dev __unused, struct net_if *
 	char *end = pos + SUPPLICANT_CANDIDATE_SCAN_CMD_BUF_SIZE;
 	int freq = 0;
 	struct wpa_supplicant *wpa_s;
+	int cur_freq = 0;
+	bool first = true;
 
 	wpa_s = get_wpa_s_handle(iface);
 	if (!wpa_s) {
 		return -1;
 	}
 
+	/*
+	 * Include the current connected AP's frequency in the scan so that
+	 * wpa_supplicant's BSS cache has an up-to-date entry for the current
+	 * AP after the scan completes.
+	 *
+	 * Without this, wpa_supplicant_need_to_roam() (events.c) hits one of
+	 * two early-return paths that bypass need_to_roam_within_ess():
+	 *
+	 *   1. current_bss == NULL  (cache entry expired / not refreshed)
+	 *   2. selected->last_update_idx > current_bss->last_update_idx
+	 *      (candidate was seen in this scan round, current AP was not)
+	 *
+	 * Both cases cause an unconditional roam regardless of RSSI delta,
+	 * potentially associating to a much weaker AP.
+	 */
+	if (wpa_s->current_bss) {
+		cur_freq = wpa_s->current_bss->freq;
+	}
+
 	strcpy(pos, "freq=");
 	pos += 5;
+
+	/* Add current AP frequency first */
+	if (cur_freq > 0) {
+		pos += snprintf(pos, end - pos, "%d", cur_freq);
+		first = false;
+	}
+
+	/* Add neighbor report channels, skipping duplicates */
 	while (params->band_chan[i].channel) {
-		if (i > 0) {
+		freq = chan_to_freq(params->band_chan[i].channel);
+		i++;
+		if (freq <= 0) {
+			continue;
+		}
+		/* Skip if this neighbor channel is the same as current AP */
+		if (freq == cur_freq) {
+			continue;
+		}
+		if (!first) {
 			pos += snprintf(pos, end - pos, ",");
 		}
-		freq = chan_to_freq(params->band_chan[i].channel);
 		pos += snprintf(pos, end - pos, "%d", freq);
-		i++;
+		first = false;
 	}
 
 	if (!wpa_cli_cmd_v("scan %s", cmd)) {

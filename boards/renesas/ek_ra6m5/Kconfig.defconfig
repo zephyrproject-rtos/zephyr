@@ -3,7 +3,7 @@
 
 if BOARD_EK_RA6M5
 
-configdefault NET_L2_ETHERNET
+configdefault ETH_DRIVER
 	default y
 
 configdefault OUTPUT_RPD

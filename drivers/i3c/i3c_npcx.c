@@ -2053,6 +2053,7 @@ out_ibi_disable:
 }
 #endif /* CONFIG_I3C_USE_IBI */
 
+#ifdef CONFIG_I3C_USE_IBI
 static int npcx_i3c_target_ibi_raise(const struct device *dev, struct i3c_ibi *request)
 {
 	const struct npcx_i3c_config *config = dev->config;
@@ -2145,6 +2146,7 @@ static int npcx_i3c_target_ibi_raise(const struct device *dev, struct i3c_ibi *r
 
 	return 0;
 }
+#endif /* CONFIG_I3C_USE_IBI */
 
 #ifdef CONFIG_I3C_NPCX_DMA
 static uint16_t npcx_i3c_target_get_mdmafb_count(const struct device *dev)
@@ -2764,6 +2766,22 @@ static int npcx_i3c_config_get(const struct device *dev, enum i3c_config_type ty
 	return 0;
 }
 
+static void npcx_i3c_target_log_errwarn(const struct device *dev, uint32_t errwarn)
+{
+	uint32_t faults = errwarn & ~BIT(NPCX_I3C_ERRWARN_URUNNACK);
+
+	/* Let's not be verbose about this - the controller may be simply
+	 * polling us.
+	 */
+	if (IS_BIT_SET(errwarn, NPCX_I3C_ERRWARN_URUNNACK)) {
+		LOG_DBG("%s: no TX data pending, read request NACKed", dev->name);
+	}
+
+	if (faults != 0U) {
+		LOG_ERR("%s: Error %#x", dev->name, faults);
+	}
+}
+
 static void npcx_i3c_target_isr(const struct device *dev)
 {
 	struct npcx_i3c_data *data = dev->data;
@@ -2854,8 +2872,10 @@ static void npcx_i3c_target_isr(const struct device *dev)
 
 		/* Check error or warning has occurred */
 		if (IS_BIT_SET(inst->INTMASKED, NPCX_I3C_INTMASKED_ERRWARN)) {
-			LOG_ERR("%s: Error %#x", __func__, inst->ERRWARN);
-			inst->ERRWARN = inst->ERRWARN;
+			uint32_t errwarn = inst->ERRWARN;
+
+			npcx_i3c_target_log_errwarn(dev, errwarn);
+			inst->ERRWARN = errwarn;
 		}
 
 		/* Check incoming header matched target dynamic address */

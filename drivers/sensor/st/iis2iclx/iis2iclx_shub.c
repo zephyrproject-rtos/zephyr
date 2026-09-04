@@ -334,7 +334,7 @@ static int iis2iclx_lps22hh_conf(const struct device *dev, uint8_t i2c_addr,
 {
 	switch (attr) {
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
-		return iis2iclx_lps22hh_odr_set(data, i2c_addr, val->val1);
+		return iis2iclx_lps22hh_odr_set(dev, i2c_addr, val->val1);
 	default:
 		LOG_ERR("shub: LPS22HH attribute not supported.");
 		return -ENOTSUP;

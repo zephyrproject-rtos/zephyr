@@ -53,6 +53,13 @@ LOG_MODULE_REGISTER(bt_smp);
 
 #define SMP_TIMEOUT K_SECONDS(30)
 
+/* Number of confirm/random rounds in the LE Secure Connections Passkey Entry
+ * protocol. The passkey is a 6-digit decimal number, which is carried one bit
+ * per round, least significant bit first.
+ * Core Spec 6.3, Vol 3, Part H, 2.3.5.6.3.
+ */
+#define SMP_PASSKEY_ROUNDS 20U
+
 #if defined(CONFIG_BT_SIGNING)
 #define SIGN_DIST BT_SMP_DIST_SIGN
 #else
@@ -222,12 +229,6 @@ struct bt_smp {
 	atomic_t			bondable;
 };
 
-static unsigned int fixed_passkey = BT_PASSKEY_RAND;
-
-#define DISPLAY_FIXED(smp) (IS_ENABLED(CONFIG_BT_FIXED_PASSKEY) && \
-			    fixed_passkey != BT_PASSKEY_RAND && \
-			    (smp)->method == PASSKEY_DISPLAY)
-
 #if !defined(CONFIG_BT_SMP_SC_PAIR_ONLY)
 /* based on table 2.8 Core Spec 2.3.5.1 Vol. 3 Part H */
 static const uint8_t gen_method_legacy[5 /* remote */][5 /* local */] = {
@@ -378,11 +379,7 @@ static uint8_t get_io_capa(struct bt_smp *smp)
 #endif /* CONFIG_BT_APP_PASSKEY */
 
 	if (smp_auth_cb->passkey_entry) {
-		if (IS_ENABLED(CONFIG_BT_FIXED_PASSKEY) && fixed_passkey != BT_PASSKEY_RAND) {
-			return BT_SMP_IO_KEYBOARD_DISPLAY;
-		} else {
-			return BT_SMP_IO_KEYBOARD_ONLY;
-		}
+		return BT_SMP_IO_KEYBOARD_ONLY;
 	}
 
 	if (smp_auth_cb->passkey_display) {
@@ -390,11 +387,7 @@ static uint8_t get_io_capa(struct bt_smp *smp)
 	}
 
 no_callbacks:
-	if (IS_ENABLED(CONFIG_BT_FIXED_PASSKEY) && fixed_passkey != BT_PASSKEY_RAND) {
-		return BT_SMP_IO_DISPLAY_ONLY;
-	} else {
-		return BT_SMP_IO_NO_INPUT_OUTPUT;
-	}
+	return BT_SMP_IO_NO_INPUT_OUTPUT;
 }
 
 #if !defined(CONFIG_BT_SMP_SC_PAIR_ONLY)
@@ -2511,22 +2504,18 @@ static uint8_t legacy_request_tk(struct bt_smp *smp)
 
 		break;
 	case PASSKEY_DISPLAY: {
-		uint32_t passkey;
+		uint32_t passkey = BT_PASSKEY_RAND;
 
-		if (IS_ENABLED(CONFIG_BT_FIXED_PASSKEY) && fixed_passkey != BT_PASSKEY_RAND) {
-			passkey = fixed_passkey;
 #if defined(CONFIG_BT_APP_PASSKEY)
-		} else if (smp_auth_cb && smp_auth_cb->app_passkey) {
+		if (smp_auth_cb && smp_auth_cb->app_passkey) {
 			passkey = smp_auth_cb->app_passkey(conn);
 
 			if (passkey != BT_PASSKEY_RAND && passkey > 999999) {
 				LOG_WRN("App-provided passkey is out of valid range: %u", passkey);
 				return BT_SMP_ERR_UNSPECIFIED;
 			}
-#endif /* CONFIG_BT_APP_PASSKEY */
-		} else {
-			passkey = BT_PASSKEY_RAND;
 		}
+#endif /* CONFIG_BT_APP_PASSKEY */
 
 		if (passkey == BT_PASSKEY_RAND) {
 			if (bt_rand(&passkey, sizeof(passkey))) {
@@ -2603,7 +2592,7 @@ static uint8_t legacy_pairing_req(struct bt_smp *smp)
 	}
 
 	/* ask for consent if pairing is not due to sending SecReq*/
-	if ((DISPLAY_FIXED(smp) || smp->method == JUST_WORKS) &&
+	if (smp->method == JUST_WORKS &&
 	    !atomic_test_bit(smp->flags, SMP_FLAG_SEC_REQ) &&
 	    smp_auth_cb && smp_auth_cb->pairing_confirm) {
 		atomic_set_bit(smp->flags, SMP_FLAG_USER);
@@ -2843,7 +2832,7 @@ static uint8_t legacy_pairing_rsp(struct bt_smp *smp)
 	}
 
 	/* ask for consent if this is due to received SecReq */
-	if ((DISPLAY_FIXED(smp) || smp->method == JUST_WORKS) &&
+	if (smp->method == JUST_WORKS &&
 	    atomic_test_bit(smp->flags, SMP_FLAG_SEC_REQ) &&
 	    smp_auth_cb && smp_auth_cb->pairing_confirm) {
 		atomic_set_bit(smp->flags, SMP_FLAG_USER);
@@ -3299,7 +3288,7 @@ static uint8_t smp_pairing_req(struct bt_smp *smp, struct net_buf *buf)
 	}
 
 	if (!IS_ENABLED(CONFIG_BT_SMP_SC_PAIR_ONLY) &&
-	    (DISPLAY_FIXED(smp) || smp->method == JUST_WORKS) &&
+	    smp->method == JUST_WORKS &&
 	    !atomic_test_bit(smp->flags, SMP_FLAG_SEC_REQ) &&
 	    smp_auth_cb && smp_auth_cb->pairing_confirm) {
 		atomic_set_bit(smp->flags, SMP_FLAG_USER);
@@ -3542,7 +3531,7 @@ static uint8_t smp_pairing_rsp(struct bt_smp *smp, struct net_buf *buf)
 	}
 
 	if (!IS_ENABLED(CONFIG_BT_SMP_SC_PAIR_ONLY) &&
-	    (DISPLAY_FIXED(smp) || smp->method == JUST_WORKS) &&
+	    smp->method == JUST_WORKS &&
 	    atomic_test_bit(smp->flags, SMP_FLAG_SEC_REQ) &&
 	    smp_auth_cb && smp_auth_cb->pairing_confirm) {
 		atomic_set_bit(smp->flags, SMP_FLAG_USER);
@@ -3972,8 +3961,13 @@ static uint8_t smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
 			break;
 		case PASSKEY_DISPLAY:
 		case PASSKEY_INPUT:
+			if (smp->passkey_round >= SMP_PASSKEY_ROUNDS) {
+				LOG_WRN("Passkey round %u out of range", smp->passkey_round);
+				return BT_SMP_ERR_UNSPECIFIED;
+			}
+
 			smp->passkey_round++;
-			if (smp->passkey_round == 20U) {
+			if (smp->passkey_round == SMP_PASSKEY_ROUNDS) {
 				break;
 			}
 
@@ -4013,24 +4007,33 @@ static uint8_t smp_pairing_random(struct bt_smp *smp, struct net_buf *buf)
 		break;
 	case PASSKEY_DISPLAY:
 	case PASSKEY_INPUT:
+		if (smp->passkey_round >= SMP_PASSKEY_ROUNDS) {
+			LOG_WRN("Passkey round %u out of range", smp->passkey_round);
+			return BT_SMP_ERR_UNSPECIFIED;
+		}
+
 		err = sc_smp_check_confirm(smp);
 		if (err) {
 			return err;
 		}
 
-		atomic_set_bit(smp->allowed_cmds,
-			       BT_SMP_CMD_PAIRING_CONFIRM);
 		err = smp_send_pairing_random(smp);
 		if (err) {
 			return err;
 		}
 
 		smp->passkey_round++;
-		if (smp->passkey_round == 20U) {
+		if (smp->passkey_round == SMP_PASSKEY_ROUNDS) {
 			atomic_set_bit(smp->allowed_cmds, BT_SMP_DHKEY_CHECK);
 			atomic_set_bit(smp->flags, SMP_FLAG_DHCHECK_WAIT);
 			return 0;
 		}
+
+		/* Only accept another confirm if a round is actually left,
+		 * otherwise a peer can keep the protocol going past the last
+		 * passkey bit.
+		 */
+		atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_PAIRING_CONFIRM);
 
 		if (bt_rand(smp->prnd, 16)) {
 			return BT_SMP_ERR_UNSPECIFIED;
@@ -4454,10 +4457,6 @@ __maybe_unused static uint8_t display_passkey(struct bt_smp *smp)
 	struct bt_conn *conn = smp->chan.chan.conn;
 	const struct bt_conn_auth_cb *smp_auth_cb = latch_auth_cb(smp);
 	uint32_t passkey = BT_PASSKEY_RAND;
-
-	if (IS_ENABLED(CONFIG_BT_FIXED_PASSKEY) && fixed_passkey != BT_PASSKEY_RAND) {
-		passkey = fixed_passkey;
-	}
 
 #if defined(CONFIG_BT_APP_PASSKEY)
 	if (smp_auth_cb && smp_auth_cb->app_passkey) {
@@ -6284,23 +6283,6 @@ int bt_smp_auth_pairing_confirm(struct bt_conn *conn)
 	return -EINVAL;
 }
 #endif /* !CONFIG_BT_SMP_SC_PAIR_ONLY */
-
-#if defined(CONFIG_BT_FIXED_PASSKEY)
-int bt_passkey_set(unsigned int passkey)
-{
-	if (passkey == BT_PASSKEY_INVALID || passkey == BT_PASSKEY_RAND) {
-		fixed_passkey = BT_PASSKEY_RAND;
-		return 0;
-	}
-
-	if (passkey > 999999) {
-		return -EINVAL;
-	}
-
-	fixed_passkey = passkey;
-	return 0;
-}
-#endif /* CONFIG_BT_FIXED_PASSKEY */
 
 int bt_smp_start_security(struct bt_conn *conn)
 {

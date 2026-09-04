@@ -162,7 +162,7 @@ config VIDEO_BUFFER_POOL_ALIGN
 	default 16 if VIDEO_STM32_DCMIPP
 
 config STM32_BACKUP_PROTECTION
-	default y if !SOC_SERIES_STM32C0X && !SOC_SERIES_STM32WB0X
+	default y if !SOC_SERIES_STM32C0X && !SOC_SERIES_STM32WB0X && !SOC_SERIES_STM32WL3X
 
 # Default LVGL configuration, closely linked to how the display (LTDC)
 # interface is being configured

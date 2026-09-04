@@ -51,15 +51,15 @@ static int spi_rts5912_configure(const struct device *dev, const struct spi_conf
 	struct spi_context *ctx = &data->ctx;
 	volatile struct spi_reg *const spi = spi_config->spi_reg_base;
 
-	if (spi_cfg->slave > 1) {
-		LOG_ERR("Slave %d is greater than 1", spi_cfg->slave);
+	if (spi_cfg->peripheral > 1) {
+		LOG_ERR("Peripheral %d is greater than 1", spi_cfg->peripheral);
 		return -EINVAL;
 	}
 
-	LOG_DBG("chip select: %d, operation: 0x%x", spi_cfg->slave, spi_cfg->operation);
+	LOG_DBG("chip select: %d, operation: 0x%x", spi_cfg->peripheral, spi_cfg->operation);
 
-	if (SPI_OP_MODE_GET(spi_cfg->operation) == SPI_OP_MODE_SLAVE) {
-		LOG_ERR("Unsupported SPI slave mode");
+	if (SPI_OP_MODE_GET(spi_cfg->operation) == SPI_OP_MODE_PERIPHERAL) {
+		LOG_ERR("Unsupported SPI peripheral mode");
 		return -ENOTSUP;
 	}
 

@@ -5,7 +5,7 @@
 
 if BOARD_W6100_EVB_PICO
 
-configdefault NET_L2_ETHERNET
+configdefault ETH_DRIVER
 	default y
 
 if I2C_DW

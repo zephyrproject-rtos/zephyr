@@ -120,9 +120,18 @@ enum cs40l26_monitor {
 };
 
 static const struct cs40l26_sensor cs40l26_sensors[] = {
-	[HAPTICS_MONITOR_BEMF] = {.is_signed = true, .n = 23, .m = 0, .full_scale = 24},
-	[HAPTICS_MONITOR_VBST] = {.is_signed = false, .n = 24, .m = 0, .full_scale = 14},
-	[HAPTICS_MONITOR_VOUT] = {.is_signed = true, .n = 23, .m = 0, .full_scale = 24},
+	[HAPTICS_MONITOR_BEMF] = {.is_signed = true,
+				  .n = 23,
+				  .m = 0,
+				  .full_scale = {.val1 = 12, .val2 = 300000}},
+	[HAPTICS_MONITOR_VBST] = {.is_signed = false,
+				  .n = 24,
+				  .m = 0,
+				  .full_scale = {.val1 = 14, .val2 = 0}},
+	[HAPTICS_MONITOR_VOUT] = {.is_signed = true,
+				  .n = 23,
+				  .m = 0,
+				  .full_scale = {.val1 = 12, .val2 = 300000}},
 };
 
 static const struct cs40lxx_multi_write cs40l26_irq_clear[] = {
@@ -1052,6 +1061,7 @@ static int cs40l26_monitor_get(const struct device *dev, const enum haptics_moni
 {
 	__maybe_unused const struct cs40l26_config *const config = dev->config;
 	struct cs40l26_data *const data = dev->data;
+	struct sensor_value full_scale;
 	uint32_t reading;
 	int offset, ret;
 
@@ -1104,7 +1114,9 @@ error_pm:
 			return ret;
 		}
 
-		ret = sensor_value_scale(val, cs40l26_sensors[monitor].full_scale, val);
+		full_scale = cs40l26_sensors[monitor].full_scale;
+
+		ret = sensor_value_multiply(val, &full_scale, val);
 	}
 
 	return ret;
@@ -1427,35 +1439,37 @@ static int cs40l26_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = k_sem_init(&data->calibration_semaphore, 0, 1);
-	if (ret < 0) {
-		return ret;
-	}
-
-	if (IS_ENABLED(CONFIG_HAPTICS_CS40L26_INTERRUPT) && config->interrupt_gpio.port != NULL) {
-		k_work_init_delayable(&data->interrupt_worker, cs40l26_interrupt_worker);
-	}
-
 	if (!cs40lxx_is_bus_ready(&config->io_bus)) {
-		LOG_INST_DBG(config->log, "control port is not ready");
+		LOG_INST_ERR_DEVICE_NOT_READY(config->log,
+					      cs40lxx_get_control_port(&config->io_bus));
 		return -ENODEV;
 	}
 
 	if (IS_ENABLED(CONFIG_HAPTICS_CS40L26_RESET) && config->reset_gpio.port != NULL &&
 	    !gpio_is_ready_dt(&config->reset_gpio)) {
-		LOG_INST_DBG(config->log, "reset GPIO is not ready");
+		LOG_INST_ERR_DEVICE_NOT_READY(config->log, config->reset_gpio.port);
 		return -ENODEV;
 	}
 
-	if (IS_ENABLED(CONFIG_HAPTICS_CS40L26_INTERRUPT) && config->interrupt_gpio.port != NULL &&
-	    !gpio_is_ready_dt(&config->interrupt_gpio)) {
-		LOG_INST_DBG(config->log, "interrupt GPIO is not ready");
-		return -ENODEV;
+	if (IS_ENABLED(CONFIG_HAPTICS_CS40L26_INTERRUPT) && config->interrupt_gpio.port != NULL) {
+		if (!gpio_is_ready_dt(&config->interrupt_gpio)) {
+			LOG_INST_ERR_DEVICE_NOT_READY(config->log, config->interrupt_gpio.port);
+			return -ENODEV;
+		}
+
+		k_work_init_delayable(&data->interrupt_worker, cs40l26_interrupt_worker);
+
+		if (IS_ENABLED(CONFIG_HAPTICS_CS40L26_CALIBRATION)) {
+			ret = k_sem_init(&data->calibration_semaphore, 0, 1);
+			if (ret < 0) {
+				return ret;
+			}
+		}
 	}
 
 	if (IS_ENABLED(CONFIG_HAPTICS_CS40L26_FLASH) && config->flash != NULL &&
 	    !device_is_ready(config->flash)) {
-		LOG_INST_DBG(config->log, "flash device is not ready (%s)", config->flash->name);
+		LOG_INST_ERR_DEVICE_NOT_READY(config->log, config->flash);
 		return -ENODEV;
 	}
 
@@ -1477,7 +1491,7 @@ __maybe_unused static int cs40l26_deinit(const struct device *dev)
 #define HAPTICS_CS40L26_BUS(inst)                                                                  \
 	COND_CODE_1(DT_INST_ON_BUS(inst, i2c),	\
 		(.io_bus.bus.i2c = I2C_DT_SPEC_INST_GET(inst), .io_bus.io = &cs40lxx_io_i2c,),	   \
-		(.io_bus.bus.spi = SPI_DT_SPEC_INST_GET(inst, SPI_OP_MODE_MASTER),		   \
+		(.io_bus.bus.spi = SPI_DT_SPEC_INST_GET(inst, SPI_OP_MODE_CONTROLLER),		   \
 			.io_bus.io = &cs40lxx_io_spi,))
 
 #define HAPTICS_CS40L26_FLASH_DEVICE(inst)                                                         \

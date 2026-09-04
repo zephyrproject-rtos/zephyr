@@ -17,6 +17,8 @@ supported:
   - counter
   - i2c
   - net
+  - netif:eth
+  - ptp_clock
   - uart
   - watchdog
 testing:

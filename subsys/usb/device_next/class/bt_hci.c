@@ -76,6 +76,15 @@ static K_FIFO_DEFINE(bt_hci_tx_queue);
 UDC_BUF_POOL_DEFINE(bt_hci_ep_pool,
 		    3, USBD_MAX_BULK_MPS,
 		    sizeof(struct udc_buf_info), NULL);
+
+/*
+ * The TX queue carries Controller-to-Host ACL data and events. Size the
+ * pool for the largest complete HCI packet.
+ */
+UDC_BUF_POOL_DEFINE(bt_hci_tx_pool,
+		    2, MAX(BT_BUF_ACL_RX_SIZE, BT_BUF_EVT_RX_SIZE),
+		    sizeof(struct udc_buf_info), NULL);
+
 /* HCI RX/TX threads */
 static K_KERNEL_STACK_DEFINE(rx_thread_stack, CONFIG_BT_HCI_TX_STACK_SIZE);
 static struct k_thread rx_thread_data;
@@ -180,13 +189,17 @@ static void bt_hci_tx_sync_in(struct usbd_class_data *const c_data,
 			      struct net_buf *const bt_buf, const uint8_t ep)
 {
 	struct bt_hci_data *hci_data = usbd_class_get_private(c_data);
+	struct udc_buf_info *bi;
 	struct net_buf *buf;
 
-	buf = bt_hci_buf_alloc(ep);
+	buf = net_buf_alloc(&bt_hci_tx_pool, K_NO_WAIT);
 	if (buf == NULL) {
 		LOG_ERR("Failed to allocate buffer");
 		return;
 	}
+
+	bi = udc_get_buf_info(buf);
+	bi->ep = ep;
 
 	net_buf_add_mem(buf, bt_buf->data, bt_buf->len);
 	if (usbd_ep_enqueue(c_data, buf)) {

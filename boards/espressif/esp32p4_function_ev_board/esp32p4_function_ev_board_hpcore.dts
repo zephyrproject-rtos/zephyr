@@ -9,6 +9,8 @@
 #include <espressif/esp32p4/esp32p4_n16r8.dtsi>
 #include "esp32p4_function_ev_board_hpcore-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/display/panel.h>
+#include <zephyr/dt-bindings/mipi_dsi/mipi_dsi.h>
 #include <espressif/partitions_0x2000_default_16M.dtsi>
 
 / {
@@ -22,6 +24,8 @@
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,bt-hci = &esp_hosted_mcu_hci;
+		zephyr,display = &dsi_display;
+		zephyr,touch = &gt911;
 	};
 
 	aliases {
@@ -74,6 +78,18 @@
 	clock-frequency = <I2C_BITRATE_FAST>;
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
+
+	gt911: touch-controller@5d {
+		compatible = "goodix,gt911";
+		status = "okay";
+		reg = <0x5d>;
+		reset-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
+		irq-gpios = <&gpio0 22 GPIO_ACTIVE_HIGH>;
+		screen-width = <1024>;
+		screen-height = <600>;
+		inverted-x;
+		inverted-y;
+	};
 };
 
 &spi2 {
@@ -115,6 +131,12 @@
 
 	ldo2@2 {
 		regulator-init-microvolt = <1800000>;
+		regulator-boot-on;
+		regulator-always-on;
+	};
+
+	ldo3@3 {
+		regulator-init-microvolt = <2500000>;
 		regulator-boot-on;
 		regulator-always-on;
 	};
@@ -186,6 +208,44 @@
 		compatible = "ethernet-phy";
 		reg = <1>;
 	};
+};
+
+&mipi_dsi {
+	status = "okay";
+	phy-clock = <900000000>;
+	dpi-clock-frequency = <48000000>;
+
+	ek79007: panel-controller@0 {
+		compatible = "fitipower,ek79007";
+		reg = <0>;
+		data-lanes = <2>;
+		pixel-format = <MIPI_DSI_PIXFMT_RGB888>;
+		width = <1024>;
+		height = <600>;
+		reset-gpios = <&gpio0 27 GPIO_ACTIVE_LOW>;
+		bl-gpios = <&gpio0 26 GPIO_ACTIVE_HIGH>;
+
+		display-timings {
+			compatible = "zephyr,panel-timing";
+			hsync-len = <10>;
+			hback-porch = <160>;
+			hfront-porch = <160>;
+			vsync-len = <1>;
+			vback-porch = <23>;
+			vfront-porch = <12>;
+			hsync-active = <0>;
+			vsync-active = <0>;
+			de-active = <1>;
+			pixelclk-active = <0>;
+		};
+	};
+};
+
+&dsi_display {
+	status = "okay";
+	pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
+	width = <1024>;
+	height = <600>;
 };
 
 &eth {

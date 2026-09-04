@@ -1106,7 +1106,7 @@ static ALWAYS_INLINE uint64_t sys_lcm_s(int32_t a, int32_t b)
 		bool _wf_ret;                                                                      \
 		while (!(_wf_ret = (expr)) &&                                                      \
 		       (_wf_cycle_count > (k_cycle_get_32() - _wf_start))) {                       \
-			delay_stmt;                                                                \
+			({ delay_stmt; });                                                         \
 			Z_SPIN_DELAY(10);                                                          \
 		}                                                                                  \
 		(_wf_ret);                                                                         \

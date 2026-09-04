@@ -23,6 +23,7 @@ supported:
   - mbox
   - mecc
   - netif:eth
+  - ptp_clock
   - pwm
   - uart
   - i3c

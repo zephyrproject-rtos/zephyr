@@ -6,19 +6,20 @@
  */
 
 #include <arm/armv7-m.dtsi>
+#include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/clock/stm32h7rs_clock.h>
+#include <zephyr/dt-bindings/dma/stm32_dma.h>
+#include <zephyr/dt-bindings/flash_controller/xspi.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+#include <zephyr/dt-bindings/power/stm32h7rs_iocell.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
 #include <zephyr/dt-bindings/pwm/stm32_pwm.h>
 #include <zephyr/dt-bindings/reset/stm32h7rs_reset.h>
-#include <zephyr/dt-bindings/adc/adc.h>
-#include <zephyr/dt-bindings/memory-attr/memory-attr.h>
-#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
-#include <zephyr/dt-bindings/flash_controller/xspi.h>
-#include <zephyr/dt-bindings/dma/stm32_dma.h>
+#include <zephyr/dt-bindings/sensor/qdec_stm32.h>
 #include <zephyr/dt-bindings/video/video-interfaces.h>
-#include <zephyr/dt-bindings/power/stm32h7rs_iocell.h>
 #include <freq.h>
 #include <mem.h>
 
@@ -677,6 +678,12 @@
 				compatible = "st,stm32-counter";
 				status = "disabled";
 			};
+
+			qdec {
+				compatible = "st,stm32-qdec";
+				st,input-filter-level = <NO_FILTER>;
+				status = "disabled";
+			};
 		};
 
 		timers2: timers@40000000 {
@@ -698,6 +705,12 @@
 
 			counter {
 				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
+
+			qdec {
+				compatible = "st,stm32-qdec";
+				st,input-filter-level = <NO_FILTER>;
 				status = "disabled";
 			};
 		};
@@ -723,6 +736,12 @@
 				compatible = "st,stm32-counter";
 				status = "disabled";
 			};
+
+			qdec {
+				compatible = "st,stm32-qdec";
+				st,input-filter-level = <NO_FILTER>;
+				status = "disabled";
+			};
 		};
 
 		timers4: timers@40000800 {
@@ -746,6 +765,12 @@
 				compatible = "st,stm32-counter";
 				status = "disabled";
 			};
+
+			qdec {
+				compatible = "st,stm32-qdec";
+				st,input-filter-level = <NO_FILTER>;
+				status = "disabled";
+			};
 		};
 
 		timers5: timers@40000c00 {
@@ -767,6 +792,12 @@
 
 			counter {
 				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
+
+			qdec {
+				compatible = "st,stm32-qdec";
+				st,input-filter-level = <NO_FILTER>;
 				status = "disabled";
 			};
 		};
@@ -816,6 +847,12 @@
 			st,prescaler = <0>;
 			status = "disabled";
 
+			pwm {
+				compatible = "st,stm32-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+
 			counter {
 				compatible = "st,stm32-counter";
 				status = "disabled";
@@ -832,6 +869,12 @@
 			interrupt-names = "global";
 			st,prescaler = <0>;
 			status = "disabled";
+
+			pwm {
+				compatible = "st,stm32-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
 
 			counter {
 				compatible = "st,stm32-counter";
@@ -850,6 +893,12 @@
 			st,prescaler = <0>;
 			status = "disabled";
 
+			pwm {
+				compatible = "st,stm32-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
+
 			counter {
 				compatible = "st,stm32-counter";
 				status = "disabled";
@@ -866,6 +915,12 @@
 			interrupt-names = "global";
 			st,prescaler = <0>;
 			status = "disabled";
+
+			pwm {
+				compatible = "st,stm32-pwm";
+				status = "disabled";
+				#pwm-cells = <3>;
+			};
 
 			counter {
 				compatible = "st,stm32-counter";
@@ -1008,6 +1063,8 @@
 				 <&rcc STM32_CLOCK(AHB1, 16)>,
 				 <&rcc STM32_CLOCK(AHB1, 17)>;
 			interrupts = <92 0>;
+			snps,multicast-filter-bins = <64>;
+			snps,perfect-filter-entries = <4>;
 			memory-regions = <&sram2>;
 			status = "disabled";
 
@@ -1105,6 +1162,34 @@
 			};
 		};
 
+		sai2: sai2@42005c00 {
+			compatible = "st,stm32-sai";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			reg = <0x42005c00 0x400>;
+			ranges;
+			clocks = <&rcc STM32_CLOCK(APB2, 23)>,
+				 <&rcc STM32_SRC_PLL1_Q SAI2_SEL(0)>;
+			clock-names = "sai_ck", "sai_ker_ck";
+			status = "disabled";
+
+			sai2_a: sai2a@42005c04 {
+				reg = <0x42005c04 0x20>;
+				dmas = <&gpdma1 1 65 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+
+			sai2_b: sai2b@42005c24 {
+				reg = <0x42005c24 0x20>;
+				dmas = <&gpdma1 0 66 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+		};
+
 		ltdc: ltdc@50001000 {
 			compatible = "st,stm32-ltdc";
 			reg = <0x50001000 0x400>;
@@ -1135,6 +1220,16 @@
 					bus-type = <VIDEO_BUS_TYPE_PARALLEL>;
 				};
 			};
+		};
+
+		gpu2d: gpu@52014000 {
+			compatible = "st,neochrom-gpu2d";
+			reg = <0x52014000 0x1000>;
+			clocks = <&rcc STM32_CLOCK(AHB5, 20)>;
+			interrupts = <149 0>, <150 0>;
+			interrupt-names = "gpu2d", "gpu2d_er";
+			resets = <&rctl STM32_RESET(AHB5, 20)>;
+			status = "disabled";
 		};
 
 		crc: crc@58024c00 {

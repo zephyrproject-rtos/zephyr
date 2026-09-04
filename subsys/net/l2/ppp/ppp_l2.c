@@ -107,6 +107,10 @@ static enum net_verdict process_ppp_msg(struct net_if *iface,
 
 	if ((IS_ENABLED(CONFIG_NET_IPV4) && protocol == PPP_IP) ||
 	    (IS_ENABLED(CONFIG_NET_IPV6) && protocol == PPP_IPV6)) {
+
+		net_pkt_set_ll_proto_type(pkt, protocol == PPP_IP ? NET_ETH_PTYPE_IP :
+								    NET_ETH_PTYPE_IPV6);
+
 		/* Remove the protocol field so that IP packet processing
 		 * continues properly in net_core.c:process_data()
 		 */

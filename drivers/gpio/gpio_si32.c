@@ -6,6 +6,7 @@
 
 #define DT_DRV_COMPAT silabs_si32_gpio
 
+#include <zephyr/irq.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/gpio/gpio_utils.h>
@@ -205,7 +206,7 @@ static void gpio_si32_irq_handler(const struct device *arg)
 	ARG_UNUSED(arg);
 
 	irq_disable(PMATCH_IRQn);
-	NVIC_ClearPendingIRQ(PMATCH_IRQn);
+	k_irq_clear_pending(PMATCH_IRQn);
 
 	for (size_t i = 0; i < ARRAY_SIZE(gpio_devices); i++) {
 		const struct device *dev = gpio_devices[i];

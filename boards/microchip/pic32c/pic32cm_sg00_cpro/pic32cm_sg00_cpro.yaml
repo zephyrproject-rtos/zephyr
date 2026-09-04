@@ -11,7 +11,10 @@ flash: 512
 ram: 128
 supported:
   - clock_control
+  - dma
   - gpio
+  - i2c
   - pinctrl
   - uart
+  - watchdog
 vendor: microchip

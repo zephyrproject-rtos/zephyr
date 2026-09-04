@@ -961,6 +961,7 @@
 		clock-names = "mac", "ptp";
 		interrupts = <139 0>, <140 0>, <141 0>;
 		interrupt-names = "mac", "power", "lpi";
+		snps,perfect-filter-entries = <1>;
 		status = "disabled";
 
 		enet_ptp_clock: ptp_clock {

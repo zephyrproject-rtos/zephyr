@@ -253,6 +253,8 @@
 			compatible = "infineon,xmc4xxx-ethernet", "snps,dwmac";
 			reg = <0x5000c000 0x3fff>;
 			interrupts = <108 1>;
+			snps,multicast-filter-bins = <64>;
+			snps,perfect-filter-entries = <4>;
 			status = "disabled";
 
 			mdio: mdio {
@@ -260,6 +262,10 @@
 				status = "disabled";
 				#address-cells = <1>;
 				#size-cells = <0>;
+			};
+
+			ptp_clock: ptp-clock {
+				compatible = "snps,dwmac-ptp-clock";
 			};
 		};
 

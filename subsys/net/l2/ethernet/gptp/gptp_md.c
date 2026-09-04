@@ -855,6 +855,19 @@ static void gptp_md_sync_send_state_machine(int port)
 	port_ds = GPTP_PORT_DS(port);
 
 	if ((!port_ds->ptt_port_enabled) || !port_ds->as_capable) {
+		/* A Sync waiting here for a transmit timestamp will never be
+		 * given one: the port that was to produce it is down or no
+		 * longer capable. Unregister the callback before dropping
+		 * the packet reference so a late timestamp cannot match the
+		 * packet, then release it, or its reference and the stale
+		 * callback are leaked.
+		 */
+		gptp_sync_timestamp_cb_unregister(port);
+
+		net_pkt_unref(state->sync_ptr);
+		state->sync_ptr = NULL;
+
+		state->md_sync_timestamp_avail = false;
 		state->rcvd_md_sync = false;
 		state->state = GPTP_SYNC_SEND_INITIALIZING;
 
@@ -918,6 +931,21 @@ void gptp_md_state_machines(int port)
 {
 	gptp_md_pdelay_req_state_machine(port);
 	gptp_md_pdelay_resp_state_machine(port);
+
+#if defined(CONFIG_NET_GPTP_STATIC_TIME_RECEIVER)
+	/* A static time receiver takes part in synchronization regardless
+	 * of the Pdelay measurement outcome, the upstream bridge is not
+	 * required to answer Pdelay requests. Pin asCapable right after
+	 * the Pdelay state machines, which are its only writers, so the
+	 * Sync receive path never sees it deasserted and never resets.
+	 * Pinning pttPortEnabled is defensive as nothing clears it today,
+	 * but a future portEnabled or link state implementation must not
+	 * silently take down a statically configured time receiver.
+	 */
+	GPTP_PORT_DS(port)->ptt_port_enabled = true;
+	GPTP_PORT_DS(port)->as_capable = true;
+#endif
+
 	gptp_md_sync_receive_state_machine(port);
 	gptp_md_sync_send_state_machine(port);
 }

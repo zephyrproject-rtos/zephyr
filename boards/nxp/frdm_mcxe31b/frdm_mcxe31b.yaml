@@ -14,6 +14,7 @@ supported:
   - arduino_gpio
   - can
   - gpio
+  - ptp_clock
   - rtc
   - dma
   - watchdog
@@ -23,4 +24,5 @@ supported:
   - pwm
   - i2s
   - spi
+  - netif:eth
 vendor: nxp

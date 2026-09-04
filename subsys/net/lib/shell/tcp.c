@@ -102,8 +102,8 @@ static void tcp_connect(const struct shell *sh, char *host, uint16_t port,
 			struct net_context **ctx)
 {
 	struct net_if *iface = net_if_get_default();
-	struct net_sockaddr_storage myaddr;
-	struct net_sockaddr_storage addr;
+	struct net_sockaddr_storage myaddr = { 0 };
+	struct net_sockaddr_storage addr = { 0 };
 	struct net_sockaddr *my_sa = net_sad(&myaddr);
 	struct net_sockaddr *sa = net_sad(&addr);
 	struct net_nbr *nbr;
