@@ -60,6 +60,10 @@
 #define DT_MFPCLK_CLOCKS_CTRL	DT_CLOCKS_CTLR(DT_NODELABEL(mfpclk))
 #define DT_SYSPLL_CLOCKS_CTRL	DT_CLOCKS_CTLR(DT_NODELABEL(syspll))
 
+#if MSPM0_CANCLK_ENABLED
+#define DT_CANCLK_CLOCKS_CTRL	DT_CLOCKS_CTLR(DT_NODELABEL(canclk))
+#endif
+
 struct mspm0_clk_cfg {
 	uint32_t clk_div;
 	uint32_t clk_freq;
@@ -270,6 +274,16 @@ static int clock_mspm0_init(const struct device *dev)
 #endif
 	DL_SYSCTL_enableMFPCLK();
 #endif /* MSPM0_MFPCLK_ENABLED */
+
+#if MSPM0_CANCLK_ENABLED
+	DL_Common_updateReg(&SYSCTL->SOCLOCK.GENCLKCFG,
+#if DT_SAME_NODE(DT_CANCLK_CLOCKS_CTRL, DT_NODELABEL(syspll))
+			    SYSCTL_GENCLKCFG_CANCLKSRC_SYSPLLOUT1,
+#else
+			    SYSCTL_GENCLKCFG_CANCLKSRC_HFCLK,
+#endif
+			    SYSCTL_GENCLKCFG_CANCLKSRC_MASK);
+#endif /* MSPM0_CANCLK_ENABLED */
 
 	return 0;
 }
