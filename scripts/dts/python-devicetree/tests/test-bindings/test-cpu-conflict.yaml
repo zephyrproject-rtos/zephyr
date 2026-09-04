@@ -1,0 +1,12 @@
+description: Test CPU binding with a type conflict on clock-frequency
+compatible: "test,cpu-conflict"
+
+# Intentionally declares clock-frequency as type: string to conflict with
+# cpu.yaml which declares it as type: uint64.  Used by test_cpu_binding_type_conflict
+# and test_cpu_binding_type_mismatch_warning.
+properties:
+  reg:
+    type: array
+
+  clock-frequency:
+    type: string

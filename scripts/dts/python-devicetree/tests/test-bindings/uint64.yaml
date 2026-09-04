@@ -1,0 +1,30 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: Property uint64 type test
+
+compatible: "vnd,uint64-test"
+
+properties:
+  val-32:
+    type: uint64
+    description: 1-cell (32-bit) uint64 value
+
+  val-64:
+    type: uint64
+    description: 2-cell (64-bit) uint64 value
+
+  val-with-min:
+    type: uint64
+    min: 100
+
+  val-with-max:
+    type: uint64
+    max: 0xFFFFFFFF
+
+  val-with-default:
+    type: uint64
+    default: 42
+
+  val-const:
+    type: uint64
+    const: 999

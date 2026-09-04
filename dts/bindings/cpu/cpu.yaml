@@ -22,8 +22,10 @@ properties:
       application code brings it up at run time with k_smp_cpu_start() (or
       k_smp_cpu_resume()). The flag has no effect on the boot CPU.
   clock-frequency:
-    type: int
-    description: Clock frequency in Hz
+    type: uint64
+    description: Clock frequency in Hz. May be a single 32-bit cell or a
+      64-bit value encoded as two 32-bit cells (high word first), per the
+      Devicetree Specification.
   cpu-power-states:
     type: phandles
     description: List of power management states supported by this cpu
@@ -49,3 +51,10 @@ properties:
   cpu-release-addr:
     type: array
     description: Address of the release mailbox used by the spin-table enable-method.
+
+  timebase-frequency:
+    type: uint64
+    description: |
+      Frequency at which the timebase and decrementer registers are updated
+      (in Hertz). May be a single 32-bit cell or a 64-bit value encoded as
+      two 32-bit cells (high word first), per the Devicetree Specification.

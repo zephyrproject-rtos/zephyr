@@ -1,0 +1,26 @@
+# Copyright (c) 2026 Qualcomm Technologies, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Test uint64 property type
+
+compatible: "vnd,uint64-holder"
+
+include: [base.yaml]
+
+properties:
+  val-32:
+    type: uint64
+    description: 1-cell (32-bit) uint64 value
+
+  val-64:
+    type: uint64
+    description: 2-cell (64-bit) uint64 value
+
+  val-with-default:
+    type: uint64
+    default: 42
+    description: uint64 with a default; omitted from DTS to exercise the default path
+
+  val-with-or:
+    type: uint64
+    description: uint64 with no default; omitted from DTS to exercise DT_PROP_OR fallback

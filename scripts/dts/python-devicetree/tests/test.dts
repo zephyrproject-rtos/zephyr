@@ -495,6 +495,20 @@
 	};
 
 	//
+	// For testing 'type: uint64'
+	//
+
+	uint64-node {
+		compatible = "vnd,uint64-test";
+		val-32 = <100000000>;		/* 0x5F5E100 - 1-cell value */
+		val-64 = <1 0>;			/* 4294967296 = 0x100000000 - 2-cell value */
+		val-with-min = <200>;		/* above min: 100 */
+		val-with-max = <0xABCDEF01>;	/* below max: 0xFFFFFFFF */
+		val-const = <999>;		/* matches const: 999 */
+		/* val-with-default intentionally omitted to exercise default: 42 */
+	};
+
+	//
 	// For testing 'min:' and 'max:'
 	//
 
@@ -703,6 +717,25 @@
 			device_type = "cpu";
 			reg = <1>;
 			clock-frequency = <2000>;
+		};
+
+		cpu@2 {
+			/* No compatible: exercises the _CPU_BINDING fallback. */
+			device_type = "cpu";
+			reg = <2>;
+			clock-frequency = <3000>;
+			enable-method = "spin-table";
+			status = "disabled";
+		};
+
+		power-states {
+			/* Child of /cpus that is NOT a cpu node: must not appear
+			 * in edt.cpus. */
+			state0: idle {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				min-residency-us = <500>;
+			};
 		};
 	};
 };
