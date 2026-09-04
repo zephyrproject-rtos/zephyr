@@ -15,26 +15,12 @@ LOG_MODULE_DECLARE(net_coap, CONFIG_COAP_LOG_LEVEL);
 #include <errno.h>
 
 #include <zephyr/sys/byteorder.h>
+#include <zephyr/sys/hash_function.h>
 
 #include <zephyr/sys/printk.h>
 
 #include <zephyr/net/coap.h>
 #include <zephyr/net/coap_link_format.h>
-
-static inline bool append_u8(struct coap_packet *cpkt, uint8_t data)
-{
-	if (!cpkt) {
-		return false;
-	}
-
-	if (cpkt->max_len - cpkt->offset < 1) {
-		return false;
-	}
-
-	cpkt->data[cpkt->offset++] = data;
-
-	return true;
-}
 
 static inline bool append(struct coap_packet *cpkt, const uint8_t *data, uint16_t len)
 {
@@ -179,6 +165,49 @@ static bool match_queries_resource(const struct coap_resource *resource,
 
 #define MAX_BLOCK_WISE_TRANSFER_SIZE 2048
 
+static uint32_t hash_combine_str(uint32_t seed, const char *str)
+{
+	/* Boost-style hash combine, the constant is the 32-bit golden ratio */
+	return seed ^ (sys_hash32(str, strlen(str)) + 0x9e3779b9U + (seed << 6) + (seed >> 2));
+}
+
+/* The link-format document is regenerated for every block, so derive an ETag
+ * from the inputs that determine its content. It lets clients verify that the
+ * blocks they reassemble belong to the same representation
+ * (RFC 7959, section 2.4).
+ */
+static uint32_t well_known_core_etag(const struct coap_resource *resources, size_t resources_len,
+				     const struct coap_option *query, unsigned int num_queries)
+{
+	uint32_t etag = 0U;
+
+	for (size_t i = 0; i < resources_len; i++) {
+		const struct coap_core_metadata *meta = resources[i].metadata;
+
+		if (!match_queries_resource(&resources[i], query, num_queries)) {
+			continue;
+		}
+
+		for (const char * const *p = resources[i].path; p != NULL && *p != NULL; p++) {
+			etag = hash_combine_str(etag, *p);
+		}
+
+		/* Separate the path segments from the attributes, like ">" does
+		 * in the document, so that a segment moving between the two
+		 * lists, or to the next resource, changes the ETag.
+		 */
+		etag = hash_combine_str(etag, ">");
+
+		if (meta != NULL && meta->attributes != NULL) {
+			for (const char * const *attr = meta->attributes; *attr != NULL; attr++) {
+				etag = hash_combine_str(etag, *attr);
+			}
+		}
+	}
+
+	return etag;
+}
+
 enum coap_block_size default_block_size(void)
 {
 	switch (CONFIG_COAP_WELL_KNOWN_BLOCK_WISE_SIZE) {
@@ -322,7 +351,8 @@ static int format_attributes(const char * const *attributes,
 	}
 
 	for (attr = attributes; *attr; attr++) {
-		int attr_len;
+		size_t attr_len;
+		size_t attr_offset;
 
 		res = append_to_coap_pkt(response, ";", 1,
 					 remaining, offset, current);
@@ -336,11 +366,22 @@ static int format_attributes(const char * const *attributes,
 		}
 
 		attr_len = strlen(*attr);
+		attr_offset = *offset;
 
 		res = append_to_coap_pkt(response, *attr, attr_len,
 					 remaining, offset, current);
 		if (!res) {
 			return -ENOMEM;
+		}
+
+		/* The offset advances by less than the attribute length only
+		 * when the attribute was cut short by the block boundary. The
+		 * remainder belongs in the next block, even when this is the
+		 * last attribute of the last resource.
+		 */
+		if (*offset - attr_offset < attr_len) {
+			*more = true;
+			return 0;
 		}
 
 		if (*(attr + 1) && !*remaining) {
@@ -426,7 +467,7 @@ int coap_well_known_core_get_len(struct coap_resource *resources,
 				 struct coap_packet *response,
 				 uint8_t *data, uint16_t len)
 {
-	static struct coap_block_context ctx;
+	struct coap_block_context ctx;
 	struct coap_option query;
 	unsigned int num_queries;
 	size_t offset;
@@ -435,25 +476,36 @@ int coap_well_known_core_get_len(struct coap_resource *resources,
 	uint16_t id;
 	uint8_t tkl;
 	int r;
+	int block2;
 	bool more = false, first = true;
 
 	if (!resources || !request || !response || !data || !len) {
 		return -EINVAL;
 	}
 
-	if (ctx.total_size == 0) {
-		/* We have to iterate through resources and it's attributes,
-		 * total size is unknown, so initialize it to
-		 * MAX_BLOCK_WISE_TRANSFER_SIZE and update it according to
-		 * offset.
-		 */
-		coap_block_transfer_init(&ctx, default_block_size(),
-					 MAX_BLOCK_WISE_TRANSFER_SIZE);
+	/* The response is regenerated for every block and the block context is
+	 * derived from the request alone, so no state is shared between calls
+	 * and concurrent transfers from different clients stay independent.
+	 * The total size is unknown until the last block; the
+	 * MAX_BLOCK_WISE_TRANSFER_SIZE placeholder keeps the more flag set
+	 * until clear_more_flag() corrects the final block.
+	 */
+	coap_block_transfer_init(&ctx, default_block_size(),
+				 MAX_BLOCK_WISE_TRANSFER_SIZE);
+
+	/* Honor a smaller block size negotiated by the client on an earlier
+	 * block, which coap_update_from_block() would otherwise reject as a
+	 * size mismatch.
+	 */
+	block2 = coap_get_option_int(request, COAP_OPTION_BLOCK2);
+	if (block2 >= 0) {
+		ctx.block_size = MIN((enum coap_block_size)GET_BLOCK_SIZE(block2),
+				     ctx.block_size);
 	}
 
 	r = coap_update_from_block(request, &ctx);
 	if (r < 0) {
-		goto end;
+		return r;
 	}
 
 	id = coap_header_get_id(request);
@@ -464,7 +516,7 @@ int coap_well_known_core_get_len(struct coap_resource *resources,
 	 */
 	r = coap_find_options(request, COAP_OPTION_URI_QUERY, &query, 1);
 	if (r < 0) {
-		goto end;
+		return r;
 	}
 
 	num_queries = r;
@@ -472,23 +524,34 @@ int coap_well_known_core_get_len(struct coap_resource *resources,
 	r = coap_packet_init(response, data, len, COAP_VERSION_1, COAP_TYPE_ACK,
 			     tkl, token, COAP_RESPONSE_CODE_CONTENT, id);
 	if (r < 0) {
-		goto end;
+		return r;
+	}
+
+	if (IS_ENABLED(CONFIG_SYS_HASH_FUNC32)) {
+		uint32_t etag = well_known_core_etag(resources, resources_len,
+						     &query, num_queries);
+
+		r = coap_packet_append_option(response, COAP_OPTION_ETAG,
+					      (const uint8_t *)&etag, sizeof(etag));
+		if (r < 0) {
+			return r;
+		}
 	}
 
 	r = coap_append_option_int(response, COAP_OPTION_CONTENT_FORMAT,
 				   COAP_CONTENT_FORMAT_APP_LINK_FORMAT);
 	if (r < 0) {
-		goto end;
+		return r;
 	}
 
 	r = coap_append_block2_option(response, &ctx);
 	if (r < 0) {
-		goto end;
+		return r;
 	}
 
 	r = coap_packet_append_payload_marker(response);
 	if (r < 0) {
-		goto end;
+		return r;
 	}
 
 	offset = 0;
@@ -510,14 +573,14 @@ int coap_well_known_core_get_len(struct coap_resource *resources,
 			r = append_to_coap_pkt(response, ",", 1, &remaining,
 					       &offset, ctx.current);
 			if (!r) {
-				goto end;
+				return r;
 			}
 		}
 
 		r = format_resource(&resources[i], response, &remaining, &offset,
 				    ctx.current, &more);
 		if (r < 0) {
-			goto end;
+			return r;
 		}
 	}
 
@@ -525,20 +588,28 @@ int coap_well_known_core_get_len(struct coap_resource *resources,
 	 * appended. So update only 'more' flag.
 	 */
 	if (!more) {
-		ctx.total_size = offset;
 		r = clear_more_flag(response);
-	}
-
-end:
-	/* So it's a last block, reset context */
-	if (!more) {
-		(void)memset(&ctx, 0, sizeof(ctx));
 	}
 
 	return r;
 }
 
 #else
+
+static inline bool append_u8(struct coap_packet *cpkt, uint8_t data)
+{
+	if (!cpkt) {
+		return false;
+	}
+
+	if (cpkt->max_len - cpkt->offset < 1) {
+		return false;
+	}
+
+	cpkt->data[cpkt->offset++] = data;
+
+	return true;
+}
 
 static int format_uri(const char * const *path, struct coap_packet *response)
 {
