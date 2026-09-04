@@ -17,6 +17,10 @@ zephyr_sources_ifdef(CONFIG_MIPI_DSI	display_if.c)
 
 zephyr_sources_ifdef(CONFIG_MFD_PCA9422	pmic_int.c)
 
+if(CONFIG_PM)
+  add_subdirectory(power)
+endif()
+
 if(CONFIG_SECOND_CORE_MCUX_REMOTE_DIR)
   zephyr_include_directories(${CONFIG_SECOND_CORE_MCUX_REMOTE_DIR})
 endif()
