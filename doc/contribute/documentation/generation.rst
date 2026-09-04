@@ -283,6 +283,12 @@ For even faster iteration when working on narrative pages, additional
    :zephyr_file:`boards`, :zephyr_file:`samples`, and :zephyr_file:`snippets`
    folders).
 
+``SKIP_SHELL_REFERENCE``
+   Skip generating the command reference of the documented shell modules (see
+   :ref:`doc_guidelines_shell_modules`). Generating these references requires
+   building and running firmware for :zephyr:board:`native_sim`, and therefore
+   a working Zephyr build environment.
+
 Each option can be enabled individually::
 
    make html SKIP_DOXYGEN=1

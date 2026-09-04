@@ -2152,7 +2152,7 @@ Documentation Infrastructure:
     - henrikbrixandersen
     - dnltz
   files:
-    - doc/hardware/peripherals/gpio.rst
+    - doc/hardware/peripherals/gpio/
     - drivers/gpio/
     - dts/bindings/gpio/
     - include/zephyr/drivers/gpio/

@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# This is not a test. The documentation build runs this application through
+# twister, with the Kconfig options of the shell module being documented, to
+# extract the tree of shell commands of that module. See the
+# ``zephyr:shell-module`` directive in doc/_extensions/zephyr/domain.
+tests:
+  doc.shell_command_tree:
+    tags: shell
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "--- shell-command-tree-end ---"
+    timeout: 60

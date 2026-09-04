@@ -8,6 +8,6 @@ General-purpose I/O and input devices.
 .. toctree::
    :maxdepth: 1
 
-   gpio.rst
+   gpio/index.rst
    ps2.rst
    tgpio.rst

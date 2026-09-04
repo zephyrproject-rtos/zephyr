@@ -210,25 +210,18 @@ types:
 Commonly-used command groups
 ============================
 
-The following list is a set of useful command groups and how to enable them:
+The following shell modules have dedicated documentation describing what they can be used for,
+how to enable them, and the reference of their commands:
 
-GPIO
-----
+.. zephyr:shell-module-listing::
 
-- :kconfig:option:`CONFIG_GPIO`
-- :kconfig:option:`CONFIG_GPIO_SHELL`
+Other useful command groups, and how to enable them:
 
 I2C
 ---
 
 - :kconfig:option:`CONFIG_I2C`
 - :kconfig:option:`CONFIG_I2C_SHELL`
-
-Sensor
-------
-
-- :kconfig:option:`CONFIG_SENSOR`
-- :kconfig:option:`CONFIG_SENSOR_SHELL`
 
 Flash
 -----

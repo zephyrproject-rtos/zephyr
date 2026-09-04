@@ -21,6 +21,21 @@ Configuration Options
 Related configuration options:
 
 * :kconfig:option:`CONFIG_HWINFO`
+* :kconfig:option:`CONFIG_HWINFO_SHELL`
+
+Shell commands
+**************
+
+.. zephyr:shell-module:: hwinfo
+   :kconfig: CONFIG_HWINFO_SHELL
+   :depends: CONFIG_HWINFO
+
+   The ``hwinfo`` command prints the unique identifier of the device and the cause of its last
+   reset, which is a quick way to check what the hardware information API reports for a board.
+
+.. rubric:: Command reference
+
+.. zephyr:shell-command-reference::
 
 API Reference
 *************

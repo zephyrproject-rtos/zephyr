@@ -19,6 +19,21 @@ infrastructure is not justified, and ``*-gpios`` devicetree properties should be
 used. There is no device interface to these regulators as they are entirely
 controlled within the driver for the corresponding node, e.g. a sensor.
 
+Shell commands
+**************
+
+.. zephyr:shell-module:: regulator
+   :kconfig: CONFIG_REGULATOR_SHELL
+   :depends: CONFIG_REGULATOR
+
+   The ``regulator`` command allows enabling and disabling a regulator, and getting or setting its
+   voltage, current limit, mode and active discharge state, which makes it a convenient playground
+   for validating a power tree interactively.
+
+.. rubric:: Command reference
+
+.. zephyr:shell-command-reference::
+
 .. _regulator_api_reference:
 
 API Reference
