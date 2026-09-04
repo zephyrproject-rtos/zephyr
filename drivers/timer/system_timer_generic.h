@@ -44,6 +44,8 @@
  *                                periodics). Assumed to auto-reload: on a
  *                                non-tickless kernel it free-runs from the LOAD
  *                                set at init and is not reprogrammed per tick.
+ *                                Hardware that cannot be configured that way says
+ *                                so with TIMER_CORE_RELOAD_ONE_SHOT below.
  *
  * If arming requires the timer interrupt to be enabled, enable it inside the
  * arming primitive rather than tracking it separately. The core does not model
@@ -122,6 +124,10 @@
  *     or a separate device. It is a statement about the hardware, so it carries no
  *     safety margin; the core derives its own from TIMER_CORE_COUNTER_WIDTH.
  *   - TIMER_CORE_ALARM_MIN_CYCLES (RELOAD): reload floor, in cycles.
+ *   - TIMER_CORE_RELOAD_ONE_SHOT (RELOAD): define where the hardware cannot be
+ *     configured to auto-reload. The core then keeps the period going itself, which
+ *     only arises on a tickful kernel; a tickless one re-arms from set_timeout()
+ *     either way.
  *   - TIMER_CORE_ALARM_LEAD_CYCLES (COMPARE_EXACT): cycles a compare must be ahead of
  *     the counter for the match to be caught. Defaults to 1. Raise it for hardware
  *     that carries the write into the counter's clock domain first.
@@ -664,10 +670,11 @@ static void timer_core_announce_from(k_spinlock_key_t key)
 	timer_core_catchup = false;
 #endif
 
-#if !defined(TIMER_CORE_BACKEND_RELOAD)
+#if !defined(TIMER_CORE_BACKEND_RELOAD) || defined(TIMER_CORE_RELOAD_ONE_SHOT)
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		/* Re-arm the comparator one tick out. A RELOAD counter reloads
-		 * itself from the LOAD set at init, so it needs nothing here.
+		/* Re-arm one tick out, from the baseline just advanced above. A
+		 * RELOAD counter reloads itself from the LOAD set at init, so it
+		 * needs nothing here unless it cannot auto-reload.
 		 */
 		timer_core_arm(1);
 	}
@@ -880,13 +887,15 @@ static inline void timer_core_init(void)
 	timer_core_last_cycle = seed * TIMER_CORE_CYC_PER_TICK;
 	timer_core_last_elapsed = 0;
 
-#if defined(TIMER_CORE_BACKEND_RELOAD)
+#if defined(TIMER_CORE_BACKEND_RELOAD) && !defined(TIMER_CORE_RELOAD_ONE_SHOT)
 	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
 		/* A tickful RELOAD driver configures its hardware to auto-reload one
 		 * tick and is never reprogrammed (see timer_core_announce_from()), so the
 		 * driver owns the period. Arming here would instead program it to the
 		 * sub-tick remainder left after seeding the baseline, and that short
-		 * value would stick as the permanent period.
+		 * value would stick as the permanent period. One-shot hardware wants
+		 * exactly that remainder, which lands the first interrupt on the next
+		 * tick boundary.
 		 */
 		return;
 	}
