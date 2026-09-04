@@ -52,6 +52,7 @@
 			compatible = "atmel,sam-supc";
 			reg = <0x400e1410 0x20>;
 			#wakeup-source-id-cells = <1>;
+			#wakeup-ctrl-cells = <1>;
 			status = "okay";
 		};
 

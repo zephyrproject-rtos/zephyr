@@ -9,9 +9,17 @@
 
 #define SAM_DT_SUPC_CONTROLLER DEVICE_DT_GET(DT_NODELABEL(supc))
 
+/**
+ * @deprecated Use DT_WUC_ID() from <zephyr/devicetree/wuc.h> with the
+ *             "wakeup-ctrls" property instead.
+ */
 #define SAM_DT_SUPC_WAKEUP_SOURCE_ID(node_id) \
 	DT_PHA(node_id, wakeup_source_id, wakeup_source_id)
 
+/**
+ * @deprecated Use DT_INST_WUC_ID() from <zephyr/devicetree/wuc.h> with the
+ *             "wakeup-ctrls" property instead.
+ */
 #define SAM_DT_INST_SUPC_WAKEUP_SOURCE_ID(inst) \
 	SAM_DT_SUPC_WAKEUP_SOURCE_ID(DT_DRV_INST(inst))
 
