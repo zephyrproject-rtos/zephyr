@@ -31,6 +31,7 @@ tests:
     extra_configs:
       - CONFIG_LLMNR_RESOLVER=y
       - CONFIG_DNS_RESOLVER_QUERY_ALL_AVAILABLE_SERVERS=y
+      - CONFIG_WARN_DEPRECATED=n
   net.dns.resolve.hostname:
     extra_configs:
       - CONFIG_NET_HOSTNAME_ENABLE=y
