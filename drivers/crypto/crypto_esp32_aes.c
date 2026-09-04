@@ -114,7 +114,6 @@ static int aes_begin_session(const struct device *dev, struct cipher_ctx *zctx,
 			     enum cipher_algo algo, enum cipher_mode mode, enum cipher_op op_type)
 {
 	struct esp_aes_ctx *ctx;
-	int rc;
 
 	ARG_UNUSED(dev);
 
@@ -145,13 +144,7 @@ static int aes_begin_session(const struct device *dev, struct cipher_ctx *zctx,
 	ctx->key_len = zctx->keylen;
 	memcpy(ctx->key, zctx->key.bit_stream, zctx->keylen);
 
-	rc = aes_setkey_dir(ctx->key, ctx->key_len, ctx->dir);
-
-	if (rc) {
-		aes_pool_free(ctx);
-		return rc;
-	}
-
+	/* The chip-global key registers are programmed per operation under aes_lock */
 	zctx->drv_sessn_state = ctx;
 
 	LOG_DBG("Session started: mode=%d, dir=%d, keylen=%zu", mode, ctx->dir, ctx->key_len);
@@ -187,6 +180,7 @@ static int aes_ecb_op(struct cipher_ctx *zctx, struct cipher_pkt *pkt)
 	const uint8_t *in;
 	uint8_t *out;
 	size_t blocks;
+	int rc;
 
 	if (!ctx || (pkt->in_len % 16U) != 0U) {
 		LOG_ERR("Invalid ECB op: ctx=%p, in_len=%zu", ctx, ctx ? pkt->in_len : 0);
@@ -194,6 +188,13 @@ static int aes_ecb_op(struct cipher_ctx *zctx, struct cipher_pkt *pkt)
 	}
 
 	k_mutex_lock(&data->aes_lock, K_FOREVER);
+
+	/* Reprogram the chip-global key: another session may have overwritten it */
+	rc = aes_setkey_dir(ctx->key, ctx->key_len, ctx->dir);
+	if (rc) {
+		k_mutex_unlock(&data->aes_lock);
+		return rc;
+	}
 
 	in = pkt->in_buf;
 	out = pkt->out_buf;
@@ -306,6 +307,12 @@ static int aes_cbc_op(struct cipher_ctx *zctx, struct cipher_pkt *pkt, uint8_t *
 
 	k_mutex_lock(&data->aes_lock, K_FOREVER);
 
+	ret = aes_setkey_dir(ctx->key, ctx->key_len, ctx->dir);
+	if (ret) {
+		k_mutex_unlock(&data->aes_lock);
+		return ret;
+	}
+
 	if (ctx->dir == ESP_AES_ENCRYPT) {
 		ret = aes_cbc_encrypt(zctx, pkt, iv, chain);
 	} else {
@@ -325,7 +332,7 @@ static int aes_ctr_op(struct cipher_ctx *zctx, struct cipher_pkt *pkt, uint8_t *
 	size_t ctr_bytes;
 	size_t iv_bytes;
 	uint8_t counter_blk[16];
-	int restore_dir;
+	int rc;
 	const uint8_t *in;
 	uint8_t *out;
 	size_t len;
@@ -353,11 +360,11 @@ static int aes_ctr_op(struct cipher_ctx *zctx, struct cipher_pkt *pkt, uint8_t *
 
 	k_mutex_lock(&data->aes_lock, K_FOREVER);
 
-	restore_dir = 0;
-
-	if (ctx->dir != ESP_AES_ENCRYPT) {
-		aes_setkey_dir(ctx->key, ctx->key_len, ESP_AES_ENCRYPT);
-		restore_dir = 1;
+	/* CTR always runs the block cipher in the encrypt direction */
+	rc = aes_setkey_dir(ctx->key, ctx->key_len, ESP_AES_ENCRYPT);
+	if (rc) {
+		k_mutex_unlock(&data->aes_lock);
+		return rc;
 	}
 
 	in = pkt->in_buf;
@@ -383,10 +390,6 @@ static int aes_ctr_op(struct cipher_ctx *zctx, struct cipher_pkt *pkt, uint8_t *
 		in += chunk;
 		out += chunk;
 		len -= chunk;
-	}
-
-	if (restore_dir) {
-		aes_setkey_dir(ctx->key, ctx->key_len, ctx->dir);
 	}
 
 	k_mutex_unlock(&data->aes_lock);
