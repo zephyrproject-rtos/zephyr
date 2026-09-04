@@ -745,17 +745,100 @@ static void gptp_mi_clk_slave_sync_compute(void)
 }
 
 #if defined(CONFIG_NET_GPTP_USE_DEFAULT_CLOCK_UPDATE)
+int gptp_apply_clock_update(struct precision_pi *pi,
+			    const struct precision_clock *precision_clk,
+			    int64_t second_diff, int64_t nanosecond_diff)
+{
+	precision_time_t current_time;
+	precision_time_t phase;
+	precision_time_t target_time;
+	int ret;
+	unsigned int key;
+
+	if (second_diff > 0 && nanosecond_diff < 0) {
+		second_diff--;
+		nanosecond_diff = NSEC_PER_SEC + nanosecond_diff;
+	}
+
+	if (second_diff < 0 && nanosecond_diff > 0) {
+		second_diff++;
+		nanosecond_diff = -(int64_t)NSEC_PER_SEC + nanosecond_diff;
+	}
+
+	/* If time difference is too high, set the clock value.
+	 * Otherwise, adjust it.
+	 */
+	if (second_diff || (second_diff == 0 &&
+			    (nanosecond_diff < -50000000 ||
+			     nanosecond_diff > 50000000))) {
+		key = irq_lock();
+		ret = precision_clock_read(precision_clk, &current_time);
+		if (ret < 0) {
+			NET_WARN_RATELIMIT("Failed to read local clock (%d)", ret);
+			goto out;
+		}
+
+		if (second_diff > PRECISION_TIME_MAX / NSEC_PER_SEC ||
+		    second_diff < PRECISION_TIME_MIN / NSEC_PER_SEC) {
+			NET_WARN_RATELIMIT("gPTP clock correction is out of range");
+			ret = -ERANGE;
+			goto out;
+		}
+
+		phase = second_diff * NSEC_PER_SEC;
+		ret = precision_time_add(phase, nanosecond_diff, &phase);
+		if (ret < 0 || precision_time_add(current_time, phase, &target_time) < 0 ||
+		    target_time < 0) {
+			NET_DBG("Do not set local clock to an unrepresentable time");
+			ret = -ERANGE;
+			goto out;
+		}
+
+		if (IS_ENABLED(CONFIG_NET_GPTP_MONITOR_SYNC_STATUS)) {
+			NET_INFO("Set local clock %" PRIu64 ".%09u",
+				 (uint64_t)(target_time / NSEC_PER_SEC),
+				 (uint32_t)(target_time % NSEC_PER_SEC));
+		}
+		ret = precision_clock_set(precision_clk, target_time);
+		if (ret < 0) {
+			NET_WARN_RATELIMIT("Failed to set local clock (%d)", ret);
+		}
+
+out:
+		irq_unlock(key);
+	} else {
+		double ppb = precision_pi_update(pi, nanosecond_diff);
+		int64_t scaled_ppm;
+
+		ret = precision_clock_ppb_to_scaled_ppm(ppb, &scaled_ppm);
+		if (ret < 0) {
+			NET_WARN_RATELIMIT("gPTP PI output is out of range (ppb=%f)", ppb);
+			return ret;
+		}
+
+		ret = precision_clock_adjust_rate(precision_clk, scaled_ppm);
+		if (ret < 0) {
+			NET_WARN_RATELIMIT("Failed to adjust local clock rate (%d)", ret);
+		}
+
+		if (IS_ENABLED(CONFIG_NET_GPTP_MONITOR_SYNC_STATUS)) {
+			NET_INFO("sync offset %9"PRId64" ns, freq offset %f ppb",
+				 nanosecond_diff, ppb);
+		}
+	}
+
+	return ret;
+}
+
 static void gptp_update_local_port_clock(void)
 {
 	struct gptp_clk_slave_sync_state *state;
 	struct gptp_global_ds *global_ds;
 	struct gptp_port_ds *port_ds;
+	const struct precision_clock *precision_clk;
 	int port;
 	int64_t nanosecond_diff;
 	int64_t second_diff;
-	const struct device *clk;
-	struct net_ptp_time tm;
-	unsigned int key;
 
 	state = &GPTP_STATE()->clk_slave_sync;
 	global_ds = GPTP_GLOBAL_DS();
@@ -783,72 +866,10 @@ static void gptp_update_local_port_clock(void)
 		(global_ds->sync_receipt_time.fract_nsecond / GPTP_POW2_16) -
 		(global_ds->sync_receipt_local_time % NSEC_PER_SEC);
 
-	clk = net_eth_get_ptp_clock(GPTP_PORT_IFACE(port));
-	if (!clk) {
-		return;
-	}
+	precision_clk = precision_clock_ptp_get(&gptp_clock.clocks[GPTP_PORT_INDEX(port)]);
 
-	if (second_diff > 0 && nanosecond_diff < 0) {
-		second_diff--;
-		nanosecond_diff = NSEC_PER_SEC + nanosecond_diff;
-	}
-
-	if (second_diff < 0 && nanosecond_diff > 0) {
-		second_diff++;
-		nanosecond_diff = -(int64_t)NSEC_PER_SEC + nanosecond_diff;
-	}
-
-	/* If time difference is too high, set the clock value.
-	 * Otherwise, adjust it.
-	 */
-	if (second_diff || (second_diff == 0 &&
-			    (nanosecond_diff < -50000000 ||
-			     nanosecond_diff > 50000000))) {
-		bool underflow = false;
-
-		key = irq_lock();
-		ptp_clock_get(clk, &tm);
-
-		if (second_diff < 0 && tm.second < -second_diff) {
-			NET_DBG("Do not set local clock because %lu < %ld",
-				(unsigned long int)tm.second,
-				(long int)-second_diff);
-			goto skip_clock_set;
-		}
-
-		tm.second += second_diff;
-
-		if (nanosecond_diff < 0 &&
-		    tm.nanosecond < -nanosecond_diff) {
-			underflow = true;
-		}
-
-		tm.nanosecond += nanosecond_diff;
-
-		if (underflow) {
-			tm.second--;
-			tm.nanosecond += NSEC_PER_SEC;
-		} else if (tm.nanosecond >= NSEC_PER_SEC) {
-			tm.second++;
-			tm.nanosecond -= NSEC_PER_SEC;
-		}
-		if (IS_ENABLED(CONFIG_NET_GPTP_MONITOR_SYNC_STATUS)) {
-			NET_INFO("Set local clock %"PRIu64".%09u", tm.second, tm.nanosecond);
-		}
-		ptp_clock_set(clk, &tm);
-
-	skip_clock_set:
-		irq_unlock(key);
-	} else {
-		double ppb = gptp_servo_pi(nanosecond_diff);
-
-		ptp_clock_rate_adjust(clk, 1.0 + (ppb / 1000000000.0));
-
-		if (IS_ENABLED(CONFIG_NET_GPTP_MONITOR_SYNC_STATUS)) {
-			NET_INFO("sync offset %9"PRId64" ns, freq offset %f ppb",
-				 nanosecond_diff, ppb);
-		}
-	}
+	(void)gptp_apply_clock_update(&gptp_clock.pi, precision_clk, second_diff,
+				      nanosecond_diff);
 }
 #endif /* CONFIG_NET_GPTP_USE_DEFAULT_CLOCK_UPDATE */
 
