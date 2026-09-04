@@ -330,7 +330,7 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: 7ad67106c3253d03ae4bd8ab48e6bdf7bc46f43e
+      revision: 2c52c9d20a921a16fc098c785a8d762b67e10e51
       path: bootloader/mcuboot
       groups:
         - bootloader
@@ -403,7 +403,7 @@ manifest:
       groups:
         - tee
     - name: trusted-firmware-m
-      revision: c821782bcf12b01807359a51de76066317cc616b
+      revision: pull/226/head
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee
