@@ -1,0 +1,39 @@
+# Copyright (c) 2026 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  SiWx91x clock route under an HP, ULP, or AON CMU node.
+
+  Describes a clock path : which SIWX91X_CLK_* is configured (from the node label
+  via SIWX91X_CLOCK_NODE_TO_ID in clock_control_silabs_siwx91x_common.h) and which
+  source drives it (clocks property).
+
+  Optional clock-div programs a hardware divider when the clock path
+  has a divider register.
+
+  Usage example:
+
+    #include <zephyr/dt-bindings/clock/silabs/siwx91x-clock.h>
+
+    xyz-clock-mux: xyz-clock-mux {
+      compatible = "silabs,siwx91x-clock-route";
+      #clock-cells = <0>;
+      clock-div = <2>;
+      clocks = <&abc_clock>;
+    };
+
+compatible: "silabs,siwx91x-clock-route"
+
+include: [base.yaml, clock-controller.yaml]
+
+properties:
+  clocks:
+    required: true
+    description: Parent clock source (single phandle).
+
+  "#clock-cells":
+    const: 0
+
+  clock-div:
+    type: int
+    description: Optional hardware divider factor (0 or omitted = no divider programmed).
