@@ -2260,10 +2260,16 @@ static struct tcp *tcp_conn_alloc(void)
 
 	conn->in_connect = false;
 	conn->state = TCP_LISTEN;
-	conn->recv_win_max = tcp_rx_window;
+	/*
+	 * The window fields are 16 bit wide, so a larger buffer configuration
+	 * has to be capped rather than truncated.  Without the cap a pool of
+	 * NET_BUF_RX_COUNT * NET_BUF_DATA_SIZE / 3 == 65536 wraps to zero and
+	 * the stack advertises a closed window.
+	 */
+	conn->recv_win_max = MIN(tcp_rx_window, UINT16_MAX);
 	conn->recv_win = conn->recv_win_max;
 	conn->recv_win_sent = conn->recv_win_max;
-	conn->send_win_max = MAX(tcp_tx_window, NET_IPV6_MTU);
+	conn->send_win_max = MIN(MAX(tcp_tx_window, NET_IPV6_MTU), UINT16_MAX);
 	conn->send_win = conn->send_win_max;
 	conn->tcp_nodelay = false;
 	conn->addr_ref_done = false;
@@ -2971,27 +2977,35 @@ static void tcp_check_sock_options(struct tcp *conn)
 					     &rcvbuf_opt, NULL);
 	}
 
-	if (sndbuf_opt > 0 && sndbuf_opt != conn->send_win_max) {
-		k_mutex_lock(&conn->lock, K_FOREVER);
+	if (sndbuf_opt > 0) {
+		uint16_t new_max = MIN(sndbuf_opt, UINT16_MAX);
 
-		conn->send_win_max = sndbuf_opt;
-		if (conn->send_win > conn->send_win_max) {
-			conn->send_win = conn->send_win_max;
+		if (new_max != conn->send_win_max) {
+			k_mutex_lock(&conn->lock, K_FOREVER);
+
+			conn->send_win_max = new_max;
+			if (conn->send_win > conn->send_win_max) {
+				conn->send_win = conn->send_win_max;
+			}
+
+			k_mutex_unlock(&conn->lock);
 		}
-
-		k_mutex_unlock(&conn->lock);
 	}
 
-	if (rcvbuf_opt > 0 && rcvbuf_opt != conn->recv_win_max) {
-		int diff;
+	if (rcvbuf_opt > 0) {
+		uint16_t new_max = MIN(rcvbuf_opt, UINT16_MAX);
 
-		k_mutex_lock(&conn->lock, K_FOREVER);
+		if (new_max != conn->recv_win_max) {
+			int diff;
 
-		diff = rcvbuf_opt - conn->recv_win_max;
-		conn->recv_win_max = rcvbuf_opt;
-		tcp_update_recv_wnd(conn, diff);
+			k_mutex_lock(&conn->lock, K_FOREVER);
 
-		k_mutex_unlock(&conn->lock);
+			diff = new_max - conn->recv_win_max;
+			conn->recv_win_max = new_max;
+			tcp_update_recv_wnd(conn, diff);
+
+			k_mutex_unlock(&conn->lock);
+		}
 	}
 }
 
