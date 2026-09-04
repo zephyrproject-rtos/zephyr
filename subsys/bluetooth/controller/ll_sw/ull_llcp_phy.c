@@ -894,6 +894,12 @@ void llcp_lp_pu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pd
 		/* Invalid behaviour */
 		/* Invalid PDU received so terminate connection */
 		conn->llcp_terminate.reason_final = BT_HCI_ERR_LMP_PDU_NOT_ALLOWED;
+
+		/* Release any retained RX node before completing the procedure,
+		 * the node would otherwise be leaked
+		 */
+		llcp_rx_node_release(ctx);
+
 		llcp_lr_complete(conn);
 		ctx->state = LP_PU_STATE_IDLE;
 		break;
@@ -1307,6 +1313,12 @@ void llcp_rp_pu_rx(struct ll_conn *conn, struct proc_ctx *ctx, struct node_rx_pd
 		/* Invalid behaviour */
 		/* Invalid PDU received so terminate connection */
 		conn->llcp_terminate.reason_final = BT_HCI_ERR_LMP_PDU_NOT_ALLOWED;
+
+		/* Release any retained RX node before completing the procedure,
+		 * the node would otherwise be leaked
+		 */
+		llcp_rx_node_release(ctx);
+
 		llcp_rr_complete(conn);
 		ctx->state = RP_PU_STATE_IDLE;
 		break;
