@@ -1046,6 +1046,11 @@ SD Host Controller
 Sensor
 ======
 
+* The :dtcompatible:`pixart,paa3905` driver now enforces the sensor's
+  datasheet SPI contract: mode 3 is set by the driver and a devicetree
+  ``spi-max-frequency`` above 2 MHz fails the build. Out-of-tree boards
+  that overclocked the bus must lower the property to 2000000 or less.
+
 * The ``girqs`` and ``pcrs`` properties (array type) of :dtcompatible:`microchip,xec-tach` have been
   replaced by ``pcr-scr`` (int type) to use encoded PCR register index and bit position macros.
   GIRQ configuration is now handled via the ``microchip,dmec-ecia-girq`` binding include
