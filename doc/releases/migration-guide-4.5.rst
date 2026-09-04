@@ -582,7 +582,7 @@ Ethernet
   (:dtcompatible:`infineon,xmc4xxx-ethernet`). (:github:`114899`)
 
 * The compatibles ``espressif,esp32-mdio``, ``infineon,xmc4xxx-mdio``, ``nxp,enet-qos-mdio``,
-  ``nxp,s32-gmac-mdio``, ``st,stm32-mdio`` and ``wch,mdio`` have been replaced by
+  ``nxp,s32-gmac-mdio`` and ``st,stm32-mdio`` have been replaced by
   :dtcompatible:`snps,dwmac-mdio`. (:github:`114899`)
 
 * The NXP ENET-QOS Ethernet controller (:dtcompatible:`nxp,enet-qos`) devicetree structure has been

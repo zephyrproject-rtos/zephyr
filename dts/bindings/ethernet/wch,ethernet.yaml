@@ -6,7 +6,7 @@ title: Ethernet MAC Controller for WCH CH32 series MCUs
 compatible: "wch,ethernet"
 
 include:
-  - name: snps,dwmac.yaml
+  - name: ethernet-controller.yaml
   - name: pinctrl-device.yaml
 
 properties:

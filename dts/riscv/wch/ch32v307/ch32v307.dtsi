@@ -11,7 +11,7 @@
 	soc {
 		eth: mac: ethernet@40028000 {
 			reg = <0x40028000 0x2000>;
-			compatible = "wch,ethernet", "snps,dwmac";
+			compatible = "wch,ethernet";
 			clocks = <&rcc CH32V20X_V30X_CLOCK_ETHMAC>,
 				 <&rcc CH32V20X_V30X_CLOCK_ETHMACTX>,
 				 <&rcc CH32V20X_V30X_CLOCK_ETHMACRX>;
@@ -20,12 +20,10 @@
 			interrupts = <77>, <78>;
 			internal-phy-pllmul = "15";
 			internal-phy-prediv = "2";
-			snps,multicast-filter-bins = <64>;
-			snps,perfect-filter-entries = <4>;
 			status = "disabled";
 
 			mdio: mdio {
-				compatible = "snps,dwmac-mdio";
+				compatible = "wch,mdio";
 				#address-cells = <1>;
 				#size-cells = <0>;
 				status = "disabled";
