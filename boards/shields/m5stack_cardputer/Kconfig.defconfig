@@ -6,16 +6,4 @@ if SHIELD_M5STACK_CARDPUTER
 config INPUT
 	default y
 
-if DISPLAY
-
-if LVGL
-
-choice LV_COLOR_DEPTH
-	default LV_COLOR_DEPTH_16
-endchoice
-
-endif # LVGL
-
-endif # DISPLAY
-
 endif # SHIELD_M5STACK_CARDPUTER

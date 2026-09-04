@@ -10,10 +10,6 @@ if LVGL
 config INPUT
 	default y
 
-choice LV_COLOR_DEPTH
-	default LV_COLOR_DEPTH_16
-endchoice
-
 configdefault LV_COLOR_16_SWAP
 	default y
 
