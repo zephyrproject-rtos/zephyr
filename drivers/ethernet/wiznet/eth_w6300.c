@@ -1,4 +1,4 @@
-/* W6300 Stand-alone Ethernet Controller with SPI
+/* W6300 Stand-alone Ethernet Controller with SPI/QSPI
  *
  * Copyright (c) 2025 WIZnet Co., Ltd.
  *
@@ -16,7 +16,9 @@ LOG_MODULE_REGISTER(eth_w6300, CONFIG_ETHERNET_LOG_LEVEL);
 #include <stddef.h>
 #include <errno.h>
 #include <zephyr/drivers/gpio.h>
-#include <zephyr/drivers/spi.h>
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(mspi)
+#include <zephyr/drivers/mspi/devicetree.h>
+#endif
 #include <zephyr/net/net_pkt.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/ethernet.h>
@@ -27,10 +29,23 @@ LOG_MODULE_REGISTER(eth_w6300, CONFIG_ETHERNET_LOG_LEVEL);
 #include "../eth.h"
 #include "eth_w6300_priv.h"
 
-static inline uint8_t w6300_spi_instr(uint8_t rwb, uint8_t bsb)
+static inline uint8_t w6300_instr(uint8_t mod, uint8_t rwb, uint8_t bsb)
 {
-	return (uint8_t)((W6300_SPI_MOD_SINGLE << 6) | ((rwb & 0x1) << 5) |
-			 (bsb & 0x1f));
+	return (uint8_t)((mod << 6) | ((rwb & 0x1) << 5) | (bsb & 0x1f));
+}
+
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
+
+static int w6300_spi_bus_init(const struct device *dev)
+{
+	const struct w6300_config *cfg = dev->config;
+
+	if (!spi_is_ready_dt(&cfg->bus.spi)) {
+		LOG_ERR_DEVICE_NOT_READY(cfg->bus.spi.bus);
+		return -ENODEV;
+	}
+
+	return 0;
 }
 
 static int w6300_spi_read(const struct device *dev, uint8_t bsb,
@@ -39,7 +54,7 @@ static int w6300_spi_read(const struct device *dev, uint8_t bsb,
 	const struct w6300_config *cfg = dev->config;
 	/* W6300 SPI read: 3-byte command + 1 dummy byte before data */
 	uint8_t header[4] = {
-		w6300_spi_instr(W6300_SPI_RWB_READ, bsb),
+		w6300_instr(W6300_SPI_MOD_SINGLE, W6300_SPI_RWB_READ, bsb),
 		(uint8_t)(addr >> 8),
 		(uint8_t)addr,
 		0x00, /* dummy byte */
@@ -67,7 +82,7 @@ static int w6300_spi_read(const struct device *dev, uint8_t bsb,
 		.count = ARRAY_SIZE(rx_bufs),
 	};
 
-	return spi_transceive_dt(&cfg->spi, &tx, &rx);
+	return spi_transceive_dt(&cfg->bus.spi, &tx, &rx);
 }
 
 static int w6300_spi_write(const struct device *dev, uint8_t bsb,
@@ -76,7 +91,7 @@ static int w6300_spi_write(const struct device *dev, uint8_t bsb,
 	const struct w6300_config *cfg = dev->config;
 	/* W6300 SPI write: 3-byte command + 1 dummy byte before data */
 	uint8_t header[4] = {
-		w6300_spi_instr(W6300_SPI_RWB_WRITE, bsb),
+		w6300_instr(W6300_SPI_MOD_SINGLE, W6300_SPI_RWB_WRITE, bsb),
 		(uint8_t)(addr >> 8),
 		(uint8_t)addr,
 		0x00, /* dummy byte */
@@ -96,7 +111,208 @@ static int w6300_spi_write(const struct device *dev, uint8_t bsb,
 		.count = ARRAY_SIZE(tx_bufs),
 	};
 
-	return spi_write_dt(&cfg->spi, &tx);
+	return spi_write_dt(&cfg->bus.spi, &tx);
+}
+
+static const struct w6300_bus_io w6300_bus_io_spi = {
+	.init = w6300_spi_bus_init,
+	.read = w6300_spi_read,
+	.write = w6300_spi_write,
+};
+
+#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(spi) */
+
+#if DT_ANY_INST_ON_BUS_STATUS_OKAY(mspi)
+
+/*
+ * Both read and write include one dummy byte between the address and data
+ * phases.  In quad mode one byte = 2 clock cycles, so dummy = 2 clocks.
+ */
+#define W6300_MSPI_DUMMY_CLOCKS 2U
+
+static int w6300_mspi_bus_init(const struct device *dev)
+{
+	const struct w6300_config *cfg = dev->config;
+	int ret;
+
+	if (!device_is_ready(cfg->bus.mspi.ctlr)) {
+		LOG_ERR_DEVICE_NOT_READY(cfg->bus.mspi.ctlr);
+		return -ENODEV;
+	}
+
+	ret = mspi_dev_config(cfg->bus.mspi.ctlr, &cfg->bus.mspi.dev_id,
+			      MSPI_DEVICE_CONFIG_ALL, &cfg->bus.mspi.dev_cfg);
+	if (ret < 0) {
+		LOG_ERR("Failed to configure W6300 on MSPI bus: %d", ret);
+		return ret;
+	}
+
+	/* Hand the controller back; every transfer takes it again. */
+	return mspi_get_channel_status(cfg->bus.mspi.ctlr, 0);
+}
+
+/*
+ * The controller is taken for a run of accesses and handed back after it, so
+ * other devices on the bus get their turn.  Taking it costs a few
+ * microseconds, so the callers that make several accesses in a row hold it
+ * across them; a single access takes it on its own.  bus_lock keeps the
+ * threads of this driver from handing the controller back from under each
+ * other, and a thread that already holds it only nests.
+ */
+static int w6300_mspi_acquire(const struct device *dev)
+{
+	const struct w6300_config *cfg = dev->config;
+	const struct w6300_mspi_bus *bus = &cfg->bus.mspi;
+	struct w6300_runtime *ctx = dev->data;
+	int ret;
+
+	if (ctx->bus_owner == k_current_get()) {
+		ctx->bus_depth++;
+		return 0;
+	}
+
+	k_mutex_lock(&ctx->bus_lock, K_FOREVER);
+
+	ret = mspi_dev_config(bus->ctlr, &bus->dev_id, bus->dev_cfg_mask, &bus->dev_cfg);
+	if (ret < 0) {
+		k_mutex_unlock(&ctx->bus_lock);
+		return ret;
+	}
+
+	ctx->bus_owner = k_current_get();
+	ctx->bus_depth = 1;
+
+	return 0;
+}
+
+static void w6300_mspi_release(const struct device *dev)
+{
+	const struct w6300_config *cfg = dev->config;
+	struct w6300_runtime *ctx = dev->data;
+
+	/* A hold that a failed re-acquire already lost has nothing to hand back. */
+	if (ctx->bus_owner != k_current_get()) {
+		return;
+	}
+
+	if (--ctx->bus_depth > 0U) {
+		return;
+	}
+
+	ctx->bus_owner = NULL;
+	(void)mspi_get_channel_status(cfg->bus.mspi.ctlr, 0);
+	k_mutex_unlock(&ctx->bus_lock);
+}
+
+static int w6300_mspi_transceive(const struct device *dev, const struct mspi_xfer *xfer)
+{
+	const struct w6300_config *cfg = dev->config;
+	int ret;
+
+	ret = w6300_mspi_acquire(dev);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = mspi_transceive(cfg->bus.mspi.ctlr, &cfg->bus.mspi.dev_id, xfer);
+
+	w6300_mspi_release(dev);
+
+	return ret;
+}
+
+static int w6300_mspi_read(const struct device *dev, uint8_t bsb,
+			   uint16_t addr, uint8_t *data, size_t len)
+{
+	struct mspi_xfer_packet pkt = {
+		.dir = MSPI_RX,
+		.cmd = w6300_instr(W6300_SPI_MOD_QUAD, W6300_SPI_RWB_READ, bsb),
+		.address = addr,
+		.data_buf = data,
+		.num_bytes = len,
+	};
+	struct mspi_xfer xfer = {
+		.async = false,
+		.xfer_mode = MSPI_DMA,
+		.rx_dummy = W6300_MSPI_DUMMY_CLOCKS,
+		.tx_dummy = 0,
+		.cmd_length = 1,
+		.addr_length = 2,
+		.hold_ce = false,
+		.packets = &pkt,
+		.num_packet = 1,
+		.timeout = CONFIG_ETH_WIZNET_TIMEOUT,
+	};
+
+	return w6300_mspi_transceive(dev, &xfer);
+}
+
+static int w6300_mspi_write(const struct device *dev, uint8_t bsb,
+			    uint16_t addr, uint8_t *data, size_t len)
+{
+	struct mspi_xfer_packet pkt = {
+		.dir = MSPI_TX,
+		.cmd = w6300_instr(W6300_SPI_MOD_QUAD, W6300_SPI_RWB_WRITE, bsb),
+		.address = addr,
+		.data_buf = data,
+		.num_bytes = len,
+	};
+	struct mspi_xfer xfer = {
+		.async = false,
+		.xfer_mode = MSPI_DMA,
+		.rx_dummy = 0,
+		.tx_dummy = W6300_MSPI_DUMMY_CLOCKS,
+		.cmd_length = 1,
+		.addr_length = 2,
+		.hold_ce = false,
+		.packets = &pkt,
+		.num_packet = 1,
+		.timeout = CONFIG_ETH_WIZNET_TIMEOUT,
+	};
+
+	return w6300_mspi_transceive(dev, &xfer);
+}
+
+static const struct w6300_bus_io w6300_bus_io_mspi = {
+	.init = w6300_mspi_bus_init,
+	.read = w6300_mspi_read,
+	.write = w6300_mspi_write,
+	.acquire = w6300_mspi_acquire,
+	.release = w6300_mspi_release,
+};
+
+#endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(mspi) */
+
+static inline int w6300_bus_read(const struct device *dev, uint8_t bsb,
+				 uint16_t addr, uint8_t *data, size_t len)
+{
+	const struct w6300_config *cfg = dev->config;
+
+	return cfg->bus_io->read(dev, bsb, addr, data, len);
+}
+
+static inline int w6300_bus_write(const struct device *dev, uint8_t bsb,
+				  uint16_t addr, uint8_t *data, size_t len)
+{
+	const struct w6300_config *cfg = dev->config;
+
+	return cfg->bus_io->write(dev, bsb, addr, data, len);
+}
+
+static inline int w6300_bus_acquire(const struct device *dev)
+{
+	const struct w6300_config *cfg = dev->config;
+
+	return cfg->bus_io->acquire != NULL ? cfg->bus_io->acquire(dev) : 0;
+}
+
+static inline void w6300_bus_release(const struct device *dev)
+{
+	const struct w6300_config *cfg = dev->config;
+
+	if (cfg->bus_io->release != NULL) {
+		cfg->bus_io->release(dev);
+	}
 }
 
 static int w6300_buf_read(const struct device *dev, uint8_t bsb,
@@ -114,12 +330,12 @@ static int w6300_buf_read(const struct device *dev, uint8_t bsb,
 	off = (uint16_t)(offset % buf_size);
 	first = MIN(len, (size_t)(buf_size - off));
 
-	ret = w6300_spi_read(dev, bsb, off, buf, first);
+	ret = w6300_bus_read(dev, bsb, off, buf, first);
 	if (ret || first == len) {
 		return ret;
 	}
 
-	return w6300_spi_read(dev, bsb, 0, buf + first, len - first);
+	return w6300_bus_read(dev, bsb, 0, buf + first, len - first);
 }
 
 static int w6300_buf_write(const struct device *dev, uint8_t bsb,
@@ -137,12 +353,12 @@ static int w6300_buf_write(const struct device *dev, uint8_t bsb,
 	off = (uint16_t)(offset % buf_size);
 	first = MIN(len, (size_t)(buf_size - off));
 
-	ret = w6300_spi_write(dev, bsb, off, buf, first);
+	ret = w6300_bus_write(dev, bsb, off, buf, first);
 	if (ret || first == len) {
 		return ret;
 	}
 
-	return w6300_spi_write(dev, bsb, 0, buf + first, len - first);
+	return w6300_bus_write(dev, bsb, 0, buf + first, len - first);
 }
 
 static int w6300_command(const struct device *dev, uint8_t cmd)
@@ -152,15 +368,21 @@ static int w6300_command(const struct device *dev, uint8_t cmd)
 	k_timepoint_t end = sys_timepoint_calc(K_MSEC(W6300_CMD_TIMEOUT_MS));
 	int ret;
 
+	/* The bus is taken before cmd_lock everywhere, so the two cannot deadlock. */
+	ret = w6300_bus_acquire(dev);
+	if (ret < 0) {
+		return ret;
+	}
+
 	k_mutex_lock(&ctx->cmd_lock, K_FOREVER);
 
-	ret = w6300_spi_write(dev, W6300_BSB_SOCK(0), W6300_Sn_CR, &cmd, 1);
+	ret = w6300_bus_write(dev, W6300_BSB_SOCK(0), W6300_Sn_CR, &cmd, 1);
 	if (ret < 0) {
 		goto out;
 	}
 
 	while (true) {
-		ret = w6300_spi_read(dev, W6300_BSB_SOCK(0), W6300_Sn_CR, &reg, 1);
+		ret = w6300_bus_read(dev, W6300_BSB_SOCK(0), W6300_Sn_CR, &reg, 1);
 		if (ret < 0) {
 			goto out;
 		}
@@ -180,6 +402,7 @@ static int w6300_command(const struct device *dev, uint8_t cmd)
 
 out:
 	k_mutex_unlock(&ctx->cmd_lock);
+	w6300_bus_release(dev);
 
 	return ret;
 }
@@ -188,7 +411,7 @@ static int w6300_set_macaddr(const struct device *dev)
 {
 	struct w6300_runtime *ctx = dev->data;
 
-	return w6300_spi_write(dev, W6300_BSB_COMMON, W6300_SHAR,
+	return w6300_bus_write(dev, W6300_BSB_COMMON, W6300_SHAR,
 			       ctx->mac_addr, sizeof(ctx->mac_addr));
 }
 
@@ -198,25 +421,38 @@ static int w6300_set_buffer_sizes(const struct device *dev)
 	uint8_t bsr;
 	int ret;
 
-	ret = w6300_spi_read(dev, W6300_BSB_SOCK(0), W6300_Sn_TX_BSR, &bsr, 1);
-	if (ret < 0 || bsr == 0) {
-		bsr = W6300_DEFAULT_BSR_KB;
-		ret = w6300_spi_write(dev, W6300_BSB_SOCK(0), W6300_Sn_TX_BSR, &bsr, 1);
-		if (ret < 0) {
-			return ret;
-		}
+	/*
+	 * Socket 0 runs in MACRAW mode and the other hardware sockets are
+	 * unused, so give socket 0 the entire 16 KB TX and RX buffer memory
+	 * and assign none to sockets 1-7.  A large socket-0 RX buffer is
+	 * required under load: the W6300 silently drops incoming frames when
+	 * its socket RX buffer fills, which appears as lost ICMP/UDP during
+	 * stress.  This mirrors the upstream W5500 driver's
+	 * w5500_memory_configure().
+	 */
+	bsr = W6300_SOCK0_BSR_KB;
+	ret = w6300_bus_write(dev, W6300_BSB_SOCK(0), W6300_Sn_TX_BSR, &bsr, 1);
+	if (ret < 0) {
+		return ret;
+	}
+	ret = w6300_bus_write(dev, W6300_BSB_SOCK(0), W6300_Sn_RX_BSR, &bsr, 1);
+	if (ret < 0) {
+		return ret;
 	}
 	ctx->tx_buf_size = W6300_BSR_TO_BYTES(bsr);
+	ctx->rx_buf_size = W6300_BSR_TO_BYTES(bsr);
 
-	ret = w6300_spi_read(dev, W6300_BSB_SOCK(0), W6300_Sn_RX_BSR, &bsr, 1);
-	if (ret < 0 || bsr == 0) {
-		bsr = W6300_DEFAULT_BSR_KB;
-		ret = w6300_spi_write(dev, W6300_BSB_SOCK(0), W6300_Sn_RX_BSR, &bsr, 1);
+	bsr = 0;
+	for (uint8_t i = 1; i < W6300_NUM_SOCKETS; i++) {
+		ret = w6300_bus_write(dev, W6300_BSB_SOCK(i), W6300_Sn_TX_BSR, &bsr, 1);
+		if (ret < 0) {
+			return ret;
+		}
+		ret = w6300_bus_write(dev, W6300_BSB_SOCK(i), W6300_Sn_RX_BSR, &bsr, 1);
 		if (ret < 0) {
 			return ret;
 		}
 	}
-	ctx->rx_buf_size = W6300_BSR_TO_BYTES(bsr);
 
 	return 0;
 }
@@ -235,39 +471,50 @@ static int w6300_tx(const struct device *dev, struct net_pkt *pkt)
 
 	k_sem_reset(&ctx->tx_sem);
 
-	ret = w6300_spi_read(dev, W6300_BSB_SOCK(0), W6300_Sn_TX_WR, tmp, 2);
+	ret = w6300_bus_acquire(dev);
 	if (ret < 0) {
 		return ret;
+	}
+
+	ret = w6300_bus_read(dev, W6300_BSB_SOCK(0), W6300_Sn_TX_WR, tmp, 2);
+	if (ret < 0) {
+		goto release;
 	}
 	offset = sys_get_be16(tmp);
 
 	if (net_pkt_read(pkt, ctx->buf, len)) {
-		return -EIO;
+		ret = -EIO;
+		goto release;
 	}
 
 	ret = w6300_buf_write(dev, W6300_BSB_TX(0), offset, ctx->buf, len,
 			      ctx->tx_buf_size);
 	if (ret < 0) {
-		return ret;
+		goto release;
 	}
 
 	offset += len;
 	sys_put_be16(offset, tmp);
-	ret = w6300_spi_write(dev, W6300_BSB_SOCK(0), W6300_Sn_TX_WR, tmp, 2);
+	ret = w6300_bus_write(dev, W6300_BSB_SOCK(0), W6300_Sn_TX_WR, tmp, 2);
 	if (ret < 0) {
-		return ret;
+		goto release;
 	}
+
+	atomic_set(&ctx->tx_pending, 1);
 
 	ret = w6300_command(dev, W6300_Sn_CR_SEND);
-	if (ret < 0) {
-		return ret;
+
+release:
+	/* SENDOK is picked up by the RX thread, which needs the bus to read it. */
+	w6300_bus_release(dev);
+
+	if (ret == 0 && k_sem_take(&ctx->tx_sem, K_MSEC(W6300_TX_SEM_TIMEOUT_MS)) != 0) {
+		ret = -EIO;
 	}
 
-	if (k_sem_take(&ctx->tx_sem, K_MSEC(W6300_TX_SEM_TIMEOUT_MS))) {
-		return -EIO;
-	}
+	atomic_set(&ctx->tx_pending, 0);
 
-	return 0;
+	return ret;
 }
 
 static int w6300_drop_rx(const struct device *dev, uint16_t off,
@@ -277,7 +524,7 @@ static int w6300_drop_rx(const struct device *dev, uint16_t off,
 	int ret;
 
 	sys_put_be16(off + drop_len, tmp);
-	ret = w6300_spi_write(dev, W6300_BSB_SOCK(0), W6300_Sn_RX_RD, tmp, 2);
+	ret = w6300_bus_write(dev, W6300_BSB_SOCK(0), W6300_Sn_RX_RD, tmp, 2);
 	if (ret < 0) {
 		return ret;
 	}
@@ -285,100 +532,182 @@ static int w6300_drop_rx(const struct device *dev, uint16_t off,
 	return w6300_command(dev, W6300_Sn_CR_RECV);
 }
 
+/*
+ * Draining the ring can take longer than w6300_tx() is willing to wait for
+ * SENDOK, and while this thread is here nothing else reads Sn_IR.  Pick the
+ * bit up between passes so a send is not left to time out.  The register read
+ * is only worth its bus time while a send is actually waiting.
+ */
+static void w6300_service_sendok(const struct device *dev)
+{
+	struct w6300_runtime *ctx = dev->data;
+	uint8_t ir;
+
+	if (atomic_get(&ctx->tx_pending) == 0) {
+		return;
+	}
+
+	if (w6300_bus_read(dev, W6300_BSB_SOCK(0), W6300_Sn_IR, &ir, 1) < 0) {
+		return;
+	}
+
+	if ((ir & W6300_Sn_IR_SENDOK) == 0U) {
+		return;
+	}
+
+	ir = W6300_Sn_IR_SENDOK;
+	if (w6300_bus_write(dev, W6300_BSB_SOCK(0), W6300_Sn_IRCLR, &ir, 1) == 0) {
+		k_sem_give(&ctx->tx_sem);
+	}
+}
+
 static void w6300_rx(const struct device *dev)
 {
 	uint8_t hdr[W6300_PKT_INFO_LEN];
-	uint8_t tmp[2];
-	uint16_t off;
-	uint16_t rx_buf_len;
-	uint16_t frame_len;
-	uint16_t total_len;
-	uint16_t reader;
-	uint16_t read_len;
-	struct net_buf *pkt_buf = NULL;
-	struct net_pkt *pkt;
+	uint8_t ring[6];
 	struct w6300_runtime *ctx = dev->data;
+	unsigned int pass;
 
-	if (w6300_spi_read(dev, W6300_BSB_SOCK(0), W6300_Sn_RX_RSR, tmp, 2) < 0) {
-		return;
-	}
-	rx_buf_len = sys_get_be16(tmp);
+	/*
+	 * Keep draining while frames keep arriving, but bound it: the link
+	 * state is polled from the same thread, so it needs a turn even on an
+	 * interface that never goes idle.
+	 */
+	for (pass = 0; pass < W6300_RX_PASS_MAX; pass++) {
+		uint16_t rx_buf_len;
+		uint16_t off;
+		uint16_t consumed = 0;
+		unsigned int batch = 0;
 
-	if (rx_buf_len < W6300_PKT_INFO_LEN) {
-		return;
-	}
-
-	if (w6300_spi_read(dev, W6300_BSB_SOCK(0), W6300_Sn_RX_RD, tmp, 2) < 0) {
-		return;
-	}
-	off = sys_get_be16(tmp);
-
-	if (w6300_buf_read(dev, W6300_BSB_RX(0), off, hdr, sizeof(hdr),
-			   ctx->rx_buf_size) < 0) {
-		eth_stats_update_errors_rx(ctx->iface);
-		(void)w6300_drop_rx(dev, off, rx_buf_len);
-		return;
-	}
-
-	/* W6300 MACRAW length includes the 2-byte packet info header. */
-	total_len = sys_get_be16(hdr);
-	if (total_len < W6300_PKT_INFO_LEN) {
-		eth_stats_update_errors_rx(ctx->iface);
-		(void)w6300_drop_rx(dev, off, rx_buf_len);
-		return;
-	}
-
-	frame_len = total_len - W6300_PKT_INFO_LEN;
-
-	if (frame_len < W6300_ETH_MIN_FRAME_LEN ||
-	    frame_len > NET_ETH_MAX_FRAME_SIZE ||
-	    total_len > rx_buf_len) {
-		eth_stats_update_errors_rx(ctx->iface);
-		(void)w6300_drop_rx(dev, off, rx_buf_len);
-		return;
-	}
-
-	pkt = net_pkt_rx_alloc_with_buffer(ctx->iface, frame_len, NET_AF_UNSPEC, 0,
-					   K_MSEC(CONFIG_ETH_WIZNET_TIMEOUT));
-	if (!pkt) {
-		eth_stats_update_errors_rx(ctx->iface);
-		(void)w6300_drop_rx(dev, off, total_len);
-		return;
-	}
-
-	pkt_buf = pkt->buffer;
-	read_len = frame_len;
-	reader = off + W6300_PKT_INFO_LEN;
-
-	while (read_len > 0) {
-		size_t frag_len;
-		size_t chunk_len;
-		uint8_t *data_ptr;
-
-		data_ptr = pkt_buf->data;
-		frag_len = net_buf_tailroom(pkt_buf);
-		chunk_len = MIN(read_len, (uint16_t)frag_len);
-
-		if (w6300_buf_read(dev, W6300_BSB_RX(0), reader, data_ptr, chunk_len,
-				   ctx->rx_buf_size) < 0) {
-			eth_stats_update_errors_rx(ctx->iface);
-			net_pkt_unref(pkt);
-			(void)w6300_drop_rx(dev, off, rx_buf_len);
+		/*
+		 * Sn_RX_RSR and Sn_RX_RD are four bytes apart, so one six byte
+		 * read picks up both and gives a consistent snapshot of the ring
+		 * at the cost of a single transaction.
+		 */
+		if (w6300_bus_read(dev, W6300_BSB_SOCK(0), W6300_Sn_RX_RSR,
+				   ring, sizeof(ring)) < 0) {
 			return;
 		}
 
-		net_buf_add(pkt_buf, chunk_len);
-		reader += (uint16_t)chunk_len;
-		read_len -= (uint16_t)chunk_len;
-		pkt_buf = pkt_buf->frags;
-	}
+		rx_buf_len = sys_get_be16(&ring[0]);
+		if (rx_buf_len < W6300_PKT_INFO_LEN) {
+			break;
+		}
 
-	if (net_recv_data(ctx->iface, pkt) < 0) {
-		net_pkt_unref(pkt);
-		eth_stats_update_errors_rx(ctx->iface);
-	}
+		/*
+		 * A count above the buffer cannot be legitimate, and the error
+		 * paths below hand it back to the chip as a read pointer, so
+		 * stop here rather than walk the ring on it.
+		 */
+		if (rx_buf_len > ctx->rx_buf_size) {
+			eth_stats_update_errors_rx(ctx->iface);
+			break;
+		}
 
-	(void)w6300_drop_rx(dev, off, total_len);
+		off = sys_get_be16(&ring[4]);
+
+		while (batch < W6300_RX_BATCH_MAX &&
+		       consumed < W6300_RX_BATCH_BYTES &&
+		       (uint16_t)(rx_buf_len - consumed) >= W6300_PKT_INFO_LEN) {
+			uint16_t reader = off + consumed;
+			uint16_t total_len;
+			uint16_t frame_len;
+			uint16_t read_len;
+			struct net_buf *pkt_buf;
+			struct net_pkt *pkt;
+
+			if (w6300_buf_read(dev, W6300_BSB_RX(0), reader, hdr,
+					   sizeof(hdr), ctx->rx_buf_size) < 0) {
+				eth_stats_update_errors_rx(ctx->iface);
+				consumed = rx_buf_len;
+				break;
+			}
+
+			/* MACRAW length includes the 2-byte packet info header. */
+			total_len = sys_get_be16(hdr);
+			frame_len = (total_len >= W6300_PKT_INFO_LEN)
+				  ? (uint16_t)(total_len - W6300_PKT_INFO_LEN) : 0;
+
+			if (frame_len < W6300_ETH_MIN_FRAME_LEN ||
+			    frame_len > NET_ETH_MAX_FRAME_SIZE ||
+			    total_len > (uint16_t)(rx_buf_len - consumed)) {
+				/*
+				 * The length field is the only thing tying one frame
+				 * to the next, so a bad one leaves no way to find the
+				 * frame after it: give up on the rest of the buffer.
+				 */
+				eth_stats_update_errors_rx(ctx->iface);
+				consumed = rx_buf_len;
+				break;
+			}
+
+			consumed += total_len;
+			batch++;
+
+			/*
+			 * The allocation can wait for a buffer, which gives the
+			 * CPU to the threads that free them, and those may need
+			 * the bus to send.  The thread's hold is handed back
+			 * around it.
+			 */
+			w6300_bus_release(dev);
+			pkt = net_pkt_rx_alloc_with_buffer(ctx->iface, frame_len,
+							   NET_AF_UNSPEC, 0,
+							   K_MSEC(CONFIG_ETH_WIZNET_TIMEOUT));
+			(void)w6300_bus_acquire(dev);
+
+			if (!pkt) {
+				eth_stats_update_errors_rx(ctx->iface);
+				continue;
+			}
+
+			pkt_buf = pkt->buffer;
+			read_len = frame_len;
+			reader += W6300_PKT_INFO_LEN;
+
+			while (read_len > 0 && pkt_buf != NULL) {
+				size_t chunk_len = MIN((size_t)read_len,
+						       net_buf_tailroom(pkt_buf));
+
+				if (w6300_buf_read(dev, W6300_BSB_RX(0), reader,
+						   pkt_buf->data, chunk_len,
+						   ctx->rx_buf_size) < 0) {
+					break;
+				}
+
+				net_buf_add(pkt_buf, chunk_len);
+				reader += (uint16_t)chunk_len;
+				read_len -= (uint16_t)chunk_len;
+				pkt_buf = pkt_buf->frags;
+			}
+
+			/*
+			 * A failed transfer leaves read_len where it was, so
+			 * it lands here together with a frame that outran its
+			 * buffers, and both are cleaned up once.
+			 */
+			if (read_len > 0) {
+				eth_stats_update_errors_rx(ctx->iface);
+				net_pkt_unref(pkt);
+				continue;
+			}
+
+			if (net_recv_data(ctx->iface, pkt) < 0) {
+				net_pkt_unref(pkt);
+				eth_stats_update_errors_rx(ctx->iface);
+			}
+		}
+
+		if (consumed == 0) {
+			break;
+		}
+
+		if (w6300_drop_rx(dev, off, consumed) < 0) {
+			return;
+		}
+
+		w6300_service_sendok(dev);
+	}
 }
 
 static void w6300_update_link_status(const struct device *dev)
@@ -387,7 +716,7 @@ static void w6300_update_link_status(const struct device *dev)
 	struct w6300_runtime *ctx = dev->data;
 	enum phy_link_speed speed;
 
-	if (w6300_spi_read(dev, W6300_BSB_COMMON, W6300_PHYSR, &physr, 1) < 0) {
+	if (w6300_bus_read(dev, W6300_BSB_COMMON, W6300_PHYSR, &physr, 1) < 0) {
 		return;
 	}
 
@@ -429,12 +758,12 @@ static void w6300_handle_interrupts(const struct device *dev,
 	while (gpio_pin_get_dt(interrupt) > 0) {
 		uint8_t ir;
 
-		if (w6300_spi_read(dev, W6300_BSB_SOCK(0), W6300_Sn_IR,
+		if (w6300_bus_read(dev, W6300_BSB_SOCK(0), W6300_Sn_IR,
 				   &ir, 1) < 0 || ir == 0U) {
 			break;
 		}
 
-		w6300_spi_write(dev, W6300_BSB_SOCK(0), W6300_Sn_IRCLR, &ir, 1);
+		w6300_bus_write(dev, W6300_BSB_SOCK(0), W6300_Sn_IRCLR, &ir, 1);
 
 		if ((ir & W6300_Sn_IR_SENDOK) != 0U) {
 			k_sem_give(&ctx->tx_sem);
@@ -452,21 +781,43 @@ static void w6300_thread(void *p1, void *p2, void *p3)
 	ARG_UNUSED(p3);
 
 	const struct device *dev = p1;
-	int res;
 	struct w6300_runtime *ctx = dev->data;
 	const struct w6300_config *config = dev->config;
+	k_timepoint_t next_poll = sys_timepoint_calc(K_MSEC(CONFIG_ETH_WIZNET_MONITOR_PERIOD));
 
 	while (true) {
-		res = k_sem_take(&ctx->int_sem,
+		(void)k_sem_take(&ctx->int_sem,
 				 K_MSEC(CONFIG_ETH_WIZNET_MONITOR_PERIOD));
 
-		if (res == 0 || res == -EAGAIN) {
-			w6300_update_link_status(dev);
+		/*
+		 * One hold of the bus for everything a wakeup does.  The
+		 * thread is cooperative, so nothing else could use the bus
+		 * before it blocks again anyway; the only place it can block
+		 * with work left is the buffer allocation in w6300_rx(), which
+		 * hands the hold back around it.
+		 */
+		if (w6300_bus_acquire(dev) < 0) {
+			continue;
 		}
 
-		if (res == 0 && ctx->state.is_up) {
+		/*
+		 * Polling the PHY costs a bus transaction, so keep it to the
+		 * monitor period.  Keying it off the wakeup reason instead
+		 * never polls an interface busy enough to wake the thread every
+		 * time, so a speed or duplex change that leaves traffic running
+		 * is never seen.
+		 */
+		if (sys_timepoint_expired(next_poll)) {
+			w6300_update_link_status(dev);
+			next_poll = sys_timepoint_calc(
+				K_MSEC(CONFIG_ETH_WIZNET_MONITOR_PERIOD));
+		}
+
+		if (ctx->state.is_up) {
 			w6300_handle_interrupts(dev, &config->interrupt);
 		}
+
+		w6300_bus_release(dev);
 	}
 }
 
@@ -536,7 +887,7 @@ static int w6300_set_config(const struct device *dev,
 			return -ENOTSUP;
 		}
 
-		if (w6300_spi_read(dev, W6300_BSB_SOCK(0), W6300_Sn_MR, &mode, 1) < 0) {
+		if (w6300_bus_read(dev, W6300_BSB_SOCK(0), W6300_Sn_MR, &mode, 1) < 0) {
 			return -EIO;
 		}
 
@@ -546,7 +897,7 @@ static int w6300_set_config(const struct device *dev,
 			mode |= W6300_Sn_MR_MF;
 		}
 
-		return w6300_spi_write(dev, W6300_BSB_SOCK(0), W6300_Sn_MR,
+		return w6300_bus_write(dev, W6300_BSB_SOCK(0), W6300_Sn_MR,
 					&mode, 1);
 	default:
 		return -ENOTSUP;
@@ -568,15 +919,15 @@ static int w6300_hw_start(const struct device *dev, struct net_if *iface)
 		return ret;
 	}
 
-	w6300_spi_write(dev, W6300_BSB_SOCK(0), W6300_Sn_MR, &mode, 1);
+	w6300_bus_write(dev, W6300_BSB_SOCK(0), W6300_Sn_MR, &mode, 1);
 	ret = w6300_command(dev, W6300_Sn_CR_OPEN);
 	if (ret < 0) {
 		return ret;
 	}
 
-	w6300_spi_write(dev, W6300_BSB_SOCK(0), W6300_Sn_IRCLR, &irclr, 1);
-	w6300_spi_write(dev, W6300_BSB_SOCK(0), W6300_Sn_IMR, &imr, 1);
-	w6300_spi_write(dev, W6300_BSB_COMMON, W6300_SIMR, &simr, 1);
+	w6300_bus_write(dev, W6300_BSB_SOCK(0), W6300_Sn_IRCLR, &irclr, 1);
+	w6300_bus_write(dev, W6300_BSB_SOCK(0), W6300_Sn_IMR, &imr, 1);
+	w6300_bus_write(dev, W6300_BSB_COMMON, W6300_SIMR, &simr, 1);
 
 	return 0;
 }
@@ -587,8 +938,8 @@ static int w6300_hw_stop(const struct device *dev, struct net_if *iface)
 
 	ARG_UNUSED(iface);
 
-	w6300_spi_write(dev, W6300_BSB_COMMON, W6300_SIMR, &mask, 1);
-	w6300_spi_write(dev, W6300_BSB_SOCK(0), W6300_Sn_IMR, &mask, 1);
+	w6300_bus_write(dev, W6300_BSB_COMMON, W6300_SIMR, &mask, 1);
+	w6300_bus_write(dev, W6300_BSB_SOCK(0), W6300_Sn_IMR, &mask, 1);
 	w6300_command(dev, W6300_Sn_CR_CLOSE);
 
 	return 0;
@@ -647,7 +998,7 @@ static int w6300_soft_reset(const struct device *dev)
 	uint8_t reg = W6300_SYCR0_RST;
 	int ret;
 
-	ret = w6300_spi_write(dev, W6300_BSB_COMMON, W6300_SYCR0, &reg, 1);
+	ret = w6300_bus_write(dev, W6300_BSB_COMMON, W6300_SYCR0, &reg, 1);
 	if (ret < 0) {
 		return ret;
 	}
@@ -660,17 +1011,17 @@ static int w6300_configure_defaults(const struct device *dev)
 {
 	uint8_t reg;
 
-	if (w6300_spi_read(dev, W6300_BSB_COMMON, W6300_SYCR1, &reg, 1) < 0) {
+	if (w6300_bus_read(dev, W6300_BSB_COMMON, W6300_SYCR1, &reg, 1) < 0) {
 		return -EIO;
 	}
 
 	reg |= W6300_SYCR1_IEN;
-	if (w6300_spi_write(dev, W6300_BSB_COMMON, W6300_SYCR1, &reg, 1) < 0) {
+	if (w6300_bus_write(dev, W6300_BSB_COMMON, W6300_SYCR1, &reg, 1) < 0) {
 		return -EIO;
 	}
 
 	reg = 0xFF;
-	w6300_spi_write(dev, W6300_BSB_COMMON, W6300_IRCLR, &reg, 1);
+	w6300_bus_write(dev, W6300_BSB_COMMON, W6300_IRCLR, &reg, 1);
 
 	return 0;
 }
@@ -683,9 +1034,9 @@ static int w6300_init(const struct device *dev)
 	const struct w6300_config *config = dev->config;
 	struct w6300_runtime *ctx = dev->data;
 
-	if (!spi_is_ready_dt(&config->spi)) {
-		LOG_ERR_DEVICE_NOT_READY(config->spi.bus);
-		return -EINVAL;
+	err = config->bus_io->init(dev);
+	if (err < 0) {
+		return err;
 	}
 
 	if (!gpio_is_ready_dt(&config->interrupt)) {
@@ -738,7 +1089,7 @@ static int w6300_init(const struct device *dev)
 		return err;
 	}
 
-	if (w6300_spi_read(dev, W6300_BSB_COMMON, W6300_CIDR0, cidr, 2) < 0) {
+	if (w6300_bus_read(dev, W6300_BSB_COMMON, W6300_CIDR0, cidr, 2) < 0) {
 		LOG_ERR("Unable to read CIDR");
 		return -EIO;
 	}
@@ -748,7 +1099,7 @@ static int w6300_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	if (w6300_spi_read(dev, W6300_BSB_COMMON, W6300_CIDR2, &cidr2, 1) == 0) {
+	if (w6300_bus_read(dev, W6300_BSB_COMMON, W6300_CIDR2, &cidr2, 1) == 0) {
 		LOG_INF("CIDR2 0x%02x", cidr2);
 	}
 
@@ -772,15 +1123,35 @@ static int w6300_init(const struct device *dev)
 	return 0;
 }
 
+#define W6300_BUS_CFG_SPI(inst) \
+	.bus_io = &w6300_bus_io_spi, \
+	.bus.spi = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8)),
+
+#define W6300_BUS_CFG_MSPI(inst) \
+	.bus_io = &w6300_bus_io_mspi, \
+	.bus.mspi = { \
+		.ctlr = DEVICE_DT_GET(DT_INST_BUS(inst)), \
+		.dev_id = MSPI_DEVICE_ID_DT_INST(inst), \
+		.dev_cfg = MSPI_DEVICE_CONFIG_DT_INST(inst), \
+		.dev_cfg_mask = DT_PROP(DT_INST_BUS(inst), software_multiperipheral) ? \
+				MSPI_DEVICE_CONFIG_ALL : MSPI_DEVICE_CONFIG_NONE, \
+	},
+
+#define W6300_BUS_CFG(inst) \
+	COND_CODE_1(DT_INST_ON_BUS(inst, mspi), \
+		    (W6300_BUS_CFG_MSPI(inst)), \
+		    (W6300_BUS_CFG_SPI(inst)))
+
 #define W6300_INST_DEFINE(inst) \
 	DEVICE_DECLARE(eth_w6300_phy_##inst); \
 	static struct w6300_runtime w6300_runtime_##inst = { \
 		.cmd_lock = Z_MUTEX_INITIALIZER(w6300_runtime_##inst.cmd_lock), \
+		.bus_lock = Z_MUTEX_INITIALIZER(w6300_runtime_##inst.bus_lock), \
 		.tx_sem = Z_SEM_INITIALIZER(w6300_runtime_##inst.tx_sem, 0, UINT_MAX), \
 		.int_sem = Z_SEM_INITIALIZER(w6300_runtime_##inst.int_sem, 0, UINT_MAX), \
 	}; \
 	static const struct w6300_config w6300_config_##inst = { \
-		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8)), \
+		W6300_BUS_CFG(inst) \
 		.interrupt = GPIO_DT_SPEC_INST_GET(inst, int_gpios), \
 		.reset = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, { 0 }), \
 		.mac_cfg = NET_ETH_MAC_DT_INST_CONFIG_INIT(inst), \
