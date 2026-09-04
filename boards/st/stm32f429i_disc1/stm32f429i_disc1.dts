@@ -25,13 +25,6 @@
 		zephyr,touch = &stmpe811;
 	};
 
-	sdram2: sdram@d0000000 {
-		compatible = "zephyr,memory-region", "mmio-sram";
-		reg = <0xd0000000 DT_SIZE_M(8)>;
-		device_type = "memory";
-		zephyr,memory-region = "SDRAM2";
-	};
-
 	leds {
 		compatible = "gpio-leds";
 
@@ -96,6 +89,13 @@
 			pgamctrl = [0f 29 24 0c 0e 09 4e 78 3c 09 13 05 17 11 00];
 			ngamctrl = [00 16 1b 04 11 07 31 33 42 05 0c 0a 28 2f 0f];
 		};
+	};
+
+	sdram2: sdram@d0000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0xd0000000 DT_SIZE_M(8)>;
+		device_type = "memory";
+		zephyr,memory-region = "SDRAM2";
 	};
 };
 

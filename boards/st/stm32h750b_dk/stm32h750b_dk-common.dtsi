@@ -17,22 +17,6 @@
 		zephyr,display = &ltdc;
 	};
 
-	sdram2: sdram@d0000000 {
-		compatible = "zephyr,memory-region", "mmio-sram";
-		/* 128Mbit, but only half is available by HW design */
-		reg = <0xd0000000 DT_SIZE_M(8)>;
-		device_type = "memory";
-		zephyr,memory-region = "SDRAM2";
-		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
-	};
-
-	ext_flash_mem: memory@90000000 {
-		compatible = "zephyr,memory-region";
-		reg = <0x90000000 DT_SIZE_M(128)>; /* 128MB */
-		zephyr,memory-region = "EXT_FLASH";
-		zephyr,memory-attr = <DT_MEM_ARM_MPU_FLASH>;
-	};
-
 	leds {
 		compatible = "gpio-leds";
 
@@ -63,6 +47,22 @@
 		rtc = &rtc;
 		sw0 = &user_button;
 		die-temp0 = &die_temp;
+	};
+
+	ext_flash_mem: memory@90000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x90000000 DT_SIZE_M(128)>; /* 128MB */
+		zephyr,memory-region = "EXT_FLASH";
+		zephyr,memory-attr = <DT_MEM_ARM_MPU_FLASH>;
+	};
+
+	sdram2: sdram@d0000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		/* 128Mbit, but only half is available by HW design */
+		reg = <0xd0000000 DT_SIZE_M(8)>;
+		device_type = "memory";
+		zephyr,memory-region = "SDRAM2";
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 	};
 };
 

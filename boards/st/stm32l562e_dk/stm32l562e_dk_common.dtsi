@@ -180,12 +180,6 @@
 	clock-frequency = <I2C_BITRATE_FAST>;
 	status = "okay";
 
-	lsm6dso: lsm6dso@6a {
-		compatible = "st,lsm6dso";
-		reg = <0x6a>;
-		irq-gpios = <&gpiof 3 GPIO_ACTIVE_HIGH>;
-	};
-
 	ft5336: ft5336@38 {
 		compatible = "focaltech,ft5336";
 		reg = <0x38>;
@@ -194,6 +188,12 @@
 		inverted-y;
 		screen-width = <240>;
 		screen-height = <240>;
+	};
+
+	lsm6dso: lsm6dso@6a {
+		compatible = "st,lsm6dso";
+		reg = <0x6a>;
+		irq-gpios = <&gpiof 3 GPIO_ACTIVE_HIGH>;
 	};
 };
 

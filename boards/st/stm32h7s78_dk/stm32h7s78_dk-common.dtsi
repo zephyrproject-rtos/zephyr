@@ -26,13 +26,6 @@
 		zephyr,canbus = &fdcan1;
 	};
 
-	psram: memory@90000000 {
-		compatible = "zephyr,memory-region";
-		reg = <0x90000000 DT_SIZE_M(32)>;
-		zephyr,memory-region = "PSRAM";
-		zephyr,memory-attr = <DT_MEM_ARM_MPU_RAM>;
-	};
-
 	leds {
 		compatible = "gpio-leds";
 
@@ -106,6 +99,13 @@
 		reg = <0x70000000 DT_SIZE_M(128)>;
 		zephyr,memory-region = "EXTMEM";
 		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_FLASH)>;
+	};
+
+	psram: memory@90000000 {
+		compatible = "zephyr,memory-region";
+		reg = <0x90000000 DT_SIZE_M(32)>;
+		zephyr,memory-region = "PSRAM";
+		zephyr,memory-attr = <DT_MEM_ARM_MPU_RAM>;
 	};
 };
 
