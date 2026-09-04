@@ -101,6 +101,18 @@
 	status = "okay";
 };
 
+&flx4 {
+	mchp,flexcom-mode = <SAM_FLEXCOM_MODE_SPI>;
+	status = "okay";
+
+	spi4: spi@400 {
+		pinctrl-names = "default";
+		pinctrl-0 = <&pinctrl_spi4_default>;
+		cs-gpios = <&pioa 15 GPIO_ACTIVE_LOW>, <&pioa 14 GPIO_ACTIVE_LOW>;
+		status = "okay";
+	};
+};
+
 &flx6 {
 	mchp,flexcom-mode = <SAM_FLEXCOM_MODE_USART>;
 	status = "okay";
@@ -262,6 +274,21 @@
 		mikrobus2_pwm1 {
 			pinmux = <PIN_PB17__PWML1>;
 			bias-disable;
+		};
+	};
+
+	pinctrl_spi4_default: spi4_default {
+		group1 {
+			pinmux = <PIN_PA18__FLEXCOM4_IO0>,
+				 <PIN_PA17__FLEXCOM4_IO1>,
+				 <PIN_PA16__FLEXCOM4_IO2>;
+			bias-disable;
+		};
+
+		cs_pins {
+			pinmux = <PIN_PA15__GPIO>, /* GPIO CS 0 */
+				 <PIN_PA14__GPIO>; /* GPIO CS 1 */
+			bias-pull-up;
 		};
 	};
 
