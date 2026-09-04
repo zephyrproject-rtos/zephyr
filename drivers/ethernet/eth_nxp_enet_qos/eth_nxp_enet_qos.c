@@ -30,7 +30,7 @@ LOG_MODULE_REGISTER(eth_nxp_enet_qos, CONFIG_ETHERNET_LOG_LEVEL);
 #endif
 
 /* Verify configuration */
-BUILD_ASSERT((ENET_QOS_RX_BUFFER_SIZE * NUM_RX_BUFDESC) >= ENET_QOS_MAX_NORMAL_FRAME_LEN,
+BUILD_ASSERT((ENET_QOS_RX_BUFFER_SIZE * NUM_RX_BUFDESC) >= ENET_QOS_MAX_FRAME_LEN,
 	"ENET_QOS_RX_BUFFER_SIZE * NUM_RX_BUFDESC is not large enough to receive a full frame");
 
 static const uint32_t rx_desc_refresh_flags =
@@ -120,6 +120,12 @@ static void eth_nxp_enet_qos_phy_cb(const struct device *phy,
 			mac_cfg &= ~ENET_QOS_REG_PREP(MAC_CONFIGURATION, DM, 0b1);
 		}
 
+		/* IPC enables the receive checksum offload engine, which
+		 * verifies the IPv4 header and the TCP and UDP checksums of
+		 * incoming frames.
+		 */
+		mac_cfg |= ENET_QOS_REG_PREP(MAC_CONFIGURATION, IPC, 0b1);
+
 		/* Transmit and receive enable */
 		mac_cfg |= ENET_QOS_REG_PREP(MAC_CONFIGURATION, TE, 0b1);
 		mac_cfg |= ENET_QOS_REG_PREP(MAC_CONFIGURATION, RE, 0b1);
@@ -199,7 +205,7 @@ static int eth_nxp_enet_qos_tx(const struct device *dev, struct net_pkt *pkt)
 
 	/* Setting up the descriptors  */
 	fragment = pkt->frags;
-	tx_desc_ptr->read.control2 = FIRST_DESCRIPTOR_FLAG;
+	tx_desc_ptr->read.control2 = FIRST_DESCRIPTOR_FLAG | TX_CHECKSUM_INSERT_FLAG;
 	while (frags_idx < frags_count) {
 		net_pkt_frag_ref(fragment);
 
@@ -302,8 +308,16 @@ skip:
 static enum ethernet_hw_caps eth_nxp_enet_qos_get_capabilities(const struct device *dev __unused,
 							      struct net_if *iface __unused)
 {
-	enum ethernet_hw_caps caps = ETHERNET_LINK_100BASE | ETHERNET_LINK_10BASE;
+	enum ethernet_hw_caps caps = ETHERNET_LINK_100BASE | ETHERNET_LINK_10BASE |
+				     ETHERNET_HW_TX_CHKSUM_OFFLOAD | ETHERNET_HW_RX_CHKSUM_OFFLOAD;
 
+#if defined(CONFIG_NET_VLAN)
+	/* The MAC accepts VLAN interfaces on the iface. Tags are inserted by
+	 * the L2 in software, so this only advertises that tagged frames are
+	 * permitted.
+	 */
+	caps |= ETHERNET_HW_VLAN;
+#endif
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
 	caps |= ETHERNET_PROMISC_MODE;
 #endif
@@ -468,7 +482,20 @@ static void eth_nxp_enet_qos_rx(struct k_work *work)
 			}
 #endif /* CONFIG_PTP_CLOCK_NXP_ENET_QOS */
 
-			if (net_recv_data(data->iface, pkt)) {
+			/* Hardware RX checksum offload: the checksum engine
+			 * writes its verdict into RDES1, valid only when
+			 * RX_STATUS1_VALID_FLAG is set. The stack trusts the
+			 * offload and does not re-verify, so drop a frame the
+			 * engine flagged with an IP header or payload checksum
+			 * error. Non-IP frames leave both bits clear.
+			 */
+			if ((desc->write.control3 & RX_STATUS1_VALID_FLAG) &&
+			    (desc->write.control1 &
+			     (RX_IP_HEADER_ERROR_FLAG | RX_IP_PAYLOAD_ERROR_FLAG))) {
+				LOG_DBG("dropping RX pkt %p with bad hardware checksum", pkt);
+				net_pkt_unref(pkt);
+				eth_stats_update_errors_rx(data->iface);
+			} else if (net_recv_data(data->iface, pkt)) {
 				LOG_WRN("RECV failed on pkt %p", pkt);
 				/* Error during processing, we continue with new buffer */
 				net_pkt_unref(pkt);
@@ -1020,7 +1047,7 @@ static const struct ethernet_api api_funcs = {
 		.phy_dev = DEVICE_DT_GET(DT_INST_PHANDLE(n, phy_handle)),                          \
 		.hw_info =                                                                         \
 			{                                                                          \
-				.max_frame_len = ENET_QOS_MAX_NORMAL_FRAME_LEN,                    \
+				.max_frame_len = ENET_QOS_MAX_FRAME_LEN,                           \
 			},                                                                         \
 		.irq_config_func = nxp_enet_qos_##n##_irq_config_func,                             \
 		.mac_addr_source = NXP_ENET_QOS_MAC_ADDR_SOURCE(n),                                \

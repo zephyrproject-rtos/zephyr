@@ -30,16 +30,36 @@
 #define OWN_FLAG                        BIT(31)
 #define RX_STATUS1_VALID_FLAG           BIT(26)
 #define RX_TIMESTAMP_AVAILABLE_FLAG     BIT(14)
+/* RDES1 write-back status, valid only when RX_STATUS1_VALID_FLAG is set:
+ * IP header checksum error and IP payload (L4) checksum error.
+ */
+#define RX_IP_HEADER_ERROR_FLAG         BIT(3)
+#define RX_IP_PAYLOAD_ERROR_FLAG        BIT(7)
 
 #define RX_INTERRUPT_ON_COMPLETE_FLAG BIT(30)
 #define TX_INTERRUPT_ON_COMPLETE_FLAG BIT(31)
 #define TX_TIMESTAMP_ENABLE_FLAG      BIT(30)
+/* TDES3 CIC (checksum insertion control) field: 0b11 inserts the IP header,
+ * the payload and the pseudo header checksums. The MAC only rewrites IP frames
+ * with a known L4 protocol and leaves other frames untouched.
+ */
+#define TX_CHECKSUM_INSERT_FLAG       FIELD_PREP(GENMASK(17, 16), 0x3)
 #define TX_TIMESTAMP_STATUS_FLAG      BIT(17)
 #define BUF1_ADDR_VALID_FLAG          BIT(24)
 #define DESC_RX_PKT_LEN               GENMASK(14, 0)
 
 #define ENET_QOS_RX_BUFFER_SIZE (CONFIG_NET_BUF_DATA_SIZE & 0xFFFFFFFC)
 #define ENET_QOS_MAX_NORMAL_FRAME_LEN 1518 /* Including FCS */
+
+#if defined(CONFIG_NET_VLAN)
+/* A single VLAN tag lengthens the maximum frame by four bytes. The MAC
+ * recognizes the VLAN type and extends its receive length limit by the same
+ * four bytes on its own, so no length register needs adjusting.
+ */
+#define ENET_QOS_MAX_FRAME_LEN (ENET_QOS_MAX_NORMAL_FRAME_LEN + NET_ETH_VLAN_HDR_SIZE)
+#else
+#define ENET_QOS_MAX_FRAME_LEN ENET_QOS_MAX_NORMAL_FRAME_LEN
+#endif
 
 #define NUM_SWR_WAIT_CHUNKS 5
 
