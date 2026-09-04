@@ -47,11 +47,6 @@ static bt_addr_t bd_addr_dflt = {{0x65, 0x43, 0x21, 0x1E, 0x08, 0x00}};
 #define ACI_HAL_WRITE_CONFIG_DATA	   BT_OP(BT_OGF_VS, 0xFC0C)
 #define HCI_CONFIG_DATA_PUBADDR_OFFSET	   0
 static bt_addr_t bd_addr_udn;
-struct aci_set_ble_addr {
-	uint8_t config_offset;
-	uint8_t length;
-	uint8_t value[6];
-} __packed;
 #endif /* CONFIG_BT_HCI_SETUP */
 
 /* ACI Reset command */
