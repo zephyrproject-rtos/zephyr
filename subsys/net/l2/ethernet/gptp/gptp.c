@@ -626,15 +626,28 @@ static void gptp_thread(void *p1, void *p2, void *p3)
 static void gptp_add_port(struct net_if *iface, void *user_data)
 {
 	uint16_t *num_ports = user_data;
+	int ret;
 
 	if (*num_ports >= CONFIG_NET_GPTP_NUM_PORTS) {
 		return;
 	}
 
-	if (gptp_set_port_number(iface, GPTP_PORT_START + *num_ports) == 0) {
-		gptp_domain.iface[*num_ports] = iface;
-		(*num_ports)++;
+	if (gptp_set_port_number(iface, GPTP_PORT_START + *num_ports) != 0) {
+		return;
 	}
+
+	/* A device that filters multicast frames in hardware drops the
+	 * gPTP messages unless it is told to listen to the group address.
+	 * The port is never removed, so the group is never left either.
+	 */
+	ret = net_eth_mcast_addr_add(iface, &gptp_multicast_eth_addr);
+	if (ret < 0) {
+		NET_WARN("Cannot join gPTP multicast group on iface %d (%d)",
+			 net_if_get_by_iface(iface), ret);
+	}
+
+	gptp_domain.iface[*num_ports] = iface;
+	(*num_ports)++;
 }
 
 void gptp_set_time_itv(struct gptp_uscaled_ns *interval,
