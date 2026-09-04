@@ -222,8 +222,26 @@ void bt_hci_cmd_state_set_init(struct net_buf *buf,
  * command complete or command status.
  */
 #define CMD_BUF_SIZE MAX(BT_BUF_EVT_RX_SIZE, BT_BUF_CMD_TX_SIZE)
+/* A freed command buffer handed to the queued asynchronous operations
+ * instead of the pool, to be taken by the TX processor.
+ */
+static atomic_ptr_t cmd_op_buf;
+
 static void hci_cmd_pool_destroy(struct net_buf *buf)
 {
+	/* With an operation waiting for a buffer, keep this one for it instead
+	 * of returning it to the pool: the kernel would hand it straight to a
+	 * thread blocked in net_buf_alloc(), and a stream of such allocators
+	 * would starve the operations, which never block on the pool.
+	 */
+	if (!sys_slist_is_empty(&bt_dev.cmd_op_queue) &&
+	    atomic_ptr_cas(&cmd_op_buf, NULL, buf)) {
+		/* Re-own the buffer: it is not being freed after all. */
+		buf = net_buf_ref(buf);
+		bt_tx_irq_raise();
+		return;
+	}
+
 	net_buf_destroy(buf);
 
 	/* An asynchronous command waiting for a buffer can be dispatched now. */
@@ -392,6 +410,32 @@ void bt_hci_host_num_completed_packets(struct net_buf *buf)
 }
 #endif /* defined(CONFIG_BT_HCI_ACL_FLOW_CONTROL) */
 
+/* Set up an empty command buffer: headroom for the packet indicator and the
+ * command header, no sender state.
+ */
+static void cmd_buf_prepare(struct net_buf *buf)
+{
+	net_buf_reset(buf);
+	net_buf_reserve(buf, sizeof(uint8_t) + sizeof(struct bt_hci_cmd_hdr));
+
+	cmd(buf)->opcode = 0;
+	cmd(buf)->sync = NULL;
+	cmd(buf)->op = NULL;
+	cmd(buf)->state = NULL;
+}
+
+/* Take the buffer that hci_cmd_pool_destroy() kept for the operations. */
+static struct net_buf *cmd_op_buf_take(void)
+{
+	struct net_buf *buf = atomic_ptr_set(&cmd_op_buf, NULL);
+
+	if (buf != NULL) {
+		cmd_buf_prepare(buf);
+	}
+
+	return buf;
+}
+
 struct net_buf *bt_hci_cmd_alloc(k_timeout_t timeout)
 {
 	struct net_buf *buf;
@@ -404,13 +448,7 @@ struct net_buf *bt_hci_cmd_alloc(k_timeout_t timeout)
 
 	LOG_DBG("buf %p", buf);
 
-	/* Reserve H:4 header and HCI command header */
-	net_buf_reserve(buf, sizeof(uint8_t) + sizeof(struct bt_hci_cmd_hdr));
-
-	cmd(buf)->opcode = 0;
-	cmd(buf)->sync = NULL;
-	cmd(buf)->op = NULL;
-	cmd(buf)->state = NULL;
+	cmd_buf_prepare(buf);
 
 	return buf;
 }
@@ -544,7 +582,10 @@ static void hci_cmd_ops_dispatch(void)
 		struct net_buf *buf;
 		int err;
 
-		buf = bt_hci_cmd_alloc(K_NO_WAIT);
+		buf = cmd_op_buf_take();
+		if (buf == NULL) {
+			buf = bt_hci_cmd_alloc(K_NO_WAIT);
+		}
 		if (buf == NULL) {
 			return;
 		}
@@ -673,6 +714,11 @@ static void hci_cmd_queue_purge(void)
 		LOG_WRN("Dropping queued command 0x%04x: HCI transport closed", op->opcode);
 
 		cmd_op_complete(op, BT_HCI_ERR_UNSPECIFIED, NULL);
+	}
+
+	buf = cmd_op_buf_take();
+	if (buf != NULL) {
+		net_buf_unref(buf);
 	}
 }
 
