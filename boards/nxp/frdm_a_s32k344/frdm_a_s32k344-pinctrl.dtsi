@@ -1,0 +1,163 @@
+/*
+ * Copyright 2023,2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <nxp/s32/S32K344_K324_K314_172HDQFP-pinctrl.h>
+
+&pinctrl {
+	eirq0_default: eirq0_default {
+		group1 {
+			pinmux = <PTB26_EIRQ13>;
+			input-enable;
+		};
+	};
+
+	lpuart5_default: lpuart5_default {
+		group1 {
+			pinmux = <PTB27_LPUART5_TX_O>;
+			output-enable;
+		};
+
+		group2 {
+			pinmux = <PTB28_LPUART5_RX>;
+			input-enable;
+		};
+	};
+
+	lpuart6_default: lpuart6_default {
+		group1 {
+			pinmux = <PTA16_LPUART6_TX_O>;
+			output-enable;
+		};
+
+		group2 {
+			pinmux = <PTA15_LPUART6_RX>;
+			input-enable;
+		};
+	};
+
+	lpuart9_default: lpuart9_default {
+		group1 {
+			pinmux = <PTB3_LPUART9_TX_O>;
+			output-enable;
+		};
+
+		group2 {
+			pinmux = <PTB2_LPUART9_RX>;
+			input-enable;
+		};
+	};
+
+	qspi0_default: qspi0_default {
+		group1 {
+			pinmux = <(PTD11_QUADSPI_IOFA0_O | PTD11_QUADSPI_IOFA0_I)>,
+				 <(PTD7_QUADSPI_IOFA1_O | PTD7_QUADSPI_IOFA1_I)>,
+				 <(PTD12_QUADSPI_IOFA2_O | PTD12_QUADSPI_IOFA2_I)>,
+				 <(PTC2_QUADSPI_IOFA3_O | PTC2_QUADSPI_IOFA3_I)>;
+			output-enable;
+			input-enable;
+		};
+
+		group2 {
+			pinmux = <PTD10_QUADSPI_SCKFA_O>;
+			output-enable;
+		};
+
+		group3 {
+			pinmux = <PTC3_QUADSPI_PCSFA>;
+			output-enable;
+			bias-pull-up;
+		};
+	};
+
+	flexcan0_default: flexcan0_default {
+		group1 {
+			pinmux = <PTA6_CAN0_RX>;
+			input-enable;
+		};
+
+		group2 {
+			pinmux = <PTA7_CAN0_TX>;
+			output-enable;
+		};
+	};
+
+	lpi2c1_default: lpi2c1_default {
+		group1 {
+			pinmux = <(PTC6_LPI2C1_SDA_I | PTC6_LPI2C1_SDA_O)>,
+				 <(PTC7_LPI2C1_SCL_I | PTC7_LPI2C1_SCL_O)>;
+			input-enable;
+			output-enable;
+		};
+	};
+
+	lpspi0_default: lpspi0_default {
+		group1 {
+			pinmux = <PTC8_LPSPI0_SCK_O>, <PTB1_LPSPI0_SOUT_O>,
+				 <PTB0_LPSPI0_PCS0_O>;
+			output-enable;
+		};
+
+		group2 {
+			pinmux = <PTC9_LPSPI0_SIN_I>;
+			input-enable;
+		};
+	};
+
+	emac0_default: emac0_default {
+		group1 {
+			pinmux = <PTD9_EMAC_MII_RMII_RXD0>,
+				 <PTD8_EMAC_MII_RMII_RXD1>,
+				 <PTC16_EMAC_MII_RMII_RX_ER>,
+				 <PTC15_EMAC_MII_RMII_RX_DV>,
+				 <PTC0_EMAC_MII_RMII_TX_CLK>;
+			input-enable;
+		};
+
+		group2 {
+			pinmux = <PTB5_EMAC_MII_RMII_TXD0>,
+				 <PTB4_EMAC_MII_RMII_TXD1>,
+				 <PTE9_EMAC_MII_RMII_TX_EN>;
+		};
+	};
+
+	mdio0_default: mdio0_default {
+		group1 {
+			pinmux = <(PTD16_EMAC_MII_RMII_MDIO_O | PTD16_EMAC_MII_RMII_MDIO_I)>;
+			input-enable;
+			output-enable;
+		};
+
+		group2 {
+			pinmux = <PTD17_EMAC_MII_RMII_MDC>;
+			output-enable;
+		};
+	};
+
+	emios0_default: emios0_default {
+		group1 {
+			pinmux = <PTB12_EMIOS_0_CH0_X_O>, <PTB13_EMIOS_0_CH1_G_O>,
+				 <PTB14_EMIOS_0_CH2_G_O>, <PTB15_EMIOS_0_CH3_G_O>,
+				 <PTB16_EMIOS_0_CH4_G_O>, <PTB17_EMIOS_0_CH5_G_O>;
+			output-enable;
+		};
+	};
+
+	emios1_default: emios1_default {
+		group1 {
+			pinmux = <PTA29_EMIOS_1_CH12_H_O>,
+				 <PTA30_EMIOS_1_CH13_H_O>,
+				 <PTA31_EMIOS_1_CH14_H_O>;
+			output-enable;
+		};
+	};
+
+	flexio0_pwm_default: flexio0_pwm_default {
+		group1 {
+			pinmux = <PTA17_FXIO_D19_O>, <PTE7_FXIO_D11_O>;
+			output-enable;
+		};
+	};
+};
