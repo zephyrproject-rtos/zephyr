@@ -10,8 +10,8 @@
 #include "phyboard_nash-pinctrl.dtsi"
 
 / {
-	model = "PHYTEC phyBOARD-Nash i.MX93";
 	compatible = "phytec,phyboard_nash";
+	model = "PHYTEC phyBOARD-Nash i.MX93";
 
 	chosen {
 		/* TCM */
@@ -24,8 +24,8 @@
 };
 
 &lpuart2 {
-	status = "okay";
 	current-speed = <115200>;
 	pinctrl-0 = <&uart2_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
