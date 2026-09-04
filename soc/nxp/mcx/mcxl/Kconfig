@@ -23,6 +23,15 @@ config SOC_MCXL255_CPU0
 config SOC_MCXL255_CPU1
 	select CPU_CORTEX_M0PLUS
 
+config ADVC_DRIVER_USED
+	bool "NXP ADVC (Adaptive Voltage Control) driver support"
+	depends on SOC_MCXL255_CPU0 || SOC_MCXL255_CPU1
+	help
+	  Link the precompiled NXP ADVC library (fetched via west blobs)
+	  and enable the ADVC-aware code paths in the NXP power/clock
+	  drivers. When disabled, those drivers fall back to fixed
+	  voltage selection based on target frequency.
+
 config SOC_MCXL254_CPU0
 	select CPU_CORTEX_M33
 	select CPU_HAS_ARM_SAU
