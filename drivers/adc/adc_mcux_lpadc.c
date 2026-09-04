@@ -17,6 +17,8 @@
 #include <zephyr/drivers/regulator.h>
 #include <zephyr/dt-bindings/regulator/nxp_vref.h>
 #include <zephyr/drivers/clock_control.h>
+#include <fsl_clock.h>
+#include <zephyr/pm/device_runtime.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/opamp.h>
 #include <zephyr/pm/policy.h>
@@ -400,8 +402,8 @@ static int mcux_lpadc_start_read(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	ret = adc_sequence_validate_buffer(sequence,
-					   POPCOUNT(sequence->channels), sizeof(uint16_t));
+	ret = adc_sequence_validate_buffer(sequence, POPCOUNT(sequence->channels),
+					   sizeof(uint16_t));
 	if (ret < 0) {
 		return ret;
 	}
@@ -499,19 +501,48 @@ static int mcux_lpadc_read_async(const struct device *dev,
 			struct k_poll_signal *async)
 {
 	struct mcux_lpadc_data *data = dev->data;
+#if CONFIG_PM_DEVICE
+	const struct mcux_lpadc_config *config = dev->config;
+#endif
 	int error;
 
+	pm_device_runtime_get(dev);
 	adc_context_lock(&data->ctx, async ? true : false, async);
-
 	mcux_lpadc_pm_policy_device_power_lock_get(dev);
 
+/*
+ * Re-calibrate on read is only needed on low-power modes
+ * since the peripheral configurations are lost after
+ * entering low-power and ensures proper function after
+ * a power domain turn-off.
+ */
+#if CONFIG_PM_DEVICE
+	/* Do ADC calibration needed before using ADC */
+#if defined(FSL_FEATURE_LPADC_HAS_CTRL_CALOFS) && FSL_FEATURE_LPADC_HAS_CTRL_CALOFS
+#if defined(FSL_FEATURE_LPADC_HAS_OFSTRIM) && FSL_FEATURE_LPADC_HAS_OFSTRIM
+	/* Request offset calibration. */
+#if defined(CONFIG_LPADC_DO_OFFSET_CALIBRATION) && CONFIG_LPADC_DO_OFFSET_CALIBRATION
+	LPADC_DoOffsetCalibration(config->base);
+#else
+#if defined(FSL_FEATURE_LPADC_OFSTRIM_COUNT) && (FSL_FEATURE_LPADC_OFSTRIM_COUNT == 1U)
+	LPADC_SetOffsetValue(config->base, config->offset_a);
+#else
+	LPADC_SetOffsetValue(config->base, config->offset_a, config->offset_b);
+#endif /* FSL_FEATURE_LPADC_OFSTRIM_COUNT */
+#endif /* CONFIG_LPADC_DO_OFFSET_CALIBRATION */
+#endif /* FSL_FEATURE_LPADC_HAS_OFSTRIM */
+	k_busy_wait(1U);
+	LPADC_PrepareAutoCalibration(config->base);
+	LPADC_FinishAutoCalibration(config->base);
+	LPADC_DoAutoCalibration(config->base);
+#endif
+#endif
+	/* Perform ADC reading after calibration */
 	error = mcux_lpadc_start_read(dev, sequence);
 
-	if (error != 0) {
-		mcux_lpadc_pm_policy_device_power_lock_put(dev);
-	}
-
+	mcux_lpadc_pm_policy_device_power_lock_put(dev);
 	adc_context_release(&data->ctx, error);
+	pm_device_runtime_put(dev);
 
 	return error;
 }
@@ -852,6 +883,7 @@ static int mcux_lpadc_pm_callback(const struct device *dev, enum pm_device_actio
 {
 	const struct mcux_lpadc_config *config = dev->config;
 	const struct device *regulator = config->ref_supplies;
+	lpadc_config_t adc_config;
 	const struct device *bandgap_supply = config->bandgap_supply;
 	struct mcux_lpadc_data *data = dev->data;
 	int err;
@@ -859,14 +891,25 @@ static int mcux_lpadc_pm_callback(const struct device *dev, enum pm_device_actio
 	switch (action) {
 	case PM_DEVICE_ACTION_RESUME:
 
+		err = clock_control_configure(config->clock_dev, config->clock_subsys, NULL);
+		if (err && err != -ENOSYS) {
+			/* Real error occurred */
+			LOG_ERR("Failed to configure clock: %d", err);
+			return err;
+		}
+
+		err = clock_control_on(config->clock_dev, config->clock_subsys);
+		if (err && err != -ENOSYS) {
+			/* Real error occurred */
+			LOG_ERR("Failed to enable clock: %d", err);
+			return err;
+		}
+
 		if (regulator != NULL) {
 			err = regulator_enable(regulator);
 			if (err < 0) {
 				return err;
 			}
-
-			/* Re-enable the BUF21 buffer (cleared at suspend). */
-			(void)regulator_set_mode(regulator, NXP_VREF_MODE_HIGH_POWER);
 		}
 
 		if (bandgap_supply != NULL && data->bandgap_channels != 0U) {
@@ -881,18 +924,36 @@ static int mcux_lpadc_pm_callback(const struct device *dev, enum pm_device_actio
 			return err;
 		}
 
-		LPADC_Enable(config->base, true);
+		/* Re-initialize ADC, previous configurations are lost after disabling clock */
+		LPADC_GetDefaultConfig(&adc_config);
+		adc_config.enableAnalogPreliminary = true;
+		adc_config.referenceVoltageSource  = config->voltage_ref;
+#if defined(FSL_FEATURE_LPADC_HAS_CTRL_CAL_AVGS) && FSL_FEATURE_LPADC_HAS_CTRL_CAL_AVGS
+		adc_config.conversionAverageMode   = config->calibration_average;
+#endif
+#if !(DT_ANY_INST_HAS_PROP_STATUS_OKAY(no_power_level))
+		adc_config.powerLevelMode          = config->power_level;
+#endif
+		LPADC_Init(config->base, &adc_config);
+
+#if (defined(FSL_FEATURE_LPADC_FIFO_COUNT) && (FSL_FEATURE_LPADC_FIFO_COUNT == 2U))
+		LPADC_EnableInterrupts(config->base, kLPADC_FIFO0WatermarkInterruptEnable);
+#else
+		LPADC_EnableInterrupts(config->base, kLPADC_FIFOWatermarkInterruptEnable);
+#endif
 
 		return 0;
 
 	case PM_DEVICE_ACTION_SUSPEND:
 
-		LPADC_Enable(config->base, false);
+		/* Disable interrupts before gating clock */
+#if (defined(FSL_FEATURE_LPADC_FIFO_COUNT) && (FSL_FEATURE_LPADC_FIFO_COUNT == 2U))
+		LPADC_DisableInterrupts(config->base, kLPADC_FIFO0WatermarkInterruptEnable);
+#else
+		LPADC_DisableInterrupts(config->base, kLPADC_FIFOWatermarkInterruptEnable);
+#endif
 
-		err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_SLEEP);
-		if (err < 0 && err != -ENOENT) {
-			return err;
-		}
+		LPADC_Enable(config->base, false);
 
 		if (regulator != NULL) {
 			err = regulator_disable(regulator);
@@ -900,13 +961,23 @@ static int mcux_lpadc_pm_callback(const struct device *dev, enum pm_device_actio
 				return err;
 			}
 		}
-
-		if (bandgap_supply != NULL && data->bandgap_channels != 0U) {
+    
+    if (bandgap_supply != NULL && data->bandgap_channels != 0U) {
 			err = regulator_disable(bandgap_supply);
 			if (err < 0) {
 				return err;
 			}
 		}
+
+		err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_SLEEP);
+		if (err < 0 && err != -ENOENT) {
+			return err;
+		}
+
+		/* gate the peripheral clock */
+		err = clock_control_off(config->clock_dev, config->clock_subsys);
+		if (err < 0 && err != -ENOENT) {
+			return err;
 
 		return 0;
 
@@ -927,23 +998,6 @@ static int mcux_lpadc_init(const struct device *dev)
 	err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_DEFAULT);
 	if (err) {
 		return err;
-	}
-
-	/* Enable necessary regulators */
-	const struct device *regulator = config->ref_supplies;
-
-	if (regulator != NULL) {
-		err = regulator_enable(regulator);
-		if (err) {
-			return err;
-		}
-
-		/* Request the buffered 2.1V output (BUF21) on the NXP VREF
-		 * regulator. enable() only brings up the bandgap; without
-		 * this step BUF21 is left disabled and the LPADC's VREFI
-		 * reference is unbuffered, which causes inaccurate conversions.
-		 */
-		(void)regulator_set_mode(regulator, NXP_VREF_MODE_HIGH_POWER);
 	}
 
 	if (!device_is_ready(config->clock_dev)) {
