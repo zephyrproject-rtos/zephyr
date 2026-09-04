@@ -19,8 +19,8 @@
 
 	chosen {
 		zephyr,sram = &sram0;
-		zephyr,flash-controller = &flash;
-		zephyr,flash = &flash0;
+		zephyr,flash-controller = &code_flash_ctrl;
+		zephyr,flash = &code_flash;
 		zephyr,console = &uart1;
 		zephyr,shell-uart = &uart1;
 		zephyr,entropy = &trng;
