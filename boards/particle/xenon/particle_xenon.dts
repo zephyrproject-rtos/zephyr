@@ -11,8 +11,8 @@
 #include "particle_xenon-pinctrl.dtsi"
 
 / {
-	model = "Particle Xenon";
 	compatible = "particle,xenon", "particle,feather";
+	model = "Particle Xenon";
 
 	sky13351: sky13351 {
 		compatible = "skyworks,sky13351";
@@ -43,8 +43,8 @@
 &uart1 { /* feather UART2 */
 	compatible = "nordic,nrf-uarte";
 	current-speed = <115200>;
-	status = "disabled";
 	pinctrl-0 = <&uart1_default>;
 	pinctrl-1 = <&uart1_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "disabled";
 };
