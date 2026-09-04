@@ -19,6 +19,10 @@
 		zephyr,console = &aon_lpuart0;
 		zephyr,shell-uart = &aon_lpuart0;
 	};
+
+	aliases {
+		rtc = &rtc;
+	};
 };
 
 &cpu1 {
@@ -30,6 +34,10 @@
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_aon_lpuart0>;
 	pinctrl-names = "default";
+};
+
+&rtc {
+	status = "okay";
 };
 
 &systick {
