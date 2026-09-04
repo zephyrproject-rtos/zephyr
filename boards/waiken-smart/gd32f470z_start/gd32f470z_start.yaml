@@ -1,0 +1,18 @@
+# Copyright (c) 2026 Zhijian Han
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: gd32f470z_start
+name: Waiken-Smart GD32F470Z-START
+type: mcu
+arch: arm
+ram: 704
+flash: 2048
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - gpio
+  - i2c
+  - spi
+  - uart
+vendor: waiken-smart
