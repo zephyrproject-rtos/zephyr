@@ -218,6 +218,15 @@
 		status = "disabled";
 	};
 
+	ft6336_touch: ft5336@38 {
+		compatible = "focaltech,ft5336";
+		reg = <0x38>;
+		int-gpios = <&aw9523b_gpio 10 GPIO_ACTIVE_LOW>;
+		reset-gpios = <&aw9523b_gpio 0 GPIO_ACTIVE_LOW>;
+		swapped-x-y;
+		status = "okay";
+	};
+
 	bm8563_rtc: bm8563@51 {
 		compatible = "nxp,pcf8563";
 		reg = <0x51>;
@@ -236,15 +245,6 @@
 			port0-push-pull;
 			int-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
 		};
-	};
-
-	ft6336_touch: ft5336@38 {
-		compatible = "focaltech,ft5336";
-		reg = <0x38>;
-		int-gpios = <&aw9523b_gpio 10 GPIO_ACTIVE_LOW>;
-		reset-gpios = <&aw9523b_gpio 0 GPIO_ACTIVE_LOW>;
-		swapped-x-y;
-		status = "okay";
 	};
 };
 
