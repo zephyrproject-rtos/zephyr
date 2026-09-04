@@ -134,6 +134,13 @@
 	pinctrl-names = "default", "sleep";
 	status = "okay";
 
+	lsm303agr_accel: lsm303agr-accel@19 {
+		compatible = "st,lis2dh", "st,lsm303agr-accel";
+		reg = <0x19>;
+		irq-gpios = <&gpio0 28 GPIO_ACTIVE_HIGH>;
+		status = "disabled";
+	};
+
 	mma8653fc: mma8653fc@1d {
 		compatible = "nxp,fxos8700", "nxp,mma8653fc";
 		reg = <0x1d>;
@@ -147,13 +154,6 @@
 		compatible = "st,lis2mdl", "st,lsm303agr-magn";
 		reg = <0x1e>;
 		irq-gpios = <&gpio0 27 GPIO_ACTIVE_HIGH>;	/* A3 */
-		status = "disabled";
-	};
-
-	lsm303agr_accel: lsm303agr-accel@19 {
-		compatible = "st,lis2dh", "st,lsm303agr-accel";
-		reg = <0x19>;
-		irq-gpios = <&gpio0 28 GPIO_ACTIVE_HIGH>;
 		status = "disabled";
 	};
 
