@@ -50,6 +50,10 @@ The lens instructions live in this same folder. Read each lens file and review t
 10. `mathieuchopstm-impersonator.md` — only if the diff touches STM32 SoC-level DTSI, SoC Kconfig, or HAL integration
 11. `GeorgeCGV-impersonator.md` — only if the diff touches STM32 drivers (USB, flash, SDHC, SPI, I2C, video, Ethernet)
 
+**Conditionally apply (Tracing only):**
+12. `nashif-impersonator.md` — only if the diff touches tracing code (scripts/tracing, subsys/tracing, include/zephyr/tracing, samples/subsys/tracing, tests/subsys/tracing, doc/services/tracing, or the CI wiring for them)
+13. `teburd-impersonator.md` — only if the diff touches tracing code or tracing tests/scripts (same paths as above plus scripts/tests/tracing)
+
 For each lens, review the full diff, the file paths changed, the subsystem context, and any PR metadata (title, description, author).
 
 ### Step 4: Collect and synthesize
@@ -60,7 +64,7 @@ Combine the findings from every lens into a single review with:
 2. **Compliance Failures** — CI check failures that will block merge (from `compliance-check`)
 3. **Upstream Reference Leaks** — `#NNNNN` autolinks that will notify an unrelated upstream thread (from `upstream-reference-check`); blocking before push, unfixable after
 4. **Convention Issues** — documented and unwritten convention violations (should fix)
-5. **Maintainer Notes** — if ATMEL, include nandojve's perspective; if STM32, include the applicable reviewer personas' perspectives (advisory)
+5. **Maintainer Notes** — if ATMEL, include nandojve's perspective; if STM32, include the applicable reviewer personas' perspectives; if tracing, include nashif's and teburd's perspectives (advisory)
 6. **Positive Notes** — things done well
 7. **Summary** — overall assessment and recommendation
 
@@ -118,6 +122,8 @@ The review lenses live next to this skill, in the same folder (peer sub-skills, 
 - `compliance-check.md` — CI compliance script lens (always applied)
 - `upstream-reference-check.md` — commit message / PR metadata lens for upstream `#NNNNN` autolinks (always applied)
 - `nandojve-impersonator.md` — ATMEL maintainer lens (SAM/Atmel only)
+- `nashif-impersonator.md` — Tracing maintainer lens (tracing/twister/CI, tracing code only)
+- `teburd-impersonator.md` — Tracing collaborator lens (tracing code and tests)
 - `erwango-impersonator.md` — STM32 platform reviewer lens (STM32 platform/DTS/SoC)
 - `FRASTM-impersonator.md` — STM32 driver reviewer lens (drivers/*stm32*)
 - `gautierg-st-impersonator.md` — STM32 SoC/clock reviewer lens (Kconfig, bindings, clock/pinctrl)
