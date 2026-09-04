@@ -1,0 +1,71 @@
+/*
+ * Copyright (c) 2026 Texas Instruments Incorporated
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * I2C loopback wiring for LP-MSPM0L2228:
+ *
+ *   i2c0 (controller): PA1  = SCL (BoosterPack #9),  PA0  = SDA (BoosterPack #10)
+ *   i2c1 (target):     PA29 = SCL (BoosterPack #35), PA30 = SDA (BoosterPack #36)
+ *
+ * Wire BoosterPack #9  <-> #35 (SCL) and BoosterPack #10 <-> #36 (SDA).
+ * Internal pull-ups are enabled on all four pins.
+ */
+
+&pinctrl {
+	i2c0_scl_pa01_pu: i2c0_scl_pa01_pu {
+		pinmux = <MSP_PINMUX(2, MSPM0_PIN_FUNCTION_3)>;
+		input-enable;
+		drive-open-drain;
+		bias-pull-up;
+	};
+
+	i2c0_sda_pa0_pu: i2c0_sda_pa0_pu {
+		pinmux = <MSP_PINMUX(1, MSPM0_PIN_FUNCTION_3)>;
+		input-enable;
+		drive-open-drain;
+		bias-pull-up;
+	};
+
+	i2c1_scl_pa29_pu: i2c1_scl_pa29_pu {
+		pinmux = <MSP_PINMUX(4, MSPM0_PIN_FUNCTION_2)>;
+		input-enable;
+		drive-open-drain;
+		bias-pull-up;
+	};
+
+	i2c1_sda_pa30_pu: i2c1_sda_pa30_pu {
+		pinmux = <MSP_PINMUX(5, MSPM0_PIN_FUNCTION_2)>;
+		input-enable;
+		drive-open-drain;
+		bias-pull-up;
+	};
+};
+
+&i2c0 {
+	pinctrl-0 = <&i2c0_scl_pa01_pu &i2c0_sda_pa0_pu>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	eeprom0: eeprom@54 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x54>;
+		address-width = <8>;
+		size = <256>;
+	};
+};
+
+&i2c1 {
+	pinctrl-0 = <&i2c1_scl_pa29_pu &i2c1_sda_pa30_pu>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	eeprom1: eeprom@56 {
+		compatible = "zephyr,i2c-target-eeprom";
+		reg = <0x56>;
+		address-width = <8>;
+		size = <256>;
+	};
+};
