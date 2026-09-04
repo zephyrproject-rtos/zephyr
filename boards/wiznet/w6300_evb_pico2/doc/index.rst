@@ -60,6 +60,33 @@ The W6300 is connected using SPI/QSPI signals on GPIO15-22:
 | GPIO22 | RSTn        | Reset            |
 +--------+-------------+------------------+
 
+Ethernet
+========
+
+These signals are not routed to the RP2350 SPI0 pinmux, so the W6300 cannot be
+driven by the SPI peripheral. By default the board therefore uses the PIO based
+MSPI controller (:dtcompatible:`raspberrypi,pico-mspi-pio`) in quad data line mode
+at 33 MHz, which claims one state machine of ``pio0``.
+
+A single data line fallback over a bit-banged SPI bus is also described in the
+board devicetree, but it is limited to 500 kHz. To use it, enable
+``&spi_w6300`` and ``&ethernet_spi`` and disable ``&mspi0`` and ``&ethernet``
+in an overlay.
+
+Sustained line rate traffic needs more network buffers than the Zephyr
+defaults provide: a full size frame occupies twelve fixed size buffers, so the
+board raises :kconfig:option:`CONFIG_NET_BUF_RX_COUNT` and
+:kconfig:option:`CONFIG_NET_PKT_RX_COUNT`. Applications that only exchange
+occasional small packets can lower them again to save RAM.
+
+With the ``zperf`` sample the board reaches around 23 Mbit/s UDP and 10 Mbit/s
+TCP, against 0.26 and 0.20 over the bit-banged single data line bus. Raising
+:kconfig:option:`CONFIG_NET_BUF_DATA_SIZE` so that a frame fits in one buffer
+lets the driver read it in a single bus transaction instead of twelve, at the
+cost of RAM in every pool, so lower the counts to stay inside RAM. Give
+:kconfig:option:`CONFIG_NET_BUF_TX_COUNT` room as well; a pool that is too
+small shows up as failed sends under sustained TCP.
+
 Programming and Debugging
 *************************
 
