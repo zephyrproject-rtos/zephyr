@@ -20,6 +20,7 @@
 				 <&rcc STM32_CLOCK(AHB6, 29)>,
 				 <&rcc STM32_CLOCK(AHB6, 30)>,
 				 <&rcc STM32_SRC_PLL4_P ETH2_SEL(0)>;
+			resets = <&rctl STM32_RESET(AHB6, 30)>;
 			interrupts = <GIC_SPI 97 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>,
 				     <GIC_SPI 98 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			snps,multicast-filter-bins = <64>;
