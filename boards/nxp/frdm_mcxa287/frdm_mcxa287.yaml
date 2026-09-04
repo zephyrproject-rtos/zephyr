@@ -1,0 +1,35 @@
+#
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: frdm_mcxa287
+name: NXP FRDM-MCXA287
+type: mcu
+arch: arm
+ram: 640
+flash: 2048
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - gpio
+  - arduino_gpio
+  - arduino_i2c
+  - arduino_spi
+  - uart
+  - counter
+  - adc
+  - i2c
+  - i3c
+  - spi
+  - dma
+  - watchdog
+  - flash
+  - edac
+  - can
+  - dac
+  - rtc
+  - crc
+vendor: nxp

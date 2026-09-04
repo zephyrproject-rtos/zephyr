@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: frdm_mcxa287
+  full_name: FRDM-MCXA287
+  vendor: nxp
+  socs:
+  - name: mcxa287
+    variants:
+    - name: ns

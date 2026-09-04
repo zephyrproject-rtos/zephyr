@@ -1047,7 +1047,7 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 	defined(CONFIG_SOC_FAMILY_MCXN) || defined(CONFIG_SOC_MIMXRT798S_CM33_CPU0) ||             \
 	defined(CONFIG_SOC_MIMXRT798S_CM33_CPU1)
 		*rate = CLOCK_GetWdtClkFreq(0);
-#elif defined(CONFIG_SOC_MCXA577)
+#elif defined(CONFIG_SOC_SERIES_MCXAXX7)
 		*rate = CLOCK_GetWwdt0ClkFreq();
 #elif defined(CONFIG_SOC_FAMILY_MCXA) || defined(CONFIG_SOC_FAMILY_MCXL)
 		*rate = CLOCK_GetWwdtClkFreq();
@@ -1062,7 +1062,7 @@ static int mcux_lpc_syscon_clock_control_get_subsys_rate(const struct device *de
 	defined(CONFIG_SOC_FAMILY_MCXN) || defined(CONFIG_SOC_MIMXRT798S_CM33_CPU0) ||             \
 	defined(CONFIG_SOC_MIMXRT798S_CM33_CPU1)
 		*rate = CLOCK_GetWdtClkFreq(1);
-#elif defined(CONFIG_SOC_MCXA577)
+#elif defined(CONFIG_SOC_SERIES_MCXAXX7)
 		*rate = CLOCK_GetWwdt1ClkFreq();
 #else
 		*rate = 0;
