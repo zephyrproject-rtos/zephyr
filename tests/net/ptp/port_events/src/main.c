@@ -1088,6 +1088,45 @@ ZTEST(ptp_port_events, test_event_gen_sync_without_rx_timestamp_is_dropped)
 	stop_port_timers(&port);
 }
 
+static int8_t sync_interval_result(int8_t log_msg_interval)
+{
+	struct ptp_port port;
+
+	init_port(&port, PTP_PS_TIME_RECEIVER);
+	init_rx_msg(PTP_MSG_SYNC, 0x62);
+	scripted_rx_msg.header.sequence_id = 13;
+	scripted_rx_msg.header.log_msg_interval = log_msg_interval;
+	scripted_rx_msg.rx_timestamp_valid = false;
+	fake_parent_ds.port_id = scripted_rx_msg.header.src_port_id;
+
+	zassert_equal(ptp_port_event_gen(&port, PTP_SOCKET_EVENT), PTP_EVT_NONE,
+		      "Sync should not change port event state");
+
+	stop_port_timers(&port);
+
+	return port.port_ds.log_sync_interval;
+}
+
+ZTEST(ptp_port_events, test_event_gen_sync_updates_interval)
+{
+	zassert_equal(sync_interval_result(-3), -3,
+		      "interval advertised in a Sync should be adopted");
+}
+
+ZTEST(ptp_port_events, test_event_gen_sync_ignores_not_applicable_interval)
+{
+	zassert_equal(sync_interval_result(0x7F), 0,
+		      "0x7F marks the interval as not applicable and must not be adopted");
+}
+
+ZTEST(ptp_port_events, test_event_gen_sync_ignores_bogus_interval)
+{
+	zassert_equal(sync_interval_result(23), 0,
+		      "out of range sync interval must be ignored");
+	zassert_equal(sync_interval_result(-11), 0,
+		      "out of range sync interval must be ignored");
+}
+
 ZTEST(ptp_port_events, test_event_gen_follow_up_first_bad_sync_clears_pair)
 {
 	struct ptp_port port;
