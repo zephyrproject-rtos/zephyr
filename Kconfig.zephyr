@@ -552,10 +552,10 @@ config COMPILER_WARNINGS_AS_ERRORS
 config DEPRECATION_TEST
 	bool "Indicate test for deprecated feature"
 	help
-	  This option is selected by tests which check functionality of
-	  deprecated features. It ensures that COMPILER_WARNINGS_AS_ERRORS
-	  is not selected as that would generate errors when the deprecated
-	  features are used.
+	  This option is selected by tests which check functionality of deprecated features. It
+	  prevents usage of deprecated features from appearing as errors and is intended solely
+	  for use in tests which ensure deprecated features do not break, until their removal.
+	  It does not prevent other warnings or errors from being emitted.
 
 config COMPILER_SAVE_TEMPS
 	bool "Save temporary object files"
