@@ -1,0 +1,67 @@
+# Copyright (c) 2026 KylinSoft Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+title: Rockchip RK3588 GMAC
+
+description: |
+  Rockchip RK3588 Gigabit Ethernet MAC based on Synopsys DesignWare MAC.
+  Aligns with the Linux rockchip-dwmac binding for RK3588.
+
+compatible: "rockchip,rk3588-gmac"
+
+include:
+  - name: snps,dwmac.yaml
+  - name: reset-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+    type: phandle-array
+    description: |
+      CRU clock phandles. See include/zephyr/dt-bindings/clock/rk3588-cru.h
+      for clock IDs. Linux uses CLK_GMAC_125M, CLK_GMAC_50M, PCLK_GMACn,
+      ACLK_GMACn, and CLK_GMACn_PTP_REF.
+
+  clock-names:
+    type: string-array
+    description: |
+      Names for clocks listed in the clocks property. Linux uses
+      "stmmaceth", "clk_mac_ref", "pclk_mac", "aclk_mac", and "ptp_ref".
+
+  resets:
+    required: true
+
+  rockchip,grf:
+    type: phandle
+    required: true
+    description: |
+      Phandle to the system GRF syscon, which holds the RGMII clock delay
+      configuration.
+
+  rockchip,php-grf:
+    type: phandle
+    required: true
+    description: |
+      Phandle to the PHP GRF syscon, which holds the RGMII interface select
+      and the transmit clock divider.
+
+  tx-delay:
+    type: int
+    default: 0x30
+    description: TX RGMII delay value programmed in sys-GRF (0-0x7f).
+
+  rx-delay:
+    type: int
+    default: 0
+    description: |
+      RX RGMII delay value. When zero, RX clock delay is disabled in sys-GRF.
+
+child-binding:
+  description: |
+    MDIO bus and other Synopsys DWMAC child nodes such as PTP clock.
