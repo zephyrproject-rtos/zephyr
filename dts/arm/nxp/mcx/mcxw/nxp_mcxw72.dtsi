@@ -6,6 +6,9 @@
 
 #include "nxp_mcxw7x_common.dtsi"
 
+/* TSTMR is removed from MCXW72 due to SIRC clock source instability. */
+/delete-node/ &tstmr0;
+
 &fast_peripheral1 {
 	smu2: smu2@1c0000 {
 		ranges = <0x0 0x1c0000 DT_SIZE_K(80)>;
