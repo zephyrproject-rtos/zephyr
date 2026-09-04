@@ -8,8 +8,6 @@ common:
     - trusted-firmware-m
     - mcuboot
   filter: CONFIG_TFM_PARTITION_FIRMWARE_UPDATE and CONFIG_TFM_BL2
-  integration_platforms:
-    - mps2/an521/cpu0/ns
   harness: console
   harness_config:
     type: multi_line
@@ -19,4 +17,30 @@ common:
       - "Swapped application booted on .*"
       - "FWU completed successfully"
 tests:
-  sample.tfm.fwu: {}
+  sample.tfm.fwu:
+    integration_platforms:
+      - mps2/an521/cpu0/ns
+    extra_args:
+      - SB_CONFIG_SAMPLE_TFM_MCUBOOT_ENCRYPTION_NONE=y
+  sample.tfm.fwu.enc.rsa2048.aes128:
+    platform_exclude:
+      # RNG is required for RSA-OAEP encryption
+      # exclude platforms without RNG support in TF-M/BL2
+      - mps2/an521/cpu0/ns
+    integration_platforms:
+      - stm32h573i_dk/stm32h573xx/ns
+    extra_args:
+      - SB_CONFIG_SAMPLE_TFM_MCUBOOT_SIGNATURE_TYPE="RSA-2048"
+      - SB_CONFIG_SAMPLE_TFM_MCUBOOT_ENCRYPTION_RSA_OAEP=y
+      - SB_CONFIG_SAMPLE_TFM_MCUBOOT_ENCRYPTION_KEY_LEN_128=y
+  sample.tfm.fwu.enc.rsa2048.aes256:
+    platform_exclude:
+      # RNG is required for RSA-OAEP encryption
+      # exclude platforms without RNG support in TF-M/BL2
+      - mps2/an521/cpu0/ns
+    integration_platforms:
+      - stm32h573i_dk/stm32h573xx/ns
+    extra_args:
+      - SB_CONFIG_SAMPLE_TFM_MCUBOOT_SIGNATURE_TYPE="RSA-2048"
+      - SB_CONFIG_SAMPLE_TFM_MCUBOOT_ENCRYPTION_RSA_OAEP=y
+      - SB_CONFIG_SAMPLE_TFM_MCUBOOT_ENCRYPTION_KEY_LEN_256=y
