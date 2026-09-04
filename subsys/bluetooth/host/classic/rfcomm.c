@@ -51,8 +51,8 @@ LOG_MODULE_REGISTER(bt_rfcomm);
 #define RFCOMM_DISC_TIMEOUT     K_SECONDS(20)
 #define RFCOMM_IDLE_TIMEOUT     K_SECONDS(2)
 
-#define DLC_RTX(_w) CONTAINER_OF(k_work_delayable_from_work(_w), \
-				 struct bt_rfcomm_dlc, rtx_work)
+#define DLC_RTX(_w) CONTAINER_OF(k_work_delayable_from_work(_w), struct bt_rfcomm_dlc, rtx_work)
+#define DLC_RETRY(_w) CONTAINER_OF(k_work_delayable_from_work(_w), struct bt_rfcomm_dlc, retry_work)
 #define SESSION_RTX(_w) CONTAINER_OF(k_work_delayable_from_work(_w), \
 				     struct bt_rfcomm_session, rtx_work)
 
@@ -243,6 +243,7 @@ static void rfcomm_dlc_destroy(struct bt_rfcomm_dlc *dlc)
 	LOG_DBG("dlc %p", dlc);
 
 	k_work_cancel_delayable(&dlc->rtx_work);
+	k_work_cancel_delayable(&dlc->retry_work);
 	k_work_cancel(&dlc->tx_work);
 
 	dlc->state = BT_RFCOMM_STATE_IDLE;
@@ -516,6 +517,15 @@ static void rfcomm_dlc_rtx_timeout(struct k_work *work)
 	rfcomm_session_disconnect(session);
 }
 
+static void rfcomm_dlc_retry_handler(struct k_work *work)
+{
+	struct bt_rfcomm_dlc *dlc = DLC_RETRY(work);
+
+	LOG_DBG("dlc %p retry", dlc);
+
+	rfcomm_dlc_tx_trigger(dlc);
+}
+
 static void rfcomm_dlc_init(struct bt_rfcomm_dlc *dlc,
 			    struct bt_rfcomm_session *session,
 			    uint8_t dlci,
@@ -545,6 +555,7 @@ static void rfcomm_dlc_init(struct bt_rfcomm_dlc *dlc,
 	dlc->state = BT_RFCOMM_STATE_INIT;
 	dlc->role = role;
 	k_work_init_delayable(&dlc->rtx_work, rfcomm_dlc_rtx_timeout);
+	k_work_init_delayable(&dlc->retry_work, rfcomm_dlc_retry_handler);
 
 	/* Start a conn timer which includes auth as well */
 	bt_work_schedule(&dlc->rtx_work, RFCOMM_CONN_TIMEOUT);
@@ -1111,9 +1122,48 @@ static inline uint8_t rfcomm_dlc_get_available_credits(struct bt_rfcomm_dlc *dlc
 	return max_credits - inprogress_credits;
 }
 
+#define RFCOMM_RETRY_TIMEOUT 1
+
+static void rfcomm_dlc_update_fc_on(struct bt_rfcomm_dlc *dlc, bool retry)
+{
+	struct bt_rfcomm_session *session;
+	int err;
+
+	session = dlc->session;
+	if (session == NULL) {
+		return;
+	}
+
+	if (session->cfc != BT_RFCOMM_CFC_NOT_SUPPORTED) {
+		return;
+	}
+
+	if (!atomic_test_and_clear_bit(&session->flags, RFCOMM_SESSION_FLAG_FC_ON_REQ)) {
+		return;
+	}
+
+	if (atomic_test_and_set_bit(&session->flags, RFCOMM_SESSION_FLAG_FC_ON)) {
+		return;
+	}
+
+	err = rfcomm_send_fcon(session, BT_RFCOMM_MSG_CMD_CR);
+	if (err != 0) {
+		atomic_clear_bit(&session->flags, RFCOMM_SESSION_FLAG_FC_ON);
+		atomic_set_bit(&session->flags, RFCOMM_SESSION_FLAG_FC_ON_REQ);
+		LOG_ERR("Failed to send fcon command on session %p (%d)", session, err);
+	}
+
+	/* Retry. */
+	if (err == -ENOBUFS && retry) {
+		bt_work_reschedule(&dlc->retry_work, K_MSEC(RFCOMM_RETRY_TIMEOUT));
+	}
+}
+
 static void rfcomm_dlc_fc_check_and_on(struct bt_rfcomm_dlc *dlc)
 {
 	int err;
+
+	rfcomm_dlc_update_fc_on(dlc, true);
 
 	if (!atomic_test_and_clear_bit(&dlc->flags, RFCOMM_FLAG_MSC_FC_CLEAR_REQ)) {
 		return;
@@ -1128,6 +1178,11 @@ static void rfcomm_dlc_fc_check_and_on(struct bt_rfcomm_dlc *dlc)
 		atomic_clear_bit(&dlc->flags, RFCOMM_FLAG_MSC_FC_CLEARED);
 		atomic_set_bit(&dlc->flags, RFCOMM_FLAG_MSC_FC_CLEAR_REQ);
 		LOG_ERR("Failed to send MSC with FC cleared (%d)", err);
+	}
+
+	/* Retry. */
+	if (err == -ENOBUFS) {
+		bt_work_reschedule(&dlc->retry_work, K_MSEC(RFCOMM_RETRY_TIMEOUT));
 	}
 }
 
@@ -1159,6 +1214,11 @@ static void rfcomm_dlc_update_credits(struct bt_rfcomm_dlc *dlc)
 		if (err != 0) {
 			LOG_ERR("Failed to send credit (%d)", err);
 			dlc->rx_credit -= credits;
+		}
+
+		/* Retry. */
+		if (err == -ENOBUFS) {
+			bt_work_reschedule(&dlc->retry_work, K_MSEC(RFCOMM_RETRY_TIMEOUT));
 		}
 	}
 }
@@ -1257,10 +1317,8 @@ static void rfcomm_dlc_connected(struct bt_rfcomm_dlc *dlc)
 
 	if (dlc->session->cfc == BT_RFCOMM_CFC_NOT_SUPPORTED) {
 		LOG_DBG("CFC not supported %p", dlc);
-		err = rfcomm_send_fcon(dlc->session, BT_RFCOMM_MSG_CMD_CR);
-		if (err != 0) {
-			LOG_ERR("Failed to send fcon command on dlc %p (%d)", dlc, err);
-		}
+		atomic_set_bit(&dlc->session->flags, RFCOMM_SESSION_FLAG_FC_ON_REQ);
+		rfcomm_dlc_update_fc_on(dlc, false);
 		/* Use tx_credits as binary sem for MSC FC */
 		k_sem_init(&dlc->tx_credits, 0, 1);
 	}
@@ -1273,6 +1331,10 @@ static void rfcomm_dlc_connected(struct bt_rfcomm_dlc *dlc)
 
 	if (dlc->ops && dlc->ops->connected) {
 		dlc->ops->connected(dlc);
+	}
+
+	if (atomic_test_bit(&dlc->session->flags, RFCOMM_SESSION_FLAG_FC_ON_REQ)) {
+		rfcomm_dlc_tx_trigger(dlc);
 	}
 }
 
@@ -2115,7 +2177,7 @@ static struct bt_rfcomm_session *rfcomm_session_new(bt_rfcomm_role_t role)
 		k_work_init_delayable(&session->rtx_work,
 				      rfcomm_session_rtx_timeout);
 		k_sem_init(&session->fc, 0, 1);
-
+		atomic_clear(&session->flags);
 		return session;
 	}
 
