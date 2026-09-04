@@ -100,6 +100,18 @@ config SOC_MIMXRT735S_CM33_CPU1
 	select CPU_CORTEX_M_HAS_SYSTICK
 	select HAS_MCUX
 
+config SOC_MIMXRT7XX_PM_XIP_HANDOVER
+	bool
+	default y if FLASH_MCUX_XSPI_XIP
+	depends on PM
+	help
+	  Internal (not a user option): compile in the XIP suspend/resume
+	  helpers and invoke them from the low-power entry path. When entering
+	  deep sleep / DSR while executing XIP, the XSPI controller and its
+	  caches must be quiesced before the relevant power domain is removed
+	  and brought back up afterwards. Auto-enabled for XIP
+	  (FLASH_MCUX_XSPI_XIP) builds with PM.
+
 config MCUX_CORE_SUFFIX
 	default "_cm33_core0" if SOC_MIMXRT798S_CM33_CPU0 || SOC_MIMXRT758S_CM33_CPU0 || SOC_MIMXRT735S_CM33_CPU0
 	default "_cm33_core1" if SOC_MIMXRT798S_CM33_CPU1 || SOC_MIMXRT758S_CM33_CPU1 || SOC_MIMXRT735S_CM33_CPU1
