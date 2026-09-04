@@ -11,8 +11,8 @@
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
-	model = "NXP LPCXpresso54114 board";
 	compatible = "nxp,lpc54xxx", "nxp,lpc";
+	model = "NXP LPCXpresso54114 board";
 
 	aliases {
 		sw0 = &user_button_1;
@@ -106,13 +106,13 @@
 		#size-cells = <1>;
 
 		slot0_partition: partition@0 {
-			label = "image-0";
 			reg = <0x00000000 DT_SIZE_K(196)>;
+			label = "image-0";
 		};
 
 		storage_partition: partition@30000 {
-			label = "storage";
 			reg = <0x00030000 DT_SIZE_K(64)>;
+			label = "storage";
 		};
 	};
 };

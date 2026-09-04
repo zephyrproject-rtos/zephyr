@@ -30,32 +30,32 @@
 		#size-cells = <1>;
 
 		ivt_header: partition@0 {
-			label = "ivt-header";
 			reg = <0x00000000 256>;
+			label = "ivt-header";
 		};
 
 		/* pad up to the 8 KiB sector boundary at 0x2000 */
 		ivt_pad: partition@100 {
-			label = "ivt_pad";
 			reg = <0x00000100 (DT_SIZE_K(8) - 256)>;
+			label = "ivt_pad";
 		};
 
 		/* MCUboot @ 0x2000 (128 KiB here; adjust if you use 64 KiB) */
 		boot_partition: partition@2000 {
-			label = "mcuboot";
 			reg = <0x00002000 DT_SIZE_K(128)>;
+			label = "mcuboot";
 		};
 
 		/* Primary image (slot 0) */
 		slot0_partition: partition@22000 {
-			label = "image-0";
 			reg = <0x00022000 DT_SIZE_K(1920)>;
+			label = "image-0";
 		};
 
 		/* Secondary image (slot 1) — start right after slot0 ends */
 		slot1_partition: partition@202000 {
-			label = "image-1";
 			reg = <0x00202000 DT_SIZE_K(1920)>;
+			label = "image-1";
 		};
 	};
 };

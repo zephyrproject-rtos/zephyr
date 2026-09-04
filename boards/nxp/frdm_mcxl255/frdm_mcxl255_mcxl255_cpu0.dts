@@ -9,6 +9,6 @@
 #include "frdm_mcxl255_mcxl255_cpu0.dtsi"
 
 / {
-	model = "NXP FRDM_MCXL255 board";
 	compatible = "nxp,mcxl255", "nxp,mcx";
+	model = "NXP FRDM_MCXL255 board";
 };

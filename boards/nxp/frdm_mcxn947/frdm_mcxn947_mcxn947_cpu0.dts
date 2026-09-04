@@ -9,8 +9,8 @@
 #include "frdm_mcxn947_mcxn947_cpu0.dtsi"
 
 / {
-	model = "NXP FRDM_N94 board";
 	compatible = "nxp,mcxn947", "nxp,mcx";
+	model = "NXP FRDM_N94 board";
 };
 
 &sema42 {

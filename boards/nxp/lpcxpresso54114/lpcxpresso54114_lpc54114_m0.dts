@@ -10,8 +10,8 @@
 #include "lpcxpresso54114.dtsi"
 
 / {
-	model = "NXP LPCXPRESSO54114 board";
 	compatible = "nxp,lpc54xxx", "nxp,lpc";
+	model = "NXP LPCXPRESSO54114 board";
 
 	chosen {
 		zephyr,sram = &sram2;
