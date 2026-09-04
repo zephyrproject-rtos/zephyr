@@ -72,6 +72,10 @@ Build System
 
 * The ``WEST_DIR`` build system variable is no longer used.
 
+* :kconfig:option:`CONFIG_DEPRECATION_TEST` has been deprecated, this is because
+  :kconfig:option:`CONFIG_WARN_DEPRECATED` can be used instead, simply replace lines with
+  ``CONFIG_DEPRECATION_TEST=y`` with ``CONFIG_WARN_DEPRECATED=n``.
+
 Kernel
 ******
 
