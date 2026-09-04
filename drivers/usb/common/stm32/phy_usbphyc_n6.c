@@ -19,8 +19,13 @@
 
 #include "stm32_usb_common.h"
 
-/* TODO: should not be hardcoded! */
-#define USB_USBPHYC_CR_FSEL_24MHZ        USB_USBPHYC_CR_FSEL_1
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(usbphyc_n6, CONFIG_STM32_USB_COMMON_LOG_LEVEL);
+
+/* Define our own friendly names since the LL does not provide any */
+#define USBPHYC_CR_FSEL_19_2_MHZ	(0u)
+#define USBPHYC_CR_FSEL_20_MHZ		(USB_USBPHYC_CR_FSEL_0)
+#define USBPHYC_CR_FSEL_24_MHZ		(USB_USBPHYC_CR_FSEL_1)
 
 struct stm32n6_usbphyc_config {
 	USB_HS_PHYC_GlobalTypeDef *reg;
@@ -39,23 +44,58 @@ static const struct device *rcc = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
 static int stm32n6_usbphyc_enable(const struct stm32_usb_phy *phy)
 {
 	const struct stm32n6_usbphyc_config *cfg = phy->pcfg;
+	clock_control_subsys_t phy_ck;
+	uint32_t phy_ck_freq, fsel;
 	int res;
 
 	/* Configure PHY input frequency selection */
-	stm32_reg_modify_bits(&cfg->reg->USBPHYC_CR,
-			      USB_USBPHYC_CR_FSEL_Msk,
-			      USB_USBPHYC_CR_FSEL_24MHZ);
+	if (cfg->num_clocks > 1) {
+		phy_ck = (clock_control_subsys_t)&cfg->clocks[1];
+	} else {
+		phy_ck = (clock_control_subsys_t)&cfg->clocks[0];
+	}
+
+	res = clock_control_get_rate(rcc, phy_ck, &phy_ck_freq);
+	if (res != 0) {
+		LOG_ERR("Failed to get PHY clock rate: %d", res);
+		return res;
+	}
+
+	switch (phy_ck_freq) {
+	case KHZ(19200):
+		fsel = USBPHYC_CR_FSEL_19_2_MHZ;
+		break;
+	case MHZ(20):
+		fsel = USBPHYC_CR_FSEL_20_MHZ;
+		break;
+	case MHZ(24):
+		fsel = USBPHYC_CR_FSEL_24_MHZ;
+		break;
+	default:
+		LOG_ERR("Unsupported PHY clock rate: %u Hz", phy_ck_freq);
+		return -EINVAL;
+	}
+
+	LOG_DBG("PHY clock rate: %u Hz -> FSEL=0x%x", phy_ck_freq, fsel);
+	stm32_reg_modify_bits(&cfg->reg->USBPHYC_CR, USB_USBPHYC_CR_FSEL_Msk, fsel);
 
 	/* Configure PHY input mux (if provided) */
 	if (cfg->num_clocks > 1) {
 		res = clock_control_configure(rcc, (clock_control_subsys_t)&cfg->clocks[1], NULL);
 		if (res != 0) {
+			LOG_ERR("Failed to configure PHY clock mux: %d", res);
 			return res;
 		}
 	}
 
 	/* Turn on the PHY's clock */
-	return clock_control_on(rcc, (clock_control_subsys_t)&cfg->clocks[0]);
+	res = clock_control_on(rcc, (clock_control_subsys_t)&cfg->clocks[0]);
+	if (res != 0) {
+		LOG_ERR("Failed to enable PHY clock: %d", res);
+		return res;
+	}
+
+	return 0;
 }
 
 static int stm32n6_usbphyc_disable(const struct stm32_usb_phy *phy)
