@@ -241,24 +241,24 @@ const struct log_backend_api log_backend_uart_api = {
 #endif
 
 #define LBU_DEFINE(node_id, ...) \
-	static uint8_t lbu_buffer##_VA_ARGS_[CONFIG_LOG_BACKEND_UART_BUFFER_SIZE] NOCACHE_ATTR; \
-	LOG_OUTPUT_DEFINE(lbu_output##_VA_ARGS, char_out, lbu_buffer##VA_ARGS_, \
+	static uint8_t lbu_buffer##__VA_ARGS__[CONFIG_LOG_BACKEND_UART_BUFFER_SIZE] NOCACHE_ATTR; \
+	LOG_OUTPUT_DEFINE(lbu_output##__VA_ARGS__, char_out, lbu_buffer##__VA_ARGS__, \
 		CONFIG_LOG_BACKEND_UART_BUFFER_SIZE); \
 	\
-	static struct lbu_data lbu_data##_VA_ARGS_ = { \
+	static struct lbu_data lbu_data##__VA_ARGS_ = { \
 		.log_format_current = CONFIG_LOG_BACKEND_UART_OUTPUT_DEFAULT, \
 	}; \
 	\
-	static const struct lbu_cb_ctx lbu_cb_ctx##_VA_ARGS_ = { \
-		.output = &lbu_output##_VA_ARGS_, \
-		COND_CODE_0(NUM_VA_ARGS_LESS_1(, ##VA_ARGS_), (), \
+	static const struct lbu_cb_ctx lbu_cb_ctx##__VA_ARGS_ = { \
+		.output = &lbu_output##__VA_ARGS__, \
+		COND_CODE_0(NUM_VA_ARGS_LESS_1(_, ##__VA_ARGS__), (), \
 			(.uart_dev = DEVICE_DT_GET(node_id),)) \
-		.data = &lbu_data##_VA_ARGS_, \
+		.data = &lbu_data##__VA_ARGS_, \
 	}; \
 	\
-	LOG_BACKEND_DEFINE(log_backend_uart##_VA_ARGS_, log_backend_uart_api, \
+	LOG_BACKEND_DEFINE(log_backend_uart##__VA_ARGS_, log_backend_uart_api, \
 		IS_ENABLED(CONFIG_LOG_BACKEND_UART_AUTOSTART), \
-		(void *)&lbu_cb_ctx##_VA_ARGS_);
+		(void *)&lbu_cb_ctx##__VA_ARGS_);
 
 #if DT_HAS_CHOSEN(zephyr_log_uart)
 #define LBU_PHA_FN(node_id, prop, idx) LBU_DEFINE(DT_PHANDLE_BY_IDX(node_id, prop, idx), idx)
