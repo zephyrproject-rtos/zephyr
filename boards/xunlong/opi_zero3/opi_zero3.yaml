@@ -3,9 +3,10 @@
 # SPDX-License-Identifier: Apache-2.0
 
 identifier: opi_zero3
-name: Xunlong Orange Pi Zero3
+name: Xunlong Orange Pi Zero 3
 type: mcu
 arch: arm64
 toolchain:
   - zephyr
 vendor: xunlong
+ram: 1048576
