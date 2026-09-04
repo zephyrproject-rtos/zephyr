@@ -10,21 +10,21 @@
 	#size-cells = <1>;
 
 	sram0: memory@40000000 {
-		device_type = "memory";
 		compatible = "mmio-sram";
 		reg = <0x40000000 DT_SIZE_K(256)>;
+		device_type = "memory";
 	};
 
 	dram0: memory@60000000 {
-		device_type = "memory";
 		compatible = "mmio-sram";
 		reg = <0x60000000 DT_SIZE_K(13824)>;
+		device_type = "memory";
 	};
 
 	dram1: memory@60e80000 {
-		device_type = "memory";
 		compatible = "mmio-sram";
 		reg = <0x60e80000 DT_SIZE_K(2560)>;
+		device_type = "memory";
 	};
 
 	soc {
@@ -48,9 +48,9 @@
 
 		intc1: intc@10803130 {
 			compatible = "mediatek,adsp_intc";
+			reg = <0x10803130 4>;
 			interrupt-controller;
 			#interrupt-cells = <3>;
-			reg = <0x10803130 4>;
 			status-reg = <0x10803150>;
 			interrupts = <1 0 0>;
 			mask = <0x3ffffff0>;
@@ -59,9 +59,9 @@
 
 		intc23: intc@108030f4 {
 			compatible = "mediatek,adsp_intc";
+			reg = <0x108030f4 4>;
 			interrupt-controller;
 			#interrupt-cells = <3>;
-			reg = <0x108030f4 4>;
 			status-reg = <0x108030fc>;
 			interrupts = <23 0 0>;
 			mask = <0xffff>;
