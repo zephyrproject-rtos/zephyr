@@ -15,3 +15,27 @@ properties:
       RDP1 but in multi-image environment, some other image could check if
       RDP1 is enabled by comparing it to some hardcoded value. The byte has to
       be different than 0xAA and 0xCC.
+
+  st,flash-latency:
+    type: int
+    description: |
+      Flash wait-state (LATENCY) count to program directly into the flash
+      controller's access control register, bypassing the vendor VOS-only
+      LL_SetFlashLatency() helper. Optional: when absent, flash wait-states
+      are computed from VOS alone as before (unchanged behavior).
+
+      Currently only consumed on the STM32F4 series (other series ignore
+      this property if set). No build-time validation is performed against
+      HCLK or supply voltage: the board author is expected to have already
+      consulted their exact part's reference manual wait-state table for
+      the correct value given their actual HCLK and VDD. Consult that
+      table before setting this -- e.g. some parts only characterize their
+      lowest voltage bands with the flash prefetch buffer disabled (see
+      e.g. RM0090 Section 3.5.1 for STM32F405xx/407xx/415xx/417xx);
+      CONFIG_STM32_FLASH_PREFETCH is not touched by this property.
+
+      Useful for boards that run below the nominal voltage range VOS alone
+      assumes (e.g. level-shifted to match a companion SoC's logic level),
+      where the vendor helper cannot express the actual latency
+      requirement, or more generally whenever the reference manual's
+      wait-state table cannot be reduced to a VOS-only computation.
