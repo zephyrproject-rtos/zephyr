@@ -1,0 +1,10 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config MSPI_NXP_QSPI
+	bool "NXP QSPI controller driver"
+	default y
+	depends on DT_HAS_NXP_QSPI_ENABLED
+	select PINCTRL
+	help
+	  Enable MSPI driver for NXP QSPI controllers.
