@@ -56,8 +56,8 @@
 		/* Reserved memory for the second stage bootloader */
 		second_stage_bootloader: partition@0 {
 			compatible = "zephyr,mapped-partition";
-			label = "second_stage_bootloader";
 			reg = <0x00000000 0x100>;
+			label = "second_stage_bootloader";
 			read-only;
 		};
 
@@ -67,8 +67,8 @@
 		 */
 		code_partition: partition@100 {
 			compatible = "zephyr,mapped-partition";
-			label = "code-partition";
 			reg = <0x100 (DT_SIZE_M(4) - 0x100)>;
+			label = "code-partition";
 			read-only;
 		};
 	};
@@ -79,9 +79,9 @@
 };
 
 &spi0 {
-	status = "okay";
 	pinctrl-0 = <&fpga_flash_default>;
 	pinctrl-names = "default";
+	status = "okay";
 
 	fpga: fpga@0 {
 		compatible = "renesas,slg47910";
@@ -96,22 +96,22 @@
 
 &uart1 {
 	current-speed = <115200>;
-	status = "okay";
 	pinctrl-0 = <&uart1_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &i2c1 {
 	clock-frequency = <I2C_BITRATE_STANDARD>;
-	status = "okay";
 	pinctrl-0 = <&i2c1_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &adc {
-	status = "okay";
 	pinctrl-0 = <&adc_default>;
 	pinctrl-names = "default";
+	status = "okay";
 };
 
 &timer {
