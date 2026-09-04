@@ -464,6 +464,12 @@ New APIs and options
   * :c:macro:`DT_IRQN_BY_NAME`
   * :c:macro:`DT_INST_IRQN_BY_NAME`
 
+* GPIO
+
+  * Added Fast GPIO API extension (:kconfig:option:`CONFIG_GPIO_FAST`) for
+    sub-microsecond GPIO operations. Vendor implementation for SAM0., See
+    :ref:`gpio_fast_api`. (:github:`110787`)
+
 * Haptics
 
   * :c:enumerator:`haptics_monitor`
