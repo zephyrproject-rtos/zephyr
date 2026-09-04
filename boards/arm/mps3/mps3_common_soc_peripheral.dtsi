@@ -53,18 +53,18 @@ eth0: eth@1400000 {
 
 i2c_touch: i2c@9200000 {
 	compatible = "arm,versatile-i2c";
+	reg = <0x9200000 0x1000>;
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	#address-cells = <1>;
 	#size-cells = <0>;
-	reg = <0x9200000 0x1000>;
 };
 
 i2c_audio_conf: i2c@9201000 {
 	compatible = "arm,versatile-i2c";
+	reg = <0x9201000 0x1000>;
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	#address-cells = <1>;
 	#size-cells = <0>;
-	reg = <0x9201000 0x1000>;
 };
 
 spi_adc: spi@9202000 {
@@ -103,30 +103,30 @@ spi_shield1: spi@9204000 {
 
 i2c_shield0: i2c@9205000 {
 	compatible = "arm,versatile-i2c";
+	reg = <0x9205000 0x1000>;
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	#address-cells = <1>;
 	#size-cells = <0>;
-	reg = <0x9205000 0x1000>;
 	pinctrl-0 = <&sbcon2_default>;
 	pinctrl-names = "default";
 };
 
 i2c_shield1: i2c@9206000 {
 	compatible = "arm,versatile-i2c";
+	reg = <0x9206000 0x1000>;
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	#address-cells = <1>;
 	#size-cells = <0>;
-	reg = <0x9206000 0x1000>;
 	pinctrl-0 = <&sbcon3_default>;
 	pinctrl-names = "default";
 };
 
 i2c_ddr4_eeprom: i2c@9208000 {
 	compatible = "arm,versatile-i2c";
+	reg = <0x9208000 0x1000>;
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	#address-cells = <1>;
 	#size-cells = <0>;
-	reg = <0x9208000 0x1000>;
 };
 
 gpio_led0: mps3_fpgaio@9302000 {
@@ -208,12 +208,12 @@ uart4: uart@9307000 {
 
 uart5: uart@9308000 {
 	compatible = "arm,cmsdk-uart";
-	status = "disabled";
 	reg = <0x9308000 0x1000>;
 	interrupt-names = "tx", "rx";
 	interrupts = <126 3 125 3>;
 	clocks = <&sysclk>;
 	current-speed = <115200>;
+	status = "disabled";
 };
 
 pinctrl: pinctrl {

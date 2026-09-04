@@ -21,9 +21,9 @@
 			#size-cells = <1>;
 
 			partitions {
+				ranges;
 				#address-cells = <1>;
 				#size-cells = <1>;
-				ranges;
 
 				/* This code memory region must match what the TF-M
 				 * project has defined for that board - the multi image

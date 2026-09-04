@@ -28,9 +28,9 @@
 		#size-cells = <0>;
 
 		cpu@0 {
-			device_type = "cpu";
 			compatible = "arm,cortex-m33";
 			reg = <0>;
+			device_type = "cpu";
 			#address-cells = <1>;
 			#size-cells = <1>;
 
@@ -52,9 +52,9 @@
 		#size-cells = <1>;
 
 		partitions {
+			ranges;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges;
 
 			/* Please see the memory layout in:
 			 * https://git.trustedfirmware.org/plugins/gitiles/TF-M/trusted-firmware-m.git/+/refs/heads/main/platform/ext/target/arm/musca_b1/partition/flash_layout.h
@@ -84,9 +84,9 @@
 
 	soc {
 		peripheral@40000000 {
+			ranges = <0x0 0x40000000 0x10000000>;
 			#address-cells = <1>;
 			#size-cells = <1>;
-			ranges = <0x0 0x40000000 0x10000000>;
 
 #include "v2m_musca_b1-common.dtsi"
 		};

@@ -130,36 +130,36 @@ uart4: uart@204000 {
 
 i2c_touch: i2c@207000 {
 	compatible = "arm,versatile-i2c";
+	reg = <0x207000 0x1000>;
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	#address-cells = <1>;
 	#size-cells = <0>;
-	reg = <0x207000 0x1000>;
 };
 
 i2c_audio_conf: i2c@208000 {
 	compatible = "arm,versatile-i2c";
+	reg = <0x208000 0x1000>;
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	#address-cells = <1>;
 	#size-cells = <0>;
-	reg = <0x208000 0x1000>;
 };
 
 i2c_shield0: i2c@20c000 {
 	compatible = "arm,versatile-i2c";
+	reg = <0x20c000 0x1000>;
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	#address-cells = <1>;
 	#size-cells = <0>;
-	reg = <0x20c000 0x1000>;
 	pinctrl-0 = <&sbcon0_default>;
 	pinctrl-names = "default";
 };
 
 i2c_shield1: i2c@20d000 {
 	compatible = "arm,versatile-i2c";
+	reg = <0x20d000 0x1000>;
 	clock-frequency = <I2C_BITRATE_STANDARD>;
 	#address-cells = <1>;
 	#size-cells = <0>;
-	reg = <0x20d000 0x1000>;
 	pinctrl-0 = <&sbcon1_default>;
 	pinctrl-names = "default";
 };
