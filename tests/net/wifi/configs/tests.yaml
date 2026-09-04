@@ -14,6 +14,10 @@ tests:
   net.wifi.build.crypto_none:
     extra_configs:
       - CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE=y
+  net.wifi.build.wep:
+    extra_configs:
+      - CONFIG_WIFI_NM_WPA_SUPPLICANT_WEP=y
+      - CONFIG_WARN_DEPRECATED=n
   net.wifi.build.crypto_psa:
     extra_configs:
       - CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ALT=y
