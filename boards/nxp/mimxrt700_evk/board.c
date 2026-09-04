@@ -11,6 +11,7 @@
 #endif
 #include <soc.h>
 #include <fsl_glikey.h>
+#include <sram_banks.h>
 
 /*!< System oscillator settling time in us */
 #define SYSOSC_SETTLING_US 220U
@@ -653,9 +654,19 @@ static void second_core_boot(void)
 	/* Get the boot address for the second core */
 	uint32_t boot_address = (uint32_t)(DT_REG_ADDR(DT_CHOSEN(zephyr_code_cpu1_partition)));
 
-	/* Power up SRAM */
-	PMC0->PDRUNCFG2 &= ~0x3FFC0000;
-	PMC0->PDRUNCFG3 &= ~0x3FFC0000;
+	/*
+	 * Power up the SRAM partitions CPU1 needs before releasing it: the RAM it
+	 * boots from and the RAM it links against. Both come from CPU0's chosen
+	 * nodes rather than node labels, so the mask follows whatever memory CPU1
+	 * is pointed at instead of hard-coding this board's current choice, and it
+	 * replaces a hand-maintained constant.
+	 */
+	uint32_t cpu1_sram_pu =
+		POWER_SRAM_MASK_FOR_NODE(DT_CHOSEN(zephyr_code_cpu1_partition)) |
+		POWER_SRAM_MASK_FOR_NODE(DT_CHOSEN(zephyr_sram_cpu1_partition));
+
+	PMC0->PDRUNCFG2 &= ~cpu1_sram_pu;
+	PMC0->PDRUNCFG3 &= ~cpu1_sram_pu;
 
 	/* Power up sense_main_clk, the bus clock of CPU1 and its private peripherals */
 	POWER_DisablePD(kPDRUNCFG_SHUT_SENSEP_MAINCLK);
