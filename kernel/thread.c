@@ -1269,6 +1269,27 @@ FUNC_NORETURN void k_thread_user_mode_enter(k_thread_entry_t entry,
 #endif /* CONFIG_USERSPACE */
 }
 
+#ifdef CONFIG_USERSPACE
+FUNC_NORETURN void z_thread_user_mode_restart(k_thread_entry_t entry, void *p1, void *p2, void *p3)
+{
+	__ASSERT((_current->base.user_options & K_USER) != 0U, "not a user thread");
+#ifdef CONFIG_THREAD_MONITOR
+	_current->entry.pEntry = entry;
+	_current->entry.parameter1 = p1;
+	_current->entry.parameter2 = p2;
+	_current->entry.parameter3 = p3;
+#endif /* CONFIG_THREAD_MONITOR */
+#ifdef CONFIG_THREAD_USERSPACE_LOCAL_DATA
+	memset(_current->userspace_local_data, 0, sizeof(struct _thread_userspace_local_data));
+#endif /* CONFIG_THREAD_USERSPACE_LOCAL_DATA */
+#ifdef CONFIG_THREAD_LOCAL_STORAGE
+	arch_tls_stack_setup(_current,
+			     (char *)(_current->stack_info.start + _current->stack_info.size));
+#endif /* CONFIG_THREAD_LOCAL_STORAGE */
+	arch_user_mode_restart(entry, p1, p2, p3);
+}
+#endif /* CONFIG_USERSPACE */
+
 #if defined(CONFIG_INIT_STACKS) && defined(CONFIG_THREAD_STACK_INFO)
 #ifdef CONFIG_STACK_GROWS_UP
 #error "Unsupported configuration for stack analysis"

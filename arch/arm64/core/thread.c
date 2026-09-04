@@ -214,6 +214,18 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 
 	CODE_UNREACHABLE;
 }
+
+FUNC_NORETURN void arch_user_mode_restart(k_thread_entry_t user_entry, void *p1, void *p2, void *p3)
+{
+	/*
+	 * A user thread in a system call: this exception is never returned
+	 * from, so the depth it added must leave with it (the eret does not
+	 * pop it), or every later exception of this thread reads one too deep.
+	 */
+	arch_irq_lock();
+	write_tpidrro_el0(read_tpidrro_el0() & ~TPIDRROEL0_EXC_DEPTH);
+	arch_user_mode_enter(user_entry, p1, p2, p3);
+}
 #endif
 
 int arch_coprocessors_disable(struct k_thread *thread)

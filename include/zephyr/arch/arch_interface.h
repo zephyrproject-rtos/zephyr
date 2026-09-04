@@ -1112,6 +1112,24 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 					void *p1, void *p2, void *p3);
 
 /**
+ * Re-enter user mode on a fresh user stack.
+ *
+ * Like arch_user_mode_enter(), for a thread that already runs in user mode
+ * and is executing a system call: the user stack pointer is reset to its
+ * initial value and execution transfers to @a user_entry in user mode. The
+ * privileged stack and any one-time adjustments made on the first entry are
+ * left as they are. The default implementation calls arch_user_mode_enter(),
+ * which is correct where that function makes no such adjustments.
+ *
+ * @param user_entry Entry point to start executing as a user thread
+ * @param p1 1st parameter to user thread
+ * @param p2 2nd parameter to user thread
+ * @param p3 3rd parameter to user thread
+ */
+FUNC_NORETURN void arch_user_mode_restart(k_thread_entry_t user_entry,
+					  void *p1, void *p2, void *p3);
+
+/**
  * @brief Induce a kernel oops that appears to come from a specific location
  *
  * Normally, k_oops() generates an exception that appears to come from the

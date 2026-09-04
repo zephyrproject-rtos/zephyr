@@ -157,31 +157,13 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
  * The conversion is one way, and threads which transition to user mode do
  * not transition back later, unless they are doing system calls.
  */
-FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
-					void *p1, void *p2, void *p3)
+/* the mode switch shared by the first entry and a restart */
+static FUNC_NORETURN void riscv_user_mode_enter(k_thread_entry_t user_entry, void *p1,
+						void *p2, void *p3,
+						unsigned long top_of_priv_stack)
 {
-	unsigned long top_of_user_stack, top_of_priv_stack;
+	unsigned long top_of_user_stack;
 	unsigned long status;
-
-	/* Set up privileged stack */
-#ifdef CONFIG_GEN_PRIV_STACKS
-	_current->arch.priv_stack_start =
-			(unsigned long)z_priv_stack_find(_current->stack_obj);
-	/* remove the stack guard from the main stack */
-	_current->stack_info.start -= K_THREAD_STACK_RESERVED;
-	_current->stack_info.size += K_THREAD_STACK_RESERVED;
-#else
-	_current->arch.priv_stack_start = (unsigned long)_current->stack_obj;
-#endif /* CONFIG_GEN_PRIV_STACKS */
-	top_of_priv_stack = Z_STACK_PTR_ALIGN(_current->arch.priv_stack_start +
-					      K_KERNEL_STACK_RESERVED +
-					      CONFIG_PRIVILEGED_STACK_SIZE);
-
-#ifdef CONFIG_INIT_STACKS
-	/* Initialize the privileged stack, leaving its guard area untouched */
-	(void)memset((void *)(_current->arch.priv_stack_start + K_KERNEL_STACK_RESERVED), 0xaa,
-		     top_of_priv_stack - _current->arch.priv_stack_start - K_KERNEL_STACK_RESERVED);
-#endif /* CONFIG_INIT_STACKS */
 
 	top_of_user_stack = Z_STACK_PTR_ALIGN(
 				_current->stack_info.start +
@@ -271,6 +253,44 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
 #endif /* CONFIG_RISCV_MMU */
 
 	CODE_UNREACHABLE;
+}
+
+FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry,
+					void *p1, void *p2, void *p3)
+{
+	unsigned long top_of_priv_stack;
+
+	/* Set up privileged stack */
+#ifdef CONFIG_GEN_PRIV_STACKS
+	_current->arch.priv_stack_start =
+			(unsigned long)z_priv_stack_find(_current->stack_obj);
+	/* remove the stack guard from the main stack */
+	_current->stack_info.start -= K_THREAD_STACK_RESERVED;
+	_current->stack_info.size += K_THREAD_STACK_RESERVED;
+#else
+	_current->arch.priv_stack_start = (unsigned long)_current->stack_obj;
+#endif /* CONFIG_GEN_PRIV_STACKS */
+	top_of_priv_stack = Z_STACK_PTR_ALIGN(_current->arch.priv_stack_start +
+					      K_KERNEL_STACK_RESERVED +
+					      CONFIG_PRIVILEGED_STACK_SIZE);
+
+#ifdef CONFIG_INIT_STACKS
+	/* Initialize the privileged stack, leaving its guard area untouched */
+	(void)memset((void *)(_current->arch.priv_stack_start + K_KERNEL_STACK_RESERVED), 0xaa,
+		     top_of_priv_stack - _current->arch.priv_stack_start - K_KERNEL_STACK_RESERVED);
+#endif /* CONFIG_INIT_STACKS */
+
+	riscv_user_mode_enter(user_entry, p1, p2, p3, top_of_priv_stack);
+}
+
+FUNC_NORETURN void arch_user_mode_restart(k_thread_entry_t user_entry, void *p1, void *p2, void *p3)
+{
+	/* a user thread in a system call: the privileged stack was set up on the first entry */
+	unsigned long top_of_priv_stack = Z_STACK_PTR_ALIGN(_current->arch.priv_stack_start +
+							    K_KERNEL_STACK_RESERVED +
+							    CONFIG_PRIVILEGED_STACK_SIZE);
+
+	riscv_user_mode_enter(user_entry, p1, p2, p3, top_of_priv_stack);
 }
 
 int arch_thread_priv_stack_space_get(const struct k_thread *thread, size_t *stack_size,

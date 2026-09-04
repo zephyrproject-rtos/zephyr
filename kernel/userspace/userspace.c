@@ -637,6 +637,12 @@ void k_object_free(void *obj)
 	z_kobj_graveyard_flush();
 }
 
+__weak FUNC_NORETURN void arch_user_mode_restart(k_thread_entry_t user_entry, void *p1, void *p2,
+						 void *p3)
+{
+	arch_user_mode_enter(user_entry, p1, p2, p3);
+}
+
 struct k_object *k_object_find(const void *obj)
 {
 	struct k_object *ret;

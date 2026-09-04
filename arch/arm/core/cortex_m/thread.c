@@ -317,6 +317,17 @@ FUNC_NORETURN void arch_user_mode_enter(k_thread_entry_t user_entry, void *p1, v
 	CODE_UNREACHABLE;
 }
 
+FUNC_NORETURN void arch_user_mode_restart(k_thread_entry_t user_entry, void *p1, void *p2, void *p3)
+{
+	/*
+	 * A user thread in a system call: the guard already moved to the
+	 * privileged stack on the first entry, and that stack is current.
+	 */
+	z_arm_userspace_enter(user_entry, p1, p2, p3, (uint32_t)_current->stack_info.start,
+			      _current->stack_info.size - _current->stack_info.delta, 1);
+	CODE_UNREACHABLE;
+}
+
 bool z_arm_thread_is_in_user_mode(void)
 {
 	uint32_t value;

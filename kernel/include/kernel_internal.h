@@ -274,6 +274,12 @@ static inline void z_process_image_drop(struct k_process *proc)
 #endif /* CONFIG_PROCESS */
 
 #ifdef CONFIG_USERSPACE
+/* restart the current user thread on a fresh user stack, from a system call */
+FUNC_NORETURN void z_thread_user_mode_restart(k_thread_entry_t entry, void *p1, void *p2,
+					      void *p3);
+#endif /* CONFIG_USERSPACE */
+
+#ifdef CONFIG_USERSPACE
 /* permission-principal index management and the reap-time sweep */
 int16_t z_process_perm_index_alloc(void);
 void z_process_perm_index_free(int16_t index);
