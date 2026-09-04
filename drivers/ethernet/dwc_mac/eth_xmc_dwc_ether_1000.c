@@ -55,6 +55,11 @@ int dwmac_bus_init(const struct device *dev)
 {
 	int ret;
 
+	/*
+	 * Hold the MAC in reset while the pins, the PHY interface mode and the
+	 * clocks are configured. The PHY interface mode must be selected while
+	 * the MAC is under reset.
+	 */
 	XMC_ETH_MAC_Disable(NULL);
 	ret = pinctrl_apply_state(eth0_pcfg, PINCTRL_STATE_DEFAULT);
 	if (ret < 0) {
