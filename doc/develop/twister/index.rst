@@ -391,7 +391,7 @@ explained in this document.
             platform_allow:
               - qemu_cortex_m3 qemu_x86
             tags:
-              bluetooth
+              - bluetooth
 
 
 A sample with tests will have the same structure with additional information
@@ -449,7 +449,9 @@ extra_args: <list of extra arguments>
     .. code-block:: yaml
 
         common:
-          tags: drivers adc
+          tags:
+           - drivers
+           - adc
         tests:
           test:
             depends_on: adc
@@ -467,7 +469,9 @@ extra_configs: <list of extra configurations>
     .. code-block:: yaml
 
         common:
-          tags: drivers adc
+          tags:
+            - drivers
+            - adc
         tests:
           test:
             depends_on: adc
@@ -481,7 +485,9 @@ extra_configs: <list of extra configurations>
     .. code-block:: yaml
 
         common:
-          tags: drivers adc
+          tags:
+            - drivers
+            - adc
         tests:
           test:
             depends_on: adc
@@ -1179,7 +1185,8 @@ The following is an example yaml file with a few harness_config options.
       sample:
         name: HTS221 Temperature and Humidity Monitor
       common:
-        tags: sensor
+        tags:
+          - sensor
         harness: console
         harness_config:
           type: multi_line
@@ -1190,7 +1197,8 @@ The following is an example yaml file with a few harness_config options.
           fixture: i2c_hts221
       tests:
         test:
-          tags: sensors
+          tags:
+            - sensors
           depends_on: i2c
 
 .. toctree::
