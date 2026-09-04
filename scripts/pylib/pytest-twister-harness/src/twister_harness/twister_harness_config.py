@@ -44,6 +44,7 @@ class DeviceConfig:
     name: str = ''
     pre_script: Path | None = None
     post_script: Path | None = None
+    pre_flash_script: Path | None = None
     post_flash_script: Path | None = None
     fixtures: list[str] = None
     extra_test_args: str = ''
@@ -151,6 +152,7 @@ class TwisterHarnessConfig:
                 flash_command=flash_command,
                 pre_script=get_path(config.option.pre_script) or get_path(dut.pre_script),
                 post_script=get_path(config.option.post_script) or get_path(dut.post_script),
+                pre_flash_script=get_path(config.option.pre_flash_script) or get_path(dut.pre_flash_script),
                 post_flash_script=get_path(config.option.post_flash_script) or get_path(dut.post_flash_script),
                 fixtures=config.option.fixtures or test_params.twister_fixtures or dut.fixtures,
                 extra_test_args=config.option.extra_test_args or test_params.extra_test_args,
