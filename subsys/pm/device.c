@@ -106,6 +106,11 @@ static int power_domain_add_or_remove(const struct device *dev,
 				      bool add)
 {
 #if defined(CONFIG_DEVICE_DEPS_DYNAMIC)
+	/*
+	 * A device bound at runtime declares no power domain in devicetree, so
+	 * its single runtime-attached domain is kept in the first (and only)
+	 * slot of its domain list.
+	 */
 	device_handle_t *rv = domain->deps;
 	device_handle_t dev_handle = -1;
 	size_t i = 0, region = 0;
@@ -146,12 +151,12 @@ static int power_domain_add_or_remove(const struct device *dev,
 		if (rv[i] == dev_handle) {
 			if (add == false) {
 				/* Remove the device from the power domain */
-				dev->pm_base->domain = NULL;
+				dev->pm_base->domains[0] = NULL;
 				rv[i] = DEVICE_HANDLE_NULL;
 				return 0;
 			}
 			/* Device is already in the power domain */
-			dev->pm_base->domain = domain;
+			dev->pm_base->domains[0] = domain;
 			return -EALREADY;
 		}
 
@@ -170,7 +175,7 @@ static int power_domain_add_or_remove(const struct device *dev,
 		}
 
 		/* Add the device to the power domain */
-		dev->pm_base->domain = domain;
+		dev->pm_base->domains[0] = domain;
 		rv[first_empty_slot] = dev_handle;
 		return 0;
 	}
@@ -357,7 +362,8 @@ bool pm_device_on_power_domain(const struct device *dev)
 	if (pm == NULL) {
 		return false;
 	}
-	return pm->domain != NULL;
+
+	return pm->domains[0] != NULL;
 #else
 	ARG_UNUSED(dev);
 	return false;
@@ -373,9 +379,18 @@ bool pm_device_is_powered(const struct device *dev)
 	/* If a device doesn't support PM or is not under a PM domain,
 	 * assume it is always powered on.
 	 */
-	return (pm == NULL) ||
-	       (pm->domain == NULL) ||
-	       (pm->domain->pm_base->state == PM_DEVICE_STATE_ACTIVE);
+	if (pm == NULL) {
+		return true;
+	}
+
+	/* The device is only powered when every domain it depends on is on. */
+	PM_DEVICE_FOREACH_DOMAIN(pm, d) {
+		if ((*d)->pm_base->state != PM_DEVICE_STATE_ACTIVE) {
+			return false;
+		}
+	}
+
+	return true;
 #else
 	ARG_UNUSED(dev);
 	return true;

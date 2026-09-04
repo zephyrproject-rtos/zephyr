@@ -1730,6 +1730,7 @@ New Samples
 * :zephyr:code-sample:`nxp_mcx_system_off`
 * :zephyr:code-sample:`nxp_smartdma_mem_to_mem`
 * :zephyr:code-sample:`pm-latency`
+* :zephyr:code-sample:`power-domain-tree`
 * :zephyr:code-sample:`pulse_io_byte_transfer`
 * :zephyr:code-sample:`qdec_multi`
 * :zephyr:code-sample:`quic-client-echo`
@@ -1798,6 +1799,13 @@ Libraries / Subsystems
     LoRaWAN 1.0.x Class A directly on top of the LoRa radio driver, without
     the Semtech LoRaMac-node dependency.  Currently supports the EU868 region.
   * :c:member:`lora_modem_config.sync_word`
+
+* Power Management
+
+  * A device can now depend on more than one power domain by listing several
+    entries in its ``power-domains`` devicetree property. All listed domains are
+    kept powered while the device is in use and released once it is suspended.
+    Previously only the first entry was acted upon.
 
 * Video
 

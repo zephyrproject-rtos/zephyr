@@ -1,0 +1,29 @@
+# Copyright (c) 2026 Rodrigo Peixoto <rodrigopex@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+sample:
+  name: Power Domain Tree
+  description: >
+    Demonstrates a device depending on more than one power domain and the
+    reference counting of a nested power domain tree.
+tests:
+  sample.pm.power_domain_tree:
+    tags: pm
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: true
+      # Each regex matches a line of the tree state print, in the order the
+      # demo produces them, tracing the cascade up and the collapse back down.
+      regex:
+        - "power domain tree demo"
+        - "pd_a1.*active"       # get dev_a: the pd_a1 branch powers up
+        - "pd_b1.*active"       # get dev_b: the second branch powers up
+        - "pd_deep.*active"     # get dev_c: pd_shared/pd_deep power up
+        - "pd_a1.*suspended"    # put dev_a: pd_a1 drops (pd_a stays up)
+        - "pd_deep.*off"        # put dev_c: the whole tree collapses
+        - "demo complete"
