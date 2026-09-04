@@ -31,12 +31,12 @@
 
 / {
 	soc {
-		uart@f0004000 {
-			interrupts = <108 1>;
-		};
-
 		gpio@f0002000 {
 			interrupts = <86 1>;
+		};
+
+		uart@f0004000 {
+			interrupts = <108 1>;
 		};
 
 		/* IRQ line in em7d_esp is different to others */

@@ -29,12 +29,12 @@
 		reg = <DT_ADDR(ICCM_ADDR) ICCM_SIZE>;
 	};
 
+	chosen {
+		zephyr,sram = &dccm0;
+	};
+
 	dccm0: dccm@DCCM_ADDR {
 		compatible = "arc,dccm";
 		reg = <DT_ADDR(DCCM_ADDR) DCCM_SIZE>;
-	};
-
-	chosen {
-		zephyr,sram = &dccm0;
 	};
 };

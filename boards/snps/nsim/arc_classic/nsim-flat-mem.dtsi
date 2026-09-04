@@ -16,12 +16,12 @@
 #endif
 
 / {
+	chosen {
+		zephyr,sram = &ddr0;
+	};
+
 	ddr0: memory@DDR_ADDR {
 		reg = <DT_ADDR(DDR_ADDR) DDR_SIZE>;
 		device_type = "memory";
-	};
-
-	chosen {
-		zephyr,sram = &ddr0;
 	};
 };
