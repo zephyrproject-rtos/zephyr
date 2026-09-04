@@ -59,7 +59,8 @@ static int handle_response(struct coap_client *client, const struct net_sockaddr
 			   net_socklen_t addrlen, const struct coap_packet *response,
 			   bool response_truncated);
 static struct coap_client_internal_request *get_request_with_mid(struct coap_client *client,
-								 uint16_t mid);
+								 uint16_t mid,
+								 const struct net_sockaddr *from);
 
 static int send_request(int sock, const void *buf, size_t len, int flags,
 			const struct net_sockaddr *dest_addr, net_socklen_t addrlen)
@@ -98,6 +99,7 @@ static int receive(int sock, void *buf, size_t max_len, int flags,
 static void reset_internal_request(struct coap_client_internal_request *request)
 {
 	*request = (struct coap_client_internal_request){
+		.last_observe_seq = -1,
 		.last_response_id = -1,
 	};
 }
@@ -220,6 +222,87 @@ static enum coap_block_size coap_client_default_block_size(void)
 	}
 
 	return COAP_BLOCK_256;
+}
+
+static bool request_is_observe_register(const struct coap_client_request *req)
+{
+	for (int i = 0; i < req->num_options; i++) {
+		if (req->options[i].code != COAP_OPTION_OBSERVE) {
+			continue;
+		}
+		return req->options[i].len == 0U ||
+		       (req->options[i].len == 1U && req->options[i].value[0] == 0U);
+	}
+
+	return false;
+}
+
+/* Uri-Host, Uri-Port and Uri-Query options change the target resource beyond
+ * what the path spells out.
+ */
+static bool request_has_uri_options(const struct coap_client_request *req)
+{
+	for (int i = 0; i < req->num_options; i++) {
+		switch (req->options[i].code) {
+		case COAP_OPTION_URI_HOST:
+		case COAP_OPTION_URI_PORT:
+		case COAP_OPTION_URI_QUERY:
+			return true;
+		default:
+			break;
+		}
+	}
+
+	return false;
+}
+
+static const char *skip_leading_slashes(const char *path)
+{
+	while (*path == '/') {
+		path++;
+	}
+
+	return path;
+}
+
+/* RFC 7641, section 3.1: a client must not register more than once for the
+ * same target resource of the same server. Only registrations whose target
+ * is fully described by the path and the destination address are compared;
+ * a request carrying Uri-Host, Uri-Port or Uri-Query options addresses a
+ * resource this comparison cannot identify and is never treated as a
+ * duplicate.
+ */
+static bool observe_registration_exists(const struct coap_client *client,
+					const struct coap_client_request *req,
+					const struct net_sockaddr *addr)
+{
+	if (request_has_uri_options(req)) {
+		return false;
+	}
+
+	for (int i = 0; i < CONFIG_COAP_CLIENT_MAX_REQUESTS; i++) {
+		const struct coap_client_internal_request *ir = &client->requests[i];
+
+		if (!ir->request_ongoing || !ir->is_observe) {
+			continue;
+		}
+		if (request_has_uri_options(&ir->coap_request)) {
+			continue;
+		}
+		if (strcmp(skip_leading_slashes(ir->coap_request.path),
+			   skip_leading_slashes(req->path)) != 0) {
+			continue;
+		}
+		if (ir->addrlen == 0U && addr == NULL) {
+			return true;
+		}
+		if (ir->addrlen != 0U && addr != NULL &&
+		    net_sockaddr_cmp((const struct net_sockaddr *)&ir->addr, addr)) {
+			return true;
+		}
+	}
+
+	return false;
 }
 
 static int coap_client_init_request(struct coap_client *client, struct coap_client_request *req,
@@ -453,6 +536,12 @@ int coap_client_req(struct coap_client *client, int sock, const struct net_socka
 	}
 
 	k_mutex_lock(&client->lock, K_FOREVER);
+
+	if (request_is_observe_register(req) && observe_registration_exists(client, req, addr)) {
+		LOG_ERR("Observe registration for the resource already ongoing");
+		ret = -EALREADY;
+		goto out;
+	}
 
 	internal_req = get_free_request(client);
 
@@ -872,6 +961,15 @@ static int handle_poll(void)
 				if (ret == -EAGAIN) {
 					continue;
 				}
+				if (ret == -EBADMSG || ret == -EILSEQ) {
+					/* RFC 7252, sections 4.2 and 4.3: a
+					 * malformed message is rejected by
+					 * silently ignoring it; it must not
+					 * tear down unrelated exchanges.
+					 */
+					LOG_WRN("Dropping malformed packet");
+					continue;
+				}
 				LOG_ERR("Error receiving response");
 				cancel_requests_with(client, -EIO);
 				continue;
@@ -939,7 +1037,12 @@ static int recv_response(struct coap_client *client, struct net_sockaddr *addr,
 
 	ret = coap_packet_parse(response, client->recv_buf, available_len, NULL, 0);
 	if (ret < 0) {
-		LOG_ERR("Invalid data received");
+		LOG_ERR("Invalid data received (%d)", ret);
+		/* Normalize parse failures, including datagrams shorter than a
+		 * CoAP header (-EINVAL), so the caller can tell a malformed
+		 * packet from a socket error.
+		 */
+		return -EBADMSG;
 	}
 
 	return ret;
@@ -989,8 +1092,31 @@ static int send_rst(int sock_fd, const struct net_sockaddr *addr, net_socklen_t 
 	return 0;
 }
 
+/* RFC 7252, sections 4.4 and 5.3.2: the source endpoint of a response,
+ * Acknowledgment or Reset must match the destination endpoint of the
+ * request. The check is skipped when either address is unknown (connected
+ * sockets) and for multicast requests, whose responses arrive from the
+ * group members' unicast addresses.
+ */
+static bool source_matches_request(const struct coap_client_internal_request *internal_req,
+				   const struct net_sockaddr *from)
+{
+	if (internal_req->addrlen == 0U || from == NULL || from->sa_family == NET_AF_UNSPEC) {
+		return true;
+	}
+
+#if defined(CONFIG_COAP_CLIENT_MULTICAST)
+	if (internal_req->is_mcast) {
+		return true;
+	}
+#endif
+
+	return net_sockaddr_cmp((const struct net_sockaddr *)&internal_req->addr, from);
+}
+
 static struct coap_client_internal_request *get_request_with_token(
-	struct coap_client *client, const struct coap_packet *resp)
+	struct coap_client *client, const struct coap_packet *resp,
+	const struct net_sockaddr *from)
 {
 
 	uint8_t response_token[COAP_TOKEN_MAX_LEN];
@@ -1008,7 +1134,8 @@ static struct coap_client_internal_request *get_request_with_token(
 				continue;
 			}
 			if (memcmp(&client->requests[i].request_token, &response_token,
-			    response_tkl) == 0) {
+			    response_tkl) == 0 &&
+			    source_matches_request(&client->requests[i], from)) {
 				return &client->requests[i];
 			}
 		}
@@ -1018,11 +1145,13 @@ static struct coap_client_internal_request *get_request_with_token(
 }
 
 static struct coap_client_internal_request *get_request_with_mid(struct coap_client *client,
-								 uint16_t mid)
+								 uint16_t mid,
+								 const struct net_sockaddr *from)
 {
 	for (int i = 0; i < CONFIG_COAP_CLIENT_MAX_REQUESTS; i++) {
 		if (client->requests[i].request_ongoing) {
-			if (client->requests[i].last_id == (int)mid) {
+			if (client->requests[i].last_id == (int)mid &&
+			    source_matches_request(&client->requests[i], from)) {
 				return &client->requests[i];
 			}
 		}
@@ -1087,7 +1216,7 @@ static int handle_response(struct coap_client *client, const struct net_sockaddr
 	const uint8_t *payload = coap_packet_get_payload(response, &payload_len);
 
 	if (response_type == COAP_TYPE_RESET) {
-		internal_req = get_request_with_mid(client, response_id);
+		internal_req = get_request_with_mid(client, response_id, addr);
 		if (!internal_req) {
 			LOG_WRN("No matching request for RESET");
 			return 0;
@@ -1100,7 +1229,7 @@ static int handle_response(struct coap_client *client, const struct net_sockaddr
 	/* Separate response coming */
 	if (payload_len == 0 && response_type == COAP_TYPE_ACK &&
 	    response_code == COAP_CODE_EMPTY) {
-		internal_req = get_request_with_mid(client, response_id);
+		internal_req = get_request_with_mid(client, response_id, addr);
 		if (internal_req == NULL) {
 			LOG_WRN("No matching request for ACK");
 			return 0;
@@ -1115,7 +1244,7 @@ static int handle_response(struct coap_client *client, const struct net_sockaddr
 		return 1;
 	}
 
-	internal_req = get_request_with_token(client, response);
+	internal_req = get_request_with_token(client, response, addr);
 	if (!internal_req) {
 		LOG_WRN("No matching request for response");
 		if (response_type != COAP_TYPE_ACK) {
@@ -1128,6 +1257,15 @@ static int handle_response(struct coap_client *client, const struct net_sockaddr
 
 			(void)send_rst(client->fd, addr, rst_addrlen, response);
 		}
+		return 0;
+	}
+
+	/* RFC 7252, section 5.3.2: for a piggybacked response, the message ID
+	 * of the Acknowledgment must match the request in addition to the
+	 * token. Separate CON/NON responses carry their own message ID.
+	 */
+	if (response_type == COAP_TYPE_ACK && response_id != (uint16_t)internal_req->last_id) {
+		LOG_WRN("Piggybacked response ID mismatch, dropping");
 		return 0;
 	}
 
@@ -1242,6 +1380,32 @@ static int handle_response(struct coap_client *client, const struct net_sockaddr
 		coap_pending_clear(&internal_req->pending);
 	}
 
+	/* RFC 7641, section 3.4: the notification sent most recently is the
+	 * freshest, regardless of arrival order. Drop a notification whose
+	 * Observe sequence number is not newer than the last accepted one,
+	 * unless more than 128 seconds passed since that one arrived. A CON
+	 * notification was already acknowledged at the message layer. Block2
+	 * continuations of an accepted notification carry no Observe option
+	 * per RFC 7959, section 2.6; one echoed there anyway must not stall
+	 * the transfer.
+	 */
+	if (internal_req->is_observe) {
+		int seq = coap_get_option_int(response, COAP_OPTION_OBSERVE);
+		int block2 = coap_get_option_int(response, COAP_OPTION_BLOCK2);
+		int64_t now = k_uptime_get();
+
+		if (seq >= 0 && (block2 < 0 || GET_BLOCK_NUM(block2) == 0)) {
+			if (internal_req->last_observe_seq >= 0 &&
+			    !coap_age_is_newer(internal_req->last_observe_seq, seq) &&
+			    (now - internal_req->last_observe_at) <= 128 * MSEC_PER_SEC) {
+				LOG_DBG("Dropping reordered observe notification");
+				return 0;
+			}
+			internal_req->last_observe_seq = seq;
+			internal_req->last_observe_at = now;
+		}
+	}
+
 #if defined(CONFIG_COAP_CLIENT_MULTICAST)
 	if (internal_req->is_mcast) {
 		/* RFC 7959 Section 2.8: Block-wise transfers are not defined for use with IP
@@ -1275,8 +1439,22 @@ static int handle_response(struct coap_client *client, const struct net_sockaddr
 		ret = coap_update_from_block(response, &internal_req->recv_blk_ctx);
 		if (ret < 0) {
 			LOG_ERR("Error updating block context");
+			goto fail;
 		}
 		coap_next_block(response, &internal_req->recv_blk_ctx);
+
+		/* RFC 7959, section 2.3: with the M bit set, the payload size
+		 * must match the block size exactly, otherwise the transfer
+		 * position desynchronizes. Truncated responses are re-requested
+		 * with a smaller block size instead.
+		 */
+		if (!last_block && !response_truncated &&
+		    payload_len !=
+			    coap_block_size_to_bytes(internal_req->recv_blk_ctx.block_size)) {
+			LOG_ERR("Payload size does not match the block size");
+			ret = -EBADMSG;
+			goto fail;
+		}
 	} else {
 		internal_req->offset = 0;
 		last_block = true;
