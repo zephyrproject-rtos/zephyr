@@ -59,7 +59,7 @@ tests:
     filter: not CONFIG_I2S_TEST_USE_GPIO_LOOPBACK
     extra_configs:
       - CONFIG_CLOCK_CONTROL_NRF=y
-      - CONFIG_DEPRECATION_TEST=y
+      - CONFIG_WARN_DEPRECATED=n
     platform_exclude:
       - nrf54h20dk/nrf54h20/cpuapp
       - mimxrt1060_evk/mimxrt1062/qspi
@@ -76,7 +76,7 @@ tests:
     filter: CONFIG_I2S_TEST_USE_GPIO_LOOPBACK
     extra_configs:
       - CONFIG_CLOCK_CONTROL_NRF=y
-      - CONFIG_DEPRECATION_TEST=y
+      - CONFIG_WARN_DEPRECATED=n
     platform_exclude:
       - nrf54h20dk/nrf54h20/cpuapp
     harness: ztest
@@ -93,7 +93,7 @@ tests:
     filter: CONFIG_I2S_TEST_USE_GPIO_LOOPBACK
     extra_configs:
       - CONFIG_CLOCK_CONTROL_NRF=y
-      - CONFIG_DEPRECATION_TEST=y
+      - CONFIG_WARN_DEPRECATED=n
     harness: ztest
     harness_config:
       fixture: gpio_loopback
