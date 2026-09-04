@@ -2977,9 +2977,12 @@ int z_impl_zsock_getsockopt(int sock, int level, int optname,
 int z_vrfy_zsock_getsockopt(int sock, int level, int optname,
 			    void *optval, socklen_t *optlen)
 {
-	socklen_t kernel_optlen = *(socklen_t *)optlen;
+	socklen_t kernel_optlen;
 	void *kernel_optval;
 	int ret;
+
+	K_OOPS(k_usermode_from_copy(&kernel_optlen, optlen,
+		sizeof(socklen_t)));
 
 	if (K_SYSCALL_MEMORY_WRITE(optval, kernel_optlen)) {
 		errno = -EPERM;
