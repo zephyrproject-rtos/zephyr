@@ -112,15 +112,15 @@
 	sda-gpios = <&gpiob 9 GPIO_ACTIVE_HIGH>;
 	status = "okay";
 
-	bme280@76 {
-		compatible = "bosch,bme280";
-		reg = <0x76>;
-	};
-
 	sht4x@44 {
 		compatible = "sensirion,sht4x";
 		reg = <0x44>;
 		repeatability = <2>;
+	};
+
+	bme280@76 {
+		compatible = "bosch,bme280";
+		reg = <0x76>;
 	};
 };
 
