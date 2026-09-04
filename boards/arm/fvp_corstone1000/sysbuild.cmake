@@ -48,76 +48,109 @@ if(NOT SGDISK)
     "'dnf install gdisk') and re-run cmake.")
 endif()
 
-# Get west topdir for calculating module paths
-# This allows us to find modules even if module.yml is missing
-execute_process(
-  COMMAND west topdir
-  OUTPUT_VARIABLE west_topdir
-  OUTPUT_STRIP_TRAILING_WHITESPACE
-  RESULT_VARIABLE west_result
-)
+# Resolve the dependency module locations from the Zephyr module system.
+# These ZEPHYR_<MODULE>_MODULE_DIR variables are populated for every module
+# in the build, regardless of whether the workspace is maintained with west
+# or the modules are provided via ZEPHYR_MODULES/EXTRA_ZEPHYR_MODULES.  TF-M
+# and its crypto/CMSIS dependencies are passed as explicit paths below so the
+# TF-M build never falls back to fetching them from the network.
+foreach(dep
+    TRUSTED_FIRMWARE_M TRUSTED_FIRMWARE_A TF_PSA_CRYPTO TF_PSA_CRYPTO_DRIVERS
+    CMSIS_6)
+  if(NOT DEFINED ZEPHYR_${dep}_MODULE_DIR)
+    string(TOLOWER "${dep}" dep_lower)
+    message(FATAL_ERROR
+      "Corstone-1000 requires the ${dep_lower} module, but "
+      "ZEPHYR_${dep}_MODULE_DIR is not set.  Ensure the module is part of "
+      "your manifest (west) or provided via ZEPHYR_MODULES / "
+      "EXTRA_ZEPHYR_MODULES.")
+  endif()
+endforeach()
 
-if(NOT west_result EQUAL 0)
-  # Fallback: assume standard west workspace layout
-  get_filename_component(west_topdir "${ZEPHYR_BASE}/.." ABSOLUTE)
-endif()
-
-# Get module paths
-# Try module variables first, fall back to west workspace layout
-if(DEFINED ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR AND EXISTS "${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR}")
-  set(tfm_source_dir ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR})
-else()
-  set(tfm_source_dir ${west_topdir}/modules/tee/tf-m/trusted-firmware-m)
-endif()
-
-if(DEFINED ZEPHYR_TRUSTED_FIRMWARE_A_MODULE_DIR AND EXISTS "${ZEPHYR_TRUSTED_FIRMWARE_A_MODULE_DIR}")
-  set(tfa_source_dir ${ZEPHYR_TRUSTED_FIRMWARE_A_MODULE_DIR})
-else()
-  set(tfa_source_dir ${west_topdir}/modules/tee/tf-a/trusted-firmware-a)
-endif()
-
-# mbedtls module path (used as MBEDCRYPTO_PATH for TF-M)
-# TF-M requires mbedtls-3.6 because mbedtls 4.x split the crypto code into a
-# separate tf-psa-crypto module that TF-M does not support yet.
-# See west.yml: "Required for TF-M build until we bump it to v2.3"
-if(DEFINED ZEPHYR_MBEDTLS_3_6_MODULE_DIR AND EXISTS "${ZEPHYR_MBEDTLS_3_6_MODULE_DIR}")
-  set(mbedtls_module_dir ${ZEPHYR_MBEDTLS_3_6_MODULE_DIR})
-else()
-  set(mbedtls_module_dir ${west_topdir}/modules/crypto/mbedtls-3.6)
-endif()
-
-# CMSIS_6 module path
-if(DEFINED ZEPHYR_CMSIS_6_MODULE_DIR AND EXISTS "${ZEPHYR_CMSIS_6_MODULE_DIR}")
-  set(cmsis_6_module_dir ${ZEPHYR_CMSIS_6_MODULE_DIR})
-else()
-  set(cmsis_6_module_dir ${west_topdir}/modules/hal/cmsis_6)
-endif()
-
-# Verify the source directories exist
-if(NOT EXISTS "${tfm_source_dir}")
-  message(FATAL_ERROR "TF-M source directory not found: ${tfm_source_dir}\n"
-    "Run 'west update' to fetch the module.")
-endif()
-
-if(NOT EXISTS "${tfa_source_dir}")
-  message(FATAL_ERROR "TF-A source directory not found: ${tfa_source_dir}\n"
-    "Run 'west update' to fetch the module.")
-endif()
-
-if(NOT EXISTS "${mbedtls_module_dir}")
-  message(FATAL_ERROR "mbedtls module directory not found: ${mbedtls_module_dir}\n"
-    "Run 'west update' to fetch the module.")
-endif()
-
-if(NOT EXISTS "${cmsis_6_module_dir}")
-  message(FATAL_ERROR "CMSIS_6 module directory not found: ${cmsis_6_module_dir}\n"
-    "Run 'west update' to fetch the module.")
-endif()
+set(tfm_source_dir ${ZEPHYR_TRUSTED_FIRMWARE_M_MODULE_DIR})
+set(tfa_source_dir ${ZEPHYR_TRUSTED_FIRMWARE_A_MODULE_DIR})
+set(tf_psa_crypto_dir ${ZEPHYR_TF_PSA_CRYPTO_MODULE_DIR})
+set(tf_psa_crypto_drivers_dir ${ZEPHYR_TF_PSA_CRYPTO_DRIVERS_MODULE_DIR})
+set(cmsis_6_module_dir ${ZEPHYR_CMSIS_6_MODULE_DIR})
 
 message(STATUS "Corstone-1000: TF-M source: ${tfm_source_dir}")
 message(STATUS "Corstone-1000: TF-A source: ${tfa_source_dir}")
-message(STATUS "Corstone-1000: mbedtls: ${mbedtls_module_dir}")
+message(STATUS "Corstone-1000: TF-PSA-Crypto: ${tf_psa_crypto_dir}")
+message(STATUS "Corstone-1000: PSA crypto drivers: ${tf_psa_crypto_drivers_dir}")
 message(STATUS "Corstone-1000: CMSIS_6: ${cmsis_6_module_dir}")
+
+# TF-M's build runs its Python tools as console scripts, by bare name, and as
+# plain scripts that import its packages.  Both normally need TF-M's Python
+# package installed; a board build must not install anything, so provide them
+# from the build directory instead.
+#
+# pyproject.toml maps package names onto directories with different names, which
+# PYTHONPATH cannot express, so the mapping is recreated as links.  The four
+# scripts below are the ones this board's build actually calls; a fifth would
+# fail loudly with "command not found" rather than silently.
+find_package(Python3 COMPONENTS Interpreter QUIET)
+if(NOT Python3_EXECUTABLE)
+  set(Python3_EXECUTABLE python3)
+endif()
+
+set(tfm_pythonpath ${CMAKE_CURRENT_BINARY_DIR}/tfm-pythonpath)
+set(tfm_scripts_dir ${CMAKE_CURRENT_BINARY_DIR}/tfm-scripts)
+set(tfm_python_wrapper ${tfm_scripts_dir}/python3-tfm)
+
+# package name -> directory holding it, from [tool.setuptools.package-dir]
+set(tfm_packages
+  bl1        bl1/bl1_1/scripts
+  bl2        bl2/ext/mcuboot/scripts
+  tfm_tools  tools/modules
+)
+# console script -> entry point, from [project.scripts]
+set(tfm_entry_points
+  bl1_1_create_bl1_2_image          bl1.create_bl1_2_img:main
+  bl1_1_create_provisioning_bundle  bl1.create_provisioning_bundle:main
+  hex_generation                    tfm_tools.hex_generation:main
+  mcuboot_imagesign_wrapper         bl2.wrapper:main
+)
+
+file(MAKE_DIRECTORY ${tfm_pythonpath} ${tfm_scripts_dir})
+
+# The package links, plus the directories themselves: some scripts import a
+# sibling module by its bare name (wrapper.py does "import macro_parser").
+set(tfm_pythonpath_env ${tfm_pythonpath})
+while(tfm_packages)
+  list(POP_FRONT tfm_packages name subdir)
+  if(NOT EXISTS ${tfm_source_dir}/${subdir})
+    message(FATAL_ERROR "Corstone-1000: TF-M package directory '${subdir}' is missing")
+  endif()
+  file(CREATE_LINK ${tfm_source_dir}/${subdir} ${tfm_pythonpath}/${name} SYMBOLIC)
+  string(APPEND tfm_pythonpath_env ":${tfm_source_dir}/${subdir}")
+endwhile()
+
+while(tfm_entry_points)
+  list(POP_FRONT tfm_entry_points script entry)
+  string(REPLACE ":" ";" entry_parts ${entry})
+  list(GET entry_parts 0 entry_module)
+  list(GET entry_parts 1 entry_func)
+  file(WRITE ${tfm_scripts_dir}/${script}
+    "#!/bin/sh\n"
+    "# Generated for the Corstone-1000 TF-M build: do not edit.\n"
+    "PYTHONPATH=\"${tfm_pythonpath_env}$\{PYTHONPATH:+:$PYTHONPATH}\" \\\n"
+    "  exec \"${Python3_EXECUTABLE}\" -c \\\n"
+    "  \"import sys; from ${entry_module} import ${entry_func}; sys.exit(${entry_func}())\" \"$@\"\n")
+  file(CHMOD ${tfm_scripts_dir}/${script} PERMISSIONS
+    OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
+endwhile()
+
+# Interpreter wrapper, handed to TF-M as Python3_EXECUTABLE.  Some of its rules
+# run "cmake -E env PYTHONPATH=<tfm>/tools/modules python3 <script>", pointing
+# PYTHONPATH inside the tfm_tools package rather than at its parent, so their
+# "import tfm_tools.foo" would otherwise still need an installed copy.
+file(WRITE ${tfm_python_wrapper}
+  "#!/bin/sh\n"
+  "# Generated for the Corstone-1000 TF-M build: do not edit.\n"
+  "PYTHONPATH=\"${tfm_pythonpath_env}$\{PYTHONPATH:+:$PYTHONPATH}\" \\\n"
+  "  exec \"${Python3_EXECUTABLE}\" \"$@\"\n")
+file(CHMOD ${tfm_python_wrapper} PERMISSIONS
+  OWNER_READ OWNER_WRITE OWNER_EXECUTE GROUP_READ GROUP_EXECUTE WORLD_READ WORLD_EXECUTE)
 
 # Output directories
 set(tfm_binary_dir ${CMAKE_BINARY_DIR}/tfm)
@@ -157,9 +190,10 @@ else()
 endif()
 
 # TF-M CMake arguments
-# Note: We must provide MBEDCRYPTO_PATH and CMSIS_PATH because TF-M's CMakeLists.txt
-# processes bl2/ before lib/ext/mbedcrypto/, so the default "DOWNLOAD" value doesn't
-# work on initial configure. Providing paths from Zephyr modules avoids the fetch.
+# Provide TF_PSA_CRYPTO_PATH and CMSIS_PATH from the in-tree Zephyr modules.
+# These default to "DOWNLOAD" in TF-M, which would clone the dependencies from
+# the network; pointing them at the modules already present in the workspace
+# keeps the build self-contained (Zephyr does not allow build-time fetches).
 # Map Kconfig log level to the three different TF-M log level systems:
 # - TF-M BL1: LOG_LEVEL_{NONE,ERROR,WARNING,INFO,DEBUG}
 # - MCUboot:  {OFF,ERROR,WARNING,INFO,DEBUG}
@@ -198,7 +232,7 @@ set(tfm_cmake_args
   -DBL1=ON
   -DBL2=ON
   -DMCUBOOT_PATH=${ZEPHYR_MCUBOOT_MODULE_DIR}
-  -DMBEDCRYPTO_PATH=${mbedtls_module_dir}
+  -DTF_PSA_CRYPTO_PATH=${tf_psa_crypto_dir}
   -DCMSIS_PATH=${cmsis_6_module_dir}
   -DTFM_BL1_LOG_LEVEL=${tfm_log_level_str}
   -DMCUBOOT_LOG_LEVEL=${mcuboot_log_level_str}
@@ -211,7 +245,19 @@ set(tfm_cmake_args
   # Cortex-A320 variant with DSU-120T PPU power management
   -DCORSTONE1000_CORTEX_A320=TRUE
   -DCORSTONE1000_DSU_120T=TRUE
+  # Verify boot images with MCUboot's default key model (public-key hash), not
+  # the builtin-key/key-id model (which would need an out-of-tree mcuboot patch).
+  -DMCUBOOT_BUILTIN_KEY=OFF
 )
+
+# TF-M's corstone1000 platform builds the CryptoCell (cc3xx) PSA crypto driver
+# unconditionally: BL1 links it to verify boot images, so it is a hard
+# dependency rather than an optional accelerator.  TF-M would otherwise clone it
+# at configure time, which Zephyr does not allow: the resulting repository under
+# the build directory fails twister's post-build checks.  Build it from the
+# module instead.
+list(APPEND tfm_cmake_args
+  -DPSA_CRYPTO_DRIVER_PATH=${tf_psa_crypto_drivers_dir})
 
 # Multi-core support: boot all 4 host CPUs (secondaries enter holding pen)
 if("${BOARD_QUALIFIERS}" MATCHES "/smp$")
@@ -228,16 +274,34 @@ set(tfm_toolchain_wrapper ${CMAKE_CURRENT_BINARY_DIR}/toolchain_corstone1000.cma
 file(WRITE ${tfm_toolchain_wrapper}
   "include(${tfm_toolchain_file})\n"
   "string(APPEND CMAKE_C_FLAGS \" -Wno-int-conversion -Wno-implicit-function-declaration -Wno-incompatible-pointer-types\")\n"
+  "string(APPEND CMAKE_C_FLAGS \" -isystem ${tf_psa_crypto_dir}/drivers/builtin/include\")\n"
 )
 list(REMOVE_ITEM tfm_cmake_args "-DTFM_TOOLCHAIN_FILE=${tfm_toolchain_file}")
 list(APPEND tfm_cmake_args "-DTFM_TOOLCHAIN_FILE=${tfm_toolchain_wrapper}")
+
+# Use the interpreter wrapper generated above so TF-M's python helpers can
+# import tfm_tools without the package being installed.
+list(APPEND tfm_cmake_args -DPython3_EXECUTABLE=${tfm_python_wrapper})
+
+# Run the TF-M build with the console scripts on PATH and the package mapping on
+# PYTHONPATH, so its image generation works without anything being installed
+# system-wide.  PYTHONPATH is needed for the whole build, not just the scripts
+# above: TF-M also runs plain python scripts that import tfm_tools.
+set(tfm_build_pythonpath "${tfm_pythonpath_env}")
+if(DEFINED ENV{PYTHONPATH})
+  string(APPEND tfm_build_pythonpath ":$ENV{PYTHONPATH}")
+endif()
+set(tfm_env ${CMAKE_COMMAND} -E env
+  "PATH=${tfm_scripts_dir}:$ENV{PATH}"
+  "PYTHONPATH=${tfm_build_pythonpath}")
 
 ExternalProject_Add(
   tfm_secure_enclave
   SOURCE_DIR ${tfm_source_dir}
   BINARY_DIR ${tfm_binary_dir}
-  CMAKE_ARGS ${tfm_cmake_args}
-  BUILD_COMMAND ${CMAKE_COMMAND} --build . -- install
+  CONFIGURE_COMMAND ${tfm_env} ${CMAKE_COMMAND} -G ${CMAKE_GENERATOR}
+    -S ${tfm_source_dir} -B ${tfm_binary_dir} ${tfm_cmake_args}
+  BUILD_COMMAND ${tfm_env} ${CMAKE_COMMAND} --build . -- install
   INSTALL_COMMAND ""
   BUILD_ALWAYS True
   USES_TERMINAL_BUILD True
@@ -245,11 +309,28 @@ ExternalProject_Add(
 
 # Post-build: Create bl1.bin from TF-M outputs
 # bl1.bin = bl1_1.bin + bl1_provisioning_bundle.bin
-# Offset must match BL1_1_CODE_SIZE from region_defs.h (0xE800 = 59392)
+# The provisioning bundle lives at PROVISIONING_DATA_START, i.e. right after
+# BL1_1's code region (BL1_1_CODE_START is 0).  Derive the offset from
+# BL1_1_CODE_SIZE in region_defs.h rather than hardcoding it, so it stays
+# correct if TF-M changes the BL1_1 layout (it shrank from 0xE800 to 0xE748
+# between TF-M v2.2 and v2.3).
+set(c1000_region_defs
+  ${tfm_source_dir}/platform/ext/target/arm/corstone1000/partition/region_defs.h)
+file(STRINGS ${c1000_region_defs} c1000_bl1_1_code_size_line
+     REGEX "^[ \t]*#define[ \t]+BL1_1_CODE_SIZE[ \t]")
+string(REGEX MATCH "0x[0-9A-Fa-f]+" c1000_bl1_1_code_size "${c1000_bl1_1_code_size_line}")
+if(NOT c1000_bl1_1_code_size)
+  message(FATAL_ERROR
+    "Corstone-1000: could not parse BL1_1_CODE_SIZE from ${c1000_region_defs}")
+endif()
+math(EXPR c1000_prov_bundle_offset "${c1000_bl1_1_code_size}")
+message(STATUS "Corstone-1000: provisioning bundle offset in bl1.bin: "
+  "${c1000_prov_bundle_offset} (BL1_1_CODE_SIZE=${c1000_bl1_1_code_size})")
+
 add_custom_command(
   OUTPUT ${CORSTONE1000_FIRMWARE_DIR}/bl1.bin
   COMMAND ${CMAKE_COMMAND} -E copy ${tfm_binary_dir}/bin/bl1_1.bin ${CORSTONE1000_FIRMWARE_DIR}/bl1.bin
-  COMMAND dd conv=notrunc bs=1 if=${tfm_binary_dir}/bin/bl1_provisioning_bundle.bin of=${CORSTONE1000_FIRMWARE_DIR}/bl1.bin seek=59392 2>/dev/null
+  COMMAND dd conv=notrunc bs=1 if=${tfm_binary_dir}/bin/bl1_provisioning_bundle.bin of=${CORSTONE1000_FIRMWARE_DIR}/bl1.bin seek=${c1000_prov_bundle_offset} 2>/dev/null
   DEPENDS tfm_secure_enclave
   COMMENT "Creating Secure Enclave ROM image (bl1.bin)"
 )
@@ -390,14 +471,10 @@ endif()
 # =============================================================================
 # Sign TF-A BL2 with MCUboot-compatible format for TF-M verification
 # =============================================================================
-# TF-M Corstone1000 uses MCUBOOT_BUILTIN_KEY mode with EC-P256 signatures.
-# Key mapping with BUILTIN_KEY (ecdsa.h bootutil_ecdsa_init increments key_id):
-#   image_index -> key_id (in image_validate.c: key_id = image_index)
-#   bootutil_ecdsa_init: key_id++ (to avoid PSA_KEY_ID_NULL=0)
-#   So for Image 1: key_id = 1 + 1 = 2
-#   PSA looks for key_id=2 -> desc_table[1] (key_id=idx+1=2)
-#   desc_table[1] -> OTP KIND_1 (image_idx = key_id - 1 = 1)
-# Therefore Image 1 (TF-A BL2) uses KIND_1 key (root-EC-P256_1.pem).
+# TF-M Corstone1000 uses MCUboot's default key model (MCUBOOT_BUILTIN_KEY=OFF,
+# EC-P256): each image carries a public-key-hash TLV, and BL2 verifies it against
+# the ROTPK it was built with. Sign the TF-A BL2 (image 1) with the same root key
+# TF-M's BL2 embeds, root-EC-P256_1.pem.
 #
 # Parameters from TF-M Corstone1000 config:
 # - Header size: 0x1000 (4KB)
@@ -407,9 +484,9 @@ endif()
 
 set(imgtool ${ZEPHYR_MCUBOOT_MODULE_DIR}/scripts/imgtool.py)
 # The signing key ships as a static asset in the TF-M tree (bl2/ext/mcuboot/);
-# it is the pre-shared root EC key matched against the OTP KIND_1 slot when
-# verifying image 1 (TF-A BL2).  TF-M does not fetch any external mcuboot
-# submodule.
+# it is the root EC key whose public half TF-M's BL2 embeds as its ROTPK, so
+# BL2 verifies image 1 (TF-A BL2) against it.  TF-M does not fetch any external
+# mcuboot submodule.
 set(signing_key ${tfm_source_dir}/bl2/ext/mcuboot/root-EC-P256_1.pem)
 
 # TF-A BL2 slot size from flash_layout.h: SE_BL2_IMAGE_MAX_SIZE = 0x100000
@@ -436,6 +513,9 @@ add_custom_command(
     --slot-size ${tfa_slot_size}
     --load-addr ${tfa_load_addr}
     --boot-record NSPE
+    # Default key model: embed the public-key hash TLV; BL2 verifies it against
+    # the ROTPK it was built with (root-EC-P256_1.pem). No builtin key-id.
+    --public-key-format hash
     ${tfa_output_dir}/bl2.bin
     ${CORSTONE1000_FIRMWARE_DIR}/bl2_signed.bin
   DEPENDS tfa_host
