@@ -79,21 +79,20 @@ static void async_callback(const struct device *dev, struct uart_event *evt, voi
 		uart_async_rx_on_buf_rel(&sh_uart->async_rx, evt->data.rx_buf.buf);
 		break;
 	case  UART_RX_DISABLED:
-	{
-		uint8_t *buf = uart_async_rx_buf_req(&sh_uart->async_rx);
-		size_t len;
-		int err;
+		if (sh_uart->shell_enabled) {
+			uint8_t *buf = uart_async_rx_buf_req(&sh_uart->async_rx);
+			size_t len;
+			int err;
 
-		sh_uart->rx_enabled = false;
-		if (buf) {
-			len = uart_async_rx_get_buf_len(&sh_uart->async_rx);
-			err = rx_enable(dev, sh_uart, buf, len);
-			(void)err;
-			__ASSERT_NO_MSG(err == 0);
+			sh_uart->rx_enabled = false;
+			if (buf) {
+				len = uart_async_rx_get_buf_len(&sh_uart->async_rx);
+				err = rx_enable(dev, sh_uart, buf, len);
+				(void)err;
+				__ASSERT_NO_MSG(err == 0);
+			}
 		}
-
 		break;
-	}
 	default:
 		break;
 	};
@@ -272,18 +271,19 @@ static void async_init(struct shell_uart_async *sh_uart)
 	k_sem_init(&sh_uart->tx_sem, 0, 1);
 
 	err = uart_async_rx_init(async_rx, &sh_uart->async_rx_config);
-	(void)err;
 	__ASSERT_NO_MSG(err == 0);
 
 	uint8_t *buf = uart_async_rx_buf_req(async_rx);
 
 	err = uart_callback_set(dev, async_callback, (void *)sh_uart);
-	(void)err;
 	__ASSERT_NO_MSG(err == 0);
 
 	err = rx_enable(dev, sh_uart, buf, uart_async_rx_get_buf_len(async_rx));
-	(void)err;
 	__ASSERT_NO_MSG(err == 0);
+
+	if (err == 0) {
+		sh_uart->shell_enabled = true;
+	}
 }
 
 static void polling_rx_timeout_handler(struct k_timer *timer)
@@ -355,6 +355,9 @@ static void async_uninit(struct shell_uart_async *sh_uart)
 {
 	const struct device *dev = sh_uart->common.dev;
 
+	sh_uart->shell_enabled = false;
+
+	(void)uart_tx_abort(dev);
 	(void)uart_rx_disable(dev);
 }
 
@@ -511,25 +514,27 @@ static int async_read(struct shell_uart_async *sh_uart,
 	buf_available = uart_async_rx_data_consume(async_rx, blen);
 #endif
 
-	/* Return if no free buffers available or UART is not waiting for new RX buffer. */
-	if (!buf_available || ((sh_uart->pending_rx_req == 0) && sh_uart->rx_enabled)) {
+	if (buf_available == false) {
 		return 0;
 	}
 
-	buf = uart_async_rx_buf_req(async_rx);
-	blen = uart_async_rx_get_buf_len(async_rx);
+	bool rx_en = false;
+	k_spinlock_key_t key = k_spin_lock(&sh_uart->lock);
 
-	__ASSERT_NO_MSG(buf != NULL);
-
-	if (!sh_uart->rx_enabled) {
-		/* If it is too late and RX is disabled then re-enable it. */
-		return rx_enable(sh_uart->common.dev, sh_uart, buf, blen);
-	}
-
-	if (sh_uart->pending_rx_req) {
+	/* As we are in the thread context, lock interrupts to avoid being pre-empted by
+	 * the UART interrupt (for example RX disabled event).
+	 */
+	if (sh_uart->rx_enabled == false) {
+		/* If RX is disabled we can re-enable RX outside of the lock as UART
+		 * interrupt is no longer expected.
+		 */
+		rx_en = true;
+	} else if (sh_uart->pending_rx_req) {
 		int err;
 
-		atomic_dec(&sh_uart->pending_rx_req);
+		buf = uart_async_rx_buf_req(async_rx);
+		blen = uart_async_rx_get_buf_len(async_rx);
+		sh_uart->pending_rx_req--;
 		err = uart_rx_buf_rsp(sh_uart->common.dev, buf, blen);
 		if (err < 0) {
 			/* Release allocated buffer. UART will be enabled after UART_RX_DISABLED. */
@@ -538,6 +543,15 @@ static int async_read(struct shell_uart_async *sh_uart,
 			sh_uart->pending_rx_req = 0;
 			return (err == -EACCES) ? 0 : err;
 		}
+	}
+	k_spin_unlock(&sh_uart->lock, key);
+
+	if (rx_en == true) {
+		buf = uart_async_rx_buf_req(async_rx);
+		blen = uart_async_rx_get_buf_len(async_rx);
+		__ASSERT_NO_MSG(buf != NULL);
+		/* If it is too late and RX is disabled then re-enable it. */
+		return rx_enable(sh_uart->common.dev, sh_uart, buf, blen);
 	}
 
 	return 0;
@@ -579,6 +593,7 @@ const struct shell_transport_api shell_uart_transport_api = {
 #endif /* CONFIG_MCUMGR_TRANSPORT_SHELL */
 };
 
+#if DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_shell_uart))
 SHELL_UART_DEFINE(shell_transport_uart);
 SHELL_DEFINE(shell_uart, CONFIG_SHELL_PROMPT_UART, &shell_transport_uart,
 	     CONFIG_SHELL_BACKEND_SERIAL_LOG_MESSAGE_QUEUE_SIZE,
@@ -612,15 +627,18 @@ static int enable_shell_uart(void)
 		smp_shell_init();
 	}
 
-	shell_init(&shell_uart, dev, cfg_flags, log_backend, level);
-
-	return 0;
+	return shell_init(&shell_uart, dev, cfg_flags, log_backend, level);
 }
 
 SYS_INIT(enable_shell_uart, POST_KERNEL,
 	 CONFIG_SHELL_BACKEND_SERIAL_INIT_PRIORITY);
+#endif
 
 const struct shell *shell_backend_uart_get_ptr(void)
 {
+#if DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_shell_uart))
 	return &shell_uart;
+#else
+	return NULL;
+#endif
 }
