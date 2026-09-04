@@ -12,8 +12,8 @@
 #include <zephyr/dt-bindings/led/led.h>
 
 / {
-	model = "Adafruit ItsyBitsy nRF52840 Express";
 	compatible = "adafruit,itsybitsy-nrf52840";
+	model = "Adafruit ItsyBitsy nRF52840 Express";
 
 	chosen {
 		zephyr,ieee802154 = &ieee802154;
@@ -74,34 +74,34 @@
 &uart0 {
 	compatible = "nordic,nrf-uarte";
 	current-speed = <115200>;
-	status = "disabled";
 	pinctrl-0 = <&uart0_default>;
 	pinctrl-1 = <&uart0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "disabled";
 };
 
 &i2c0 {
 	compatible = "nordic,nrf-twi";
-	status = "okay";
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-1 = <&i2c0_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &spi1 {
 	compatible = "nordic,nrf-spi";
-	status = "okay";
 	pinctrl-0 = <&spi1_default>;
 	pinctrl-1 = <&spi1_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 };
 
 &spi2 {
 	compatible = "nordic,nrf-spi";
-	status = "okay";
 	pinctrl-0 = <&spi2_default>;
 	pinctrl-1 = <&spi2_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	apa102: apa102@0 {
 		compatible = "apa,apa102";
@@ -115,10 +115,10 @@
 };
 
 &qspi {
-	status = "okay";
 	pinctrl-0 = <&qspi_default>;
 	pinctrl-1 = <&qspi_sleep>;
 	pinctrl-names = "default", "sleep";
+	status = "okay";
 
 	gd25q16: gd25q16@0 {
 		compatible = "nordic,qspi-nor";
@@ -146,8 +146,8 @@
 		#size-cells = <1>;
 
 		lfs_partition: partition@0 {
-			label = "lfs_storage";
 			reg = <0x00000000 DT_SIZE_M(2)>;
+			label = "lfs_storage";
 		};
 	};
 };
