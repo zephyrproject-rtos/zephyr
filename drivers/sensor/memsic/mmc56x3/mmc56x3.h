@@ -144,6 +144,8 @@ int mmc56x3_sample_fetch(const struct device *dev, enum sensor_channel chan);
 int mmc56x3_sample_fetch_helper(const struct device *dev, enum sensor_channel chan,
 				struct mmc56x3_data *data);
 
+bool mmc56x3_is_continuous_mode(const struct device *dev);
+
 #ifdef __cplusplus
 }
 #endif
