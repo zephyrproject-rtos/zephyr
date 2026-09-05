@@ -9,9 +9,12 @@
 
 #include <sample_usbd.h>
 
+#include <string.h>
+
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/input/input.h>
+#include <zephyr/sys/util.h>
 #include <zephyr/usb/class/usbd_midi2.h>
 
 #include <ump_stream_responder.h>
@@ -25,20 +28,33 @@ static const struct device *const midi = DEVICE_DT_GET(USB_MIDI_DT_NODE);
 
 static struct gpio_dt_spec led = GPIO_DT_SPEC_GET_OR(DT_ALIAS(led0), gpios, {0});
 
+static enum usbd_midi_status midi_status = USBD_MIDI_STATUS_DISABLED;
+
 static void key_press(struct input_event *evt, void *user_data)
 {
+	struct midi_ump ump;
+	uint8_t channel = 0;
+	uint8_t note;
+	uint8_t velocity;
+	uint8_t command;
+	int ret;
+
+	ARG_UNUSED(user_data);
+
 	/* Only handle key presses in the 7bit MIDI range */
 	if (evt->type != INPUT_EV_KEY || evt->code > 0x7f) {
 		return;
 	}
-	uint8_t command = evt->value ? UMP_MIDI_NOTE_ON : UMP_MIDI_NOTE_OFF;
-	uint8_t channel = 0;
-	uint8_t note = evt->code;
-	uint8_t velocity = 100;
 
-	struct midi_ump ump = UMP_MIDI1_CHANNEL_VOICE(0, command, channel,
-						      note, velocity);
-	usbd_midi_send(midi, ump);
+	note = evt->code;
+	velocity = evt->value ? 100 : 0;
+	command = evt->value ? UMP_MIDI_NOTE_ON : UMP_MIDI_NOTE_OFF;
+
+	ump = UMP_MIDI1_CHANNEL_VOICE(0, command, channel, note, velocity);
+	ret = usbd_midi_send(midi, ump);
+	if (ret != 0) {
+		LOG_WRN("Failed to send note event (%d)", ret);
+	}
 }
 INPUT_CALLBACK_DEFINE(NULL, key_press, NULL);
 
@@ -54,9 +70,12 @@ static void on_midi_packet(const struct device *dev, const struct midi_ump ump)
 
 	switch (UMP_MT(ump)) {
 	case UMP_MT_MIDI1_CHANNEL_VOICE:
-		/* Only send MIDI1 channel voice messages back to the host */
-		LOG_INF("Send back MIDI1 message %02X %02X %02X",
-			UMP_MIDI_STATUS(ump), UMP_MIDI1_P1(ump), UMP_MIDI1_P2(ump));
+		LOG_INF("Send back MIDI1 message %02X %02X %02X", UMP_MIDI_STATUS(ump),
+			UMP_MIDI1_P1(ump), UMP_MIDI1_P2(ump));
+		usbd_midi_send(dev, ump);
+		break;
+	case UMP_MT_MIDI2_CHANNEL_VOICE:
+		LOG_INF("Send back MIDI2 channel voice message");
 		usbd_midi_send(dev, ump);
 		break;
 	case UMP_MT_UMP_STREAM:
@@ -65,17 +84,35 @@ static void on_midi_packet(const struct device *dev, const struct midi_ump ump)
 	}
 }
 
-static void on_device_ready(const struct device *dev, const bool ready)
+static void on_status_changed(const struct device *dev, const enum usbd_midi_status status)
 {
-	/* Light up the LED (if any) when USB-MIDI2.0 is enabled */
+	ARG_UNUSED(dev);
+
+	midi_status = status;
+
+	/* Light up the LED (if any) while the USB-MIDI interface is available */
 	if (led.port) {
-		gpio_pin_set_dt(&led, ready);
+		gpio_pin_set_dt(&led, status != USBD_MIDI_STATUS_DISABLED);
+	}
+
+	switch (status) {
+	case USBD_MIDI_STATUS_DISABLED:
+		LOG_INF("USB-MIDI interface disabled");
+		break;
+	case USBD_MIDI_STATUS_MIDI1:
+		LOG_INF("Host selected USB-MIDI 1.0 alternate setting");
+		break;
+	case USBD_MIDI_STATUS_MIDI2:
+		LOG_INF("Host selected USB-MIDI 2.0 alternate setting");
+		break;
+	default:
+		CODE_UNREACHABLE;
 	}
 }
 
 static const struct usbd_midi_ops ops = {
 	.rx_packet_cb = on_midi_packet,
-	.ready_cb = on_device_ready,
+	.status_changed_cb = on_status_changed,
 };
 
 int main(void)
