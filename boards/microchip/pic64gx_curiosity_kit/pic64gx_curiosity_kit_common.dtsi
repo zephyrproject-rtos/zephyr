@@ -88,6 +88,22 @@
 	};
 };
 
+&msspll {
+	status = "okay";
+};
+
+&cpu_clk {
+	status = "okay";
+};
+
+&axi_clk {
+	status = "okay";
+};
+
+&ahb_clk {
+	status = "okay";
+};
+
 &gpio1 {
 	status = "okay";
 
