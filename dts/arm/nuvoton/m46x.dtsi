@@ -502,7 +502,6 @@
 			reg = <0x40012000 0x105c>;
 			interrupts = <66 0>;
 			resets = <&rst NUMAKER_EMAC0_RST>;
-			phy-addr = <1>;
 			clocks = <&pcc NUMAKER_EMAC0_MODULE 0 0>;
 			snps,perfect-filter-entries = <9>;
 			status = "disabled";
