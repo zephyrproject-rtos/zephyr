@@ -1885,6 +1885,35 @@ hawkBit
   Include ``<zephyr/mgmt/hawkbit/hawkbit.h>``, ``<zephyr/mgmt/hawkbit/config.h>`` and
   ``<zephyr/mgmt/hawkbit/autohandler.h>`` instead.
 
+JWT
+===
+
+* The JWT API has been reworked and is not source compatible with previous releases.
+
+  * :c:func:`jwt_init_builder` takes the signing key and the PSA signature algorithm. The header
+    ``alg`` value is derived from them, so it always matches the signature; combinations without
+    a JWS name (:rfc:`7518#section-3.1`) are rejected with ``-ENOTSUP``. The ``typ`` value is
+    always ``JWT``.
+  * :c:func:`jwt_add_payload` takes an arbitrary payload described by a JSON object descriptor
+    instead of the fixed ``exp``, ``iat`` and ``aud`` claims.
+  * Importing the signing key is now the responsibility of the caller. :c:func:`jwt_sign` uses
+    the key that was given to the builder instead of taking a DER encoded key.
+  * The ``CONFIG_JWT_SIGN_RSA_PSA`` and ``CONFIG_JWT_SIGN_ECDSA_PSA`` choices have been removed.
+    :kconfig:option:`CONFIG_JWT` now selects :kconfig:option:`CONFIG_PSA_CRYPTO` only, and the
+    application enables the ``PSA_WANT`` options for the algorithms and key types it uses.
+
+  .. code-block:: c
+
+     /* Before */
+     jwt_init_builder(&builder, buf, sizeof(buf));
+     jwt_add_payload(&builder, exp, iat, "audience");
+     jwt_sign(&builder, der_key, der_key_len);
+
+     /* After */
+     jwt_init_builder(&builder, buf, sizeof(buf), key_id, PSA_ALG_ECDSA(PSA_ALG_SHA_256));
+     jwt_add_payload(&builder, &claims, claims_descr, ARRAY_SIZE(claims_descr));
+     jwt_sign(&builder);
+
 Logging
 =======
 
