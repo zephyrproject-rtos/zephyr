@@ -951,12 +951,17 @@ __syscall int device_init(const struct device *dev);
  * Note: this will be available if CONFIG_DEVICE_DEINIT_SUPPORT is enabled.
  *
  * @warning It is the responsibility of the caller to ensure that the device is
- * ready to be de-initialized.
+ * ready to be de-initialized. As a best-effort guard on top of that contract, a
+ * driver may reject de-initialization with -EBUSY while an operation is still in
+ * flight; this is driver-defined and is not a substitute for caller-side
+ * synchronization.
  *
  * @param dev device to be de-initialized.
  *
  * @retval 0 If successful
  * @retval -EPERM If device has not been initialized.
+ * @retval -EBUSY If the device is busy and the driver rejects de-initialization
+ *         while an operation is in flight (driver-defined, best-effort).
  * @retval -ENOTSUP If device does not support de-initialization, or if the
  *         feature is not enabled (see CONFIG_DEVICE_DEINIT_SUPPORT)
  * @retval -errno For any other errors.
