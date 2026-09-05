@@ -1,0 +1,18 @@
+common:
+  tags:
+    - drivers
+    - can
+  depends_on: can
+tests:
+  drivers.can.host_socketcan:
+    harness: ztest
+    sidecar: can
+    sidecar_config:
+      can:
+        tools_apps:
+          - "python3 {source_dir}/can_echo.py {iface}"
+    platform_allow:
+      - qemu_x86
+      - native_sim
+    integration_platforms:
+      - qemu_x86
