@@ -4,23 +4,26 @@
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
-# Simple selfchecking test for the unicast client/server samples,
+# Simple selfchecking test for the unicast client/server samples using
+# sequential packing of the Connected ISO (CIS) subevents.
 # It relies on the bs_tests hooks to register a test timer callback, which after a deadline
 # will check how many audio packets the unicast client has received, and if over a threshold
 # it considers the test passed
 
-simulation_id="${BOARD_TS}_unicast_samples_test"
+simulation_id="${BOARD_TS}_unicast_samples_test_seq"
 verbosity_level=2
 
 EXECUTE_TIMEOUT=100
 
 cd ${BSIM_OUT_PATH}/bin
 
+client="tests_bsim_bluetooth_audio_samples_bap_unicast_client"
+
 Execute ./bs_${BOARD_TS}_samples_bluetooth_audio_bap_unicast_server_prj_conf \
   -v=${verbosity_level} -s=${simulation_id} -d=0 -RealEncryption=1 \
   -start_offset=2e3
 
-Execute ./bs_${BOARD_TS}_tests_bsim_bluetooth_audio_samples_bap_unicast_client_prj_conf \
+Execute ./bs_${BOARD_TS}_${client}_prj_conf_overlay-sequential_conf \
   -v=${verbosity_level} -s=${simulation_id} -d=1 -RealEncryption=1 \
   -testid=unicast_client
 

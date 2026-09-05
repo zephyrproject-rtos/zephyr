@@ -11,10 +11,17 @@ config TEST_CONNECT_ACL_FIRST
 	help
 	  Connect ACLs first
 
-config TEST_MULTIPLE_PERIPERAL_CIS
+config TEST_MULTIPLE_PERIPHERAL_CIS
 	bool "Multiple Peripheral CIS"
 	help
 	  Multiple Peripheral CIS establishment.
+
+config TEST_CIS_PACKING_INTERLEAVED
+	bool "Use interleaved CIS packing"
+	help
+	  Use interleaved packing of the CIS subevents in the CIG instead of
+	  sequential packing. Only relevant when the CIG contains multiple
+	  CISes.
 
 config TEST_FT_SKIP_SUBEVENTS
 	bool
