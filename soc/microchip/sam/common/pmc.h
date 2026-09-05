@@ -156,6 +156,9 @@ int clk_register_peripheral(pmc_registers_t *const pmc,
 			    const struct clk_range *range,
 			    struct device **clk);
 
+int sam_pmc_register_plla(mm_reg_t reg, struct pmc_data *sama5d2_pmc, const struct device *parent,
+			  struct device **clk);
+
 int sam9x60_clk_register_div_pll(pmc_registers_t *const pmc, struct k_spinlock *lock,
 				 const char *name,
 				 const struct device *parent, uint8_t id,
