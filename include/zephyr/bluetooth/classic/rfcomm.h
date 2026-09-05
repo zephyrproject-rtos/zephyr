@@ -155,9 +155,6 @@ struct bt_rfcomm_dlc {
 	 */
 	struct k_work_delayable rtx_work;
 
-	/** Work for retransmission. */
-	struct k_work_delayable retry_work;
-
 	/** Queue for outgoing data.
 	 *
 	 *  Holds net_buf fragments waiting to be transmitted over this DLC.
@@ -180,7 +177,7 @@ struct bt_rfcomm_dlc {
 	 *  @p tx_queue and credits are available, to drain the queue and push
 	 *  data to L2CAP.
 	 */
-	struct k_work tx_work;
+	struct k_work_delayable tx_work;
 
 	/** Pointer to the RFCOMM session this DLC belongs to. */
 	struct bt_rfcomm_session *session;
