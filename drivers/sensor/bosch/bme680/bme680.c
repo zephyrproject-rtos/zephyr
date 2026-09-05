@@ -221,11 +221,11 @@ static int bme680_sample_fetch(const struct device *dev, enum sensor_channel cha
 	}
 
 	do {
-		/* Wait for a maximum of 250ms for data.
-		 * Initial delay after boot has been measured at 170ms.
-		 * Subsequent triggers are < 1ms.
+		/* Wait for at most the full measurement duration for data.
+		 * Initial delay after boot has been measured at 170ms with the
+		 * low power heater profile. Subsequent triggers are < 1ms.
 		 */
-		if (cnt++ > 250) {
+		if (cnt++ > BME680_MEAS_TIMEOUT_MS) {
 			return -EAGAIN;
 		}
 		k_sleep(K_MSEC(1));
