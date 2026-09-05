@@ -430,9 +430,19 @@ static int display_smartbond_blanking_off(const struct device *dev)
 	return ret;
 }
 
-static void *display_smartbond_get_framebuffer(const struct device *dev)
+static void *display_smartbond_get_framebuffer(const struct device *dev, uint32_t index,
+					       size_t *size)
 {
+	const struct display_smartbond_config *config = dev->config;
 	struct display_smartbond_data *data = dev->data;
+
+	if (index != 0U) {
+		return NULL;
+	}
+
+	if (size != NULL) {
+		*size = ROUND_UP(config->x_res * config->pixel_size, 4) * config->y_res;
+	}
 
 	return ((void *)data->buffer);
 }

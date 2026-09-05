@@ -383,9 +383,17 @@ static int stm32_ltdc_read(const struct device *dev, const uint16_t x,
 	return 0;
 }
 
-static void *stm32_ltdc_get_framebuffer(const struct device *dev)
+static void *stm32_ltdc_get_framebuffer(const struct device *dev, uint32_t index, size_t *size)
 {
 	struct display_stm32_ltdc_data *data = dev->data;
+
+	if (index != 0U) {
+		return NULL;
+	}
+
+	if (size != NULL) {
+		*size = data->frame_buffer_len;
+	}
 
 	return ((void *)data->front_buf);
 }

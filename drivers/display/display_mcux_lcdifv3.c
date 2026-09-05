@@ -153,11 +153,19 @@ static int mcux_lcdifv3_write(const struct device *dev, const uint16_t x, const 
 	return 0;
 }
 
-static void *mcux_lcdifv3_get_framebuffer(const struct device *dev)
+static void *mcux_lcdifv3_get_framebuffer(const struct device *dev, uint32_t index, size_t *size)
 {
 	struct mcux_lcdifv3_data *dev_data = dev->data;
 
-	return (void *)dev_data->active_fb;
+	if (index >= CONFIG_MCUX_LCDIFV3_FB_NUM) {
+		return NULL;
+	}
+
+	if (size != NULL) {
+		*size = dev_data->fb_bytes;
+	}
+
+	return dev_data->fb[index];
 }
 
 static void mcux_lcdifv3_get_capabilities(const struct device *dev,

@@ -1,0 +1,13 @@
+sample:
+  description: Scale, rotate and mirror an image with the pixel processing
+    accelerator
+  name: ppa_srm
+common:
+  tags: display
+tests:
+  sample.boards.espressif.ppa_srm:
+    build_only: true
+    platform_allow:
+      - esp32p4x_function_ev_board/esp32p4/hpcore
+    integration_platforms:
+      - esp32p4x_function_ev_board/esp32p4/hpcore

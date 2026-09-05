@@ -340,9 +340,17 @@ static int ra_display_set_contrast(const struct device *dev, const uint8_t contr
 	return ra_display_color_config(dev, &display_color_cfg);
 }
 
-static void *ra_display_get_framebuffer(const struct device *dev)
+static void *ra_display_get_framebuffer(const struct device *dev, uint32_t index, size_t *size)
 {
 	struct display_ra_data *data = dev->data;
+
+	if (index != 0U) {
+		return NULL;
+	}
+
+	if (size != NULL) {
+		*size = data->frame_buffer_len;
+	}
 
 	return (void *)data->front_buf;
 }

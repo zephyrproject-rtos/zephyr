@@ -150,9 +150,18 @@ static void dpu_get_capabilities(const struct device *dev,
 	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;
 }
 
-static void *dpu_get_framebuffer(const struct device *dev)
+static void *dpu_get_framebuffer(const struct device *dev, uint32_t index, size_t *size)
 {
+	const struct dpu_config *config = dev->config;
 	struct dpu_data *data = dev->data;
+
+	if (index != 0U) {
+		return NULL;
+	}
+
+	if (size != NULL) {
+		*size = config->fb_bytes;
+	}
 
 	return (void *)(uintptr_t)data->active_fb;
 }

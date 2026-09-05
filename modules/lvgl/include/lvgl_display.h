@@ -28,6 +28,16 @@ struct lvgl_disp_data {
 	bool blanking_on;
 };
 
+/**
+ * @brief Register a hardware draw unit with LVGL
+ *
+ * Called once from lvgl_init() after the library is up. The default does
+ * nothing; a draw unit overrides it to register itself.
+ *
+ * @retval 0 on success, negative errno otherwise.
+ */
+int lvgl_draw_unit_init(void);
+
 struct lvgl_display_flush {
 	lv_display_t *display;
 	uint16_t x;

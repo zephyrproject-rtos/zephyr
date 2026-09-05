@@ -217,9 +217,18 @@ static int cplx_write(const struct device *dev, uint16_t x, uint16_t y,
 	return 0;
 }
 
-static void *cplx_get_framebuffer(const struct device *dev)
+static void *cplx_get_framebuffer(const struct device *dev, uint32_t index, size_t *size)
 {
+	const struct cplx_config *cfg = dev->config;
 	struct cplx_data *data = dev->data;
+
+	if (index != 0U) {
+		return NULL;
+	}
+
+	if (size != NULL) {
+		*size = cfg->num_pixels;
+	}
 
 	/* Exposes the per-pixel brightness buffer (1 byte/pixel, 0..max). */
 	return data->framebuf;

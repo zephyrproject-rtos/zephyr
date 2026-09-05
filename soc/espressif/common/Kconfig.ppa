@@ -1,0 +1,28 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config ESP32_PPA
+	bool "ESP32 pixel processing accelerator"
+	depends on DT_HAS_ESPRESSIF_ESP32_PPA_ENABLED
+	help
+	  Enable support for the pixel processing accelerator, which performs
+	  fill, blend and scale-rotate-mirror operations in hardware.
+
+if ESP32_PPA
+
+config ESP32_PPA_WAIT_TIMEOUT_US
+	int "Blocking operation timeout in microseconds"
+	default 100000
+	help
+	  How long a blocking operation waits for the hardware to finish
+	  before giving up.
+
+config ESP32_PPA_MAX_PENDING
+	int "Operation queue depth"
+	default 4
+	range 1 32
+	help
+	  Number of operations that can be queued at once, including the one
+	  running on the hardware.
+
+endif # ESP32_PPA

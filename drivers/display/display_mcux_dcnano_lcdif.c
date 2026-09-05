@@ -203,11 +203,20 @@ static void mcux_dcnano_lcdif_get_capabilities(const struct device *dev,
 	}
 }
 
-static void *mcux_dcnano_lcdif_get_framebuffer(const struct device *dev)
+static void *mcux_dcnano_lcdif_get_framebuffer(const struct device *dev, uint32_t index,
+					       size_t *size)
 {
 	struct mcux_dcnano_lcdif_data *data = dev->data;
 
-	return (void *)data->active_fb;
+	if (index >= CONFIG_MCUX_DCNANO_LCDIF_FB_NUM) {
+		return NULL;
+	}
+
+	if (size != NULL) {
+		*size = data->fb_bytes;
+	}
+
+	return data->fb[index];
 }
 
 static int mcux_dcnano_lcdif_display_blanking_off(const struct device *dev)

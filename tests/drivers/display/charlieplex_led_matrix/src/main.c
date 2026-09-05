@@ -39,7 +39,7 @@ ZTEST(charlieplex, test_capabilities)
  */
 ZTEST(charlieplex, test_write_all_on_off)
 {
-	uint8_t *fb = display_get_framebuffer(disp);
+	uint8_t *fb = display_get_framebuffer(disp, 0, NULL);
 	struct display_buffer_descriptor desc = {
 		.buf_size = sizeof(uint8_t) * ((MATRIX_W + 7) / 8) * MATRIX_H,
 		.width = MATRIX_W,
@@ -71,7 +71,7 @@ ZTEST(charlieplex, test_write_all_on_off)
  */
 ZTEST(charlieplex, test_write_single_pixel)
 {
-	uint8_t *fb = display_get_framebuffer(disp);
+	uint8_t *fb = display_get_framebuffer(disp, 0, NULL);
 	struct display_buffer_descriptor desc = {
 		.buf_size = ((MATRIX_W + 7) / 8) * MATRIX_H,
 		.width = MATRIX_W,

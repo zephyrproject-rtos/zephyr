@@ -15,6 +15,7 @@ if(CONFIG_LVGL)
   zephyr_include_directories(${LVGL_DIR}/src/)
   zephyr_include_directories(include)
 
+  add_subdirectory_ifdef(CONFIG_LV_Z_DRAW_PPA_ESP32 esp32_ppa)
   add_subdirectory_ifdef(CONFIG_LV_USE_NEMA_GFX nemagfx)
 
   zephyr_compile_definitions(LV_CONF_INCLUDE_SIMPLE=1)

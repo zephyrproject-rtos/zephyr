@@ -563,6 +563,18 @@ static int display_esp32_dsi_write_locked(const struct device *dev, const uint16
 	}
 
 	if (multi && !data->fb_seeded) {
+		/* The frame before this one may still be on its way out, and
+		 * this one is about to be written into the buffer it left
+		 * behind. Let it finish, otherwise the panel scans a buffer
+		 * that is being redrawn under it.
+		 */
+		int err = display_esp32_dsi_wait_buffer_free(data, fb, K_MSEC(100));
+
+		if (err != 0) {
+			LOG_DBG("Timed out waiting for framebuffer %u", data->draw_fb);
+			return err;
+		}
+
 		if (data->have_last_fb && data->last_fb != data->draw_fb) {
 			memcpy(fb, data->fb[data->last_fb], data->fb_size);
 			sys_cache_data_flush_range(fb, data->fb_size);
@@ -709,22 +721,16 @@ static int display_esp32_dsi_blanking_off(const struct device *dev)
 	return display_blanking_off(config->panel);
 }
 
-static void *display_esp32_dsi_get_framebuffer(const struct device *dev)
+static void *display_esp32_dsi_get_framebuffer(const struct device *dev, uint32_t index,
+					       size_t *size)
 {
 	struct display_esp32_dsi_data *data = dev->data;
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
-	void *fb = data->started ? data->fb[data->draw_fb] : NULL;
+	void *fb = (data->started && index < data->fb_count) ? data->fb[index] : NULL;
 
-	k_spin_unlock(&data->lock, key);
-
-	return fb;
-}
-
-void *display_esp32_dsi_get_framebuffer_by_index(const struct device *dev, uint32_t index)
-{
-	struct display_esp32_dsi_data *data = dev->data;
-	k_spinlock_key_t key = k_spin_lock(&data->lock);
-	void *fb = (index < data->fb_count) ? data->fb[index] : NULL;
+	if (fb != NULL && size != NULL) {
+		*size = data->fb_size;
+	}
 
 	k_spin_unlock(&data->lock, key);
 
@@ -735,8 +741,10 @@ static void display_esp32_dsi_get_capabilities(const struct device *dev,
 					       struct display_capabilities *capabilities)
 {
 	const struct display_esp32_dsi_config *config = dev->config;
+	struct display_esp32_dsi_data *data = dev->data;
 
 	memset(capabilities, 0, sizeof(struct display_capabilities));
+	capabilities->framebuffer_count = data->fb_count;
 	capabilities->x_resolution = config->width;
 	capabilities->y_resolution = config->height;
 	capabilities->supported_pixel_formats = config->pixel_format;
