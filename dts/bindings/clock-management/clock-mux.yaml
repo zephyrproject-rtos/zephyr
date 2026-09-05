@@ -1,0 +1,37 @@
+# Copyright 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Multiplexer clock node. Accepts one specifier, which sets the clock
+  multiplexer selection to the given zero based index in the "input-sources"
+  phandle array for the given node.
+
+compatible: "clock-mux"
+
+include: [clock-node.yaml]
+
+properties:
+  reg:
+    required: true
+    description: |
+      Tuple containing address of register and width of the bitfield
+      to set to set the multiplexer selection.
+
+  offset:
+    type: int
+    required: true
+    description: |
+      Offset of bitfield within register to set to configure multiplexer.
+
+  input-sources:
+    type: phandles
+    required: true
+    description: |
+      List of all input sources provided to the multiplexer. These sources
+      should be references to other clock nodes within the clock tree.
+
+  "#clock-cells":
+    const: 1
+
+clock-cells:
+  - mux

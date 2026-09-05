@@ -5,7 +5,7 @@ description: Generic fixed factor clock provider
 
 compatible: "fixed-factor-clock"
 
-include: clock-controller.yaml
+include: [clock-controller.yaml, clock-node.yaml]
 
 properties:
   clock-div:
