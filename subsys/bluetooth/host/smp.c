@@ -5058,13 +5058,17 @@ static void bt_smp_encrypt_change(struct bt_l2cap_chan *chan,
 			 */
 			atomic_set_bit(smp->flags, SMP_FLAG_DERIVE_LK);
 		}
-		/*
-		 * Those are used as pairing finished indicator so generated
-		 * but not distributed keys must be cleared here.
-		 */
-		smp->local_dist &= ~BT_SMP_DIST_LINK_KEY;
-		smp->remote_dist &= ~BT_SMP_DIST_LINK_KEY;
 	}
+
+	/*
+	 * Those are used as pairing finished indicator so generated
+	 * but not distributed keys must be cleared here. This applies to legacy
+	 * pairing too: a link key can only be derived from a Secure Connections
+	 * LTK, so the bit is never consumed there and would otherwise keep the
+	 * distribution set non-empty forever.
+	 */
+	smp->local_dist &= ~BT_SMP_DIST_LINK_KEY;
+	smp->remote_dist &= ~BT_SMP_DIST_LINK_KEY;
 
 	if (smp->remote_dist & BT_SMP_DIST_ENC_KEY) {
 		atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_ENCRYPT_INFO);
