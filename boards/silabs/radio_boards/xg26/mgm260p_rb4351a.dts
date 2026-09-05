@@ -5,14 +5,14 @@
  */
 
 /dts-v1/;
-#include <silabs/xg26/mgm260pd22vna.dtsi>
+#include <silabs/xg26/mgm260pd32vna.dtsi>
 #include <silabs/xg26/clock-hfrcodpll-80m.dtsi>
 #include "xg26_common.dtsi"
-#include "mgm260p_rb4350a-pinctrl.dtsi"
+#include "mgm260p_rb4351a-pinctrl.dtsi"
 
 / {
-	model = "Silicon Labs MGM260P 2.4 GHz +10 dBm Radio Board (MGM260P-RB4350A, BRD4350A)";
-	compatible = "silabs,mgm260p_rb4350a", "silabs,mgm26";
+	model = "Silicon Labs MGM260P 2.4 GHz +20 dBm Radio Board (MGM260P-RB4351A, BRD4351A)";
+	compatible = "silabs,mgm260p_rb4351a", "silabs,mgm26";
 };
 
 &led0 {
