@@ -1338,75 +1338,50 @@ static inline void async_timer_start(struct k_work_delayable *work,
 	}
 }
 
+/* Report everything the DMA has written since the previous flush.
+ *
+ * The write position is read from the DMA on every call, so it does not matter
+ * what woke us up - a half-transfer, a transfer completion or an RX timeout -
+ * nor how late that wakeup is. A stale wakeup simply reports no new data.
+ */
 static void uart_stm32_dma_rx_flush(const struct device *dev, int status)
 {
-	struct dma_status stat;
 	struct uart_stm32_data *data = dev->data;
-	size_t rx_rcv_len = 0;
-	uint32_t half_pos;
+	struct dma_status stat;
+	size_t rx_pos;
 
-	switch (status) {
-	case DMA_STATUS_COMPLETE:
-		/* fully complete */
+	/* Which event we were woken by no longer changes what gets reported, so
+	 * this and STM32_ASYNC_STATUS_TIMEOUT can go once that is settled.
+	 */
+	ARG_UNUSED(status);
 
-		/* If offset is already at the end, just reset for next lap and return. */
-		if (data->dma_rx.offset >= data->dma_rx.buffer_length) {
-			data->dma_rx.offset = 0;
-			return;
-		}
-
-		data->dma_rx.counter = data->dma_rx.buffer_length;
-		break;
-	case DMA_STATUS_BLOCK:
-		/* half complete */
-		half_pos = data->dma_rx.buffer_length / 2;
-
-		/* Already handled by timeout path has already dealt with this data.
-		 * Return immediately.
-		 */
-		if (data->dma_rx.offset >= half_pos) {
-			return;
-		}
-
-		data->dma_rx.counter = half_pos;
-		break;
-	default: /* likely STM32_ASYNC_STATUS_TIMEOUT */
-		if (dma_get_status(data->dma_rx.dma_dev, data->dma_rx.dma_channel, &stat) == 0) {
-			rx_rcv_len = data->dma_rx.buffer_length - stat.pending_length;
-
-			/* If DMA wrapped: emit tail [offset..end), then head [0..counter). */
-			if (rx_rcv_len < data->dma_rx.offset) {
-				/* tail end and emit*/
-				data->dma_rx.counter = data->dma_rx.buffer_length;
-				async_evt_rx_rdy(data);
-
-				/* prepare head */
-				data->dma_rx.offset = 0;
-			}
-
-			data->dma_rx.counter = rx_rcv_len;
-		}
-		break;
+	if (dma_get_status(data->dma_rx.dma_dev, data->dma_rx.dma_channel, &stat) != 0) {
+		return;
 	}
 
-	/* Emit contiguous segment if any (BLOCK/COMPLETE or non-wrapping TIMEOUT).*/
+	rx_pos = data->dma_rx.buffer_length - stat.pending_length;
+
+	/* The DMA wrapped around since the previous flush: report the tail
+	 * [offset..end) of the finished lap before the head [0..rx_pos). There is
+	 * no tail at all if the previous flush already ended at the end of the
+	 * buffer, and reporting one anyway would be a zero-length event.
+	 */
+	if (rx_pos < data->dma_rx.offset) {
+		if (data->dma_rx.offset < data->dma_rx.buffer_length) {
+			data->dma_rx.counter = data->dma_rx.buffer_length;
+			async_evt_rx_rdy(data);
+		}
+
+		data->dma_rx.offset = 0;
+	}
+
+	data->dma_rx.counter = rx_pos;
+
 	if (data->dma_rx.counter > data->dma_rx.offset) {
 		async_evt_rx_rdy(data);
 	}
 
-	switch (status) { /* update offset*/
-	case DMA_STATUS_COMPLETE:
-		/* fully complete */
-		data->dma_rx.offset = 0;
-		break;
-	case DMA_STATUS_BLOCK:
-		/* half complete */
-		data->dma_rx.offset = data->dma_rx.buffer_length / 2;
-		break;
-	default: /* likely STM32_ASYNC_STATUS_TIMEOUT */
-		data->dma_rx.offset = rx_rcv_len;
-		break;
-	}
+	data->dma_rx.offset = rx_pos;
 }
 
 #endif /* CONFIG_UART_ASYNC_API */
@@ -1981,6 +1956,15 @@ static int uart_stm32_async_rx_enable(const struct device *dev,
 	if (!stm32_buf_in_nocache((uintptr_t)rx_buf, buf_size)) {
 		LOG_ERR("Rx buffer should be placed in a nocache memory region");
 		return -EFAULT;
+	}
+
+	/* A cyclic DMA is tracked by where its write position has got to, which
+	 * cannot tell a full lap apart from no progress at all. One byte leaves no
+	 * room between those two, so the position never reports anything.
+	 */
+	if (data->dma_rx.dma_cfg.cyclic && buf_size < 2) {
+		LOG_ERR("Rx buffer must hold at least 2 bytes in cyclic DMA mode");
+		return -EINVAL;
 	}
 
 	data->dma_rx.offset = 0;
