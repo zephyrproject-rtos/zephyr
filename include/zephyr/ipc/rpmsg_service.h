@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief RPMsg service API for communication with a remote processor.
+ * @ingroup rpmsg_service_api
+ */
+
 #ifndef ZEPHYR_INCLUDE_IPC_RPMSG_SERVICE_H_
 #define ZEPHYR_INCLUDE_IPC_RPMSG_SERVICE_H_
 
