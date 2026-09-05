@@ -99,6 +99,7 @@ else()
     sleep.c
     pipe.c
     scheduler.c
+    workq.c
     )
 
   if(CONFIG_MULTITHREADING)
