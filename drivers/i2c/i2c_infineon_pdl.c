@@ -17,6 +17,10 @@
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/drivers/clock_control/clock_control_ifx_cat1.h>
 #include <zephyr/dt-bindings/clock/ifx_clock_source_common.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
+#include <zephyr/pm/pm.h>
+#include <zephyr/pm/policy.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(i2c_infineon, CONFIG_I2C_LOG_LEVEL);
@@ -95,6 +99,21 @@ struct ifx_cat1_i2c_config {
 	struct gpio_dt_spec sda;
 #endif /* CONFIG_I2C_INFINEON_BUS_RECOVERY */
 };
+
+/*
+ * The PSoC 4 PDL variant of Cy_SCB_I2C_Enable() takes the context pointer while
+ * every other family takes only the base. Wrap the difference in one place.
+ */
+static inline void ifx_cat1_i2c_enable(const struct ifx_cat1_i2c_config *config,
+				       struct ifx_cat1_i2c_data *data)
+{
+#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
+	Cy_SCB_I2C_Enable(config->base, &data->context);
+#else
+	ARG_UNUSED(data);
+	Cy_SCB_I2C_Enable(config->base);
+#endif
+}
 
 /* Default SCB/I2C configuration template (read-only). Each device instance
  * keeps its own mutable copy in struct ifx_cat1_i2c_data::scb_config so that
@@ -501,6 +520,18 @@ static int ifx_cat1_i2c_configure(const struct device *dev, uint32_t dev_config)
 		data->scb_config.ackGeneralAddr = false;
 	}
 
+#ifdef CONFIG_PM_DEVICE
+	/*
+	 * Enable I2C address-match wakeup from DeepSleep when this instance is
+	 * marked as a wakeup source (only DeepSleep-capable SCB instances such
+	 * as SCB0 support this).  The vendor Cy_SCB_I2C_DeepSleepCallback then
+	 * keeps the target alive across DeepSleep (externally-clocked address
+	 * match) so an addressed transaction wakes the device instead of being
+	 * NAKed.  The flag is inert for controller mode.
+	 */
+	data->scb_config.enableWakeFromSleep = pm_device_wakeup_is_enabled(dev);
+#endif /* CONFIG_PM_DEVICE */
+
 	/* De-initialize SCB before re-configuring (required when switching modes) */
 	Cy_SCB_I2C_Disable(config->base, &data->context);
 	Cy_SCB_I2C_DeInit(config->base);
@@ -520,11 +551,7 @@ static int ifx_cat1_i2c_configure(const struct device *dev, uint32_t dev_config)
 		return -EIO;
 	}
 
-#if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
-	Cy_SCB_I2C_Enable(config->base, &data->context);
-#else
-	Cy_SCB_I2C_Enable(config->base);
-#endif
+	ifx_cat1_i2c_enable(config, data);
 	irq_enable(config->irq_num);
 
 	/* Register an I2C event callback handler - explicitly drop the const here
@@ -534,10 +561,27 @@ static int ifx_cat1_i2c_configure(const struct device *dev, uint32_t dev_config)
 	 */
 	ifx_cat1_i2c_register_callback(dev, ifx_cat1_i2c_event_handler, (void *)(uintptr_t)dev);
 
-#ifdef CONFIG_PM
-	data->i2c_deep_sleep_param.context = &data->context;
-	Cy_SysPm_RegisterCallback(&data->i2c_deep_sleep);
+	/*
+	 * Register the vendor PDL DeepSleep callback so the SCB is preserved across
+	 * DeepSleep. With device PM, only a DeepSleep wakeup source needs it (target-
+	 * mode address-match wake, see above); pm_device_wakeup_is_enabled() is
+	 * always false without CONFIG_PM_DEVICE. With system PM but no device PM,
+	 * always register it.
+	 */
+	bool register_deep_sleep_cb = pm_device_wakeup_is_enabled(dev);
+
+#if !defined(CONFIG_PM_DEVICE) && defined(CONFIG_PM)
+	register_deep_sleep_cb = true;
 #endif
+
+	if (register_deep_sleep_cb) {
+		data->i2c_deep_sleep_param.context = &data->context;
+		Cy_SysPm_RegisterCallback(&data->i2c_deep_sleep);
+	} else {
+		/* Drop any stale registration when no longer a wakeup source. */
+		Cy_SysPm_UnregisterCallback(&data->i2c_deep_sleep);
+	}
+
 	/* Release semaphore */
 	k_sem_give(&data->operation_sem);
 	return 0;
@@ -633,10 +677,14 @@ static int ifx_cat1_i2c_transfer(const struct device *dev, struct i2c_msg *msg, 
 		return -EIO;
 	}
 
+	/* Reference the device for the duration of the transfer. */
+	(void)pm_device_runtime_get(dev);
+
 	/* This function checks if msg.buf is not NULL and if
 	 * target address is not 10 bit.
 	 */
 	if (ifx_cat1_i2c_msg_validate(msg, num_msgs) != 0) {
+		(void)pm_device_runtime_put(dev);
 		k_sem_give(&data->operation_sem);
 		return -EINVAL;
 	}
@@ -645,6 +693,9 @@ static int ifx_cat1_i2c_transfer(const struct device *dev, struct i2c_msg *msg, 
 
 	/* Enable I2C Interrupt */
 	data->irq_cause |= I2C_CAT1_EVENTS_MASK;
+
+	/* Hold power state across the whole transfer; balanced on every exit. */
+	pm_policy_device_power_lock_get(dev);
 
 	for (uint32_t i = 0; i < num_msgs; i++) {
 		tx_msg = NULL;
@@ -675,6 +726,8 @@ static int ifx_cat1_i2c_transfer(const struct device *dev, struct i2c_msg *msg, 
 						     (rx_msg == NULL) ? 0 : rx_msg->len);
 
 		if (ret < 0) {
+			pm_policy_device_power_lock_put(dev);
+			(void)pm_device_runtime_put(dev);
 			k_sem_give(&data->operation_sem);
 			return ret;
 		}
@@ -704,13 +757,16 @@ static int ifx_cat1_i2c_transfer(const struct device *dev, struct i2c_msg *msg, 
 			data->irq_cause &= ~I2C_CAT1_EVENTS_MASK;
 			irq_enable(config->irq_num);
 
+			pm_policy_device_power_lock_put(dev);
+			(void)pm_device_runtime_put(dev);
 			k_sem_give(&data->operation_sem);
 			return -ETIMEDOUT;
 		}
 
 		/* Check for an error during the transfer */
 		if (data->error) {
-			/* Release semaphore */
+			pm_policy_device_power_lock_put(dev);
+			(void)pm_device_runtime_put(dev);
 			k_sem_give(&data->operation_sem);
 			return -EIO;
 		}
@@ -719,7 +775,8 @@ static int ifx_cat1_i2c_transfer(const struct device *dev, struct i2c_msg *msg, 
 	/* Disable I2C Interrupt */
 	data->irq_cause &= ~I2C_CAT1_EVENTS_MASK;
 
-	/* Release semaphore (After I2C transfer is complete) */
+	pm_policy_device_power_lock_put(dev);
+	(void)pm_device_runtime_put(dev);
 	k_sem_give(&data->operation_sem);
 	return 0;
 }
@@ -767,10 +824,85 @@ static int ifx_cat1_i2c_init(const struct device *dev)
 	 * controller is usable at the configured rate without an explicit
 	 * i2c_configure() call.
 	 */
-	return ifx_cat1_i2c_configure(dev,
-				      I2C_MODE_CONTROLLER |
-					      i2c_map_dt_bitrate(config->controller_frequency));
+	ret = ifx_cat1_i2c_configure(dev, I2C_MODE_CONTROLLER |
+						  i2c_map_dt_bitrate(config->controller_frequency));
+
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = pm_device_runtime_enable(dev);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return 0;
 }
+
+#ifdef CONFIG_PM_DEVICE
+static int ifx_cat1_i2c_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	struct ifx_cat1_i2c_data *const data = dev->data;
+	const struct ifx_cat1_i2c_config *const config = dev->config;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		/* Refuse mid-transfer; the busy flag differs by role. */
+		if (data->scb_config.i2cMode == CY_SCB_I2C_SLAVE) {
+			if ((Cy_SCB_I2C_SlaveGetStatus(config->base, &data->context) &
+			     (CY_SCB_I2C_SLAVE_RD_BUSY | CY_SCB_I2C_SLAVE_WR_BUSY)) != 0U) {
+				return -EBUSY;
+			}
+		} else {
+			if ((Cy_SCB_I2C_MasterGetStatus(config->base, &data->context) &
+			     CY_SCB_I2C_MASTER_BUSY) != 0U) {
+				return -EBUSY;
+			}
+		}
+		/* Leave enabled for a wakeup source; gating would disable DeepSleep wake. */
+		if (pm_device_wakeup_is_enabled(dev)) {
+			break;
+		}
+		/* Clock gate the block; clock tree left untouched. */
+		Cy_SCB_I2C_Disable(config->base, &data->context);
+		break;
+	case PM_DEVICE_ACTION_RESUME:
+		/* Re-enable the block; configuration is retained. */
+		ifx_cat1_i2c_enable(config, data);
+		break;
+#if defined(CONFIG_PM_S2RAM) || defined(CONFIG_PM_DEVICE_POWER_DOMAIN)
+	case PM_DEVICE_ACTION_TURN_ON: {
+		/*
+		 * Power was lost: re-init the I2C block - re-apply pinctrl,
+		 * re-assign the clock divider, and replay the retained config.
+		 */
+		cy_rslt_t result;
+		int ret;
+
+		ret = pinctrl_apply_state(config->pcfg, PINCTRL_STATE_DEFAULT);
+		if (ret < 0) {
+			return ret;
+		}
+
+		result = ifx_cat1_utils_peri_pclk_assign_divider(config->clk_dst, &data->clock);
+		if (result != CY_RSLT_SUCCESS) {
+			return -EIO;
+		}
+
+		ret = ifx_cat1_i2c_configure(dev, 0);
+		if (ret < 0) {
+			return ret;
+		}
+		break;
+	}
+#endif /* CONFIG_PM_S2RAM || CONFIG_PM_DEVICE_POWER_DOMAIN */
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_PM_DEVICE */
 
 void _i2c_free(const struct device *dev)
 {
@@ -1041,9 +1173,7 @@ static DEVICE_API(i2c, i2c_cat1_driver_api) = {
 		.irq_config_func = ifx_cat1_i2c_irq_config_func_##n,                               \
 		.i2c_handle_events_func = i2c_handle_events_func_##n,                              \
 		.transfer_timeout = I2C_DT_INST_TRANSFER_TIMEOUT(n),                               \
-		I2C_CAT1_SCL_INIT(n)                                                               \
-		I2C_CAT1_SDA_INIT(n)                                                               \
-	};                                                                                         \
+		I2C_CAT1_SCL_INIT(n) I2C_CAT1_SDA_INIT(n)};                                        \
                                                                                                    \
 	static struct ifx_cat1_i2c_data ifx_cat1_i2c_data##n = {                                   \
 		.i2c_deep_sleep_param = {(CySCB_Type *)DT_INST_REG_ADDR(n), NULL},                 \
@@ -1052,8 +1182,10 @@ static DEVICE_API(i2c, i2c_cat1_driver_api) = {
 				   &ifx_cat1_i2c_data##n.i2c_deep_sleep_param, NULL, NULL, 1},     \
 		I2C_PERI_CLOCK_INIT(n)};                                                           \
                                                                                                    \
-	I2C_DEVICE_DT_INST_DEFINE(n, ifx_cat1_i2c_init, NULL, &ifx_cat1_i2c_data##n,               \
-				  &i2c_cat1_cfg_##n, POST_KERNEL, CONFIG_I2C_INIT_PRIORITY,        \
-				  &i2c_cat1_driver_api);
+	PM_DEVICE_DT_INST_DEFINE(n, ifx_cat1_i2c_pm_action);                                       \
+                                                                                                   \
+	I2C_DEVICE_DT_INST_DEFINE(n, ifx_cat1_i2c_init, PM_DEVICE_DT_INST_GET(n),                  \
+				  &ifx_cat1_i2c_data##n, &i2c_cat1_cfg_##n, POST_KERNEL,           \
+				  CONFIG_I2C_INIT_PRIORITY, &i2c_cat1_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(INFINEON_CAT1_I2C_INIT)
