@@ -80,7 +80,7 @@
 		clk_inro: clk_inro {
 			compatible = "fixed-clock";
 			#clock-cells = <0>;
-			clock-frequency = <DT_FREQ_K(8)>;
+			clock-frequency = <DT_FREQ_K(131)>;
 			status = "disabled";
 		};
 
@@ -103,6 +103,21 @@
 			#clock-cells = <0>;
 			clock-frequency = <DT_FREQ_M(32)>;
 			capacitance-erfoctrl = <0>;
+			status = "disabled";
+		};
+
+		clk_rtc_in: clk_rtc_in {
+			compatible = "adi,max32-extclk";
+			#clock-cells = <0>;
+			clock-frequency = <DT_FREQ_K(32768)>;
+			status = "disabled";
+		};
+
+		clk_32k: clk_32k {
+			compatible = "fixed-clock";
+			#clock-cells = <0>;
+			clock-frequency = <32768>;
+			clocks = <&clk_ertco>;
 			status = "disabled";
 		};
 	};
