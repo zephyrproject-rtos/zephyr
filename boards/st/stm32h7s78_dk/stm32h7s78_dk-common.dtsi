@@ -135,6 +135,21 @@
 	status = "okay";
 };
 
+&pll2 {
+	/* PLL2.Q is tuned to minimize bit clock errors on I2S6 acting as
+	 * master clock in stereo 16b at the following rates:
+	 * - 8kHz / 16kHz / 32kHz / 48kHz / 96kHz ~ 0.25% err
+	 * - 11.025kHz / 22.05kHz / 44.1KHz / 88.2kHz ~ 0.02% err
+	 * ie. there exists valid I2S prescaler values such that:
+	 * 271MHz x prescaler =~ sample_rate x16(bits) x2(chans) x8(MCK)
+	 */
+	div-m = <12>;
+	mul-n = <271>;
+	div-q = <2>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
 &pll3 {
 	div-m = <12>;
 	mul-n = <25>;
@@ -257,6 +272,23 @@ st_cam_i2c: &i2c1 {
 		irq-gpios = <&gpioe 3 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 		status = "okay";
 	};
+
+	audio_codec: wm8904g@1a {
+		compatible = "wolfson,wm8904";
+		reg = <0x1a>;
+		wolfson,mic-bias-voltage = "avdd-9-10";
+		input-pga-select = <1>;
+		status = "okay";
+	};
+};
+
+&i2s6 {
+	clocks = <&rcc STM32_CLOCK(APB4, 5)>,
+		 <&rcc STM32_SRC_PLL2_Q SPI6_SEL(1)>;
+	pinctrl-0 = <&i2s6_mck_pa3 &i2s6_ws_pa4 &i2s6_ck_pa5 &i2s6_sdo_pb5 &i2s6_sdi_pg12>;
+	pinctrl-names = "default";
+	mck-enabled;
+	status = "okay";
 };
 
 &fdcan1 {
