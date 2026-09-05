@@ -122,6 +122,12 @@
 				status = "disabled";
 			};
 		};
+
+		lcd0: lcd@40070000 {
+			compatible = "ti,mspm0-lcd";
+			reg = <0x40070000 0x2000>;
+			status = "disabled";
+		};
 	};
 };
 
