@@ -1,0 +1,31 @@
+# AMEBA I2S driver configuration options
+
+# Copyright (c) 2026 Realtek Semiconductor Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig I2S_AMEBA
+	bool "AMEBA MCU I2S controller driver"
+	default y
+	depends on DT_HAS_REALTEK_AMEBA_I2S_ENABLED
+	select PINCTRL
+	select DMA
+	help
+	  Enable I2S support on the AMEBA family of processors.
+
+if I2S_AMEBA
+
+config I2S_AMEBA_RX_BLOCK_COUNT
+	int "RX queue length"
+	default 4
+
+config I2S_AMEBA_TX_BLOCK_COUNT
+	int "TX queue length"
+	default 4
+
+config I2S_AMEBA_CHANNEL_EXT
+	bool "AMEBA I2S controller support for more channels"
+	default n
+	help
+	  Enable I2S support for 6~8 channels
+
+endif # I2S_AMEBA
