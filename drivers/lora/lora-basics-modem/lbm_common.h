@@ -107,6 +107,26 @@ int lbm_driver_radio_init(const struct device *dev);
 void lbm_driver_antenna_configure(const struct device *dev, enum lbm_modem_mode mode);
 
 /**
+ * @brief Let the radio interrupt through again
+ *
+ * Called before each operation that ends in an interrupt. The interrupt does
+ * not always arrive on a pin, so how it is unmasked is left to the driver.
+ *
+ * @param dev Modem device
+ */
+void lbm_driver_dio1_irq_enable(const struct device *dev);
+
+/**
+ * @brief Keep the radio interrupt out
+ *
+ * Called while the radio goes to sleep, so that no further work is scheduled
+ * against hardware that is on its way down.
+ *
+ * @param dev Modem device
+ */
+void lbm_driver_dio1_irq_disable(const struct device *dev);
+
+/**
  * @brief Control a GPIO pin if it has been configured
  *
  * @param spec GPIO specification from devicetree
@@ -118,27 +138,6 @@ static inline int lbm_optional_gpio_set_dt(const struct gpio_dt_spec *spec, int 
 {
 	if (spec->port != NULL) {
 		return gpio_pin_set_dt(spec, value);
-	}
-	return 0;
-}
-
-/**
- * @brief Configure the DIO1 interrupt if the pin has been provided
- *
- * Drivers that route their interrupt through a single DIO1 line (e.g. SX126x,
- * LR11xx) populate the common dio1 pin. Other parts (e.g. SX127x) manage
- * several DIO lines themselves and leave it unset; for those this is a no-op.
- *
- * @param spec DIO1 GPIO specification from devicetree
- * @param flags Interrupt configuration flags
- *
- * @return a value from gpio_pin_interrupt_configure_dt()
- */
-static inline int lbm_optional_dio1_irq_configure_dt(const struct gpio_dt_spec *spec,
-						     gpio_flags_t flags)
-{
-	if (spec->port != NULL) {
-		return gpio_pin_interrupt_configure_dt(spec, flags);
 	}
 	return 0;
 }
