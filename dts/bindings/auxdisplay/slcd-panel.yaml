@@ -80,6 +80,14 @@ properties:
       Example: if indicator 0 controlled by pin 15, COM4, the first element of
       this array is 4.
 
+  display-indicators:
+    type: array
+    description: |
+      List of indicator indexes referring to array indicator-pins, for the whole display.
+      This is a table with as many columns as display positions and as many rows as
+      indicator types existing on the display. If a specific type does exist in a specific
+      position, that cell must be set to 0xff (that is an invalid index).
+
   col-indicators:
     type: array
     description: |
