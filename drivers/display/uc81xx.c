@@ -1,4 +1,5 @@
 /*
+ * Copyright (c) 2026 RASNA
  * Copyright (c) 2025 Cactus Engineering S.L
  * Copyright (c) 2022 Andreas Sandberg
  * Copyright (c) 2020 PHYTEC Messtechnik GmbH
@@ -25,9 +26,12 @@ LOG_MODULE_REGISTER(uc81xx, CONFIG_DISPLAY_LOG_LEVEL);
  *
  * Currently only the black/white panels are supported (KW mode),
  * also first gate/source should be 0.
+ *
+ * The UC8253 can optionally use a four-level grayscale waveform.
  */
 
 #define UC81XX_PIXELS_PER_BYTE		8U
+#define UC8253_GRAY_LEVELS              4U
 
 struct uc81xx_dt_array {
 	uint8_t *data;
@@ -37,6 +41,7 @@ struct uc81xx_dt_array {
 enum uc81xx_profile_type {
 	UC81XX_PROFILE_FULL = 0,
 	UC81XX_PROFILE_PARTIAL,
+	UC81XX_PROFILE_GRAY,
 	UC81XX_NUM_PROFILES,
 	UC81XX_PROFILE_INVALID = UC81XX_NUM_PROFILES,
 };
@@ -57,6 +62,10 @@ struct uc81xx_profile {
 	bool override_pll;
 	uint8_t  vdcs;
 	bool override_vdcs;
+	uint8_t ccset;
+	bool override_ccset;
+	uint8_t tsset;
+	bool override_tsset;
 
 	const struct uc81xx_dt_array lutc;
 	const struct uc81xx_dt_array lutww;
@@ -90,6 +99,11 @@ struct uc81xx_config {
 
 	uint16_t height;
 	uint16_t width;
+	bool grayscale;
+	uint8_t gray_level_planes[UC8253_GRAY_LEVELS];
+	size_t plane_size;
+	uint8_t *plane_hi;
+	uint8_t *plane_lo;
 
 	struct uc81xx_dt_array softstart;
 
@@ -287,6 +301,14 @@ static int uc81xx_set_profile(const struct device *dev,
 		return 0;
 	}
 
+	if (p->override_ccset && uc81xx_write_cmd_uint8(dev, UC81XX_CMD_CCSET, p->ccset)) {
+		return -EIO;
+	}
+
+	if (p->override_tsset && uc81xx_write_cmd_uint8(dev, UC81XX_CMD_TSSET, p->tsset)) {
+		return -EIO;
+	}
+
 	if (uc81xx_write_array_opt(dev, UC81XX_CMD_LUTC, &p->lutc)) {
 		return -EIO;
 	}
@@ -371,13 +393,163 @@ static int uc81xx_update_display(const struct device *dev)
 	return 0;
 }
 
+#if DT_HAS_COMPAT_STATUS_OKAY(ultrachip_uc8253)
+
+#define UC8253_GRAY_L8(level)  ((level) * UINT8_MAX / (UC8253_GRAY_LEVELS - 1U))
+#define UC8253_GRAY_MID(level) ((UC8253_GRAY_L8(level) + UC8253_GRAY_L8((level) + 1U) + 1U) / 2U)
+
+static uint8_t uc81xx_gray_code(const struct uc81xx_config *config, uint8_t luminance)
+{
+	uint8_t level;
+
+	if (luminance < UC8253_GRAY_MID(0U)) {
+		level = 0U;
+	} else if (luminance < UC8253_GRAY_MID(1U)) {
+		level = 1U;
+	} else if (luminance < UC8253_GRAY_MID(2U)) {
+		level = 2U;
+	} else {
+		level = 3U;
+	}
+
+	return config->gray_level_planes[level];
+}
+
+static void uc81xx_gray_put(uint8_t *plane_hi, uint8_t *plane_lo, size_t offset, uint8_t mask,
+			    uint8_t code)
+{
+	if ((code & BIT(1)) != 0U) {
+		plane_hi[offset] |= mask;
+	} else {
+		plane_hi[offset] &= (uint8_t)~mask;
+	}
+
+	if ((code & BIT(0)) != 0U) {
+		plane_lo[offset] |= mask;
+	} else {
+		plane_lo[offset] &= (uint8_t)~mask;
+	}
+}
+
+static void uc81xx_gray_scatter(const struct device *dev, uint16_t x, uint16_t y,
+				const struct display_buffer_descriptor *desc, const uint8_t *buf)
+{
+	const struct uc81xx_config *config = dev->config;
+	const size_t plane_stride = config->width / UC81XX_PIXELS_PER_BYTE;
+
+	for (uint16_t row = 0U; row < desc->height; row++) {
+		const uint8_t *src = buf + (size_t)row * desc->pitch;
+		const size_t row_offset = (size_t)(y + row) * plane_stride;
+
+		for (uint16_t column = 0U; column < desc->width; column++) {
+			const uint16_t pixel_x = x + column;
+			const size_t offset = row_offset + pixel_x / UC81XX_PIXELS_PER_BYTE;
+			const uint8_t mask = BIT(7U - (pixel_x % UC81XX_PIXELS_PER_BYTE));
+
+			uc81xx_gray_put(config->plane_hi, config->plane_lo, offset, mask,
+					uc81xx_gray_code(config, src[column]));
+		}
+	}
+}
+
+static int uc81xx_gray_send_plane(const struct device *dev, uint8_t cmd, const uint8_t *plane)
+{
+	const struct uc81xx_config *config = dev->config;
+	struct display_buffer_descriptor mipi_desc = {
+		.buf_size = config->plane_size,
+		.width = config->plane_size,
+		.pitch = config->plane_size,
+		.height = 1U,
+	};
+	int err;
+
+	uc81xx_busy_wait(dev);
+
+	err = mipi_dbi_command_write(config->mipi_dev, &config->dbi_config, cmd, NULL, 0U);
+	if (err < 0) {
+		mipi_dbi_release(config->mipi_dev, &config->dbi_config);
+		return err;
+	}
+
+	err = mipi_dbi_write_display(config->mipi_dev, &config->dbi_config, plane, &mipi_desc,
+				     PIXEL_FORMAT_MONO10);
+	mipi_dbi_release(config->mipi_dev, &config->dbi_config);
+
+	return err;
+}
+
+static int uc81xx_gray_commit(const struct device *dev)
+{
+	const struct uc81xx_config *config = dev->config;
+	const struct uc81xx_data *data = dev->data;
+	const uint8_t plane_hi_cmd =
+		data->phase == UC81XX_PHASE_NORMAL ? UC81XX_CMD_DTM1 : UC81XX_CMD_DTM2;
+	const uint8_t plane_lo_cmd =
+		data->phase == UC81XX_PHASE_NORMAL ? UC81XX_CMD_DTM2 : UC81XX_CMD_DTM1;
+
+	if (uc81xx_set_profile(dev, UC81XX_PROFILE_GRAY)) {
+		return -EIO;
+	}
+
+	if (uc81xx_gray_send_plane(dev, plane_hi_cmd, config->plane_hi) ||
+	    uc81xx_gray_send_plane(dev, plane_lo_cmd, config->plane_lo)) {
+		return -EIO;
+	}
+
+	return uc81xx_update_display(dev);
+}
+
+static int uc81xx_write_gray(const struct device *dev, uint16_t x, uint16_t y,
+			     const struct display_buffer_descriptor *desc, const void *buf)
+{
+	const struct uc81xx_config *config = dev->config;
+	const struct uc81xx_data *data = dev->data;
+	size_t needed;
+
+	if (buf == NULL || desc->width == 0U || desc->height == 0U || desc->pitch < desc->width) {
+		LOG_ERR("Invalid grayscale buffer descriptor");
+		return -EINVAL;
+	}
+
+	if ((uint32_t)x + desc->width > config->width ||
+	    (uint32_t)y + desc->height > config->height) {
+		LOG_ERR("Position out of bounds");
+		return -EINVAL;
+	}
+
+	needed = (size_t)desc->pitch * (desc->height - 1U) + desc->width;
+	if (desc->buf_size < needed) {
+		LOG_ERR("Buffer size too small");
+		return -EINVAL;
+	}
+
+	uc81xx_gray_scatter(dev, x, y, desc, buf);
+
+	if (data->blanking_on || desc->frame_incomplete) {
+		return 0;
+	}
+
+	return uc81xx_gray_commit(dev);
+}
+
+#endif /* DT_HAS_COMPAT_STATUS_OKAY(ultrachip_uc8253) */
+
 static int uc81xx_blanking_off(const struct device *dev)
 {
+#if DT_HAS_COMPAT_STATUS_OKAY(ultrachip_uc8253)
+	const struct uc81xx_config *config = dev->config;
+#endif
 	struct uc81xx_data *data = dev->data;
+	int err;
 
 	if (data->blanking_on) {
-		/* Update EPD panel in normal mode */
-		if (uc81xx_update_display(dev)) {
+		/* Update EPD panel in the configured mode. */
+#if DT_HAS_COMPAT_STATUS_OKAY(ultrachip_uc8253)
+		err = config->grayscale ? uc81xx_gray_commit(dev) : uc81xx_update_display(dev);
+#else
+		err = uc81xx_update_display(dev);
+#endif
+		if (err) {
 			return -EIO;
 		}
 	}
@@ -389,10 +561,12 @@ static int uc81xx_blanking_off(const struct device *dev)
 
 static int uc81xx_blanking_on(const struct device *dev)
 {
+	const struct uc81xx_config *config = dev->config;
 	struct uc81xx_data *data = dev->data;
 
 	if (!data->blanking_on) {
-		if (uc81xx_set_profile(dev, UC81XX_PROFILE_FULL)) {
+		if (uc81xx_set_profile(dev, config->grayscale ? UC81XX_PROFILE_GRAY
+							      : UC81XX_PROFILE_FULL)) {
 			return -EIO;
 		}
 	}
@@ -408,13 +582,22 @@ static int uc81xx_write(const struct device *dev, const uint16_t x, const uint16
 {
 	const struct uc81xx_config *config = dev->config;
 	struct uc81xx_data *data = dev->data;
-
-	uint16_t x_end_idx = x + desc->width - 1;
-	uint16_t y_end_idx = y + desc->height - 1;
-	size_t buf_len = desc->width * desc->height / UC81XX_PIXELS_PER_BYTE;
+	uint16_t x_end_idx;
+	uint16_t y_end_idx;
+	size_t buf_len;
 
 	LOG_DBG("x %u, y %u, height %u, width %u, pitch %u",
 		x, y, desc->height, desc->width, desc->pitch);
+
+#if DT_HAS_COMPAT_STATUS_OKAY(ultrachip_uc8253)
+	if (config->grayscale) {
+		return uc81xx_write_gray(dev, x, y, desc, buf);
+	}
+#endif
+
+	x_end_idx = x + desc->width - 1U;
+	y_end_idx = y + desc->height - 1U;
+	buf_len = desc->width * desc->height / UC81XX_PIXELS_PER_BYTE;
 
 	__ASSERT(desc->width == desc->pitch, "Non-contiguous display buffers are not supported");
 	__ASSERT(buf != NULL, "Buffer is not available");
@@ -506,15 +689,26 @@ static void uc81xx_get_capabilities(const struct device *dev,
 	memset(caps, 0, sizeof(struct display_capabilities));
 	caps->x_resolution = config->width;
 	caps->y_resolution = config->height;
-	caps->supported_pixel_formats = PIXEL_FORMAT_MONO01;
-	caps->current_pixel_format = PIXEL_FORMAT_MONO01;
-	caps->screen_info = SCREEN_INFO_MONO_MSB_FIRST | SCREEN_INFO_EPD;
+
+	if (config->grayscale) {
+		caps->supported_pixel_formats = PIXEL_FORMAT_L_8;
+		caps->current_pixel_format = PIXEL_FORMAT_L_8;
+		caps->screen_info = SCREEN_INFO_EPD;
+	} else {
+		caps->supported_pixel_formats = PIXEL_FORMAT_MONO01;
+		caps->current_pixel_format = PIXEL_FORMAT_MONO01;
+		caps->screen_info = SCREEN_INFO_MONO_MSB_FIRST | SCREEN_INFO_EPD;
+	}
 }
 
 static int uc81xx_set_pixel_format(const struct device *dev,
 				   const enum display_pixel_format pf)
 {
-	if (pf == PIXEL_FORMAT_MONO01) {
+	const struct uc81xx_config *config = dev->config;
+	const enum display_pixel_format expected =
+		config->grayscale ? PIXEL_FORMAT_L_8 : PIXEL_FORMAT_MONO01;
+
+	if (pf == expected) {
 		return 0;
 	}
 
@@ -562,9 +756,26 @@ static int uc81xx_controller_init(const struct device *dev)
 	data->profile = UC81XX_PROFILE_INVALID;
 	data->phase = UC81XX_PHASE_NORMAL;
 
-	if (uc81xx_set_profile(dev, UC81XX_PROFILE_FULL)) {
+	if (uc81xx_set_profile(dev,
+			       config->grayscale ? UC81XX_PROFILE_GRAY : UC81XX_PROFILE_FULL)) {
 		return -EIO;
 	}
+
+#if DT_HAS_COMPAT_STATUS_OKAY(ultrachip_uc8253)
+	if (config->grayscale) {
+		const uint8_t white = config->gray_level_planes[UC8253_GRAY_LEVELS - 1U];
+
+		memset(config->plane_hi, (white & BIT(1)) != 0U ? 0xff : 0x00, config->plane_size);
+		memset(config->plane_lo, (white & BIT(0)) != 0U ? 0xff : 0x00, config->plane_size);
+
+		if (uc81xx_gray_send_plane(dev, UC81XX_CMD_DTM1, config->plane_hi) ||
+		    uc81xx_gray_send_plane(dev, UC81XX_CMD_DTM2, config->plane_lo)) {
+			return -EIO;
+		}
+
+		return 0;
+	}
+#endif
 
 	if (uc81xx_clear_and_write_buffer(dev, 0xff, false)) {
 		return -EIO;
@@ -587,6 +798,11 @@ static int uc81xx_init(const struct device *dev)
 	if (!gpio_is_ready_dt(&config->busy_gpio)) {
 		LOG_ERR("Busy GPIO device not ready");
 		return -ENODEV;
+	}
+
+	if (config->grayscale && !uc81xx_have_profile(dev, UC81XX_PROFILE_GRAY)) {
+		LOG_ERR("Grayscale mode requires a gray refresh profile");
+		return -EINVAL;
 	}
 
 	gpio_pin_configure_dt(&config->busy_gpio, GPIO_INPUT);
@@ -905,32 +1121,36 @@ static DEVICE_API(display, uc81xx_driver_api) = {
 		.len = sizeof(data_ ## n ## _ ## p),			\
 	}
 
-#define UC81XX_PROFILE(n)						\
-	UC81XX_MAKE_ARRAY_OPT(n, pwr);					\
-	UC81XX_MAKE_ARRAY_OPT(n, lutc);					\
-	UC81XX_MAKE_ARRAY_OPT(n, lutww);				\
-	UC81XX_MAKE_ARRAY_OPT(n, lutkw);				\
-	UC81XX_MAKE_ARRAY_OPT(n, lutwk);				\
-	UC81XX_MAKE_ARRAY_OPT(n, lutkk);				\
-	UC81XX_MAKE_ARRAY_OPT(n, lutbd);				\
-									\
-	static const struct uc81xx_profile uc81xx_profile_ ## n = {	\
-		.pwr = UC81XX_ASSIGN_ARRAY(n, pwr),			\
-		.cdi = DT_PROP_OR(n, cdi, 0),				\
-		.override_cdi = DT_NODE_HAS_PROP(n, cdi),		\
-		.tcon = DT_PROP_OR(n, tcon, 0),				\
-		.override_tcon = DT_NODE_HAS_PROP(n, tcon),		\
-		.pll = DT_PROP_OR(n, pll, 0),				\
-		.override_pll = DT_NODE_HAS_PROP(n, pll),		\
-		.vdcs = DT_PROP_OR(n, vdcs, 0),				\
-		.override_vdcs = DT_NODE_HAS_PROP(n, vdcs),		\
-									\
-		.lutc = UC81XX_ASSIGN_ARRAY(n, lutc),			\
-		.lutww = UC81XX_ASSIGN_ARRAY(n, lutww),			\
-		.lutkw = UC81XX_ASSIGN_ARRAY(n, lutkw),			\
-		.lutwk = UC81XX_ASSIGN_ARRAY(n, lutwk),			\
-		.lutkk = UC81XX_ASSIGN_ARRAY(n, lutkk),			\
-		.lutbd = UC81XX_ASSIGN_ARRAY(n, lutbd),			\
+#define UC81XX_PROFILE(n)                                                                          \
+	UC81XX_MAKE_ARRAY_OPT(n, pwr);                                                             \
+	UC81XX_MAKE_ARRAY_OPT(n, lutc);                                                            \
+	UC81XX_MAKE_ARRAY_OPT(n, lutww);                                                           \
+	UC81XX_MAKE_ARRAY_OPT(n, lutkw);                                                           \
+	UC81XX_MAKE_ARRAY_OPT(n, lutwk);                                                           \
+	UC81XX_MAKE_ARRAY_OPT(n, lutkk);                                                           \
+	UC81XX_MAKE_ARRAY_OPT(n, lutbd);                                                           \
+                                                                                                   \
+	static const struct uc81xx_profile uc81xx_profile_##n = {                                  \
+		.pwr = UC81XX_ASSIGN_ARRAY(n, pwr),                                                \
+		.cdi = DT_PROP_OR(n, cdi, 0),                                                      \
+		.override_cdi = DT_NODE_HAS_PROP(n, cdi),                                          \
+		.tcon = DT_PROP_OR(n, tcon, 0),                                                    \
+		.override_tcon = DT_NODE_HAS_PROP(n, tcon),                                        \
+		.pll = DT_PROP_OR(n, pll, 0),                                                      \
+		.override_pll = DT_NODE_HAS_PROP(n, pll),                                          \
+		.vdcs = DT_PROP_OR(n, vdcs, 0),                                                    \
+		.override_vdcs = DT_NODE_HAS_PROP(n, vdcs),                                        \
+		.ccset = DT_PROP_OR(n, ccset, 0),                                                  \
+		.override_ccset = DT_NODE_HAS_PROP(n, ccset),                                      \
+		.tsset = DT_PROP_OR(n, tsset, 0),                                                  \
+		.override_tsset = DT_NODE_HAS_PROP(n, tsset),                                      \
+                                                                                                   \
+		.lutc = UC81XX_ASSIGN_ARRAY(n, lutc),                                              \
+		.lutww = UC81XX_ASSIGN_ARRAY(n, lutww),                                            \
+		.lutkw = UC81XX_ASSIGN_ARRAY(n, lutkw),                                            \
+		.lutwk = UC81XX_ASSIGN_ARRAY(n, lutwk),                                            \
+		.lutkk = UC81XX_ASSIGN_ARRAY(n, lutkk),                                            \
+		.lutbd = UC81XX_ASSIGN_ARRAY(n, lutbd),                                            \
 	};
 
 #define _UC81XX_PROFILE_PTR(n) &uc81xx_profile_ ## n
@@ -940,44 +1160,97 @@ static DEVICE_API(display, uc81xx_driver_api) = {
 		    (_UC81XX_PROFILE_PTR(n)),				\
 		    NULL)
 
-#define UC81XX_DEFINE(n, quirks_ptr)					\
-	UC81XX_MAKE_ARRAY_OPT(n, softstart);				\
-									\
-	DT_FOREACH_CHILD(n, UC81XX_PROFILE);				\
-									\
-	static const struct uc81xx_config uc81xx_cfg_ ## n = {		\
-		.quirks = quirks_ptr,					\
-		.mipi_dev = DEVICE_DT_GET(DT_PARENT(n)),                \
-		.dbi_config = {                                         \
-			.mode = MIPI_DBI_MODE_SPI_4WIRE,                \
-			.config = MIPI_DBI_SPI_CONFIG_DT(n,             \
-					SPI_OP_MODE_CONTROLLER |        \
-					SPI_LOCK_ON | SPI_WORD_SET(8),  \
-					0),                             \
-		},                                                      \
-		.busy_gpio = GPIO_DT_SPEC_GET(n, busy_gpios),		\
-									\
-		.height = DT_PROP(n, height),				\
-		.width = DT_PROP(n, width),				\
-									\
-		.softstart = UC81XX_ASSIGN_ARRAY(n, softstart),		\
-									\
-		.profiles = {						\
-			[UC81XX_PROFILE_FULL] =				\
-				UC81XX_PROFILE_PTR(DT_CHILD(n, full)),	\
-			[UC81XX_PROFILE_PARTIAL] =			\
-				UC81XX_PROFILE_PTR(DT_CHILD(n, partial)), \
-		},							\
-	};								\
-									\
-	static struct uc81xx_data uc81xx_data_##n = {};			\
-									\
-	DEVICE_DT_DEFINE(n, uc81xx_init, NULL,				\
-			 &uc81xx_data_ ## n,				\
-			 &uc81xx_cfg_ ## n,				\
-			 POST_KERNEL,					\
-			 CONFIG_DISPLAY_INIT_PRIORITY,			\
-			 &uc81xx_driver_api);
+#define UC81XX_NODE_IS_UC8253(n) DT_NODE_HAS_COMPAT(n, ultrachip_uc8253)
+
+#define UC81XX_GRAYSCALE(n) COND_CODE_1(UC81XX_NODE_IS_UC8253(n), (DT_PROP(n, grayscale)), (0))
+
+#define UC81XX_GRAY_LEVEL_PLANE(n, i)                                                              \
+	COND_CODE_1(UC81XX_NODE_IS_UC8253(n),				\
+		    (DT_PROP_BY_IDX(n, gray_level_planes, i)), (i))
+
+#define UC81XX_GRAY_PLANE_SIZE(n) (DT_PROP(n, width) * DT_PROP(n, height) / UC81XX_PIXELS_PER_BYTE)
+
+#define UC81XX_GRAY_PLANE_SUM(n)                                                                   \
+	(UC81XX_GRAY_LEVEL_PLANE(n, 0) + UC81XX_GRAY_LEVEL_PLANE(n, 1) +                           \
+	 UC81XX_GRAY_LEVEL_PLANE(n, 2) + UC81XX_GRAY_LEVEL_PLANE(n, 3))
+
+#define UC81XX_GRAY_PLANE_SUMSQ(n)                                                                 \
+	(UC81XX_GRAY_LEVEL_PLANE(n, 0) * UC81XX_GRAY_LEVEL_PLANE(n, 0) +                           \
+	 UC81XX_GRAY_LEVEL_PLANE(n, 1) * UC81XX_GRAY_LEVEL_PLANE(n, 1) +                           \
+	 UC81XX_GRAY_LEVEL_PLANE(n, 2) * UC81XX_GRAY_LEVEL_PLANE(n, 2) +                           \
+	 UC81XX_GRAY_LEVEL_PLANE(n, 3) * UC81XX_GRAY_LEVEL_PLANE(n, 3))
+
+#define UC81XX_GRAY_MAPPING_VALIDATE(n)                                                            \
+	COND_CODE_1(UC81XX_NODE_IS_UC8253(n),				\
+		    (BUILD_ASSERT(DT_PROP_LEN(n, gray_level_planes) == UC8253_GRAY_LEVELS, \
+				  "gray-level-planes must contain four values");	\
+		     BUILD_ASSERT(UC81XX_GRAY_PLANE_SUM(n) == 6 &&		\
+				  UC81XX_GRAY_PLANE_SUMSQ(n) == 14,		\
+				  "gray-level-planes must list 0..3 exactly once");), ())
+
+#define UC81XX_GRAY_WIDTH_VALIDATE(n)                                                              \
+	COND_CODE_1(UC81XX_GRAYSCALE(n),				\
+		    (BUILD_ASSERT(DT_PROP(n, width) % UC81XX_PIXELS_PER_BYTE == 0, \
+				  "UC8253 grayscale width must be a multiple of 8");), ())
+
+#define UC81XX_GRAY_BUFFERS(n)                                                                     \
+	COND_CODE_1(UC81XX_GRAYSCALE(n),				\
+		    (static uint8_t uc81xx_plane_hi_ ## n[UC81XX_GRAY_PLANE_SIZE(n)]; \
+		     static uint8_t uc81xx_plane_lo_ ## n[UC81XX_GRAY_PLANE_SIZE(n)];), ())
+
+#define UC81XX_GRAY_PLANE_PTR(n, plane)                                                            \
+	COND_CODE_1(UC81XX_GRAYSCALE(n), (uc81xx_plane_ ## plane ## _ ## n), (NULL))
+
+#define UC81XX_DEFINE(n, quirks_ptr)                                                               \
+	UC81XX_MAKE_ARRAY_OPT(n, softstart);                                                       \
+                                                                                                   \
+	DT_FOREACH_CHILD(n, UC81XX_PROFILE);                                                       \
+                                                                                                   \
+	UC81XX_GRAY_MAPPING_VALIDATE(n);                                                           \
+	UC81XX_GRAY_WIDTH_VALIDATE(n);                                                             \
+	UC81XX_GRAY_BUFFERS(n);                                                                    \
+                                                                                                   \
+	static const struct uc81xx_config uc81xx_cfg_##n = {                                       \
+		.quirks = quirks_ptr,                                                              \
+		.mipi_dev = DEVICE_DT_GET(DT_PARENT(n)),                                           \
+		.dbi_config =                                                                      \
+			{                                                                          \
+				.mode = MIPI_DBI_MODE_SPI_4WIRE,                                   \
+				.config = MIPI_DBI_SPI_CONFIG_DT(                                  \
+					n, SPI_OP_MODE_CONTROLLER | SPI_LOCK_ON | SPI_WORD_SET(8), \
+					0),                                                        \
+			},                                                                         \
+		.busy_gpio = GPIO_DT_SPEC_GET(n, busy_gpios),                                      \
+                                                                                                   \
+		.height = DT_PROP(n, height),                                                      \
+		.width = DT_PROP(n, width),                                                        \
+		.grayscale = UC81XX_GRAYSCALE(n),                                                  \
+		.gray_level_planes =                                                               \
+			{                                                                          \
+				UC81XX_GRAY_LEVEL_PLANE(n, 0),                                     \
+				UC81XX_GRAY_LEVEL_PLANE(n, 1),                                     \
+				UC81XX_GRAY_LEVEL_PLANE(n, 2),                                     \
+				UC81XX_GRAY_LEVEL_PLANE(n, 3),                                     \
+			},                                                                         \
+		.plane_size = UC81XX_GRAY_PLANE_SIZE(n),                                           \
+		.plane_hi = UC81XX_GRAY_PLANE_PTR(n, hi),                                          \
+		.plane_lo = UC81XX_GRAY_PLANE_PTR(n, lo),                                          \
+                                                                                                   \
+		.softstart = UC81XX_ASSIGN_ARRAY(n, softstart),                                    \
+                                                                                                   \
+		.profiles =                                                                        \
+			{                                                                          \
+				[UC81XX_PROFILE_FULL] = UC81XX_PROFILE_PTR(DT_CHILD(n, full)),     \
+				[UC81XX_PROFILE_PARTIAL] =                                         \
+					UC81XX_PROFILE_PTR(DT_CHILD(n, partial)),                  \
+				[UC81XX_PROFILE_GRAY] = UC81XX_PROFILE_PTR(DT_CHILD(n, gray)),     \
+			},                                                                         \
+	};                                                                                         \
+                                                                                                   \
+	static struct uc81xx_data uc81xx_data_##n = {};                                            \
+                                                                                                   \
+	DEVICE_DT_DEFINE(n, uc81xx_init, NULL, &uc81xx_data_##n, &uc81xx_cfg_##n, POST_KERNEL,     \
+			 CONFIG_DISPLAY_INIT_PRIORITY, &uc81xx_driver_api);
 
 DT_FOREACH_STATUS_OKAY_VARGS(ultrachip_uc8175, UC81XX_DEFINE,
 			     &uc8175_quirks);
