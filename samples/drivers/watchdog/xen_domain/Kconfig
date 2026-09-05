@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 EPAM Systems
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Xen domain watchdog sample"
+
+config XEN_WDT_FAIL_CHANNEL
+	int "Watchdog channel to stop feeding"
+	default -1
+	range -1 1
+	help
+	  Select which Zephyr watchdog channel the sample stops feeding after
+	  both Xen domain watchdog timers have been installed and fed a few
+	  times. Use -1 to keep feeding both channels.
+
+source "Kconfig.zephyr"

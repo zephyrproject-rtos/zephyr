@@ -1,0 +1,8 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 EPAM Systems
+# SPDX-License-Identifier: Apache-2.0
+
+description: Xen domain watchdog
+
+compatible: "xen,watchdog"
+
+include: base.yaml
