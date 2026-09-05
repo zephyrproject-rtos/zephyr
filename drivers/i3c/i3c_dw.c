@@ -65,6 +65,8 @@ LOG_MODULE_REGISTER(i3c_dw, CONFIG_I3C_DW_LOG_LEVEL);
 	((role) == HW_CAP_DEVICE_ROLE_SEC_MASTER || (role) == HW_CAP_DEVICE_ROLE_SLAVE)
 
 #define COMMAND_QUEUE_PORT         0xc
+/* A controller command takes two queue locations: cmd_hi then cmd_lo */
+#define COMMAND_QUEUE_DWORDS_PER_CMD 2
 #define COMMAND_PORT_TOC           BIT(30)
 #define COMMAND_PORT_READ_TRANSFER BIT(28)
 #define COMMAND_PORT_SDAP          BIT(27)
@@ -129,6 +131,10 @@ LOG_MODULE_REGISTER(i3c_dw, CONFIG_I3C_DW_LOG_LEVEL);
 #define QUEUE_THLD_CTRL_RESP_BUF_MASK GENMASK(15, 8)
 #define QUEUE_THLD_CTRL_RESP_BUF(x)   (((x) - 1) << 8)
 
+#define QUEUE_THLD_CTRL_CMD_EMPTY_BUF_MASK GENMASK(7, 0)
+/* Empty locations required before CMD_QUEUE_READY is raised */
+#define QUEUE_THLD_CTRL_CMD_EMPTY_BUF(x)   ((x) & GENMASK(7, 0))
+
 #define QUEUE_THLD_CTRL_IBI_DATA_MASK    GENMASK(23, 16)
 #define QUEUE_THLD_CTRL_IBI_DATA(x)      (((x) << 16) & QUEUE_THLD_CTRL_IBI_DATA_MASK)
 #define QUEUE_THLD_CTRL_IBI_DATA_DEFAULT 0x01U
@@ -149,6 +155,8 @@ LOG_MODULE_REGISTER(i3c_dw, CONFIG_I3C_DW_LOG_LEVEL);
 #define RESET_CTRL_RESP_QUEUE BIT(2)
 #define RESET_CTRL_CMD_QUEUE  BIT(1)
 #define RESET_CTRL_SOFT       BIT(0)
+#define RESET_CTRL_FIFO_QUEUE                                                                      \
+	(RESET_CTRL_RX_FIFO | RESET_CTRL_TX_FIFO | RESET_CTRL_RESP_QUEUE | RESET_CTRL_CMD_QUEUE)
 #define RESET_CTRL_ALL                                                                             \
 	(RESET_CTRL_IBI_QUEUE | RESET_CTRL_RX_FIFO | RESET_CTRL_TX_FIFO | RESET_CTRL_RESP_QUEUE |  \
 	 RESET_CTRL_CMD_QUEUE | RESET_CTRL_SOFT)
@@ -376,6 +384,16 @@ LOG_MODULE_REGISTER(i3c_dw, CONFIG_I3C_DW_LOG_LEVEL);
 #define DW_I3C_MAX_DEVS         32
 #define DW_I3C_MAX_CMD_BUF_SIZE 16
 
+/*
+ * TID is shared by the command and response descriptors. 0x0-0x7 are user-defined; the
+ * controller generates the rest itself, and only while it is acting as a target.
+ */
+#define DW_I3C_TID_USER_MAX   0x7
+#define DW_I3C_TID_MWR_STATUS 0x8 /* Master Write Data Status */
+#define DW_I3C_TID_DEFSLVS    0xf /* DEFSLVS Status */
+
+#define DW_I3C_MAX_CMDS (DW_I3C_TID_USER_MAX + 1)
+
 /* Snps I3C/I2C Device Private Data */
 struct dw_i3c_i2c_dev_data {
 	/* Device id within the retaining registers. This is set after bus initialization by the
@@ -396,6 +414,8 @@ struct dw_i3c_cmd {
 struct dw_i3c_xfer {
 	int32_t ret;
 	uint32_t ncmds;
+	uint32_t nresp_seen;
+	uint32_t cmd_idx;
 	struct dw_i3c_cmd cmds[DW_I3C_MAX_CMD_BUF_SIZE];
 };
 
@@ -631,106 +651,212 @@ static void dw_i3c_deftgts_work_fn(struct k_work *work)
 }
 #endif /* CONFIG_I3C_CONTROLLER && CONFIG_I3C_TARGET */
 
+static void dw_i3c_intr_enable(const struct dw_i3c_config *config, uint32_t bits)
+{
+	uint32_t mask = sys_read32(config->regs + INTR_STATUS_EN) | bits;
+
+	sys_write32(mask, config->regs + INTR_STATUS_EN);
+	sys_write32(mask, config->regs + INTR_SIGNAL_EN);
+}
+
+static void dw_i3c_intr_disable(const struct dw_i3c_config *config, uint32_t bits)
+{
+	uint32_t mask = sys_read32(config->regs + INTR_STATUS_EN) & ~bits;
+
+	sys_write32(mask, config->regs + INTR_STATUS_EN);
+	sys_write32(mask, config->regs + INTR_SIGNAL_EN);
+}
+
 /**
- * @brief End the I3C transfer and process responses.
+ * @brief Enqueue pending commands into the Command Queue as space allows.
  *
- * This function is responsible for ending the I3C transfer on the specified
- * I3C device. It processes the responses received from the I3C bus, updating the
- * status and error information in the transfer structure.
+ * Keeping the queue fed avoids the "next command unavailable" SCL stall on
+ * repeated-start chains longer than the queue.
  *
  * @param dev Pointer to the I3C device structure.
+ *
+ * @retval true if every command has been enqueued.
+ * @retval false if commands remain.
  */
-static void dw_i3c_end_xfer(const struct device *dev)
+static bool dw_i3c_cmd_write_to_cmd_fifo(const struct device *dev)
 {
 	const struct dw_i3c_config *config = dev->config;
 	struct dw_i3c_data *data = dev->data;
 	struct dw_i3c_xfer *xfer = &data->xfer;
 	struct dw_i3c_cmd *cmd;
-	uint32_t nresp, resp;
-	int i, ret = 0;
-#ifdef CONFIG_I3C_TARGET
-	uint32_t rx_data;
-	int j, k;
-#endif /* CONFIG_I3C_TARGET */
+	uint32_t nempty;
 
-	nresp = QUEUE_STATUS_LEVEL_RESP(sys_read32(config->regs + QUEUE_STATUS_LEVEL));
-	for (i = 0; i < nresp; i++) {
-		uint8_t tid;
+	while (xfer->cmd_idx < xfer->ncmds) {
+		nempty = QUEUE_STATUS_LEVEL_CMD(sys_read32(config->regs + QUEUE_STATUS_LEVEL));
+		if (nempty < COMMAND_QUEUE_DWORDS_PER_CMD) {
+			/* Rest goes on CMD_QUEUE_READY */
+			break;
+		}
 
-		resp = sys_read32(config->regs + RESPONSE_QUEUE_PORT);
-		tid = RESPONSE_PORT_TID(resp);
-		if (tid == 0xf) {
+		cmd = &xfer->cmds[xfer->cmd_idx];
+		sys_write32(cmd->cmd_hi, config->regs + COMMAND_QUEUE_PORT);
+		sys_write32(cmd->cmd_lo, config->regs + COMMAND_QUEUE_PORT);
+		xfer->cmd_idx++;
+	}
+
+	return xfer->cmd_idx == xfer->ncmds;
+}
+
+static void dw_i3c_reset(const struct dw_i3c_config *config, uint32_t mask)
+{
+	sys_write32(mask, config->regs + RESET_CTRL);
+	while ((sys_read32(config->regs + RESET_CTRL) & mask) != 0) {
+	}
+}
+
+static void dw_i3c_reset_fifos_and_queues(const struct dw_i3c_config *config)
+{
+	/* A flushed queue asserts CMD_QUEUE_READY; stop the refill before it fires */
+	dw_i3c_intr_disable(config, INTR_CMD_QUEUE_READY_STAT);
+	dw_i3c_reset(config, RESET_CTRL_FIFO_QUEUE);
+	sys_write32(INTR_TRANSFER_ERR_STAT | INTR_TRANSFER_ABORT_STAT, config->regs + INTR_STATUS);
+	sys_write32(sys_read32(config->regs + DEVICE_CTRL) | DEV_CTRL_RESUME,
+		    config->regs + DEVICE_CTRL);
+}
+
+static int dw_i3c_resp_err_to_errno(uint8_t error)
+{
+	switch (error) {
+	case RESPONSE_NO_ERROR:
+		return 0;
+	case RESPONSE_ERROR_PARITY:
+	case RESPONSE_ERROR_IBA_NACK:
+	case RESPONSE_ERROR_TRANSF_ABORT:
+	case RESPONSE_ERROR_CRC:
+	case RESPONSE_ERROR_FRAME:
+		return -EIO;
+	case RESPONSE_ERROR_OVER_UNDER_FLOW:
+		return -ENOSPC;
+	case RESPONSE_ERROR_I2C_W_NACK_ERR:
+	case RESPONSE_ERROR_ADDRESS_NACK:
+		return -ENXIO;
+	default:
+		return -EINVAL;
+	}
+}
+
+/**
+ * @brief Consume one response word and record its result against the owning command.
+ *
+ * @param dev Pointer to the I3C device structure.
+ * @param resp Raw word read from RESPONSE_QUEUE_PORT.
+ */
+static void dw_i3c_process_response(const struct device *dev, uint32_t resp)
+{
+	struct dw_i3c_data *data = dev->data;
+	struct dw_i3c_xfer *xfer = &data->xfer;
+	struct dw_i3c_cmd *cmd;
+	uint8_t tid = RESPONSE_PORT_TID(resp);
+
+	if (tid > DW_I3C_TID_USER_MAX) {
 #if defined(CONFIG_I3C_CONTROLLER) && defined(CONFIG_I3C_TARGET)
+		if (tid == DW_I3C_TID_DEFSLVS) {
 			data->deftgts_count = RESPONSE_PORT_DATA_LEN(resp);
 			k_work_submit(&data->deftgts_work);
+		}
 #endif
-			continue;
-		}
+		return;
+	}
 
-		cmd = &xfer->cmds[tid];
-		cmd->rx_len = RESPONSE_PORT_DATA_LEN(resp);
-		cmd->error = RESPONSE_PORT_ERR_STATUS(resp);
+	cmd = &xfer->cmds[tid];
+	cmd->rx_len = RESPONSE_PORT_DATA_LEN(resp);
+	cmd->error = RESPONSE_PORT_ERR_STATUS(resp);
 #ifdef CONFIG_I3C_TARGET
-		/* if we are in target mode */
-		if (!dw_i3c_is_current_controller(dev)) {
-			const struct i3c_target_callbacks *target_cb =
-				data->target_config->callbacks;
+	/* if we are in target mode */
+	if (!dw_i3c_is_current_controller(dev)) {
+		const struct dw_i3c_config *config = dev->config;
+		const struct i3c_target_callbacks *target_cb = data->target_config->callbacks;
+		uint32_t rx_data;
+		int j, k;
 
-			for (j = 0; j < cmd->rx_len; j += 4) {
-				rx_data = sys_read32(config->regs + RX_TX_DATA_PORT);
-				if (target_cb != NULL && target_cb->write_received_cb != NULL) {
-					/* Call write received cb for each remaining byte  */
-					for (k = 0; k < MIN(4, cmd->rx_len - j); k++) {
-						target_cb->write_received_cb(data->target_config,
-								(rx_data >> (8 * k)) & 0xff);
-					}
-				}
+		for (j = 0; j < cmd->rx_len; j += 4) {
+			rx_data = sys_read32(config->regs + RX_TX_DATA_PORT);
+			if (target_cb == NULL || target_cb->write_received_cb == NULL) {
+				continue;
 			}
-
-			if (target_cb != NULL && target_cb->stop_cb != NULL) {
-				/*
-				 * TODO: modify API to include status, such as success or aborted
-				 * transfer
-				 */
-				target_cb->stop_cb(data->target_config);
+			/* Call write received cb for each remaining byte */
+			for (k = 0; k < MIN(4, cmd->rx_len - j); k++) {
+				target_cb->write_received_cb(data->target_config,
+							     (rx_data >> (8 * k)) & 0xff);
 			}
 		}
+
+		if (target_cb != NULL && target_cb->stop_cb != NULL) {
+			/*
+			 * TODO: modify API to include status, such as success or aborted
+			 * transfer
+			 */
+			target_cb->stop_cb(data->target_config);
+		}
+	}
 #endif /* CONFIG_I3C_TARGET */
-	}
 
-	for (i = 0; i < nresp; i++) {
-		switch (xfer->cmds[i].error) {
-		case RESPONSE_NO_ERROR:
-			break;
-		case RESPONSE_ERROR_PARITY:
-		case RESPONSE_ERROR_IBA_NACK:
-		case RESPONSE_ERROR_TRANSF_ABORT:
-		case RESPONSE_ERROR_CRC:
-		case RESPONSE_ERROR_FRAME:
-			ret = -EIO;
-			break;
-		case RESPONSE_ERROR_OVER_UNDER_FLOW:
-			ret = -ENOSPC;
-			break;
-		case RESPONSE_ERROR_I2C_W_NACK_ERR:
-		case RESPONSE_ERROR_ADDRESS_NACK:
-			ret = -ENXIO;
-			break;
-		default:
-			ret = -EINVAL;
-			break;
+	xfer->nresp_seen++;
+	if (cmd->error != RESPONSE_NO_ERROR && xfer->ret == 0) {
+		xfer->ret = dw_i3c_resp_err_to_errno(cmd->error);
+	}
+}
+
+/**
+ * @brief Drain the response queue and, once complete, end the I3C transfer.
+ *
+ * The response FIFO can be shallower than the command FIFO, so the responses for a long
+ * transfer arrive across several RESP_READY interrupts.
+ *
+ * @param dev Pointer to the I3C device structure.
+ * @param xfer_err True if a transfer-error interrupt triggered this.
+ */
+static void dw_i3c_end_xfer(const struct device *dev, bool xfer_err)
+{
+	const struct dw_i3c_config *config = dev->config;
+	struct dw_i3c_data *data = dev->data;
+	struct dw_i3c_xfer *xfer = &data->xfer;
+	uint32_t nresp, remaining, thld_ctrl;
+	int i;
+
+	for (;;) {
+		nresp = QUEUE_STATUS_LEVEL_RESP(sys_read32(config->regs + QUEUE_STATUS_LEVEL));
+		for (i = 0; i < nresp; i++) {
+			dw_i3c_process_response(dev,
+						sys_read32(config->regs + RESPONSE_QUEUE_PORT));
+		}
+
+		/* A transfer error aborts the remaining commands */
+		if (xfer_err && xfer->ret == 0) {
+			xfer->ret = -EIO;
+		}
+
+		if (xfer->ret != 0) {
+			dw_i3c_reset_fifos_and_queues(config);
+			k_sem_give(&data->sem_xfer);
+			return;
+		}
+
+		/* Also covers the ncmds == 0 target path */
+		if (xfer->nresp_seen >= xfer->ncmds) {
+			k_sem_give(&data->sem_xfer);
+			return;
+		}
+
+		/*
+		 * Re-arm for the remainder, then re-check occupancy: a response arriving
+		 * mid-drain would not re-assert the level-sensitive interrupt.
+		 */
+		remaining = xfer->ncmds - xfer->nresp_seen;
+		thld_ctrl = sys_read32(config->regs + QUEUE_THLD_CTRL);
+		thld_ctrl &= ~QUEUE_THLD_CTRL_RESP_BUF_MASK;
+		thld_ctrl |= QUEUE_THLD_CTRL_RESP_BUF(MIN(remaining, data->respfifodepth));
+		sys_write32(thld_ctrl, config->regs + QUEUE_THLD_CTRL);
+
+		if (QUEUE_STATUS_LEVEL_RESP(sys_read32(config->regs + QUEUE_STATUS_LEVEL)) == 0) {
+			return;
 		}
 	}
-	xfer->ret = ret;
-
-	if (ret < 0) {
-		sys_write32(RESET_CTRL_RX_FIFO | RESET_CTRL_TX_FIFO | RESET_CTRL_RESP_QUEUE |
-			    RESET_CTRL_CMD_QUEUE,
-			    config->regs + RESET_CTRL);
-		sys_write32(sys_read32(config->regs + DEVICE_CTRL) | DEV_CTRL_RESUME,
-			    config->regs + DEVICE_CTRL);
-	}
-	k_sem_give(&data->sem_xfer);
 }
 
 /**
@@ -750,6 +876,8 @@ static void start_xfer(const struct device *dev)
 	uint32_t thld_ctrl;
 	int32_t i;
 
+	k_sem_reset(&data->sem_xfer);
+
 	/* Push data to TXFIFO */
 	for (i = 0; i < xfer->ncmds; i++) {
 		cmd = &xfer->cmds[i];
@@ -759,22 +887,56 @@ static void start_xfer(const struct device *dev)
 		}
 	}
 
+	/* Cap at the FIFO depth; dw_i3c_end_xfer() re-arms for any remainder */
+	xfer->nresp_seen = 0;
+	xfer->cmd_idx = 0;
+	xfer->ret = 0;
 	thld_ctrl = sys_read32(config->regs + QUEUE_THLD_CTRL);
 	thld_ctrl &= ~QUEUE_THLD_CTRL_RESP_BUF_MASK;
-	thld_ctrl |= QUEUE_THLD_CTRL_RESP_BUF(xfer->ncmds);
+	thld_ctrl |= QUEUE_THLD_CTRL_RESP_BUF(MIN(xfer->ncmds, data->respfifodepth));
 	sys_write32(thld_ctrl, config->regs + QUEUE_THLD_CTRL);
 
 	/* Enqueue CMD */
-	for (i = 0; i < xfer->ncmds; i++) {
-		cmd = &xfer->cmds[i];
-		/* Only cmd_lo is used when it is a target */
-		if (dw_i3c_is_current_controller(dev)) {
-			sys_write32(cmd->cmd_hi, config->regs + COMMAND_QUEUE_PORT);
+	if (dw_i3c_is_current_controller(dev)) {
+		if (!dw_i3c_cmd_write_to_cmd_fifo(dev)) {
+			thld_ctrl = sys_read32(config->regs + QUEUE_THLD_CTRL);
+			thld_ctrl &= ~QUEUE_THLD_CTRL_CMD_EMPTY_BUF_MASK;
+			thld_ctrl |= QUEUE_THLD_CTRL_CMD_EMPTY_BUF(COMMAND_QUEUE_DWORDS_PER_CMD);
+			sys_write32(thld_ctrl, config->regs + QUEUE_THLD_CTRL);
+
+			dw_i3c_intr_enable(config, INTR_CMD_QUEUE_READY_STAT);
 		}
-		sys_write32(cmd->cmd_lo, config->regs + COMMAND_QUEUE_PORT);
+	} else {
+		/* Only cmd_lo is used when it is a target */
+		for (i = 0; i < xfer->ncmds; i++) {
+			cmd = &xfer->cmds[i];
+			sys_write32(cmd->cmd_lo, config->regs + COMMAND_QUEUE_PORT);
+		}
 	}
 }
 #ifdef CONFIG_I3C_CONTROLLER
+/**
+ * @brief Wait for the running transfer to complete.
+ *
+ * @param dev Pointer to the I3C device structure.
+ *
+ * @retval 0 if the transfer completed.
+ * @retval -ETIMEDOUT if it did not complete in time.
+ */
+static int dw_i3c_wait_for_xfer(const struct device *dev)
+{
+	const struct dw_i3c_config *config = dev->config;
+	struct dw_i3c_data *data = dev->data;
+
+	if (k_sem_take(&data->sem_xfer, K_MSEC(CONFIG_I3C_DW_RW_TIMEOUT_MS)) != 0) {
+		LOG_ERR("%s: Transfer timeout", dev->name);
+		dw_i3c_reset_fifos_and_queues(config);
+		return -ETIMEDOUT;
+	}
+
+	return 0;
+}
+
 /**
  * @brief Get the position of an I3C device with the specified address.
  *
@@ -828,7 +990,7 @@ static int dw_i3c_xfers(const struct device *dev, struct i3c_device_desc *target
 		return -EACCES;
 	}
 
-	if (num_msgs > data->cmdfifodepth) {
+	if (num_msgs > DW_I3C_MAX_CMDS) {
 		return -ENOTSUP;
 	}
 
@@ -861,7 +1023,6 @@ static int dw_i3c_xfers(const struct device *dev, struct i3c_device_desc *target
 	memset(xfer, 0, sizeof(struct dw_i3c_xfer));
 
 	xfer->ncmds = num_msgs;
-	xfer->ret = -1;
 
 	for (i = 0; i < num_msgs; i++) {
 		struct dw_i3c_cmd *cmd = &xfer->cmds[i];
@@ -971,9 +1132,8 @@ static int dw_i3c_xfers(const struct device *dev, struct i3c_device_desc *target
 
 	start_xfer(dev);
 
-	ret = k_sem_take(&data->sem_xfer, K_MSEC(CONFIG_I3C_DW_RW_TIMEOUT_MS));
+	ret = dw_i3c_wait_for_xfer(dev);
 	if (ret) {
-		LOG_ERR("%s: Semaphore err (%d)", dev->name, ret);
 		goto error;
 	}
 
@@ -1053,7 +1213,7 @@ static int dw_i3c_i2c_transfer(const struct device *dev, struct i3c_i2c_device_d
 		return -EACCES;
 	}
 
-	if (num_msgs > data->cmdfifodepth) {
+	if (num_msgs > DW_I3C_MAX_CMDS) {
 		return -ENOTSUP;
 	}
 
@@ -1091,7 +1251,6 @@ static int dw_i3c_i2c_transfer(const struct device *dev, struct i3c_i2c_device_d
 	memset(xfer, 0, sizeof(struct dw_i3c_xfer));
 
 	xfer->ncmds = num_msgs;
-	xfer->ret = -1;
 
 	for (i = 0; i < num_msgs; i++) {
 		struct dw_i3c_cmd *cmd = &xfer->cmds[i];
@@ -1128,9 +1287,8 @@ static int dw_i3c_i2c_transfer(const struct device *dev, struct i3c_i2c_device_d
 
 	start_xfer(dev);
 
-	ret = k_sem_take(&data->sem_xfer, K_MSEC(CONFIG_I3C_DW_RW_TIMEOUT_MS));
+	ret = dw_i3c_wait_for_xfer(dev);
 	if (ret) {
-		LOG_ERR("%s: Semaphore err (%d)", dev->name, ret);
 		goto error;
 	}
 
@@ -1656,10 +1814,20 @@ static int i3c_dw_irq(const struct device *dev)
 
 	status = sys_read32(config->regs + INTR_STATUS);
 	if (status & (INTR_TRANSFER_ERR_STAT | INTR_RESP_READY_STAT)) {
-		dw_i3c_end_xfer(dev);
+		dw_i3c_end_xfer(dev, (status & INTR_TRANSFER_ERR_STAT) != 0);
 
 		if (status & INTR_TRANSFER_ERR_STAT) {
 			sys_write32(INTR_TRANSFER_ERR_STAT, config->regs + INTR_STATUS);
+		}
+	}
+
+	/*
+	 * CMD_QUEUE_READY tracks queue occupancy and cannot be cleared by writing the status
+	 * bit, so mask against the enable register to tell an armed refill from an idle queue.
+	 */
+	if (status & sys_read32(config->regs + INTR_STATUS_EN) & INTR_CMD_QUEUE_READY_STAT) {
+		if (dw_i3c_cmd_write_to_cmd_fifo(dev)) {
+			dw_i3c_intr_disable(config, INTR_CMD_QUEUE_READY_STAT);
 		}
 	}
 #ifdef CONFIG_I3C_CONTROLLER
@@ -2053,7 +2221,6 @@ static int dw_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *paylo
 	pm_device_busy_set(dev);
 
 	memset(xfer, 0, sizeof(struct dw_i3c_xfer));
-	xfer->ret = -1;
 
 	/* in the case of multiple targets in a CCC, each command queue must have the same CCC ID
 	 * loaded along with different dev index fields pointing to the targets
@@ -2078,6 +2245,12 @@ static int dw_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *paylo
 		if (!(payload->targets.payloads)) {
 			LOG_ERR("%s: Direct CCC Payload structure Empty", dev->name);
 			ret = -EINVAL;
+			goto error;
+		}
+		if (payload->targets.num_targets > DW_I3C_MAX_CMD_BUF_SIZE) {
+			LOG_ERR("%s: %zu CCC targets exceeds %d", dev->name,
+				payload->targets.num_targets, DW_I3C_MAX_CMD_BUF_SIZE);
+			ret = -ENOTSUP;
 			goto error;
 		}
 		xfer->ncmds = payload->targets.num_targets;
@@ -2123,9 +2296,8 @@ static int dw_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *paylo
 
 	start_xfer(dev);
 
-	ret = k_sem_take(&data->sem_xfer, K_MSEC(CONFIG_I3C_DW_RW_TIMEOUT_MS));
+	ret = dw_i3c_wait_for_xfer(dev);
 	if (ret) {
-		LOG_ERR("%s: Semaphore err (%d)", dev->name, ret);
 		goto error;
 	}
 
@@ -2334,7 +2506,6 @@ static int dw_i3c_do_daa(const struct device *dev)
 	memset(xfer, 0, sizeof(struct dw_i3c_xfer));
 
 	xfer->ncmds = 1;
-	xfer->ret = -1;
 
 	cmd = &xfer->cmds[0];
 	cmd->cmd_hi = COMMAND_PORT_TRANSFER_ARG;
@@ -2343,13 +2514,12 @@ static int dw_i3c_do_daa(const struct device *dev)
 		      COMMAND_PORT_CMD(I3C_CCC_ENTDAA) | COMMAND_PORT_ADDR_ASSGN_CMD;
 
 	start_xfer(dev);
-	ret = k_sem_take(&data->sem_xfer, K_MSEC(CONFIG_I3C_DW_RW_TIMEOUT_MS));
+	ret = dw_i3c_wait_for_xfer(dev);
 
 	pm_device_busy_clear(dev);
 	k_mutex_unlock(&data->mt);
 
 	if (ret) {
-		LOG_ERR("%s: Semaphore err (%d)", dev->name, ret);
 		return ret;
 	}
 
@@ -2630,10 +2800,7 @@ static int dw_i3c_recover_bus(const struct device *dev)
 	/* Flush command / response / data FIFOs and the IBI queue.
 	 * Crucially, SOFT reset is NOT asserted here — DAT/DCT survive.
 	 */
-	sys_write32(RESET_CTRL_RX_FIFO | RESET_CTRL_TX_FIFO |
-		    RESET_CTRL_RESP_QUEUE | RESET_CTRL_CMD_QUEUE |
-		    RESET_CTRL_IBI_QUEUE,
-		    config->regs + RESET_CTRL);
+	dw_i3c_reset(config, RESET_CTRL_FIFO_QUEUE | RESET_CTRL_IBI_QUEUE);
 
 	/* Resume controller from any halt state caused by a prior error. */
 	sys_write32(sys_read32(config->regs + DEVICE_CTRL) | DEV_CTRL_RESUME,
