@@ -15,10 +15,6 @@
 #include <zephyr/spinlock.h>
 #include <zephyr/sys/clock.h>
 
-#if defined(CONFIG_TICKLESS_KERNEL)
-BUILD_ASSERT(0, "PIT driver for tickless kernel support DOES NOT implemented yet!");
-#endif
-
 BUILD_ASSERT(DT_HAS_CHOSEN(zephyr_system_timer),
 	     "zephyr,system-timer must be set to a microchip,pit-g1-timer node");
 BUILD_ASSERT(DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_system_timer), microchip_pit_g1_timer),
@@ -31,15 +27,12 @@ BUILD_ASSERT(DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_system_timer), microchip_pit_g1
 
 #define CYCLES_PER_TICK		(sys_clock_hw_cycles_per_sec() / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 
-#define MAX_PERIOD_CYCLES	((PIT_PIVR_CPIV_Msk >> PIT_PIVR_CPIV_Pos) + 1)
-#define MAX_TICKS		((k_ticks_t)(MAX_PERIOD_CYCLES / CYCLES_PER_TICK))
+/* PIV is 20 bits; the maximum period is all ones (counter runs PIV..0). */
+#define PIT_MAX_PIV ((PIT_PIVR_CPIV_Msk >> PIT_PIVR_CPIV_Pos))
 
 BUILD_ASSERT(CYCLES_PER_TICK > 0, "PIT CYCLES_PER_TICK must be greater than 0");
-
-BUILD_ASSERT(CYCLES_PER_TICK <= MAX_PERIOD_CYCLES,
+BUILD_ASSERT(CYCLES_PER_TICK <= PIT_MAX_PIV + 1,
 	     "system tick period exceeds the maximum Periodic Interval Value");
-
-BUILD_ASSERT(MAX_TICKS > 0, "system tick MAX_TICKS must be greater than 0");
 
 /* Device constant configuration parameters */
 struct mchp_pit_timer_config {
@@ -50,7 +43,6 @@ struct mchp_pit_timer_config {
 struct mchp_pit_timer_data {
 	DEVICE_MMIO_NAMED_RAM(reg_base);
 	uint64_t accumulated_cycles;
-	uint64_t last_cycle;
 	uint32_t piv;
 };
 
@@ -58,6 +50,7 @@ struct mchp_pit_timer_data {
 #define DEV_DATA(_dev) ((struct mchp_pit_timer_data *)(_dev)->data)
 
 static const struct device *systick_timer_dev;
+static bool mchp_pit_mmio_mapped;
 
 #if defined(CONFIG_TEST)
 const int32_t z_sys_timer_irq_for_test = TIMER_IRQ_NUM;
@@ -74,30 +67,43 @@ static inline void mchp_pit_reg_write(uint32_t data, uint32_t reg, uint32_t mask
 		    DEVICE_MMIO_NAMED_GET(systick_timer_dev, reg_base) + reg);
 }
 
-static uint64_t mchp_pit_get_cycles(uint32_t reg, bool commit)
+static inline uint32_t timer_driver_cycle_get(void)
 {
 	struct mchp_pit_timer_data *data = systick_timer_dev->data;
-	uint64_t cycles;
 	uint32_t piir;
-	uint32_t cpiv;
-	uint32_t picnt;
 
-	piir = mchp_pit_reg_read(reg);
-
-	cpiv = FIELD_GET(PIT_PIIR_CPIV_Msk, piir);
-	picnt = FIELD_GET(PIT_PIIR_PICNT_Msk, piir);
-
-	cycles = data->accumulated_cycles;
-	cycles += (uint64_t)picnt * (data->piv + 1);
-
-	if (commit) {
-		data->accumulated_cycles = cycles;
+	if (!mchp_pit_mmio_mapped) {
+		return 0;
 	}
 
-	cycles += cpiv;
+	piir = mchp_pit_reg_read(PIT_PIIR_REG_OFST);
 
-	return cycles;
+	return data->accumulated_cycles + FIELD_GET(PIT_PIIR_CPIV_Msk, piir);
 }
+
+static inline void timer_driver_set_reload(uint32_t cycles)
+{
+	struct mchp_pit_timer_data *data = systick_timer_dev->data;
+	uint32_t piir = mchp_pit_reg_read(PIT_PIIR_REG_OFST);
+
+	/* Fold the current period's elapsed count before reprogramming. */
+	data->accumulated_cycles += FIELD_GET(PIT_PIIR_CPIV_Msk, piir);
+
+	data->piv = cycles - 1;
+
+	mchp_pit_reg_write(PIT_MR_PIV(data->piv), PIT_MR_REG_OFST, PIT_MR_PIV_Msk);
+}
+
+/*
+ * A 20-bit reload counter, synthesized cycle count, immediate PIV reload.
+ * The synthesized read touches state the ISR and set_reload also update, so
+ * declare it non-atomic and let the core serialise under the clock lock.
+ */
+#define TIMER_CORE_BACKEND_RELOAD
+#define TIMER_CORE_COUNTER_WIDTH 20
+#define TIMER_CORE_COUNTER_NONATOMIC
+
+#include "system_timer_generic.h"
 
 static void mchp_pit_isr(const void *arg)
 {
@@ -105,8 +111,7 @@ static void mchp_pit_isr(const void *arg)
 
 	struct mchp_pit_timer_data *data = systick_timer_dev->data;
 	k_spinlock_key_t key;
-	uint32_t elapsed_ticks;
-	uint64_t curr_cycle;
+	uint32_t pivr;
 
 	/* If no pending event */
 	if (FIELD_GET(PIT_SR_PITS_Msk, mchp_pit_reg_read(PIT_SR_REG_OFST)) == 0) {
@@ -115,47 +120,12 @@ static void mchp_pit_isr(const void *arg)
 
 	key = sys_clock_lock();
 
-	curr_cycle = mchp_pit_get_cycles(PIT_PIVR_REG_OFST, true);
+	pivr = mchp_pit_reg_read(PIT_PIVR_REG_OFST);
 
-	elapsed_ticks = (curr_cycle - data->last_cycle) / CYCLES_PER_TICK;
+	data->accumulated_cycles += FIELD_GET(PIT_PIVR_PICNT_Msk, pivr) * (data->piv + 1);
 
-	data->last_cycle += (uint64_t)elapsed_ticks * CYCLES_PER_TICK;
-
-	sys_clock_announce_locked(elapsed_ticks, key);
+	timer_core_announce_from(key);
 }
-
-void sys_clock_set_timeout(uint32_t ticks, bool idle)
-{
-	ARG_UNUSED(ticks);
-	ARG_UNUSED(idle);
-	/* do nothing for tickful kernel system */
-}
-
-uint32_t sys_clock_elapsed(void)
-{
-	/* Always return 0 for tickful kernel system */
-	return 0;
-}
-
-uint32_t sys_clock_cycle_get_32(void)
-{
-	k_spinlock_key_t key = sys_clock_lock();
-	uint32_t cycles = (uint32_t)mchp_pit_get_cycles(PIT_PIIR_REG_OFST, false);
-
-	sys_clock_unlock(key);
-	return cycles;
-}
-
-#ifdef CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER
-uint64_t sys_clock_cycle_get_64(void)
-{
-	k_spinlock_key_t key = sys_clock_lock();
-	uint64_t cycles = mchp_pit_get_cycles(PIT_PIIR_REG_OFST, false);
-
-	sys_clock_unlock(key);
-	return cycles;
-}
-#endif
 
 static int sys_clock_driver_init(void)
 {
@@ -172,10 +142,10 @@ static int sys_clock_driver_init(void)
 			       (clock_control_subsys_t)&cfg->clock_cfg);
 
 	data->accumulated_cycles = 0;
-	data->last_cycle = 0;
-	data->piv = CYCLES_PER_TICK - 1;
+	data->piv = TIMER_CORE_CYC_PER_TICK - 1;
 
 	DEVICE_MMIO_NAMED_MAP(systick_timer_dev, reg_base, K_MEM_CACHE_NONE);
+	mchp_pit_mmio_mapped = true;
 
 	/* Read PIT_PIVR and clear PITS in PIT_SR */
 	(void)mchp_pit_reg_read(PIT_PIVR_REG_OFST);
@@ -195,6 +165,9 @@ static int sys_clock_driver_init(void)
 
 	/* Enable Period Interval Timer */
 	mchp_pit_reg_write(PIT_MR_PITEN_Msk, PIT_MR_REG_OFST, PIT_MR_PITEN_Msk);
+
+	/* Seed the announce baseline and arm the first tick/deadline. */
+	timer_core_init();
 
 	return 0;
 }

@@ -36,6 +36,7 @@
 		zephyr,console = &usart3;
 		zephyr,entropy = &trng;
 		zephyr,shell-uart = &usart3;
+		zephyr,system-timer = &pit64b0;
 	};
 
 	clocks {

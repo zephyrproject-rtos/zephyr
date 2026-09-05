@@ -52,6 +52,12 @@
 			status = "disabled";
 		};
 
+		pmc: clock-controller@f0014000 {
+			compatible = "microchip,sam-pmc";
+			reg = <0xf0014000 0x200>;
+			#clock-cells = <2>;
+		};
+
 		pit: timer@f8048030 {
 			compatible = "microchip,pit-g1-timer";
 			reg = <0xf8048030 0x4000>;
@@ -60,12 +66,6 @@
 			interrupt-parent = <&aic>;
 			interrupts = <3 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 			status = "disabled";
-		};
-
-		pmc: clock-controller@f0014000 {
-			compatible = "microchip,sam-pmc";
-			reg = <0xf0014000 0x200>;
-			#clock-cells = <2>;
 		};
 
 		aic: interrupt-controller@fc020000 {
