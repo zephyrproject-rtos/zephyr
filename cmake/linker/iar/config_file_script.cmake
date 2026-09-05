@@ -41,6 +41,17 @@ function(process_region)
           EXPR "@ADDR(.ramfunc_init)@"
           )
       else()
+        # make lower case aliases for ITCM and DTCM
+        if(${name} STREQUAL ITCM)
+          create_symbol(OBJECT ${REGION_OBJECT} SYMBOL __itcm_load_start
+            EXPR "@LOADADDR(${name_clean})@"
+            )
+        endif()
+        if(${name} STREQUAL DTCM)
+          create_symbol(OBJECT ${REGION_OBJECT} SYMBOL __dtcm_load_start
+            EXPR "@LOADADDR(${name_clean})@"
+            )
+        endif()
         create_symbol(OBJECT ${REGION_OBJECT} SYMBOL __${name_clean}_load_start
           EXPR "@LOADADDR(${name_clean})@"
           )
@@ -69,6 +80,17 @@ function(process_region)
     get_property(symbol_val GLOBAL PROPERTY SYMBOL_TABLE___${name_clean}_end)
 
     if("${symbol_val}" STREQUAL "${name_clean}")
+      # make lower case aliases for ITCM and DTCM
+      if(${name} STREQUAL ITCM)
+        create_symbol(OBJECT ${REGION_OBJECT} SYMBOL __itcm_size
+          EXPR "@SIZE(${name_clean})@"
+          )
+      endif()
+      if(${name} STREQUAL DTCM)
+        create_symbol(OBJECT ${REGION_OBJECT} SYMBOL __dtcm_size
+          EXPR "@SIZE(${name_clean})@"
+          )
+      endif()
       create_symbol(OBJECT ${REGION_OBJECT} SYMBOL __${name_clean}_size
         EXPR "@SIZE(${name_clean})@"
         )
@@ -520,6 +542,15 @@ function(section_to_string)
       set_property(GLOBAL APPEND PROPERTY ILINK_SYMBOL_ICF "__${name_clean}_start = (__iar_tls$$INIT_DATA$$Base)")
       set_property(GLOBAL APPEND PROPERTY ILINK_SYMBOL_ICF "__${name_clean}_end = (__iar_tls$$INIT_DATA$$Limit)")
     else()
+      # make lower case aliases for ITCM and DTCM
+      if(${name} STREQUAL ITCM)
+        set_property(GLOBAL APPEND PROPERTY ILINK_SYMBOL_ICF "__itcm_start = ADDR(${name_clean})")
+        set_property(GLOBAL APPEND PROPERTY ILINK_SYMBOL_ICF "__itcm_end = END(${name_clean})")
+      endif()
+      if(${name} STREQUAL DTCM)
+        set_property(GLOBAL APPEND PROPERTY ILINK_SYMBOL_ICF "__dtcm_start = ADDR(${name_clean})")
+        set_property(GLOBAL APPEND PROPERTY ILINK_SYMBOL_ICF "__dtcm_end = END(${name_clean})")
+      endif()
       set_property(GLOBAL APPEND PROPERTY ILINK_SYMBOL_ICF "__${name_clean}_start = ADDR(${name_clean})")
       set_property(GLOBAL APPEND PROPERTY ILINK_SYMBOL_ICF "__${name_clean}_end = END(${name_clean})")
     endif()
