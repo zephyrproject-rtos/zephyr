@@ -12,6 +12,8 @@
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 
+#include "adc_test.h"
+
 #if CONFIG_ADC_32_BITS_DATA
 typedef int32_t adc_data_size_t;
 #define INVALID_ADC_VALUE INT_MIN
@@ -33,33 +35,8 @@ typedef int16_t adc_data_size_t;
 #define __NOCACHE
 #endif /* CONFIG_NOCACHE_MEMORY */
 
-#define DT_SPEC_AND_COMMA(node_id, prop, idx)	ADC_DT_SPEC_GET_BY_IDX(node_id, idx),
-
-/* Expands to a channel spec for a channel node of an enabled ADC controller. */
-#define CHANNEL_NODE_SPEC_AND_COMMA(node_id) \
-	IF_ENABLED(UTIL_AND(DT_NODE_HAS_PROP(node_id, zephyr_gain), \
-			    DT_NODE_HAS_STATUS_OKAY(DT_PARENT(node_id))), \
-		   (ADC_DT_SPEC_FROM_CHANNEL_NODE(node_id),))
-
-/*
- * Channels to exercise. The io-channels of the zephyr,user node select them
- * explicitly; otherwise every channel described under an enabled ADC
- * controller is used. Only the channels on the controller of the first entry
- * are exercised.
- */
-static const struct adc_dt_spec adc_channels[] = {
-#if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), io_channels)
-	DT_FOREACH_PROP_ELEM(DT_PATH(zephyr_user), io_channels, DT_SPEC_AND_COMMA)
-#else
-	DT_FOREACH_STATUS_OKAY_NODE(CHANNEL_NODE_SPEC_AND_COMMA)
-#endif
-};
-static const int adc_channels_count = ARRAY_SIZE(adc_channels);
-
-BUILD_ASSERT(ARRAY_SIZE(adc_channels) > 0, "No ADC channel described in devicetree");
-
 /* Room for one sampling of every channel, or the samplings of the async tests. */
-#define BUFFER_SIZE  MAX(15, ARRAY_SIZE(adc_channels))
+#define BUFFER_SIZE  MAX(15, ADC_TEST_CHANNEL_COUNT)
 #ifdef CONFIG_TEST_USERSPACE
 static ZTEST_BMEM adc_data_size_t m_sample_buffer[BUFFER_SIZE];
 #else
@@ -88,20 +65,10 @@ static __aligned(32) adc_data_size_t m_prio1_sample_buffer[PRIO1_BUFFER_SIZE] __
 #endif /* CONFIG_TEST_USERSPACE */
 #endif /* CONFIG_ADC_SEQUENCE_PRIORITY */
 
-const struct device *get_adc_device(void)
-{
-	if (!adc_is_ready_dt(&adc_channels[0])) {
-		printk("ADC device is not ready\n");
-		return NULL;
-	}
-
-	return adc_channels[0].dev;
-}
-
 /* True for the channels on the controller under test. */
 static bool on_adc_device(const struct adc_dt_spec *spec)
 {
-	return spec->dev == adc_channels[0].dev;
+	return spec->dev == adc_test_channels[0].dev;
 }
 
 /*
@@ -113,12 +80,13 @@ static int add_channels(struct adc_sequence *sequence, int max_count)
 {
 	int count = 1;
 
-	for (int i = 1; i < adc_channels_count && count < max_count; i++) {
-		if (!on_adc_device(&adc_channels[i]) || adc_channels[i].channel_id >= 32) {
+	for (int i = 1; i < ADC_TEST_CHANNEL_COUNT && count < max_count; i++) {
+		if (!on_adc_device(&adc_test_channels[i]) ||
+		    adc_test_channels[i].channel_id >= 32) {
 			continue;
 		}
 
-		sequence->channels |= BIT(adc_channels[i].channel_id);
+		sequence->channels |= BIT(adc_test_channels[i].channel_id);
 		count++;
 	}
 
@@ -149,14 +117,14 @@ static void init_adc(void)
 {
 	int i, ret;
 
-	zassert_true(adc_is_ready_dt(&adc_channels[0]), "ADC device is not ready");
+	zassert_true(adc_is_ready_dt(&adc_test_channels[0]), "ADC device is not ready");
 
-	for (i = 0; i < adc_channels_count; i++) {
-		if (!on_adc_device(&adc_channels[i])) {
+	for (i = 0; i < ADC_TEST_CHANNEL_COUNT; i++) {
+		if (!on_adc_device(&adc_test_channels[i])) {
 			continue;
 		}
 
-		ret = adc_channel_setup_dt(&adc_channels[i]);
+		ret = adc_channel_setup_dt(&adc_test_channels[i]);
 		zassert_equal(ret, 0, "Setting up of channel %d failed with code %d", i, ret);
 	}
 
@@ -219,9 +187,9 @@ static int test_task_one_channel(void)
 	};
 
 	init_adc();
-	(void)adc_sequence_init_dt(&adc_channels[0], &sequence);
+	(void)adc_sequence_init_dt(&adc_test_channels[0], &sequence);
 
-	ret = adc_read_dt(&adc_channels[0], &sequence);
+	ret = adc_read_dt(&adc_test_channels[0], &sequence);
 	zassert_equal(ret, 0, "adc_read() failed with code %d", ret);
 
 	check_samples(1, m_sample_buffer, BUFFER_SIZE);
@@ -253,9 +221,9 @@ static int test_task_invalid_buffer(void)
 	small_buffer[1] = UINT8_MAX;
 
 	init_adc();
-	(void)adc_sequence_init_dt(&adc_channels[0], &sequence);
+	(void)adc_sequence_init_dt(&adc_test_channels[0], &sequence);
 
-	ret = adc_read_dt(&adc_channels[0], &sequence);
+	ret = adc_read_dt(&adc_test_channels[0], &sequence);
 	zassert_equal(ret, -ENOMEM, "adc_read() incorrectly returned with code %d", ret);
 	zassert_equal(small_buffer[1], UINT8_MAX, "adc_read() overwrote beyond the buffer size");
 
@@ -283,14 +251,14 @@ static int test_task_multiple_channels(void)
 	};
 
 	init_adc();
-	(void)adc_sequence_init_dt(&adc_channels[0], &sequence);
+	(void)adc_sequence_init_dt(&adc_test_channels[0], &sequence);
 
-	count = add_channels(&sequence, adc_channels_count);
+	count = add_channels(&sequence, ADC_TEST_CHANNEL_COUNT);
 	if (count < 2) {
 		ztest_test_skip();
 	}
 
-	ret = adc_read_dt(&adc_channels[0], &sequence);
+	ret = adc_read_dt(&adc_test_channels[0], &sequence);
 	if (ret == -ENOTSUP) {
 		ztest_test_skip();
 	}
@@ -334,9 +302,9 @@ static int test_task_asynchronous_call(void)
 					 &async_sig);
 	init_adc();
 
-	(void)adc_sequence_init_dt(&adc_channels[0], &sequence);
+	(void)adc_sequence_init_dt(&adc_test_channels[0], &sequence);
 
-	ret = adc_read_async(adc_channels[0].dev, &sequence, &async_sig);
+	ret = adc_read_async(adc_test_channels[0].dev, &sequence, &async_sig);
 	zassert_equal(ret, 0, "adc_read_async() failed with code %d", ret);
 
 	ret = k_poll(&async_evt, 1, K_MSEC(1000));
@@ -461,9 +429,9 @@ static int test_task_with_interval(void)
 
 	init_adc();
 
-	(void)adc_sequence_init_dt(&adc_channels[0], &sequence);
+	(void)adc_sequence_init_dt(&adc_test_channels[0], &sequence);
 
-	ret = adc_read_dt(&adc_channels[0], &sequence);
+	ret = adc_read_dt(&adc_test_channels[0], &sequence);
 	if (ret == -ENOTSUP) {
 		ztest_test_skip();
 	}
@@ -541,12 +509,12 @@ static int test_task_repeated_samplings(void)
 	};
 
 	init_adc();
-	(void)adc_sequence_init_dt(&adc_channels[0], &sequence);
+	(void)adc_sequence_init_dt(&adc_test_channels[0], &sequence);
 
 	m_samplings_done = 0;
 	m_repeated_channels = add_channels(&sequence, 2);
 
-	ret = adc_read_dt(&adc_channels[0], &sequence);
+	ret = adc_read_dt(&adc_test_channels[0], &sequence);
 	if (ret == -ENOTSUP) {
 		ztest_test_skip();
 	}
@@ -567,7 +535,7 @@ static int test_task_invalid_request(void)
 {
 	int ret;
 	struct adc_sequence sequence = {
-		.channels    = BIT(adc_channels[0].channel_id),
+		.channels    = BIT(adc_test_channels[0].channel_id),
 		.buffer      = m_sample_buffer,
 		.buffer_size = sizeof(m_sample_buffer),
 		.resolution  = 0, /* intentionally invalid value */
@@ -578,20 +546,20 @@ static int test_task_invalid_request(void)
 
 	init_adc();
 
-	ret = adc_read_dt(&adc_channels[0], &sequence);
+	ret = adc_read_dt(&adc_test_channels[0], &sequence);
 	zassert_not_equal(ret, 0, "adc_read() unexpectedly succeeded");
 
 #if defined(CONFIG_ADC_ASYNC)
-	ret = adc_read_async(adc_channels[0].dev, &sequence, &async_sig);
+	ret = adc_read_async(adc_test_channels[0].dev, &sequence, &async_sig);
 	zassert_not_equal(ret, 0, "adc_read_async() unexpectedly succeeded");
 #endif
 
 	/*
 	 * Make the sequence parameters valid, now the request should succeed.
 	 */
-	sequence.resolution = adc_channels[0].resolution;
+	sequence.resolution = adc_test_channels[0].resolution;
 
-	ret = adc_read_dt(&adc_channels[0], &sequence);
+	ret = adc_read_dt(&adc_test_channels[0], &sequence);
 	zassert_equal(ret, 0, "adc_read() failed with code %d", ret);
 
 	check_samples(1, m_sample_buffer, BUFFER_SIZE);
