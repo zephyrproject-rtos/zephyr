@@ -82,7 +82,7 @@ int main(void)
 		return 0;
 	}
 
-	sys_notify_init_callback(&cli.notify, sample_notify_cb);
+	sys_notify_init_callback(&cli.notify, (sys_notify_generic_callback)sample_notify_cb);
 
 	k_sleep(SAMPLE_PRE_REQUEST_TIMEOUT);
 

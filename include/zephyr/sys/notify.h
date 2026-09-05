@@ -94,8 +94,13 @@ struct sys_notify;
  *   sys_notify_fetch_result().  Expected values are
  *   service-specific, but the value shall be non-negative if the
  *   operation succeeded, and negative if the operation failed.
+ *
+ * The signature is service-specific, so a callback must be cast to
+ * @c sys_notify_generic_callback when it is registered, e.g.
+ * @c (sys_notify_generic_callback)my_callback, and cast back to its own
+ * signature by the service that invokes it.
  */
-typedef void (*sys_notify_generic_callback)();
+typedef void (*sys_notify_generic_callback)(void);
 
 /**
  * @brief State associated with notification for an asynchronous
