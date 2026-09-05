@@ -113,6 +113,7 @@ config BT_BLUENRG_ACI
 	bool "ACI message with BlueNRG-based devices"
 	depends on BT_SPI_BLUENRG
 	select BT_HCI_SET_PUBLIC_ADDR
+	select BT_HCI_SETUP if !BT_HCI_RAW
 	help
 	  Enable support for devices compatible with the BlueNRG Bluetooth
 	  Stack. Current driver supports: ST BLUENRG-MS.
@@ -124,6 +125,7 @@ config BT_STM32WBA
 	depends on ZEPHYR_HAL_STM32_MODULE_BLOBS || BUILD_ONLY_NO_BLOBS
 	select HAS_STM32LIB
 	select BT_HCI_SET_PUBLIC_ADDR if !BT_HCI_RAW
+	select BT_HCI_SETUP if !BT_HCI_RAW
 	help
 	  ST STM32WBA HCI Bluetooth interface
 
@@ -225,6 +227,7 @@ config BT_CYW208XX
 	default y
 	depends on DT_HAS_INFINEON_CYW208XX_HCI_ENABLED
 	select BT_HCI_SET_PUBLIC_ADDR
+	select BT_HCI_SETUP
 	help
 	  Infineon CYW208XX HCI bluetooth interface
 
@@ -297,13 +300,15 @@ config BT_DRIVER_QUIRK_NO_AUTO_DLE
 
 config BT_HCI_SET_PUBLIC_ADDR
 	bool
-	select BT_HCI_SETUP
 	help
-	  Pass the controller's public address to the HCI driver in setup()
+	  Pass the controller's public address to the HCI driver
 
 	  This option should be enabled by drivers for controllers that support setting the
-	  public identity through vendor-specific commands. They can then implement the
-	  setup() HCI driver API function and get the address to set from the public_addr field.
+	  public identity through vendor-specific commands. The address is available to the
+	  driver through bt_hci_get_public_addr() from the time the HCI transport is opened,
+	  so that the driver can set it during open(). Drivers that instead apply it in the
+	  setup() HCI driver API function, which receives it in its public_addr field, also
+	  select BT_HCI_SETUP.
 
 	  From the application side, the public address is set using the first call to
 	  bt_id_create(), before calling bt_enable().

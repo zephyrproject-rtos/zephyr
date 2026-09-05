@@ -3,8 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <zephyr/kernel.h>
+#include <zephyr/bluetooth/hci_lockstep.h>
 #include <zephyr/drivers/bluetooth.h>
+#include <zephyr/kernel.h>
 
 #define DT_DRV_COMPAT silabs_siwx91x_bt_hci
 #define LOG_LEVEL     CONFIG_BT_HCI_DRIVER_LOG_LEVEL
@@ -19,8 +20,6 @@ LOG_MODULE_REGISTER(bt_hci_driver_siwg917);
 #define BT_OP_VS_RF_POWER_MODE BT_OP(BT_OGF_VS, BLE_RF_POWER_INDEX)
 #define BT_LE_MODE             2
 
-static int rsi_bt_driver_send_tx_pwr_vs_cmd(const struct device *dev, uint8_t protocol_mode,
-					    uint8_t le_tx_power_index);
 static void siwx91x_bt_resp_rcvd(uint16_t status, rsi_ble_event_rcp_rcvd_info_t *resp_buf);
 
 struct hci_config {
@@ -32,34 +31,50 @@ struct hci_config {
 struct hci_data {
 	/* bt_hci_driver_data must be first */
 	struct bt_hci_driver_data common;
+	struct bt_hci_lockstep lockstep;
 	rsi_data_packet_t rsi_data_packet;
 };
 
+static int siwx91x_bt_send_raw(const struct device *dev, const uint8_t *pkt, size_t len)
+{
+	struct hci_data *hci = dev->data;
+	int sc;
+
+	if (len >= sizeof(hci->rsi_data_packet.data)) {
+		return -EOVERFLOW;
+	}
+
+	memcpy(&hci->rsi_data_packet, pkt, len);
+	sc = rsi_bt_driver_send_cmd(RSI_BLE_REQ_HCI_RAW, &hci->rsi_data_packet, NULL);
+	/* TODO SILABS ZEPHYR Convert to errno. A common function from rsi/sl_status should
+	 * be introduced
+	 */
+	if (sc) {
+		LOG_ERR("BT command send failure: %d", sc);
+		return -EIO;
+	}
+
+	return 0;
+}
+
 /**
  * @brief Send RF power mode configuration command to controller
- * @param dev Pointer to the device structure
+ * @param hci Driver data
  * @return 0 on success, negative errno on failure
  */
-static int rsi_bt_driver_send_tx_pwr_vs_cmd(const struct device *dev, uint8_t protocol_mode,
-					    uint8_t le_tx_power_index)
+static int siwx91x_bt_set_rf_power(struct hci_data *hci, uint8_t protocol_mode,
+				   uint8_t le_tx_power_index)
 {
-	struct net_buf *buf;
+	BT_HCI_PKT_CMD_DEFINE(cmd, sizeof(protocol_mode) + sizeof(le_tx_power_index));
 	int err;
 
-	/* Allocate HCI command buffer with timeout */
-	buf = bt_hci_cmd_alloc(K_FOREVER);
-	if (!buf) {
-		LOG_ERR("Failed to allocate HCI command buffer");
-		return -ENOMEM;
-	}
-	net_buf_add_u8(buf, protocol_mode);
-	net_buf_add_u8(buf, le_tx_power_index);
+	net_buf_simple_add_u8(&cmd, protocol_mode);
+	net_buf_simple_add_u8(&cmd, le_tx_power_index);
 	LOG_DBG("Sending RF Power Mode command (OCF 0x%04X) with power index %d",
 		BLE_RF_POWER_INDEX, le_tx_power_index);
 
-	err = bt_hci_cmd_send_sync(BT_OP_VS_RF_POWER_MODE, buf, NULL);
-	if (err) {
-		LOG_ERR("RF Power Mode command failed: %d", err);
+	err = bt_hci_lockstep_cmd_send_sync(&hci->lockstep, BT_OP_VS_RF_POWER_MODE, &cmd, NULL);
+	if (err != 0) {
 		return err;
 	}
 
@@ -69,45 +84,25 @@ static int rsi_bt_driver_send_tx_pwr_vs_cmd(const struct device *dev, uint8_t pr
 
 static int siwx91x_bt_open(const struct device *dev)
 {
-	ARG_UNUSED(dev);
+	struct hci_data *hci = dev->data;
+	int status;
 
-	int status = rsi_ble_enhanced_gap_extended_register_callbacks(RSI_BLE_ON_RCP_EVENT,
-								      (void *)siwx91x_bt_resp_rcvd);
-
-	return status ? -EIO : 0;
-}
-
-static int siwx91x_bt_setup(const struct device *dev, const struct bt_hci_setup_params *params)
-{
-	int err = rsi_bt_driver_send_tx_pwr_vs_cmd(dev, BT_LE_MODE, RSI_BLE_PWR_INX);
-
-	if (err < 0) {
-		LOG_ERR("Failed to send RF power config command: %d", err);
-		return err;
+	status = rsi_ble_enhanced_gap_extended_register_callbacks(RSI_BLE_ON_RCP_EVENT,
+								  (void *)siwx91x_bt_resp_rcvd);
+	if (status != 0) {
+		return -EIO;
 	}
 
-	return 0;
+	return siwx91x_bt_set_rf_power(hci, BT_LE_MODE, RSI_BLE_PWR_INX);
 }
 
 static int siwx91x_bt_send(const struct device *dev, struct net_buf *buf)
 {
-	struct hci_data *hci = dev->data;
-	int sc = -EOVERFLOW;
+	int err;
 
-	if (buf->len < sizeof(hci->rsi_data_packet.data)) {
-		memcpy(&hci->rsi_data_packet, buf->data, buf->len);
-		sc = rsi_bt_driver_send_cmd(RSI_BLE_REQ_HCI_RAW, &hci->rsi_data_packet, NULL);
-		/* TODO SILABS ZEPHYR Convert to errno. A common function from rsi/sl_status should
-		 * be introduced
-		 */
-		if (sc) {
-			LOG_ERR("BT command send failure: %d", sc);
-			sc = -EIO;
-		}
-	}
-
-	if (sc != 0) {
-		return sc;
+	err = siwx91x_bt_send_raw(dev, buf->data, buf->len);
+	if (err != 0) {
+		return err;
 	}
 
 	net_buf_unref(buf);
@@ -117,6 +112,7 @@ static int siwx91x_bt_send(const struct device *dev, struct net_buf *buf)
 static void siwx91x_bt_resp_rcvd(uint16_t status, rsi_ble_event_rcp_rcvd_info_t *resp_buf)
 {
 	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
+	struct hci_data *hci = dev->data;
 	uint8_t packet_type = BT_HCI_H4_NONE;
 	size_t len = 0;
 	struct net_buf *buf = NULL;
@@ -147,6 +143,13 @@ static void siwx91x_bt_resp_rcvd(uint16_t status, rsi_ble_event_rcp_rcvd_info_t 
 
 	if (buf && (len <= net_buf_tailroom(buf))) {
 		net_buf_add_mem(buf, resp_buf->data, len);
+
+		/* Responses to the driver's own commands, sent while opening */
+		if (bt_hci_lockstep_feed(&hci->lockstep, buf->data, buf->len)) {
+			net_buf_unref(buf);
+			return;
+		}
+
 		bt_hci_recv(dev, buf);
 	}
 }
@@ -154,11 +157,14 @@ static void siwx91x_bt_resp_rcvd(uint16_t status, rsi_ble_event_rcp_rcvd_info_t 
 static int siwx91x_bt_init(const struct device *dev)
 {
 	const struct hci_config *hci_config = dev->config;
+	struct hci_data *hci = dev->data;
 
 	if (!device_is_ready(hci_config->nwp_dev)) {
 		LOG_ERR("NWP device not ready");
 		return -ENODEV;
 	}
+
+	bt_hci_lockstep_init(&hci->lockstep, dev, siwx91x_bt_send_raw);
 
 	return 0;
 }
@@ -166,7 +172,6 @@ static int siwx91x_bt_init(const struct device *dev)
 static DEVICE_API(bt_hci, siwx91x_api) = {
 	.open = siwx91x_bt_open,
 	.send = siwx91x_bt_send,
-	.setup = siwx91x_bt_setup,
 };
 
 #define HCI_DEVICE_INIT(inst)                                                                      \

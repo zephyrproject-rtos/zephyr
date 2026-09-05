@@ -61,6 +61,7 @@ Core Host and drivers
    connection_mgmt.rst
    data_buffer.rst
    hci_drivers.rst
+   hci_pkt.rst
    hci_raw.rst
    crypto.rst
 
