@@ -438,14 +438,21 @@ void radio_pkt_configure(uint8_t bits_len, uint8_t max_len, uint8_t flags)
 	if ((pdu_type == RADIO_PKT_CONF_PDU_TYPE_DC) ||
 	    (pdu_type == RADIO_PKT_CONF_PDU_TYPE_BIS) ||
 	    (pdu_type == RADIO_PKT_CONF_PDU_TYPE_CIS)) {
-		extra |= (RADIO_PCNF0_S1INCL_Include <<
-			  RADIO_PCNF0_S1INCL_Pos) & RADIO_PCNF0_S1INCL_Msk;
+		if (false) {
+
 #if defined(CONFIG_BT_CTLR_DF)
-		if (RADIO_PKT_CONF_CTE_GET(flags) == RADIO_PKT_CONF_CTE_ENABLED) {
+		} else if (RADIO_PKT_CONF_CTE_GET(flags) == RADIO_PKT_CONF_CTE_ENABLED) {
+			extra |= (RADIO_PCNF0_S1INCL_Include <<
+				  RADIO_PCNF0_S1INCL_Pos) & RADIO_PCNF0_S1INCL_Msk;
 			bits_s1 = RADIO_PKT_CONF_S1_8BIT;
-		} else
 #endif /* CONFIG_BT_CTLR_DF */
-		{
+
+		} else {
+#if !defined(EASYVDMA_PRESENT) || defined(CONFIG_BT_CTLR_DF)
+			extra |= (RADIO_PCNF0_S1INCL_Include <<
+				  RADIO_PCNF0_S1INCL_Pos) & RADIO_PCNF0_S1INCL_Msk;
+#endif /* !EASYVDMA_PRESENT || CONFIG_BT_CTLR_DF */
+
 			bits_s1 = 0U;
 		}
 	} else {
@@ -2271,7 +2278,7 @@ static void *radio_ccm_ext_rx_pkt_set(struct ccm *cnf, uint8_t phy, uint8_t pdu_
 	ccm_job.in[3].length = sizeof(uint8_t);
 	ccm_job.in[3].attribute = CCM_JOB_PTR_ATTRIBUTE_ADATA;
 
-	ccm_job.in[4].ptr = (void *)((uint8_t *)_pkt_scratch + 3U);
+	ccm_job.in[4].ptr = (void *)((uint8_t *)_pkt_scratch + 2U + OCTET3_LEN);
 	ccm_job.in[4].length = mlen + NRF_CCM_WORKAROUND_XXXX_MDATA_EXTRA;
 	ccm_job.in[4].attribute = CCM_JOB_PTR_ATTRIBUTE_MDATA;
 
@@ -2295,7 +2302,7 @@ static void *radio_ccm_ext_rx_pkt_set(struct ccm *cnf, uint8_t phy, uint8_t pdu_
 	ccm_job.out[3].length = sizeof(uint8_t);
 	ccm_job.out[3].attribute = CCM_JOB_PTR_ATTRIBUTE_ADATA;
 
-	ccm_job.out[4].ptr = (void *)((uint8_t *)pkt + 3U);
+	ccm_job.out[4].ptr = (void *)((uint8_t *)pkt + 2U + OCTET3_LEN);
 	ccm_job.out[4].length = mlen - sizeof(uint32_t);
 	ccm_job.out[4].attribute = CCM_JOB_PTR_ATTRIBUTE_MDATA;
 
@@ -2455,7 +2462,7 @@ static void *radio_ccm_ext_tx_pkt_set(struct ccm *cnf, uint8_t pdu_type, void *p
 	ccm_job.in[2].length = alen;
 	ccm_job.in[2].attribute = CCM_JOB_PTR_ATTRIBUTE_ADATA;
 
-	ccm_job.in[3].ptr = (void *)((uint8_t *)pkt + 3U);
+	ccm_job.in[3].ptr = (void *)((uint8_t *)pkt + 2U + OCTET3_LEN);
 	ccm_job.in[3].length = mlen;
 	ccm_job.in[3].attribute = CCM_JOB_PTR_ATTRIBUTE_MDATA;
 
@@ -2479,7 +2486,7 @@ static void *radio_ccm_ext_tx_pkt_set(struct ccm *cnf, uint8_t pdu_type, void *p
 	ccm_job.out[3].length = sizeof(uint8_t);
 	ccm_job.out[3].attribute = CCM_JOB_PTR_ATTRIBUTE_ADATA;
 
-	ccm_job.out[4].ptr = (void *)((uint8_t *)_pkt_scratch + 3U);
+	ccm_job.out[4].ptr = (void *)((uint8_t *)_pkt_scratch + 2U + OCTET3_LEN);
 	ccm_job.out[4].length = mlen + sizeof(uint32_t);
 	ccm_job.out[4].attribute = CCM_JOB_PTR_ATTRIBUTE_MDATA;
 
