@@ -29,12 +29,12 @@ LL/DDI/ADV/BV-18-C
 LL/DDI/ADV/BV-19-C
 LL/DDI/ADV/BV-20-C
 LL/DDI/ADV/BV-22-C
-#LL/DDI/ADV/BV-27-C # Fails due to https://github.com/zephyrproject-rtos/zephyr/issues/53137
+LL/DDI/ADV/BV-27-C
 LL/DDI/ADV/BV-28-C
-#LL/DDI/ADV/BV-45-C # Fails due to https://github.com/zephyrproject-rtos/zephyr/issues/53137
-#LL/DDI/ADV/BV-47-C # Fails due to https://github.com/zephyrproject-rtos/zephyr/issues/53137
-#LL/DDI/ADV/BV-49-C # Fails due to https://github.com/zephyrproject-rtos/zephyr/issues/53137
-#LL/DDI/ADV/BV-52-C # Fails due to https://github.com/zephyrproject-rtos/zephyr/issues/53137
+LL/DDI/ADV/BV-45-C
+LL/DDI/ADV/BV-47-C
+LL/DDI/ADV/BV-49-C
+LL/DDI/ADV/BV-52-C
 LL/DDI/SCN/BV-01-C
 LL/DDI/SCN/BV-02-C
 LL/DDI/SCN/BV-03-C
