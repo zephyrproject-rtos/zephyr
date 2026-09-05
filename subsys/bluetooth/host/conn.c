@@ -433,6 +433,13 @@ static void bt_acl_recv(struct bt_conn *conn, struct net_buf *buf,
 			return;
 		}
 
+		if (!net_buf_is_valid(conn->rx)) {
+			LOG_ERR("Corrupted L2CAP reassembly buffer");
+			bt_conn_reset_rx_state(conn);
+			net_buf_unref(buf);
+			return;
+		}
+
 		if (buf->len > net_buf_tailroom(conn->rx)) {
 			LOG_ERR("Not enough buffer space for L2CAP data");
 
