@@ -53,6 +53,14 @@ static K_KERNEL_STACK_DEFINE(hc_stack, CONFIG_EC_HOST_CMD_HANDLER_STACK_SIZE);
 static struct k_thread hc_thread;
 #endif /* CONFIG_EC_HOST_CMD_DEDICATED_THREAD */
 
+struct ec_host_cmd_header_snapshot {
+	uint16_t cmd_id;
+	uint8_t cmd_ver;
+	uint16_t data_len;
+};
+
+static struct ec_host_cmd_header_snapshot hc_rx_snapshot;
+
 static struct ec_host_cmd ec_host_cmd = {
 	.rx_ctx = {
 			.buf = COND_CODE_1(CONFIG_EC_HOST_CMD_HANDLER_RX_BUFFER_DEF, (hc_rx_buffer),
@@ -212,7 +220,8 @@ static void send_status_response(const struct ec_host_cmd_backend *backend,
 	backend->api->send(backend);
 }
 
-static enum ec_host_cmd_status verify_rx(struct ec_host_cmd_rx_ctx *rx)
+static enum ec_host_cmd_status verify_rx(struct ec_host_cmd_rx_ctx *rx,
+					 struct ec_host_cmd_header_snapshot *snapshot)
 {
 	/* rx buf and len now have valid incoming data */
 	if (rx->len < RX_HEADER_SIZE) {
@@ -242,13 +251,24 @@ static enum ec_host_cmd_status verify_rx(struct ec_host_cmd_rx_ctx *rx)
 		return EC_HOST_CMD_INVALID_CHECKSUM;
 	}
 
+	if (snapshot != NULL) {
+		snapshot->cmd_id = rx_header->cmd_id;
+		snapshot->cmd_ver = rx_header->cmd_ver;
+		snapshot->data_len = rx_header->data_len;
+	}
+
 	return EC_HOST_CMD_SUCCESS;
 }
 
 static enum ec_host_cmd_status validate_handler(const struct ec_host_cmd_handler *handler,
-						const struct ec_host_cmd_handler_args *args)
+						const struct ec_host_cmd_handler_args *args,
+						size_t max_input_size)
 {
 	if (handler->min_rqt_size > args->input_buf_size) {
+		return EC_HOST_CMD_REQUEST_TRUNCATED;
+	}
+
+	if (args->input_buf_size > max_input_size) {
 		return EC_HOST_CMD_REQUEST_TRUNCATED;
 	}
 
@@ -309,10 +329,7 @@ int ec_host_cmd_send_response(enum ec_host_cmd_status status,
 	hc->state = EC_HOST_CMD_STATE_SENDING;
 
 	if (status != EC_HOST_CMD_SUCCESS) {
-		const struct ec_host_cmd_request_header *const rx_header =
-			(const struct ec_host_cmd_request_header *const)hc->rx_ctx.buf;
-
-		LOG_INF("HC 0x%04x err %d", rx_header->cmd_id, status);
+		LOG_INF("HC 0x%04x err %d", hc_rx_snapshot.cmd_id, status);
 		send_status_response(hc->backend, tx, status);
 		return status;
 	}
@@ -337,7 +354,7 @@ void ec_host_cmd_rx_notify(void)
 	struct ec_host_cmd *hc = &ec_host_cmd;
 	struct ec_host_cmd_rx_ctx *rx = &hc->rx_ctx;
 
-	hc->rx_status = verify_rx(rx);
+	hc->rx_status = verify_rx(rx, &hc_rx_snapshot);
 
 	if (!hc->rx_status && hc->user_cb) {
 		hc->user_cb(rx, hc->user_data);
@@ -346,14 +363,13 @@ void ec_host_cmd_rx_notify(void)
 	k_sem_give(&hc->rx_ready);
 }
 
-static void ec_host_cmd_log_request(const uint8_t *rx_buf)
+static void ec_host_cmd_log_request(const struct ec_host_cmd_header_snapshot *snapshot,
+				    const uint8_t *rx_buf)
 {
 	static uint16_t prev_cmd;
-	const struct ec_host_cmd_request_header *const rx_header =
-		(const struct ec_host_cmd_request_header *const)rx_buf;
 
 #ifdef CONFIG_EC_HOST_CMD_LOG_SUPPRESSED
-	if (ec_host_cmd_is_suppressed(rx_header->cmd_id)) {
+	if (ec_host_cmd_is_suppressed(snapshot->cmd_id)) {
 		ec_host_cmd_check_suppressed();
 
 		return;
@@ -361,7 +377,7 @@ static void ec_host_cmd_log_request(const uint8_t *rx_buf)
 #endif /* CONFIG_EC_HOST_CMD_LOG_SUPPRESSED */
 
 	if (IS_ENABLED(CONFIG_EC_HOST_CMD_LOG_DBG_BUFFERS)) {
-		if (rx_header->data_len) {
+		if (snapshot->data_len) {
 			const uint8_t *rx_data = rx_buf + RX_HEADER_SIZE;
 			static const char dbg_fmt[] = "HC 0x%04x.%d:";
 			/* Use sizeof because "%04x" needs 4 bytes for command id, and
@@ -369,9 +385,9 @@ static void ec_host_cmd_log_request(const uint8_t *rx_buf)
 			 */
 			char dbg_raw[sizeof(dbg_fmt)];
 
-			snprintf(dbg_raw, sizeof(dbg_raw), dbg_fmt, rx_header->cmd_id,
-				 rx_header->cmd_ver);
-			LOG_HEXDUMP_DBG(rx_data, rx_header->data_len, dbg_raw);
+			snprintf(dbg_raw, sizeof(dbg_raw), dbg_fmt, snapshot->cmd_id,
+				 snapshot->cmd_ver);
+			LOG_HEXDUMP_DBG(rx_data, snapshot->data_len, dbg_raw);
 
 			return;
 		}
@@ -381,11 +397,11 @@ static void ec_host_cmd_log_request(const uint8_t *rx_buf)
 	 * that occur in rapid succession - such as flash commands during
 	 * software sync.
 	 */
-	if (rx_header->cmd_id != prev_cmd) {
-		prev_cmd = rx_header->cmd_id;
-		LOG_INF("HC 0x%04x", rx_header->cmd_id);
+	if (snapshot->cmd_id != prev_cmd) {
+		prev_cmd = snapshot->cmd_id;
+		LOG_INF("HC 0x%04x", snapshot->cmd_id);
 	} else {
-		LOG_DBG("HC 0x%04x", rx_header->cmd_id);
+		LOG_DBG("HC 0x%04x", snapshot->cmd_id);
 	}
 }
 
@@ -398,7 +414,6 @@ FUNC_NORETURN static void ec_host_cmd_thread(void *hc_handle, void *arg2, void *
 	struct ec_host_cmd_rx_ctx *rx = &hc->rx_ctx;
 	struct ec_host_cmd_tx_buf *tx = &hc->tx;
 	const struct ec_host_cmd_handler *found_handler;
-	const struct ec_host_cmd_request_header *const rx_header = (void *)rx->buf;
 	/* The pointer to rx buffer is constant during communication */
 	struct ec_host_cmd_handler_args args = {
 		.output_buf = (uint8_t *)tx->buf + TX_HEADER_SIZE,
@@ -414,7 +429,7 @@ FUNC_NORETURN static void ec_host_cmd_thread(void *hc_handle, void *arg2, void *
 		k_sem_take(&hc->rx_ready, K_FOREVER);
 		hc->state = EC_HOST_CMD_STATE_PROCESSING;
 
-		ec_host_cmd_log_request(rx->buf);
+		ec_host_cmd_log_request(&hc_rx_snapshot, rx->buf);
 
 		/* Check status of the rx data, that has been verified in
 		 * ec_host_cmd_send_received.
@@ -424,9 +439,13 @@ FUNC_NORETURN static void ec_host_cmd_thread(void *hc_handle, void *arg2, void *
 			continue;
 		}
 
+		const uint16_t cmd_id = hc_rx_snapshot.cmd_id;
+		const uint8_t cmd_ver = hc_rx_snapshot.cmd_ver;
+		const uint16_t data_len = hc_rx_snapshot.data_len;
+
 		found_handler = NULL;
 		STRUCT_SECTION_FOREACH(ec_host_cmd_handler, handler) {
-			if (handler->id == rx_header->cmd_id) {
+			if (handler->id == cmd_id) {
 				found_handler = handler;
 				break;
 			}
@@ -438,13 +457,13 @@ FUNC_NORETURN static void ec_host_cmd_thread(void *hc_handle, void *arg2, void *
 			continue;
 		}
 
-		args.command = rx_header->cmd_id;
-		args.version = rx_header->cmd_ver;
-		args.input_buf_size = rx_header->data_len;
+		args.command = cmd_id;
+		args.version = cmd_ver;
+		args.input_buf_size = data_len;
 		args.output_buf_max = tx->len_max - TX_HEADER_SIZE,
 		args.output_buf_size = 0;
 
-		status = validate_handler(found_handler, &args);
+		status = validate_handler(found_handler, &args, rx->len_max - RX_HEADER_SIZE);
 		if (status != EC_HOST_CMD_SUCCESS) {
 			ec_host_cmd_send_response(status, &args);
 			continue;
