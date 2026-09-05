@@ -2204,8 +2204,33 @@ static int flash_stm32_xspi_init(const struct device *dev)
 		return -EINVAL;
 	}
 
+	/*
+	 * Use a conservative clock for the SPI-mode init phase (reset, status
+	 * polling, JEDEC ID read).  The flash's SPI-mode max clock can be much
+	 * lower than its OPI-DTR max.
+	 * The target (fast) prescaler is applied later after the flash has been
+	 * reconfigured for its target bus mode (OPI STR/DTR).
+	 */
+	uint32_t init_prescaler = prescaler;
+
+	if (dev_cfg->data_mode == XSPI_OCTO_MODE) {
+		uint32_t p;
+
+		for (p = STM32_XSPI_CLOCK_PRESCALER_MIN;
+		     p <= STM32_XSPI_CLOCK_PRESCALER_MAX;
+		     p++) {
+			if (STM32_XSPI_CLOCK_COMPUTE(ahb_clock_freq, p) <=
+			    STM32_XSPI_SPI_INIT_MAX_FREQ) {
+				break;
+			}
+		}
+		if (p > prescaler) {
+			init_prescaler = p;
+		}
+	}
+
 	/* Initialize XSPI HAL structure completely */
-	dev_data->hxspi.Init.ClockPrescaler = prescaler;
+	dev_data->hxspi.Init.ClockPrescaler = init_prescaler;
 	/* The stm32 hal_xspi driver does not reduce DEVSIZE before writing the DCR1 */
 	dev_data->hxspi.Init.MemorySize = find_lsb_set(dev_cfg->flash_size) - 2;
 #if defined(XSPI_DCR2_WRAPSIZE)
@@ -2231,21 +2256,26 @@ static int flash_stm32_xspi_init(const struct device *dev)
 
 	LOG_DBG("XSPI Init'd");
 
-#if defined(XSPI_DCR1_DLYBYP)
-	/* XSPI delay block init Function */
-	HAL_XSPI_DLYB_CfgTypeDef xspi_delay_block_cfg = {0};
+#if (defined(HAL_XSPIM_IOPORT_1) || defined(HAL_XSPIM_IOPORT_2)) && \
+	!defined(CONFIG_STM32_XSPIM)
+	/* XSPI I/O manager init Function */
+	XSPIM_CfgTypeDef xspi_mgr_cfg;
 
-	(void)HAL_XSPI_DLYB_GetClockPeriod(&dev_data->hxspi, &xspi_delay_block_cfg);
-	/*  with DTR, set the PhaseSel/4 (empiric value from stm32Cube) */
-	xspi_delay_block_cfg.PhaseSel /= 4;
+	if (dev_data->hxspi.Instance == STM32_XSPI1) {
+		xspi_mgr_cfg.IOPort = HAL_XSPIM_IOPORT_1;
+	} else if (dev_data->hxspi.Instance == STM32_XSPI2) {
+		xspi_mgr_cfg.IOPort = HAL_XSPIM_IOPORT_2;
+	}
+	xspi_mgr_cfg.nCSOverride = HAL_XSPI_CSSEL_OVR_DISABLED;
+	xspi_mgr_cfg.Req2AckTime = 1;
 
-	if (HAL_XSPI_DLYB_SetConfig(&dev_data->hxspi, &xspi_delay_block_cfg) != HAL_OK) {
-		LOG_ERR("XSPI DelayBlock failed");
+	if (HAL_XSPIM_Config(&dev_data->hxspi, &xspi_mgr_cfg,
+		HAL_XSPI_TIMEOUT_DEFAULT_VALUE) != HAL_OK) {
+		LOG_ERR("XSPI M config failed");
 		return -EIO;
 	}
 
-	LOG_DBG("Delay Block Init");
-#endif /* XSPI_DCR1_DLYBYP */
+#endif /* (HAL_XSPIM_IOPORT_1 || HAL_XSPIM_IOPORT_2) && !(xspim node) */
 
 #ifdef CONFIG_FLASH_STM32_XSPI_DMA
 	/* Configure and enable the DMA channels after XSPI config */
@@ -2319,6 +2349,41 @@ static int flash_stm32_xspi_init(const struct device *dev)
 			dev_cfg->data_mode, dev_cfg->data_rate);
 		return -EIO;
 	}
+
+	/*
+	 * Flash is now in its target bus mode (e.g. OPI-DTR).
+	 * Switch to the target (fast) prescaler, and
+	 * call HAL_XSPI_SetClockPrescaler(hxspi, 0) after init.
+	 */
+	if (prescaler != init_prescaler) {
+		dev_data->hxspi.Init.ClockPrescaler = prescaler;
+		if (HAL_XSPI_Init(&dev_data->hxspi) != HAL_OK) {
+			LOG_ERR("XSPI prescaler switch failed");
+			return -EIO;
+		}
+		LOG_DBG("XSPI clock prescaler %u -> %u", init_prescaler, prescaler);
+	}
+
+#if defined(XSPI_DCR1_DLYBYP)
+	/*
+	 * Note: delay block (DLYB) configuration is deferred until after
+	 * stm32_xspi_config_mem() and the prescaler switch to the target
+	 * clock speed, so that calibration runs at the actual operating
+	 * frequency rather than the conservative SPI-mode init frequency.
+	 */
+	HAL_XSPI_DLYB_CfgTypeDef xspi_delay_block_cfg = {0};
+
+	(void)HAL_XSPI_DLYB_GetClockPeriod(&dev_data->hxspi, &xspi_delay_block_cfg);
+	/* with DTR, set the PhaseSel/4 (empiric value from STM32Cube) */
+	xspi_delay_block_cfg.PhaseSel /= 4;
+
+	if (HAL_XSPI_DLYB_SetConfig(&dev_data->hxspi,
+				&xspi_delay_block_cfg) != HAL_OK) {
+		LOG_ERR("XSPI DelayBlock failed");
+		return -EIO;
+	}
+	LOG_DBG("Delay Block Init");
+#endif /* XSPI_DCR1_DLYBYP */
 
 	/* Send the instruction to read the SFDP  */
 	const uint8_t decl_nph = 2;
