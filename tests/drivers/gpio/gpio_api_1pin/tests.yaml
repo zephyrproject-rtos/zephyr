@@ -40,3 +40,9 @@ tests:
     filter: dt_compat_enabled("test-gpio-external-pulldown")
     harness_config:
       fixture: gpio_external_pull_down
+  drivers.gpio.1pin.tracing:
+    platform_allow:
+      - native_sim
+    extra_configs:
+      - CONFIG_TRACING=y
+      - CONFIG_TRACING_USER=y
