@@ -190,7 +190,7 @@ int gpio_mmio32_init(const struct device *dev)
 
 	context->config = config;
 
-	return 0;
+	return gpio_common_init(dev);
 }
 
 #define MMIO32_GPIO_DEVICE(n)                                                                      \

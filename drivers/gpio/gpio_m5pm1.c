@@ -199,7 +199,7 @@ static int gpio_m5pm1_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	return 0;
+	return gpio_common_init(dev);
 }
 
 #define GPIO_M5PM1_DEFINE(inst)                                                                    \

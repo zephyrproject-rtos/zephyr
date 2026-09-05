@@ -253,13 +253,15 @@ static int cy8c95xx_init(const struct device *dev)
 	};
 	rc = write_pin_state(cfg, &drv_data->pin_state);
 out:
+	k_sem_give(drv_data->lock);
 	if (rc != 0) {
 		LOG_ERR("%s init failed: %d", dev->name, rc);
-	} else {
-		LOG_DBG("%s init ok", dev->name);
+		return rc;
 	}
-	k_sem_give(drv_data->lock);
-	return rc;
+
+	LOG_DBG("%s init ok", dev->name);
+
+	return gpio_common_init(dev);
 }
 
 static DEVICE_API(gpio, api_table) = {

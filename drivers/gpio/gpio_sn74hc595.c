@@ -207,7 +207,11 @@ static int gpio_sn74hc595_init(const struct device *dev)
 		gpio_pin_set_dt(&config->enable_gpio, 1);
 	}
 
-	return ret;
+	if (ret < 0) {
+		return ret;
+	}
+
+	return gpio_common_init(dev);
 }
 
 #define SN74HC595_SPI_OPERATION                                                                    \

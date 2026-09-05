@@ -202,7 +202,7 @@ static int gpio_efinix_sapphire_init(const struct device *dev)
 	if (config->n_gpios > 4) {
 		return -EINVAL;
 	}
-	return 0;
+	return gpio_common_init(dev);
 }
 
 /* API map */

@@ -162,7 +162,7 @@ static int gpio_davinci_init(const struct device *dev)
 		LOG_ERR("failed to apply pinctrl");
 		return ret;
 	}
-	return 0;
+	return gpio_common_init(dev);
 }
 
 #define GPIO_DAVINCI_INIT_FUNC(n)                                                                  \

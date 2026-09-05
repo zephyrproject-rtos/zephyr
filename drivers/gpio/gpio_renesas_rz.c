@@ -601,6 +601,11 @@ static int gpio_rz_manage_callback(const struct device *dev, struct gpio_callbac
 
 #endif /* CONFIG_RENESAS_RZ_TINT || CONFIG_RENESAS_RZ_EXT_IRQ */
 
+static int gpio_rz_init(const struct device *dev)
+{
+	return gpio_common_init(dev);
+}
+
 static DEVICE_API(gpio, gpio_rz_driver_api) = {
 	.pin_configure = gpio_rz_pin_configure,
 #ifdef CONFIG_GPIO_GET_CONFIG
@@ -650,7 +655,8 @@ static DEVICE_API(gpio, gpio_rz_driver_api) = {
 	static struct gpio_rz_data gpio_rz_##inst##_data = {                                       \
 		.fsp_ctrl = &g_ioport_##inst##_ctrl,                                               \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(inst, NULL, NULL, &gpio_rz_##inst##_data, &gpio_rz_##inst##_config,  \
-			      POST_KERNEL, CONFIG_GPIO_INIT_PRIORITY, &gpio_rz_driver_api);
+	DEVICE_DT_INST_DEFINE(inst, gpio_rz_init, NULL, &gpio_rz_##inst##_data,                    \
+			      &gpio_rz_##inst##_config, POST_KERNEL, CONFIG_GPIO_INIT_PRIORITY,    \
+			      &gpio_rz_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(RZ_GPIO_PORT_INIT)

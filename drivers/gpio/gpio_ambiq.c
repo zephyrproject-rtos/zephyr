@@ -553,7 +553,7 @@ static int ambiq_gpio_init(const struct device *port)
 #else
 	dev_cfg->cfg_func();
 #endif
-	return 0;
+	return gpio_common_init(port);
 }
 
 static DEVICE_API(gpio, ambiq_gpio_drv_api) = {

@@ -316,7 +316,7 @@ int gpio_bcm2711_init(const struct device *port)
 
 	cfg->irq_config_func();
 
-	return 0;
+	return gpio_common_init(port);
 }
 
 static DEVICE_API(gpio, gpio_bcm2711_api) = {

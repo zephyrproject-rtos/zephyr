@@ -122,7 +122,7 @@ int gpio_brcmstb_init(const struct device *port)
 	DEVICE_MMIO_NAMED_MAP(port, reg_base, K_MEM_CACHE_NONE);
 	data->base = DEVICE_MMIO_NAMED_GET(port, reg_base) + config->offset;
 
-	return 0;
+	return gpio_common_init(port);
 }
 
 #define GPIO_BRCMSTB_INIT(n)                                                                       \

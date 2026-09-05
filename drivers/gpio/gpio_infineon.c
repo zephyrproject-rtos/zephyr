@@ -426,6 +426,13 @@ static DEVICE_API(gpio, gpio_ifx_api) = {
 #endif
 };
 
+#if !DT_ALL_INST_HAS_PROP_STATUS_OKAY(interrupts)
+static int gpio_ifx_init(const struct device *dev)
+{
+	return gpio_common_init(dev);
+}
+#endif
+
 #define GPIO_PORT_STRUCTS_DEFINE(n)                                                                \
 	static const struct gpio_ifx_config gpio_ifx_config_##n = {                                \
 		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(n),                                      \
@@ -441,7 +448,7 @@ static DEVICE_API(gpio, gpio_ifx_api) = {
 			    DEVICE_DT_INST_GET(n), 0);                                             \
 		irq_enable(DT_INST_IRQN(n));                                                       \
                                                                                                    \
-		return 0;                                                                          \
+		return gpio_common_init(dev);                                                      \
 	}                                                                                          \
 	GPIO_PORT_STRUCTS_DEFINE(n)                                                                \
 	DEVICE_DT_INST_DEFINE(n, gpio_ifx##n##_init, NULL, &gpio_ifx_data_##n,                     \
@@ -451,7 +458,7 @@ static DEVICE_API(gpio, gpio_ifx_api) = {
 
 #define GPIO_SHARED_PORT_DEFINE(n)                                                                 \
 	GPIO_PORT_STRUCTS_DEFINE(n)                                                                \
-	DEVICE_DT_INST_DEFINE(n, NULL, NULL, &gpio_ifx_data_##n,                                   \
+	DEVICE_DT_INST_DEFINE(n, gpio_ifx_init, NULL, &gpio_ifx_data_##n,                          \
 			      &gpio_ifx_config_##n, POST_KERNEL,                                   \
 			      CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &gpio_ifx_api);
 

@@ -326,6 +326,13 @@ static DEVICE_API(gpio, gpio_litex_driver_api) = {
 #endif /* CONFIG_GPIO_GET_DIRECTION */
 };
 
+#if !GPIO_LITEX_ALL_HAS_IRQ
+static int gpio_litex_port_init(const struct device *dev)
+{
+	return gpio_common_init(dev);
+}
+#endif
+
 /* Device Instantiation */
 #define GPIO_LITEX_IRQ(n)                                                                          \
 	BUILD_ASSERT(DT_INST_REG_HAS_NAME(n, mode) &&						   \
@@ -341,7 +348,7 @@ static DEVICE_API(gpio, gpio_litex_driver_api) = {
                                                                                                    \
 		irq_enable(DT_INST_IRQN(n));                                                       \
 												   \
-		return 0;                                                                          \
+		return gpio_common_init(dev);                                                      \
 	}
 
 #define GPIO_LITEX_INIT(n)                                                                         \
@@ -370,8 +377,8 @@ static DEVICE_API(gpio, gpio_litex_driver_api) = {
 	static struct gpio_litex_data gpio_litex_data_##n;					   \
 												   \
 	DEVICE_DT_INST_DEFINE(n, COND_CODE_1(DT_INST_IRQ_HAS_IDX(n, 0),				   \
-			      (gpio_litex_port_init_##n), (NULL)), NULL, &gpio_litex_data_##n,     \
-			      &gpio_litex_cfg_##n, POST_KERNEL, CONFIG_GPIO_INIT_PRIORITY,         \
-			      &gpio_litex_driver_api);
+			      (gpio_litex_port_init_##n), (gpio_litex_port_init)), NULL,	   \
+			      &gpio_litex_data_##n, &gpio_litex_cfg_##n, POST_KERNEL,		   \
+			      CONFIG_GPIO_INIT_PRIORITY, &gpio_litex_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(GPIO_LITEX_INIT)

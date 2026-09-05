@@ -220,7 +220,7 @@ static int tca9554_init(const struct device *dev)
 		return ret;
 	}
 
-	return 0;
+	return gpio_common_init(dev);
 }
 
 static DEVICE_API(gpio, tca9554_api) = {

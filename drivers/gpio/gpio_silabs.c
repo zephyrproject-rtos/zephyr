@@ -428,7 +428,7 @@ static int gpio_silabs_port_init(const struct device *dev)
 	common_data->ports[config->gpio_index] = dev;
 	LOG_DBG("Added GPIO port %s", dev->name);
 
-	return 0;
+	return gpio_common_init(dev);
 }
 
 static DEVICE_API(gpio, gpio_driver_api) = {

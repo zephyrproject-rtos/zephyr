@@ -438,10 +438,11 @@ out:
 	k_sem_give(&parent_data->lock);
 	if (ret) {
 		LOG_ERR("%s init failed: %d", dev->name, ret);
-	} else {
-		LOG_INF("%s init ok", dev->name);
+		return ret;
 	}
-	return ret;
+	LOG_INF("%s init ok", dev->name);
+
+	return gpio_common_init(dev);
 }
 
 static DEVICE_API(gpio, api_table) = {
@@ -457,10 +458,7 @@ static DEVICE_API(gpio, api_table) = {
 
 #define GPIO_ADP5585_INIT(inst)                                               \
 	static const struct adp5585_gpio_config adp5585_gpio_cfg_##inst = {       \
-		.common = {                                                           \
-			.port_pin_mask = GPIO_DT_INST_PORT_PIN_MASK_NGPIOS_EXC(           \
-					inst, DT_INST_PROP(inst, ngpios))                         \
-		},                                                                    \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(inst),                  \
 		.mfd_dev = DEVICE_DT_GET(DT_INST_PARENT(inst)),                       \
 	};                                                                        \
 	static struct adp5585_gpio_data adp5585_gpio_drvdata_##inst;              \

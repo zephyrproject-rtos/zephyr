@@ -366,7 +366,7 @@ static DEVICE_API(gpio, mcux_rgpio_driver_api) = {
 			K_MEM_CACHE_NONE | K_MEM_DIRECT_MAP); \
 		IF_ENABLED(DT_INST_IRQ_HAS_IDX(n, DT_INST_PROP(n, irq_output_select)), \
 		   (MCUX_RGPIO_IRQ_INIT(n, DT_INST_PROP(n, irq_output_select));)) \
-		return 0;						\
+		return gpio_common_init(dev);				\
 	}
 
 DT_INST_FOREACH_STATUS_OKAY(MCUX_RGPIO_INIT)

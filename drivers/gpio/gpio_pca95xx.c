@@ -814,7 +814,7 @@ static int gpio_pca95xx_init(const struct device *dev)
 	}
 #endif
 
-	return 0;
+	return gpio_common_init(dev);
 }
 
 #define GPIO_PCA95XX_DEVICE_INSTANCE(inst)				\
