@@ -465,7 +465,7 @@ static int hpack_integer_encode(uint8_t *buf, size_t buflen, int value,
 			return -ENOBUFS;
 		}
 
-		*buf = (uint8_t)((value % 128) + 128);
+		*buf++ = (uint8_t)((value % 128) + 128);
 		len++;
 		value /= 128;
 	}
