@@ -52,8 +52,6 @@ config INPUT_CRSF_CHANNEL_VALUE_ZERO
 	  CRSF sends analogue values for digital switches. This config value
 	  sets the threshold to interpret the analogue value as a logic 0
 
-DT_CHOSEN_Z_DTCM := zephyr,dtcm
-
 config INPUT_CRSF_USE_DTCM_FOR_DMA_BUFFER
 	bool "Use DTCM for hardware DMA buffers"
 	depends on $(dt_chosen_enabled,$(DT_CHOSEN_Z_DTCM))

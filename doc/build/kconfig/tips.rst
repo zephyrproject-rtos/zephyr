@@ -637,6 +637,15 @@ argument, as follows:
    in Devicetree bindings; there is no need to define such variables.
    See :ref:`auto-dts-kconfig` for details.
 
+   To avoid repetition, Zephyr also provides two variables for each
+   of the :ref:`devicetree-zephyr-chosen-nodes`.
+
+      .. code-block:: kconfig
+
+         # Variables for chosen "zephyr,example-chosen"
+         DT_CHOSEN_Z_EXAMPLE_CHOSEN := zephyr,example-chosen
+         DT_CHOSEN_Z_EXAMPLE_CHOSEN_PATH := $(dt_chosen_path, $(DT_CHOSEN_Z_EXAMPLE_CHOSEN))
+
 Checking changes in menuconfig/guiconfig
 ****************************************
 

@@ -70,8 +70,6 @@ config DMA_MCUX_TEST_SLOT_START
 	help
 	  test slot start num
 
-ZEPHYR_DTCM := zephyr,dtcm
-
 config DMA_MCUX_USE_DTCM_FOR_DMA_DESCRIPTORS
 	bool "Use DTCM for DMA descriptors"
 	default y

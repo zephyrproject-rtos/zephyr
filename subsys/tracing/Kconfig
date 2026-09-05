@@ -3,8 +3,6 @@
 # Copyright (c) 2015 Wind River Systems, Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-DT_CHOSEN_Z_CONSOLE := zephyr,console
-
 config SYS_IDLE_HOOKS
 	bool
 	help
