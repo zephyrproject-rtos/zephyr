@@ -443,6 +443,14 @@ New APIs and options
     for unmapped addresses, erratum 1013783 workaround)
   * :kconfig:option:`CONFIG_EXCEPTION_DUMP` (enabled by default, can be disabled to compile
     out the fault handler output on size constrained builds)
+  * :kconfig:option:`CONFIG_RISCV_USER_STRING_NLEN_VALIDATE` (RISC-V, validate the user
+    string chunk by chunk in ``arch_user_string_nlen()`` instead of relying on the fault fixup,
+    for SoCs whose load access fault is imprecise)
+  * :kconfig:option:`CONFIG_RISCV_SOC_HAS_SYSCALL_INTMASK` (RISC-V SoC hook to mask
+    interrupts in the user-mode syscall body without clearing ``mstatus.MIE``)
+  * :kconfig:option:`CONFIG_RISCV_SOC_SYSCALL_CLOSE_ECALL` (RISC-V SoC hook to leave the
+    ecall exception before the user-mode syscall body runs, for SoCs that cannot deliver a
+    fault raised by the body while that exception is open)
 
 * Audio
 
