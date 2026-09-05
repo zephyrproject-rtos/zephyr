@@ -10,7 +10,7 @@ common:
     - nrf54l15bsim/nrf54l15/cpuapp
 
 tests:
-  tests.bsim.bluetooth.samples.central_hr_peripheral_hr:
+  bluetooth.samples.central_hr_peripheral_hr:
     extra_conf_files:
       - ${ZEPHYR_BASE}/samples/bluetooth/central_hr/prj.conf
     harness_config:
@@ -22,7 +22,7 @@ tests:
       - application: sample.bluetooth.peripheral_hr.bsim
         path: $ZEPHYR_BASE/samples/bluetooth/peripheral_hr
 
-  tests.bsim.bluetooth.samples.central_hr_peripheral_hr.extended:
+  bluetooth.samples.central_hr_peripheral_hr.extended:
     extra_conf_files:
       - ${ZEPHYR_BASE}/samples/bluetooth/central_hr/prj.conf
     extra_overlay_confs:
@@ -37,7 +37,7 @@ tests:
       - application: sample.bluetooth.peripheral_hr.extended.bsim
         path: $ZEPHYR_BASE/samples/bluetooth/peripheral_hr
 
-  tests.bsim.bluetooth.samples.central_hr_peripheral_hr.phy_coded:
+  bluetooth.samples.central_hr_peripheral_hr.phy_coded:
     extra_conf_files:
       - ${ZEPHYR_BASE}/samples/bluetooth/central_hr/prj.conf
     extra_overlay_confs:
@@ -52,7 +52,7 @@ tests:
       - application: sample.bluetooth.peripheral_hr.phy_coded.bsim
         path: $ZEPHYR_BASE/samples/bluetooth/peripheral_hr
 
-  tests.bsim.bluetooth.samples.central_hr_peripheral_hr.static_callbacks:
+  bluetooth.samples.central_hr_peripheral_hr.static_callbacks:
     extra_conf_files:
       - ${ZEPHYR_BASE}/samples/bluetooth/central_hr/prj.conf
     extra_overlay_confs:

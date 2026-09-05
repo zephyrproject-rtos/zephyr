@@ -12,14 +12,14 @@ common:
     - nrf54l15bsim/nrf54l15/cpuapp
 
 tests:
-  tests.bsim.bluetooth.ll.throughput:
+  bluetooth.controller.throughput:
     harness_config:
       fixture: bsim_multi_test
       bsim_exe_name: tests_bsim_bluetooth_ll_throughput_prj_conf
       tests_scripts:
         - tests_scripts/gatt_write.sh
 
-  tests.bsim.bluetooth.ll.throughput_no_phy_update:
+  bluetooth.controller.throughput_no_phy_update:
     extra_overlay_confs:
       - overlay-no_phy_update.conf
     harness_config:
