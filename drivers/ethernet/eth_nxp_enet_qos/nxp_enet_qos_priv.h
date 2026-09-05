@@ -30,10 +30,20 @@
 #define OWN_FLAG                        BIT(31)
 #define RX_STATUS1_VALID_FLAG           BIT(26)
 #define RX_TIMESTAMP_AVAILABLE_FLAG     BIT(14)
+/* RDES1 write-back status, valid only when RX_STATUS1_VALID_FLAG is set:
+ * IP header checksum error and IP payload (L4) checksum error.
+ */
+#define RX_IP_HEADER_ERROR_FLAG         BIT(3)
+#define RX_IP_PAYLOAD_ERROR_FLAG        BIT(7)
 
 #define RX_INTERRUPT_ON_COMPLETE_FLAG BIT(30)
 #define TX_INTERRUPT_ON_COMPLETE_FLAG BIT(31)
 #define TX_TIMESTAMP_ENABLE_FLAG      BIT(30)
+/* TDES3 CIC (checksum insertion control) field: 0b11 inserts the IP header,
+ * the payload and the pseudo header checksums. The MAC only rewrites IP frames
+ * with a known L4 protocol and leaves other frames untouched.
+ */
+#define TX_CHECKSUM_INSERT_FLAG       FIELD_PREP(GENMASK(17, 16), 0x3)
 #define TX_TIMESTAMP_STATUS_FLAG      BIT(17)
 #define BUF1_ADDR_VALID_FLAG          BIT(24)
 #define DESC_RX_PKT_LEN               GENMASK(14, 0)
@@ -115,10 +125,36 @@ struct nxp_enet_qos_mac_config {
 #endif
 };
 
-struct nxp_enet_qos_tx_data {
-	struct k_sem tx_sem;
+/* One in-flight frame: num_descs consecutive descriptors ending at last_desc,
+ * wrapping with the ring. pkt is claimed by whichever of completion or abort
+ * reaches it first.
+ */
+struct nxp_enet_qos_tx_frame {
 	struct net_pkt *pkt;
-	int num_descs;
+	uint16_t first_desc;
+	uint16_t last_desc;
+	uint16_t num_descs;
+	uint32_t seq;
+	bool timestamp;
+};
+
+/* Persistent transmit ring with a parallel ring of in-flight frame records.
+ * The producer (thread), the consumer (transmit interrupt) and the abort path
+ * (PHY callback work) mutate head, tail and the records only under irq_lock,
+ * and a record's pkt is claimed once, so exactly one path returns each frame.
+ */
+struct nxp_enet_qos_tx_data {
+	struct k_work_delayable watchdog;
+	uint16_t desc_head;
+	uint16_t desc_used;
+	uint16_t frame_head;
+	uint16_t frame_tail;
+	uint16_t frame_used;
+	uint32_t seq_next;
+	uint32_t watchdog_seq;
+	bool watchdog_seq_valid;
+	bool aborting;
+	struct nxp_enet_qos_tx_frame frames[NUM_TX_BUFDESC];
 	volatile union nxp_enet_qos_tx_desc descriptors[NUM_TX_BUFDESC];
 };
 
