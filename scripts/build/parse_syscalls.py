@@ -29,7 +29,15 @@ import json
 import os
 import re
 import sys
+from concurrent.futures import ProcessPoolExecutor
 from pathlib import PurePath
+
+# Scanning the tree is CPU bound, so it is spread over several processes. Below
+# this many files the pool would cost more to start than it saves. The worker cap
+# bounds CPU use rather than wall time: more workers do not scan faster, they just
+# take cores away from the compile jobs running alongside this script.
+PARALLEL_SCAN_MIN_FILES = 500
+PARALLEL_SCAN_MAX_WORKERS = 4
 
 regex_flags = re.MULTILINE | re.VERBOSE
 
@@ -86,6 +94,57 @@ def merge_extends_into_tagged(tagged_list, extends_map):
     for i, item in enumerate(tagged_list):
         if isinstance(item, str) and item in extends_map:
             tagged_list[i] = {"name": item, "extends": extends_map[item]}
+
+
+def scan_file(one_file, to_emit):
+    """Scan a single file, returning its syscalls, tagged structs and API extensions."""
+    with open(one_file, encoding="utf-8") as fp:
+        try:
+            contents = fp.read()
+        except Exception:
+            sys.stderr.write(f"Error decoding {one_file}\n")
+            raise
+
+    fn = os.path.basename(one_file)
+
+    try:
+        syscall_result = []
+        for mo in syscall_regex.finditer(contents):
+            groups = mo.groups()
+            groups = [re.sub(r'\s+', ' ', group) for group in groups]
+            syscall_result.append((groups, fn, to_emit))
+
+        tagged_result = {}
+        for tag in struct_tags:
+            tagged_result[tag] = []
+            tagged_struct_update(tagged_result[tag], tag, contents)
+
+        extends_result = {}
+        api_extends_update(extends_result, contents)
+    except Exception as e:
+        sys.stderr.write(f"While parsing {fn}\n")
+        raise e
+
+    return syscall_result, tagged_result, extends_result
+
+
+def scan_files(file_names, emit_flags):
+    """Scan every file, returning one result per file in file_names order."""
+    if len(file_names) < PARALLEL_SCAN_MIN_FILES:
+        return list(map(scan_file, file_names, emit_flags))
+
+    workers = min(os.cpu_count() or 1, PARALLEL_SCAN_MAX_WORKERS)
+    with ProcessPoolExecutor(max_workers=workers) as executor:
+        # executor.map() hands results back in input order, so the generated
+        # JSON does not depend on how the work happened to be scheduled.
+        return list(
+            executor.map(
+                scan_file,
+                file_names,
+                emit_flags,
+                chunksize=max(1, len(file_names) // (workers * 8)),
+            )
+        )
 
 
 def analyze_headers(include_dir, scan_dir, file_list):
@@ -146,32 +205,14 @@ def analyze_headers(include_dir, scan_dir, file_list):
                         syscall_files[path] = {"emit": False}
 
     # Parse files to extract syscall functions
-    for one_file in syscall_files:
-        with open(one_file, encoding="utf-8") as fp:
-            try:
-                contents = fp.read()
-            except Exception:
-                sys.stderr.write(f"Error decoding {one_file} (included in {path})\n")
-                raise
+    file_names = list(syscall_files)
+    emit_flags = [syscall_files[f]["emit"] | args.emit_all_syscalls for f in file_names]
 
-        fn = os.path.basename(one_file)
-
-        try:
-            to_emit = syscall_files[one_file]["emit"] | args.emit_all_syscalls
-
-            syscall_result = []
-            for mo in syscall_regex.finditer(contents):
-                groups = mo.groups()
-                groups = [re.sub(r'\s+', ' ', group) for group in groups]
-                syscall_result.append((groups, fn, to_emit))
-            for tag in struct_tags:
-                tagged_struct_update(tagged_ret[tag], tag, contents)
-            api_extends_update(extends_map, contents)
-        except Exception as e:
-            sys.stderr.write(f"While parsing {fn}\n")
-            raise e
-
+    for syscall_result, tagged_result, extends_result in scan_files(file_names, emit_flags):
         syscall_ret.extend(syscall_result)
+        for tag in struct_tags:
+            tagged_ret[tag].extend(tagged_result[tag])
+        extends_map.update(extends_result)
 
     merge_extends_into_tagged(tagged_ret["__subsystem"], extends_map)
 
