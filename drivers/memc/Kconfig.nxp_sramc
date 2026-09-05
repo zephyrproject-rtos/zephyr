@@ -1,0 +1,15 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config MEMC_NXP_SRAMC
+	bool "NXP AHB SRAM Controller (SRAMC)"
+	default y
+	depends on DT_HAS_NXP_SRAMC_ENABLED
+	select PINCTRL
+	help
+	  Enable the NXP AHB SRAM Controller (SRAMC) driver. This init-only
+	  driver configures the external asynchronous parallel SRAM bus timing
+	  by calling the MCUXpresso SDK fsl_sramc HAL, so the external SRAM is
+	  usable as a memory-mapped region. Used on i.MX RT118x (e.g.
+	  MIMXRT1189).
+

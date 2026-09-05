@@ -1792,4 +1792,12 @@
 		zephyr,memory-region = "OCRAM2";
 		reg = <0x80000 DT_SIZE_K(256)>;
 	};
+
+	sramc: sramc@42420000 {
+		compatible = "nxp,sramc";
+		reg = <0x42420000 0x1000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		status = "disabled";
+	};
 };
