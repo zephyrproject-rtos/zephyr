@@ -1127,6 +1127,18 @@ Expressions
    - ``node_id``: The node alias (defined in ``aliases`` node) or node path to match.
    - ``prop``: The node's property to check.
 
+``dt_any_enabled_node_has_prop(prop)``
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+**Purpose:**
+   Checks if any enabled DT node has the specified property. A node counts as enabled when it and
+   all of its ancestors have status ``okay``, so a child of a disabled node does not match. Useful
+   for nodes identified by a property rather than a compatible, like the channel child nodes of an
+   ADC controller.
+
+**Parameters:**
+   - ``prop``: The property to look for.
+
 Usage
 -----
 
