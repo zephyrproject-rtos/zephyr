@@ -453,24 +453,22 @@ static int airoc_mgmt_send(const struct device *dev, struct net_pkt *pkt)
 	size_t pkt_len = net_pkt_get_len(pkt);
 	struct net_buf *buf = NULL;
 
-	/* Read the packet payload */
-	if (net_pkt_read(pkt, data->frame_buf, pkt_len) < 0) {
-		LOG_ERR("net_pkt_read failed");
-		return -EIO;
-	}
-
-	/* Allocate Network Buffer from pool with Packet Length + Data Header */
+	/* Allocate WHD buffer with headroom for WHD data header */
 	ret = airoc_wifi_host_buffer_get((whd_buffer_t *)&buf, WHD_NETWORK_TX,
 					 pkt_len + sizeof(data_header_t), 0);
 	if ((ret != WHD_SUCCESS) || (buf == NULL)) {
 		return -EIO;
 	}
 
-	/* Reserve the buffer Headroom for WHD Data header */
+	/* Reserve headroom for WHD data header */
 	net_buf_reserve(buf, sizeof(data_header_t));
 
-	/* Copy the buffer to network Buffer pointer */
-	(void)memcpy(buf->data, data->frame_buf, pkt_len);
+	/* Read net_pkt directly into WHD buffer — single copy, no intermediate frame_buf */
+	if (net_pkt_read(pkt, buf->data, pkt_len) < 0) {
+		LOG_ERR("net_pkt_read failed");
+		airoc_wifi_buffer_release((whd_buffer_t)buf, WHD_NETWORK_TX);
+		return -EIO;
+	}
 
 	/* Call WHD API to send out the Packet */
 	ret = whd_network_send_ethernet_data(airoc_if, (void *)buf);
@@ -497,50 +495,64 @@ static int airoc_mgmt_send(const struct device *dev, struct net_pkt *pkt)
 static void airoc_wifi_network_process_ethernet_data(whd_interface_t interface, whd_buffer_t buffer)
 {
 	struct net_pkt *pkt;
-	uint8_t *data = whd_buffer_get_current_piece_data_pointer(interface->whd_driver, buffer);
+	struct net_buf *buf = (struct net_buf *)buffer;
 	uint32_t len = whd_buffer_get_current_piece_size(interface->whd_driver, buffer);
-	bool net_pkt_unref_flag = false;
 
-	if ((airoc_wifi_iface != NULL) && net_if_flag_is_set(airoc_wifi_iface, NET_IF_UP)) {
-
-		pkt = net_pkt_rx_alloc_with_buffer(airoc_wifi_iface, len, NET_AF_UNSPEC, 0,
-						   K_NO_WAIT);
-
-		if (pkt != NULL) {
-			if (net_pkt_write(pkt, data, len) < 0) {
-				LOG_ERR("Failed to write pkt");
-				net_pkt_unref_flag = true;
-			}
-
-			if ((net_pkt_unref_flag) || (net_recv_data(airoc_wifi_iface, pkt) < 0)) {
-				LOG_ERR("Failed to push received data");
-				net_pkt_unref_flag = true;
-			}
-		} else {
-			LOG_ERR("Failed to get net buffer");
-		}
+	if ((airoc_wifi_iface == NULL) || !net_if_flag_is_set(airoc_wifi_iface, NET_IF_UP)) {
+		airoc_wifi_buffer_release(buffer, WHD_NETWORK_RX);
+		return;
 	}
 
-	/* Release a packet buffer */
-	airoc_wifi_buffer_release(buffer, WHD_NETWORK_RX);
+	pkt = net_pkt_rx_alloc_on_iface(airoc_wifi_iface, K_NO_WAIT);
+	if (pkt == NULL) {
+		LOG_ERR("Failed to alloc net_pkt");
+		airoc_wifi_buffer_release(buffer, WHD_NETWORK_RX);
+#if defined(CONFIG_NET_STATISTICS_WIFI)
+		airoc_wifi_data.stats.errors.rx++;
+#endif
+		return;
+	}
+
+	/* WHD tracks data length via buf->size; fix up buf->len so the network
+	 * stack sees the correct amount of data when we hand off the buffer.
+	 */
+	buf->len = len;
+	net_pkt_append_buffer(pkt, buf);
+	/* Ownership of buf transferred to pkt; do not call airoc_wifi_buffer_release */
+
+	if (net_recv_data(airoc_wifi_iface, pkt) < 0) {
+		LOG_ERR("Failed to push received data");
+		net_pkt_unref(pkt);
+#if defined(CONFIG_NET_STATISTICS_WIFI)
+		airoc_wifi_data.stats.errors.rx++;
+#endif
+		return;
+	}
 
 #if defined(CONFIG_NET_STATISTICS_WIFI)
 	airoc_wifi_data.stats.bytes.received += len;
 	airoc_wifi_data.stats.pkts.rx++;
 #endif
-
-	if (net_pkt_unref_flag) {
-		net_pkt_unref(pkt);
-#if defined(CONFIG_NET_STATISTICS_WIFI)
-		airoc_wifi_data.stats.errors.rx++;
-#endif
-	}
 }
 
 static enum ethernet_hw_caps airoc_get_capabilities(const struct device *dev __unused,
 						    struct net_if *iface __unused)
 {
 	return ETHERNET_HW_FILTERING;
+}
+
+static int airoc_get_config(const struct device *dev __unused,
+			    struct net_if *iface __unused,
+			    enum ethernet_config_type type,
+			    struct ethernet_config *config)
+{
+	switch (type) {
+	case ETHERNET_CONFIG_TYPE_EXTRA_TX_PKT_HEADROOM:
+		config->extra_tx_pkt_headroom = sizeof(data_header_t);
+		return 0;
+	default:
+		return -ENOTSUP;
+	}
 }
 
 static int airoc_set_config(const struct device *dev __unused,
@@ -2548,6 +2560,7 @@ static const struct net_wifi_mgmt_offload airoc_api = {
 	.wifi_iface.iface_api.init = airoc_mgmt_init,
 	.wifi_iface.send = airoc_mgmt_send,
 	.wifi_iface.get_capabilities = airoc_get_capabilities,
+	.wifi_iface.get_config = airoc_get_config,
 	.wifi_iface.set_config = airoc_set_config,
 	.wifi_mgmt_api = &airoc_wifi_mgmt,
 #if defined(CONFIG_WIFI_NM_WPA_SUPPLICANT)

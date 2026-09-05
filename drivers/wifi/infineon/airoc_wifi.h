@@ -82,7 +82,6 @@ struct airoc_wifi_data {
 #endif
 	whd_driver_t whd_drv;
 	struct gpio_callback host_oob_pin_cb;
-	uint8_t frame_buf[NET_ETH_MAX_FRAME_SIZE];
 #if defined(CONFIG_WIFI_NM_WPA_SUPPLICANT)
 	wl_bss_info_t scan_bss_info;
 	void *supp_if_ctx;
