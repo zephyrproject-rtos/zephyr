@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022 Linaro Limited
+ * Copyright (c) 2026 Witekio
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -52,8 +53,43 @@
 #define RTC_SEL(val)		STM32_DT_CLOCK_SELECT((val), 9, 8, BDCR_REG)
 
 /** CFGR1 devices */
-#define MCO1_SEL(val)           STM32_DT_CLOCK_SELECT((val), 27, 24, CFGR1_REG)
-#define MCO1_PRE(val)           STM32_DT_CLOCK_SELECT((val), 30, 28, CFGR1_REG)
+#define MCO1_SEL(val)       STM32_DT_CLOCK_SELECT((val), 27, 24, CFGR1_REG)
+#define MCO1_PRE(val)       STM32_DT_CLOCK_SELECT((val), 30, 28, CFGR1_REG)
+#define MCO1_PLL_DIV(val)   STM32_DT_CLOCK_SELECT((val), 31, 31, CFGR1_REG)
+
+/* MCO source clock selector */
+#define MCO_SEL_HSI14    (1)
+#define MCO_SEL_LSI      (2)
+#define MCO_SEL_LSE      (3)
+#define MCO_SEL_SYSCLK   (4)
+#define MCO_SEL_HSI      (5)
+#define MCO_SEL_HSE      (6)
+#define MCO_SEL_PLL      (7)    /* PLL/2 or PLL, see below */
+#define MCO_SEL_HSI48    (8)
+
+/* MCO prescaler : division factor */
+#define MCO_PRE_DIV_1   (0)
+#define MCO_PRE_DIV_2   (1)
+#define MCO_PRE_DIV_4   (2)
+#define MCO_PRE_DIV_8   (3)
+#define MCO_PRE_DIV_16  (4)
+#define MCO_PRE_DIV_32  (5)
+#define MCO_PRE_DIV_64  (6)
+#define MCO_PRE_DIV_128 (7)
+
+/*
+ * MCO PLL source divider
+ * 
+ * By default, the MCO_SEL_PLL source goes through a divide-by-2
+ * prescaler and outputs "PLL / 2". It is possible to output the
+ * undivided PLL clock by disabling the prescaler on some SoCs
+ * by using MCO_PLL_DIV_1.
+ *  
+ * Refer to RM00091 Rev 10 §6.2.12 (or RM0360 Rev 5 §7.2.11) to
+ * determine if disabling the prescaler is possible on your SoC.
+ */
+#define MCO_PLL_DIV_2   (0)     /* default value */
+#define MCO_PLL_DIV_1   (1)
 
 /** @endcond */
 
