@@ -8,12 +8,14 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/init.h>
+#include <zephyr/kernel.h>
 #include <zephyr/sys/iterable_sections.h>
-#include <zephyr/usb/usbh.h>
+#include <zephyr/sys/barrier.h>
 
-#include "usbh_class.h"
-#include "usbh_device.h"
 #include "usbh_internal.h"
+#include "usbh_device.h"
+#include "usbh_host.h"
+#include "usbh_class.h"
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(uhs, CONFIG_USBH_LOG_LEVEL);
@@ -24,11 +26,11 @@ static struct k_thread usbh_thread_data;
 static K_KERNEL_STACK_DEFINE(usbh_bus_stack, CONFIG_USBH_STACK_SIZE);
 static struct k_thread usbh_bus_thread_data;
 
-K_MSGQ_DEFINE_STATIC_TYPE(usbh_msgq, struct uhc_event, CONFIG_USBH_MAX_UHC_MSG);
-K_MSGQ_DEFINE_STATIC_TYPE(usbh_bus_msgq, struct uhc_event, CONFIG_USBH_MAX_UHC_MSG);
+K_MSGQ_DEFINE(usbh_msgq, sizeof(struct uhc_event), CONFIG_USBH_MAX_UHC_MSG, sizeof(uint32_t));
 
-static int usbh_event_carrier(const struct device *dev,
-			      const struct uhc_event *const event)
+K_MSGQ_DEFINE(usbh_bus_msgq, sizeof(struct uhc_event), CONFIG_USBH_MAX_UHC_MSG, sizeof(uint32_t));
+
+static int usbh_event_carrier(const struct device *dev, const struct uhc_event *const event)
 {
 	int err;
 
@@ -38,49 +40,121 @@ static int usbh_event_carrier(const struct device *dev,
 		err = k_msgq_put(&usbh_bus_msgq, event, K_NO_WAIT);
 	}
 
+	if (err != 0) {
+		LOG_ERR("USB host event queue full (type=%d)", (int)event->type);
+	}
+
 	return err;
+}
+
+static void usbh_root_publish(struct usbh_context *const ctx, struct usb_device *udev)
+{
+	usbh_host_lock(ctx);
+	ctx->root = udev;
+	usbh_host_unlock(ctx);
+}
+
+static struct usb_device *usbh_root_take(struct usbh_context *const ctx)
+{
+	struct usb_device *udev;
+
+	usbh_host_lock(ctx);
+	udev = ctx->root;
+	ctx->root = NULL;
+	usbh_host_unlock(ctx);
+
+	return udev;
+}
+
+static void usbh_device_detach(struct usbh_context *const ctx)
+{
+	struct usb_device *udev = usbh_root_take(ctx);
+
+	if (udev == NULL) {
+		return;
+	}
+
+	barrier_dmem_fence_full();
+	usbh_device_removed_notify(udev);
+	usbh_class_remove_all(udev);
+	usbh_device_free(udev);
 }
 
 static void dev_connected_handler(struct usbh_context *const ctx,
 				  const struct uhc_event *const event)
 {
+	const char *const tname = k_thread_name_get(k_current_get());
 	struct usb_device *udev;
+	struct usb_device *prev;
+	int init_err;
+
+	LOG_DBG("trace: dev_connected thread=%s prio=%d speed_evt=%d", tname != NULL ? tname : "?",
+		k_thread_priority_get(k_current_get()), (int)event->type);
+
+	prev = usbh_root_take(ctx);
+	if (prev != NULL) {
+		LOG_WRN("Replacing connected USB device");
+		barrier_dmem_fence_full();
+		usbh_device_removed_notify(prev);
+		usbh_class_remove_all(prev);
+		usbh_device_free(prev);
+		uhc_free_dev(ctx->dev);
+	}
 
 	udev = usbh_device_alloc(ctx);
-
 	if (udev == NULL) {
 		LOG_ERR("Failed allocate new device");
+		uhc_free_dev(ctx->dev);
 		return;
 	}
 
+	udev->state = USB_STATE_DEFAULT;
+
 	if (event->type == UHC_EVT_DEV_CONNECTED_HS) {
 		udev->speed = USB_SPEED_SPEED_HS;
+	} else if (event->type == UHC_EVT_DEV_CONNECTED_LS) {
+		udev->speed = USB_SPEED_SPEED_LS;
+	} else if (event->type == UHC_EVT_DEV_CONNECTED_SS) {
+		udev->speed = USB_SPEED_SPEED_SS;
 	} else {
 		udev->speed = USB_SPEED_SPEED_FS;
 	}
 
-	usbh_device_connect(ctx, udev);
+	usbh_root_publish(ctx, udev);
+
+	init_err = usbh_device_init(udev);
+	LOG_DBG("trace: usbh_device_init done err=%d thread=%s root=%p", init_err,
+		tname != NULL ? tname : "?", (void *)udev);
+
+	if (init_err != 0) {
+		struct usb_device *failed = usbh_root_take(ctx);
+
+		LOG_ERR("Failed to reset new USB device");
+		if (failed != NULL) {
+			usbh_device_free(failed);
+		}
+		uhc_free_dev(ctx->dev);
+	}
 }
 
 static void dev_removed_handler(struct usbh_context *const ctx)
 {
-	struct usb_device *udev = NULL;
-
-	udev = usbh_device_get_root(ctx);
-	if (udev != NULL) {
-		usbh_device_disconnect(ctx, udev);
+	if (ctx->root != NULL) {
+		usbh_device_detach(ctx);
+		LOG_DBG("Device removed");
 	} else {
 		LOG_DBG("Spurious device removed event");
 	}
+
+	uhc_free_dev(ctx->dev);
 }
 
-static int discard_ep_request(struct usbh_context *const ctx,
-			      struct uhc_transfer *const xfer)
+static int discard_ep_request(struct usbh_context *const ctx, struct uhc_transfer *const xfer)
 {
 	const struct device *dev = ctx->dev;
 
 	if (xfer->buf) {
-		LOG_HEXDUMP_INF(xfer->buf->data, xfer->buf->len, "buf");
+		LOG_HEXDUMP_DBG(xfer->buf->data, xfer->buf->len, "buf");
 		uhc_xfer_buf_free(dev, xfer->buf);
 	}
 
@@ -94,10 +168,9 @@ static ALWAYS_INLINE int usbh_event_handler(struct usbh_context *const ctx,
 
 	switch (event->type) {
 	case UHC_EVT_DEV_CONNECTED_LS:
-		LOG_ERR("Low speed device not supported (connected event)");
-		break;
 	case UHC_EVT_DEV_CONNECTED_FS:
 	case UHC_EVT_DEV_CONNECTED_HS:
+	case UHC_EVT_DEV_CONNECTED_SS:
 		dev_connected_handler(ctx, event);
 		break;
 	case UHC_EVT_DEV_REMOVED:
@@ -189,18 +262,13 @@ int usbh_init_device_intl(struct usbh_context *const uhs_ctx)
 
 static int uhs_pre_init(void)
 {
-	k_thread_create(&usbh_thread_data, usbh_stack,
-			K_KERNEL_STACK_SIZEOF(usbh_stack),
-			usbh_thread,
-			NULL, NULL, NULL,
-			K_PRIO_COOP(9), 0, K_NO_WAIT);
+	k_thread_create(&usbh_thread_data, usbh_stack, K_KERNEL_STACK_SIZEOF(usbh_stack),
+			usbh_thread, NULL, NULL, NULL, K_PRIO_COOP(9), 0, K_NO_WAIT);
 
 	k_thread_name_set(&usbh_thread_data, "usbh");
 
 	k_thread_create(&usbh_bus_thread_data, usbh_bus_stack,
-			K_KERNEL_STACK_SIZEOF(usbh_bus_stack),
-			usbh_bus_thread,
-			NULL, NULL, NULL,
+			K_KERNEL_STACK_SIZEOF(usbh_bus_stack), usbh_bus_thread, NULL, NULL, NULL,
 			K_PRIO_COOP(9), 0, K_NO_WAIT);
 
 	k_thread_name_set(&usbh_bus_thread_data, "usbh_bus");

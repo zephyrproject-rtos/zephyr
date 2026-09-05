@@ -12,9 +12,13 @@
 #include <zephyr/init.h>
 #include <zephyr/fs/fs.h>
 #include <zephyr/sd/sd_spec.h>
+#if defined(CONFIG_DISK_ACCESS)
+#include <zephyr/storage/disk_access.h>
+#endif
 #include <stdlib.h>
 #include <inttypes.h>
 #include <limits.h>
+#include <zephyr/sys/dlist.h>
 
 #ifdef CONFIG_FILE_SYSTEM_SHELL_MOUNT_COMMAND
 /* FAT */
@@ -44,13 +48,9 @@ static struct fs_mount_t fatfs_mnt = {
 #error "No disk device defined, is your board supported?"
 #endif
 
-FS_LITTLEFS_DECLARE_CUSTOM_CONFIG(
-	lfs_data,
-	CONFIG_SDHC_BUFFER_ALIGNMENT,
-	SDMMC_DEFAULT_BLOCK_SIZE,
-	SDMMC_DEFAULT_BLOCK_SIZE,
-	SDMMC_DEFAULT_BLOCK_SIZE,
-	2 * SDMMC_DEFAULT_BLOCK_SIZE);
+FS_LITTLEFS_DECLARE_CUSTOM_CONFIG(lfs_data, CONFIG_SDHC_BUFFER_ALIGNMENT, SDMMC_DEFAULT_BLOCK_SIZE,
+				  SDMMC_DEFAULT_BLOCK_SIZE, SDMMC_DEFAULT_BLOCK_SIZE,
+				  2 * SDMMC_DEFAULT_BLOCK_SIZE);
 
 static struct fs_mount_t littlefs_mnt = {
 	.type = FS_LITTLEFS,
@@ -850,11 +850,54 @@ static char *mntpt_prepare(char *mntpt)
 }
 
 #if defined(CONFIG_FAT_FILESYSTEM_ELM)
+#if defined(CONFIG_DISK_ACCESS)
+static int shell_disk_init_from_mntpt(const struct shell *sh, const char *mntpt)
+{
+	const char *colon;
+	char disk_name[16];
+	size_t name_len;
+	int err;
+
+	if (mntpt[0] != '/') {
+		return 0;
+	}
+
+	colon = strchr(mntpt + 1, ':');
+	if (colon == NULL) {
+		return 0;
+	}
+
+	name_len = (size_t)(colon - (mntpt + 1));
+	if (name_len == 0U || name_len >= sizeof(disk_name)) {
+		shell_error(sh, "Invalid mount point \"%s\"", mntpt);
+		return -EINVAL;
+	}
+
+	memcpy(disk_name, mntpt + 1, name_len);
+	disk_name[name_len] = '\0';
+
+	err = disk_access_ioctl(disk_name, DISK_IOCTL_CTRL_INIT, NULL);
+	if (err != 0) {
+		shell_error(sh, "Disk \"%s\" init failed (%d)", disk_name, err);
+		return err;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_DISK_ACCESS */
+
 static int cmd_mount_fat(const struct shell *sh, size_t argc, char **argv)
 {
+	int res;
+
 	if (fatfs_mnt.mnt_point != NULL) {
-		shell_error(sh, "%s already mounted at %s", "FAT fs", fatfs_mnt.mnt_point);
-		return -EBUSY;
+		if (!sys_dnode_is_linked(&fatfs_mnt.node)) {
+			k_free((void *)fatfs_mnt.mnt_point);
+			fatfs_mnt.mnt_point = NULL;
+		} else {
+			shell_error(sh, "%s already mounted at %s", "FAT fs", fatfs_mnt.mnt_point);
+			return -EBUSY;
+		}
 	}
 
 	char *mntpt = mntpt_prepare(argv[1]);
@@ -864,9 +907,17 @@ static int cmd_mount_fat(const struct shell *sh, size_t argc, char **argv)
 		return -EIO;
 	}
 
+#if defined(CONFIG_DISK_ACCESS)
+	res = shell_disk_init_from_mntpt(sh, mntpt);
+	if (res != 0) {
+		k_free(mntpt);
+		return res;
+	}
+#endif
+
 	fatfs_mnt.mnt_point = mntpt;
 
-	int res = fs_mount(&fatfs_mnt);
+	res = fs_mount(&fatfs_mnt);
 
 	if (res != 0) {
 		shell_error(sh, "Error mounting %s: %d", "FAT fs", res);
@@ -947,36 +998,32 @@ static int cmd_mount_rpmsgfs(const struct shell *sh, size_t argc, char **argv)
 }
 #endif
 
-SHELL_STATIC_SUBCMD_SET_CREATE(sub_fs_mount,
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	sub_fs_mount,
 #if defined(CONFIG_FAT_FILESYSTEM_ELM)
-	SHELL_CMD_ARG(fat, NULL,
-		      SHELL_HELP("Mount fatfs", "<mount-point>"),
-		      cmd_mount_fat, 2, 0),
+	SHELL_CMD_ARG(fat, NULL, SHELL_HELP("Mount fatfs", "<mount-point>"), cmd_mount_fat, 2, 0),
 #endif
 
 #if defined(CONFIG_FILE_SYSTEM_LITTLEFS)
-	SHELL_CMD_ARG(littlefs, NULL,
-		      SHELL_HELP("Mount littlefs", "<mount-point>"),
+	SHELL_CMD_ARG(littlefs, NULL, SHELL_HELP("Mount littlefs", "<mount-point>"),
 		      cmd_mount_littlefs, 2, 0),
 #endif
 
 #if defined(CONFIG_FILE_SYSTEM_RPMSGFS)
-	SHELL_CMD_ARG(rpmsgfs, NULL,
-		      SHELL_HELP("Mount rpmsgfs", "<mount-point> [<remote-path>]"),
+	SHELL_CMD_ARG(rpmsgfs, NULL, SHELL_HELP("Mount rpmsgfs", "<mount-point> [<remote-path>]"),
 		      cmd_mount_rpmsgfs, 2, 1),
 #endif
 
-	SHELL_SUBCMD_SET_END
-);
+	SHELL_SUBCMD_SET_END);
 #endif
 
-SHELL_STATIC_SUBCMD_SET_CREATE(sub_fs,
-	SHELL_CMD(cd, NULL, SHELL_HELP("Change working directory", "[<path>]"), cmd_cd),
+SHELL_STATIC_SUBCMD_SET_CREATE(
+	sub_fs, SHELL_CMD(cd, NULL, SHELL_HELP("Change working directory", "[<path>]"), cmd_cd),
 	SHELL_CMD(ls, NULL, SHELL_HELP("List files in current directory", "[<path>]"), cmd_ls),
 	SHELL_CMD_ARG(mkdir, NULL, SHELL_HELP("Create directory", "<path>"), cmd_mkdir, 2, 0),
 #ifdef CONFIG_FILE_SYSTEM_SHELL_MOUNT_COMMAND
-	SHELL_CMD(mount, &sub_fs_mount,
-		  SHELL_HELP("Mount filesystem", "<fs type> <mount-point>"), NULL),
+	SHELL_CMD(mount, &sub_fs_mount, SHELL_HELP("Mount filesystem", "<fs type> <mount-point>"),
+		  NULL),
 #endif
 	SHELL_CMD(pwd, NULL, SHELL_HELP("Print current working directory", NULL), cmd_pwd),
 	SHELL_CMD_ARG(read, NULL, SHELL_HELP("Read from file", "<path> [<count> [<offset>]]"),
@@ -988,10 +1035,10 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_fs,
 	SHELL_CMD_ARG(rm, NULL, SHELL_HELP("Remove file", "<path>"), cmd_rm, 2, 0),
 	SHELL_CMD_ARG(cp, NULL, SHELL_HELP("Copy file", "<source> <dest>"), cmd_cp, 3, 0),
 	SHELL_CMD_ARG(mv, NULL, SHELL_HELP("Move file", "<source> <dest>"), cmd_mv, 3, 0),
-	SHELL_CMD_ARG(statvfs, NULL, SHELL_HELP("Show file system state", "<path>"),
-		      cmd_statvfs, 2, 0),
-	SHELL_CMD_ARG(trunc, NULL, SHELL_HELP("Truncate file", "<path> [<length>]"),
-		      cmd_trunc, 2, 255),
+	SHELL_CMD_ARG(statvfs, NULL, SHELL_HELP("Show file system state", "<path>"), cmd_statvfs, 2,
+		      0),
+	SHELL_CMD_ARG(trunc, NULL, SHELL_HELP("Truncate file", "<path> [<length>]"), cmd_trunc, 2,
+		      255),
 	SHELL_CMD_ARG(write, NULL, SHELL_HELP("Write file", "<path> <data> [<data> ...]"),
 		      cmd_write, 3, 255),
 #ifdef CONFIG_FILE_SYSTEM_SHELL_TEST_COMMANDS
@@ -1001,7 +1048,6 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_fs,
 		      SHELL_HELP("Erase/write file test", "<path> <size> <repeat>"),
 		      cmd_erase_write_test, 4, 0),
 #endif
-	SHELL_SUBCMD_SET_END
-);
+	SHELL_SUBCMD_SET_END);
 
 SHELL_CMD_REGISTER(fs, &sub_fs, "File system commands", NULL);
