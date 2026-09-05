@@ -402,6 +402,25 @@ static void handle_wifi_scan_done(struct net_mgmt_event_callback *cb)
 	context.scan_result = 0U;
 }
 
+static void print_ieee80211_codes(const struct shell *sh,
+				  struct net_mgmt_event_callback *cb)
+{
+	const struct wifi_status *status = cb->info;
+
+	/* Not every producer of these events fills in the codes */
+	if (cb->info_length < sizeof(struct wifi_status)) {
+		return;
+	}
+
+	if (status->status_code != 0) {
+		PR("IEEE 802.11 status code %u\n", status->status_code);
+	}
+
+	if (status->reason_code != 0) {
+		PR("IEEE 802.11 reason code %u\n", status->reason_code);
+	}
+}
+
 static void handle_wifi_connect_result(struct net_mgmt_event_callback *cb)
 {
 	const struct wifi_status *status =
@@ -421,6 +440,7 @@ static void handle_wifi_connect_result(struct net_mgmt_event_callback *cb)
 
 		PR_WARNING("Connection request failed (%s/%d)\n",
 			   wifi_conn_status_txt(st), st);
+		print_ieee80211_codes(sh, cb);
 	} else {
 		PR("Connected\n");
 	}
@@ -450,6 +470,8 @@ static void handle_wifi_disconnect_result(struct net_mgmt_event_callback *cb)
 			PR("Disconnected\n");
 		}
 	}
+
+	print_ieee80211_codes(sh, cb);
 }
 
 static void print_twt_params(uint8_t dialog_token, uint8_t flow_id,
