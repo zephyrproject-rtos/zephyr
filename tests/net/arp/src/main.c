@@ -783,4 +783,263 @@ ZTEST(arp_fn_tests, test_bcast_hwaddr_unicast_ipaddr)
 			unicast_ipaddr, true);
 }
 
+struct arp_lookup_result {
+	const struct net_in_addr *ip;
+	struct net_eth_addr eth;
+	bool found;
+	bool is_static;
+};
+
+static void arp_lookup_cb(struct arp_entry *entry, void *user_data)
+{
+	struct arp_lookup_result *result = user_data;
+
+	if (net_ipv4_addr_cmp(&entry->ip, result->ip)) {
+		result->found = true;
+		result->is_static = entry->is_static;
+		memcpy(&result->eth, &entry->eth, sizeof(struct net_eth_addr));
+	}
+}
+
+static struct arp_lookup_result arp_lookup(const struct net_in_addr *ip)
+{
+	struct arp_lookup_result result = { .ip = ip };
+
+	(void)net_arp_foreach(arp_lookup_cb, &result);
+
+	return result;
+}
+
+static void arp_count_cb(struct arp_entry *entry, void *user_data)
+{
+	ARG_UNUSED(entry);
+	ARG_UNUSED(user_data);
+}
+
+static int arp_entry_count(void)
+{
+	return net_arp_foreach(arp_count_cb, NULL);
+}
+
+/* A static entry belongs to the user: it survives a flush, it is not evicted
+ * to make room, and a peer cannot rewrite it by sending us an ARP message.
+ */
+ZTEST(arp_fn_tests, test_arp_static_entry)
+{
+	struct net_eth_addr hwaddr = { { 0x00, 0x00, 0x5e, 0x00, 0x53, 0x11 } };
+	struct net_eth_addr hwaddr2 = { { 0x00, 0x00, 0x5e, 0x00, 0x53, 0x22 } };
+	struct net_in_addr dynamic = { { { 192, 0, 2, 21 } } };
+	struct net_in_addr fixed = { { { 192, 0, 2, 22 } } };
+	struct arp_lookup_result result;
+	struct net_if *iface;
+	int ret;
+
+	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(ETHERNET));
+	zassert_not_null(iface, "No Ethernet interface");
+
+	net_if_ipv4_nbr_flush(NULL);
+
+	net_arp_update(iface, &dynamic, &hwaddr, false, true);
+
+	ret = net_arp_add_static(iface, &fixed, &hwaddr);
+	zassert_ok(ret, "Cannot add a static entry");
+
+	result = arp_lookup(&dynamic);
+	zassert_true(result.found, "Dynamic entry was not added");
+	zexpect_false(result.is_static, "Dynamic entry is marked static");
+
+	result = arp_lookup(&fixed);
+	zassert_true(result.found, "Static entry was not added");
+	zexpect_true(result.is_static, "Static entry is not marked static");
+
+	/* An ARP message from the peer must not change the address we were
+	 * told to use.
+	 */
+	net_arp_update(iface, &fixed, &hwaddr2, false, true);
+	result = arp_lookup(&fixed);
+	zexpect_mem_equal(&result.eth, &hwaddr, sizeof(struct net_eth_addr),
+			  "Static entry was overwritten from the network");
+
+	/* The same message for a dynamic entry must go through. */
+	net_arp_update(iface, &dynamic, &hwaddr2, false, true);
+	result = arp_lookup(&dynamic);
+	zexpect_mem_equal(&result.eth, &hwaddr2, sizeof(struct net_eth_addr),
+			  "Dynamic entry was not updated");
+
+	/* A flush keeps the static entry and drops the dynamic one. */
+	net_if_ipv4_nbr_flush(iface);
+
+	zexpect_false(arp_lookup(&dynamic).found,
+		      "Dynamic entry survived a flush");
+	zexpect_true(arp_lookup(&fixed).found,
+		     "Static entry did not survive a flush");
+
+	zexpect_true(net_arp_entry_rm(iface, &fixed),
+		     "Static entry could not be removed");
+	zexpect_false(arp_lookup(&fixed).found,
+		      "Static entry is still in the cache");
+}
+
+/* Static entries are never evicted, so a table full of them has nothing to
+ * give back and resolution fails instead of throwing one away.
+ */
+ZTEST(arp_fn_tests, test_arp_static_entries_are_not_evicted)
+{
+	struct net_eth_addr hwaddr = { { 0x00, 0x00, 0x5e, 0x00, 0x53, 0x33 } };
+	struct net_in_addr dynamic = { { { 192, 0, 2, 40 } } };
+	struct net_if *iface;
+	int i, ret;
+
+	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(ETHERNET));
+	zassert_not_null(iface, "No Ethernet interface");
+
+	net_if_ipv4_nbr_flush(NULL);
+
+	for (i = 0; i < CONFIG_NET_ARP_TABLE_SIZE; i++) {
+		struct net_in_addr fixed = { { { 192, 0, 2, 30 + i } } };
+
+		ret = net_arp_add_static(iface, &fixed, &hwaddr);
+		zassert_ok(ret, "Cannot add static entry %d", i);
+	}
+
+	zassert_equal(arp_entry_count(), CONFIG_NET_ARP_TABLE_SIZE,
+		      "Not all static entries were added");
+
+	net_arp_update(iface, &dynamic, &hwaddr, false, true);
+	zexpect_false(arp_lookup(&dynamic).found,
+		      "A static entry was evicted to make room");
+
+	/* And a flush still leaves them all in place. */
+	net_if_ipv4_nbr_flush(NULL);
+	zexpect_equal(arp_entry_count(), CONFIG_NET_ARP_TABLE_SIZE,
+		      "Static entries were flushed");
+
+	for (i = 0; i < CONFIG_NET_ARP_TABLE_SIZE; i++) {
+		struct net_in_addr fixed = { { { 192, 0, 2, 30 + i } } };
+
+		zexpect_true(net_arp_entry_rm(NULL, &fixed),
+			     "Cannot remove static entry %d", i);
+	}
+
+	zexpect_equal(arp_entry_count(), 0, "Cache is not empty");
+}
+
+/* Removing one address leaves the others alone, and says whether it did
+ * anything.
+ */
+ZTEST(arp_fn_tests, test_arp_entry_rm)
+{
+	struct net_eth_addr hwaddr = { { 0x00, 0x00, 0x5e, 0x00, 0x53, 0x44 } };
+	struct net_in_addr first = { { { 192, 0, 2, 51 } } };
+	struct net_in_addr second = { { { 192, 0, 2, 52 } } };
+	struct net_in_addr unknown = { { { 192, 0, 2, 53 } } };
+	struct net_if *iface;
+
+	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(ETHERNET));
+	zassert_not_null(iface, "No Ethernet interface");
+
+	net_if_ipv4_nbr_flush(NULL);
+
+	net_arp_update(iface, &first, &hwaddr, false, true);
+	net_arp_update(iface, &second, &hwaddr, false, true);
+
+	zassert_true(arp_lookup(&first).found, "First entry was not added");
+	zassert_true(arp_lookup(&second).found, "Second entry was not added");
+
+	zexpect_false(net_if_ipv4_nbr_rm(iface, &unknown),
+		      "Removing an unknown address reported success");
+
+	zexpect_true(net_if_ipv4_nbr_rm(iface, &first),
+		     "Cannot remove the first entry");
+	zexpect_false(arp_lookup(&first).found, "First entry is still there");
+	zexpect_true(arp_lookup(&second).found,
+		     "Second entry was removed as well");
+
+	zexpect_false(net_if_ipv4_nbr_rm(iface, &first),
+		      "Removing the entry twice reported success");
+
+	zexpect_true(net_if_ipv4_nbr_rm(NULL, &second),
+		     "Cannot remove the second entry without an interface");
+
+	zexpect_equal(arp_entry_count(), 0, "Cache is not empty");
+}
+
+/* Queue a packet for an address that nobody has answered for yet, so that the
+ * ARP cache holds a pending entry for it.
+ */
+static void arp_start_resolving(struct net_if *iface,
+				struct net_in_addr *src,
+				struct net_in_addr *dst)
+{
+	struct net_ipv4_hdr *ipv4;
+	struct net_pkt *pkt_arp = NULL;
+	struct net_pkt *pkt;
+	int ret;
+
+	pkt = net_pkt_alloc_with_buffer(iface, sizeof(struct net_ipv4_hdr),
+					NET_AF_INET, 0, K_SECONDS(1));
+	zassert_not_null(pkt, "out of mem");
+
+	(void)net_linkaddr_set(net_pkt_lladdr_src(pkt),
+			       net_if_get_link_addr(iface)->addr,
+			       sizeof(struct net_eth_addr));
+
+	ipv4 = (struct net_ipv4_hdr *)net_buf_add(pkt->buffer,
+						  sizeof(struct net_ipv4_hdr));
+	net_ipv4_addr_copy_raw(ipv4->src, (uint8_t *)src);
+	net_ipv4_addr_copy_raw(ipv4->dst, (uint8_t *)dst);
+
+	net_pkt_set_ll_proto_type(pkt, NET_ETH_PTYPE_IP);
+
+	ret = net_arp_prepare(pkt, dst, NULL, &pkt_arp);
+	zassert_equal(ret, NET_ARP_PKT_REPLACED,
+		      "Resolution of %s did not start (%d)",
+		      net_sprint_ipv4_addr(dst), ret);
+
+	net_pkt_unref(pkt_arp);
+}
+
+/* An address that is still being resolved is removed from the pending list,
+ * which is walked separately from the resolved one.
+ */
+ZTEST(arp_fn_tests, test_arp_entry_rm_pending)
+{
+	struct net_eth_addr hwaddr = { { 0x00, 0x00, 0x5e, 0x00, 0x53, 0x55 } };
+	struct net_in_addr src = { { { 192, 0, 2, 1 } } };
+	struct net_in_addr resolved = { { { 192, 0, 2, 61 } } };
+	struct net_in_addr first = { { { 192, 0, 2, 62 } } };
+	struct net_in_addr second = { { { 192, 0, 2, 63 } } };
+	struct net_if *iface;
+
+	iface = net_if_get_first_by_type(&NET_L2_GET_NAME(ETHERNET));
+	zassert_not_null(iface, "No Ethernet interface");
+
+	net_if_ipv4_nbr_flush(NULL);
+
+	net_arp_update(iface, &resolved, &hwaddr, false, true);
+	zassert_equal(arp_entry_count(), 1, "Resolved entry was not added");
+
+	arp_start_resolving(iface, &src, &first);
+	arp_start_resolving(iface, &src, &second);
+
+	/* Only the resolved entry is in the table, the other two are pending
+	 * and must not be reachable from it.
+	 */
+	zassert_equal(arp_entry_count(), 1, "Pending entries are in the table");
+
+	zexpect_true(net_if_ipv4_nbr_rm(iface, &first),
+		     "Cannot remove the pending entry");
+	zexpect_equal(arp_entry_count(), 1,
+		      "Removing a pending entry disturbed the resolved list");
+
+	zexpect_true(net_if_ipv4_nbr_rm(iface, &second),
+		     "Cannot remove the second pending entry");
+	zexpect_equal(arp_entry_count(), 1,
+		      "Removing a pending entry disturbed the resolved list");
+
+	zexpect_true(net_if_ipv4_nbr_rm(iface, &resolved),
+		     "Cannot remove the resolved entry");
+	zexpect_equal(arp_entry_count(), 0, "Cache is not empty");
+}
+
 ZTEST_SUITE(arp_fn_tests, NULL, NULL, NULL, NULL, NULL);

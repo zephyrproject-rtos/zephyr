@@ -62,14 +62,25 @@ static void arp_entry_cleanup(struct arp_entry *entry, bool pending)
 	}
 
 	entry->iface = NULL;
+	entry->is_static = false;
 
 	(void)memset(&entry->ip, 0, sizeof(struct net_in_addr));
 	(void)memset(&entry->eth, 0, sizeof(struct net_eth_addr));
 }
 
+static void arp_entry_release(sys_slist_t *list, sys_snode_t *prev,
+			      struct arp_entry *entry, bool pending)
+{
+	arp_entry_cleanup(entry, pending);
+
+	sys_slist_remove(list, prev, &entry->node);
+	sys_slist_prepend(&arp_free_entries, &entry->node);
+}
+
+/* A NULL iface matches an entry on any interface. */
 static struct arp_entry *arp_entry_find(sys_slist_t *list,
 					struct net_if *iface,
-					struct net_in_addr *dst,
+					const struct net_in_addr *dst,
 					sys_snode_t **previous)
 {
 	struct arp_entry *entry;
@@ -79,7 +90,7 @@ static struct arp_entry *arp_entry_find(sys_slist_t *list,
 			net_if_get_by_iface(iface), iface,
 			net_sprint_ipv4_addr(&entry->ip));
 
-		if (entry->iface == iface &&
+		if ((iface == NULL || entry->iface == iface) &&
 		    net_ipv4_addr_cmp(&entry->ip, dst)) {
 			NET_DBG("found dst %s",
 				net_sprint_ipv4_addr(dst));
@@ -166,20 +177,33 @@ static struct arp_entry *arp_entry_get_free(void)
 
 static struct arp_entry *arp_entry_get_last_from_table(void)
 {
+	sys_snode_t *prev = NULL, *oldest_prev = NULL, *oldest = NULL;
 	sys_snode_t *node;
 
-	/* We assume last entry is the oldest one,
-	 * so is the preferred one to be taken out.
+	/* We assume last entry is the oldest one, so is the preferred one to
+	 * be taken out. Static entries were added by the user, so they are
+	 * never evicted and the table can legitimately have nothing to give.
 	 */
 
-	node = sys_slist_peek_tail(&arp_table);
-	if (!node) {
+	SYS_SLIST_FOR_EACH_NODE(&arp_table, node) {
+		struct arp_entry *entry = CONTAINER_OF(node, struct arp_entry,
+						       node);
+
+		if (!entry->is_static) {
+			oldest = node;
+			oldest_prev = prev;
+		}
+
+		prev = node;
+	}
+
+	if (oldest == NULL) {
 		return NULL;
 	}
 
-	sys_slist_find_and_remove(&arp_table, node);
+	sys_slist_remove(&arp_table, oldest_prev, oldest);
 
-	return CONTAINER_OF(node, struct arp_entry, node);
+	return CONTAINER_OF(oldest, struct arp_entry, node);
 }
 
 
@@ -530,7 +554,7 @@ static void arp_gratuitous(struct net_if *iface,
 	struct arp_entry *entry;
 
 	entry = arp_entry_find(&arp_table, iface, src, &prev);
-	if (entry) {
+	if (entry != NULL && !entry->is_static) {
 		NET_DBG("Gratuitous ARP hwaddr %s -> %s",
 			net_sprint_ll_addr((const uint8_t *)&entry->eth,
 					   sizeof(struct net_eth_addr)),
@@ -684,6 +708,68 @@ static void arp_gratuitous_work_handler(struct k_work *work)
 }
 #endif /* defined(CONFIG_NET_ARP_GRATUITOUS_TRANSMISSION) */
 
+/* Find the cache entry for src, creating one if there is none, and store the
+ * given hardware address in it. Called with arp_mutex held. A static entry
+ * belongs to the user, so only another static update is allowed to change it.
+ */
+static struct arp_entry *arp_entry_set(struct net_if *iface,
+				       struct net_in_addr *src,
+				       struct net_eth_addr *hwaddr,
+				       bool is_static)
+{
+	struct arp_entry *entry;
+
+	entry = arp_entry_find(&arp_table, iface, src, NULL);
+	if (entry == NULL) {
+		entry = arp_entry_get_free();
+		if (entry == NULL) {
+			/* Then let's take one from table? */
+			entry = arp_entry_get_last_from_table();
+		}
+
+		if (entry == NULL) {
+			return NULL;
+		}
+
+		entry->req_start = k_uptime_get_32();
+		entry->iface = iface;
+		net_ipaddr_copy(&entry->ip, src);
+		sys_slist_prepend(&arp_table, &entry->node);
+	} else if (entry->is_static && !is_static) {
+		return entry;
+	}
+
+	memcpy(&entry->eth, hwaddr, sizeof(struct net_eth_addr));
+
+	if (is_static) {
+		entry->is_static = true;
+	}
+
+	return entry;
+}
+
+int net_arp_add_static(struct net_if *iface,
+		       struct net_in_addr *addr,
+		       struct net_eth_addr *hwaddr)
+{
+	struct arp_entry *entry;
+
+	/* Let a request that is already in flight for this address complete
+	 * normally first, so that the packets queued on it are sent out.
+	 */
+	net_arp_update(iface, addr, hwaddr, false, false);
+
+	net_if_tx_lock(iface);
+	k_mutex_lock(&arp_mutex, K_FOREVER);
+
+	entry = arp_entry_set(iface, addr, hwaddr, true);
+
+	k_mutex_unlock(&arp_mutex);
+	net_if_tx_unlock(iface);
+
+	return entry == NULL ? -ENOMEM : 0;
+}
+
 void net_arp_update(struct net_if *iface,
 		    struct net_in_addr *src,
 		    struct net_eth_addr *hwaddr,
@@ -705,31 +791,7 @@ void net_arp_update(struct net_if *iface,
 		}
 
 		if (force) {
-			sys_snode_t *prev = NULL;
-			struct arp_entry *arp_ent;
-
-			arp_ent = arp_entry_find(&arp_table, iface, src, &prev);
-			if (arp_ent) {
-				memcpy(&arp_ent->eth, hwaddr,
-				       sizeof(struct net_eth_addr));
-			} else {
-				/* Add new entry as it was not found and force
-				 * was set.
-				 */
-				arp_ent = arp_entry_get_free();
-				if (!arp_ent) {
-					/* Then let's take one from table? */
-					arp_ent = arp_entry_get_last_from_table();
-				}
-
-				if (arp_ent) {
-					arp_ent->req_start = k_uptime_get_32();
-					arp_ent->iface = iface;
-					net_ipaddr_copy(&arp_ent->ip, src);
-					memcpy(&arp_ent->eth, hwaddr, sizeof(arp_ent->eth));
-					sys_slist_prepend(&arp_table, &arp_ent->node);
-				}
-			}
+			(void)arp_entry_set(iface, src, hwaddr, false);
 		}
 
 		k_mutex_unlock(&arp_mutex);
@@ -974,15 +1036,12 @@ void net_arp_clear_cache(struct net_if *iface)
 	k_mutex_lock(&arp_mutex, K_FOREVER);
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&arp_table, entry, next, node) {
-		if (iface && iface != entry->iface) {
+		if ((iface != NULL && iface != entry->iface) || entry->is_static) {
 			prev = &entry->node;
 			continue;
 		}
 
-		arp_entry_cleanup(entry, false);
-
-		sys_slist_remove(&arp_table, prev, &entry->node);
-		sys_slist_prepend(&arp_free_entries, &entry->node);
+		arp_entry_release(&arp_table, prev, entry, false);
 	}
 
 	prev = NULL;
@@ -991,15 +1050,12 @@ void net_arp_clear_cache(struct net_if *iface)
 
 	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&arp_pending_entries,
 					  entry, next, node) {
-		if (iface && iface != entry->iface) {
+		if (iface != NULL && iface != entry->iface) {
 			prev = &entry->node;
 			continue;
 		}
 
-		arp_entry_cleanup(entry, true);
-
-		sys_slist_remove(&arp_pending_entries, prev, &entry->node);
-		sys_slist_prepend(&arp_free_entries, &entry->node);
+		arp_entry_release(&arp_pending_entries, prev, entry, true);
 	}
 
 	if (sys_slist_is_empty(&arp_pending_entries)) {
@@ -1007,6 +1063,43 @@ void net_arp_clear_cache(struct net_if *iface)
 	}
 
 	k_mutex_unlock(&arp_mutex);
+}
+
+bool net_arp_entry_rm(struct net_if *iface, const struct net_in_addr *addr)
+{
+	sys_snode_t *prev = NULL;
+	struct arp_entry *entry;
+	bool removed = false;
+
+	k_mutex_lock(&arp_mutex, K_FOREVER);
+
+	entry = arp_entry_find(&arp_table, iface, addr, &prev);
+	if (entry != NULL) {
+		arp_entry_release(&arp_table, prev, entry, false);
+		removed = true;
+		goto out;
+	}
+
+	/* The address may still be waiting to be resolved, in which case the
+	 * packets queued on it are dropped along with the entry. The walk
+	 * above left prev pointing into the resolved list, so start over.
+	 */
+	prev = NULL;
+
+	entry = arp_entry_find(&arp_pending_entries, iface, addr, &prev);
+	if (entry != NULL) {
+		arp_entry_release(&arp_pending_entries, prev, entry, true);
+		removed = true;
+
+		if (sys_slist_is_empty(&arp_pending_entries)) {
+			k_work_cancel_delayable(&arp_request_timer);
+		}
+	}
+
+out:
+	k_mutex_unlock(&arp_mutex);
+
+	return removed;
 }
 
 int net_arp_clear_pending(struct net_if *iface, struct net_in_addr *dst)
@@ -1042,6 +1135,14 @@ int net_arp_foreach(net_arp_cb_t cb, void *user_data)
 void net_arp_init(void)
 {
 	int i;
+
+	/* Start from a known state so that calling this more than once, as a
+	 * test does to get a clean cache, rebuilds the lists instead of
+	 * linking the same entries into them again.
+	 */
+	sys_slist_init(&arp_free_entries);
+	sys_slist_init(&arp_pending_entries);
+	sys_slist_init(&arp_table);
 
 	for (i = 0; i < CONFIG_NET_ARP_TABLE_SIZE; i++) {
 		/* Inserting entry as free with initialised packet queue */

@@ -35,6 +35,7 @@ LOG_MODULE_REGISTER(net_if, CONFIG_NET_IF_LOG_LEVEL);
 #include <zephyr/sys/iterable_sections.h>
 
 #include "net_private.h"
+#include "../l2/ethernet/arp.h"
 #include "ipv4.h"
 #include "ipv6.h"
 #include "route_ipv4.h"
@@ -1867,6 +1868,32 @@ out:
 }
 
 #endif
+
+#if defined(CONFIG_NET_IPV6)
+
+void net_if_ipv6_nbr_flush(struct net_if *iface)
+{
+	/* The neighbor cache has a lock of its own and the interface lock
+	 * cannot be taken for a NULL interface anyway, so do not take it here.
+	 */
+	net_ipv6_nbr_clear_cache(iface);
+}
+
+bool net_if_ipv6_nbr_rm(struct net_if *iface, const struct net_in6_addr *addr)
+{
+	struct net_in6_addr nbr_addr;
+
+	if (addr == NULL) {
+		return false;
+	}
+
+	/* net_ipv6_nbr_rm() still takes the address by non-const pointer. */
+	net_ipaddr_copy(&nbr_addr, addr);
+
+	return net_ipv6_nbr_rm(iface, &nbr_addr);
+}
+
+#endif /* CONFIG_NET_IPV6 */
 
 /* To be called when interface comes up so that all the non-joined multicast
  * groups are joined.
@@ -5648,6 +5675,27 @@ void net_if_ipv4_maddr_join(struct net_if *iface, struct net_if_mcast_addr *addr
 	addr->is_joined = true;
 	net_if_unlock(iface);
 }
+
+#if defined(CONFIG_NET_IPV4)
+
+void net_if_ipv4_nbr_flush(struct net_if *iface)
+{
+	/* The ARP cache has a lock of its own and the interface lock cannot be
+	 * taken for a NULL interface anyway, so do not take it here.
+	 */
+	net_arp_clear_cache(iface);
+}
+
+bool net_if_ipv4_nbr_rm(struct net_if *iface, const struct net_in_addr *addr)
+{
+	if (addr == NULL) {
+		return false;
+	}
+
+	return net_arp_entry_rm(iface, addr);
+}
+
+#endif /* CONFIG_NET_IPV4 */
 
 #if defined(CONFIG_NET_NATIVE_IPV4)
 uint8_t net_if_ipv4_get_ttl(struct net_if *iface)
