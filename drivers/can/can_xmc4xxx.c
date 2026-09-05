@@ -434,19 +434,6 @@ static void can_xmc4xxx_remove_rx_filter(const struct device *dev, int filter_id
 	k_mutex_unlock(&dev_data->mutex);
 }
 
-static void can_xmc4xxx_set_state_change_callback(const struct device *dev,
-						  can_state_change_callback_t cb, void *user_data)
-{
-	struct can_xmc4xxx_data *dev_data = dev->data;
-	unsigned int key;
-
-	key = irq_lock();
-	/* critical section so that state_change_cb and state_change_cb_data are consistent */
-	dev_data->common.state_change_cb = cb;
-	dev_data->common.state_change_cb_user_data = user_data;
-	irq_unlock(key);
-}
-
 static void can_xmc4xxx_get_state_from_status(const struct device *dev, enum can_state *state,
 					      struct can_bus_err_cnt *err_cnt, uint32_t *status)
 {
@@ -665,11 +652,7 @@ static void can_xmc4xxx_state_change_handler(const struct device *dev, uint32_t 
 
 	can_xmc4xxx_get_state_from_status(dev, &new_state, &err_cnt, &status);
 	if (dev_data->state != new_state) {
-		if (dev_data->common.state_change_cb) {
-			dev_data->common.state_change_cb(
-				dev, new_state, err_cnt,
-				dev_data->common.state_change_cb_user_data);
-		}
+		can_fire_state_change_callbacks(dev, new_state, err_cnt);
 
 		if (dev_data->state != CAN_STATE_STOPPED && new_state == CAN_STATE_BUS_OFF) {
 			/* re-enable the node after auto bus-off recovery completes */
@@ -791,6 +774,7 @@ static int can_xmc4xxx_init(const struct device *dev)
 	CAN_MO_TypeDef *mo;
 	uint8_t mo_index = 0;
 
+	sys_slist_init(&dev_data->common.state_change_callbacks);
 	k_sem_init(&dev_data->tx_sem, CONFIG_CAN_XMC4XXX_MAX_TX_QUEUE,
 		   CONFIG_CAN_XMC4XXX_MAX_TX_QUEUE);
 	k_mutex_init(&dev_data->mutex);
@@ -892,7 +876,6 @@ static DEVICE_API(can, can_xmc4xxx_api_funcs) = {
 	.add_rx_filter = can_xmc4xxx_add_rx_filter,
 	.remove_rx_filter = can_xmc4xxx_remove_rx_filter,
 	.get_state = can_xmc4xxx_get_state,
-	.set_state_change_callback = can_xmc4xxx_set_state_change_callback,
 	.get_core_clock = can_xmc4xxx_get_core_clock,
 	.get_max_filters = can_xmc4xxx_get_max_filters,
 	.timing_min = {

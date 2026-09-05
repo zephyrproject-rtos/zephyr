@@ -538,15 +538,6 @@ int can_sja1000_get_state(const struct device *dev, enum can_state *state,
 	return 0;
 }
 
-void can_sja1000_set_state_change_callback(const struct device *dev,
-					   can_state_change_callback_t callback, void *user_data)
-{
-	struct can_sja1000_data *data = dev->data;
-
-	data->common.state_change_cb = callback;
-	data->common.state_change_cb_user_data = user_data;
-}
-
 int can_sja1000_get_max_filters(const struct device *dev, bool ide)
 {
 	ARG_UNUSED(dev);
@@ -693,8 +684,6 @@ static void can_sja1000_handle_error_passive_irq(const struct device *dev)
 void can_sja1000_isr(const struct device *dev)
 {
 	struct can_sja1000_data *data = dev->data;
-	const can_state_change_callback_t cb = data->common.state_change_cb;
-	void *cb_data = data->common.state_change_cb_user_data;
 	enum can_state prev_state = data->state;
 	struct can_bus_err_cnt err_cnt;
 	uint8_t ir;
@@ -727,10 +716,11 @@ void can_sja1000_isr(const struct device *dev)
 		can_sja1000_handle_error_passive_irq(dev);
 	}
 
-	if (prev_state != data->state && cb != NULL) {
+	if (prev_state != data->state) {
 		err_cnt.rx_err_cnt = can_sja1000_read_reg(dev, CAN_SJA1000_RXERR);
 		err_cnt.tx_err_cnt = can_sja1000_read_reg(dev, CAN_SJA1000_TXERR);
-		cb(dev, data->state, err_cnt, cb_data);
+
+		can_fire_state_change_callbacks(dev, data->state, err_cnt);
 	}
 }
 
