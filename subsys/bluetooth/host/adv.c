@@ -2332,6 +2332,15 @@ void bt_hci_le_adv_set_terminated(struct net_buf *buf)
 		}
 	}
 
+	if (adv->cb && adv->cb->terminated) {
+		struct bt_le_ext_adv_terminated_info info = {
+			.reason = evt->status,
+			.num_completed_ext_adv_evts = evt->num_completed_ext_adv_evts,
+		};
+
+		adv->cb->terminated(adv, &info);
+	}
+
 	if (adv == bt_dev.adv) {
 		bt_le_adv_delete_legacy();
 	}
