@@ -279,10 +279,13 @@ static int coap_client_init_request(struct coap_client *client, struct coap_clie
 
 	/* Add extra options if any */
 	for (i = 0; i < req->num_options; i++) {
-		if (COAP_OPTION_BLOCK2 == req->options[i].code && block2) {
-			/* After the first request, ignore any block2 option added by the
-			 * application, since NUM (and possibly SZX) must be updated based on the
-			 * server response.
+		if (block2 && (req->options[i].code == COAP_OPTION_BLOCK2 ||
+			       req->options[i].code == COAP_OPTION_OBSERVE)) {
+			/* On Block2 continuation retrievals, drop the application's block2
+			 * option, since NUM (and possibly SZX) must be updated based on the
+			 * server response, and the Observe option, since RFC 7959 Section 3.4
+			 * requires that block retrievals of a notification body do not carry
+			 * Observe (only the block-0 notification does).
 			 */
 			continue;
 		}
@@ -430,6 +433,17 @@ static int coap_client_init_request(struct coap_client *client, struct coap_clie
 		if (internal_req->send_blk_ctx.total_size > 0) {
 			coap_next_block(&internal_req->request, &internal_req->send_blk_ctx);
 		}
+	}
+
+	/* Snapshot the registration token of an observe request (the initial request or
+	 * an Echo retry, both of which mint a new token). Block retrievals overwrite
+	 * request_token with fresh tokens, so the registration token is kept separately
+	 * for matching server-pushed notifications and for deregister.
+	 */
+	if (coap_request_is_observe(&internal_req->request)) {
+		memcpy(internal_req->observe_token, internal_req->request_token,
+		       internal_req->request_tkl);
+		internal_req->observe_tkl = internal_req->request_tkl;
 	}
 out:
 	return ret;
@@ -999,18 +1013,30 @@ static struct coap_client_internal_request *get_request_with_token(
 	response_tkl = coap_header_get_token(resp, response_token);
 
 	for (int i = 0; i < CONFIG_COAP_CLIENT_MAX_REQUESTS; i++) {
-		if (client->requests[i].request_ongoing ||
-		    !exchange_lifetime_exceeded(&client->requests[i])) {
-			if (client->requests[i].request_tkl == 0) {
-				continue;
-			}
-			if (client->requests[i].request_tkl != response_tkl) {
-				continue;
-			}
-			if (memcmp(&client->requests[i].request_token, &response_token,
-			    response_tkl) == 0) {
-				return &client->requests[i];
-			}
+		struct coap_client_internal_request *internal_req = &client->requests[i];
+
+		if (!internal_req->request_ongoing &&
+		    exchange_lifetime_exceeded(internal_req)) {
+			continue;
+		}
+
+		/* Current request token. For an observation mid-blockwise-notification
+		 * this is the block-retrieval (continuation) token.
+		 */
+		if (internal_req->request_tkl != 0 &&
+		    internal_req->request_tkl == response_tkl &&
+		    memcmp(&internal_req->request_token, &response_token, response_tkl) == 0) {
+			return internal_req;
+		}
+
+		/* Registration token of an active observation, so asynchronous
+		 * notifications stay matchable for the whole observation, including while
+		 * a blockwise notification body is being retrieved.
+		 */
+		if (internal_req->is_observe && internal_req->observe_tkl != 0 &&
+		    internal_req->observe_tkl == response_tkl &&
+		    memcmp(&internal_req->observe_token, &response_token, response_tkl) == 0) {
+			return internal_req;
 		}
 	}
 
@@ -1392,7 +1418,10 @@ fail:
 #endif
 
 	if (was_observe) {
-		/* Observer: keep request active until unobserve */
+		/* Observer: keep request active until unobserve. The registration token
+		 * stays matchable in get_request_with_token(), so no token restore is
+		 * needed here.
+		 */
 		return ret;
 	}
 
@@ -1539,10 +1568,13 @@ int coap_client_deregister_observe(struct coap_client *client, struct coap_clien
 		mid = coap_next_id();
 		memset(internal_req->send_buf, 0, sizeof(internal_req->send_buf));
 
+		/* Cancel using the registration token; request_token may currently hold a
+		 * block-retrieval token from an in-progress blockwise notification.
+		 */
 		err = coap_packet_init(
 			&pkt, internal_req->send_buf, sizeof(internal_req->send_buf), COAP_VERSION,
 			internal_req->coap_request.confirmable ? COAP_TYPE_CON : COAP_TYPE_NON_CON,
-			internal_req->request_tkl, internal_req->request_token, COAP_METHOD_GET,
+			internal_req->observe_tkl, internal_req->observe_token, COAP_METHOD_GET,
 			mid);
 
 		if (err == 0) {
@@ -1563,6 +1595,10 @@ int coap_client_deregister_observe(struct coap_client *client, struct coap_clien
 
 		internal_req->request = pkt;
 		internal_req->last_id = mid;
+		/* Match the deregister response via request_token once is_observe is cleared. */
+		memcpy(internal_req->request_token, internal_req->observe_token,
+		       internal_req->observe_tkl);
+		internal_req->request_tkl = internal_req->observe_tkl;
 		internal_req->is_observe = false;
 
 		if (internal_req->coap_request.confirmable) {
