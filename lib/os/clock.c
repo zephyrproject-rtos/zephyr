@@ -194,10 +194,16 @@ int z_impl_sys_clock_nanosleep(int clock_id, int flags, const struct timespec *r
 
 	timeout = timespec_to_timeout(&duration, NULL);
 	end = sys_timepoint_calc(timeout);
-	do {
-		(void)k_sleep(timeout);
+	/* Re-read the clock only when the sleep was cut short (k_wakeup());
+	 * a zero return means the full duration elapsed and no further
+	 * timepoint check is needed.
+	 */
+	while (k_sleep_ticks(timeout) != 0) {
 		timeout = sys_timepoint_timeout(end);
-	} while (!K_TIMEOUT_EQ(timeout, K_NO_WAIT));
+		if (K_TIMEOUT_EQ(timeout, K_NO_WAIT)) {
+			break;
+		}
+	}
 
 	if (update_rmtp) {
 		*rmtp = (struct timespec){
