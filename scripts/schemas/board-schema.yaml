@@ -64,6 +64,15 @@ $defs:
       vendor:
         type: string
         description: SoC family of the SoC on the board.
+      requires:
+        type: array
+        description: |
+          Names of SoCs whose Kconfig and CMake trees must be loaded in addition to the tree of
+          the SoC the board target selects. Use this when a board pairs SoC trees that are
+          independent of each other, such as a simulated board built on one SoC while using the
+          Kconfig of the SoC it simulates.
+        items:
+          type: string
       revision:
         type: object
         properties:
