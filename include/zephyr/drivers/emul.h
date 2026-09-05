@@ -5,6 +5,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Public APIs for the device emulation framework.
+ * @ingroup io_emulators
+ */
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_EMUL_H_
 #define ZEPHYR_INCLUDE_DRIVERS_EMUL_H_
 
@@ -35,19 +41,19 @@ struct emul;
  * The types of supported buses.
  */
 enum emul_bus_type {
-	EMUL_BUS_TYPE_I2C,
-	EMUL_BUS_TYPE_ESPI,
-	EMUL_BUS_TYPE_SPI,
-	EMUL_BUS_TYPE_MSPI,
-	EMUL_BUS_TYPE_UART,
-	EMUL_BUS_TYPE_NONE,
+	EMUL_BUS_TYPE_I2C,  /**< I2C bus */
+	EMUL_BUS_TYPE_ESPI, /**< eSPI bus */
+	EMUL_BUS_TYPE_SPI,  /**< SPI bus */
+	EMUL_BUS_TYPE_MSPI, /**< MSPI bus */
+	EMUL_BUS_TYPE_UART, /**< UART bus */
+	EMUL_BUS_TYPE_NONE, /**< Emulator is not attached to a bus */
 };
 
 /**
  * Structure uniquely identifying a device to be emulated
  */
 struct emul_link_for_bus {
-	const struct device *dev;
+	const struct device *dev; /**< Device to be emulated */
 };
 
 /** List of emulators attached to a bus */
@@ -71,8 +77,8 @@ typedef int (*emul_init_t)(const struct emul *emul, const struct device *parent)
  * Emulator API stub when an emulator is not actually placed on a bus.
  */
 struct no_bus_emul {
-	void *api;
-	uint16_t addr;
+	void *api;     /**< Emulator-specific bus API */
+	uint16_t addr; /**< Emulated device address, from the devicetree reg property */
 };
 
 /** An emulator instance - represents the *target* emulated device/peripheral that is
@@ -92,13 +98,13 @@ struct emul {
 	enum emul_bus_type bus_type;
 	/** Pointer to the emulated bus node */
 	union bus {
-		struct i2c_emul *i2c;
-		struct espi_emul *espi;
-		struct spi_emul *spi;
-		struct mspi_emul *mspi;
-		struct uart_emul *uart;
-		struct no_bus_emul *none;
-	} bus;
+		struct i2c_emul *i2c;     /**< I2C emulated bus node */
+		struct espi_emul *espi;   /**< eSPI emulated bus node */
+		struct spi_emul *spi;     /**< SPI emulated bus node */
+		struct mspi_emul *mspi;   /**< MSPI emulated bus node */
+		struct uart_emul *uart;   /**< UART emulated bus node */
+		struct no_bus_emul *none; /**< Stub used when the emulator is not on a bus */
+	} bus; /**< Emulated bus node */
 	/** Address of the API structure exposed by the emulator instance */
 	const void *backend_api;
 };
@@ -224,9 +230,13 @@ const struct emul *emul_get_binding(const char *name);
  * @}
  */
 
+/** @cond INTERNAL_HIDDEN */
+
 #define Z_MAYBE_EMUL_DECLARE_INTERNAL(node_id) extern const struct emul EMUL_DT_NAME_GET(node_id);
 
 DT_FOREACH_STATUS_OKAY_NODE(Z_MAYBE_EMUL_DECLARE_INTERNAL);
+
+/** @endcond */
 
 #ifdef __cplusplus
 }
