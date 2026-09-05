@@ -3,7 +3,9 @@ sample:
   name: fuzz
 tests:
   sample.debug.fuzz:
-    toolchain_allow: llvm
+    toolchain_allow:
+      - host/llvm
+      - llvm
     platform_allow: native_sim/native/64
     harness: console
     harness_config:
