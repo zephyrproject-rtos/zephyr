@@ -11,14 +11,7 @@
 extern "C" {
 #endif
 
-#ifdef CONFIG_XIP
 void arch_data_copy(void);
-#else
-static inline void arch_data_copy(void)
-{
-	/* Do nothing */
-}
-#endif /* CONFIG_XIP */
 #ifdef __cplusplus
 }
 #endif

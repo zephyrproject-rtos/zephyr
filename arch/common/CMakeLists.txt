@@ -20,7 +20,7 @@ endif()
 add_subdirectory_ifdef(CONFIG_ACPI acpi)
 zephyr_library_sources(init.c)
 zephyr_library_sources_ifdef(CONFIG_PM pm.c)
-zephyr_library_sources_ifdef(CONFIG_XIP xip.c)
+zephyr_library_sources(xip.c)
 
 zephyr_library_sources_ifdef(
   CONFIG_ISR_TABLE_SHELL

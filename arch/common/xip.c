@@ -20,12 +20,15 @@ extern volatile uintptr_t __stack_chk_guard;
 #endif /* CONFIG_REQUIRES_STACK_CANARIES */
 
 /**
- * @brief Copy the data section from ROM to RAM
+ * @brief Copy sections whose load address differs from their virtual address
  *
- * This routine copies the data section from ROM to RAM.
+ * With CONFIG_XIP this copies the data section and the other regions residing
+ * in ROM. TCM regions are copied unconditionally, as they are separate
+ * memories whose load address always differs from their virtual address.
  */
 void arch_data_copy(void)
 {
+#ifdef CONFIG_XIP
 	arch_early_memcpy(&__data_region_start, &__data_region_load_start,
 		       __data_region_end - __data_region_start);
 #ifdef CONFIG_ARCH_HAS_RAMFUNC_SUPPORT
@@ -38,14 +41,6 @@ void arch_data_copy(void)
 		       (uintptr_t) &_nocache_load_ram_size);
 #endif /* CONFIG_NOCACHE_MEMORY */
 #endif /* CONFIG_ARCH_HAS_NOCACHE_MEMORY_SUPPORT */
-#if DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_itcm))
-	arch_early_memcpy(&__itcm_start, &__itcm_load_start,
-		       (uintptr_t) &__itcm_size);
-#endif
-#if DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_dtcm))
-	arch_early_memcpy(&__dtcm_data_start, &__dtcm_data_load_start,
-		       __dtcm_data_end - __dtcm_data_start);
-#endif
 #ifdef CONFIG_CODE_DATA_RELOCATION
 	extern void data_copy_xip_relocation(void);
 
@@ -75,4 +70,17 @@ void arch_data_copy(void)
 		       _app_smem_end - _app_smem_start);
 #endif /* CONFIG_REQUIRES_STACK_CANARIES */
 #endif /* CONFIG_USERSPACE */
+#endif /* CONFIG_XIP */
+
+	/* TCM regions are separate memories: their load address always differs
+	 * from their virtual address, independently of CONFIG_XIP.
+	 */
+#if DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_itcm))
+	arch_early_memcpy(&__itcm_start, &__itcm_load_start,
+		       (uintptr_t) &__itcm_size);
+#endif
+#if DT_NODE_HAS_STATUS_OKAY(DT_CHOSEN(zephyr_dtcm))
+	arch_early_memcpy(&__dtcm_data_start, &__dtcm_data_load_start,
+		       __dtcm_data_end - __dtcm_data_start);
+#endif
 }
