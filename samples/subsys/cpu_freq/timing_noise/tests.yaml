@@ -1,0 +1,21 @@
+sample:
+  description: CPU frequency timing noise policy sample
+  name: CPU Freq Timing Noise Policy
+common:
+  tags: cpu_freq
+  harness: console
+  harness_config:
+    type: multi_line
+    regex:
+    - "^.*<inf> cpu_freq_timing_noise_sample: Starting timing side-channel attack\\.\\.\\."
+    - "^.*<inf> cpu_freq_timing_noise_sample: found pos [0-9]+ try \
+       [A-Za-z0-9!@#\\$%\\^&\\*()\\-_=\\+]+ -> [0-9]+ cycles"
+    - "^.*<inf> cpu_freq_timing_noise_sample: Recovered so far: .+"
+
+tests:
+  sample.cpu_freq_timing_noise:
+    extra_args: EXTRA_CONF_FILE=timing_noise_prj.conf
+    integration_platforms:
+    - frdm_mcxn236
+    platform_allow:
+    - frdm_mcxn236
