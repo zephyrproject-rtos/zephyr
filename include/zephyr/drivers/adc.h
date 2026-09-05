@@ -291,6 +291,7 @@ IF_ENABLED(CONFIG_ADC_CONFIGURABLE_VBIAS_PIN, \
  * @see ADC_DT_SPEC_GET_BY_IDX_OR
  * @see ADC_DT_SPEC_GET
  * @see ADC_DT_SPEC_GET_OR
+ * @see ADC_DT_SPEC_FROM_CHANNEL_NODE
  */
 struct adc_dt_spec {
 	/**
@@ -642,6 +643,30 @@ struct adc_dt_spec {
  */
 #define ADC_DT_SPEC_INST_GET_OR(inst, default_value) \
 	ADC_DT_SPEC_GET_OR(DT_DRV_INST(inst), default_value)
+
+/**
+ * @brief Get ADC channel information from a channel devicetree node.
+ *
+ * The node is a child of an ADC controller describing one channel, for
+ * example one obtained by iterating the controller's children:
+ *
+ * @code{.c}
+ * #define CHANNEL_SPEC_AND_COMMA(node_id) ADC_DT_SPEC_FROM_CHANNEL_NODE(node_id),
+ *
+ * static const struct adc_dt_spec channels[] = {
+ *	DT_FOREACH_CHILD(DT_NODELABEL(adc0), CHANNEL_SPEC_AND_COMMA)
+ * };
+ * @endcode
+ *
+ * @param node_id Devicetree node identifier of the channel node.
+ *
+ * @return Static initializer for an adc_dt_spec structure.
+ */
+#define ADC_DT_SPEC_FROM_CHANNEL_NODE(node_id) { \
+		.dev = DEVICE_DT_GET(DT_PARENT(node_id)), \
+		.channel_id = DT_REG_ADDR(node_id), \
+		ADC_CHANNEL_CFG_FROM_DT_NODE(node_id) \
+	}
 
 /* Forward declaration of the adc_sequence structure. */
 struct adc_sequence;
