@@ -4,6 +4,8 @@ common:
     - drivers
     - userspace
   depends_on: adc
+  required_snippets:
+    - hw-test
   # A zephyr,user channel list, or a channel described under an enabled ADC
   # controller (zephyr,gain is required in every ADC channel node).
   filter: >-
@@ -83,7 +85,6 @@ tests:
   drivers.adc.dma_nxp_lpadc:
     extra_args:
       - EXTRA_CONF_FILE=overlay-dma-nxp-lpadc.conf
-      - platform:frdm_mcxa156/mcxa156:DTC_OVERLAY_FILE="boards/frdm_mcxa156.overlay"
     depends_on:
       - dma
       - adc
