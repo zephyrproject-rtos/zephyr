@@ -18,6 +18,8 @@ import sys
 import tempfile
 import time
 
+from packaging import version
+
 logger = logging.getLogger('twister')
 
 supported_coverage_formats = {
@@ -533,7 +535,7 @@ class Gcovr(CoverageTool):
             version_lines = result.stdout.strip().split('\n')
             if version_lines:
                 version_output = version_lines[0].replace('gcovr ', '')
-                return version_output
+                return version.parse(version_output)
         except subprocess.CalledProcessError as e:
             logger.error(f"Unable to determine gcovr version: {e}")
             sys.exit(1)
@@ -571,9 +573,9 @@ class Gcovr(CoverageTool):
                "--gcov-ignore-parse-errors=negative_hits.warn_once_per_file",
                "--gcov-executable", self.gcov_tool,
                "-e", "tests/*"]
-        if self.version >= "7.0":
+        if self.version >= version.parse("7.0"):
             cmd += ["--gcov-object-directory", outdir]
-        if self.version >= "8.0":
+        if self.version >= version.parse("8.0"):
             cmd += ["--gcov-ignore-parse-errors=suspicious_hits.warn_once_per_file"]
         cmd += excludes + self.options + ["--json", "-o", coverage_file, outdir]
         cmd_str = " ".join(cmd)
@@ -589,7 +591,7 @@ class Gcovr(CoverageTool):
         cmd += ["--gcov-executable", self.gcov_tool,
                 "-f", "tests/ztest", "-e", "tests/ztest/test/*",
                 "--json", "-o", ztest_file, outdir]
-        if self.version >= "7.0":
+        if self.version >= version.parse("7.0"):
             cmd += ["--gcov-object-directory", outdir]
 
         cmd_str = " ".join(cmd)
