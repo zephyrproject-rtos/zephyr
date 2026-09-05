@@ -38,21 +38,28 @@ This is supported by the ``openocd`` binary available in the board, and its
 functionality can be made available to the computer via ``adb`` port forwarding
 commands.
 
-This interface is not yet integrated with the ``west flash`` command, but
-debugging is supported.
+Flashing
+========
+
+The board configuration uses a UNO Q-specific OpenOCD bridge script which
+starts the board-side debug server through ``adb`` and forwards the GDB port
+automatically. From a USB-connected computer, build and flash the
+:zephyr:code-sample:`blinky` application with:
+
+.. code-block:: console
+
+   west build -b arduino_uno_q samples/basic/blinky
+   west flash -r openocd
 
 Debugging
 =========
 
-Debugging can be done with the usual ``west debug`` command after starting the
-debug server on the board. The following commands, run from an USB-connected
-computer, allow to debug the :zephyr:code-sample:`blinky` application on the
-Uno Q board:
+Debugging can be done with the usual ``west debug`` command. The board-specific
+OpenOCD bridge starts the debug server on the board over ``adb`` before
+connecting GDB:
 
 .. code-block:: console
 
-   adb forward tcp:3333 tcp:3333 && adb shell arduino-debug
-   # in a different shell
    west build -b arduino_uno_q samples/basic/blinky
    west debug -r openocd
 
