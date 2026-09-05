@@ -93,7 +93,7 @@
 
 &spi0 {
 	status = "okay";
-	pinctrl-0 = <&spi0_sclk_pb03 &spi0_pico_pb02 &spi0_poci_pa07>;
+	pinctrl-0 = <&spi0_sclk_pb3 &spi0_pico_pb2 &spi0_poci_pa7>;
 	pinctrl-names = "default";
 	cs-gpios = <&gpioa 8 GPIO_ACTIVE_LOW>;
 	#address-cells = <1>;
@@ -103,7 +103,7 @@
 
 &spi1 {
 	status = "okay";
-	pinctrl-0 = <&spi1_sclk_pa17 &spi1_pico_pb08 &spi1_poci_pb07>;
+	pinctrl-0 = <&spi1_sclk_pa17 &spi1_pico_pb8 &spi1_poci_pb7>;
 	pinctrl-names = "default";
 	cs-gpios = <&gpiob 6 GPIO_ACTIVE_LOW>;
 	#address-cells = <1>;
