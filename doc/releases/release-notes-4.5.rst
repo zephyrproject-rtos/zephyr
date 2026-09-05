@@ -1949,6 +1949,11 @@ Other notable changes
     key. The first entry is the key the application is signed with and the rest are
     verification-only public keys. See :ref:`build-signing`.
 
+  * Espressif boards no longer force overwrite-only mode and unsigned images under sysbuild.
+    They now build a swap-using-offset MCUboot with rollback and an RSA-2048 signed
+    application, and the shared Espressif partition tables no longer reserve a scratch
+    partition. See the :ref:`migration guide <migration_4.5>`.
+
 * NXP
 
   * The NXP LPC DTSI files have been reorganized from the flat
