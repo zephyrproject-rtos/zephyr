@@ -1032,13 +1032,24 @@ class Test(Harness):
     test_case_summary_pattern = re.compile(
         r".*- (PASS|FAIL|SKIP) - \[([^\.]*).(test_)?(\S*)\] duration = (\d*[.,]?\d*) seconds"
     )
+    # A value-parameterized case (ZTEST_P) logs each of its invocations as
+    # 'test_name[instance/param]', while the suite summary refers to the
+    # test by its plain name.
+    test_case_param_pattern = re.compile(r"^(?P<base>[^\[]+)(?P<param>\[[^\]]*\])$")
 
 
     def get_testcase(self, tc_name, phase, ts_name=None):
         """ Search a Ztest case among detected in the test image binary
             expecting the same test names as already known from the ELF.
             Track suites and cases unexpectedly found in the log.
+            A parameterized invocation 'name[instance/param]' is looked up
+            by its base name and registered as a subcase of that case.
         """
+        param = ""
+        if param_match := self.test_case_param_pattern.match(tc_name):
+            tc_name = param_match.group("base")
+            param = param_match.group("param")
+
         ts_names = self.started_suites.keys()
         if ts_name:
             if self.trace and ts_name not in self.instance.testsuite.ztest_suite_names:
@@ -1057,16 +1068,16 @@ class Test(Harness):
             if self.started_suites[ts_name_]['count'] < (0 if phase == 'TS_SUM' else 1):
                 continue
             tc_fq_id = self.instance.testsuite.compose_case_name(f"{ts_name_}.{tc_name}")
-            if tc := self.instance.get_case_by_name(tc_fq_id):
+            if self.instance.get_case_by_name(tc_fq_id):
                 if self.trace:
                     logger.debug(f"{phase}: Ztest case '{tc_name}' matched to '{tc_fq_id}")
-                return tc
+                return self.instance.get_case_or_create(tc_fq_id + param)
         logger.debug(
             f"{phase}: Ztest case '{tc_name}' is not known"
             f" in {self.started_suites} running suite(s)."
         )
         tc_id = self.instance.testsuite.compose_case_name(tc_name)
-        return self.instance.get_case_or_create(tc_id)
+        return self.instance.get_case_or_create(tc_id + param)
 
     def start_suite(self, suite_name, phase='TS_START'):
         if suite_name not in self.detected_suite_names:
