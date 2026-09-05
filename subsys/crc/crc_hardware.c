@@ -9,6 +9,7 @@ LOG_MODULE_REGISTER(crc, CONFIG_CRC_LOG_LEVEL);
 
 #include <zephyr/drivers/crc.h>
 #include <zephyr/device.h>
+#include <zephyr/sys/bit_rev.h>
 
 /* This value needs to be XORed with the final crc value once crc for
  * the entire stream is calculated. This is a requirement of crc32c algo.
@@ -48,10 +49,12 @@ static int crc_operation(const struct device *const dev, struct crc_ctx *ctx, co
 uint8_t crc4(const uint8_t *src, size_t len, uint8_t polynomial, uint8_t initial_value,
 	     bool reversed)
 {
-	uint8_t flag_reversed;
+	uint8_t flag_reversed = 0;
 	int ret;
 
 	if (reversed) {
+		/* We're reversing 4 bits */
+		polynomial = sys_bit_rev8(polynomial) >> 4;
 		flag_reversed = CRC_FLAG_REVERSE_OUTPUT | CRC_FLAG_REVERSE_INPUT;
 	}
 
@@ -130,6 +133,7 @@ uint8_t crc8(const uint8_t *src, size_t len, uint8_t polynomial, uint8_t initial
 	};
 
 	if (reversed) {
+		ctx.polynomial = sys_bit_rev8(ctx.polynomial);
 		ctx.reversed = CRC_FLAG_REVERSE_OUTPUT | CRC_FLAG_REVERSE_INPUT;
 	}
 
@@ -215,7 +219,7 @@ uint16_t crc16_reflect(uint16_t poly, uint16_t seed, const uint8_t *src, size_t 
 
 	struct crc_ctx ctx = {
 		.type = CRC16,
-		.polynomial = poly,
+		.polynomial = sys_bit_rev16(poly),
 		.seed = seed,
 		.reversed = CRC_FLAG_REVERSE_OUTPUT | CRC_FLAG_REVERSE_INPUT,
 	};

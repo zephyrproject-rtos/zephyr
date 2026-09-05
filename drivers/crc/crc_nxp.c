@@ -62,24 +62,8 @@ static int crc_nxp_prepare_config(const struct device *dev, const struct crc_ctx
 
 	switch (ctx->type) {
 	case CRC16:
-		/*
-		 * The CRC engine takes the polynomial in normal (MSBit-first) form
-		 * and performs input/output reflection through reflectIn/reflectOut.
-		 * crc16() passes the normal CRC-16 polynomial (0x8005), while
-		 * crc16_reflect()/crc16_ansi() pass its reflected form (0xA001) with
-		 * both reflect flags set. The reflected form is only accepted when
-		 * both input and output are reflected -- the only case where it can
-		 * be honored by programming the equivalent normal-form polynomial;
-		 * accepting it otherwise would silently compute a different CRC.
-		 */
-		if (ctx->polynomial == CRC16_REFLECT_POLY) {
-			if ((ctx->reversed & (CRC_FLAG_REVERSE_INPUT | CRC_FLAG_REVERSE_OUTPUT)) !=
-			    (CRC_FLAG_REVERSE_INPUT | CRC_FLAG_REVERSE_OUTPUT)) {
-				return -EINVAL;
-			}
-			/* Program the equivalent normal-form polynomial. */
-			cfg->polynomial = CRC16_POLY;
-		} else if (ctx->polynomial != CRC16_POLY) {
+	case CRC16_ANSI:
+		if (ctx->polynomial != CRC16_POLY) {
 			return -EINVAL;
 		}
 		cfg->seed &= 0xFFFFU;
@@ -89,14 +73,6 @@ static int crc_nxp_prepare_config(const struct device *dev, const struct crc_ctx
 	case CRC16_CCITT:
 	case CRC16_ITU_T:
 		if (ctx->polynomial != CRC16_CCITT_POLY) {
-			return -EINVAL;
-		}
-		cfg->seed &= 0xFFFFU;
-		cfg->crcBits = kCrcBits16;
-		*use32 = false;
-		break;
-	case CRC16_ANSI:
-		if (ctx->polynomial != CRC16_REFLECT_POLY) {
 			return -EINVAL;
 		}
 		cfg->seed &= 0xFFFFU;
