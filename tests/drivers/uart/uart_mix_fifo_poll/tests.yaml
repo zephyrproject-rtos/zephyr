@@ -72,6 +72,29 @@ tests:
       - nrf5340dk/nrf5340/cpuapp
       - nrf9160dk/nrf9160
 
+  drivers.uart.uart_mix_poll.lp_mspm0:
+    filter: CONFIG_SERIAL_SUPPORT_INTERRUPT
+    platform_allow:
+      - lp_mspm0g3519
+      - lp_mspm0l2228
+    integration_platforms:
+      - lp_mspm0g3519
+      - lp_mspm0l2228
+    extra_configs:
+      - CONFIG_UART_INTERRUPT_DRIVEN=n
+      - CONFIG_UART_ASYNC_API=n
+
+  drivers.uart.uart_mix_poll_fifo.lp_mspm0:
+    filter: CONFIG_SERIAL_SUPPORT_INTERRUPT
+    platform_allow:
+      - lp_mspm0g3519
+      - lp_mspm0l2228
+    integration_platforms:
+      - lp_mspm0g3519
+      - lp_mspm0l2228
+    extra_configs:
+      - CONFIG_UART_INTERRUPT_DRIVEN=y
+
   drivers.uart.uart_mix_poll_async_api_with_ppi:
     extra_configs:
       - CONFIG_UART_ASYNC_API=y
