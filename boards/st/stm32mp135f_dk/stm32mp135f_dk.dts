@@ -323,6 +323,8 @@ csi_interface: &dcmipp {
 	phy-connection-type = "rmii";
 	phy-handle = <&eth_phy0>;
 	memory-regions = <&eth_ram>;
+	nvmem-cells = <&ethernet_mac1_address>;
+	nvmem-cell-names = "mac-address";
 
 	status = "okay";
 };
@@ -357,6 +359,8 @@ csi_interface: &dcmipp {
 	phy-handle = <&eth_phy1>;
 	memory-regions = <&eth_ram>;
 	st,ext-phyclk;
+	nvmem-cells = <&ethernet_mac2_address>;
+	nvmem-cell-names = "mac-address";
 
 	status = "okay";
 };
