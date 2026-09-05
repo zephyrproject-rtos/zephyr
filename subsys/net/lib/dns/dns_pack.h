@@ -347,13 +347,13 @@ static inline int dns_unpack_srv_port(const uint8_t *srv)
  *
  * @param len Bytes used by this function
  * @param buf Buffer
- * @param sizeof Buffer's size
+ * @param size Buffer's size
  * @param domain_name Something like www.example.com
  * @retval 0 on success
  * @retval -ENOMEM if there is no enough space to store the resultant QNAME
  * @retval -EINVAL if an invalid parameter was passed as an argument
  */
-int dns_msg_pack_qname(uint16_t *len, uint8_t *buf, uint16_t size,
+int dns_msg_pack_qname(uint32_t *len, uint8_t *buf, uint32_t size,
 		       const char *domain_name);
 
 /**
@@ -403,8 +403,8 @@ int dns_unpack_response_header(struct dns_msg_t *msg, int src_id);
  * @retval On error, a negative value is returned.
  *         See: dns_msg_pack_query_header and  dns_msg_pack_qname.
  */
-int dns_msg_pack_query(uint8_t *buf, uint16_t *len, uint16_t size,
-		       uint8_t *qname, uint16_t qname_len, uint16_t id,
+int dns_msg_pack_query(uint8_t *buf, uint32_t *len, uint32_t size,
+		       uint8_t *qname, uint32_t qname_len, uint16_t id,
 		       enum dns_rr_type qtype);
 
 /**
@@ -440,7 +440,7 @@ int dns_unpack_response_query(struct dns_msg_t *dns_msg);
  * @retval -EINVAL if an invalid parameter was passed as an argument
  * @retval -ENOMEM if the label's size is corrupted
  */
-int dns_copy_qname(uint8_t *buf, uint16_t *len, uint16_t size,
+int dns_copy_qname(uint8_t *buf, uint32_t *len, uint32_t size,
 		   struct dns_msg_t *dns_msg, uint16_t pos);
 
 /**
