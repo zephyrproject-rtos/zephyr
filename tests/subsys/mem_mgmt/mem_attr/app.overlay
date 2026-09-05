@@ -19,6 +19,12 @@
 		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
 	};
 
+	mem_text: memory@21000000 {
+		compatible = "vnd,memory-attr";
+		reg = <0x21000000 0x1000>;
+		zephyr,memory-attr = <(DT_MEM_READABLE | DT_MEM_EXECUTABLE | DT_MEM_CACHEABLE)>;
+	};
+
 	mem_ram_disabled: memory@30000000 {
 		compatible = "vnd,memory-attr";
 		reg = <0x30000000 0x3000>;

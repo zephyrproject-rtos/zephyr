@@ -14,13 +14,13 @@ ZTEST(mem_attr, test_mem_attr)
 	size_t num_regions;
 
 	num_regions = mem_attr_get_regions(&region);
-	zassert_equal(num_regions, 2, "No regions returned");
+	zassert_equal(num_regions, 3, "No regions returned");
 
 	/*
 	 * Check the data in the regions
 	 */
 	for (size_t idx = 0; idx < num_regions; idx++) {
-		if (region[idx].dt_size == 0x1000) {
+		if (region[idx].dt_addr == 0x10000000) {
 			zassert_equal(region[idx].dt_addr, 0x10000000, "Wrong region address");
 			zassert_equal(region[idx].dt_size, 0x1000, "Wrong region size");
 			zassert_equal(region[idx].dt_attr, DT_MEM_ARM_MPU_FLASH |
@@ -28,13 +28,20 @@ ZTEST(mem_attr, test_mem_attr)
 							   "Wrong region address");
 			zassert_str_equal(region[idx].dt_name,
 					  "memory@10000000", "Wrong name");
-		} else {
+		} else if (region[idx].dt_addr == 0x20000000) {
 			zassert_equal(region[idx].dt_addr, 0x20000000, "Wrong region address");
 			zassert_equal(region[idx].dt_size, 0x2000, "Wrong region size");
 			zassert_equal(region[idx].dt_attr, DT_MEM_ARM_MPU_RAM_NOCACHE,
 							   "Wrong region address");
 			zassert_str_equal(region[idx].dt_name,
 					  "memory@20000000", "Wrong name");
+		} else {
+			zassert_equal(region[idx].dt_addr, 0x21000000, "Wrong region address");
+			zassert_equal(region[idx].dt_size, 0x1000, "Wrong region size");
+			zassert_equal(region[idx].dt_attr,
+				      DT_MEM_READABLE | DT_MEM_EXECUTABLE | DT_MEM_CACHEABLE,
+				      "Wrong region attributes");
+			zassert_str_equal(region[idx].dt_name, "memory@21000000", "Wrong name");
 		}
 	}
 
