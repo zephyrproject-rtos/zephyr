@@ -181,22 +181,18 @@ void log_backend_ws_start(void)
 
 int log_backend_ws_register(int fd)
 {
-	struct log_backend_ws_ctx *ctx = log_output_ws.control_block->ctx;
-
-	ctx->sock = fd;
+	ctx.sock = fd;
 
 	return 0;
 }
 
 int log_backend_ws_unregister(int fd)
 {
-	struct log_backend_ws_ctx *ctx = log_output_ws.control_block->ctx;
-
-	if (ctx->sock != fd) {
-		LOG_DBG("Websocket sock mismatch (%d vs %d)", ctx->sock, fd);
+	if (ctx.sock != fd) {
+		LOG_DBG("Websocket sock mismatch (%d vs %d)", ctx.sock, fd);
 	}
 
-	ctx->sock = -1;
+	ctx.sock = -1;
 
 	return 0;
 }
