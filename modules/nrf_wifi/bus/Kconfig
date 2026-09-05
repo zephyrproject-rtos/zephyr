@@ -12,15 +12,15 @@ menuconfig NRF70_BUSLIB
 if NRF70_BUSLIB
 
 config NRF70_ON_QSPI
-	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF7002_QSPI)) ||\
-			$(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF7001_QSPI)) ||\
-			$(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF7000_QSPI))
+	def_bool $(dt_compat_on_bus,$(DT_COMPAT_NORDIC_NRF7002),qspi) ||\
+			$(dt_compat_on_bus,$(DT_COMPAT_NORDIC_NRF7001),qspi) ||\
+			$(dt_compat_on_bus,$(DT_COMPAT_NORDIC_NRF7000),qspi)
 	select NRFX_QSPI
 
 config NRF70_ON_SPI
-	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF7002_SPI)) ||\
-			$(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF7001_SPI)) ||\
-			$(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF7000_SPI))
+	def_bool $(dt_compat_on_bus,$(DT_COMPAT_NORDIC_NRF7002),spi) ||\
+			$(dt_compat_on_bus,$(DT_COMPAT_NORDIC_NRF7001),spi) ||\
+			$(dt_compat_on_bus,$(DT_COMPAT_NORDIC_NRF7000),spi)
 	select SPI
 
 config NRF70_ON_MSPI
