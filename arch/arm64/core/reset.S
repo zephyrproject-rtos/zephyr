@@ -245,6 +245,10 @@ switch_el:
 
 1:
 	/* EL1 init */
+#ifdef CONFIG_ARCH_HAS_CUSTOM_CURRENT_IMPL
+	/* No current thread exists until the kernel installs its dummy thread. */
+	msr	tpidr_el1, xzr
+#endif
 	bl	z_arm64_el1_init
 
 	/* We want to use SP_ELx from now on */

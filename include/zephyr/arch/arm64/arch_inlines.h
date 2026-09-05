@@ -14,6 +14,20 @@
 #include <zephyr/arch/arm64/tpidrro_el0.h>
 #include <zephyr/sys/__assert.h>
 
+#ifdef CONFIG_ARCH_HAS_CUSTOM_CURRENT_IMPL
+/* A register read cannot race with migration between a CPU lookup and load. */
+static ALWAYS_INLINE struct k_thread *arch_current_thread(void)
+{
+	return (struct k_thread *)read_tpidr_el1();
+}
+
+static ALWAYS_INLINE void arch_current_thread_set(struct k_thread *thread)
+{
+	/* The scheduler updates this CPU-local register with preemption disabled. */
+	write_tpidr_el1((uintptr_t)thread);
+}
+#endif
+
 /* Note: keep in sync with `get_cpu` in arch/arm64/core/macro_priv.inc */
 static ALWAYS_INLINE _cpu_t *arch_curr_cpu(void)
 {
