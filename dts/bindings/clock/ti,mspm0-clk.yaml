@@ -10,7 +10,7 @@ include: [clock-controller.yaml, base.yaml]
 
 properties:
   "#clock-cells":
-    const: 1
+    const: 0
 
   clocks:
     description: |
@@ -25,6 +25,3 @@ properties:
     type: int
     description: |
       Clock divider selection value. Valid range [2 ... 16].
-
-clock-cells:
-  - clk
