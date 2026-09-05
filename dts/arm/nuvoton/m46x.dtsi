@@ -506,6 +506,18 @@
 			snps,perfect-filter-entries = <9>;
 			phy-connection-type = "rmii";
 			status = "disabled";
+
+			mdio: mdio {
+				compatible = "snps,dwmac-mdio";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+
+			ptp_clock: ptp-clock {
+				compatible = "snps,dwmac-ptp-clock";
+				status = "disabled";
+			};
 		};
 
 		i2c0: i2c@40080000 {
