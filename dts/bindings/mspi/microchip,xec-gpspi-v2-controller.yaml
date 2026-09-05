@@ -1,0 +1,60 @@
+# Copyright (c) 2026 Microchip Technology Inc. and its subsidiaries.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip XEC General Purpose SPI(GPSPI-V2) MSPI controller
+
+compatible: "microchip,xec-gpspi-v2-controller"
+
+include: [base.yaml, mspi-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  clock-frequency:
+    type: int
+    required: true
+    description: |
+      QMSPI input clock frequency in Hz. For MEC175x this is 96000000.
+
+  pcr-scr:
+    type: int
+    required: true
+    description: |
+      PCR sleep control register encoding for power gating this peripheral.
+
+  girqs:
+    type: array
+    required: true
+    description: |
+      GIRQ and bit-position encoding for this peripheral interrupt source.
+
+  dmas:
+    description: |
+      Optional DMA channel specifier, required for DMA transactions.
+      For example dmas = <phandle-to-central-dma chan-number dma-slot-num>
+      The dma-slot-number is Device Number from the DMA Host Device Selection
+      table in the chip data sheet. GP-SPI controller uses two DMA channel one
+      for transmit and the second for receive. For example in MEC175x GP-SPI
+      controller 0 DMA Device Number 12 is transmit and Device Number 13 is
+      receive. We choose DMA channel 5 for TX and channel 6 for RX:
+         dmas = <&dmac 5 12>, <&dmac 6 13>;
+
+  dma-names:
+    description: |
+      DMA channel name. If DMA should be used, expected value is "tx" or "rx".
+
+      For example
+         dma-names = "tx", "rx";
+    enum:
+      - "tx"
+      - "rx"
