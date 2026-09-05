@@ -192,9 +192,16 @@ static int gpio_bee_pin_configure(const struct device *port, gpio_pin_t pin, gpi
 
 	__ASSERT(pad_pin < TOTAL_PIN_NUM, "gpio port or pin error");
 
-	if (flags & GPIO_OPEN_SOURCE) {
+	if ((flags & GPIO_SINGLE_ENDED) != 0 && (flags & GPIO_LINE_OPEN_DRAIN) == 0) {
 		return -ENOTSUP;
 	}
+
+#if defined(CONFIG_SOC_SERIES_RTL8752H)
+	if ((flags & GPIO_OPEN_DRAIN) == GPIO_OPEN_DRAIN) {
+		/* RTL8752H does not provides a hardware open-drain output mode. */
+		return -ENOTSUP;
+	}
+#endif
 
 	if ((flags & GPIO_INPUT) && (flags & GPIO_OUTPUT)) {
 		return -ENOTSUP;
@@ -221,33 +228,38 @@ static int gpio_bee_pin_configure(const struct device *port, gpio_pin_t pin, gpi
 #if defined(CONFIG_SOC_SERIES_RTL87X2G)
 	Pad_Dedicated_Config(pad_pin, DISABLE);
 #endif
-	Pad_Config(pad_pin, PAD_PINMUX_MODE, PAD_IS_PWRON, pull_config,
-		   (flags & GPIO_OUTPUT) ? PAD_OUT_ENABLE : PAD_OUT_DISABLE,
-		   (flags & GPIO_OUTPUT_INIT_HIGH) ? PAD_OUT_HIGH : PAD_OUT_LOW);
-	Pinmux_Config(pad_pin, DWGPIO);
-
-	switch (flags & (GPIO_OUTPUT | GPIO_OUTPUT_INIT_HIGH | GPIO_OUTPUT_INIT_LOW)) {
-	case (GPIO_OUTPUT_HIGH):
-		BEE_GPIO_WRITE_BIT(port_base, gpio_bit, 1);
-		break;
-	case (GPIO_OUTPUT_LOW):
-		BEE_GPIO_WRITE_BIT(port_base, gpio_bit, 0);
-		break;
-	default:
-		break;
-	}
-
-	/* to avoid trigger gpio interrupt */
-	if (debounce_ms && (flags & GPIO_INT_ENABLE)) {
-		BEE_GPIO_INT_CONFIG(port_base, gpio_bit, DISABLE);
+	if (flags & GPIO_OUTPUT) {
+		switch (flags & (GPIO_OUTPUT_INIT_HIGH | GPIO_OUTPUT_INIT_LOW)) {
+		case GPIO_OUTPUT_INIT_HIGH:
+			BEE_GPIO_WRITE_BIT(port_base, gpio_bit, 1);
+			break;
+		case GPIO_OUTPUT_INIT_LOW:
+			BEE_GPIO_WRITE_BIT(port_base, gpio_bit, 0);
+			break;
+		default:
+			break;
+		}
 		BEE_GPIO_INIT(port_base, &gpio_init_struct);
-		BEE_GPIO_MASK_INT_CONFIG(port_base, gpio_bit, ENABLE);
-		BEE_GPIO_INT_CONFIG(port_base, gpio_bit, ENABLE);
-		k_busy_wait(data->array[pin].pin_debounce_ms * 2 * USEC_PER_MSEC);
-		BEE_GPIO_CLEAR_INT_PENDING_BIT(port_base, gpio_bit);
-		BEE_GPIO_MASK_INT_CONFIG(port_base, gpio_bit, DISABLE);
+		Pinmux_Config(pad_pin, DWGPIO);
+		Pad_Config(pad_pin, PAD_PINMUX_MODE, PAD_IS_PWRON, pull_config, PAD_OUT_ENABLE,
+			   (flags & GPIO_OUTPUT_INIT_HIGH) ? PAD_OUT_HIGH : PAD_OUT_LOW);
 	} else {
-		BEE_GPIO_INIT(port_base, &gpio_init_struct);
+		Pad_Config(pad_pin, PAD_PINMUX_MODE, PAD_IS_PWRON, pull_config, PAD_OUT_DISABLE,
+			   PAD_OUT_LOW);
+		Pinmux_Config(pad_pin, DWGPIO);
+
+		/* to avoid trigger gpio interrupt */
+		if (debounce_ms && (flags & GPIO_INT_ENABLE)) {
+			BEE_GPIO_INT_CONFIG(port_base, gpio_bit, DISABLE);
+			BEE_GPIO_INIT(port_base, &gpio_init_struct);
+			BEE_GPIO_MASK_INT_CONFIG(port_base, gpio_bit, ENABLE);
+			BEE_GPIO_INT_CONFIG(port_base, gpio_bit, ENABLE);
+			k_busy_wait(data->array[pin].pin_debounce_ms * 2 * USEC_PER_MSEC);
+			BEE_GPIO_CLEAR_INT_PENDING_BIT(port_base, gpio_bit);
+			BEE_GPIO_MASK_INT_CONFIG(port_base, gpio_bit, DISABLE);
+		} else {
+			BEE_GPIO_INIT(port_base, &gpio_init_struct);
+		}
 	}
 
 	key = irq_lock();
