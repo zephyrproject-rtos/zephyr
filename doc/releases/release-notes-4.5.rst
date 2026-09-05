@@ -1625,6 +1625,18 @@ New Drivers
   * :dtcompatible:`zephyr,flow-meter` (:github:`111366`)
   * :dtcompatible:`zephyr,native-linux-temp` (:github:`114563`)
 
+* MPC (Memory Protection Controller)
+
+  * Arm CoreLink TrustZone Memory Protection Controller
+    (:dtcompatible:`arm,tz-mpc`).
+  * Infineon MPC (:dtcompatible:`infineon,mpc`).
+
+* PPC (Peripheral Protection Controller)
+
+  * Arm SSE-200 Secure Privilege Control block
+    (:dtcompatible:`arm,sse-200-spctrl`).
+  * Infineon PPC (:dtcompatible:`infineon,ppc`).
+
 * Serial controller
 
   * :dtcompatible:`elan,em32-uart` (:github:`103037`)
@@ -1813,6 +1825,12 @@ Libraries / Subsystems
 * __assert
 
    * ``__ASSERT_ON`` define has been removed.
+
+* Secure calls
+
+  * Added the ``__secure_call`` code-generation mechanism for crossing the Arm
+    TrustZone-M Non-Secure/Secure boundary, mirroring the ``__syscall``
+    pattern. See :ref:`secure_call`.
 
 
 Devicetree

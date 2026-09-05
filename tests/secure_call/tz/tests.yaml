@@ -1,0 +1,43 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  secure_call.tz:
+    tags:
+      - secure_call
+      - trustzone
+      - arm
+    platform_allow:
+      - mps2/an521/cpu0/ns
+    integration_platforms:
+      - mps2/an521/cpu0/ns
+    sysbuild: true
+    harness: pytest
+    harness_config:
+      pytest_root:
+        - pytest/test_tz_calls.py
+    timeout: 120
+
+  secure_call.tz.hw:
+    tags:
+      - secure_call
+      - trustzone
+      - arm
+    platform_allow:
+      - kit_pse84_eval/pse846gps2dbzc4a/m33/ns
+      - kit_pse84_ai/pse846gps2dbzc4a/m33/ns
+    integration_platforms:
+      - kit_pse84_eval/pse846gps2dbzc4a/m33/ns
+    sysbuild: true
+    harness: console
+    harness_config:
+      type: multi_line
+      ordered: true
+      regex:
+        - "SC_ADD: 7"
+        - "SC_NOP: 42"
+        - "SC_FILL: OK"
+        - "NS: test complete"
+    timeout: 120
