@@ -21,9 +21,14 @@ struct mfd_max2221x_config {
 	struct spi_dt_spec spi;
 };
 
+struct mfd_max2221x_data {
+	struct k_mutex lock;
+};
+
 int max2221x_reg_read(const struct device *dev, uint8_t addr, uint16_t *value)
 {
 	int ret;
+	struct mfd_max2221x_data *data = dev->data;
 	const struct mfd_max2221x_config *config = dev->config;
 	uint8_t rxbuffer[3] = {0};
 	size_t rx_len = 3;
@@ -55,8 +60,11 @@ int max2221x_reg_read(const struct device *dev, uint8_t addr, uint16_t *value)
 		.count = ARRAY_SIZE(rxb),
 	};
 
+	k_mutex_lock(&data->lock, K_FOREVER);
+
 	ret = spi_transceive_dt(&config->spi, &tx, &rx);
 	if (ret) {
+		k_mutex_unlock(&data->lock);
 		return ret;
 	}
 
@@ -64,16 +72,21 @@ int max2221x_reg_read(const struct device *dev, uint8_t addr, uint16_t *value)
 
 	ret = spi_transceive_dt(&config->spi, &tx, &rx);
 	if (ret) {
+		k_mutex_unlock(&data->lock);
 		return ret;
 	}
 
-	*value = sys_be16_to_cpu(*(uint16_t *)&rxbuffer[1]);
+	k_mutex_unlock(&data->lock);
+
+	*value = sys_get_be16(&rxbuffer[1]);
 	return 0;
 }
 
 int max2221x_reg_write(const struct device *dev, uint8_t addr, uint16_t value)
 {
+	struct mfd_max2221x_data *data = dev->data;
 	const struct mfd_max2221x_config *config = dev->config;
+	int ret;
 
 	addr = FIELD_PREP(MAX2221X_SPI_TRANS_ADDR, addr) | FIELD_PREP(MAX2221X_SPI_TRANS_DIR, 1);
 	value = sys_cpu_to_be16(value);
@@ -94,42 +107,59 @@ int max2221x_reg_write(const struct device *dev, uint8_t addr, uint16_t value)
 		.count = ARRAY_SIZE(buf),
 	};
 
-	return spi_write_dt(&config->spi, &tx);
+	k_mutex_lock(&data->lock, K_FOREVER);
+	ret = spi_write_dt(&config->spi, &tx);
+	k_mutex_unlock(&data->lock);
+
+	return ret;
 }
 
 int max2221x_reg_update(const struct device *dev, uint8_t addr, uint16_t mask, uint16_t val)
 {
+	struct mfd_max2221x_data *data = dev->data;
 	uint16_t tmp;
 	int ret;
 
+	k_mutex_lock(&data->lock, K_FOREVER);
+
 	ret = max2221x_reg_read(dev, addr, &tmp);
 	if (ret) {
+		k_mutex_unlock(&data->lock);
 		return ret;
 	}
 
 	tmp = (tmp & ~mask) | FIELD_PREP(mask, val);
 
-	return max2221x_reg_write(dev, addr, tmp);
+	ret = max2221x_reg_write(dev, addr, tmp);
+
+	k_mutex_unlock(&data->lock);
+
+	return ret;
 }
 
 static int max2221x_init(const struct device *dev)
 {
 	const struct mfd_max2221x_config *config = dev->config;
+	struct mfd_max2221x_data *data = dev->data;
 
 	if (!spi_is_ready_dt(&config->spi)) {
 		LOG_ERR("SPI device %s not ready", config->spi.bus->name);
 		return -ENODEV;
 	}
 
+	k_mutex_init(&data->lock);
+
 	return 0;
 }
 
 #define MAX2221X_DEFINE(inst)                                                                      \
+	static struct mfd_max2221x_data mfd_max2221x_data_##inst;                                  \
 	static const struct mfd_max2221x_config mfd_max2221x_config_##inst = {                     \
 		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8) | SPI_TRANSFER_MSB),             \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, max2221x_init, NULL, NULL, &mfd_max2221x_config_##inst,        \
-			      POST_KERNEL, CONFIG_MFD_INIT_PRIORITY, NULL);
+	DEVICE_DT_INST_DEFINE(inst, max2221x_init, NULL, &mfd_max2221x_data_##inst,                \
+			      &mfd_max2221x_config_##inst, POST_KERNEL, CONFIG_MFD_INIT_PRIORITY,  \
+			      NULL);
 
 DT_INST_FOREACH_STATUS_OKAY(MAX2221X_DEFINE)
