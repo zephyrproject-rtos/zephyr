@@ -1716,6 +1716,7 @@ New Samples
 * :zephyr:code-sample:`espnow`
 * :zephyr:code-sample:`fido2`
 * :zephyr:code-sample:`flow-meter`
+* :zephyr:code-sample:`fota-http`
 * :zephyr:code-sample:`frdm-mcxe31b-system-off`
 * :zephyr:code-sample:`i2c-tiny-usb`
 * :zephyr:code-sample:`logging_multidomain`
@@ -1790,6 +1791,13 @@ Libraries / Subsystems
 
   * Added :kconfig:option:`CONFIG_IMG_CUSTOM_SECTOR_SIZE` to allow MCUboot to use a different
     sector size for reducing the swap-using-offset status area size.
+
+* Management
+
+  * Added the :ref:`fota_http` library, a firmware-over-the-air client that
+    downloads an MCUboot image over HTTP or HTTPS straight into the secondary
+    slot, with optional resume, redirect following, SHA-256 verification and a
+    ``fota`` shell command.
 
 * LoRa / LoRaWAN
 
