@@ -10,6 +10,7 @@
 	chosen {
 		zephyr,sram = &tcm0;
 		zephyr,flash = &flash;
+		zephyr,flash-controller = &fmc;
 		zephyr,code-partition = &app_partition;
 		zephyr,itcm = &tcm1;
 		zephyr,console = &uart2;
