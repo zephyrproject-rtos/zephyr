@@ -13,6 +13,7 @@
 #include <zephyr/drivers/spi.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/types.h>
+#include <zephyr/dt-bindings/display/lt7680.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(display_lt7680, CONFIG_DISPLAY_LOG_LEVEL);
@@ -143,12 +144,12 @@ LOG_MODULE_REGISTER(display_lt7680, CONFIG_DISPLAY_LOG_LEVEL);
 
 /* Memory Configuration Register */
 /* Memory write direction */
-#define LT7680_MCR_MWRITE                GENMASK(2, 1)
-#define LT7680_MCR_MWRITE_LR_TB          0 /* left->right, top->bottom */
-#define LT7680_MCR_MWRITE_RL_TB          1 /* right->left, top->bottom */
-#define LT7680_MCR_MWRITE_TB_LR          2 /* top->bottom, left->right */
-#define LT7680_MCR_MWRITE_BT_LR          3 /* bottom->top, left->right */
-#define LT7680_MCR_IMGFMT                GENMASK(7, 6)
+#define LT7680_MCR_MWRITE       GENMASK(2, 1)
+#define LT7680_MCR_MWRITE_LR_TB LT7680_MEM_WRITE_DIRECTION_LR_TB /* left->right, top->bottom */
+#define LT7680_MCR_MWRITE_RL_TB LT7680_MEM_WRITE_DIRECTION_RL_TB /* right->left, top->bottom */
+#define LT7680_MCR_MWRITE_TB_LR LT7680_MEM_WRITE_DIRECTION_TB_LR /* top->bottom, left->right */
+#define LT7680_MCR_MWRITE_BT_LR LT7680_MEM_WRITE_DIRECTION_BT_LR /* bottom->top, left->right */
+#define LT7680_MCR_IMGFMT       GENMASK(7, 6)
 #define LT7680_MCR_IMGFMT_DIRECT_WRITE   0
 #define LT7680_MCR_IMGFMT_MASK_HIGH_EACH 1
 #define LT7680_MCR_IMGFMT_MASK_HIGH_EVEN 2
@@ -224,6 +225,27 @@ LOG_MODULE_REGISTER(display_lt7680, CONFIG_DISPLAY_LOG_LEVEL);
 #define LT7680_STATUS_MEM_WR_FIFO_EMPTY BIT(6)
 #define LT7680_STATUS_MEM_WR_FIFO_FULL  BIT(7)
 
+struct lt7680_orientation_code {
+	enum display_orientation orientation;
+	uint8_t vscan_direction;
+	uint8_t memory_write_direction;
+};
+
+struct lt7680_orientation_code lt7680_orientation_codes_list[] = {
+	{.orientation = DISPLAY_ORIENTATION_NORMAL,
+	 .vscan_direction = LT7680_DPCR_VSCAN_T_TO_B,
+	 .memory_write_direction = LT7680_MCR_MWRITE_LR_TB},
+	{.orientation = DISPLAY_ORIENTATION_ROTATED_90,
+	 .vscan_direction = LT7680_DPCR_VSCAN_T_TO_B,
+	 .memory_write_direction = LT7680_MCR_MWRITE_BT_LR},
+	{.orientation = DISPLAY_ORIENTATION_ROTATED_180,
+	 .vscan_direction = LT7680_DPCR_VSCAN_B_TO_T,
+	 .memory_write_direction = LT7680_MCR_MWRITE_RL_TB},
+	{.orientation = DISPLAY_ORIENTATION_ROTATED_270,
+	 .vscan_direction = LT7680_DPCR_VSCAN_B_TO_T,
+	 .memory_write_direction = LT7680_MCR_MWRITE_TB_LR},
+};
+
 struct lt7680_config {
 	struct spi_dt_spec spi_spec;
 	struct gpio_dt_spec reset_gpio;
@@ -232,9 +254,10 @@ struct lt7680_config {
 	uint16_t height;
 	uint16_t reset_delay_ms;
 
-	uint32_t clock_frequency;
+	uint8_t vscan_direction;
+	uint8_t memory_write_direction;
 
-	uint8_t rotation;
+	uint32_t clock_frequency;
 	uint16_t hsync_len;
 	uint16_t hback_porch;
 	uint16_t hfront_porch;
@@ -252,7 +275,66 @@ struct lt7680_data {
 	bool display_on;
 	bool blanking;
 	enum display_orientation orientation;
+	struct lt7680_orientation_code
+		orientation_code_reordered[ARRAY_SIZE(lt7680_orientation_codes_list)];
 };
+
+static int lt7680_get_normal_code_idx(uint8_t vscan_direction, uint8_t memory_write_direction)
+{
+	int normal_code_idx = -EINVAL;
+
+	for (size_t i = 0; i < ARRAY_SIZE(lt7680_orientation_codes_list); i++) {
+		if (lt7680_orientation_codes_list[i].vscan_direction == vscan_direction &&
+		    lt7680_orientation_codes_list[i].memory_write_direction ==
+			    memory_write_direction) {
+			normal_code_idx = i;
+			break;
+		}
+	}
+
+	if (normal_code_idx < 0) {
+		LOG_WRN("Invalid orientation code: vscan=%u, mem_write=%u. Check DT settings.",
+			vscan_direction, memory_write_direction);
+		normal_code_idx = -EINVAL;
+	}
+
+	return normal_code_idx;
+}
+
+static int lt7680_init_orientation_codes_reordered(const struct device *dev)
+{
+	struct lt7680_data *data = dev->data;
+	const struct lt7680_config *cfg = dev->config;
+
+	int normal_code_idx =
+		lt7680_get_normal_code_idx(cfg->vscan_direction, cfg->memory_write_direction);
+	if (normal_code_idx < 0) {
+		return -EINVAL;
+	}
+
+	for (size_t i = 0; i < ARRAY_SIZE(lt7680_orientation_codes_list); i++) {
+		data->orientation_code_reordered[i] =
+			lt7680_orientation_codes_list[(normal_code_idx + i) %
+						      ARRAY_SIZE(lt7680_orientation_codes_list)];
+		data->orientation_code_reordered[i].orientation = (enum display_orientation)i;
+	}
+
+	return 0;
+}
+
+static uint32_t lt7680_get_orientation_code_idx(const struct device *dev,
+						enum display_orientation orientation)
+{
+	struct lt7680_data *data = dev->data;
+
+	for (size_t i = 0; i < ARRAY_SIZE(data->orientation_code_reordered); i++) {
+		if (data->orientation_code_reordered[i].orientation == orientation) {
+			return i;
+		}
+	}
+
+	return -EINVAL;
+}
 
 static int lt7680_read_status(const struct device *dev, uint8_t *status)
 {
@@ -751,24 +833,32 @@ static int lt7680_set_orientation(const struct device *dev,
 				  const enum display_orientation orientation)
 {
 	struct lt7680_data *data = dev->data;
+	int ret;
 	uint8_t mcr;
 	uint8_t dpcr;
 	uint8_t memory_direction = 0;
 	uint8_t vscan_direction = 0;
-	int ret;
+	int preferred_orientation_idx = 0;
 
 	switch (orientation) {
 	case DISPLAY_ORIENTATION_NORMAL:
-		memory_direction = LT7680_MCR_MWRITE_LR_TB;
-		vscan_direction = LT7680_DPCR_VSCAN_T_TO_B;
-		break;
 	case DISPLAY_ORIENTATION_ROTATED_180:
-		memory_direction = LT7680_MCR_MWRITE_RL_TB;
-		vscan_direction = LT7680_DPCR_VSCAN_B_TO_T;
 		break;
 	default:
 		return -ENOTSUP;
 	}
+
+	preferred_orientation_idx = lt7680_get_orientation_code_idx(dev, orientation);
+
+	if (preferred_orientation_idx == -EINVAL) {
+		LOG_ERR("Unsupported orientation: %d", orientation);
+		return -ENOTSUP;
+	}
+
+	memory_direction =
+		data->orientation_code_reordered[preferred_orientation_idx].memory_write_direction;
+	vscan_direction =
+		data->orientation_code_reordered[preferred_orientation_idx].vscan_direction;
 
 	ret = lt7680_read_reg(dev, LT7680_MCR, &mcr);
 	if (ret < 0) {
@@ -1023,7 +1113,7 @@ static int lt7680_panel_init(const struct device *dev)
 		return ret;
 	}
 
-	mcr = FIELD_PREP(LT7680_MCR_MWRITE, LT7680_MCR_MWRITE_LR_TB);
+	mcr = FIELD_PREP(LT7680_MCR_MWRITE, cfg->memory_write_direction);
 	if (data->current_pixel_format == PIXEL_FORMAT_RGB_888) {
 		mcr |= LT7680_MCR_IMGFMT_DIRECT_WRITE;
 	} else {
@@ -1042,7 +1132,7 @@ static int lt7680_panel_init(const struct device *dev)
 	}
 
 	/* PCLK edge, display OFF (enabled later), scan dir, RGB */
-	dpcr = FIELD_PREP(LT7680_DPCR_VSCAN, LT7680_DPCR_VSCAN_T_TO_B);
+	dpcr = FIELD_PREP(LT7680_DPCR_VSCAN, cfg->vscan_direction);
 	dpcr |= FIELD_PREP(LT7680_DPCR_PDATA, LT7680_DPCR_PDATA_RGB);
 	if (!cfg->pixelclk_active) {
 		dpcr |= FIELD_PREP(LT7680_DPCR_PCLK, LT7680_DPCR_PCLK_FALLING);
@@ -1184,16 +1274,7 @@ static int lt7680_init(const struct device *dev)
 {
 	const struct lt7680_config *cfg = dev->config;
 	struct lt7680_data *data = dev->data;
-	enum display_orientation orientation;
 	int ret;
-
-	if (cfg->rotation == 0) {
-		orientation = DISPLAY_ORIENTATION_NORMAL;
-	} else if (cfg->rotation == 180) {
-		orientation = DISPLAY_ORIENTATION_ROTATED_180;
-	} else {
-		return -ENOTSUP;
-	}
 
 	if (!spi_is_ready_dt(&cfg->spi_spec)) {
 		LOG_ERR("SPI bus not ready");
@@ -1251,7 +1332,13 @@ static int lt7680_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = lt7680_set_orientation(dev, orientation);
+	ret = lt7680_init_orientation_codes_reordered(dev);
+	if (ret < 0) {
+		LOG_ERR("Orientation code init failed: %d", ret);
+		return ret;
+	}
+
+	ret = lt7680_set_orientation(dev, DISPLAY_ORIENTATION_NORMAL);
 	if (ret < 0) {
 		return ret;
 	}
@@ -1293,9 +1380,12 @@ static DEVICE_API(display, lt7680_api) = {
 		.width = DT_INST_PROP(inst, width),                                                \
 		.height = DT_INST_PROP(inst, height),                                              \
 		.reset_delay_ms = DT_INST_PROP(inst, reset_delay_ms),                              \
+		.vscan_direction =                                                                 \
+			DT_INST_PROP_OR(inst, vscan_direction, LT7680_DPCR_VSCAN_T_TO_B),          \
+		.memory_write_direction =                                                          \
+			DT_INST_PROP_OR(inst, memory_write_direction, LT7680_MCR_MWRITE_LR_TB),    \
 		.clock_frequency = DT_PROP_OR(DT_INST_CHILD(inst, display_timings),                \
 					      clock_frequency, 10000000),                          \
-		.rotation = DT_INST_PROP(inst, rotation),                                          \
 		.hsync_len = DT_PROP(DT_INST_CHILD(inst, display_timings), hsync_len),             \
 		.hback_porch = DT_PROP(DT_INST_CHILD(inst, display_timings), hback_porch),         \
 		.hfront_porch = DT_PROP(DT_INST_CHILD(inst, display_timings), hfront_porch),       \
