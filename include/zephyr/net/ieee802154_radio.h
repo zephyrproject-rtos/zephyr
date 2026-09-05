@@ -485,40 +485,14 @@ enum ieee802154_hw_caps {
 	/** TX at specified time supported */
 	IEEE802154_HW_TXTIME = BIT(8),
 
-	/** TX directly from sleep supported
-	 *
-	 *  @note This HW capability does not conform to the requirements
-	 *  specified in #61227 as it closely couples the driver to OpenThread's
-	 *  capability and device model which is different from Zephyr's:
-	 *   - "Sleeping" is a well defined term in Zephyr related to internal
-	 *     power and thread management and different from "RX off" as
-	 *     defined in OT.
-	 *   - Currently all OT-capable drivers have the "sleep to TX"
-	 *     capability anyway plus we expect future drivers to implement it
-	 *     ootb as well, so no information is actually conveyed by this
-	 *     capability.
-	 *   - The `start()`/`stop()` API of a net device controls the
-	 *     interface's operational state. Drivers MUST respond with
-	 *     -ENETDOWN when calling `tx()` while their operational state is
-	 *     "DOWN", only devices in the "UP" state MAY transmit packets (RFC
-	 *     2863).
-	 *   - A migration path has been defined in #63670 for actual removal of
-	 *     this capability in favor of a standard compliant
-	 *     `configure(rx_on/rx_off)` call, see there for details.
-	 *
-	 * @deprecated Drivers and L2 SHALL not introduce additional references
-	 * to this capability and remove existing ones as outlined in #63670.
-	 */
-	IEEE802154_HW_SLEEP_TO_TX = BIT(9),
-
 	/** Timed RX window scheduling supported */
-	IEEE802154_HW_RXTIME = BIT(10),
+	IEEE802154_HW_RXTIME = BIT(9),
 
 	/** TX security supported (key management, encryption and authentication) */
-	IEEE802154_HW_TX_SEC = BIT(11),
+	IEEE802154_HW_TX_SEC = BIT(10),
 
 	/** RxOnWhenIdle handling supported */
-	IEEE802154_RX_ON_WHEN_IDLE = BIT(12),
+	IEEE802154_RX_ON_WHEN_IDLE = BIT(11),
 
 	/** Support for timed transmissions on selective channel.
 	 *
@@ -531,7 +505,7 @@ enum ieee802154_hw_caps {
 	 *
 	 *  Please refer to the `ieee802154_radio_api::tx` documentation for details.
 	 */
-	IEEE802154_HW_SELECTIVE_TXCHANNEL = BIT(13),
+	IEEE802154_HW_SELECTIVE_TXCHANNEL = BIT(12),
 
 	/* Note: Update also IEEE802154_HW_CAPS_BITS_COMMON_COUNT when changing
 	 * the ieee802154_hw_caps type.
@@ -539,7 +513,7 @@ enum ieee802154_hw_caps {
 };
 
 /** @brief Number of bits used by ieee802154_hw_caps type. */
-#define IEEE802154_HW_CAPS_BITS_COMMON_COUNT (14)
+#define IEEE802154_HW_CAPS_BITS_COMMON_COUNT (13)
 
 /** @brief This and higher values are specific to the protocol- or driver-specific extensions. */
 #define IEEE802154_HW_CAPS_BITS_PRIV_START IEEE802154_HW_CAPS_BITS_COMMON_COUNT
