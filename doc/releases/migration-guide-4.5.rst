@@ -1335,6 +1335,13 @@ USB
   their API struct definitions and switch their API instances to ``DEVICE_API(uhc, ...)``.
   (:github:`108414`)
 
+* The reboot into a BOSSA compatible bootloader when the host sets a magic DTE rate is now
+  implemented on top of the new USB device support. The ``CONFIG_BOOTLOADER_BOSSA_DEVICE_NAME``
+  Kconfig option has been removed, and the reboot is handled by the CDC ACM serial backend,
+  see :kconfig:option:`CONFIG_CDC_ACM_SERIAL_REBOOT_TO_BOOTLOADER`. Boards that relied on this
+  feature with the legacy USB device support must enable
+  :kconfig:option:`CONFIG_CDC_ACM_SERIAL_INITIALIZE_AT_BOOT`.
+
 Video
 =====
 
