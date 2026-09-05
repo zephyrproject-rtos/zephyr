@@ -36,6 +36,7 @@
 #include <hal/nrf_spu.h>
 #include <hal/nrf_mpc.h>
 #include <hal/nrf_lfxo.h>
+#include <hal/nrf_gpio.h>
 
 #include <wicr_setup.h>
 
@@ -165,6 +166,19 @@ static void ipct_configuration(void)
 #if defined(CONFIG_SOC_NRF71_WIFI_BOOT)
 #if (defined(NRF_APPLICATION) && !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)) || \
 	!defined(__ZEPHYR__)
+/* Antenna switch (ANTSW) GPIO setup, done before the Wi-Fi core is started. */
+static void antsw_setup(void)
+{
+	/* P0.09: power on ANTSW. */
+	nrf_gpio_cfg(NRF_GPIO_PIN_MAP(0, 9), NRF_GPIO_PIN_DIR_OUTPUT,
+		     NRF_GPIO_PIN_INPUT_DISCONNECT, NRF_GPIO_PIN_PULLUP,
+		     NRF_GPIO_PIN_S0H1, NRF_GPIO_PIN_NOSENSE);
+	/* P0.05: place ANTSW towards WLAN. */
+	nrf_gpio_cfg(NRF_GPIO_PIN_MAP(0, 5), NRF_GPIO_PIN_DIR_OUTPUT,
+		     NRF_GPIO_PIN_INPUT_DISCONNECT, NRF_GPIO_PIN_PULLDOWN,
+		     NRF_GPIO_PIN_S0S1, NRF_GPIO_PIN_NOSENSE);
+}
+
 static void wifi_setup(void)
 {
 	/* Kickstart the LMAC processor */
@@ -205,6 +219,8 @@ void soc_early_init_hook(void)
 #endif
 
 #if defined(CONFIG_SOC_NRF71_WIFI_BOOT)
+	/* Configure ANTSW GPIOs before starting comms with the Wi-Fi core. */
+	antsw_setup();
 	wifi_setup();
 #endif
 
