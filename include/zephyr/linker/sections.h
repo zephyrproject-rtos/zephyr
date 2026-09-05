@@ -90,6 +90,11 @@
 #define ONDEMAND_RODATA_SECTION_NAME	ondemand_rodata
 #endif
 
+#if defined(CONFIG_DCACHE_LINE_SIZE)
+#define __DCACHELINE_EXCLUSIVE_NOINIT_SECTION_NAME dcacheline_exclusive_noinit
+#define __DCACHELINE_EXCLUSIVE_DATA_SECTION_NAME dcacheline_exclusive_data
+#endif
+
 /* Short section references for use in ASM files */
 #if defined(_ASMLANGUAGE)
 /* Various text section names */

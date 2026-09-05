@@ -3,7 +3,7 @@ tests:
     tags:
       - kernel
       - cache
-    filter: CONFIG_CACHE_MANAGEMENT
+    filter: CONFIG_DCACHE or CONFIG_ICACHE
     platform_exclude:
       - bcm958402m2/bcm58402/m7
       - bcm958401m2
@@ -30,3 +30,11 @@ tests:
       - qemu_x86_64
     extra_configs:
       - CONFIG_MINIMAL_LIBC=y
+  arch.cache.api.linker_generator:
+    platform_allow:
+      - qemu_cortex_a9
+    tags:
+      - cache
+      - linker_generator
+    extra_configs:
+      - CONFIG_CMAKE_LINKER_GENERATOR=y
