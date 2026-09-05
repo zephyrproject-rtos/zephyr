@@ -101,7 +101,7 @@ static void reg_write(const struct emul *target, int regn, int val)
 					shift = BMI160_PMU_STATUS_MAG_POS;
 					break;
 				}
-				data->pmu_status &= 3 << shift;
+				data->pmu_status &= ~(3 << shift);
 				data->pmu_status |= pmu_val << shift;
 				LOG_DBG("   * pmu %s = %x, new status %x", pmu_name[which], pmu_val,
 					data->pmu_status);
