@@ -12,6 +12,19 @@ config USBD_CDC_ECM_CLASS
 
 if USBD_CDC_ECM_CLASS
 
+config USBD_CDC_ECM_TX_TIMEOUT
+	int "TX transfer timeout (milliseconds)"
+	default 100
+	help
+	  Maximum time cdc_ecm_send() waits for the previous IN transfer to
+	  complete before it drops the packet. A transfer completes only when
+	  the host issues an IN token, which it does not while the host side
+	  of the interface is down, even though the device is enumerated.
+	  Unbounded, the send blocks forever and holds up every other flow
+	  queued on the same network TX thread. Raising CONFIG_NET_TC_TX_COUNT
+	  does not necessarily separate them, since the default priority
+	  mapping places several priorities on one traffic class.
+
 module = USBD_CDC_ECM
 module-str = usbd cdc_ecm
 default-count = 1
