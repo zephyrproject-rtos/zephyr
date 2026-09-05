@@ -54,6 +54,8 @@ properties:
 
   ac-states:
     type: phandles
+    target-compatibles:
+      - "infineon,autanalog-ac-state"
     description: |
       Ordered list of AC state node phandles for advanced mode.  When present,
       the driver uses these nodes to build the full State Transition Table.
