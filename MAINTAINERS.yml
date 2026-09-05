@@ -7790,6 +7790,25 @@ hawkBit:
   tests:
     - sample.net.hawkbit
 
+"mgmt: fota_http":
+  status: maintained
+  maintainers:
+    - sylvioalves
+  files:
+    - subsys/mgmt/fota_http/
+    - include/zephyr/mgmt/fota_http.h
+    - samples/subsys/mgmt/fota_http/
+    - tests/subsys/mgmt/fota_http/
+    - doc/services/device_mgmt/fota_http.rst
+  labels:
+    - "area: FOTA HTTP"
+  description: >-
+    Firmware Over-the-Air over HTTP or HTTPS into the MCUboot
+    secondary slot
+  tests:
+    - sample.mgmt.fota_http
+    - mgmt.fota_http
+
 "mgmt: updatehub":
   status: maintained
   maintainers:
