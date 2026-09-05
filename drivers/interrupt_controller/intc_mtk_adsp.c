@@ -18,7 +18,7 @@ bool intc_mtk_adsp_get_enable(const struct device *dev, int irq)
 {
 	const struct intc_mtk_cfg *cfg = dev->config;
 
-	return (*cfg->enable_reg | (BIT(irq) & cfg->irq_mask)) != 0;
+	return (*cfg->enable_reg & BIT(irq) & cfg->irq_mask) != 0;
 }
 
 void intc_mtk_adsp_set_enable(const struct device *dev, int irq, bool val)
