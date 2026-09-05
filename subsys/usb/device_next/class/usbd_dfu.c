@@ -55,7 +55,7 @@ static const struct usb_dfu_descriptor dfu_desc = {
 
 /* Common class data for both run-time and DFU instances. */
 struct usbd_dfu_data {
-	struct usb_desc_header **const runtime_mode_descs;
+	struct usb_desc_header *const *const runtime_mode_descs;
 	struct usb_desc_header **const dfu_mode_descs;
 	enum usb_dfu_state state;
 	enum usb_dfu_state next;
@@ -71,7 +71,7 @@ struct usbd_dfu_data {
 static __noinit struct usb_if_descriptor runtime_if0_desc;
 
 /* Run-Time mode descriptors. No endpoints, identical for high and full speed. */
-static struct usb_desc_header *runtime_mode_descs[] = {
+static struct usb_desc_header *const runtime_mode_descs[] = {
 	(struct usb_desc_header *) &runtime_if0_desc,
 	(struct usb_desc_header *) &dfu_desc,
 	NULL,
@@ -623,7 +623,7 @@ static void *runtime_mode_get_desc(struct usbd_class_data *const c_data,
 {
 	struct usbd_dfu_data *data = usbd_class_get_private(c_data);
 
-	return data->runtime_mode_descs;
+	return (void *)data->runtime_mode_descs;
 }
 
 static int runtime_mode_init(struct usbd_class_data *const c_data)
@@ -641,7 +641,7 @@ static int runtime_mode_init(struct usbd_class_data *const c_data)
 	return 0;
 }
 
-struct usbd_class_api runtime_mode_api = {
+static const struct usbd_class_api runtime_mode_api = {
 	.control_to_host = runtime_mode_control_to_host,
 	.control_to_dev = runtime_mode_control_to_dev,
 	.get_desc = runtime_mode_get_desc,
@@ -823,7 +823,7 @@ static int dfu_mode_init(struct usbd_class_data *const c_data)
 	return data->image == NULL ? -EINVAL : 0;
 }
 
-struct usbd_class_api dfu_api = {
+static const struct usbd_class_api dfu_api = {
 	.control_to_host = dfu_mode_control_to_host,
 	.control_to_dev = dfu_mode_control_to_dev,
 	.update = dfu_mode_update,

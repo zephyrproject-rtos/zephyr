@@ -94,8 +94,8 @@ struct uac2_ctx {
 /* UAC2 device constant data */
 struct uac2_cfg {
 	struct usbd_class_data *const c_data;
-	const struct usb_desc_header **fs_descriptors;
-	const struct usb_desc_header **hs_descriptors;
+	const struct usb_desc_header *const *fs_descriptors;
+	const struct usb_desc_header *const *hs_descriptors;
 	/* Entity 1 type is at entity_types[0] */
 	const entity_type_t *entity_types;
 	/* Array of indexes to data endpoint descriptor in descriptors set.
@@ -131,7 +131,7 @@ get_as_data_ep(struct usbd_class_data *const c_data, int as_idx)
 	const struct device *dev = usbd_class_get_private(c_data);
 	const struct uac2_cfg *cfg = dev->config;
 	const struct usb_desc_header *desc = NULL;
-	const struct usb_desc_header **descriptors;
+	const struct usb_desc_header *const *descriptors;
 
 	if (usbd_bus_speed(c_data->uds_ctx) == USBD_SPEED_FS) {
 		descriptors = cfg->fs_descriptors;
@@ -153,7 +153,7 @@ get_as_feedback_ep(struct usbd_class_data *const c_data, int as_idx)
 	const struct device *dev = usbd_class_get_private(c_data);
 	const struct uac2_cfg *cfg = dev->config;
 	const struct usb_desc_header *desc = NULL;
-	const struct usb_desc_header **descriptors;
+	const struct usb_desc_header *const *descriptors;
 
 	if (usbd_bus_speed(c_data->uds_ctx) == USBD_SPEED_FS) {
 		descriptors = cfg->fs_descriptors;
@@ -462,7 +462,7 @@ void uac2_update(struct usbd_class_data *const c_data,
 	struct usbd_context *uds_ctx = usbd_class_get_ctx(c_data);
 	const struct uac2_cfg *cfg = dev->config;
 	struct uac2_ctx *ctx = dev->data;
-	const struct usb_desc_header **descriptors;
+	const struct usb_desc_header *const *descriptors;
 	const struct usb_association_descriptor *iad;
 	const struct usb_ep_descriptor *data_ep, *fb_ep;
 	uint8_t as_idx;
@@ -927,10 +927,10 @@ static void *uac2_get_desc(struct usbd_class_data *const c_data,
 	const struct uac2_cfg *cfg = dev->config;
 
 	if (USBD_SUPPORTS_HIGH_SPEED && speed == USBD_SPEED_HS) {
-		return cfg->hs_descriptors;
+		return (void *)cfg->hs_descriptors;
 	}
 
-	return cfg->fs_descriptors;
+	return (void *)cfg->fs_descriptors;
 }
 
 static void uac2_disable(struct usbd_class_data *const c_data)
@@ -966,7 +966,7 @@ static int uac2_init(struct usbd_class_data *const c_data)
 	return 0;
 }
 
-struct usbd_class_api uac2_api = {
+static const struct usbd_class_api uac2_api = {
 	.update = uac2_update,
 	.control_to_dev = uac2_control_to_dev,
 	.control_to_host = uac2_control_to_host,
@@ -1034,11 +1034,11 @@ struct usbd_class_api uac2_api = {
 	static struct uac2_ctx uac2_ctx_##inst;					\
 	UAC2_DESCRIPTOR_ARRAYS(DT_DRV_INST(inst))				\
 	IF_ENABLED(UAC2_ALLOWED_AT_FULL_SPEED(DT_DRV_INST(inst)), (		\
-		static const struct usb_desc_header *uac2_fs_desc_##inst[] =	\
+		static const struct usb_desc_header *const uac2_fs_desc_##inst[] =	\
 			UAC2_FS_DESCRIPTOR_PTRS_ARRAY(DT_DRV_INST(inst));	\
 	))									\
 	IF_ENABLED(UAC2_ALLOWED_AT_HIGH_SPEED(DT_DRV_INST(inst)), (		\
-		static const struct usb_desc_header *uac2_hs_desc_##inst[] =	\
+		static const struct usb_desc_header *const uac2_hs_desc_##inst[] =	\
 			UAC2_HS_DESCRIPTOR_PTRS_ARRAY(DT_DRV_INST(inst));	\
 	))									\
 	USBD_DEFINE_CLASS(uac2_##inst, &uac2_api,				\

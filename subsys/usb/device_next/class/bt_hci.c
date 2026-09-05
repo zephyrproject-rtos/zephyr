@@ -119,8 +119,8 @@ struct usbd_bt_hci_desc {
 struct bt_hci_data {
 	struct net_buf *acl_buf;
 	struct usbd_bt_hci_desc *const desc;
-	const struct usb_desc_header **const fs_desc;
-	const struct usb_desc_header **const hs_desc;
+	const struct usb_desc_header *const *const fs_desc;
+	const struct usb_desc_header *const *const hs_desc;
 	uint16_t acl_len;
 	struct k_sem sync_sem;
 	atomic_t state;
@@ -476,10 +476,10 @@ static void *bt_hci_get_desc(struct usbd_class_data *const c_data,
 	struct bt_hci_data *data = usbd_class_get_private(c_data);
 
 	if (USBD_SUPPORTS_HIGH_SPEED && speed == USBD_SPEED_HS) {
-		return data->hs_desc;
+		return (void *)data->hs_desc;
 	}
 
-	return data->fs_desc;
+	return (void *)data->fs_desc;
 }
 
 static int bt_hci_init(struct usbd_class_data *const c_data)
@@ -489,7 +489,7 @@ static int bt_hci_init(struct usbd_class_data *const c_data)
 	return 0;
 }
 
-static struct usbd_class_api bt_hci_api = {
+static const struct usbd_class_api bt_hci_api = {
 	.request = bt_hci_request,
 	.update = bt_hci_update,
 	.enable = bt_hci_enable,
@@ -634,7 +634,7 @@ static struct usbd_bt_hci_desc bt_hci_desc_##n = {				\
 	},									\
 };										\
 										\
-const static struct usb_desc_header *bt_hci_fs_desc_##n[] = {			\
+const static struct usb_desc_header *const bt_hci_fs_desc_##n[] = {		\
 	(struct usb_desc_header *) &bt_hci_desc_##n.iad,			\
 	(struct usb_desc_header *) &bt_hci_desc_##n.if0,			\
 	(struct usb_desc_header *) &bt_hci_desc_##n.if0_int_ep,			\
@@ -649,7 +649,7 @@ const static struct usb_desc_header *bt_hci_fs_desc_##n[] = {			\
 	(struct usb_desc_header *) &bt_hci_desc_##n.nil_desc,			\
 };										\
 										\
-const static __maybe_unused struct usb_desc_header *bt_hci_hs_desc_##n[] = {	\
+const static __maybe_unused struct usb_desc_header *const bt_hci_hs_desc_##n[] = {	\
 	(struct usb_desc_header *) &bt_hci_desc_##n.iad,			\
 	(struct usb_desc_header *) &bt_hci_desc_##n.if0,			\
 	(struct usb_desc_header *) &bt_hci_desc_##n.if0_int_ep,			\
