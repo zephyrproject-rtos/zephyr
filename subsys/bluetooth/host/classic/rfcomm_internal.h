@@ -22,6 +22,10 @@ struct bt_rfcomm_session {
 	struct bt_l2cap_br_chan br_chan;
 	/* Response Timeout eXpired (RTX) timer */
 	struct k_work_delayable rtx_work;
+	/* Retry work */
+	struct k_work_delayable retry_work;
+	/* Retry timeout expired timer */
+	struct k_work_delayable retry_timeout_work;
 	/* Binary sem for aggregate fc */
 	struct k_sem fc;
 	/* DLC list */
@@ -30,15 +34,17 @@ struct bt_rfcomm_session {
 	uint8_t state;
 	bt_rfcomm_role_t role;
 	bt_rfcomm_cfc_t cfc;
+	atomic_t flags;
 };
 
 enum {
 	BT_RFCOMM_STATE_IDLE,
 	BT_RFCOMM_STATE_INIT,
+	BT_RFCOMM_STATE_SECURITY_FAILED,
 	BT_RFCOMM_STATE_SECURITY_PENDING,
+	BT_RFCOMM_STATE_CONFIG,
 	BT_RFCOMM_STATE_CONNECTING,
 	BT_RFCOMM_STATE_CONNECTED,
-	BT_RFCOMM_STATE_CONFIG,
 	BT_RFCOMM_STATE_USER_DISCONNECT,
 	BT_RFCOMM_STATE_DISCONNECTING,
 	BT_RFCOMM_STATE_DISCONNECTED,
@@ -216,4 +222,17 @@ void bt_rfcomm_init(void);
 enum {
 	RFCOMM_FLAG_MSC_FC_CLEARED = 0,
 	RFCOMM_FLAG_MSC_FC_CLEAR_REQ = 1,
+	RFCOMM_FLAG_PN_REQ = 2,
+	RFCOMM_FLAG_PN_RSP = 3,
+	RFCOMM_FLAG_UA_FOR_SABM = 4,
+	RFCOMM_FLAG_UA_FOR_DISC = 5,
+	RFCOMM_FLAG_DM = 6,
+};
+
+enum {
+	RFCOMM_SESSION_FLAG_FC_ON = 0,
+	RFCOMM_SESSION_FLAG_FC_ON_REQ = 1,
+	RFCOMM_SESSION_FLAG_FC_ON_RSP = 2,
+	RFCOMM_SESSION_FLAG_FC_OFF_RSP = 3,
+	RFCOMM_SESSION_FLAG_UA_FOR_DISC = 4,
 };
