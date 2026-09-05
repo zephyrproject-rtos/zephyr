@@ -34,4 +34,22 @@
 		zephyr,input-positive = <NRF_SAADC_AIN2>;
 		zephyr,resolution = <10>;
 	};
+
+	channel@3 {
+		reg = <3>;
+		zephyr,gain = "ADC_GAIN_1_2";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,input-positive = <NRF_SAADC_AIN2>;
+		zephyr,resolution = <14>;
+	};
+};
+
+/ {
+	adc_reference_voltage: adc-reference-voltage {
+		compatible = "test-adc-reference-voltage";
+		io-channels = <&adc 3>;
+		reference-mv = <1800>;
+		expected-accuracy = <64>;
+	};
 };
