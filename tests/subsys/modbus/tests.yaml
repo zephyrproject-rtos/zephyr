@@ -15,3 +15,10 @@ tests:
     filter: CONFIG_UART_CONSOLE and CONFIG_UART_INTERRUPT_DRIVEN
     integration_platforms:
       - frdm_k64f
+  modbus.raw:
+    tags: modbus
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim

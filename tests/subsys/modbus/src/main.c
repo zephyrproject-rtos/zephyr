@@ -6,6 +6,7 @@
 
 #include "test_modbus.h"
 
+#if defined(CONFIG_MODBUS_SERIAL)
 ZTEST(modbus, test_setup_low_none)
 {
 	test_server_setup_low_none();
@@ -57,6 +58,7 @@ ZTEST(modbus, test_setup_ascii)
 	test_client_disable();
 	test_server_disable();
 }
+#endif /* CONFIG_MODBUS_SERIAL */
 
 ZTEST(modbus, test_setup_raw)
 {
