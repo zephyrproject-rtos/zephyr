@@ -668,6 +668,34 @@ struct adc_dt_spec {
 		ADC_CHANNEL_CFG_FROM_DT_NODE(node_id) \
 	}
 
+/** @cond INTERNAL_HIDDEN */
+#define ADC_DT_FOREACH_CHANNEL_NODE_HELPER(node_id, fn) \
+	IF_ENABLED(UTIL_AND(DT_NODE_HAS_PROP(node_id, zephyr_gain), \
+			    DT_NODE_HAS_STATUS_OKAY(DT_PARENT(node_id))), \
+		   (fn(node_id)))
+/** @endcond */
+
+/**
+ * @brief Invoke @p fn on every channel node of an enabled ADC controller.
+ *
+ * The channel nodes are the children of the ADC controllers with status
+ * "okay" in the devicetree, in devicetree order. Together with
+ * ADC_DT_SPEC_FROM_CHANNEL_NODE() this builds the list of every channel a
+ * board describes:
+ *
+ * @code{.c}
+ * #define CHANNEL_SPEC_AND_COMMA(node_id) ADC_DT_SPEC_FROM_CHANNEL_NODE(node_id),
+ *
+ * static const struct adc_dt_spec channels[] = {
+ *	ADC_DT_FOREACH_CHANNEL_NODE(CHANNEL_SPEC_AND_COMMA)
+ * };
+ * @endcode
+ *
+ * @param fn Macro to invoke with the channel node identifier as argument.
+ */
+#define ADC_DT_FOREACH_CHANNEL_NODE(fn) \
+	DT_FOREACH_STATUS_OKAY_NODE_VARGS(ADC_DT_FOREACH_CHANNEL_NODE_HELPER, fn)
+
 /* Forward declaration of the adc_sequence structure. */
 struct adc_sequence;
 
