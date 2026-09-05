@@ -6,6 +6,13 @@ menuconfig NVMEM
 
 if NVMEM
 
+config NVMEM_PROVIDER
+	bool
+	help
+	  Enabled when a native NVMEM provider driver is selected. Native
+	  providers implement the NVMEM provider device API instead of one
+	  of the memory device APIs.
+
 config NVMEM_BBRAM
 	bool "NVMEM support for Battery Backed RAM"
 	default y
@@ -39,6 +46,48 @@ config NVMEM_OTP
 config NVMEM_OTP_WRITE
 	bool "NVMEM (write) support for OTP memory handling devices"
 	depends on NVMEM_OTP && OTP_PROGRAM
+
+config NVMEM_PSA
+	bool
+	help
+	  Enabled when a PSA Secure Storage NVMEM provider is selected.
+
+config NVMEM_PSA_ITS
+	bool "NVMEM cells backed by PSA Internal Trusted Storage"
+	default y
+	depends on DT_HAS_ZEPHYR_NVMEM_PSA_ITS_ENABLED
+	depends on TFM_PARTITION_INTERNAL_TRUSTED_STORAGE || SECURE_STORAGE
+	select NVMEM_PSA
+	select NVMEM_PROVIDER
+
+config NVMEM_PSA_PS
+	bool "NVMEM cells backed by PSA Protected Storage"
+	default y
+	depends on DT_HAS_ZEPHYR_NVMEM_PSA_PS_ENABLED
+	depends on TFM_PARTITION_PROTECTED_STORAGE || SECURE_STORAGE
+	select NVMEM_PSA
+	select NVMEM_PROVIDER
+
+config NVMEM_PSA_WRITE
+	bool "Write support for PSA Secure Storage backed NVMEM cells"
+	default y
+	depends on NVMEM_PSA
+	help
+	  Allow writing to NVMEM cells backed by PSA Secure Storage entries.
+
+	  Writing part of a cell reads, modifies and rewrites the whole
+	  backing entry, as the PSA Secure Storage APIs only support
+	  whole-entry writes.
+
+config NVMEM_PSA_WRITE_BUF_SIZE
+	int "PSA Secure Storage entry read-modify-write buffer size"
+	depends on NVMEM_PSA_WRITE
+	default SECURE_STORAGE_ITS_MAX_DATA_SIZE if SECURE_STORAGE
+	default 128
+	help
+	  Size of the buffer used to read-modify-write a whole PSA Secure
+	  Storage entry when writing part of an NVMEM cell. Partial writes
+	  to entries larger than this buffer fail with -ENOBUFS.
 
 module = NVMEM
 module-str = nvmem
