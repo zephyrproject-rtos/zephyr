@@ -1,0 +1,39 @@
+common:
+  tags:
+    - drivers
+    - sdhc
+    - emul
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  extra_configs:
+    - CONFIG_SDHC=y
+    - CONFIG_SDHC_EMUL=y
+    - CONFIG_ZTEST=y
+
+tests:
+  drivers.sdhc.emul.sd: {}
+
+  drivers.sdhc.emul.emmc:
+    tags: emmc
+
+  drivers.sdhc.emul.sdio:
+    tags: sdio net
+    extra_configs:
+      - CONFIG_SDHC=y
+      - CONFIG_NETWORKING=y
+      - CONFIG_NET_L2_ETHERNET=y
+      - CONFIG_SDHC_EMUL_SDIO_NET=y
+
+  drivers.sdhc.emul.faults:
+    tags: fault
+
+  drivers.sdhc.emul.framework:
+    tags: emul framework
+    extra_args:
+      - DTC_OVERLAY_FILE="boards/native_sim_emul_fw.overlay"
+    extra_configs:
+      - CONFIG_SDHC=y
+      - CONFIG_SDHC_EMUL_CONTROLLER=y
+      - CONFIG_SDHC_EMUL_CARD=y
+      - CONFIG_ZTEST=y
