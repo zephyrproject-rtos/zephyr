@@ -206,6 +206,7 @@ void regression_thread(void *arg1, void *arg2, void *arg3)
  * @see k_work_init()
  * @see k_work_submit_to_queue()
  * @see k_sched_time_slice_set()
+ * @verifies ZEP-SRS-38-12
  */
 ZTEST(kernel_offload_wq, test_workq_offload_critical_section)
 {
