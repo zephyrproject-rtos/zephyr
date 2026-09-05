@@ -15,4 +15,5 @@ supported:
   - spi
   - vref
   - counter
+  - adc
 vendor: ti
