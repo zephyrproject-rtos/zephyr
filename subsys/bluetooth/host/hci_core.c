@@ -2285,6 +2285,7 @@ static void unpair(uint8_t id, const bt_addr_le_t *addr)
 {
 	struct bt_keys *keys = NULL;
 	struct bt_conn *conn = bt_conn_lookup_addr_le(id, addr);
+	bool was_bonded = false;
 
 	if (conn) {
 		/* Clear the conn->le.keys pointer since we'll invalidate it,
@@ -2306,6 +2307,11 @@ static void unpair(uint8_t id, const bt_addr_le_t *addr)
 		}
 
 		if (keys) {
+			/* bond existed if any keys were present */
+			if (keys->keys != 0) {
+				was_bonded = true;
+			}
+
 			bt_keys_clear(keys);
 		}
 	}
@@ -2313,12 +2319,14 @@ static void unpair(uint8_t id, const bt_addr_le_t *addr)
 	bt_gatt_clear(id, addr);
 
 #if defined(CONFIG_BT_SMP) || defined(CONFIG_BT_CLASSIC)
-	struct bt_conn_auth_info_cb *listener, *next;
+	if (was_bonded) {
+		struct bt_conn_auth_info_cb *listener, *next;
 
-	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&bt_auth_info_cbs, listener,
-					  next, node) {
-		if (listener->bond_deleted) {
-			listener->bond_deleted(id, addr);
+		SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&bt_auth_info_cbs, listener,
+						  next, node) {
+			if (listener->bond_deleted) {
+				listener->bond_deleted(id, addr);
+			}
 		}
 	}
 #endif /* defined(CONFIG_BT_SMP) || defined(CONFIG_BT_CLASSIC) */
