@@ -6,6 +6,7 @@
 #include <zephyr/sys/minmax.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
+#include <zephyr/tracing/tracking.h>
 #include <zephyr/internal/syscall_handler.h>
 #include <ksched.h>
 #include <kthread.h>
@@ -294,6 +295,8 @@ void z_impl_k_pipe_close(struct k_pipe *pipe)
 		z_sched_wake_all(&pipe->data, 0, NULL);
 		z_sched_wake_all(&pipe->space, 0, NULL);
 	}
+
+	sys_track_k_pipe_deinit(pipe);
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_pipe, close, pipe);
 }
 

@@ -7,6 +7,7 @@
 #include <zephyr/sys/sys_heap.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/sys/heap_listener.h>
+#include <zephyr/sys/heap_release_hook.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <string.h>
@@ -339,6 +340,13 @@ void sys_heap_free(struct sys_heap *heap, void *mem)
 		k_panic();
 	}
 
+	/* All configured hardening checks have run at this point. The memory
+	 * itself stays valid until the chunk is released below.
+	 */
+	IF_ENABLED(CONFIG_SYS_HEAP_RELEASE_HOOK,
+		   (heap_release_hook(mem,
+				      chunk_usable_bytes(h, c) - mem_align_gap(h, mem))));
+
 	set_chunk_used(h, c, false);
 #ifdef CONFIG_SYS_HEAP_RUNTIME_STATS
 	h->allocated_bytes -= chunk_usable_bytes(h, c);
@@ -596,6 +604,19 @@ static bool inplace_realloc(struct sys_heap *heap, void *ptr, size_t bytes)
 
 	if (chunk_size(h, c) > chunks_need) {
 		/* Shrink in place, split off and free unused suffix */
+
+		/* The tail of the block stops being usable while the front
+		 * stays allocated, so it is reported on its own. It starts
+		 * where the retained chunk's usable region now ends, which is
+		 * below chunk_mem() of the suffix: the split writes the new
+		 * chunk header over those bytes.
+		 */
+		IF_ENABLED(CONFIG_SYS_HEAP_RELEASE_HOOK,
+			   (heap_release_hook((uint8_t *)chunk_mem(h, c)
+					      + chunks_need * CHUNK_UNIT
+					      - chunk_header_bytes(h)
+					      - CHUNK_TRAILER_SIZE * CHUNK_UNIT,
+					      (chunk_size(h, c) - chunks_need) * CHUNK_UNIT)));
 #ifdef CONFIG_SYS_HEAP_LISTENER
 		size_t bytes_freed = chunk_usable_bytes(h, c) - align_gap;
 #endif
