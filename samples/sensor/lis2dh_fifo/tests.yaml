@@ -1,0 +1,13 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+sample:
+  name: LIS2DH FIFO streaming sample
+tests:
+  sample.sensor.lis2dh_fifo:
+    build_only: true
+    tags: sensors
+    filter: dt_alias_exists("accel0") and dt_compat_enabled("st,lis2dh")
+    integration_platforms:
+      - holyiot_25008/nrf54l15/cpuapp
+      - xiao_ble/nrf52840
