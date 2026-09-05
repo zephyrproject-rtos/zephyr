@@ -1,10 +1,10 @@
 /*
- * Copyright (c) 2026 Nordic Semiconductor ASA
+ * Copyright (c) 2024 Nordic Semiconductor ASA
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
-ipc0: &cpuapp_cpuppr_ipc {
+&ipc1 {
 	compatible = "zephyr,ipc-icmsg";
 	/delete-property/ tx-blocks;
 	/delete-property/ rx-blocks;
