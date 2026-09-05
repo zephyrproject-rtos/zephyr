@@ -850,12 +850,31 @@ static int ns_i2s_trigger(const struct device *dev, enum i2s_dir dir, enum i2s_t
 	return ns_i2s_trigger_single(dev, data, stream, dir, cmd);
 }
 
+static enum i2s_state ns_i2s_get_state(const struct device *dev, enum i2s_dir dir)
+{
+	const struct ns_i2s_config *cfg = dev->config;
+	struct ns_i2s_data *data = dev->data;
+	struct ns_i2s_stream *stream;
+
+	if (!ns_i2s_supports_dir(cfg, dir) || (dir == I2S_DIR_BOTH)) {
+		return I2S_STATE_UNKNOWN;
+	}
+
+	stream = ns_i2s_stream_get(data, dir);
+	if (stream == NULL) {
+		return I2S_STATE_UNKNOWN;
+	}
+
+	return stream->state;
+}
+
 static DEVICE_API(i2s, ns_i2s_driver_api) = {
 	.configure = ns_i2s_configure,
 	.config_get = ns_i2s_config_get,
 	.trigger = ns_i2s_trigger,
 	.read = ns_i2s_read,
 	.write = ns_i2s_write,
+	.get_state = ns_i2s_get_state,
 };
 
 static int ns_i2s_init(const struct device *dev)

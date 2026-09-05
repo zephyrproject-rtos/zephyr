@@ -134,3 +134,10 @@ static inline int z_vrfy_i2s_trigger(const struct device *dev,
 	return z_impl_i2s_trigger(dev, dir, cmd);
 }
 #include <zephyr/syscalls/i2s_trigger_mrsh.c>
+
+static inline enum i2s_state z_vrfy_i2s_get_state(const struct device *dev, enum i2s_dir dir)
+{
+	K_OOPS(K_SYSCALL_OBJ(dev, K_OBJ_DRIVER_I2S));
+	return z_impl_i2s_get_state(dev, dir);
+}
+#include <zephyr/syscalls/i2s_get_state_mrsh.c>
