@@ -13,3 +13,14 @@ tests:
     ignore_faults: true
     extra_configs:
       - CONFIG_MINIMAL_LIBC=y
+  kernel.queue.tracing:
+    tags:
+      - kernel
+    platform_allow:
+      - native_sim
+    extra_configs:
+      - CONFIG_TRACING=y
+      - CONFIG_TRACING_CTF=y
+      - CONFIG_TRACING_BACKEND_POSIX=y
+      - CONFIG_TRACING_PACKET_MAX_SIZE=256
+      - CONFIG_TRACING_SYNC=y

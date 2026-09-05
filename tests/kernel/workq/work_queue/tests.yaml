@@ -11,3 +11,15 @@ tests:
       - workqueue
     extra_configs:
       - CONFIG_WORKQUEUE_WORK_TIMEOUT=y
+  kernel.workqueue.tracing:
+    tags:
+      - kernel
+      - workqueue
+    platform_allow:
+      - native_sim
+    extra_configs:
+      - CONFIG_TRACING=y
+      - CONFIG_TRACING_CTF=y
+      - CONFIG_TRACING_BACKEND_POSIX=y
+      - CONFIG_TRACING_PACKET_MAX_SIZE=256
+      - CONFIG_TRACING_SYNC=y
