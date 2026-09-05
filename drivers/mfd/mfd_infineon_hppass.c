@@ -30,6 +30,7 @@
 #include <zephyr/irq.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/sys/util.h>
@@ -46,6 +47,17 @@ LOG_MODULE_REGISTER(mfd_infineon_hppass, CONFIG_MFD_LOG_LEVEL);
 struct ifx_hppass_mfd_data {
 	sys_slist_t callbacks;
 	struct k_mutex start_lock;
+#ifdef CONFIG_PM_DEVICE
+	/* BLOCK_STATUS.READY latched at SUSPEND; RESUME only re-powers if set. */
+	bool ac_was_ready;
+	/* Volatile SAR calibration, saved/restored around DeepSleep. */
+	struct {
+		uint32_t caloffst[IFX_HPPASS_SAR_CAL_OFFST_SIZE];
+		uint32_t callin[IFX_HPPASS_SAR_CAL_LIN_TABLE_SIZE];
+		uint32_t calgainc;
+		uint32_t calgainf;
+	} sar_cal;
+#endif
 };
 
 /*
@@ -732,6 +744,105 @@ static int ifx_hppass_mfd_init(const struct device *dev)
 	return 0;
 } /* ifx_hppass_mfd_init() */
 
+#ifdef CONFIG_PM_DEVICE
+/* Save the volatile SAR calibration before DeepSleep resets it. */
+static void ifx_hppass_sar_cal_save(const struct device *dev)
+{
+	const struct ifx_hppass_mfd_config *config = dev->config;
+	struct ifx_hppass_mfd_data *data = dev->data;
+
+	for (uint8_t n = 0U; n < IFX_HPPASS_SAR_CAL_OFFST_SIZE; n++) {
+		data->sar_cal.caloffst[n] =
+			sys_read32(config->base + IFX_HPPASS_SARADC_CALOFFST(n));
+	}
+	for (uint8_t n = 0U; n < IFX_HPPASS_SAR_CAL_LIN_TABLE_SIZE; n++) {
+		data->sar_cal.callin[n] =
+			sys_read32(config->base + IFX_HPPASS_SARADC_CALLIN(n));
+	}
+	data->sar_cal.calgainc = sys_read32(config->base + IFX_HPPASS_SARADC_CALGAINC);
+	data->sar_cal.calgainf = sys_read32(config->base + IFX_HPPASS_SARADC_CALGAINF);
+} /* ifx_hppass_sar_cal_save() */
+
+/* Restore the SAR calibration after DeepSleep; the rest is retained. */
+static void ifx_hppass_sar_cal_restore(const struct device *dev)
+{
+	const struct ifx_hppass_mfd_config *config = dev->config;
+	struct ifx_hppass_mfd_data *data = dev->data;
+
+	for (uint8_t n = 0U; n < IFX_HPPASS_SAR_CAL_OFFST_SIZE; n++) {
+		sys_write32(data->sar_cal.caloffst[n],
+			    config->base + IFX_HPPASS_SARADC_CALOFFST(n));
+	}
+	for (uint8_t n = 0U; n < IFX_HPPASS_SAR_CAL_LIN_TABLE_SIZE; n++) {
+		sys_write32(data->sar_cal.callin[n],
+			    config->base + IFX_HPPASS_SARADC_CALLIN(n));
+	}
+	sys_write32(data->sar_cal.calgainc, config->base + IFX_HPPASS_SARADC_CALGAINC);
+	sys_write32(data->sar_cal.calgainf, config->base + IFX_HPPASS_SARADC_CALGAINF);
+} /* ifx_hppass_sar_cal_restore() */
+
+/*
+ * DeepSleep retains the HPPASS config (STT, startup, triggers) but drops the
+ * block out of BLOCK_READY and resets the volatile SAR calibration.  RESUME
+ * reloads the calibration and re-runs the AC startup.
+ */
+static int ifx_hppass_mfd_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	struct ifx_hppass_mfd_data *data = dev->data;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+		/* Refuse while the AC is executing. */
+		if (ifx_hppass_ac_is_running(dev)) {
+			return -EBUSY;
+		}
+		/* Witness block state for RESUME; save calibration only if up. */
+		data->ac_was_ready = ifx_hppass_ac_is_block_ready(dev);
+		if (data->ac_was_ready) {
+			ifx_hppass_sar_cal_save(dev);
+		}
+		break;
+	case PM_DEVICE_ACTION_RESUME: {
+		int ret;
+
+		/* Leave the block down if it was down before suspend. */
+		if (!data->ac_was_ready) {
+			break;
+		}
+
+		/*
+		 * Reload calibration (writable while ENABLED, which is retained),
+		 * then re-kick the AC to re-power SAR + CSG.
+		 */
+		ifx_hppass_sar_cal_restore(dev);
+		ret = ifx_hppass_ac_start(dev, 0, 0);
+		if (ret != 0 && ret != -EALREADY) {
+			return ret;
+		}
+		break;
+	}
+#if defined(CONFIG_PM_S2RAM)
+	case PM_DEVICE_ACTION_TURN_ON: {
+		const struct ifx_hppass_mfd_config *config = dev->config;
+		int ret;
+
+		/* Cold resume from S2RAM: full rebuild and re-wire the IRQ. */
+		ret = ifx_hppass_init_hw(dev);
+		if (ret != 0) {
+			return ret;
+		}
+		config->irq_config_func(dev);
+		break;
+	}
+#endif
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+} /* ifx_hppass_mfd_pm_action() */
+#endif /* CONFIG_PM_DEVICE */
+
 /*
  * Per-instance STT is basic or advanced, selected by whether ac-states is
  * present in DT.  Basic mode generates a 2-state STT: WAIT_FOR BLOCK_READY
@@ -1043,7 +1154,9 @@ static int ifx_hppass_mfd_init(const struct device *dev)
                                                                                                \
 	static struct ifx_hppass_mfd_data ifx_hppass_mfd_data_##n;                             \
                                                                                                \
-	DEVICE_DT_INST_DEFINE(n, &ifx_hppass_mfd_init, NULL,                                   \
+	PM_DEVICE_DT_INST_DEFINE(n, ifx_hppass_mfd_pm_action);                                 \
+                                                                                               \
+	DEVICE_DT_INST_DEFINE(n, &ifx_hppass_mfd_init, PM_DEVICE_DT_INST_GET(n),               \
 			      &ifx_hppass_mfd_data_##n,                                        \
 			      &ifx_hppass_mfd_config_##n, POST_KERNEL,                         \
 			      CONFIG_MFD_INFINEON_HPPASS_INIT_PRIORITY, NULL);                 \

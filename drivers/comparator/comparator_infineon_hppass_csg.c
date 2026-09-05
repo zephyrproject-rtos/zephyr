@@ -1,6 +1,6 @@
 /*
  * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
- * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG.
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -35,6 +35,7 @@
 #include <zephyr/drivers/comparator.h>
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/pm/device.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/sys_io.h>
 #include <zephyr/sys/util.h>
@@ -275,6 +276,37 @@ static int ifx_csg_comp_init(const struct device *dev)
 	return 0;
 } /* ifx_csg_comp_init() */
 
+#ifdef CONFIG_PM_DEVICE
+/*
+ * Regular DeepSleep retains CMP_CFG and the CMP_INTR_MASK, so resume is a
+ * no-op.  Only a genuine power loss (S2RAM warm boot) clears them; the TURN_ON
+ * path reprograms the base CMP_CFG (mirroring init), leaving the slice
+ * disarmed.  The app re-arms its trigger via comparator_set_trigger() after
+ * resume, matching how the CSG DAC restores its DT default and leaves the
+ * runtime value to the app.  The callback binding is retained software state.
+ */
+static int ifx_csg_comp_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	switch (action) {
+	case PM_DEVICE_ACTION_SUSPEND:
+	case PM_DEVICE_ACTION_RESUME:
+		break;
+#if defined(CONFIG_PM_S2RAM)
+	case PM_DEVICE_ACTION_TURN_ON: {
+		const struct ifx_csg_comp_config *cfg = dev->config;
+
+		sys_write32(cfg->cmp_cfg, cfg->slice_base + IFX_HPPASS_CSG_SLICE_CMP_CFG);
+		break;
+	}
+#endif
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+} /* ifx_csg_comp_pm_action() */
+#endif /* CONFIG_PM_DEVICE */
+
 /*
  * Compose CMP_CFG for one comparator child.  edge_mode is left at 0 and
  * filled in at runtime by comparator_set_trigger().
@@ -304,7 +336,8 @@ static int ifx_csg_comp_init(const struct device *dev)
 		.slice      = IFX_CSG_COMP_SLICE_OF(n),                                   \
 		.cmp_cfg    = IFX_CSG_COMP_CFG_INIT(DT_DRV_INST(n)),                      \
 	};                                                                                \
-	DEVICE_DT_INST_DEFINE(n, ifx_csg_comp_init, NULL,                                 \
+	PM_DEVICE_DT_INST_DEFINE(n, ifx_csg_comp_pm_action);                              \
+	DEVICE_DT_INST_DEFINE(n, ifx_csg_comp_init, PM_DEVICE_DT_INST_GET(n),             \
 			      &ifx_csg_comp_data_##n, &ifx_csg_comp_config_##n,           \
 			      POST_KERNEL,                                                \
 			      CONFIG_COMPARATOR_INFINEON_HPPASS_CSG_INIT_PRIORITY,        \
