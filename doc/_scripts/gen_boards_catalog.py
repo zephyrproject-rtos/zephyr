@@ -261,6 +261,7 @@ def get_catalog(
 
         supported_features = {}
         compatibles = {}
+        compatibles_enabled = {}
         target_memory = []
 
         # Use pre-gathered build info and DTS files
@@ -268,6 +269,7 @@ def get_catalog(
             for board_target, edt in board_devicetrees[board.name].items():
                 features = {}
                 target_compatibles = set()
+                target_enabled_compatibles = set()
                 ram_size = get_board_memory_size(edt, "zephyr,sram")
                 flash_size = get_board_memory_size(edt, "zephyr,flash")
                 if ram_size is not None or flash_size is not None:
@@ -310,6 +312,8 @@ def get_catalog(
 
                     existing_feature = features.get(binding_type, {}).get(node.matching_compat)
                     target_compatibles.add(node.matching_compat)
+                    if node.status == "okay":
+                        target_enabled_compatibles.add(node.matching_compat)
 
                     node_info = {
                         "filename": str(filename),
@@ -343,6 +347,7 @@ def get_catalog(
                     "features": features,
                 }
                 compatibles[board_target] = list(target_compatibles)
+                compatibles_enabled[board_target] = list(target_enabled_compatibles)
 
         board_runner_info = {}
         if board.name in board_runners:
@@ -380,6 +385,7 @@ def get_catalog(
             "revision_default": board.revision_default,
             "supported_features": supported_features,
             "compatibles": compatibles,
+            "compatibles_enabled": compatibles_enabled,
             "image": guess_image(board),
             "maintained": is_board_maintained(doc_page_path) if doc_page_path else False,
             # Per-target zephyr,sram / zephyr,flash sizes in bytes.
