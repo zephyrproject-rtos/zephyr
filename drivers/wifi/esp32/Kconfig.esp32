@@ -477,24 +477,32 @@ menuconfig WIFI_ESP32_MESH
 if WIFI_ESP32_MESH
 
 config WIFI_ESP32_MESH_MAX_LAYER
-	int "Maximum mesh layer (tree depth)"
+	int "Maximum mesh layer (tree depth) buffer ceiling"
 	default 25
 	range 1 25
 	help
-	  Maximum number of layers (tree depth) the mesh may grow to. The root
-	  is layer 1, its direct children layer 2, and so on. Nodes that would
-	  attach deeper than this limit are refused, bounding the tree height.
-	  The routing table on the root is sized for the whole sub-network, so
-	  the maximum node count is roughly MAX_LAYER * MAX_CONNECTIONS + 1.
+	  Compile-time ceiling on the mesh tree depth (layers): it sizes the
+	  routing-table buffers at build time and bounds the num_layers field
+	  esp_wifi_mesh_set_config() accepts, which is the value actually
+	  applied at runtime (esp_wifi_mesh_start() defaults num_layers to this
+	  ceiling if the config is never set). The root is layer 1, its direct
+	  children layer 2, and so on; nodes that would attach deeper than the
+	  runtime num_layers are refused. The routing table on the root is sized
+	  for the whole sub-network, so the maximum node count is roughly
+	  MAX_LAYER * MAX_CONNECTIONS + 1.
 
 config WIFI_ESP32_MESH_MAX_CONNECTIONS
-	int "Maximum direct child connections per node"
+	int "Maximum direct child connections per node buffer ceiling"
 	default 6
 	range 1 10
 	help
-	  Maximum number of direct child nodes a single node accepts on its
-	  softAP interface. This is a per-node fan-out limit, not a whole-network
-	  limit: nodes beyond this count attach one layer deeper instead, so the
+	  Compile-time ceiling on the per-node child fan-out: it sizes the
+	  routing-table buffers at build time and bounds the
+	  max_connections field esp_wifi_mesh_set_config() accepts, which
+	  is the value actually applied at runtime (esp_wifi_mesh_start()
+	  defaults max_connections to this ceiling if the config is never
+	  set). This is a per-node fan-out limit, not a whole-network limit:
+	  nodes beyond this count attach one layer deeper instead, so the
 	  network still grows by extending the tree. A larger value makes a
 	  flatter tree (more RAM per node for the extra links); a smaller value
 	  makes a deeper tree. Each direct link consumes Wi-Fi RX/TX buffers from
@@ -520,49 +528,6 @@ config WIFI_ESP32_MESH_START_TIMEOUT
 	  MESH_EVENT_STARTED before it proceeds to re-deliver the initial
 	  station-start event. The wait ends as soon as the event arrives; this
 	  is only the upper bound before it gives up and continues anyway.
-
-config WIFI_ESP32_MESH_CHANNEL
-	int "Mesh channel (0 = auto, 1-13 = fixed)"
-	default 0
-	range 0 13
-	help
-	  Channel the mesh network operates on. 0 lets the mesh select the
-	  channel by scanning, which is required when the router channel is
-	  unknown. A fixed value 1-13 pins the channel; all nodes must then
-	  use the same one.
-
-config WIFI_ESP32_MESH_ROUTER_SSID
-	string "Router SSID"
-	default "myssid"
-	help
-	  SSID of the router the root node connects to for external network
-	  access. The mesh stack requires a router SSID to be set, so this
-	  carries a placeholder rather than an empty default. Set it to the
-	  router in use: a node left on the placeholder finds no such network
-	  and keeps searching for a parent.
-
-config WIFI_ESP32_MESH_ROUTER_PSK
-	string "Router password"
-	default "mypassword"
-	help
-	  Password of the router the root node connects to. Leave empty for an
-	  open router.
-
-config WIFI_ESP32_MESH_AP_PSK
-	string "Mesh softAP password"
-	default "meshpassword"
-	help
-	  Password protecting the inter-node mesh softAP links. Must be at
-	  least 8 characters and identical on every node.
-
-config WIFI_ESP32_MESH_ID
-	string "Mesh network ID (6 bytes, colon-separated hex)"
-	default "12:34:56:78:9a:bc"
-	help
-	  Unique 6-byte identifier of this mesh network, written as six
-	  colon-separated hex octets. Nodes only join a mesh that advertises
-	  the same ID, so every node in one network must use the same value and
-	  different networks sharing a channel must use different IDs.
 
 config WIFI_ESP32_MESH_ASSOC_EXPIRE
 	int "Idle child association expiry (seconds)"
