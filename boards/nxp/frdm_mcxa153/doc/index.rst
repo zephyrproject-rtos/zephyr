@@ -162,7 +162,7 @@ Troubleshooting
    https://www.nxp.com/products/processors-and-microcontrollers/arm-microcontrollers/general-purpose-mcus/mcx-arm-cortex-m/mcx-a-series-microcontrollers/mcx-a13x-14x-15x-mcus-with-arm-cortex-m33-scalable-device-options-low-power-and-intelligent-peripherals:MCX-A13X-A14X-A15X
 
 .. _MCX-A153 Datasheet:
-   https://www.nxp.com/docs/en/data-sheet/MCXAP64M96FS3.pdf
+   https://www.nxp.com/docs/en/data-sheet/MCXAP064M096F30.pdf
 
 .. _MCX-A153 Reference Manual:
    https://www.nxp.com/webapp/Download?colCode=MCXAP64M96FS3RM
@@ -174,7 +174,7 @@ Troubleshooting
    https://www.nxp.com/document/guide/getting-started-with-frdm-mcxa153:GS-FRDM-MCXAXX
 
 .. _FRDM-MCXA153 Board User Manual:
-   https://www.nxp.com/docs/en/user-manual/UM12012.pdf
+   https://www.nxp.com/webapp/Download?colCode=UM12012
 
 .. _FRDM-MCXA153 Schematics:
    https://www.nxp.com/webapp/Download?colCode=SPF-90829_A1
