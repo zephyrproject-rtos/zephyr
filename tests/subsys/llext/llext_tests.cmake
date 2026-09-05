@@ -1,0 +1,143 @@
+# Copyright (c) 2023 Intel Corporation.
+# SPDX-License-Identifier: Apache-2.0
+
+# Extension build logic shared by the llext test applications. All
+# sources are referenced relative to this file so that a wrapper
+# application in another directory can include it unchanged.
+
+target_sources(app PRIVATE
+  ${CMAKE_CURRENT_LIST_DIR}/src/test_llext.c
+)
+
+target_include_directories(app PRIVATE
+  ${ZEPHYR_BASE}/include
+  ${ZEPHYR_BASE}/kernel/include
+  ${ZEPHYR_BASE}/arch/${ARCH}/include
+)
+
+set(ext_names
+  hello_world
+  logging
+  relative_jump
+  object
+  syscalls
+  inspect
+  threads_kernel_objects
+  export_dependent
+  export_dependency
+  align
+)
+
+if(CONFIG_ARM)
+  if(NOT CONFIG_CPU_CORTEX_M0 AND NOT CONFIG_CPU_CORTEX_M0PLUS AND NOT CONFIG_CPU_CORTEX_M1)
+    list(APPEND ext_names movwmovt)
+  endif()
+endif()
+
+if(CONFIG_LLEXT_TYPE_ELF_RELOCATABLE AND NOT CONFIG_ARM)
+  list(APPEND ext_names pre_located)
+endif()
+
+if(CONFIG_LLEXT_STORAGE_WRITABLE)
+  list(APPEND ext_names find_section detached_fn)
+endif()
+
+if(NOT CONFIG_LLEXT_TYPE_ELF_SHAREDLIB)
+  # ELF shared libraries do not support init sections
+  list(APPEND ext_names init_fini)
+endif()
+
+if(CONFIG_LLEXT_RODATA_NO_RELOC AND NOT CONFIG_XTENSA)
+  # Xtensa linker rejects relocations in .rodata even with -fPIC
+  list(APPEND ext_names rodata_no_reloc)
+endif()
+
+# generate extension targets for each extension in 'ext_names'
+foreach(ext_name ${ext_names})
+  set(ext_src ${CMAKE_CURRENT_LIST_DIR}/src/${ext_name}_ext.c)
+  set(ext_bin ${PROJECT_BINARY_DIR}/llext/${ext_name}.llext)
+  set(ext_inc ${ZEPHYR_BINARY_DIR}/include/generated/${ext_name}.inc)
+  add_llext_target(${ext_name}_ext
+    OUTPUT  ${ext_bin}
+    SOURCES ${ext_src}
+  )
+  generate_inc_file_for_target(app ${ext_bin} ${ext_inc})
+endforeach()
+
+if(CONFIG_LLEXT_VENEERS)
+  set(ext_bin ${PROJECT_BINARY_DIR}/llext/veneer.llext)
+  set(ext_inc ${ZEPHYR_BINARY_DIR}/include/generated/veneer.inc)
+  add_llext_target(veneer_ext
+    OUTPUT  ${ext_bin}
+    SOURCES ${CMAKE_CURRENT_LIST_DIR}/src/veneer_ext.c
+  )
+  # -mno-long-calls overrides the global -mlong-calls so direct BL instructions
+  # are emitted, producing R_ARM_THM_CALL relocations that exercise the veneer.
+  get_target_property(veneer_lib veneer_ext lib_target)
+  target_compile_options(${veneer_lib} PRIVATE -mno-long-calls)
+  generate_inc_file_for_target(app ${ext_bin} ${ext_inc})
+endif()
+
+# An extension referencing the thread-local errno, exercising the AArch64
+# local-exec TLS relocations (R_AARCH64_TLSLE_ADD_TPREL_*). Only arm64
+# implements these in arch_elf_relocate(); a libc whose errno is genuinely
+# __thread (toolchain picolibc with thread-local storage) is enabled by the
+# llext.tls scenario.
+if(CONFIG_ARM64 AND CONFIG_THREAD_LOCAL_STORAGE)
+  add_llext_target(tls_ext
+    OUTPUT  ${PROJECT_BINARY_DIR}/llext/tls.llext
+    SOURCES ${CMAKE_CURRENT_LIST_DIR}/src/tls_ext.c
+  )
+  generate_inc_file_for_target(app ${PROJECT_BINARY_DIR}/llext/tls.llext
+    ${ZEPHYR_BINARY_DIR}/include/generated/tls.inc
+  )
+endif()
+
+if(NOT CONFIG_LLEXT_TYPE_ELF_OBJECT)
+  add_llext_target(multi_file_ext
+    OUTPUT  ${PROJECT_BINARY_DIR}/llext/multi_file.llext
+    SOURCES ${CMAKE_CURRENT_LIST_DIR}/src/multi_file_ext1.c ${CMAKE_CURRENT_LIST_DIR}/src/multi_file_ext2.c
+  )
+  generate_inc_file_for_target(app ${PROJECT_BINARY_DIR}/llext/multi_file.llext
+    ${ZEPHYR_BINARY_DIR}/include/generated/multi_file.inc
+  )
+endif()
+
+get_property(TOPT GLOBAL PROPERTY TOPT)
+get_property(COMPILER_TOPT TARGET compiler PROPERTY linker_script)
+set_ifndef(  TOPT "${COMPILER_TOPT}")
+set_ifndef(  TOPT -Wl,-T) # Use this if the compiler driver doesn't set a value
+
+if(CONFIG_LLEXT_TYPE_ELF_RELOCATABLE AND CONFIG_XTENSA AND CONFIG_LLEXT_STORAGE_WRITABLE)
+  # Manually fix the pre_located extension's text address at a multiple of 4
+  get_target_property(pre_located_target pre_located_ext lib_target)
+  get_target_property(pre_located_file pre_located_ext pkg_input)
+  add_llext_command(
+    TARGET pre_located_ext
+    POST_BUILD
+    COMMAND ${CMAKE_C_COMPILER}
+    ${LLEXT_APPEND_FLAGS}
+    -Wl,-r ${TOPT}text=0xbada110c -nostdlib -nodefaultlibs -nostartfiles
+    $<TARGET_OBJECTS:${pre_located_target}> -o ${pre_located_file}
+  )
+endif()
+
+if(NOT CONFIG_LLEXT_TYPE_ELF_OBJECT AND CONFIG_RISCV AND CONFIG_RISCV_ISA_EXT_C)
+  add_llext_target(riscv_edge_case_cb_type_ext
+    OUTPUT  ${PROJECT_BINARY_DIR}/llext/riscv_edge_case_cb_type_ext.llext
+    SOURCES ${CMAKE_CURRENT_LIST_DIR}/src/riscv_edge_case_cb_type.c ${CMAKE_CURRENT_LIST_DIR}/src/riscv_edge_case_cb_type_trigger.S
+  )
+  generate_inc_file_for_target(app ${PROJECT_BINARY_DIR}/llext/riscv_edge_case_cb_type_ext.llext
+    ${ZEPHYR_BINARY_DIR}/include/generated/riscv_edge_case_cb_type.inc
+  )
+endif()
+
+if(NOT CONFIG_LLEXT_TYPE_ELF_OBJECT AND CONFIG_RISCV)
+  add_llext_target(riscv_edge_case_non_paired_hi20_lo12_ext
+    OUTPUT  ${PROJECT_BINARY_DIR}/llext/riscv_edge_case_non_paired_hi20_lo12_ext.llext
+    SOURCES ${CMAKE_CURRENT_LIST_DIR}/src/riscv_edge_case_non_paired_hi20_lo12.c ${CMAKE_CURRENT_LIST_DIR}/src/riscv_edge_case_non_paired_hi20_lo12_trigger.S
+  )
+  generate_inc_file_for_target(app ${PROJECT_BINARY_DIR}/llext/riscv_edge_case_non_paired_hi20_lo12_ext.llext
+    ${ZEPHYR_BINARY_DIR}/include/generated/riscv_edge_case_non_paired_hi20_lo12.inc
+  )
+endif()

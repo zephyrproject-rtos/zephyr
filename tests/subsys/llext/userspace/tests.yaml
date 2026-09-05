@@ -1,0 +1,21 @@
+# RISC-V userspace: exercises calling syscalls from an extension and running
+# it in a user-mode thread. Every syscall stub inlines arch_is_user_context();
+# on RISC-V that check used to read a thread-local symbol a loaded extension
+# cannot relocate, so any such extension failed to link.
+#
+# This is a separate application so the scenario does not inherit the arm
+# integration platforms from the main llext test: those merge additively and
+# cannot be narrowed per scenario, and any of them missing from platform_allow
+# turns the integration test plan into an error.
+tests:
+  llext.userspace:
+    tags: llext
+    arch_allow:
+      - riscv
+    platform_allow:
+      - qemu_riscv32
+    filter: CONFIG_ARCH_HAS_USERSPACE and CONFIG_RISCV_PMP
+    integration_platforms:
+      - qemu_riscv32
+    min_ram: 172
+    min_flash: 172
