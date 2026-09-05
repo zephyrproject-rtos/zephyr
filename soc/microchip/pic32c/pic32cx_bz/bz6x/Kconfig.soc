@@ -1,0 +1,51 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_MICROCHIP_PIC32CX_BZ6
+	bool
+
+config SOC_FAMILY
+	default "microchip_pic32cx_bz6" if SOC_FAMILY_MICROCHIP_PIC32CX_BZ6
+
+config SOC_SERIES_REVISION_N
+	bool
+	depends on SOC_FAMILY_MICROCHIP_PIC32CX_BZ6
+
+config SOC_SERIES_REVISION
+	string
+	default "n" if SOC_SERIES_REVISION_N
+	default ""
+	depends on SOC_FAMILY_MICROCHIP_PIC32CX_BZ6
+
+config SOC_SERIES_PIC32CX_BZ62
+	bool
+	select SOC_FAMILY_MICROCHIP_PIC32CX_BZ6
+	help
+	  Enable support for Microchip PIC32CX_BZ6 Cortex-M4F microcontrollers.
+
+config SOC_SERIES_PIC32CX_BZ66
+	bool
+	select SOC_FAMILY_MICROCHIP_PIC32CX_BZ6
+	help
+	  Enable support for Microchip PIC32CX_BZ6 Cortex-M4F microcontrollers.
+
+config SOC_SERIES
+	default "bz62" if SOC_SERIES_PIC32CX_BZ62
+	default "bz66" if SOC_SERIES_PIC32CX_BZ66
+
+config SOC_PIC32CX2051BZ62132
+	bool
+	select SOC_SERIES_PIC32CX_BZ62
+
+config SOC_PIC32CX2051BZ62064
+	bool
+	select SOC_SERIES_PIC32CX_BZ62
+
+config SOC_PIC32CX2051BZ66048
+	bool
+	select SOC_SERIES_PIC32CX_BZ66
+
+config SOC
+	default "pic32cx2051bz62132" if SOC_PIC32CX2051BZ62132
+	default "pic32cx2051bz62064" if SOC_PIC32CX2051BZ62064
+	default "pic32cx2051bz66048" if SOC_PIC32CX2051BZ66048
