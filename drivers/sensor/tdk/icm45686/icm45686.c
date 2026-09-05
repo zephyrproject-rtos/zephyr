@@ -203,6 +203,7 @@ static int icm45686_channel_get(const struct device *dev, enum sensor_channel ch
 		} else if ((cfg->apex == TDK_APEX_TILT) || (cfg->apex == TDK_APEX_SMD)) {
 			val[0].val1 = data->apex_status;
 		}
+		break;
 #endif
 
 	default:
@@ -377,6 +378,11 @@ static int icm45686_init(const struct device *dev)
 		return err;
 	}
 
+	if (read_val != cfg->whoami) {
+		LOG_ERR("Unexpected WHO_AM_I: 0x%02X (expected 0x%02X)", read_val, cfg->whoami);
+		return -ENODEV;
+	}
+
 	/* Sensor Configuration */
 	err = icm456xx_set_accel_mode(&data->driver, cfg->settings.accel.pwr_mode);
 	if (err < 0) {
@@ -426,7 +432,7 @@ static int icm45686_init(const struct device *dev)
 	 */
 	k_sleep(K_MSEC(1));
 
-	icm456xx_set_accel_ln_bw(&data->driver, cfg->settings.accel.lpf);
+	err = icm456xx_set_accel_ln_bw(&data->driver, cfg->settings.accel.lpf);
 	if (err < 0) {
 		LOG_ERR("Failed to set Accel BW settings: %d", err);
 		return err;
@@ -483,7 +489,7 @@ static int icm45686_init(const struct device *dev)
 	 (pwr_mode == ICM45686_DT_GYRO_LN && odr <= ICM45686_DT_GYRO_ODR_12_5) || \
 	 (pwr_mode == ICM45686_DT_GYRO_OFF))
 
-#define ICM45686_INIT(inst) \
+#define ICM45686_INIT(inst, whoami_val) \
  \
 	RTIO_DEFINE(icm45686_rtio_ctx_##inst, 32, 32); \
  \
@@ -519,6 +525,7 @@ static int icm45686_init(const struct device *dev)
 		}, \
 		.int_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {0}), \
 		.apex = DT_INST_ENUM_IDX(inst, apex), \
+		.whoami = whoami_val, \
 	}; \
 	static struct icm45686_data icm45686_data_##inst = { \
 		.edata.header = { \
@@ -556,20 +563,20 @@ static int icm45686_init(const struct device *dev)
 
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT invensense_icm45605
-DT_INST_FOREACH_STATUS_OKAY(ICM45686_INIT)
+DT_INST_FOREACH_STATUS_OKAY_VARGS(ICM45686_INIT, WHO_AM_I_ICM45605)
 
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT invensense_icm45605s
-DT_INST_FOREACH_STATUS_OKAY(ICM45686_INIT)
+DT_INST_FOREACH_STATUS_OKAY_VARGS(ICM45686_INIT, WHO_AM_I_ICM45605S)
 
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT invensense_icm45686
-DT_INST_FOREACH_STATUS_OKAY(ICM45686_INIT)
+DT_INST_FOREACH_STATUS_OKAY_VARGS(ICM45686_INIT, WHO_AM_I_ICM45686)
 
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT invensense_icm45686s
-DT_INST_FOREACH_STATUS_OKAY(ICM45686_INIT)
+DT_INST_FOREACH_STATUS_OKAY_VARGS(ICM45686_INIT, WHO_AM_I_ICM45686S)
 
 #undef DT_DRV_COMPAT
 #define DT_DRV_COMPAT invensense_icm45688p
-DT_INST_FOREACH_STATUS_OKAY(ICM45686_INIT)
+DT_INST_FOREACH_STATUS_OKAY_VARGS(ICM45686_INIT, WHO_AM_I_ICM45688P)
