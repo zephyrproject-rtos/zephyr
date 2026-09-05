@@ -43,14 +43,6 @@
 #define __imx_boot_dcd_section Z_GENERIC_SECTION(_IMX_BOOT_DCD_SECTION_NAME)
 #define __imx_boot_container_section Z_GENERIC_SECTION(_IMX_BOOT_CONTAINER_SECTION_NAME)
 #define __stm32_backup_sram_section Z_GENERIC_SECTION(_STM32_BACKUP_SRAM_SECTION_NAME)
-
-/*
- * Deprecated aliases, provided for backwards compatibility.
- * These aliases will be removed in Zephyr v4.5.
- */
-#define __ccm_data_section __dtcm_data_section __DEPRECATED_MACRO
-#define __ccm_bss_section __dtcm_bss_section __DEPRECATED_MACRO
-#define __ccm_noinit_section __dtcm_noinit_section __DEPRECATED_MACRO
 #endif /* CONFIG_ARM */
 
 #if defined(CONFIG_NOCACHE_MEMORY)
