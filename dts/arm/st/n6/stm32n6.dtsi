@@ -976,6 +976,7 @@
 				clocks = <&rcc STM32_CLOCK(AHB5, 22)>,
 					 <&rcc STM32_CLOCK(AHB5, 23)>,
 					 <&rcc STM32_CLOCK(AHB5, 24)>;
+				resets = <&rctl STM32_RESET(AHB5, 25)>;
 				interrupts = <179 0>;
 				snps,multicast-filter-bins = <64>;
 				snps,perfect-filter-entries = <4>;
