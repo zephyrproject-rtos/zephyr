@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2018 Analog Devices Inc.
+ * Copyright (c) 2026 Daniel Kampert
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +9,7 @@
 #define ZEPHYR_DRIVERS_SENSOR_ADXL372_ADXL372_H_
 
 #include <zephyr/drivers/sensor.h>
+#include <zephyr/drivers/sensor/adxl372.h>
 #include <zephyr/types.h>
 #include <zephyr/device.h>
 #include <zephyr/drivers/gpio.h>
@@ -206,13 +208,6 @@ enum adxl372_axis {
 	ADXL372_Z_AXIS
 };
 
-enum adxl372_op_mode {
-	ADXL372_STANDBY,
-	ADXL372_WAKE_UP,
-	ADXL372_INSTANT_ON,
-	ADXL372_FULL_BW_MEASUREMENT
-};
-
 enum adxl372_bandwidth {
 	ADXL372_BW_200HZ,
 	ADXL372_BW_400HZ,
@@ -254,10 +249,23 @@ enum adxl372_chip_id {
 #define ADXL372_SCALE_MG	100
 #define ADXL373_SCALE_MG	200
 
+enum adxl372_wakeup_rate {
+	ADXL372_WUR_52ms,
+	ADXL372_WUR_104ms,
+	ADXL372_WUR_208ms,
+	ADXL372_WUR_512ms,
+	ADXL372_WUR_2048ms,
+	ADXL372_WUR_4096ms,
+	ADXL372_WUR_8192ms,
+	ADXL372_WUR_24576ms
+};
+
 /* What differs between the parts handled by this driver */
 struct adxl372_chip_info {
 	/* Output data rate in Hz, indexed by enum adxl372_odr */
 	uint16_t odr_hz[ADXL372_ODR_6400HZ + 1];
+	/* Wake-up mode period in ms, indexed by enum adxl372_wakeup_rate */
+	uint16_t wur_period_ms[ADXL372_WUR_24576ms + 1];
 	/* Acceleration and activity threshold scale factor, in mg/LSB */
 	uint16_t scale_mg;
 	/* Decoded q31 sample shift, so that the full scale fits */
@@ -269,17 +277,6 @@ extern const struct adxl372_chip_info adxl372_chip_info[];
 enum adxl372_instant_on_th_mode {
 	ADXL372_INSTANT_ON_LOW_TH,
 	ADXL372_INSTANT_ON_HIGH_TH
-};
-
-enum adxl372_wakeup_rate {
-	ADXL372_WUR_52ms,
-	ADXL372_WUR_104ms,
-	ADXL372_WUR_208ms,
-	ADXL372_WUR_512ms,
-	ADXL372_WUR_2048ms,
-	ADXL372_WUR_4096ms,
-	ADXL372_WUR_8192ms,
-	ADXL372_WUR_24576ms
 };
 
 enum adxl372_filter_settle {
@@ -345,6 +342,8 @@ struct adxl372_data {
 	struct adxl372_fifo_config fifo_config;
 	enum adxl372_act_proc_mode act_proc_mode;
 	enum adxl372_odr odr;
+	enum adxl372_op_mode op_mode;
+	enum adxl372_wakeup_rate wur;
 #ifdef CONFIG_ADXL372_TRIGGER
 	struct gpio_callback gpio_cb;
 
@@ -446,6 +445,8 @@ int adxl372_trigger_set(const struct device *dev,
 int adxl372_init_interrupt(const struct device *dev);
 #endif /* CONFIG_ADXL372_TRIGGER */
 
+int adxl372_set_op_mode(const struct device *dev, enum adxl372_op_mode op_mode);
+
 #ifdef CONFIG_SENSOR_ASYNC_API
 int adxl372_get_accel_data(const struct device *dev, bool maxpeak,
 			   struct adxl372_xyz_accel_data *accel_data);
@@ -458,7 +459,6 @@ void adxl372_accel_convert(struct sensor_value *val, int16_t sample, uint8_t chi
 int adxl372_configure_fifo(const struct device *dev, enum adxl372_fifo_mode mode,
 			   enum adxl372_fifo_format format, uint16_t fifo_samples);
 size_t adxl372_get_packet_size(const struct adxl372_dev_config *cfg);
-int adxl372_set_op_mode(const struct device *dev, enum adxl372_op_mode op_mode);
 #endif /* CONFIG_ADXL372_STREAM */
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_ADXL372_ADXL372_H_ */
