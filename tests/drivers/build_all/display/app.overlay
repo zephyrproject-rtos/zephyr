@@ -830,6 +830,26 @@
 			};
 		};
 
+		test_mspi: mspi@44445555 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "zephyr,mspi-emul-controller";
+			reg = <0x44445555 0x1000>;
+			status = "okay";
+			clock-frequency = <2000000>;
+			ce-gpios = <&test_gpio 0 0>;
+
+			test_chipone_co5300: co5300@0 {
+				compatible = "chipone,co5300";
+				status = "okay";
+				reg = <0>;
+				mspi-max-frequency = <30000000>;
+				pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+				width = <466>;
+				height = <466>;
+			};
+		};
+
 		test_led_strip_matrix {
 			compatible = "led-strip-matrix";
 			status = "okay";
