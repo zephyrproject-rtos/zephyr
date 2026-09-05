@@ -2138,6 +2138,11 @@ MCUboot
   this change rejects unsigned images, so the bootloader and the application must be
   reflashed together when a device is moved to the new defaults.
 
+* The shared Espressif partition tables no longer define a ``scratch_partition``, so
+  :kconfig:option:`SB_CONFIG_MCUBOOT_MODE_SWAP_SCRATCH` is no longer available on boards using
+  them. The other partitions keep their offsets. Projects that need it can add the partition
+  back in a board overlay.
+
 MCUmgr
 ======
 
