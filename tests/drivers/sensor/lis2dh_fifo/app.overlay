@@ -1,0 +1,27 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c0 {
+	status = "okay";
+
+	accel_i2c: accelerometer@18 {
+		compatible = "st,lis2dh";
+		reg = <0x18>;
+		irq-gpios = <&gpio0 1 GPIO_ACTIVE_HIGH>;
+		fifo-watermark = <16>;
+	};
+};
+
+&spi0 {
+	status = "okay";
+
+	accel_spi: accelerometer@0 {
+		compatible = "st,lis2dh";
+		reg = <0>;
+		spi-max-frequency = <8000000>;
+		irq-gpios = <&gpio0 2 GPIO_ACTIVE_HIGH>;
+		fifo-watermark = <16>;
+	};
+};
