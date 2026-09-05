@@ -204,6 +204,21 @@ class Blobs(WestCommand):
         if not isinstance(urls, list):
             urls = (urls,)
 
+        url_mirror_config = self.config.get('blobs.url-mirror')
+        if url_mirror_config:
+            mirror_urls = []
+            for url in urls:
+                for url_mirror in url_mirror_config.split(';'):
+                    _src, _dst = url_mirror.split('=')
+                    _src = _src.rstrip('/') + '/'
+                    _dst = _dst.rstrip('/') + '/'
+                    if url.startswith(_src):
+                        mirror_url = f"{_dst}" + url.removeprefix(_src)
+                        self.dbg(f'    [debug] mirror was specified: {mirror_url}')
+                        mirror_urls.append(mirror_url)
+                mirror_urls.append(url)
+            urls = mirror_urls
+
         downloaded = False
         for i, url in enumerate(urls):
             scheme = blob.get('fetcher') or urlparse(url).scheme
