@@ -9,6 +9,9 @@ config ETH_NUMAKER
 	select HAS_NUMAKER_ETH
 	select PINCTRL
 	depends on DT_HAS_NUVOTON_NUMAKER_ETHERNET_ENABLED
+	# This driver drives the PHY itself and has no MDIO driver, so it
+	# cannot be used once the MDIO controller is enabled in devicetree.
+	depends on !DT_HAS_SNPS_DWMAC_MDIO_ENABLED
 	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
 	select DEPRECATED
 	help
