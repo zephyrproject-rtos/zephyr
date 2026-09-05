@@ -547,7 +547,10 @@ config LTO_SINGLE_THREADED
 config COMPILER_WARNINGS_AS_ERRORS
 	bool "Treat warnings as errors"
 	help
-	  Turn on "warning as error" toolchain flags
+	  Turn on "warning as error" toolchain flags, will also cause build system to throw
+	  failures depending upon other configuration options e.g. with this and
+	  ``CONFIG_WARN_DEPRECATED`` enabled, Kconfig will throw an error if a deprecated Kconfig
+	  is selected.
 
 config DEPRECATION_TEST
 	bool "Indicate test for deprecated feature"
