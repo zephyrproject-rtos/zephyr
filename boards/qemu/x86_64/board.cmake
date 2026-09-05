@@ -10,4 +10,8 @@ if("${CONFIG_MP_MAX_NUM_CPUS}" STREQUAL "1")
   list(APPEND QEMU_EXTRA_FLAGS -icount shift=5,align=off,sleep=off -rtc clock=vm)
 endif()
 
+if(CONFIG_BOARD_QEMU_X86_64_KVM)
+  list(APPEND QEMU_EXTRA_FLAGS --enable-kvm)
+endif()
+
 include(${ZEPHYR_BASE}/boards/common/qemu_x86.board.cmake)

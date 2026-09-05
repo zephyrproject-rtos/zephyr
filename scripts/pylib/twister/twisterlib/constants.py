@@ -41,6 +41,7 @@ SUPPORTED_SIMS_WITH_EXEC = ['nsim', 'mdb-nsim', 'renode', 'tsim', 'native', 'sim
 # value means the simulator was not found and the test cannot be executed.
 SIM_PROGRAM_CMAKE_VARS = {
     'armfvp': 'ARMFVP',
+    'qemu': 'QEMU',
 }
 
 PYTEST_HARNESSES = ['pytest', 'shell', 'power', 'display_capture']
