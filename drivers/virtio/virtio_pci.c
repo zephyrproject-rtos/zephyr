@@ -5,6 +5,7 @@
  */
 
 #include <zephyr/device.h>
+#include <zephyr/drivers/pcie/cap.h>
 #include <zephyr/drivers/pcie/pcie.h>
 #include <zephyr/kernel/mm.h>
 #include <zephyr/logging/log.h>
@@ -74,6 +75,7 @@ struct virtio_pci_common_cfg {
 #define VIRTIO_PCI_CAP_PCI_CFG 5
 #define VIRTIO_PCI_CAP_SHARED_MEMORY_CFG 8
 #define VIRTIO_PCI_CAP_VENDOR_CFG 9
+#define VIRTIO_PCI_BAR_MAX 5U
 
 #define CABABILITY_LIST_VALID_BIT 4
 #define STATUS_COMMAND_REG 0x1
@@ -142,15 +144,20 @@ static bool virtio_pci_read_cap(
 		for (int i = 0; i < sizeof(struct virtio_pci_cap) / sizeof(uint32_t); i++) {
 			((uint32_t *)&tmp)[i] = pcie_conf_read(bdf, cap_off + i);
 		}
-		if (tmp.cfg_type == cfg_type) {
-			if (tmp.cap_len < sizeof(struct virtio_pci_cap) ||
-			    tmp.cap_len > cap_struct_size) {
+		if (tmp.cap_vndr == PCI_CAP_ID_VNDR && tmp.cfg_type == cfg_type &&
+		    tmp.bar <= VIRTIO_PCI_BAR_MAX) {
+			/*
+			 * cap_len may include padding or fields unused by this driver.
+			 * Require the bytes we consume, then copy only that many.
+			 */
+			if (tmp.cap_len < cap_struct_size) {
 				LOG_ERR("invalid virtio pci cap_len %u for bdf 0x%x",
 					tmp.cap_len, bdf);
 				return false;
 			}
 			size_t extra_data_words =
-				(tmp.cap_len - sizeof(struct virtio_pci_cap)) / sizeof(uint32_t);
+				(cap_struct_size - sizeof(struct virtio_pci_cap)) /
+				sizeof(uint32_t);
 			size_t extra_data_offset =
 				cap_off + sizeof(struct virtio_pci_cap) / sizeof(uint32_t);
 			uint32_t *extra_data =
