@@ -17,6 +17,15 @@ module-str = Log level for LLDP
 module-help = Enables core LLDP code to output debug messages.
 source "subsys/net/Kconfig.template.log_config.net"
 
+config NET_L2_ETHERNET_MCAST_FILTER_ADD_COUNT_LLDP
+	int
+	default 1
+	help
+	  LLDP listens to one link layer multicast address, the nearest
+	  bridge group address 01:80:C2:00:00:0E, on an interface that has
+	  registered a receive callback. The addresses are tracked per
+	  network interface, so one entry is enough.
+
 #
 # LLDP Tx state machine config
 #
