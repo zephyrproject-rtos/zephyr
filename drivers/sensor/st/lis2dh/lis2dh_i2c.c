@@ -82,6 +82,9 @@ int lis2dh_i2c_init(const struct device *dev)
 
 	data->hw_tf = &lis2dh_i2c_transfer_fn;
 
+	LOG_DBG("%s: I2C bus=%s address=0x%02x", dev->name, cfg->bus_cfg.i2c.bus->name,
+		cfg->bus_cfg.i2c.addr);
+
 	return 0;
 }
 #endif /* DT_ANY_INST_ON_BUS_STATUS_OKAY(i2c) */
