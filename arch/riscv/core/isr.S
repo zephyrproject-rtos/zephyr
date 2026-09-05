@@ -107,6 +107,13 @@
 #endif
 	.endm
 
+	.macro debugpoint_trap_enable
+#if defined(CONFIG_DEBUGPOINT) && defined(CONFIG_RISCV_HAS_TCONTROL)
+	/* Observe watched accesses in interrupt and syscall bodies. */
+	csrsi 0x7a5, 8
+#endif
+	.endm
+
 /* imports */
 GDATA(_sw_isr_table)
 GDATA(_kernel)
@@ -602,6 +609,8 @@ do_irq_offload:
 #endif /* CONFIG_CUSTOM_STACK_GUARD */
 
 1:
+	debugpoint_trap_enable
+
 	/* Execute provided routine (argument is in a0 already). */
 	jalr ra, a1, 0
 
@@ -664,6 +673,8 @@ valid_syscall_id:
 	slli t1, t0, RV_REGSHIFT	# Determine offset from indice value
 	add t2, t2, t1			# Table addr + offset = function addr
 	lr t2, 0(t2)			# Load function address
+
+	debugpoint_trap_enable
 
 	/* Execute syscall function */
 	jalr ra, t2, 0
@@ -737,6 +748,7 @@ is_interrupt:
 #endif /* CONFIG_CUSTOM_STACK_GUARD */
 
 on_irq_stack:
+	debugpoint_trap_enable
 
 #ifdef CONFIG_RISCV_SOC_HAS_CUSTOM_IRQ_HANDLING
 	call __soc_handle_all_irqs
