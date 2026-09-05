@@ -10,6 +10,7 @@
  * (and be extended to test) real hardware.
  */
 
+#include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/led/led.h>
 #include <zephyr/dt-bindings/mipi_dbi/mipi_dbi.h>
 #include <zephyr/dt-bindings/display/panel.h>
@@ -827,6 +828,26 @@
 					vfront-porch = <12>;
 					vsync-len = <3>;
 				};
+			};
+		};
+
+		test_mspi: mspi@44445555 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "vnd,mspi";
+			reg = <0x44445555 0x1000>;
+			status = "okay";
+			clock-frequency = <2000000>;
+			ce-gpios = <&test_gpio 0 GPIO_ACTIVE_HIGH>;
+
+			test_chipone_co5300: co5300@0 {
+				compatible = "chipone,co5300";
+				status = "okay";
+				reg = <0>;
+				mspi-max-frequency = <30000000>;
+				pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+				width = <466>;
+				height = <466>;
 			};
 		};
 

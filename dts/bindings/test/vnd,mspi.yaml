@@ -1,0 +1,11 @@
+#
+# Copyright (c) 2026 Muhammad Waleed Badar
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: Test MSPI node
+
+compatible: "vnd,mspi"
+
+include: [mspi-controller.yaml]
