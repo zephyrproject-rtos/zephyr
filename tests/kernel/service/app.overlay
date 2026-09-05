@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2026 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	test_anchored_dev: gpio@f0f0f0 {
+		compatible = "vnd,gpio-device";
+		status = "okay";
+		reg = <0xf0f0f0 0x1000>;
+		gpio-controller;
+		#gpio-cells = <0x2>;
+	};
+};
