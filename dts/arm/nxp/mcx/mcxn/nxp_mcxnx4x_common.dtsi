@@ -959,6 +959,7 @@
 		reg = <0x40100000 0x1200>;
 		clocks = <&syscon MCUX_ENET_QOS_CLK>, <&syscon MCUX_ENET_QOS_PTP_CLK>;
 		clock-names = "mac", "ptp";
+		resets = <&reset NXP_SYSCON_RESET(2, 2)>;
 		interrupts = <139 0>, <140 0>, <141 0>;
 		interrupt-names = "mac", "power", "lpi";
 		snps,perfect-filter-entries = <1>;
