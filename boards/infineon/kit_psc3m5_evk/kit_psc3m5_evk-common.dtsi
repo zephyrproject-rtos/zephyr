@@ -9,6 +9,7 @@
  * Common devicetree content for the kit_psc3m5_evk secure board variants.
  */
 
+#include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 
 / {
@@ -52,6 +53,29 @@
 			zephyr,code = <INPUT_KEY_1>;
 		};
 	};
+
+	mikrobus_header: mikrobus-connector {
+		compatible = "mikro-bus";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = /* AN = PASS[0].SAR[0].CH[4], ADC only, no GPIO */
+			   /* RST is XRES_L_MCU, not usable as GPIO */
+			   <2 0 &gpio_prt9 5 0>,   /* CS,  P9.5  */
+			   <3 0 &gpio_prt7 0 0>,   /* SCK, P7.0  */
+			   <4 0 &gpio_prt7 2 0>,   /* MISO, P7.2 */
+			   <5 0 &gpio_prt7 1 0>,   /* MOSI, P7.1 */
+			   <6 0 &gpio_prt5 1 0>,   /* PWM, P5.1  */
+			   <7 0 &gpio_prt7 7 0>,   /* INT, P7.7  */
+			   <8 0 &gpio_prt3 2 0>,   /* RX,  P3.2  */
+			   <9 0 &gpio_prt3 3 0>,   /* TX,  P3.3  */
+			   <10 0 &gpio_prt9 0 0>,  /* SCL, P9.0  */
+			   <11 0 &gpio_prt9 2 0>;  /* SDA, P9.2  */
+	};
+
+	mikrobus_adc: zephyr,user {
+		io-channels = <&adc0 4>;
+	};
 };
 
 &gpio_prt0 {
@@ -78,9 +102,44 @@
 	status = "okay";
 };
 
+&gpio_prt7 {
+	status = "okay";
+};
+
 &gpio_prt8 {
 	status = "okay";
 };
+
+&gpio_prt9 {
+	status = "okay";
+};
+
+&scb0 {
+	compatible = "infineon,i2c";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&p9_0_scb0_i2c_scl &p9_2_scb0_i2c_sda>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+	clocks = <&peri0_group4_16_5bit_2>;
+	status = "okay";
+};
+
+mikrobus_i2c: &scb0 {};
+
+&scb2 {
+	compatible = "infineon,spi";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&p7_0_scb2_spi_m_clk &p7_1_scb2_spi_m_mosi
+		     &p7_2_scb2_spi_m_miso>;
+	pinctrl-names = "default";
+	cs-gpios = <&gpio_prt9 5 GPIO_ACTIVE_LOW>;
+	clocks = <&peri0_group4_16_5bit_1>;
+	status = "okay";
+};
+
+mikrobus_spi: &scb2 {};
 
 uart3: &scb3 {
 	compatible = "infineon,uart";
@@ -93,12 +152,40 @@ uart3: &scb3 {
 	pinctrl-names = "default";
 };
 
+&scb4 {
+	compatible = "infineon,uart";
+	pinctrl-0 = <&p3_3_scb4_uart_tx &p3_2_scb4_uart_rx>;
+	pinctrl-names = "default";
+	clocks = <&peri0_group4_8bit_1>;
+	current-speed = <115200>;
+	status = "okay";
+};
+
+mikrobus_serial: &scb4 {};
+
 &peri0_group4_8bit_0 {
 	status = "okay";
 	clock-div = <86>;
 };
 
+&peri0_group4_8bit_1 {
+	status = "okay";
+	clock-div = <1>;
+};
+
 &peri0_group4_16_5bit_0 {
+	status = "okay";
+	clock-div = <1>;
+};
+
+/* clock source for SCB2 MikroBUS SPI; oversample >= 4 caps rate at 20 MHz */
+&peri0_group4_16_5bit_1 {
+	status = "okay";
+	clock-div = <1>;
+};
+
+/* clock source for SCB0 MikroBUS I2C */
+&peri0_group4_16_5bit_2 {
 	status = "okay";
 	clock-div = <1>;
 };
@@ -233,6 +320,10 @@ uart3: &scb3 {
  * (TRM 002-39348 §27.2.4.4).  Do not modify.
  */
 &hppass_analog0 {
+	status = "okay";
+};
+
+&adc0 {
 	status = "okay";
 };
 
