@@ -5,6 +5,7 @@ menuconfig DISPLAY_SOCIONEXT_DPU
 	bool "Socionext DPU driver"
 	default y
 	depends on DT_HAS_SOCIONEXT_DPU_ENABLED
+	select DISPLAY_SUPPORTS_FRAMEBUFFER_ACCESS if DPU_FB_NUM > 0
 	help
 	  Enable support for dpu driver.
 

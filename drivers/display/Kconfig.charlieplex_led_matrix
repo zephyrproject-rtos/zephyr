@@ -7,6 +7,7 @@ config DISPLAY_CHARLIEPLEX_LED_MATRIX
 	depends on DT_HAS_CHARLIEPLEX_LED_MATRIX_ENABLED
 	select GPIO
 	select COUNTER
+	select DISPLAY_SUPPORTS_FRAMEBUFFER_ACCESS
 	help
 	  Enable the display driver for a monochrome/grayscale LED matrix driven
 	  by charlieplexed GPIOs. N GPIO lines drive up to N*(N-1) LEDs; each

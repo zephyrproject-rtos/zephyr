@@ -159,9 +159,17 @@ static int api_blanking_off(const struct device *dev)
 	return 0;
 }
 
-static void *api_get_framebuffer(const struct device *dev)
+static void *api_get_framebuffer(const struct device *dev, uint32_t index, size_t *size)
 {
 	struct display_drv_data *dev_data = dev->data;
+
+	if (index != 0U) {
+		return NULL;
+	}
+
+	if (size != NULL) {
+		*size = sizeof(dev_data->framebuf);
+	}
 
 	return dev_data->framebuf;
 }
@@ -220,6 +228,7 @@ static void api_get_capabilities(const struct device *dev,
 	caps->screen_info = 0;
 	caps->current_pixel_format = PIXEL_FORMAT_MONO01;
 	caps->current_orientation = DISPLAY_ORIENTATION_NORMAL;
+	caps->framebuffer_count = 1;
 }
 
 static inline void move_to_next_pixel(uint8_t *mask, uint8_t *data,

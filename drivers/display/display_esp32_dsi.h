@@ -44,20 +44,6 @@ int display_esp32_dsi_start(const struct device *dev, uint32_t bits_per_pixel);
  */
 int display_esp32_dsi_stop(const struct device *dev);
 
-/**
- * @brief Address a fixed framebuffer by index.
- *
- * Unlike display_get_framebuffer(), which follows the buffer being drawn
- * into, this addresses one specific buffer. A renderer that draws one frame
- * while another is on screen needs the pair to stay put.
- *
- * @param dev DSI scanout controller device.
- * @param index Framebuffer index.
- *
- * @retval Pointer to the framebuffer, or NULL if the index is out of range.
- */
-void *display_esp32_dsi_get_framebuffer_by_index(const struct device *dev, uint32_t index);
-
 #ifdef __cplusplus
 }
 #endif

@@ -418,6 +418,15 @@ Digital Microphone
 Display
 =======
 
+* :c:func:`display_get_framebuffer` now takes a framebuffer index and a place to report the size
+  of the buffer, so a driver owning several can hand out each of them. Callers of the old form pass
+  ``0`` for the index and ``NULL`` for the size to keep the previous behaviour. Drivers gain both
+  parameters, return ``NULL`` for any index they do not own, and set the size whenever they return
+  a buffer. A driver that hands its framebuffers out also selects
+  :kconfig:option:`CONFIG_DISPLAY_SUPPORTS_FRAMEBUFFER_ACCESS` and reports how many it owns through
+  :c:member:`display_capabilities.framebuffer_count`, so a caller can depend on the support at
+  build time instead of discovering it at run time.
+
 * The Kconfig options ``CONFIG_SDL_DISPLAY_DEFAULT_PIXEL_FORMAT_*`` for SDL display pixel-format
   selection have been removed in favour of setting the pixel-format property directly in devicetree
   on the SDL pseudo-device node using the PANEL_PIXEL_FORMAT_* macros from

@@ -39,7 +39,7 @@ ZTEST(charlieplex, test_capabilities)
  */
 ZTEST(charlieplex, test_write_all_on_off)
 {
-	uint8_t *fb = display_get_framebuffer(disp);
+	uint8_t *fb = display_get_framebuffer(disp, 0, NULL);
 	struct display_buffer_descriptor desc = {
 		.buf_size = sizeof(uint8_t) * ((MATRIX_W + 7) / 8) * MATRIX_H,
 		.width = MATRIX_W,
@@ -71,7 +71,7 @@ ZTEST(charlieplex, test_write_all_on_off)
  */
 ZTEST(charlieplex, test_write_single_pixel)
 {
-	uint8_t *fb = display_get_framebuffer(disp);
+	uint8_t *fb = display_get_framebuffer(disp, 0, NULL);
 	struct display_buffer_descriptor desc = {
 		.buf_size = ((MATRIX_W + 7) / 8) * MATRIX_H,
 		.width = MATRIX_W,
@@ -128,6 +128,38 @@ ZTEST(charlieplex, test_pixel_format)
 		   "MONO01 should be accepted");
 	zassert_not_ok(display_set_pixel_format(disp, PIXEL_FORMAT_RGB_888),
 		       "RGB_888 should be rejected");
+}
+
+/* The framebuffer accessor takes an index and reports the buffer size. This
+ * driver owns a single buffer, so index 0 resolves and anything above it does
+ * not, and the size it reports has to cover the whole framebuffer.
+ */
+ZTEST(charlieplex, test_get_framebuffer_index_and_size)
+{
+	struct display_capabilities caps;
+	size_t size = 0;
+	void *fb0;
+
+	display_get_capabilities(disp, &caps);
+	zassert_equal(caps.framebuffer_count, 1, "driver should hand out one framebuffer");
+
+	fb0 = display_get_framebuffer(disp, 0, &size);
+	zassert_not_null(fb0, "index 0 should resolve");
+	zassert_equal(size, NUM_PIXELS, "reported size should cover the framebuffer");
+
+	/* The index names a fixed buffer, so asking again gives the same one. */
+	zassert_equal_ptr(display_get_framebuffer(disp, 0, NULL), fb0,
+			  "index 0 should stay put across calls");
+
+	/* Every index the driver does not own is refused, and the size it was
+	 * given is left alone.
+	 */
+	size = 0xdeadbeef;
+	zassert_is_null(display_get_framebuffer(disp, caps.framebuffer_count, &size),
+			"index past the last buffer should be refused");
+	zassert_equal(size, 0xdeadbeef, "size should be untouched when no buffer is returned");
+	zassert_is_null(display_get_framebuffer(disp, UINT32_MAX, NULL),
+			"a wild index should be refused");
 }
 
 ZTEST_SUITE(charlieplex, NULL, NULL, NULL, NULL, NULL);

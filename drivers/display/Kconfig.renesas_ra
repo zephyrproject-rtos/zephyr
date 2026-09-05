@@ -8,6 +8,7 @@ config RENESAS_RA_GLCDC
 	default y
 	depends on DT_HAS_RENESAS_RA_GLCDC_ENABLED
 	select USE_RA_FSP_DISPLAY
+	select DISPLAY_SUPPORTS_FRAMEBUFFER_ACCESS if RENESAS_RA_GLCDC_FB_NUM > 0
 	help
 	  Enable Renesas display controller.
 

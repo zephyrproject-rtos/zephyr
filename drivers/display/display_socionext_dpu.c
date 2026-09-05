@@ -148,13 +148,22 @@ static void dpu_get_capabilities(const struct device *dev,
 	capabilities->supported_pixel_formats = dpu_supported_fmts;
 	capabilities->current_pixel_format = data->pixel_format;
 	capabilities->current_orientation = DISPLAY_ORIENTATION_NORMAL;
+	capabilities->framebuffer_count = CONFIG_DPU_FB_NUM;
 }
 
-static void *dpu_get_framebuffer(const struct device *dev)
+static void *dpu_get_framebuffer(const struct device *dev, uint32_t index, size_t *size)
 {
 	struct dpu_data *data = dev->data;
 
-	return (void *)(uintptr_t)data->active_fb;
+	if (index >= CONFIG_DPU_FB_NUM) {
+		return NULL;
+	}
+
+	if (size != NULL) {
+		*size = data->fb_bytes;
+	}
+
+	return data->fb[index];
 }
 
 static int dpu_set_pixel_format(const struct device *dev,

@@ -9,6 +9,7 @@ menuconfig DISPLAY_ESP32_DSI
 	select ESP_SPIRAM
 	select SHARED_MULTI_HEAP
 	select MIPI_DSI
+	select DISPLAY_SUPPORTS_FRAMEBUFFER_ACCESS
 	help
 	  Enable driver for the ESP32 MIPI DSI display controller, which
 	  streams the framebuffer to a video mode panel. The framebuffers are
