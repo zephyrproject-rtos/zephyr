@@ -468,16 +468,19 @@ New APIs and options
 
 * Haptics
 
-  * :c:enumerator:`haptics_monitor`
-  * :c:enumerator:`haptics_monitor_type`
-  * :c:enumerator:`haptics_source`
+  * :c:enum:`haptics_monitor`
+  * :c:enum:`haptics_monitor_type`
+  * :c:enum:`haptics_source`
+  * :c:enum:`haptics_trigger_type`
   * :c:union:`haptics_config`
   * :c:func:`haptics_calibrate`
   * :c:func:`haptics_monitor_get`
   * :c:func:`haptics_monitor_set`
   * :c:func:`haptics_select_source`
   * :c:func:`haptics_set_level`
+  * :c:func:`haptics_set_trigger`
   * :c:func:`haptics_stream_samples`
+  * :c:func:`haptics_trigger`
 
 * HWSPINLOCK
 
