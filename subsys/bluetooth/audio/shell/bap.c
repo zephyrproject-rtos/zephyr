@@ -229,7 +229,8 @@ static int get_lc3_chan_alloc_from_index(const struct shell_stream *sh_stream, u
 		(sh_stream->lc3_chan_allocation & BT_AUDIO_LOCATION_FRONT_RIGHT) != 0;
 	const bool is_mono = sh_stream->lc3_chan_allocation == BT_AUDIO_LOCATION_MONO_AUDIO;
 	const bool is_left = index == 0 && has_left;
-	const bool is_right = has_right && (index == 0U || (index == 1U && has_left));
+	const bool is_right =
+		has_right && ((index == 0U && !has_left) || (index == 1U && has_left));
 
 	/* LC3 is always Left before Right, so we can use the index and the stream channel
 	 * allocation to determine if index 0 is left or right.
@@ -246,6 +247,12 @@ static int get_lc3_chan_alloc_from_index(const struct shell_stream *sh_stream, u
 	}
 
 	return 0;
+}
+
+/** Offset of @p chan_alloc in an interleaved stereo USB frame */
+static size_t get_usb_chan_offset(enum bt_audio_location chan_alloc)
+{
+	return chan_alloc == BT_AUDIO_LOCATION_FRONT_RIGHT ? 1U : 0U;
 }
 #endif /* CONFIG_LIBLC3 */
 
@@ -322,17 +329,6 @@ static int init_lc3_encoder(struct shell_stream *sh_stream)
 		return -EINVAL;
 	}
 
-	if (IS_ENABLED(CONFIG_USBD_AUDIO2_CLASS)) {
-		const size_t frame_size = bap_usb_get_frame_size(sh_stream);
-
-		if (frame_size > sizeof(lc3_tx_buf)) {
-			bt_shell_error("Cannot put %u octets in lc3_tx_buf of size %zu",
-				       frame_size, sizeof(lc3_tx_buf));
-
-			return -EINVAL;
-		}
-	}
-
 	bt_shell_print(
 		"Initializing LC3 encoder for BAP stream %p with %u us duration and %u Hz "
 		"frequency",
@@ -373,36 +369,46 @@ static void fill_lc3_tx_buf_sin(int16_t *buf, int length_us, int frequency_hz, i
 }
 
 static bool encode_frame(struct shell_stream *sh_stream, uint8_t index, size_t frame_cnt,
-			 struct net_buf *out_buf)
+			 const int16_t *frame_block, struct net_buf *out_buf)
 {
 	const size_t total_frames = sh_stream->lc3_chan_cnt * sh_stream->lc3_frame_blocks_per_sdu;
 	const uint16_t octets_per_frame = sh_stream->lc3_octets_per_frame;
+	const int16_t *pcm;
+	int stride;
 	int lc3_ret;
 
 	if (IS_ENABLED(CONFIG_USBD_AUDIO2_CLASS)) {
 		enum bt_audio_location chan_alloc;
 		int err;
 
+		if (frame_block == NULL) {
+			return false;
+		}
+
 		err = get_lc3_chan_alloc_from_index(sh_stream, index, &chan_alloc);
 		if (err != 0) {
 			/* Not suitable for USB */
-			false;
+			return false;
 		}
 
-		bap_usb_get_frame(sh_stream, chan_alloc, lc3_tx_buf);
+		/* Encode directly out of the interleaved USB ring buffer */
+		pcm = &frame_block[get_usb_chan_offset(chan_alloc)];
+		stride = USB_CHANNELS;
 	} else {
 		/* Generate sine wave */
 		fill_lc3_tx_buf_sin(lc3_tx_buf, sh_stream->lc3_frame_duration_us,
 				    AUDIO_TONE_FREQUENCY_HZ, sh_stream->lc3_freq_hz);
+		pcm = lc3_tx_buf;
+		stride = 1;
 	}
 
-	if ((sh_stream->tx.encoded_cnt % bap_stats_interval) == 0) {
+	if (bap_stats_interval > 0U && (sh_stream->tx.encoded_cnt % bap_stats_interval) == 0) {
 		bt_shell_print("[%zu]: Encoding frame of size %u (%u/%u)",
 			       sh_stream->tx.encoded_cnt, octets_per_frame, frame_cnt + 1,
 			       total_frames);
 	}
 
-	lc3_ret = lc3_encode(sh_stream->tx.lc3_encoder, LC3_PCM_FORMAT_S16, lc3_tx_buf, 1,
+	lc3_ret = lc3_encode(sh_stream->tx.lc3_encoder, LC3_PCM_FORMAT_S16, pcm, stride,
 			     octets_per_frame, net_buf_tail(out_buf));
 	if (lc3_ret == -1) {
 		bt_shell_error("LC3 encoder failed - wrong parameters?: %d", lc3_ret);
@@ -419,15 +425,30 @@ static size_t encode_frame_block(struct shell_stream *sh_stream, size_t frame_cn
 				 struct net_buf *out_buf)
 {
 	const uint8_t chan_cnt = sh_stream->lc3_chan_cnt;
+	const int16_t *frame_block = NULL;
 	size_t encoded_frames = 0U;
+
+	if (IS_ENABLED(CONFIG_USBD_AUDIO2_CLASS)) {
+		/* Claim the frame block once and encode every channel of it in place, rather than
+		 * copying each channel out of the ring buffer first
+		 */
+		frame_block = bap_usb_claim_frame_block(sh_stream);
+		if (frame_block == NULL) {
+			return 0U;
+		}
+	}
 
 	for (uint8_t i = 0U; i < chan_cnt; i++) {
 		/* We provide the total number of decoded frames to `decode_frame` for logging
 		 * purposes
 		 */
-		if (encode_frame(sh_stream, i, frame_cnt, out_buf)) {
+		if (encode_frame(sh_stream, i, frame_cnt, frame_block, out_buf)) {
 			encoded_frames++;
 		}
+	}
+
+	if (IS_ENABLED(CONFIG_USBD_AUDIO2_CLASS)) {
+		bap_usb_release_frame_block(sh_stream);
 	}
 
 	return encoded_frames;
@@ -499,7 +520,7 @@ static void lc3_audio_send_data(struct shell_stream *sh_stream)
 		return;
 	}
 
-	if ((sh_stream->tx.lc3_sdu_cnt % bap_stats_interval) == 0U) {
+	if (bap_stats_interval > 0U && (sh_stream->tx.lc3_sdu_cnt % bap_stats_interval) == 0U) {
 		bt_shell_info("[%zu]: stream %p : TX LC3: %zu (seq_num %u)",
 			      sh_stream->tx.lc3_sdu_cnt, bap_stream, tx_sdu_len,
 			      sh_stream->tx.seq_num);
@@ -2526,7 +2547,6 @@ struct lc3_data {
 	void *fifo_reserved; /* 1st word reserved for use by FIFO */
 	struct net_buf *buf;
 	struct shell_stream *sh_stream;
-	uint32_t ts;
 	bool do_plc;
 };
 
@@ -2581,7 +2601,7 @@ static int init_lc3_decoder(struct shell_stream *sh_stream)
 	return 0;
 }
 
-static bool decode_frame(struct lc3_data *data, size_t frame_cnt)
+static bool decode_frame(struct lc3_data *data, size_t frame_cnt, int16_t *pcm, int stride)
 {
 	const struct shell_stream *sh_stream = data->sh_stream;
 	const size_t total_frames = sh_stream->lc3_chan_cnt * sh_stream->lc3_frame_blocks_per_sdu;
@@ -2593,13 +2613,15 @@ static bool decode_frame(struct lc3_data *data, size_t frame_cnt)
 	if (data->do_plc) {
 		iso_data = NULL; /* perform PLC */
 
-		if ((sh_stream->rx.decoded_cnt % bap_stats_interval) == 0) {
+		if (bap_stats_interval > 0U &&
+		    (sh_stream->rx.decoded_cnt % bap_stats_interval) == 0) {
 			bt_shell_print("[%zu]: Performing PLC", sh_stream->rx.decoded_cnt);
 		}
 	} else {
 		iso_data = net_buf_pull_mem(data->buf, octets_per_frame);
 
-		if ((sh_stream->rx.decoded_cnt % bap_stats_interval) == 0) {
+		if (bap_stats_interval > 0U &&
+		    (sh_stream->rx.decoded_cnt % bap_stats_interval) == 0) {
 			bt_shell_print("[%zu]: Decoding frame of size %u (%u/%u)",
 				       sh_stream->rx.decoded_cnt, octets_per_frame, frame_cnt + 1,
 				       total_frames);
@@ -2607,7 +2629,7 @@ static bool decode_frame(struct lc3_data *data, size_t frame_cnt)
 	}
 
 	err = lc3_decode(sh_stream->rx.lc3_decoder, iso_data, octets_per_frame, LC3_PCM_FORMAT_S16,
-			 lc3_rx_buf, 1);
+			 pcm, stride);
 	if (err < 0) {
 		bt_shell_error("Failed to decode LC3 data (%u/%u - %u/%u)", frame_cnt + 1,
 			       total_frames, octets_per_frame * frame_cnt, buf->len);
@@ -2617,6 +2639,48 @@ static bool decode_frame(struct lc3_data *data, size_t frame_cnt)
 	return true;
 }
 
+/**
+ * Determine where the decoded data for channel @p index of @p sh_stream shall be written.
+ *
+ * If the channel is sent to USB, this is a pointer directly into the interleaved USB IN ring
+ * buffer, so that the decoder writes the data in its final location. Otherwise it is the scratch
+ * buffer, as the data is only used for statistics.
+ */
+static int16_t *get_decode_dest(const struct shell_stream *sh_stream, uint8_t index, int *stride,
+				enum bt_audio_location *chan_alloc)
+{
+	int16_t *pcm;
+	int err;
+
+	*stride = 1;
+
+	if (!IS_ENABLED(CONFIG_USBD_AUDIO2_CLASS)) {
+		return lc3_rx_buf;
+	}
+
+	err = get_lc3_chan_alloc_from_index(sh_stream, index, chan_alloc);
+	if (err != 0) {
+		/* Not suitable for USB */
+		return lc3_rx_buf;
+	}
+
+	/* We only want to send left or right to USB from one stream */
+	if ((*chan_alloc == BT_AUDIO_LOCATION_FRONT_LEFT && sh_stream != usb_left_stream) ||
+	    (*chan_alloc == BT_AUDIO_LOCATION_FRONT_RIGHT && sh_stream != usb_right_stream) ||
+	    (*chan_alloc == BT_AUDIO_LOCATION_MONO_AUDIO && sh_stream != usb_left_stream)) {
+		return lc3_rx_buf;
+	}
+
+	pcm = bap_usb_claim_in_frame(*chan_alloc, bap_usb_get_read_cnt(sh_stream));
+	if (pcm == NULL) {
+		return lc3_rx_buf;
+	}
+
+	*stride = USB_CHANNELS;
+
+	return pcm;
+}
+
 static size_t decode_frame_block(struct lc3_data *data, size_t frame_cnt)
 {
 	const struct shell_stream *sh_stream = data->sh_stream;
@@ -2624,45 +2688,21 @@ static size_t decode_frame_block(struct lc3_data *data, size_t frame_cnt)
 	size_t decoded_frames = 0U;
 
 	for (uint8_t i = 0U; i < chan_cnt; i++) {
+		enum bt_audio_location chan_alloc = BT_AUDIO_LOCATION_MONO_AUDIO;
+		int stride;
+		int16_t *pcm = get_decode_dest(sh_stream, i, &stride, &chan_alloc);
+
 		/* We provide the total number of decoded frames to `decode_frame` for logging
 		 * purposes
 		 */
-		if (decode_frame(data, frame_cnt + decoded_frames)) {
-			decoded_frames++;
-
-			if (IS_ENABLED(CONFIG_USBD_AUDIO2_CLASS)) {
-				enum bt_audio_location chan_alloc;
-				int err;
-
-				err = get_lc3_chan_alloc_from_index(sh_stream, i, &chan_alloc);
-				if (err != 0) {
-					/* Not suitable for USB */
-					continue;
-				}
-
-				/* We only want to left or right from one stream to USB */
-				if ((chan_alloc == BT_AUDIO_LOCATION_FRONT_LEFT &&
-				     sh_stream != usb_left_stream) ||
-				    (chan_alloc == BT_AUDIO_LOCATION_FRONT_RIGHT &&
-				     sh_stream != usb_right_stream)) {
-					continue;
-				}
-
-				err = bap_usb_add_frame_to_usb(chan_alloc, lc3_rx_buf,
-							       sizeof(lc3_rx_buf), data->ts);
-				if (err == -EINVAL) {
-					continue;
-				}
-			}
-		} else {
-			/* If decoding failed, we clear the data to USB as it would contain
-			 * invalid data
-			 */
-			if (IS_ENABLED(CONFIG_USBD_AUDIO2_CLASS)) {
-				bap_usb_clear_frames_to_usb();
-			}
-
+		if (!decode_frame(data, frame_cnt + decoded_frames, pcm, stride)) {
 			break;
+		}
+
+		decoded_frames++;
+
+		if (stride == USB_CHANNELS) {
+			bap_usb_release_in_frame(chan_alloc, bap_usb_get_read_cnt(sh_stream));
 		}
 	}
 
@@ -2754,7 +2794,7 @@ static void audio_recv(struct bt_bap_stream *stream,
 		sh_stream->rx.lost_pkts++;
 	}
 
-	if ((sh_stream->rx.rx_cnt % bap_stats_interval) == 0) {
+	if (bap_stats_interval > 0U && (sh_stream->rx.rx_cnt % bap_stats_interval) == 0) {
 		bt_shell_print(
 			"[%zu]: Incoming audio on stream %p len %u ts %u seq_num %u flags %u "
 			"(valid %zu, dup ts %zu, dup psn %zu, err_pkts %zu, lost_pkts %zu, "
@@ -2807,11 +2847,6 @@ static void audio_recv(struct bt_bap_stream *stream,
 
 		data->buf = net_buf_ref(buf);
 		data->sh_stream = sh_stream;
-		if (info->flags & BT_ISO_FLAGS_TS) {
-			data->ts = info->ts;
-		} else {
-			data->ts = 0U;
-		}
 
 		k_fifo_put(&lc3_in_fifo, data);
 	}
@@ -2970,6 +3005,7 @@ static void stream_started_cb(struct bt_bap_stream *bap_stream)
 			if (IS_ENABLED(CONFIG_USBD_AUDIO2_CLASS)) {
 				/* Always mark as active when using USB */
 				sh_stream->tx.active = true;
+				bap_usb_tx_stream_started(sh_stream);
 			}
 		}
 #endif /* CONFIG_BT_AUDIO_TX */
@@ -2989,12 +3025,19 @@ static void stream_started_cb(struct bt_bap_stream *bap_stream)
 			sh_stream->rx.decoded_cnt = 0U;
 
 			if (IS_ENABLED(CONFIG_USBD_AUDIO2_CLASS)) {
+				/* Mono is sent to USB as the left channel, and duplicated to
+				 * the right channel by bap_usb.c
+				 */
 				if ((sh_stream->lc3_chan_allocation &
-				     BT_AUDIO_LOCATION_FRONT_LEFT) != 0) {
+				     BT_AUDIO_LOCATION_FRONT_LEFT) != 0 ||
+				    sh_stream->lc3_chan_allocation ==
+					    BT_AUDIO_LOCATION_MONO_AUDIO) {
 					if (usb_left_stream == NULL) {
 						bt_shell_info("Setting USB left stream to %p",
 							      sh_stream);
 						usb_left_stream = sh_stream;
+						bap_usb_activate_in_chan(
+							BT_AUDIO_LOCATION_FRONT_LEFT);
 					} else {
 						bt_shell_warn("Multiple left streams started");
 					}
@@ -3006,6 +3049,8 @@ static void stream_started_cb(struct bt_bap_stream *bap_stream)
 						bt_shell_info("Setting USB right stream to %p",
 							      sh_stream);
 						usb_right_stream = sh_stream;
+						bap_usb_activate_in_chan(
+							BT_AUDIO_LOCATION_FRONT_RIGHT);
 					} else {
 						bt_shell_warn("Multiple right streams started");
 					}
@@ -3040,19 +3085,29 @@ static void stream_started_cb(struct bt_bap_stream *bap_stream)
 #if defined(CONFIG_LIBLC3)
 static void update_usb_streams_cb(struct shell_stream *sh_stream, void *user_data)
 {
-	ARG_UNUSED(user_data);
+	const struct shell_stream *stopped_stream = user_data;
+
+	/* is_rx is not cleared until after this runs, so the stream that is being torn down
+	 * would otherwise elect itself again and then never produce any data
+	 */
+	if (sh_stream == stopped_stream) {
+		return;
+	}
 
 	if (sh_stream->is_rx) {
 		if (usb_left_stream == NULL &&
-		    (sh_stream->lc3_chan_allocation & BT_AUDIO_LOCATION_FRONT_LEFT) != 0) {
+		    ((sh_stream->lc3_chan_allocation & BT_AUDIO_LOCATION_FRONT_LEFT) != 0 ||
+		     sh_stream->lc3_chan_allocation == BT_AUDIO_LOCATION_MONO_AUDIO)) {
 			bt_shell_info("Setting new USB left stream to %p", sh_stream);
 			usb_left_stream = sh_stream;
+			bap_usb_activate_in_chan(BT_AUDIO_LOCATION_FRONT_LEFT);
 		}
 
 		if (usb_right_stream == NULL &&
 		    (sh_stream->lc3_chan_allocation & BT_AUDIO_LOCATION_FRONT_RIGHT) != 0) {
 			bt_shell_info("Setting new USB right stream to %p", sh_stream);
 			usb_right_stream = sh_stream;
+			bap_usb_activate_in_chan(BT_AUDIO_LOCATION_FRONT_RIGHT);
 		}
 	}
 }
@@ -3066,6 +3121,7 @@ static void update_usb_streams(struct shell_stream *sh_stream)
 			bt_shell_info("Clearing USB left stream (%p)", usb_left_stream);
 
 			usb_left_stream = NULL;
+			bap_usb_deactivate_in_chan(BT_AUDIO_LOCATION_FRONT_LEFT);
 			usb_stream_cleared = true;
 		}
 
@@ -3073,12 +3129,13 @@ static void update_usb_streams(struct shell_stream *sh_stream)
 			bt_shell_info("Clearing USB right stream (%p)", usb_right_stream);
 
 			usb_right_stream = NULL;
+			bap_usb_deactivate_in_chan(BT_AUDIO_LOCATION_FRONT_RIGHT);
 			usb_stream_cleared = true;
 		}
 
 		if (usb_stream_cleared) {
-			bap_usb_clear_frames_to_usb();
-			bap_foreach_stream(update_usb_streams_cb, NULL);
+			/* Another stream may be able to take over the freed channel */
+			bap_foreach_stream(update_usb_streams_cb, sh_stream);
 		}
 	}
 }
@@ -3102,6 +3159,8 @@ static void clear_stream_data(struct shell_stream *sh_stream)
 #endif /* CONFIG_BT_BAP_BROADCAST_SINK */
 
 #if defined(CONFIG_BT_AUDIO_RX)
+	/* TODO: Need to wait for LC3 to finish using a mutex before clearing the LC3 encoder and
+	 * decoder */
 	if (sh_stream->is_rx) {
 		rx_streaming_cnt--;
 		memset(&sh_stream->rx, 0, sizeof(sh_stream->rx));
@@ -3985,7 +4044,7 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 #if defined(CONFIG_LIBLC3)
 #if defined(CONFIG_BT_AUDIO_RX)
 	static K_KERNEL_STACK_DEFINE(lc3_decoder_thread_stack, 4096);
-	const int lc3_decoder_thread_prio = K_PRIO_PREEMPT(5);
+	const int lc3_decoder_thread_prio = K_PRIO_PREEMPT(10);
 	static struct k_thread lc3_decoder_thread;
 
 	k_thread_create(&lc3_decoder_thread, lc3_decoder_thread_stack,
@@ -3996,7 +4055,7 @@ static int cmd_init(const struct shell *sh, size_t argc, char *argv[])
 
 #if defined(CONFIG_BT_AUDIO_TX)
 	static K_KERNEL_STACK_DEFINE(lc3_encoder_thread_stack, 4096);
-	const int lc3_encoder_thread_prio = K_PRIO_PREEMPT(5);
+	const int lc3_encoder_thread_prio = K_PRIO_PREEMPT(10);
 	static struct k_thread lc3_encoder_thread;
 
 	k_thread_create(&lc3_encoder_thread, lc3_encoder_thread_stack,
@@ -4170,12 +4229,6 @@ static int cmd_bap_stats(const struct shell *sh, size_t argc, char *argv[])
 		interval = shell_strtoul(argv[1], 0, &err);
 		if (err != 0) {
 			shell_error(sh, "Could not parse interval: %d", err);
-
-			return -ENOEXEC;
-		}
-
-		if (interval == 0U) {
-			shell_error(sh, "Interval cannot be 0");
 
 			return -ENOEXEC;
 		}
