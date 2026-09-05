@@ -6,6 +6,7 @@ menuconfig ETH_VIRTIO_NET
 	default y
 	depends on DT_HAS_VIRTIO_NET_ENABLED
 	select VIRTIO
+	select NET_CHECKSUM_OFFLOAD_SUPPORTED if NET_L2_ETHERNET
 
 if ETH_VIRTIO_NET
 
