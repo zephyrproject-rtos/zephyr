@@ -12,21 +12,27 @@ menuconfig NRF70_BUSLIB
 if NRF70_BUSLIB
 
 config NRF70_ON_QSPI
-	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF7002_QSPI)) ||\
-			$(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF7001_QSPI)) ||\
-			$(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF7000_QSPI))
+	def_bool $(dt_compat_on_bus,$(DT_COMPAT_NORDIC_NRF7002),qspi) ||\
+			$(dt_compat_on_bus,$(DT_COMPAT_NORDIC_NRF7001),qspi) ||\
+			$(dt_compat_on_bus,$(DT_COMPAT_NORDIC_NRF7000),qspi)
+	depends on DT_HAS_NORDIC_NRF7002_ENABLED || DT_HAS_NORDIC_NRF7001_ENABLED || \
+		DT_HAS_NORDIC_NRF7000_ENABLED
 	select NRFX_QSPI
 
 config NRF70_ON_SPI
-	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF7002_SPI)) ||\
-			$(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF7001_SPI)) ||\
-			$(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF7000_SPI))
+	def_bool $(dt_compat_on_bus,$(DT_COMPAT_NORDIC_NRF7002),spi) ||\
+			$(dt_compat_on_bus,$(DT_COMPAT_NORDIC_NRF7001),spi) ||\
+			$(dt_compat_on_bus,$(DT_COMPAT_NORDIC_NRF7000),spi)
+	depends on DT_HAS_NORDIC_NRF7002_ENABLED || DT_HAS_NORDIC_NRF7001_ENABLED || \
+		DT_HAS_NORDIC_NRF7000_ENABLED
 	select SPI
 
 config NRF70_ON_MSPI
 	def_bool $(dt_compat_on_bus,$(DT_COMPAT_NORDIC_NRF7002),mspi) ||\
 			$(dt_compat_on_bus,$(DT_COMPAT_NORDIC_NRF7001),mspi) ||\
 			$(dt_compat_on_bus,$(DT_COMPAT_NORDIC_NRF7000),mspi)
+	depends on DT_HAS_NORDIC_NRF7002_ENABLED || DT_HAS_NORDIC_NRF7001_ENABLED || \
+		DT_HAS_NORDIC_NRF7000_ENABLED
 	select MSPI
 	help
 	  Selected when the nRF70 is wired to a generic Zephyr MSPI controller
