@@ -17,13 +17,17 @@ zephyr_library_sources(
 )
 
 zephyr_library_sources_ifdef(CONFIG_CPP __aeabi_atexit.c)
-zephyr_library_sources_ifdef(CONFIG_IRQ_OFFLOAD irq_offload.c)
 zephyr_library_sources_ifdef(CONFIG_THREAD_LOCAL_STORAGE tls.c)
 zephyr_library_sources_ifdef(CONFIG_USERSPACE userspace.S)
 zephyr_library_sources_ifdef(CONFIG_ARM_ZIMAGE_HEADER header.S)
 zephyr_library_sources_ifdef(CONFIG_LLEXT elf.c)
 zephyr_library_sources_ifdef(CONFIG_GDBSTUB gdbstub.c)
 zephyr_library_sources_ifdef(CONFIG_ARCH_STACKWALK stacktrace.c)
+# Cortex-A/R provides its own SMP/nested-capable irq_offload implementation
+# (see cortex_a_r/irq_offload.c).
+if(NOT (CONFIG_CPU_AARCH32_CORTEX_A OR CONFIG_CPU_AARCH32_CORTEX_R))
+  zephyr_library_sources_ifdef(CONFIG_IRQ_OFFLOAD irq_offload.c)
+endif()
 
 zephyr_cc_option_ifdef(CONFIG_ARCH_STACKWALK -funwind-tables)
 

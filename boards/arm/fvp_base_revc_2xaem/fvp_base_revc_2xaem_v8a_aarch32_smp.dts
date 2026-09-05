@@ -1,0 +1,6 @@
+/*
+ * SPDX-FileCopyrightText: Copyright Alif Semiconductor
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "fvp_base_revc_2xaem_v8a_aarch32.dts"
