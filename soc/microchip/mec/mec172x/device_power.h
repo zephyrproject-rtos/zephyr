@@ -48,8 +48,6 @@
  */
 #define DEEP_SLEEP_PERIPH_SAVE_RESTORE_EXTENDED
 
-#define NUM_DS_TIMER_ENTRIES 6
-
 struct ds_timer_info {
 	uintptr_t addr;
 	uint32_t stop_mask;
@@ -63,7 +61,6 @@ struct ds_peci_info {
 
 struct ds_dev_info {
 	uint32_t ecs[2];
-	uint32_t timers[NUM_DS_TIMER_ENTRIES];
 #ifdef DEEP_SLEEP_UART_SAVE_RESTORE
 	uint8_t uart_info[MCHP_UART_INSTANCES];
 #endif
