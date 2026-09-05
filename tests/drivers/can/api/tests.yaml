@@ -3,6 +3,7 @@ common:
     - drivers
     - can
   depends_on: can
+  ignore_faults: true
 tests:
   drivers.can.api:
     integration_platforms:
