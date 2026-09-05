@@ -9,3 +9,4 @@ Required Kconfig: :kconfig:option:`CONFIG_PROFILING`
    :maxdepth: 1
 
    perf.rst
+   irq_stats.rst
