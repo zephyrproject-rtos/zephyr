@@ -1,4 +1,4 @@
-# Configuration options for the Zephyr serial 1-Wire Master driver
+# Configuration options for the Zephyr serial 1-Wire controller driver
 
 # Copyright (c) 2022 Thomas Stranger
 # SPDX-License-Identifier: Apache-2.0
@@ -10,7 +10,7 @@ config W1_ZEPHYR_SERIAL
 	depends on DT_HAS_ZEPHYR_W1_SERIAL_ENABLED
 	select UART_USE_RUNTIME_CONFIGURE
 	help
-	  This option enables the Zephyr serial 1-Wire master driver.
+	  This option enables the Zephyr serial 1-Wire controller driver.
 
 	  The bus reset, and bit read and write operations are executed
 	  via bytes read and write operations on top of the Zephyr
