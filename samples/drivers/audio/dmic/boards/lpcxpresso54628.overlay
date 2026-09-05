@@ -1,0 +1,12 @@
+/*
+ * The on-board microphone is on DMIC hardware channel 1, which this sample
+ * reaches through its two-channel transfer. Channel 0 is not connected on this
+ * board but has to be enabled for that transfer to be accepted.
+ */
+dmic_dev: &dmic0 {
+	status = "okay";
+};
+
+&pdmc0 {
+	status = "okay";
+};
