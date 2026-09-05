@@ -203,7 +203,8 @@ manifest:
       groups:
         - hal
     - name: hal_nordic
-      revision: 4387c79cebd31927fb1ea7d64bee11728ae8041f
+      url: https://github.com/hellesvik-nordic/hal_nordic
+      revision: uicr_customer
       path: modules/hal/nordic
       groups:
         - hal
