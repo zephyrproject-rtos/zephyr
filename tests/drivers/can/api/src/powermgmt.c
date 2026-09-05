@@ -5,6 +5,7 @@
 
 #include <zephyr/drivers/can.h>
 #include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 #include <zephyr/ztest.h>
 
 #include "common.h"
@@ -112,6 +113,11 @@ static bool can_powermgmt_predicate(const void *state)
 		return false;
 	}
 
+	if (pm_device_runtime_is_enabled(can_dev)) {
+		TC_PRINT("CAN device uses runtime device power management");
+		return false;
+	}
+
 	err = pm_device_state_get(can_dev, &pm_state);
 	if (err == -ENOSYS) {
 		TC_PRINT("CAN controller does not support device power management");
@@ -128,4 +134,12 @@ void *can_powermgmt_setup(void)
 	return NULL;
 }
 
-ZTEST_SUITE(can_powermgmt, can_powermgmt_predicate, can_powermgmt_setup, NULL, NULL, NULL);
+void can_powermgmt_teardown(void *f)
+{
+	ARG_UNUSED(f);
+
+	can_common_test_teardown();
+}
+
+ZTEST_SUITE(can_powermgmt, can_powermgmt_predicate, can_powermgmt_setup, NULL, NULL,
+	    can_powermgmt_teardown);
