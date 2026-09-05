@@ -80,10 +80,22 @@
 };
 
 zephyr_udc0: &usbotg_hs {
+	compatible = "st,stm32u5-hsotg", "snps,dwc2";
+	/delete-property/ num-bidir-endpoints;
+	/delete-property/ ram-size;
+	/delete-property/ maximum-speed;
+	phys = <&otghs_phy>;
+	num-in-eps = <9>;
+	num-out-eps = <9>;
+	ghwcfg1 = <0x00000000>;
+	ghwcfg2 = <0x228fe052>;
+	ghwcfg4 = <0xe2103e30>;
 	pinctrl-0 = <&usb_otg_hs_dm_pa11 &usb_otg_hs_dp_pa12>;
 	pinctrl-names = "default";
 	status = "okay";
 };
+
+zephyr_uhc0: &usbotg_hs {};
 
 &otghs_phy {
 	clock-reference = "SYSCFG_OTG_HS_PHY_CLK_16MHz";
