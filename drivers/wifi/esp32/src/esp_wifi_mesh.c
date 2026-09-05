@@ -35,11 +35,6 @@
 
 LOG_MODULE_REGISTER(esp_wifi_mesh, CONFIG_WIFI_LOG_LEVEL);
 
-/* The mesh softAP uses WPA2-PSK, which requires an 8..63 character password. */
-BUILD_ASSERT(sizeof(CONFIG_WIFI_ESP32_MESH_AP_PSK) - 1 >= 8 &&
-		     sizeof(CONFIG_WIFI_ESP32_MESH_AP_PSK) - 1 <= 63,
-	     "CONFIG_WIFI_ESP32_MESH_AP_PSK must be 8 to 63 characters");
-
 /*
  * When the mesh stack is active it drives the station and softAP directly.
  * Its softAP start/stop and association events would otherwise take the
@@ -186,43 +181,103 @@ void esp_wifi_mesh_dispatch_event(esp_event_base_t event_base, int32_t event_id,
 }
 
 /*
- * Parse the 6-byte mesh id from its "xx:xx:xx:xx:xx:xx" Kconfig string into
- * out. On a malformed value fall back to a fixed default so the mesh still
- * comes up rather than joining an unintended network.
+ * Effective mesh configuration esp_wifi_mesh_start() reads from. Seeded with
+ * what used to be the Kconfig defaults, so a caller that never calls
+ * esp_wifi_mesh_set_config() gets identical behavior to before. Set only
+ * before esp_wifi_mesh_start() runs; mesh has no runtime reconfiguration.
  */
-static void mesh_id_parse(uint8_t out[6])
+static struct esp_wifi_mesh_config runtime_cfg = {
+	.ssid = "myssid",
+	.password = "mypassword",
+	.mesh_password = "meshpassword",
+	.channel = 0,
+	.mesh_id = {0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc},
+	.authmode = WIFI_SECURITY_TYPE_PSK,
+	.num_layers = CONFIG_WIFI_ESP32_MESH_MAX_LAYER,
+	.max_connections = CONFIG_WIFI_ESP32_MESH_MAX_CONNECTIONS,
+};
+
+/* Translate the Zephyr-native security type to the vendor mesh softAP auth
+ * mode. The mesh softAP only ever needs to be open or PSK/SAE-secured, so
+ * this covers that practical subset rather than every wifi_security_type.
+ */
+static int mesh_authmode_from_security(enum wifi_security_type security,
+					wifi_auth_mode_t *authmode)
 {
-	static const uint8_t fallback[6] = {0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc};
-	const char *p = CONFIG_WIFI_ESP32_MESH_ID;
-	uint8_t id[6];
+	switch (security) {
+	case WIFI_SECURITY_TYPE_NONE:
+		*authmode = WIFI_AUTH_OPEN;
+		return 0;
+	case WIFI_SECURITY_TYPE_PSK:
+		*authmode = WIFI_AUTH_WPA2_PSK;
+		return 0;
+	case WIFI_SECURITY_TYPE_SAE:
+		*authmode = WIFI_AUTH_WPA3_PSK;
+		return 0;
+	default:
+		return -EINVAL;
+	}
+}
 
-	for (int i = 0; i < 6; i++) {
-		uint8_t hi, lo;
+int esp_wifi_mesh_set_config(const struct esp_wifi_mesh_config *config)
+{
+	wifi_auth_mode_t authmode;
+	size_t mesh_password_len;
 
-		if (char2hex(p[0], &hi) != 0 || char2hex(p[1], &lo) != 0) {
-			goto invalid;
-		}
-		id[i] = (hi << 4) | lo;
-		p += 2;
-
-		if (i < 5) {
-			if (*p != ':') {
-				goto invalid;
-			}
-			p++;
-		}
+	if (config == NULL) {
+		return -EINVAL;
 	}
 
-	if (*p != '\0') {
-		goto invalid;
+	if (esp_wifi_mesh_is_active()) {
+		return -EBUSY;
 	}
 
-	memcpy(out, id, sizeof(id));
-	return;
+	if (strnlen(config->ssid, sizeof(config->ssid)) >= sizeof(config->ssid)) {
+		return -EINVAL;
+	}
 
-invalid:
-	LOG_WRN("invalid mesh id '%s', using default", CONFIG_WIFI_ESP32_MESH_ID);
-	memcpy(out, fallback, sizeof(fallback));
+	if (strnlen(config->password, sizeof(config->password)) >= sizeof(config->password)) {
+		return -EINVAL;
+	}
+
+	mesh_password_len = strnlen(config->mesh_password, sizeof(config->mesh_password));
+	if (mesh_password_len >= sizeof(config->mesh_password) ||
+	    (mesh_password_len != 0 && (mesh_password_len < 8 || mesh_password_len > 63))) {
+		return -EINVAL;
+	}
+
+	if (config->channel > 13) {
+		return -EINVAL;
+	}
+
+	if (mesh_authmode_from_security(config->authmode, &authmode) != 0) {
+		return -EINVAL;
+	}
+
+	if (authmode == WIFI_AUTH_OPEN && strlen(config->password) != 0) {
+		return -EINVAL;
+	}
+
+	if (config->num_layers < 1 || config->num_layers > CONFIG_WIFI_ESP32_MESH_MAX_LAYER) {
+		return -EINVAL;
+	}
+
+	if (config->max_connections < 1 ||
+	    config->max_connections > CONFIG_WIFI_ESP32_MESH_MAX_CONNECTIONS) {
+		return -EINVAL;
+	}
+
+	runtime_cfg = *config;
+	return 0;
+}
+
+void esp_wifi_mesh_get_config(struct esp_wifi_mesh_config *config)
+{
+	if (config == NULL) {
+		return;
+	}
+
+	*config = runtime_cfg;
 }
 
 static esp_wifi_mesh_event_cb_t app_event_cb;
@@ -359,9 +414,8 @@ int esp_wifi_mesh_start(void)
 	 * role needs a router. A fixed root or fixed child does not run an
 	 * election and can form a router-less mesh, so the router is optional.
 	 */
-	if (IS_ENABLED(CONFIG_WIFI_ESP32_MESH_ROLE_AUTO) &&
-	    strlen(CONFIG_WIFI_ESP32_MESH_ROUTER_SSID) == 0) {
-		LOG_ERR("router SSID must be set (CONFIG_WIFI_ESP32_MESH_ROUTER_SSID)");
+	if (IS_ENABLED(CONFIG_WIFI_ESP32_MESH_ROLE_AUTO) && strlen(runtime_cfg.ssid) == 0) {
+		LOG_ERR("router SSID must be set (see esp_wifi_mesh_set_config())");
 		return -EINVAL;
 	}
 
@@ -380,7 +434,7 @@ int esp_wifi_mesh_start(void)
 	}
 
 	esp_mesh_set_topology(MESH_TOPO_TREE);
-	esp_mesh_set_max_layer(CONFIG_WIFI_ESP32_MESH_MAX_LAYER);
+	esp_mesh_set_max_layer(runtime_cfg.num_layers);
 	esp_mesh_set_vote_percentage((float)CONFIG_WIFI_ESP32_MESH_VOTE_PERCENTAGE / 100.0f);
 	esp_mesh_set_xon_qsize(CONFIG_WIFI_ESP32_MESH_XON_QSIZE);
 
@@ -389,15 +443,12 @@ int esp_wifi_mesh_start(void)
 
 	esp_mesh_set_ap_assoc_expire(CONFIG_WIFI_ESP32_MESH_ASSOC_EXPIRE);
 
-	cfg.channel = CONFIG_WIFI_ESP32_MESH_CHANNEL;
+	cfg.channel = runtime_cfg.channel;
 	if (cfg.channel == 0) {
 		/* Scan all channels to locate the router. */
 		cfg.allow_channel_switch = true;
 	}
-	uint8_t mesh_id[6];
-
-	mesh_id_parse(mesh_id);
-	memcpy((uint8_t *)&cfg.mesh_id, mesh_id, sizeof(mesh_id));
+	memcpy((uint8_t *)&cfg.mesh_id, runtime_cfg.mesh_id, sizeof(runtime_cfg.mesh_id));
 
 	/*
 	 * Router credentials: only the elected or fixed root associates to the
@@ -406,8 +457,8 @@ int esp_wifi_mesh_start(void)
 	 * SSID the fixed root never actually associates to; its children attach
 	 * to the root's softAP and the mesh forms with no router involved.
 	 */
-	const char *router_ssid = CONFIG_WIFI_ESP32_MESH_ROUTER_SSID;
-	const char *router_psk = CONFIG_WIFI_ESP32_MESH_ROUTER_PSK;
+	const char *router_ssid = runtime_cfg.ssid;
+	const char *router_psk = runtime_cfg.password;
 
 	if (strlen(router_ssid) == 0) {
 		router_ssid = "esp-mesh-no-router";
@@ -419,10 +470,19 @@ int esp_wifi_mesh_start(void)
 	memcpy(cfg.router.password, router_psk,
 	       MIN(strlen(router_psk), sizeof(cfg.router.password) - 1));
 
-	esp_mesh_set_ap_authmode(WIFI_AUTH_WPA2_PSK);
-	cfg.mesh_ap.max_connection = CONFIG_WIFI_ESP32_MESH_MAX_CONNECTIONS;
-	memcpy(cfg.mesh_ap.password, CONFIG_WIFI_ESP32_MESH_AP_PSK,
-	       MIN(strlen(CONFIG_WIFI_ESP32_MESH_AP_PSK), sizeof(cfg.mesh_ap.password) - 1));
+	wifi_auth_mode_t mesh_authmode = WIFI_AUTH_WPA_PSK;
+
+	/* Validated in esp_wifi_mesh_set_config(); the seeded default is also valid. */
+	(void)mesh_authmode_from_security(runtime_cfg.authmode, &mesh_authmode);
+
+	if (esp_mesh_set_ap_authmode(mesh_authmode) != ESP_OK) {
+		LOG_ERR("failed to set authmode for AP");
+		return -EIO;
+	}
+
+	cfg.mesh_ap.max_connection = runtime_cfg.max_connections;
+	memcpy(cfg.mesh_ap.password, runtime_cfg.mesh_password,
+	       MIN(strlen(runtime_cfg.mesh_password), sizeof(cfg.mesh_ap.password) - 1));
 
 	esp_err_t cfg_ret = esp_mesh_set_config(&cfg);
 
@@ -467,7 +527,7 @@ int esp_wifi_mesh_start(void)
 	 * stay enabled: self-organized networking also drives the association to
 	 * the router and the reconnection that maintains the root uplink.
 	 */
-	if (strlen(CONFIG_WIFI_ESP32_MESH_ROUTER_SSID) == 0) {
+	if (strlen(runtime_cfg.ssid) == 0) {
 		esp_mesh_set_self_organized(false, false);
 	}
 #endif

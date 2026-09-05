@@ -23,6 +23,7 @@
 #include <stddef.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_ip.h>
+#include <zephyr/net/wifi.h>
 
 /**
  * @brief ESP32 Wi-Fi Mesh API.
@@ -101,12 +102,86 @@ typedef void (*esp_wifi_mesh_event_cb_t)(enum esp_wifi_mesh_event event,
 void esp_wifi_mesh_event_cb_register(esp_wifi_mesh_event_cb_t cb);
 
 /**
+ * @brief Runtime-configurable mesh credentials and tree limits.
+ *
+ * Read by esp_wifi_mesh_start() in place of the driver's Kconfig defaults.
+ * Set this before calling esp_wifi_mesh_start(); the mesh stack has no
+ * runtime reconfiguration or teardown, so changes after start have no effect.
+ */
+struct esp_wifi_mesh_config {
+	/** Router SSID: the upstream Wi-Fi network the root associates to for
+	 *  external network access. Empty forms a router-less fixed-root mesh
+	 *  (see esp_wifi_mesh_start()). NUL-terminated, up to 32 characters.
+	 */
+	char ssid[33];
+	/** Router password. NUL-terminated, up to 63 characters; empty for an
+	 *  open router.
+	 */
+	char password[64];
+	/** Mesh softAP password securing the inter-node mesh links. Must be
+	 *  empty (for WIFI_SECURITY_TYPE_NONE) or 8..63 characters, and
+	 *  identical on every node in the mesh.
+	 */
+	char mesh_password[64];
+	/** Mesh channel: 0 lets the mesh select it by scanning (required when
+	 *  the router channel is unknown); 1-13 pins a fixed channel, which
+	 *  must then match on every node.
+	 */
+	uint8_t channel;
+	/** 6-byte mesh network identifier. Nodes only join a mesh advertising
+	 *  the same ID, so every node in one network must use the same value.
+	 */
+	uint8_t mesh_id[6];
+	/** Mesh softAP authentication mode. */
+	enum wifi_security_type authmode;
+	/** Tree depth (layers) to use for this mesh. Must be at least 1 and no
+	 *  greater than the compiled-in CONFIG_WIFI_ESP32_MESH_MAX_LAYER,
+	 *  which sizes the routing-table buffers at build time.
+	 */
+	uint8_t num_layers;
+	/** Per-node direct child fan-out to use for this mesh. Must be at
+	 *  least 1 and no greater than the compiled-in
+	 *  CONFIG_WIFI_ESP32_MESH_MAX_CONNECTIONS, which sizes the
+	 *  routing-table buffers at build time.
+	 */
+	uint8_t max_connections;
+};
+
+/**
+ * @brief Set the mesh configuration used by the next esp_wifi_mesh_start().
+ *
+ * Validates every field and, if valid, replaces the current configuration in
+ * full (there is no partial update). On failure the previous configuration is
+ * left unchanged. Must be called before esp_wifi_mesh_start(); mesh has no
+ * runtime reconfiguration.
+ *
+ * @param config configuration to apply.
+ *
+ * @retval 0 on success.
+ * @retval -EINVAL on a NULL argument or any field outside its documented
+ *         valid range (string lengths, channel, authmode, a mismatched
+ *         authmode/mesh_password pair, or a tree limit above its
+ *         compiled-in Kconfig ceiling).
+ */
+int esp_wifi_mesh_set_config(const struct esp_wifi_mesh_config *config);
+
+/**
+ * @brief Get the mesh configuration esp_wifi_mesh_start() will use.
+ *
+ * Returns the last configuration passed to esp_wifi_mesh_set_config(), or the
+ * driver's built-in defaults if it was never called.
+ *
+ * @param config output filled with the current configuration.
+ */
+void esp_wifi_mesh_get_config(struct esp_wifi_mesh_config *config);
+
+/**
  * @brief Start the Wi-Fi mesh stack.
  *
  * Performs the full mesh bring-up: puts Wi-Fi in AP+STA mode, initializes and
- * configures the mesh stack from the driver Kconfig options (mesh id, channel,
- * router and softAP credentials, tree limits), disables power save, and starts
- * the mesh.
+ * configures the mesh stack from the current configuration (see
+ * esp_wifi_mesh_set_config()/esp_wifi_mesh_get_config()) plus the mesh tuning
+ * Kconfig options, disables power save, and starts the mesh.
  *
  * The node role follows the WIFI_ESP32_MESH_ROLE choice: the auto role runs
  * self-organized election (a router is required); WIFI_ESP32_MESH_FORCE_ROOT
