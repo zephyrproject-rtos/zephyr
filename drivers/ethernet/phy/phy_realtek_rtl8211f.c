@@ -56,6 +56,22 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define PHY_RT_RTL8211F_INER_LINKSTATUS_CHANGE_MASK BIT(4)
 #define PHY_RT_RTL8211F_INSR_REG                    (0x1DU)
 
+#define PHY_RT_RTL8211F_PAGE_CLKOUT_SSC_ADDR (0xD09U)
+#define PHY_RT_RTL8211F_SSC_CLKOUT_REG       (0x10U)
+#define PHY_RT_RTL8211F_SSC_CLKOUT_CONFIG    (0xCF00U)
+
+#define PHY_RT_RTL8211F_PAGE_SSC_ADDR     (0xC44U)
+#define PHY_RT_RTL8211F_SSC_RXC_REG       (0x13U)
+#define PHY_RT_RTL8211F_SSC_RXC_CONFIG    (0x5F00U)
+#define PHY_RT_RTL8211F_SSC_SYSCLK_REG    (0x17U)
+#define PHY_RT_RTL8211F_SSC_SYSCLK_CONFIG (0x4F00U)
+
+#define PHY_RT_RTL8211F_PAGE_PHY_CFG_ADDR (0xA43U)
+#define PHY_RT_RTL8211F_PHYCR2_REG        (0x19U)
+#define PHY_RT_RTL8211F_PHYCR2_CLKOUT_EN  BIT(0)
+#define PHY_RT_RTL8211F_PHYCR2_RXC_SSC    BIT(3)
+#define PHY_RT_RTL8211F_PHYCR2_CLKOUT_SSC (BIT(7) || BIT(12) || BIT(13))
+
 #define PHY_RT_RTL8211F_RESET_HOLD_TIME_MS 10
 
 enum rt_rtl8211f_rgmii_delay {
@@ -76,6 +92,10 @@ struct rt_rtl8211f_config {
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
 	const struct gpio_dt_spec interrupt_gpio;
 #endif
+	bool rxc_ssc;
+	bool sysclk_ssc;
+	bool clkout_ssc;
+	bool clkout_disable;
 };
 
 struct rt_rtl8211f_data {
@@ -122,6 +142,34 @@ static int phy_rt_rtl8211f_write(const struct device *dev,
 	return 0;
 }
 
+static int phy_rt_rtl8211f_soft_reset(const struct device *dev)
+{
+	const struct rt_rtl8211f_config *config = dev->config;
+	uint32_t reg_val;
+	int ret;
+
+	/* Reset PHY using register */
+	ret = phy_rt_rtl8211f_write(dev, MII_BMCR, MII_BMCR_RESET);
+	if (ret < 0) {
+		LOG_ERR("Error writing phy (%d) basic control register", config->addr);
+		return ret;
+	}
+
+	/* Wait for the minimum reset time specified by datasheet */
+	k_busy_wait(USEC_PER_MSEC * PHY_RT_RTL8211F_RESET_HOLD_TIME_MS);
+
+	/* Wait for the reset to be cleared */
+	do {
+		ret = phy_rt_rtl8211f_read(dev, MII_BMCR, &reg_val);
+		if (ret < 0) {
+			LOG_ERR("Error reading phy (%d) basic control register", config->addr);
+			return ret;
+		}
+	} while (reg_val & MII_BMCR_RESET);
+
+	return ret;
+}
+
 static int phy_rt_rtl8211f_reset(const struct device *dev)
 {
 	const struct rt_rtl8211f_config *config = dev->config;
@@ -152,24 +200,10 @@ static int phy_rt_rtl8211f_reset(const struct device *dev)
 	}
 #endif /* DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios) */
 
-	/* Reset PHY using register */
-	ret = phy_rt_rtl8211f_write(dev, MII_BMCR, MII_BMCR_RESET);
-	if (ret) {
-		LOG_ERR("Error writing phy (%d) basic control register", config->addr);
+	ret = phy_rt_rtl8211f_soft_reset(dev);
+	if (ret < 0) {
 		return ret;
 	}
-
-	/* Wait for the minimum reset time specified by datasheet */
-	k_busy_wait(USEC_PER_MSEC * PHY_RT_RTL8211F_RESET_HOLD_TIME_MS);
-
-	/* Wait for the reset to be cleared */
-	do {
-		ret = phy_rt_rtl8211f_read(dev, MII_BMCR, &reg_val);
-		if (ret) {
-			LOG_ERR("Error reading phy (%d) basic control register", config->addr);
-			return ret;
-		}
-	} while (reg_val & MII_BMCR_RESET);
 
 	goto finalize_reset;
 
@@ -238,6 +272,84 @@ restore_page:
 	ret = phy_rt_rtl8211f_write(dev, PHY_RT_RTL8211F_PAGSR_REG, 0);
 	if (ret < 0) {
 		LOG_ERR("Error writing phy (%d) page select register", config->addr);
+	}
+
+	return ret;
+}
+
+static int phy_rt_rtl8211f_cfg_ssc(const struct device *dev)
+{
+	const struct rt_rtl8211f_config *config = dev->config;
+	uint32_t reg_val;
+	int ret = 0;
+
+	if (config->rxc_ssc || config->sysclk_ssc) {
+		ret = phy_rt_rtl8211f_write(dev, PHY_RT_RTL8211F_PAGSR_REG,
+					    PHY_RT_RTL8211F_PAGE_SSC_ADDR);
+		if (ret < 0) {
+			return ret;
+		}
+
+		if (config->rxc_ssc) {
+			ret = phy_rt_rtl8211f_write(dev, PHY_RT_RTL8211F_SSC_RXC_REG,
+						    PHY_RT_RTL8211F_SSC_RXC_CONFIG);
+		}
+		if (config->sysclk_ssc) {
+			ret = phy_rt_rtl8211f_write(dev, PHY_RT_RTL8211F_SSC_SYSCLK_REG,
+						    PHY_RT_RTL8211F_SSC_SYSCLK_CONFIG);
+		}
+
+		ret |= phy_rt_rtl8211f_write(dev, PHY_RT_RTL8211F_PAGSR_REG, 0);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	if (config->clkout_ssc) {
+		ret = phy_rt_rtl8211f_write(dev, PHY_RT_RTL8211F_PAGSR_REG,
+					    PHY_RT_RTL8211F_PAGE_CLKOUT_SSC_ADDR);
+		if (ret < 0) {
+			return ret;
+		}
+
+		ret = phy_rt_rtl8211f_write(dev, PHY_RT_RTL8211F_SSC_CLKOUT_REG,
+					    PHY_RT_RTL8211F_SSC_CLKOUT_CONFIG);
+
+		ret |= phy_rt_rtl8211f_write(dev, PHY_RT_RTL8211F_PAGSR_REG, 0);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	if (config->rxc_ssc || config->clkout_ssc || config->clkout_disable) {
+		ret = phy_rt_rtl8211f_write(dev, PHY_RT_RTL8211F_PAGSR_REG,
+					    PHY_RT_RTL8211F_PAGE_PHY_CFG_ADDR);
+		if (ret < 0) {
+			return ret;
+		}
+
+		ret = phy_rt_rtl8211f_read(dev, PHY_RT_RTL8211F_PHYCR2_REG, &reg_val);
+		if (ret == 0) {
+			if (config->rxc_ssc) {
+				reg_val |= PHY_RT_RTL8211F_PHYCR2_RXC_SSC;
+			}
+			if (config->clkout_ssc) {
+				reg_val |= PHY_RT_RTL8211F_PHYCR2_CLKOUT_SSC;
+			}
+			if (config->clkout_disable) {
+				reg_val &= ~PHY_RT_RTL8211F_PHYCR2_CLKOUT_EN;
+			}
+			ret = phy_rt_rtl8211f_write(dev, PHY_RT_RTL8211F_PHYCR2_REG, reg_val);
+		}
+
+		ret |= phy_rt_rtl8211f_write(dev, PHY_RT_RTL8211F_PAGSR_REG, 0);
+		if (ret < 0) {
+			return ret;
+		}
+
+		if (config->clkout_disable) {
+			ret = phy_rt_rtl8211f_soft_reset(dev);
+		}
 	}
 
 	return ret;
@@ -541,6 +653,12 @@ static int phy_rt_rtl8211f_init(const struct device *dev)
 		return ret;
 	}
 
+	ret = phy_rt_rtl8211f_cfg_ssc(dev);
+	if (ret < 0) {
+		LOG_ERR("Error setting SSC configuration for phy (%d)", config->addr);
+		return ret;
+	}
+
 	k_work_init_delayable(&data->phy_monitor_work, phy_rt_rtl8211f_monitor_work_handler);
 
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
@@ -663,6 +781,10 @@ static DEVICE_API(ethphy, rt_rtl8211f_phy_api) = {
 		.mdio_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),			\
 		.default_speeds = PHY_INST_GENERATE_DEFAULT_SPEEDS(n),		\
 		.rgmii_delay = DT_INST_ENUM_IDX(n, realtek_rgmii_delay),		\
+		.rxc_ssc = DT_INST_PROP(n, realtek_rxc_ssc_enable),		\
+		.sysclk_ssc = DT_INST_PROP(n, realtek_sysclk_ssc_enable),	\
+		.clkout_ssc = DT_INST_PROP(n, realtek_clkout_ssc_enable),	\
+		.clkout_disable = DT_INST_PROP(n, realtek_clkout_disable),	\
 		RESET_GPIO(n)							\
 		INTERRUPT_GPIO(n)						\
 	};									\
