@@ -13,6 +13,10 @@
 
 #define CONFIG_GEN_IRQ_START_VECTOR 0
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /**
  * @cond INTERNAL_HIDDEN
  */
@@ -294,6 +298,10 @@ static ALWAYS_INLINE bool arch_cpu_irqs_are_enabled(void)
  * @return True if interrupt is enabled, false otherwise.
  */
 int xtensa_irq_is_enabled(unsigned int irq);
+
+#ifdef __cplusplus
+}
+#endif
 
 #include <zephyr/irq.h>
 
