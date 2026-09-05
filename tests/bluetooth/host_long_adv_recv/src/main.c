@@ -156,6 +156,19 @@ static void generic_success(struct net_buf *buf, struct net_buf **evt, uint8_t l
 	ccst->status = BT_HCI_ERR_SUCCESS;
 }
 
+/* Generic command status with success status. */
+static void generic_status(struct net_buf *buf, struct net_buf **evt, uint8_t len, uint16_t opcode)
+{
+	struct bt_hci_evt_cmd_status *cs;
+
+	*evt = bt_buf_get_evt(BT_HCI_EVT_CMD_STATUS, false, K_FOREVER);
+	evt_create(*evt, BT_HCI_EVT_CMD_STATUS, sizeof(*cs));
+	cs = net_buf_add(*evt, sizeof(*cs));
+	cs->status = BT_HCI_ERR_SUCCESS;
+	cs->ncmd = 1U;
+	cs->opcode = sys_cpu_to_le16(opcode);
+}
+
 /* Bogus handler for BT_HCI_OP_READ_LOCAL_FEATURES. */
 static void read_local_features(struct net_buf *buf, struct net_buf **evt, uint8_t len,
 				uint16_t opcode)
@@ -221,6 +234,7 @@ static const struct cmd_handler cmds[] = {
 	  generic_success },
 	{ BT_HCI_OP_LE_SET_EXT_SCAN_PARAM, 0, generic_success },
 	{ BT_HCI_OP_LE_SET_EXT_SCAN_ENABLE, 0, generic_success },
+	{ BT_HCI_OP_LE_PER_ADV_CREATE_SYNC, 0, generic_status },
 	{ BT_HCI_OP_RESET, 0, generic_success },
 };
 
@@ -360,6 +374,83 @@ static void scan_timeout_cb(void)
 	zassert_unreachable("Timeout should not happen");
 }
 
+#define SYNC_HANDLE 0x0001
+
+/* Send a periodic advertising sync established event for the pending sync. */
+static void send_per_adv_sync_established(const bt_addr_le_t *addr, uint8_t sid)
+{
+	struct bt_hci_evt_le_meta_event *meta_evt;
+	struct bt_hci_evt_le_per_adv_sync_established *evt;
+	struct net_buf *buf;
+
+	buf = bt_buf_get_rx(BT_BUF_EVT, K_FOREVER);
+	evt_create(buf, BT_HCI_EVT_LE_META_EVENT, sizeof(*meta_evt) + sizeof(*evt));
+	meta_evt = net_buf_add(buf, sizeof(*meta_evt));
+	le_meta_evt_create(meta_evt, BT_HCI_EVT_LE_PER_ADV_SYNC_ESTABLISHED);
+	evt = net_buf_add(buf, sizeof(*evt));
+	evt->status = BT_HCI_ERR_SUCCESS;
+	evt->handle = sys_cpu_to_le16(SYNC_HANDLE);
+	evt->sid = sid;
+	bt_addr_le_copy(&evt->adv_addr, addr);
+	evt->phy = BT_HCI_LE_PHY_1M;
+	evt->interval = sys_cpu_to_le16(0x0100);
+	evt->clock_accuracy = 0;
+
+	bt_recv_job_submit(buf);
+}
+
+/* Send a periodic advertising report carrying data_len bytes of data, whose length
+ * field claims claimed_len bytes.
+ */
+static void send_per_adv_report(uint8_t data_status, const uint8_t *data, uint8_t data_len,
+				uint8_t claimed_len)
+{
+	struct bt_hci_evt_le_meta_event *meta_evt;
+	struct bt_hci_evt_le_per_advertising_report *evt;
+	struct net_buf *buf;
+
+	buf = bt_buf_get_rx(BT_BUF_EVT, K_FOREVER);
+	evt_create(buf, BT_HCI_EVT_LE_META_EVENT, sizeof(*meta_evt) + sizeof(*evt) + data_len);
+	meta_evt = net_buf_add(buf, sizeof(*meta_evt));
+	le_meta_evt_create(meta_evt, BT_HCI_EVT_LE_PER_ADVERTISING_REPORT);
+	evt = net_buf_add(buf, sizeof(*evt));
+	evt->handle = sys_cpu_to_le16(SYNC_HANDLE);
+	evt->tx_power = 0;
+	evt->rssi = 0;
+	evt->cte_type = BT_HCI_LE_NO_CTE;
+	evt->data_status = data_status;
+	evt->length = claimed_len;
+	net_buf_add_mem(buf, data, data_len);
+
+	bt_recv_job_submit(buf);
+}
+
+static K_SEM_DEFINE(per_adv_synced_sem, 0, 1);
+
+static void per_adv_sync_synced_cb(struct bt_le_per_adv_sync *sync,
+				   struct bt_le_per_adv_sync_synced_info *info)
+{
+	k_sem_give(&per_adv_synced_sem);
+}
+
+static void per_adv_sync_term_cb(struct bt_le_per_adv_sync *sync,
+				 const struct bt_le_per_adv_sync_term_info *info)
+{
+	zassert_unreachable("Sync should not be terminated");
+}
+
+static void per_adv_sync_recv_cb(struct bt_le_per_adv_sync *sync,
+				 const struct bt_le_per_adv_sync_recv_info *info,
+				 struct net_buf_simple *buf)
+{
+	const struct test_adv_report expected = get_expected_report();
+
+	LOG_DBG("Received periodic adv report with length %u", buf->len);
+
+	zassert_equal(buf->len, expected.length, "Lengths should be equal");
+	zassert_mem_equal(buf->data, expected.data, buf->len, "Data should be equal");
+}
+
 static void generate_sequence(uint8_t *dest, uint16_t len, uint8_t range_start, uint8_t range_end)
 {
 	uint16_t written = 0;
@@ -374,14 +465,18 @@ static void generate_sequence(uint8_t *dest, uint16_t len, uint8_t range_start, 
 	}
 }
 
-ZTEST_SUITE(long_adv_rx_tests, NULL, NULL, NULL, NULL, NULL);
+static void *suite_setup(void)
+{
+	zassert_true((bt_enable(NULL) == 0), "bt_enable failed");
+
+	return NULL;
+}
+
+ZTEST_SUITE(long_adv_rx_tests, NULL, suite_setup, NULL, NULL, NULL);
 
 ZTEST(long_adv_rx_tests, test_host_long_adv_recv)
 {
 	struct test_adv_report expected_reports[2];
-
-	/* Go! Wait until Bluetooth initialization is done  */
-	zassert_true((bt_enable(NULL) == 0), "bt_enable failed");
 
 	static struct bt_le_scan_cb scan_callbacks = { .recv = scan_recv_cb,
 						       .timeout = scan_timeout_cb };
@@ -508,5 +603,68 @@ ZTEST(long_adv_rx_tests, test_host_long_adv_recv)
 	/* Check that reports from a different advertiser works after truncation */
 	send_adv_report(&report_b_1);
 	send_adv_report(&report_b_2);
+	zassert_equal(1, get_expected_report_fake.call_count);
+}
+
+ZTEST(long_adv_rx_tests, test_host_per_adv_report_bad_len)
+{
+	static struct bt_le_per_adv_sync_cb sync_callbacks = {
+		.synced = per_adv_sync_synced_cb,
+		.term = per_adv_sync_term_cb,
+		.recv = per_adv_sync_recv_cb,
+	};
+	struct bt_le_per_adv_sync_param param = {
+		.sid = 1,
+		.timeout = BT_GAP_PER_ADV_MIN_TIMEOUT,
+	};
+	struct bt_le_per_adv_sync *sync;
+	struct test_adv_report report = { .length = 20 };
+	uint8_t fragment[10];
+	int err;
+
+	RESET_FAKE(get_expected_report);
+	FFF_RESET_HISTORY();
+
+	bt_addr_le_create_static(&param.addr);
+	generate_sequence(fragment, sizeof(fragment), 'A', 'Z');
+	generate_sequence(report.data, report.length, 'a', 'z');
+
+	err = bt_le_per_adv_sync_cb_register(&sync_callbacks);
+	zassert_equal(err, 0, "bt_le_per_adv_sync_cb_register failed (err %d)", err);
+
+	err = bt_le_per_adv_sync_create(&param, &sync);
+	zassert_equal(err, 0, "bt_le_per_adv_sync_create failed (err %d)", err);
+
+	send_per_adv_sync_established(&param.addr, param.sid);
+	err = k_sem_take(&per_adv_synced_sem, K_SECONDS(1));
+	zassert_equal(err, 0, "Sync not established (err %d)", err);
+
+	/* A partial fragment claiming more data than the event carries. The report is
+	 * discarded up to and including the next complete fragment, and the one after
+	 * that is delivered intact.
+	 */
+	SET_RETURN_SEQ(get_expected_report, &report, 1);
+	send_per_adv_report(BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL, fragment, sizeof(fragment),
+			    sizeof(fragment));
+	send_per_adv_report(BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL, fragment, sizeof(fragment),
+			    4 * sizeof(fragment));
+	send_per_adv_report(BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_COMPLETE, report.data, report.length,
+			    report.length);
+	send_per_adv_report(BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_COMPLETE, report.data, report.length,
+			    report.length);
+	zassert_equal(1, get_expected_report_fake.call_count);
+	RESET_FAKE(get_expected_report);
+	FFF_RESET_HISTORY();
+
+	/* Same with the complete fragment of a reassembled report being the bad one */
+	SET_RETURN_SEQ(get_expected_report, &report, 1);
+	send_per_adv_report(BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_PARTIAL, fragment, sizeof(fragment),
+			    sizeof(fragment));
+	send_per_adv_report(BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_COMPLETE, fragment, sizeof(fragment),
+			    4 * sizeof(fragment));
+	send_per_adv_report(BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_COMPLETE, report.data, report.length,
+			    report.length);
+	send_per_adv_report(BT_HCI_LE_ADV_EVT_TYPE_DATA_STATUS_COMPLETE, report.data, report.length,
+			    report.length);
 	zassert_equal(1, get_expected_report_fake.call_count);
 }
