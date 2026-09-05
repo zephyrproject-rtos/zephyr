@@ -147,14 +147,15 @@
 	};
 
 	soc {
-		adc1: adc@42028000 {
+		adc12_common: adc@42028000 {
 			compatible = "st,stm32n6-adc", "st,stm32-adc";
+			#address-cells = <1>;
+			#size-cells = <1>;
 			reg = <0x42028000 0x100>;
+			ranges;
 			clocks = <&rcc STM32_CLOCK(AHB2, 10)>,
 				 <&rcc STM32_SRC_PSIS ADCDAC_SEL(1)>;
 			clock-names = "adcx", "adc_ker";
-			interrupts = <32 0>;
-			#io-channel-cells = <1>;
 			st,adc-resolutions = <12 10 8 6>;
 			sampling-times = <3 5 8 13 25 48 139 289>;
 			st,adc-sequencer = "programmable";
@@ -163,6 +164,13 @@
 			st,adc-has-deep-powerdown;
 			st,adc-has-channel-preselection;
 			status = "disabled";
+
+			adc1: adc@42028000 {
+				reg = <0x42028000 0x100>;
+				interrupts = <32 0>;
+				#io-channel-cells = <1>;
+				status = "disabled";
+			};
 		};
 
 		crc: crc@40023000 {

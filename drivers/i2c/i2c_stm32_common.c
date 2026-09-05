@@ -378,7 +378,7 @@ restore:
 #define I2C_DMA_INIT(index, dir)								\
 	.dir##_dma = {										\
 		.dev_dma = COND_CODE_1(DT_INST_DMAS_HAS_NAME(index, dir),			\
-				(DEVICE_DT_GET(STM32_DMA_CTLR(index, dir))), (NULL)),		\
+				(DEVICE_DT_GET(STM32_DT_INST_DMA_CTLR(index, dir))), (NULL)),	\
 		.dma_channel = COND_CODE_1(DT_INST_DMAS_HAS_NAME(index, dir),			\
 				(DT_INST_DMAS_CELL_BY_NAME(index, dir, channel)), (-1)),	\
 	},
@@ -404,22 +404,22 @@ void i2c_stm32_dma_rx_cb(const struct device *dma_dev __unused, void *user_data 
 #define I2C_DMA_DATA_INIT(index, dir, src, dest)						\
 	IF_ENABLED(DT_INST_DMAS_HAS_NAME(index, dir),						\
 		(.dma_##dir##_cfg = {								\
-			.dma_slot = STM32_DMA_SLOT(index, dir, slot),				\
+			.dma_slot = STM32_DT_INST_DMA_SLOT(index, dir),				\
 			.channel_direction = STM32_DMA_CONFIG_DIRECTION(			\
-				STM32_DMA_CHANNEL_CONFIG(index, dir)),				\
+				STM32_DT_INST_DMA_CHANNEL_CONFIG(index, dir)),			\
 			.cyclic =  STM32_DMA_CONFIG_CYCLIC(					\
-				STM32_DMA_CHANNEL_CONFIG(index, dir)),				\
+				STM32_DT_INST_DMA_CHANNEL_CONFIG(index, dir)),			\
 			.channel_priority = STM32_DMA_CONFIG_PRIORITY(				\
-				STM32_DMA_CHANNEL_CONFIG(index, dir)),				\
+				STM32_DT_INST_DMA_CHANNEL_CONFIG(index, dir)),			\
 			.source_data_size = STM32_DMA_CONFIG_##src##_DATA_SIZE(			\
-				STM32_DMA_CHANNEL_CONFIG(index, dir)),				\
+				STM32_DT_INST_DMA_CHANNEL_CONFIG(index, dir)),			\
 			.dest_data_size = STM32_DMA_CONFIG_##dest##_DATA_SIZE(			\
-				STM32_DMA_CHANNEL_CONFIG(index, dir)),				\
+				STM32_DT_INST_DMA_CHANNEL_CONFIG(index, dir)),			\
 			/* single transfers (burst length = data size) */			\
 			.source_burst_length = STM32_DMA_CONFIG_##src##_DATA_SIZE(		\
-				STM32_DMA_CHANNEL_CONFIG(index, dir)),				\
+				STM32_DT_INST_DMA_CHANNEL_CONFIG(index, dir)),			\
 			.dest_burst_length = STM32_DMA_CONFIG_##dest##_DATA_SIZE(		\
-				STM32_DMA_CHANNEL_CONFIG(index, dir)),				\
+				STM32_DT_INST_DMA_CHANNEL_CONFIG(index, dir)),			\
 			.dma_callback = i2c_stm32_dma_##dir##_cb,				\
 		},))
 

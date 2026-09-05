@@ -92,11 +92,14 @@
 	apb2-prescaler = <2>;
 };
 
+&adc123_common {
+	st,adc-prescaler = <2>;
+	status = "okay";
+};
+
 &adc1 {
 	pinctrl-0 = <&adc1_in0_pa0>;
 	pinctrl-names = "default";
-	st,adc-clock-source = "SYNC";
-	st,adc-prescaler = <2>;
 	status = "okay";
 };
 

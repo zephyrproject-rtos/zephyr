@@ -69,7 +69,11 @@
 	status = "okay";
 };
 
-&adc1 {
+&adc12_common {
 	st,adc-prescaler = <4>;
+	status = "okay";
+};
+
+&adc1 {
 	status = "okay";
 };

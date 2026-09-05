@@ -277,13 +277,17 @@ qsh_030_i2c: &i2c1 {};
 	disk-name = "SD";
 };
 
+&adc123_common {
+	st,adc-clock-source = "SYNC";
+	st,adc-prescaler = <1>;
+	status = "okay";
+};
+
 &adc1 {
 	status = "okay";
 	pinctrl-0 = <&adc1_in5_pa0 &adc1_in12_pa7 &adc1_in15_pb0
 		     &adc1_in4_pc3 &adc1_in13_pc4>;
 	pinctrl-names = "default";
-	st,adc-clock-source = "SYNC";
-	st,adc-prescaler = <1>;
 };
 
 zephyr_udc0: &usbotg_fs {
