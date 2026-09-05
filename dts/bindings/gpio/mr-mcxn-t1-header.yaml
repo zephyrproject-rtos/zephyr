@@ -1,0 +1,30 @@
+# SPDX-FileCopyrightText: 2026 CogniPilot Foundation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    GPIO control lines exposed on the MR-MCXN-T1 stacking header.
+
+    The MR-MCXN-T1 carries a stacking header that mates a series of expansion
+    boards (optical flow, GNSS, flex IO). This binding maps the header's raw
+    GPIO control lines (sensor interrupts, resets, indicator and user inputs)
+    so that expansion-board overlays reference stable nexus names instead of
+    SoC GPIO controllers. The multiplexed peripheral buses (SPI, I2C, UART,
+    PWM, ADC) are exposed separately as labeled bus nodes on the board
+    devicetree.
+
+    The mapped lines are:
+
+        0  Optical flow AFBR-S50 rangefinder interrupt
+        1  Optical flow ICM-42688 IMU interrupt
+        2  Optical flow ICM-45686 IMU interrupt
+        3  Optical flow PAA3905 flow-sensor interrupt
+        4  GNSS u-blox F9P reset
+        5  GNSS RM3100 magnetometer data-ready
+        6  GNSS fix-status indicator
+        7  GNSS F9P external-interrupt time-mark
+        8  User input 0
+        9  User input 1
+
+compatible: "mr-mcxn-t1-header"
+
+include: [gpio-nexus.yaml, base.yaml]

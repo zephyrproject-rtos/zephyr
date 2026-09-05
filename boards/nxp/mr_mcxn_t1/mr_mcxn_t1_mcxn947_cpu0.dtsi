@@ -1,0 +1,147 @@
+/*
+ * SPDX-FileCopyrightText: 2024-2025 NXP
+ * SPDX-FileCopyrightText: 2026 CogniPilot Foundation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Common dts file to enable supported features for CPU 0. */
+/dts-v1/;
+
+#include <nxp/mcx/mcxn/nxp_mcxn94x.dtsi>
+#include "mr_mcxn_t1.dtsi"
+
+/ {
+	cpus {
+		/delete-node/ cpu@1;
+	};
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash;
+		zephyr,flash-controller = &fmu;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,uart-mcumgr = &flexcomm1_lpuart1;
+		zephyr,console = &flexcomm1_lpuart1;
+		zephyr,shell-uart = &flexcomm1_lpuart1;
+		zephyr,canbus = &flexcan0;
+		zephyr,code-cpu1-partition = &slot1_partition;
+	};
+
+	aliases {
+		watchdog0 = &wwdt0;
+		rtc = &rtc;
+		led-strip = &led_strip;
+	};
+};
+
+/*
+ * Default for this board is to allocate SRAM0-5 to cpu0 but the
+ * application can have an application specific device tree to
+ * allocate the SRAM0-7 differently.
+ *
+ * For example, SRAM0-6 could be allocated to cpu0 with only SRAM7
+ * for cpu1. This would require the value of sram0 to have a DT_SIZE_K
+ * of 384. You would have to make updates to cpu1 sram settings as well.
+ */
+&sram0 {
+	compatible = "mmio-sram";
+	reg = <0x20000000 DT_SIZE_K(320)>;
+};
+
+&mbox {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio2 {
+	status = "okay";
+};
+
+&gpio3 {
+	status = "okay";
+};
+
+&gpio4 {
+	status = "okay";
+};
+
+&edma0 {
+	status = "okay";
+};
+
+&flexcomm1 {
+	status = "okay";
+};
+
+&flexcomm1_lpuart1 {
+	status = "okay";
+};
+
+/* On-board hub IMU SPI. */
+&flexcomm8 {
+	status = "okay";
+};
+
+&flexcomm8_lpspi8 {
+	status = "okay";
+};
+
+&flexio0 {
+	status = "okay";
+};
+
+&enet {
+	status = "okay";
+};
+
+&enet_mdio {
+	status = "okay";
+};
+
+&wwdt0 {
+	status = "okay";
+};
+
+&flexcan0 {
+	status = "okay";
+};
+
+&flexcan1 {
+	status = "okay";
+};
+
+&ctimer0 {
+	status = "okay";
+};
+
+&vref {
+	status = "okay";
+};
+
+zephyr_udc0: &usb1 {
+	status = "okay";
+	phy-handle = <&usbphy1>;
+};
+
+&usbphy1 {
+	status = "okay";
+	tx-d-cal = <4>;
+	tx-cal-45-dp-ohms = <7>;
+	tx-cal-45-dm-ohms = <7>;
+};
+
+&rtc {
+	status = "okay";
+	/* clock-src 0 selects the FRO16K internal RC (SoC default). The
+	 * board's 32.768 kHz crystal (Y2) is intentionally left off. See the
+	 * VBAT oscillator note in board.c.
+	 */
+};
