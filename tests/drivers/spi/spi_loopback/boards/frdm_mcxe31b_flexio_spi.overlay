@@ -9,13 +9,15 @@
  * This is the same jumper as the LPSPI0 loopback (frdm_mcxe31b.overlay).
  */
 
+#define SPI_LOOPBACK_FAST_HZ 4000000
+
 /* FlexIO reuses the Arduino SPI pads, so LPSPI0 must release them. */
 &lpspi_0 {
 	status = "disabled";
 };
 
 &flexio {
-	flexio_spi: flexio_spi {
+	spi_loopback: flexio_spi: flexio_spi {
 		compatible = "nxp,flexio-spi";
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -26,21 +28,11 @@
 		pinctrl-0 = <&pinmux_flexio_spi>;
 		pinctrl-names = "default";
 		status = "okay";
-
-		slow@0 {
-			compatible = "test-spi-loopback-slow";
-			reg = <0>;
-			spi-max-frequency = <500000>;
-		};
-
-		fast@0 {
-			compatible = "test-spi-loopback-fast";
-			reg = <0>;
-			spi-max-frequency = <4000000>;
-		};
 	};
 };
 
 &gpioe_l {
 	status = "okay";
 };
+
+#include "../spi-loopback.dtsi"

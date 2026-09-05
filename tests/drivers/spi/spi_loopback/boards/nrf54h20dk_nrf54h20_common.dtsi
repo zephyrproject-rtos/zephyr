@@ -33,25 +33,16 @@
 	};
 };
 
-&spi130 {
+#define SPI_LOOPBACK_SLOW_HZ DT_FREQ_K(500)
+#define SPI_LOOPBACK_FAST_HZ DT_FREQ_M(8)
+
+spi_loopback: &spi130 {
 	pinctrl-0 = <&spi130_default>;
 	pinctrl-1 = <&spi130_sleep>;
 	pinctrl-names = "default", "sleep";
 	overrun-character = <0x00>;
 	zephyr,pm-device-runtime-auto;
 	status = "okay";
-
-	slow@0 {
-		compatible = "test-spi-loopback-slow";
-		reg = <0>;
-		spi-max-frequency = <DT_FREQ_K(500)>;
-	};
-
-	fast@0 {
-		compatible = "test-spi-loopback-fast";
-		reg = <0>;
-		spi-max-frequency = <DT_FREQ_M(8)>;
-	};
 
 	cs-gpios = <&gpio0 10 0>;
 };
@@ -63,3 +54,5 @@
 &gpiote130 {
 	status = "okay";
 };
+
+#include "../spi-loopback.dtsi"

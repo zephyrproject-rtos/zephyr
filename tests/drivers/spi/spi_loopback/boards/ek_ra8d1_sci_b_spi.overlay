@@ -3,6 +3,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#define SPI_LOOPBACK_SLOW_HZ 1000000
+#define SPI_LOOPBACK_FAST_HZ 2500000
+
 &pinctrl {
 	sci3_spi_default: sci3_spi_default {
 		group1 {
@@ -19,20 +22,8 @@
 	pinctrl-0 = <&sci3_spi_default>;
 	pinctrl-names = "default";
 
-	spi {
+	spi_loopback: spi {
 		status = "okay";
-
-		slow@0 {
-			compatible = "test-spi-loopback-slow";
-			reg = <0>;
-			spi-max-frequency = <1000000>;
-		};
-
-		fast@0 {
-			compatible = "test-spi-loopback-fast";
-			reg = <0>;
-			spi-max-frequency = <2500000>;
-		};
 	};
 
 	uart {
@@ -43,3 +34,5 @@
 		status = "disabled";
 	};
 };
+
+#include "../spi-loopback.dtsi"

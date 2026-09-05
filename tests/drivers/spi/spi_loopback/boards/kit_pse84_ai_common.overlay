@@ -5,7 +5,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-spi1: &scb10 {
+#define SPI_LOOPBACK_SLOW_HZ 3000000
+#define SPI_LOOPBACK_FAST_HZ 3000000
+
+spi_loopback: &scb10 {
 	#address-cells = <1>;
 	#size-cells = <0>;
 	compatible = "infineon,spi";
@@ -16,18 +19,6 @@ spi1: &scb10 {
 	cs-gpios = <&gpio_prt16 3 GPIO_ACTIVE_LOW>;
 
 	clocks = <&peri0_group1_16bit_2>;
-
-	slow@0 {
-		compatible = "test-spi-loopback-slow";
-		reg = <0>;
-		spi-max-frequency = <3000000>;
-	};
-
-	fast@0 {
-		compatible = "test-spi-loopback-fast";
-		reg = <0>;
-		spi-max-frequency = <3000000>;
-	};
 };
 
 &peri0_group1_16bit_2 {
@@ -48,3 +39,5 @@ spi1: &scb10 {
 	drive-strength = "full";
 	drive-push-pull;
 };
+
+#include "../spi-loopback.dtsi"

@@ -9,7 +9,7 @@
 	status = "okay";
 };
 
-&sercom4 {
+spi_loopback: &sercom4 {
 	/* Internally connect MOSI to MISO for loop-back operation */
 	dipo = <3>;
 	dopo = <2>;
@@ -20,16 +20,6 @@
 	/* Configure DMA */
 	dmas = <&dmac 0 12>, <&dmac 1 13>;
 	dma-names = "rx", "tx";
-
-	slow@0 {
-		compatible = "test-spi-loopback-slow";
-		reg = <0>;
-		spi-max-frequency = <500000>;
-	};
-
-	fast@0 {
-		compatible = "test-spi-loopback-fast";
-		reg = <0>;
-		spi-max-frequency = <16000000>;
-	};
 };
+
+#include "../spi-loopback.dtsi"

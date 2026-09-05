@@ -8,16 +8,8 @@
  * spi0 MOSI (J1-11, PTC6) --> spi0 MISO (J1-1, PTC7)
  */
 
-&spi0 {
-	slow@0 {
-		compatible = "test-spi-loopback-slow";
-		reg = <0>;
-		spi-max-frequency = <500000>;
-	};
+#define SPI_LOOPBACK_FAST_HZ 10000000
 
-	fast@0 {
-		compatible = "test-spi-loopback-fast";
-		reg = <0>;
-		spi-max-frequency = <10000000>;
-	};
-};
+spi_loopback: &spi0 {};
+
+#include "../spi-loopback.dtsi"
