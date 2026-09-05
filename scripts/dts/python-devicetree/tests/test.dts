@@ -704,5 +704,15 @@
 			reg = <1>;
 			clock-frequency = <2000>;
 		};
+
+		cpu@2 {
+			/* No 'compatible': binding should be synthesized. */
+			device_type = "cpu";
+			reg = <2>;
+			clock-frequency = <3000>;
+			enable-method = "spin-table";
+			cpu-release-addr = <0xa0000000>;
+			status = "disabled";
+		};
 	};
 };
