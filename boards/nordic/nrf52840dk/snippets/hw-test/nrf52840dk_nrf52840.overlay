@@ -57,3 +57,12 @@
 		spi-max-frequency = <16000000>;
 	};
 };
+
+/ {
+	adc_reference_voltage: adc-reference-voltage {
+		compatible = "test-adc-reference-voltage";
+		io-channels = <&adc 0>;
+		reference-mv = <3000>;
+		expected-accuracy = <60>;
+	};
+};
