@@ -1292,6 +1292,9 @@ static void l2cap_chan_seg_recv_rx_init(struct bt_l2cap_le_chan *chan)
 
 static void l2cap_chan_rx_init(struct bt_l2cap_le_chan *chan)
 {
+	uint16_t max_mps;
+	uint16_t min_mps;
+
 	LOG_DBG("chan %p", chan);
 
 	chan->rx.cid = 0U;
@@ -1314,9 +1317,25 @@ static void l2cap_chan_rx_init(struct bt_l2cap_le_chan *chan)
 
 	/* MPS shall not be bigger than MTU + BT_L2CAP_SDU_HDR_SIZE as the
 	 * remaining bytes cannot be used.
+	 *
+	 * An application may ask for a smaller MPS by setting rx.mps before
+	 * connecting or accepting. Clamp the request into the range the
+	 * protocol and the receive buffers allow, the same way
+	 * l2cap_chan_seg_recv_rx_init() does. Clamping rather than taking the
+	 * value verbatim keeps this function idempotent, so re-initialising a
+	 * channel object that is being reused cannot end up with an MPS that
+	 * is out of range or inconsistent with rx.mtu.
 	 */
-	chan->rx.mps = MIN(chan->rx.mtu + BT_L2CAP_SDU_HDR_SIZE,
-			   BT_L2CAP_RX_MTU);
+	max_mps = MIN(chan->rx.mtu + BT_L2CAP_SDU_HDR_SIZE, BT_L2CAP_RX_MTU);
+	min_mps = MIN(BT_L2CAP_ECRED_MIN_MPS, max_mps);
+
+	if (chan->rx.mps == 0U || chan->rx.mps > max_mps) {
+		chan->rx.mps = max_mps;
+	} else if (chan->rx.mps < min_mps) {
+		LOG_WRN("RX MPS %u below the minimum of %u, raising it",
+			chan->rx.mps, min_mps);
+		chan->rx.mps = min_mps;
+	}
 
 	/* Truncate MTU if channel have disabled segmentation but still have
 	 * set an MTU which requires it.
