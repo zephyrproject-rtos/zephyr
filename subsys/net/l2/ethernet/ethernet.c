@@ -232,9 +232,8 @@ BUILD_ASSERT(NET_ETH_MCAST_FILTER_COUNT > 0,
 	     "CONFIG_NET_L2_ETHERNET_MCAST_FILTER_COUNT");
 
 /* Program the multicast address to the receive filter of the device. */
-static int ethernet_mcast_filter_set(struct net_if *iface,
-				     const struct net_eth_addr *mac_addr,
-				     bool is_joined)
+static int ethernet_mcast_filter_set(struct net_if *iface, const struct net_eth_addr *mac_addr,
+				     uint16_t vid, bool is_joined)
 {
 	struct ethernet_config cfg = {
 		.filter = {
@@ -244,6 +243,7 @@ static int ethernet_mcast_filter_set(struct net_if *iface,
 	};
 	const struct device *dev = net_if_get_device(iface);
 	const struct ethernet_api *api;
+	enum ethernet_hw_caps caps;
 
 	NET_ASSERT(dev != NULL);
 
@@ -254,14 +254,23 @@ static int ethernet_mcast_filter_set(struct net_if *iface,
 		return -ENOTSUP;
 	}
 
-	if (!(net_eth_get_hw_capabilities(iface) & ETHERNET_HW_FILTERING)) {
+	caps = net_eth_get_hw_capabilities(iface);
+
+	if (!(caps & ETHERNET_HW_FILTERING)) {
 		return -ENOTSUP;
+	}
+
+	if (IS_ENABLED(CONFIG_NET_VLAN)) {
+		if (!(caps & ETHERNET_HW_VLAN) && vid != NET_VLAN_TAG_PRIORITY) {
+			return -ENOTSUP;
+		}
 	}
 
 	if (!api || !api->set_config) {
 		return -ENOTSUP;
 	}
 
+	cfg.filter.vid = vid;
 	memcpy(&cfg.filter.mac_address, mac_addr, sizeof(cfg.filter.mac_address));
 
 	return api->set_config(dev, iface, ETHERNET_CONFIG_TYPE_FILTER, &cfg);
@@ -298,11 +307,12 @@ static struct ethernet_context *ethernet_mcast_ctx(struct net_if *iface)
 	return net_if_l2_data(iface);
 }
 
-static struct net_eth_mcast_addr *ethernet_mcast_addr_find(
-	struct ethernet_context *ctx, const struct net_eth_addr *addr)
+static struct net_eth_mcast_addr *ethernet_mcast_addr_find(struct ethernet_context *ctx,
+							   const struct net_eth_addr *addr,
+							   uint16_t vid)
 {
 	ARRAY_FOR_EACH_PTR(ctx->mcast_addrs, maddr) {
-		if (maddr->is_used &&
+		if (maddr->is_used && maddr->vid == vid &&
 		    memcmp(&maddr->addr, addr, sizeof(*addr)) == 0) {
 			return maddr;
 		}
@@ -311,12 +321,16 @@ static struct net_eth_mcast_addr *ethernet_mcast_addr_find(
 	return NULL;
 }
 
-int net_eth_mcast_addr_add(struct net_if *iface, const struct net_eth_addr *addr)
+int net_eth_vlan_mcast_addr_add(struct net_if *iface, const struct net_eth_addr *addr, uint16_t vid)
 {
 	struct net_eth_mcast_addr *maddr, *free_slot = NULL;
 	struct ethernet_context *ctx;
 	bool program = false;
 	int ret = 0;
+
+	if (!IS_ENABLED(CONFIG_NET_VLAN) && vid != NET_VLAN_TAG_PRIORITY) {
+		return -ENOTSUP;
+	}
 
 	if (iface == NULL || addr == NULL) {
 		return -EINVAL;
@@ -334,12 +348,12 @@ int net_eth_mcast_addr_add(struct net_if *iface, const struct net_eth_addr *addr
 
 	k_mutex_lock(&mcast_lock, K_FOREVER);
 
-	maddr = ethernet_mcast_addr_find(ctx, addr);
+	maddr = ethernet_mcast_addr_find(ctx, addr, vid);
 	if (maddr != NULL) {
 		atomic_inc(&maddr->atomic_ref);
 
-		NET_DBG("iface %d (%p) address %s already joined (ref %ld)",
-			net_if_get_by_iface(iface), iface,
+		NET_DBG("iface %d (%p) VLAN %u address %s already joined (ref %ld)",
+			net_if_get_by_iface(iface), iface, (unsigned int)vid,
 			net_sprint_ll_addr(addr->addr, sizeof(*addr)),
 			atomic_get(&maddr->atomic_ref));
 		goto out;
@@ -371,12 +385,13 @@ int net_eth_mcast_addr_add(struct net_if *iface, const struct net_eth_addr *addr
 	}
 
 	free_slot->is_used = true;
+	free_slot->vid = vid;
 	free_slot->addr = *addr;
 	atomic_set(&free_slot->atomic_ref, 1);
 	program = true;
 
-	NET_DBG("iface %d (%p) address %s joined", net_if_get_by_iface(iface),
-		iface, net_sprint_ll_addr(addr->addr, sizeof(*addr)));
+	NET_DBG("iface %d (%p) VLAN %u address %s joined", net_if_get_by_iface(iface), iface,
+		(unsigned int)vid, net_sprint_ll_addr(addr->addr, sizeof(*addr)));
 
 out:
 	k_mutex_unlock(&mcast_lock);
@@ -392,7 +407,7 @@ out:
 	 * device later reprograms its filter from it.
 	 */
 	if (program) {
-		ret = ethernet_mcast_filter_set(iface, addr, true);
+		ret = ethernet_mcast_filter_set(iface, addr, vid, true);
 		if (ret == -ENOTSUP) {
 			ret = 0;
 		}
@@ -401,12 +416,16 @@ out:
 	return ret;
 }
 
-int net_eth_mcast_addr_rm(struct net_if *iface, const struct net_eth_addr *addr)
+int net_eth_vlan_mcast_addr_rm(struct net_if *iface, const struct net_eth_addr *addr, uint16_t vid)
 {
 	struct net_eth_mcast_addr *maddr;
 	struct ethernet_context *ctx;
 	bool program = false;
 	int ret = 0;
+
+	if (!IS_ENABLED(CONFIG_NET_VLAN) && vid != NET_VLAN_TAG_PRIORITY) {
+		return -ENOTSUP;
+	}
 
 	if (iface == NULL || addr == NULL) {
 		return -EINVAL;
@@ -424,7 +443,7 @@ int net_eth_mcast_addr_rm(struct net_if *iface, const struct net_eth_addr *addr)
 
 	k_mutex_lock(&mcast_lock, K_FOREVER);
 
-	maddr = ethernet_mcast_addr_find(ctx, addr);
+	maddr = ethernet_mcast_addr_find(ctx, addr, vid);
 	if (maddr == NULL) {
 		/* The group was never joined, so the device was never told
 		 * about it either and there is nothing to unset.
@@ -434,8 +453,8 @@ int net_eth_mcast_addr_rm(struct net_if *iface, const struct net_eth_addr *addr)
 	}
 
 	if (atomic_dec(&maddr->atomic_ref) > 1) {
-		NET_DBG("iface %d (%p) address %s still in use (ref %ld)",
-			net_if_get_by_iface(iface), iface,
+		NET_DBG("iface %d (%p) VLAN %u address %s still in use (ref %ld)",
+			net_if_get_by_iface(iface), iface, (unsigned int)vid,
 			net_sprint_ll_addr(addr->addr, sizeof(*addr)),
 			atomic_get(&maddr->atomic_ref));
 		goto out;
@@ -444,8 +463,8 @@ int net_eth_mcast_addr_rm(struct net_if *iface, const struct net_eth_addr *addr)
 	maddr->is_used = false;
 	program = true;
 
-	NET_DBG("iface %d (%p) address %s left", net_if_get_by_iface(iface),
-		iface, net_sprint_ll_addr(addr->addr, sizeof(*addr)));
+	NET_DBG("iface %d (%p) VLAN %u address %s left", net_if_get_by_iface(iface), iface,
+		(unsigned int)vid, net_sprint_ll_addr(addr->addr, sizeof(*addr)));
 
 out:
 	k_mutex_unlock(&mcast_lock);
@@ -454,7 +473,7 @@ out:
 	 * and that is not a failure to leave the group.
 	 */
 	if (program) {
-		ret = ethernet_mcast_filter_set(iface, addr, false);
+		ret = ethernet_mcast_filter_set(iface, addr, vid, false);
 		if (ret == -ENOTSUP) {
 			ret = 0;
 		}
@@ -1326,14 +1345,15 @@ int net_eth_txinjection_mode(struct net_if *iface, bool enable)
 #endif
 }
 
-int net_eth_mac_filter(struct net_if *iface, struct net_eth_addr *mac,
-		       enum ethernet_filter_type type, bool enable)
+int net_eth_vlan_mac_filter(struct net_if *iface, struct net_eth_addr *mac,
+			    enum ethernet_filter_type type, bool enable, uint16_t vid)
 {
 #ifdef CONFIG_NET_L2_ETHERNET_MGMT
 	struct ethernet_req_params params;
 
 	memcpy(&params.filter.mac_address, mac, sizeof(struct net_eth_addr));
 	params.filter.type = type;
+	params.filter.vid = vid;
 	params.filter.set = enable;
 
 	return net_mgmt(NET_REQUEST_ETHERNET_SET_MAC_FILTER, iface, &params,
