@@ -34,8 +34,8 @@ struct sfunc_desc {
 
 struct sfunc_data {
 	struct sfunc_desc *const desc;
-	const struct usb_desc_header **const fs_desc;
-	const struct usb_desc_header **const hs_desc;
+	const struct usb_desc_header *const *const fs_desc;
+	const struct usb_desc_header *const *const hs_desc;
 	atomic_t state;
 };
 
@@ -106,10 +106,10 @@ static void *sfunc_get_desc(struct usbd_class_data *const c_data,
 	struct sfunc_data *data = usbd_class_get_private(c_data);
 
 	if (speed == USBD_SPEED_HS) {
-		return data->hs_desc;
+		return (void *)data->hs_desc;
 	}
 
-	return data->fs_desc;
+	return (void *)data->fs_desc;
 }
 
 struct net_buf *sfunc_buf_alloc(struct usbd_class_data *const c_data,
@@ -175,7 +175,7 @@ static int sfunc_init(struct usbd_class_data *c_data)
 	return 0;
 }
 
-struct usbd_class_api sfunc_api = {
+static const struct usbd_class_api sfunc_api = {
 	.request = sfunc_request_handler,
 	.get_desc = sfunc_get_desc,
 	.enable = sfunc_enable,
@@ -245,14 +245,14 @@ static struct sfunc_desc sfunc_desc_##n = {					\
 	},									\
 };										\
 										\
-const static struct usb_desc_header *sfunc_fs_desc_##n[] = {			\
+const static struct usb_desc_header *const sfunc_fs_desc_##n[] = {		\
 	(struct usb_desc_header *) &sfunc_desc_##n.if0,				\
 	(struct usb_desc_header *) &sfunc_desc_##n.if0_in_ep,			\
 	(struct usb_desc_header *) &sfunc_desc_##n.if0_out_ep,			\
 	(struct usb_desc_header *) &sfunc_desc_##n.nil_desc,			\
 };										\
 										\
-const static struct usb_desc_header *sfunc_hs_desc_##n[] = {			\
+const static struct usb_desc_header *const sfunc_hs_desc_##n[] = {		\
 	(struct usb_desc_header *) &sfunc_desc_##n.if0,				\
 	(struct usb_desc_header *) &sfunc_desc_##n.if0_hs_in_ep,		\
 	(struct usb_desc_header *) &sfunc_desc_##n.if0_hs_out_ep,		\

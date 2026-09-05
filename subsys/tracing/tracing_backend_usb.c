@@ -33,8 +33,8 @@ struct tracing_func_desc {
 
 struct tracing_func_data {
 	struct tracing_func_desc *const desc;
-	const struct usb_desc_header **const fs_desc;
-	const struct usb_desc_header **const hs_desc;
+	const struct usb_desc_header *const *const fs_desc;
+	const struct usb_desc_header *const *const hs_desc;
 	struct k_sem sync_sem;
 	atomic_t state;
 };
@@ -129,10 +129,10 @@ static void *tracing_func_get_desc(struct usbd_class_data *const c_data,
 	struct tracing_func_data *data = usbd_class_get_private(c_data);
 
 	if (USBD_SUPPORTS_HIGH_SPEED && speed == USBD_SPEED_HS) {
-		return data->hs_desc;
+		return (void *)data->hs_desc;
 	}
 
-	return data->fs_desc;
+	return (void *)data->fs_desc;
 }
 
 static void tracing_func_enable(struct usbd_class_data *const c_data)
@@ -158,7 +158,7 @@ static int tracing_func_init(struct usbd_class_data *c_data)
 	return 0;
 }
 
-struct usbd_class_api tracing_func_api = {
+static const struct usbd_class_api tracing_func_api = {
 	.request = tracing_func_request_handler,
 	.get_desc = tracing_func_get_desc,
 	.enable = tracing_func_enable,
@@ -218,14 +218,14 @@ static struct tracing_func_desc func_desc = {
 	},
 };
 
-const static struct usb_desc_header *tracing_func_fs_desc[] = {
+const static struct usb_desc_header *const tracing_func_fs_desc[] = {
 	(struct usb_desc_header *) &func_desc.if0,
 	(struct usb_desc_header *) &func_desc.if0_in_ep,
 	(struct usb_desc_header *) &func_desc.if0_out_ep,
 	NULL,
 };
 
-const static __maybe_unused struct usb_desc_header *tracing_func_hs_desc[] = {
+const static __maybe_unused struct usb_desc_header *const tracing_func_hs_desc[] = {
 	(struct usb_desc_header *) &func_desc.if0,
 	(struct usb_desc_header *) &func_desc.if0_hs_in_ep,
 	(struct usb_desc_header *) &func_desc.if0_hs_out_ep,
