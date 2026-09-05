@@ -15,9 +15,16 @@ config NRF70_ON_QSPI
 	def_bool $(dt_compat_on_bus,$(DT_COMPAT_NORDIC_NRF7002),qspi) ||\
 			$(dt_compat_on_bus,$(DT_COMPAT_NORDIC_NRF7001),qspi) ||\
 			$(dt_compat_on_bus,$(DT_COMPAT_NORDIC_NRF7000),qspi)
+	depends on HAS_HW_NRF_QSPI
 	depends on DT_HAS_NORDIC_NRF7002_ENABLED || DT_HAS_NORDIC_NRF7001_ENABLED || \
 		DT_HAS_NORDIC_NRF7000_ENABLED
 	select NRFX_QSPI
+	help
+	  The "qspi" on-bus tag is shared by several vendors' QSPI
+	  controllers, but the nRF70 QSPI backend talks to the nRF QSPI
+	  peripheral directly via nrfx, so this is also gated on the SoC
+	  actually having one (HAS_HW_NRF_QSPI, derived from the
+	  nordic,nrf-qspi devicetree compatible).
 
 config NRF70_ON_SPI
 	def_bool $(dt_compat_on_bus,$(DT_COMPAT_NORDIC_NRF7002),spi) ||\
