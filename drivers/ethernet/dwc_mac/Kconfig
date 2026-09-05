@@ -107,10 +107,25 @@ config ETH_STM32_DWC_ETHER_1000
 	  This enables the Synopsys DesignWare MAC driver for STM32 SoCs.
 	  Applicable for STM32F1/F2/F4/F7 series; tested only on F2/F4/F7.
 
+config ETH_ROCKCHIP_DWC_ETHER_QOS
+	bool "Driver for DWC Ethernet QoS-based Rockchip RK3588"
+	depends on SOC_RK3588
+	depends on MMU
+	depends on NET_BUF_FIXED_DATA_SIZE
+	depends on DT_HAS_ROCKCHIP_RK3588_GMAC_ENABLED
+	select ETH_DWC_ETHER_QOS_CORE
+	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
+	select SYSCON
+	default y
+	help
+	  This enables the Synopsys DesignWare MAC driver on Rockchip RK3588
+	  SoCs. DMA descriptors use the linker nocache region.
+
 config ETH_DWMAC_MMU
 	bool "Synopsys DesignWare MAC driver for MMU based platforms"
 	depends on MMU
 	depends on DT_HAS_SNPS_DESIGNWARE_ETHERNET_ENABLED
+	depends on !ETH_ROCKCHIP_DWC_ETHER_QOS
 	select ETH_DWC_ETHER_QOS_CORE
 	default y
 	help

@@ -6,6 +6,8 @@
 #include <mem.h>
 #include <arm64/armv8-a.dtsi>
 #include <zephyr/dt-bindings/interrupt-controller/arm-gic.h>
+#include <zephyr/dt-bindings/clock/rk3588-cru.h>
+#include <zephyr/dt-bindings/reset/rk3588-cru-reset.h>
 
 / {
 	#address-cells = <1>;
@@ -101,6 +103,36 @@
 		interrupt-parent = <&gic>;
 	};
 
+	sys_grf: syscon@fd58c000 {
+		compatible = "syscon";
+		reg = <0xfd58c000 0x1000>;
+		status = "okay";
+	};
+
+	php_grf: syscon@fd5b0000 {
+		compatible = "syscon";
+		reg = <0xfd5b0000 0x1000>;
+		status = "okay";
+	};
+
+	cru: clock-controller@fd7c0000 {
+		compatible = "rockchip,rk3588-cru";
+		reg = <0xfd7c0000 0x5c000>;
+		status = "okay";
+
+		cru_clk: clock-controller {
+			compatible = "rockchip,rk3588-cru-clk";
+			#clock-cells = <1>;
+			status = "okay";
+		};
+
+		cru_rst: reset-controller {
+			compatible = "rockchip,rk3588-cru-rst";
+			#reset-cells = <1>;
+			status = "okay";
+		};
+	};
+
 	uart2: serial@feb50000 {
 		compatible = "rockchip,rk3588-uart", "ns16550";
 		reg = <0xfeb50000 0x100>;
@@ -117,5 +149,55 @@
 		clock-frequency = <24000000>;
 		reg-shift = <2>;
 		status = "disabled";
+	};
+
+	gmac0: ethernet@fe1b0000 {
+		compatible = "rockchip,rk3588-gmac", "snps,dwmac";
+		reg = <0xfe1b0000 0x10000>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 227 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		clocks = <&cru_clk CLK_GMAC_125M>, <&cru_clk CLK_GMAC_50M>,
+			 <&cru_clk PCLK_GMAC0>, <&cru_clk ACLK_GMAC0>,
+			 <&cru_clk CLK_GMAC0_PTP_REF>;
+		clock-names = "stmmaceth", "clk_mac_ref", "pclk_mac", "aclk_mac", "ptp_ref";
+		resets = <&cru_rst SRST_A_GMAC0>;
+		reset-names = "stmmaceth";
+		rockchip,grf = <&sys_grf>;
+		rockchip,php-grf = <&php_grf>;
+		phy-connection-type = "rgmii";
+		snps,clk-csr = <4>;
+		status = "disabled";
+
+		mdio0: mdio {
+			compatible = "snps,dwmac-mdio";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
+	};
+
+	gmac1: ethernet@fe1c0000 {
+		compatible = "rockchip,rk3588-gmac", "snps,dwmac";
+		reg = <0xfe1c0000 0x10000>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_SPI 234 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		clocks = <&cru_clk CLK_GMAC_125M>, <&cru_clk CLK_GMAC_50M>,
+			 <&cru_clk PCLK_GMAC1>, <&cru_clk ACLK_GMAC1>,
+			 <&cru_clk CLK_GMAC1_PTP_REF>;
+		clock-names = "stmmaceth", "clk_mac_ref", "pclk_mac", "aclk_mac", "ptp_ref";
+		resets = <&cru_rst SRST_A_GMAC1>;
+		reset-names = "stmmaceth";
+		rockchip,grf = <&sys_grf>;
+		rockchip,php-grf = <&php_grf>;
+		phy-connection-type = "rgmii";
+		snps,clk-csr = <4>;
+		status = "disabled";
+
+		mdio1: mdio {
+			compatible = "snps,dwmac-mdio";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+		};
 	};
 };

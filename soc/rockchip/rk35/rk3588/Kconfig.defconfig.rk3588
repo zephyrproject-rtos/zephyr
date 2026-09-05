@@ -16,4 +16,10 @@ config NUM_IRQS
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency)
 
+config CLOCK_CONTROL
+	default y if DT_HAS_ROCKCHIP_RK3588_CRU_CLK_ENABLED
+
+config RESET
+	default y if DT_HAS_ROCKCHIP_RK3588_CRU_RST_ENABLED
+
 endif

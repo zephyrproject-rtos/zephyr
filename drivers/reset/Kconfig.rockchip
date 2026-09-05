@@ -1,0 +1,9 @@
+# Copyright (c) 2026 KylinSoft Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config RESET_ROCKCHIP_RK3588
+	bool "Rockchip RK3588 CRU reset controller"
+	default y
+	depends on DT_HAS_ROCKCHIP_RK3588_CRU_RST_ENABLED
+	help
+	  Enable reset control for the Rockchip RK3588 CRU.

@@ -1,0 +1,20 @@
+# Copyright (c) 2026 KylinSoft Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+title: Rockchip RK3588 CRU
+
+description: |
+  Rockchip RK3588 Clock and Reset Unit (CRU) register block. Child nodes
+  provide the clock and reset controller interfaces.
+
+compatible: "rockchip,rk3588-cru"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+child-binding:
+  description: |
+    Child clock or reset controller nodes sharing the CRU register block.
