@@ -1,0 +1,20 @@
+/ {
+	chosen {
+		zephyr,system-timer-companion = &counterg0;
+		zephyr,test-pm-state = &stdby1;
+	};
+};
+
+&counterg0 {
+	status = "okay";
+};
+
+&timg0 {
+	status = "okay";
+	clocks = <&ckm MSPM0_CLOCK_LFCLK>;
+	wakeup-source;
+};
+
+&cpu0 {
+	cpu-power-states = < &run0 &run1 &run2 &stdby1 >;
+};
