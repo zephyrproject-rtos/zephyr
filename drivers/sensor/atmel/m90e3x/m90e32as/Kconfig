@@ -1,0 +1,623 @@
+# Copyright (c) 2025 Atmel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig M90E32AS
+	bool "Atmel M90E32AS Energy Meter Driver"
+	default y
+	depends on DT_HAS_ATMEL_M90E32AS_ENABLED
+	select SPI
+	select PM_DEVICE_RUNTIME if PM_DEVICE
+	help
+	Enable driver for Atmel M90E32AS energy meter IC.
+
+if M90E32AS
+
+menu "Status and Special Registers"
+
+config M90E32AS_METEREN
+	hex "MeterEn"
+	range 0x0 0xFF
+	default 0x00
+	help
+	Enable or disable metering functions.
+
+config M90E32AS_CHANNELMAPI
+	hex "ChannelMapI"
+	range 0x0 0xFFFF
+	default 0x0210
+	help
+	Current Channel Map Configuration.
+
+config M90E32AS_CHANNELMAPU
+	hex "ChannelMapU"
+	range 0x0 0xFFFF
+	default 0x0654
+	help
+	Voltage Channel Map Configuration.
+
+config M90E32AS_SAGPEAKDETCFG
+	hex "SagPeakDetCfg"
+	range 0x0 0xFFFF
+	default 0x143F
+	help
+	Sag and Peak Detector Period Configuration.
+
+config M90E32AS_OVTHCFG
+	hex "OVThCfg"
+	range 0x0 0xFFFF
+	default 0xC000
+	help
+	Over Voltage Threshold.
+
+config M90E32AS_ZXCONFIG
+	hex "ZXConfig"
+	range 0x0 0xFFFF
+	default 0x0001
+	help
+	Zero Crossing Configuration.
+
+config M90E32AS_SAGTH
+	hex "SagTh"
+	range 0x0 0xFFFF
+	default 0x1000
+	help
+	Voltage Sag Threshold Level.
+
+config M90E32AS_PHASELOSSTH
+	hex "PhaseLossTh"
+	range 0x0 0xFFFF
+	default 0x0400
+	help
+	Phase Loss Threshold Level.
+
+config M90E32AS_INWARNTH
+	hex "InWarnTh"
+	range 0x0 0xFFFF
+	default 0xFFFF
+	help
+	Neutral Current Warning Threshold.
+
+config M90E32AS_OITH
+	hex "OIth"
+	range 0x0 0xFFFF
+	default 0xC000
+	help
+	Overcurrent Threshold.
+
+config M90E32AS_FREQLOTH
+	hex "FreqLoTh"
+	range 0x0 0xFFFF
+	default 0x1324
+	help
+	Low Threshold for Frequency Detection.
+
+config M90E32AS_FREQHITH
+	hex "FreqHiTh"
+	range 0x0 0xFFFF
+	default 0x13EC
+	help
+	High Threshold for Frequency Detection.
+
+config M90E32AS_PMPWRCTRL
+	hex "PmPwrCtrl"
+	range 0x0 0xFFFF
+	default 0x010F
+	help
+	Partial Measurement Mode Power Control.
+
+config M90E32AS_IRQ0MERGECFG
+	hex "IRQ0MergeCfg"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	IRQ0 Merge Configuration.
+
+endmenu # Status and Special Registers
+
+menu "Low Power Mode Configuration"
+
+config M90E32AS_DETECTCTRL
+	hex "DetectCtrl"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	Current Detect Control.
+
+config M90E32AS_DETECTTH1
+	hex "DetectTh1"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	Channel 1 Current Threshold in Detection Mode.
+
+config M90E32AS_DETECTTH2
+	hex "DetectTh2"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	Channel 2 Current Threshold in Detection Mode.
+
+config M90E32AS_DETECTTH3
+	hex "DetectTh3"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	Channel 3 Current Threshold in Detection Mode.
+
+config M90E32AS_IDCOFFSETA
+	hex "IDCOffsetA"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	Phase A Current DC offset.
+
+config M90E32AS_IDCOFFSETB
+	hex "IDCOffsetB"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	Phase B Current DC offset.
+
+config M90E32AS_IDCOFFSETC
+	hex "IDCOffsetC"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	Phase C Current DC offset.
+
+config M90E32AS_UDCOFFSETA
+	hex "UDCOffsetA"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	Voltage DC offset for Channel A.
+
+config M90E32AS_UDCOFFSETB
+	hex "UDCOffsetB"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	Voltage DC offset for Channel B.
+
+config M90E32AS_UDCOFFSETC
+	hex "UDCOffsetC"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	Voltage DC offset for Channel C.
+
+config M90E32AS_UGAINTAB
+	hex "UGainTab"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	Voltage Gain Temperature Compesation for Phase A/B.
+
+config M90E32AS_UGAINTC
+	hex "UGainTC"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	Voltage Gain Temperature Compesation for Phase C.
+
+config M90E32AS_PHIFREQCOMP
+	hex "PhiFreqComp"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	Phase Compensation for Frequency.
+
+config M90E32AS_LOGIRMS0
+	hex "LogIRMS0"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	Current (Log Irms0) Configuration for Segment Compensation.
+
+config M90E32AS_LOGIRMS1
+	hex "LogIRMS1"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	Current (Log Irms1) Configuration for Segment Compensation.
+
+config M90E32AS_F0
+	hex "F0"
+	range 0x0 0xFFFF
+	default 0x5000
+	help
+	Nominal Frequency.
+
+config M90E32AS_T0
+	hex "T0"
+	range 0x0 0xFFFF
+	default 0x0025
+	help
+	Nominal Temperature.
+
+config M90E32AS_PHIAIRMS01
+	hex "PhiAIrms01"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	Phase A Phase Compensation for Current Segment 0 and 1.
+
+config M90E32AS_PHIAIRMS2
+	hex "PhiAIrms2"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	Phase A Phase Compensation for Current Segment 2.
+
+config M90E32AS_GAINAIRMS01
+	hex "GainAIrms01"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	Phase A Gain Compensation for Current Segment 0 and 1.
+
+config M90E32AS_GAINAIRMS2
+	hex "GainAIrms2"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	Phase A Gain Compensation for Current Segment 2.
+
+config M90E32AS_PHIBIRMS01
+	hex "PhiBIrms01"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	Phase B Phase Compensation for Current Segment 0 and 1.
+
+config M90E32AS_PHIBIRMS2
+	hex "PhiBIrms2"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	Phase B Phase Compensation for Current Segment 2.
+
+config M90E32AS_GAINBIRMS01
+	hex "GainBIrms01"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	Phase B Gain Compensation for Current Segment 0 and 1.
+
+config M90E32AS_GAINBIRMS2
+	hex "GainBIrms2"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	Phase B Gain Compensation for Current Segment 2.
+
+config M90E32AS_PHICIRMS01
+	hex "PhiCIrms01"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	Phase C Phase Compensation for Current Segment 0 and 1.
+
+config M90E32AS_PHICIRMS2
+	hex "PhiCIrms2"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	Phase C Phase Compensation for Current Segment 2.
+
+config M90E32AS_GAINCIRMS01
+	hex "GainCIrms01"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	Phase C Gain Compensation for Current Segment 0 and 1.
+
+config M90E32AS_GAINCIRMS2
+	hex "GainCIrms2"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	Phase C Gain Compensation for Current Segment 2.
+
+endmenu # Low Power Mode Configuration
+
+menu "Configuration Registers"
+
+config M90E32AS_PLCONSTH
+	hex "PLConstH"
+	range 0x0 0xFFFF
+	default 0x0861
+	help
+	Power Line Constant High Word.
+
+config M90E32AS_PLCONSTL
+	hex "PLConstL"
+	range 0x0 0xFFFF
+	default 0xC468
+	help
+	Power Line Constant Low Word.
+
+config M90E32AS_MMODE0
+	hex "MMode0"
+	range 0x0 0xFFFF
+	default 0x0087
+	help
+	HPF/Integrator On/Off, CF and all-phase energy computation configuration.
+
+config M90E32AS_MMODE1
+	hex "MMode1"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	PGA gain configuration.
+
+config M90E32AS_PSTARTTH
+	hex "PStartTh"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	Active Startup Power Threshold.
+
+config M90E32AS_QSTARTTH
+	hex "QStartTh"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	Reactive Startup Power Threshold.
+
+config M90E32AS_SSTARTTH
+	hex "SStartTh"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	Apparent Startup Power Threshold.
+
+config M90E32AS_PPHASETH
+	hex "PPhaSeTh"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	Startup power threshold (for |P|+|Q| of a phase) for any phase participating Active
+	Energy Accumulation. Common for phase A/B/C.
+
+config M90E32AS_QPHASETH
+	hex "QPhaSeTh"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	Startup power threshold (for |P|+|Q| of a phase) for any phase participating Reactive
+	Energy Accumulation. Common for phase A/B/C.
+
+config M90E32AS_SPHASETH
+	hex "SPhaSeTh"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	Startup power threshold (for |P|+|Q| of a phase) for any phase participating Apparent
+	Energy Accumulation. Common for phase A/B/C.
+
+endmenu # Configuration Registers
+
+menu "Calibration Registers"
+
+config M90E32AS_POFFSETA
+	hex "POffsetA"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	Phase A Active Power Offset.
+
+config M90E32AS_QOFFSETA
+	hex "QOffsetA"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	Phase A Reactive Power Offset.
+
+config M90E32AS_POFFSETB
+	hex "POffsetB"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	Phase B Active Power Offset.
+
+config M90E32AS_QOFFSETB
+	hex "QOffsetB"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	Phase B Reactive Power Offset.
+
+config M90E32AS_POFFSETC
+	hex "POffsetC"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	Phase C Active Power Offset.
+
+config M90E32AS_QOFFSETC
+	hex "QOffsetC"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	Phase C Reactive Power Offset.
+
+config M90E32AS_PQGAINA
+	hex "PQGainA"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	Phase A Active/Reactive Energy Calibration Gain.
+
+config M90E32AS_PHIA
+	hex "PhiA"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	Phase A Calibration Phase Angle.
+
+config M90E32AS_PQGAINB
+	hex "PQGainB"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	Phase B Active/Reactive Energy Calibration Gain.
+
+config M90E32AS_PHIB
+	hex "PhiB"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	Phase B Calibration Phase Angle.
+
+config M90E32AS_PQGAINC
+	hex "PQGainC"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	Phase C Active/Reactive Energy Calibration Gain.
+
+config M90E32AS_PHIC
+	hex "PhiC"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	Phase C Calibration Phase Angle.
+
+endmenu # Calibration Registers
+
+menu "Fundamental/Harmonic Energy Calibration Registers"
+
+config M90E32AS_POFFSETAF
+	hex "POffsetAF"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	Phase A Fundamental Active Power Offset.
+
+config M90E32AS_POFFSETBF
+	hex "POffsetBF"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	Phase B Fundamental Active Power Offset.
+
+config M90E32AS_POFFSETCF
+	hex "POffsetCF"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	Phase C Fundamental Active Power Offset.
+
+config M90E32AS_PGAINAF
+	hex "PGainAF"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	Phase A Fundamental Calibration Gain.
+
+config M90E32AS_PGAINBF
+	hex "PGainBF"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	Phase B Fundamental Calibration Gain.
+
+config M90E32AS_PGAINCF
+	hex "PGainCF"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	Phase C Fundamental Calibration Gain.
+
+endmenu # Fundamental/Harmonic Energy Calibration Registers
+
+menu "Measurement Calibration Registers"
+
+config M90E32AS_UGAINA
+	hex "UGainA"
+	range 0x0 0xFFFF
+	default 0x8000
+	help
+	Phase A Voltage RMS Gain.
+
+config M90E32AS_IGAINA
+	hex "IGainA"
+	range 0x0 0xFFFF
+	default 0x8000
+	help
+	Phase A Current RMS Gain.
+
+config M90E32AS_UOFFSETA
+	hex "UOffsetA"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	Phase A Voltage RMS Offset.
+
+config M90E32AS_IOFFSETA
+	hex "IOffsetA"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	Phase A Current RMS Offset.
+
+config M90E32AS_UGAINB
+	hex "UGainB"
+	range 0x0 0xFFFF
+	default 0x8000
+	help
+	Phase B Voltage RMS Gain.
+
+config M90E32AS_IGAINB
+	hex "IGainB"
+	range 0x0 0xFFFF
+	default 0x8000
+	help
+	Phase B Current RMS Gain.
+
+config M90E32AS_UOFFSETB
+	hex "UOffsetB"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	Phase B Voltage RMS Offset.
+
+config M90E32AS_IOFFSETB
+	hex "IOffsetB"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	Phase B Current RMS Offset.
+
+config M90E32AS_UGAINC
+	hex "UGainC"
+	range 0x0 0xFFFF
+	default 0x8000
+	help
+	Phase C Voltage RMS Gain.
+
+config M90E32AS_IGAINC
+	hex "IGainC"
+	range 0x0 0xFFFF
+	default 0x8000
+	help
+	Phase C Current RMS Gain.
+
+config M90E32AS_UOFFSETC
+	hex "UOffsetC"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	Phase C Voltage RMS Offset.
+
+config M90E32AS_IOFFSETC
+	hex "IOffsetC"
+	range 0x0 0xFFFF
+	default 0x0000
+	help
+	Phase C Current RMS Offset.
+
+endmenu # Measurement Calibration Registers
+
+endif # M90E32AS
