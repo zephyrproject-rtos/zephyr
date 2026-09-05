@@ -75,8 +75,9 @@ config ETH_STM32_DWC_ETHER_QOS
 	bool "Driver for DWC Ethernet QoS-based STM32"
 	depends on !ETH_STM32_HAL
 	depends on SOC_SERIES_STM32H5X \
-		   || SOC_SERIES_STM32H7X \
-		   || SOC_SERIES_STM32H7RSX
+		|| SOC_SERIES_STM32H7X \
+		|| SOC_SERIES_STM32H7RSX \
+		|| SOC_SERIES_STM32MP13X
 	depends on DT_HAS_ST_STM32_ETHERNET_ENABLED
 	select ETH_DWC_ETHER_QOS_CORE
 	select NOCACHE_MEMORY if ARCH_HAS_NOCACHE_MEMORY_SUPPORT
@@ -85,7 +86,7 @@ config ETH_STM32_DWC_ETHER_QOS
 	select CRC
 	default y
 	help
-	  This enables the Synopsys DesignWare MAC driver on STM32 H5/H7/H7RS
+	  This enables the Synopsys DesignWare MAC driver on STM32 H5/H7/H7RS/MP13
 	  series SoCs.
 
 config ETH_STM32_DWC_ETHER_1000

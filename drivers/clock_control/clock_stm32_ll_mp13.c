@@ -120,10 +120,64 @@ static int stm32_clock_control_configure(const struct device *dev,
 	return 0;
 }
 
+static int stm32_clock_control_get_eth_rate(uint32_t eth_source, uint32_t *rate)
+{
+	uint32_t eth_rate = LL_RCC_GetETHClockFreq(eth_source);
+
+	if (eth_rate == LL_RCC_PERIPH_FREQUENCY_NO) {
+		return -EIO;
+	}
+
+	*rate = eth_rate;
+
+	return 0;
+}
+
+/*
+ * Rates of the domain clocks of the ethernet controllers: the kernel clock
+ * selectors and the PTP dividers, which divide the kernel clock by their
+ * value plus one, all live in ETH12CKSELR.
+ */
+static int stm32_clock_control_get_eth_domain_rate(uint32_t enr, uint32_t *rate)
+{
+	uint32_t ptp_div;
+	int ret;
+
+	if (STM32_DT_CLKSEL_REG_GET(enr) != ETH12CKSELR_REG) {
+		return -ENOTSUP;
+	}
+
+	switch (STM32_DT_CLKSEL_SHIFT_GET(enr)) {
+	case RCC_ETH12CKSELR_ETH1SRC_Pos:
+		return stm32_clock_control_get_eth_rate(LL_RCC_ETH1_CLKSOURCE, rate);
+	case RCC_ETH12CKSELR_ETH2SRC_Pos:
+		return stm32_clock_control_get_eth_rate(LL_RCC_ETH2_CLKSOURCE, rate);
+	case RCC_ETH12CKSELR_ETH1PTPDIV_Pos:
+		ret = stm32_clock_control_get_eth_rate(LL_RCC_ETH1_CLKSOURCE, rate);
+		ptp_div = READ_BIT(RCC->ETH12CKSELR, RCC_ETH12CKSELR_ETH1PTPDIV) >>
+			  RCC_ETH12CKSELR_ETH1PTPDIV_Pos;
+		break;
+	case RCC_ETH12CKSELR_ETH2PTPDIV_Pos:
+		ret = stm32_clock_control_get_eth_rate(LL_RCC_ETH2_CLKSOURCE, rate);
+		ptp_div = READ_BIT(RCC->ETH12CKSELR, RCC_ETH12CKSELR_ETH2PTPDIV) >>
+			  RCC_ETH12CKSELR_ETH2PTPDIV_Pos;
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	if (ret == 0) {
+		*rate /= ptp_div + 1;
+	}
+
+	return ret;
+}
+
 static int stm32_clock_control_get_subsys_rate(const struct device *dev,
 					       clock_control_subsys_t sub_system, uint32_t *rate)
 {
 	struct stm32_pclken *pclken = (struct stm32_pclken *)sub_system;
+	LL_RCC_ClocksTypeDef clocks;
 
 	ARG_UNUSED(dev);
 
@@ -194,6 +248,24 @@ static int stm32_clock_control_get_subsys_rate(const struct device *dev,
 			return -ENOTSUP;
 		}
 		break;
+	case STM32_CLOCK_BUS_AHB6:
+		switch (pclken->enr) {
+		case LL_AHB6_GRP1_PERIPH_ETH1MAC:
+		case LL_AHB6_GRP1_PERIPH_ETH2MAC:
+			LL_RCC_GetSystemClocksFreq(&clocks);
+			*rate = clocks.HCLK6_Frequency;
+			break;
+		case LL_AHB6_GRP1_PERIPH_ETH1CK:
+			return stm32_clock_control_get_eth_rate(LL_RCC_ETH1_CLKSOURCE, rate);
+		case LL_AHB6_GRP1_PERIPH_ETH2CK:
+			return stm32_clock_control_get_eth_rate(LL_RCC_ETH2_CLKSOURCE, rate);
+		default:
+			return -ENOTSUP;
+		}
+		break;
+	case STM32_SRC_PLL3_Q:
+	case STM32_SRC_PLL4_P:
+		return stm32_clock_control_get_eth_domain_rate(pclken->enr, rate);
 	case STM32_SRC_TIMPCLK1:
 		*rate = LL_RCC_GetTIMGClockFreq(LL_RCC_TIMG1PRES);
 		break;
