@@ -1,0 +1,33 @@
+# Copyright (c) 2017 Intel Corporation
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+# SPDX-License-Identifier: Apache-2.0
+
+config ARCH_POSIX_FUZZ_IRQ
+	int "OS interrupt via which to deliver fuzz cases"
+	default 31
+	help
+	  In this test, new fuzz cases are delivered to Zephyr
+	  via interrupts.  The IRQ number is arbitrary: any line the
+	  board is not otherwise using works, since it is only the
+	  delivery mechanism for handing the fuzz buffer into the
+	  simulated OS.  The IRQ should be otherwise unused, but can
+	  be any value desired by the app.
+
+config ARCH_POSIX_FUZZ_TICKS
+	int "Ticks to allow for fuzz case processing"
+	default 10
+	help
+	  Fuzz interrupts are delivered, from the perspective of the
+	  OS, at a steady cadence in simulated time.  The ISR only
+	  signals a semaphore; the default of 10 ticks is the simulated
+	  time nsi_exec_for() grants per iteration for that handoff to
+	  reach main()'s thread AND for the full packet-draining loop
+	  there to complete before the next fuzz case is delivered.
+	  Too few ticks silently truncates processing rather than
+	  failing loudly: the fuzzer keeps reporting steady (or even
+	  rising) exec/s while quietly exercising less code per
+	  iteration.  If a harness change makes per-iteration work
+	  longer, watch for falling coverage alongside rising exec/s as
+	  the symptom that this value needs raising.
+
+source "Kconfig.zephyr"
