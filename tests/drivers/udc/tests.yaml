@@ -25,6 +25,7 @@ tests:
       - EXTRA_DTC_OVERLAY_FILE="udc_skeleton.overlay"
       - CONFIG_UDC_BUF_POOL_SIZE=32768
     platform_allow:
+      - native_sim
       - native_sim/native/64
     integration_platforms:
       - native_sim/native/64
