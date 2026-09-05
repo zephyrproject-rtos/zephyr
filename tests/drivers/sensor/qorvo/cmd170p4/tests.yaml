@@ -1,0 +1,10 @@
+tests:
+  drivers.sensor.qorvo.cmd170p4:
+    tags:
+      - drivers
+      - sensor
+      - qorvo
+    harness: ztest
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
