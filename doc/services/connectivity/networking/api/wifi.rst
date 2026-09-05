@@ -260,6 +260,44 @@ To enable and build with Wi-Fi NAN support:
 
     $ west build -p -b <board> samples/net/wifi/shell -- -DCONFIG_WIFI_NM_WPA_SUPPLICANT_NAN=y
 
+External PMKSA cache
+********************
+
+The PMKSA cache API has independent import and export controls:
+:kconfig:option:`CONFIG_WIFI_MGMT_PMKSA_IMPORT` lets an application supply an
+array of entries in :c:struct:`wifi_connect_req_params`, while
+:kconfig:option:`CONFIG_WIFI_MGMT_PMKSA_EXPORT` lets it enumerate backend
+entries with :c:macro:`NET_REQUEST_WIFI_PMKSA_GET`. Export exposes raw PMKs,
+which are credential-equivalent secrets; use protected storage, do not log
+them, and promptly wipe temporary copies.
+
+The intended lifecycle is:
+
+* :c:macro:`NET_EVENT_WIFI_PMKSA_CACHE_ADDED` -> mark the current profile dirty.
+* Successful ``CONNECT`` -> enumerate indexes 0 through ``entry_count - 1``
+  and copy the entries to protected storage.
+* Power removal -> deduct trusted elapsed time or discard the records.
+* Next ``CONNECT`` -> supply the aged array in
+  :c:struct:`wifi_connect_req_params`.
+* Status -> observe ``HIT``, ``MISS``, or ``UNKNOWN`` in
+  ``wifi_iface_status.pmksa_cache_usage``.
+* :c:macro:`NET_EVENT_WIFI_PMKSA_CACHE_REMOVED` -> delete the stored record scoped to the BSSID.
+* Credential, station-MAC, or policy change -> issue
+  :c:macro:`NET_REQUEST_WIFI_PMKSA_FLUSH_EXTERNAL` and delete stored records.
+
+:c:macro:`NET_EVENT_WIFI_PMKSA_CACHE_ADDED` may precede connection completion. A GET before a
+connected station profile exists returns ``-ENOTCONN``; a cache miss must fall
+back to full authentication. The transfer object is an API object, not a disk
+format. CONNECT supplies profile identity, and the backend assigns its runtime
+network context, so the public record contains neither SSID nor ``network_ctx``.
+Cache-change events are hints to enumerate the cache; backend export policy may
+exclude the entry that triggered an event.
+
+The :c:enum:`wifi_akm_suite` values are canonical 32-bit OUI-plus-suite-type
+selectors. They are distinct from :c:enum:`wifi_security_type`, which does not
+identify one negotiated AKM. Backends may reject unsupported records with
+``-EPROTONOSUPPORT`` or limit the number of entries they retain.
+
 API Reference
 *************
 
