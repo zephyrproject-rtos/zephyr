@@ -1,0 +1,24 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/i2c/i2c.h>
+
+/ {
+	aliases {
+		accel0 = &lis2dh_external;
+	};
+};
+
+/* External LIS2DH12: SDA=D4, SCL=D5, INT1=D0. */
+&xiao_i2c {
+	clock-frequency = <I2C_BITRATE_FAST>;
+
+	lis2dh_external: accelerometer@18 {
+		compatible = "st,lis2dh";
+		reg = <0x18>;
+		irq-gpios = <&xiao_d 0 GPIO_ACTIVE_HIGH>;
+		fifo-watermark = <16>;
+	};
+};

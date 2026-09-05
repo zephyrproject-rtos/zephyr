@@ -1,0 +1,10 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.sensor.lis2dh_decoder:
+    tags:
+      - drivers
+      - sensor
+    platform_allow:
+      - native_sim/native/64
