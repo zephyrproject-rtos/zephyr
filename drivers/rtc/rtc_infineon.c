@@ -163,7 +163,7 @@ static void _ifx_cat1_rtc_isr_handler(void)
 	Cy_RTC_Interrupt(_ifx_cat1_rtc_dst, NULL != _ifx_cat1_rtc_dst);
 }
 
-void _ifx_cat1_rtc_century_interrupt(void)
+void Cy_RTC_CenturyInterrupt(void)
 {
 	/* The century is stored in its own register so when a "century interrupt"
 	 * occurs at a rollover. The current century is retrieved and 100 is added
@@ -177,6 +177,7 @@ static int ifx_cat1_rtc_init(const struct device *dev)
 {
 	cy_rslt_t rslt = CY_RSLT_SUCCESS;
 
+#ifndef CONFIG_RTC_INFINEON_SKIP_SECURE_INIT
 	Cy_SysClk_ClkBakSetSource(CY_SYSCLK_BAK_IN_CLKLF);
 
 	if (_ifx_cat1_rtc_get_state() == _IFX_CAT1_RTC_STATE_UNINITIALIZED) {
@@ -198,9 +199,10 @@ static int ifx_cat1_rtc_init(const struct device *dev)
 		   _ifx_cat1_rtc_get_state() == _IFX_CAT1_RTC_STATE_TIME_SET) {
 
 		if (Cy_RTC_GetInterruptStatus() & CY_RTC_INTR_CENTURY) {
-			_ifx_cat1_rtc_century_interrupt();
+			Cy_RTC_CenturyInterrupt();
 		}
 	}
+#endif
 
 	Cy_RTC_ClearInterrupt(CY_RTC_INTR_CENTURY);
 	Cy_RTC_SetInterruptMask(CY_RTC_INTR_CENTURY);
