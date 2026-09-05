@@ -1,0 +1,26 @@
+# Copyright (c) 2026 Meta Platforms
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Synthetic I3C peripheral used by tests/drivers/i3c/i3c_emul to exercise the
+  Zephyr I3C emulator. The peripheral lives entirely inside the test directory
+  and exposes a 32-byte register file plus configurable PID/BCR/DCR.
+
+compatible: "zephyr,i3c-emul-test-target"
+
+include: i3c-device.yaml
+
+properties:
+  bcr:
+    type: int
+    default: 0
+
+  dcr:
+    type: int
+    default: 0
+
+  supports-hdr-ddr:
+    type: boolean
+    description: |
+      The synthetic peripheral advertises HDR-DDR support in its
+      GETCAPS Format 1 response and accepts HDR-DDR private xfers.
