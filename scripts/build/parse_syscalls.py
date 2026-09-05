@@ -151,7 +151,7 @@ def analyze_headers(include_dir, scan_dir, file_list):
             try:
                 contents = fp.read()
             except Exception:
-                sys.stderr.write(f"Error decoding {one_file} (included in {path})\n")
+                sys.stderr.write(f"Error decoding {one_file}\n")
                 raise
 
         fn = os.path.basename(one_file)
