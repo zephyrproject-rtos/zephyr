@@ -81,3 +81,27 @@
 };
 
 tst_dma0: &dma0 {};
+
+&adc0 {
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+	};
+};
+
+/ {
+	adc_dac_loopback: adc-dac-loopback {
+		compatible = "test-adc-dac-loopback";
+		io-channels = <&adc0 0>;
+		dac = <&dac0>;
+		dac-channel-id = <0>;
+		dac-resolution = <12>;
+	};
+};
