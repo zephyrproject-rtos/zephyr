@@ -8,5 +8,6 @@ zephyr_library_sources_ifdef(CONFIG_ZTEST_BENCHMARK
 
 zephyr_linker_sources(DATA_SECTIONS benchmark.ld)
 zephyr_iterable_section(NAME ztest_benchmark GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT})
+zephyr_iterable_section(NAME ztest_benchmark_manual GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT})
 zephyr_iterable_section(NAME ztest_benchmark_timed GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT})
 zephyr_iterable_section(NAME ztest_benchmark_suite GROUP DATA_REGION ${XIP_ALIGN_WITH_INPUT})
