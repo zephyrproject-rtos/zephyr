@@ -5,15 +5,15 @@
 
 /delete-node/ &storage_partition;
 
-&flash0 {
+&code_flash {
 	partitions {
-		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
 		ranges;
 
 		/* Set the 2 last block of storage. */
 		storage_partition: partition@f0000 {
+			compatible = "zephyr,mapped-partition";
 			label = "storage";
 			reg = <0xf0000 DT_SIZE_K(64)>;
 		};
