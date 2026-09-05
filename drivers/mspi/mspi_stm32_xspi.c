@@ -784,6 +784,8 @@ static int mspi_configure_delay_block(struct mspi_stm32_data *dev_data)
 static int mspi_stm32_xspi_dma_init(DMA_HandleTypeDef *hdma, struct stm32_stream *dma_stream)
 {
 	int ret;
+	struct dma_config hal_dma_cfg;
+	uint16_t source_addr_adj, dest_addr_adj;
 
 	/*
 	 * DMA configuration
@@ -798,22 +800,20 @@ static int mspi_stm32_xspi_dma_init(DMA_HandleTypeDef *hdma, struct stm32_stream
 		return ret;
 	}
 
-	/* Proceed to the HAL DMA driver init */
-	hdma->Init.SrcDataWidth = DMA_SRC_DATAWIDTH_BYTE;
-	hdma->Init.DestDataWidth = DMA_DEST_DATAWIDTH_BYTE;
-	hdma->Init.SrcInc =
-		(dma_stream->src_addr_increment) ? DMA_SINC_INCREMENTED : DMA_SINC_FIXED;
-	hdma->Init.DestInc =
-		(dma_stream->dst_addr_increment) ? DMA_DINC_INCREMENTED : DMA_DINC_FIXED;
-	hdma->Init.SrcBurstLength = 4;
-	hdma->Init.DestBurstLength = 4;
-	hdma->Init.Priority = mspi_stm32_table_priority[dma_stream->cfg.channel_priority];
-	hdma->Init.Direction = mspi_stm32_table_direction[dma_stream->cfg.channel_direction];
-	hdma->Init.TransferAllocatedPort = DMA_SRC_ALLOCATED_PORT0 | DMA_SRC_ALLOCATED_PORT1;
-	hdma->Init.TransferEventMode = DMA_TCEM_BLOCK_TRANSFER;
-	hdma->Init.Mode = DMA_NORMAL;
-	hdma->Init.BlkHWRequest = DMA_BREQ_SINGLE_BURST;
-	hdma->Init.Request = dma_stream->cfg.dma_slot;
+	hal_dma_cfg = dma_stream->cfg;
+	hal_dma_cfg.source_data_size = 1U;
+	hal_dma_cfg.dest_data_size = 1U;
+
+	source_addr_adj = dma_stream->src_addr_increment ?
+		DMA_ADDR_ADJ_INCREMENT : DMA_ADDR_ADJ_NO_CHANGE;
+	dest_addr_adj = dma_stream->dst_addr_increment ?
+		DMA_ADDR_ADJ_INCREMENT : DMA_ADDR_ADJ_NO_CHANGE;
+
+	ret = dma_stm32_zcfg_to_halcfg(dma_stream->dev, &hal_dma_cfg, &hdma->Init,
+				       source_addr_adj, dest_addr_adj);
+	if (ret < 0) {
+		return ret;
+	}
 
 	/*
 	 * HAL expects a valid DMA channel.
