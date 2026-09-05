@@ -6,8 +6,8 @@ common:
 tests:
   # section.subsection
   drivers.display.callbacks:
-    filter: dt_compat_enabled("st,stm32-ltdc")
     platform_allow:
-      - stm32u5g9j_dk2
-      - stm32h7s78_dk
-      - stm32n6570_dk/stm32n657xx/sb
+      - stm32h7s78_dk/stm32h7s7xx
+      - mimxrt1170_evk@A/mimxrt1176/cm7
+    extra_args:
+      - platform:mimxrt1170_evk@A/mimxrt1176/cm7:SHIELD=rk055hdmipi4ma0
