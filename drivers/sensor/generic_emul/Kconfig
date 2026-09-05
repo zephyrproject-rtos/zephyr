@@ -1,0 +1,11 @@
+# Generic emulated sensor driver configuration
+# Copyright (c) 2026 Embeint Inc
+# SPDX-License-Identifier: Apache-2.0
+
+config SENSOR_GENERIC_EMUL
+	bool "Generic emulated sensor"
+	depends on DT_HAS_ZEPHYR_GENERIC_EMUL_SENSOR_ENABLED
+	select EMUL
+	default y
+	help
+	  Generic sensor device controlled by the sensor emulator backend API.
