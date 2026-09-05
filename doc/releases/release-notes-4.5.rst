@@ -466,6 +466,9 @@ New APIs and options
   * :c:macro:`DT_IRQN_BY_NAME`
   * :c:macro:`DT_INST_IRQN_BY_NAME`
 
+* DSA
+  * :c:member:`dsa_api.vlan_setup`
+
 * Haptics
 
   * :c:enumerator:`haptics_monitor`
