@@ -50,7 +50,7 @@
 				write-command = <0x12ed>; /* WRite 4Bytes */
 				rx-dummy = <20>;
 				jedec-id = [c2 85 3a];
-				memmap-config = <1 0x70000000 0x04000000 0>;
+				memmap-config = <1 0x800 0x04000000 0>;
 				status = "okay";
 
 				partitions {
