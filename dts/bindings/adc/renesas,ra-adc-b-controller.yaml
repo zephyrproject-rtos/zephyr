@@ -1,0 +1,26 @@
+# Copyright (c) 2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Renesas RA ADC_B controller.
+
+compatible: "renesas,ra-adc-b-controller"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clock-div:
+    type: int
+    required: true
+    enum: [1, 2, 3, 4, 5, 6, 7, 8]
+    description: |
+      Divider applied to the ADC_B input clock.
+
+  "#address-cells":
+    const: 1
+
+  "#size-cells":
+    const: 0
