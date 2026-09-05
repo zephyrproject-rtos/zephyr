@@ -157,8 +157,8 @@ static void hl78xx_on_unsol_monitored(struct modem_chat *chat, char **argv, uint
 				      void *user_data);
 static const struct hl78xx_script_recovery_rule *
 hl78xx_find_script_recovery_rule(enum hl78xx_state state,
-				 const struct modem_chat_script_chat *script_chat,
-				 uint16_t script_chat_index, enum modem_chat_script_result result);
+				 const struct modem_chat_script_callback_ctx *ctx,
+				 enum modem_chat_script_result result);
 
 MODEM_CHAT_MATCH_DEFINE(hl78xx_ok_match, "OK", "", NULL);
 MODEM_CHAT_MATCHES_DEFINE(hl78xx_allow_match, MODEM_CHAT_MATCH(MDM_HL78XX_OK_STRING, "", NULL),
@@ -365,7 +365,7 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(hl78xx_periodic_chat_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CEREG?", hl78xx_ok_match));
 
 MODEM_CHAT_SCRIPT_DEFINE(hl78xx_periodic_chat_script, hl78xx_periodic_chat_script_cmds,
-			 hl78xx_abort_matches, hl78xx_chat_callback_handler,
+			 hl78xx_abort_matches, hl78xx_chat_callback_handler_ctx,
 			 HL78XX_SCRIPT_TIMEOUT_PERIODIC);
 
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(
@@ -440,7 +440,7 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(
 				   MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGACT?", hl78xx_ok_match));
 
 MODEM_CHAT_SCRIPT_DEFINE(hl78xx_init_chat_script, hl78xx_init_chat_script_cmds,
-			 hl78xx_abort_matches, hl78xx_chat_callback_handler,
+			 hl78xx_abort_matches, hl78xx_chat_callback_handler_ctx,
 			 HL78XX_SCRIPT_TIMEOUT_INIT);
 
 /* Post-restart script (moved from hl78xx.c) */
@@ -453,7 +453,7 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(hl78xx_post_restart_chat_script_cmds,
 );
 
 MODEM_CHAT_SCRIPT_DEFINE(hl78xx_post_restart_chat_script, hl78xx_post_restart_chat_script_cmds,
-			 hl78xx_abort_matches, hl78xx_chat_callback_handler,
+			 hl78xx_abort_matches, hl78xx_chat_callback_handler_ctx,
 			 HL78XX_SCRIPT_TIMEOUT_POST_RESTART);
 
 /* init_fail_script moved from hl78xx.c */
@@ -476,7 +476,7 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(hl78xx_pwroff_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CPWROFF", hl78xx_ok_match));
 
 MODEM_CHAT_SCRIPT_DEFINE(hl78xx_pwroff_script, hl78xx_pwroff_cmds, hl78xx_abort_matches,
-			 hl78xx_chat_callback_handler, HL78XX_SCRIPT_TIMEOUT_POWEROFF);
+			 hl78xx_chat_callback_handler_ctx, HL78XX_SCRIPT_TIMEOUT_POWEROFF);
 
 /* GSM registration status disable / LTE registration status enable script */
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(hl78xx_gsm_dis_lte_en_reg_status_script_cmds,
@@ -491,7 +491,7 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(hl78xx_query_cfun_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN?", hl78xx_ok_match));
 
 MODEM_CHAT_SCRIPT_DEFINE(hl78xx_query_cfun_script, hl78xx_query_cfun_cmds, hl78xx_abort_matches,
-			 hl78xx_chat_callback_handler, HL78XX_CMD_TIMEOUT_LONG);
+			 hl78xx_chat_callback_handler_ctx, HL78XX_CMD_TIMEOUT_LONG);
 
 #ifdef CONFIG_HL78XX_GNSS
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(hl78xx_gnss_init_chat_script_cmds,
@@ -502,26 +502,26 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(hl78xx_gnss_init_chat_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+GNSSCONF=10,1", hl78xx_ok_match));
 
 MODEM_CHAT_SCRIPT_DEFINE(hl78xx_gnss_init_chat_script, hl78xx_gnss_init_chat_script_cmds,
-			 hl78xx_abort_matches, hl78xx_chat_callback_handler,
+			 hl78xx_abort_matches, hl78xx_chat_callback_handler_ctx,
 			 HL78XX_CMD_TIMEOUT_LONG);
 
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(hl78xx_gnss_stop_search_chat_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+GNSSSTOP", hl78xx_ok_match));
 MODEM_CHAT_SCRIPT_DEFINE(hl78xx_gnss_stop_search_chat_script,
 			 hl78xx_gnss_stop_search_chat_script_cmds, hl78xx_abort_matches,
-			 hl78xx_chat_callback_handler, HL78XX_SCRIPT_TIMEOUT_GNSS);
+			 hl78xx_chat_callback_handler_ctx, HL78XX_SCRIPT_TIMEOUT_GNSS);
 
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(hl78xx_gnss_terminate_nmea_chat_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("", hl78xx_ok_match));
 MODEM_CHAT_SCRIPT_DEFINE(hl78xx_gnss_terminate_nmea_chat_script,
 			 hl78xx_gnss_terminate_nmea_chat_script_cmds, hl78xx_abort_matches,
-			 hl78xx_chat_callback_handler, HL78XX_SCRIPT_TIMEOUT_GNSS);
+			 hl78xx_chat_callback_handler_ctx, HL78XX_SCRIPT_TIMEOUT_GNSS);
 
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(hl78xx_gnss_gnssloc_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+GNSSLOC?",
 							      hl78xx_gnss_gnssloc_matches));
 MODEM_CHAT_SCRIPT_DEFINE(hl78xx_gnss_gnssloc_script, hl78xx_gnss_gnssloc_script_cmds,
-			 hl78xx_abort_matches, hl78xx_chat_callback_handler,
+			 hl78xx_abort_matches, hl78xx_chat_callback_handler_ctx,
 			 HL78XX_SCRIPT_TIMEOUT_GNSS);
 
 #if defined(CONFIG_MODEM_HL78XX_LOW_POWER_MODE)
@@ -536,7 +536,7 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(hl78xx_rrc_query_script_cmds,
 							      hl78xx_rrc_query_matches));
 
 MODEM_CHAT_SCRIPT_DEFINE(hl78xx_rrc_query_script, hl78xx_rrc_query_script_cmds,
-			 hl78xx_abort_matches, hl78xx_chat_callback_handler,
+			 hl78xx_abort_matches, hl78xx_chat_callback_handler_ctx,
 			 HL78XX_CMD_TIMEOUT_SHORT);
 #endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
 
@@ -550,7 +550,7 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(hl78xx_disable_pmc_chat_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CPSMS=0", hl78xx_ok_match));
 
 MODEM_CHAT_SCRIPT_DEFINE(hl78xx_disable_pmc_chat_script, hl78xx_disable_pmc_chat_script_cmds,
-			 hl78xx_abort_matches, hl78xx_chat_callback_handler,
+			 hl78xx_abort_matches, hl78xx_chat_callback_handler_ctx,
 			 HL78XX_CMD_TIMEOUT_MEDIUM);
 #endif /* CONFIG_MODEM_HL78XX_LOW_POWER_MODE */
 #if defined(CONFIG_MODEM_HL78XX_HAS_KSTATEV_URC) &&                                                \
@@ -574,7 +574,7 @@ MODEM_CHAT_SCRIPT_CMDS_DEFINE(
 				   "\",\"" CONFIG_NTN_MANUAL_ALTITUDE "\"",
 				   hl78xx_ok_match));
 MODEM_CHAT_SCRIPT_DEFINE(hl78xx_ntn_pos_script, hl78xx_ntn_pos_cmds, hl78xx_abort_matches,
-			 hl78xx_chat_callback_handler, 10);
+			 hl78xx_chat_callback_handler_ctx, 10);
 
 #endif /* CONFIG_NTN_POSITION_SOURCE_MANUAL */
 #endif /* CONFIG_MODEM_HL78XX_RAT_NBNTN */
@@ -583,19 +583,19 @@ MODEM_CHAT_SCRIPT_DEFINE(hl78xx_ntn_pos_script, hl78xx_ntn_pos_cmds, hl78xx_abor
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(hl78xx_av_connect_accept_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+WDSR=1", hl78xx_ok_match));
 MODEM_CHAT_SCRIPT_DEFINE(hl78xx_av_connect_accept_script, hl78xx_av_connect_accept_cmds,
-			 hl78xx_abort_matches, hl78xx_chat_callback_handler,
+			 hl78xx_abort_matches, hl78xx_chat_callback_handler_ctx,
 			 HL78XX_SCRIPT_TIMEOUT_NETWORK);
 /* FOTA script download accept */
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(hl78xx_fota_download_accept_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+WDSR=3", hl78xx_ok_match));
 MODEM_CHAT_SCRIPT_DEFINE(hl78xx_fota_download_accept_script, hl78xx_fota_download_accept_cmds,
-			 hl78xx_abort_matches, hl78xx_chat_callback_handler,
+			 hl78xx_abort_matches, hl78xx_chat_callback_handler_ctx,
 			 HL78XX_SCRIPT_TIMEOUT_NETWORK);
 /* FOTA script install */
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(hl78xx_fota_install_accept_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+WDSR=4", hl78xx_ok_match));
 MODEM_CHAT_SCRIPT_DEFINE(hl78xx_fota_install_accept_script, hl78xx_fota_install_accept_cmds,
-			 hl78xx_abort_matches, hl78xx_chat_callback_handler,
+			 hl78xx_abort_matches, hl78xx_chat_callback_handler_ctx,
 			 HL78XX_SCRIPT_TIMEOUT_NETWORK);
 #endif /* CONFIG_MODEM_HL78XX_AIRVANTAGE */
 /* Socket-specific matches and wrappers exposed for the sockets translation
@@ -680,22 +680,19 @@ size_t hl78xx_get_ktcp_state_matches_size(void)
 }
 
 /* Capture script failure information */
-static void hl78xx_capture_script_failure(struct hl78xx_data *data, struct modem_chat *chat,
+static void hl78xx_capture_script_failure(struct hl78xx_data *data,
+					  const struct modem_chat_script_callback_ctx *ctx,
 					  enum modem_chat_script_result result)
 {
-	const struct modem_chat_script_chat *script_chat;
-	uint16_t script_chat_index;
 	enum hl78xx_state origin_state;
 
 	origin_state = data->status.state;
 
-	script_chat = modem_chat_callback_script_chat(chat);
-	script_chat_index = modem_chat_callback_script_chat_index(chat);
 
 	data->script_failure.recovery_rule = hl78xx_find_script_recovery_rule(
-		origin_state, script_chat, script_chat_index, result);
+		origin_state, ctx, result);
 
-	data->script_failure.script_chat_index = script_chat_index;
+	data->script_failure.script_chat = ctx->script_chat;
 	data->script_failure.result = result;
 	data->script_failure.origin_state = origin_state;
 
@@ -712,8 +709,8 @@ static void hl78xx_capture_script_failure(struct hl78xx_data *data, struct modem
  */
 
 /* Bridge function - modem_chat callback */
-void hl78xx_chat_callback_handler(struct modem_chat *chat, enum modem_chat_script_result result,
-				  void *user_data)
+void hl78xx_chat_callback_handler_ctx(const struct modem_chat_script_callback_ctx *ctx,
+				      enum modem_chat_script_result result, void *user_data)
 {
 	struct hl78xx_data *data = (struct hl78xx_data *)user_data;
 
@@ -724,12 +721,27 @@ void hl78xx_chat_callback_handler(struct modem_chat *chat, enum modem_chat_scrip
 	if (result == MODEM_CHAT_SCRIPT_RESULT_SUCCESS) {
 		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_SCRIPT_SUCCESS);
 	} else if (result == MODEM_CHAT_SCRIPT_RESULT_TIMEOUT) {
-		hl78xx_capture_script_failure(data, chat, result);
+		hl78xx_capture_script_failure(data, ctx, result);
 		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_AT_CMD_TIMEOUT);
 	} else {
-		hl78xx_capture_script_failure(data, chat, result);
+		hl78xx_capture_script_failure(data, ctx, result);
 		hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_SCRIPT_FAILED);
 	}
+}
+
+void hl78xx_chat_callback_handler(struct modem_chat *chat, enum modem_chat_script_result result,
+				  void *user_data)
+{
+	/* Construct a context object for the non callback usage of this function
+	 * in other HL78xx files.
+	 */
+	const struct modem_chat_script_callback_ctx ctx = {
+		.chat = chat,
+		.script = NULL,
+		.script_chat = NULL,
+	};
+
+	hl78xx_chat_callback_handler_ctx(&ctx, result, user_data);
 }
 
 /* --- Wrapper helpers -------------------------------------------------- */
@@ -1022,7 +1034,7 @@ static const struct hl78xx_script_recovery_rule hl78xx_script_recovery_rules[] =
 	{
 		.failed_state = MODEM_HL78XX_STATE_RUN_INIT_SCRIPT,
 		.failed_request = "AT+KBNDCFG?",
-		.failed_script_chat_index = HL78XX_SCRIPT_CHAT_INDEX_ANY,
+		.failed_script_chat = NULL,
 		.result_mask = HL78XX_SCRIPT_RESULT_BIT(MODEM_CHAT_SCRIPT_RESULT_ABORT),
 		.action = hl78xx_recover_kbndcfg,
 		.success_state = MODEM_HL78XX_STATE_RUN_INIT_SCRIPT,
@@ -1033,7 +1045,7 @@ static const struct hl78xx_script_recovery_rule hl78xx_script_recovery_rules[] =
 	{
 		.failed_state = MODEM_HL78XX_STATE_AWAIT_POWER_ON,
 		.failed_request = "",
-		.failed_script_chat_index = 0U,
+		.failed_script_chat = &hl78xx_post_restart_chat_script_cmds[0],
 		.result_mask = HL78XX_SCRIPT_RESULT_BIT(MODEM_CHAT_SCRIPT_RESULT_TIMEOUT),
 		.action = hl78xx_recover_post_restart_timeout,
 		.success_state = MODEM_HL78XX_STATE_RUN_INIT_SCRIPT,
@@ -1045,16 +1057,16 @@ static const struct hl78xx_script_recovery_rule hl78xx_script_recovery_rules[] =
 
 static const struct hl78xx_script_recovery_rule *
 hl78xx_find_script_recovery_rule(enum hl78xx_state state,
-				 const struct modem_chat_script_chat *script_chat,
-				 uint16_t script_chat_index, enum modem_chat_script_result result)
+				 const struct modem_chat_script_callback_ctx *ctx,
+				 enum modem_chat_script_result result)
 {
 	const char *request;
 
-	if (script_chat == NULL) {
+	if (ctx->script_chat == NULL) {
 		return NULL;
 	}
 
-	request = script_chat->request;
+	request = ctx->script_chat->request;
 	if (request == NULL) {
 		return NULL;
 	}
@@ -1065,8 +1077,8 @@ hl78xx_find_script_recovery_rule(enum hl78xx_state state,
 		if ((rule->failed_state == state) &&
 		    ((rule->result_mask & HL78XX_SCRIPT_RESULT_BIT(result)) != 0U) &&
 		    (strcmp(rule->failed_request, request) == 0) &&
-		    ((rule->failed_script_chat_index == HL78XX_SCRIPT_CHAT_INDEX_ANY) ||
-		     (rule->failed_script_chat_index == script_chat_index))) {
+		    ((rule->failed_script_chat == NULL) ||
+		     (rule->failed_script_chat == ctx->script_chat))) {
 			return rule;
 		}
 	}

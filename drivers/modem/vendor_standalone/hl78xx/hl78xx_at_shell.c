@@ -58,8 +58,8 @@ MODEM_CHAT_MATCHES_DEFINE(at_shell_abort_matches,
 			  MODEM_CHAT_MATCH("+CME ERROR:", "", at_shell_print_match),
 			  MODEM_CHAT_MATCH("ERROR", "", at_shell_print_match));
 
-static void at_shell_script_callback(struct modem_chat *chat, enum modem_chat_script_result result,
-				     void *user_data)
+static void at_shell_script_callback(const struct modem_chat_script_callback_ctx *ctx,
+				     enum modem_chat_script_result result, void *user_data)
 {
 	atomic_clear_bit(&at_shell_state, AT_SHELL_STATE_SCRIPT_RUNNING_BIT);
 }

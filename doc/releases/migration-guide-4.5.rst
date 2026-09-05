@@ -1754,6 +1754,8 @@ Modem
   :c:struct:`modem_cellular_vendor_config`, not :c:struct:`modem_cellular_data`.
 * Cellular modem instance PPP pointer is now automatically populated in
   :c:struct:`modem_cellular_config`. Assignment to :c:struct:`modem_cellular_data` must be removed.
+* Chat script callback argument types have been updated. The old :c:struct:`modem_chat` pointer is
+  now accessible through the :c:struct:`modem_chat_script_callback_ctx` pointer.
 
 PTP
 ===

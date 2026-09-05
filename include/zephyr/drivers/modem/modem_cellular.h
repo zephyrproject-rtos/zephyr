@@ -382,11 +382,11 @@ void modem_cellular_chat_on_modem_ready(struct modem_chat *chat, char **argv, ui
  * Use this as the callback for lifecycle scripts executed by the cellular modem state machine. The
  * callback translates the chat result into the corresponding internal state-machine event.
  *
- * @param chat Chat instance that completed the script. Must not be NULL.
+ * @param ctx Chat completion context from the chat module. Must not be NULL.
  * @param result Script completion result.
  * @param user_data Pointer to the associated @ref modem_cellular_data object. Must not be NULL.
  */
-void modem_cellular_chat_callback_handler(struct modem_chat *chat,
+void modem_cellular_chat_callback_handler(const struct modem_chat_script_callback_ctx *ctx,
 					  enum modem_chat_script_result result, void *user_data);
 
 /**
