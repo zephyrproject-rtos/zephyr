@@ -1,5 +1,5 @@
 /*
- * Copyright 2022, 2025 NXP
+ * SPDX-FileCopyrightText: Copyright 2022, 2025-2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,15 +8,15 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/devicetree.h>
-#include <zephyr/drivers/sdhc.h>
-#include <zephyr/sd/sd_spec.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/gpio.h>
 #include <zephyr/drivers/reset.h>
 #include <zephyr/logging/log.h>
 #include <soc.h>
 #include <zephyr/drivers/pinctrl.h>
-#include "sdhc_helpers.h"
+
+#include "sdhc_standard_core.h"
+
 #define PINCTRL_STATE_SLOW   PINCTRL_STATE_PRIV_START
 #define PINCTRL_STATE_MED    (PINCTRL_STATE_PRIV_START + 1U)
 #define PINCTRL_STATE_FAST   (PINCTRL_STATE_PRIV_START + 2U)
@@ -46,8 +46,18 @@ enum transfer_callback_status {
 /* USDHC DAT3 detect delay */
 #define IMX_USDHC_DAT3_DETECT_DELAY_US    (1000U)
 
-#define DEV_CFG(_dev)  ((const struct usdhc_config *)(_dev)->config)
-#define DEV_DATA(_dev) ((struct usdhc_data *)(_dev)->data)
+/*
+ * uSDHC host controller capabilities register
+ *
+ * Some platforms' header files may not have some bits definition
+ * if they don't support. (Bits are reserved with 0.)
+ * So, just defined them here.
+ */
+#define IMX_USDHC_HOST_CTRL_CAP_SDR50			BIT(0)
+#define IMX_USDHC_HOST_CTRL_CAP_SDR104			BIT(1)
+#define IMX_USDHC_HOST_CTRL_CAP_DDR50			BIT(2)
+#define IMX_USDHC_HOST_CTRL_CAP_USE_TUNING_SDR50	BIT(13)
+#define IMX_USDHC_HOST_CTRL_CAP_ADMA			BIT(20)
 
 struct usdhc_host_transfer {
 #ifdef CONFIG_SDHC_SCATTER_GATHER_TRANSFER
@@ -60,8 +70,7 @@ struct usdhc_host_transfer {
 };
 
 struct usdhc_config {
-	DEVICE_MMIO_NAMED_ROM(usdhc_mmio);
-
+	struct sdhc_standard_host_common_config standard;
 	const struct device *clock_dev;
 	clock_control_subsys_t clock_subsys;
 	uint8_t nusdhc;
@@ -76,24 +85,15 @@ struct usdhc_config {
 	uint32_t data_timeout;
 	uint32_t read_watermark;
 	uint32_t write_watermark;
-	uint32_t max_current_330;
-	uint32_t max_current_300;
-	uint32_t max_current_180;
-	uint32_t power_delay_ms;
-	uint32_t min_bus_freq;
-	uint32_t max_bus_freq;
-	bool mmc_hs200_1_8v;
-	bool mmc_hs400_1_8v;
 	const struct pinctrl_dev_config *pincfg;
 	struct reset_dt_spec reset;
 	void (*irq_config_func)(const struct device *dev);
 };
 
 struct usdhc_data {
-	DEVICE_MMIO_NAMED_RAM(usdhc_mmio);
+	struct sdhc_standard_host_common_data standard;
 
 	const struct device *dev;
-	struct sdhc_host_props props;
 	bool card_present;
 	struct k_sem transfer_sem;
 	volatile uint32_t transfer_status;
@@ -115,7 +115,7 @@ struct usdhc_data {
 
 static USDHC_Type *get_base(const struct device *dev)
 {
-	return (USDHC_Type *)DEVICE_MMIO_NAMED_GET(dev, usdhc_mmio);
+	return (USDHC_Type *)SDHC_STANDARD_DEV_MMIO_GET(dev);
 }
 
 static void transfer_complete_cb(USDHC_Type *usdhc, usdhc_handle_t *handle, status_t status,
@@ -258,49 +258,21 @@ static void imx_usdhc_error_recovery(const struct device *dev)
  */
 static void imx_usdhc_init_host_props(const struct device *dev)
 {
-	const struct usdhc_config *cfg = dev->config;
-	struct usdhc_data *data = dev->data;
-	usdhc_capability_t caps;
+	struct sdhc_standard_host_common_data *data = DEV_DATA(dev);
 	struct sdhc_host_props *props = &data->props;
-	USDHC_Type *base = get_base(dev);
+	const struct usdhc_config *cfg = dev->config;
 
-	memset(props, 0, sizeof(struct sdhc_host_props));
-	props->f_max = cfg->max_bus_freq;
-	props->f_min = cfg->min_bus_freq;
-	props->max_current_330 = cfg->max_current_330;
-	props->max_current_180 = cfg->max_current_180;
-	props->power_delay = cfg->power_delay_ms;
-	/* Read host capabilities */
-	USDHC_GetCapability(base, &caps);
-#if !(defined(FSL_FEATURE_USDHC_HAS_NO_VS18) && FSL_FEATURE_USDHC_HAS_NO_VS18)
+	props->bus_4_bit_support = true;
+
 	if (cfg->no_180_vol) {
 		props->host_caps.vol_180_support = false;
-	} else {
-		props->host_caps.vol_180_support = (bool)(caps.flags & kUSDHC_SupportV180Flag);
 	}
-#endif
 	if (cfg->no_300_vol) {
 		props->host_caps.vol_300_support = false;
-	} else {
-		props->host_caps.vol_300_support = (bool)(caps.flags & kUSDHC_SupportV300Flag);
 	}
 	if (cfg->no_330_vol) {
 		props->host_caps.vol_330_support = false;
-	} else {
-		props->host_caps.vol_330_support = (bool)(caps.flags & kUSDHC_SupportV330Flag);
 	}
-	props->host_caps.suspend_res_support = (bool)(caps.flags & kUSDHC_SupportSuspendResumeFlag);
-	props->host_caps.sdma_support = (bool)(caps.flags & kUSDHC_SupportDmaFlag);
-	props->host_caps.high_spd_support = (bool)(caps.flags & kUSDHC_SupportHighSpeedFlag);
-	props->host_caps.adma_2_support = (bool)(caps.flags & kUSDHC_SupportAdmaFlag);
-	props->host_caps.max_blk_len = (bool)(caps.maxBlockLength);
-	props->host_caps.ddr50_support = (bool)(caps.flags & kUSDHC_SupportDDR50Flag);
-	props->host_caps.sdr104_support = (bool)(caps.flags & kUSDHC_SupportSDR104Flag);
-	props->host_caps.sdr50_support = (bool)(caps.flags & kUSDHC_SupportSDR50Flag);
-	props->host_caps.bus_8_bit_support = (bool)(caps.flags & kUSDHC_Support8BitFlag);
-	props->bus_4_bit_support = (bool)(caps.flags & kUSDHC_Support4BitFlag);
-	props->hs200_support = (bool)(cfg->mmc_hs200_1_8v);
-	props->hs400_support = (bool)(cfg->mmc_hs400_1_8v);
 }
 
 /*
@@ -344,6 +316,7 @@ static int imx_usdhc_set_io(const struct device *dev, struct sdhc_io *ios)
 {
 	const struct usdhc_config *cfg = dev->config;
 	struct usdhc_data *data = dev->data;
+	struct sdhc_standard_host_common_data *standard_data = DEV_DATA(dev);
 	uint32_t src_clk_hz, bus_clk;
 	struct sdhc_io *host_io = &data->host_io;
 	USDHC_Type *base = get_base(dev);
@@ -356,7 +329,8 @@ static int imx_usdhc_set_io(const struct device *dev, struct sdhc_io *ios)
 		return -EINVAL;
 	}
 
-	if (ios->clock && (ios->clock > data->props.f_max || ios->clock < data->props.f_min)) {
+	if (ios->clock && (ios->clock > standard_data->props.f_max ||
+			   ios->clock < standard_data->props.f_min)) {
 		return -EINVAL;
 	}
 
@@ -983,7 +957,7 @@ static int imx_usdhc_get_card_present(const struct device *dev)
  */
 static int imx_usdhc_get_host_props(const struct device *dev, struct sdhc_host_props *props)
 {
-	struct usdhc_data *data = dev->data;
+	struct sdhc_standard_host_common_data *data = DEV_DATA(dev);
 
 	memcpy(props, &data->props, sizeof(struct sdhc_host_props));
 	return 0;
@@ -1113,6 +1087,60 @@ static int imx_usdhc_isr(const struct device *dev)
 }
 
 /*
+ * Standard register access APIs
+ *
+ * Some fix-up is needed because the USDHC registers may be
+ * partial compatible with specification.
+ */
+
+static uint64_t imx_usdhc_read64(const struct device *dev, uint32_t reg)
+{
+	uint32_t base = SDHC_STANDARD_DEV_MMIO_GET(dev);
+	uint32_t lo;
+	uint32_t hi;
+
+	if (reg == SDHC_REG_CAPABILITIES) {
+		uint64_t usdhc_caps;
+		uint64_t std_caps;
+
+		/* There is only lower 32-bit capabilities register on usdhc */
+		usdhc_caps = sys_read32(base + reg);
+
+		/* Keep compatible fields */
+		std_caps = usdhc_caps &
+			(SDHC_REG_CAPABILITIES_MBL_MASK | SDHC_REG_CAPABILITIES_HSS_MASK |
+			 SDHC_REG_CAPABILITIES_SDMA_MASK | SDHC_REG_CAPABILITIES_SRS_MASK |
+			 SDHC_REG_CAPABILITIES_VS33_MASK | SDHC_REG_CAPABILITIES_VS30_MASK |
+			 SDHC_REG_CAPABILITIES_VS18_MASK);
+		/*
+		 * Fill other fields if knows
+		 * - SDR50/SDR104/DDR50_SUPPORT/USE_TUNING_SDR50
+		 *   - have 32 bit offset between uSDHC and standard host
+		 * - ADMA2_SUPPORT
+		 *   - have 1 bit offset between uSDHC and standard host
+		 * - 8_BIT_SUPPORT
+		 *   - always support. No bit defined on uSDHC.
+		 */
+		std_caps |= ((usdhc_caps & (IMX_USDHC_HOST_CTRL_CAP_SDR50 |
+					    IMX_USDHC_HOST_CTRL_CAP_SDR104 |
+					    IMX_USDHC_HOST_CTRL_CAP_DDR50 |
+					    IMX_USDHC_HOST_CTRL_CAP_USE_TUNING_SDR50)) << 32);
+		std_caps |= ((usdhc_caps & IMX_USDHC_HOST_CTRL_CAP_ADMA) >> 1);
+		std_caps |= SDHC_REG_CAPABILITIES_8B_MASK;
+
+		return std_caps;
+	}
+
+	lo = sys_read32(base + reg);
+	hi = sys_read32(base + reg + 4);
+	return (((uint64_t)hi << 32) | lo);
+}
+
+static struct sdhc_standard_host_ops imx_usdhc_standard_ops = {
+	.read64  = imx_usdhc_read64,
+};
+
+/*
  * Perform early system init for SDHC
  */
 static int imx_usdhc_init(const struct device *dev)
@@ -1128,8 +1156,6 @@ static int imx_usdhc_init(const struct device *dev)
 		.CardInserted = card_inserted_cb,
 		.CardRemoved = card_removed_cb,
 	};
-
-	DEVICE_MMIO_NAMED_MAP(dev, usdhc_mmio, K_MEM_CACHE_NONE | K_MEM_DIRECT_MAP);
 
 	if (!device_is_ready(cfg->clock_dev)) {
 		LOG_ERR("clock control device not ready");
@@ -1153,6 +1179,9 @@ static int imx_usdhc_init(const struct device *dev)
 	if (ret) {
 		return ret;
 	}
+
+	sdhc_standard_host_init(dev);
+
 	base = get_base(dev);
 	USDHC_TransferCreateHandle(base, &data->transfer_handle, &callbacks, (void *)dev);
 	cfg->irq_config_func(dev);
@@ -1162,6 +1191,7 @@ static int imx_usdhc_init(const struct device *dev)
 	host_config.readWatermarkLevel = cfg->read_watermark;
 	host_config.writeWatermarkLevel = cfg->write_watermark;
 	USDHC_Init(base, &host_config);
+
 	/* Read host controller properties */
 	imx_usdhc_init_host_props(dev);
 	/* Set power GPIO low, so card starts powered off */
@@ -1250,7 +1280,7 @@ static DEVICE_API(sdhc, usdhc_api) = {
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \
                                                                                                    \
 	static const struct usdhc_config usdhc_##n##_config = {                                    \
-		DEVICE_MMIO_NAMED_ROM_INIT(usdhc_mmio, DT_DRV_INST(n)),                            \
+		.standard = SDHC_STANDARD_COMMON_CONFIG_DT_INST_INIT(n, &imx_usdhc_standard_ops),  \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
 		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),              \
 		.nusdhc = n,                                                                       \
@@ -1265,13 +1295,6 @@ static DEVICE_API(sdhc, usdhc_api) = {
 		.no_300_vol = DT_INST_PROP(n, no_3_0_v),                                           \
 		.read_watermark = DT_INST_PROP(n, read_watermark),                                 \
 		.write_watermark = DT_INST_PROP(n, write_watermark),                               \
-		.max_current_330 = DT_INST_PROP(n, max_current_330),                               \
-		.max_current_180 = DT_INST_PROP(n, max_current_180),                               \
-		.min_bus_freq = DT_INST_PROP(n, min_bus_freq),                                     \
-		.max_bus_freq = DT_INST_PROP(n, max_bus_freq),                                     \
-		.power_delay_ms = DT_INST_PROP(n, power_delay_ms),                                 \
-		.mmc_hs200_1_8v = DT_INST_PROP(n, mmc_hs200_1_8v),                                 \
-		.mmc_hs400_1_8v = DT_INST_PROP(n, mmc_hs400_1_8v),                                 \
 		.reset = RESET_DT_SPEC_INST_GET_OR(n, {0}),                                        \
 		.irq_config_func = usdhc_##n##_irq_config_func,                                    \
 		.pincfg = PINCTRL_DT_INST_DEV_CONFIG_GET(n),                                       \
