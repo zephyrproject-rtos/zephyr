@@ -42,7 +42,6 @@ static int reject_conn(const bt_addr_t *bdaddr, uint8_t reason)
 {
 	struct bt_hci_cp_reject_conn_req *cp;
 	struct net_buf *buf;
-	int err;
 
 	buf = bt_hci_cmd_alloc(K_FOREVER);
 	if (!buf) {
@@ -53,12 +52,10 @@ static int reject_conn(const bt_addr_t *bdaddr, uint8_t reason)
 	bt_addr_copy(&cp->bdaddr, bdaddr);
 	cp->reason = reason;
 
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_REJECT_CONN_REQ, buf, NULL);
-	if (err) {
-		return err;
-	}
-
-	return 0;
+	/* Fire-and-forget: this runs in HCI event (RX) context and the command
+	 * completion carries no information we act on here.
+	 */
+	return bt_hci_cmd_send(BT_HCI_OP_REJECT_CONN_REQ, buf);
 }
 
 static uint8_t accept_conn(const struct bt_hci_evt_conn_request *evt)
@@ -100,7 +97,12 @@ static uint8_t accept_conn(const struct bt_hci_evt_conn_request *evt)
 	bt_addr_copy(&cp->bdaddr, &evt->bdaddr);
 	cp->role = role;
 
-	err = bt_hci_cmd_send_sync(BT_HCI_OP_ACCEPT_CONN_REQ, buf, NULL);
+	/* Fire-and-forget: this runs in HCI event (RX) context. Accept Connection
+	 * Request only yields a Command Status; the actual connection outcome is
+	 * reported asynchronously via the Connection Complete event, which is
+	 * handled separately. We only fail here if the command cannot be queued.
+	 */
+	err = bt_hci_cmd_send(BT_HCI_OP_ACCEPT_CONN_REQ, buf);
 	if (err != 0) {
 		return BT_HCI_ERR_UNSPECIFIED;
 	}
