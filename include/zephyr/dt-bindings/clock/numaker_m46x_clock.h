@@ -626,8 +626,8 @@
 	(NUMAKER_MODULE_APBCLK_ENC(0UL) |                                                          \
 	 NUMAKER_MODULE_IP_EN_Pos_ENC(NUMAKER_CLK_AHBCLK0_EMAC0CKEN_Pos) |                         \
 	 NUMAKER_MODULE_CLKSEL_ENC(NUMAKER_NA) | NUMAKER_MODULE_CLKSEL_Msk_ENC(NUMAKER_NA) |       \
-	 NUMAKER_MODULE_CLKSEL_Pos_ENC(NUMAKER_NA) | NUMAKER_MODULE_CLKDIV_ENC(3UL) |              \
-	 NUMAKER_MODULE_CLKDIV_Msk_ENC(0x0FUL) | NUMAKER_MODULE_CLKDIV_Pos_ENC(16UL))
+	 NUMAKER_MODULE_CLKSEL_Pos_ENC(NUMAKER_NA) | NUMAKER_MODULE_CLKDIV_ENC(NUMAKER_NA) |       \
+	 NUMAKER_MODULE_CLKDIV_Msk_ENC(NUMAKER_NA) | NUMAKER_MODULE_CLKDIV_Pos_ENC(NUMAKER_NA))
 
 #define NUMAKER_SDH0_MODULE                                                                        \
 	(NUMAKER_MODULE_APBCLK_ENC(0UL) |                                                          \
