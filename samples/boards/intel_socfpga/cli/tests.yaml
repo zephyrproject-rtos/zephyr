@@ -1,0 +1,12 @@
+sample:
+  name: Intel SoC FPGA CLI
+tests:
+  sample.board.intel_socfpga.cli:
+    platform_allow:
+      - intel_socfpga_agilex5_socdk
+    tags: shell
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "Starting Command Line Interface"
