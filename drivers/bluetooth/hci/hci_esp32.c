@@ -522,6 +522,7 @@ static bool is_hci_event_discardable(uint8_t evt_code, const uint8_t *payload, s
 {
 	switch (evt_code) {
 #if defined(CONFIG_BT_CLASSIC)
+	case BT_HCI_EVT_INQUIRY_RESULT:
 	case BT_HCI_EVT_INQUIRY_RESULT_WITH_RSSI:
 	case BT_HCI_EVT_EXTENDED_INQUIRY_RESULT:
 		return true;

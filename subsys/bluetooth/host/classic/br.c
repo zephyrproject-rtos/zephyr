@@ -497,6 +497,77 @@ static struct bt_br_discovery_result *get_result_slot(const bt_addr_t *addr, int
 	return result;
 }
 
+/* Report one inquiry response to the discovery listeners.
+ *
+ * @param addr           Address of the responding device.
+ * @param pscan_rep_mode Page scan repetition mode of the device.
+ * @param clock_offset   Clock offset of the device, little endian.
+ * @param cod            Class of Device, 3 octets.
+ * @param rssi           RSSI, or RSSI_INVALID when the event does not carry it.
+ * @param eir            EIR data, or NULL when the event does not carry it.
+ */
+static void inquiry_result_report(const bt_addr_t *addr, uint8_t pscan_rep_mode,
+				  uint16_t clock_offset, const uint8_t cod[3],
+				  int8_t rssi, const uint8_t *eir)
+{
+	struct bt_br_discovery_result *result;
+	struct bt_br_discovery_priv *priv;
+	struct bt_br_discovery_cb *listener, *next;
+
+	result = get_result_slot(addr, rssi);
+	if (!result) {
+		return;
+	}
+
+	priv = &result->_priv;
+	priv->pscan_rep_mode = pscan_rep_mode;
+	priv->clock_offset = clock_offset;
+
+	memcpy(result->cod, cod, 3);
+	result->rssi = rssi;
+
+	if (eir != NULL) {
+		memcpy(result->eir, eir, sizeof(result->eir));
+	} else {
+		/* we could reuse slot so make sure EIR is cleared */
+		(void)memset(result->eir, 0, sizeof(result->eir));
+	}
+
+	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&discovery_cbs, listener, next, node) {
+		if (listener->recv) {
+			listener->recv(result);
+		}
+	}
+}
+
+void bt_hci_inquiry_result(struct net_buf *buf)
+{
+	uint8_t num_reports = net_buf_pull_u8(buf);
+
+	if (!atomic_test_bit(bt_dev.flags, BT_DEV_INQUIRY)) {
+		return;
+	}
+
+	LOG_DBG("number of results: %u", num_reports);
+
+	while (num_reports--) {
+		struct bt_hci_evt_inquiry_result *evt;
+
+		if (buf->len < sizeof(*evt)) {
+			LOG_ERR("Unexpected end to buffer");
+			return;
+		}
+
+		evt = net_buf_pull_mem(buf, sizeof(*evt));
+		LOG_DBG("%s", bt_addr_str(&evt->addr));
+
+		/* The standard format carries no RSSI. */
+		inquiry_result_report(&evt->addr, evt->pscan_rep_mode,
+				      evt->clock_offset, evt->cod, RSSI_INVALID,
+				      NULL);
+	}
+}
+
 void bt_hci_inquiry_result_with_rssi(struct net_buf *buf)
 {
 	uint8_t num_reports = net_buf_pull_u8(buf);
@@ -509,9 +580,6 @@ void bt_hci_inquiry_result_with_rssi(struct net_buf *buf)
 
 	while (num_reports--) {
 		struct bt_hci_evt_inquiry_result_with_rssi *evt;
-		struct bt_br_discovery_result *result;
-		struct bt_br_discovery_priv *priv;
-		struct bt_br_discovery_cb *listener, *next;
 
 		if (buf->len < sizeof(*evt)) {
 			LOG_ERR("Unexpected end to buffer");
@@ -521,35 +589,15 @@ void bt_hci_inquiry_result_with_rssi(struct net_buf *buf)
 		evt = net_buf_pull_mem(buf, sizeof(*evt));
 		LOG_DBG("%s rssi %d dBm", bt_addr_str(&evt->addr), evt->rssi);
 
-		result = get_result_slot(&evt->addr, evt->rssi);
-		if (!result) {
-			return;
-		}
-
-		priv = &result->_priv;
-		priv->pscan_rep_mode = evt->pscan_rep_mode;
-		priv->clock_offset = evt->clock_offset;
-
-		memcpy(result->cod, evt->cod, 3);
-		result->rssi = evt->rssi;
-
-		/* we could reuse slot so make sure EIR is cleared */
-		(void)memset(result->eir, 0, sizeof(result->eir));
-
-		SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&discovery_cbs, listener, next, node) {
-			if (listener->recv) {
-				listener->recv(result);
-			}
-		}
+		inquiry_result_report(&evt->addr, evt->pscan_rep_mode,
+				      evt->clock_offset, evt->cod, evt->rssi,
+				      NULL);
 	}
 }
 
 void bt_hci_extended_inquiry_result(struct net_buf *buf)
 {
 	struct bt_hci_evt_extended_inquiry_result *evt = (void *)buf->data;
-	struct bt_br_discovery_result *result;
-	struct bt_br_discovery_priv *priv;
-	struct bt_br_discovery_cb *listener, *next;
 
 	if (!atomic_test_bit(bt_dev.flags, BT_DEV_INQUIRY)) {
 		return;
@@ -557,24 +605,8 @@ void bt_hci_extended_inquiry_result(struct net_buf *buf)
 
 	LOG_DBG("%s rssi %d dBm", bt_addr_str(&evt->addr), evt->rssi);
 
-	result = get_result_slot(&evt->addr, evt->rssi);
-	if (!result) {
-		return;
-	}
-
-	priv = &result->_priv;
-	priv->pscan_rep_mode = evt->pscan_rep_mode;
-	priv->clock_offset = evt->clock_offset;
-
-	result->rssi = evt->rssi;
-	memcpy(result->cod, evt->cod, 3);
-	memcpy(result->eir, evt->eir, sizeof(result->eir));
-
-	SYS_SLIST_FOR_EACH_CONTAINER_SAFE(&discovery_cbs, listener, next, node) {
-		if (listener->recv) {
-			listener->recv(result);
-		}
-	}
+	inquiry_result_report(&evt->addr, evt->pscan_rep_mode,
+			      evt->clock_offset, evt->cod, evt->rssi, evt->eir);
 }
 
 void bt_hci_remote_name_request_complete(struct net_buf *buf)
