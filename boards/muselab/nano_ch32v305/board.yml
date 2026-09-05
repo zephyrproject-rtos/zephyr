@@ -1,0 +1,6 @@
+board:
+  name: nano_ch32v305
+  full_name: MuseLab nanoCH32V305
+  vendor: muselab
+  socs:
+    - name: ch32v305
