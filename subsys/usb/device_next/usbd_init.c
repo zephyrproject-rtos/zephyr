@@ -282,7 +282,7 @@ int usbd_init_configurations(struct usbd_context *const uds_ctx)
 	usbd_init_update_fs_mps0(uds_ctx);
 
 	if (USBD_SUPPORTS_HIGH_SPEED) {
-		SYS_SLIST_FOR_EACH_CONTAINER(&uds_ctx->hs_configs, cfg_nd, node) {
+		SYS_SLIST_FOR_EACH_CONTAINER(usbd_get_hs_configs(uds_ctx), cfg_nd, node) {
 			int ret;
 
 			ret = init_configuration(uds_ctx, USBD_SPEED_HS, cfg_nd);
