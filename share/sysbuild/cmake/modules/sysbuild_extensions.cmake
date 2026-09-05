@@ -2,6 +2,28 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+#[=======================================================================[.rst:
+sysbuild_extensions
+###################
+
+Sysbuild's CMake extension commands.
+
+This module defines the commands used to describe a :ref:`sysbuild <sysbuild>` configuration: which
+images take part in the build, how they are configured, and in which order they are configured and
+flashed.
+
+The commands documented below are available in the :file:`sysbuild.cmake` file of any application or
+Zephyr module that participates in a sysbuild build.
+
+Commands not documented here are used by sysbuild itself and may be removed, renamed, or
+re-purposed without prior notice.
+
+.. contents::
+   :backlinks: entry
+   :local:
+
+#]=======================================================================]
+
 # Usage:
 #   load_cache(IMAGE <image> BINARY_DIR <dir>)
 #
@@ -43,36 +65,50 @@ function(load_cache)
   endforeach()
 endfunction()
 
-# Usage:
-#   sysbuild_get(<variable> IMAGE <image> [VAR <image-variable>] <KCONFIG|CACHE>)
-#
-# This function will return the variable found in the CMakeCache.txt file
-# identified by image.
-# If `VAR` is provided, the name given as parameter will be looked up, but if
-# `VAR` is not given, the `<variable>` name provided will be used both for
-# lookup and value return.
-#
-# The result will be returned in `<variable>`.
-#
-# Example use:
-#   sysbuild_get(PROJECT_NAME IMAGE my_sample CACHE)
-#     will lookup PROJECT_NAME from the CMakeCache identified by `my_sample` and
-#     and return the value in the local variable `PROJECT_NAME`.
-#
-#   sysbuild_get(my_sample_PROJECT_NAME IMAGE my_sample VAR PROJECT_NAME CACHE)
-#     will lookup PROJECT_NAME from the CMakeCache identified by `my_sample` and
-#     and return the value in the local variable `my_sample_PROJECT_NAME`.
-#
-#   sysbuild_get(my_sample_CONFIG_FOO IMAGE my_sample VAR CONFIG_FOO KCONFIG)
-#     will lookup CONFIG_FOO from the KConfig identified by `my_sample` and
-#     and return the value in the local variable `my_sample_CONFIG_FOO`.
-#
-# <variable>: variable used for returning CMake cache value. Also used as lookup
-#             variable if `VAR` is not provided.
-# IMAGE:      image name identifying the cache to use for variable lookup.
-# VAR:        name of the CMake cache variable name to lookup.
-# KCONFIG:    Flag indicating that a Kconfig setting should be fetched.
-# CACHE:      Flag indicating that a CMake cache variable should be fetched.
+#[=======================================================================[.rst:
+.. cmake:signature:: sysbuild_get(<variable> IMAGE <image> [VAR <image-variable>] <KCONFIG|CACHE>)
+
+   Read a CMake cache variable or Kconfig setting from an image.
+
+   Sysbuild can only read an image once that image has been configured, for example from the
+   post-CMake hook of a :ref:`sysbuild module <sysbuild_module_integration>`.
+
+   If ``VAR`` is provided, the name given as parameter will be looked up, but if ``VAR`` is not
+   given, the ``<variable>`` name provided will be used both for lookup and value return.
+
+   The result will be returned in ``<variable>``.
+
+   ``<variable>``
+     Variable used for returning the value. Also used as lookup variable if ``VAR`` is not
+     provided.
+
+   ``IMAGE <image>``
+     Name of the image to read the variable from.
+
+   ``VAR <image-variable>``
+     Name of the variable to look up.
+
+   ``KCONFIG``
+     Flag indicating that a Kconfig setting should be fetched.
+
+   ``CACHE``
+     Flag indicating that a CMake cache variable should be fetched.
+
+   Example usage:
+
+   .. code-block:: cmake
+
+      # Look up PROJECT_NAME from the CMake cache of `my_sample` and return it
+      # in the local variable `PROJECT_NAME`.
+      sysbuild_get(PROJECT_NAME IMAGE my_sample CACHE)
+
+      # Same lookup, but returned in `my_sample_PROJECT_NAME`.
+      sysbuild_get(my_sample_PROJECT_NAME IMAGE my_sample VAR PROJECT_NAME CACHE)
+
+      # Look up the Kconfig setting CONFIG_FOO of `my_sample`.
+      sysbuild_get(my_sample_CONFIG_FOO IMAGE my_sample VAR CONFIG_FOO KCONFIG)
+
+#]=======================================================================]
 function(sysbuild_get variable)
   cmake_parse_arguments(GET_VAR "CACHE;KCONFIG" "IMAGE;VAR" "" ${ARGN})
 
@@ -189,35 +225,49 @@ function(sysbuild_cache)
 
 endfunction()
 
-# Usage:
-#   ExternalZephyrProject_Add(APPLICATION <name>
-#                             SOURCE_DIR <dir>
-#                             [BOARD <board> [BOARD_REVISION <revision>]]
-#                             [APP_TYPE <MAIN|BOOTLOADER|FIRMWARE_LOADER>]
-#                             [BUILD_ONLY <bool>]
-#   )
-#
-# This function includes a Zephyr based build system into the multiimage
-# build system
-#
-# APPLICATION: <name>:       Name of the application, name will also be used for build
-#                            folder of the application
-# SOURCE_DIR <dir>:          Source directory of the application
-# BOARD <board>:             Use <board> for application build instead user defined BOARD.
-# BOARD_REVISION <revision>: Use <revision> of <board> for application (only valid if
-#                            <board> is also supplied).
-# APP_TYPE <MAIN|BOOTLOADER|: Application type.
-#           FIRMWARE_LOADER>  MAIN indicates this application is the main application
-#                             and where user defined settings should be passed on as-is
-#                             except for multi image build flags.
-#                             For example, -DCONF_FILES=<files> will be passed on to the
-#                             MAIN_APP unmodified.
-#                             BOOTLOADER indicates this app is a bootloader
-#                             FIRMWARE_LOADER indicates this app is a firmware loader image for MCUboot
-# BUILD_ONLY <bool>:          Mark the application as build-only. If <bool> evaluates to
-#                             true, then this application will be excluded from flashing
-#                             and debugging.
-#
+#[=======================================================================[.rst:
+.. cmake:signature::
+   ExternalZephyrProject_Add(APPLICATION <name>
+                             SOURCE_DIR <dir>
+                             [BOARD <board> [BOARD_REVISION <revision>]]
+                             [APP_TYPE <MAIN|BOOTLOADER|FIRMWARE_LOADER>]
+                             [BUILD_ONLY <bool>]
+   )
+
+   Include a Zephyr based build system into the multi-image build system.
+
+   ``APPLICATION <name>``
+     Name of the application. The name will also be used for the build folder of the application.
+
+   ``SOURCE_DIR <dir>``
+     Source directory of the application.
+
+   ``BOARD <board>``
+     Use ``<board>`` for the application build instead of the user defined
+     :cmake:variable:`BOARD`.
+
+   ``BOARD_REVISION <revision>``
+     Use ``<revision>`` of ``<board>`` for the application. Only valid if ``BOARD`` is also
+     supplied.
+
+   ``APP_TYPE <MAIN|BOOTLOADER|FIRMWARE_LOADER>``
+     Application type.
+
+     ``MAIN`` indicates this application is the main application, and where user defined settings
+     should be passed on as-is except for multi image build flags. For example,
+     ``-DCONF_FILE=<files>`` will be passed on to the main application unmodified.
+
+     ``BOOTLOADER`` indicates this application is a bootloader.
+
+     ``FIRMWARE_LOADER`` indicates this application is a firmware loader image for MCUboot.
+
+   ``BUILD_ONLY <bool>``
+     Mark the application as build-only. If ``<bool>`` evaluates to true, then this application
+     will be excluded from flashing and debugging.
+
+   See :ref:`sysbuild_zephyr_application` for a worked example.
+
+#]=======================================================================]
 function(ExternalZephyrProject_Add)
   set(app_types MAIN BOOTLOADER FIRMWARE_LOADER)
   cmake_parse_arguments(ZBUILD "" "APPLICATION;BOARD;BOARD_REVISION;SOURCE_DIR;APP_TYPE;BUILD_ONLY" "" ${ARGN})
@@ -435,32 +485,48 @@ function(ExternalZephyrProject_Add)
   endif()
 endfunction()
 
-# Usage:
-#   ExternalZephyrVariantProject_Add(APPLICATION <name>
-#                                    SOURCE_APP <name>
-#                                    [SNIPPET <snippet>]
-#                                    [EXTRA_DTC_OVERLAY_FILE <file>]
-#                                    [EXTRA_CONF_FILE <file>]
-#                                    [BUILD_ONLY <bool>]
-#   )
-#
-# This function duplicates an existing Zephyr based build system into the multi-image
-# build system with a specified modification. This will not creates the extra build targets that
-# ExternalZephyrProject_Add() adds e.g. ``<app>_menuconfig``. Note that the variant image must
-# either have a ``CONF_FILE``, ``EXTRA_CONF_FILE``, ``EXTRA_DTC_OVERLAY_FILE`` or ``SNIPPET``
-# added to it or it will be invalid and image configuration will result in a fatal error.
-#
-# APPLICATION: <name>:           Name of the application, name will also be used for build folder
-#                                of the application.
-# SOURCE_APP <name>:             Name of the existing image to use for duplication.
-# SNIPPET <snippet>:             List of default snippets to apply for variant image.
-# EXTRA_DTC_OVERLAY_FILE <file>: List of default extra DTC files to apply for variant image.
-# EXTRA_CONF_FILE <file>:        List of default extra Kconfig fragments to apply for variant
-#                                image.
-# BUILD_ONLY <bool>:             Mark the application as build-only. If <bool> evaluates to true,
-#                                then this application will be excluded from flashing and
-#                                debugging.
-#
+#[=======================================================================[.rst:
+.. cmake:signature::
+   ExternalZephyrVariantProject_Add(APPLICATION <name>
+                                    SOURCE_APP <name>
+                                    [SNIPPET <snippet>]
+                                    [EXTRA_DTC_OVERLAY_FILE <file>]
+                                    [EXTRA_CONF_FILE <file>]
+                                    [BUILD_ONLY <bool>]
+   )
+
+   Duplicate an existing Zephyr based build system into the multi-image build system with a
+   specified modification.
+
+   This will not create the extra build targets that :cmake:command:`ExternalZephyrProject_Add`
+   adds, for example ``<app>_menuconfig``.
+
+   .. note::
+
+      The variant image must have a :cmake:variable:`CONF_FILE`,
+      :cmake:variable:`EXTRA_CONF_FILE`, :cmake:variable:`EXTRA_DTC_OVERLAY_FILE` or ``SNIPPET``
+      added to it, or it will be invalid and image configuration will result in a fatal error.
+
+   ``APPLICATION <name>``
+     Name of the application. The name will also be used for the build folder of the application.
+
+   ``SOURCE_APP <name>``
+     Name of the existing image to use for duplication.
+
+   ``SNIPPET <snippet>``
+     List of default snippets to apply for the variant image.
+
+   ``EXTRA_DTC_OVERLAY_FILE <file>``
+     List of default extra devicetree overlay files to apply for the variant image.
+
+   ``EXTRA_CONF_FILE <file>``
+     List of default extra Kconfig fragments to apply for the variant image.
+
+   ``BUILD_ONLY <bool>``
+     Mark the application as build-only. If ``<bool>`` evaluates to true, then this application
+     will be excluded from flashing and debugging.
+
+#]=======================================================================]
 function(ExternalZephyrVariantProject_Add)
   cmake_parse_arguments(ZBUILD "" "SOURCE_APP;APPLICATION;SNIPPET;EXTRA_DTC_OVERLAY_FILE;EXTRA_CONF_FILE;BUILD_ONLY" "" ${ARGN})
 
@@ -823,26 +889,34 @@ function(sysbuild_module_call)
   endforeach()
 endfunction()
 
-# Usage:
-#   sysbuild_cache_set(VAR <variable> [APPEND [REMOVE_DUPLICATES]] <value>)
-#
-# This function will set the specified value of the sysbuild cache variable in
-# the CMakeCache.txt file which can then be accessed by images.
-# `VAR` specifies the variable name to set/update.
-#
-# The result will be returned in `<variable>`.
-#
-# Example use:
-#   sysbuild_cache_set(VAR ATTRIBUTES APPEND REMOVE_DUPLICATES battery)
-#     Will add the item `battery` to the `ATTRIBUTES` variable as a new element
-#     in the list in the CMakeCache and remove any duplicates from the list.
-#
-# <variable>:        Name of variable in CMake cache.
-# APPEND:            If specified then will append the supplied data to the
-#                    existing value as a list.
-# REMOVE_DUPLICATES: If specified then remove duplicate entries contained
-#                    within the list before saving to the cache.
-# <value>:           Value to set/update.
+#[=======================================================================[.rst:
+.. cmake:signature:: sysbuild_cache_set(VAR <variable> [APPEND [REMOVE_DUPLICATES]] <value>)
+
+   Set a sysbuild cache variable, which can then be accessed by images.
+
+   The result will be returned in ``<variable>``.
+
+   ``VAR <variable>``
+     Name of the variable in the CMake cache.
+
+   ``APPEND``
+     If specified, append the supplied data to the existing value as a list.
+
+   ``REMOVE_DUPLICATES``
+     If specified, remove duplicate entries contained within the list before saving to the cache.
+
+   ``<value>``
+     Value to set or update.
+
+   Example usage:
+
+   .. code-block:: cmake
+
+      # Add `battery` to the `ATTRIBUTES` list in the CMake cache, removing
+      # any duplicates from the list.
+      sysbuild_cache_set(VAR ATTRIBUTES APPEND REMOVE_DUPLICATES battery)
+
+#]=======================================================================]
 function(sysbuild_cache_set)
   cmake_parse_arguments(VARS "APPEND;REMOVE_DUPLICATES" "VAR" "" ${ARGN})
 
@@ -887,6 +961,38 @@ function(sysbuild_cache_set)
   set(${VARS_VAR} "${var_new}" CACHE "${var_type}" "${var_help}" FORCE)
 endfunction()
 
+#[=======================================================================[.rst:
+Setting Kconfig values on an image
+==================================
+
+The following commands add a Kconfig fragment line to ``<image>``. They are the supported way for
+a :file:`sysbuild.cmake` file to configure an image it has added.
+
+The collected fragment is passed to the image as a forced input configuration, so it is applied
+last and takes precedence over the image's own Kconfig fragments. See
+:ref:`sysbuild_kconfig_namespacing` for how these relate to ``SB_CONFIG_`` options.
+
+.. cmake:signature:: set_config_bool(<image> <setting> <value>)
+
+   Set a boolean Kconfig option to ``y`` if ``<value>`` evaluates to true, and to ``n`` otherwise.
+
+.. cmake:signature:: set_config_string(<image> <setting> <value>)
+
+   Set a string Kconfig option to ``<value>``.
+
+.. cmake:signature:: set_config_int(<image> <setting> <value>)
+
+   Set an int or hex Kconfig option to ``<value>``.
+
+   Example usage:
+
+   .. code-block:: cmake
+
+      set_config_bool(${DEFAULT_IMAGE} CONFIG_BOOTLOADER_MCUBOOT y)
+      set_config_string(${DEFAULT_IMAGE} CONFIG_MCUBOOT_SIGNATURE_KEY_FILE "${keyfile}")
+      set_config_int(mcuboot CONFIG_LOG_MAX_LEVEL 2)
+
+#]=======================================================================]
 function(set_config_bool image setting value)
   if(${value})
     set_property(TARGET ${image} APPEND_STRING PROPERTY CONFIG "${setting}=y\n")
@@ -947,17 +1053,20 @@ function(sysbuild_mcuboot_application_signature_key_file out_var key_files)
   set(${out_var} "${resolved}" PARENT_SCOPE)
 endfunction()
 
-# Usage:
-#   sysbuild_add_subdirectory(<source_dir> [<binary_dir>])
-#
-# This function extends the standard add_subdirectory() command with additional,
-# recursive processing of the sysbuild images added via <source_dir>.
-#
-# After exiting <source_dir>, this function will take every image added so far,
-# and include() its sysbuild.cmake file (if found). If more images get added at
-# this stage, their sysbuild.cmake files will be included as well, and so on.
-# This continues until all expected images have been added, before returning.
-#
+#[=======================================================================[.rst:
+.. cmake:signature:: sysbuild_add_subdirectory(<source_dir> [<binary_dir>])
+
+   Add a subdirectory, and recursively process the sysbuild images it adds.
+
+   This command extends :cmake:command:`add_subdirectory <command:add_subdirectory>` with
+   additional, recursive processing of the sysbuild images added via ``<source_dir>``.
+
+   After exiting ``<source_dir>``, this command will take every image added so far and
+   :cmake:command:`include() <command:include>` its :file:`sysbuild.cmake` file, if found. If more
+   images get added at this stage, their :file:`sysbuild.cmake` files will be included as well, and
+   so on. This continues until all expected images have been added, before returning.
+
+#]=======================================================================]
 function(sysbuild_add_subdirectory source_dir)
   if(ARGC GREATER 2)
     message(FATAL_ERROR
@@ -986,18 +1095,24 @@ function(sysbuild_add_subdirectory source_dir)
   endwhile()
 endfunction()
 
-# Usage:
-#   sysbuild_add_dependencies(<CONFIGURE | FLASH> <image> [<image-dependency> ...])
-#
-# This function makes an image depend on other images in the configuration or
-# flashing order. Each image named "<image-dependency>" will be ordered before
-# the image named "<image>".
-#
-# CONFIGURE: Add CMake configuration dependencies. This will determine the order
-#            in which `ExternalZephyrProject_Cmake()` will be called.
-# FLASH:     Add flashing dependencies. This will determine the order in which
-#            all images will appear in `domains.yaml`.
-#
+#[=======================================================================[.rst:
+.. cmake:signature:: sysbuild_add_dependencies(<CONFIGURE | FLASH> <image> [<image-dependency> ...])
+
+   Make an image depend on other images in the configuration or flashing order.
+
+   Each image named ``<image-dependency>`` will be ordered before the image named ``<image>``.
+
+   ``CONFIGURE``
+     Add CMake configuration dependencies. This will determine the order in which images are
+     configured.
+
+   ``FLASH``
+     Add flashing dependencies. This will determine the order in which all images will appear in
+     :file:`domains.yaml`.
+
+   See :ref:`sysbuild_zephyr_application_dependencies` for a worked example.
+
+#]=======================================================================]
 function(sysbuild_add_dependencies dependency_type image)
   set(valid_dependency_types CONFIGURE FLASH)
   if(NOT dependency_type IN_LIST valid_dependency_types)
@@ -1027,13 +1142,15 @@ function(sysbuild_add_dependencies dependency_type image)
   set_property(TARGET ${image} APPEND PROPERTY ${property_name} ${ARGN})
 endfunction()
 
-# Usage:
-#   sysbuild_images_order(<variable> <CONFIGURE | FLASH> IMAGES <images>)
-#
-# This function will sort the provided `<images>` to satisfy the dependencies
-# specified using `sysbuild_add_dependencies()`. The result will be returned in
-# `<variable>`.
-#
+#[=======================================================================[.rst:
+.. cmake:signature:: sysbuild_images_order(<variable> <CONFIGURE | FLASH> IMAGES <images>)
+
+   Sort the provided ``<images>`` to satisfy the dependencies specified using
+   :cmake:command:`sysbuild_add_dependencies`.
+
+   The result will be returned in ``<variable>``.
+
+#]=======================================================================]
 function(sysbuild_images_order variable dependency_type)
   cmake_parse_arguments(SIS "" "" "IMAGES" ${ARGN})
   zephyr_check_arguments_required_all("sysbuild_images_order" SIS IMAGES)

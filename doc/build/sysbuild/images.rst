@@ -334,15 +334,15 @@ Image configuration script (Zephyr-wide)
 ----------------------------------------
 
 Global Zephyr provided image configuration scripts, which allow specifying the type when using
-``ExternalZephyrProject_Add()`` require changes to sysbuild code in Zephyr. This should only be
-added to when adding a new type that any project should be able to select, generally this should
-only be needed for upstream Zephyr though forked versions of Zephyr might use this to add
-additional types without restriction.
+:cmake:command:`ExternalZephyrProject_Add` require changes to sysbuild code in Zephyr. This
+should only be added to when adding a new type that any project should be able to select,
+generally this should only be needed for upstream Zephyr though forked versions of Zephyr might
+use this to add additional types without restriction.
 
 Image configuration has an allow-list of names which must be set in the Zephyr file
 :zephyr_file:`share/sysbuild/cmake/modules/sysbuild_extensions.cmake` in the
-``ExternalZephyrProject_Add`` function. After adding a new type, it can be used when adding a
-sysbuild image, for example:
+:cmake:command:`ExternalZephyrProject_Add` function. After adding a new type, it can be used
+when adding a sysbuild image, for example:
 
 .. tabs::
 
