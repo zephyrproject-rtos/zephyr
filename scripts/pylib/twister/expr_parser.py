@@ -298,6 +298,19 @@ def ast_expr(ast, env, edt):
         if prop in node.props:
             return True
         return False
+    elif ast[0] == "dt_any_enabled_node_has_prop":
+        # True if any node has the property and the node and all of its
+        # ancestors have status "okay".
+        prop = ast[1][0]
+        for node in edt.nodes:
+            if prop not in node.props:
+                continue
+            ancestor = node
+            while ancestor is not None and ancestor.status == "okay":
+                ancestor = ancestor.parent
+            if ancestor is None:
+                return True
+        return False
 
 
 mutex = threading.Lock()
