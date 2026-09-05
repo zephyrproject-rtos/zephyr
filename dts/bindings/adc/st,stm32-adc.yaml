@@ -161,5 +161,23 @@ properties:
     description: |
       If present, it indicates that the ADC instance supports the injected channel feature.
 
+  st,adc-ext-trigger:
+    type: string
+    description: |
+      If present, names the trigger we want to enable.
+      You will also need to enable the relevant counter node, for example:
+
+        / &timer15 {
+             status = "okay";
+
+             counter {
+                status = "okay";
+             };
+          };
+
+          &adc1 {
+             st,adc-ext-trigger = "TIM15_TRGO";
+          };
+
 io-channel-cells:
   - input
