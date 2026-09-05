@@ -1531,6 +1531,10 @@ smmap==5.0.3 \
     --hash=sha256:4d9debb8b99007ae47165abc08670bd74cb74b5227dda7f643eccc4e9eb5642c \
     --hash=sha256:c106e05d5a61449cf6ba9a1e650227ecfb141590d2a98412103ff35d89fc7b2f
     # via gitdb
+spdx-python-model==0.0.6 \
+    --hash=sha256:dd793ce0176e53af05f9c0d8624196f38da45bc263ccee5ee532b1812b3113e2 \
+    --hash=sha256:f1938eb08d08218278122849bba123b8993a0171e9b4f5ea6af7aeb71f3204d7
+    # via -r requirements-actions.in
 spdx-tools==0.8.5 \
     --hash=sha256:7c2d5865941be9d2e898f5b084e8d5422dd298dc5a29320ddb198fec304f59c4 \
     --hash=sha256:be600beb2f762f0116025e05490d399e724f668bef84025a7c421bb266688bdb
