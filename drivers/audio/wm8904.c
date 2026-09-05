@@ -1,5 +1,6 @@
 /*
  * Copyright 2024 NXP
+ * Copyright (c) 2026 Mario Paja
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -32,13 +33,8 @@ struct wm8904_driver_config {
 	int clock_source;
 	const struct device *mclk_dev;
 	clock_control_subsys_t mclk_name;
-	int fs_ratio;
 	int in_pga_sel;
 	enum mic_bias_select mic_bias_sel;
-};
-
-struct wm8904_driver_data {
-	bool eq_enabled;
 };
 
 struct wm8904_eq_band_reg {
@@ -52,6 +48,35 @@ static const struct wm8904_eq_band_reg wm8904_eq_band_regs[] = {
 	{WM8904_EQ_BAND_3, WM8904_REG_EQ_B3_GAIN},
 	{WM8904_EQ_BAND_4, WM8904_REG_EQ_B4_GAIN},
 	{WM8904_EQ_BAND_5, WM8904_REG_EQ_B5_GAIN},
+};
+
+struct fll_config {
+	uint32_t f_ref;
+	uint32_t f_ref_div;
+	uint16_t f_out_div;
+	uint16_t f_ratio;
+	uint16_t n;
+	uint16_t k;
+};
+
+struct wm8904_driver_data {
+	bool eq_enabled;
+	uint32_t mclk_freq;
+	uint32_t sysclk;
+	struct fll_config fll;
+};
+
+static const struct {
+	uint32_t min;
+	uint32_t max;
+	uint16_t f_ratio;
+	int ratio;
+} fll_fratios[] = {
+	{       0,    64000, 4, 16 },
+	{   64000,   128000, 3,  8 },
+	{  128000,   256000, 2,  4 },
+	{  256000,  1000000, 1,  2 },
+	{ 1000000, 13500000, 0,  1 },
 };
 
 #define DEV_CFG(dev) ((const struct wm8904_driver_config *const)dev->config)
@@ -170,8 +195,8 @@ static int wm8904_audio_fmt_config(const struct device *dev, audio_dai_cfg_t *cf
 		return -EINVAL;
 	}
 
-	/* Disable SYSCLK */
-	wm8904_write_reg(dev, WM8904_REG_CLK_RATES_2, 0x00);
+	/* CLK_SYS_ENA=0 */
+	wm8904_update_reg(dev, WM8904_REG_CLK_RATES_2, (uint16_t)(1UL << 2U), 0x0000);
 
 	/* Set Clock ratio and sample rate */
 	wm8904_write_reg(dev, WM8904_REG_CLK_RATES_1,
@@ -196,11 +221,13 @@ static int wm8904_audio_fmt_config(const struct device *dev, audio_dai_cfg_t *cf
 		word_size = 0;
 		break;
 	}
+
 	/* Set bit resolution */
 	wm8904_update_reg(dev, WM8904_REG_AUDIO_IF_1, (0x000CU), ((uint16_t)(word_size) << 2U));
 
-	/* Enable SYSCLK */
-	wm8904_write_reg(dev, WM8904_REG_CLK_RATES_2, 0x1007);
+	/* CLK_SYS_ENA=1 */
+	wm8904_update_reg(dev, WM8904_REG_CLK_RATES_2, (uint16_t)(1UL << 2U),
+			  (uint16_t)(1UL << 2U));
 	return 0;
 }
 
@@ -435,10 +462,208 @@ static void wm8904_set_master_clock(const struct device *dev, audio_dai_cfg_t *c
 	wm8904_update_reg(dev, WM8904_REG_AUDIO_IF_3, 0xFFFU, audioInterface);
 }
 
+static uint32_t wm8904_calc_fll_k(uint32_t nmod, uint32_t f_ref)
+{
+	uint32_t k = 0U;
+
+	for (uint32_t i = 0U; i < 16U; i++) {
+		nmod <<= 1;
+		k <<= 1;
+
+		if (nmod >= f_ref) {
+			nmod -= f_ref;
+			k |= 1U;
+		}
+	}
+
+	if ((nmod << 1) >= f_ref) {
+		k++;
+	}
+
+	return k;
+}
+
+static int wm8904_fll_cfg(const struct device *dev)
+{
+	struct wm8904_driver_data *dev_data = DEV_DATA(dev);
+	uint32_t n_div, n_mod, target, val;
+
+	dev_data->fll.f_ref_div = 0;
+	val = 1;
+
+	/* Fref must be <=13.5MHz */
+	while ((dev_data->fll.f_ref / val) > 13500000) {
+		if (val >= 8) {
+			LOG_ERR("Can't scale %uHz input down to <=13.5MHz", dev_data->fll.f_ref);
+			return -EINVAL;
+		}
+
+		val *= 2;
+		dev_data->fll.f_ref_div++;
+	}
+
+	dev_data->fll.f_ref /= val;
+
+	/* Fvco should be 90-100MHz; don't check the upper bound */
+	val = 4;
+	while ((dev_data->sysclk * val) < 90000000) {
+		val++;
+		if (val > 64) {
+			LOG_ERR("Unable to find FLL_OUTDIV for Fout=%uHz", dev_data->sysclk);
+			return -EINVAL;
+		}
+	}
+
+	target = dev_data->sysclk * val;
+	dev_data->fll.f_out_div = val - 1;
+
+	/* Find an appropriate FLL_FRATIO and factor it out of the target */
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(fll_fratios); i++) {
+		if (fll_fratios[i].min <= dev_data->fll.f_ref &&
+		    dev_data->fll.f_ref <= fll_fratios[i].max) {
+			dev_data->fll.f_ratio = fll_fratios[i].f_ratio;
+			target /= fll_fratios[i].ratio;
+			break;
+		}
+	}
+
+	if (i == ARRAY_SIZE(fll_fratios)) {
+		LOG_ERR("Unable to find FLL_FRATIO for Fref=%uHz", dev_data->fll.f_ref);
+		return -EINVAL;
+	}
+
+	/* Calculate N.K */
+	n_div = target / dev_data->fll.f_ref;
+	if (n_div > 0x3FFU) {
+		LOG_ERR("FLL_N %u out of range for Fref=%uHz", n_div, dev_data->fll.f_ref);
+		return -EINVAL;
+	}
+
+	dev_data->fll.n = n_div;
+	n_mod = target % dev_data->fll.f_ref;
+
+	dev_data->fll.k = wm8904_calc_fll_k(n_mod, dev_data->fll.f_ref);
+
+	/* Values below are the applied decimal N/ratio/divider values, not the raw register
+	 * fields
+	 */
+	LOG_DBG("N=%u, K=%u, FLL_FRATIO=%u, FLL_OUTDIV=%u, FLL_CLK_REF_DIV=%u", dev_data->fll.n,
+		dev_data->fll.k, fll_fratios[i].ratio, val, 1U << dev_data->fll.f_ref_div);
+
+	/* Ensure the FLL is stopped */
+	wm8904_update_reg(dev, WM8904_REG_FLL_CONTROL_1,
+			  (uint16_t)(1UL << 1U) | (uint16_t)(1UL << 0U), 0x0000);
+
+	k_msleep(10);
+
+	if (dev_data->fll.k != 0) {
+
+		/* FLL_K */
+		wm8904_write_reg(dev, WM8904_REG_FLL_CONTROL_3, dev_data->fll.k);
+
+		/* FLL_FRACN_ENA */
+		wm8904_update_reg(dev, WM8904_REG_FLL_CONTROL_1, (uint16_t)(1UL << 2U), 0x0004);
+	}
+
+	/* FLL_N */
+	wm8904_update_reg(dev, WM8904_REG_FLL_CONTROL_4, (uint16_t)(0x03FFU << 5U),
+			  (uint16_t)(dev_data->fll.n << 5U));
+
+	/* FLL_CLK_REF_DIV, FLL_FRATIO */
+	wm8904_update_reg(dev, WM8904_REG_FLL_CONTROL_5, (uint16_t)(0x03U << 3U) | 0x07U,
+			  (uint16_t)((dev_data->fll.f_ref_div << 3U) | dev_data->fll.f_ratio));
+
+	/* FLL_OUT_DIV */
+	wm8904_update_reg(dev, WM8904_REG_FLL_CONTROL_2, (uint16_t)(0x3FU << 8U),
+			  (uint16_t)(dev_data->fll.f_out_div << 8U));
+
+	/* FLL_OCS_ENA */
+	wm8904_update_reg(dev, WM8904_REG_FLL_CONTROL_1, (uint16_t)(1UL << 1U),
+			  (uint16_t)(1UL << 1U));
+
+	k_msleep(10);
+
+	/* FLL_ENA */
+	wm8904_update_reg(dev, WM8904_REG_FLL_CONTROL_1, (uint16_t)(1UL << 0U), 0x0001);
+
+	k_msleep(10);
+
+	return 0;
+}
+
+static int wm8904_sysclk_cfg(const struct device *dev, struct audio_codec_cfg *cfg)
+{
+	const struct wm8904_driver_config *const dev_cfg = DEV_CFG(dev);
+	struct wm8904_driver_data *dev_data = DEV_DATA(dev);
+	int ret;
+
+	/* Calculate MCLK */
+	ret = clock_control_on(dev_cfg->mclk_dev, dev_cfg->mclk_name);
+
+	if (ret < 0) {
+		LOG_ERR("MCLK clock source enable fail: %d", ret);
+		return ret;
+	}
+
+	ret = clock_control_get_rate(dev_cfg->mclk_dev, dev_cfg->mclk_name, &dev_data->mclk_freq);
+	if (ret < 0) {
+		LOG_ERR("MCLK clock source freq acquire fail: %d", ret);
+		return ret;
+	}
+
+	if (dev_data->mclk_freq == 0) {
+		LOG_ERR("MCLK clock source freq is 0Hz");
+		return -EINVAL;
+	}
+
+	LOG_DBG("MCLK frequency: %uHz", dev_data->mclk_freq);
+
+	if (dev_cfg->clock_source == 0) {
+		LOG_DBG("MCLK selected as SYSCLK source");
+
+		/* Set SYSCLK to MCLK */
+		dev_data->sysclk = dev_data->mclk_freq;
+	} else {
+		LOG_DBG("FLL selected as SYSCLK source");
+
+		/* Set SYSCLK to Target Clock */
+		dev_data->sysclk = cfg->mclk_freq;
+
+		/* FLL reference clock is the codec's MCLK input */
+		dev_data->fll.f_ref = dev_data->mclk_freq;
+
+		ret = wm8904_fll_cfg(dev);
+		if (ret != 0) {
+			LOG_ERR("FLL configuration <FAILED>, ret=%d", ret);
+			return ret;
+		}
+	}
+
+	/* MCLK_DIV=1 when SYSCLK exceeds the 13.5MHz */
+	if (dev_data->sysclk > 13500000U) {
+		wm8904_update_reg(dev, WM8904_REG_CLK_RATES_0, 0x0001U, 0x0001U);
+	}
+
+	/* OPCLK_ENA=1, CLK_SYS_ENA=1, CLK_DSP_ENA=1, TOCLK_ENA=1 */
+	wm8904_write_reg(dev, WM8904_REG_CLK_RATES_2, 0x000F);
+
+	if (dev_cfg->clock_source != 0) {
+		/* SYSCLK_SRC=1: select FLL as SYSCLK source */
+		wm8904_update_reg(dev, WM8904_REG_CLK_RATES_2, (uint16_t)(1UL << 14U),
+				  (uint16_t)(1UL << 14U));
+	}
+
+	return 0;
+}
+
 static int wm8904_configure(const struct device *dev, struct audio_codec_cfg *cfg)
 {
-	uint16_t value;
 	const struct wm8904_driver_config *const dev_cfg = DEV_CFG(dev);
+	struct wm8904_driver_data *dev_data = DEV_DATA(dev);
+	uint16_t value;
+	int ret;
 
 	if (cfg->dai_type >= AUDIO_DAI_TYPE_INVALID) {
 		LOG_ERR("dai_type not supported");
@@ -447,14 +672,15 @@ static int wm8904_configure(const struct device *dev, struct audio_codec_cfg *cf
 
 	wm8904_soft_reset(dev);
 
+	ret = wm8904_sysclk_cfg(dev, cfg);
+	if (ret != 0) {
+		LOG_ERR("SYSCLK configuration <FAILED>, ret= %d", ret);
+		return ret;
+	}
+
 	if (cfg->dai_route == AUDIO_ROUTE_BYPASS) {
 		return 0;
 	}
-
-	/* MCLK_INV=0, SYSCLK_SRC=0, TOCLK_RATE=0, OPCLK_ENA=1,
-	 * CLK_SYS_ENA=1, CLK_DSP_ENA=1, TOCLK_ENA=1
-	 */
-	wm8904_write_reg(dev, WM8904_REG_CLK_RATES_2, 0x000F);
 
 	/* WSEQ_ENA=1, WSEQ_WRITE_INDEX=0_0000 */
 	wm8904_write_reg(dev, WM8904_REG_WRT_SEQUENCER_0, 0x0100);
@@ -466,10 +692,10 @@ static int wm8904_configure(const struct device *dev, struct audio_codec_cfg *cf
 		wm8904_read_reg(dev, WM8904_REG_WRT_SEQUENCER_4, &value);
 	} while (((value & 1U) != 0U));
 
-	/* TOCLK_RATE_DIV16=0, TOCLK_RATE_x4=1, SR_MODE=0, MCLK_DIV=1
-	 * (Required for MMCs: SGY, KRT see erratum CE000546)
+	/* TOCLK_RATE_DIV16=0, TOCLK_RATE_x4=1, SR_MODE=0
+	 * (0xA45E required for MMCs: SGY, KRT see erratum CE000546)
 	 */
-	wm8904_write_reg(dev, WM8904_REG_CLK_RATES_0, 0xA45F);
+	wm8904_update_reg(dev, WM8904_REG_CLK_RATES_0, 0xFFFEU, 0xA45E);
 
 	if (dev_cfg->mic_bias_sel != MIC_BIAS_DISABLED) {
 		/* MICBIAS_SEL */
@@ -518,45 +744,11 @@ static int wm8904_configure(const struct device *dev, struct audio_codec_cfg *cf
 	wm8904_write_reg(dev, WM8904_REG_CHRG_PUMP_0, 0x0001);
 
 	wm8904_protocol_config(dev, cfg->dai_type);
-	wm8904_update_reg(dev, WM8904_REG_CLK_RATES_2, (uint16_t)(1UL << 14U),
-			  (uint16_t)(dev_cfg->clock_source));
 
-	if (dev_cfg->clock_source == 0) {
-		LOG_DBG("MCLK selected as clock source");
-
-		/* Both MCLK dev & MCLK name should be present */
-		if (dev_cfg->mclk_dev != NULL && dev_cfg->mclk_name != NULL) {
-			int err = clock_control_on(dev_cfg->mclk_dev, dev_cfg->mclk_name);
-
-			if (err < 0) {
-				LOG_ERR("MCLK clock source enable fail: %d", err);
-				return err;
-			}
-
-			err = clock_control_get_rate(dev_cfg->mclk_dev, dev_cfg->mclk_name,
-						     &cfg->mclk_freq);
-			if (err < 0) {
-				LOG_ERR("MCLK clock source freq acquire fail: %d", err);
-				return err;
-			}
-		} else {
-			if (dev_cfg->fs_ratio == 0) {
-				LOG_ERR("Cannot compute MCLK: missing MCLK and fs_ratio in DT");
-				return -EINVAL;
-			}
-
-			cfg->mclk_freq = cfg->dai_cfg.i2s.frame_clk_freq * dev_cfg->fs_ratio;
-			LOG_WRN("Cannot obtain MCLK from DT, using computed MCLK=%u from fs_ratio",
-				cfg->mclk_freq);
-		}
-	} else {
-		LOG_DBG("FLL selected as clock source");
-	}
-
-	wm8904_audio_fmt_config(dev, &cfg->dai_cfg, cfg->mclk_freq);
+	wm8904_audio_fmt_config(dev, &cfg->dai_cfg, dev_data->sysclk);
 
 	if ((cfg->dai_cfg.i2s.options & I2S_OPT_FRAME_CLK_TARGET) == 0) {
-		wm8904_set_master_clock(dev, &cfg->dai_cfg, cfg->mclk_freq);
+		wm8904_set_master_clock(dev, &cfg->dai_cfg, dev_data->sysclk);
 	} else {
 		/* BCLK/LRCLK default direction input */
 		wm8904_update_reg(dev, WM8904_REG_AUDIO_IF_1, 1U << 6U, 0U);
@@ -775,12 +967,10 @@ static DEVICE_API(audio_codec, wm8904_driver_api) = {
 	static const struct wm8904_driver_config wm8904_device_config_##n = {                      \
 		.i2c = I2C_DT_SPEC_INST_GET(n),                                                    \
 		.clock_source = DT_INST_ENUM_IDX(n, clock_source),                                 \
-		.mclk_dev = COND_CODE_1(DT_INST_CLOCKS_HAS_NAME(n, mclk),                          \
-			(DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_NAME(n, mclk))), (NULL)),            \
-		.mclk_name = COND_CODE_1(DT_INST_CLOCKS_HAS_NAME(n, mclk),                         \
+		.mclk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_NAME(n, mclk)),                   \
+		.mclk_name = COND_CODE_1(DT_INST_PHA_HAS_CELL(n, clocks, name),                    \
 			((clock_control_subsys_t)DT_INST_CLOCKS_CELL_BY_NAME(n, mclk, name)),      \
 			(NULL)),                                                                   \
-		.fs_ratio = DT_INST_PROP_OR(n, fs_ratio, 0),                                       \
 		.in_pga_sel = DT_INST_PROP_OR(n, input_pga_select, 2),                             \
 		.mic_bias_sel = CONCAT(MIC_BIAS_,                                                  \
 			DT_INST_STRING_UPPER_TOKEN_OR(n, wolfson_mic_bias_voltage, DISABLED))};    \
