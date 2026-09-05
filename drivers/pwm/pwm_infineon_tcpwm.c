@@ -315,29 +315,8 @@ static DEVICE_API(pwm, ifx_tcpwm_pwm_api) = {
 
 /*
  * Initialize the peripheral clock divider from devicetree.
- *
- * PSoC Edge SoCs require an extra peri_group index argument to
- * IFX_CAT1_PERIPHERAL_GROUP_ADJUST, so the two variants are selected
- * at compile time based on CONFIG_SOC_FAMILY_INFINEON_EDGE.
  */
-#if defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
-#define PWM_PERI_CLOCK_INIT(n)                                                                     \
-	.clock = {                                                                                 \
-		.block = IFX_CAT1_PERIPHERAL_GROUP_ADJUST(                                         \
-			DT_PROP_BY_IDX(DT_INST_PHANDLE(n, clocks), peri_group, 0),                 \
-			DT_PROP_BY_IDX(DT_INST_PHANDLE(n, clocks), peri_group, 1),                 \
-			DT_INST_PROP_BY_PHANDLE(n, clocks, div_type)),                             \
-		.channel = DT_INST_PROP_BY_PHANDLE(n, clocks, channel),                            \
-	}
-#else
-#define PWM_PERI_CLOCK_INIT(n)                                                                     \
-	.clock = {                                                                                 \
-		.block = IFX_CAT1_PERIPHERAL_GROUP_ADJUST(                                         \
-			DT_PROP_BY_IDX(DT_INST_PHANDLE(n, clocks), peri_group, 1),                 \
-			DT_INST_PROP_BY_PHANDLE(n, clocks, div_type)),                             \
-		.channel = DT_INST_PROP_BY_PHANDLE(n, clocks, channel),                            \
-	}
-#endif
+#define PWM_PERI_CLOCK_INIT(n) .clock = IFX_CAT1_PERI_CLOCK_DT_INST_INIT(n)
 
 /*
  * Per-instance wrapper init for PWM event support.

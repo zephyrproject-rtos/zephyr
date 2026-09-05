@@ -11,6 +11,8 @@
  * @ingroup clock_control_ifx_cat1
  */
 
+#include <zephyr/devicetree.h>
+
 #include <cy_sysclk.h>
 #include <cy_systick.h>
 
@@ -410,6 +412,56 @@ struct ifx_cat1_clock {
 	const void *funcs;               /**< Clock-specific functions. */
 };
 
+/** @cond INTERNAL_HIDDEN */
+#define IFX_CAT1_PERI_DIV_INST(node_id)  DT_PROP_BY_IDX(node_id, peri_group, 0)
+#define IFX_CAT1_PERI_DIV_GROUP(node_id) DT_PROP_BY_IDX(node_id, peri_group, 1)
+/** @endcond */
+
+/**
+ * @brief Static initializer for a struct ifx_cat1_clock describing a
+ *        peripheral clock divider.
+ *
+ * Decodes the @c peri-group, @c div-type and @c channel properties of an
+ * @c infineon,peri-div devicetree node. The encoding of the block field
+ * differs between EDGE and the other CAT1 devices; both are handled here so
+ * that consumers do not have to repeat the conditional.
+ *
+ * On devices without peripheral clock instances and groups (PSOC4) the
+ * @c peri-group property defaults to @c [00 00], which reduces the block
+ * encoding to the divider type alone.
+ *
+ * @param node_id Devicetree node identifier for an @c infineon,peri-div node.
+ */
+#if defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
+#define IFX_CAT1_PERI_CLOCK_DT_INIT(node_id)                                                       \
+	{                                                                                          \
+		.block = IFX_CAT1_PERIPHERAL_GROUP_ADJUST(IFX_CAT1_PERI_DIV_INST(node_id),         \
+							  IFX_CAT1_PERI_DIV_GROUP(node_id),        \
+							  DT_PROP(node_id, div_type)),             \
+		.channel = DT_PROP(node_id, channel),                                              \
+		.instance = IFX_CAT1_PERI_DIV_INST(node_id),                                       \
+		.group = IFX_CAT1_PERI_DIV_GROUP(node_id),                                         \
+	}
+#else
+#define IFX_CAT1_PERI_CLOCK_DT_INIT(node_id)                                                       \
+	{                                                                                          \
+		.block = IFX_CAT1_PERIPHERAL_GROUP_ADJUST(IFX_CAT1_PERI_DIV_GROUP(node_id),        \
+							  DT_PROP(node_id, div_type)),             \
+		.channel = DT_PROP(node_id, channel),                                              \
+		.instance = IFX_CAT1_PERI_DIV_INST(node_id),                                       \
+		.group = IFX_CAT1_PERI_DIV_GROUP(node_id),                                         \
+	}
+#endif
+
+/**
+ * @brief Static initializer for the divider referenced by the @c clocks
+ *        property of a @c DT_DRV_COMPAT instance.
+ *
+ * @param inst Instance number of the peripheral referencing the divider.
+ */
+#define IFX_CAT1_PERI_CLOCK_DT_INST_INIT(inst)                                                     \
+	IFX_CAT1_PERI_CLOCK_DT_INIT(DT_INST_PHANDLE(inst, clocks))
+
 /** @brief CAT1 resource instance descriptor. */
 struct ifx_cat1_resource_inst {
 	uint8_t type;      /**< The resource block type. */
@@ -420,17 +472,6 @@ struct ifx_cat1_resource_inst {
 	 */
 	uint8_t channel_num;
 };
-
-/**
- * @brief Get the frequency of a clock identified by its Devicetree ordinal.
- *
- * @param dt_ord Devicetree ordinal (dependency ordinal) of the clock node.
- * @param[out] frequency Resulting clock frequency, in Hz.
- *
- * @retval 0 on success.
- * @retval -errno Negative error code on failure.
- */
-int ifx_cat1_clock_control_get_frequency(uint32_t dt_ord, uint32_t *frequency);
 
 /**
  * @brief Get the frequency of a peripheral clock divider.

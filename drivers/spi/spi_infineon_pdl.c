@@ -719,28 +719,7 @@ static int ifx_cat1_spi_init(const struct device *dev)
 #define EN_XFER_SEPARATION enableTransferSeperation
 #endif
 
-#if defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
-#define SPI_PERI_CLOCK_INIT(n)                                                                     \
-	.clock =                                                                                   \
-		{                                                                                  \
-			.block = IFX_CAT1_PERIPHERAL_GROUP_ADJUST(                                 \
-				DT_PROP_BY_IDX(DT_INST_PHANDLE(n, clocks), peri_group, 0),         \
-				DT_PROP_BY_IDX(DT_INST_PHANDLE(n, clocks), peri_group, 1),         \
-				DT_INST_PROP_BY_PHANDLE(n, clocks, div_type)),                     \
-			.channel = DT_INST_PROP_BY_PHANDLE(n, clocks, channel),                    \
-	},                                                                                         \
-	PERI_INFO(n)
-#else
-#define SPI_PERI_CLOCK_INIT(n)                                                                     \
-	.clock =                                                                                   \
-		{                                                                                  \
-			.block = IFX_CAT1_PERIPHERAL_GROUP_ADJUST(                                 \
-				DT_PROP_BY_IDX(DT_INST_PHANDLE(n, clocks), peri_group, 1),         \
-				DT_INST_PROP_BY_PHANDLE(n, clocks, div_type)),                     \
-			.channel = DT_INST_PROP_BY_PHANDLE(n, clocks, channel),                    \
-	},                                                                                         \
-	PERI_INFO(n)
-#endif
+#define SPI_PERI_CLOCK_INIT(n) .clock = IFX_CAT1_PERI_CLOCK_DT_INST_INIT(n), PERI_INFO(n)
 
 #if defined(CONFIG_SOC_FAMILY_INFINEON_PSOC4)
 #define ADVANCED_SPI_FIELDS(n)                                                                     \

@@ -349,6 +349,15 @@ Clock Control
   RT11xx overlays should be updated using the mapping
   ``loop-div = clock-mult * 2`` and ``post-div = clock-div``.
 
+* The Infineon peripheral clock driver now binds to the new :dtcompatible:`infineon,peri` container
+  node instead of to each individual :dtcompatible:`infineon,peri-div` node. A single device is
+  created per peripheral clock instance and it programs all of its enabled divider children. The
+  :dtcompatible:`infineon,peri-div` binding itself is unchanged, so ``clocks = <&peri_clk_div0>``
+  references in board devicetree files keep working. Out-of-tree SoC devicetree files must add
+  ``compatible = "infineon,peri";`` to the parent node that holds the divider nodes. A build
+  assertion fires if an enabled :dtcompatible:`infineon,peri-div` node is not a child of an
+  :dtcompatible:`infineon,peri` node, since such a divider would never be programmed.
+
 Comparator
 ==========
 

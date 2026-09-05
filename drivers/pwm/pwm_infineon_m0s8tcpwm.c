@@ -219,13 +219,7 @@ static DEVICE_API(pwm, ifx_tcpwm_pwm_api) = {
 	.get_cycles_per_sec = ifx_tcpwm_pwm_get_cycles_per_sec,
 };
 
-#define PWM_PERI_CLOCK_INIT(n)                                                                     \
-	.clock = {                                                                                 \
-		.block = IFX_CAT1_PERIPHERAL_GROUP_ADJUST(                                         \
-			DT_PROP_BY_IDX(DT_INST_PHANDLE(n, clocks), peri_group, 1),                 \
-			DT_INST_PROP_BY_PHANDLE(n, clocks, div_type)),                             \
-		.channel = DT_INST_PROP_BY_PHANDLE(n, clocks, channel),                            \
-	}
+#define PWM_PERI_CLOCK_INIT(n) .clock = IFX_CAT1_PERI_CLOCK_DT_INST_INIT(n)
 
 #define INFINEON_TCPWM_PWM_INIT(n)                                                                 \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \

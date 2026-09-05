@@ -1495,28 +1495,7 @@ static DEVICE_API(uart, ifx_cat1_uart_driver_api) = {
 #define CALL_UART_IRQ_CONFIG(n)
 #endif
 
-#if defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
-#define UART_PERI_CLOCK_INIT(n)                                                                    \
-	.clock =                                                                                   \
-		{                                                                                  \
-			.block = IFX_CAT1_PERIPHERAL_GROUP_ADJUST(                                 \
-				DT_PROP_BY_IDX(DT_INST_PHANDLE(n, clocks), peri_group, 0),         \
-				DT_PROP_BY_IDX(DT_INST_PHANDLE(n, clocks), peri_group, 1),         \
-				DT_INST_PROP_BY_PHANDLE(n, clocks, div_type)),                     \
-			.channel = DT_INST_PROP_BY_PHANDLE(n, clocks, channel),                    \
-	},                                                                                         \
-	PERI_INFO(n)
-#else
-#define UART_PERI_CLOCK_INIT(n)                                                                    \
-	.clock =                                                                                   \
-		{                                                                                  \
-			.block = IFX_CAT1_PERIPHERAL_GROUP_ADJUST(                                 \
-				DT_PROP_BY_IDX(DT_INST_PHANDLE(n, clocks), peri_group, 1),         \
-				DT_INST_PROP_BY_PHANDLE(n, clocks, div_type)),                     \
-			.channel = DT_INST_PROP_BY_PHANDLE(n, clocks, channel),                    \
-	},                                                                                         \
-	PERI_INFO(n)
-#endif
+#define UART_PERI_CLOCK_INIT(n) .clock = IFX_CAT1_PERI_CLOCK_DT_INST_INIT(n), PERI_INFO(n)
 
 #define INFINEON_CAT1_UART_INIT(n)                                                                 \
 	PINCTRL_DT_INST_DEFINE(n);                                                                 \

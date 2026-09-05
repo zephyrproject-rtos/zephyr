@@ -298,12 +298,7 @@ static int ifx_hppass_csg_init(const struct device *dev)
 	static const struct ifx_csg_config ifx_csg_config_##n = {                                  \
 		.base = (mem_addr_t)DT_INST_REG_ADDR(n),                                           \
 		.parent = DEVICE_DT_GET(DT_INST_PARENT(n)),                                        \
-		.clock = {                                                                         \
-			.block = IFX_CAT1_PERIPHERAL_GROUP_ADJUST(                                 \
-				DT_PROP_BY_IDX(DT_INST_PHANDLE(n, clocks), peri_group, 1),         \
-				DT_INST_PROP_BY_PHANDLE(n, clocks, div_type)),                     \
-			.channel = DT_INST_PROP_BY_PHANDLE(n, clocks, channel),                    \
-		},                                                                                 \
+		.clock = IFX_CAT1_PERI_CLOCK_DT_INST_INIT(n),                                      \
 		.clk_dst = (en_clk_dst_t)DT_INST_PROP(n, clk_dst),                                 \
 		.dac_observe_blank = (uint8_t)DT_INST_PROP(n, infineon_dac_observe_blank_cycles),  \
 	};                                                                                         \
