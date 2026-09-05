@@ -5,6 +5,12 @@
 # remove entries for files that pass CI compliance testing.
 
 [lint.per-file-ignores]
+"./arch/arm64/zefi/zefi.py" = [
+    "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
+    "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
+    "SIM115",   # https://docs.astral.sh/ruff/rules/open-file-with-context-handler
+    "UP031",    # https://docs.astral.sh/ruff/rules/printf-string-formatting
+]
 "./arch/x86/zefi/zefi.py" = [
     "E501",     # https://docs.astral.sh/ruff/rules/line-too-long
     "I001",     # https://docs.astral.sh/ruff/rules/unsorted-imports
@@ -732,6 +738,7 @@
 
 [format]
 exclude = [
+    "./arch/arm64/zefi/zefi.py",
     "./arch/x86/zefi/zefi.py",
     "./boards/microchip/mec172xevb_assy6906/support/mec172x_remote_flasher.py",
     "./doc/_extensions/moderncmakedomain/cmake.py",

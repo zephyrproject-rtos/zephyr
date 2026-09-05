@@ -807,7 +807,7 @@ config BUILD_OUTPUT_BIN
 config BUILD_OUTPUT_EFI
 	bool "Build as an EFI application"
 	default n
-	depends on X86_64
+	depends on X86_64 || ARM64
 	help
 	  Build as an EFI application.
 
@@ -816,7 +816,7 @@ config BUILD_OUTPUT_EFI
 	  relocatable, and cannot be placed at specific locations in memory.
 	  Instead, the stub code will copy the embedded zephyr sections to the
 	  appropriate locations at startup, clear any zero-filled (BSS, etc...)
-	  areas, then jump into the 64 bit entry point.
+	  areas, then jump into the entry point.
 
 config BUILD_OUTPUT_EXE
 	bool "Build a binary in ELF format with .exe extension"

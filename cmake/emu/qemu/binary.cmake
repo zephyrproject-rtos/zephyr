@@ -49,14 +49,49 @@ else()
   )
 endif()
 
-# We need to set up uefi-run and OVMF environment
-# for testing UEFI method on qemu platforms
+# Wrap QEMU in a UEFI launcher. x86_64 uses uefi-run + OVMF; AArch64 uses
+# arch/arm64/zefi/uefi_run.py + AAVMF (partitioned FAT ESP).
 if(CONFIG_QEMU_UEFI_BOOT)
-  find_program(UEFI NAMES uefi-run REQUIRED)
-  if(DEFINED ENV{OVMF_FD_PATH})
-    set(OVMF_FD_PATH $ENV{OVMF_FD_PATH})
+  if(CONFIG_ARM64)
+    set(UEFI ${PYTHON_EXECUTABLE} ${ZEPHYR_BASE}/arch/arm64/zefi/uefi_run.py)
+    if(DEFINED ENV{OVMF_FD_PATH})
+      set(OVMF_FD_PATH $ENV{OVMF_FD_PATH})
+    elseif(EXISTS /usr/share/AAVMF/AAVMF_CODE.fd)
+      set(OVMF_FD_PATH /usr/share/AAVMF/AAVMF_CODE.fd)
+    else()
+      message(FATAL_ERROR
+        "Couldn't find a valid OVMF_FD_PATH. Set OVMF_FD_PATH or install "
+        "qemu-efi-aarch64 (AAVMF_CODE.fd)."
+      )
+    endif()
+    if(DEFINED ENV{AAVMF_VARS_PATH})
+      set(AAVMF_VARS_PATH $ENV{AAVMF_VARS_PATH})
+    else()
+      set(AAVMF_VARS_PATH /usr/share/AAVMF/AAVMF_VARS.fd)
+    endif()
+    if(NOT EXISTS ${AAVMF_VARS_PATH})
+      message(FATAL_ERROR
+        "Couldn't find AAVMF vars at ${AAVMF_VARS_PATH}. "
+        "Install qemu-efi-aarch64 or set AAVMF_VARS_PATH."
+      )
+    endif()
+    find_program(ZEFI_PARTED NAMES parted)
+    find_program(ZEFI_MKFS_VFAT NAMES mkfs.vfat)
+    find_program(ZEFI_MMD NAMES mmd)
+    find_program(ZEFI_MCOPY NAMES mcopy)
+    if(NOT ZEFI_PARTED OR NOT ZEFI_MKFS_VFAT OR NOT ZEFI_MMD OR NOT ZEFI_MCOPY)
+      message(FATAL_ERROR
+        "ARM64 QEMU UEFI boot needs host tools: parted, mkfs.vfat (dosfstools), "
+        "mmd and mcopy (mtools)."
+      )
+    endif()
   else()
-    message(FATAL_ERROR "Couldn't find an valid OVMF_FD_PATH.")
+    find_program(UEFI NAMES uefi-run REQUIRED)
+    if(DEFINED ENV{OVMF_FD_PATH})
+      set(OVMF_FD_PATH $ENV{OVMF_FD_PATH})
+    else()
+      message(FATAL_ERROR "Couldn't find an valid OVMF_FD_PATH.")
+    endif()
   endif()
   list(APPEND UEFI -b ${OVMF_FD_PATH} -q ${QEMU})
   set(QEMU ${UEFI})
