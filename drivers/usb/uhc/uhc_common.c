@@ -93,6 +93,7 @@ void uhc_xfer_buf_free(const struct device *dev, struct net_buf *const buf)
 struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 				    const uint8_t ep,
 				    struct usb_device *const udev,
+				    const size_t rec_len,
 				    void *const cb,
 				    void *const cb_priv)
 {
@@ -147,6 +148,7 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
 	xfer->udev = udev;
 	xfer->cb = cb;
 	xfer->priv = cb_priv;
+	xfer->expected_data_len = rec_len;
 
 xfer_alloc_error:
 	api->unlock(dev);
@@ -169,7 +171,7 @@ struct uhc_transfer *uhc_xfer_alloc_with_buf(const struct device *dev,
 		return NULL;
 	}
 
-	xfer = uhc_xfer_alloc(dev, ep, udev, cb, cb_priv);
+	xfer = uhc_xfer_alloc(dev, ep, udev, size, cb, cb_priv);
 	if (xfer == NULL) {
 		net_buf_unref(buf);
 		return NULL;
