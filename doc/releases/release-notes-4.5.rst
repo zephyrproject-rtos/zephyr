@@ -795,6 +795,11 @@ New APIs and options
 
   * :c:enumerator:`CELLULAR_MODEM_INFO_SERIAL_NUMBER`
 
+* MSPI
+
+  * :c:enumerator:`MSPI_MEMMAP` transfer mode, to ask the controller to service a
+    transfer through the memory mapped region set up with :c:func:`mspi_memmap_config`.
+
 * Multimedia Pipeline
 
   * :kconfig:option:`CONFIG_MPIPE` (see :ref:`mpipe`)
