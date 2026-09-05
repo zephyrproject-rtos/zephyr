@@ -22,7 +22,7 @@ from string import Template
 import junitparser.junitparser as junit
 import yaml
 from pytest import ExitCode
-from twisterlib.constants import SUPPORTED_SIMS_IN_PYTEST
+from twisterlib.constants import FAULT_REASON, SUPPORTED_SIMS_IN_PYTEST
 from twisterlib.environment import PYTEST_PLUGIN_INSTALLED, ZEPHYR_BASE
 from twisterlib.error import ConfigurationError, StatusAttributeError
 from twisterlib.handlers import DeviceHandler, Handler, terminate_process
@@ -52,6 +52,11 @@ class Harness:
     GCOV_START = "GCOV_COVERAGE_DUMP_START"
     GCOV_END = "GCOV_COVERAGE_DUMP_END"
     FAULT = "ZEPHYR FATAL ERROR"
+    # Printed by Ztest's fatal-error/assert hooks
+    UNEXPECTED_FAULT_MARKERS = (
+        "fatal error was unexpected",
+        "assert failed was unexpected",
+    )
     RUN_PASSED = "PROJECT EXECUTION SUCCESSFUL"
     RUN_FAILED = "PROJECT EXECUTION FAILED"
     run_id_pattern = r"RunID: (?P<run_id>[0-9A-Fa-f]+)"
@@ -185,9 +190,13 @@ class Harness:
             if run_id == str(self.run_id):
                 self.matched_run_id = True
 
-        # Faults are logged with a timestamp and module prefix, so the marker
-        # has to be matched as a substring rather than against the whole line.
-        if self.fail_on_fault and self.FAULT in line:
+        # Faults are logged with a timestamp and module prefix, so the markers
+        # have to be matched as substrings rather than against the whole line.
+        line_lower = line.lower()
+        unexpected_hook_fault = any(
+            marker in line_lower for marker in self.UNEXPECTED_FAULT_MARKERS
+        )
+        if (self.fail_on_fault and self.FAULT in line) or unexpected_hook_fault:
             self.fault = True
             # A fault can be reported after the test has already announced
             # success, for instance a stray interrupt taken once the test
@@ -195,12 +204,12 @@ class Harness:
             # that was recorded earlier in the output.
             if self.status == TwisterStatus.PASS:
                 self.status = TwisterStatus.FAIL
-                self.reason = "Fault detected while running test"
+                self.reason = FAULT_REASON
 
         if self.RUN_PASSED in line:
             if self.fault:
                 self.status = TwisterStatus.FAIL
-                self.reason = "Fault detected while running test"
+                self.reason = FAULT_REASON
             else:
                 self.status = TwisterStatus.PASS
 

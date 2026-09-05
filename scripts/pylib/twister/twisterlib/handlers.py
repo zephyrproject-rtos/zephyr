@@ -30,6 +30,7 @@ from typing import TYPE_CHECKING
 import psutil
 from domains import Domains
 from twisterlib import ZEPHYR_BASE
+from twisterlib.constants import FAULT_REASON
 from twisterlib.environment import strip_ansi_sequences
 from twisterlib.hardwaredata import CompoundHardwareData
 from twisterlib.platform import Platform
@@ -217,6 +218,12 @@ class Handler:
             # Depending on the failure type, we set the reason
             if self.options.enable_valgrind and self.returncode == 2:
                 self.instance.reason = "Valgrind error"
+            elif harness.fault:
+                # The console showed an unexpected fatal error: the test
+                # crashed. A crash typically also makes the run time out or
+                # the simulator exit with an error, so report the crash
+                # itself rather than those side effects.
+                self.instance.reason = FAULT_REASON
             elif failure_type == self.FailureType.TIMEOUT:
                 self.instance.reason = "Timeout"
             elif failure_type == self.FailureType.FLASH:
@@ -293,8 +300,12 @@ class BinaryHandler(Handler):
                     log_out_fp.write(strip_ansi_sequences(line_decoded))
                     log_out_fp.flush()
                     harness.handle(stripped_line)
+                    # A harness status means the run reached a verdict; a
+                    # fault means it crashed and no verdict is coming. In
+                    # both cases stop after a short grace period to catch
+                    # late output instead of waiting for the full timeout.
                     if (
-                        harness.status != TwisterStatus.NONE
+                        (harness.status != TwisterStatus.NONE or harness.fault)
                         and not timeout_extended
                         or harness.capture_coverage
                     ):
@@ -1135,7 +1146,10 @@ class QEMUHandler(QEMUHandlerBase):
 
                 if c == "":
                     # EOF, this shouldn't happen unless QEMU crashes
-                    if not ignore_unexpected_eof:
+                    # Don't overwrite an already-recorded failure (e.g. a
+                    # fault): that reason is more precise than the EOF that
+                    # follows it.
+                    if not ignore_unexpected_eof and _status != TwisterStatus.FAIL:
                         _status = TwisterStatus.FAIL
                         _reason = "unexpected eof"
                     break
@@ -1150,22 +1164,32 @@ class QEMUHandler(QEMUHandlerBase):
                 logger.debug(f"QEMU ({pid}): {line}")
 
                 harness.handle(line)
-                if harness.status != TwisterStatus.NONE:
+
+                if harness.fault and _status == TwisterStatus.NONE:
+                    # The console showed an unexpected fatal error: the test
+                    # crashed and usually halts right after, so no verdict is
+                    # coming. Record the crash as the failure now instead of
+                    # letting the run expire as a timeout.
+                    _status = TwisterStatus.FAIL
+                    _reason = FAULT_REASON
+
+                if harness.status != TwisterStatus.NONE and _status != TwisterStatus.FAIL:
                     # if we have registered a fail make sure the status is not
                     # overridden by a false success message coming from the
                     # testsuite
-                    if _status != TwisterStatus.FAIL:
-                        _status = harness.status
-                        _reason = harness.reason
+                    _status = harness.status
+                    _reason = harness.reason
 
-                    # if we get some status, that means test is doing well, we reset
-                    # the timeout and wait for 2 more seconds to catch anything
-                    # printed late. We wait much longer if code
-                    # coverage is enabled since dumping this information can
-                    # take some time.
-                    if not timeout_extended or harness.capture_coverage:
-                        timeout_extended = True
-                        timeout_time = QEMUHandler._extend_timeout_on_status(harness)
+                # once a verdict (or a crash) is known the test is done;
+                # reset the timeout and wait for 2 more seconds to catch
+                # anything printed late. We wait much longer if code
+                # coverage is enabled since dumping this information can
+                # take some time.
+                if _status != TwisterStatus.NONE and (
+                    not timeout_extended or harness.capture_coverage
+                ):
+                    timeout_extended = True
+                    timeout_time = QEMUHandler._extend_timeout_on_status(harness)
                 line = ""
 
             handler.execution_time = time.time() - start_time
@@ -1435,7 +1459,10 @@ class QEMUWinHandler(QEMUHandlerBase):
 
             if c == "":
                 # EOF, this shouldn't happen unless QEMU crashes
-                if not ignore_unexpected_eof:
+                # Don't overwrite an already-recorded failure (e.g. a
+                # fault): that reason is more precise than the EOF that
+                # follows it.
+                if not ignore_unexpected_eof and _status != TwisterStatus.FAIL:
                     _status = TwisterStatus.FAIL
                     _reason = "unexpected eof"
                 break
@@ -1450,22 +1477,32 @@ class QEMUWinHandler(QEMUHandlerBase):
             logger.debug(f"QEMU ({self.pid}): {line}")
 
             harness.handle(line)
-            if harness.status != TwisterStatus.NONE:
+
+            if harness.fault and _status == TwisterStatus.NONE:
+                # The console showed an unexpected fatal error: the test
+                # crashed and usually halts right after, so no verdict is
+                # coming. Record the crash as the failure now instead of
+                # letting the run expire as a timeout.
+                _status = TwisterStatus.FAIL
+                _reason = FAULT_REASON
+
+            if harness.status != TwisterStatus.NONE and _status != TwisterStatus.FAIL:
                 # if we have registered a fail make sure the status is not
                 # overridden by a false success message coming from the
                 # testsuite
-                if _status != TwisterStatus.FAIL:
-                    _status = harness.status
-                    _reason = harness.reason
+                _status = harness.status
+                _reason = harness.reason
 
-                # if we get some status, that means test is doing well, we reset
-                # the timeout and wait for 2 more seconds to catch anything
-                # printed late. We wait much longer if code
-                # coverage is enabled since dumping this information can
-                # take some time.
-                if not timeout_extended or harness.capture_coverage:
-                    timeout_extended = True
-                    timeout_time = self._extend_timeout_on_status(harness)
+            # once a verdict (or a crash) is known the test is done;
+            # reset the timeout and wait for 2 more seconds to catch
+            # anything printed late. We wait much longer if code
+            # coverage is enabled since dumping this information can
+            # take some time.
+            if _status != TwisterStatus.NONE and (
+                not timeout_extended or harness.capture_coverage
+            ):
+                timeout_extended = True
+                timeout_time = self._extend_timeout_on_status(harness)
             line = ""
 
         self.stop_thread = True
