@@ -511,7 +511,7 @@ static int pac194x_parse_sensor_acc_avg(const struct device *dev, uint16_t ch_id
 			res_uv = i128.low >> denominator;
 			res_uv |= i128.high << (64 - denominator);
 
-			if (i128.high >> denominator) {
+			if (((int64_t)i128.high >> denominator) != (res_uv >> 63)) {
 				/* This is VERY unlikely but take care of the corner case */
 				LOG_ERR("accumulated power exceeds 64-bit");
 				return -E2BIG;
@@ -804,9 +804,11 @@ static void pac194x_configure_refresh(const struct device *dev)
 static int pac194x_configure_channels(const struct device *dev)
 {
 	const struct pac194x_config *config = dev->config;
+	struct pac194x_data *data = dev->data;
 	int ret;
 	uint8_t a, vsense, vbus, accum;
 	uint8_t buf[2];
+	uint16_t off_bits;
 
 	if (IS_ENABLED(CONFIG_SENSOR_LOG_LEVEL_DBG)) {
 		pac194x_dump_config(dev);
@@ -822,7 +824,7 @@ static int pac194x_configure_channels(const struct device *dev)
 			continue;
 		}
 
-		tmp = config->channels[a].vbus_mode;
+		tmp = config->channels[a].vsense_mode;
 		switch (tmp) {
 		case PAC_UNIPOLAR_FSR:
 		case PAC_BIPOLAR_FSR:
@@ -834,7 +836,7 @@ static int pac194x_configure_channels(const struct device *dev)
 		}
 		vsense |= tmp << (2 * (3 - a));
 
-		tmp = config->channels[a].vsense_mode;
+		tmp = config->channels[a].vbus_mode;
 		switch (tmp) {
 		case PAC_UNIPOLAR_FSR:
 		case PAC_BIPOLAR_FSR:
@@ -881,10 +883,17 @@ static int pac194x_configure_channels(const struct device *dev)
 		return ret;
 	}
 
-	/* Disable all channels */
+	/* Enable the channels described in devicetree, disable all the others */
+	off_bits = PAC194X_CTRL_CHANNEL_N_OFF_MASK;
+	for (a = 0; a < MIN(PAC194X_MAX_CHANNELS, data->info->phys_channels); a++) {
+		if (config->channels[a].configured) {
+			off_bits &= ~PAC194X_CTRL_CHANNEL_N_OFF(a);
+			data->channels[a].enabled = true;
+		}
+	}
+
 	ret = pac194_reg_mask_write_16(dev, PAC194X_REG_CTRL,
-				       PAC194X_CTRL_CHANNEL_N_OFF_MASK,
-				       PAC194X_CTRL_CHANNEL_N_OFF_MASK);
+				       PAC194X_CTRL_CHANNEL_N_OFF_MASK, off_bits);
 
 	if (ret < 0) {
 		return ret;
