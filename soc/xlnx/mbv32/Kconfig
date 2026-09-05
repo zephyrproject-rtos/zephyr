@@ -1,0 +1,11 @@
+#
+# Copyright (c) 2026 Advanced Micro Devices, Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config SOC_MBV32
+	select RISCV
+	select INCLUDE_RESET_VECTOR
+	select CLOCK_CONTROL
+	select CLOCK_CONTROL_FIXED_RATE_CLOCK
