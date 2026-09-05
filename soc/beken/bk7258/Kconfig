@@ -1,0 +1,24 @@
+# Copyright (c) 2026 Embracecactus
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_BK7258
+	select ARM
+	select CPU_CORTEX_M33
+	select CPU_CORTEX_M_HAS_SYSTICK
+	select CPU_HAS_FPU
+	select CPU_HAS_ARM_SAU
+	select ARMV8_M_DSP
+	select PINCTRL
+	imply XIP
+
+if SOC_BK7258
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	int
+	default 120000000
+
+config NUM_IRQS
+	int
+	default 64
+
+endif # SOC_BK7258

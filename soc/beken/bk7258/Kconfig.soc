@@ -1,0 +1,8 @@
+# Copyright (c) 2026 Embracecactus
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_BK7258
+	bool
+
+config SOC
+	default "bk7258" if SOC_BK7258
