@@ -2,4 +2,4 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_OSD32MP15X
-	select SOC_STM32MP15_M4
+	select SOC_STM32MP157CXX_M4
