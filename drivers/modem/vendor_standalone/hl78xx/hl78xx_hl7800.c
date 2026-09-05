@@ -251,10 +251,18 @@ static void hl78xx_hl7800_on_ksup_lpm(struct hl78xx_data *data)
 			 * explicitly sent AT+CFUN=4,1 and is waiting for the modem to
 			 * reboot. Dispatch MDM_RESTART so the event handler transitions
 			 * back to RUN_INIT_SCRIPT.
+			 *
+			 * This reboot is a real session boundary — unlike the PSM/eDRX
+			 * KSUPs handled below, where modem state is preserved and the
+			 * GNSS queue must survive the wake.
 			 */
 			LOG_DBG("KSUP after config restart (state=%d) - "
 				"dispatching MDM_RESTART",
 				data->status.state);
+			hl78xx_reset_modem_session_state(data);
+#ifdef CONFIG_HL78XX_GNSS
+			hl78xx_gnss_reset_session_state(data);
+#endif /* CONFIG_HL78XX_GNSS */
 			hl78xx_delegate_event(data, MODEM_HL78XX_EVENT_MDM_RESTART);
 		} else {
 			/* All other states: KSUP is informational.
