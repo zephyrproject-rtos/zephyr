@@ -312,6 +312,14 @@ Deprecated APIs and options
   * Renamed :c:func:`lora_recv_duty_cycle` to :c:func:`lora_recv_duty_cycle_async`
     to be consistent with the existing sync/async naming convention.
 
+* Microchip SAM
+
+  * The ``wakeup-source-id`` devicetree property, the ``#wakeup-source-id-cells`` property of
+    :dtcompatible:`atmel,sam-supc`, and the ``SAM_DT_SUPC_WAKEUP_SOURCE_ID()`` and
+    ``SAM_DT_INST_SUPC_WAKEUP_SOURCE_ID()`` macros have been deprecated. Use the ``wakeup-ctrls``
+    property and ``DT_WUC_ID()`` / ``DT_INST_WUC_ID()`` from
+    :zephyr_file:`include/zephyr/devicetree/wuc.h` instead.
+
 * Nordic
 
   * The internal SoC platform Kconfig symbols ``NRF_PLATFORM_HALTIUM`` and
