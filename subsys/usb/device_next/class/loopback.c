@@ -238,7 +238,11 @@ static int lb_control_to_dev(struct usbd_class_data *c_data,
 		return -ENOTSUP;
 	}
 
-	if (setup->wLength && (buf == NULL)) {
+	if (setup->wLength == 0) {
+		return -ENOTSUP;
+	}
+
+	if (buf == NULL) {
 		/* Data OUT can be received */
 		return 0;
 	}
