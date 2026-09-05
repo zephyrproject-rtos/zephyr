@@ -29,6 +29,7 @@ class HardwareData:
     flash_with_test: bool = False
     flash_before: bool = False
     fixtures: list[str] = field(default_factory=list)
+    run_with_fixture_only: bool = False
     probe_id: str | None = None
     notes: str | None = None
     match: bool = False
