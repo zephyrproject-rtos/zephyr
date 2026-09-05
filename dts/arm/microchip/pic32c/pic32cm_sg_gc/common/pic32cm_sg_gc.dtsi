@@ -35,6 +35,18 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 
+		/*
+		 * 128-bit device identifier, data sheet table 11-3. Stored in
+		 * CAL-OTP, not the NVM calibration row other G1 parts use.
+		 */
+		hwinfo: device_id@a0071e0 {
+			compatible = "microchip,hwinfo-g1";
+			reg = <0x0a0071e0 0x4>,
+			      <0x0a0071e4 0x4>,
+			      <0x0a0071e8 0x4>,
+			      <0x0a0071ec 0x4>;
+		};
+
 		sram0: memory@20000000 {
 			compatible = "mmio-sram";
 			#address-cells = <1>;
@@ -252,6 +264,15 @@
 				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_SERCOM5_CORE>;
 			clock-names = "mclk", "gclk";
 			status = "disabled";
+		};
+
+		/*
+		 * Reset controller. RCAUSE at offset 0 is 16 bits wide on this
+		 * family and the block ends at DBGCTRL (0x04, 32-bit).
+		 */
+		rstc: rstc@45004000 {
+			compatible = "microchip,rstc-g1-reset";
+			reg = <0x45004000 0x8>;
 		};
 	};
 };
