@@ -51,6 +51,14 @@ config PM_CPU_OPS_SPIN_TABLE
 	  Say Y here if secondary CPUs are brought up via the ARM64
 	  spin-table boot protocol.
 
+config PM_CPU_OPS_SBI
+	bool "Support for RISCV SBI Hart State Management Extension"
+	depends on RISCV_S_MODE_EXTERNAL_SBI
+	select PM_CPU_OPS_HAS_DRIVER
+	help
+	  Say Y here is secondary CPUs are brought up via the RISCV SBI Hart
+	  State Management Extension.
+
 config PSCI_SHELL
 	bool "Support for PSCI interface shell commands"
 	depends on SHELL && PM_CPU_OPS_PSCI

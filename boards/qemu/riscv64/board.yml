@@ -8,3 +8,4 @@ board:
         - name: smp
         - name: smode
         - name: opensbi
+        - name: opensbi_smp

@@ -12,19 +12,6 @@
 #include <zephyr/kernel_structs.h>
 #include "csr.h"
 
-static ALWAYS_INLINE uint32_t arch_proc_id(void)
-{
-#ifdef CONFIG_RISCV_S_MODE
-	/* mhartid is M-mode only; S-mode cannot read it.
-	 * For single-hart systems the hart ID is always 0.
-	 * SMP S-mode would need to retrieve this from per-CPU data.
-	 */
-	return 0;
-#else
-	return csr_read(mhartid) & ((uintptr_t)CONFIG_RISCV_HART_MASK);
-#endif
-}
-
 static ALWAYS_INLINE _cpu_t *arch_curr_cpu(void)
 {
 #if defined(CONFIG_SMP) || defined(CONFIG_USERSPACE)
@@ -35,6 +22,19 @@ static ALWAYS_INLINE _cpu_t *arch_curr_cpu(void)
 #endif
 #else
 	return &_kernel.cpus[0];
+#endif
+}
+
+static ALWAYS_INLINE uint32_t arch_proc_id(void)
+{
+#ifdef CONFIG_RISCV_S_MODE
+#if defined(CONFIG_SMP) || (CONFIG_MP_MAX_NUM_CPUS > 1)
+	return arch_curr_cpu()->arch.hartid;
+#else
+	return CONFIG_RV_BOOT_HART;
+#endif
+#else
+	return csr_read(mhartid) & ((uintptr_t)CONFIG_RISCV_HART_MASK);
 #endif
 }
 
