@@ -13,6 +13,16 @@ config MIPI_DBI_SPI
 
 if MIPI_DBI_SPI
 
+config MIPI_DBI_SPI_SHARED_DC
+	bool
+	default $(dt_compat_any_has_prop,$(DT_COMPAT_ZEPHYR_MIPI_DBI_SPI),dc-gpios-shared,True)
+	depends on PINCTRL
+	select PINCTRL_NON_STATIC
+	help
+	  Support for a data/command pin that is shared with the SPI bus.
+	  The pad is handed back to the bus pin control state after every
+	  transfer instead of being driven for the lifetime of the device.
+
 config MIPI_DBI_SPI_3WIRE
 	bool "Emulated 3 wire SPI support"
 	help
