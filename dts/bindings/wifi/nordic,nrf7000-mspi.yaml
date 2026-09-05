@@ -3,7 +3,7 @@
 
 description: nRF7000 Wi-Fi chip with MSPI interface.
 
-compatible: "nordic,nrf7000-mspi"
+compatible: "nordic,nrf7000"
 
 include:
   - "nordic,nrf70-mspi.yaml"

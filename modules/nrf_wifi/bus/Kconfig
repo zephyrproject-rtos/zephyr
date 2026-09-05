@@ -24,9 +24,9 @@ config NRF70_ON_SPI
 	select SPI
 
 config NRF70_ON_MSPI
-	def_bool $(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF7002_MSPI)) ||\
-			$(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF7001_MSPI)) ||\
-			$(dt_compat_enabled,$(DT_COMPAT_NORDIC_NRF7000_MSPI))
+	def_bool $(dt_compat_on_bus,$(DT_COMPAT_NORDIC_NRF7002),mspi) ||\
+			$(dt_compat_on_bus,$(DT_COMPAT_NORDIC_NRF7001),mspi) ||\
+			$(dt_compat_on_bus,$(DT_COMPAT_NORDIC_NRF7000),mspi)
 	select MSPI
 	help
 	  Selected when the nRF70 is wired to a generic Zephyr MSPI controller
