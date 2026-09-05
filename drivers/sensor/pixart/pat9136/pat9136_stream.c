@@ -159,13 +159,21 @@ static void pat9136_stream_get_data(const struct device *dev)
 	CHECKIF(!write_res_x_sqe || !read_res_x_sqe ||
 		!write_res_y_sqe || !read_res_y_sqe ||
 		!write_sqe || !read_sqe || !cb_sqe) {
+		struct rtio_iodev_sqe *iodev_sqe = data->stream.iodev_sqe;
+
 		LOG_ERR("Failed to acquire RTIO SQE's. Dropping all pending SQE's");
 		rtio_sqe_drop_all(data->rtio.ctx);
 
 		data->stream.iodev_sqe = NULL;
-		rtio_iodev_sqe_err(data->stream.iodev_sqe, -ENOMEM);
+		rtio_iodev_sqe_err(iodev_sqe, -ENOMEM);
 		return;
 	}
+
+	/** Only the LOWER resolution registers are read below, as the UPPER
+	 * ones always read back zero (resolution is capped to 199).
+	 */
+	buf->header.resolution.x = 0;
+	buf->header.resolution.y = 0;
 
 	/* X Resolution used for decoding DXY in mm */
 	{
@@ -332,7 +340,7 @@ void pat9136_stream_submit(const struct device *dev,
 	struct pat9136_stream stream = {0};
 
 	for (size_t i = 0 ; i < read_config->count ; i++) {
-		switch (read_config->channels[i].chan_type) {
+		switch (read_config->triggers[i].trigger) {
 		case SENSOR_TRIG_DATA_READY:
 			stream.settings.enabled.drdy = true;
 			stream.settings.opt.drdy = read_config->triggers[i].opt;
