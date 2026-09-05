@@ -76,18 +76,27 @@ uint64_t z_sys_clock_lpm_exit(void)
 {
 	/* Compute how much time elapsed according to the counter */
 	uint32_t counter_top, post_lpm_ticks, ticks_elapsed;
+	uint32_t pre_ticks, post_ticks;
 	bool counter_int_pending, wraparound_occurred;
 
 	counter_int_pending = !!counter_get_pending_int(lpm_counter);
 	counter_top = counter_get_top_value(lpm_counter);
 	counter_get_value(lpm_counter, &post_lpm_ticks);
 
+	/* Normalize to elapsed ticks for both counting directions */
+	if (counter_is_counting_up(lpm_counter)) {
+		pre_ticks = counter_pre_lpm_ticks;
+		post_ticks = post_lpm_ticks;
+	} else {
+		pre_ticks = counter_top - counter_pre_lpm_ticks;
+		post_ticks = counter_top - post_lpm_ticks;
+	}
+
 	/* Check for counter overflow/wraparound */
-	/* TODO: this works only for upcounting timers! */
-	if (counter_pre_lpm_ticks > post_lpm_ticks) {
+	if (pre_ticks > post_ticks) {
 		/* Pre > Post: counter wrapped around (overflow occurred) */
 		wraparound_occurred = true;
-	} else if (counter_pre_lpm_ticks == post_lpm_ticks) {
+	} else if (pre_ticks == post_ticks) {
 		/* Pre == Post: counter wrapped around if interrupt is pending */
 		wraparound_occurred = counter_int_pending;
 	} else {
@@ -96,14 +105,13 @@ uint64_t z_sys_clock_lpm_exit(void)
 		 * many ticks we scheduled, then treat this as wraparound.
 		 */
 		wraparound_occurred = counter_int_pending &&
-			((uint64_t)counter_pre_lpm_ticks + counter_scheduled_lpm_ticks
-				>= counter_top);
+			(counter_scheduled_lpm_ticks >= counter_top - pre_ticks);
 	}
 
 	if (wraparound_occurred) {
-		ticks_elapsed = (counter_top - counter_pre_lpm_ticks) + post_lpm_ticks + 1;
+		ticks_elapsed = (counter_top - pre_ticks) + post_ticks + 1;
 	} else {
-		ticks_elapsed = post_lpm_ticks - counter_pre_lpm_ticks;
+		ticks_elapsed = post_ticks - pre_ticks;
 	}
 
 	return (uint64_t)counter_ticks_to_us(lpm_counter, ticks_elapsed);
