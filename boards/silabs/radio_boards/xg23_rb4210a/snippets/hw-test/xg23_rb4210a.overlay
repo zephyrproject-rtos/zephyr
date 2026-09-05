@@ -40,6 +40,15 @@
 		zephyr,resolution = <12>;
 		zephyr,input-positive = <IADC_INPUT_PB3>;
 	};
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+		zephyr,input-positive = <IADC_INPUT_AVDD>;
+	};
 };
 
 &adc0 {
@@ -48,4 +57,13 @@
 
 &dma0 {
 	status = "okay";
+};
+
+/ {
+	adc_reference_voltage: adc-reference-voltage {
+		compatible = "test-adc-reference-voltage";
+		io-channels = <&adc0 0>;
+		reference-mv = <(3300 / 4)>;
+		expected-accuracy = <32>;
+	};
 };

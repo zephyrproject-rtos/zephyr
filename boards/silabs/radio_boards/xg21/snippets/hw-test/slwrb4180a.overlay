@@ -49,3 +49,12 @@
 &dma0 {
 	status = "okay";
 };
+
+/ {
+	adc_reference_voltage: adc-reference-voltage {
+		compatible = "test-adc-reference-voltage";
+		io-channels = <&adc0 3>;
+		reference-mv = <(3300 / 4)>;
+		expected-accuracy = <32>;
+	};
+};
