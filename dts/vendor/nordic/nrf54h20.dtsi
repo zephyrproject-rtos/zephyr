@@ -265,6 +265,11 @@
 		#power-domain-cells = <0>;
 	};
 
+	usbhs_phy: usbhs_phy {
+		compatible = "nordic,nrf-usbhs-phy-type1";
+		status = "reserved";
+	};
+
 	soc {
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -682,6 +687,7 @@
 				ghwcfg1 = <0xaa555000>;
 				ghwcfg2 = <0x22abfc72>;
 				ghwcfg4 = <0x1e10aa60>;
+				phy = <&usbhs_phy>;
 				status = "disabled";
 			};
 
