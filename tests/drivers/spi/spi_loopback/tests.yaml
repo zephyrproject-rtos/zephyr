@@ -47,48 +47,54 @@ tests:
       - EXTRA_CONF_FILE="overlay-mcux-dspi-dma.conf"
       - DTC_OVERLAY_FILE="overlay-mcux-dspi-dma.overlay"
     platform_allow: frdm_k64f
-  drivers.spi.sam_spi_dma.loopback:
-    extra_args:
-      - EXTRA_CONF_FILE="overlay-sam-spi-dma.conf"
-      - DTC_OVERLAY_FILE="overlay-sam-spi-dma.overlay"
-    platform_allow:
-      - sam_e70_xplained/same70q21
-      - sam_v71_xult/samv71q21
-      - robokit1
-    integration_platforms:
-      - sam_e70_xplained/same70q21
+
   drivers.spi.mchp_spi_dma.loopback:
     extra_args:
       - EXTRA_CONF_FILE="overlay-mchp-spi-dma.conf"
     platform_allow:
       - sam_e54_xpro
       - pic32cx_sg41_cult
-  drivers.spi.stm32_spi_dma.loopback:
-    extra_args: EXTRA_CONF_FILE="overlay-stm32-spi-dma.conf"
+  drivers.spi.loopback.dma:
+    extra_configs:
+      - CONFIG_SPI_DMA=y
     platform_allow:
       - b_u585i_iot02a
+      - gd32f403z_eval
+      - gd32f407v_start
+      - gd32f450i_eval
+      - gd32f450v_start
+      - gd32f450z_eval
+      - gd32f470i_eval
+      - gd32vf103c_starter
+      - gd32vf103v_eval
+      - longan_nano
+      - longan_nano/gd32vf103/lite
       - nucleo_c071rb
       - nucleo_c5a3zg
-      - nucleo_g071rb
-      - nucleo_g474re
       - nucleo_f207zg
       - nucleo_f429zi
       - nucleo_f746zg
       - nucleo_f767zi
-      - nucleo_wba55cg
-      - nucleo_wb55rg
-      - nucleo_l152re
-      - nucleo_wl55jc
+      - nucleo_g071rb
+      - nucleo_g474re
       - nucleo_h743zi
-      - nucleo_h753zi
       - nucleo_h745zi_q/stm32h745xx/m4
       - nucleo_h745zi_q/stm32h745xx/m7
+      - nucleo_h753zi
+      - nucleo_l152re
       - nucleo_u385rg_q
+      - nucleo_wb55rg
+      - nucleo_wba55cg
+      - nucleo_wl55jc
+      - robokit1
+      - sam_e70_xplained/same70q21
+      - sam_v71_xult/samv71q21
       - stm32h573i_dk
       - stm32n6570_dk/stm32n657xx/sb
       - stm32u083c_dk
     integration_platforms:
       - nucleo_g474re
+
   drivers.spi.stm32_spi_dma_dt_nocache_mem.loopback:
     # this test case is for when nocache memory region is defined in DT
     # using `zephyr,memory-attr = < DT_MEM_ARM_MPU_RAM_NOCACHE)>`
@@ -102,10 +108,21 @@ tests:
       - nucleo_h745zi_q/stm32h745xx/m7
     integration_platforms:
       - nucleo_h753zi
-  drivers.spi.stm32_spi_interrupt.loopback:
-    extra_args: EXTRA_CONF_FILE="overlay-stm32-spi-interrupt.conf"
+  drivers.spi.loopback.interrupt:
+    extra_configs:
+      - CONFIG_SPI_INTERRUPT_DRIVEN=y
     platform_allow:
       - b_u585i_iot02a
+      - gd32f403z_eval
+      - gd32f407v_start
+      - gd32f450i_eval
+      - gd32f450v_start
+      - gd32f450z_eval
+      - gd32f470i_eval
+      - gd32vf103c_starter
+      - gd32vf103v_eval
+      - longan_nano
+      - longan_nano/gd32vf103/lite
       - nucleo_c071rb
       - nucleo_c5a3zg
       - nucleo_f207zg
@@ -115,13 +132,13 @@ tests:
       - nucleo_g071rb
       - nucleo_g474re
       - nucleo_h743zi
-      - nucleo_h753zi
       - nucleo_h745zi_q/stm32h745xx/m4
       - nucleo_h745zi_q/stm32h745xx/m7
+      - nucleo_h753zi
       - nucleo_l152re
       - nucleo_u385rg_q
-      - nucleo_wba55cg
       - nucleo_wb55rg
+      - nucleo_wba55cg
       - nucleo_wl55jc
       - stm32f3_disco
       - stm32h573i_dk
@@ -129,6 +146,7 @@ tests:
       - stm32u083c_dk
     integration_platforms:
       - stm32h573i_dk
+
   drivers.spi.stm32_spi_rtio.loopback:
     extra_args: EXTRA_CONF_FILE="overlay-stm32-spi-rtio.conf"
     platform_allow:
@@ -179,36 +197,8 @@ tests:
       - stm32u083c_dk
     integration_platforms:
       - stm32h573i_dk
-  drivers.spi.gd32_spi_interrupt.loopback:
-    extra_args: EXTRA_CONF_FILE="overlay-gd32-spi-interrupt.conf"
-    platform_allow:
-      - gd32f403z_eval
-      - gd32f407v_start
-      - gd32f450i_eval
-      - gd32f450v_start
-      - gd32f450z_eval
-      - gd32f470i_eval
-      - gd32vf103c_starter
-      - gd32vf103v_eval
-      - longan_nano
-      - longan_nano/gd32vf103/lite
-    integration_platforms:
-      - gd32f403z_eval
-  drivers.spi.gd32_spi_dma.loopback:
-    extra_args: EXTRA_CONF_FILE="overlay-gd32-spi-dma.conf"
-    platform_allow:
-      - gd32f403z_eval
-      - gd32f407v_start
-      - gd32f450i_eval
-      - gd32f450v_start
-      - gd32f450z_eval
-      - gd32f470i_eval
-      - gd32vf103c_starter
-      - gd32vf103v_eval
-      - longan_nano
-      - longan_nano/gd32vf103/lite
-    integration_platforms:
-      - gd32f403z_eval
+
+
   drivers.spi.pl022_spi_interrupt.loopback:
     extra_args: DTC_OVERLAY_FILE="boards/rpi_pico_pl022.overlay"
     extra_configs:
@@ -229,8 +219,8 @@ tests:
   drivers.spi.pl022_spi_dma_and_interrupt.loopback:
     extra_args: DTC_OVERLAY_FILE="boards/rpi_pico_pl022_dma.overlay"
     extra_configs:
-      - CONFIG_SPI_PL022_INTERRUPT=y
-      - CONFIG_SPI_PL022_DMA=y
+      - CONFIG_SPI_INTERRUPT_DRIVEN=y
+      - CONFIG_SPI_DMA=y
       - CONFIG_DMA=y
     platform_allow:
       - rpi_pico
@@ -247,8 +237,8 @@ tests:
   drivers.spi.pl022_spi_dma_and_interrupt_no_dma_props.loopback:
     extra_args: DTC_OVERLAY_FILE="boards/rpi_pico_pl022.overlay"
     extra_configs:
-      - CONFIG_SPI_PL022_INTERRUPT=y
-      - CONFIG_SPI_PL022_DMA=y
+      - CONFIG_SPI_INTERRUPT_DRIVEN=y
+      - CONFIG_SPI_DMA=y
       - CONFIG_DMA=y
     platform_allow:
       - rpi_pico

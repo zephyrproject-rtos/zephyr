@@ -5,6 +5,7 @@
 
 config SPI_CC13XX_CC26XX
 	bool "TI SimpleLink CC13xx / CC26xx SPI driver"
+	select SPI_ASYNC_NOT_SUPPORTED
 	default y
 	depends on DT_HAS_TI_CC13XX_CC26XX_SPI_ENABLED
 	select PINCTRL

@@ -3,6 +3,7 @@
 
 config SPI_MSPM0
 	bool "TI MSPM0 SPI"
+	select SPI_ASYNC_NOT_SUPPORTED
 	default y
 	depends on DT_HAS_TI_MSPM0_SPI_ENABLED
 	select USE_MSPM0_DL_SPI
