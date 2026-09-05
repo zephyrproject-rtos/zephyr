@@ -37,7 +37,14 @@ static inline int z_vrfy_rtc_alarm_set_time(const struct device *dev, uint16_t i
 					    const struct rtc_time *timeptr)
 {
 	K_OOPS(K_SYSCALL_DRIVER_RTC(dev, alarm_set_time));
-	K_OOPS(K_SYSCALL_MEMORY_READ(timeptr, sizeof(struct rtc_time)));
+
+	if (timeptr != NULL) {
+		K_OOPS(K_SYSCALL_MEMORY_READ(timeptr, sizeof(struct rtc_time)));
+	} else {
+		K_OOPS(K_SYSCALL_VERIFY_MSG(mask == 0,
+					    "timeptr may only be NULL when mask is 0"));
+	}
+
 	return z_impl_rtc_alarm_set_time(dev, id, mask, timeptr);
 }
 #include <zephyr/syscalls/rtc_alarm_set_time_mrsh.c>
