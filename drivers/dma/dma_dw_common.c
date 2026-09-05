@@ -45,7 +45,7 @@ void dw_dma_isr(const struct device *dev)
 	status_block = dw_read(dev_cfg->base, DW_STATUS_BLOCK);
 	status_tfr = dw_read(dev_cfg->base, DW_STATUS_TFR);
 
-	/* TODO: handle errors, just clear them atm */
+	/* handle dma transfer errors */
 	status_err = dw_read(dev_cfg->base, DW_STATUS_ERR);
 	if (status_err) {
 		LOG_ERR("%s: status_err = %d\n", dev->name, status_err);
@@ -62,6 +62,9 @@ void dw_dma_isr(const struct device *dev)
 		status_block &= ~(1 << channel);
 		chan_data = &dev_data->chan[channel];
 
+		int status = (status_err & DW_CHAN(channel)) && !chan_data->error_callback_dis
+			     ? -EIO : DMA_STATUS_BLOCK;
+
 		if (chan_data->dma_blkcallback) {
 			LOG_DBG("%s: Dispatching block complete callback for channel %d", dev->name,
 				channel);
@@ -72,7 +75,7 @@ void dw_dma_isr(const struct device *dev)
 			 */
 			chan_data->dma_blkcallback(dev,
 						   chan_data->blkuser_data,
-						   channel, DMA_STATUS_BLOCK);
+						   channel, status);
 		}
 	}
 
@@ -87,12 +90,15 @@ void dw_dma_isr(const struct device *dev)
 		 */
 		chan_data->state = DW_DMA_IDLE;
 
+		int status = (status_err & DW_CHAN(channel)) && !chan_data->error_callback_dis
+			     ? -EIO : DMA_STATUS_COMPLETE;
+
 		if (chan_data->dma_tfrcallback) {
 			LOG_DBG("%s: Dispatching transfer callback for channel %d", dev->name,
 				channel);
 			chan_data->dma_tfrcallback(dev,
 						   chan_data->tfruser_data,
-						   channel, DMA_STATUS_COMPLETE);
+						   channel, status);
 		}
 	}
 }
@@ -423,7 +429,12 @@ int dw_dma_config(const struct device *dev, uint32_t channel,
 		dw_write(dev_cfg->base, DW_MASK_TFR, DW_CHAN_UNMASK(channel));
 	}
 
-	dw_write(dev_cfg->base, DW_MASK_ERR, DW_CHAN_UNMASK(channel));
+	chan_data->error_callback_dis = cfg->error_callback_dis;
+
+	/* unmask error interrupt when error_callback_dis is 0 */
+	if (!cfg->error_callback_dis) {
+		dw_write(dev_cfg->base, DW_MASK_ERR, DW_CHAN_UNMASK(channel));
+	}
 
 	/* write interrupt clear registers for the channel
 	 * ClearTfr, ClearBlock, ClearSrcTran, ClearDstTran, ClearErr
