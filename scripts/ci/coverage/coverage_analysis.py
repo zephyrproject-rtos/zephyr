@@ -247,6 +247,9 @@ class Json_report:
                 if not x:
                     continue
 
+                if not covered_file['lines']:
+                    continue
+
                 file_name = covered_file['file'][covered_file['file'].rfind('/') + 1 :]
                 file_path = covered_file['file']
                 file_coverage, file_lines, file_hit = self._calculate_coverage_of_file(covered_file)
