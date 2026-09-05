@@ -151,3 +151,10 @@ properties:
     type: boolean
     description: |
       Configure the INT pin as open-drain. Defaults to push-pull.
+
+  int-latched:
+    type: boolean
+    description: |
+      Configure INT as latched (held until INT_STATUS read) instead of pulsed.
+      When set, the driver uses edge-triggered GPIO and chains an INT_STATUS
+      read after each sample to clear the sensor latch (see datasheet section 4.7.3.2).
