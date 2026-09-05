@@ -615,6 +615,13 @@ New APIs and options
 
   * :c:struct:`sys_ringq` (see :ref:`fixed_size_ringq_api`)
 
+* Sensor
+
+  * LIS2DH FIFO support: :c:func:`lis2dh_fifo_start`, :c:func:`lis2dh_fifo_stop`,
+    :c:func:`lis2dh_fifo_read` and :c:enumerator:`SENSOR_ATTR_LIS2DH_FIFO_DROPPED`.
+    Enable :kconfig:option:`CONFIG_LIS2DH_STREAM` for Sensor Async API streaming
+    with RTIO and the sensor decoder API.
+
 * USB Type-C
 
   * :kconfig:option:`CONFIG_USBC_LOG_PD_MSG_NAMES`
