@@ -1,0 +1,90 @@
+# Copyright (c) 2026 Realtek Semiconductor, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Realtek RTS5817 Wakeup Controller (WUC).
+
+  The RTS5817 WUC manages wakeup sources for the SoC's power management
+  controller. It provides the ability to enable/disable wakeup sources and
+  check which source triggered a wakeup after S2RAM (Suspend-to-RAM).
+
+  Wakeup sources include GPIO-AL0/1/2, sensor GPIO, sensor CS, GPI_WAKE1/2,
+  RC timer, USB host, and OCP (over-current protection).
+
+  Each wakeup source is identified by an integer ID matching the
+  RTS5817_WKUP_SRC_* constants defined in
+  include/zephyr/dt-bindings/wuc/wuc_rts5817.h.
+
+  Child nodes define the configuration (wakeup mode, substate, RC timer
+  timeout) for each wakeup source.
+
+  Example:
+    wuc: wakeup-controller@401e2000 {
+        compatible = "realtek,rts5817-wuc";
+        reg = <0x401e2000 0x200>;
+        #wakeup-ctrl-cells = <1>;
+
+        gpio_al0_wakeup {
+            wkup-src = <3>;        // RTS5817_WKUP_SRC_GPIO_AL0
+            wkup-mode = <0>;       // rising edge
+            wkup-state = <&suspend>;
+        };
+    };
+
+compatible: "realtek,rts5817-wuc"
+
+include: [base.yaml, wuc-controller.yaml]
+
+properties:
+  syscon-sys:
+    type: phandle
+    required: true
+    description: |
+      phandle to dlink_sys node.
+
+  syscon-ldo:
+    type: phandle
+    required: true
+    description: |
+      phandle to dlink_ldo node.
+
+  '#wakeup-ctrl-cells':
+    type: int
+    const: 1
+    description: |
+      Number of cells in the wakeup-ctrls property.
+      The 'id' cell is the wakeup source identifier (RTS5817_WKUP_SRC_*).
+
+wakeup-ctrl-cells:
+  - id
+
+child-binding:
+  description: |
+    Wakeup source configuration node.
+
+  properties:
+    id:
+      type: int
+      required: true
+      description: |
+        Wakeup source identifier. Must be one of the RTS5817_WKUP_SRC_*
+        values from wuc_rts5817.h.
+
+    mode:
+      type: int
+      description: |
+        Wakeup trigger mode for GPIO-type sources. Must be one of
+        the RTS5817_WAKEUP_MODE_* values from wuc_rts5817.h
+      enum: [0, 1, 2, 3]
+
+    time:
+      type: int
+      description: |
+        Wakeup time in milliseconds for RC timer wakeup source.
+        Valid range is [0, 41943].
+
+    substate-id:
+      type: int
+      required: true
+      description: |
+        The substate_id of S2RAM that wakeup source is active for.
