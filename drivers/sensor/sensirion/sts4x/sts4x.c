@@ -1,168 +1,252 @@
 /*
- * Copyright (c) 2024 Jan Fäh
+ * Copyright (c) 2026 Sensirion
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 #define DT_DRV_COMPAT sensirion_sts4x
 
+#include "sts4x.h"
+#include "../common/conversions.h"
+#include "../common/i2c_packet.h"
+
 #include <zephyr/device.h>
-#include <zephyr/kernel.h>
-#include <zephyr/drivers/sensor.h>
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/sensor.h>
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
-#include <zephyr/sys/__assert.h>
-#include <zephyr/sys/byteorder.h>
-#include <zephyr/sys/crc.h>
-#include <zephyr/devicetree.h>
 
-LOG_MODULE_REGISTER(STS4X, CONFIG_SENSOR_LOG_LEVEL);
+#include <zephyr/drivers/sensor/sts4x.h>
 
-#define STS4X_CMD_RESET 0x94
+LOG_MODULE_REGISTER(STS4x, CONFIG_SENSOR_LOG_LEVEL);
 
-#define STS4X_RESET_TIME 1
+static const struct i2c_dt_spec *i2c_spec;
 
-#define STS4X_CRC_POLY 0x31
-#define STS4X_CRC_INIT 0xFF
+static uint8_t communication_buffer[6] = {0};
 
-#define STS4X_MAX_TEMP 175
-#define STS4X_MIN_TEMP -45
+static i2c_packet_t packet = {
+	.crc8_poly = 0x31, .crc8_init = 0xff, .max_length = 6, .data = communication_buffer};
 
-struct sts4x_config {
-	struct i2c_dt_spec bus;
-	uint8_t repeatability;
-};
+static uint8_t _repeatability;
 
-struct sts4x_data {
-	uint16_t temp_sample;
-};
-
-static const uint8_t measure_cmds[3] = {0xE0, 0xF6, 0xFD};
-static const uint16_t measure_time_us[3] = {1600, 4500, 8300};
-
-static int sts4x_crc_check(uint16_t value, uint8_t sensor_crc)
+int sts4x_measure_temperature_high_precision(uint16_t *temperature_ticks)
 {
-	uint8_t buf[2];
+	int ret = NO_ERROR;
+	uint16_t local_offset = 0U;
 
-	sys_put_be16(value, buf);
-
-	uint8_t calculated_crc = crc8(buf, 2, STS4X_CRC_POLY, STS4X_CRC_INIT, false);
-
-	if (calculated_crc == sensor_crc) {
-		return 0;
-	}
-
-	return -EIO;
-}
-
-static int sts4x_write_command(const struct device *dev, uint8_t cmd)
-{
-	const struct sts4x_config *cfg = dev->config;
-	uint8_t tx_buf = cmd;
-
-	return i2c_write_dt(&cfg->bus, &tx_buf, 1);
-}
-
-static int sts4x_read_sample(const struct device *dev, uint16_t *temp_sample)
-{
-	const struct sts4x_config *cfg = dev->config;
-	uint8_t rx_buf[3];
-	int ret;
-
-	ret = i2c_read_dt(&cfg->bus, rx_buf, sizeof(rx_buf));
-	if (ret < 0) {
-		LOG_ERR("Failed to read data.");
+	local_offset = sensirion_i2c_packet_add_command8(
+		&packet, local_offset, STS4X_MEASURE_TEMPERATURE_HIGH_PRECISION_CMD_ID);
+	ret = sensirion_i2c_packet_write(&packet, local_offset, i2c_spec);
+	if (ret != NO_ERROR) {
 		return ret;
 	}
-
-	*temp_sample = sys_get_be16(rx_buf);
-	ret = sts4x_crc_check(*temp_sample, rx_buf[2]);
-	if (ret < 0) {
-		LOG_ERR("Invalid CRC.");
+	k_msleep(9U);
+	ret = sensirion_i2c_packet_read(&packet, 2, i2c_spec);
+	if (ret != NO_ERROR) {
 		return ret;
 	}
+	*temperature_ticks = sensirion_conversions_bytes_to_uint16_t(&packet.data[0]);
+	return ret;
+}
 
-	return 0;
+int sts4x_measure_temperature_medium_precision(uint16_t *temperature_ticks)
+{
+	int ret = NO_ERROR;
+	uint16_t local_offset = 0U;
+
+	local_offset = sensirion_i2c_packet_add_command8(
+		&packet, local_offset, STS4X_MEASURE_TEMPERATURE_MEDIUM_PRECISION_CMD_ID);
+	ret = sensirion_i2c_packet_write(&packet, local_offset, i2c_spec);
+	if (ret != NO_ERROR) {
+		return ret;
+	}
+	k_msleep(5U);
+	ret = sensirion_i2c_packet_read(&packet, 2, i2c_spec);
+	if (ret != NO_ERROR) {
+		return ret;
+	}
+	*temperature_ticks = sensirion_conversions_bytes_to_uint16_t(&packet.data[0]);
+	return ret;
+}
+
+int sts4x_measure_temperature_low_precision(uint16_t *temperature_ticks)
+{
+	int ret = NO_ERROR;
+	uint16_t local_offset = 0U;
+
+	local_offset = sensirion_i2c_packet_add_command8(
+		&packet, local_offset, STS4X_MEASURE_TEMPERATURE_LOW_PRECISION_CMD_ID);
+	ret = sensirion_i2c_packet_write(&packet, local_offset, i2c_spec);
+	if (ret != NO_ERROR) {
+		return ret;
+	}
+	k_msleep(2U);
+	ret = sensirion_i2c_packet_read(&packet, 2, i2c_spec);
+	if (ret != NO_ERROR) {
+		return ret;
+	}
+	*temperature_ticks = sensirion_conversions_bytes_to_uint16_t(&packet.data[0]);
+	return ret;
+}
+
+int sts4x_read_serial_number(uint32_t *serial_number)
+{
+	int ret = NO_ERROR;
+	uint16_t local_offset = 0U;
+
+	local_offset = sensirion_i2c_packet_add_command8(&packet, local_offset,
+							 STS4X_READ_SERIAL_NUMBER_CMD_ID);
+	ret = sensirion_i2c_packet_write(&packet, local_offset, i2c_spec);
+	if (ret != NO_ERROR) {
+		return ret;
+	}
+	k_msleep(1U);
+	ret = sensirion_i2c_packet_read(&packet, 4, i2c_spec);
+	if (ret != NO_ERROR) {
+		return ret;
+	}
+	*serial_number = sensirion_conversions_bytes_to_uint32_t(&packet.data[0]);
+	return ret;
+}
+
+int sts4x_soft_reset(void)
+{
+	int ret = NO_ERROR;
+	uint16_t local_offset = 0U;
+
+	local_offset =
+		sensirion_i2c_packet_add_command8(&packet, local_offset, STS4X_SOFT_RESET_CMD_ID);
+	ret = sensirion_i2c_packet_write(&packet, local_offset, i2c_spec);
+	if (ret != NO_ERROR) {
+		return ret;
+	}
+	k_msleep(1U);
+	return ret;
+}
+
+float sts4x_signal_ticks_to_celsius(uint16_t temperature_ticks)
+{
+	float ticks = 0.0;
+	float ticks_to_celsius = 0.0;
+
+	ticks = (float)(temperature_ticks);
+	ticks_to_celsius = -45.0f + ((175.0f * ticks) / 65535.0f);
+	return ticks_to_celsius;
+}
+
+float sts4x_signal_ticks_to_fahrenheit(uint16_t temperature_ticks)
+{
+	float ticks = 0.0;
+	float ticks_to_fahrenheit = 0.0;
+
+	ticks = (float)(temperature_ticks);
+	ticks_to_fahrenheit = -49.0f + ((315.0f * ticks) / 65535.0f);
+	return ticks_to_fahrenheit;
+}
+
+void sts4x_set_repeatability(uint8_t rep)
+{
+	if (rep > 2) {
+		return;
+	}
+	_repeatability = rep;
+}
+
+int sts4x_read_measurement_raw(uint16_t *temperature_ticks)
+{
+	int ret = 0;
+
+	if (_repeatability == 0) {
+		ret = sts4x_measure_temperature_low_precision(temperature_ticks);
+		return ret;
+	} else if (_repeatability == 1) {
+		ret = sts4x_measure_temperature_medium_precision(temperature_ticks);
+		return ret;
+	} else if (_repeatability == 2) {
+		ret = sts4x_measure_temperature_high_precision(temperature_ticks);
+		return ret;
+	}
+	return ret;
 }
 
 static int sts4x_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
 	struct sts4x_data *data = dev->data;
-	const struct sts4x_config *cfg = dev->config;
-	int ret;
+	int ret = 0;
 
-	if (chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_AMBIENT_TEMP) {
-		ret = sts4x_write_command(dev, measure_cmds[cfg->repeatability]);
-		if (ret < 0) {
-			LOG_ERR("Failed to write measure command.");
-			return ret;
-		}
-
-		k_usleep(measure_time_us[cfg->repeatability]);
-
-		ret = sts4x_read_sample(dev, &data->temp_sample);
-		if (ret < 0) {
-			LOG_ERR("Failed to get temperature data.");
-			return ret;
-		}
-
-		return 0;
+	if (chan == SENSOR_CHAN_AMBIENT_TEMP || chan == SENSOR_CHAN_ALL) {
+		ret = sts4x_read_measurement_raw(&data->temperature_ticks);
 	} else {
+		LOG_ERR("Channel not supported.");
 		return -ENOTSUP;
 	}
+
+	if (ret != NO_ERROR) {
+		LOG_ERR("Failed to sample fetch.");
+		return ret;
+	}
+	return 0;
 }
 
 static int sts4x_channel_get(const struct device *dev, enum sensor_channel chan,
 			     struct sensor_value *val)
 {
-	const struct sts4x_data *data = dev->data;
+	struct sts4x_data *data = dev->data;
+	int ret = 0;
 
 	if (chan == SENSOR_CHAN_AMBIENT_TEMP) {
-		int64_t temp;
+		float local_var = sts4x_signal_ticks_to_celsius(data->temperature_ticks);
 
-		temp = data->temp_sample * STS4X_MAX_TEMP;
-		val->val1 = (int32_t)(temp / 0xFFFF) + STS4X_MIN_TEMP;
-		val->val2 = ((temp % 0xFFFF) * 1000000) / 0xFFFF;
+		ret = sensor_value_from_float(val, local_var);
 	} else {
+		LOG_ERR("Channel not supported.");
 		return -ENOTSUP;
 	}
-	return 0;
-}
 
-static int sts4x_init(const struct device *dev)
-{
-	const struct sts4x_config *cfg = dev->config;
-	int ret;
-
-	if (!i2c_is_ready_dt(&cfg->bus)) {
-		LOG_ERR_DEVICE_NOT_READY(cfg->bus.bus);
-		return -ENODEV;
-	}
-
-	ret = sts4x_write_command(dev, STS4X_CMD_RESET);
-	if (ret < 0) {
-		LOG_ERR("Failed to reset the device.");
+	if (ret != NO_ERROR) {
+		LOG_ERR("Failed to convert value.");
 		return ret;
 	}
 
-	k_msleep(STS4X_RESET_TIME);
-
 	return 0;
 }
 
-static DEVICE_API(sensor, sts4x_api_funcs) = {
+int sts4x_init(const struct device *dev)
+{
+	int ret = 0;
+
+	const struct sts4x_config *cfg = dev->config;
+
+	i2c_spec = &cfg->bus;
+
+	if (!i2c_is_ready_dt(&cfg->bus)) {
+		LOG_ERR("Device not ready.");
+		return -ENODEV;
+	}
+
+	sts4x_set_repeatability(cfg->repeatability);
+	ret = sts4x_soft_reset();
+	if (ret != NO_ERROR) {
+		LOG_ERR("error executing soft_reset(): %i\n", ret);
+		return ret;
+	}
+	return 0;
+}
+
+static DEVICE_API(sensor, sts4x_api) = {
 	.sample_fetch = sts4x_sample_fetch,
 	.channel_get = sts4x_channel_get,
 };
 
-#define STS4X_INIT(inst)                                                                           \
+#define STS4x_INIT(inst)                                                                           \
 	static struct sts4x_data sts4x_data_##inst;                                                \
+                                                                                                   \
 	static const struct sts4x_config sts4x_config_##inst = {                                   \
 		.bus = I2C_DT_SPEC_INST_GET(inst),                                                 \
 		.repeatability = DT_INST_PROP(inst, repeatability),                                \
 	};                                                                                         \
 	SENSOR_DEVICE_DT_INST_DEFINE(inst, sts4x_init, NULL, &sts4x_data_##inst,                   \
 				     &sts4x_config_##inst, POST_KERNEL,                            \
-				     CONFIG_SENSOR_INIT_PRIORITY, &sts4x_api_funcs);
+				     CONFIG_SENSOR_INIT_PRIORITY, &sts4x_api);
 
-DT_INST_FOREACH_STATUS_OKAY(STS4X_INIT)
+DT_INST_FOREACH_STATUS_OKAY(STS4x_INIT)
