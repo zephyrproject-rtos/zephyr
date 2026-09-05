@@ -1,0 +1,58 @@
+/*
+ * Copyright (c) 2026 Xiaomi Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#ifndef HOGP_TEST_COMMON_H_
+#define HOGP_TEST_COMMON_H_
+
+#include <zephyr/bluetooth/services/hids.h>
+#include <zephyr/usb/class/hid.h>
+
+/* Report definitions */
+#define TEST_REPORT_ID_INPUT   1
+#define TEST_REPORT_ID_OUTPUT  2
+#define TEST_REPORT_ID_FEATURE 3
+
+/* HID Report Map: Generic Desktop, Mouse (3 buttons + X + Y) */
+static const uint8_t test_report_map[] = {
+	HID_USAGE_PAGE(HID_USAGE_GEN_DESKTOP),
+	HID_USAGE(HID_USAGE_GEN_DESKTOP_MOUSE),
+	HID_COLLECTION(HID_COLLECTION_APPLICATION),
+		HID_REPORT_ID(TEST_REPORT_ID_INPUT),
+		HID_USAGE(HID_USAGE_GEN_DESKTOP_POINTER),
+		HID_COLLECTION(HID_COLLECTION_PHYSICAL),
+			HID_USAGE_PAGE(HID_USAGE_GEN_BUTTON),
+			HID_USAGE_MIN8(1),
+			HID_USAGE_MAX8(3),
+			HID_LOGICAL_MIN8(0),
+			HID_LOGICAL_MAX8(1),
+			HID_REPORT_COUNT(3),
+			HID_REPORT_SIZE(1),
+			HID_INPUT(0x02),
+			HID_REPORT_COUNT(1),
+			HID_REPORT_SIZE(5),
+			HID_INPUT(0x03),
+			HID_USAGE_PAGE(HID_USAGE_GEN_DESKTOP),
+			HID_USAGE(HID_USAGE_GEN_DESKTOP_X),
+			HID_USAGE(HID_USAGE_GEN_DESKTOP_Y),
+			HID_LOGICAL_MIN8(-127),
+			HID_LOGICAL_MAX8(127),
+			HID_REPORT_SIZE(8),
+			HID_REPORT_COUNT(2),
+			HID_INPUT(0x06),
+		HID_END_COLLECTION,
+	HID_END_COLLECTION,
+};
+
+/* Expected HID Information */
+#define TEST_BCD_HID       0x0111
+#define TEST_COUNTRY_CODE  0x00
+#define TEST_HID_FLAGS     BT_HID_INFO_FLAG_NORMALLY_CONNECTABLE
+
+/* Test data */
+#define TEST_INPUT_REPORT_LEN  3  /* buttons(1) + X(1) + Y(1) */
+static const uint8_t test_input_data[TEST_INPUT_REPORT_LEN] = {0x01, 0x10, 0x20};
+
+#endif /* HOGP_TEST_COMMON_H_ */

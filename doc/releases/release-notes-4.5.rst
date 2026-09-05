@@ -454,6 +454,16 @@ New APIs and options
     * :c:func:`bt_mesh_stat_lpn_timing_reset`
     * :kconfig:option:`CONFIG_BT_MESH_LPN_OFFER_WAIT_TIMEOUT`
 
+  * Profiles
+
+    * :c:func:`bt_hogp_device_register`
+    * :c:func:`bt_hogp_device_unregister`
+
+  * Services
+
+    * :c:func:`bt_hids_register`
+    * :c:func:`bt_hids_unregister`
+
 * Crypto
 
   * :c:enumerator:`CRYPTO_CIPHER_MODE_CFB`
@@ -1758,6 +1768,14 @@ New Samples
 
 Libraries / Subsystems
 **********************
+
+* Bluetooth
+
+  * Added a HID Service server (:kconfig:option:`CONFIG_BT_HIDS`) and the HID
+    Device role of the HID over GATT Profile
+    (:kconfig:option:`CONFIG_BT_HOGP_DEVICE`), with a ``hogp`` Bluetooth shell
+    command set. Profile implementations live in the new
+    ``subsys/bluetooth/profiles`` directory.
 
 * Crypto
 
