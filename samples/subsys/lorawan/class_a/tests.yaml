@@ -44,6 +44,12 @@ tests:
     extra_configs:
       - CONFIG_LORAWAN_REGION_EU868=y
       - CONFIG_LORAWAN_REGION_US915=y
+  sample.lorawan.class_a.lora_basics_modem:
+    modules:
+      - lora-basics-modem
+    extra_configs:
+      - CONFIG_LORA_MODULE_BACKEND_LORA_BASICS_MODEM=y
+      - CONFIG_LORAWAN_REGION_EU868=y
   sample.lorawan.class_a.native:
     extra_configs:
       - CONFIG_LORA_MODULE_BACKEND_NATIVE=y
