@@ -46,3 +46,57 @@ properties:
       - 7
       - 8
       - 9
+  framing-error-reporting:
+    type: string
+    description: |
+      Describes how the UART hardware reports framing errors relative
+      to byte reads via uart_fifo_read() and uart_err_check().
+
+      This property is used by protocols that rely on framing error
+      detection (e.g. DMX512 break detection) to adapt their error
+      handling strategy to the underlying hardware. This is especially
+      important for protocols that need to read the byte immediately
+      following a framing error.
+
+      "FIFO_HEAD" - Error flags reflect the byte at the FIFO head
+        BEFORE it is read. Reading pops the byte and updates the
+        flags for the new head. Callers can check errors before
+        reading to determine if the next byte is clean.
+        Multiple error bytes in the FIFO are reported individually.
+        Examples: NS16550, STM32 USART (with FIFO enabled).
+
+      "LAST_READ" - Error flags reflect the byte most recently read
+        from the data register (AFTER the read). Callers must read
+        first, then check. Requires explicit clearing of the error
+        status register between reads. Multiple error bytes in the
+        FIFO are reported individually as each byte is read.
+        Examples: ARM PL011 (RP2040, RP2350).
+
+      "STICKY_MULTIPLE" - A global error flag is set on the first
+        framing error and cleared by uart_err_check(). The flag
+        does NOT re-assert for error bytes already in the FIFO.
+        Multiple error bytes may be buffered, but only the first
+        is reported; subsequent error bytes are indistinguishable
+        from clean bytes.
+        Examples: NXP LPUART (i.MX RT, Kinetis), Atmel SAM0 (SAMD21).
+
+      "STICKY_SINGLE" - Same sticky-and-clear semantics as
+        "STICKY_MULTIPLE", but the hardware buffers only one byte
+        at a time (e.g. via single-byte DMA transfers). The
+        distinction from "STICKY_MULTIPLE" is that there are no
+        "hidden" error bytes behind the first one; each byte
+        triggers a separate ISR invocation.
+        Examples: Nordic nRF UARTE (nRF52, nRF53, nRF91).
+
+      "ISR_SAVED" - Framing errors are captured in the UART ISR and
+        stored in driver state. Cleared when the application calls
+        uart_err_check(). Behaves like "STICKY_MULTIPLE" from the
+        caller's perspective (one report per ISR invocation,
+        regardless of how many error bytes triggered the ISR).
+        Examples: Espressif ESP32 UART (all variants).
+    enum:
+      - "FIFO_HEAD"
+      - "LAST_READ"
+      - "STICKY_MULTIPLE"
+      - "STICKY_SINGLE"
+      - "ISR_SAVED"
