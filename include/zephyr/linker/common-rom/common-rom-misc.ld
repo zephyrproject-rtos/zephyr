@@ -14,6 +14,11 @@
 	ITERABLE_SECTION_ROM(settings_handler_static, Z_LINK_ITERABLE_SUBALIGN)
 #endif
 
+#if defined(CONFIG_SAFETY_TEST)
+	ITERABLE_SECTION_ROM(safety_test, Z_LINK_ITERABLE_SUBALIGN)
+	ITERABLE_SECTION_ROM(safety_test_failure_hook, Z_LINK_ITERABLE_SUBALIGN)
+#endif
+
 #if defined(CONFIG_MODEM_CELLULAR)
 	ITERABLE_SECTION_ROM(modem_cellular_board_init, Z_LINK_ITERABLE_SUBALIGN)
 #endif
