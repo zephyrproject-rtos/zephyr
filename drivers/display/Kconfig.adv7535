@@ -1,0 +1,22 @@
+# Copyright (C) 2026, Savoir-faire Linux, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config ADV7535
+	bool "Analog Devices ADV7535 DSI-to-HDMI bridge"
+	default y
+	select I2C
+	select MIPI_DSI
+	depends on DT_HAS_ADI_ADV7535_ENABLED
+	help
+	  Initialize an ADV7535 for an RGB888 video mode and attach it to a
+	  MIPI DSI host. Runtime mode selection and HDMI services are not supported.
+
+if ADV7535
+
+config ADV7535_INIT_PRIORITY
+	int "ADV7535 initialization priority"
+	default 90
+	help
+	  Must be later than the MIPI DSI host initialization priority.
+
+endif
