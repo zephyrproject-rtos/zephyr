@@ -79,6 +79,15 @@ config XTENSA_EXCEPTION_ENTER_GDB
 	  When an exception like invalid address access or division by zero is
 	  hit, enter the GDB stub.
 
+config XTENSA_FATAL_BREADCRUMB
+	bool "Record fatal exception breadcrumbs"
+	help
+	  When a fatal exception is taken, record the faulting PC, exception
+	  cause and faulting virtual address so that crash information remains
+	  visible even when no console or mtrace output is available. The SoC
+	  provides the actual storage and reporting mechanism; enabling this
+	  option only opts a fatal exception into calling it.
+
 menu "Xtensa HiFi Options"
 
 config XTENSA_CPU_HAS_HIFI

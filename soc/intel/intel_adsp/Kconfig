@@ -176,4 +176,14 @@ config INTEL_ADSP_UNCACHED_REGION
 	  As for INTEL_ADSP_CACHED_REGION, this specifies which 512M
 	  region (0-7) contains the "uncached" mapping.
 
+config INTEL_ADSP_TRIPLE_FAULT_BREADCRUMB
+	bool "Record triple fault breadcrumbs in HP-SRAM window0"
+	default y
+	help
+	  When a double exception escalates to a triple fault (escaping the
+	  CPU), record the EPC1, double-exception EXCCAUSE, and DEPC into
+	  HP-SRAM window0 via its uncached alias. This is a lightweight
+	  tracing aid that can be enabled in production builds to diagnose
+	  fatal CPU locks and double faults.
+
 endif # SOC_FAMILY_INTEL_ADSP
