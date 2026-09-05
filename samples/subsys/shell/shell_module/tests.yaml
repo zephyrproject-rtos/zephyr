@@ -106,3 +106,4 @@ tests:
       - CONFIG_HEAP_MEM_POOL_SIZE=1024
     extra_args:
       - FILE_SUFFIX=remote_shell
+      - platform:nrf54l15dk/nrf54l15/cpuapp:shell_module_SNIPPET=nordic-flpr

@@ -4,7 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-&cpuapp_cpuflpr_ipc {
+/ {
+	aliases {
+		dut-ipc = &ipc0;
+	};
+};
+
+&ipc0 {
 	compatible = "zephyr,ipc-icmsg";
 	/delete-property/ tx-blocks;
 	/delete-property/ rx-blocks;
