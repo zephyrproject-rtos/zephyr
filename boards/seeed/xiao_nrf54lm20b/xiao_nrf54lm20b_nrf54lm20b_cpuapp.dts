@@ -1,0 +1,55 @@
+/*
+ * Copyright (c) 2026 Seeed Technology Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "nrf54lm20b_cpuapp_common.dtsi"
+#include "seeed_xiao_connector.dtsi"
+
+/ {
+	compatible = "seeed,xiao_nrf54lm20b_nrf54lm20b-cpuapp";
+	model = "Seeed XIAO nRF54LM20B nRF54LM20B Application MCU";
+
+	chosen {
+		zephyr,code-partition = &slot0_partition;
+		zephyr,sram = &cpuapp_sram;
+	};
+};
+
+&cpuapp_rram {
+	partitions {
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		/* Bootloader layout matching the factory-programmed MCUboot with
+		 * USB firmware loader (mcuboot + slot0 app + slot1 loader + storage).
+		 */
+		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			label = "mcuboot";
+			reg = <0x0 DT_SIZE_K(24)>;
+		};
+
+		slot0_partition: partition@6000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-0";
+			reg = <0x6000 DT_SIZE_K(1784)>;
+		};
+
+		slot1_partition: partition@1c4000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-1";
+			reg = <0x1c4000 DT_SIZE_K(116)>;
+		};
+
+		storage_partition: partition@1e1000 {
+			compatible = "zephyr,mapped-partition";
+			label = "storage";
+			reg = <0x1e1000 DT_SIZE_K(16)>;
+		};
+	};
+};
