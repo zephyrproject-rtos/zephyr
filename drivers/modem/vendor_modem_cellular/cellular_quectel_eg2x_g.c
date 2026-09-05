@@ -187,7 +187,7 @@ static const struct modem_cellular_vendor_config quectel_eg2x_g_vendor = {
                                                                                                    \
 	MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst, (user_pipe_0, 3), (user_pipe_1, 4))        \
                                                                                                    \
-	MODEM_CELLULAR_DEFINE_INSTANCE(inst, &quectel_eg2x_g_vendor)
+	MODEM_CELLULAR_DEFINE_INSTANCE(inst, &quectel_eg2x_g_vendor, NULL)
 
 #define DT_DRV_COMPAT quectel_eg21_g
 DT_INST_FOREACH_STATUS_OKAY(MODEM_CELLULAR_DEVICE_QUECTEL_EG2X_G)

@@ -310,6 +310,7 @@ struct modem_cellular_vendor_config {
 struct modem_cellular_config {
 	const struct device *uart;
 	const struct modem_cellular_vendor_config *vendor;
+	const void *vendor_specific;
 	struct modem_ppp *ppp;
 	struct gpio_dt_spec power_gpio;
 	struct gpio_dt_spec reset_gpio;
@@ -553,12 +554,15 @@ void modem_cellular_chat_callback_handler(struct modem_chat *chat,
  * @param inst Devicetree instance number.
  * @param vendor_config Pointer to a constant @ref modem_cellular_vendor_config object. Must not be
  *        NULL and must remain valid for the lifetime of the device.
+ * @param _vendor_specific Pointer to an arbitrary vendor-specific configuration structure. Can be
+ *        NULL.
  */
-#define MODEM_CELLULAR_DEFINE_INSTANCE(inst, vendor_config)                                        \
+#define MODEM_CELLULAR_DEFINE_INSTANCE(inst, vendor_config, _vendor_specific)                      \
 	BUILD_ASSERT(vendor_config != NULL, "vendor_config must be non-NULL");                     \
 	static const struct modem_cellular_config MODEM_CELLULAR_INST_NAME(config, inst) = {       \
 		.uart = DEVICE_DT_GET(DT_INST_BUS(inst)),                                          \
 		.vendor = vendor_config,                                                           \
+		.vendor_specific = _vendor_specific,                                               \
 		.ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                                       \
 		.power_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_power_gpios, {}),                 \
 		.reset_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mdm_reset_gpios, {}),                 \

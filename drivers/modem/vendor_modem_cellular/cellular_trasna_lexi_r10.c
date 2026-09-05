@@ -91,6 +91,6 @@ static const struct modem_cellular_vendor_config trasna_lexi_r10_vendor = {
                                                                                                    \
 	MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst, (user_pipe_0, 3))                          \
                                                                                                    \
-	MODEM_CELLULAR_DEFINE_INSTANCE(inst, &trasna_lexi_r10_vendor)
+	MODEM_CELLULAR_DEFINE_INSTANCE(inst, &trasna_lexi_r10_vendor, NULL)
 
 DT_INST_FOREACH_STATUS_OKAY(MODEM_CELLULAR_DEVICE_TRASNA_LEXI_R10)
