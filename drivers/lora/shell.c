@@ -9,6 +9,7 @@
 #include <errno.h>
 #include <inttypes.h>
 #include <zephyr/shell/shell.h>
+#include <zephyr/sys/util.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -129,13 +130,33 @@ static int lora_conf_dump(const struct shell *sh)
 		    modem_config.frequency);
 	shell_print(sh, "  TX power: %" PRIi8 " dBm",
 		    modem_config.tx_power);
+
+	if (modem_config.modulation == LORA_MODULATION_GFSK) {
+		shell_print(sh, "  Modulation: GFSK");
+		shell_print(sh, "  Bit rate: %" PRIu32 " bit/s",
+			    modem_config.gfsk.bitrate);
+		shell_print(sh, "  Frequency deviation: %" PRIu32 " Hz",
+			    modem_config.gfsk.freq_deviation);
+		shell_print(sh, "  Bandwidth: %" PRIu32 " Hz (both sidebands)",
+			    modem_config.gfsk.bandwidth);
+		shell_print(sh, "  Sync word length: %" PRIu8 " bytes",
+			    modem_config.gfsk.sync_word_len);
+		shell_print(sh, "  Whitening: %s",
+			    modem_config.gfsk.whitening ? "on" : "off");
+		shell_print(sh, "  Preamble length: %" PRIu16 " bytes",
+			    modem_config.preamble_len);
+
+		return 0;
+	}
+
+	shell_print(sh, "  Modulation: LoRa");
 	shell_print(sh, "  Bandwidth: %i kHz",
 		    (int)modem_config.bandwidth);
 	shell_print(sh, "  Spreading factor: SF%i",
 		    (int)modem_config.datarate);
 	shell_print(sh, "  Coding rate: 4/%i",
 		    (int)modem_config.coding_rate + 4);
-	shell_print(sh, "  Preamble length: %" PRIu16,
+	shell_print(sh, "  Preamble length: %" PRIu16 " symbols",
 		    modem_config.preamble_len);
 
 	return 0;
@@ -199,6 +220,44 @@ static int lora_conf_set(const struct shell *sh, const char *param,
 			return -EINVAL;
 		}
 		modem_config.preamble_len = lval;
+	} else if (!strcmp("modulation", param)) {
+		if (!strcmp("lora", value)) {
+			modem_config.modulation = LORA_MODULATION_LORA;
+		} else if (!strcmp("gfsk", value)) {
+			modem_config.modulation = LORA_MODULATION_GFSK;
+		} else {
+			shell_error(sh, "Invalid modulation: %s", value);
+			return -EINVAL;
+		}
+	} else if (!strcmp("bitrate", param)) {
+		if (parse_long_range(&lval, sh, value, "bitrate", 1, INT32_MAX) < 0) {
+			return -EINVAL;
+		}
+		modem_config.gfsk.bitrate = lval;
+	} else if (!strcmp("fdev", param)) {
+		if (parse_long_range(&lval, sh, value, "fdev", 1, INT32_MAX) < 0) {
+			return -EINVAL;
+		}
+		modem_config.gfsk.freq_deviation = lval;
+	} else if (!strcmp("gfsk-bw", param)) {
+		if (parse_long_range(&lval, sh, value, "gfsk-bw", 1, INT32_MAX) < 0) {
+			return -EINVAL;
+		}
+		modem_config.gfsk.bandwidth = lval;
+	} else if (!strcmp("sync-word", param)) {
+		size_t len = hex2bin(value, strlen(value), modem_config.gfsk.sync_word,
+				     sizeof(modem_config.gfsk.sync_word));
+
+		if (len == 0 && strlen(value) != 0) {
+			shell_error(sh, "Invalid sync word: %s", value);
+			return -EINVAL;
+		}
+		modem_config.gfsk.sync_word_len = len;
+	} else if (!strcmp("whitening", param)) {
+		if (parse_long_range(&lval, sh, value, "whitening", 0, 1) < 0) {
+			return -EINVAL;
+		}
+		modem_config.gfsk.whitening = lval != 0;
 	} else {
 		shell_error(sh, "Unknown parameter '%s'", param);
 		return -EINVAL;
@@ -398,8 +457,11 @@ static int cmd_lora_energy_detect(const struct shell *sh, size_t argc, char **ar
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_lora,
 	SHELL_CMD(config, NULL,
 		  SHELL_HELP("Configure the LoRa radio",
-			     "[freq <Hz>] [tx-power <dBm>] [bw <kHz>] [sf <int>] [cr <int>] "
-			     "[pre-len <int>]"),
+			     "[freq <Hz>] [tx-power <dBm>] [pre-len <int>] "
+			     "[modulation lora|gfsk] "
+			     "LoRa: [bw <kHz>] [sf <int>] [cr <int>] "
+			     "GFSK: [bitrate <bit/s>] [fdev <Hz>] [gfsk-bw <Hz>] "
+			     "[sync-word <hex>] [whitening 0|1]"),
 		  cmd_lora_conf),
 	SHELL_CMD_ARG(send, NULL,
 		      SHELL_HELP("Send a LoRa packet", "<data>"),

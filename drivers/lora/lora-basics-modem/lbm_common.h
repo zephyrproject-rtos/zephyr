@@ -44,9 +44,14 @@ struct lbm_lora_config_common {
 struct lbm_lora_data_common {
 	/* Reference back to parent device */
 	const struct device *dev;
+	/* Modulation the radio is currently set up for */
+	enum lora_modulation modulation;
 	/* Current LoRa parameters */
 	ral_lora_mod_params_t mod_params;
 	ral_lora_pkt_params_t pkt_params;
+	/* Current GFSK parameters */
+	ral_gfsk_mod_params_t gfsk_mod_params;
+	ral_gfsk_pkt_params_t gfsk_pkt_params;
 	/* Operation complete worker */
 	struct k_work_delayable op_done_work;
 	/* RX state storage */
@@ -71,6 +76,8 @@ struct lbm_lora_data_common {
 	enum lbm_modem_mode modem_mode;
 	/* Radio initialization state */
 	bool radio_initialized;
+	/* Whether the stored parameters still describe the radio */
+	bool configured;
 };
 
 /**

@@ -36,6 +36,8 @@ static struct sx12xx_data {
 	void *async_user_data;
 	RadioEvents_t events;
 	struct lora_modem_config tx_cfg;
+	/* Modem the last configuration set the radio up for */
+	RadioModems_t modem;
 	atomic_t modem_usage;
 	struct sx12xx_rx_params rx_params;
 } dev_data;
@@ -225,6 +227,17 @@ uint32_t sx12xx_airtime(const struct device *dev, uint32_t data_len)
 {
 	uint32_t bw_idx;
 
+	if (dev_data.modem == MODEM_FSK) {
+		/* Under FSK the datarate argument carries the bit rate and
+		 * the bandwidth is not read at all.
+		 */
+		return Radio.TimeOnAir(MODEM_FSK, 0,
+				       dev_data.tx_cfg.gfsk.bitrate, 0,
+				       dev_data.tx_cfg.preamble_len,
+				       dev_data.tx_cfg.gfsk.fixed_len, data_len,
+				       !dev_data.tx_cfg.packet_crc_disable);
+	}
+
 	/* Translate bandwidth to loramac-node index, default to 0 if invalid */
 	if (sx12xx_get_bandwidth_idx(dev_data.tx_cfg.bandwidth, &bw_idx) < 0) {
 		bw_idx = 0;
@@ -290,7 +303,7 @@ int sx12xx_lora_send_async(const struct device *dev, uint8_t *data,
 	/* Store signal */
 	dev_data.operation_done = async;
 
-	Radio.SetMaxPayloadLength(MODEM_LORA, data_len);
+	Radio.SetMaxPayloadLength(dev_data.modem, data_len);
 
 	Radio.Send(data, data_len);
 
@@ -321,7 +334,7 @@ int sx12xx_lora_recv(const struct device *dev, uint8_t *data, uint8_t size,
 	dev_data.rx_params.rssi = rssi;
 	dev_data.rx_params.snr = snr;
 
-	Radio.SetMaxPayloadLength(MODEM_LORA, 255);
+	Radio.SetMaxPayloadLength(dev_data.modem, 255);
 	Radio.Rx(0);
 
 	ret = k_poll(&evt, 1, timeout);
@@ -369,7 +382,7 @@ int sx12xx_lora_recv_async(const struct device *dev, lora_recv_cb cb, void *user
 	dev_data.async_user_data = user_data;
 
 	/* Start reception */
-	Radio.SetMaxPayloadLength(MODEM_LORA, 255);
+	Radio.SetMaxPayloadLength(dev_data.modem, 255);
 	Radio.Rx(0);
 
 	return 0;
@@ -379,13 +392,18 @@ int sx12xx_lora_config(const struct device *dev,
 		       const struct lora_modem_config *config)
 {
 	bool crc = !config->packet_crc_disable;
-	uint32_t bw_idx;
+	uint32_t bw_idx = 0;
 	int ret;
 
-	ret = sx12xx_get_bandwidth_idx(config->bandwidth, &bw_idx);
-	if (ret < 0) {
-		LOG_ERR("Unsupported bandwidth: %d", config->bandwidth);
-		return ret;
+	if (config->modulation == LORA_MODULATION_LORA) {
+		ret = sx12xx_get_bandwidth_idx(config->bandwidth, &bw_idx);
+		if (ret < 0) {
+			LOG_ERR("Unsupported bandwidth: %d", config->bandwidth);
+			return ret;
+		}
+	} else if (config->gfsk.bitrate == 0) {
+		LOG_ERR("GFSK bit rate must be set");
+		return -EINVAL;
 	}
 
 	/* Ensure available, decremented after configuration */
@@ -395,7 +413,36 @@ int sx12xx_lora_config(const struct device *dev,
 
 	Radio.SetChannel(config->frequency);
 
-	if (config->tx) {
+	dev_data.modem = config->modulation == LORA_MODULATION_GFSK ? MODEM_FSK
+								    : MODEM_LORA;
+
+	if (config->modulation == LORA_MODULATION_GFSK) {
+		/*
+		 * The library states its FSK bandwidths across one sideband
+		 * and doubles them for the radio, where this API states them
+		 * across both, so halve on the way in. Under FSK the datarate
+		 * argument carries the bit rate, and the preamble length
+		 * counts bytes.
+		 */
+		uint32_t bw_ssb = config->gfsk.bandwidth / 2;
+
+		if (config->tx) {
+			memcpy(&dev_data.tx_cfg, config, sizeof(dev_data.tx_cfg));
+			Radio.SetTxConfig(MODEM_FSK, config->tx_power,
+					  config->gfsk.freq_deviation, 0,
+					  config->gfsk.bitrate, 0,
+					  config->preamble_len,
+					  config->gfsk.fixed_len, crc,
+					  0, 0, false, 4000);
+		} else {
+			Radio.SetRxConfig(MODEM_FSK, bw_ssb,
+					  config->gfsk.bitrate, 0,
+					  bw_ssb, config->preamble_len, 0,
+					  config->gfsk.fixed_len,
+					  config->gfsk.payload_len,
+					  crc, false, 0, false, true);
+		}
+	} else if (config->tx) {
 		/* Store TX config locally for airtime calculations */
 		memcpy(&dev_data.tx_cfg, config, sizeof(dev_data.tx_cfg));
 		/* Configure radio driver */
@@ -415,7 +462,10 @@ int sx12xx_lora_config(const struct device *dev,
 		/* Radio_s API doesn't expose SYNC word functionality */
 		LOG_WRN_ONCE("loramac-node doesn't support custom SYNC words");
 	}
-	Radio.SetPublicNetwork(config->public_network);
+
+	if (config->modulation == LORA_MODULATION_LORA) {
+		Radio.SetPublicNetwork(config->public_network);
+	}
 
 	modem_release(&dev_data);
 	return 0;
@@ -442,7 +492,7 @@ int sx12xx_lora_rssi(const struct device *dev, int16_t *rssi)
 	 * already in progress. The bus access itself is serialised one layer
 	 * down.
 	 */
-	*rssi = Radio.Rssi(MODEM_LORA);
+	*rssi = Radio.Rssi(dev_data.modem);
 
 	return 0;
 }
