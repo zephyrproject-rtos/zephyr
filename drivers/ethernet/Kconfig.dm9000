@@ -1,0 +1,52 @@
+# Davicom DM9000 Ethernet driver configuration options
+
+# Copyright (c) 2026 Fuyu Fei
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ETH_DM9000
+	bool "Davicom DM9000 Ethernet Controller"
+	default y
+	depends on DT_HAS_DAVICOM_DM9000_ENABLED
+	select GPIO
+	select MEMC
+	select MDIO
+	help
+	  Davicom DM9000 Ethernet Controller with parallel host interface.
+	  The integrated MII PHY is described as an "ethernet-phy" node on a
+	  "davicom,dm9000-mdio" child bus and managed by the generic phy_mii
+	  driver.
+
+if ETH_DM9000
+
+config ETH_DM9000_RX_THREAD_STACK_SIZE
+	int "Stack size for internal incoming packet handler"
+	default 1024
+	help
+	  Size of the stack used for internal incoming packet processing.
+
+config ETH_DM9000_RX_THREAD_PRIORITY
+	int "Priority for internal incoming packet handler"
+	default 2
+	help
+	  Priority level for internal incoming packet processing.
+
+config ETH_DM9000_TIMEOUT
+	int "IP buffer timeout"
+	default 100
+	help
+	  Maximum time in milliseconds that the driver waits for an RX packet
+	  buffer before dropping an Ethernet frame.
+
+config ETH_DM9000_HW_CHECKSUM
+	bool "Use TX and RX hardware checksum offload"
+	default y
+	select NET_CHECKSUM_OFFLOAD_SUPPORTED if NET_L2_ETHERNET
+	help
+	  Offload the IPv4 header, TCP and UDP checksums to the controller's
+	  TCSCR/RCSCSR checksum engine: generate on transmit, and verify-and-
+	  discard on receive (so the network stack can skip the software
+	  checksum). ICMP and IPv6 are left to software. Disable this if the
+	  DM9000A checksum engine mishandles your traffic (for example IP
+	  fragments or packets with IP options).
+
+endif # ETH_DM9000
