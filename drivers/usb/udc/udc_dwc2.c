@@ -1125,12 +1125,22 @@ static int dwc2_set_dedicated_fifo(const struct device *dev,
 			dwc2_unset_unused_fifo(dev);
 		}
 
-		if ((ep_idx - 1) != 0U) {
-			txfaddr = dwc2_get_txfdep(dev, ep_idx - 2) +
-				  dwc2_get_txfaddr(dev, ep_idx - 2);
-		} else {
-			txfaddr = priv->rxfifo_depth +
-				MIN(UDC_DWC2_FIFO0_DEPTH, priv->max_txfifo_depth[0]);
+		/* Chain the FIFO off the closest lower-numbered TxFIFO that has
+		 * actually been allocated. IN endpoints with wMaxPacketSize 0,
+		 * such as the alternate setting 0 isochronous endpoints of the
+		 * BT HCI class, are activated without a FIFO, so their size and
+		 * address registers still hold the power-on values and must not
+		 * be used as a base address.
+		 */
+		txfaddr = priv->rxfifo_depth +
+			MIN(UDC_DWC2_FIFO0_DEPTH, priv->max_txfifo_depth[0]);
+
+		for (uint8_t i = ep_idx - 1U; i > 0U; i--) {
+			if (priv->txf_set & BIT(i)) {
+				txfaddr = dwc2_get_txfdep(dev, i - 1) +
+					  dwc2_get_txfaddr(dev, i - 1);
+				break;
+			}
 		}
 
 		if (priv->txf_set & BIT(ep_idx)) {
