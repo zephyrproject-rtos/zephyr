@@ -98,6 +98,23 @@
   </div>
 
   <div class="form-group" style="flex-basis: 100%">
+    <label>Devicetree node status</label>
+    <div class="visibility-toggles dt-status-toggle">
+      <div class="toggle-group">
+        <input type="checkbox" id="enabled-nodes-only"
+          {%- if not hw_features_present %} disabled{% endif %}>
+        <label for="enabled-nodes-only" class="toggle-label">
+          <span class="toggle-switch"></span>
+          <span class="toggle-text">
+            Only consider hardware capabilities and devices that correspond to nodes enabled
+            (<code>status = "okay"</code>) in the devicetree
+          </span>
+        </label>
+      </div>
+    </div>
+  </div>
+
+  <div class="form-group" style="flex-basis: 100%">
     <label for="hwcaps-input">Supported Hardware Capabilities</label>
     <div class="tag-container" id="hwcaps-tags">
       <input list="tag-list" class="tag-input" id="hwcaps-input"
