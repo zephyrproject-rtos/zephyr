@@ -446,6 +446,8 @@ New APIs and options
     * :c:func:`bt_rfcomm_dlc_recv_complete` to return RX credits to the peer. Applications can
       return ``-EINPROGRESS`` from the :c:member:`bt_rfcomm_dlc_ops.recv` callback to defer buffer
       release and flow-control credit refill until processing is complete.
+    * :c:func:`bt_le_bond_addr_res_support`, :c:enum:`bt_le_addr_res_support` and
+      :c:member:`bt_conn_auth_info_cb.addr_res_support_read`
 
   * Mesh
 
