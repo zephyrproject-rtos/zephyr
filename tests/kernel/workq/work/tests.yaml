@@ -21,3 +21,11 @@ tests:
       - CONFIG_TRACING_BACKEND_POSIX=y
       - CONFIG_TRACING_PACKET_MAX_SIZE=256
       - CONFIG_TRACING_SYNC=y
+  kernel.workqueue.api.tracing_user:
+    tags: kernel
+    timeout: 80
+    platform_allow:
+      - native_sim
+    extra_configs:
+      - CONFIG_TRACING=y
+      - CONFIG_TRACING_USER=y

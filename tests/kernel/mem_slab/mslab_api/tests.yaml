@@ -29,3 +29,12 @@ tests:
       - qemu_arc/qemu_arc_hs
     extra_configs:
       - CONFIG_MULTITHREADING=n
+  kernel.memory_slabs.api.tracing:
+    tags:
+      - kernel
+      - memory_slabs
+    platform_allow:
+      - native_sim
+    extra_configs:
+      - CONFIG_TRACING=y
+      - CONFIG_TRACING_USER=y

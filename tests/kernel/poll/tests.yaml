@@ -17,3 +17,13 @@ tests:
       - nrf52dk/nrf52810
     extra_configs:
       - CONFIG_MINIMAL_LIBC=y
+  kernel.poll.tracing:
+    ignore_faults: true
+    tags:
+      - kernel
+      - userspace
+    platform_allow:
+      - native_sim
+    extra_configs:
+      - CONFIG_TRACING=y
+      - CONFIG_TRACING_USER=y

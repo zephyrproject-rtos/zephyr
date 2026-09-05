@@ -3,3 +3,12 @@ tests:
     tags:
       - kernel
       - userspace
+  kernel.events.tracing:
+    tags:
+      - kernel
+      - userspace
+    platform_allow:
+      - native_sim
+    extra_configs:
+      - CONFIG_TRACING=y
+      - CONFIG_TRACING_USER=y

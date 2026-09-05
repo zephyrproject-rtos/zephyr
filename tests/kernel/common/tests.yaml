@@ -93,3 +93,9 @@ tests:
     integration_platforms:
       - qemu_x86
       - mps2/an385
+  kernel.common.tracing:
+    platform_allow:
+      - native_sim
+    extra_configs:
+      - CONFIG_TRACING=y
+      - CONFIG_TRACING_USER=y
