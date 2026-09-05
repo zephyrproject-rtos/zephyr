@@ -42,7 +42,7 @@ config SPI_MCHP_INTER_CHARACTER_SPACE
 	default 63 if SPI_PERIPHERAL
 	default 0
 	range 0 63
-	depends on SOC_FAMILY_MICROCHIP_SAM_D5X_E5X
+	depends on SOC_FAMILY_MICROCHIP_SAM_D5X_E5X || SOC_FAMILY_MICROCHIP_PIC32CZ_CA
 	help
 	  Number of clock cycles to delay between characters on SPI bus.
 
