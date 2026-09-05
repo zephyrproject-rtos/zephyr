@@ -304,7 +304,8 @@ static int nrf_write(off_t addr, const void *data, uint8_t fill_val, size_t len)
 	{
 #ifdef CONFIG_SOC_FLASH_NRF_THROTTLING
 		/* Thread-context throttling: write one block at a time and
-		 * sleep in between to spread the RRAM write current over time.
+		 * sleep after each block to spread the RRAM write current over
+		 * time.
 		 */
 		while (len > 0) {
 			size_t chunk_len =
@@ -324,7 +325,7 @@ static int nrf_write(off_t addr, const void *data, uint8_t fill_val, size_t len)
 			}
 			len -= chunk_len;
 
-			if (len > 0 && !k_is_in_isr()) {
+			if (!k_is_in_isr()) {
 				k_usleep(CONFIG_NRF_RRAM_THROTTLING_DELAY);
 			}
 		}
