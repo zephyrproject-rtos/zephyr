@@ -31,6 +31,8 @@
 #include <zephyr/pm/policy.h>
 #include <os_wrapper.h>
 #include <ll_sys.h>
+#include "app_conf.h"
+
 #endif
 
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
@@ -124,6 +126,10 @@ static struct nvic_context nvic_state;
 #if defined(CONFIG_ARM_MPU)
 static struct z_mpu_context_retained mpu_state;
 #endif
+#endif
+
+#if defined(CONFIG_PM) && (defined(CONFIG_BT) || defined(CONFIG_IEEE802154))
+uint64_t next_radio_evt_us;
 #endif
 
 static int enter_low_power_mode(void)
@@ -273,6 +279,25 @@ static void set_mode_suspend_to_ram_exit(void)
 	stm32wba_init();
 	stm32_power_init();
 }
+#if (defined(CONFIG_BT) || defined(CONFIG_IEEE802154))
+
+void stm32wba_radio_pm_resume(void)
+{
+	ll_sys_dp_slp_exit();
+}
+
+void stm32wba_radio_pm_suspend(void)
+{
+	enum pm_state state = pm_state_next_get(_current_cpu->id)->state;
+
+	if (state == PM_STATE_SUSPEND_TO_RAM) {
+		/* System will enter S2RAM, program wakeup timer for
+		 * possible radio event
+		 */
+		(void)ll_sys_dp_slp_enter(next_radio_evt_us);
+	}
+}
+#endif
 
 #endif
 
@@ -389,7 +414,7 @@ int64_t pm_policy_next_custom_ticks(void)
 	if (LL_PWR_GetRadioMode() == LL_PWR_RADIO_ACTIVE_MODE) {
 		ret = 0; /* Radio is active - inhibit sleep */
 	} else {
-		uint64_t next_radio_evt_us = os_timer_get_earliest_time();
+		next_radio_evt_us = os_timer_get_earliest_time();
 
 		if (next_radio_evt_us == LL_DP_SLP_NO_WAKEUP) {
 			ret = -1LL; /* No radio event pending */
