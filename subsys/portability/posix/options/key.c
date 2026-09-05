@@ -135,6 +135,7 @@ int pthread_key_delete(pthread_key_t key)
 			ret = EINVAL;
 			SYS_SEM_LOCK_BREAK;
 		}
+		posix_thread_remove_key_refs(key_obj);
 
 		/* Delete thread-specific elements associated with the key */
 		while ((node_l = sys_dlist_get(&key_obj->key_data_l)) != NULL) {
