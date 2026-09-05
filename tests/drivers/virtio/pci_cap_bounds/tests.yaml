@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.virtio.pci_cap_bounds:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    tags:
+      - drivers
+      - virtio
+      - pcie
