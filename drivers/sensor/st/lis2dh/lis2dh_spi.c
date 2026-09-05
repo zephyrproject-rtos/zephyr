@@ -26,6 +26,7 @@ LOG_MODULE_DECLARE(lis2dh, CONFIG_SENSOR_LOG_LEVEL);
 static int lis2dh_raw_read(const struct device *dev, uint8_t reg_addr,
 			    uint8_t *value, uint8_t len)
 {
+	LOG_DBG("address = %02x", reg_addr);
 	const struct lis2dh_config *cfg = dev->config;
 	uint8_t buffer_tx[2] = { reg_addr | LIS2DH_SPI_READ_BIT, 0 };
 	const struct spi_buf tx_buf = {
@@ -51,7 +52,6 @@ static int lis2dh_raw_read(const struct device *dev, uint8_t reg_addr,
 		.count = 2
 	};
 
-
 	if (len > 64) {
 		return -EIO;
 	}
@@ -60,9 +60,13 @@ static int lis2dh_raw_read(const struct device *dev, uint8_t reg_addr,
 		buffer_tx[0] |= LIS2DH_SPI_AUTOINC;
 	}
 
+	// LOG_DBG("cfg = %x", cfg->hw.);
+	LOG_DBG("tx = %02x", tx.buffers);
 	if (spi_transceive_dt(&cfg->bus_cfg.spi, &tx, &rx)) {
 		return -EIO;
 	}
+	LOG_DBG("tx = %02x", tx.buffers);
+	LOG_INF("rx = %x", rx.buffers);
 
 	return 0;
 }
@@ -159,6 +163,7 @@ int lis2dh_spi_init(const struct device *dev)
 		LOG_ERR_DEVICE_NOT_READY(cfg->bus_cfg.spi.bus);
 		return -ENODEV;
 	}
+	LOG_DBG("init success");
 
 	return 0;
 }
