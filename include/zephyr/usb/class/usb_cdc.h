@@ -158,6 +158,31 @@
 #define GET_CRC_MODE           0x89
 #define SET_CRC_MODE           0x8A
 
+/**
+ * @name Network Capabilities Bitmap of the NCM Functional Descriptor
+ * @note NCM100.pdf, 5.2.1, Table 5-2
+ * @{
+ */
+/** Function can process SetEthernetPacketFilter requests */
+#define USB_CDC_NCM_NCAP_ETH_FILTER		BIT(0)
+/** Function can process GetNetAddress and SetNetAddress requests */
+#define USB_CDC_NCM_NCAP_NET_ADDRESS		BIT(1)
+/** Function can process SendEncapsulatedCommand and
+ *  GetEncapsulatedResponse requests
+ */
+#define USB_CDC_NCM_NCAP_ENCAP_COMMAND		BIT(2)
+/** Function can process SetMaxDatagramSize and GetMaxDatagramSize
+ *  requests
+ */
+#define USB_CDC_NCM_NCAP_MAX_DATAGRAM_SIZE	BIT(3)
+/** Function can process SetCrcMode and GetCrcMode requests */
+#define USB_CDC_NCM_NCAP_CRC_MODE		BIT(4)
+/** Function can process 8-byte forms of GetNtbInputSize and
+ *  SetNtbInputSize requests
+ */
+#define USB_CDC_NCM_NCAP_NTB_INPUT_SIZE		BIT(5)
+/** @} */
+
 /** Ethernet Packet Filter Bitmap */
 #define PACKET_TYPE_MULTICAST		0x10
 #define PACKET_TYPE_BROADCAST		0x08
