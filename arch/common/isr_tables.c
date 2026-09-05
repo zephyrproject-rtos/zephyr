@@ -109,3 +109,13 @@ const
 struct z_shared_isr_table_entry __shared_sw_isr_table z_shared_sw_isr_table[IRQ_TABLE_SIZE] = {
 };
 #endif
+
+#if defined(CONFIG_3RD_LEVEL_INTERRUPTS) && defined(CONFIG_INTERRUPT_MATRIX_LAYOUT)
+/* Placeholder 3rd-level aggregator windows, replaced by the generated table.
+ * The condition must match gen_isr_tables.py's emits_l3_windows(): the
+ * interrupt-matrix layout is the only one that packs 3rd-level windows densely
+ * and therefore the only one that needs them described at runtime.
+ */
+const struct z_isr_l3_window z_isr_l3_windows[1] = { { 0 } };
+const size_t z_isr_l3_window_num;
+#endif
