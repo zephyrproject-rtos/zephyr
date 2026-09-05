@@ -771,7 +771,7 @@ int hostapd_ap_status(const struct device *dev __unused, struct net_if *net_ifac
 
 	os_memcpy(status->bssid, hapd->own_addr, WIFI_MAC_ADDR_LEN);
 	status->iface_mode = WIFI_MODE_AP;
-	status->band = wpas_band_to_zephyr(wpas_freq_to_band(iface->freq));
+	status->band = wpas_freq_to_zephyr_band(iface->freq);
 	key_mgmt = bss->wpa_key_mgmt;
 	proto = bss->wpa;
 	sae_pwe = bss->sae_pwe;
