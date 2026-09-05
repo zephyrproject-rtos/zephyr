@@ -5,7 +5,7 @@ menuconfig SPI_PW
 	bool "Penwell SPI driver"
 	default y
 	depends on DT_HAS_INTEL_PENWELL_SPI_ENABLED
-	select PCIE if $(dt_compat_on_bus,$(DT_COMPAT_INTEL_PENWELL_SPI),pcie)
+	select PCIE_HOST if $(dt_compat_on_bus,$(DT_COMPAT_INTEL_PENWELL_SPI),pcie)
 	help
 	  Enable the Penwell SPI driver.
 

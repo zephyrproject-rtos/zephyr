@@ -976,6 +976,15 @@ NXP
     #include <nxp/imx/pinctrl/mimx8ml8dvnlz-pinctrl.dtsi>
     #include <nxp/kinetis/k6x/pinctrl/MK64FN1M0VLL12-pinctrl.h>
 
+PCIe
+====
+
+* PCIe host and endpoint support now use separate Kconfig options. Applications and out-of-tree
+  boards that previously enabled PCIe Root Complex support with ``CONFIG_PCIE=y`` must now enable
+  :kconfig:option:`CONFIG_PCIE_HOST`. PCIe endpoint configurations must enable
+  :kconfig:option:`CONFIG_PCIE_ENDPOINT`. The :kconfig:option:`CONFIG_PCIE` symbol is now
+  an umbrella selected when host or endpoint support is enabled.
+
 PWM
 ===
 

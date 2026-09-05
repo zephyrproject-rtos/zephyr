@@ -97,9 +97,9 @@
 
 	ITERABLE_SECTION_ROM(_static_thread_data, Z_LINK_ITERABLE_SUBALIGN)
 
-#if defined(CONFIG_PCIE)
+#if defined(CONFIG_PCIE_HOST)
 	ITERABLE_SECTION_ROM(irq_alloc, Z_LINK_ITERABLE_SUBALIGN)
-#endif /* CONFIG_PCIE */
+#endif /* CONFIG_PCIE_HOST */
 
 #if !defined(CONFIG_DEVICE_DEPS_DYNAMIC)
 	SECTION_DATA_PROLOGUE(device_deps,,)
