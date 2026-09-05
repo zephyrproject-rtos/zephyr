@@ -50,3 +50,14 @@ tests:
     tags:
       - settings
       - nvs
+  settings.functional.nvs.name_cache:
+    extra_configs:
+      - CONFIG_SETTINGS_NVS_NAME_CACHE=y
+    platform_allow:
+      - qemu_x86
+      - native_sim
+    integration_platforms:
+      - native_sim
+    tags:
+      - settings
+      - nvs
