@@ -1,0 +1,103 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 DevItWise
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	i2c_emul_bus: i2c_emul@60000000 {
+		compatible = "zephyr,i2c-emul-controller";
+		reg = <0x60000000 0x1>;
+		clock-frequency = <I2C_BITRATE_STANDARD>;
+		status = "okay";
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		tlv320aic3104_channel_mode: tlv320aic3104@18 {
+			compatible = "ti,tlv320aic3104";
+			reg = <0x18>;
+			reset-gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
+			status = "okay";
+		};
+
+		tlv320aic3104_clock_apply: tlv320aic3104@19 {
+			compatible = "ti,tlv320aic3104";
+			reg = <0x19>;
+			reset-gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
+			status = "okay";
+		};
+
+		tlv320aic3104_configure_fail: tlv320aic3104@1a {
+			compatible = "ti,tlv320aic3104";
+			reg = <0x1a>;
+			reset-gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
+			status = "okay";
+		};
+
+		tlv320aic3104_dai_configure: tlv320aic3104@1b {
+			compatible = "ti,tlv320aic3104";
+			reg = <0x1b>;
+			reset-gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
+			status = "okay";
+		};
+
+		tlv320aic3104_fault: tlv320aic3104@1c {
+			compatible = "ti,tlv320aic3104";
+			reg = <0x1c>;
+			reset-gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
+			status = "okay";
+		};
+
+		tlv320aic3104_independent_power: tlv320aic3104@1d {
+			compatible = "ti,tlv320aic3104";
+			reg = <0x1d>;
+			reset-gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
+			status = "okay";
+		};
+
+		tlv320aic3104_init_properties: tlv320aic3104@1e {
+			compatible = "ti,tlv320aic3104";
+			reg = <0x1e>;
+			reset-gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
+
+			mic-bias-level = <2>;
+			adc-high-pass-filter = <3>;
+			status = "okay";
+		};
+
+		tlv320aic3104_pga_gain: tlv320aic3104@1f {
+			compatible = "ti,tlv320aic3104";
+			reg = <0x1f>;
+			reset-gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
+			status = "okay";
+		};
+
+		tlv320aic3104_read_path: tlv320aic3104@20 {
+			compatible = "ti,tlv320aic3104";
+			reg = <0x20>;
+			reset-gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
+			status = "okay";
+		};
+
+		tlv320aic3104_route_input: tlv320aic3104@21 {
+			compatible = "ti,tlv320aic3104";
+			reg = <0x21>;
+			reset-gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
+			status = "okay";
+		};
+
+		tlv320aic3104_route_output: tlv320aic3104@22 {
+			compatible = "ti,tlv320aic3104";
+			reg = <0x22>;
+			reset-gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
+			status = "okay";
+		};
+
+		tlv320aic3104_volume_restore: tlv320aic3104@23 {
+			compatible = "ti,tlv320aic3104";
+			reg = <0x23>;
+			reset-gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
+			status = "okay";
+		};
+	};
+};

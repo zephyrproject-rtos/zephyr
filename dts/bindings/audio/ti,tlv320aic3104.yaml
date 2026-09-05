@@ -1,0 +1,52 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 DevItWise
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Texas Instruments TLV320AIC3104 low-power stereo audio codec.
+  I2C control interface with page-based register access (pages 0 and 1).
+  Datasheet: https://www.ti.com/product/TLV320AIC3104
+
+  This package (32-pin RHB) has no interrupt output pin - HPLCOM/HPRCOM are
+  analog-only multi-function outputs, not a GPIO/INT mux. The driver's
+  output short-circuit sticky flags (page 0, registers 96/97) are therefore
+  read opportunistically, from the class API calls that already touch the
+  output stage, rather than from a chip-driven interrupt.
+
+compatible: "ti,tlv320aic3104"
+
+include: i2c-device.yaml
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    required: true
+    description: GPIO for hardware reset (active-low)
+
+  mic-bias-level:
+    type: int
+    default: 0
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+    description: |
+      MICBIAS output level (page 0, register 25, D7-D6). A board property,
+      not a runtime setting: applied whenever the ADC path powers up.
+      0 = off (default, matches the part's reset state). 1 = 2 V.
+      2 = 2.5 V. 3 = connected to AVDD.
+
+  adc-high-pass-filter:
+    type: int
+    default: 0
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+    description: |
+      ADC high-pass filter corner (page 0, register 12, D7-D4), applied
+      identically to the left and right channels whenever the ADC path
+      powers up. 0 = disabled (default, matches the part's reset state).
+      1 = 0.0045 x fS(ADC). 2 = 0.0125 x fS(ADC). 3 = 0.025 x fS(ADC).

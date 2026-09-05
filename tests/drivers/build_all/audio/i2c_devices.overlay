@@ -55,6 +55,13 @@
 				reg = <0x4>;
 				status = "okay";
 			};
+
+			test_i2c_tlv320aic3104: tlv320aic3104@5 {
+				compatible = "ti,tlv320aic3104";
+				status = "okay";
+				reg = <0x5>;
+				reset-gpios = <&test_gpio 0 0>;
+			};
 		};
 	};
 };
