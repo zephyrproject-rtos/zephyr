@@ -1164,6 +1164,10 @@ class Node:
       A list of Range objects extracted from the node's ranges property.
       The list is empty if the node does not have a range property.
 
+    dma_ranges:
+      A list of Range objects extracted from the node's dma-ranges property.
+      The list is empty if the node does not have a dma-ranges property.
+
     regs:
       A list of Register objects for the node's registers
 
@@ -2025,7 +2029,11 @@ class Node:
 
     def _check_undeclared_props(self) -> None:
         # Checks that all properties are declared in the binding
-        wl = {"compatible", "status", "ranges", "phandle",
+        # "dma-ranges" sits next to "ranges": the devicetree specification
+        # defines the two the same way (2.3.8 and 2.3.9) and edtlib parses
+        # them with the same code, so a node may carry either without its
+        # binding declaring it.
+        wl = {"compatible", "status", "ranges", "dma-ranges", "phandle",
               "interrupt-parent", "interrupts-extended", "device_type"}
 
         for prop_name in self._node.props:
@@ -3918,11 +3926,18 @@ def _check_dt(dt: DT) -> None:
                      ", ".join(ok_status) +
                      " (see the devicetree specification)")
 
-        ranges_prop = node.props.get("ranges")
-        if ranges_prop and ranges_prop.type not in (Type.EMPTY, Type.NUMS):
-            _err(f"expected 'ranges = <...>;' in {node.path} in "
-                 f"{node.dt.filename}, not '{ranges_prop}' "
-                  "(see the devicetree specification)")
+        # Both names, for the same reason the two tables above list both:
+        # the specification defines them the same way, so a value that is
+        # not a cell array is as wrong for one as for the other. Without
+        # this, a malformed dma-ranges reaches _init_dma_ranges and is
+        # sliced into Range objects holding whatever the bytes happened to
+        # be, while the identical ranges is rejected here.
+        for prop_name in ("ranges", "dma-ranges"):
+            range_prop = node.props.get(prop_name)
+            if range_prop and range_prop.type not in (Type.EMPTY, Type.NUMS):
+                _err(f"expected '{prop_name} = <...>;' in {node.path} in "
+                     f"{node.dt.filename}, not '{range_prop}' "
+                      "(see the devicetree specification)")
 
 
 def _err(msg) -> NoReturn:
@@ -4007,6 +4022,7 @@ _DEFAULT_PROP_TYPES: dict[str, str] = {
     "compatible": "string-array",
     "status": "string",
     "ranges": "compound",  # NUMS or EMPTY
+    "dma-ranges": "compound",  # NUMS or EMPTY
     "reg": "array",
     "reg-names": "string-array",
     "label": "string",
