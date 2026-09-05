@@ -38,7 +38,9 @@ struct fixed_rate_clock_config {
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(dpll_hp)) ||                                              \
 	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(dpll_lp0)) ||                                         \
-	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(dpll_lp1))
+	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(dpll_lp1)) ||                                         \
+	(DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(clk_wco)) &&                                         \
+	 !IS_ENABLED(CONFIG_SOC_FAMILY_INFINEON_PSOC4))
 static void clock_startup_error(uint32_t error)
 {
 	(void)error; /* Suppress the compiler warning */
@@ -52,7 +54,7 @@ static void clock_startup_error(uint32_t error)
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(dpll_lp0)) ||                                             \
 	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(dpll_lp1))
-#if defined(CONFIG_SOC_SERIES_PSC3)
+#if defined(CONFIG_SOC_SERIES_PSC3) || defined(CONFIG_SOC_SERIES_PSC3M6)
 #define DPLL_LP0 SRSS_PLL_250M_0_PATH_NUM
 #define DPLL_LP1 SRSS_PLL_250M_1_PATH_NUM
 #elif defined(CONFIG_SOC_SERIES_PSE84)
@@ -159,12 +161,12 @@ static int fixed_rate_clk_init(const struct device *dev)
 		 * If increasing frequency this must be done before the adjustment.
 		 */
 		if (config->rate > imo_freq) {
-			Cy_SysLib_SetWaitStates(config->rate/1000000UL);
+			Cy_SysLib_SetWaitStates(config->rate / 1000000UL);
 		}
 		int err = Cy_SysClk_ImoSetFrequency(config->rate);
 
 		if (config->rate < imo_freq) {
-			Cy_SysLib_SetWaitStates(config->rate/1000000UL);
+			Cy_SysLib_SetWaitStates(config->rate / 1000000UL);
 		}
 
 		/* "touch" err to avoid a warning with asserts turned off */
@@ -274,7 +276,7 @@ static int fixed_rate_clk_init(const struct device *dev)
 
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(dpll_lp0)) ||                                             \
 	DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(dpll_lp1))
-#if defined(CONFIG_SOC_SERIES_PSC3)
+#if defined(CONFIG_SOC_SERIES_PSC3) || defined(CONFIG_SOC_SERIES_PSC3M6)
 #define DPLL_LP_INIT(n)                                                                            \
 	.dpll_lp_config = {                                                                        \
 		.feedbackDiv = DT_INST_PROP_OR(n, feedback_div, 0),                                \
@@ -336,9 +338,7 @@ static int fixed_rate_clk_init(const struct device *dev)
 	static const struct fixed_rate_clock_config fixed_rate_clock_config_##n = {                \
 		.rate = DT_INST_PROP(n, clock_frequency),                                          \
 		.system_clock = DT_INST_PROP(n, system_clock),                                     \
-		DPLL_HP_INIT(n)                                                                    \
-		DPLL_LP_INIT(n)                                                                    \
-	};                                                                                         \
+		DPLL_HP_INIT(n) DPLL_LP_INIT(n)};                                                  \
 	DEVICE_DT_INST_DEFINE(n, fixed_rate_clk_init, NULL, NULL, &fixed_rate_clock_config_##n,    \
 			      PRE_KERNEL_1, CONFIG_CLOCK_CONTROL_INIT_PRIORITY, NULL);
 
