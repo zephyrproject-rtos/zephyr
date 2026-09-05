@@ -105,6 +105,10 @@ static enum net_verdict virtual_recv(struct net_if *iface,
 		goto silent_drop;
 	}
 
+	if (net_if_l2(iface) != &NET_L2_GET_NAME(VIRTUAL)) {
+		goto silent_drop;
+	}
+
 	/* If there are no virtual interfaces attached, then pass the packet
 	 * to the actual virtual network interface.
 	 */
