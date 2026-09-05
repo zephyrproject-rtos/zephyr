@@ -316,7 +316,7 @@ static int timer_crsas_ma2_set_alarm(const struct device *dev, uint8_t chan_id,
 		    (alarm_cfg->ticks == now && data->guard_period > 0)) {
 			if (alarm_cfg->flags & COUNTER_ALARM_CFG_EXPIRE_WHEN_LATE) {
 				/* Late, trigger interrupt */
-				NVIC_SetPendingIRQ(config->irqn);
+				k_irq_set_pending(config->irqn);
 			} else {
 				data->alarm_cb = NULL;
 			}
