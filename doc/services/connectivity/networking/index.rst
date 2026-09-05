@@ -16,6 +16,7 @@ operation of the stacks and how they were implemented.
    networking_with_host.rst
    network_monitoring.rst
    network_tracing.rst
+   conformance/index.rst
    api/index.rst
    conn_mgr/index.rst
    dsa.rst

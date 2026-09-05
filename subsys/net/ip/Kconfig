@@ -447,11 +447,6 @@ config NET_MAX_ROUTERS
 
 source "subsys/net/ip/Kconfig.tcp"
 
-config NET_TEST_PROTOCOL
-	bool "JSON based test protocol (UDP)"
-	help
-	  Enable JSON based test protocol (UDP).
-
 config NET_UDP
 	bool "UDP"
 	default y
