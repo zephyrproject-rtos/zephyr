@@ -1332,7 +1332,7 @@ config CACHE_HAS_MIRRORED_MEMORY_REGIONS
 	  sense when MP_MAX_NUM_CPUS > 1.
 
 config CACHE_DOUBLEMAP
-	bool "Cache double-mapping support"
+	bool "Cache double-mapping support [DEPRECATED]"
 	select CACHE_HAS_MIRRORED_MEMORY_REGIONS
 	select DEPRECATED
 	help

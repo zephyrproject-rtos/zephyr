@@ -35,7 +35,7 @@ config UART_NRFX_UARTE_NO_IRQ
 	  to get to the lowest power state after uart_poll_out if receiver is not used.
 
 config UART_NRFX_UARTE_ENHANCED_RX
-	bool "Enhanced RX handling"
+	bool "Enhanced RX handling [DEPRECATED]"
 	select DEPRECATED
 	help
 	  Option is deprecated as it is used as default unless TIMER peripheral is used

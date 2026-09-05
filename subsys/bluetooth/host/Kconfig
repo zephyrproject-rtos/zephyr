@@ -548,7 +548,7 @@ config BT_RPA_SHARING
 	  period.
 
 config BT_SIGNING
-	bool "Data signing support"
+	bool "Data signing support [DEPRECATED]"
 	select DEPRECATED
 	help
 	  This option enables data signing which is used for transferring
