@@ -1,0 +1,104 @@
+common:
+  tags:
+    - bluetooth
+  platform_allow:
+    - native_sim
+  harness: script
+
+tests:
+  bluetooth.classic.sim.l2cap.basic:
+    timeout: 120
+    harness_config:
+      tests_scripts:
+        - tests_scripts/basic.sh
+  bluetooth.classic.sim.l2cap.basic.mode_optional:
+    timeout: 120
+    extra_args:
+      - EXTRA_CONF_FILE="prj_basic.conf"
+    harness_config:
+      tests_scripts:
+        - tests_scripts/basic_mode_optional.sh
+
+  bluetooth.classic.sim.l2cap.retransmission:
+    timeout: 120
+    extra_configs:
+      - CONFIG_TEST_L2CAP_SERVER_TX_DATA_POOL_COUNT=6
+      - CONFIG_TEST_L2CAP_CLIENT_TX_DATA_POOL_COUNT=6
+    extra_args:
+      - EXTRA_CONF_FILE="prj_ret.conf"
+    harness_config:
+      tests_scripts:
+        - tests_scripts/ret.sh
+  bluetooth.classic.sim.l2cap.retransmission.mode_optional:
+    timeout: 120
+    extra_configs:
+      - CONFIG_TEST_L2CAP_SERVER_TX_DATA_POOL_COUNT=6
+      - CONFIG_TEST_L2CAP_CLIENT_TX_DATA_POOL_COUNT=6
+    extra_args:
+      - EXTRA_CONF_FILE="prj_ret.conf"
+    harness_config:
+      tests_scripts:
+        - tests_scripts/ret_mode_optional.sh
+
+  bluetooth.classic.sim.l2cap.enhanced_retransmission:
+    timeout: 120
+    extra_configs:
+      - CONFIG_TEST_L2CAP_SERVER_TX_DATA_POOL_COUNT=6
+      - CONFIG_TEST_L2CAP_CLIENT_TX_DATA_POOL_COUNT=6
+    extra_args:
+      - EXTRA_CONF_FILE="prj_eret.conf"
+    harness_config:
+      tests_scripts:
+        - tests_scripts/eret.sh
+  bluetooth.classic.sim.l2cap.enhanced_retransmission.mode_optional:
+    timeout: 120
+    extra_configs:
+      - CONFIG_TEST_L2CAP_SERVER_TX_DATA_POOL_COUNT=6
+      - CONFIG_TEST_L2CAP_CLIENT_TX_DATA_POOL_COUNT=6
+    extra_args:
+      - EXTRA_CONF_FILE="prj_eret.conf"
+    harness_config:
+      tests_scripts:
+        - tests_scripts/eret_mode_optional.sh
+
+  bluetooth.classic.sim.l2cap.flow_control:
+    timeout: 120
+    extra_configs:
+      - CONFIG_TEST_L2CAP_SERVER_TX_DATA_POOL_COUNT=6
+      - CONFIG_TEST_L2CAP_CLIENT_TX_DATA_POOL_COUNT=6
+    extra_args:
+      - EXTRA_CONF_FILE="prj_fc.conf"
+    harness_config:
+      tests_scripts:
+        - tests_scripts/fc.sh
+  bluetooth.classic.sim.l2cap.flow_control.mode_optional:
+    timeout: 120
+    extra_configs:
+      - CONFIG_TEST_L2CAP_SERVER_TX_DATA_POOL_COUNT=6
+      - CONFIG_TEST_L2CAP_CLIENT_TX_DATA_POOL_COUNT=6
+    extra_args:
+      - EXTRA_CONF_FILE="prj_fc.conf"
+    harness_config:
+      tests_scripts:
+        - tests_scripts/fc_mode_optional.sh
+
+  bluetooth.classic.sim.l2cap.streaming:
+    timeout: 120
+    extra_configs:
+      - CONFIG_TEST_L2CAP_SERVER_TX_DATA_POOL_COUNT=6
+      - CONFIG_TEST_L2CAP_CLIENT_TX_DATA_POOL_COUNT=6
+    extra_args:
+      - EXTRA_CONF_FILE="prj_stream.conf"
+    harness_config:
+      tests_scripts:
+        - tests_scripts/stream.sh
+  bluetooth.classic.sim.l2cap.streaming.mode_optional:
+    timeout: 120
+    extra_configs:
+      - CONFIG_TEST_L2CAP_SERVER_TX_DATA_POOL_COUNT=6
+      - CONFIG_TEST_L2CAP_CLIENT_TX_DATA_POOL_COUNT=6
+    extra_args:
+      - EXTRA_CONF_FILE="prj_stream.conf"
+    harness_config:
+      tests_scripts:
+        - tests_scripts/stream_mode_optional.sh

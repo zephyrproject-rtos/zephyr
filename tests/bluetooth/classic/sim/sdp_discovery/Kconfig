@@ -1,0 +1,26 @@
+# Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+config TEST_SDP_DISCOVER_ATTR_TRACK_TABLE_SIZE
+	int "Number of attribute IDs to track"
+	default 32
+	range 1 255
+	help
+	  Sets the size of the internal table used by the test to store discovered
+	  attribute IDs and their hit counts.
+
+config TEST_ADDITIONAL_SDP_RECORD_COUNT
+	int "Number of additional SDP records to be registered"
+	default 10
+	range 1 252
+	help
+	  Sets the number of additional SDP service records that can be registered by specific
+	  test cases.
+	  Each record represents a service that can be discovered through the SDP discovery process.
+
+module = TEST_SDP_DISCOVERY
+module-str = test_sdp_discovery
+source "subsys/logging/Kconfig.template.log_config"
