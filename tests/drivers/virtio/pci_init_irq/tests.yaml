@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.virtio.pci_init_irq:
+    platform_allow:
+      - qemu_x86
+    tags:
+      - drivers
+      - virtio
+      - pcie
