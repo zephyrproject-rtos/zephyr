@@ -1142,7 +1142,7 @@ int pthread_timedjoin_np(pthread_t pthread, void **status, const struct timespec
 	}
 
 	return pthread_timedjoin_internal(pthread, status,
-					  K_MSEC(timespec_to_timeoutms(CLOCK_REALTIME, abstime)));
+					  timespec_abs_to_timeout(CLOCK_REALTIME, abstime));
 }
 
 /**
