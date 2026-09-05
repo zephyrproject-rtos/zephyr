@@ -28,10 +28,17 @@
 
 #include <zephyr/logging/log.h>
 
-#if defined(CONFIG_PM) && (defined(CONFIG_BT) || defined(CONFIG_IEEE802154))
+#if (defined(CONFIG_BT_STM32WBA) || defined(CONFIG_IEEE802154_STM32WBA))
+#define RADIO_LL_ACTIVE
+#else
+#undef RADIO_LL_ACTIVE
+#endif
+
+#if defined(RADIO_LL_ACTIVE)
 #include <zephyr/pm/policy.h>
 #include <os_wrapper.h>
 #include <ll_sys.h>
+#include <app_conf.h>
 #endif
 
 LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
@@ -148,13 +155,17 @@ static uint32_t flash_latency_backup;
 
 #if defined(CONFIG_PM_S2RAM)
 /* set to true if standby mode has been effectively entered */
-bool standby_entered;
+static bool standby_entered;
 static struct fpu_ctx_full fpu_state;
 static struct scb_context scb_state;
 static struct nvic_context nvic_state;
 #if defined(CONFIG_ARM_MPU)
 static struct z_mpu_context_retained mpu_state;
 #endif
+#endif
+
+#if defined(RADIO_LL_ACTIVE)
+static uint32_t radio_wkup_us;
 #endif
 
 static int enter_low_power_mode(void)
@@ -300,6 +311,30 @@ static void set_mode_suspend_to_ram_exit(void)
 	stm32wba_init();
 	stm32_power_init();
 }
+#if defined(RADIO_LL_ACTIVE)
+
+void stm32wba_radio_pm_resume(void)
+{
+	if (ll_sys_dp_slp_exit() != LL_SYS_OK) {
+		LOG_ERR("Failed to exit low-power sleep mode");
+	}
+}
+
+void stm32wba_radio_pm_suspend(void)
+{
+	/* Check if radio is already suspended */
+	if (ll_sys_dp_slp_get_state() == LL_SYS_DP_SLP_DISABLED) {
+		const struct pm_state_info *pm_state = pm_state_next_get(_current_cpu->id);
+
+		if (pm_state->state == PM_STATE_SUSPEND_TO_RAM) {
+			if (radio_wkup_us > 0) {
+				(void)ll_sys_dp_slp_enter(radio_wkup_us);
+			}
+		}
+	}
+}
+#endif
+
 #endif
 
 /*
@@ -455,10 +490,14 @@ int64_t pm_policy_next_custom_ticks(void)
 	} else {
 		uint64_t next_radio_evt_us = os_timer_get_earliest_time();
 
-		if (next_radio_evt_us == LL_DP_SLP_NO_WAKEUP) {
+		if (next_radio_evt_us >= LL_DP_SLP_NO_WAKEUP) {
 			ret = -1LL; /* No radio event pending */
+			radio_wkup_us = LL_DP_SLP_NO_WAKEUP;
 		} else {
 			ret = k_us_to_ticks_floor64(next_radio_evt_us);
+			radio_wkup_us = (next_radio_evt_us > CFG_LPM_STDBY_WAKEUP_TIME) ?
+				next_radio_evt_us - CFG_LPM_STDBY_WAKEUP_TIME :
+				UINT32_C(0);
 		}
 	}
 	return ret;
