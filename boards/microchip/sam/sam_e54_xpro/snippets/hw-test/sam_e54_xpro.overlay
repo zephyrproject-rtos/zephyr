@@ -17,4 +17,66 @@
 		zephyr,resolution = <12>;
 		zephyr,input-positive = <MCHP_ADC_SCALEDIOVCC>;
 	};
+
+	channel@1 {
+		reg = <1>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,acquisition-time = <ADC_ACQ_TIME(ADC_ACQ_TIME_TICKS, 4)>;
+		zephyr,input-positive = <MCHP_ADC_DAC0>;
+		zephyr,resolution = <12>;
+		zephyr,vref-mv = <3300>;
+	};
+
+	channel@2 {
+		reg = <2>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_VDD_1";
+		zephyr,vref-mv = <3300>;
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,input-positive = <MCHP_ADC_AIN1>;
+		zephyr,resolution = <12>;
+	};
+};
+
+&dac {
+	refsel = "vdd_ana";
+	#address-cells = <1>;
+	#size-cells = <0>;
+	status = "okay";
+
+	dac0: channel@0 {
+		reg = <0>;
+		rate = <100>;
+		data-adj = "right";
+		refresh-period = <30>;
+		sampling-ratio = <1>;
+	};
+};
+
+/ {
+	adc_dac_loopback: adc-dac-loopback {
+		compatible = "test-adc-dac-loopback";
+		io-channels = <&adc0 1>;
+		dac = <&dac>;
+		dac-channel-id = <0>;
+		dac-resolution = <12>;
+	};
+};
+
+&pinctrl {
+	adc0_default: adc0_default {
+		group1 {
+			pinmux = <PA3B_ADC0_AIN1>;
+		};
+	};
+};
+
+/ {
+	adc_reference_voltage: adc-reference-voltage {
+		compatible = "test-adc-reference-voltage";
+		io-channels = <&adc0 2>;
+		reference-mv = <3300>;
+		expected-accuracy = <32>;
+	};
 };

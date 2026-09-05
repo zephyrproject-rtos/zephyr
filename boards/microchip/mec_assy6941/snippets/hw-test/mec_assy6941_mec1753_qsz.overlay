@@ -43,3 +43,12 @@
 		zephyr,resolution = <10>;
 	};
 };
+
+/ {
+	adc_reference_voltage: adc-reference-voltage {
+		compatible = "test-adc-reference-voltage";
+		io-channels = <&adc0 3>;
+		reference-mv = <3300>;
+		expected-accuracy = <10>;
+	};
+};
