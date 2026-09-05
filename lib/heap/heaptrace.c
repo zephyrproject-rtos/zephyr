@@ -50,6 +50,15 @@ struct heaptrace_record {
 #endif
 
 	bool used;
+
+	/*
+	 * In-place realloc is notified by the allocator as an alloc(new)
+	 * event immediately followed by a free(old) event for the same
+	 * pointer.  Set when the alloc half of such a pair refreshes this
+	 * record, so that the free half is recognized as part of the resize
+	 * instead of dropping the record of a still-live block.
+	 */
+	bool resize_pending;
 };
 
 struct heaptrace_filter_state {
@@ -251,21 +260,47 @@ void heaptrace_alloc(void *ptr, size_t size, uintptr_t heap_id)
 
 	key = k_spin_lock(&heaptrace_lock);
 
+	idx = heaptrace_find_record_by_ptr_nolock(ptr);
+	if (idx >= 0) {
+		/*
+		 * The pointer is already tracked: this is the alloc half of
+		 * an in-place realloc.  sys_heap_realloc() notifies a resize
+		 * as alloc(ptr, new_size) immediately followed by
+		 * free(ptr, old_size), on both the shrink and the expand
+		 * path, so that accounting listeners see the correct delta.
+		 * Refresh the size and mark the record so that the companion
+		 * free is absorbed as part of the resize instead of dropping
+		 * the record of a still-live block.  Like the free path,
+		 * this is not gated by the acquisition filter: the realloc
+		 * may run in a different thread than the original
+		 * allocation, and dropping the resize would make the
+		 * unfiltered companion free clear the record.
+		 */
+		if (heaptrace_records[idx].resize_pending) {
+			/* Companion free of an earlier resize never arrived. */
+			LOG_WRN("alloc duplicate ptr=%p old_size=%zu new_size=%zu "
+				"old_alloc_tid=%p old_alloc_ms=%u "
+				"(possible missed free or allocator corruption)",
+				ptr, heaptrace_records[idx].size, size,
+				heaptrace_records[idx].alloc_tid,
+				heaptrace_records[idx].alloc_time_ms);
+		}
+
+		heaptrace_records[idx].size = size;
+		heaptrace_records[idx].resize_pending = true;
+		k_spin_unlock(&heaptrace_lock, key);
+
+		LOG_DBG("resize ptr=%p new_size=%zu heap=%s", ptr, size,
+			heaptrace_heap_id_to_name(heap_id));
+		return;
+	}
+
 	if (!heaptrace_event_matches_filter_nolock(tid, cpu)) {
 		k_spin_unlock(&heaptrace_lock, key);
 		return;
 	}
 
-	idx = heaptrace_find_record_by_ptr_nolock(ptr);
-	if (idx >= 0) {
-		LOG_WRN("alloc duplicate ptr=%p old_size=%zu new_size=%zu "
-			"old_alloc_tid=%p old_alloc_ms=%u "
-			"(possible missed free or allocator corruption)",
-			ptr, heaptrace_records[idx].size, size,
-			heaptrace_records[idx].alloc_tid, heaptrace_records[idx].alloc_time_ms);
-	} else {
-		idx = heaptrace_find_free_slot_nolock();
-	}
+	idx = heaptrace_find_free_slot_nolock();
 
 	if (idx < 0) {
 		k_spin_unlock(&heaptrace_lock, key);
@@ -286,8 +321,7 @@ void heaptrace_alloc(void *ptr, size_t size, uintptr_t heap_id)
 
 #if defined(CONFIG_HEAPTRACE_BACKTRACE)
 	heaptrace_records[idx].bt_depth = bt_depth;
-	memcpy(heaptrace_records[idx].bt_buf, bt_buf,
-	       (size_t)bt_depth * sizeof(unsigned long));
+	memcpy(heaptrace_records[idx].bt_buf, bt_buf, (size_t)bt_depth * sizeof(unsigned long));
 #endif
 
 	k_spin_unlock(&heaptrace_lock, key);
@@ -316,9 +350,42 @@ void heaptrace_free(void *ptr, size_t size, uintptr_t heap_id)
 	 */
 	idx = heaptrace_find_record_by_ptr_nolock(ptr);
 	if (idx < 0) {
+		/*
+		 * A missing record is expected when the acquisition filter
+		 * is active (the alloc was filtered out) or when the record
+		 * table has filled (the alloc was dropped).  In both cases
+		 * the free cannot find a matching entry through no fault of
+		 * the allocator, so log at DBG to avoid flooding the hot
+		 * path with warnings in exactly the configurations the
+		 * filter and the bounded table exist to support.  Only warn
+		 * when there is no benign explanation, which points to a
+		 * genuine missed free or allocator corruption.
+		 */
+		bool benign = (heaptrace_filter.type != HEAPTRACE_FILTER_NONE) ||
+			      (heaptrace_find_free_slot_nolock() < 0);
+
 		k_spin_unlock(&heaptrace_lock, key);
-		LOG_WRN("free unknown ptr=%p size=%zu heap=%s free_tid=%p", ptr, size,
-			heaptrace_heap_id_to_name(heap_id), tid);
+		if (benign) {
+			LOG_DBG("free untracked ptr=%p size=%zu heap=%s free_tid=%p "
+				"(filter active or table full)",
+				ptr, size, heaptrace_heap_id_to_name(heap_id), tid);
+		} else {
+			LOG_WRN("free unknown ptr=%p size=%zu heap=%s free_tid=%p", ptr, size,
+				heaptrace_heap_id_to_name(heap_id), tid);
+		}
+		return;
+	}
+
+	if (heaptrace_records[idx].resize_pending) {
+		/*
+		 * Free half of an in-place realloc: the allocator notified
+		 * alloc(new_size) followed by free(old_size) for the same
+		 * pointer.  The block is still live and its record already
+		 * carries the refreshed size, so consume the marker and keep
+		 * the record instead of dropping it.
+		 */
+		heaptrace_records[idx].resize_pending = false;
+		k_spin_unlock(&heaptrace_lock, key);
 		return;
 	}
 
@@ -438,20 +505,23 @@ struct find_tid_ctx {
 	k_tid_t result;
 };
 
-static void find_tid_cb(const struct k_thread *thread, void *user_data)
+TOOLCHAIN_DISABLE_WARNING(TOOLCHAIN_WARNING_CAST_QUAL)
+static void find_tid_cb(const struct k_thread *cthread, void *user_data)
 {
 	struct find_tid_ctx *ctx = user_data;
+	k_tid_t thread = (k_tid_t)cthread;
 	const char *name;
 
 	if (ctx->result != NULL) {
 		return;
 	}
 
-	name = k_thread_name_get((k_tid_t)thread);
+	name = k_thread_name_get(thread);
 	if (name != NULL && strstr(name, ctx->name) != NULL) {
-		ctx->result = (k_tid_t)thread;
+		ctx->result = thread;
 	}
 }
+TOOLCHAIN_ENABLE_WARNING(TOOLCHAIN_WARNING_CAST_QUAL)
 
 k_tid_t heaptrace_find_tid_by_name(const char *name)
 {
@@ -606,8 +676,7 @@ void heaptrace_foreach_resize(heaptrace_resize_cb_t cb, void *user_data)
 
 	k_spinlock_key_t key = k_spin_lock(&heaptrace_lock);
 
-	start = (heaptrace_resize_head - heaptrace_resize_count +
-		 HEAPTRACE_MAX_RESIZE_RECORDS) %
+	start = (heaptrace_resize_head - heaptrace_resize_count + HEAPTRACE_MAX_RESIZE_RECORDS) %
 		HEAPTRACE_MAX_RESIZE_RECORDS;
 	count = heaptrace_resize_count;
 	k_spin_unlock(&heaptrace_lock, key);
@@ -667,8 +736,8 @@ static void heaptrace_heap_resize_cb(uintptr_t heap_id, void *old_heap_end, void
 HEAP_LISTENER_RESIZE_DEFINE(heaptrace_libc_resize_listener, HEAP_ID_LIBC, heaptrace_heap_resize_cb);
 #endif
 
-#if defined(CONFIG_SYS_HEAP_LISTENER) && (CONFIG_HEAP_MEM_POOL_SIZE > 0)
-extern struct sys_heap _system_heap;
+#if defined(CONFIG_SYS_HEAP_LISTENER) && (K_HEAP_MEM_POOL_SIZE > 0)
+extern struct k_heap _system_heap;
 
 static void heaptrace_heap_alloc_cb(uintptr_t heap_id, void *mem, size_t bytes)
 {
@@ -680,9 +749,9 @@ static void heaptrace_heap_free_cb(uintptr_t heap_id, void *mem, size_t bytes)
 	heaptrace_free(mem, bytes, heap_id);
 }
 
-HEAP_LISTENER_ALLOC_DEFINE(heaptrace_sysheap_alloc_listener, HEAP_ID_FROM_POINTER(&_system_heap),
-			   heaptrace_heap_alloc_cb);
-HEAP_LISTENER_FREE_DEFINE(heaptrace_sysheap_free_listener, HEAP_ID_FROM_POINTER(&_system_heap),
+HEAP_LISTENER_ALLOC_DEFINE(heaptrace_sysheap_alloc_listener,
+			   HEAP_ID_FROM_POINTER(&_system_heap.heap), heaptrace_heap_alloc_cb);
+HEAP_LISTENER_FREE_DEFINE(heaptrace_sysheap_free_listener, HEAP_ID_FROM_POINTER(&_system_heap.heap),
 			  heaptrace_heap_free_cb);
 #endif
 
@@ -701,7 +770,7 @@ int heaptrace_init(void)
 #if defined(CONFIG_NEWLIB_LIBC_HEAP_LISTENER)
 	heap_listener_register(&heaptrace_libc_resize_listener);
 #endif
-#if defined(CONFIG_SYS_HEAP_LISTENER) && (CONFIG_HEAP_MEM_POOL_SIZE > 0)
+#if defined(CONFIG_SYS_HEAP_LISTENER) && (K_HEAP_MEM_POOL_SIZE > 0)
 	heap_listener_register(&heaptrace_sysheap_alloc_listener);
 	heap_listener_register(&heaptrace_sysheap_free_listener);
 #endif

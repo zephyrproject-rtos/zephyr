@@ -385,7 +385,7 @@ endmenu
 
 config HEAPTRACE
 	bool "Heap trace"
-	select HEAP_LISTENER
+	select SYS_HEAP_LISTENER
 	help
 	  Enable heap trace to track outstanding memory allocations.
 	  Records each k_malloc/k_free with thread info, timestamp, and caller

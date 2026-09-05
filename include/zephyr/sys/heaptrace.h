@@ -114,7 +114,11 @@ void heaptrace_reset(void);
  *
  * Usually called from a heap_listener callback; user code rarely needs to
  * call it directly. If the event does not match the current filter it is
- * dropped.
+ * dropped. An event for an already tracked pointer is recognized as the
+ * alloc half of an in-place realloc: the allocator notifies a resize as
+ * alloc(new_size) immediately followed by free(old_size) for the same
+ * pointer, so the recorded size is refreshed and the companion free is
+ * absorbed by heaptrace_free() instead of dropping the record.
  *
  * @param ptr     Address returned by the allocator, ignored if NULL
  * @param size    Number of bytes allocated, ignored if 0
@@ -129,7 +133,13 @@ void heaptrace_alloc(void *ptr, size_t size, uintptr_t heap_id);
  * heaptrace_alloc(), the free path is not gated by the acquisition filter:
  * a block allocated by a filtered thread may be freed by another thread,
  * and dropping such frees would leave phantom leaks in the table. If the
- * ptr is not found a warning is emitted.
+ * ptr is not found a warning is emitted, except when the acquisition
+ * filter is active or the record table has filled, in which case the
+ * missing record has a benign explanation and the event is logged at
+ * DBG level. A free arriving for a record that
+ * was just refreshed by an in-place realloc (see heaptrace_alloc()) is
+ * absorbed as the companion half of the resize and keeps the record of
+ * the still-live block.
  *
  * @param ptr     Address being freed, ignored if NULL
  * @param size    Number of bytes freed (may be 0)
