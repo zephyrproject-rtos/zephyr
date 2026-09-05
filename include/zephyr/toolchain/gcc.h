@@ -580,7 +580,7 @@ do {                                                                    \
 
 #elif defined(CONFIG_ARC) || defined(CONFIG_ARM64) \
 	|| defined(CONFIG_ARCH_POSIX) /*&& (__x86_64 or __i*86 or __aarch64__)*/ \
-	|| defined(CONFIG_X86)
+	|| defined(CONFIG_X86) || defined(CONFIG_M68K)
 
 #define GEN_ABSOLUTE_SYM(name, value)               \
 	__asm__ __volatile__(".globl\t" #name "\n\t.equ\t" #name \

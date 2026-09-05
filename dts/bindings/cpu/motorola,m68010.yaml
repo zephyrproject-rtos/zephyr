@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: Motorola M68010 processor
+
+compatible: "motorola,m68010"
+
+include: cpu.yaml

@@ -8,6 +8,9 @@ archs:
   - name: arm64
     path: arm64
     full_name: ARM 64
+  - name: m68k
+    path: m68k
+    full_name: Motorola M68K
   - name: mips
     path: mips
     full_name: MIPS
