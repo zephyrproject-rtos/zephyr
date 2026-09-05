@@ -341,6 +341,12 @@ Deprecated APIs and options
   * The :c:struct:`_dmic_ops` struct has been deprecated. DMIC drivers are now expected to use the
     :c:macro:`DEVICE_API` macro to declare their driver API.
 
+* Ethernet
+
+  * Deprecated :kconfig:option:`CONFIG_ETH_NUMAKER` in favor of
+    :kconfig:option:`CONFIG_ETH_NUMAKER_DWC_ETHER_1000`, which drives the same hardware through
+    the generic Synopsys DesignWare MAC driver and is now enabled by default.
+
 * Fuel Gauge
 
   * Deprecated various fuel gauge property enums and union fields in favor of

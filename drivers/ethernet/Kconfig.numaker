@@ -4,8 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config ETH_NUMAKER
-	bool "Nuvoton NUMAKER MCU Ethernet driver"
-	default y
+	bool "Nuvoton NUMAKER MCU Ethernet driver [DEPRECATED]"
 	select HAS_NUMAKER_ETH
 	select PINCTRL
 	depends on DT_HAS_NUVOTON_NUMAKER_ETHERNET_ENABLED
@@ -17,4 +16,6 @@ config ETH_NUMAKER
 	help
 	  This option enables the Ethernet driver for Nuvoton NuMaker family of
 	  processors.
-	  Say y if you wish to enable NuMaker ETH.
+
+	  Deprecated in favor of ETH_NUMAKER_DWC_ETHER_1000, which drives the
+	  same hardware through the generic Synopsys DesignWare MAC driver.

@@ -125,7 +125,6 @@
 &emac {
 	pinctrl-0 = <&emac_default>;
 	pinctrl-names = "default";
-	phy-addr = <1>;
 	phy-handle = <&phy>;
 	status = "okay";
 };
