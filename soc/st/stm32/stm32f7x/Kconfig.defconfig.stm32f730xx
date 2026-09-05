@@ -1,0 +1,11 @@
+# ST STM32F730XX MCU configuration options
+
+# Copyright (c) 2026 Eve Redero
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_STM32F730XX
+
+config NUM_IRQS
+	default 104
+
+endif # SOC_STM32F730XX
