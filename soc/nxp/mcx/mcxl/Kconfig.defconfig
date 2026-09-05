@@ -16,6 +16,10 @@ config NUM_IRQS
 	default 32 if SOC_MCXL255_CPU1 || SOC_MCXL254_CPU1 || SOC_MCXL253_CPU1
 	default 161 if SOC_MCXL255_CPU0 || SOC_MCXL254_CPU0 || SOC_MCXL253_CPU0
 
+# Default offset 0x200 is not enough with higher ISR count
+config ROM_START_OFFSET
+	default 0x400 if BOOTLOADER_MCUBOOT
+
 config SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if \
 		SOC_MCXL255_CPU0 || SOC_MCXL254_CPU0 || SOC_MCXL253_CPU0
