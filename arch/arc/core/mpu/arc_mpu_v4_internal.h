@@ -590,17 +590,15 @@ void arc_core_mpu_configure_thread(struct k_thread *thread)
 		pparts = NULL;
 	}
 
-	for (uint32_t i = 0; i < num_partitions; i++) {
-		if (pparts->size) {
-			if (_dynamic_region_allocate_and_init(pparts->start,
-				pparts->size, pparts->attr) < 0) {
-				LOG_ERR(
-				"thread %p's mem region: %p failed",
-				 thread, pparts);
+	for (uint32_t i = 0; i < CONFIG_MAX_DOMAIN_PARTITIONS && num_partitions; i++) {
+		if (pparts[i].size != 0U) {
+			if (_dynamic_region_allocate_and_init(pparts[i].start, pparts[i].size,
+							      pparts[i].attr) < 0) {
+				LOG_ERR("thread %p's mem region: %p failed", thread, pparts);
 				return;
 			}
+			num_partitions--;
 		}
-		pparts++;
 	}
 #else
 	arc_core_mpu_configure_mem_domain(thread);
@@ -681,16 +679,21 @@ void arc_core_mpu_configure_mem_domain(struct k_thread *thread)
 	num_regions = get_num_regions();
 	region_index = get_region_index_by_type(THREAD_DOMAIN_PARTITION_REGION);
 
-	while (num_partitions && region_index < num_regions) {
-		if (pparts->size > 0) {
-			LOG_DBG("set region 0x%x 0x%lx 0x%x",
-				region_index, pparts->start, pparts->size);
-			_region_init(region_index, pparts->start,
-				     pparts->size, pparts->attr);
+	/*
+	 * Scan the full partitions array: removed partitions leave zero-sized
+	 * holes, so num_partitions only counts the valid entries. The array
+	 * bound keeps the scan in range regardless.
+	 */
+	for (uint32_t i = 0; i < CONFIG_MAX_DOMAIN_PARTITIONS && num_partitions &&
+	     region_index < num_regions; i++) {
+		if (pparts[i].size != 0U) {
+			LOG_DBG("set region 0x%x 0x%lx 0x%x", region_index, pparts[i].start,
+				pparts[i].size);
+			_region_init(region_index, pparts[i].start, pparts[i].size,
+				     pparts[i].attr);
 			region_index++;
+			num_partitions--;
 		}
-		pparts++;
-		num_partitions--;
 	}
 
 	while (region_index < num_regions) {
@@ -708,34 +711,28 @@ void arc_core_mpu_configure_mem_domain(struct k_thread *thread)
  */
 void arc_core_mpu_remove_mem_domain(struct k_mem_domain *mem_domain)
 {
-	uint32_t num_partitions;
 	struct k_mem_partition *pparts;
 	int index;
 
-	if (mem_domain) {
-		LOG_DBG("configure domain: %p", mem_domain);
-		num_partitions = mem_domain->num_partitions;
-		pparts = mem_domain->partitions;
-	} else {
+	if (!mem_domain) {
 		LOG_DBG("disable domain partition regions");
-		num_partitions = 0U;
-		pparts = NULL;
+		return;
 	}
 
-	for (uint32_t i = 0; i < num_partitions; i++) {
-		if (pparts->size) {
-			index = _get_region_index(pparts->start,
-			 pparts->size);
+	LOG_DBG("configure domain: %p", mem_domain);
+	pparts = mem_domain->partitions;
+
+	for (uint32_t i = 0; i < CONFIG_MAX_DOMAIN_PARTITIONS; i++) {
+		if (pparts[i].size != 0U) {
+			index = _get_region_index(pparts[i].start, pparts[i].size);
 			if (index > 0) {
 #if defined(CONFIG_MPU_GAP_FILLING)
-				_region_set_attr(index,
-				REGION_KERNEL_RAM_ATTR);
+				_region_set_attr(index, REGION_KERNEL_RAM_ATTR);
 #else
 				_region_init(index, 0, 0, 0);
 #endif
 			}
 		}
-		pparts++;
 	}
 }
 
