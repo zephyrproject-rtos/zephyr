@@ -3,6 +3,14 @@ common:
     - drivers
     - flash
 tests:
+  drivers.flash.common.semihost:
+    platform_allow:
+      - qemu_riscv64
+    extra_args:
+      - DTC_OVERLAY_FILE=boards/qemu_riscv64_semihost.overlay
+      - EXTRA_CONF_FILE=boards/qemu_riscv64_semihost.conf
+    integration_platforms:
+      - qemu_riscv64
   drivers.flash.common.nrf_qspi_nor:
     platform_allow: nrf52840dk/nrf52840
     extra_args: EXTRA_CONF_FILE=boards/nrf52840dk_nrf52840_qspi_nor.conf
