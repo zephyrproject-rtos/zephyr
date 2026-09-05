@@ -1,0 +1,64 @@
+# Copyright (C) 2026, Savoir-faire Linux
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  A single media sub-domain gated by the NXP i.MX8MP MEDIA_BLK_CTRL. Each
+  instance is a power-domain device that a media peripheral (LCDIF, MIPI-DSI,
+  MIPI-CSI, ISI, ISP, DWE) references through its "power-domains" property.
+
+  On RESUME, the driver asserts the sub-domain's soft reset (write 0 to the
+  SFT_RSTN bitmask — active-low), enables the block clock gates (CLK_EN), waits
+  approximately 5 µs for reset to propagate, then deasserts reset (write 1).
+  For MIPI sub-domains, the D-PHY reset (MIPI_RESET_DIV, active-low) is also
+  asserted and deasserted around the sequence.
+
+examples:
+  - |
+    mbc_mipi_dsi1: power-domain@0 {
+        compatible = "nxp,imx8mp-media-blk-ctrl-domain";
+        reg = <IMX8MP_MEDIABLK_PD_MIPI_DSI_1>;
+        nxp,rst-mask = <0x3>;
+        nxp,clk-mask = <0x3>;
+        nxp,mipi-phy-rst-mask = <0x20000>;
+        #power-domain-cells = <0>;
+        status = "okay";
+    };
+
+compatible: "nxp,imx8mp-media-blk-ctrl-domain"
+
+include: [power-domain.yaml]
+
+properties:
+  reg:
+    required: true
+    description: |
+      Sub-domain index. See dt-bindings/power/imx8mp_media_blk_ctrl.h
+      (IMX8MP_MEDIABLK_PD_*).
+
+  "#power-domain-cells":
+    const: 0
+
+  nxp,rst-mask:
+    type: int
+    required: true
+    description: |
+      Bitmask in SFT_RSTN (offset 0x00) for this sub-domain.
+      Active-low: write 0 to assert (enable) reset, write 1 to deassert (release).
+
+  nxp,clk-mask:
+    type: int
+    required: true
+    description: |
+      Bitmask in CLK_EN (offset 0x04) to enable for this sub-domain.
+      Active-high: write 1 to enable, write 0 to disable.
+
+  nxp,mipi-phy-rst-mask:
+    type: int
+    description: |
+      Optional bitmask in MIPI_RESET_DIV (offset 0x08) for this sub-domain's
+      D-PHY reset. Active-low: write 0 to assert, write 1 to deassert.
+      Present for MIPI-DSI and MIPI-CSI sub-domains only.
+      Bit 17 = DSI1 master PHY (GPR_MIPI_M_RESETN).
+      Bit 16 = CSI1 slave PHY (GPR_MIPI_S_RESETN).
+      Bit 29 = DSI2 master PHY (GPR_MIPI_M2_RESETN).
+      Bit 30 = CSI2 slave PHY (GPR_MIPI_S2_RESETN).
