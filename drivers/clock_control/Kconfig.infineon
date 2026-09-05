@@ -31,9 +31,29 @@ config CLOCK_CONTROL_IFX_PERI_CLOCK
 	bool "Infineon peri div clock driver"
 	default y
 	depends on DT_HAS_INFINEON_PERI_DIV_ENABLED
+	depends on !CLOCK_CONTROL_IFX_PERI_CLOCK_V2
 	help
 	  This option enables the Peripheral clock driver for Infineon CAT1 family.
+	  It is force-disabled when the peripheral clock group driver
+	  (CLOCK_CONTROL_IFX_PERI_CLOCK_V2, infineon,peri-clk) is selected, since
+	  that driver manages the infineon,peri-div child nodes itself.
 
+config CLOCK_CONTROL_IFX_CLOCK_V2
+	bool "Infineon Traveo clock control driver"
+	default y
+	depends on DT_HAS_INFINEON_CLK_OSC_ENABLED
+	depends on DT_HAS_INFINEON_CLK_PLL_ENABLED
+	depends on DT_HAS_INFINEON_CLK_HF_ENABLED
+	help
+	  This option enables the clock control driver for Infineon Traveo family.
+
+config CLOCK_CONTROL_IFX_PERI_CLOCK_V2
+	bool "Infineon peripheral clock group driver"
+	default y
+	depends on DT_HAS_INFINEON_PERI_CLK_ENABLED
+	help
+	  This option enables the peripheral clock group driver (infineon,peri-clk)
+	  for Infineon MCUs.
 
 if CLOCK_CONTROL_IFX_FIXED_FACTOR_CLOCK
 config CLOCK_CONTROL_IFX_FIXED_FACTOR_CLOCK_INIT_PRIORITY
