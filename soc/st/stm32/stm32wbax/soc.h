@@ -17,6 +17,11 @@
 
 #include <stm32wbaxx.h>
 
+/* Functions to support PM suspend and resume for radio
+ * drivers
+ */
+void stm32wba_radio_pm_resume(void);
+void stm32wba_radio_pm_suspend(void);
 
 /* function exported to the soc power.c */
 void stm32wba_init(void);
