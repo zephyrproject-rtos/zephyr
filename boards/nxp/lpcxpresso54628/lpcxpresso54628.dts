@@ -73,7 +73,7 @@
 
 /*
  * Default for this board is to use the full 160 KB of contiguous main SRAM
- * (SRAM0-2) as a single region; an application can provide its own devicetree
+ * (SRAM0-3) as a single region; an application can provide its own devicetree
  * to allocate the SRAM banks differently.
  */
 &sram0 {
