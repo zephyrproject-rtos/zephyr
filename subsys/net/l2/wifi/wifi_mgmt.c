@@ -1962,3 +1962,221 @@ static int connect_stored_command(uint64_t mgmt_request, struct net_if *iface, v
 NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_CONNECT_STORED, connect_stored_command);
 
 #endif /* CONFIG_WIFI_CREDENTIALS_CONNECT_STORED */
+
+#if defined(CONFIG_WIFI_MGMT_RANGING) || defined(CONFIG_WIFI_MGMT_LOCATION)
+/*
+ * Ranging and location have no supplicant path: measurement results arrive from
+ * the firmware straight to the driver, and the decode is standards-defined work
+ * done here. So resolve the driver's ops directly instead of get_wifi_api(),
+ * which returns the network manager's table and would shadow them.
+ */
+static const struct wifi_mgmt_ops *const get_wifi_driver_api(struct net_if *iface)
+{
+	const struct device *dev = net_if_get_device(iface);
+	struct net_wifi_mgmt_offload *off_api;
+
+	if (dev == NULL || !net_if_is_wifi(iface)) {
+		return NULL;
+	}
+
+	off_api = (struct net_wifi_mgmt_offload *)dev->api;
+
+	return off_api ? off_api->wifi_mgmt_api : NULL;
+}
+#endif /* CONFIG_WIFI_MGMT_RANGING || CONFIG_WIFI_MGMT_LOCATION */
+
+#ifdef CONFIG_WIFI_MGMT_RANGING
+void wifi_mgmt_raise_ranging_done_event(struct net_if *iface,
+					struct wifi_ranging_done *done)
+{
+	net_mgmt_event_notify_with_info(NET_EVENT_WIFI_RANGING_DONE, iface,
+					done, sizeof(*done));
+}
+
+#ifdef CONFIG_WIFI_MGMT_RANGING_INITIATOR
+static void ranging_result_cb(struct net_if *iface, uint32_t session_id, int status,
+			      struct wifi_ranging_result *result)
+{
+	if (result == NULL) {
+		struct wifi_ranging_done done = {
+			.session_id = session_id,
+			.status = status,
+		};
+
+		wifi_mgmt_raise_ranging_done_event(iface, &done);
+		return;
+	}
+
+	net_mgmt_event_notify_with_info(NET_EVENT_WIFI_RANGING_RESULT, iface,
+					result, sizeof(*result));
+}
+
+static int wifi_ranging_start(uint64_t mgmt_request, struct net_if *iface,
+			      void *data, size_t len)
+{
+	const struct device *dev = net_if_get_device(iface);
+	struct wifi_ranging_params *params = data;
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_driver_api(iface);
+
+	if (wifi_mgmt_api == NULL || wifi_mgmt_api->ranging_start == NULL) {
+		return -ENOTSUP;
+	}
+
+	/*
+	 * Admin-up is enough; ranging does not require an association. The
+	 * driver decides whether an unassociated or off-channel request is
+	 * supported and rejects with -ENOTSUP if not.
+	 */
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
+	}
+
+	if (params == NULL || len != sizeof(*params) ||
+	    params->num_peers == 0 ||
+	    params->num_peers > CONFIG_WIFI_MGMT_RANGING_MAX_PEERS) {
+		return -EINVAL;
+	}
+
+	if (params->mode > WIFI_RANGING_MODE_11AZ_TB) {
+		return -EINVAL;
+	}
+
+	if (!IS_ENABLED(CONFIG_WIFI_MGMT_RANGING_11AZ) &&
+	    (params->mode == WIFI_RANGING_MODE_11AZ_NTB ||
+	     params->mode == WIFI_RANGING_MODE_11AZ_TB)) {
+		return -ENOTSUP;
+	}
+
+	return wifi_mgmt_api->ranging_start(dev, iface, params, ranging_result_cb);
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_RANGING_START, wifi_ranging_start);
+
+static int wifi_ranging_cancel(uint64_t mgmt_request, struct net_if *iface,
+			       void *data, size_t len)
+{
+	const struct device *dev = net_if_get_device(iface);
+	uint32_t *session_id = data;
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_driver_api(iface);
+
+	if (wifi_mgmt_api == NULL || wifi_mgmt_api->ranging_cancel == NULL) {
+		return -ENOTSUP;
+	}
+
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
+	}
+
+	if (session_id == NULL || len != sizeof(*session_id)) {
+		return -EINVAL;
+	}
+
+	return wifi_mgmt_api->ranging_cancel(dev, iface, *session_id);
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_RANGING_CANCEL, wifi_ranging_cancel);
+#endif /* CONFIG_WIFI_MGMT_RANGING_INITIATOR */
+
+#ifdef CONFIG_WIFI_MGMT_RANGING_RESPONDER
+static int wifi_ranging_responder(uint64_t mgmt_request, struct net_if *iface,
+				  void *data, size_t len)
+{
+	const struct device *dev = net_if_get_device(iface);
+	struct wifi_ranging_responder_params *params = data;
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_driver_api(iface);
+
+	if (wifi_mgmt_api == NULL || wifi_mgmt_api->ranging_responder == NULL) {
+		return -ENOTSUP;
+	}
+
+	if (!net_if_is_admin_up(iface)) {
+		return -ENETDOWN;
+	}
+
+	if (params == NULL || len != sizeof(*params)) {
+		return -EINVAL;
+	}
+
+	if (params->oper != WIFI_MGMT_GET && params->oper != WIFI_MGMT_SET) {
+		return -EINVAL;
+	}
+
+	return wifi_mgmt_api->ranging_responder(dev, iface, params);
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_RANGING_RESPONDER, wifi_ranging_responder);
+#endif /* CONFIG_WIFI_MGMT_RANGING_RESPONDER */
+
+static int wifi_ranging_caps(uint64_t mgmt_request, struct net_if *iface,
+			     void *data, size_t len)
+{
+	const struct device *dev = net_if_get_device(iface);
+	struct wifi_ranging_caps *caps = data;
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_driver_api(iface);
+
+	if (wifi_mgmt_api == NULL || wifi_mgmt_api->ranging_get_caps == NULL) {
+		return -ENOTSUP;
+	}
+
+	if (caps == NULL || len != sizeof(*caps)) {
+		return -EINVAL;
+	}
+
+	return wifi_mgmt_api->ranging_get_caps(dev, iface, caps);
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_RANGING_CAPS, wifi_ranging_caps);
+
+static int wifi_ranging_peer_caps(uint64_t mgmt_request, struct net_if *iface,
+				  void *data, size_t len)
+{
+	const struct device *dev = net_if_get_device(iface);
+	struct wifi_ranging_peer_caps *caps = data;
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_driver_api(iface);
+
+	if (wifi_mgmt_api == NULL || wifi_mgmt_api->ranging_get_peer_caps == NULL) {
+		return -ENOTSUP;
+	}
+
+	if (caps == NULL || len != sizeof(*caps)) {
+		return -EINVAL;
+	}
+
+	return wifi_mgmt_api->ranging_get_peer_caps(dev, iface, caps);
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_RANGING_PEER_CAPS, wifi_ranging_peer_caps);
+#endif /* CONFIG_WIFI_MGMT_RANGING */
+
+#ifdef CONFIG_WIFI_MGMT_LOCATION
+void wifi_mgmt_raise_location_result_event(struct net_if *iface,
+					   struct wifi_location *location)
+{
+	net_mgmt_event_notify_with_info(NET_EVENT_WIFI_LOCATION_RESULT, iface,
+					location, sizeof(*location));
+}
+
+static int wifi_location_self(uint64_t mgmt_request, struct net_if *iface,
+			      void *data, size_t len)
+{
+	const struct device *dev = net_if_get_device(iface);
+	struct wifi_location_self_params *params = data;
+	const struct wifi_mgmt_ops *const wifi_mgmt_api = get_wifi_driver_api(iface);
+
+	if (wifi_mgmt_api == NULL || wifi_mgmt_api->location_self == NULL) {
+		return -ENOTSUP;
+	}
+
+	if (params == NULL || len != sizeof(*params)) {
+		return -EINVAL;
+	}
+
+	if (params->oper != WIFI_MGMT_GET && params->oper != WIFI_MGMT_SET) {
+		return -EINVAL;
+	}
+
+	return wifi_mgmt_api->location_self(dev, iface, params);
+}
+
+NET_MGMT_REGISTER_REQUEST_HANDLER(NET_REQUEST_WIFI_LOCATION_SELF, wifi_location_self);
+#endif /* CONFIG_WIFI_MGMT_LOCATION */

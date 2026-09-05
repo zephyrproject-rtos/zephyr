@@ -794,6 +794,65 @@ enum wifi_config_param {
 /** Helper function to get user-friendly status name for the status code. */
 const char *wifi_conn_status_txt(enum wifi_conn_status status);
 
+/**
+ * Measurement mode. The underlying protocol is internal; callers pick a mode.
+ * See IEEE Std 802.11-2024, 11.21.6 (Fine timing measurement procedure) and the
+ * 802.11az ranging procedures folded into the same clause.
+ */
+enum wifi_ranging_mode {
+	/**
+	 * Let the stack pick the best mode the peer and local device both
+	 * support (see section 3.10). The default; a caller that does not track
+	 * peer capability leaves the mode here.
+	 */
+	WIFI_RANGING_MODE_AUTO = 0,
+	/** Legacy Fine Timing Measurement (formerly 802.11mc). */
+	WIFI_RANGING_MODE_11MC,
+	/** 802.11az non-trigger-based (NTB) ranging. */
+	WIFI_RANGING_MODE_11AZ_NTB,
+	/** 802.11az trigger-based (TB) ranging. */
+	WIFI_RANGING_MODE_11AZ_TB,
+};
+
+/**
+ * PHY format for the measurement frames - the "format" half of the FTM
+ * Parameters "Format And Bandwidth" field (IEEE Std 802.11-2024, 9.4.2.168).
+ * The driver combines it with wifi_ranging_tuning.bandwidth to build the on-air
+ * encoding, so callers select format and width independently.
+ */
+enum wifi_ranging_preamble {
+	/** Non-HT (legacy 802.11a/g). */
+	WIFI_RANGING_PREAMBLE_LEGACY = 0,
+	/** HT (802.11n). */
+	WIFI_RANGING_PREAMBLE_HT,
+	/** VHT (802.11ac). */
+	WIFI_RANGING_PREAMBLE_VHT,
+	/** HE (802.11ax). */
+	WIFI_RANGING_PREAMBLE_HE,
+};
+
+/** Outcome of a per-peer measurement. */
+enum wifi_ranging_status {
+	WIFI_RANGING_STATUS_SUCCESS = 0,
+	WIFI_RANGING_STATUS_REQ_FAILED,
+	WIFI_RANGING_STATUS_NO_RESPONSE,
+	WIFI_RANGING_STATUS_PEER_BUSY,
+	WIFI_RANGING_STATUS_TIMEOUT,
+	WIFI_RANGING_STATUS_NOT_CAPABLE,
+};
+
+/** Validity flags for the optional fields of struct wifi_ranging_result. */
+enum wifi_ranging_result_valid {
+	WIFI_RANGING_VALID_RSSI		= BIT(0),
+	WIFI_RANGING_VALID_RTT		= BIT(1),
+	WIFI_RANGING_VALID_RTT_VAR	= BIT(2),
+	WIFI_RANGING_VALID_RTT_SPREAD	= BIT(3),
+	WIFI_RANGING_VALID_DISTANCE	= BIT(4),
+	WIFI_RANGING_VALID_DIST_VAR	= BIT(5),
+	WIFI_RANGING_VALID_DIST_SPREAD	= BIT(6),
+	WIFI_RANGING_VALID_RSSI_SPREAD	= BIT(7),
+};
+
 #ifdef __cplusplus
 }
 #endif

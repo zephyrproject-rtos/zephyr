@@ -78,6 +78,16 @@ LOG_MODULE_REGISTER(net_wifi_shell, LOG_LEVEL_INF);
 				NET_EVENT_WIFI_RAW_SCAN_RESULT)
 #endif /* CONFIG_WIFI_MGMT_RAW_SCAN_RESULTS_ONLY */
 
+#ifdef CONFIG_WIFI_MGMT_RANGING
+#define WIFI_SHELL_RANGING_EVENTS (                 \
+				NET_EVENT_WIFI_RANGING_RESULT     |\
+				NET_EVENT_WIFI_RANGING_DONE)
+#endif /* CONFIG_WIFI_MGMT_RANGING */
+
+#ifdef CONFIG_WIFI_MGMT_LOCATION
+#define WIFI_SHELL_LOCATION_EVENTS (NET_EVENT_WIFI_LOCATION_RESULT)
+#endif /* CONFIG_WIFI_MGMT_LOCATION */
+
 #define MAX_BANDS_STR_LEN 64
 
 static struct {
@@ -834,6 +844,157 @@ static void handle_wifi_nan_receive(struct net_mgmt_event_callback *cb)
 }
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN */
 
+#ifdef CONFIG_WIFI_MGMT_RANGING
+static const char *wifi_ranging_mode_txt(enum wifi_ranging_mode mode)
+{
+	switch (mode) {
+	case WIFI_RANGING_MODE_AUTO:
+		return "auto";
+	case WIFI_RANGING_MODE_11MC:
+		return "11mc";
+	case WIFI_RANGING_MODE_11AZ_NTB:
+		return "11az-ntb";
+	case WIFI_RANGING_MODE_11AZ_TB:
+		return "11az-tb";
+	default:
+		return "unknown";
+	}
+}
+
+static const char *wifi_ranging_status_txt(enum wifi_ranging_status status)
+{
+	switch (status) {
+	case WIFI_RANGING_STATUS_SUCCESS:
+		return "success";
+	case WIFI_RANGING_STATUS_REQ_FAILED:
+		return "request failed";
+	case WIFI_RANGING_STATUS_NO_RESPONSE:
+		return "no response";
+	case WIFI_RANGING_STATUS_PEER_BUSY:
+		return "peer busy";
+	case WIFI_RANGING_STATUS_TIMEOUT:
+		return "timeout";
+	case WIFI_RANGING_STATUS_NOT_CAPABLE:
+		return "not capable";
+	default:
+		return "unknown";
+	}
+}
+
+static void handle_wifi_ranging_result(struct net_mgmt_event_callback *cb)
+{
+	const struct wifi_ranging_result *res =
+		(const struct wifi_ranging_result *)cb->info;
+	const struct shell *sh = context.sh;
+	uint8_t mac_string_buf[sizeof("xx:xx:xx:xx:xx:xx")];
+
+	PR("Ranging result: session %u, peer %s, mode %s, status %s\n",
+	   res->session_id,
+	   net_sprint_ll_addr_buf(res->mac, WIFI_MAC_ADDR_LEN,
+				  mac_string_buf, sizeof(mac_string_buf)),
+	   wifi_ranging_mode_txt(res->mode),
+	   wifi_ranging_status_txt(res->status));
+
+	if (res->status != WIFI_RANGING_STATUS_SUCCESS) {
+		return;
+	}
+
+	if (res->valid_fields & WIFI_RANGING_VALID_DISTANCE) {
+		PR("\tDistance       : %d mm\n", res->distance_mm);
+	}
+
+	if (res->valid_fields & WIFI_RANGING_VALID_DIST_VAR) {
+		PR("\tDistance var   : %d\n", res->distance_variance);
+	}
+
+	if (res->valid_fields & WIFI_RANGING_VALID_DIST_SPREAD) {
+		PR("\tDistance spread: %d mm\n", res->distance_spread);
+	}
+
+	if (res->valid_fields & WIFI_RANGING_VALID_RTT) {
+		PR("\tRTT            : %lld ps\n", res->rtt_ps);
+	}
+
+	if (res->valid_fields & WIFI_RANGING_VALID_RTT_VAR) {
+		PR("\tRTT var        : %lld\n", res->rtt_variance);
+	}
+
+	if (res->valid_fields & WIFI_RANGING_VALID_RTT_SPREAD) {
+		PR("\tRTT spread     : %lld ps\n", res->rtt_spread);
+	}
+
+	if (res->valid_fields & WIFI_RANGING_VALID_RSSI) {
+		PR("\tRSSI           : %d dBm\n", res->rssi);
+	}
+
+	if (res->valid_fields & WIFI_RANGING_VALID_RSSI_SPREAD) {
+		PR("\tRSSI spread    : %d dB\n", res->rssi_spread);
+	}
+
+	PR("\tBursts (exp)   : %u\n", res->num_bursts_exp);
+	PR("\tFTMs per burst : %u\n", res->ftms_per_burst);
+}
+
+static void handle_wifi_ranging_done(struct net_mgmt_event_callback *cb)
+{
+	const struct wifi_ranging_done *done =
+		(const struct wifi_ranging_done *)cb->info;
+	const struct shell *sh = context.sh;
+
+	if (done->status) {
+		PR_WARNING("Ranging session %u failed (%d)\n",
+			   done->session_id, done->status);
+		return;
+	}
+
+	PR("Ranging session %u done, %u result(s)\n",
+	   done->session_id, done->num_results);
+}
+#endif /* CONFIG_WIFI_MGMT_RANGING */
+
+#ifdef CONFIG_WIFI_MGMT_LOCATION
+static void print_wifi_location(const struct shell *sh,
+				const struct wifi_location *loc)
+{
+	uint8_t mac_string_buf[sizeof("xx:xx:xx:xx:xx:xx")];
+
+	PR("Location of %s:\n",
+	   net_sprint_ll_addr_buf(loc->mac, WIFI_MAC_ADDR_LEN,
+				  mac_string_buf, sizeof(mac_string_buf)));
+
+#ifdef CONFIG_WIFI_MGMT_LOCATION_LCI
+	if (loc->has_lci) {
+		PR("\tLatitude    : %lld (uncertainty %u)\n",
+		   loc->lci.latitude, loc->lci.lat_uncertainty);
+		PR("\tLongitude   : %lld (uncertainty %u)\n",
+		   loc->lci.longitude, loc->lci.long_uncertainty);
+		PR("\tAltitude    : %d (type %u, uncertainty %u)\n",
+		   loc->lci.altitude, loc->lci.altitude_type,
+		   loc->lci.alt_uncertainty);
+	} else {
+		PR("\tNo LCI report\n");
+	}
+#endif /* CONFIG_WIFI_MGMT_LOCATION_LCI */
+
+#ifdef CONFIG_WIFI_MGMT_LOCATION_CIVIC
+	if (loc->has_civic) {
+		PR("\tCountry     : %c%c\n",
+		   loc->civic.country[0], loc->civic.country[1]);
+		PR("\tCivic length: %u bytes\n", loc->civic.addr_len);
+	} else {
+		PR("\tNo civic report\n");
+	}
+#endif /* CONFIG_WIFI_MGMT_LOCATION_CIVIC */
+}
+
+static void handle_wifi_location_result(struct net_mgmt_event_callback *cb)
+{
+	const struct wifi_location *loc = (const struct wifi_location *)cb->info;
+
+	print_wifi_location(context.sh, loc);
+}
+#endif /* CONFIG_WIFI_MGMT_LOCATION */
+
 static void wifi_mgmt_event_handler(struct net_mgmt_event_callback *cb,
 				    uint64_t mgmt_event, struct net_if *iface)
 {
@@ -889,6 +1050,19 @@ static void wifi_mgmt_event_handler(struct net_mgmt_event_callback *cb,
 		handle_wifi_nan_receive(cb);
 		break;
 #endif
+#ifdef CONFIG_WIFI_MGMT_RANGING
+	case NET_EVENT_WIFI_RANGING_RESULT:
+		handle_wifi_ranging_result(cb);
+		break;
+	case NET_EVENT_WIFI_RANGING_DONE:
+		handle_wifi_ranging_done(cb);
+		break;
+#endif /* CONFIG_WIFI_MGMT_RANGING */
+#ifdef CONFIG_WIFI_MGMT_LOCATION
+	case NET_EVENT_WIFI_LOCATION_RESULT:
+		handle_wifi_location_result(cb);
+		break;
+#endif /* CONFIG_WIFI_MGMT_LOCATION */
 	default:
 		break;
 	}
@@ -6058,6 +6232,474 @@ SHELL_SUBCMD_ADD((wifi), wps_pin, NULL,
 
 SHELL_SUBCMD_SET_CREATE(wifi_commands, (wifi));
 
+#ifdef CONFIG_WIFI_MGMT_RANGING
+static int cmd_wifi_ranging_caps(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = get_iface(IFACE_TYPE_STA, argc, argv);
+	struct wifi_ranging_caps caps = { 0 };
+	int ret;
+
+	if (iface == NULL) {
+		return -ENOEXEC;
+	}
+
+	ret = net_mgmt(NET_REQUEST_WIFI_RANGING_CAPS, iface, &caps, sizeof(caps));
+	if (ret) {
+		PR_WARNING("Cannot get ranging capabilities: %d\n", ret);
+		return -ENOEXEC;
+	}
+
+	PR("Ranging capabilities:\n");
+	PR("\tInitiator      : %s\n", caps.initiator ? "yes" : "no");
+	PR("\tResponder      : %s\n", caps.responder ? "yes" : "no");
+	PR("\t802.11az (NGP) : %s\n", caps.ngp ? "yes" : "no");
+	PR("\tSecure LTF     : %s\n", caps.secure_ltf ? "yes" : "no");
+	PR("\tLCI            : %s\n", caps.lci ? "yes" : "no");
+	PR("\tCivic          : %s\n", caps.civic ? "yes" : "no");
+	PR("\tUnassociated   : %s\n", caps.unassociated ? "yes" : "no");
+	PR("\tOff-channel    : %s\n", caps.off_channel ? "yes" : "no");
+	PR("\tMax peers      : %u\n", caps.max_peers);
+
+	return 0;
+}
+
+static int cmd_wifi_ranging_peer_caps(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = get_iface(IFACE_TYPE_STA, argc, argv);
+	struct wifi_ranging_peer_caps caps = { 0 };
+	uint8_t mac_string_buf[sizeof("xx:xx:xx:xx:xx:xx")];
+	int ret;
+
+	if (iface == NULL) {
+		return -ENOEXEC;
+	}
+
+	/* An omitted MAC leaves caps.mac zeroed, which asks about the
+	 * associated AP. Skip a leading option so "-i <idx>" alone still works.
+	 */
+	if (argc > 1 && argv[1][0] != '-') {
+		if (net_bytes_from_str(caps.mac, WIFI_MAC_ADDR_LEN, argv[1]) < 0) {
+			PR_WARNING("Invalid peer MAC \"%s\"\n", argv[1]);
+			return -ENOEXEC;
+		}
+	}
+
+	ret = net_mgmt(NET_REQUEST_WIFI_RANGING_PEER_CAPS, iface, &caps, sizeof(caps));
+	if (ret) {
+		PR_WARNING("Cannot get peer ranging capabilities: %d\n", ret);
+		return -ENOEXEC;
+	}
+
+	PR("Ranging capabilities of %s:\n",
+	   net_sprint_ll_addr_buf(caps.mac, WIFI_MAC_ADDR_LEN,
+				  mac_string_buf, sizeof(mac_string_buf)));
+	PR("\tFTM responder  : %s\n", caps.ftm_responder ? "yes" : "no");
+	PR("\t802.11az (NGP) : %s\n", caps.ngp ? "yes" : "no");
+	PR("\tSecure LTF     : %s\n", caps.secure_ltf ? "yes" : "no");
+	PR("\tLCI            : %s\n", caps.lci ? "yes" : "no");
+	PR("\tCivic          : %s\n", caps.civic ? "yes" : "no");
+
+	return 0;
+}
+#endif /* CONFIG_WIFI_MGMT_RANGING */
+
+#ifdef CONFIG_WIFI_MGMT_RANGING_RESPONDER
+static int cmd_wifi_ranging_responder(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = get_iface(IFACE_TYPE_STA, argc, argv);
+	struct wifi_ranging_responder_params params = { 0 };
+	int ret;
+
+	if (iface == NULL) {
+		return -ENOEXEC;
+	}
+
+	if (!strcasecmp(argv[1], "enable")) {
+		params.enable = true;
+	} else if (!strcasecmp(argv[1], "disable")) {
+		params.enable = false;
+	} else {
+		PR_WARNING("Invalid argument \"%s\", expected enable or disable\n", argv[1]);
+		return -ENOEXEC;
+	}
+
+	params.oper = WIFI_MGMT_SET;
+
+	ret = net_mgmt(NET_REQUEST_WIFI_RANGING_RESPONDER, iface, &params, sizeof(params));
+	if (ret) {
+		PR_WARNING("Cannot %s ranging responder: %d\n",
+			   params.enable ? "enable" : "disable", ret);
+		return -ENOEXEC;
+	}
+
+	PR("Ranging responder %s\n", params.enable ? "enabled" : "disabled");
+
+	return 0;
+}
+#endif /* CONFIG_WIFI_MGMT_RANGING_RESPONDER */
+
+#ifdef CONFIG_WIFI_MGMT_RANGING_INITIATOR
+/* Long-only options for "wifi ranging start"; values above the ASCII range so
+ * they cannot collide with the short options.
+ */
+enum wifi_ranging_start_opt {
+	RANGING_START_OPT_FORMAT = 0x100,
+	RANGING_START_OPT_ASAP,
+	RANGING_START_OPT_START_DELAY,
+	RANGING_START_OPT_LOCATION,
+};
+
+static int wifi_ranging_parse_band(const char *arg, enum wifi_frequency_bands *band)
+{
+	if (!strcmp(arg, "2")) {
+		*band = WIFI_FREQ_BAND_2_4_GHZ;
+	} else if (!strcmp(arg, "5")) {
+		*band = WIFI_FREQ_BAND_5_GHZ;
+	} else if (!strcmp(arg, "6")) {
+		*band = WIFI_FREQ_BAND_6_GHZ;
+	} else {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static int wifi_ranging_parse_mode(const char *arg, enum wifi_ranging_mode *mode)
+{
+	if (!strcasecmp(arg, "auto")) {
+		*mode = WIFI_RANGING_MODE_AUTO;
+	} else if (!strcasecmp(arg, "11mc")) {
+		*mode = WIFI_RANGING_MODE_11MC;
+	} else if (!strcasecmp(arg, "11az-ntb")) {
+		*mode = WIFI_RANGING_MODE_11AZ_NTB;
+	} else if (!strcasecmp(arg, "11az-tb")) {
+		*mode = WIFI_RANGING_MODE_11AZ_TB;
+	} else {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static int wifi_ranging_parse_preamble(const char *arg, enum wifi_ranging_preamble *preamble)
+{
+	if (!strcasecmp(arg, "non-ht")) {
+		*preamble = WIFI_RANGING_PREAMBLE_LEGACY;
+	} else if (!strcasecmp(arg, "ht")) {
+		*preamble = WIFI_RANGING_PREAMBLE_HT;
+	} else if (!strcasecmp(arg, "vht")) {
+		*preamble = WIFI_RANGING_PREAMBLE_VHT;
+	} else if (!strcasecmp(arg, "he")) {
+		*preamble = WIFI_RANGING_PREAMBLE_HE;
+	} else {
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
+static int cmd_wifi_ranging_start(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = get_iface(IFACE_TYPE_STA, argc, argv);
+	struct wifi_ranging_params params = { 0 };
+	struct wifi_ranging_peer *peer = NULL;
+	struct sys_getopt_state *state;
+	int opt, opt_index = 0, ret;
+	static const struct sys_getopt_option long_options[] = {
+		{"peer", sys_getopt_required_argument, 0, 'p'},
+		{"band", sys_getopt_required_argument, 0, 'b'},
+		{"channel", sys_getopt_required_argument, 0, 'c'},
+		{"bandwidth", sys_getopt_required_argument, 0, 'w'},
+		{"bursts", sys_getopt_required_argument, 0, 'n'},
+		{"ftms-per-burst", sys_getopt_required_argument, 0, 'f'},
+		{"burst-duration", sys_getopt_required_argument, 0, 'd'},
+		{"burst-period", sys_getopt_required_argument, 0, 'r'},
+		{"mode", sys_getopt_required_argument, 0, 'm'},
+		{"timeout", sys_getopt_required_argument, 0, 't'},
+		{"session", sys_getopt_required_argument, 0, 's'},
+		{"iface", sys_getopt_required_argument, 0, 'i'},
+		{"format", sys_getopt_required_argument, 0, RANGING_START_OPT_FORMAT},
+		{"start-delay", sys_getopt_required_argument, 0, RANGING_START_OPT_START_DELAY},
+		{"asap", sys_getopt_no_argument, 0, RANGING_START_OPT_ASAP},
+		{"location", sys_getopt_no_argument, 0, RANGING_START_OPT_LOCATION},
+		{"help", sys_getopt_no_argument, 0, 'h'},
+		{NULL, 0, NULL, 0}
+	};
+
+	if (iface == NULL) {
+		return -ENOEXEC;
+	}
+
+	while ((opt = sys_getopt_long(argc, argv, "p:b:c:w:n:f:d:r:m:t:s:i:h",
+				      long_options, &opt_index)) != -1) {
+		state = sys_getopt_state_get();
+
+		/* Every option below 'p' aside applies to the peer named by the
+		 * most recent --peer, so ordering is "--peer X --band 5 ...".
+		 */
+		if (opt != 'p' && opt != 'm' && opt != 't' && opt != 's' &&
+		    opt != 'i' && opt != 'h' && opt != '?' && peer == NULL) {
+			PR_WARNING("Option must follow a --peer\n");
+			return -ENOEXEC;
+		}
+
+		switch (opt) {
+		case 'p':
+			if (params.num_peers >= CONFIG_WIFI_MGMT_RANGING_MAX_PEERS) {
+				PR_WARNING("Too many peers, maximum is %d\n",
+					   CONFIG_WIFI_MGMT_RANGING_MAX_PEERS);
+				return -ENOEXEC;
+			}
+
+			peer = &params.peers[params.num_peers];
+
+			if (net_bytes_from_str(peer->mac, WIFI_MAC_ADDR_LEN,
+					       state->optarg) < 0) {
+				PR_WARNING("Invalid peer MAC \"%s\"\n", state->optarg);
+				return -ENOEXEC;
+			}
+
+			params.num_peers++;
+			break;
+		case 'b':
+			if (wifi_ranging_parse_band(state->optarg, &peer->band)) {
+				PR_WARNING("Invalid band \"%s\", expected 2, 5 or 6\n",
+					   state->optarg);
+				return -ENOEXEC;
+			}
+			break;
+		case 'c':
+			peer->channel = (uint16_t)strtoul(state->optarg, NULL, 10);
+			break;
+		case 'w':
+			peer->tuning.bandwidth = (uint16_t)strtoul(state->optarg, NULL, 10);
+			if (peer->tuning.bandwidth != 20 && peer->tuning.bandwidth != 40 &&
+			    peer->tuning.bandwidth != 80 && peer->tuning.bandwidth != 160) {
+				PR_WARNING("Invalid bandwidth \"%s\", expected 20, 40, 80 or 160\n",
+					   state->optarg);
+				return -ENOEXEC;
+			}
+			break;
+		case 'n':
+			peer->tuning.bursts_exp = (uint8_t)strtoul(state->optarg, NULL, 10);
+			break;
+		case 'f':
+			peer->tuning.ftms_per_burst = (uint8_t)strtoul(state->optarg, NULL, 10);
+			break;
+		case 'd':
+			peer->tuning.burst_duration = (uint8_t)strtoul(state->optarg, NULL, 10);
+			break;
+		case 'r':
+			peer->tuning.burst_period = (uint8_t)strtoul(state->optarg, NULL, 10);
+			break;
+		case RANGING_START_OPT_FORMAT:
+			if (wifi_ranging_parse_preamble(state->optarg, &peer->tuning.preamble)) {
+				PR_WARNING("Invalid format \"%s\", expected non-ht, ht, vht or he\n",
+					   state->optarg);
+				return -ENOEXEC;
+			}
+			break;
+		case RANGING_START_OPT_ASAP:
+			peer->tuning.asap = true;
+			break;
+		case RANGING_START_OPT_START_DELAY:
+			peer->tuning.start_delay = (uint16_t)strtoul(state->optarg, NULL, 10);
+			break;
+		case RANGING_START_OPT_LOCATION:
+			peer->request_location = true;
+			break;
+		case 'm':
+			if (wifi_ranging_parse_mode(state->optarg, &params.mode)) {
+				PR_WARNING("Invalid mode \"%s\"\n", state->optarg);
+				return -ENOEXEC;
+			}
+			break;
+		case 't':
+			params.timeout_ms = (uint32_t)strtoul(state->optarg, NULL, 10);
+			break;
+		case 's':
+			params.session_id = (uint32_t)strtoul(state->optarg, NULL, 0);
+			break;
+		case 'i':
+			/* Parsed by get_iface() above. */
+			break;
+		case 'h':
+			shell_help(sh);
+			return SHELL_CMD_HELP_PRINTED;
+		default:
+			return -ENOEXEC;
+		}
+	}
+
+	if (params.num_peers == 0) {
+		PR_WARNING("At least one --peer is required\n");
+		return -ENOEXEC;
+	}
+
+	ret = net_mgmt(NET_REQUEST_WIFI_RANGING_START, iface, &params, sizeof(params));
+	if (ret) {
+		PR_WARNING("Ranging start failed: %d\n", ret);
+		return -ENOEXEC;
+	}
+
+	PR("Ranging session %u started for %u peer(s)\n",
+	   params.session_id, params.num_peers);
+
+	return 0;
+}
+
+static int cmd_wifi_ranging_cancel(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = get_iface(IFACE_TYPE_STA, argc, argv);
+	uint32_t session_id = 0;
+	int ret;
+
+	if (iface == NULL) {
+		return -ENOEXEC;
+	}
+
+	if (argc > 1) {
+		session_id = (uint32_t)strtoul(argv[1], NULL, 0);
+	}
+
+	ret = net_mgmt(NET_REQUEST_WIFI_RANGING_CANCEL, iface,
+		       &session_id, sizeof(session_id));
+	if (ret) {
+		PR_WARNING("Ranging cancel failed: %d\n", ret);
+		return -ENOEXEC;
+	}
+
+	PR("Ranging session %u cancelled\n", session_id);
+
+	return 0;
+}
+#endif /* CONFIG_WIFI_MGMT_RANGING_INITIATOR */
+
+#ifdef CONFIG_WIFI_MGMT_LOCATION
+static int cmd_wifi_location_self(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = get_iface(IFACE_TYPE_STA, argc, argv);
+	struct wifi_location_self_params params = { 0 };
+	int ret;
+
+	if (iface == NULL) {
+		return -ENOEXEC;
+	}
+
+	if (!strcasecmp(argv[1], "get")) {
+		params.oper = WIFI_MGMT_GET;
+	} else if (!strcasecmp(argv[1], "set")) {
+		params.oper = WIFI_MGMT_SET;
+	} else {
+		PR_WARNING("Invalid argument \"%s\", expected get or set\n", argv[1]);
+		return -ENOEXEC;
+	}
+
+	if (params.oper == WIFI_MGMT_SET) {
+#ifdef CONFIG_WIFI_MGMT_LOCATION_LCI
+		if (argc < 5) {
+			PR_WARNING("Usage: wifi location self set <lat> <long> <alt> "
+				   "[alt_type]\n");
+			return -ENOEXEC;
+		}
+
+		params.location.has_lci = true;
+		params.location.lci.latitude = strtoll(argv[2], NULL, 10);
+		params.location.lci.longitude = strtoll(argv[3], NULL, 10);
+		params.location.lci.altitude = (int32_t)strtol(argv[4], NULL, 10);
+		params.location.lci.altitude_type =
+			(argc > 5) ? (uint8_t)strtoul(argv[5], NULL, 10) : 1;
+#else
+		PR_WARNING("Setting a location requires CONFIG_WIFI_MGMT_LOCATION_LCI\n");
+		return -ENOEXEC;
+#endif /* CONFIG_WIFI_MGMT_LOCATION_LCI */
+	}
+
+	ret = net_mgmt(NET_REQUEST_WIFI_LOCATION_SELF, iface, &params, sizeof(params));
+	if (ret) {
+		PR_WARNING("Cannot %s own location: %d\n",
+			   params.oper == WIFI_MGMT_GET ? "get" : "set", ret);
+		return -ENOEXEC;
+	}
+
+	if (params.oper == WIFI_MGMT_GET) {
+		print_wifi_location(sh, &params.location);
+	} else {
+		PR("Own location updated\n");
+	}
+
+	return 0;
+}
+#endif /* CONFIG_WIFI_MGMT_LOCATION */
+
+#ifdef CONFIG_WIFI_MGMT_RANGING
+SHELL_STATIC_SUBCMD_SET_CREATE(wifi_cmd_ranging,
+	SHELL_CMD_ARG(caps, NULL,
+		      SHELL_HELP("Show ranging/location capabilities",
+				 "[-i, --iface <idx>]"),
+		      cmd_wifi_ranging_caps, 1, 2),
+	SHELL_CMD_ARG(peer_caps, NULL,
+		      SHELL_HELP("Show a peer's advertised ranging capability",
+				 "[<peer mac>, default = the associated AP]\n"
+				 "[-i, --iface <idx>]"),
+		      cmd_wifi_ranging_peer_caps, 1, 3),
+#ifdef CONFIG_WIFI_MGMT_RANGING_RESPONDER
+	SHELL_CMD_ARG(responder, NULL,
+		      SHELL_HELP("Enable/disable responder",
+				 "<enable|disable>\n"
+				 "[-i, --iface <idx>]"),
+		      cmd_wifi_ranging_responder, 2, 2),
+#endif /* CONFIG_WIFI_MGMT_RANGING_RESPONDER */
+#ifdef CONFIG_WIFI_MGMT_RANGING_INITIATOR
+	SHELL_CMD_ARG(start, NULL,
+		      SHELL_HELP("Start a ranging session",
+				 "Per-peer options must follow their --peer.\n"
+				 "[-p, --peer <mac> peer MAC, repeatable up to\n"
+				 "    CONFIG_WIFI_MGMT_RANGING_MAX_PEERS]\n"
+				 "[-b, --band <2|5|6>]\n"
+				 "[-c, --channel <n>]\n"
+				 "[-w, --bandwidth <20|40|80|160>]\n"
+				 "[--format <non-ht|ht|vht|he> PHY format; with\n"
+				 "    --bandwidth this is the spec's Format And Bandwidth]\n"
+				 "[-n, --bursts <exp> bursts as a power of two]\n"
+				 "[-f, --ftms-per-burst <n>]\n"
+				 "[-d, --burst-duration <n>]\n"
+				 "[-r, --burst-period <n> units of 100ms]\n"
+				 "[--asap]\n"
+				 "[--start-delay <tu> non-ASAP only: requested delay\n"
+				 "    before the first burst (default 0)]\n"
+				 "[--location fetch each peer's lci/civic]\n"
+				 "[-m, --mode <auto|11mc|11az-ntb|11az-tb>]\n"
+				 "[-t, --timeout <ms>]\n"
+				 "[-s, --session <id> optional session id, used by\n"
+				 "    wifi ranging cancel]\n"
+				 "[-i, --iface <idx>]\n"
+				 "[-h, --help]"),
+		      cmd_wifi_ranging_start, 2, 20),
+	SHELL_CMD_ARG(cancel, NULL,
+		      SHELL_HELP("Cancel a ranging session",
+				 "[<session id>, default 0 = the only active session]\n"
+				 "[-i, --iface <idx>]"),
+		      cmd_wifi_ranging_cancel, 1, 3),
+#endif /* CONFIG_WIFI_MGMT_RANGING_INITIATOR */
+	SHELL_SUBCMD_SET_END);
+SHELL_SUBCMD_ADD((wifi), ranging, &wifi_cmd_ranging, "Ranging (distance) commands.",
+		 NULL, 0, 0);
+#endif /* CONFIG_WIFI_MGMT_RANGING */
+
+#ifdef CONFIG_WIFI_MGMT_LOCATION
+SHELL_STATIC_SUBCMD_SET_CREATE(wifi_cmd_location,
+	SHELL_CMD_ARG(self, NULL,
+		      SHELL_HELP("Get/set own location",
+				 "get\n"
+				 "set <lat> <long> <alt> [alt_type]\n"
+				 "[-i, --iface <idx>]"),
+		      cmd_wifi_location_self, 2, 8),
+	SHELL_SUBCMD_SET_END);
+SHELL_SUBCMD_ADD((wifi), location, &wifi_cmd_location, "Location (coordinate) commands.",
+		 NULL, 0, 0);
+#endif /* CONFIG_WIFI_MGMT_LOCATION */
+
 SHELL_CMD_REGISTER(wifi, &wifi_commands, "Wi-Fi commands", NULL);
 
 static int wifi_shell_init(void)
@@ -6071,7 +6713,11 @@ static int wifi_shell_init(void)
 				     wifi_mgmt_event_handler,
 				     WIFI_SHELL_MGMT_EVENTS
 				     IF_ENABLED(CONFIG_WIFI_NM_WPA_SUPPLICANT_NAN,
-						(|WIFI_SHELL_NAN_EVENTS)));
+						(|WIFI_SHELL_NAN_EVENTS))
+				     IF_ENABLED(CONFIG_WIFI_MGMT_RANGING,
+						(|WIFI_SHELL_RANGING_EVENTS))
+				     IF_ENABLED(CONFIG_WIFI_MGMT_LOCATION,
+						(|WIFI_SHELL_LOCATION_EVENTS)));
 
 	net_mgmt_add_event_callback(&wifi_shell_mgmt_cb);
 
