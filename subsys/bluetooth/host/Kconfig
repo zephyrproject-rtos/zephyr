@@ -1069,6 +1069,32 @@ config BT_SMP_FORCE_BREDR
 	  supporting BR/EDR Secure Connections. This option is solely for
 	  testing and should never be enabled on production devices.
 
+config BT_SMP_CTKD_LE_TO_BR
+	bool "Derive the BR/EDR link key from the LE LTK"
+	depends on BT_CLASSIC
+	default y
+	help
+	  Ask for a BR/EDR link key to be derived from the LE LTK during
+	  Secure Connections pairing over LE, as described in Core Spec
+	  Vol 3, Part C, 14.1.
+
+	  Disable this on a device that must not end up with a BR/EDR bond
+	  as a side effect of pairing over LE.
+
+config BT_SMP_CTKD_BR_TO_LE
+	bool "Derive the LE LTK from the BR/EDR link key"
+	depends on BT_CLASSIC
+	default y
+	help
+	  Accept deriving the LE LTK from the BR/EDR link key, as described
+	  in Core Spec Vol 3, Part C, 14.1. When disabled, SMP over BR/EDR
+	  refuses the derivation and the BR/EDR SMP fixed channel is not
+	  advertised in the L2CAP information response, so that a peer does
+	  not start a derivation that would then be rejected.
+
+	  Disable this on a device that must not end up with an LE bond as a
+	  side effect of pairing over BR/EDR.
+
 config BT_LOG_SNIFFER_INFO
 	bool "Bluetooth log information for sniffer"
 	help
