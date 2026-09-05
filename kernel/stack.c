@@ -109,6 +109,16 @@ int z_stack_cleanup(struct k_stack *stack, __maybe_unused bool locked)
 
 out:
 	k_spin_unlock(&stack->lock, key);
+
+#ifdef CONFIG_OBJ_CORE_STACK
+	/* On success the stack has reached the end of its life cycle; the
+	 * stack object type list must not reference it anymore.
+	 */
+	if (ret == 0) {
+		k_obj_core_unlink(K_OBJ_CORE(stack));
+	}
+#endif /* CONFIG_OBJ_CORE_STACK */
+
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_stack, cleanup, stack, ret);
 
 	return ret;

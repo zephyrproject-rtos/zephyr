@@ -283,5 +283,175 @@ ZTEST(obj_core, test_obj_core_sem)
 			     K_OBJ_CORE(&sem1), K_OBJ_CORE(&sem2));
 }
 
+struct obj_core_count_data {
+	struct k_obj_core *obj_core;    /* Object core to count */
+	unsigned int count;             /* Number of occurrences found */
+};
+
+static int obj_core_count_op(struct k_obj_core *obj_core, void *data)
+{
+	struct obj_core_count_data *count_data = data;
+
+	if (count_data->obj_core == obj_core) {
+		count_data->count++;
+	}
+
+	return 0;
+}
+
+static unsigned int obj_core_count(struct k_obj_type *obj_type, struct k_obj_core *obj_core)
+{
+	struct obj_core_count_data walk_data = {
+		.obj_core = obj_core,
+		.count = 0,
+	};
+
+	k_obj_type_walk_locked(obj_type, obj_core_count_op, &walk_data);
+
+	return walk_data.count;
+}
+
+ZTEST(obj_core, test_obj_core_reinit)
+{
+	struct k_obj_type *obj_type;
+
+	obj_type = k_obj_type_find(K_OBJ_TYPE_MUTEX_ID);
+	zassert_not_null(obj_type, "mutex object type not found\n");
+
+	/*
+	 * mutex1 was statically defined and linked at boot; link mutex2
+	 * after it. Re-initializing mutex1 must neither truncate the mutex
+	 * type list (losing mutex2) nor link mutex1's node twice.
+	 */
+
+	k_mutex_init(&mutex2);
+	k_mutex_init(&mutex1);
+	k_mutex_init(&mutex1);
+
+	zassert_equal(obj_core_count(obj_type, K_OBJ_CORE(&mutex1)), 1,
+		      "re-initialized mutex not linked exactly once\n");
+	zassert_equal(obj_core_count(obj_type, K_OBJ_CORE(&mutex2)), 1,
+		      "mutex list truncated by re-initialization\n");
+
+	/*
+	 * k_fifo_init() links the object core via the split
+	 * K_OBJ_CORE_INIT()/K_OBJ_CORE_LINK() macros rather than
+	 * k_obj_core_init_and_link(); cover that path as well.
+	 */
+
+	obj_type = k_obj_type_find(K_OBJ_TYPE_FIFO_ID);
+	zassert_not_null(obj_type, "FIFO object type not found\n");
+
+	k_fifo_init(&fifo2);
+	k_fifo_init(&fifo1);
+	k_fifo_init(&fifo1);
+
+	zassert_equal(obj_core_count(obj_type, K_OBJ_CORE(&fifo1)), 1,
+		      "re-initialized FIFO not linked exactly once\n");
+	zassert_equal(obj_core_count(obj_type, K_OBJ_CORE(&fifo2)), 1,
+		      "FIFO list truncated by re-initialization\n");
+}
+
+static struct k_thread cleanup_thread;
+static K_THREAD_STACK_DEFINE(cleanup_thread_stack, 512 + CONFIG_TEST_EXTRA_STACK_SIZE);
+
+static void stack_pop_entry(void *p1, void *p2, void *p3)
+{
+	stack_data_t data;
+
+	(void)k_stack_pop(&stack2, &data, K_FOREVER);
+}
+
+ZTEST(obj_core, test_obj_core_cleanup)
+{
+	struct k_obj_type *obj_type;
+
+	/* Objects that reached the end of their life cycle via their
+	 * *_cleanup() function must be unlinked from their type's list.
+	 */
+
+	obj_type = k_obj_type_find(K_OBJ_TYPE_MSGQ_ID);
+	zassert_not_null(obj_type, "message queue object type not found\n");
+
+	k_msgq_init(&msgq2, msgq2_buffer, 4, 4);
+	zassert_equal(obj_core_count(obj_type, K_OBJ_CORE(&msgq2)), 1,
+		      "message queue not linked\n");
+	zassert_equal(k_msgq_cleanup(&msgq2), 0, "msgq cleanup failed\n");
+	zassert_equal(obj_core_count(obj_type, K_OBJ_CORE(&msgq2)), 0,
+		      "cleaned up message queue still linked\n");
+
+	obj_type = k_obj_type_find(K_OBJ_TYPE_STACK_ID);
+	zassert_not_null(obj_type, "stack object type not found\n");
+
+	k_stack_init(&stack2, stack2_buffer, 8);
+	zassert_equal(obj_core_count(obj_type, K_OBJ_CORE(&stack2)), 1, "stack not linked\n");
+
+	/* A cleanup refused because the object is still in use must leave
+	 * the object linked.
+	 */
+
+	k_thread_create(&cleanup_thread, cleanup_thread_stack,
+			K_THREAD_STACK_SIZEOF(cleanup_thread_stack),
+			stack_pop_entry, NULL, NULL, NULL,
+			K_HIGHEST_THREAD_PRIO, 0, K_NO_WAIT);
+
+	/* Wait until the thread is pending on the stack */
+	k_msleep(50);
+
+	zassert_equal(k_stack_cleanup(&stack2), -EAGAIN,
+		      "stack cleanup did not refuse with a waiter\n");
+	zassert_equal(obj_core_count(obj_type, K_OBJ_CORE(&stack2)), 1,
+		      "refused stack cleanup unlinked the stack\n");
+
+	/* Release the waiter and try again */
+	zassert_ok(k_stack_push(&stack2, 1));
+	zassert_ok(k_thread_join(&cleanup_thread, K_SECONDS(1)));
+
+	zassert_equal(k_stack_cleanup(&stack2), 0, "stack cleanup failed\n");
+	zassert_equal(obj_core_count(obj_type, K_OBJ_CORE(&stack2)), 0,
+		      "cleaned up stack still linked\n");
+
+	obj_type = k_obj_type_find(K_OBJ_TYPE_TIMER_ID);
+	zassert_not_null(obj_type, "timer object type not found\n");
+
+	k_timer_init(&timer2, NULL, NULL);
+	zassert_equal(obj_core_count(obj_type, K_OBJ_CORE(&timer2)), 1, "timer not linked\n");
+	zassert_equal(k_timer_cleanup(&timer2), 0, "timer cleanup failed\n");
+	zassert_equal(obj_core_count(obj_type, K_OBJ_CORE(&timer2)), 0,
+		      "cleaned up timer still linked\n");
+}
+
+ZTEST(obj_core, test_obj_core_dyn_free)
+{
+#ifdef CONFIG_DYNAMIC_OBJECTS
+	struct k_obj_type *obj_type;
+	struct k_obj_core *obj_core;
+	struct k_sem *sem;
+
+	obj_type = k_obj_type_find(K_OBJ_TYPE_SEM_ID);
+	zassert_not_null(obj_type, "semaphore object type not found\n");
+
+	k_thread_system_pool_assign(k_current_get());
+
+	sem = k_object_alloc(K_OBJ_SEM);
+	zassert_not_null(sem, "unable to allocate semaphore\n");
+
+	k_sem_init(sem, 0, 1);
+	obj_core = K_OBJ_CORE(sem);
+
+	zassert_equal(obj_core_count(obj_type, obj_core), 1, "allocated semaphore not linked\n");
+
+	/* Freeing the semaphore must unlink it from the semaphore type
+	 * list, which would otherwise point into freed memory.
+	 */
+
+	k_object_free(sem);
+
+	zassert_equal(obj_core_count(obj_type, obj_core), 0, "freed semaphore still linked\n");
+#else
+	ztest_test_skip();
+#endif /* CONFIG_DYNAMIC_OBJECTS */
+}
+
 ZTEST_SUITE(obj_core, NULL, NULL,
 	    ztest_simple_1cpu_before, ztest_simple_1cpu_after, NULL);

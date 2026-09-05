@@ -39,6 +39,34 @@ Object cores have been integrated into following kernel objects:
 Developers are free to integrate them if desired into other objects within
 their projects.
 
+Object Lifetimes
+****************
+
+Kernel objects are only linked into their type's list when the object core
+framework (:kconfig:option:`CONFIG_OBJ_CORE`) and the respective object type
+integration option (see `Configuration Options`_) are enabled; otherwise the
+requirements below do not apply.
+
+An object that is linked into its type's list must remain valid for as long
+as it is linked. The kernel automatically unlinks objects at the natural end
+of their life cycle:
+
+* Threads are unlinked when they are aborted.
+* Dynamically allocated kernel objects (see
+  :kconfig:option:`CONFIG_DYNAMIC_OBJECTS`) are unlinked when they are freed
+  with :c:func:`k_object_free` or when automatically disposed of after their
+  last permission has been revoked.
+* Message queues, stacks and timers are unlinked by
+  :c:func:`k_msgq_cleanup`, :c:func:`k_stack_cleanup` and
+  :c:func:`k_timer_cleanup` respectively.
+
+Any other object passed to a kernel object ``*_init()`` function must remain
+valid forever (or until unlinked with :c:func:`k_obj_core_unlink`). In
+particular, a kernel object living on a thread's stack violates this
+requirement as soon as the stack frame holding it is left, and manually
+allocated memory holding a kernel object must not be freed while the object
+is linked.
+
 Object Core Statistics Concepts
 *******************************
 A variety of kernel objects allow for the gathering and reporting of statistics.

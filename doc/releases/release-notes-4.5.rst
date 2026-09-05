@@ -1835,6 +1835,14 @@ Other notable changes
 
 * Kernel
 
+  * Kernel object cores are now unlinked when a dynamic kernel object is
+    freed or an object is released with its ``*_cleanup()`` function.
+    Previously such objects left the :kconfig:option:`CONFIG_OBJ_CORE`
+    object type lists referencing freed memory. The object lifetime
+    requirements for :kconfig:option:`CONFIG_OBJ_CORE` and
+    :kconfig:option:`CONFIG_TRACING_OBJECT_TRACKING` are now documented in
+    :ref:`Object Cores <object_cores_api>`.
+
   * :kconfig:option:`CONFIG_SCHED_CPU_MASK` no longer depends on
     :kconfig:option:`CONFIG_SCHED_SIMPLE`.  CPU affinity masks are now
     supported on all three scheduler backends: ``SCHED_SIMPLE`` (O(N) list
