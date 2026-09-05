@@ -32,24 +32,227 @@ static void printk_line(const char *fn, char sep_char)
 }
 #endif /* CONFIG_ZTEST_BENCHMARK_OUTPUT_VERBOSE */
 
+/*
+ * Subtract the control measurement from a reported statistic.
+ *
+ * Every statistic has to be corrected by the same amount, or they stop
+ * describing one set of samples: truncating the control to an integer
+ * for the discrete statistics, as this used to do, left a benchmark
+ * whose samples were all identical reporting a mean below its own
+ * minimum whenever the control was under one cycle.
+ *
+ * The correction is a real number, so the corrected values are real
+ * numbers too, and generally do not coincide with any single
+ * measurement.
+ *
+ * A negative result is not clamped: it means the operation costs less
+ * than the control loop bracketing it, so the counter is too coarse to
+ * measure it. Clamping would hide that behind a plausible number.
+ */
 static double noise_correction(double value, double ctrl)
 {
 	return value - ctrl;
 }
 
-static int64_t discrete_noise_correction(uint64_t value, double ctrl)
+/*
+ * Render a corrected extreme as a whole number of cycles.
+ *
+ * The extremes are single measurements and a cycle is a discrete thing,
+ * so printing them with a fraction reads oddly. The correction is still
+ * a real number, so rounding has to be directional: the minimum rounds
+ * down and the maximum rounds up, which keeps each of them outside the
+ * statistics computed from the same samples instead of letting a
+ * rounded extreme cross the mean.
+ */
+#ifdef CONFIG_ZTEST_BENCHMARK_OUTPUT_VERBOSE
+static int64_t noise_corrected_floor(uint64_t value, double ctrl)
 {
-	return (int64_t)value - (int64_t)trunc(ctrl);
+	return (int64_t)floor(noise_correction((double)value, ctrl));
 }
 
-static void ztest_benchmark_print_results(struct ztest_benchmark *benchmark,
-					  struct ztest_benchmark_stats *ctrl_stats)
+static int64_t noise_corrected_ceil(uint64_t value, double ctrl)
+{
+	return (int64_t)ceil(noise_correction((double)value, ctrl));
+}
+#endif /* CONFIG_ZTEST_BENCHMARK_OUTPUT_VERBOSE */
+
+#ifdef CONFIG_ZTEST_BENCHMARK_PERCENTILES
+/*
+ * Retained samples, for the percentile report. Only one benchmark runs
+ * at a time, so a single buffer serves all of them.
+ */
+static uint64_t retained[CONFIG_ZTEST_BENCHMARK_MAX_SAMPLES];
+static size_t retained_count;
+static size_t dropped_count;
+
+static void percentiles_reset(void)
+{
+	retained_count = 0;
+	dropped_count = 0;
+}
+
+static void percentiles_record(uint64_t cycles)
+{
+	if (retained_count < ARRAY_SIZE(retained)) {
+		retained[retained_count++] = cycles;
+	} else {
+		dropped_count++;
+	}
+}
+
+static void percentiles_sort(void)
+{
+	/* Shell sort: no allocation, no recursion, good enough here */
+	for (size_t gap = retained_count / 2; gap > 0; gap /= 2) {
+		for (size_t i = gap; i < retained_count; i++) {
+			uint64_t value = retained[i];
+			size_t j = i;
+
+			while ((j >= gap) && (retained[j - gap] > value)) {
+				retained[j] = retained[j - gap];
+				j -= gap;
+			}
+			retained[j] = value;
+		}
+	}
+}
+
+/*
+ * Nearest-rank percentile, with the percentile given in hundredths of a
+ * percent so that 99.99 can be expressed: 5000 is the median, 9999 is
+ * the 99.99th percentile.
+ */
+static uint64_t percentile(uint32_t hundredths)
+{
+	uint64_t rank = ((uint64_t)hundredths * retained_count + 9999U) / 10000U;
+
+	if (rank == 0U) {
+		rank = 1U;
+	}
+
+	if (rank > retained_count) {
+		rank = retained_count;
+	}
+
+	return retained[rank - 1U];
+}
+
+#if defined(CONFIG_ZTEST_BENCHMARK_OUTLIERS) && defined(CONFIG_ZTEST_BENCHMARK_OUTPUT_VERBOSE)
+/*
+ * Samples disturbed enough to sit clear of the baseline, which for a
+ * kernel latency distribution is the median.
+ *
+ * Merely exceeding the median is not enough: the counter resolution
+ * spreads the baseline over a few counts, so that would report about
+ * half the samples as outliers. Require a margin instead, relative so
+ * it holds across platforms, floored below for quantized distributions.
+ */
+static size_t percentiles_outliers(void)
+{
+	uint64_t median = percentile(5000);
+	uint64_t margin = median / CONFIG_ZTEST_BENCHMARK_OUTLIER_MARGIN_DIV;
+	uint64_t threshold;
+	size_t count = 0;
+
+	/*
+	 * A distribution spanning a couple of counts is at the counter
+	 * resolution, not above it. One count is not enough to exclude
+	 * it: the neighbouring count is exactly one away.
+	 */
+	if (margin < 2U) {
+		margin = 2U;
+	}
+
+	threshold = median + margin;
+
+	while ((count < retained_count) && (retained[retained_count - 1 - count] > threshold)) {
+		count++;
+	}
+
+	return count;
+}
+#endif /* CONFIG_ZTEST_BENCHMARK_OUTLIERS && CONFIG_ZTEST_BENCHMARK_OUTPUT_VERBOSE */
+
+static bool percentiles_available(void)
+{
+	/*
+	 * Samples that did not fit make the retained ones a prefix rather
+	 * than a sample of the run, which percentiles_prepare() refuses
+	 * to sort or report.
+	 */
+	return (retained_count != 0) && (dropped_count == 0);
+}
+
+static void percentiles_prepare(const char *suite_name, const char *bench_name)
+{
+	if (retained_count == 0) {
+		return;
+	}
+
+	/*
+	 * The retained samples are the first ones taken, not a sample of
+	 * the whole run, so percentiles over them are not percentiles of
+	 * the distribution: whatever happened after the buffer filled is
+	 * missing entirely, and the tail is exactly where it tends to
+	 * live. Report nothing rather than something misleading.
+	 */
+	if (dropped_count != 0) {
+		printk("%s %s: no percentiles, %zu of %zu samples did not fit; "
+		       "raise CONFIG_ZTEST_BENCHMARK_MAX_SAMPLES\n",
+		       suite_name, bench_name, dropped_count,
+		       retained_count + dropped_count);
+		return;
+	}
+
+	percentiles_sort();
+}
+#else
+/*
+ * Only the two hooks the runner calls unconditionally need a stub. The
+ * rest are referenced solely from code that this option compiles out,
+ * and a stub for them would be an unused function, which both
+ * compilers reject under the warning flags Zephyr builds with.
+ */
+static void percentiles_reset(void)
+{
+}
+
+static void percentiles_record(uint64_t cycles)
+{
+	ARG_UNUSED(cycles);
+}
+#endif /* CONFIG_ZTEST_BENCHMARK_PERCENTILES */
+
+/*
+ * Report one benchmark.
+ *
+ * The layout is the one the framework has always printed. The optional
+ * additions extend it rather than rearrange it: percentiles and the
+ * cold cost are extra lines, and CONFIG_ZTEST_BENCHMARK_OUTLIERS
+ * swaps the standard error for the outlier count in place.
+ *
+ * The CSV output keeps every column it had, including the standard
+ * error, so that existing parsers are unaffected whatever is enabled.
+ */
+static void ztest_benchmark_report(const char *suite_name, const char *bench_name,
+				   char record_type, struct ztest_benchmark_stats *stats,
+				   struct ztest_benchmark_stats *ctrl_stats)
 {
 	double ctrl = (double)ctrl_stats->mean;
 	double stddev = 0.0;
 	double sample_variance;
 	double std_error = 0.0;
-	struct ztest_benchmark_stats *stats = &benchmark->stats;
+
+	if (stats->samples == 0) {
+#ifdef CONFIG_ZTEST_BENCHMARK_OUTPUT_CSV
+		printk("%c,%s,%s\tINCONCLUSIVE\n", record_type, suite_name, bench_name);
+#endif /* CONFIG_ZTEST_BENCHMARK_OUTPUT_CSV */
+#ifdef CONFIG_ZTEST_BENCHMARK_OUTPUT_VERBOSE
+		printk_line(bench_name, '=');
+		printk("\tTest inconclusive (no samples recorded)\n");
+#endif /* CONFIG_ZTEST_BENCHMARK_OUTPUT_VERBOSE */
+		return;
+	}
 
 	if (stats->samples > 1) {
 		sample_variance = stats->m2 / (double)(stats->samples - 1);
@@ -57,33 +260,99 @@ static void ztest_benchmark_print_results(struct ztest_benchmark *benchmark,
 		std_error = stddev / sqrt(stats->samples);
 	}
 
+#ifdef CONFIG_ZTEST_BENCHMARK_PERCENTILES
+	percentiles_prepare(suite_name, bench_name);
+#endif
+
 #ifdef CONFIG_ZTEST_BENCHMARK_OUTPUT_CSV
-	printk("S,%s,%s,%lld,%lld,%.3f,%.3f,%.3f,%lld,%lld,%lld,%lld\n",
-		benchmark->suite->name, benchmark->name,
+	printk("%c,%s,%s,%lld,%.3f,%.3f,%.3f,%.3f,%.3f,%lld,%.3f,%lld\n",
+		record_type, suite_name, bench_name,
 		stats->samples,
-		discrete_noise_correction(stats->total, ctrl * stats->samples),
+		noise_correction((double)stats->total, ctrl * (double)stats->samples),
 		noise_correction(stats->mean, ctrl), stddev, std_error,
-		discrete_noise_correction(stats->min.value, ctrl), stats->min.sample,
-		discrete_noise_correction(stats->max.value, ctrl), stats->max.sample);
+		noise_correction((double)stats->min.value, ctrl), stats->min.sample,
+		noise_correction((double)stats->max.value, ctrl), stats->max.sample);
+
+	if (stats->cold != 0) {
+		printk("C,%s,%s,%d,%.3f\n", suite_name, bench_name,
+			CONFIG_ZTEST_BENCHMARK_WARMUP,
+			noise_correction((double)stats->cold, ctrl));
+	}
+
+#ifdef CONFIG_ZTEST_BENCHMARK_PERCENTILES
+	/*
+	 * The percentiles go in a row of their own rather than as extra
+	 * columns on the row above, so that a parser written against the
+	 * original column layout keeps working.
+	 *
+	 * The extremes come from the retained samples the percentiles were
+	 * taken over, which is not the same set as the min and max on the
+	 * row above once samples have been dropped.
+	 */
+	if (percentiles_available()) {
+		printk("P,%s,%s,%zu,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f,%.3f\n",
+			suite_name, bench_name, retained_count,
+			noise_correction((double)retained[0], ctrl),
+			noise_correction((double)percentile(5000), ctrl),
+			noise_correction((double)percentile(9000), ctrl),
+			noise_correction((double)percentile(9900), ctrl),
+			noise_correction((double)percentile(9990), ctrl),
+			noise_correction((double)percentile(9999), ctrl),
+			noise_correction((double)retained[retained_count - 1], ctrl));
+	}
+#endif /* CONFIG_ZTEST_BENCHMARK_PERCENTILES */
 #endif /* CONFIG_ZTEST_BENCHMARK_OUTPUT_CSV */
+
 #ifdef CONFIG_ZTEST_BENCHMARK_OUTPUT_VERBOSE
-	printk_line(benchmark->name, '=');
-	printk("\tSample size:%lld, total cycles: %lld\n", stats->samples,
-			discrete_noise_correction(stats->total, ctrl * stats->samples));
+	printk_line(bench_name, '=');
+	printk("\tSample size:%lld, total cycles: %.3f\n", stats->samples,
+			noise_correction((double)stats->total, ctrl * (double)stats->samples));
 
 	printk("\tMean(u): %.3f\n", noise_correction(stats->mean, ctrl));
 	printk("\tStandard deviation(s): %.3f\n", stddev);
+#ifdef CONFIG_ZTEST_BENCHMARK_OUTLIERS
+	/*
+	 * The standard error describes how precisely the mean of one
+	 * stochastic population was estimated. A latency distribution is
+	 * usually a baseline plus a few disturbed runs instead, so the
+	 * count of samples slower than the median says more about it.
+	 */
+	if (percentiles_available()) {
+		size_t outliers = percentiles_outliers();
+
+		printk("\tOutliers: %zu / %zu (%.3f%%)\n", outliers, retained_count,
+			(100.0 * (double)outliers) / (double)retained_count);
+	}
+#else
 	printk("\tStandard Error(SE): %.3f\n", std_error);
-	printk("\tMin: %lld (run #%llu)\n", discrete_noise_correction(stats->min.value, ctrl),
+#endif /* CONFIG_ZTEST_BENCHMARK_OUTLIERS */
+	printk("\tMin: %lld (run #%llu)\n", noise_corrected_floor(stats->min.value, ctrl),
 		stats->min.sample);
-	printk("\tMax: %lld (run #%llu)\n", discrete_noise_correction(stats->max.value, ctrl),
+	printk("\tMax: %lld (run #%llu)\n", noise_corrected_ceil(stats->max.value, ctrl),
 		stats->max.sample);
+
+#ifdef CONFIG_ZTEST_BENCHMARK_PERCENTILES
+	if (percentiles_available()) {
+		printk("\tp50: %.3f\n", noise_correction((double)percentile(5000), ctrl));
+		printk("\tp90: %.3f\n", noise_correction((double)percentile(9000), ctrl));
+		printk("\tp99: %.3f\n", noise_correction((double)percentile(9900), ctrl));
+		printk("\tp99.9: %.3f\n", noise_correction((double)percentile(9990), ctrl));
+		printk("\tp99.99: %.3f\n", noise_correction((double)percentile(9999), ctrl));
+	}
+#endif /* CONFIG_ZTEST_BENCHMARK_PERCENTILES */
+
+	if (stats->cold != 0) {
+		printk("\tCold (first run): %.3f\n",
+			noise_correction((double)stats->cold, ctrl));
+	}
 #endif /* CONFIG_ZTEST_BENCHMARK_OUTPUT_VERBOSE */
 }
 
 static void update_metrics(struct ztest_benchmark_stats *stats, uint64_t cycles)
 {
 	double delta, delta2;
+
+	percentiles_record(cycles);
 
 	/* Welfords method */
 	stats->samples += 1;
@@ -111,8 +380,16 @@ static void ztest_benchmark_run(struct ztest_benchmark *benchmark)
 
 	memset(&benchmark->stats, 0, sizeof(benchmark->stats));
 	benchmark->stats.min.value = UINT64_MAX;
+	percentiles_reset();
 
-	for (size_t i = 0; i < benchmark->iterations; i++) {
+	/*
+	 * The warmup iterations run the whole loop, setup and teardown
+	 * included, and are simply not recorded. Only the very first is
+	 * kept, as the cold cost.
+	 */
+	for (size_t i = 0; i < CONFIG_ZTEST_BENCHMARK_WARMUP + benchmark->iterations; i++) {
+		uint64_t cycles;
+
 		if (benchmark->setup) {
 			benchmark->setup();
 		}
@@ -123,7 +400,114 @@ static void ztest_benchmark_run(struct ztest_benchmark *benchmark)
 		benchmark->run();
 		end = timing_counter_get();
 
-		update_metrics(&benchmark->stats, timing_cycles_get(&start, &end));
+		cycles = timing_cycles_get(&start, &end);
+
+		if (i == 0) {
+			benchmark->stats.cold = cycles;
+		}
+
+		if (i >= CONFIG_ZTEST_BENCHMARK_WARMUP) {
+			update_metrics(&benchmark->stats, cycles);
+		}
+
+		if (benchmark->teardown) {
+			benchmark->teardown();
+		}
+	}
+}
+
+/*
+ * The benchmark whose body is running, the span it has open, and which
+ * iteration it is on.
+ *
+ * Only one benchmark runs at a time, so a single set of these serves all
+ * of them. manual_span_open separates "no span open" from a span that
+ * legitimately began at timestamp zero.
+ */
+static struct ztest_benchmark_stats *manual_active_stats;
+static timing_t manual_span_start;
+static bool manual_span_open;
+static size_t manual_iteration;
+
+void ztest_benchmark_start_at(timing_t start)
+{
+	if (manual_active_stats == NULL) {
+		return;
+	}
+
+	manual_span_start = start;
+	manual_span_open = true;
+}
+
+void ztest_benchmark_start(void)
+{
+	if (manual_active_stats == NULL) {
+		return;
+	}
+
+	barrier_dsync_fence_full();
+	barrier_isync_fence_full();
+	ztest_benchmark_start_at(timing_counter_get());
+}
+
+void ztest_benchmark_end_at(timing_t end)
+{
+	uint64_t cycles;
+
+	__ASSERT(!k_is_in_isr(), "%s must be called from thread context", __func__);
+
+	if ((manual_active_stats == NULL) || !manual_span_open) {
+		return;
+	}
+
+	manual_span_open = false;
+	cycles = timing_cycles_get(&manual_span_start, &end);
+
+	if (manual_iteration == 0) {
+		manual_active_stats->cold = cycles;
+	}
+
+	/*
+	 * The warmup iterations run the body in full and are simply not
+	 * recorded, exactly as for a sampled benchmark.
+	 */
+	if (manual_iteration >= CONFIG_ZTEST_BENCHMARK_WARMUP) {
+		update_metrics(manual_active_stats, cycles);
+	}
+}
+
+void ztest_benchmark_end(void)
+{
+	if ((manual_active_stats == NULL) || !manual_span_open) {
+		return;
+	}
+
+	barrier_dsync_fence_full();
+	barrier_isync_fence_full();
+	ztest_benchmark_end_at(timing_counter_get());
+}
+
+static void ztest_benchmark_manual_run(struct ztest_benchmark_manual *benchmark)
+{
+	memset(&benchmark->stats, 0, sizeof(benchmark->stats));
+	benchmark->stats.min.value = UINT64_MAX;
+	percentiles_reset();
+
+	/*
+	 * The loop, the setup and the teardown are the framework's, exactly
+	 * as for a sampled benchmark. All the body decides is which part of
+	 * itself the timestamps go around.
+	 */
+	for (size_t i = 0; i < CONFIG_ZTEST_BENCHMARK_WARMUP + benchmark->iterations; i++) {
+		if (benchmark->setup) {
+			benchmark->setup();
+		}
+
+		manual_active_stats = &benchmark->stats;
+		manual_span_open = false;
+		manual_iteration = i;
+		benchmark->run();
+		manual_active_stats = NULL;
 
 		if (benchmark->teardown) {
 			benchmark->teardown();
@@ -250,7 +634,17 @@ void benchmark_main(void)
 				continue;
 			}
 			ztest_benchmark_run(benchmark);
-			ztest_benchmark_print_results(benchmark, &ctrl.stats);
+			ztest_benchmark_report(suite->name, benchmark->name, 'S',
+					       &benchmark->stats, &ctrl.stats);
+		}
+
+		STRUCT_SECTION_FOREACH(ztest_benchmark_manual, benchmark) {
+			if (benchmark->suite != suite) {
+				continue;
+			}
+			ztest_benchmark_manual_run(benchmark);
+			ztest_benchmark_report(suite->name, benchmark->name, 'M',
+					       &benchmark->stats, &ctrl.stats);
 		}
 
 		STRUCT_SECTION_FOREACH(ztest_benchmark_timed, benchmark) {
