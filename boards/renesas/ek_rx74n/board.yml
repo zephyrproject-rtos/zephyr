@@ -1,0 +1,6 @@
+board:
+  name: ek_rx74n
+  full_name: RX74N Evaluation Kit
+  vendor: renesas
+  socs:
+    - name: r5k574ncb4ae

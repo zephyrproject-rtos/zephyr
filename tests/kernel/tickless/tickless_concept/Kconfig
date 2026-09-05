@@ -3,6 +3,7 @@
 
 config SYS_CLOCK_TICKS_PER_SEC
 	default 32768 if NRF_RTC_TIMER
+	default 1000 if RENESAS_RX_TIMER_CMT
 	default 100
 
 source "Kconfig.zephyr"

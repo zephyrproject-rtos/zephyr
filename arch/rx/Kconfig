@@ -1,7 +1,7 @@
 # Renesas RX architecture configuration options
 
 # Copyright (c) 2020 KT-Elektronik, Klaucke und Partner GmbH
-# Copyright (c) 2024 Renesas Electronics Corporation
+# Copyright (c) 2024-2026 Renesas Electronics Corporation
 # SPDX-License-Identifier: Apache-2.0
 
 menu "Renesas RX Options"
@@ -34,6 +34,12 @@ config CPU_RXV3
 	select CPU_HAS_FPU
 	help
 	  Set if the processor supports the Renesas RXv3 instruction set.
+
+config CPU_RXV3E
+	bool
+	select HAS_EXCEPT_VECTOR_TABLE
+	help
+	  Set if the processor supports the Renesas RXv3e instruction set.
 
 config XIP
 	default y
@@ -79,5 +85,8 @@ config HAS_MAPPED_INTERRUPTS
 	bool
 	help
 	  Support for mapped interrupts.
+
+config TEST_EXTRA_STACK_SIZE
+	default 128
 
 endmenu

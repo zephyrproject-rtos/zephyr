@@ -13,6 +13,11 @@ config HAS_RENESAS_RZ_FSP
 	help
 	  Enable Renesas RZ FSP support
 
+config HAS_RENESAS_RX_FSP
+	bool
+	help
+	  Enable Renesas RX FSP support
+
 if HAS_RENESAS_RA_FSP
 
 config USE_RA_FSP_SCI_B_UART
@@ -521,3 +526,12 @@ config USE_RX_RDP_LPC
 	  Enable RX RDP LPC driver
 
 endif # HAS_RENESAS_RX_RDP
+
+if HAS_RENESAS_RX_FSP
+
+config USE_RX_FSP_SCI_B_UART
+	bool
+	help
+	  Enable RX FSP SCI-B UART driver
+
+endif # HAS_RENESAS_RX_FSP

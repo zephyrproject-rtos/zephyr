@@ -13,3 +13,13 @@ config UART_RENESAS_RX
 	select PINCTRL
 	help
 	  Enable Renesas RX series UART driver.
+
+config UART_RENESAS_RX_SCI_B
+	bool "Renesas RX Series UART Driver"
+	default y
+	depends on DT_HAS_RENESAS_RX_UART_SCI_B_ENABLED
+	select SERIAL_HAS_DRIVER
+	select USE_RX_FSP_SCI_B_UART
+	select PINCTRL
+	help
+	  Enable Renesas RX series UART on SCI B HW driver.
