@@ -763,6 +763,10 @@ Flash
   of each plane in the flash device. For devices with a single plane, this should be set to the
   same value as ``size-bytes``.
 
+* The :dtcompatible:`st,stm32-nv-flash` property ``bank2-flash-size`` has been deprecated in favor
+  of determining flash bank sizes using ``reg`` size cells. No changes need be made to the
+  devicetree save for removing the aforementioned property. (:github:`114971`)
+
 Fuel Gauge
 ==========
 
