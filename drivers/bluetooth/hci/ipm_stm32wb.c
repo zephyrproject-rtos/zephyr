@@ -17,10 +17,10 @@
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/irq.h>
 
-#include "app_conf.h"
-#include "stm32_wpan_common.h"
-#include "shci.h"
-#include "shci_tl.h"
+#include <app_conf.h>
+#include <stm32_wpan_common.h>
+#include <shci.h>
+#include <shci_tl.h>
 
 #define STM32_IPCC_RX_IRQ	DT_INST_IRQ_BY_NAME(0, rx, irq)
 #define STM32_IPCC_RX_IRQ_PRIO	DT_INST_IRQ_BY_NAME(0, rx, priority)
@@ -49,7 +49,7 @@ PLACE_IN_SECTION("MB_MEM2") ALIGN(4) static uint8_t
 static void syscmd_status_not(SHCI_TL_CmdStatus_t status);
 static void sysevt_received(void *pdata);
 
-#include "common/bt_str.h"
+#include <common/bt_str.h>
 
 #define LOG_LEVEL CONFIG_BT_HCI_DRIVER_LOG_LEVEL
 #include <zephyr/logging/log.h>
