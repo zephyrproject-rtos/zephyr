@@ -5,6 +5,7 @@ zephyr_syscall_header(${ZEPHYR_BASE}/include/zephyr/drivers/i2s.h)
 zephyr_library()
 
 zephyr_library_sources(i2s_common.c)
+zephyr_library_sources_ifdef(CONFIG_I2S_RTIO i2s_rtio.c)
 
 # zephyr-keep-sorted-start
 zephyr_library_sources_ifdef(CONFIG_I2S_AMBIQ i2s_ambiq.c)
@@ -16,6 +17,7 @@ zephyr_library_sources_ifdef(CONFIG_I2S_MCUX_FLEXCOMM i2s_mcux_flexcomm.c)
 zephyr_library_sources_ifdef(CONFIG_I2S_MCUX_SAI i2s_mcux_sai.c)
 zephyr_library_sources_ifdef(CONFIG_I2S_NATIVE_SIM i2s_native_sim.c)
 zephyr_library_sources_ifdef(CONFIG_I2S_NRFX i2s_nrfx.c)
+zephyr_library_sources_ifdef(CONFIG_I2S_NRFX_RTIO i2s_nrfx_rtio.c)
 zephyr_library_sources_ifdef(CONFIG_I2S_NRF_TDM i2s_nrf_tdm.c)
 zephyr_library_sources_ifdef(CONFIG_I2S_RENESAS_RA_SSIE i2s_renesas_ra_ssie.c)
 zephyr_library_sources_ifdef(CONFIG_I2S_SAM_SSC i2s_sam_ssc.c)
