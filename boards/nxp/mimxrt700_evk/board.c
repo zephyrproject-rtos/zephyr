@@ -623,7 +623,7 @@ static void edma_enable_all_request(uint8_t instance)
 static int second_core_boot(void)
 {
 	/* Get the boot address for the second core */
-	uint32_t boot_address = (uint32_t)(DT_REG_ADDR(DT_NODELABEL(sram_code)));
+	uint32_t boot_address = (uint32_t)(DT_REG_ADDR(DT_CHOSEN(zephyr_code_cpu1_partition)));
 
 	PMC0->PDRUNCFG2 &= ~0x3FFC0000;
 	PMC0->PDRUNCFG3 &= ~0x3FFC0000;
