@@ -2453,33 +2453,18 @@ int bt_avdtp_parse_capability_codec(struct net_buf *buf, uint8_t *codec_type,
 
 	while (buf->len) {
 		data = net_buf_pull_u8(buf);
+
+		if (buf->len < sizeof(length)) {
+			return -EINVAL;
+		}
+
+		length = net_buf_pull_u8(buf);
+		if (buf->len < length) {
+			return -EINVAL;
+		}
+
 		switch (data) {
-		case BT_AVDTP_SERVICE_MEDIA_TRANSPORT:
-		case BT_AVDTP_SERVICE_REPORTING:
-		case BT_AVDTP_SERVICE_MEDIA_RECOVERY:
-		case BT_AVDTP_SERVICE_CONTENT_PROTECTION:
-		case BT_AVDTP_SERVICE_HEADER_COMPRESSION:
-		case BT_AVDTP_SERVICE_MULTIPLEXING:
-			if (buf->len < sizeof(length)) {
-				return -EINVAL;
-			}
-
-			length = net_buf_pull_u8(buf);
-			if (length > 0) {
-				if (buf->len < length) {
-					return -EINVAL;
-				}
-
-				net_buf_pull_mem(buf, length);
-			}
-			break;
-
 		case BT_AVDTP_SERVICE_DELAY_REPORTING:
-			if (buf->len < sizeof(length)) {
-				return -EINVAL;
-			}
-
-			length = net_buf_pull_u8(buf);
 			if (length != 0) {
 				return -EINVAL;
 			}
@@ -2490,29 +2475,29 @@ int bt_avdtp_parse_capability_codec(struct net_buf *buf, uint8_t *codec_type,
 			break;
 
 		case BT_AVDTP_SERVICE_MEDIA_CODEC:
-			if (buf->len < sizeof(length)) {
+			if (length < sizeof(struct bt_avdtp_media_codec_capabilities)) {
 				return -EINVAL;
 			}
 
-			length = net_buf_pull_u8(buf);
-			if (buf->len < length) {
-				return -EINVAL;
-			}
-
-			if (length > 3) {
+			data = net_buf_pull_u8(buf);
+			length--;
+			if ((data & AVDTP_SEP_MEDIA_TYPE_MASK) == BT_AVDTP_AUDIO) {
 				data = net_buf_pull_u8(buf);
-				if (data == BT_AVDTP_AUDIO) {
-					data = net_buf_pull_u8(buf);
-					*codec_type = data;
-					*codec_info_element_len = (length - 2);
-					*codec_info_element =
-						net_buf_pull_mem(buf, (*codec_info_element_len));
-					break;
-				}
+				length--;
+				*codec_type = data;
+				*codec_info_element_len = length;
+				*codec_info_element = net_buf_pull_mem(buf, length);
+				break;
 			}
-			break;
-
+			__fallthrough;
+		case BT_AVDTP_SERVICE_MEDIA_TRANSPORT:
+		case BT_AVDTP_SERVICE_REPORTING:
+		case BT_AVDTP_SERVICE_MEDIA_RECOVERY:
+		case BT_AVDTP_SERVICE_CONTENT_PROTECTION:
+		case BT_AVDTP_SERVICE_HEADER_COMPRESSION:
+		case BT_AVDTP_SERVICE_MULTIPLEXING:
 		default:
+			net_buf_pull_mem(buf, length);
 			break;
 		}
 	}
