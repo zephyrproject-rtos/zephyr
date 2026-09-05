@@ -153,6 +153,19 @@ class Board:
         return node
 
 
+@dataclass(frozen=True)
+class BoardTarget:
+    board: str
+    qualifiers: str
+    soc: str
+    cpucluster: str | None = None
+    revision: str | None = None
+
+    def name(self) -> str:
+        board = f"{self.board}@{self.revision}" if self.revision else self.board
+        return f"{board}/{self.qualifiers}"
+
+
 def load_v2_boards(board_name, board_yml, systems):
     boards = {}
     board_extensions = []
@@ -299,24 +312,41 @@ def variant_v2_qualifiers(variant, qualifiers = None):
     return qualifiers_list
 
 
-def board_v2_qualifiers(board):
-    qualifiers_list = []
+def board_v2_targets(board: Board, include_revisions: bool = True) -> list[BoardTarget]:
+    targets: list[BoardTarget] = []
+
+    def extend_targets(qualifiers, soc, cpucluster=None):
+        targets.append(BoardTarget(board.name, qualifiers, soc, cpucluster))
+        if not include_revisions:
+            return
+
+        for revision in board.revisions:
+            if not revision.name:
+                continue
+            targets.append(BoardTarget(board.name, qualifiers, soc, cpucluster, revision.name))
 
     for s in board.socs:
         if s.cpuclusters:
             for c in s.cpuclusters:
                 id_str = s.name + '/' + c.name
-                qualifiers_list.append(id_str)
+                extend_targets(id_str, s.name, c.name)
                 for v in c.variants:
-                    qualifiers_list.extend(variant_v2_qualifiers(v, id_str))
+                    for qualifiers in variant_v2_qualifiers(v, id_str):
+                        extend_targets(qualifiers, s.name, c.name)
         else:
-            qualifiers_list.append(s.name)
+            extend_targets(s.name, s.name)
             for v in s.variants:
-                qualifiers_list.extend(variant_v2_qualifiers(v, s.name))
+                for qualifiers in variant_v2_qualifiers(v, s.name):
+                    extend_targets(qualifiers, s.name)
 
     for v in board.variants:
-        qualifiers_list.extend(variant_v2_qualifiers(v))
-    return qualifiers_list
+        for qualifiers in variant_v2_qualifiers(v):
+            extend_targets(qualifiers, "")
+
+    return targets
+
+def board_v2_qualifiers(board: Board) -> list[str]:
+    return [t.qualifiers for t in board_v2_targets(board, include_revisions=False)]
 
 
 def board_v2_qualifiers_csv(board):
