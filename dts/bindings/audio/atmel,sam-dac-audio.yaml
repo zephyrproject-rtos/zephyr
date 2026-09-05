@@ -1,0 +1,55 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Ugo Marchand
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  PCM audio playback on an Atmel SAM DACC channel.
+
+  A Timer Counter (TC) channel paces the conversions through its TIOA output
+  and the DMA feeds the DACC conversion data register, so the CPU only has to
+  refill a block per completion callback. Only the outputs of the first TC
+  module can reach the DACC, so this node must sit under that module.
+
+  The driver programs the TC channel itself and owns it for as long as the
+  output runs, which is why it takes the registers and the clocks from its
+  parent rather than from a phandle. The parent TC node must stay disabled,
+  otherwise the counter driver binds to the same registers and the two fight
+  over the mode and compare registers.
+
+  The DACC node keeps ownership of its clock, pins and prescaler, so it must be
+  enabled and pin-muxed separately, as must the DMA controller.
+
+  Example DTS:
+
+    &tc0 {
+      audio_dac0: dac-audio {
+        compatible = "atmel,sam-dac-audio";
+        status = "okay";
+        channel = <0>;
+        io-channels = <&dacc 1>;
+        dmas = <&xdmac 0 DMA_PERID_DACC1_TX>;
+        dma-names = "tx";
+      };
+    };
+
+compatible: "atmel,sam-dac-audio"
+
+include: base.yaml
+
+properties:
+  channel:
+    type: int
+    required: true
+    enum: [0, 1, 2]
+    description: |
+      Channel of the parent TC module that paces the conversions.
+
+  io-channels:
+    required: true
+    description: |
+      DACC controller and channel the samples are converted on.
+
+  dmas:
+    required: true
+
+  dma-names:
+    required: true
