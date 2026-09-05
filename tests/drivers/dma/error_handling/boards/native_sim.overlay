@@ -1,0 +1,11 @@
+/*
+ * Copyright (c) 2024
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&dma {
+	dma-channels = <4>;
+	dma-requests = <4>;
+	status = "okay";
+};

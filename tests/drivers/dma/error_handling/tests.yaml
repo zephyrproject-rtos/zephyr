@@ -1,0 +1,15 @@
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.dma.error_handling:
+    depends_on: dma
+    tags:
+      - drivers
+      - dma
+    integration_platforms:
+      - native_sim
+    filter: dt_nodelabel_enabled("dma")
+    extra_configs:
+      - CONFIG_DMA_EMUL=y
+      - CONFIG_TEST=y
+      - CONFIG_LOG=y
