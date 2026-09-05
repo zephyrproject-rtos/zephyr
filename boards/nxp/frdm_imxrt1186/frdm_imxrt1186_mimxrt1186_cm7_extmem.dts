@@ -9,6 +9,7 @@
 #include <nxp/imxrt/imxrt118x/nxp_rt1186_cm7.dtsi>
 #include "frdm_imxrt1186.dtsi"
 #include <freq.h>
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 
 / {
 	model = "NXP FRDM-iMXRT1186 board";
@@ -31,8 +32,11 @@
 
 	hyperram0: memory@28000000 {
 		/* Winbond W957A8MFYA5K */
+		compatible = "zephyr,memory-region";
 		device_type = "memory";
 		reg = <0x28000000 DT_SIZE_M(8)>;
+		zephyr,memory-region = "HYPER_RAM";
+		zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 		status = "okay";
 	};
 
