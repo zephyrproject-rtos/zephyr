@@ -18,6 +18,12 @@
 		zephyr,console = &lpuart0;
 		zephyr,shell-uart = &lpuart0;
 		zephyr,crc = &crc;
+		zephyr,code-partition = &slot0_partition;
+		/*
+		 * CM0+ runs from AON SRAM; CM33 copies the image here at boot
+		 * and releases the core via AON CGU RST_SUB_BLK.CM0P_RST_REL.
+		 */
+		zephyr,code-cpu1-partition = &aon_sram;
 	};
 
 	aliases {
@@ -167,4 +173,37 @@
 
 &mbox_a {
 	status = "okay";
+};
+
+/*
+ * Split CM33 flash (512 KB) into two partitions:
+ *   slot0 (0x10000000, 480 KB) - CM33 cpu0 application image
+ *   slot1 (0x10078000,  32 KB) - CM0+ cpu1 image storage (LMA slot)
+ *
+ * The CM33 copies slot1 to AON SRAM at boot via second_core_init()
+ * and releases the CM0+ via AON CGU RST_SUB_BLK.CM0P_RST_REL.
+ * BUILD_OUTPUT_ADJUST_LMA for the cpu1 build = 0x10078000.
+ */
+&flash {
+	ranges = <0x0 0x10000000 DT_SIZE_K(512)>;
+	#address-cells = <1>;
+	#size-cells = <1>;
+
+	partitions {
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		slot0_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-0";
+			reg = <0x00000000 DT_SIZE_K(480)>;
+		};
+
+		slot1_partition: partition@78000 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-1";
+			reg = <0x00078000 DT_SIZE_K(32)>;
+		};
+	};
 };

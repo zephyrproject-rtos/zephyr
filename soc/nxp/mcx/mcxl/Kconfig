@@ -1,4 +1,4 @@
-# Copyright 2025 NXP
+# Copyright 2025-2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
 config SOC_FAMILY_MCXL
@@ -50,3 +50,33 @@ config SOC_MCXL253_CPU0
 
 config SOC_MCXL253_CPU1
 	select CPU_CORTEX_M0PLUS
+
+if SOC_MCXL255
+
+config SECOND_CORE_MCUX
+	bool "MCXL255 secondary core (CM0+ AON)"
+	depends on HAS_MCUX
+	help
+	  Enable support for the CM0+ AON secondary core on MCXL255.
+	  When set, the CM33 (cpu0) copies the CM0+ image from its LMA
+	  in CM33 flash to AON SRAM at PRE_KERNEL_2, enables the AON CPU
+	  clock, and releases the CM0+ from reset via the AON CGU
+	  RST_SUB_BLK.CM0P_RST_REL bit.  The CM0+ image is stored in the last
+	  32 KB of CM33 flash (offset 0x78000, absolute 0x10078000) and is
+	  copied to AON SRAM (CM33 alias 0xa1000000, CM0+ view 0x00000000)
+	  at boot.
+
+# Workaround for not being able to have commas in macro arguments
+DT_CHOSEN_Z_CODE_CPU1_PARTITION := zephyr,code-cpu1-partition
+
+# Shift the cpu1 image LMA from VMA (0x00000000 in CM0+ / AON SRAM view)
+# to the reserved slot in CM33 flash (0x10078000 = last 32 KB of 512 KB).
+config BUILD_OUTPUT_ADJUST_LMA
+	depends on SECOND_CORE_MCUX && SOC_MCXL255_CPU1
+	default "0x10078000"
+
+config BUILD_OUTPUT_INFO_HEADER
+	default y
+	depends on SECOND_CORE_MCUX && SOC_MCXL255_CPU1
+
+endif # SOC_MCXL255

@@ -1,0 +1,23 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	mbox-consumer {
+		compatible = "vnd,mbox-consumer";
+		mboxes = <&mbox_a 1>, <&mbox_a 0>;
+		mbox-names = "tx", "rx";
+	};
+};
+
+/*
+ * Disable the RTC node so board_early_init_hook skips CLOCK_InitRosc.
+ * The 32 kHz RTC crystal bring-up busy-waits BEFORE the LPUART console
+ * is initialised and causes the board to stall with empty serial output.
+ * The mbox multicore demo does not need the RTC peripheral.
+ */
+&rtc {
+	status = "disabled";
+};
