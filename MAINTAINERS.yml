@@ -5836,6 +5836,11 @@ Security:
     - valeriosetti
   files:
     - doc/security/
+    - scripts/kconfig/hardenconfig.py
+    - scripts/kconfig/hardening.yaml
+    - scripts/kconfig/hardeninglib.py
+    - scripts/schemas/hardening-schema.yaml
+    - scripts/tests/hardenconfig/
   labels:
     - "area: Security"
 
