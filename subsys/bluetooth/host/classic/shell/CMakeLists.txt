@@ -20,3 +20,4 @@ endif()
 
 zephyr_library_sources_ifdef(CONFIG_BT_PBAP pbap.c)
 zephyr_library_sources_ifdef(CONFIG_BT_MAP map.c)
+zephyr_library_sources_ifdef(CONFIG_BT_OPP opp.c)
