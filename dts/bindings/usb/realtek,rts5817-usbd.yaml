@@ -1,0 +1,23 @@
+# Copyright (c) 2026 Realtek Semiconductor, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  RTS5817 usb device controller
+
+compatible: "realtek,rts5817-usbd"
+
+include: usb-ep.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  num-endpoints:
+    type: int
+    required: true
+    description: |
+      Number of endpoints supported by hardware
+      (including EP0)
