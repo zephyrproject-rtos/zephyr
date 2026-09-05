@@ -20,5 +20,6 @@ supported:
   - pinctrl
   - pwm
   - rtc
+  - spi
   - uart
 vendor: microchip

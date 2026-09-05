@@ -420,6 +420,19 @@
 				status = "disabled";
 			};
 
+			spi4: spi@400 {
+				compatible = "microchip,flexcom-g1-spi";
+				reg = <0x400 0x200>;
+				interrupt-parent = <&gic>;
+				interrupts = <GIC_SPI 38 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+				clocks = <&pmc PMC_TYPE_PERIPHERAL 38>;
+				clock-names = "pclk";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				fifo-size = <32>;
+				status = "disabled";
+			};
+
 			uart4: serial@200 {
 				compatible = "atmel,sam-usart";
 				reg = <0x200 0x200>;
