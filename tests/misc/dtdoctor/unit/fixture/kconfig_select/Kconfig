@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# Symbols related to the DT_HAS symbol only through select/imply conditions.
+
+config DTD_SELECT_HELPER
+	bool "Helper selected when the foo device is present"
+
+config DTD_PLATFORM_SELECT
+	bool "Platform selecting the helper for the foo device"
+	select DTD_SELECT_HELPER if DT_HAS_VND_FOO_DEVICE_ENABLED
+
+config DTD_IMPLY_HELPER
+	bool "Helper implied when the foo device is present"
+
+config DTD_PLATFORM_IMPLY
+	bool "Platform implying the helper for the foo device"
+	imply DTD_IMPLY_HELPER if DT_HAS_VND_FOO_DEVICE_ENABLED
+
+config DT_HAS_VND_FOO_DEVICE_ENABLED
+	def_bool y

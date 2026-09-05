@@ -68,6 +68,11 @@ CPU_V7  # U-Boot boards/luckfox/pico_ultra
 CRC  # Used in TI CC13x2 / CC26x2 SDK comment
 DEEP_SLEEP  # #defined by RV32M1 in ext/
 DESCRIPTION
+DTD_PLATFORM_IMPLY  # DT Doctor test fixture symbol
+DTD_PLATFORM_SELECT  # DT Doctor test fixture symbol
+DTD_SERIAL  # DT Doctor test fixture symbol
+DTD_SPECIAL_CORE  # DT Doctor test fixture symbol
+DTD_UART  # DT Doctor test fixture symbol
 DT_HAS_  # example from doc/build/dts/dt-vs-kconfig.rst
 EFI_LOADER  # U-Boot boards/luckfox/pico_ultra
 ERR
