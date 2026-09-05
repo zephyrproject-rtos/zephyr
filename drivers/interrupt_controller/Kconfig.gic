@@ -7,6 +7,12 @@ if CPU_CORTEX
 
 config GIC
 	bool
+	# On AArch32 Cortex-A/R the GIC is the root interrupt controller device.
+	# Pending-state operations are backed by the distributor ICPENDR/ISPENDR.
+	select INTC_ROOT_DEVICE if (CPU_AARCH32_CORTEX_A || CPU_AARCH32_CORTEX_R) && \
+		!ARM_CUSTOM_INTERRUPT_CONTROLLER
+	select ARCH_HAS_IRQ_PENDING_OPS if (CPU_AARCH32_CORTEX_A || CPU_AARCH32_CORTEX_R) && \
+		!ARM_CUSTOM_INTERRUPT_CONTROLLER && !MULTI_LEVEL_INTERRUPTS
 
 config GIC_V1
 	def_bool DT_HAS_ARM_GIC_V1_ENABLED

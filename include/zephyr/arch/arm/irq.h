@@ -35,6 +35,8 @@ extern "C" {
 #define arch_irq_clear_pending              z_soc_irq_clear_pending
 #define arch_irq_set_pending                z_soc_irq_set_pending
 #define arch_irq_is_pending                 z_soc_irq_is_pending
+#elif defined(CONFIG_INTC_ROOT_DEVICE)
+/* arch_irq_* are functions, provided by arch/common/intc_root.c */
 #else
 #define arch_irq_enable                     arm_irq_enable
 #define arch_irq_disable                    arm_irq_disable
@@ -57,10 +59,20 @@ GTEXT(arch_irq_is_pending)
 #if defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
 GTEXT(z_soc_irq_get_active)
 GTEXT(z_soc_irq_eoi)
+#elif defined(CONFIG_INTC_ROOT_DEVICE)
+GTEXT(intc_root_get_active)
+GTEXT(intc_root_eoi)
 #endif /* CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
 #else
 
-#if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
+#if defined(CONFIG_INTC_ROOT_DEVICE)
+/*
+ * The root interrupt controller is an intc device: arch_irq_* are the
+ * generic functions in arch/common/intc_root.c.
+ */
+void intc_root_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags);
+#define z_arm_irq_priority_set(irq, prio, flags) intc_root_irq_priority_set(irq, prio, flags)
+#elif !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
 extern void arm_irq_enable(unsigned int irq);
 extern void arm_irq_disable(unsigned int irq);
 extern int arm_irq_is_enabled(unsigned int irq);

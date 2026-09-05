@@ -176,11 +176,11 @@ _idle_state_cleared:
 #endif /* CONFIG_PM */
 
 	/* Get active IRQ number from the interrupt controller */
-#if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
-	bl arm_gic_get_active
-#else
+#if defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
 	bl z_soc_irq_get_active
-#endif /* !CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
+#else
+	bl intc_root_get_active
+#endif /* CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
 	push {r0, r1}
 
 #ifdef CONFIG_ARM_TRACK_ACTIVE_IRQ
@@ -254,11 +254,11 @@ spurious_continue:
 
 	/* Signal end-of-interrupt */
 	pop {r0, r1}
-#if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
-	bl arm_gic_eoi
-#else
+#if defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
 	bl z_soc_irq_eoi
-#endif /* !CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
+#else
+	bl intc_root_eoi
+#endif /* CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
 
 #ifdef CONFIG_TRACING_ISR
 	bl sys_trace_isr_exit
@@ -328,11 +328,11 @@ _idle_state_cleared:
 #endif /* CONFIG_PM */
 
 	/* Get active IRQ number from the interrupt controller */
-#if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
-	bl arm_gic_get_active
-#else
+#if defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
 	bl z_soc_irq_get_active
-#endif /* !CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
+#else
+	bl intc_root_get_active
+#endif /* CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
 
 	push {r0, r1}
 
@@ -393,11 +393,11 @@ spurious_continue:
 
 	/* Signal end-of-interrupt */
 	pop {r0, r1}
-#if !defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
-	bl arm_gic_eoi
-#else
+#if defined(CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER)
 	bl z_soc_irq_eoi
-#endif /* !CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
+#else
+	bl intc_root_eoi
+#endif /* CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
 
 #ifdef CONFIG_TRACING_ISR
 	bl sys_trace_isr_exit
