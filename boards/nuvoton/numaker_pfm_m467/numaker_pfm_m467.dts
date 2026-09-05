@@ -126,6 +126,22 @@
 	pinctrl-0 = <&emac_default>;
 	pinctrl-names = "default";
 	phy-addr = <1>;
+	phy-handle = <&phy>;
+	status = "okay";
+};
+
+&mdio {
+	pinctrl-0 = <&emac_mdio_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	phy: ethernet-phy@1 {
+		compatible = "ethernet-phy";
+		reg = <1>;
+	};
+};
+
+&ptp_clock {
 	status = "okay";
 };
 
