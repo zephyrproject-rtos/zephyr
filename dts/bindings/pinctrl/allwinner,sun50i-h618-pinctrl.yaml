@@ -1,0 +1,26 @@
+description: Allwinner H618 Pin Controller
+
+compatible: "allwinner,sun50i-h618-pinctrl"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+child-binding:
+  description: Pinmux configuration nodes
+  include:
+    - name: pincfg-node.yaml
+      property-allowlist:
+        - bias-pull-up
+        - bias-pull-down
+        - bias-disable
+        - drive-strength
+  properties:
+    pinmux:
+      required: true
+      type: array
+      description: |
+        An array of pins sharing the same properties. Each element is an integer
+        created by SUNXI_PINMUX macro in dt-bindings/pinctrl/sunxi-pinctrl.h
