@@ -665,6 +665,25 @@ config BT_PAGE_TIMEOUT
 	  This option sets the page timeout value. Value is selected as
 	  (N * 0.625) ms.
 
+config BT_BR_CONN_ACCEPT_TIMEOUT
+	hex "Bluetooth BR/EDR Connection Accept Timeout"
+	default 0x1f40
+	range 0x00a0 0xb540
+	help
+	  This option sets the connection accept timeout, that is how long
+	  the controller waits for the host to accept or reject an incoming
+	  connection before rejecting it itself. Value is selected as
+	  (N * 0.625) ms.
+
+	  The bounds are the mandatory range from Core Spec v6.3 Vol 4,
+	  Part E, 6.7. The specification allows down to 0x0001, but a
+	  controller may reject anything below 0x00a0, which would fail
+	  BR/EDR initialisation.
+
+	  The underlying controller parameter is shared with the LE CIS
+	  request timeout, so this also affects LE CIS on a dual mode
+	  controller.
+
 config BT_COD
 	hex "Bluetooth Class of Device(CoD)"
 	default 0
