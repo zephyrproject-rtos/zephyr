@@ -17,7 +17,7 @@
 
 	chosen {
 		zephyr,flash = &cpuapp_rram;
-		zephyr,sram = &cpuapp_sram;
+		zephyr,sram = &cpuapp_sram_app;
 		zephyr,code-partition = &slot0_partition;
 	};
 };
