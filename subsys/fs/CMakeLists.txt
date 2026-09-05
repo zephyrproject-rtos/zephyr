@@ -36,6 +36,7 @@ if(CONFIG_FILE_SYSTEM_LIB_LINK)
 endif()
 
 add_subdirectory_ifdef(CONFIG_FCB  ./fcb)
+zephyr_library_sources_ifdef(CONFIG_VIRTUAL_FAT virtual_fat.c)
 
 if(CONFIG_FUSE_FS_ACCESS)
   zephyr_library_named(FS_FUSE)
