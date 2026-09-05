@@ -50,8 +50,10 @@ tests:
       - shield
     platform_allow:
       - nucleo_u3c5zi_q
+      - nucleo_c5a3zg
     integration_platforms:
       - nucleo_u3c5zi_q
+      - nucleo_c5a3zg
     extra_args: SHIELD=b_m2mem_pack1_mb1927_18ba
 
   sample.drivers.mspi.flash.b_m2mem_pack1_mb1927_33ba:
@@ -59,8 +61,10 @@ tests:
       - shield
     platform_allow:
       - nucleo_u3c5zi_q
+      - nucleo_c5a3zg
     integration_platforms:
       - nucleo_u3c5zi_q
+      - nucleo_c5a3zg
     extra_args: SHIELD=b_m2mem_pack1_mb1927_33ba
 
   sample.drivers.mspi.flash.b_m2mem_pack1_mb1928_33la:
@@ -68,8 +72,10 @@ tests:
       - shield
     platform_allow:
       - nucleo_u3c5zi_q
+      - nucleo_c5a3zg
     integration_platforms:
       - nucleo_u3c5zi_q
+      - nucleo_c5a3zg
     extra_args: SHIELD=b_m2mem_pack1_mb1928_33la
 
   sample.drivers.mspi.flash.b_m2mem_pack1_mb1928_33lb:
@@ -77,6 +83,8 @@ tests:
       - shield
     platform_allow:
       - nucleo_u3c5zi_q
+      - nucleo_c5a3zg
     integration_platforms:
       - nucleo_u3c5zi_q
+      - nucleo_c5a3zg
     extra_args: SHIELD=b_m2mem_pack1_mb1928_33lb
