@@ -42,6 +42,7 @@
 #include "stream_rx.h"
 #include "usb.h"
 #include "hw_codec.h"
+#include "i2s_play.h"
 
 LOG_MODULE_REGISTER(lc3, CONFIG_LOG_DEFAULT_LEVEL);
 
@@ -195,6 +196,7 @@ static int usb_add_frame(const struct stream_rx *stream, int chn, uint32_t ts)
 	return usb_add_frame_to_usb(chan_alloc, lc3_rx_buf, sizeof(lc3_rx_buf), ts);
 }
 
+#if !(DT_HAS_ALIAS(i2s_codec_tx) && IS_ENABLED(CONFIG_I2S) && IS_ENABLED(CONFIG_AUDIO_CODEC))
 static int codec_add_frame(const struct stream_rx *stream, int chn, uint32_t ts)
 {
 	ARG_UNUSED(stream);
@@ -209,6 +211,7 @@ static int codec_add_frame(const struct stream_rx *stream, int chn, uint32_t ts)
 		return hw_codec_write_data((const uint8_t *)lc3_rx_buf, sizeof(lc3_rx_buf));
 	}
 }
+#endif
 
 static size_t decode_frame_block(struct lc3_data *data, size_t frame_cnt)
 {
@@ -223,6 +226,15 @@ static size_t decode_frame_block(struct lc3_data *data, size_t frame_cnt)
 		 */
 		if (decode_frame(data, frame_cnt + decoded_frames)) {
 			decoded_frames++;
+#if DT_HAS_ALIAS(i2s_codec_tx) && IS_ENABLED(CONFIG_I2S) && IS_ENABLED(CONFIG_AUDIO_CODEC)
+			if (IS_ENABLED(CONFIG_USE_CODEC_AUDIO_OUTPUT)) {
+				ret = i2s_play_add_frame(stream, i, lc3_rx_buf);
+				if (ret != 0) {
+					LOG_ERR("i2s_play_add_frame failed: %d", ret);
+					continue;
+				}
+			}
+#else
 			if (IS_ENABLED(CONFIG_USE_CODEC_AUDIO_OUTPUT)) {
 				ret = codec_add_frame(stream, i, data->ts);
 				if (ret != 0) {
@@ -230,6 +242,7 @@ static size_t decode_frame_block(struct lc3_data *data, size_t frame_cnt)
 					continue;
 				}
 			}
+#endif
 			if (IS_ENABLED(CONFIG_USE_USB_AUDIO_OUTPUT)) {
 				ret = usb_add_frame(stream, i, data->ts);
 				if (ret != 0) {
@@ -289,6 +302,18 @@ static void lc3_decoder_thread_func(void *arg1, void *arg2, void *arg3)
 
 		if (stream->lc3_decoder == NULL) {
 			LOG_WRN("Decoder is NULL, discarding data from FIFO");
+			/*
+			 * lc3_enqueue_for_decoding() took a reference on the
+			 * network buffer (net_buf_ref). The normal decode path
+			 * releases it in do_lc3_decode(), but this discard path
+			 * must release it too. Without this unref, every packet
+			 * that was still queued when the stream was disabled
+			 * (e.g. on a broadcast stop / re-sync) permanently leaks
+			 * one RX buffer. Across repeated stop/re-sync cycles the
+			 * RX pool is drained until allocations start failing and
+			 * the sink can no longer receive.
+			 */
+			net_buf_unref(data->buf);
 			k_mem_slab_free(&lc3_data_slab, (void *)data);
 			continue; /* Wait for new data */
 		}
@@ -413,6 +438,7 @@ int lc3_enable(struct stream_rx *stream)
 		}
 	}
 
+#if !DT_HAS_ALIAS(i2s_codec_tx) || !IS_ENABLED(CONFIG_I2S) || !IS_ENABLED(CONFIG_AUDIO_CODEC)
 	if (IS_ENABLED(CONFIG_USE_CODEC_AUDIO_OUTPUT)) {
 		const int err = hw_codec_cfg(lc3_freq_hz);
 
@@ -421,6 +447,7 @@ int lc3_enable(struct stream_rx *stream)
 			return err;
 		}
 	}
+#endif
 	return 0;
 }
 
