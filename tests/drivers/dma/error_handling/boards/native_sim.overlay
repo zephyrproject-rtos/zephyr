@@ -1,0 +1,5 @@
+&dma {
+	dma-channels = <4>;
+	dma-requests = <4>;
+	status = "okay";
+};
