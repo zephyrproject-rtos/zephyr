@@ -121,6 +121,10 @@ zephyr_library_sources_ifdef(CONFIG_USART_SAM usart_sam.c)
 zephyr_library_sources_ifdef(CONFIG_USERSPACE uart_handlers.c)
 # zephyr-keep-sorted-stop
 
+if(CONFIG_UART_NATIVE_PTY OR CONFIG_UART_NATIVE_TTY)
+  zephyr_library_sources(uart_native_common.c)
+endif()
+
 if(CONFIG_UART_NATIVE_PTY)
   zephyr_library_sources(uart_native_pty.c)
   target_sources(native_simulator INTERFACE uart_native_pty_bottom.c)
