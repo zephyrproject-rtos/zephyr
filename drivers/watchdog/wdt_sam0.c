@@ -37,9 +37,8 @@ LOG_MODULE_REGISTER(wdt_sam0);
 struct wdt_sam0_dev_data {
 	wdt_callback_t cb;
 	bool timeout_valid;
+	bool always_on;
 };
-
-static struct wdt_sam0_dev_data wdt_sam0_data = { 0 };
 
 static void wdt_sam0_wait_synchronization(void)
 {
@@ -60,9 +59,9 @@ static inline void wdt_sam0_set_enable(bool on)
 static inline bool wdt_sam0_is_enabled(void)
 {
 #ifdef WDT_CTRLA_ENABLE
-	return WDT_REGS->CTRLA.bit.ENABLE;
+	return WDT_REGS->CTRLA.bit.ENABLE || WDT_REGS->CTRLA.bit.ALWAYSON;
 #else
-	return WDT_REGS->CTRL.bit.ENABLE;
+	return WDT_REGS->CTRL.bit.ENABLE || WDT_REGS->CTRL.bit.ALWAYSON;
 #endif
 }
 
@@ -99,6 +98,11 @@ static int wdt_sam0_setup(const struct device *dev, uint8_t options)
 {
 	struct wdt_sam0_dev_data *data = dev->data;
 
+	if (data->always_on) {
+		LOG_WRN("Watchdog already running in Always-On mode");
+		return 0;
+	}
+
 	if (wdt_sam0_is_enabled()) {
 		LOG_ERR("Watchdog already setup");
 		return -EBUSY;
@@ -123,13 +127,32 @@ static int wdt_sam0_setup(const struct device *dev, uint8_t options)
 	wdt_sam0_set_enable(1);
 	wdt_sam0_wait_synchronization();
 
+	/* Set Always-On mode if requested and not already set by fuse */
+	if (!data->always_on && DT_INST_PROP(0, always_on)) {
+#ifdef WDT_CTRLA_ENABLE
+		WDT_REGS->CTRLA.bit.ALWAYSON = 1;
+#else
+		WDT_REGS->CTRL.bit.ALWAYSON = 1;
+#endif
+		wdt_sam0_wait_synchronization();
+		data->always_on = true;
+		LOG_INF("Always-On mode enabled");
+	}
+
 	return 0;
 }
 
 static int wdt_sam0_disable(const struct device *dev)
 {
+	struct wdt_sam0_dev_data *data = dev->data;
+
 	if (!wdt_sam0_is_enabled()) {
 		return -EFAULT;
+	}
+
+	if (data->always_on) {
+		LOG_ERR("Cannot disable watchdog: Always-On is set");
+		return -ENOTSUP;
 	}
 
 	wdt_sam0_set_enable(0);
@@ -143,6 +166,23 @@ static int wdt_sam0_install_timeout(const struct device *dev,
 {
 	struct wdt_sam0_dev_data *data = dev->data;
 	uint32_t window, per;
+
+	/* If Always-On is set, CONFIG/EWCTRL are read-only (persisted from
+	 * a previous boot or NVM fuse). Still allow callback and interrupt
+	 * configuration since INTENSET/INTENCLR work with Always-On.
+	 */
+	if (data->always_on) {
+		LOG_WRN("WDT is Always-On: cannot change timeout/window");
+		data->cb = cfg->callback;
+		if (data->cb) {
+			WDT_REGS->INTENSET.reg = WDT_INTENSET_EW;
+		} else {
+			WDT_REGS->INTENCLR.reg = WDT_INTENCLR_EW;
+			WDT_REGS->INTFLAG.reg = WDT_INTFLAG_EW;
+		}
+		data->timeout_valid = true;
+		return 0;
+	}
 
 	/* CONFIG is enable protected, error out if already enabled */
 	if (wdt_sam0_is_enabled()) {
@@ -251,9 +291,22 @@ static DEVICE_API(wdt, wdt_sam0_api) = {
 
 static int wdt_sam0_init(const struct device *dev)
 {
+	struct wdt_sam0_dev_data *data = dev->data;
+
+	/* Detect Always-On state (set by NVM User Row fuse at POR) */
+#ifdef WDT_CTRLA_ENABLE
+	data->always_on = WDT_REGS->CTRLA.bit.ALWAYSON;
+#else
+	data->always_on = WDT_REGS->CTRL.bit.ALWAYSON;
+#endif
+
 #ifdef CONFIG_WDT_DISABLE_AT_BOOT
-	/* Ignore any errors */
-	wdt_sam0_disable(dev);
+	if (data->always_on) {
+		LOG_WRN("Watchdog is Always-On, cannot disable at boot");
+	} else {
+		/* Ignore any errors */
+		wdt_sam0_disable(dev);
+	}
 #endif
 	/* Enable APB clock */
 #ifdef MCLK
@@ -277,7 +330,7 @@ static int wdt_sam0_init(const struct device *dev)
 	return 0;
 }
 
-static struct wdt_sam0_dev_data wdt_sam0_data;
+static struct wdt_sam0_dev_data wdt_sam0_data = { 0 };
 
 DEVICE_DT_INST_DEFINE(0, wdt_sam0_init, NULL,
 		    &wdt_sam0_data, NULL, PRE_KERNEL_1,

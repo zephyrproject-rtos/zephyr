@@ -10,3 +10,15 @@ properties:
 
   interrupts:
     required: true
+
+  always-on:
+    type: boolean
+    description: |
+      Enable Always-On mode (CTRLA.ALWAYSON). When set, the watchdog runs
+      continuously and can only be disabled by a power-on reset. CONFIG and
+      EWCTRL registers become read-only and their settings cannot be changed.
+
+      This bit, once written, cannot be cleared except by a power-on reset.
+      It can also be pre-programmed in the NVM User Row (fuse). When the
+      fuse is set, this property has no effect — the watchdog is always-on
+      regardless of the devicetree.
