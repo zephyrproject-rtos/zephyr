@@ -1290,7 +1290,7 @@ static struct usbd_cdc_ncm_desc cdc_ncm_desc_##n = {				\
 		.bDescriptorType = USB_DESC_CS_INTERFACE,			\
 		.bDescriptorSubtype = ETHERNET_FUNC_DESC_NCM,			\
 		.bcdNcmVersion = sys_cpu_to_le16(0x100),			\
-		.bmNetworkCapabilities = 0,					\
+		.bmNetworkCapabilities = USB_CDC_NCM_NCAP_ETH_FILTER,		\
 	},									\
 										\
 	.if0_int_ep = {								\
