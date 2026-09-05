@@ -148,6 +148,31 @@ Removed APIs and options
       * ``scobc_module1``
       * ``xiao_esp32c6``
 
+    * The following boards have been deprecated and renamed:
+
+      * ``metro_rp2350/rp2350b/m33`` to ``metro_rp2350/rp2350b/m33_0``
+      * ``motion_2350_pro/rp2350a/m33`` to ``motion_2350_pro/rp2350a/m33_0``
+      * ``motion_2350_pro/rp2350a/hazard3`` to ``motion_2350_pro/rp2350a/hazard3_0``
+      * ``beetle_rp2350/rp2350a/m33`` to ``beetle_rp2350/rp2350a/m33_0``
+      * ``beetle_rp2350/rp2350a/hazard3`` to ``beetle_rp2350/rp2350a/hazard3_0``
+      * ``pico2_spe/rp2350a/m33`` to ``pico2_spe/rp2350a/m33_0``
+      * ``pico_plus2/rp2350b/m33`` to ``pico_plus2/rp2350b/m33_0``
+      * ``pico_plus2/rp2350b/hazard3`` to ``pico_plus2/rp2350b/hazard3_0``
+      * ``rpi_pico2/rp2350a/m33`` to ``rpi_pico2/rp2350a/m33_0``
+      * ``rpi_pico2/rp2350a/m33/w`` to ``rpi_pico2/rp2350a/m33_0/w``
+      * ``rpi_pico2/rp2350a/m33/mcuboot`` to ``rpi_pico2/rp2350a/m33_0/mcuboot``
+      * ``rpi_pico2/rp2350a/m33/w/mcuboot`` to ``rpi_pico2/rp2350a/m33_0/w/mcuboot``
+      * ``rpi_pico2/rp2350a/hazard3`` to ``rpi_pico2/rp2350a/hazard3_0``
+      * ``xiao_rp2350/rp2350a/m33`` to ``xiao_rp2350/rp2350a/m33_0``
+      * ``xiao_rp2350/rp2350a/hazard3`` to ``xiao_rp2350/rp2350a/hazard3_0``
+      * ``rp2350_zero/rp2350a/m33`` to ``rp2350_zero/rp2350a/m33_0``
+      * ``rp2350_zero/rp2350a/hazard3`` to ``rp2350_zero/rp2350a/hazard3_0``
+      * ``rp2350b_core/rp2350b/m33`` to ``rp2350b_core/rp2350b/m33_0``
+      * ``rp2350b_core/rp2350b/hazard3`` to ``rp2350b_core/rp2350b/hazard3_0``
+      * ``w5500_evb_pico2/rp2350a/m33`` to ``w5500_evb_pico2/rp2350a/m33_0``
+      * ``w6100_evb_pico2/rp2350a/m33`` to ``w6100_evb_pico2/rp2350a/m33_0``
+      * ``w6300_evb_pico2/rp2350a/m33`` to ``w6300_evb_pico2/rp2350a/m33_0``
+
 * Build system
 
     * ``CONFIG_BUILD_NO_GAP_FILL``
@@ -322,6 +347,16 @@ Deprecated APIs and options
 
   * The Nordic SoC headers :file:`<haltium_power.h>` and :file:`<haltium_pm_s2ram.h>`
     have been renamed to :file:`<soc_power.h>` and :file:`<soc_pm_s2ram.h>` respectively.
+
+* Raspberry Pi
+
+  * The RP2350 ``SOC_RP2350A_HAZARD3``, ``SOC_RP2350A_M33``, ``SOC_RP2350B_HAZARD3``, and
+    ``SOC_RP2350B_M33`` Kconfig symbols, along with the corresponding bare ``hazard3``/``m33``
+    cpuclusters in ``soc.yml``, are deprecated in favor of ``SOC_RP2350A_HAZARD3_0``,
+    ``SOC_RP2350A_M33_0``, ``SOC_RP2350B_HAZARD3_0``, and ``SOC_RP2350B_M33_0`` and their
+    ``hazard3_0``/``m33_0`` cpuclusters, to align RP2350 dual-core cluster naming with the hardware
+    model v2. Both the old Kconfig symbols and the ``soc.yml`` entries will be removed
+    in a future release. All in-tree boards have been migrated.
 
 * Ring buffer
 

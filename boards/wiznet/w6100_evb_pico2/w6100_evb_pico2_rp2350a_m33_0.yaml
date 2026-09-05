@@ -1,5 +1,5 @@
-identifier: w6300_evb_pico2/rp2350a/m33
-name: Wiznet W6300 Evaluation Board with RP2350
+identifier: w6100_evb_pico2/rp2350a/m33_0
+name: Wiznet W6100 Evaluation Board with RP2350
 type: mcu
 arch: arm
 flash: 2048
@@ -15,7 +15,6 @@ supported:
   - gpio
   - hwinfo
   - i2c
-  - netif:eth
   - pico_gpio
   - pico_i2c
   - pico_serial

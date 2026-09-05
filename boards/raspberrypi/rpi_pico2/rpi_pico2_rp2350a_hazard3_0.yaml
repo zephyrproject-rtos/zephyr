@@ -1,12 +1,11 @@
-identifier: w6100_evb_pico2/rp2350a/m33
-name: Wiznet W6100 Evaluation Board with RP2350
+identifier: rpi_pico2/rp2350a/hazard3_0
+name: Raspberry Pi Pico 2 (Hazard3)
 type: mcu
-arch: arm
-flash: 2048
+arch: riscv
+flash: 4096
 ram: 520
 toolchain:
   - zephyr
-  - gnuarmemb
 supported:
   - adc
   - clock

@@ -1,14 +1,12 @@
-identifier: pico2_spe/rp2350a/m33
-name: KWS Pico2 SinglePairEthernet
+identifier: rp2350b_core/rp2350b/hazard3_0
+name: WeAct RP2350B Core (Hazard3)
 type: mcu
-arch: arm
+arch: riscv
 flash: 4096
 ram: 520
 toolchain:
   - zephyr
-  - gnuarmemb
 supported:
-  - adc
   - clock
   - counter
   - dma
@@ -18,3 +16,5 @@ supported:
   - pwm
   - spi
   - uart
+  - usbd
+  - watchdog

@@ -216,7 +216,7 @@ tests:
       - CONFIG_SPI_PL022_DMA=n
     platform_allow:
       - rpi_pico
-      - pico_plus2/rp2350b/m33
+      - pico_plus2/rp2350b/m33_0
   drivers.spi.pl022_spi_dma.loopback:
     extra_args: DTC_OVERLAY_FILE="boards/rpi_pico_pl022_dma.overlay"
     extra_configs:
@@ -225,7 +225,7 @@ tests:
       - CONFIG_DMA=y
     platform_allow:
       - rpi_pico
-      - pico_plus2/rp2350b/m33
+      - pico_plus2/rp2350b/m33_0
   drivers.spi.pl022_spi_dma_and_interrupt.loopback:
     extra_args: DTC_OVERLAY_FILE="boards/rpi_pico_pl022_dma.overlay"
     extra_configs:
@@ -234,7 +234,7 @@ tests:
       - CONFIG_DMA=y
     platform_allow:
       - rpi_pico
-      - pico_plus2/rp2350b/m33
+      - pico_plus2/rp2350b/m33_0
   drivers.spi.pl022_spi_dma_no_dma_props.loopback:
     extra_args: DTC_OVERLAY_FILE="boards/rpi_pico_pl022.overlay"
     extra_configs:
@@ -243,7 +243,7 @@ tests:
       - CONFIG_DMA=y
     platform_allow:
       - rpi_pico
-      - pico_plus2/rp2350b/m33
+      - pico_plus2/rp2350b/m33_0
   drivers.spi.pl022_spi_dma_and_interrupt_no_dma_props.loopback:
     extra_args: DTC_OVERLAY_FILE="boards/rpi_pico_pl022.overlay"
     extra_configs:
@@ -252,7 +252,7 @@ tests:
       - CONFIG_DMA=y
     platform_allow:
       - rpi_pico
-      - pico_plus2/rp2350b/m33
+      - pico_plus2/rp2350b/m33_0
   drivers.spi.pio_spi.loopback:
     extra_args:
       - DTC_OVERLAY_FILE="boards/rpi_pico_pio.overlay"

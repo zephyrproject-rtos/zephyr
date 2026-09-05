@@ -1,4 +1,4 @@
-identifier: rp2350b_core/rp2350b/m33
+identifier: rp2350b_core/rp2350b/m33_0
 name: WeAct RP2350B Core (Cortex-M33)
 type: mcu
 arch: arm
