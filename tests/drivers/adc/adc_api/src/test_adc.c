@@ -33,23 +33,37 @@ typedef int16_t adc_data_size_t;
 #define __NOCACHE
 #endif /* CONFIG_NOCACHE_MEMORY */
 
-#define BUFFER_SIZE  15
+#define DT_SPEC_AND_COMMA(node_id, prop, idx)	ADC_DT_SPEC_GET_BY_IDX(node_id, idx),
+
+/* Expands to a channel spec for a channel node of an enabled ADC controller. */
+#define CHANNEL_NODE_SPEC_AND_COMMA(node_id) \
+	IF_ENABLED(UTIL_AND(DT_NODE_HAS_PROP(node_id, zephyr_gain), \
+			    DT_NODE_HAS_STATUS_OKAY(DT_PARENT(node_id))), \
+		   (ADC_DT_SPEC_FROM_CHANNEL_NODE(node_id),))
+
+/*
+ * Channels to exercise. The io-channels of the zephyr,user node select them
+ * explicitly; otherwise every channel described under an enabled ADC
+ * controller is used. Only the channels on the controller of the first entry
+ * are exercised.
+ */
+static const struct adc_dt_spec adc_channels[] = {
+#if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), io_channels)
+	DT_FOREACH_PROP_ELEM(DT_PATH(zephyr_user), io_channels, DT_SPEC_AND_COMMA)
+#else
+	DT_FOREACH_STATUS_OKAY_NODE(CHANNEL_NODE_SPEC_AND_COMMA)
+#endif
+};
+static const int adc_channels_count = ARRAY_SIZE(adc_channels);
+
+BUILD_ASSERT(ARRAY_SIZE(adc_channels) > 0, "No ADC channel described in devicetree");
+
+/* Room for one sampling of every channel, or the samplings of the async tests. */
+#define BUFFER_SIZE  MAX(15, ARRAY_SIZE(adc_channels))
 #ifdef CONFIG_TEST_USERSPACE
 static ZTEST_BMEM adc_data_size_t m_sample_buffer[BUFFER_SIZE];
 #else
 static __aligned(32) adc_data_size_t m_sample_buffer[BUFFER_SIZE] __NOCACHE;
-#endif
-
-#define DT_SPEC_AND_COMMA(node_id, prop, idx)	ADC_DT_SPEC_GET_BY_IDX(node_id, idx),
-
-#if DT_NODE_HAS_PROP(DT_PATH(zephyr_user), io_channels)
-/* Data of ADC io-channels specified in devicetree. */
-static const struct adc_dt_spec adc_channels[] = {
-	DT_FOREACH_PROP_ELEM(DT_PATH(zephyr_user), io_channels, DT_SPEC_AND_COMMA)
-};
-static const int adc_channels_count = ARRAY_SIZE(adc_channels);
-#else
-#error "Unsupported board."
 #endif
 
 #ifdef CONFIG_ADC_SEQUENCE_PRIORITY
@@ -84,6 +98,33 @@ const struct device *get_adc_device(void)
 	return adc_channels[0].dev;
 }
 
+/* True for the channels on the controller under test. */
+static bool on_adc_device(const struct adc_dt_spec *spec)
+{
+	return spec->dev == adc_channels[0].dev;
+}
+
+/*
+ * Adds up to max_count channels of the controller under test to the sequence,
+ * the first of which the sequence was initialized with. Returns the number of
+ * channels in the sequence.
+ */
+static int add_channels(struct adc_sequence *sequence, int max_count)
+{
+	int count = 1;
+
+	for (int i = 1; i < adc_channels_count && count < max_count; i++) {
+		if (!on_adc_device(&adc_channels[i]) || adc_channels[i].channel_id >= 32) {
+			continue;
+		}
+
+		sequence->channels |= BIT(adc_channels[i].channel_id);
+		count++;
+	}
+
+	return count;
+}
+
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(test_counter)) && \
 	defined(CONFIG_COUNTER)
 static void init_counter(void)
@@ -111,6 +152,10 @@ static void init_adc(void)
 	zassert_true(adc_is_ready_dt(&adc_channels[0]), "ADC device is not ready");
 
 	for (i = 0; i < adc_channels_count; i++) {
+		if (!on_adc_device(&adc_channels[i])) {
+			continue;
+		}
+
 		ret = adc_channel_setup_dt(&adc_channels[i]);
 		zassert_equal(ret, 0, "Setting up of channel %d failed with code %d", i, ret);
 	}
@@ -228,6 +273,7 @@ ZTEST_USER(adc_basic, test_adc_sample_invalid_buffer)
 static int test_task_multiple_channels(void)
 {
 	int ret;
+	int count;
 	struct adc_sequence sequence = {
 		.buffer      = m_sample_buffer,
 		.buffer_size = sizeof(m_sample_buffer),
@@ -239,8 +285,9 @@ static int test_task_multiple_channels(void)
 	init_adc();
 	(void)adc_sequence_init_dt(&adc_channels[0], &sequence);
 
-	for (int i = 1; i < adc_channels_count; i++) {
-		sequence.channels |= BIT(adc_channels[i].channel_id);
+	count = add_channels(&sequence, adc_channels_count);
+	if (count < 2) {
+		ztest_test_skip();
 	}
 
 	ret = adc_read_dt(&adc_channels[0], &sequence);
@@ -249,18 +296,14 @@ static int test_task_multiple_channels(void)
 	}
 	zassert_equal(ret, 0, "adc_read() failed with code %d", ret);
 
-	check_samples(adc_channels_count, m_sample_buffer, BUFFER_SIZE);
+	check_samples(count, m_sample_buffer, BUFFER_SIZE);
 
 	return TC_PASS;
 }
 
 ZTEST_USER(adc_basic, test_adc_sample_two_channels)
 {
-	if (adc_channels_count > 1) {
-		zassert_true(test_task_multiple_channels() == TC_PASS);
-	} else {
-		ztest_test_skip();
-	}
+	zassert_true(test_task_multiple_channels() == TC_PASS);
 }
 
 /*
@@ -444,6 +487,7 @@ ZTEST(adc_basic, test_adc_sample_with_interval)
  * test_adc_repeated_samplings
  */
 static uint8_t m_samplings_done;
+static int m_repeated_channels;
 static enum adc_action repeated_samplings_callback(const struct device *dev,
 						   const struct adc_sequence *sequence,
 						   uint16_t sampling_index)
@@ -451,12 +495,12 @@ static enum adc_action repeated_samplings_callback(const struct device *dev,
 	++m_samplings_done;
 	TC_PRINT("%s: done %d\n", __func__, m_samplings_done);
 	if (m_samplings_done == 1U) {
-		check_samples(MIN(adc_channels_count, 2), m_sample_buffer, BUFFER_SIZE);
+		check_samples(m_repeated_channels, m_sample_buffer, BUFFER_SIZE);
 
 		/* After first sampling continue normally. */
 		return ADC_ACTION_CONTINUE;
 	} else {
-		check_samples(2 * MIN(adc_channels_count, 2), m_sample_buffer, BUFFER_SIZE);
+		check_samples(2 * m_repeated_channels, m_sample_buffer, BUFFER_SIZE);
 
 		/*
 		 * The second sampling is repeated 9 times (the samples are
@@ -499,9 +543,8 @@ static int test_task_repeated_samplings(void)
 	init_adc();
 	(void)adc_sequence_init_dt(&adc_channels[0], &sequence);
 
-	if (adc_channels_count > 1) {
-		sequence.channels |=  BIT(adc_channels[1].channel_id);
-	}
+	m_samplings_done = 0;
+	m_repeated_channels = add_channels(&sequence, 2);
 
 	ret = adc_read_dt(&adc_channels[0], &sequence);
 	if (ret == -ENOTSUP) {
