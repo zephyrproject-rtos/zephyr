@@ -169,9 +169,11 @@ static void i2s_tx_stream_disable(const struct device *dev, bool drop)
 
 	dma_stop(dev_dma, strm->dma_channel);
 
-	/* wait for TX FIFO to drain before disabling */
-	while ((base->TCSR & I2S_TCSR_FWF_MASK) == 0) {
-		;
+	/* wait for TX FIFO to drain before disabling, if not disabled already */
+	if ((base->TCSR & I2S_TCSR_TE_MASK) != 0UL) {
+		while ((base->TCSR & I2S_TCSR_FWF_MASK) == 0) {
+			;
+		}
 	}
 
 	/* Disable the channel FIFO */
