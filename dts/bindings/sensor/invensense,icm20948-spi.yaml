@@ -1,0 +1,29 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    ICM20948 High-precision 9-axis motion tracking device.
+    When setting the properties in a .dts or .dtsi file you may include
+    dt-bindings/sensor/icm20948.h and use the macros defined there.
+
+compatible: "invensense,icm20948"
+
+include: ["spi-device.yaml", "invensense,icm20948-common.yaml"]
+
+examples:
+  - |
+    #include <zephyr/dt-bindings/sensor/icm20948.h>
+
+    &spi0 {
+      /* ... */
+
+      icm20948: icm20948@68 {
+        /* ... */
+
+        accel-fs = <ICM20948_DT_ACCEL_FS_16G>;
+        accel-div = <10>;
+        gyro-fs = <ICM20948_DT_GYRO_FSR_500DPS>;
+        gyro-div = <10>;
+        mag-mode = <ICM20948_DT_MAG_MODE_50HZ>
+      };
+    };
