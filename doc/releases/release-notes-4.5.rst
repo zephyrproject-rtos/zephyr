@@ -447,6 +447,10 @@ New APIs and options
       return ``-EINPROGRESS`` from the :c:member:`bt_rfcomm_dlc_ops.recv` callback to defer buffer
       release and flow-control credit refill until processing is complete.
 
+  * Host
+
+    * :c:func:`bt_le_generate_and_get_rpa`
+
   * Mesh
 
     * :c:struct:`bt_mesh_lpn_timing`
