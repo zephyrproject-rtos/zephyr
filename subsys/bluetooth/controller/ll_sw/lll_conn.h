@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
 #if defined(CONFIG_BT_CTLR_CONN_META)
 #include "lll_conn_meta.h"
 #endif /* CONFIG_BT_CTLR_CONN_META */
@@ -56,8 +57,8 @@ struct data_pdu_length {
 struct lll_conn {
 	struct lll_hdr hdr;
 
-	uint8_t access_addr[4];
-	uint8_t crc_init[3];
+	uint8_t access_addr[PDU_ACCESS_ADDR_SIZE];
+	uint8_t crc_init[PDU_CRC_SIZE];
 
 	uint16_t tifs_tx_us;
 	uint16_t tifs_rx_us;
