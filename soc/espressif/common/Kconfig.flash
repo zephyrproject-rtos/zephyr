@@ -135,12 +135,12 @@ DT_CHOSEN_FLASH_NODE := $(dt_chosen_path,$(DT_CHOSEN_Z_FLASH))
 DT_FLASH_WRITE_BLOCK_SIZE := $(dt_node_int_prop_int,$(DT_CHOSEN_FLASH_NODE),write-block-size)
 config ESP_FLASH_ENCRYPTION
 	bool "Hardware flash encryption compatibility"
-	depends on !ESP_SIMPLE_BOOT && !MCUBOOT && "$(DT_FLASH_WRITE_BLOCK_SIZE)" = 32
+	depends on !ESP_SIMPLE_BOOT && !MCUBOOT && BOOTLOADER_MCUBOOT && "$(DT_FLASH_WRITE_BLOCK_SIZE)" = 32
 	help
 	  Enable Espressif's hardware flash encryption compatibility with MCUboot
-	  Espressif Port.
-	  The flash encryption configuration must be enabled on the bootloader and
-	  the flash write block size must be set to 32 bytes on Zephyr's device tree.
+	  Zephyr port. Requires hardware flash encryption to be enabled in the
+	  MCUboot bootloader (e.g. via sysbuild SB_CONFIG_MCUBOOT_ESP_FLASH_ENCRYPTION).
+	  Image signing uses 32-byte alignment when this option is enabled.
 
 config ESP32_SLEEP_WAIT_FLASH_READY_EXTRA_DELAY
 	int "Extra delay (in us) after flash power down sleep wakeup to wait flash ready"
