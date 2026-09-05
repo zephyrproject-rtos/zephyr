@@ -457,6 +457,99 @@
 				 <&pcc NPCX_CLOCK_BUS_APB1 NPCX_PWDWN_CTL5 7>;
 		};
 
+		espi_host_sub: espi-host-sub {
+			compatible = "nuvoton,npcx-espi-host-sub";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			/* WUI map for accessing host sub-modules */
+			host-acc-wui = <&wui_host_acc>;
+
+			mswc: mswc@400c1000 {
+				compatible = "nuvoton,npcx-host-mswc";
+				reg = <0x400c1000 0x2000>;
+				clocks = <&pcc NPCX_CLOCK_BUS_APB3
+					  NPCX_PWDWN_CTL5 3>;
+			};
+
+			shm: shm@40010000 {
+				compatible = "nuvoton,npcx-host-shm";
+				reg = <0x40010000 0x2000>;
+				clocks = <&pcc NPCX_CLOCK_BUS_APB3
+					  NPCX_PWDWN_CTL5 4>;
+				interrupts = <10 3>; /* Port80 FIFO Not Empty */
+				interrupt-names = "p80_fifo";
+				status = "disabled";
+			};
+
+			c2h: c2h@4000e000 {
+				compatible = "nuvoton,npcx-host-c2h";
+				reg = <0x4000e000 0x2000>;
+				status = "disabled";
+			};
+
+			kbc: kbc@400c7000 {
+				compatible = "nuvoton,npcx-host-kbc";
+				reg = <0x400c7000 0x2000>;
+				clocks = <&pcc NPCX_CLOCK_BUS_APB3
+					  NPCX_PWDWN_CTL5 5>;
+				interrupts = <6 3>, /* KBC Input-Buf-Full */
+					     <5 3>; /* KBC Output-Buf-Empty */
+				interrupt-names = "kbc_ibf", "kbc_obe";
+				status = "disabled";
+			};
+
+			pm_group: pm-group {
+				compatible = "nuvoton,npcx-host-pm-ch-group";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				interrupts = <4 3>, /* PMCH Input-Buf-Full */
+					     <3 3>;  /* PMCH Output-Buf-Empty */
+				interrupt-names = "pmch_ibf", "pmch_obe";
+
+				pm_ch1: pm-ch1@400c9000 {
+					compatible = "nuvoton,npcx-host-pm-channel";
+					reg = <0x400c9000 0x2000>;
+					clocks = <&pcc NPCX_CLOCK_BUS_APB3
+						  NPCX_PWDWN_CTL5 6>;
+					status = "disabled";
+				};
+
+				pm_ch2: pm-ch2@400cb000 {
+					compatible = "nuvoton,npcx-host-pm-channel";
+					reg = <0x400cb000 0x2000>;
+					clocks = <&pcc NPCX_CLOCK_BUS_APB1
+						  NPCX_PWDWN_CTL5 7>;
+					status = "disabled";
+				};
+
+				pm_ch3: pm-ch3@400cd000 {
+					compatible = "nuvoton,npcx-host-pm-channel";
+					reg = <0x400cd000 0x2000>;
+					clocks = <&pcc NPCX_CLOCK_BUS_APB1
+						  NPCX_PWDWN_CTL5 7>;
+					status = "disabled";
+				};
+
+				pm_ch4: pm-ch4@400cf000 {
+					compatible = "nuvoton,npcx-host-pm-channel";
+					reg = <0x400cf000 0x2000>;
+					clocks = <&pcc NPCX_CLOCK_BUS_APB1
+						  NPCX_PWDWN_CTL5 7>;
+					status = "disabled";
+				};
+			};
+
+			mbi: mbi@400a1000 {
+				compatible = "nuvoton,npcx-host-mbi";
+				reg = <0x400a1000 0x2000>;
+				interrupts = <7 3>; /* SHM/MBI interrupts */
+				interrupt-names = "shm_mbi";
+				status = "disabled";
+			};
+		};
+
 		/* I2c Controllers - Do not use them as i2c node directly */
 		i2c_ctrl1: i2c@40003000 {
 			compatible = "nuvoton,npcx-i2c-ctrl";
