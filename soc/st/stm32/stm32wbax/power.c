@@ -103,6 +103,15 @@ BUILD_ASSERT(SRAM1_RETENTION_MASK != 0U,
 
 #define HSE_ON (stm32_reg_read_bits(&RCC->CR, RCC_CR_HSEON) == RCC_CR_HSEON)
 
+/* Number of 32-bit words needed for ISER/IPR depending on IRQ count */
+#define NVIC_ISER_COUNT ((CONFIG_NUM_IRQS + 31) / 32)
+#define NVIC_IPR_COUNT  ((CONFIG_NUM_IRQS + 3) / 4)
+
+struct nvic_context {
+	uint32_t iser[NVIC_ISER_COUNT];
+	uint32_t ipr[CONFIG_NUM_IRQS];
+};
+
 static uint32_t ram_waitstates_backup;
 static uint32_t flash_latency_backup;
 
@@ -111,6 +120,7 @@ static uint32_t flash_latency_backup;
 bool standby_entered;
 static struct fpu_ctx_full fpu_state;
 static struct scb_context scb_state;
+static struct nvic_context nvic_state;
 #if defined(CONFIG_ARM_MPU)
 static struct z_mpu_context_retained mpu_state;
 #endif
@@ -167,6 +177,42 @@ static int enter_low_power_mode(void)
 }
 
 #if defined(CONFIG_PM_S2RAM)
+
+static void nvic_save_context(void)
+{
+	/* 1. Save priorities 4 interrupts at a time using 32-bit access */
+	for (int i = 0; i < NVIC_IPR_COUNT; i++) {
+		nvic_state.ipr[i] = NVIC->IPR[i];
+	}
+
+	/* 2. Save active interrupt enables */
+	for (int i = 0; i < NVIC_ISER_COUNT; i++) {
+		nvic_state.iser[i] = NVIC->ISER[i];
+	}
+}
+
+static void nvic_restore_context(void)
+{
+	/* 1. Clear any pending/stale hardware IRQs prior to re-enabling */
+	for (int i = 0; i < NVIC_ISER_COUNT; i++) {
+		NVIC->ICER[i] = 0xFFFFFFFFU;
+		NVIC->ICPR[i] = 0xFFFFFFFFU;
+	}
+
+	/* 2. Restore Peripheral Interrupt Priorities (IPR) */
+	for (int i = 0; i < NVIC_IPR_COUNT; i++) {
+		NVIC->IPR[i] = nvic_state.ipr[i];
+	}
+
+	/* 3. Restore Active Interrupt Enables (ISER) */
+	for (int i = 0; i < NVIC_ISER_COUNT; i++) {
+		NVIC->ISER[i] = nvic_state.iser[i];
+	}
+
+	__DSB();
+	__ISB();
+}
+
 static void set_mode_suspend_to_ram_enter(void)
 {
 	/* Enable RTC wakeup
@@ -185,12 +231,13 @@ static void set_mode_suspend_to_ram_enter(void)
 	/* Select standby mode */
 	LL_PWR_SetPowerMode(LL_PWR_MODE_STANDBY);
 
-	/* Save FPU, SCB and MPU states */
+	/* Save NVIC, FPU, SCB and MPU states */
 	z_arm_save_fp_context(&fpu_state);
 	z_arm_save_scb_context(&scb_state);
 #if defined(CONFIG_ARM_MPU)
 	z_arm_save_mpu_context(&mpu_state);
 #endif /* CONFIG_ARM_MPU */
+	nvic_save_context();
 
 	standby_entered = true;
 	/* Save context and enter Standby mode */
@@ -205,7 +252,8 @@ static void set_mode_suspend_to_ram_enter(void)
 
 static void set_mode_suspend_to_ram_exit(void)
 {
-	/* Save MPU, SCB and FPU states */
+	/* Restore NVIC, MPU, SCB and FPU states */
+	nvic_restore_context();
 #if defined(CONFIG_ARM_MPU)
 	z_arm_restore_mpu_context(&mpu_state);
 #endif /* CONFIG_ARM_MPU */
@@ -225,6 +273,7 @@ static void set_mode_suspend_to_ram_exit(void)
 	stm32wba_init();
 	stm32_power_init();
 }
+
 #endif
 
 static void set_mode_stop_enter(uint8_t substate_id)
