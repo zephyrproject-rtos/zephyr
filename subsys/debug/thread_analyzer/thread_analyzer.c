@@ -16,6 +16,7 @@
 #include <zephyr/logging/log.h>
 #include <stdio.h>
 #include <zephyr/init.h>
+#include <zephyr/sys/__assert.h>
 
 LOG_MODULE_REGISTER(thread_analyzer, CONFIG_THREAD_ANALYZER_LOG_LEVEL);
 
@@ -122,8 +123,12 @@ static void thread_print_cb(struct thread_analyzer_info *info)
 }
 
 struct ta_cb_user_data {
-	thread_analyzer_cb cb;
+	union {
+		thread_analyzer_cb cb;
+		thread_analyzer_ud_cb ud_cb;
+	};
 	unsigned int cpu;
+	void *user_data;
 };
 
 #ifdef CONFIG_THREAD_ANALYZER_STACK_SAFETY
@@ -160,7 +165,6 @@ static void thread_analyze_cb(const struct k_thread *cthread, void *user_data)
 #endif
 	size_t size = thread->stack_info.size;
 	struct ta_cb_user_data *ud = user_data;
-	thread_analyzer_cb cb = ud->cb;
 	struct thread_analyzer_info info;
 	char hexname[PTR_STR_MAXLEN + 1];
 	const char *name;
@@ -235,7 +239,11 @@ static void thread_analyze_cb(const struct k_thread *cthread, void *user_data)
 
 	ARG_UNUSED(ret);
 
-	cb(&info);
+	if (ud->user_data) {
+		ud->ud_cb(&info, ud->user_data);
+	} else {
+		ud->cb(&info);
+	}
 
 #ifdef CONFIG_THREAD_ANALYZER_LONG_FRAME_PER_INTERVAL
 	k_thread_runtime_stats_longest_frame_reset(thread);
@@ -246,22 +254,22 @@ static void thread_analyze_cb(const struct k_thread *cthread, void *user_data)
 K_KERNEL_STACK_ARRAY_DECLARE(z_interrupt_stacks, CONFIG_MP_MAX_NUM_CPUS,
 			     CONFIG_ISR_STACK_SIZE);
 
-static void isr_stack(thread_analyzer_cb cb, int core)
+static void isr_stack(struct ta_cb_user_data *ta_ctx)
 {
-	const uint8_t *buf = K_KERNEL_STACK_BUFFER(z_interrupt_stacks[core]);
-	size_t size = K_KERNEL_STACK_SIZEOF(z_interrupt_stacks[core]);
+	const uint8_t *buf = K_KERNEL_STACK_BUFFER(z_interrupt_stacks[ta_ctx->cpu]);
+	size_t size = K_KERNEL_STACK_SIZEOF(z_interrupt_stacks[ta_ctx->cpu]);
 	size_t unused;
 	int err;
 
 #if CONFIG_MP_MAX_NUM_CPUS < 10
 	char name[] = "ISR0";
 
-	name[3] += core;
+	name[3] += ta_ctx->cpu;
 #elif CONFIG_MP_MAX_NUM_CPUS < 100
 	char name[] = "ISR00";
 
-	name[3] += core / 10;
-	name[4] += core % 10;
+	name[3] += ta_ctx->cpu / 10;
+	name[4] += ta_ctx->cpu % 10;
 #else
 #error Too many CPUs
 #endif
@@ -273,44 +281,70 @@ static void isr_stack(thread_analyzer_cb cb, int core)
 			.stack_used = size - unused,
 		};
 
-		cb(&isr_info);
+		if (ta_ctx->user_data) {
+			ta_ctx->ud_cb(&isr_info, ta_ctx->user_data);
+		} else {
+			ta_ctx->cb(&isr_info);
+		}
 	}
 }
 
-static void isr_stacks(thread_analyzer_cb cb)
+static void isr_stacks(struct ta_cb_user_data *ta_ctx)
 {
 	unsigned int num_cpus = arch_num_cpus();
 
 	for (int i = 0; i < num_cpus; i++) {
-		isr_stack(cb, i);
+		ta_ctx->cpu = i;
+		isr_stack(ta_ctx);
 	}
 }
 
-void thread_analyzer_run(thread_analyzer_cb cb, unsigned int cpu)
+void thread_analyzer_internal(struct ta_cb_user_data *ta_ctx)
 {
-	struct ta_cb_user_data ud = { .cb = cb, .cpu = cpu };
-
 	if (IS_ENABLED(CONFIG_THREAD_ANALYZER_RUN_UNLOCKED)) {
 		if (IS_ENABLED(CONFIG_THREAD_ANALYZER_AUTO_SEPARATE_CORES)) {
-			k_thread_foreach_unlocked_filter_by_cpu(cpu, thread_analyze_cb, &ud);
+			k_thread_foreach_unlocked_filter_by_cpu(ta_ctx->cpu, thread_analyze_cb,
+								ta_ctx);
 		} else {
-			k_thread_foreach_unlocked(thread_analyze_cb, &ud);
+			k_thread_foreach_unlocked(thread_analyze_cb, ta_ctx);
 		}
 	} else {
 		if (IS_ENABLED(CONFIG_THREAD_ANALYZER_AUTO_SEPARATE_CORES)) {
-			k_thread_foreach_filter_by_cpu(cpu, thread_analyze_cb, &ud);
+			k_thread_foreach_filter_by_cpu(ta_ctx->cpu, thread_analyze_cb, ta_ctx);
 		} else {
-			k_thread_foreach(thread_analyze_cb, &ud);
+			k_thread_foreach(thread_analyze_cb, ta_ctx);
 		}
 	}
 
 	if (IS_ENABLED(CONFIG_THREAD_ANALYZER_ISR_STACK_USAGE)) {
 		if (IS_ENABLED(CONFIG_THREAD_ANALYZER_AUTO_SEPARATE_CORES)) {
-			isr_stack(cb, cpu);
+			isr_stack(ta_ctx);
 		} else {
-			isr_stacks(cb);
+			isr_stacks(ta_ctx);
 		}
 	}
+}
+
+void thread_analyzer_run(thread_analyzer_cb cb, unsigned int cpu)
+{
+	struct ta_cb_user_data ctx = {
+		.cb = cb,
+		.cpu = cpu,
+	};
+
+	thread_analyzer_internal(&ctx);
+}
+
+void thread_analyzer_ud_run(thread_analyzer_ud_cb cb, unsigned int cpu, void *user_data)
+{
+	struct ta_cb_user_data ctx = {
+		.ud_cb = cb,
+		.cpu = cpu,
+		.user_data = user_data,
+	};
+
+	__ASSERT_NO_MSG(user_data != NULL);
+	thread_analyzer_internal(&ctx);
 }
 
 void thread_analyzer_print(unsigned int cpu)
