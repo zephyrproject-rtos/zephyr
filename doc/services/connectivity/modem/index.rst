@@ -299,11 +299,9 @@ binding, then write a driver source file using the macros from
    #include <zephyr/drivers/modem/modem_cellular.h>
    #include <zephyr/device.h>
 
-   MODEM_CHAT_MATCH_DEFINE(ok_match, "OK", "", NULL);
-   MODEM_CHAT_MATCH_DEFINE(connect_match, "CONNECT", "", NULL);
-   MODEM_CHAT_MATCHES_DEFINE(abort_matches,
-       MODEM_CHAT_MATCH("ERROR", "", NULL),
-       MODEM_CHAT_MATCH("NO CARRIER", "", NULL));
+   MODEM_CELLULAR_COMMON_CHAT_MATCHES();
+   MODEM_CHAT_MATCHES_DEFINE(my_modem_unsol,
+       MODEM_CELLULAR_COMMON_UNSOL_MATCHES);
 
    /* Init script — configure the modem, enable unsolicited LTE
     * registration notifications, then switch to CMUX.
@@ -322,7 +320,24 @@ binding, then write a driver source file using the macros from
        MODEM_CHAT_SCRIPT_CMD_RESP("ATD*99#",   connect_match));
 
    MODEM_CHAT_SCRIPT_DEFINE(dial_chat_script, dial_chat_script_cmds,
-       abort_matches, modem_cellular_chat_callback_handler, 60);
+       dial_abort_matches, modem_cellular_chat_callback_handler, 60);
+
+   static const struct modem_cellular_vendor_config my_modem_vendor = {
+       .scripts = {
+           .init = &init_chat_script,
+           .dial = &dial_chat_script,
+       },
+       .unsol_matches = {
+           .matches = my_modem_unsol,
+           .size = ARRAY_SIZE(my_modem_unsol),
+       },
+       .chat_delimiter = "\r",
+       .chat_filter = "\n",
+       .power_pulse_duration_ms = 1000,
+       .reset_pulse_duration_ms = 100,
+       .startup_time_ms = 5000,
+       .shutdown_time_ms = 5000,
+   };
 
    /* Macro for defining a DT instance */
    #define MY_MODEM_DEVICE(inst)                                                   \
@@ -330,18 +345,12 @@ binding, then write a driver source file using the macros from
            MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 1500, 64);                   \
                                                                                    \
        static struct modem_cellular_data                                           \
-           MODEM_CELLULAR_INST_NAME(data, inst) = {                                \
-           .chat_delimiter = "\r",                                                 \
-           .chat_filter = "\n",                                                    \
-           .ppp = &MODEM_CELLULAR_INST_NAME(ppp, inst),                            \
-       };                                                                          \
+           MODEM_CELLULAR_INST_NAME(data, inst);                                   \
                                                                                    \
        MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst,                             \
            (user_pipe_0, 3), (user_pipe_1, 4))                                     \
                                                                                    \
-       MODEM_CELLULAR_DEFINE_INSTANCE(inst,                                        \
-           1000, 100, 5000, 5000, false, NULL,                                     \
-           &init_chat_script, &dial_chat_script, NULL, NULL)
+       MODEM_CELLULAR_DEFINE_INSTANCE(inst, &my_modem_vendor, NULL)
 
    #define DT_DRV_COMPAT my_modem
    DT_INST_FOREACH_STATUS_OKAY(MY_MODEM_DEVICE)
