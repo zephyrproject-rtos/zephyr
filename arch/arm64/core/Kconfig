@@ -182,6 +182,7 @@ config WAIT_AT_RESET_VECTOR
 
 config ARM64_SAFE_EXCEPTION_STACK
 	bool "To enable the safe exception stack"
+	depends on ARM64_STACK_PROTECTION
 	help
 	  The safe exception stack is used for checking whether the kernel stack
 	  overflows during the exception happens from EL1. This stack is not
