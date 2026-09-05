@@ -22,8 +22,10 @@
 #define ARRAY_SIZE(arr) (sizeof(arr) / sizeof((arr)[0]))
 #endif
 
-/* When out-of-tree patch is included, it defines the LMAC and UMAC patch
- * addresses and takes precedence over the devicetree values.
+/* A Wi-Fi ROM patch build defines the LMAC and UMAC patch addresses, taken
+ * from the patch manifest and reserved in MRAM by the build system, and those
+ * take precedence. Without a patch the devicetree values are used, which point
+ * at the entry the ROM uses when no patch is applied.
  */
 #ifdef NRF71_WIFI_LMAC_PATCH_ADDR
 #define WICR_LMAC_PATCH_ADDR NRF71_WIFI_LMAC_PATCH_ADDR
@@ -59,8 +61,18 @@ static const struct wicr_word wicr_words[] = {
 
 int wicr_setup(void)
 {
-	bool write_enabled = false;
 	int err = 0;
+
+	while (!nrfx_mramc_ready_check()) {
+		/* Wait until MRAMC is ready for the next operation. */
+	}
+
+	/* The page permissions gate reads as well as writes, so the page has to
+	 * be unlocked before the comparison below is meaningful. Reading it
+	 * while locked yields 0xFFFFFFFF for every word, so no word ever
+	 * matches and the whole block is rewritten on every boot.
+	 */
+	nrfx_mramc_confignvr_perm_set(true, MRAM_CONFIGNVR_WICR_PAGE);
 
 	for (size_t i = 0; i < ARRAY_SIZE(wicr_words); i++) {
 		volatile uint32_t *reg = (uint32_t *)(WICR_BASE + wicr_words[i].offset);
@@ -70,12 +82,11 @@ int wicr_setup(void)
 			continue;
 		}
 
-		if (!write_enabled) {
-			nrfx_mramc_confignvr_perm_set(true, MRAM_CONFIGNVR_WICR_PAGE);
-			write_enabled = true;
-		}
-
 		*reg = wicr_words[i].value;
+
+		while (!nrfx_mramc_ready_check()) {
+			/* Let the write commit before reading it back. */
+		}
 
 		if (*reg != wicr_words[i].value) {
 			err = -EIO;
@@ -83,9 +94,11 @@ int wicr_setup(void)
 		}
 	}
 
-	if (write_enabled) {
-		nrfx_mramc_confignvr_perm_set(false, MRAM_CONFIGNVR_WICR_PAGE);
+	while (!nrfx_mramc_ready_check()) {
+		/* Do not lock the page with a write still in flight. */
 	}
+
+	nrfx_mramc_confignvr_perm_set(false, MRAM_CONFIGNVR_WICR_PAGE);
 
 	return err;
 }
