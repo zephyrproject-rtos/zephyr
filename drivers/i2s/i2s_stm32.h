@@ -62,6 +62,7 @@ struct stream {
 struct i2s_stm32_data {
 	struct stream rx;
 	struct stream tx;
+	bool full_duplex;
 };
 
 /* checks that DMA Tx packet is fully transmitted over the I2S */
