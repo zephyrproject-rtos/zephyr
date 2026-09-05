@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: 2026 The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.virtio.pci_cap_endianness:
+    platform_allow:
+      - qemu_leon3
+    tags:
+      - drivers
+      - virtio
+      - pcie
