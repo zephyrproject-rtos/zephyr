@@ -2,6 +2,21 @@
 
 zephyr_include_directories(.)
 
+if(CONFIG_SOC_SERIES_NPCM4)
+  # The npcm4 series does not share the npcx scfg/registers sources or the
+  # ecst firmware header tool. It provides its own esiost image generation
+  # tool under the npcmn common directory instead.
+  set(NPCM_BIN_NAME ${CONFIG_KERNEL_BIN_NAME}.npcm.bin)
+  string(TOUPPER "${CONFIG_SOC}" soc_name_upper)
+  set_property(GLOBAL APPEND PROPERTY extra_post_build_commands
+    COMMAND ${PYTHON_EXECUTABLE} ${SOC_${soc_name_upper}_DIR}/common/npcmn/esiost/esiost.py
+    -i ${KERNEL_BIN_NAME}
+    -o ${NPCM_BIN_NAME}
+    -v
+    )
+  return()
+endif()
+
 zephyr_sources_ifdef(CONFIG_PM power.c)
 zephyr_sources(
   scfg.c

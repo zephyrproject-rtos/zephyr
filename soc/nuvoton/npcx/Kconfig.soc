@@ -17,9 +17,14 @@ config NPCX_SOC_VARIANT_NPCKN
 	bool
 	select SOC_FAMILY_NPCX
 
+config NPCX_SOC_VARIANT_NPCMN
+	bool
+	select SOC_FAMILY_NPCX
+
 config NPCX_SOC_VARIANT
 	string
 	default "npcxn" if NPCX_SOC_VARIANT_NPCXN
 	default "npckn" if NPCX_SOC_VARIANT_NPCKN
+	default "npcmn" if NPCX_SOC_VARIANT_NPCMN
 
 rsource "*/Kconfig.soc"
