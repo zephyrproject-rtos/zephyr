@@ -1,0 +1,33 @@
+name: WeAct Studio MiniSTM32H750 Core Board
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 512
+supported:
+  - gpio
+  - counter
+  - spi
+  - backup_sram
+  - watchdog
+  - qspi
+vendor: weact
+variants:
+  mini_stm32h750/stm32h750xx:
+    flash: 128
+    twister: true
+  mini_stm32h750/stm32h750xx/ext_flash_app:
+    sysbuild: true
+    flash: 6143  # size in kB of 1 app slot (6MB) minus MCUboot header size (1KB)
+    toolchain:
+      - zephyr
+    testing:
+      ignore_tags:
+        - arch
+        - arm
+        - clib
+        - cpp
+        - kernel
+        - posix
+        - cmsis-dsp
