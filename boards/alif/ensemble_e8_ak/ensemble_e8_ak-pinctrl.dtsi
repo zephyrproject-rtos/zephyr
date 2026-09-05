@@ -6,7 +6,7 @@
 #include <zephyr/dt-bindings/pinctrl/alif-ensemble-pinctrl.h>
 
 &pinctrl {
-	pinctrl_uart2: pinctrl_uart2 {
+	uart2_default: uart2_default {
 		group0 {
 			pinmux = <PIN_P1_0__UART2_RX_A>;
 			input-enable;
@@ -17,7 +17,7 @@
 		};
 	};
 
-	pinctrl_uart4: pinctrl_uart4 {
+	uart4_default: uart4_default {
 		group0 {
 			pinmux = <PIN_P12_1__UART4_RX_B>;
 			input-enable;
@@ -28,14 +28,14 @@
 		};
 	};
 
-	pinctrl_gpio7: pinctrl_gpio7 {
+	gpio7_default: gpio7_default {
 		group0 {
 			/* Multicolor LED0: green on P7_4 */
 			pinmux = <PIN_P7_4__GPIO>;
 		};
 	};
 
-	pinctrl_gpio12: pinctrl_gpio12 {
+	gpio12_default: gpio12_default {
 		group0 {
 			/* Multicolor LED0: blue on P12_0, red on P12_3 */
 			pinmux = <PIN_P12_0__GPIO>,
@@ -43,7 +43,7 @@
 		};
 	};
 
-	pinctrl_lpgpio: pinctrl_lpgpio {
+	lpgpio_default: lpgpio_default {
 		group0 {
 			/* Navigation joystick JOY_SW1 to JOY_SW5 on SW2 */
 			pinmux = <PIN_P15_0__LPGPIO>,

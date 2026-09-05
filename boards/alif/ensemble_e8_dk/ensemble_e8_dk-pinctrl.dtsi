@@ -7,7 +7,7 @@
 #include <zephyr/dt-bindings/pinctrl/alif-ensemble-pinctrl.h>
 
 &pinctrl {
-	pinctrl_uart0: pinctrl_uart0 {
+	uart0_default: uart0_default {
 		group0 {
 			pinmux = <PIN_P0_0__UART0_RX_A>;
 			input-enable;
@@ -18,7 +18,7 @@
 		};
 	};
 
-	pinctrl_uart1: pinctrl_uart1 {
+	uart1_default: uart1_default {
 		group0 {
 			pinmux = <PIN_P0_4__UART1_RX_A>;
 			input-enable;
@@ -29,7 +29,7 @@
 		};
 	};
 
-	pinctrl_uart2: pinctrl_uart2 {
+	uart2_default: uart2_default {
 		group0 {
 			pinmux = <PIN_P1_0__UART2_RX_A>;
 			input-enable;
@@ -40,7 +40,7 @@
 		};
 	};
 
-	pinctrl_uart3: pinctrl_uart3 {
+	uart3_default: uart3_default {
 		group0 {
 			pinmux = <PIN_P1_2__UART3_RX_A>;
 			input-enable;
@@ -51,7 +51,7 @@
 		};
 	};
 
-	pinctrl_uart4: pinctrl_uart4 {
+	uart4_default: uart4_default {
 		group0 {
 			pinmux = <PIN_P12_1__UART4_RX_B>;
 			input-enable;
@@ -62,7 +62,7 @@
 		};
 	};
 
-	pinctrl_uart5: pinctrl_uart5 {
+	uart5_default: uart5_default {
 		group0 {
 			pinmux = <PIN_P3_4__UART5_RX_A>;
 			input-enable;
@@ -73,7 +73,7 @@
 		};
 	};
 
-	pinctrl_uart6: pinctrl_uart6 {
+	uart6_default: uart6_default {
 		group0 {
 			pinmux = <PIN_P10_5__UART6_RX_A>;
 			input-enable;
@@ -84,7 +84,7 @@
 		};
 	};
 
-	pinctrl_uart7: pinctrl_uart7 {
+	uart7_default: uart7_default {
 		group0 {
 			pinmux = <PIN_P9_3__UART7_RX_B>;
 			input-enable;
@@ -95,7 +95,7 @@
 		};
 	};
 
-	pinctrl_i2c0: pinctrl_i2c0 {
+	i2c0_default: i2c0_default {
 		group0 {
 			pinmux = <PIN_P3_5__I2C0_SDA_B>,
 				 <PIN_P3_4__I2C0_SCL_B>;
@@ -104,7 +104,7 @@
 		};
 	};
 
-	pinctrl_i2c1: pinctrl_i2c1 {
+	i2c1_default: i2c1_default {
 		group0 {
 			pinmux = <PIN_P7_2__I2C1_SDA_C>,
 				 <PIN_P7_3__I2C1_SCL_C>;
@@ -113,7 +113,7 @@
 		};
 	};
 
-	pinctrl_i2c2: pinctrl_i2c2 {
+	i2c2_default: i2c2_default {
 		group0 {
 			pinmux = <PIN_P0_7__I2C2_SDA_A>,
 				 <PIN_P0_6__I2C2_SCL_A>;
@@ -122,7 +122,7 @@
 		};
 	};
 
-	pinctrl_i2c3: pinctrl_i2c3 {
+	i2c3_default: i2c3_default {
 		group0 {
 			pinmux = <PIN_P9_6__I2C3_SDA_B>,
 				 <PIN_P9_7__I2C3_SCL_B>;
@@ -131,7 +131,7 @@
 		};
 	};
 
-	pinctrl_gpio6: pinctrl_gpio6 {
+	gpio6_default: gpio6_default {
 		group0 {
 			/* Multicolor LED1: red on P6_2, green on P6_4, blue on P6_6 */
 			pinmux = <PIN_P6_2__GPIO>,
@@ -140,14 +140,14 @@
 		};
 	};
 
-	pinctrl_gpio7: pinctrl_gpio7 {
+	gpio7_default: gpio7_default {
 		group0 {
 			/* Multicolor LED0: green on P7_4 */
 			pinmux = <PIN_P7_4__GPIO>;
 		};
 	};
 
-	pinctrl_gpio12: pinctrl_gpio12 {
+	gpio12_default: gpio12_default {
 		group0 {
 			/* Multicolor LED0: blue on P12_0, red on P12_3 */
 			pinmux = <PIN_P12_0__GPIO>,
@@ -155,7 +155,7 @@
 		};
 	};
 
-	pinctrl_lpgpio: pinctrl_lpgpio {
+	lpgpio_default: lpgpio_default {
 		group0 {
 			/* Navigation joystick JOY_SW1 to JOY_SW5 on SW2 */
 			pinmux = <PIN_P15_0__LPGPIO>,

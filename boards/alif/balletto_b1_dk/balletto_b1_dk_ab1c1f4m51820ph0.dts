@@ -89,25 +89,25 @@
 
 &uart2 {
 	status = "okay";
-	pinctrl-0 = <&pinctrl_uart2>;
+	pinctrl-0 = <&uart2_default>;
 	pinctrl-names = "default";
 };
 
 &gpio4 {
 	status = "okay";
-	pinctrl-0 = <&pinctrl_gpio4>;
+	pinctrl-0 = <&gpio4_default>;
 	pinctrl-names = "default";
 };
 
 &gpio5 {
 	status = "okay";
-	pinctrl-0 = <&pinctrl_gpio5>;
+	pinctrl-0 = <&gpio5_default>;
 	pinctrl-names = "default";
 };
 
 &i2c1 {
 	status = "okay";
-	pinctrl-0 = <&pinctrl_i2c1>;
+	pinctrl-0 = <&i2c1_default>;
 	pinctrl-names = "default";
 };
 
