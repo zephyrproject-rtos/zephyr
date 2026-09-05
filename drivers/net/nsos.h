@@ -112,6 +112,12 @@ struct nsos_mid_addrinfo {
 	struct nsos_mid_addrinfo *ai_next;
 };
 
+struct nsos_mid_ifaddr {
+	uint16_t family;    /* NSOS_MID_AF_INET or NSOS_MID_AF_INET6 */
+	uint8_t addr[16];   /* Address in network byte order */
+	uint8_t prefix_len; /* Netmask prefix length in bits */
+};
+
 struct nsos_mid_iovec {
 	void  *iov_base;
 	size_t iov_len;
@@ -153,6 +159,7 @@ int nsos_adapt_getsockopt(int fd, int level, int optname,
 			  void *optval, size_t *optlen);
 int nsos_adapt_setsockopt(int fd, int level, int optname,
 			  const void *optval, size_t optlen);
+int nsos_adapt_host_ifindex(const char *name);
 int nsos_adapt_getpeername(int fd, struct nsos_mid_sockaddr *addr,
 			   size_t *addrlen);
 int nsos_adapt_getsockname(int fd, struct nsos_mid_sockaddr *addr,
@@ -174,5 +181,7 @@ int nsos_adapt_getaddrinfo(const char *node, const char *service,
 			   struct nsos_mid_addrinfo **res,
 			   int *system_errno);
 void nsos_adapt_freeaddrinfo(struct nsos_mid_addrinfo *res);
+
+int nsos_adapt_get_ifaddrs(const char *ifname, struct nsos_mid_ifaddr *addrs, size_t *count);
 
 #endif /* __DRIVERS_NET_NSOS_H__ */
