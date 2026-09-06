@@ -209,8 +209,10 @@ static inline void tcc_enable(void *pwm_reg, bool enable)
 static inline void tcc_sync_wait(void *pwm_reg)
 {
 
-	if (!WAIT_FOR(((PWM_REG(pwm_reg)->TCC_SYNCBUSY) != 0), TIMEOUT_VALUE_US,
-		      k_busy_wait(DELAY_US))) {
+	bool sync_done = WAIT_FOR(((PWM_REG(pwm_reg)->TCC_SYNCBUSY) == 0), TIMEOUT_VALUE_US,
+				  k_busy_wait(DELAY_US));
+
+	if (sync_done == false) {
 		LOG_ERR("TCC_SYNCBUSY wait timed out");
 	}
 	LOG_DBG("%s invoked", __func__);
