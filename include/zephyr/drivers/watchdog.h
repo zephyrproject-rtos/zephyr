@@ -240,7 +240,8 @@ static inline int wdt_install_timeout(const struct device *dev,
  * @return 0 on success, negative errno value on failure.
  * @retval -EAGAIN Completing the feed operation would stall the caller, for
  * example due to an in-progress watchdog operation such as a previous
- * wdt_feed() call.
+ * wdt_feed() call, or (in window mode) the closed window period has
+ * not yet elapsed. Retry later.
  * @retval -EINVAL There is no installed timeout for supplied channel.
  */
 __syscall int wdt_feed(const struct device *dev, int channel_id);
