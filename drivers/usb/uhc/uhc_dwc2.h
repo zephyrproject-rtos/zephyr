@@ -70,9 +70,22 @@ struct uhc_dwc2_config {
 #include "uhc_dwc2_nrf_usbhs_nrf54l.h"
 #endif
 
+#define UHC_DWC2_HAS_VENDOR_QUIRK(n)						\
+	DT_NODE_VENDOR_HAS_IDX(DT_DRV_INST(n), 1)
+
 #define UHC_DWC2_VENDOR_QUIRK_GET(n)						\
-	COND_CODE_1(DT_NODE_VENDOR_HAS_IDX(DT_DRV_INST(n), 1),			\
+	COND_CODE_1(UHC_DWC2_HAS_VENDOR_QUIRK(n),				\
 			(&uhc_dwc2_vendor_quirks_##n),				\
+			(NULL))
+
+#define UHC_DWC2_VENDOR_QUIRK_DATA_GET(n)					\
+	COND_CODE_1(UHC_DWC2_HAS_VENDOR_QUIRK(n),				\
+			(&uhc_dwc2_quirk_data_##n),				\
+			(NULL))
+
+#define UHC_DWC2_VENDOR_QUIRK_CONFIG_GET(n)					\
+	COND_CODE_1(UHC_DWC2_HAS_VENDOR_QUIRK(n),				\
+			(&uhc_dwc2_quirk_config_##n),				\
 			(NULL))
 
 #define DWC2_QUIRK_FUNC_DEFINE(fname)						\
