@@ -458,6 +458,7 @@ static void nxp_micfil_isr(const void *arg)
 		/* Allocate next buffer first to avoid using a freed buffer */
 		if (k_mem_slab_alloc(data->mem_slab, &new_buf, K_NO_WAIT) != 0) {
 			/* No memory available: enter error state and stop capturing */
+			LOG_ERR("MICFIL capture stopped: no free slab block");
 			data->active_buf = NULL;
 			data->state = DMIC_STATE_ERROR;
 
