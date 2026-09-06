@@ -1529,16 +1529,14 @@ static int update_descriptive_block(struct coap_block_context *ctx,
 }
 
 static int update_control_block1(struct coap_block_context *ctx,
-				 int block, int size)
+				 const struct coap_packet *cpkt)
 {
 	size_t new_current;
+	uint32_t block;
+	uint32_t size;
 
-	if (block == -ENOENT) {
+	if (get_option_uint(cpkt, COAP_OPTION_BLOCK1, &block) != 0) {
 		return 0;
-	}
-
-	if (block < 0) {
-		return -EINVAL;
 	}
 
 	new_current = GET_NUM(block) << (GET_BLOCK_SIZE(block) + 4);
@@ -1552,7 +1550,7 @@ static int update_control_block1(struct coap_block_context *ctx,
 
 	ctx->block_size = GET_BLOCK_SIZE(block);
 
-	if (size >= 0) {
+	if (get_option_uint(cpkt, COAP_OPTION_SIZE1, &size) == 0) {
 		ctx->total_size = size;
 	}
 
@@ -1560,16 +1558,13 @@ static int update_control_block1(struct coap_block_context *ctx,
 }
 
 static int update_control_block2(struct coap_block_context *ctx,
-				 int block, int size)
+				 const struct coap_packet *cpkt)
 {
 	size_t new_current;
+	uint32_t block;
 
-	if (block == -ENOENT) {
+	if (get_option_uint(cpkt, COAP_OPTION_BLOCK2, &block) != 0) {
 		return 0;
-	}
-
-	if (block < 0) {
-		return -EINVAL;
 	}
 
 	new_current = GET_NUM(block) << (GET_BLOCK_SIZE(block) + 4);
@@ -1591,15 +1586,10 @@ static int update_control_block2(struct coap_block_context *ctx,
 int coap_update_from_block(const struct coap_packet *cpkt,
 			   struct coap_block_context *ctx)
 {
-	int r, block1, block2, size1, size2;
-
-	block1 = coap_get_option_int(cpkt, COAP_OPTION_BLOCK1);
-	block2 = coap_get_option_int(cpkt, COAP_OPTION_BLOCK2);
-	size1 = coap_get_option_int(cpkt, COAP_OPTION_SIZE1);
-	size2 = coap_get_option_int(cpkt, COAP_OPTION_SIZE2);
+	int r;
 
 	if (coap_packet_is_request(cpkt)) {
-		r = update_control_block2(ctx, block2, size2);
+		r = update_control_block2(ctx, cpkt);
 		if (r != 0) {
 			return r;
 		}
@@ -1607,7 +1597,7 @@ int coap_update_from_block(const struct coap_packet *cpkt,
 		return update_descriptive_block(ctx, cpkt, COAP_OPTION_BLOCK1, COAP_OPTION_SIZE1);
 	}
 
-	r = update_control_block1(ctx, block1, size1);
+	r = update_control_block1(ctx, cpkt);
 	if (r != 0) {
 		return r;
 	}
@@ -2544,16 +2534,14 @@ int coap_tcp_append_block2_option(struct coap_packet *cpkt,
 }
 
 static int update_control_block1_tcp(struct coap_block_context *ctx,
-				 int block, int size)
+				 const struct coap_packet *cpkt)
 {
 	size_t new_current;
+	uint32_t block;
+	uint32_t size;
 
-	if (block == -ENOENT) {
+	if (get_option_uint(cpkt, COAP_OPTION_BLOCK1, &block) != 0) {
 		return 0;
-	}
-
-	if (block < 0) {
-		return -EINVAL;
 	}
 
 	new_current = GET_NUM(block) << (MIN(COAP_BLOCK_1024, GET_BLOCK_SIZE(block)) + 4);
@@ -2567,7 +2555,7 @@ static int update_control_block1_tcp(struct coap_block_context *ctx,
 
 	ctx->block_size = GET_BLOCK_SIZE(block);
 
-	if (size >= 0) {
+	if (get_option_uint(cpkt, COAP_OPTION_SIZE1, &size) == 0) {
 		ctx->total_size = size;
 	}
 
@@ -2575,16 +2563,13 @@ static int update_control_block1_tcp(struct coap_block_context *ctx,
 }
 
 static int update_control_block2_tcp(struct coap_block_context *ctx,
-				 int block, int size)
+				 const struct coap_packet *cpkt)
 {
 	size_t new_current;
+	uint32_t block;
 
-	if (block == -ENOENT) {
+	if (get_option_uint(cpkt, COAP_OPTION_BLOCK2, &block) != 0) {
 		return 0;
-	}
-
-	if (block < 0) {
-		return -EINVAL;
 	}
 
 	new_current = GET_NUM(block) << (MIN(COAP_BLOCK_1024, GET_BLOCK_SIZE(block)) + 4);
@@ -2606,15 +2591,10 @@ static int update_control_block2_tcp(struct coap_block_context *ctx,
 int coap_tcp_update_from_block(const struct coap_packet *cpkt,
 			       struct coap_block_context *ctx)
 {
-	int r, block1, block2, size1, size2;
-
-	block1 = coap_get_option_int(cpkt, COAP_OPTION_BLOCK1);
-	block2 = coap_get_option_int(cpkt, COAP_OPTION_BLOCK2);
-	size1 = coap_get_option_int(cpkt, COAP_OPTION_SIZE1);
-	size2 = coap_get_option_int(cpkt, COAP_OPTION_SIZE2);
+	int r;
 
 	if (coap_tcp_packet_is_request(cpkt)) {
-		r = update_control_block2_tcp(ctx, block2, size2);
+		r = update_control_block2_tcp(ctx, cpkt);
 		if (r != 0) {
 			return r;
 		}
@@ -2622,7 +2602,7 @@ int coap_tcp_update_from_block(const struct coap_packet *cpkt,
 		return update_descriptive_block(ctx, cpkt, COAP_OPTION_BLOCK1, COAP_OPTION_SIZE1);
 	}
 
-	r = update_control_block1_tcp(ctx, block1, size1);
+	r = update_control_block1_tcp(ctx, cpkt);
 	if (r != 0) {
 		return r;
 	}
