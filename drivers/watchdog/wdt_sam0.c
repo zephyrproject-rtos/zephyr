@@ -191,6 +191,14 @@ static int wdt_sam0_install_timeout(const struct device *dev,
 		WDT_REGS->CTRL.bit.WEN = 1;
 #endif
 		wdt_sam0_wait_synchronization();
+
+		/* EWOFFSET is ignored in window mode per datasheet 23.6.8.2:
+		 * the EW fires at the start of the open window regardless of
+		 * the offset value. Clear it to be defensive in case the
+		 * register was left over from a previous normal-mode config.
+		 */
+		WDT_REGS->EWCTRL.bit.EWOFFSET = 0;
+		wdt_sam0_wait_synchronization();
 	} else {
 		/* Normal mode */
 		data->window_mode = false;
