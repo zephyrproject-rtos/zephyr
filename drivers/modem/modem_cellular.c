@@ -442,6 +442,46 @@ void modem_cellular_chat_on_imei(struct modem_chat *chat, char **argv, uint16_t 
 	modem_cellular_emit_modem_info(data, CELLULAR_MODEM_INFO_SERIAL_NUMBER);
 }
 
+void modem_cellular_chat_on_cgsn_sn(struct modem_chat *chat, char **argv, uint16_t argc,
+				    void *user_data)
+{
+	struct modem_cellular_data *data = (struct modem_cellular_data *)user_data;
+
+	if (argc != 2) {
+		return;
+	}
+
+	strncpy(data->sn, argv[1], sizeof(data->sn) - 1);
+	modem_cellular_emit_modem_info(data, CELLULAR_MODEM_INFO_SERIAL_NUMBER);
+}
+
+void modem_cellular_chat_on_cgsn_imei(struct modem_chat *chat, char **argv, uint16_t argc,
+				      void *user_data)
+{
+	struct modem_cellular_data *data = (struct modem_cellular_data *)user_data;
+	const char *rsp;
+	size_t rsp_len;
+
+	if (argc != 2) {
+		return;
+	}
+
+	/* 3GPP specifies 15 digit string type in decimal format */
+	rsp = argv[1];
+	rsp_len = strlen(rsp);
+	if ((rsp_len != 17) || (rsp[0] != '"') || (rsp[16] != '"')) {
+		LOG_WRN("Invalid CGSN respnse: %s", rsp);
+		return;
+	}
+
+	/* IMEI from AT+CGSN is string quoted.
+	 * 3GPP specifies the length as exactly 15 digits.
+	 * Start from offset 1 to skip first quote character.
+	 */
+	memcpy(data->imei, rsp + 1, 15);
+	modem_cellular_emit_modem_info(data, CELLULAR_MODEM_INFO_IMEI);
+}
+
 void modem_cellular_chat_on_cgmm(struct modem_chat *chat, char **argv, uint16_t argc,
 				 void *user_data)
 {
