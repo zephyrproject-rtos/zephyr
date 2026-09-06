@@ -1539,6 +1539,10 @@ static int update_control_block1(struct coap_block_context *ctx,
 		return 0;
 	}
 
+	if (GET_NUM(block) > MAX_BLOCK_NUM) {
+		return -EINVAL;
+	}
+
 	new_current = GET_NUM(block) << (GET_BLOCK_SIZE(block) + 4);
 	if (new_current != ctx->current) {
 		return -EINVAL;
@@ -1565,6 +1569,10 @@ static int update_control_block2(struct coap_block_context *ctx,
 
 	if (get_option_uint(cpkt, COAP_OPTION_BLOCK2, &block) != 0) {
 		return 0;
+	}
+
+	if (GET_NUM(block) > MAX_BLOCK_NUM) {
+		return -EINVAL;
 	}
 
 	new_current = GET_NUM(block) << (GET_BLOCK_SIZE(block) + 4);
@@ -2544,6 +2552,10 @@ static int update_control_block1_tcp(struct coap_block_context *ctx,
 		return 0;
 	}
 
+	if (GET_NUM(block) > MAX_BLOCK_NUM) {
+		return -EINVAL;
+	}
+
 	new_current = GET_NUM(block) << (MIN(COAP_BLOCK_1024, GET_BLOCK_SIZE(block)) + 4);
 	if (new_current != ctx->current) {
 		return -EINVAL;
@@ -2570,6 +2582,10 @@ static int update_control_block2_tcp(struct coap_block_context *ctx,
 
 	if (get_option_uint(cpkt, COAP_OPTION_BLOCK2, &block) != 0) {
 		return 0;
+	}
+
+	if (GET_NUM(block) > MAX_BLOCK_NUM) {
+		return -EINVAL;
 	}
 
 	new_current = GET_NUM(block) << (MIN(COAP_BLOCK_1024, GET_BLOCK_SIZE(block)) + 4);
