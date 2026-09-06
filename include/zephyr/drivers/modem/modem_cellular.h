@@ -41,6 +41,7 @@ extern "C" {
 /** @cond INTERNAL_HIDDEN */
 
 #define MODEM_CELLULAR_DATA_IMEI_LEN         (16)
+#define MODEM_CELLULAR_DATA_SN_LEN           (CONFIG_MODEM_CELLULAR_SERIAL_NUMBER_MAX_SIZE + 1)
 #define MODEM_CELLULAR_DATA_MODEL_ID_LEN     (65)
 #define MODEM_CELLULAR_DATA_IMSI_LEN         (23)
 #define MODEM_CELLULAR_DATA_ICCID_LEN        (22)
@@ -162,6 +163,7 @@ struct modem_cellular_data {
 	struct cellular_evt_network_status network_status;
 	bool network_status_valid;
 	uint8_t imei[MODEM_CELLULAR_DATA_IMEI_LEN];
+	uint8_t sn[MODEM_CELLULAR_DATA_SN_LEN];
 	uint8_t model_id[MODEM_CELLULAR_DATA_MODEL_ID_LEN];
 	uint8_t imsi[MODEM_CELLULAR_DATA_IMSI_LEN];
 	uint8_t iccid[MODEM_CELLULAR_DATA_ICCID_LEN];
