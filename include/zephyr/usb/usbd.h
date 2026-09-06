@@ -1032,7 +1032,7 @@ bool usbd_ep_is_halted(struct usbd_context *uds_ctx, uint8_t ep);
 /**
  * @brief Allocate buffer for USB device request
  *
- * Allocate a new buffer from controller's driver buffer pool.
+ * Allocate a new buffer from the USB device stack buffer pool.
  *
  * @param[in] c_data Pointer to USB device class data
  * @param[in] ep     Endpoint address
@@ -1046,7 +1046,7 @@ struct net_buf *usbd_ep_buf_alloc(const struct usbd_class_data *const c_data,
 /**
  * @brief Allocate buffer for USB control transfer data stage
  *
- * Allocate a new buffer from controller's driver buffer pool.
+ * Allocate a new buffer from the USB device stack buffer pool.
  *
  * @param[in] uds_ctx Pointer to USB device support context
  * @param[in] size    Size of the request buffer
@@ -1095,7 +1095,7 @@ int usbd_ep_dequeue(struct usbd_context *uds_ctx, const uint8_t ep);
 /**
  * @brief Free USB device request buffer
  *
- * Put the buffer back into the request buffer pool.
+ * Put the buffer back into the USB device stack buffer pool.
  *
  * @param[in] uds_ctx Pointer to USB device support context
  * @param[in] buf     Pointer to UDC request buffer
