@@ -245,6 +245,15 @@
 			};
 		};
 
+		sdmmc1: sdmmc@52007000 {
+			compatible = "st,stm32-sdmmc";
+			reg = <0x52007000 0x1000>;
+			clocks = <&rcc STM32_CLOCK(AHB5, 8)>;
+			resets = <&rctl STM32_RESET(AHB5, 8)>;
+			interrupts = <108 0>;
+			status = "okay";
+		};
+
 		pwr: power@58024800 {
 			/* TODO:
 			 * Add "st,stm32-pwr" to compatible list
