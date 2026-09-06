@@ -4833,8 +4833,10 @@ struct k_work_queue_config {
 	 * If non-zero, and CONFIG_WORKQUEUE_WORK_TIMEOUT is enabled,
 	 * the work queue will monitor the duration of each work item.
 	 * If the work item handler takes longer than the specified
-	 * time to execute, the work queue thread will be aborted, and
-	 * an error will be logged if CONFIG_LOG is enabled.
+	 * time to execute, an error will be logged if CONFIG_LOG is
+	 * enabled and the work queue thread will be aborted. If the
+	 * queue's thread is essential, this also raises a fatal error
+	 * with reason K_ERR_WORK_TIMEOUT.
 	 */
 	uint32_t work_timeout_ms;
 };

@@ -6,6 +6,15 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
+#include <zephyr/tc_util.h>
+
+#if defined(CONFIG_WORKQUEUE_WORK_TIMEOUT)
+#include <kernel_internal.h>
+#endif
+
+#ifndef TEST_WORKQUEUE_ESSENTIAL
+#define TEST_WORKQUEUE_ESSENTIAL 0
+#endif
 
 #define TEST_WORK_TIMEOUT_MS     100
 #define TEST_WORK_DURATION_MS    (TEST_WORK_TIMEOUT_MS / 2)
@@ -32,20 +41,32 @@ static void test_work_handler_blocking(struct k_work *work)
 
 static K_WORK_DEFINE(test_work_blocking, test_work_handler_blocking);
 
+#if defined(CONFIG_WORKQUEUE_WORK_TIMEOUT)
+/* Fires from ISR context; for a non-essential queue, firing at all is a failure. */
+void k_sys_fatal_error_handler(unsigned int reason, const struct arch_esf *esf)
+{
+	int rv = (TEST_WORKQUEUE_ESSENTIAL && reason == K_ERR_WORK_TIMEOUT) ? TC_PASS : TC_FAIL;
+
+	ARG_UNUSED(esf);
+
+	TC_PRINT("work timeout fatal handler: reason %d\n", reason);
+	TC_END_RESULT_CUSTOM(rv, "workqueue_work_timeout_test_workq_work_timeout");
+	TC_END_REPORT(rv);
+	arch_system_halt(reason);
+}
+#endif /* CONFIG_WORKQUEUE_WORK_TIMEOUT */
+
 static void *test_setup(void)
 {
 	const struct k_work_queue_config config = {
 		.name = "sysworkq",
 		.no_yield = false,
-		.essential = false,
+		.essential = TEST_WORKQUEUE_ESSENTIAL,
 		.work_timeout_ms = TEST_WORK_TIMEOUT_MS,
 	};
 
-	k_work_queue_start(&test_workq,
-			   test_workq_stack,
-			   K_KERNEL_STACK_SIZEOF(test_workq_stack),
-			   0,
-			   &config);
+	k_work_queue_start(&test_workq, test_workq_stack, K_KERNEL_STACK_SIZEOF(test_workq_stack),
+			   0, &config);
 
 	return NULL;
 }
@@ -66,11 +87,16 @@ ZTEST_SUITE(workqueue_work_timeout, NULL, test_setup, NULL, NULL, NULL);
  * - Submit several work items that each run for less than the timeout.
  * - Confirm the work queue thread is not aborted while processing them.
  * - Submit a work item whose handler blocks forever.
- * - Join the work queue thread.
+ * - With CONFIG_WORKQUEUE_WORK_TIMEOUT disabled, join the work queue thread.
+ * - With CONFIG_WORKQUEUE_WORK_TIMEOUT enabled, wait past the timeout on
+ *   an essential queue (never returns) or join it on a non-essential one.
  *
  * Expected result:
- * - With CONFIG_WORKQUEUE_WORK_TIMEOUT enabled the thread is aborted (join
- *   returns 0); otherwise the join times out with -EAGAIN.
+ * - With CONFIG_WORKQUEUE_WORK_TIMEOUT disabled, the join times out with
+ *   -EAGAIN (the thread is never aborted).
+ * - With CONFIG_WORKQUEUE_WORK_TIMEOUT enabled, an essential queue raises
+ *   a fatal error with reason K_ERR_WORK_TIMEOUT; a non-essential queue's
+ *   join just succeeds.
  *
  * @see k_work_queue_start()
  * @see k_work_submit_to_queue()
@@ -78,8 +104,6 @@ ZTEST_SUITE(workqueue_work_timeout, NULL, test_setup, NULL, NULL, NULL);
  */
 ZTEST(workqueue_work_timeout, test_workq_work_timeout)
 {
-	int ret;
-
 	/* Submit multiple items which take less time than TEST_WORK_TIMEOUT_MS each */
 	zassert_equal(k_work_submit_to_queue(&test_workq, &test_work0), 1);
 	zassert_equal(k_work_submit_to_queue(&test_workq, &test_work1), 1);
@@ -95,14 +119,15 @@ ZTEST(workqueue_work_timeout, test_workq_work_timeout)
 	/* Submit single item which takes longer than TEST_WORK_TIMEOUT_MS */
 	zassert_equal(k_work_submit_to_queue(&test_workq, &test_work_blocking), 1);
 
-	/*
-	 * Submitted item shall cause the work to time out and the workqueue thread be
-	 * aborted if CONFIG_WORKQUEUE_WORK_TIMEOUT is enabled.
-	 */
-	ret = k_thread_join(test_workq.thread_id, TEST_WORK_BLOCKING_DELAY);
-	if (IS_ENABLED(CONFIG_WORKQUEUE_WORK_TIMEOUT)) {
-		zassert_equal(ret, 0);
+	if (!IS_ENABLED(CONFIG_WORKQUEUE_WORK_TIMEOUT)) {
+		zassert_equal(k_thread_join(test_workq.thread_id, TEST_WORK_BLOCKING_DELAY),
+			      -EAGAIN);
+	} else if (TEST_WORKQUEUE_ESSENTIAL) {
+		/* k_sys_fatal_error_handler() reports the verdict and halts; no return. */
+		k_sleep(TEST_WORK_BLOCKING_DELAY);
+		zassert_unreachable("work timeout did not raise a fatal error");
 	} else {
-		zassert_equal(ret, -EAGAIN);
+		/* Non-essential: aborted, no fatal error. */
+		zassert_equal(k_thread_join(test_workq.thread_id, TEST_WORK_BLOCKING_DELAY), 0);
 	}
 }

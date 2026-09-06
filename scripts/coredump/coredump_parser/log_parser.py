@@ -52,6 +52,8 @@ def reason_string(reason):
         ret = "K_ERR_KERNEL_OOPS"
     elif reason == 4:
         ret = "K_ERR_KERNEL_PANIC"
+    elif reason == 5:
+        ret = "K_ERR_WORK_TIMEOUT"
 
     return ret
 
