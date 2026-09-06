@@ -74,9 +74,18 @@
 #define FLASH_SIZE         DT_REG_SIZE(DT_CHOSEN(zephyr_flash))
 #define FLASH_BASE_ADDRESS DT_REG_ADDR(DT_CHOSEN(zephyr_flash))
 
-/* Cached memory */
+/* Cached memory - ESP32-C6 uses unified I/D address space
+ * From HAL ext_mem_defs.h: SOC_IRAM0_CACHE_ADDRESS_LOW = 0x42000000
+ */
 #define CACHE_ALIGN  CONFIG_MMU_PAGE_SIZE
 #define IROM_SEG_ORG 0x42000000
 #define IROM_SEG_LEN FLASH_SIZE
-#define DROM_SEG_ORG 0x42800000
+/* DROM shares the unified-cache linear address space with IROM. Placing
+ * drom0_0_seg at the same origin lets the linker emit .flash.rodata
+ * immediately after .text, so the linear range the memory mapper
+ * reserves for the image (irom_len + drom_len) matches the virtual
+ * range the image actually occupies and later mappings cannot land on
+ * it.
+ */
+#define DROM_SEG_ORG IROM_SEG_ORG
 #define DROM_SEG_LEN FLASH_SIZE
