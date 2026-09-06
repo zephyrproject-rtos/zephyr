@@ -503,7 +503,7 @@ DT_INST_FOREACH_STATUS_OKAY(GPIO_CONTROLLER_INIT)
 		.gpio_index = GET_SILABS_GPIO_INDEX(n),                                            \
 		.common_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),                                    \
 		.em4wu_pin_count = DT_INST_PROP_LEN_OR(n, silabs_wakeup_ints, 0),                  \
-		.em4wu_pins = COND_CODE_1(DT_INST_HAS_PROP(n, silabs_wakeup_ints),                 \
+		.em4wu_pins = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, silabs_wakeup_ints),            \
 			({DT_INST_FOREACH_PROP_ELEM(n, silabs_wakeup_ints, EM4_WAKEUP_PIN)}),      \
 			({})),                                                                     \
 	};                                                                                         \
