@@ -371,6 +371,13 @@ typedef int (*tcpc_api_set_alert_handler_cb_t)(const struct device *dev,
 					       tcpc_alert_handler_cb_t handler, void *data);
 
 /**
+ * @brief Callback API to query the dead battery configuration of the TCPC.
+ *
+ * See tcpc_dead_battery_enabled() for argument description.
+ */
+typedef int (*tcpc_api_dead_battery_enabled_t)(const struct device *dev, bool *enabled);
+
+/**
  * @driver_ops{USB Type-C Port Controller}
  */
 __subsystem struct tcpc_driver_api {
@@ -430,6 +437,8 @@ __subsystem struct tcpc_driver_api {
 	tcpc_api_set_bist_test_mode_t set_bist_test_mode;
 	/** @driver_ops_mandatory @copybrief tcpc_set_alert_handler_cb */
 	tcpc_api_set_alert_handler_cb_t set_alert_handler_cb;
+	/** @driver_ops_optional @copybrief tcpc_dead_battery_enabled */
+	tcpc_api_dead_battery_enabled_t dead_battery_enabled;
 };
 
 /** @} */
@@ -1082,6 +1091,27 @@ static inline int tcpc_sop_prime_enable(const struct device *dev, bool enable)
 	}
 
 	return api->sop_prime_enable(dev, enable);
+}
+
+/**
+ * @brief Queries whether the TCPC applies the USB-C dead battery terminations
+ *
+ * @param dev Runtime device structure
+ * @param enabled True if the TCPC applies the dead battery terminations,
+ *                false otherwise.
+ *
+ * @retval 0 on success
+ * @retval -ENOSYS if not implemented
+ */
+static inline int tcpc_dead_battery_enabled(const struct device *dev, bool *enabled)
+{
+	const struct tcpc_driver_api *api = DEVICE_API_GET(tcpc, dev);
+
+	if (api->dead_battery_enabled == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->dead_battery_enabled(dev, enabled);
 }
 
 /**
