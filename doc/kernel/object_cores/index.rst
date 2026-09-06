@@ -15,13 +15,13 @@ Object Core Concepts
 
 Each instance of an object embeds an object core field named ``obj_core``.
 Objects of the same type are linked together via their respective object
-cores to form a singly linked list. Each object core also links to the their
+cores to form a singly linked list. Each object core also links to their
 respective object type. Each object type contains a singly linked list
 linking together all the object cores of that type. Object types are also
 linked together via a singly linked list. Together, this can allow debugging
 tools to traverse all the objects in the system.
 
-Object cores have been integrated into following kernel objects:
+Object cores have been integrated into the following kernel objects:
 
 * :ref:`Condition Variables <condvar>`
 * :ref:`Events <events>`
