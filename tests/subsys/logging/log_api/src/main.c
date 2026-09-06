@@ -865,7 +865,6 @@ ZTEST(test_log_api, test_log_panic)
  *
  * @see printk()
  * @ingroup logging_tests
- * @verifies ZEP-SRS-11-20
  */
 ZTEST(test_log_api, test_log_printk)
 {
