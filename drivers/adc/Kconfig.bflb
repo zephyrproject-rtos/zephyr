@@ -8,3 +8,14 @@ config ADC_BFLB
 	select ADC_CONFIGURABLE_INPUTS
 	help
 	  Enables the Bouffalolab ADC driver.
+
+if ADC_BFLB
+
+config ADC_BFLB_FORCE_DYNAMIC_CALIBRATION
+	bool "Use dynamic calibration instead of efuse calibration values"
+	default y if SOC_SERIES_BL60X
+	help
+	  Use differential measurement of VBAT/2 to calibrated the ADC. This depends heavily on
+	  the precision of the chip's power supply.
+
+endif
