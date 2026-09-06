@@ -13,6 +13,7 @@ from argparse import Namespace
 from itertools import groupby
 
 import list_boards
+import list_hardware
 import scl
 from twisterlib.constants import SUPPORTED_SIMS, ZEPHYR_BASE
 
@@ -64,6 +65,7 @@ class Platform:
         self.aliases = []
         self.normalized_name = ""
         self.board_dirs = []
+        self.soc_dirs = []
         # if sysbuild to be used by default on a given platform
         self.sysbuild = False
         self.twister = True
@@ -96,17 +98,19 @@ class Platform:
         self.uart = ""
         self.resc = ""
 
-    def load(self, board, target, aliases, data, variant_data):
+    def load(self, board, target, aliases, data, variant_data, soc_dirs=None):
         """Load the platform data from the board data and target data
         board: the board object as per the zephyr build system
         target: the target name of the board as per the zephyr build system
         aliases: list of aliases for the target
         data: the default data from the twister.yaml file for the board
         variant_data: the target-specific data to replace the default data
+        soc_dirs: directories of the target's SoC
         """
         self.name = target
         self.aliases = aliases
         self.board_dirs = [str(d) for d in board.directories]
+        self.soc_dirs = [str(d) for d in (soc_dirs or [])]
 
         self.normalized_name = self.name.replace("/", "_")
         self.sysbuild = variant_data.get("sysbuild", data.get("sysbuild", self.sysbuild))
@@ -241,6 +245,14 @@ def _generate_platforms(board_roots, soc_roots, arch_roots):
     lb_args = Namespace(board_roots=board_roots, soc_roots=soc_roots, arch_roots=arch_roots,
                         board=None, board_dir=None)
 
+    soc2dirs = {
+        soc.name: soc.folder
+        for soc in list_hardware.find_v2_systems(Namespace(soc_roots=soc_roots)).get_socs()
+    }
+
+    def soc_dirs_of(target):
+        return soc2dirs.get(target.split('/')[1], []) if '/' in target else []
+
     for board in list_boards.find_v2_boards(lb_args).values():
         for board_dir in board.directories:
             if board_dir in dir2data:
@@ -316,7 +328,7 @@ def _generate_platforms(board_roots, soc_roots, arch_roots):
             variant_data = target2data.get(target, {})
 
             platform = Platform()
-            platform.load(board, target, aliases, data, variant_data)
+            platform.load(board, target, aliases, data, variant_data, soc_dirs_of(target))
             yield platform
 
         target2aliases[target] = aliases
@@ -334,5 +346,6 @@ def _generate_platforms(board_roots, soc_roots, arch_roots):
             raise Exception(f"Duplicate platform identifier {target} found")
 
         platform = Platform()
-        platform.load(board, target, target2aliases[target], data, variant_data={})
+        platform.load(board, target, target2aliases[target], data, variant_data={},
+                      soc_dirs=soc_dirs_of(target))
         yield platform

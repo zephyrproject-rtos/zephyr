@@ -1214,12 +1214,12 @@ class TestPlan:
                                     matched_snippet_board = True
                                     break
 
-                            # A board may also provide its part of the snippet
-                            # from its own directory.
+                            # A board or its SoC may also provide its part of
+                            # the snippet from its own directory.
                             if matched_snippet_board is False:
                                 matched_snippet_board = any(
                                     os.path.isdir(os.path.join(d, 'snippets', this_snippet))
-                                    for d in plat.board_dirs
+                                    for d in plat.board_dirs + plat.soc_dirs
                                 )
 
                             if matched_snippet_board is False:

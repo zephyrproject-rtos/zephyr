@@ -280,16 +280,19 @@ The above example will use :file:`first.overlay` for all revisions of the ``bar`
 also include :file:`extra_0_7_0.overlay` when building for revision ``0.7.0`` of the ``bar``
 board (``bar@0.7.0``).
 
-Board-provided settings
-=======================
+Board and SoC provided settings
+===============================
 
-A board can extend a snippet from its own directory instead of the snippet
-listing every board it applies to. When a snippet is requested, the build
-looks in :file:`snippets/<name>/` under each directory of the board for
-devicetree overlays and ``.conf`` files, and applies those that match the
-board the same way :file:`boards/` files of an application do (see
-:ref:`application-configuration-directory`): :file:`<board>_<qualifiers>.overlay`,
-:file:`<board>.overlay`, and their revision and ``.conf`` counterparts.
+A board or a SoC can extend a snippet from its own directory instead of the
+snippet listing every board it applies to. When a snippet is requested, the
+build looks in :file:`snippets/<name>/` under each directory of the board and
+of its SoC for devicetree overlays and ``.conf`` files, and applies those that
+match the board the same way the :file:`boards/` and :file:`socs/` files of an
+application do (see :ref:`application-configuration-directory`): in the board
+directory :file:`<board>_<qualifiers>.overlay`, :file:`<board>.overlay`, and
+their revision and ``.conf`` counterparts; in the SoC directory
+:file:`<soc>.overlay`, :file:`<soc>_<cpucluster>.overlay` and their ``.conf``
+counterparts.
 
 For example, with a snippet ``foo`` defined in :file:`snippets/foo/snippet.yml`,
 the ``bar`` board can provide the settings it needs for ``foo`` in:
@@ -299,10 +302,18 @@ the ``bar`` board can provide the settings it needs for ``foo`` in:
    boards/<vendor>/bar/snippets/foo/bar.overlay
    boards/<vendor>/bar/snippets/foo/bar.conf
 
-The snippet still has to be defined in a snippet root; the board only adds to
-it. Settings from the snippet definition are applied first, then the board's.
-A snippet defined with no settings of its own is meant to be extended this way,
-and applies to every board, with no effect on those adding nothing to it.
+and the settings every board with the ``baz`` SoC needs go in:
+
+.. code-block:: none
+
+   soc/<vendor>/<family>/snippets/foo/baz.overlay
+   soc/<vendor>/<family>/snippets/foo/baz.conf
+
+The snippet still has to be defined in a snippet root; the board and the SoC
+only add to it. Settings from the snippet definition are applied first, then
+the SoC's, then the board's. A snippet defined with no settings of its own is
+meant to be extended this way, and applies to every board, with no effect on
+those adding nothing to it.
 
 This keeps the board-specific part of a snippet next to the board it describes,
 which suits snippets that many applications share, such as one enabling the

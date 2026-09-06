@@ -109,31 +109,49 @@ function(zephyr_process_snippets)
   endif()
   include(${snippets_generated})
 
-  # A board extends a requested snippet with the devicetree overlays
-  # and Kconfig fragments found in <board dir>/snippets/<snippet>/,
-  # named like any other board configuration file.
+  # A SoC or a board extends a requested snippet with the devicetree
+  # overlays and Kconfig fragments found in snippets/<snippet>/ under its
+  # own directory, named like the socs/ and boards/ configuration files of
+  # an application. The SoC files are applied first, then the board's.
   set(board_snippet_files)
-  if(DEFINED BOARD_DIRECTORIES)
-    foreach(snippet_name IN LISTS SNIPPET_AS_LIST)
-      foreach(board_dir IN LISTS BOARD_DIRECTORIES)
-        set(board_snippet_dir ${board_dir}/snippets/${snippet_name})
-        if(NOT IS_DIRECTORY ${board_snippet_dir})
-          continue()
-        endif()
-        zephyr_file(CONF_FILES ${board_snippet_dir}
-                    DTS board_snippet_dts
-                    KCONF board_snippet_conf
-        )
-        foreach(file IN LISTS board_snippet_dts)
-          zephyr_set(EXTRA_DTC_OVERLAY_FILE ${file} SCOPE snippets APPEND)
-        endforeach()
-        foreach(file IN LISTS board_snippet_conf)
-          zephyr_set(EXTRA_CONF_FILE ${file} SCOPE snippets APPEND)
-        endforeach()
-        list(APPEND board_snippet_files ${board_snippet_dts} ${board_snippet_conf})
+  string(REGEX MATCH "^[^/]*" snippet_soc "${BOARD_QUALIFIERS}")
+  foreach(snippet_name IN LISTS SNIPPET_AS_LIST)
+    foreach(soc_dir IN LISTS SOC_${snippet_soc}_DIRECTORIES)
+      set(soc_snippet_dir ${soc_dir}/snippets/${snippet_name})
+      if(NOT IS_DIRECTORY ${soc_snippet_dir})
+        continue()
+      endif()
+      zephyr_file(CONF_FILES ${soc_snippet_dir}
+                  DTS soc_snippet_dts
+                  KCONF soc_snippet_conf
+                  QUALIFIERS
+      )
+      foreach(file IN LISTS soc_snippet_dts)
+        zephyr_set(EXTRA_DTC_OVERLAY_FILE ${file} SCOPE snippets APPEND)
       endforeach()
+      foreach(file IN LISTS soc_snippet_conf)
+        zephyr_set(EXTRA_CONF_FILE ${file} SCOPE snippets APPEND)
+      endforeach()
+      list(APPEND board_snippet_files ${soc_snippet_dts} ${soc_snippet_conf})
     endforeach()
-  endif()
+    foreach(board_dir IN LISTS BOARD_DIRECTORIES)
+      set(board_snippet_dir ${board_dir}/snippets/${snippet_name})
+      if(NOT IS_DIRECTORY ${board_snippet_dir})
+        continue()
+      endif()
+      zephyr_file(CONF_FILES ${board_snippet_dir}
+                  DTS board_snippet_dts
+                  KCONF board_snippet_conf
+      )
+      foreach(file IN LISTS board_snippet_dts)
+        zephyr_set(EXTRA_DTC_OVERLAY_FILE ${file} SCOPE snippets APPEND)
+      endforeach()
+      foreach(file IN LISTS board_snippet_conf)
+        zephyr_set(EXTRA_CONF_FILE ${file} SCOPE snippets APPEND)
+      endforeach()
+      list(APPEND board_snippet_files ${board_snippet_dts} ${board_snippet_conf})
+    endforeach()
+  endforeach()
 
   # Create the 'snippets' target. Each snippet is printed in a
   # separate command because build system files are not fond of
