@@ -1,0 +1,34 @@
+# Copyright(c) 2026 Junseo Pyun
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    TLV493D 3D Magnetic sensor.
+
+compatible: "infineon,tlv493d"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  operating-mode:
+    type: string
+    default: master-controlled
+    description: |
+      Operating mode for sensor.
+      Operating modes are the following:
+      - powerdown: fastmode=0, lowpower=0, odr=0Hz
+      - fast: fastmode=1, lowpower=0, odr=3.3kHz
+      - low-power: fastmode=0, lowpower=1, odr=100Hz
+      - ultra-low-power: fastmode=0, lowpower=1, odr=10Hz
+      - master-controlled: fastmode=1, lowpower=1, odr=0Hz ~ 3.3kHz
+      Default set to master-controlled.
+    enum:
+      - powerdown
+      - fast
+      - low-power
+      - ultra-low-power
+      - master-controlled
+
+  temp-disable:
+    type: boolean
+    description: |
+      Disable die temperature measurement, enabled by default.
