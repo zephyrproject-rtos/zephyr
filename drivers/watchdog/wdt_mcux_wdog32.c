@@ -127,8 +127,29 @@ static int mcux_wdog32_disable(const struct device *dev)
 	return 0;
 }
 
-#define MSEC_TO_WDOG32_TICKS(clock_freq, divider, msec)                                            \
-	((uint32_t)(clock_freq * msec / 1000U / divider))
+/*
+ * TOVAL and WIN are 16-bit registers. Compute the tick count in 64 bits so
+ * that a megahertz-class clock times a multi-second timeout cannot wrap, and
+ * refuse a value the register cannot hold instead of truncating it: at
+ * 32.768 kHz with divider 1 the counter holds at most 1999 ms, and a 2100 ms
+ * request used to become 3276 ticks, a 100 ms window, without any error.
+ */
+static int mcux_wdog32_msec_to_ticks(uint32_t clock_freq, uint32_t divider, uint32_t msec,
+				     uint16_t *ticks)
+{
+	uint64_t t = ((uint64_t)clock_freq * msec) / 1000ULL / divider;
+
+	if (t > UINT16_MAX) {
+		LOG_ERR("%u ms does not fit the 16-bit counter at %u Hz / %u (max %u ms)", msec,
+			clock_freq, divider,
+			(uint32_t)((uint64_t)UINT16_MAX * 1000ULL * divider / clock_freq));
+		return -EINVAL;
+	}
+
+	*ticks = (uint16_t)t;
+
+	return 0;
+}
 
 static int mcux_wdog32_install_timeout(const struct device *dev, const struct wdt_timeout_cfg *cfg)
 {
@@ -152,12 +173,19 @@ static int mcux_wdog32_install_timeout(const struct device *dev, const struct wd
 
 	WDOG32_GetDefaultConfig(&data->wdog_config);
 
-	data->wdog_config.timeoutValue = MSEC_TO_WDOG32_TICKS(clock_freq, div, cfg->window.max);
+	ret = mcux_wdog32_msec_to_ticks(clock_freq, div, cfg->window.max,
+					&data->wdog_config.timeoutValue);
+	if (ret) {
+		return ret;
+	}
 
 	if (cfg->window.min) {
 		data->wdog_config.enableWindowMode = true;
-		data->wdog_config.windowValue =
-			MSEC_TO_WDOG32_TICKS(clock_freq, div, cfg->window.min);
+		ret = mcux_wdog32_msec_to_ticks(clock_freq, div, cfg->window.min,
+						&data->wdog_config.windowValue);
+		if (ret) {
+			return ret;
+		}
 	} else {
 		data->wdog_config.enableWindowMode = false;
 		data->wdog_config.windowValue = 0;
