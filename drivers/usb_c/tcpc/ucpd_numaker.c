@@ -2310,6 +2310,18 @@ int numaker_tcpc_vbus_enable(const struct device *dev, bool enable)
 
 /* End of "*_tcpc_vbus_*" functions */
 
+/**
+ * @brief Report whether this port applies the Dead Battery resistor
+ *
+ * @retval 0 on success
+ */
+static int numaker_tcpc_dead_battery_enabled(const struct device *dev, bool *enabled)
+{
+	*enabled = numaker_utcpd_deadbattery_query_enable(dev);
+
+	return 0;
+}
+
 static DEVICE_API(tcpc, numaker_tcpc_driver_api) = {
 	.init = numaker_tcpc_init_recycle,
 	.get_cc = numaker_tcpc_get_cc,
@@ -2331,6 +2343,7 @@ static DEVICE_API(tcpc, numaker_tcpc_driver_api) = {
 	.sop_prime_enable = numaker_tcpc_sop_prime_enable,
 	.set_bist_test_mode = numaker_tcpc_set_bist_test_mode,
 	.set_alert_handler_cb = numaker_tcpc_set_alert_handler_cb,
+	.dead_battery_enabled = numaker_tcpc_dead_battery_enabled,
 };
 
 /* Same as RESET_DT_SPEC_INST_GET_BY_IDX, except by name */
