@@ -36,6 +36,16 @@ Threads running in user mode are not permitted to invoke :c:func:`k_panic()`,
 and doing so will generate a kernel oops instead. Otherwise, the fatal error
 reason code generated will be ``K_ERR_KERNEL_PANIC``.
 
+Work Queue Timeout
+===================
+
+If :kconfig:option:`CONFIG_WORKQUEUE_WORK_TIMEOUT` is enabled and a work
+queue's handler runs longer than its configured timeout, the work queue
+thread is aborted. If the queue's thread is essential, this additionally
+raises a fatal error with reason code ``K_ERR_WORK_TIMEOUT``.
+A non-essential queue's thread is aborted without a fatal error,
+and the rest of the system is unaffected.
+
 Exceptions
 **********
 
