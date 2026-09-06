@@ -15,6 +15,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
+#include <zephyr/pm/policy.h>
 
 /* TI DriverLib includes */
 #include <driverlib/dl_spi.h>
@@ -281,6 +282,7 @@ static int spi_mspm0_transceive(const struct device *dev, const struct spi_confi
 	if (ret < 0) {
 		return ret;
 	}
+	pm_policy_device_power_lock_get(dev);
 
 	spi_context_lock(&data->spi_ctx, false, NULL, NULL, spi_cfg);
 
@@ -298,6 +300,7 @@ release:
 	spi_context_release(&data->spi_ctx, ret);
 
 	(void)pm_device_runtime_put(dev);
+	pm_policy_device_power_lock_put(dev);
 
 	return ret;
 }
