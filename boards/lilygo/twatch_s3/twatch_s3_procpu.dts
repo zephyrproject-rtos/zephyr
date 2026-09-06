@@ -24,6 +24,7 @@
 		pwm-led0 = &backlight_pwm;
 		fuel-gauge0 = &fuel_gauge;
 		lora0 = &lora0;
+		accel0 = &bma423;
 	};
 
 	chosen {
