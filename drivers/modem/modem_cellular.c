@@ -2666,6 +2666,9 @@ static int modem_cellular_get_modem_info(const struct device *dev,
 	case CELLULAR_MODEM_INFO_SIM_ICCID:
 		strncpy(info, &data->iccid[0], MIN(size, sizeof(data->iccid)));
 		break;
+	case CELLULAR_MODEM_INFO_SERIAL_NUMBER:
+		strncpy(info, &data->sn[0], MIN(size, sizeof(data->sn)));
+		break;
 	default:
 		ret = -ENODATA;
 		break;

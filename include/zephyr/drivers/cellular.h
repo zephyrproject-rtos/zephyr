@@ -109,6 +109,8 @@ enum cellular_modem_info_type {
 	CELLULAR_MODEM_INFO_SIM_IMSI,
 	/** Integrated Circuit Card Identification Number (SIM) */
 	CELLULAR_MODEM_INFO_SIM_ICCID,
+	/** Modem Serial Number */
+	CELLULAR_MODEM_INFO_SERIAL_NUMBER,
 };
 
 /** Cellular registration status (3GPP TS 27.007) */

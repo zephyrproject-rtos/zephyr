@@ -99,6 +99,16 @@ config MODEM_CELLULAR_USER_PIPE_BUFFER_SIZES
 	int "The size of the buffers used for each user pipe in bytes."
 	default 128
 
+config MODEM_CELLULAR_SERIAL_NUMBER_MAX_SIZE
+	int "The maximum size of the modem serial number string (excluding NUL)"
+	range 16 2048
+	default 16
+	help
+	  3GPP TS 27.007 documentation for +CGSN states that the serial
+	  number text shall not exceed 2048 characters. Most modems output
+	  the IMEI as the serial number, and therefore 16 characters is
+	  sufficient.
+
 config MODEM_CMUX_WORK_BUFFER_SIZE_EXTRA
 	default 256 if DT_HAS_TELIT_LE910C1TX_ENABLED
 	default 256 if DT_HAS_TELIT_LEX10Q1_ENABLED
