@@ -2248,8 +2248,8 @@ static DEVICE_API(uhc, uhc_dwc2_api) = {
 	static const struct uhc_dwc2_config uhc_dwc2_config_##n = {		\
 		UHC_DWC2_DT_INST_REG_ADDR(n),					\
 		.quirks = UHC_DWC2_VENDOR_QUIRK_GET(n),				\
-		.quirk_data = &uhc_dwc2_quirk_data_##n,				\
-		.quirk_config = &uhc_dwc2_quirk_config_##n,			\
+		.quirk_data = UHC_DWC2_VENDOR_QUIRK_DATA_GET(n),		\
+		.quirk_config = UHC_DWC2_VENDOR_QUIRK_CONFIG_GET(n),		\
 		.stack = uhc_dwc2_stack_##n,					\
 		.stack_size = K_THREAD_STACK_SIZEOF(uhc_dwc2_stack_##n),	\
 		.irq_enable_func = uhc_dwc2_irq_enable_func_##n,		\
