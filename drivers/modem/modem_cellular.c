@@ -433,8 +433,13 @@ void modem_cellular_chat_on_imei(struct modem_chat *chat, char **argv, uint16_t 
 		return;
 	}
 
+	/* Any modem using this callback is making the assumption that IMEI == SN,
+	 * as the documented response to 'AT+CGSN' is the SN, not the IMEI.
+	 */
 	strncpy(data->imei, argv[1], sizeof(data->imei) - 1);
 	modem_cellular_emit_modem_info(data, CELLULAR_MODEM_INFO_IMEI);
+	strncpy(data->sn, argv[1], sizeof(data->sn) - 1);
+	modem_cellular_emit_modem_info(data, CELLULAR_MODEM_INFO_SERIAL_NUMBER);
 }
 
 void modem_cellular_chat_on_cgmm(struct modem_chat *chat, char **argv, uint16_t argc,
