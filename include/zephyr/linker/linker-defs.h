@@ -162,6 +162,9 @@ extern char __rodata_region_start[];
 extern char __rodata_region_end[];
 extern char __rodata_region_size[];
 
+extern char __noinit_start[];
+extern char __noinit_end[];
+
 extern char _vector_start[];
 extern char _vector_end[];
 

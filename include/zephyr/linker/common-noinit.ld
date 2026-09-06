@@ -11,6 +11,7 @@ SECTION_PROLOGUE(_NOINIT_SECTION_NAME,(NOLOAD),)
          * This section is used for non-initialized objects that
          * will not be cleared during the boot process.
          */
+	PLACE_SYMBOL_HERE(__noinit_start);
 
 /* Located in generated directory. This file is populated by the
  * zephyr_linker_sources() Cmake function.
@@ -39,6 +40,7 @@ SECTION_PROLOGUE(_NOINIT_SECTION_NAME,(NOLOAD),)
 #include <snippets-noinit.ld>
 #endif
 
+	PLACE_SYMBOL_HERE(__noinit_end);
 } GROUP_NOLOAD_LINK_IN(RAMABLE_REGION, ROMABLE_REGION)
 
 #include "kobject-priv-stacks.ld"
