@@ -28,6 +28,9 @@ config PMP_SLOTS
 config PMP_NO_LOCK_GLOBAL
 	default y
 
+config PMP_GRANULARITY
+	default 128 if SOC_ESP32P4_HPCORE && RISCV_PMP
+
 configdefault CACHE_MANAGEMENT
 	default y
 
