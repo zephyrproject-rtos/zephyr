@@ -21,38 +21,39 @@ LOG_MODULE_REGISTER(adc_bflb, CONFIG_ADC_LOG_LEVEL);
 #include <bouffalolab/common/adc_reg.h>
 #include <zephyr/drivers/clock_control/clock_control_bflb_common.h>
 
-#define ADC_CHAN_SELECT_PER_SCN		6
-#define ADC_CHAN_SELECT_SIZE_SCN	5
-#define ADC_CHAN_SELECT_MSK_SCN		0x1f
-#define ADC_CHAN_COUNT			12
-#define ADC_CHAN_INPUT_COUNT		0x1f
+#define ADC_CHAN_SELECT_PER_SCN		6U
+#define ADC_CHAN_SELECT_SIZE_SCN	5U
+#define ADC_CHAN_SELECT_MSK_SCN		0x1fU
+#define ADC_CHAN_COUNT			12U
+#define ADC_CHAN_INPUT_COUNT		0x1fU
 
-#define ADC_GAIN_1_ID	1
-#define ADC_GAIN_2_ID	2
-#define ADC_GAIN_4_ID	3
-#define ADC_GAIN_8_ID	4
-#define ADC_GAIN_16_ID	5
-#define ADC_GAIN_32_ID	6
+#define ADC_GAIN_1_ID	1U
+#define ADC_GAIN_2_ID	2U
+#define ADC_GAIN_4_ID	3U
+#define ADC_GAIN_8_ID	4U
+#define ADC_GAIN_16_ID	5U
+#define ADC_GAIN_32_ID	6U
 
 #define ADC_GAIN_UNSET ADC_GAIN_128
 
-#define ADC_RESOLUTION_12B_ID	0
-#define ADC_RESOLUTION_14B_ID	2
-#define ADC_RESOLUTION_16B_ID	4
+#define ADC_RESOLUTION_12B_ID	0U
+#define ADC_RESOLUTION_14B_ID	2U
+#define ADC_RESOLUTION_16B_ID	4U
 
-#define ADC_INPUT_ID_TSEN_P	14
-#define ADC_INPUT_ID_HALF_VBAT	18
-#define ADC_INPUT_ID_GND	23
+#define ADC_INPUT_ID_TSEN_P	14U
+#define ADC_INPUT_ID_HALF_VBAT	18U
+#define ADC_INPUT_ID_GND	23U
 
-#define ADC_RESULT_POSITIVE_INPUT	0x3E00000
-#define ADC_RESULT_POSITIVE_INPUT_POS	21
-#define ADC_RESULT_NEGATIVE_INPUT	0x1F0000
-#define ADC_RESULT_NEGATIVE_INPUT_POS	16
-#define ADC_RESULT			0xFFFF
+#define ADC_RESULT_POSITIVE_INPUT	0x3e00000U
+#define ADC_RESULT_POSITIVE_INPUT_POS	21U
+#define ADC_RESULT_NEGATIVE_INPUT	0x1f0000U
+#define ADC_RESULT_NEGATIVE_INPUT_POS	16U
+#define ADC_RESULT			0xffffU
 
-#define ADC_WAIT_TIMEOUT_MS	500
+#define ADC_WAIT_TIMEOUT_MS		500
+#define ADC_WAIT_SAMPLE_TIMEOUT_MS	100
 
-#define ADC_CHOP_MODE_VREF_AZ	1
+#define ADC_CHOP_MODE_VREF_AZ	1U
 
 /* Two-phase averaging parameters for the internal TSEN measurement. After
  * toggling TSVBE_LOW the first few samples are discarded for settling, the
@@ -62,7 +63,25 @@ LOG_MODULE_REGISTER(adc_bflb, CONFIG_ADC_LOG_LEVEL);
 #define ADC_TSEN_PHASE_AVG	16
 #define ADC_TSEN_PHASE_SAMPLES	(ADC_TSEN_PHASE_DISCARD + ADC_TSEN_PHASE_AVG)
 
-#define ADC_CLK_DIV_32	7
+#define ADC_CLK_DIV_32	7U
+
+#if defined(CONFIG_SOC_SERIES_BL60X) || defined(CONFIG_SOC_SERIES_BL70X) \
+	|| defined(CONFIG_SOC_SERIES_BL70XL)
+#define EFUSE_ADC_TRIM_OFFSET		0x78U
+#define EFUSE_ADC_TRIM_EN_POS		14U
+#define EFUSE_ADC_TRIM_PARITY_POS	13U
+#define EFUSE_ADC_TRIM_POS		1U
+#elif defined(CONFIG_SOC_SERIES_BL61X) || defined(CONFIG_SOC_SERIES_BL808)
+#define EFUSE_ADC_TRIM_OFFSET		0xf0U
+#define EFUSE_ADC_TRIM_EN_POS		27U
+#define EFUSE_ADC_TRIM_PARITY_POS	26U
+#define EFUSE_ADC_TRIM_POS		14U
+#else
+#error "Unsupported Platform"
+#endif
+
+#define EFUSE_ADC_TRIM_MSK		0xfffU
+#define EFUSE_ADC_TRIM_NEG_BIT		0x800U
 
 struct adc_bflb_config {
 	uint32_t reg_GPIP;
@@ -216,6 +235,8 @@ static int adc_bflb_channel_setup(const struct device *dev,
 	tmp = sys_read32(cfg->reg_AON + AON_GPADC_REG_CONFIG2_OFFSET);
 	tmp |= (gain << AON_GPADC_PGA1_GAIN_SHIFT);
 	tmp |= (gain << AON_GPADC_PGA2_GAIN_SHIFT);
+	tmp &= ~AON_GPADC_VBAT_EN;
+	tmp &= ~AON_GPADC_VREF_SEL;
 	if (channel_cfg->differential) {
 		tmp |= AON_GPADC_DIFF_MODE;
 	} else {
@@ -243,15 +264,24 @@ static int adc_bflb_channel_setup(const struct device *dev,
 	return 0;
 }
 
-static uint32_t adc_bflb_read_one(const struct device *dev)
+static int adc_bflb_read_one(const struct device *dev, volatile uint32_t *sample)
 {
+	k_timepoint_t end_timeout = sys_timepoint_calc(K_MSEC(ADC_WAIT_TIMEOUT_MS));
 	const struct adc_bflb_config *const cfg = dev->config;
 
 	while ((sys_read32(cfg->reg_GPIP + GPIP_GPADC_CONFIG_OFFSET) &
-		GPIP_GPADC_FIFO_DATA_COUNT_MASK) == 0) {
+		GPIP_GPADC_FIFO_DATA_COUNT_MASK) == 0 && !sys_timepoint_expired(end_timeout)) {
 		clock_bflb_settle();
 	}
-	return sys_read32(cfg->reg_GPIP + GPIP_GPADC_DMA_RDATA_OFFSET) & GPIP_GPADC_DMA_RDATA_MASK;
+
+	if (sys_timepoint_expired(end_timeout)) {
+		return -ETIMEDOUT;
+	}
+
+	*sample = sys_read32(cfg->reg_GPIP + GPIP_GPADC_DMA_RDATA_OFFSET)
+		& GPIP_GPADC_DMA_RDATA_MASK;
+
+	return 0;
 }
 
 static void adc_bflb_trigger(const struct device *dev)
@@ -283,16 +313,18 @@ static int adc_bflb_read(const struct device *dev,
 	const struct adc_bflb_config *const cfg = dev->config;
 	uint32_t tmp;
 	uint8_t chan_nb = 0;
-	uint32_t nb_samples = 0;
+	size_t nb_samples;
+	size_t target_samples;
 	uint8_t sample_chans[ADC_CHAN_COUNT] = {0};
 	bool has_tsen = false;
 	bool has_normal = false;
 	k_timepoint_t end_timeout = sys_timepoint_calc(K_MSEC(ADC_WAIT_TIMEOUT_MS));
+	int ret = 0;
 
 	for (uint8_t i = 0; i < ADC_CHAN_COUNT; i++) {
-		if ((sequence->channels >> i) & 0x1) {
+		if ((sequence->channels >> i) & 0x1U) {
 			sample_chans[chan_nb] = i;
-			chan_nb += 1;
+			chan_nb += 1U;
 			if (data->channel_p[i] == ADC_INPUT_ID_TSEN_P) {
 				has_tsen = true;
 			} else {
@@ -314,23 +346,30 @@ static int adc_bflb_read(const struct device *dev,
 		return adc_bflb_read_tsen(dev, sequence);
 	}
 
+	if (sequence->options != NULL) {
+		target_samples = 1 + sequence->options->extra_samplings;
+	} else {
+		target_samples = 1;
+	}
+
 	nb_samples = sequence->buffer_size / 2 / chan_nb;
-	if (nb_samples < 1) {
+	if (nb_samples < target_samples) {
 		LOG_ERR("resolution 12 to 16 bits, buffer size invalid");
 		return -EINVAL;
 	}
+	nb_samples = target_samples;
 
 	tmp = sys_read32(cfg->reg_AON + AON_GPADC_REG_CONFIG1_OFFSET);
 	tmp &= ~AON_GPADC_RES_SEL_MASK;
 
 	switch (sequence->resolution) {
-	case 12:
+	case 12U:
 		tmp |= ADC_RESOLUTION_12B_ID << AON_GPADC_RES_SEL_SHIFT;
 		break;
-	case 14:
+	case 14U:
 		tmp |= ADC_RESOLUTION_14B_ID << AON_GPADC_RES_SEL_SHIFT;
 		break;
-	case 16:
+	case 16U:
 		tmp |= ADC_RESOLUTION_16B_ID << AON_GPADC_RES_SEL_SHIFT;
 		break;
 	default:
@@ -345,31 +384,32 @@ static int adc_bflb_read(const struct device *dev,
 
 	adc_bflb_trigger(dev);
 
-	for (int i = 0; i < nb_samples; i++) {
-		for (int j = 0; j < chan_nb; j++) {
-			tmp = adc_bflb_read_one(dev);
+	for (size_t i = 0; i < nb_samples; i++) {
+		for (size_t j = 0; j < chan_nb; j++) {
+			ret = adc_bflb_read_one(dev, &tmp);
 			while (((tmp & ADC_RESULT_POSITIVE_INPUT)
 				>> ADC_RESULT_POSITIVE_INPUT_POS
 				!= data->channel_p[sample_chans[j]]
 				|| (tmp & ADC_RESULT_NEGATIVE_INPUT)
 				>> ADC_RESULT_NEGATIVE_INPUT_POS
 				!= data->channel_n[sample_chans[j]])
-				&& !sys_timepoint_expired(end_timeout)) {
-				tmp = adc_bflb_read_one(dev);
+				&& !sys_timepoint_expired(end_timeout)
+				&& ret == 0) {
+				ret = adc_bflb_read_one(dev, &tmp);
 			}
 			((uint16_t *)sequence->buffer)[i * chan_nb + j] =
-				((tmp & ADC_RESULT) >> (16 - sequence->resolution))
+				((tmp & ADC_RESULT) >> (16U - sequence->resolution))
 				/ data->cal_coe - data->cal_off;
 		}
 	}
+
+	adc_bflb_detrigger(dev);
 
 	if (sys_timepoint_expired(end_timeout)) {
 		return -ETIMEDOUT;
 	}
 
-	adc_bflb_detrigger(dev);
-
-	return 0;
+	return ret;
 }
 
 static void adc_bflb_isr(const struct device *dev)
@@ -377,7 +417,6 @@ static void adc_bflb_isr(const struct device *dev)
 	/* Do nothing */
 }
 
-#if defined(CONFIG_SOC_SERIES_BL60X)
 static void adc_bflb_calibrate_dynamic(const struct device *dev)
 {
 	struct adc_bflb_data *data = dev->data;
@@ -385,6 +424,7 @@ static void adc_bflb_calibrate_dynamic(const struct device *dev)
 	volatile uint32_t tmp;
 	volatile uint32_t offset = 0;
 	bool negative = false;
+	int ret;
 
 	tmp = sys_read32(cfg->reg_AON + AON_GPADC_REG_CONFIG1_OFFSET);
 	/* resolution 16-bits */
@@ -417,28 +457,30 @@ static void adc_bflb_calibrate_dynamic(const struct device *dev)
 
 	adc_bflb_trigger(dev);
 	/* 10 samplings */
-	for (uint8_t i = 0; i < 10; i++) {
-		tmp = adc_bflb_read_one(dev);
+	for (uint8_t i = 0; i < 10U; i++) {
+		ret = adc_bflb_read_one(dev, &tmp);
+		if (ret != 0) {
+			LOG_WRN("Failed to fetch calibration sample");
+		}
 		/* only consider samples after the first 5 */
-		if (i > 4) {
-			if (tmp & 0x8000) {
+		if (i > 4U) {
+			if (tmp & 0x8000U) {
 				negative = true;
 				tmp = ~tmp;
 				tmp += 1;
 			}
-			offset += (tmp & 0xffff);
+			offset += (tmp & ADC_RESULT);
 		}
 	}
 
 	adc_bflb_detrigger(dev);
-	offset = offset / 5;
+	offset = offset / 5U;
 	if (negative) {
 		data->cal_coe += (float)offset / 2048.0f;
 	} else {
 		data->cal_coe -= (float)offset / 2048.0f;
 	}
 }
-#endif
 
 static void adc_bflb_calibrate_gnd_offset(const struct device *dev)
 {
@@ -446,6 +488,7 @@ static void adc_bflb_calibrate_gnd_offset(const struct device *dev)
 	const struct adc_bflb_config *const cfg = dev->config;
 	volatile uint32_t tmp;
 	volatile uint32_t offset = 0;
+	int ret;
 
 	tmp = sys_read32(cfg->reg_AON + AON_GPADC_REG_CONFIG1_OFFSET);
 	tmp |= (ADC_RESOLUTION_16B_ID << AON_GPADC_RES_SEL_SHIFT);
@@ -478,74 +521,60 @@ static void adc_bflb_calibrate_gnd_offset(const struct device *dev)
 
 	adc_bflb_trigger(dev);
 	/* 10 samplings */
-	for (uint8_t i = 0; i < 10; i++) {
-		tmp = adc_bflb_read_one(dev);
+	for (uint8_t i = 0; i < 10U; i++) {
+		ret = adc_bflb_read_one(dev, &tmp);
+		if (ret != 0) {
+			LOG_WRN("Failed to fetch calibration sample");
+		}
 		/* only consider samples after the first 5 */
-		if (i > 4) {
+		if (i > 4U) {
 			offset += (tmp & ADC_RESULT);
 		}
 	}
 
 	adc_bflb_detrigger(dev);
-	data->cal_off = offset / 5;
+	data->cal_off = offset / 5U;
 }
 
-#if defined(CONFIG_SOC_SERIES_BL70X) || defined(CONFIG_SOC_SERIES_BL70XL)
+#ifndef CONFIG_ADC_BFLB_FORCE_DYNAMIC_CALIBRATION
+
 static int adc_bflb_calibrate_efuse(const struct device *dev)
 {
 	struct adc_bflb_data *data = dev->data;
 	const struct device *efuse = DEVICE_DT_GET_ONE(bflb_efuse);
 	int ret;
-	uint32_t trim;
+	uint32_t trim, parity;
 
-	ret = otp_read(efuse, 0x78, &trim, sizeof(uint32_t));
+	ret = otp_read(efuse, EFUSE_ADC_TRIM_OFFSET, &trim, sizeof(uint32_t));
 	if (ret < 0) {
 		LOG_ERR("Error: Couldn't read efuses: err: %d.\n", ret);
 		return -EINVAL;
 	}
-	if ((trim & 0x4000) == 0) {
+	if (((trim >> EFUSE_ADC_TRIM_EN_POS) & 0x1U) == 0) {
 		LOG_ERR("Error: ADC calibration data not present");
 		return -EINVAL;
 	}
-	trim = (trim & 0x1FFE) >> 1;
-	if (trim & 0x800) {
-		trim = ~trim;
-		trim += 1;
-		trim = trim & 0xfff;
-		data->cal_coe = ((float)1.0 + ((float)trim / (float)2048.0));
-	} else {
-		data->cal_coe = ((float)1.0 - ((float)trim / (float)2048.0));
-	}
-	return 0;
-}
-#elif defined(CONFIG_SOC_SERIES_BL61X) || defined(CONFIG_SOC_SERIES_BL808)
-static int adc_bflb_calibrate_efuse(const struct device *dev)
-{
-	struct adc_bflb_data *data = dev->data;
-	const struct device *efuse = DEVICE_DT_GET_ONE(bflb_efuse);
-	int ret;
-	uint32_t trim;
 
-	ret = otp_read(efuse, 0xF0, &trim, sizeof(uint32_t));
-	if (ret < 0) {
-		LOG_ERR("Error: Couldn't read efuses: err: %d.\n", ret);
+	parity = (trim >> EFUSE_ADC_TRIM_PARITY_POS) & 0x1U;
+
+	trim = (trim >> EFUSE_ADC_TRIM_POS) & EFUSE_ADC_TRIM_MSK;
+
+	if (parity != (POPCOUNT(trim) & 0x1U)) {
+		LOG_ERR("Error: Bad trim parity");
 		return -EINVAL;
 	}
-	if ((trim & 0x4000000) == 0) {
-		LOG_ERR("Error: ADC calibration data not present");
-		return -EINVAL;
-	}
-	trim = (trim & 0x3FFC000) >> 14;
-	if (trim & 0x800) {
+
+	if (trim & EFUSE_ADC_TRIM_NEG_BIT) {
 		trim = ~trim;
-		trim += 1;
-		trim = trim & 0xfff;
-		data->cal_coe = ((float)1.0 + ((float)trim / (float)2048.0));
+		trim += 1U;
+		trim = trim & EFUSE_ADC_TRIM_MSK;
+		data->cal_coe = (1.0f + ((float)trim / (float)2048.0));
 	} else {
-		data->cal_coe = ((float)1.0 - ((float)trim / (float)2048.0));
+		data->cal_coe = (1.0f - ((float)trim / (float)2048.0));
 	}
 	return 0;
 }
+
 #endif
 
 #if defined(CONFIG_SOC_SERIES_BL60X) || defined(CONFIG_SOC_SERIES_BL70X) || \
@@ -625,8 +654,8 @@ static int adc_bflb_init(const struct device *dev)
 
 	tmp = 0;
 	/* enable power to adc? */
-	tmp |= (2 << AON_GPADC_V18_SEL_SHIFT);
-	tmp |= (1 << AON_GPADC_V11_SEL_SHIFT);
+	tmp |= (2U << AON_GPADC_V18_SEL_SHIFT);
+	tmp |= (1U << AON_GPADC_V11_SEL_SHIFT);
 	/* set internal clock divider to 32 */
 	tmp |= (ADC_CLK_DIV_32 << AON_GPADC_CLK_DIV_RATIO_SHIFT);
 	/* default resolution (12-bits) */
@@ -646,21 +675,21 @@ static int adc_bflb_init(const struct device *dev)
 
 	tmp = 0;
 	/* ""conversion speed"" */
-	tmp |= (2 << AON_GPADC_DLY_SEL_SHIFT);
+	tmp |= (2U << AON_GPADC_DLY_SEL_SHIFT);
 	/* ""Vref AZ and chop on"" */
-	tmp |= (2 << AON_GPADC_CHOP_MODE_SHIFT);
+	tmp |= (2U << AON_GPADC_CHOP_MODE_SHIFT);
 	/* "gain 1" is 1 */
-	tmp |= (1 << AON_GPADC_PGA1_GAIN_SHIFT);
+	tmp |= (1U << AON_GPADC_PGA1_GAIN_SHIFT);
 #if !defined(CONFIG_SOC_SERIES_BL70XL)
 	/* "gain 2" is 1 (BL702L: PGA2 gain must be 0) */
-	tmp |= (1 << AON_GPADC_PGA2_GAIN_SHIFT);
+	tmp |= (1U << AON_GPADC_PGA2_GAIN_SHIFT);
 #endif
 	/* enable gain */
 	tmp |= AON_GPADC_PGA_EN;
 	/* "offset calibration" value */
-	tmp |= (8 << AON_GPADC_PGA_OS_CAL_SHIFT);
+	tmp |= (8U << AON_GPADC_PGA_OS_CAL_SHIFT);
 	/* "VCM" is 1.2v */
-	tmp |= (1 << AON_GPADC_PGA_VCM_SHIFT);
+	tmp |= (1U << AON_GPADC_PGA_VCM_SHIFT);
 	/* ADC reference (VREF channel) is 3v3 */
 	tmp &= ~AON_GPADC_VREF_SEL;
 	sys_write32(tmp, cfg->reg_AON + AON_GPADC_REG_CONFIG2_OFFSET);
@@ -707,16 +736,16 @@ static int adc_bflb_init(const struct device *dev)
 	tmp |= AON_GPADC_POS_SATUR_MASK;
 	sys_write32(tmp, cfg->reg_AON + AON_GPADC_REG_ISR_OFFSET);
 
-#if defined(CONFIG_SOC_SERIES_BL60X)
+#ifdef CONFIG_ADC_BFLB_FORCE_DYNAMIC_CALIBRATION
 	adc_bflb_calibrate_dynamic(dev);
-	adc_bflb_calibrate_gnd_offset(dev);
 #else
 	ret = adc_bflb_calibrate_efuse(dev);
 	if (ret < 0) {
-		LOG_WRN("ADC efuse calibration not available, using defaults");
+		LOG_WRN("ADC efuse calibration not available, using dynamic calibration");
+		adc_bflb_calibrate_dynamic(dev);
 	}
-	adc_bflb_calibrate_gnd_offset(dev);
 #endif
+	adc_bflb_calibrate_gnd_offset(dev);
 
 	cfg->irq_config_func(dev);
 	return 0;
@@ -768,7 +797,7 @@ static int adc_bflb_tsen_phase(const struct device *dev, bool tsvbe_low, uint32_
 
 	adc_bflb_detrigger(dev);
 
-	*avg = (sum + ADC_TSEN_PHASE_AVG / 2) / ADC_TSEN_PHASE_AVG;
+	*avg = (sum + ADC_TSEN_PHASE_AVG / 2U) / ADC_TSEN_PHASE_AVG;
 	return 0;
 }
 
@@ -806,7 +835,7 @@ static int adc_bflb_read_tsen(const struct device *dev, const struct adc_sequenc
 static DEVICE_API(adc, adc_bflb_api) = {
 	.channel_setup = adc_bflb_channel_setup,
 	.read = adc_bflb_read,
-	.ref_internal = 3200,
+	.ref_internal = 3200U,
 };
 
 #define ADC_BFLB_DEVICE(n)						\
