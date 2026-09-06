@@ -290,6 +290,7 @@ static int pwm_mchp_set_cycles(const struct device *pwm_dev, uint32_t channel, u
 	const pwm_mchp_config_t *const mchp_pwm_cfg = pwm_dev->config;
 	pwm_mchp_data_t *mchp_pwm_data = pwm_dev->data;
 	uint32_t top = (BIT(mchp_pwm_cfg->max_bit_width) - 1);
+	uint32_t ccbuf_val = pulse;
 	pwm_mchp_polarity_t requested_polarity = ((flags & PWM_POLARITY_INVERTED) != 0)
 							 ? PWM_MCHP_POLARITY_INVERTED
 							 : PWM_MCHP_POLARITY_NORMAL;
@@ -310,7 +311,11 @@ static int pwm_mchp_set_cycles(const struct device *pwm_dev, uint32_t channel, u
 		tcc_set_polarity(mchp_pwm_cfg->regs, channel, requested_polarity);
 	}
 
-	PWM_REG(mchp_pwm_cfg->regs)->TCC_CCBUF[channel] = TCC_CCBUF_CCBUF(pulse);
+	if (pulse >= period) {
+		ccbuf_val = (period < top) ? (period + 1) : period;
+	}
+
+	PWM_REG(mchp_pwm_cfg->regs)->TCC_CCBUF[channel] = TCC_CCBUF_CCBUF(ccbuf_val);
 	PWM_REG(mchp_pwm_cfg->regs)->TCC_PER = TCC_PER_PER(period);
 
 	MCHP_PWM_DATA_UNLOCK(&mchp_pwm_data->lock);
