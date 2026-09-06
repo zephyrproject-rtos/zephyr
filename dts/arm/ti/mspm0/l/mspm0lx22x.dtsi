@@ -8,6 +8,10 @@
 #include <mem.h>
 #include <ti/mspm0/l/mspm0l.dtsi>
 
+&spi0 {
+	/delete-property/ zephyr,disabling-power-states;
+};
+
 / {
 	soc {
 		sram0: memory@20000000 {
