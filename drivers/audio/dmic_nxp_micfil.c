@@ -587,7 +587,11 @@ static int nxp_micfil_init(const struct device *dev)
 			return -EINVAL;
 		}
 
-		uint32_t reg_div = clk_rate / micfil_clock_rate;
+		/* The root rate is read at run time, and a fractional PLL can
+		 * leave it a few hertz below nominal. Round to the nearest
+		 * divider: flooring would pick the next faster MICFIL clock.
+		 */
+		uint32_t reg_div = DIV_ROUND_CLOSEST(clk_rate, micfil_clock_rate);
 
 		if (reg_div == 0U) {
 			reg_div = 1U;
