@@ -22,7 +22,9 @@ LOG_MODULE_REGISTER(udc_test, LOG_LEVEL_INF);
 #define BULK_IN_EP_ADDR		0x81U
 #define FALSE_EP_ADDR		0x0FU
 
-#define QUEUED_BUFFERS (CONFIG_UDC_BUF_COUNT - 4)
+#define TEST_BUF_COUNT 16U
+#define TEST_BUF_POOL_SIZE 16384U
+#define QUEUED_BUFFERS (TEST_BUF_COUNT - 4U)
 
 K_MSGQ_DEFINE(test_msgq, sizeof(struct udc_event), QUEUED_BUFFERS, sizeof(uint32_t));
 static K_KERNEL_STACK_DEFINE(test_udc_stack, 512);
@@ -30,6 +32,9 @@ static struct k_thread test_udc_thread_data;
 static K_SEM_DEFINE(ep_queue_sem, 0, QUEUED_BUFFERS);
 static uint8_t last_used_ep;
 static uint8_t test_event_ctx;
+
+USB_BUF_POOL_VAR_DEFINE(test_ep_pool, TEST_BUF_COUNT, TEST_BUF_POOL_SIZE,
+			 sizeof(struct udc_buf_info), NULL);
 
 static int test_udc_event_handler(const struct device *dev,
 				  const struct udc_event *const event)
@@ -40,12 +45,11 @@ static int test_udc_event_handler(const struct device *dev,
 static void event_ep_request(const struct device *dev, struct udc_event event)
 {
 	struct udc_buf_info *bi;
-	int err;
 
+	ARG_UNUSED(dev);
 	bi = udc_get_buf_info(event.buf);
 
-	err = udc_ep_buf_free(dev, event.buf);
-	zassert_ok(err, "Failed to free request buffer");
+	net_buf_unref(event.buf);
 
 	if (bi->err == -ECONNABORTED && bi->ep == last_used_ep) {
 		k_sem_give(&ep_queue_sem);
@@ -205,9 +209,14 @@ static struct net_buf *test_udc_ep_buf_alloc(const struct device *dev,
 					     struct usb_ep_descriptor *ed)
 {
 	struct net_buf *buf;
+	size_t size = USB_MPS_TO_TPL(sys_le16_to_cpu(ed->wMaxPacketSize));
 
-	buf = udc_ep_buf_alloc(dev, ed->bEndpointAddress,
-			       USB_MPS_TO_TPL(sys_le16_to_cpu(ed->wMaxPacketSize)));
+	ARG_UNUSED(dev);
+
+	buf = net_buf_alloc_len(&test_ep_pool, size, K_NO_WAIT);
+	if (buf != NULL) {
+		udc_get_buf_info(buf)->ep = ed->bEndpointAddress;
+	}
 
 	zassert_not_null(buf, "Failed to allocate request");
 
@@ -217,14 +226,12 @@ static struct net_buf *test_udc_ep_buf_alloc(const struct device *dev,
 static void test_udc_ep_buf_free(const struct device *dev,
 				 struct net_buf *buf)
 {
-	int err;
-
 	if (buf == NULL) {
 		return;
 	}
 
-	err = udc_ep_buf_free(dev, buf);
-	zassert_ok(err, "Failed to free request");
+	ARG_UNUSED(dev);
+	net_buf_unref(buf);
 }
 
 static void test_udc_ep_halt(const struct device *dev,
@@ -275,7 +282,10 @@ static void test_udc_ep_enqueue(const struct device *dev,
 
 	err1 = udc_ep_enqueue(dev, buf);
 	if (udc_is_enabled(dev)) {
-		false_buf = udc_ep_buf_alloc(dev, FALSE_EP_ADDR, 64);
+		false_buf = net_buf_alloc_len(&test_ep_pool, 64, K_NO_WAIT);
+		if (false_buf != NULL) {
+			udc_get_buf_info(false_buf)->ep = FALSE_EP_ADDR;
+		}
 		zassert_not_null(false_buf, "Failed to allocate request");
 		err2 = udc_ep_enqueue(dev, false_buf);
 	}
@@ -344,8 +354,7 @@ static void test_udc_ep_api(const struct device *dev,
 
 		/* It needs a little reserve for memory management overhead. */
 		for (int n = 0; n < QUEUED_BUFFERS; n++) {
-			buf = udc_ep_buf_alloc(dev, ed->bEndpointAddress,
-				USB_MPS_TO_TPL(sys_le16_to_cpu(ed->wMaxPacketSize)));
+			buf = test_udc_ep_buf_alloc(dev, ed);
 			zassert_not_null(buf,
 					 "Failed to allocate request (%d) for 0x%02x",
 					 n, ed->bEndpointAddress);
