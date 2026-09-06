@@ -32,6 +32,9 @@ enum rstc_g1_rcause {
 	RSTC_G1_RCAUSE_BACKUP = 7 /* Backup Reset */
 };
 
+/** Reset-cause bits that all report through RESET_BROWNOUT. */
+#define RSTC_G1_RCAUSE_BROWNOUT_MASK (BIT(RSTC_G1_RCAUSE_BOD12) | BIT(RSTC_G1_RCAUSE_BOD33))
+
 #ifdef CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH
 /* Reserved reset-cause bits on PIC32CM JH */
 #define RSTC_RESERVED_BIT_3     BIT(3)
