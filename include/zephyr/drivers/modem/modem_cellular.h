@@ -355,6 +355,10 @@ void modem_cellular_emit_network_status(struct modem_cellular_data *data,
 
 void modem_cellular_chat_on_imei(struct modem_chat *chat, char **argv, uint16_t argc,
 				 void *user_data);
+void modem_cellular_chat_on_cgsn_sn(struct modem_chat *chat, char **argv, uint16_t argc,
+				    void *user_data);
+void modem_cellular_chat_on_cgsn_imei(struct modem_chat *chat, char **argv, uint16_t argc,
+				      void *user_data);
 void modem_cellular_chat_on_cgmm(struct modem_chat *chat, char **argv, uint16_t argc,
 				 void *user_data);
 void modem_cellular_chat_on_csq(struct modem_chat *chat, char **argv, uint16_t argc,
@@ -502,6 +506,10 @@ void modem_cellular_chat_callback_handler(struct modem_chat *chat,
 				  MODEM_CHAT_MATCH("ERROR", "", NULL));				   \
 	MODEM_CELLULAR_OK_CHAT_MATCH_DEFINE(__maybe_unused imei_match,				   \
 				"", "", modem_cellular_chat_on_imei);				   \
+	MODEM_CELLULAR_OK_CHAT_MATCH_DEFINE(__maybe_unused cgsn_sn_match,			   \
+				"", "", modem_cellular_chat_on_cgsn_sn);			   \
+	MODEM_CELLULAR_OK_CHAT_MATCH_DEFINE(__maybe_unused cgsn_imei_match,			   \
+				"+CGSN: ", "", modem_cellular_chat_on_cgsn_imei);		   \
 	MODEM_CELLULAR_OK_CHAT_MATCH_DEFINE(__maybe_unused cgmm_match,				   \
 				"", "", modem_cellular_chat_on_cgmm);				   \
 	MODEM_CELLULAR_OK_CHAT_MATCH_DEFINE(__maybe_unused csq_match,				   \
