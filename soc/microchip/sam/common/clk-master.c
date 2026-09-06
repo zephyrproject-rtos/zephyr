@@ -43,12 +43,50 @@ static uint32_t clocks_master_idx;
 
 static inline bool clk_master_ready(struct clk_master *master)
 {
+#ifdef PMC_SR_MCKXRDY_Msk
 	uint32_t bit = master->id ? PMC_SR_MCKXRDY_Msk : PMC_SR_MCKRDY_Msk;
+#else
+	uint32_t bit = PMC_SR_MCKRDY_Msk;
+#endif
 	uint32_t status;
 
 	status = master->pmc->PMC_SR;
 
 	return !!(status & bit);
+}
+
+static int clk_master_pres_get_rate(const struct device *dev, clock_control_subsys_t sys,
+				    uint32_t *rate)
+{
+	ARG_UNUSED(sys);
+
+	struct clk_master *master = to_clk_master(dev);
+	const struct clk_master_characteristics *characteristics = master->characteristics;
+	k_spinlock_key_t key = k_spin_lock(master->lock);
+	uint32_t reg, pres;
+	int retval;
+
+	regmap_read((void *)master->pmc, master->layout->offset, &reg);
+
+	k_spin_unlock(master->lock, key);
+
+	pres = FIELD_GET(MASTER_PRES_MASK << master->layout->pres_shift, reg);
+	master->parent = FIELD_GET(master->layout->css_msk, reg);
+
+	if (pres == MASTER_PRES_MAX && characteristics->have_div3_pres) {
+		pres = 3;
+	} else {
+		pres = (1 << pres);
+	}
+
+	retval = clock_control_get_rate(master->parents[master->parent], NULL, rate);
+	if (!retval) {
+		*rate /= pres;
+	}
+
+	LOG_DBG("%s, rate %d", dev->name, *rate);
+
+	return retval;
 }
 
 static int clk_master_div_on(const struct device *dev, clock_control_subsys_t sys)
@@ -92,7 +130,7 @@ static int clk_master_div_get_rate(const struct device *dev,
 	ARG_UNUSED(sys);
 
 	struct clk_master *master = to_clk_master(dev);
-	uint32_t retval = 0;
+	int retval = 0;
 
 	retval = clock_control_get_rate(master->parents[master->parent], NULL, rate);
 	if (!retval) {
@@ -102,6 +140,42 @@ static int clk_master_div_get_rate(const struct device *dev,
 	LOG_DBG("%s, rate %d", dev->name, *rate);
 
 	return retval;
+}
+
+static DEVICE_API(clock_control, master_pres_api) = {
+	.on = clk_master_div_on,
+	.get_rate = clk_master_pres_get_rate,
+};
+
+int clk_register_master_pres(pmc_registers_t *const pmc, const char *name,
+			     const struct device **parent, int num_parents,
+			     const struct clk_master_layout *layout,
+			     const struct clk_master_characteristics *characteristics,
+			     struct k_spinlock *lock, struct device **clk)
+{
+	struct clk_master *master;
+
+	if (name == NULL || lock == NULL) {
+		return -EINVAL;
+	}
+
+	master = &clocks_master[clocks_master_idx++];
+	if (clocks_master_idx > ARRAY_SIZE(clocks_master)) {
+		LOG_ERR("Array for master clock not enough");
+		return -ENOMEM;
+	}
+
+	*clk = &master->clk;
+	(*clk)->name = name;
+	(*clk)->api = &master_pres_api;
+	memcpy(master->parents, parent, sizeof(struct device *) * num_parents);
+	master->num_parents = num_parents;
+	master->layout = layout;
+	master->characteristics = characteristics;
+	master->pmc = pmc;
+	master->lock = lock;
+
+	return 0;
 }
 
 static DEVICE_API(clock_control, master_div_api) = {
@@ -151,6 +225,9 @@ int clk_register_master_div(pmc_registers_t *const pmc, const char *name,
 	return 0;
 }
 
+#ifdef CONFIG_SOC_FAMILY_MICROCHIP_SAMA7
+
+/* Get Clock Rate for Main System Bus Clock: MCK1 ... MCKN */
 static int clk_mck_get_rate(const struct device *dev, clock_control_subsys_t sys, uint32_t *rate)
 {
 	ARG_UNUSED(sys);
@@ -195,6 +272,7 @@ static int clk_mck_get_rate(const struct device *dev, clock_control_subsys_t sys
 	return retval;
 }
 
+/* Switch On Main System Bus Clock: MCK1 ... MCKN */
 static int clk_mck_on(const struct device *dev, clock_control_subsys_t sys)
 {
 	ARG_UNUSED(sys);
@@ -228,6 +306,7 @@ static int clk_mck_on(const struct device *dev, clock_control_subsys_t sys)
 	return 0;
 }
 
+/* Switch Off Main System Bus Clock: MCK1 ... MCKN */
 static int clk_mck_off(const struct device *dev, clock_control_subsys_t sys)
 {
 	ARG_UNUSED(sys);
@@ -247,6 +326,7 @@ static int clk_mck_off(const struct device *dev, clock_control_subsys_t sys)
 	return 0;
 }
 
+/* Get Status for Main System Bus Clock: MCK1 ... MCKN */
 static enum clock_control_status clk_mck_get_status(const struct device *dev,
 						    clock_control_subsys_t sys)
 {
@@ -277,6 +357,7 @@ static DEVICE_API(clock_control, sama7g5_master_api) = {
 	.get_status = clk_mck_get_status,
 };
 
+/* Register for Main System Bus Clock: MCK1 ... MCKN */
 int clk_register_master(pmc_registers_t *const pmc,
 			const char *name, int num_parents,
 			const struct device **parents,
@@ -326,3 +407,5 @@ int clk_register_master(pmc_registers_t *const pmc,
 
 	return 0;
 }
+
+#endif /* CONFIG_SOC_FAMILY_MICROCHIP_SAMA7 */
