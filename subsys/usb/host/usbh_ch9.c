@@ -24,6 +24,11 @@ LOG_MODULE_REGISTER(usbh_ch9, CONFIG_USBH_LOG_LEVEL);
  */
 #define SETUP_REQ_TIMEOUT	5000U
 
+/*
+ * Synchronous requests may be issued from different threads, e.g. the bus
+ * thread and the hub class work queue, serialize them.
+ */
+K_MUTEX_DEFINE(ch9_req_lock);
 K_SEM_DEFINE(ch9_req_sync, 0, 1);
 static bool ctrl_req_no_status;
 
@@ -66,8 +71,12 @@ int usbh_req_setup(struct usb_device *const udev,
 	uint8_t ep = usb_reqtype_is_to_device(&req) ? 0x00 : 0x80;
 	int ret;
 
+	k_mutex_lock(&ch9_req_lock, K_FOREVER);
+	k_sem_reset(&ch9_req_sync);
+
 	xfer = usbh_xfer_alloc(udev, ep, ch9_req_cb, NULL);
 	if (!xfer) {
+		k_mutex_unlock(&ch9_req_lock);
 		return -ENOMEM;
 	}
 
@@ -96,10 +105,12 @@ int usbh_req_setup(struct usb_device *const udev,
 		ret = usbh_xfer_dequeue(udev, xfer);
 		if (ret != 0) {
 			LOG_ERR("Failed to cancel transfer");
+			k_mutex_unlock(&ch9_req_lock);
 			return ret;
 		}
 
 		LOG_ERR("Timeout");
+		k_mutex_unlock(&ch9_req_lock);
 		return -ETIMEDOUT;
 	}
 
@@ -107,6 +118,7 @@ int usbh_req_setup(struct usb_device *const udev,
 
 buf_alloc_err:
 	usbh_xfer_free(udev, xfer);
+	k_mutex_unlock(&ch9_req_lock);
 
 	return ret;
 }
