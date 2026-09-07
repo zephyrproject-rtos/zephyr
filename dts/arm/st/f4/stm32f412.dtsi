@@ -253,6 +253,37 @@
 			master-can-reg = <0x40006400>;
 			status = "disabled";
 		};
+
+		dfsdm1: dfsdm@40016000 {
+			compatible = "st,stm32-dfsdm";
+			reg = <0x40016000 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB2, 24)>;
+			clock-names = "pclk";
+			resets = <&rctl STM32_RESET(APB2, 24)>;
+			#address-cells = <1>;
+			#size-cells = <0>;
+			status = "disabled";
+
+			pdm0: filter@0 {
+				compatible = "st,stm32-dfsdm-dmic";
+				reg = <0>;
+				interrupts = <61 0>;
+				filter-order = <5>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+
+			pdm1: filter@1 {
+				compatible = "st,stm32-dfsdm-dmic";
+				reg = <1>;
+				interrupts = <62 0>;
+				filter-order = <5>;
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
+			};
+		};
 	};
 
 	die_temp: dietemp {
