@@ -1131,6 +1131,14 @@ static void i2c_xec_v2_isr(const struct device *dev)
 	status = sys_read8(rb + XEC_I2C_SR_OFS);
 	compl_status = sys_read32(rb + XEC_I2C_CMPL_OFS) & XEC_I2C_CMPL_RW1C_MSK;
 	config = sys_read32(rb + XEC_I2C_CFG_OFS);
+	/*
+	 * Clear I2C CMPL first, then ECIA GIRQ source — ECIA W1C ordering
+	 * requires the peripheral condition to be cleared before acking GIRQ_SRC,
+	 * else the I2C block keeps asserting its interrupt and GIRQ re-latches.
+	 * Any new event after both clears re-asserts GIRQ_SRC and stays pending.
+	 */
+	sys_write32(compl_status, rb + XEC_I2C_CMPL_OFS);
+	soc_ecia_girq_status_clear(drvcfg->girq, drvcfg->girq_pos);
 
 	if (tcfg != NULL) {
 		tcbs = tcfg->callbacks;
@@ -1149,12 +1157,12 @@ static void i2c_xec_v2_isr(const struct device *dev)
 #ifdef CONFIG_PM_DEVICE
 			i2c_xec_pm_policy_state_lock_put(data, I2C_XEC_PM_POLICY_STATE_TARGET_FLAG);
 #endif
-			goto clear_iag;
+			return;
 		}
 	}
 
 	if (data->target_attached == false) {
-		goto clear_iag;
+		return;
 	}
 
 	/* External STOP or Bus Error: restart target handling */
@@ -1162,15 +1170,23 @@ static void i2c_xec_v2_isr(const struct device *dev)
 		if ((status & BIT(XEC_I2C_SR_BER_POS)) != 0) {
 			data->i2c_error = I2C_XEC_ERR_BUS;
 		}
+
+		/*
+		 * Re-arm the controller before invoking stop_cb so that a new
+		 * START from the controller (e.g. the RESET that follows
+		 * SET_POWER) is ACKed even if stop_cb takes longer than
+		 * t_BUF (1.3 µs at 400 kHz).  The pending AAT interrupt is
+		 * latched by the NVIC and delivered after this ISR returns.
+		 */
+		restart_target(dev);
+
 		if ((tcbs != NULL) && (tcbs->stop != NULL)) {
 			tcbs->stop(tcfg);
 		}
-
-		restart_target(dev);
 #ifdef CONFIG_PM_DEVICE
 		i2c_xec_pm_policy_state_lock_put(data, I2C_XEC_PM_POLICY_STATE_TARGET_FLAG);
 #endif
-		goto clear_iag;
+		return;
 	}
 
 	/* Address byte handling. AAT status is only valid if PIN status bit == 0.
@@ -1183,7 +1199,7 @@ static void i2c_xec_v2_isr(const struct device *dev)
 		i2c_xec_pm_policy_state_lock_get(data, I2C_XEC_PM_POLICY_STATE_TARGET_FLAG);
 #endif
 		target_addr_handler(dev);
-		goto clear_iag;
+		return;
 	}
 
 	if (data->target_read == true) { /* Target transmitter mode */
@@ -1191,10 +1207,6 @@ static void i2c_xec_v2_isr(const struct device *dev)
 	} else { /* target receiver mode */
 		target_rx_handler(dev, tcbs);
 	}
-
-clear_iag:
-	sys_write32(compl_status, rb + XEC_I2C_CMPL_OFS);
-	soc_ecia_girq_status_clear(drvcfg->girq, drvcfg->girq_pos);
 #endif
 }
 
