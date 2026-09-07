@@ -128,4 +128,11 @@ config NRF_RRAM_FILL_SKIP_IF_FILLED
 	  NOTE: Feature does not protect against simultaneous writes to the
 	  scanned area.
 
+config SOC_FLASH_NRF_RRAM_UICR
+	bool "Access to UICR"
+	depends on !TRUSTED_EXECUTION_NONSECURE
+	help
+	  Enable operations on UICR. Once enabled UICR are written or read as
+	  ordinary flash memory. Erase is not supported.
+
 endif # SOC_FLASH_NRF_RRAM
