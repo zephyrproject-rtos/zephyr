@@ -35,6 +35,11 @@
 		 */
 		compatible = "st,stm32-usbphyc";
 		#phy-cells = <0>;
+		/*
+		 * Pay attention: this clock configuration works out of the box
+		 * only if HSE is working at 24 MHz (because 'mux' clock selects
+		 * HSE and 'fsel' clock selects 24 MHz).
+		 */
 		clocks = <&rcc STM32_CLOCK(AHB2, 13)>,
 			 <&rcc STM32_SRC_HSE OTGHS_SEL(0)>,
 			 <&rcc STM32_SRC_HSE OTGPHYREFCK_SEL(10)>;
