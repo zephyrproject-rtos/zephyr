@@ -4,32 +4,12 @@
 #include <zephyr/secure_storage/its/transform/aead_get.h>
 #include <zephyr/drivers/hwinfo.h>
 #include <zephyr/init.h>
-#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <psa/crypto.h>
 #include <string.h>
-#include <sys/types.h>
 #include <mbedtls/platform_util.h>
 
 LOG_MODULE_DECLARE(secure_storage, CONFIG_SECURE_STORAGE_LOG_LEVEL);
-
-#if defined(CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_SCHEME_AES_GCM)
-#define PSA_KEY_TYPE PSA_KEY_TYPE_AES
-#define PSA_ALG PSA_ALG_GCM
-#elif defined(CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_SCHEME_CHACHA20_POLY1305)
-#define PSA_KEY_TYPE PSA_KEY_TYPE_CHACHA20
-#define PSA_ALG PSA_ALG_CHACHA20_POLY1305
-#endif
-#ifdef PSA_KEY_TYPE
-void secure_storage_its_transform_aead_get_scheme(psa_key_type_t *key_type, psa_algorithm_t *alg)
-{
-	*key_type = PSA_KEY_TYPE;
-	*alg = PSA_ALG;
-}
-#endif /* PSA_KEY_TYPE */
-
-#if	defined(CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_PROVIDER_DEVICE_ID_HASH) || \
-	defined(CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_PROVIDER_ENTRY_UID_HASH)
 
 #define SHA256_OUTPUT_SIZE 32
 BUILD_ASSERT(SHA256_OUTPUT_SIZE == PSA_HASH_LENGTH(PSA_ALG_SHA_256));
@@ -115,40 +95,3 @@ static int warn_insecure_key(void)
 SYS_INIT(warn_insecure_key, APPLICATION, CONFIG_SECURE_STORAGE_INIT_PRIORITY);
 
 #endif /* !CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_NO_INSECURE_KEY_WARNING */
-
-#endif /* CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_PROVIDER_DEVICE_ID_HASH || */
-       /* CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_KEY_PROVIDER_ENTRY_UID_HASH    */
-
-#ifdef CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_NONCE_PROVIDER_DEFAULT
-
-psa_status_t secure_storage_its_transform_aead_get_nonce(
-		uint8_t nonce[static CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_NONCE_SIZE])
-{
-	psa_status_t ret = PSA_SUCCESS;
-	static uint8_t s_nonce[CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_NONCE_SIZE];
-	static bool s_nonce_initialized;
-	static K_MUTEX_DEFINE(s_nonce_mutex);
-
-	k_mutex_lock(&s_nonce_mutex, K_FOREVER);
-
-	if (!s_nonce_initialized) {
-		ret = psa_generate_random(s_nonce, sizeof(s_nonce));
-		if (ret != PSA_SUCCESS) {
-			goto exit;
-		}
-		s_nonce_initialized = true;
-	} else {
-		for (unsigned int i = 0; i != sizeof(s_nonce); ++i) {
-			++s_nonce[i];
-			if (s_nonce[i] != 0) {
-				break;
-			}
-		}
-	}
-	memcpy(nonce, &s_nonce, sizeof(s_nonce));
-
-exit:
-	k_mutex_unlock(&s_nonce_mutex);
-	return ret;
-}
-#endif /* CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_NONCE_PROVIDER_DEFAULT */
