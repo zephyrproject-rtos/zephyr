@@ -500,6 +500,8 @@ New APIs and options
     * HCI packet helpers (:c:macro:`BT_HCI_PKT_CMD_DEFINE`, :c:func:`bt_hci_pkt_push_cmd_hdr`,
       :c:func:`bt_hci_pkt_parse_cmd_rsp` and friends) for framing HCI command packets and
       parsing command responses independently of the Host.
+    * HCI lockstep helper (:c:func:`bt_hci_lockstep_cmd_send_sync`) for HCI drivers that
+      exchange commands with the controller over their own transport.
 
   * Mesh
 
