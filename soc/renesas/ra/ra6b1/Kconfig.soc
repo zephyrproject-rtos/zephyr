@@ -1,0 +1,83 @@
+# SPDX-FileCopyrightText: 2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_RA6B1
+	bool
+	select SOC_FAMILY_RENESAS_RA
+	help
+	  Renesas RA6B1 series
+
+config SOC_R7KA6B1AF4ZNQ
+	bool
+	select SOC_SERIES_RA6B1
+	help
+	  R7KA6B1AF4ZNQ
+
+config SOC_R7KA6B1AG4ZNQ
+	bool
+	select SOC_SERIES_RA6B1
+	help
+	  R7KA6B1AG4ZNQ
+
+config SOC_R7KA6B1BF4ZNQ
+	bool
+	select SOC_SERIES_RA6B1
+	help
+	  R7KA6B1BF4ZNQ
+
+config SOC_R7KA6B1BG4ZNQ
+	bool
+	select SOC_SERIES_RA6B1
+	help
+	  R7KA6B1BG4ZNQ
+
+config SOC_R7KA6B1AF4ZDC
+	bool
+	select SOC_SERIES_RA6B1
+	help
+	  R7KA6B1AF4ZDC
+
+config SOC_R7KA6B1AG4ZDC
+	bool
+	select SOC_SERIES_RA6B1
+	help
+	  R7KA6B1AG4ZDC
+
+config SOC_R7KA6B1BF4ZDC
+	bool
+	select SOC_SERIES_RA6B1
+	help
+	  R7KA6B1BF4ZDC
+
+config SOC_R7KA6B1BG4ZDC
+	bool
+	select SOC_SERIES_RA6B1
+	help
+	  R7KA6B1BG4ZDC
+
+config SOC_R7KA6B1AG4ZAK
+	bool
+	select SOC_SERIES_RA6B1
+	help
+	  R7KA6B1AG4ZAK
+
+config SOC_R7KA6B1BG4ZAK
+	bool
+	select SOC_SERIES_RA6B1
+	help
+	  R7KA6B1BG4ZAK
+
+config SOC_SERIES
+	default "ra6b1" if SOC_SERIES_RA6B1
+
+config SOC
+	default "r7ka6b1af4znq" if SOC_R7KA6B1AF4ZNQ
+	default "r7ka6b1ag4znq" if SOC_R7KA6B1AG4ZNQ
+	default "r7ka6b1bf4znq" if SOC_R7KA6B1BF4ZNQ
+	default "r7ka6b1bg4znq" if SOC_R7KA6B1BG4ZNQ
+	default "r7ka6b1af4zdc" if SOC_R7KA6B1AF4ZDC
+	default "r7ka6b1ag4zdc" if SOC_R7KA6B1AG4ZDC
+	default "r7ka6b1bf4zdc" if SOC_R7KA6B1BF4ZDC
+	default "r7ka6b1bg4zdc" if SOC_R7KA6B1BG4ZDC
+	default "r7ka6b1ag4zak" if SOC_R7KA6B1AG4ZAK
+	default "r7ka6b1bg4zak" if SOC_R7KA6B1BG4ZAK
