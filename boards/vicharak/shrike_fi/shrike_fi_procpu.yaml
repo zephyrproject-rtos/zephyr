@@ -1,0 +1,17 @@
+identifier: shrike_fi/esp32s3/procpu
+name: Vicharak Shrike-fi PROCPU
+vendor: Vicharak
+type: mcu
+arch: xtensa
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - uart
+  - i2c
+  - spi
+  - fpga
+  - watchdog
+  - entropy
+  - dma
+  - netif:wifi
