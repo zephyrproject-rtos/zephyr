@@ -99,6 +99,13 @@ static struct prepare_probe_i2s_data prepare_probe_data;
 DEVICE_DEFINE(prepare_probe_i2s, "prepare_probe_i2s", NULL, NULL, &prepare_probe_data, NULL,
 	      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &prepare_probe_i2s_api);
 
+/* The teardown case needs its own graph: the objects above are already linked. */
+__nocache struct k_mem_slab td_slab;
+static struct mpipe td_pipe;
+static struct mpipe_aud_i2s_src td_src;
+static struct mpipe_aud_i2s_codec_sink td_sink;
+static struct mpipe_caps_filter td_caps_filter;
+
 ZTEST(mpipe_aud_i2s_src, test_enum_caps_nonempty)
 {
 	struct mpipe_aud_i2s_src local;
@@ -183,6 +190,50 @@ ZTEST(mpipe_aud_i2s_src, test_pipeline_starts_i2s_only_while_playing)
 		      MPIPE_STATE_CHANGE_SUCCESS, "RX was not stopped and restarted across pause");
 
 	(void)mpipe_element_set_state((struct mpipe_element *)&pipe, MPIPE_STATE_READY);
+}
+
+/* Tear down while the source thread holds a block inside i2s_read(). */
+ZTEST(mpipe_aud_i2s_src, test_teardown_while_streaming)
+{
+	struct mpipe_structure caps;
+
+	zassert_ok(mpipe_pipeline_init(&td_pipe, 0));
+	zassert_ok(mpipe_aud_i2s_src_init(&td_src, 1, DEVICE_DT_GET(DT_ALIAS(i2s_codec_rx))));
+	zassert_ok(mpipe_caps_filter_init(&td_caps_filter, 2));
+	zassert_ok(mpipe_aud_i2s_codec_sink_init(&td_sink, 3));
+
+	zassert_ok(mpipe_object_set_properties((struct mpipe_object *)&td_src,
+					       MPIPE_PROP_AUD_SRC_SLAB_PTR, &td_slab,
+					       MPIPE_PROP_LIST_END));
+	zassert_ok(mpipe_object_set_properties((struct mpipe_object *)&td_sink,
+					       MPIPE_PROP_AUD_SINK_SLAB_PTR, &td_slab,
+					       MPIPE_PROP_LIST_END));
+
+	zassert_ok(mpipe_structure_init_fields(
+		&caps, MPIPE_MEDIA_AUDIO_PCM, MPIPE_CAPS_FRAME_INTERVAL, MPIPE_TYPE_UINT, 10000,
+		MPIPE_CAPS_NUM_OF_CHANNEL, MPIPE_TYPE_UINT, 2, MPIPE_CAPS_END));
+	zassert_ok(mpipe_object_set_properties((struct mpipe_object *)&td_caps_filter,
+					       MPIPE_PROP_BASE_CAPS_FILTER_CAPS, &caps,
+					       MPIPE_PROP_LIST_END));
+
+	zassert_ok(mpipe_element_link((struct mpipe_element *)&td_src,
+				      (struct mpipe_element *)&td_caps_filter,
+				      (struct mpipe_element *)&td_sink, NULL));
+	zassert_ok(mpipe_bin_add((struct mpipe_bin *)&td_pipe, (struct mpipe_element *)&td_src,
+				 (struct mpipe_element *)&td_caps_filter,
+				 (struct mpipe_element *)&td_sink, NULL));
+
+	zassert_equal(mpipe_element_set_state((struct mpipe_element *)&td_pipe, MPIPE_STATE_PAUSED),
+		      MPIPE_STATE_CHANGE_SUCCESS, "negotiation to PAUSED failed");
+	zassert_equal(
+		mpipe_element_set_state((struct mpipe_element *)&td_pipe, MPIPE_STATE_PLAYING),
+		MPIPE_STATE_CHANGE_SUCCESS);
+
+	/* Let the source thread take a block out of the pool. */
+	k_sleep(K_MSEC(50));
+
+	zassert_equal(mpipe_element_set_state((struct mpipe_element *)&td_pipe, MPIPE_STATE_READY),
+		      MPIPE_STATE_CHANGE_SUCCESS, "teardown from PLAYING did not complete");
 }
 
 ZTEST_SUITE(mpipe_aud_i2s_src, NULL, NULL, NULL, NULL, NULL);
