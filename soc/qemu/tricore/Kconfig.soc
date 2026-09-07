@@ -1,0 +1,33 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_AURIX
+	bool
+
+config SOC_FAMILY
+	default "aurix" if SOC_FAMILY_AURIX
+
+config SOC_SERIES_TC3X
+	bool
+	select SOC_FAMILY_AURIX
+
+config SOC_SERIES_TC4X
+	bool
+	select SOC_FAMILY_AURIX
+
+config SOC_SERIES
+	default "tc3x" if SOC_SERIES_TC3X
+	default "tc4x" if SOC_SERIES_TC4X
+
+config SOC_QEMU_TC3X
+	bool
+
+config SOC_QEMU_TC4X
+	bool
+
+config SOC
+	default "qemu_tc3x" if SOC_QEMU_TC3X
+	default "qemu_tc4x" if SOC_QEMU_TC4X
