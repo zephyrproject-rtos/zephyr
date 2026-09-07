@@ -33,7 +33,7 @@ Building and Running
 Build and flash the sample in the following way:
 
 .. zephyr-app-commands::
-    :zephyr-app: samples/boards/st/sensortile_box_pro/sensors-on-board
+    :zephyr-app: samples/boards/st/board_specific/sensortile_box_pro/sensors-on-board
     :board: sensortile_box_pro
     :goals: build flash
 

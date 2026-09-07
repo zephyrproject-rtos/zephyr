@@ -36,7 +36,7 @@ Building and Running
 Build and flash the sample in the following way:
 
 .. zephyr-app-commands::
-    :zephyr-app: samples/boards/st/steval_stwinbx1/sensors
+    :zephyr-app: samples/boards/st/board_specific/steval_stwinbx1/sensors
     :board: steval_stwinbx1
     :goals: build flash
 
