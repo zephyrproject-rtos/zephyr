@@ -211,6 +211,7 @@ SECTIONS
     } GROUP_DATA_LINK_IN(RAMABLE_REGION, RAMABLE_REGION)
 
     __tbss_align = 8;
+    __tls_align = MAX(__tdata_align, __tbss_align);
     __tbss_size = __tbss_end - __tbss_start;
     __tls_start = __tdata_start;
     __tls_end = __tbss_end;
