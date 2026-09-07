@@ -1,0 +1,18 @@
+/*
+ * SPDX-FileCopyrightText: 2026 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <renesas/ra/ra6/r7ka6b1-common.dtsi>
+
+&gpio0 {
+	ngpios = <24>;
+	status = "okay";
+};
+
+&gpio1 {
+	ngpios = <8>;
+	status = "okay";
+};
+
+/delete-node/ &gpio2;
