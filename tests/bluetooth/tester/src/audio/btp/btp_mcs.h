@@ -39,3 +39,9 @@ struct btp_mcs_state_set_rp {
 } __packed;
 
 #define BTP_MCS_PARENT_GROUP_SET		0x06U
+
+#define BTP_MCS_PLAYER_NAME_SET			0x07U
+struct btp_mcs_player_name_set_cmd {
+	uint8_t name_len;
+	char name[0];
+} __packed;
