@@ -17,6 +17,8 @@ NPCX_REG_OFFSET_CHECK(cdcg_reg, LFCGCTL2, 0x114);
 
 /* PMC register structure check */
 NPCX_REG_SIZE_CHECK(pmc_reg, 0x025);
+NPCX_REG_OFFSET_CHECK(pmc_reg, ENSLP_CTL, 0x003);
+/* Deprecated alias of ENSLP_CTL, kept for out-of-tree users */
 NPCX_REG_OFFSET_CHECK(pmc_reg, ENIDL_CTL, 0x003);
 NPCX_REG_OFFSET_CHECK(pmc_reg, PWDWN_CTL1, 0x008);
 NPCX_REG_OFFSET_CHECK(pmc_reg, PWDWN_CTL7, 0x024);
