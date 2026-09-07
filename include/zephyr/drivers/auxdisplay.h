@@ -370,7 +370,7 @@ __subsystem struct auxdisplay_driver_api {
  * @retval		-ENOSYS if not supported/implemented.
  * @retval		-errno Negative errno code on other failure.
  */
-__syscall int auxdisplay_display_on(const struct device *dev);
+__syscall int auxdisplay_display_on (const struct device *dev);
 
 static inline int z_impl_auxdisplay_display_on(const struct device *dev)
 {
