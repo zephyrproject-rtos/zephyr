@@ -372,3 +372,39 @@ csi_interface: &dcmipp {
 		reset-gpios = <&mcp23017 10 GPIO_ACTIVE_LOW>;
 	};
 };
+
+&usbphyc {
+	status = "okay";
+};
+
+/* PHY port 0: USB host, on-board USB2514B hub to the four USB Type-A connectors */
+&usbphyc_port0 {
+	st,current-boost-microamp = <1000>;
+	st,decrease-hs-slew-rate;
+	st,tune-hs-dc-level = <2>;
+	st,enable-hs-rftime-reduction;
+	st,trim-hs-current = <11>;
+	st,trim-hs-impedance = <2>;
+	st,tune-squelch-level = <1>;
+	st,enable-hs-rx-gain-eq;
+	st,no-hs-ftime-ctrl;
+	st,no-lsfs-sc;
+};
+
+/* PHY port 1: USB Type-C connector (CN7), OTG controller */
+&usbphyc_port1 {
+	st,current-boost-microamp = <1000>;
+	st,decrease-hs-slew-rate;
+	st,tune-hs-dc-level = <2>;
+	st,enable-hs-rftime-reduction;
+	st,trim-hs-current = <11>;
+	st,trim-hs-impedance = <2>;
+	st,tune-squelch-level = <1>;
+	st,enable-hs-rx-gain-eq;
+	st,no-hs-ftime-ctrl;
+	st,no-lsfs-sc;
+};
+
+zephyr_uhc0: &usbh_ohci {
+	status = "okay";
+};

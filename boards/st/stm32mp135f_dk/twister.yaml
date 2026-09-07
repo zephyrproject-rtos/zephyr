@@ -11,6 +11,7 @@ supported:
   - uart
   - spi
   - netif:eth
+  - usbh
 ram: 262144
 flash: 262144
 vendor: st
