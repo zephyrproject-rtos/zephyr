@@ -1001,7 +1001,7 @@ static int tcp_conn_close(struct tcp *conn, int status)
 		}
 
 		conn->in_connect = false;
-		k_sem_reset(&conn->connect_sem);
+		k_sem_give(&conn->connect_sem);
 	} else if (conn->context->recv_cb) {
 		conn->context->recv_cb(conn->context, NULL, NULL, NULL,
 				       status, conn->recv_user_data);
@@ -3882,7 +3882,7 @@ int net_tcp_put(struct net_context *context, bool force_close)
 		}
 	} else if (conn->in_connect && conn->state != TCP_CLOSED && conn->state != TCP_UNUSED) {
 		conn->in_connect = false;
-		k_sem_reset(&conn->connect_sem);
+		k_sem_give(&conn->connect_sem);
 		tcp_conn_close(conn, -ECONNABORTED);
 	}
 
@@ -4215,8 +4215,11 @@ int net_tcp_connect(struct net_context *context,
 		} else if ((K_TIMEOUT_EQ(timeout, K_NO_WAIT)) && conn->state != TCP_ESTABLISHED) {
 			ret = -EINPROGRESS;
 			goto out;
-		} else if (k_sem_take(&conn->connect_sem, timeout) != 0 &&
-			   conn->state != TCP_ESTABLISHED) {
+		}
+
+		(void)k_sem_take(&conn->connect_sem, timeout);
+
+		if (conn->state != TCP_ESTABLISHED) {
 			if (conn->in_connect) {
 				conn->in_connect = false;
 				tcp_conn_close(conn, -ETIMEDOUT);
@@ -4229,6 +4232,7 @@ int net_tcp_connect(struct net_context *context,
 			}
 			goto out;
 		}
+
 		conn->in_connect = false;
 	}
 
