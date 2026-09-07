@@ -1,0 +1,12 @@
+common:
+  tags:
+    - bluetooth
+    - hci
+  integration_platforms:
+    - native_sim
+tests:
+  bluetooth.hci_pkt:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+      - qemu_cortex_m3
