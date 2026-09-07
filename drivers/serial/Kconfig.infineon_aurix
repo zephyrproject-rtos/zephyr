@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright (c) 2024 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+# SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_ASCLIN
+	bool "ASCLIN serial driver"
+	default y
+	depends on DT_HAS_INFINEON_ASCLIN_UART_ENABLED
+	select SERIAL_HAS_DRIVER
+	help
+	  This option enables the ASCLIN driver for AURIX processors.
