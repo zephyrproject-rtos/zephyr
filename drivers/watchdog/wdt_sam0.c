@@ -39,8 +39,6 @@ struct wdt_sam0_dev_data {
 	bool timeout_valid;
 };
 
-static struct wdt_sam0_dev_data wdt_sam0_data = { 0 };
-
 static void wdt_sam0_wait_synchronization(void)
 {
 	while (WDT_SYNCBUSY) {
@@ -60,9 +58,18 @@ static inline void wdt_sam0_set_enable(bool on)
 static inline bool wdt_sam0_is_enabled(void)
 {
 #ifdef WDT_CTRLA_ENABLE
-	return WDT_REGS->CTRLA.bit.ENABLE;
+	return WDT_REGS->CTRLA.bit.ENABLE || WDT_REGS->CTRLA.bit.ALWAYSON;
 #else
-	return WDT_REGS->CTRL.bit.ENABLE;
+	return WDT_REGS->CTRL.bit.ENABLE || WDT_REGS->CTRL.bit.ALWAYSON;
+#endif
+}
+
+static inline bool wdt_sam0_is_always_on(void)
+{
+#ifdef WDT_CTRLA_ENABLE
+	return WDT_REGS->CTRLA.bit.ALWAYSON;
+#else
+	return WDT_REGS->CTRL.bit.ALWAYSON;
 #endif
 }
 
@@ -99,11 +106,6 @@ static int wdt_sam0_setup(const struct device *dev, uint8_t options)
 {
 	struct wdt_sam0_dev_data *data = dev->data;
 
-	if (wdt_sam0_is_enabled()) {
-		LOG_ERR("Watchdog already setup");
-		return -EBUSY;
-	}
-
 	if (!data->timeout_valid) {
 		LOG_ERR("No valid timeout installed");
 		return -EINVAL;
@@ -119,6 +121,17 @@ static int wdt_sam0_setup(const struct device *dev, uint8_t options)
 		return -ENOTSUP;
 	}
 
+	if (wdt_sam0_is_always_on()) {
+		LOG_WRN("Watchdog already running in Always-On mode");
+		data->timeout_valid = true;
+		return 0;
+	}
+
+	if (wdt_sam0_is_enabled()) {
+		LOG_ERR("Watchdog already setup");
+		return -EBUSY;
+	}
+
 	/* Enable watchdog */
 	wdt_sam0_set_enable(1);
 	wdt_sam0_wait_synchronization();
@@ -132,6 +145,11 @@ static int wdt_sam0_disable(const struct device *dev)
 		return -EFAULT;
 	}
 
+	if (wdt_sam0_is_always_on()) {
+		LOG_ERR("Cannot disable watchdog: Always-On is set");
+		return -EPERM;
+	}
+
 	wdt_sam0_set_enable(0);
 	wdt_sam0_wait_synchronization();
 
@@ -143,6 +161,12 @@ static int wdt_sam0_install_timeout(const struct device *dev,
 {
 	struct wdt_sam0_dev_data *data = dev->data;
 	uint32_t window, per;
+
+	/* CONFIG/EWCTRL are read-only when Always-On is set */
+	if (wdt_sam0_is_always_on()) {
+		LOG_ERR("Cannot install timeout: Always-On is set");
+		return -ENOTSUP;
+	}
 
 	/* CONFIG is enable protected, error out if already enabled */
 	if (wdt_sam0_is_enabled()) {
@@ -252,8 +276,12 @@ static DEVICE_API(wdt, wdt_sam0_api) = {
 static int wdt_sam0_init(const struct device *dev)
 {
 #ifdef CONFIG_WDT_DISABLE_AT_BOOT
-	/* Ignore any errors */
-	wdt_sam0_disable(dev);
+	if (wdt_sam0_is_always_on()) {
+		LOG_WRN("Watchdog is Always-On, cannot disable at boot");
+	} else {
+		/* Ignore any errors */
+		wdt_sam0_disable(dev);
+	}
 #endif
 	/* Enable APB clock */
 #ifdef MCLK
@@ -277,7 +305,7 @@ static int wdt_sam0_init(const struct device *dev)
 	return 0;
 }
 
-static struct wdt_sam0_dev_data wdt_sam0_data;
+static struct wdt_sam0_dev_data wdt_sam0_data = { 0 };
 
 DEVICE_DT_INST_DEFINE(0, wdt_sam0_init, NULL,
 		    &wdt_sam0_data, NULL, PRE_KERNEL_1,
