@@ -28,6 +28,7 @@
 		sw0 = &button0;
 		sw1 = &button1;
 		eeprom-0 = &eeprom;
+		rtc = &rtc;
 	};
 
 	leds {
@@ -269,5 +270,10 @@ i2c0: &sercom9 {
 	cs-gpios = <&portc 10 GPIO_ACTIVE_LOW>;
 	dmas = <&dmac 3 10>, <&dmac 4 9>;
 	dma-names = "tx", "rx";
+	status = "okay";
+};
+
+&rtc {
+	prescaler = <1024>;
 	status = "okay";
 };
