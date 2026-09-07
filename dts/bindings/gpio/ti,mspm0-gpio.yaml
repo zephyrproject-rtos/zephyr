@@ -16,6 +16,14 @@ properties:
   "#gpio-cells":
     const: 2
 
+  pinmux:
+    type: phandles
+    required: true
+    description: |
+      GPIO-function pinctrl nodes in pin order (index = pin number); each
+      carries the pin's pinmux, applied via pinctrl_configure_pins(). A node
+      with pinmux 0 marks a non-bonded pin.
+
 gpio-cells:
   - pin
   - flags
