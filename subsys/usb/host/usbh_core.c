@@ -21,8 +21,13 @@ LOG_MODULE_REGISTER(uhs, CONFIG_USBH_LOG_LEVEL);
 static K_KERNEL_STACK_DEFINE(usbh_stack, CONFIG_USBH_STACK_SIZE);
 static struct k_thread usbh_thread_data;
 
+/*
+ * The bus events and the work of the class instances that needs synchronous
+ * requests, like the hub port handling, are serialized on this work queue.
+ */
 static K_KERNEL_STACK_DEFINE(usbh_bus_stack, CONFIG_USBH_STACK_SIZE);
-static struct k_thread usbh_bus_thread_data;
+static struct k_work_q usbh_bus_wq;
+static struct k_work usbh_bus_event_work;
 
 K_MSGQ_DEFINE_STATIC_TYPE(usbh_msgq, struct uhc_event, CONFIG_USBH_MAX_UHC_MSG);
 K_MSGQ_DEFINE_STATIC_TYPE(usbh_bus_msgq, struct uhc_event, CONFIG_USBH_MAX_UHC_MSG);
@@ -36,9 +41,17 @@ static int usbh_event_carrier(const struct device *dev,
 		err = k_msgq_put(&usbh_msgq, event, K_NO_WAIT);
 	} else {
 		err = k_msgq_put(&usbh_bus_msgq, event, K_NO_WAIT);
+		if (err == 0) {
+			(void)k_work_submit_to_queue(&usbh_bus_wq, &usbh_bus_event_work);
+		}
 	}
 
 	return err;
+}
+
+int usbh_bus_work_submit(struct k_work *const work)
+{
+	return k_work_submit_to_queue(&usbh_bus_wq, work);
 }
 
 static void dev_connected_handler(struct usbh_context *const ctx,
@@ -68,7 +81,7 @@ static void dev_connected_handler(struct usbh_context *const ctx,
 		return;
 	}
 
-	usbh_device_connect(ctx, udev);
+	(void)usbh_device_connect(ctx, udev);
 }
 
 static void dev_removed_handler(struct usbh_context *const ctx)
@@ -132,18 +145,14 @@ static ALWAYS_INLINE int usbh_event_handler(struct usbh_context *const ctx,
 	return ret;
 }
 
-static void usbh_bus_thread(void *p1, void *p2, void *p3)
+static void usbh_bus_event_work_handler(struct k_work *const work)
 {
-	ARG_UNUSED(p1);
-	ARG_UNUSED(p2);
-	ARG_UNUSED(p3);
-
 	struct usbh_context *uhs_ctx;
 	struct uhc_event event;
 
-	while (true) {
-		k_msgq_get(&usbh_bus_msgq, &event, K_FOREVER);
+	ARG_UNUSED(work);
 
+	while (k_msgq_get(&usbh_bus_msgq, &event, K_NO_WAIT) == 0) {
 		uhs_ctx = (void *)uhc_get_event_ctx(event.dev);
 		usbh_event_handler(uhs_ctx, &event);
 	}
@@ -196,6 +205,8 @@ int usbh_init_device_intl(struct usbh_context *const uhs_ctx)
 
 static int uhs_pre_init(void)
 {
+	static const struct k_work_queue_config usbh_bus_wq_cfg = {.name = "usbh_bus"};
+
 	k_thread_create(&usbh_thread_data, usbh_stack,
 			K_KERNEL_STACK_SIZEOF(usbh_stack),
 			usbh_thread,
@@ -204,13 +215,9 @@ static int uhs_pre_init(void)
 
 	k_thread_name_set(&usbh_thread_data, "usbh");
 
-	k_thread_create(&usbh_bus_thread_data, usbh_bus_stack,
-			K_KERNEL_STACK_SIZEOF(usbh_bus_stack),
-			usbh_bus_thread,
-			NULL, NULL, NULL,
-			K_PRIO_COOP(9), 0, K_NO_WAIT);
-
-	k_thread_name_set(&usbh_bus_thread_data, "usbh_bus");
+	k_work_init(&usbh_bus_event_work, usbh_bus_event_work_handler);
+	k_work_queue_start(&usbh_bus_wq, usbh_bus_stack, K_KERNEL_STACK_SIZEOF(usbh_bus_stack),
+			   K_PRIO_COOP(9), &usbh_bus_wq_cfg);
 
 	usbh_class_init_all();
 

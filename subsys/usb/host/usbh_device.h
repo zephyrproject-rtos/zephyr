@@ -48,8 +48,11 @@ static inline bool usbh_device_is_root(struct usbh_context *const ctx,
 	return usbh_device_get_root(ctx) == udev;
 }
 
-/* Connect a new USB device */
-void usbh_device_connect(struct usbh_context *const ctx, struct usb_device *const udev);
+/*
+ * Connect a new USB device, the device is initialized and probed against
+ * the class instances. The device is freed on failure.
+ */
+int usbh_device_connect(struct usbh_context *const ctx, struct usb_device *const udev);
 
 /* Disconnect USB device */
 void usbh_device_disconnect(struct usbh_context *ctx, struct usb_device *udev);
