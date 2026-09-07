@@ -49,8 +49,7 @@ struct mchp_pit_timer_config {
 
 struct mchp_pit_timer_data {
 	DEVICE_MMIO_NAMED_RAM(reg_base);
-	uint64_t accumulated_cycles;
-	uint64_t last_cycle;
+	uint32_t accumulated_cycles;
 	uint32_t piv;
 };
 
@@ -74,10 +73,9 @@ static inline void mchp_pit_reg_write(uint32_t data, uint32_t reg, uint32_t mask
 		    DEVICE_MMIO_NAMED_GET(systick_timer_dev, reg_base) + reg);
 }
 
-static uint64_t mchp_pit_get_cycles(uint32_t reg, bool commit)
+static uint32_t mchp_pit_get_cycles(uint32_t reg)
 {
 	struct mchp_pit_timer_data *data = systick_timer_dev->data;
-	uint64_t cycles;
 	uint32_t piir;
 	uint32_t cpiv;
 	uint32_t picnt;
@@ -87,16 +85,7 @@ static uint64_t mchp_pit_get_cycles(uint32_t reg, bool commit)
 	cpiv = FIELD_GET(PIT_PIIR_CPIV_Msk, piir);
 	picnt = FIELD_GET(PIT_PIIR_PICNT_Msk, piir);
 
-	cycles = data->accumulated_cycles;
-	cycles += (uint64_t)picnt * (data->piv + 1);
-
-	if (commit) {
-		data->accumulated_cycles = cycles;
-	}
-
-	cycles += cpiv;
-
-	return cycles;
+	return data->accumulated_cycles + picnt * (data->piv + 1) + cpiv;
 }
 
 static void mchp_pit_isr(const void *arg)
@@ -106,7 +95,6 @@ static void mchp_pit_isr(const void *arg)
 	struct mchp_pit_timer_data *data = systick_timer_dev->data;
 	k_spinlock_key_t key;
 	uint32_t elapsed_ticks;
-	uint64_t curr_cycle;
 
 	/* If no pending event */
 	if (FIELD_GET(PIT_SR_PITS_Msk, mchp_pit_reg_read(PIT_SR_REG_OFST)) == 0) {
@@ -115,11 +103,9 @@ static void mchp_pit_isr(const void *arg)
 
 	key = sys_clock_lock();
 
-	curr_cycle = mchp_pit_get_cycles(PIT_PIVR_REG_OFST, true);
+	elapsed_ticks = FIELD_GET(PIT_PIVR_PICNT_Msk, mchp_pit_reg_read(PIT_PIVR_REG_OFST));
 
-	elapsed_ticks = (curr_cycle - data->last_cycle) / CYCLES_PER_TICK;
-
-	data->last_cycle += (uint64_t)elapsed_ticks * CYCLES_PER_TICK;
+	data->accumulated_cycles += elapsed_ticks * CYCLES_PER_TICK;
 
 	sys_clock_announce_locked(elapsed_ticks, key);
 }
@@ -140,22 +126,11 @@ uint32_t sys_clock_elapsed(void)
 uint32_t sys_clock_cycle_get_32(void)
 {
 	k_spinlock_key_t key = sys_clock_lock();
-	uint32_t cycles = (uint32_t)mchp_pit_get_cycles(PIT_PIIR_REG_OFST, false);
+	uint32_t cycles = mchp_pit_get_cycles(PIT_PIIR_REG_OFST);
 
 	sys_clock_unlock(key);
 	return cycles;
 }
-
-#ifdef CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER
-uint64_t sys_clock_cycle_get_64(void)
-{
-	k_spinlock_key_t key = sys_clock_lock();
-	uint64_t cycles = mchp_pit_get_cycles(PIT_PIIR_REG_OFST, false);
-
-	sys_clock_unlock(key);
-	return cycles;
-}
-#endif
 
 static int sys_clock_driver_init(void)
 {
@@ -172,7 +147,6 @@ static int sys_clock_driver_init(void)
 			       (clock_control_subsys_t)&cfg->clock_cfg);
 
 	data->accumulated_cycles = 0;
-	data->last_cycle = 0;
 	data->piv = CYCLES_PER_TICK - 1;
 
 	DEVICE_MMIO_NAMED_MAP(systick_timer_dev, reg_base, K_MEM_CACHE_NONE);
