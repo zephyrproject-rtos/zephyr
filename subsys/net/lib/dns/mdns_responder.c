@@ -305,6 +305,9 @@ static void create_ipv6_addr(struct net_sockaddr_in6 *addr)
 	/* Well known IPv6 ff02::fb address */
 	net_ipv6_addr_create(&addr->sin6_addr,
 			     0xff02, 0, 0, 0, 0, 0, 0, 0x00fb);
+
+	/* Not scoped to any interface. */
+	addr->sin6_scope_id = 0;
 }
 
 static void create_ipv4_addr(struct net_sockaddr_in *addr)
