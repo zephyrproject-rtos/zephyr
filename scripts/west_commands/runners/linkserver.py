@@ -1,4 +1,4 @@
-# Copyright 2023-2024 NXP
+# Copyright 2023-2024, 2026 NXP
 # Copyright (c) 2017 Linaro Limited.
 #
 # SPDX-License-Identifier: Apache-2.0
@@ -29,7 +29,7 @@ class LinkServerBinaryRunner(ZephyrBinaryRunner):
                  gdb_port=DEFAULT_LINKSERVER_GDB_PORT,
                  semihost_port=DEFAULT_LINKSERVER_SEMIHOST_PORT,
                  override=None,
-                 tui=False, tool_opt=None, batch=False):
+                 tui=False, tool_opt=None, batch=False, gdb_init=None):
         super().__init__(cfg)
         self.file = cfg.file
         self.file_type = cfg.file_type
@@ -50,6 +50,7 @@ class LinkServerBinaryRunner(ZephyrBinaryRunner):
         self.override = override if override else []
         self.override_cli = self._build_override_cli()
         self.is_batch = batch
+        self.gdb_init = gdb_init or []
 
         self.tool_opt = []
         if tool_opt is not None:
@@ -64,7 +65,7 @@ class LinkServerBinaryRunner(ZephyrBinaryRunner):
     def capabilities(cls):
         return RunnerCaps(commands={'flash', 'debug', 'debugserver', 'attach'},
                           dev_id=True, flash_addr=True, erase=True,
-                          tool_opt=True, file=True, batch_debug=True)
+                          tool_opt=True, file=True, batch_debug=True, gdb_init=True)
 
     @classmethod
     def do_add_parser(cls, parser):
@@ -106,7 +107,8 @@ class LinkServerBinaryRunner(ZephyrBinaryRunner):
                                  gdb_port=args.gdb_port,
                                  override=args.override,
                                  tui=args.tui, tool_opt=args.tool_opt,
-                                 batch=args.batch)
+                                 batch=args.batch,
+                                 gdb_init=args.gdb_init)
 
     @property
     def linkserver_version_str(self):
@@ -157,11 +159,14 @@ class LinkServerBinaryRunner(ZephyrBinaryRunner):
                     # the ram as inaccessible and does not flash.
                     gdb_cmd += ['-ex', 'set mem inaccessible-by-default off']
                     gdb_cmd += ['-ex', 'monitor reset', '-ex', 'load']
+                    # Run the user's commands while the target is still halted.
+                    gdb_cmd += self.gdb_ex_args(self.gdb_init)
                     if self.is_batch:
                         gdb_cmd += ['-ex', 'monitor ondisconnect cont', '-ex',
                                     'monitor kill_server', '-ex', 'quit']
 
                 if command == 'attach':
+                    gdb_cmd += self.gdb_ex_args(self.gdb_init)
                     linkserver_cmd += ['--attach']
 
                 self.run_server_and_client(linkserver_cmd, gdb_cmd)
