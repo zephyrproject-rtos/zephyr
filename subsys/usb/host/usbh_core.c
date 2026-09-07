@@ -61,7 +61,7 @@ static void dev_connected_handler(struct usbh_context *const ctx,
 		udev->speed = USB_SPEED_SPEED_FS;
 	}
 
-	usbh_device_connect(ctx, udev);
+	(void)usbh_device_connect(ctx, udev);
 }
 
 static void dev_removed_handler(struct usbh_context *const ctx)
