@@ -30,9 +30,9 @@ static inline int mux_control_copy_from_user(struct mux_control *k_ctrl,
 		return -EFAULT;
 	}
 
-	if (!K_SYSCALL_VERIFY_MSG(k_ctrl->len <= CONFIG_MUX_MAX_CELLS,
-				  "mux_control cells len %zu exceeds maximum %d",
-				  k_ctrl->len, CONFIG_MUX_MAX_CELLS)) {
+	if (K_SYSCALL_VERIFY_MSG(k_ctrl->len <= CONFIG_MUX_MAX_CELLS,
+				 "mux_control cells len %zu exceeds maximum %d",
+				 k_ctrl->len, CONFIG_MUX_MAX_CELLS)) {
 		return -EINVAL;
 	}
 
@@ -105,6 +105,8 @@ static inline int z_vrfy_mux_control_disconnect(const struct device *dev,
 	struct mux_control k_ctrl;
 	uint32_t k_cells[CONFIG_MUX_MAX_CELLS];
 
+	/* disconnect is optional; z_impl reports -ENOSYS, so only check the object. */
+	K_OOPS(K_SYSCALL_OBJ(dev, K_OBJ_DRIVER_MUX_CONTROL));
 	K_OOPS(mux_control_copy_from_user(&k_ctrl, k_cells, control));
 
 	return z_impl_mux_control_disconnect(dev, &k_ctrl);
