@@ -950,7 +950,8 @@ static int entropy_stm32_rng_pm_action(const struct device *dev,
 	int res = 0;
 
 	/* Remove warning on some platforms */
-	ARG_UNUSED(dev_data);
+	(void)dev_data;
+	(void)dev_cfg;
 
 	switch (action) {
 	case PM_DEVICE_ACTION_SUSPEND:
