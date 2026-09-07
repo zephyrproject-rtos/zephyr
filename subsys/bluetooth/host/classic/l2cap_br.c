@@ -131,10 +131,11 @@ LOG_MODULE_REGISTER(bt_l2cap_br, CONFIG_BT_L2CAP_LOG_LEVEL);
 
 enum {
 	/* Connection oriented channels flags */
-	L2CAP_FLAG_CONN_LCONF_DONE, /* local config accepted by remote */
-	L2CAP_FLAG_CONN_RCONF_DONE, /* remote config accepted by local */
-	L2CAP_FLAG_CONN_ACCEPTOR,   /* getting incoming connection req */
-	L2CAP_FLAG_CONN_PENDING,    /* remote sent pending result in rsp */
+	L2CAP_FLAG_CONN_LCONF_DONE,       /* local config accepted by remote */
+	L2CAP_FLAG_CONN_RCONF_DONE,       /* remote config accepted by local */
+	L2CAP_FLAG_CONN_ACCEPTOR,         /* getting incoming connection req */
+	L2CAP_FLAG_CONN_PENDING,          /* remote sent pending result in rsp */
+	L2CAP_FLAG_CONN_CONF_RSP_SENDING, /* waiting for config response sent */
 
 	/* Signaling channel flags */
 	L2CAP_FLAG_SIG_INFO_PENDING, /* retrieving remote l2cap info */
@@ -4635,19 +4636,10 @@ done:
 }
 #endif /* CONFIG_BT_L2CAP_RET_FC */
 
-static void l2cap_br_config_rsp_sent_cb(struct bt_conn *conn, void *user_data, int err)
+static void l2cap_br_config_rsp_complete(struct bt_l2cap_chan *chan)
 {
-	uint16_t scid = POINTER_TO_UINT(user_data);
-	struct bt_l2cap_chan *chan;
-
-	chan = bt_l2cap_br_lookup_tx_cid(conn, scid);
-	if (chan == NULL) {
-		return;
-	}
-
-	if (err != 0) {
-		LOG_ERR("Config response of chan %p failed to send (%d)", BR_CHAN(chan), err);
-		l2cap_br_chan_disconn(chan);
+	if (!atomic_test_and_clear_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_CONF_RSP_SENDING)) {
+		LOG_DBG("No config response pending for chan %p", BR_CHAN(chan));
 		return;
 	}
 
@@ -4667,6 +4659,25 @@ static void l2cap_br_config_rsp_sent_cb(struct bt_conn *conn, void *user_data, i
 			chan->ops->connected(chan);
 		}
 	}
+}
+
+static void l2cap_br_config_rsp_sent_cb(struct bt_conn *conn, void *user_data, int err)
+{
+	uint16_t scid = POINTER_TO_UINT(user_data);
+	struct bt_l2cap_chan *chan;
+
+	chan = bt_l2cap_br_lookup_tx_cid(conn, scid);
+	if (chan == NULL) {
+		return;
+	}
+
+	if (err != 0) {
+		LOG_ERR("Config response of chan %p failed to send (%d)", BR_CHAN(chan), err);
+		l2cap_br_chan_disconn(chan);
+		return;
+	}
+
+	l2cap_br_config_rsp_complete(chan);
 }
 
 static void l2cap_br_conf_req(struct bt_l2cap_br *l2cap, uint8_t ident, uint16_t len,
@@ -4851,9 +4862,11 @@ send_rsp:
 	}
 #endif /* CONFIG_BT_L2CAP_RET_FC */
 
+	atomic_set_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_CONF_RSP_SENDING);
 	err = bt_l2cap_br_send_cb(conn, BT_L2CAP_CID_BR_SIG, rsp_buf, l2cap_br_config_rsp_sent_cb,
 				  UINT_TO_POINTER(BR_CHAN(chan)->tx.cid));
 	if (err != 0) {
+		atomic_clear_bit(BR_CHAN(chan)->flags, L2CAP_FLAG_CONN_CONF_RSP_SENDING);
 		LOG_ERR("Failed to send config response of chan %p (%d)", BR_CHAN(chan), err);
 		net_buf_unref(rsp_buf);
 		l2cap_br_chan_disconn(chan);
@@ -6379,6 +6392,15 @@ void bt_l2cap_br_recv(struct bt_conn *conn, struct net_buf *buf)
 	 * Response we connect channel here.
 	 */
 	check_fixed_channel(chan);
+
+	/* If data arrives while still in the config state, the peer must have already received the
+	 * config response and moved to the connected state, so there's no need to wait for config
+	 * response tx callback. Complete the pending config response now, otherwise this packet
+	 * would be dropped since the channel isn't marked connected yet.
+	 */
+	if (BR_CHAN(chan)->state == BT_L2CAP_CONFIG) {
+		l2cap_br_config_rsp_complete(chan);
+	}
 
 	if (BR_CHAN(chan)->state < BT_L2CAP_CONNECTED) {
 		LOG_ERR("Chan %p in invalid state %u, ignoring data", chan, BR_CHAN(chan)->state);
