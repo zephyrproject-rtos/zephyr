@@ -32,6 +32,8 @@
 		 * Reuse the H7R/S compatible as it matches our programming model even
 		 * though "USBPHYC" is not used at all in the STM32H5E/F Reference Manual.
 		 * The node name follows the RM terminology as it be chosen arbitrarily.
+		 *
+		 * NOTE: this default configuration is valid for HSE source @ 24 MHz.
 		 */
 		compatible = "st,stm32-usbphyc";
 		#phy-cells = <0>;
