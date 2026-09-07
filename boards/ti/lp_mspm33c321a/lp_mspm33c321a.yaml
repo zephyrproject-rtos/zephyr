@@ -13,4 +13,5 @@ supported:
   - rtc
   - uart
   - gpio
+  - spi
 vendor: ti
