@@ -55,6 +55,8 @@ static void dev_connected_handler(struct usbh_context *const ctx,
 
 	if (event->type == UHC_EVT_DEV_CONNECTED_HS) {
 		udev->speed = USB_SPEED_SPEED_HS;
+	} else if (event->type == UHC_EVT_DEV_CONNECTED_LS) {
+		udev->speed = USB_SPEED_SPEED_LS;
 	} else {
 		udev->speed = USB_SPEED_SPEED_FS;
 	}
@@ -94,8 +96,6 @@ static ALWAYS_INLINE int usbh_event_handler(struct usbh_context *const ctx,
 
 	switch (event->type) {
 	case UHC_EVT_DEV_CONNECTED_LS:
-		LOG_ERR("Low speed device not supported (connected event)");
-		break;
 	case UHC_EVT_DEV_CONNECTED_FS:
 	case UHC_EVT_DEV_CONNECTED_HS:
 		dev_connected_handler(ctx, event);
