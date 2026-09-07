@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2025 Texas Instruments
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * GPIO loopback test resources for LP-MSPM0G3507.
+ * Jumper PB2 (out-gpios) to PB3 (in-gpios) for the runtime loopback test.
+ */
+
+/ {
+	resources {
+		compatible = "test-gpio-basic-api";
+		out-gpios = <&gpiob 2 GPIO_ACTIVE_HIGH>; /* PB2 */
+		in-gpios = <&gpiob 3 GPIO_ACTIVE_HIGH>; /* PB3 */
+	};
+};
