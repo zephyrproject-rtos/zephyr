@@ -173,6 +173,4 @@ config MAC_BB_PD
 
 endmenu  # Cache config
 
-rsource "Kconfig.caps"
-
 endif # SOC_SERIES_ESP32S3

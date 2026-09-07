@@ -61,6 +61,5 @@ config ESP32_EMAC
 	  Both Ethernet and MDIO depend on this driver.
 	  This option allows enabling MDIO independently of Ethernet.
 
-rsource "Kconfig.caps"
 
 endif # SOC_SERIES_ESP32

@@ -54,3 +54,9 @@ config SOC_SERIES
 
 config SOC
 	default "esp32p4" if SOC_ESP32P4
+
+if SOC_SERIES_ESP32P4
+
+rsource "Kconfig.caps"
+
+endif

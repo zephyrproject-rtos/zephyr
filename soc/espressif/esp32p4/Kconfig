@@ -68,8 +68,6 @@ config ESP32_CACHE_L2_LINE_SIZE
 
 endmenu # Cache config
 
-rsource "Kconfig.caps"
-
 config ESP32P4_EMAC
 	bool
 	default y if ETH_ESP32

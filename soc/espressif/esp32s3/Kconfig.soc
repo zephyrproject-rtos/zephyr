@@ -161,3 +161,9 @@ config SOC_PART_NUMBER
 config SOC_TOOLCHAIN_NAME
 	string
 	default "espressif_esp32s3" if SOC_SERIES_ESP32S3
+
+if SOC_SERIES_ESP32S3
+
+rsource "Kconfig.caps"
+
+endif
