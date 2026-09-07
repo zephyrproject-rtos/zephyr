@@ -55,5 +55,53 @@
 				status = "disabled";
 			};
 		};
+
+		mdf1: mdf@40025000 {
+			compatible = "st,stm32-mdf";
+			reg = <0x40025000 0x1000>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 3)>;
+			clock-names = "pclk";
+			resets = <&rctl STM32_RESET(AHB1, 3)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+			status = "disabled";
+
+			filter@40025080 {
+				reg = <0x40025080 0x80>;
+				interrupts = <102 0>;
+				status = "disabled";
+			};
+
+			filter@40025100 {
+				reg = <0x40025100 0x80>;
+				interrupts = <103 0>;
+				status = "disabled";
+			};
+
+			filter@40025180 {
+				reg = <0x40025180 0x80>;
+				interrupts = <104 0>;
+				status = "disabled";
+			};
+
+			filter@40025200 {
+				reg = <0x40025200 0x80>;
+				interrupts = <105 0>;
+				status = "disabled";
+			};
+
+			filter@40025280 {
+				reg = <0x40025280 0x80>;
+				interrupts = <121 0>;
+				status = "disabled";
+			};
+
+			filter@40025300 {
+				reg = <0x40025300 0x80>;
+				interrupts = <122 0>;
+				status = "disabled";
+			};
+		};
 	};
 };
