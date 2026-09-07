@@ -28,12 +28,16 @@
  */
 static inline FUNC_NO_STACK_PROTECTOR size_t z_tls_data_size(void)
 {
+#ifdef __IAR_SYSTEMS_ICC__
 	size_t size = (size_t)(uintptr_t)__tdata_size + (size_t)(uintptr_t)__tbss_size;
 
 #if defined(CONFIG_STACK_CANARIES_TLS_PREPEND)
 	size += (size_t)(uintptr_t)__stack_chk_size;
 #endif
 	return size;
+#else
+	return ROUND_UP((size_t)(uintptr_t)__tls_size, (size_t)(uintptr_t)__tls_align);
+#endif
 }
 
 /**
@@ -46,22 +50,24 @@ static inline FUNC_NO_STACK_PROTECTOR size_t z_tls_data_size(void)
  */
 static inline FUNC_NO_STACK_PROTECTOR void z_tls_copy(char *dest)
 {
-#if defined(CONFIG_STACK_CANARIES_TLS_PREPEND)
-	/* Copy .stack_chk.guard and .tdata separately since the linker may insert
-	 * padding between sections.
-	 */
-	memcpy(dest, __stack_chk_start, (size_t)(uintptr_t)__stack_chk_size);
-	dest += (size_t)(uintptr_t)__stack_chk_size;
+	size_t tdata_size = (size_t)(uintptr_t)__tdata_size;
+	size_t tdata_offset = 0;
 
-	memcpy(dest, __tdata_start, (size_t)(uintptr_t)__tdata_size);
-	dest += (size_t)(uintptr_t)__tdata_size;
-#else
-	/* Copy initialized data (tdata) */
-	memcpy(dest, __tdata_start, (size_t)(uintptr_t)__tdata_size);
-	dest += (size_t)(uintptr_t)__tdata_size;
+#if defined(CONFIG_STACK_CANARIES_TLS_PREPEND)
+	size_t stack_chk_size = (size_t)(uintptr_t)__stack_chk_size;
+
+	/* Use runtime offsets even when initialized sections are loaded from ROM. */
+	tdata_offset = (size_t)(uintptr_t)__tdata_offset;
+	memcpy(dest, __stack_chk_start, stack_chk_size);
+	memset(dest + stack_chk_size, 0, tdata_offset - stack_chk_size);
 #endif
-	/* Clear BSS data (tbss) */
-	memset(dest, 0, (size_t)(uintptr_t)__tbss_size);
+	/* Copy initialized data at its ELF offset from the TLS image base. */
+	dest += tdata_offset;
+	memcpy(dest, __tdata_start, tdata_size);
+	dest += tdata_size;
+
+	/* Clear tbss and the padding around it. */
+	memset(dest, 0, z_tls_data_size() - tdata_offset - tdata_size);
 }
 
 #endif /* ZEPHYR_KERNEL_INCLUDE_KERNEL_TLS_H_ */

@@ -49,13 +49,16 @@ static struct k_thread tls_thread[NUM_THREADS];
 K_APP_BMEM(part_common) static k_tid_t tls_tid[NUM_THREADS];
 K_APP_BMEM(part_common) static enum test_result tls_result[NUM_THREADS];
 
-/* Thread data with initialized values */
-static uint8_t Z_THREAD_LOCAL thread_data8 = STATIC_DATA8;
+/*
+ * Initialized thread data. The aligned variants verify that runtime TLS
+ * initialization preserves the compiler-generated variable offsets.
+ */
+static uint8_t Z_THREAD_LOCAL thread_data8 __aligned(CONFIG_TEST_TLS_ALIGNMENT) = STATIC_DATA8;
 static uint32_t Z_THREAD_LOCAL thread_data32 = STATIC_DATA32;
 static uint64_t Z_THREAD_LOCAL thread_data64 = STATIC_DATA64;
 
 /* Zeroed thread data */
-static uint8_t Z_THREAD_LOCAL thread_bss8;
+static uint8_t Z_THREAD_LOCAL thread_bss8 __aligned(CONFIG_TEST_TLS_BSS_ALIGNMENT);
 static uint32_t Z_THREAD_LOCAL thread_bss32;
 static uint64_t Z_THREAD_LOCAL thread_bss64;
 
