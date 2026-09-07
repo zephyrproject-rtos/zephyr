@@ -209,12 +209,13 @@ int nordicsemi_nrf71_init(void)
 	}
 #endif
 
-#if defined(CONFIG_SOC_NRF71_WIFI_BOOT)
-	wifi_setup();
+#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_pwr_antswc)
+	/* Power on the antenna switch before starting the Wi-Fi core. */
+	*(volatile uint32_t *)PWR_ANTSWC_REG |= PWR_ANTSWC_ENABLE;
 #endif
 
-#if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_pwr_antswc)
-	*(volatile uint32_t *)PWR_ANTSWC_REG |= PWR_ANTSWC_ENABLE;
+#if defined(CONFIG_SOC_NRF71_WIFI_BOOT)
+	wifi_setup();
 #endif
 
 	/* Configure LFXO capacitive load if internal load capacitors are used */
