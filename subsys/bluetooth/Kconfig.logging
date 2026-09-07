@@ -578,6 +578,14 @@ module-str = BT_OTS
 source "subsys/logging/Kconfig.template.log_config"
 endif # BT_OTS
 
+if BT_HIDS
+
+module = BT_HIDS
+module-str = HID Service
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # BT_HIDS
+
 endmenu # Services
 
 endmenu # Bluetooth logging

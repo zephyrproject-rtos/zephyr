@@ -1,0 +1,103 @@
+# Bluetooth HID Service (HIDS)
+
+# Copyright (c) 2026 Xiaomi Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig BT_HIDS
+	bool "HID Service (HIDS) [EXPERIMENTAL]"
+	depends on BT_PERIPHERAL
+	depends on BT_SMP
+	select EXPERIMENTAL
+	select BT_GATT_DYNAMIC_DB
+	help
+	  Enable the HID Service server. Provides a HID Service with a
+	  configurable Report Map and Input, Output and Feature reports.
+
+	  All HID Service characteristics require an encrypted link, as
+	  required by the HID over GATT Profile.
+
+if BT_HIDS
+
+config BT_HIDS_MAX_CONNECTIONS
+	int "Maximum simultaneous HID Service connections"
+	default BT_MAX_CONN
+	range 1 BT_MAX_CONN
+	help
+	  Maximum number of simultaneous Host connections the HID Service keeps
+	  HID state (Protocol Mode and Suspend) for. A Host beyond this limit is
+	  denied access to the Protocol Mode and HID Control Point
+	  characteristics, so the default matches BT_MAX_CONN.
+
+	  The Report characteristics do not need this state: the service holds
+	  one value per Report, which every Host reads and writes.
+
+config BT_HIDS_PROTOCOL_MODE
+	bool "Protocol Mode characteristic"
+	help
+	  Include the Protocol Mode characteristic in the HID Service.
+
+	  The characteristic is mandatory for a Device that supports Boot
+	  Protocol Mode, so the Boot Report options below select it, and
+	  optional for a Device that supports Report Protocol Mode only.
+
+config BT_HIDS_BOOT_KEYBOARD
+	bool "Boot Keyboard Input and Output Report characteristics"
+	select BT_HIDS_PROTOCOL_MODE
+	help
+	  Include the Boot Keyboard Input Report and Boot Keyboard Output Report
+	  characteristics, which carry the fixed format Reports a Host uses in
+	  Boot Protocol Mode. Their format and length are defined by the USB HID
+	  Specification, so they are not described in the Report Map.
+
+	  Mandatory for a Device operating as a keyboard, and not permitted for
+	  a Device that does not.
+
+config BT_HIDS_BOOT_MOUSE
+	bool "Boot Mouse Input Report characteristic"
+	select BT_HIDS_PROTOCOL_MODE
+	help
+	  Include the Boot Mouse Input Report characteristic, which carries the
+	  fixed format Report a Host uses in Boot Protocol Mode. Its format and
+	  length are defined by the USB HID Specification, so it is not
+	  described in the Report Map.
+
+	  Mandatory for a Device operating as a mouse, and not permitted for a
+	  Device that does not.
+
+config BT_HIDS_INPUT_REPORT_COUNT
+	int "Number of Input Report characteristics"
+	default 1
+	range 0 16
+	help
+	  Number of Input Report characteristics in the HID Service. The
+	  application has to register exactly this many Input Reports.
+
+config BT_HIDS_OUTPUT_REPORT_COUNT
+	int "Number of Output Report characteristics"
+	default 0
+	range 0 16
+	help
+	  Number of Output Report characteristics in the HID Service. The
+	  application has to register exactly this many Output Reports.
+
+config BT_HIDS_FEATURE_REPORT_COUNT
+	int "Number of Feature Report characteristics"
+	default 0
+	range 0 16
+	help
+	  Number of Feature Report characteristics in the HID Service. The
+	  application has to register exactly this many Feature Reports.
+
+config BT_HIDS_MAX_REPORT_LEN
+	int "Maximum single report data length (bytes)"
+	default 64
+	range 8 256
+	help
+	  Maximum length of a single HID report data payload, in both
+	  directions. It is the upper bound the service enforces on a Host write
+	  before calling set_report, and on the value the application sets with
+	  bt_hids_report_set(). One buffer of this size is held per Report
+	  characteristic. The Boot Reports have a fixed length of their own and
+	  are not covered by this option.
+
+endif # BT_HIDS
