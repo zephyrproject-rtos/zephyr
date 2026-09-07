@@ -24,11 +24,23 @@ jobs:
 
     steps:
     - name: Delete stale queued workflow runs
-      uses: MajorScruffy/delete-old-workflow-runs@78b5af714fefaefdf74862181c467b061782719e # v0.3.0
+      uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9.0.0
       with:
-        repository: ${{ github.repository }}
-        # Remove any workflow runs in "queued" state for more than 1 day
-        older-than-seconds: 86400
-        status: queued
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        retries: 3
+        script: |
+          // Remove any workflow runs in "queued" state for more than 1 day
+          const cutoff = Date.now() - 24 * 60 * 60 * 1000;
+
+          const runs = await github.paginate(
+            github.rest.actions.listWorkflowRunsForRepo,
+            { ...context.repo, status: "queued", per_page: 100 },
+          );
+
+          for (const run of runs.filter((r) => Date.parse(r.created_at) < cutoff)) {
+            core.info(`Deleting workflow run ${run.id}`);
+            try {
+              await github.rest.actions.deleteWorkflowRun({ ...context.repo, run_id: run.id });
+            } catch (err) {
+              core.warning(`Failed to delete workflow run ${run.id}: ${err.message}`);
+            }
+          }
