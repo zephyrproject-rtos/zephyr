@@ -1,11 +1,16 @@
 # Copyright (c) 2025 STMicroelectronics
 # SPDX-License-Identifier: Apache-2.0
 
-if(CONFIG_STM32_USB_COMMON)
+if(CONFIG_STM32_USB_COMMON OR CONFIG_STM32_USBPHYC_MP1)
   zephyr_library()
 
   zephyr_include_directories(.)
+endif()
 
+# Standalone PHY controller drivers
+zephyr_library_sources_ifdef(CONFIG_STM32_USBPHYC_MP1 phy_usbphyc_mp1.c)
+
+if(CONFIG_STM32_USB_COMMON)
   zephyr_library_sources(stm32_usb_pwr.c)
 
   # PHY interface drivers

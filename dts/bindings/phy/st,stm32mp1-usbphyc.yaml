@@ -1,0 +1,148 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  STM32MP1 USB HS PHY controller (USBPHYC), as found in the STM32MP13 and
+  STM32MP15 series.
+
+  The controller hosts a PLL that generates the 480 MHz PHY clock and the
+  48 MHz clock of the USB host block, and two UTMI+ ports:
+
+  - port 0 is always routed to port 1 of the USBH host block
+    (EHCI/OHCI).
+  - port 1 is routed to the USB OTG controller by default, or to port 2 of
+    the USBH host block when it is referenced by a host controller node
+    ("generic-ohci" or "generic-ehci").
+
+  The PHY analog domain is supplied by the internal 1.1 V and 1.8 V
+  regulators of the PWR block and by the external 3.3 V USB supply
+  (VDD3V3_USBHS). USB controllers reference a port with their phys
+  property.
+
+  Example:
+
+    usbphyc: usbphyc@5a006000 {
+      compatible = "st,stm32mp1-usbphyc";
+      reg = <0x5a006000 0x1000>;
+      clocks = <&rcc STM32_CLOCK(APB4, 16)>,
+               <&rcc STM32_SRC_HSE USBPHY_SEL(0)>;
+      clock-names = "gate", "mux";
+      resets = <&rctl STM32_RESET(APB4, 16)>;
+      #address-cells = <1>;
+      #size-cells = <0>;
+
+      usbphyc_port0: usb-phy@0 {
+        reg = <0>;
+        #phy-cells = <0>;
+      };
+
+      usbphyc_port1: usb-phy@1 {
+        reg = <1>;
+        #phy-cells = <0>;
+      };
+    };
+
+compatible: "st,stm32mp1-usbphyc"
+
+include: [base.yaml, reset-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true
+
+  clock-names:
+    required: true
+    description: |
+      Two clock cells are expected:
+      - "gate": USBPHYC peripheral clock gate (RCC USBPHY)
+      - "mux": USBPHYC PLL reference clock selection (RCC USBPHYSRC).
+        The reference clock must be between 19.2 MHz and 38.4 MHz.
+
+  resets:
+    required: true
+
+  "#address-cells":
+    const: 1
+
+  "#size-cells":
+    const: 0
+
+child-binding:
+  description: USBPHYC UTMI+ port
+
+  properties:
+    reg:
+      type: array
+      required: true
+      description: Port index, 0 or 1
+
+    "#phy-cells":
+      type: int
+      required: true
+      const: 0
+
+    st,current-boost-microamp:
+      type: int
+      enum: [1000, 2000]
+      description: Current boost, in microamperes
+
+    st,no-lsfs-fb-cap:
+      type: boolean
+      description: Disable the LS/FS feedback capacitor
+
+    st,decrease-hs-slew-rate:
+      type: boolean
+      description: Decrease the HS driver slew rate
+
+    st,tune-hs-dc-level:
+      type: int
+      enum: [0, 1, 2, 3]
+      description: |
+        HS driver DC level:
+        0: normal level
+        1: increase the level by 5 to 7 mV
+        2: increase the level by 10 to 14 mV
+        3: decrease the level by 5 to 7 mV
+
+    st,enable-fs-rftime-tuning:
+      type: boolean
+      description: Enable the FS rise/fall time tuning
+
+    st,enable-hs-rftime-reduction:
+      type: boolean
+      description: Enable the HS rise/fall time reduction
+
+    st,trim-hs-current:
+      type: int
+      description: HS driver current trimming, 0 to 15
+
+    st,trim-hs-impedance:
+      type: int
+      description: HS driver impedance trimming, 0 to 3
+
+    st,tune-squelch-level:
+      type: int
+      description: Squelch level, 0 to 3
+
+    st,enable-hs-rx-gain-eq:
+      type: boolean
+      description: Enable the HS receiver gain equalizer
+
+    st,tune-hs-rx-offset:
+      type: int
+      description: HS receiver offset, 0 to 3
+
+    st,no-hs-ftime-ctrl:
+      type: boolean
+      description: Disable the HS fall time control of the single ended signals
+
+    st,no-lsfs-sc:
+      type: boolean
+      description: Disable the short circuit protection of the LS/FS driver
+
+    st,enable-hs-tx-staggering:
+      type: boolean
+      description: Enable the HS transmitter staggering
