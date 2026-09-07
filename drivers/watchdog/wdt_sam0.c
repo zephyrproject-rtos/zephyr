@@ -106,11 +106,6 @@ static int wdt_sam0_setup(const struct device *dev, uint8_t options)
 {
 	struct wdt_sam0_dev_data *data = dev->data;
 
-	if (!data->timeout_valid) {
-		LOG_ERR("No valid timeout installed");
-		return -EINVAL;
-	}
-
 	if (options & WDT_OPT_PAUSE_IN_SLEEP) {
 		LOG_ERR("Pause in sleep not supported");
 		return -ENOTSUP;
@@ -127,6 +122,11 @@ static int wdt_sam0_setup(const struct device *dev, uint8_t options)
 		return 0;
 	}
 
+	if (!data->timeout_valid) {
+		LOG_ERR("No valid timeout installed");
+		return -EINVAL;
+	}
+
 	if (wdt_sam0_is_enabled()) {
 		LOG_ERR("Watchdog already setup");
 		return -EBUSY;
@@ -135,6 +135,17 @@ static int wdt_sam0_setup(const struct device *dev, uint8_t options)
 	/* Enable watchdog */
 	wdt_sam0_set_enable(1);
 	wdt_sam0_wait_synchronization();
+
+	/* Set Always-On mode if requested in devicetree */
+	if (DT_INST_PROP(0, always_on)) {
+#ifdef WDT_CTRLA_ENABLE
+		WDT_REGS->CTRLA.bit.ALWAYSON = 1;
+#else
+		WDT_REGS->CTRL.bit.ALWAYSON = 1;
+#endif
+		wdt_sam0_wait_synchronization();
+		LOG_INF("Always-On mode enabled");
+	}
 
 	return 0;
 }
