@@ -76,6 +76,23 @@ config NRF70_RADIO_TEST
 	  compliance. It provides direct control of the radio hardware
 	  for transmitting test patterns and measuring RF parameters.
 
+config NRF70_RADIO_TEST_SHELL
+	bool "Radio test shell commands"
+	default y
+	depends on NRF70_RADIO_TEST && SHELL
+	help
+	  Register the wifi_radio_test shell command set for nRF70 radio test
+	  mode. Disable to provide a custom shell integration in the application.
+
+config NRF70_RADIO_TEST_FICR_SHELL
+	bool "Radio test FICR/OTP programming shell"
+	default y
+	depends on NRF70_RADIO_TEST_SHELL
+	help
+	  Register the wifi_radio_ficr_prog shell command set for programming
+	  nRF7002 OTP memory. Disable if the application provides its own
+	  integration.
+
 config NRF70_OFFLOADED_RAW_TX
 	bool "Offloaded raw TX mode of the nRF70 driver"
 	help
