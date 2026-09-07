@@ -161,6 +161,9 @@ struct coredump_cmd_copy_arg {
 #define COREDUMP_CPU_SNAPSHOT_HDR_ID	'F'
 #define COREDUMP_CPU_SNAPSHOT_HDR_VER	1
 
+#define COREDUMP_CRC_HDR_ID		'C'
+#define COREDUMP_CRC_HDR_VER		1
+
 /* Target code */
 enum coredump_tgt_code {
 	COREDUMP_TGT_UNKNOWN = 0,
@@ -255,6 +258,28 @@ struct coredump_cpu_snapshot_hdr_t {
 
 	/* The k_thread that was .current on that CPU when it was frozen */
 	uintptr_t	thread_ptr;
+} __packed;
+
+/*
+ * Integrity trailer (CONFIG_DEBUG_COREDUMP_CRC).
+ *
+ * When enabled, this is emitted as the very last block of the coredump. It
+ * carries a CRC-32 (IEEE 802.3, as computed by crc32_ieee()) over every byte
+ * of the dump that precedes it - i.e. the main header and all arch / threads
+ * metadata / per-CPU snapshot / memory blocks, but not the trailer itself.
+ * Host tooling recomputes the CRC over the same range and compares, so a
+ * dump corrupted or truncated in transit (logging/UDP) or in storage (flash)
+ * can be detected before it is fed to GDB.
+ */
+struct coredump_crc_hdr_t {
+	/* COREDUMP_CRC_HDR_ID */
+	char		id;
+
+	/* Header version */
+	uint16_t	hdr_version;
+
+	/* CRC-32 (IEEE) of all preceding coredump bytes */
+	uint32_t	crc;
 } __packed;
 
 typedef void (*coredump_backend_start_t)(void);
