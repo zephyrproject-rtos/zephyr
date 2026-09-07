@@ -48,6 +48,9 @@ Suite / benchmark                    Operation
 ``thread.yield_preemptive``          context switch between preemptible
                                      threads of equal priority
 ``thread.yield_cooperative``         the same between cooperative threads
+``yield_queue.depth_<n>``            the preemptive context switch with ``n``
+                                     other threads runnable at the same
+                                     priority, for ``n`` of 1, 4 and 16
 ``semaphore.give`` / ``take``        uncontended, no waiter
 ``semaphore.give_wake_switch``       give to a blocked higher priority thread,
                                      until that thread runs
@@ -127,8 +130,9 @@ Notes
   exhaust the mapping pool and ``k_thread_create()`` asserts. Disabling it
   also keeps thread creation comparable with platforms that have no MMU.
 * The benchmark runs on a single CPU. The operations that span a context
-  switch are closed by a partner thread, which on a second CPU would close
-  the span before the switch being measured. :file:`prj.conf` limits
+  switch are closed by a partner thread, and the ready queue benchmarks keep
+  filler threads runnable, so on a second CPU either would close the span
+  before the switch being measured. :file:`prj.conf` limits
   :kconfig:option:`CONFIG_MP_MAX_NUM_CPUS` to one, as the other kernel
   benchmarks do; the SMP scheduler paths are still what is measured when
   :kconfig:option:`CONFIG_SMP` is enabled.
