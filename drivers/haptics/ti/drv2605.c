@@ -126,6 +126,10 @@ LOG_MODULE_REGISTER(DRV2605, CONFIG_HAPTICS_LOG_LEVEL);
 
 #define DRV2605_POWER_UP_DELAY_US 250
 
+/* A DRV2605L is unreachable on the bus for about 800 ms after a device reset */
+#define DRV2605_T_RESET      K_MSEC(1000)
+#define DRV2605_T_RESET_POLL K_MSEC(20)
+
 #define DRV2605_VOLTAGE_SCALE_FACTOR_MV 5600
 
 #define DRV2605_CALCULATE_VOLTAGE(_volt) ((_volt * 255) / DRV2605_VOLTAGE_SCALE_FACTOR_MV)
@@ -483,8 +487,9 @@ static int drv2605_hw_config(const struct device *dev)
 static int drv2605_reset(const struct device *dev)
 {
 	const struct drv2605_config *config = dev->config;
-	int retries = 5, ret;
+	const k_timepoint_t end = sys_timepoint_calc(DRV2605_T_RESET);
 	uint8_t value;
+	int ret;
 
 	i2c_reg_update_byte_dt(&config->i2c, DRV2605_REG_MODE, DRV2605_STANDBY, 0);
 
@@ -494,22 +499,19 @@ static int drv2605_reset(const struct device *dev)
 		return ret;
 	}
 
-	k_msleep(100);
-
-	while (retries > 0) {
-		retries--;
+	/*
+	 * The device does not answer on the bus at all while it resets, so a
+	 * failed read means it is still busy rather than absent.
+	 */
+	do {
+		(void)k_sleep(DRV2605_T_RESET_POLL);
 
 		ret = i2c_reg_read_byte_dt(&config->i2c, DRV2605_REG_MODE, &value);
-		if (ret < 0) {
-			k_usleep(10000);
-			continue;
+		if ((ret == 0) && ((value & DRV2605_DEV_RESET) == 0U)) {
+			return i2c_reg_update_byte_dt(&config->i2c, DRV2605_REG_MODE,
+						      DRV2605_STANDBY, 0);
 		}
-
-		if ((value & DRV2605_DEV_RESET) == 0U) {
-			i2c_reg_update_byte_dt(&config->i2c, DRV2605_REG_MODE, DRV2605_STANDBY, 0);
-			return 0;
-		}
-	}
+	} while (!sys_timepoint_expired(end));
 
 	return -ETIMEDOUT;
 }
