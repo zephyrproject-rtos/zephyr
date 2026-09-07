@@ -120,6 +120,19 @@ void arch_new_thread(struct k_thread *thread, k_thread_stack_t *stack,
 {
 	thread->switch_handle = init_stack(thread, (int *)stack_ptr, entry,
 					   p1, p2, p3);
+
+#if defined(CONFIG_USERSPACE) && defined(CONFIG_XTENSA_MMU)
+	/*
+	 * Start with no page tables. arch_mem_domain_thread_add() uses a
+	 * non-NULL arch.ptables to detect that the thread is migrating from a
+	 * previous memory domain and reset its stack there. For a brand new
+	 * thread - in particular a dynamically allocated one (k_object_alloc()),
+	 * whose backing memory is not zeroed - this field would otherwise hold
+	 * garbage and the "migration" would walk a bogus page table.
+	 */
+	thread->arch.ptables = NULL;
+#endif
+
 #ifdef CONFIG_XTENSA_LAZY_HIFI_SHARING
 	memset(thread->arch.hifi_regs, 0, sizeof(thread->arch.hifi_regs));
 #endif /* CONFIG_XTENSA_LAZY_HIFI_SHARING */
