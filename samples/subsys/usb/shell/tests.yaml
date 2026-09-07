@@ -26,6 +26,7 @@ tests:
       - rd_rw612_bga
       - qemu_riscv32
       - qemu_riscv32/qemu_virt_riscv32/smp
+      - stm32mp135f_dk
     build_only: true
   sample.usbh.shell.shield:
     depends_on:
