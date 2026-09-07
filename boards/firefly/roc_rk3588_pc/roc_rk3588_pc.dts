@@ -34,3 +34,25 @@
 	status = "disabled";
 	current-speed = <115200>;
 };
+
+&gmac0 {
+	status = "okay";
+	phy-handle = <&rgmii_phy0>;
+	clock-in-out = "output";
+	tx-delay = <0x47>;
+	rx-delay = <0>;
+};
+
+&mdio0 {
+	status = "okay";
+
+	rgmii_phy0: ethernet-phy@1 {
+		compatible = "realtek,rtl8211f";
+		reg = <0x1>;
+		status = "okay";
+	};
+};
+
+&ptp_clock0 {
+	status = "okay";
+};

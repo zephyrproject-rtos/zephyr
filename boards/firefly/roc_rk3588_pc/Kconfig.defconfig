@@ -1,0 +1,9 @@
+# Copyright (c) 2025 Syswonder
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_ROC_RK3588_PC_RK3588 || BOARD_ROC_RK3588_PC_RK3588_SMP
+
+configdefault ETH_DRIVER
+	default y
+
+endif
