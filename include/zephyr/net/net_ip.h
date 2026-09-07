@@ -2209,7 +2209,8 @@ static inline bool net_sockaddr_cmp(const struct net_sockaddr *a, const struct n
 		return false;
 	}
 
-	if (a->sa_family == NET_AF_INET) {
+	switch (a->sa_family) {
+	case NET_AF_INET: {
 		const struct net_sockaddr_in *a4 = net_sin(a);
 		const struct net_sockaddr_in *b4 = net_sin(b);
 
@@ -2220,7 +2221,7 @@ static inline bool net_sockaddr_cmp(const struct net_sockaddr *a, const struct n
 		return net_ipv4_addr_cmp(&a4->sin_addr, &b4->sin_addr);
 	}
 
-	if (b->sa_family == NET_AF_INET6) {
+	case NET_AF_INET6: {
 		const struct net_sockaddr_in6 *a6 = net_sin6(a);
 		const struct net_sockaddr_in6 *b6 = net_sin6(b);
 
@@ -2231,8 +2232,10 @@ static inline bool net_sockaddr_cmp(const struct net_sockaddr *a, const struct n
 		return net_ipv6_addr_cmp(&a6->sin6_addr, &b6->sin6_addr);
 	}
 
-	/* Invalid address family */
-	return false;
+	default:
+		/* Invalid address family */
+		return false;
+	}
 }
 
 /**
