@@ -43,6 +43,8 @@ elseif("${ARCH}" STREQUAL "riscv")
   endif()
 elseif("${ARCH}" STREQUAL "hexagon")
   set(triple hexagon-none-elf)
+elseif("${ARCH}" STREQUAL "tricore")
+  set(triple tricore-unknown-elf)
 endif()
 
 if(DEFINED triple)

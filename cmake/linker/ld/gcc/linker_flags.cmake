@@ -12,4 +12,6 @@ check_set_linker_property(TARGET linker APPEND PROPERTY gprof -pg)
 # Extra warnings options for twister run
 set_property(TARGET linker PROPERTY warnings_as_errors -Wl,--fatal-warnings)
 
+check_set_linker_property(TARGET linker PROPERTY no_warn_rwx_segments -Wl,--no-warn-rwx-segments)
+
 set_linker_property(PROPERTY specs -specs=)

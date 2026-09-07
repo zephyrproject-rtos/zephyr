@@ -33,6 +33,10 @@ check_set_linker_property(TARGET linker PROPERTY memusage)
 # Extra warnings options for twister run
 set_property(TARGET linker PROPERTY warnings_as_errors)
 
+# Linker flag for suppressing warnings about output sections with RWX
+# (read/write/execute) permissions, such as "-Wl,--no-warn-rwx-segments" for ld.
+set_property(TARGET linker PROPERTY no_warn_rwx_segments)
+
 # Linker flag for disabling position independent binaries,
 # such as, "-no-pie" for LD, and "--no-pie" for LLD.
 set_property(TARGET linker PROPERTY no_position_independent)
