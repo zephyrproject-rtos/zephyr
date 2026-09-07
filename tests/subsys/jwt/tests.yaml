@@ -10,6 +10,8 @@ common:
     - CONFIG_TEST_RANDOM_GENERATOR=y
   platform_exclude:
     - max32657evkit/max32657/ns
+    - qemu_tc3x
+    - qemu_tc4x
 tests:
   libraries.encoding.jwt.ecdsa.psa:
     extra_configs:
