@@ -10,6 +10,7 @@ LOG_MODULE_REGISTER(net_tcp, CONFIG_NET_TCP_LOG_LEVEL);
 #include <stdarg.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/types.h>
 #include <zephyr/kernel.h>
 #include <zephyr/random/random.h>
 
@@ -88,7 +89,6 @@ static const char *tcp_state_to_str(enum tcp_state state, bool prefix);
 static int tcp_pkt_peek(struct net_pkt *to, struct net_pkt *from, size_t pos, size_t len);
 
 int (*tcp_send_cb)(struct net_pkt *pkt) = NULL;
-size_t (*tcp_recv_cb)(struct tcp *conn, struct net_pkt *pkt) = NULL;
 
 static bool tcp_backlog_is_full(struct tcp *conn)
 {
@@ -960,8 +960,6 @@ static int tcp_conn_unref(struct tcp *conn)
 
 	ref_count = atomic_dec(&conn->ref_count) - 1;
 	if (ref_count != 0) {
-		tp_out(net_context_get_family(conn->context), conn->iface,
-		       "TP_TRACE", "event", "CONN_DELETE");
 		return ref_count;
 	}
 
@@ -1344,11 +1342,6 @@ static enum net_verdict tcp_data_get(struct tcp *conn, struct net_pkt *pkt, size
 {
 	enum net_verdict ret = NET_DROP;
 
-	if (tcp_recv_cb) {
-		tcp_recv_cb(conn, pkt);
-		goto out;
-	}
-
 	if (conn->context->recv_cb) {
 		/* If there is any out-of-order pending data, then pass it
 		 * to the application here.
@@ -1379,7 +1372,7 @@ static enum net_verdict tcp_data_get(struct tcp *conn, struct net_pkt *pkt, size
 
 		ret = NET_OK;
 	}
- out:
+
 	return ret;
 }
 
@@ -2632,8 +2625,7 @@ static struct tcp *tcp_conn_new(struct net_pkt *pkt, struct tcphdr *th)
 		net_sin(&context->local)->sin_port = conn->src.sin.sin_port;
 	}
 
-	if (!(IS_ENABLED(CONFIG_NET_TEST_PROTOCOL) ||
-	      IS_ENABLED(CONFIG_NET_TEST))) {
+	if (!IS_ENABLED(CONFIG_NET_TEST)) {
 		conn->seq = tcp_init_isn(local_addr, &context->remote);
 	}
 
@@ -4159,8 +4151,7 @@ int net_tcp_connect(struct net_context *context,
 		ret = -EPROTONOSUPPORT;
 	}
 
-	if (!(IS_ENABLED(CONFIG_NET_TEST_PROTOCOL) ||
-	      IS_ENABLED(CONFIG_NET_TEST))) {
+	if (!IS_ENABLED(CONFIG_NET_TEST)) {
 		conn->seq = tcp_init_isn(&conn->src.sa, &conn->dst.sa);
 	}
 
@@ -4195,7 +4186,7 @@ int net_tcp_connect(struct net_context *context,
 	/* Input of a (nonexistent) packet with no flags set will cause
 	 * a TCP connection to be established
 	 */
-	conn->in_connect = !IS_ENABLED(CONFIG_NET_TEST_PROTOCOL);
+	conn->in_connect = true;
 
 	conn->isn = conn->seq;
 
@@ -4204,33 +4195,32 @@ int net_tcp_connect(struct net_context *context,
 		goto out;
 	}
 
-	if (!IS_ENABLED(CONFIG_NET_TEST_PROTOCOL)) {
-		if (conn->state == TCP_UNUSED || conn->state == TCP_CLOSED) {
-			if (conn->rst_received) {
-				ret = -ECONNREFUSED;
-			} else {
-				ret = -ENOTCONN;
-			}
-			goto out;
-		} else if ((K_TIMEOUT_EQ(timeout, K_NO_WAIT)) && conn->state != TCP_ESTABLISHED) {
-			ret = -EINPROGRESS;
-			goto out;
-		} else if (k_sem_take(&conn->connect_sem, timeout) != 0 &&
-			   conn->state != TCP_ESTABLISHED) {
-			if (conn->in_connect) {
-				conn->in_connect = false;
-				tcp_conn_close(conn, -ETIMEDOUT);
-			}
-
-			if (conn->rst_received) {
-				ret = -ECONNREFUSED;
-			} else {
-				ret = -ETIMEDOUT;
-			}
-			goto out;
+	if (conn->state == TCP_UNUSED || conn->state == TCP_CLOSED) {
+		if (conn->rst_received) {
+			ret = -ECONNREFUSED;
+		} else {
+			ret = -ENOTCONN;
 		}
-		conn->in_connect = false;
+		goto out;
+	} else if ((K_TIMEOUT_EQ(timeout, K_NO_WAIT)) && conn->state != TCP_ESTABLISHED) {
+		ret = -EINPROGRESS;
+		goto out;
+	} else if (k_sem_take(&conn->connect_sem, timeout) != 0 &&
+		   conn->state != TCP_ESTABLISHED) {
+		if (conn->in_connect) {
+			conn->in_connect = false;
+			tcp_conn_close(conn, -ETIMEDOUT);
+		}
+
+		if (conn->rst_received) {
+			ret = -ECONNREFUSED;
+		} else {
+			ret = -ETIMEDOUT;
+		}
+		goto out;
 	}
+
+	conn->in_connect = false;
 
 out:
 	NET_DBG("[%p] ret=%d", conn, ret);
@@ -4398,280 +4388,6 @@ drop:
 	net_stats_update_tcp_seg_chkerr(net_pkt_iface(pkt));
 	return NULL;
 }
-
-#if defined(CONFIG_NET_TEST_PROTOCOL)
-static enum net_verdict tcp_input(struct net_conn *net_conn,
-				  struct net_pkt *pkt,
-				  union net_ip_header *ip,
-				  union net_proto_header *proto,
-				  void *user_data)
-{
-	struct tcphdr *th = th_get(pkt);
-	enum net_verdict verdict = NET_DROP;
-
-	if (th && (th_off(th) >= 5)) {
-		struct tcp *conn = tcp_conn_search(pkt, th);
-
-		if (conn == NULL && SYN == th_flags(th)) {
-			struct net_context *context =
-				tcp_calloc(1, sizeof(struct net_context));
-			net_tcp_get(context);
-			net_context_set_family(context, net_pkt_family(pkt));
-			conn = context->tcp;
-			tcp_endpoint_set(&conn->dst, pkt, th, TCP_EP_SRC);
-			tcp_endpoint_set(&conn->src, pkt, th, TCP_EP_DST);
-			/* Make an extra reference, the sanity check suite
-			 * will delete the connection explicitly
-			 */
-			tcp_conn_ref(conn);
-		}
-
-		if (conn) {
-			conn->iface = pkt->iface;
-			verdict = tcp_in(conn, pkt, th);
-		}
-	}
-
-	return verdict;
-}
-
-static size_t tp_tcp_recv_cb(struct tcp *conn, struct net_pkt *pkt)
-{
-	ssize_t len = tcp_data_len(pkt, th_get(pkt));
-	struct net_pkt *up = tcp_pkt_clone(pkt);
-
-	NET_DBG("[%p] pkt: %p, len: %zu", conn, pkt, net_pkt_get_len(pkt));
-
-	net_pkt_cursor_init(up);
-	net_pkt_set_overwrite(up, true);
-
-	net_pkt_pull(up, net_pkt_get_len(up) - len);
-
-	for (struct net_buf *buf = pkt->buffer; buf != NULL; buf = buf->frags) {
-		net_tcp_queue(conn->context, buf->data, buf->len);
-	}
-
-	return len;
-}
-
-static ssize_t tp_tcp_recv(int fd, void *buf, size_t len, int flags)
-{
-	return 0;
-}
-
-static void tp_init(struct tcp *conn, struct tp *tp)
-{
-	struct tp out = {
-		.msg = "",
-		.status = "",
-		.state = tcp_state_to_str(conn->state, true),
-		.seq = conn->seq,
-		.ack = conn->ack,
-		.rcv = "",
-		.data = "",
-		.op = "",
-	};
-
-	*tp = out;
-}
-
-static void tcp_to_json(struct tcp *conn, void *data, size_t *data_len)
-{
-	struct tp tp;
-
-	tp_init(conn, &tp);
-
-	tp_encode(&tp, data, data_len);
-}
-
-enum net_verdict tp_input(struct net_conn *net_conn,
-			  struct net_pkt *pkt,
-			  union net_ip_header *ip_hdr,
-			  union net_proto_header *proto,
-			  void *user_data)
-{
-	struct net_udp_hdr *uh = net_udp_get_hdr(pkt, NULL);
-	size_t data_len = net_ntohs(uh->len) - sizeof(*uh);
-	/* The test protocol rides on UDP; th_get() lands on the UDP header,
-	 * whose port fields alias the TCP ones, which is all that is read.
-	 */
-	struct tcp *conn = tcp_conn_search(pkt, th_get(pkt));
-	size_t json_len = 0;
-	struct tp *tp;
-	struct tp_new *tp_new;
-	enum tp_type type;
-	bool responded = false;
-	static char buf[512];
-	enum net_verdict verdict = NET_DROP;
-	size_t data_len;
-
-	net_pkt_cursor_init(pkt);
-	net_pkt_set_overwrite(pkt, true);
-
-	data_len = net_pkt_ip_hdr_len(pkt) + net_pkt_ip_opts_len(pkt) + sizeof(*uh);
-	if (net_pkt_skip(pkt, data_len) < 0) {
-		return NET_DROP;
-	}
-	net_pkt_read(pkt, buf, data_len);
-	buf[data_len] = '\0';
-	data_len += 1;
-
-	type = json_decode_msg(buf, data_len);
-
-	data_len = net_ntohs(uh->len) - sizeof(*uh);
-
-	net_pkt_cursor_init(pkt);
-	net_pkt_set_overwrite(pkt, true);
-	data_len = net_pkt_ip_hdr_len(pkt) + net_pkt_ip_opts_len(pkt) + sizeof(*uh);
-	if (net_pkt_skip(pkt, data_len) < 0) {
-		return NET_DROP;
-	}
-	net_pkt_read(pkt, buf, data_len);
-	buf[data_len] = '\0';
-	data_len += 1;
-
-	switch (type) {
-	case TP_CONFIG_REQUEST:
-		tp_new = json_to_tp_new(buf, data_len);
-		break;
-	default:
-		tp = json_to_tp(buf, data_len);
-		break;
-	}
-
-	switch (type) {
-	case TP_COMMAND:
-		if (is("CONNECT", tp->op)) {
-			tp_output(pkt->family, pkt->iface, buf, 1);
-			responded = true;
-			{
-				struct net_context *context = tcp_calloc(1,
-						sizeof(struct net_context));
-				net_tcp_get(context);
-				net_context_set_family(context,
-						       net_pkt_family(pkt));
-				conn = context->tcp;
-				/* This is a UDP packet carrying the test
-				 * protocol; only the port fields are read,
-				 * and those alias the TCP header layout.
-				 */
-				tcp_endpoint_set(&conn->dst, pkt, th_get(pkt),
-						 TCP_EP_SRC);
-				tcp_endpoint_set(&conn->src, pkt, th_get(pkt),
-						 TCP_EP_DST);
-				conn->iface = pkt->iface;
-				tcp_conn_ref(conn);
-			}
-			conn->seq = tp->seq;
-
-			if (tcp_start_handshake(conn) == 0) {
-				verdict = NET_OK;
-			}
-		}
-		if (is("CLOSE", tp->op)) {
-			tp_trace = false;
-			{
-				struct net_context *context;
-
-				conn = (void *)sys_slist_peek_head(&tcp_conns);
-				context = conn->context;
-				while (tcp_conn_close(conn, 0)) {
-				}
-				tcp_free(context);
-			}
-			tp_mem_stat();
-			tp_nbuf_stat();
-			tp_pkt_stat();
-			tp_seq_stat();
-		}
-		if (is("CLOSE2", tp->op)) {
-			struct tcp *conn =
-				(void *)sys_slist_peek_head(&tcp_conns);
-			net_tcp_put(conn->context, false);
-		}
-		if (is("RECV", tp->op)) {
-#define HEXSTR_SIZE 64
-			char hexstr[HEXSTR_SIZE];
-			ssize_t len = tp_tcp_recv(0, buf, sizeof(buf), 0);
-
-			tp_init(conn, tp);
-			bin2hex(buf, len, hexstr, HEXSTR_SIZE);
-			tp->data = hexstr;
-			NET_DBG("%zd = tcp_recv(\"%s\")", len, tp->data);
-			json_len = sizeof(buf);
-			tp_encode(tp, buf, &json_len);
-		}
-		if (is("SEND", tp->op)) {
-			ssize_t len = tp_str_to_hex(buf, sizeof(buf), tp->data);
-			struct tcp *conn =
-				(void *)sys_slist_peek_head(&tcp_conns);
-
-			tp_output(pkt->family, pkt->iface, buf, 1);
-			responded = true;
-			NET_DBG("tcp_send(\"%s\")", tp->data);
-			{
-				net_tcp_queue(conn->context, buf, len);
-			}
-		}
-		break;
-	case TP_CONFIG_REQUEST:
-		tp_new_find_and_apply(tp_new, "tcp_rto", &tcp_rto, TP_INT);
-		tp_new_find_and_apply(tp_new, "tcp_retries", &tcp_retries,
-					TP_INT);
-		tp_new_find_and_apply(tp_new, "tcp_window", &tcp_rx_window,
-					TP_INT);
-		tp_new_find_and_apply(tp_new, "tp_trace", &tp_trace, TP_BOOL);
-		break;
-	case TP_INTROSPECT_REQUEST:
-		json_len = sizeof(buf);
-		conn = (void *)sys_slist_peek_head(&tcp_conns);
-		tcp_to_json(conn, buf, &json_len);
-		break;
-	case TP_DEBUG_STOP:
-	case TP_DEBUG_CONTINUE:
-		tp_state = tp->type;
-		break;
-	default:
-		NET_ASSERT(false, "Unimplemented tp command: %s", tp->msg);
-	}
-
-	if (json_len) {
-		tp_output(pkt->family, pkt->iface, buf, json_len);
-	} else if ((TP_CONFIG_REQUEST == type || TP_COMMAND == type)
-			&& responded == false) {
-		tp_output(pkt->family, pkt->iface, buf, 1);
-	}
-
-	return verdict;
-}
-
-static void test_cb_register(net_sa_family_t family, enum net_sock_type type,
-			     uint8_t proto, uint16_t remote_port,
-			     uint16_t local_port, net_conn_cb_t cb)
-{
-	struct net_conn_handle *conn_handle = NULL;
-	struct net_sockaddr_storage addr_storage = { 0 };
-	struct net_sockaddr *addr = net_sad(&addr_storage);
-	int ret;
-
-	addr->sa_family = family;
-
-	ret = net_conn_register(proto,
-				type,
-				family,
-				addr,	/* remote address */
-				addr,	/* local address */
-				local_port,
-				remote_port,
-				NULL,
-				cb,
-				NULL,	/* user_data */
-				&conn_handle);
-	if (ret < 0) {
-		NET_ERR("net_conn_register(): %d", ret);
-	}
-}
-#endif /* CONFIG_NET_TEST_PROTOCOL */
 
 void net_tcp_foreach(net_tcp_cb_t cb, void *user_data)
 {
@@ -5028,19 +4744,6 @@ void net_tcp_init(void)
 {
 	int i;
 	int rto;
-#if defined(CONFIG_NET_TEST_PROTOCOL)
-	/* Register inputs for TTCN-3 based TCP sanity check */
-	test_cb_register(NET_AF_INET,  NET_SOCK_STREAM, NET_IPPROTO_TCP,
-			 4242, 4242, tcp_input);
-	test_cb_register(NET_AF_INET6, NET_SOCK_STREAM, NET_IPPROTO_TCP,
-			 4242, 4242, tcp_input);
-	test_cb_register(NET_AF_INET,  NET_SOCK_DGRAM, NET_IPPROTO_UDP,
-			 4242, 4242, tp_input);
-	test_cb_register(NET_AF_INET6, NET_SOCK_DGRAM, NET_IPPROTO_UDP,
-			 4242, 4242, tp_input);
-
-	tcp_recv_cb = tp_tcp_recv_cb;
-#endif
 
 #if defined(CONFIG_NET_TC_THREAD_COOPERATIVE)
 #define THREAD_PRIORITY K_PRIO_COOP(CONFIG_NET_TCP_WORKER_PRIO)

@@ -4625,6 +4625,7 @@ Networking:
     - doc/services/connectivity/networking/
     - tests/net/
     - tests/unit/net_timeout/
+    - .github/workflows/net_conformance.yml
   files-exclude:
     - doc/services/connectivity/networking/api/gptp.rst
     - doc/services/connectivity/networking/api/ieee802154.rst
