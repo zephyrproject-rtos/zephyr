@@ -21,6 +21,10 @@
 #include <zephyr/drivers/usb/uhc.h>
 #include <zephyr/drivers/pcie/pcie.h>
 
+#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_rcc)
+#include <zephyr/drivers/clock_control/stm32_clock_control.h>
+#endif
+
 #include "uhc_common.h"
 
 #include <zephyr/logging/log.h>
@@ -1389,9 +1393,15 @@ static DEVICE_API(uhc, ohci_api) = {
 		    (DT_NODE_HAS_COMPAT(DT_INST_CLOCKS_CTLR(n), compat)), (0))
 
 #define OHCI_CLOCK_DEFINE(n)                                                                       \
-	BUILD_ASSERT(!DT_INST_NODE_HAS_PROP(n, clocks), "Unsupported OHCI clock controller");
+	COND_CODE_1(OHCI_CLOCK_CTLR_IS(n, st_stm32_rcc),                                           \
+		    (static const struct stm32_pclken ohci_pclken_##n =                            \
+			     STM32_CLOCK_INFO(0, DT_DRV_INST(n));),                                \
+		    (BUILD_ASSERT(!DT_INST_NODE_HAS_PROP(n, clocks),                             \
+				  "Unsupported OHCI clock controller");))
 
-#define OHCI_CLOCK_SUBSYS(n) NULL
+#define OHCI_CLOCK_SUBSYS(n)                                                                       \
+	COND_CODE_1(OHCI_CLOCK_CTLR_IS(n, st_stm32_rcc),                                           \
+		    ((clock_control_subsys_t)&ohci_pclken_##n), (NULL))
 
 #define OHCI_CLOCK_DEV(n)                                                                          \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, clocks),                                              \
