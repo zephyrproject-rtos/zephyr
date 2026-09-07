@@ -404,7 +404,7 @@ config PMP_NO_NAPOT
 	  Set this if NAPOT (Naturally Aligned Power Of Two) is not supported.
 
 config PMP_POWER_OF_TWO_ALIGNMENT
-	bool "Enforce power-of-two alignment on PMP memory areas" if !PMP_NO_TOR
+	bool "Enforce power-of-two alignment on PMP memory areas"
 	default y if TEST_USERSPACE
 	default y if (PMP_SLOTS = 8)
 	default y if PMP_NO_TOR
@@ -414,6 +414,49 @@ config PMP_POWER_OF_TWO_ALIGNMENT
 	  This option reduces the PMP slot usage but increases
 	  memory consumption. Useful when enabling userspace mode with
 	  many memory domains and/or few PMP slots available.
+
+config PMP_NAPOT_USE_MULTI_SLOTS
+	bool "Use multiple NAPOT entries to cover non-aligned memory regions"
+	depends on PMP_NO_TOR
+	depends on !PMP_POWER_OF_TWO_ALIGNMENT
+	depends on !PMP_NO_NAPOT
+	depends on !USERSPACE
+	default y
+	help
+	  Enable splitting non-naturally-aligned memory regions into multiple
+	  NAPOT entries. This allows PMP to protect memory regions that are
+	  not power-of-2 aligned in both start address and size.
+
+	  When enabled, a region like [0x1800, 0x3800) will be split into
+	  multiple naturally-aligned blocks (e.g., 0x800+0x1000+0x800 bytes),
+	  each protected by a separate NAPOT entry.
+
+	  This option is useful when TOR mode is not supported and memory
+	  regions are not naturally aligned. It consumes more PMP slots
+	  but provides flexible memory protection coverage.
+
+	  Note: disabling PMP_POWER_OF_TWO_ALIGNMENT affects more than the
+	  code+rodata region. The kernel-mode stack guard
+	  (Z_RISCV_STACK_GUARD_SIZE) is then rounded up to Z_RISCV_STACK_PMP_ALIGN
+	  instead of to a power of two, and ARCH_KERNEL_STACK_OBJ_ALIGN drops to
+	  the PMP granularity. As a result, every kernel-mode stack guard and,
+	  under CONFIG_USERSPACE, every user-mode stack region is also split into
+	  multiple NAPOT entries. With the typical PMP_SLOTS=8 or 16, this is
+	  where the slot budget is actually consumed.
+
+	  Setting PMP_GRANULARITY to 64 reduces the number of split entries for
+	  code+rodata, but it also makes the stack guard a multiple of 64 that
+	  is generally not a power of two, so the guard itself still needs to be
+	  split. Weigh both effects when choosing a granularity.
+
+	  Depends on !USERSPACE: under CONFIG_USERSPACE, arch_mem_domain_max_partitions_get()
+	  assumes 1 or 2 PMP slots per partition, and resync_pmp_domain() can
+	  only log an error (compiles out __ASSERT) when a partition needs more
+	  slots than remain. The domain would then run with partitions unmapped,
+	  a silent loss of protection rather than a visible failure. Until the
+	  slot estimate and the failure path handle a partition requiring an
+	  arbitrary number of slots, this option is limited to the M-mode
+	  code+rodata region case.
 
 config PMP_GRANULARITY
 	int "The granularity of PMP address matching"
