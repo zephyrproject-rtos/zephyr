@@ -42,6 +42,11 @@
 #define SYSCTL_LFXTCTL_OFFSET        0x1314 /**< LFXT and LFCLK control */
 #define SYSCTL_EXLFCTL_OFFSET        0x1318 /**< LFCLK_IN control */
 
+#if defined(CONFIG_SOC_SERIES_AM13E)
+#define SYSCTL_XTALCR_OFFSET 0x1474 /**< XTAL control */
+#define SYSCTL_X1CNT_OFFSET  0x147C /**< X1 oscillator activity counter */
+#endif
+
 /* sysosccfg bits */
 #define SYSCTL_SYSOSCCFG_DISABLE       BIT(10)
 #define SYSCTL_SYSOSCCFG_FREQ          GENMASK(1, 0)
@@ -114,6 +119,15 @@
 
 /* hsclkcfg bits */
 #define SYSCTL_HSCLKCFG_HSCLKSEL BIT(0)
+
+/* xtalcr bits */
+#define SYSCTL_XTALCR_SE     BIT(1)
+#define SYSCTL_XTALCR_OSCOFF BIT(0)
+
+/* x1cnt bits */
+#define SYSCTL_X1CNT_CLR       BIT(16)
+#define SYSCTL_X1CNT_CNT       GENMASK(10, 0)
+#define SYSCTL_X1CNT_SATURATED (0x7FFU)
 
 /* hfclkclkcfg bits */
 #define SYSCTL_HFCLKCLKCFG_HFCLKFLTCHK        BIT(28)
