@@ -187,6 +187,26 @@
 			};
 		};
 
+		unicomm2: unicomm2@40680000 {
+			reg = <0x40680000 DT_SIZE_K(8)>;
+			compatible = "ti,unicomm";
+			unicomm-fixed-mode;
+			interrupts = <27 0>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			status = "disabled";
+
+			unicomm2_spi: unicomm2_spi@40660000 {
+				reg = <0x40660000 DT_SIZE_K(8)>;
+				interrupts = <27 0>;
+				compatible = "ti,unicomm-spi";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				clocks = <&ckm MSPM0_CLOCK_MCLK_DIV_2>;
+				status = "disabled";
+			};
+		};
+
 		unicomm1_0: unicomm1_0@40582000 {
 			reg = <0x40582000 DT_SIZE_K(8)>;
 			compatible = "ti,unicomm";
@@ -266,6 +286,16 @@
 				clk-div = <1>;
 				status = "disabled";
 			};
+
+			unicomm13_0_spi: unicomm13_0_spi@4066a000 {
+				reg = <0x4066a000 DT_SIZE_K(8)>;
+				interrupts = <31 0>;
+				compatible = "ti,unicomm-spi";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				clocks = <&ckm MSPM0_CLOCK_MCLK_DIV_2>;
+				status = "disabled";
+			};
 		};
 
 		unicomm13_1: unicomm13_1@40780000 {
@@ -285,6 +315,16 @@
 				is-unicomm-uart;
 				clocks = <&ckm MSPM0_CLOCK_MCLK>;
 				clk-div = <1>;
+				status = "disabled";
+			};
+
+			unicomm13_1_spi: unicomm13_1_spi@40760000 {
+				reg = <0x40760000 DT_SIZE_K(8)>;
+				interrupts = <50 0>;
+				compatible = "ti,unicomm-spi";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				clocks = <&ckm MSPM0_CLOCK_MCLK_DIV_2>;
 				status = "disabled";
 			};
 		};
@@ -308,6 +348,16 @@
 				clk-div = <1>;
 				status = "disabled";
 			};
+
+			unicomm13_2_spi: unicomm13_2_spi@40762000 {
+				reg = <0x40762000 DT_SIZE_K(8)>;
+				interrupts = <51 0>;
+				compatible = "ti,unicomm-spi";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				clocks = <&ckm MSPM0_CLOCK_MCLK_DIV_2>;
+				status = "disabled";
+			};
 		};
 
 		unicomm13_3: unicomm13_3@40784000 {
@@ -327,6 +377,16 @@
 				is-unicomm-uart;
 				clocks = <&ckm MSPM0_CLOCK_MCLK>;
 				clk-div = <1>;
+				status = "disabled";
+			};
+
+			unicomm13_3_spi: unicomm13_3_spi@40764000 {
+				reg = <0x40764000 DT_SIZE_K(8)>;
+				interrupts = <52 0>;
+				compatible = "ti,unicomm-spi";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				clocks = <&ckm MSPM0_CLOCK_MCLK_DIV_2>;
 				status = "disabled";
 			};
 		};
