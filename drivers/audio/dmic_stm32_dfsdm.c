@@ -4,7 +4,7 @@
  */
 
 #include <zephyr/sys/util_macro.h>
-#include <zephyr/arch/common/ffs.h>
+#include <zephyr/arch/cpu.h>
 #include <zephyr/audio/dmic.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
