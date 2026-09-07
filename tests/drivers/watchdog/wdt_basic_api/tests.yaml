@@ -8,6 +8,7 @@ tests:
   drivers.watchdog:
     filter: >
       dt_alias_exists("watchdog0") and not (CONFIG_WDT_SAM or CONFIG_WDT_SAM4L
+       or dt_compat_enabled("xen,watchdog")
        or dt_compat_enabled("st,stm32-window-watchdog")
        or dt_compat_enabled("st,stm32-watchdog")
        or (CONFIG_SOC_FAMILY_LPC and not CONFIG_SOC_SERIES_LPC55XXX) or
@@ -217,3 +218,10 @@ tests:
       - nrf54h20dk/nrf54h20/cpuapp
     extra_args:
       - FILE_SUFFIX=nrf_gswdt
+  drivers.watchdog.xen_domain:
+    build_only: true
+    filter: dt_compat_enabled("xen,watchdog")
+    platform_allow:
+      - xenvm
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE="boards/xenvm.overlay"
