@@ -69,7 +69,7 @@ config SECURE_STORAGE_ITS_STORE_SETTINGS_NAME_CUSTOM
 	  This allows to use custom names for the settings that the implementation uses
 	  instead of the default naming scheme.
 	  When enabling this, implement the secure_storage_its_store_settings_get_name()
-	  function declared in <zephyr/secure_storage/its/store/settings_get.h>
+	  function declared in <zephyr/secure_storage/its/store/settings.h>
 	  and set CONFIG_SECURE_STORAGE_ITS_STORE_SETTINGS_NAME_MAX_LEN appropriately.
 	  The header file is made available when this Kconfig option is enabled.
 
