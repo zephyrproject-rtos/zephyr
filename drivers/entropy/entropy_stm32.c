@@ -981,9 +981,11 @@ static int entropy_stm32_init(const struct device *dev)
 	IRQ_CONNECT(IRQN, IRQ_PRIO, stm32_rng_isr, &entropy_stm32_rng_data, 0);
 #endif /* !IRQLESS_TRNG */
 
+	entropy_stm32_hsem_acquire();
+
 	res = entropy_stm32_init_hw_rng(dev_cfg, dev_data);
 	if (res < 0) {
-		return res;
+		goto out;
 	}
 
 	if (DT_INST_NUM_CLOCKS(0) > 1) {
@@ -993,12 +995,14 @@ static int entropy_stm32_init(const struct device *dev)
 					   (clock_control_subsys_t)&dev_cfg->pclken[1],
 					   &rng_clock_rate) != 0) {
 			LOG_ERR("Failed to get RNG domain clock rate");
-			return -EIO;
+			res = -EIO;
+			goto out;
 		}
 
 		if (rng_clock_rate == 0) {
 			LOG_ERR("RNG domain clock is not running (null rate)");
-			return -ENOTSUP;
+			res = -ENOTSUP;
+			goto out;
 		}
 	}
 
@@ -1006,7 +1010,10 @@ static int entropy_stm32_init(const struct device *dev)
 		entropy_stm32_init_wq();
 	}
 
-	return 0;
+out:
+	entropy_stm32_hsem_release();
+
+	return res;
 }
 
 #ifdef CONFIG_PM_DEVICE
