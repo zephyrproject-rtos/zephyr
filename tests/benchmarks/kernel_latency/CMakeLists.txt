@@ -14,6 +14,7 @@ target_sources(app PRIVATE
   src/stack.c
   src/heap.c
   src/condvar.c
+  src/yield_queue.c
 )
 
 target_sources_ifdef(CONFIG_EVENTS app PRIVATE src/events.c)
