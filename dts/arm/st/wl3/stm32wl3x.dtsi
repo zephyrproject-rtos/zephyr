@@ -10,6 +10,7 @@
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/clock/stm32wl3_clock.h>
 #include <zephyr/dt-bindings/reset/stm32wl3_reset.h>
+#include <zephyr/dt-bindings/dma/stm32_dma.h>
 #include <freq.h>
 #include <mem.h>
 
@@ -189,6 +190,29 @@
 			clocks = <&rcc STM32_CLOCK(APB1, 14)>;
 			interrupts = <7 0>;
 			st,spi-data-width = "full-4-to-16-bit";
+			status = "disabled";
+		};
+
+		dma1: dma@48700000 {
+			compatible = "st,stm32-dma-v2bis";
+			#dma-cells = <2>;
+			reg = <0x48700000 256>;
+			clocks = <&rcc STM32_CLOCK(AHB0, 0)>;
+			interrupts = <17 0>, <17 0>, <17 0>, <17 0>,
+				     <17 0>, <17 0>, <17 0>, <17 0>;
+			dma-requests = <8>;
+			dma-offset = <0>;
+			status = "disabled";
+		};
+
+		dmamux1: dmamux@48800000 {
+			compatible = "st,stm32-dmamux";
+			reg = <0x48800000 DT_SIZE_K(1)>;
+			clocks = <&rcc STM32_CLOCK(AHB0, 0)>;
+			#dma-cells = <3>;
+			dma-channels = <8>;
+			dma-generators = <1>;
+			dma-requests = <25>;
 			status = "disabled";
 		};
 	};
