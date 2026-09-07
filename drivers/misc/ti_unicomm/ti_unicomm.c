@@ -45,6 +45,12 @@ struct ti_unicomm_data {
 	enum IPMode ip_mode;
 };
 
+/*
+ * Per TRM Section 2.2.7 / SDK DL_SPI_enablePower: after writing PWREN, poll
+ * until the enable bit reads back before accessing any other peripheral
+ * registers (including IPMODE). A fixed cycle delay is insufficient at high
+ * CPU frequencies.
+ */
 static int ti_unicomm_init(const struct device *dev)
 {
 	const struct ti_unicomm_config *cfg = dev->config;
@@ -52,12 +58,16 @@ static int ti_unicomm_init(const struct device *dev)
 
 	volatile UNICOMM_Regs_t *unicomm = (UNICOMM_Regs_t *)cfg->inst_base;
 
-	/* Reset, set IP mode and enable power */
+	/* Reset and enable power; poll until PWREN.ENABLE reads back before
+	 * accessing IPMODE (matches SDK DL_SPI_enablePower behaviour)
+	 */
 	unicomm->rstctl = RSTCTL_KEY_UNLOCK | RSTCTL_STICKY_BIT_CLEAR | RSTCTL_ASSERT_RESET;
+	unicomm->pwren = PWREN_KEY | PWREN_ENABLE;
+	while ((unicomm->pwren & PWREN_ENABLE) == 0) {
+	}
 	if (!cfg->fixed_mode) {
 		unicomm->ipmode = data->ip_mode;
 	}
-	unicomm->pwren = PWREN_KEY | PWREN_ENABLE;
 
 	return 0;
 }
@@ -69,7 +79,12 @@ static int ti_unicomm_init(const struct device *dev)
 #define TI_UNICOMM_CHILD_IPMODE_UART(node_id)                                                      \
 	COND_CODE_1(DT_NODE_HAS_COMPAT(node_id, ti_mspm0_uart), (IPMODE_UART), ())
 
-#define TI_UNICOMM_CHILD_IPMODE(node_id) TI_UNICOMM_CHILD_IPMODE_UART(node_id)
+#define TI_UNICOMM_CHILD_IPMODE_SPI(node_id)                                                       \
+	COND_CODE_1(DT_NODE_HAS_COMPAT(node_id, ti_unicomm_spi), (IPMODE_SPI), ())
+
+#define TI_UNICOMM_CHILD_IPMODE(node_id)                                                           \
+	TI_UNICOMM_CHILD_IPMODE_UART(node_id)                                                      \
+	TI_UNICOMM_CHILD_IPMODE_SPI(node_id)
 
 #define TI_UNICOMM_INIT(idx)                                                                       \
 	BUILD_ASSERT(DT_INST_CHILD_NUM_STATUS_OKAY(idx) == 1,                                      \
