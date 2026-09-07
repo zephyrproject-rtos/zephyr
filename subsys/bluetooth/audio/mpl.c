@@ -1947,6 +1947,21 @@ static const char *get_player_name(void)
 	return media_player.name;
 }
 
+static void set_player_name(const char *name)
+{
+	size_t len = strlen(name);
+
+	if (len >= sizeof(media_player.name)) {
+		LOG_DBG("Media Player Name is too long: %zu", len);
+		return;
+	}
+
+	if (strcmp(media_player.name, name) != 0) {
+		(void)memcpy(media_player.name, name, len + 1U);
+		media_proxy_pl_name_cb(media_player.name);
+	}
+}
+
 #ifdef CONFIG_BT_MPL_OBJECTS
 static uint64_t get_icon_id(void)
 {
@@ -2508,6 +2523,7 @@ int media_proxy_pl_init(void)
 
 	/* Set up the calls structure */
 	media_player.calls.get_player_name              = get_player_name;
+	media_player.calls.set_player_name              = set_player_name;
 #ifdef CONFIG_BT_MPL_OBJECTS
 	media_player.calls.get_icon_id                  = get_icon_id;
 #endif /* CONFIG_BT_MPL_OBJECTS */
