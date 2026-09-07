@@ -12,7 +12,7 @@ elseif(DEFINED WEST_TOPDIR)
 endif()
 
 foreach(report ram rom)
-  add_custom_target(
+  zephyr_custom_target_shared(
     ${report}_report
     ${PYTHON_EXECUTABLE}
     ${ZEPHYR_BASE}/scripts/footprint/size_report
@@ -28,7 +28,7 @@ foreach(report ram rom)
     USES_TERMINAL
     WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
     )
-  add_custom_target(
+  zephyr_custom_target_shared(
     ${report}_plot
     ${PYTHON_EXECUTABLE}
     ${ZEPHYR_BASE}/scripts/footprint/plot.py
@@ -39,7 +39,7 @@ foreach(report ram rom)
     )
 endforeach()
 
-add_custom_target(
+zephyr_custom_target_shared(
   footprint
   DEPENDS ram_report rom_report
   )
