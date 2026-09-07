@@ -91,6 +91,34 @@ __weak void soc_clock_init(void)
 	/* Set root clock to 800MHZ / 10 = 80MHZ */
 	CLOCK_SetRootDivider(kCLOCK_RootFlexCan2, 2U, 5U);
 #endif
+	/*
+	 * Configure and ungate the PWM peripheral clocks. The i.MX PWM driver
+	 * accesses the PWM register block at init time but does not manage the
+	 * peripheral clock itself. Without ungating the clock here the very
+	 * first register access stalls the SoC bus and hangs the core before
+	 * the boot banner is printed, so set the root mux/divider to OSC 24MHz
+	 * and enable the gate for every enabled PWM instance.
+	 */
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pwm1))
+	CLOCK_SetRootMux(kCLOCK_RootPwm1, kCLOCK_PwmRootmuxOsc24M);
+	CLOCK_SetRootDivider(kCLOCK_RootPwm1, 1U, 1U);
+	CLOCK_EnableClock(kCLOCK_Pwm1);
+#endif
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pwm2))
+	CLOCK_SetRootMux(kCLOCK_RootPwm2, kCLOCK_PwmRootmuxOsc24M);
+	CLOCK_SetRootDivider(kCLOCK_RootPwm2, 1U, 1U);
+	CLOCK_EnableClock(kCLOCK_Pwm2);
+#endif
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pwm3))
+	CLOCK_SetRootMux(kCLOCK_RootPwm3, kCLOCK_PwmRootmuxOsc24M);
+	CLOCK_SetRootDivider(kCLOCK_RootPwm3, 1U, 1U);
+	CLOCK_EnableClock(kCLOCK_Pwm3);
+#endif
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(pwm4))
+	CLOCK_SetRootMux(kCLOCK_RootPwm4, kCLOCK_PwmRootmuxOsc24M);
+	CLOCK_SetRootDivider(kCLOCK_RootPwm4, 1U, 1U);
+	CLOCK_EnableClock(kCLOCK_Pwm4);
+#endif
 }
 
 void soc_prep_hook(void)
