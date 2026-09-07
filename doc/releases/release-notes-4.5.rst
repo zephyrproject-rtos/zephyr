@@ -1782,6 +1782,7 @@ New Samples
 * :zephyr:code-sample:`adi-gpio-wakeup`
 * :zephyr:code-sample:`adi-pm`
 * :zephyr:code-sample:`autanalog_fir_fifo`
+* :zephyr:code-sample:`ble_peripheral_hogp`
 * :zephyr:code-sample:`bluetooth_cap_handover`
 * :zephyr:code-sample:`buzzer-tone`
 * :zephyr:code-sample:`coap-client-tcp`

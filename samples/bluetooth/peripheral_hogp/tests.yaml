@@ -1,0 +1,12 @@
+sample:
+  name: Bluetooth Peripheral HOGP
+  description: HID over GATT Profile Device role acting as a Bluetooth LE mouse
+tests:
+  sample.bluetooth.peripheral_hogp:
+    harness: bluetooth
+    tags: bluetooth
+    platform_allow:
+      - native_sim/native/64
+      - nrf52840dk/nrf52840
+    integration_platforms:
+      - native_sim/native/64
