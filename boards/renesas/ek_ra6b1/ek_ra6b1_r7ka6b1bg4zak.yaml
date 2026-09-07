@@ -1,0 +1,16 @@
+identifier: ek_ra6b1/r7ka6b1bg4zak
+name: Renesas EK-RA6B1
+type: mcu
+arch: arm
+ram: 352
+flash: 1536
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - gpio
+  - uart
+vendor: renesas
+testing:
+  binaries:
+    - ra6b1.jlinkscript
