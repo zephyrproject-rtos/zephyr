@@ -18,11 +18,13 @@ LOG_MODULE_REGISTER(otp_bsec_stm32, CONFIG_OTP_LOG_LEVEL);
 
 #define BSEC_WORD_SIZE	4
 
+/* Start fuse index of the upper fuse region, which requires a particular SoC state to be read */
+#define BSEC_UPPER_FUSE_LIMIT DT_INST_PROP(0, st_upper_fuse_limit)
+
 static K_MUTEX_DEFINE(lock);
 
 struct bsec_stm32_config {
 	BSEC_TypeDef *base;
-	unsigned int upper_fuse_limit;
 };
 
 static inline void otp_bsec_stm32_lock(void)
@@ -112,9 +114,8 @@ static HAL_StatusTypeDef hal_bsec_otp_program(BSEC_HandleTypeDef *handle, uint32
 }
 #endif /* CONFIG_OTP_PROGRAM */
 
-static int otp_bsec_stm32_check_accessible(BSEC_HandleTypeDef *handle,
-					   const struct bsec_stm32_config *config __unused,
-					   off_t offset, unsigned int nb_fuse)
+static int otp_bsec_stm32_check_accessible(BSEC_HandleTypeDef *handle, off_t offset,
+					   unsigned int nb_fuse)
 {
 	uint32_t fuse_idx = offset / BSEC_WORD_SIZE;
 	BSEC_ChipSecurityTypeDef bsec_state;
@@ -164,8 +165,7 @@ static HAL_StatusTypeDef hal_bsec_otp_program(BSEC_HandleTypeDef *handle, uint32
 }
 #endif /* CONFIG_OTP_PROGRAM */
 
-static int otp_bsec_stm32_check_accessible(BSEC_HandleTypeDef *handle,
-					   const struct bsec_stm32_config *config, off_t offset,
+static int otp_bsec_stm32_check_accessible(BSEC_HandleTypeDef *handle, off_t offset,
 					   unsigned int nb_fuse)
 {
 	uint32_t fuse_idx = offset / BSEC_WORD_SIZE;
@@ -182,7 +182,7 @@ static int otp_bsec_stm32_check_accessible(BSEC_HandleTypeDef *handle,
 	}
 
 	/* Upper fuses are only accessible when the BSEC is in closed locked state */
-	if (((fuse_idx + nb_fuse) > config->upper_fuse_limit) &&
+	if (((fuse_idx + nb_fuse) > BSEC_UPPER_FUSE_LIMIT) &&
 	    (bsec_state != HAL_BSEC_CLOSED_STATE)) {
 		return -EACCES;
 	}
@@ -218,7 +218,7 @@ static int otp_bsec_stm32_program(const struct device *dev, off_t offset, const 
 
 	nb_fuse = len / BSEC_WORD_SIZE;
 
-	ret = otp_bsec_stm32_check_accessible(&handle, config, offset, nb_fuse);
+	ret = otp_bsec_stm32_check_accessible(&handle, offset, nb_fuse);
 	if (ret != 0) {
 		return ret;
 	}
@@ -266,7 +266,7 @@ static int otp_bsec_stm32_read(const struct device *dev, off_t offset, void *buf
 	/* Allow intra-word and spanned reads but not 0-sized reads */
 	nb_fuse = len != 0 ? DIV_ROUND_UP(offset % BSEC_WORD_SIZE + len, BSEC_WORD_SIZE) : 0;
 
-	ret = otp_bsec_stm32_check_accessible(&handle, config, offset, nb_fuse);
+	ret = otp_bsec_stm32_check_accessible(&handle, offset, nb_fuse);
 	if (ret != 0) {
 		return ret;
 	}
@@ -308,7 +308,6 @@ static int otp_bsec_stm32_read(const struct device *dev, off_t offset, void *buf
 
 static const struct bsec_stm32_config bsec_config = {
 	.base = (void *)DT_INST_REG_ADDR(0),
-	.upper_fuse_limit = DT_INST_PROP(0, st_upper_fuse_limit),
 };
 
 static DEVICE_API(otp, otp_bsec_stm32_api) = {
