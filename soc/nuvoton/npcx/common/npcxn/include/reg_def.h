@@ -107,11 +107,13 @@ struct pmc_reg {
 #define NPCX_PMCSR_NWBI            3
 #define NPCX_PMCSR_OHFC            6
 #define NPCX_PMCSR_OLFC            7
-#define NPCX_DISIDL_CTL_RAM_DID    5
-#define NPCX_ENSLP_CTL_ADC_LFSL    7
-#define NPCX_ENSLP_CTL_LP_WK_CTL   6
-#define NPCX_ENSLP_CTL_PECI_ENI    2
-#define NPCX_ENSLP_CTL_ADC_ACC_DIS 1
+#define NPCX_DISIDL_CTL_RAM_DID         5
+#define NPCX_ENSLP_CTL_ADC_LFSL         7
+#define NPCX_ENSLP_CTL_LP_WK_CTL        6
+#define NPCX_ENSLP_CTL_PECI_ENI         2
+#define NPCX_ENSLP_CTL_ADC_ACC_DIS      1
+/* Implemented from SOC_SERIES_NPCX4 onwards */
+#define NPCX_ENSLP_CTL_ESPI_FMCLK_ENSLP 0
 
 /* Macro functions for Development and Debugger Interface (DDI) registers */
 #define NPCX_DBGCTRL(base)   (*(volatile uint8_t *)(base + 0x004))
