@@ -1,0 +1,26 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  nRF71 Wi-Fi antenna switch (ANTSW) steering.
+
+  Steers the antenna switch towards WLAN before the Wi-Fi core is started,
+  from soc_early_init_hook(). Because that runs before the GPIO driver is
+  initialized, the pin is configured directly through the nrf_gpio HAL using
+  the PSEL derived from this property, rather than through the GPIO driver or
+  GPIO hogs. The pin is SoC specific and is not meant to be changed at a board
+  level.
+
+  Powering the antenna switch is a separate concern handled by the pwr_antswc
+  node (nordic,nrf-pwr-antswc).
+
+compatible: "nordic,nrf71-wifi-antsw"
+
+include: base.yaml
+
+properties:
+  wlan-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Steers the antenna switch towards WLAN.

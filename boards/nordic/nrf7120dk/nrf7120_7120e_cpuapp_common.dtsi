@@ -164,6 +164,10 @@
 	status = "okay";
 };
 
+&wifi_antsw {
+	status = "okay";
+};
+
 &wifi {
 	status = "okay";
 	nordic,wifi-xo-freq-offset = <0x0>;
