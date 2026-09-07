@@ -64,29 +64,53 @@ config BT_HIDS_BOOT_MOUSE
 	  Mandatory for a Device operating as a mouse, and not permitted for a
 	  Device that does not.
 
+config BT_HIDS_SHELL
+	bool "HID Service shell commands"
+	depends on BT_SHELL
+	default y
+	help
+	  Add a `hids` command set to the Bluetooth shell. The commands
+	  register one Report of each type, so this option raises the lower
+	  bound of the Report counts below to one. Disable it to configure the
+	  Report counts freely in an image that has the Bluetooth shell.
+
 config BT_HIDS_INPUT_REPORT_COUNT
 	int "Number of Input Report characteristics"
 	default 1
+	range 1 16 if BT_HIDS_SHELL
 	range 0 16
 	help
 	  Number of Input Report characteristics in the HID Service. The
 	  application has to register exactly this many Input Reports.
 
+	  BT_HIDS_SHELL needs at least one, because the shell commands
+	  register one Report of each type.
+
 config BT_HIDS_OUTPUT_REPORT_COUNT
 	int "Number of Output Report characteristics"
+	default 1 if BT_HIDS_SHELL
 	default 0
+	range 1 16 if BT_HIDS_SHELL
 	range 0 16
 	help
 	  Number of Output Report characteristics in the HID Service. The
 	  application has to register exactly this many Output Reports.
 
+	  BT_HIDS_SHELL needs at least one, because the shell commands
+	  register one Report of each type.
+
 config BT_HIDS_FEATURE_REPORT_COUNT
 	int "Number of Feature Report characteristics"
+	default 1 if BT_HIDS_SHELL
 	default 0
+	range 1 16 if BT_HIDS_SHELL
 	range 0 16
 	help
 	  Number of Feature Report characteristics in the HID Service. The
 	  application has to register exactly this many Feature Reports.
+
+	  BT_HIDS_SHELL needs at least one, because the shell commands
+	  register one Report of each type.
 
 config BT_HIDS_MAX_REPORT_LEN
 	int "Maximum single report data length (bytes)"

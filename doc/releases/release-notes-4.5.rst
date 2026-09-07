@@ -1842,7 +1842,9 @@ Libraries / Subsystems
 * Bluetooth
 
   * Added a HID Service server (:kconfig:option:`CONFIG_BT_HIDS`), the service
-    the HID Device role of the HID over GATT Profile is built on.
+    the HID Device role of the HID over GATT Profile is built on, with a
+    ``hids`` Bluetooth shell command set
+    (:kconfig:option:`CONFIG_BT_HIDS_SHELL`).
 
 * Crypto
 
