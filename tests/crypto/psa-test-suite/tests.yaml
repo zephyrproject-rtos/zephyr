@@ -1,0 +1,13 @@
+common:
+  # Currently only tested with CSPRNG and an mbedtls platform RNG driver
+  filter: not CONFIG_BUILD_WITH_TFM and CONFIG_CSPRNG_ENABLED
+  tags:
+    - mbedtls
+    - psa
+
+tests:
+  crypto.psa.all:
+    integration_platforms:
+      - nucleo_u385rg_q
+    extra_configs:
+      - CONFIG_PSA_TEST_SUITE_LIST="all.txt"

@@ -1,0 +1,5 @@
+basename=test_suite_psa_crypto_hash
+<all>
+
+basename=test_suite_psa_crypto
+<all>
