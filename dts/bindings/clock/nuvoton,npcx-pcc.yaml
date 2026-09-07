@@ -222,6 +222,14 @@ properties:
       Power-down (turn off clock) the modules during system initialization for
       better power consumption.
 
+  fast-clk-to-espi-sleep-support:
+    type: boolean
+    description: |
+      The fast clock (FMCLK) to the eSPI_SIF module can be kept enabled while
+      the chip is in the Sleep or Deep Sleep power state. Only set it on the
+      series that implement the ESPI_FMCLK_ENSLP field of the ENSLP_CTL
+      register, that is SOC_SERIES_NPCX4 and later of the NPCXn variant.
+
 clock-cells:
   - bus
   - ctl
