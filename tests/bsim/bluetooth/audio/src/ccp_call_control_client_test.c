@@ -26,9 +26,9 @@ extern enum bst_result_t bst_result;
 
 CREATE_FLAG(flag_discovery_complete);
 CREATE_FLAG(flag_bearer_name_read);
-CREATE_FLAG(flag_bearer_uci);
-CREATE_FLAG(flag_bearer_tech);
-CREATE_FLAG(flag_bearer_uri_schemes);
+CREATE_FLAG(flag_bearer_uci_read);
+CREATE_FLAG(flag_bearer_tech_read);
+CREATE_FLAG(flag_bearer_uri_schemes_read);
 
 static struct bt_ccp_call_control_client *call_control_client;
 static struct bt_ccp_call_control_client_bearers client_bearers;
@@ -87,7 +87,7 @@ ccp_call_control_client_read_bearer_uci_cb(struct bt_ccp_call_control_client_bea
 
 	LOG_INF("Bearer %p UCI: %s", (void *)bearer, uci);
 
-	SET_FLAG(flag_bearer_uci);
+	SET_FLAG(flag_bearer_uci_read);
 }
 #endif /* CONFIG_BT_TBS_CLIENT_BEARER_UCI */
 #if defined(CONFIG_BT_TBS_CLIENT_BEARER_TECHNOLOGY)
@@ -104,7 +104,7 @@ ccp_call_control_client_read_bearer_tech_cb(struct bt_ccp_call_control_client_be
 
 	LOG_INF("Bearer %p technology: %d", (void *)bearer, tech);
 
-	SET_FLAG(flag_bearer_tech);
+	SET_FLAG(flag_bearer_tech_read);
 }
 #endif /* CONFIG_BT_TBS_CLIENT_BEARER_TECHNOLOGY */
 
@@ -124,7 +124,7 @@ ccp_call_control_client_read_bearer_uri_schemes_cb(struct bt_ccp_call_control_cl
 
 	LOG_INF("Bearer %p URI schemes: %s", (void *)bearer, uri_schemes);
 
-	SET_FLAG(flag_bearer_uri_schemes);
+	SET_FLAG(flag_bearer_uri_schemes_read);
 }
 #endif /* CONFIG_BT_TBS_CLIENT_BEARER_URI_SCHEMES_SUPPORTED_LIST */
 
@@ -162,7 +162,7 @@ static void read_bearer_uci(struct bt_ccp_call_control_client_bearer *bearer)
 {
 	int err;
 
-	UNSET_FLAG(flag_bearer_uci);
+	UNSET_FLAG(flag_bearer_uci_read);
 
 	err = bt_ccp_call_control_client_read_bearer_uci(bearer);
 	if (err != 0) {
@@ -170,14 +170,14 @@ static void read_bearer_uci(struct bt_ccp_call_control_client_bearer *bearer)
 		return;
 	}
 
-	WAIT_FOR_FLAG(flag_bearer_uci);
+	WAIT_FOR_FLAG(flag_bearer_uci_read);
 }
 
 static void read_bearer_tech(struct bt_ccp_call_control_client_bearer *bearer)
 {
 	int err;
 
-	UNSET_FLAG(flag_bearer_tech);
+	UNSET_FLAG(flag_bearer_tech_read);
 
 	err = bt_ccp_call_control_client_read_bearer_tech(bearer);
 	if (err != 0) {
@@ -185,14 +185,14 @@ static void read_bearer_tech(struct bt_ccp_call_control_client_bearer *bearer)
 		return;
 	}
 
-	WAIT_FOR_FLAG(flag_bearer_tech);
+	WAIT_FOR_FLAG(flag_bearer_tech_read);
 }
 
 static void read_bearer_uri_schemes(struct bt_ccp_call_control_client_bearer *bearer)
 {
 	int err;
 
-	UNSET_FLAG(flag_bearer_uri_schemes);
+	UNSET_FLAG(flag_bearer_uri_schemes_read);
 
 	err = bt_ccp_call_control_client_read_bearer_uri_schemes(bearer);
 	if (err != 0) {
@@ -200,7 +200,7 @@ static void read_bearer_uri_schemes(struct bt_ccp_call_control_client_bearer *be
 		return;
 	}
 
-	WAIT_FOR_FLAG(flag_bearer_uri_schemes);
+	WAIT_FOR_FLAG(flag_bearer_uri_schemes_read);
 }
 
 static void read_bearer_values(void)
