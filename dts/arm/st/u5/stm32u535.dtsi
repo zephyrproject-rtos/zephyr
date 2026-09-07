@@ -20,6 +20,30 @@
 	soc {
 		compatible = "st,stm32u535", "st,stm32u5", "simple-bus";
 
+		mdf1: mdf@40025000 {
+			compatible = "st,stm32-mdf";
+			reg = <0x40025000 0x1000>;
+			clocks = <&rcc STM32_CLOCK(AHB1, 3)>;
+			clock-names = "pclk";
+			resets = <&rctl STM32_RESET(AHB1, 3)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+			status = "disabled";
+
+			filter@40025080 {
+				reg = <0x40025080 0x80>;
+				interrupts = <102 0>;
+				status = "disabled";
+			};
+
+			filter@40025100 {
+				reg = <0x40025100 0x80>;
+				interrupts = <103 0>;
+				status = "disabled";
+			};
+		};
+
 		rng: rng@420c0800 {
 			nist-config = <0xf10f00>;
 			health-test-config = <0x76b3>;
