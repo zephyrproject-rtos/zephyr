@@ -82,7 +82,19 @@ int uhc_xfer_append(const struct device *dev,
 struct net_buf *uhc_xfer_buf_alloc(const struct device *dev,
 				   const size_t size)
 {
-	return net_buf_alloc_len(&uhc_ep_pool, size, K_NO_WAIT);
+	struct net_buf *buf = net_buf_alloc_len(&uhc_ep_pool, size, K_NO_WAIT);
+
+	/*
+	 * The pool rounds the payload up to DCACHE_LINE_SIZE, but UHC
+	 * drivers (e.g. mcux, virtual, max3421e) use net_buf_tailroom()
+	 * as the IN transfer length. Keep the claimed size at what the
+	 * caller requested so IN transfers do not exceed wLength.
+	 */
+	if (buf != NULL && buf->size > size) {
+		buf->size = size;
+	}
+
+	return buf;
 }
 
 void uhc_xfer_buf_free(const struct device *dev, struct net_buf *const buf)
