@@ -168,7 +168,7 @@ static bool entropy_stm32_hsem_is_owned(void)
 
 static void configure_rng(void)
 {
-	RNG_TypeDef *rng = TRNG_BASE;
+	__maybe_unused RNG_TypeDef *rng = TRNG_BASE;
 
 #ifdef STM32_CONDRST_SUPPORT
 	uint32_t desired_nist_cfg = DT_INST_PROP_OR(0, nist_config, 0U);
@@ -227,9 +227,6 @@ static void configure_rng(void)
 		}
 	}
 #endif /* STM32_CONDRST_SUPPORT */
-
-	LL_RNG_Enable(rng);
-	ll_rng_enable_it(rng);
 }
 
 /* This function releases the HSEM (on applicable series) for RNG access */
@@ -329,13 +326,13 @@ static void acquire_rng(void)
 	 */
 	LL_RNG_SetSamplingClockEnableDivider(rng, 0);
 #endif
-	LL_RNG_Enable(rng);
-	ll_rng_enable_it(rng);
-
 #if HAS_MULTICORE_SHARED_RNG
 	/* RNG configuration could have been changed by the other core */
 	configure_rng();
 #endif /* HAS_MULTICORE_SHARED_RNG */
+
+	LL_RNG_Enable(rng);
+	ll_rng_enable_it(rng);
 }
 
 static int entropy_stm32_got_error(RNG_TypeDef *rng)
