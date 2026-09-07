@@ -437,6 +437,17 @@ struct wm8960_config {
 
 struct wm8960_data {
 	bool initialized;
+	/*
+	 * Directions configured so far, as a mask of BIT(AUDIO_ROUTE_*). One
+	 * codec can be shared by a capture element and a playback element,
+	 * neither of which knows the other exists, so the route is
+	 * accumulated rather than replaced.
+	 */
+	uint8_t routes_seen;
+	/* The DAI the codec is currently programmed for, once configured. */
+	audio_dai_type_t active_dai_type;
+	audio_dai_cfg_t active_dai_cfg;
+	bool configured;
 	bool muted;
 	bool input_muted;
 	bool use_pll;
@@ -1244,6 +1255,7 @@ static int wm8960_power_up(const struct device *dev, struct audio_codec_cfg *cfg
 {
 	int ret;
 	const struct wm8960_config *config = dev->config;
+	struct wm8960_data *data = dev->data;
 
 	/* Power up sequence:
 	 * 1. Enable VMID and VREF
@@ -1265,7 +1277,7 @@ static int wm8960_power_up(const struct device *dev, struct audio_codec_cfg *cfg
 	/* Step 2: route (this includes power up and mixer configs) */
 	uint16_t i_left, i_right, o_hp_l, o_hp_r;
 
-	switch (cfg->dai_route) {
+	switch (data->route) {
 	case AUDIO_ROUTE_BYPASS:
 		i_left = WM8960_IN_MUTE;
 		i_right = WM8960_IN_MUTE;
@@ -1904,10 +1916,31 @@ static int wm8960_apply_properties(const struct device *dev)
 	return 0;
 }
 
+/*
+ * True when cfg programs the codec as it is programmed now. Only the fields
+ * configure() writes to the codec count: the stream fields of i2s_config
+ * belong to each caller.
+ */
+static bool wm8960_cfg_matches_active(const struct wm8960_data *data,
+				      const struct audio_codec_cfg *cfg)
+{
+	const struct i2s_config *active = &data->active_dai_cfg.i2s;
+	const struct i2s_config *req = &cfg->dai_cfg.i2s;
+
+	return data->active_dai_type == cfg->dai_type && active->word_size == req->word_size &&
+	       active->channels == req->channels && active->format == req->format &&
+	       active->frame_clk_freq == req->frame_clk_freq &&
+	       ((active->options ^ req->options) & I2S_OPT_FRAME_CLK_TARGET) == 0U;
+}
+
 static int wm8960_configure(const struct device *dev,
 			    struct audio_codec_cfg *cfg)
 {
 	struct wm8960_data *data = dev->data;
+	audio_route_t saved_route;
+	uint8_t saved_routes_seen;
+	bool is_single_dir;
+	bool shares_codec;
 	int ret;
 
 	if (!data->initialized) {
@@ -1915,57 +1948,117 @@ static int wm8960_configure(const struct device *dev,
 		return -ENODEV;
 	}
 
-	data->route = cfg->dai_route;
-
 	ret = wm8960_validate_dai_cfg(cfg);
 	if (ret < 0) {
 		return ret;
 	}
 
+	/*
+	 * configure() soft-resets the device, so a second element configuring
+	 * its own direction would tear down the first element's. Accumulate
+	 * the directions instead: the codec ends up routed for every direction
+	 * that has been asked for, whatever order the elements run in.
+	 *
+	 * Only the clocking of the first caller is kept. Reprogramming it for
+	 * the second caller would silently change the sample rate or word
+	 * length under the first, so a conflicting configuration is refused
+	 * rather than accepted and ignored. This applies only when the codec
+	 * is actually shared: a single element reconfiguring its own direction
+	 * is a normal reconfiguration and reprograms everything. An element
+	 * switching direction at a different rate asks for an explicit route
+	 * (BYPASS or PLAYBACK_CAPTURE) first, which clears the directions.
+	 */
+	is_single_dir =
+		(cfg->dai_route == AUDIO_ROUTE_PLAYBACK || cfg->dai_route == AUDIO_ROUTE_CAPTURE);
+	shares_codec = is_single_dir && data->configured &&
+		       (data->routes_seen & ~BIT(cfg->dai_route)) != 0U;
+
+	if (shares_codec && !wm8960_cfg_matches_active(data, cfg)) {
+		LOG_ERR("codec is shared and already runs a different dai_cfg; "
+			"both directions must use the same format");
+		return -EBUSY;
+	}
+
+	saved_route = data->route;
+	saved_routes_seen = data->routes_seen;
+
+	if (is_single_dir) {
+		data->routes_seen |= (uint8_t)BIT(cfg->dai_route);
+
+		if (data->routes_seen == (BIT(AUDIO_ROUTE_PLAYBACK) | BIT(AUDIO_ROUTE_CAPTURE))) {
+			data->route = AUDIO_ROUTE_PLAYBACK_CAPTURE;
+		} else {
+			data->route = cfg->dai_route;
+		}
+	} else {
+		/* BYPASS and PLAYBACK_CAPTURE are explicit; they reset the mask. */
+		data->routes_seen = 0U;
+		data->route = cfg->dai_route;
+	}
+
+	if (data->route != saved_route) {
+		LOG_INF("codec route is now %u", (unsigned int)data->route);
+	}
+
 	ret = wm8960_soft_reset(dev);
 	if (ret < 0) {
 		LOG_ERR("Failed to reset WM8960: %d", ret);
-		return ret;
+		goto restore_route;
 	}
 
 	ret = wm8960_power_up(dev, cfg);
 	if (ret < 0) {
 		LOG_ERR("Failed to power up codec: %d", ret);
-		return ret;
+		goto restore_route;
 	}
 
 	ret = wm8960_update_mclk(dev, cfg);
 	if (ret < 0) {
-		return ret;
+		goto restore_route;
 	}
 
 	ret = wm8960_apply_clocking(dev, cfg);
 	if (ret < 0) {
-		return ret;
+		goto restore_route;
 	}
 
 	ret = wm8960_set_default_volumes(dev);
 	if (ret < 0) {
-		return ret;
+		goto restore_route;
 	}
 
 	ret = wm8960_apply_properties(dev);
 	if (ret < 0) {
-		return ret;
+		goto restore_route;
 	}
 
 	ret = wm8960_configure_jack_detect(dev);
 	if (ret < 0) {
-		return ret;
+		goto restore_route;
 	}
 
 	ret = wm8960_set_mute(dev, false);
 	if (ret < 0) {
 		LOG_ERR("Failed to set mute: %d", ret);
-		return ret;
+		goto restore_route;
 	}
 
+	data->active_dai_type = cfg->dai_type;
+	data->active_dai_cfg = cfg->dai_cfg;
+	data->configured = true;
+
 	return 0;
+
+restore_route:
+	/*
+	 * The device did not reach the requested state, so the driver must not
+	 * claim it did: a later power_up() or property write would be taken
+	 * from a route the codec is not in.
+	 */
+	data->route = saved_route;
+	data->routes_seen = saved_routes_seen;
+
+	return ret;
 }
 
 static int wm8960_set_input_mute_property(const struct device *dev,
