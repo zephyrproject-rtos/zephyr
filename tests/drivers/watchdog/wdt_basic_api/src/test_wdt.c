@@ -141,6 +141,11 @@
 #if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_gswdt) && !defined(CONFIG_NRFS_GSWDT_SERVICE_ENABLED)
 #define WDT_TEST_MAX_WINDOW 6000U
 #endif
+#if DT_HAS_COMPAT_STATUS_OKAY(xen_watchdog)
+#define TIMEOUTS DT_PROP(WDT_NODE, num_channels)
+#define WDT_TEST_MAX_WINDOW 3000U
+#define WDT_OPT_PAUSE_IN_SLEEP_SUPPORTED 0
+#endif
 
 #define WDT_TEST_STATE_IDLE        0
 #define WDT_TEST_STATE_CHECK_RESET 1
@@ -162,9 +167,18 @@
 #if !(defined(CONFIG_HAS_WDT_NO_CALLBACKS) && CONFIG_HAS_WDT_NO_CALLBACKS)
 #define TEST_WDT_CALLBACK_1 (TIMEOUTS > 0)
 #define TEST_WDT_CALLBACK_2 (TIMEOUTS > 1)
+#define TEST_WDT_NO_CALLBACK_2 0
+#else
+#define TEST_WDT_CALLBACK_1 0
+#define TEST_WDT_CALLBACK_2 0
+#define TEST_WDT_NO_CALLBACK_2 (TIMEOUTS > 1)
 #endif
 
-#if CONFIG_PM
+#ifndef WDT_OPT_PAUSE_IN_SLEEP_SUPPORTED
+#define WDT_OPT_PAUSE_IN_SLEEP_SUPPORTED 1
+#endif
+
+#if CONFIG_PM && WDT_OPT_PAUSE_IN_SLEEP_SUPPORTED
 #define TEST_WDT_WAIT_MODE 1
 #endif
 
@@ -173,7 +187,7 @@
 #endif
 
 static struct wdt_timeout_cfg m_cfg_wdt0;
-#if TEST_WDT_CALLBACK_2
+#if TEST_WDT_CALLBACK_2 || TEST_WDT_NO_CALLBACK_2
 static struct wdt_timeout_cfg m_cfg_wdt1;
 #endif
 
@@ -426,6 +440,73 @@ static int test_wdt_callback_2(void)
 }
 #endif
 
+#if TEST_WDT_NO_CALLBACK_2
+static int test_wdt_no_callback_2(void)
+{
+	int err;
+	int channel_id;
+	const struct device *const wdt = DEVICE_DT_GET(WDT_NODE);
+
+	TC_PRINT("Testcase: %s\n", __func__);
+
+	if (!device_is_ready(wdt)) {
+		TC_PRINT("WDT device is not ready\n");
+		return TC_FAIL;
+	}
+
+	if (m_state == WDT_TEST_STATE_CHECK_RESET) {
+		m_state = WDT_TEST_STATE_IDLE;
+		m_testcase_index++;
+		TC_PRINT("Testcase passed\n");
+		return TC_PASS;
+	}
+
+	err = wdt_disable(wdt);
+	if (err < 0 && err != -EPERM && err != -EFAULT) {
+		TC_PRINT("Watchdog disable error\n");
+		return TC_FAIL;
+	}
+
+	m_cfg_wdt0.callback = NULL;
+	m_cfg_wdt0.flags = WDT_FLAG_RESET_SOC;
+	m_cfg_wdt0.window.max = WDT_TEST_MAX_WINDOW;
+	channel_id = wdt_install_timeout(wdt, &m_cfg_wdt0);
+	if (channel_id < 0) {
+		TC_PRINT("Watchdog install error\n");
+		return TC_FAIL;
+	}
+
+	m_cfg_wdt1.callback = NULL;
+	m_cfg_wdt1.flags = WDT_FLAG_RESET_SOC;
+	m_cfg_wdt1.window.max = WDT_TEST_MAX_WINDOW;
+	err = wdt_install_timeout(wdt, &m_cfg_wdt1);
+	if (err < 0) {
+		TC_PRINT("Watchdog install error\n");
+		return TC_FAIL;
+	}
+
+	err = wdt_setup(wdt, WDT_OPT_PAUSE_HALTED_BY_DBG);
+	if (err == -ENOTSUP) {
+		TC_PRINT("- pausing watchdog by debugger is not supported\n");
+		err = wdt_setup(wdt, 0);
+	}
+	if (err < 0) {
+		TC_PRINT("Watchdog setup error\n");
+		return TC_FAIL;
+	}
+
+	TC_PRINT("Waiting to restart MCU\n");
+	m_testvalue = 0U;
+	m_state = WDT_TEST_STATE_CHECK_RESET;
+	commit_noinit_state();
+
+	while (1) {
+		wdt_feed(wdt, channel_id);
+		k_sleep(K_MSEC(100));
+	}
+}
+#endif
+
 #if TEST_WDT_BAD_MAX_WINDOW
 static int test_wdt_bad_window_max(void)
 {
@@ -548,19 +629,26 @@ ZTEST(wdt_basic_test_suite, test_wdt)
 #endif
 	}
 	if (m_testcase_index == 3U) {
+#if TEST_WDT_NO_CALLBACK_2
+		zassert_true(test_wdt_no_callback_2() == TC_PASS);
+#else
+		m_testcase_index++;
+#endif
+	}
+	if (m_testcase_index == 4U) {
 #if TEST_WDT_WAIT_MODE
 		zassert_true(test_wdt_enable_wait_mode() == TC_PASS);
 #else
 		m_testcase_index++;
 #endif
 	}
-	if (m_testcase_index == 4U) {
+	if (m_testcase_index == 5U) {
 #if TEST_WDT_BAD_MAX_WINDOW
 		zassert_true(test_wdt_bad_window_max() == TC_PASS);
 #endif
 		m_testcase_index++;
 	}
-	if (m_testcase_index > 4) {
+	if (m_testcase_index > 5) {
 		m_state = WDT_TEST_STATE_IDLE;
 		m_magic = 0;
 		m_testcase_index = 0;
