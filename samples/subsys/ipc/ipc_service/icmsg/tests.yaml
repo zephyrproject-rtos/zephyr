@@ -21,7 +21,10 @@ tests:
       - nrf54lm20dk/nrf54lm20a/cpuapp
     integration_platforms:
       - nrf54l15dk/nrf54l15/cpuapp
-    extra_args: icmsg_SNIPPET=nordic-flpr
+    extra_args:
+      - icmsg_SNIPPET=nordic-flpr
+      - icmsg_FILE_SUFFIX=icmsg
+      - remote_FILE_SUFFIX=icmsg
 
   sample.ipc.icmsg.nrf54l_no_multithreading:
     platform_allow:
@@ -30,11 +33,14 @@ tests:
     integration_platforms:
       - nrf54l15dk/nrf54l15/cpuapp
     extra_args:
+    extra_args:
       - icmsg_SNIPPET=nordic-flpr
       - icmsg_CONFIG_MULTITHREADING=n
       - icmsg_CONFIG_LOG_MODE_MINIMAL=y
+      - icmsg_FILE_SUFFIX=icmsg
       - remote_CONFIG_MULTITHREADING=n
       - remote_CONFIG_LOG_MODE_MINIMAL=y
+      - remote_FILE_SUFFIX=icmsg
 
   sample.ipc.icmsg.nrf54l_remote_no_multithreading:
     platform_allow:
@@ -44,8 +50,10 @@ tests:
       - nrf54l15dk/nrf54l15/cpuapp
     extra_args:
       - icmsg_SNIPPET=nordic-flpr
+      - icmsg_FILE_SUFFIX=icmsg
       - remote_CONFIG_MULTITHREADING=n
       - remote_CONFIG_LOG_MODE_MINIMAL=y
+      - remote_FILE_SUFFIX=icmsg
 
   sample.ipc.icbmsg.nrf54l:
     platform_allow:
@@ -56,9 +64,7 @@ tests:
     extra_args:
       - icmsg_SNIPPET=nordic-flpr
       - icmsg_CONFIG_IPC_SERVICE_BACKEND_ICBMSG_NUM_EP=1
-      - icmsg_EXTRA_DTC_OVERLAY_FILE="boards/nrf54l_cpuapp_icbmsg.overlay"
       - remote_CONFIG_IPC_SERVICE_BACKEND_ICBMSG_NUM_EP=1
-      - remote_EXTRA_DTC_OVERLAY_FILE="boards/nrf54l_cpuflpr_icbmsg.overlay"
 
   sample.ipc.icbmsg.nrf54l_no_multithreading:
     platform_allow:
@@ -69,11 +75,9 @@ tests:
     extra_args:
       - icmsg_SNIPPET=nordic-flpr
       - icmsg_CONFIG_IPC_SERVICE_BACKEND_ICBMSG_NUM_EP=1
-      - icmsg_EXTRA_DTC_OVERLAY_FILE="boards/nrf54l_cpuapp_icbmsg.overlay"
       - icmsg_CONFIG_MULTITHREADING=n
       - icmsg_CONFIG_LOG_MODE_MINIMAL=y
       - remote_CONFIG_IPC_SERVICE_BACKEND_ICBMSG_NUM_EP=1
-      - remote_EXTRA_DTC_OVERLAY_FILE="boards/nrf54l_cpuflpr_icbmsg.overlay"
       - remote_CONFIG_MULTITHREADING=n
       - remote_CONFIG_LOG_MODE_MINIMAL=y
 
@@ -86,9 +90,7 @@ tests:
     extra_args:
       - icmsg_SNIPPET=nordic-flpr
       - icmsg_CONFIG_IPC_SERVICE_BACKEND_ICBMSG_NUM_EP=1
-      - icmsg_EXTRA_DTC_OVERLAY_FILE="boards/nrf54l_cpuapp_icbmsg.overlay"
       - remote_CONFIG_IPC_SERVICE_BACKEND_ICBMSG_NUM_EP=1
-      - remote_EXTRA_DTC_OVERLAY_FILE="boards/nrf54l_cpuflpr_icbmsg.overlay"
       - remote_CONFIG_MULTITHREADING=n
       - remote_CONFIG_LOG_MODE_MINIMAL=y
 
