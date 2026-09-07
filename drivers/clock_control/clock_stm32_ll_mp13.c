@@ -167,6 +167,19 @@ static int stm32_clock_control_get_subsys_rate(const struct device *dev,
 			return -ENOTSUP;
 		}
 		break;
+	case STM32_CLOCK_BUS_APB5:
+		switch (pclken->enr) {
+		case LL_APB5_GRP1_PERIPH_BSEC: {
+			LL_RCC_ClocksTypeDef rcc_clocks;
+
+			LL_RCC_GetSystemClocksFreq(&rcc_clocks);
+			*rate = rcc_clocks.PCLK5_Frequency;
+			break;
+		}
+		default:
+			return -ENOTSUP;
+		}
+		break;
 	case STM32_CLOCK_BUS_APB6:
 		switch (pclken->enr) {
 		case LL_APB6_GRP1_PERIPH_USART1:
