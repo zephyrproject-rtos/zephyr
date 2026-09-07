@@ -64,6 +64,14 @@
 		};
 	};
 
+	pwm3_default: pwm3_default {
+		group0 {
+			pinmux = <&iomuxc_spdif_tx_pwm_out_pwm3_out>;
+			slew-rate = "fast";
+			drive-strength = "x1";
+		};
+	};
+
 	pinmux_i2c3: pinmux_i2c3 {
 		group0 {
 			pinmux = <&iomuxc_i2c3_scl_i2c_scl_i2c3_scl>,

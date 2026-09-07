@@ -101,3 +101,10 @@
 &wdog1 {
 	status = "okay";
 };
+
+&pwm3 {
+	pinctrl-0 = <&pwm3_default>;
+	pinctrl-names = "default";
+	prescaler = <9>;
+	status = "okay";
+};
