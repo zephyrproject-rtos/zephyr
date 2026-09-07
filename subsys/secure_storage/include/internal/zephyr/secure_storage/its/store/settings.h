@@ -1,10 +1,10 @@
 /* Copyright (c) 2024 Nordic Semiconductor
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef SECURE_STORAGE_ITS_STORE_SETTINGS_GET_H
-#define SECURE_STORAGE_ITS_STORE_SETTINGS_GET_H
+#ifndef SECURE_STORAGE_ITS_STORE_SETTINGS_H
+#define SECURE_STORAGE_ITS_STORE_SETTINGS_H
 
-/** @file zephyr/secure_storage/its/store/settings_get.h The settings ITS store module API.
+/** @file zephyr/secure_storage/its/store/settings.h The settings ITS store module API.
  *
  * The functions declared in this header allow customization
  * of the settings implementation of the ITS store module.
