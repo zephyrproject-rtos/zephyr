@@ -1212,6 +1212,7 @@
 		compatible = "nxp,os-timer";
 		reg = <0x207000 0x1000>;
 		interrupts = <34 0>;
+		handoff-power-states = <&deepsleep>, <&dsr>;
 		status = "disabled";
 	};
 
