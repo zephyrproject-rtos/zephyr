@@ -1,0 +1,7 @@
+# Copyright (C) 2026 Dhruv Menon <dhruvmenon1104@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_SHRIKE_FI
+	select SOC_ESP32S3_FN8
+	select SOC_ESP32S3_PROCPU if BOARD_SHRIKE_FI_ESP32S3_PROCPU
+	select SOC_ESP32S3_APPCPU if BOARD_SHRIKE_FI_ESP32S3_APPCPU
