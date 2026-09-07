@@ -55,6 +55,20 @@
 		};
 	};
 
+	/*
+	 * Deep Sleep Retention collapses the Compute domain's peripheral supply,
+	 * so every peripheral tagged with this domain comes back with its
+	 * registers at their reset values. Announcing that as a real power cycle
+	 * lets the drivers re-run PM_DEVICE_ACTION_TURN_ON, which is where their
+	 * hardware bring-up belongs. Plain Deep Sleep retains the supply and is
+	 * deliberately not listed.
+	 */
+	peripheral_domain: peripheral-domain {
+		compatible = "power-domain-soc-state-change";
+		#power-domain-cells = <0>;
+		onoff-power-states = <&dsr>;
+	};
+
 	dsp: dsp {
 		#address-cells = <1>;
 		#size-cells = <1>;
@@ -458,6 +472,7 @@
 		reg = <0x110000 0x1000>;
 		interrupts = <7 0>;
 		resets = <&rstctl0 NXP_SYSCON_RESET(2, 30)>;
+		power-domains = <&peripheral_domain>;
 		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
@@ -469,6 +484,7 @@
 			compatible = "nxp,lpuart";
 			reg = <0x110000 0x1000>;
 			clocks = <&clkctl0 MCUX_FLEXCOMM0_CLK>;
+			power-domains = <&peripheral_domain>;
 			status = "disabled";
 		};
 
@@ -498,6 +514,7 @@
 		reg = <0x111000 0x1000>;
 		interrupts = <8 0>;
 		resets = <&rstctl0 NXP_SYSCON_RESET(2, 31)>;
+		power-domains = <&peripheral_domain>;
 		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
@@ -509,6 +526,7 @@
 			compatible = "nxp,lpuart";
 			reg = <0x111000 0x1000>;
 			clocks = <&clkctl0 MCUX_FLEXCOMM1_CLK>;
+			power-domains = <&peripheral_domain>;
 			status = "disabled";
 		};
 
@@ -538,6 +556,7 @@
 		reg = <0x112000 0x1000>;
 		interrupts = <9 0>;
 		resets = <&rstctl0 NXP_SYSCON_RESET(3, 0)>;
+		power-domains = <&peripheral_domain>;
 		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
@@ -549,6 +568,7 @@
 			compatible = "nxp,lpuart";
 			reg = <0x112000 0x1000>;
 			clocks = <&clkctl0 MCUX_FLEXCOMM2_CLK>;
+			power-domains = <&peripheral_domain>;
 			status = "disabled";
 		};
 
@@ -578,6 +598,7 @@
 		reg = <0x113000 0x1000>;
 		interrupts = <10 0>;
 		resets = <&rstctl0 NXP_SYSCON_RESET(3, 1)>;
+		power-domains = <&peripheral_domain>;
 		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
@@ -589,6 +610,7 @@
 			compatible = "nxp,lpuart";
 			reg = <0x113000 0x1000>;
 			clocks = <&clkctl0 MCUX_FLEXCOMM3_CLK>;
+			power-domains = <&peripheral_domain>;
 			status = "disabled";
 		};
 
@@ -618,6 +640,7 @@
 		reg = <0x171000 0x1000>;
 		interrupts = <11 0>;
 		resets = <&rstctl0 NXP_SYSCON_RESET(3, 2)>;
+		power-domains = <&peripheral_domain>;
 		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
@@ -629,6 +652,7 @@
 			compatible = "nxp,lpuart";
 			reg = <0x171000 0x1000>;
 			clocks = <&clkctl0 MCUX_FLEXCOMM4_CLK>;
+			power-domains = <&peripheral_domain>;
 			status = "disabled";
 		};
 
@@ -658,6 +682,7 @@
 		reg = <0x172000 0x1000>;
 		interrupts = <12 0>;
 		resets = <&rstctl0 NXP_SYSCON_RESET(3, 3)>;
+		power-domains = <&peripheral_domain>;
 		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
@@ -669,6 +694,7 @@
 			compatible = "nxp,lpuart";
 			reg = <0x172000 0x1000>;
 			clocks = <&clkctl0 MCUX_FLEXCOMM5_CLK>;
+			power-domains = <&peripheral_domain>;
 			status = "disabled";
 		};
 
@@ -698,6 +724,7 @@
 		reg = <0x173000 0x1000>;
 		interrupts = <35 0>;
 		resets = <&rstctl0 NXP_SYSCON_RESET(3, 4)>;
+		power-domains = <&peripheral_domain>;
 		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
@@ -709,6 +736,7 @@
 			compatible = "nxp,lpuart";
 			reg = <0x173000 0x1000>;
 			clocks = <&clkctl0 MCUX_FLEXCOMM6_CLK>;
+			power-domains = <&peripheral_domain>;
 			status = "disabled";
 		};
 
@@ -738,6 +766,7 @@
 		reg = <0x174000 0x1000>;
 		interrupts = <36 0>;
 		resets = <&rstctl0 NXP_SYSCON_RESET(3, 5)>;
+		power-domains = <&peripheral_domain>;
 		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
@@ -749,6 +778,7 @@
 			compatible = "nxp,lpuart";
 			reg = <0x174000 0x1000>;
 			clocks = <&clkctl0 MCUX_FLEXCOMM7_CLK>;
+			power-domains = <&peripheral_domain>;
 			status = "disabled";
 		};
 
@@ -778,6 +808,7 @@
 		reg = <0x199000 0x1000>;
 		interrupts = <47 0>;
 		resets = <&rstctl0 NXP_SYSCON_RESET(3, 6)>;
+		power-domains = <&peripheral_domain>;
 		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
@@ -789,6 +820,7 @@
 			compatible = "nxp,lpuart";
 			reg = <0x199000 0x1000>;
 			clocks = <&clkctl0 MCUX_FLEXCOMM8_CLK>;
+			power-domains = <&peripheral_domain>;
 			status = "disabled";
 		};
 
@@ -818,6 +850,7 @@
 		reg = <0x19a000 0x1000>;
 		interrupts = <48 0>;
 		resets = <&rstctl0 NXP_SYSCON_RESET(3, 7)>;
+		power-domains = <&peripheral_domain>;
 		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
@@ -829,6 +862,7 @@
 			compatible = "nxp,lpuart";
 			reg = <0x19a000 0x1000>;
 			clocks = <&clkctl0 MCUX_FLEXCOMM9_CLK>;
+			power-domains = <&peripheral_domain>;
 			status = "disabled";
 		};
 
@@ -858,6 +892,7 @@
 		reg = <0x19b000 0x1000>;
 		interrupts = <49 0>;
 		resets = <&rstctl0 NXP_SYSCON_RESET(3, 8)>;
+		power-domains = <&peripheral_domain>;
 		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
@@ -869,6 +904,7 @@
 			compatible = "nxp,lpuart";
 			reg = <0x19b000 0x1000>;
 			clocks = <&clkctl0 MCUX_FLEXCOMM10_CLK>;
+			power-domains = <&peripheral_domain>;
 			status = "disabled";
 		};
 
@@ -898,6 +934,7 @@
 		reg = <0x19c000 0x1000>;
 		interrupts = <50 0>;
 		resets = <&rstctl0 NXP_SYSCON_RESET(3, 9)>;
+		power-domains = <&peripheral_domain>;
 		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
@@ -909,6 +946,7 @@
 			compatible = "nxp,lpuart";
 			reg = <0x19c000 0x1000>;
 			clocks = <&clkctl0 MCUX_FLEXCOMM11_CLK>;
+			power-domains = <&peripheral_domain>;
 			status = "disabled";
 		};
 
@@ -938,6 +976,7 @@
 		reg = <0x19d000 0x1000>;
 		interrupts = <51 0>;
 		resets = <&rstctl0 NXP_SYSCON_RESET(3, 10)>;
+		power-domains = <&peripheral_domain>;
 		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
@@ -949,6 +988,7 @@
 			compatible = "nxp,lpuart";
 			reg = <0x19d000 0x1000>;
 			clocks = <&clkctl0 MCUX_FLEXCOMM12_CLK>;
+			power-domains = <&peripheral_domain>;
 			status = "disabled";
 		};
 
@@ -978,6 +1018,7 @@
 		reg = <0x19e000 0x1000>;
 		interrupts = <52 0>;
 		resets = <&rstctl0 NXP_SYSCON_RESET(3, 11)>;
+		power-domains = <&peripheral_domain>;
 		status = "disabled";
 
 		/* Empty ranges property implies parent and child address space is identical */
@@ -989,6 +1030,7 @@
 			compatible = "nxp,lpuart";
 			reg = <0x19e000 0x1000>;
 			clocks = <&clkctl0 MCUX_FLEXCOMM13_CLK>;
+			power-domains = <&peripheral_domain>;
 			status = "disabled";
 		};
 
