@@ -827,6 +827,30 @@
 			status = "disabled";
 		};
 
+		bsec: efuse@5c005000 {
+			compatible = "st,stm32-bsec";
+			reg = <0x5c005000 0x400>;
+			clocks = <&rcc STM32_CLOCK(APB5, 16)>;
+			st,upper-fuse-limit = <32>;
+
+			nvmem-layout {
+				compatible = "fixed-layout";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				/* MAC addresses programmed into OTP words 57 to 59 by ST */
+				ethernet_mac1_address: mac-address@e4 {
+					reg = <0xe4 0x6>;
+					#nvmem-cell-cells = <0>;
+				};
+
+				ethernet_mac2_address: mac-address@ea {
+					reg = <0xea 0x6>;
+					#nvmem-cell-cells = <0>;
+				};
+			};
+		};
+
 		rtc: rtc@5c004000 {
 			compatible = "st,stm32-rtc";
 			reg = <0x5c004000 0x400>;
