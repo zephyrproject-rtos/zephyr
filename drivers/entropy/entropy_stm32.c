@@ -163,6 +163,8 @@ static bool entropy_stm32_hsem_is_owned(void)
 
 #define ASSERT_RNG_HSEM_OWNED() \
 	__ASSERT_NO_MSG(!HAS_MULTICORE_SHARED_RNG || entropy_stm32_hsem_is_owned())
+#define ASSERT_RNG_HSEM_NOT_OWNED() \
+	__ASSERT_NO_MSG(!HAS_MULTICORE_SHARED_RNG || !entropy_stm32_hsem_is_owned())
 
 static void configure_rng(void)
 {
@@ -230,12 +232,15 @@ static void configure_rng(void)
 	ll_rng_enable_it(rng);
 }
 
+/* This function releases the HSEM (on applicable series) for RNG access */
 static void release_rng(void)
 {
 	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
 	const struct entropy_stm32_rng_dev_cfg *dev_cfg = dev->config;
 	RNG_TypeDef *rng = dev_cfg->rng;
 	int res = 0;
+
+	ASSERT_RNG_HSEM_OWNED();
 
 	LL_RNG_Disable(rng);
 #if defined(CONFIG_SOC_STM32WB09XX)
@@ -302,6 +307,7 @@ static void release_rng(void)
 	entropy_stm32_hsem_release();
 }
 
+/* This function acquires the HSEM (on applicable series) for RNG access */
 static void acquire_rng(void)
 {
 	const struct device *dev = DEVICE_DT_GET(DT_DRV_INST(0));
@@ -547,9 +553,12 @@ static int start_pool_filling(bool wait)
 {
 	bool already_filling;
 
-	if (!wait && entropy_stm32_hsem_try_acquire() != 0) {
-		/* In non-blocking mode, return immediately if the RNG is not available */
-		return -EAGAIN;
+	if (!wait) {
+		if (entropy_stm32_hsem_try_acquire() != 0) {
+			/* In non-blocking mode, return immediately if the RNG is not available */
+			return -EAGAIN;
+		}
+		entropy_stm32_hsem_release();
 	}
 
 	already_filling = atomic_set(&entropy_stm32_rng_data.filling_pools, 1) != 0;
@@ -1017,6 +1026,7 @@ static int entropy_stm32_rng_pm_action(const struct device *dev,
 			const struct entropy_stm32_rng_dev_cfg *dev_cfg = dev->config;
 			struct entropy_stm32_rng_dev_data *dev_data = dev->data;
 
+			ASSERT_RNG_HSEM_NOT_OWNED();
 			entropy_stm32_hsem_acquire();
 
 			res = entropy_stm32_init_hw_rng(dev_cfg, dev_data);
