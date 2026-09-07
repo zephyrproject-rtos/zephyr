@@ -1,7 +1,7 @@
 /* Copyright (c) 2026 Nordic Semiconductor
  * SPDX-License-Identifier: Apache-2.0
  */
-#include <zephyr/secure_storage/its/transform/aead_get.h>
+#include <zephyr/secure_storage/its/transform/aead.h>
 #include <zephyr/kernel.h>
 #include <psa/crypto.h>
 

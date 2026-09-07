@@ -1,10 +1,10 @@
 /* Copyright (c) 2024 Nordic Semiconductor
  * SPDX-License-Identifier: Apache-2.0
  */
-#ifndef SECURE_STORAGE_ITS_TRANSFORM_AEAD_GET_H
-#define SECURE_STORAGE_ITS_TRANSFORM_AEAD_GET_H
+#ifndef SECURE_STORAGE_ITS_TRANSFORM_AEAD_H
+#define SECURE_STORAGE_ITS_TRANSFORM_AEAD_H
 
-/** @file zephyr/secure_storage/its/transform/aead_get.h The AEAD ITS transform module API.
+/** @file zephyr/secure_storage/its/transform/aead.h The AEAD ITS transform module API.
  *
  * The functions declared in this header allow customization
  * of the AEAD implementation of the ITS transform module.

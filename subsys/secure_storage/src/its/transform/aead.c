@@ -3,7 +3,7 @@
  */
 #include <psa_crypto_driver_wrappers.h>
 #include <zephyr/secure_storage/its/transform.h>
-#include <zephyr/secure_storage/its/transform/aead_get.h>
+#include <zephyr/secure_storage/its/transform/aead.h>
 #include <zephyr/sys/__assert.h>
 #include <mbedtls/platform_util.h>
 
