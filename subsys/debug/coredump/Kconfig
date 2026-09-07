@@ -201,6 +201,18 @@ config DEBUG_COREDUMP_SMP_FREEZE_CPUS
 	  timeout (e.g. one that never booted, or is stuck with interrupts
 	  masked) is skipped and the dump proceeds without it.
 
+config DEBUG_COREDUMP_CRC
+	bool "Append CRC-32 integrity trailer to coredump"
+	select CRC
+	help
+	  Append a CRC-32 (IEEE 802.3) trailer block to every coredump, covering
+	  all preceding bytes of the dump. Host tooling
+	  (scripts/coredump/coredump_parser) recomputes and verifies it, so a
+	  dump corrupted or truncated in transit (logging / UDP backends, which
+	  otherwise have no integrity check) or in storage can be detected before
+	  it is handed to GDB. The trailer is backend-agnostic and adds a few
+	  bytes plus one CRC pass over the emitted data on the fatal path.
+
 config DEBUG_COREDUMP_DUMP_THREAD_PRIV_STACK
 	bool "Dump privilege stack of user threads"
 	default y
