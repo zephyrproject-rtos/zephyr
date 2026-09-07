@@ -10,4 +10,5 @@ dut: &uart1 {
 	current-speed = <115200>;
 	hw-flow-control;
 	status = "okay";
+	zephyr,pm-device-runtime-auto;
 };
