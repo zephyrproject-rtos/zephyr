@@ -11,3 +11,12 @@ config ADC_RENESAS_RA
 	select PINCTRL
 	help
 	  Enable Renesas RA ADC Driver.
+
+config ADC_RENESAS_RA_ADC_B
+	bool "Renesas RA ADC-B version"
+	default y
+	depends on DT_HAS_RENESAS_RA_ADC_B_ENABLED
+	select USE_RA_FSP_ADC_B
+	select PINCTRL
+	help
+	  Enable Renesas RA ADC Driver.
