@@ -364,6 +364,10 @@ zephyr_udc0: &usbhs {
 	dmas = <&xdmac 22 DMA_PERID_SSC_RX>, <&xdmac 23 DMA_PERID_SSC_TX>;
 };
 
+&xdmac {
+	status = "okay";
+};
+
 &can1 {
 	status = "okay";
 
