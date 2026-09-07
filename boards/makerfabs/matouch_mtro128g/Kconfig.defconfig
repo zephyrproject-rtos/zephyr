@@ -3,9 +3,6 @@
 
 if BOARD_MATOUCH_MTRO128G
 
-configdefault KERNEL_MEM_POOL
-	default y
-
 if DISPLAY
 
 if LVGL
