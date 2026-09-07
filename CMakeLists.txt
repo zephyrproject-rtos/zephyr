@@ -963,7 +963,7 @@ endif()
 add_custom_command(
   OUTPUT
   include/generated/zephyr/syscall_dispatch.c
-  include/generated/zephyr/syscall_exports_llext.c
+  ${ZEPHYR_BINARY_DIR}/syscall_exports_llext.c
   syscall_weakdefs_llext.c
   ${syscall_list_h}
   # Also, some files are written to include/generated/zephyr/syscalls/
@@ -973,7 +973,7 @@ add_custom_command(
   --json-file        ${syscalls_json}                     # Read this file
   --base-output      include/generated/zephyr/syscalls    # Write to this dir
   --syscall-dispatch include/generated/zephyr/syscall_dispatch.c # Write this file
-  --syscall-exports-llext  include/generated/zephyr/syscall_exports_llext.c
+  --syscall-exports-llext  ${ZEPHYR_BINARY_DIR}/syscall_exports_llext.c # compiled in LLEXT subsys
   --syscall-weakdefs-llext syscall_weakdefs_llext.c # compiled in CMake library 'syscall_weakdefs'
   --syscall-list     ${syscall_list_h}
   $<$<BOOL:${CONFIG_USERSPACE}>:--gen-mrsh-files>
