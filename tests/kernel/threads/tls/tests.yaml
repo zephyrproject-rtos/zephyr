@@ -2,6 +2,31 @@ common:
   integration_platforms:
     - qemu_x86
 tests:
+  kernel.threads.tls.aligned:
+    tags:
+      - kernel
+      - threads
+    filter: CONFIG_ARCH_HAS_THREAD_LOCAL_STORAGE and CONFIG_TOOLCHAIN_SUPPORTS_THREAD_LOCAL_STORAGE
+    arch_allow:
+      - arm
+      - x86
+      - riscv
+    extra_configs:
+      - CONFIG_TEST_TLS_ALIGNMENT=64
+  kernel.threads.tls.aligned.userspace:
+    tags:
+      - kernel
+      - threads
+      - userspace
+    filter: CONFIG_ARCH_HAS_THREAD_LOCAL_STORAGE and CONFIG_ARCH_HAS_USERSPACE and
+      CONFIG_TOOLCHAIN_SUPPORTS_THREAD_LOCAL_STORAGE
+    arch_allow:
+      - arm
+      - x86
+      - riscv
+    extra_configs:
+      - CONFIG_TEST_TLS_ALIGNMENT=64
+      - CONFIG_TEST_USERSPACE=y
   kernel.threads.tls:
     tags:
       - kernel

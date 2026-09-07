@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Thread-local storage tests"
+
+config TEST_TLS_ALIGNMENT
+	int "Alignment of initialized thread-local data"
+	default 1
+	range 1 64
+	help
+	  Increase the alignment to verify that runtime TLS initialization
+	  preserves the ELF layout and compiler-generated variable offsets.
+
+source "Kconfig.zephyr"

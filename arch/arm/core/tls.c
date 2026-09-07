@@ -22,6 +22,13 @@ K_APP_DMEM(z_libc_partition) uintptr_t z_arm_tls_ptr;
 
 size_t arch_tls_stack_setup(struct k_thread *new_thread, char *stack_ptr)
 {
+	char *const stack_end = stack_ptr;
+#ifndef __IAR_SYSTEMS_ICC__
+	size_t tls_align = (size_t)(uintptr_t)__tls_align;
+#else
+	size_t tls_align = 1;
+#endif
+
 	/*
 	 * TLS area for ARM has some data fields following by
 	 * thread data and bss. These fields are supposed to be
@@ -36,13 +43,17 @@ size_t arch_tls_stack_setup(struct k_thread *new_thread, char *stack_ptr)
 	 * Since we are populating things backwards,
 	 * setup the TLS data/bss area first.
 	 */
-	stack_ptr -= z_tls_data_size();
+	stack_ptr = (char *)ROUND_DOWN((uintptr_t)stack_ptr - z_tls_data_size(), tls_align);
 	z_tls_copy(stack_ptr);
 
-	size_t toolchain_tls_size = 0;
 #ifndef __IAR_SYSTEMS_ICC__
-	/* Skip two pointers due to toolchain */
-	toolchain_tls_size = sizeof(uintptr_t) * 2;
+	/*
+	 * The Arm TLS ABI reserves two pointers before the TLS image and rounds
+	 * the image offset up to its alignment. Compiler-generated TLS offsets
+	 * include that padding. In particular, an alignas(64) TLS object is at
+	 * TP + 64, not immediately after the two-word TCB.
+	 */
+	size_t toolchain_tls_size = ROUND_UP(sizeof(uintptr_t) * 2, tls_align);
 	stack_ptr -= toolchain_tls_size;
 #endif
 
@@ -56,5 +67,5 @@ size_t arch_tls_stack_setup(struct k_thread *new_thread, char *stack_ptr)
 	ARG_UNUSED(new_thread);
 #endif /* CONFIG_MULTITHREADING */
 
-	return (z_tls_data_size() + toolchain_tls_size);
+	return (size_t)(stack_end - stack_ptr);
 }

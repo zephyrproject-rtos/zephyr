@@ -292,6 +292,7 @@ extern char __tbss_align[];
 extern char __tls_start[];
 extern char __tls_end[];
 extern char __tls_size[];
+extern char __tls_align[];
 #endif /* CONFIG_THREAD_LOCAL_STORAGE */
 
 #ifdef CONFIG_LINKER_USE_BOOT_SECTION
