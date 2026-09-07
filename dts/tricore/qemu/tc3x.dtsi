@@ -1,0 +1,86 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Linumiz
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <freq.h>
+#include <skeleton.dtsi>
+
+/ {
+	model = "QEMU AURIX TC39x";
+	compatible = "infineon,qemu-tc39x";
+
+	cpus {
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		cpu0: cpu: cpu@0 {
+			compatible = "infineon,tricore", "infineon,tc162";
+			reg = <0>;
+		};
+	};
+
+	clocks {
+		fstm: fstm {
+			compatible = "fixed-clock";
+			clock-frequency = <DT_FREQ_M(50)>;
+			#clock-cells = <0>;
+		};
+	};
+
+	flashctrl: flash-controller@f8040000 {
+		reg = <0xf8040000 0x100>;
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		flash0: flash@80000000 {
+			compatible = "soc-nv-flash";
+			reg = <0x80000000 DT_SIZE_M(3)>;
+			ranges = <0x0 0x80000000 DT_SIZE_M(3)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+		};
+	};
+
+	dsram0: memory@70000000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x70000000 DT_SIZE_K(240)>;
+		zephyr,memory-region = "DSRAM0";
+	};
+
+	soc {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		interrupt-parent = <&ir>;
+		compatible = "simple-bus";
+		ranges;
+
+		asclin0: asclin@f0000600 {
+			compatible = "infineon,asclin-uart";
+			reg = <0xf0000600 256>;
+			clock-frequency = <DT_FREQ_M(100)>;
+			status = "disabled";
+		};
+
+		stm0: stm: timer@f0001000 {
+			compatible = "infineon,aurix-stm";
+			reg = <0xf0001000 256>;
+			clocks = <&fstm>;
+			interrupts = <0xc0 1>;
+			status = "disabled";
+		};
+
+		ir: interrupt_controller@f0037000 {
+			compatible = "infineon,aurix-ir";
+			reg = <0xf0037000 0x10000 0xf0038000 0x10000>;
+			#address-cells = <0>;
+			#interrupt-cells = <2>;
+			interrupt-controller;
+		};
+	};
+};
