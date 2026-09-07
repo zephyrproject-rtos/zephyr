@@ -23,6 +23,9 @@ The tests are:
 #. **Write and read back.** Write a known pattern into the erased sector and
    read it back.
 
+The first test needs the ``jedec-id`` property on the flash node. Shield
+variants that do not carry it skip that test and run the other two.
+
 Results go to the console and to the two shield LEDs, so the sample is also
 usable without a serial terminal:
 

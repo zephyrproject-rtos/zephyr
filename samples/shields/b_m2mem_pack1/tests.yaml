@@ -9,9 +9,15 @@ common:
   harness_config:
     type: multi_line
     ordered: true
+    # TEST 1 is not matched here: it is skipped when the devicetree carries no
+    # jedec-id, and it is expected to fail on MB1928-33LB, whose identification
+    # EEPROM records the wrong ID. Only the two flash tests must pass.
     regex:
-      - "Flash:"
-      - "EEPROM:"
+      - "B-M2MEM-PACK1 shield test"
+      - "EEPROM board information"
+      - "TEST 2: PASS"
+      - "TEST 3: PASS"
+      - "All tests completed"
 
 tests:
   sample.shields.b_m2mem_pack1.mb1927_18ba:
