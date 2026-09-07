@@ -203,6 +203,10 @@
 		pinctrl: pin-controller@40428000 {
 			compatible = "ti,mspm0-pinctrl";
 			reg = <0x40428000 0x400>;
+
+			gpio_none: gpio_none {
+				pinmux = <0>;
+			};
 		};
 
 		gpioa: gpio@400a0000 {
