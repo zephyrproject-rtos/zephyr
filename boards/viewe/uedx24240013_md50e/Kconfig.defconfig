@@ -3,9 +3,6 @@
 
 if BOARD_UEDX24240013_MD50E
 
-config KERNEL_MEM_POOL
-	default y
-
 if DISPLAY
 
 if LVGL
