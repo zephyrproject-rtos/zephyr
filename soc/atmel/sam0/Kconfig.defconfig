@@ -24,4 +24,25 @@ config HEAP_MEM_POOL_ADD_SIZE_SOC
 
 endif # USB_DEVICE_DRIVER
 
+# The Arduino and Adafruit UF2 bootloaders are entered by placing a magic
+# value in the last word of SRAM before a reset. Boards describe that word as
+# the zephyr,boot-mode retention area, which the CDC ACM serial backend uses
+# to reboot into the bootloader when the host opens the port at 1200 baud.
+if (BOOTLOADER_BOSSA_ARDUINO || BOOTLOADER_BOSSA_ADAFRUIT_UF2) && \
+	DT_HAS_ZEPHYR_RETENTION_ENABLED && CDC_ACM_SERIAL_INITIALIZE_AT_BOOT
+
+config RETAINED_MEM
+	default y
+
+config RETENTION
+	default y
+
+config RETENTION_BOOT_MODE
+	default y
+
+config REBOOT
+	default y
+
+endif # BOSSA bootloader boot mode
+
 endif # SOC_FAMILY_ATMEL_SAM0
