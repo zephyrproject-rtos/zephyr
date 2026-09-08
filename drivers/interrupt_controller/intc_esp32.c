@@ -943,17 +943,17 @@ void IRAM_ATTR esp_intr_noniram_enable(void)
  * be used via user API, as peripherals are all routed through INTMUX
  * and shared interrupts require managing sources state.
  */
-void arch_irq_enable(unsigned int irq)
+void IRAM_ATTR arch_irq_enable(unsigned int irq)
 {
 	esp_cpu_intr_enable(1 << irq);
 }
 
-void arch_irq_disable(unsigned int irq)
+void IRAM_ATTR arch_irq_disable(unsigned int irq)
 {
 	esp_cpu_intr_disable(1 << irq);
 }
 
-int arch_irq_is_enabled(unsigned int irq)
+int IRAM_ATTR arch_irq_is_enabled(unsigned int irq)
 {
 	/* The z_isr_install() assert queries this with the isr table index,
 	 * which on a SoC that reserves entries sits above the line the enable
