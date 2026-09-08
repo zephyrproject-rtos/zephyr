@@ -240,6 +240,22 @@ int bt_le_scan_set_enable(uint8_t enable)
 						      BT_LE_SCAN_OPT_FILTER_DUPLICATE);
 }
 
+/* Select the scanning filter policy to request from the Controller. */
+static uint8_t get_scan_filter_policy(uint8_t options)
+{
+	bool filter_accept_list = IS_ENABLED(CONFIG_BT_FILTER_ACCEPT_LIST) &&
+				  ((options & BT_LE_SCAN_OPT_FILTER_ACCEPT_LIST) != 0U);
+
+	if (IS_ENABLED(CONFIG_BT_SCAN_EXT_FILTER_POLICY) &&
+	    ((options & BT_LE_SCAN_OPT_EXT_FILTER_POLICY) != 0U)) {
+		return filter_accept_list ? BT_HCI_LE_SCAN_FP_EXT_FILTER
+					  : BT_HCI_LE_SCAN_FP_EXT_NO_FILTER;
+	}
+
+	return filter_accept_list ? BT_HCI_LE_SCAN_FP_BASIC_FILTER
+				  : BT_HCI_LE_SCAN_FP_BASIC_NO_FILTER;
+}
+
 static int start_le_scan_ext(struct bt_le_scan_param *scan_param)
 {
 	struct bt_hci_ext_scan_phy param_1m;
@@ -301,9 +317,7 @@ static int start_le_scan_ext(struct bt_le_scan_param *scan_param)
 	set_param = net_buf_add(buf, sizeof(*set_param));
 	set_param->own_addr_type = own_addr_type;
 	set_param->phys = 0;
-	set_param->filter_policy = scan_param->options & BT_LE_SCAN_OPT_FILTER_ACCEPT_LIST
-					   ? BT_HCI_LE_SCAN_FP_BASIC_FILTER
-					   : BT_HCI_LE_SCAN_FP_BASIC_NO_FILTER;
+	set_param->filter_policy = get_scan_filter_policy(scan_param->options);
 
 	if (phy_1m) {
 		set_param->phys |= BT_HCI_LE_EXT_SCAN_PHY_1M;
@@ -347,12 +361,7 @@ static int start_le_scan_legacy(struct bt_le_scan_param *param)
 	set_param.interval = sys_cpu_to_le16(param->interval);
 	set_param.window = sys_cpu_to_le16(param->window);
 
-	if (IS_ENABLED(CONFIG_BT_FILTER_ACCEPT_LIST) &&
-	    param->options & BT_LE_SCAN_OPT_FILTER_ACCEPT_LIST) {
-		set_param.filter_policy = BT_HCI_LE_SCAN_FP_BASIC_FILTER;
-	} else {
-		set_param.filter_policy = BT_HCI_LE_SCAN_FP_BASIC_NO_FILTER;
-	}
+	set_param.filter_policy = get_scan_filter_policy(param->options);
 
 	active_scan = param->type == BT_HCI_LE_SCAN_ACTIVE;
 	err = bt_id_set_scan_own_addr(active_scan, &set_param.addr_type);
@@ -1780,6 +1789,14 @@ void bt_hci_le_adv_report(struct net_buf *buf)
 
 static bool valid_le_scan_param(const struct bt_le_scan_param *param)
 {
+	uint8_t supported_options = BT_LE_SCAN_OPT_FILTER_DUPLICATE |
+				    BT_LE_SCAN_OPT_FILTER_ACCEPT_LIST | BT_LE_SCAN_OPT_CODED |
+				    BT_LE_SCAN_OPT_NO_1M;
+
+	if (IS_ENABLED(CONFIG_BT_SCAN_EXT_FILTER_POLICY)) {
+		supported_options |= BT_LE_SCAN_OPT_EXT_FILTER_POLICY;
+	}
+
 	if (IS_ENABLED(CONFIG_BT_PRIVACY) && param->type == BT_LE_SCAN_TYPE_ACTIVE &&
 	    param->timeout != 0) {
 		/* This is marked as not supported as a stopgap until the (scan,
@@ -1801,8 +1818,7 @@ static bool valid_le_scan_param(const struct bt_le_scan_param *param)
 		return false;
 	}
 
-	if (param->options & ~(BT_LE_SCAN_OPT_FILTER_DUPLICATE | BT_LE_SCAN_OPT_FILTER_ACCEPT_LIST |
-			       BT_LE_SCAN_OPT_CODED | BT_LE_SCAN_OPT_NO_1M)) {
+	if ((param->options & ~supported_options) != 0U) {
 		return false;
 	}
 
@@ -1832,6 +1848,16 @@ int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb)
 	/* Check that the parameters have valid values */
 	if (!valid_le_scan_param(param)) {
 		return -EINVAL;
+	}
+
+	/* The Controller only accepts the extended scanning filter policies if its Link Layer
+	 * supports them. Reject the request here to avoid an opaque HCI error later on.
+	 */
+	if (IS_ENABLED(CONFIG_BT_SCAN_EXT_FILTER_POLICY) &&
+	    ((param->options & BT_LE_SCAN_OPT_EXT_FILTER_POLICY) != 0U) &&
+	    !BT_FEAT_LE_EXT_SCAN(bt_dev.le.features)) {
+		LOG_WRN("Extended scanner filter policies not supported by the Controller");
+		return -ENOTSUP;
 	}
 
 	if (param->type && !bt_id_scan_random_addr_check()) {

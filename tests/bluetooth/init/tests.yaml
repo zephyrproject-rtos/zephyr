@@ -344,3 +344,10 @@ tests:
       - nrf52840dk/nrf52840
     integration_platforms:
       - nrf52840dk/nrf52840
+  bluetooth.init.test_scan_ext_fp:
+    extra_args: CONF_FILE=prj_scan_ext_fp.conf
+    platform_allow:
+      - qemu_cortex_m3
+      - nrf52840dk/nrf52840
+    integration_platforms:
+      - nrf52840dk/nrf52840
