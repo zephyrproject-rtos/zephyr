@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <espressif/esp32c3/esp32c3_fx4.dtsi>
+#include <espressif/esp32c3/esp32c3.dtsi>
 #include <espressif/partitions_0x0_default.dtsi>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
@@ -41,6 +41,11 @@
 			label = "Blue LED";
 		};
 	};
+};
+
+&flash0 {
+	reg = <0x0 DT_SIZE_M(4)>;
+	ranges = <0x0 0x0 DT_SIZE_M(4)>;
 };
 
 &uart0 {

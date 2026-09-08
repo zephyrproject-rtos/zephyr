@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <espressif/esp32c3/esp32c3_fx4.dtsi>
+#include <espressif/esp32c3/esp32c3.dtsi>
 #include "icev_wireless-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
 #include <espressif/partitions_0x0_default.dtsi>
@@ -49,6 +49,11 @@
 			zephyr,code = <INPUT_KEY_0>;
 		};
 	};
+};
+
+&flash0 {
+	reg = <0x0 DT_SIZE_M(4)>;
+	ranges = <0x0 0x0 DT_SIZE_M(4)>;
 };
 
 &uart0 {
