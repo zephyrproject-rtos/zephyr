@@ -23,7 +23,7 @@ RTIO_DEFINE_WITH_MEMPOOL(stream_ctx, 1, 1, 20, 256, sizeof(void *));
 
 static const struct device *const accel = DEVICE_DT_GET(DT_ALIAS(accel0));
 
-static void print_fifo_samples(const uint8_t *buffer)
+static bool print_fifo_samples(const uint8_t *buffer)
 {
 	const struct sensor_decoder_api *decoder;
 	struct sensor_three_axis_data accel_data;
@@ -35,25 +35,46 @@ static void print_fifo_samples(const uint8_t *buffer)
 	status = sensor_get_decoder(accel, &decoder);
 	if (status < 0) {
 		printf("Cannot get LIS2DH decoder: %d\n", status);
-		return;
+		return false;
 	}
 
 	status = decoder->get_frame_count(buffer, channel, &frame_count);
 	if (status < 0) {
 		printf("Cannot get FIFO frame count: %d\n", status);
-		return;
+		return false;
+	}
+	if (frame_count == 0U || frame_count > 32U) {
+		printf("FIFO invalid frame count: %u\n", frame_count);
+		return false;
 	}
 
 	while (fit < frame_count) {
 		status = decoder->decode(buffer, channel, &fit, 1U, &accel_data);
 		if (status < 0) {
 			printf("Cannot decode FIFO frame: %d\n", status);
-			return;
+			return false;
+		}
+		if (IS_ENABLED(CONFIG_LIS2DH_FIFO_HW_TEST)) {
+			static uint64_t last_timestamp;
+			static bool have_timestamp;
+			uint64_t timestamp = accel_data.header.base_timestamp_ns +
+				accel_data.readings[0].timestamp_delta;
+
+			if (have_timestamp && timestamp <= last_timestamp) {
+				printf("FIFO timestamp is not increasing: %llu <= %llu\n",
+				       (unsigned long long)timestamp,
+				       (unsigned long long)last_timestamp);
+				return false;
+			}
+			last_timestamp = timestamp;
+			have_timestamp = true;
 		}
 
 		printf("%" PRIu64 " ns: (%" PRIq(6) ", %" PRIq(6) ", %" PRIq(6) ") m/s^2\n",
 		       PRIsensor_three_axis_data_arg(accel_data, 0));
 	}
+
+	return true;
 }
 
 int main(void)
@@ -63,6 +84,7 @@ int main(void)
 	uint8_t *buffer = NULL;
 	uint32_t buffer_len = 0U;
 	int status;
+	unsigned int batches = 0U;
 
 	if (!device_is_ready(accel)) {
 		printf("LIS2DH device is not ready\n");
@@ -90,7 +112,15 @@ int main(void)
 			return 0;
 		}
 
-		print_fifo_samples(buffer);
+		if (!print_fifo_samples(buffer)) {
+			rtio_release_buffer(&stream_ctx, buffer, buffer_len);
+			printf("FIFO HARDWARE TEST FAIL\n");
+			return 0;
+		}
 		rtio_release_buffer(&stream_ctx, buffer, buffer_len);
+
+		if (IS_ENABLED(CONFIG_LIS2DH_FIFO_HW_TEST) && ++batches == 10U) {
+			printf("FIFO HARDWARE TEST PASS: 10 batches\n");
+		}
 	}
 }

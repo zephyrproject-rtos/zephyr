@@ -73,7 +73,7 @@ to SPI, INT1 connected to P2.00, CS on P2.05, and 3.3 V logic. Capture the
 console at 115200 baud::
 
    west build -b holyiot_25008/nrf54l15/cpuapp samples/sensor/lis2dh_fifo \
-     -- -DEXTRA_CONF_FILE=debug.conf
+     -- -DEXTRA_CONF_FILE="debug.conf hw-test.conf"
    west flash
 
 Save the complete console output and, when available, a logic-analyzer capture
@@ -89,6 +89,10 @@ of CS, SCK, MOSI, MISO, and INT1. The run passes when:
 * after at least 10 minutes of continuous motion, power cycling and restarting
   the sample produces the same ID and stream-start messages.
 
+The automated part of this procedure prints ``FIFO HARDWARE TEST PASS: 10
+batches`` after ten valid batches. A decoder, frame-count, or timestamp failure
+prints ``FIFO HARDWARE TEST FAIL`` and stops the application.
+
 For a stress run, use 400 Hz and repeat with the application workload enabled.
 Record the board revision, sensor marking, supply voltage, ODR, SPI clock, and
 any lost-sample counter in the review log. This validates the physical bus,
@@ -96,10 +100,10 @@ interrupt line, FIFO batching, decoder, and restart path; the native emulator
 tests remain the checks for rollback, cancellation, allocation exhaustion, and
 injected bus errors.
 
-Classic FIFO interface
-**********************
+Building and Running
+********************
 
-Applications that do not use RTIO can enable ``CONFIG_LIS2DH_FIFO`` and use
+Build and flash the sample for HOLYIOT-25008:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/lis2dh_fifo
