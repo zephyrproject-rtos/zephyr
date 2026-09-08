@@ -1,57 +1,20 @@
 # Copyright (c) 2024 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-config BOARD_NRF52_BSIM
-	bool
-	select SOC_SERIES_BSIM_NRF52X
-	select SOC_COMPATIBLE_NRF52833
+config BOARD_SELECTOR
 	select CLOCK_CONTROL
-	help
-	  NRF52 simulation model
-	  Will produce a console Linux process which can be executed natively.
-	  It needs the BabbleSim simulator both in compile time and to execute
-
-config BOARD_NRF5340BSIM_NRF5340_CPUNET
-	bool
-	select SOC_SERIES_BSIM_NRF53X
-	select SOC_COMPATIBLE_NRF5340_CPUNET
-	select CLOCK_CONTROL
-	help
-	  Simulated NRF53 Network core
-	  Will produce a console Linux process which can be executed natively.
-	  It needs the BabbleSim simulator both in compile time and to execute
-
-config BOARD_NRF5340BSIM_NRF5340_CPUAPP
-	bool
-	select SOC_SERIES_BSIM_NRF53X
-	select SOC_COMPATIBLE_NRF5340_CPUAPP
-	select CLOCK_CONTROL
-	help
-	  Simulated NRF53 Application core
-	  Will produce a console Linux process which can be executed natively.
-	  It needs the BabbleSim simulator both in compile time and to execute
-
-config BOARD_NRF54L15BSIM_NRF54L15_CPUAPP
-	bool
-	select SOC_SERIES_BSIM_NRF54LX
-	select SOC_COMPATIBLE_NRF54L15
-	select SOC_COMPATIBLE_NRF54L15_CPUAPP
-	select CLOCK_CONTROL
-	help
-	  Simulated NRF54L15 Application core
-	  Will produce a console Linux process which can be executed natively.
-	  It needs the BabbleSim simulator both in compile time and to execute
-
-config BOARD_NRF54LM20BSIM_NRF54LM20A_CPUAPP
-	bool
-	select SOC_SERIES_BSIM_NRF54LX
-	select SOC_COMPATIBLE_NRF54LM20A
-	select SOC_COMPATIBLE_NRF54LM20A_CPUAPP
-	select CLOCK_CONTROL
-	help
-	  Simulated NRF54LM20 Application core
-	  Will produce a console Linux process which can be executed natively.
-	  It needs the BabbleSim simulator both in compile time and to execute
+	select SOC_SERIES_BSIM_NRF52X if BOARD_NRF52_BSIM
+	select SOC_COMPATIBLE_NRF52833 if BOARD_NRF52_BSIM
+	select SOC_SERIES_BSIM_NRF53X if BOARD_NRF5340BSIM_NRF5340_CPUNET || \
+		BOARD_NRF5340BSIM_NRF5340_CPUAPP
+	select SOC_COMPATIBLE_NRF5340_CPUNET if BOARD_NRF5340BSIM_NRF5340_CPUNET
+	select SOC_COMPATIBLE_NRF5340_CPUAPP if BOARD_NRF5340BSIM_NRF5340_CPUAPP
+	select SOC_SERIES_BSIM_NRF54LX if BOARD_NRF54L15BSIM_NRF54L15_CPUAPP || \
+		BOARD_NRF54LM20BSIM_NRF54LM20A_CPUAPP
+	select SOC_COMPATIBLE_NRF54L15 if BOARD_NRF54L15BSIM_NRF54L15_CPUAPP
+	select SOC_COMPATIBLE_NRF54L15_CPUAPP if BOARD_NRF54L15BSIM_NRF54L15_CPUAPP
+	select SOC_COMPATIBLE_NRF54LM20A if BOARD_NRF54LM20BSIM_NRF54LM20A_CPUAPP
+	select SOC_COMPATIBLE_NRF54LM20A_CPUAPP if BOARD_NRF54LM20BSIM_NRF54LM20A_CPUAPP
 
 if SOC_SERIES_BSIM_NRFXX
 
