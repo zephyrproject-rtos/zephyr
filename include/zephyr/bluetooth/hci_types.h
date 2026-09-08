@@ -230,6 +230,9 @@ struct bt_hci_cmd_hdr {
 						  BT_LE_FEAT_BIT_PHY_CODED)
 #define BT_FEAT_LE_PRIVACY(feat)                  BT_LE_FEAT_TEST(feat, \
 						  BT_LE_FEAT_BIT_PRIVACY)
+/** Test if the Extended Scanner Filter Policies feature is supported */
+#define BT_FEAT_LE_EXT_SCAN(feat)                 BT_LE_FEAT_TEST(feat, \
+						  BT_LE_FEAT_BIT_EXT_SCAN)
 #define BT_FEAT_LE_EXT_ADV(feat)                  BT_LE_FEAT_TEST(feat, \
 						  BT_LE_FEAT_BIT_EXT_ADV)
 #define BT_FEAT_LE_EXT_PER_ADV(feat)              BT_LE_FEAT_TEST(feat, \
