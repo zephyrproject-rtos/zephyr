@@ -126,6 +126,7 @@ static int wdt_sam0_setup(const struct device *dev, uint8_t options)
 	}
 
 	/* Enable watchdog */
+	data->window_open = false;
 	wdt_sam0_set_enable(1);
 	wdt_sam0_wait_synchronization();
 
@@ -226,6 +227,7 @@ static int wdt_sam0_install_timeout(const struct device *dev,
 	 */
 	data->cb = cfg->callback;
 	if (data->window_mode) {
+		WDT_REGS->INTFLAG.reg = WDT_INTFLAG_EW;
 		WDT_REGS->INTENSET.reg = WDT_INTENSET_EW;
 	} else if (data->cb) {
 		WDT_REGS->INTENSET.reg = WDT_INTENSET_EW;
