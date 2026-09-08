@@ -263,3 +263,7 @@
 	width = <1024>;
 	height = <600>;
 };
+
+zephyr_uhc0: &usb_otg {
+	status = "okay";
+};
