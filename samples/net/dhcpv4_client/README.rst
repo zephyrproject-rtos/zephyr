@@ -19,6 +19,15 @@ Requirements
 Building and Running
 ********************
 
+USB Ethernet adapters
+=====================
+
+On boards with a USB host controller, the sample can also obtain an address
+through a USB CDC-ECM Ethernet adapter. The USB host stack and the CDC-ECM host
+class are enabled in the board configuration, for example for the
+:zephyr:board:`stm32mp135f_dk`, and the DHCP client starts on the USB interface
+as soon as the adapter is connected.
+
 Running DHCPv4 client in Linux Host
 ===================================
 

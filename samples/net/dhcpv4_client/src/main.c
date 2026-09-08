@@ -19,8 +19,38 @@ LOG_MODULE_REGISTER(net_dhcpv4_client_sample, LOG_LEVEL_DBG);
 #include <zephyr/net/net_core.h>
 #include <zephyr/net/net_context.h>
 #include <zephyr/net/net_mgmt.h>
+#include <zephyr/usb/usbh.h>
 
 #define DHCP_OPTION_NTP (42)
+
+#if defined(CONFIG_USB_HOST_STACK)
+/* USB Ethernet adapters connected to the USB host controller are network interfaces too */
+USBH_CONTROLLER_DEFINE(uhs_ctx, DEVICE_DT_GET(DT_NODELABEL(zephyr_uhc0)));
+
+static int usb_host_enable(void)
+{
+	int ret;
+
+	ret = usbh_init(&uhs_ctx);
+	if (ret != 0) {
+		LOG_ERR("Failed to initialize USB host (%d)", ret);
+		return ret;
+	}
+
+	ret = usbh_enable(&uhs_ctx);
+	if (ret != 0) {
+		LOG_ERR("Failed to enable USB host (%d)", ret);
+		return ret;
+	}
+
+	return 0;
+}
+#else
+static int usb_host_enable(void)
+{
+	return 0;
+}
+#endif /* CONFIG_USB_HOST_STACK */
 
 static uint8_t ntp_server[4];
 
@@ -97,6 +127,14 @@ int main(void)
 
 	net_dhcpv4_add_option_callback(&dhcp_cb);
 
+	/*
+	 * Start the DHCP client on all interfaces, including the ones without
+	 * link. The client starts as soon as the interface comes up, for example
+	 * when a USB Ethernet adapter is connected.
+	 */
 	net_if_foreach(start_dhcpv4_client, NULL);
+
+	(void)usb_host_enable();
+
 	return 0;
 }
