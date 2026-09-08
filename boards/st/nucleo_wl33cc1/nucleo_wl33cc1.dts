@@ -115,6 +115,14 @@
 	status = "okay";
 };
 
+&dma1 {
+	status = "okay";
+};
+
+&dmamux1 {
+	status = "okay";
+};
+
 &flash0 {
 	partitions {
 		#address-cells = <1>;
