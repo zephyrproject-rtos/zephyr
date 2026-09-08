@@ -400,7 +400,7 @@ static uint8_t *transfer_prepare_data(const struct device *dev,
 {
 	const struct mspi_esp32_config *config = dev->config;
 	uint8_t *buffer = NULL;
-	*dma_buf_len = ROUND_UP(dma_len, 4);
+	*dma_buf_len = ROUND_UP(dma_len, config->dma_buf_size_alignment);
 
 	*ret = 0;
 
@@ -434,10 +434,11 @@ static uint8_t *transfer_prepare_data(const struct device *dev,
 	} else { /* MSPI_RX */
 		uint8_t *dst = packet->data_buf;
 		bool need_bounce = config->dma_enabled || !esp_ptr_dma_capable((uint32_t *)dst) ||
-				   ((uintptr_t)dst % 4 != 0) || (dma_len % 4 != 0);
+				   ((uintptr_t)dst % 4 != 0) ||
+				   (dma_len % config->dma_buf_size_alignment != 0);
 
 		if (need_bounce) {
-			*dma_buf_len = ((dma_len << 3) + 31) / 8;
+			*dma_buf_len = ROUND_UP(dma_len, config->dma_buf_size_alignment);
 			buffer = k_calloc(*dma_buf_len, sizeof(uint8_t));
 			if (!buffer) {
 				*ret = -ENOMEM;
@@ -696,7 +697,12 @@ static int IRAM_ATTR transfer(const struct device *dev, const struct mspi_xfer *
 	if (config->dma_enabled) {
 #ifdef SOC_GDMA_SUPPORTED
 		res = transfer_start_gdma(dev, hal, &tc, dma_buf_len);
+#else
+		res = transfer_start_intdma(dev, hal, hal_dev, &tc, dma_buf_len);
 #endif
+		if (res != 0) {
+			goto cleanup;
+		}
 	}
 
 	spi_hal_setup_trans(hal, hal_dev, &tc);
@@ -1202,12 +1208,19 @@ static DEVICE_API(mspi, mspi_esp32_api) = {
 };
 
 #ifdef SOC_GDMA_SUPPORTED
+#define MSPI_DMA_BUF_SIZE_ALIGNMENT(inst)                                                          \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, dmas),                                             \
+		    (DT_PROP_OR(DT_INST_DMAS_CTLR_BY_NAME(inst, tx), dma_buf_size_alignment, 4)),  \
+		    (4))
 #define MSPI_DMA_CFG(inst)                                                                         \
 	.dma_dev = ESP32_DT_INST_DMA_CTLR(inst, tx),                                               \
 	.dma_tx_ch = ESP32_DT_INST_DMA_CELL(inst, tx, channel),                                    \
-	.dma_rx_ch = ESP32_DT_INST_DMA_CELL(inst, rx, channel),
+	.dma_rx_ch = ESP32_DT_INST_DMA_CELL(inst, rx, channel),                                    \
+	.dma_buf_size_alignment = MSPI_DMA_BUF_SIZE_ALIGNMENT(inst),
 #else
-#define MSPI_DMA_CFG(inst) .dma_clk_src = DT_INST_PROP(inst, dma_clk),
+#define MSPI_DMA_CFG(inst)                                                                         \
+	.dma_clk_src = DT_INST_PROP(inst, dma_clk),                                                \
+	.dma_buf_size_alignment = 4,
 #endif
 
 #define MSPI_CONTROLLER_CONFIG(inst)                                                               \

@@ -38,6 +38,7 @@ struct mspi_esp32_config {
 #else
 	int dma_clk_src;
 #endif
+	uint32_t dma_buf_size_alignment;
 	bool line_idle_low;
 	bool use_iomux;
 	uint32_t duty_cycle;

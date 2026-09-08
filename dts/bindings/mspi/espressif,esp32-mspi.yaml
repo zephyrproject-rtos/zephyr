@@ -40,7 +40,6 @@ properties:
 
   dma-host:
     type: int
-    required: true
     description: |
       DMA host / peripheral slot index (0-based):
         0 → SPI2, 1 → SPI3.
