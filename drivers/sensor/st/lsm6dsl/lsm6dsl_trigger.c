@@ -41,12 +41,33 @@ static inline void handle_irq(const struct device *dev)
 #endif
 }
 
+static int lsm6dsl_int1_route_for_chan(enum sensor_channel chan, uint8_t *route)
+{
+	switch (chan) {
+	case SENSOR_CHAN_ACCEL_XYZ:
+		*route = LSM6DSL_MASK_INT1_CTRL_DRDY_XL;
+		break;
+	case SENSOR_CHAN_GYRO_XYZ:
+		*route = LSM6DSL_MASK_INT1_CTRL_DRDY_G;
+		break;
+	case SENSOR_CHAN_ALL:
+		*route = LSM6DSL_MASK_INT1_CTRL_DRDY_XL |
+			 LSM6DSL_MASK_INT1_CTRL_DRDY_G;
+		break;
+	default:
+		return -ENOTSUP;
+	}
+
+	return 0;
+}
+
 int lsm6dsl_trigger_set(const struct device *dev,
 			const struct sensor_trigger *trig,
 			sensor_trigger_handler_t handler)
 {
 	const struct lsm6dsl_config *config = dev->config;
 	struct lsm6dsl_data *drv_data = dev->data;
+	uint8_t route;
 
 	__ASSERT_NO_MSG(trig->type == SENSOR_TRIG_DATA_READY);
 
@@ -56,13 +77,29 @@ int lsm6dsl_trigger_set(const struct device *dev,
 		return -ENOTSUP;
 	}
 
+	if (lsm6dsl_int1_route_for_chan(trig->chan, &route) < 0) {
+		LOG_ERR("Channel %d cannot be routed to INT1.", trig->chan);
+		return -ENOTSUP;
+	}
+
 	setup_irq(dev, false);
 
-	drv_data->data_ready_handler = handler;
+	drv_data->data_ready_handler = NULL;
+
+	if (drv_data->hw_tf->update_reg(dev,
+				LSM6DSL_REG_INT1_CTRL,
+				LSM6DSL_MASK_INT1_CTRL_DRDY_XL |
+				LSM6DSL_MASK_INT1_CTRL_DRDY_G,
+				handler != NULL ? route : 0) < 0) {
+		LOG_ERR("Could not configure the data-ready interrupt.");
+		return -EIO;
+	}
+
 	if (handler == NULL) {
 		return 0;
 	}
 
+	drv_data->data_ready_handler = handler;
 	drv_data->data_ready_trigger = trig;
 
 	setup_irq(dev, true);
@@ -147,17 +184,6 @@ int lsm6dsl_init_interrupt(const struct device *dev)
 		return -EIO;
 	}
 
-	/* enable data-ready interrupt */
-	if (drv_data->hw_tf->update_reg(dev,
-			       LSM6DSL_REG_INT1_CTRL,
-			       LSM6DSL_MASK_INT1_CTRL_DRDY_XL |
-			       LSM6DSL_MASK_INT1_CTRL_DRDY_G,
-			       BIT(LSM6DSL_SHIFT_INT1_CTRL_DRDY_XL) |
-			       BIT(LSM6DSL_SHIFT_INT1_CTRL_DRDY_G)) < 0) {
-		LOG_ERR("Could not enable data-ready interrupt.");
-		return -EIO;
-	}
-
 	drv_data->dev = dev;
 
 #if defined(CONFIG_LSM6DSL_TRIGGER_OWN_THREAD)
@@ -171,8 +197,6 @@ int lsm6dsl_init_interrupt(const struct device *dev)
 #elif defined(CONFIG_LSM6DSL_TRIGGER_GLOBAL_THREAD)
 	drv_data->work.handler = lsm6dsl_work_cb;
 #endif
-
-	setup_irq(dev, true);
 
 	return 0;
 }
