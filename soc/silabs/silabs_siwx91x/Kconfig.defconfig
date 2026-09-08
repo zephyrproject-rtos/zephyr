@@ -14,6 +14,17 @@ configdefault SYS_CLOCK_HW_CYCLES_PER_SEC
 	default $(dt_node_int_prop_int,/cpus/cpu@0,clock-frequency) if CORTEX_M_SYSTICK
 	default 32768
 
+# Only used when CORTEX_M_SYSTICK is used.
+# Declare it even when sleeptimer is used to avoid 'ifdef' in the code.
+# Calling the update function when sleeptimer is used will break the sleeptimer and it can'than
+# be needed since the clock is fixed (SYSRTC clock) (not depending on CPU).
+# TODO: Integrate a native SYSRTC system timer driver that did not relly on sleeptimer and
+#	integrate z_sys_clock_hw_cycles_per_sec_update() to update the value when ref_clock
+#	for the SYSRTC is changed.
+#   OR: Add SYSRTC as companion LPM Timer and completely removed Sleeptimer dependency.
+configdefault SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE
+	default y
+
 # WiseConnect create threads with realtime priority. Default (10kHz) clock tick
 # prevent proper use of the system with these threads.
 configdefault SYS_CLOCK_TICKS_PER_SEC
