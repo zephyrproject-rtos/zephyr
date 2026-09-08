@@ -548,6 +548,7 @@ New APIs and options
       :c:member:`bt_conn_auth_info_cb.addr_res_support_read`
     * :c:enumerator:`BT_LE_SCAN_OPT_EXT_FILTER_POLICY`
     * :kconfig:option:`CONFIG_BT_SCAN_EXT_FILTER_POLICY`
+    * :c:member:`bt_le_scan_recv_info.direct_addr`
 
   * Mesh
 
