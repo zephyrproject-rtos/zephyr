@@ -47,6 +47,13 @@ Arm and disarm it from a supervisor thread with interrupts enabled:
            ret = k_watchpoint_remove(&wp);
    }
 
+These APIs do not provide a userspace syscall interface. Calls to
+:c:func:`k_watchpoint_add` and :c:func:`k_watchpoint_remove` from user mode
+return ``-EPERM`` before accessing the descriptor. The state query
+:c:func:`k_watchpoint_is_active` returns false from user mode. A watchpoint
+installed by supervisor code can still observe user-mode memory accesses
+when the backend supports them.
+
 A successful add has installed the watchpoint on every online CPU. A successful
 remove has removed it from every online CPU and waited for callbacks already in
 progress. Calling remove on a disarmed descriptor is supported.
@@ -121,7 +128,7 @@ Hardware debug resources are limited and architecture-specific:
 
 See the :zephyr:code-sample:`watchpoint` sample for a complete minimal
 application. The implementation design and architecture details are documented
-in :zephyr_file:`subsys/debug/debugpoint/README.md`.
+in :ref:`debugpoint_design`.
 
 API reference
 *************
