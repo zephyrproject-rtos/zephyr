@@ -1559,6 +1559,7 @@ Documentation Infrastructure:
     - kv2019i
     - TomasBarakNXP
     - Peterson-Brett
+    - rgallaispou
   files:
     - drivers/audio/
     - include/zephyr/audio/
