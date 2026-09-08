@@ -9,3 +9,19 @@ tests:
       - subsys
     platform_allow:
       - native_sim
+  drivers.sensor.akm09918c.on_i3c:
+    # Same source under a zephyr,i3c-emul bus via the legacy-I2C-on-I3C
+    # bridge. Proves an in-tree i2c sensor emul (akm09918c) works
+    # unmodified when reparented under an i3c controller.
+    tags:
+      - drivers
+      - sensor
+      - subsys
+      - i3c_emul
+    platform_allow:
+      - native_sim
+    extra_dtc_overlay_files:
+      - boards/native_sim_on_i3c.overlay
+    extra_configs:
+      - CONFIG_I3C=y
+      - CONFIG_I3C_EMUL=y

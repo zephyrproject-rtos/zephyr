@@ -1,0 +1,12 @@
+# Copyright (c) 2026 Meta Platforms
+# SPDX-License-Identifier: Apache-2.0
+
+description: Zephyr I3C Emulation controller
+
+compatible: "zephyr,i3c-emul"
+
+include: i3c-controller.yaml
+
+properties:
+  reg:
+    required: true

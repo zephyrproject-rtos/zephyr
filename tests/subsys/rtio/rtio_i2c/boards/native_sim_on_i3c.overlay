@@ -1,0 +1,18 @@
+/* Copyright (c) 2026 Meta Platforms
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Runs the blocking_emul target on the native_sim board's zephyr,i3c-emul bus
+ * via the legacy-I2C-on-I3C bridge (reg = <addr 0 lvr>), so the I2C-RTIO
+ * fallback path is driven through the i3c controller's i2c_api.iodev_submit.
+ */
+
+&i2c0 {
+	status = "disabled";
+};
+
+&i3c0 {
+	blocking_emul: blocking-emul@520000000000000000 {
+		compatible = "zephyr,blocking-emul";
+		reg = <0x52 0 0>;
+	};
+};

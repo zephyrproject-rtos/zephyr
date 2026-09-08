@@ -1,0 +1,87 @@
+/*
+ * Copyright (c) 2026 Meta Platforms
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i3c0 {
+	/*
+	 * Self-DA for the bus controller's target-mode endpoint.
+	 * Intentionally equal to target_a's DA (which DAA assigns to
+	 * 0x55 from its static_addr). The target-mode handoff tests
+	 * use this aliasing: i3c_target_register() takes precedence
+	 * over the peripheral, so GETACCCR addressed to peripheral A
+	 * (via i3c_device_controller_handoff(desc_a, ...)) routes to
+	 * the registered target_cfg in the test instead.
+	 */
+	primary-controller-da = <0x55>;
+
+	test_target_a: target_a@550000123412345678 {
+		compatible = "zephyr,i3c-emul-test-target";
+		reg = <0x55 0x1234 0x12345678>;
+		bcr = <0x00>;
+		dcr = <0x6c>;
+	};
+
+	test_target_b: target_b@5678abcdef01 {
+		compatible = "zephyr,i3c-emul-test-target";
+		reg = <0x00 0x5678 0xabcdef01>;
+		assigned-address = <0x42>;
+		bcr = <0x00>;
+		dcr = <0x6c>;
+	};
+
+	/*
+	 * SETAASA-capable target. Has a static_addr and the
+	 * supports-setaasa flag, so i3c_bus_init issues SETAASA
+	 * (instead of SETDASA) and the peripheral self-assigns
+	 * static_addr -> dynamic_addr in response.
+	 */
+	test_target_c: target_c@660000111222334455 {
+		compatible = "zephyr,i3c-emul-test-target";
+		reg = <0x66 0x1112 0x22334455>;
+		supports-setaasa;
+		bcr = <0x00>;
+		dcr = <0x6c>;
+	};
+
+	/*
+	 * HDR-DDR-capable target. BCR bit 5 (Advanced Capabilities)
+	 * is set so the controller knows GETCAPS / HDR are supported.
+	 * supports-hdr-ddr makes the peripheral advertise the bit in
+	 * its GETCAPS Format 1 response and accept HDR-DDR private
+	 * xfers (after the controller broadcasts ENTHDR0).
+	 */
+	test_target_d: target_d@7700009999aabbccdd {
+		compatible = "zephyr,i3c-emul-test-target";
+		reg = <0x77 0x9999 0xaabbccdd>;
+		supports-hdr-ddr;
+		bcr = <0x20>;
+		dcr = <0x6c>;
+	};
+
+	/*
+	 * Advanced-capabilities target that does NOT support HDR-DDR.
+	 * BCR bit 5 is set (so a controller knows GETCAPS is meaningful),
+	 * but the GETCAPS response carries no HDR-mode bits. Used to
+	 * verify the bus emulator gates HDR-DDR on the cached GETCAPS
+	 * bit and not just BCR.
+	 */
+	test_target_e: target_e@440000111122334456 {
+		compatible = "zephyr,i3c-emul-test-target";
+		reg = <0x44 0x1111 0x22334456>;
+		bcr = <0x20>;
+		dcr = <0x6c>;
+	};
+
+	/*
+	 * Legacy-I2C-on-I3C peripheral. reg = <addr 0 lvr> per the
+	 * i3c subsystem's i2c-device convention; the bus emulator
+	 * routes its i2c_api.transfer to this node's standard
+	 * struct i2c_emul, same as an i2c sensor emul would under
+	 * a zephyr,i2c-emul-controller parent.
+	 */
+	test_i2c_target: i2c-target@2a0000000000000000 {
+		compatible = "zephyr,i2c-on-i3c-emul-test-target";
+		reg = <0x2a 0x00 0x00>;
+	};
+};
