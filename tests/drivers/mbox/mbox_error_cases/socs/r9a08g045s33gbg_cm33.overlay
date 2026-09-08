@@ -1,5 +1,6 @@
 /*
- * Copyright (c) 2025 Renesas Electronics Corporation
+ * Copyright (c) 2024 Epam Systems
+ * Copyright (c) 2024-2025 Renesas Electronics Corporation
  * SPDX-License-Identifier: Apache-2.0
  */
 
@@ -15,7 +16,7 @@
 
 		openamp_shm: memory-region@62f00000 {
 			compatible = "zephyr,memory-region";
-			reg = <0x62f00000 0x900000>;
+			reg = <0x62f00000 0x600000>;
 			zephyr,memory-region = "openamp_memory";
 			zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_IO)>;
 		};
@@ -42,9 +43,10 @@
 	};
 
 	mbox-consumer {
-		compatible = "vnd,mbox-consumer";
-		mboxes = <&mbox1 1>, <&mbox1 4>, <&mbox3 0>, <&mbox3 3>;
-		mbox-names = "remote_valid", "remote_incorrect", "local_valid", "local_incorrect";
+		compatible = "zephyr,mbox-consumer";
+		mboxes = <&mbox1 1>, <&mbox3 0>;
+		mbox-names = "tx0", "rx0";
+		mtu = <4>;
 	};
 };
 
