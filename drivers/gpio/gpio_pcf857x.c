@@ -323,7 +323,8 @@ static int pcf857x_pin_interrupt_configure(const struct device *dev, gpio_pin_t 
 {
 	const struct pcf857x_drv_cfg *drv_cfg = dev->config;
 
-	if (!drv_cfg->gpio_int.port) {
+	/* Disabling interrupts is always allowed, even without an INT line. */
+	if (mode != GPIO_INT_MODE_DISABLED && !drv_cfg->gpio_int.port) {
 		return -ENOTSUP;
 	}
 
