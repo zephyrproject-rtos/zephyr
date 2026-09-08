@@ -15,8 +15,6 @@ include: mipi-dsi-device.yaml
 
 properties:
   data-lanes:
-    type: array
-    required: true
     enum:
       - 2
       - 3
