@@ -60,7 +60,10 @@
 
 #define NCT_DEBUG_PRINTS 0
 
-/* For pthread_setname_np() */
+/* For GNU/Darwin pthread extensions used below */
+#ifdef __APPLE__
+#define _DARWIN_C_SOURCE
+#endif
 #undef _GNU_SOURCE
 #define _GNU_SOURCE
 #include <stdbool.h>
@@ -430,8 +433,17 @@ void nct_get_thread_stack(void *this_arg, int thread_idx, void **stack_addr,
 {
 	struct nct_status_t *this = (struct nct_status_t *)this_arg;
 	struct threads_table_el *tt_el = ttable_get_element(this, thread_idx);
-	pthread_attr_t attr;
 	size_t stack_size_local;
+
+#ifdef __APPLE__
+	void *stack_top;
+
+	stack_top = pthread_get_stackaddr_np(tt_el->thread);
+	stack_size_local = pthread_get_stacksize_np(tt_el->thread);
+	*stack_addr = (void *)((uintptr_t)stack_top - stack_size_local);
+	*stack_size = stack_size_local;
+#else
+	pthread_attr_t attr;
 
 	NSI_SAFE_CALL(pthread_getattr_np(tt_el->thread, &attr));
 
@@ -440,6 +452,7 @@ void nct_get_thread_stack(void *this_arg, int thread_idx, void **stack_addr,
 	*stack_size = stack_size_local;
 
 	NSI_SAFE_CALL(pthread_attr_destroy(&attr));
+#endif
 }
 
 /**
@@ -592,7 +605,15 @@ int nct_thread_name_set(void *this_arg, int thread_idx, const char *str)
 	struct nct_status_t *this = (struct nct_status_t *)this_arg;
 	struct threads_table_el *tt_el = ttable_get_element(this, thread_idx);
 
+#ifdef __APPLE__
+	if (pthread_equal(tt_el->thread, pthread_self()) == 0) {
+		return 0;
+	}
+
+	return pthread_setname_np(str);
+#else
 	return pthread_setname_np(tt_el->thread, str);
+#endif
 }
 
 /*

@@ -100,8 +100,14 @@
 
 #define ALIAS_OF(of) __attribute__((alias(#of)))
 
+#if defined(__APPLE__)
+#define FUNC_ALIAS(real_func, new_alias, return_type) \
+	return_type new_alias(); \
+	__asm__(".globl _" #new_alias "\n_" #new_alias " = _" #real_func)
+#else
 #define FUNC_ALIAS(real_func, new_alias, return_type) \
 	return_type new_alias() ALIAS_OF(real_func)
+#endif
 
 #if TOOLCHAIN_GCC_VERSION < 40500
 #define __builtin_unreachable() __builtin_trap()
