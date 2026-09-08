@@ -479,6 +479,36 @@ static bool target_i2c_fifo_read_to_buf(const struct device *dev, uint32_t count
 	return true;
 }
 
+static bool target_i2c_fifo_write_from_buf(const struct device *dev)
+{
+	const struct i2c_it51xxx_config *config = dev->config;
+	struct i2c_it51xxx_data *data = dev->data;
+
+	if (data->r_index + SMB_TARGET_IT51XXX_MAX_FIFO_SIZE > sizeof(data->target_out_buffer)) {
+		LOG_ERR("I2CS ch%d: read OOB (r_index=%d + count=%d > buf_size=%d), aborting",
+			config->port, data->r_index, SMB_TARGET_IT51XXX_MAX_FIFO_SIZE,
+			sizeof(data->target_out_buffer));
+		target_i2c_reset_fifo(dev);
+
+		return false;
+	}
+
+	for (int i = 0; i < SMB_TARGET_IT51XXX_MAX_FIFO_SIZE; i++) {
+		/* Host receiving, target transmitting */
+#ifdef CONFIG_SOC_IT51526AW
+		sys_write8(data->target_out_buffer[i + data->r_index],
+			   config->i2cbase_mapping + SMB_SLDA(config->port));
+#else
+		sys_write8(data->target_out_buffer[i + data->r_index],
+			   config->target_base + SMB_SLDn);
+#endif
+	}
+	/* Index to next 16 bytes of read buffer */
+	data->r_index += SMB_TARGET_IT51XXX_MAX_FIFO_SIZE;
+
+	return true;
+}
+
 static void target_i2c_isr_fifo(const struct device *dev)
 {
 	const struct i2c_it51xxx_config *config = dev->config;
@@ -535,18 +565,7 @@ static void target_i2c_isr_fifo(const struct device *dev)
 				}
 			}
 
-			for (int i = 0; i < SMB_TARGET_IT51XXX_MAX_FIFO_SIZE; i++) {
-				/* Host receiving, target transmitting */
-#ifdef CONFIG_SOC_IT51526AW
-				sys_write8(data->target_out_buffer[i + data->r_index],
-					   config->i2cbase_mapping + SMB_SLDA(config->port));
-#else
-				sys_write8(data->target_out_buffer[i + data->r_index],
-					   config->target_base + SMB_SLDn);
-#endif
-			}
-			/* Index to next 16 bytes of read buffer */
-			data->r_index += SMB_TARGET_IT51XXX_MAX_FIFO_SIZE;
+			target_i2c_fifo_write_from_buf(dev);
 		} else {
 			target_i2c_fifo_read_to_buf(dev, count);
 		}
