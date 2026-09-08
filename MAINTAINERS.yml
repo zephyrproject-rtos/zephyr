@@ -472,6 +472,8 @@ Arduino Platforms:
     - boards/shields/arduino_*/
     - drivers/*/*modulino*
     - dts/vendor/arduino/
+  labels:
+    - "platform: Arduino"
 
 Authentication:
   status: maintained
