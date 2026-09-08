@@ -55,9 +55,6 @@ qspiFlash: SPI.ISSI_IS25WP @ qspi
 flashMem: Memory.MappedMemory @ sysbus 0x90000000
     size: 0x8000000
 
-dwt: Miscellaneous.DWT @ sysbus 0xE0001000
-    frequency: 72000000
-
 phy: Network.EthernetPhysicalLayer @ ethernet 0
     BasicControl: 0x3100
     BasicStatus: 0x782D
