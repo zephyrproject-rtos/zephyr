@@ -5,6 +5,10 @@ compatible: "ti,cc35xx-uart"
 include: [uart-controller.yaml, pinctrl-device.yaml]
 
 properties:
+  loopback:
+    type: boolean
+    description: Connect TX to RX internally for self-test without external wiring.
+
   reg:
     required: true
 
