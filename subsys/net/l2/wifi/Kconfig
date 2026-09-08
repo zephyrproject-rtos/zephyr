@@ -28,6 +28,21 @@ config WIFI_MGMT_RAW_SCAN_RESULTS_ONLY
 
 endif # WIFI_MGMT_RAW_SCAN_RESULTS
 
+config WIFI_MGMT_PMKSA_IMPORT
+	bool "Import external PMKSA cache entries"
+	help
+	  Allow applications to supply previously retained PMKSA cache entries
+	  as part of a station connection request. The application is responsible
+	  for profile binding, offline ageing, and wiping temporary copies.
+
+config WIFI_MGMT_PMKSA_EXPORT
+	bool "Export PMKSA cache entries"
+	help
+	  Allow applications to read raw PMKSA key material from the Wi-Fi
+	  backend. Exported PMKs are credential-equivalent secrets. Applications
+	  must use protected storage, avoid logging them, and promptly wipe
+	  temporary copies.
+
 config WIFI_MGMT_TWT_CHECK_IP
 	bool "Check IP Assignment for TWT"
 	default y
