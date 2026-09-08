@@ -39,6 +39,7 @@
 #define RV_TVAL      stval
 #define STATUS_IE    SSTATUS_SIE
 #define STATUS_PP    SSTATUS_SPP
+#define STATUS_PIE   SSTATUS_SPIE
 #define TRAP_RET     sret
 /*
  * In S-mode, ecall (cause=9) is kept in M-mode for SBI.  ARCH_EXCEPT in
@@ -55,6 +56,7 @@
 #define RV_TVAL      mtval
 #define STATUS_IE    MSTATUS_IEN
 #define STATUS_PP    MSTATUS_MPP
+#define STATUS_PIE   MSTATUS_MPIE
 #define TRAP_RET     mret
 #define EXC_SYSCALL  RISCV_EXC_ECALLM
 #endif
@@ -642,6 +644,27 @@ is_user_syscall:
 #endif
 	/* It is safe to re-enable IRQs now. */
 	csrs RV_STATUS, STATUS_IE
+
+#ifdef CONFIG_RISCV_SOC_SYSCALL_CLOSE_ECALL
+	/*
+	 * Leave the ecall exception before running the syscall body. On some
+	 * SoCs a fault raised by the body itself, such as the stack guard
+	 * catching a call chain that runs too deep, cannot be delivered while
+	 * this exception is open and locks the core up instead.
+	 *
+	 * Return to the next instruction with the previous privilege set to
+	 * machine mode, so the body continues on this stack with these
+	 * privileges but outside the exception. The exception program counter
+	 * and status register are already saved in the frame and the exit path
+	 * reloads both, so borrowing them here is safe.
+	 */
+	la t0, close_ecall_done
+	csrw RV_EPC, t0
+	li t0, STATUS_PP | STATUS_PIE
+	csrs RV_STATUS, t0
+	TRAP_RET
+close_ecall_done:
+#endif /* CONFIG_RISCV_SOC_SYSCALL_CLOSE_ECALL */
 
 	/*
 	 * Same as for is_kernel_syscall: increment saved RV_EPC by 4 to

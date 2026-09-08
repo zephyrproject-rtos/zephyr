@@ -242,6 +242,32 @@ config RISCV_SOC_HAS_SYSCALL_INTMASK
 	  body that bounds a busy wait with tick-derived uptime never times
 	  out when the kernel is not tickless.
 
+config RISCV_SOC_SYSCALL_CLOSE_ECALL
+	bool
+	depends on USERSPACE
+	help
+	  Hidden option for SoCs that cannot deliver a fault raised by the
+	  syscall body itself while the ECALL exception of a user-mode syscall
+	  is still being handled. The stack guard below the privileged stack
+	  catches a syscall whose call chain runs too deep, but on such a SoC
+	  that access fault is reported asynchronously inside the open ECALL
+	  and locks the core up, resetting the chip with nothing delivered to
+	  software. Masking interrupts does not help: the fault comes from the
+	  body, not from an interrupt controller.
+
+	  Enable this hidden option to leave the exception before the syscall
+	  body runs. The IRQ wrapper returns to the following instruction with
+	  a trap return that stays in machine mode, so the body runs on the
+	  same privileged stack with the same privileges, but outside the
+	  exception. A fault taken in the body is then an ordinary top-level
+	  trap the SoC delivers normally, and a syscall that overflows the
+	  privileged stack is reported as a stack overflow and kills only the
+	  offending thread.
+
+	  The exception exit path reloads the exception program counter and
+	  status register from the saved frame, so borrowing them here does
+	  not disturb the return to user mode.
+
 config RISCV_SOC_HAS_GP_RELATIVE_ADDRESSING
 	bool
 	help
