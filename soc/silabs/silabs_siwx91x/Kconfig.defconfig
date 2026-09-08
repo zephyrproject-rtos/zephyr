@@ -16,9 +16,9 @@ configdefault SYS_CLOCK_HW_CYCLES_PER_SEC
 
 # Only used when CORTEX_M_SYSTICK is used.
 # Declare it even when sleeptimer is used to avoid 'ifdef' in the code.
-# Calling the update function when sleeptimer is used will break the sleeptimer and it can'than
-# be needed since the clock is fixed (SYSRTC clock) (not depending on CPU).
-# TODO: Integrate a native SYSRTC system timer driver that did not relly on sleeptimer and
+# Calling the update function when sleeptimer is used will break the sleeptimer and it's
+# not needed since the clock is fixed (SYSRTC clock) (not depending on CPU).
+# TODO: Integrate a native SYSRTC system timer driver that did not rely on sleeptimer and
 #	integrate z_sys_clock_hw_cycles_per_sec_update() to update the value when ref_clock
 #	for the SYSRTC is changed.
 #   OR: Add SYSRTC as companion LPM Timer and completely removed Sleeptimer dependency.
