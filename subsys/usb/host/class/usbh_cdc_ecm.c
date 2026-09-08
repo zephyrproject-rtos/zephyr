@@ -1000,8 +1000,13 @@ static int interrupt_in_req_cb(struct usb_device *const udev, struct uhc_transfe
 		goto done;
 	}
 
+	LOG_DBG("Interrupt IN transfer completed, %u bytes, err %d", buf->len, xfer->err);
+
 	if (xfer->err == 0 && buf->len >= sizeof(struct usb_setup_packet)) {
+		LOG_HEXDUMP_DBG(buf->data, buf->len, "Notification");
 		parse_notifications(host_data, buf);
+	} else if (xfer->err != 0) {
+		LOG_WRN("Interrupt IN transfer failed: %d", xfer->err);
 	}
 
 	net_buf_reset(buf);
@@ -1360,6 +1365,13 @@ static int enable_function(struct cdc_ecm_host_data *const host_data)
 		goto error;
 	}
 
+	/*
+	 * Devices are not required to report the initial link state, many only
+	 * send a NetworkConnection notification when the link changes. Assume
+	 * the link is up, the notifications update the carrier afterwards.
+	 */
+	net_eth_carrier_on(host_data->iface);
+
 	return 0;
 
 error:
@@ -1387,6 +1399,9 @@ static void disable_function(struct cdc_ecm_host_data *const host_data)
 				  false);
 
 	atomic_clear_bit(&host_data->flags, CDC_ECM_DEVICE_FLAG_FORWARDING);
+
+	/* Last, the interface stop handler is called again when the carrier goes off */
+	net_eth_carrier_off(host_data->iface);
 }
 
 static int usbh_cdc_ecm_init(struct usbh_class_data *const c_data)
