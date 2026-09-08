@@ -12,6 +12,7 @@ config MCHP_PIT_G1_TIMER
 	depends on DT_HAS_MICROCHIP_PIT_G1_TIMER_ENABLED && \
 		$(dt_chosen_enabled,$(DT_CHOSEN_ZEPHYR_SYSTEM_TIMER)) && \
 		$(dt_node_has_compat,$(DT_CHOSEN_ZEPHYR_SYSTEM_TIMER_PATH),$(DT_COMPAT_MICROCHIP_PIT_G1_TIMER))
+	select TICKLESS_CAPABLE
 	help
 	  This module implements a kernel device driver for the Microchip
 	  SAMA5D2 series PIT timer and provides the standard "system clock

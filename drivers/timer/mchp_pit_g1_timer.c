@@ -15,10 +15,6 @@
 #include <zephyr/spinlock.h>
 #include <zephyr/sys/clock.h>
 
-#if defined(CONFIG_TICKLESS_KERNEL)
-BUILD_ASSERT(0, "PIT driver for tickless kernel support DOES NOT implemented yet!");
-#endif
-
 BUILD_ASSERT(DT_HAS_CHOSEN(zephyr_system_timer),
 	     "zephyr,system-timer must be set to a microchip,pit-g1-timer node");
 BUILD_ASSERT(DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_system_timer), microchip_pit_g1_timer),
@@ -31,15 +27,13 @@ BUILD_ASSERT(DT_NODE_HAS_COMPAT(DT_CHOSEN(zephyr_system_timer), microchip_pit_g1
 
 #define CYCLES_PER_TICK		(sys_clock_hw_cycles_per_sec() / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 
-#define MAX_PERIOD_CYCLES	((PIT_PIVR_CPIV_Msk >> PIT_PIVR_CPIV_Pos) + 1)
-#define MAX_TICKS		((k_ticks_t)(MAX_PERIOD_CYCLES / CYCLES_PER_TICK))
+/* PIV is 20 bits; the maximum period is all ones (counter counts up 0..PIV). */
+#define PIT_MAX_PIV (PIT_PIVR_CPIV_Msk >> PIT_PIVR_CPIV_Pos)
 
 BUILD_ASSERT(CYCLES_PER_TICK > 0, "PIT CYCLES_PER_TICK must be greater than 0");
 
-BUILD_ASSERT(CYCLES_PER_TICK <= MAX_PERIOD_CYCLES,
+BUILD_ASSERT(CYCLES_PER_TICK <= PIT_MAX_PIV + 1,
 	     "system tick period exceeds the maximum Periodic Interval Value");
-
-BUILD_ASSERT(MAX_TICKS > 0, "system tick MAX_TICKS must be greater than 0");
 
 /* Device constant configuration parameters */
 struct mchp_pit_timer_config {
@@ -49,7 +43,11 @@ struct mchp_pit_timer_config {
 
 struct mchp_pit_timer_data {
 	DEVICE_MMIO_NAMED_RAM(reg_base);
+	/* Cycle count at CPIV == 0 of the period CPIV is currently in. */
 	uint32_t accumulated_cycles;
+	/* PIV that every not-yet-folded period ran under, which is not the
+	 * register's value across an arm that has not been confirmed yet.
+	 */
 	uint32_t piv;
 };
 
@@ -57,6 +55,7 @@ struct mchp_pit_timer_data {
 #define DEV_DATA(_dev) ((struct mchp_pit_timer_data *)(_dev)->data)
 
 static const struct device *systick_timer_dev;
+static bool mchp_pit_mmio_mapped;
 
 #if defined(CONFIG_TEST)
 const int32_t z_sys_timer_irq_for_test = TIMER_IRQ_NUM;
@@ -72,6 +71,115 @@ static inline void mchp_pit_reg_write(uint32_t data, uint32_t reg, uint32_t mask
 	sys_write32((mchp_pit_reg_read(reg) & ~mask) | data,
 		    DEVICE_MMIO_NAMED_GET(systick_timer_dev, reg_base) + reg);
 }
+
+#ifdef CONFIG_TICKLESS_KERNEL
+
+/*
+ * Consume the periods PICNT has counted, which by the invariant above all ran
+ * under data->piv, and hand back the live CPIV. Clears PICNT and PITS, so a
+ * match this swallows is left to the PITS test in the ISR.
+ */
+static inline uint32_t mchp_pit_fold(struct mchp_pit_timer_data *data)
+{
+	uint32_t pivr = mchp_pit_reg_read(PIT_PIVR_REG_OFST);
+
+	/* PICNT is 12 bits and PIV 20, so the product stays inside 32. */
+	data->accumulated_cycles += FIELD_GET(PIT_PIVR_PICNT_Msk, pivr) * (data->piv + 1);
+
+	return FIELD_GET(PIT_PIVR_CPIV_Msk, pivr);
+}
+
+static inline uint32_t timer_driver_cycle_get(void)
+{
+	struct mchp_pit_timer_data *data = systick_timer_dev->data;
+	uint32_t piir;
+
+	if (!mchp_pit_mmio_mapped) {
+		return 0;
+	}
+
+	/* PIIR leaves PICNT alone, so the periods it reports are still to be
+	 * folded and have to be added here.
+	 */
+	piir = mchp_pit_reg_read(PIT_PIIR_REG_OFST);
+
+	return data->accumulated_cycles +
+	       FIELD_GET(PIT_PIIR_PICNT_Msk, piir) * (data->piv + 1) +
+	       FIELD_GET(PIT_PIIR_CPIV_Msk, piir);
+}
+
+/* Bound for the arming retry below. Reached only if the compare cannot be
+ * placed ahead of the count, which the minimum arm is there to prevent.
+ */
+#define PIT_ARM_RETRY_MAX 8U
+static void timer_driver_set_reload(uint32_t cycles)
+{
+	struct mchp_pit_timer_data *data = systick_timer_dev->data;
+
+	for (uint32_t retry = 0U; retry < PIT_ARM_RETRY_MAX; retry++) {
+		uint32_t cpiv = mchp_pit_fold(data);
+		uint32_t piv = MIN(cpiv + cycles, PIT_MAX_PIV);
+		uint32_t piir;
+
+		/*
+		 * PIV is the count CPIV matches at and the write does not restart
+		 * CPIV, so the delay has to be expressed from the current count.
+		 * A PIV at or below CPIV never matches: CPIV runs to its 20-bit
+		 * end, wraps and climbs back, and that period is accounted as one
+		 * PIV, losing the wrap from the timebase for good.
+		 */
+		mchp_pit_reg_write(PIT_MR_PIV(piv), PIT_MR_REG_OFST, PIT_MR_PIV_Msk);
+		piir = mchp_pit_reg_read(PIT_PIIR_REG_OFST);
+		if ((FIELD_GET(PIT_PIIR_PICNT_Msk, piir) == 0U) &&
+		    (FIELD_GET(PIT_PIIR_CPIV_Msk, piir) < piv)) {
+			/* Ahead, and nothing pending ran under the old value. */
+			data->piv = piv;
+			return;
+		}
+		/* Either the write landed behind, which leaves a whole wrap to
+		 * correct it in, or a period ended meanwhile and still belongs to
+		 * data->piv, which the next fold accounts for.
+		 */
+	}
+
+	__ASSERT(false, "PIT compare could not be placed ahead of the count");
+}
+
+/*
+ * A 20-bit counter that resets to 0 whenever it reaches PIV, so PIV is a period
+ * and this is a RELOAD backend. The count it presents is synthesized from
+ * accumulated_cycles, PICNT and CPIV, which the ISR and the arm path both
+ * write, hence non-atomic.
+ *
+ * TIMER_CORE_ALARM_MIN_CYCLES has to exceed the PIT_MR write plus the PIIR read
+ * back, in MCK/16 cycles: below that the compare can land at or behind CPIV.
+ */
+#define TIMER_CORE_BACKEND_RELOAD
+#define TIMER_CORE_COUNTER_WIDTH 32
+#define TIMER_CORE_ALARM_MAX_CYCLES PIT_MAX_PIV
+#define TIMER_CORE_ALARM_MIN_CYCLES 8U
+#define TIMER_CORE_COUNTER_NONATOMIC
+
+#include "system_timer_generic.h"
+
+static void mchp_pit_isr(const void *arg)
+{
+	ARG_UNUSED(arg);
+
+	struct mchp_pit_timer_data *data = systick_timer_dev->data;
+	k_spinlock_key_t key;
+
+	/* If no pending event */
+	if (FIELD_GET(PIT_SR_PITS_Msk, mchp_pit_reg_read(PIT_SR_REG_OFST)) == 0) {
+		return;
+	}
+
+	key = sys_clock_lock();
+	(void)mchp_pit_fold(data);
+	timer_core_announce_from(key);
+}
+
+#else /* !CONFIG_TICKLESS_KERNEL */
 
 static uint32_t mchp_pit_get_cycles(uint32_t reg)
 {
@@ -132,6 +240,8 @@ uint32_t sys_clock_cycle_get_32(void)
 	return cycles;
 }
 
+#endif /* CONFIG_TICKLESS_KERNEL */
+
 static int sys_clock_driver_init(void)
 {
 	const struct mchp_pit_timer_config *cfg;
@@ -150,6 +260,7 @@ static int sys_clock_driver_init(void)
 	data->piv = CYCLES_PER_TICK - 1;
 
 	DEVICE_MMIO_NAMED_MAP(systick_timer_dev, reg_base, K_MEM_CACHE_NONE);
+	mchp_pit_mmio_mapped = true;
 
 	/* Read PIT_PIVR and clear PITS in PIT_SR */
 	(void)mchp_pit_reg_read(PIT_PIVR_REG_OFST);
@@ -169,6 +280,11 @@ static int sys_clock_driver_init(void)
 
 	/* Enable Period Interval Timer */
 	mchp_pit_reg_write(PIT_MR_PITEN_Msk, PIT_MR_REG_OFST, PIT_MR_PITEN_Msk);
+
+#ifdef CONFIG_TICKLESS_KERNEL
+	/* Seed the announce baseline and arm the first tick/deadline. */
+	timer_core_init();
+#endif /* CONFIG_TICKLESS_KERNEL */
 
 	return 0;
 }
