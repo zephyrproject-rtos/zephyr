@@ -7,6 +7,7 @@
 
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/led/led.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include <st/h7/stm32h753Xi.dtsi>
 #include "stm32h7_renode_reference_board-pinctrl.dtsi"
@@ -76,17 +77,26 @@
 	leds {
 		compatible = "gpio-leds";
 
-		green_rgb_led: led_rgb_g {
-			gpios = <&gpiod 14 GPIO_ACTIVE_HIGH>;
-		};
-
 		red_rgb_led: led_rgb_r {
 			gpios = <&gpiod 13 GPIO_ACTIVE_HIGH>;
+		};
+
+		green_rgb_led: led_rgb_g {
+			gpios = <&gpiod 14 GPIO_ACTIVE_HIGH>;
 		};
 
 		blue_rgb_led: led_rgb_b {
 			gpios = <&gpiod 15 GPIO_ACTIVE_HIGH>;
 		};
+	};
+
+	rgbled {
+		compatible = "leds-group-multicolor";
+
+		leds = <&red_rgb_led>, <&green_rgb_led>, <&blue_rgb_led>;
+		color-mapping = <LED_COLOR_ID_RED>,
+				<LED_COLOR_ID_GREEN>,
+				<LED_COLOR_ID_BLUE>;
 	};
 
 	pwmleds {
