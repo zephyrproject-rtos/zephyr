@@ -365,7 +365,7 @@ static int bt_hci_acl_out_cb(struct usbd_class_data *const c_data,
 
 		/*
 		 * Take over the next chunk if HCI packet is
-		 * larger than USB_MAX_FS_BULK_MPS.
+		 * larger than BT_HCI_EP_FS_MPS_ACL_DATA.
 		 */
 		net_buf_add_mem(hci_data->acl_buf, buf->data, buf->len);
 		LOG_INF("len %u, chunk %u", hci_data->acl_buf->len, buf->len);

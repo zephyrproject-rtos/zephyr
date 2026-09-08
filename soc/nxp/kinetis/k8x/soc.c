@@ -87,7 +87,7 @@ __weak void clk_init(void)
 	CLOCK_SetLpuartClock(PERIPH_CLK_PLLFLLSEL);
 #endif
 
-#if CONFIG_USB_KINETIS || CONFIG_UDC_KINETIS
+#if CONFIG_UDC_KINETIS
 	CLOCK_EnableUsbfs0Clock(kCLOCK_UsbSrcPll0, 120000000UL);
 #endif
 }

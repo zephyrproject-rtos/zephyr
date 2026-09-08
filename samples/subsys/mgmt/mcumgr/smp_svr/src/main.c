@@ -7,8 +7,6 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/stats/stats.h>
-#include <zephyr/usb/usb_device.h>
-
 #ifdef CONFIG_MCUMGR_GRP_FS
 #include <zephyr/device.h>
 #include <zephyr/fs/fs.h>

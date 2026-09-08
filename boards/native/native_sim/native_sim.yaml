@@ -19,7 +19,6 @@ supported:
   - netif:eth
   - mspi
   - ptp_clock
-  - usb_device
   - adc
   - i2c
   - i2s

@@ -18,7 +18,7 @@ Requirements
 
 Hardware support for:
 
-- :kconfig:option:`CONFIG_USB_DEVICE_STACK`
+- :kconfig:option:`CONFIG_USB_DEVICE_STACK_NEXT`
 - :kconfig:option:`CONFIG_SERIAL`
 - :kconfig:option:`CONFIG_CONSOLE`
 - :kconfig:option:`CONFIG_UART_CONSOLE`

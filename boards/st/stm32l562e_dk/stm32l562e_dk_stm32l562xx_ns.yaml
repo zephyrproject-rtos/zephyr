@@ -13,7 +13,7 @@ supported:
   - dac
   - spi
   - arduino_spi
-  - usb_device
+  - usbd
 ram: 128
 flash: 168
 vendor: st

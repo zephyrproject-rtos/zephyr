@@ -24,7 +24,6 @@ supported:
   - qspi
   - rtc
   - spi
-  - usb_device
   - usbd
   - vl53l0x
   - watchdog

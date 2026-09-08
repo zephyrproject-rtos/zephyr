@@ -103,7 +103,7 @@ required for best test coverage for this specific board:
     - nvs
     - spi
     - gpio
-    - usb_device
+    - usbd
     - watchdog
     - can
     - pwm

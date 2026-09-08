@@ -16,7 +16,7 @@ supported:
   - pwm
   - spi
   - backup_sram
-  - usb_device
+  - usbd
   - rtc
   - can
 vendor: other

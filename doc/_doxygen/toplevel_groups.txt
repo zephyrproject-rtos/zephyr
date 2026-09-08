@@ -25,11 +25,7 @@ toolchain
 utilities
 # zephyr-keep-sorted-stop
 
-# Doxygen's EXCLUDE_SYMBOLS drops leading-underscore names, so these three never
-# appear on the homepage but they are still top level in the Doxygen XML. list
-# them here to avoid having to maintain duplicated logic in
-# `doxygen_toplevel_groups` for groups that are going to be deleted soon anyway
-# as they are for the deprecated legacy USB device stack.
-_usb_device_core_api
-_usb_device_controller_api
+# Doxygen's EXCLUDE_SYMBOLS drops leading-underscore names, so this group never
+# appears on the homepage but is still top level in the Doxygen XML. List it
+# here to avoid having to maintain duplicated logic in `doxygen_toplevel_groups`.
 _usbc_device_api

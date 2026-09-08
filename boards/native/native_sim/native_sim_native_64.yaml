@@ -17,7 +17,6 @@ supported:
   - eeprom
   - netif:eth
   - ptp_clock
-  - usb_device
   - adc
   - gpio
   - rtc

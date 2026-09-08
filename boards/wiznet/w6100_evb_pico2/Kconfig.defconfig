@@ -6,7 +6,4 @@ if BOARD_W6100_EVB_PICO2
 configdefault ETH_DRIVER
 	default y
 
-config USB_SELF_POWERED
-	default n
-
 endif # BOARD_W6100_EVB_PICO2

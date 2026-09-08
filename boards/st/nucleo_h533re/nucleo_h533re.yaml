@@ -19,6 +19,6 @@ supported:
   - pwm
   - rtc
   - adc
-  - usb_device
+  - usbd
   - backup_sram
 vendor: st

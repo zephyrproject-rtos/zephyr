@@ -10,7 +10,6 @@ zephyr_library_sources_ifdef(CONFIG_UART_ASYNC_RX_HELPER uart_async_rx.c)
 zephyr_library_sources_ifdef(CONFIG_UART_ASYNC_TO_INT_DRIVEN_API uart_async_to_irq.c)
 zephyr_library_sources_ifdef(CONFIG_UART_SHELL uart_shell.c)
 zephyr_library_sources_ifdef(CONFIG_USBD_CDC_ACM_CLASS ${ZEPHYR_BASE}/misc/empty_file.c)
-zephyr_library_sources_ifdef(CONFIG_USB_CDC_ACM ${ZEPHYR_BASE}/misc/empty_file.c)
 # zephyr-keep-sorted-stop
 
 # zephyr-keep-sorted-start

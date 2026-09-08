@@ -13,7 +13,4 @@ endif # I2C_DW
 config RP2_FLASH_W25Q080
 	default y
 
-config USB_SELF_POWERED
-	default n
-
 endif # BOARD_FRAMEWORK_LAPTOP16_KEYBOARD

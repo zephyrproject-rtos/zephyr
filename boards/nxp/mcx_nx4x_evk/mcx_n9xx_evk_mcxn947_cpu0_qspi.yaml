@@ -27,7 +27,7 @@ supported:
   - regulator
   - sdhc
   - spi
-  - usb_device
+  - usbd
   - watchdog
   - crc
 vendor: nxp

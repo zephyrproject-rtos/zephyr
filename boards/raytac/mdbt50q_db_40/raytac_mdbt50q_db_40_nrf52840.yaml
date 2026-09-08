@@ -22,6 +22,6 @@ supported:
   - ieee802154
   - pwm
   - spi
-  - usb_device
+  - usbd
   - watchdog
   - netif:openthread

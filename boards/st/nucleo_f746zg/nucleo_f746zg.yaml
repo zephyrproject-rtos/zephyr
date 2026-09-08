@@ -26,7 +26,6 @@ supported:
   - rtc
   - spi
   - uart
-  - usb_device
   - usbd
   - watchdog
 vendor: st

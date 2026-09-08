@@ -15,7 +15,7 @@ supported:
   - i2c
   - pwm
   - spi
-  - usb_device
+  - usbd
   - watchdog
   - netif:modem
 vendor: ezurio

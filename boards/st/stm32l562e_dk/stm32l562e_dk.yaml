@@ -21,7 +21,6 @@ supported:
   - pwm
   - spi
   - usart
-  - usb_device
   - usbd
   - watchdog
 ram: 192

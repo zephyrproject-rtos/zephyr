@@ -1115,16 +1115,10 @@ config BOOTLOADER_BOSSA
 	select USE_DT_CODE_PARTITION
 
 	help
-	  Signifies that the target uses a BOSSA compatible bootloader.  If CDC
-	  ACM USB support is also enabled then the board will reboot into the
+	  Signifies that the target uses a BOSSA compatible bootloader.  If the
+	  CDC ACM serial backend is also enabled, see
+	  CDC_ACM_SERIAL_INITIALIZE_AT_BOOT, then the board will reboot into the
 	  bootloader automatically when bossac is run.
-
-config BOOTLOADER_BOSSA_DEVICE_NAME
-	string "BOSSA CDC ACM device name"
-	depends on BOOTLOADER_BOSSA && CDC_ACM_DTE_RATE_CALLBACK_SUPPORT
-	default "CDC_ACM_0"
-	help
-	  Sets the CDC ACM port to watch for reboot commands.
 
 choice
 	prompt "BOSSA bootloader variant"

@@ -30,7 +30,7 @@ supported:
   - pwm
   - sdhc
   - spi
-  - usb_device
+  - usbd
   - video
   - watchdog
   - rtc

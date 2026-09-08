@@ -27,7 +27,6 @@ supported:
   - ptp_clock
   - sdhc
   - spi
-  - usb_device
   - usbd
   - watchdog
   - rtc

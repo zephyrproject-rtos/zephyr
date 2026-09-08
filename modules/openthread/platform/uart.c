@@ -19,8 +19,6 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #include <zephyr/sys/ring_buffer.h>
 #include <zephyr/sys/atomic.h>
 
-#include <zephyr/usb/usb_device.h>
-
 #include <openthread/ncp.h>
 #include <openthread-system.h>
 #include <utils/uart.h>

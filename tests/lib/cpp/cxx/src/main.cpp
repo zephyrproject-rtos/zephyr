@@ -71,8 +71,8 @@
 #include <zephyr/drivers/syscon.h>
 #include <zephyr/drivers/uart_pipe.h>
 #include <zephyr/drivers/uart.h>
-#include <zephyr/usb/usb_device.h>
-#include <zephyr/usb/class/usb_hid.h>
+#include <zephyr/usb/usbd.h>
+#include <zephyr/usb/class/usbd_hid.h>
 #include <zephyr/drivers/video.h>
 #include <zephyr/drivers/watchdog.h>
 

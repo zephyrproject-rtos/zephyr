@@ -20,7 +20,6 @@
 #include <zephyr/sys/printk.h>
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/kernel.h>
-#include <zephyr/usb/usb_device.h>
 #include <zephyr/drivers/uart.h>
 
 #include <zephyr/shell/shell.h>

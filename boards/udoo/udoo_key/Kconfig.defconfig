@@ -3,9 +3,6 @@
 
 if BOARD_UDOO_KEY_RP2040
 
-config USB_SELF_POWERED
-	default n
-
 if I2C_DW
 
 config I2C_DW_CLOCK_SPEED

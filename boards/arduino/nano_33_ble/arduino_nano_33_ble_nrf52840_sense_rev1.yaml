@@ -13,6 +13,6 @@ supported:
   - serial
   - spi
   - uart
-  - usb_device
+  - usbd
   - watchdog
 vendor: arduino
