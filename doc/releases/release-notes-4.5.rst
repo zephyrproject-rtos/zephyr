@@ -290,6 +290,40 @@ Deprecated APIs and options
   * The ``zephyr_file_copy()`` CMake function has been deprecated. Use the native
     ``file(COPY_FILE ...)`` CMake command instead.
 
+* Clock control
+
+  * The function :c:func:`z_nrf_clock_control_get_onoff` has been deprecated.
+    See the :ref:`migration guide <migration_4.5>` for details.
+
+  * The macro :c:macro:`CLOCK_CONTROL_NRF_K32SRC_ACCURACY` has been deprecated.
+    See the :ref:`migration guide <migration_4.5>` for details.
+
+  * The macro :c:macro:`CLOCK_CONTROL_NRF_K32SRC` has been deprecated.
+    See the :ref:`migration guide <migration_4.5>` for details.
+
+  * The macro :c:macro:`CLOCK_CONTROL_NRF_SUBSYS_HFAUDIO` has been deprecated.
+    See the :ref:`migration guide <migration_4.5>` for details.
+
+  * The macro :c:macro:`CLOCK_CONTROL_NRF_SUBSYS_HFAUDIO` has been deprecated.
+    See the :ref:`migration guide <migration_4.5>` for details.
+
+  * The macro :c:macro:`CLOCK_CONTROL_NRF_SUBSYS_HF24M` has been deprecated.
+    See the :ref:`migration guide <migration_4.5>` for details.
+
+  * The macro :c:macro:`CLOCK_CONTROL_NRF_SUBSYS_HF24M` has been deprecated.
+    See the :ref:`migration guide <migration_4.5>` for details.
+
+  * The macro :c:macro:`CLOCK_CONTROL_NRF_SUBSYS_HF` has been deprecated.
+    See the :ref:`migration guide <migration_4.5>` for details.
+
+  * The enum :c:enumerator:`clock_control_nrf_type` has been deprecated.
+    See the :ref:`migration guide <migration_4.5>` for details.
+
+  * The Kconfig option :kconfig:option:`CONFIG_CLOCK_CONTROL_NRF` and all dependent kconfigs have
+    been deprecated. See the :ref:`migration guide <migration_4.5>` for details. The Kconfigs are
+    located in the ``drivers/clock_control/Kconfig.nrf`` and  ``modules/hal_nordic/nrfx/Kconfig``
+    files.
+
 * CPU Load
 
   * :kconfig:option:`CONFIG_CPU_LOAD_METRIC` and :c:func:`cpu_load_metric_get` are deprecated. The
@@ -455,6 +489,18 @@ New APIs and options
     * :c:func:`bt_mesh_stat_lpn_timing_get`
     * :c:func:`bt_mesh_stat_lpn_timing_reset`
     * :kconfig:option:`CONFIG_BT_MESH_LPN_OFFER_WAIT_TIMEOUT`
+
+* Clock control
+
+  * :kconfig:option:`CLOCK_CONTROL_NRF_ONOFF`
+  * The following functions are now supported for devices compatible with ``nordic,nrf-clock-hfclk``,
+    ``nordic,nrf-clock-lfclk``, ``nordic,nrf-clock-hfclk192m``, ``nordic,nrf-clock-hfclk24m``,
+    ``nordic,nrf-clock-hfclkaudio``, ``nordic,nrf-clock-xo``, ``nordic,nrf-clock-xo24m``:
+    See the :ref:`migration guide <migration_4.5>` for details.
+    * :c:func:`clock_control_request`
+    * :c:func:`clock_control_request_sync`
+    * :c:func:`clock_control_release`
+    * :c:func:`clock_control_cancel_or_release`
 
 * Crypto
 
