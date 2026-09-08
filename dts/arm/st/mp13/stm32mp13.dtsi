@@ -827,6 +827,19 @@
 			status = "disabled";
 		};
 
+		hash: crypto@54003000 {
+			compatible = "st,stm32-hash";
+			reg = <0x54003000 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB5, 5)>;
+			resets = <&rctl STM32_RESET(AHB5, 5)>;
+			/* HASH1_IRQn (CMSIS) = 113 -> GIC SPI = 113 - 32 = 81 */
+			interrupts = <GIC_SPI 81 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			st,has-sha384-algorithm;
+			st,has-sha512-algorithm;
+			st,has-sha3-algorithm;
+			status = "disabled";
+		};
+
 		rtc: rtc@5c004000 {
 			compatible = "st,stm32-rtc";
 			reg = <0x5c004000 0x400>;

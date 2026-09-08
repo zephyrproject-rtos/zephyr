@@ -1,0 +1,10 @@
+/*
+ * Copyright (c) 2026 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Ensure HASH IP is enabled for board-level test runs */
+&hash {
+	status = "okay";
+};
