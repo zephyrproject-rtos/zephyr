@@ -2564,6 +2564,23 @@ struct bt_le_scan_recv_info {
 
 	/** Secondary advertising channel PHY. */
 	uint8_t secondary_phy;
+
+	/**
+	 * @brief Target address of a directed advertisement.
+	 *
+	 * @c NULL if the report carries no target address. Whether the advertisement was
+	 * directed is given by @ref BT_GAP_ADV_PROP_DIRECTED in
+	 * @ref bt_le_scan_recv_info.adv_props.
+	 *
+	 * An LE Extended Advertising Report always carries the target address of a directed
+	 * advertisement, whether or not the Controller resolved it. An LE Advertising Report
+	 * has no target address field, so this is @c NULL for a directed advertisement the
+	 * Controller resolved while scanning with the legacy scanning commands.
+	 *
+	 * The address type is @ref BT_ADDR_LE_UNRESOLVED if the Controller was unable to
+	 * resolve it.
+	 */
+	const bt_addr_le_t *direct_addr;
 };
 
 /** Listener context for (LE) scanning.
