@@ -1507,7 +1507,7 @@ static int update_descriptive_block(struct coap_block_context *ctx,
 		total_size = size;
 	}
 
-	if (total_size && ctx->total_size && ctx->total_size != total_size) {
+	if (total_size != 0 && ctx->total_size != 0 && ctx->total_size != total_size) {
 		return -EINVAL;
 	}
 
@@ -1519,7 +1519,7 @@ static int update_descriptive_block(struct coap_block_context *ctx,
 		return -EINVAL;
 	}
 
-	if (total_size) {
+	if (total_size != 0) {
 		ctx->total_size = total_size;
 	}
 	ctx->current = new_current;
