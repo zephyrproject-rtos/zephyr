@@ -58,9 +58,9 @@ enum dma_channel_direction {
 	DMA_CHANNEL_DIRECTION_PRIV_START = DMA_CHANNEL_DIRECTION_COMMON_COUNT,
 
 	/**
-	 * Maximum allowed value (3 bit field!)
+	 * Maximum allowed value (4 bit field!)
 	 */
-	DMA_CHANNEL_DIRECTION_MAX = 0x7
+	DMA_CHANNEL_DIRECTION_MAX = 0xF
 };
 
 /**
@@ -212,7 +212,7 @@ struct dma_config {
 	 * - 0b101 memory to host
 	 * - others hardware specific
 	 */
-	uint32_t  channel_direction :    3;
+	uint32_t  channel_direction :    4;
 	/** enable half completion callback when set to 1 */
 	uint32_t  half_complete_callback_en : 1;
 	/**
@@ -256,7 +256,7 @@ struct dma_config {
 	/** Cyclic transfer list, HW specific */
 	uint32_t  cyclic :				 1;
 
-	uint32_t  _reserved :             2;
+	uint32_t  _reserved :             1;
 	/** Width of source data (in bytes) */
 	uint32_t  source_data_size :    16;
 	/** Width of destination data (in bytes) */
