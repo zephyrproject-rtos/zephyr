@@ -766,6 +766,32 @@ Interrupt Controllers
 * Deprecate ``GIC_NUM_CPU_IF`` from GIC header file :file:`gic.h`. One shall use
   instead.:kconfig:option:`CONFIG_MP_MAX_NUM_CPUS` instead.
 
+Microchip
+=========
+
+* The ``wakeup-source-id`` form of describing an Atmel SAM SUPC wake-up source is deprecated in
+  favour of the ``wakeup-ctrls`` property used by the rest of the tree.
+  :dtcompatible:`atmel,sam-supc` nodes now declare ``#wakeup-ctrl-cells`` alongside the existing
+  ``#wakeup-source-id-cells``, and a wake-up source names the controller the same way any other
+  wake-up source does:
+
+  .. code-block:: devicetree
+
+     rtc: rtc@400e1460 {
+             /* deprecated */
+             wakeup-source-id = <&supc SUPC_WAKEUP_SOURCE_RTC>;
+             /* replacement */
+             wakeup-ctrls = <&supc SUPC_WAKEUP_SOURCE_RTC>;
+     };
+
+  Out-of-tree consumers must also include :zephyr_file:`dts/bindings/wuc/wuc-device.yaml` in their
+  binding to declare ``wakeup-ctrls``, and read the identifier with ``DT_WUC_ID()`` or
+  ``DT_INST_WUC_ID()`` from :zephyr_file:`include/zephyr/devicetree/wuc.h` instead of
+  ``SAM_DT_SUPC_WAKEUP_SOURCE_ID()`` or ``SAM_DT_INST_SUPC_WAKEUP_SOURCE_ID()``, which now warn
+  when expanded. Nothing in tree used either form, so no in-tree node or driver changes.
+  ``#wakeup-source-id-cells``, ``wakeup-source-id`` and both macros will be removed in a future
+  release. (:github:`117727`)
+
 MSPI
 ====
 
