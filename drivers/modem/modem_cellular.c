@@ -2695,37 +2695,46 @@ static int modem_cellular_get_modem_info(const struct device *dev,
 					 enum cellular_modem_info_type type,
 					 char *info, size_t size)
 {
-	int ret = 0;
 	struct modem_cellular_data *data = (struct modem_cellular_data *)dev->data;
+	const char *info_str;
+
+	if (size <= 1) {
+		return -EINVAL;
+	}
 
 	switch (type) {
 	case CELLULAR_MODEM_INFO_IMEI:
-		strncpy(info, &data->imei[0], MIN(size, sizeof(data->imei)));
+		info_str = &data->imei[0];
 		break;
 	case CELLULAR_MODEM_INFO_SIM_IMSI:
-		strncpy(info, &data->imsi[0], MIN(size, sizeof(data->imsi)));
+		info_str = &data->imsi[0];
 		break;
 	case CELLULAR_MODEM_INFO_MANUFACTURER:
-		strncpy(info, &data->manufacturer[0], MIN(size, sizeof(data->manufacturer)));
+		info_str = &data->manufacturer[0];
 		break;
 	case CELLULAR_MODEM_INFO_FW_VERSION:
-		strncpy(info, &data->fw_version[0], MIN(size, sizeof(data->fw_version)));
+		info_str = &data->fw_version[0];
 		break;
 	case CELLULAR_MODEM_INFO_MODEL_ID:
-		strncpy(info, &data->model_id[0], MIN(size, sizeof(data->model_id)));
+		info_str = &data->model_id[0];
 		break;
 	case CELLULAR_MODEM_INFO_SIM_ICCID:
-		strncpy(info, &data->iccid[0], MIN(size, sizeof(data->iccid)));
+		info_str = &data->iccid[0];
 		break;
 	case CELLULAR_MODEM_INFO_SERIAL_NUMBER:
-		strncpy(info, &data->sn[0], MIN(size, sizeof(data->sn)));
+		info_str = &data->sn[0];
 		break;
 	default:
-		ret = -ENODATA;
-		break;
+		return -ENODATA;
 	}
 
-	return ret;
+	/* All internal copies of modem info are NUL terminated.
+	 * Copy at most `size - 1` bytes of the info to the output.
+	 * Manually NUL terminate the output.
+	 */
+	strncpy(info, info_str, size - 1);
+	info[size - 1] = '\0';
+	return 0;
 }
 static int modem_cellular_get_registration_status(const struct device *dev,
 						  enum cellular_access_technology tech,
