@@ -84,7 +84,6 @@ static uint8_t data_buf[2][COAP_BUF_SIZE];
 #define COAP_MAX_AGE      0xffffff
 #define COAP_FIRST_AGE    2
 
-extern bool coap_age_is_newer(int v1, int v2);
 
 ZTEST(coap, test_build_empty_pdu)
 {
@@ -186,6 +185,31 @@ ZTEST(coap, test_parse_empty_pdu)
 	zassert_equal(code, COAP_METHOD_GET,
 		      "Packet code doesn't match reference");
 	zassert_equal(id, 0U, "Packet id doesn't match reference");
+}
+
+ZTEST(coap, test_parse_malformed_empty_message)
+{
+	/* RFC 7252, section 4.1: an Empty message has the token length set to
+	 * zero and no bytes after the message ID.
+	 */
+	uint8_t empty_with_token[] = { 0x62, 0x00, 0x12, 0x34, 0xde, 0xad };
+	uint8_t empty_with_extra[] = { 0x60, 0x00, 0x12, 0x34, 0xff, 0x42 };
+	uint8_t empty_ok[] = { 0x60, 0x00, 0x12, 0x34 };
+	struct coap_packet cpkt;
+	uint8_t *data = data_buf[0];
+	int r;
+
+	memcpy(data, empty_with_token, sizeof(empty_with_token));
+	r = coap_packet_parse(&cpkt, data, sizeof(empty_with_token), NULL, 0);
+	zassert_equal(r, -EBADMSG, "Empty message with a token not rejected");
+
+	memcpy(data, empty_with_extra, sizeof(empty_with_extra));
+	r = coap_packet_parse(&cpkt, data, sizeof(empty_with_extra), NULL, 0);
+	zassert_equal(r, -EBADMSG, "Empty message with a payload not rejected");
+
+	memcpy(data, empty_ok, sizeof(empty_ok));
+	r = coap_packet_parse(&cpkt, data, sizeof(empty_ok), NULL, 0);
+	zassert_equal(r, 0, "Well-formed Empty message rejected");
 }
 
 /* 1 option, No payload (No payload marker) */
@@ -791,6 +815,68 @@ ZTEST(coap, test_block2_size)
 		verify_block2_request(&req_ctx, i);
 		verify_block2_response(&rsp_ctx, i);
 	}
+}
+
+ZTEST(coap, test_block2_request_more_bit_ignored)
+{
+	struct coap_block_context ctx;
+	struct coap_packet req;
+	uint8_t data[128];
+	int r;
+
+	/* RFC 7959, section 2.4: the M bit of a Block2 option in a request
+	 * has no function and is ignored by the server.
+	 */
+	r = coap_packet_init(&req, data, sizeof(data), COAP_VERSION_1, COAP_TYPE_CON,
+			     COAP_TOKEN_MAX_LEN, coap_next_token(), COAP_METHOD_GET,
+			     coap_next_id());
+	zassert_equal(r, 0, "Failed to init request");
+
+	r = coap_append_option_int(&req, COAP_OPTION_BLOCK2, (2 << 4) | BIT(3) | COAP_BLOCK_64);
+	zassert_equal(r, 0, "Failed to append block2 option");
+
+	coap_block_transfer_init(&ctx, COAP_BLOCK_64, 256);
+
+	r = coap_update_from_block(&req, &ctx);
+	zassert_equal(r, 0, "M bit in a block2 request must be ignored (%d)", r);
+	zassert_equal(ctx.current, 128, "Unexpected block position");
+}
+
+ZTEST(coap, test_block_bert_rejected_over_udp)
+{
+	struct coap_block_context ctx;
+	struct coap_packet pkt;
+	uint8_t data[128];
+	int r;
+
+	/* RFC 7959, section 2.2: SZX value 7 is reserved outside reliable
+	 * transports and leads to a 4.00 Bad Request response. A request with
+	 * a BERT block2 option is rejected by the server-side update.
+	 */
+	r = coap_packet_init(&pkt, data, sizeof(data), COAP_VERSION_1, COAP_TYPE_CON,
+			     COAP_TOKEN_MAX_LEN, coap_next_token(), COAP_METHOD_GET,
+			     coap_next_id());
+	zassert_equal(r, 0, "Failed to init request");
+
+	r = coap_append_option_int(&pkt, COAP_OPTION_BLOCK2, (1 << 4) | COAP_BLOCK_BERT);
+	zassert_equal(r, 0, "Failed to append block2 option");
+
+	coap_block_transfer_init(&ctx, COAP_BLOCK_1024, 4096);
+	zassert_equal(coap_update_from_block(&pkt, &ctx), -EINVAL,
+		      "BERT block size in a request must be rejected over UDP");
+
+	/* The same applies to the client side receiving a BERT response */
+	r = coap_packet_init(&pkt, data, sizeof(data), COAP_VERSION_1, COAP_TYPE_ACK,
+			     COAP_TOKEN_MAX_LEN, coap_next_token(),
+			     COAP_RESPONSE_CODE_CONTENT, coap_next_id());
+	zassert_equal(r, 0, "Failed to init response");
+
+	r = coap_append_option_int(&pkt, COAP_OPTION_BLOCK2, BIT(3) | COAP_BLOCK_BERT);
+	zassert_equal(r, 0, "Failed to append block2 option");
+
+	coap_block_transfer_init(&ctx, COAP_BLOCK_1024, 4096);
+	zassert_equal(coap_update_from_block(&pkt, &ctx), -EINVAL,
+		      "BERT block size in a response must be rejected over UDP");
 }
 
 ZTEST(coap, test_retransmit_second_round)

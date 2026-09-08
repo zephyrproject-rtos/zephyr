@@ -797,6 +797,13 @@ int coap_packet_parse(struct coap_packet *cpkt, uint8_t *data, uint16_t len,
 		return -EBADMSG;
 	}
 
+	/* RFC 7252, section 4.1: an Empty message has the token length set to
+	 * zero and no bytes after the message ID.
+	 */
+	if (data[1] == COAP_CODE_EMPTY && (tkl != 0U || len > BASIC_HEADER_SIZE)) {
+		return -EBADMSG;
+	}
+
 	cpkt->hdr_len = BASIC_HEADER_SIZE + tkl;
 	if (cpkt->hdr_len > len) {
 		return -EBADMSG;
@@ -1478,6 +1485,13 @@ static int update_descriptive_block(struct coap_block_context *ctx,
 		return 0;
 	}
 
+	/* RFC 7959, section 2.2: SZX value 7 is reserved outside reliable
+	 * transports and leads to a 4.00 Bad Request response.
+	 */
+	if (block >= 0 && GET_BLOCK_SIZE(block) == COAP_BLOCK_BERT) {
+		return -EINVAL;
+	}
+
 	if (size && ctx->total_size && ctx->total_size != size) {
 		return -EINVAL;
 	}
@@ -1512,6 +1526,13 @@ static int update_control_block1(struct coap_block_context *ctx,
 		return -EINVAL;
 	}
 
+	/* RFC 7959, section 2.2: SZX value 7 is reserved outside reliable
+	 * transports and leads to a 4.00 Bad Request response.
+	 */
+	if (GET_BLOCK_SIZE(block) == COAP_BLOCK_BERT) {
+		return -EINVAL;
+	}
+
 	new_current = GET_NUM(block) << (GET_BLOCK_SIZE(block) + 4);
 	if (new_current != ctx->current) {
 		return -EINVAL;
@@ -1543,11 +1564,18 @@ static int update_control_block2(struct coap_block_context *ctx,
 		return -EINVAL;
 	}
 
-	new_current = GET_NUM(block) << (GET_BLOCK_SIZE(block) + 4);
-
-	if (GET_MORE(block)) {
+	/* RFC 7959, section 2.2: SZX value 7 is reserved outside reliable
+	 * transports and leads to a 4.00 Bad Request response.
+	 */
+	if (GET_BLOCK_SIZE(block) == COAP_BLOCK_BERT) {
 		return -EINVAL;
 	}
+
+	new_current = GET_NUM(block) << (GET_BLOCK_SIZE(block) + 4);
+
+	/* RFC 7959, section 2.4: the M bit has no function in a Block2 request
+	 * and is ignored on reception.
+	 */
 
 	if (GET_NUM(block) > 0 && GET_BLOCK_SIZE(block) != ctx->block_size) {
 		return -EINVAL;
@@ -1840,7 +1868,6 @@ size_t coap_pendings_count(struct coap_pending *pendings, size_t len)
 }
 
 /* Reordering according to RFC7641 section 3.4 but without timestamp comparison */
-IF_DISABLED(CONFIG_ZTEST, (static inline))
 bool coap_age_is_newer(int v1, int v2)
 {
 	return (v1 < v2 && v2 - v1 < (1 << 23))
@@ -2560,9 +2587,9 @@ static int update_control_block2_tcp(struct coap_block_context *ctx,
 
 	new_current = GET_NUM(block) << (MIN(COAP_BLOCK_1024, GET_BLOCK_SIZE(block)) + 4);
 
-	if (GET_MORE(block)) {
-		return -EINVAL;
-	}
+	/* RFC 7959, section 2.4: the M bit has no function in a Block2 request
+	 * and is ignored on reception.
+	 */
 
 	if (GET_NUM(block) > 0 && GET_BLOCK_SIZE(block) != ctx->block_size) {
 		return -EINVAL;
