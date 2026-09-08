@@ -1,0 +1,80 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config USBH_MSC
+	bool "USB host mass storage class support [EXPERIMENTAL]"
+	select EXPERIMENTAL
+	help
+	  Enable the USB host Mass Storage class driver. It implements the
+	  Bulk-Only Transport and the SCSI commands needed for block access
+	  to the first logical unit of an attached device.
+
+if USBH_MSC
+
+config USBH_MSC_DEVICE_COUNT
+	int "Number of mass storage devices supported at once"
+	default $(dt_compat_enabled_num,$(DT_COMPAT_ZEPHYR_USB_MSC_DISK)) if $(dt_compat_enabled,$(DT_COMPAT_ZEPHYR_USB_MSC_DISK))
+	default 1
+	range 1 8
+	help
+	  Number of attached mass storage devices the host can use
+	  simultaneously. The buffer pool is split between them.
+
+config USBH_MSC_MAX_BLOCK_SIZE
+	int "Largest supported logical block size"
+	default FS_FATFS_MAX_SS if FAT_FILESYSTEM_ELM
+	default 512
+	range 512 4096
+	help
+	  Media that report a larger logical block size are not used.
+	  The default follows the largest sector size of the FAT file
+	  system when it is enabled.
+
+config USBH_MSC_STACK_SIZE
+	int "Mass storage work queue stack size"
+	default 1536
+	help
+	  Stack size of the work queue that identifies attached media and
+	  polls removable ones.
+
+config USBH_MSC_THREAD_PRIORITY
+	int "Mass storage work queue priority"
+	default 9
+	help
+	  Priority of the work queue that identifies attached media and
+	  polls removable ones.
+
+config USBH_MSC_XFER_TIMEOUT_MS
+	int "Bulk transfer timeout in milliseconds"
+	default 5000
+	help
+	  Time to wait for a bulk transfer of a command, data or status
+	  wrapper to complete before the command fails.
+
+config USBH_MSC_UNIT_READY_INTERVAL_MS
+	int "Medium ready poll interval in milliseconds"
+	default 100
+	range 10 10000
+	help
+	  Interval between TEST UNIT READY commands while the medium of
+	  an attached device is becoming ready. A device without a
+	  medium is also polled at this interval when
+	  USBH_MSC_MEDIUM_POLL_INTERVAL_MS is 0.
+
+config USBH_MSC_MEDIUM_POLL_INTERVAL_MS
+	int "Removable medium poll interval in milliseconds"
+	default 1000
+	range 0 60000
+	help
+	  Interval between TEST UNIT READY commands sent to a ready
+	  removable medium to detect that it was removed or changed,
+	  and to a device without a medium to detect that one was
+	  inserted. 0 disables polling of a ready medium, a change is
+	  then detected by the next command that fails, and a device
+	  without a medium is polled at USBH_MSC_UNIT_READY_INTERVAL_MS.
+
+module = USBH_MSC
+module-str = usbh msc
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # USBH_MSC
