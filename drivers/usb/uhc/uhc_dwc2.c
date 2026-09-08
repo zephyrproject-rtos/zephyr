@@ -646,6 +646,9 @@ static int port_reset(const struct device *dev)
 	struct usb_dwc2_reg *const base = uhc_dwc2_get_base(dev);
 	int ret;
 
+	/* A bus reset returns every endpoint behind the port to DATA0 */
+	memset(priv->ch_data, 0, sizeof(priv->ch_data));
+
 	/* Reset the port */
 	dwc2_set_reset(base, true);
 
