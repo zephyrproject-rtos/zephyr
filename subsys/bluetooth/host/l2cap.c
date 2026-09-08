@@ -273,6 +273,16 @@ static void l2cap_chan_del(struct bt_l2cap_chan *chan)
 
 	LOG_DBG("conn %p chan %p", chan->conn, chan);
 
+#if defined(CONFIG_BT_L2CAP_DYNAMIC_CHANNEL)
+	/* Release the channel from its server before the disconnected callback,
+	 * so that an application may unregister the server from there.
+	 */
+	if (le_chan->_server != NULL) {
+		atomic_dec(&le_chan->_server->_active_chans);
+		le_chan->_server = NULL;
+	}
+#endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
+
 	if (!chan->conn) {
 		goto destroy;
 	}
@@ -370,6 +380,7 @@ static void init_le_chan_private(struct bt_l2cap_le_chan *le_chan)
 #if defined(CONFIG_BT_L2CAP_SEG_RECV)
 	le_chan->_sdu_len_done = 0;
 #endif /* CONFIG_BT_L2CAP_SEG_RECV */
+	le_chan->_server = NULL;
 #endif /* CONFIG_BT_L2CAP_DYNAMIC_CHANNEL */
 	memset(&le_chan->_pdu_ready, 0, sizeof(le_chan->_pdu_ready));
 	le_chan->_pdu_remaining = 0;
@@ -1233,20 +1244,26 @@ static struct bt_l2cap_server *l2cap_server_lookup_psm(uint16_t psm)
 	return NULL;
 }
 
-bool bt_l2cap_server_is_registered(const struct bt_l2cap_server *server)
+/* Caller must hold @ref servers_lock. */
+static bool l2cap_server_is_registered(const struct bt_l2cap_server *server)
 {
 	struct bt_l2cap_server *registered;
-	bool found = false;
-
-	k_mutex_lock(&servers_lock, K_FOREVER);
 
 	SYS_SLIST_FOR_EACH_CONTAINER(&servers, registered, node) {
 		if (registered == server) {
-			found = true;
-			break;
+			return true;
 		}
 	}
 
+	return false;
+}
+
+bool bt_l2cap_server_is_registered(const struct bt_l2cap_server *server)
+{
+	bool found;
+
+	k_mutex_lock(&servers_lock, K_FOREVER);
+	found = l2cap_server_is_registered(server);
 	k_mutex_unlock(&servers_lock);
 
 	return found;
@@ -1305,7 +1322,43 @@ int bt_l2cap_server_register(struct bt_l2cap_server *server)
 
 	LOG_DBG("PSM 0x%04x", server->psm);
 
+	atomic_clear(&server->_active_chans);
+
 	sys_slist_append(&servers, &server->node);
+
+unlock:
+	k_mutex_unlock(&servers_lock);
+
+	return err;
+}
+
+int bt_l2cap_server_unregister(struct bt_l2cap_server *server)
+{
+	atomic_val_t active;
+	int err = 0;
+
+	if (server == NULL) {
+		return -EINVAL;
+	}
+
+	k_mutex_lock(&servers_lock, K_FOREVER);
+
+	if (!l2cap_server_is_registered(server)) {
+		err = -ENOENT;
+		goto unlock;
+	}
+
+	/* The count cannot grow here, because accepting takes the same lock. */
+	active = atomic_get(&server->_active_chans);
+	if (active != 0) {
+		LOG_DBG("PSM 0x%04x still has %ld channel(s)", server->psm, active);
+		err = -EBUSY;
+		goto unlock;
+	}
+
+	(void)sys_slist_find_and_remove(&servers, &server->node);
+
+	LOG_DBG("PSM 0x%04x unregistered", server->psm);
 
 unlock:
 	k_mutex_unlock(&servers_lock);
@@ -1528,6 +1581,9 @@ static uint16_t l2cap_chan_accept(struct bt_conn *conn,
 
 	/* Set channel PSM */
 	le_chan->psm = server->psm;
+
+	le_chan->_server = server;
+	atomic_inc(&server->_active_chans);
 
 	/* Update state */
 	l2cap_chan_set_state(*chan, BT_L2CAP_CONNECTED);
