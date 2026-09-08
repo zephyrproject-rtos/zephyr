@@ -809,6 +809,11 @@ static const uint8_t block2_at_enoent_pattern_pdu[] = {
 	0xD4, 0x0A, 0xFF, 0xFF, 0xFF, 0xFE,
 };
 
+static const uint8_t block1_at_enoent_pattern_pdu[] = {
+	0x40, 0x02, 0x12, 0x34,
+	0xD4, 0x0E, 0xFF, 0xFF, 0xFF, 0xFE,
+};
+
 static const uint8_t size2_at_enoent_pattern_pdu[] = {
 	0x60, 0x45, 0x12, 0x34,
 	0xD1, 0x0A, 0x06,
@@ -877,6 +882,42 @@ ZTEST(coap, test_block2_at_enoent_pattern)
 	r = coap_update_from_block(&cpkt, &ctx);
 	zassert_equal(r, -EINVAL, "Block2 was mistaken for an absent option");
 	zassert_equal(ctx.current, 0U, "Block context was updated from a refused option");
+}
+
+ZTEST(coap, test_get_block1_option_at_enoent_pattern)
+{
+	struct coap_packet cpkt;
+	uint8_t *data = data_buf[0];
+	uint32_t block_number = 0U;
+	bool has_more = false;
+	int r;
+
+	memcpy(data, block1_at_enoent_pattern_pdu, sizeof(block1_at_enoent_pattern_pdu));
+
+	r = coap_packet_parse(&cpkt, data, sizeof(block1_at_enoent_pattern_pdu), NULL, 0);
+	zassert_equal(r, 0, "Could not parse packet");
+
+	r = coap_get_block1_option(&cpkt, &has_more, &block_number);
+	zassert_equal(r, -EINVAL, "Block1 was mistaken for an absent option");
+	zassert_equal(block_number, 0U, "Block number was taken from a refused option");
+}
+
+ZTEST(coap, test_get_block2_option_at_enoent_pattern)
+{
+	struct coap_packet cpkt;
+	uint8_t *data = data_buf[0];
+	uint32_t block_number = 0U;
+	bool has_more = false;
+	int r;
+
+	memcpy(data, block2_at_enoent_pattern_pdu, sizeof(block2_at_enoent_pattern_pdu));
+
+	r = coap_packet_parse(&cpkt, data, sizeof(block2_at_enoent_pattern_pdu), NULL, 0);
+	zassert_equal(r, 0, "Could not parse packet");
+
+	r = coap_get_block2_option(&cpkt, &has_more, &block_number);
+	zassert_equal(r, -EINVAL, "Block2 was mistaken for an absent option");
+	zassert_equal(block_number, 0U, "Block number was taken from a refused option");
 }
 
 ZTEST(coap, test_size2_at_enoent_pattern)
