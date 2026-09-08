@@ -18,6 +18,11 @@
 #define PMC_UTMI		2
 #define PMC_MAIN		3
 
+/* SAMA5D2 */
+#define PMC_MCK2		(PMC_MAIN + 1) /* MCK2 is used for AHB 32-bit MATRIX system */
+#define PMC_PLLA		(PMC_MAIN + 2)
+#define PMC_UPLL		(PMC_MAIN + 3)
+
 /* SAMA7G5 */
 #define PMC_CPUPLL		(PMC_MAIN + 1)
 #define PMC_SYSPLL		(PMC_MAIN + 2)
