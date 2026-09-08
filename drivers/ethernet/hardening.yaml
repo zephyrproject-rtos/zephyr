@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Security hardening database fragment for Ethernet drivers.
+
+rules:
+  ETH_E1000_VERBOSE_DEBUG:
+    value: n
+    profiles: [strict]
+    rationale: |
+      Verbose Ethernet driver debugging logs frame-level details of network traffic, disclosing
+      traffic contents and internal state.
+    references: [CWE-532]

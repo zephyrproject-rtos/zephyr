@@ -1,0 +1,108 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# JSON Schema for the Zephyr security hardening database: the central
+# scripts/kconfig/hardening.yaml (profiles + rules for symbols defined in
+# the top-level Kconfig files) and the 'hardening.yaml' fragments living
+# next to subsystem/driver/arch/SoC Kconfig files (rules only).
+# When possible, constraints and validation rules should be modeled directly
+# in this file. Consistency with the actual Kconfig tree (symbol existence,
+# value/type coherence, profiles only in the central file, no duplicate
+# rules) is enforced by hardeninglib.py and check_compliance.py
+# (KconfigCheck).
+#
+# A rule recommends either an exact value:
+#
+# rules:
+#   BOOT_BANNER:
+#     value: n
+#     rationale: |
+#       The boot banner discloses the exact Zephyr version to anyone with
+#       console access.
+#     references: [CWE-200]
+#
+# or an integer constraint (int/hex symbols only):
+#
+# rules:
+#   STACK_POINTER_RANDOM:
+#     min: 100
+#     rationale: |
+#       0 disables stack pointer randomization entirely.
+#
+# Rules belong to one or more profiles (default: [base]). Profiles may extend
+# a single parent profile.
+
+$schema: "https://json-schema.org/draft/2020-12/schema"
+$id: "https://zephyrproject.org/schemas/zephyr/hardening"
+title: Zephyr hardening database schema
+description: Schema for validating the Zephyr security hardening database
+type: object
+additionalProperties: false
+anyOf:
+  - required: [profiles]
+  - required: [rules]
+properties:
+  profiles:
+    type: object
+    minProperties: 1
+    additionalProperties: false
+    patternProperties:
+      "^[a-z][a-z0-9-]*$":
+        type: object
+        additionalProperties: false
+        required:
+          - description
+        properties:
+          description:
+            type: string
+          extends:
+            type: string
+  rules:
+    type: object
+    additionalProperties: false
+    patternProperties:
+      # Kconfig symbol name, without the CONFIG_ prefix. Keying the mapping
+      # by symbol turns a duplicate entry into a duplicate YAML key, which
+      # the loader rejects.
+      "^[A-Z0-9_]+$":
+        type: object
+        additionalProperties: false
+        required:
+          - rationale
+        # Exactly one of: an exact 'value', or a 'min'/'max' constraint.
+        oneOf:
+          - required: [value]
+            not:
+              anyOf:
+                - required: [min]
+                - required: [max]
+          - anyOf:
+              - required: [min]
+              - required: [max]
+            not:
+              required: [value]
+        properties:
+          value:
+            oneOf:
+              - type: string
+              - type: integer
+              - type: boolean
+          min:
+            type: integer
+          max:
+            type: integer
+          rationale:
+            type: string
+            # Requiring the key is not enough: an empty or blank string
+            # would satisfy the mandatory rationale without carrying one.
+            pattern: "\\S"
+          references:
+            type: array
+            minItems: 1
+            items:
+              type: string
+          profiles:
+            type: array
+            minItems: 1
+            items:
+              type: string

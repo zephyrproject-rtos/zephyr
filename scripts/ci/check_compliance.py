@@ -848,6 +848,7 @@ class KconfigCheck(ComplianceTest):
         self.check_soc_name_sync(kconf)
         self.check_no_undef_outside_kconfig(kconf)
         self.check_disallowed_defconfigs(kconf)
+        self.check_hardening_data(kconf)
 
     def get_modules(self, _module_dirs_file, modules_file, sysbuild_modules_file, settings_file):
         """
@@ -1396,6 +1397,150 @@ Found disallowed Kconfig symbol in SoC Kconfig files: {sym_name:35}
             [sym.name for sym in kconf_syms] + re.findall(regex, grep_stdout, re.MULTILINE)
         ).union(self.get_logging_syms(kconf))
 
+    def check_hardening_data(self, kconf):
+        """
+        Checks that the hardening database (scripts/kconfig/hardening.yaml
+        plus the hardening.yaml fragments next to subsystem Kconfig files)
+        parses, matches its schema, and only references Kconfig symbols that
+        exist, with values coherent with each symbol's type.
+        """
+        # scripts/kconfig is on sys.path since parse_kconfig() ran
+        import hardeninglib
+
+        # A misnamed fragment would silently not be loaded; make it loud.
+        fragment_name_re = re.compile(r"harden.*\.ya?ml$", re.IGNORECASE)
+        for root in hardeninglib.FRAGMENT_ROOTS:
+            root_dir = Path(ZEPHYR_BASE) / root
+            if not root_dir.is_dir():
+                continue
+            for path in root_dir.rglob("*.y*ml"):
+                if fragment_name_re.search(path.name) and path.name != hardeninglib.FRAGMENT_NAME:
+                    self.failure(
+                        f"{path.relative_to(ZEPHYR_BASE)} looks like a "
+                        "hardening database fragment but is not named "
+                        f"'{hardeninglib.FRAGMENT_NAME}', so it will not be "
+                        "loaded. Hint: rename it."
+                    )
+
+        try:
+            database = hardeninglib.load_database()
+        except hardeninglib.HardeningDatabaseError as e:
+            self.failure(f"Malformed hardening database: {e}")
+            return
+
+        profile_errors = hardeninglib.check_profile_integrity(database)
+        for error in profile_errors:
+            self.failure(
+                f"Hardening database: {error}\n"
+                "Hint: profiles are defined in scripts/kconfig/hardening.yaml."
+            )
+
+        defined_syms = self.get_defined_syms(kconf)
+        for name, rule in database['rules'].items():
+            hint = f"Hint: update '{rule['source']}' accordingly."
+
+            if name not in defined_syms:
+                self.failure(f"CONFIG_{name} in {rule['source']} does not exist in Kconfig. {hint}")
+                continue
+
+            sym = kconf.syms.get(name)
+            if sym is None:
+                # Defined only in a sample/test Kconfig tree; the symbol's
+                # type is not available for further checking.
+                continue
+
+            is_numeric = sym.orig_type in (kconfiglib.INT, kconfiglib.HEX)
+
+            # The schema guarantees a rule carries either a value or a
+            # min/max constraint, so 'value' is set in the branches below.
+            if rule['min'] is not None or rule['max'] is not None:
+                if not is_numeric:
+                    self.failure(
+                        f"CONFIG_{name} in {rule['source']} has a min/max "
+                        f"constraint, but is not an int/hex symbol. {hint}"
+                    )
+            elif sym.orig_type in (kconfiglib.BOOL, kconfiglib.TRISTATE):
+                valid = ('y', 'n', 'm') if sym.orig_type is kconfiglib.TRISTATE else ('y', 'n')
+                if rule['value'] not in valid:
+                    self.failure(
+                        f"CONFIG_{name} in {rule['source']} recommends value "
+                        f"'{rule['value']}', which is not valid for a "
+                        f"{kconfiglib.TYPE_TO_STR[sym.orig_type]} symbol. {hint}"
+                    )
+            elif is_numeric:
+                try:
+                    int(rule['value'], 0)
+                except ValueError:
+                    self.failure(
+                        f"CONFIG_{name} in {rule['source']} recommends "
+                        f"value '{rule['value']}', which is not valid "
+                        f"for an int/hex symbol. {hint}"
+                    )
+
+        # The redundancy analysis resolves profile inheritance, so it can
+        # only run once the profiles themselves are known to be consistent.
+        if not profile_errors:
+            self.check_no_redundant_hardening_rules(kconf, database)
+
+    def check_no_redundant_hardening_rules(self, kconf, database):
+        """
+        Checks that no 'n' rule in the hardening database is redundant: a
+        rule for a symbol that can only be enabled while violating another
+        'n' rule applying to at least the same profiles adds nothing (e.g.
+        FILE_SYSTEM_SHELL=n is pointless when SHELL=n is already flagged
+        for the same profiles and FILE_SYSTEM_SHELL depends on SHELL).
+        Rules for symbols that merely 'select' a flagged symbol are not
+        redundant; they point at the actionable option.
+        """
+        # scripts/kconfig is on sys.path since parse_kconfig() ran
+        import hardeninglib
+
+        profiles = database['profiles']
+
+        def applies_to(rule):
+            # profiles a rule is active in, following 'extends'
+            return {
+                p
+                for p in profiles
+                if hardeninglib.profile_closure(profiles, p) & set(rule['profiles'])
+            }
+
+        off_rules = {name: rule for name, rule in database['rules'].items() if rule['value'] == 'n'}
+
+        def required_syms(sym, seen):
+            # Symbols that must be enabled for 'sym' to be enabled:
+            # positive AND-branches of the direct dependencies, followed
+            # transitively. Conservative: OR/NOT branches are skipped.
+            out = []
+
+            def walk(expr):
+                if isinstance(expr, kconfiglib.Symbol):
+                    if not expr.is_constant and expr.name not in seen:
+                        seen.add(expr.name)
+                        out.append(expr)
+                        walk(expr.direct_dep)
+                elif isinstance(expr, tuple) and expr[0] == kconfiglib.AND:
+                    walk(expr[1])
+                    walk(expr[2])
+
+            walk(sym.direct_dep)
+            return out
+
+        for name, rule in off_rules.items():
+            sym = kconf.syms.get(name)
+            if sym is None:
+                continue
+            for dep in required_syms(sym, {name}):
+                other = off_rules.get(dep.name)
+                if other and applies_to(rule) <= applies_to(other):
+                    self.failure(
+                        f"CONFIG_{name} in {rule['source']} is redundant: "
+                        f"it requires CONFIG_{dep.name}, which "
+                        f"{other['source']} already recommends disabling "
+                        "for the same profiles. Hint: remove the "
+                        f"CONFIG_{name} rule."
+                    )
+
     def check_top_menu_not_too_long(self, kconf):
         """
         Checks that there aren't too many items in the top-level menu (which
@@ -1696,6 +1841,9 @@ class KconfigBasicCheck(KconfigCheck):
     def check_no_undef_outside_kconfig(self, kconf):
         pass
 
+    def check_hardening_data(self, kconf):
+        pass
+
 
 class KconfigBasicNoModulesCheck(KconfigBasicCheck):
     """
@@ -1768,6 +1916,11 @@ class SysbuildKconfigCheck(KconfigCheck):
         "SECOND_SAMPLE",  # Used in sysbuild documentation
         # zephyr-keep-sorted-stop
     }
+
+    def check_hardening_data(self, kconf):
+        # The hardening database references application Kconfig symbols,
+        # which do not exist in the sysbuild Kconfig tree.
+        pass
 
 
 class SysbuildKconfigBasicCheck(SysbuildKconfigCheck, KconfigBasicCheck):

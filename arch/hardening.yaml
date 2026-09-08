@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+#
+# Security hardening database fragment for architecture-generic options.
+
+rules:
+  EXCEPTION_DEBUG:
+    value: n
+    profiles: [strict]
+    rationale: |
+      Prints detailed fault information (register contents, fault addresses) on exceptions, handing
+      an attacker feedback for developing memory-corruption exploits.
+    references: [CWE-209]
+
+  HW_STACK_PROTECTION:
+    value: y
+    rationale: |
+      Turns on whatever stack-overflow detection the hardware offers, an MPU guard region or the
+      stack pointer limit registers on cores that have them, so an overflow traps as it happens
+      rather than running on past the end of the stack.
+    references: [CWE-121, CWE-787]
