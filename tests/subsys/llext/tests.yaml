@@ -97,17 +97,15 @@ tests:
       - CONFIG_LLEXT_HEAP_MEMBLK=y
       - CONFIG_LLEXT_EXT_HEAP_SIZE=64
       - CONFIG_LLEXT_HEAP_MEMBLK_BLOCK_SIZE=8192
-  # RISC-V userspace: exercises calling syscalls from an extension and running
-  # it in a user-mode thread. Every syscall stub inlines arch_is_user_context();
-  # on RISC-V that check used to read a thread-local symbol a loaded extension
-  # cannot relocate, so any such extension failed to link. RISC-V runs the
-  # extension from RAM and needs writable storage, so it is covered here rather
-  # than by the readonly_mpu cases above.
-  llext.userspace:
-    arch_allow:
-      - riscv
-    platform_allow:
-      - qemu_riscv32
+  # Writable storage under an MPU, running the extension in a user-mode
+  # thread: the counterpart of the readonly_mpu cases above for targets
+  # that copy the extension into RAM instead of running it in place.
+  #
+  # Only RISC-V does that today, but the restriction is expressed as a
+  # filter rather than arch_allow so the arm integration platforms
+  # inherited from common are filtered at build time instead of
+  # erroring the integration test plan.
+  llext.writable_mpu:
     filter: CONFIG_ARCH_HAS_USERSPACE and CONFIG_RISCV_PMP
     integration_platforms:
       - qemu_riscv32
