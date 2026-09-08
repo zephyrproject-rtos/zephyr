@@ -35,6 +35,8 @@
 #include <zephyr/pm/device.h>
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/net_l2.h>
+#include <zephyr/net/net_mgmt.h>
+#include <zephyr/net/ppp.h>
 #include <zephyr/modem/cmux.h>
 #include <zephyr/modem/pipe.h>
 #include <zephyr/sys/atomic.h>
@@ -54,7 +56,7 @@ static struct k_event emu_events;
 #define EV_APN_DONE BIT(0)    /* APN script answered => boot got past RUN_APN_SCRIPT */
 
 /* Knobs the tests flip to steer the emulated modem. */
-static atomic_t emu_registered;    /* report registration on the next AT+CEREG? poll */
+static atomic_t emu_registered;    /* status reported on the next AT+CEREG? poll */
 static atomic_t emu_hold_connect;  /* count ATD but withhold CONNECT */
 
 /* ------------------------------------------------------------------------- */
@@ -150,14 +152,15 @@ static void dlci1_respond(const char *line)
 	} else if (strcmp(line, "AT+CSQ") == 0) {
 		atomic_inc(&csq_count);
 		dce_send(dce_dlci1_pipe, "+CSQ: 20,99\r\nOK\r\n");
-	} else if (strcmp(line, "AT+CEREG?") == 0 && atomic_get(&emu_registered)) {
-		/* <n>,<stat> with stat 1: registered, home LTE network. The driver
-		 * picks this up through its unsolicited +CEREG match and raises
-		 * MODEM_CELLULAR_EVENT_REGISTERED.
-		 */
-		dce_send(dce_dlci1_pipe, "+CEREG: 1,1\r\nOK\r\n");
+	} else if (strcmp(line, "AT+CEREG?") == 0) {
+		/* <n>,<stat>: stat 1 registered on the home LTE network, stat 0 not. */
+		if (atomic_get(&emu_registered)) {
+			dce_send(dce_dlci1_pipe, "+CEREG: 1,1\r\nOK\r\n");
+		} else {
+			dce_send(dce_dlci1_pipe, "+CEREG: 1,0\r\nOK\r\n");
+		}
 	} else {
-		/* AT+CREG?, AT+CEREG?, AT+CGREG?, AT+QENG="servingcell" */
+		/* AT+CREG?, AT+CGREG?, AT+QENG="servingcell" */
 		dce_send(dce_dlci1_pipe, "OK\r\n");
 	}
 }
@@ -842,6 +845,35 @@ ZTEST(cellular_on_demand_connect, test_08_periodic_survives_pause_resume_while_p
 	zassert_equal(MODEM_CELLULAR_STATE_AWAIT_DIAL, modem_fsm_state(),
 		      "periodic activity moved the FSM out of AWAIT_DIAL, state is %d",
 		      modem_fsm_state());
+}
+
+/* A PPP drop while awaiting registration must re-dial, not be discarded. */
+ZTEST(cellular_on_demand_connect, test_09_ppp_dead_while_awaiting_registration)
+{
+	int dials;
+	int csq;
+
+	/* Entering AWAIT_REGISTERED re-delegates REGISTERED from the cached status,
+	 * so the driver has to observe the deregistration first.
+	 */
+	park_in_await_dial();
+	atomic_set(&emu_registered, 0);
+	csq = atomic_get(&csq_count);
+	zassert_true(wait_for_csq(csq + 1, 4 * CONFIG_MODEM_CELLULAR_PERIODIC_SCRIPT_MS),
+		     "periodic script did not poll while parked");
+
+	/* EG25-G has no network script, so a completed dial rests in AWAIT_REGISTERED. */
+	admit_iface();
+	zassert_true(wait_for_state(MODEM_CELLULAR_STATE_AWAIT_REGISTERED, 20000),
+		     "modem did not rest in AWAIT_REGISTERED, state is %d", modem_fsm_state());
+	zassert_true(net_if_is_admin_up(ppp_iface), "PPP interface must be admin-up");
+	dials = atomic_get(&atd_count);
+
+	net_mgmt_event_notify(NET_EVENT_PPP_PHASE_DEAD, ppp_iface);
+
+	zassert_true(wait_for_atd(dials + 1, 20000),
+		     "a PPP drop in AWAIT_REGISTERED did not re-dial, state is %d",
+		     modem_fsm_state());
 }
 
 static void *suite_setup(void)
