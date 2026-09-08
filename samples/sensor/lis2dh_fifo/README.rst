@@ -65,10 +65,41 @@ for command 0xe8 plus 192 received bytes, watermark/full behavior, all required
 ODR/mode combinations, and sustained operation with application/BLE load.
 Repeat on I2C and SPI and test recovery from disconnected hardware.
 
-Building and Running
-********************
+HOLYIOT hardware test procedure
+--------------------------------
 
-Build and flash the sample for HOLYIOT-25008:
+Run this test on ``holyiot_25008/nrf54l15/cpuapp`` with a LIS2DH12 connected
+to SPI, INT1 connected to P2.00, CS on P2.05, and 3.3 V logic. Capture the
+console at 115200 baud::
+
+   west build -b holyiot_25008/nrf54l15/cpuapp samples/sensor/lis2dh_fifo \
+     -- -DEXTRA_CONF_FILE=debug.conf
+   west flash
+
+Save the complete console output and, when available, a logic-analyzer capture
+of CS, SCK, MOSI, MISO, and INT1. The run passes when:
+
+* startup reports ``WHO_AM_I RX=0x33`` and ``chip ID OK``;
+* FIFO readback shows stream mode (``FIFO_CTRL=0x8f``) and interrupt routing
+  to INT1;
+* every batch contains decoded XYZ samples with strictly increasing
+  timestamps, with no ``FIFO stream failed`` messages;
+* the capture shows SPI mode 3, ID command ``0x8f``, and FIFO burst command
+  ``0xe8`` followed by 192 data bytes; and
+* after at least 10 minutes of continuous motion, power cycling and restarting
+  the sample produces the same ID and stream-start messages.
+
+For a stress run, use 400 Hz and repeat with the application workload enabled.
+Record the board revision, sensor marking, supply voltage, ODR, SPI clock, and
+any lost-sample counter in the review log. This validates the physical bus,
+interrupt line, FIFO batching, decoder, and restart path; the native emulator
+tests remain the checks for rollback, cancellation, allocation exhaustion, and
+injected bus errors.
+
+Classic FIFO interface
+**********************
+
+Applications that do not use RTIO can enable ``CONFIG_LIS2DH_FIFO`` and use
 
 .. zephyr-app-commands::
    :zephyr-app: samples/sensor/lis2dh_fifo
