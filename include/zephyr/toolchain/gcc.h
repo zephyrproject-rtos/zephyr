@@ -187,6 +187,72 @@ do {                                                                    \
 /* Double indirection to ensure section names are expanded before
  * stringification
  */
+#if defined(__APPLE__)
+#define Z_MACHO_SEC_GET(token) _CONCAT(Z_MACHO_SEC_, token)
+#define Z_MACHO_SECNAME(token) STRINGIFY(Z_MACHO_SEC_GET(token))
+
+#define Z_MACHO_SEC__log_const zlogconst
+#define Z_MACHO_SEC__log_dynamic zlogdyn
+#define Z_MACHO_SEC__static_thread_data zthrdat
+#define Z_MACHO_SEC___static_thread_data zthrdat
+#define Z_MACHO_SEC___stack_to_hw_shadow_stack zshdstk
+#define Z_MACHO_SEC___stack_to_hw_shadow_stack_arr zshdarr
+#define Z_MACHO_SEC___thread_hw_shadow_stack_static zshdsta
+#define Z_MACHO_SEC__device zdevice
+#define Z_MACHO_SEC__device_mutable zdevmut
+#define Z_MACHO_SEC__net_buf_pool znbpool
+#define Z_MACHO_SEC__net_if znetif
+#define Z_MACHO_SEC__net_if_dev znifdev
+#define Z_MACHO_SEC__net_l2 znetl2
+#define Z_MACHO_SEC__net_pkt_alloc_stats_slab znpkast
+#define Z_MACHO_SEC__eth_bridge zethbr
+#define Z_MACHO_SEC__k_kernel_init_pre_entry zkinipre
+#define Z_MACHO_SEC__k_kernel_init_post_entry zkinipst
+#define Z_MACHO_SEC__k_timer zktimer
+#define Z_MACHO_SEC__k_timer_observer zktimobs
+#define Z_MACHO_SEC__k_mem_slab zkmslab
+#define Z_MACHO_SEC__k_heap zkheap
+#define Z_MACHO_SEC__k_mutex zkmutex
+#define Z_MACHO_SEC__k_stack zkstack
+#define Z_MACHO_SEC__k_msgq zkmsgq
+#define Z_MACHO_SEC__k_mbox zkmbox
+#define Z_MACHO_SEC__k_pipe zkpipe
+#define Z_MACHO_SEC__k_sem zksem
+#define Z_MACHO_SEC__k_event zkevent
+#define Z_MACHO_SEC__k_queue zkqueue
+#define Z_MACHO_SEC__k_fifo zkfifo
+#define Z_MACHO_SEC__k_lifo zklifo
+#define Z_MACHO_SEC__k_condvar zkcondv
+#define Z_MACHO_SEC__sys_mem_blocks_ptr zmemblk
+#define Z_MACHO_SEC_noinit znoinit
+#define Z_MACHO_SEC__entropy_driver_api zentapi
+#define Z_MACHO_SEC__flash_driver_api zflsapi
+#define Z_MACHO_SEC__shared_irq_driver_api zshirq
+#define Z_MACHO_SEC__counter_driver_api zctrapi
+#define Z_MACHO_SEC__clock_control_driver_api zclkapi
+#define Z_MACHO_SEC__gpio_driver_api zgpioapi
+#define Z_MACHO_SEC__uart_driver_api zuartapi
+#define Z_MACHO_SEC__i2c_driver_api zi2capi
+#define Z_MACHO_SEC__pinmux_driver_api zpmxapi
+#define Z_MACHO_SEC__ieee802154_radio_api z154api
+#define Z_MACHO_SEC__gnss_driver_api zgnssapi
+#define Z_MACHO_SEC__sensor_driver_api zsnsapi
+
+#define __GENERIC_SECTION(segment) \
+	__attribute__((section("__DATA," STRINGIFY(segment))))
+#define Z_GENERIC_SECTION(segment) __GENERIC_SECTION(segment)
+
+#define __GENERIC_DOT_SECTION(segment) \
+	__attribute__((section("__DATA,." STRINGIFY(segment))))
+#define Z_GENERIC_DOT_SECTION(segment) __GENERIC_DOT_SECTION(segment)
+
+#define ___in_section(a, b, c) \
+	__attribute__((section("__DATA," Z_MACHO_SECNAME(a))))
+#define __in_section(a, b, c) ___in_section(a, b, c)
+
+#define ___in_section_unique(a, b) \
+	__attribute__((section("__DATA," Z_MACHO_SECNAME(a))))
+#else
 #define __GENERIC_SECTION(segment) __attribute__((section(STRINGIFY(segment))))
 #define Z_GENERIC_SECTION(segment) __GENERIC_SECTION(segment)
 
@@ -204,6 +270,7 @@ do {                                                                    \
 	__attribute__((section("." Z_STRINGIFY(a)		\
 				"." __FILE__			\
 				"." Z_STRINGIFY(b))))
+#endif
 
 #ifndef __in_section_unique
 #define __in_section_unique(seg) ___in_section_unique(seg, __COUNTER__)
@@ -313,7 +380,10 @@ do {                                                                    \
 #define __no_optimization __attribute__((optimize("-O0")))
 #endif
 
-#ifndef __weak
+#if defined(__APPLE__) && defined(__clang__) && !defined(__OBJC__)
+#undef __weak
+#define __weak __attribute__((__weak__))
+#elif !defined(__weak)
 #define __weak __attribute__((__weak__))
 #endif
 
@@ -577,6 +647,16 @@ do {                                                                    \
 	__asm__ __volatile__(".globl\t" #name                    \
 		"\n\t.equ\t" #name "," #value       \
 		"\n\t.type\t" #name ",%object")
+
+#elif defined(CONFIG_ARCH_POSIX) && defined(__APPLE__)
+
+#define GEN_ABSOLUTE_SYM(name, value)               \
+	__asm__ __volatile__(".globl\t" #name "\n\t.equ\t" #name \
+		",%c0" :  : "n"(value))
+
+#define GEN_ABSOLUTE_SYM_KCONFIG(name, value)       \
+	__asm__ __volatile__(".globl\t" #name                    \
+		"\n\t.equ\t" #name "," #value)
 
 #elif defined(CONFIG_ARC) || defined(CONFIG_ARM64) \
 	|| defined(CONFIG_ARCH_POSIX) /*&& (__x86_64 or __i*86 or __aarch64__)*/ \

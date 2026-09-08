@@ -1,7 +1,17 @@
 # SPDX-License-Identifier: Apache-2.0
 
-if(NOT CMAKE_HOST_UNIX OR CMAKE_HOST_APPLE)
-  message(FATAL_ERROR "The POSIX architecture only works on Linux. If on Windows or macOS "
+if(CMAKE_HOST_APPLE)
+  if(NOT NATIVE_SIM_EXPERIMENTAL_MACOS)
+    message(FATAL_ERROR "The POSIX architecture is only available on macOS when "
+            "NATIVE_SIM_EXPERIMENTAL_MACOS=ON is explicitly provided.")
+  endif()
+
+  if(NOT CONFIG_64BIT)
+    message(FATAL_ERROR "Experimental macOS POSIX support is currently limited to "
+            "native_sim/native/64.")
+  endif()
+elseif(NOT CMAKE_HOST_UNIX)
+  message(FATAL_ERROR "The POSIX architecture only works on Linux. If on Windows "
           "consider using a virtual machine to run a Linux guest.")
 endif()
 
@@ -42,7 +52,9 @@ set(NSI_DIR ${ZEPHYR_BASE}/scripts/native_simulator CACHE PATH "Path to the nati
 if(NATIVE_TARGET_HOST) # Allow users to manually select the target for cross-compiling use cases
   set(TARGET_HOST ${NATIVE_TARGET_HOST})
 else()
-  if("${CMAKE_HOST_SYSTEM_PROCESSOR}" MATCHES "arm.*")
+  if("${CMAKE_HOST_SYSTEM_PROCESSOR}" MATCHES "^(aarch64|arm64)$")
+    set(TARGET_HOST "aarch64")
+  elseif("${CMAKE_HOST_SYSTEM_PROCESSOR}" MATCHES "arm.*")
     # All 32bit arm variants
     set(TARGET_HOST "arm")
   elseif("${CMAKE_HOST_SYSTEM_PROCESSOR}" MATCHES ".*86.*")
@@ -73,9 +85,11 @@ zephyr_compile_options(
 
 # While doing the partial linking of the native library, some symbols will be missing
 # which are provided by the native simulator runner
-zephyr_ld_options(
-  -Wl,--unresolved-symbols=ignore-all
-)
+if(CMAKE_HOST_APPLE)
+  zephyr_ld_options(-Wl,-undefined,dynamic_lookup)
+else()
+  zephyr_ld_options(-Wl,--unresolved-symbols=ignore-all)
+endif()
 
 if(NOT CONFIG_EXTERNAL_LIBC)
   # Get the *compiler* include path, that is where the *compiler* provided headers are (not the
