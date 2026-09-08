@@ -1,0 +1,65 @@
+# Copyright (c) 2026 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32N6 power controller
+
+compatible: "st,stm32n6-pwr"
+
+include: "st,stm32-pwr.yaml"
+
+properties:
+  power-supply:
+    type: string
+    required: true
+    description: |
+      Power supply configuration
+
+      This property specifies the voltage regulators configuration
+      and indicates how the core domain voltage (Vcore) is generated.
+      Refer to your product's Datasheet and Reference Manual for details.
+
+      WARNING: If this property's value does not match the target board's
+      hardware configuration, the product will deadlock during boot which
+      prevents debugging or re-programming. If such a situation occurs,
+      configure the product to start execution in System memory instead
+      then erase the firmware with incorrect configuration.
+
+      smps: Internal SMPS supply
+        Internal SMPS is enabled and generates Vcore.
+
+      external-source: External regulator supply
+        An external supply provides Vcore; internal SMPS is disabled.
+    enum:
+      - "smps"
+      - "external-source"
+
+  st,external-control-gpios:
+    type: phandle-array
+    max-len: 1
+    description: |
+      This property describes the pin that controls the external voltage.
+      Used only when the "power-supply" property is set to "external-source".
+      This property describes a pin connected to the external source which,
+      when set to high logic level, makes that source's output voltage change
+      from VOS low level to VOS high. This pin will be asserted by software
+      during boot if VOS high is required. Whether this property is necessary
+      or not depends on the target board's hardware implementation as well as
+      on the clock configuration.
+
+      This property is ignored if the "power-supply" property is set to "smps".
+      This property only supports internal GPIO (e.g. gpioa).
+
+examples:
+  - |
+    /* Example: STM32N6 internal SMPS  */
+    pwr: power@56024800 {
+      compatible = "st,stm32n6-pwr";
+      reg = <0x56024800 0x400>;
+      power-supply = "smps";
+    };
+
+    /* Overlay example: external SMPS controlled by PB12 */
+    &pwr {
+      power-supply = "external-source";
+      st,external-control-gpios = <&gpiob 12 GPIO_ACTIVE_HIGH>;
+    };
