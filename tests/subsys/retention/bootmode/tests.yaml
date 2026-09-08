@@ -1,0 +1,20 @@
+common:
+  platform_allow:
+    - qemu_cortex_m3
+  integration_platforms:
+    - qemu_cortex_m3
+  # Listed explicitly: twister passes extra_dtc_overlay_files as DTC_OVERLAY_FILE,
+  # which disables the automatic boards/<board>.overlay lookup.
+  extra_dtc_overlay_files:
+    - boards/qemu_cortex_m3.overlay
+  tags:
+    - retention
+    - bootmode
+tests:
+  retention.bootmode.byte: {}
+  retention.bootmode.byte_prefix:
+    extra_dtc_overlay_files:
+      - byte_prefix.overlay
+  retention.bootmode.prefix_only:
+    extra_dtc_overlay_files:
+      - prefix_only.overlay
