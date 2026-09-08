@@ -3568,6 +3568,29 @@ static void le_read_resolving_list_size_complete(struct net_buf *buf)
 }
 #endif /* defined(CONFIG_BT_SMP) */
 
+#if defined(CONFIG_BT_CONN_ACCEPT_TIMEOUT)
+static int set_conn_accept_timeout(void)
+{
+	struct bt_hci_cp_write_conn_accept_timeout *cp;
+	struct net_buf *buf;
+
+	/* Only write it if the controller supports the command. */
+	if (!BT_CMD_TEST(bt_dev.supported_commands, 7, 3)) {
+		return 0;
+	}
+
+	buf = bt_hci_cmd_alloc(K_FOREVER);
+	if (!buf) {
+		return -ENOBUFS;
+	}
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->conn_accept_timeout = sys_cpu_to_le16(CONFIG_BT_CONN_ACCEPT_TIMEOUT);
+
+	return bt_hci_cmd_send_sync(BT_HCI_OP_WRITE_CONN_ACCEPT_TIMEOUT, buf, NULL);
+}
+#endif /* CONFIG_BT_CONN_ACCEPT_TIMEOUT */
+
 static int common_init(void)
 {
 	struct net_buf *rsp;
@@ -3623,6 +3646,13 @@ static int common_init(void)
 		return err;
 	}
 #endif /* CONFIG_BT_HCI_ACL_FLOW_CONTROL */
+
+#if defined(CONFIG_BT_CONN_ACCEPT_TIMEOUT)
+	err = set_conn_accept_timeout();
+	if (err) {
+		return err;
+	}
+#endif /* CONFIG_BT_CONN_ACCEPT_TIMEOUT */
 
 	return 0;
 }
