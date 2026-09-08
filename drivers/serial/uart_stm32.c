@@ -1232,6 +1232,7 @@ static void uart_stm32_irq_callback_set(const struct device *dev,
 					void *cb_data)
 {
 	struct uart_stm32_data *data = dev->data;
+	unsigned int key = irq_lock();
 
 	data->user_cb = cb;
 	data->user_data = cb_data;
@@ -1240,6 +1241,8 @@ static void uart_stm32_irq_callback_set(const struct device *dev,
 	data->async_cb = NULL;
 	data->async_user_data = NULL;
 #endif
+
+	irq_unlock(key);
 }
 
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
