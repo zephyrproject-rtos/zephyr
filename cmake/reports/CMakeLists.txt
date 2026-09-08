@@ -5,6 +5,11 @@ set(flag_for_rom_report rom)
 set(flag_for_footprint all)
 set(report_depth 99)
 
+if(KCONFIG_VARIANT_SOURCE)
+  # A variant build should not create report targets, those belongs in the main image.
+  return()
+endif()
+
 if(DEFINED ZEPHYR_WORKSPACE)
   set(workspace_arg "--workspace=${ZEPHYR_WORKSPACE}")
 elseif(DEFINED WEST_TOPDIR)
