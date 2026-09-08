@@ -1,0 +1,27 @@
+{
+  "flash_type": {
+    "flash_device_type": "IS25WJ032F",
+    "flash_device_size": 4,
+    "flash_page_size": 256,
+    "flash_sector_size": 4096
+  },
+  "inputs": {
+    "boot_sector_size": 8,
+    "ti_btl2_slot1_size": 400,
+    "vendor_app_slot1_size": 3044,
+    "nvs_data_max_size": 140,
+    "key_storage_data_max_size": 32,
+    "vendor_specific_max_size": 0,
+    "wsoc_code_slot1_size": 450,
+    "wsoc_bl2_cont_max_size": 0,
+    "psram_data": 4096
+  },
+  "internal": {
+    "ota": false,
+    "primary_region": 0,
+    "memory_mode": 0,
+    "dtcm": 64,
+    "itcm": 32
+  },
+  "psram_type": "NO_PSRAM"
+}
