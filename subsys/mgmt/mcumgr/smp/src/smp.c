@@ -518,7 +518,7 @@ int smp_process_request_packet(struct smp_streamer *streamer, void *vreq)
 #endif
 
 #if defined(CONFIG_SMP_CLIENT)
-			rc = smp_client_single_response(req, &req_hdr);
+			rc = smp_client_single_response(streamer->smpt, req, &req_hdr);
 
 			if (rc == MGMT_ERR_EOK) {
 				handler_found = true;

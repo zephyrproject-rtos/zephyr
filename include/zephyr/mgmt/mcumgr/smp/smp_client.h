@@ -92,13 +92,18 @@ typedef int (*smp_client_res_fn)(struct net_buf *nb, void *user_data);
 /**
  * @brief SMP client response handler.
  *
+ * Only a command that was sent on @p smpt can be completed by this response, so a
+ * response arriving on one transport never completes a command issued on another.
+ *
+ * @param smpt SMP transport the response arrived on
  * @param nb response net_buf
  * @param res_hdr Parsed SMP header
  *
  * @return 0 on success.
  * @return @ref mcumgr_err_t code on failure.
  */
-int smp_client_single_response(struct net_buf *nb, const struct smp_hdr *res_hdr);
+int smp_client_single_response(const struct smp_transport *smpt, struct net_buf *nb,
+			       const struct smp_hdr *res_hdr);
 
 /**
  * @brief Allocate buffer and initialize with SMP header.
