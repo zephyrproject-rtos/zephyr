@@ -12,6 +12,9 @@
 #include <hardware/pio.h>
 #include <hardware/clocks.h>
 
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(uart_rpi_pico_pio, CONFIG_UART_LOG_LEVEL);
+
 #define DT_DRV_COMPAT raspberrypi_pico_uart_pio
 
 #define CYCLES_PER_BIT 8
@@ -272,17 +275,6 @@ static int pio_uart_irq_rx_ready(const struct device *dev)
 	return data->rx_irq_en && !pio_sm_is_rx_fifo_empty(pio, data->rx_sm);
 }
 
-/* Framing errors are not routed to the NVIC yet, see the plan's Stage 5. */
-static void pio_uart_irq_err_enable(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-}
-
-static void pio_uart_irq_err_disable(const struct device *dev)
-{
-	ARG_UNUSED(dev);
-}
-
 static int pio_uart_irq_is_pending(const struct device *dev)
 {
 	return pio_uart_irq_tx_ready(dev) || pio_uart_irq_rx_ready(dev);
@@ -309,14 +301,33 @@ static void pio_uart_irq_callback_set(const struct device *dev, uart_irq_callbac
 static void pio_uart_irq_handler(const struct device *piodev, uint32_t ints, void *user_data)
 {
 	const struct device *dev = user_data;
+	const struct pio_uart_config *config = dev->config;
 	struct pio_uart_data *data = dev->data;
 
 	ARG_UNUSED(piodev);
-	ARG_UNUSED(ints);
 
-	if (data->cb != NULL) {
-		data->cb(dev, data->cb_data);
+	if (data->cb == NULL) {
+		uint32_t pending = ints & (data->tx_source_mask | data->rx_source_mask);
+
+		/*
+		 * Nothing else drains or fills the FIFO, so an enabled source
+		 * with no callback installed would re-enter this handler for
+		 * ever. Mask it; irq_tx_enable()/irq_rx_enable() unmask again.
+		 */
+		pio_rpi_pico_irq_sources_set(config->piodev, PIO_UART_IRQ_INDEX, pending, false);
+
+		if ((pending & data->tx_source_mask) != 0) {
+			data->tx_irq_en = false;
+		}
+
+		if ((pending & data->rx_source_mask) != 0) {
+			data->rx_irq_en = false;
+		}
+
+		return;
 	}
+
+	data->cb(dev, data->cb_data);
 }
 
 #endif /* CONFIG_UART_INTERRUPT_DRIVEN */
@@ -362,6 +373,7 @@ static int pio_uart_init(const struct device *dev)
 					   data->rx_source_mask | data->tx_source_mask,
 					   pio_uart_irq_handler, (void *)dev);
 	if (retval < 0) {
+		LOG_ERR("failed to register the PIO interrupt handler: %d", retval);
 		return retval;
 	}
 #endif
@@ -382,8 +394,6 @@ static DEVICE_API(uart, pio_uart_driver_api) = {
 	.irq_rx_enable = pio_uart_irq_rx_enable,
 	.irq_rx_disable = pio_uart_irq_rx_disable,
 	.irq_rx_ready = pio_uart_irq_rx_ready,
-	.irq_err_enable = pio_uart_irq_err_enable,
-	.irq_err_disable = pio_uart_irq_err_disable,
 	.irq_is_pending = pio_uart_irq_is_pending,
 	.irq_update = pio_uart_irq_update,
 	.irq_callback_set = pio_uart_irq_callback_set,
