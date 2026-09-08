@@ -1,0 +1,18 @@
+# Copyright (c) 2026 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  On-chip RC or crystal oscillator for SiWx91x SoCs.
+
+  Extends fixed-clock with the measured or datasheet startup time of the
+  physical oscillator block.
+
+compatible: "silabs,siwx91x-physical-clock"
+
+include: fixed-clock.yaml
+
+properties:
+  silabs,startup-time-us:
+    type: int
+    required: true
+    description: Oscillator startup time in microseconds.
