@@ -146,6 +146,17 @@ bool openthread_border_router_check_packet_forwarding_rules(struct net_pkt *pkt)
 bool openthread_border_router_has_ipv4_connectivity(void);
 
 /**
+ * @brief Learn the IPv6-to-L2 neighbor mapping for a packet arriving from the AIL interface.
+ *
+ * @details Extracts the IPv6 source address and L2 source address from the packet and inserts
+ * a REACHABLE neighbor cache entry on the AIL interface.  Call this for every unicast packet
+ * forwarded from AIL toward Thread so that the reverse path can resolve the MAC without NDP.
+ *
+ * @param pkt Pointer to the incoming network packet.
+ */
+void openthread_border_router_learn_ail_neighbor(struct net_pkt *pkt);
+
+/**
  * @brief Remove transport layer checksums for Ethernet hardware offloading on IPv6 packets.
  *
  * @param pkt Pointer to the network packet to modify
