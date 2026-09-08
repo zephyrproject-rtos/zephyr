@@ -71,11 +71,11 @@
 #include <string.h>
 #include <stdint.h>
 #include <pthread.h>
-#include <semaphore.h>
 #include <errno.h>
 #include "nsi_utils.h"
 #include "nct_if.h"
 #include "nsi_internal.h"
+#include "nsi_sem.h"
 #include "nsi_safe_call.h"
 
 #if NCT_DEBUG_PRINTS
@@ -101,7 +101,7 @@ struct threads_table_el {
 	/* Pointer to the overall status of the threading emulator instance */
 	struct nct_status_t *nct_status;
 	struct threads_table_el *next;	/* Pointer to the next element of the table */
-	sem_t sema;			/* Semaphore to hold this thread until allowed */
+	nsi_sem_t sema;		/* Semaphore to hold this thread until allowed */
 	pthread_t thread;		/* Actual pthread_t as returned by the native kernel */
 
 	int thread_idx;			/* Index of this element in the threads_table*/
@@ -146,11 +146,11 @@ static void nct_exit_this_thread(void)
 /*
  * Wait for the semaphore, retrying if we are interrupted by a signal
  */
-NSI_INLINE int nct_sem_rewait(sem_t *semaphore)
+NSI_INLINE int nct_sem_rewait(nsi_sem_t *semaphore)
 {
 	int ret;
 
-	while (((ret = sem_wait(semaphore)) == -1) && (errno == EINTR)) {
+	while (((ret = nsi_sem_wait(semaphore)) == -1) && (errno == EINTR)) {
 		/* Restart wait if we were interrupted */
 	}
 	return ret;
@@ -206,7 +206,7 @@ static void nct_let_run(struct nct_status_t *this, int next_allowed_th)
 	NCT_DEBUG("%s: We let thread [%i] %i run\n", __func__, tt_el->thead_cnt, next_allowed_th);
 
 	this->currently_allowed_thread = next_allowed_th;
-	NSI_SAFE_CALL(sem_post(&tt_el->sema));
+	NSI_SAFE_CALL(nsi_sem_post(&tt_el->sema));
 }
 
 /**
@@ -320,10 +320,10 @@ static void ttable_init_elements(struct threads_table_el *chunk, int size)
 {
 	for (int i = 0; i < size - 1; i++) {
 		chunk[i].next = &chunk[i+1];
-		NSI_SAFE_CALL(sem_init(&chunk[i].sema, 0, 0));
+		NSI_SAFE_CALL(nsi_sem_init(&chunk[i].sema, 0U));
 	}
 	chunk[size - 1].next = NULL;
-	NSI_SAFE_CALL(sem_init(&chunk[size - 1].sema, 0, 0));
+	NSI_SAFE_CALL(nsi_sem_init(&chunk[size - 1].sema, 0U));
 }
 
 /*
@@ -536,7 +536,7 @@ void nct_clean_up(void *this_arg)
 		if (tt_el->state != USED) {
 			continue;
 		}
-		NSI_SAFE_CALL(sem_post(&tt_el->sema));
+		NSI_SAFE_CALL(nsi_sem_post(&tt_el->sema));
 	}
 #endif
 
@@ -582,7 +582,7 @@ void nct_abort_thread(void *this_arg, int thread_idx)
 
 		NCT_DEBUG("Aborting not scheduled thread [%i] %i\n", tt_el->thead_cnt, thread_idx);
 		tt_el->state = ABORTING;
-		NSI_SAFE_CALL(sem_post(&tt_el->sema));
+		NSI_SAFE_CALL(nsi_sem_post(&tt_el->sema));
 	}
 }
 
