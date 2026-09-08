@@ -43,7 +43,7 @@ static int siwx91x_clock_on(const struct device *dev, clock_control_subsys_t sys
 		RSI_PS_UlpssPeriPowerUp(ULPSS_PWRGATE_ULP_I2C);
 		RSI_ULPSS_PeripheralEnable(ULPCLK, ULP_I2C_CLK, ENABLE_STATIC_CLK);
 		break;
-	case SIWX91X_CLK_ULP_DMA:
+	case SIWX91X_CLK_ULP_UDMA:
 		RSI_PS_UlpssPeriPowerUp(ULPSS_PWRGATE_ULP_UDMA);
 		RSI_ULPSS_PeripheralEnable(ULPCLK, ULP_UDMA_CLK, ENABLE_STATIC_CLK);
 		break;
@@ -65,7 +65,7 @@ static int siwx91x_clock_on(const struct device *dev, clock_control_subsys_t sys
 		RSI_PS_M4ssPeriPowerUp(M4SS_PWRGATE_ULP_EFUSE_PERI);
 		RSI_CLK_I2CClkConfig(M4CLK, true, 1);
 		break;
-	case SIWX91X_CLK_DMA0:
+	case SIWX91X_CLK_UDMA:
 		RSI_PS_M4ssPeriPowerUp(M4SS_PWRGATE_ULP_EFUSE_PERI);
 		RSI_CLK_PeripheralClkEnable(M4CLK, UDMA_CLK, ENABLE_STATIC_CLK);
 		break;
@@ -73,7 +73,7 @@ static int siwx91x_clock_on(const struct device *dev, clock_control_subsys_t sys
 		RSI_PS_M4ssPeriPowerUp(M4SS_PWRGATE_ULP_EFUSE_PERI);
 		RSI_CLK_PeripheralClkEnable(M4CLK, PWM_CLK, ENABLE_STATIC_CLK);
 		break;
-	case SIWX91X_CLK_WATCHDOG:
+	case SIWX91X_CLK_UULP_WATCHDOG:
 		/* Both SYSRTC and WDT are clocked using LF-FSM XTAL which is initialized in
 		 * SystemCoreClockUpdate(). This function allows clock to stabilize before use.
 		 */
@@ -86,31 +86,31 @@ static int siwx91x_clock_on(const struct device *dev, clock_control_subsys_t sys
 	case SIWX91X_CLK_QSPI:
 		RSI_CLK_Qspi2ClkConfig(M4CLK, QSPI_INTFPLLCLK, 0, 0, 1);
 		break;
-	case SIWX91X_CLK_RTC:
+	case SIWX91X_CLK_UULP_RTC:
 		/* Already done in sl_calendar_init()*/
 		RSI_PS_NpssPeriPowerUp(SLPSS_PWRGATE_ULP_MCURTC | SLPSS_PWRGATE_ULP_TIMEPERIOD);
 		break;
-	case SIWX91X_CLK_I2S0:
+	case SIWX91X_CLK_I2S:
 		RSI_PS_M4ssPeriPowerUp(M4SS_PWRGATE_ULP_EFUSE_PERI);
 		break;
-	case SIWX91X_CLK_STATIC_I2S0:
+	case SIWX91X_CLK_STATIC_I2S:
 		MISC_CFG_MISC_CTRL1 |= (1 << 23);
 		RSI_CLK_PeripheralClkEnable(M4CLK, I2SM_CLK, ENABLE_STATIC_CLK);
 		break;
 	case SIWX91X_CLK_ULP_I2S:
 		RSI_PS_UlpssPeriPowerUp(ULPSS_PWRGATE_ULP_I2S);
 		break;
-	case SIWX91X_CLK_STATIC_ULP_I2S:
+	case SIWX91X_CLK_ULP_STATIC_I2S:
 		ULPCLK->ULP_I2S_CLK_GEN_REG_b.ULP_I2S_MASTER_SLAVE_MODE_b = 1;
 		RSI_ULPSS_PeripheralEnable(ULPCLK, ULP_I2S_CLK, ENABLE_STATIC_CLK);
 		break;
-	case SIWX91X_CLK_ADC:
+	case SIWX91X_CLK_ULP_ADC:
 		/* Warning, DAC also use these clocks */
 		RSI_IPMU_PowerGateSet(AUXADC_PG_ENB);
 		RSI_PS_UlpssPeriPowerUp(ULPSS_PWRGATE_ULP_AUX);
 		RSI_ULPSS_AuxClkConfig(ULPCLK, ENABLE_STATIC_CLK, ULP_AUX_REF_CLK);
 		break;
-	case SIWX91X_CLK_GPDMA0:
+	case SIWX91X_CLK_GPDMA:
 		RSI_CLK_PeripheralClkEnable(M4CLK, RPDMA_CLK, ENABLE_STATIC_CLK);
 		break;
 	case SIWX91X_CLK_RNG:
@@ -133,7 +133,7 @@ static int siwx91x_clock_off(const struct device *dev, clock_control_subsys_t sy
 	case SIWX91X_CLK_ULP_I2C:
 		RSI_ULPSS_PeripheralDisable(ULPCLK, ULP_I2C_CLK);
 		break;
-	case SIWX91X_CLK_ULP_DMA:
+	case SIWX91X_CLK_ULP_UDMA:
 		RSI_ULPSS_PeripheralDisable(ULPCLK, ULP_UDMA_CLK);
 		break;
 	case SIWX91X_CLK_UART0:
@@ -142,16 +142,16 @@ static int siwx91x_clock_off(const struct device *dev, clock_control_subsys_t sy
 	case SIWX91X_CLK_UART1:
 		RSI_CLK_PeripheralClkDisable(M4CLK, USART2_CLK);
 		break;
-	case SIWX91X_CLK_DMA0:
+	case SIWX91X_CLK_UDMA:
 		RSI_CLK_PeripheralClkDisable(M4CLK, UDMA_CLK);
 		break;
-	case SIWX91X_CLK_STATIC_I2S0:
+	case SIWX91X_CLK_STATIC_I2S:
 		RSI_CLK_PeripheralClkDisable(M4CLK, I2SM_CLK);
 		break;
-	case SIWX91X_CLK_STATIC_ULP_I2S:
+	case SIWX91X_CLK_ULP_STATIC_I2S:
 		RSI_ULPSS_PeripheralDisable(ULPCLK, ULP_I2S_CLK);
 		break;
-	case SIWX91X_CLK_ADC:
+	case SIWX91X_CLK_ULP_ADC:
 		/* Warning, DAC also use these clocks */
 		RSI_PS_UlpssPeriPowerDown(ULPSS_PWRGATE_ULP_AUX);
 		RSI_ULPSS_PeripheralDisable(ULPCLK, ULP_AUX_CLK);
@@ -195,7 +195,7 @@ static int siwx91x_clock_get_rate(const struct device *dev, clock_control_subsys
 		 */
 		*rate = SystemCoreClock;
 		return 0;
-	case SIWX91X_CLK_WATCHDOG:
+	case SIWX91X_CLK_UULP_WATCHDOG:
 		*rate = LF_FSM_CLOCK_FREQUENCY;
 		return 0;
 	case SIWX91X_CLK_GSPI:
@@ -217,7 +217,7 @@ static int siwx91x_clock_set_rate(const struct device *dev, clock_control_subsys
 	ARG_UNUSED(dev);
 
 	switch (clockid) {
-	case SIWX91X_CLK_I2S0:
+	case SIWX91X_CLK_I2S:
 		RSI_CLK_SetI2sPllFreq(M4CLK, rate, XTAL_FREQUENCY);
 		RSI_CLK_I2sClkConfig(M4CLK, I2S_PLLCLK, 0);
 		return 0;
