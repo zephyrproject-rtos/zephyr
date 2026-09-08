@@ -3162,15 +3162,20 @@ static int smp_send_security_req(struct bt_conn *conn)
 	req = net_buf_add(req_buf, sizeof(*req));
 	req->auth_req = get_auth(smp, BT_SMP_AUTH_DEFAULT);
 
+	/* bt_l2cap_send_pdu() only queues the PDU and the answering Pairing
+	 * Request is handled on the RX thread, so publish the state first.
+	 */
+	atomic_set_bit(smp->flags, SMP_FLAG_SEC_REQ);
+	atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_PAIRING_REQ);
+
 	/* SMP timer is not restarted for SecRequest so don't use smp_send */
 	err = bt_l2cap_send_pdu(&smp->chan, req_buf, NULL, NULL);
 	if (err) {
 		net_buf_unref(req_buf);
+		atomic_clear_bit(smp->flags, SMP_FLAG_SEC_REQ);
+		atomic_clear_bit(smp->allowed_cmds, BT_SMP_CMD_PAIRING_REQ);
 		return err;
 	}
-
-	atomic_set_bit(smp->flags, SMP_FLAG_SEC_REQ);
-	atomic_set_bit(smp->allowed_cmds, BT_SMP_CMD_PAIRING_REQ);
 
 	return 0;
 }
