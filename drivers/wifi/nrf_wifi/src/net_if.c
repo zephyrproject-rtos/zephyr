@@ -1351,7 +1351,7 @@ int nrf_wifi_if_set_config_zep(const struct device *dev,
 		    config->promisc_mode) {
 			LOG_ERR("%s: Driver promisc mode setting is same as configured setting",
 				__func__);
-			goto out;
+			goto unlock;
 		}
 
 		if (config->promisc_mode) {
@@ -1367,7 +1367,7 @@ int nrf_wifi_if_set_config_zep(const struct device *dev,
 
 		if (ret != NRF_WIFI_STATUS_SUCCESS) {
 			LOG_ERR("%s: mode set operation failed", __func__);
-			goto out;
+			goto unlock;
 		}
 	}
 #endif
