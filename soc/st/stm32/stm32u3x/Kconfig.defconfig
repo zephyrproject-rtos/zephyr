@@ -5,6 +5,13 @@
 
 if SOC_SERIES_STM32U3X
 
+configdefault CACHE_MANAGEMENT
+	default y
+
+choice CACHE_TYPE
+	default EXTERNAL_CACHE
+endchoice
+
 # BL2 implementation not available yet
 config TFM_BL2_NOT_SUPPORTED
 	default y
