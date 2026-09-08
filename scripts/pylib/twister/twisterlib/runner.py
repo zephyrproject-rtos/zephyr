@@ -1498,7 +1498,7 @@ class ProjectBuilder(FilterBuilder):
     @staticmethod
     def cmake_assemble_args(extra_args, handler, conf_files, extra_conf_files, extra_overlay_confs,
                             extra_dtc_overlay_files, cmake_extra_args,
-                            build_dir):
+                            build_dir, overlay_roots=None):
         # Retain quotes around config options
         config_options = [arg for arg in extra_args if arg.startswith(("CONFIG_", "SB_CONFIG_"))]
         args = [arg for arg in extra_args if not arg.startswith(("CONFIG_", "SB_CONFIG_"))]
@@ -1516,6 +1516,9 @@ class ProjectBuilder(FilterBuilder):
 
         if extra_dtc_overlay_files:
             args.append(f"DTC_OVERLAY_FILE=\"{';'.join(extra_dtc_overlay_files)}\"")
+
+        if overlay_roots:
+            args.append(f"OVERLAY_ROOT=\"{';'.join(overlay_roots)}\"")
 
         # merge overlay files into one variable
         overlays = extra_overlay_confs.copy()
@@ -1556,6 +1559,10 @@ class ProjectBuilder(FilterBuilder):
                 args.append(va)
 
 
+        overlay_roots = None
+        if self.testsuite.alt_config_dir:
+            overlay_roots = [self.testsuite.alt_config_dir]
+
         args = self.cmake_assemble_args(
             args,
             self.instance.handler,
@@ -1565,6 +1572,7 @@ class ProjectBuilder(FilterBuilder):
             self.testsuite.extra_dtc_overlay_files,
             self.options.extra_args, # CMake extra args
             self.instance.build_dir,
+            overlay_roots=overlay_roots,
         )
         return self.run_cmake(args,filter_stages)
 
