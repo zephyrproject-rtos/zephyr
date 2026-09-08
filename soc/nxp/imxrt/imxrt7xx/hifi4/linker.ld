@@ -90,6 +90,9 @@ MEMORY
   adsp_flash :
     org = FLASH_BASE,
     len = FLASH_SIZE
+  adsp_nocache :
+    org = NOCACHE_BASE,
+    len = NOCACHE_SIZE
 #ifdef CONFIG_GEN_ISR_TABLES
   IDT_LIST :
     org = IDT_BASE,
@@ -379,7 +382,7 @@ SECTIONS
     *(.bss)
     *(.bss.*)
     *(.gnu.linkonce.b.*)
-    *(COMMON)
+    *(COMMON)#error "Flash memory region is improperly defined - missing adsp_flash in DT?"
     . = ALIGN (8);
     _bss_end = ABSOLUTE(.);
   } >adsp_data
@@ -395,6 +398,31 @@ SECTIONS
 
   /* stack */
   _end = ALIGN (8);
+
+  /* nocache data */
+  _NOCACHE_LOAD_SECTION_NAME :
+  {
+    _nocache_ram_start = .;
+    _nocache_load_ram_start = .;
+
+    *(.nocache_load)
+    *(".nocache_load.*")
+
+    _nocache_load_ram_end = .;
+  } >adsp_nocache AT>adsp_flash
+
+  /* nocache bss */
+  _NOCACHE_SECTION_NAME (NOLOAD) :
+  {
+    _nocache_noload_ram_start = .;
+
+    *(.nocache)
+    *(".nocache.*")
+
+    _nocache_noload_ram_end = .;
+    _nocache_ram_end = .;
+  } >adsp_nocache
+  _nocache_noload_ram_size = _nocache_noload_ram_end - _nocache_noload_ram_start;
 
   /DISCARD/ : { *(.note.GNU-stack) }
   _heap_sentry = DATA_BASE + DATA_SIZE;
