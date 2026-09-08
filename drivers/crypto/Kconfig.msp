@@ -20,7 +20,7 @@ config CRYPTO_MSP_AES_ADV
 	help
 	  Enable TI MSP Advanced AES driver support
 
-config CRYPTO_MSPM0_MAX_SESSION
+config CRYPTO_MSP_AES_MAX_SESSION
 	int "Maximum AES sessions"
 	default 2
 	depends on CRYPTO_MSPM0_AES || CRYPTO_MSP_AES_ADV
