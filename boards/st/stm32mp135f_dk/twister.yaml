@@ -1,4 +1,3 @@
-identifier: stm32mp135f_dk
 name: ST STM32MP135F-DK Discovery
 type: mcu
 arch: arm
@@ -14,3 +13,6 @@ supported:
 ram: 262144
 flash: 262144
 vendor: st
+variants:
+  stm32mp135f_dk/stm32mp135fxx:
+    twister: true
