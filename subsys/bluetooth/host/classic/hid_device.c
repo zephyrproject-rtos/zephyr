@@ -293,7 +293,7 @@ static int hid_get_protocol_handle(struct bt_hid_device *hid, struct net_buf *bu
 	}
 
 	hdr = net_buf_add(rsp, sizeof(struct bt_hid_hdr));
-	hdr->header = BT_HID_BUILD_HDR(BT_HID_MSG_TYPE_DATA, BT_HID_PAR_REP_TYPE_OTHER);
+	hdr->header = BT_HID_BUILD_HDR(BT_HID_MSG_TYPE_DATA, BT_HID_REPORT_TYPE_OTHER);
 	net_buf_add_u8(rsp, hid->boot_mode ? BT_HID_PROTOCOL_BOOT_MODE
 					     : BT_HID_PROTOCOL_REPORT_MODE);
 
@@ -607,7 +607,7 @@ static int bt_hid_l2cap_intr_recv(struct bt_l2cap_chan *chan, struct net_buf *bu
 	 * no handshake mechanism, so a non-Output report is silently dropped.
 	 */
 	report_type = FIELD_GET(BT_HID_PARAM_REPORT_TYPE_MASK, param);
-	if (report_type != BT_HID_PAR_REP_TYPE_OUTPUT) {
+	if (report_type != BT_HID_REPORT_TYPE_OUTPUT) {
 		LOG_WRN("INTR DATA report type %u not Output, ignoring", report_type);
 		return 0;
 	}

@@ -30,15 +30,6 @@
 #define BT_HID_MSG_TYPE_DATA         0x0a
 #define BT_HID_MSG_TYPE_DATAC        0x0b
 
-/** @brief HID handshake result codes (4-bit param field). */
-#define BT_HID_HS_RSP_SUCCESS               0x00
-#define BT_HID_HS_RSP_NOT_READY             0x01
-#define BT_HID_HS_RSP_ERR_INVALID_REPORT_ID 0x02
-#define BT_HID_HS_RSP_ERR_UNSUPPORTED_REQ   0x03
-#define BT_HID_HS_RSP_ERR_INVALID_PARAM     0x04
-#define BT_HID_HS_RSP_ERR_UNKNOWN           0x0e
-#define BT_HID_HS_RSP_ERR_FATAL             0x0f
-
 /** @brief HID_CONTROL operations (lower nibble of HID header). */
 #define BT_HID_CONTROL_NOP                  0x00
 #define BT_HID_CONTROL_HARD_RESET           0x01
@@ -54,12 +45,6 @@
 #define BT_HID_PARAM_REPORT_TYPE_MASK GENMASK(1, 0)
 /** @brief Report size present flag in parameter field. */
 #define BT_HID_PARAM_REPORT_SIZE_MASK BIT(2)
-
-/** @brief Report type values used in GET/SET/DATA messages. */
-#define BT_HID_PAR_REP_TYPE_OTHER   0x00
-#define BT_HID_PAR_REP_TYPE_INPUT   0x01
-#define BT_HID_PAR_REP_TYPE_OUTPUT  0x02
-#define BT_HID_PAR_REP_TYPE_FEATURE 0x03
 
 /** @brief HID header field masks (1 byte): upper nibble = message type,
  *  lower nibble = parameter.
