@@ -60,7 +60,7 @@ fi
 set -u
 
 RESULTS_FILE="${RESULTS_FILE:-`pwd`/../RunResults.xml}"
-tmp_res_file=tmp.xml
+tmp_res_file=$(mktemp --tmpdir run_parallel.XXXXXX.xml)
 
 if [[ -v BOARD ]]; then
 	export FAILURE_EXTRA_INFO=" on ${BOARD}"
