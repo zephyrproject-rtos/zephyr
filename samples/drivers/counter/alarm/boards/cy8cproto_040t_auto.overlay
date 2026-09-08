@@ -1,0 +1,22 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&tcpwm0_1 {
+	status = "okay";
+	interrupts = <12 0>;
+
+	counter0_1 {
+		status = "okay";
+		clocks = <&peri_clk_div1>;
+	};
+};
+
+&peri_clk_div1 {
+	/* 48 MHz IMO / 48000 = 1 kHz counter tick */
+	clock-div = <47999>;
+	status = "okay";
+};
