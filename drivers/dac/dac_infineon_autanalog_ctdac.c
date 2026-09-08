@@ -383,14 +383,8 @@ static DEVICE_API(dac, dac_ifx_autanalog_api) = {
 	(DT_NODE_CHILD_IDX(DT_DRV_INST(n)) - DT_NODE_CHILD_IDX(DT_NODELABEL(dac0)))
 
 /* Extract peripheral clock divider info from the DTS clocks phandle */
-#define CTDAC_PERI_CLOCK_INIT(n)                                                               \
-	.clock = {                                                                                 \
-		.block = IFX_CAT1_PERIPHERAL_GROUP_ADJUST(                                         \
-			DT_PROP_BY_IDX(DT_INST_PHANDLE(n, clocks), peri_group, 0),                 \
-			DT_PROP_BY_IDX(DT_INST_PHANDLE(n, clocks), peri_group, 1),                 \
-			DT_INST_PROP_BY_PHANDLE(n, clocks, div_type)),                             \
-		.channel = DT_INST_PROP_BY_PHANDLE(n, clocks, channel),                            \
-	}
+#define CTDAC_PERI_CLOCK_INIT(n)                                                                   \
+	.clock = IFX_CAT1_PERI_CLOCK_DT_INST_INIT(n)
 
 /*
  * Macros to extract waveform channel child node configurations.

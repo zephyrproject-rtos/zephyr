@@ -30,7 +30,7 @@ config CLOCK_CONTROL_IFX_FIXED_FACTOR_CLOCK
 config CLOCK_CONTROL_IFX_PERI_CLOCK
 	bool "Infineon peri div clock driver"
 	default y
-	depends on DT_HAS_INFINEON_PERI_DIV_ENABLED
+	depends on DT_HAS_INFINEON_PERI_ENABLED
 	help
 	  This option enables the Peripheral clock driver for Infineon CAT1 family.
 

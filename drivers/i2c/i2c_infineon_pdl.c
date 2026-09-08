@@ -986,24 +986,7 @@ static DEVICE_API(i2c, i2c_cat1_driver_api) = {
 #endif /* CONFIG_I2C_INFINEON_BUS_RECOVERY */
 };
 
-#if defined(CONFIG_SOC_FAMILY_INFINEON_EDGE)
-#define I2C_PERI_CLOCK_INIT(n)                                                                     \
-	.clock = {                                                                                 \
-		.block = IFX_CAT1_PERIPHERAL_GROUP_ADJUST(                                         \
-			DT_PROP_BY_IDX(DT_INST_PHANDLE(n, clocks), peri_group, 0),                 \
-			DT_PROP_BY_IDX(DT_INST_PHANDLE(n, clocks), peri_group, 1),                 \
-			DT_INST_PROP_BY_PHANDLE(n, clocks, div_type)),                             \
-		.channel = DT_INST_PROP_BY_PHANDLE(n, clocks, channel),                            \
-	},
-#else
-#define I2C_PERI_CLOCK_INIT(n)                                                                     \
-	.clock = {                                                                                 \
-		.block = IFX_CAT1_PERIPHERAL_GROUP_ADJUST(                                         \
-			DT_PROP_BY_IDX(DT_INST_PHANDLE(n, clocks), peri_group, 1),                 \
-			DT_INST_PROP_BY_PHANDLE(n, clocks, div_type)),                             \
-		.channel = DT_INST_PROP_BY_PHANDLE(n, clocks, channel),                            \
-	},
-#endif
+#define I2C_PERI_CLOCK_INIT(n) .clock = IFX_CAT1_PERI_CLOCK_DT_INST_INIT(n),
 
 #ifdef CONFIG_I2C_INFINEON_BUS_RECOVERY
 #define I2C_CAT1_SCL_INIT(n) .scl = GPIO_DT_SPEC_INST_GET_OR(n, scl_gpios, {0}),

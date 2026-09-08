@@ -732,14 +732,7 @@ static DEVICE_API(dmic, dmic_ops) = {
 	.read = ifx_dmic_read,
 };
 
-#define DMIC_PERI_CLOCK_INFO(n)                                                                    \
-	.clock = {                                                                                 \
-		.block = IFX_CAT1_PERIPHERAL_GROUP_ADJUST(                                         \
-			DT_PROP_BY_IDX(DT_INST_PHANDLE(n, clocks), peri_group, 0),                 \
-			DT_PROP_BY_IDX(DT_INST_PHANDLE(n, clocks), peri_group, 1),                 \
-			DT_INST_PROP_BY_PHANDLE(n, clocks, div_type)),                             \
-		.channel = DT_INST_PROP_BY_PHANDLE(n, clocks, channel),                            \
-	},
+#define DMIC_PERI_CLOCK_INFO(n) .clock = IFX_CAT1_PERI_CLOCK_DT_INST_INIT(n),
 
 #define DMIC_DMA_CHANNEL_INIT(index)                                                               \
 	.dev_dma = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(index, rx)),                            \

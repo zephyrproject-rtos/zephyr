@@ -1016,13 +1016,7 @@ static DEVICE_API(i2s, ifx_i2s_api) = {
 };
 
 #define I2S_PERI_CLOCK_INFO(n)                                                                     \
-	.clock = {                                                                                 \
-		.block = IFX_CAT1_PERIPHERAL_GROUP_ADJUST(                                         \
-			DT_PROP_BY_IDX(DT_INST_PHANDLE(n, clocks), peri_group, 0),                 \
-			DT_PROP_BY_IDX(DT_INST_PHANDLE(n, clocks), peri_group, 1),                 \
-			DT_INST_PROP_BY_PHANDLE(n, clocks, div_type)),                             \
-		.channel = DT_INST_PROP_BY_PHANDLE(n, clocks, channel),                            \
-	},                                                                                         \
+	.clock = IFX_CAT1_PERI_CLOCK_DT_INST_INIT(n),                                              \
 	.clock_peri_group = DT_PROP_BY_IDX(DT_INST_PHANDLE(n, clocks), peri_group, 1),
 
 #define I2S_DMA_CHANNEL_INIT(index, dir, ch_dir)                                                   \

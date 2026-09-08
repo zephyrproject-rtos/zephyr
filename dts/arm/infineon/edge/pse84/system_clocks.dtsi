@@ -251,6 +251,8 @@
 	};
 
 	peri0: peri0 {
+		compatible = "infineon,peri";
+
 		/* Peripheral 0, Clock Group 1 */
 		/* 8-bit */
 		peri0_group1_8bit_0: peri0_group1_8bit_0 {
@@ -480,6 +482,8 @@
 	};
 
 	peri1: peri1 {
+		compatible = "infineon,peri";
+
 		/* Peripheral 1, Clock Group 1 */
 		/* 16.5-bit */
 		peri1_group1_16_5bit_0: peri1_group1_16_5bit_0 {

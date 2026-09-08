@@ -1,0 +1,34 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Infineon peripheral clock (PERI) instance.
+
+  Groups the programmable peripheral clock dividers belonging to one PERI
+  instance. Divider child nodes use the "infineon,peri-div" compatible and are
+  programmed by the driver bound to this node, so every "infineon,peri-div"
+  node must be a child of an "infineon,peri" node.
+
+  Peripherals reference an individual divider, not this node, for example:
+
+      peri0: peri0 {
+              compatible = "infineon,peri";
+
+              peri0_group1_8bit_0: peri0_group1_8bit_0 {
+                      compatible = "infineon,peri-div";
+                      peri-group = [00 01];
+                      div-type = <DIV_8_BIT>;
+                      channel = <0>;
+                      clock-div = <1>;
+                      status = "okay";
+              };
+      };
+
+      &uart0 {
+              clocks = <&peri0_group1_8bit_0>;
+      };
+
+compatible: "infineon,peri"
+
+include: [base.yaml]
