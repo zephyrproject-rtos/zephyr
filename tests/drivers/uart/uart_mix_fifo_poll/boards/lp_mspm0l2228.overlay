@@ -13,6 +13,7 @@ dut: &uart1 {
 	pinctrl-0 = <&uart1_tx_pb4 &uart1_rx_pb5>;
 	pinctrl-names = "default";
 	status = "okay";
+	zephyr,pm-device-runtime-auto;
 };
 
 &timg8 {
