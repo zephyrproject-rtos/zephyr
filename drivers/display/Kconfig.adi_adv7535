@@ -1,0 +1,31 @@
+# Copyright (c) 2026 Antmicro <www.antmicro.com>
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config ADI_ADV7535
+	bool "Analog Devices ADV7535 DSI-to-HDMI bridge driver"
+	default y
+	select MIPI_DSI
+	select I2C
+	select GPIO
+	depends on DT_HAS_ADI_ADV7535_ENABLED
+	help
+	  Enable driver for Analog Devices ADV7535 DSI-to-HDMI display bridge.
+
+if ADI_ADV7535
+
+config ADV7535_THREAD_PRIORITY
+	int "Driver internal thread priority"
+	default -1 if COOP_ENABLED
+	default 0
+	help
+	  Priority of the thread used to handle ADV7535 interrupts.
+	  Defaults to the lowest priority cooperative thread.
+
+config ADV7535_THREAD_STACK_SIZE
+	int "Driver internal thread stack size"
+	default 1024
+	help
+	  Size of the stack used in the driver.
+
+endif
