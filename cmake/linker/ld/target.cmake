@@ -117,23 +117,47 @@ function(toolchain_ld_link_elf)
     ${ARGN}                                                   # input args to parse
   )
 
-  target_link_libraries(
-    ${TOOLCHAIN_LD_LINK_ELF_TARGET_ELF}
-    ${TOOLCHAIN_LD_LINK_ELF_LIBRARIES_PRE_SCRIPT}
-    ${TOPT}
-    ${TOOLCHAIN_LD_LINK_ELF_LINKER_SCRIPT}
-    ${TOOLCHAIN_LD_LINK_ELF_LIBRARIES_POST_SCRIPT}
+  if(CMAKE_HOST_APPLE AND "${ZEPHYR_TOOLCHAIN_VARIANT}" STREQUAL "host")
+    set(whole_archive_flags)
+    foreach(lib ${WHOLE_ARCHIVE_LIBS})
+      list(APPEND whole_archive_flags
+        ${LINKERFLAGPREFIX},-force_load,$<TARGET_FILE:${lib}>
+      )
+    endforeach()
+    add_dependencies(${TOOLCHAIN_LD_LINK_ELF_TARGET_ELF} ${WHOLE_ARCHIVE_LIBS})
 
-    ${LINKERFLAGPREFIX},-Map,${TOOLCHAIN_LD_LINK_ELF_OUTPUT_MAP}
-    ${LINKERFLAGPREFIX},--whole-archive
-    ${WHOLE_ARCHIVE_LIBS}
-    ${LINKERFLAGPREFIX},--no-whole-archive
-    ${NO_WHOLE_ARCHIVE_LIBS}
-    $<TARGET_OBJECTS:${OFFSETS_LIB}>
-    -L${PROJECT_BINARY_DIR}
+    target_link_libraries(
+      ${TOOLCHAIN_LD_LINK_ELF_TARGET_ELF}
+      ${TOOLCHAIN_LD_LINK_ELF_LIBRARIES_PRE_SCRIPT}
+      ${TOOLCHAIN_LD_LINK_ELF_LIBRARIES_POST_SCRIPT}
 
-    ${TOOLCHAIN_LD_LINK_ELF_DEPENDENCIES}
-  )
+      ${LINKERFLAGPREFIX},-map,${TOOLCHAIN_LD_LINK_ELF_OUTPUT_MAP}
+      ${whole_archive_flags}
+      ${NO_WHOLE_ARCHIVE_LIBS}
+      $<TARGET_OBJECTS:${OFFSETS_LIB}>
+      -L${PROJECT_BINARY_DIR}
+
+      ${TOOLCHAIN_LD_LINK_ELF_DEPENDENCIES}
+    )
+  else()
+    target_link_libraries(
+      ${TOOLCHAIN_LD_LINK_ELF_TARGET_ELF}
+      ${TOOLCHAIN_LD_LINK_ELF_LIBRARIES_PRE_SCRIPT}
+      ${TOPT}
+      ${TOOLCHAIN_LD_LINK_ELF_LINKER_SCRIPT}
+      ${TOOLCHAIN_LD_LINK_ELF_LIBRARIES_POST_SCRIPT}
+
+      ${LINKERFLAGPREFIX},-Map,${TOOLCHAIN_LD_LINK_ELF_OUTPUT_MAP}
+      ${LINKERFLAGPREFIX},--whole-archive
+      ${WHOLE_ARCHIVE_LIBS}
+      ${LINKERFLAGPREFIX},--no-whole-archive
+      ${NO_WHOLE_ARCHIVE_LIBS}
+      $<TARGET_OBJECTS:${OFFSETS_LIB}>
+      -L${PROJECT_BINARY_DIR}
+
+      ${TOOLCHAIN_LD_LINK_ELF_DEPENDENCIES}
+    )
+  endif()
 endfunction(toolchain_ld_link_elf)
 
 # Function for finalizing link setup after Zephyr configuration has completed.
