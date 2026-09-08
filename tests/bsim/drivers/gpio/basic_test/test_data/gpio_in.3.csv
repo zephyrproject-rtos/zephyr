@@ -1,0 +1,6 @@
+time(microsecond),port,pin,level
+# comment
+60000,0,3,1
+110000,0,3,0
+165000,0,3,1
+# comment
