@@ -50,6 +50,8 @@ def main():
     kconf = Kconfig(args.kconfig_file, warn_to_stderr=False,
                     suppress_traceback=True)
 
+    check_board_sym_redefinition(kconf)
+
     if args.handwritten_input_configs:
         # Warn for assignments to undefined symbols, but only for handwritten
         # fragments, to avoid warnings-turned-errors when using an old
@@ -145,6 +147,39 @@ def main():
 
     # Write the list of parsed Kconfig files to a file
     write_kconfig_filenames(kconf, args.kconfig_list_out)
+
+
+def check_board_sym_redefinition(kconf):
+    # boards/Kconfig.v2 and the generated $KCONFIG_BOARD_DIR/Kconfig define
+    # BOARD_<board>, BOARD_<board target> and BOARD_REVISION_<revision> for
+    # the board being built. Board Kconfig files may only 'select' and 'imply'
+    # from these symbols. A type, prompt or default there keeps the symbol
+    # alive, silently, once the build system stops defining it.
+    board_dir = os.environ.get("KCONFIG_BOARD_DIR", "")
+    kconfig_v2 = os.path.join(os.environ.get("srctree", ""), "boards", "Kconfig.v2")
+
+    def generated(node):
+        path = os.path.abspath(os.path.join(os.environ.get("srctree", ""), node.filename))
+        return path == kconfig_v2 or (board_dir and path.startswith(board_dir + os.sep))
+
+    errors = []
+    for sym in kconf.unique_defined_syms:
+        gen_nodes = [node for node in sym.nodes if generated(node)]
+        if not gen_nodes:
+            continue
+
+        for node in sym.nodes:
+            if node in gen_nodes:
+                continue
+            if node.has_type or node.prompt or node.defaults or node.ranges:
+                errors.append(
+                    f"{sym.name} is defined by the build system at "
+                    f"{gen_nodes[0].filename}:{gen_nodes[0].linenr} and redefined at "
+                    f"{node.filename}:{node.linenr}. Board Kconfig files may only "
+                    f"'select' and 'imply' from it, not set a type, prompt or default.")
+
+    if errors:
+        err("\n\n".join(errors))
 
 
 def check_no_promptless_assign(kconf):
