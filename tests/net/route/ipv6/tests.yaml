@@ -22,3 +22,11 @@ tests:
       - CONFIG_ETH_DRIVER=n
       - CONFIG_ASSERT=y
       - CONFIG_NET_IF_MAX_IPV6_COUNT=3
+  net.route.ipv6.forward_nd:
+    extra_configs:
+      - CONFIG_NET_L2_ETHERNET=y
+      - CONFIG_ETH_DRIVER=n
+      - CONFIG_ASSERT=y
+      - CONFIG_NET_IF_MAX_IPV6_COUNT=3
+      - CONFIG_NET_IPV6_FORWARDING=y
+      - CONFIG_NET_IPV6_ND=y

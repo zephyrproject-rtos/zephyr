@@ -1164,6 +1164,120 @@ ZTEST(route_packet_suite, test_route_outbound_ll_src)
 	net_ipv6_nbr_rm(outbound_if, &rp_nexthop);
 }
 
+/*
+ * Forwarding to a next hop that is not yet in the neighbor cache must not drop
+ * the packet: net_route_ipv6_packet() clears the received LL dest so that the
+ * send path solicits the next hop (one NS) and queues the packet, then it is
+ * transmitted on the outbound (Ethernet) iface once the neighbor is resolved.
+ */
+ZTEST(route_packet_suite, test_route_forward_unresolved_nexthop_queues)
+{
+	struct net_if *inbound_if = net_if_get_first_by_type(&NET_L2_GET_NAME(DUMMY));
+	struct net_if *outbound_if = net_if_get_first_by_type(&NET_L2_GET_NAME(ETHERNET));
+	struct net_route_entry *route;
+	struct net_linkaddr nbr_ll;
+	struct net_if_addr *ifaddr;
+	struct net_ipv6_hdr *hdr;
+	struct net_nbr *nbr;
+	struct net_pkt *pkt;
+
+	Z_TEST_SKIP_IFNDEF(CONFIG_NET_IPV6_FORWARDING);
+
+	zassert_not_null(inbound_if, "Inbound iface missing");
+	zassert_not_null(outbound_if, "Outbound iface missing");
+
+	/* The Ethernet test iface is created down and with NET_IF_IPV6_NO_ND
+	 * set; bring it fully up and enable ND so the forwarding path solicits
+	 * the unresolved next hop.
+	 */
+	net_if_carrier_on(outbound_if);
+	(void)net_if_up(outbound_if);
+	net_if_flag_clear(outbound_if, NET_IF_IPV6_NO_ND);
+
+	/* The outbound iface needs a source address for the solicitation. */
+	ifaddr = net_if_ipv6_addr_add(outbound_if, &rp_src, NET_ADDR_MANUAL, 0);
+	zassert_not_null(ifaddr, "Cannot add IPv6 address to outbound iface");
+	ifaddr->addr_state = NET_ADDR_PREFERRED;
+
+	/* Route forward_dest_addr via the unresolved next hop on the Eth iface. */
+	route = net_route_ipv6_add(outbound_if, &forward_dest_addr, 128,
+				   &rp_nexthop,
+				   NET_IPV6_ND_INFINITE_LIFETIME,
+				   NET_ROUTE_PREFERENCE_HIGH);
+	zassert_not_null(route, "Forwarding route add failed");
+
+	net_ipv6_nbr_rm(outbound_if, &rp_nexthop);
+
+	nbr_ll.len = sizeof(struct net_eth_addr);
+	nbr_ll.type = NET_LINK_ETHERNET;
+	nbr_ll.addr[0] = 0x02;
+	nbr_ll.addr[1] = 0x00;
+	nbr_ll.addr[2] = 0x5E;
+	nbr_ll.addr[3] = 0x00;
+	nbr_ll.addr[4] = 0x53;
+	nbr_ll.addr[5] = 0x77;
+
+	/* Minimal, fully contiguous IPv6 packet, built like the dummy
+	 * forwarding tests so the ND send path can re-read the header.
+	 */
+	pkt = net_pkt_alloc_with_buffer(inbound_if, sizeof(struct net_ipv6_hdr),
+					NET_AF_INET6, NET_IPV6_NEXTHDR_NONE,
+					K_NO_WAIT);
+	zassert_not_null(pkt, "Forwarding packet alloc failed");
+
+	hdr = (struct net_ipv6_hdr *)net_buf_add(pkt->buffer,
+						 sizeof(struct net_ipv6_hdr));
+	zassert_not_null(hdr, "Cannot reserve IPv6 header");
+
+	memset(hdr, 0, sizeof(*hdr));
+	hdr->vtc = 0x60;
+	hdr->len = 0U;
+	hdr->nexthdr = NET_IPV6_NEXTHDR_NONE;
+	hdr->hop_limit = 2U;
+	net_ipv6_addr_copy_raw(hdr->src, forward_src_addr.s6_addr);
+	net_ipv6_addr_copy_raw(hdr->dst, forward_dest_addr.s6_addr);
+
+	/* Received on the dummy iface, forwarded towards the Ethernet iface
+	 * whose next hop is unresolved.
+	 */
+	zassert_ok(net_recv_data(inbound_if, pkt), "Forwarding receive failed");
+
+	/* net_recv_data() is asynchronous: let the RX thread forward the
+	 * packet, run the ND send path and solicit the next hop (one NS).
+	 */
+	k_sleep(K_MSEC(10));
+
+	/* The unresolved next hop must now exist (INCOMPLETE) with the
+	 * forwarded packet queued behind the outstanding NS.
+	 */
+	nbr = net_ipv6_nbr_lookup(outbound_if, &rp_nexthop);
+	zassert_not_null(nbr, "Next hop not created by forwarding NS");
+
+	/* Arm the capture now so we only observe the queued DATA packet being
+	 * flushed, not the NS that was already sent to solicit the neighbor.
+	 */
+	route_eth_tx_capture.armed = true;
+	route_eth_tx_capture.done = false;
+
+	/* Resolve the neighbor (as an arriving NA would); flush pending queue. */
+	nbr = net_ipv6_nbr_add(outbound_if, &rp_nexthop, &nbr_ll, false,
+				NET_IPV6_NBR_STATE_REACHABLE);
+	zassert_not_null(nbr, "Cannot resolve outbound neighbor");
+
+	zassert_ok(k_sem_take(&route_eth_send_sem, K_SECONDS(1)),
+		   "Queued forwarded packet was not sent after resolution");
+	zassert_true(route_eth_tx_capture.done,
+		     "Forwarded packet should be sent once next hop resolved");
+	zassert_equal_ptr(route_eth_tx_capture.iface, outbound_if,
+			  "Forwarded packet should egress on outbound iface");
+
+	route_eth_tx_capture.armed = false;
+	net_ipv6_nbr_rm(outbound_if, &rp_nexthop);
+	(void)net_route_ipv6_del(route);
+	net_if_flag_set(outbound_if, NET_IF_IPV6_NO_ND);
+	net_if_ipv6_addr_rm(outbound_if, &rp_src);
+}
+
 ZTEST_SUITE(route_packet_suite, NULL, NULL, NULL, NULL, NULL);
 
 #endif /* CONFIG_NET_L2_ETHERNET && !CONFIG_ETH_DRIVER */
