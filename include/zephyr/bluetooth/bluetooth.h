@@ -2423,6 +2423,21 @@ enum bt_le_scan_opt {
 	 * @note Requires @ref BT_LE_SCAN_OPT_CODED.
 	 */
 	BT_LE_SCAN_OPT_NO_1M = BIT(3),
+
+	/**
+	 * @brief Use the extended scanner filter policy.
+	 *
+	 * Also report directed advertisements whose target address is a resolvable private
+	 * address that the Controller was unable to resolve. The target address is reported
+	 * in @ref bt_le_scan_recv_info.direct_addr.
+	 *
+	 * @note Requires @kconfig{CONFIG_BT_SCAN_EXT_FILTER_POLICY}. @ref bt_le_scan_start
+	 *       returns @c -EINVAL if this option is set while it is disabled.
+	 *
+	 * @note Requires a Controller that supports the Extended Scanner Filter Policies.
+	 *       @ref bt_le_scan_start returns @c -ENOTSUP otherwise.
+	 */
+	BT_LE_SCAN_OPT_EXT_FILTER_POLICY = BIT(4),
 };
 
 enum bt_le_scan_type {
@@ -2691,6 +2706,10 @@ BUILD_ASSERT(BT_GAP_SCAN_FAST_WINDOW == BT_GAP_SCAN_FAST_INTERVAL_MIN,
  *       when requesting additional information from advertisers.
  *       In order to enable directed advertiser reports then
  *       @kconfig{CONFIG_BT_SCAN_WITH_IDENTITY} must be enabled.
+ *       This does not apply to directed advertisements whose target address the Controller
+ *       was unable to resolve. Those are reported whenever
+ *       @ref BT_LE_SCAN_OPT_EXT_FILTER_POLICY is used, as they cannot disclose the local
+ *       identity address.
  *
  * @note Setting the `param.timeout` parameter is not supported when
  *       @kconfig{CONFIG_BT_PRIVACY} is enabled, when the param.type is @ref
@@ -2707,6 +2726,10 @@ BUILD_ASSERT(BT_GAP_SCAN_FAST_WINDOW == BT_GAP_SCAN_FAST_INTERVAL_MIN,
  * @return Zero on success or error code otherwise, positive in case of
  *         protocol error or negative (POSIX) in case of stack internal error.
  * @retval -EBUSY if the scanner is already being started in a different thread.
+ * @retval -EINVAL if @ref BT_LE_SCAN_OPT_EXT_FILTER_POLICY is set and
+ *         @kconfig{CONFIG_BT_SCAN_EXT_FILTER_POLICY} is disabled.
+ * @retval -ENOTSUP if @ref BT_LE_SCAN_OPT_EXT_FILTER_POLICY is set and the Controller does
+ *         not support the Extended Scanner Filter Policies.
  */
 int bt_le_scan_start(const struct bt_le_scan_param *param, bt_le_scan_cb_t cb);
 

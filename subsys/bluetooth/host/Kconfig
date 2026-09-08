@@ -883,6 +883,23 @@ config BT_EXT_SCAN_BUF_SIZE
 	  provided by the controller is larger than this buffer size,
 	  the remaining data will be discarded.
 
+config BT_SCAN_EXT_FILTER_POLICY
+	bool "Extended scanner filter policies"
+	depends on !HAS_BT_CTLR || BT_CTLR_EXT_SCAN_FP
+	help
+	  Enable support for the BT_LE_SCAN_OPT_EXT_FILTER_POLICY scanning option.
+
+	  The extended scanner filter policies let the Controller report directed
+	  advertisements whose target address is a resolvable private address that
+	  the Controller was unable to resolve, instead of discarding them. This
+	  allows an application to detect a peer that is directing advertisements
+	  at an identity the local device cannot resolve.
+
+	  This enables the LE Directed Advertising Report event, which is used to
+	  report these advertisements while scanning with the legacy scanning
+	  commands. It requires a Controller that supports the Extended Scanner
+	  Filter Policies.
+
 endif # BT_OBSERVER
 
 config BT_SCAN_WITH_IDENTITY
