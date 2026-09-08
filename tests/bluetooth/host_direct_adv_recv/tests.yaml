@@ -1,0 +1,19 @@
+common:
+  extra_args:
+    - EXTRA_DTC_OVERLAY_FILE="test.overlay"
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+  integration_platforms:
+    - native_sim
+  tags:
+    - bluetooth
+    - host
+tests:
+  bluetooth.host_direct_adv_recv: {}
+  bluetooth.host_direct_adv_recv.scan_with_identity:
+    extra_configs:
+      - CONFIG_BT_SCAN_WITH_IDENTITY=y
+  bluetooth.host_direct_adv_recv.ext_adv:
+    extra_configs:
+      - CONFIG_BT_EXT_ADV=y
