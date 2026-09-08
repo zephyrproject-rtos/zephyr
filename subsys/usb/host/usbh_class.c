@@ -159,6 +159,11 @@ void usbh_class_probe_device(struct usb_device *const udev)
 
 	usbh_class_probe_function(udev, &filter_data, USBH_CLASS_IFNUM_DEVICE);
 
+	/* Single-function device matched at device level, no need to scan interfaces */
+	if (usbh_class_is_any_iface_bound(udev)) {
+		return;
+	}
+
 	/* To support multi-function devices, match against each function */
 
 	while (true) {
