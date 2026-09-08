@@ -16,12 +16,16 @@
 		#address-cells = <1>;
 		#size-cells = <1>;
 		status = "okay";
+		ranges;
 
 		flash0: flash@0 {
 			compatible = "soc-nv-flash";
 			reg = <0x00000000 DT_SIZE_K(128)>;  /* 128 KB Flash */
 			write-block-size = <256>;
 			erase-block-size = <256>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
 		};
 	};
 
