@@ -1,0 +1,44 @@
+description: TCS34725 color sensor
+
+compatible: "ams,tcs34725"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  gain:
+    type: int
+    default: 0
+    description: |
+      RGBC analog gain (AGAIN) setting.
+      0 = 1x, 1 = 4x, 2 = 16x, 3 = 60x
+    enum:
+      - 0
+      - 1
+      - 2
+      - 3
+
+  atime:
+    type: int
+    default: 0xFF
+    description: |
+      RGBC integration time register (ATIME).
+      Integration time (ms) = 2.4 * (256 - ATIME)
+
+  wtime:
+    type: int
+    default: 0xFF
+    description: |
+      Wait time register (WTIME). Only used if wait-enable is set.
+      Wait time (ms) = 2.4 * (256 - WTIME), or x12 if wlong is set.
+
+  wlong:
+    type: boolean
+    description: |
+      Extend wait cycles by 12x (datasheet CONFIG register, WLONG bit).
+
+  wait-enable:
+    type: boolean
+    description: |
+      Enable the Wait state between RGBC conversion cycles to reduce
+      average power consumption (datasheet System Timing / Power
+      Management sections).
