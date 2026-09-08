@@ -11,8 +11,6 @@ tests:
     depends_on:
       - eth
       - ptp_clock
-    integration_platforms:
-      - nucleo_h563zi
 
   sample.net.ptp.multicast:
     extra_configs:
