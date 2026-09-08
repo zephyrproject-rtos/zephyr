@@ -6,20 +6,27 @@
 if(CONFIG_SOC_FAMILY_MICROCHIP_SAMA5 OR CONFIG_SOC_FAMILY_MICROCHIP_SAMA7)
   zephyr_include_directories(.)
 
-  zephyr_sources_ifdef(CONFIG_SOC_FAMILY_MICROCHIP_SAMA7
+  zephyr_sources(
     clk-generated.c
     clk-main.c
     clk-master.c
     clk-peripheral.c
     clk-programmable.c
-    clk-sam9x60-pll.c
     clk-system.c
     pmc.c
-    delay.c
   )
 
   zephyr_sources(
     ${CONFIG_SOC_SERIES}.c
+  )
+
+  zephyr_sources_ifdef(CONFIG_SOC_FAMILY_MICROCHIP_SAMA5
+    clk-sama5d2-pll.c
+  )
+
+  zephyr_sources_ifdef(CONFIG_SOC_FAMILY_MICROCHIP_SAMA7
+    clk-sam9x60-pll.c
+    delay.c
   )
 
   zephyr_sources_ifdef(CONFIG_SOC_SERIES_SAMA7G5
