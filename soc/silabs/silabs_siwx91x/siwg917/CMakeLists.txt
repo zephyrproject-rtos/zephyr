@@ -6,6 +6,7 @@ zephyr_sources_ifdef(CONFIG_SILABS_SIWX91X_NWP siwx91x_nwp.c)
 zephyr_sources_ifdef(CONFIG_PM power.c)
 zephyr_sources_ifdef(CONFIG_SIWX91X_FIRMWARE_UPGRADE_SHELL siwx91x_fota_shell.c)
 zephyr_sources_ifdef(CONFIG_SIWX91X_VERSION_SHELL siwx91x_version_shell.c)
+zephyr_sources_ifdef(CONFIG_SIWX91X_CLOCK_SHELL siwx91x_clock_shell.c)
 
 zephyr_compile_definitions_ifdef(CONFIG_SOC_SIWG917Y111MGABA
   SI91X_32kHz_EXTERNAL_OSCILLATOR=1
