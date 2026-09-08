@@ -66,6 +66,10 @@ struct uhc_dwc2_config {
 #include "uhc_dwc2_esp32_usb_otg_fs.h"
 #endif
 
+#if DT_HAS_COMPAT_STATUS_OKAY(espressif_esp32_usb_otg_hs)
+#include "uhc_dwc2_esp32_usb_otg_hs.h"
+#endif
+
 #if DT_HAS_COMPAT_STATUS_OKAY(nordic_nrf_usbhs_nrf54l)
 #include "uhc_dwc2_nrf_usbhs_nrf54l.h"
 #endif
