@@ -357,6 +357,30 @@ static int pcf857x_init(const struct device *dev)
 		return -ENODEV;
 	}
 
+	/*
+	 * Put the device into a known state: all pins released high
+	 * (high-impedance / input with pull-up on these open-drain parts).
+	 * This also primes input_port_last with the initial pin state.
+	 */
+	drv_data->pins_cfg.configured_as_outputs = 0U;
+	drv_data->pins_cfg.outputs_state = 0xFFFFU;
+
+	uint8_t init_buf[2] = {0xFFU, 0xFFU};
+
+	rc = i2c_write_dt(&drv_cfg->i2c, init_buf, drv_data->num_bytes);
+	if (rc != 0) {
+		LOG_ERR("%s: failed to initialize output port: %d", dev->name, rc);
+		return -EIO;
+	}
+
+	k_sem_take(&drv_data->lock, K_FOREVER);
+	rc = pcf857x_process_input(dev, NULL);
+	k_sem_give(&drv_data->lock);
+	if (rc != 0) {
+		LOG_ERR("%s: failed to read initial state: %d", dev->name, rc);
+		return -EIO;
+	}
+
 	/* If the INT line is available, configure the callback for it. */
 	if (drv_cfg->gpio_int.port) {
 		if (!gpio_is_ready_dt(&drv_cfg->gpio_int)) {
