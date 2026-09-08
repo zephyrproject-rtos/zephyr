@@ -673,6 +673,40 @@ static uint8_t get_adv_props_legacy(uint8_t evt_type)
 	}
 }
 
+#if defined(CONFIG_BT_EXT_ADV) || defined(CONFIG_BT_SCAN_EXT_FILTER_POLICY)
+/* Copy the target address of a directed advertisement out of an HCI event, converting an
+ * identity address to a regular one.
+ *
+ * BT_ADDR_LE_UNRESOLVED has the identity address bit set, so it has to be excluded before
+ * calling bt_addr_le_is_resolved(), which only inspects that bit.
+ */
+static void copy_hci_target_addr(bt_addr_le_t *dst, const bt_addr_le_t *hci_addr)
+{
+	if (hci_addr->type != BT_ADDR_LE_UNRESOLVED && bt_addr_le_is_resolved(hci_addr)) {
+		bt_addr_le_copy_resolved(dst, hci_addr);
+	} else {
+		bt_addr_le_copy(dst, hci_addr);
+	}
+}
+#endif /* CONFIG_BT_EXT_ADV || CONFIG_BT_SCAN_EXT_FILTER_POLICY */
+
+/* Fill in the fields shared by the reports of the legacy scanning commands. Reports carrying a
+ * target address set it after this.
+ */
+static void create_legacy_adv_info(uint8_t evt_type, int8_t rssi,
+				   struct bt_le_scan_recv_info *const scan_info)
+{
+	scan_info->primary_phy = BT_GAP_LE_PHY_1M;
+	scan_info->secondary_phy = 0;
+	scan_info->tx_power = BT_GAP_TX_POWER_INVALID;
+	scan_info->rssi = rssi;
+	scan_info->sid = BT_GAP_SID_INVALID;
+	scan_info->interval = 0U;
+	scan_info->adv_type = evt_type;
+	scan_info->adv_props = get_adv_props_legacy(evt_type);
+	scan_info->direct_addr = NULL;
+}
+
 static void le_adv_recv(bt_addr_le_t *addr, struct bt_le_scan_recv_info *info,
 			struct net_buf_simple *buf, uint16_t len)
 {
@@ -681,12 +715,19 @@ static void le_adv_recv(bt_addr_le_t *addr, struct bt_le_scan_recv_info *info,
 	bt_addr_le_t id_addr;
 	bool explicit_scan = atomic_test_bit(scan_state.scan_flags, BT_LE_SCAN_USER_EXPLICIT_SCAN);
 	bool conn_scan = atomic_test_bit(scan_state.scan_flags, BT_LE_SCAN_USER_CONN);
+	/* A directed advertisement whose target address the Controller could not resolve is by
+	 * construction not addressed to the local identity, so it cannot disclose it. It is only
+	 * reported when the application asked for it with BT_LE_SCAN_OPT_EXT_FILTER_POLICY.
+	 */
+	bool unresolved_directed =
+		info->direct_addr != NULL && info->direct_addr->type == BT_ADDR_LE_UNRESOLVED;
 
 	LOG_DBG("%s event %u, len %u, rssi %d dBm", bt_addr_le_str(addr), info->adv_type, len,
 		info->rssi);
 
 	if (!IS_ENABLED(CONFIG_BT_PRIVACY) && !IS_ENABLED(CONFIG_BT_SCAN_WITH_IDENTITY) &&
-	    explicit_scan && (info->adv_props & BT_HCI_LE_ADV_PROP_DIRECT)) {
+	    explicit_scan && (info->adv_props & BT_GAP_ADV_PROP_DIRECTED) != 0U &&
+	    !unresolved_directed) {
 		LOG_DBG("Dropped direct adv report");
 		return;
 	}
@@ -832,8 +873,11 @@ static uint16_t get_adv_props_extended(uint16_t evt_type)
 }
 
 static void create_ext_adv_info(struct bt_hci_evt_le_ext_advertising_info const *const evt,
-				struct bt_le_scan_recv_info *const scan_info)
+				struct bt_le_scan_recv_info *const scan_info,
+				bt_addr_le_t *const direct_addr)
 {
+	uint16_t evt_type = sys_le16_to_cpu(evt->evt_type);
+
 	if (IS_ENABLED(CONFIG_BT_EXT_ADV_CODING_SELECTION) &&
 	    BT_FEAT_LE_ADV_CODING_SEL(bt_dev.le.features)) {
 		scan_info->primary_phy = get_ext_adv_coding_sel_phy(evt->prim_phy);
@@ -847,8 +891,15 @@ static void create_ext_adv_info(struct bt_hci_evt_le_ext_advertising_info const 
 	scan_info->rssi = evt->rssi;
 	scan_info->sid = evt->sid;
 	scan_info->interval = sys_le16_to_cpu(evt->interval);
-	scan_info->adv_type = get_adv_type(sys_le16_to_cpu(evt->evt_type));
-	scan_info->adv_props = get_adv_props_extended(sys_le16_to_cpu(evt->evt_type));
+	scan_info->adv_type = get_adv_type(evt_type);
+	scan_info->adv_props = get_adv_props_extended(evt_type);
+
+	if ((evt_type & BT_HCI_LE_ADV_EVT_TYPE_DIRECT) != 0U) {
+		copy_hci_target_addr(direct_addr, &evt->direct_addr);
+		scan_info->direct_addr = direct_addr;
+	} else {
+		scan_info->direct_addr = NULL;
+	}
 }
 
 void bt_hci_le_adv_ext_report(struct net_buf *buf)
@@ -862,6 +913,7 @@ void bt_hci_le_adv_ext_report(struct net_buf *buf)
 	while (num_reports--) {
 		struct bt_hci_evt_le_ext_advertising_info *evt;
 		struct bt_le_scan_recv_info scan_info;
+		bt_addr_le_t direct_addr;
 		uint16_t data_status;
 		uint16_t evt_type;
 		bool is_report_complete;
@@ -920,7 +972,7 @@ void bt_hci_le_adv_ext_report(struct net_buf *buf)
 			/* Legacy advertising reports are complete.
 			 * Create event immediately.
 			 */
-			create_ext_adv_info(evt, &scan_info);
+			create_ext_adv_info(evt, &scan_info, &direct_addr);
 			le_adv_recv(&evt->addr, &scan_info, &buf->b, evt->length);
 			goto cont;
 		}
@@ -933,7 +985,7 @@ void bt_hci_le_adv_ext_report(struct net_buf *buf)
 			/* Only advertising report from this advertiser.
 			 * Create event immediately.
 			 */
-			create_ext_adv_info(evt, &scan_info);
+			create_ext_adv_info(evt, &scan_info, &direct_addr);
 			le_adv_recv(&evt->addr, &scan_info, &buf->b, evt->length);
 			goto cont;
 		}
@@ -1002,7 +1054,7 @@ void bt_hci_le_adv_ext_report(struct net_buf *buf)
 		 * Create event.
 		 */
 		__ASSERT_NO_MSG(is_report_complete);
-		create_ext_adv_info(evt, &scan_info);
+		create_ext_adv_info(evt, &scan_info, &direct_addr);
 		le_adv_recv(&evt->addr, &scan_info, &ext_scan_buf, ext_scan_buf.len);
 
 		if (IS_ENABLED(CONFIG_BT_TESTING)) {
@@ -1771,21 +1823,72 @@ void bt_hci_le_adv_report(struct net_buf *buf)
 			break;
 		}
 
-		adv_info.primary_phy = BT_GAP_LE_PHY_1M;
-		adv_info.secondary_phy = 0;
-		adv_info.tx_power = BT_GAP_TX_POWER_INVALID;
-		adv_info.rssi = evt->data[evt->length];
-		adv_info.sid = BT_GAP_SID_INVALID;
-		adv_info.interval = 0U;
-
-		adv_info.adv_type = evt->evt_type;
-		adv_info.adv_props = get_adv_props_legacy(evt->evt_type);
+		/* This event carries no target address, not even for a directed
+		 * advertisement, so direct_addr stays NULL.
+		 */
+		create_legacy_adv_info(evt->evt_type, evt->data[evt->length], &adv_info);
 
 		le_adv_recv(&evt->addr, &adv_info, &buf->b, evt->length);
 
 		net_buf_pull(buf, evt->length + sizeof(adv_info.rssi));
 	}
 }
+
+#if defined(CONFIG_BT_SCAN_EXT_FILTER_POLICY)
+void bt_hci_le_direct_adv_report(struct net_buf *buf)
+{
+	uint8_t num_reports = net_buf_pull_u8(buf);
+	struct bt_hci_evt_le_direct_adv_info *evt;
+	bool explicit_scan = atomic_test_bit(scan_state.scan_flags, BT_LE_SCAN_USER_EXPLICIT_SCAN);
+	bool conn_scan = atomic_test_bit(scan_state.scan_flags, BT_LE_SCAN_USER_CONN);
+
+	LOG_DBG("Direct adv number of reports %u", num_reports);
+
+	while (num_reports--) {
+		struct bt_le_scan_recv_info adv_info;
+		bt_addr_le_t direct_addr;
+
+		if (!explicit_scan && !conn_scan) {
+			/* The application has not requested explicit scan, so it is not expecting
+			 * advertising reports. Discard.
+			 * This is done in the loop as this flag can change between each iteration,
+			 * and it is not uncommon that scanning is disabled in the callback called
+			 * from le_adv_recv.
+			 *
+			 * However, if scanning is running for connection purposes,
+			 * the report shall still be processed to allow pending connections.
+			 */
+
+			break;
+		}
+
+		if (buf->len < sizeof(*evt)) {
+			LOG_ERR("Unexpected end of buffer");
+			break;
+		}
+
+		evt = net_buf_pull_mem(buf, sizeof(*evt));
+
+		create_legacy_adv_info(evt->evt_type, evt->rssi, &adv_info);
+
+		copy_hci_target_addr(&direct_addr, &evt->dir_addr);
+
+		if (!bt_addr_le_is_resolved(&evt->dir_addr)) {
+			/* This event only reports a target address that the Controller was
+			 * unable to resolve, and the address type it carries is always
+			 * BT_ADDR_LE_RANDOM. Normalize it so that the application sees the
+			 * same representation as in an extended advertising report.
+			 */
+			direct_addr.type = BT_ADDR_LE_UNRESOLVED;
+		}
+
+		adv_info.direct_addr = &direct_addr;
+
+		/* A directed advertisement carries no advertising data. */
+		le_adv_recv(&evt->addr, &adv_info, &buf->b, 0);
+	}
+}
+#endif /* CONFIG_BT_SCAN_EXT_FILTER_POLICY */
 
 static bool valid_le_scan_param(const struct bt_le_scan_param *param)
 {
