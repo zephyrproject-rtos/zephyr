@@ -413,10 +413,6 @@ static int put_sync_locked(const struct device *dev)
 	struct pm_device_isr *pm = dev->pm_isr;
 	uint32_t flags = pm->base.flags;
 
-	if (!(flags & BIT(PM_DEVICE_FLAG_RUNTIME_ENABLED))) {
-		return 0;
-	}
-
 	if (pm->base.usage == 0U) {
 		return -EALREADY;
 	}
@@ -434,7 +430,7 @@ static int put_sync_locked(const struct device *dev)
 			const struct device *domain = PM_DOMAIN(&pm->base);
 
 			if (domain->pm_base->flags & BIT(PM_DEVICE_FLAG_ISR_SAFE)) {
-				ret = put_sync_locked(domain);
+				ret = pm_device_runtime_put(domain);
 				pm->base.flags &= ~BIT(PM_DEVICE_FLAG_PD_CLAIMED);
 			} else {
 				ret = -EWOULDBLOCK;
