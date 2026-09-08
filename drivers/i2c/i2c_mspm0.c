@@ -18,6 +18,10 @@
 #include <zephyr/sys/sys_io.h>
 #include <soc.h>
 
+#ifdef CONFIG_I2C_MSPM0_DMA
+#include <zephyr/drivers/dma.h>
+#endif
+
 #include "i2c-priv.h"
 
 /*
@@ -40,6 +44,10 @@
 #define I2C_REG_CPU_INT_MIS   0x1038
 #define I2C_REG_CPU_INT_ISET  0x1040
 #define I2C_REG_CPU_INT_ICLR  0x1048
+
+/* DMA interrupt registers */
+#define I2C_REG_DMA_TRIG1_IMASK 0x1058
+#define I2C_REG_DMA_TRIG0_IMASK 0x1088
 
 /* Glitch filter and timeout */
 #define I2C_REG_GFCTL       0x1200
@@ -196,6 +204,10 @@
 
 #endif /* !CONFIG_HAS_MSPM0_SDK */
 
+/* DMA_TRIG0 / DMA_TRIG1 fields */
+#define I2C_DMA_TRIG_IMASK_MRXFIFOTRG_SET BIT(0)
+#define I2C_DMA_TRIG_IMASK_MTXFIFOTRG_SET BIT(1)
+
 /* FIFO depth (device-specific via Kconfig) */
 #define I2C_FIFO_DEPTH CONFIG_MSPM0_I2C_FIFO_DEPTH
 
@@ -227,20 +239,14 @@ typedef struct {
 	uint32_t divide_ratio;
 } i2c_clock_config_t;
 
-#define TI_MSPM0_CONTROLLER_INTERRUPTS                                                             \
+#define TI_MSPM0_CONTROLLER_INTERRUPTS_BASE                                                        \
 	(I2C_CPU_INT_IMASK_MARBLOST_SET | I2C_CPU_INT_IMASK_MNACK_SET |                            \
-	 I2C_CPU_INT_IMASK_MRXFIFOTRG_SET | I2C_CPU_INT_IMASK_MRXDONE_SET |                        \
-	 I2C_CPU_INT_IMASK_MTXDONE_SET | I2C_CPU_INT_IMASK_TIMEOUTA_SET |                          \
-	 I2C_CPU_INT_IMASK_MSTOP_SET)
+	 I2C_CPU_INT_IMASK_MRXDONE_SET | I2C_CPU_INT_IMASK_MTXDONE_SET |                           \
+	 I2C_CPU_INT_IMASK_TIMEOUTA_SET | I2C_CPU_INT_IMASK_MSTOP_SET)
 
-/*
- * Mask covering all possible controller interrupt sources, including
- * I2C_CPU_INT_IMASK_MTXFIFOTRG_SET which is dynamically
- * enabled/disabled during multi-byte transmits. Used in the dual-role ISR
- * dispatcher to distinguish controller from target interrupts via MIS.
- */
 #define TI_MSPM0_CONTROLLER_INTERRUPTS_ALL                                                         \
-	(TI_MSPM0_CONTROLLER_INTERRUPTS | I2C_CPU_INT_IMASK_MTXFIFOTRG_SET)
+	(TI_MSPM0_CONTROLLER_INTERRUPTS_BASE | I2C_CPU_INT_IMASK_MRXFIFOTRG_SET |                  \
+	 I2C_CPU_INT_IMASK_MTXFIFOTRG_SET)
 
 #define TI_MSPM0_TARGET_INTERRUPTS                                                                 \
 	(I2C_CPU_INT_IMASK_SRXDONE_SET | I2C_CPU_INT_IMASK_STXEMPTY_SET |                          \
@@ -263,6 +269,14 @@ enum i2c_mspm0_state {
 	I2C_MSPM0_ERROR,
 };
 
+#ifdef CONFIG_I2C_MSPM0_DMA
+struct i2c_mspm0_dma {
+	const struct device *dev;
+	uint32_t channel;
+	uint32_t slot;
+};
+#endif /* CONFIG_I2C_MSPM0_DMA */
+
 struct i2c_mspm0_config {
 	mm_reg_t base;
 	uint32_t bitrate;
@@ -274,6 +288,10 @@ struct i2c_mspm0_config {
 	void (*irq_config_func)(const struct device *dev);
 	uint32_t controller_tx_fifo_threshold; /* pre-encoded TXTRIG field value */
 	uint32_t controller_rx_fifo_threshold; /* pre-encoded RXTRIG field value */
+#ifdef CONFIG_I2C_MSPM0_DMA
+	struct i2c_mspm0_dma dma_tx;
+	struct i2c_mspm0_dma dma_rx;
+#endif
 };
 
 /*
@@ -504,6 +522,29 @@ static inline uint32_t i2c_get_pending_interrupt(mm_reg_t base)
 	return sys_read32(base + I2C_REG_CPU_INT_IIDX);
 }
 
+#ifdef CONFIG_I2C_MSPM0_DMA
+static inline void i2c_enable_controller_tx_dma_trigger(mm_reg_t base)
+{
+	sys_write32(I2C_DMA_TRIG_IMASK_MTXFIFOTRG_SET, base + I2C_REG_DMA_TRIG1_IMASK);
+}
+
+static inline void i2c_enable_controller_rx_dma_trigger(mm_reg_t base)
+{
+	sys_write32(I2C_DMA_TRIG_IMASK_MRXFIFOTRG_SET, base + I2C_REG_DMA_TRIG0_IMASK);
+}
+#endif /* CONFIG_I2C_MSPM0_DMA */
+
+static inline uint32_t i2c_mspm0_controller_interrupts(const struct i2c_mspm0_config *config)
+{
+	uint32_t mask = TI_MSPM0_CONTROLLER_INTERRUPTS_BASE;
+
+	if (!IS_ENABLED(CONFIG_I2C_MSPM0_DMA) || config->dma_rx.dev == NULL) {
+		mask |= I2C_CPU_INT_IMASK_MRXFIFOTRG_SET;
+	}
+
+	return mask;
+}
+
 /* Workaround for errata I2C_ERR_04: always disable target wakeup on init */
 static inline void i2c_disable_target_wakeup(mm_reg_t base)
 {
@@ -717,7 +758,7 @@ static int i2c_mspm0_configure(const struct device *dev, uint32_t dev_config)
 	i2c_enable_controller_clock_stretching(base);
 
 	/* Configure Interrupts */
-	i2c_enable_interrupt(base, TI_MSPM0_CONTROLLER_INTERRUPTS);
+	i2c_enable_interrupt(base, i2c_mspm0_controller_interrupts(config));
 
 	/* Enable module */
 	i2c_enable_controller(base);
@@ -727,6 +768,49 @@ sem_give:
 	k_sem_give(&data->i2c_lock);
 	return ret;
 }
+
+#ifdef CONFIG_I2C_MSPM0_DMA
+static int i2c_mspm0_dma_init(const struct i2c_mspm0_config *config)
+{
+	const mm_reg_t base = config->base;
+	uint32_t channel;
+	int ret;
+
+	if (config->dma_tx.dev != NULL) {
+		if (!device_is_ready(config->dma_tx.dev)) {
+			LOG_ERR("DMA TX device not ready");
+			return -ENODEV;
+		}
+
+		channel = config->dma_tx.channel;
+		ret = dma_request_channel(config->dma_tx.dev, &channel);
+		if (ret < 0) {
+			LOG_ERR("Failed to request DMA TX channel: %d", ret);
+			return ret;
+		}
+
+		i2c_enable_controller_tx_dma_trigger(base);
+	}
+
+	if (config->dma_rx.dev != NULL) {
+		if (!device_is_ready(config->dma_rx.dev)) {
+			LOG_ERR("DMA RX device not ready");
+			return -ENODEV;
+		}
+
+		channel = config->dma_rx.channel;
+		ret = dma_request_channel(config->dma_rx.dev, &channel);
+		if (ret < 0) {
+			LOG_ERR("Failed to request DMA RX channel: %d", ret);
+			return ret;
+		}
+
+		i2c_enable_controller_rx_dma_trigger(base);
+	}
+
+	return 0;
+}
+#endif /* CONFIG_I2C_MSPM0_DMA */
 
 static int i2c_mspm0_init(const struct device *dev)
 {
@@ -760,6 +844,13 @@ static int i2c_mspm0_init(const struct device *dev)
 	/* Config clocks and analog filter */
 	i2c_set_clock_config(base, &config->clock_config);
 	i2c_disable_analog_glitch_filter(base);
+
+#ifdef CONFIG_I2C_MSPM0_DMA
+	ret = i2c_mspm0_dma_init(config);
+	if (ret < 0) {
+		return ret;
+	}
+#endif
 
 	/* Set frequency */
 	speed_config = i2c_map_dt_bitrate(config->bitrate);
@@ -812,8 +903,8 @@ static int i2c_mspm0_reset_controller(const struct device *dev)
 	i2c_enable_controller_clock_stretching(base);
 
 	/* Configure Interrupts */
-	i2c_clear_interrupt_status(base, TI_MSPM0_CONTROLLER_INTERRUPTS);
-	i2c_enable_interrupt(base, TI_MSPM0_CONTROLLER_INTERRUPTS);
+	i2c_clear_interrupt_status(base, TI_MSPM0_CONTROLLER_INTERRUPTS_ALL);
+	i2c_enable_interrupt(base, i2c_mspm0_controller_interrupts(config));
 
 	/* Enable module */
 	i2c_enable_controller(base);
@@ -838,6 +929,58 @@ static bool i2c_mspm0_is_merge_next(const struct i2c_msg *msgs, const uint8_t nu
 }
 
 /* Start transfer for dispatch[dispatch_idx] */
+#ifdef CONFIG_I2C_MSPM0_DMA
+static void i2c_mspm0_dma_callback(const struct device *dma_dev, void *user_data, uint32_t channel,
+				   int status)
+{
+	const struct device *i2c_dev = user_data;
+	struct i2c_mspm0_data *data = i2c_dev->data;
+
+	ARG_UNUSED(dma_dev);
+	ARG_UNUSED(channel);
+
+	if (status < 0) {
+		data->state = I2C_MSPM0_ERROR;
+		data->transfer_ret = -EIO;
+		k_sem_give(&data->device_sync_sem);
+		k_sem_give(&data->i2c_lock);
+	}
+}
+
+static int i2c_mspm0_dma_start(const struct device *i2c_dev, const struct i2c_mspm0_dma *dma,
+			       uint32_t src, uint32_t dst, uint32_t len,
+			       enum dma_channel_direction direction)
+{
+	struct dma_block_config block = {
+		.source_address = src,
+		.dest_address = dst,
+		.block_size = len,
+		.source_addr_adj = (direction == MEMORY_TO_PERIPHERAL) ? DMA_ADDR_ADJ_INCREMENT
+								       : DMA_ADDR_ADJ_NO_CHANGE,
+		.dest_addr_adj = (direction == MEMORY_TO_PERIPHERAL) ? DMA_ADDR_ADJ_NO_CHANGE
+								     : DMA_ADDR_ADJ_INCREMENT,
+	};
+	struct dma_config cfg = {
+		.channel_direction = direction,
+		.source_data_size = 1,
+		.dest_data_size = 1,
+		.block_count = 1,
+		.head_block = &block,
+		.dma_slot = dma->slot,
+		.dma_callback = i2c_mspm0_dma_callback,
+		.user_data = (void *)i2c_dev,
+	};
+	int ret;
+
+	ret = dma_config(dma->dev, dma->channel, &cfg);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return dma_start(dma->dev, dma->channel);
+}
+#endif /* CONFIG_I2C_MSPM0_DMA */
+
 static void i2c_mspm0_start_dispatch(const struct device *dev)
 {
 	const struct i2c_mspm0_config *config = dev->config;
@@ -855,18 +998,35 @@ static void i2c_mspm0_start_dispatch(const struct device *dev)
 
 	if ((d->flags & I2C_MSG_RW_MASK) == I2C_MSG_READ) {
 		data->state = I2C_MSPM0_RX_STARTED;
+#ifdef CONFIG_I2C_MSPM0_DMA
+		if (config->dma_rx.dev != NULL) {
+			i2c_mspm0_dma_start(dev, &config->dma_rx, base + I2C_REG_MRXDATA,
+					    (uint32_t)(uintptr_t)d->buf, d->len,
+					    PERIPHERAL_TO_MEMORY);
+		}
+#endif
 		i2c_start_controller_transfer_advanced(
 			base, data->addr, I2C_CONTROLLER_DIRECTION_RX, d->len,
 			I2C_CONTROLLER_START_ENABLE, stop, I2C_CONTROLLER_ACK_DISABLE, addr_mode);
 	} else {
 		data->state = I2C_MSPM0_IDLE;
 		i2c_flush_controller_tx_fifo(base);
-		data->transfer_count = i2c_fill_controller_tx_fifo(base, d->buf, d->len);
 
-		if (data->transfer_count < data->transfer_len) {
-			i2c_enable_interrupt(base, I2C_CPU_INT_IMASK_MTXFIFOTRG_SET);
-		} else {
-			i2c_disable_interrupt(base, I2C_CPU_INT_IMASK_MTXFIFOTRG_SET);
+#ifdef CONFIG_I2C_MSPM0_DMA
+		if (config->dma_tx.dev != NULL) {
+			data->transfer_count = d->len;
+			i2c_mspm0_dma_start(dev, &config->dma_tx, (uint32_t)(uintptr_t)d->buf,
+					    base + I2C_REG_MTXDATA, d->len, MEMORY_TO_PERIPHERAL);
+		} else
+#endif
+		{
+			data->transfer_count = i2c_fill_controller_tx_fifo(base, d->buf, d->len);
+
+			if (data->transfer_count < data->transfer_len) {
+				i2c_enable_interrupt(base, I2C_CPU_INT_IMASK_MTXFIFOTRG_SET);
+			} else {
+				i2c_disable_interrupt(base, I2C_CPU_INT_IMASK_MTXFIFOTRG_SET);
+			}
 		}
 
 		data->state = I2C_MSPM0_TX_STARTED;
@@ -1263,21 +1423,28 @@ static inline void i2c_mspm0_isr_controller(const struct device *dev)
 
 	switch (i2c_get_pending_interrupt(base)) {
 	case I2C_CPU_INT_IIDX_STAT_MRXDONEFG:
-		/*
-		 * Transfer complete. Drain any bytes remaining in the RX FIFO.
-		 * With a threshold > 1, MRXFIFOTRG only fires when >= threshold
-		 * bytes are present; bytes that arrived after the last trigger
-		 * (or transfers shorter than the threshold) sit in the FIFO
-		 * and must be drained here.
-		 */
-		while (i2c_is_controller_rx_fifo_empty(base) != true) {
-			if (data->transfer_count < data->transfer_len) {
-				data->msg_buf[data->transfer_count++] =
+#ifdef CONFIG_I2C_MSPM0_DMA
+		if (config->dma_rx.dev == NULL) {
+#endif
+			/*
+			 * Transfer complete. Drain any bytes remaining in the RX FIFO.
+			 * With a threshold > 1, MRXFIFOTRG only fires when >= threshold
+			 * bytes are present; bytes that arrived after the last trigger
+			 * (or transfers shorter than the threshold) sit in the FIFO
+			 * and must be drained here.
+			 */
+			while (i2c_is_controller_rx_fifo_empty(base) != true) {
+				if (data->transfer_count < data->transfer_len) {
+					data->msg_buf[data->transfer_count++] =
+						i2c_receive_controller_data(base);
+				} else {
 					i2c_receive_controller_data(base);
-			} else {
-				i2c_receive_controller_data(base);
+				}
 			}
+#ifdef CONFIG_I2C_MSPM0_DMA
 		}
+		/* DMA already drained the RX FIFO so do nothing */
+#endif
 		data->state = I2C_MSPM0_RX_COMPLETE;
 
 		/* Advance the state machine to the next dispatch entry */
@@ -1358,8 +1525,8 @@ static inline void i2c_mspm0_isr_controller(const struct device *dev)
 		data->state = I2C_MSPM0_TIMEOUT;
 		data->transfer_ret = -ETIMEDOUT;
 		k_sem_give(&data->device_sync_sem);
-		i2c_disable_interrupt(base, TI_MSPM0_CONTROLLER_INTERRUPTS);
-		i2c_clear_interrupt_status(base, TI_MSPM0_CONTROLLER_INTERRUPTS);
+		i2c_disable_interrupt(base, i2c_mspm0_controller_interrupts(config));
+		i2c_clear_interrupt_status(base, TI_MSPM0_CONTROLLER_INTERRUPTS_ALL);
 		i2c_flush_controller_tx_fifo(base);
 		__fallthrough;
 	case I2C_CPU_INT_IIDX_STAT_MSTOPFG:
@@ -1420,18 +1587,40 @@ static DEVICE_API(i2c, i2c_mspm0_driver_api) = {
 
 #define USES_MERGE_BUF(index) COND_CODE_0(MERGE_BUF_SIZE(index), (0), (1))
 
-/*
- * Convert the DT byte-count property to the pre-encoded FIFO register field
- * values written into MFIFOCTL/SFIFOCTL at init time.
- *
- * TX: TXTRIG field = raw byte count, stored in bits [2:0].
- * RX: RXTRIG field = (byte count - 1), stored in bits [10:8].
- */
+/* When a direction is DMA-driven, the DMA channel is triggered per FIFO event
+ * (Single Transfer Mode) so that direction's threshold is forced to one byte. */
+#ifdef CONFIG_I2C_MSPM0_DMA
+#define TX_FIFO_THRESHOLD(index)                                                                   \
+	COND_CODE_1(DT_INST_DMAS_HAS_NAME(index, tx),                                              \
+		    (FIELD_PREP(I2C_MFIFOCTL_TXTRIG_MASK, 1)),                                     \
+		    (FIELD_PREP(I2C_MFIFOCTL_TXTRIG_MASK,                                          \
+				DT_INST_PROP(index, controller_tx_fifo_threshold))))
+
+#define RX_FIFO_THRESHOLD(index)                                                                   \
+	COND_CODE_1(DT_INST_DMAS_HAS_NAME(index, rx),                                              \
+		    (FIELD_PREP(I2C_MFIFOCTL_RXTRIG_MASK, 0)),                                     \
+		    (FIELD_PREP(I2C_MFIFOCTL_RXTRIG_MASK,                                          \
+				DT_INST_PROP(index, controller_rx_fifo_threshold) - 1)))
+
+#define I2C_MSPM0_DMA(index, dir)                                                                  \
+	{                                                                                          \
+		.dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(index, dir)),                       \
+		.channel = DT_INST_DMAS_CELL_BY_NAME(index, dir, channel),                         \
+		.trigger = DT_INST_DMAS_CELL_BY_NAME(index, dir, trigger),                         \
+	}
+
+#define I2C_MSPM0_DMA_TX(index)                                                                    \
+	COND_CODE_1(DT_INST_DMAS_HAS_NAME(index, tx), (I2C_MSPM0_DMA(index, tx)), ({0}))
+
+#define I2C_MSPM0_DMA_RX(index)                                                                    \
+	COND_CODE_1(DT_INST_DMAS_HAS_NAME(index, rx), (I2C_MSPM0_DMA(index, rx)), ({0}))
+#else
 #define TX_FIFO_THRESHOLD(index)                                                                   \
 	FIELD_PREP(I2C_MFIFOCTL_TXTRIG_MASK, DT_INST_PROP(index, controller_tx_fifo_threshold))
 
 #define RX_FIFO_THRESHOLD(index)                                                                   \
 	FIELD_PREP(I2C_MFIFOCTL_RXTRIG_MASK, DT_INST_PROP(index, controller_rx_fifo_threshold) - 1)
+#endif /* CONFIG_I2C_MSPM0_DMA */
 
 #define I2C_MSPM0_CONFIG_IRQ_FUNC(index)                                                           \
 	static void i2c_mspm0_irq_config_func_##index(const struct device *dev)                    \
@@ -1462,6 +1651,10 @@ static DEVICE_API(i2c, i2c_mspm0_driver_api) = {
 			.irq_config_func = i2c_mspm0_irq_config_func_##index,                      \
 			.controller_tx_fifo_threshold = TX_FIFO_THRESHOLD(index),                  \
 			.controller_rx_fifo_threshold = RX_FIFO_THRESHOLD(index),                  \
+			IF_ENABLED(CONFIG_I2C_MSPM0_DMA, (                                         \
+			.dma_tx = I2C_MSPM0_DMA_TX(index),                                         \
+			.dma_rx = I2C_MSPM0_DMA_RX(index),                                         \
+			))                                                                          \
 			.clock_config = {                                                          \
 				.clock_sel = MSPM0_CLOCK_PERIPH_REG_MASK(                          \
 					DT_INST_CLOCKS_CELL(index, clk)),                          \
