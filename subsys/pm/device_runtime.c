@@ -141,13 +141,6 @@ static int runtime_suspend(const struct device *dev, bool async,
 	int ret = 0;
 	struct pm_device *pm = dev->pm;
 
-	/*
-	 * Early return if device runtime is not enabled.
-	 */
-	if (!atomic_test_bit(&pm->base.flags, PM_DEVICE_FLAG_RUNTIME_ENABLED)) {
-		return 0;
-	}
-
 	/* If we are not the last user, return. */
 	if (runtime_usage_put_fast(pm)) {
 		return 0;
@@ -464,7 +457,12 @@ int pm_device_runtime_put(const struct device *dev)
 
 	SYS_PORT_TRACING_FUNC_ENTER(pm, device_runtime_put, dev);
 
-	if (atomic_test_bit(&dev->pm_base->flags, PM_DEVICE_FLAG_ISR_SAFE)) {
+	/*
+	 * Early return if device runtime is not enabled.
+	 */
+	if (!atomic_test_bit(&dev->pm_base->flags, PM_DEVICE_FLAG_RUNTIME_ENABLED)) {
+		ret = 0;
+	} else if (atomic_test_bit(&dev->pm_base->flags, PM_DEVICE_FLAG_ISR_SAFE)) {
 		struct pm_device_isr *pm_sync = dev->pm_isr;
 		k_spinlock_key_t k = k_spin_lock(&pm_sync->lock);
 
@@ -489,7 +487,13 @@ int pm_device_runtime_put_async(const struct device *dev, k_timeout_t delay)
 	}
 
 	SYS_PORT_TRACING_FUNC_ENTER(pm, device_runtime_put_async, dev, delay);
-	if (atomic_test_bit(&dev->pm_base->flags, PM_DEVICE_FLAG_ISR_SAFE)) {
+
+	/*
+	 * Early return if device runtime is not enabled.
+	 */
+	if (!atomic_test_bit(&dev->pm_base->flags, PM_DEVICE_FLAG_RUNTIME_ENABLED)) {
+		ret = 0;
+	} else if (atomic_test_bit(&dev->pm_base->flags, PM_DEVICE_FLAG_ISR_SAFE)) {
 		struct pm_device_isr *pm_sync = dev->pm_isr;
 		k_spinlock_key_t k = k_spin_lock(&pm_sync->lock);
 
