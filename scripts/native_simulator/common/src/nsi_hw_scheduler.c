@@ -15,6 +15,11 @@
 #include <signal.h>
 #include <stddef.h>
 #include <inttypes.h>
+#ifdef __APPLE__
+#include <mach-o/dyld.h>
+#include <mach-o/loader.h>
+#include <string.h>
+#endif
 #include "nsi_tracing.h"
 #include "nsi_main.h"
 #include "nsi_safe_call.h"
@@ -23,11 +28,132 @@
 
 uint64_t nsi_simu_time; /* The actual time as known by the HW models */
 static uint64_t end_of_time = NSI_NEVER; /* When will this device stop */
+static unsigned int number_of_events;
 
+#ifdef __APPLE__
+extern const struct mach_header_64 _mh_execute_header;
+
+struct macho_nsi_hw_event_section {
+	const struct nsi_hw_event_st *start;
+	size_t count;
+	unsigned int prio;
+};
+
+static const struct nsi_hw_event_st *macho_nsi_hw_events[64];
+
+static unsigned int macho_parse_nsi_hw_event_prio(const char *str)
+{
+	unsigned int value = 0U;
+
+	while ((*str >= '0') && (*str <= '9')) {
+		value = (value * 10U) + (unsigned int)(*str - '0');
+		str++;
+	}
+
+	return value;
+}
+
+static size_t macho_collect_nsi_hw_event_sections(struct macho_nsi_hw_event_section *sections,
+						  size_t max_sections)
+{
+	static const char prefix[] = "nsihwe_";
+	const struct mach_header_64 *hdr = &_mh_execute_header;
+	const struct load_command *lc =
+		(const struct load_command *)((const char *)hdr + sizeof(*hdr));
+	const intptr_t slide = _dyld_get_image_vmaddr_slide(0);
+	const size_t prefix_len = strlen(prefix);
+	size_t count = 0U;
+
+	for (uint32_t i = 0U; i < hdr->ncmds; i++) {
+		if (lc->cmd == LC_SEGMENT_64) {
+			const struct segment_command_64 *seg =
+				(const struct segment_command_64 *)lc;
+			const struct section_64 *sec =
+				(const struct section_64 *)(seg + 1);
+
+			if (strncmp(seg->segname, "__DATA", sizeof(seg->segname)) == 0) {
+				for (uint32_t j = 0U; (j < seg->nsects) && (count < max_sections);
+				     j++, sec++) {
+					char sectname[sizeof(sec->sectname) + 1];
+
+					memcpy(sectname, sec->sectname, sizeof(sec->sectname));
+					sectname[sizeof(sec->sectname)] = '\0';
+
+					if (strncmp(sectname, prefix, prefix_len) != 0) {
+						continue;
+					}
+
+					sections[count].start =
+						(const struct nsi_hw_event_st *)(uintptr_t)
+							(sec->addr + slide);
+					sections[count].count =
+						sec->size / sizeof(struct nsi_hw_event_st);
+					sections[count].prio =
+						macho_parse_nsi_hw_event_prio(
+							sectname + prefix_len);
+					count++;
+				}
+			}
+		}
+
+		lc = (const struct load_command *)((const char *)lc + lc->cmdsize);
+	}
+
+	return count;
+}
+
+static void macho_sort_nsi_hw_event_sections(struct macho_nsi_hw_event_section *sections,
+					     size_t count)
+{
+	for (size_t i = 1U; i < count; i++) {
+		struct macho_nsi_hw_event_section key = sections[i];
+		size_t j = i;
+
+		while ((j > 0U) && (sections[j - 1U].prio > key.prio)) {
+			sections[j] = sections[j - 1U];
+			j--;
+		}
+
+		sections[j] = key;
+	}
+}
+
+static void macho_init_nsi_hw_events(void)
+{
+	struct macho_nsi_hw_event_section sections[64];
+	size_t section_count = macho_collect_nsi_hw_event_sections(
+		sections, NSI_ARRAY_SIZE(sections));
+	size_t event_count = 0U;
+
+	macho_sort_nsi_hw_event_sections(sections, section_count);
+
+	for (size_t i = 0U; i < section_count; i++) {
+		if (sections[i].count >
+		    (NSI_ARRAY_SIZE(macho_nsi_hw_events) - event_count)) {
+			nsi_print_error_and_exit("Too many NSI HW events in Mach-O image\n");
+		}
+
+		for (size_t j = 0U; j < sections[i].count; j++) {
+			macho_nsi_hw_events[event_count++] = &sections[i].start[j];
+		}
+	}
+
+	number_of_events = (unsigned int)event_count;
+}
+
+static const struct nsi_hw_event_st *nsi_hws_get_event(unsigned int index)
+{
+	return macho_nsi_hw_events[index];
+}
+#else
 extern struct nsi_hw_event_st __nsi_hw_events_start[];
 extern struct nsi_hw_event_st __nsi_hw_events_end[];
 
-static unsigned int number_of_events;
+static const struct nsi_hw_event_st *nsi_hws_get_event(unsigned int index)
+{
+	return &__nsi_hw_events_start[index];
+}
+#endif
 
 static unsigned int next_timer_index;
 static uint64_t next_timer_time;
@@ -100,13 +226,21 @@ static void nsi_hws_sleep_until_next_event(void)
  */
 void nsi_hws_find_next_event(void)
 {
-	next_timer_index = 0;
-	next_timer_time  = *__nsi_hw_events_start[0].timer;
+	const struct nsi_hw_event_st *event;
 
-	for (unsigned int i = 1; i < number_of_events ; i++) {
-		if (next_timer_time > *__nsi_hw_events_start[i].timer) {
+	if (number_of_events == 0U) {
+		return;
+	}
+
+	next_timer_index = 0;
+	event = nsi_hws_get_event(0U);
+	next_timer_time = *event->timer;
+
+	for (unsigned int i = 1U; i < number_of_events; i++) {
+		event = nsi_hws_get_event(i);
+		if (next_timer_time > *event->timer) {
 			next_timer_index = i;
-			next_timer_time = *__nsi_hw_events_start[i].timer;
+			next_timer_time = *event->timer;
 		}
 	}
 }
@@ -125,7 +259,7 @@ void nsi_hws_one_event(void)
 	nsi_hws_sleep_until_next_event();
 
 	if (next_timer_index < number_of_events) { /* LCOV_EXCL_BR_LINE */
-		__nsi_hw_events_start[next_timer_index].callback();
+		nsi_hws_get_event(next_timer_index)->callback();
 	} else {
 		nsi_print_error_and_exit("next_timer_index corrupted\n"); /* LCOV_EXCL_LINE */
 	}
@@ -149,7 +283,11 @@ void nsi_hws_set_end_of_time(uint64_t new_end_of_time)
  */
 void nsi_hws_init(void)
 {
+#ifdef __APPLE__
+	macho_init_nsi_hw_events();
+#else
 	number_of_events = __nsi_hw_events_end - __nsi_hw_events_start;
+#endif
 
 	nsi_hws_set_sig_handler();
 	nsi_hws_find_next_event();
