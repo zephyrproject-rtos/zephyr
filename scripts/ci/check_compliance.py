@@ -848,6 +848,7 @@ class KconfigCheck(ComplianceTest):
         self.check_soc_name_sync(kconf)
         self.check_no_undef_outside_kconfig(kconf)
         self.check_disallowed_defconfigs(kconf)
+        self.check_redefined_board_kconfigs()
 
     def get_modules(self, _module_dirs_file, modules_file, sysbuild_modules_file, settings_file):
         """
@@ -1371,6 +1372,155 @@ Found disallowed Kconfig symbol in SoC Kconfig files: {sym_name:35}
 {reason}
 """,
                     )
+
+    def check_redefined_board_kconfigs(self):
+        """
+        Checks for boards that re-define board Kconfigs which the build system automatically
+        defines
+        """
+        kconfiglib_dir = tempfile.mkdtemp(prefix="kconfiglib_")
+
+        # Put the Kconfiglib path first to make sure no local Kconfiglib version is
+        # used
+        kconfig_path = ZEPHYR_BASE / "scripts" / "kconfig"
+        if not kconfig_path.exists():
+            self.error(kconfig_path + " not found")
+
+        sys.path.insert(0, str(kconfig_path))
+        # Import globally so that e.g. kconfiglib.Symbol can be referenced in
+        # tests
+        global kconfiglib
+        import kconfiglib
+
+        # Look up Kconfig files relative to ZEPHYR_BASE
+        os.environ["srctree"] = str(ZEPHYR_BASE)  # noqa: SIM112
+
+        # Parse the entire Kconfig tree, to make sure we see all symbols
+        os.environ["SOC_DIR"] = "soc/"
+        os.environ["ARCH_DIR"] = "arch/"
+        os.environ["BOARD"] = "boards"
+        os.environ["ARCH"] = "*"
+        os.environ["KCONFIG_BINARY_DIR"] = kconfiglib_dir
+        os.environ['DEVICETREE_CONF'] = "dummy"
+        kconfig_env_file = os.path.join(kconfiglib_dir, "kconfig_module_dirs.env")
+
+        try:
+            # For multi repo support
+            self.get_modules(
+                kconfig_env_file,
+                os.path.join(kconfiglib_dir, "Kconfig.modules"),
+                os.path.join(kconfiglib_dir, "Kconfig.sysbuild.modules"),
+                os.path.join(kconfiglib_dir, "settings_file.txt"),
+            )
+
+            os.environ['HWM_SCHEME'] = 'v2'
+            os.environ["KCONFIG_BOARD_DIR"] = os.path.join(kconfiglib_dir, 'boards')
+            os.environ["KCONFIG_WARN_UNDEF"] = "n"
+
+            os.makedirs(os.path.join(kconfiglib_dir, 'boards'), exist_ok=True)
+
+            kconfig_file = os.path.join(kconfiglib_dir, 'boards', 'Kconfig')
+            kconfig_boards_file = os.path.join(kconfiglib_dir, 'boards', 'Kconfig.boards')
+
+            board_roots = get_module_setting_root('board', "settings_file.txt")
+            board_roots.insert(0, ZEPHYR_BASE)
+            soc_roots = get_module_setting_root('soc', "settings_file.txt")
+            soc_roots.insert(0, ZEPHYR_BASE)
+            root_args = argparse.Namespace(
+                **{
+                    'board_roots': board_roots,
+                    'soc_roots': soc_roots,
+                    'board': None,
+                    'board_dir': [],
+                }
+            )
+            v2_boards = list_boards.find_v2_boards(root_args).values()
+
+            with open(kconfig_boards_file, 'w') as fp:
+                for board in v2_boards:
+                    fp.write(
+                        'source "'
+                        + (board.directories[0] / ('Kconfig.' + board.name)).as_posix()
+                        + '"\n'
+                    )
+                    if len(board.directories) > 1:
+                        for board_dir in board.directories[1:]:
+                            fp.write(
+                                'osource "'
+                                + (board_dir / ('Kconfig.' + board.name)).as_posix()
+                                + '"\n'
+                            )
+
+            with open(kconfig_file, 'w') as fp:
+                for board in v2_boards:
+                    for board_dir in board.directories:
+                        fp.write('osource "' + (board_dir / 'Kconfig').as_posix() + '"\n')
+
+            kconfig_list = [
+                kconfiglib_dir + '/boards/Kconfig',
+                kconfiglib_dir + '/boards/Kconfig.boards',
+            ]
+
+            for kconfigfile in kconfig_list:
+                try:
+                    kconf = kconfiglib.Kconfig(filename=kconfigfile, warn=False)
+                except kconfiglib.KconfigError as e:
+                    self.failure(str(e))
+                    raise EndTest from e
+
+                board_defined_kconfigs = []
+                for node in kconf.node_iter():
+                    if not isinstance(node.item, kconfiglib.Symbol):
+                        continue
+
+                    if node.item.type != 0:
+                        board_defined_kconfigs.append(node.item.name)
+
+                for board in v2_boards:
+                    board_str = 'BOARD_' + re.sub(r"[^a-zA-Z0-9_]", "_", board.name).upper()
+
+                    if board_str in board_defined_kconfigs:
+                        for node in kconf.node_iter():
+                            if not isinstance(node.item, kconfiglib.Symbol):
+                                continue
+
+                            if node.item.name == board_str:
+                                self.fmtd_failure(
+                                    "error",
+                                    "BoardRedefiningBuildSystemKconfigs",
+                                    node.item.nodes[0].loc[0],
+                                    node.item.nodes[0].loc[1],
+                                    desc=f"""
+Found board redefining build system defined Kconfig symbol: CONFIG_{board_str}
+""",
+                                )
+                                break
+
+                    for qualifier in list_boards.board_v2_qualifiers(board):
+                        board_str = (
+                            'BOARD_' + board.name + '_' + re.sub(r"[^a-zA-Z0-9_]", "_", qualifier)
+                        ).upper()
+
+                        if board_str in board_defined_kconfigs:
+                            for node in kconf.node_iter():
+                                if not isinstance(node.item, kconfiglib.Symbol):
+                                    continue
+
+                                if node.item.name == board_str:
+                                    self.fmtd_failure(
+                                        "error",
+                                        "BoardRedefiningBuildSystemKconfigs",
+                                        node.item.nodes[0].loc[0],
+                                        node.item.nodes[0].loc[1],
+                                        desc=f"""
+Found board redefining build system defined Kconfig symbol: CONFIG_{board_str}
+""",
+                                    )
+                                    break
+
+        finally:
+            # Clean up the temporary directory
+            shutil.rmtree(kconfiglib_dir)
 
     def get_defined_syms(self, kconf):
         # Returns a set() with the names of all defined Kconfig symbols (with no
