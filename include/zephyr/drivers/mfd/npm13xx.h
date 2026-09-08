@@ -20,7 +20,7 @@ extern "C" {
 #include <stdint.h>
 
 #include <zephyr/device.h>
-#include <zephyr/drivers/gpio.h>
+#include <zephyr/sys/slist.h>
 
 enum mfd_npm13xx_event_t {
 	NPM13XX_EVENT_CHG_COMPLETED,
@@ -38,6 +38,45 @@ enum mfd_npm13xx_event_t {
 	NPM13XX_EVENT_GPIO3_EDGE,
 	NPM13XX_EVENT_GPIO4_EDGE,
 	NPM13XX_EVENT_MAX
+};
+
+/** @brief Identifies a set of events for the event callback */
+typedef uint32_t npm13xx_event_t;
+
+struct mfd_npm13xx_event_callback;
+
+/**
+ * @brief Define the application callback handler function signature
+ *
+ * @param dev nPM13xx MFD device
+ * @param cb Original struct mfd_npm13xx_event_callback owning this handler
+ * @param events Mask of events that triggered the callback handler
+ *
+ * Note: cb pointer can be used to retrieve private data through CONTAINER_OF() if the original
+ * struct mfd_npm13xx_event_callback is stored in another private structure. The events are
+ * encoded as a bitwise-OR of BIT(NPM13XX_EVENT_*) values.
+ */
+typedef void (*npm13xx_callback_handler_t)(const struct device *dev,
+					   struct mfd_npm13xx_event_callback *cb,
+					   npm13xx_event_t events);
+
+/**
+ * @brief nPM13xx MFD event callback structure
+ *
+ * Used to register a callback in the driver instance callback list.
+ * As many callbacks as needed can be added as long as each of them
+ * are unique pointers of struct mfd_npm13xx_event_callback.
+ */
+struct mfd_npm13xx_event_callback {
+	/** Intended for internal use by the driver. Do not use in application. */
+	sys_snode_t node;
+	/**
+	 * A set of events the callback is interested in. Constructed by a bitwise-OR of any
+	 * number of BIT(NPM13XX_EVENT_*) values.
+	 */
+	npm13xx_event_t event_mask;
+	/** Function to be called when any of the provided events occur. */
+	npm13xx_callback_handler_t handler;
 };
 
 /**
@@ -135,19 +174,20 @@ int mfd_npm13xx_hibernate(const struct device *dev, uint32_t time_ms);
  * @brief Add npm13xx event callback
  *
  * @param dev npm13xx mfd device
- * @param callback callback
+ * @param callback A pointer to the event callback to add to the list
  * @return 0 on success, -errno on failure
  */
-int mfd_npm13xx_add_callback(const struct device *dev, struct gpio_callback *callback);
+int mfd_npm13xx_add_callback(const struct device *dev, struct mfd_npm13xx_event_callback *callback);
 
 /**
  * @brief Remove npm13xx event callback
  *
  * @param dev npm13xx mfd device
- * @param callback callback
+ * @param callback A pointer to the event callback to remove from the list
  * @return 0 on success, -errno on failure
  */
-int mfd_npm13xx_remove_callback(const struct device *dev, struct gpio_callback *callback);
+int mfd_npm13xx_remove_callback(const struct device *dev,
+				struct mfd_npm13xx_event_callback *callback);
 
 /** @} */
 
