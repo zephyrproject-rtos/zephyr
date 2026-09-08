@@ -145,6 +145,12 @@
 	status = "okay";
 };
 
+&pwr {
+	power-supply = "external-smps";
+	external-smps-scaling = "dynamic";
+	external-smps-pin = <STM32_PINMUX('F', 4, GPIO)>;
+};
+
 &pll1 {
 	clocks = <&clk_hse>;
 	div-m = <3>;

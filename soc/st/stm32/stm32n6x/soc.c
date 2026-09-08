@@ -15,13 +15,22 @@
 #include <zephyr/logging/log.h>
 
 #include <stm32_ll_bus.h>
+#include <stm32_ll_gpio.h>
 #include <stm32_ll_pwr.h>
 #include <stm32_ll_icache.h>
 
 #include <cmsis_core.h>
+#include <zephyr/dt-bindings/pinctrl/stm32-pinctrl.h>
 
 #define LOG_LEVEL CONFIG_SOC_LOG_LEVEL
 LOG_MODULE_REGISTER(soc);
+
+#define PWR_NODE DT_INST(0, st_stm32n6_pwr)
+#define PWR_EXT_SMPS_CONTROL                                                                       \
+	DT_ENUM_HAS_VALUE(PWR_NODE, power_supply, external_smps) &&                                \
+		DT_ENUM_HAS_VALUE(PWR_NODE, external_smps_scaling, dynamic)
+#define PWR_EXT_SMSPS_CONTROL_GPIO DT_PROP(PWR_NODE, external_smps_pin)
+#define USE_VOLTAGE_SCALE0         CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC > MHZ(600)
 
 extern char _vector_start[];
 void *g_pfnVectors = (void *)_vector_start;
@@ -83,6 +92,45 @@ static void soc_rif_config(void)
 #endif /* CONFIG_TRUSTED_EXECUTION_SECURE */
 }
 
+/* Voltage scale 0 (VOS0) needs to be configured
+ * for CPU frequency above 600 MHz
+ */
+#if USE_VOLTAGE_SCALE0
+static void soc_configure_voltage_scale(void)
+{
+	/* Check that we have posibility to configure VOS0 */
+#if !DT_ENUM_HAS_VALUE(PWR_NODE, power_supply, internal_smps) &&                                   \
+	DT_ENUM_HAS_VALUE(PWR_NODE, external_smps_scaling, fixed_low)
+#error CPU clock exceeds 600 MHz, but SMPS not configured properly
+#endif
+
+#if PWR_EXT_SMPS_CONTROL
+#if ((PWR_EXT_SMSPS_CONTROL_GPIO >> STM32_MODE_SHIFT) & STM32_MODE_MASK) != STM32_GPIO
+#error GPIO needs to be defined for dynamic external SMPS
+#endif
+	/* Disable internal SMPS */
+	LL_PWR_ConfigSupply(LL_PWR_EXTERNAL_SOURCE_SUPPLY);
+
+	/* We are in early stage of initialization so we can't rely on
+	 * Zephyr GPIO driver
+	 */
+	uint32_t port = (PWR_EXT_SMSPS_CONTROL_GPIO >> STM32_PORT_SHIFT) & STM32_PORT_MASK;
+	uint32_t pin = (1 << ((PWR_EXT_SMSPS_CONTROL_GPIO >> STM32_LINE_SHIFT) & STM32_LINE_MASK));
+	GPIO_TypeDef *GPIOx = (GPIO_TypeDef *)(GPIOA_BASE + (GPIOB_BASE - GPIOA_BASE) * port);
+
+	LL_AHB4_GRP1_EnableClock(LL_AHB4_GRP1_PERIPH_GPIOA << port);
+
+	LL_GPIO_SetPinMode(GPIOx, pin, LL_GPIO_MODE_OUTPUT);
+	LL_GPIO_SetPinOutputType(GPIOx, pin, LL_GPIO_OUTPUT_PUSHPULL);
+	LL_GPIO_SetOutputPin(GPIOx, pin);
+#endif /* PWR_EXT_SMPS_CONTROL */
+	/* Set the main internal Regulator output voltage for best performance.
+	 * Even when ext. SMPS is used, the bit can be used to keep track.
+	 */
+	LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE0);
+}
+#endif /* USE_VOLTAGE_SCALE0 */
+
 /**
  * @brief Perform basic hardware initialization at boot.
  *
@@ -103,8 +151,9 @@ void soc_early_init_hook(void)
 	/* Enable PWR */
 	LL_AHB4_GRP1_EnableClock(LL_AHB4_GRP1_PERIPH_PWR);
 
-	/* Set the main internal Regulator output voltage for best performance */
-	LL_PWR_SetRegulVoltageScaling(LL_PWR_REGU_VOLTAGE_SCALE0);
+#if USE_VOLTAGE_SCALE0
+	soc_configure_voltage_scale();
+#endif
 
 	/* Enable IOs */
 	LL_PWR_EnableVddIO2();
