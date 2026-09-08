@@ -28,7 +28,7 @@
 };
 
 &memc {
-	clocks = <&clock0 SIWX91X_CLK_QSPI>;
+	clocks = <&cmu_hp SIWX91X_CLK_QSPI2>;
 	pinctrl-0 = <&psram_default>;
 	pinctrl-names = "default";
 	device-id = [0d 5d 00 00 00 00 00 00];

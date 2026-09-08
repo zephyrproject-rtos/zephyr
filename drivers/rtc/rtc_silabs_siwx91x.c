@@ -123,11 +123,13 @@ static int siwx91x_rtc_init(const struct device *dev)
 	const struct siwx91x_rtc_config *config = dev->config;
 	int ret;
 
+	/* Not needed because rtc clock is always on and depends on uulp_lf_ref clock */
 	ret = clock_control_on(config->clock_dev, config->clock_subsys);
-	if (ret) {
+	if (ret && ret != -EALREADY) {
 		return ret;
 	}
 
+	/* No clock selection is managed by calendar API, but IPMU is*/
 	sl_si91x_calendar_init();
 
 	return 0;
@@ -141,7 +143,7 @@ static DEVICE_API(rtc, siwx91x_rtc_driver_api) = {
 #define SIWX91X_RTC_INIT(inst)                                                                     \
 	static const struct siwx91x_rtc_config siwx91x_rtc_config_##inst = {                       \
 		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst)),                             \
-		.clock_subsys = (clock_control_subsys_t)DT_INST_PHA(inst, clocks, clkid),          \
+		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(inst, clkid),          \
 	};                                                                                         \
                                                                                                    \
 	static struct siwx91x_rtc_data siwx91x_rtc_data##inst;                                     \
