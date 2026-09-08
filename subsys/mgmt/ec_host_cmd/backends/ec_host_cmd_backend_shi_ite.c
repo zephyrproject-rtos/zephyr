@@ -320,7 +320,10 @@ static void shi_ite_int_handler(const struct device *dev)
 {
 	struct shi_it8xxx2_data *data = dev->data;
 
-	if (data->shi_state == SHI_STATE_DISABLED) {
+	if (data->shi_state == SHI_STATE_DISABLED || data->rx_ctx == NULL) {
+		IT83XX_SPI_TXRXFAR = 0;
+		IT83XX_SPI_ISR = 0xff;
+		IT83XX_SPI_RX_VLISR = IT83XX_SPI_RVLI;
 		return;
 	}
 
@@ -430,8 +433,8 @@ static int shi_ite_init_registers(const struct device *dev)
 	/* Reset fifo and prepare to for next transaction */
 	shi_ite_reset_rx_fifo();
 
-	/* Ready to receive */
-	shi_ite_set_state(dev->data, SHI_STATE_READY_TO_RECV);
+	/* Initial response state: not ready until host command backend is initialized */
+	shi_ite_set_state(dev->data, SHI_STATE_DISABLED);
 
 	/* Interrupt status register(write one to clear) */
 	IT83XX_SPI_ISR = 0xff;
@@ -446,10 +449,10 @@ static int shi_ite_init_registers(const struct device *dev)
 		return status;
 	}
 
-	/* Enable SPI peripheral interrupt */
+	/* Connect SPI peripheral interrupt (enabled when backend is initialized) */
+	irq_disable(DT_INST_IRQN(0));
 	IRQ_CONNECT(DT_INST_IRQN(0), DT_INST_IRQ(0, priority), shi_ite_int_handler,
 		    DEVICE_DT_INST_GET(0), 0);
-	irq_enable(DT_INST_IRQN(0));
 
 	return 0;
 }
@@ -491,6 +494,21 @@ static int shi_ite_init(const struct device *dev)
 	return pm_device_runtime_enable(dev);
 }
 
+static void shi_ite_enable(struct shi_it8xxx2_data *data)
+{
+	if (data->rx_ctx == NULL) {
+		return;
+	}
+
+	/* Reset FIFO and clear any pending status before enabling interrupts */
+	shi_ite_reset_rx_fifo();
+	IT83XX_SPI_ISR = 0xff;
+	IT83XX_SPI_RX_VLISR = IT83XX_SPI_RVLI;
+
+	shi_ite_set_state(data, SHI_STATE_READY_TO_RECV);
+	irq_enable(DT_INST_IRQN(0));
+}
+
 static int shi_ite_backend_init(const struct ec_host_cmd_backend *backend,
 				struct ec_host_cmd_rx_ctx *rx_ctx, struct ec_host_cmd_tx_buf *tx)
 {
@@ -511,6 +529,8 @@ static int shi_ite_backend_init(const struct ec_host_cmd_backend *backend,
 	tx->buf = data->out_msg + sizeof(out_preamble);
 	data->tx->len_max = CONFIG_EC_HOST_CMD_BACKEND_SHI_MAX_RESPONSE;
 
+	shi_ite_enable(data);
+
 	return 0;
 }
 
@@ -526,6 +546,7 @@ static int shi_ite_pm_cb(const struct device *dev, enum pm_device_action action)
 	switch (action) {
 	case PM_DEVICE_ACTION_SUSPEND:
 		shi_ite_set_state(data, SHI_STATE_DISABLED);
+		irq_disable(DT_INST_IRQN(0));
 
 		ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_SLEEP);
 		if (ret < 0) {
@@ -540,7 +561,7 @@ static int shi_ite_pm_cb(const struct device *dev, enum pm_device_action action)
 			return ret;
 		}
 
-		shi_ite_set_state(data, SHI_STATE_READY_TO_RECV);
+		shi_ite_enable(data);
 		break;
 	default:
 		ret = -ENOTSUP;
