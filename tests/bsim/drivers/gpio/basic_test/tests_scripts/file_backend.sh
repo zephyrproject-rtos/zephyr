@@ -4,11 +4,14 @@
 
 source ${ZEPHYR_BASE}/tests/bsim/sh_common.source
 
+# Test the GPIO driver and HW model, where the several GPIO inputs are driven from a csv file
+
 EXE_NAME="bs_${BOARD_TS}_$(guess_test_long_name)_prj_conf"
-CSV_FILE="${ZEPHYR_BASE}/$(guess_test_relpath)/test_data/gpio_in.csv"
+CSV_FILE="${ZEPHYR_BASE}/$(guess_test_relpath)/test_data/gpio_in_all.csv"
 
 cd ${BSIM_OUT_PATH}/bin
 
 ./${EXE_NAME} \
   -v=2 -nosim \
-  -gpio_in_file="${CSV_FILE}"
+  -gpio_in_file="${CSV_FILE}" \
+  -testid=file_backend
