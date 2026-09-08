@@ -1228,6 +1228,10 @@ static int ch_claim(const struct device *const dev,
 	LOG_DBG("Claimed channel%d for ep 0x%02x, xfer=%p, channel=%p",
 		ch->index, xfer->ep, (void *)xfer, (void *)ch);
 
+	/* Error and completion state belongs to the transfer, not the channel */
+	ch->error_count = 0U;
+	ch->hcint_cplt_pending = 0U;
+
 	/* Save channel characteristics of the underlying channel */
 	ch->xfer = xfer;
 	ch->data = ch_data_get(priv, xfer->udev, xfer->ep);
