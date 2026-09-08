@@ -3,14 +3,14 @@
  * 2022 Ithinx GmbH
  * 2023 Amrith Venkat Kesavamoorthi <amrith@mr-beam.org>
  * 2023 Mr Beam Lasers GmbH.
+ * 2026 Analog Devices, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  *
  * @see https://www.nxp.com/docs/en/data-sheet/PCF8575.pdf
  * @see https://www.nxp.com/docs/en/data-sheet/PCF8574_PCF8574A.pdf
+ * @see https://www.analog.com/media/en/technical-documentation/data-sheets/MAX7321.pdf
  */
-
-#define DT_DRV_COMPAT nxp_pcf857x
 
 #include <zephyr/drivers/gpio/gpio_utils.h>
 
@@ -227,8 +227,8 @@ static int pcf857x_pin_configure(const struct device *dev, gpio_pin_t pin, gpio_
 		return -ENOTSUP;
 	}
 	/*
-	 * These parts are open-drain, so open-drain is the natural output mode
-	 * and is accepted. Open-source is not supported.
+	 * The PCF857x and MAX7321 are open-drain parts, so open-drain is the
+	 * natural output mode and is accepted. Open-source is not supported.
 	 */
 	if ((flags & GPIO_SINGLE_ENDED) && !(flags & GPIO_LINE_OPEN_DRAIN)) {
 		return -ENOTSUP;
@@ -424,19 +424,24 @@ static DEVICE_API(gpio, pcf857x_drv_api) = {
 	.manage_callback = pcf857x_manage_callback,
 };
 
-#define GPIO_PCF857X_INST(idx)                                                                     \
-	static const struct pcf857x_drv_cfg pcf857x_cfg##idx = {                                   \
+#define GPIO_PCF857X_INST(idx, pfx)                                                                \
+	static const struct pcf857x_drv_cfg pfx##_cfg##idx = {                                     \
 		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(idx),                                    \
 		.gpio_int = GPIO_DT_SPEC_INST_GET_OR(idx, int_gpios, {0}),                         \
 		.i2c = I2C_DT_SPEC_INST_GET(idx),                                                  \
 	};                                                                                         \
-	static struct pcf857x_drv_data pcf857x_data##idx = {                                       \
-		.lock = Z_SEM_INITIALIZER(pcf857x_data##idx.lock, 1, 1),                           \
+	static struct pcf857x_drv_data pfx##_data##idx = {                                         \
+		.lock = Z_SEM_INITIALIZER(pfx##_data##idx.lock, 1, 1),                             \
 		.work = Z_WORK_INITIALIZER(pcf857x_work_handler),                                  \
 		.dev = DEVICE_DT_INST_GET(idx),                                                    \
-		.num_bytes = DT_INST_ENUM_IDX(idx, ngpios) + 1,                                    \
+		.num_bytes = DT_INST_PROP(idx, ngpios) / 8,                                        \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(idx, pcf857x_init, NULL, &pcf857x_data##idx, &pcf857x_cfg##idx,      \
+	DEVICE_DT_INST_DEFINE(idx, pcf857x_init, NULL, &pfx##_data##idx, &pfx##_cfg##idx,          \
 			      POST_KERNEL, CONFIG_GPIO_PCF857X_INIT_PRIORITY, &pcf857x_drv_api);
 
-DT_INST_FOREACH_STATUS_OKAY(GPIO_PCF857X_INST);
+#define DT_DRV_COMPAT nxp_pcf857x
+DT_INST_FOREACH_STATUS_OKAY_VARGS(GPIO_PCF857X_INST, pcf857x)
+
+#undef DT_DRV_COMPAT
+#define DT_DRV_COMPAT adi_max7321
+DT_INST_FOREACH_STATUS_OKAY_VARGS(GPIO_PCF857X_INST, max7321)
