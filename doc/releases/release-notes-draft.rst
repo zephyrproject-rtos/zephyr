@@ -74,6 +74,11 @@ New APIs and options
     * :c:func:`bt_hids_report_get`
     * :c:func:`bt_hids_send_report`
 
+* Retention
+
+  * The :ref:`boot mode interface <boot_mode_api>` supports prefix-only retention areas,
+    whose prefix is the magic value a bootloader looks for.
+
 .. zephyr-keep-sorted-stop
 
 .. _boards_added_in_zephyr_4_6:

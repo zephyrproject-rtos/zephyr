@@ -26,6 +26,14 @@ extern "C" {
  * @brief Boot mode interface
  * @defgroup boot_mode_interface Boot mode interface
  * @ingroup retention_api
+ *
+ * The boot mode is stored in the retention area assigned to the ``zephyr,boot-mode``
+ * chosen node. An area with user data stores the boot mode value in its first byte.
+ * An area made of a prefix only, without user data, stores no value: writing the
+ * prefix, typically the magic value a bootloader looks for, requests the bootloader
+ * boot mode and clearing the area requests the normal boot mode, no other boot mode
+ * can be set.
+ *
  * @{
  */
 
@@ -39,6 +47,10 @@ enum BOOT_MODE_TYPES {
 
 /**
  * @brief		Checks if the boot mode of the device is set to a specific value.
+ *
+ * @note		On a prefix only area, #BOOT_MODE_TYPE_NORMAL matches when the prefix is
+ *			absent. On an area with user data and a prefix or checksum, a cleared
+ *			area is not valid and no boot mode matches.
  *
  * @param boot_mode	Expected boot mode to check.
  *
@@ -54,6 +66,7 @@ int bootmode_check(uint8_t boot_mode);
  * @param boot_mode	Boot mode value to set.
  *
  * @retval 0		If successful.
+ * @retval -ENOTSUP	If the boot mode cannot be stored in a prefix only area.
  * @retval -errno	Error code code.
  */
 int bootmode_set(uint8_t boot_mode);
