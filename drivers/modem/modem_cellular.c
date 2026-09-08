@@ -1922,6 +1922,12 @@ static void modem_cellular_await_registered_event_handler(struct modem_cellular_
 			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_REGISTERED);
 		}
 		break;
+	case MODEM_CELLULAR_EVENT_PPP_DEAD:
+		if (net_if_is_admin_up(modem_ppp_get_iface(config->ppp))) {
+			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_AWAIT_PPP_DEAD);
+			modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
+		}
+		break;
 	case MODEM_CELLULAR_EVENT_HANGUP:
 		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_AWAIT_PPP_DEAD);
 		modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
