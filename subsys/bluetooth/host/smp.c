@@ -3149,6 +3149,11 @@ static int smp_send_security_req(struct bt_conn *conn)
 		}
 	}
 
+	/* smp_init() clears smp->flags, so this bit is set again further down. */
+	if (atomic_test_and_set_bit(smp->flags, SMP_FLAG_SEC_REQ)) {
+		return -EALREADY;
+	}
+
 	if (smp_init(smp) != 0) {
 		return -ENOBUFS;
 	}
