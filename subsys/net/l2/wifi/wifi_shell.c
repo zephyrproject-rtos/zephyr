@@ -108,6 +108,7 @@ static struct wifi_ap_sta_node sta_list[CONFIG_WIFI_SHELL_MAX_AP_STA];
 enum iface_type {
 	IFACE_TYPE_STA,
 	IFACE_TYPE_SAP,
+	IFACE_TYPE_P2P,
 };
 
 static struct net_if *get_iface(enum iface_type type, int argc, char *argv[])
@@ -147,11 +148,14 @@ static struct net_if *get_iface(enum iface_type type, int argc, char *argv[])
 			iface = net_if_get_wifi_sta();
 		} else if (type == IFACE_TYPE_SAP) {
 			iface = net_if_get_wifi_sap();
+		} else if (type == IFACE_TYPE_P2P) {
+			iface = net_if_get_wifi_p2p();
 		}
 
 		if (iface == NULL) {
 			LOG_ERR("No default interface found for type: %s",
-					type == IFACE_TYPE_STA ? "STA" : "SAP");
+				type == IFACE_TYPE_STA ? "STA" :
+				type == IFACE_TYPE_SAP ? "SAP" : "P2P");
 			return NULL;
 		}
 	}
@@ -4010,7 +4014,7 @@ static void print_peer_info(const struct shell *sh, int index,
 
 static int cmd_wifi_p2p_peer(const struct shell *sh, size_t argc, char *argv[])
 {
-	struct net_if *iface = get_iface(IFACE_TYPE_STA, argc, argv);
+	struct net_if *iface = get_iface(IFACE_TYPE_P2P, argc, argv);
 	struct wifi_p2p_params params = {0};
 	uint8_t mac_addr[WIFI_MAC_ADDR_LEN];
 	static struct wifi_p2p_device_info peers[WIFI_P2P_MAX_PEERS];
@@ -4065,7 +4069,7 @@ static int cmd_wifi_p2p_peer(const struct shell *sh, size_t argc, char *argv[])
 
 static int cmd_wifi_p2p_find(const struct shell *sh, size_t argc, char *argv[])
 {
-	struct net_if *iface = get_iface(IFACE_TYPE_STA, argc, argv);
+	struct net_if *iface = get_iface(IFACE_TYPE_P2P, argc, argv);
 	struct wifi_p2p_params params = {0};
 
 	context.sh = sh;
@@ -4138,7 +4142,7 @@ static int cmd_wifi_p2p_find(const struct shell *sh, size_t argc, char *argv[])
 
 static int cmd_wifi_p2p_stop_find(const struct shell *sh, size_t argc, char *argv[])
 {
-	struct net_if *iface = get_iface(IFACE_TYPE_STA, argc, argv);
+	struct net_if *iface = get_iface(IFACE_TYPE_P2P, argc, argv);
 	struct wifi_p2p_params params = {0};
 
 	context.sh = sh;
@@ -4155,7 +4159,7 @@ static int cmd_wifi_p2p_stop_find(const struct shell *sh, size_t argc, char *arg
 
 static int cmd_wifi_p2p_connect(const struct shell *sh, size_t argc, char *argv[])
 {
-	struct net_if *iface = get_iface(IFACE_TYPE_STA, argc, argv);
+	struct net_if *iface = get_iface(IFACE_TYPE_P2P, argc, argv);
 	struct wifi_p2p_params params = {0};
 	uint8_t mac_addr[WIFI_MAC_ADDR_LEN];
 	const char *method_arg = NULL;
@@ -4268,7 +4272,7 @@ static int cmd_wifi_p2p_connect(const struct shell *sh, size_t argc, char *argv[
 
 static int cmd_wifi_p2p_group_add(const struct shell *sh, size_t argc, char *argv[])
 {
-	struct net_if *iface = get_iface(IFACE_TYPE_STA, argc, argv);
+	struct net_if *iface = get_iface(IFACE_TYPE_P2P, argc, argv);
 	struct wifi_p2p_params params = {0};
 	int opt;
 	int opt_index = 0;
@@ -4370,7 +4374,7 @@ static int cmd_wifi_p2p_group_add(const struct shell *sh, size_t argc, char *arg
 
 static int cmd_wifi_p2p_group_remove(const struct shell *sh, size_t argc, char *argv[])
 {
-	struct net_if *iface = get_iface(IFACE_TYPE_STA, argc, argv);
+	struct net_if *iface = get_iface(IFACE_TYPE_P2P, argc, argv);
 	struct wifi_p2p_params params = {0};
 
 	context.sh = sh;
@@ -4395,7 +4399,7 @@ static int cmd_wifi_p2p_group_remove(const struct shell *sh, size_t argc, char *
 
 static int cmd_wifi_p2p_invite(const struct shell *sh, size_t argc, char *argv[])
 {
-	struct net_if *iface = get_iface(IFACE_TYPE_STA, argc, argv);
+	struct net_if *iface = get_iface(IFACE_TYPE_P2P, argc, argv);
 	struct wifi_p2p_params params = {0};
 	uint8_t mac_addr[WIFI_MAC_ADDR_LEN];
 	int opt;
@@ -4528,7 +4532,7 @@ static int cmd_wifi_p2p_invite(const struct shell *sh, size_t argc, char *argv[]
 
 static int cmd_wifi_p2p_power_save(const struct shell *sh, size_t argc, char *argv[])
 {
-	struct net_if *iface = get_iface(IFACE_TYPE_STA, argc, argv);
+	struct net_if *iface = get_iface(IFACE_TYPE_P2P, argc, argv);
 	struct wifi_p2p_params params = {0};
 	bool power_save_enable = false;
 
@@ -4560,9 +4564,60 @@ static int cmd_wifi_p2p_power_save(const struct shell *sh, size_t argc, char *ar
 	return 0;
 }
 
+static int cmd_wifi_p2p_wps_pbc(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = get_iface(IFACE_TYPE_P2P, argc, argv);
+	struct wifi_wps_config_params params = {0};
+
+	context.sh = sh;
+
+	if (argc == 1) {
+		params.oper = WIFI_WPS_PBC;
+	} else {
+		shell_help(sh);
+		return -ENOEXEC;
+	}
+
+	if (net_mgmt(NET_REQUEST_WIFI_WPS_CONFIG, iface, &params, sizeof(params))) {
+		PR_WARNING("Start wps pbc connection failed\n");
+		return -ENOEXEC;
+	}
+
+	return 0;
+}
+
+static int cmd_wifi_p2p_wps_pin(const struct shell *sh, size_t argc, char *argv[])
+{
+	struct net_if *iface = get_iface(IFACE_TYPE_P2P, argc, argv);
+	struct wifi_wps_config_params params = {0};
+
+	context.sh = sh;
+
+	if (argc == 1) {
+		params.oper = WIFI_WPS_PIN_GET;
+	} else if (argc == 2) {
+		params.oper = WIFI_WPS_PIN_SET;
+		strncpy(params.pin, argv[1], WIFI_WPS_PIN_MAX_LEN);
+	} else {
+		shell_help(sh);
+		return -ENOEXEC;
+	}
+
+	if (net_mgmt(NET_REQUEST_WIFI_WPS_CONFIG, iface, &params, sizeof(params))) {
+		PR_WARNING("Start wps pin connection failed\n");
+		return -ENOEXEC;
+	}
+
+	if (params.oper == WIFI_WPS_PIN_GET) {
+		PR("WPS PIN is: %s\n", params.pin);
+	}
+
+	return 0;
+}
+
 static int cmd_wifi_p2p_list_networks(const struct shell *sh, size_t argc, char *argv[])
 {
-	struct net_if *iface = get_iface(IFACE_TYPE_STA, argc, argv);
+	struct net_if *iface = get_iface(IFACE_TYPE_P2P, argc, argv);
 	struct wifi_p2p_params params = {0};
 	char *buf;
 	int ret;
@@ -4601,7 +4656,7 @@ static int cmd_wifi_p2p_list_networks(const struct shell *sh, size_t argc, char 
 
 static int cmd_wifi_p2p_persistent_remove(const struct shell *sh, size_t argc, char *argv[])
 {
-	struct net_if *iface = get_iface(IFACE_TYPE_STA, argc, argv);
+	struct net_if *iface = get_iface(IFACE_TYPE_P2P, argc, argv);
 	struct wifi_p2p_params params = {0};
 	int idx = 1;
 	long val;
@@ -5820,6 +5875,15 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 				 "<on>: Enable P2P power save\n"
 				 "<off>: Disable P2P power save"),
 		      cmd_wifi_p2p_power_save, 2, 3),
+	SHELL_CMD_ARG(wps_pbc, NULL,
+		      SHELL_HELP("Start a WPS PBC connection",
+				 "[-i, --iface=<interface index>]"),
+		      cmd_wifi_p2p_wps_pbc, 1, 2),
+	SHELL_CMD_ARG(wps_pin, NULL,
+		      SHELL_HELP("Set and get WPS pin",
+				 "[-i, --iface=<interface index>]\n"
+				 "[pin] Only applicable for set"),
+		      cmd_wifi_p2p_wps_pin, 1, 3),
 	SHELL_CMD_ARG(list_networks, NULL,
 		      SHELL_HELP("List stored persistent P2P networks",
 				 "[-i, --iface=<interface index>]"),
