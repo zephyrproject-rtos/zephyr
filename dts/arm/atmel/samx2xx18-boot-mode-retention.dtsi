@@ -1,0 +1,51 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Boot mode retention area for the Arduino and Adafruit UF2 (BOSSA
+ * compatible) bootloaders, which look for a magic value in the last word
+ * of SRAM after a reset and stay in the bootloader when it is present.
+ *
+ * The last word of SRAM is taken away from sram0 and described as a
+ * retention area without user data. The board must set the bootloader
+ * magic value, little-endian, as the prefix of that area, for example
+ * for the Adafruit UF2 bootloader:
+ *
+ *	&boot_mode {
+ *		prefix = [ef 69 16 f0];
+ *	};
+ */
+
+#include <mem.h>
+
+&sram0 {
+	reg = <0x20000000 (DT_SIZE_K(32) - 4)>;
+};
+
+/ {
+	chosen {
+		zephyr,boot-mode = &boot_mode;
+	};
+
+	sram@20007ffc {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x20007ffc 0x4>;
+		zephyr,memory-region = "RetainedMem";
+		status = "okay";
+
+		retainedmem {
+			compatible = "zephyr,retained-ram";
+			status = "okay";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			boot_mode: retention@0 {
+				compatible = "zephyr,retention";
+				status = "okay";
+				reg = <0x0 0x4>;
+			};
+		};
+	};
+};
