@@ -382,6 +382,10 @@ int sx12xx_lora_config(const struct device *dev,
 	uint32_t bw_idx;
 	int ret;
 
+	if (config->rx_symbol_timeout != 0U) {
+		return -ENOTSUP;
+	}
+
 	ret = sx12xx_get_bandwidth_idx(config->bandwidth, &bw_idx);
 	if (ret < 0) {
 		LOG_ERR("Unsupported bandwidth: %d", config->bandwidth);

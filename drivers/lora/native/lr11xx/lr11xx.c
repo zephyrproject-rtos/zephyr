@@ -313,6 +313,11 @@ static int lr11xx_set_rx_duty_cycle(const struct device *dev,
 	return lr11xx_hal_write_cmd(dev, LR11XX_CMD_SET_RX_DUTY_CYCLE, buf, 7);
 }
 
+static int lr11xx_set_symbol_timeout(const struct device *dev, uint8_t symbols)
+{
+	return lr11xx_hal_write_cmd(dev, LR11XX_CMD_SET_LORA_SYNCH_TIMEOUT, &symbols, 1);
+}
+
 static int lr11xx_set_rx(const struct device *dev, uint32_t timeout_ms)
 {
 	uint32_t timeout;
@@ -1058,6 +1063,13 @@ static int lr11xx_lora_recv(const struct device *dev, uint8_t *data_buf,
 		return ret;
 	}
 
+	ret = lr11xx_set_symbol_timeout(dev, data->config.rx_symbol_timeout);
+	if (ret != 0) {
+		lr11xx_set_sleep(dev);
+		k_mutex_unlock(&data->lock);
+		return ret;
+	}
+
 	/* Start reception (0 = continuous for K_FOREVER) */
 	timeout_ms = K_TIMEOUT_EQ(timeout, K_FOREVER)
 		     ? 0 : k_ticks_to_ms_ceil32(timeout.ticks);
@@ -1155,6 +1167,14 @@ static int lr11xx_lora_recv_async(const struct device *dev,
 		return ret;
 	}
 
+	ret = lr11xx_set_symbol_timeout(dev, 0U);
+	if (ret != 0) {
+		data->rx_cb = NULL;
+		lr11xx_set_sleep(dev);
+		k_mutex_unlock(&data->lock);
+		return ret;
+	}
+
 	/* Start continuous reception */
 	ret = lr11xx_set_rx(dev, 0);
 	if (ret < 0) {
@@ -1205,6 +1225,11 @@ static int lr11xx_duty_cycle_start(const struct device *dev,
 				       LR11XX_LORA_IQ_INVERTED :
 				       LR11XX_LORA_IQ_STANDARD);
 	if (ret < 0) {
+		goto out_error;
+	}
+
+	ret = lr11xx_set_symbol_timeout(dev, 0U);
+	if (ret != 0) {
 		goto out_error;
 	}
 

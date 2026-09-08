@@ -120,6 +120,10 @@ static int sx126x_validate_config(const struct lora_modem_config *config)
 {
 	uint8_t bw_reg;
 
+	if (config->rx_symbol_timeout > SX126X_MAX_SYMBOL_TIMEOUT) {
+		return -EINVAL;
+	}
+
 	if (bandwidth_to_reg(config->bandwidth, &bw_reg) < 0) {
 		LOG_ERR("Unsupported bandwidth: %d kHz", config->bandwidth);
 		return -EINVAL;
@@ -376,6 +380,29 @@ static int sx126x_set_rx_duty_cycle(const struct device *dev,
 	}
 
 	return sx126x_hal_write_cmd(dev, SX126X_CMD_SET_RX_DUTY_CYCLE, buf, 6);
+}
+
+static int sx126x_set_symbol_timeout(const struct device *dev, uint8_t symbols)
+{
+	uint8_t mantissa = DIV_ROUND_UP(symbols, 2U);
+	uint8_t exponent = 0U;
+	uint8_t value;
+	int ret;
+
+	/* Round up to the modem's mantissa * 2^(2 * exponent + 1) encoding. */
+	while (mantissa > 31U) {
+		mantissa = DIV_ROUND_UP(mantissa, 4U);
+		exponent++;
+	}
+
+	value = mantissa << (2U * exponent + 1U);
+	ret = sx126x_hal_write_cmd(dev, SX126X_CMD_SET_LORA_SYMB_NUM_TIMEOUT, &value, 1);
+	if (ret != 0 || symbols == 0U) {
+		return ret;
+	}
+
+	value = (mantissa << 3) | exponent;
+	return sx126x_hal_write_regs(dev, SX126X_REG_LORA_SYNC_TIMEOUT, &value, 1);
 }
 
 static int sx126x_set_rx(const struct device *dev, uint32_t timeout_ms)
@@ -1089,6 +1116,13 @@ static int sx126x_lora_recv(const struct device *dev, uint8_t *data_buf,
 	/* Enable antenna and set RX path */
 	sx126x_set_rf_path(dev, true, false);
 
+	ret = sx126x_set_symbol_timeout(dev, data->config.rx_symbol_timeout);
+	if (ret != 0) {
+		sx126x_set_sleep(dev);
+		k_mutex_unlock(&data->lock);
+		return ret;
+	}
+
 	/* Start reception (0 = continuous for K_FOREVER) */
 	timeout_ms = K_TIMEOUT_EQ(timeout, K_FOREVER)
 		     ? 0 : k_ticks_to_ms_ceil32(timeout.ticks);
@@ -1189,6 +1223,14 @@ static int sx126x_lora_recv_async(const struct device *dev,
 	/* Enable antenna and set RX path */
 	sx126x_set_rf_path(dev, true, false);
 
+	ret = sx126x_set_symbol_timeout(dev, 0U);
+	if (ret != 0) {
+		data->rx_cb = NULL;
+		sx126x_set_sleep(dev);
+		k_mutex_unlock(&data->lock);
+		return ret;
+	}
+
 	/* Start continuous reception */
 	ret = sx126x_set_rx(dev, 0);
 	if (ret < 0) {
@@ -1281,6 +1323,11 @@ static int sx126x_duty_cycle_start(const struct device *dev,
 	}
 
 	sx126x_set_rf_path(dev, true, false);
+
+	ret = sx126x_set_symbol_timeout(dev, 0U);
+	if (ret != 0) {
+		goto out_error;
+	}
 
 	ret = sx126x_set_rx_duty_cycle(dev, data->duty_cycle.rx_period,
 				       data->duty_cycle.sleep_period);

@@ -128,7 +128,7 @@ uint32_t radio_airtime_params(uint8_t sf, uint16_t bw_khz, uint8_t frame_len)
 }
 
 int radio_rx(uint32_t freq, const struct lwan_dr_params *dr,
-	     uint32_t timeout_ms,
+	     uint8_t symbol_timeout, uint32_t timeout_ms,
 	     uint8_t *buf, uint8_t buf_size,
 	     int16_t *rssi, int8_t *snr)
 {
@@ -137,6 +137,7 @@ int radio_rx(uint32_t freq, const struct lwan_dr_params *dr,
 	rx_config.frequency = freq;
 	rx_config.bandwidth = dr->bw;
 	rx_config.datarate = dr->sf;
+	rx_config.rx_symbol_timeout = symbol_timeout;
 
 	ret = lora_config(radio_dev, &rx_config);
 	if (ret != 0) {
