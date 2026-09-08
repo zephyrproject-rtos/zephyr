@@ -1407,31 +1407,41 @@ static int get_option_uint(const struct coap_packet *cpkt, uint16_t code, uint32
 
 int coap_get_block1_option(const struct coap_packet *cpkt, bool *has_more, uint32_t *block_number)
 {
-	int ret = coap_get_option_int(cpkt, COAP_OPTION_BLOCK1);
+	uint32_t block;
+	int ret = get_option_uint(cpkt, COAP_OPTION_BLOCK1, &block);
 
 	if (ret < 0) {
 		return ret;
 	}
 
-	*has_more = GET_MORE(ret);
-	*block_number = GET_NUM(ret);
-	ret = 1 << (GET_BLOCK_SIZE(ret) + 4);
-	return ret;
+	if (GET_NUM(block) > MAX_BLOCK_NUM) {
+		return -EINVAL;
+	}
+
+	*has_more = GET_MORE(block);
+	*block_number = GET_NUM(block);
+
+	return 1 << (GET_BLOCK_SIZE(block) + 4);
 }
 
 int coap_get_block2_option(const struct coap_packet *cpkt, bool *has_more,
 			   uint32_t *block_number)
 {
-	int ret = coap_get_option_int(cpkt, COAP_OPTION_BLOCK2);
+	uint32_t block;
+	int ret = get_option_uint(cpkt, COAP_OPTION_BLOCK2, &block);
 
 	if (ret < 0) {
 		return ret;
 	}
 
-	*has_more = GET_MORE(ret);
-	*block_number = GET_NUM(ret);
-	ret = 1 << (GET_BLOCK_SIZE(ret) + 4);
-	return ret;
+	if (GET_NUM(block) > MAX_BLOCK_NUM) {
+		return -EINVAL;
+	}
+
+	*has_more = GET_MORE(block);
+	*block_number = GET_NUM(block);
+
+	return 1 << (GET_BLOCK_SIZE(block) + 4);
 }
 
 int insert_option(struct coap_packet *cpkt, uint16_t code, const uint8_t *value, uint16_t len)
