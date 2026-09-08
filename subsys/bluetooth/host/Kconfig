@@ -609,6 +609,45 @@ config BT_SMP_ALLOW_UNAUTH_OVERWRITE
 	  to create a new bond the old bond has to be explicitly deleted with
 	  bt_unpair.
 
+config BT_SMP_DERIVE_LTK
+	bool "Derive the LE LTK from the BR/EDR link key"
+	depends on BT_CLASSIC
+	default y
+	help
+	  Accept the Security Manager procedure over BR/EDR, which derives the
+	  LE LTK from the BR/EDR link key as part of Cross-Transport Key
+	  Derivation (Core Specification 6.3, Vol 3, Part H, Section 2.4.2.5).
+
+	  Disabling this refuses that procedure as a whole rather than only the
+	  LTK: the IRK, the identity address and the CSRK are not distributed
+	  over BR/EDR either, so RPAs from a peer bonded only over BR/EDR can
+	  no longer be resolved. That is intended, because the identity
+	  information on its own already creates an LE bond entry. The BR/EDR
+	  Security Manager fixed channel is also left out of the L2CAP
+	  information response so that a peer does not start a procedure that
+	  would then be rejected.
+
+	  Disable this on a device that must not end up with an LE bond as a
+	  side effect of pairing over BR/EDR. Keys derived while it was enabled
+	  are kept.
+
+config BT_SMP_DERIVE_LK
+	bool "Derive the BR/EDR link key from the LE LTK"
+	depends on BT_CLASSIC
+	default y
+	help
+	  Ask for a BR/EDR link key to be derived from the LE LTK during Secure
+	  Connections pairing over LE, as part of Cross-Transport Key Derivation
+	  (Core Specification 6.3, Vol 3, Part H, Section 2.4.2.4).
+
+	  Disabling this clears the LinkKey bit from the key distribution of
+	  both the Pairing Request and the Pairing Response, so that the peer
+	  does not keep a link key that this device never derives.
+
+	  Disable this on a device that must not end up with a BR/EDR bond as a
+	  side effect of pairing over LE. Keys derived while it was enabled are
+	  kept.
+
 config BT_ID_UNPAIR_MATCHING_BONDS
 	bool "Delete bond with same peer with other local identity when bonding"
 	help

@@ -476,6 +476,11 @@ New APIs and options
     * :c:member:`bt_bap_unicast_group_info.iso_interval`
     * :c:func:`bt_vocs_client_free_instance`
 
+  * Classic
+
+    * :kconfig:option:`CONFIG_BT_SMP_DERIVE_LTK`
+    * :kconfig:option:`CONFIG_BT_SMP_DERIVE_LK`
+
   * Host
 
     * :c:func:`bt_conn_take`

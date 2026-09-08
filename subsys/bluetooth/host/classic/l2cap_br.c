@@ -1987,6 +1987,14 @@ static uint8_t get_fixed_channels_mask(void)
 
 	/* this needs to be enhanced if AMP Test Manager support is added */
 	STRUCT_SECTION_FOREACH(bt_l2cap_br_fixed_chan, fchan) {
+		if (!IS_ENABLED(CONFIG_BT_SMP_DERIVE_LTK) &&
+		    fchan->cid == BT_L2CAP_CID_BR_SMP) {
+			/* Nothing would be accepted on this channel, so do not
+			 * invite the peer to start a derivation on it.
+			 */
+			continue;
+		}
+
 		mask |= BIT(fchan->cid);
 	}
 
