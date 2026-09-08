@@ -1,0 +1,81 @@
+# Copyright 2026 Alif Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Common properties for the Zephyr SDHC emulator bindings.
+
+  Shared by "zephyr,sdhc-emul" (standalone emulator) and
+  "zephyr,sdhc-emul-card" (emulated card peripheral on the
+  emul framework bus). Not a standalone binding.
+
+properties:
+  card-type:
+    type: string
+    default: "sdhc"
+    enum:
+      - "sd"
+      - "sdhc"
+      - "sdxc"
+      - "emmc"
+      - "sdio"
+    description: |
+      Virtual card personality.
+        sd    - SDSC up to 2 GB
+        sdhc  - SDHC 4-32 GB (default)
+        sdxc  - SDXC above 32 GB
+        emmc  - eMMC 5.1, supports CMD6 EXT_CSD, HS200/HS400
+        sdio  - SDIO-only, triggers function enumeration
+
+  capacity-blocks:
+    type: int
+    default: 131072
+    description: |
+      Number of blocks in the virtual storage.
+      Default 131072 blocks = 64 MiB at 512 bytes/block.
+
+  sector-size:
+    type: int
+    default: 512
+    description: |
+      Block (sector) size in bytes.
+
+  inject-error-cmd:
+    type: int
+    default: 255
+    description: |
+      CMD index that returns an error for fault injection.
+      255 disables fault injection.
+
+  card-inserted:
+    type: boolean
+    description: |
+      If present, the virtual card is inserted at boot.
+
+  host-ocr:
+    type: int
+    default: 0x00FF8000
+    description: |
+      OCR (Operating Conditions Register) value reported by the emulated
+      card in response to CMD1 (eMMC) or ACMD41 (SD).
+
+      The default 0x00FF8000 sets bits 15-23, advertising every supported
+      VDD window from 2.7 V to 3.6 V (equivalent to MMC_OCR_VDD27_36FLAG).
+
+      Notable bits:
+        bit 7      - VDD 1.65-1.95 V supported (eMMC only)
+        bits 15-23 - VDD 2.7-3.6 V windows, one bit per 100 mV step
+        bit 24     - S18A: card supports switching to 1.8 V signalling
+        bit 30     - CCS / sector mode: card is high capacity and
+                     block-addressed rather than byte-addressed
+        bit 31     - power-up busy status; set by the emulator at
+                     runtime and must not be set here
+
+      Clearing bit 30 in the default means the emulated card reports
+      byte addressing. Set 0x40FF8000 to exercise the high-capacity
+      code paths in the SD/MMC subsystem.
+
+  sdio-func-count:
+    type: int
+    default: 1
+    description: |
+      Number of SDIO functions to emulate (1-7).

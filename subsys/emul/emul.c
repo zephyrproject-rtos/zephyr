@@ -61,6 +61,9 @@ int emul_init_for_bus(const struct device *dev)
 		case EMUL_BUS_TYPE_UART:
 			emul->bus.uart->target = emul;
 			break;
+		case EMUL_BUS_TYPE_SDHC:
+			emul->bus.sdhc->target = emul;
+			break;
 		case EMUL_BUS_TYPE_NONE:
 			break;
 		}
@@ -97,6 +100,11 @@ int emul_init_for_bus(const struct device *dev)
 			rc = uart_emul_register(dev, emul->bus.uart);
 			break;
 #endif /* CONFIG_UART_EMUL */
+#ifdef CONFIG_SDHC_EMUL_CONTROLLER
+		case EMUL_BUS_TYPE_SDHC:
+			rc = sdhc_emul_register(dev, emul->bus.sdhc);
+			break;
+#endif /* CONFIG_SDHC_EMUL_CONTROLLER */
 		default:
 			rc = -EINVAL;
 			LOG_WRN("Found no emulated bus enabled to register emulator %s",
