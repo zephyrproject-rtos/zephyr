@@ -63,6 +63,11 @@ New APIs and options
 
 .. zephyr-keep-sorted-start re(^\* \w) ignorecase
 
+* Retention
+
+  * The :ref:`boot mode interface <boot_mode_api>` supports prefix-only retention areas,
+    whose prefix is the magic value a bootloader looks for.
+
 .. zephyr-keep-sorted-stop
 
 .. _boards_added_in_zephyr_4_6:

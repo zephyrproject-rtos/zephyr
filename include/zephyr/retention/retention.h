@@ -71,6 +71,8 @@ int retention_read(const struct device *dev, off_t offset, uint8_t *buffer, size
  * @brief		Writes data to the retention area (underlying data does not need to be
  *			cleared prior to writing), once function returns with a success code, the
  *			data will be classed as valid if queried using retention_is_valid().
+ *			A write of zero bytes stores no data but still writes the prefix and
+ *			checksum, if any, which marks the area as valid.
  *
  * @param dev		Retention device to use.
  * @param offset	Offset to write data to.

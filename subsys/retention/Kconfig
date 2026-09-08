@@ -51,9 +51,12 @@ config RETENTION_BOOT_MODE
 	  e.g. button-less bootloader serial recovery mode entering from the
 	  application.
 
-	  In order to use this, a retention area with at least 1 usable user
-	  byte must be created and set as the "zephyr,boot-mode" chosen node
-	  via device tree.
+	  In order to use this, a retention area must be created and set as
+	  the "zephyr,boot-mode" chosen node via device tree, either with at
+	  least 1 usable user byte to store the boot mode value, or made of a
+	  prefix only, in which case the presence of the prefix (for example
+	  the magic value a bootloader looks for) selects the bootloader boot
+	  mode.
 
 source "subsys/retention/Kconfig.blinfo"
 
