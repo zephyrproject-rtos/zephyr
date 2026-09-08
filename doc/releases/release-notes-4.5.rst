@@ -668,6 +668,11 @@ New APIs and options
 
   * :c:struct:`sys_ringq` (see :ref:`fixed_size_ringq_api`)
 
+* USB
+
+  * :kconfig:option:`CONFIG_CDC_ACM_SERIAL_REBOOT_TO_BOOTLOADER` and
+    :kconfig:option:`CONFIG_CDC_ACM_SERIAL_REBOOT_DTE_RATE`
+
 * USB Type-C
 
   * :kconfig:option:`CONFIG_USBC_LOG_PD_MSG_NAMES`
