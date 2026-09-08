@@ -19,16 +19,11 @@ config ARM_MPU_CM7_UNMAPPED_REGION
 
 if SECOND_CORE_MCUX && BOARD_MIMXRT1180_EVK_MIMXRT1189_CM7
 
-# Workaround for not being able to have commas in macro arguments
-DT_CHOSEN_Z_CODE_PARTITION := zephyr,code-partition
-
-config FLASH_LOAD_OFFSET
+# With zephyr,mapped-partition the linker derives the load address from the
+# CPU-mapped (AHB) address of the chosen code partition directly.
+config USE_DT_CODE_PARTITION
 	depends on CM7_BOOT_FROM_FLASH
-	default $(dt_chosen_reg_addr_hex,$(DT_CHOSEN_Z_CODE_PARTITION))
-
-config FLASH_LOAD_SIZE
-	depends on CM7_BOOT_FROM_FLASH
-	default $(dt_chosen_reg_size_hex,$(DT_CHOSEN_Z_CODE_PARTITION))
+	default y
 
 config BUILD_OUTPUT_INFO_HEADER
 	default y
