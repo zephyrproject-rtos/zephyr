@@ -15,9 +15,14 @@
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
 
+#define DT_DRV_COMPAT st_lsm6dsl
+
+#include "lsm6dsl.h"
 #include "lsm6dsl_emul.h"
 
 #define LSM6DSL_NODE DT_ALIAS(lsm6dsl)
+
+#define INT1_DRDY_MASK (LSM6DSL_MASK_INT1_CTRL_DRDY_XL | LSM6DSL_MASK_INT1_CTRL_DRDY_G)
 
 /*
  * Every wait below carries a timeout and every one is asserted on, so a
@@ -39,6 +44,22 @@ static const struct gpio_dt_spec int_gpio = GPIO_DT_SPEC_GET(LSM6DSL_NODE, irq_g
 static const struct sensor_trigger drdy_trigger = {
 	.type = SENSOR_TRIG_DATA_READY,
 	.chan = SENSOR_CHAN_ALL,
+};
+
+static const struct sensor_trigger accel_drdy_trigger = {
+	.type = SENSOR_TRIG_DATA_READY,
+	.chan = SENSOR_CHAN_ACCEL_XYZ,
+};
+
+static const struct sensor_trigger gyro_drdy_trigger = {
+	.type = SENSOR_TRIG_DATA_READY,
+	.chan = SENSOR_CHAN_GYRO_XYZ,
+};
+
+/* Data ready is reported per channel, but never for the die temperature. */
+static const struct sensor_trigger die_temp_drdy_trigger = {
+	.type = SENSOR_TRIG_DATA_READY,
+	.chan = SENSOR_CHAN_DIE_TEMP,
 };
 
 static K_SEM_DEFINE(handler_sem, 0, K_SEM_MAX_LIMIT);
@@ -106,6 +127,20 @@ static void probe_work_handler(struct k_work *work)
 
 static K_WORK_DEFINE(probe_work, probe_work_handler);
 
+/* Read back the data ready routing the driver programmed into INT1_CTRL. */
+static uint8_t int1_drdy_routing(void)
+{
+	uint8_t val;
+
+	zassert_ok(lsm6dsl_emul_get_reg(lsm6dsl_emul, LSM6DSL_REG_INT1_CTRL, &val),
+		   "INT1_CTRL is outside the emulated register file");
+
+	return val & INT1_DRDY_MASK;
+}
+
+/* INT1_CTRL as initialisation left it, sampled before any case has run. */
+static uint8_t post_init_int1_routing;
+
 static void *lsm6dsl_suite_setup(void)
 {
 	zassert_not_null(lsm6dsl_emul, "no emulator registered for the lsm6dsl node");
@@ -113,6 +148,8 @@ static void *lsm6dsl_suite_setup(void)
 	zassert_true(gpio_is_ready_dt(&int_gpio), "the emulated interrupt line is not ready");
 	zassert_ok(gpio_emul_input_set(int_gpio.port, int_gpio.pin, 0),
 		   "the interrupt line cannot be driven");
+
+	post_init_int1_routing = int1_drdy_routing();
 
 	return NULL;
 }
@@ -143,6 +180,76 @@ static void lsm6dsl_after(void *unused)
 }
 
 ZTEST_SUITE(lsm6dsl_trigger, NULL, lsm6dsl_suite_setup, lsm6dsl_before, lsm6dsl_after, NULL);
+
+/*
+ * Regression anchor. Initialisation must leave INT1 unrouted: routing a source
+ * before a handler exists asserts the line with nobody to consume it, and the
+ * part latches data ready, so the line then stays asserted for good.
+ *
+ * The value is the one sampled in the suite setup rather than a fresh read.
+ * Removing a trigger clears the routing too, so a read taken here would pass
+ * on the strength of the previous case's teardown whatever initialisation did.
+ */
+ZTEST(lsm6dsl_trigger, test_init_does_not_route_int1)
+{
+	zassert_equal(post_init_int1_routing, 0,
+		      "initialisation routed data ready to INT1 before a handler was "
+		      "installed: INT1_CTRL data ready bits are 0x%02x",
+		      post_init_int1_routing);
+}
+
+ZTEST(lsm6dsl_trigger, test_accel_trigger_routes_only_the_accel_source)
+{
+	zassert_ok(sensor_trigger_set(lsm6dsl_dev, &accel_drdy_trigger, drdy_handler));
+
+	zassert_equal(int1_drdy_routing(), LSM6DSL_MASK_INT1_CTRL_DRDY_XL,
+		      "an accelerometer trigger routed 0x%02x to INT1", int1_drdy_routing());
+}
+
+ZTEST(lsm6dsl_trigger, test_gyro_trigger_routes_only_the_gyro_source)
+{
+	zassert_ok(sensor_trigger_set(lsm6dsl_dev, &gyro_drdy_trigger, drdy_handler));
+
+	zassert_equal(int1_drdy_routing(), LSM6DSL_MASK_INT1_CTRL_DRDY_G,
+		      "a gyroscope trigger routed 0x%02x to INT1", int1_drdy_routing());
+}
+
+ZTEST(lsm6dsl_trigger, test_all_channels_route_both_sources)
+{
+	zassert_ok(sensor_trigger_set(lsm6dsl_dev, &drdy_trigger, drdy_handler));
+
+	zassert_equal(int1_drdy_routing(), INT1_DRDY_MASK,
+		      "a whole device trigger routed 0x%02x to INT1", int1_drdy_routing());
+}
+
+/*
+ * A channel the part reports no data ready for is refused, and the refusal is
+ * decided before anything is written: the routing already in place survives it.
+ */
+ZTEST(lsm6dsl_trigger, test_an_unsupported_channel_is_refused)
+{
+	uint8_t before;
+
+	zassert_ok(sensor_trigger_set(lsm6dsl_dev, &accel_drdy_trigger, drdy_handler));
+	before = int1_drdy_routing();
+
+	zassert_equal(sensor_trigger_set(lsm6dsl_dev, &die_temp_drdy_trigger, drdy_handler),
+		      -ENOTSUP, "a die temperature trigger was accepted");
+	zassert_equal(int1_drdy_routing(), before,
+		      "the refused trigger changed the routing from 0x%02x to 0x%02x", before,
+		      int1_drdy_routing());
+}
+
+ZTEST(lsm6dsl_trigger, test_removing_the_trigger_clears_the_routing)
+{
+	zassert_ok(sensor_trigger_set(lsm6dsl_dev, &drdy_trigger, drdy_handler));
+	zassert_equal(int1_drdy_routing(), INT1_DRDY_MASK, "the trigger was not routed to INT1");
+
+	zassert_ok(sensor_trigger_set(lsm6dsl_dev, &drdy_trigger, NULL));
+
+	zassert_equal(int1_drdy_routing(), 0,
+		      "removing the trigger left 0x%02x routed to INT1", int1_drdy_routing());
+}
 
 /* Baseline: one edge on the interrupt line produces exactly one callback. */
 ZTEST(lsm6dsl_trigger, test_trigger_fires_on_edge)
