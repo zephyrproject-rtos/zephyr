@@ -9,6 +9,12 @@ Overview
 
 This sample show how to use the NXP MCUX Low-power Analog Comparator (LPCMP) driver.
 
+.. note::
+   This sample demonstrates the deprecated ``mcux_lpcmp`` sensor driver. New
+   applications should use the :ref:`comparator API <comparator_api>` with
+   :kconfig:option:`CONFIG_COMPARATOR_NXP_LPCMP` instead. The driver and this
+   sample are scheduled for removal in Zephyr 4.6.
+
 In this application, the negative input port of the LPCMP is set with
 :kconfig:option:`CONFIG_LPCMP_NEGATIVE_PORT` which means the input voltage comes
 from the LPCMP internal DAC. The reference voltage of the DAC is set to 0 (check
