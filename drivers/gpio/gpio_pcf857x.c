@@ -172,7 +172,15 @@ static int pcf857x_port_set_raw(const struct device *dev, uint16_t mask, uint16_
 		return -EWOULDBLOCK;
 	}
 
-	if ((drv_data->pins_cfg.configured_as_outputs & value) != value) {
+	/*
+	 * These parts are quasi-bidirectional open-drain: writing a 1 releases
+	 * the pin to high-impedance (its input/pulled-up state) while writing a
+	 * 0 actively pulls it low. Releasing a pin high is therefore always
+	 * safe, so only reject attempts to actively drive a pin that is not
+	 * configured as an output low. The set of pins being pulled low is
+	 * mask & ~value.
+	 */
+	if (((mask & ~value) & ~drv_data->pins_cfg.configured_as_outputs) != 0U) {
 		LOG_ERR("Pin(s) is/are configured as input which should be output.");
 		return -EOPNOTSUPP;
 	}
@@ -215,7 +223,14 @@ static int pcf857x_pin_configure(const struct device *dev, gpio_pin_t pin, gpio_
 	uint16_t temp_pins = drv_data->pins_cfg.outputs_state;
 	uint16_t temp_outputs = drv_data->pins_cfg.configured_as_outputs;
 
-	if (flags & (GPIO_PULL_UP | GPIO_PULL_DOWN | GPIO_DISCONNECTED | GPIO_SINGLE_ENDED)) {
+	if (flags & (GPIO_PULL_UP | GPIO_PULL_DOWN | GPIO_DISCONNECTED)) {
+		return -ENOTSUP;
+	}
+	/*
+	 * These parts are open-drain, so open-drain is the natural output mode
+	 * and is accepted. Open-source is not supported.
+	 */
+	if ((flags & GPIO_SINGLE_ENDED) && !(flags & GPIO_LINE_OPEN_DRAIN)) {
 		return -ENOTSUP;
 	}
 	if (flags & GPIO_INPUT) {
