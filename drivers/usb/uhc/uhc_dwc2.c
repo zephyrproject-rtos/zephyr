@@ -1149,6 +1149,7 @@ static void ch_complete_bulk(const struct device *dev, struct uhc_dwc2_channel *
 
 		/* Device may send a short packet, use the actual length */
 		actual_len = ch->length - remaining;
+		sys_cache_data_invd_range(net_buf_tail(xfer->buf), actual_len);
 		net_buf_add(xfer->buf, actual_len);
 	}
 
@@ -1310,6 +1311,14 @@ static void ch_start_bulk(struct uhc_dwc2_channel *ch)
 
 	sys_write32(hctsiz, (mem_addr_t)&ch->regs->hctsiz);
 	sys_write32((uint32_t)dma_addr, (mem_addr_t)&ch->regs->hcdma);
+
+	if (ch->length > 0) {
+		if (USB_EP_DIR_IS_IN(xfer->ep)) {
+			sys_cache_data_invd_range(dma_addr, ch->length);
+		} else {
+			sys_cache_data_flush_range(dma_addr, ch->length);
+		}
+	}
 
 	/* Start transfer */
 	hcchar = sys_read32((mem_addr_t)&ch->regs->hcchar);
