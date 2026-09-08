@@ -26,7 +26,9 @@ On boards with a USB host controller, the sample can also obtain an address
 through a USB CDC-ECM Ethernet adapter. The USB host stack and the CDC-ECM host
 class are enabled in the board configuration, for example for the
 :zephyr:board:`stm32mp135f_dk`, and the DHCP client starts on the USB interface
-as soon as the adapter is connected.
+as soon as the adapter is connected. The board configuration also enables
+:zephyr:code-sample:`zperf` to measure the throughput over the USB interface, for example
+with ``zperf udp download`` and ``zperf tcp download`` on the shell.
 
 Running DHCPv4 client in Linux Host
 ===================================
