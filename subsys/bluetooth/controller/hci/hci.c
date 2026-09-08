@@ -6764,6 +6764,22 @@ static void le_advertising_report(struct pdu_data *pdu_data,
 }
 
 #if defined(CONFIG_BT_CTLR_ADV_EXT)
+static uint8_t legacy_adv_direct_addr_type(struct node_rx_pdu *node_rx, uint8_t rx_addr_type)
+{
+#if defined(CONFIG_BT_CTLR_EXT_SCAN_FP)
+	/* The directed address is a resolvable private address, but Controller
+	 * could not resolve it.
+	 */
+	if (node_rx->rx_ftr.direct != 0U) {
+		return BT_ADDR_LE_UNRESOLVED;
+	}
+#else /* !CONFIG_BT_CTLR_EXT_SCAN_FP */
+	ARG_UNUSED(node_rx);
+#endif /* !CONFIG_BT_CTLR_EXT_SCAN_FP */
+
+	return rx_addr_type;
+}
+
 static void le_ext_adv_legacy_report(struct pdu_data *pdu_data,
 				     struct node_rx_pdu *node_rx,
 				     struct net_buf *buf)
@@ -6867,7 +6883,7 @@ static void le_ext_adv_legacy_report(struct pdu_data *pdu_data,
 	adv_info->interval = 0U;
 
 	if (adv->type == PDU_ADV_TYPE_DIRECT_IND) {
-		adv_info->direct_addr.type = adv->rx_addr;
+		adv_info->direct_addr.type = legacy_adv_direct_addr_type(node_rx, adv->rx_addr);
 		bt_addr_copy(&adv_info->direct_addr.a,
 			     (void *)adv->direct_ind.tgt_addr);
 	} else {
