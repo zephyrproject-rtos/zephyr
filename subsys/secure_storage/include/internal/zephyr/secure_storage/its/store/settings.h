@@ -14,10 +14,9 @@
  */
 #include <zephyr/secure_storage/its/common.h>
 
-/** @brief ITS store settings name buffer size
- */
-enum { SECURE_STORAGE_ITS_STORE_SETTINGS_NAME_BUF_SIZE
-	= CONFIG_SECURE_STORAGE_ITS_STORE_SETTINGS_NAME_MAX_LEN + 1 };
+/** @brief ITS store settings name buffer size */
+#define SECURE_STORAGE_ITS_STORE_SETTINGS_NAME_BUF_SIZE                    \
+		(CONFIG_SECURE_STORAGE_ITS_STORE_SETTINGS_NAME_MAX_LEN + 1)
 
 /** @brief Returns the setting name to use for an ITS entry.
  *
