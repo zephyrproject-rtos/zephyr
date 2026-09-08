@@ -262,6 +262,10 @@ Removed APIs and options
 
     * ``stream_flash_erase_page()``
 
+* USB
+
+  * ``CONFIG_BOOTLOADER_BOSSA_DEVICE_NAME``
+
 * ZTest
 
     * ``CONFIG_ZTEST_SHUFFLE_SUITE_REPEAT_COUNT``
