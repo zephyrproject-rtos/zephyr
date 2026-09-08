@@ -98,6 +98,11 @@ Programming and Debugging
 The TRRS Trinkey ships the BOSSA compatible UF2 bootloader. The bootloader can be entered by
 quickly tapping the reset button twice.
 
+Additionally, :kconfig:option:`CONFIG_CDC_ACM_SERIAL_INITIALIZE_AT_BOOT` is enabled by default
+on this board, so running :code:`west flash` enters the bootloader automatically: the default
+``bossac`` runner briefly opens the CDC ACM port at 1200 baud, and the application reboots into
+the bootloader. This is only done on Linux and macOS.
+
 Flashing
 ========
 

@@ -8,6 +8,7 @@
 /dts-v1/;
 #include <atmel/samd21.dtsi>
 #include <atmel/samx2xx18.dtsi>
+#include <atmel/samx2xx18-boot-mode-retention.dtsi>
 #include <freq.h>
 #include "adafruit_trrs_trinkey-pinctrl.dtsi"
 
@@ -103,3 +104,8 @@ zephyr_udc0: &usb0 {
 };
 
 #include <../boards/common/usb/cdc_acm_serial.dtsi>
+
+/* Adafruit UF2 bootloader magic value 0xf01669ef */
+&boot_mode {
+	prefix = [ef 69 16 f0];
+};

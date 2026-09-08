@@ -5,6 +5,7 @@
 
 /dts-v1/;
 #include <atmel/samd5xx20.dtsi>
+#include <atmel/samd5xx20-boot-mode-retention.dtsi>
 #include "adafruit_grand_central_m4_express-pinctrl.dtsi"
 
 / {
@@ -135,4 +136,9 @@ zephyr_udc0: &usb0 {
 			read-only;
 		};
 	};
+};
+
+/* Adafruit UF2 bootloader magic value 0xf01669ef */
+&boot_mode {
+	prefix = [ef 69 16 f0];
 };

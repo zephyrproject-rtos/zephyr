@@ -6,6 +6,7 @@
 
 /dts-v1/;
 #include <atmel/samd5xx19.dtsi>
+#include <atmel/samd5xx19-boot-mode-retention.dtsi>
 #include "adafruit_itsybitsy_m4_express-pinctrl.dtsi"
 
 / {
@@ -125,4 +126,9 @@ zephyr_udc0: &usb0 {
 			reg = <0x7c000 DT_SIZE_K(16)>;
 		};
 	};
+};
+
+/* Adafruit UF2 bootloader magic value 0xf01669ef */
+&boot_mode {
+	prefix = [ef 69 16 f0];
 };
