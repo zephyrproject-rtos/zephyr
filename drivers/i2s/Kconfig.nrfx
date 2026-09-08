@@ -45,6 +45,7 @@ menuconfig I2S_NRF_TDM
 	bool "nRF TDM driver"
 	default y
 	depends on DT_HAS_NORDIC_NRF_TDM_ENABLED
+	depends on !I2S_RTIO
 	select CLOCK_CONTROL
 	select PINCTRL
 	help
@@ -61,3 +62,13 @@ config I2S_NRF_TDM_TX_BLOCK_COUNT
 	default 4
 
 endif # I2S_NRF_TDM
+
+config I2S_NRFX_TDM_RTIO
+	bool "nRF TDM NRFX RTIO device driver"
+	default y
+	depends on DT_HAS_NORDIC_NRF_TDM_ENABLED
+	depends on I2S_RTIO
+	select NRFX_TDM
+	select PINCTRL
+	help
+	  Enable support for NRFX TDM RTIO based driver for nRF MCU series.
