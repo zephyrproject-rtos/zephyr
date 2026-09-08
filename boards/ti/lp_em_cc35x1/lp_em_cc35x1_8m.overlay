@@ -1,0 +1,72 @@
+/*
+ * Copyright (c) 2026 Conclusive Engineering Sp. z o.o.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&extflash_ns {
+	reg = <0x10000000 DT_SIZE_M(8)>;
+};
+
+&extflash {
+	reg = <0x14000000 DT_SIZE_M(8)>;
+};
+
+&flash0 {
+	reg = <0x14000000 0x544000>, <0x2bc000 0x544000>;
+
+	partitions {
+		/delete-node/ partition@0;
+
+		vendor_image_partition: partition@0 {
+			label = "vendor-image";
+			reg = <0x0 0x544000>;
+		};
+	};
+};
+
+&flash1 {
+	reg = <0xa0000000 0x1b2000>, <0x0 0x1b2000>;
+
+	partitions {
+		/delete-node/ partition@68000;
+		/delete-node/ partition@da000;
+
+		wifi_fw_slot1_partition: partition@ce000 {
+			label = "wifi-fw-1";
+			reg = <0xce000 0x72000>;
+		};
+
+		wifi_fw_slot2_partition: partition@140000 {
+			label = "wifi-fw-2";
+			reg = <0x140000 0x72000>;
+		};
+	};
+};
+
+&{/soc} {
+	/delete-node/ flash@a00da000;
+
+	flash2: flash@a01b2000 {
+		compatible = "ti,cc35xx-nv-flash";
+		reg = <0xa01b2000 0x10a000>, <0x1b2000 0x10a000>;
+		erase-block-size = <0x1000>;
+		write-block-size = <0x4>;
+		status = "okay";
+
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			wifi_nvs_partition: partition@0 {
+				label = "wifi-nvs";
+				reg = <0x0 0x8000>;
+			};
+
+			storage_partition: partition@8000 {
+				label = "storage";
+				reg = <0x8000 0x102000>;
+			};
+		};
+	};
+};
