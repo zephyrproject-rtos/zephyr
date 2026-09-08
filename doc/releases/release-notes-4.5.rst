@@ -659,6 +659,11 @@ New APIs and options
     API for hardware that generates and captures timed digital edges on a
     GPIO line.
 
+* Retention
+
+  * The :ref:`boot mode interface <boot_mode_api>` supports prefix-only retention areas,
+    whose prefix is the magic value a bootloader looks for.
+
 * Ring buffer
 
   * :c:struct:`sys_ringq` (see :ref:`fixed_size_ringq_api`)
