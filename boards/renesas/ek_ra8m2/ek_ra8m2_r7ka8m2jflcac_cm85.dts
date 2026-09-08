@@ -28,6 +28,7 @@
 		led0 = &led1;
 		sw0 = &button0;
 		watchdog0 = &wdt0;
+		sdhc0 = &sdhc0;
 	};
 };
 
@@ -215,4 +216,13 @@ mikrobus_spi: &spi1 {};
 		reset-gpios = <&ioport5 14 GPIO_ACTIVE_LOW>;
 		status = "okay";
 	};
+};
+
+&sdhc0 {
+	pinctrl-0 = <&sdhc0_default>;
+	pinctrl-names = "default";
+	interrupt-names = "accs", "card", "dma-req", "sdio-int";
+	interrupts = <30 12>, <31 12>, <32 12>, <33 12>;
+	/delete-property/ card-detect;
+	status = "okay";
 };
