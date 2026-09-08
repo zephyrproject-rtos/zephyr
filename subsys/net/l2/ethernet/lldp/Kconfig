@@ -5,6 +5,7 @@ menuconfig NET_LLDP
 	bool "Link Layer Discovery Protocol (LLDP)"
 	select NET_MGMT
 	select NET_MGMT_EVENT
+	depends on NET_NATIVE
 	help
 	  Enable Link Layer Discovery Protocol (LLDP) Transmit support.
 	  Please refer to IEEE Std 802.1AB for more information.
