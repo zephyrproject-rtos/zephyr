@@ -22,4 +22,5 @@ supported:
   - sdhc
   - spi
   - uart
+  - usbh
   - watchdog
