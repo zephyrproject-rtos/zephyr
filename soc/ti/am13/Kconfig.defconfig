@@ -8,4 +8,7 @@ if SOC_FAMILY_TI_AM13
 
 rsource "*/Kconfig.defconfig"
 
+config SYSCON_INIT_PRIORITY
+	default 20 if CLOCK_CONTROL_MSPM0
+
 endif # SOC_FAMILY_TI_AM13
