@@ -502,6 +502,7 @@ New APIs and options
       parsing command responses independently of the Host.
     * :c:enumerator:`BT_LE_SCAN_OPT_EXT_FILTER_POLICY`
     * :kconfig:option:`CONFIG_BT_SCAN_EXT_FILTER_POLICY`
+    * :c:member:`bt_le_scan_recv_info.direct_addr`
 
   * Mesh
 
