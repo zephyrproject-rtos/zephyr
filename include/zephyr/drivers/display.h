@@ -893,6 +893,10 @@ static inline int display_unregister_event_cb(const struct device *dev, uint32_t
 		return -ENOSYS;
 	}
 
+	if (reg_handle == 0U) {
+		return -EINVAL;
+	}
+
 	return api->unregister_event_cb(dev, reg_handle);
 }
 
