@@ -62,6 +62,17 @@ extern const uintptr_t _irq_vector_table[];
 #define ISR3_OFFSET	20
 #define ISR5_OFFSET	21
 #define TRIG_CHECK_SIZE	22
+#elif defined(CONFIG_SOC_AE350_INTERRUPT_TYPE_PLIC)
+#define TABLE_INDEX(offset)        (CONFIG_2ND_LVL_ISR_TBL_OFFSET + offset)
+#define VECTOR_TABLE_INDEX(offset) (offset)
+#define IRQ_LINE(offset)           (IRQ_TO_L2(offset) | RISCV_IRQ_MEXT)
+#define ISR1_OFFSET                10
+#define ISR2_OFFSET                11
+#define ISR3_OFFSET                12
+#define ISR4_OFFSET                13
+#define ISR5_OFFSET                14
+#define ISR6_OFFSET                15
+#define TRIG_CHECK_SIZE            16
 #elif defined(CONFIG_HAZARD3_INTC)
 #define ISR3_OFFSET SPARE_IRQ_2
 #define ISR4_OFFSET SPARE_IRQ_3
@@ -98,11 +109,16 @@ extern const uintptr_t _irq_vector_table[];
 #define TRIG_CHECK_SIZE	6
 #endif
 
+#if !defined(IRQ_LINE)
 #define IRQ_LINE(offset)        offset
+#endif
+
+#if !defined(TABLE_INDEX)
 #if defined(CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET)
 #define TABLE_INDEX(offset)     offset + CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET
 #else
 #define TABLE_INDEX(offset)     offset
+#endif
 #endif
 
 #if !defined(VECTOR_TABLE_INDEX)
