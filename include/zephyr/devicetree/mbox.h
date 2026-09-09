@@ -24,7 +24,7 @@ extern "C" {
  */
 
 /**
- * @brief Get the node identifier for the MBOX controller from a mboxes
+ * @brief Get the node identifier for the MBOX controller from a <tt>mboxes</tt>
  *	  property by name
  *
  * Example devicetree fragment:
@@ -42,9 +42,9 @@ extern "C" {
  *     DT_MBOX_CTLR_BY_NAME(DT_NODELABEL(n), tx) // DT_NODELABEL(mbox1)
  *     DT_MBOX_CTLR_BY_NAME(DT_NODELABEL(n), rx) // DT_NODELABEL(mbox1)
  *
- * @param node_id node identifier for a node with a mboxes property
- * @param name lowercase-and-underscores name of a mboxes element
- *             as defined by the node's mbox-names property
+ * @param node_id node identifier for a node with a <tt>mboxes</tt> property
+ * @param name lowercase-and-underscores name of a <tt>mboxes</tt> element
+ *             as defined by the node's <tt>mbox-names</tt> property
  *
  * @return the node identifier for the MBOX controller in the named element
  *
@@ -78,9 +78,9 @@ extern "C" {
  *     DT_MBOX_CHANNEL_BY_NAME(DT_NODELABEL(n), tx) // 1
  *     DT_MBOX_CHANNEL_BY_NAME(DT_NODELABEL(n), rx) // 6
  *
- * @param node_id node identifier for a node with a mboxes property
- * @param name lowercase-and-underscores name of a mboxes element
- *             as defined by the node's mbox-names property
+ * @param node_id node identifier for a node with a <tt>mboxes</tt> property
+ * @param name lowercase-and-underscores name of a <tt>mboxes</tt> element
+ *             as defined by the node's <tt>mbox-names</tt> property
  *
  * @return the channel value in the specifier at the named element or 0 if no
  *         channels are supported

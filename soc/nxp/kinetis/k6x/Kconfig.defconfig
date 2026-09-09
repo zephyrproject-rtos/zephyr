@@ -19,7 +19,7 @@ config GPIO
 config SPI
 	default n if SOC_MK64F12
 
-config CACHE_MANAGEMENT
+configdefault CACHE_MANAGEMENT
 	default y if SOC_MK66F18
 
 choice CACHE_TYPE

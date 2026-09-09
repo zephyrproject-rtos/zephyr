@@ -71,7 +71,7 @@ int modbus_raw_submit_rx(const int iface, const struct modbus_adu *adu)
 	ctx->rx_adu.fc = adu->fc;
 	memcpy(ctx->rx_adu.data, adu->data,
 	       MIN(adu->length, sizeof(ctx->rx_adu.data)));
-	k_work_submit(&ctx->server_work);
+	modbus_work_submit(&ctx->server_work);
 
 	return 0;
 }

@@ -78,8 +78,10 @@ FUNC_NORETURN void z_openrisc_switch_to_main_no_multithreading(k_thread_entry_t 
 	__asm__ volatile (
 		"l.ori r1, %0, 0\n"
 		"l.jalr %1\n"
+		"l.nop\n"
 		:
-		: "r" (main_stack), "r" (main_entry));
+		: "r" (main_stack), "r" (main_entry)
+		: "memory");
 
 	/* infinite loop */
 	irq_lock();

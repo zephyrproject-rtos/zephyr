@@ -5,7 +5,7 @@
 
 if BOARD_SAM4E_XPRO
 
-configdefault NET_L2_ETHERNET
+configdefault ETH_DRIVER
 	default n
 
 configdefault ETH_SAM_GMAC

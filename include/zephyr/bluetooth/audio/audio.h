@@ -335,6 +335,25 @@ enum bt_audio_dir {
 };
 
 /**
+ * @brief Returns a string representation of a specific @ref bt_audio_dir direction
+ *
+ * @param dir The direction to convert to a string
+ *
+ * @return String representation of the supplied direction
+ */
+static inline const char *bt_audio_dir_to_str(enum bt_audio_dir dir)
+{
+	switch (dir) {
+	case BT_AUDIO_DIR_SINK:
+		return "Sink";
+	case BT_AUDIO_DIR_SOURCE:
+		return "Source";
+	default:
+		return "Unknown";
+	}
+}
+
+/**
  * @brief Audio codec Config APIs
  * @defgroup bt_audio_codec_cfg Codec config parsing APIs
  *
@@ -1086,7 +1105,7 @@ int bt_audio_codec_cap_set_freq(struct bt_audio_codec_cap *codec_cap,
 				enum bt_audio_codec_cap_freq freq);
 
 /**
- * @brief Extract the frequency from a codec capability.
+ * @brief Extract the frame duration from a codec capability.
  *
  * @param codec_cap The codec capabilities to extract data from.
  *
@@ -1111,7 +1130,7 @@ int bt_audio_codec_cap_set_frame_dur(struct bt_audio_codec_cap *codec_cap,
 				     enum bt_audio_codec_cap_frame_dur frame_dur);
 
 /**
- * @brief Extract the frequency from a codec capability.
+ * @brief Extract the supported audio channel counts from a codec capability.
  *
  * @param codec_cap The codec capabilities to extract data from.
  * @param fallback_to_default If true this function will provide the default value of 1

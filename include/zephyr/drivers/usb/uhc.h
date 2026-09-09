@@ -121,7 +121,7 @@ struct uhc_transfer {
 	/** dlist node */
 	sys_dnode_t node;
 	/** Control transfer setup packet */
-	uint8_t setup_pkt[8];
+	__aligned(USB_BUF_ALIGN) uint8_t setup_pkt[USB_BUF_ROUND_UP(8)];
 	/** Transfer data buffer */
 	struct net_buf *buf;
 	/** Endpoint to which request is associated */

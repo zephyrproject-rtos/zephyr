@@ -9,6 +9,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <zephyr/sys/atomic.h>
+#include <zephyr/sys/check.h>
 #include <zephyr/debug/stack.h>
 #include <zephyr/portability/cmsis_types.h>
 #include "wrapper.h"
@@ -123,6 +124,10 @@ osThreadId_t osThreadNew(osThreadFunc_t threadfunc, void *arg, const osThreadAtt
 	}
 
 	if (attr->cb_mem == NULL && num_dynamic_cb >= CONFIG_CMSIS_V2_THREAD_MAX_COUNT) {
+		return NULL;
+	}
+
+	CHECKIF(attr->cb_mem != NULL && attr->cb_size < sizeof(struct cmsis_rtos_thread_cb)) {
 		return NULL;
 	}
 

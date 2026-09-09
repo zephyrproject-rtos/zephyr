@@ -319,9 +319,11 @@ ZTEST(lib_stream_flash, test_stream_flash_bytes_buffered)
 ZTEST(lib_stream_flash, test_stream_flash_buf_size_greater_than_page_size)
 {
 	int rc;
+	const struct flash_parameters *fparam = flash_get_parameters(fdev);
 
 	/* To illustrate that other params does not trigger error */
-	rc = stream_flash_init(&ctx, fdev, generic_buf, 0x10, 0, FLASH_AVAILABLE, NULL);
+	rc = stream_flash_init(&ctx, fdev, generic_buf, fparam->write_block_size, 0,
+			       FLASH_AVAILABLE, NULL);
 	zassert_equal(rc, 0, "expected success");
 
 	/* Only change buf_len param */

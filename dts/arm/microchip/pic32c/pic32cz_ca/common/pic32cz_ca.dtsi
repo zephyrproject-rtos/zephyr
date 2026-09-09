@@ -9,6 +9,10 @@
 #include <zephyr/dt-bindings/clock/mchp_pic32cz_ca_clock.h>
 
 / {
+	aliases {
+		watchdog0 = &wdt;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -28,15 +32,37 @@
 	};
 
 	soc {
-		flash0: flash@8000000 {
-			compatible = "soc-nv-flash";
-			write-block-size = <8>;
-			#address-cells = <1>;
-			#size-cells = <1>;
+		sram0: memory@20020000 {
+			compatible = "mmio-sram";
 		};
 
-		sram0: memory@20000000 {
-			compatible = "mmio-sram";
+		nvmctrl: flash-controller@44002000 {
+			compatible = "microchip,nvmctrl-g3";
+			reg = <0x44002000 0x7c>, <0x44004000 0x60>;
+			reg-names = "fcw", "fcr";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_FCW_AHB>,
+				 <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_FCW_APB>,
+				 <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_FCR_AHB>,
+				 <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_FCR_APB>;
+			clock-names = "mclk-fcw-ahb", "mclk-fcw-apb",
+				      "mclk-fcr-ahb", "mclk-fcr-apb";
+			clock-parent = <&clock>;
+			interrupts = <0 0>, <1 0>, <2 0>;
+			interrupt-names = "fcw", "eccerr", "crcerr";
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges;
+
+			flash0: flash@8000000 {
+				compatible = "microchip,flash-g3", "soc-nv-flash";
+				write-block-size = <8>;
+				write-block-size-quad-dw = <32>;
+				write-block-size-row = <DT_SIZE_K(1)>;
+				erase-block-size = <DT_SIZE_K(4)>;
+				unimplemented-region = <0x08020000 0x0bffffff>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+			};
 		};
 
 		clock: clock@44052000 {
@@ -96,6 +122,20 @@
 				compatible = "microchip,pic32cz-ca-mclkperiph";
 				#clock-cells = <1>;
 			};
+		};
+
+		wdt: watchdog@44070000 {
+			compatible = "microchip,wdt-g1";
+			reg = <0x44070000 13>;
+			interrupts = <14 0>;
+			interrupt-names = "wdt-ew";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_WDT>;
+			clock-names = "mclk";
+			max-installable-timeout-count = <1>;
+			max-timeout-window = <0x4000>;
+			max-timeout-window-mode = <0x8000>;
+			min-window-limit = <0x8>;
+			status = "disabled";
 		};
 
 		pinctrl: pinctrl@44840000 {

@@ -5,6 +5,12 @@
  *
  */
 
+/**
+ * @file
+ * @brief MCTP bus binding over the Zephyr asynchronous UART interface.
+ * @ingroup mctp
+ */
+
 #ifndef ZEPHYR_INCLUDE_PMCI_MCTP_MCTP_UART_H_
 #define ZEPHYR_INCLUDE_PMCI_MCTP_MCTP_UART_H_
 

@@ -147,11 +147,13 @@ static inline int net_offload_get(struct net_if *iface,
 				  enum net_ip_protocol ip_proto,
 				  struct net_context **context)
 {
-	NET_ASSERT(iface);
-	NET_ASSERT(net_if_offload(iface));
-	NET_ASSERT(net_if_offload(iface)->get);
+	struct net_offload *offload = net_if_offload(iface);
 
-	return net_if_offload(iface)->get(family, type, ip_proto, context);
+	NET_ASSERT(iface);
+	NET_ASSERT(offload);
+	NET_ASSERT(offload->get);
+
+	return offload->get(family, type, ip_proto, context);
 }
 
 /**
@@ -172,11 +174,13 @@ static inline int net_offload_bind(struct net_if *iface,
 				   const struct net_sockaddr *addr,
 				   net_socklen_t addrlen)
 {
-	NET_ASSERT(iface);
-	NET_ASSERT(net_if_offload(iface));
-	NET_ASSERT(net_if_offload(iface)->bind);
+	struct net_offload *offload = net_if_offload(iface);
 
-	return net_if_offload(iface)->bind(context, addr, addrlen);
+	NET_ASSERT(iface);
+	NET_ASSERT(offload);
+	NET_ASSERT(offload->bind);
+
+	return offload->bind(context, addr, addrlen);
 }
 
 /**
@@ -195,11 +199,13 @@ static inline int net_offload_listen(struct net_if *iface,
 				     struct net_context *context,
 				     int backlog)
 {
-	NET_ASSERT(iface);
-	NET_ASSERT(net_if_offload(iface));
-	NET_ASSERT(net_if_offload(iface)->listen);
+	struct net_offload *offload = net_if_offload(iface);
 
-	return net_if_offload(iface)->listen(context, backlog);
+	NET_ASSERT(iface);
+	NET_ASSERT(offload);
+	NET_ASSERT(offload->listen);
+
+	return offload->listen(context, backlog);
 }
 
 /**
@@ -239,11 +245,13 @@ static inline int net_offload_connect(struct net_if *iface,
 				      k_timeout_t timeout,
 				      void *user_data)
 {
-	NET_ASSERT(iface);
-	NET_ASSERT(net_if_offload(iface));
-	NET_ASSERT(net_if_offload(iface)->connect);
+	struct net_offload *offload = net_if_offload(iface);
 
-	return net_if_offload(iface)->connect(
+	NET_ASSERT(iface);
+	NET_ASSERT(offload);
+	NET_ASSERT(offload->connect);
+
+	return offload->connect(
 		context, addr, addrlen, cb,
 		timeout_to_int32(timeout),
 		user_data);
@@ -282,11 +290,13 @@ static inline int net_offload_accept(struct net_if *iface,
 				     k_timeout_t timeout,
 				     void *user_data)
 {
-	NET_ASSERT(iface);
-	NET_ASSERT(net_if_offload(iface));
-	NET_ASSERT(net_if_offload(iface)->accept);
+	struct net_offload *offload = net_if_offload(iface);
 
-	return net_if_offload(iface)->accept(
+	NET_ASSERT(iface);
+	NET_ASSERT(offload);
+	NET_ASSERT(offload->accept);
+
+	return offload->accept(
 		context, cb,
 		timeout_to_int32(timeout),
 		user_data);
@@ -324,11 +334,13 @@ static inline int net_offload_send(struct net_if *iface,
 				   k_timeout_t timeout,
 				   void *user_data)
 {
-	NET_ASSERT(iface);
-	NET_ASSERT(net_if_offload(iface));
-	NET_ASSERT(net_if_offload(iface)->send);
+	struct net_offload *offload = net_if_offload(iface);
 
-	return net_if_offload(iface)->send(
+	NET_ASSERT(iface);
+	NET_ASSERT(offload);
+	NET_ASSERT(offload->send);
+
+	return offload->send(
 		pkt, cb,
 		timeout_to_int32(timeout),
 		user_data);
@@ -370,11 +382,13 @@ static inline int net_offload_sendto(struct net_if *iface,
 				     k_timeout_t timeout,
 				     void *user_data)
 {
-	NET_ASSERT(iface);
-	NET_ASSERT(net_if_offload(iface));
-	NET_ASSERT(net_if_offload(iface)->sendto);
+	struct net_offload *offload = net_if_offload(iface);
 
-	return net_if_offload(iface)->sendto(
+	NET_ASSERT(iface);
+	NET_ASSERT(offload);
+	NET_ASSERT(offload->sendto);
+
+	return offload->sendto(
 		pkt, dst_addr, addrlen, cb,
 		timeout_to_int32(timeout),
 		user_data);
@@ -419,11 +433,13 @@ static inline int net_offload_recv(struct net_if *iface,
 				   k_timeout_t timeout,
 				   void *user_data)
 {
-	NET_ASSERT(iface);
-	NET_ASSERT(net_if_offload(iface));
-	NET_ASSERT(net_if_offload(iface)->recv);
+	struct net_offload *offload = net_if_offload(iface);
 
-	return net_if_offload(iface)->recv(
+	NET_ASSERT(iface);
+	NET_ASSERT(offload);
+	NET_ASSERT(offload->recv);
+
+	return offload->recv(
 		context, cb,
 		timeout_to_int32(timeout),
 		user_data);
@@ -445,11 +461,13 @@ static inline int net_offload_recv(struct net_if *iface,
 static inline int net_offload_put(struct net_if *iface,
 				  struct net_context *context)
 {
-	NET_ASSERT(iface);
-	NET_ASSERT(net_if_offload(iface));
-	NET_ASSERT(net_if_offload(iface)->put);
+	struct net_offload *offload = net_if_offload(iface);
 
-	return net_if_offload(iface)->put(context);
+	NET_ASSERT(iface);
+	NET_ASSERT(offload);
+	NET_ASSERT(offload->put);
+
+	return offload->put(context);
 }
 
 #else

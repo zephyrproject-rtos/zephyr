@@ -8,7 +8,33 @@
 #include <zephyr/device.h>
 #include <zephyr/ztest.h>
 
-ZTEST(no_multithreading, test_k_busy_wait)
+/**
+ * @brief Verify that k_busy_wait() delays for the requested time when
+ *        multithreading is disabled.
+ *
+ * @ingroup kernel_thread_tests
+ *
+ * @details
+ * With CONFIG_MULTITHREADING=n there is no scheduler and no other thread to
+ * switch to, so a busy wait has to be served entirely by the caller spinning
+ * while the system clock keeps advancing. Uptime is sampled around a busy wait
+ * of a known length to confirm both that the clock runs and that the delay is
+ * of the requested duration.
+ *
+ * Test steps:
+ * - Spin until the uptime changes, so the measurement starts on a tick
+ *   boundary, failing if it never does.
+ * - Sample the uptime, call k_busy_wait() for 10 ms and sample it again.
+ * - Compare the elapsed uptime against the requested delay.
+ *
+ * Expected result:
+ * - The uptime advances, and the elapsed time is within 2 ms of the 10 ms
+ *   that were requested.
+ *
+ * @see k_busy_wait()
+ * @see k_uptime_get()
+ */
+ZTEST(no_multithreading, test_no_multithreading_busy_wait)
 {
 	int64_t now = k_uptime_get();
 	uint32_t watchdog = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
@@ -39,7 +65,35 @@ static void timeout_handler(struct k_timer *timer)
 
 K_TIMER_DEFINE(timer, timeout_handler, NULL);
 
-ZTEST(no_multithreading, test_irq_locking)
+/**
+ * @brief Verify that locking interrupts defers a timer expiry handler.
+ *
+ * @ingroup kernel_thread_tests
+ *
+ * @details
+ * Interrupt locking is the only mutual exclusion mechanism left once
+ * multithreading is disabled, so it has to hold off the timer ISR: a timer
+ * that expires while interrupts are locked must not run its handler until
+ * they are unlocked. The handler sets a flag through the timer user data,
+ * which is sampled on both sides of the unlock.
+ *
+ * Test steps:
+ * - Start a 10 ms timer whose handler raises a flag.
+ * - Lock interrupts, busy-wait past the timer deadline with a tick of slack
+ *   and check the flag is still clear.
+ * - Unlock interrupts, allowing the pending timer interrupt to be delivered.
+ * - On a tickful kernel, busy-wait one more tick so a second announce reaches
+ *   the timer deadline, then check the flag.
+ *
+ * Expected result:
+ * - The handler does not run while interrupts are locked.
+ * - The handler runs once interrupts are unlocked.
+ *
+ * @see irq_lock()
+ * @see irq_unlock()
+ * @see k_timer_start()
+ */
+ZTEST(no_multithreading, test_no_multithreading_irq_lock)
 {
 	volatile bool timeout_run = false;
 
@@ -75,7 +129,32 @@ ZTEST(no_multithreading, test_irq_locking)
 	zassert_true(timeout_run, "Timeout should expire because irq got unlocked");
 }
 
-ZTEST(no_multithreading, test_cpu_idle)
+/**
+ * @brief Verify that k_cpu_idle() sleeps until a timer interrupt wakes it.
+ *
+ * @ingroup kernel_thread_tests
+ *
+ * @details
+ * Without multithreading there is no idle thread, so the application itself
+ * calls k_cpu_idle() to wait. The CPU must suspend until an interrupt arrives
+ * and must resume with the timer's expiry handler having run, which is how a
+ * single-threaded application waits for time to pass without spinning.
+ *
+ * Test steps:
+ * - Start a 10 ms timer whose handler raises a flag, sampling the uptime.
+ * - Call k_cpu_idle(); on a tickful kernel, where every tick wakes the CPU,
+ *   idle again until the handler has actually run.
+ * - Check the flag and measure the elapsed uptime.
+ *
+ * Expected result:
+ * - The CPU resumes with the timer handler having run.
+ * - At least the requested 10 ms elapsed, and no more than one tick plus a
+ *   small measurement margin beyond it.
+ *
+ * @see k_cpu_idle()
+ * @see k_timer_start()
+ */
+ZTEST(no_multithreading, test_no_multithreading_cpu_idle)
 {
 	volatile bool timeout_run = false;
 	int64_t now, diff;
@@ -122,7 +201,29 @@ ZTEST(no_multithreading, test_cpu_idle)
  * See https://github.com/zephyrproject-rtos/zephyr/issues/114503
  */
 #if defined(CONFIG_ARM)
-ZTEST(no_multithreading, test_tls)
+/**
+ * @brief Verify that thread-local storage is initialized without
+ *        multithreading.
+ *
+ * @ingroup kernel_thread_tests
+ *
+ * @details
+ * Thread-local variables are set up from their initializers as part of
+ * starting a thread. With CONFIG_MULTITHREADING=n there is only the main
+ * thread of control, and its TLS block still has to be established before the
+ * application runs, so a thread-local variable must read back its initializer
+ * rather than zero or garbage.
+ *
+ * Test steps:
+ * - Declare a thread-local variable with a non-zero initializer.
+ * - Read it back from the single thread of control.
+ *
+ * Expected result:
+ * - The variable holds the value it was initialized with.
+ *
+ * @see Z_THREAD_LOCAL
+ */
+ZTEST(no_multithreading, test_no_multithreading_tls)
 {
 	static volatile Z_THREAD_LOCAL int i = 42;
 
@@ -151,7 +252,29 @@ static int sys_init_result;
 
 FOR_EACH(SYS_INIT_CREATE, (;), PRE_KERNEL_1, PRE_KERNEL_2, POST_KERNEL);
 
-ZTEST(no_multithreading, test_sys_init)
+/**
+ * @brief Verify that SYS_INIT functions run in order without multithreading.
+ *
+ * @ingroup kernel_thread_tests
+ *
+ * @details
+ * The initialization levels are a property of the boot sequence rather than of
+ * the scheduler, so disabling multithreading must not change them. Each
+ * registered init function checks that it is entered at its own position in
+ * the sequence and then advances a counter, so a wrong order is recorded as it
+ * happens rather than being inferred afterwards.
+ *
+ * Test steps:
+ * - Register one init function at PRE_KERNEL_1, PRE_KERNEL_2 and POST_KERNEL,
+ *   each asserting its position and incrementing a shared counter.
+ * - After boot, read the counter.
+ *
+ * Expected result:
+ * - All three init functions ran, in level order, leaving the counter at 3.
+ *
+ * @see SYS_INIT()
+ */
+ZTEST(no_multithreading, test_no_multithreading_sys_init)
 {
 	zassert_equal(init_order, 3, "SYS_INIT failed: %d", init_order);
 }

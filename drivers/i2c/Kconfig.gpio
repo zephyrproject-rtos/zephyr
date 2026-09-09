@@ -15,7 +15,7 @@ config I2C_GPIO_CLOCK_STRETCHING
 	bool "GPIO bit banging I2C clock stretching support"
 	default y
 	help
-	  Enable Slave clock stretching support
+	  Enable Target clock stretching support
 
 config I2C_GPIO_CLOCK_STRETCHING_TIMEOUT_US
 	int "GPIO bit banging I2C clock stretching timeout (us)"

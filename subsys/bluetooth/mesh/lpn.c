@@ -56,7 +56,7 @@ LOG_MODULE_REGISTER(bt_mesh_lpn);
 #define FRIEND_REQ_RETRY_TIMEOUT  K_SECONDS(CONFIG_BT_MESH_LPN_RETRY_TIMEOUT)
 
 #define FRIEND_REQ_WAIT           100
-#define FRIEND_REQ_SCAN           (1 * MSEC_PER_SEC)
+#define FRIEND_REQ_SCAN           CONFIG_BT_MESH_LPN_OFFER_WAIT_TIMEOUT
 #define FRIEND_REQ_TIMEOUT        (FRIEND_REQ_WAIT + FRIEND_REQ_SCAN)
 
 #define POLL_RETRY_TIMEOUT        100
@@ -76,6 +76,9 @@ LOG_MODULE_REGISTER(bt_mesh_lpn);
 			  (REQ_ATTEMPTS(lpn) * REQ_RETRY_DURATION(lpn)))
 
 #define CLEAR_ATTEMPTS            3
+
+/* The specification defines no Friend Clear Confirm timeout for the Low Power node. */
+#define FRIEND_CLEAR_TIMEOUT      (1 * MSEC_PER_SEC)
 
 #define LPN_CRITERIA ((CONFIG_BT_MESH_LPN_MIN_QUEUE_SIZE) | \
 		      (CONFIG_BT_MESH_LPN_RSSI_FACTOR << 3) | \
@@ -199,7 +202,7 @@ static void friend_clear_sent(int err, void *user_data)
 	}
 
 	lpn_set_state(BT_MESH_LPN_CLEAR);
-	k_work_reschedule(&lpn->timer, K_MSEC(FRIEND_REQ_TIMEOUT));
+	k_work_reschedule(&lpn->timer, K_MSEC(FRIEND_CLEAR_TIMEOUT));
 }
 
 static const struct bt_mesh_send_cb clear_sent_cb = {

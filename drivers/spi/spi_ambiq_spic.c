@@ -159,7 +159,7 @@ static int spi_config(const struct device *dev, const struct spi_config *config)
 		}
 	}
 
-	if (config->operation & SPI_OP_MODE_SLAVE) {
+	if (config->operation & SPI_OP_MODE_PERIPHERAL) {
 		LOG_ERR("Device mode not supported");
 		return -ENOTSUP;
 	}

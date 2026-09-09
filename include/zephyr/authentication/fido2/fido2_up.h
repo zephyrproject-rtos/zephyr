@@ -7,6 +7,7 @@
 /**
  * @file
  * @brief FIDO2 user presence abstraction API.
+ * @ingroup fido2
  */
 
 #ifndef ZEPHYR_INCLUDE_AUTHENTICATION_FIDO2_FIDO2_UP_H_

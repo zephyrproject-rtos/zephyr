@@ -101,17 +101,17 @@ Here is an overview of the on-device I2C devices:
 +-----------------+-----------------+--------------------+--------------------+
 | I2C Device      | Address         | Usage              | Can be used by M7? |
 +=================+=================+====================+====================+
-| PMIC            | 0x25@i2c1       | Power Management   | Should not be used |
+| PMIC            | 0x25 on i2c1    | Power Management   | Should not be used |
 +-----------------+-----------------+--------------------+--------------------+
-| EEPROM          | 0x51@i2c1       | EEPROM             | Should not be used |
+| EEPROM          | 0x51 on i2c1    | EEPROM             | Should not be used |
 | (Atmel 24C32)   |                 | (U-Boot config)    |                    |
 +-----------------+-----------------+--------------------+--------------------+
-| RTC (RV3028)    | 0x51@i2c1       | Real Time Clock    | Should not be used |
+| RTC (RV3028)    | 0x51 on i2c1    | Real Time Clock    | Should not be used |
 +-----------------+-----------------+--------------------+--------------------+
-| EEPROM          | 0x51@i2c2       | EEPROM             | yes                |
+| EEPROM          | 0x51 on i2c2    | EEPROM             | yes                |
 | (Atmel 24C02)   |                 | (On carrier-board) |                    |
 +-----------------+-----------------+--------------------+--------------------+
-| PCA9553         | 0x62@i2c2       | RGB LED            | yes                |
+| PCA9553         | 0x62 on i2c2    | RGB LED            | yes                |
 +-----------------+-----------------+--------------------+--------------------+
 
 .. note::

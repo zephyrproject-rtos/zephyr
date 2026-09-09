@@ -181,7 +181,7 @@ struct http_response {
 	 */
 	size_t processed;
 
-	/** See https://tools.ietf.org/html/rfc7230#section-3.1.2 for more information.
+	/** See @rfc{7230,section-3.1.2} for more information.
 	 * The status-code element is a 3-digit integer code
 	 *
 	 * The reason-phrase element exists for the sole

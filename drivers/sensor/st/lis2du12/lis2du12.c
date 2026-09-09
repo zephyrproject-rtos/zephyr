@@ -426,7 +426,7 @@ static int lis2du12_init(const struct device *dev)
 #endif /* CONFIG_LIS2DU12_TRIGGER */
 
 #define LIS2DU12_SPI_OP  (SPI_WORD_SET(8) |				\
-			 SPI_OP_MODE_MASTER |				\
+			 SPI_OP_MODE_CONTROLLER |			\
 			 SPI_MODE_CPOL |				\
 			 SPI_MODE_CPHA)					\
 

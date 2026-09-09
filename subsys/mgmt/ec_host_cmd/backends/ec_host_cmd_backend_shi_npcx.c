@@ -6,6 +6,7 @@
 
 #include "ec_host_cmd_backend_shi.h"
 
+#include <zephyr/irq.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/logging/log.h>
@@ -851,7 +852,7 @@ static int shi_npcx_enable(const struct device *dev)
 		return ret;
 	}
 
-	NVIC_ClearPendingIRQ(DT_INST_IRQN(0));
+	k_irq_clear_pending(DT_INST_IRQN(0));
 	/*
 	 * Clear the pending bit because switching the pinmux (pinctrl) might cause a faking WUI
 	 * pending bit set.

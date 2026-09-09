@@ -1,0 +1,24 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+boards:
+  - name: slwrb4180a
+    full_name: EFR32xG21 2.4 GHz 20 dBm (SLWRB4180A)
+    vendor: silabs
+    socs:
+      - name: efr32mg21a020f1024im32
+  - name: slwrb4180b
+    full_name: EFR32xG21 2.4 GHz 20 dBm (SLWRB4180B)
+    vendor: silabs
+    socs:
+      - name: efr32mg21a020f1024im32
+  - name: xg21_rb4195b
+    full_name: EFR32xG21B 2.4 GHz 10 dBm (xG21-RB4195B)
+    vendor: silabs
+    socs:
+      - name: efr32mg21b010f1024im32
+  - name: xg21_rb4196b
+    full_name: EFR32xG21B 2.4 GHz 20 dBm (xG21-RB4196B)
+    vendor: silabs
+    socs:
+      - name: efr32mg21b020f1024im32

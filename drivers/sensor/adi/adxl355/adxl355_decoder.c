@@ -291,7 +291,7 @@ static int adxl355_get_size_info(struct sensor_chan_spec channel, size_t *base_s
  */
 static bool adxl355_decoder_has_trigger(const uint8_t *buffer, enum sensor_trigger_type trigger)
 {
-#ifdef CONFIG_ADXL355_STREAM
+#ifndef CONFIG_ADXL355_STREAM
 	return false;
 #endif
 	const struct adxl355_fifo_data *fifo_data = (const struct adxl355_fifo_data *)buffer;

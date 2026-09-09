@@ -27,7 +27,7 @@ extern "C" {
  * @ref DNS_SD_REGISTER_TCP_SERVICE or
  * @ref DNS_SD_REGISTER_UDP_SERVICE.
  *
- * @see <a href="https://tools.ietf.org/html/rfc6763">RFC 6763</a>
+ * @see @rfc{6763}
  *
  * @defgroup dns_sd DNS Service Discovery
  * @since 2.5
@@ -36,21 +36,21 @@ extern "C" {
  * @{
  */
 
-/** RFC 1034 Section 3.1 */
+/** @rfc{1034,section-3.1} */
 #define DNS_SD_INSTANCE_MIN_SIZE 1
-/** RFC 1034 Section 3.1, RFC 6763 Section 7.2 */
+/** @rfc{1034,section-3.1}, @rfc{6763,section-7.2} */
 #define DNS_SD_INSTANCE_MAX_SIZE 63
-/** RFC 6763 Section 7.2 - inclusive of underscore */
+/** @rfc{6763,section-7.2} - inclusive of underscore */
 #define DNS_SD_SERVICE_MIN_SIZE 2
-/** RFC 6763 Section 7.2 - inclusive of underscore */
+/** @rfc{6763,section-7.2} - inclusive of underscore */
 #define DNS_SD_SERVICE_MAX_SIZE 16
-/** RFC 6763 Section 4.1.2 */
+/** @rfc{6763,section-4.1.2} */
 #define DNS_SD_SERVICE_PREFIX '_'
-/** RFC 6763 Section 4.1.2 - either _tcp or _udp (case insensitive) */
+/** @rfc{6763,section-4.1.2} - either _tcp or _udp (case insensitive) */
 #define DNS_SD_PROTO_SIZE 4
 /** ICANN Rules for TLD naming */
 #define DNS_SD_DOMAIN_MIN_SIZE 2
-/** RFC 1034 Section 3.1, RFC 6763 Section 7.2 */
+/** @rfc{1034,section-3.1}, @rfc{6763,section-7.2} */
 #define DNS_SD_DOMAIN_MAX_SIZE 63
 
 /**
@@ -65,7 +65,7 @@ extern "C" {
  * ```
  * <sub>._sub.<sn>._tcp.<servicedomain>.<parentdomain>.
  * ```
- * @see <a href="https://datatracker.ietf.org/doc/html/rfc6763">RFC 6763</a>, Section 7.2.
+ * @see @rfc{6763,section-7.2}
  */
 #define DNS_SD_MIN_LABELS 3
 /**
@@ -81,7 +81,7 @@ extern "C" {
  * ```
  * <sub>._sub.<sn>._tcp.<servicedomain>.<parentdomain>.
  * ```
- * @see <a href="https://datatracker.ietf.org/doc/html/rfc6763">RFC 6763</a>, Section 7.2.
+ * @see @rfc{6763,section-7.2}
  */
 #define DNS_SD_MAX_LABELS 4
 
@@ -147,7 +147,7 @@ extern "C" {
  * must not exceed 255 bytes. Care must be taken to ensure that the
  * encoded length value is correct.
  *
- * For additional rules on TXT encoding, see RFC 6763, Section 6.
+ * For additional rules on TXT encoding, see @rfc{6763,section-6}.
 
  * @param id variable name for the DNS-SD service record
  * @param instance name of the service instance such as "My HTTP Server"
@@ -156,7 +156,7 @@ extern "C" {
  * @param text information for the DNS TXT record
  * @param port the port number that this service will use
  *
- * @see <a href="https://tools.ietf.org/html/rfc6763">RFC 6763</a>
+ * @see @rfc{6763}
  */
 #define DNS_SD_REGISTER_TCP_SERVICE(id, instance, service, domain, text, \
 				    port)				 \
@@ -185,7 +185,7 @@ extern "C" {
  * @param text information for the DNS TXT record
  * @param port the port number that this service will use
  *
- * @see <a href="https://tools.ietf.org/html/rfc6763">RFC 6763</a>
+ * @see @rfc{6763}
  */
 #define DNS_SD_REGISTER_UDP_SERVICE(id, instance, service, domain, text, \
 				    port)				 \
@@ -199,7 +199,7 @@ extern "C" {
 /**
  * @brief DNS Service Discovery record
  *
- * This structure used in the implementation of RFC 6763 and should not
+ * This structure used in the implementation of @rfc{6763} and should not
  * need to be accessed directly from application code.
  *
  * The @a port pointer must be non-NULL. When the value in @a port
@@ -210,7 +210,7 @@ extern "C" {
  * Thus, it is possible for multiple services to advertise on a
  * particular port if they hard-code the port.
  *
- * @see <a href="https://tools.ietf.org/html/rfc6763">RFC 6763</a>
+ * @see @rfc{6763}
  */
 struct dns_sd_rec {
 	/** "<Instance>" - e.g. "My HTTP Server" */
@@ -269,7 +269,7 @@ static inline size_t dns_sd_txt_size(const struct dns_sd_rec *rec)
  *
  * Currently, only the '.local' domain is supported.
  *
- * @see <a href="https://datatracker.ietf.org/doc/html/rfc6763#section-9">Service Type Enumeration, RFC 6763</a>.
+ * @see @rfc{6763,section-9}
  *
  * @param rec the record to in question
  * @return true if @a rec is a DNS-SD Service Type Enumeration

@@ -40,6 +40,11 @@ enum bt_mesh_dfd_status bt_mesh_dfd_srv_fw_delete(struct bt_mesh_dfd_srv *srv, s
 
 enum bt_mesh_dfd_status bt_mesh_dfd_srv_fw_delete_all(struct bt_mesh_dfd_srv *srv);
 
+/** Notify a co-located Firmware Distribution Server that the local Firmware
+ *  Update Server completed a deferred self-apply.
+ */
+void bt_mesh_dfd_srv_self_applied(void);
+
 #ifdef __cplusplus
 }
 #endif

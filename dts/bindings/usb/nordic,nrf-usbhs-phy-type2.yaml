@@ -1,0 +1,159 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nordic USBHS Type 2 PHY configuration
+
+compatible: "nordic,nrf-usbhs-phy-type2"
+
+include: base.yaml
+
+properties:
+  compdistune:
+    type: string
+    default: "0"
+    enum:
+      - "-4.65%"
+      - "-3.29%"
+      - "-1.44%"
+      - "0"
+      - "+1.85%"
+      - "+3.40%"
+      - "+5.48%"
+      - "+7.15%"
+    description: |
+      Disconnect Threshold Adjustment.
+      Adjusts the voltage level for the threshold used to detect a disconnect
+      event at the host.
+
+  sqrxtune:
+    type: string
+    default: "0"
+    enum:
+      - "+16.75%"
+      - "+11.06%"
+      - "+5.66%"
+      - "0"
+      - "-5.42%"
+      - "-11.03%"
+      - "-16.35%"
+      - "-21.90%"
+    description: |
+      Squelch Threshold Adjustment.
+      Adjusts the voltage level for the threshold used to detect valid
+      high-speed data.
+
+  vdatreftune:
+    type: string
+    default: "0"
+    enum:
+      - "+11.36%"
+      - "0"
+      - "-11.33%"
+      - "-22.74%"
+    description: |
+      Data Detect Voltage Adjustment.
+      Adjusts the threshold voltage level (Vdat_ref) used to detect data during
+      Battery Charging 1.2 port detection.
+
+  txhsxvtune:
+    type: string
+    default: "0"
+    enum:
+      - "-13 mV"
+      - "+13 mV"
+      - "0"
+    description: |
+      Transmitter High-Speed Crossover Adjustment.
+      Adjusts the voltage at which the DP0 and DM0 signals cross while
+      transmitting in HS mode.
+
+  txfslstune:
+    type: string
+    default: "0"
+    enum:
+      - "+15%"
+      - "+7%"
+      - "0"
+      - "-6%"
+      - "-12%"
+    description: |
+      FS/LS Source Impedance Adjustment.
+      Adjusts the low- and full-speed single-ended source impedance while
+      driving high.
+
+  txvreftune:
+    type: string
+    default: "0"
+    enum:
+      - "-9%"
+      - "-6%"
+      - "-3%"
+      - "0"
+      - "+3%"
+      - "+6%"
+      - "+9%"
+      - "+12%"
+      - "+15%"
+      - "+18%"
+      - "+22%"
+      - "+25%"
+      - "+28%"
+      - "+31%"
+      - "+34%"
+      - "+37%"
+    description: |
+      HS DC Voltage Level Adjustment.
+      Adjusts the high-speed DC level voltage.
+
+  txrisetune:
+    type: string
+    default: "0"
+    enum:
+      - "+10%"
+      - "0"
+      - "-12%"
+      - "-25%"
+    description: |
+      HS Transmitter Rise/Fall Time Adjustment.
+      Adjusts the rise/fall times of the high-speed waveform.
+
+  txrestune:
+    type: string
+    default: "0"
+    enum:
+      - "+6.5 ohm"
+      - "+3 ohm"
+      - "0"
+      - "-2 ohm"
+    description: |
+      USB Source Impedance Adjustment.
+      Adjusts the driver source impedance to compensate for added series
+      resistance on the USB.
+
+  txpreempamptune:
+    type: string
+    default: "disabled"
+    enum:
+      - "disabled"
+      - "2x"
+      - "1x"
+      - "3x"
+    description: |
+      HS Transmitter Pre-Emphasis Current Control.
+      Controls the amount of current sourced to DP0 and DM0 after a J-to-K or
+      K-to-J transition. The HS Transmitter pre-emphasis current is defined in
+      terms of unit amounts. One unit amount is approximately 4 mA and is
+      defined as 1x pre-emphasis current.
+
+  txpreemppulsetune:
+    type: string
+    default: "2x"
+    enum:
+      - "2x"
+      - "1x"
+    description: |
+      HS Transmitter Pre-Emphasis Duration Control.
+      Controls the duration for which the HS pre-emphasis current is sourced
+      onto DP0 or DM0. The HS Transmitter pre-emphasis duration is defined in
+      terms of unit amounts. One unit of pre-emphasis duration is approximately
+      580 ps and is defined as 1x pre-emphasis duration.

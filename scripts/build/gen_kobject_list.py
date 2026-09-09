@@ -106,7 +106,6 @@ kobjects = OrderedDict(
         ("NET_SOCKET", (None, False, False)),
         ("net_if", (None, False, False)),
         ("sys_mutex", (None, True, False)),
-        ("k_futex", (None, True, False)),
         ("k_condvar", (None, False, True)),
         ("k_event", ("CONFIG_EVENTS", False, True)),
         ("ztest_suite_node", ("CONFIG_ZTEST", True, False)),
@@ -171,9 +170,19 @@ def debug_die(die, text):
     files = lp_header["file_entry"]
     includes = lp_header["include_directory"]
 
-    fileinfo = files[die.attributes["DW_AT_decl_file"].value - 1]
+    dwarf_v5 = lp_header.version >= 5
+
+    file_index = die.attributes["DW_AT_decl_file"].value
+    fileinfo = files[file_index if dwarf_v5 else file_index - 1]
     filename = fileinfo.name.decode("utf-8")
-    filedir = includes[fileinfo.dir_index - 1].decode("utf-8")
+
+    dir_index = fileinfo.dir_index
+    if dwarf_v5:
+        filedir = includes[dir_index].decode("utf-8")
+    elif dir_index == 0:
+        filedir = ""
+    else:
+        filedir = includes[dir_index - 1].decode("utf-8")
 
     path = os.path.join(filedir, filename)
     lineno = die.attributes["DW_AT_decl_line"].value
@@ -188,10 +197,10 @@ def debug_die(die, text):
 DW_OP_addr = 0x3
 DW_OP_plus_uconst = 0x23
 DW_OP_fbreg = 0x91
+DW_OP_addrx = 0xA1
 STACK_TYPE = "z_thread_stack_element"
 thread_counter = 0
 sys_mutex_counter = 0
-futex_counter = 0
 stack_counter = 0
 
 # Global type environment. Populated by pass 1.
@@ -318,6 +327,13 @@ class ConstType:
 
     def __repr__(self):
         return f"<const {self.child_type}>"
+
+    @property
+    def size(self):
+        # Delegate to the underlying type so that arrays of const-qualified
+        # kernel objects (e.g. "const struct device foo[N]") can compute the
+        # per-element stride. Mirrors has_kobject()/get_kobjects() delegation.
+        return type_env[self.child_type].size
 
     def has_kobject(self):
         if self.child_type not in type_env:
@@ -449,6 +465,19 @@ def analyze_die_const(die):
     type_env[die.offset] = ConstType(type_offset)
 
 
+def _is_constant_form(form):
+    # A subrange bound is a plain integer count only for constant-class forms.
+    # DWARF <=4 GCC uses DW_FORM_dataN; DWARF 5 GCC uses DW_FORM_implicit_const,
+    # and other producers use the signed/unsigned LEB forms. Anything else
+    # (an exprloc/block computing a dynamic bound, or a reference) is not a
+    # constant we can turn into an element count, so it is skipped.
+    return form.startswith("DW_FORM_data") or form in (
+        "DW_FORM_implicit_const",
+        "DW_FORM_sdata",
+        "DW_FORM_udata",
+    )
+
+
 def analyze_die_array(die):
     type_offset = die_get_type_offset(die)
     elements = []
@@ -460,7 +489,7 @@ def analyze_die_array(die):
         if "DW_AT_upper_bound" in child.attributes:
             ub = child.attributes["DW_AT_upper_bound"]
 
-            if not ub.form.startswith("DW_FORM_data"):
+            if not _is_constant_form(ub.form):
                 continue
 
             elements.append(ub.value + 1)
@@ -469,7 +498,7 @@ def analyze_die_array(die):
         elif "DW_AT_count" in child.attributes:
             ub = child.attributes["DW_AT_count"]
 
-            if not ub.form.startswith("DW_FORM_data"):
+            if not _is_constant_form(ub.form):
                 continue
 
             elements.append(ub.value)
@@ -544,7 +573,6 @@ def device_get_api_addr(elf, addr):
 def find_kobjects(elf, syms):
     global thread_counter
     global sys_mutex_counter
-    global futex_counter
     global stack_counter
 
     if not elf.has_dwarf_info():
@@ -622,7 +650,7 @@ def find_kobjects(elf, syms):
             continue
 
         opcode = loc.value[0]
-        if opcode != DW_OP_addr:
+        if opcode not in (DW_OP_addr, DW_OP_addrx):
             # Check if frame pointer offset DW_OP_fbreg
             if opcode == DW_OP_fbreg:
                 debug_die(die, f"kernel object '{name}' found on stack")
@@ -631,7 +659,16 @@ def find_kobjects(elf, syms):
             continue
 
         endian_code = "<" if elf.little_endian else ">"
-        if "CONFIG_64BIT" in syms:
+        if opcode == DW_OP_addrx:
+            # DWARF v5: the operand is a ULEB128 index into .debug_addr rather
+            # than an inline address.
+            addr_index, uconst_idx = decode_uleb128(loc.value, 1)
+            try:
+                addr = die.dwarfinfo.get_addr(die.cu, addr_index)
+            except Exception:
+                debug_die(die, f"kernel object '{name}' unresolvable DW_OP_addrx index")
+                continue
+        elif "CONFIG_64BIT" in syms:
             addr = struct.unpack(endian_code + "Q", bytes(loc.value[1:9]))[0]
             uconst_idx = 9
         else:
@@ -686,9 +723,6 @@ def find_kobjects(elf, syms):
         elif ko.type_obj.name == "sys_mutex":
             ko.data = f"&kernel_mutexes[{sys_mutex_counter}]"
             sys_mutex_counter += 1
-        elif ko.type_obj.name == "k_futex":
-            ko.data = f"&futex_data[{futex_counter}]"
-            futex_counter += 1
         elif ko.type_obj.name == STACK_TYPE:
             stack_counter += 1
 
@@ -789,18 +823,9 @@ def write_gperf_table(fp, syms, objs, little_endian, static_begin, static_end):
                 fp.write(", ")
         fp.write("};\n")
 
-    if futex_counter != 0:
-        fp.write(f"static struct z_futex_data futex_data[{futex_counter}] = {{\n")
-        for i in range(futex_counter):
-            fp.write(f"Z_FUTEX_DATA_INITIALIZER(futex_data[{i}])")
-            if i != futex_counter - 1:
-                fp.write(", ")
-        fp.write("};\n")
-
     metadata_names = {
         "K_OBJ_THREAD": "thread_id",
         "K_OBJ_SYS_MUTEX": "mutex",
-        "K_OBJ_FUTEX": "futex_data",
     }
 
     if "CONFIG_GEN_PRIV_STACKS" in syms:

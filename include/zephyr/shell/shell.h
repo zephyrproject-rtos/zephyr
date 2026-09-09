@@ -330,7 +330,7 @@ struct shell_cmd_help {
  * @brief Magic number used to identify the beginning of a structured help
  * message when cast to a char pointer.
  */
-#define SHELL_STRUCTURED_HELP_MAGIC 0x86D20BC4
+#define SHELL_STRUCTURED_HELP_MAGIC 0x86D20BC4U
 
 /**
  * @endcond

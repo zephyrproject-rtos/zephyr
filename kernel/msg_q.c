@@ -107,14 +107,21 @@ int z_vrfy_k_msgq_alloc_init(struct k_msgq *msgq, size_t msg_size,
 #include <zephyr/syscalls/k_msgq_alloc_init_mrsh.c>
 #endif /* CONFIG_USERSPACE */
 
-int k_msgq_cleanup(struct k_msgq *msgq)
+int z_msgq_cleanup(struct k_msgq *msgq, __maybe_unused bool locked)
 {
-	int ret = 0;
 	SYS_PORT_TRACING_OBJ_FUNC_ENTER(k_msgq, cleanup, msgq);
 
-	CHECKIF(z_waitq_head(&msgq->wait_q) != NULL) {
+	int ret = 0;
+	k_spinlock_key_t key = k_spin_lock(&msgq->lock);
+
+	CHECKIF(locked && (z_waitq_head_locked(&msgq->wait_q) != NULL)) {
 		ret = -EBUSY;
-		goto exit;
+		goto out;
+	}
+
+	CHECKIF(!locked && (z_waitq_head(&msgq->wait_q) != NULL)) {
+		ret = -EBUSY;
+		goto out;
 	}
 
 	if ((msgq->flags & K_MSGQ_FLAG_ALLOC) != 0U) {
@@ -122,9 +129,15 @@ int k_msgq_cleanup(struct k_msgq *msgq)
 		msgq->flags &= ~K_MSGQ_FLAG_ALLOC;
 	}
 
-exit:
+out:
+	k_spin_unlock(&msgq->lock, key);
 	SYS_PORT_TRACING_OBJ_FUNC_EXIT(k_msgq, cleanup, msgq, ret);
 	return ret;
+}
+
+int k_msgq_cleanup(struct k_msgq *msgq)
+{
+	return z_msgq_cleanup(msgq, false);
 }
 
 static inline int put_msg_in_queue(struct k_msgq *msgq, const void *data,
@@ -148,7 +161,7 @@ static inline int put_msg_in_queue(struct k_msgq *msgq, const void *data,
 	if (msgq->used_msgs < msgq->max_msgs) {
 		/* message queue isn't full. Try to hand the message
 		 * directly to the longest-waiting receiver, atomically
-		 * under _sched_spinlock so a racing in-flight timeout
+		 * under the scheduler's spinlock so a racing in-flight timeout
 		 * handler cannot wake the receiver before the message
 		 * has been copied into its buffer.
 		 */
@@ -312,8 +325,8 @@ int z_impl_k_msgq_get(struct k_msgq *msgq, void *data, k_timeout_t timeout)
 				((size_t)(uintptr_t)(msgq->buffer_end - msgq->write_ptr) >=
 					msgq->msg_size));
 
-		/* handle first thread waiting to write (if any).
-		 * Done atomically under _sched_spinlock so we read the
+		/* handle first thread waiting to write (if any). Done
+		 * atomically under the scheduler's spinlock so we read the
 		 * sender's swap_data and complete the wake before any
 		 * racing in-flight timeout handler can wake the sender.
 		 */

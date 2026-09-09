@@ -30,7 +30,7 @@ static aic_registers_t *mchp_aic_get_aic(uint32_t source)
 	ARG_UNUSED(source);
 
 #ifdef SFR_AICREDIR_NSAIC_Msk
-	if (SFR_REGS->SFR_AICREDIR & SFR_AICREDIR_NSAIC_Msk == SFR_AICREDIR_NSAIC(1)) {
+	if ((SFR_REGS->SFR_AICREDIR & SFR_AICREDIR_NSAIC_Msk) == SFR_AICREDIR_NSAIC(1)) {
 		return aic_reg[AIC_NON_SECURE];
 	}
 	__ASSERT(false, "Interrupts managed by the AICs corresponding to the "

@@ -59,6 +59,25 @@ void arch_flush_fpu_ipi(unsigned int cpu);
 void z_arm64_safe_exception_stack_init(void);
 #endif
 
+#ifdef CONFIG_DEBUG_COREDUMP_SMP_FREEZE_CPUS
+/*
+ * arch_coredump_freeze_other_cpus()/arch_coredump_thaw_other_cpus() are the
+ * generic hooks (declared in kernel_arch_interface.h) implemented in smp.c.
+ *
+ * Retrieve the raw live snapshot captured for the given CPU index.
+ * Returns false if that CPU was never successfully frozen (self, never
+ * booted, or timed out) -- in which case *esf, *x19_x29, *sp and *thread
+ * are left untouched. *sp is the pre-interrupt stack pointer computed at
+ * capture time; it is NOT simply (*esf + sizeof(**esf)), since *esf points
+ * into this snapshot's own storage, not the original stack.
+ */
+bool arm64_coredump_freeze_get_snapshot(unsigned int cpu,
+					 const struct arch_esf **esf,
+					 const uint64_t **x19_x29,
+					 uintptr_t *sp,
+					 struct k_thread **thread);
+#endif /* CONFIG_DEBUG_COREDUMP_SMP_FREEZE_CPUS */
+
 #endif /* _ASMLANGUAGE */
 
 #ifdef __cplusplus

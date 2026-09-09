@@ -14,16 +14,25 @@
 
 BUILD_ASSERT(NUM_AFBR_INST > 0, "Invalid number of AFBR-S50 instances");
 
-/** Defined separate memslab to isolate library from the other components.
- * Through debugging, the library requests an initial allocation of ~4-KiB,
- * which is why the total pool is sized to 8-KiB per instance.
+/** Defined separate memslab to isolate the library from the other
+ * components. The library's device handle is a single allocation of
+ * ~4.1-KiB per instance, so the blocks have to be large enough to satisfy
+ * it; a request larger than a block fails honestly instead of handing
+ * back undersized memory.
  */
-K_MEM_SLAB_DEFINE(argus_memslab, 64, 128 * NUM_AFBR_INST, sizeof(void *));
+#define ARGUS_ALLOC_BLOCK_SIZE	4352
+
+K_MEM_SLAB_DEFINE(argus_memslab, ARGUS_ALLOC_BLOCK_SIZE, 2 * NUM_AFBR_INST,
+		  sizeof(void *));
 
 void *Argus_Malloc(size_t size)
 {
 	void *ptr = NULL;
 	int err;
+
+	CHECKIF(size > ARGUS_ALLOC_BLOCK_SIZE) {
+		return NULL;
+	}
 
 	err = k_mem_slab_alloc(&argus_memslab, &ptr, K_NO_WAIT);
 

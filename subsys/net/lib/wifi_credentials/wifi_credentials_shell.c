@@ -142,6 +142,7 @@ static int cmd_add_network(const struct shell *sh, size_t argc, char *argv[])
 	size_t offset = 0;
 	long channel;
 	long mfp = WIFI_MFP_OPTIONAL;
+	int ret;
 
 	while ((opt = sys_getopt_long(argc, argv, "s:p:k:w:b:c:m:t:a:K:h",
 				      long_options, &opt_index)) != -1) {
@@ -302,7 +303,6 @@ static int cmd_add_network(const struct shell *sh, size_t argc, char *argv[])
 
 #ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE
 	struct net_if *iface = net_if_get_wifi_sta();
-	int ret;
 
 	/* Load the enterprise credentials if needed */
 	if (creds.header.type == WIFI_SECURITY_TYPE_EAP_TLS ||
@@ -318,7 +318,13 @@ static int cmd_add_network(const struct shell *sh, size_t argc, char *argv[])
 	}
 #endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE */
 
-	return wifi_credentials_set_personal_struct(&creds);
+	ret = wifi_credentials_set_personal_struct(&creds);
+
+	if (ret != 0) {
+		shell_error(sh, "Failed to add network credentials, err: %d", ret);
+	}
+
+	return ret;
 }
 
 static int cmd_delete_network(const struct shell *sh, size_t argc, char *argv[])
@@ -340,7 +346,15 @@ static int cmd_delete_network(const struct shell *sh, size_t argc, char *argv[])
 	wifi_clear_enterprise_credentials();
 #endif /* CONFIG_WIFI_SHELL_RUNTIME_CERTIFICATES */
 
-	return wifi_credentials_delete_by_ssid(argv[1], strlen(argv[1]));
+	int ret = wifi_credentials_delete_by_ssid(argv[1], strlen(argv[1]));
+
+	if (ret == -ENOENT) {
+		shell_error(sh, "No matching network with SSID: \"%s\" found", argv[1]);
+	} else if (ret != 0) {
+		shell_error(sh, "Failed to delete network credentials, err: %d", ret);
+	}
+
+	return ret;
 }
 
 static int cmd_list_networks(const struct shell *sh, size_t argc, char *argv[])

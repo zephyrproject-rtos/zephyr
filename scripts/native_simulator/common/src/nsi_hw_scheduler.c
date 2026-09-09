@@ -86,7 +86,7 @@ static void nsi_hws_sleep_until_next_event(void)
 		/* LCOV_EXCL_STOP */
 	}
 
-	if (signaled_end || (nsi_simu_time > end_of_time)) {
+	if (signaled_end || (nsi_simu_time >= end_of_time)) {
 		nsi_print_trace("\nStopped at %.3Lfs\n",
 				((long double)nsi_simu_time)/1.0e6L);
 		nsi_exit(0);

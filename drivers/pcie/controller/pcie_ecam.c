@@ -303,6 +303,13 @@ static bool pcie_ecam_region_get_allocate_base(const struct device *dev, pcie_bd
 	*bar_base_addr = (((data->regions[type].bus_start +
 			    data->regions[type].allocation_offset) - 1) | ((align) - 1)) + 1;
 
+	/*
+	 * Commit the aligned base so subsequent BAR allocations start at the
+	 * Type-1 window base instead of overlapping the unaligned remainder.
+	 */
+	data->regions[type].allocation_offset =
+		*bar_base_addr - data->regions[type].bus_start;
+
 	return true;
 }
 

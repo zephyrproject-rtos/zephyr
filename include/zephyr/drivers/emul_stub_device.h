@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Stub device support for emulators without a corresponding driver.
+ * @ingroup io_emulators
+ */
+
 #ifndef ZEPHYR_INCLUDE_EMUL_STUB_DEVICE_H_
 #define ZEPHYR_INCLUDE_EMUL_STUB_DEVICE_H_
 
@@ -14,6 +20,7 @@
  * Needed for emulators without corresponding DEVICE_DT_DEFINE drivers
  */
 
+/** @cond INTERNAL_HIDDEN */
 struct emul_stub_dev_data {
 	/* Stub */
 };
@@ -23,8 +30,16 @@ struct emul_stub_dev_config {
 struct emul_stub_dev_api {
 	/* Stub */
 };
+/** @endcond */
 
-/* For every instance of a @c DT_DRV_COMPAT stub out a device for that instance */
+/**
+ * @brief Stub out a device for an emulator instance.
+ *
+ * For every instance of a @c DT_DRV_COMPAT, define a stub device so that
+ * the emulator's devicetree node has a corresponding device.
+ *
+ * @param n @c DT_DRV_COMPAT instance number
+ */
 #define EMUL_STUB_DEVICE(n)                                                                        \
 	__maybe_unused static int emul_init_stub_##n(const struct device *dev)                     \
 	{                                                                                          \

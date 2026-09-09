@@ -21,6 +21,7 @@ tests:
       - sam_e54_xpro
       - pic32cm_jh01_cpro
       - pic32cx_sg41_cult
+      - pic32cm_sg00_cpro
   drivers.uart.uart_errors.async:
     filter: CONFIG_SERIAL_SUPPORT_ASYNC
     platform_allow:

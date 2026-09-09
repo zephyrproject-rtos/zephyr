@@ -71,9 +71,11 @@ tests:
       - frdm_mcxa266
       - frdm_mcxa346
       - frdm_mcxa366
-    harness: ztest
+    harness: pytest
     harness_config:
       fixture: dac_fixture
+      pytest_root:
+        - pytest/test_dac0_channel0_mcxaxx6.py
   drivers.dac.api.dac1_channel1:
     extra_args:
       - EXTRA_DTC_OVERLAY_FILE="dac1-channel1.overlay"

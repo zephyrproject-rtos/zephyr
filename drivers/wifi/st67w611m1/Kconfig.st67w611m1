@@ -24,6 +24,10 @@ config ST67W611M1_SCAN_RESULT_MAX_NUMBER
 	int "Max number of scan results"
 	default 12
 
+config ST67W611M1_WIFI_STA_SAP_MODE
+	bool "SoftAP mode on top of STA mode"
+	default y if WIFI_USAGE_MODE_STA_AP
+
 config ST67W611M1_WORKQ_THREAD_PRIORITY
 	int "Priority of the work queue thread"
 	default 7
@@ -79,5 +83,11 @@ config ST67W611M1_WIFI_AUTO_CONNECT
 
 configdefault NET_MGMT_EVENT_STACK_SIZE
 	default 2048
+
+configdefault NET_IF_MAX_IPV4_COUNT
+	default 2 if ST67W611M1_WIFI_STA_SAP_MODE
+
+configdefault NET_IF_MAX_IPV6_COUNT
+	default 2 if ST67W611M1_WIFI_STA_SAP_MODE
 
 endif # WIFI_ST67W611M1

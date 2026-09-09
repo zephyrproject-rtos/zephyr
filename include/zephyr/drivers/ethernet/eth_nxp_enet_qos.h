@@ -4,11 +4,19 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for NXP ENET QOS Ethernet driver internal definitions.
+ * @ingroup ethernet
+ */
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_ETH_NXP_ENET_QOS_H__
 #define ZEPHYR_INCLUDE_DRIVERS_ETH_NXP_ENET_QOS_H__
 
 #include <fsl_device_registers.h>
 #include <zephyr/drivers/clock_control.h>
+
+/** @cond INTERNAL_HIDDEN */
 
 /* Different platforms named the peripheral different in the register definitions */
 #if defined(CONFIG_SOC_FAMILY_MCXN) || defined(CONFIG_SOC_FAMILY_MCXA)
@@ -50,5 +58,7 @@ struct nxp_enet_qos_config {
 	enet_qos_t *base;
 };
 #define ENET_QOS_MODULE_CFG(module_dev) ((struct nxp_enet_qos_config *) module_dev->config)
+
+/** INTERNAL_HIDDEN @endcond */
 
 #endif /* ZEPHYR_INCLUDE_DRIVERS_ETH_NXP_ENET_H__ */

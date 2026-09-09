@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Header file for the PCIe driver APIs.
+ * @ingroup pcie_interface
+ */
+
 #ifndef ZEPHYR_INCLUDE_DRIVERS_PCIE_PCIE_H_
 #define ZEPHYR_INCLUDE_DRIVERS_PCIE_PCIE_H_
 
@@ -214,6 +220,9 @@ struct pcie_scan_opt {
 
 	/** Scan flags */
 	uint32_t flags;
+
+	/** Function to call to determine if a BDF is masked */
+	bool (*scan_masking_fn)(pcie_bdf_t bdf);
 };
 
 /** Scan for PCIe devices.

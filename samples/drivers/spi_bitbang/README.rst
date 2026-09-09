@@ -2,7 +2,7 @@
    :name: SPI bitbang
    :relevant-api: spi_interface
 
-   Use the bitbang SPI driver for communicating with a slave.
+   Use the bitbang SPI driver for communicating with a peripheral.
 
 Overview
 ********
@@ -20,7 +20,7 @@ Building and Running
 The application will build only for a target that has a :ref:`devicetree
 <dt-guide>` entry with :dtcompatible:`zephyr,spi-bitbang` as a compatible.
 
-You can connect the MISO and MOSI pins with a wire to provide a basic loopback
+You can connect the SDI and SDO pins with a wire to provide a basic loopback
 test for receive data.
 
 .. zephyr-app-commands::

@@ -1,7 +1,7 @@
 # Copyright (c) 2019 Nordic Semiconductor ASA
 # SPDX-License-Identifier: Apache-2.0
 
-description: Nordic nRF family SPIM (SPI master with EasyDMA)
+description: Nordic nRF family SPIM (SPI controller with EasyDMA)
 
 compatible: "nordic,nrf-spim"
 
@@ -11,7 +11,7 @@ properties:
   rx-delay-supported:
     type: boolean
     description: |
-      Indicates if the SPIM instance has the capability of delaying MISO
+      Indicates if the SPIM instance has the capability of delaying SDI
       sampling. This property needs to be defined at SoC level DTS files.
 
   rx-delay:
@@ -28,5 +28,5 @@ properties:
     description: |
       Number of 64 MHz clock cycles (15.625 ns) delay from the sampling edge
       of SCK (leading or trailing, depending on the CPHA setting used) until
-      the input serial data on MISO is actually sampled. This property does
+      the input serial data on SDI is actually sampled. This property does
       not have any effect if the rx-delay-supported property is not set.

@@ -3,3 +3,4 @@
 # SPDX-License-Identifier: Apache-2.0
 
 source "drivers/sensor/broadcom/afbr_s50/Kconfig"
+source "drivers/sensor/broadcom/bcm283x_vc_thermal/Kconfig"

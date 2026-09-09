@@ -7,6 +7,7 @@
 #include <stddef.h>
 #include <stdint.h>
 #include <zephyr/toolchain.h>
+#include <zephyr/sys/hash_function.h>
 #include <zephyr/sys/util.h>
 
 static inline uint32_t murmur_32_scramble(uint32_t k)
@@ -26,8 +27,9 @@ static inline uint32_t murmur_32_scramble(uint32_t k)
 		h = h * 5 + 0xe6546b64; \
 	}
 
-uint32_t sys_hash32_murmur3(const char *str, size_t n)
+uint32_t sys_hash32_murmur3(const void *data, size_t n)
 {
+	const char *str = data;
 	uint32_t k;
 	/* seed of 0 */
 	uint32_t h = 0;

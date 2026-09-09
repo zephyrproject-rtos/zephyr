@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <nxp/rw/RW612-pinctrl.h>
+#include <nxp/rw/pinctrl/RW612-pinctrl.h>
 
 &pinctrl {
 	// default-UART

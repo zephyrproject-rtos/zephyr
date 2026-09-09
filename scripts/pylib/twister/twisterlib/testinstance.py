@@ -301,6 +301,21 @@ class TestInstance(StatusMixin):
                 not simulator.is_runnable():
             target_ready = False
 
+        # A sidecar provisions host-side resources around the run; when the
+        # host lacks what it needs (for example no virtiofsd binary), build
+        # the test but do not try to run it, like a missing simulator.
+        if target_ready and self.sidecar:
+            from twisterlib.sidecars import SidecarImporter
+            try:
+                sidecar = SidecarImporter.get_sidecar(self.sidecar)
+            except ValueError:
+                # Unknown sidecar names are reported at the run stage.
+                sidecar = None
+            if sidecar is not None:
+                sidecar.configure(self)
+                if not sidecar.host_ready():
+                    target_ready = False
+
         if testsuite_runnable := self.testsuite.harness in SUPPORTED_HARNESSES:
             if device_testing:
                 testsuite_runnable = HardwareReservationManager(

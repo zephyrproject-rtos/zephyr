@@ -762,7 +762,7 @@ static void taf_qmspi_ldma_cfg(const struct device *dev)
 		temp = XEC_QSPI_CR_TXM_GET(d);
 		if (temp != XEC_QSPI_CR_TXM_DIS) {
 			chan = XEC_QSPI_CR_TXDMA_GET(d);
-			if (chan != XEC_QSPI_CR_TXDMA_DIS) {
+			if (chan != XEC_QSPI_CR_DMA_DIS) {
 				/* this descriptor uses TX DMA, set bit */
 				sys_set_bit(qb + XEC_QSPI_LDMA_TX_EN_OFS, n);
 				/* chan is 1-based add last RX index to get TX index */
@@ -774,7 +774,7 @@ static void taf_qmspi_ldma_cfg(const struct device *dev)
 
 		if ((d & BIT(XEC_QSPI_CR_RX_EN_POS)) != 0) {
 			chan = XEC_QSPI_CR_RXDMA_GET(d);
-			if (chan != XEC_QSPI_CR_RXDMA_DIS) {
+			if (chan != XEC_QSPI_CR_DMA_DIS) {
 				sys_set_bit(qb + XEC_QSPI_LDMA_RX_EN_OFS, n);
 				/* chan is 1-based. Decrement to get 0 based */
 				chan--;

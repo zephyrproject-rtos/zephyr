@@ -30,6 +30,7 @@
 
 #include <soc.h>
 #include <nrfx.h>
+#include <helpers/nrfx_ram_ctrl.h>
 #include <lib/nrfx_coredep.h>
 
 #include <hal/nrf_spu.h>
@@ -169,7 +170,7 @@ static void wifi_setup(void)
 	/* Kickstart the LMAC processor */
 	NRF_WIFICORE_LRCCONF_LRC0->POWERON =
 		(LRCCONF_POWERON_MAIN_AlwaysOn << LRCCONF_POWERON_MAIN_Pos);
-	NRF_WIFICORE_LMAC_VPR->INITPC = NRF_WICR->RESERVED[0];
+	NRF_WIFICORE_LMAC_VPR->INITPC = (uint32_t)(uintptr_t)NRF_WICR->FIRMWARE.LMACINITPC;
 	NRF_WIFICORE_LMAC_VPR->CPURUN = (VPR_CPURUN_EN_Running << VPR_CPURUN_EN_Pos);
 }
 #endif
@@ -177,6 +178,10 @@ static void wifi_setup(void)
 
 void soc_early_init_hook(void)
 {
+#if defined(CONFIG_HAS_NORDIC_RAM_CTRL) && !defined(CONFIG_TRUSTED_EXECUTION_NONSECURE)
+	nrfx_ram_ctrl_retention_enable_all_set(false);
+#endif
+
 	/* Update the SystemCoreClock global variable with current core clock
 	 * retrieved from the DT.
 	 */

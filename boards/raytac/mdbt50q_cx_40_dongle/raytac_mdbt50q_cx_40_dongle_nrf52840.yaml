@@ -13,7 +13,7 @@ toolchain:
   - gnuarmemb
 supported:
   - usbd
-  - ble
+  - bluetooth
   - pwm
   - watchdog
   - counter

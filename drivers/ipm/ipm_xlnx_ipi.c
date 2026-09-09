@@ -168,19 +168,20 @@ static int xlnx_ipi_set_enabled(const struct device *ipmdev, int enable)
 	const struct xlnx_ipi_child_config *config = ipmdev->config;
 	struct xlnx_ipi_child_data *data = ipmdev->data;
 
+	/*
+	 * Mark the channel enabled before unmasking so the ISR handles a pending
+	 * interrupt. When disabling, mask first so the ISR cannot skip an
+	 * interrupt while it is still unmasked.
+	 */
 	if (enable) {
+		data->enabled = true;
 		sys_set_bit(config->host_ipi_reg + IPI_IER, config->remote_ipi_ch_bit);
 	} else {
 		sys_set_bit(config->host_ipi_reg + IPI_IDR, config->remote_ipi_ch_bit);
+		data->enabled = false;
 	}
 
-	/* If IPI channel bit in IPI Mask Register is not set, then interrupt is enabled */
-	if (!sys_test_bit(config->host_ipi_reg + IPI_IMR, config->remote_ipi_ch_bit)) {
-		data->enabled = enable;
-		return 0;
-	}
-
-	return -EINVAL;
+	return 0;
 }
 
 static int xlnx_ipi_init(const struct device *dev)

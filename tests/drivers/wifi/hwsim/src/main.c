@@ -38,6 +38,10 @@ static struct wifi_connect_req_params default_ap_params = {
 static const uint8_t psk_ssid[] = "ZephyrPsk";
 static const uint8_t sae_ssid[] = "ZephyrSae";
 static const uint8_t secured_psk[] = "ZephyrPass123";
+static const uint8_t wrong_psk[] = "ZephyrPass456";
+
+/* IEEE Std 802.11-2020, Table 9-90 */
+#define IEEE80211_REASON_4WAY_HANDSHAKE_TIMEOUT 15
 
 static struct wifi_connect_req_params wpa2_psk_params = {
 	.ssid = psk_ssid,
@@ -71,6 +75,19 @@ struct hwsim_waiter {
 	uint64_t event_mask;
 	uint64_t last_event;
 	int status;
+	uint16_t status_code;
+	uint16_t reason_code;
+	/*
+	 * One request can produce several results, and the fields above only
+	 * keep the latest one. A waiter can name the status it is after, and
+	 * the result carrying it is then latched separately so that whatever
+	 * the supplicant reports next cannot hide it.
+	 */
+	bool wanted_valid;
+	bool wanted_seen;
+	int wanted_status;
+	uint16_t wanted_status_code;
+	uint16_t wanted_reason_code;
 };
 
 static void waiter_handler(struct net_mgmt_event_callback *cb, uint64_t event,
@@ -90,6 +107,18 @@ static void waiter_handler(struct net_mgmt_event_callback *cb, uint64_t event,
 		if (cb->info != NULL && cb->info_length >= sizeof(int)) {
 			w->status = *(int *)cb->info;
 		}
+		if (cb->info != NULL && cb->info_length >= sizeof(struct wifi_status)) {
+			const struct wifi_status *st = cb->info;
+
+			w->status_code = st->status_code;
+			w->reason_code = st->reason_code;
+		}
+
+		if (w->wanted_valid && !w->wanted_seen && w->status == w->wanted_status) {
+			w->wanted_seen = true;
+			w->wanted_status_code = w->status_code;
+			w->wanted_reason_code = w->reason_code;
+		}
 #endif
 		k_sem_give(&w->sem);
 	}
@@ -98,13 +127,33 @@ static void waiter_handler(struct net_mgmt_event_callback *cb, uint64_t event,
 static void hwsim_waiter_init(struct hwsim_waiter *w, struct net_if *iface,
 			     uint64_t event_mask)
 {
-	k_sem_init(&w->sem, 0, 1);
+	/*
+	 * Counting, as a single request can report more than one result and a
+	 * waiter that reads them in a loop must not lose any of them.
+	 */
+	k_sem_init(&w->sem, 0, K_SEM_MAX_LIMIT);
 	w->iface = iface;
 	w->event_mask = event_mask;
 	w->last_event = 0;
 	w->status = -1;
+	w->status_code = 0;
+	w->reason_code = 0;
+	w->wanted_valid = false;
+	w->wanted_seen = false;
+	w->wanted_status = 0;
+	w->wanted_status_code = 0;
+	w->wanted_reason_code = 0;
 	net_mgmt_init_event_callback(&w->cb, waiter_handler, event_mask);
 	net_mgmt_add_event_callback(&w->cb);
+}
+
+/* Latch the result carrying this status, see struct hwsim_waiter. Call before
+ * the request that produces the results is made.
+ */
+static void hwsim_waiter_expect_status(struct hwsim_waiter *w, int status)
+{
+	w->wanted_valid = true;
+	w->wanted_status = status;
 }
 
 static int hwsim_waiter_wait(struct hwsim_waiter *w, k_timeout_t timeout)
@@ -406,7 +455,7 @@ ZTEST(hwsim, test_05_ap_start_connect_ping_full)
  * succeeds. For a secured network a successful connect result means the real
  * 4-way handshake (EAPOL over the medium) completed.
  */
-static void secured_connect(struct wifi_connect_req_params *params)
+static void secured_ap_start(struct wifi_connect_req_params *params)
 {
 	struct hwsim_waiter w;
 
@@ -438,6 +487,13 @@ static void secured_connect(struct wifi_connect_req_params *params)
 	 */
 	net_if_up(iface_ap);
 	net_if_up(iface_sta);
+}
+
+static void secured_connect(struct wifi_connect_req_params *params)
+{
+	struct hwsim_waiter w;
+
+	secured_ap_start(params);
 
 	/* Connect the STA; success implies the 4-way handshake completed. */
 	hwsim_waiter_init(&w, iface_sta, NET_EVENT_WIFI_CONNECT_RESULT);
@@ -463,4 +519,51 @@ ZTEST(hwsim, test_07_connect_wpa3_sae)
 	secured_connect(&wpa3_sae_params);
 	sta_ping_ap();
 }
+
+ZTEST(hwsim, test_08_connect_wrong_password)
+{
+	k_timeout_t timeout = K_SECONDS(CONFIG_WIFI_HWSIM_CONNECT_TIMEOUT_SEC + 5);
+	struct wifi_connect_req_params params = wpa2_psk_params;
+	struct hwsim_waiter w;
+
+	secured_ap_start(&wpa2_psk_params);
+
+	params.psk = wrong_psk;
+	params.psk_length = sizeof(wrong_psk) - 1;
+
+	hwsim_waiter_init(&w, iface_sta, NET_EVENT_WIFI_CONNECT_RESULT);
+	hwsim_waiter_expect_status(&w, WIFI_STATUS_CONN_WRONG_PASSWORD);
+	zassert_equal(net_mgmt(NET_REQUEST_WIFI_CONNECT, iface_sta,
+			       &params, sizeof(params)), 0,
+		      "connect request with a wrong password failed");
+
+	/*
+	 * The supplicant reports the failed association before it concludes that
+	 * the key was wrong, so a single request can produce more than one
+	 * result. Keep reading until the verdict arrives.
+	 */
+	for (int i = 0; i < 4; i++) {
+		if (hwsim_waiter_wait(&w, timeout) != 0) {
+			break;
+		}
+
+		/* Once the first result is in, the rest follow immediately */
+		timeout = K_SECONDS(2);
+
+		zexpect_not_equal(w.status, WIFI_STATUS_CONN_SUCCESS,
+				  "connect with a wrong password succeeded");
+
+		if (w.wanted_seen) {
+			break;
+		}
+	}
+
+	zexpect_true(w.wanted_seen, "wrong password was never reported");
+	zexpect_equal(w.wanted_reason_code, IEEE80211_REASON_4WAY_HANDSHAKE_TIMEOUT,
+		      "expected the 4-way handshake reason code, got %u",
+		      w.wanted_reason_code);
+
+	hwsim_waiter_cleanup(&w);
+}
+
 #endif /* CONFIG_NET_IPV4 */

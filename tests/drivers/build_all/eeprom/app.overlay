@@ -68,6 +68,18 @@
 					read-only;
 				};
 			};
+
+			test_rv3028: rv3028@3 {
+				compatible = "microcrystal,rv3028";
+				reg = <0x3>;
+				backup-switch-mode = "disabled";
+				status = "okay";
+
+				test_rv3028_eeprom: rv3028_eeprom {
+					compatible = "microcrystal,rv3028-eeprom";
+					status = "okay";
+				};
+			};
 		};
 
 		test_spi: spi@33334444 {

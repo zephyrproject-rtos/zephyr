@@ -5,7 +5,7 @@
 menuconfig WIFI_BFLB
 	bool "Bouffalo Lab WiFi driver"
 	default y
-	depends on DT_HAS_BFLB_BL61X_WIFI_ENABLED
+	depends on DT_HAS_BFLB_WIFI6_ENABLED
 	depends on ZEPHYR_MBEDTLS_MODULE
 	select NET_L2_WIFI_MGMT
 	select NET_L2_ETHERNET
@@ -22,7 +22,7 @@ menuconfig WIFI_BFLB
 
 if WIFI_BFLB
 
-rsource "bl61x/Kconfig"
+rsource "wifi6/Kconfig"
 
 config HEAP_MEM_POOL_ADD_SIZE_WIFI_BFLB
 	int

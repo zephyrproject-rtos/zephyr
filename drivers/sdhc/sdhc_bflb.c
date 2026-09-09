@@ -17,7 +17,7 @@
 
 #include <bflb_soc.h>
 #include <glb_reg.h>
-#include <sdh_reg.h>
+#include <bouffalolab/common/sdh_reg.h>
 
 #if defined(CONFIG_SOC_SERIES_BL61X)
 #include <zephyr/dt-bindings/clock/bflb_bl61x_clock.h>

@@ -74,4 +74,15 @@ config ETH_NXP_ENET_RMII_EXT_CLK
 	  Setting this option will configure ENET clock block to feed RMII
 	  reference clock from external source (ENET_1588_CLKIN)
 
+config ETH_NXP_ENET_MULTICAST_FILTER
+	bool "Multicast destination address filtering"
+	default y
+	help
+	  Enable support for multicast destination address filtering in the
+	  MAC. The MAC performs imperfect filtering using a group-address hash
+	  table (GAUR/GALR). Only multicast whose computed hash bit is set in
+	  the table is received and all other multicast is dropped by the MAC.
+	  If disabled, the hash table is opened to every multicast address so
+	  that reception does not depend on per-group hash installation.
+
 endif # ETH_NXP_ENET

@@ -61,7 +61,7 @@ struct cs40l26_sensor {
 	bool is_signed;
 	uint8_t n;
 	uint8_t m;
-	int8_t full_scale;
+	struct sensor_value full_scale;
 };
 
 struct cs40l26_config {

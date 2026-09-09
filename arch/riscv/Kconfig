@@ -360,12 +360,6 @@ config RISCV_HART_MASK
 	  i.e. 128, 129, ..(0x80, 8x81, ..), this can be configured to 63 (0x7f)
 	  such that we can extract the bits that start from 0.
 
-config EXTRA_EXCEPTION_INFO
-	bool "Collect extra exception info [DEPRECATED]"
-	select DEPRECATED
-	help
-	  This option is deprecated and should be replaced with CONFIG_EXCEPTION_DEBUG.
-
 config RISCV_PMP
 	bool "RISC-V PMP Support"
 	depends on !RISCV_S_MODE
@@ -679,21 +673,60 @@ config RISCV_S_MODE
 	bool "Supervisor mode (S-mode)"
 	depends on $(dt_compat_all_has_prop,riscv,$(RISCV_PRIV_MODES_PROP),s)
 	help
-	  Indicates that the kernel runs in Supervisor mode (S-mode). When
-	  enabled, the boot code performs an M-mode to S-mode transition
-	  before entering the C runtime, and a minimal SBI runtime is kept
-	  resident in M-mode to service timer and ecall requests.
+	  Indicates that the kernel runs in Supervisor mode (S-mode).
 
 endchoice # RISCV_PRIVILEGE_MODE
+
+choice RISCV_S_MODE_SBI
+	prompt "RISC-V SBI Implementation"
+	depends on RISCV_S_MODE
+	default RISCV_S_MODE_INTERNAL_SBI
+	help
+	  Select the Supervisor Binary Interface (SBI) implementation to use
+	  when running in Supervisor mode (S-mode).
+
+config RISCV_S_MODE_INTERNAL_SBI
+	bool "Use built-in minimal SBI runtime"
+	help
+	  Enable this to have the boot code handle the transition from
+	  Machine mode (M-mode) to Supervisor mode (S-mode) internally.
+	  A minimal SBI runtime will remain resident in M-mode to service
+	  timer interrupts and ecall requests.
+
+config RISCV_S_MODE_EXTERNAL_SBI
+	bool "Enter S-mode directly, relying on an external SBI (e.g. OpenSBI)"
+	# TODO: Remove once SMP is fixed with this configuration
+	depends on !SMP
+	help
+	  Skip the in-tree M-mode boot sequence (PMP/medeleg/mideleg/
+	  mcounteren/mtvec setup and the mret drop to S-mode). Use this when
+	  Zephyr is launched as a payload by a bootloader (e.g. U-Boot) that
+	  is already running in S-mode under an external M-mode SBI
+	  implementation such as OpenSBI, which has already performed the
+	  M-mode setup and delegation.
+
+endchoice # RISCV_S_MODE_SBI
 
 config RISCV_M_MODE_STACK_SIZE
 	int "M-mode SBI handler stack size (bytes)"
 	default 256
-	depends on RISCV_S_MODE
+	depends on RISCV_S_MODE_INTERNAL_SBI
 	help
 	  Size in bytes of the dedicated stack used by the in-tree M-mode SBI
 	  runtime handler. Increase this if the handler is extended with
 	  functionality that requires more stack space.
+
+config RISCV_FPU_INSN_VALIDATE
+	bool
+	depends on FPU_SHARING
+	depends on ASSERT
+	default y
+	help
+	  Derived debug-only symbol. When enabled, the FPU trap handler will
+	  explicitly decode the trapping instruction to ensure it is a valid
+	  floating-point instruction. This catches edge cases where non-FPU
+	  instructions (like Vector instructions) might accidentally trigger
+	  an FP trap.
 
 rsource "Kconfig.isa"
 

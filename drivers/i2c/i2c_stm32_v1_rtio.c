@@ -4,27 +4,28 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <errno.h>
-#include <soc.h>
-#include <stm32_bitops.h>
-#include <stm32_ll_i2c.h>
-#include <stm32_ll_rcc.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/i2c.h>
 #include <zephyr/drivers/i2c/rtio.h>
 #include <zephyr/drivers/pinctrl.h>
 #include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
 #include <zephyr/sys/util.h>
 
-#define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
-#include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(i2c_ll_stm32_v1_rtio);
+#include <soc.h>
+#include <stm32_bitops.h>
+#include <stm32_ll_i2c.h>
+#include <stm32_ll_rcc.h>
+
+#include <errno.h>
 
 #include "i2c_stm32.h"
 #include "i2c-priv.h"
+
+LOG_MODULE_REGISTER(i2c_ll_stm32_v1_rtio, CONFIG_I2C_LOG_LEVEL);
 
 #define I2C_REQUEST_WRITE       0x00
 #define I2C_REQUEST_READ        0x01

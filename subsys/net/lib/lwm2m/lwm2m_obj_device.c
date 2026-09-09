@@ -343,7 +343,7 @@ static struct lwm2m_engine_obj_inst *device_create(uint16_t obj_inst_id)
 	inst.resources = res;
 	inst.resource_count = i;
 
-	LOG_DBG("Create LWM2M device instance: %d", obj_inst_id);
+	LOG_DBG("Create LwM2M device instance: %d", obj_inst_id);
 	return &inst;
 }
 
@@ -370,7 +370,7 @@ static int lwm2m_device_init(void)
 	/* auto create the only instance */
 	ret = lwm2m_create_obj_inst(LWM2M_OBJECT_DEVICE_ID, 0, &obj_inst);
 	if (ret < 0) {
-		LOG_DBG("Create LWM2M instance 0 error: %d", ret);
+		LOG_DBG("Create LwM2M instance 0 error: %d", ret);
 	}
 
 	/* Ensure error list is reset if not loaded from settings */

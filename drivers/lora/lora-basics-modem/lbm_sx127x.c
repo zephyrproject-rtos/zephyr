@@ -469,7 +469,7 @@ static int sx127x_driver_init(const struct device *dev)
 		.lbm_common.ralf = RALF_SX127X_INSTANTIATE(&data_##node_id.radio),                 \
 		.lbm_common.force_ldro = DT_PROP(node_id, force_ldro),                             \
 		.spi = SPI_DT_SPEC_GET(                                                            \
-			node_id, SPI_WORD_SET(8) | SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB),         \
+			node_id, SPI_WORD_SET(8) | SPI_OP_MODE_CONTROLLER | SPI_TRANSFER_MSB),     \
 		.reset = GPIO_DT_SPEC_GET(node_id, reset_gpios),                                   \
 		.ant_enable = GPIO_DT_SPEC_GET_OR(node_id, antenna_enable_gpios, {0}),             \
 		.rfi_enable = GPIO_DT_SPEC_GET_OR(node_id, rfi_enable_gpios, {0}),                 \

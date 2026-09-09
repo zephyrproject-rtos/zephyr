@@ -149,8 +149,8 @@ ipc0: &cpuapp_cpurad_ipc {
 	mbox-names = "rx", "tx";
 	tx-region = <&cpuapp_cpurad_ipc_shm>;
 	rx-region = <&cpurad_cpuapp_ipc_shm>;
-	tx-blocks = <32>;
-	rx-blocks = <32>;
+	tx-blocks = <15>;
+	rx-blocks = <15>;
 
 	bt_hci_ipc0: bt_hci_ipc0 {
 		compatible = "zephyr,bt-hci-ipc";

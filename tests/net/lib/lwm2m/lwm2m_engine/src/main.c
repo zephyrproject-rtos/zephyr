@@ -101,7 +101,7 @@ ZTEST(lwm2m_engine, test_start_stop)
 	(void)memset(&ctx, 0x0, sizeof(ctx));
 
 	k_mutex_init(&ctx.lock);
-	ctx.remote_addr.sa_family = NET_AF_INET;
+	ctx.remote_addr_storage.ss_family = NET_AF_INET;
 	ctx.sock_fd = -1;
 	ctx.load_credentials = NULL;
 	ctx.desthostname = host_name;
@@ -132,7 +132,7 @@ ZTEST(lwm2m_engine, test_pause_resume)
 	(void)memset(&ctx, 0x0, sizeof(ctx));
 
 	k_mutex_init(&ctx.lock);
-	ctx.remote_addr.sa_family = NET_AF_INET;
+	ctx.remote_addr_storage.ss_family = NET_AF_INET;
 	ctx.sock_fd = -1;
 	ctx.load_credentials = NULL;
 
@@ -158,7 +158,7 @@ ZTEST(lwm2m_engine, test_engine_add_service)
 	(void)memset(&ctx, 0x0, sizeof(ctx));
 
 	k_mutex_init(&ctx.lock);
-	ctx.remote_addr.sa_family = NET_AF_INET;
+	ctx.remote_addr_storage.ss_family = NET_AF_INET;
 	ctx.load_credentials = NULL;
 
 	ret = lwm2m_engine_start(&ctx);
@@ -199,7 +199,7 @@ ZTEST(lwm2m_engine, test_connect_fail)
 	k_mutex_init(&ctx.lock);
 	ctx.sock_fd = -1;
 	ctx.load_credentials = NULL;
-	ctx.remote_addr.sa_family = NET_AF_INET;
+	ctx.remote_addr_storage.ss_family = NET_AF_INET;
 
 	errno = ENETDOWN;
 	z_impl_zsock_connect_fake.return_val = -1;
@@ -218,7 +218,7 @@ ZTEST(lwm2m_engine, test_socket_suspend_resume_connection)
 	k_mutex_init(&ctx.lock);
 	ctx.sock_fd = -1;
 	ctx.load_credentials = NULL;
-	ctx.remote_addr.sa_family = NET_AF_INET;
+	ctx.remote_addr_storage.ss_family = NET_AF_INET;
 
 	ret = lwm2m_engine_start(&ctx);
 	zassert_equal(ret, 0);
@@ -242,7 +242,7 @@ ZTEST(lwm2m_engine, test_check_notifications)
 	k_mutex_init(&ctx.lock);
 	ctx.sock_fd = -1;
 	ctx.load_credentials = NULL;
-	ctx.remote_addr.sa_family = NET_AF_INET;
+	ctx.remote_addr_storage.ss_family = NET_AF_INET;
 	sys_slist_init(&ctx.observer);
 
 	obs.last_timestamp = k_uptime_get();
@@ -357,7 +357,7 @@ ZTEST(lwm2m_engine, test_retransmit_request)
 	k_mutex_init(&ctx.lock);
 	ctx.sock_fd = -1;
 	ctx.load_credentials = NULL;
-	ctx.remote_addr.sa_family = NET_AF_INET;
+	ctx.remote_addr_storage.ss_family = NET_AF_INET;
 
 	pending_1.t0 = k_uptime_get();
 	pending_1.timeout = 200U;
@@ -387,7 +387,7 @@ ZTEST(lwm2m_engine, test_socket_recv)
 	(void)memset(&ctx, 0x0, sizeof(ctx));
 
 	k_mutex_init(&ctx.lock);
-	ctx.remote_addr.sa_family = NET_AF_INET;
+	ctx.remote_addr_storage.ss_family = NET_AF_INET;
 	ctx.sock_fd = -1;
 
 	set_socket_events(ZSOCK_POLLIN);
@@ -411,7 +411,7 @@ ZTEST(lwm2m_engine, test_socket_send)
 	(void)memset(&ctx, 0x0, sizeof(ctx));
 
 	k_mutex_init(&ctx.lock);
-	ctx.remote_addr.sa_family = NET_AF_INET;
+	ctx.remote_addr_storage.ss_family = NET_AF_INET;
 	ctx.sock_fd = -1;
 	sys_slist_init(&ctx.queued_messages);
 	msg.ctx = &ctx;
@@ -443,7 +443,7 @@ ZTEST(lwm2m_engine, test_security)
 	my_data_len = snprintk(my_buf, sizeof(my_buf), "-----BEGIN SOMETHING");
 
 	k_mutex_init(&ctx.lock);
-	ctx.remote_addr.sa_family = NET_AF_INET;
+	ctx.remote_addr_storage.ss_family = NET_AF_INET;
 	ctx.sock_fd = -1;
 	ctx.load_credentials = NULL;
 	ctx.desthostname = host_name;
@@ -498,7 +498,7 @@ ZTEST(lwm2m_engine, test_socket_state)
 {
 	int ret;
 	struct lwm2m_ctx ctx = {
-		.remote_addr.sa_family = NET_AF_INET,
+		.remote_addr_storage.ss_family = NET_AF_INET,
 		.sock_fd = -1,
 		.set_socket_state = socket_state,
 	};

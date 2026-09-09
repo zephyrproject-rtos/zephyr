@@ -301,8 +301,9 @@ static bool wrapper_os_mutex_give(void *p_handle, bool *p_result)
 /************************************************************
  * Task Management Wrapper Functions
  ************************************************************/
-static bool wrapper_os_task_create(void **pp_handle, const char *p_name, void (*p_routine)(void *),
-				   void *p_param, uint16_t stack_size, uint16_t priority,
+static bool wrapper_os_task_create(void **pp_handle, const char *p_name,
+				   void (*p_routine)(void *p_param), void *p_param,
+				   uint16_t stack_size, uint16_t priority,
 				   bool *p_is_create_success)
 {
 	*p_is_create_success =

@@ -299,7 +299,7 @@ static int mcux_sysctr_set_alarm(const struct device *dev, uint8_t chan_id,
 		 */
 		if (irq_on_late) {
 			atomic_or(&data->irq_pending, BIT(chan_id));
-			NVIC_SetPendingIRQ(config->irqn);
+			k_irq_set_pending(config->irqn);
 		} else {
 			data->channels[chan_id].callback = NULL;
 		}
@@ -396,7 +396,7 @@ static int mcux_sysctr_set_alarm_64(const struct device *dev, uint8_t chan_id,
 
 		if (irq_on_late) {
 			atomic_or(&data->irq_pending, BIT(chan_id));
-			NVIC_SetPendingIRQ(config->irqn);
+			k_irq_set_pending(config->irqn);
 		} else {
 			data->channels[chan_id].callback_64 = NULL;
 		}

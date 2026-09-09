@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <inttypes.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/drivers/entropy.h>
 #include <zephyr/ztest.h>
@@ -32,7 +33,7 @@ static uint8_t entropy_buffer[BUFFER_LENGTH] = {0};
 static uint8_t entropy_buffer[BUFFER_LENGTH] = {0};
 #endif
 
-static int random_entropy(const struct device *dev, char *buffer, char num)
+static int random_entropy(const struct device *dev, uint8_t *buffer, char num)
 {
 	int ret, i;
 	int count = 0;
@@ -56,7 +57,7 @@ static int random_entropy(const struct device *dev, char *buffer, char num)
 	}
 
 	for (i = 0; i < BUFFER_LENGTH - 1; i++) {
-		TC_PRINT("  0x%02x\n", buffer[i]);
+		TC_PRINT("  0x%02" PRIx8 "\n", buffer[i]);
 		if (buffer[i] == num) {
 			count++;
 		}

@@ -17,9 +17,6 @@ CONFIG_HW_STACK_PROTECTION=y
 # Enable ADC for joystick
 CONFIG_ADC=y
 
-# Header offset since TF-M has no BL2 hence Zephyr is not signed
-CONFIG_ROM_START_OFFSET=0x400
-
 # Enable TZ non-secure configuration
 CONFIG_TRUSTED_EXECUTION_NONSECURE=y
 CONFIG_RUNTIME_NMI=y

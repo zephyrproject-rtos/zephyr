@@ -6,8 +6,8 @@
 
 /*
  * This test checks for proper support of ELF init arrays. This processing is
- * performed by llext_bootstrap(), which gets the array of function pointers
- * from LLEXT via the llext_get_fn_table() syscall.
+ * performed by llext_bootstrap(), which gets the function pointers from LLEXT
+ * via the llext_get_fn_table_entry() syscall.
  *
  * Each function in this test shifts the number left by 4 bits and sets the
  * lower 4 bits to a specific value. The proper init sequence (preinit_fn_1,

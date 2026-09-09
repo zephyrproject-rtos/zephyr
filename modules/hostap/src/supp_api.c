@@ -164,7 +164,6 @@ static void supp_shell_connect_status(struct k_work *work)
 {
 	static int seconds_counter;
 	int status = CONNECTION_SUCCESS;
-	int conn_result = CONNECTION_FAILURE;
 	struct wpa_supplicant *wpa_s;
 	struct wpa_supp_api_ctrl *ctrl = &wpas_api_ctrl;
 
@@ -188,10 +187,8 @@ static void supp_shell_connect_status(struct k_work *work)
 				goto out;
 			}
 
-			conn_result = -ETIMEDOUT;
-			supplicant_send_wifi_mgmt_event(wpa_s->ifname,
-							NET_EVENT_WIFI_CMD_CONNECT_RESULT,
-							(void *)&conn_result, sizeof(int));
+			supplicant_send_wifi_mgmt_conn_status(wpa_s,
+							      WIFI_STATUS_CONN_TIMEOUT);
 			status = CONNECTION_FAILURE;
 			goto out;
 		}
@@ -317,9 +314,18 @@ static inline int chan_to_freq(int chan)
 	return freq;
 }
 
-enum wifi_frequency_bands wpas_band_to_zephyr(enum wpa_radio_work_band band)
+enum wifi_frequency_bands wpas_freq_to_zephyr_band(int freq)
 {
-	switch (band) {
+	if (freq <= 0) {
+		return WIFI_FREQ_BAND_UNKNOWN;
+	}
+
+	/* The supplicant lumps 6 GHz in with 5 GHz, so ask separately. */
+	if (is_6ghz_freq(freq)) {
+		return WIFI_FREQ_BAND_6_GHZ;
+	}
+
+	switch (wpas_freq_to_band(freq)) {
 	case BAND_2_4_GHZ:
 		return WIFI_FREQ_BAND_2_4_GHZ;
 	case BAND_5_GHZ:
@@ -1101,9 +1107,14 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 			if (params->security == WIFI_SECURITY_TYPE_EAP_PEAP_MSCHAPV2 ||
 			    params->security == WIFI_SECURITY_TYPE_EAP_PEAP_GTC ||
 			    params->security == WIFI_SECURITY_TYPE_EAP_PEAP_TLS) {
-				snprintk(phase1, sizeof(phase1),
-					 "peapver=%d peaplabel=0 crypto_binding=0",
-					 params->eap_ver);
+				if (params->eap_ver == -1) {
+					snprintk(phase1, sizeof(phase1),
+						"peaplabel=0 crypto_binding=0");
+				} else {
+					snprintk(phase1, sizeof(phase1),
+						"peapver=%d peaplabel=0 crypto_binding=0",
+						params->eap_ver);
+				}
 
 				if (!wpa_cli_cmd_v("set_network %d phase1 \"%s\"", resp.network_id,
 						   &phase1[0])) {
@@ -1153,9 +1164,9 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 				}
 			}
 
-			if (false == ((params->security == WIFI_SECURITY_TYPE_EAP_PEAP_MSCHAPV2 ||
-			    params->security == WIFI_SECURITY_TYPE_EAP_TTLS_MSCHAPV2) &&
-			    (!params->verify_peer_cert))) {
+			if (false == (params->security == WIFI_SECURITY_TYPE_EAP_PEAP_MSCHAPV2 ||
+			    params->security == WIFI_SECURITY_TYPE_EAP_TTLS_MSCHAPV2 ||
+				params->security == WIFI_SECURITY_TYPE_EAP_PEAP_GTC)) {
 				if (wpas_config_process_blob(wpa_s->conf, "ca_cert",
 						   enterprise_creds.ca_cert,
 						   enterprise_creds.ca_cert_len)) {
@@ -1166,71 +1177,85 @@ static int wpas_add_and_config_network(struct wpa_supplicant *wpa_s,
 						   resp.network_id)) {
 					goto out;
 				}
-			}
 
-			if (wpas_config_process_blob(wpa_s->conf, "client_cert",
-					   enterprise_creds.client_cert,
-					   enterprise_creds.client_cert_len)) {
-				goto out;
-			}
+				if (wpas_config_process_blob(wpa_s->conf, "client_cert",
+						enterprise_creds.client_cert,
+						enterprise_creds.client_cert_len)) {
+					goto out;
+				}
 
-			if (!wpa_cli_cmd_v("set_network %d client_cert \"blob://client_cert\"",
-					   resp.network_id)) {
-				goto out;
-			}
+				if (!wpa_cli_cmd_v("set_network %d client_cert \"blob://client_cert\"",
+						resp.network_id)) {
+					goto out;
+				}
 
-			if (wpas_config_process_blob(wpa_s->conf, "private_key",
-					   enterprise_creds.client_key,
-					   enterprise_creds.client_key_len)) {
-				goto out;
-			}
+				if (wpas_config_process_blob(wpa_s->conf, "private_key",
+						enterprise_creds.client_key,
+						enterprise_creds.client_key_len)) {
+					goto out;
+				}
 
-			if (!wpa_cli_cmd_v("set_network %d private_key \"blob://private_key\"",
-					   resp.network_id)) {
-				goto out;
-			}
+				if (!wpa_cli_cmd_v("set_network %d private_key \"blob://private_key\"",
+						resp.network_id)) {
+					goto out;
+				}
 
-			if (!wpa_cli_cmd_v("set_network %d private_key_passwd \"%s\"",
-					   resp.network_id, params->key_passwd)) {
-				goto out;
-			}
+				if (!wpa_cli_cmd_v("set_network %d private_key_passwd \"%s\"",
+						resp.network_id, params->key_passwd)) {
+					goto out;
+				}
 
-			if (wpas_config_process_blob(wpa_s->conf, "ca_cert2",
-						     enterprise_creds.ca_cert2,
-						     enterprise_creds.ca_cert2_len)) {
-				goto out;
-			}
+				if (wpas_config_process_blob(wpa_s->conf, "ca_cert2",
+								enterprise_creds.ca_cert2,
+								enterprise_creds.ca_cert2_len)) {
+					goto out;
+				}
 
-			if (!wpa_cli_cmd_v("set_network %d ca_cert2 \"blob://ca_cert2\"",
-					   resp.network_id)) {
-				goto out;
-			}
+				if (!wpa_cli_cmd_v("set_network %d ca_cert2 \"blob://ca_cert2\"",
+						resp.network_id)) {
+					goto out;
+				}
 
-			if (wpas_config_process_blob(wpa_s->conf, "client_cert2",
-						     enterprise_creds.client_cert2,
-						     enterprise_creds.client_cert2_len)) {
-				goto out;
-			}
+				if (wpas_config_process_blob(wpa_s->conf, "client_cert2",
+							enterprise_creds.client_cert2,
+							enterprise_creds.client_cert2_len)) {
+					goto out;
+				}
 
-			if (!wpa_cli_cmd_v("set_network %d client_cert2 \"blob://client_cert2\"",
-					   resp.network_id)) {
-				goto out;
-			}
+				if (!wpa_cli_cmd_v("set_network %d client_cert2 \"blob://client_cert2\"",
+						resp.network_id)) {
+					goto out;
+				}
 
-			if (wpas_config_process_blob(wpa_s->conf, "private_key2",
-						     enterprise_creds.client_key2,
-						     enterprise_creds.client_key2_len)) {
-				goto out;
-			}
+				if (wpas_config_process_blob(wpa_s->conf, "private_key2",
+								enterprise_creds.client_key2,
+								enterprise_creds.client_key2_len)) {
+					goto out;
+				}
 
-			if (!wpa_cli_cmd_v("set_network %d private_key2 \"blob://private_key2\"",
-					   resp.network_id)) {
-				goto out;
-			}
+				if (!wpa_cli_cmd_v("set_network %d private_key2 \"blob://private_key2\"",
+						resp.network_id)) {
+					goto out;
+				}
 
-			if (!wpa_cli_cmd_v("set_network %d private_key2_passwd \"%s\"",
-					   resp.network_id, params->key2_passwd)) {
-				goto out;
+				if (!wpa_cli_cmd_v("set_network %d private_key2_passwd \"%s\"",
+						resp.network_id, params->key2_passwd)) {
+					goto out;
+				}
+			} else if (params->verify_peer_cert) {
+				/* If we're using MSCHAPV2 and we're
+				 * requested a CA cert valid, load it
+				 */
+				if (wpas_config_process_blob(wpa_s->conf, "ca_cert",
+						enterprise_creds.ca_cert,
+						enterprise_creds.ca_cert_len)) {
+					goto out;
+				}
+
+				if (!wpa_cli_cmd_v("set_network %d ca_cert \"blob://ca_cert\"",
+						resp.network_id)) {
+					goto out;
+				}
 			}
 #endif
 #ifdef CONFIG_WEP
@@ -1491,6 +1516,14 @@ int supplicant_connect(const struct device *dev __unused, struct net_if *iface,
 		goto out;
 	}
 
+	/* The supplicant only clears these once it associates, so drop the codes of
+	 * the previous request to keep them from being reported against this one.
+	 * Configuring the network ends with select_network, which already starts
+	 * the attempt, so this has to happen before that.
+	 */
+	wpa_s->auth_status_code = WLAN_STATUS_SUCCESS;
+	wpa_s->assoc_status_code = WLAN_STATUS_SUCCESS;
+
 	ret = wpas_add_and_config_network(wpa_s, params, false);
 	if (ret) {
 		wpa_printf(MSG_ERROR, "Failed to add and configure network for STA mode: %d", ret);
@@ -1597,7 +1630,7 @@ int supplicant_status(const struct device *dev __unused, struct net_if *iface,
 
 	if (wpa_s->wpa_state >= WPA_ASSOCIATED) {
 		struct wpa_ssid *ssid = wpa_s->current_ssid;
-		u8 channel;
+		u8 channel = 0;
 		struct signal_poll_resp signal_poll;
 		u8 *_ssid;
 		size_t ssid_len;
@@ -1617,7 +1650,7 @@ int supplicant_status(const struct device *dev __unused, struct net_if *iface,
 		key_mgmt = ssid->key_mgmt;
 		sae_pwe = wpa_s->conf->sae_pwe;
 		os_memcpy(status->bssid, wpa_s->bssid, WIFI_MAC_ADDR_LEN);
-		status->band = wpas_band_to_zephyr(wpas_freq_to_band(wpa_s->assoc_freq));
+		status->band = wpas_freq_to_zephyr_band(wpa_s->assoc_freq);
 		status->wpa3_ent_type = wpas_key_mgmt_to_zephyr_wpa3_ent(key_mgmt);
 		status->security = wpas_key_mgmt_to_zephyr(0, ssid, key_mgmt, proto, sae_pwe);
 #ifdef CONFIG_WEP
@@ -1639,7 +1672,12 @@ int supplicant_status(const struct device *dev __unused, struct net_if *iface,
 		 * does when associating.
 		 */
 		status->mfp = get_mfp(wpas_get_ssid_pmf(wpa_s, ssid));
-		ieee80211_freq_to_chan(wpa_s->assoc_freq, &channel);
+		if (ieee80211_freq_to_chan(wpa_s->assoc_freq, &channel) == NUM_HOSTAPD_MODES) {
+			/* The frequency is not in any known band, so the
+			 * channel was left untouched.
+			 */
+			channel = 0;
+		}
 		status->channel = channel;
 
 		if (ssid_len == 0) {
@@ -1881,21 +1919,58 @@ int supplicant_candidate_scan(const struct device *dev __unused, struct net_if *
 	char *end = pos + SUPPLICANT_CANDIDATE_SCAN_CMD_BUF_SIZE;
 	int freq = 0;
 	struct wpa_supplicant *wpa_s;
+	int cur_freq = 0;
+	bool first = true;
 
 	wpa_s = get_wpa_s_handle(iface);
 	if (!wpa_s) {
 		return -1;
 	}
 
+	/*
+	 * Include the current connected AP's frequency in the scan so that
+	 * wpa_supplicant's BSS cache has an up-to-date entry for the current
+	 * AP after the scan completes.
+	 *
+	 * Without this, wpa_supplicant_need_to_roam() (events.c) hits one of
+	 * two early-return paths that bypass need_to_roam_within_ess():
+	 *
+	 *   1. current_bss == NULL  (cache entry expired / not refreshed)
+	 *   2. selected->last_update_idx > current_bss->last_update_idx
+	 *      (candidate was seen in this scan round, current AP was not)
+	 *
+	 * Both cases cause an unconditional roam regardless of RSSI delta,
+	 * potentially associating to a much weaker AP.
+	 */
+	if (wpa_s->current_bss) {
+		cur_freq = wpa_s->current_bss->freq;
+	}
+
 	strcpy(pos, "freq=");
 	pos += 5;
+
+	/* Add current AP frequency first */
+	if (cur_freq > 0) {
+		pos += snprintf(pos, end - pos, "%d", cur_freq);
+		first = false;
+	}
+
+	/* Add neighbor report channels, skipping duplicates */
 	while (params->band_chan[i].channel) {
-		if (i > 0) {
+		freq = chan_to_freq(params->band_chan[i].channel);
+		i++;
+		if (freq <= 0) {
+			continue;
+		}
+		/* Skip if this neighbor channel is the same as current AP */
+		if (freq == cur_freq) {
+			continue;
+		}
+		if (!first) {
 			pos += snprintf(pos, end - pos, ",");
 		}
-		freq = chan_to_freq(params->band_chan[i].channel);
 		pos += snprintf(pos, end - pos, "%d", freq);
-		i++;
+		first = false;
 	}
 
 	if (!wpa_cli_cmd_v("scan %s", cmd)) {

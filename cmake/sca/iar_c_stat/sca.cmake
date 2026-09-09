@@ -67,5 +67,5 @@ if(CSTAT_CLEANUP)
 endif()
 
 # Enable IAR C-STAT Static Analysis (requires CMake v4.1+)
-set(CMAKE_C_ICSTAT ${IAR_CSTAT};${output_arg} CACHE INTERNAL "")
-set(CMAKE_CXX_ICSTAT ${IAR_CSTAT};${output_arg} CACHE INTERNAL "")
+set(CMAKE_C_ICSTAT ${IAR_CSTAT};${output_arg})
+set(CMAKE_CXX_ICSTAT ${IAR_CSTAT};${output_arg})

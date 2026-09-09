@@ -1,0 +1,12 @@
+common:
+  build_only: true
+  tags:
+    - drivers
+    - dma
+tests:
+  drivers.dma.adi_axi_dmac.build:
+    platform_allow: qemu_cortex_m3
+    extra_args: DTC_OVERLAY_FILE=adi_axi_dmac.overlay
+  drivers.dma.adi_axi_dmac.no_irq.build:
+    platform_allow: native_sim
+    extra_args: DTC_OVERLAY_FILE=adi_axi_dmac_no_irq.overlay

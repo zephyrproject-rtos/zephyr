@@ -55,9 +55,6 @@
 			compatible = "microchip,mpfs-gpio";
 			reg = <0x40013000 0x1000>;
 			interrupts = <M2S_IRQ_GPIO0 1>;
-			interrupt-controller;
-			#address-cells = <0>;
-			#interrupt-cells = <1>;
 			gpio-controller;
 			#gpio-cells = <2>;
 			ngpios = <32>;

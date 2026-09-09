@@ -201,6 +201,14 @@ properties:
     description: |
       Optional names given to the DMA channel specifiers in the "dmas" property.
 
+  dma-ranges:
+    type: compound
+    description: |
+      The dma-ranges provides a means of defining a mapping or translation between the
+      physical address space of the bus and the physical address space of the parent of the bus.
+
+      For details, see "2.3.9 dma-ranges" in Devicetree Specification v0.4.
+
   io-channels:
     type: phandle-array
     description: |

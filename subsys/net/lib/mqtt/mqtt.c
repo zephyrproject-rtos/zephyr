@@ -250,7 +250,7 @@ int mqtt_client_set_proxy(struct mqtt_client *client,
 		}
 
 		client->transport.proxy.addrlen = addrlen;
-		memcpy(&client->transport.proxy.addr, proxy_addr, addrlen);
+		memcpy(&client->transport.proxy.addr_storage, proxy_addr, addrlen);
 
 		return 0;
 	}

@@ -1,0 +1,6 @@
+board:
+  name: elemrv_flask_n
+  full_name: ElemRV Flask-N
+  vendor: aesc
+  socs:
+  - name: elemrv_n

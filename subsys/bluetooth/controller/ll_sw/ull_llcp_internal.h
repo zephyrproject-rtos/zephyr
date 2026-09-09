@@ -587,7 +587,7 @@ void llcp_lr_check_done(struct ll_conn *conn, struct proc_ctx *ctx);
  */
 void llcp_rr_set_incompat(struct ll_conn *conn, enum proc_incompat incompat);
 bool llcp_rr_get_collision(struct ll_conn *conn);
-void llcp_rr_set_paused_cmd(struct ll_conn *conn, enum llcp_proc);
+void llcp_rr_set_paused_cmd(struct ll_conn *conn, enum llcp_proc proc);
 enum llcp_proc llcp_rr_get_paused_cmd(struct ll_conn *conn);
 struct proc_ctx *llcp_rr_peek(struct ll_conn *conn);
 bool llcp_rr_ispaused(struct ll_conn *conn);

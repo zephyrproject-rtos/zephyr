@@ -39,7 +39,7 @@ extern "C" {
 
 /**
  * @brief List of FTP server reply codes
- * Reference RFC959 FTP Transfer Protocol
+ * Reference @rfc{959} File Transfer Protocol
  */
 enum ftp_reply_code {
 	/* 100 Series	The requested action is being initiated, expect another
@@ -269,7 +269,13 @@ typedef void (*ftp_client_callback_t)(const uint8_t *msg, uint16_t len);
 
 /** FTP client context. */
 struct ftp_client {
-	struct net_sockaddr remote; /**< Server address */
+	/** Remote server address storage */
+	union {
+		struct net_sockaddr_storage remote_addr;  /**< Server address */
+/** @cond INTERNAL_HIDDEN */
+		struct net_sockaddr remote; /**< Server address (use remote_addr instead) */
+/** @endcond */
+	};
 	bool connected; /**< Server connected flag */
 	int ctrl_sock; /**< Control socket */
 	int data_sock; /**< Data socket */

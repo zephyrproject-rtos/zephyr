@@ -15,5 +15,6 @@ toolchain:
   - gnuarmemb
 supported:
   - netif:eth
+  - ptp_clock
   - crc
 vendor: nxp

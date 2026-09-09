@@ -3,7 +3,7 @@
 
 if SHIELD_LINK_BOARD_ETH
 
-configdefault NET_L2_ETHERNET
+configdefault ETH_DRIVER
 	default y
 
 endif # SHIELD_LINK_BOARD_ETH

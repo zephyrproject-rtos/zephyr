@@ -476,7 +476,7 @@ static int pads_2511020213301_init(const struct device *dev)
  */
 
 #define PADS_2511020213301_SPI_OPERATION                                                           \
-	(SPI_WORD_SET(8) | SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA)
+	(SPI_WORD_SET(8) | SPI_OP_MODE_CONTROLLER | SPI_MODE_CPOL | SPI_MODE_CPHA)
 
 #define PADS_2511020213301_CONFIG_SPI(inst)                                                        \
 	{.bus_cfg =                                                                                \

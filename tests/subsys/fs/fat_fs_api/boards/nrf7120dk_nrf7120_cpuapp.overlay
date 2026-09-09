@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2026 Nordic Semiconductor ASA
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	memc_ramdisk: memc_ramdisk {
+		compatible = "zephyr,memc-ram-disk";
+		memc = <&is66wvs8m8f>;
+		disk-name = "RAM";
+		sector-size = <512>;
+		sector-count = <16384>;
+		status = "okay";
+	};
+};
+
+&mspi01 {
+	status = "okay";
+};
+
+&is66wvs8m8f {
+	status = "okay";
+};

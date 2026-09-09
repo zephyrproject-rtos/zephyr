@@ -318,3 +318,5 @@ CAN Controller API Reference
 ****************************
 
 .. doxygengroup:: can_controller
+
+.. doxygengroup:: can_fake

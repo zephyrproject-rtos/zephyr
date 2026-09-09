@@ -29,6 +29,7 @@
 #include <zephyr/device.h>
 #include <zephyr/drivers/entropy.h>
 #include <zephyr/kernel.h>
+#include <errno.h>
 #include <string.h>
 
 static uint32_t state[4];
@@ -41,13 +42,15 @@ static inline uint32_t rotl(const uint32_t x, int k)
 
 static void xoshiro128_init_state(void)
 {
-	int rc;
+	int rc = -ENODEV;
 	const struct device *const entropy_driver = entropy_get_default_device();
 
 	/* This is not thread safe but it doesn't matter as we will just end
 	 * up with a mix of random bytes from both threads.
 	 */
-	rc = entropy_get_entropy(entropy_driver, (uint8_t *)&state, sizeof(state));
+	if (device_is_ready(entropy_driver)) {
+		rc = entropy_get_entropy(entropy_driver, (uint8_t *)&state, sizeof(state));
+	}
 
 	/* Reject an all-zero seed: xoshiro128++ has a fixed point at
 	 * state = {0,0,0,0}. Leaving initialized=false on rejection lets

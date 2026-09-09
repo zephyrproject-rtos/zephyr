@@ -30,10 +30,10 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		clocks = <&clocks RPI_PICO_CLKID_CLK_SYS>;
-		miso-gpios = <&gpio0 16 0>;
+		sdi-gpios = <&gpio0 16 0>;
 		cs-gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
 		clk-gpios = <&gpio0 18 GPIO_ACTIVE_HIGH>;
-		mosi-gpios = <&gpio0 19 GPIO_ACTIVE_HIGH>;
+		sdo-gpios = <&gpio0 19 GPIO_ACTIVE_HIGH>;
 
 		slow@0 {
 			compatible = "test-spi-loopback-slow";

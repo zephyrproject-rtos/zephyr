@@ -829,9 +829,9 @@ static int dma_dw_axi_resume(const struct device *dev, uint32_t channel)
 
 	reg = sys_read64(reg_base + DMA_DW_AXI_CHENREG);
 	/* channel susp write enable bit has to be asserted */
-	WRITE_BIT(reg, CH_RESUME_WE(channel), 1);
+	reg |= CH_RESUME_WE(channel);
 	/* channel susp bit must be cleared to resume a channel*/
-	WRITE_BIT(reg, CH_RESUME(channel), 0);
+	reg &= ~CH_RESUME(channel);
 	/* resume a channel by writing 0: ch_susp and 1: ch_susp_we */
 	sys_write64(reg, reg_base + DMA_DW_AXI_CHENREG);
 

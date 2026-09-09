@@ -379,7 +379,7 @@ static int hub12_init(const struct device *dev)
 		.pb = GPIO_DT_SPEC_INST_GET(inst, pb_gpios),                                       \
 		.pe = GPIO_DT_SPEC_INST_GET(inst, pe_gpios),                                       \
 		.plat = GPIO_DT_SPEC_INST_GET(inst, plat_gpios),                                   \
-		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_OP_MODE_MASTER | SPI_WORD_SET(8)),           \
+		.spi = SPI_DT_SPEC_INST_GET(inst, SPI_OP_MODE_CONTROLLER | SPI_WORD_SET(8)),       \
 		.width = DT_INST_PROP(inst, width),                                                \
 		.height = DT_INST_PROP(inst, height),                                              \
 		.num_panels = DT_INST_PROP(inst, width) / HUB12_PANEL_WIDTH,                       \

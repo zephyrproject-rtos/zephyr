@@ -10,8 +10,7 @@ config BUILD_OUTPUT_HEX
 	bool
 	default y
 
-configdefault NET_L2_ETHERNET
-	default n if BOARD_TEENSY40
+configdefault ETH_DRIVER
 	default y if BOARD_TEENSY41
 
 endif # BOARD_TEENSY40 || BOARD_TEENSY41

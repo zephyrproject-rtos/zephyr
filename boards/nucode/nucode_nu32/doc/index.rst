@@ -46,6 +46,38 @@ SWD
 
 * The SWDCLK and SWDIO debug pads are used for flashing and debugging.
 
+NUCODE_JTAG Adapter
+-------------------
+
+The NU32-B-Dev04 carrier can be connected to an external J-Link through a
+NUCODE_JTAG Adapter.  The minimum SWD connection is:
+
+.. list-table:: SWD connection
+   :header-rows: 1
+
+   * - NUCODE_JTAG Adapter
+     - NU32-B-Dev04
+     - Description
+   * - VTARGET
+     - VCC or VTARGET
+     - Target voltage reference
+   * - GND
+     - GND
+     - Common ground
+   * - SWDCLK
+     - SWDCLK
+     - SWD clock
+   * - SWDIO
+     - SWDIO
+     - SWD data
+   * - nRESET (nRST)
+     - RESET (P0.21)
+     - Target reset
+
+The target must be powered and VTARGET must be connected before starting a
+debug session.  Keep the SWD leads short.  Connect nRESET to P0.21 so the
+debug probe can reliably reset and recover the target.
+
 Programming and Debugging
 *************************
 
@@ -68,12 +100,22 @@ to the SWD pads.
       :zephyr-app: samples/hello_world
       :board: nucode_nu32/nrf52832
       :goals: build flash
+      :flash-args: -r jlink
 
 #. Open a serial terminal (115200 8N1) connected to the UART0 pins and
    reset the board to see the output.
 
+If more than one J-Link is connected to the host, select the probe by appending
+``--dev-id <serial-number>`` to the ``west flash`` command.
+
 Debugging
 =========
+
+Start a debug session with J-Link:
+
+.. code-block:: console
+
+   $ west debug -r jlink
 
 Refer to the :ref:`application_run` page for more details on debugging.
 

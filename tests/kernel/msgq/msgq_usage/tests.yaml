@@ -3,4 +3,4 @@ tests:
     min_ram: 24
     tags:
       - kernel
-      - message queue
+      - message_queue

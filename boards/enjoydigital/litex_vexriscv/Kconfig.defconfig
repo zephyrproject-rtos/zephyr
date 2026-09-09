@@ -3,7 +3,7 @@
 
 if BOARD_LITEX_VEXRISCV
 
-configdefault NET_L2_ETHERNET
+configdefault ETH_DRIVER
 	default y
 
 endif # BOARD_LITEX_VEXRISCV

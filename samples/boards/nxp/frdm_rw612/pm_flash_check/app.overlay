@@ -1,0 +1,18 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&standby {
+	status = "okay";
+};
+
+&w25q512jvfiq {
+	partitions {
+		scratch_partition: partition@3000000 {
+			label = "scratch";
+			reg = <0x3000000 DT_SIZE_K(16)>;
+		};
+	};
+};

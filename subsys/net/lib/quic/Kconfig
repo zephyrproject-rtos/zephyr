@@ -17,12 +17,39 @@ config QUIC
 	select NET_IPV4_PMTU_DPLPMTUD if NET_NATIVE_IPV4
 	select NET_PMTU_DPLPMTUD if NET_NATIVE_IPV6 || NET_NATIVE_IPV4
 	select NET_STATISTICS_USER_API if NET_STATISTICS_QUIC
+	select CSPRNG_NEEDED
 	help
 	  This option enables the QUIC implementation specified
 	  in RFC 9000, including Retry and NEW_TOKEN-based
 	  address-validation tokens.
 
+	  QUIC requires a cryptographically secure random number
+	  generator for connection IDs, address-validation tokens and
+	  TLS randoms. CSPRNG_NEEDED is selected to pull one in, but it
+	  can only do so on platforms that have an entropy source. See
+	  QUIC_ALLOW_NON_CSPRNG if the build fails because of this.
+
 if QUIC
+
+config QUIC_ALLOW_NON_CSPRNG
+	bool "Allow QUIC to run without a cryptographically secure RNG"
+	depends on TEST_RANDOM_GENERATOR
+	default y if ZTEST
+	help
+	  Permit QUIC to build on a platform where CSPRNG_ENABLED could not
+	  be satisfied, so that sys_csrand_get() falls back to the plain
+	  non-cryptographic generator.
+
+	  Connection IDs, address-validation tokens, TLS randoms and session
+	  tickets then become predictable to anyone who can observe enough
+	  output, which breaks the unpredictability RFC 9000 requires. Only
+	  enable this for testing on platforms without an entropy source.
+
+	  Test binaries default to allowed so protocol test suites build on
+	  platforms without an entropy source; they already run with the
+	  test random generator. Applications and samples never get this
+	  automatically and must either provide an entropy source or opt in
+	  consciously.
 
 config QUIC_SHELL
 	bool "Create a shell to see Quic connectivity information"
@@ -229,6 +256,38 @@ config QUIC_TOKEN_MAX_LEN
 	help
 	  Maximum token length that the stack stores locally for Retry and
 	  NEW_TOKEN handling. Larger received tokens are ignored or rejected.
+
+config QUIC_MAX_REPLIES_PER_PAYLOAD
+	int "Max packets sent in reply to the frames in one payload"
+	default 8
+	range 1 256
+	help
+	  Frames such as DATA_BLOCKED, STREAM_DATA_BLOCKED, STREAMS_BLOCKED,
+	  PATH_CHALLENGE and NEW_CONNECTION_ID are each answered with a packet
+	  of their own. A single datagram can hold hundreds of them, so without
+	  a cap one small datagram can be turned into hundreds of encrypted
+	  sends, which is a cheap way to exhaust a constrained device.
+
+	  Replies beyond this many for a single received payload are dropped.
+	  The peer repeats these frames if it still needs an answer, so the
+	  only cost is a delay. Frames that must be answered for correctness,
+	  such as CONNECTION_CLOSE and the ACK covering the packet, are not
+	  counted here.
+
+config QUIC_TOKEN_REPLAY_CACHE_SIZE
+	int "Number of address-validation tokens tracked against replay"
+	default 8
+	range 1 128
+	help
+	  How many accepted address-validation tokens to remember so they
+	  cannot be used a second time. Tokens travel in the clear in the
+	  Initial packet header, so an observer can copy one and replay it
+	  from a spoofed address to obtain an endpoint that skips the
+	  anti-amplification limit.
+
+	  Entries are dropped once the token they describe is too old to pass
+	  the age check, so this only has to cover the tokens that can be in
+	  flight at once. When every slot is in use the oldest is evicted.
 
 config QUIC_TOKEN_CACHE_SIZE
 	int "Number of NEW_TOKEN cache entries"

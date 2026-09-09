@@ -721,7 +721,8 @@ static void netmidi2_service_handler(struct net_socket_service_event *pev)
 	int ret;
 	struct netmidi2_ep *ep = pev->user_data;
 	struct zsock_pollfd *pfd = &pev->event;
-	struct net_sockaddr peer_addr;
+	struct net_sockaddr_storage peer_addr;
+	struct net_sockaddr *peer_sa = net_sad(&peer_addr);
 	net_socklen_t peer_addr_len = sizeof(peer_addr);
 	struct net_buf *rxbuf;
 
@@ -732,7 +733,7 @@ static void netmidi2_service_handler(struct net_socket_service_event *pev)
 	}
 
 	ret = zsock_recvfrom(pfd->fd, rxbuf->data, rxbuf->size, 0,
-			     &peer_addr, &peer_addr_len);
+			     peer_sa, &peer_addr_len);
 	if (ret < 0) {
 		LOG_ERR("Rx error: %d (%d)", ret, errno);
 		goto end;
@@ -752,7 +753,7 @@ static void netmidi2_service_handler(struct net_socket_service_event *pev)
 	/* Parse contained command packets */
 	ret = 0;
 	while (ret == 0 && rxbuf->len >= 4) {
-		ret = netmidi2_dispatch_cmdpkt(ep, &peer_addr, peer_addr_len, rxbuf);
+		ret = netmidi2_dispatch_cmdpkt(ep, peer_sa, peer_addr_len, rxbuf);
 	}
 
 end:

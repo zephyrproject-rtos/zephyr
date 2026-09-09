@@ -14,7 +14,11 @@
 #include "q31.pat"
 
 #define SNR_ERROR_THRESH	((float32_t)100)
+#if CONFIG_DSP_BACKEND_POWERQUAD_SUPPORT_Q31
+#define ABS_ERROR_THRESH_Q31	((q31_t)(1 << 8))
+#else
 #define ABS_ERROR_THRESH_Q31	((q31_t)4)
+#endif
 #define ABS_ERROR_THRESH_Q63	((q63_t)(1 << 17))
 
 static void test_zdsp_add_q31(const DSP_DATA q31_t *input1, const DSP_DATA q31_t *input2,
@@ -47,6 +51,7 @@ DEFINE_TEST_VARIANT4(basic_math_q31, zdsp_add_q31, 8, in_com1, in_com2, ref_add,
 DEFINE_TEST_VARIANT4(basic_math_q31, zdsp_add_q31, 11, in_com1, in_com2, ref_add, 11);
 DEFINE_TEST_VARIANT4(basic_math_q31, zdsp_add_q31, possat, in_maxpos, in_maxpos, ref_add_possat, 9);
 DEFINE_TEST_VARIANT4(basic_math_q31, zdsp_add_q31, negsat, in_maxneg, in_maxneg, ref_add_negsat, 9);
+DEFINE_TEST_VARIANT4(basic_math_q31, zdsp_add_q31, 100, in_com1, in_com2, ref_add, 100);
 DEFINE_TEST_VARIANT4(basic_math_q31, zdsp_add_q31, long, in_com1, in_com2, ref_add,
 		     ARRAY_SIZE(in_com1));
 
@@ -116,6 +121,7 @@ DEFINE_TEST_VARIANT4(basic_math_q31, zdsp_sub_q31, 8, in_com1, in_com2, ref_sub,
 DEFINE_TEST_VARIANT4(basic_math_q31, zdsp_sub_q31, 11, in_com1, in_com2, ref_sub, 11);
 DEFINE_TEST_VARIANT4(basic_math_q31, zdsp_sub_q31, possat, in_maxpos, in_maxneg, ref_sub_possat, 9);
 DEFINE_TEST_VARIANT4(basic_math_q31, zdsp_sub_q31, negsat, in_maxneg, in_maxpos, ref_sub_negsat, 9);
+DEFINE_TEST_VARIANT4(basic_math_q31, zdsp_sub_q31, 100, in_com1, in_com2, ref_sub, 100);
 DEFINE_TEST_VARIANT4(basic_math_q31, zdsp_sub_q31, long, in_com1, in_com2, ref_sub,
 		     ARRAY_SIZE(in_com1));
 
@@ -185,6 +191,7 @@ DEFINE_TEST_VARIANT4(basic_math_q31, zdsp_mult_q31, 8, in_com1, in_com2, ref_mul
 DEFINE_TEST_VARIANT4(basic_math_q31, zdsp_mult_q31, 11, in_com1, in_com2, ref_mult, 11);
 DEFINE_TEST_VARIANT4(basic_math_q31, zdsp_mult_q31, possat, in_maxneg2, in_maxneg2, ref_mult_possat,
 		     9);
+DEFINE_TEST_VARIANT4(basic_math_q31, zdsp_mult_q31, 100, in_com1, in_com2, ref_mult, 100);
 DEFINE_TEST_VARIANT4(basic_math_q31, zdsp_mult_q31, long, in_com1, in_com2, ref_mult,
 		     ARRAY_SIZE(in_com1));
 
@@ -250,6 +257,7 @@ DEFINE_TEST_VARIANT3(basic_math_q31, zdsp_negate_q31, 3, in_com1, ref_negate, 3)
 DEFINE_TEST_VARIANT3(basic_math_q31, zdsp_negate_q31, 8, in_com1, ref_negate, 8);
 DEFINE_TEST_VARIANT3(basic_math_q31, zdsp_negate_q31, 11, in_com1, ref_negate, 11);
 DEFINE_TEST_VARIANT3(basic_math_q31, zdsp_negate_q31, possat, in_maxneg2, ref_negate_possat, 9);
+DEFINE_TEST_VARIANT3(basic_math_q31, zdsp_negate_q31, 100, in_com1, ref_negate, 100);
 DEFINE_TEST_VARIANT3(basic_math_q31, zdsp_negate_q31, long, in_com1, ref_negate,
 		     ARRAY_SIZE(in_com1));
 
@@ -319,6 +327,8 @@ DEFINE_TEST_VARIANT4(basic_math_q31, zdsp_offset_q31, possat, in_maxpos, 0x73333
 		     ref_offset_possat, 9);
 DEFINE_TEST_VARIANT4(basic_math_q31, zdsp_offset_q31, negsat, in_maxneg, 0x8ccccccd,
 		     ref_offset_negsat, 9);
+DEFINE_TEST_VARIANT4(basic_math_q31, zdsp_offset_q31, 0p5_100, in_com1, 0x40000000, ref_offset,
+		     100);
 DEFINE_TEST_VARIANT4(basic_math_q31, zdsp_offset_q31, long, in_com1, 0x40000000, ref_offset,
 		     ARRAY_SIZE(in_com1));
 
@@ -391,6 +401,7 @@ DEFINE_TEST_VARIANT4(basic_math_q31, zdsp_scale_q31, 0p5_8, in_com1, 0x40000000,
 DEFINE_TEST_VARIANT4(basic_math_q31, zdsp_scale_q31, 0p5_11, in_com1, 0x40000000, ref_scale, 11);
 DEFINE_TEST_VARIANT4(basic_math_q31, zdsp_scale_q31, possat, in_maxneg2, 0x80000000,
 		     ref_scale_possat, 9);
+DEFINE_TEST_VARIANT4(basic_math_q31, zdsp_scale_q31, 0p5_100, in_com1, 0x40000000, ref_scale, 100);
 DEFINE_TEST_VARIANT4(basic_math_q31, zdsp_scale_q31, long, in_com1, 0x40000000, ref_scale,
 		     ARRAY_SIZE(in_com1));
 

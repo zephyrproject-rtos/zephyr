@@ -1309,6 +1309,7 @@ static void dhcpv4_handle_request(struct dhcpv4_server_ctx *ctx,
 		if (!net_if_ipv4_addr_mask_cmp(ctx->iface, &requested_ip)) {
 			/* Wrong subnet. */
 			dhcpv4_send_nak(ctx, msg, &client_id);
+			return;
 		}
 
 		if (address_validator_callback != NULL) {
@@ -1366,6 +1367,7 @@ static void dhcpv4_handle_request(struct dhcpv4_server_ctx *ctx,
 	if (!net_if_ipv4_addr_mask_cmp(ctx->iface, &ciaddr)) {
 		/* Wrong subnet. */
 		dhcpv4_send_nak(ctx, msg, &client_id);
+		return;
 	}
 
 	for (int i = 0; i < ARRAY_SIZE(ctx->addr_pool); i++) {

@@ -1,0 +1,12 @@
+# Copyright (c) 2026 Jonathan Elliot Peace <jep@alphabetiq.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config ENTROPY_BRCM_BCM2835_RNG
+	bool "Broadcom BCM2835 simple RNG driver"
+	default y
+	depends on DT_HAS_BRCM_BCM2835_RNG_ENABLED
+	select ENTROPY_HAS_DRIVER
+	help
+	  Enable the Broadcom BCM2835 simple hardware RNG block driver, used
+	  by the BCM2835/BCM2836/BCM2837/BCM2710 SoCs (Raspberry Pi 1/2/3/Zero
+	  family). This is distinct from the iProc RNG200 on BCM2711 (Pi 4).

@@ -275,7 +275,7 @@ static DEVICE_API(regulator, api) = {
 	BUILD_ASSERT(DT_INST_PROP_LEN(inst, ref_voltages) <= MAX_VOLTAGE_SCALES_NUM,               \
 		"Too many voltage scales; please increase MAX_VOLTAGE_SCALES_NUM in the driver!"); \
                                                                                                    \
-	IF_ENABLED(DT_INST_HAS_PROP(inst, nvmem_cells),                                            \
+	IF_ENABLED(DT_INST_NODE_HAS_PROP(inst, nvmem_cells),                                       \
 	(BUILD_ASSERT(DT_INST_PROP_LEN(inst, nvmem_cells) == DT_INST_PROP_LEN(inst, ref_voltages), \
 	 "On node " DT_NODE_FULL_NAME(DT_DRV_INST(inst)) ": the following properties must have "   \
 	 "the same length but do not: `nvmem-cells` and `ref-voltages`");))                        \

@@ -187,15 +187,18 @@ int adt7420_trigger_set(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	setup_int(dev, false);
-	setup_ct(dev, false);
-
 	if (trig->type != SENSOR_TRIG_THRESHOLD) {
 		LOG_ERR("Unsupported sensor trigger");
 		return -ENOTSUP;
 	}
 
 	if (trig->chan == SENSOR_CHAN_ADT7420_CRIT_TEMP) {
+		if (cfg->ct_gpio.port == NULL) {
+			return -ENOTSUP;
+		}
+
+		setup_ct(dev, false);
+
 		drv_data->ct_handler = handler;
 		if (handler != NULL) {
 			drv_data->ct_trigger = trig;
@@ -210,6 +213,12 @@ int adt7420_trigger_set(const struct device *dev,
 			}
 		}
 	} else {
+		if (cfg->int_gpio.port == NULL) {
+			return -ENOTSUP;
+		}
+
+		setup_int(dev, false);
+
 		drv_data->th_handler = handler;
 
 		if (handler != NULL) {

@@ -24,6 +24,8 @@ properties:
     required: true
 
   enable-gpios:
+    min-len: 1
+    max-len: 1
     type: phandle-array
     description: |
       GPIO to use to enable/disable the regulator.

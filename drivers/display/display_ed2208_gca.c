@@ -408,7 +408,7 @@ static DEVICE_API(display, ed2208_gca_api) = {
 			{                                                                          \
 				.mode = MIPI_DBI_MODE_SPI_4WIRE,                                   \
 				.config = MIPI_DBI_SPI_CONFIG_DT_INST(                             \
-					inst, SPI_OP_MODE_MASTER | SPI_WORD_SET(8), 0),            \
+					inst, SPI_OP_MODE_CONTROLLER | SPI_WORD_SET(8), 0),        \
 			},                                                                         \
 		.busy_gpio = GPIO_DT_SPEC_INST_GET(inst, busy_gpios),                              \
 		.color_palette = DT_PROP(DT_INST_CHILD(inst, color_palette), colors),              \

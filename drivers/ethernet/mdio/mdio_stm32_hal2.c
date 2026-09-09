@@ -18,7 +18,7 @@
 #include <zephyr/sys/device_mmio.h>
 
 LOG_MODULE_REGISTER(mdio_stm32_hal2, CONFIG_MDIO_LOG_LEVEL);
-#define DT_DRV_COMPAT st_stm32_mdio
+#define DT_DRV_COMPAT snps_dwmac_mdio
 
 struct mdio_stm32_data {
 	DEVICE_MMIO_RAM;

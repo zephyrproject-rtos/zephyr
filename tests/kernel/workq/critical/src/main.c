@@ -7,10 +7,11 @@
 /**
  * @file
  *
- * @brief Offload to the Kernel workqueue
+ * @brief Offload critical sections to a workqueue
  *
- * This test verifies that the kernel workqueue operates as
- * expected.
+ * This test verifies that work offloaded to a workqueue by concurrently
+ * running threads is serialized by the workqueue thread, so it can be used
+ * as a critical section.
  *
  * This test has two threads that increment a counter.  The routine that
  * increments the counter is invoked from workqueue due to the two threads
@@ -20,9 +21,6 @@
  *
  * This is done with time slicing both disabled and enabled to ensure that the
  * result always matches the number of times the workqueue is called.
- *
- * @{
- * @}
  */
 #include <zephyr/kernel.h>
 #include <zephyr/linker/sections.h>
@@ -57,10 +55,10 @@ K_SEM_DEFINE(ALT_SEM, 0, UINT_MAX);
 K_SEM_DEFINE(REGRESS_SEM, 0, UINT_MAX);
 K_SEM_DEFINE(TEST_SEM, 0, UINT_MAX);
 
-/**
- * @brief Routine to be called from a workqueue
+/*
+ * Routine to be called from a workqueue
  *
- * This routine increments the global variable @a critical_var.
+ * This routine increments the global variable critical_var.
  */
 void critical_rtn(struct k_work *unused)
 {
@@ -72,13 +70,13 @@ void critical_rtn(struct k_work *unused)
 	critical_var = x + 1;
 }
 
-/**
- * @brief Common code for invoking work
+/*
+ * Common code for invoking work
  *
- * @param tag text identifying the invocation context
- * @param count number of critical section calls made thus far
+ * tag: text identifying the invocation context
+ * count: number of critical section calls made thus far
  *
- * @return number of critical section calls made by a thread
+ * Returns number of critical section calls made by a thread
  */
 uint32_t critical_loop(const char *tag, uint32_t count)
 {
@@ -107,8 +105,8 @@ uint32_t critical_loop(const char *tag, uint32_t count)
 	return count;
 }
 
-/**
- * @brief Alternate thread
+/*
+ * Alternate thread
  *
  * This routine invokes the workqueue many times.
  */
@@ -131,12 +129,12 @@ void alternate_thread(void *arg1, void *arg2, void *arg3)
 	k_sem_give(&REGRESS_SEM);
 }
 
-/**
- * @brief Regression thread
+/*
+ * Regression thread
  *
  * This routine invokes the workqueue many times. It also checks to
  * ensure that the number of times it is called matches the global variable
- * @a critical_var.
+ * critical_var.
  */
 
 void regression_thread(void *arg1, void *arg2, void *arg3)
@@ -177,14 +175,39 @@ void regression_thread(void *arg1, void *arg2, void *arg3)
 }
 
 /**
- * @brief Verify thread context
+ * @brief Verify that a workqueue serializes work offloaded by competing threads.
  *
- * @details Check whether variable value per-thread is saved
- * during context switch
+ * @details
+ * A dedicated workqueue is used as a critical section: two preemptible threads
+ * of equal priority repeatedly submit a work item that performs a
+ * read-modify-write on a shared counter. Because the workqueue thread runs the
+ * submitted items one at a time, no update may be lost, and the counter must
+ * end up equal to the total number of work items submitted by both threads.
+ * The sequence is run twice, first with time slicing disabled and then with it
+ * enabled, so that preemption between the two submitting threads is exercised
+ * in both scheduling modes.
+ *
+ * Test steps:
+ * - Start a dedicated workqueue with k_work_queue_start().
+ * - Create an alternate and a regression thread at the same preemptible
+ *   priority, each submitting a counter-incrementing work item to that queue
+ *   in a loop for a fixed period.
+ * - Once both threads finish, compare the shared counter against the number of
+ *   work items each thread submitted.
+ * - Enable time slicing with k_sched_time_slice_set() and repeat the loop and
+ *   the comparison.
+ *
+ * Expected result:
+ * - After each round the shared counter equals the total number of work items
+ *   submitted by both threads, with time slicing both disabled and enabled.
  *
  * @ingroup kernel_workqueue_tests
+ * @see k_work_queue_start()
+ * @see k_work_init()
+ * @see k_work_submit_to_queue()
+ * @see k_sched_time_slice_set()
  */
-ZTEST(kernel_offload_wq, test_offload_workqueue)
+ZTEST(kernel_offload_wq, test_workq_offload_critical_section)
 {
 	critical_var = 0U;
 	alt_thread_iterations = 0U;

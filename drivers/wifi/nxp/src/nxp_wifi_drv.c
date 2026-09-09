@@ -18,6 +18,7 @@
 
 #include <zephyr/net/net_if.h>
 #include <zephyr/net/wifi_mgmt.h>
+#include <zephyr/net/wifi_utils.h>
 #ifdef CONFIG_PM_DEVICE
 #include <zephyr/pm/device.h>
 #ifdef CONFIG_PM_MCUX_GPC
@@ -412,11 +413,15 @@ int nxp_wifi_wlan_event_callback(enum wlan_event_reason reason, void *data)
 static int nxp_wifi_cpu_reset(uint8_t enable)
 {
 	int err = 0;
-#if DT_NODE_HAS_PROP(DT_DRV_INST(0), sd_gpios) &&    \
-	DT_NODE_HAS_PROP(DT_DRV_INST(0), pwr_gpios)
+#if DT_NODE_HAS_PROP(DT_DRV_INST(0), sd_gpios)
+	const int reset_assert_ms = 100;
+	const int reset_release_ms = 300;
 
 	struct gpio_dt_spec sdio_reset = GPIO_DT_SPEC_GET(DT_DRV_INST(0), sd_gpios);
+
+#if DT_NODE_HAS_PROP(DT_DRV_INST(0), pwr_gpios)
 	struct gpio_dt_spec pwr_gpios = GPIO_DT_SPEC_GET(DT_DRV_INST(0), pwr_gpios);
+#endif
 
 #if DT_NODE_HAS_PROP(DT_DRV_INST(0), ext1_pwren_gpios)
 	struct gpio_dt_spec ext1_pwren = GPIO_DT_SPEC_GET(DT_DRV_INST(0), ext1_pwren_gpios);
@@ -459,57 +464,69 @@ static int nxp_wifi_cpu_reset(uint8_t enable)
 		return -EIO;
 	}
 
-	/* Configure sdio_reset as output  */
-	err = gpio_pin_configure_dt(&sdio_reset, GPIO_OUTPUT);
+	err = gpio_pin_configure_dt(&sdio_reset, GPIO_OUTPUT_INACTIVE);
 	if (err) {
 		LOG_ERR("Error %d: failed to configure sdio_reset %s pin %d", err,
 				sdio_reset.port->name, sdio_reset.pin);
 		return err;
 	}
 
+#if DT_NODE_HAS_PROP(DT_DRV_INST(0), pwr_gpios)
 	if (!gpio_is_ready_dt(&pwr_gpios)) {
 		LOG_ERR("Error: failed to configure pwr_gpios %s pin %d", pwr_gpios.port->name,
 				pwr_gpios.pin);
 		return -EIO;
 	}
 
-	/* Configure wlan-power-io as an output  */
-	err = gpio_pin_configure_dt(&pwr_gpios, GPIO_OUTPUT);
+	err = gpio_pin_configure_dt(&pwr_gpios, GPIO_OUTPUT_INACTIVE);
 	if (err) {
 		LOG_ERR("Error %d: failed to configure pwr_gpios %s pin %d", err,
 				pwr_gpios.port->name, pwr_gpios.pin);
 		return err;
 	}
+#endif
 
 	if (enable) {
-		/* Set SDIO reset pin as high  */
+		/* Assert reset first. For GPIO_ACTIVE_LOW this drives the line low. */
 		err = gpio_pin_set_dt(&sdio_reset, 1);
 		if (err) {
 			return err;
 		}
-		/* wait for reset done */
-		k_sleep(K_MSEC(100));
+		k_sleep(K_MSEC(reset_assert_ms));
 
-		/* Set power gpio pin as high  */
-		err = gpio_pin_set_dt(&pwr_gpios, 1);
-		if (err) {
-			return err;
-		}
-	} else {
-		/* Set SDIO reset pin as low */
+		/* Release reset. For GPIO_ACTIVE_LOW this drives the line high. */
 		err = gpio_pin_set_dt(&sdio_reset, 0);
 		if (err) {
 			return err;
 		}
 
-		/* Set power gpio pin as low */
+#if DT_NODE_HAS_PROP(DT_DRV_INST(0), pwr_gpios)
+		/* Set power gpio pin as active  */
+		err = gpio_pin_set_dt(&pwr_gpios, 1);
+		if (err) {
+			return err;
+		}
+#endif
+
+		/* Hold time after reset release before first SDIO command. */
+		k_sleep(K_MSEC(reset_release_ms));
+	} else {
+		/* Keep module in reset when disabled. */
+		err = gpio_pin_set_dt(&sdio_reset, 1);
+		if (err) {
+			return err;
+		}
+
+#if DT_NODE_HAS_PROP(DT_DRV_INST(0), pwr_gpios)
+		/* Set power gpio pin as inactive */
 		err = gpio_pin_set_dt(&pwr_gpios, 0);
 		if (err) {
 			return err;
 		}
+#endif
+
+		k_sleep(K_MSEC(reset_assert_ms));
 	}
-	/* wait for reset done */
-	k_sleep(K_MSEC(100));
 #endif
 
 	return err;
@@ -913,8 +930,7 @@ static int nxp_wifi_process_results(unsigned int count)
 
 		res.rssi = -scan_result.rssi;
 		res.channel = scan_result.channel;
-		res.band = scan_result.channel > 14 ?
-			   WIFI_FREQ_BAND_5_GHZ : WIFI_FREQ_BAND_2_4_GHZ;
+		res.band = wifi_utils_chan_to_band(scan_result.channel);
 
 		res.security = WIFI_SECURITY_TYPE_NONE;
 
@@ -1381,10 +1397,16 @@ static int nxp_wifi_uap_status(const struct device *dev,
 			}
 
 			if (nxp_wlan_uap_network.channel != 0) {
-				status->band = nxp_wlan_uap_network.channel > 14 ?
-					WIFI_FREQ_BAND_5_GHZ : WIFI_FREQ_BAND_2_4_GHZ;
+				status->band =
+					wifi_utils_chan_to_band(nxp_wlan_uap_network.channel);
 			} else {
-				status->band = nxp_wlan_uap_network.acs_band;
+				/* ACS has not picked a channel yet, so report the
+				 * band it was asked to scan. acs_band is 1 for
+				 * 5 GHz and 0 for 2.4 GHz.
+				 */
+				status->band = nxp_wlan_uap_network.acs_band
+						       ? WIFI_FREQ_BAND_5_GHZ
+						       : WIFI_FREQ_BAND_2_4_GHZ;
 			}
 
 			status->security = nxp_wifi_key_mgmt_to_zephyr(
@@ -1472,8 +1494,7 @@ static int nxp_wifi_status(const struct device *dev,
 #else
 			status->twt_capable = false;
 #endif
-			status->band = nxp_wlan_network.channel > 14 ? WIFI_FREQ_BAND_5_GHZ
-								     : WIFI_FREQ_BAND_2_4_GHZ;
+			status->band = wifi_utils_chan_to_band(nxp_wlan_network.channel);
 			status->security = nxp_wifi_key_mgmt_to_zephyr(
 				nxp_wlan_network.security.key_mgmt,
 				nxp_wlan_network.security.pwe_derivation);
@@ -2524,6 +2545,20 @@ static int device_wlan_pm_action(const struct device *dev, enum pm_device_action
 PM_DEVICE_DT_INST_DEFINE(0, device_wlan_pm_action);
 #endif
 
+static uint32_t nxp_wifi_get_iface_caps(const struct device *dev,
+					    struct net_if *iface)
+{
+#ifdef CONFIG_NXP_WIFI_SOFTAP_SUPPORT
+	if (iface == (struct net_if *)net_get_uap_interface()) {
+		/* uap interface: second net_if on this device */
+		return BIT(WIFI_TYPE_SAP);
+	}
+#endif
+
+	/* mlan interface: default STA */
+	return BIT(WIFI_TYPE_STA);
+}
+
 static const struct wifi_mgmt_ops nxp_wifi_sta_mgmt = {
 	.get_version = nxp_wifi_version,
 	.scan = nxp_wifi_scan,
@@ -2552,6 +2587,7 @@ static const struct wifi_mgmt_ops nxp_wifi_sta_mgmt = {
 	.set_twt = nxp_wifi_set_twt,
 #endif
 	.set_rts_threshold = nxp_wifi_set_rts_threshold,
+	.get_iface_caps = nxp_wifi_get_iface_caps,
 };
 
 #if defined(CONFIG_WIFI_NM) && !defined(CONFIG_WIFI_NM_WPA_SUPPLICANT)
@@ -2638,6 +2674,7 @@ static const struct wifi_mgmt_ops nxp_wifi_uap_mgmt = {
 #endif
 	.ap_sta_disconnect = nxp_wifi_uap_disconnect_sta,
 	.set_rts_threshold = nxp_wifi_ap_set_rts_threshold,
+	.get_iface_caps = nxp_wifi_get_iface_caps,
 };
 
 #if defined(CONFIG_WIFI_NM) && !defined(CONFIG_WIFI_NM_HOSTAPD_AP)

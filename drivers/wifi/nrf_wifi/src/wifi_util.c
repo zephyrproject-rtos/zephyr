@@ -1112,7 +1112,7 @@ static int nrf_wifi_util_req_extended_sleep(const struct shell *sh,
 
 	val = strtoul(argv[1], &ptr, 10);
 
-	if ((val < 0) || (val > UINT_MAX)) {
+	if (val > UINT_MAX) {
 		shell_fprintf(sh,
 			      SHELL_ERROR,
 			      "Invalid value(%lu).\n",

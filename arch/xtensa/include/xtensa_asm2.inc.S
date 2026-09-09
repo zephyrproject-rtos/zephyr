@@ -741,16 +741,19 @@ _not_triple_fault:
 	s32i a2, a1, ___xtensa_irq_bsa_t_a2_OFFSET
 	s32i a3, a1, ___xtensa_irq_bsa_t_a3_OFFSET
 
-#ifdef CONFIG_XTENSA_MMU
-.if \LVL != 1
-#endif
+#ifndef CONFIG_XTENSA_MMU
+.if \LVL == 1
 	/* Save register needed for handling the exception as
 	 * this register can be overwritten during nested
-	 * exceptions.
+	 * exceptions.  EXCVADDR describes exceptions, not
+	 * interrupts, so only the level 1 vector (which serves
+	 * both) needs it: nothing consumes it from the frames of
+	 * interrupt-only levels and nothing restores it on exit.
+	 * (With the MMU enabled, level 1 saved it on vector entry
+	 * already.)
 	 */
 	rsr.excvaddr a0
 	s32i a0, a1, ___xtensa_irq_bsa_t_excvaddr_OFFSET
-#ifdef CONFIG_XTENSA_MMU
 .endif
 #endif
 

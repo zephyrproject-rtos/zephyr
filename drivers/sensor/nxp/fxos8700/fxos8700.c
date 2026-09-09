@@ -744,14 +744,14 @@ static DEVICE_API(sensor, fxos8700_driver_api) = {
 
 #define FXOS8700_CONFIG_SPI(n)						\
 		.bus_cfg = { .spi = SPI_DT_SPEC_INST_GET(n,		\
-			SPI_OP_MODE_MASTER | SPI_WORD_SET(8)) },	\
+			SPI_OP_MODE_CONTROLLER | SPI_WORD_SET(8)) },	\
 		.ops = &fxos8700_spi_ops,				\
 		.power_mode =  DT_INST_PROP(n, power_mode),		\
 		.range = DT_INST_PROP(n, range),			\
 		.inst_on_bus = FXOS8700_BUS_SPI,			\
 
 #define FXOS8700_SPI_OPERATION (SPI_WORD_SET(8) |			\
-				SPI_OP_MODE_MASTER)			\
+				SPI_OP_MODE_CONTROLLER)			\
 
 #define FXOS8700_INIT(n)						\
 	static const struct fxos8700_config fxos8700_config_##n = {	\

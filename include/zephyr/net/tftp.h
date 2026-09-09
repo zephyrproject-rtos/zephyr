@@ -26,7 +26,7 @@ extern "C" {
 #endif
 
 /**
- * RFC1350: the file is sent in fixed length blocks of 512 bytes.
+ * @rfc{1350}: the file is sent in fixed length blocks of 512 bytes.
  * Each data packet contains one block of data, and must be acknowledged
  * by an acknowledgment packet before the next packet can be sent.
  * A data packet of less than 512 bytes signals termination of a transfer.
@@ -34,7 +34,7 @@ extern "C" {
 #define TFTP_BLOCK_SIZE          512
 
 /**
- * RFC1350: For non-request TFTP message, the header contains 2-byte operation
+ * @rfc{1350}: For non-request TFTP message, the header contains 2-byte operation
  * code plus 2-byte block number or error code.
  */
 #define TFTP_HEADER_SIZE         4
@@ -127,8 +127,15 @@ typedef void (*tftp_callback_t)(const struct tftp_evt *evt);
  *       GET or PUT API with the `tftpc` structure.
  */
 struct tftpc {
-	/** Socket address pointing to the remote TFTP server */
-	struct net_sockaddr server;
+	/** Socket address storage */
+	union {
+		/** Socket address pointing to the remote TFTP server */
+		struct net_sockaddr_storage server_addr;
+/** @cond INTERNAL_HIDDEN */
+		/* Do not access this directly, use server_addr instead */
+		struct net_sockaddr server;
+/** @endcond */
+	};
 
 	/** Event notification callback. No notification if NULL */
 	tftp_callback_t callback;

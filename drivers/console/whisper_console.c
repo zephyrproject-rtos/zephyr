@@ -8,6 +8,8 @@
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/devicetree.h>
+#include <zephyr/sys/libc-hooks.h>
+#include <zephyr/sys/printk-hooks.h>
 
 #define CONSOLE_OUT_ADDR (DT_REG_ADDR(DT_CHOSEN(zephyr_console)))
 
@@ -21,17 +23,13 @@ int arch_printk_char_out(int c)
 	return 0;
 }
 
-#if defined(CONFIG_STDOUT_CONSOLE)
-extern void __stdout_hook_install(int (*hook)(int));
-#else
+#if !defined(CONFIG_STDOUT_CONSOLE)
 #define __stdout_hook_install(x)                                                                   \
 	do { /* nothing */                                                                         \
 	} while ((0))
 #endif
 
-#if defined(CONFIG_PRINTK)
-extern void __printk_hook_install(int (*fn)(int));
-#else
+#if !defined(CONFIG_PRINTK)
 #define __printk_hook_install(x)                                                                   \
 	do { /* nothing */                                                                         \
 	} while ((0))

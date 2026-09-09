@@ -135,10 +135,6 @@ static int llext_copy_region(struct llext_loader *ldr, struct llext *ext,
 			/* Region has data in the file, check if peek() is supported */
 			ext->mem[mem_idx] = llext_peek(ldr, region->sh_offset);
 			if (ext->mem[mem_idx]) {
-				if (mem_idx == LLEXT_MEM_TEXT) {
-					ext->text_in_elf = ext->mem[mem_idx];
-				}
-
 				if ((IS_ALIGNED(ext->mem[mem_idx], region_align) ||
 				     ldr_parm->pre_located) &&
 				    ((mem_idx != LLEXT_MEM_TEXT) ||
@@ -332,7 +328,6 @@ void llext_adjust_mmu_permissions(struct llext *ext)
 #ifdef CONFIG_LLEXT_VENEERS
 		case LLEXT_MEM_VENEER:
 #endif
-			sys_cache_instr_invd_range(addr, size);
 			flags = K_MEM_PERM_EXEC;
 			break;
 		case LLEXT_MEM_DATA:
@@ -346,6 +341,12 @@ void llext_adjust_mmu_permissions(struct llext *ext)
 			continue;
 		}
 		sys_cache_data_flush_range(addr, size);
+		if ((flags & K_MEM_PERM_EXEC) != 0) {
+			/* new code must reach PoU (flush above) before the
+			 * stale instruction lines are dropped
+			 */
+			sys_cache_instr_invd_range(addr, size);
+		}
 		k_mem_update_flags(addr, size, flags);
 	}
 

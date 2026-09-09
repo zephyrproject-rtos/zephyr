@@ -26,15 +26,17 @@
 
 &flash0 {
 	partitions {
-		compatible = "fixed-partitions";
 		#address-cells = <1>;
 		#size-cells = <1>;
+		ranges;
 
 		slot0_partition: partition@12000000 {
+			compatible = "zephyr,mapped-partition";
 			reg = <0x12000000 DT_SIZE_K(128)>;
 		};
 
 		slot0_ns_partition: partition@2010000 {
+			compatible = "zephyr,mapped-partition";
 			reg = <0x02010000 DT_SIZE_K(128)>;
 		};
 	};

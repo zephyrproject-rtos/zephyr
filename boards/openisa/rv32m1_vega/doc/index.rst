@@ -574,9 +574,8 @@ Flashing
 Make sure you've followed the above instructions to set up your board
 and build a program first.
 
-Since you need to use a special OpenOCD, the easiest way to flash is
-by using :ref:`west flash <west-build-flash-debug>` instead of ``ninja
-flash`` like you might see with other Zephyr documentation.
+Since you need to use a special OpenOCD, flash with :ref:`west flash
+<west-build-flash-debug>` and point it at your OpenOCD build.
 
 Run these commands from the build directory where you ran ``ninja`` in
 the above section.

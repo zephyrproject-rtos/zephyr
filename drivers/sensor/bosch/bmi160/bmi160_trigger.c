@@ -199,14 +199,23 @@ int bmi160_acc_slope_config(const struct device *dev,
 
 		acc_range_g = bmi160_acc_reg_val_to_range(reg_val);
 
+		if (val->val1 < 0 || val->val2 < 0) {
+			return -EINVAL;
+		}
+
 		slope_th_ums2 = val->val1 * 1000000 + val->val2;
+
+		if (slope_th_ums2 == 0U) {
+			return -EINVAL;
+		}
 
 		/* make sure the provided threshold does not exceed range / 2 */
 		if (slope_th_ums2 > (acc_range_g / 2 * SENSOR_G)) {
 			return -EINVAL;
 		}
 
-		reg_val = (slope_th_ums2 - 1) * 512U / (acc_range_g * SENSOR_G);
+		reg_val = (uint64_t)(slope_th_ums2 - 1) * 512U /
+			  (acc_range_g * SENSOR_G);
 
 		if (bmi160_byte_write(dev, BMI160_REG_INT_MOTION1,
 				      reg_val) < 0) {

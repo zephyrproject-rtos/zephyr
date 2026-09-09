@@ -15,7 +15,15 @@ config MBOX_NRF_VEVIF_EVENT_TX
 	help
 	  Mailbox driver for transmitting events from VPR to a remote core
 
+config MBOX_NRF_VEVIF_EVENT_EARLY_INT_HANDLE
+	bool "Early interrupt handling"
+	help
+	  Enable handling of early interrupts that arrive before
+	  VPR event is enabled. Pending interrupt will be handled after
+	  enabling corresponding event.
+
 config MBOX_NRF_VEVIF_EVENT_USE_54L_ERRATA_16
 	bool "Apply errata 16 for nRF54L series"
 	depends on SOC_NRF54L05 || SOC_NRF54L10 || SOC_NRF54L15
+	select MBOX_NRF_VEVIF_EVENT_EARLY_INT_HANDLE
 	default y

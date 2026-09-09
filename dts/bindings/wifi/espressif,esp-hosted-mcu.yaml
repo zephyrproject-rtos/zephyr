@@ -1,0 +1,50 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Espressif ESP-Hosted-MCU Wi-Fi co-processor over SPI.
+
+  An Espressif SoC running esp-hosted-mcu coprocessor firmware, attached to the
+  host over SPI with three handshake GPIOs: reset drives the coprocessor reset
+  line, handshake is asserted by the coprocessor when it is ready for a
+  transaction, and dataready is asserted when the coprocessor has a frame to send.
+
+  The coprocessor firmware version the host expects is a Kconfig option, not a
+  devicetree property: the firmware is flashed to a separate chip and the driver
+  queries it at init.
+
+compatible: "espressif,esp-hosted-mcu"
+
+include: spi-device.yaml
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    required: true
+    description: Coprocessor reset line, driven by the host.
+
+  handshake-gpios:
+    type: phandle-array
+    required: true
+    description: Coprocessor-driven handshake line, asserted when ready.
+
+  dataready-gpios:
+    type: phandle-array
+    required: true
+    description: Coprocessor-driven data-ready line, asserted when TX pending.
+
+examples:
+  - |
+    &spi2 {
+            cs-gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
+
+            esp_hosted_mcu: esp-hosted-mcu@0 {
+                    compatible = "espressif,esp-hosted-mcu";
+                    reg = <0>;
+                    spi-max-frequency = <20000000>;
+                    reset-gpios = <&gpio0 5 GPIO_ACTIVE_HIGH>;
+                    handshake-gpios = <&gpio0 6 GPIO_ACTIVE_HIGH>;
+                    dataready-gpios = <&gpio0 7 GPIO_ACTIVE_HIGH>;
+                    status = "okay";
+            };
+    };

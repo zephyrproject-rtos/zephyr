@@ -13,8 +13,6 @@
 #include <zephyr/devicetree.h>
 #include "asm_macros.inc"
 
-#ifdef CONFIG_RISCV_S_MODE
-
 #ifdef CONFIG_64BIT
 #define REGBYTES 8
 #else
@@ -221,5 +219,3 @@ m_mode_return:
     csrrw sp, mscratch, sp
 
     mret
-
-#endif /* CONFIG_RISCV_S_MODE */

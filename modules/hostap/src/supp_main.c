@@ -42,6 +42,19 @@ static K_THREAD_STACK_DEFINE(iface_wq_stack, CONFIG_WIFI_NM_WPA_SUPPLICANT_WQ_ST
 #include "eloop.h"
 #include "wpa_supplicant/config.h"
 #include "wpa_supplicant_i.h"
+
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_PRINT_PMK
+/* struct wpa_sm is private to rsn_supp, pulled in only for this debug-only
+ * print. wpa_i.h is not self-contained - it needs struct wpa_sm_ctx,
+ * struct wpa_sm_mlo and enum wpa_rsn_override (all in wpa.h), matching the
+ * exact preamble wpa.c itself uses right before including wpa_i.h.
+ */
+#include "rsn_supp/wpa.h"
+#include "preauth.h"
+#include "pmksa_cache.h"
+#include "rsn_supp/wpa_i.h"
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_PRINT_PMK */
+
 #include "fst/fst.h"
 #include "wpa_cli_zephyr.h"
 #include "ctrl_iface_zephyr.h"
@@ -238,6 +251,15 @@ static void zephyr_wpa_supplicant_msg(void *ctx, const char *txt, size_t len)
 
 	/* Only interested in CTRL-EVENTs */
 	if (strncmp(txt, "CTRL-EVENT", 10) == 0) {
+#ifdef CONFIG_WIFI_NM_WPA_SUPPLICANT_PRINT_PMK
+		if (strncmp(txt, "CTRL-EVENT-CONNECTED", 20) == 0 && wpa_s->wpa) {
+			char pmk_hex[2 * PMK_LEN_MAX + 1];
+
+			wpa_snprintf_hex(pmk_hex, sizeof(pmk_hex),
+					 wpa_s->wpa->pmk, wpa_s->wpa->pmk_len);
+			wpa_printf(MSG_ERROR, "WPA: PMK = %s", pmk_hex);
+		}
+#endif /* CONFIG_WIFI_NM_WPA_SUPPLICANT_PRINT_PMK */
 		if (strncmp(txt, "CTRL-EVENT-SIGNAL-CHANGE", 24) == 0) {
 			supplicant_send_wifi_mgmt_event(wpa_s->ifname,
 						NET_EVENT_WIFI_CMD_SIGNAL_CHANGE,
@@ -340,6 +362,54 @@ static void zephyr_hostap_ctrl_iface_msg_cb(void *ctx, int level, enum wpa_msg_t
 #endif
 }
 
+static int supplicant_register_iface_type(struct net_if *iface)
+{
+	const struct device *dev = net_if_get_device(iface);
+	struct net_wifi_mgmt_offload *off_api;
+	struct wifi_nm_instance *nm = wifi_nm_get_instance("wifi_supplicant");
+	uint32_t caps = 0;
+	int ret;
+
+	if (dev == NULL || nm == NULL) {
+		return -EINVAL;
+	}
+
+	off_api = (struct net_wifi_mgmt_offload *)dev->api;
+
+	/* Query driver for its static role capabilities.
+	 * If the driver does not implement get_iface_caps, fall back to
+	 * WIFI_TYPE_STA plus WIFI_TYPE_SAP when CONFIG_WIFI_NM_WPA_SUPPLICANT_AP
+	 * is enabled.
+	 */
+	if (off_api != NULL && off_api->wifi_mgmt_api != NULL &&
+	    off_api->wifi_mgmt_api->get_iface_caps != NULL) {
+		caps = off_api->wifi_mgmt_api->get_iface_caps(dev, iface);
+	}
+	caps &= BIT_MASK(WIFI_TYPE_MAX);
+
+	if (caps == 0) {
+		/* No caps declared: default to STA */
+		caps = BIT(WIFI_TYPE_STA);
+		if (IS_ENABLED(CONFIG_WIFI_NM_WPA_SUPPLICANT_AP)) {
+			caps |= BIT(WIFI_TYPE_SAP);
+		}
+	}
+
+	/* Register each declared role */
+	for (enum wifi_nm_iface_type type = WIFI_TYPE_STA;
+	     type < WIFI_TYPE_MAX; type++) {
+		if (!(caps & BIT(type))) {
+			continue;
+		}
+		ret = wifi_nm_register_mgd_type_iface(nm, type, iface);
+		if (ret != 0) {
+			return ret;
+		}
+	}
+
+	return 0;
+}
+
 static int add_interface(struct supplicant_context *ctx, struct net_if *iface)
 {
 	struct wpa_supplicant *wpa_s;
@@ -388,27 +458,11 @@ static int add_interface(struct supplicant_context *ctx, struct net_if *iface)
 		goto out;
 	}
 
-	ret = wifi_nm_register_mgd_type_iface(wifi_nm_get_instance("wifi_supplicant"),
-					      WIFI_TYPE_STA,
-					      iface);
-	if (ret) {
+	ret = supplicant_register_iface_type(iface);
+	if (ret != 0) {
 		LOG_ERR("Failed to register mgd iface with native stack %s (%d)",
 			ifname, ret);
 		goto out;
-	}
-
-	if (IS_ENABLED(CONFIG_WIFI_NM_WPA_SUPPLICANT_AP)) {
-		/* In SoftAP-via-supplicant mode the same interface can also act
-		 * as an AP, so register it as SAP capable too.
-		 */
-		ret = wifi_nm_register_mgd_type_iface(wifi_nm_get_instance("wifi_supplicant"),
-						      WIFI_TYPE_SAP,
-						      iface);
-		if (ret) {
-			LOG_ERR("Failed to register mgd SAP iface with native stack %s (%d)",
-				ifname, ret);
-			goto out;
-		}
 	}
 
 	supplicant_generate_state_event(ifname, NET_EVENT_SUPPLICANT_CMD_IFACE_ADDED, 0);
@@ -778,6 +832,7 @@ static void handler(void)
 
 	memset(&params, 0, sizeof(params));
 	params.wpa_debug_level = CONFIG_WIFI_NM_WPA_SUPPLICANT_DEBUG_LEVEL;
+	params.wpa_debug_show_keys = IS_ENABLED(CONFIG_WIFI_NM_WPA_SUPPLICANT_DEBUG_SHOW_KEYS);
 
 	ctx->supplicant = wpa_supplicant_init(&params);
 	if (ctx->supplicant == NULL) {

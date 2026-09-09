@@ -326,7 +326,9 @@
 			compatible = "silabs,ldma";
 			reg = <0x50040000 0x4000>;
 			#dma-cells = <1>;
-			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_HCLK>;
+			clock-names = "ldma", "xbar";
+			clocks = <&cmu CLOCK_AUTO CLOCK_BRANCH_HCLK>,
+				 <&cmu CLOCK_AUTO CLOCK_BRANCH_PCLK>;
 			dma-channels = <8>;
 			interrupt-names = "ldma";
 			interrupts = <21 2>;

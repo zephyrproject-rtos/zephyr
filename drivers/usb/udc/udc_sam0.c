@@ -209,27 +209,31 @@ static void sam0_load_padcal(const struct device *dev)
 
 static uint8_t sam0_get_bd_size(const uint16_t mps)
 {
-	switch (mps) {
-	case 8:
+	/*
+	 * The PCKSIZE.SIZE field only supports 8, 16, 32, 64, 128, 256, 512
+	 * and 1023. Round up so isochronous MPS values such as 192 (48 kHz
+	 * 16-bit stereo) can be programmed.
+	 */
+	if (mps <= 8U) {
 		return 0;
-	case 16:
+	} else if (mps <= 16U) {
 		return 1;
-	case 32:
+	} else if (mps <= 32U) {
 		return 2;
-	case 64:
+	} else if (mps <= 64U) {
 		return 3;
-	case 128:
+	} else if (mps <= 128U) {
 		return 4;
-	case 256:
+	} else if (mps <= 256U) {
 		return 5;
-	case 512:
+	} else if (mps <= 512U) {
 		return 6;
-	case 1023:
+	} else if (mps <= 1023U) {
 		return 7;
-	default:
-		__ASSERT(true, "Wrong maximum packet size value");
-		return 0;
 	}
+
+	__ASSERT(false, "Wrong maximum packet size value");
+	return 0;
 }
 
 static struct sam0_ep_buffer_desc *sam0_get_ebd(const struct device *dev, const uint8_t ep)
@@ -582,7 +586,8 @@ static void sam0_isr_handler(const struct device *dev)
 	/* Clear interrupt flags */
 	base->INTFLAG.reg = intflag;
 
-	if (intflag & USB_DEVICE_INTFLAG_SOF) {
+	if (IS_ENABLED(CONFIG_UDC_ENABLE_SOF) &&
+	    (intflag & USB_DEVICE_INTFLAG_SOF)) {
 		udc_submit_sof_event(dev);
 	}
 
@@ -883,6 +888,9 @@ static int udc_sam0_enable(const struct device *dev)
 	base->INTENSET.reg = USB_DEVICE_INTENSET_EORSM |
 			     USB_DEVICE_INTENSET_EORST |
 			     USB_DEVICE_INTENSET_SUSPEND;
+	if (IS_ENABLED(CONFIG_UDC_ENABLE_SOF)) {
+		base->INTENSET.reg = USB_DEVICE_INTENSET_SOF;
+	}
 
 	base->CTRLA.bit.ENABLE = 1;
 	sam0_wait_syncbusy(dev);

@@ -39,13 +39,6 @@ LOG_MODULE_DECLARE(mpu);
 #define MPU_NODEID DT_INST(0, arm_armv6m_mpu)
 #endif
 
-#define NODE_HAS_PROP_AND_OR(node_id, prop) \
-	DT_NODE_HAS_PROP(node_id, prop) ||
-
-BUILD_ASSERT((DT_FOREACH_STATUS_OKAY_NODE_VARGS(
-	      NODE_HAS_PROP_AND_OR, zephyr_memory_region_mpu) false) == false,
-	      "`zephyr,memory-region-mpu` was deprecated in favor of `zephyr,memory-attr`");
-
 #define NULL_PAGE_DETECT_NODE_FINDER(node_id, prop)                                                \
 	(DT_NODE_HAS_PROP(node_id, prop) && (DT_REG_ADDR(node_id) == 0) &&                         \
 	 (DT_REG_SIZE(node_id) >= CONFIG_CORTEX_M_NULL_POINTER_EXCEPTION_PAGE_SIZE)) ||
@@ -79,21 +72,10 @@ static const struct arm_mpu_region unmapped_region =
 #endif /* CONFIG_ARM_MPU_CM7_UNMAPPED_REGION */
 
 /* Include architecture-specific internal headers. */
-#if defined(CONFIG_CPU_CORTEX_M0PLUS) || \
-	defined(CONFIG_CPU_CORTEX_M3) || \
-	defined(CONFIG_CPU_CORTEX_M4) || \
-	defined(CONFIG_CPU_CORTEX_M7) || \
-	defined(CONFIG_ARMV7_R)
-#include "arm_mpu_v7_internal.h"
-#elif defined(CONFIG_CPU_CORTEX_M23) || \
-	defined(CONFIG_CPU_CORTEX_M33) || \
-	defined(CONFIG_CPU_CORTEX_M52) || \
-	defined(CONFIG_CPU_CORTEX_M55) || \
-	defined(CONFIG_CPU_CORTEX_M85) || \
-	defined(CONFIG_AARCH32_ARMV8_R)
+#if Z_ARM_CPU_HAS_PMSAV8_MPU
 #include "arm_mpu_v8_internal.h"
 #else
-#error "Unsupported ARM CPU"
+#include "arm_mpu_v7_internal.h"
 #endif
 
 static int region_allocate_and_init(const uint8_t index,

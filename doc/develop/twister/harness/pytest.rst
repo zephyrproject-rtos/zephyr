@@ -125,12 +125,12 @@ required_devices: <list of required device entries> (default empty)
 
         .. code-block:: yaml
 
-            - id: 01
+            - id: "01"
               platform: nrf52840dk/nrf52840
               serial: /dev/ttyACM0
               fixtures:
                 - io_adapter:channel_a
-            - id: 02
+            - id: "02"
               platform: nrf52840dk/nrf52840
               serial: /dev/ttyACM1
               fixtures:

@@ -10,3 +10,14 @@ config UART_WCH_USART
 	select PINCTRL
 	help
 	  This option enables the USART driver for CH32V00x SoC family.
+
+if UART_WCH_USART
+
+config UART_WCH_USART_RESET
+	bool "Reset USART peripheral before use"
+	depends on RESET
+	default y
+	help
+	  Reset the USART peripheral before use using the reset subsystem.
+
+endif

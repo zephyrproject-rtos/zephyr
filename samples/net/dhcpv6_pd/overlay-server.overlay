@@ -1,0 +1,17 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * The server role serves clients on a single link, so it uses one interface
+ * named "zeth" and disables the downstream interface from the board overlay.
+ */
+
+&zeth0 {
+	host-interface = "zeth";
+};
+
+&zeth1 {
+	status = "disabled";
+};

@@ -267,6 +267,27 @@ extern "C" {
  *  Kconfig option is enabled.
  */
 #define ZSOCK_TLS_CERT_VERIFY_CALLBACK 20
+/** Write-only socket option to configure per-socket Max Fragment Length (MFL)
+ *  for TLS 1.2. When set, overrides the global MFL derived from compile-time
+ *  buffer sizes for this socket only. Accepts a pointer to an int holding one
+ *  of the ZSOCK_TLS_MFL_* values.
+ *
+ *  By default (option not set) the socket advertises an MFL derived from
+ *  CONFIG_MBEDTLS_SSL_IN_CONTENT_LEN / CONFIG_MBEDTLS_SSL_OUT_CONTENT_LEN.
+ *  Pass ZSOCK_TLS_MFL_DEFAULT to revert a socket back to this default after
+ *  a previous call has overridden it.
+ *
+ *  Requires CONFIG_NET_SOCKETS_TLS_SET_MAX_FRAGMENT_LENGTH.
+ */
+#define ZSOCK_TLS_MAX_FRAGMENT_LENGTH 21
+
+/* Valid values for @ref ZSOCK_TLS_MAX_FRAGMENT_LENGTH option */
+#define ZSOCK_TLS_MFL_DEFAULT -1 /**< Use the global Kconfig-derived MFL. */
+#define ZSOCK_TLS_MFL_DISABLED 0 /**< Do not send the MFL extension. */
+#define ZSOCK_TLS_MFL_512 1      /**< Advertise 512-byte max fragment. */
+#define ZSOCK_TLS_MFL_1024 2     /**< Advertise 1024-byte max fragment. */
+#define ZSOCK_TLS_MFL_2048 3     /**< Advertise 2048-byte max fragment. */
+#define ZSOCK_TLS_MFL_4096 4     /**< Advertise 4096-byte max fragment. */
 
 /* Valid values for @ref TLS_PEER_VERIFY option */
 #define ZSOCK_TLS_PEER_VERIFY_NONE 0     /**< Peer verification disabled. */
@@ -770,7 +791,7 @@ __syscall int z_zsock_getaddrinfo_internal(const char *host,
 #define ZSOCK_AI_ADDRCONFIG 0x20
 /** Assume service (port) is numeric */
 #define ZSOCK_AI_NUMERICSERV 0x400
-/** Extra flags present (see RFC 5014) */
+/** Extra flags present (see @rfc{5014}) */
 #define ZSOCK_AI_EXTFLAGS 0x800
 /** @} */
 
@@ -1012,7 +1033,7 @@ int zsock_sendmsg_all(int sock, const struct net_msghdr *msg, int flags,
  */
 /* Socket options for NET_IPPROTO_UDP level */
 
-/** Enable/disable all UDP options (int boolean), these are from RFC 9868 */
+/** Enable/disable all UDP options (int boolean), these are from @rfc{9868} */
 #define ZSOCK_UDP_OPT      1
 /** Enable/disable UDP OCS (int boolean) */
 #define ZSOCK_UDP_OPT_OCS  2
@@ -1040,7 +1061,7 @@ int zsock_sendmsg_all(int sock, const struct net_msghdr *msg, int flags,
 #define ZSOCK_UDP_OPT_UENC 13
 /** Enable/disable UDP UEXP option (int boolean) */
 #define ZSOCK_UDP_OPT_UEXP 14
-/** Enable/disable DPLPMTUD over UDP options, RFC 9869 (int boolean) */
+/** Enable/disable DPLPMTUD over UDP options, @rfc{9869} (int boolean) */
 #define ZSOCK_UDP_OPT_DPLPMTUD 15
 /** Let the application echo REQ->RES itself instead of the stack (int boolean) */
 #define ZSOCK_UDP_OPT_DPLPMTUD_APP_RESPOND 16
@@ -1182,7 +1203,7 @@ int zsock_sendmsg_all(int sock, const struct net_msghdr *msg, int flags,
 
 /** Pass an IPV6_RECVPKTINFO ancillary message that contains a
  *  in6_pktinfo structure that supplies some information about the
- *  incoming packet. See RFC 3542.
+ *  incoming packet. See @rfc{3542}.
  */
 #define ZSOCK_IPV6_RECVPKTINFO 49
 
@@ -1190,14 +1211,14 @@ int zsock_sendmsg_all(int sock, const struct net_msghdr *msg, int flags,
 #define ZSOCK_IPV6_PKTINFO 50
 
 /** Pass an IPV6_RECVHOPLIMIT ancillary message that contains information
- *  about the hop limit of the incoming packet. See RFC 3542.
+ *  about the hop limit of the incoming packet. See @rfc{3542}.
  */
 #define ZSOCK_IPV6_RECVHOPLIMIT 51
 
 /** Set or receive the hoplimit value for an outgoing packet. */
 #define ZSOCK_IPV6_HOPLIMIT 52
 
-/** RFC5014: Source address selection. */
+/** @rfc{5014}: Source address selection. */
 #define ZSOCK_IPV6_ADDR_PREFERENCES   72
 
 /** Prefer temporary address as source. */
@@ -1270,6 +1291,29 @@ int zsock_sendmsg_all(int sock, const struct net_msghdr *msg, int flags,
 #define ZSOCK_IN6_IS_ADDR_MC_ORGLOCAL(addr) net_ipv6_is_addr_mcast_org(addr)
 
 /** @} */
+
+/**
+ * @defgroup packet_socket_options Socket options for packet socket
+ * @ingroup bsd_sockets
+ * @{
+ */
+
+/**
+ * @name Socket level options (ZSOCK_SOL_PACKET)
+ * @{
+ */
+
+/** Packet socket-level option */
+#define ZSOCK_SOL_PACKET 263
+
+/** Add multicast group membership to a packet socket. */
+#define ZSOCK_PACKET_ADD_MEMBERSHIP           1
+
+/** Drop multicast group membership from a packet socket. */
+#define ZSOCK_PACKET_DROP_MEMBERSHIP          2
+
+/** @} */ /* for @name */
+/** @} */ /* for @defgroup */
 
 /** @cond INTERNAL_HIDDEN */
 /**

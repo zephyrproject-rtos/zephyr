@@ -1,6 +1,6 @@
 /*
- * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
- * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -174,10 +174,9 @@
 			/* Default trigger 0 = FW pulse (used by SAR driver) */
 			trig-in-0-type = <3>;
 
-			adc0: adc@70000 {
+			adc0: adc@80000 {
 				compatible = "infineon,hppass-sar-adc";
-				/* Offset within HPPASS analog region */
-				reg = <0x00070000 0x10000>;
+				reg = <0x00080000 0x10000>;
 				interrupts = <109 4>;
 				status = "disabled";
 				#io-channel-cells = <1>;

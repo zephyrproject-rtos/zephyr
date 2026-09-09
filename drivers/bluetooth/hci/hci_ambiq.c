@@ -56,7 +56,7 @@ static uint8_t __noinit rxmsg[SPI_MAX_RX_MSG_LEN];
 
 static struct spi_dt_spec spi_bus =
 	SPI_DT_SPEC_INST_GET(0,
-			     SPI_OP_MODE_MASTER | SPI_HALF_DUPLEX | SPI_TRANSFER_MSB |
+			     SPI_OP_MODE_CONTROLLER | SPI_HALF_DUPLEX | SPI_TRANSFER_MSB |
 				     SPI_MODE_CPOL | SPI_MODE_CPHA | SPI_WORD_SET(8));
 
 static K_KERNEL_STACK_DEFINE(spi_rx_stack, CONFIG_BT_DRV_RX_STACK_SIZE);

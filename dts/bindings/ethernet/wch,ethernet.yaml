@@ -10,6 +10,10 @@ include:
   - name: pinctrl-device.yaml
 
 properties:
+  reg:
+    required: true
+  clocks:
+    required: true
   interrupts:
     required: true
   pinctrl-0:

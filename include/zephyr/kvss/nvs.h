@@ -4,6 +4,13 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+
+/**
+ * @file
+ * @brief Header file for the Non-volatile Storage (NVS) API.
+ * @ingroup nvs
+ */
+
 #ifndef ZEPHYR_INCLUDE_KVSS_NVS_H_
 #define ZEPHYR_INCLUDE_KVSS_NVS_H_
 

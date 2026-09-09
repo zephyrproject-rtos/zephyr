@@ -338,7 +338,7 @@ static int iis3dwb_init(const struct device *dev)
 }
 
 #define IIS3DWB_SPI_OPERATION								\
-	(SPI_WORD_SET(8) | SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA)
+	(SPI_WORD_SET(8) | SPI_OP_MODE_CONTROLLER | SPI_MODE_CPOL | SPI_MODE_CPHA)
 
 #define IIS3DWB_SPI_RTIO_DEFINE(inst)					\
 	SPI_DT_IODEV_DEFINE(iis3dwb_iodev_##inst,			\

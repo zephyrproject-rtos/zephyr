@@ -1,0 +1,11 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	cpus {
+		riscv,isa-extensions = "i", "m", "a", "f", "d", "c", "zicsr", "zifencei", "zbkb";
+	};
+};

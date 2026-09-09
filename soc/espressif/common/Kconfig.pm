@@ -7,7 +7,7 @@ menu "Espressif PM Config"
 
 config ESP32_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP
 	bool "Power down CPU in light sleep"
-	depends on ESP32_SOC_PM_SUPPORT_CPU_PD
+	depends on SOC_ESP32_PM_SUPPORT_CPU_PD
 	select ESP32_PM_RESTORE_CACHE_TAGMEM_AFTER_LIGHT_SLEEP if ESP32S3_DATA_CACHE_16KB
 	default y
 	help
@@ -20,7 +20,7 @@ config ESP32_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP
 
 choice ESP32_PM_CPU_RETENTION_STRATEGY
 	prompt "Retentive memory allocation strategy for light sleep"
-	depends on ESP32_SOC_PM_CPU_RETENTION_BY_SW
+	depends on SOC_ESP32_PM_CPU_RETENTION_BY_SW
 	depends on ESP32_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP
 	default ESP32_PM_CPU_RETENTION_DYNAMIC
 
@@ -50,7 +50,7 @@ config ESP32_PM_RESTORE_CACHE_TAGMEM_AFTER_LIGHT_SLEEP
 
 config ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
 	bool "Power down digital peripherals in light sleep (EXPERIMENTAL)"
-	depends on ESP32_SOC_PM_SUPPORT_TOP_PD && ESP32_SOC_PAU_SUPPORTED
+	depends on SOC_ESP32_PM_SUPPORT_TOP_PD && SOC_ESP32_PAU_SUPPORTED
 	select ESP32_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP
 	help
 	  Allow the main digital (TOP) peripheral power domain to switch off
@@ -76,6 +76,41 @@ config ESP32_PM_ESP_SLEEP_POWER_DOWN_CPU
 	bool
 	default y if ESP32_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP
 
+config SOC_ESP32_PM_SLP_DEFAULT_PARAMS_OPT
+	bool
+
+config SOC_ESP32_PM_WAKEUP_MARGIN_US
+	int "Light sleep RTC wake pad (us)"
+	range 0 2000
+	default 1000 if SOC_SERIES_ESP32C5 && \
+			ESP32_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP && ESP32_PM_SLP_IRAM_OPT
+	default 2000 if SOC_SERIES_ESP32C5 && ESP32_PM_POWER_DOWN_CPU_IN_LIGHT_SLEEP
+	default 0 if ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
+	default 300
+	help
+	  Extra time subtracted when programming the RTC wake timer for light
+	  sleep, in addition to the measured time since idle entry.
+	  HAL's sleep code has an estimation to compensate for exit latency depending
+	  on the hardware resources enabled. However, this compensation does not cover
+	  all code involved in the sleep path. If no extra margin is added, we
+	  fail to meet the kernel's wake deadline in some configurations.
+
+	  Zephyr's exit-latency-us (DTS setting) can't be used for this compensation,
+	  as the wakeup signal comes from an LP timer, not from the system timer
+	  Zephyr schedules on. This means that we need to recalculate the wake
+	  deadline and add an extra margin.
+
+	  Defaults to 0 when peripheral power down is enabled (except on
+	  ESP32-C5): the HAL already overestimates that wake path, so an
+	  extra pad would only waste sleep.
+
+	  ESP32-C5 needs a much larger lead when the CPU powers down: its cache
+	  tags live in the CPU power domain, so every wake starts with a cold
+	  cache and refills from flash, which dominates the resume path.
+	  Disabling CPU power down removes the extra latency, and the IRAM
+	  optimization shortens it by keeping the early wake path independent
+	  of the flash cache.
+
 config ESP32_TIMER_IN_IRAM
 	bool
 
@@ -90,8 +125,9 @@ config ESP32_PM_SLP_IRAM_OPT
 
 config ESP32_SLEEP_POWER_DOWN_FLASH
 	bool "Power down flash supply in light sleep (VDDSDIO path)"
-	depends on ESP32_SOC_PM_SUPPORT_VDDSDIO_PD
-	depends on ESP32_SOC_FLASH_SUPPORTED
+	depends on SOC_ESP32_PM_SUPPORT_VDDSDIO_PD
+	depends on SOC_ESP32_FLASH_SUPPORTED
+	depends on !SOC_ESP32_PM_FLASH_KEEP_POWER_IN_LSLP
 	depends on !ESP_SPIRAM
 	select ESP32_PM_SLP_IRAM_OPT
 	help
@@ -104,7 +140,7 @@ config ESP32_SLEEP_POWER_DOWN_FLASH
 
 config ESP32_SLEEP_SET_FLASH_DPD
 	bool "SPI flash deep power-down mode in light sleep"
-	depends on ESP32_SOC_FLASH_SUPPORTED
+	depends on SOC_ESP32_FLASH_SUPPORTED
 	depends on !ESP32_SLEEP_POWER_DOWN_FLASH
 	select ESP32_PM_SLP_IRAM_OPT
 	help
@@ -135,6 +171,24 @@ config ESP32_SLEEP_SPI_FLASH_EXIT_DPD_MODE_DELAY
 	help
 	  Time CS must stay high after the exit-DPD command (tRES1 in datasheets).
 
+config SOC_ESP32_SLEEP_DEBUG
+	bool
+
+config SOC_ESP32_PM_SLEEP_STATS
+	bool "Log light sleep statistics"
+	depends on LOG
+	select SOC_ESP32_SLEEP_DEBUG
+	help
+	  Log one line per light sleep window with requested and executed time,
+	  fragment count, power down flags and error code. Useful to check on
+	  target, without an ammeter, whether peripheral power down happened.
+	  Adds a small overhead to the sleep path. The line is LOG_DBG on
+	  soc_pm, so CONFIG_SOC_LOG_LEVEL_DBG is required for it to print.
+
 endmenu # Espressif PM Config
+
+config HEAP_MEM_POOL_ADD_SIZE_ESP32_PM
+	int
+	default 16384 if ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP
 
 endif # SOC_FAMILY_ESPRESSIF_ESP32

@@ -224,11 +224,11 @@ static int stimer_init(void)
 	/* A Possible clock glitch could rarely cause the Stimer interrupt to be lost.
 	 * Set up a backup comparator to handle this case
 	 */
-	NVIC_ClearPendingIRQ(COMPAREA_IRQ);
+	k_irq_clear_pending(COMPAREA_IRQ);
 	IRQ_CONNECT(COMPAREA_IRQ, 0, stimer_isr, 0, 0);
 	irq_enable(COMPAREA_IRQ);
 #if !defined(CONFIG_SOC_SERIES_APOLLO5X)
-	NVIC_ClearPendingIRQ(COMPAREB_IRQ);
+	k_irq_clear_pending(COMPAREB_IRQ);
 	IRQ_CONNECT(COMPAREB_IRQ, 0, stimer_isr, 0, 0);
 	irq_enable(COMPAREB_IRQ);
 #endif

@@ -48,6 +48,8 @@ struct rtio_sqe *i3c_rtio_copy(struct rtio *r, struct rtio_iodev *iodev, const s
 			((msgs[i].flags & I3C_MSG_RESTART) ? RTIO_IODEV_I3C_RESTART : 0) |
 			((msgs[i].flags & I3C_MSG_HDR) ? RTIO_IODEV_I3C_HDR : 0) |
 			((msgs[i].flags & I3C_MSG_NBCH) ? RTIO_IODEV_I3C_NBCH : 0) |
+			((msgs[i].flags & I3C_MSG_NOACK_EXPECTED) ?
+				RTIO_IODEV_I3C_NOACK_EXPECTED : 0) |
 			RTIO_IODEV_I3C_HDR_MODE_SET(msgs[i].hdr_mode) |
 			RTIO_IODEV_I3C_HDR_CMD_CODE_SET(msgs[i].hdr_cmd_code);
 	}

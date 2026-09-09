@@ -71,6 +71,7 @@
 	pinctrl-0 = <&pinmux_sai0>;
 	pinctrl-names = "default";
 	mclk-output;
+	nxp,rx-sync-mode;
 };
 
 &mbox4_b {

@@ -176,8 +176,8 @@ zephyr_udc0: &usbd {
 		#size-cells = <0>;
 		cs-gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
 		clk-gpios = <&gpio0 13 GPIO_ACTIVE_HIGH>;
-		mosi-gpios = <&gpio0 11 GPIO_ACTIVE_HIGH>;
-		miso-gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
+		sdo-gpios = <&gpio0 11 GPIO_ACTIVE_HIGH>;
+		sdi-gpios = <&gpio0 12 GPIO_ACTIVE_HIGH>;
 		pinctrl-0 = <&pio0_spi0_default>;
 		pinctrl-names = "default";
 	};

@@ -937,14 +937,14 @@ static int onfi_parameters_load(const struct device *dev)
 		}
 		computed_crc =
 			crc16(CRC16_POLY, 0x4F4E, (void *)&onfi, sizeof(onfi) - sizeof(uint16_t));
-		if (computed_crc == onfi.integrity_crc) {
+		if (computed_crc == sys_le16_to_cpu(onfi.integrity_crc)) {
 			LOG_DBG("Valid CRC: %04X", computed_crc);
 			break;
 		}
 		LOG_DBG("Parameters at offset %u corrupt (%04X != %04X)", i, computed_crc,
-			onfi.integrity_crc);
+			sys_le16_to_cpu(onfi.integrity_crc));
 	}
-	if (computed_crc != onfi.integrity_crc) {
+	if (computed_crc != sys_le16_to_cpu(onfi.integrity_crc)) {
 		LOG_ERR("No valid ONFI parameters blocks found");
 		return -ENOSPC;
 	}
@@ -955,19 +955,21 @@ static int onfi_parameters_load(const struct device *dev)
 	 */
 	LOG_DBG("      Manufacturer: %.12s", onfi.device_manufacturer);
 	LOG_DBG("             Model: %.20s", onfi.device_model);
-	LOG_DBG("  Page Size (data): %d", onfi.data_bytes_per_page);
-	LOG_DBG(" Page Size (spare): %d", onfi.spare_bytes_per_page);
-	LOG_DBG("   Pages per Block: %d", onfi.pages_per_block);
-	LOG_DBG("   Blocks per Unit: %d", onfi.blocks_per_lun);
+	LOG_DBG("  Page Size (data): %d", sys_le32_to_cpu(onfi.data_bytes_per_page));
+	LOG_DBG(" Page Size (spare): %d", sys_le16_to_cpu(onfi.spare_bytes_per_page));
+	LOG_DBG("   Pages per Block: %d", sys_le32_to_cpu(onfi.pages_per_block));
+	LOG_DBG("   Blocks per Unit: %d", sys_le32_to_cpu(onfi.blocks_per_lun));
 	LOG_DBG("             Units: %d", onfi.num_lun);
 	LOG_DBG("Plane Address Bits: %d", onfi.plane_address_bits);
 
 	/* Validate ONFI data against devicetree */
-	block_size = onfi.data_bytes_per_page * onfi.pages_per_block;
-	total_size = block_size * onfi.blocks_per_lun * onfi.num_lun;
-	if (onfi.data_bytes_per_page != config->parameters->write_block_size) {
+	block_size = sys_le32_to_cpu(onfi.data_bytes_per_page) *
+		     sys_le32_to_cpu(onfi.pages_per_block);
+	total_size = block_size * sys_le32_to_cpu(onfi.blocks_per_lun) * onfi.num_lun;
+	if (sys_le32_to_cpu(onfi.data_bytes_per_page) != config->parameters->write_block_size) {
 		LOG_WRN("Devicetree page size does not match ONFI page size (%d != %d)",
-			onfi.data_bytes_per_page, config->parameters->write_block_size);
+			sys_le32_to_cpu(onfi.data_bytes_per_page),
+			config->parameters->write_block_size);
 	}
 	if (block_size != config->block_size) {
 		LOG_WRN("Devicetree block size does not match ONFI block size (%d != %d)",

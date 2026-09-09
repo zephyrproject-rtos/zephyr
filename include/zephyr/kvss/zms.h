@@ -5,6 +5,13 @@
  *
  * ZMS: Zephyr Memory Storage
  */
+
+/**
+ * @file
+ * @brief Header file for the Zephyr Memory Storage (ZMS) API.
+ * @ingroup zms
+ */
+
 #ifndef ZEPHYR_INCLUDE_KVSS_ZMS_H_
 #define ZEPHYR_INCLUDE_KVSS_ZMS_H_
 
@@ -66,6 +73,8 @@ struct zms_fs {
 	uint8_t sector_cycle;
 	/** Flag indicating if the file system is initialized */
 	bool ready;
+	/** Flag indicating that `zms_lock` has been initialized */
+	bool lock_initialized;
 	/** Mutex used to lock flash writes */
 	struct k_mutex zms_lock;
 	/** Flash device runtime structure */

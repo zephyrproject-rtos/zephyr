@@ -25,7 +25,6 @@ config BT_DIS_STR_MAX
 
 config BT_DIS_MODEL_NUMBER
 	bool "Model number characteristic"
-	depends on !BT_DIS_MODEL_DEPRECATED_USED
 	default y
 	help
 	  Enable model number characteristic in Device Information Service.
@@ -38,20 +37,8 @@ config BT_DIS_MODEL_NUMBER_STR
 	  Configure model number string that can be read with the model number characteristic
 	  in Device Information Service.
 
-config BT_DIS_MODEL
-	string "Model name [DEPRECATED]"
-	help
-	  The device model inside Device Information Service.
-	  This option is deprecated. Use BT_DIS_MODEL_NUMBER and BT_DIS_MODEL_NUMBER_STR instead.
-
-config BT_DIS_MODEL_DEPRECATED_USED
-	bool
-	default y if BT_DIS_MODEL != ""
-	select DEPRECATED
-
 config BT_DIS_MANUF_NAME
 	bool "Manufacturer name characteristic"
-	depends on !BT_DIS_MANUF_DEPRECATED_USED
 	default y
 	help
 	  Enable manufacturer name characteristic in Device Information Service.
@@ -63,17 +50,6 @@ config BT_DIS_MANUF_NAME_STR
 	help
 	  Configure manufacturer name string that can be read with the manufacturer name
 	  characteristic in Device Information Service.
-
-config BT_DIS_MANUF
-	string "Manufacturer name [DEPRECATED]"
-	help
-	  The device manufacturer inside Device Information Service.
-	  This option is deprecated. Use BT_DIS_MANUF_NAME and BT_DIS_MANUF_NAME_STR instead.
-
-config BT_DIS_MANUF_DEPRECATED_USED
-	bool
-	default y if BT_DIS_MANUF != ""
-	select DEPRECATED
 
 config BT_DIS_PNP
 	bool "PnP_ID characteristic"

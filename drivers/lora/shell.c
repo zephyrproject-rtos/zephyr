@@ -5,6 +5,8 @@
  */
 
 #include <zephyr/drivers/lora.h>
+#include <zephyr/kernel.h>
+#include <errno.h>
 #include <inttypes.h>
 #include <zephyr/shell/shell.h>
 #include <stdlib.h>
@@ -23,12 +25,6 @@ static struct lora_modem_config modem_config = {
 	.coding_rate = CR_4_5,
 	.preamble_len = 8,
 	.tx_power = 4,
-};
-
-static const int bw_table[] = {
-	[BW_125_KHZ] = 125,
-	[BW_250_KHZ] = 250,
-	[BW_500_KHZ] = 500,
 };
 
 static int parse_long(long *out, const struct shell *sh, const char *arg)
@@ -72,6 +68,7 @@ static int parse_freq(uint32_t *out, const struct shell *sh, const char *arg)
 	char *eptr;
 	unsigned long val;
 
+	errno = 0;
 	val = strtoul(arg, &eptr, 0);
 	if (*eptr != '\0') {
 		shell_error(sh, "Invalid frequency, '%s' is not an integer",
@@ -79,7 +76,7 @@ static int parse_freq(uint32_t *out, const struct shell *sh, const char *arg)
 		return -EINVAL;
 	}
 
-	if (val == ULONG_MAX) {
+	if (errno == ERANGE || val > UINT32_MAX) {
 		shell_error(sh, "Frequency %s out of range", arg);
 		return -EINVAL;
 	}
@@ -133,7 +130,7 @@ static int lora_conf_dump(const struct shell *sh)
 	shell_print(sh, "  TX power: %" PRIi8 " dBm",
 		    modem_config.tx_power);
 	shell_print(sh, "  Bandwidth: %i kHz",
-		    bw_table[modem_config.bandwidth]);
+		    (int)modem_config.bandwidth);
 	shell_print(sh, "  Spreading factor: SF%i",
 		    (int)modem_config.datarate);
 	shell_print(sh, "  Coding rate: 4/%i",
@@ -165,24 +162,32 @@ static int lora_conf_set(const struct shell *sh, const char *param,
 			return -EINVAL;
 		}
 		switch (lval) {
-		case 125:
-			modem_config.bandwidth = BW_125_KHZ;
-			break;
-		case 250:
-			modem_config.bandwidth = BW_250_KHZ;
-			break;
-		case 500:
-			modem_config.bandwidth = BW_500_KHZ;
+		case BW_7_KHZ:
+		case BW_10_KHZ:
+		case BW_15_KHZ:
+		case BW_20_KHZ:
+		case BW_31_KHZ:
+		case BW_41_KHZ:
+		case BW_62_KHZ:
+		case BW_125_KHZ:
+		case BW_200_KHZ:
+		case BW_250_KHZ:
+		case BW_400_KHZ:
+		case BW_500_KHZ:
+		case BW_800_KHZ:
+		case BW_1000_KHZ:
+		case BW_1600_KHZ:
+			modem_config.bandwidth = lval;
 			break;
 		default:
 			shell_error(sh, "Invalid bandwidth: %ld", lval);
 			return -EINVAL;
 		}
 	} else if (!strcmp("sf", param)) {
-		if (parse_long_range(&lval, sh, value, "sf", 6, 12) < 0) {
+		if (parse_long_range(&lval, sh, value, "sf", SF_5, SF_12) < 0) {
 			return -EINVAL;
 		}
-		modem_config.datarate = SF_6 + (unsigned int)lval - 6;
+		modem_config.datarate = lval;
 	} else if (!strcmp("cr", param)) {
 		if (parse_long_range(&lval, sh, value, "cr", 5, 8) < 0) {
 			return -EINVAL;
@@ -312,6 +317,84 @@ static int cmd_lora_test_cw(const struct shell *sh,
 	return 0;
 }
 
+static void lora_shell_discard(const struct device *dev, uint8_t *data, uint16_t size, int16_t rssi,
+			       int8_t snr, void *user_data)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(data);
+	ARG_UNUSED(size);
+	ARG_UNUSED(rssi);
+	ARG_UNUSED(snr);
+	ARG_UNUSED(user_data);
+}
+
+static int cmd_lora_rssi(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev;
+	int16_t rssi;
+	int ret, stop;
+
+	ARG_UNUSED(argc);
+	ARG_UNUSED(argv);
+
+	dev = get_configured_modem(sh);
+	if (!dev) {
+		return -ENODEV;
+	}
+
+	ret = lora_recv_async(dev, lora_shell_discard, NULL);
+	if (ret < 0) {
+		shell_error(sh, "Failed to enter receive mode: %i", ret);
+		return ret;
+	}
+
+	k_sleep(K_USEC(CONFIG_LORA_RSSI_SETTLE_US));
+
+	ret = lora_rssi(dev, &rssi);
+
+	stop = lora_recv_async(dev, NULL, NULL);
+	if (stop < 0) {
+		shell_error(sh, "Failed to leave receive mode: %i", stop);
+		return stop;
+	}
+
+	if (ret < 0) {
+		shell_error(sh, "LoRa RSSI read failed: %i", ret);
+		return ret;
+	}
+
+	shell_print(sh, "RSSI: %d dBm", rssi);
+
+	return 0;
+}
+
+static int cmd_lora_energy_detect(const struct shell *sh, size_t argc, char **argv)
+{
+	const struct device *dev;
+	long threshold, duration;
+	int ret;
+
+	dev = get_configured_modem(sh);
+	if (!dev) {
+		return -ENODEV;
+	}
+
+	if (parse_long_range(&threshold, sh, argv[1], "threshold", INT16_MIN, INT16_MAX) < 0 ||
+	    parse_long_range(&duration, sh, argv[2], "duration", 1, INT32_MAX) < 0) {
+		return -EINVAL;
+	}
+
+	ret = lora_energy_detect(dev, (int16_t)threshold, K_MSEC((uint32_t)duration));
+	if (ret < 0) {
+		shell_error(sh, "LoRa energy detect failed: %i", ret);
+		return ret;
+	}
+
+	shell_print(sh, "Channel %s", ret == 1 ? "busy" : "clear");
+
+	return 0;
+}
+
 SHELL_STATIC_SUBCMD_SET_CREATE(sub_lora,
 	SHELL_CMD(config, NULL,
 		  SHELL_HELP("Configure the LoRa radio",
@@ -328,6 +411,13 @@ SHELL_STATIC_SUBCMD_SET_CREATE(sub_lora,
 		      SHELL_HELP("Send a continuous wave",
 				 "<freq (Hz)> <power (dBm)> <duration (s)>"),
 		      cmd_lora_test_cw, 4, 0),
+	SHELL_CMD_ARG(rssi, NULL,
+		      SHELL_HELP("Read the instantaneous RSSI", "No arguments"),
+		      cmd_lora_rssi, 1, 0),
+	SHELL_CMD_ARG(energy_detect, NULL,
+		      SHELL_HELP("Energy-detection carrier sense",
+				 "<threshold (dBm)> <duration (ms)>"),
+		      cmd_lora_energy_detect, 3, 0),
 	SHELL_SUBCMD_SET_END /* Array terminated. */
 );
 

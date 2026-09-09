@@ -37,9 +37,9 @@ APA020 and LPD880x
 
 #. Ensure your Zephyr board, the 5V power supply, and the LED strip
    share a common ground.
-#. Connect the MOSI pin of your board's SPI master to the data input
+#. Connect the SDO pin of your board's SPI controller to the data input
    pin of the first IC in the strip.
-#. Connect the SCLK pin of your board's SPI master to the clock input
+#. Connect the SCLK pin of your board's SPI controller to the clock input
    pin of the first IC in the strip.
 #. Connect the 5V power supply pin to the 5V input of the LED strip.
 
@@ -47,7 +47,7 @@ WS2812
 ======
 
 #. Ensure your Zephyr board, and the LED strip share a common ground.
-#. Connect the LED strip control pin (either I2S SDOUT, SPI MOSI or GPIO) from
+#. Connect the LED strip control pin (either I2S SDOUT, SPI SDO or GPIO) from
    your board to the data input pin of the first WS2812 IC in the strip.
 #. Power the LED strip at an I/O level compatible with the control pin signals.
 

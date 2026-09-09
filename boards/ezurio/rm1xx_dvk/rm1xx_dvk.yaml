@@ -7,7 +7,7 @@ toolchain:
   - gnuarmemb
 ram: 32
 supported:
-  - ble
+  - bluetooth
   - i2c
   - spi
   - lora

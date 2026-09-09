@@ -46,8 +46,8 @@
 
 	sercom7_i2c_default: sercom7_i2c_default {
 		group1 {
-			pinmux = <PD8C_SERCOM7_PAD0>,
-				 <PD9C_SERCOM7_PAD1>;
+			pinmux = <PD8C_SERCOM7_PAD0>,  /* SDA */
+				 <PD9C_SERCOM7_PAD1>;  /* SCL */
 		};
 	};
 

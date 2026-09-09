@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Wi-Fi Enterprise mode credentials setup APIs.
+ * @ingroup wifi_mgmt
+ */
+
 #ifndef ZEPHYR_INCLUDE_NET_WIFI_CERTS_H_
 #define ZEPHYR_INCLUDE_NET_WIFI_CERTS_H_
 

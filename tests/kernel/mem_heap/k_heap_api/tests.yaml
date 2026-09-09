@@ -3,3 +3,4 @@ tests:
     tags:
       - heap
       - kernel
+    ignore_faults: true

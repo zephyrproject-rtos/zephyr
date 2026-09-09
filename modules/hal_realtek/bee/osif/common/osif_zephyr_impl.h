@@ -116,7 +116,7 @@ bool os_sched_is_start_zephyr(void);
 /************************************************************
  * TASK MANAGEMENT - Internal APIs
  ************************************************************/
-bool os_task_create_zephyr(void **handle_ptr, const char *name, void (*routine)(void *),
+bool os_task_create_zephyr(void **handle_ptr, const char *name, void (*routine)(void *param),
 			   void *param, uint16_t stack_size, uint16_t priority);
 bool os_task_delete_zephyr(void *handle);
 bool os_task_suspend_zephyr(void *handle);

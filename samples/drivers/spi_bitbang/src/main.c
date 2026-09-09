@@ -25,8 +25,8 @@ void test_basic_write_9bit_words(const struct device *dev,
 	struct spi_config config;
 
 	config.frequency = 125000;
-	config.operation = SPI_OP_MODE_MASTER | SPI_WORD_SET(9);
-	config.slave = 0;
+	config.operation = SPI_OP_MODE_CONTROLLER | SPI_WORD_SET(9);
+	config.peripheral = 0;
 	config.cs = *cs;
 
 	uint16_t buff[5] = { 0x0101, 0x00ff, 0x00a5, 0x0000, 0x0102};
@@ -44,7 +44,7 @@ void test_basic_write_9bit_words(const struct device *dev,
 
 /*
  * A more complicated xfer, sends two words, then sends and receives another
- * 3 words. Connect MOSI to MISO to test read
+ * 3 words. Connect SDO to SDI to test read
  */
 void test_9bit_loopback_partial(const struct device *dev,
 				struct spi_cs_control *cs)
@@ -52,8 +52,8 @@ void test_9bit_loopback_partial(const struct device *dev,
 	struct spi_config config;
 
 	config.frequency = 125000;
-	config.operation = SPI_OP_MODE_MASTER | SPI_WORD_SET(9);
-	config.slave = 0;
+	config.operation = SPI_OP_MODE_CONTROLLER | SPI_WORD_SET(9);
+	config.peripheral = 0;
 	config.cs = *cs;
 
 	enum { datacount = 5 };
@@ -91,8 +91,8 @@ void test_8bit_xfer(const struct device *dev, struct spi_cs_control *cs)
 	struct spi_config config;
 
 	config.frequency = 1000000;
-	config.operation = SPI_OP_MODE_MASTER | SPI_WORD_SET(8);
-	config.slave = 0;
+	config.operation = SPI_OP_MODE_CONTROLLER | SPI_WORD_SET(8);
+	config.peripheral = 0;
 	config.cs = *cs;
 
 	enum { datacount = 5 };

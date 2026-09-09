@@ -25,6 +25,10 @@ tests:
       - CONFIG_USERSPACE=n
   kernel.threads.dynamic_thread.stack.no_pool.no_alloc.user:
     tags: userspace
+    # Userspace is not yet enabled on rpi_zero_2w (BCM2710 / cortex-a53);
+    # forcing CONFIG_USERSPACE=y on a board without USERSPACE_SUPPORTED
+    # trips a build-time _Bool[0] assertion.
+    platform_exclude: rpi_zero_2w
     extra_configs:
       # 001
       - CONFIG_DYNAMIC_THREAD_POOL_SIZE=0
@@ -39,6 +43,11 @@ tests:
       - CONFIG_USERSPACE=n
   kernel.threads.dynamic_thread.stack.no_pool.alloc.user:
     tags: userspace
+    # See kernel.threads.dynamic_thread.stack.no_pool.no_alloc.user above.
+    platform_exclude: rpi_zero_2w
+    # test_dynamic_thread_stack_permission expects a kernel oops here; it
+    # skips itself unless prefer_alloc, alloc and userspace are all enabled.
+    ignore_faults: true
     extra_configs:
       # 011
       - CONFIG_DYNAMIC_THREAD_POOL_SIZE=0
@@ -53,6 +62,8 @@ tests:
       - CONFIG_USERSPACE=n
   kernel.threads.dynamic_thread.stack.pool.no_alloc.user:
     tags: userspace
+    # See kernel.threads.dynamic_thread.stack.no_pool.no_alloc.user above.
+    platform_exclude: rpi_zero_2w
     extra_configs:
       # 101
       - CONFIG_DYNAMIC_THREAD_POOL_SIZE=2
@@ -67,6 +78,10 @@ tests:
       - CONFIG_USERSPACE=n
   kernel.threads.dynamic_thread.stack.pool.alloc.user:
     tags: userspace
+    # See kernel.threads.dynamic_thread.stack.no_pool.no_alloc.user above.
+    platform_exclude: rpi_zero_2w
+    # See kernel.threads.dynamic_thread.stack.no_pool.alloc.user.
+    ignore_faults: true
     extra_configs:
       # 111
       - CONFIG_DYNAMIC_THREAD_PREFER_ALLOC=y

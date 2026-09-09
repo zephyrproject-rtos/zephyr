@@ -7,15 +7,15 @@
 
 #include <api/argus_api.h>
 
-/** Used to get instance data from slave index */
+/** Used to get instance data from peripheral index */
 #include <../drivers/sensor/broadcom/afbr_s50/platform.h>
 
-argus_hnd_t *Argus_GetHandle(s2pi_slave_t spi_slave)
+argus_hnd_t *Argus_GetHandle(s2pi_slave_t spi_peripheral)
 {
 	struct afbr_s50_platform_data *data;
 	int err;
 
-	err = afbr_s50_platform_get_by_id(spi_slave, &data);
+	err = afbr_s50_platform_get_by_id(spi_peripheral, &data);
 	if (err) {
 		return NULL;
 	}

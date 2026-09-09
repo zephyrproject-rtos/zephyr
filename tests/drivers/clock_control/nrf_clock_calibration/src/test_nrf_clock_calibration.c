@@ -143,26 +143,16 @@ static void sync_just_after_calibration(void)
  */
 ZTEST(nrf_clock_calibration, test_basic_clock_calibration)
 {
-#if defined(CONFIG_CLOCK_CONTROL_NRF)
 	int wait_ms = CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_PERIOD *
 		(CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_MAX_SKIP + 1) +
-#else
-	int wait_ms = CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_PERIOD *
-		(CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_MAX_SKIP + 1) +
-#endif
 		CALIBRATION_PROCESS_TIME_MS;
 	struct sensor_value value = { .val1 = 0, .val2 = 0 };
 
 	mock_temp_nrf5_value_set(&value);
 	sync_just_after_calibration();
 
-#if defined(CONFIG_CLOCK_CONTROL_NRF)
 	TEST_CALIBRATION(1, CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_MAX_SKIP,
 			 wait_ms);
-#else
-	TEST_CALIBRATION(1, CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_MAX_SKIP,
-			 wait_ms);
-#endif
 }
 
 /* Test checks if calibration happens just after clock is enabled. */
@@ -201,11 +191,7 @@ ZTEST(nrf_clock_calibration, test_calibration_after_enabling_lfclk)
 	turn_on_clock(clk_dev);
 #endif
 
-#if defined(CONFIG_CLOCK_CONTROL_NRF)
 	TEST_CALIBRATION(1, 0, CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_PERIOD);
-#else
-	TEST_CALIBRATION(1, 0, CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_PERIOD);
-#endif
 }
 
 /* Test checks if temperature change triggers calibration. */
@@ -216,7 +202,6 @@ ZTEST(nrf_clock_calibration, test_temp_change_triggers_calibration)
 	mock_temp_nrf5_value_set(&value);
 	sync_just_after_calibration();
 
-#if defined(CONFIG_CLOCK_CONTROL_NRF)
 	/* change temperature by 0.25'C which should not trigger calibration */
 	value.val2 += ((CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_TEMP_DIFF - 1) *
 			250000);
@@ -238,29 +223,6 @@ ZTEST(nrf_clock_calibration, test_temp_change_triggers_calibration)
 	/* expect calibration due to temp change. */
 	TEST_CALIBRATION(1, 0,
 			 CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_PERIOD + 40);
-#else
-	/* change temperature by 0.25'C which should not trigger calibration */
-	value.val2 += ((CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_TEMP_DIFF - 1) *
-			250000);
-
-	mock_temp_nrf5_value_set(&value);
-
-	/* expected one skip */
-	TEST_CALIBRATION(0, CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_MAX_SKIP,
-				CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_MAX_SKIP *
-				CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_PERIOD +
-				CALIBRATION_PROCESS_TIME_MS);
-
-	TEST_CALIBRATION(1, 0,
-			 CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_PERIOD + 40);
-
-	value.val2 += (CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_TEMP_DIFF * 250000);
-	mock_temp_nrf5_value_set(&value);
-
-	/* expect calibration due to temp change. */
-	TEST_CALIBRATION(1, 0,
-			 CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_PERIOD + 40);
-#endif
 }
 
 /* Test checks if z_nrf_clock_calibration_force_start() results in immediate
@@ -276,19 +238,11 @@ ZTEST(nrf_clock_calibration, test_force_calibration)
 	TEST_CALIBRATION(1, 0,
 		CALIBRATION_PROCESS_TIME_MS + 5);
 
-#if defined(CONFIG_CLOCK_CONTROL_NRF)
 	/* and back to scheduled operation. */
 	TEST_CALIBRATION(1, CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_MAX_SKIP,
 		CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_PERIOD *
 		(CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_MAX_SKIP + 1) +
 		CALIBRATION_PROCESS_TIME_MS);
-#else
-	/* and back to scheduled operation. */
-	TEST_CALIBRATION(1, CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_MAX_SKIP,
-		CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_PERIOD *
-		(CONFIG_CLOCK_CONTROL_NRF_CALIBRATION_MAX_SKIP + 1) +
-		CALIBRATION_PROCESS_TIME_MS);
-#endif
-
 }
+
 ZTEST_SUITE(nrf_clock_calibration, NULL, NULL, NULL, NULL, NULL);

@@ -105,6 +105,22 @@ enum nrf_wifi_off_raw_tx_he_ltf {
 };
 
 /**
+ * @brief- Operating band
+ * Band on which the channel resides. Needed because channel numbers overlap
+ * across bands (e.g. channel 1 exists in both 2.4 GHz and 6 GHz).
+ */
+enum nrf_wifi_off_raw_tx_band {
+	/** Infer the band from the channel number (2.4 GHz: 1-14, 5 GHz: 32-177) */
+	NRF_WIFI_OFF_RAW_TX_BAND_AUTO,
+	/** 2.4 GHz band */
+	NRF_WIFI_OFF_RAW_TX_BAND_2GHZ,
+	/** 5 GHz band */
+	NRF_WIFI_OFF_RAW_TX_BAND_5GHZ,
+	/** 6 GHz band (nRF71 series only) */
+	NRF_WIFI_OFF_RAW_TX_BAND_6GHZ,
+};
+
+/**
  * @brief- Throughput mode
  * Throughput mode to be used for transmitting the packet.
  */
@@ -145,6 +161,7 @@ struct nrf_wifi_off_raw_tx_conf {
 	unsigned int tx_pwr;
 	/** Channel number on which to transmit */
 	unsigned int chan;
+	enum nrf_wifi_off_raw_tx_band band;
 	/** Set to TRUE to use short preamble for FALSE to disable short preamble */
 	bool short_preamble;
 	/* Number of times a packet should be retried at each possible rate */

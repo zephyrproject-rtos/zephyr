@@ -1,0 +1,49 @@
+/*
+ * Copyright (c) 2026 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Loopback wiring (two-wire):
+ * - I3C1_SCL (PB2) <-> I3C2_SCL (PB10)
+ * - I3C1_SDA (PC1) <-> I3C2_SDA (PB14)
+ */
+&i3c1 {
+	zephyr,deferred-init;
+	pinctrl-0 = <&i3c1_scl_pb2 &i3c1_sda_pc1>;
+	pinctrl-names = "default";
+	status = "okay";
+	i3c-scl-hz = <1000000>;
+	i2c-scl-hz = <400000>;
+
+	mctp_endpoint0: mctp_endpoint0@20813818000 {
+		zephyr,deferred-init;
+		compatible = "zephyr,mctp-i3c-endpoint";
+		reg = <0x0000 0x0208 0x13818000>;
+		status = "okay";
+	};
+};
+
+&i3c2 {
+	pinctrl-0 = <&i3c2_scl_pb10 &i3c2_sda_pb14>;
+	pinctrl-names = "default";
+	status = "okay";
+	target-mode;
+	mipi-instance = <0x8>;
+};
+
+/ {
+	mctp_i3c: mctp_i3c {
+		compatible = "zephyr,mctp-i3c-controller";
+		endpoints = <&mctp_endpoint0>;
+		endpoint-ids = <11>;
+	};
+
+	mctp_i3c_target: mctp_i3c_target {
+		compatible = "zephyr,mctp-i3c-target";
+		i3c = <&i3c2>;
+		endpoint-id = <11>;
+	};
+};
+
+i3c_controller: &i3c1 {};

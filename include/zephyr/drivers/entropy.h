@@ -33,7 +33,10 @@
 extern "C" {
 #endif
 
-/** @brief Driver is allowed to busy-wait for random data to be ready */
+/** @brief Driver is allowed to busy-wait for random data to be ready
+ *
+ * Flag possibly set in @p flags argument of entropy_get_entropy_isr().
+ */
 #define ENTROPY_BUSYWAIT  BIT(0)
 
 /**
@@ -135,7 +138,7 @@ static inline int z_impl_entropy_get_entropy(const struct device *dev,
  * @param dev Pointer to the device structure.
  * @param buffer Buffer to fill with entropy.
  * @param length Buffer length.
- * @param flags Flags to modify the behavior of the call.
+ * @param flags Flags to modify the behavior of the call: ENTROPY_BUSYWAIT.
  * @return number of bytes filled with entropy or -error.
  * @retval -ENOSYS Driver does not implement the function
  */

@@ -10,6 +10,16 @@
 
 #ifndef _ASMLANGUAGE
 
+#include <stdarg.h>
+#include <zephyr/toolchain.h>
+#include <zephyr/sys/printk.h>
+
+/** @brief Dummy function to trigger exception dump argument type checking. */
+static inline __printf_like(1, 2) void arch_exception_dump_arg_check(const char *fmt, ...)
+{
+	ARG_UNUSED(fmt);
+}
+
 #if defined(CONFIG_EXCEPTION_DUMP_HOOK)
 
 #include <stdbool.h>
@@ -89,22 +99,56 @@ static inline void arch_exception_call_dump_hook(const char *format, ...)
 	}
 }
 
-#if defined(CONFIG_EXCEPTION_DUMP_HOOK_ONLY)
-#define EXCEPTION_DUMP(format, ...) arch_exception_call_dump_hook(format "\n",  ##__VA_ARGS__)
+#if !defined(CONFIG_EXCEPTION_DUMP)
+#define EXCEPTION_DUMP(format, ...)                                                                \
+	do {                                                                                       \
+		if (0) {                                                                           \
+			arch_exception_dump_arg_check(format, ##__VA_ARGS__);                      \
+		}                                                                                  \
+	} while (false)
+#elif defined(CONFIG_EXCEPTION_DUMP_HOOK_ONLY)
+#define EXCEPTION_DUMP(format, ...)                                                                \
+	do {                                                                                       \
+		printk_panic();                                                                    \
+		arch_exception_call_dump_hook(format "\n", ##__VA_ARGS__);                         \
+	} while (false)
 #elif defined(CONFIG_LOG)
-#define EXCEPTION_DUMP(format, ...) arch_exception_call_dump_hook(format "\n",  ##__VA_ARGS__); \
-	LOG_ERR(format, ##__VA_ARGS__)
+#define EXCEPTION_DUMP(format, ...)                                                                \
+	do {                                                                                       \
+		printk_panic();                                                                    \
+		arch_exception_call_dump_hook(format "\n", ##__VA_ARGS__);                         \
+		LOG_ERR(format, ##__VA_ARGS__);                                                    \
+	} while (false)
 #else
-#define EXCEPTION_DUMP(format, ...) arch_exception_call_dump_hook(format "\n",  ##__VA_ARGS__); \
-	printk(format "\n", ##__VA_ARGS__)
+#define EXCEPTION_DUMP(format, ...)                                                                \
+	do {                                                                                       \
+		printk_panic();                                                                    \
+		arch_exception_call_dump_hook(format "\n", ##__VA_ARGS__);                         \
+		printk(format "\n", ##__VA_ARGS__);                                                \
+	} while (false)
 #endif
 
 #else
 
-#if defined(CONFIG_LOG)
-#define EXCEPTION_DUMP(...) LOG_ERR(__VA_ARGS__)
+#if !defined(CONFIG_EXCEPTION_DUMP)
+#define EXCEPTION_DUMP(format, ...)                                                                \
+	do {                                                                                       \
+		if (0) {                                                                           \
+			arch_exception_dump_arg_check(format, ##__VA_ARGS__);                      \
+		}                                                                                  \
+	} while (false)
+#elif defined(CONFIG_LOG)
+#define EXCEPTION_DUMP(...)                                                                        \
+	do {                                                                                       \
+		printk_panic();                                                                    \
+		LOG_ERR(__VA_ARGS__);                                                              \
+	} while (false)
 #else
-#define EXCEPTION_DUMP(format, ...) printk(format "\n", ##__VA_ARGS__)
+#define EXCEPTION_DUMP(format, ...)                                                                \
+	do {                                                                                       \
+		printk_panic();                                                                    \
+		printk(format "\n", ##__VA_ARGS__);                                                \
+	} while (false)
 #endif
 #endif
 

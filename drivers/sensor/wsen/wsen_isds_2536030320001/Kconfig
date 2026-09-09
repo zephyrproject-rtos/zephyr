@@ -5,6 +5,7 @@ menuconfig WSEN_ISDS_2536030320001
 	bool "WSEN-ISDS 3D accelerometer and 3D gyroscope sensor"
 	default y
 	depends on DT_HAS_WE_WSEN_ISDS_2536030320001_ENABLED
+	depends on ZEPHYR_HAL_WURTHELEKTRONIK_MODULE
 	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_WE_WSEN_ISDS_2536030320001),i2c)
 	select SPI if $(dt_compat_on_bus,$(DT_COMPAT_WE_WSEN_ISDS_2536030320001),spi)
 	select HAS_WESENSORS

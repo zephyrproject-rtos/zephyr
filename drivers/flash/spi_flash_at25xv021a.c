@@ -939,7 +939,7 @@ static DEVICE_API(flash, spi_flash_at25xv021a_api) = {
 #define ASSERT_TIMEOUTS(timeout, timeout_erase)                                                    \
 	BUILD_ASSERT((timeout > 0) && (timeout_erase > 0), "Timeouts must be positive")
 
-#define SPI_OP (SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8))
+#define SPI_OP (SPI_OP_MODE_CONTROLLER | SPI_TRANSFER_MSB | SPI_WORD_SET(8))
 
 #define PAGE_SIZE_IF_WRITEABLE(inst)                                                               \
 	COND_CODE_0(DT_INST_PROP_OR(inst, read_only, false),	\

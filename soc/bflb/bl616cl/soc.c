@@ -189,5 +189,8 @@ void soc_prep_hook(void)
 
 	tmp = sys_read32(GLB_BASE + GLB_SRAM_CFG3_OFFSET);
 	tmp &= GLB_EM_SEL_UMSK;
+#if defined(CONFIG_BT_BFLB_BL616CL)
+	tmp |= (BLE_EM_SEL_16K << GLB_EM_SEL_POS);
+#endif
 	sys_write32(tmp, GLB_BASE + GLB_SRAM_CFG3_OFFSET);
 }

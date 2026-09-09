@@ -47,6 +47,7 @@ struct siwx91x_nwp_config {
 	void (*config_irq)(const struct device *dev);
 	uint32_t stack_size;
 	uint8_t antenna_selection;
+	bool antenna_ext_gpios;
 	bool support_1p8v;
 	bool enable_xtal_correction;
 	bool qspi_80mhz_clk;
@@ -503,7 +504,7 @@ static int siwx91x_nwp_init(const struct device *dev)
 	if (ret < 0 && ret != -ENOENT) {
 		return ret;
 	}
-	if (config->antenna_selection == 2 && ret == -ENOENT) {
+	if (config->antenna_ext_gpios && ret == -ENOENT) {
 		LOG_WRN("'ext-gpios' expects some pinctrl configuration");
 	}
 
@@ -535,20 +536,9 @@ static int siwx91x_nwp_init(const struct device *dev)
 		return -EINVAL;
 	}
 
-	/* WORKAROUND:
-	 * Only set the power profile if Bluetooth is not enabled.
-	 *
-	 * If bt is enabled, we need to wait for the bt setup to complete
-	 * before setting the power profile.
-	 *
-	 * Because of that, if CONFIG_BT_SILABS_SIWX91X is enabled and
-	 * bt_enable() is not called, you will never go in sleep.
-	 */
-	if (!IS_ENABLED(CONFIG_BT_SILABS_SIWX91X)) {
-		ret = siwx91x_nwp_apply_power_profile(dev, NULL);
-		if (ret) {
-			return -EINVAL;
-		}
+	ret = siwx91x_nwp_apply_power_profile(dev, NULL);
+	if (ret) {
+		return -EINVAL;
 	}
 
 	config->config_irq(dev);
@@ -567,7 +557,8 @@ BUILD_ASSERT(CONFIG_SIWX91X_NWP_INIT_PRIORITY < CONFIG_KERNEL_INIT_PRIORITY_DEFA
 	{                                                                                          \
 		ARG_UNUSED(dev);                                                                   \
 		IRQ_CONNECT(DT_INST_IRQ_BY_NAME(inst, nwp_irq, irq),                               \
-			    DT_INST_IRQ_BY_NAME(inst, nwp_irq, priority), IRQ074_Handler, NULL, 0);\
+			    DT_INST_IRQ_BY_NAME(inst, nwp_irq, priority), IRQ074_Handler, NULL,    \
+			    0);                                                                    \
 		irq_enable(DT_INST_IRQ_BY_NAME(inst, nwp_irq, irq));                               \
 	};                                                                                         \
                                                                                                    \
@@ -583,7 +574,8 @@ BUILD_ASSERT(CONFIG_SIWX91X_NWP_INIT_PRIORITY < CONFIG_KERNEL_INIT_PRIORITY_DEFA
 		.enable_xtal_correction = DT_INST_PROP(inst, enable_xtal_correction),              \
 		.qspi_80mhz_clk = DT_INST_PROP(inst, qspi_80mhz_clk),                              \
 		.antenna_selection = DT_INST_ENUM_IDX(inst, antenna_selection),                    \
-		.clock_frequency = DT_INST_PROP(inst, clock_frequency)                             \
+		.antenna_ext_gpios = DT_INST_ENUM_HAS_VALUE(inst, antenna_selection, ext_gpios),   \
+		.clock_frequency = DT_INST_PROP(inst, clock_frequency),                            \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(inst, &siwx91x_nwp_init, NULL, &siwx91x_nwp_data_##inst,             \

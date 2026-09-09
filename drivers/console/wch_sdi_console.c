@@ -10,6 +10,8 @@
 #include <zephyr/devicetree.h>
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
+#include <zephyr/sys/libc-hooks.h>
+#include <zephyr/sys/printk-hooks.h>
 #include <zephyr/sys/winstream.h>
 
 #define TX_TIMEOUT   1000000
@@ -39,14 +41,6 @@ struct wch_sdi_console_data {
 };
 
 static struct wch_sdi_console_data wch_sdi_console_data_0;
-
-#if defined(CONFIG_STDOUT_CONSOLE)
-extern void __stdout_hook_install(int (*hook)(int));
-#endif
-
-#if defined(CONFIG_PRINTK)
-extern void __printk_hook_install(int (*fn)(int));
-#endif
 
 static int wch_sdi_console_putc(int ch)
 {

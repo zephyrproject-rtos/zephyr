@@ -6,7 +6,7 @@
 
 /dts-v1/;
 
-#include <nxp/mcx/nxp_mcxe31b.dtsi>
+#include <nxp/mcx/mcxe/nxp_mcxe31b.dtsi>
 #include "frdm_mcxe31b-pinctrl.dtsi"
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/gpio/arduino-header-r3.h>
@@ -24,6 +24,7 @@
 		sw0 = &user_button;
 		rtc = &counter_rtc;
 		watchdog0 = &swt_0;
+		accel0 = &fxls8974;
 	};
 
 	chosen {
@@ -109,16 +110,18 @@
 
 &flash0 {
 	partitions {
-		compatible = "fixed-partitions";
+		ranges;
 		#address-cells = <1>;
 		#size-cells = <1>;
 
 		ivt_header: partition@0 {
+			compatible = "zephyr,mapped-partition";
 			label = "ivt-header";
 			reg = <0x00000000 0x100>;
 		};
 
 		code_partition: partition@100 {
+			compatible = "zephyr,mapped-partition";
 			label = "code-partition";
 			reg = <0x00000100 (DT_SIZE_K(3920) - 0x100)>;
 		};
@@ -169,7 +172,7 @@
 	current-speed = <115200>;
 	pinctrl-0 = <&pinmux_lpuart_5>;
 	pinctrl-names = "default";
-	dmas = <&edma 1 44>, <&edma 2 45>;
+	dmas = <&edma 20 44>, <&edma 21 45>;
 	dma-names = "tx", "rx";
 };
 
@@ -183,6 +186,29 @@
 	pinctrl-0 = <&pinmux_lpspi_0>;
 	pinctrl-names = "default";
 	status = "okay";
+};
+
+&emac {
+	pinctrl-0 = <&pinmux_emac>;
+	pinctrl-names = "default";
+	phy-connection-type = "rmii";
+	phy-handle = <&eth_phy>;
+	status = "okay";
+};
+
+&mdio {
+	pinctrl-0 = <&pinmux_emac_mdio>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	/* Microchip LAN8741 */
+	eth_phy: ethernet-phy@0 {
+		compatible = "ethernet-phy";
+		reg = <0x00>;
+		reset-gpios = <&gpioc_l 3 GPIO_ACTIVE_LOW>;
+		reset-assert-duration-us = <25000>;
+		reset-deassertion-timeout-ms = <25>;
+	};
 };
 
 /*
@@ -314,6 +340,19 @@ lpuart2: &lpuart_2 {};
 		rs-gpios = <&gpioc_l 8 GPIO_ACTIVE_HIGH>;
 		pinctrl-0 = <&pinmux_flexio_lcd>;
 		pinctrl-names = "default";
+	};
+};
+
+&lpi2c_0 {
+	status = "okay";
+	pinctrl-0 = <&pinmux_lpi2c_0>;
+	pinctrl-names = "default";
+	clock-frequency = <I2C_BITRATE_STANDARD>;
+
+	fxls8974: fxls8974@18 {
+		compatible = "nxp,fxls8974";
+		reg = <0x18>;
+		status = "okay";
 	};
 };
 

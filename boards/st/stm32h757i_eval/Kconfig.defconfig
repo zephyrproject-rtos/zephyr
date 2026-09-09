@@ -6,7 +6,7 @@
 
 if BOARD_STM32H757I_EVAL
 
-configdefault NET_L2_ETHERNET
+configdefault ETH_DRIVER
 	default y
 
 endif # BOARD_STM32H757I_EVAL

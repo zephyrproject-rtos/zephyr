@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <nxp/kinetis/K32L2B31VLH0A-pinctrl.h>
+#include <nxp/kinetis/k32lx/pinctrl/K32L2B31VLH0A-pinctrl.h>
 
 &pinctrl {
 	lpuart0_default: lpuart0_default {

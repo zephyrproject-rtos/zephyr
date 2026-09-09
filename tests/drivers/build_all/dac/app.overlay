@@ -134,6 +134,9 @@
 				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
 				   <&test_gpio 0 0>;
 
 			test_spi_dac60508: dac60508@0 {
@@ -356,6 +359,27 @@
 				reset-gpios = <&test_gpio 0 0>;
 				ldac-gpios = <&test_gpio 0 0>;
 				clear-gpios = <&test_gpio 0 0>;
+			};
+
+			test_spi_dac43508: dac43508@18 {
+				compatible = "ti,dac43508";
+				reg = <0x18>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
+			};
+
+			test_spi_dac53508: dac53508@19 {
+				compatible = "ti,dac53508";
+				reg = <0x19>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
+			};
+
+			test_spi_dac63508: dac63508@1a {
+				compatible = "ti,dac63508";
+				reg = <0x1a>;
+				spi-max-frequency = <0>;
+				#io-channel-cells = <1>;
 			};
 		};
 	};

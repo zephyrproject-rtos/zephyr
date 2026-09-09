@@ -25,6 +25,8 @@ static const struct gpio_dt_spec led = GPIO_DT_SPEC_GET(DT_ALIAS(led0), gpios);
 
 int main(void)
 {
+	int res;
+
 	printk("\nWake-up button is connected to %s pin %d\n", button.port->name, button.pin);
 
 	__ASSERT_NO_MSG(gpio_is_ready_dt(&led));
@@ -32,7 +34,13 @@ int main(void)
 	gpio_pin_set(led.port, led.pin, 1);
 
 	/* Setup button GPIO pin as a source for exiting Poweroff */
-	gpio_pin_configure_dt(&button, GPIO_INPUT | STM32_GPIO_WKUP);
+	res = gpio_pin_configure_dt(&button, GPIO_INPUT | STM32_GPIO_WKUP);
+	if (res < 0) {
+		printk("Failed to configure %s pin %d as wake-up pin: %d\n",
+		       button.port->name, button.pin, res);
+		printk("Are you sure this pin is a valid wake-up pin?\n");
+		return 0;
+	}
 
 	printk("Will wait %ds before powering the system off\n", (WAIT_TIME_US / 1000000));
 	k_busy_wait(WAIT_TIME_US);

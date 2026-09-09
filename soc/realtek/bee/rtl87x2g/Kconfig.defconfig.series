@@ -21,9 +21,6 @@ config SYS_CLOCK_TICKS_PER_SEC
 config ARCH_HAS_CUSTOM_BUSY_WAIT
 	default y
 
-config TIMESLICE_SIZE
-	default 10
-
 config INIT_STACKS
 	default y
 

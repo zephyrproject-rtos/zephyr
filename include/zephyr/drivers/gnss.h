@@ -32,6 +32,16 @@
 extern "C" {
 #endif
 
+/** GNSS receiver start modes */
+enum gnss_start_mode {
+	/** Restart with all navigation data preserved (fastest TTFF) */
+	GNSS_HOT_START = 0,
+	/** Restart clearing ephemeris; almanac and position are retained */
+	GNSS_WARM_START = 1,
+	/** Restart clearing all navigation data (longest TTFF) */
+	GNSS_COLD_START = 2,
+};
+
 /** GNSS PPS modes */
 enum gnss_pps_mode {
 	/** PPS output disabled */
@@ -78,18 +88,6 @@ enum gnss_system {
 	GNSS_SYSTEM_SBAS = BIT(6),
 	/** Indoor Messaging System (IMES) */
 	GNSS_SYSTEM_IMES = BIT(7),
-	/** Global Positioning System (GPS) L5 */
-	GNSS_SYSTEM_GPS_L5 = BIT(8),
-	/** Galileo L5 */
-	GNSS_SYSTEM_GALILEO_L5 = BIT(9),
-	/** Quasi-Zenith Satellite System (QZSS) L5 */
-	GNSS_SYSTEM_QZSS_L5 = BIT(10),
-	/** BeiDou Navigation Satellite System B1C */
-	GNSS_SYSTEM_BEIDOU_B1C = BIT(11),
-	/** BeiDou Navigation Satellite System B2a */
-	GNSS_SYSTEM_BEIDOU_B2A = BIT(12),
-	/** Quasi-Zenith Satellite System (QZSS) L1S Augmentation service */
-	GNSS_SYSTEM_QZSS_L1S = BIT(13),
 };
 
 /** Type storing bitmask of GNSS systems */
@@ -162,6 +160,12 @@ struct gnss_time {
  * @{
  */
 
+/** API for starting the GNSS receiver engine */
+typedef int (*gnss_start_t)(const struct device *dev, enum gnss_start_mode mode);
+
+/** API for stopping the GNSS receiver engine */
+typedef int (*gnss_stop_t)(const struct device *dev);
+
 /** API for setting fix rate */
 typedef int (*gnss_set_fix_rate_t)(const struct device *dev, uint32_t fix_interval_ms);
 
@@ -192,6 +196,14 @@ typedef int (*gnss_get_latest_timepulse_t)(const struct device *dev, k_ticks_t *
  * @driver_ops{GNSS}
  */
 __subsystem struct gnss_driver_api {
+	/**
+	 * @driver_ops_optional @copybrief gnss_start
+	 */
+	gnss_start_t start;
+	/**
+	 * @driver_ops_optional @copybrief gnss_stop
+	 */
+	gnss_stop_t stop;
 	/**
 	 * @driver_ops_optional @copybrief gnss_set_fix_rate
 	 */
@@ -280,6 +292,61 @@ struct gnss_satellites_callback {
 	/** Callback called when GNSS satellites is published */
 	gnss_satellites_callback_t callback;
 };
+
+/**
+ * @brief Start the GNSS receiver engine.
+ *
+ * Starts (or resumes) GNSS receiver engine.  @p mode controls which
+ * navigation data is preserved across the restart, trading time-to-first-fix
+ * against accuracy of the first few fixes.
+ *
+ * @param dev  Device instance
+ * @param mode Start mode: GNSS_HOT_START, GNSS_WARM_START, or GNSS_COLD_START
+ *
+ * @retval 0        Success
+ * @retval -ENOSYS  Driver does not support this function
+ * @retval -ENODEV  Device is not yet started (PM not resumed)
+ * @retval -EINVAL  Invalid mode
+ * @retval -errno   Other driver-specific error
+ */
+__syscall int gnss_start(const struct device *dev, enum gnss_start_mode mode);
+
+static inline int z_impl_gnss_start(const struct device *dev, enum gnss_start_mode mode)
+{
+	const struct gnss_driver_api *api = DEVICE_API_GET(gnss, dev);
+
+	if (api->start == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->start(dev, mode);
+}
+
+/**
+ * @brief Stop the GNSS receiver engine.
+ *
+ * Instructs the receiver to halt position computation while keeping the
+ * communication link open.  Call gnss_start() to resume.
+ *
+ * @param dev Device instance
+ *
+ * @retval 0        Success
+ * @retval -ENOSYS  Driver does not support this function
+ * @retval -ENODEV  Device is not yet started (PM not resumed)
+ * @retval -errno   Other driver-specific error
+ */
+__syscall int gnss_stop(const struct device *dev);
+
+static inline int z_impl_gnss_stop(const struct device *dev)
+{
+	const struct gnss_driver_api *api = DEVICE_API_GET(gnss, dev);
+
+	if (api->stop == NULL) {
+		return -ENOSYS;
+	}
+
+	return api->stop(dev);
+}
 
 /**
  * @brief Set the GNSS fix rate

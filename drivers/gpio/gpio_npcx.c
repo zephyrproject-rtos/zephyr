@@ -20,9 +20,8 @@
 LOG_MODULE_REGISTER(gpio_npcx, CONFIG_GPIO_LOG_LEVEL);
 
 /* GPIO module instances */
-#define NPCX_GPIO_DEV(inst) DEVICE_DT_INST_GET(inst),
 static const struct device *const gpio_devs[] = {
-	DT_INST_FOREACH_STATUS_OKAY(NPCX_GPIO_DEV)
+	DT_INST_FOREACH_STATUS_OKAY(DEVICE_DT_INST_GET_COMMA)
 };
 
 /* Driver config */
@@ -403,10 +402,7 @@ int gpio_npcx_init(const struct device *dev)
 
 #define NPCX_GPIO_DEVICE_INIT(inst)                                            \
 	static const struct gpio_npcx_config gpio_npcx_cfg_##inst = {          \
-		.common = {						       \
-			.port_pin_mask =                                       \
-			GPIO_PORT_PIN_MASK_FROM_NGPIOS(NPCX_GPIO_PORT_PIN_NUM),\
-		},                                                             \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(inst),               \
 		.base = DT_INST_REG_ADDR(inst),                                \
 		.port = inst,                                                  \
 		.wui_maps = NPCX_DT_WUI_ITEMS_LIST(inst),                      \

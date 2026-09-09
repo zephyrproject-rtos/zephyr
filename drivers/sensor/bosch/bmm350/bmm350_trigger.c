@@ -91,8 +91,15 @@ int bmm350_trigger_set(const struct device *dev, const struct sensor_trigger *tr
 	data->drdy_trigger = trig;
 	data->drdy_handler = handler;
 
-	/* Set PMU command configuration */
-	ret = bmm350_reg_write(dev, BMM350_REG_INT_CTRL, cfg->int_flags);
+	if (handler != NULL) {
+		/* Enable the data-ready interrupt output. */
+		ret = bmm350_reg_write(dev, BMM350_REG_INT_CTRL, cfg->int_flags);
+	} else {
+		/* Disable the data-ready interrupt output. */
+		ret = bmm350_reg_write(dev, BMM350_REG_INT_CTRL,
+				       cfg->int_flags & ~(BMM350_INT_CTRL_DRDY_DATA_REG_EN_MSK |
+							  BMM350_INT_CTRL_INT_OUTPUT_EN_MSK));
+	}
 	if (ret < 0) {
 		return ret;
 	}

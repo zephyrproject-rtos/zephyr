@@ -14,4 +14,4 @@ if(CONFIG_SOC_FAMILY_ENSEMBLE_APSS)
   add_subdirectory(apss)
 endif()
 
-add_subdirectory(${SOC_SERIES})
+add_subdirectory(${CONFIG_SOC_SERIES})

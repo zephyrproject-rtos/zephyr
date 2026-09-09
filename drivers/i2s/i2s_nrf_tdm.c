@@ -145,7 +145,8 @@ static int audio_clock_request(struct tdm_drv_data *drv_data)
 #if DT_NODE_HAS_STATUS_OKAY(NODE_ACLK) && CONFIG_CLOCK_CONTROL_NRF
 	return onoff_request(drv_data->clk_mgr, &drv_data->clk_cli);
 #elif (DT_NODE_HAS_STATUS_OKAY(NODE_ACLK) && CONFIG_CLOCK_CONTROL_NRFS_AUDIOPLL) || \
-	  DT_NODE_HAS_STATUS_OKAY(NODE_AUDIO_AUXPLL)
+	  DT_NODE_HAS_STATUS_OKAY(NODE_AUDIO_AUXPLL) || \
+	  ((NRF_CLOCK_HAS_HFCLK24M || NRF_CLOCK_HAS_HFCLKAUDIO) && !CONFIG_CLOCK_CONTROL_NRF)
 	return nrf_clock_control_request(drv_data->audioclock, &drv_data->aclk_spec,
 					 &drv_data->clk_cli);
 #else
@@ -160,7 +161,8 @@ static int audio_clock_release(struct tdm_drv_data *drv_data)
 #if DT_NODE_HAS_STATUS_OKAY(NODE_ACLK) && CONFIG_CLOCK_CONTROL_NRF
 	return onoff_release(drv_data->clk_mgr);
 #elif (DT_NODE_HAS_STATUS_OKAY(NODE_ACLK) && CONFIG_CLOCK_CONTROL_NRFS_AUDIOPLL) || \
-	  DT_NODE_HAS_STATUS_OKAY(NODE_AUDIO_AUXPLL)
+	  DT_NODE_HAS_STATUS_OKAY(NODE_AUDIO_AUXPLL) || \
+	  ((NRF_CLOCK_HAS_HFCLK24M || NRF_CLOCK_HAS_HFCLKAUDIO) && !CONFIG_CLOCK_CONTROL_NRF)
 	return nrf_clock_control_release(drv_data->audioclock, &drv_data->aclk_spec);
 #else
 	(void)drv_data;
@@ -714,6 +716,10 @@ static int tdm_nrf_write(const struct device *dev, void *mem_block, size_t size)
 
 	ret = dmm_buffer_out_prepare(drv_cfg->mem_reg, buf.mem_block, buf.size,
 				     (void **)&buf.dmm_buf);
+	if (ret < 0) {
+		LOG_ERR("Failed to prepare buffer: %d", ret);
+		return ret;
+	}
 	ret = k_msgq_put(&drv_data->tx_queue, &buf, SYS_TIMEOUT_MS(drv_data->tx.cfg.timeout));
 	if (ret < 0) {
 		return ret;

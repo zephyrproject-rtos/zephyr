@@ -1,0 +1,109 @@
+/*
+ * Copyright (c) 2026 Michele Vaccari
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/gpio/st-zio-header.h>
+
+/*
+ * ST Zio connector pin mapping for the NUCLEO-F446ZE board.
+ *
+ * Pinout taken from UM1974 (Rev 11), Table 18 "NUCLEO-F446ZE and
+ * NUCLEO-F722ZE pin assignments", covering the Zio connectors CN7, CN8, CN9
+ * and CN10.
+ *
+ * Only pins routed to an STM32 GPIO are listed below; power, ground and other
+ * dedicated pins (AREF, IOREF, NRST, 3V3, 5V, VIN, AVDD, AGND, NC) are
+ * omitted. PE2 is exposed on both CN9 pin 14 and CN10 pin 25 (only one
+ * function can be used at a time); both positions are mapped and annotated.
+ */
+
+/ {
+	st_zio_header: st-zio-header {
+		compatible = "st-zio-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <ST_ZIO_PIN_MASK 0x0>;
+		gpio-map-pass-thru = <0x0 GPIO_DT_FLAGS_MASK>;
+		gpio-map = <ST_ZIO_CN7_1 0 &gpioc 6 0>,   /* D16 */
+			   <ST_ZIO_CN7_2 0 &gpiob 8 0>,   /* D15 */
+			   <ST_ZIO_CN7_3 0 &gpiob 15 0>,  /* D17 */
+			   <ST_ZIO_CN7_4 0 &gpiob 9 0>,   /* D14 */
+			   <ST_ZIO_CN7_5 0 &gpiob 13 0>,  /* D18 */
+			   <ST_ZIO_CN7_7 0 &gpiob 12 0>,  /* D19 */
+			   <ST_ZIO_CN7_9 0 &gpioa 15 0>,  /* D20 */
+			   <ST_ZIO_CN7_10 0 &gpioa 5 0>,  /* D13 */
+			   <ST_ZIO_CN7_11 0 &gpioc 7 0>,  /* D21 */
+			   <ST_ZIO_CN7_12 0 &gpioa 6 0>,  /* D12 */
+			   <ST_ZIO_CN7_13 0 &gpiob 5 0>,  /* D22 */
+			   <ST_ZIO_CN7_14 0 &gpioa 7 0>,  /* D11 */
+			   <ST_ZIO_CN7_15 0 &gpiob 3 0>,  /* D23 */
+			   <ST_ZIO_CN7_16 0 &gpiod 14 0>, /* D10 */
+			   <ST_ZIO_CN7_17 0 &gpioa 4 0>,  /* D24 */
+			   <ST_ZIO_CN7_18 0 &gpiod 15 0>, /* D9 */
+			   <ST_ZIO_CN7_19 0 &gpiob 4 0>,  /* D25 */
+			   <ST_ZIO_CN7_20 0 &gpiof 12 0>, /* D8 */
+			   <ST_ZIO_CN8_2 0 &gpioc 8 0>,   /* D43 */
+			   <ST_ZIO_CN8_4 0 &gpioc 9 0>,   /* D44 */
+			   <ST_ZIO_CN8_6 0 &gpioc 10 0>,  /* D45 */
+			   <ST_ZIO_CN8_8 0 &gpioc 11 0>,  /* D46 */
+			   <ST_ZIO_CN8_10 0 &gpioc 12 0>, /* D47 */
+			   <ST_ZIO_CN8_12 0 &gpiod 2 0>,  /* D48 */
+			   <ST_ZIO_CN8_14 0 &gpiog 2 0>,  /* D49 */
+			   <ST_ZIO_CN8_16 0 &gpiog 3 0>,  /* D50 */
+			   <ST_ZIO_CN9_1 0 &gpioa 3 0>,   /* A0 */
+			   <ST_ZIO_CN9_2 0 &gpiod 7 0>,   /* D51 */
+			   <ST_ZIO_CN9_3 0 &gpioc 0 0>,   /* A1 */
+			   <ST_ZIO_CN9_4 0 &gpiod 6 0>,   /* D52 */
+			   <ST_ZIO_CN9_5 0 &gpioc 3 0>,   /* A2 */
+			   <ST_ZIO_CN9_6 0 &gpiod 5 0>,   /* D53 */
+			   <ST_ZIO_CN9_7 0 &gpiof 3 0>,   /* A3 */
+			   <ST_ZIO_CN9_8 0 &gpiod 4 0>,   /* D54 */
+			   <ST_ZIO_CN9_9 0 &gpiof 5 0>,   /* A4 (default; PB9 via solder bridge) */
+			   <ST_ZIO_CN9_10 0 &gpiod 3 0>,  /* D55 */
+			   <ST_ZIO_CN9_11 0 &gpiof 10 0>, /* A5 (default; PB8 via solder bridge) */
+			   <ST_ZIO_CN9_14 0 &gpioe 2 0>,  /* D56, shared with CN10 pin 25 */
+			   <ST_ZIO_CN9_16 0 &gpioe 4 0>,  /* D57 */
+			   <ST_ZIO_CN9_17 0 &gpiof 2 0>,  /* D70 */
+			   <ST_ZIO_CN9_18 0 &gpioe 5 0>,  /* D58 */
+			   <ST_ZIO_CN9_19 0 &gpiof 1 0>,  /* D69 */
+			   <ST_ZIO_CN9_20 0 &gpioe 6 0>,  /* D59 */
+			   <ST_ZIO_CN9_21 0 &gpiof 0 0>,  /* D68 */
+			   <ST_ZIO_CN9_22 0 &gpioe 3 0>,  /* D60 */
+			   <ST_ZIO_CN9_24 0 &gpiof 8 0>,  /* D61 */
+			   <ST_ZIO_CN9_25 0 &gpiod 0 0>,  /* D67 */
+			   <ST_ZIO_CN9_26 0 &gpiof 7 0>,  /* D62 */
+			   <ST_ZIO_CN9_27 0 &gpiod 1 0>,  /* D66 */
+			   <ST_ZIO_CN9_28 0 &gpiof 9 0>,  /* D63 */
+			   <ST_ZIO_CN9_29 0 &gpiog 0 0>,  /* D65 */
+			   <ST_ZIO_CN9_30 0 &gpiog 1 0>,  /* D64 */
+			   <ST_ZIO_CN10_2 0 &gpiof 13 0>, /* D7 */
+			   <ST_ZIO_CN10_4 0 &gpioe 9 0>,  /* D6 */
+			   <ST_ZIO_CN10_6 0 &gpioe 11 0>, /* D5 */
+			   <ST_ZIO_CN10_7 0 &gpiob 1 0>,  /* A6 */
+			   <ST_ZIO_CN10_8 0 &gpiof 14 0>, /* D4 */
+			   <ST_ZIO_CN10_9 0 &gpioc 2 0>,  /* A7 */
+			   <ST_ZIO_CN10_10 0 &gpioe 13 0>, /* D3 */
+			   <ST_ZIO_CN10_11 0 &gpiof 4 0>,  /* A8 */
+			   <ST_ZIO_CN10_12 0 &gpiof 15 0>, /* D2 */
+			   <ST_ZIO_CN10_13 0 &gpiob 6 0>,  /* D26 */
+			   <ST_ZIO_CN10_14 0 &gpiog 14 0>, /* D1 */
+			   <ST_ZIO_CN10_15 0 &gpiob 2 0>,  /* D27 */
+			   <ST_ZIO_CN10_16 0 &gpiog 9 0>,  /* D0 */
+			   <ST_ZIO_CN10_18 0 &gpioe 8 0>,  /* D42 */
+			   <ST_ZIO_CN10_19 0 &gpiod 13 0>, /* D28 */
+			   <ST_ZIO_CN10_20 0 &gpioe 7 0>,  /* D41 */
+			   <ST_ZIO_CN10_21 0 &gpiod 12 0>, /* D29 */
+			   <ST_ZIO_CN10_23 0 &gpiod 11 0>, /* D30 */
+			   <ST_ZIO_CN10_24 0 &gpioe 10 0>, /* D40 */
+			   <ST_ZIO_CN10_25 0 &gpioe 2 0>,  /* D31, shared with CN9 pin 14 */
+			   <ST_ZIO_CN10_26 0 &gpioe 12 0>, /* D39 */
+			   <ST_ZIO_CN10_28 0 &gpioe 14 0>, /* D38 */
+			   <ST_ZIO_CN10_29 0 &gpioa 0 0>,  /* D32 */
+			   <ST_ZIO_CN10_30 0 &gpioe 15 0>, /* D37 */
+			   <ST_ZIO_CN10_31 0 &gpiob 0 0>,  /* D33 */
+			   <ST_ZIO_CN10_32 0 &gpiob 10 0>, /* D36 */
+			   <ST_ZIO_CN10_33 0 &gpioe 0 0>,  /* D34 */
+			   <ST_ZIO_CN10_34 0 &gpiob 11 0>; /* D35 */
+	};
+};

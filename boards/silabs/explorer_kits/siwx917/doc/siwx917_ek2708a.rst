@@ -1,0 +1,121 @@
+.. SPDX-FileCopyrightText: Copyright (c) 2026 Silicon Laboratories Inc.
+.. SPDX-License-Identifier: Apache-2.0
+
+.. zephyr:board:: siwx917_ek2708a
+
+Overview
+********
+
+The `SiWx917Y Explorer Kit`_ (BRD2708A) is a small form factor development and
+evaluation platform based on the SiWG917Y module. The kit supports Wi-Fi 6,
+Bluetooth LE, a mikroBUS socket, a Qwiic connector, user LEDs and buttons, and
+external PSRAM.
+
+Hardware
+********
+
+- SiWG917Y111MGABA module
+- ARM Cortex-M4F CPU
+- 8 MB flash and 8 MB external PSRAM
+- Two user LEDs and two user push buttons
+- mikroBUS socket
+- Qwiic connector
+- SEGGER J-Link on-board debugger and virtual COM port
+
+.. note::
+
+   The on-board PSRAM is isolated from the module by an analog switch driven by
+   the ``PSRAM Power Control`` slide switch. This switch must be in the ``ON``
+   position for the ``memc`` driver and the ``psram`` memory region to work.
+   Silicon Labs recommends turning it ``OFF`` when the PSRAM is unused, to
+   reduce current consumption.
+
+For more information about the SiWG917Y module and BRD2708A board, refer to
+these documents:
+
+- `SiWG917 Website`_
+- `SiWG917 Datasheet`_
+- `SiWG917 Reference Manual`_
+- `SiWx917Y Explorer Kit`_
+- `SiWx917Y Explorer Kit User Guide`_
+
+Supported Features
+******************
+
+.. zephyr:board-supported-hw::
+
+Refer to the :ref:`siwx917_wifi_features` page for a list of supported Wi-Fi
+features.
+
+Programming and Debugging
+*************************
+
+.. zephyr:board-supported-runners::
+
+Building and Flashing
+*********************
+
+Applications for the ``siwx917_ek2708a`` board can be built in the usual way.
+The flash method requires `Simplicity Commander`_ installed on the host.
+
+Connect the board to your host computer using the USB Type-C connector.
+
+The SiWG917Y module contains a Network Co-Processor (NWP). Ensure the NWP is
+flashed with the firmware associated with the current Zephyr version. The
+firmware is provided by the ``hal_silabs`` module:
+
+.. code-block:: console
+
+   west blobs fetch hal_silabs
+   cd modules/hal/silabs/zephyr/blobs/wiseconnect/connectivity_firmware/standard
+   commander flash SiWG917-*.rps
+
+The NWP firmware only needs to be reflashed when its version changes.
+
+Here is an example for the :zephyr:code-sample:`hello_world` application:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/hello_world
+   :board: siwx917_ek2708a
+   :goals: build flash
+
+Open a serial terminal (minicom, putty, etc.) with the following settings:
+
+- Speed: 115200
+- Data: 8 bits
+- Parity: None
+- Stop bits: 1
+
+Reset the board and you should see the following message in the terminal:
+
+.. code-block:: console
+
+   Hello World! siwx917_ek2708a/siwg917y111mgaba
+
+Debugging
+*********
+
+Debugging relies on J-Link. J-Link is not able to flash the firmware, so a
+debug session has to be done in two steps. ``west flash`` flashes the firmware
+using Simplicity Commander. Then ``west attach`` uses J-Link to attach to the
+board. The Zephyr image may have already booted when the user runs
+``west attach``. The user may execute ``monitor reset`` in the GDB prompt to
+reset the board.
+
+.. _SiWx917Y Explorer Kit:
+   https://www.silabs.com/development-tools/wireless/wi-fi/siw917y-ek2708a-explorer-kit
+
+.. _SiWx917Y Explorer Kit User Guide:
+   https://www.silabs.com/documents/public/user-guides/ug590-brd2708a-user-guide.pdf
+
+.. _SiWG917 Website:
+   https://www.silabs.com/wireless/wi-fi/siwx917-wireless-socs
+
+.. _SiWG917 Datasheet:
+   https://www.silabs.com/documents/public/data-sheets/siwg917-datasheet.pdf
+
+.. _SiWG917 Reference Manual:
+   https://www.silabs.com/documents/public/reference-manuals/siw917x-family-rm.pdf
+
+.. _Simplicity Commander:
+   https://www.silabs.com/developer-tools/simplicity-studio/simplicity-commander

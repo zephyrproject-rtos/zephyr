@@ -451,6 +451,16 @@ void gptp_handle_signaling(int port, struct net_pkt *pkt);
 void gptp_send_sync(int port, struct net_pkt *pkt);
 
 /**
+ * @brief Unregister the Sync transmit timestamp callback.
+ *
+ * Unregisters the timestamp callback of a Sync that will not be
+ * timestamped, so that the next Sync registers one of its own.
+ *
+ * @param port gPTP port number.
+ */
+void gptp_sync_timestamp_cb_unregister(int port);
+
+/**
  * @brief Send a Follow Up message.
  *
  * @param port gPTP port number.

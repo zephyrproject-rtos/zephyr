@@ -67,7 +67,7 @@ static void spi_mcux_transfer_next_packet(const struct device *dev)
 		return;
 	}
 
-	transfer.channel = spi_cs_is_gpio(ctx->config) ? kECSPI_Channel0 : ctx->config->slave;
+	transfer.channel = spi_cs_is_gpio(ctx->config) ? kECSPI_Channel0 : ctx->config->peripheral;
 
 	if (spi_context_rx_buf_on(ctx)) {
 		transfer.rxData = &data->rx_data;
@@ -113,8 +113,8 @@ static void spi_mcux_isr(const struct device *dev)
 	ECSPI_MasterTransferHandleIRQ(base, &data->handle);
 }
 
-static void spi_mcux_master_transfer_callback(ECSPI_Type *base, ecspi_master_handle_t *handle,
-					      status_t status, void *user_data)
+static void spi_mcux_transfer_callback(ECSPI_Type *base, ecspi_master_handle_t *handle,
+				       status_t status, void *user_data)
 {
 	const struct device *dev = (const struct device *)user_data;
 	struct spi_mcux_data *data = dev->data;
@@ -145,7 +145,7 @@ static int spi_mcux_configure(const struct device *dev,
 	const struct spi_mcux_config *config = dev->config;
 	struct spi_mcux_data *data = dev->data;
 	ECSPI_Type *base = config->base;
-	ecspi_master_config_t master_config;
+	ecspi_master_config_t controller_config;
 	uint32_t clock_freq;
 	uint16_t word_size;
 
@@ -164,8 +164,8 @@ static int spi_mcux_configure(const struct device *dev,
 		return -ENOTSUP;
 	}
 
-	if (!spi_cs_is_gpio(spi_cfg) && spi_cfg->slave > kECSPI_Channel3) {
-		LOG_ERR("Slave %d is greater than %d", spi_cfg->slave, kECSPI_Channel3);
+	if (!spi_cs_is_gpio(spi_cfg) && spi_cfg->peripheral > kECSPI_Channel3) {
+		LOG_ERR("Peripheral %d is greater than %d", spi_cfg->peripheral, kECSPI_Channel3);
 		return -EINVAL;
 	}
 
@@ -180,26 +180,27 @@ static int spi_mcux_configure(const struct device *dev,
 		return -EINVAL;
 	}
 
-	ECSPI_MasterGetDefaultConfig(&master_config);
+	ECSPI_MasterGetDefaultConfig(&controller_config);
 
-	master_config.channel =
-		spi_cs_is_gpio(spi_cfg) ? kECSPI_Channel0 : (ecspi_channel_source_t)spi_cfg->slave;
-	master_config.channelConfig.clockInactiveState =
+	controller_config.channel =
+		spi_cs_is_gpio(spi_cfg) ? kECSPI_Channel0
+					: (ecspi_channel_source_t)spi_cfg->peripheral;
+	controller_config.channelConfig.clockInactiveState =
 		(SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPOL)
 		? kECSPI_ClockInactiveStateHigh
 		: kECSPI_ClockInactiveStateLow;
-	master_config.channelConfig.polarity =
+	controller_config.channelConfig.polarity =
 		(SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPOL)
 		? kECSPI_PolarityActiveLow
 		: kECSPI_PolarityActiveHigh;
-	master_config.channelConfig.phase =
+	controller_config.channelConfig.phase =
 		(SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_CPHA)
 		? kECSPI_ClockPhaseSecondEdge
 		: kECSPI_ClockPhaseFirstEdge;
-	master_config.baudRate_Bps = spi_cfg->frequency;
-	master_config.burstLength = word_size;
+	controller_config.baudRate_Bps = spi_cfg->frequency;
+	controller_config.burstLength = word_size;
 
-	master_config.enableLoopback = (SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_LOOP);
+	controller_config.enableLoopback = (SPI_MODE_GET(spi_cfg->operation) & SPI_MODE_LOOP);
 
 	if (!spi_cs_is_gpio(spi_cfg)) {
 		uint32_t clock_cycles =
@@ -209,12 +210,12 @@ static int spi_mcux_configure(const struct device *dev,
 			LOG_ERR("CS delay is greater than 63 clock cycles (%u)", clock_cycles);
 			return -EINVAL;
 		}
-		master_config.chipSelectDelay = (uint8_t)clock_cycles;
+		controller_config.chipSelectDelay = (uint8_t)clock_cycles;
 	}
 
-	ECSPI_MasterInit(base, &master_config, clock_freq);
+	ECSPI_MasterInit(base, &controller_config, clock_freq);
 	ECSPI_MasterTransferCreateHandle(base, &data->handle,
-					 spi_mcux_master_transfer_callback,
+					 spi_mcux_transfer_callback,
 					 (void *)dev);
 
 	data->word_size = word_size;

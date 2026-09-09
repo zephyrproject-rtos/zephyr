@@ -99,7 +99,7 @@ config MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL_RETRY_TIME
 	  In case connection parameters update fails due to an error, this option specifies the
 	  time of the next update attempt.
 
-endif # MCUMGR_TRASNPORT_BT_CONN_PARAM_CONTROL
+endif # MCUMGR_TRANSPORT_BT_CONN_PARAM_CONTROL
 
 config MCUMGR_TRANSPORT_BT_DYNAMIC_SVC_REGISTRATION
 	bool "Register SMP service at runtime"

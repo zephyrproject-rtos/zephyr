@@ -71,6 +71,12 @@ node-macro =/ %s"DT_N" path-id %s"_COMPAT_VENDOR_IDX_" DIGIT "_EXISTS"
 node-macro =/ %s"DT_N" path-id %s"_COMPAT_VENDOR_IDX_" DIGIT
 node-macro =/ %s"DT_N" path-id %s"_COMPAT_MODEL_IDX_" DIGIT "_EXISTS"
 node-macro =/ %s"DT_N" path-id %s"_COMPAT_MODEL_IDX_" DIGIT
+; The binding compatible (the compatible that matched a binding) as a token,
+; uppercased token, or unquoted string. Only defined for nodes with a
+; matching binding.
+node-macro =/ %s"DT_N" path-id %s"_BINDING_COMPAT_TOKEN"
+node-macro =/ %s"DT_N" path-id %s"_BINDING_COMPAT_UPPER_TOKEN"
+node-macro =/ %s"DT_N" path-id %s"_BINDING_COMPAT_UNQUOTED"
 ; Every non-root node gets one of these macros, which expands to the node
 ; identifier for that node's parent in the devicetree.
 node-macro =/ %s"DT_N" path-id %s"_PARENT"

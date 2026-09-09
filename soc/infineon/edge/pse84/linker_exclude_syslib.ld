@@ -1,6 +1,6 @@
 /*
- * SPDX-FileCopyrightText: <text>Copyright (c) 2026 Infineon Technologies AG,
- * or an affiliate of Infineon Technologies AG. All rights reserved.</text>
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+ * SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -167,7 +167,23 @@ SECTIONS
 
 	__text_region_end = .;
 
-#if defined (CONFIG_CPP) || defined(CONFIG_RUST)
+	/*
+	 * Code relocated into ITCM (see itcm_mem.ld: .cy_itcm) gets its own
+	 * .ARM.exidx/.ARM.extab unwind entries when -funwind-tables is enabled
+	 * (CONFIG_ARCH_STACKWALK). Those entries would otherwise be gathered into
+	 * the main exidx table in ROMABLE_REGION, from where the R_ARM_PREL31
+	 * relocation back to the ITCM code cannot be encoded ("relocation
+	 * truncated to fit"). The Cortex-M stack unwinder does not consume these
+	 * tables, so drop the ITCM ones. Listed before the .ARM.extab/.ARM.exidx
+	 * output sections so they are matched here first.
+	 */
+	/DISCARD/ :
+	{
+	*(.ARM.exidx.cy_itcm*)
+	*(.ARM.extab.cy_itcm*)
+	}
+
+#if defined (CONFIG_CPP) || defined(CONFIG_RUST) || defined(CONFIG_ARCH_STACKWALK)
 	SECTION_PROLOGUE(.ARM.extab,,)
 	{
 	/*

@@ -487,6 +487,7 @@ struct max30009_data {
 	int pll_clk;
 	int bioz_adc_clk;
 	int bioz_synth_clk;
+	uint8_t bioz_adc_osr_code;
 #ifdef CONFIG_MAX30009_TRIGGER
 	const struct device *dev;
 	struct gpio_callback gpio_cb;

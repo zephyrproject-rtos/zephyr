@@ -218,6 +218,8 @@
 		irq-gpios = <&gpioe 6 (GPIO_ACTIVE_HIGH | GPIO_PULL_DOWN)>;
 		spi-max-frequency = <DT_FREQ_M(2)>;
 		spi-hold-cs;
+		reset-event;
+		req-ll-only;
 	};
 
 	wifi0: ism43362@1 {

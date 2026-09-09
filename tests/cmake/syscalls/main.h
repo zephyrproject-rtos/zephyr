@@ -13,4 +13,9 @@ __syscall void
 test_wrapped(int foo);
 /* clang-format on */
 
+/* Whitespace between symbol name and arguments */
+/* clang-format off */
+__syscall void test_arguments (void);
+/* clang-format on */
+
 #include <zephyr/syscalls/main.h>

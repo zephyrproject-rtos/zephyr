@@ -6,6 +6,6 @@
     "patch": 0
   },
   "include": [
-    "$penv{APP_DIR}/CMakePresets.json"
+    "$penv{APP_DIR}/sysbuild/CMakePresets.json"
   ]
 }

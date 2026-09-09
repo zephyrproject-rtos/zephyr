@@ -101,7 +101,7 @@ void lwm2m_firmware_set_update_state_inst(uint16_t obj_inst_id, uint8_t state)
 					       FIRMWARE_UPDATE_RESULT_ID);
 
 	lwm2m_registry_lock();
-	/* Check LWM2M SPEC appendix E.6.1 */
+	/* Check LwM2M SPEC appendix E.6.1 */
 	switch (state) {
 	case STATE_DOWNLOADING:
 		if (update_state[obj_inst_id] == STATE_IDLE) {
@@ -168,7 +168,7 @@ void lwm2m_firmware_set_update_result_inst(uint16_t obj_inst_id, uint8_t result)
 					       FIRMWARE_UPDATE_RESULT_ID);
 
 	lwm2m_registry_lock();
-	/* Check LWM2M SPEC appendix E.6.1 */
+	/* Check LwM2M SPEC appendix E.6.1 */
 	switch (result) {
 	case RESULT_DEFAULT:
 		lwm2m_firmware_set_update_state_inst(obj_inst_id, STATE_IDLE);
@@ -305,8 +305,20 @@ static int package_uri_write_cb(uint16_t obj_inst_id, uint16_t res_id,
 	LOG_DBG("PACKAGE_URI WRITE: %s", package_uri[obj_inst_id]);
 
 #ifdef CONFIG_LWM2M_FIRMWARE_UPDATE_PULL_SUPPORT
-	uint8_t state = lwm2m_firmware_get_update_state_inst(obj_inst_id);
-	bool empty_uri = data_len == 0 || strnlen(data, data_len) == 0;
+	uint8_t state;
+	bool empty_uri;
+
+	/* writes every block of a block-wise transfer to the start of
+	 * the buffer, so it never holds the assembled URI. Reject the
+	 * write rather than act on whichever fragment happens to be present.
+	 */
+	if (!last_block) {
+		LOG_ERR("PACKAGE_URI: block-wise write is not supported");
+		return -EFBIG;
+	}
+
+	state = lwm2m_firmware_get_update_state_inst(obj_inst_id);
+	empty_uri = data_len == 0 || strnlen(data, data_len) == 0;
 
 	if (state == STATE_IDLE) {
 		if (!empty_uri) {
@@ -465,7 +477,7 @@ static struct lwm2m_engine_obj_inst *firmware_create(uint16_t obj_inst_id)
 	inst[index].resources = res[index];
 	inst[index].resource_count = i;
 
-	LOG_DBG("Create LWM2M firmware instance: %d", obj_inst_id);
+	LOG_DBG("Create LwM2M firmware instance: %d", obj_inst_id);
 	return &inst[index];
 }
 
@@ -500,7 +512,7 @@ static int lwm2m_firmware_init(void)
 #endif
 		ret = lwm2m_create_obj_inst(LWM2M_OBJECT_FIRMWARE_ID, idx, &obj_inst);
 		if (ret < 0) {
-			LOG_DBG("Create LWM2M instance %d error: %d", idx, ret);
+			LOG_DBG("Create LwM2M instance %d error: %d", idx, ret);
 			break;
 		}
 	}

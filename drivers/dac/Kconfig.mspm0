@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config DAC_MSPM0
-	bool "TI MSPM0 Digital To Analog Converter (DAC) Driver"
+	bool "TI MSPM0 DAC driver"
 	default y
 	depends on DT_HAS_TI_MSPM0_DAC_ENABLED
 	select USE_MSPM0_DL_DAC12

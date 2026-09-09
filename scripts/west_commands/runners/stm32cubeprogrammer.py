@@ -130,27 +130,22 @@ class STM32CubeProgrammerBinaryRunner(ZephyrBinaryRunner):
             if cmd is not None:
                 return Path(cmd)
 
-            match platform.machine():
-                case "arm64":
-                    subdir = "Resources"
-                case "x86_64":
-                    subdir = "MacOs"
-                case other:
-                    raise NotImplementedError(
-                        f"Unsupported macOS architecture: {other}"
-                    )
-
-            return (
+            app_path = (
                 Path("/Applications")
                 / "STMicroelectronics"
                 / "STM32Cube"
                 / "STM32CubeProgrammer"
                 / "STM32CubeProgrammer.app"
                 / "Contents"
-                / subdir
-                / "bin"
-                / "STM32_Programmer_CLI"
             )
+
+            exe_path = app_path / "MacOS/bin/STM32_Programmer_CLI"
+
+            if not exe_path.exists():
+                # Some older STM32CubeProgrammer versions place
+                # the executable in a "Resources" subfolder instead
+                exe_path = app_path / "Resources/bin/STM32_Programmer_CLI"
+            return exe_path
 
         raise NotImplementedError("Could not determine STM32_Programmer_CLI path")
 

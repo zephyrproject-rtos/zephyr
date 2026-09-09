@@ -30,20 +30,14 @@ static bool failed_expectation;
 #ifdef CONFIG_ZTEST_SHUFFLE
 #include <time.h>
 #include <zephyr/random/random.h>
-#ifndef CONFIG_ZTEST_REPEAT
-#define NUM_ITER_PER_SUITE CONFIG_ZTEST_SHUFFLE_SUITE_REPEAT_COUNT
-#define NUM_ITER_PER_TEST  CONFIG_ZTEST_SHUFFLE_TEST_REPEAT_COUNT
-#endif
 #endif /* CONFIG_ZTEST_SHUFFLE */
 
 #ifdef CONFIG_ZTEST_REPEAT
 #define NUM_ITER_PER_SUITE CONFIG_ZTEST_SUITE_REPEAT_COUNT
 #define NUM_ITER_PER_TEST  CONFIG_ZTEST_TEST_REPEAT_COUNT
 #else
-#ifndef CONFIG_ZTEST_SHUFFLE
 #define NUM_ITER_PER_SUITE 1
 #define NUM_ITER_PER_TEST  1
-#endif
 #endif
 
 #ifdef CONFIG_ZTEST_COVERAGE_RESET_BEFORE_TESTS
@@ -97,7 +91,7 @@ static void __ztest_show_suite_summary(void);
 static void end_report(void)
 {
 	__ztest_show_suite_summary();
-	if (test_status) {
+	if (test_status != ZTEST_STATUS_OK) {
 		TC_END_REPORT(TC_FAIL);
 	} else {
 		TC_END_REPORT(TC_PASS);
@@ -309,7 +303,10 @@ void z_impl_z_test_1cpu_stop(void)
 
 	for (int i = 0; i <= MAX_NUM_CPUHOLD; i++) {
 		if (cpuhold_pool_items[i].used) {
-			k_thread_abort(&cpuhold_pool_items[i].thread);
+			/* Must join the cpuhold threads before z_test_1cpu_start()
+			 * reuses the thread objects.
+			 */
+			k_thread_join(&cpuhold_pool_items[i].thread, K_FOREVER);
 			cpuhold_pool_items[i].used = false;
 		}
 	}
@@ -1350,6 +1347,7 @@ void __weak test_main(void)
 #ifdef ZTEST_UNITTEST
 int main(void)
 {
+	TC_PRINT_RUNID_START;
 	z_init_mock();
 	test_main();
 	end_report();
@@ -1603,6 +1601,7 @@ int main(void)
 #endif
 #endif /* CONFIG_USERSPACE */
 
+	TC_PRINT_RUNID_START;
 	z_init_mock();
 #ifndef CONFIG_ZTEST_SHELL
 	test_main();

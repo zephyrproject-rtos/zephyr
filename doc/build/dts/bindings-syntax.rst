@@ -426,7 +426,15 @@ If property ``foo`` is missing in a matching node, then the output will be as
 if ``foo = <3>;`` had appeared in the DTS (except YAML data types are used for
 the default value).
 
-Note that combining ``default:`` with ``required: true`` will raise an error.
+Note that a binding which declares both ``default:`` and ``required: true``
+for the same property will produce a warning, since the two settings are
+redundant: ``required: true`` already fails the build when the property is
+missing, so the default can never apply. A binding may still override an
+inherited ``default:`` with ``required: true`` to force an explicit value;
+this is well defined and is not reported. A binding which is only ever
+reached through ``include:`` is not loaded on its own during a build, so
+the warning for it is seen when the documentation is generated rather
+than when an application is built.
 
 For rules related to ``default`` in upstream Zephyr bindings, see
 :ref:`dt-bindings-default-rules`.

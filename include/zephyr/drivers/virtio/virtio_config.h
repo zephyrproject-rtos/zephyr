@@ -7,6 +7,7 @@
 
 /**
  * @file
+ * @ingroup virtio_interface
  *
  * VIRTIO common definitions based on the specification.
  *

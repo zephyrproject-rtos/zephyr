@@ -45,7 +45,6 @@ class ZephyrExport(WestCommand):
         share = Path(__file__).parents[2] / 'share'
 
         self.run_cmake_export(share / 'zephyr-package' / 'cmake')
-        self.run_cmake_export(share / 'zephyrunittest-package' / 'cmake')
 
     def run_cmake_export(self, path):
         # Run a package installation script.

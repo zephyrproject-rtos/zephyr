@@ -81,6 +81,23 @@ int memc_flexspi_set_device_config(const struct device *dev,
 		uint8_t lut_count,
 		flexspi_port_t port);
 
+/**
+ * @brief Reset the per-port LUT bookkeeping after a power-domain power-down
+ *
+ * Clears the per-port LUT slot allocation and size tracking so a following
+ * memc_flexspi_set_device_config()/probe re-allocates LUT slots from zero.
+ * Intended for PM resume paths where the hardware LUT was lost but the
+ * software bookkeeping is still RAM-resident.
+ *
+ * The controller-level registers and LUT contents are intentionally left
+ * untouched: on RW612, re-running FLEXSPI_Init or wiping the whole LUT while
+ * the CPU runs XIP from the NOR resets the SoC.  The ROM FCB already
+ * restores the controller-level state on PM3 wake.
+ *
+ * @param dev: FlexSPI device
+ * @param port: port whose LUT bookkeeping is reset
+ */
+void memc_flexspi_reset_lut_alloc(const struct device *dev, flexspi_port_t port);
 
 /**
  * @brief Perform software reset of FlexSPI

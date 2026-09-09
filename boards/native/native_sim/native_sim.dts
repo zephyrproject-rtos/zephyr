@@ -306,8 +306,16 @@
 		};
 	};
 
-	ptp_clock: ptp_clock {
-		compatible = "zephyr,native-ptp-clock";
+	zeth0: zeth0 {
+		compatible = "zephyr,native-tap";
 		status = "okay";
+		zephyr,random-mac-address;
+		zephyr,mac-address-prefix = [00 00 5e 00 53];
+		host-interface = "zeth";
+
+		ptp_clock: ptp_clock {
+			compatible = "zephyr,native-ptp-clock";
+			status = "okay";
+		};
 	};
 };

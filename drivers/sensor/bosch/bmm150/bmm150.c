@@ -116,8 +116,7 @@ static int bmm150_set_odr(const struct device *dev, uint8_t val)
 #if defined(BMM150_SET_ATTR_REP)
 static int bmm150_read_rep_xy(const struct device *dev)
 {
-	struct bmm150_data *data = dev->driver->data;
-	const struct bmm150_config *config = dev->config;
+	struct bmm150_data *data = dev->data;
 	uint8_t reg_val;
 
 	if (bmm150_reg_read(dev, BMM150_REG_REP_XY, &reg_val, 1) < 0) {
@@ -454,7 +453,7 @@ static int bmm150_attr_set(const struct device *dev,
 			   enum sensor_attribute attr,
 			   const struct sensor_value *val)
 {
-	struct bmm150_magn_data *data = dev->data;
+	struct bmm150_data *data = dev->data;
 
 	switch (attr) {
 #if defined(CONFIG_BMM150_SAMPLING_RATE_RUNTIME)
@@ -625,6 +624,7 @@ err_poweroff:
 
 static int pm_action(const struct device *dev, enum pm_device_action action)
 {
+	struct bmm150_preset preset = bmm150_presets_table[BMM150_DEFAULT_PRESET];
 	int ret = 0;
 
 	switch (action) {
@@ -642,6 +642,25 @@ static int pm_action(const struct device *dev, enum pm_device_action action)
 		}
 
 		k_sleep(BMM150_START_UP_TIME);
+
+		/* Suspend reset the registers, so reprogram the preset */
+		ret = bmm150_set_odr(dev, preset.odr);
+		if (ret != 0) {
+			LOG_ERR("failed to set ODR: %d", ret);
+			return ret;
+		}
+		ret = bmm150_reg_write(dev, BMM150_REG_REP_XY,
+					BMM150_REPXY_TO_REGVAL(preset.rep_xy));
+		if (ret != 0) {
+			LOG_ERR("failed to set REP XY: %d", ret);
+			return ret;
+		}
+		ret = bmm150_reg_write(dev, BMM150_REG_REP_Z,
+					BMM150_REPZ_TO_REGVAL(preset.rep_z));
+		if (ret != 0) {
+			LOG_ERR("failed to set REP Z: %d", ret);
+			return ret;
+		}
 
 		ret |= bmm150_opmode(dev, BMM150_MODE_NORMAL);
 		if (ret != 0) {

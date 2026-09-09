@@ -308,6 +308,38 @@ def test_twisterenv_init(options, expected_env):
     assert twister_env.outdir == expected_env.outdir
 
 
+# enable_coverage, environment beforehand, expected ccache environment afterwards
+TESTDATA_CCACHE = [
+    (False, {}, {'CCACHE_BASEDIR': 'foo', 'CCACHE_NOHASHDIR': 'true'}),
+    (False, {'CCACHE_BASEDIR': 'bar'}, {'CCACHE_BASEDIR': 'bar', 'CCACHE_NOHASHDIR': 'true'}),
+    (False, {'CCACHE_HASHDIR': 'true'}, {'CCACHE_BASEDIR': 'foo', 'CCACHE_HASHDIR': 'true'}),
+    (True, {}, {}),
+]
+
+
+@pytest.mark.parametrize(
+    'enable_coverage, preset_env, expected_env',
+    TESTDATA_CCACHE,
+    ids=[
+        'reuse objects',
+        'base directory already set',
+        'hash directory already set',
+        'coverage keeps the build directory paths'
+    ]
+)
+def test_twisterenv_setup_ccache(enable_coverage, preset_env, expected_env):
+    env = mock.Mock(
+        options=mock.Mock(enable_coverage=enable_coverage),
+        outdir='foo',
+    )
+
+    with mock.patch.dict(os.environ, preset_env, clear=True):
+        twisterlib.environment.TwisterEnv._setup_ccache(env)
+        ccache_env = {k: v for k, v in os.environ.items() if k.startswith('CCACHE_')}
+
+    assert ccache_env == expected_env
+
+
 def test_twisterenv_discover():
     options = mock.Mock(
         ninja=True

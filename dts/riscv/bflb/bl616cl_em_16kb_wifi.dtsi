@@ -1,0 +1,40 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * BL616CL 16 KB EM + WiFi DT snippet.
+ *
+ * Carves the lower 128 KB of WRAM for WiFi MAC shared structures (TX/RX
+ * descriptors, IPC), accessed via the non-cached bus-remap alias at
+ * 0x20ff8000. Non-cached access is required: the MAC DMA engine writes
+ * descriptors directly to memory, so cached reads would return stale data.
+ *
+ * The top 16 KB of WRAM is reserved for BLE exchange memory
+ * (hardware-mapped via GLB_EM_SEL), so all_ram shrinks from 384 KB to 240 KB.
+ */
+
+&wram {
+	reg = <0x38000 DT_SIZE_K(16)>;
+	ranges = <0x0 0x38000 DT_SIZE_K(16)>;
+};
+
+&all_ram {
+	reg = <0x60fc0000 DT_SIZE_K(240)>;
+	ranges = <0x0 0x60fc0000 DT_SIZE_K(240)>;
+};
+
+/ {
+	soc {
+		wifi_ram: memory@20ffc000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x20ffc000 DT_SIZE_K(128)>;
+			#address-cells = <1>;
+			#size-cells = <1>;
+			ranges = <0x0 0x20ffc000 DT_SIZE_K(128)>;
+			zephyr,memory-region = "WIFI_RAM";
+		};
+	};
+};

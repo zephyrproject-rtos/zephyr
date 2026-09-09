@@ -51,7 +51,7 @@
 				compatible = "zephyr,power-state";
 				power-state-name = "standby";
 				min-residency-us = <2500>;
-				exit-latency-us = <50>;
+				exit-latency-us = <0>;
 			};
 
 			deep_sleep: deep_sleep {
@@ -478,6 +478,16 @@
 			reg = <0x60088000 0x1000>;
 			clocks = <&clock ESP32_AES_MODULE>;
 			status = "okay";
+		};
+
+		rmt: rmt@60006000 {
+			compatible = "espressif,esp32-rmt";
+			#pulse-io-cells = <1>;
+			reg = <0x60006000 0x1000>;
+			interrupts = <RMT_INTR_SOURCE IRQ_DEFAULT_PRIORITY 0>;
+			interrupt-parent = <&intc>;
+			clocks = <&clock ESP32_RMT_MODULE>;
+			status = "disabled";
 		};
 	};
 };

@@ -170,23 +170,6 @@ config ZTEST_SHUFFLE
 	help
 	  This rule will shuffle the order of tests and test suites.
 
-if ZTEST_SHUFFLE
-config ZTEST_SHUFFLE_SUITE_REPEAT_COUNT
-	int "[DEPRECATED] Number of iterations the test suite will run"
-	default 3
-	help
-	  This is used to execute a test suite N number of times.
-	  [DEPRECATED] use ZTEST_SUITE_REPEAT_COUNT instead.
-
-config ZTEST_SHUFFLE_TEST_REPEAT_COUNT
-	int "[DEPRECATED] Number of iterations the test will run"
-	default 3
-	help
-	  This is used to execute a test case N number of times.
-	  [DEPRECATED] use ZTEST_TEST_REPEAT_COUNT instead.
-
-endif #ZTEST_SHUFFLE
-
 config ZTEST_REPEAT
 	bool "Repeat the tests and suites"
 	help

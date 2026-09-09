@@ -279,12 +279,13 @@
  * for packet formats and thus lengths
  */
 
-#define PHY_LEGACY   0
-#define PHY_1M       BIT(0)
-#define PHY_2M       BIT(1)
-#define PHY_CODED    BIT(2)
-#define PHY_FLAGS_S2 0
-#define PHY_FLAGS_S8 BIT(0)
+#define PHY_LEGACY       0U
+#define PHY_1M           BIT(0)
+#define PHY_2M           BIT(1)
+#define PHY_CODED        BIT(2)
+#define PHY_FLAGS_UNUSED 0U
+#define PHY_FLAGS_S2     0U
+#define PHY_FLAGS_S8     BIT(0)
 
 /* Macros for getting/setting did/sid from pdu_adv_adi */
 #define PDU_ADV_ADI_DID_GET(adi) ((adi)->did_sid_packed[0] | \

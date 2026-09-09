@@ -930,7 +930,7 @@ static int lsm6dsl_pm_action(const struct device *dev,
 	{									\
 		.bus_init = lsm6dsl_spi_init,					\
 		.bus_cfg.spi = SPI_DT_SPEC_INST_GET(inst, SPI_WORD_SET(8) |	\
-				      SPI_OP_MODE_MASTER |			\
+				      SPI_OP_MODE_CONTROLLER |			\
 				      SPI_MODE_CPOL |				\
 				      SPI_MODE_CPHA),				\
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, irq_gpios),		\

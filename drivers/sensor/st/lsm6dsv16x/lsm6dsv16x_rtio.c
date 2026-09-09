@@ -117,7 +117,6 @@ static void lsm6dsv16x_submit_sample(const struct device *dev, struct rtio_iodev
 	rc = sensor_clock_get_cycles(&cycles);
 	if (rc != 0) {
 		LOG_ERR("Failed to get sensor clock cycles");
-		rtio_iodev_sqe_err(iodev_sqe, rc);
 		goto err;
 	}
 

@@ -9,6 +9,7 @@
 #include <kernel_internal.h>
 #include <zephyr/sys/__assert.h>
 #include <zephyr/arch/cpu.h>
+#include <zephyr/arch/exception.h>
 #include <zephyr/logging/log_ctrl.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/fatal.h>
@@ -41,10 +42,10 @@ __weak void k_sys_fatal_error_handler(unsigned int reason,
 	LOG_PANIC();
 
 #if CONFIG_RESET_ON_FATAL_ERROR
-	LOG_ERR("Resetting system\n");
+	EXCEPTION_DUMP("Resetting system");
 	sys_reboot(SYS_REBOOT_WARM);
 #else
-	LOG_ERR("Halting system\n");
+	EXCEPTION_DUMP("Halting system");
 	arch_system_halt(reason);
 #endif /* CONFIG_RESET_ON_FATAL_ERROR */
 
@@ -98,11 +99,17 @@ void z_fatal_error(unsigned int reason, const struct arch_esf *esf)
 	struct k_thread *thread = IS_ENABLED(CONFIG_MULTITHREADING) ?
 			_current : NULL;
 
+	/* The printk lock is not trustworthy from here on: this context may
+	 * have failed while holding it, or a CPU that is never coming back
+	 * may own it. Give up on serialized output rather than on output.
+	 */
+	printk_panic();
+
 	/* twister looks for the "ZEPHYR FATAL ERROR" string, don't
 	 * change it without also updating twister
 	 */
-	LOG_ERR(">>> ZEPHYR FATAL ERROR %d: %s on CPU %d", reason,
-		reason_to_str(reason), _current_cpu->id);
+	EXCEPTION_DUMP(">>> ZEPHYR FATAL ERROR %d: %s on CPU %d", reason, reason_to_str(reason),
+		       _current_cpu->id);
 
 	/* FIXME: This doesn't seem to work as expected on all arches.
 	 * Need a reliable way to determine whether the fault happened when
@@ -112,12 +119,12 @@ void z_fatal_error(unsigned int reason, const struct arch_esf *esf)
 	 */
 #if defined(CONFIG_ARCH_HAS_NESTED_EXCEPTION_DETECTION)
 	if ((esf != NULL) && arch_is_in_nested_exception(esf)) {
-		LOG_ERR("Fault during interrupt handling\n");
+		EXCEPTION_DUMP("Fault during interrupt handling");
 	}
 #endif /* CONFIG_ARCH_HAS_NESTED_EXCEPTION_DETECTION */
 
 	if (IS_ENABLED(CONFIG_MULTITHREADING)) {
-		LOG_ERR("Current thread: %p (%s)", thread, thread_name_get(thread));
+		EXCEPTION_DUMP("Current thread: %p (%s)", thread, thread_name_get(thread));
 	}
 
 	/*

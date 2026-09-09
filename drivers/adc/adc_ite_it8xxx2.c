@@ -55,6 +55,8 @@ LOG_MODULE_REGISTER(adc_ite_it8xxx2);
 #define IT8XXX2_ADC_READING_TIMEOUT K_MSEC(CONFIG_ADC_IT8XXX2_READING_TIMEOUT_MS)
 #endif /* CONFIG_ADC_IT8XXX2_READING_TIMEOUT_MS */
 
+#define IT8XXX2_ADC_RESOLUTION 10U
+
 /* List of ADC channels. */
 enum chip_adc_channel {
 	CHIP_ADC_CH0 = 0,
@@ -77,6 +79,7 @@ struct adc_it8xxx2_data {
 	struct k_sem sem;
 	/* Channel ID */
 	uint32_t ch;
+	uint32_t configured_channels;
 	/* Save ADC result to the buffer. */
 	uint16_t *buffer;
 	/*
@@ -101,6 +104,7 @@ struct adc_it8xxx2_cfg {
 static int adc_it8xxx2_channel_setup(const struct device *dev,
 				     const struct adc_channel_cfg *channel_cfg)
 {
+	struct adc_it8xxx2_data *data = dev->data;
 	uint8_t channel_id = channel_cfg->channel_id;
 
 	if (channel_cfg->acquisition_time != ADC_ACQ_TIME_DEFAULT) {
@@ -115,11 +119,6 @@ static int adc_it8xxx2_channel_setup(const struct device *dev,
 		return -EINVAL;
 	}
 
-	/* Channels 13~16 should be shifted by 5 */
-	if (channel_id > CHIP_ADC_CH7) {
-		channel_id -= ADC_CHANNEL_SHIFT;
-	}
-
 	if (channel_cfg->gain != ADC_GAIN_1) {
 		LOG_ERR("Invalid channel gain");
 		return -EINVAL;
@@ -129,6 +128,8 @@ static int adc_it8xxx2_channel_setup(const struct device *dev,
 		LOG_ERR("Invalid channel reference");
 		return -EINVAL;
 	}
+
+	data->configured_channels |= BIT(channel_id);
 
 	LOG_DBG("Channel setup succeeded!");
 	return 0;
@@ -305,7 +306,12 @@ static int adc_it8xxx2_start_read(const struct device *dev,
 		return -EINVAL;
 	}
 
-	if (!sequence->resolution) {
+	if (sequence->oversampling) {
+		LOG_ERR("Oversampling is not supported");
+		return -EINVAL;
+	}
+
+	if (!sequence->resolution || sequence->resolution > IT8XXX2_ADC_RESOLUTION) {
 		LOG_ERR("ADC resolution is not valid");
 		return -EINVAL;
 	}
@@ -314,6 +320,11 @@ static int adc_it8xxx2_start_read(const struct device *dev,
 	err = check_buffer_size(sequence, POPCOUNT(sequence->channels));
 	if (err) {
 		return err;
+	}
+
+	if (sequence->channels & ~data->configured_channels) {
+		LOG_ERR("Attempt to read unconfigured channel(s)");
+		return -EINVAL;
 	}
 
 	data->buffer = sequence->buffer;

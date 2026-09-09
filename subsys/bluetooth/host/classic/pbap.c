@@ -14,8 +14,6 @@
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/kernel.h>
 
-#include "psa/crypto.h"
-
 #include <zephyr/bluetooth/hci.h>
 #include <zephyr/bluetooth/bluetooth.h>
 #include <zephyr/bluetooth/conn.h>
@@ -25,9 +23,7 @@
 #include <zephyr/bluetooth/classic/goep.h>
 #include <zephyr/bluetooth/classic/pbap.h>
 
-#include <mbedtls/constant_time.h>
-
-#include "host/conn_internal.h"
+#include <host/conn_internal.h>
 #include "l2cap_br_internal.h"
 #include "rfcomm_internal.h"
 #include "obex_internal.h"
@@ -819,113 +815,6 @@ struct net_buf *bt_pbap_pse_create_pdu(struct bt_pbap_pse *pbap_pse, struct net_
 	return bt_pbap_create_pdu(&pbap_pse->_goep, pool);
 }
 
-int bt_pbap_calculate_nonce(const uint8_t *pwd, uint8_t nonce[BT_OBEX_CHALLENGE_TAG_NONCE_LEN])
-{
-	int64_t timestamp = k_uptime_get();
-	uint8_t hash_input[PBAP_PWD_MAX_LENGTH + 1U + sizeof(timestamp)];
-	size_t len;
-	uint16_t pwd_len;
-	int err;
-
-	if (pwd == NULL) {
-		LOG_WRN("no available password");
-		return -EINVAL;
-	}
-
-	if (nonce == NULL) {
-		LOG_WRN("no available nonce");
-		return -EINVAL;
-	}
-
-	pwd_len = strlen(pwd);
-	if (pwd_len == 0 || pwd_len > PBAP_PWD_MAX_LENGTH) {
-		LOG_ERR("Password is invalid");
-		return -EINVAL;
-	}
-
-	LOG_WRN("PBAP authentication relies on legacy MD5-based OBEX authentication");
-
-	memcpy(hash_input, &timestamp, sizeof(timestamp));
-	hash_input[sizeof(timestamp)] = ':';
-	memcpy(hash_input + sizeof(timestamp) + 1U, pwd, pwd_len);
-	err = psa_hash_compute(PSA_ALG_MD5, (const unsigned char *)hash_input,
-			       sizeof(timestamp) + 1U + pwd_len, nonce,
-			       BT_OBEX_CHALLENGE_TAG_NONCE_LEN, &len);
-	if (err != 0) {
-		LOG_WRN("Generate nonce failed %d", err);
-		return err;
-	}
-	return 0;
-}
-
-int bt_pbap_calculate_rsp_digest(const uint8_t *pwd,
-				 const uint8_t nonce[BT_OBEX_CHALLENGE_TAG_NONCE_LEN],
-				 uint8_t rsp_digest[BT_OBEX_RESPONSE_TAG_REQ_DIGEST_LEN])
-{
-	uint8_t hash_input[PBAP_PWD_MAX_LENGTH + BT_OBEX_CHALLENGE_TAG_NONCE_LEN + 1U];
-	size_t len;
-	uint16_t pwd_len;
-	int err;
-
-	if (pwd == NULL) {
-		LOG_WRN("no available password");
-		return -EINVAL;
-	}
-
-	if (nonce == NULL) {
-		LOG_WRN("no available nonce");
-		return -EINVAL;
-	}
-
-	if (rsp_digest == NULL) {
-		LOG_WRN("no available rsp_digest");
-		return -EINVAL;
-	}
-
-	pwd_len = strlen(pwd);
-	if (pwd_len == 0 || pwd_len > PBAP_PWD_MAX_LENGTH) {
-		LOG_ERR("Password is invalid");
-		return -EINVAL;
-	}
-
-	LOG_WRN("PBAP authentication relies on legacy MD5-based OBEX authentication");
-
-	memcpy(hash_input, nonce, BT_OBEX_CHALLENGE_TAG_NONCE_LEN);
-	hash_input[BT_OBEX_CHALLENGE_TAG_NONCE_LEN] = ':';
-	memcpy(hash_input + BT_OBEX_CHALLENGE_TAG_NONCE_LEN + 1U, pwd, pwd_len);
-
-	err = psa_hash_compute(PSA_ALG_MD5, (const unsigned char *)hash_input,
-			       BT_OBEX_CHALLENGE_TAG_NONCE_LEN + 1U + pwd_len, rsp_digest,
-			       BT_OBEX_RESPONSE_TAG_REQ_DIGEST_LEN, &len);
-	if (err != 0) {
-		LOG_WRN("Generate response digest failed %d", err);
-		return err;
-	}
-	return 0;
-}
-
-int bt_pbap_verify_authentication(uint8_t nonce[BT_OBEX_CHALLENGE_TAG_NONCE_LEN],
-				  uint8_t rsp_digest[BT_OBEX_RESPONSE_TAG_REQ_DIGEST_LEN],
-				  const uint8_t *pwd)
-{
-	uint8_t result[BT_OBEX_RESPONSE_TAG_REQ_DIGEST_LEN];
-	int err;
-
-	err = bt_pbap_calculate_rsp_digest(pwd, nonce, result);
-	if (err != 0) {
-		LOG_ERR("Failed to calculate response digest %d", err);
-		return err;
-	}
-
-	err = mbedtls_ct_memcmp(result, rsp_digest, BT_OBEX_RESPONSE_TAG_REQ_DIGEST_LEN);
-	if (err != 0) {
-		LOG_ERR("rsp_digest is invalid");
-		return -EINVAL;
-	}
-
-	return 0;
-}
-
 #if defined(CONFIG_BT_PBAP_PSE)
 static uint8_t rfcomm_channel;
 static uint16_t l2cap_psm;
@@ -1233,7 +1122,7 @@ static int pbap_pse_rfcomm_accept(struct bt_conn *conn,
 				  struct bt_goep **goep)
 {
 	struct bt_pbap_pse_rfcomm *pbap_pse_rfcomm;
-	struct bt_pbap_pse *pbap_pse;
+	struct bt_pbap_pse *pbap_pse = NULL;
 	int err;
 
 	pbap_pse_rfcomm = CONTAINER_OF(server, struct bt_pbap_pse_rfcomm, server);
@@ -1246,10 +1135,7 @@ static int pbap_pse_rfcomm_accept(struct bt_conn *conn,
 		return err;
 	}
 
-	if (pbap_pse == NULL) {
-		LOG_WRN("Invalid parameter");
-		return -EINVAL;
-	}
+	__ASSERT(pbap_pse != NULL, "Invalid pbap pse instance");
 
 	pbap_pse->_goep.transport_ops = &pse_rfcomm_transport_ops;
 	BT_GOEP_INIT_V1(&pbap_pse->_goep, &pbap_pse->_goep_transport.v1);
@@ -1265,7 +1151,7 @@ static int pbap_pse_l2cap_accept(struct bt_conn *conn,
 				 struct bt_goep **goep)
 {
 	struct bt_pbap_pse_l2cap *pbap_pse_l2cap;
-	struct bt_pbap_pse *pbap_pse;
+	struct bt_pbap_pse *pbap_pse = NULL;
 	int err;
 
 	pbap_pse_l2cap = CONTAINER_OF(server, struct bt_pbap_pse_l2cap, server);
@@ -1278,10 +1164,7 @@ static int pbap_pse_l2cap_accept(struct bt_conn *conn,
 		return err;
 	}
 
-	if (pbap_pse == NULL) {
-		LOG_WRN("Invalid parameter");
-		return -EINVAL;
-	}
+	__ASSERT(pbap_pse != NULL, "Invalid pbap pse instance");
 
 	pbap_pse->_goep.transport_ops = &pse_l2cap_transport_ops;
 	BT_GOEP_INIT_V2(&pbap_pse->_goep, &pbap_pse->_goep_transport.v2);

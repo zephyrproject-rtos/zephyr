@@ -371,7 +371,7 @@ static LLEXT_CONST uint8_t inspect_ext[] LLEXT_SECT ELF_ALIGN = {
 	#include "inspect.inc"
 };
 
-#if defined(CONFIG_LLEXT_RODATA_NO_RELOC)
+#if defined(CONFIG_LLEXT_RODATA_NO_RELOC) && !defined(CONFIG_XTENSA)
 static LLEXT_CONST uint8_t rodata_no_reloc_ext[] ELF_ALIGN = {
 	#include "rodata_no_reloc.inc"
 };
@@ -529,7 +529,8 @@ ZTEST(llext, test_inter_ext)
 #endif
 
 #if defined(CONFIG_LLEXT_TYPE_ELF_RELOCATABLE) && defined(CONFIG_XTENSA) &&                        \
-	!defined(CONFIG_ARCH_HAS_WORD_GRANULAR_ACCESS_INSTR_MEM)
+	!defined(CONFIG_ARCH_HAS_WORD_GRANULAR_ACCESS_INSTR_MEM) &&                                \
+	defined(CONFIG_LLEXT_STORAGE_WRITABLE)
 static LLEXT_CONST uint8_t pre_located_ext[] LLEXT_SECT ELF_ALIGN = {
 	#include "pre_located.inc"
 };

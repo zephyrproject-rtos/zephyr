@@ -20,9 +20,8 @@
 	status = "reserved";
 };
 
-&cpuapp_sram {
-	reg = <0x20000000 DT_SIZE_K(63)>;
-	ranges = <0x0 0x20000000 DT_SIZE_K(63)>;
+&cpuapp_sram_app {
+	reg = <0x60 (DT_SIZE_K(63) - 0x60)>;
 };
 
 &cpuapp_rram {

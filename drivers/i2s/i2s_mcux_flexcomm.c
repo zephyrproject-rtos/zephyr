@@ -60,6 +60,7 @@ struct i2s_mcux_data {
 	struct i2s_mcux_q_entry tx_in_msgs[CONFIG_I2S_MCUX_FLEXCOMM_TX_BLOCK_COUNT];
 	void *tx_out_msgs[CONFIG_I2S_MCUX_FLEXCOMM_TX_BLOCK_COUNT];
 	struct dma_block_config tx_dma_blocks[CONFIG_I2S_MCUX_FLEXCOMM_DMA_TX_BLOCKS];
+	bool waiting_txdata;
 };
 
 static int i2s_mcux_flexcomm_cfg_convert(uint32_t base_frequency, enum i2s_dir dir,
@@ -362,6 +363,8 @@ static void i2s_mcux_tx_stream_disable(const struct device *dev, bool drop)
 	if (drop) {
 		i2s_purge_stream_buffers(stream, stream->cfg.mem_slab, true);
 	}
+
+	dev_data->waiting_txdata = false;
 }
 
 static void i2s_mcux_rx_stream_disable(const struct device *dev, bool drop)
@@ -610,6 +613,19 @@ static int i2s_mcux_tx_stream_start(const struct device *dev)
 	I2S_Type *base = cfg->base;
 	struct i2s_mcux_q_entry queue_entry[CONFIG_I2S_MCUX_FLEXCOMM_DMA_TX_BLOCKS] = {0};
 
+	/* Wait for 2 buffer writes before transmitting as the DMA channel will fail after
+	 * transferring one block if the next block is NULL.
+	 * However if the stream is in STOPPING state then send data immediately.
+	 */
+	if ((k_msgq_num_used_get(&stream->in_queue) == 1) &&
+		(stream->state != I2S_STATE_STOPPING)) {
+		dev_data->waiting_txdata = true;
+		return ret;
+	}
+
+	/* Clear as we have at least 2 blocks of data to write or stream is in STOPPING state */
+	dev_data->waiting_txdata = false;
+
 	for (int i = 0;
 	     i < CONFIG_I2S_MCUX_FLEXCOMM_DMA_TX_BLOCKS && k_msgq_num_used_get(&stream->in_queue);
 	     i++) {
@@ -765,6 +781,10 @@ static int i2s_mcux_trigger(const struct device *dev, enum i2s_dir dir, enum i2s
 		}
 		stream->state = I2S_STATE_STOPPING;
 		stream->last_block = true;
+		/* Start TX if waiting for a second block to be written. */
+		if (dev_data->waiting_txdata) {
+			ret = i2s_mcux_tx_stream_start(dev);
+		}
 		break;
 
 	case I2S_TRIGGER_DRAIN:
@@ -774,6 +794,10 @@ static int i2s_mcux_trigger(const struct device *dev, enum i2s_dir dir, enum i2s
 			break;
 		}
 		stream->state = I2S_STATE_STOPPING;
+		/* Start TX if waiting for a second block to be written. */
+		if (dev_data->waiting_txdata) {
+			ret = i2s_mcux_tx_stream_start(dev);
+		}
 		break;
 
 	case I2S_TRIGGER_DROP:
@@ -863,6 +887,10 @@ static int i2s_mcux_write(const struct device *dev, void *mem_block, size_t size
 		return ret;
 	}
 
+	/* Start the stream if it was waiting for more data to be written */
+	if (dev_data->waiting_txdata) {
+		ret = i2s_mcux_tx_stream_start(dev);
+	}
 	return ret;
 }
 

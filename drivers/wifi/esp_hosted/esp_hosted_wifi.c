@@ -10,6 +10,7 @@ LOG_MODULE_REGISTER(esp_hosted, CONFIG_WIFI_LOG_LEVEL);
 #include <esp_hosted_wifi.h>
 #include <esp_hosted_hal.h>
 #include <esp_hosted_util.h>
+#include <zephyr/version.h>
 
 static struct k_thread esp_hosted_event_thread;
 K_THREAD_STACK_DEFINE(esp_hosted_event_stack, CONFIG_WIFI_ESP_HOSTED_EVENT_TASK_STACK_SIZE);
@@ -22,7 +23,7 @@ static esp_hosted_config_t esp_hosted_config = {
 
 static esp_hosted_data_t esp_hosted_data = {0};
 
-static int esp_hosted_recv(struct net_if *, void *, size_t);
+static int esp_hosted_recv(struct net_if *iface, void *buf, size_t len);
 
 static size_t esp_hosted_get_iface(const struct device *dev)
 {
@@ -523,7 +524,8 @@ static int esp_hosted_status(const struct device *dev, struct net_if *iface,
 	size_t itf = esp_hosted_get_iface(dev);
 
 	status->state = data->state[itf];
-	status->band = WIFI_FREQ_BAND_2_4_GHZ;
+	/* Derived from the channel below, once the channel is known. */
+	status->band = WIFI_FREQ_BAND_UNKNOWN;
 	status->link_mode = WIFI_LINK_MODE_UNKNOWN;
 	status->wpa3_ent_type = WIFI_WPA3_ENTERPRISE_NA;
 	status->mfp = WIFI_MFP_DISABLE;
@@ -543,6 +545,7 @@ static int esp_hosted_status(const struct device *dev, struct net_if *iface,
 	if (itf == ESP_HOSTED_STA_IF) {
 		status->security = esp_hosted_prot_to_sec(ctrl_msg.resp_get_ap_config.sec_prot);
 		status->channel = ctrl_msg.resp_get_ap_config.chnl;
+		status->band = wifi_utils_chan_to_band(status->channel);
 		status->rssi = ctrl_msg.resp_get_ap_config.rssi;
 		status->ssid_len = MIN(ctrl_msg.resp_get_ap_config.ssid.size, WIFI_SSID_MAX_LEN);
 		memcpy(status->ssid, ctrl_msg.resp_get_ap_config.ssid.bytes, status->ssid_len);
@@ -550,6 +553,7 @@ static int esp_hosted_status(const struct device *dev, struct net_if *iface,
 	} else {
 		status->security = esp_hosted_prot_to_sec(ctrl_msg.resp_get_softap_config.sec_prot);
 		status->channel = ctrl_msg.resp_get_softap_config.chnl;
+		status->band = wifi_utils_chan_to_band(status->channel);
 		status->ssid_len =
 			MIN(ctrl_msg.resp_get_softap_config.ssid.size, WIFI_SSID_MAX_LEN);
 		memcpy(status->ssid, ctrl_msg.resp_get_softap_config.ssid.bytes, status->ssid_len);
@@ -577,6 +581,7 @@ static int esp_hosted_scan(const struct device *dev,
 
 		result.rssi = ap_list[i].rssi;
 		result.channel = ap_list[i].chnl;
+		result.band = wifi_utils_chan_to_band(result.channel);
 		result.security = esp_hosted_prot_to_sec(ap_list[i].sec_prot);
 
 		if (ap_list[i].ssid.size) {
@@ -648,8 +653,10 @@ static int esp_hosted_dev_init(const struct device *dev)
 		data->fw_version.rev_patch2 = fw->rev_patch2;
 	}
 
-	LOG_INF("firmware version: v%u.%u.%u.%u.%u", fw->major1, fw->major2, fw->minor,
-		fw->rev_patch1, fw->rev_patch2);
+	snprintk(data->fw_version.str, sizeof(data->fw_version.str), "%u.%u.%u.%u.%u",
+		 data->fw_version.major1, data->fw_version.major2, data->fw_version.minor,
+		 data->fw_version.rev_patch1, data->fw_version.rev_patch2);
+	LOG_INF("firmware version: v%s", data->fw_version.str);
 
 	/* Set MAC addresses. */
 	for (size_t i = 0; i < 2; i++) {
@@ -663,6 +670,21 @@ static int esp_hosted_dev_init(const struct device *dev)
 	return 0;
 }
 
+static int esp_hosted_get_version(const struct device *dev, struct net_if *iface __unused,
+				  struct wifi_version *params)
+{
+	esp_hosted_data_t *data = dev->data;
+
+	if (params == NULL) {
+		return -EINVAL;
+	}
+
+	params->drv_version = KERNEL_VERSION_STRING;
+	params->fw_version = data->fw_version.str[0] != '\0' ? data->fw_version.str : "unknown";
+
+	return 0;
+}
+
 static const struct wifi_mgmt_ops esp_hosted_mgmt = {
 	.scan = esp_hosted_scan,
 	.connect = esp_hosted_connect,
@@ -673,6 +695,7 @@ static const struct wifi_mgmt_ops esp_hosted_mgmt = {
 	.get_stats = esp_hosted_stats,
 #endif
 	.iface_status = esp_hosted_status,
+	.get_version = esp_hosted_get_version,
 };
 
 static const struct net_wifi_mgmt_offload esp_hosted_api = {

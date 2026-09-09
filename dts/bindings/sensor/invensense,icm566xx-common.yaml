@@ -127,14 +127,3 @@ properties:
 
       Otherwise, it will generate interrupts when the level is greater or equals the FIFO Watermark
       Threshold (count >= watermark).
-
-  apex:
-    type: string
-    default: "none"
-    enum:
-      - "none"
-      - "pedometer"
-      - "tilt"
-      - "smd"
-      - "wom"
-    description: "APEX features selection"

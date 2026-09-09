@@ -354,9 +354,6 @@ arduino_serial: &flexcomm2_lpuart2 {};
 &enet {
 	pinctrl-0 = <&pinmux_enet_qos>;
 	pinctrl-names = "default";
-};
-
-&enet_mac {
 	phy-connection-type = "rmii";
 	zephyr,random-mac-address;
 	phy-handle = <&phy>;
@@ -445,6 +442,10 @@ dvp_20pin_i2c: &flexcomm7_lpi2c7 {};
 dvp_20pin_interface: &video_sdma {};
 
 &crc {
+	status = "okay";
+};
+
+&powerquad {
 	status = "okay";
 };
 

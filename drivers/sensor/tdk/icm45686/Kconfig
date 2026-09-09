@@ -5,6 +5,7 @@
 menuconfig ICM45686
 	bool "ICM45686 High-precision 6-Axis Motion Tracking Device"
 	default y
+	depends on ZEPHYR_HAL_TDK_MODULE
 	depends on DT_HAS_INVENSENSE_ICM45605_ENABLED || \
 		DT_HAS_INVENSENSE_ICM45605S_ENABLED || \
 		DT_HAS_INVENSENSE_ICM45686_ENABLED || \

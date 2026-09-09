@@ -17,6 +17,10 @@
 	#address-cells = <1>;
 	#size-cells = <1>;
 
+	chosen {
+		zephyr,system-timer = &systick_timer;
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -56,7 +60,7 @@
 		reg = <0x04800000 0x70>;
 		interrupts = <0 28 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
 		interrupt-parent = <&vim>;
-		status = "disabled";
+		status = "okay";
 	};
 
 	mbox1: mailbox@29010000 {

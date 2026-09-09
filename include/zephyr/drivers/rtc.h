@@ -21,6 +21,11 @@
  * @version 0.1.0
  * @ingroup io_interfaces
  * @{
+ *
+ * @defgroup rtc_interface_ext Device-specific RTC API extensions
+ *
+ * @{
+ * @}
  */
 
 #include <zephyr/kernel.h>

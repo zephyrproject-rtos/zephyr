@@ -116,3 +116,16 @@ properties:
     enum:
       - "P5_10"
       - "P6_6"
+
+  mdi-port-ctrl:
+    description: |
+      The MDIO input is connected to several port/pins via a mux.
+      This is not handled by pinctrl because the mux is located at the
+      peripheral and not GPIO. The possible connections are defined by
+      an enum.
+    type: string
+    enum:
+      - "P0_9"
+      - "P2_0"
+      - "P1_11"
+    required: true

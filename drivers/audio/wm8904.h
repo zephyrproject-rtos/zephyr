@@ -12,6 +12,8 @@
  ******************************************************************************/
 
 #define WM8904_REG_RESET                    (0x00)
+#define WM8904_REG_MIC_BIAS_CONTROL_0       (0x06)
+#define WM8904_REG_MIC_BIAS_CONTROL_1       (0x07)
 #define WM8904_REG_ANALOG_ADC_0             (0x0A)
 #define WM8904_REG_POWER_MGMT_0             (0x0C)
 #define WM8904_REG_POWER_MGMT_2             (0x0E)
@@ -101,6 +103,23 @@
 	((mute & 0b1) << 7 | (vol & 0b00011111))
 #define WM8904_REGMASK_IN_MUTE		0b10000000
 #define WM8904_REGMASK_IN_VOLUME	0b00011111
+
+/**
+ * WM8904_REG_MIC_BIAS_CONTROL_0:
+ * [0] - MICBIAS_ENA: Microphone bias enable
+ */
+#define WM8904_REGMASK_MICBIAS_ENA	0x0001
+
+/**
+ * WM8904_REG_MIC_BIAS_CONTROL_1:
+ * [2:0] - MICBIAS_SEL: Microphone bias voltage select
+ *         000 - 9/10 AVDD
+ *         001 - 10/9 AVDD
+ *         010 - 7/6 AVDD
+ *         011 - 4/3 AVDD
+ *         1xx - 3/2 AVDD
+ */
+#define WM8904_REGMASK_MICBIAS_SEL	0x0007
 
 /**
  * WM8904_ANALOG_LEFT_IN_1, WM8904_ANALOG_RIGHT_IN_1:

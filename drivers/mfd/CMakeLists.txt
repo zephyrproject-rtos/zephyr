@@ -21,6 +21,7 @@ zephyr_library_sources_ifdef(CONFIG_MFD_INFINEON_AUTANALOG_PRB mfd_infineon_auta
 zephyr_library_sources_ifdef(CONFIG_MFD_INFINEON_AUTANALOG_PTCOMP mfd_infineon_autanalog_ptcomp.c)
 zephyr_library_sources_ifdef(CONFIG_MFD_INFINEON_HPPASS mfd_infineon_hppass.c)
 zephyr_library_sources_ifdef(CONFIG_MFD_INFINEON_HPPASS_CSG mfd_infineon_hppass_csg.c)
+zephyr_library_sources_ifdef(CONFIG_MFD_INFINEON_MXCRYPTO mfd_infineon_mxcrypto.c)
 zephyr_library_sources_ifdef(CONFIG_MFD_INFINEON_MXCRYPTOLITE mfd_infineon_mxcryptolite.c)
 zephyr_library_sources_ifdef(CONFIG_MFD_ITE_IT8801 mfd_ite_it8801.c)
 zephyr_library_sources_ifdef(CONFIG_MFD_ITE_IT8801_ALTCTRL mfd_it8801_altctrl.c)
@@ -46,3 +47,7 @@ zephyr_library_sources_ifdef(CONFIG_MFD_TLA2528 mfd_tla2528.c)
 zephyr_library_sources_ifdef(CONFIG_MFD_TLE9104 mfd_tle9104.c)
 zephyr_library_sources_ifdef(CONFIG_NXP_LP_FLEXCOMM mfd_nxp_lp_flexcomm.c)
 # zephyr-keep-sorted-stop
+
+if(CONFIG_MFD_RV3028)
+  zephyr_include_directories(${CMAKE_CURRENT_LIST_DIR})
+endif()

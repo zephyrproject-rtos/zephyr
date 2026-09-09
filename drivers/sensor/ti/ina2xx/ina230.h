@@ -32,10 +32,8 @@
 #define INA236_REG_DEVICE_ID       0x3F
 
 struct ina230_data {
+	struct ina2xx_data common;
 	const struct device *dev;
-	int16_t current;
-	uint16_t bus_voltage;
-	uint16_t power;
 #ifdef CONFIG_INA230_TRIGGER
 	const struct device *gpio;
 	struct gpio_callback gpio_cb;

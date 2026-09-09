@@ -1,0 +1,160 @@
+/*
+ * Copyright (c) 2026 MASSDRIVER EI (massdriver.space)
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <bflb/bl602.dtsi>
+#include <bflb/bl60x_em_8kb.dtsi>
+#include "pinecone-pinctrl.dtsi"
+
+/ {
+	model = "PineCone BL602 Evaluation Board";
+	compatible = "bflb,bl602";
+
+	chosen {
+		zephyr,flash = &w25q16jv;
+		zephyr,flash-controller = &sf_bank1;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,itcm = &itcm;
+		zephyr,sram = &all_ram;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,entropy = &sec_eng_trng;
+		zephyr,bt-hci = &bt_hci_bflb;
+	};
+
+	aliases {
+		watchdog0 = &wdt0;
+		led0 = &red_led;
+		led1 = &green_led;
+		led2 = &blue_led;
+		pwm-led0 = &red_pwm_led;
+		pwm-led1 = &green_pwm_led;
+		pwm-led2 = &blue_pwm_led;
+	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		blue_led: led_0 {
+			gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
+			label = "Blue - LED0";
+		};
+
+		red_led: led_1 {
+			gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
+			label = "Red - LED1";
+		};
+
+		green_led: led_2 {
+			gpios = <&gpio0 14 GPIO_ACTIVE_LOW>;
+			label = "Green - LED2";
+		};
+	};
+
+	pwmleds: pwmleds {
+		compatible = "pwm-leds";
+		status = "disabled";
+
+		blue_pwm_led: led_pwm_0 {
+			pwms = <&pwm0 1 PWM_MSEC(1) PWM_POLARITY_INVERTED>;
+			label = "Blue - LED0 PWM";
+		};
+
+		red_pwm_led: led_pwm_1 {
+			pwms = <&pwm0 2 PWM_MSEC(1) PWM_POLARITY_INVERTED>;
+			label = "Red - LED1 PWM";
+		};
+
+		green_pwm_led: led_pwm_2 {
+			pwms = <&pwm0 4 PWM_MSEC(1) PWM_POLARITY_INVERTED>;
+			label = "Green - LED2 PWM";
+		};
+	};
+};
+
+&cpu0 {
+	clock-frequency = <DT_FREQ_M(192)>;
+};
+
+&sf_bank1 {
+	reg = <0x23000000 0x200000>;
+	ranges = <0x0 0x23000000 0x200000>;
+
+	w25q16jv: flash@0 {
+		compatible = "bflb,sf-flash", "soc-nv-flash";
+		reg = <0 0x200000>;
+		ranges;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		write-block-size = <4>;
+		erase-block-size = <DT_SIZE_K(4)>;
+
+		spi-bus-mode = <2>;
+		sf-pad = <1>;
+		jedec-id = [ef 40 15];
+
+		partitions {
+			ranges;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			boot_header_partition: partition@0 {
+				compatible = "zephyr,mapped-partition";
+				label = "boot_header";
+				reg = <0x00000000 0x2000>;
+				read-only;
+			};
+
+			slot0_partition: partition@2000 {
+				compatible = "zephyr,mapped-partition";
+				label = "image-0";
+				reg = <0x00002000 (0x00180000 - 0x2000)>;
+				read-only;
+			};
+
+			storage_partition: partition@180000 {
+				compatible = "zephyr,mapped-partition";
+				label = "storage";
+				reg = <0x00180000 0x80000>;
+			};
+		};
+	};
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&pwm0 {
+	pinctrl-0 = <&pwm0_default>;
+	pinctrl-names = "default";
+};
+
+&sec_eng_trng {
+	status = "okay";
+};
+
+&sec_eng_aes {
+	status = "okay";
+};
+
+&sec_eng_sha {
+	status = "okay";
+};
+
+&bt_hci_bflb {
+	status = "okay";
+};

@@ -37,6 +37,10 @@ struct lsm6dsv16x_fifo_data {
 	uint16_t temp_batch_odr: 4;
 	uint16_t sflp_batch_odr: 3;
 	uint16_t reserved_2: 1;
+#if defined(CONFIG_LSM6DSV16X_SENSORHUB)
+	uint8_t num_ext_dev;
+	uint8_t shub_ext[LSM6DSV16X_SHUB_MAX_NUM_TARGETS];
+#endif
 } __attribute__((__packed__));
 
 struct lsm6dsv16x_rtio_data {

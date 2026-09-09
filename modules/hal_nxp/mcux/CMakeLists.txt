@@ -137,6 +137,10 @@ zephyr_library_compile_definitions_ifdef(CONFIG_NOCACHE_MEMORY
   __STARTUP_INITIALIZE_NONCACHEDATA
   )
 
+zephyr_library_compile_definitions_ifdef(CONFIG_SOC_MCXA_EARLY_SRAM_ECC_INIT
+  BYPASS_ECC_RAM_INIT
+  )
+
 if(CONFIG_HAS_MCUX_CACHE OR CONFIG_HAS_MCUX_XCACHE)
   zephyr_library_compile_definitions(FSL_SDK_ENABLE_DRIVER_CACHE_CONTROL)
 endif()

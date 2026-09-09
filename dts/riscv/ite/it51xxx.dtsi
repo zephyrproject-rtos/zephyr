@@ -24,6 +24,11 @@
 	#address-cells = <1>;
 	#size-cells = <1>;
 
+	pinctrl: pin-controller {
+		compatible = "ite,it8xxx2-pinctrl";
+		status = "okay";
+	};
+
 	cpus {
 		#address-cells = <1>;
 		#size-cells = <0>;
@@ -560,11 +565,6 @@
 				   &wuc_wu36   /* GPN6 */
 				   &wuc_wu37>; /* GPN7 */
 			#gpio-cells = <2>;
-		};
-
-		pinctrl: pin-controller {
-			compatible = "ite,it8xxx2-pinctrl";
-			status = "okay";
 		};
 
 		pinctrla: pinctrl@f01610 {

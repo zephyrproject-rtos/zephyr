@@ -16,6 +16,7 @@
 #include <zephyr/logging/log.h>
 #include <soc.h>
 #include <esp_clk_tree.h>
+#include <esp_private/esp_clk_tree_common.h>
 #include <hal/i2s_hal.h>
 
 #if !SOC_GDMA_SUPPORTED
@@ -35,7 +36,15 @@
 
 LOG_MODULE_REGISTER(i2s_esp32, CONFIG_I2S_LOG_LEVEL);
 
-#define I2S_ESP32_CLK_SRC             I2S_CLK_SRC_DEFAULT
+/* I2S_CLK_SRC_DEFAULT is an auto-select sentinel on esp32p4, not an
+ * alias of a module clock, so its rate resolves to zero. PLL_F160M is
+ * available on the revisions zephyr supports.
+ */
+#ifdef CONFIG_SOC_SERIES_ESP32P4
+#define I2S_ESP32_CLK_SRC I2S_CLK_SRC_PLL_160M
+#else
+#define I2S_ESP32_CLK_SRC I2S_CLK_SRC_DEFAULT
+#endif
 #define I2S_ESP32_DMA_BUFFER_MAX_SIZE 4092
 
 #define I2S_ESP32_NUM_INST_OK          DT_NUM_INST_STATUS_OKAY(espressif_esp32_i2s)
@@ -439,6 +448,12 @@ void IRAM_ATTR i2s_esp32_tx_compl_transfer(struct k_timer *timer)
 	if (err < 0) {
 		dev_data->state = I2S_STATE_ERROR;
 		LOG_DBG("Failed to restart TX transfer: %d", err);
+		stream->data->dma_pending = false;
+		if (stream->data->mem_block != NULL) {
+			k_mem_slab_free(stream->data->i2s_cfg.mem_slab, stream->data->mem_block);
+		}
+		stream->data->mem_block = NULL;
+		stream->data->mem_block_len = 0;
 		goto tx_disable;
 	}
 
@@ -559,6 +574,12 @@ static int i2s_esp32_tx_start_transfer(const struct device *dev)
 	err = i2s_esp32_start_dma(dev, I2S_DIR_TX);
 	if (err < 0) {
 		LOG_DBG("Failed to start TX DMA transfer: %d", err);
+		stream->data->dma_pending = false;
+		if (stream->data->mem_block != NULL) {
+			k_mem_slab_free(stream->data->i2s_cfg.mem_slab, stream->data->mem_block);
+		}
+		stream->data->mem_block = NULL;
+		stream->data->mem_block_len = 0;
 		return -EIO;
 	}
 
@@ -577,6 +598,9 @@ static void IRAM_ATTR i2s_esp32_tx_stop_transfer(const struct device *dev)
 {
 	const struct i2s_esp32_cfg *dev_cfg = dev->config;
 	const struct i2s_esp32_stream *stream = &dev_cfg->tx;
+	struct i2s_esp32_data *dev_data = dev->data;
+
+	k_timer_stop(&dev_data->tx_deferred_transfer_timer);
 
 #if SOC_GDMA_SUPPORTED
 	dma_stop(stream->conf->dma_dev, stream->conf->dma_channel);
@@ -715,8 +739,7 @@ int IRAM_ATTR i2s_esp32_config_dma(const struct device *dev, enum i2s_dir dir,
 #endif /* I2S_ESP32_IS_DIR_EN(tx) */
 	}
 	dma_cfg.user_data = (void *)dev;
-	dma_cfg.dma_slot =
-		dev_cfg->unit == 0 ? ESP_GDMA_TRIG_PERIPH_I2S0 : ESP_GDMA_TRIG_PERIPH_I2S1;
+	dma_cfg.dma_slot = ESP_GDMA_TRIG_PERIPH_I2S0 + dev_cfg->unit;
 	dma_cfg.block_count = 1;
 	dma_cfg.head_block = &dma_blk;
 
@@ -969,6 +992,9 @@ static int i2s_esp32_initialize(const struct device *dev)
 		return -ENODEV;
 	}
 
+#ifdef CONFIG_SOC_SERIES_ESP32P4
+	esp_clk_tree_enable_src((soc_module_clk_t)I2S_ESP32_CLK_SRC, true);
+#endif
 	err = clock_control_on(clk_dev, dev_cfg->clock_subsys);
 	if (err != 0) {
 		LOG_DBG("Clock control enabling failed: %d", err);
@@ -1371,8 +1397,16 @@ static int i2s_esp32_trigger_check(const struct device *dev, enum i2s_dir dir,
 			return -ENOSYS;
 		}
 	} else if (dir == I2S_DIR_RX) {
+		if (!dev_cfg->rx.conf || !dev_cfg->rx.data) {
+			LOG_DBG("I2S_DIR_RX not supported");
+			return -ENOSYS;
+		}
 		configured = dev_cfg->rx.data->configured;
 	} else if (dir == I2S_DIR_TX) {
+		if (!dev_cfg->tx.conf || !dev_cfg->tx.data) {
+			LOG_DBG("I2S_DIR_TX not supported");
+			return -ENOSYS;
+		}
 		configured = dev_cfg->tx.data->configured;
 	} else {
 		LOG_DBG("Invalid dir: %d", dir);

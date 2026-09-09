@@ -157,9 +157,9 @@ SECTIONS
      * 12. Flash offset (LMA) for start of RTC_DRAM region
      * 13. Size of RTC_DRAM region
      */
-    LONG(ADDR(.rtc.data))
-    LONG(LOADADDR(.rtc.data))
-    LONG(SIZEOF(.rtc.data))
+    LONG(ADDR(.rtc.force_fast))
+    LONG(LOADADDR(.rtc.force_fast))
+    LONG(LOADADDR(.rtc.force_slow) + SIZEOF(.rtc.force_slow) - LOADADDR(.rtc.force_fast))
 
     /* IROM metadata:
      * 14. Destination address (VMA) for IROM region
@@ -187,7 +187,7 @@ SECTIONS
   /* --- START OF RTC --- */
 
   /* RTC fast memory holds RTC wake stub code */
-  .rtc.text :
+  .rtc.text : ALIGN_WITH_INPUT
   {
     . = ALIGN(4);
     *(.rtc.literal .rtc.literal.*)
@@ -200,7 +200,7 @@ SECTIONS
    * It holds data marked with RTC_FAST_ATTR attribute.
    * See the file "esp_attr.h" for more information.
    */
-  .rtc.force_fast :
+  .rtc.force_fast : ALIGN_WITH_INPUT
   {
     . = ALIGN(4);
     *(.rtc.force_fast .rtc.force_fast.*)
@@ -212,13 +212,25 @@ SECTIONS
    * RTC_DATA_ATTR, RTC_RODATA_ATTR attributes.
    * See the file "esp_attr.h" for more information.
    */
-  .rtc.data :
+  .rtc.data : ALIGN_WITH_INPUT
   {
     . = ALIGN(4);
     _rtc_data_start = ABSOLUTE(.);
     *(.rtc.data .rtc.data.*)
     *(.rtc.rodata .rtc.rodata.*)
     . = ALIGN(4);
+  } GROUP_DATA_LINK_IN(rtc_iram_seg, ROMABLE_REGION)
+
+  /* This section located in RTC SLOW Memory area.
+   * It holds data marked with RTC_SLOW_ATTR attribute.
+   * See the file "esp_attr.h" for more information.
+   */
+  .rtc.force_slow : ALIGN_WITH_INPUT
+  {
+    . = ALIGN(4);
+    *(.rtc.force_slow .rtc.force_slow.*)
+    . = ALIGN(4);
+    _rtc_force_slow_end = ABSOLUTE(.);
   } GROUP_DATA_LINK_IN(rtc_iram_seg, ROMABLE_REGION)
 
   .rtc.bss (NOLOAD) :
@@ -241,18 +253,6 @@ SECTIONS
     . = ALIGN(4);
   } GROUP_LINK_IN(rtc_iram_seg)
 
-  /* This section located in RTC SLOW Memory area.
-   * It holds data marked with RTC_SLOW_ATTR attribute.
-   * See the file "esp_attr.h" for more information.
-   */
-  .rtc.force_slow :
-  {
-    . = ALIGN(4);
-    *(.rtc.force_slow .rtc.force_slow.*)
-    . = ALIGN(4);
-    _rtc_force_slow_end = ABSOLUTE(.);
-  } GROUP_DATA_LINK_IN(rtc_iram_seg, ROMABLE_REGION)
-
   /* Get size of rtc slow data */
   _rtc_slow_length = (_rtc_force_slow_end - _rtc_data_start);
 
@@ -274,6 +274,15 @@ SECTIONS
 #else
   _rtc_reserved_length = 0;
 #endif
+
+  /* The RTC_DRAM load descriptor above spans .rtc.force_fast through .rtc.force_slow, so the
+   * bootloader can only place those sections correctly while the VMA and LMA layouts of that
+   * span agree. ALIGN_WITH_INPUT on the four loadable LP sections keeps them in step; this
+   * catches any future change that reintroduces a skew.
+   */
+  ASSERT((LOADADDR(.rtc.force_slow) + SIZEOF(.rtc.force_slow) - LOADADDR(.rtc.force_fast)) ==
+         (ADDR(.rtc.force_slow) + SIZEOF(.rtc.force_slow) - ADDR(.rtc.force_fast)),
+         "LP-SRAM loadable sections must be contiguous with equal VMA and LMA offsets")
 
   /* --- END OF RTC --- */
 
@@ -436,11 +445,43 @@ SECTIONS
     *libzephyr.a:bootloader_random*.*(.literal.bootloader_random_enable .text.bootloader_random_enable)
 
 #if defined(CONFIG_ESP32_WIFI_IRAM_OPT)
-    *libnet80211.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.* .wifiextrairam .wifiextrairam.*)
-    *libpp.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.* .wifiextrairam .wifiextrairam.*)
-    *libcoexist.a:(.wifi_slp_iram  .wifi_slp_iram.* .coexiram .coexiram.* .coexsleepiram .coexsleepiram.*)
+    *libnet80211.a:(.wifi0iram .wifi0iram.*)
+    *libpp.a:(.wifi0iram .wifi0iram.*)
+#endif
 
-    /* [mapping:esp_wifi] */
+#if defined(CONFIG_ESP32_WIFI_RX_IRAM_OPT)
+    *libnet80211.a:(.wifirxiram .wifirxiram.*)
+    *libpp.a:(.wifirxiram .wifirxiram.*)
+#endif
+
+#if defined(CONFIG_ESP32_WIFI_SLP_IRAM_OPT)
+    *libnet80211.a:(.wifislpiram .wifislpiram.*)
+    *libpp.a:(.wifislpiram .wifislpiram.*)
+#endif
+
+#if defined(CONFIG_ESP32_WIFI_IRAM_OPT) || defined(CONFIG_ESP32_WIFI_SLP_IRAM_OPT)
+    *libpp.a:(.wifiorslpiram .wifiorslpiram.*)
+#endif
+
+#if defined(CONFIG_ESP32_WIFI_RX_IRAM_OPT) || defined(CONFIG_ESP32_WIFI_SLP_IRAM_OPT)
+    *libnet80211.a:(.wifislprxiram .wifislprxiram.*)
+    *libpp.a:(.wifislprxiram .wifislprxiram.*)
+#endif
+
+#if defined(CONFIG_ESP32_WIFI_EXTRA_IRAM_OPT)
+    *libnet80211.a:(.wifiextrairam .wifiextrairam.*)
+    *libpp.a:(.wifiextrairam .wifiextrairam.*)
+#endif
+
+#if defined(CONFIG_ESP32_WIFI_IRAM_OPT)
+    *libcoexist.a:(.coexiram .coexiram.*)
+#endif
+
+#if defined(CONFIG_ESP32_WIFI_IRAM_OPT)
+    *(.literal.coex_pti_get_wrapper .text.coex_pti_get_wrapper)
+#endif
+
+#if defined(CONFIG_ESP32_WIFI_SLP_IRAM_OPT)
     *(.literal.wifi_clock_enable_wrapper .text.wifi_clock_enable_wrapper)
     *(.literal.wifi_clock_disable_wrapper .text.wifi_clock_disable_wrapper)
 
@@ -448,12 +489,12 @@ SECTIONS
     *(.literal.esp_phy_enable .text.esp_phy_enable)
     *(.literal.esp_phy_disable .text.esp_phy_disable)
     *(.literal.esp_wifi_bt_power_domain_off .text.esp_wifi_bt_power_domain_off)
-#endif /* CONFIG_ESP32_WIFI_IRAM_OPT */
 
-#if defined(CONFIG_ESP32_WIFI_RX_IRAM_OPT)
-    *libnet80211.a:( .wifirxiram  .wifirxiram.* .wifislprxiram .wifislprxiram.*)
-    *libpp.a:( .wifirxiram  .wifirxiram.* .wifislprxiram .wifislprxiram.*)
-#endif /* CONFIG_ESP32_WIFI_RX_IRAM_OPT */
+#if defined(CONFIG_PM)
+    *(.literal.wifi_apb80m_request .text.wifi_apb80m_request)
+    *(.literal.wifi_apb80m_release .text.wifi_apb80m_release)
+#endif
+#endif
 
     . = ALIGN(4) + 16;
 
@@ -786,15 +827,56 @@ SECTIONS
     __rom_region_start = ABSOLUTE(.);
 
 #if !defined(CONFIG_ESP32_WIFI_IRAM_OPT)
-    *libnet80211.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.* .wifiextrairam .wifiextrairam.*)
-    *libpp.a:( .wifi0iram  .wifi0iram.* .wifislpiram .wifislpiram.* .wifiextrairam .wifiextrairam.*)
-    *libcoexist.a:(.wifi_slp_iram  .wifi_slp_iram.* .coexiram .coexiram.* .coexsleepiram .coexsleepiram.*)
-#endif /* CONFIG_ESP32_WIFI_IRAM_OPT */
+    *libnet80211.a:(.wifi0iram .wifi0iram.*)
+    *libpp.a:(.wifi0iram .wifi0iram.*)
+#endif
 
 #if !defined(CONFIG_ESP32_WIFI_RX_IRAM_OPT)
-    *libnet80211.a:( .wifirxiram  .wifirxiram.* .wifislprxiram .wifislprxiram.*)
-    *libpp.a:( .wifirxiram  .wifirxiram.* .wifislprxiram .wifislprxiram.*)
-#endif /* CONFIG_ESP32_WIFI_RX_IRAM_OPT */
+    *libnet80211.a:(.wifirxiram .wifirxiram.*)
+    *libpp.a:(.wifirxiram .wifirxiram.*)
+#endif
+
+#if !defined(CONFIG_ESP32_WIFI_SLP_IRAM_OPT)
+    *libnet80211.a:(.wifislpiram .wifislpiram.*)
+    *libpp.a:(.wifislpiram .wifislpiram.*)
+#endif
+
+#if !defined(CONFIG_ESP32_WIFI_IRAM_OPT) && !defined(CONFIG_ESP32_WIFI_SLP_IRAM_OPT)
+    *libpp.a:(.wifiorslpiram .wifiorslpiram.*)
+#endif
+
+#if !defined(CONFIG_ESP32_WIFI_RX_IRAM_OPT) && !defined(CONFIG_ESP32_WIFI_SLP_IRAM_OPT)
+    *libnet80211.a:(.wifislprxiram .wifislprxiram.*)
+    *libpp.a:(.wifislprxiram .wifislprxiram.*)
+#endif
+
+#if !defined(CONFIG_ESP32_WIFI_EXTRA_IRAM_OPT)
+    *libnet80211.a:(.wifiextrairam .wifiextrairam.*)
+    *libpp.a:(.wifiextrairam .wifiextrairam.*)
+#endif
+
+#if !defined(CONFIG_ESP32_WIFI_IRAM_OPT)
+    *libcoexist.a:(.coexiram .coexiram.*)
+#endif
+
+#if !defined(CONFIG_ESP32_WIFI_IRAM_OPT)
+    *(.literal.coex_pti_get_wrapper .text.coex_pti_get_wrapper)
+#endif
+
+#if !defined(CONFIG_ESP32_WIFI_SLP_IRAM_OPT)
+    *(.literal.wifi_clock_enable_wrapper .text.wifi_clock_enable_wrapper)
+    *(.literal.wifi_clock_disable_wrapper .text.wifi_clock_disable_wrapper)
+
+    /* [mapping:esp_phy] */
+    *(.literal.esp_phy_enable .text.esp_phy_enable)
+    *(.literal.esp_phy_disable .text.esp_phy_disable)
+    *(.literal.esp_wifi_bt_power_domain_off .text.esp_wifi_bt_power_domain_off)
+
+#if !defined(CONFIG_PM)
+    *(.literal.wifi_apb80m_request .text.wifi_apb80m_request)
+    *(.literal.wifi_apb80m_release .text.wifi_apb80m_release)
+#endif
+#endif
 
     *(.literal .text .literal.* .text.*)
     *(.stub .gnu.warning .gnu.linkonce.literal.* .gnu.linkonce.t.*.literal .gnu.linkonce.t.*)

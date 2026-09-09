@@ -147,6 +147,8 @@ static inline bool net_eth_iface_is_bridged(struct ethernet_context *ctx)
 #if defined(CONFIG_NET_ETHERNET_BRIDGE)
 	struct eth_bridge_iface_context *br_ctx;
 
+	NET_ASSERT(ctx != NULL);
+
 	if (ctx->bridge == NULL) {
 		return false;
 	}
@@ -169,6 +171,8 @@ static inline bool net_eth_iface_is_bridged(struct ethernet_context *ctx)
 static inline struct net_if *net_eth_get_bridge(struct ethernet_context *ctx)
 {
 #if defined(CONFIG_NET_ETHERNET_BRIDGE)
+	NET_ASSERT(ctx != NULL);
+
 	return ctx->bridge;
 #else
 	return NULL;

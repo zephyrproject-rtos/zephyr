@@ -20,6 +20,7 @@
 #include <zephyr/logging/log.h>
 
 #include "bap_common.h"
+#include "bap_stream_tx.h"
 #include "common.h"
 
 LOG_MODULE_REGISTER(bap_common);
@@ -163,4 +164,38 @@ bool cap_stream_is_streaming(const struct bt_cap_stream *cap_stream)
 bool audio_test_stream_is_streaming(const struct audio_test_stream *test_stream)
 {
 	return cap_stream_is_streaming(&test_stream->stream);
+}
+
+void bap_unicast_stream_disconnected_cb(struct bt_bap_stream *stream, uint8_t reason)
+{
+	struct audio_test_stream *test_stream = audio_test_stream_from_bap_stream(stream);
+
+	LOG_INF("Disconnected stream %p with reason %u", stream, reason);
+
+	UNSET_FLAG(test_stream->stopping);
+}
+
+void bap_common_stream_started_cb(struct bt_bap_stream *stream)
+{
+	struct audio_test_stream *test_stream = audio_test_stream_from_bap_stream(stream);
+
+	test_stream->seq_num = 0U;
+	test_stream->tx_cnt = 0U;
+	(void)memset(&test_stream->last_info, 0, sizeof(test_stream->last_info));
+	test_stream->rx_cnt = 0U;
+	test_stream->valid_rx_cnt = 0U;
+	UNSET_FLAG(test_stream->flag_audio_received);
+	test_stream->last_rx_failed = false;
+
+	LOG_INF("Stream %p started", stream);
+
+	if (bap_stream_tx_can_send(stream)) {
+		int err;
+
+		err = bap_stream_tx_register(stream);
+		if (err != 0) {
+			FAIL("Failed to register stream %p for TX: %d\n", stream, err);
+			return;
+		}
+	}
 }

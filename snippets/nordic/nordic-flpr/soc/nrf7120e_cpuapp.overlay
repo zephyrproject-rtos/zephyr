@@ -1,0 +1,8 @@
+/*
+ * Copyright (c) 2026 Nordic Semiconductor
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* nRF7120E shares the nRF7120 memory layout, so the FLPR carve-out is identical. */
+
+#include "nrf7120_cpuapp.overlay"

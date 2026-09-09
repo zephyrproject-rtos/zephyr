@@ -81,7 +81,8 @@ DEVICE_DT_DEFINE(DT_INST(2, fakedeferdriver), fakedeferdriver_init, NULL, NULL, 
  *
  * @ingroup kernel_device_tests
  *
- * @see device_get_binding(), DEVICE_DEFINE()
+ * @see device_get_binding()
+ * @see DEVICE_DEFINE()
  */
 ZTEST(device, test_dummy_device)
 {
@@ -111,7 +112,8 @@ ZTEST(device, test_dummy_device)
  *
  * Validates device binding for an existing device object.
  *
- * @see device_get_binding(), DEVICE_DEFINE()
+ * @see device_get_binding()
+ * @see DEVICE_DEFINE()
  */
 ZTEST_USER(device, test_dynamic_name)
 {
@@ -129,7 +131,8 @@ ZTEST_USER(device, test_dynamic_name)
  * Validates binding of a random device driver(non-defined driver) named
  * "ANOTHER_BOGUS_NAME".
  *
- * @see device_get_binding(), DEVICE_DEFINE()
+ * @see device_get_binding()
+ * @see DEVICE_DEFINE()
  */
 ZTEST_USER(device, test_bogus_dynamic_name)
 {
@@ -146,7 +149,8 @@ ZTEST_USER(device, test_bogus_dynamic_name)
  *
  * Validates device binding for device object when given dynamic name is null.
  *
- * @see device_get_binding(), DEVICE_DEFINE()
+ * @see device_get_binding()
+ * @see DEVICE_DEFINE()
  */
 ZTEST_USER(device, test_null_dynamic_name)
 {
@@ -295,6 +299,19 @@ SYS_INIT_NAMED(init3, init_fn, APPLICATION, 2);
 SYS_INIT_NAMED(init4, init_fn, APPLICATION, 99);
 SYS_INIT_NAMED(init5, init_fn, APPLICATION, 999);
 
+/**
+ * @brief Test registering multiple initialization functions
+ *
+ * @ingroup kernel_device_tests
+ *
+ * @details Register the same initialization function multiple times with
+ * SYS_INIT() and SYS_INIT_NAMED() at the same initialization level but
+ * different priorities, and verify that every registered entry is invoked
+ * during system initialization.
+ *
+ * @see SYS_INIT()
+ * @see SYS_INIT_NAMED()
+ */
 ZTEST(device, test_sys_init_multiple)
 {
 	zassert_equal(sys_init_counter, 6, "");

@@ -4,6 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/logging/log.h>
+#include <zephyr/kernel.h>
 
 #include <siwx91x_nwp.h>
 #include "siwx91x_wifi.h"
@@ -125,6 +126,24 @@ unsigned int siwx91x_on_join(sl_wifi_event_t event, unsigned int status,
 
 	wifi_mgmt_raise_connect_result_event(sidev->iface, WIFI_STATUS_CONN_SUCCESS);
 	sidev->state = WIFI_STATE_COMPLETED;
+	k_work_submit(&sidev->on_join_work);
+
+	return 0;
+}
+
+/*
+ * siwx91x_on_join runs on the WiseConnect event-engine thread. Sync NWP
+ * commands from that context (multicast filter via net_if_dormant_off,
+ * DHCP, power-save) block the engine so BLE RX buffers cannot be freed and
+ * the shared pool exhausts. Defer that work to the system workqueue.
+ */
+void siwx91x_on_join_work(struct k_work *work)
+{
+	struct siwx91x_dev *sidev = CONTAINER_OF(work, struct siwx91x_dev, on_join_work);
+
+	if (sidev->state != WIFI_STATE_COMPLETED) {
+		return;
+	}
 
 	if (IS_ENABLED(CONFIG_WIFI_SILABS_SIWX91X_NET_STACK_NATIVE)) {
 		net_if_dormant_off(sidev->iface);
@@ -134,8 +153,6 @@ unsigned int siwx91x_on_join(sl_wifi_event_t event, unsigned int status,
 	siwx91x_on_join_ipv6(sidev);
 
 	siwx91x_apply_power_save(sidev);
-
-	return 0;
 }
 
 int siwx91x_disconnect(const struct device *dev, struct net_if *iface)

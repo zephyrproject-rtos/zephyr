@@ -296,7 +296,6 @@ config BT_BFLB_BL61X
 	depends on DT_HAS_BFLB_BT_HCI_ENABLED && SOC_SERIES_BL61X
 	select BT_BFLB
 	select HAS_BT_CTLR
-	select DYNAMIC_INTERRUPTS
 	select FPU_SHARING
 	select BFLB_BTBLE_PORT_OS_SHIM
 	help
@@ -346,3 +345,41 @@ config BFLB_BL61X_BLE_EM_64K
 	  must include bl61x_em_64kb.dtsi instead of bl61x_em_32kb.dtsi.
 
 endif # BT_BFLB_BL61X
+
+config BT_BFLB_BL616CL
+	bool
+	default y
+	depends on DT_HAS_BFLB_BT_HCI_ENABLED && SOC_SERIES_BL616CL
+	select BT_BFLB
+	select HAS_BT_CTLR
+	select FPU_SHARING
+	select BFLB_BTBLE_PORT_OS_SHIM
+	help
+	  Bouffalo Lab BL616CL on-chip BLE controller HCI driver.
+	  Uses precompiled binary blobs from the hal_bouffalolab module.
+
+if BT_BFLB_BL616CL
+
+choice BFLB_BL616CL_BLE_VARIANT
+	prompt "BLE controller variant"
+	default BFLB_BL616CL_BLE_M2S1 if BT_CENTRAL || BT_PERIPHERAL || BT_OBSERVER
+	default BFLB_BL616CL_BLE_M0B1
+	help
+	  Select the BLE controller binary variant. The default is
+	  automatically chosen based on the enabled Bluetooth roles.
+
+config BFLB_BL616CL_BLE_M2S1
+	bool "m2s1: Central + Peripheral, 2 connections"
+
+config BFLB_BL616CL_BLE_M0B1
+	bool "m0b1: Advertising (Beacon) only variant"
+
+endchoice
+
+configdefault BT_BUF_ACL_TX_COUNT
+	default 4
+
+configdefault BT_BUF_EVT_RX_COUNT
+	default 5
+
+endif # BT_BFLB_BL616CL

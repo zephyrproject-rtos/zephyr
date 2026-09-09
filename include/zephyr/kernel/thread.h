@@ -269,24 +269,31 @@ struct k_thread {
 	/** threads waiting in k_thread_join() */
 	_wait_q_t join_queue;
 
+#if defined(CONFIG_USERSPACE)
+	/**
+	 * The futex this thread is waiting on.
+	 * Value may be stale if inspected while thread is not waiting on a futex.
+	 */
+	void *futex_pointer;
+#endif /* CONFIG_USERSPACE */
+
 #if defined(CONFIG_POLL)
 	struct z_poller poller;
 #endif /* CONFIG_POLL */
 
-#if defined(CONFIG_EVENTS)
-#if defined(CONFIG_WAITQ_SCALABLE)
-	/*
-	 * Used to build a list of threads that are
-	 * pending on a k_event and should be woken
-	 * up due to a k_event_post/set() call.
-	 *
-	 * Needed only when red-black tree is used for
-	 * wait queues because it is forbidden to mutate
-	 * an rbtree waitq while walking it.
+#if defined(CONFIG_WAITQ_SCALABLE) && (defined(CONFIG_EVENTS) || defined(CONFIG_USERSPACE))
+	/**
+	 * Some operations which satisfy wait conditions need to build a list of
+	 * threads that should be woken up. This field serves as a link to place
+	 * any thread in such a list when necessary:
+	 * - k_event_post/set() when rbtree waitqs are used (because these waitqs
+	 *   are not mutable during walk)
+	 * - k_futex_wake() when rbtree waitqs are used (for the same reason)
 	 */
-	struct k_thread *next_event_link;
-#endif /* CONFIG_WAITQ_SCALABLE */
+	struct k_thread *next_wake_link;
+#endif /* CONFIG_WAITQ_SCALABLE && (CONFIG_EVENTS || CONFIG_USERSPACE) */
 
+#if defined(CONFIG_EVENTS)
 	uint32_t   events; /* dual purpose - wait on and then received */
 	uint32_t   event_options;
 #endif /* CONFIG_EVENTS */
@@ -374,6 +381,31 @@ struct k_thread {
 	/** threads waiting in k_thread_suspend() */
 	_wait_q_t  halt_queue;
 #endif /* CONFIG_SMP */
+
+/*
+ * True when the priority-inheritance fields below and in struct k_mutex
+ * (kernel.h) are compiled in. Defined here rather than in kernel.h because
+ * this header is included first.
+ */
+#define Z_MUTEX_PI_ENABLED (CONFIG_PRIORITY_CEILING < CONFIG_NUM_PREEMPT_PRIORITIES)
+
+#if Z_MUTEX_PI_ENABLED
+	/**
+	 * List of all mutexes currently held by this thread.
+	 * Used to recalculate the thread's priority when a mutex is released,
+	 * and to propagate priority boosts through the ownership chain.
+	 */
+	sys_slist_t held_mutexes;
+
+	/**
+	 * Mutex this thread is currently blocked on, or NULL if not blocked.
+	 * Used for chained priority inheritance (to boost the owner of the
+	 * mutex this thread is waiting for) and for deadlock cycle detection.
+	 */
+	struct k_mutex *mutex_pended_on;
+	/** Thread's priority before any mutex inheritance boost. */
+	int8_t orig_prio;
+#endif /* Z_MUTEX_PI_ENABLED */
 
 	/** arch-specifics: must always be at the end */
 	struct _thread_arch arch;

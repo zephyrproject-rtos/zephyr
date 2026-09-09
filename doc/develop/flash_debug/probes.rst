@@ -198,7 +198,8 @@ provide:
 1. SWO trace end point: this virtual device is used by MCUXpresso to retrieve
    SWO trace data. See the MCUXpresso IDE documentation for more information.
 2. Virtual COM (VCOM) port / UART bridge connected to the target processor
-3. LPCSIO bridge that provides communication to I2C and SPI slave devices
+3. LPCSIO bridge that provides communication to I2C and SPI peripheral
+   devices
 
 This debug probe firmware is compatible with the following debug host tools:
 

@@ -38,7 +38,7 @@ static int spi_config(const struct device *dev, uint32_t frequency,
 		return -ENOTSUP;
 	}
 
-	if (SPI_OP_MODE_GET(operation) != SPI_OP_MODE_MASTER) {
+	if (SPI_OP_MODE_GET(operation) != SPI_OP_MODE_CONTROLLER) {
 		return -ENOTSUP;
 	}
 
@@ -234,7 +234,7 @@ static int spi_sifive_transceive(const struct device *dev,
 		 *	GPIO pin, but the index into the list of available
 		 *	CS lines for the SPI peripheral.
 		 */
-		sys_write32(config->slave, SPI_REG(dev, REG_CSID));
+		sys_write32(config->peripheral, SPI_REG(dev, REG_CSID));
 		sys_write32(SF_CSMODE_OFF, SPI_REG(dev, REG_CSMODE));
 	}
 

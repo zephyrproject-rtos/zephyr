@@ -7,25 +7,24 @@
 
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/clock_control.h>
+#include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/pinctrl.h>
+#include <zephyr/irq.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
 #include <zephyr/sys/util.h>
-#include <zephyr/kernel.h>
+
 #include <soc.h>
 #include <stm32_ll_i2c.h>
 #include <stm32_ll_rcc.h>
 #include <errno.h>
-#include <zephyr/drivers/i2c.h>
-#include <zephyr/drivers/pinctrl.h>
-#include <zephyr/irq.h>
-
-#define LOG_LEVEL CONFIG_I2C_LOG_LEVEL
-#include <zephyr/logging/log.h>
-LOG_MODULE_REGISTER(i2c_stm32);
 
 #include "i2c_stm32.h"
 #include "i2c-priv.h"
 
+LOG_MODULE_REGISTER(i2c_stm32, CONFIG_I2C_LOG_LEVEL);
 
 int i2c_stm32_get_config(const struct device *dev, uint32_t *config)
 {
@@ -61,70 +60,6 @@ int i2c_stm32_get_config(const struct device *dev, uint32_t *config)
 	return 0;
 }
 
-int i2c_stm32_runtime_configure(const struct device *dev, uint32_t config)
-{
-	const struct i2c_stm32_config *cfg = dev->config;
-	struct i2c_stm32_data *data = dev->data;
-	const struct device *clk = DEVICE_DT_GET(STM32_CLOCK_CONTROL_NODE);
-	I2C_TypeDef *i2c = cfg->i2c;
-	uint32_t i2c_clock = 0U;
-	int ret;
-
-	if (cfg->pclk_len > 1) {
-		if (clock_control_get_rate(clk, (clock_control_subsys_t)&cfg->pclken[1],
-					   &i2c_clock) < 0) {
-			LOG_ERR("Failed call clock_control_get_rate(pclken[1])");
-			return -EIO;
-		}
-	} else {
-		if (clock_control_get_rate(clk, (clock_control_subsys_t)&cfg->pclken[0],
-					   &i2c_clock) < 0) {
-			LOG_ERR("Failed call clock_control_get_rate(pclken[0])");
-			return -EIO;
-		}
-	}
-
-	data->dev_config = config;
-
-	k_sem_take(&data->bus_mutex, K_FOREVER);
-
-#ifdef CONFIG_PM_DEVICE_RUNTIME
-	ret = clock_control_on(clk, (clock_control_subsys_t)&cfg->pclken[0]);
-	if (ret < 0) {
-		LOG_ERR("failure Enabling I2C clock");
-		goto out;
-	}
-#endif
-
-	LL_I2C_Disable(i2c);
-#if defined(I2C_CR1_SMBUS) || defined(I2C_CR1_SMBDEN) || defined(I2C_CR1_SMBHEN)
-	i2c_stm32_set_smbus_mode(dev, data->mode);
-#endif
-	ret = i2c_stm32_configure_timing(dev, i2c_clock);
-	if (ret < 0) {
-		goto out;
-	}
-
-	if (data->smbalert_active) {
-		LL_I2C_Enable(i2c);
-	}
-
-#ifdef CONFIG_PM_DEVICE_RUNTIME
-	ret = clock_control_off(clk, (clock_control_subsys_t)&cfg->pclken[0]);
-	if (ret < 0) {
-		LOG_ERR("failure disabling I2C clock");
-		goto out;
-	}
-#endif
-
-out:
-	k_sem_give(&data->bus_mutex);
-
-	return ret;
-}
-
-#define OPERATION(msg) (((struct i2c_msg *) msg)->flags & I2C_MSG_RW_MASK)
-
 static int i2c_stm32_transfer(const struct device *dev, struct i2c_msg *msg,
 			      uint8_t num_msgs, uint16_t target)
 {
@@ -153,7 +88,7 @@ static int i2c_stm32_transfer(const struct device *dev, struct i2c_msg *msg,
 			 * Restart condition between messages
 			 * of different directions is required
 			 */
-			if (OPERATION(current) != OPERATION(next)) {
+			if ((current->flags & I2C_MSG_RW_MASK) != (next->flags & I2C_MSG_RW_MASK)) {
 				if (!(next->flags & I2C_MSG_RESTART)) {
 					ret = -EINVAL;
 					break;
@@ -209,8 +144,21 @@ out_sem:
 	return ret;
 }
 
+static int i2c_stm32_configure(const struct device *dev,
+				uint32_t dev_config_raw)
+{
+	struct i2c_stm32_data *data = dev->data;
+	int ret;
+
+	k_sem_take(&data->bus_mutex, K_FOREVER);
+	ret = i2c_stm32_runtime_configure(dev, dev_config_raw);
+	k_sem_give(&data->bus_mutex);
+
+	return ret;
+}
+
 DEVICE_API(i2c, i2c_stm32_driver_api) = {
-	.configure = i2c_stm32_runtime_configure,
+	.configure = i2c_stm32_configure,
 	.transfer = i2c_stm32_transfer,
 	.get_config = i2c_stm32_get_config,
 #if defined(CONFIG_I2C_STM32_BUS_RECOVERY)
@@ -273,7 +221,10 @@ int i2c_stm32_init(const struct device *dev)
 
 	bitrate_cfg = i2c_map_dt_bitrate(cfg->bitrate);
 
+	k_sem_take(&data->bus_mutex, K_FOREVER);
 	ret = i2c_stm32_runtime_configure(dev, I2C_MODE_CONTROLLER | bitrate_cfg);
+	k_sem_give(&data->bus_mutex);
+
 	if (ret < 0) {
 		LOG_ERR("i2c: failure initializing");
 		return ret;

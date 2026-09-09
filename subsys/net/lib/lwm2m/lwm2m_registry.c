@@ -497,30 +497,54 @@ static bool lwm2m_validate_time_resource_lenghts(uint16_t resource_length, uint1
 
 static int lwm2m_check_buf_sizes(uint8_t data_type, uint16_t resource_length, uint16_t buf_length)
 {
+	size_t expected_len;
+
 	switch (data_type) {
 	case LWM2M_RES_TYPE_OPAQUE:
 	case LWM2M_RES_TYPE_STRING:
 		if (resource_length > buf_length) {
 			return -ENOMEM;
 		}
-		break;
+		return 0;
 	case LWM2M_RES_TYPE_U32:
-	case LWM2M_RES_TYPE_U16:
-	case LWM2M_RES_TYPE_U8:
-	case LWM2M_RES_TYPE_S64:
 	case LWM2M_RES_TYPE_S32:
+		expected_len = sizeof(uint32_t);
+		break;
+	case LWM2M_RES_TYPE_U16:
 	case LWM2M_RES_TYPE_S16:
+		expected_len = sizeof(uint16_t);
+		break;
+	case LWM2M_RES_TYPE_U8:
 	case LWM2M_RES_TYPE_S8:
+		expected_len = sizeof(uint8_t);
+		break;
 	case LWM2M_RES_TYPE_BOOL:
+		expected_len = sizeof(bool);
+		break;
+	case LWM2M_RES_TYPE_S64:
+		expected_len = sizeof(int64_t);
+		break;
 	case LWM2M_RES_TYPE_FLOAT:
+		expected_len = sizeof(double);
+		break;
 	case LWM2M_RES_TYPE_OBJLNK:
-		if (resource_length != buf_length) {
-			return -EINVAL;
-		}
+		expected_len = sizeof(struct lwm2m_objlnk);
 		break;
 	default:
 		return 0;
 	}
+
+	/* For fixed-width types the switch statements in the get/set paths access
+	 * the buffers using the C type matching the resource data type, so both
+	 * the resource data and the user buffer must be exactly that size. Merely
+	 * checking that the two lengths match is not enough: a buffer smaller than
+	 * the accessed type (e.g. reading a float resource into a bool via the
+	 * wrong getter) would overflow.
+	 */
+	if (resource_length != expected_len || buf_length != expected_len) {
+		return -EINVAL;
+	}
+
 	return 0;
 }
 

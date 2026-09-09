@@ -18,7 +18,7 @@
  * The fsl_enet_qos SDK HAL is intentionally NOT used here.
  */
 
-#define DT_DRV_COMPAT nxp_enet_qos_ptp_clock
+#define DT_DRV_COMPAT snps_dwmac_ptp_clock
 
 #include <zephyr/drivers/ptp_clock.h>
 #include <zephyr/kernel.h>
@@ -225,6 +225,9 @@ static int ptp_clock_nxp_enet_qos_init(const struct device *dev)
 	while (data->base->MAC_TIMESTAMP_CONTROL & ENET_MAC_TIMESTAMP_CONTROL_TSADDREG_MASK) {
 	}
 
+	/* Allow the timestamp configuration to propagate to the MAC clock domain. */
+	k_busy_wait(10);
+
 	return 0;
 }
 
@@ -237,9 +240,10 @@ static DEVICE_API(ptp_clock, ptp_clock_nxp_enet_qos_api) = {
 
 #define PTP_CLOCK_NXP_ENET_QOS_INIT(n)                                                             \
 	static const struct ptp_clock_nxp_enet_qos_config ptp_clock_nxp_enet_qos_##n##_config = {  \
-		.enet_qos_dev = DEVICE_DT_GET(DT_INST_GPARENT(n)),                                 \
-		.clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n)),                                \
-		.clock_subsys = (clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name),              \
+		.enet_qos_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),                                  \
+		.clock_dev = DEVICE_DT_GET(DT_CLOCKS_CTLR_BY_NAME(DT_INST_PARENT(n), ptp)),        \
+		.clock_subsys = (clock_control_subsys_t)DT_CLOCKS_CELL_BY_NAME(                    \
+			DT_INST_PARENT(n), ptp, name),                                             \
 	};                                                                                         \
                                                                                                    \
 	static struct ptp_clock_nxp_enet_qos_data ptp_clock_nxp_enet_qos_##n##_data;               \

@@ -541,8 +541,7 @@ void pe_src_transition_to_default_entry(void *obj)
 	 *	 it receives the HARD_RESET_RECEIVED notification.
 	 */
 	policy_notify(dev, HARD_RESET_RECEIVED);
-	pe->data_role = TC_ROLE_DFP;
-	policy_notify(dev, DATA_ROLE_IS_DFP);
+	pe_set_data_role(dev, TC_ROLE_DFP);
 }
 
 enum smf_state_result pe_src_transition_to_default_run(void *obj)

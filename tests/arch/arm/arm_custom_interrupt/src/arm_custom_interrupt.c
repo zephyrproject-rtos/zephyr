@@ -63,6 +63,21 @@ int z_soc_irq_is_enabled(unsigned int irq)
 	return NVIC->ISER[REG_FROM_IRQ(irq)] & BIT(BIT_FROM_IRQ(irq));
 }
 
+void z_soc_irq_clear_pending(unsigned int irq)
+{
+	NVIC_ClearPendingIRQ((IRQn_Type)irq);
+}
+
+void z_soc_irq_set_pending(unsigned int irq)
+{
+	NVIC_SetPendingIRQ((IRQn_Type)irq);
+}
+
+bool z_soc_irq_is_pending(unsigned int irq)
+{
+	return NVIC_GetPendingIRQ((IRQn_Type)irq) != 0U;
+}
+
 void z_soc_irq_eoi(unsigned int irq)
 {
 	if (irq == sw_irq_number) {

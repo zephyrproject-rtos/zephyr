@@ -14,7 +14,7 @@ static const struct gpio_dt_spec led = GPIO_DT_SPEC_GET(LED_NODE, gpios);
 static struct net_mgmt_event_callback wifi_cb;
 static K_SEM_DEFINE(scan_done, 0, 1);
 
-static void wifi_scan_result(struct net_mgmt_event_callback *cb, uint32_t mgmt_event,
+static void wifi_scan_result(struct net_mgmt_event_callback *cb, uint64_t mgmt_event,
 			     struct net_if *iface)
 {
 	if (mgmt_event == NET_EVENT_WIFI_SCAN_DONE) {

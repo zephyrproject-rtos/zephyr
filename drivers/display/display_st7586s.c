@@ -524,7 +524,7 @@ static DEVICE_API(display, st7586s_driver_api) = {
 		.display_offset = DT_PROP(node_id, display_offset),                                \
 		.mipi_dev = DEVICE_DT_GET(DT_PARENT(node_id)),                                     \
 		.dbi_config = MIPI_DBI_CONFIG_DT(                                                  \
-			node_id, ST7586S_WORD_SIZE(node_id) | SPI_OP_MODE_MASTER, 0),              \
+			node_id, ST7586S_WORD_SIZE(node_id) | SPI_OP_MODE_CONTROLLER, 0),          \
 		.conversion_buf = conversion_buf##node_id,                                         \
 		.conversion_buf_size = sizeof(conversion_buf##node_id),                            \
 	};                                                                                         \

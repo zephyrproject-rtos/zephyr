@@ -88,9 +88,9 @@ LOG_MODULE_REGISTER(spi_pl022);
 #define SSP_CR1_MASK_LBM SSP_MASK(CR1, LBM)
 /* Port Enable */
 #define SSP_CR1_MASK_SSE SSP_MASK(CR1, SSE)
-/* Controller/Peripheral (Master/Slave) select */
+/* Controller/Peripheral select */
 #define SSP_CR1_MASK_MS SSP_MASK(CR1, MS)
-/* Peripheral (Slave) mode output disabled */
+/* Peripheral mode output disabled */
 #define SSP_CR1_MASK_SOD SSP_MASK(CR1, SOD)
 
 /*
@@ -380,7 +380,7 @@ static int spi_pl022_configure(const struct device *dev,
 	}
 
 	/* Peripheral mode has not been implemented */
-	if (SPI_OP_MODE_GET(op) != SPI_OP_MODE_MASTER) {
+	if (SPI_OP_MODE_GET(op) != SPI_OP_MODE_CONTROLLER) {
 		LOG_ERR("Peripheral mode is not supported");
 		return -ENOTSUP;
 	}
@@ -911,7 +911,7 @@ static int spi_pl022_init(const struct device *dev)
 	const struct spi_config spicfg = {
 		.frequency = 0,
 		.operation = SPI_WORD_SET(8),
-		.slave = 0,
+		.peripheral = 0,
 	};
 	const struct spi_pl022_cfg *cfg = dev->config;
 	struct spi_pl022_data *data = dev->data;

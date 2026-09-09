@@ -4,7 +4,7 @@
  *
  */
 
-#include <nxp/nxp_imx/mimx9131cvvxj-pinctrl.dtsi>
+#include <nxp/imx/pinctrl/mimx9131cvvxj-pinctrl.dtsi>
 
 &pinctrl {
 	sai3_default: sai3_default {

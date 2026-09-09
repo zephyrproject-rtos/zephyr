@@ -55,12 +55,12 @@ struct k_spinlock z_mm_lock;
 /* Database of all RAM page frames */
 struct k_mem_page_frame k_mem_page_frames[K_MEM_NUM_PAGE_FRAMES];
 
-#if __ASSERT_ON
+#ifdef CONFIG_ASSERT
 /* Indicator that k_mem_page_frames has been initialized, many of these APIs do
  * not work before POST_KERNEL
  */
 static bool page_frames_initialized;
-#endif
+#endif /* CONFIG_ASSERT */
 
 /* Add colors to page table dumps to indicate mapping type */
 #define COLOR_PAGE_FRAMES	1
@@ -386,6 +386,8 @@ static void *virt_region_alloc(size_t size, size_t align)
  * This implies in the future there may be multiple slists managing physical
  * pages. Each page frame will still just have one snode link.
  */
+BUILD_ASSERT(SYS_SFLIST_FLAG_BITS >= 1, "MMU free-page list needs one sflist flag bit");
+
 static sys_sflist_t free_page_frame_list;
 
 /* Number of unused and available free page frames.
@@ -533,7 +535,10 @@ static int map_anon_page(void *addr, uint32_t flags)
 		int ret;
 
 		pf = k_mem_paging_eviction_select(&dirty);
-		__ASSERT(pf != NULL, "failed to get a page frame");
+		if (pf == NULL) {
+			/* Every evictable page frame is pinned or busy */
+			return -ENOMEM;
+		}
 		LOG_DBG("evicting %p at 0x%lx",
 			k_mem_page_frame_to_virt(pf),
 			k_mem_page_frame_to_phys(pf));
@@ -906,7 +911,7 @@ void k_mem_map_phys_bare(uint8_t **virt_ptr, uintptr_t phys, size_t size, uint32
 					 phys, size,
 					 CONFIG_MMU_PAGE_SIZE);
 	__ASSERT(aligned_size != 0U, "0-length mapping at 0x%lx", aligned_phys);
-	__ASSERT(aligned_phys < (aligned_phys + (aligned_size - 1)),
+	__ASSERT(aligned_size - 1 <= (UINTPTR_MAX - aligned_phys),
 		 "wraparound for physical address 0x%lx (size %zu)",
 		 aligned_phys, aligned_size);
 
@@ -988,7 +993,7 @@ void k_mem_unmap_phys_bare(uint8_t *virt, size_t size)
 					 POINTER_TO_UINT(virt), size,
 					 CONFIG_MMU_PAGE_SIZE);
 	__ASSERT(aligned_size != 0U, "0-length mapping at 0x%lx", aligned_virt);
-	__ASSERT(aligned_virt < (aligned_virt + (aligned_size - 1)),
+	__ASSERT(aligned_size - 1 <= (UINTPTR_MAX - aligned_virt),
 		 "wraparound for virtual address 0x%lx (size %zu)",
 		 aligned_virt, aligned_size);
 
@@ -1150,9 +1155,10 @@ void z_mem_manage_init(void)
 	z_paging_ondemand_section_map();
 #endif
 
-#if __ASSERT_ON
+#ifdef CONFIG_ASSERT
 	page_frames_initialized = true;
-#endif
+#endif /* CONFIG_ASSERT */
+
 	k_spin_unlock(&z_mm_lock, key);
 }
 
@@ -1265,7 +1271,7 @@ static K_MUTEX_DEFINE(z_mm_paging_lock);
 #endif
 
 static void virt_region_foreach(void *addr, size_t size,
-				void (*func)(void *))
+				void (*func)(void *vaddr))
 {
 	k_mem_assert_virtual_region(addr, size);
 
@@ -1387,7 +1393,6 @@ static int do_mem_evict(void *addr)
 		goto out;
 	}
 
-	__ASSERT(ret == 0, "failed to prepare page frame");
 #ifdef CONFIG_DEMAND_PAGING_ALLOW_IRQ
 	k_spin_unlock(&z_mm_lock, key);
 #endif /* CONFIG_DEMAND_PAGING_ALLOW_IRQ */
@@ -1690,7 +1695,13 @@ static bool do_page_fault(void *addr, bool pin)
 	if (pf == NULL) {
 		/* Need to evict a page frame */
 		pf = do_eviction_select(&dirty);
-		__ASSERT(pf != NULL, "failed to get a page frame");
+		if (pf == NULL) {
+			/* Every evictable page frame is pinned or busy.
+			 * Fail the fault so it is reported as fatal.
+			 */
+			result = false;
+			goto out;
+		}
 		LOG_DBG("evicting %p at 0x%lx",
 			k_mem_page_frame_to_virt(pf),
 			k_mem_page_frame_to_phys(pf));
@@ -1698,7 +1709,13 @@ static bool do_page_fault(void *addr, bool pin)
 		paging_stats_eviction_inc(faulting_thread, dirty);
 	}
 	ret = page_frame_prepare_locked(pf, &dirty, true, &page_out_location);
-	__ASSERT(ret == 0, "failed to prepare page frame");
+	if (ret != 0) {
+		/* Backing store is full. Fail the fault so it is
+		 * reported as fatal.
+		 */
+		result = false;
+		goto out;
+	}
 
 #ifdef CONFIG_DEMAND_PAGING_ALLOW_IRQ
 	k_spin_unlock(&z_mm_lock, key);
@@ -1745,8 +1762,14 @@ static void do_page_in(void *addr)
 	bool ret;
 
 	ret = do_page_fault(addr, false);
-	__ASSERT(ret, "unmapped memory address %p", addr);
-	(void)ret;
+	if (!ret) {
+		/* There is no error reporting channel to the caller, and
+		 * continuing would defer the failure to an arbitrary later
+		 * access.
+		 */
+		LOG_ERR("cannot page in address %p", addr);
+		k_panic();
+	}
 }
 
 void k_mem_page_in(void *addr, size_t size)
@@ -1762,8 +1785,15 @@ static void do_mem_pin(void *addr)
 	bool ret;
 
 	ret = do_page_fault(addr, true);
-	__ASSERT(ret, "unmapped memory address %p", addr);
-	(void)ret;
+	if (!ret) {
+		/* There is no error reporting channel to the caller, and
+		 * continuing with the memory not actually pinned would
+		 * defer the failure to an arbitrary later access, possibly
+		 * from a context that cannot handle a page fault.
+		 */
+		LOG_ERR("cannot pin address %p", addr);
+		k_panic();
+	}
 }
 
 void k_mem_pin(void *addr, size_t size)

@@ -196,8 +196,6 @@ typedef enum {
 	CTF_EVENT_GPIO_GET_PENDING_INT_EXIT = 0x7C,
 	CTF_EVENT_GPIO_FIRE_CALLBACKS_ENTER = 0x7D,
 	CTF_EVENT_GPIO_FIRE_CALLBACK = 0x7E,
-	CTF_EVENT_THREAD_SLEEP_ENTER = 0x7F,
-	CTF_EVENT_THREAD_SLEEP_EXIT = 0x80,
 	/* memory slabs */
 	CTF_EVENT_MEM_SLAB_INIT = 0x81,
 	CTF_EVENT_MEM_SLAB_ALLOC_ENTER = 0x82,
@@ -307,10 +305,6 @@ typedef enum {
 	CTF_EVENT_THREAD_JOIN_ENTER = 0xDA,
 	CTF_EVENT_THREAD_JOIN_BLOCKING = 0xDB,
 	CTF_EVENT_THREAD_JOIN_EXIT = 0xDC,
-	CTF_EVENT_THREAD_MSLEEP_ENTER = 0xDD,
-	CTF_EVENT_THREAD_MSLEEP_EXIT = 0xDE,
-	CTF_EVENT_THREAD_USLEEP_ENTER = 0xDF,
-	CTF_EVENT_THREAD_USLEEP_EXIT = 0xE0,
 	CTF_EVENT_THREAD_BUSY_WAIT_ENTER = 0xE1,
 	CTF_EVENT_THREAD_BUSY_WAIT_EXIT = 0xE2,
 	CTF_EVENT_THREAD_YIELD = 0xE3,
@@ -500,6 +494,8 @@ typedef enum {
 	/* Syscall */
 	CTF_EVENT_SYSCALL_ENTER = 0x182,
 	CTF_EVENT_SYSCALL_EXIT = 0x183,
+	CTF_EVENT_THREAD_SLEEP_TICKS_ENTER = 0x184,
+	CTF_EVENT_THREAD_SLEEP_TICKS_EXIT = 0x185,
 
 } ctf_event_t;
 
@@ -523,14 +519,14 @@ static inline void ctf_top_thread_priority_set(uint32_t thread_id, int8_t prio,
 	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_THREAD_PRIORITY_SET), thread_id, name, prio);
 }
 
-static inline void ctf_top_thread_sleep_enter(uint32_t timeout)
+static inline void ctf_top_thread_sleep_ticks_enter(uint32_t timeout)
 {
-	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_THREAD_SLEEP_ENTER), timeout);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_THREAD_SLEEP_TICKS_ENTER), timeout);
 }
 
-static inline void ctf_top_thread_sleep_exit(uint32_t timeout, int32_t ret)
+static inline void ctf_top_thread_sleep_ticks_exit(uint32_t timeout, int32_t ret)
 {
-	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_THREAD_SLEEP_EXIT), timeout, ret);
+	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_THREAD_SLEEP_TICKS_EXIT), timeout, ret);
 }
 
 static inline void ctf_top_thread_create(uint32_t thread_id, int8_t prio, ctf_bounded_string_t name)
@@ -624,26 +620,6 @@ static inline void ctf_top_thread_join_blocking(uint32_t thread_id, uint32_t tim
 static inline void ctf_top_thread_join_exit(uint32_t thread_id, uint32_t timeout, int32_t ret)
 {
 	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_THREAD_JOIN_EXIT), thread_id, timeout, ret);
-}
-
-static inline void ctf_top_thread_msleep_enter(int32_t ms)
-{
-	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_THREAD_MSLEEP_ENTER), ms);
-}
-
-static inline void ctf_top_thread_msleep_exit(int32_t ms, int32_t ret)
-{
-	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_THREAD_MSLEEP_EXIT), ms, ret);
-}
-
-static inline void ctf_top_thread_usleep_enter(int32_t us)
-{
-	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_THREAD_USLEEP_ENTER), us);
-}
-
-static inline void ctf_top_thread_usleep_exit(int32_t us, int32_t ret)
-{
-	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_THREAD_USLEEP_EXIT), us, ret);
 }
 
 static inline void ctf_top_thread_busy_wait_enter(uint32_t usec_to_wait)

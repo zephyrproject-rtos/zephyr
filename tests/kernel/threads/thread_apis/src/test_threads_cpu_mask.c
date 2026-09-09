@@ -24,18 +24,36 @@ void child_fn(void *a, void *b, void *c)
 
 
 /**
- * @brief Test the CPU mask APIs for thread lifecycle management
- *
- * This test verifies the behavior of the CPU mask APIs in the Zephyr kernel
- * for thread lifecycle management. It ensures that the APIs behave as expected
- * when operating on both running and non-running threads.
- *
- * @note This test is only executed if `CONFIG_SCHED_CPU_MASK` is enabled.
- *       Otherwise, the test is skipped.
+ * @brief Verify that a thread's CPU mask decides whether it can be scheduled.
  *
  * @ingroup kernel_thread_tests
+ *
+ * @details
+ * The affinity APIs may only be applied to a thread that is prevented from
+ * running, and the resulting mask decides whether the scheduler may dispatch
+ * it at all. Both halves are checked: the calls are first refused on the
+ * running caller, then a not-yet-started high priority thread is given each
+ * shape of mask in turn and the test observes whether it runs when yielded to.
+ * Skipped unless CONFIG_SCHED_CPU_MASK is enabled.
+ *
+ * Test steps:
+ * - Call each mask API on the running thread itself and check the return.
+ * - For each pass, create a higher priority thread in the K_FOREVER state and
+ *   give it a mask: cleared, all enabled, CPU 0 disabled, or pinned to CPU 0.
+ * - Start the thread, yield, and record whether it ran.
+ * - Skip the pass that enables more than one CPU when PIN_ONLY is configured.
+ *
+ * Expected result:
+ * - Every mask API returns -EINVAL for the running thread.
+ * - The thread runs only for the masks that leave it eligible for this CPU.
+ *
+ * @see k_thread_cpu_mask_clear()
+ * @see k_thread_cpu_mask_enable_all()
+ * @see k_thread_cpu_mask_enable()
+ * @see k_thread_cpu_mask_disable()
+ * @see k_thread_cpu_pin()
  */
-ZTEST(threads_lifecycle_1cpu, test_threads_cpu_mask)
+ZTEST(threads_lifecycle_1cpu, test_thread_cpu_mask)
 {
 #ifdef CONFIG_SCHED_CPU_MASK
 	k_tid_t thread;

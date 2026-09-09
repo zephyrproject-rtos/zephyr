@@ -3,37 +3,22 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
-&pinctrl {
-	pinmux_flexcomm1_lpi2c: pinmux_flexcomm1_lpi2c {
-		group0 {
-			pinmux = <FC1_P0_PIO0_24>,
-				 <FC1_P1_PIO0_25>;
-			slew-rate = "fast";
-			drive-strength = "low";
-			input-enable;
-			bias-pull-up;
-			drive-open-drain;
-		};
-	};
-};
-
-&flexcomm1 {
+&flexcomm3 {
 	status = "okay";
 };
 
-/* We cannot enable SPI and I2C on the same flexcomm */
-&flexcomm1_lpspi1 {
-	status = "disabled";
+&flexcomm3_lpi2c3 {
+	status = "okay";
 };
 
 /* To test this sample, connect
- * LPI2C1 SCL(J2-12, P0_25/FC1_P1)    -->        LPI2C2 SCL(J2-20, P4_1/FC2_P1)
- * LPI2C1 SDA(J2-8, P0_24/FC1_P0)     -->        LPI2C2 SDA(J2-18, P4_0/FC2_P0)
+ * LPI2C3 SCL(J5-5, P1_1/FC3_P1)    -->        LPI2C2 SCL(J2-20, P4_1/FC2_P1)
+ * LPI2C3 SDA(J5-6, P1_0/FC3_P0)     -->        LPI2C2 SDA(J2-18, P4_0/FC2_P0)
  */
-&flexcomm1_lpi2c1 {
-	pinctrl-0 = <&pinmux_flexcomm1_lpi2c>;
-	pinctrl-names = "default";
-	clock-frequency = <I2C_BITRATE_STANDARD>;
+&flexcomm3_lpi2c3 {
+	scl-gpios = <&gpio1 1 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+	sda-gpios = <&gpio1 0 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+	recover-bus-on-init;
 	status = "okay";
 
 	eeprom0: eeprom@54 {
@@ -44,6 +29,10 @@
 };
 
 &flexcomm2_lpi2c2 {
+	scl-gpios = <&gpio4 1 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+	sda-gpios = <&gpio4 0 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+	recover-bus-on-init;
+
 	eeprom1: eeprom@56 {
 		compatible = "zephyr,i2c-target-eeprom";
 		reg = <0x56>;

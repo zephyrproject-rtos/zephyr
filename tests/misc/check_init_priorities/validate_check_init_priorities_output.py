@@ -9,27 +9,32 @@ import re
 import sys
 
 REFERENCE_OUTPUT = [
-        "ERROR: Device initialization priority validation failed, the sequence of initialization calls does not match the devicetree dependencies.",
-        "ERROR: /i2c@11112222/test-i2c-dev@10 <NULL> is initialized before its dependency /gpio@ffff <init_fn_0> (PRE_KERNEL_1+0 < PRE_KERNEL_1+1)",
-        "ERROR: /i2c@11112222/test-i2c-dev@10 <NULL> is initialized before its dependency /i2c@11112222 <init_fn_1> (PRE_KERNEL_1+0 < PRE_KERNEL_1+2)",
-        "INFO: /i2c@11112222/test-i2c-dev@11 <NULL> PRE_KERNEL_1+3 > /gpio@ffff <init_fn_0> PRE_KERNEL_1+1",
-        "INFO: /i2c@11112222/test-i2c-dev@11 <NULL> PRE_KERNEL_1+3 > /i2c@11112222 <init_fn_1> PRE_KERNEL_1+2",
+    "ERROR: Device initialization priority validation failed, the sequence of "
+    "initialization calls does not match the devicetree dependencies.",
+    "ERROR: /i2c@11112222/test-i2c-dev@10 <NULL> is initialized before its dependency "
+    "/gpio@ffff <init_fn_0> (PRE_KERNEL_1+0 < PRE_KERNEL_1+1)",
+    "ERROR: /i2c@11112222/test-i2c-dev@10 <NULL> is initialized before its dependency "
+    "/i2c@11112222 <init_fn_1> (PRE_KERNEL_1+0 < PRE_KERNEL_1+2)",
+    "INFO: /i2c@11112222/test-i2c-dev@11 <NULL> PRE_KERNEL_1+3 > /gpio@ffff <init_fn_0> "
+    "PRE_KERNEL_1+1",
+    "INFO: /i2c@11112222/test-i2c-dev@11 <NULL> PRE_KERNEL_1+3 > /i2c@11112222 <init_fn_1> "
+    "PRE_KERNEL_1+2",
 ]
 
 REFERENCE_OUTPUT_INITLEVELS = [
-        "EARLY",
-        "PRE_KERNEL_1",
-        "__init___device_dts_ord_<ord>: init_fn_0(__device_dts_ord_<ord>)",
-        "__init___device_dts_ord_<ord>: init_fn_1(__device_dts_ord_<ord>)",
-        "__init___device_dts_ord_<ord>: NULL(__device_dts_ord_<ord>)",
-        "__init___device_dts_ord_<ord>: NULL(__device_dts_ord_<ord>)",
-        "__init_posix_arch_console_init: posix_arch_console_init(NULL)",
-        "PRE_KERNEL_2",
-        "__init_sys_clock_driver_init: sys_clock_driver_init(NULL)",
-        "POST_KERNEL",
-        "APPLICATION",
-        "__init_boot_banner: boot_banner(NULL)",
-        "SMP",
+    "EARLY",
+    "PRE_KERNEL_1",
+    "__init___device_dts_ord_<ord>: init_fn_0(__device_dts_ord_<ord>)",
+    "__init___device_dts_ord_<ord>: init_fn_1(__device_dts_ord_<ord>)",
+    "__init___device_dts_ord_<ord>: NULL(__device_dts_ord_<ord>)",
+    "__init___device_dts_ord_<ord>: NULL(__device_dts_ord_<ord>)",
+    "__init_posix_arch_console_init: posix_arch_console_init(NULL)",
+    "PRE_KERNEL_2",
+    "__init_sys_clock_driver_init: sys_clock_driver_init(NULL)",
+    "POST_KERNEL",
+    "APPLICATION",
+    "__init_boot_banner: boot_banner(NULL)",
+    "SMP",
 ]
 
 if len(sys.argv) != 3:
@@ -45,7 +50,7 @@ def normalize_initlevel_output(line):
 
 def check_file(file_name, expect, normalize=None):
     output = []
-    with open(file_name, "r") as file:
+    with open(file_name) as file:
         for line in file:
             if line.startswith("INFO: check_init_priorities"):
                 continue
@@ -64,6 +69,7 @@ def check_file(file_name, expect, normalize=None):
         print("\n".join(sorted(output)))
         print("TEST FAILED")
         sys.exit(1)
+
 
 check_file(sys.argv[1], REFERENCE_OUTPUT)
 check_file(sys.argv[2], REFERENCE_OUTPUT_INITLEVELS, normalize_initlevel_output)

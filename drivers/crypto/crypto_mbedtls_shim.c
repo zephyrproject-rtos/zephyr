@@ -14,6 +14,7 @@
 #include <zephyr/init.h>
 #include <errno.h>
 #include <zephyr/crypto/crypto.h>
+#include <zephyr/sys/check.h>
 
 #include <psa/crypto.h>
 
@@ -36,7 +37,7 @@ struct mbedtls_shim_session {
 
 #define CRYPTO_MAX_SESSION CONFIG_CRYPTO_MBEDTLS_SHIM_MAX_SESSION
 
-struct mbedtls_shim_session mbedtls_sessions[CRYPTO_MAX_SESSION];
+static struct mbedtls_shim_session mbedtls_sessions[CRYPTO_MAX_SESSION];
 
 static K_MUTEX_DEFINE(mbedtls_sessions_lock);
 
@@ -94,19 +95,19 @@ static int mbedtls_ecb(struct cipher_ctx *ctx, struct cipher_pkt *pkt)
 					    &out_len);
 	}
 
-	pkt->out_len = out_len;
-
 	if (status != PSA_SUCCESS) {
 		LOG_ERR("psa_cipher_[en|de]crypt() failed (%d)", status);
 		return -EINVAL;
 	}
+
+	pkt->out_len = out_len;
 
 	return 0;
 }
 #endif /* CONFIG_PSA_WANT_ALG_ECB_NO_PADDING */
 
 #if CONFIG_PSA_WANT_ALG_CBC_NO_PADDING
-int mbedtls_cbc(struct cipher_ctx *ctx, struct cipher_pkt *pkt, uint8_t *iv)
+static int mbedtls_cbc(struct cipher_ctx *ctx, struct cipher_pkt *pkt, uint8_t *iv)
 {
 	struct mbedtls_shim_session *session = ctx->drv_sessn_state;
 	psa_cipher_operation_t psa_op = PSA_CIPHER_OPERATION_INIT;
@@ -146,14 +147,14 @@ int mbedtls_cbc(struct cipher_ctx *ctx, struct cipher_pkt *pkt, uint8_t *iv)
 	status = psa_cipher_set_iv(&psa_op, iv, 16);
 	if (status != PSA_SUCCESS) {
 		LOG_ERR("psa_cipher_set_iv() failed (%d)", status);
-		return -EINVAL;
+		goto error;
 	}
 
 	status = psa_cipher_update(&psa_op, in_buf_ptr, in_buf_size,
 				   out_buf_ptr, out_buf_size, &out_len);
 	if (status != PSA_SUCCESS) {
 		LOG_ERR("psa_cipher_update() failed (%d)", status);
-		return -EINVAL;
+		goto error;
 	}
 	out_buf_ptr += out_len;
 	out_buf_size -= out_len;
@@ -162,12 +163,20 @@ int mbedtls_cbc(struct cipher_ctx *ctx, struct cipher_pkt *pkt, uint8_t *iv)
 	status = psa_cipher_finish(&psa_op, out_buf_ptr, out_buf_size, &out_len);
 	if (status != PSA_SUCCESS) {
 		LOG_ERR("psa_cipher_finish() failed (%d)", status);
-		return -EINVAL;
+		goto error;
 	}
 
 	pkt->out_len += out_len;
 
 	return 0;
+
+error:
+	status = psa_cipher_abort(&psa_op);
+	CHECKIF(status != PSA_SUCCESS) {
+		LOG_ERR("psa_cipher_abort() failed (%d)", status);
+	}
+
+	return -EINVAL;
 }
 #endif /* CONFIG_PSA_WANT_ALG_CBC_NO_PADDING */
 
@@ -205,19 +214,19 @@ static int mbedtls_aead(struct cipher_ctx *ctx, struct cipher_aead_pkt *apkt, ui
 	status = psa_aead_set_nonce(&psa_op, nonce, nonce_len);
 	if (status != PSA_SUCCESS) {
 		LOG_ERR("psa_aead_set_nonce() failed (%d)", status);
-		return -EIO;
+		goto error;
 	}
 
 	status = psa_aead_set_lengths(&psa_op, apkt->ad_len, apkt->pkt->in_len);
 	if (status != PSA_SUCCESS) {
 		LOG_ERR("psa_aead_set_lengths() failed (%d)", status);
-		return -EIO;
+		goto error;
 	}
 
 	status = psa_aead_update_ad(&psa_op, apkt->ad, apkt->ad_len);
 	if (status != PSA_SUCCESS) {
 		LOG_ERR("psa_aead_update_ad() failed (%d)", status);
-		return -EIO;
+		goto error;
 	}
 
 	apkt->pkt->out_len = 0;
@@ -226,7 +235,7 @@ static int mbedtls_aead(struct cipher_ctx *ctx, struct cipher_aead_pkt *apkt, ui
 				 out_buf_ptr, out_buf_size, &out_len);
 	if (status != PSA_SUCCESS) {
 		LOG_ERR("psa_aead_update() failed (%d)", status);
-		return -EIO;
+		goto error;
 	}
 
 	out_buf_ptr += out_len;
@@ -244,10 +253,18 @@ static int mbedtls_aead(struct cipher_ctx *ctx, struct cipher_aead_pkt *apkt, ui
 	}
 	if (status != PSA_SUCCESS) {
 		LOG_ERR("psa_aead_[finish|verify]() failed (%d)", status);
-		return -EIO;
+		goto error;
 	}
 
 	return 0;
+
+error:
+	status = psa_aead_abort(&psa_op);
+	CHECKIF(status != PSA_SUCCESS) {
+		LOG_ERR("psa_aead_abort() failed (%d)", status);
+	}
+
+	return -EIO;
 }
 #endif /* CONFIG_PSA_WANT_ALG_CCM || CONFIG_PSA_WANT_ALG_GCM */
 #endif /* CONFIG_PSA_WANT_KEY_TYPE_AES */
@@ -447,15 +464,16 @@ static int mbedtls_hash_session_setup(const struct device *dev,
 static int mbedtls_hash_session_free(const struct device *dev, struct hash_ctx *ctx)
 {
 	struct mbedtls_shim_session *session = ctx->drv_sessn_state;
+	psa_status_t status;
 
-	if (psa_hash_abort(&session->hash_op) != PSA_SUCCESS) {
+	status = psa_hash_abort(&session->hash_op);
+	if (status != PSA_SUCCESS) {
 		LOG_ERR("PSA hash abort failed");
-		return -EIO;
 	}
 
 	mbedtls_free_session(session);
 
-	return 0;
+	return (status == PSA_SUCCESS) ? 0 : -EIO;
 }
 
 static int mbedtls_query_caps(const struct device *dev)

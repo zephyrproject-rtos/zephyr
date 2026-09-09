@@ -9,11 +9,28 @@ config INPUT_VIRTIO
 	help
 	  Enable driver for VIRTIO input devices.
 
+if INPUT_VIRTIO
+
 config INPUT_VIRTIO_EVENT_BUF_COUNT
 	int "Number of queued event buffers"
-	depends on INPUT_VIRTIO
 	default 16
 	range 1 256
 	help
 	  Number of event buffers queued on the event virtqueue. Each buffer
 	  holds a single input event.
+
+choice INPUT_VIRTIO_DEVICE_TYPE
+	prompt "VIRTIO input device type"
+	default INPUT_VIRTIO_DEVICE_TYPE_TABLET
+	help
+	  Type of VIRTIO input device to emulate/probe.
+
+config INPUT_VIRTIO_DEVICE_TYPE_TABLET
+	bool "Tablet"
+
+config INPUT_VIRTIO_DEVICE_TYPE_KEYBOARD
+	bool "Keyboard"
+
+endchoice # INPUT_VIRTIO_DEVICE_TYPE
+
+endif # INPUT_VIRTIO

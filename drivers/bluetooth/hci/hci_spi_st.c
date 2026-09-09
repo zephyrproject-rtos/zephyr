@@ -91,7 +91,7 @@ static struct k_thread spi_rx_thread_data;
 #define BLUENRG_CONFIG_LL_ONLY_LEN          0x01
 
 static const struct spi_dt_spec bus = SPI_DT_SPEC_INST_GET(
-	0, SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8) | SPI_LOCK_ON);
+	0, SPI_OP_MODE_CONTROLLER | SPI_TRANSFER_MSB | SPI_WORD_SET(8) | SPI_LOCK_ON);
 
 static struct spi_buf spi_tx_buf;
 static struct spi_buf spi_rx_buf;
@@ -215,8 +215,8 @@ static void release_cs(bool data_transaction)
 
 static int bt_spi_get_header(uint8_t op, uint16_t *size, uint16_t write_size)
 {
-	uint8_t header_master[5] = {op, 0, 0, 0, 0};
-	uint8_t header_slave[5];
+	uint8_t header_controller[5] = {op, 0, 0, 0, 0};
+	uint8_t header_peripheral[5];
 	uint8_t size_offset, attempts;
 	int ret;
 
@@ -244,14 +244,14 @@ static int bt_spi_get_header(uint8_t op, uint16_t *size, uint16_t write_size)
 		}
 		/* Make sure CS is raised before a new attempt */
 		gpio_pin_set_dt(&bus.config.cs.gpio, 0);
-		ret = bt_spi_transceive(header_master, 5, header_slave, 5);
+		ret = bt_spi_transceive(header_controller, 5, header_peripheral, 5);
 		if (ret) {
 			/* SPI transaction failed */
 			break;
 		}
 
-		*size = (header_slave[STATUS_HEADER_READY] == READY_NOW) ?
-				header_slave[size_offset] : 0;
+		*size = (header_peripheral[STATUS_HEADER_READY] == READY_NOW) ?
+				header_peripheral[size_offset] : 0;
 		attempts--;
 	} while ((*size == 0) && attempts);
 
@@ -278,8 +278,8 @@ static void release_cs(bool data_transaction)
 
 static int bt_spi_get_header(uint8_t op, uint16_t *size, uint16_t write_size)
 {
-	uint8_t header_master[5] = {op, 0, 0, 0, 0};
-	uint8_t header_slave[5];
+	uint8_t header_controller[5] = {op, 0, 0, 0, 0};
+	uint8_t header_peripheral[5];
 	uint16_t cs_delay;
 	uint8_t size_offset;
 	int ret;
@@ -295,8 +295,8 @@ static int bt_spi_get_header(uint8_t op, uint16_t *size, uint16_t write_size)
 		/* To make sure we have a minimum delay from previous release cs */
 		cs_delay = 100;
 		size_offset = STATUS_HEADER_TOWRITE;
-		header_master[size_offset] = write_size & 0x00FF;
-		header_master[size_offset + 1] = write_size >> 8;
+		header_controller[size_offset] = write_size & 0x00FF;
+		header_controller[size_offset + 1] = write_size >> 8;
 	} else {
 		return -EINVAL;
 	}
@@ -307,7 +307,7 @@ static int bt_spi_get_header(uint8_t op, uint16_t *size, uint16_t write_size)
 	/* Perform a zero byte SPI transaction to acquire the SPI lock and lower CS
 	 * while waiting for IRQ to be raised
 	 */
-	bt_spi_transceive(header_master, 0, header_slave, 0);
+	bt_spi_transceive(header_controller, 0, header_peripheral, 0);
 	gpio_pin_interrupt_configure_dt(&irq_gpio, GPIO_INT_DISABLE);
 
 	/* Wait up to a maximum time of 100 ms */
@@ -316,8 +316,8 @@ static int bt_spi_get_header(uint8_t op, uint16_t *size, uint16_t write_size)
 		return -EIO;
 	}
 
-	ret = bt_spi_transceive(header_master, 5, header_slave, 5);
-	*size = header_slave[size_offset] | (header_slave[size_offset + 1] << 8);
+	ret = bt_spi_transceive(header_controller, 5, header_peripheral, 5);
+	*size = header_peripheral[size_offset] | (header_peripheral[size_offset + 1] << 8);
 
 	if (DT_INST_PROP_OR(0, wait_irq_low, false)) {
 		/* Wait up to a maximum time of 10 ms */

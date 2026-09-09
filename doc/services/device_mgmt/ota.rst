@@ -69,7 +69,7 @@ upgrade occurs.
 There is an :zephyr:code-sample:`smp-svr` sample included in the Zephyr
 :zephyr:code-sample-category:`mgmt` section.
 
-Lightweight M2M (LWM2M)
+Lightweight M2M (LwM2M)
 =======================
 
 The :ref:`lwm2m_interface` protocol includes support for firmware update via

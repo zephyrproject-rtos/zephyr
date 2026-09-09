@@ -1,0 +1,16 @@
+sample:
+  name: SPI RTIO loopback sample
+tests:
+  sample.drivers.spi.rtio_loopback:
+    tags:
+      - rtio
+      - spi
+    harness: console
+    harness_config:
+      fixture: spi_loopback
+      type: one_line
+      regex:
+        - "sample complete"
+    platform_allow:
+      - b_u585i_iot02a
+      - nrf54l15dk/nrf54l15/cpuapp

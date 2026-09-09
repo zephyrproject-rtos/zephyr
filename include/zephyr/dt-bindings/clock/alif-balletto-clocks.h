@@ -24,6 +24,12 @@
 /** UART control register offset in CLKCTL_PER_SLV */
 #define ALIF_UART_CTRL_REG		0x08U
 
+/** I2C0 control register offset in CLKCTL_PER_SLV */
+#define ALIF_I2C0_CTRL_REG		0x50U
+
+/** I2C1 control register offset in CLKCTL_PER_SLV */
+#define ALIF_I2C1_CTRL_REG		0x54U
+
 /** @} */
 
 /**
@@ -50,6 +56,12 @@
 #define ALIF_UART5_SYST_PCLK        \
 	ALIF_CLK_CFG(CLKCTL_PER_SLV, UART_CTRL, 5U, 1U, 1U, 1U, 13U, ALIF_PARENT_CLK_SYST_PCLK)
 
+/** I2C0 clock sourced from system PCLK */
+#define ALIF_I2C0_SYST_PCLK         \
+	ALIF_CLK_CFG(CLKCTL_PER_SLV, I2C0_CTRL, 0U, 1U, 0U, 0U, 0U, ALIF_PARENT_CLK_SYST_PCLK)
+/** I2C1 clock sourced from system PCLK */
+#define ALIF_I2C1_SYST_PCLK         \
+	ALIF_CLK_CFG(CLKCTL_PER_SLV, I2C1_CTRL, 0U, 1U, 0U, 0U, 0U, ALIF_PARENT_CLK_SYST_PCLK)
 /** @} */
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_ALIF_BALLETTO_CLOCKS_H_ */

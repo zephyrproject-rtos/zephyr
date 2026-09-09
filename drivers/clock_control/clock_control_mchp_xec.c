@@ -210,7 +210,7 @@ static void ht_clean(const struct device *dev)
 }
 
 static int ht_wait_ready(const struct device *dev, uint16_t counts,
-			 int (*is_ready)(const struct device *))
+			 int (*is_ready)(const struct device *dev))
 {
 	const struct xec_pcr_config *drvcfg = dev->config;
 	mem_addr_t ht_base = drvcfg->htmr_base;
@@ -243,7 +243,7 @@ static int ht_wait_ready(const struct device *dev, uint16_t counts,
 }
 
 static int ht_wait_ready_ms(const struct device *dev, uint32_t ms,
-			    int (*is_ready)(const struct device *))
+			    int (*is_ready)(const struct device *dev))
 {
 	int ret = 0;
 	uint16_t ht_counts = 0;

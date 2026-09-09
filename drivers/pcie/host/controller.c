@@ -226,7 +226,22 @@ static bool pcie_generic_ctrl_enumerate_type1(const struct device *ctrl_dev, pci
 			pcie_ctrl_set_cmd(ctrl_dev, bdf, PCIE_CONF_CMDSTAT_MEM, true);
 		}
 
-		/* TODO: add support for prefetchable */
+		/* Prefetch/MEM64 align on 1MiB boundary */
+		if (pcie_ctrl_region_get_allocate_base(ctrl_dev, bdf, true, true,
+						       MB(1), &bar_base_addr)) {
+			uint32_t mem_64 =
+				pcie_ctrl_conf_read(ctrl_dev, bdf, PCIE_PREFETCH_BASE_LIMIT);
+
+			pcie_ctrl_conf_write(
+				ctrl_dev, bdf, PCIE_PREFETCH_BASE_LIMIT,
+				PCIE_PREFETCH_BASE_LIMIT_VAL((bar_base_addr & 0xfff00000) >> 16,
+							     PCIE_PREFETCH_LIMIT(mem_64)));
+
+			pcie_ctrl_conf_write(ctrl_dev, bdf, PCIE_PREFETCH_BASE_UPPER,
+					     (uint64_t)bar_base_addr >> 32);
+
+			pcie_ctrl_set_cmd(ctrl_dev, bdf, PCIE_CONF_CMDSTAT_MEM, true);
+		}
 
 		pcie_ctrl_set_cmd(ctrl_dev, bdf, PCIE_CONF_CMDSTAT_MASTER, true);
 
@@ -277,7 +292,19 @@ static void pcie_generic_ctrl_post_enumerate_type1(const struct device *ctrl_dev
 			PCIE_MEM_BASE_LIMIT_VAL(PCIE_MEM_BASE(mem), (bar_base_addr - 1) >> 16));
 	}
 
-	/* TODO: add support for prefetchable */
+	/* Prefetch/MEM64 align on 1MiB boundary */
+	if (pcie_ctrl_region_get_allocate_base(ctrl_dev, bdf, true, true,
+					       MB(1), &bar_base_addr)) {
+		uint32_t mem_64 = pcie_ctrl_conf_read(ctrl_dev, bdf, PCIE_PREFETCH_BASE_LIMIT);
+
+		pcie_ctrl_conf_write(
+			ctrl_dev, bdf, PCIE_PREFETCH_BASE_LIMIT,
+			PCIE_PREFETCH_BASE_LIMIT_VAL(PCIE_PREFETCH_BASE(mem_64),
+						     (bar_base_addr - 1) >> 16));
+
+		pcie_ctrl_conf_write(ctrl_dev, bdf, PCIE_PREFETCH_LIMIT_UPPER,
+				     (uint64_t)(bar_base_addr - 1) >> 32);
+	}
 }
 
 static void pcie_generic_ctrl_enumerate_type0(const struct device *ctrl_dev, pcie_bdf_t bdf)

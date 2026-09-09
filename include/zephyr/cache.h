@@ -390,11 +390,11 @@ static ALWAYS_INLINE int sys_cache_instr_flush_and_invd_range(void *addr, size_t
  *
  * The API is provided to get the data cache line.
  *
- * The cache line size is calculated (in order of priority):
+ * The cache line size is obtained (in order of priority):
  *
  * - At run-time when @kconfig{CONFIG_DCACHE_LINE_SIZE_DETECT} is set.
- * - At compile time using the value set in @kconfig{CONFIG_DCACHE_LINE_SIZE}.
- * - 0 otherwise
+ * - From compile time @kconfig{CONFIG_DCACHE_LINE_SIZE} value.
+ * - 0 if DCache is disabled
  *
  * @retval size Size of the d-cache line.
  * @retval 0 If the d-cache is not enabled.
@@ -402,8 +402,12 @@ static ALWAYS_INLINE int sys_cache_instr_flush_and_invd_range(void *addr, size_t
 static ALWAYS_INLINE size_t sys_cache_data_line_size_get(void)
 {
 #ifdef CONFIG_DCACHE_LINE_SIZE_DETECT
-	return cache_data_line_size_get();
-#elif defined(CONFIG_DCACHE_LINE_SIZE)
+	size_t dcache_line_size = cache_data_line_size_get();
+
+	__ASSERT(dcache_line_size > 0);
+	__ASSERT(dcache_line_size == CONFIG_DCACHE_LINE_SIZE);
+	return dcache_line_size;
+#elif defined(CONFIG_DCACHE)
 	return CONFIG_DCACHE_LINE_SIZE;
 #else
 	return 0;
@@ -416,11 +420,11 @@ static ALWAYS_INLINE size_t sys_cache_data_line_size_get(void)
  *
  * The API is provided to get the instruction cache line.
  *
- * The cache line size is calculated (in order of priority):
+ * The cache line size is obtained (in order of priority):
  *
  * - At run-time when @kconfig{CONFIG_ICACHE_LINE_SIZE_DETECT} is set.
- * - At compile time using the value set in @kconfig{CONFIG_ICACHE_LINE_SIZE}.
- * - 0 otherwise
+ * - From compile time @kconfig{CONFIG_ICACHE_LINE_SIZE} value.
+ * - 0 if ICache is disabled
  *
  * @retval size Size of the d-cache line.
  * @retval 0 If the d-cache is not enabled.
@@ -428,8 +432,12 @@ static ALWAYS_INLINE size_t sys_cache_data_line_size_get(void)
 static ALWAYS_INLINE size_t sys_cache_instr_line_size_get(void)
 {
 #ifdef CONFIG_ICACHE_LINE_SIZE_DETECT
-	return cache_instr_line_size_get();
-#elif defined(CONFIG_ICACHE_LINE_SIZE)
+	size_t icache_line_size = cache_instr_line_size_get();
+
+	__ASSERT(icache_line_size > 0);
+	__ASSERT(icache_line_size == CONFIG_ICACHE_LINE_SIZE);
+	return icache_line_size;
+#elif defined(CONFIG_ICACHE)
 	return CONFIG_ICACHE_LINE_SIZE;
 #else
 	return 0;

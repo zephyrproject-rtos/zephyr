@@ -57,10 +57,24 @@ extern "C" {
 /** Device Tree specified speed */
 #define I2C_SPEED_DT			(0x7U)
 
+/** @cond INTERNAL_HIDDEN */
 #define I2C_SPEED_SHIFT			(1U)
+#define I2C_SPEED_MASK			(0x7U << I2C_SPEED_SHIFT) /* 3 bits */
+/** @endcond */
+
+/**
+ * @brief Encode an I2C speed into the format of the configuration word.
+ *
+ * @param speed One of the @c I2C_SPEED_* constants.
+ */
 #define I2C_SPEED_SET(speed)		(((speed) << I2C_SPEED_SHIFT) \
 						& I2C_SPEED_MASK)
-#define I2C_SPEED_MASK			(0x7U << I2C_SPEED_SHIFT) /* 3 bits */
+
+/**
+ * @brief Extract the I2C speed from a configuration word.
+ *
+ * @param cfg I2C configuration word.
+ */
 #define I2C_SPEED_GET(cfg) 		(((cfg) & I2C_SPEED_MASK) \
 						>> I2C_SPEED_SHIFT)
 
@@ -526,11 +540,11 @@ typedef int (*i2c_target_stop_cb_t)(struct i2c_target_config *config);
  * an I2C transfer.
  */
 enum i2c_error_reason {
-	I2C_ERROR_TIMEOUT = 0,	/* Timeout error         */
-	I2C_ERROR_ARBITRATION,	/* Bus arbitration size  */
-	I2C_ERROR_SIZE,		/* Bad frame size        */
-	I2C_ERROR_DMA,		/* DMA transfer error    */
-	I2C_ERROR_GENERIC,	/* Any other bus error   */
+	I2C_ERROR_TIMEOUT = 0,	/**< Timeout error */
+	I2C_ERROR_ARBITRATION,	/**< Bus arbitration lost */
+	I2C_ERROR_SIZE,		/**< Bad frame size */
+	I2C_ERROR_DMA,		/**< DMA transfer error */
+	I2C_ERROR_GENERIC,	/**< Any other bus error */
 };
 
 /** @brief Function called when an error is detected on the I2C bus
@@ -731,7 +745,9 @@ STATS_NAME_END(i2c);
  * @brief I2C specific device state which allows for i2c device class specific additions
  */
 struct i2c_device_state {
+	/** Common device state */
 	struct device_state devstate;
+	/** I2C statistics */
 	struct stats_i2c stats;
 };
 
@@ -1237,9 +1253,13 @@ static inline void i2c_iodev_submit(struct rtio_iodev_sqe *iodev_sqe)
 	api->iodev_submit(dt_spec->bus, iodev_sqe);
 }
 
+/** @cond INTERNAL_HIDDEN */
+
 extern const struct rtio_iodev_api i2c_iodev_api;
 
 #define I2C_CAT2(x, y) x ## y
+
+/** @endcond */
 
 /**
  * @brief Define an iodev for a given dt node on the bus

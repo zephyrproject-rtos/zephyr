@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_SI32_PINCTRL_
-#define ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_SI32_PINCTRL_
+#ifndef ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_SI32_PINCTRL_H_
+#define ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_SI32_PINCTRL_H_
 
 #define SI32_SIGNAL_USART0_TX   0
 #define SI32_SIGNAL_USART0_RX   1
@@ -110,4 +110,4 @@
 #define SI32_MUX(fun, port, pin)                                                                   \
 	((((port)&0x7)) | (((pin)&0xF) << 3) | ((SI32_SIGNAL_##fun & 0x7F) << 22))
 
-#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_SI32_PINCTRL_ */
+#endif /* ZEPHYR_INCLUDE_DT_BINDINGS_PINCTRL_SI32_PINCTRL_H_ */

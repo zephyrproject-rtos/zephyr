@@ -12,6 +12,10 @@ menuconfig UOSCORE
 
 if UOSCORE
 
+config UOSCORE_NVM_SUPPORT
+	bool "Non-volatile storage support for OSCORE SSN persistence"
+	depends on SETTINGS
+
 config UOSCORE_DEBUG
 	bool "Debug logs in the uoscore library"
 

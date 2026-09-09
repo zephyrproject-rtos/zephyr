@@ -11,6 +11,8 @@ set_property(TARGET compiler-cpp PROPERTY dialect_cpp2b "-std=c++2b"
   "-Wno-register" "-Wno-deprecated-volatile")
 set_property(TARGET compiler-cpp PROPERTY dialect_cpp23 "-std=c++23"
   "-Wno-register" "-Wno-deprecated-volatile")
+set_property(TARGET compiler-cpp PROPERTY dialect_cpp26 "-std=c++26"
+  "-Wno-register" "-Wno-deprecated-volatile")
 
 ########################################################
 # Setting compiler properties for gcc / g++ compilers. #
@@ -40,6 +42,7 @@ check_set_compiler_property(PROPERTY warning_base
                             -Wno-unused-but-set-variable
                             -Wno-typedef-redefinition
                             -Wno-deprecated-non-prototype
+                            -Wno-parentheses-equality
 )
 
 # C implicit promotion rules will want to make floats into doubles very easily

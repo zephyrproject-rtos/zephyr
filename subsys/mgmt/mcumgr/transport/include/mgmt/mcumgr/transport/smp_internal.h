@@ -115,6 +115,30 @@ static inline bool smp_mgmt_reset_zse(struct smp_streamer *streamer)
 	return zcbor_map_start_encode(zse, CONFIG_MCUMGR_SMP_CBOR_MAX_MAIN_MAP_ENTRIES);
 }
 
+/**
+ * @brief	Reset a zcbor encoder to allow a new response.
+ *
+ * If a response has already been (partially) generated then this will allow resetting back to
+ * the default state so that new response can be used (e.g. an error).
+ *
+ * @param zce	The zcbor encoding object, which is part of a cbor_nb_writer object.
+ *
+ * @return	true on success, false on failure (memory error).
+ */
+static inline bool smp_mgmt_reset_writer(zcbor_state_t *zse)
+{
+	struct cbor_nb_writer *writer = CONTAINER_OF(zse, struct cbor_nb_writer, zs[0]);
+
+	/* Because there is already data in the buffer, it must be cleared first */
+	net_buf_reset(writer->nb);
+	writer->nb->len = sizeof(struct smp_hdr);
+	zcbor_new_encode_state(zse, ARRAY_SIZE(writer->zs),
+			       writer->nb->data + sizeof(struct smp_hdr),
+			       net_buf_tailroom(writer->nb), 0);
+
+	return zcbor_map_start_encode(zse, CONFIG_MCUMGR_SMP_CBOR_MAX_MAIN_MAP_ENTRIES);
+}
+
 #ifdef __cplusplus
 }
 #endif

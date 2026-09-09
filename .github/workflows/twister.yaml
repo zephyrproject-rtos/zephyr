@@ -29,7 +29,7 @@ jobs:
       group: zephyr-runner-v2-linux-x64-4xlarge
     timeout-minutes: 60
     container:
-      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.29.2.20260422
+      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.29.3.20260727
       options: '--entrypoint /bin/bash'
     outputs:
       subset: ${{ steps.output-services.outputs.subset }}
@@ -156,7 +156,7 @@ jobs:
     needs: twister-build-prep
     if: needs.twister-build-prep.outputs.size != 0
     container:
-      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.29.2.20260422
+      image: ghcr.io/zephyrproject-rtos/ci-repo-cache:v0.29.3.20260727
       options: '--entrypoint /bin/bash'
     strategy:
       fail-fast: false
@@ -230,6 +230,7 @@ jobs:
           cd /opt/bsim_west/bsim
           git fetch -n origin ${BSIM_VERSION}
           git -c advice.detachedHead=false checkout ${BSIM_VERSION}
+          git config --global http.version HTTP/1.1
           west update
           make everything -s -j 8
 
@@ -286,6 +287,11 @@ jobs:
             fi
           fi
 
+          if [ ! -f twister-out/twister.json ]; then
+            echo "Twister did not produce a twister.json file, something went wrong."
+            exit 1
+          fi
+
       - name: Print ccache stats
         if: always()
         run: |
@@ -299,6 +305,7 @@ jobs:
           if-no-files-found: ignore
           path: |
             twister-out/twister.xml
+            twister-out/twister.log
             twister-out/twister.json
             module_tests/twister.xml
             testplan.json

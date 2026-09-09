@@ -225,8 +225,13 @@ void z_arm64_fpu_enter_exc(void)
 	__ASSERT(read_daif() & DAIF_IRQ_BIT, "must be called with IRQs disabled");
 
 	/* always deny FPU access whenever an exception is entered */
-	write_cpacr_el1(read_cpacr_el1() & ~(CPACR_EL1_FPEN | CPACR_EL1_ZEN));
-	barrier_isync_fence_full();
+	uint64_t old_cpacr = read_cpacr_el1();
+	uint64_t cpacr = old_cpacr & ~(CPACR_EL1_FPEN | CPACR_EL1_ZEN);
+
+	if (cpacr != old_cpacr) {
+		write_cpacr_el1(cpacr);
+		barrier_isync_fence_full();
+	}
 }
 
 /*
@@ -424,7 +429,8 @@ static void fpu_access_update(unsigned int exc_update_level)
 {
 	__ASSERT(read_daif() & DAIF_IRQ_BIT, "must be called with IRQs disabled");
 
-	uint64_t cpacr = read_cpacr_el1();
+	uint64_t old_cpacr = read_cpacr_el1();
+	uint64_t cpacr = old_cpacr;
 
 	if (arch_exception_depth() == exc_update_level) {
 		/* We're about to execute non-exception code */
@@ -434,10 +440,9 @@ static void fpu_access_update(unsigned int exc_update_level)
 			if (USE_SVE(_current)) {
 				cpacr |= CPACR_EL1_ZEN;
 			}
-			write_cpacr_el1(cpacr);
 		} else {
 			/* deny FPU access */
-			write_cpacr_el1(cpacr & ~(CPACR_EL1_FPEN | CPACR_EL1_ZEN));
+			cpacr &= ~(CPACR_EL1_FPEN | CPACR_EL1_ZEN);
 		}
 	} else {
 		/*
@@ -445,9 +450,13 @@ static void fpu_access_update(unsigned int exc_update_level)
 		 * access as we want to make sure IRQs are disabled before
 		 * granting it access (see z_arm64_fpu_trap() documentation).
 		 */
-		write_cpacr_el1(cpacr & ~(CPACR_EL1_FPEN | CPACR_EL1_ZEN));
+		cpacr &= ~(CPACR_EL1_FPEN | CPACR_EL1_ZEN);
 	}
-	barrier_isync_fence_full();
+	/* The instruction barrier is needed only when access permissions change. */
+	if (cpacr != old_cpacr) {
+		write_cpacr_el1(cpacr);
+		barrier_isync_fence_full();
+	}
 }
 
 /*

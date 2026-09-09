@@ -53,7 +53,7 @@
 		#address-cells = <1>;
 		#size-cells = <0>;
 		clk-gpios = <&gpio1 11 (GPIO_ACTIVE_HIGH | MAX32_GPIO_VSEL_VDDIOH)>;
-		mosi-gpios = <&gpio1 9 (GPIO_ACTIVE_HIGH | MAX32_GPIO_VSEL_VDDIOH)>;
+		sdo-gpios = <&gpio1 9 (GPIO_ACTIVE_HIGH | MAX32_GPIO_VSEL_VDDIOH)>;
 		cs-gpios = <&gpio1 8 (GPIO_ACTIVE_HIGH | MAX32_GPIO_VSEL_VDDIOH)>;
 
 		ls0xx_ls013b7dh03: ls0xx@0 {

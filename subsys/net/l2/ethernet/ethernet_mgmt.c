@@ -32,10 +32,14 @@ static int ethernet_set_config(uint64_t mgmt_request,
 {
 	struct ethernet_req_params *params = (struct ethernet_req_params *)data;
 	const struct device *dev = net_if_get_device(iface);
-	const struct ethernet_api *api = dev->api;
+	const struct ethernet_api *api;
 	struct ethernet_config config = { 0 };
 	enum ethernet_config_type type;
 	int ret;
+
+	NET_ASSERT(dev != NULL);
+
+	api = dev->api;
 
 	if (!api) {
 		return -ENOENT;
@@ -175,6 +179,20 @@ static int ethernet_set_config(uint64_t mgmt_request,
 			return -ENOTSUP;
 		}
 
+		/* A multicast group can be needed by several users at once,
+		 * so the L2 counts them and tells the driver only when the
+		 * first user joins and when the last one leaves.
+		 */
+		if (IS_ENABLED(NET_ETH_MCAST_FILTER_SUPPORTED) &&
+		    params->filter.type == ETHERNET_FILTER_TYPE_DST_MAC_ADDRESS &&
+		    net_eth_is_addr_multicast(&params->filter.mac_address)) {
+			if (params->filter.set) {
+				return net_eth_mcast_addr_add(iface, &params->filter.mac_address);
+			}
+
+			return net_eth_mcast_addr_rm(iface, &params->filter.mac_address);
+		}
+
 		memcpy(&config.filter, &params->filter, sizeof(struct ethernet_filter));
 		type = ETHERNET_CONFIG_TYPE_FILTER;
 	} else {
@@ -214,10 +232,14 @@ static int ethernet_get_config(uint64_t mgmt_request,
 {
 	struct ethernet_req_params *params = (struct ethernet_req_params *)data;
 	const struct device *dev = net_if_get_device(iface);
-	const struct ethernet_api *api = dev->api;
+	const struct ethernet_api *api;
 	struct ethernet_config config = { 0 };
 	int ret = 0;
 	enum ethernet_config_type type;
+
+	NET_ASSERT(dev != NULL);
+
+	api = dev->api;
 
 	if (!api) {
 		return -ENOENT;

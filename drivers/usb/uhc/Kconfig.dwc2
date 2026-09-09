@@ -48,6 +48,13 @@ config UHC_DWC2_RESET_HOLD_MS
 
 	  The default value is set to 50 ms.
 
+config UHC_DWC2_RESUME_DURATION_MS
+	int "Resume duration in ms"
+	range 20 $(UINT32_MAX)
+	default 30
+	help
+	  Duration of driving resume to a root port in milliseconds.
+
 config UHC_DWC2_RESET_RECOVERY_MS
 	int "Reset recovery delay in ms"
 	range 10 30

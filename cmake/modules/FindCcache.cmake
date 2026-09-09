@@ -16,6 +16,7 @@
 # 'CCACHE_VERSION_STRING'
 # The version of ccache.
 
+zephyr_get(USE_CCACHE)
 if(USE_CCACHE STREQUAL "0")
   # ccache explicitly disabled by the user.
   set(CCACHE CCACHE-NOTFOUND CACHE FILEPATH "Path to a program" FORCE)

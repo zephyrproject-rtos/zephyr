@@ -6,6 +6,9 @@
 
 if SOC_SERIES_KE1XF
 
+config MCUX_LPTMR_TIMER
+	default y if PM
+
 config CORTEX_M_SYSTICK
 	default n if MCUX_LPTMR_TIMER
 

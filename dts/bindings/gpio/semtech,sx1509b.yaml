@@ -12,7 +12,6 @@ properties:
     const: 2
 
   ngpios:
-    required: true
     const: 16
 
   nint-gpios:

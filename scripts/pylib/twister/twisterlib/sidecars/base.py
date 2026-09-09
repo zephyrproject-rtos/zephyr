@@ -103,6 +103,16 @@ class Sidecar:
         }
         return {'type': 'object', 'properties': properties, 'additionalProperties': False}
 
+    def host_ready(self) -> bool:
+        """Whether the host provides what this sidecar needs to run.
+
+        Called on a configured sidecar at test-plan time. Returning False
+        demotes the instance to build-only, the same way a missing simulator
+        executable does, instead of discovering the gap at run time. The
+        default assumes no special host requirements.
+        """
+        return True
+
     def cmake_env(self, build_dir: str) -> dict[str, str]:
         """Environment overrides for the CMake configure step.
 

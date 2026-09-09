@@ -1084,7 +1084,10 @@ Status
        - * ``master / slave`` => ``controller / peripheral``
          * ``MOSI / MISO / SS`` => ``SDO / SDI / CS``
        - The Open Source Hardware Association has selected these replacement
-         terms. See `OSHWA Resolution to Redefine SPI Signal Names`_
+         terms. See `OSHWA Resolution to Redefine SPI Signal Names`_.
+         The Zephyr SPI API and tree were migrated to these terms in v4.5;
+         the former names are retained as compatibility aliases, deprecated
+         since v4.5 and scheduled for removal in v5.0.
 
      * - :ref:`twister_script`
        - * ``platform_whitelist`` => ``platform_allow``

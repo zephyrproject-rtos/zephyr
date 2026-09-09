@@ -20,3 +20,5 @@ API Reference
 *************
 
 .. doxygengroup:: eeprom_interface
+
+.. doxygengroup:: eeprom_fake

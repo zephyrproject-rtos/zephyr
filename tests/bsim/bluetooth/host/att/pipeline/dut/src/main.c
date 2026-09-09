@@ -33,9 +33,6 @@ DEFINE_FLAG_STATIC(flag_data_length_updated);
 
 static struct bt_conn *dconn;
 
-/* Defined in hci_core.c */
-extern k_tid_t bt_testing_tx_tid_get(void);
-
 static void connected(struct bt_conn *conn, uint8_t conn_err)
 {
 	if (conn_err) {

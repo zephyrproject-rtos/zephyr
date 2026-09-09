@@ -183,6 +183,14 @@ dimension is higher than omitting the dimension."
 -config=MC3A2.R10.4,etypes={safe,"any()","preserved_integer_constant()||sibling(rhs,preserved_integer_constant())"}
 -doc_end
 
+-doc_begin="The likely() and unlikely() macros hand a truth value to the GCC builtin
+__builtin_expect(), whose parameters are declared long.  The conversion from the
+essentially Boolean argument to the essentially signed parameter is value-preserving,
+and the result is immediately compared against 0, so no information is lost and the
+intent of the rule is met."
+-config=MC3A2.R10.3,reports+={deliberate,"any_area(any_loc(any_exp(macro(name(likely||unlikely)))))"}
+-doc_end
+
 -doc_begin="Shifting non-negative integers to the right is safe."
 -config=MC3A2.R10.1,etypes+={safe,
   "stmt(node(binary_operator)&&operator(shr))",

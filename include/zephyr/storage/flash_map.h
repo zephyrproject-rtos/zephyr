@@ -103,7 +103,7 @@ struct flash_area_check {
  * point is indicated by an offset value.
  *
  * @param[in] fa	Flash area
- * @param[in] fic	Flash area check integrity data
+ * @param[in] fac	Flash area check integrity data
  *
  * @return  0 on success, negative errno code on fail
  */

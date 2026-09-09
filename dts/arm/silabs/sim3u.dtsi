@@ -121,6 +121,7 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			reg = <0x4002a0a0 0xa0>;
+			ngpios = <16>;
 		};
 
 		gpio1: gpio@4002a140 {
@@ -128,6 +129,7 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			reg = <0x4002a140 0xa0>;
+			ngpios = <16>;
 		};
 
 		gpio2: gpio@4002a1e0 {
@@ -135,6 +137,7 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			reg = <0x4002a1e0 0xc0>;
+			ngpios = <16>;
 		};
 
 		gpio3: gpio@4002a320 {
@@ -142,6 +145,7 @@
 			gpio-controller;
 			#gpio-cells = <2>;
 			reg = <0x4002a320 0xa0>;
+			ngpios = <16>;
 		};
 	};
 };

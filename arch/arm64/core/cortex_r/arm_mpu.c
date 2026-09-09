@@ -21,13 +21,6 @@
 
 LOG_MODULE_REGISTER(mpu, CONFIG_MPU_LOG_LEVEL);
 
-#define NODE_HAS_PROP_AND_OR(node_id, prop) \
-	DT_NODE_HAS_PROP(node_id, prop) ||
-
-BUILD_ASSERT((DT_FOREACH_STATUS_OKAY_NODE_VARGS(
-	      NODE_HAS_PROP_AND_OR, zephyr_memory_region_mpu) false) == false,
-	      "`zephyr,memory-region-mpu` was deprecated in favor of `zephyr,memory-attr`");
-
 #define MPU_DYNAMIC_REGION_AREAS_NUM	3
 
 #if defined(CONFIG_USERSPACE) || defined(CONFIG_ARM64_STACK_PROTECTION)

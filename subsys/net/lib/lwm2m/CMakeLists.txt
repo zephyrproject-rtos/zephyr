@@ -21,7 +21,7 @@ zephyr_library_sources(
     lwm2m_rd_client.c
     )
 
-# LWM2M Object Support
+# LwM2M Object Support
 zephyr_library_sources_ifdef(CONFIG_LWM2M_CONN_MON_OBJ_SUPPORT
     lwm2m_obj_connmon.c
     )

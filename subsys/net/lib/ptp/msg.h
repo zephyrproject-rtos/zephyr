@@ -1,6 +1,6 @@
 /*
  * Copyright (c) 2024 BayLibre SAS
- * Copyright (c) 2026 Philipp Steiner <philipp.steiner1987@gmail.com>
+ * Copyright (c) 2026 Philipp Steiner
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -304,7 +304,7 @@ struct ptp_msg {
 	/** Single-linked list of TLVs attached to the message. */
 	sys_slist_t tlvs;
 	/** Protocol address of the sender/receiver of the message. */
-	struct net_sockaddr addr;
+	struct net_sockaddr_storage addr;
 };
 
 /**

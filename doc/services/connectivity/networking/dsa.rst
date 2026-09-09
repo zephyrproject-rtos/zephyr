@@ -83,8 +83,7 @@ of i.MX NETC.
                    .phy_mode = NETC_PHY_MODE(port),                                            \
            };                                                                                  \
            struct dsa_port_config dsa_##n##_##port##_config = {                                \
-                   .use_random_mac_addr = DT_PROP(port, zephyr_random_mac_address),            \
-                   .mac_addr = DT_PROP_OR(port, local_mac_address, {0}),                       \
+                   .mcfg = NET_ETH_MAC_DT_CONFIG_INIT(port),                                   \
                    .port_idx = DT_REG_ADDR(port),                                              \
                    .phy_dev = DEVICE_DT_GET_OR_NULL(DT_PHANDLE(port, phy_handle)),             \
                    .phy_mode = DT_PROP_OR(port, phy_connection_type, ""),                      \

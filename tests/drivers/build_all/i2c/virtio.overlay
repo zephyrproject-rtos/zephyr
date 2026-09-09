@@ -1,0 +1,18 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Application overlay for testing the VIRTIO I2C driver build
+ */
+
+&virtio_mmio1 {
+	status = "okay";
+
+	test_i2c_virtio: virtio-i2c {
+		compatible = "virtio,i2c";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		status = "okay";
+	};
+};

@@ -138,7 +138,6 @@ in your Zephyr application. For example:
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/can/counter
-   :tool: all
    :board: rpi_pico
    :shield: canpico
    :goals: build flash

@@ -165,6 +165,7 @@ enum {
 	BT_HFP_HF_FLAG_RECORD_FOUND,  /* SDP AG Record found */
 	BT_HFP_HF_FLAG_DLC_CONNECTED, /* HFP HF DLC is connected */
 	BT_HFP_HF_FLAG_FEAT_UPDATED,  /* Remote feature has been updated */
+	BT_HFP_HF_FLAG_RELEASING,     /* Release object when SDP discovery completes */
 	/* Total number of flags - must be at the end of the enum */
 	BT_HFP_HF_NUM_FLAGS,
 };
@@ -223,7 +224,6 @@ struct bt_hfp_hf {
 	/* SCL work */
 	struct k_work slc_work;
 
-	char hf_buffer[HF_MAX_BUF_LEN];
 	struct at_client at;
 	uint32_t hf_features;
 	uint32_t ag_features;

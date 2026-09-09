@@ -67,7 +67,18 @@ enum {
 
 struct bt_rfcomm_dlc;
 
-/** @brief RFCOMM DLC operations structure. */
+/** @brief RFCOMM DLC operations structure.
+ *
+ * The object has to stay valid and constant for the lifetime of the DLC.
+ *
+ *  @note The callbacks are invoked from a thread context, never from an
+ *        ISR. Whether a callback is invoked from a context internal to
+ *        the stack or synchronously from within the API call that
+ *        triggers it, and from which context, is not part of the API and
+ *        may change between releases. See
+ *        @rstref{Callback execution contexts <bluetooth_callback_contexts>}
+ *        for the hazards of blocking in a callback and their mitigations.
+ */
 struct bt_rfcomm_dlc_ops {
 	/** DLC connected callback
 	 *
@@ -90,10 +101,33 @@ struct bt_rfcomm_dlc_ops {
 
 	/** DLC recv callback
 	 *
+	 *  Called whenever data is received on the DLC.
+	 *
+	 *  If processing @p buf requires work that cannot complete immediately (e.g. passing data
+	 *  to another thread or a work queue), return @c -EINPROGRESS to defer the completion. The
+	 *  callback must not block in this case. Then the stack will hold back RX flow-control
+	 *  credits (CFC) or assert FC=1 (non-CFC) until @ref bt_rfcomm_dlc_recv_complete is called
+	 *  for every outstanding buffer.
+	 *
+	 *  When @c -EINPROGRESS is returned, the application takes ownership of the @p buf
+	 *  reference and must eventually call @ref bt_rfcomm_dlc_recv_complete exactly once,
+	 *  passing back the same @p buf pointer. No @ref net_buf_ref or @ref net_buf_unref calls
+	 *  are needed around that hand-off.
+	 *
+	 *  @warning @ref bt_rfcomm_dlc_recv_complete must be called from a thread context
+	 *           <b>after this callback has returned</b>. Calling it from inside the recv
+	 *           callback (before it returns) will underflow the in-progress counter and
+	 *           cause @ref bt_rfcomm_dlc_recv_complete to fail with @c -EINVAL.
+	 *
 	 *  @param dlc The dlc receiving data.
 	 *  @param buf Buffer containing incoming data.
+	 *
+	 *  @retval 0 Data was fully consumed synchronously; the stack retains ownership of @p buf.
+	 *  @retval -EINPROGRESS Data processing is deferred; the application now owns @p buf and
+	 *                       must call @ref bt_rfcomm_dlc_recv_complete once processing is done.
+	 *  @return Other negative error code; the DLC will be actively disconnected by the stack.
 	 */
-	void (*recv)(struct bt_rfcomm_dlc *dlc, struct net_buf *buf);
+	int (*recv)(struct bt_rfcomm_dlc *dlc, struct net_buf *buf);
 
 	/** DLC sent callback
 	 *
@@ -112,31 +146,135 @@ typedef enum bt_rfcomm_role {
 
 /** @brief RFCOMM DLC structure. */
 struct bt_rfcomm_dlc {
-	/* Response Timeout eXpired (RTX) timer */
-	struct k_work_delayable    rtx_work;
+	/** @cond INTERNAL_HIDDEN */
 
-	/* Queue for outgoing data */
-	struct k_fifo              tx_queue;
+	/** Response Timeout eXpired (RTX) timer.
+	 *
+	 *  Used to detect when a peer fails to respond to an RFCOMM command
+	 *  (e.g. SABM, DISC) within the allowed time window.
+	 */
+	struct k_work_delayable rtx_work;
 
-	/* TX credits, Reuse as a binary sem for MSC FC if CFC is not enabled */
-	struct k_sem               tx_credits;
+	/** Queue for outgoing data.
+	 *
+	 *  Holds net_buf fragments waiting to be transmitted over this DLC.
+	 *  Frames are dequeued and sent by @p tx_work.
+	 */
+	struct k_fifo tx_queue;
 
-	/* Worker for RFCOMM TX */
-	struct k_work              tx_work;
+	/** TX credits semaphore.
+	 *
+	 *  When Credit-Based Flow Control (CFC) is active this semaphore counts
+	 *  the number of frames the remote peer is willing to receive. When CFC
+	 *  is not negotiated it is used as a binary semaphore to serialize
+	 *  transmissions under aggregate (MSC) flow control.
+	 */
+	struct k_sem tx_credits;
 
-	struct bt_rfcomm_session  *session;
-	struct bt_rfcomm_dlc_ops  *ops;
+	/** Worker for RFCOMM TX.
+	 *
+	 *  Submitted to the bt work queue whenever there are frames in
+	 *  @p tx_queue and credits are available, to drain the queue and push
+	 *  data to L2CAP.
+	 */
+	struct k_work tx_work;
 
-	/** @internal Internally used field for list handling */
-	sys_snode_t                _node;
+	/** Pointer to the RFCOMM session this DLC belongs to. */
+	struct bt_rfcomm_session *session;
 
-	bt_security_t              required_sec_level;
-	bt_rfcomm_role_t           role;
+	/** @endcond */
 
-	uint16_t                   mtu;
-	uint8_t                    dlci;
-	uint8_t                    state;
-	uint8_t                    rx_credit;
+	/** Pointer to the application callback operations for this DLC. */
+	struct bt_rfcomm_dlc_ops *ops;
+
+	/** @cond INTERNAL_HIDDEN */
+
+	/** Internally used field for list handling. */
+	sys_snode_t _node;
+
+	/** @endcond */
+
+	/** Minimum security level required before this DLC may be established. */
+	bt_security_t required_sec_level;
+
+	/** @cond INTERNAL_HIDDEN */
+
+	/** Role of this DLC: initiator or acceptor. */
+	bt_rfcomm_role_t role;
+
+	/** @endcond */
+
+	/** Maximum Transmission Unit for this DLC in bytes.
+	 *
+	 *  Negotiated during the Parameter Negotiation (PN) procedure.
+	 *  Outgoing @ref bt_rfcomm_dlc_send buffers must not exceed this value.
+	 */
+	uint16_t mtu;
+
+	/** @cond INTERNAL_HIDDEN */
+
+	/** Data Link Connection Identifier assigned to this DLC. */
+	uint8_t dlci;
+
+	/** Current connection state of this DLC.
+	 *
+	 *  One of the BT_RFCOMM_STATE_* values defined in rfcomm_internal.h.
+	 */
+	uint8_t state;
+
+	/** Number of receive credits remaining for this DLC.
+	 *
+	 *  Tracks how many additional UIH frames the local side may accept from the remote
+	 *  before flow control must be applied.
+	 *  Initialized from @p rx_credit_limit at connection setup and decremented as frames are
+	 *  received; refilled by sending credit grants to the remote.
+	 *
+	 *  Only meaningful when CFC is enabled.
+	 */
+	uint8_t rx_credit;
+
+	/** @endcond */
+
+	/** Requested initial number of receive credits for this DLC.
+	 *
+	 *  Sets how many UIH frames the local side is willing to accept from the remote after the
+	 *  DLC is established. The stack limits this value to MIN((BT_BUF_ACL_RX_COUNT - 1), 255)
+	 *  before use. If the field is 0, the stack uses the internal default
+	 *  MIN((BT_BUF_ACL_RX_COUNT - 1), 255). The result is written back to the field. Also
+	 *  the value of field will be limited to 7 when sending in Parameter Negotiation (PN)
+	 *  command/response.
+	 *
+	 *  @note If the value exceeds MIN((BT_BUF_ACL_RX_COUNT - 1), 255), it will be limited to
+	 *  MIN((BT_BUF_ACL_RX_COUNT - 1), 255).
+	 *  @note This field can only be modified when the DLC is in an unconnected state. This
+	 *  means that from the time @ref bt_rfcomm_server::accept returns until @ref
+	 *  bt_rfcomm_dlc_ops::disconnected is called, it cannot be modified any more.
+	 *
+	 *  Only meaningful when CFC is enabled.
+	 */
+	uint8_t rx_credit_limit;
+
+	/** @cond INTERNAL_HIDDEN */
+
+	/** Number of in-progress receive operations for this DLC.
+	 *
+	 *  Counts how many @ref bt_rfcomm_dlc_ops::recv callbacks have returned @c -EINPROGRESS
+	 *  but have not yet been completed by calling @ref bt_rfcomm_dlc_recv_complete.
+	 *
+	 *  For CFC-supported sessions, this counter is used to delay RX credit refill:
+	 *  RX credits are not refilled until the in-progress bufs are completed, ensuring
+	 *  the remote peer cannot send more frames than the application can handle concurrently.
+	 *
+	 *  For non-CFC sessions, this counter gates the MSC flow-control commands:
+	 *  - MSC with FC=1 (pause) is sent only when the count is changing from 0 to 1
+	 *  - MSC with FC=0 (resume) is sent only when the count is changing from 1 to 0
+	 */
+	atomic_t rx_credit_inprogress;
+
+	/** DLC flags */
+	atomic_t flags;
+
+	/** @endcond */
 };
 
 struct bt_rfcomm_server {
@@ -297,6 +435,40 @@ int bt_rfcomm_dlc_send(struct bt_rfcomm_dlc *dlc, struct net_buf *buf);
  */
 int bt_rfcomm_dlc_disconnect(struct bt_rfcomm_dlc *dlc);
 
+/**
+ * @brief Complete receiving RFCOMM channel data
+ *
+ * Must be called exactly once for each invocation of @ref bt_rfcomm_dlc_ops::recv that returned
+ * @c -EINPROGRESS. Pass back the same @p buf pointer that was received in that callback; no
+ * additional @ref net_buf_ref or @ref net_buf_unref calls are needed.
+ *
+ * @note This function must be called from a thread context only, never from an ISR.
+ *
+ * @note This function must be called only after @ref bt_rfcomm_dlc_ops::recv has returned.
+ *       Calling it from within the recv callback (before it returns) underflows the in-progress
+ *       counter and causes this function to return @c -EINVAL.
+ *
+ * When this function returns, the stack releases its reference to @p buf regardless of the return
+ * value, unless @p dlc or @p buf is @c NULL (in which case @c -EINVAL is returned immediately and
+ * @p buf is not touched).
+ *
+ * Flow-control behavior after a successful call:
+ * - CFC sessions: the stack may now send additional RX credits to the remote peer, allowing it
+ *   to send more frames.
+ * - Non-CFC sessions: an MSC command with FC=0 (resume) is sent to the remote peer only when
+ *   all in-progress buffers are completed.
+ *
+ * @param dlc Pointer to the RFCOMM DLC whose receive operation is being completed.
+ * @param buf The buffer that was passed to @ref bt_rfcomm_dlc_ops::recv when it returned
+ *            @c -EINPROGRESS.
+ *
+ * @return 0 in case of success or negative value in case of error.
+ * @retval -EINVAL @p dlc or @p buf is @c NULL, the DLC's CFC state is unknown, or the
+ *                 in-progress counter would underflow (more completions than in-progress calls).
+ * @retval -ENOTCONN The DLC has no associated session or is not in the connected state.
+ */
+int bt_rfcomm_dlc_recv_complete(struct bt_rfcomm_dlc *dlc, struct net_buf *buf);
+
 /** @brief Allocate the buffer from pool after reserving head room for RFCOMM,
  *  L2CAP and ACL headers.
  *
@@ -315,6 +487,50 @@ struct net_buf *bt_rfcomm_create_pdu(struct net_buf_pool *pool);
  * @return 0 on success, negative error code on failure
  */
 int bt_rfcomm_send_rpn_cmd(struct bt_rfcomm_dlc *dlc, struct bt_rfcomm_rpn *rpn);
+
+/** @brief Remote Line Status value: No error */
+#define BT_RFCOMM_RLS_NO_ERR (0x00U)
+
+/** @brief Remote Line Status value: error occurred
+ *
+ *  @param err Error code to be set in the RLS value; must be one of the following values:
+ *             @ref BT_RFCOMM_RLS_ERR_OVERRUN_ERROR, @ref BT_RFCOMM_RLS_ERR_PARITY_ERROR, or
+ *             @ref BT_RFCOMM_RLS_ERR_FRAMING_ERROR.
+ *
+ *  @return RLS value with error code set.
+ */
+#define BT_RFCOMM_RLS_ERR(err) (BIT(0) | (err))
+
+/** @brief Overrun Error - Received character overwrote an unread character */
+#define BT_RFCOMM_RLS_ERR_OVERRUN_ERROR BIT(1)
+
+/** @brief Parity Error - Received character's parity was incorrect */
+#define BT_RFCOMM_RLS_ERR_PARITY_ERROR BIT(2)
+
+/** @brief Framing Error - a character did not terminate with a stop bit */
+#define BT_RFCOMM_RLS_ERR_FRAMING_ERROR BIT(3)
+
+/**
+ * @brief Send Remote Line Status Command
+ *
+ * Send remote line status with specific rls value @p line_status to the RFCOMM DLC.
+ * For @p line_status, the BIT(4-7) are reserved and must be set to 0.
+ * The BIT(0-3) indicate the Line Status.
+ * If the BIT(0) is set to 0, there is no error occurred.
+ * If the BIT(0) is set to 1, the error is indicated by BIT(1-3) with the following values:
+ * @ref BT_RFCOMM_RLS_ERR_OVERRUN_ERROR - Received character overwrote an unread
+ * character.
+ * @ref BT_RFCOMM_RLS_ERR_PARITY_ERROR - Received character's parity was incorrect.
+ * @ref BT_RFCOMM_RLS_ERR_FRAMING_ERROR - a character did not terminate with a stop bit.
+ *
+ * @p line_status can be created using @ref BT_RFCOMM_RLS_NO_ERR and @ref BT_RFCOMM_RLS_ERR macros.
+ *
+ * @param dlc Pointer to the RFCOMM DLC
+ * @param line_status Line Status value
+ *
+ * @return 0 on success, negative error code on failure
+ */
+int bt_rfcomm_send_rls_cmd(struct bt_rfcomm_dlc *dlc, uint8_t line_status);
 
 #ifdef __cplusplus
 }

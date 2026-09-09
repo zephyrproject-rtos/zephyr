@@ -19,6 +19,7 @@ target_include_directories(app PRIVATE ${ZEPHYR_BASE}/subsys/net/lib/lwm2m/)
 target_include_directories(app PRIVATE ${ZEPHYR_MBEDTLS_MODULE_DIR}/include/)
 target_include_directories(app PRIVATE ${CONFIG_TF_PSA_CRYPTO_MODULE_DIR}/include/)
 target_include_directories(app PRIVATE ${CONFIG_TF_PSA_CRYPTO_MODULE_DIR}/drivers/builtin/include/)
+target_include_directories(app PRIVATE ${CONFIG_TF_PSA_CRYPTO_MODULE_DIR}/dispatch/include/)
 
 add_compile_definitions(CONFIG_LWM2M_ENGINE_MAX_PENDING=2)
 add_compile_definitions(CONFIG_LWM2M_ENGINE_MAX_REPLIES=2)

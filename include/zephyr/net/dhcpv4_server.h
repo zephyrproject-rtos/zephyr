@@ -34,8 +34,7 @@ struct net_if;
 #define DHCPV4_CLIENT_ID_MAX_SIZE 20
 
 /**
- * Max DHCP hardware address size is defined in RFC2131
- * https://www.rfc-editor.org/rfc/rfc2131
+ * Max DHCP hardware address size is defined in @rfc{2131}
  */
 #define DHCPV4_HARDWARE_ADDRESS_MAX_SIZE 16
 

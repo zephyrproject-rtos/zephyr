@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -8,6 +8,7 @@
 
 / {
 	chosen {
+		zephyr,code-partition = &code_partition;
 		zephyr,console = &uart1;
 		zephyr,shell-uart = &uart1;
 		zephyr,sram = &sram4;
@@ -88,6 +89,26 @@
 
 zephyr_udc0: &usbhs {
 	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		code_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x0 DT_SIZE_K(448)>;
+			read-only;
+		};
+
+		storage_partition: partition@70000 {
+			compatible = "zephyr,mapped-partition";
+			label = "storage";
+			reg = <0x70000 DT_SIZE_K(64)>;
+		};
+	};
 };
 
 /* Ensure we don't attempt to access flash instance used by CPU1 */

@@ -8,6 +8,8 @@ config BOARD_NATIVE_SIM
 	select NATIVE_LIBRARY
 	select NATIVE_SIM_TIMER
 	select 64BIT if BOARD_NATIVE_SIM_NATIVE_64
+	select ARCH_HAS_IRQ_PENDING_OPS
+	select ARCH_HAS_IRQ_GET_ACTIVE
 	help
 	  Native simulator (Single Core)
 	  Will produce a console Linux process which can be executed natively.

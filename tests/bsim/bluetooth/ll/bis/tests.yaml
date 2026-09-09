@@ -6,7 +6,7 @@ common:
   harness: bsim
 
 tests:
-  bluetooth.ll.bis.sequential:
+  bluetooth.controller.bis.sequential:
     sysbuild: true
     platform_allow:
       - nrf52_bsim/native
@@ -21,7 +21,7 @@ tests:
       tests_scripts:
         - tests_scripts/broadcast_iso_sequential.sh
 
-  bluetooth.ll.bis.interleaved:
+  bluetooth.controller.bis.interleaved:
     sysbuild: true
     platform_allow:
       - nrf52_bsim/native
@@ -36,7 +36,7 @@ tests:
       tests_scripts:
         - tests_scripts/broadcast_iso_interleaved.sh
 
-  bluetooth.ll.bis.ll_interface:
+  bluetooth.controller.bis.ll_interface:
     platform_allow:
       - nrf52_bsim/native
       - nrf5340bsim/nrf5340/cpunet
@@ -48,7 +48,7 @@ tests:
       tests_scripts:
         - tests_scripts/broadcast_iso_ll_interface.sh
 
-  bluetooth.ll.bis.ticker_expire_info:
+  bluetooth.controller.bis.ticker_expire_info:
     sysbuild: true
     platform_allow:
       - nrf52_bsim/native
@@ -63,7 +63,7 @@ tests:
       tests_scripts:
         - tests_scripts/broadcast_iso_ticker_expire_info.sh
 
-  bluetooth.ll.bis.scan_aux_use_chains:
+  bluetooth.controller.bis.scan_aux_use_chains:
     platform_allow:
       - nrf52_bsim/native
       - nrf5340bsim/nrf5340/cpunet
@@ -75,7 +75,7 @@ tests:
       tests_scripts:
         - tests_scripts/broadcast_iso_scan_aux_use_chains.sh
 
-  bluetooth.ll.bis.vs_dp:
+  bluetooth.controller.bis.vs_dp:
     platform_allow:
       - nrf52_bsim/native
       - nrf5340bsim/nrf5340/cpunet
@@ -87,9 +87,9 @@ tests:
       tests_scripts:
         - tests_scripts/broadcast_iso_vs_dp.sh
     required_applications:
-      - application: bluetooth.ll.bis.sequential
+      - application: bluetooth.controller.bis.sequential
 
-  bluetooth.ll.bis.past:
+  bluetooth.controller.bis.past:
     platform_allow:
       - nrf52_bsim/native
       - nrf5340bsim/nrf5340/cpunet

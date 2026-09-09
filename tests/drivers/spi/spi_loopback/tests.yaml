@@ -39,6 +39,7 @@ tests:
       - nrf54h20dk/nrf54h20/cpuapp
       - nrf54l15dk/nrf54l15/cpuapp
       - sam_e54_xpro
+      - pic32cx_sg41_cult
     integration_platforms:
       - robokit1
   drivers.spi.mcux_dspi_dma.loopback:
@@ -61,6 +62,7 @@ tests:
       - EXTRA_CONF_FILE="overlay-mchp-spi-dma.conf"
     platform_allow:
       - sam_e54_xpro
+      - pic32cx_sg41_cult
   drivers.spi.stm32_spi_dma.loopback:
     extra_args: EXTRA_CONF_FILE="overlay-stm32-spi-dma.conf"
     platform_allow:
@@ -491,6 +493,18 @@ tests:
     extra_args:
       - DTC_OVERLAY_FILE="boards/${BOARD}_${NORMALIZED_BOARD_QUALIFIERS}_sci_b_spi.overlay"
       - CONF_FILE="prj.conf" # to exclude "boards/${BOARD}_${NORMALIZED_BOARD_QUALIFIERS}.overlay"
-  drivers.spi.mspm0.loopback:
+  drivers.spi.max32_pm_runtime:
+    depends_on:
+      - counter
+      - spi
+    filter: CONFIG_SOC_FAMILY_MAX32
     platform_allow:
-      - lp_mspm0g3507
+      - max32657evkit/max32657
+      - max32658evkit/max32658
+    extra_configs:
+      - CONFIG_COUNTER=y
+      - CONFIG_PM=y
+      - CONFIG_PM_DEVICE=y
+      - CONFIG_PM_DEVICE_RUNTIME=y
+      - CONFIG_PM_POLICY_DEVICE_CONSTRAINTS=y
+      - CONFIG_SPI_COMPLETION_TIMEOUT_TOLERANCE=300

@@ -4,7 +4,7 @@
  *
  */
 
-#include <nxp/nxp_imx/rt/mimxrt1062dvl6a-pinctrl.dtsi>
+#include <nxp/imxrt/imxrt10xx/pinctrl/mimxrt1062dvl6a-pinctrl.dtsi>
 
 /* Flash RESET pin is DNP here unlike RT1050 */
 

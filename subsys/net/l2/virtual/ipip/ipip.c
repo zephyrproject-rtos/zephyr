@@ -66,7 +66,14 @@ static int virt_dev_init(const struct device *dev)
 
 static void iface_init(struct net_if *iface)
 {
-	struct ipip_context *ctx = net_if_get_device(iface)->data;
+	const struct device *dev = net_if_get_device(iface);
+	struct ipip_context *ctx;
+
+	NET_ASSERT(dev != NULL);
+
+	ctx = dev->data;
+
+	NET_ASSERT(ctx != NULL);
 
 	if (ctx->init_done) {
 		return;
@@ -134,11 +141,18 @@ static uint8_t ipv4_get_tos(struct net_pkt *pkt)
 
 static int interface_send(struct net_if *iface, struct net_pkt *pkt)
 {
-	struct ipip_context *ctx = net_if_get_device(iface)->data;
+	const struct device *dev = net_if_get_device(iface);
+	struct ipip_context *ctx;
 	struct net_pkt *tmp = NULL;
 	uint8_t nexthdr;
 	uint8_t tos = 0;
 	int ret;
+
+	NET_ASSERT(dev != NULL);
+
+	ctx = dev->data;
+
+	NET_ASSERT(ctx != NULL);
 
 	if (ctx->attached_to == NULL) {
 		return -ENOENT;
@@ -292,10 +306,17 @@ static bool verify_remote_addr(struct ipip_context *ctx,
 static enum net_verdict interface_recv(struct net_if *iface,
 				       struct net_pkt *pkt)
 {
-	struct ipip_context *ctx = net_if_get_device(iface)->data;
+	const struct device *dev = net_if_get_device(iface);
+	struct ipip_context *ctx;
 	struct net_pkt_cursor hdr_start;
 	uint8_t iptype;
 	int ret;
+
+	NET_ASSERT(dev != NULL);
+
+	ctx = dev->data;
+
+	NET_ASSERT(ctx != NULL);
 
 	net_pkt_cursor_backup(pkt, &hdr_start);
 
@@ -444,6 +465,7 @@ static enum net_verdict interface_recv(struct net_if *iface,
 static int interface_attach(struct net_if *iface, struct net_if *lower_iface)
 {
 	struct ipip_context *ctx;
+	const struct device *dev;
 
 	if (net_if_get_by_iface(iface) < 0) {
 		return -ENOENT;
@@ -451,7 +473,14 @@ static int interface_attach(struct net_if *iface, struct net_if *lower_iface)
 
 	k_mutex_lock(&lock, K_FOREVER);
 
-	ctx = net_if_get_device(iface)->data;
+	dev = net_if_get_device(iface);
+
+	NET_ASSERT(dev != NULL);
+
+	ctx = dev->data;
+
+	NET_ASSERT(ctx != NULL);
+
 	ctx->attached_to = lower_iface;
 	ctx->iface = iface;
 
@@ -478,13 +507,14 @@ static int interface_attach(struct net_if *iface, struct net_if *lower_iface)
 				 net_if_get_link_addr(iface));
 			if (ret < 0) {
 				NET_WARN("IPv6 IID generation issue (%d)", ret);
-			}
-
-			ifaddr = net_if_ipv6_addr_add(iface, &iid, NET_ADDR_AUTOCONF, 0);
-			if (!ifaddr) {
-				NET_ERR("Cannot add %s address to interface %p",
-					net_sprint_ipv6_addr(&iid),
-					iface);
+			} else {
+				ifaddr = net_if_ipv6_addr_add(iface, &iid,
+							      NET_ADDR_AUTOCONF, 0);
+				if (!ifaddr) {
+					NET_ERR("Cannot add %s address to interface %p",
+						net_sprint_ipv6_addr(&iid),
+						iface);
+				}
 			}
 		}
 	}
@@ -498,7 +528,14 @@ static int interface_set_config(struct net_if *iface,
 				enum virtual_interface_config_type type,
 				const struct virtual_interface_config *config)
 {
-	struct ipip_context *ctx = net_if_get_device(iface)->data;
+	const struct device *dev = net_if_get_device(iface);
+	struct ipip_context *ctx;
+
+	NET_ASSERT(dev != NULL);
+
+	ctx = dev->data;
+
+	NET_ASSERT(ctx != NULL);
 
 	switch (type) {
 	case VIRTUAL_INTERFACE_CONFIG_TYPE_PEER_ADDRESS:
@@ -583,7 +620,14 @@ static int interface_get_config(struct net_if *iface,
 				enum virtual_interface_config_type type,
 				struct virtual_interface_config *config)
 {
-	struct ipip_context *ctx = net_if_get_device(iface)->data;
+	const struct device *dev = net_if_get_device(iface);
+	struct ipip_context *ctx;
+
+	NET_ASSERT(dev != NULL);
+
+	ctx = dev->data;
+
+	NET_ASSERT(ctx != NULL);
 
 	switch (type) {
 	case VIRTUAL_INTERFACE_CONFIG_TYPE_PEER_ADDRESS:

@@ -10,6 +10,7 @@ flash: 2048
 supported:
   - arduino_i2c
   - i2c
+  - ptp_clock
   - spi
   - arduino_spi
   - gpio

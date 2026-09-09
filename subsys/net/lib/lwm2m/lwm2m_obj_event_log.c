@@ -74,7 +74,7 @@ static struct lwm2m_engine_obj_inst *lwm2m_event_log_create(uint16_t obj_inst_id
 	inst.resources = res;
 	inst.resource_count = i;
 
-	LOG_DBG("Created LWM2M event log instance: %d", obj_inst_id);
+	LOG_DBG("Created LwM2M event log instance: %d", obj_inst_id);
 	return &inst;
 }
 
@@ -97,7 +97,7 @@ static int lwm2m_event_log_init(void)
 	/* auto create the first instance */
 	ret = lwm2m_create_obj_inst(LWM2M_OBJECT_EVENT_LOG_ID, 0, &obj_inst);
 	if (ret < 0) {
-		LOG_ERR("Create LWM2M Event Log instance 0 error: %d", ret);
+		LOG_ERR("Create LwM2M Event Log instance 0 error: %d", ret);
 	}
 
 	return ret;

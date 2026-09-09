@@ -9,6 +9,7 @@ supported:
   - adc
   - dma
   - gpio
+  - ptp_clock
   - spi
   - uart
   - watchdog

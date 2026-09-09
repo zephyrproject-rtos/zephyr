@@ -51,6 +51,7 @@ DEFINE_TEST_VARIANT4(basic_math_q15, zdsp_add_q15, possat, in_maxpos, in_maxpos,
 		     17);
 DEFINE_TEST_VARIANT4(basic_math_q15, zdsp_add_q15, negsat, in_maxneg, in_maxneg, ref_add_negsat,
 		     17);
+DEFINE_TEST_VARIANT4(basic_math_q15, zdsp_add_q15, 100, in_com1, in_com2, ref_add, 100);
 DEFINE_TEST_VARIANT4(basic_math_q15, zdsp_add_q15, long, in_com1, in_com2, ref_add,
 		     ARRAY_SIZE(in_com1));
 
@@ -123,6 +124,7 @@ DEFINE_TEST_VARIANT4(basic_math_q15, zdsp_sub_q15, possat, in_maxpos, in_maxneg,
 		     17);
 DEFINE_TEST_VARIANT4(basic_math_q15, zdsp_sub_q15, negsat, in_maxneg, in_maxpos, ref_sub_negsat,
 		     17);
+DEFINE_TEST_VARIANT4(basic_math_q15, zdsp_sub_q15, 100, in_com1, in_com2, ref_sub, 100);
 DEFINE_TEST_VARIANT4(basic_math_q15, zdsp_sub_q15, long, in_com1, in_com2, ref_sub,
 		     ARRAY_SIZE(in_com1));
 
@@ -193,6 +195,7 @@ DEFINE_TEST_VARIANT4(basic_math_q15, zdsp_mult_q15, 16, in_com1, in_com2, ref_mu
 DEFINE_TEST_VARIANT4(basic_math_q15, zdsp_mult_q15, 23, in_com1, in_com2, ref_mult, 23);
 DEFINE_TEST_VARIANT4(basic_math_q15, zdsp_mult_q15, possat, in_maxneg2, in_maxneg2, ref_mult_possat,
 		     17);
+DEFINE_TEST_VARIANT4(basic_math_q15, zdsp_mult_q15, 100, in_com1, in_com2, ref_mult, 100);
 DEFINE_TEST_VARIANT4(basic_math_q15, zdsp_mult_q15, long, in_com1, in_com2, ref_mult,
 		     ARRAY_SIZE(in_com1));
 
@@ -259,6 +262,7 @@ DEFINE_TEST_VARIANT3(basic_math_q15, zdsp_negate_q15, 7, in_com1, ref_negate, 7)
 DEFINE_TEST_VARIANT3(basic_math_q15, zdsp_negate_q15, 16, in_com1, ref_negate, 16);
 DEFINE_TEST_VARIANT3(basic_math_q15, zdsp_negate_q15, 23, in_com1, ref_negate, 23);
 DEFINE_TEST_VARIANT3(basic_math_q15, zdsp_negate_q15, possat, in_maxneg2, ref_negate_possat, 17);
+DEFINE_TEST_VARIANT3(basic_math_q15, zdsp_negate_q15, 100, in_com1, ref_negate, 100);
 DEFINE_TEST_VARIANT3(basic_math_q15, zdsp_negate_q15, long, in_com1, ref_negate,
 		     ARRAY_SIZE(in_com1));
 
@@ -328,6 +332,7 @@ DEFINE_TEST_VARIANT4(basic_math_q15, zdsp_offset_q15, possat, in_maxpos, 0x7333,
 		     17);
 DEFINE_TEST_VARIANT4(basic_math_q15, zdsp_offset_q15, negsat, in_maxneg, 0x8ccd, ref_offset_negsat,
 		     17);
+DEFINE_TEST_VARIANT4(basic_math_q15, zdsp_offset_q15, 0p5_100, in_com1, 0x4000, ref_offset, 100);
 DEFINE_TEST_VARIANT4(basic_math_q15, zdsp_offset_q15, long, in_com1, 0x4000, ref_offset,
 		     ARRAY_SIZE(in_com1));
 
@@ -400,6 +405,7 @@ DEFINE_TEST_VARIANT4(basic_math_q15, zdsp_scale_q15, 0p5_16, in_com1, 0x4000, re
 DEFINE_TEST_VARIANT4(basic_math_q15, zdsp_scale_q15, 0p5_23, in_com1, 0x4000, ref_scale, 23);
 DEFINE_TEST_VARIANT4(basic_math_q15, zdsp_scale_q15, possat, in_maxneg2, 0x8000, ref_scale_possat,
 		     17);
+DEFINE_TEST_VARIANT4(basic_math_q15, zdsp_scale_q15, 0p5_100, in_com1, 0x4000, ref_scale, 100);
 DEFINE_TEST_VARIANT4(basic_math_q15, zdsp_scale_q15, long, in_com1, 0x4000, ref_scale,
 		     ARRAY_SIZE(in_com1));
 

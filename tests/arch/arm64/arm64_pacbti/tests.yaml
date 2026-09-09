@@ -4,6 +4,8 @@ common:
     - pacbti
     - security
   timeout: 30
+  # Pointer authentication and BTI violations are provoked on purpose.
+  ignore_faults: true
   filter: CONFIG_ARMV9_A
   arch_allow:
     - arm64

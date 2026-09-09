@@ -85,6 +85,29 @@ extern "C" {
 /** @} */
 
 /**
+ * @brief Convert an AICS gain mode to a human-readable string.
+ *
+ * @param mode  The gain mode (BT_AICS_MODE_*) value.
+ *
+ * @return A string representation of the gain mode.
+ */
+static inline const char *bt_aics_mode_to_str(uint8_t mode)
+{
+	switch (mode) {
+	case BT_AICS_MODE_MANUAL_ONLY:
+		return "Manual only";
+	case BT_AICS_MODE_AUTO_ONLY:
+		return "Auto only";
+	case BT_AICS_MODE_MANUAL:
+		return "Manual";
+	case BT_AICS_MODE_AUTO:
+		return "Auto";
+	default:
+		return "Unknown";
+	}
+}
+
+/**
  * @name Audio Input Control Service input types
  * @{
  */
@@ -537,6 +560,18 @@ int bt_aics_description_set(struct bt_aics *inst, const char *description);
  * @return Pointer to the instance, or NULL if no free instances are left.
  */
 struct bt_aics *bt_aics_client_free_instance_get(void);
+
+/**
+ * @brief Free an instance received from bt_aics_client_free_instance_get()
+ *
+ * @param inst The instance to free
+ *
+ * @retval 0 Success.
+ * @retval -EINVAL @p inst is NULL or not a client instance.
+ * @retval -EALREADY @p inst is already free.
+ * @retval -EBUSY @p inst is busy.
+ */
+int bt_aics_client_free_instance(struct bt_aics *inst);
 
 /**
  * @brief Registers the callbacks for the Audio Input Control Service client.

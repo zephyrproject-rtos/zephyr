@@ -212,6 +212,7 @@ static void runtime_suspend_work(struct k_work *work)
 	int ret;
 	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
 	struct pm_device *pm = CONTAINER_OF(dwork, struct pm_device, work);
+	bool release_domain = false;
 
 	ret = pm->base.action_cb(pm->dev, PM_DEVICE_ACTION_SUSPEND);
 
@@ -221,19 +222,21 @@ static void runtime_suspend_work(struct k_work *work)
 		pm->base.state = PM_DEVICE_STATE_ACTIVE;
 	} else {
 		pm->base.state = PM_DEVICE_STATE_SUSPENDED;
+		release_domain = (pm->base.usage == 0U) &&
+				 atomic_test_bit(&pm->base.flags, PM_DEVICE_FLAG_PD_CLAIMED);
 	}
 	k_event_set(&pm->event, BIT(pm->base.state));
-	k_sem_give(&pm->lock);
 
 	/*
 	 * On async put, we have to suspend the domain when the device
-	 * finishes its operation
+	 * finishes its operation, unless a get arrived while the suspend was
+	 * running and restored the device usage.
 	 */
-	if ((ret == 0) &&
-	    atomic_test_bit(&pm->base.flags, PM_DEVICE_FLAG_PD_CLAIMED)) {
+	if (release_domain) {
 		(void)pm_device_runtime_put(PM_DOMAIN(&pm->base));
 		atomic_clear_bit(&pm->base.flags, PM_DEVICE_FLAG_PD_CLAIMED);
 	}
+	k_sem_give(&pm->lock);
 
 	__ASSERT(ret == 0, "Could not suspend device (%d)", ret);
 }
@@ -292,7 +295,7 @@ int pm_device_runtime_get(const struct device *dev)
 	 * Early return if device runtime is not enabled.
 	 */
 	if (!atomic_test_bit(&pm->base.flags, PM_DEVICE_FLAG_RUNTIME_ENABLED)) {
-		return 0;
+		goto end;
 	}
 
 	if (atomic_test_bit(&dev->pm_base->flags, PM_DEVICE_FLAG_ISR_SAFE)) {
@@ -322,7 +325,8 @@ int pm_device_runtime_get(const struct device *dev)
 
 		ret = k_sem_take(&pm->lock, k_is_in_isr() ? K_NO_WAIT : K_FOREVER);
 		if (ret < 0) {
-			return -EWOULDBLOCK;
+			ret = -EWOULDBLOCK;
+			goto end;
 		}
 	}
 

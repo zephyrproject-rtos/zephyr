@@ -23,7 +23,8 @@ void soc_prep_hook(void)
 	SystemCoreClockUpdate();
 }
 
-void enable_sys_int(uint32_t int_num, uint32_t priority, void (*isr)(const void *), const void *arg)
+void enable_sys_int(uint32_t int_num, uint32_t priority, void (*isr)(const void *param),
+		    const void *arg)
 {
 	/* Interrupts are not supported on cm0p */
 	k_fatal_halt(K_ERR_CPU_EXCEPTION);

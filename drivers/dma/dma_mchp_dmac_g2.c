@@ -355,34 +355,83 @@ static int dma_mchp_desc_setup(struct dma_mchp_dev_data *dev_data, struct dma_co
 	return ret;
 }
 
-static void dma_mchp_isr(const struct device *dev)
+/* Channel Interrupt handling function */
+static __always_inline void dma_mchp_handle_channel_int(const struct device *dev, uint32_t channel,
+					uint8_t ch_int_flag)
 {
 	struct dma_mchp_dev_data *dev_data = dev->data;
-	uint16_t pend = DMAC_REG->DMAC_INTPEND;
-	uint32_t channel = (pend & DMAC_INTPEND_ID_Msk) >> DMAC_INTPEND_ID_Pos;
+	struct dma_mchp_channel_config *ch_cfg = &dev_data->dma_channel_config[channel];
 
-	/* Acknowledge interrupt immediately */
-	DMAC_REG->DMAC_INTPEND = pend;
-
-	/* Ignore non TC / ERR interrupts */
-	if ((pend & (DMAC_INTPEND_TERR_Msk | DMAC_INTPEND_TCMPL_Msk)) == 0) {
+	if (ch_cfg->cb == NULL) {
 		return;
 	}
 
-	struct dma_mchp_channel_config *cfg = &dev_data->dma_channel_config[channel];
-
-	if (cfg->cb == NULL) {
-		return;
-	}
-
-	if (pend & DMAC_INTPEND_TERR_Msk) {
+	if ((ch_int_flag & DMAC_CHINTFLAG_TERR_Msk) != 0U) {
 		/* Invoke error callback only if it is not disabled */
-		if (cfg->is_err_cb_dis == false) {
-			cfg->cb(dev, cfg->user_data, channel, -EIO);
+		if (ch_cfg->is_err_cb_dis == false) {
+			ch_cfg->cb(dev, ch_cfg->user_data, channel, -EIO);
 		}
 	} else {
-		cfg->cb(dev, cfg->user_data, channel, DMA_STATUS_COMPLETE);
+		ch_cfg->cb(dev, ch_cfg->user_data, channel, DMA_STATUS_COMPLETE);
 	}
+}
+
+/* ISR for dedicated IRQ line - one IRQ per channel */
+static __always_inline void dma_mchp_isr_dedicated(const struct device *dev, uint32_t channel)
+{
+	uint8_t ch_int_flag;
+	uint8_t saved_ch_id;
+
+	/* Save current channel ID to restore later */
+	saved_ch_id = DMAC_REG->DMAC_CHID;
+
+	/* Select the channel */
+	DMAC_REG->DMAC_CHID = channel;
+
+	/* Read and clear channel interrupt flags */
+	ch_int_flag = DMAC_REG->DMAC_CHINTFLAG & DMAC_REG->DMAC_CHINTENSET;
+	ch_int_flag &= (uint8_t)(DMAC_CHINTFLAG_TERR_Msk | DMAC_CHINTFLAG_TCMPL_Msk);
+
+	if (ch_int_flag != 0) {
+		DMAC_REG->DMAC_CHINTFLAG = ch_int_flag;
+		dma_mchp_handle_channel_int(dev, channel, ch_int_flag);
+	}
+
+	/* Restore the original channel ID */
+	DMAC_REG->DMAC_CHID = saved_ch_id;
+}
+
+/* ISR for shared IRQ line - multiple channels share one IRQ */
+static __always_inline void dma_mchp_isr_shared(const struct device *dev)
+{
+	uint16_t int_pend;
+	uint32_t channel;
+	uint8_t ch_int_flag;
+
+	/* Read INTPEND to get channel ID and interrupt flags */
+	int_pend = DMAC_REG->DMAC_INTPEND;
+
+	/* Acknowledge interrupt immediately */
+	DMAC_REG->DMAC_INTPEND = int_pend;
+
+	/* Extract channel from INTPEND */
+	channel = (int_pend & DMAC_INTPEND_ID_Msk) >> DMAC_INTPEND_ID_Pos;
+
+	/*
+	 * Extract interrupt flags from INTPEND bits [10:8] (SUSP, TCMPL, TERR).
+	 * These bits map directly to CHINTFLAG format and only show enabled
+	 * interrupts that triggered this ISR.
+	 */
+	ch_int_flag = (int_pend >> DMAC_INTPEND_TERR_Pos) &
+		      (DMAC_CHINTFLAG_TERR_Msk | DMAC_CHINTFLAG_TCMPL_Msk |
+		       DMAC_CHINTFLAG_SUSP_Msk);
+
+	/* Ignore if no TERR/TCMPL flags (e.g., only SUSP) */
+	if ((ch_int_flag & (DMAC_CHINTFLAG_TERR_Msk | DMAC_CHINTFLAG_TCMPL_Msk)) == 0) {
+		return;
+	}
+
+	dma_mchp_handle_channel_int(dev, channel, ch_int_flag);
 }
 
 static int dma_mchp_config(const struct device *dev, uint32_t channel, struct dma_config *config)
@@ -758,30 +807,39 @@ static DEVICE_API(dma, dma_mchp_api) = {
 	.get_attribute = dma_mchp_get_attribute,
 };
 
+/* Number of dedicated IRQs */
+#define NUM_DEDICATED_IRQS(n) DT_INST_PROP(n, num_dedicated_irqs)
+
+/* Generate ISR function for each IRQ index */
+#define DMA_MCHP_ISR_FUNC(idx, n)                                                                  \
+	static void dma_mchp_isr_##n##_##idx(const struct device *dev)                             \
+	{                                                                                          \
+		if ((idx) < NUM_DEDICATED_IRQS(n)) {                                               \
+			dma_mchp_isr_dedicated(dev, idx);                                          \
+		} else {                                                                           \
+			dma_mchp_isr_shared(dev);                                                  \
+		}                                                                                  \
+	}
+
 /* Declare the DMA IRQ connection handler for a specific instance. */
 #define DMA_MCHP_IRQ_HANDLER_DECL(n) static void mchp_dma_irq_connect_##n(void)
 
-/* Enable IRQ lines for the DMA controller. */
+/* Connect and enable a single IRQ */
 #define DMA_MCHP_IRQ_CONNECT(idx, n)                                                               \
-	IF_ENABLED(DT_INST_IRQ_HAS_IDX(n, idx), (                                                  \
-		/** Connect the IRQ to the DMA ISR */                                              \
-		IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, idx, irq),                                       \
-			DT_INST_IRQ_BY_IDX(n, idx, priority),                                      \
-			dma_mchp_isr,                                                              \
-			DEVICE_DT_INST_GET(n), 0);                                                 \
-		/** Enable the IRQ */                                                              \
-		irq_enable(DT_INST_IRQ_BY_IDX(n, idx, irq));                                       \
-	))
+	IRQ_CONNECT(DT_INST_IRQ_BY_IDX(n, idx, irq),                                               \
+		    DT_INST_IRQ_BY_IDX(n, idx, priority),                                          \
+		    dma_mchp_isr_##n##_##idx,                                                      \
+		    DEVICE_DT_INST_GET(n), 0);                                                     \
+	irq_enable(DT_INST_IRQ_BY_IDX(n, idx, irq));
 
 /* Define the DMA IRQ handler function for a given instance. */
 #define DMA_MCHP_IRQ_HANDLER(n)                                                                    \
+	/* Generate ISR functions for each IRQ */                                                  \
+	LISTIFY(DT_NUM_IRQS(DT_DRV_INST(n)), DMA_MCHP_ISR_FUNC, (), n)                             \
 	static void mchp_dma_irq_connect_##n(void)                                                 \
 	{                                                                                          \
-		/** Connect all IRQs for this instance */                                          \
-		LISTIFY(DT_NUM_IRQS(DT_DRV_INST(n)),          \
-			DMA_MCHP_IRQ_CONNECT,                 \
-			(),                                   \
-			n)                                    \
+		/* Connect all IRQs for this instance */                                           \
+		LISTIFY(DT_NUM_IRQS(DT_DRV_INST(n)), DMA_MCHP_IRQ_CONNECT, (), n)                  \
 	}
 
 /* DMA runtime data structure. */

@@ -44,3 +44,13 @@
 	status = "okay";
 	clock-frequency = <DT_FREQ_M(150)>;
 };
+
+&sdhci1 {
+	status = "disabled";
+
+	mmc {
+		compatible = "zephyr,mmc-disk";
+		bus-width = <8>;
+		disk-name = "mmc0";
+	};
+};

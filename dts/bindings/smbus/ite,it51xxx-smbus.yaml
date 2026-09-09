@@ -50,3 +50,9 @@ properties:
       The SMBus controller supports two 32-bytes FIFOs,
       FIFO1 supports SMBus port 0. FIFO2 only supports one port among
       1~8. The default is SMBus port 1.
+
+  alert-gpios:
+    type: phandle-array
+    description: |
+      An interrupt can be asserted on SMB_INT# pin to notify
+      the host-side since an effective interrupt occurs.

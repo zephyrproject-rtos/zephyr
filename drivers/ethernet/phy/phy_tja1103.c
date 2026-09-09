@@ -257,6 +257,13 @@ static void phy_tja1103_cfg_irq_poll(const struct device *dev)
 {
 	struct phy_tja1103_data *const data = dev->data;
 
+	/* The interrupt can fire as soon as its GPIO is enabled. Initialize the
+	 * delayable work before enabling that interrupt so the ISR can always
+	 * reschedule a work item with a valid handler.
+	 */
+	data->timeout = sys_timepoint_calc(K_MSEC(SWITCH_WAIT_RANGE(1000, 3000)));
+	k_work_init_delayable(&data->phy_work, phy_work_handler);
+
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(int_gpios)
 	int ret;
 	const struct phy_tja1103_config *const cfg = dev->config;
@@ -298,11 +305,7 @@ static void phy_tja1103_cfg_irq_poll(const struct device *dev)
 	}
 #endif
 
-	data->timeout = sys_timepoint_calc(K_MSEC(SWITCH_WAIT_RANGE(1000, 3000)));
-
-	k_work_init_delayable(&data->phy_work, phy_work_handler);
-
-	phy_work_handler(&data->phy_work.work);
+	(void)k_work_reschedule(&data->phy_work, K_NO_WAIT);
 }
 
 static int phy_tja1103_init(const struct device *dev)

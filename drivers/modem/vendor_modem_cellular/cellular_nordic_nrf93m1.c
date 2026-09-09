@@ -10,8 +10,26 @@
 
 #define DT_DRV_COMPAT nordic_nrf93m1
 
+struct nrf93m1_modem_cellular_config {
+	/** UART bus is configured with RTS/CTS hardware flow control */
+	bool bus_has_hwfc;
+};
+
+struct nrf93m1_modem_cellular_data {
+	/** Common modem data */
+	struct modem_cellular_data data;
+	/** Vendor specific data */
+
+	/** HWFC already enabled */
+	bool hwfc_enabled;
+};
+BUILD_ASSERT(offsetof(struct nrf93m1_modem_cellular_data, data) == 0,
+	     "Common data must be at start of struct");
+
 static void nrf93m1_on_bcinfosc(struct modem_chat *chat, char **argv, uint16_t argc,
 				void *user_data);
+static void nrf93m1_on_ifc(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data);
+static bool nrf93m1_ifc_required(void *user_data);
 
 MODEM_CELLULAR_COMMON_CHAT_MATCHES();
 MODEM_CHAT_MATCH_DEFINE(pwd_match, "POWERED DOWN", "", NULL);
@@ -20,39 +38,47 @@ MODEM_CHAT_MATCHES_DEFINE(nordic_nrf93m1_unsol, MODEM_CELLULAR_COMMON_UNSOL_MATC
 			  MODEM_CHAT_MATCH("RDY", "", modem_cellular_chat_on_modem_ready),
 			  MODEM_CHAT_MATCH("%BCINFOSC:", ",", nrf93m1_on_bcinfosc));
 
+/* Multi-line response matches - use partial=true for intermediate lines
+ * so the script doesn't advance until the final OK is received.
+ */
+MODEM_CHAT_MATCHES_DEFINE(nordic_nrf93m1_ifc_matches,
+			  MODEM_CHAT_MATCH_INITIALIZER("+IFC:", ",", nrf93m1_on_ifc, false, true),
+			  MODEM_CHAT_MATCH("OK", "", NULL));
+
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(
-	nordic_nrf93m1_init_chat_script_cmds,
-	MODEM_CHAT_SCRIPT_CMD_RESP("ATE0", ok_match),
-	MODEM_CHAT_SCRIPT_CMD_RESP("AT+IFC=2,2", ok_match),
-	MODEM_CHAT_SCRIPT_CMD_RESP_NONE("", 100),
-	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGSN", imei_match), MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
-	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGMM", cgmm_match), MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
-	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGMI", cgmi_match), MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
-	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CGMR", cgmr_match), MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
+	nordic_nrf93m1_init_chat_script_cmds, MODEM_CHAT_SCRIPT_CMD_RESP("ATE0", ok_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+IFC?", nordic_nrf93m1_ifc_matches),
+	MODEM_CHAT_SCRIPT_CMD_RESP_COND("AT+IFC=2,2", ok_match, nrf93m1_ifc_required),
+	MODEM_CHAT_SCRIPT_CMD_RESP_NONE_COND("", 100, nrf93m1_ifc_required),
+	MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CGSN", imei_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CGMM", cgmm_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CGMI", cgmi_match),
+	MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CGMR", cgmr_match),
 	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=4", ok_match),
-	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CMUX=0,0,5,127", ok_match));
+	MODEM_CHAT_SCRIPT_CMD_RESP("AT+CMUX=0,0,5," STRINGIFY(CONFIG_MODEM_CMUX_MTU), ok_match));
 
 MODEM_CHAT_SCRIPT_DEFINE(nordic_nrf93m1_init_chat_script, nordic_nrf93m1_init_chat_script_cmds,
 			 abort_matches, modem_cellular_chat_callback_handler, 10);
 
 /* Differs from common `iccid_match` only in the % vs + prefix */
-MODEM_CHAT_MATCH_DEFINE(nrf93m1_iccid_match, "%ICCID: ", "", modem_cellular_chat_on_iccid);
+MODEM_CELLULAR_OK_CHAT_MATCH_DEFINE(nrf93m1_iccid_match, "%ICCID: ", "",
+				    modem_cellular_chat_on_iccid);
 
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(nordic_nrf93m1_network_chat_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CEREG=2", ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=1", ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP_NONE("", 500),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CIMI", cimi_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT%ICCID", nrf93m1_iccid_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("", ok_match));
+			      MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CIMI", cimi_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT%ICCID", nrf93m1_iccid_match));
 
 MODEM_CHAT_SCRIPT_DEFINE(nordic_nrf93m1_network_chat_script,
 			 nordic_nrf93m1_network_chat_script_cmds, abort_matches,
 			 modem_cellular_chat_callback_handler, 10);
 
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(nordic_nrf93m1_dial_chat_script_cmds,
-			      MODEM_CHAT_SCRIPT_CMD_RESP("ATD*99***1#", connect_match));
+			      MODEM_CHAT_SCRIPT_CMD_RESP(
+				"ATD*99***" STRINGIFY(CONFIG_MODEM_CELLULAR_PDP_CONTEXT_ID) "#",
+				connect_match));
 
 MODEM_CHAT_SCRIPT_DEFINE(nordic_nrf93m1_dial_chat_script, nordic_nrf93m1_dial_chat_script_cmds,
 			 dial_abort_matches, modem_cellular_chat_callback_handler, 60);
@@ -101,6 +127,41 @@ static void nrf93m1_on_bcinfosc(struct modem_chat *chat, char **argv, uint16_t a
 	modem_cellular_emit_network_status(data, &evt);
 }
 
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(nordic_nrf93m1_dlci_setup_chat_script_cmds,
+			      MODEM_CHAT_SCRIPT_CMD_RESP("ATE0", ok_match));
+
+MODEM_CHAT_SCRIPT_DEFINE(nordic_nrf93m1_dlci_setup_chat_script,
+			 nordic_nrf93m1_dlci_setup_chat_script_cmds, abort_matches,
+			 modem_cellular_chat_callback_handler, 1);
+
+static void nrf93m1_on_ifc(struct modem_chat *chat, char **argv, uint16_t argc, void *user_data)
+{
+	struct modem_cellular_data *data = (struct modem_cellular_data *)user_data;
+	struct nrf93m1_modem_cellular_data *vendor_data =
+		CONTAINER_OF(data, struct nrf93m1_modem_cellular_data, data);
+
+	/* IFC configuration is stored in flash, so only needs to be set once.
+	 * If the configuration is already correct, we can skip the delay that needs to be
+	 * respected while the interface is reconfigured.
+	 */
+	vendor_data->hwfc_enabled =
+		(argc == 3) && (strtol(argv[1], NULL, 10) == 2) && (strtol(argv[2], NULL, 10) == 2);
+}
+
+static bool nrf93m1_ifc_required(void *user_data)
+{
+	struct modem_cellular_data *data = (struct modem_cellular_data *)user_data;
+	struct nrf93m1_modem_cellular_data *vendor_data =
+		CONTAINER_OF(data, struct nrf93m1_modem_cellular_data, data);
+	const struct modem_cellular_config *config = data->dev->config;
+	const struct nrf93m1_modem_cellular_config *vendor_config = config->vendor_specific;
+
+	/* IFC configuration should only be sent if the bus supports HWFC and it is not already
+	 * enabled.
+	 */
+	return vendor_config->bus_has_hwfc && !vendor_data->hwfc_enabled;
+}
+
 static const struct modem_cellular_vendor_config nrf93m1_vendor = {
 	/* clang-format off */
 	.scripts = {
@@ -109,6 +170,7 @@ static const struct modem_cellular_vendor_config nrf93m1_vendor = {
 		.dial = &nordic_nrf93m1_dial_chat_script,
 		.periodic = &nordic_nrf93m1_periodic_chat_script,
 		.shutdown = &nordic_nrf93m1_shutdown_chat_script,
+		.dlci_setup = &nordic_nrf93m1_dlci_setup_chat_script,
 	},
 	.unsol_matches = {
 		.matches = nordic_nrf93m1_unsol,
@@ -127,10 +189,14 @@ static const struct modem_cellular_vendor_config nrf93m1_vendor = {
 #define MODEM_CELLULAR_DEVICE_NORDIC_NRF93M1(inst)                                                 \
 	MODEM_DT_INST_PPP_DEFINE(inst, MODEM_CELLULAR_INST_NAME(ppp, inst), NULL, 1500, 1500);     \
                                                                                                    \
-	static struct modem_cellular_data MODEM_CELLULAR_INST_NAME(data, inst);                    \
+	static const struct nrf93m1_modem_cellular_config nrf93m1_vendor_cfg##inst = {             \
+		.bus_has_hwfc = DT_PROP(DT_INST_BUS(inst), hw_flow_control),                       \
+	};                                                                                         \
+                                                                                                   \
+	static struct nrf93m1_modem_cellular_data MODEM_CELLULAR_INST_NAME(data, inst);            \
                                                                                                    \
 	MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst, (user_pipe_0, 3), (user_pipe_1, 4))        \
                                                                                                    \
-	MODEM_CELLULAR_DEFINE_INSTANCE(inst, &nrf93m1_vendor)
+	MODEM_CELLULAR_DEFINE_INSTANCE(inst, &nrf93m1_vendor, &nrf93m1_vendor_cfg##inst)
 
 DT_INST_FOREACH_STATUS_OKAY(MODEM_CELLULAR_DEVICE_NORDIC_NRF93M1)

@@ -26,7 +26,7 @@ properties:
       - 3
       - 4
     description: |
-      Number of slave select bits implemented
+      Number of chip select bits implemented
 
   xlnx,num-transfer-bits:
     type: int

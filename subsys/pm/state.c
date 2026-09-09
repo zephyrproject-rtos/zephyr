@@ -132,7 +132,7 @@ bool pm_state_in_constraints(const struct pm_state_constraints *constraints,
 	size_t num_constraints = constraints->count;
 	bool match_found = false;
 
-	for (int i = 0; i < num_constraints; i++) {
+	for (size_t i = 0; i < num_constraints; i++) {
 		enum pm_state state = constraints_list[i].state;
 		uint8_t substate = constraints_list[i].substate_id;
 

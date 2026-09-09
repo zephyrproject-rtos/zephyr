@@ -179,7 +179,7 @@ static int spi_rz_rspi_configure(const struct device *dev, const struct spi_conf
 	}
 
 	/* SPI mode */
-	if (spi_cfg->operation & SPI_OP_MODE_SLAVE) {
+	if (spi_cfg->operation & SPI_OP_MODE_PERIPHERAL) {
 		data->fsp_config->operating_mode = SPI_MODE_SLAVE;
 	} else {
 		data->fsp_config->operating_mode = SPI_MODE_MASTER;
@@ -219,7 +219,7 @@ static int spi_rz_rspi_configure(const struct device *dev, const struct spi_conf
 		data->fsp_ctrl->bit_width = SPI_BIT_WIDTH_8_BITS;
 	}
 
-	/* SPI slave select polarity */
+	/* SPI chip select polarity */
 	if (spi_cfg->operation & SPI_CS_ACTIVE_HIGH) {
 		data->fsp_extend_config.ssl_polarity = RSPI_SSLP_HIGH;
 	} else {
@@ -357,15 +357,15 @@ static int transceive(const struct device *dev, const struct spi_config *spi_cfg
 		goto end_transceive;
 	}
 	if (data->ctx.rx_len == 0) {
-		data->data_len = spi_context_is_slave(&data->ctx)
+		data->data_len = spi_context_is_peripheral(&data->ctx)
 					 ? spi_context_total_tx_len(&data->ctx)
 					 : data->ctx.tx_len;
 	} else if (data->ctx.tx_len == 0) {
-		data->data_len = spi_context_is_slave(&data->ctx)
+		data->data_len = spi_context_is_peripheral(&data->ctx)
 					 ? spi_context_total_rx_len(&data->ctx)
 					 : data->ctx.rx_len;
 	} else {
-		data->data_len = spi_context_is_slave(&data->ctx)
+		data->data_len = spi_context_is_peripheral(&data->ctx)
 					 ? MAX(spi_context_total_tx_len(&data->ctx),
 					       spi_context_total_rx_len(&data->ctx))
 					 : MIN(data->ctx.tx_len, data->ctx.rx_len);
@@ -418,11 +418,11 @@ end_transceive:
 #endif  /* #if (defined(CONFIG_SPI_RENESAS_RZ_RSPI_INTERRUPT) */
 	/* || defined(CONFIG_SPI_RENESAS_RZ_RSPI_DMAC)) */
 
-#ifdef CONFIG_SPI_SLAVE
-	if (spi_context_is_slave(spi_ctx) && !ret) {
+#ifdef CONFIG_SPI_PERIPHERAL
+	if (spi_context_is_peripheral(spi_ctx) && !ret) {
 		ret = spi_ctx->recv_frames;
 	}
-#endif /* CONFIG_SPI_SLAVE */
+#endif /* CONFIG_SPI_PERIPHERAL */
 
 	spi_context_cs_control(spi_ctx, false);
 

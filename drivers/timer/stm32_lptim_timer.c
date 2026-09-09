@@ -369,7 +369,7 @@ void sys_clock_set_timeout(uint32_t ticks, bool idle)
 
 		LL_LPTIM_DisableIT_ARROK(LPTIM);
 		LL_LPTIM_ClearFlag_ARROK(LPTIM);
-		NVIC_ClearPendingIRQ(DT_IRQN(LPTIM_SYSTIMER_NODE));
+		k_irq_clear_pending(DT_IRQN(LPTIM_SYSTIMER_NODE));
 		/* Stop clocks for LPTIM, since RTC is used instead */
 		clock_control_off(clk_ctrl, (clock_control_subsys_t) &lptim_clk[0]);
 

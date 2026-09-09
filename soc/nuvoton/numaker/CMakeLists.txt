@@ -5,4 +5,4 @@
 # This is for access to pinctrl macros
 zephyr_include_directories(common)
 
-add_subdirectory(${SOC_SERIES})
+add_subdirectory(${CONFIG_SOC_SERIES})

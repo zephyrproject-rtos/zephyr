@@ -225,6 +225,14 @@ application:
   the system console. E.g. for ``printk`` and the :kconfig:option:`boot banner
   <CONFIG_BOOT_BANNER>`
 
+Optionally, on boards whose monitor UART driver supports the interrupt API,
+setting :kconfig:option:`CONFIG_BT_DEBUG_MONITOR_UART_INTERRUPT_DRIVEN` queues
+complete monitor records and transmits them from the UART interrupt handler
+instead of blocking while each byte is transmitted. Records that do not fit in
+the buffer are dropped and reported in the next monitor record. The buffer
+size can be adjusted with
+:kconfig:option:`CONFIG_BT_DEBUG_MONITOR_UART_BUFFER_SIZE`.
+
 To decode the binary protocol that will now be sent to the console UART you need
 to use the btmon tool from :ref:`BlueZ <bluetooth_bluez>`:
 

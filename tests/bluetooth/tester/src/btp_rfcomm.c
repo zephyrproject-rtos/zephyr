@@ -117,7 +117,7 @@ static void rfcomm_disconnected(struct bt_rfcomm_dlc *dlc)
 	free_channel(chan);
 }
 
-static void rfcomm_recv(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
+static int rfcomm_recv(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
 {
 	struct rfcomm_channel *chan = CONTAINER_OF(dlc, struct rfcomm_channel, dlc);
 	struct btp_rfcomm_data_received_ev *ev;
@@ -128,7 +128,7 @@ static void rfcomm_recv(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
 
 	if (chan->conn == NULL) {
 		LOG_ERR("No connection");
-		return;
+		return 0;
 	}
 
 	ev_len = sizeof(*ev) + buf->len;
@@ -139,7 +139,7 @@ static void rfcomm_recv(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
 	if (ev_data == NULL) {
 		LOG_ERR("Failed to allocate event buffer");
 		tester_rsp_buffer_unlock();
-		return;
+		return 0;
 	}
 
 	ev = (struct btp_rfcomm_data_received_ev *)ev_data;
@@ -153,6 +153,8 @@ static void rfcomm_recv(struct bt_rfcomm_dlc *dlc, struct net_buf *buf)
 
 	tester_rsp_buffer_free();
 	tester_rsp_buffer_unlock();
+
+	return 0;
 }
 
 static void rfcomm_sent(struct bt_rfcomm_dlc *dlc, int err)

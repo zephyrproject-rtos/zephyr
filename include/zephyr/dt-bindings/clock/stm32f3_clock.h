@@ -6,7 +6,9 @@
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32F3_CLOCK_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32F3_CLOCK_H_
 
-#include "stm32_common_clocks.h"
+#include <zephyr/dt-bindings/clock/stm32_common_clocks.h>
+
+/** @cond INTERNAL_HIDDEN */
 
 /** Bus gatting clocks */
 #define STM32_CLOCK_BUS_AHB1    0x014
@@ -84,5 +86,7 @@
 #define ADC_PRE_DIV_64		0x19
 #define ADC_PRE_DIV_128		0x1A
 #define ADC_PRE_DIV_256		0x1B
+
+/** @endcond */
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32F3_CLOCK_H_ */

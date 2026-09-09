@@ -202,7 +202,7 @@ Its properties can be accessed like this:
 
    int a[] = DT_PROP(FOO, a);           /* {1000, 2000, 3000} */
    unsigned char b[] = DT_PROP(FOO, b); /* {0xaa, 0xbb, 0xcc, 0xdd} */
-   char* c[] = DT_PROP(FOO, c);         /* {"foo", "bar"} */
+   char* c[] = DT_PROP(FOO, c);         /* {"bar", "baz"} */
 
 You can use :c:macro:`DT_PROP_LEN()` to get logical array lengths in number of
 elements.

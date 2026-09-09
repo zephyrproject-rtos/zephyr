@@ -125,6 +125,7 @@ static void bmm350_event_handler(const struct device *dev)
 			      &buf, &buf_len);
 	CHECKIF(err != 0 || buf_len < sizeof(struct bmm350_encoded_data)) {
 		LOG_ERR("Failed to allocate BMM350 encoded buffer: %d", err);
+		(void)atomic_set(&data->stream.state, BMM350_STREAM_ON);
 		bmm350_stream_result(dev, -ENOMEM);
 		return;
 	}
@@ -137,12 +138,18 @@ static void bmm350_event_handler(const struct device *dev)
 					 edata->payload.buf, sizeof(edata->payload.buf),
 					 &read_sqe);
 	CHECKIF(err < 0 || !read_sqe) {
+		(void)atomic_set(&data->stream.state, BMM350_STREAM_ON);
 		bmm350_stream_result(dev, err);
 		return;
 	}
 	read_sqe->flags |= RTIO_SQE_CHAINED;
 
 	cb_sqe = rtio_sqe_acquire(cfg->bus.rtio.ctx);
+	if (cb_sqe == NULL) {
+		rtio_sqe_drop_all(cfg->bus.rtio.ctx);
+		bmm350_stream_result(dev, -ENOMEM);
+		return;
+	}
 
 	rtio_sqe_prep_callback_no_cqe(cb_sqe, bmm350_stream_event_complete,
 				      iodev_sqe, (void *)dev);

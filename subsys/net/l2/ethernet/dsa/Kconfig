@@ -24,6 +24,17 @@ config DSA_TAG_SIZE
 	help
 	  Set the DSA tag length in bytes.
 
+config DSA_CONDUIT_PROMISC_ON
+	bool "Run DSA conduit in promiscuous mode"
+	default y
+	select NET_PROMISCUOUS_MODE
+	help
+	  Some conduits leverage ingress filters to discard packets whose DMAC field does not match
+	  that programmed into the conduit's MAC before said packets are ever made available to the
+	  software. Such conduits typically need to run in promiscuous mode to ensure packets
+	  received on DSA ports being processed.
+
+
 module = NET_DSA
 module-dep = NET_LOG
 module-str = Log level for DSA

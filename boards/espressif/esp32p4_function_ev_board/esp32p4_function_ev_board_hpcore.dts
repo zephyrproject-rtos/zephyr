@@ -9,6 +9,8 @@
 #include <espressif/esp32p4/esp32p4_n16r8.dtsi>
 #include "esp32p4_function_ev_board_hpcore-pinctrl.dtsi"
 #include <zephyr/dt-bindings/input/input-event-codes.h>
+#include <zephyr/dt-bindings/display/panel.h>
+#include <zephyr/dt-bindings/mipi_dsi/mipi_dsi.h>
 #include <espressif/partitions_0x2000_default_16M.dtsi>
 
 / {
@@ -21,6 +23,9 @@
 		zephyr,shell-uart = &usb_serial;
 		zephyr,flash = &flash0;
 		zephyr,code-partition = &slot0_partition;
+		zephyr,bt-hci = &esp_hosted_mcu_hci;
+		zephyr,display = &dsi_display;
+		zephyr,touch = &gt911;
 	};
 
 	aliases {
@@ -73,6 +78,18 @@
 	clock-frequency = <I2C_BITRATE_FAST>;
 	pinctrl-0 = <&i2c0_default>;
 	pinctrl-names = "default";
+
+	gt911: touch-controller@5d {
+		compatible = "goodix,gt911";
+		status = "okay";
+		reg = <0x5d>;
+		reset-gpios = <&gpio0 21 GPIO_ACTIVE_LOW>;
+		irq-gpios = <&gpio0 22 GPIO_ACTIVE_HIGH>;
+		screen-width = <1024>;
+		screen-height = <600>;
+		inverted-x;
+		inverted-y;
+	};
 };
 
 &spi2 {
@@ -118,6 +135,12 @@
 		regulator-always-on;
 	};
 
+	ldo3@3 {
+		regulator-init-microvolt = <2500000>;
+		regulator-boot-on;
+		regulator-always-on;
+	};
+
 	ldo4@4 {
 		regulator-init-microvolt = <3300000>;
 		regulator-boot-on;
@@ -143,6 +166,37 @@
 			status = "okay";
 		};
 	};
+
+	sdhc1: sdhc@1 {
+		status = "okay";
+		bus-width = <4>;
+		max-bus-freq = <40000000>;
+		clk-pin = <18>;
+		cmd-pin = <19>;
+		d0-pin = <14>;
+		d1-pin = <15>;
+		d2-pin = <16>;
+		d3-pin = <17>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+
+		esp_hosted_mcu: esp-hosted-mcu@0 {
+			compatible = "espressif,esp-hosted-mcu";
+			reg = <0>;
+			reset-gpios = <&gpio1 22 GPIO_ACTIVE_HIGH>;
+			status = "okay";
+
+			esp_hosted_mcu_wifi: wifi {
+				compatible = "espressif,esp-hosted-mcu-wifi";
+				status = "okay";
+			};
+
+			esp_hosted_mcu_hci: bt-hci {
+				compatible = "espressif,esp-hosted-mcu-bt-hci";
+				status = "okay";
+			};
+		};
+	};
 };
 
 &mdio {
@@ -154,6 +208,44 @@
 		compatible = "ethernet-phy";
 		reg = <1>;
 	};
+};
+
+&mipi_dsi {
+	status = "okay";
+	phy-clock = <900000000>;
+	dpi-clock-frequency = <48000000>;
+
+	ek79007: panel-controller@0 {
+		compatible = "fitipower,ek79007";
+		reg = <0>;
+		data-lanes = <2>;
+		pixel-format = <MIPI_DSI_PIXFMT_RGB888>;
+		width = <1024>;
+		height = <600>;
+		reset-gpios = <&gpio0 27 GPIO_ACTIVE_LOW>;
+		bl-gpios = <&gpio0 26 GPIO_ACTIVE_HIGH>;
+
+		display-timings {
+			compatible = "zephyr,panel-timing";
+			hsync-len = <10>;
+			hback-porch = <160>;
+			hfront-porch = <160>;
+			vsync-len = <1>;
+			vback-porch = <23>;
+			vfront-porch = <12>;
+			hsync-active = <0>;
+			vsync-active = <0>;
+			de-active = <1>;
+			pixelclk-active = <0>;
+		};
+	};
+};
+
+&dsi_display {
+	status = "okay";
+	pixel-format = <PANEL_PIXEL_FORMAT_RGB_888>;
+	width = <1024>;
+	height = <600>;
 };
 
 &eth {

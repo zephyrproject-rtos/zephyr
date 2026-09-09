@@ -50,6 +50,7 @@ struct mctp_usb_class_ctx {
 	uint8_t inst_idx;
 	struct k_fifo rx_fifo;
 	struct k_work out_work;
+	struct k_work_sync out_work_sync;
 	atomic_t state;
 	atomic_t in_pending;
 };
@@ -456,8 +457,12 @@ static void mctp_usb_class_disable(struct usbd_class_data *const c_data)
 
 	atomic_clear_bit(&ctx->state, MCTP_USB_ENABLED);
 
-	/* Stop worker first so it doesn't race while we drain FIFO */
-	(void)k_work_cancel(&ctx->out_work);
+	/*
+	 * Stop the worker and wait for it to finish. This prevents the case
+	 * in which the worker is running and ends up using usb->rx_pkt after it
+	 * has been freed in mctp_usb_reset_rx_state().
+	 */
+	(void)k_work_cancel_sync(&ctx->out_work, &ctx->out_work_sync);
 
 	/* Drain and free any queued OUT buffers */
 	while (1) {

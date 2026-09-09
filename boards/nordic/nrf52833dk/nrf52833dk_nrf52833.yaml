@@ -14,7 +14,7 @@ supported:
   - arduino_spi
   - usb_device
   - usbd
-  - ble
+  - bluetooth
   - gpio
   - pwm
   - watchdog

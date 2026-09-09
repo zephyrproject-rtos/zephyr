@@ -6,7 +6,7 @@ common:
   harness: bsim
 
 tests:
-  tests.bsim.bluetooth.ll.multiple_id:
+  bluetooth.controller.multiple_id:
     sysbuild: true
     platform_allow:
       - nrf52_bsim

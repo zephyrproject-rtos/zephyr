@@ -1,7 +1,7 @@
 # ARM Cortex-M platform configuration options
 
 # Copyright (c) 2014-2015 Wind River Systems, Inc.
-# Copyright 2025 Arm Limited and/or its affiliates <open-source-office@arm.com>
+# Copyright 2025-2026 Arm Limited and/or its affiliates <open-source-office@arm.com>
 # SPDX-License-Identifier: Apache-2.0
 
 # NOTE: We have the specific core implementations first and outside of the
@@ -228,8 +228,9 @@ config ARMV7_M_ARMV8_M_MAINLINE
 	select CPU_CORTEX_M_HAS_VTOR
 	select CPU_CORTEX_M_HAS_PROGRAMMABLE_FAULT_PRIOS
 	select CPU_CORTEX_M_HAS_SYSTICK
-	select USE_SWITCH_SUPPORTED
+	select USE_SWITCH_SUPPORTED if !TRUSTED_EXECUTION_NONSECURE
 	select ARCH_HAS_LLEXT_VENEERS
+	select ARCH_HAS_BIT_REV
 	help
 	  This option signifies the use of an ARMv7-M processor
 	  implementation, or the use of a backwards-compatible
@@ -505,14 +506,18 @@ config CORTEX_M_NULL_POINTER_EXCEPTION_PAGE_SIZE
 
 endif # CORTEX_M_NULL_POINTER_EXCEPTION
 
-config ARM_GCC_FP_WORKAROUND
-	bool "GCC/gas frame pointer workaround"
+config ARM_FP_CLOBBER_WORKAROUND
+	bool "Frame pointer clobber workaround"
+	depends on USE_SWITCH
+	default y if FRAME_POINTER
+	default y if SCHED_SCALABLE
 	help
-	  Enables a two-instruction workaround for a GNU toolchain
-	  buglet in arch_switch() when the kernel must unavoidably be
-	  compiled with -fno-omit-frame-pointer.  Most code doesn't
-	  want this, but in at least one case it's necessary.  See
-	  comment in arm-m-switch.h
+	  Enables a two-instruction workaround for a GNU and clang toolchain
+	  limitation in which inline assembly cannot clobber the frame pointer.
+	  Most code doesn't want this, but it's necessary if the kernel is to
+	  be compiled with -fno-omit-frame-pointer, or if the red-black tree
+	  scheduler queue is used, which requires dynamic stack allocation in
+	  sched.c.
 
 rsource "tz/Kconfig"
 

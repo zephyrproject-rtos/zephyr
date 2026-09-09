@@ -2,6 +2,7 @@
  * @file drivers/stepper/stepper_drv84xx.h
  *
  * @brief Public API for DRV84XX Stepper Controller Specific Functions
+ * @ingroup drv84xx_stepper_ctrl
  *
  */
 
@@ -13,6 +14,13 @@
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_STEPPER_STEPPER_DRV84XX_H_
 #define ZEPHYR_INCLUDE_DRIVERS_STEPPER_STEPPER_DRV84XX_H_
+
+/**
+ * @brief TI DRV84XX Stepper Controller
+ * @defgroup drv84xx_stepper_ctrl DRV84XX Stepper Controller
+ * @ingroup stepper_interface_ext
+ * @{
+ */
 
 #include <stdint.h>
 #include <zephyr/drivers/stepper/stepper.h>
@@ -30,6 +38,10 @@ extern "C" {
  * @retval <0 Error code dependent on the gpio controller of the microstep pins
  */
 int drv84xx_microstep_recovery(const struct device *dev);
+
+/**
+ * @}
+ */
 
 #ifdef __cplusplus
 }

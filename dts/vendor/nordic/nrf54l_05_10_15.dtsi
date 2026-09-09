@@ -44,7 +44,8 @@
 			device_type = "cpu";
 			clocks = <&hfpll>;
 			riscv,isa-base = "rv32e";
-			riscv,isa-extensions = "e", "m", "c", "zicsr";
+			riscv,isa-extensions = "e", "m", "c", "zicsr",
+					       "zba", "zbb", "zbc", "zbs", "zcb";
 			nordic,bus-width = <32>;
 		};
 	};
@@ -198,6 +199,7 @@
 				ngpios = <11>;
 				status = "disabled";
 				port = <2>;
+				hspadctrl-supported;
 			};
 
 			timer00: timer@55000 {
@@ -661,7 +663,7 @@
 				xo: xo {
 					compatible = "nordic,nrf-clock-xo";
 					status = "disabled";
-					clock-frequency = <0x1e84800>;
+					clock-frequency = <DT_FREQ_M(32)>;
 					#clock-cells = <0>;
 				};
 
@@ -809,3 +811,25 @@
 		};
 	};
 };
+
+#ifndef USE_NON_SECURE_ADDRESS_MAP
+/ {
+	reserved-memory {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		/*
+		 * The KMU pushes keys to a fixed address at the start of SRAM,
+		 * so this area is not available to the application. When
+		 * building with TF-M the area is part of the SRAM partition
+		 * owned by the secure image instead.
+		 */
+		kmu_push_area: memory@20000000 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x20000000 0x60>;
+			zephyr,memory-region = "KMU_PUSH";
+		};
+	};
+};
+#endif

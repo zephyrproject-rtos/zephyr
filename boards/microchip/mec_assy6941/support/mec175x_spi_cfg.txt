@@ -3,7 +3,7 @@
 SPISizeMegabits = 128
 
 [DEVICE]
-DeviceSel = A
+DeviceSel = B
 TagAddr0 = 0
 TagAddr1 = 0
 ; BoardID is used by a Boot-ROM feature named PlatformID. By default PlatformID

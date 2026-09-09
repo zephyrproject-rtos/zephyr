@@ -7,7 +7,7 @@
 
 if BOARD_STM32H573I_DK
 
-configdefault NET_L2_ETHERNET
+configdefault ETH_DRIVER
 	default y
 
 configdefault SDMMC_STM32_CLOCK_CHECK

@@ -68,7 +68,7 @@ Zephyr board options
 
     .. code-block:: bash
 
-     $ west build -b mps3_an547 samples/hello_world -DEMU_PLATFORM=qemu -t run
+     $ west build -b mps3/corstone300/an547 samples/hello_world -DEMU_PLATFORM=qemu -t run
 
   .. tab:: MPS3 Corstone-300 (AN552)
 

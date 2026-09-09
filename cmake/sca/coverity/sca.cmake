@@ -17,5 +17,5 @@ file(MAKE_DIRECTORY ${output_dir})
 set(output_arg --dir=${output_dir})
 
 
-set(CMAKE_C_COMPILER_LAUNCHER ${COVERITY_BUILD} ${output_arg} CACHE INTERNAL "")
-set(CMAKE_CXX_COMPILER_LAUNCHER ${COVERITY_BUILD} ${output_arg} CACHE INTERNAL "")
+set(CMAKE_C_COMPILER_LAUNCHER ${COVERITY_BUILD} ${output_arg})
+set(CMAKE_CXX_COMPILER_LAUNCHER ${COVERITY_BUILD} ${output_arg})

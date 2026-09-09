@@ -1,0 +1,5 @@
+# Copyright (c) 2026 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_XGM240_RB4318A
+	select SOC_MGM240SD22VNA

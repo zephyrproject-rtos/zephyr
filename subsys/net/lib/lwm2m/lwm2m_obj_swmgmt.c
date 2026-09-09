@@ -656,7 +656,20 @@ static int package_uri_write_cb(uint16_t obj_inst_id, uint16_t res_id,
 	int error_code;
 	struct lwm2m_swmgmt_data *instance = NULL;
 
+	/* writes every block of a block-wise transfer to the start of
+	 * the buffer, so it never holds the assembled URI. Reject the
+	 * write rather than act on whichever fragment happens to be present.
+	 */
+	if (!last_block) {
+		LOG_ERR("PACKAGE_URI: block-wise write is not supported");
+		return -EFBIG;
+	}
+
 	instance = find_index(obj_inst_id);
+	if (instance == NULL) {
+		LOG_ERR("Instance %u not found", obj_inst_id);
+		return -ENOENT;
+	}
 
 	struct requesting_object req = { .obj_inst_id = obj_inst_id,
 					 .is_firmware_uri = false,

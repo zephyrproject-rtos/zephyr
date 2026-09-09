@@ -112,7 +112,7 @@ static void selftest_fill_upload(struct zperf_upload_params *param, int family,
 	}
 
 	memset(param, 0, sizeof(*param));
-	selftest_fill_addr(&param->peer_addr, family);
+	selftest_fill_addr(net_sad(&param->peer_addr_storage), family);
 	param->duration_ms = SELFTEST_DURATION_MS;
 	param->packet_size = packet_size;
 	param->rate_kbps = rate_kbps;

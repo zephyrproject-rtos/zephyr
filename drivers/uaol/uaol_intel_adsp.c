@@ -209,6 +209,11 @@ static int uaol_intel_adsp_set_power(const struct device *dev, bool power)
 
 	dp->is_powered_up = power;
 
+	/* The link power domain retains neither the BDF nor the frame alignment */
+	if (!power) {
+		dp->is_initialized = false;
+	}
+
 	return 0;
 }
 
@@ -373,7 +378,8 @@ static uint8_t uaol_intel_adsp_encode_service_interval(uint32_t service_interval
 static void uaol_intel_adsp_program_format(const struct device *dev, int stream,
 					   uint32_t sample_rate, uint32_t channels,
 					   uint32_t sample_bits, uint32_t sio_credit_size,
-					   uint32_t service_interval_usec)
+					   uint32_t service_interval_usec,
+					   enum uaol_direction direction)
 {
 	struct uaol_intel_adsp_data *dp = dev->data;
 	union UAOLxPCMSyCTL pcms_ctl;
@@ -385,6 +391,20 @@ static void uaol_intel_adsp_program_format(const struct device *dev, int stream,
 	sample_block_size = sample_size * channels;
 	payload_size = sample_block_size * ((sample_rate * service_interval_usec) / USEC_PER_SEC);
 
+	if (direction == UAOL_DIR_CAPTURE) {
+		/* Capture streams should ignore the format and capture all available bytes.
+		 * However, sio_credit_size describes only one packet, while a high-speed
+		 * endpoint may provide up to three packets per service interval. The driver
+		 * currently provides the maximum size of a single packet, not the maximum
+		 * payload size. Therefore, infer the maximum payload size by rounding the
+		 * format-derived payload size up to a whole number of packets.
+		 *
+		 * This prevents data loss at sample rates such as 44.1 kHz, where the payload
+		 * size varies between service intervals.
+		 */
+		payload_size = DIV_ROUND_UP(payload_size, sio_credit_size) * sio_credit_size;
+	}
+
 	pcms_ctl.full = sys_read64(UAOLxPCMSyCTL_ADDR(dp, stream));
 	pcms_ctl.part.si = uaol_intel_adsp_encode_service_interval(service_interval_usec);
 	pcms_ctl.part.ass = sample_size - 1;
@@ -393,6 +413,12 @@ static void uaol_intel_adsp_program_format(const struct device *dev, int stream,
 	pcms_ctl.part.mps = sio_credit_size;
 	pcms_ctl.part.pm = DIV_ROUND_UP(payload_size, sio_credit_size);
 	sys_write64(pcms_ctl.full, UAOLxPCMSyCTL_ADDR(dp, stream));
+
+	LOG_INF("stream %d: %uHz/%uch/%ubits, si %uus",
+		stream, sample_rate, channels, sample_bits, service_interval_usec);
+	LOG_INF("          si: %u, ass: %u, asbs: %u, aps: %u, mps: %u, pm: %u",
+		pcms_ctl.part.si, pcms_ctl.part.ass, pcms_ctl.part.asbs, pcms_ctl.part.aps,
+		pcms_ctl.part.mps, pcms_ctl.part.pm);
 }
 
 /*
@@ -419,6 +445,8 @@ static void uaol_intel_adsp_program_rate_adjustment(const struct device *dev, in
 	pcms_ra.part.fcadivm = fcadivm;
 	pcms_ra.part.fcadivn = fcadivn;
 	sys_write32(pcms_ra.full, UAOLxPCMSyRA_ADDR(dp, stream));
+
+	LOG_INF("stream %d: fcadivm: %u, fcadivn: %u", stream, fcadivm, fcadivn);
 }
 
 static uint32_t uaol_intel_adsp_get_sbusy(const struct device *dev, int stream)
@@ -663,6 +691,8 @@ static int uaol_intel_adsp_config(const struct device *dev, int stream, struct u
 			goto out;
 		}
 
+		LOG_DBG("link initialized, frame counter aligned");
+
 		dp->is_initialized = true;
 	}
 
@@ -670,9 +700,12 @@ static int uaol_intel_adsp_config(const struct device *dev, int stream, struct u
 	sys_write16(cfg->fifo_start_offset, UAOLxPCMSyFSA_ADDR(dp, stream));
 	sys_write16(cfg->channel_map, UAOLxPCMSyCM_ADDR(dp, stream));
 
+	LOG_INF("stream %d: FSA 0x%04x, CM 0x%04x", stream, cfg->fifo_start_offset,
+		cfg->channel_map);
+
 	uaol_intel_adsp_program_format(dev, stream, cfg->sample_rate, cfg->channels,
 				       cfg->sample_bits, cfg->sio_credit_size,
-				       cfg->service_interval);
+				       cfg->service_interval, cfg->direction);
 
 	uaol_intel_adsp_program_rate_adjustment(dev, stream, cfg->sample_rate,
 						cfg->service_interval);

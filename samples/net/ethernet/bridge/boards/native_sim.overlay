@@ -1,0 +1,20 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* The bridge sample needs two TAP interfaces: zeth0 and zeth1. */
+
+&zeth0 {
+	host-interface = "zeth0";
+};
+
+/ {
+	zeth1: zeth1 {
+		compatible = "zephyr,native-tap";
+		status = "okay";
+		zephyr,random-mac-address;
+		zephyr,mac-address-prefix = [00 00 5e 00 53];
+		host-interface = "zeth1";
+	};
+};

@@ -56,15 +56,14 @@ jobs:
         # debug
         ls -la
         git log  --pretty=oneline | head -n 10
-        ./scripts/ci/guideline_check.py --output output.txt -c origin/${BASE_REF}..
+        ./scripts/ci/guideline_check.py --annotate --output output.txt -c origin/${BASE_REF}..
 
     - name: check-warns
       run: |
         if [[ -s "output.txt" ]]; then
-            errors=$(cat output.txt)
-            errors="${errors//'%'/'%25'}"
-            errors="${errors//$'\n'/'%0A'}"
-            errors="${errors//$'\r'/'%0D'}"
-            echo "::error file=output.txt::$errors"
+            echo "Coding guideline violations, annotated on the changed lines:"
+            cat output.txt
+            count=$(wc -l < output.txt)
+            echo "::error title=Coding guidelines::${count} coding guideline violation(s), see the annotations on the changed lines"
             exit 1;
         fi

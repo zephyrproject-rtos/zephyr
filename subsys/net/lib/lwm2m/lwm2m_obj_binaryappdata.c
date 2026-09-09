@@ -97,7 +97,7 @@ static struct lwm2m_engine_obj_inst *lwm2m_binaryappdata_create(uint16_t obj_ins
 	inst[avail].resources = res[avail];
 	inst[avail].resource_count = i;
 
-	LOG_DBG("Created LWM2M binary app data container instance: %d", obj_inst_id);
+	LOG_DBG("Created LwM2M binary app data container instance: %d", obj_inst_id);
 	return &inst[avail];
 }
 

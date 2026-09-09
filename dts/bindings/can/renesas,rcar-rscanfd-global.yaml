@@ -1,0 +1,15 @@
+# Copyright (c) 2026 BayLibre, SAS
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas R-Car RS-CANFD controller global
+
+compatible: "renesas,rcar-rscanfd-global"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  clocks:
+    required: true

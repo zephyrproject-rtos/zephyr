@@ -4,11 +4,22 @@
 """Pytest configuration for SPDX content validation tests."""
 
 import os
+import re
 
 import pytest
 import yaml
 from packaging import version
 from spdx_tools.spdx.parser.parse_anything import parse_file
+
+# Matches the git URLs that 'west spdx' turns into package URLs:
+#   https://(<user>(:<password>)?@)?<host>/<namespace>/<package>(.git)?
+#   git@<host>:<namespace>/<package>(.git)?
+# Any credentials belong to the checkout, not to the package, so they are not
+# part of the expected purl.
+GIT_URL_REGEX = (
+    r"(?:git@|https?://(?:[^@/]+@)?)(?P<host>[\w.]+)\.\w+[/:]"
+    r"(?P<namespace>[\w\-_/]+)/(?P<package>[\w\-_]+)(?:\.git)?/?"
+)
 
 
 def pytest_addoption(parser):
@@ -128,14 +139,52 @@ def zephyr_version():
 
 
 @pytest.fixture(scope="session")
-def zephyr_meta_remote(build_dir):
-    """Fixture providing the zephyr SCM URL from zephyr.meta, if any."""
+def zephyr_meta(build_dir):
+    """Fixture providing the zephyr entry of zephyr.meta, or an empty dict."""
     meta_path = os.path.join(build_dir, "zephyr", "zephyr.meta")
     try:
         with open(meta_path) as f:
             content = yaml.safe_load(f)
     except OSError:
+        return {}
+
+    return content.get("zephyr", {}) if content else {}
+
+
+@pytest.fixture(scope="session")
+def zephyr_purl_prefix(zephyr_meta):
+    """Fixture providing the purl prefix expected for the checked-out Zephyr repository.
+
+    Derived from the SCM URL recorded in zephyr.meta so that the tests hold in
+    forks and downstream mirrors, not just in zephyrproject-rtos/zephyr.
+
+    Returns None when no purl can be derived, which is the common case in a
+    development workspace: zephyr.meta only records a remote for a checkout that
+    has exactly one, so anything with an extra fork or upstream remote lands here
+    (and gets its revision flagged '-off'). 'west spdx' emits no package URL at
+    all in that case, which the tests assert instead.
+    """
+    url = zephyr_meta.get("remote") or zephyr_meta.get("url")
+    if not url:
         return None
 
-    zephyr = content.get("zephyr", {}) if content else {}
-    return zephyr.get("remote") or zephyr.get("url")
+    match = re.fullmatch(GIT_URL_REGEX, url)
+    if not match:
+        return None
+
+    return f"pkg:{match.group('host')}/{match.group('namespace')}/{match.group('package')}@"
+
+
+@pytest.fixture(scope="session")
+def zephyr_purl_versions(zephyr_meta):
+    """Fixture providing the revisions a Zephyr purl may be pinned to.
+
+    'west spdx' pins to the release tags pointing at the checked-out commit when
+    there are any, and to the commit itself otherwise.
+    """
+    tags = zephyr_meta.get("tags")
+    if tags:
+        return set(tags)
+
+    revision = zephyr_meta.get("revision")
+    return {revision} if revision else set()

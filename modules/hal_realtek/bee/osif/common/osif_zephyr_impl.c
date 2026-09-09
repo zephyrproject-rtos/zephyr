@@ -207,7 +207,7 @@ bool os_sched_is_start_zephyr(void)
  ************************************************************/
 K_MEM_SLAB_DEFINE_TYPE(osif_task_slab, struct osif_task, CONFIG_REALTEK_BEE_OSIF_TASK_MAX_COUNT);
 
-bool os_task_create_zephyr(void **handle_ptr, const char *name, void (*routine)(void *),
+bool os_task_create_zephyr(void **handle_ptr, const char *name, void (*routine)(void *param),
 			   void *param, uint16_t stack_size, uint16_t priority)
 {
 	struct osif_task *task;

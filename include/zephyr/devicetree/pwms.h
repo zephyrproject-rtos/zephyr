@@ -46,7 +46,7 @@ extern "C" {
  * @param node_id node identifier for a node with a pwms property
  * @param idx logical index into pwms property
  * @return the node identifier for the PWM controller referenced at
- *         index "idx"
+ *         index @p idx
  * @see DT_PROP_BY_PHANDLE_IDX()
  */
 #define DT_PWMS_CTLR_BY_IDX(node_id, idx) \
@@ -86,7 +86,7 @@ extern "C" {
  * @brief Equivalent to DT_PWMS_CTLR_BY_IDX(node_id, 0)
  * @param node_id node identifier for a node with a pwms property
  * @return the node identifier for the PWM controller at index 0
- *         in the node's "pwms" property
+ *         in the node's <tt>pwms</tt> property
  * @see DT_PWMS_CTLR_BY_IDX()
  */
 #define DT_PWMS_CTLR(node_id) DT_PWMS_CTLR_BY_IDX(node_id, 0)
@@ -130,7 +130,7 @@ extern "C" {
  * @param node_id node identifier for a node with a pwms property
  * @param idx logical index into pwms property
  * @param cell lowercase-and-underscores cell name
- * @return the cell value at index "idx"
+ * @return the cell value at index @p idx
  * @see DT_PHA_BY_IDX()
  */
 #define DT_PWMS_CELL_BY_IDX(node_id, idx, cell) \
@@ -195,14 +195,14 @@ extern "C" {
 /**
  * @brief Get a PWM specifier's channel cell value at an index
  *
- * This macro only works for PWM specifiers with cells named "channel".
+ * This macro only works for PWM specifiers with cells named <tt>channel</tt>.
  * Refer to the node's binding to check if necessary.
  *
  * This is equivalent to DT_PWMS_CELL_BY_IDX(node_id, idx, channel).
  *
  * @param node_id node identifier for a node with a pwms property
  * @param idx logical index into pwms property
- * @return the channel cell value at index "idx"
+ * @return the channel cell value at index @p idx
  * @see DT_PWMS_CELL_BY_IDX()
  */
 #define DT_PWMS_CHANNEL_BY_IDX(node_id, idx) \
@@ -211,7 +211,7 @@ extern "C" {
 /**
  * @brief Get a PWM specifier's channel cell value by name
  *
- * This macro only works for PWM specifiers with cells named "channel".
+ * This macro only works for PWM specifiers with cells named <tt>channel</tt>.
  * Refer to the node's binding to check if necessary.
  *
  * This is equivalent to DT_PWMS_CELL_BY_NAME(node_id, name, channel).
@@ -236,14 +236,14 @@ extern "C" {
 /**
  * @brief Get PWM specifier's period cell value at an index
  *
- * This macro only works for PWM specifiers with cells named "period".
+ * This macro only works for PWM specifiers with cells named <tt>period</tt>.
  * Refer to the node's binding to check if necessary.
  *
  * This is equivalent to DT_PWMS_CELL_BY_IDX(node_id, idx, period).
  *
  * @param node_id node identifier for a node with a pwms property
  * @param idx logical index into pwms property
- * @return the period cell value at index "idx"
+ * @return the period cell value at index @p idx
  * @see DT_PWMS_CELL_BY_IDX()
  */
 #define DT_PWMS_PERIOD_BY_IDX(node_id, idx) \
@@ -252,7 +252,7 @@ extern "C" {
 /**
  * @brief Get a PWM specifier's period cell value by name
  *
- * This macro only works for PWM specifiers with cells named "period".
+ * This macro only works for PWM specifiers with cells named <tt>period</tt>.
  * Refer to the node's binding to check if necessary.
  *
  * This is equivalent to DT_PWMS_CELL_BY_NAME(node_id, name, period).
@@ -277,15 +277,15 @@ extern "C" {
 /**
  * @brief Get a PWM specifier's flags cell value at an index
  *
- * This macro expects PWM specifiers with cells named "flags".
- * If there is no "flags" cell in the PWM specifier, zero is returned.
+ * This macro expects PWM specifiers with cells named <tt>flags</tt>.
+ * If there is no <tt>flags</tt> cell in the PWM specifier, zero is returned.
  * Refer to the node's binding to check specifier cell names if necessary.
  *
  * This is equivalent to DT_PWMS_CELL_BY_IDX(node_id, idx, flags).
  *
  * @param node_id node identifier for a node with a pwms property
  * @param idx logical index into pwms property
- * @return the flags cell value at index "idx", or zero if there is none
+ * @return the flags cell value at index @p idx, or zero if there is none
  * @see DT_PWMS_CELL_BY_IDX()
  */
 #define DT_PWMS_FLAGS_BY_IDX(node_id, idx) \
@@ -294,8 +294,8 @@ extern "C" {
 /**
  * @brief Get a PWM specifier's flags cell value by name
  *
- * This macro expects PWM specifiers with cells named "flags".
- * If there is no "flags" cell in the PWM specifier, zero is returned.
+ * This macro expects PWM specifiers with cells named <tt>flags</tt>.
+ * If there is no <tt>flags</tt> cell in the PWM specifier, zero is returned.
  * Refer to the node's binding to check specifier cell names if necessary.
  *
  * This is equivalent to DT_PWMS_CELL_BY_NAME(node_id, name, flags) if
@@ -326,7 +326,7 @@ extern "C" {
  * @param inst @c DT_DRV_COMPAT instance number
  * @param idx logical index into pwms property
  * @return the node identifier for the PWM controller referenced at
- *         index "idx"
+ *         index @p idx
  * @see DT_PWMS_CTLR_BY_IDX()
  */
 #define DT_INST_PWMS_CTLR_BY_IDX(inst, idx) \
@@ -348,7 +348,7 @@ extern "C" {
  * @brief Equivalent to DT_INST_PWMS_CTLR_BY_IDX(inst, 0)
  * @param inst @c DT_DRV_COMPAT instance number
  * @return the node identifier for the PWM controller at index 0
- *         in the instance's "pwms" property
+ *         in the instance's <tt>pwms</tt> property
  * @see DT_PWMS_CTLR_BY_IDX()
  */
 #define DT_INST_PWMS_CTLR(inst) DT_INST_PWMS_CTLR_BY_IDX(inst, 0)
@@ -359,7 +359,7 @@ extern "C" {
  * @param inst @c DT_DRV_COMPAT instance number
  * @param idx logical index into pwms property
  * @param cell lowercase-and-underscores cell name
- * @return the cell value at index "idx"
+ * @return the cell value at index @p idx
  */
 #define DT_INST_PWMS_CELL_BY_IDX(inst, idx, cell) \
 	DT_PWMS_CELL_BY_IDX(DT_DRV_INST(inst), idx, cell)
@@ -389,7 +389,7 @@ extern "C" {
  * @brief Equivalent to DT_INST_PWMS_CELL_BY_IDX(inst, idx, channel)
  * @param inst @c DT_DRV_COMPAT instance number
  * @param idx logical index into pwms property
- * @return the channel cell value at index "idx"
+ * @return the channel cell value at index @p idx
  * @see DT_INST_PWMS_CELL_BY_IDX()
  */
 #define DT_INST_PWMS_CHANNEL_BY_IDX(inst, idx) \
@@ -418,7 +418,7 @@ extern "C" {
  * @brief Equivalent to DT_INST_PWMS_CELL_BY_IDX(inst, idx, period)
  * @param inst @c DT_DRV_COMPAT instance number
  * @param idx logical index into pwms property
- * @return the period cell value at index "idx"
+ * @return the period cell value at index @p idx
  * @see DT_INST_PWMS_CELL_BY_IDX()
  */
 #define DT_INST_PWMS_PERIOD_BY_IDX(inst, idx) \
@@ -447,7 +447,7 @@ extern "C" {
  * @brief Equivalent to DT_INST_PWMS_CELL_BY_IDX(inst, idx, flags)
  * @param inst @c DT_DRV_COMPAT instance number
  * @param idx logical index into pwms property
- * @return the flags cell value at index "idx", or zero if there is none
+ * @return the flags cell value at index @p idx, or zero if there is none
  * @see DT_INST_PWMS_CELL_BY_IDX()
  */
 #define DT_INST_PWMS_FLAGS_BY_IDX(inst, idx) \

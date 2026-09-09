@@ -72,9 +72,7 @@ config WIFI_NM_WPA_SUPPLICANT_THREAD_STACK_SIZE
 	# overflow issues. Need to identify the cause for higher stack usage.
 	default 8600 if WIFI_NM_WPA_SUPPLICANT_CRYPTO_ENTERPRISE || WIFI_USAGE_MODE_STA_AP
 	default 8000 if WIFI_NM_WPA_SUPPLICANT_P2P
-	# This is needed to handle stack overflow issues on nRF Wi-Fi drivers.
-	default 6300 if WIFI_NM_WPA_SUPPLICANT_AP
-	default 5800
+	default 6300
 
 config WIFI_NM_WPA_SUPPLICANT_WQ_STACK_SIZE
 	int "Stack size for wpa_supplicant iface workqueue"
@@ -126,6 +124,19 @@ config WIFI_NM_WPA_SUPPLICANT_DEBUG_SHOW_KEYS
 	  WARNING: This is a security risk and should only be enabled during
 	  development or debugging. Key material should never be logged in production
 	  systems as it can compromise network security.
+
+config WIFI_NM_WPA_SUPPLICANT_PRINT_PMK
+	bool "Print PMK once per successful handshake"
+	select EXPERIMENTAL
+	help
+	  Prints the PMK (as a hex string) once per completed 4-way handshake,
+	  independent of WIFI_NM_WPA_SUPPLICANT_DEBUG_LEVEL and
+	  WIFI_NM_WPA_SUPPLICANT_DEBUG_SHOW_KEYS. Intended for capturing the PMK
+	  needed to decrypt an over-the-air Wi-Fi capture, without the log
+	  volume that comes with enabling full supplicant debug output.
+
+	  WARNING: This is a security risk and should only be enabled during
+	  development or debugging.
 
 if WIFI_NM_WPA_SUPPLICANT_LOG_LEVEL_DBG
 # hostap debug is very verbose and despite large log buffer sizes
@@ -525,6 +536,19 @@ config WIFI_NM_WPA_SUPPLICANT_DPP
 config WIFI_NM_WPA_SUPPLICANT_NAN
 	bool "NAN (Neighbor Awareness Networking) support"
 	depends on !WIFI_NM_WPA_SUPPLICANT_CRYPTO_NONE
+
+config WIFI_NAN_MAX_SSI_LEN
+	int "Maximum length of NAN service specific info"
+	depends on WIFI_NM_WPA_SUPPLICANT_NAN
+	range 1 65535
+	default 128
+	help
+	  Maximum NAN Service Specific Info (SSI) payload length in bytes.
+	  This value is stored inline in NAN event and request structures,
+	  so increasing it raises the net_mgmt event queue footprint by
+	  roughly CONFIG_NET_MGMT_EVENT_QUEUE_SIZE times this value.
+	  Users needing larger SSI payloads (e.g. Matter PAF commissioning
+	  with MTU=350) should set this to the required size.
 
 config WIFI_NM_WPA_SUPPLICANT_11AC
 	bool "IEEE 802.11ac VHT support"

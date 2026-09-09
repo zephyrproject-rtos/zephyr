@@ -78,7 +78,7 @@ config MCUX_CORE_SUFFIX
 configdefault DCACHE_LINE_SIZE
 	default 256
 
-config NOCACHE_MEMORY
+configdefault NOCACHE_MEMORY
 	default y
 
 endif # SOC_MIMXRT685S_HIFI4

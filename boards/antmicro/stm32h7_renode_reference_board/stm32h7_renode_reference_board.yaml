@@ -22,6 +22,7 @@ supported:
   - led
   - netif:eth
   - nvs
+  - ptp_clock
   - pwm
   - rtc
   - uart

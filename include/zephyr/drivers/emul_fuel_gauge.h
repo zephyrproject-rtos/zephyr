@@ -7,6 +7,7 @@
 /**
  * @file
  * @brief Backend APIs for the fuel gauge emulators.
+ * @ingroup fuel_gauge_emulator_backend
  */
 
 #ifndef ZEPHYR_INCLUDE_DRIVERS_EMUL_FUEL_GAUGE_H_

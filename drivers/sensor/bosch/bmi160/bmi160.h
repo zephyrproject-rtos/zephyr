@@ -473,7 +473,6 @@ union bmi160_pmu_status {
 /* Each sample has X, Y and Z */
 union bmi160_sample {
 	uint8_t raw[BMI160_BUF_SIZE];
-	uint16_t temperature;
 	struct {
 #if !defined(CONFIG_BMI160_GYRO_PMU_SUSPEND)
 		uint16_t gyr[BMI160_AXES];
@@ -500,6 +499,7 @@ struct bmi160_data {
 #endif
 	union bmi160_pmu_status pmu_sts;
 	union bmi160_sample sample;
+	uint16_t temperature;
 	struct bmi160_scale scale;
 
 #ifdef CONFIG_BMI160_TRIGGER_OWN_THREAD

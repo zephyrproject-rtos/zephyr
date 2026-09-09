@@ -32,12 +32,11 @@ config CORTEX_M_SYSTICK_64BIT_CYCLE_COUNTER
 	default y if (SYS_CLOCK_HW_CYCLES_PER_SEC > 60000000)
 	select TIMER_HAS_64BIT_CYCLE_COUNTER
 	help
-	  This driver, due to its limited 24-bits hardware counter, is already
-	  tracking a separate cycle count in software. This option make that
-	  count a 64-bits value to support sys_clock_cycle_get_64().
-	  This is cheap to do as expensive math operations (i.e. divisions)
-	  are performed only on counter interval values that always fit in
-	  32 bits.
+	  The generic timer core extends this driver's 32-bit software cycle
+	  count from its own announce baseline, so sys_clock_cycle_get_64() is
+	  available whether or not this is set. What this option adds is telling
+	  the rest of the system that a 64-bit cycle counter is there to be
+	  used, which is worth doing where the 32-bit one wraps quickly.
 
 	  This is set to y by default when the hardware clock is fast enough
 	  to wrap sys_clock_cycle_get_32() in about a minute or less.

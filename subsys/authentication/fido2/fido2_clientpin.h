@@ -9,17 +9,6 @@
 
 #include <zephyr/authentication/fido2/fido2_types.h>
 
-/** PIN Protocol 1 auth param size */
-#define FIDO2_PIN_AUTH_SIZE_P1       16
-/** PIN Protocol 2 auth param size */
-#define FIDO2_PIN_AUTH_SIZE_P2       32
-/** Maximum PIN auth param size */
-#define FIDO2_PIN_AUTH_MAX_SIZE      32
-/** Padded PIN size */
-#define FIDO2_PIN_PADDED_SIZE        64
-/** Encrypted PIN token size */
-#define FIDO2_PIN_TOKEN_ENC_MAX_SIZE 48
-
 #define FIDO2_CLIENTPIN_GET_PIN_RETRIES           0x01 /**< getPINRetries */
 #define FIDO2_CLIENTPIN_GET_KEY_AGREEMENT         0x02 /**< getKeyAgreement */
 #define FIDO2_CLIENTPIN_SET_PIN                   0x03 /**< setPIN */
@@ -108,6 +97,26 @@ enum fido2_status fido2_clientpin_cmd_set_pin(uint8_t protocol, const uint8_t *p
 					      size_t platform_key_len, const uint8_t *new_pin_enc,
 					      size_t new_pin_enc_len,
 					      const uint8_t *pin_uv_auth_param);
+
+/**
+ * Handle changePIN.
+ *
+ * @param protocol PIN/UV auth protocol version.
+ * @param platform_key Platform's ECDH public key.
+ * @param platform_key_len Length of @p platform_key in bytes.
+ * @param pin_hash_enc Encrypted PIN hash.
+ * @param pin_hash_enc_len Length of @p pin_hash_enc in bytes.
+ * @param new_pin_enc Encrypted new pin.
+ * @param new_pin_enc_len Length of @p new_pin_enc in bytes.
+ * @param pin_uv_auth_param Result of calling authenticate(shared secret, newPinEnc).
+ * @return FIDO2_OK on success, FIDO2_ERR_* on failure.
+ */
+enum fido2_status fido2_clientpin_cmd_change_pin(uint8_t protocol, const uint8_t *platform_key,
+						 size_t platform_key_len,
+						 const uint8_t *pin_hash_enc,
+						 size_t pin_hash_enc_len,
+						 const uint8_t *new_pin_enc, size_t new_pin_enc_len,
+						 const uint8_t *pin_uv_auth_param);
 
 /**
  * Handle getPinToken / getPinUvAuthTokenUsingPinWithPermissions.

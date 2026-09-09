@@ -9,9 +9,6 @@
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/counter.h>
 #include <zephyr/drivers/clock_control.h>
-#if defined(CONFIG_GIC)
-#include <zephyr/drivers/interrupt_controller/gic.h>
-#endif /* CONFIG_GIC */
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
 
@@ -70,15 +67,6 @@ struct nxp_s32_sys_timer_config {
 	bool freeze;
 	unsigned int irqn;
 };
-
-static ALWAYS_INLINE void irq_set_pending(unsigned int irq)
-{
-#if defined(CONFIG_GIC)
-	arm_gic_irq_set_pending(irq);
-#else
-	NVIC_SetPendingIRQ(irq);
-#endif /* CONFIG_GIC */
-}
 
 static uint32_t ticks_add(uint32_t val1, uint32_t val2, uint32_t top)
 {
@@ -164,7 +152,7 @@ static int stm_set_alarm(const struct device *dev, uint8_t channel, uint32_t tic
 		 */
 		if (irq_on_late) {
 			atomic_or(&data->irq_pending, BIT(channel));
-			irq_set_pending(config->irqn);
+			k_irq_set_pending(config->irqn);
 		} else {
 			ch_data->callback = NULL;
 		}

@@ -77,6 +77,7 @@ The :code:`map mce mns` commands:
    uart:~$ map mce mns
    mns - MCE MNS commands
    Subcommands:
+     register           : [none]
      rfcomm_register    : [none]
      rfcomm_disconnect  : [none]
      l2cap_register     : [none]
@@ -110,6 +111,7 @@ The :code:`map mse mas` commands:
    mas - MSE MAS commands
    Subcommands:
      select              : <instance_id>
+     register            : [none]
      rfcomm_register     : [none]
      rfcomm_disconnect   : [none]
      l2cap_register      : [none]
@@ -272,6 +274,8 @@ RFCOMM Transport
 
       .. code-block:: console
 
+         uart:~$ map mse mas register
+         MSE MAS server(s) registered
          uart:~$ map mse mas rfcomm_register
          RFCOMM server (channel 06, mas_instance_id 0, map_supported_features 007fffff) is registered
          MSE MAS SDP record 0 registered
@@ -301,6 +305,8 @@ L2CAP Transport
 
       .. code-block:: console
 
+         uart:~$ map mse mas register
+         MSE MAS server(s) registered
          uart:~$ map mse mas l2cap_register
          L2CAP server (psm 1003, mas_instance_id 0, map_supported_features 007fffff) is registered
          MSE MAS SDP record 0 registered
@@ -323,6 +329,8 @@ RFCOMM Transport
 
       .. code-block:: console
 
+         uart:~$ map mce mns register
+         MCE MNS server(s) registered
          uart:~$ map mce mns rfcomm_register
          RFCOMM server (channel 06, map_supported_features 0077ffff) is registered
          MCE MNS SDP record registered
@@ -346,6 +354,8 @@ L2CAP Transport
 
       .. code-block:: console
 
+         uart:~$ map mce mns register
+         MCE MNS server(s) registered
          uart:~$ map mce mns l2cap_register
          L2CAP server (psm 1003, map_supported_features 0077ffff) is registered
          MCE MNS SDP record registered

@@ -151,7 +151,7 @@ int zperf_tcp_upload(const struct zperf_upload_params *param,
 		return -EINVAL;
 	}
 
-	sock = zperf_prepare_upload_sock(&param->peer_addr, param->options.tos,
+	sock = zperf_prepare_upload_sock(net_sad(&param->peer_addr_storage), param->options.tos,
 					 param->options.priority, param->options.tcp_nodelay,
 					 NET_IPPROTO_TCP);
 	if (sock < 0) {
@@ -205,7 +205,7 @@ static void tcp_upload_async_work(struct k_work *work)
 	upload_ctx->callback(ZPERF_SESSION_STARTED, NULL,
 			     upload_ctx->user_data);
 
-	sock = zperf_prepare_upload_sock(&param.peer_addr, param.options.tos,
+	sock = zperf_prepare_upload_sock(net_sad(&param.peer_addr_storage), param.options.tos,
 					 param.options.priority, param.options.tcp_nodelay,
 					 NET_IPPROTO_TCP);
 
@@ -280,7 +280,7 @@ int zperf_tcp_upload_async(const struct zperf_upload_params *param,
 	struct session *ses;
 	k_tid_t tid;
 
-	ses = get_free_session(&param->peer_addr, SESSION_TCP);
+	ses = get_free_session(net_sad(&param->peer_addr_storage), SESSION_TCP);
 	if (ses == NULL) {
 		NET_ERR("Cannot get a session!");
 		return -ENOENT;

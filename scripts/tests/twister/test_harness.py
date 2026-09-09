@@ -278,6 +278,91 @@ def test_harness_process_test(line, fault, fail_on_fault, cap_cov, exp_stat, exp
     assert harness.recording == []
 
 
+def test_harness_process_test_fault_is_logged_with_a_prefix():
+    """A fault is emitted through the logging subsystem, so the marker is
+    surrounded by a timestamp and a module name rather than being a line of
+    its own."""
+    harness = Harness()
+    harness.status = TwisterStatus.NONE
+    harness.fail_on_fault = True
+
+    harness.process_test(
+        "[00:00:02.130,000] <err> os: >>> ZEPHYR FATAL ERROR 0: CPU exception on CPU 0"
+    )
+
+    assert harness.fault
+
+
+def test_harness_process_test_fault_after_run_passed():
+    """A fault reported once the test has already announced success still
+    fails the run."""
+    harness = Harness()
+    harness.status = TwisterStatus.NONE
+    harness.fail_on_fault = True
+
+    harness.process_test("PROJECT EXECUTION SUCCESSFUL")
+    assert harness.status == TwisterStatus.PASS
+
+    harness.process_test(
+        "[00:00:02.130,000] <err> os: >>> ZEPHYR FATAL ERROR 0: CPU exception on CPU 0"
+    )
+
+    assert harness.fault
+    assert harness.status == TwisterStatus.FAIL
+    assert harness.reason == "Fault detected while running test"
+
+
+def test_harness_process_test_fault_after_run_passed_ignored():
+    """Tests that fault on purpose opt out with ignore_faults, and keep their
+    PASS even when the fault comes last."""
+    harness = Harness()
+    harness.status = TwisterStatus.NONE
+    harness.fail_on_fault = False
+
+    harness.process_test("PROJECT EXECUTION SUCCESSFUL")
+    harness.process_test(
+        "[00:00:02.130,000] <err> os: >>> ZEPHYR FATAL ERROR 0: CPU exception on CPU 0"
+    )
+
+    assert not harness.fault
+    assert harness.status == TwisterStatus.PASS
+
+
+@pytest.mark.parametrize(
+    'line',
+    [
+        'Fatal error was unexpected, aborting...',
+        'fatal error was unexpected, aborting',
+        'Assert failed was unexpected, aborting...',
+    ],
+    ids=['ztest fatal hook', 'custom lowercase hook', 'ztest assert hook']
+)
+def test_harness_process_test_unexpected_hook_fault_overrides_ignore_faults(line):
+    """The Ztest error/assert hooks (and equivalent custom hooks) announce a
+    fault the test did not expect. That is a crash even for ignore_faults
+    tests, where the generic fatal-error banner is not acted upon."""
+    harness = Harness()
+    harness.status = TwisterStatus.NONE
+    harness.fail_on_fault = False
+
+    harness.process_test(line)
+
+    assert harness.fault
+
+
+def test_harness_process_test_expected_hook_fault_not_a_crash():
+    """The hooks' expected-fault messages must not trip crash detection."""
+    harness = Harness()
+    harness.status = TwisterStatus.NONE
+    harness.fail_on_fault = False
+
+    harness.process_test('Caught system error -- reason 3 1')
+    harness.process_test('Fatal error expected as part of test case.')
+    harness.process_test('Assert error expected as part of test case.')
+
+    assert not harness.fault
+
+
 def test_robot_configure(tmp_path):
     # Arrange
     mock_platform = mock.Mock()

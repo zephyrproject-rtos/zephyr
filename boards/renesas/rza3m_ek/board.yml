@@ -1,0 +1,6 @@
+board:
+  name: rza3m_ek
+  full_name: RZ/A3M Evaluation Kit
+  vendor: renesas
+  socs:
+  - name: r9a07g066m04gbg

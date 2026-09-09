@@ -125,7 +125,7 @@ static int mcp23sxx_bus_is_ready(const struct device *dev)
 		.config = GPIO_COMMON_CONFIG_FROM_DT_INST(inst),                              \
 		.bus = {                                                                      \
 			.spi = SPI_DT_SPEC_INST_GET(inst,                                     \
-				SPI_OP_MODE_MASTER | SPI_MODE_CPOL |                          \
+				SPI_OP_MODE_CONTROLLER | SPI_MODE_CPOL |                      \
 				SPI_MODE_CPHA | SPI_WORD_SET(8))                              \
 		},                                                                            \
 		.gpio_int = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {0}),                   \

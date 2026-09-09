@@ -5,7 +5,6 @@
  */
 #define DT_DRV_COMPAT nxp_lpc11u6x_uart
 
-#include <cmsis_core.h>
 
 #include <zephyr/drivers/uart.h>
 #include <zephyr/drivers/clock_control.h>
@@ -232,7 +231,7 @@ static void lpc11u6x_uart0_irq_tx_enable(const struct device *dev)
 	/* Due to hardware limitations, first TX interrupt is not triggered when
 	 * enabling it in the IER register. We have to trigger it.
 	 */
-	NVIC_SetPendingIRQ(DT_INST_IRQN(0));
+	k_irq_set_pending(DT_INST_IRQN(0));
 }
 
 static void lpc11u6x_uart0_irq_tx_disable(const struct device *dev)

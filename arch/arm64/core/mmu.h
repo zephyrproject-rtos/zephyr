@@ -5,16 +5,69 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <zephyr/arch/arm64/cpu.h>
+#include <zephyr/arch/arm64/lib_helpers.h>
+#include <zephyr/logging/log_core.h>
+#include <zephyr/sys/printk.h>
+#include <zephyr/toolchain.h>
+
 /* Set below flag to get debug prints */
 #define MMU_DEBUG_PRINTS	0
 
 #if MMU_DEBUG_PRINTS
 /* To dump page table entries while filling them, set DUMP_PTE macro */
 #define DUMP_PTE		0
-#define MMU_DEBUG(fmt, ...)	printk(fmt, ##__VA_ARGS__)
+/* Unlocked: this tracing exists to debug the pre-MMU window. */
+#define MMU_DEBUG(fmt, ...)	printk_unlocked(fmt, ##__VA_ARGS__)
 #else
 #define MMU_DEBUG(...)
 #endif
+
+/*
+ * Pre-MMU, neither logging nor printk's spinlock is usable: the atomics
+ * under them need shareable memory attributes. The page table helpers run
+ * both before the MMU is on and later from arch_mem_map(), so they ask.
+ */
+static ALWAYS_INLINE bool mmu_is_enabled(void)
+{
+	return (read_sctlr_el1() & SCTLR_M_BIT) != 0U;
+}
+
+/*
+ * MMU on: a normal LOG_*() call, keeping level filtering and the backends.
+ * MMU off: an unlocked printk() to the character hook.
+ * Z_LOG_CONST_LEVEL_CHECK() drops both branches, and the arguments, when
+ * the level is filtered out at build time.
+ */
+#define MMU_LOG(_level, _log, _fmt, ...)                                                           \
+	do {                                                                                       \
+		if (Z_LOG_CONST_LEVEL_CHECK(_level)) {                                             \
+			if (likely(mmu_is_enabled())) {                                            \
+				_log(_fmt, ##__VA_ARGS__);                                         \
+			} else {                                                                   \
+				printk_unlocked(_fmt "\n", ##__VA_ARGS__);                         \
+			}                                                                          \
+		}                                                                                  \
+	} while (false)
+
+#define MMU_LOG_INF(fmt, ...)	MMU_LOG(LOG_LEVEL_INF, LOG_INF, fmt, ##__VA_ARGS__)
+#define MMU_LOG_WRN(fmt, ...)	MMU_LOG(LOG_LEVEL_WRN, LOG_WRN, fmt, ##__VA_ARGS__)
+
+/* These precede a k_panic(), so they must print with CONFIG_LOG=n too. */
+#if defined(CONFIG_LOG)
+#define MMU_EMIT_ERR(fmt, ...)	LOG_ERR(fmt, ##__VA_ARGS__)
+#else
+#define MMU_EMIT_ERR(fmt, ...)	printk("ERROR: " fmt "\n", ##__VA_ARGS__)
+#endif
+
+#define MMU_LOG_ERR(fmt, ...)                                                                      \
+	do {                                                                                       \
+		if (likely(mmu_is_enabled())) {                                                    \
+			MMU_EMIT_ERR(fmt, ##__VA_ARGS__);                                          \
+		} else {                                                                           \
+			printk_unlocked("ERROR: " fmt "\n", ##__VA_ARGS__);                        \
+		}                                                                                  \
+	} while (false)
 
 /*
  * 48-bit address with 4KB granule size:

@@ -5,7 +5,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config DAC_LTC166X
-	bool "Linear Technology LTC166X DAC"
+	bool "Linear Technology LTC166X DAC driver"
 	default y
 	select SPI
 	depends on DT_HAS_LLTC_LTC1660_ENABLED || DT_HAS_LLTC_LTC1665_ENABLED

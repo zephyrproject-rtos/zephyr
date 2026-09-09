@@ -5,7 +5,7 @@
 
 if BOARD_ADI_EVAL_ADIN2111D1Z
 
-configdefault NET_L2_ETHERNET
+configdefault ETH_DRIVER
 	default y
 
 if ETH_ADIN2111

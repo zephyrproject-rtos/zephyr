@@ -76,6 +76,6 @@ int i2c_bitbang_recover_bus(struct i2c_bitbang *bitbang);
  */
 int i2c_bitbang_transfer(struct i2c_bitbang *bitbang,
 			   struct i2c_msg *msgs, uint8_t num_msgs,
-			   uint16_t slave_address);
+			   uint16_t target_address);
 
 #endif /* ZEPHYR_DRIVERS_I2C_I2C_BITBANG_H */

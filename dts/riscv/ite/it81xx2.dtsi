@@ -7,6 +7,11 @@
 #include <ite/it8xxx2.dtsi>
 
 / {
+	pinctrl: pin-controller {
+		compatible = "ite,it8xxx2-pinctrl";
+		status = "okay";
+	};
+
 	soc {
 		gpiogcr: gpio-gcr@f01600 {
 			compatible = "ite,it8xxx2-gpiogcr";
@@ -50,11 +55,6 @@
 			ngpios = <8>;
 			gpio-controller;
 			#gpio-cells = <2>;
-		};
-
-		pinctrl: pin-controller {
-			compatible = "ite,it8xxx2-pinctrl";
-			status = "okay";
 		};
 
 		pinctrla: pinctrl@f01610 {

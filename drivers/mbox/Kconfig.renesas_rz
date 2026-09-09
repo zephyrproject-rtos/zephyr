@@ -11,7 +11,7 @@ config MBOX_RENESAS_RZ_MHU
 
 if MBOX_RENESAS_RZ_MHU
 
-config MBOX_BUSY_WAIT_TIMEOUT_US
+config MBOX_RENESAS_RZ_MHU_BUSY_WAIT_TIMEOUT_US
 	int "MBOX send api timeout in microseconds"
 	default 10
 	help

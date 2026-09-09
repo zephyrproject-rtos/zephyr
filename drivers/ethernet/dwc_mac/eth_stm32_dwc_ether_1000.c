@@ -19,6 +19,7 @@ LOG_MODULE_REGISTER(dwmac_plat, CONFIG_ETHERNET_LOG_LEVEL);
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/clock_control/stm32_clock_control.h>
 #include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/reset.h>
 #include <zephyr/irq.h>
 #include <stm32_ll_system.h>
 
@@ -57,10 +58,31 @@ static const struct pinctrl_dev_config *eth0_pcfg = PINCTRL_DT_INST_DEV_CONFIG_G
 
 static const struct stm32_pclken pclken[] = STM32_DT_INST_CLOCKS(0);
 
+static const struct reset_dt_spec eth_reset = RESET_DT_SPEC_INST_GET(0);
+
 int dwmac_bus_init(const struct device *dev)
 {
 	const struct dwmac_config *cfg = dev->config;
 	int ret;
+
+	/*
+	 * Hold the MAC in reset while the pins, the PHY interface mode and the
+	 * clocks are configured. The PHY interface mode must be selected while
+	 * the MAC is under reset.
+	 */
+	ret = reset_line_assert_dt(&eth_reset);
+	if (ret != 0) {
+		LOG_ERR("Could not assert ethernet reset");
+		return ret;
+	}
+
+	ret = pinctrl_apply_state(eth0_pcfg, PINCTRL_STATE_DEFAULT);
+	if (ret < 0) {
+		LOG_ERR("Could not configure ethernet pins");
+		return ret;
+	}
+
+	STM32_CONFIGURE_ETH_PHY_MODE();
 
 	for (size_t n = 0; n < ARRAY_SIZE(pclken); n++) {
 		if (IN_RANGE(pclken[n].bus, STM32_PERIPH_BUS_MIN, STM32_PERIPH_BUS_MAX)) {
@@ -76,13 +98,11 @@ int dwmac_bus_init(const struct device *dev)
 		}
 	}
 
-	ret = pinctrl_apply_state(eth0_pcfg, PINCTRL_STATE_DEFAULT);
-	if (ret < 0) {
-		LOG_ERR("Could not configure ethernet pins");
+	ret = reset_line_deassert_dt(&eth_reset);
+	if (ret != 0) {
+		LOG_ERR("Could not deassert ethernet reset");
 		return ret;
 	}
-
-	STM32_CONFIGURE_ETH_PHY_MODE();
 
 	return 0;
 }

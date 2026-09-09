@@ -108,3 +108,18 @@ properties:
       allows more reliable communication with UART devices sensitive to variation of inter-frames
       delays.
       In RX, FIFO reduces overrun occurrences.
+
+  st,sw-rts-gpios:
+    type: phandle-array
+    description: |
+      GPIO pin corresponding to the hardware-controlled RTS pin.
+
+      This property is used to implement the workaround for erratum
+      "nRTS signal abnormally driven low after a protocol violation",
+      which requires controlling the RTS pin in software (while leaving
+      CTS under hardware control).
+
+      This property must not be provided if the 'hw-flow-control'
+      property is not set (i.e., if HW flow control is not enabled).
+      Do not use this property if your hardware is not affected by
+      the erratum.

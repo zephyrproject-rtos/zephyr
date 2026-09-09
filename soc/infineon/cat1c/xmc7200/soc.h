@@ -26,7 +26,7 @@
 		       (void (*)(const void *))(void *)isr_handler,            \
 		       DEVICE_DT_INST_GET(n));
 
-void enable_sys_int(uint32_t int_num, uint32_t priority, void(*isr)(const void *),
+void enable_sys_int(uint32_t int_num, uint32_t priority, void (*isr)(const void *param),
 		    const void *arg);
 
 #endif /* !_ASMLANGUAGE */

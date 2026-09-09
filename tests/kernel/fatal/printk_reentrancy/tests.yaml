@@ -1,0 +1,35 @@
+common:
+  tags:
+    - kernel
+    - printk
+  # Taking the fault is the point of the test, so the fatal error report
+  # in the output is the expected outcome rather than a crash.
+  ignore_faults: true
+  # A fault taken inside printk() must still be reported. Without a lock
+  # free reporting path the fault handler blocks on the printk lock the
+  # faulting context already holds, and the test times out rather than
+  # failing an assertion.
+  #
+  # Two conditions have to hold for that to be observable, and the
+  # platforms below cover both of them. The low address dereference must
+  # fault rather than return data, which needs an MMU leaving the first
+  # page unmapped or null pointer detection. And the printk lock must be
+  # real: either SMP, or a uniprocessor with spinlock validation, where
+  # the re-taken lock asserts and reporting the assertion takes the lock
+  # again.
+  platform_allow:
+    # MMU, real SMP
+    - qemu_cortex_a53/qemu_cortex_a53/smp
+    # MPU null pointer detection, uniprocessor with spinlock validation
+    - mps2/an385
+    # MMU on a second architecture, with its own fatal error path
+    - qemu_x86_64/atom
+
+tests:
+  # The fatal path reaches printk differently depending on the logging
+  # configuration, so cover both.
+  kernel.fatal.printk_reentrancy: {}
+  kernel.fatal.printk_reentrancy.logging:
+    extra_configs:
+      - CONFIG_LOG=y
+      - CONFIG_LOG_MODE_IMMEDIATE=y

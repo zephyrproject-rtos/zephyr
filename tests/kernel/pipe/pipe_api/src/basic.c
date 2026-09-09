@@ -3,6 +3,7 @@
  *
  * SPDX-License-Identifier: Apache-2.0
  */
+#include <limits.h>
 #include <stdint.h>
 #include <zephyr/kernel.h>
 #include <zephyr/ztest.h>
@@ -322,6 +323,41 @@ ZTEST(k_pipe_basic, test_pipe_close)
 	zassert_true(memcmp(&input[5], res, 3) == 0, "Written and read bytes should be equal");
 	zassert_true(k_pipe_read(&pipe, res, 5, K_NO_WAIT) == -EPIPE,
 		"Closed and empty pipe should return -EPIPE");
+}
+
+/**
+ * @brief Verify a length above INT_MAX is refused with -EOVERFLOW.
+ *
+ * @details
+ * Both calls report a successful transfer as a positive int, so a request
+ * they could not report the size of is refused up front rather than
+ * truncated.
+ *
+ * Test steps:
+ * - Ask to write, then to read, INT_MAX + 1 bytes.
+ * - Verify both return -EOVERFLOW and leave the pipe untouched.
+ *
+ * Expected result:
+ * - Both calls return -EOVERFLOW and the pipe is still empty.
+ *
+ * @see k_pipe_read()
+ * @see k_pipe_write()
+ */
+ZTEST(k_pipe_basic, test_pipe_len_above_int_max)
+{
+	uint8_t buffer[16];
+	uint8_t data[4];
+
+	k_pipe_init(&pipe, buffer, sizeof(buffer));
+
+	zassert_equal(k_pipe_write(&pipe, data, (size_t)INT_MAX + 1, K_NO_WAIT), -EOVERFLOW,
+		"write of more than INT_MAX bytes should return -EOVERFLOW");
+	zassert_equal(k_pipe_read(&pipe, data, (size_t)INT_MAX + 1, K_NO_WAIT), -EOVERFLOW,
+		"read of more than INT_MAX bytes should return -EOVERFLOW");
+
+	/* The rejected calls must not have consumed or produced anything. */
+	zassert_equal(k_pipe_read(&pipe, data, sizeof(data), K_NO_WAIT), -EAGAIN,
+		"pipe should still be empty");
 }
 
 /**

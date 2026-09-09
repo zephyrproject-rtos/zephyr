@@ -5,16 +5,17 @@
  */
 
 #include <arm/armv7-m.dtsi>
+#include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/clock/stm32wl_clock.h>
+#include <zephyr/dt-bindings/dma/stm32_dma.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/lora/sx126x.h>
-#include <zephyr/dt-bindings/pwm/pwm.h>
-#include <zephyr/dt-bindings/adc/adc.h>
-#include <zephyr/dt-bindings/pwm/stm32_pwm.h>
-#include <zephyr/dt-bindings/dma/stm32_dma.h>
-#include <zephyr/dt-bindings/reset/stm32wb_l_reset.h>
 #include <zephyr/dt-bindings/power/stm32_pwr.h>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/pwm/stm32_pwm.h>
+#include <zephyr/dt-bindings/reset/stm32wb_l_reset.h>
+#include <zephyr/dt-bindings/sensor/qdec_stm32.h>
 #include <freq.h>
 #include <mem.h>
 
@@ -386,7 +387,6 @@
 			clocks = <&rcc STM32_CLOCK(APB3, 0)>;
 			st,spi-data-width = "full-4-to-16-bit";
 			status = "disabled";
-			use-subghzspi-nss;
 
 			radio@0 {
 				compatible = "st,stm32wl-subghz-radio";
@@ -442,6 +442,12 @@
 				compatible = "st,stm32-counter";
 				status = "disabled";
 			};
+
+			qdec {
+				compatible = "st,stm32-qdec";
+				st,input-filter-level = <NO_FILTER>;
+				status = "disabled";
+			};
 		};
 
 		timers2: timers@40000000 {
@@ -463,6 +469,12 @@
 
 			counter {
 				compatible = "st,stm32-counter";
+				status = "disabled";
+			};
+
+			qdec {
+				compatible = "st,stm32-qdec";
+				st,input-filter-level = <NO_FILTER>;
 				status = "disabled";
 			};
 		};
@@ -570,28 +582,30 @@
 		pwr: power@58000400 {
 			compatible = "st,stm32-pwr";
 			reg = <0x58000400 0x400>; /* PWR register bank */
-			status = "disabled";
 
-			wkup-pins-nb = <3>; /* 3 system wake-up pins */
-			wkup-pins-pol;
-			wkup-pins-pupd;
+			wakeup-controller {
+				compatible = "st,stm32-pwr-wkupctrl";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
 
-			#address-cells = <1>;
-			#size-cells = <0>;
+				st,max-wkup-line-idx = <3>;
+				st,has-pwr-full-pupd;
 
-			wkup-pin@1 {
-				reg = <0x1>;
-				wkup-gpios = <&gpioa 0 STM32_PWR_WKUP_PIN_NOT_MUXED>;
-			};
+				wkup@1 {
+					reg = <0x1>;
+					wkup-gpios = <&gpioa 0 STM32_PWR_WKUP_PIN_NOT_MUXED>;
+				};
 
-			wkup-pin@2 {
-				reg = <0x2>;
-				wkup-gpios = <&gpioc 13 STM32_PWR_WKUP_PIN_NOT_MUXED>;
-			};
+				wkup@2 {
+					reg = <0x2>;
+					wkup-gpios = <&gpioc 13 STM32_PWR_WKUP_PIN_NOT_MUXED>;
+				};
 
-			wkup-pin@3 {
-				reg = <0x3>;
-				wkup-gpios = <&gpiob 3 STM32_PWR_WKUP_PIN_NOT_MUXED>;
+				wkup@3 {
+					reg = <0x3>;
+					wkup-gpios = <&gpiob 3 STM32_PWR_WKUP_PIN_NOT_MUXED>;
+				};
 			};
 		};
 

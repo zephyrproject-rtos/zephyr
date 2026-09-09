@@ -106,7 +106,17 @@ static void formatted_text_print(const struct shell *sh, const char *str,
 		 * not begin with a space.
 		 */
 		while (isspace((int) (*(str + offset))) != 0) {
+			bool is_newline = (*(str + offset) == '\n');
+
 			++offset;
+
+			if (is_newline) {
+				/* Stop after consuming the newline so that
+				 * intentional indentation spaces that follow
+				 * are preserved for the next iteration.
+				 */
+				break;
+			}
 		}
 
 		z_cursor_next_line_move(sh);

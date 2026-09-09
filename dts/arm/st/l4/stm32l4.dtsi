@@ -562,33 +562,35 @@
 		pwr: power@40007000 {
 			compatible = "st,stm32-pwr";
 			reg = <0x40007000 0x400>; /* PWR register bank */
-			status = "disabled";
 
-			wkup-pins-nb = <5>; /* 5 system wake-up pins */
-			wkup-pins-pol;
-			wkup-pins-pupd;
+			wakeup-controller {
+				compatible = "st,stm32-pwr-wkupctrl";
+				#address-cells = <1>;
+				#size-cells = <0>;
+				status = "disabled";
 
-			#address-cells = <1>;
-			#size-cells = <0>;
+				st,max-wkup-line-idx = <5>;
+				st,has-pwr-full-pupd;
 
-			wkup-pin@1 {
-				reg = <0x1>;
-			};
+				wkup@1 {
+					reg = <0x1>;
+				};
 
-			wkup-pin@2 {
-				reg = <0x2>;
-			};
+				wkup@2 {
+					reg = <0x2>;
+				};
 
-			wkup-pin@3 {
-				reg = <0x3>;
-			};
+				wkup@3 {
+					reg = <0x3>;
+				};
 
-			wkup-pin@4 {
-				reg = <0x4>;
-			};
+				wkup@4 {
+					reg = <0x4>;
+				};
 
-			wkup-pin@5 {
-				reg = <0x5>;
+				wkup@5 {
+					reg = <0x5>;
+				};
 			};
 		};
 

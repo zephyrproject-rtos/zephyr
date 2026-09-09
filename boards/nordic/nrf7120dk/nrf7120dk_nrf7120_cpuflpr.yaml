@@ -8,8 +8,7 @@ arch: riscv
 toolchain:
   - zephyr
 sysbuild: true
-ram: 124
-flash: 116
+ram: 120
 supported:
   - counter
   - gpio

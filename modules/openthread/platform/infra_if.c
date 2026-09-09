@@ -199,14 +199,17 @@ static void handle_ra_from_ot(const uint8_t *buffer, uint16_t buffer_length)
 							      (struct net_in6_addr *)pio->prefix,
 							      pio->prefix_len, pio->valid_lifetime);
 			i += sizeof(struct net_icmpv6_nd_opt_prefix_info);
-			net_ipv6_addr_generate_iid(
+			if (net_ipv6_addr_generate_iid(
 				ail_iface_ptr, (struct net_in6_addr *)pio->prefix,
 				COND_CODE_1(CONFIG_NET_IPV6_IID_STABLE,
 				     ((uint8_t *)&ail_iface_ptr->config.ip.ipv6->network_counter),
 				     (NULL)), COND_CODE_1(CONFIG_NET_IPV6_IID_STABLE,
 				     (sizeof(ail_iface_ptr->config.ip.ipv6->network_counter)),
 				     (0U)), 0U, &addr_to_add_from_pio,
-							       net_if_get_link_addr(ail_iface_ptr));
+				net_if_get_link_addr(ail_iface_ptr)) < 0) {
+				break;
+			}
+
 			ifaddr = net_if_ipv6_addr_lookup(&addr_to_add_from_pio, NULL);
 			if (ifaddr != NULL) {
 				net_if_addr_set_lf(ifaddr, true);

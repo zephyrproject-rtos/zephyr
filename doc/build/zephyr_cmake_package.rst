@@ -68,12 +68,6 @@ Zephyr CMake package is exported to the CMake user package registry using the fo
 
 This will export the current Zephyr to the CMake user package registry.
 
-To also export the Zephyr Unittest CMake package, run the following command in addition:
-
-.. code-block:: bash
-
-   cmake -P <PATH-TO-ZEPHYR>/share/zephyrunittest-package/cmake/zephyr_export.cmake
-
 .. _zephyr_cmake_package_zephyr_base:
 
 Zephyr Base Environment Setting
@@ -409,13 +403,12 @@ Zephyr CMake package source code
 ********************************
 
 The Zephyr CMake package source code in
-:zephyr_file:`share/zephyr-package/cmake` and
-:zephyr_file:`share/zephyrunittest-package/cmake` contains the CMake config
+:zephyr_file:`share/zephyr-package/cmake` contains the CMake config
 package which is used by the CMake ``find_package`` function.
 
 It also contains code for exporting Zephyr as a CMake config package.
 
-The following is an overview of the files in these directories:
+The following is an overview of the files in this directory:
 
 :file:`ZephyrConfigVersion.cmake`
     The Zephyr package version file. This file is called by CMake to determine
@@ -423,19 +416,11 @@ The following is an overview of the files in these directories:
     ``find_package(Zephyr ...)``. It is also responsible for detection of Zephyr
     repository or workspace only installations.
 
-:file:`ZephyrUnittestConfigVersion.cmake`
-    Same responsibility as ``ZephyrConfigVersion.cmake``, but for unit tests.
-    Includes ``ZephyrConfigVersion.cmake``.
-
 :file:`ZephyrConfig.cmake`
     The Zephyr package file. This file is called by CMake to for the package
     meeting which fulfils the requirements specified by user when calling
     ``find_package(Zephyr ...)``. This file is responsible for sourcing of
     boilerplate code.
-
-:file:`ZephyrUnittestConfig.cmake`
-    Same responsibility as ``ZephyrConfig.cmake``, but for unit tests.
-    Includes ``ZephyrConfig.cmake``.
 
 :file:`zephyr_package_search.cmake`
    Common file used for detection of Zephyr repository and workspace candidates.

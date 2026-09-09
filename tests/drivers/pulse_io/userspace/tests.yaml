@@ -1,0 +1,11 @@
+common:
+  tags:
+    - drivers
+    - pulse_io
+    - userspace
+  filter: dt_nodelabel_enabled("pulse_io0") and CONFIG_ARCH_HAS_USERSPACE
+  integration_platforms:
+    - qemu_x86
+tests:
+  drivers.pulse_io.userspace:
+    harness: ztest

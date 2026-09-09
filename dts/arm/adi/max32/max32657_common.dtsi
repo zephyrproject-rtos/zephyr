@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2024-2025 Analog Devices, Inc.
+ * Copyright (c) 2024-2026 Analog Devices, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -46,7 +46,7 @@
 			standby: standby {
 				compatible = "zephyr,power-state";
 				power-state-name = "standby";
-				min-residency-us = <1000>;
+				min-residency-us = <2000>;
 				exit-latency-us = <20>;
 			};
 
@@ -99,9 +99,10 @@
 		};
 
 		clk_erfo: clk_erfo {
-			compatible = "fixed-clock";
+			compatible = "adi,max32-erfo";
 			#clock-cells = <0>;
 			clock-frequency = <DT_FREQ_M(32)>;
+			capacitance-erfoctrl = <0>;
 			status = "disabled";
 		};
 	};
@@ -175,6 +176,7 @@
 		clocks = <&gcr ADI_MAX32_CLOCK_BUS0 13>;
 		interrupts = <10 0>;
 		status = "disabled";
+		zephyr,disabling-power-states = <&standby &backup>;
 	};
 
 	uart0: serial@42000 {
@@ -220,6 +222,8 @@
 
 		counter {
 			compatible = "adi,max32-counter";
+			zephyr,pm-device-runtime-auto;
+			zephyr,disabling-power-states = <&standby &backup>;
 			status = "disabled";
 		};
 	};
@@ -241,6 +245,8 @@
 
 		counter {
 			compatible = "adi,max32-counter";
+			zephyr,pm-device-runtime-auto;
+			zephyr,disabling-power-states = <&standby &backup>;
 			status = "disabled";
 		};
 	};
@@ -262,6 +268,8 @@
 
 		counter {
 			compatible = "adi,max32-counter";
+			zephyr,pm-device-runtime-auto;
+			zephyr,disabling-power-states = <&standby &backup>;
 			status = "disabled";
 		};
 	};
@@ -283,6 +291,8 @@
 
 		counter {
 			compatible = "adi,max32-counter";
+			zephyr,pm-device-runtime-auto;
+			zephyr,disabling-power-states = <&standby &backup>;
 			status = "disabled";
 		};
 	};
@@ -304,6 +314,8 @@
 
 		counter {
 			compatible = "adi,max32-counter";
+			zephyr,pm-device-runtime-auto;
+			zephyr,disabling-power-states = <&standby &backup>;
 			status = "disabled";
 		};
 	};
@@ -325,6 +337,8 @@
 
 		counter {
 			compatible = "adi,max32-counter";
+			zephyr,pm-device-runtime-auto;
+			zephyr,disabling-power-states = <&standby &backup>;
 			status = "disabled";
 		};
 	};
@@ -382,6 +396,7 @@
 		clocks = <&gcr ADI_MAX32_CLOCK_BUS0 6>;
 		interrupts = <12 0>;
 		status = "disabled";
+		zephyr,disabling-power-states = <&standby &backup>;
 	};
 };
 

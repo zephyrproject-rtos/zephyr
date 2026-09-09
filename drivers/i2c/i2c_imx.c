@@ -30,7 +30,7 @@ struct i2c_imx_config {
 	const struct pinctrl_dev_config *pincfg;
 };
 
-struct i2c_master_transfer {
+struct i2c_controller_transfer {
 	const uint8_t     *txBuff;
 	volatile uint8_t  *rxBuff;
 	volatile uint32_t	cmdSize;
@@ -43,7 +43,7 @@ struct i2c_master_transfer {
 };
 
 struct i2c_imx_data {
-	struct i2c_master_transfer transfer;
+	struct i2c_controller_transfer transfer;
 	struct k_sem device_sync_sem;
 };
 
@@ -52,7 +52,7 @@ static bool i2c_imx_write(const struct device *dev, uint8_t *txBuffer,
 {
 	I2C_Type *base = DEV_BASE(dev);
 	struct i2c_imx_data *data = dev->data;
-	struct i2c_master_transfer *transfer = &data->transfer;
+	struct i2c_controller_transfer *transfer = &data->transfer;
 
 	transfer->isBusy = true;
 
@@ -86,7 +86,7 @@ static void i2c_imx_read(const struct device *dev, uint8_t *rxBuffer,
 {
 	I2C_Type *base = DEV_BASE(dev);
 	struct i2c_imx_data *data = dev->data;
-	struct i2c_master_transfer *transfer = &data->transfer;
+	struct i2c_controller_transfer *transfer = &data->transfer;
 
 	transfer->isBusy = true;
 
@@ -126,7 +126,7 @@ static int i2c_imx_configure(const struct device *dev,
 {
 	I2C_Type *base = DEV_BASE(dev);
 	struct i2c_imx_data *data = dev->data;
-	struct i2c_master_transfer *transfer = &data->transfer;
+	struct i2c_controller_transfer *transfer = &data->transfer;
 	uint32_t baudrate;
 
 	if (!(I2C_MODE_CONTROLLER & dev_config_raw)) {
@@ -190,7 +190,7 @@ static int i2c_imx_transfer(const struct device *dev, struct i2c_msg *msgs,
 {
 	I2C_Type *base = DEV_BASE(dev);
 	struct i2c_imx_data *data = dev->data;
-	struct i2c_master_transfer *transfer = &data->transfer;
+	struct i2c_controller_transfer *transfer = &data->transfer;
 	uint16_t timeout = UINT16_MAX;
 	int result = -EIO;
 
@@ -202,7 +202,7 @@ static int i2c_imx_transfer(const struct device *dev, struct i2c_msg *msgs,
 		return result;
 	}
 
-	/* Make sure we're in a good state so slave recognises the Start */
+	/* Make sure we're in a good state so target recognises the Start */
 	I2C_SetWorkMode(base, i2cModeSlave);
 	transfer->currentMode = i2cModeSlave;
 	/* Switch back to Rx direction. */
@@ -268,7 +268,7 @@ static void i2c_imx_isr(const struct device *dev)
 {
 	I2C_Type *base = DEV_BASE(dev);
 	struct i2c_imx_data *data = dev->data;
-	struct i2c_master_transfer *transfer = &data->transfer;
+	struct i2c_controller_transfer *transfer = &data->transfer;
 
 	/* Clear interrupt flag. */
 	I2C_ClearStatusFlag(base, i2cStatusInterrupt);

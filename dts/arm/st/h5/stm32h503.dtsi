@@ -9,5 +9,13 @@
 / {
 	soc {
 		compatible = "st,stm32h503", "st,stm32h5", "simple-bus";
+
+		pwr: power@44020800 {
+			wakeup-controller {
+				wkup@3 {
+					wkup-gpios = <&gpioc 1 STM32_PWR_WKUP_EVT_SRC_0>;
+				};
+			};
+		};
 	};
 };

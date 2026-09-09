@@ -6,6 +6,8 @@ config MS5637
 	default y
 	depends on DT_HAS_MEAS_MS5637_ENABLED
 	select I2C
+	select I2C_RTIO if SENSOR_ASYNC_API
+	select RTIO_OP_DELAY if SENSOR_ASYNC_API
 	help
 	  Enable driver for the TE Connectivity MS5637 digital
 	  pressure and temperature sensor over I2C.

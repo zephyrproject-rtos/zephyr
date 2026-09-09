@@ -166,6 +166,8 @@ struct can_sja1000_data {
 	ATOMIC_DEFINE(rx_allocs, CONFIG_CAN_SJA1000_MAX_FILTERS);
 	struct can_sja1000_rx_filter filters[CONFIG_CAN_SJA1000_MAX_FILTERS];
 	struct k_mutex mod_lock;
+	/* Serializes thread and ISR access to the shared rx/tx buffer window */
+	struct k_spinlock buf_lock;
 	enum can_state state;
 	struct k_sem tx_idle;
 	can_tx_callback_t tx_callback;

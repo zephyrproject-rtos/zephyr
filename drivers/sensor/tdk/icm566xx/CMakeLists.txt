@@ -11,6 +11,7 @@ zephyr_library_sources(
   icm566xx_bus.c
 )
 
+zephyr_library_sources_ifdef(CONFIG_TDK_APEX icm566xx_apex.c)
 zephyr_library_sources_ifdef(CONFIG_SENSOR_ASYNC_API icm566xx_decoder.c)
 zephyr_library_sources_ifdef(CONFIG_ICM566XX_STREAM icm566xx_stream.c)
 zephyr_library_sources_ifdef(CONFIG_ICM566XX_TRIGGER icm566xx_trigger.c)

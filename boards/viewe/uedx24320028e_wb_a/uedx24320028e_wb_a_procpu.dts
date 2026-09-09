@@ -35,7 +35,6 @@
 		zephyr,bt-hci = &esp32_bt_hci;
 		zephyr,display = &gc9307n;
 		zephyr,touch = &chsc6x;
-		zephyr,sdhc = &sdhc0;
 	};
 
 	buzzer: buzzer {

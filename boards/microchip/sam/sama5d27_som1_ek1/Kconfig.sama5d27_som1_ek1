@@ -1,0 +1,7 @@
+# Copyright (C) 2026 Microchip Technology Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config BOARD_SAMA5D27_SOM1_EK1
+	select SOC_SAMA5D27SOM1

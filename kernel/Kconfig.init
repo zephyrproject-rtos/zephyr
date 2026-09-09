@@ -7,7 +7,7 @@
 menu "SoC and Board Hooks"
 
 config SOC_EARLY_RESET_HOOK
-	bool "Run SoC-specific early reset hook"
+	bool
 	help
 	  Run a SoC-specific hook early in the reset/startup code (__start).
 	  A custom hook soc_early_reset_hook() will be executed at the beginning
@@ -29,7 +29,7 @@ config SOC_EARLY_RESET_HOOK
 	  Additional constraints may be imposed on the hook by the architecture.
 
 config SOC_RESET_HOOK
-	bool "Run SoC-specific reset hook"
+	bool
 	help
 	  Run a SoC-specific hook in the reset/startup code (__start).
 
@@ -42,7 +42,7 @@ config SOC_RESET_HOOK
 	  resumes from a suspend-to-RAM power state.
 
 config SOC_PREP_HOOK
-	bool "Run early SoC preparation hook"
+	bool
 	help
 	  Run an early SoC preparation hook.
 
@@ -50,7 +50,7 @@ config SOC_PREP_HOOK
 	  c prep code (prep_c). soc_prep_hook() must be implemented by the SoC.
 
 config SOC_EARLY_INIT_HOOK
-	bool "Run early SoC hook"
+	bool
 	help
 	  Run an early SoC initialization hook.
 
@@ -58,7 +58,7 @@ config SOC_EARLY_INIT_HOOK
 	  devices are initialized
 
 config SOC_LATE_INIT_HOOK
-	bool "Run late SoC hook"
+	bool
 	help
 	  Run a late SoC initialization hook.
 
@@ -66,7 +66,7 @@ config SOC_LATE_INIT_HOOK
 	  devices are initialized
 
 config SOC_PER_CORE_INIT_HOOK
-	bool "Run SoC per-core initialization hook"
+	bool
 	help
 	  Run an SoC initialization hook for every core
 
@@ -75,7 +75,7 @@ config SOC_PER_CORE_INIT_HOOK
 	  for secondary cores.
 
 config BOARD_EARLY_INIT_HOOK
-	bool "Run early board hook"
+	bool
 	help
 	  Run an early board initialization hook.
 
@@ -83,7 +83,7 @@ config BOARD_EARLY_INIT_HOOK
 	  devices are initialized
 
 config BOARD_LATE_INIT_HOOK
-	bool "Run late board hook"
+	bool
 	help
 	  Run a late board initialization hook.
 

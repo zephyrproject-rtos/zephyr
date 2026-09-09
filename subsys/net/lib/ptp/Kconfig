@@ -1,5 +1,5 @@
 # Copyright (c) 2024 BayLibre
-# Copyright (c) 2026 Philipp Steiner <philipp.steiner1987@gmail.com>
+# Copyright (c) 2026 Philipp Steiner
 # SPDX-License-Identifier: Apache-2.0
 
 menuconfig PTP
@@ -85,7 +85,7 @@ config PTP_CLOCK_TYPE
 	default 0x02 if PTP_TRANSPARENT_P2P_CLOCK
 	default 0x03 if PTP_TRANSPARENT_E2E_CLOCK
 
-choice
+choice PTP_DELAY_MECHANISM_TYPE
 	prompt "PTP Delay Mechanism"
 	default PTP_DELAY_MECHANISM_E2E
 	help
@@ -109,6 +109,65 @@ config PTP_DELAY_MECHANISM
 	hex
 	default 0x01 if PTP_DELAY_MECHANISM_E2E
 	default 0x02 if PTP_DELAY_MECHANISM_P2P
+
+choice PTP_NETWORK_MODE
+	prompt "Network transmission mode"
+	default PTP_NETWORK_MODE_MULTICAST
+	help
+	  Selects how delay measurement messages are transmitted. Announce,
+	  Sync and Follow_Up messages are always sent to the default multicast
+	  addresses.
+
+config PTP_NETWORK_MODE_MULTICAST
+	bool "Multicast"
+	help
+	  Standard PTP mode, all PTP messages are sent to the default
+	  multicast addresses. Every node receives the Delay_Req and
+	  Delay_Resp messages of all other nodes, which is usually not a
+	  problem on smaller networks with only a few timeReceivers.
+
+config PTP_NETWORK_MODE_HYBRID
+	bool "Hybrid"
+	depends on PTP_DELAY_MECHANISM_E2E
+	help
+	  In hybrid mode the End-to-End delay measurement uses unicast
+	  messages: Delay_Req messages are sent directly to the protocol
+	  address (IP address, or MAC address for the IEEE 802.3 transport) of
+	  the current timeTransmitter and Delay_Resp messages are sent back
+	  directly to the requesting timeReceiver. This reduces the multicast
+	  load in large PTP domains because nodes no longer receive delay
+	  messages of other nodes. The mode is compatible with the hybrid_e2e
+	  option of linuxptp and the hybrid ptp_network_mode of sfptpd.
+
+	  Unless PTP_NETWORK_MODE_HYBRID_NO_FALLBACK is enabled, the port
+	  reverts to multicast Delay_Req messages if the timeTransmitter does
+	  not answer PTP_HYBRID_FALLBACK_ATTEMPTS consecutive unicast
+	  Delay_Req messages, and stays in multicast until a new
+	  timeTransmitter is selected.
+
+endchoice
+
+if PTP_NETWORK_MODE_HYBRID
+
+config PTP_NETWORK_MODE_HYBRID_NO_FALLBACK
+	bool "Disable multicast fallback"
+	help
+	  Always stay in hybrid mode and keep sending unicast Delay_Req
+	  messages even if the current timeTransmitter does not respond to
+	  them.
+
+config PTP_HYBRID_FALLBACK_ATTEMPTS
+	int "Unanswered unicast Delay_Req messages before multicast fallback"
+	depends on !PTP_NETWORK_MODE_HYBRID_NO_FALLBACK
+	default 3
+	range 1 255
+	help
+	  Number of consecutive unicast Delay_Req messages without a matching
+	  Delay_Resp after which the port assumes the timeTransmitter does not
+	  support unicast delay measurement and falls back to multicast
+	  Delay_Req messages.
+
+endif # PTP_NETWORK_MODE_HYBRID
 
 config PTP_NUM_PORTS
 	int "Number of PTP Ports"
@@ -137,6 +196,7 @@ config PTP_UDP_IPV6_PROTOCOL
 config PTP_IEEE_802_3_PROTOCOL
 	bool "IEEE 802.3 (Layer 2 / EtherType 0x88F7)"
 	select NET_SOCKETS_PACKET
+	select NET_SOCKETS_PACKET_MCAST_MEMBERSHIP
 
 endchoice
 

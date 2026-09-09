@@ -11,7 +11,6 @@
 
 /* (2^31 / 2^8(shift) */
 #define ADXL362_TEMP_QSCALE   8388608
-#define ADXL362_TEMP_LSB_PER_C 15
 
 #define ADXL362_COMPLEMENT         0xf000
 
@@ -49,8 +48,10 @@ static inline void adxl362_temp_convert_q31(q31_t *out, int16_t data_in)
 		data_in |= ADXL362_COMPLEMENT;
 	}
 
-	*out = ((data_in - ADXL362_TEMP_BIAS_LSB) / ADXL362_TEMP_LSB_PER_C
-			+ ADXL362_TEMP_BIAS_TEST_CONDITION) * ADXL362_TEMP_QSCALE;
+	int32_t milli_c = (data_in - ADXL362_TEMP_BIAS_LSB) * ADXL362_TEMP_MC_PER_LSB +
+			  (ADXL362_TEMP_BIAS_TEST_CONDITION * 1000);
+
+	*out = (q31_t)(((int64_t)milli_c * ADXL362_TEMP_QSCALE) / 1000);
 }
 
 static inline void adxl362_accel_convert_q31(q31_t *out, int16_t data_in, int32_t range)
@@ -87,6 +88,10 @@ static int adxl362_decode_stream(const uint8_t *buffer, struct sensor_chan_spec 
 	}
 
 	uint64_t period_ns = accel_period_ns[enc_data->accel_odr];
+	uint16_t total_samples = sample_set_size > 0
+				 ? enc_data->fifo_byte_count / sample_set_size : 0;
+	uint64_t base_ts = enc_data->timestamp -
+			   (total_samples > 0 ? (total_samples - 1) : 0) * period_ns;
 
 	/* Calculate which sample is decoded. */
 	if (*fit >= (uintptr_t)buffer) {
@@ -97,7 +102,7 @@ static int adxl362_decode_stream(const uint8_t *buffer, struct sensor_chan_spec 
 		struct sensor_q31_data *data = (struct sensor_q31_data *)data_out;
 
 		memset(data, 0, sizeof(struct sensor_q31_data));
-		data->header.base_timestamp_ns = enc_data->timestamp;
+		data->header.base_timestamp_ns = base_ts;
 		data->shift = 8;
 
 		while (count < max_count && buffer < buffer_end) {
@@ -130,7 +135,7 @@ static int adxl362_decode_stream(const uint8_t *buffer, struct sensor_chan_spec 
 				(struct sensor_three_axis_data *)data_out;
 
 		memset(data, 0, sizeof(struct sensor_three_axis_data));
-		data->header.base_timestamp_ns = enc_data->timestamp;
+		data->header.base_timestamp_ns = base_ts;
 		data->shift = range_to_shift[enc_data->selected_range];
 
 		while (count < max_count && buffer < buffer_end) {

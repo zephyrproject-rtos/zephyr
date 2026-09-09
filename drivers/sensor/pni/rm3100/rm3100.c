@@ -92,6 +92,10 @@ static void rm3100_submit_one_shot(const struct device *dev, struct rtio_iodev_s
 
 	uint8_t val = RM3100_REG_MX;
 
+	if (rtio_is_spi(data->rtio.type)) {
+		val |= REG_READ_BIT;
+	}
+
 	rtio_sqe_prep_tiny_write(write_sqe,
 				 data->rtio.iodev,
 				 RTIO_PRIO_HIGH,
@@ -223,14 +227,15 @@ static int rm3100_init(const struct device *dev)
 
 #define RM3100_DEFINE(inst)									   \
 												   \
-	RTIO_DEFINE(rm3100_rtio_ctx_##inst, 8, 8);						   \
+	RTIO_DEFINE(rm3100_rtio_ctx_##inst, 16, 16);						   \
 	COND_CODE_1(DT_INST_ON_BUS(inst, i2c),							   \
 		    (I2C_DT_IODEV_DEFINE(rm3100_bus_##inst, DT_DRV_INST(inst))),		   \
 		    ());									   \
 	COND_CODE_1(DT_INST_ON_BUS(inst, spi),							   \
 		    (SPI_DT_IODEV_DEFINE(rm3100_bus_##inst,					   \
 					 DT_DRV_INST(inst),					   \
-					 SPI_OP_MODE_MASTER | SPI_WORD_SET(8) | SPI_TRANSFER_MSB)),\
+					 SPI_OP_MODE_CONTROLLER | SPI_WORD_SET(8) |		   \
+					 SPI_TRANSFER_MSB)),					   \
 		    ());									   \
 												   \
 	static const struct rm3100_config rm3100_cfg_##inst = {					   \

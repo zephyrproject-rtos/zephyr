@@ -184,12 +184,12 @@ static int hpack_integer_decode(const uint8_t *buf, size_t datalen,
 			return -EAGAIN;
 		}
 
-		if (m > sizeof(uint32_t) * 8) {
+		if (m >= sizeof(uint32_t) * 8) {
 			/* Can't handle integer that large. */
 			return -EBADMSG;
 		}
 
-		*value += (*buf & ~HPACK_INTEGER_CONTINUATION_FLAG) * (1 << m);
+		*value += (uint32_t)(*buf & ~HPACK_INTEGER_CONTINUATION_FLAG) << m;
 		m += 7;
 
 	} while (*buf & HPACK_INTEGER_CONTINUATION_FLAG);
@@ -465,7 +465,7 @@ static int hpack_integer_encode(uint8_t *buf, size_t buflen, int value,
 			return -ENOBUFS;
 		}
 
-		*buf = (uint8_t)((value % 128) + 128);
+		*buf++ = (uint8_t)((value % 128) + 128);
 		len++;
 		value /= 128;
 	}

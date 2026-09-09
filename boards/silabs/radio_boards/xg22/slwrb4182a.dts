@@ -7,18 +7,13 @@
 /dts-v1/;
 #include <silabs/xg22/efr32mg22c224f512im40.dtsi>
 #include <silabs/xg22/clock-lfxo.dtsi>
-#include "xg22_radio_board.dtsi"
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include "xg22_common.dtsi"
+#include "slwrb4182a-pinctrl.dtsi"
 
 / {
 	model = "Silicon Labs BRD4182A (EFR32xG22 Radio Board)";
 	compatible = "silabs,slwrb4182a", "silabs,efr32mg22";
-
-	aliases {
-		led0 = &led0;
-		led1 = &led1;
-		pwm-led0 = &pwm_led0;
-		pwm-led1 = &pwm_led1;
-	};
 
 	leds {
 		compatible = "gpio-leds";
@@ -88,30 +83,6 @@
 	pa-voltage-mv = <1800>;
 };
 
-&si7021 {
-	vin-supply = <&sensor_enable>;
-};
-
 &ls013b7dh03 {
 	disp-en-gpios = <&gpioc 7 GPIO_ACTIVE_HIGH>;
-};
-
-&pinctrl {
-	timer0_default: timer0_default {
-		group0 {
-			pins = <TIMER0_CC0_PD2>, <TIMER0_CC1_PD3>;
-			drive-push-pull;
-			output-low;
-		};
-	};
-};
-
-&timer0 {
-	status = "okay";
-
-	timer0_pwm: pwm {
-		pinctrl-0 = <&timer0_default>;
-		pinctrl-names = "default";
-		status = "okay";
-	};
 };

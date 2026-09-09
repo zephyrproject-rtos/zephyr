@@ -13,14 +13,14 @@ the Zephyr SPI HCI transport protocol (similar to BlueNRG).
 Requirements
 ************
 
-A board with SPI slave, GPIO and Bluetooth Low Energy support.
+A board with SPI peripheral, GPIO and Bluetooth Low Energy support.
 
 Building and Running
 ********************
 
 You then need to ensure that your :ref:`devicetree <dt-guide>` defines a node
-for the HCI SPI slave device with compatible
-:dtcompatible:`zephyr,bt-hci-spi-slave`. This node sets an interrupt line to
+for the HCI SPI peripheral device with compatible
+:dtcompatible:`zephyr,bt-hci-spi-peripheral`. This node sets an interrupt line to
 the host and associates the application with a SPI bus to use.
 
 See :zephyr_file:`boards/nrf51dk_nrf51822.overlay
@@ -36,8 +36,8 @@ board (e.g. :zephyr:board:`nrf51dk` using the ``nrf51dk/nrf51822`` target):
    :goals: build flash
    :compact:
 
-You will also need a separate chip acting as BT HCI SPI master. This
-application is compatible with the HCI SPI master driver provided by
+You will also need a separate chip acting as BT HCI SPI controller. This
+application is compatible with the HCI SPI controller driver provided by
 Zephyr's Bluetooth HCI driver core; see the help associated with the
 :kconfig:option:`CONFIG_BT_SPI` configuration option for more information.
 

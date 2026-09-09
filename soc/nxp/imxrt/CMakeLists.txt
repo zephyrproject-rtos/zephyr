@@ -1,11 +1,11 @@
 # Copyright 2024 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-add_subdirectory(${SOC_SERIES})
+add_subdirectory(${CONFIG_SOC_SERIES})
 
 zephyr_include_directories(.)
 zephyr_include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../common)
-zephyr_include_directories(${SOC_SERIES})
+zephyr_include_directories(${CONFIG_SOC_SERIES})
 
 zephyr_linker_sources_ifdef(CONFIG_NXP_IMXRT_BOOT_HEADER
   ROM_START SORT_KEY 0 boot_header.ld)

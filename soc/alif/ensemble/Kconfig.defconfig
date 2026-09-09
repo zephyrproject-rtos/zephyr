@@ -12,7 +12,10 @@ rsource "*/Kconfig.defconfig"
 config CLOCK_CONTROL
 	default y
 
-config CACHE_MANAGEMENT
+configdefault CACHE_MANAGEMENT
+	default y
+
+configdefault I2C_DW_IC_CLK_FREQ_OPTIMIZATION
 	default y
 
 endif # SOC_FAMILY_ENSEMBLE

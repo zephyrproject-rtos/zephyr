@@ -53,8 +53,8 @@ struct spi_pico_pio_config {
 	const struct device *piodev;
 	const struct pinctrl_dev_config *pin_cfg;
 	struct gpio_dt_spec clk_gpio;
-	struct gpio_dt_spec mosi_gpio;
-	struct gpio_dt_spec miso_gpio;
+	struct gpio_dt_spec sdo_gpio;
+	struct gpio_dt_spec sdi_gpio;
 	struct gpio_dt_spec sio_gpio;
 	const struct device *clk_dev;
 	clock_control_subsys_t clk_id;
@@ -278,8 +278,8 @@ static int spi_pico_pio_configure(const struct spi_pico_pio_config *dev_cfg,
 		return 0;
 	}
 
-	if (spi_cfg->operation & SPI_OP_MODE_SLAVE) {
-		LOG_ERR("Slave mode not supported");
+	if (spi_cfg->operation & SPI_OP_MODE_PERIPHERAL) {
+		LOG_ERR("Peripheral mode not supported");
 		return -ENOTSUP;
 	}
 
@@ -424,8 +424,8 @@ static int spi_pico_pio_configure(const struct spi_pico_pio_config *dev_cfg,
 #endif /* SPI_RPI_PICO_PIO_HALF_DUPLEX_ENABLED */
 	} else {
 		/* 4-wire mode */
-		const struct gpio_dt_spec *miso = miso = &dev_cfg->miso_gpio;
-		const struct gpio_dt_spec *mosi = &dev_cfg->mosi_gpio;
+		const struct gpio_dt_spec *sdi = sdi = &dev_cfg->sdi_gpio;
+		const struct gpio_dt_spec *sdo = &dev_cfg->sdo_gpio;
 		uint32_t wrap_target;
 		uint32_t wrap;
 		int cycles;
@@ -472,23 +472,23 @@ static int spi_pico_pio_configure(const struct spi_pico_pio_config *dev_cfg,
 		sm_config = pio_get_default_sm_config();
 
 		sm_config_set_clkdiv(&sm_config, clock_div);
-		sm_config_set_in_pins(&sm_config, miso->pin);
+		sm_config_set_in_pins(&sm_config, sdi->pin);
 		sm_config_set_in_shift(&sm_config, lsb, true, data->bits);
-		sm_config_set_out_pins(&sm_config, mosi->pin, 1);
+		sm_config_set_out_pins(&sm_config, sdo->pin, 1);
 		sm_config_set_out_shift(&sm_config, lsb, true, data->bits);
 		sm_config_set_sideset_pins(&sm_config, clk->pin);
 		sm_config_set_sideset(&sm_config, 1, false, false);
 		sm_config_set_wrap(&sm_config, data->pio_tx_offset + wrap_target,
 				   data->pio_tx_offset + wrap);
 
-		pio_sm_set_consecutive_pindirs(pio, data->pio_sm, miso->pin, 1, false);
+		pio_sm_set_consecutive_pindirs(pio, data->pio_sm, sdi->pin, 1, false);
 		pio_sm_set_pindirs_with_mask(pio, data->pio_sm,
-					     (BIT(clk->pin) | BIT(mosi->pin)),
-					     (BIT(clk->pin) | BIT(mosi->pin)));
+					     (BIT(clk->pin) | BIT(sdo->pin)),
+					     (BIT(clk->pin) | BIT(sdo->pin)));
 		pio_sm_set_pins_with_mask(pio, data->pio_sm, (cpol << clk->pin),
-					  BIT(clk->pin) | BIT(mosi->pin));
-		pio_gpio_init(pio, mosi->pin);
-		pio_gpio_init(pio, miso->pin);
+					  BIT(clk->pin) | BIT(sdo->pin));
+		pio_gpio_init(pio, sdo->pin);
+		pio_gpio_init(pio, sdi->pin);
 		pio_gpio_init(pio, clk->pin);
 
 		pio_sm_init(pio, data->pio_sm, data->pio_tx_offset, &sm_config);
@@ -1011,15 +1011,15 @@ int spi_pico_pio_init(const struct device *dev)
 		return rc;
 	}
 
-	if (dev_cfg->mosi_gpio.port != NULL) {
-		rc = config_gpio(&dev_cfg->mosi_gpio, "mosi", GPIO_OUTPUT);
+	if (dev_cfg->sdo_gpio.port != NULL) {
+		rc = config_gpio(&dev_cfg->sdo_gpio, "sdo", GPIO_OUTPUT);
 		if (rc < 0) {
 			return rc;
 		}
 	}
 
-	if (dev_cfg->miso_gpio.port != NULL) {
-		rc = config_gpio(&dev_cfg->miso_gpio, "miso", GPIO_INPUT);
+	if (dev_cfg->sdi_gpio.port != NULL) {
+		rc = config_gpio(&dev_cfg->sdi_gpio, "sdi", GPIO_INPUT);
 		if (rc < 0) {
 			return rc;
 		}
@@ -1051,14 +1051,30 @@ int spi_pico_pio_init(const struct device *dev)
 			(DMAS_ENABLED(inst) ? DT_INST_DMAS_CELL_BY_NAME(inst, rx, channel) : 0), \
 	}
 
+#define SPI_PICO_PIO_SDO_SPEC(inst)                                                            \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, sdo_gpios),                                    \
+		    (GPIO_DT_SPEC_INST_GET(inst, sdo_gpios)),                                  \
+		    (GPIO_DT_SPEC_INST_GET_OR(inst, mosi_gpios, {0})))
+
+#define SPI_PICO_PIO_SDI_SPEC(inst)                                                            \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, sdi_gpios),                                    \
+		    (GPIO_DT_SPEC_INST_GET(inst, sdi_gpios)),                                  \
+		    (GPIO_DT_SPEC_INST_GET_OR(inst, miso_gpios, {0})))
+
+#define SPI_PICO_PIO_HAS_SDO(inst)                                                             \
+	(DT_INST_NODE_HAS_PROP(inst, sdo_gpios) || DT_INST_NODE_HAS_PROP(inst, mosi_gpios))
+
+#define SPI_PICO_PIO_HAS_SDI(inst)                                                             \
+	(DT_INST_NODE_HAS_PROP(inst, sdi_gpios) || DT_INST_NODE_HAS_PROP(inst, miso_gpios))
+
 #define SPI_PICO_PIO_INIT(inst)                                                                \
 	PINCTRL_DT_INST_DEFINE(inst);                                                          \
 	static struct spi_pico_pio_config spi_pico_pio_config_##inst = {                       \
 		.piodev = DEVICE_DT_GET(DT_INST_PARENT(inst)),                                 \
 		.pin_cfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),                               \
 		.clk_gpio = GPIO_DT_SPEC_INST_GET(inst, clk_gpios),                            \
-		.mosi_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, mosi_gpios, {0}),                  \
-		.miso_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, miso_gpios, {0}),                  \
+		.sdo_gpio = SPI_PICO_PIO_SDO_SPEC(inst),                                       \
+		.sdi_gpio = SPI_PICO_PIO_SDI_SPEC(inst),                                       \
 		.sio_gpio = GPIO_DT_SPEC_INST_GET_OR(inst, sio_gpios, {0}),                    \
 		.clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(inst)),                           \
 		.clk_id = (clock_control_subsys_t)DT_INST_PHA_BY_IDX(inst, clocks, 0, clk_id), \
@@ -1078,12 +1094,12 @@ int spi_pico_pio_init(const struct device *dev)
 				&spi_pico_pio_config_##inst, POST_KERNEL,                      \
 				CONFIG_SPI_INIT_PRIORITY, &spi_pico_pio_api);                  \
 	BUILD_ASSERT(DT_INST_NODE_HAS_PROP(inst, clk_gpios), "Missing clock GPIO");            \
-	BUILD_ASSERT(((DT_INST_NODE_HAS_PROP(inst, mosi_gpios) ||                              \
-			DT_INST_NODE_HAS_PROP(inst, miso_gpios)) &&                            \
+	BUILD_ASSERT(((SPI_PICO_PIO_HAS_SDO(inst) ||                                           \
+			SPI_PICO_PIO_HAS_SDI(inst)) &&                                         \
 			(!DT_INST_NODE_HAS_PROP(inst, sio_gpios))) ||                          \
 				(DT_INST_NODE_HAS_PROP(inst, sio_gpios) &&                     \
-				!(DT_INST_NODE_HAS_PROP(inst, mosi_gpios) ||                   \
-				DT_INST_NODE_HAS_PROP(inst, miso_gpios))),                     \
+				!(SPI_PICO_PIO_HAS_SDO(inst) ||                                \
+				SPI_PICO_PIO_HAS_SDI(inst))),                                  \
 			"Invalid GPIO Configuration");
 
 DT_INST_FOREACH_STATUS_OKAY(SPI_PICO_PIO_INIT)

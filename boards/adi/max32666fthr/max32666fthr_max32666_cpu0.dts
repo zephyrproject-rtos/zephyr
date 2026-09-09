@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Analog Devices, Inc.
+ * Copyright (c) 2023-2026 Analog Devices, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,6 +16,7 @@
 	compatible = "adi,max32666fthr";
 
 	chosen {
+		zephyr,code-partition = &code_partition;
 		zephyr,console = &uart1;
 		zephyr,shell-uart = &uart1;
 		zephyr,sram = &sram4;
@@ -134,6 +135,19 @@
 	pinctrl-names = "default";
 };
 
+feather_spi: &spi2 {
+	status = "okay";
+	pinctrl-0 = <&spi2_mosi_p0_25 &spi2_miso_p0_26 &spi2_sck_p0_27>;
+	cs-gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
+	pinctrl-names = "default";
+};
+
+feather_i2c: &i2c0 {
+	status = "okay";
+	pinctrl-0 = <&i2c0_scl_p0_6 &i2c0_sda_p0_7>;
+	pinctrl-names = "default";
+};
+
 &w1 {
 	pinctrl-0 = <&owm_io_p0_12>;
 	pinctrl-names = "default";
@@ -183,4 +197,28 @@
 &sdhc_cdn_p1_7 {
 	power-source = <MAX32_VSEL_VDDIOH>;
 	drive-strength = <1>;
+};
+
+zephyr_udc0: &usbhs {
+	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		code_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x0 DT_SIZE_K(448)>;
+			read-only;
+		};
+
+		storage_partition: partition@70000 {
+			compatible = "zephyr,mapped-partition";
+			label = "storage";
+			reg = <0x70000 DT_SIZE_K(64)>;
+		};
+	};
 };

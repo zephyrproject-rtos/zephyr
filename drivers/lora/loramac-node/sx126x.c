@@ -118,6 +118,8 @@ static int sx126x_spi_transceive(uint8_t *req_tx, uint8_t *req_rx,
 		.count = ARRAY_SIZE(rx_buf)
 	};
 
+	k_sem_take(&dev_data.bus_lock, K_FOREVER);
+
 	/* Wake the device if necessary */
 	SX126xCheckDeviceReady();
 
@@ -134,6 +136,9 @@ static int sx126x_spi_transceive(uint8_t *req_tx, uint8_t *req_rx,
 	if (req_len >= 1 && req_tx[0] != RADIO_SET_SLEEP) {
 		SX126xWaitOnBusy();
 	}
+
+	k_sem_give(&dev_data.bus_lock);
+
 	return ret;
 }
 
@@ -441,6 +446,7 @@ static int sx126x_lora_init(const struct device *dev)
 		return -EIO;
 	}
 
+	k_sem_init(&dev_data.bus_lock, 1, 1);
 	k_work_init(&dev_data.dio1_irq_work, sx126x_dio1_irq_work_handler);
 
 	ret = sx126x_variant_init(dev);
@@ -471,6 +477,7 @@ static DEVICE_API(lora, sx126x_lora_api) = {
 	.recv = sx12xx_lora_recv,
 	.recv_async = sx12xx_lora_recv_async,
 	.test_cw = sx12xx_lora_test_cw,
+	.rssi = sx12xx_lora_rssi,
 };
 
 DEVICE_DT_INST_DEFINE(0, &sx126x_lora_init, NULL, &dev_data,

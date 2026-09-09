@@ -129,15 +129,24 @@ static inline int spi_it8xxx2_set_freq(const struct device *dev, const uint32_t 
 	uint8_t reg_val;
 
 	clk_pll = chip_get_pll_freq();
+#ifdef CONFIG_SOC_IT8XXX2_REG_SET_V1
 	clk_sspi = clk_pll / (((IT8XXX2_ECPM_SCDCR2 & 0xF0) >> 4) + 1U);
+#elif CONFIG_SOC_IT8XXX2_REG_SET_V2
+	clk_sspi = clk_pll / ((IT8XXX2_ECPM_SCDCR8 & 0x0F) + 1U);
+#else
+#error "unknown clk_sspi for register set version"
+#endif /* CONFIG_SOC_IT8XXX2_REG_SET_V1 */
 	if (frequency < (clk_sspi / 16) || frequency > clk_sspi) {
-		LOG_ERR("Unsupported frequency %d", frequency);
+		LOG_ERR("Unsupported frequency %d (sspi %d)", frequency, clk_sspi);
 		return -ENOTSUP;
 	}
 
 	if (frequency == clk_sspi) {
+		/* the spi clk must be turned on (un-gated) before setting ssck equal to sspi_clk */
+		spi_it8xxx2_turn_on_clk(dev, true);
 		sys_write8(sys_read8(cfg->base + SPI0D_CTRL5) | SCK_FREQ_DIV_1_EN,
 			   cfg->base + SPI0D_CTRL5);
+		spi_it8xxx2_turn_on_clk(dev, false);
 	} else {
 		for (int i = 0; i <= ARRAY_SIZE(freq_div); i++) {
 			if (i == ARRAY_SIZE(freq_div)) {
@@ -167,15 +176,21 @@ static int spi_it8xxx2_configure(const struct device *dev, const struct spi_conf
 	int ret;
 	uint8_t reg_val;
 
-	if (spi_cfg->slave > (SPI_CHIP_SELECT_COUNT - 1)) {
-		LOG_ERR("Slave %d is greater than %d", spi_cfg->slave, SPI_CHIP_SELECT_COUNT - 1);
+	if (spi_context_configured(ctx, spi_cfg)) {
+		/* already configured */
+		return 0;
+	}
+
+	if (spi_cfg->peripheral > (SPI_CHIP_SELECT_COUNT - 1)) {
+		LOG_ERR("Peripheral %d is greater than %d", spi_cfg->peripheral,
+			SPI_CHIP_SELECT_COUNT - 1);
 		return -EINVAL;
 	}
 
-	LOG_DBG("chip select: %d, operation: 0x%x", spi_cfg->slave, spi_cfg->operation);
+	LOG_DBG("chip select: %d, operation: 0x%x", spi_cfg->peripheral, spi_cfg->operation);
 
-	if (SPI_OP_MODE_GET(spi_cfg->operation) == SPI_OP_MODE_SLAVE) {
-		LOG_ERR("Unsupported SPI slave mode");
+	if (SPI_OP_MODE_GET(spi_cfg->operation) == SPI_OP_MODE_PERIPHERAL) {
+		LOG_ERR("Unsupported SPI peripheral mode");
 		return -ENOTSUP;
 	}
 
@@ -369,7 +384,7 @@ static int spi_it8xxx2_next_xfer(const struct device *dev)
 
 	cmd_address = (uint32_t)(&data->cmdq_data) - SRAM_BASE_ADDR;
 	mem_address = (uint32_t)ctx->rx_buf - SRAM_BASE_ADDR;
-	if (ctx->config->slave == 0) {
+	if (ctx->config->peripheral == 0) {
 		sys_write8(BYTE_0(cmd_address), cfg->base + SPI05_CH0_CMD_ADDR_LB);
 		sys_write8(BYTE_1(cmd_address), cfg->base + SPI06_CH0_CMD_ADDR_HB);
 		sys_write8(BYTE_2(cmd_address), cfg->base + SPI21_CH0_CMD_ADDR_HB2);
@@ -394,7 +409,7 @@ static int spi_it8xxx2_next_xfer(const struct device *dev)
 	sys_write8(sys_read8(cfg->base + SPI01_CTRL1) | INTERRUPT_EN, cfg->base + SPI01_CTRL1);
 
 	reg_val = sys_read8(cfg->base + SPI0D_CTRL5);
-	reg_val |= (ctx->config->slave == 0) ? CH0_SEL_CMDQ : CH1_SEL_CMDQ;
+	reg_val |= (ctx->config->peripheral == 0) ? CH0_SEL_CMDQ : CH1_SEL_CMDQ;
 	sys_write8(reg_val | CMDQ_MODE_EN, cfg->base + SPI0D_CTRL5);
 	return 0;
 }
@@ -480,7 +495,7 @@ static void it8xxx2_spi_isr(const void *arg)
 
 	if (reg_val & SPI_CMDQ_BUS_END) {
 		reg_val = sys_read8(cfg->base + SPI0D_CTRL5);
-		if (ctx->config->slave == 0) {
+		if (ctx->config->peripheral == 0) {
 			reg_val &= ~CH0_SEL_CMDQ;
 		} else {
 			reg_val &= ~CH1_SEL_CMDQ;

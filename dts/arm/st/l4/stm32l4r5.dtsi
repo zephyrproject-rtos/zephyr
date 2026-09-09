@@ -83,5 +83,16 @@
 				dmas = <&dma2 2 37 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
 			};
 		};
+
+		sai2: sai2@40015800 {
+			/* L4R/S SAI DMA Request differs from L4P/Q */
+			sai2_a: sai2a@40015804 {
+				dmas = <&dma2 1 38 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
+			};
+
+			sai2_b: sai2b@40015824 {
+				dmas = <&dma2 2 39 (STM32_DMA_16BITS | STM32_DMA_PRIORITY_HIGH)>;
+			};
+		};
 	};
 };

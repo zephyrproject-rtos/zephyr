@@ -83,7 +83,7 @@ static void dns_resolve_cb(enum dns_resolve_status status,
 		state->ai_arr[state->idx - 1].ai_next = ai;
 	}
 
-	memcpy(&ai->_ai_addr, &info->ai_addr, info->ai_addrlen);
+	memcpy(&ai->_ai_addr, &info->ai_addr_storage, info->ai_addrlen);
 	net_sin(net_sad(&ai->_ai_addr))->sin_port = state->port;
 	ai->ai_addr = net_sad(&ai->_ai_addr);
 	ai->ai_addrlen = info->ai_addrlen;

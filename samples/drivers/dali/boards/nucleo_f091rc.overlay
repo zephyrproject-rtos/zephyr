@@ -8,7 +8,7 @@
  * DALI 2 Click
  *   DALI TX 2
  *   DALI RX 15
- * Arduino UNO click shield (slot 2)
+ * Arduino UNO click shield (slot 1)
  *   DALI TX 2 > A3
  *   DALI RX 15 > D2
  * STM32F091
@@ -16,22 +16,13 @@
  *   DALI RX D2 > PA_10
  */
 
-/ {
-	dali0: dali {
-		compatible = "zephyr,dali-pwm";
-		status = "okay";
-		counter = <&counter2>;
-		chan-id-rx = <0>;
-		chan-id-tx = <1>;
-		pwms = <&pwm3 3 PWM_USEC(41) PWM_POLARITY_NORMAL>;
-		rx-gpios = <&gpioa 10 GPIO_ACTIVE_HIGH>;
-		tx-flank-shift-us = <(-46)>;
-		rx-flank-shift-us = <(-68)>;
-		tx-rx-propagation-max-us = <2400>;
-		tx-prog-delay-us = <(-200)>;
-		rx-max-latency-us = <80>;
-		rx-grey-area-us = <800>;
-	};
+&mikroe_dali2_click {
+	counter = <&counter2>;
+	pwms = <&pwm3 3 PWM_USEC(41) PWM_POLARITY_NORMAL>;
+	tx-rx-propagation-max-us = <2400>;
+	tx-prog-delay-us = <(-200)>;
+	rx-max-latency-us = <80>;
+	rx-grey-area-us = <800>;
 };
 
 &timers2 {
@@ -52,7 +43,7 @@
 	status = "okay";
 
 	pwm3: pwm {
-		pinctrl-0 = <&tim3_ch3_pb0>;
+		pinctrl-0 = <&tim3_ch3_pb0>; // microbus header 1
 		pinctrl-names = "default";
 		status = "okay";
 	};

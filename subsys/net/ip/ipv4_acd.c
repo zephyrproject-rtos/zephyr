@@ -271,6 +271,7 @@ enum net_verdict net_ipv4_acd_input(struct net_if *iface, struct net_pkt *pkt)
 	struct net_arp_hdr *arp_hdr;
 	struct net_if_ipv4 *ipv4;
 	struct net_linkaddr *dst_lladdr;
+	struct net_linkaddr *ll_addr;
 
 	if (net_pkt_get_len(pkt) < sizeof(struct net_arp_hdr)) {
 		NET_DBG("Invalid ARP header (len %zu, min %zu bytes)",
@@ -285,6 +286,10 @@ enum net_verdict net_ipv4_acd_input(struct net_if *iface, struct net_pkt *pkt)
 		return NET_DROP;
 	}
 
+	ll_addr = net_if_get_link_addr(iface);
+
+	NET_ASSERT(ll_addr != NULL);
+
 	arp_hdr = NET_ARP_HDR(pkt);
 
 	k_mutex_lock(&lock, K_FOREVER);
@@ -293,7 +298,6 @@ enum net_verdict net_ipv4_acd_input(struct net_if *iface, struct net_pkt *pkt)
 		struct net_if_addr *ifaddr =
 			CONTAINER_OF(current, struct net_if_addr, acd_node);
 		struct net_if *addr_iface = net_if_get_by_index(ifaddr->ifindex);
-		struct net_linkaddr *ll_addr;
 
 		if (iface != addr_iface) {
 			continue;
@@ -302,8 +306,6 @@ enum net_verdict net_ipv4_acd_input(struct net_if *iface, struct net_pkt *pkt)
 		if (ifaddr->acd_state != IPV4_ACD_PROBE) {
 			continue;
 		}
-
-		ll_addr = net_if_get_link_addr(addr_iface);
 
 		/* RFC 5227, ch. 2.1.1 Probe Details:
 		 * - ARP Request/Reply with Sender IP address match OR,
@@ -346,7 +348,6 @@ enum net_verdict net_ipv4_acd_input(struct net_if *iface, struct net_pkt *pkt)
 	 */
 	ARRAY_FOR_EACH(ipv4->unicast, i) {
 		struct net_if_addr *ifaddr = &ipv4->unicast[i].ipv4;
-		struct net_linkaddr *ll_addr = net_if_get_link_addr(iface);
 
 		if (!ifaddr->is_used) {
 			continue;

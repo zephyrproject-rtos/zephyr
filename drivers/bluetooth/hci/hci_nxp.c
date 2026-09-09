@@ -495,6 +495,11 @@ static void process_rx(uint8_t packetType, uint8_t *data, uint16_t len)
 
 K_MSGQ_DEFINE_STATIC_TYPE(rx_msgq, struct hci_data, CONFIG_HCI_NXP_RX_MSG_QUEUE_SIZE);
 
+/* Semaphore used by bt_nxp_rx_drain() to wait until bt_rx_thread has
+ * acknowledged the drain sentinel.
+ */
+static K_SEM_DEFINE(rx_drain_sem, 0, 1);
+
 static void bt_rx_thread(void *p1, void *p2, void *p3)
 {
 	ARG_UNUSED(p1);
@@ -508,6 +513,15 @@ static void bt_rx_thread(void *p1, void *p2, void *p3)
 			LOG_ERR("Failed to get RX data from message queue");
 			continue;
 		}
+		/* A sentinel frame (data == NULL) is posted by bt_nxp_rx_drain()
+		 * to mark the boundary between pre-close and post-open frames.
+		 * Acknowledge it and skip process_rx() so that close() knows all
+		 * earlier frames have been fully processed.
+		 */
+		if (hci_rx_frame.data == NULL) {
+			k_sem_give(&rx_drain_sem);
+			continue;
+		}
 		process_rx(hci_rx_frame.packetType, hci_rx_frame.data, hci_rx_frame.len);
 		k_free(hci_rx_frame.data);
 	}
@@ -515,6 +529,34 @@ static void bt_rx_thread(void *p1, void *p2, void *p3)
 
 K_THREAD_DEFINE(nxp_hci_rx_thread, CONFIG_BT_DRV_RX_STACK_SIZE, bt_rx_thread, NULL, NULL, NULL,
 		K_PRIO_COOP(CONFIG_BT_DRIVER_RX_HIGH_PRIO), 0, 0);
+
+/* Drain all frames that bt_rx_thread may be holding or that are buffered
+ * in rx_msgq, then wait until the thread acknowledges the drain barrier.
+ *
+ * When bt_rx_thread is blocked in k_msgq_get(K_FOREVER), k_msgq_put()
+ * copies the frame directly into the thread's stack buffer without
+ * incrementing msgq->used_msgs (kernel/msg_q.c).  A K_NO_WAIT drain
+ * loop therefore misses any frame the thread already holds.  To close
+ * this gap: drain the queue buffer first, then post a sentinel frame
+ * (data == NULL) with K_FOREVER.  Because the queue is FIFO, when
+ * bt_rx_thread dequeues the sentinel it has already processed every
+ * frame that arrived before close.  Waiting on rx_drain_sem guarantees
+ * that no pre-close packet can escape into the next session.
+ */
+static void bt_nxp_rx_drain(void)
+{
+	struct hci_data hci_rx_frame;
+	struct hci_data sentinel = {0}; /* data == NULL marks the drain barrier */
+
+	/* Free any frames sitting in the queue buffer. */
+	while (k_msgq_get(&rx_msgq, &hci_rx_frame, K_NO_WAIT) == 0) {
+		k_free(hci_rx_frame.data);
+	}
+
+	/* Post the sentinel and wait for bt_rx_thread to acknowledge it. */
+	(void)k_msgq_put(&rx_msgq, &sentinel, K_FOREVER);
+	k_sem_take(&rx_drain_sem, K_FOREVER);
+}
 
 static void hci_rx_cb(uint8_t packetType, uint8_t *data, uint16_t len)
 {
@@ -783,6 +825,17 @@ int bt_nxp_setup(const struct device *dev, const struct bt_hci_setup_params *par
 
 static int bt_nxp_close(const struct device *dev)
 {
+	int err;
+
+	err = PLATFORM_SetHciRxCallback(NULL);
+	if (err != 0) {
+		return err;
+	}
+
+#if defined(CONFIG_HCI_NXP_RX_THREAD)
+	bt_nxp_rx_drain();
+#endif /* CONFIG_HCI_NXP_RX_THREAD */
+
 	return 0;
 }
 

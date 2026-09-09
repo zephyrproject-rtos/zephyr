@@ -45,12 +45,12 @@ properties:
   ctar:
     type: int
     description: |
-      ctar register selection range form 0-1 for master mode, 0 for slave mode
+      ctar register selection range form 0-1 for controller mode, 0 for peripheral mode
 
   sample-point:
     type: int
     description: |
-      Controls when the DSPI master samples SIN in the Modified Transfer Format.
+      Controls when the DSPI controller samples SIN in the Modified Transfer Format.
       This field is valid only when the CPHA bit in the CTAR register is 0.
 
   continuous-sck:

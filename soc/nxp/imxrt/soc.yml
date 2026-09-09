@@ -14,6 +14,8 @@ family:
     - name: mimxrt1064
   - name: imxrt11xx
     socs:
+    - name: mimxrt1151
+    - name: mimxrt1152
     - name: mimxrt1166
       cpuclusters:
       - name: cm7
@@ -66,6 +68,16 @@ family:
       - name: cm33_cpu1
       - name: hifi4
       - name: hifi1
+    - name: mimxrt758s
+      cpuclusters:
+      - name: cm33_cpu0
+      - name: cm33_cpu1
+      - name: hifi1
+    - name: mimxrt735s
+      cpuclusters:
+      - name: cm33_cpu0
+      - name: cm33_cpu1
+      - name: hifi1
 runners:
   run_once:
     '--erase':
@@ -79,6 +91,8 @@ runners:
         - mimxrt1052/(qspi|hyperflash)
       - qualifiers:
         - mimxrt1062/(qspi|hyperflash)
+      - qualifiers:
+        - mimxrt115([12])
       - qualifiers:
         - mimxrt1166/cm7
         - mimxrt1166/cm4
@@ -123,6 +137,8 @@ runners:
         - mimxrt1052/(qspi|hyperflash)
       - qualifiers:
         - mimxrt1062/(qspi|hyperflash)
+      - qualifiers:
+        - mimxrt115([12])
       - qualifiers:
         - mimxrt1166/cm7
         - mimxrt1166/cm4

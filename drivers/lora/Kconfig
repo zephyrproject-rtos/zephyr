@@ -52,6 +52,25 @@ config LORA_SHELL
 	help
 	  Enable LoRa Shell for testing.
 
+config LORA_RSSI_SETTLE_US
+	int "RSSI settling time in microseconds"
+	default 500 if LORA_MODULE_BACKEND_LORAMAC_NODE
+	default 500 if LORA_MODULE_BACKEND_NATIVE
+	default 10000
+	help
+	  Time to wait after entering receive mode before the RSSI is read,
+	  to let the receiver settle. How long a radio needs varies with the
+	  driver: one that sleeps between accesses spends part of this time
+	  in its wake-up calibration, and reads taken too early report the
+	  noise floor. The defaults come from an SX1262: loramac-node and the
+	  native driver are ready in 0.5 ms, the Basics Modem glue needs 7 ms.
+
+config LORA_ENERGY_DETECT_SAMPLE_INTERVAL_US
+	int "Energy detection sample interval in microseconds"
+	default 500
+	help
+	  Time to sleep between two RSSI samples while sensing the channel.
+
 config LORA_INIT_PRIORITY
 	int "LoRa initialization priority"
 	default 90

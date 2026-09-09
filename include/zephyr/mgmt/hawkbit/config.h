@@ -7,6 +7,7 @@
 /**
  * @file
  * @brief hawkBit configuration header file
+ * @ingroup hawkbit_config
  */
 
 /**

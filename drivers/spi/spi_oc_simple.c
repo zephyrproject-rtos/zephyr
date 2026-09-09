@@ -48,9 +48,9 @@ static int spi_oc_simple_configure(const struct spi_oc_simple_cfg *info,
 		return -ENOTSUP;
 	}
 
-	/* Simple SPI only supports master mode */
-	if (spi_context_is_slave(&spi->ctx)) {
-		LOG_ERR("Slave mode not supported");
+	/* Simple SPI only supports controller mode */
+	if (spi_context_is_peripheral(&spi->ctx)) {
+		LOG_ERR("Peripheral mode not supported");
 		return -ENOTSUP;
 	}
 
@@ -113,7 +113,7 @@ int spi_oc_simple_transceive(const struct device *dev,
 	if (spi_cs_is_gpio(config)) {
 		spi_context_cs_control(&spi->ctx, true);
 	} else {
-		sys_write8(1 << config->slave, SPI_OC_SIMPLE_SPSS(info));
+		sys_write8(1 << config->peripheral, SPI_OC_SIMPLE_SPSS(info));
 	}
 
 	spi_context_buffers_setup(ctx, tx_bufs, rx_bufs, 1);
@@ -151,7 +151,7 @@ int spi_oc_simple_transceive(const struct device *dev,
 	if (spi_cs_is_gpio(config)) {
 		spi_context_cs_control(&spi->ctx, false);
 	} else {
-		sys_write8(0 << config->slave, SPI_OC_SIMPLE_SPSS(info));
+		sys_write8(0 << config->peripheral, SPI_OC_SIMPLE_SPSS(info));
 	}
 
 	spi_context_complete(ctx, dev, 0);

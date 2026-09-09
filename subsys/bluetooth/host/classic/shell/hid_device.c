@@ -22,8 +22,8 @@
 #include <zephyr/shell/shell.h>
 #include <zephyr/shell/shell_string_conv.h>
 
-#include "host/shell/bt.h"
-#include "common/bt_shell_private.h"
+#include <host/shell/bt.h>
+#include <common/bt_shell_private.h>
 
 #define BT_HID_DEVICE_VERSION      0x0101
 #define BT_HID_PARSER_VERSION      0x0111

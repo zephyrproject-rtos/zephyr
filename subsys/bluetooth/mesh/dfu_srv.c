@@ -8,6 +8,7 @@
 #include "dfu.h"
 #include "blob.h"
 #include "access.h"
+#include "dfd_srv_internal.h"
 
 #define LOG_LEVEL CONFIG_BT_MESH_DFU_LOG_LEVEL
 #include <zephyr/logging/log.h>
@@ -25,10 +26,27 @@ BUILD_ASSERT((DFU_UPDATE_INFO_STATUS_MSG_MINLEN +
 	     "The Firmware Update Info Status message does not fit into the maximum outgoing SDU "
 	     "size.");
 
+struct dfu_srv_persistent_state {
+	uint8_t effect;
+	uint8_t phase;
+	uint8_t ttl;
+	uint8_t idx;
+	uint16_t timeout_base;
+	uint16_t meta;
+} __packed;
+
 static void store_state(struct bt_mesh_dfu_srv *srv)
 {
-	bt_mesh_model_data_store(srv->mod, false, NULL, &srv->update,
-				 sizeof(srv->update));
+	struct dfu_srv_persistent_state state = {
+		.effect = srv->update.effect,
+		.phase = srv->update.phase,
+		.ttl = srv->update.ttl,
+		.idx = srv->update.idx,
+		.timeout_base = srv->update.timeout_base,
+		.meta = srv->update.meta,
+	};
+
+	bt_mesh_model_data_store(srv->mod, false, NULL, &state, sizeof(state));
 }
 
 static void erase_state(struct bt_mesh_dfu_srv *srv)
@@ -77,10 +95,27 @@ static void apply_rsp_sent(int err, void *cb_params)
 {
 	struct bt_mesh_dfu_srv *srv = cb_params;
 
-	if (err) {
-		/* return phase back to give client one more chance. */
+	if (err == -ETIMEDOUT) {
+		/* The response was transmitted N times without receiving a
+		 * segment ack. A spec-compliant client that received any
+		 * complete copy of the Firmware Update Status message
+		 * containing status Success and phase Applying Update has
+		 * accepted it as terminal for the Apply step (MshDFUv1.0
+		 * Section 7.1.2.6) and will not retry Update Apply. Proceed
+		 * with the apply so our state matches what the client
+		 * believes; if the client did miss the response, its retry
+		 * hits handle_apply's idempotent APPLYING branch.
+		 */
+		LOG_WRN("Apply response ack timeout, applying anyway");
+	} else if (err) {
+		/* Any other end-of-send error (buffer exhaustion, cancellation,
+		 * etc.) means the response was not successfully placed on air.
+		 * Revert the phase so a client retry of Update Apply is
+		 * accepted as a fresh apply request.
+		 */
 		srv->update.phase = BT_MESH_DFU_PHASE_VERIFY_OK;
-		LOG_WRN("Apply response failed, wait for retry (err %d)", err);
+		LOG_WRN("Apply response send failed (err %d), wait for retry",
+			err);
 		return;
 	}
 
@@ -88,17 +123,22 @@ static void apply_rsp_sent(int err, void *cb_params)
 
 	if (!srv->cb->apply || srv->update.idx == UPDATE_IDX_NONE) {
 		srv->update.phase = BT_MESH_DFU_PHASE_IDLE;
-		store_state(srv);
+		erase_state(srv);
 		LOG_DBG("Prerequisites for apply callback are wrong");
 		return;
 	}
 
 	store_state(srv);
 
+	if (srv->update.self_update) {
+		LOG_DBG("Self-update: deferring apply");
+		return;
+	}
+
 	err = srv->cb->apply(srv, &srv->imgs[srv->update.idx]);
 	if (err) {
 		srv->update.phase = BT_MESH_DFU_PHASE_IDLE;
-		store_state(srv);
+		erase_state(srv);
 		LOG_DBG("Application apply callback failed (err %d)", err);
 	}
 }
@@ -106,6 +146,9 @@ static void apply_rsp_sent(int err, void *cb_params)
 static void apply_rsp_sending(uint16_t duration, int err, void *cb_params)
 {
 	if (err) {
+		/* Start-of-send errors are never -ETIMEDOUT, so this falls
+		 * into apply_rsp_sent's revert-to-VERIFY_OK branch.
+		 */
 		apply_rsp_sent(err, cb_params);
 	}
 }
@@ -326,6 +369,7 @@ static int handle_start(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx 
 	srv->update.ttl = ttl;
 	srv->update.timeout_base = timeout_base;
 	srv->update.meta = meta_checksum;
+	srv->update.self_update = bt_mesh_has_addr(ctx->addr);
 
 	io = NULL;
 	err = srv->cb->start(srv, &srv->imgs[idx], buf, &io);
@@ -389,6 +433,7 @@ static int handle_cancel(const struct bt_mesh_model *mod, struct bt_mesh_msg_ctx
 
 	bt_mesh_blob_srv_cancel(&srv->blob);
 	srv->update.phase = BT_MESH_DFU_PHASE_IDLE;
+	erase_state(srv);
 	xfer_failed(srv);
 
 rsp:
@@ -474,16 +519,24 @@ static int dfu_srv_settings_set(const struct bt_mesh_model *mod, const char *nam
 				void *cb_arg)
 {
 	struct bt_mesh_dfu_srv *srv = mod->rt->user_data;
+	struct dfu_srv_persistent_state state;
 	ssize_t len;
 
-	if (len_rd < sizeof(srv->update)) {
+	if (len_rd < sizeof(state)) {
 		return -EINVAL;
 	}
 
-	len = read_cb(cb_arg, &srv->update, sizeof(srv->update));
+	len = read_cb(cb_arg, &state, sizeof(state));
 	if (len < 0) {
 		return len;
 	}
+
+	srv->update.effect = state.effect;
+	srv->update.phase = state.phase;
+	srv->update.ttl = state.ttl;
+	srv->update.idx = state.idx;
+	srv->update.timeout_base = state.timeout_base;
+	srv->update.meta = state.meta;
 
 	LOG_DBG("Recovered transfer (phase: %u, idx: %u)", srv->update.phase,
 		srv->update.idx);
@@ -605,6 +658,13 @@ void bt_mesh_dfu_srv_applied(struct bt_mesh_dfu_srv *srv)
 
 	srv->update.phase = BT_MESH_DFU_PHASE_IDLE;
 	store_state(srv);
+
+	/* Not set after a reboot, so the Distribution Server's own resume path
+	 * does not complete the distribution before the Confirm step re-runs.
+	 */
+	if (IS_ENABLED(CONFIG_BT_MESH_DFD_SRV) && srv->update.self_update) {
+		bt_mesh_dfd_srv_self_applied();
+	}
 }
 
 bool bt_mesh_dfu_srv_is_busy(const struct bt_mesh_dfu_srv *srv)
@@ -612,6 +672,44 @@ bool bt_mesh_dfu_srv_is_busy(const struct bt_mesh_dfu_srv *srv)
 	return srv->update.phase != BT_MESH_DFU_PHASE_IDLE &&
 	       srv->update.phase != BT_MESH_DFU_PHASE_TRANSFER_ERR &&
 	       srv->update.phase != BT_MESH_DFU_PHASE_VERIFY_FAIL;
+}
+
+int bt_mesh_dfu_srv_apply_deferred(struct bt_mesh_dfu_srv *srv)
+{
+	int err;
+
+	if (srv->update.phase != BT_MESH_DFU_PHASE_APPLYING) {
+		return 0;
+	}
+
+	if (!srv->cb->apply || srv->update.idx == UPDATE_IDX_NONE) {
+		srv->update.phase = BT_MESH_DFU_PHASE_IDLE;
+		erase_state(srv);
+		return -EINVAL;
+	}
+
+	err = srv->cb->apply(srv, &srv->imgs[srv->update.idx]);
+	if (err) {
+		srv->update.phase = BT_MESH_DFU_PHASE_IDLE;
+		erase_state(srv);
+	}
+
+	return err;
+}
+
+void bt_mesh_dfu_srv_apply_cancel(struct bt_mesh_dfu_srv *srv)
+{
+	if (srv->update.phase != BT_MESH_DFU_PHASE_APPLYING) {
+		return;
+	}
+
+	LOG_DBG("");
+
+	/* Equivalent of receiving Firmware Update Cancel, which a self-target
+	 * cannot receive over the mesh from its own Distributor.
+	 */
+	srv->update.phase = BT_MESH_DFU_PHASE_IDLE;
+	erase_state(srv);
 }
 
 uint8_t bt_mesh_dfu_srv_progress(const struct bt_mesh_dfu_srv *srv)

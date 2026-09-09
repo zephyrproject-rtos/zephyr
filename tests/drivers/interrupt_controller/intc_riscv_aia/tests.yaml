@@ -10,6 +10,8 @@ common:
     - aia
     - aplic
     - imsic
+  # test_aplic_direct_spurious_interrupt provokes a fatal error on purpose.
+  ignore_faults: true
   platform_allow:
     - qemu_riscv32/qemu_virt_riscv32/aia-imsic
     - qemu_riscv32/qemu_virt_riscv32/aia-imsic/smp

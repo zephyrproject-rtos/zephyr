@@ -32,7 +32,7 @@ struct tlc5971_data {
 };
 
 /** SPI operation word constant, SPI mode 0, CPOL = 0, CPHA = 0 */
-#define TLC5971_SPI_OPERATION (SPI_OP_MODE_MASTER | SPI_TRANSFER_MSB | SPI_WORD_SET(8))
+#define TLC5971_SPI_OPERATION (SPI_OP_MODE_CONTROLLER | SPI_TRANSFER_MSB | SPI_WORD_SET(8))
 
 /** Number of supported colors */
 #define TLC5971_NUMBER_OF_COLORS 3

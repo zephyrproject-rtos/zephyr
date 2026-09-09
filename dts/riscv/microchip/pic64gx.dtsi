@@ -244,8 +244,6 @@
 			reg = <0x20120000 0x1000>;
 			interrupt-parent = <&plic>;
 			interrupts = <51 1>;
-			interrupt-controller;
-			#interrupt-cells = <1>;
 			gpio-controller;
 			#gpio-cells = <2>;
 			ngpios = <32>;
@@ -257,8 +255,6 @@
 			reg = <0x20121000 0x1000>;
 			interrupt-parent = <&plic>;
 			interrupts = <52 1>;
-			interrupt-controller;
-			#interrupt-cells = <1>;
 			gpio-controller;
 			#gpio-cells = <2>;
 			ngpios = <32>;
@@ -270,8 +266,6 @@
 			reg = <0x20122000 0x1000>;
 			interrupt-parent = <&plic>;
 			interrupts = <53 1>;
-			interrupt-controller;
-			#interrupt-cells = <1>;
 			gpio-controller;
 			#gpio-cells = <2>;
 			ngpios = <32>;

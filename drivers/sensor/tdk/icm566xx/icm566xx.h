@@ -220,6 +220,11 @@ int icm566xx_apex_enable_pedometer(const struct device *dev, inv_imu_device_t *s
 int icm566xx_apex_enable_tilt(inv_imu_device_t *s);
 int icm566xx_apex_enable_smd(inv_imu_device_t *s);
 int icm566xx_apex_enable_wom(inv_imu_device_t *s);
+int icm566xx_apex_enable_tap(inv_imu_device_t *s);
+int icm566xx_edmp_disable_pedometer(inv_imu_device_t *s);
+int icm566xx_edmp_disable_tilt(inv_imu_device_t *s);
+int icm566xx_edmp_disable_tap(inv_imu_device_t *s);
+int icm566xx_adv_disable_wom(inv_imu_device_t *s);
 #endif
 
 #endif /* ZEPHYR_DRIVERS_SENSOR_ICM566XX_H_ */

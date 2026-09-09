@@ -292,7 +292,7 @@ static DEVICE_API(sensor, lis2dux12_driver_api) = {
  * Instantiation macros used when a device is on a SPI bus.
  */
 #define LIS2DUX12_SPI_OPERATION								\
-	(SPI_WORD_SET(8) | SPI_OP_MODE_MASTER | SPI_MODE_CPOL | SPI_MODE_CPHA)
+	(SPI_WORD_SET(8) | SPI_OP_MODE_CONTROLLER | SPI_MODE_CPOL | SPI_MODE_CPHA)
 
 #define LIS2DUX12_SPI_RTIO_DEFINE(inst, name)				\
 	SPI_DT_IODEV_DEFINE(lis2dux12_iodev_##name##_##inst,		\

@@ -12,7 +12,7 @@ how to generate USB VIF policies in XML format using the USB-C subsystem. The
 application implements a USB-C Sink device.
 
 After the USB-C Sink device is plugged into a Power Delivery charger, it
-negotiates with the charger to provide 5V@100mA and displays all
+negotiates with the charger to provide 5V at 100mA and displays all
 Power Delivery Objects (PDOs) provided by the charger.
 
 .. _usb-c-sink-sample-requirements:

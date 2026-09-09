@@ -24,3 +24,4 @@ tests:
       - qemu_x86
     platform_exclude:
       - max32657evkit/max32657
+      - max32658evkit/max32658

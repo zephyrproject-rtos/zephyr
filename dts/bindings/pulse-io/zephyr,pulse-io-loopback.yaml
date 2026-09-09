@@ -1,0 +1,17 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Software loopback Pulse IO controller. A functional backend that loops
+  transmitted symbols back on receive, for testing the subsystem API
+  without hardware.
+
+compatible: "zephyr,pulse-io-loopback"
+
+include: [pulse-io-controller.yaml]
+
+properties:
+  num-channels:
+    type: int
+    default: 4
+    description: Number of channels the controller exposes.

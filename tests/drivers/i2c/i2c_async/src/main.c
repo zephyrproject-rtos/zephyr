@@ -7,7 +7,7 @@
 #include <zephyr/ztest.h>
 #include <zephyr/drivers/i2c.h>
 
-#define EEPROM_NODE     DT_NODELABEL(eeprom0)
+#define EEPROM_NODE     DT_ALIAS(eeprom_0)
 #define EEPROM_I2C_ADDR DT_REG_ADDR(EEPROM_NODE)
 #define I2C_NODE        DT_PARENT(EEPROM_NODE)
 #define TEST_DATA_LEN   8

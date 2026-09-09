@@ -21,6 +21,7 @@ struct adc_esp32_conf {
 	adc_unit_t unit;
 	uint8_t channel_count;
 	const struct device *gpio_port;
+	const struct device *gpio_port1;
 #if defined(CONFIG_ADC_ESP32_DMA) && SOC_GDMA_SUPPORTED
 	const struct device *dma_dev;
 	uint8_t dma_channel;

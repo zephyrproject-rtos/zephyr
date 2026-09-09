@@ -29,6 +29,17 @@ properties:
   dma-channels:
     required: true
 
+  num-dedicated-irqs:
+    type: int
+    default: 0
+    description: |
+      Number of dedicated IRQ lines (1:1 mapping to channels).
+
+      IRQs 0 to (num-dedicated-irqs - 1) are dedicated to channels 0 to (num-dedicated-irqs - 1).
+      Remaining IRQs are shared among the other channels.
+      Example: num-dedicated-irqs = <4> means ch0-ch3 have dedicated IRQs,
+      and ch4+ share the remaining IRQ(s).
+
   "#dma-cells":
     type: int
     const: 2

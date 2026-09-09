@@ -35,7 +35,7 @@ extern "C" {
  * @{
  */
 
-/** RTP protocol version 2 as defined in RFC 3550. */
+/** RTP protocol version 2 as defined in @rfc{3550}. */
 #define RTP_VERSION 2
 
 /** Minimum RTP header length in bytes, excluding any CSRC list or extension. */
@@ -69,7 +69,7 @@ extern "C" {
 #define RTP_MAX_CSRC_COUNT 0
 #endif
 
-/** RTP header extension as defined in RFC 3550 section 5.3.1. */
+/** RTP header extension as defined in @rfc{3550,section-5.3.1}. */
 struct rtp_header_extension {
 	/** Profile-defined extension header identifier. */
 	uint16_t definition;
@@ -79,7 +79,7 @@ struct rtp_header_extension {
 	uint8_t *data;
 };
 
-/** RTP fixed header as defined in RFC 3550 section 5.1. */
+/** RTP fixed header as defined in @rfc{3550,section-5.1}. */
 struct rtp_header {
 	/** Raw encoding of the version, padding, extension, and CC fields. */
 	uint8_t vpxcc;

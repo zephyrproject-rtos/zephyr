@@ -23,7 +23,8 @@
 #include <soc_common.h>
 
 /* CPU 0 has an instruction and data cache, provide the defines for XCACHE */
-#ifdef CONFIG_SOC_MIMXRT798S_CM33_CPU0
+#if defined(CONFIG_SOC_MIMXRT798S_CM33_CPU0) || defined(CONFIG_SOC_MIMXRT758S_CM33_CPU0) ||        \
+	defined(CONFIG_SOC_MIMXRT735S_CM33_CPU0)
 #define NXP_XCACHE_INSTR XCACHE1
 #define NXP_XCACHE_DATA XCACHE0
 #endif

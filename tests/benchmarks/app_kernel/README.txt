@@ -5,7 +5,7 @@ Description:
 The app_kernel test is used to measure the performance of the following
 kernel objects: message queues, semaphores, memory slabs, mailboxes and pipes.
 
-When the userspace version is selected (CONF_FILE=prj_user.conf), this
+When the userspace version is selected (EXTRA_CONF_FILE=prj_user.conf), this
 benchmark will execute with four configurations (kernel/kernel, kernel/user,
 user/kernel and user/user). However, any configuration involving user threads
 will omit both the memory slabs and mailbox tests.

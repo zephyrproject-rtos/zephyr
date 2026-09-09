@@ -105,6 +105,7 @@ static inline int z_vrfy_mux_control_disconnect(const struct device *dev,
 	struct mux_control k_ctrl;
 	uint32_t k_cells[CONFIG_MUX_MAX_CELLS];
 
+	K_OOPS(K_SYSCALL_DRIVER_MUX_CONTROL(dev, disconnect));
 	K_OOPS(mux_control_copy_from_user(&k_ctrl, k_cells, control));
 
 	return z_impl_mux_control_disconnect(dev, &k_ctrl);

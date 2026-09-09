@@ -286,6 +286,11 @@ void bt_mesh_iv_update_test(bool enable)
 	atomic_set_bit_to(bt_mesh.flags, BT_MESH_IVU_TEST, enable);
 	/* Reset the duration variable - needed for some PTS tests */
 	bt_mesh.ivu_duration = 0U;
+	/* ivu_refresh() drops the beacon cache when the 96-hour limit expires. Test mode
+	 * lifts that limit without the timer running, so drop it here too, or a beacon
+	 * cached while the limit was in force would keep being filtered as a duplicate.
+	 */
+	bt_mesh_subnet_foreach(bt_mesh_beacon_cache_clear);
 }
 
 bool bt_mesh_iv_update(void)
@@ -989,10 +994,13 @@ void bt_mesh_net_recv(struct net_buf_simple *data, int8_t rssi,
 
 static void ivu_refresh(struct k_work *work)
 {
+	uint8_t prev_duration;
+
 	if (!bt_mesh_is_provisioned()) {
 		return;
 	}
 
+	prev_duration = bt_mesh.ivu_duration;
 	bt_mesh.ivu_duration = MIN(UINT8_MAX,
 	       bt_mesh.ivu_duration + BT_MESH_IVU_HOURS);
 
@@ -1012,8 +1020,10 @@ static void ivu_refresh(struct k_work *work)
 	/* Because the beacon may be cached, iv update or iv recovery
 	 * cannot be performed after 96 hours or 192 hours.
 	 * So we need clear beacon cache.
+	 * BT_MESH_IVU_HOURS need not divide the limit, so test for crossing it.
 	 */
-	if (!(bt_mesh.ivu_duration % BT_MESH_IVU_MIN_HOURS)) {
+	if (prev_duration / BT_MESH_IVU_MIN_HOURS !=
+	    bt_mesh.ivu_duration / BT_MESH_IVU_MIN_HOURS) {
 		bt_mesh_subnet_foreach(bt_mesh_beacon_cache_clear);
 	}
 

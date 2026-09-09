@@ -79,14 +79,15 @@ void sys_trace_k_thread_priority_set(struct k_thread *thread)
 	ctf_top_thread_priority_set((uint32_t)(uintptr_t)thread, thread->base.prio, name);
 }
 
-void sys_trace_k_thread_sleep_enter(k_timeout_t timeout)
+void sys_trace_k_thread_sleep_ticks_enter(k_timeout_t timeout)
 {
-	ctf_top_thread_sleep_enter(k_ticks_to_us_floor32((uint32_t)timeout.ticks));
+	ctf_top_thread_sleep_ticks_enter(k_ticks_to_us_floor32((uint32_t)timeout.ticks));
 }
 
-void sys_trace_k_thread_sleep_exit(k_timeout_t timeout, int ret)
+void sys_trace_k_thread_sleep_ticks_exit(k_timeout_t timeout, int ret)
 {
-	ctf_top_thread_sleep_exit(k_ticks_to_us_floor32((uint32_t)timeout.ticks), (uint32_t)ret);
+	ctf_top_thread_sleep_ticks_exit(k_ticks_to_us_floor32((uint32_t)timeout.ticks),
+					(uint32_t)ret);
 }
 
 void sys_trace_k_thread_create(struct k_thread *thread, size_t stack_size, int prio)
@@ -207,26 +208,6 @@ void sys_trace_k_thread_join_exit(struct k_thread *thread, k_timeout_t timeout, 
 {
 	ctf_top_thread_join_exit((uint32_t)(uintptr_t)thread, (uint32_t)timeout.ticks,
 				 (int32_t)ret);
-}
-
-void sys_trace_k_thread_msleep_enter(int32_t ms)
-{
-	ctf_top_thread_msleep_enter(ms);
-}
-
-void sys_trace_k_thread_msleep_exit(int32_t ms, int ret)
-{
-	ctf_top_thread_msleep_exit(ms, (int32_t)ret);
-}
-
-void sys_trace_k_thread_usleep_enter(int32_t us)
-{
-	ctf_top_thread_usleep_enter(us);
-}
-
-void sys_trace_k_thread_usleep_exit(int32_t us, int ret)
-{
-	ctf_top_thread_usleep_exit(us, (int32_t)ret);
 }
 
 void sys_trace_k_thread_busy_wait_enter(uint32_t usec_to_wait)

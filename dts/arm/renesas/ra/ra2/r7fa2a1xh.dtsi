@@ -108,6 +108,23 @@
 			variant = "ctsua";
 			status = "disabled";
 		};
+
+		usbfs: usbfs@40090000 {
+			compatible = "renesas,ra-usbfs";
+			reg = <0x40090000 0x2000>;
+			interrupts = <20 1>, <21 1>;
+			interrupt-names = "usbfs-i", "usbfs-r";
+			maximum-speed = "full-speed";
+			num-bidir-endpoints = <5>;
+			phys = <&usbfs_phy>;
+			phys-clock = <&uclk>;
+			status = "disabled";
+
+			udc {
+				compatible = "renesas,ra-udc";
+				status = "disabled";
+			};
+		};
 	};
 
 	clocks: clocks {
@@ -203,6 +220,11 @@
 				status = "disabled";
 			};
 		};
+	};
+
+	usbfs_phy: usbfs-phy {
+		compatible = "usb-nop-xceiv";
+		#phy-cells = <0>;
 	};
 };
 

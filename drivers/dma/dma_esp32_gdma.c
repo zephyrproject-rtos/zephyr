@@ -89,9 +89,6 @@ struct dma_esp32_data {
 #if defined(SOC_AXI_GDMA_SUPPORTED)
 	bool is_axi;
 #endif
-#if CONFIG_PM
-	bool pm_policy_state_on;
-#endif
 };
 
 enum dma_channel_dir {
@@ -125,7 +122,7 @@ struct dma_esp32_channel {
 	void *user_data;
 	esp_dma_desc_t desc_list[CONFIG_DMA_ESP32_MAX_DESCRIPTOR_NUM];
 #if CONFIG_PM
-	bool m2m_transfer;
+	bool pm_lock_held;
 #endif
 };
 
@@ -214,26 +211,24 @@ static inline void dma_ll_force_reg_clock(struct dma_esp32_data *data, bool en)
 #endif /* SOC_AXI_GDMA_SUPPORTED */
 
 #if CONFIG_PM
-static void IRAM_ATTR dma_esp32_pm_policy_state_lock_get(const struct device *dev)
+static void IRAM_ATTR dma_esp32_pm_policy_state_lock_get(struct dma_esp32_channel *dma_channel_rx)
 {
-	struct dma_esp32_data *data = dev->data;
 	unsigned int key = irq_lock();
 
-	if (!data->pm_policy_state_on) {
-		data->pm_policy_state_on = true;
+	if (!dma_channel_rx->pm_lock_held) {
+		dma_channel_rx->pm_lock_held = true;
 		pm_policy_state_all_lock_get();
 	}
 
 	irq_unlock(key);
 }
 
-static void IRAM_ATTR dma_esp32_pm_policy_state_lock_put(const struct device *dev)
+static void IRAM_ATTR dma_esp32_pm_policy_state_lock_put(struct dma_esp32_channel *dma_channel_rx)
 {
-	struct dma_esp32_data *data = dev->data;
 	unsigned int key = irq_lock();
 
-	if (data->pm_policy_state_on) {
-		data->pm_policy_state_on = false;
+	if (dma_channel_rx->pm_lock_held) {
+		dma_channel_rx->pm_lock_held = false;
 		pm_policy_state_all_lock_put();
 	}
 
@@ -250,7 +245,7 @@ static void dma_esp32_cache_flush_data(struct dma_esp32_channel *dma_channel)
 {
 	esp_dma_desc_t *desc = dma_channel->desc_list;
 
-	for (int i = 0; i < CONFIG_DMA_ESP32_MAX_DESCRIPTOR_NUM && desc; ++i) {
+	for (int i = 0; i < ARRAY_SIZE(dma_channel->desc_list) && desc; ++i) {
 		if (desc->buffer && desc->dw0.size) {
 			sys_cache_data_flush_range(desc->buffer, desc->dw0.size);
 		}
@@ -269,7 +264,7 @@ static void dma_esp32_cache_invd_data(struct dma_esp32_channel *dma_channel)
 	const size_t line = sys_cache_data_line_size_get();
 	esp_dma_desc_t *desc = dma_channel->desc_list;
 
-	for (int i = 0; i < CONFIG_DMA_ESP32_MAX_DESCRIPTOR_NUM && desc; ++i) {
+	for (int i = 0; i < ARRAY_SIZE(dma_channel->desc_list) && desc; ++i) {
 		if (desc->buffer && desc->dw0.size) {
 			uintptr_t start = (uintptr_t)desc->buffer;
 			uintptr_t end = start + desc->dw0.size;
@@ -311,9 +306,8 @@ static void IRAM_ATTR dma_esp32_isr_handle_rx(const struct device *dev,
 	}
 
 #if CONFIG_PM
-	if (pm_unlock && rx->m2m_transfer) {
-		rx->m2m_transfer = false;
-		dma_esp32_pm_policy_state_lock_put(dev);
+	if (pm_unlock) {
+		dma_esp32_pm_policy_state_lock_put(rx);
 	}
 #endif
 
@@ -370,7 +364,7 @@ static int dma_esp32_config_descriptor(struct dma_esp32_channel *dma_channel,
 	uint32_t target_address = 0, block_size = 0;
 	esp_dma_desc_t *desc_iter = dma_channel->desc_list;
 
-	for (int i = 0; i < CONFIG_DMA_ESP32_MAX_DESCRIPTOR_NUM; ++i) {
+	for (int i = 0; i < ARRAY_SIZE(dma_channel->desc_list); ++i) {
 		if (block_size == 0) {
 			if (dma_channel->dir == DMA_TX) {
 				target_address = block->source_address;
@@ -408,6 +402,11 @@ static int dma_esp32_config_descriptor(struct dma_esp32_channel *dma_channel,
 			}
 
 			block_size = block->block_size;
+
+			if (block_size == 0) {
+				LOG_ERR("Zero-length DMA block is not allowed");
+				return -EINVAL;
+			}
 		}
 
 		uint32_t buffer_size;
@@ -445,7 +444,7 @@ static int dma_esp32_config_descriptor(struct dma_esp32_channel *dma_channel,
 		desc_iter += 1;
 	}
 
-	if (desc_iter->next) {
+	if (desc_iter == dma_channel->desc_list + ARRAY_SIZE(dma_channel->desc_list)) {
 		memset(dma_channel->desc_list, 0, sizeof(dma_channel->desc_list));
 		LOG_ERR("Run out of DMA descriptors. Increase CONFIG_DMA_ESP32_MAX_DESCRIPTOR_NUM");
 		return -EINVAL;
@@ -542,13 +541,15 @@ static int dma_esp32_config(const struct device *dev, uint32_t channel,
 			    struct dma_config *config_dma)
 {
 	struct dma_esp32_config *config = (struct dma_esp32_config *)dev->config;
-	struct dma_esp32_channel *dma_channel = &config->dma_channel[channel];
+	struct dma_esp32_channel *dma_channel;
 	int ret = 0;
 
 	if (channel >= config->dma_channel_max) {
 		LOG_ERR("Unsupported channel");
 		return -EINVAL;
 	}
+
+	dma_channel = &config->dma_channel[channel];
 
 	if (!config_dma) {
 		return -EINVAL;
@@ -602,12 +603,14 @@ static int dma_esp32_start(const struct device *dev, uint32_t channel)
 {
 	struct dma_esp32_config *config = (struct dma_esp32_config *)dev->config;
 	struct dma_esp32_data *data = (struct dma_esp32_data *const)(dev)->data;
-	struct dma_esp32_channel *dma_channel = &config->dma_channel[channel];
+	struct dma_esp32_channel *dma_channel;
 
 	if (channel >= config->dma_channel_max) {
 		LOG_ERR("Unsupported channel");
 		return -EINVAL;
 	}
+
+	dma_channel = &config->dma_channel[channel];
 
 	if (dma_channel->periph_id == SOC_GDMA_TRIG_PERIPH_M2M0) {
 		struct dma_esp32_channel *dma_channel_rx =
@@ -616,8 +619,7 @@ static int dma_esp32_start(const struct device *dev, uint32_t channel)
 			&config->dma_channel[(dma_channel->channel_id * 2) + 1];
 
 #if CONFIG_PM
-		dma_channel_rx->m2m_transfer = true;
-		dma_esp32_pm_policy_state_lock_get(dev);
+		dma_esp32_pm_policy_state_lock_get(dma_channel_rx);
 #endif
 		gdma_hal_enable_intr(&data->hal, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_RX,
 				     GDMA_LL_EVENT_RX_SUC_EOF | GDMA_LL_EVENT_RX_DONE, true);
@@ -657,12 +659,14 @@ static int dma_esp32_stop(const struct device *dev, uint32_t channel)
 {
 	struct dma_esp32_config *config = (struct dma_esp32_config *)dev->config;
 	struct dma_esp32_data *data = (struct dma_esp32_data *const)(dev)->data;
-	struct dma_esp32_channel *dma_channel = &config->dma_channel[channel];
+	struct dma_esp32_channel *dma_channel;
 
 	if (channel >= config->dma_channel_max) {
 		LOG_ERR("Unsupported channel");
 		return -EINVAL;
 	}
+
+	dma_channel = &config->dma_channel[channel];
 
 	if (dma_channel->periph_id == SOC_GDMA_TRIG_PERIPH_M2M0) {
 		gdma_hal_enable_intr(&data->hal, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_RX,
@@ -675,14 +679,9 @@ static int dma_esp32_stop(const struct device *dev, uint32_t channel)
 		struct dma_esp32_channel *dma_channel_rx =
 			&config->dma_channel[dma_channel->channel_id * 2];
 
-		if (dma_channel_rx->m2m_transfer) {
-			dma_channel_rx->m2m_transfer = false;
-			dma_esp32_pm_policy_state_lock_put(dev);
-		}
+		dma_esp32_pm_policy_state_lock_put(dma_channel_rx);
 #endif
-	}
-
-	if (dma_channel->dir == DMA_RX) {
+	} else if (dma_channel->dir == DMA_RX) {
 		gdma_hal_enable_intr(&data->hal, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_RX,
 				     GDMA_LL_RX_EVENT_MASK, false);
 		gdma_hal_stop(&data->hal, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_RX);
@@ -700,13 +699,15 @@ static int dma_esp32_get_status(const struct device *dev, uint32_t channel,
 {
 	struct dma_esp32_config *config = (struct dma_esp32_config *)dev->config;
 	struct dma_esp32_data *data = (struct dma_esp32_data *const)(dev)->data;
-	struct dma_esp32_channel *dma_channel = &config->dma_channel[channel];
+	struct dma_esp32_channel *dma_channel;
 	esp_dma_desc_t *desc;
 
 	if (channel >= config->dma_channel_max) {
 		LOG_ERR("Unsupported channel");
 		return -EINVAL;
 	}
+
+	dma_channel = &config->dma_channel[channel];
 
 	if (!status) {
 		return -EINVAL;
@@ -750,12 +751,26 @@ static int dma_esp32_reload(const struct device *dev, uint32_t channel, uint32_t
 {
 	struct dma_esp32_config *config = (struct dma_esp32_config *)dev->config;
 	struct dma_esp32_data *data = (struct dma_esp32_data *const)(dev)->data;
-	struct dma_esp32_channel *dma_channel = &config->dma_channel[channel];
-	esp_dma_desc_t *desc_iter = dma_channel->desc_list;
+	struct dma_esp32_channel *dma_channel;
+	esp_dma_desc_t *desc_iter;
 	uint32_t buf;
 
 	if (channel >= config->dma_channel_max) {
 		LOG_ERR("Unsupported channel");
+		return -EINVAL;
+	}
+
+	dma_channel = &config->dma_channel[channel];
+	desc_iter = dma_channel->desc_list;
+
+	if (size == 0) {
+		LOG_ERR("Zero-length DMA block is not allowed for a reload");
+		return -EINVAL;
+	}
+
+	if (size > ARRAY_SIZE(dma_channel->desc_list) *
+		   DMA_DESCRIPTOR_BUFFER_MAX_SIZE_4B_ALIGNED) {
+		LOG_ERR("Not enough DMA descriptors. Increase CONFIG_DMA_ESP32_MAX_DESCRIPTOR_NUM");
 		return -EINVAL;
 	}
 
@@ -791,8 +806,8 @@ static int dma_esp32_reload(const struct device *dev, uint32_t channel, uint32_t
 		desc_iter += 1;
 	}
 
-	if (desc_iter->next) {
-		memset(desc_iter, 0, sizeof(esp_dma_desc_t));
+	if (desc_iter == dma_channel->desc_list + ARRAY_SIZE(dma_channel->desc_list)) {
+		memset(dma_channel->desc_list, 0, sizeof(dma_channel->desc_list));
 		LOG_ERR("Not enough DMA descriptors. Increase CONFIG_DMA_ESP32_MAX_DESCRIPTOR_NUM");
 		return -EINVAL;
 	}

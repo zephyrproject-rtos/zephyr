@@ -182,7 +182,32 @@ static void start_tls_test(uint32_t thread_options)
 	zassert_true(passed, "Test failed");
 }
 
-ZTEST(thread_tls, test_tls)
+/**
+ * @brief Verify that thread-local variables are private to each thread.
+ *
+ * @ingroup kernel_thread_tests
+ *
+ * @details
+ * A variable declared thread-local must resolve to a separate instance per
+ * thread, so writes made by one thread are invisible to every other one.
+ * Several threads run the same body concurrently, each writing a value derived
+ * from its own identity and then checking that what it reads back is still its
+ * own; a shared instance would show up as a thread observing a neighbour's
+ * value. Skipped when userspace is enabled, as the user-mode case below covers
+ * that configuration.
+ *
+ * Test steps:
+ * - Spawn the worker threads in supervisor mode.
+ * - In each thread, write to the thread-local variables, yield to let the
+ *   others run, and read them back.
+ * - Collect the per-thread results once every thread has finished.
+ *
+ * Expected result:
+ * - Every thread reads back only the values it wrote itself.
+ *
+ * @see Z_THREAD_LOCAL
+ */
+ZTEST(thread_tls, test_tls_vars_are_per_thread)
 {
 	if (IS_ENABLED(CONFIG_USERSPACE)) {
 		ztest_test_skip();
@@ -192,9 +217,33 @@ ZTEST(thread_tls, test_tls)
 	start_tls_test(0);
 }
 
-ZTEST_USER(thread_tls, test_tls_userspace)
+/**
+ * @brief Verify that thread-local variables stay private in user mode.
+ *
+ * @ingroup kernel_thread_tests
+ *
+ * @details
+ * User threads reach their thread-local storage through the same mechanism as
+ * supervisor threads but under memory protection, where the TLS block has to
+ * be mapped into the thread's own domain. The same isolation check is
+ * therefore repeated with the workers spawned as user threads, so a TLS block
+ * that is shared or unreachable under userspace is caught.
+ *
+ * Test steps:
+ * - Spawn the worker threads with K_USER, inheriting the caller's permissions.
+ * - In each thread, write to the thread-local variables, yield to let the
+ *   others run, and read them back.
+ * - Collect the per-thread results once every thread has finished.
+ *
+ * Expected result:
+ * - Every user thread reads back only the values it wrote itself.
+ *
+ * @see Z_THREAD_LOCAL
+ * @see k_thread_create()
+ */
+ZTEST_USER(thread_tls, test_tls_vars_are_per_thread_user)
 {
-	/* TLS test in supervisor mode */
+	/* TLS test in user mode */
 	start_tls_test(K_USER | K_INHERIT_PERMS);
 }
 

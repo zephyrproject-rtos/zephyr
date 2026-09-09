@@ -130,12 +130,6 @@ class PyOcdBinaryRunner(ZephyrBinaryRunner):
             frequency=args.frequency,
             tool_opt=args.tool_opt)
 
-        daparg = os.environ.get('PYOCD_DAPARG')
-        if not ret.daparg_args and daparg:
-            ret.logger.warning('PYOCD_DAPARG is deprecated; use --daparg')
-            ret.logger.debug(f'--daparg={daparg} via PYOCD_DAPARG')
-            ret.daparg_args = ['-da', daparg]
-
         return ret
 
     def port_args(self):

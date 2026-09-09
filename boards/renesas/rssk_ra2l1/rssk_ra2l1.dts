@@ -21,7 +21,8 @@
 
 	chosen {
 		zephyr,sram = &sram0;
-		zephyr,flash = &flash0;
+		zephyr,flash-controller = &code_flash_ctrl;
+		zephyr,flash = &code_flash;
 		zephyr,console = &uart9;
 		zephyr,shell-uart = &uart9;
 	};
@@ -132,6 +133,20 @@
 
 &wdt {
 	status = "okay";
+};
+
+&data_flash {
+	partitions {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		storage_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			label = "storage";
+			reg = <0x0 DT_SIZE_K(8)>;
+		};
+	};
 };
 
 &ctsu {

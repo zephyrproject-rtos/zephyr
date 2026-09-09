@@ -94,3 +94,15 @@ properties:
     description: |
       Disable thermistor control over the charger. Alerts are still generated.
       Clears the TS_EN bit in the control register.
+
+  termination-current-percent:
+    type: string
+    enum:
+      - "Disable"
+      - "5%"
+      - "10%"
+      - "20%"
+    default: "10%"
+    description:
+      Current at which charging terminates, as a percentage of maximum charge
+      current. Default matches the register reset value.

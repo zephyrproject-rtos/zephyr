@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2023-2024 Analog Devices, Inc.
+ * Copyright (c) 2023-2026 Analog Devices, Inc.
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -16,6 +16,7 @@
 	compatible = "adi,max32690fthr";
 
 	chosen {
+		zephyr,code-partition = &code_partition;
 		zephyr,console = &uart0;
 		zephyr,shell-uart = &uart0;
 		zephyr,sram = &sram0;
@@ -148,4 +149,24 @@ feather_spi: &spi0 {
 
 zephyr_udc0: &usbhs {
 	status = "okay";
+};
+
+&flash0 {
+	partitions {
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges;
+
+		code_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			label = "image-m4";
+			reg = <0x0 DT_SIZE_K(3008)>;
+		};
+
+		storage_partition: partition@2f0000 {
+			compatible = "zephyr,mapped-partition";
+			label = "storage";
+			reg = <0x2f0000 DT_SIZE_K(64)>;
+		};
+	};
 };

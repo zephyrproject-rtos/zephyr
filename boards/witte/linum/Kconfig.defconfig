@@ -5,7 +5,7 @@
 
 if BOARD_LINUM
 
-configdefault NET_L2_ETHERNET
+configdefault ETH_DRIVER
 	default y
 
 endif # BOARD_LINUM

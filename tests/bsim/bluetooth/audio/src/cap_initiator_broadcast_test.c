@@ -101,19 +101,7 @@ static const struct named_lc3_preset lc3_broadcast_presets[] = {
 
 static void broadcast_stream_started_cb(struct bt_bap_stream *stream)
 {
-	struct audio_test_stream *test_stream = audio_test_stream_from_bap_stream(stream);
-	int err;
-
-	test_stream->seq_num = 0U;
-	test_stream->tx_cnt = 0U;
-
-	LOG_INF("Stream %p started", stream);
-
-	err = bap_stream_tx_register(stream);
-	if (err != 0) {
-		FAIL("Failed to register stream %p for TX: %d\n", stream, err);
-		return;
-	}
+	bap_common_stream_started_cb(stream);
 
 	k_sem_give(&sem_broadcast_stream_started);
 }
@@ -402,12 +390,6 @@ static void test_broadcast_audio_create(struct bt_cap_broadcast_source **broadca
 	if (err != 0) {
 		FAIL("Unable to start broadcast source: %d\n", err);
 		return;
-	}
-
-	for (size_t i = 0U; i < ARRAY_SIZE(broadcast_source_streams); i++) {
-		struct audio_test_stream *test_stream = &broadcast_source_streams[i];
-
-		test_stream->tx_sdu_size = create_param.qos->sdu;
 	}
 
 	LOG_INF("Broadcast source created with %zu broadcast_streams",
@@ -832,11 +814,6 @@ static int test_cap_initiator_ac(const struct cap_initiator_ac_param *param)
 	}
 
 	stream_count = param->stream_cnt;
-	for (size_t i = 0U; i < stream_count; i++) {
-		struct audio_test_stream *test_stream = &broadcast_source_streams[i];
-
-		test_stream->tx_sdu_size = create_param.qos->sdu;
-	}
 
 	test_broadcast_audio_start(broadcast_source, adv);
 	setup_extended_adv_data(broadcast_source, adv);

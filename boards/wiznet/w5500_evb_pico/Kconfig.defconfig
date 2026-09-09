@@ -4,7 +4,7 @@
 
 if BOARD_W5500_EVB_PICO
 
-configdefault NET_L2_ETHERNET
+configdefault ETH_DRIVER
 	default y
 
 if I2C_DW

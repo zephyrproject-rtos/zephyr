@@ -1857,6 +1857,7 @@ static int dai_ssp_check_aux_data(struct ssp_intel_aux_tlv *aux_tlv, int aux_len
 	case SSP_DMA_TRANSMISSION_START:
 	case SSP_DMA_TRANSMISSION_STOP:
 		size = sizeof(struct ssp_intel_tr_ctl);
+		break;
 	case SSP_DMA_ALWAYS_RUNNING_MODE:
 		size = sizeof(struct ssp_intel_run_ctl);
 		break;

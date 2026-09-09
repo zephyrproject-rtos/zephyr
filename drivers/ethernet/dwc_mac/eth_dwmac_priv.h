@@ -14,6 +14,7 @@
 #ifndef ZEPHYR_DRIVERS_ETHERNET_ETH_DWMAC_PRIV_H_
 #define ZEPHYR_DRIVERS_ETHERNET_ETH_DWMAC_PRIV_H_
 
+#include <zephyr/devicetree.h>
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/sys/device_mmio.h>
@@ -73,6 +74,22 @@
 /* number of hardware descriptors in uncached memory */
 #define NB_TX_DESCS		CONFIG_DWMAC_NB_TX_DESCS
 #define NB_RX_DESCS		CONFIG_DWMAC_NB_RX_DESCS
+
+/*
+ * The devicetree node of the first MAC instance. The snps,dwmac properties
+ * are assumed to be the same for all instances.
+ */
+
+BUILD_ASSERT(DT_HAS_COMPAT_STATUS_OKAY(snps_dwmac),
+	     "No device tree node with compatible \"snps,dwmac\" found");
+
+#define DWMAC_DT_NODE DT_INST(0, snps_dwmac)
+
+/* multicast filter capabilities of the hardware */
+#define DWMAC_MULTICAST_FILTER_BINS	DT_PROP_OR(DWMAC_DT_NODE, snps_multicast_filter_bins, 0)
+#define DWMAC_PERFECT_FILTER_ENTRIES	DT_PROP(DWMAC_DT_NODE, snps_perfect_filter_entries)
+/* MAC address entry 0 holds the station address */
+#define DWMAC_MULTICAST_PERFECT_SLOTS	(DWMAC_PERFECT_FILTER_ENTRIES - 1)
 
 /* stack size for RX refill thread */
 #define RX_REFILL_STACK_SIZE	1024
@@ -211,6 +228,7 @@ struct dwmac_priv {
 int dwmac_probe(const struct device *dev);
 int dwmac_bus_init(const struct device *dev);
 int dwmac_platform_init(const struct device *dev);
+void dwmac_setup_multicast_filter(const struct device *dev, const struct ethernet_filter *filter);
 void dwmac_isr(const struct device *ddev);
 #if defined(CONFIG_PTP_CLOCK_DWC_MAC)
 const struct device *dwmac_get_ptp_clock(const struct device *dev, struct net_if *iface);
@@ -1394,9 +1412,16 @@ extern const struct ethernet_api dwmac_api;
 /* GMAC register map */
 #define DWMAC_MACCR      (DWMAC_MAC_OFFSET + 0x0000)
 #define DWMAC_MACFFR     (DWMAC_MAC_OFFSET + 0x0004)
+#define DWMAC_MACHTHR    (DWMAC_MAC_OFFSET + 0x0008)
+#define DWMAC_MACHTLR    (DWMAC_MAC_OFFSET + 0x000C)
 #define DWMAC_MACVERR    (DWMAC_MAC_OFFSET + 0x0020)
-#define DWMAC_MACA0HR    (DWMAC_MAC_OFFSET + 0x0040)
-#define DWMAC_MACA0LR    (DWMAC_MAC_OFFSET + 0x0044)
+#define DWMAC_MACAHR(n)  (DWMAC_MAC_OFFSET + 0x0040 + 8 * (n))
+#define DWMAC_MACALR(n)  (DWMAC_MAC_OFFSET + 0x0044 + 8 * (n))
+#define DWMAC_MACA0HR    DWMAC_MACAHR(0)
+#define DWMAC_MACA0LR    DWMAC_MACALR(0)
+
+/* MAC address high register bits (entries 1 and up) */
+#define DWMAC_MACAHR_AE  BIT(31)
 
 #define DWMAC_DMABMR       (DWMAC_DMA_OFFSET + 0x0000)
 #define DWMAC_DMATPDR      (DWMAC_DMA_OFFSET + 0x0004)
@@ -1420,6 +1445,7 @@ extern const struct ethernet_api dwmac_api;
 
 /* MAC frame filter bits */
 #define DWMAC_MACFFR_PM    BIT(0)
+#define DWMAC_MACFFR_HM    BIT(2)
 #define DWMAC_MACFFR_PAM   BIT(4)
 
 /* DMA status bits */

@@ -6,7 +6,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <nxp/kinetis/MKV58F1M0VLQ24-pinctrl.h>
+#include <nxp/kinetis/kv5x/pinctrl/MKV58F1M0VLQ24-pinctrl.h>
 
 &pinctrl {
 	i2c1_default: i2c1_default {

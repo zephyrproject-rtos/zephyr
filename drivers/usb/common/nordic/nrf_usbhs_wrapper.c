@@ -9,6 +9,7 @@
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
 #include <zephyr/drivers/regulator.h>
+#include <nrf_usbhs_phy_config.h>
 #include <nrf_usbhs_wrapper.h>
 
 #include <zephyr/logging/log.h>
@@ -42,6 +43,7 @@ static const char *const bc12_state_str[] = {
 struct usbhs_wrapper_config {
 	NRF_USBHS_Type *base;
 	const struct device *vregusb_dev;
+	uint32_t phy_config;
 };
 
 struct nrf_usbhs_wrapper_data {
@@ -133,6 +135,9 @@ static void wrapper_enable_core_internal(const struct device *dev)
 
 	/* Power up peripheral */
 	wrapper->ENABLE = USBHS_ENABLE_CORE_Msk;
+
+	/* Set PHY strapping options */
+	wrapper->PHY.CONFIG = config->phy_config;
 
 	/* Set role to Device, force D+ pull-up off by overriding VBUS valid signal */
 	wrapper->PHY.OVERRIDEVALUES = USBHS_PHY_OVERRIDEVALUES_ID_Msk;
@@ -483,6 +488,7 @@ static int usbhs_wrapper_init(const struct device *dev)
 	static const struct usbhs_wrapper_config usbhs_wrapper_config_##n = {	\
 		.base = (void *)(DT_INST_REG_ADDR(n)),				\
 		.vregusb_dev = DEVICE_DT_GET(DT_INST_PHANDLE(n, regulator)),	\
+		.phy_config = PHY_CONFIG(DT_INST_PHANDLE(n, phy)),		\
 	};									\
 										\
 	static struct nrf_usbhs_wrapper_data usbhs_wrapper_data_##n;		\

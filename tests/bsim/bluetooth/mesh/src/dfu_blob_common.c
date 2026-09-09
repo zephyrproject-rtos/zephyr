@@ -47,14 +47,39 @@ void common_sar_conf(uint16_t addr)
 {
 	int err;
 
-	/* Reconfigure SAR Transmitter state to change compile-time configuration to default
-	 * configuration.
+	/* Reconfigure SAR Transmitter and Receiver states so BLOB and DFU transfers
+	 * complete without segment retransmission storms in the bsim environment.
+	 *
+	 * Timing invariants that must hold to avoid false -ETIMEDOUT on TX and
+	 * unnecessary retransmit bursts:
+	 *   1. unicast retransmission timeout > max ACK_DELAY, so TX does not
+	 *      retransmit before RX has a chance to send the segment ack.
+	 *   2. unicast_retrans_count > 0 so the transport gets more than one
+	 *      chance to deliver a segmented message; single-attempt delivery
+	 *      is too fragile when multiple Targets respond concurrently to a
+	 *      multicast Firmware Update Apply and their unicast responses
+	 *      collide in bsim's 2.4 GHz airtime model.
+	 *
+	 * With the values below at ttl=1:
+	 *   - RX_SEG_INT_MS      = (0xf + 1) * 10  = 160 ms
+	 *   - max ACK_DELAY      = (0 * 2 + 3) * 160 / 2 = 240 ms
+	 *   - RETRANS_TIMEOUT@1  = (0xf + 1) * 25 = 400 ms
+	 *   - Total TX budget    = (2 + 1) * 400  = 1200 ms
+	 * so the ack always arrives well before the first retransmission fires
+	 * on the ideal path (no storm), but there are two extra attempts in
+	 * reserve when a segment collision drops the initial burst. Only
+	 * unacked segments are retransmitted (see seg_tx_send_unacked in
+	 * transport.c), so the retry cost scales with actual loss, not with
+	 * the retry budget.
+	 * With seg_thresh = 0x1f (max), the RX side does not retransmit acks,
+	 * so lowering ack_delay_inc only shortens ack latency without adding
+	 * airtime.
 	 */
 	struct bt_mesh_sar_tx tx_set = {
 		.seg_int_step = 1,
-		.unicast_retrans_count = 0,
-		.unicast_retrans_without_prog_count = 2,
-		.unicast_retrans_int_step = 7,
+		.unicast_retrans_count = 2,
+		.unicast_retrans_without_prog_count = 3,
+		.unicast_retrans_int_step = 0xf,
 		.unicast_retrans_int_inc = 1,
 		.multicast_retrans_count = 2,
 		.multicast_retrans_int = 3,
@@ -66,12 +91,9 @@ void common_sar_conf(uint16_t addr)
 		FAIL("Failed to configure SAR Transmitter state (err %d)", err);
 	}
 
-	/* Reconfigure SAR Receiver state so that the transport layer doesn't generate SegAcks too
-	 * frequently.
-	 */
 	struct bt_mesh_sar_rx rx_set = {
 		.seg_thresh = 0x1f,
-		.ack_delay_inc = 7,
+		.ack_delay_inc = 0,
 		.discard_timeout = 1,
 		.rx_seg_int_step = 0xf,
 		.ack_retrans_count = 1,

@@ -54,7 +54,10 @@ void idle(void *unused1, void *unused2, void *unused3)
 		bool system_suspended = false;
 
 		if (!k_is_pre_kernel()) {
-			_kernel.idle = z_get_next_timeout_expiry();
+			/* Value preserving: the helper returns either at most
+			 * SYS_CLOCK_MAX_WAIT (== INT32_MAX) or K_TICKS_FOREVER.
+			 */
+			_kernel.idle = (int32_t)z_get_next_timeout_expiry();
 
 			/*
 			 * Call the suspend hook function of the soc interface

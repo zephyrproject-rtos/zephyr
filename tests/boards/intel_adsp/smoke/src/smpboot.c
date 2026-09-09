@@ -5,6 +5,7 @@
 #include <zephyr/kernel.h>
 #include <zephyr/kernel/smp.h>
 #include <zephyr/ztest.h>
+#include <zephyr/devicetree.h>
 #include "tests.h"
 
 /* Experimentally 10ms is enough time to get the second CPU to run on
@@ -16,7 +17,18 @@
 #define CPU_IPI_DELAY 250
 
 BUILD_ASSERT(CONFIG_SMP);
-BUILD_ASSERT(CONFIG_SMP_BOOT_DELAY);
+
+/* The test brings up every secondary core itself and checks that each one is
+ * idle beforehand, so none of them may be started during kernel boot. Assert
+ * that here rather than discovering a missing overlay entry as a runtime
+ * failure on the one board that has more cores than the others.
+ */
+#define CPU_MUST_DEFER_START(node_id)                                                              \
+	BUILD_ASSERT(DT_SAME_NODE(node_id, DT_PATH(cpus, cpu_0)) ||                                \
+			     DT_PROP_OR(node_id, zephyr_deferred_start, 0),                        \
+		     "every secondary cpu node needs zephyr,deferred-start for this test");
+
+DT_FOREACH_CPU(CPU_MUST_DEFER_START)
 
 #define STACKSZ 2048
 char stack[STACKSZ];

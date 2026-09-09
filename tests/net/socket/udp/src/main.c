@@ -2870,6 +2870,77 @@ ZTEST(net_socket_udp, test_v4_ttl)
 		       NET_AF_INET, ttl, 0);
 }
 
+/* A multicast sender must be handed a copy of its own datagram while
+ * IP_MULTICAST_LOOP is enabled. Run this over Ethernet on purpose: the copy is
+ * cloned before the L2 header is written, so only an L2 that has a header of
+ * its own catches the copy being run through L2 processing on receive.
+ */
+ZTEST(net_socket_udp, test_v4_mcast_loop)
+{
+	struct net_sockaddr_in bind_addr = { 0 };
+	struct net_sockaddr_in mcast_addr = { 0 };
+	struct net_ip_mreqn mreqn = { 0 };
+	int loop = 1;
+	int send_sock;
+	int recv_sock;
+	int ret;
+
+	memcpy(&mreqn.imr_multiaddr, &my_mcast_addr2, sizeof(mreqn.imr_multiaddr));
+	mreqn.imr_ifindex = net_if_get_by_iface(eth_iface);
+
+	mcast_addr.sin_family = NET_AF_INET;
+	mcast_addr.sin_port = net_htons(SERVER_PORT);
+	memcpy(&mcast_addr.sin_addr, &my_mcast_addr2, sizeof(mcast_addr.sin_addr));
+
+	recv_sock = zsock_socket(NET_AF_INET, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
+	zassert_true(recv_sock >= 0, "Cannot create socket (%d)", -errno);
+
+	bind_addr.sin_family = NET_AF_INET;
+	bind_addr.sin_port = net_htons(SERVER_PORT);
+	bind_addr.sin_addr.s_addr = net_htonl(NET_INADDR_ANY);
+	ret = zsock_bind(recv_sock, (struct net_sockaddr *)&bind_addr, sizeof(bind_addr));
+	zassert_ok(ret, "Cannot bind socket (%d)", -errno);
+
+	ret = zsock_setsockopt(recv_sock, NET_IPPROTO_IP, ZSOCK_IP_ADD_MEMBERSHIP,
+			       &mreqn, sizeof(mreqn));
+	zassert_ok(ret, "Cannot join multicast group (%d)", -errno);
+
+	/* Bind the sender to the Ethernet address so the datagram leaves over
+	 * Ethernet, and to a different port because a datagram whose source is
+	 * one of our own addresses is rejected when the ports match.
+	 */
+	send_sock = zsock_socket(NET_AF_INET, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
+	zassert_true(send_sock >= 0, "Cannot create socket (%d)", -errno);
+
+	bind_addr.sin_port = net_htons(CLIENT_PORT);
+	memcpy(&bind_addr.sin_addr, &my_addr2, sizeof(bind_addr.sin_addr));
+	ret = zsock_bind(send_sock, (struct net_sockaddr *)&bind_addr, sizeof(bind_addr));
+	zassert_ok(ret, "Cannot bind socket (%d)", -errno);
+
+	ret = zsock_setsockopt(send_sock, NET_IPPROTO_IP, ZSOCK_IP_MULTICAST_LOOP,
+			       &loop, sizeof(loop));
+	zassert_ok(ret, "Cannot enable multicast loop (%d)", -errno);
+
+	ret = zsock_sendto(send_sock, TEST_STR_SMALL, strlen(TEST_STR_SMALL), 0,
+			   (struct net_sockaddr *)&mcast_addr, sizeof(mcast_addr));
+	zassert_equal(ret, strlen(TEST_STR_SMALL), "Cannot send (%d)", -errno);
+
+	k_msleep(10);
+
+	memset(rx_buf, 0, sizeof(rx_buf));
+	ret = zsock_recv(recv_sock, rx_buf, sizeof(rx_buf), ZSOCK_MSG_DONTWAIT);
+	zassert_equal(ret, strlen(TEST_STR_SMALL),
+		      "Sender did not get its own multicast back (%d)", -errno);
+	zassert_mem_equal(rx_buf, TEST_STR_SMALL, strlen(TEST_STR_SMALL),
+			  "Wrong data received");
+
+	ret = zsock_close(send_sock);
+	zassert_ok(ret, "Cannot close socket (%d)", -errno);
+
+	ret = zsock_close(recv_sock);
+	zassert_ok(ret, "Cannot close socket (%d)", -errno);
+}
+
 ZTEST(net_socket_udp, test_v4_mcast_ttl)
 {
 	int ret;

@@ -185,11 +185,16 @@ static int tsl2591_set_threshold(const struct device *dev, enum sensor_attribute
 	const struct tsl2591_data *data = dev->data;
 	const struct tsl2591_config *config = dev->config;
 	uint64_t cpl;
-	uint32_t raw;
+	uint64_t raw;
 	uint16_t thld;
 	uint8_t thld_reg;
 	uint8_t cmd[3];
 	int ret;
+
+	if (val->val1 < 0 || val->val2 < 0) {
+		LOG_ERR("Threshold value must not be negative");
+		return -EINVAL;
+	}
 
 	/* Convert from relative strength of visible light to raw value */
 	cpl = (uint32_t)data->atime * data->again;
@@ -201,7 +206,7 @@ static int tsl2591_set_threshold(const struct device *dev, enum sensor_attribute
 		return -EOVERFLOW;
 	}
 
-	thld = sys_cpu_to_le16(raw);
+	thld = sys_cpu_to_le16((uint16_t)raw);
 	thld_reg = attr == SENSOR_ATTR_LOWER_THRESH ? TSL2591_REG_AILTL : TSL2591_REG_AIHTL;
 
 	cmd[0] = TSL2591_NORMAL_CMD | thld_reg;
@@ -286,24 +291,25 @@ static int tsl2591_set_persist(const struct device *dev, int32_t persist_filter)
 static int tsl2591_set_gain(const struct device *dev, enum sensor_gain_tsl2591 gain)
 {
 	struct tsl2591_data *data = dev->data;
+	uint16_t again_scale;
 	uint8_t gain_mode;
 	int ret;
 
 	switch (gain) {
 	case TSL2591_SENSOR_GAIN_LOW:
-		data->again = TSL2591_GAIN_SCALE_LOW;
+		again_scale = TSL2591_GAIN_SCALE_LOW;
 		gain_mode = TSL2591_GAIN_MODE_LOW;
 		break;
 	case TSL2591_SENSOR_GAIN_MED:
-		data->again = TSL2591_GAIN_SCALE_MED;
+		again_scale = TSL2591_GAIN_SCALE_MED;
 		gain_mode = TSL2591_GAIN_MODE_MED;
 		break;
 	case TSL2591_SENSOR_GAIN_HIGH:
-		data->again = TSL2591_GAIN_SCALE_HIGH;
+		again_scale = TSL2591_GAIN_SCALE_HIGH;
 		gain_mode = TSL2591_GAIN_MODE_HIGH;
 		break;
 	case TSL2591_SENSOR_GAIN_MAX:
-		data->again = TSL2591_GAIN_SCALE_MAX;
+		again_scale = TSL2591_GAIN_SCALE_MAX;
 		gain_mode = TSL2591_GAIN_MODE_MAX;
 		break;
 	default:
@@ -314,9 +320,12 @@ static int tsl2591_set_gain(const struct device *dev, enum sensor_gain_tsl2591 g
 	ret = tsl2591_reg_update(dev, TSL2591_REG_CONFIG, TSL2591_AGAIN_MASK, gain_mode);
 	if (ret < 0) {
 		LOG_ERR("Failed to set gain mode");
+		return ret;
 	}
 
-	return ret;
+	data->again = again_scale;
+
+	return 0;
 }
 
 static int tsl2591_set_integration(const struct device *dev, int32_t integration_time)
@@ -405,8 +414,12 @@ static int tsl2591_attr_set(const struct device *dev, enum sensor_channel chan,
 
 exit:
 	if (data->powered_on) {
-		ret = tsl2591_reg_update(dev, TSL2591_REG_ENABLE, TSL2591_POWER_MASK,
-					 TSL2591_POWER_ON);
+		int pon_ret = tsl2591_reg_update(dev, TSL2591_REG_ENABLE, TSL2591_POWER_MASK,
+						 TSL2591_POWER_ON);
+
+		if (ret == 0) {
+			ret = pon_ret;
+		}
 	}
 
 	return ret;

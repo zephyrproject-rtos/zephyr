@@ -508,7 +508,8 @@ static int mspi_stm32_qspi_access(const struct device *dev, const struct mspi_xf
 		cmd.DataMode = QSPI_DATA_NONE;
 	}
 
-	if (cmd.Instruction == MSPI_NOR_CMD_WREN) {
+	if (dev_data->ctx.xfer.addr_length == 0) {
+		/* Commands without an address phase, e.g. RDID or WREN */
 		cmd.AddressMode = QSPI_ADDRESS_NONE;
 	}
 
@@ -1027,7 +1028,7 @@ static int mspi_stm32_qspi_memmap_config(const struct device *controller,
 
 	ret = pm_device_runtime_get(controller);
 	if (ret != 0) {
-		LOG_ERR("%u, pm_device_runtime_get() failed: %d", __LINE__, ret);
+		LOG_ERR_PM_DEVICE_RUNTIME_GET(controller, __LINE__);
 		return ret;
 	}
 
@@ -1047,7 +1048,7 @@ static int mspi_stm32_qspi_memmap_config(const struct device *controller,
 
 	pm_policy_state_lock_put(PM_STATE_SUSPEND_TO_IDLE, PM_ALL_SUBSTATES);
 	if (pm_device_runtime_put(controller)) {
-		LOG_ERR("%u, pm_device_runtime_put() failed", __LINE__);
+		LOG_ERR_PM_DEVICE_RUNTIME_PUT(controller, __LINE__);
 	}
 
 	return ret;

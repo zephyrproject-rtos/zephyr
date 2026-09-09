@@ -67,7 +67,7 @@ class ProbeRsBinaryRunner(ZephyrBinaryRunner):
 
     @classmethod
     def capabilities(cls):
-        return RunnerCaps(commands={'flash', 'debug', 'debugserver', 'attach'},
+        return RunnerCaps(commands={'flash', 'debug', 'debugserver', 'rtt'},
                           dev_id=True,
                           erase=True,
                           reset=True,
@@ -124,8 +124,8 @@ class ProbeRsBinaryRunner(ZephyrBinaryRunner):
             self.do_flash(**kwargs)
         elif command in ('debug', 'debugserver'):
             self.do_debug_debugserver(command, **kwargs)
-        elif command == 'attach':
-            self.do_attach(**kwargs)
+        elif command == 'rtt':
+            self.do_rtt(**kwargs)
 
     def do_flash(self, **kwargs):
         download_args = []
@@ -180,7 +180,7 @@ class ProbeRsBinaryRunner(ZephyrBinaryRunner):
         self.check_call_ignore_sigint([self.probe_rs, 'gdb']
                         + self.args + debug_args)
 
-    def do_attach(self, **kwargs):
+    def do_rtt(self, **kwargs):
         '''Attach to RTT logging using probe-rs attach command.'''
         attach_cmd = [self.probe_rs, 'attach'] + self.args + [self.elf_name]
         self.logger.info('Starting RTT session')

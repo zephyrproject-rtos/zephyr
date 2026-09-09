@@ -402,6 +402,25 @@ static void handle_wifi_scan_done(struct net_mgmt_event_callback *cb)
 	context.scan_result = 0U;
 }
 
+static void print_ieee80211_codes(const struct shell *sh,
+				  struct net_mgmt_event_callback *cb)
+{
+	const struct wifi_status *status = cb->info;
+
+	/* Not every producer of these events fills in the codes */
+	if (cb->info_length < sizeof(struct wifi_status)) {
+		return;
+	}
+
+	if (status->status_code != 0) {
+		PR("IEEE 802.11 status code %u\n", status->status_code);
+	}
+
+	if (status->reason_code != 0) {
+		PR("IEEE 802.11 reason code %u\n", status->reason_code);
+	}
+}
+
 static void handle_wifi_connect_result(struct net_mgmt_event_callback *cb)
 {
 	const struct wifi_status *status =
@@ -421,6 +440,7 @@ static void handle_wifi_connect_result(struct net_mgmt_event_callback *cb)
 
 		PR_WARNING("Connection request failed (%s/%d)\n",
 			   wifi_conn_status_txt(st), st);
+		print_ieee80211_codes(sh, cb);
 	} else {
 		PR("Connected\n");
 	}
@@ -450,6 +470,8 @@ static void handle_wifi_disconnect_result(struct net_mgmt_event_callback *cb)
 			PR("Disconnected\n");
 		}
 	}
+
+	print_ieee80211_codes(sh, cb);
 }
 
 static void print_twt_params(uint8_t dialog_token, uint8_t flow_id,
@@ -1181,7 +1203,8 @@ static int __wifi_args_to_params(const struct shell *sh, size_t argc, char *argv
 			break;
 		case 'V':
 			params->eap_ver = atoi(state->optarg);
-			if (params->eap_ver != 0U && params->eap_ver != 1U) {
+			if (params->eap_ver != 0U && params->eap_ver != 1U &&
+						params->eap_ver != -1) {
 				PR_WARNING("eap_ver error %d\n", params->eap_ver);
 				return -EINVAL;
 			}
@@ -2299,7 +2322,7 @@ static int twt_args_to_params(const struct shell *sh, size_t argc, char *argv[],
 	if ((params->setup.twt_interval != 0) &&
 	   ((params->setup.twt_exponent != 0) ||
 	   (params->setup.twt_mantissa != 0))) {
-		PR_ERROR("Only one of TWT internal or (mantissa, exponent) should be used\n");
+		PR_ERROR("Only one of TWT interval or (mantissa, exponent) should be used\n");
 		return -EINVAL;
 	}
 
@@ -4662,6 +4685,33 @@ static int validate_srv_proto_type(int type)
 	return 0;
 }
 
+/* Convert an SSI hex string into the caller's buffer */
+static int parse_nan_ssi(const struct shell *sh, const char *arg, uint8_t *ssi, size_t ssi_size,
+			 uint16_t *ssi_len)
+{
+	size_t hex_len = strlen(arg);
+
+	if (hex_len == 0) {
+		*ssi_len = 0;
+		return 0;
+	}
+
+	if (hex_len / 2 + hex_len % 2 > ssi_size) {
+		PR_ERROR("SSI is %zu bytes, max %zu (%s)\n",
+			 hex_len / 2 + hex_len % 2, ssi_size,
+			"CONFIG_WIFI_NAN_MAX_SSI_LEN");
+		return -EINVAL;
+	}
+
+	*ssi_len = hex2bin(arg, hex_len, ssi, ssi_size);
+	if (*ssi_len == 0) {
+		PR_ERROR("Invalid SSI hex string\n");
+		return -EINVAL;
+	}
+
+	return 0;
+}
+
 /* Parse NAN publish arguments */
 static int parse_nan_args_publish(const struct shell *sh, size_t argc, char *argv[],
 				  struct wifi_nan_params *params)
@@ -4712,17 +4762,13 @@ static int parse_nan_args_publish(const struct shell *sh, size_t argc, char *arg
 			params->publish.freq_list[sizeof(params->publish.freq_list) - 1] = '\0';
 			break;
 		}
-		case 'd': {
-			int ssi_len = hex2bin(state->optarg, strlen(state->optarg),
-					      params->publish.ssi,
-					      sizeof(params->publish.ssi));
-			if (ssi_len < 0) {
-				PR_ERROR("Invalid SSI hex string\n");
+		case 'd':
+			if (parse_nan_ssi(sh, state->optarg, params->publish.ssi,
+					  sizeof(params->publish.ssi),
+					  &params->publish.ssi_len) < 0) {
 				return -EINVAL;
 			}
-			params->publish.ssi_len = ssi_len;
 			break;
-		}
 		case 'u':
 			params->publish.unsolicited = shell_strtol(state->optarg, 10, &ret) != 0;
 			break;
@@ -4805,17 +4851,13 @@ static int parse_nan_args_update_publish(const struct shell *sh, size_t argc, ch
 		case 'n':
 			params->update_publish.publish_id = shell_strtol(state->optarg, 10, &ret);
 			break;
-		case 'd': {
-			int ssi_len = hex2bin(state->optarg, strlen(state->optarg),
-					      params->update_publish.ssi,
-					      sizeof(params->update_publish.ssi));
-			if (ssi_len < 0) {
-				PR_ERROR("Invalid SSI hex string\n");
+		case 'd':
+			if (parse_nan_ssi(sh, state->optarg, params->update_publish.ssi,
+					  sizeof(params->update_publish.ssi),
+					  &params->update_publish.ssi_len) < 0) {
 				return -EINVAL;
 			}
-			params->update_publish.ssi_len = ssi_len;
 			break;
-		}
 		default:
 			PR_ERROR("Invalid option %c\n", state->optopt);
 			return -EINVAL;
@@ -4878,17 +4920,13 @@ static int parse_nan_args_subscribe(const struct shell *sh, size_t argc, char *a
 		case 'f':
 			params->subscribe.freq = shell_strtoul(state->optarg, 10, &ret);
 			break;
-		case 'd': {
-			int ssi_len = hex2bin(state->optarg, strlen(state->optarg),
-					      params->subscribe.ssi,
-					      sizeof(params->subscribe.ssi));
-			if (ssi_len < 0) {
-				PR_ERROR("Invalid SSI hex string\n");
+		case 'd':
+			if (parse_nan_ssi(sh, state->optarg, params->subscribe.ssi,
+					  sizeof(params->subscribe.ssi),
+					  &params->subscribe.ssi_len) < 0) {
 				return -EINVAL;
 			}
-			params->subscribe.ssi_len = ssi_len;
 			break;
-		}
 		default:
 			PR_ERROR("Invalid option %c\n", state->optopt);
 			return -EINVAL;
@@ -4974,17 +5012,13 @@ static int parse_nan_args_transmit(const struct shell *sh, size_t argc, char *ar
 				return -EINVAL;
 			}
 			break;
-		case 'd': {
-			int ssi_len = hex2bin(state->optarg, strlen(state->optarg),
-					      params->transmit.ssi,
-					      sizeof(params->transmit.ssi));
-			if (ssi_len < 0) {
-				PR_ERROR("Invalid SSI hex string\n");
+		case 'd':
+			if (parse_nan_ssi(sh, state->optarg, params->transmit.ssi,
+					  sizeof(params->transmit.ssi),
+					  &params->transmit.ssi_len) < 0) {
 				return -EINVAL;
 			}
-			params->transmit.ssi_len = ssi_len;
 			break;
-		}
 		default:
 			PR_ERROR("Invalid option %c\n", state->optopt);
 			return -EINVAL;
@@ -5006,8 +5040,8 @@ static int parse_nan_args_transmit(const struct shell *sh, size_t argc, char *ar
 /* Common NAN command dispatcher */
 static int cmd_wifi_nan_exec(const struct shell *sh, size_t argc, char *argv[],
 			     struct wifi_nan_params *params,
-			     int (*parse_fn)(const struct shell *, size_t, char **,
-					     struct wifi_nan_params *),
+			     int (*parse_fn)(const struct shell *sh, size_t argc, char **argv,
+					     struct wifi_nan_params *params),
 			     const char *parse_err_msg,
 			     const char *exec_err_msg,
 			     const char *success_msg,
@@ -5387,7 +5421,8 @@ SHELL_STATIC_SUBCMD_SET_CREATE(
 				 "[-S, --wpa3-enterprise]: WPA3 enterprise mode:\n"
 				 "Default is 0: Not WPA3 enterprise mode\n"
 				 "1:Suite-b mode, 2:Suite-b-192-bit mode, 3:WPA3-enterprise-only mode\n"
-				 "[-V, --eap-version]: 0 or 1. Default 1: eap version 1\n"
+				 "[-V, --eap-version]: Forced eap-version. 0, 1 or -1.\n"
+				 "Default 1: eap version 1. -1: no forced version\n"
 				 "[-I, --eap-id1...--eap-id8]: Client Identity. Default no eap identity\n"
 				 "[-P, --eap-pwd1...--eap-pwd8]: Client Password\n"
 				 "Default no password for eap user\n"
@@ -5526,12 +5561,13 @@ SHELL_SUBCMD_ADD((wifi), connect, NULL,
 			    "Default is 0. 0:No WPA3 enterprise mode, "
 			    "1:Suite-b mode, 2:Suite-b-192-bit mode, 3:WPA3-enterprise-only mode\n"
 			    "[-T, --TLS-cipher]: 0:TLS-NONE, 1:TLS-ECC-P384, 2:TLS-RSA-3K\n"
-			    "[-A, --verify-peer-cert]: apply for EAP-PEAP-MSCHAPv2 and "
-			    "EAP-TTLS-MSCHAPv2\n"
+			    "[-A, --verify-peer-cert]: apply for EAP-PEAP-MSCHAPv2, "
+			    "EAP-PEAP-GTC and EAP-TTLS-MSCHAPv2\n"
 			    "Default is 0. 0:do not use CA to verify peer, "
 			    "1:use CA to verify peer\n"
-			    "[-V, --eap-version]: 0 or 1. Default is 1: use eap version 1\n"
-			    "[-I, --eap-id1]: Client Identity. Default is no eap identity\n"
+				"[-V, --eap-version]: Forced eap-version. 0, 1 or -1.\n"
+				"Default 1: eap version 1. -1: no forced version\n"
+				"[-I, --eap-id1]: Client Identity. Default is no eap identity\n"
 			    "[-P, --eap-pwd1]: Client Password. "
 			    "Default is no password for eap user\n"
 			    "[-R, --ieee-80211r]: Use IEEE80211R fast BSS transition connect\n"

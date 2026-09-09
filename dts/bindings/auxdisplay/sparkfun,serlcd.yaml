@@ -11,14 +11,12 @@ include: [auxdisplay-device.yaml, i2c-device.yaml]
 properties:
   columns:
     type: int
-    default: 16
     enum:
       - 16
       - 20
 
   rows:
     type: int
-    default: 2
     enum:
       - 2
       - 4

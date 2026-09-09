@@ -18,6 +18,7 @@
 #include <zephyr/cache.h>
 
 #include <stm32_ll_dma.h>
+#include <stm32_bitops.h>
 
 #include <zephyr/logging/log.h>
 #include <zephyr/irq.h>
@@ -128,6 +129,24 @@ struct stm32_sai_cfg {
 	bool has_sai_b_ker_ck: 1;
 };
 
+static inline void sai_sub_disable(SAI_HandleTypeDef *hsai, i2s_opt_t options)
+{
+	if ((options & I2S_OPT_BIT_CLK_GATED) == 0) {
+		LOG_DBG("SAI sub-block %p not disabled: bit clock gating disabled", hsai->Instance);
+		return;
+	}
+
+	if (hsai->Init.Synchro == SAI_SYNCHRONOUS) {
+		LOG_DBG("SAI sub-block %p not disabled: configured as synchronous peripheral",
+			hsai->Instance);
+		return;
+	}
+
+	__HAL_SAI_DISABLE(hsai);
+
+	LOG_DBG("SAI Disabled");
+}
+
 void HAL_SAI_RxCpltCallback(SAI_HandleTypeDef *hsai)
 {
 	struct stm32_sai_sub_data *sub_data = CONTAINER_OF(hsai, struct stm32_sai_sub_data, hsai);
@@ -143,7 +162,7 @@ void HAL_SAI_RxCpltCallback(SAI_HandleTypeDef *hsai)
 		if (stream->state != I2S_STATE_READY) {
 			stream->state = I2S_STATE_ERROR;
 			LOG_ERR("RX mem_block NULL");
-			__HAL_SAI_DISABLE(hsai);
+			sai_sub_disable(hsai, stream->i2s_cfg.options);
 			goto exit;
 		} else {
 			return;
@@ -155,21 +174,21 @@ void HAL_SAI_RxCpltCallback(SAI_HandleTypeDef *hsai)
 	ret = k_msgq_put(&stream->queue, &item, K_NO_WAIT);
 	if (ret < 0) {
 		stream->state = I2S_STATE_ERROR;
-		__HAL_SAI_DISABLE(hsai);
+		sai_sub_disable(hsai, stream->i2s_cfg.options);
 		goto exit;
 	}
 
 	if (stream->state == I2S_STATE_STOPPING) {
 		stream->state = I2S_STATE_READY;
 		LOG_DBG("Stopping RX ...");
-		__HAL_SAI_DISABLE(hsai);
+		sai_sub_disable(hsai, stream->i2s_cfg.options);
 		goto exit;
 	}
 
 	ret = k_mem_slab_alloc(stream->i2s_cfg.mem_slab, &stream->mem_block, K_NO_WAIT);
 	if (ret < 0) {
 		stream->state = I2S_STATE_ERROR;
-		__HAL_SAI_DISABLE(hsai);
+		sai_sub_disable(hsai, stream->i2s_cfg.options);
 		goto exit;
 	}
 
@@ -194,7 +213,7 @@ void HAL_SAI_TxCpltCallback(SAI_HandleTypeDef *hsai)
 
 	if (stream->state == I2S_STATE_ERROR) {
 		LOG_ERR("TX bad status: %d, Stopping...", stream->state);
-		__HAL_SAI_DISABLE(hsai);
+		sai_sub_disable(hsai, stream->i2s_cfg.options);
 		goto exit;
 	}
 
@@ -202,7 +221,7 @@ void HAL_SAI_TxCpltCallback(SAI_HandleTypeDef *hsai)
 		if (stream->state != I2S_STATE_READY) {
 			stream->state = I2S_STATE_ERROR;
 			LOG_ERR("TX mem_block NULL");
-			__HAL_SAI_DISABLE(hsai);
+			sai_sub_disable(hsai, stream->i2s_cfg.options);
 			goto exit;
 		} else {
 			return;
@@ -213,7 +232,7 @@ void HAL_SAI_TxCpltCallback(SAI_HandleTypeDef *hsai)
 		LOG_DBG("TX Stopped ...");
 		stream->state = I2S_STATE_READY;
 		stream->mem_block = NULL;
-		__HAL_SAI_DISABLE(hsai);
+		sai_sub_disable(hsai, stream->i2s_cfg.options);
 		goto exit;
 	}
 
@@ -223,14 +242,14 @@ void HAL_SAI_TxCpltCallback(SAI_HandleTypeDef *hsai)
 		LOG_DBG("Exit TX callback, no more data in the queue");
 		stream->state = I2S_STATE_READY;
 		stream->mem_block = NULL;
-		__HAL_SAI_DISABLE(hsai);
+		sai_sub_disable(hsai, stream->i2s_cfg.options);
 		goto exit;
 	}
 
 	ret = k_msgq_get(&stream->queue, &item, K_NO_WAIT);
 	if (ret < 0) {
 		stream->state = I2S_STATE_ERROR;
-		__HAL_SAI_DISABLE(hsai);
+		sai_sub_disable(hsai, stream->i2s_cfg.options);
 		goto exit;
 	}
 
@@ -578,6 +597,8 @@ static int stm32_sai_sub_conf(const struct device *dev, enum i2s_dir dir,
 			hsai->Init.AudioMode = SAI_MODESLAVE_RX;
 			if (sub_cfg->synchronous) {
 				hsai->Init.Synchro = SAI_SYNCHRONOUS;
+				LOG_WRN("Synchronous RX peripheral mode requires an active "
+					"controller with bit clock gating disabled");
 			}
 		}
 
@@ -593,6 +614,8 @@ static int stm32_sai_sub_conf(const struct device *dev, enum i2s_dir dir,
 			hsai->Init.AudioMode = SAI_MODESLAVE_TX;
 			if (sub_cfg->synchronous) {
 				hsai->Init.Synchro = SAI_SYNCHRONOUS;
+				LOG_WRN("Synchronous TX peripheral mode requires an active "
+					"controller with bit clock gating disabled");
 			}
 		}
 	} else {
@@ -741,6 +764,30 @@ static int stm32_sai_sub_conf(const struct device *dev, enum i2s_dir dir,
 	}
 
 	stream->state = I2S_STATE_READY;
+
+	/*
+	 * Enable immediately SAI peripheral only when the bit clock is not gated.
+	 * It allows the synchronous sub-block to become operational immediately.
+	 */
+	if (((i2s_cfg->options & I2S_OPT_BIT_CLK_GATED) == 0) &&
+	    hsai->Init.Synchro != SAI_SYNCHRONOUS) {
+
+		__HAL_SAI_ENABLE(hsai);
+
+		if (sub_cfg->dir == I2S_DIR_TX) {
+			/* Prime the FIFO with a dummy sample so the controller
+			 * actually starts clocking out frames.
+			 */
+			stm32_reg_write(&hsai->Instance->DR, 0U);
+		} else {
+			/* Discard whatever's in DR to clear FIFO state
+			 * before the real DMA-driven reads begin.
+			 */
+			(void)stm32_reg_read(&hsai->Instance->DR);
+		}
+
+		LOG_DBG("SAI Enabled");
+	}
 
 	return 0;
 }

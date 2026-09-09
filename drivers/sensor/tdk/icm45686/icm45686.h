@@ -82,6 +82,8 @@ struct icm45686_encoded_header {
 	uint8_t events: 3;
 	uint8_t channels: 7;
 	uint16_t fifo_count;
+	uint8_t accel_odr;
+	uint8_t gyro_odr;
 };
 
 struct icm45686_encoded_data {
@@ -138,6 +140,15 @@ struct icm45686_stream {
 			bool fifo_full: 1;
 		} events;
 	} data;
+	/* Counts of interrupts dropped by each ignore path, summarized at
+	 * most once per report interval. Per-instance so a multi-device
+	 * system attributes and rate-limits each sensor independently.
+	 */
+	struct {
+		atomic_t busy_ignored;
+		atomic_t no_submission_ignored;
+		int64_t report_deadline;
+	} ignore_stats;
 };
 
 struct icm45686_data {

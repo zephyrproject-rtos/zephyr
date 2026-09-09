@@ -16,6 +16,7 @@ target_include_directories(app
     ${ZEPHYR_BASE}/subsys/bluetooth/mesh
     ${CONFIG_TF_PSA_CRYPTO_MODULE_DIR}/include
     ${CONFIG_TF_PSA_CRYPTO_MODULE_DIR}/drivers/builtin/include/
+    ${CONFIG_TF_PSA_CRYPTO_MODULE_DIR}/dispatch/include/
 )
 
 target_compile_options(app

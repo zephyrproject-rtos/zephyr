@@ -3,7 +3,6 @@ common:
     - dns
     - net
   depends_on: netif
-  timeout: 600
   min_ram: 21
 tests:
   net.dns.resolve:

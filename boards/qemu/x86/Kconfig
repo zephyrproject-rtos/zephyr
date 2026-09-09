@@ -2,18 +2,15 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+# Both boards live in this directory, but the build system only types the
+# symbol of the board being built, so the sibling needs an explicit type.
+
 config BOARD_QEMU_X86
 	bool
-	select CPU_HAS_FPU
-
-config BOARD_QEMU_X86_64
-	bool
-	select X86_64
-
-config BOARD_QEMU_X86_LAKEMONT
-	bool
-	select CPU_HAS_FPU
+	select QEMU_TARGET
+	select HAS_COVERAGE_SUPPORT
 
 config BOARD_QEMU_X86_TINY
 	bool
-	select CPU_HAS_FPU
+	select QEMU_TARGET
+	select HAS_COVERAGE_SUPPORT

@@ -21,6 +21,7 @@ config DSP_BACKEND_HAS_XDATA_SECTION
 
 choice DSP_BACKEND
 	prompt "DSP library backend selection"
+	default DSP_BACKEND_POWERQUAD if DT_HAS_NXP_POWERQUAD_ENABLED && CMSIS_DSP
 	default DSP_BACKEND_CMSIS if CMSIS_DSP
 	default DSP_BACKEND_ARCMWDT if ARC && "$(ZEPHYR_TOOLCHAIN_VARIANT)" = "arcmwdt"
 	default DSP_BACKEND_CUSTOM
@@ -32,6 +33,16 @@ config DSP_BACKEND_CMSIS
 	help
 	  Implement the various zephyr DSP functions using the CMSIS-DSP library. This feature
 	  requires the CMSIS module to be selected.
+
+config DSP_BACKEND_POWERQUAD
+	bool "Use the NXP PowerQuad hardware DSP accelerator"
+	depends on CMSIS_DSP
+	depends on DT_HAS_NXP_POWERQUAD_ENABLED
+	select DSP_BACKEND_HAS_STATIC
+	help
+	  Implement the various zephyr DSP functions using the NXP PowerQuad
+	  hardware DSP coprocessor with CMSIS-DSP fallback for unsupported
+	  operations.
 
 config DSP_BACKEND_CUSTOM
 	bool "Do not use any Zephyr backends for DSP"
@@ -51,5 +62,32 @@ config DSP_BACKEND_ARCMWDT
 	  requires the MetaWare toolchain and CMSIS module to be selected.
 
 endchoice
+
+if DSP_BACKEND_POWERQUAD
+
+config DSP_POWERQUAD_ADDR_REMAP
+	bool
+	help
+	  Selected by SoCs where PowerQuad cannot directly access certain
+	  memory regions (e.g. FlexSPI) and requires address translation.
+	  The SoC must provide soc_powerquad_remap_addr() in its soc.h.
+
+config DSP_POWERQUAD_TMP_BASE
+	hex "PowerQuad temporary memory base address"
+	default 0xE0000000
+	help
+	  Base address of the private RAM used by PowerQuad as temporary
+	  working memory.
+
+config DSP_BACKEND_POWERQUAD_SUPPORT_Q31
+	bool "Use PowerQuad for Q31 fixed-point operations"
+	help
+	  Use the PowerQuad hardware accelerator for Q31 fixed-point
+	  operations. PowerQuad computes internally in single-precision
+	  float which has only a 24-bit mantissa, less than the
+	  31-bit precision of Q31. Select this if the error can be
+	  accepted.
+
+endif # DSP_BACKEND_POWERQUAD
 
 endif # DSP

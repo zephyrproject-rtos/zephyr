@@ -1,0 +1,77 @@
+/*
+ * Copyright (c) 2026 Martin Moya <martin.moya@focus.uy>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * DUT: USART0 on PB0 (TX) / PB1 (RX) — wire PB0 to PB1.
+ * Console moved to USART1 on the original VCOM pins (PA5/PA6).
+ */
+
+#include <zephyr/dt-bindings/pinctrl/silabs/xg21-pinctrl.h>
+
+/ {
+	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+		zephyr,uart-pipe = &usart1;
+	};
+};
+
+&pinctrl {
+	usart0_default: usart0_default {
+		group0 {
+			/* Mapped to EXP_HEADER16 in carrier board BRD4002A */
+			pins = <USART0_TX_PB0>;
+			drive-push-pull;
+			output-high;
+		};
+
+		group1 {
+			/* Mapped to EXP_HEADER15 in carrier board BRD4002A */
+			pins = <USART0_RX_PB1>;
+			input-enable;
+			silabs,input-filter;
+		};
+
+		group2 {
+			pins = <USART0_RTS_PA2>;
+			drive-push-pull;
+		};
+
+		group3 {
+			pins = <USART0_CTS_PA1>;
+			input-enable;
+			bias-pull-down;
+		};
+	};
+
+	usart1_default: usart1_default {
+		group0 {
+			pins = <USART1_TX_PA5>;
+			drive-push-pull;
+			output-high;
+		};
+
+		group1 {
+			pins = <USART1_RX_PA6>;
+			input-enable;
+			silabs,input-filter;
+		};
+	};
+};
+
+dut: &usart0 {
+	pinctrl-0 = <&usart0_default>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&usart1 {
+	current-speed = <115200>;
+	pinctrl-0 = <&usart1_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};

@@ -46,3 +46,7 @@
 &lptimer1 {
 	interrupts = <13 0>;
 };
+
+&mbox {
+	interrupts = <4 0>;
+};

@@ -36,6 +36,15 @@ tests:
       - apollo3p_evb
       - apollo510_evb
 
+  sample.drivers.mspi.flash.x_nucleo_pgeez1:
+    tags:
+      - shield
+    platform_allow:
+      - nucleo_u575zi_q
+    integration_platforms:
+      - nucleo_u575zi_q
+    extra_args: SHIELD=x_nucleo_pgeez1
+
   sample.drivers.mspi.flash.b_m2mem_pack1_mb1927_18ba:
     tags:
       - shield

@@ -33,4 +33,14 @@ if(CONFIG_NXP_IMXRT_BOOT_HEADER)
   endif()
 endif()
 
+# The MCUX HAL emits code/data into custom "CodeQuickAccess" and
+# "DataQuickAccess" input sections (e.g. fsl_romapi.c). Explicitly collect
+# them so they are not left as orphan output sections. As orphans, the
+# companion ".ARM.exidxCodeQuickAccess" unwind table (kept when
+# CONFIG_ARCH_STACKWALK is set, as in sample.perf) can be placed >1 GB from
+# the code, overflowing the 31-bit R_ARM_PREL31 relocation and failing the
+# link with "relocation truncated to fit: R_ARM_PREL31".
+zephyr_linker_sources(ROM_SECTIONS quick_access_code.ld)
+zephyr_linker_sources(DATA_SECTIONS quick_access_data.ld)
+
 set(SOC_LINKER_SCRIPT ${CMAKE_CURRENT_SOURCE_DIR}/linker.ld CACHE INTERNAL "")

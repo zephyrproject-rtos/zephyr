@@ -593,6 +593,66 @@
 		status = "disabled";
 	};
 
+	pwm2: pwm@44320000 {
+		compatible = "nxp,kinetis-tpm";
+		reg = <0x44320000 DT_SIZE_K(64)>;
+		interrupts = <GIC_SPI 30 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-names = "irq_0";
+		interrupt-parent = <&gic>;
+		clocks = <&scmi_clk IMX95_CLK_TPM2>;
+		prescaler = <1>;
+		#pwm-cells = <3>;
+		status = "disabled";
+	};
+
+	pwm3: pwm@424e0000 {
+		compatible = "nxp,kinetis-tpm";
+		reg = <0x424e0000 DT_SIZE_K(64)>;
+		interrupts = <GIC_SPI 73 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-names = "irq_0";
+		interrupt-parent = <&gic>;
+		clocks = <&scmi_clk IMX95_CLK_BUSWAKEUP>;
+		prescaler = <1>;
+		#pwm-cells = <3>;
+		status = "disabled";
+	};
+
+	pwm4: pwm@424f0000 {
+		compatible = "nxp,kinetis-tpm";
+		reg = <0x424f0000 DT_SIZE_K(64)>;
+		interrupts = <GIC_SPI 74 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-names = "irq_0";
+		interrupt-parent = <&gic>;
+		clocks = <&scmi_clk IMX95_CLK_TPM4>;
+		prescaler = <1>;
+		#pwm-cells = <3>;
+		status = "disabled";
+	};
+
+	pwm5: pwm@42500000 {
+		compatible = "nxp,kinetis-tpm";
+		reg = <0x42500000 DT_SIZE_K(64)>;
+		interrupts = <GIC_SPI 75 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-names = "irq_0";
+		interrupt-parent = <&gic>;
+		clocks = <&scmi_clk IMX95_CLK_TPM5>;
+		prescaler = <1>;
+		#pwm-cells = <3>;
+		status = "disabled";
+	};
+
+	pwm6: pwm@42510000 {
+		compatible = "nxp,kinetis-tpm";
+		reg = <0x42510000 DT_SIZE_K(64)>;
+		interrupts = <GIC_SPI 76 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		interrupt-names = "irq_0";
+		interrupt-parent = <&gic>;
+		clocks = <&scmi_clk IMX95_CLK_TPM6>;
+		prescaler = <1>;
+		#pwm-cells = <3>;
+		status = "disabled";
+	};
+
 	gpio1: gpio@47400000 {
 		compatible = "nxp,imx-rgpio";
 		reg = <0x47400000 DT_SIZE_K(64)>;

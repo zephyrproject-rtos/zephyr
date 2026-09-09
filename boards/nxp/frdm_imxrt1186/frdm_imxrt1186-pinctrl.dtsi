@@ -4,7 +4,7 @@
  *
  */
 
-#include <nxp/nxp_imx/rt/mimxrt1186cvj8c-pinctrl.dtsi>
+#include <nxp/imxrt/imxrt118x/pinctrl/mimxrt1186cvj8c-pinctrl.dtsi>
 
 &pinctrl {
 	pinmux_lpspi2: pinmux_lpspi2 {

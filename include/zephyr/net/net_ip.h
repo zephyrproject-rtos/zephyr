@@ -647,7 +647,7 @@ struct net_udp_hdr {
 	uint16_t chksum;
 } __packed;
 
-/** @brief UDP Options Maximum Reassembled Datagram Size (MRDS), RFC 9868.
+/** @brief UDP Options Maximum Reassembled Datagram Size (MRDS), @rfc{9868}.
  *
  * Value type for the @c ZSOCK_UDP_OPT_MRDS socket option and the
  * @c ZSOCK_UDP_OPT_CMSG_MRDS ancillary control message.
@@ -659,7 +659,7 @@ struct net_udp_opt_mrds {
 	uint8_t segs;
 };
 
-/** @brief UDP Options Timestamp (TIME), RFC 9868.
+/** @brief UDP Options Timestamp (TIME), @rfc{9868}.
  *
  * Value type for the @c ZSOCK_UDP_OPT_CMSG_TIME ancillary control message.
  */
@@ -810,6 +810,30 @@ struct net_ipv6_mreq {
 	/** Network interface index of the local IPv6 address */
 	int ipv6mr_ifindex;
 };
+
+/**
+ * @brief Struct used when setting a packet socket multicast filtering.
+ */
+struct net_packet_mreq {
+	/** Network interface index */
+	int mr_ifindex;
+
+	/** Packet type (action) */
+	uint16_t mr_type;
+
+	/** Address length */
+	uint16_t mr_alen;
+
+	/** Physical layer address */
+	uint8_t mr_address[NET_LINK_ADDR_MAX_LENGTH];
+};
+
+/**
+ * @brief Packet socket multicast filtering types.
+ */
+#define NET_PACKET_MR_MULTICAST 0 /**< Packet will receive only certain multicast packets */
+#define NET_PACKET_MR_PROMISC   1 /**< Packet will receive all packets */
+#define NET_PACKET_MR_ALLMULTI  2 /**< Packet will receive all multicast packets */
 
 /**
  * @brief Incoming IPv6 packet information.
@@ -1424,7 +1448,7 @@ static inline bool net_ipv6_is_addr_solicited_node_raw(const uint8_t *addr)
 
 /**
  *  @brief Check if the IPv6 address is solicited node multicast address
- *  FF02:0:0:0:0:1:FFXX:XXXX defined in RFC 3513
+ *  FF02:0:0:0:0:1:FFXX:XXXX defined in @rfc{3513}
  *
  *  @param addr IPv6 address.
  *
@@ -1702,7 +1726,7 @@ net_ipv6_is_addr_mcast_link_all_nodes(const struct net_in6_addr *addr)
 
 /**
  *  @brief Create solicited node IPv6 multicast address
- *  FF02:0:0:0:0:1:FFXX:XXXX defined in RFC 3513
+ *  FF02:0:0:0:0:1:FFXX:XXXX defined in @rfc{3513}
  *
  *  @param src IPv6 address.
  *  @param dst IPv6 address.
@@ -1822,7 +1846,7 @@ static inline void net_ipv6_addr_get_v4_mapped(const struct net_in6_addr *addr6,
 /**
  *  @brief Generate IPv6 address using a prefix and interface identifier.
  *         Interface identifier is either generated from EUI-64 (MAC) defined
- *         in RFC 4291 or from randomized value defined in RFC 7217.
+ *         in @rfc{4291} or from randomized value defined in @rfc{7217}.
  *
  *  @param iface Network interface
  *  @param prefix IPv6 prefix, can be left out in which case fe80::/64 is used

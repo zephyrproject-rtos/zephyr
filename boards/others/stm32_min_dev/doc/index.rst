@@ -10,8 +10,8 @@ are two variants of the board:
 - Blue Pill Board
 - Black Pill Board
 
-Zephyr applications can use the stm32_min_dev@blue or stm32_min_dev@black board
-configuration to use these boards.
+Zephyr applications can use the ``stm32_min_dev@blue`` or ``stm32_min_dev@black``
+board configuration to use these boards.
 
 As the name suggests, these boards have the bare minimum components required to
 power on the CPU. For practical use, you'll need to add additional components

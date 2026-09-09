@@ -12,7 +12,8 @@ config MCUBOOT
 
 config BOOTLOADER_MCUBOOT
 	bool "MCUboot bootloader support"
-	select USE_DT_CODE_PARTITION if !MCUBOOT_BOOTLOADER_MODE_RAM_LOAD
+	select USE_DT_CODE_PARTITION if !MCUBOOT_BOOTLOADER_MODE_RAM_LOAD && \
+		!MCUBOOT_BOOTLOADER_MODE_RAM_LOAD_WITH_REVERT
 	imply INIT_ARCH_HW_AT_BOOT if ARCH_SUPPORTS_ARCH_HW_INIT
 	depends on !MCUBOOT
 	help
@@ -222,13 +223,6 @@ config MCUBOOT_BOOTLOADER_MODE_SWAP_USING_MOVE
 	  in DT and application will boot from slot0_partition.
 	  MCUBOOT_BOOTLOADER_NO_DOWNGRADE should also be selected
 	  if MCUboot has been built with MCUBOOT_DOWNGRADE_PREVENTION.
-
-config MCUBOOT_BOOTLOADER_MODE_SWAP_WITHOUT_SCRATCH
-	bool "MCUboot has been configured for swap without scratch operation [DEPRECATED]"
-	select DEPRECATED
-	select MCUBOOT_BOOTLOADER_MODE_HAS_NO_DOWNGRADE
-	help
-	  This Kconfig is deprecated, use MCUBOOT_BOOTLOADER_MODE_SWAP_USING_MOVE instead.
 
 config MCUBOOT_BOOTLOADER_MODE_SWAP_SCRATCH
 	bool "MCUboot has been configured for swap using scratch operation"

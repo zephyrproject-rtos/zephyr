@@ -49,6 +49,18 @@
 #include <hal/clk_tree_ll.h>
 #include <esp_private/esp_pmu.h>
 #include <modem/modem_syscon_struct.h>
+#elif defined(CONFIG_SOC_SERIES_ESP32C61)
+#define DT_CPU_COMPAT espressif_riscv
+#include <zephyr/dt-bindings/clock/esp32c61_clock.h>
+#include <soc/lp_clkrst_reg.h>
+#include <soc/pmu_reg.h>
+#include <soc/regi2c_dig_reg.h>
+#include <regi2c_ctrl.h>
+#include <esp32c61/rom/rtc.h>
+#include <soc/dport_access.h>
+#include <hal/clk_tree_ll.h>
+#include <esp_private/esp_pmu.h>
+#include <modem/modem_syscon_struct.h>
 #elif defined(CONFIG_SOC_SERIES_ESP32C6)
 #define DT_CPU_COMPAT espressif_riscv
 #include <zephyr/dt-bindings/clock/esp32c6_clock.h>
@@ -97,7 +109,9 @@
 #include <esp_rom_caps.h>
 #include <esp_rom_serial_output.h>
 #include <esp_rom_sys.h>
+#if !defined(CONFIG_SOC_SERIES_ESP32C61)
 #include <hal/clk_gate_ll.h>
+#endif
 #include <hal/clk_tree_hal.h>
 #include <hal/regi2c_ctrl_ll.h>
 #include <hal/timg_ll.h>

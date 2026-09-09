@@ -21,7 +21,7 @@ static inline int cache_data_require_enabled(void)
 }
 
 static int cache_data_manage_range(void *addr, size_t size,
-				   void (*operation)(uint32_t, uint32_t))
+				   void (*operation)(uint32_t addr, uint32_t size))
 {
 	int ret = cache_data_require_enabled();
 
@@ -119,7 +119,7 @@ static inline int cache_instr_require_enabled(void)
 }
 
 static int cache_instr_manage_range(void *addr, size_t size,
-				    void (*operation)(uint32_t, uint32_t))
+				    void (*operation)(uint32_t addr, uint32_t size))
 {
 	int ret = cache_instr_require_enabled();
 

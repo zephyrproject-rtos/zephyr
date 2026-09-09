@@ -40,6 +40,7 @@ config PWM_EVENT
 	  and receive PWM events.
 
 # zephyr-keep-sorted-start
+source "drivers/pwm/Kconfig.adi_axi_pwmgen"
 source "drivers/pwm/Kconfig.ambiq_timer"
 source "drivers/pwm/Kconfig.ameba"
 source "drivers/pwm/Kconfig.b91"

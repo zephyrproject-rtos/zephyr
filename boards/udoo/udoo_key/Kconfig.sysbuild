@@ -1,5 +1,7 @@
-# Copyright (c) 2023 Espressif Systems (Shanghai) Co., Ltd.
+# Copyright (c) 2026 Mohan Nagaraj
 # SPDX-License-Identifier: Apache-2.0
+
+if BOARD_UDOO_KEY_ESP32_PROCPU || BOARD_UDOO_KEY_ESP32_APPCPU
 
 choice BOOTLOADER
 	default BOOTLOADER_MCUBOOT
@@ -8,3 +10,5 @@ endchoice
 choice BOOT_SIGNATURE_TYPE
 	default BOOT_SIGNATURE_TYPE_NONE
 endchoice
+
+endif

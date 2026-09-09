@@ -9,7 +9,7 @@ common:
     - nrf5340bsim/nrf5340/cpunet
 
 tests:
-  bluetooth.ll.cis:
+  bluetooth.controller.cis:
     extra_overlay_confs:
       - overlay.conf
     harness_config:
@@ -18,7 +18,7 @@ tests:
       tests_scripts:
         - tests_scripts/connected_iso.sh
 
-  bluetooth.ll.cis.acl_first:
+  bluetooth.controller.cis.acl_first:
     extra_overlay_confs:
       - overlay-acl_first.conf
     harness_config:
@@ -27,7 +27,7 @@ tests:
       tests_scripts:
         - tests_scripts/connected_iso_acl_first.sh
 
-  bluetooth.ll.cis.legacy_adv:
+  bluetooth.controller.cis.legacy_adv:
     extra_overlay_confs:
       - overlay-legacy_adv.conf
     harness_config:
@@ -36,7 +36,7 @@ tests:
       tests_scripts:
         - tests_scripts/connected_iso_legacy_adv.sh
 
-  bluetooth.ll.cis.legacy_adv_acl_first:
+  bluetooth.controller.cis.legacy_adv_acl_first:
     extra_overlay_confs:
       - overlay-legacy_adv_acl_first.conf
     harness_config:
@@ -45,7 +45,7 @@ tests:
       tests_scripts:
         - tests_scripts/connected_iso_legacy_adv_acl_first.sh
 
-  bluetooth.ll.cis.acl_group:
+  bluetooth.controller.cis.acl_group:
     sysbuild: true
     platform_allow:
       - nrf52_bsim/native
@@ -59,7 +59,7 @@ tests:
       tests_scripts:
         - tests_scripts/connected_iso_acl_group.sh
 
-  bluetooth.ll.cis.acl_group_acl_first:
+  bluetooth.controller.cis.acl_group_acl_first:
     extra_overlay_confs:
       - overlay-acl_group_acl_first.conf
     harness_config:
@@ -68,7 +68,7 @@ tests:
       tests_scripts:
         - tests_scripts/connected_iso_acl_group_acl_first.sh
 
-  bluetooth.ll.cis.peripheral_cis:
+  bluetooth.controller.cis.peripheral_cis:
     extra_overlay_confs:
       - overlay-peripheral_cis.conf
     harness_config:
@@ -77,7 +77,7 @@ tests:
       tests_scripts:
         - tests_scripts/connected_iso_peripheral_cis.sh
 
-  bluetooth.ll.cis.acl_first_ft_per_skip_2_se:
+  bluetooth.controller.cis.acl_first_ft_per_skip_2_se:
     extra_overlay_confs:
       - overlay-acl_first_ft_per_skip_2_se.conf
     harness_config:
@@ -86,7 +86,7 @@ tests:
       tests_scripts:
         - tests_scripts/connected_iso_acl_first_ft_per_skip_2_se.sh
 
-  bluetooth.ll.cis.acl_first_ft_per_skip_4_se:
+  bluetooth.controller.cis.acl_first_ft_per_skip_4_se:
     extra_overlay_confs:
       - overlay-acl_first_ft_per_skip_4_se.conf
     harness_config:
@@ -95,7 +95,7 @@ tests:
       tests_scripts:
         - tests_scripts/connected_iso_acl_first_ft_per_skip_4_se.sh
 
-  bluetooth.ll.cis.acl_first_ft_cen_skip_2_se:
+  bluetooth.controller.cis.acl_first_ft_cen_skip_2_se:
     extra_overlay_confs:
       - overlay-acl_first_ft_cen_skip_2_se.conf
     harness_config:
@@ -104,7 +104,7 @@ tests:
       tests_scripts:
         - tests_scripts/connected_iso_acl_first_ft_cen_skip_2_se.sh
 
-  bluetooth.ll.cis.acl_first_ft_cen_skip_4_se:
+  bluetooth.controller.cis.acl_first_ft_cen_skip_4_se:
     extra_overlay_confs:
       - overlay-acl_first_ft_cen_skip_4_se.conf
     harness_config:

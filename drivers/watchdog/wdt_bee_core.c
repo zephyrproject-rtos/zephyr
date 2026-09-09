@@ -6,6 +6,7 @@
 
 #define DT_DRV_COMPAT realtek_bee_core_wdt
 
+#include <zephyr/irq.h>
 #include <zephyr/drivers/watchdog.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/clock.h>
@@ -180,7 +181,7 @@ static int core_wdt_bee_init(const struct device *dev)
 	nvic_init_struct.NVIC_IRQChannelPriority = 0;
 	NVIC_Init(&nvic_init_struct);
 #else
-	NVIC_ClearPendingIRQ(config->irq_num);
+	k_irq_clear_pending(config->irq_num);
 	config->cfg_func();
 #endif
 

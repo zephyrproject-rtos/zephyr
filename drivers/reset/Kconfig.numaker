@@ -4,7 +4,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config RESET_NUMAKER
-	bool "Nuvoton NuMaker reset controller driver"
+	bool "Nuvoton NuMaker reset driver"
 	default y
 	depends on DT_HAS_NUVOTON_NUMAKER_RST_ENABLED
 	help

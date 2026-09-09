@@ -67,8 +67,8 @@ static int spi_wch_configure(const struct device *dev, const struct spi_config *
 		return -ENOTSUP;
 	}
 
-	if (SPI_OP_MODE_GET(config->operation) != SPI_OP_MODE_MASTER) {
-		LOG_ERR("Slave mode not supported");
+	if (SPI_OP_MODE_GET(config->operation) != SPI_OP_MODE_CONTROLLER) {
+		LOG_ERR("Peripheral mode not supported");
 		return -ENOTSUP;
 	}
 

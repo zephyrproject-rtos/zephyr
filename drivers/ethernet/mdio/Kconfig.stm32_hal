@@ -5,7 +5,7 @@
 config MDIO_ST_STM32_HAL
 	bool "STM32 MDIO controller driver"
 	default y
-	depends on DT_HAS_ST_STM32_MDIO_ENABLED
+	depends on DT_HAS_SNPS_DWMAC_MDIO_ENABLED
 	depends on ETH_STM32_HAL
 	select PINCTRL
 	help

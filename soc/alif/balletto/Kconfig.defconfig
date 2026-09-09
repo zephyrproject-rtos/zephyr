@@ -15,4 +15,7 @@ configdefault CLOCK_CONTROL
 configdefault CACHE_MANAGEMENT
 	default y
 
+configdefault I2C_DW_IC_CLK_FREQ_OPTIMIZATION
+	default y
+
 endif # SOC_FAMILY_BALLETTO

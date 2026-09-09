@@ -4,6 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 #include <zephyr/kernel.h>
+#include <zephyr/sys/atomic.h>
+#include <kspinlock.h>
 #include <kswap.h>
 #include <ksched.h>
 #include <ipi.h>
@@ -12,7 +14,9 @@
 static int slice_ticks = DIV_ROUND_UP(CONFIG_TIMESLICE_SIZE * Z_HZ_ticks, Z_HZ_ms);
 static int slice_max_prio = CONFIG_TIMESLICE_PRIORITY;
 static struct _timeout slice_timeouts[CONFIG_MP_MAX_NUM_CPUS];
-static bool slice_expired[CONFIG_MP_MAX_NUM_CPUS];
+
+/* Timeouts can expire on another CPU, so each CPU's flag must be atomic. */
+static atomic_t slice_expired[CONFIG_MP_MAX_NUM_CPUS];
 
 #ifdef CONFIG_SWAP_NONATOMIC
 /* If z_swap() isn't atomic, then it's possible for a timer interrupt
@@ -63,7 +67,7 @@ static void slice_timeout(struct _timeout *timeout)
 {
 	int cpu = ARRAY_INDEX(slice_timeouts, timeout);
 
-	slice_expired[cpu] = true;
+	atomic_set(&slice_expired[cpu], 1);
 
 	/* We need an IPI if we just handled a timeslice expiration
 	 * for a different CPU.
@@ -88,12 +92,12 @@ static void slice_reset(int slice_size)
 		 * announce window, so subtract 1 to cancel z_add_timeout()'s
 		 * "+1" round-up and land at exactly slice_size ticks.
 		 */
-		int delay = slice_expired[cpu] ? slice_size - 1 : slice_size;
+		int delay = atomic_get(&slice_expired[cpu]) ? slice_size - 1 : slice_size;
 
 		z_add_timeout(&slice_timeouts[cpu], slice_timeout,
 			      K_TICKS(delay));
 	}
-	slice_expired[cpu] = false;
+	atomic_clear(&slice_expired[cpu]);
 }
 
 void z_time_slice_reset(struct k_thread *thread)
@@ -106,35 +110,35 @@ static ALWAYS_INLINE bool thread_defines_time_slice_size(struct k_thread *thread
 #ifdef CONFIG_TIMESLICE_PER_THREAD
 	return (thread->base.slice_ticks != 0);
 #else  /* !CONFIG_TIMESLICE_PER_THREAD */
+	ARG_UNUSED(thread);
 	return false;
 #endif /* !CONFIG_TIMESLICE_PER_THREAD */
 }
 
 void k_sched_time_slice_set(int32_t slice, int prio)
 {
-	k_spinlock_key_t key = k_spin_lock(&_sched_spinlock);
+	Z_SCHED_SPINLOCK {
 
-	slice_ticks = k_ms_to_ticks_ceil32(slice);
-	slice_max_prio = prio;
+		slice_ticks = k_ms_to_ticks_ceil32(slice);
+		slice_max_prio = prio;
 
-	/*
-	 * Threads that define their own time slice size should not have
-	 * their time slices reset here as a thread-specific time slice size
-	 * take precedence over the global time slice size.
-	 */
+		/*
+		 * Threads that define their own time slice size should not have
+		 * their time slices reset here as a thread-specific time slice size
+		 * take precedence over the global time slice size.
+		 */
 
-	if (!thread_defines_time_slice_size(_current)) {
-		z_time_slice_reset(_current);
+		if (!thread_defines_time_slice_size(_current)) {
+			z_time_slice_reset(_current);
+		}
 	}
-
-	k_spin_unlock(&_sched_spinlock, key);
 }
 
 #ifdef CONFIG_TIMESLICE_PER_THREAD
 void k_thread_time_slice_set(struct k_thread *thread, int32_t thread_slice_ticks,
 			     k_thread_timeslice_fn_t expired, void *data)
 {
-	K_SPINLOCK(&_sched_spinlock) {
+	Z_SCHED_SPINLOCK {
 		thread->base.slice_ticks = thread_slice_ticks;
 		thread->base.slice_expired = expired;
 		thread->base.slice_data = data;
@@ -146,13 +150,23 @@ void k_thread_time_slice_set(struct k_thread *thread, int32_t thread_slice_ticks
 /* Called out of each timer and IPI interrupt */
 void z_time_slice(void)
 {
-	k_spinlock_key_t key = k_spin_lock(&_sched_spinlock);
+	/*
+	 * Atomic context switches need no scheduler work until this CPU's
+	 * time slice expires. Non-atomic context switches must still take
+	 * the scheduler lock to synchronize pending_current.
+	 */
+	if (!IS_ENABLED(CONFIG_SWAP_NONATOMIC) &&
+	    !atomic_get(&slice_expired[_current_cpu->id])) {
+		return;
+	}
+
+	k_spinlock_key_t key = z_sched_spinlock_lock();
 	struct k_thread *curr = _current;
 
 #ifdef CONFIG_SWAP_NONATOMIC
 	if (pending_current == curr) {
 		z_time_slice_reset(curr);
-		k_spin_unlock(&_sched_spinlock, key);
+		z_sched_spinlock_unlock(key);
 		return;
 	}
 	pending_current = NULL;
@@ -160,7 +174,7 @@ void z_time_slice(void)
 
 	int slice_size = 0;
 
-	if (slice_expired[_current_cpu->id]) {
+	if (atomic_get(&slice_expired[_current_cpu->id])) {
 		slice_size = z_time_slice_size(curr);
 	}
 
@@ -169,9 +183,10 @@ void z_time_slice(void)
 		k_thread_timeslice_fn_t handler = curr->base.slice_expired;
 
 		if (handler != NULL) {
-			k_spin_unlock(&_sched_spinlock, key);
+			z_sched_spinlock_unlock(key);
 			handler(curr, curr->base.slice_data);
-			key = k_spin_lock(&_sched_spinlock);
+			key = z_sched_spinlock_lock();
+
 			/* The handler ran with the lock dropped and may have
 			 * changed this thread's slice configuration, so the
 			 * cached size is stale; recompute before rearming.
@@ -201,5 +216,5 @@ void z_time_slice(void)
 #endif
 		}
 	}
-	k_spin_unlock(&_sched_spinlock, key);
+	z_sched_spinlock_unlock(key);
 }

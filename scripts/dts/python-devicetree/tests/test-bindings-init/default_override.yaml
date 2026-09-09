@@ -1,0 +1,20 @@
+# SPDX-License-Identifier: BSD-3-Clause
+#
+# This binding overrides an inherited "default:" with "required: true"
+# at each nesting level, which is well defined and is not reported.
+
+include: default_base.yaml
+
+properties:
+  prop-with-default:
+    required: true
+
+child-binding:
+  properties:
+    child-prop-with-default:
+      required: true
+
+  child-binding:
+    properties:
+      grandchild-prop-with-default:
+        required: true

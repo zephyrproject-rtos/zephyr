@@ -1,0 +1,39 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+if SHIELD_NXP_M2_2EL_2LL_IEEE802154
+
+config HDLC_RCP_IF
+	default y
+
+config HDLC_RCP_IF_SPI
+	default y
+
+config HDLC_RCP_IF_SPI_DEFERRED_INIT
+	default y
+
+config HDLC_RCP_IF_SPI_SMALL_PACKET_SIZE
+	default 48
+
+config HDLC_RCP_IF_SPI_ALIGN_ALLOWANCE
+	default 16
+
+config SPI
+	default y
+
+config I2C
+	default y
+
+config BT
+	default y
+
+config BT_H4
+	default y
+
+config BT_H4_NXP_CTLR
+	default y
+
+config NET_L2_OPENTHREAD
+	default y
+
+endif # SHIELD_NXP_M2_2EL_2LL_IEEE802154

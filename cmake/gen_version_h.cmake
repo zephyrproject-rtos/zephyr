@@ -14,8 +14,7 @@ else()
 endif()
 
 if(NOT DEFINED ${BUILD_VERSION_NAME})
-  cmake_path(GET VERSION_FILE PARENT_PATH work_dir)
-  git_describe(${work_dir} ${BUILD_VERSION_NAME})
+  git_describe(${VERSION_FILE} ${BUILD_VERSION_NAME})
 endif()
 
 include(${ZEPHYR_BASE}/cmake/modules/version.cmake)

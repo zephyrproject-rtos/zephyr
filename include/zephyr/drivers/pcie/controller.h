@@ -2,6 +2,7 @@
  * @file
  *
  * @brief Public APIs for the PCIe Controllers drivers.
+ * @ingroup pcie_controller_interface
  */
 
 /*
@@ -343,27 +344,33 @@ struct pcie_ctrl_config {
 	 */
 	const struct device *msi_parent;
 #endif
-	/* Configuration space physical address */
+	/** Configuration space physical address */
 	uintptr_t cfg_addr;
-	/* Configuration space physical size */
+	/** Configuration space physical size */
 	size_t cfg_size;
-	/* BAR regions translation ranges count */
+	/** BAR regions translation ranges count */
 	size_t ranges_count;
-	/* BAR regions translation ranges table */
+	/** BAR regions translation ranges table */
 	struct {
-		/* Flags as defined in the PCI Bus Binding to IEEE Std 1275-1994 */
+		/** Flags as defined in the PCI Bus Binding to IEEE Std 1275-1994 */
 		uint32_t flags;
-		/* bus-centric offset from the start of the region */
+		/** bus-centric offset from the start of the region */
 		uintptr_t pcie_bus_addr;
-		/* CPU-centric offset from the start of the region */
+		/** CPU-centric offset from the start of the region */
 		uintptr_t host_map_addr;
-		/* region size */
+		/** region size */
 		size_t map_length;
 	} ranges[];
 };
 
-/*
- * Fills the pcie_ctrl_config.ranges table from DT
+/**
+ * @brief Fill a pcie_ctrl_config.ranges table entry from devicetree
+ *
+ * Intended to be used with DT_FOREACH_RANGE to fill the whole table from the
+ * controller's ranges property.
+ *
+ * @param node_id PCIe controller devicetree node identifier
+ * @param idx Index of the entry in the ranges property
  */
 #define PCIE_RANGE_FORMAT(node_id, idx)							\
 {											\

@@ -6,10 +6,18 @@
 #define DT_DRV_COMPAT nxp_tstmr
 
 #include <zephyr/device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/counter.h>
 #include <zephyr/irq.h>
 #include <zephyr/sys/barrier.h>
 #include <zephyr/sys/sys_io.h>
+
+#include <fsl_clock.h>
+
+#if defined(CONFIG_COUNTER_MCUX_TSTMR_SYSCTR_BACKEND)
+#include <fsl_sysctr.h>
+#endif
 
 #define TSTMR_MAX_TICKS     ((1ULL << 56) - 1ULL)
 
@@ -20,6 +28,13 @@
 struct mcux_tstmr_config {
 	struct counter_config_info info;
 	mem_addr_t base;
+	/* Clock feeding the underlying SYS_CTR. NULL when no 'clocks' phandle. */
+	const struct device *clock_dev;
+	clock_control_subsys_t clock_subsys;
+};
+
+struct mcux_tstmr_data {
+	uint32_t freq;
 };
 
 static uint64_t mcux_tstmr_read_timestamp(mem_addr_t base)
@@ -52,6 +67,12 @@ static uint64_t mcux_tstmr_read_timestamp(mem_addr_t base)
 static int mcux_tstmr_start(const struct device *dev)
 {
 	ARG_UNUSED(dev);
+
+#if defined(CONFIG_COUNTER_MCUX_TSTMR_SYSCTR_BACKEND)
+	if ((SYS_CTR_CONTROL->CNTCR & SYS_CTR_CONTROL_CNTCR_EN_MASK) == 0U) {
+		SYS_CTR_CONTROL->CNTCR |= SYS_CTR_CONTROL_CNTCR_EN_MASK;
+	}
+#endif /* CONFIG_COUNTER_MCUX_TSTMR_SYSCTR_BACKEND */
 
 	return 0;
 }
@@ -158,14 +179,54 @@ static uint64_t mcux_tstmr_get_top_value_64(const struct device *dev)
 
 static uint32_t mcux_tstmr_get_freq(const struct device *dev)
 {
-	const struct mcux_tstmr_config *config = dev->config;
+	const struct mcux_tstmr_data *data = dev->data;
 
-	return config->info.freq;
+#if defined(CONFIG_COUNTER_MCUX_TSTMR_SYSCTR_BACKEND)
+		if ((SYS_CTR_CONTROL->CNTCR & SYS_CTR_CONTROL_CNTCR_EN_MASK) == 0U) {
+			return 0U;
+		}
+#endif /* CONFIG_COUNTER_MCUX_TSTMR_SYSCTR_BACKEND */
+
+	return data->freq;
 }
 
 static int mcux_tstmr_init(const struct device *dev)
 {
-	ARG_UNUSED(dev);
+	const struct mcux_tstmr_config *config = dev->config;
+	struct mcux_tstmr_data *data = dev->data;
+
+	if (config->clock_dev != NULL) {
+		uint32_t rate;
+		int ret;
+
+		if (!device_is_ready(config->clock_dev)) {
+			return -ENODEV;
+		}
+
+		/*
+		 * Enable the SYS_CTR clock gate once, here, so counter_start()
+		 * only sets the count-enable and never toggles the gate (a gate
+		 * toggle re-syncs the clock domains and slows the first reads).
+		 */
+		ret = clock_control_on(config->clock_dev, config->clock_subsys);
+		if (ret != 0) {
+			return ret;
+		}
+
+		ret = clock_control_get_rate(config->clock_dev, config->clock_subsys, &rate);
+		if (ret != 0) {
+			return ret;
+		}
+
+		data->freq = rate;
+	} else {
+		/* No 'clocks' phandle: rate comes from the clock-frequency prop. */
+		data->freq = config->info.freq;
+	}
+
+	if (data->freq == 0U) {
+		return -EINVAL;
+	}
 
 	return 0;
 }
@@ -188,10 +249,19 @@ static DEVICE_API(counter, mcux_tstmr_driver_api) = {
 #endif /* CONFIG_COUNTER_64BITS_TICKS */
 };
 
+#define MCUX_TSTMR_CLOCK_DEV(n)                                                            \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, clocks),                                       \
+		    (DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(n))), (NULL))
+
+#define MCUX_TSTMR_CLOCK_SUBSYS(n)                                                         \
+	COND_CODE_1(DT_INST_NODE_HAS_PROP(n, clocks),                                       \
+		    ((clock_control_subsys_t)DT_INST_CLOCKS_CELL(n, name)), (NULL))
+
 #define MCUX_TSTMR_DEVICE(n)                                                               \
+	static struct mcux_tstmr_data mcux_tstmr_data_##n;                                  \
 	static const struct mcux_tstmr_config mcux_tstmr_config_##n = {                      \
 		.info = {                                                                      \
-			.freq = DT_INST_PROP(n, clock_frequency),                               \
+			.freq = DT_INST_PROP_OR(n, clock_frequency, 0),                         \
 			IF_ENABLED(CONFIG_COUNTER_64BITS_TICKS,                                 \
 				(.max_top_value_64 = TSTMR_MAX_TICKS,))                           \
 			IF_DISABLED(CONFIG_COUNTER_64BITS_TICKS,                                \
@@ -200,9 +270,11 @@ static DEVICE_API(counter, mcux_tstmr_driver_api) = {
 			.channels = 0,                                                           \
 		},                                                                              \
 		.base = DT_INST_REG_ADDR(n),                                                    \
+		.clock_dev = MCUX_TSTMR_CLOCK_DEV(n),                                           \
+		.clock_subsys = MCUX_TSTMR_CLOCK_SUBSYS(n),                                     \
 	};                                                                                 \
-	DEVICE_DT_INST_DEFINE(n, mcux_tstmr_init, NULL, NULL, &mcux_tstmr_config_##n,       \
-			      PRE_KERNEL_1, CONFIG_COUNTER_INIT_PRIORITY,                         \
-			      &mcux_tstmr_driver_api);
+	DEVICE_DT_INST_DEFINE(n, mcux_tstmr_init, NULL, &mcux_tstmr_data_##n,               \
+			      &mcux_tstmr_config_##n, POST_KERNEL,                              \
+			      CONFIG_COUNTER_INIT_PRIORITY, &mcux_tstmr_driver_api);
 
 DT_INST_FOREACH_STATUS_OKAY(MCUX_TSTMR_DEVICE)

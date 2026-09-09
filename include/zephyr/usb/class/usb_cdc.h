@@ -2,6 +2,7 @@
 
 /*
  * Copyright (c) 2017 PHYTEC Messtechnik GmbH
+ * Copyright (c) 2025 - 2026 NXP
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -55,6 +56,18 @@
 #define ETHERNET_FUNC_DESC_NCM		0x1a
 
 /**
+ * @brief Communications Class Notification Codes
+ * @note CDC120-20101103-track.pdf, 6.3, Table 20
+ */
+
+/** Network connection notification */
+#define USB_CDC_NETWORK_CONNECTION	0x00
+/** Response available notification */
+#define USB_CDC_RESPONSE_AVAILABLE	0x01
+/** Connection speed change notification */
+#define USB_CDC_CONNECTION_SPEED_CHANGE	0x2A
+
+/**
  * @brief PSTN Subclass Specific Requests
  * for ACM devices
  * @note PSTN120.pdf, 6.3, Table 13
@@ -69,13 +82,17 @@
  * @brief PSTN Subclass Class-Specific Notification Codes
  * @note PSTN120.pdf, 6.5, Table 30
  */
-#define USB_CDC_NETWORK_CONNECTION	0x00
-#define USB_CDC_RESPONSE_AVAILABLE	0x01
+
+/** Auxiliary jack hook state notification */
 #define USB_CDC_AUX_JACK_HOOK_STATE	0x08
+/** Ring detect notification */
 #define USB_CDC_RING_DETECT		0x09
+/** Serial state notification */
 #define USB_CDC_SERIAL_STATE		0x20
-#define USB_CDC_CALL_STATE_CHANGE	0x28
+/** Line state change notification */
 #define USB_CDC_LINE_STATE_CHANGE	0x23
+/** Call state change notification */
+#define USB_CDC_CALL_STATE_CHANGE	0x28
 
 /**
  * @brief PSTN UART State Bitmap Values
@@ -164,6 +181,72 @@
 #define PACKET_TYPE_DIRECTED		0x04
 #define PACKET_TYPE_ALL_MULTICAST	0x02
 #define PACKET_TYPE_PROMISCUOUS		0x01
+
+/**
+ * @brief ECM Subclass Ethernet Statistics Feature Selector Codes
+ * @note ECM120.pdf, 6.2.5, Table 9
+ */
+
+/** Reserved for future use */
+#define USB_CDC_ECM_STAT_RESERVED		0x00
+/** Frames transmitted without errors */
+#define USB_CDC_ECM_STAT_XMIT_OK		0x01
+/** Frames received without errors */
+#define USB_CDC_ECM_STAT_RCV_OK			0x02
+/** Frames not transmitted, or transmitted with errors */
+#define USB_CDC_ECM_STAT_XMIT_ERROR		0x03
+/** Frames received with errors */
+#define USB_CDC_ECM_STAT_RCV_ERROR		0x04
+/** Frames missed, no buffers */
+#define USB_CDC_ECM_STAT_RCV_NO_BUFFER		0x05
+/** Directed bytes transmitted without errors */
+#define USB_CDC_ECM_STAT_DIRECTED_BYTES_XMIT	0x06
+/** Directed frames transmitted without errors */
+#define USB_CDC_ECM_STAT_DIRECTED_FRAMES_XMIT	0x07
+/** Multicast bytes transmitted without errors */
+#define USB_CDC_ECM_STAT_MULTICAST_BYTES_XMIT	0x08
+/** Multicast frames transmitted without errors */
+#define USB_CDC_ECM_STAT_MULTICAST_FRAMES_XMIT	0x09
+/** Broadcast bytes transmitted without errors */
+#define USB_CDC_ECM_STAT_BROADCAST_BYTES_XMIT	0x0A
+/** Broadcast frames transmitted without errors */
+#define USB_CDC_ECM_STAT_BROADCAST_FRAMES_XMIT	0x0B
+/** Directed bytes received without errors */
+#define USB_CDC_ECM_STAT_DIRECTED_BYTES_RCV	0x0C
+/** Directed frames received without errors */
+#define USB_CDC_ECM_STAT_DIRECTED_FRAMES_RCV	0x0D
+/** Multicast bytes received without errors */
+#define USB_CDC_ECM_STAT_MULTICAST_BYTES_RCV	0x0E
+/** Multicast frames received without errors */
+#define USB_CDC_ECM_STAT_MULTICAST_FRAMES_RCV	0x0F
+/** Broadcast bytes received without errors */
+#define USB_CDC_ECM_STAT_BROADCAST_BYTES_RCV	0x10
+/** Broadcast frames received without errors */
+#define USB_CDC_ECM_STAT_BROADCAST_FRAMES_RCV	0x11
+/** Frames received with circular redundancy check (CRC) or frame check sequence (FCS) error */
+#define USB_CDC_ECM_STAT_RCV_CRC_ERROR		0x12
+/** Length of transmit queue */
+#define USB_CDC_ECM_STAT_TRANSMIT_QUEUE_LENGTH	0x13
+/** Frames received with alignment error */
+#define USB_CDC_ECM_STAT_RCV_ERROR_ALIGNMENT	0x14
+/** Frames transmitted with one collision */
+#define USB_CDC_ECM_STAT_XMIT_ONE_COLLISION	0x15
+/** Frames transmitted with more than one collision */
+#define USB_CDC_ECM_STAT_XMIT_MORE_COLLISIONS	0x16
+/** Frames transmitted after deferral */
+#define USB_CDC_ECM_STAT_XMIT_DEFERRED		0x17
+/** Frames not transmitted due to collisions */
+#define USB_CDC_ECM_STAT_XMIT_MAX_COLLISIONS	0x18
+/** Frames not received due to overrun */
+#define USB_CDC_ECM_STAT_RCV_OVERRUN		0x19
+/** Frames not transmitted due to underrun */
+#define USB_CDC_ECM_STAT_XMIT_UNDERRUN		0x1A
+/** Frames transmitted with heartbeat failure */
+#define USB_CDC_ECM_STAT_XMIT_HEARTBEAT_FAILURE	0x1B
+/** Times carrier sense signal lost during transmission */
+#define USB_CDC_ECM_STAT_XMIT_TIMES_CRS_LOST	0x1C
+/** Late collisions detected */
+#define USB_CDC_ECM_STAT_XMIT_LATE_COLLISIONS	0x1D
 
 /** Header Functional Descriptor */
 struct cdc_header_descriptor {

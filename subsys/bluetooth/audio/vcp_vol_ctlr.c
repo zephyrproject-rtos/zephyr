@@ -33,7 +33,9 @@
 #include <zephyr/toolchain.h>
 #include <zephyr/types.h>
 
+#include "aics_internal.h"
 #include "common/bt_str.h"
+#include "vocs_internal.h"
 #include "vcp_internal.h"
 
 LOG_MODULE_REGISTER(bt_vcp_vol_ctlr, CONFIG_BT_VCP_VOL_CTLR_LOG_LEVEL);
@@ -44,6 +46,34 @@ static sys_slist_t vcp_vol_ctlr_cbs = SYS_SLIST_STATIC_INIT(&vcp_vol_ctlr_cbs);
 static struct bt_vcp_vol_ctlr vol_ctlr_insts[CONFIG_BT_MAX_CONN];
 static int write_common_vcs_cp(struct bt_vcp_vol_ctlr *vol_ctlr);
 static int write_set_vol_cp(struct bt_vcp_vol_ctlr *vol_ctlr);
+
+#if defined(CONFIG_BT_VCP_VOL_CTLR_VOCS)
+static void vcp_vol_ctlr_free_vocs_client(void)
+{
+	ARRAY_FOR_EACH_PTR(vol_ctlr_insts, vol_ctlr) {
+		ARRAY_FOR_EACH_PTR(vol_ctlr->vocs, vocs) {
+			if (*vocs != NULL) {
+				bt_vocs_client_free_instance(*vocs);
+				*vocs = NULL;
+			}
+		}
+	}
+}
+#endif /* CONFIG_BT_VCP_VOL_CTLR_VOCS */
+
+#if defined(CONFIG_BT_VCP_VOL_CTLR_AICS)
+static void vcp_vol_ctlr_free_aics_client(void)
+{
+	ARRAY_FOR_EACH_PTR(vol_ctlr_insts, vol_ctlr) {
+		ARRAY_FOR_EACH_PTR(vol_ctlr->aics, aics) {
+			if (*aics != NULL) {
+				bt_aics_client_free_instance(*aics);
+				*aics = NULL;
+			}
+		}
+	}
+}
+#endif /* CONFIG_BT_VCP_VOL_CTLR_AICS */
 
 static struct bt_vcp_vol_ctlr *vol_ctlr_get_by_conn(const struct bt_conn *conn)
 {
@@ -879,7 +909,7 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.disconnected = disconnected,
 };
 
-static void bt_vcp_vol_ctlr_init(void)
+static int bt_vcp_vol_ctlr_init(void)
 {
 #if defined(CONFIG_BT_VCP_VOL_CTLR_VOCS)
 	for (size_t i = 0U; i < ARRAY_SIZE(vol_ctlr_insts); i++) {
@@ -894,8 +924,10 @@ static void bt_vcp_vol_ctlr_init(void)
 
 			vol_ctlr_insts[i].vocs[j] = bt_vocs_client_free_instance_get();
 
-			__ASSERT(vol_ctlr_insts[i].vocs[j],
-				 "Could not allocate VOCS client instance");
+			if (vol_ctlr_insts[i].vocs[j] == NULL) {
+				vcp_vol_ctlr_free_vocs_client();
+				return -ENOMEM;
+			}
 
 			bt_vocs_client_cb_register(vol_ctlr_insts[i].vocs[j], &vocs_cb);
 		}
@@ -921,13 +953,20 @@ static void bt_vcp_vol_ctlr_init(void)
 
 			vol_ctlr_insts[i].aics[j] = bt_aics_client_free_instance_get();
 
-			__ASSERT(vol_ctlr_insts[i].aics[j],
-				 "Could not allocate AICS client instance");
+			if (vol_ctlr_insts[i].aics[j] == NULL) {
+				vcp_vol_ctlr_free_aics_client();
+#if defined(CONFIG_BT_VCP_VOL_CTLR_VOCS)
+				vcp_vol_ctlr_free_vocs_client();
+#endif /* CONFIG_BT_VCP_VOL_CTLR_VOCS */
+				return -ENOMEM;
+			}
 
 			bt_aics_client_cb_register(vol_ctlr_insts[i].aics[j], &aics_cb);
 		}
 	}
 #endif /* CONFIG_BT_VCP_VOL_CTLR_AICS */
+
+	return 0;
 }
 
 int bt_vcp_vol_ctlr_discover(struct bt_conn *conn, struct bt_vcp_vol_ctlr **out_vol_ctlr)
@@ -965,7 +1004,11 @@ int bt_vcp_vol_ctlr_discover(struct bt_conn *conn, struct bt_vcp_vol_ctlr **out_
 	}
 
 	if (!initialized) {
-		bt_vcp_vol_ctlr_init();
+		err = bt_vcp_vol_ctlr_init();
+		if (err != 0) {
+			goto cleanup;
+		}
+
 		initialized = true;
 	}
 

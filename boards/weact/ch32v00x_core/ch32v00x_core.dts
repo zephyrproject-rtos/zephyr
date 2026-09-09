@@ -20,6 +20,7 @@
 	chosen {
 		zephyr,sram = &sram0;
 		zephyr,flash = &flash0;
+		zephyr,flash-controller = &flash;
 		zephyr,console = &usart1;
 		zephyr,shell-uart = &usart1;
 	};
@@ -98,5 +99,9 @@
 };
 
 &tim1 {
+	status = "okay";
+};
+
+&esig {
 	status = "okay";
 };

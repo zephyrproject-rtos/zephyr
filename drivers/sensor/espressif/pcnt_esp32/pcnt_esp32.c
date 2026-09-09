@@ -309,6 +309,14 @@ int pcnt_esp32_init(const struct device *dev)
 		return ret;
 	}
 
+	/* Unmask the events at the peripheral, now that a handler is installed. */
+	for (uint8_t i = 0; i < config->unit_len; i++) {
+		uint8_t u = config->unit_config[i].idx;
+
+		pcnt_ll_clear_intr_status(data->hal.dev, BIT(u));
+		pcnt_ll_enable_intr(data->hal.dev, BIT(u), true);
+	}
+
 	return 0;
 }
 

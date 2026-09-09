@@ -101,6 +101,8 @@ API Reference
 
 .. doxygengroup:: rtc_interface
 
+.. doxygengroup:: rtc_fake
+
 RTC device driver test suite
 ****************************
 

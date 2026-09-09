@@ -6,7 +6,7 @@
  * from mimxrt1010_evk.mex
  */
 
-#include <nxp/nxp_imx/rt/mimxrt1011dae5a-pinctrl.dtsi>
+#include <nxp/imxrt/imxrt10xx/pinctrl/mimxrt1011dae5a-pinctrl.dtsi>
 
 &pinctrl {
 	/* ADC Channels 1 and 2, exposed as pins 10 and 12 on J26 of EVK */

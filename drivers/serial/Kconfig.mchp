@@ -33,3 +33,13 @@ config UART_MCHP_DBGU_G1
 	select SERIAL_HAS_DRIVER
 	help
 	  This option enables UART driver for group (g1) of DBGU peripherals.
+
+config UART_MCHP_UART_G1
+	bool "Microchip SAM UART (uart-g1) driver"
+	default y
+	depends on DT_HAS_MICROCHIP_UART_G1_ENABLED
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	select PINCTRL
+	help
+	  This option enables UART driver for group (g1) of UART peripherals.

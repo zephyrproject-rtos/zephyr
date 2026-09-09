@@ -8,9 +8,11 @@ tests:
     platform_allow:
       - stm32mp157c_dk2
       - imx8mp_evk/mimx8ml8/adsp
+      - scobc_v1/versal_rpu
     integration_platforms:
       - stm32mp157c_dk2
       - imx8mp_evk/mimx8ml8/adsp
+      - scobc_v1/versal_rpu
     tags:
       - ipm
       - openamp

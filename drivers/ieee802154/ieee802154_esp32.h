@@ -56,6 +56,14 @@ struct ieee802154_esp32_data {
 	 * It shall be NULL if energy scan is not in progress.
 	 */
 	energy_scan_done_cb_t energy_scan_done;
+
+	/* Energy scan (ED) work item: dispatches energy_scan_done from thread
+	 * context after the HW energy detection completes.
+	 */
+	struct k_work ed_scan_work;
+
+	/* Maximum energy (dBm) reported by the last HW energy detection. */
+	int8_t ed_scan_power;
 };
 
 #endif /* ZEPHYR_DRIVERS_IEEE802154_IEEE802154_ESP32_H_ */

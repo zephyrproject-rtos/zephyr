@@ -10,8 +10,8 @@ toolchain:
   - xtools
   - zephyr
 sysbuild: true
-ram: 512
-flash: 1992
+ram: 1015
+flash: 1440
 supported:
   - adc
   - counter

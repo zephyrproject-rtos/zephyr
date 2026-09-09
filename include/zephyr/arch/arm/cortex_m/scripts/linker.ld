@@ -150,7 +150,7 @@ SECTIONS
 #if DT_NODE_HAS_STATUS(DT_CHOSEN(zephyr_itcm), okay)
 GROUP_START(ITCM)
 
-	SECTION_PROLOGUE(_ITCM_SECTION_NAME,,SUBALIGN(4))
+	SECTION_PROLOGUE(_ITCM_SECTION_NAME,,ALIGN(4))
 	{
 		__itcm_start = .;
 		*(.itcm)
@@ -436,6 +436,11 @@ _flash_used = LOADADDR(.last_section) + SIZEOF(.last_section) - __rom_region_sta
         . = ALIGN(4);
 	__bss_start = .;
 	__kernel_ram_start = .;
+
+/* Located in generated directory. This file is populated by the
+ * zephyr_linker_sources() Cmake function.
+ */
+#include <snippets-bss.ld>
 
 	*(.bss)
 	*(".bss.*")

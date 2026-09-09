@@ -13,19 +13,37 @@ tests:
     min_flash: 34
     filter: dt_compat_enabled("test-gpio-basic-api") and not dt_compat_enabled("arduino-header-r3")
 
-  drivers.gpio.nrf_sense_edge:
+  drivers.gpio.2pin.bsim:
     platform_allow:
-      - nrf52840dk/nrf52840
       - nrf52_bsim
       - nrf5340bsim/nrf5340/cpuapp
       - nrf5340bsim/nrf5340/cpunet
+      - nrf54l15bsim/nrf54l15/cpuapp
+    integration_platforms:
+      - nrf52_bsim
+    harness_config: {} # The GPIO loopback is set programmatically at runtime in the test
+
+  drivers.gpio.nrf_sense_edge:
+    platform_allow:
+      - nrf52840dk/nrf52840
       - nrf5340dk/nrf5340/cpuapp
       - nrf5340dk/nrf5340/cpunet
-      - nrf54l15bsim/nrf54l15/cpuapp
     integration_platforms:
       - nrf52840dk/nrf52840
     extra_args: "DTC_OVERLAY_FILE=boards/nrf52840dk_nrf52840.overlay;\
                  boards/nrf52840dk_nrf52840_sense_edge.overlay"
+
+  drivers.gpio.nrf_sense_edge.bsim:
+    platform_allow:
+      - nrf52_bsim
+      - nrf5340bsim/nrf5340/cpuapp
+      - nrf5340bsim/nrf5340/cpunet
+      - nrf54l15bsim/nrf54l15/cpuapp
+    integration_platforms:
+      - nrf52_bsim
+    extra_args: "DTC_OVERLAY_FILE=boards/nrf52840dk_nrf52840.overlay;\
+                 boards/nrf52840dk_nrf52840_sense_edge.overlay"
+    harness_config: {} # The GPIO loopback is set programmatically at runtime in the test
 
   drivers.gpio.nrf_sense_edge.nrf54l:
     platform_allow:

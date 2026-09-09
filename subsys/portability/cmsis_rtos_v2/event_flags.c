@@ -6,6 +6,7 @@
 
 #include <zephyr/kernel.h>
 #include <zephyr/portability/cmsis_types.h>
+#include <zephyr/sys/check.h>
 #include <string.h>
 
 K_MEM_SLAB_DEFINE_TYPE(cmsis_rtos_event_cb_slab, struct cmsis_rtos_event_cb,
@@ -36,7 +37,9 @@ osEventFlagsId_t osEventFlagsNew(const osEventFlagsAttr_t *attr)
 	}
 
 	if (attr->cb_mem != NULL) {
-		__ASSERT(attr->cb_size == sizeof(struct cmsis_rtos_event_cb), "Invalid cb_size\n");
+		CHECKIF(attr->cb_size < sizeof(struct cmsis_rtos_event_cb)) {
+			return NULL;
+		}
 		events = (struct cmsis_rtos_event_cb *)attr->cb_mem;
 	} else if (k_mem_slab_alloc(&cmsis_rtos_event_cb_slab, (void **)&events, K_MSEC(100)) !=
 		   0) {

@@ -7,6 +7,7 @@
 
 #include <zephyr/version.h>
 #include <zephyr/logging/log.h>
+#include <zephyr/net/wifi_utils.h>
 
 #include <siwx91x_nwp.h>
 #include "siwx91x_wifi.h"
@@ -57,6 +58,9 @@ int siwx91x_status(const struct device *dev,
 
 	memset(status, 0, sizeof(*status));
 
+	/* Derived from the channel below, once the channel is known. */
+	status->band = WIFI_FREQ_BAND_UNKNOWN;
+
 	status->state = sidev->state;
 	if (sidev->state <= WIFI_STATE_INACTIVE) {
 		return 0;
@@ -73,10 +77,6 @@ int siwx91x_status(const struct device *dev,
 	status->ssid_len = strlen(status->ssid);
 	status->wpa3_ent_type = WIFI_WPA3_ENTERPRISE_NA;
 
-	if (interface & SL_WIFI_2_4GHZ_INTERFACE) {
-		status->band = WIFI_FREQ_BAND_2_4_GHZ;
-	}
-
 	if (FIELD_GET(SIWX91X_INTERFACE_MASK, interface) == SL_WIFI_CLIENT_INTERFACE) {
 		sl_wifi_operational_statistics_t operational_statistics = { };
 
@@ -86,6 +86,7 @@ int siwx91x_status(const struct device *dev,
 		status->link_mode = wlan_info.wireless_mode;
 		status->iface_mode = WIFI_MODE_INFRA;
 		status->channel = wlan_info.channel_number;
+		status->band = wifi_utils_chan_to_band(status->channel);
 		if (status->link_mode >= WIFI_6) {
 			status->twt_capable = true;
 		}
@@ -129,6 +130,7 @@ int siwx91x_status(const struct device *dev,
 		status->iface_mode = WIFI_MODE_AP;
 		status->mfp = WIFI_MFP_DISABLE;
 		status->channel = wlan_info.channel_number;
+		status->band = wifi_utils_chan_to_band(status->channel);
 		status->beacon_interval = sl_ap_cfg.beacon_interval;
 		status->dtim_period = sl_ap_cfg.dtim_beacon_count;
 		status->link_mode = WIFI_4;
@@ -336,7 +338,7 @@ static int siwx91x_set_config(const struct device *dev,
 			filter_info.command_type = SL_WIFI_MULTICAST_MAC_CLEAR_BIT;
 		}
 
-		status = sl_wifi_configure_multicast_filter(&filter_info);
+		status = sli_wifi_configure_multicast_filter(&filter_info);
 		if (status != SL_STATUS_OK) {
 			LOG_ERR("Failed to %s multicast filter: 0x%x",
 				config->filter.set ? "add" : "remove", status);
@@ -524,6 +526,7 @@ static void siwx91x_iface_init(struct net_if *iface)
 
 	sidev->state = WIFI_STATE_INTERFACE_DISABLED;
 	sidev->iface = iface;
+	k_work_init(&sidev->on_join_work, siwx91x_on_join_work);
 
 	sl_wifi_set_callback_v2(SL_WIFI_SCAN_RESULT_EVENTS, siwx91x_on_scan, sidev);
 	sl_wifi_set_callback_v2(SL_WIFI_JOIN_EVENTS, siwx91x_on_join, sidev);

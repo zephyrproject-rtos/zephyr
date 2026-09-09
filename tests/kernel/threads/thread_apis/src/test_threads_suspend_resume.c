@@ -41,33 +41,59 @@ static void threads_suspend_resume(int prio)
 /*test cases*/
 
 /**
+ * @brief Verify that suspend and resume work on a cooperative thread.
+ *
  * @ingroup kernel_thread_tests
- * @brief Check the suspend and resume functionality in
- * a cooperative thread
  *
- * @details Create a thread with the priority lower than the current
- * thread which is cooperative and suspend it, make sure it doesn't
- * gets scheduled, and resume and check if the entry function is executed.
+ * @details
+ * A suspended thread must not be dispatched no matter what its priority
+ * would otherwise allow, and resuming it must make it runnable again. The
+ * worker is created at a cooperative priority and records that it ran, so
+ * the check is on observed execution rather than on a state flag.
  *
- * @see k_thread_suspend(), k_thread_resume()
+ * Test steps:
+ * - Create a cooperative thread and suspend it before it can run.
+ * - Sleep long enough that it would have run, and confirm it did not.
+ * - Resume it and sleep again.
+ * - Check that the entry function executed and that the thread kept the
+ *   priority it was created with.
+ *
+ * Expected result:
+ * - The thread does not run while suspended and does run once resumed.
+ *
+ * @see k_thread_suspend()
+ * @see k_thread_resume()
  */
-ZTEST(threads_lifecycle_1cpu, test_threads_suspend_resume_cooperative)
+ZTEST(threads_lifecycle_1cpu, test_thread_suspend_resume_coop)
 {
 	threads_suspend_resume(-2);
 }
 
 /**
+ * @brief Verify that suspend and resume work on a preemptible thread.
+ *
  * @ingroup kernel_thread_tests
- * @brief Check the suspend and resume functionality in
- * preemptive thread
  *
- * @details Create a thread with the priority lower than the current
- * thread which is preemptive and suspend it, make sure it doesn't gets
- * scheduled, and resume and check if the entry function is executed.
+ * @details
+ * The preemptible counterpart of the cooperative case, run from user mode so
+ * suspend and resume are reached through their system calls. A preemptible
+ * thread is eligible to be scheduled as soon as it is ready, which makes
+ * "did not run while suspended" the meaningful part of the check.
  *
- * @see k_thread_suspend(), k_thread_resume()
+ * Test steps:
+ * - Create a preemptible thread and suspend it before it can run.
+ * - Sleep long enough that it would have run, and confirm it did not.
+ * - Resume it and sleep again.
+ * - Check that the entry function executed and that the thread kept the
+ *   priority it was created with.
+ *
+ * Expected result:
+ * - The thread does not run while suspended and does run once resumed.
+ *
+ * @see k_thread_suspend()
+ * @see k_thread_resume()
  */
-ZTEST_USER(threads_lifecycle, test_threads_suspend_resume_preemptible)
+ZTEST_USER(threads_lifecycle, test_thread_suspend_resume_preempt)
 {
 	threads_suspend_resume(1);
 }
@@ -84,12 +110,28 @@ void suspend_myself(void *arg0, void *arg1, void *arg2)
 }
 
 /**
+ * @brief Verify that a thread suspending itself reschedules immediately.
+ *
  * @ingroup kernel_thread_tests
  *
- * @brief Check that suspending a thread is a schedule point when
- * called on the current thread.
+ * @details
+ * k_thread_suspend() called on the current thread has to act as a scheduling
+ * point: the thread must give up the CPU inside the call rather than running
+ * on to the next statement. The worker sets a flag on the line after the
+ * call, so that flag being clear is what proves the switch happened there.
+ *
+ * Test steps:
+ * - Create a user thread that suspends itself and then sets a flag.
+ * - Give it time to start and run into the suspend.
+ * - Check the flag, then resume the thread and check it again.
+ *
+ * Expected result:
+ * - The flag stays clear while the thread is suspended and is set once it is
+ *   resumed, so the suspend switched away before the following statement.
+ *
+ * @see k_thread_suspend()
  */
-ZTEST(threads_lifecycle, test_threads_suspend)
+ZTEST(threads_lifecycle, test_thread_suspend)
 {
 	after_suspend = false;
 
@@ -120,13 +162,29 @@ void sleep_suspended(void *arg0, void *arg1, void *arg2)
 }
 
 /**
- * @ingroup kernel_thread_tests
- * @brief Check that suspending a thread cancels a preexisting thread timeout
+ * @brief Verify that suspending a sleeping thread cancels its timeout.
  *
- * @details Suspended threads should not wake up unexpectedly if they
- * happened to have been sleeping when suspended.
+ * @ingroup kernel_thread_tests
+ *
+ * @details
+ * A thread that is suspended while it happens to be sleeping must not be
+ * woken by the timeout it had pending. If the timeout survived the suspend,
+ * the thread would come back on its own, which is exactly what a suspended
+ * thread must never do.
+ *
+ * Test steps:
+ * - Create a user thread that sleeps and then sets a flag on waking.
+ * - Suspend it part-way through its sleep.
+ * - Wait well past the point its sleep would have expired.
+ * - Check the flag.
+ *
+ * Expected result:
+ * - The thread does not wake up, so the flag stays clear.
+ *
+ * @see k_thread_suspend()
+ * @see k_sleep()
  */
-ZTEST(threads_lifecycle, test_threads_suspend_timeout)
+ZTEST(threads_lifecycle, test_thread_suspend_timeout)
 {
 	after_suspend = false;
 
@@ -148,13 +206,29 @@ ZTEST(threads_lifecycle, test_threads_suspend_timeout)
 }
 
 /**
- * @ingroup kernel_thread_tests
- * @brief Check resuming a thread that is not suspended
+ * @brief Verify that resuming a thread that is not suspended does nothing.
  *
- * @details Use k_thread_state_str() to get thread state.
- * Resume an unsuspend thread will not change the thread state.
+ * @ingroup kernel_thread_tests
+ *
+ * @details
+ * k_thread_resume() on a thread that was never suspended has to be a no-op
+ * rather than disturbing whatever the thread is currently doing. The thread's
+ * state string is sampled before and after the call, so an unwanted change of
+ * state is visible rather than merely assumed absent.
+ *
+ * Test steps:
+ * - Create a thread and let it reach a known state.
+ * - Read its state with k_thread_state_str().
+ * - Call k_thread_resume() on it, which was never suspended.
+ * - Read the state again and compare.
+ *
+ * Expected result:
+ * - The thread state is unchanged by the resume.
+ *
+ * @see k_thread_resume()
+ * @see k_thread_state_str()
  */
-ZTEST(threads_lifecycle, test_resume_unsuspend_thread)
+ZTEST(threads_lifecycle, test_thread_resume_not_suspended)
 {
 	char buffer[32];
 	const char *str;

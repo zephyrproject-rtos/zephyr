@@ -1,0 +1,19 @@
+#
+# Copyright 2026 Advanced Micro Devices, Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config AMD_TMRCTR
+	bool "AMD AXI Timer"
+	default y
+	depends on DT_HAS_AMD_XPS_TIMER_1_00_A_ENABLED
+	select TICKLESS_CAPABLE
+	select TIMER_HAS_64BIT_CYCLE_COUNTER
+	help
+	  This module implements a kernel device driver for the AMD AXI
+	  Timer IP.
+
+	  The driver supports periodic and tickless kernel operation using
+	  one timer channel as the clock event source and the second timer
+	  channel as the clock source.

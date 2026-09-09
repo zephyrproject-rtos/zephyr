@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-#include <nxp/kinetis/MKW40Z160VHT4-pinctrl.h>
+#include <nxp/kinetis/kwx/pinctrl/MKW40Z160VHT4-pinctrl.h>
 
 &pinctrl {
 	adc0_default: adc0_default {

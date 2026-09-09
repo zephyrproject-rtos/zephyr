@@ -370,12 +370,11 @@ struct can_driver_config {
 		.phy = DEVICE_DT_GET_OR_NULL(DT_PHANDLE(node_id, phys)),			\
 		.min_bitrate = DT_CAN_TRANSCEIVER_MIN_BITRATE(node_id, _min_bitrate),		\
 		.max_bitrate = DT_CAN_TRANSCEIVER_MAX_BITRATE(node_id, _max_bitrate),		\
-		.bitrate = DT_PROP_OR(node_id, bitrate,						\
-			DT_PROP_OR(node_id, bus_speed, CONFIG_CAN_DEFAULT_BITRATE)),            \
+		.bitrate = DT_PROP_OR(node_id, bitrate, CONFIG_CAN_DEFAULT_BITRATE),		\
 		.sample_point = DT_PROP_OR(node_id, sample_point, 0),				\
 		IF_ENABLED(CONFIG_CAN_FD_MODE,							\
-			(.bitrate_data = DT_PROP_OR(node_id, bitrate_data,                      \
-			 DT_PROP_OR(node_id, bus_speed_data, CONFIG_CAN_DEFAULT_BITRATE_DATA)), \
+			(.bitrate_data = DT_PROP_OR(node_id, bitrate_data,			\
+						    CONFIG_CAN_DEFAULT_BITRATE_DATA),		\
 			 .sample_point_data = DT_PROP_OR(node_id, sample_point_data, 0),))	\
 	}
 
@@ -1403,6 +1402,15 @@ int can_add_rx_filter(const struct device *dev, can_rx_callback_t callback,
  *
  * @note The message queue must be initialized before calling this function and
  * the caller must have appropriate permissions on it.
+ *
+ * @warning The CAN controller driver retains the message queue pointer for as
+ * long as the filter is installed. The message queue must therefore remain
+ * valid until the filter is removed with @a can_remove_rx_filter(); received
+ * frames are otherwise written to freed memory. Use @a CAN_MSGQ_DEFINE() to
+ * statically define the message queue. Message queues obtained from
+ * @a k_object_alloc() may not be used, as they are freed once the last thread
+ * holding permission on them releases it or terminates; such message queues
+ * are rejected when this function is called from user mode.
  *
  * @warning Message queue overruns are silently ignored and overrun frames
  * discarded. Custom error handling can be implemented by using

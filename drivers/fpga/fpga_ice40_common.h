@@ -40,7 +40,7 @@
 	BUILD_ASSERT(DT_INST_PROP(inst, trailing_clocks) <= UINT8_MAX);                            \
                                                                                                    \
 	static const struct fpga_ice40_config fpga_ice40_config_##inst = {                         \
-		.bus = SPI_DT_SPEC_INST_GET(inst, SPI_OP_MODE_MASTER | SPI_MODE_CPOL |             \
+		.bus = SPI_DT_SPEC_INST_GET(inst, SPI_OP_MODE_CONTROLLER | SPI_MODE_CPOL |         \
 							  SPI_MODE_CPHA | SPI_WORD_SET(8) |        \
 							  SPI_TRANSFER_MSB),                       \
 		.creset = GPIO_DT_SPEC_INST_GET(inst, creset_gpios),                               \

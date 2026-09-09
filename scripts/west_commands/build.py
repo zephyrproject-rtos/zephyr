@@ -418,9 +418,13 @@ class Build(Forceable):
                                 args.append("-D{}".format(entry.replace('"', '\"')))
                     elif data == 'extra_args':
                         # Retain quotes around config options
-                        config_options = [arg for arg in arg_list if arg.startswith("CONFIG_")]
+                        config_options = [
+                            arg for arg in arg_list
+                            if arg.startswith(("CONFIG_", "SB_CONFIG_"))
+                        ]
                         non_config_option_candidates = [
-                            arg for arg in arg_list if not arg.startswith("CONFIG_")
+                            arg for arg in arg_list
+                            if not arg.startswith(("CONFIG_", "SB_CONFIG_"))
                         ]
                         args = ["-D{}".format(a.replace('"', '\"')) for a in config_options]
 

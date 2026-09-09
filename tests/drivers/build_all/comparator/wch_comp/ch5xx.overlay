@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2026 SMILE (smile.eu)
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/ch570-pinctrl.h>
+
+&pinctrl {
+	cmp0_pins: cmp0_pins {
+		group {
+			pinmux = <CMP_P_PA3_0 CMP_N_PA2_0>;
+			input-disable;
+		};
+	};
+};
+
+&cmp0 {
+	status = "okay";
+	pinctrl-0 = <&cmp0_pins>;
+	pinctrl-names = "default";
+};

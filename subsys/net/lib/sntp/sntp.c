@@ -132,13 +132,18 @@ static int32_t parse_response(uint8_t *data, uint16_t len, struct sntp_time *exp
 	int64_t root_delay_us = q16_16_s_to_ll_us(net_ntohl(pkt->root_delay));
 	uint32_t precision_us;
 
-	if (pkt->precision <= 0) {
-		precision_us = (uint32_t)(USEC_PER_SEC + USEC_PER_SEC / 2) >> -pkt->precision;
-	} else if (pkt->precision <= 10) {
-		precision_us = (uint32_t)(USEC_PER_SEC + USEC_PER_SEC / 2) << pkt->precision;
-	} else {
+	/* precision is a shift count on a 32-bit value; below -31 the
+	 * shift is undefined, and the expression already saturates to 0 us.
+	 */
+	if (pkt->precision < -31 || pkt->precision > 10) {
 		NET_DBG("SNTP packet precision out of range: %d", pkt->precision);
 		return -EINVAL;
+	}
+
+	if (pkt->precision <= 0) {
+		precision_us = (uint32_t)(USEC_PER_SEC + USEC_PER_SEC / 2) >> -pkt->precision;
+	} else {
+		precision_us = (uint32_t)(USEC_PER_SEC + USEC_PER_SEC / 2) << pkt->precision;
 	}
 
 	res->uptime_us = client_rx_us;

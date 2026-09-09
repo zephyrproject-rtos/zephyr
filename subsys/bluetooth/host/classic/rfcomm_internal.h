@@ -75,6 +75,37 @@ struct bt_rfcomm_pn {
 	uint8_t  credits;
 } __packed;
 
+/** @brief Bitmask for the FC (Flow Control) field in the RFCOMM MSC V.24 signals octet. */
+#define BT_RFCOMM_V24_SIGNALS_FC_MASK GENMASK(1, 1)
+
+/**
+ * @brief Extract the FC (Flow Control) field from the RFCOMM MSC V.24 signals octet.
+ *
+ * @param _v  V.24 signals octet value.
+ *
+ * @return FC field value (0 = ready to accept frames, 1 = unable to accept frames).
+ */
+#define BT_RFCOMM_V24_SIGNALS_GET_FC(_v) FIELD_GET(BT_RFCOMM_V24_SIGNALS_FC_MASK, _v)
+
+/**
+ * @brief Clear the FC (Flow Control) field from the RFCOMM MSC V.24 signals octet.
+ *
+ * @param _v  V.24 signals octet value.
+ *
+ * @return V.24 signals octet with FC field cleared.
+ */
+#define BT_RFCOMM_V24_SIGNALS_CLR_FC(_v) ((_v) & (~BT_RFCOMM_V24_SIGNALS_FC_MASK))
+
+/**
+ * @brief Set the FC (Flow Control) field to the RFCOMM MSC V.24 signals octet.
+ *
+ * @param _v  V.24 signals octet value.
+ *
+ * @return V.24 signals octet with FC field set.
+ */
+#define BT_RFCOMM_V24_SIGNALS_SET_FC(_v) \
+	(BT_RFCOMM_V24_SIGNALS_CLR_FC(_v) | FIELD_PREP(BT_RFCOMM_V24_SIGNALS_FC_MASK, 1))
+
 #define BT_RFCOMM_MSC    0x38
 struct bt_rfcomm_msc {
 	uint8_t  dlci;
@@ -100,8 +131,6 @@ struct bt_rfcomm_rls {
 
 /* DV = 1 IC = 0 RTR = 1 RTC = 1 FC = 0 EXT = 0 */
 #define BT_RFCOMM_DEFAULT_V24_SIG 0x8d
-
-#define BT_RFCOMM_GET_FC(v24_signal) (((v24_signal) & 0x02) >> 1)
 
 #define BT_RFCOMM_SIG_MIN_MTU   23
 #define BT_RFCOMM_SIG_MAX_MTU   32767
@@ -183,3 +212,8 @@ struct bt_rfcomm_rls {
 
 /* Initialize RFCOMM signal layer */
 void bt_rfcomm_init(void);
+
+enum {
+	RFCOMM_FLAG_MSC_FC_CLEARED = 0,
+	RFCOMM_FLAG_MSC_FC_CLEAR_REQ = 1,
+};

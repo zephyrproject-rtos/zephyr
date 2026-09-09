@@ -13,10 +13,9 @@ LOG_MODULE_REGISTER(test);
 
 static volatile uint32_t top_cnt;
 
-#define DEVICE_DT_GET_AND_COMMA(node_id) DEVICE_DT_GET(node_id),
 /* Generate a list of devices for all instances of the "compat" */
 #define DEVS_FOR_DT_COMPAT(compat) \
-	DT_FOREACH_STATUS_OKAY(compat, DEVICE_DT_GET_AND_COMMA)
+	DT_FOREACH_STATUS_OKAY(compat, DEVICE_DT_GET_COMMA)
 
 #define DEVICE_DT_GET_REG_AND_COMMA(node_id) (NRF_RTC_Type *)DT_REG_ADDR(node_id),
 /* Generate a list of devices for all instances of the "compat" */

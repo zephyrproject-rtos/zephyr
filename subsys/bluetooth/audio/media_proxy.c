@@ -894,6 +894,29 @@ int media_proxy_ctrl_get_player_name(struct media_player *player)
 	return -EINVAL;
 }
 
+int media_proxy_ctrl_set_player_name(struct media_player *player, const char *name)
+{
+	CHECKIF(player == NULL || name == NULL) {
+		LOG_DBG("player or name is NULL");
+		return -EINVAL;
+	}
+
+#if defined(CONFIG_MCTL_LOCAL_PLAYER_LOCAL_CONTROL)
+	if (mprx.local_player.registered && player == &mprx.local_player) {
+		if (mprx.local_player.calls->set_player_name != NULL) {
+			mprx.local_player.calls->set_player_name(name);
+
+			return 0;
+		}
+
+		LOG_DBG("No call");
+		return -EOPNOTSUPP;
+	}
+#endif /* CONFIG_MCTL_LOCAL_PLAYER_LOCAL_CONTROL */
+
+	return -EINVAL;
+}
+
 int media_proxy_ctrl_get_icon_id(struct media_player *player)
 {
 	CHECKIF(player == NULL) {

@@ -8,6 +8,7 @@ menuconfig TMP1075
 	default y
 	depends on DT_HAS_TI_TMP1075_ENABLED
 	select I2C
+	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_TI_TMP1075),alert-gpios)
 
 	help
 	  Enable the driver for Texas Instruments TMP1075 High-Accuracy Digital

@@ -3,7 +3,7 @@
 
 if BOARD_QEMU_ARC
 
-configdefault NET_L2_ETHERNET
+configdefault ETH_DRIVER
 	default y
 
 # Required to satisfy dependency of networking stack on RNG

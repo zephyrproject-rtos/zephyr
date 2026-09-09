@@ -19,6 +19,12 @@ source "subsys/logging/Kconfig.template.log_config"
 config NORDIC_VPR_LAUNCHER_INIT_PRIORITY
 	int "Nordic VPR coprocessor launcher init priority"
 	default 44 if DT_HAS_NORDIC_CORESIGHT_NRF_ENABLED
+	# If errata 16 is enabled Mailbox driver need to be started as soon as possible
+	# after VPR launcher to minimize a chance of losing an event from FLPR.
+	# Mailbox starts one level later than the VPR launcher and as many modules
+	# may start on level 0 there might be a significant delay. Need to use less common
+	# level. It's not bullet proof but there is nothing better.
+	default 11 if MBOX_NRF_VEVIF_EVENT_USE_54L_ERRATA_16
 	default 0
 	help
 	  The init priority of the VPR coprocessor launcher.

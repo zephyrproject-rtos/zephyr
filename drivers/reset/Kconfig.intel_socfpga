@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 
 config RESET_INTEL_SOCFPGA
-	bool "Intel SoC FPGA Reset Controller driver"
+	bool "Intel SoC FPGA reset driver"
 	default y
 	depends on DT_HAS_INTEL_SOCFPGA_RESET_ENABLED
 	help

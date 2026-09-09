@@ -8,7 +8,7 @@
 #include "lwm2m_object.h"
 #include "lwm2m_observation.h"
 
-/* LWM2M / CoAP Content-Formats */
+/* LwM2M / CoAP Content-Formats */
 #define LWM2M_FORMAT_PLAIN_TEXT	      0
 #define LWM2M_FORMAT_APP_LINK_FORMAT  40
 #define LWM2M_FORMAT_APP_OCTET_STREAM 42

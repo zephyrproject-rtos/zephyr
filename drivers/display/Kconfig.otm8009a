@@ -6,6 +6,8 @@ config OTM8009A
 	default y
 	depends on DT_HAS_ORISETECH_OTM8009A_ENABLED
 	select MIPI_DSI
+	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_ORISETECH_OTM8009A),reset-gpios) || \
+		$(dt_compat_any_has_prop,$(DT_COMPAT_ORISETECH_OTM8009A),bl-gpios)
 	help
 	  Enable driver for OTM8009A display driver.
 

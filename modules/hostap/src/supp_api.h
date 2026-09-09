@@ -21,7 +21,7 @@
 #define MAC_STR_LEN 18 /* for ':' or '-' separated MAC address string */
 #define CHAN_NUM_LEN 6 /* for space-separated channel numbers string */
 
-enum wifi_frequency_bands wpas_band_to_zephyr(enum wpa_radio_work_band band);
+enum wifi_frequency_bands wpas_freq_to_zephyr_band(int freq);
 
 enum wifi_wpa3_enterprise_type wpas_key_mgmt_to_zephyr_wpa3_ent(int key_mgmt);
 

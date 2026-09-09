@@ -241,7 +241,7 @@ def main() -> int:
     )
     parser.add_argument(
         "--warn-paths",
-        nargs="*",
+        action="append",
         default=[],
         help="Path prefixes where undocumented symbols are treated as warnings",
     )

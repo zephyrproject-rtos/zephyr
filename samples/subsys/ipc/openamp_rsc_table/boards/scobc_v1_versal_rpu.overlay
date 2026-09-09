@@ -1,0 +1,77 @@
+/*
+ * Copyright (c) 2026 Space Cubics Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+
+/ {
+	chosen {
+		zephyr,ipc = &mbox_consumer;
+		zephyr,ipc_shm = &rpu0vdev0buffer;
+	};
+
+	/*
+	 * One naturally aligned MPU region covers the firmware carveout, both
+	 * vrings, and the shared buffer. APU and the RPU access this memory
+	 * concurrently, so keep it non-cacheable.
+	 */
+	rproc0_shm: shared-memory@9800000 {
+		compatible = "zephyr,memory-region", "mmio-sram";
+		reg = <0x09800000 0x200000>;
+		zephyr,memory-region = "RPROC_SHM";
+		zephyr,memory-attr = <DT_MEM_ARM_MPU_RAM_NOCACHE>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		ranges = <0x0 0x09800000 0x200000>;
+
+		/*
+		 * RPROC stores the load image for OCM data and the ELF resource
+		 * table; it is deliberately separate from zephyr,sram, which
+		 * remains in OCM. Limit the linker region to the firmware
+		 * carveout so that an oversized image fails to link instead of
+		 * overwriting vring0 at 0x09860000.
+		 */
+		rproc0_reserved: memory@0 {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x0 0x60000>;
+			zephyr,memory-region = "RPROC";
+			zephyr,memory-region-flags = "rwx";
+		};
+	};
+
+	rpu0vdev0vring0: memory@9860000 {
+		compatible = "mmio-sram";
+		reg = <0x09860000 0x4000>;
+	};
+
+	rpu0vdev0vring1: memory@9864000 {
+		compatible = "mmio-sram";
+		reg = <0x09864000 0x4000>;
+	};
+
+	rpu0vdev0buffer: memory@9868000 {
+		compatible = "mmio-sram";
+		reg = <0x09868000 0x100000>;
+	};
+
+	mbox_consumer: mbox-consumer {
+		compatible = "zephyr,mbox-ipm";
+		mboxes = <&rpu0_apu_mailbox 0>, <&rpu0_apu_mailbox 1>;
+		mbox-names = "tx", "rx";
+	};
+};
+
+&ipi1 {
+	status = "okay";
+
+	rpu0_apu_mailbox: mailbox@ff360000 {
+		compatible = "xlnx,mbox-versal-ipi-dest-mailbox";
+		reg = <0xff360000 0x10000>, <0xff3f0a00 0x200>;
+		reg-names = "ctrl", "msg";
+		xlnx,ipi-id = <5>;
+		#mbox-cells = <1>;
+		status = "okay";
+	};
+};

@@ -28,7 +28,7 @@ extern void lvd_ch1_isr(void);
 extern void lvd_ch2_isr(void);
 extern void lvd_start_lvd(lvd_channel_t ch, lvd_trigger_t trigger);
 extern void lvd_stop_lvd(lvd_channel_t ch);
-extern void lvd_start_int(lvd_channel_t ch, void (*p_callback)(void *));
+extern void lvd_start_int(lvd_channel_t ch, void (*p_callback)(void *p_args));
 extern void lvd_stop_int(lvd_channel_t ch);
 extern void lvd_hw_enable_reset_int(lvd_channel_t ch, bool enable);
 extern void lvd_hw_enable_reg_protect(bool enable);

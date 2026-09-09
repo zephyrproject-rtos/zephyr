@@ -173,8 +173,8 @@
 		clock-frequency = <10000000>;
 
 		clk-gpios = <&gpio0 21 GPIO_ACTIVE_HIGH>;
-		mosi-gpios = <&gpio0 23 GPIO_ACTIVE_HIGH>;
-		miso-gpios = <&gpio0 22 GPIO_ACTIVE_HIGH>;
+		sdo-gpios = <&gpio0 23 GPIO_ACTIVE_HIGH>;
+		sdi-gpios = <&gpio0 22 GPIO_ACTIVE_HIGH>;
 
 		cs-gpios = <&gpio0 20 GPIO_ACTIVE_LOW>;
 

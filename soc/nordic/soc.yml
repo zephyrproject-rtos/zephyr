@@ -55,6 +55,10 @@ family:
             cpuclusters:
               - name: cpuapp
               - name: cpuflpr
+          - name: nrf7120e
+            cpuclusters:
+              - name: cpuapp
+              - name: cpuflpr
       - name: nrf91
         socs:
           - name: nrf9131
@@ -135,6 +139,14 @@ runners:
               - nrf54h20/cpurad
               - nrf54h20/cpuppr
               - nrf54h20/cpuflpr
+          - qualifiers:
+              - nrf7120/cpuapp
+              - nrf7120/cpuapp/ns
+              - nrf7120/cpuflpr
+          - qualifiers:
+              - nrf7120e/cpuapp
+              - nrf7120e/cpuapp/ns
+              - nrf7120e/cpuflpr
           - qualifiers:
               - nrf9280/cpuapp
               - nrf9280/cpurad
@@ -270,6 +282,10 @@ runners:
               - nrf7120/cpuapp
               - nrf7120/cpuapp/ns
               - nrf7120/cpuflpr
+          - qualifiers:
+              - nrf7120e/cpuapp
+              - nrf7120e/cpuapp/ns
+              - nrf7120e/cpuflpr
           - qualifiers:
               - nrf9280/cpuapp
               - nrf9280/cpurad

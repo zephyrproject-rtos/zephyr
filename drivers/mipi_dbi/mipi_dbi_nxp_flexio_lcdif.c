@@ -15,17 +15,26 @@
 #include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/device_mmio.h>
-#include <fsl_edma.h>
 #include <fsl_flexio_mculcd.h>
+#ifdef CONFIG_MIPI_DBI_NXP_FLEXIO_LCDIF_SMARTDMA
+#include <fsl_smartdma.h>
+#include <zephyr/drivers/dma/dma_mcux_smartdma.h>
+#include <zephyr/devicetree/mux.h>
+#include <zephyr/drivers/mux.h>
+#else
+#include <fsl_edma.h>
+#endif
 
 LOG_MODULE_REGISTER(display_mcux_flexio_lcdif, CONFIG_DISPLAY_LOG_LEVEL);
 
+#ifndef CONFIG_MIPI_DBI_NXP_FLEXIO_LCDIF_SMARTDMA
 struct stream {
 	const struct device *dma_dev;
 	uint32_t channel; /* stores the channel for dma */
 	struct dma_config dma_cfg;
 	struct dma_block_config dma_blk_cfg;
 };
+#endif
 
 struct mcux_flexio_lcdif_config {
 	FLEXIO_MCULCD_Type *flexio_lcd_dev;
@@ -37,15 +46,104 @@ struct mcux_flexio_lcdif_config {
 	const struct gpio_dt_spec cs_gpio;
 	const struct gpio_dt_spec rs_gpio;
 	const struct gpio_dt_spec rdwr_gpio;
+#ifdef CONFIG_MIPI_DBI_NXP_FLEXIO_LCDIF_SMARTDMA
+	const struct device *smart_dma;
+	/* Optional FlexIO-IRQ-to-SmartDMA-trigger INPUTMUX route (mux-states);
+	 * NULL on back-ends/SoCs that need no such route.
+	 */
+	const struct device *inputmux_dev;
+	const struct mux_state *inputmux_state;
+#endif
 };
 
 struct mcux_flexio_lcdif_data {
+#ifdef CONFIG_MIPI_DBI_NXP_FLEXIO_LCDIF_SMARTDMA
+	smartdma_flexio_mculcd_param_t smartdma_params __aligned(4);
+	uint32_t smartdma_stack[1];
+	const uint8_t *smartdma_tail;
+	uint32_t smartdma_tail_len;
+#else
 	struct stream dma_tx;
+#endif
 	struct k_sem transfer_done;
 	const struct mipi_dbi_config *active_cfg;
 	uint8_t data_bus_width;
 };
 
+#ifdef CONFIG_MIPI_DBI_NXP_FLEXIO_LCDIF_SMARTDMA
+
+/* SMARTDMA TX transfer memory address must be 4 byte aligned. */
+#define FLEXIO_LCDIF_SMARTDMA_TX_ADDR_ALIGN 4U
+/* SMARTDMA TX transfer size must be a multiple of 64 bytes. */
+#define FLEXIO_LCDIF_SMARTDMA_TX_LEN_ALIGN 64U
+
+/*
+ * The SMARTDMA FlexIO_DMA firmware can only transfer a buffer that is 4 byte
+ * aligned and a multiple of 64 bytes. Split the transfer into an unaligned
+ * head (part1) sent using the blocking method, an aligned middle chunk
+ * (part2) sent using SMARTDMA, and an unaligned tail (part3) sent using the
+ * blocking method once the SMARTDMA transfer completes.
+ */
+static void flexio_lcdif_smartdma_get_chunk_len(uint32_t total_len, uint32_t start_addr,
+						 uint32_t *part1_len, uint32_t *part2_len,
+						 uint32_t *part3_len)
+{
+	if (total_len < FLEXIO_LCDIF_SMARTDMA_TX_LEN_ALIGN) {
+		*part1_len = total_len;
+		*part2_len = 0;
+		*part3_len = 0;
+		return;
+	}
+
+	*part3_len = (start_addr + total_len) & (FLEXIO_LCDIF_SMARTDMA_TX_ADDR_ALIGN - 1U);
+	*part2_len = (total_len - *part3_len) & ~(FLEXIO_LCDIF_SMARTDMA_TX_LEN_ALIGN - 1U);
+
+	if (*part2_len < FLEXIO_LCDIF_SMARTDMA_TX_LEN_ALIGN) {
+		*part1_len = total_len;
+		*part2_len = 0;
+		*part3_len = 0;
+	} else {
+		*part1_len = total_len - *part2_len - *part3_len;
+	}
+}
+
+#endif /* CONFIG_MIPI_DBI_NXP_FLEXIO_LCDIF_SMARTDMA */
+
+static void flexio_lcdif_write_data_array(FLEXIO_MCULCD_Type *base,
+					  const void *data,
+					  size_t size);
+
+#ifdef CONFIG_MIPI_DBI_NXP_FLEXIO_LCDIF_SMARTDMA
+static void flexio_lcdif_smartdma_dma_callback(const struct device *dma_dev, void *arg,
+					       uint32_t channel, int status)
+{
+	const struct device *flexio_dev = (struct device *)arg;
+	struct mcux_flexio_lcdif_data *lcdif_data = flexio_dev->data;
+	const struct mcux_flexio_lcdif_config *config = flexio_dev->config;
+	FLEXIO_MCULCD_Type *flexio_lcd = config->flexio_lcd_dev;
+
+	ARG_UNUSED(dma_dev);
+	ARG_UNUSED(channel);
+	ARG_UNUSED(status);
+
+	/* Now the data are in shifter, wait for the data send out from the shifter. */
+	FLEXIO_MCULCD_WaitTransmitComplete();
+
+	/* Disable the TX shifter and the timer. */
+	FLEXIO_MCULCD_ClearMultiBeatsWriteConfig(flexio_lcd);
+
+	/* Send the unaligned tail, if any, using the blocking method. */
+	if (lcdif_data->smartdma_tail_len != 0) {
+		flexio_lcdif_write_data_array(flexio_lcd, lcdif_data->smartdma_tail,
+					      lcdif_data->smartdma_tail_len);
+	}
+
+	/* De-assert nCS. */
+	FLEXIO_MCULCD_StopTransfer(flexio_lcd);
+
+	k_sem_give(&lcdif_data->transfer_done);
+}
+#else
 static void flexio_lcdif_dma_callback(const struct device *dev, void *arg,
 				      uint32_t channel, int status)
 {
@@ -67,7 +165,7 @@ static void flexio_lcdif_dma_callback(const struct device *dev, void *arg,
 
 	k_sem_give(&lcdif_data->transfer_done);
 }
-
+#endif /* CONFIG_MIPI_DBI_NXP_FLEXIO_LCDIF_SMARTDMA */
 
 static void flexio_lcdif_set_cs(bool set, void *param)
 {
@@ -93,6 +191,7 @@ static void flexio_lcdif_set_rd_wr(bool set, void *param)
 	gpio_pin_set_dt(&config->rdwr_gpio, (int)set);
 }
 
+#ifndef CONFIG_MIPI_DBI_NXP_FLEXIO_LCDIF_SMARTDMA
 static edma_modulo_t flexio_lcdif_get_edma_modulo(uint8_t shifterNum)
 {
 	edma_modulo_t ret = kEDMA_ModuloDisable;
@@ -117,6 +216,7 @@ static edma_modulo_t flexio_lcdif_get_edma_modulo(uint8_t shifterNum)
 
 	return ret;
 }
+#endif /* !CONFIG_MIPI_DBI_NXP_FLEXIO_LCDIF_SMARTDMA */
 
 static void flexio_lcdif_write_data_array(FLEXIO_MCULCD_Type *base,
 					  const void *data,
@@ -209,6 +309,8 @@ static int mipi_dbi_flexio_lcdif_configure(const struct device *dev,
 	flexioMcuLcdConfig.baudRate_Bps = dbi_config->config.frequency *
 					  lcdif_data->data_bus_width;
 
+	flexioMcuLcdConfig.enableInDoze = true;
+
 	if (nxp_flexio_get_rate(config->flexio_dev, &clock_freq)) {
 		return -EINVAL;
 	}
@@ -222,11 +324,108 @@ static int mipi_dbi_flexio_lcdif_configure(const struct device *dev,
 		return -EINVAL;
 	}
 
+#ifdef CONFIG_MIPI_DBI_NXP_FLEXIO_LCDIF_SMARTDMA
+	FLEXIO_EnableShifterStatusInterrupts(config->flexio_lcd_dev->flexioBase,
+					     (1UL << config->flexio_lcd_dev->txShifterEndIndex));
+#endif
+
 	lcdif_data->active_cfg = dbi_config;
 
 	return 0;
 }
 
+#ifdef CONFIG_MIPI_DBI_NXP_FLEXIO_LCDIF_SMARTDMA
+static int mipi_dbi_flexio_ldcif_write_display(const struct device *dev,
+					       const struct mipi_dbi_config *dbi_config,
+					       const uint8_t *framebuf,
+					       struct display_buffer_descriptor *desc,
+					       enum display_pixel_format pixfmt)
+{
+	const struct mcux_flexio_lcdif_config *config = dev->config;
+	struct mcux_flexio_lcdif_data *lcdif_data = dev->data;
+	FLEXIO_MCULCD_Type *flexio_lcd = config->flexio_lcd_dev;
+	struct dma_config dma_cfg = {0};
+	uint32_t part1_len, part2_len, part3_len;
+	int ret;
+
+	ARG_UNUSED(pixfmt);
+
+	ret = mipi_dbi_flexio_lcdif_configure(dev, dbi_config);
+	if (ret) {
+		return ret;
+	}
+
+	flexio_lcdif_smartdma_get_chunk_len(desc->buf_size, (uint32_t)framebuf,
+					    &part1_len, &part2_len, &part3_len);
+
+	/* Assert the nCS. */
+	FLEXIO_MCULCD_StartTransfer(flexio_lcd);
+
+	if (part1_len > 0) {
+		flexio_lcdif_write_data_array(flexio_lcd, framebuf, part1_len);
+	}
+
+	if (part2_len == 0) {
+		/* The whole transfer was small enough to send using the blocking method. */
+		FLEXIO_MCULCD_StopTransfer(flexio_lcd);
+		return 0;
+	}
+
+	/* For 6800, de-assert the RDWR pin. */
+	if (kFLEXIO_MCULCD_6800 == flexio_lcd->busType) {
+		flexio_lcdif_set_rd_wr(false, (void *)dev);
+	}
+
+	lcdif_data->smartdma_tail = framebuf + part1_len + part2_len;
+	lcdif_data->smartdma_tail_len = part3_len;
+
+	lcdif_data->smartdma_params.p_buffer = (uint32_t *)(framebuf + part1_len);
+	lcdif_data->smartdma_params.buffersize = part2_len;
+	lcdif_data->smartdma_params.smartdma_stack = lcdif_data->smartdma_stack;
+
+	dma_cfg.dma_callback = flexio_lcdif_smartdma_dma_callback;
+	dma_cfg.user_data = (struct device *)dev;
+	dma_cfg.head_block = (struct dma_block_config *)&lcdif_data->smartdma_params;
+	dma_cfg.block_count = 1;
+	dma_cfg.dma_slot = kSMARTDMA_FlexIO_DMA;
+	dma_cfg.channel_direction = MEMORY_TO_PERIPHERAL;
+
+	ret = dma_config(config->smart_dma, 0, &dma_cfg);
+	if (ret < 0) {
+		LOG_ERR("Could not configure SMARTDMA (%d)", ret);
+		FLEXIO_MCULCD_StopTransfer(flexio_lcd);
+		return ret;
+	}
+
+	nxp_flexio_lock(config->flexio_dev);
+	FLEXIO_MCULCD_SetMultiBeatsWriteConfig(flexio_lcd);
+	nxp_flexio_unlock(config->flexio_dev);
+
+	ret = dma_start(config->smart_dma, 0);
+	if (ret < 0) {
+		LOG_ERR("Could not start SMARTDMA (%d)", ret);
+		nxp_flexio_lock(config->flexio_dev);
+		FLEXIO_MCULCD_ClearMultiBeatsWriteConfig(flexio_lcd);
+		nxp_flexio_unlock(config->flexio_dev);
+		FLEXIO_MCULCD_StopTransfer(flexio_lcd);
+		return ret;
+	}
+
+	/* Wait for transfer done. */
+	ret = k_sem_take(&lcdif_data->transfer_done, K_MSEC(1000));
+	if (ret < 0) {
+		LOG_ERR("Timed out waiting for SMARTDMA transfer to complete (%d)", ret);
+		dma_stop(config->smart_dma, 0);
+		nxp_flexio_lock(config->flexio_dev);
+		FLEXIO_MCULCD_ClearMultiBeatsWriteConfig(flexio_lcd);
+		nxp_flexio_unlock(config->flexio_dev);
+		FLEXIO_MCULCD_StopTransfer(flexio_lcd);
+		return ret;
+	}
+
+	return 0;
+}
+#else
 static int mipi_dbi_flexio_ldcif_write_display(const struct device *dev,
 					       const struct mipi_dbi_config *dbi_config,
 					       const uint8_t *framebuf,
@@ -303,6 +502,7 @@ static int mipi_dbi_flexio_ldcif_write_display(const struct device *dev,
 
 	return 0;
 }
+#endif /* CONFIG_MIPI_DBI_NXP_FLEXIO_LCDIF_SMARTDMA */
 
 static int mipi_dbi_flexio_lcdif_command_write(const struct device *dev,
 					       const struct mipi_dbi_config *dbi_config,
@@ -378,15 +578,24 @@ static int flexio_lcdif_init(const struct device *dev)
 	int err;
 	uint8_t shifter_end = config->child->res.shifter_count - 1;
 
+#ifdef CONFIG_MIPI_DBI_NXP_FLEXIO_LCDIF_SMARTDMA
+	if (!device_is_ready(config->smart_dma)) {
+		LOG_ERR("%s device is not ready", config->smart_dma->name);
+		return -ENODEV;
+	}
+#else
 	if (!device_is_ready(lcdif_data->dma_tx.dma_dev)) {
 		LOG_ERR("%s device is not ready", lcdif_data->dma_tx.dma_dev->name);
 		return -ENODEV;
 	}
+#endif /* CONFIG_MIPI_DBI_NXP_FLEXIO_LCDIF_SMARTDMA */
 
 	err = nxp_flexio_child_attach(config->flexio_dev, config->child);
 	if (err < 0) {
 		return err;
 	}
+
+	nxp_flexio_irq_disable(config->flexio_dev);
 
 	config->flexio_lcd_dev->txShifterStartIndex = config->child->res.shifter_index[0];
 	config->flexio_lcd_dev->txShifterEndIndex = config->child->res.shifter_index[shifter_end];
@@ -411,6 +620,18 @@ static int flexio_lcdif_init(const struct device *dev)
 	 */
 	config->flexio_lcd_dev->userData = (void *)dev;
 
+#ifdef CONFIG_MIPI_DBI_NXP_FLEXIO_LCDIF_SMARTDMA
+	if (config->inputmux_dev != NULL) {
+		err = mux_state_apply(config->inputmux_dev, config->inputmux_state);
+		if (err) {
+			LOG_ERR("Failed to route FlexIO IRQ to SmartDMA trigger (%d)", err);
+			return err;
+		}
+	}
+
+	dma_smartdma_install_fw(config->smart_dma, (uint8_t *)s_smartdmaDisplayFirmware,
+				s_smartdmaDisplayFirmwareSize);
+#endif /* CONFIG_MIPI_DBI_NXP_FLEXIO_LCDIF_SMARTDMA */
 
 	k_sem_init(&lcdif_data->transfer_done, 0, 1);
 
@@ -441,6 +662,10 @@ static DEVICE_API(mipi_dbi, mipi_dbi_lcdif_driver_api) = {
 	static uint8_t mcux_flexio_lcdif_shifters_##n[DT_INST_PROP(n, shifters_count)];	\
 	static uint8_t mcux_flexio_lcdif_timers_##n[DT_INST_PROP(n, timers_count)];	\
 											\
+	IF_ENABLED(CONFIG_MIPI_DBI_NXP_FLEXIO_LCDIF_SMARTDMA,					\
+		(IF_ENABLED(DT_INST_NODE_HAS_PROP(n, mux_states),				\
+			(MUX_STATE_DT_SPEC_DEFINE(DT_DRV_INST(n));))))				\
+											\
 	static const struct nxp_flexio_child lcdif_child_##n = {			\
 		.isr = NULL,								\
 		.user_data = (void *)DEVICE_DT_INST_GET(n),				\
@@ -461,19 +686,26 @@ static DEVICE_API(mipi_dbi, mipi_dbi_lcdif_driver_api) = {
 		.cs_gpio = GPIO_DT_SPEC_INST_GET(n, cs_gpios),				\
 		.rs_gpio = GPIO_DT_SPEC_INST_GET(n, rs_gpios),				\
 		.rdwr_gpio = GPIO_DT_SPEC_INST_GET_OR(n, rdwr_gpios, {0}),		\
+		IF_ENABLED(CONFIG_MIPI_DBI_NXP_FLEXIO_LCDIF_SMARTDMA,			\
+			(.smart_dma = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(n, smartdma)),	\
+			 .inputmux_dev = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, mux_states),	\
+				(MUX_STATE_DT_DEV_GET(DT_DRV_INST(n))), (NULL)),		\
+			 .inputmux_state = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, mux_states),	\
+				(MUX_STATE_DT_GET(DT_DRV_INST(n))), (NULL)),))			\
 	};										\
 	struct mcux_flexio_lcdif_data mcux_flexio_lcdif_data_##n = {			\
-		.dma_tx = {								\
-			.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(n, tx)),	\
-			.channel = DT_INST_DMAS_CELL_BY_NAME(n, tx, mux),		\
-			.dma_cfg = {							\
-				.channel_direction = MEMORY_TO_MEMORY,			\
-				.dma_callback = flexio_lcdif_dma_callback,		\
-				.dest_data_size = 4,					\
-				.block_count = 1,					\
-				.dma_slot = DT_INST_DMAS_CELL_BY_NAME(n, tx, source)	\
-			}								\
-		},									\
+		COND_CODE_1(CONFIG_MIPI_DBI_NXP_FLEXIO_LCDIF_SMARTDMA, (),		\
+			(.dma_tx = {							\
+				.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_NAME(n, tx)),	\
+				.channel = DT_INST_DMAS_CELL_BY_NAME(n, tx, mux),		\
+				.dma_cfg = {							\
+					.channel_direction = MEMORY_TO_MEMORY,			\
+					.dma_callback = flexio_lcdif_dma_callback,		\
+					.dest_data_size = 4,					\
+					.block_count = 1,					\
+					.dma_slot = DT_INST_DMAS_CELL_BY_NAME(n, tx, source)	\
+				}								\
+			},))								\
 	};										\
 	DEVICE_DT_INST_DEFINE(n,							\
 		&flexio_lcdif_init,							\

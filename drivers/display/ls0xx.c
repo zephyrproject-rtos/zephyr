@@ -342,7 +342,7 @@ static struct ls0xx_data ls0xx_dev_data;
 
 static const struct ls0xx_config ls0xx_config = {
 	.bus = SPI_DT_SPEC_INST_GET(
-		0, SPI_OP_MODE_MASTER | SPI_WORD_SET(8) |
+		0, SPI_OP_MODE_CONTROLLER | SPI_WORD_SET(8) |
 		SPI_TRANSFER_LSB | SPI_CS_ACTIVE_HIGH |
 		SPI_HOLD_ON_CS | SPI_LOCK_ON),
 #if DT_INST_NODE_HAS_PROP(0, disp_en_gpios)

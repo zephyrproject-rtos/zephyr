@@ -10,7 +10,6 @@
 #include <zephyr/drivers/timer/system_timer.h>
 #include <zephyr/sys/clock.h>
 #include <zephyr/spinlock.h>
-#include <cmsis_core.h>
 #include <zephyr/irq.h>
 #include <da1469x_pdc.h>
 
@@ -103,7 +102,7 @@ static void schedule_next_interrupt(uint32_t ticks)
 	 * not but time expired anyway so make sure that interrupt is pending.
 	 */
 	if ((int32_t)(target_val - timer_val_32_noupdate() - 1) < 0) {
-		NVIC_SetPendingIRQ(TIMER2_IRQn);
+		k_irq_set_pending(TIMER2_IRQn);
 	}
 }
 

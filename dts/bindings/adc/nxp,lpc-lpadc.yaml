@@ -94,3 +94,12 @@ properties:
 
 io-channel-cells:
   - input
+
+child-binding:
+  properties:
+    bandgap-supply:
+      type: phandle
+      description: |
+        Regulator providing the buffered internal bandgap input selected by
+        this channel. At most one channel per LPADC instance may define this
+        property.

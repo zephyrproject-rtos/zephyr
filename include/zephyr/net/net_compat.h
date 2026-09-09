@@ -148,6 +148,7 @@ extern "C" {
 #define ip_mreqn     net_ip_mreqn
 #define ip_mreq      net_ip_mreq
 #define ipv6_mreq    net_ipv6_mreq
+#define packet_mreq  net_packet_mreq
 #define in6_pktinfo  net_in6_pktinfo
 #define ifreq        net_ifreq
 
@@ -172,6 +173,7 @@ extern "C" {
 #define TLS_DTLS_HANDSHAKE_ON_CONNECT     ZSOCK_TLS_DTLS_HANDSHAKE_ON_CONNECT
 #define TLS_CERT_VERIFY_RESULT            ZSOCK_TLS_CERT_VERIFY_RESULT
 #define TLS_CERT_VERIFY_CALLBACK          ZSOCK_TLS_CERT_VERIFY_CALLBACK
+#define TLS_MAX_FRAGMENT_LENGTH           ZSOCK_TLS_MAX_FRAGMENT_LENGTH
 #define TLS_PEER_VERIFY_NONE              ZSOCK_TLS_PEER_VERIFY_NONE
 #define TLS_PEER_VERIFY_OPTIONAL          ZSOCK_TLS_PEER_VERIFY_OPTIONAL
 #define TLS_PEER_VERIFY_REQUIRED          ZSOCK_TLS_PEER_VERIFY_REQUIRED
@@ -188,6 +190,11 @@ extern "C" {
 #define TLS_DTLS_CID_STATUS_DOWNLINK      ZSOCK_TLS_DTLS_CID_STATUS_DOWNLINK
 #define TLS_DTLS_CID_STATUS_UPLINK        ZSOCK_TLS_DTLS_CID_STATUS_UPLINK
 #define TLS_DTLS_CID_STATUS_BIDIRECTIONAL ZSOCK_TLS_DTLS_CID_STATUS_BIDIRECTIONAL
+#define TLS_MFL_DISABLED                  ZSOCK_TLS_MFL_DISABLED
+#define TLS_MFL_512                       ZSOCK_TLS_MFL_512
+#define TLS_MFL_1024                      ZSOCK_TLS_MFL_1024
+#define TLS_MFL_2048                      ZSOCK_TLS_MFL_2048
+#define TLS_MFL_4096                      ZSOCK_TLS_MFL_4096
 
 #define tls_cert_verify_cb zsock_tls_cert_verify_cb
 
@@ -285,6 +292,13 @@ extern "C" {
 #define IPV6_PREFER_SRC_CGA             ZSOCK_IPV6_PREFER_SRC_CGA
 #define IPV6_PREFER_SRC_NONCGA          ZSOCK_IPV6_PREFER_SRC_NONCGA
 #define IPV6_TCLASS                     ZSOCK_IPV6_TCLASS
+
+#define SOL_PACKET             ZSOCK_SOL_PACKET
+#define PACKET_ADD_MEMBERSHIP  ZSOCK_PACKET_ADD_MEMBERSHIP
+#define PACKET_DROP_MEMBERSHIP ZSOCK_PACKET_DROP_MEMBERSHIP
+#define PACKET_MR_MULTICAST    NET_PACKET_MR_MULTICAST
+#define PACKET_MR_PROMISC      NET_PACKET_MR_PROMISC
+#define PACKET_MR_ALLMULTI     NET_PACKET_MR_ALLMULTI
 
 #define SOMAXCONN ZSOCK_SOMAXCONN
 

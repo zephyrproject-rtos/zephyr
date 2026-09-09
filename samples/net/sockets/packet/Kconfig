@@ -28,4 +28,23 @@ config NET_SAMPLE_DESTINATION_ADDR
 	help
 	  Where to send the Ethernet frames.
 
+config NET_SAMPLE_MCAST_MEMBERSHIP
+	bool "Join an Ethernet multicast group"
+	select NET_SOCKETS_PACKET_MCAST_MEMBERSHIP
+	default y
+	help
+	  Ask the network interface to also listen to the multicast MAC
+	  address set by NET_SAMPLE_MCAST_ADDR. The group is joined with the
+	  PACKET_ADD_MEMBERSHIP socket option and left with
+	  PACKET_DROP_MEMBERSHIP when the sample stops.
+
+config NET_SAMPLE_MCAST_ADDR
+	string "Ethernet multicast MAC address to listen to"
+	depends on NET_SAMPLE_MCAST_MEMBERSHIP
+	default "01:00:5e:00:00:01"
+	help
+	  The multicast MAC address the receiving packet socket joins. The
+	  default value is the one IPv4 multicast address 224.0.0.1 (all
+	  hosts) maps to.
+
 source "Kconfig.zephyr"

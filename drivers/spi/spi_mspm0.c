@@ -94,8 +94,8 @@ static int spi_mspm0_configure(const struct device *dev, const struct spi_config
 		return 0;
 	}
 
-	/* Only master mode is supported */
-	if (SPI_OP_MODE_GET(spi_cfg->operation) != SPI_OP_MODE_MASTER) {
+	/* Only controller mode is supported */
+	if (SPI_OP_MODE_GET(spi_cfg->operation) != SPI_OP_MODE_CONTROLLER) {
 		return -ENOTSUP;
 	}
 

@@ -73,7 +73,7 @@ extern "C" {
 			COND_CODE_1(DT_PROP(node_id, mipi_cpol), SPI_MODE_CPOL, (0)) |	\
 			COND_CODE_1(DT_PROP(node_id, mipi_cpha), SPI_MODE_CPHA, (0)) |	\
 			COND_CODE_1(DT_PROP(node_id, mipi_hold_cs), SPI_HOLD_ON_CS, (0)),	\
-		.slave = DT_REG_ADDR(node_id),				\
+		.peripheral = DT_REG_ADDR(node_id),				\
 		.cs = {									\
 			COND_CODE_1(DT_SPI_HAS_CS_GPIOS(MIPI_DBI_DT_SPI_DEV(node_id)),	\
 			(MIPI_DBI_SPI_CS_CONTROL_INIT_GPIO(node_id, delay_)),		\
@@ -99,8 +99,10 @@ extern "C" {
  * @brief Initialize a MIPI DBI configuration from devicetree
  *
  * This helper allows drivers to initialize a MIPI DBI configuration
- * structure from devicetree. It sets the MIPI DBI mode, as well
- * as configuration fields in the SPI configuration structure
+ * structure from devicetree. It sets the MIPI DBI mode and color
+ * coding, as well as configuration fields in the SPI configuration
+ * structure. If the color-coding property is absent the color coding
+ * field is left at zero, meaning no Type A/B coding was specified.
  * @param node_id Devicetree node identifier for the MIPI DBI device to
  *                initialize
  * @param operation_ the desired operation field in the struct spi_config
@@ -110,6 +112,7 @@ extern "C" {
 #define MIPI_DBI_CONFIG_DT(node_id, operation_, delay_)			\
 	{								\
 		.mode = DT_STRING_UPPER_TOKEN(node_id, mipi_mode),	\
+		.color_coding = DT_STRING_UPPER_TOKEN_OR(node_id, color_coding, 0), \
 		.config = MIPI_DBI_SPI_CONFIG_DT(node_id, operation_, delay_), \
 	}
 

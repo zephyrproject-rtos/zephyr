@@ -67,8 +67,8 @@
 #define FDC2X1X_CLK_DIV_CHX_FIN_SEL_SET(x)          (((x) & 0x3) << 12)
 #define FDC2X1X_CLK_DIV_CHX_FIN_SEL_GET(x)          (((x) >> 12) & 0x3)
 #define FDC2X1X_CLK_DIV_CHX_FREF_DIV_MSK            GENMASK(9, 0)
-#define FDC2X1X_CLK_DIV_CHX_FREF_DIV_SET(x)         ((x) & 0x1FF)
-#define FDC2X1X_CLK_DIV_CHX_FREF_DIV_GET(x)         (((x) >> 0) & 0x1FF)
+#define FDC2X1X_CLK_DIV_CHX_FREF_DIV_SET(x)         ((x) & 0x3FF)
+#define FDC2X1X_CLK_DIV_CHX_FREF_DIV_GET(x)         (((x) >> 0) & 0x3FF)
 
 /* STATUS Field Descriptions */
 #define FDC2X1X_STATUS_ERR_CHAN(x)                  (((x) >> 14) & 0x3)

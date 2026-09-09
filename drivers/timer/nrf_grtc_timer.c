@@ -514,28 +514,25 @@ ISR_DIRECT_DECLARE(nrfx_grtc_direct_irq_handler)
 
 void sys_clock_disable(void)
 {
-	nrfx_grtc_uninit();
+	int err __maybe_unused;
 #if defined(CONFIG_CLOCK_CONTROL_NRF)
-	int err;
 	struct onoff_manager *mgr =
 		z_nrf_clock_control_get_onoff((clock_control_subsys_t)CLOCK_CONTROL_NRF_TYPE_LFCLK);
 
 	err = onoff_release(mgr);
-
 	__ASSERT_NO_MSG(err >= 0);
-#if !IS_ENABLED(__ASSERT_ON)
-	(void)err;
-#endif
+
+	nrfx_grtc_uninit();
 	nrfx_coredep_delay_us(1000);
 #elif defined(CONFIG_CLOCK_CONTROL_NRF_COMMON) &&                                                  \
 	!(defined(CONFIG_SOC_SERIES_NRF54H) || defined(CONFIG_SOC_SERIES_NRF92))
-	int err = nrf_clock_control_release(DEVICE_DT_GET_ONE(nordic_nrf_clock_lfclk), NULL);
-
+	err = nrf_clock_control_release(DEVICE_DT_GET_ONE(nordic_nrf_clock_lfclk), NULL);
 	__ASSERT_NO_MSG(err >= 0);
-#if !IS_ENABLED(__ASSERT_ON)
-	(void)err;
-#endif
+
+	nrfx_grtc_uninit();
 	nrfx_coredep_delay_us(1000);
+#else
+	nrfx_grtc_uninit();
 #endif
 }
 
@@ -589,9 +586,13 @@ static int sys_clock_driver_init(void)
 				       sys_clock_timeout_handler, NULL);
 
 	int_mask = NRFX_GRTC_CONFIG_ALLOWED_CC_CHANNELS_MASK;
-	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		system_timeout_set_relative(CYC_PER_TICK);
-	}
+	/*
+	 * Always arm a first compare. Tickless used to skip this and wait for
+	 * sys_clock_set_timeout(), but the kernel only calls that when insert
+	 * reports a new soon-list head. An empty soon side never does, so
+	 * announce never started (SysTick enables TICKINT at init instead).
+	 */
+	system_timeout_set_relative(CYC_PER_TICK);
 
 	return 0;
 }

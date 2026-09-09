@@ -19,7 +19,7 @@ typedef void (*lv_thread_entry)(void *);
 static void thread_entry(void *thread, void *cb, void *user_data);
 
 lv_result_t lv_thread_init(lv_thread_t *thread, const char *const name, lv_thread_prio_t prio,
-			   void (*callback)(void *), size_t stack_size, void *user_data)
+			   void (*callback)(void *user_data), size_t stack_size, void *user_data)
 {
 	int thread_priority;
 

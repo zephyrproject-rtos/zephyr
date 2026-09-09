@@ -4,6 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/**
+ * @file
+ * @brief Public APIs for the system initialization infrastructure.
+ * @ingroup sys_init
+ */
+
 #ifndef ZEPHYR_INCLUDE_INIT_H_
 #define ZEPHYR_INCLUDE_INIT_H_
 
@@ -19,6 +25,8 @@ extern "C" {
 
 /**
  * @defgroup sys_init System Initialization
+ * @since 1.0
+ * @version 1.0.0
  * @ingroup os_services
  *
  * Zephyr offers an infrastructure to call initialization code before `main`.

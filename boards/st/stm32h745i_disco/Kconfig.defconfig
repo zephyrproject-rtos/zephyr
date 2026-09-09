@@ -6,7 +6,7 @@
 
 if BOARD_STM32H745I_DISCO
 
-configdefault NET_L2_ETHERNET
+configdefault ETH_DRIVER
 	default y
 
 config MEMC

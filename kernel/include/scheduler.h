@@ -19,10 +19,10 @@ void z_sched_init(void);
 
 /**
  * @brief Update the scheduler cache and reschedule, releasing the scheduler
- * spinlock.  Callers must hold _sched_spinlock before calling; the lock is
- * released (via reschedule) before this returns.
+ * spinlock.  Callers must hold the scheduler's spinlock before calling; the
+ * lock is released (via reschedule) before this returns.
  *
- * @param key Spinlock key obtained from k_spin_lock(&_sched_spinlock).
+ * @param key Spinlock key obtained from z_sched_spinlock_lock().
  */
 void z_sched_lock_reschedule(k_spinlock_key_t key);
 
@@ -60,15 +60,18 @@ typedef void (*_waitq_post_walk_cb_t)(int status, void *data);
  *
  * This function walks the wait queue invoking the `walk_func` callback function
  * on each waiting thread (except if stopped earlier by a non-zero return value),
- * followed by a single call of `post_func`, all while holding `_sched_spinlock`.
- * This can be useful for routines that need to operate on multiple waiting threads.
+ * followed by a single call of `post_func`, all while holding the scheduler's
+ * spinlock. This is useful for routines that need to operate on multiple
+ * waiting threads.
  *
  * CAUTION! As a wait queue is of indeterminate length, the scheduler will be
  * locked for an indeterminate amount of time. This may impact system performance.
  * As such, care must be taken when using this function and in the callbacks.
  *
  * @warning @p walk_func may safely remove the thread received as argument from
- * the wait queue only when `CONFIG_WAITQ_SCALABLE=n`.
+ * the wait queue only when `CONFIG_WAITQ_SCALABLE=n` or if the removal is
+ * performed on the final iteration of the walk (i.e. when the callback returns
+ * a non-zero value).
  *
  * @param wait_q    Identifies the wait queue to walk
  * @param walk_func Callback to invoke for each waiting thread
@@ -86,7 +89,7 @@ int z_sched_waitq_walk(_wait_q_t *wait_q, _waitq_walk_cb_t walk_func,
  * Given a specific thread, wake it up. This routine assumes that the given
  * thread is not on the timeout queue.
  *
- * @warning Caller must hold _sched_spinlock when calling this function!
+ * @warning Caller must hold the scheduler's spinlock when calling this function!
  *
  * @param thread Given thread to wake up.
  *

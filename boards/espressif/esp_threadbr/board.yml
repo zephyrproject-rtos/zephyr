@@ -4,3 +4,6 @@ board:
   vendor: espressif
   socs:
   - name: esp32s3
+    variants:
+    - name: ethernet
+      cpucluster: procpu

@@ -63,6 +63,29 @@ int arm_irq_is_enabled(unsigned int irq)
 	return arm_gic_irq_is_enabled(irq);
 }
 
+#if defined(CONFIG_ARCH_HAS_IRQ_PENDING_OPS)
+void arm_irq_clear_pending(unsigned int irq)
+{
+	__ASSERT(irq < CONFIG_NUM_IRQS, "IRQ %u out of range", irq);
+
+	arm_gic_irq_clear_pending(irq);
+}
+
+void arm_irq_set_pending(unsigned int irq)
+{
+	__ASSERT(irq < CONFIG_NUM_IRQS, "IRQ %u out of range", irq);
+
+	arm_gic_irq_set_pending(irq);
+}
+
+bool arm_irq_is_pending(unsigned int irq)
+{
+	__ASSERT(irq < CONFIG_NUM_IRQS, "IRQ %u out of range", irq);
+
+	return arm_gic_irq_is_pending(irq);
+}
+#endif
+
 /**
  * @internal
  *
@@ -79,6 +102,19 @@ void arm_irq_priority_set(unsigned int irq, unsigned int prio, uint32_t flags)
 }
 
 #endif /* !CONFIG_ARM_CUSTOM_INTERRUPT_CONTROLLER */
+
+#if defined(CONFIG_ARM_TRACK_ACTIVE_IRQ)
+unsigned int arch_irq_get_active(void)
+{
+	/*
+	 * The ISR wrapper stores the INTID biased by one so that the
+	 * zero-initialized boot state reads as "none" on every CPU.
+	 */
+	uint32_t biased = _current_cpu->arch.active_irq;
+
+	return (biased == 0U) ? K_IRQ_ACTIVE_NONE : (biased - 1U);
+}
+#endif
 
 void z_arm_fatal_error(unsigned int reason, const struct arch_esf *esf);
 

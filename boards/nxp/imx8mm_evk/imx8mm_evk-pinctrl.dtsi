@@ -4,7 +4,7 @@
  *
  */
 
-#include <nxp/nxp_imx/mimx8mm6dvtlz-pinctrl.dtsi>
+#include <nxp/imx/pinctrl/mimx8mm6dvtlz-pinctrl.dtsi>
 
 &pinctrl {
 	uart2_default: uart2_default {

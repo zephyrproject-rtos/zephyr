@@ -411,9 +411,9 @@ static int32_t counter_mchp_set_alarm(const struct device *const dev, const uint
 
 				/* Enable interrupt and trigger immediately */
 #if defined(CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH)
-				NVIC_SetPendingIRQ(cfg->irq_line);
+				k_irq_set_pending(cfg->irq_line);
 #else
-				NVIC_SetPendingIRQ(cfg->channel_irq_map->comp_irq_line[chan_id]);
+				k_irq_set_pending(cfg->channel_irq_map->comp_irq_line[chan_id]);
 #endif /* CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH */
 			} else {
 				data->channel_data[chan_id].callback = NULL;
@@ -459,9 +459,9 @@ static int32_t counter_mchp_cancel_alarm(const struct device *const dev, uint8_t
 
 /* Clear NVIC Flag to avoid retrigger */
 #if defined(CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH)
-	NVIC_ClearPendingIRQ(cfg->irq_line);
+	k_irq_clear_pending(cfg->irq_line);
 #else
-	NVIC_ClearPendingIRQ(cfg->channel_irq_map->comp_irq_line[chan_id]);
+	k_irq_clear_pending(cfg->channel_irq_map->comp_irq_line[chan_id]);
 #endif /* CONFIG_SOC_FAMILY_MICROCHIP_PIC32CM_JH */
 
 	return 0;
@@ -683,7 +683,7 @@ static inline void counter_mchp_irq_0_handle(const struct device *const dev)
 	struct counter_mchp_dev_data *const data = dev->data;
 	const struct counter_mchp_dev_config *const cfg = dev->config;
 
-	NVIC_ClearPendingIRQ(cfg->channel_irq_map->ovf_irq_line);
+	k_irq_clear_pending(cfg->channel_irq_map->ovf_irq_line);
 	tcc_counter_top_irq_clear(cfg->regs);
 
 	if (data->top_cb != NULL) {

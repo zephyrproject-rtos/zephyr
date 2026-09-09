@@ -11,6 +11,7 @@ static LIBC_DATA int (*_stdout_hook)(int);
 int z_impl_zephyr_fputc(int a, FILE *out)
 {
 	(*_stdout_hook)(a);
+	ARG_UNUSED(out);
 	return 0;
 }
 
@@ -56,7 +57,7 @@ FILE *const stdin = &__stdin;
 FILE *const stdout = &__stdout;
 STDIO_ALIAS(stderr);
 
-void __stdout_hook_install(int (*hook)(int))
+void __stdout_hook_install(int (*hook)(int c))
 {
 	_stdout_hook = hook;
 	__stdout.flags |= _FDEV_SETUP_WRITE;

@@ -11,9 +11,10 @@
 
 #ifndef ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32C5_CLOCK_H_
 #define ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32C5_CLOCK_H_
-/** @cond INTERNAL_HIDDEN */
 
-#include "stm32_common_clocks.h"
+#include <zephyr/dt-bindings/clock/stm32_common_clocks.h>
+
+/** @cond INTERNAL_HIDDEN */
 
 /** Domain clocks */
 
@@ -140,4 +141,5 @@
 #define MCO2_SEL_HSIDIV3	7
 
 /** @endcond */
+
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_STM32C5_CLOCK_H_ */

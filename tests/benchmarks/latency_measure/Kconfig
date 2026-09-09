@@ -3,8 +3,17 @@
 
 mainmenu "Latency Measure Benchmark"
 
-source "Kconfig.zephyr"
-
 config BENCHMARK_NUM_ITERATIONS
 	int "Number of iterations to gather data"
 	default 1000
+
+config SYS_CLOCK_TICKS_PER_SEC
+	int "Number of ticks per second"
+	# Cortex-M has 24bit systick, so default 1 TICK per seconds
+	# is achievable only if frequency is below 0x00FFFFFF (around 16MHz)
+	# 20 Ticks per secondes allows a frequency up to 335544300Hz (335MHz)
+	default 20 if SOC_FAMILY_STM32
+	# eliminate timer interrupts during the benchmark
+	default 1
+
+source "Kconfig.zephyr"

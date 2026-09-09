@@ -27,13 +27,15 @@ config DAI_USERSPACE
 
 config DAI_MAX_BESPOKE_CFG_SIZE
 	int "Maximum bespoke configuration blob size"
-	default 1024
+	default 8192
 	depends on DAI_USERSPACE
-	range 256 4096
+	range 256 65536
 	help
 	  Maximum size of bespoke configuration objects passed to the DAI
-	  driver via syscalls. The objects are temporarily allocated on the
-	  stack for validation when copied from user-space to kernel memory.
+	  driver via syscalls. The objects are copied from user-space to
+	  kernel memory for validation. Small objects are validated on the
+	  stack; larger objects are copied into a temporary heap allocation,
+	  so this limit is not bounded by the available stack size.
 
 module = DAI
 module-str = dai
