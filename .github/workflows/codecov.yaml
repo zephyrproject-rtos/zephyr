@@ -221,6 +221,7 @@ jobs:
 
       - name: Merge coverage files
         run: |
+          python3 ./scripts/ci/coverage/strip_function_pos.py coverage/reports/*.json
           pushd ./coverage/reports
           gcovr ${{ steps.get-coverage-files.outputs.mergefiles }}  --merge-mode-functions=separate --json merged.json
           gcovr ${{ steps.get-coverage-files.outputs.mergefiles }} --merge-mode-functions=separate --cobertura merged.xml
