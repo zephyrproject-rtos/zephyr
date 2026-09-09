@@ -10,6 +10,11 @@
  * They are meant to be called only by the ITS implementation.
  * This header may be included when providing a custom implementation of the
  * ITS store module (@kconfig{CONFIG_SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_CUSTOM}).
+ *
+ * The ITS implementation serializes the operations that modify the storage medium, but a
+ * retrieval can happen concurrently with one of them. The operations must therefore be
+ * atomic with respect to each other, so that a retrieval returns either the previous or the
+ * new data of an entry, never a mix of both.
  */
 #include <zephyr/secure_storage/its/common.h>
 
