@@ -140,9 +140,14 @@ static void on_cmgl_any_partial(struct modem_chat *cmd, char **argv, uint16_t ar
 static enum modem_chat_script_result script_result;
 static void *script_result_user_data;
 
-static void on_script_result(struct modem_chat *cmd, enum modem_chat_script_result result,
-			     void *user_data)
+static void on_script_result(struct modem_chat *chat, enum modem_chat_script_result result,
+			     const struct modem_chat_script_completion_info *info, void *user_data)
 {
+	zassert_not_null(chat);
+	zassert_not_null(info);
+	zassert_not_null(info->script);
+	zassert_not_null(info->script_chat);
+
 	atomic_set_bit(&callback_called, MODEM_CHAT_UTEST_ON_SCRIPT_CALLBACK_BIT);
 	script_result = result;
 	script_result_user_data = user_data;

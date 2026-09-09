@@ -2889,7 +2889,7 @@ static int hl78xx_carrier_on_pdp_ready(struct hl78xx_data *data)
 		hl78xx_start_timer(data, K_SECONDS(2));
 	}
 #else
-	ret = iface_status_work_cb(data, hl78xx_chat_callback_handler);
+	ret = iface_status_work_cb(data, hl78xx_chat_callback_handler_info);
 	if (ret < 0) {
 		LOG_WRN("carrier_on: CGCONTRDP deferred (ret=%d), retrying", ret);
 		hl78xx_start_timer(data, K_SECONDS(2));
@@ -2992,7 +2992,7 @@ static void hl78xx_carrier_on_timeout_handler(struct hl78xx_data *data
 		/* Fetch PDP context (CGCONTRDP) - fires SCRIPT_SUCCESS
 		 * which starts the DNS timer.
 		 */
-		ret = iface_status_work_cb(data, hl78xx_chat_callback_handler);
+		ret = iface_status_work_cb(data, hl78xx_chat_callback_handler_info);
 		if (ret < 0) {
 			LOG_WRN("LPM restore: CGCONTRDP deferred (ret=%d), retrying", ret);
 			data->status.lpm.restore_pending = true;
