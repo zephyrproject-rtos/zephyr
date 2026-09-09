@@ -310,16 +310,20 @@ struct usbd_context {
 	sys_dlist_t descriptors;
 	/** slist to manage Full-Speed device configurations */
 	sys_slist_t fs_configs;
+#if USBD_SUPPORTS_HIGH_SPEED
 	/** slist to manage High-Speed device configurations */
 	sys_slist_t hs_configs;
+#endif
 	/** dlist to manage vendor requests with recipient device */
 	sys_dlist_t vreqs;
 	/** Status of the USB device support */
 	struct usbd_status status;
 	/** Pointer to Full-Speed device descriptor */
 	void *fs_desc;
+#if USBD_SUPPORTS_HIGH_SPEED
 	/** Pointer to High-Speed device descriptor */
 	void *hs_desc;
+#endif
 	/** Pre-allocated buffer for control transfer SETUP stage */
 	struct net_buf *setup_buf;
 };
