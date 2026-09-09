@@ -75,13 +75,13 @@ do {                                                                       \
 } while (false)
 
 /* Don't allow the total size of the HTTP headers (including the status
- * line) to exceed HTTP_MAX_HEADER_SIZE.  This check is here to protect
+ * line) to exceed CONFIG_HTTP_PARSER_MAX_HEADER_SIZE.  This check is here to protect
  * embedders against denial-of-service attacks where the attacker feeds
  * us a never-ending header that the embedder keeps buffering.
  *
  * This check is arguably the responsibility of embedders but we're doing
  * it on the embedder's behalf because most won't bother and this way we
- * make the web a little safer.  HTTP_MAX_HEADER_SIZE is still far bigger
+ * make the web a little safer.  CONFIG_HTTP_PARSER_MAX_HEADER_SIZE is still far bigger
  * than any reasonable request or response so this should never affect
  * day-to-day operation.
  */
@@ -90,7 +90,7 @@ int count_header_size(struct http_parser *parser, int bytes)
 {
 	parser->nread += bytes;
 
-	if (UNLIKELY(parser->nread > (HTTP_MAX_HEADER_SIZE))) {
+	if (UNLIKELY(parser->nread > (CONFIG_HTTP_PARSER_MAX_HEADER_SIZE))) {
 		parser->http_errno = HPE_HEADER_OVERFLOW;
 		return -1;
 	}
@@ -536,7 +536,7 @@ int header_states(struct http_parser *parser, const char *data, size_t len,
 		const char *p_cr;
 		const char *p_lf;
 
-		limit = MIN(limit, HTTP_MAX_HEADER_SIZE);
+		limit = MIN(limit, CONFIG_HTTP_PARSER_MAX_HEADER_SIZE);
 		p_cr = (const char *)memchr(p, CR, limit);
 		p_lf = (const char *)memchr(p, LF, limit);
 		if (p_cr != NULL) {
