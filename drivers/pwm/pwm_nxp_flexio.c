@@ -245,10 +245,9 @@ static int mcux_flexio_pwm_init(const struct device *dev)
 		FLEXIO_SetPinLevel(flexio_base, pwm_info->pin_id, false);
 		FLEXIO_ConfigPinOverride(flexio_base, pwm_info->pin_id, false);
 #endif
-		/* Timer output is logic one and is not affected by timer reset */
-		timerConfig.timerOutput = kFLEXIO_TimerOutputOneNotAffectedByReset;
-		/* Set the timer mode to dual 8-bit counter PWM high */
-		timerConfig.timerMode = kFLEXIO_TimerModeDual8BitPWM;
+		/* Leave the timer disabled with its output parked at the inactive level. */
+		timerConfig.timerOutput = kFLEXIO_TimerOutputZeroNotAffectedByReset;
+		timerConfig.timerMode = kFLEXIO_TimerModeDisabled;
 
 		/* Timer scaling factor w.r.t Flexio Clock */
 		timerConfig.timerDecrement = pwm_info->prescaler;
