@@ -587,24 +587,24 @@ static int cmd_hid_send_report(const struct shell *sh, size_t argc, char *argv[]
 		return -ENOEXEC;
 	}
 
-	/* BDIT/BV-01-C: Boot Protocol mouse = buttons(1) + X(1) + Y(1).
-	 * Report Protocol mouse = Report ID(1) + buttons(1) + X(1) + Y(1) + wheel(1).
+	/* HID spec v1.1.2 Section 3.3.2: a Device in Boot Protocol Mode includes the
+	 * Report ID in every report, both in a GET_REPORT response and in one sent
+	 * asynchronously on the Interrupt channel, so the only difference from Report
+	 * Protocol Mode is the wheel byte. Boot Protocol Mode fixes the mouse Report
+	 * ID to 2, which is what this descriptor declares anyway.
 	 *
 	 * Button byte (bit fields):
 	 *  bit0 = Left, bit1 = Right, bit2 = Middle, bit3..7 = Button 4..8
 	 * X/Y: signed 8-bit relative displacement
 	 * Wheel: signed 8-bit scroll (Report Protocol only)
 	 */
-	if (hid_boot_mode) {
-		net_buf_add_u8(buf, (uint8_t)button); /* buttons */
-		net_buf_add_u8(buf, (uint8_t)dx);     /* X displacement */
-		net_buf_add_u8(buf, (uint8_t)dy);     /* Y displacement */
-	} else {
-		net_buf_add_u8(buf, SHELL_MOUSE_REPORT_ID); /* Report ID */
-		net_buf_add_u8(buf, (uint8_t)button);        /* buttons */
-		net_buf_add_u8(buf, (uint8_t)dx);            /* X displacement */
-		net_buf_add_u8(buf, (uint8_t)dy);            /* Y displacement */
-		net_buf_add_u8(buf, (uint8_t)wheel);         /* wheel scroll */
+	net_buf_add_u8(buf, SHELL_MOUSE_REPORT_ID); /* Report ID */
+	net_buf_add_u8(buf, (uint8_t)button);       /* buttons */
+	net_buf_add_u8(buf, (uint8_t)dx);           /* X displacement */
+	net_buf_add_u8(buf, (uint8_t)dy);           /* Y displacement */
+
+	if (!hid_boot_mode) {
+		net_buf_add_u8(buf, (uint8_t)wheel); /* wheel scroll */
 	}
 
 	err = bt_hid_device_input_report(default_hid, buf);
