@@ -386,8 +386,8 @@ struct usbd_class_api {
 	void (*shutdown)(struct usbd_class_data *const c_data);
 
 	/** Get function descriptor based on speed parameter */
-	void *(*get_desc)(struct usbd_class_data *const c_data,
-			  const enum usbd_speed speed);
+	const void *(*get_desc)(struct usbd_class_data *const c_data,
+				const enum usbd_speed speed);
 };
 
 /**

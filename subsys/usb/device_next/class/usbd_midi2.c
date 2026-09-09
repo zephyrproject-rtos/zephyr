@@ -141,8 +141,8 @@ struct usbd_midi_descriptors {
 /* Device driver configuration */
 struct usbd_midi_config {
 	struct usbd_midi_descriptors *desc;
-	struct usb_desc_header const **fs_descs;
-	struct usb_desc_header const **hs_descs;
+	struct usb_desc_header const *const *fs_descs;
+	struct usb_desc_header const *const *hs_descs;
 };
 
 /* Device driver data */
@@ -341,8 +341,8 @@ static int usbd_midi_class_init(struct usbd_class_data *const class_data)
 	return 0;
 }
 
-static void *usbd_midi_class_get_desc(struct usbd_class_data *const class_data,
-				      const enum usbd_speed speed)
+static const void *usbd_midi_class_get_desc(struct usbd_class_data *const class_data,
+					    const enum usbd_speed speed)
 {
 	const struct device *dev = usbd_class_get_private(class_data);
 	const struct usbd_midi_config *config = dev->config;
@@ -357,7 +357,7 @@ static void *usbd_midi_class_get_desc(struct usbd_class_data *const class_data,
 }
 
 
-static struct usbd_class_api usbd_midi_class_api = {
+static const struct usbd_class_api usbd_midi_class_api = {
 	.request = usbd_midi_class_request,
 	.update = usbd_midi_class_update,
 	.enable = usbd_midi_class_enable,
@@ -740,7 +740,7 @@ void usbd_midi_set_ops(const struct device *dev, const struct usbd_midi_ops *ops
 			)                                                                \
 		},                                                                       \
 	};                                                                               \
-	static const struct usb_desc_header *usbd_midi_desc_array_fs_##n[] = {           \
+	static const struct usb_desc_header *const usbd_midi_desc_array_fs_##n[] = {     \
 		(struct usb_desc_header *)&usbd_midi_desc_##n.iad,                       \
 		(struct usb_desc_header *)&usbd_midi_desc_##n.if0_std,                   \
 		(struct usb_desc_header *)&usbd_midi_desc_##n.if0_cs,                    \
@@ -758,7 +758,7 @@ void usbd_midi_set_ops(const struct device *dev, const struct usbd_midi_ops *ops
 		(struct usb_desc_header *)&usbd_midi_desc_##n.if1_1_cs_in_ep,            \
 		NULL,                                                                    \
 	};                                                                               \
-	static const struct usb_desc_header *usbd_midi_desc_array_hs_##n[] = {           \
+	static const struct usb_desc_header *const usbd_midi_desc_array_hs_##n[] = {     \
 		(struct usb_desc_header *)&usbd_midi_desc_##n.iad,                       \
 		(struct usb_desc_header *)&usbd_midi_desc_##n.if0_std,                   \
 		(struct usb_desc_header *)&usbd_midi_desc_##n.if0_cs,                    \
