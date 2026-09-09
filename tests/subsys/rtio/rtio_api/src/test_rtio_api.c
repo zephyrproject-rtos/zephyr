@@ -1356,6 +1356,94 @@ ZTEST(rtio_api, test_rtio_acquire_array)
 	rtio_sqe_drop_all(&r_acquire_array);
 }
 
+RTIO_DEFINE(r_cqe_callback, SQE_POOL_SIZE, CQE_POOL_SIZE);
+RTIO_IODEV_TEST_DEFINE(iodev_test_cqe_callback);
+
+static atomic_t cqe_callback_count;
+static struct rtio *cqe_callback_rtio;
+static void *cqe_callback_user_data;
+
+static void test_cqe_callback(struct rtio *r, void *user_data)
+{
+	atomic_inc(&cqe_callback_count);
+	zassert_equal_ptr(r, cqe_callback_rtio, "Expected callback on registered rtio");
+	zassert_equal_ptr(user_data, cqe_callback_user_data,
+			  "Expected registered CQE callback user_data");
+}
+
+/**
+ * @brief Test completion queue event callbacks
+ *
+ * Ensures rtio_set_cqe_callback() is invoked once per produced CQE with the
+ * registered user_data and can be disabled by passing NULL.
+ */
+static void test_rtio_cqe_callback_(struct rtio *r)
+{
+	int res;
+	uintptr_t userdata[4] = {0, 1, 2, 3};
+	uintptr_t cb_user_data = 0xdeadbeef;
+	struct rtio_sqe *sqe;
+	struct rtio_cqe *cqe;
+
+	rtio_iodev_test_init(&iodev_test_cqe_callback);
+
+	atomic_set(&cqe_callback_count, 0);
+	cqe_callback_rtio = r;
+	cqe_callback_user_data = &cb_user_data;
+	rtio_set_cqe_callback(r, test_cqe_callback, cqe_callback_user_data);
+
+	ARRAY_FOR_EACH(userdata, i) {
+		sqe = rtio_sqe_acquire(r);
+		zassert_not_null(sqe);
+		rtio_sqe_prep_nop(sqe, &iodev_test_cqe_callback, &userdata[i]);
+	}
+
+	res = rtio_submit(r, ARRAY_SIZE(userdata));
+	zassert_ok(res);
+	zassert_equal(atomic_get(&cqe_callback_count),
+		      ARRAY_SIZE(userdata),
+		      "Expected CQE callback once per completion");
+
+	ARRAY_FOR_EACH(userdata, i) {
+		cqe = rtio_cqe_consume(r);
+		zassert_not_null(cqe);
+		zassert_ok(cqe->result);
+		rtio_cqe_release(r, cqe);
+	}
+
+	rtio_set_cqe_callback(r, NULL, NULL);
+
+	ARRAY_FOR_EACH(userdata, i) {
+		sqe = rtio_sqe_acquire(r);
+		zassert_not_null(sqe);
+		rtio_sqe_prep_nop(sqe, &iodev_test_cqe_callback, &userdata[i]);
+	}
+
+	res = rtio_submit(r, ARRAY_SIZE(userdata));
+	zassert_ok(res);
+	zassert_equal(atomic_get(&cqe_callback_count),
+		      ARRAY_SIZE(userdata),
+		      "Unexpected CQE callback");
+
+	ARRAY_FOR_EACH(userdata, i) {
+		cqe = rtio_cqe_consume(r);
+		zassert_not_null(cqe);
+		zassert_ok(cqe->result);
+		rtio_cqe_release(r, cqe);
+	}
+}
+
+ZTEST(rtio_api, test_rtio_cqe_callback)
+{
+	if (!IS_ENABLED(CONFIG_RTIO_CQE_CALLBACK)) {
+		ztest_test_skip();
+	}
+
+	for (int i = 0; i < TEST_REPEATS; i++) {
+		test_rtio_cqe_callback_(&r_cqe_callback);
+	}
+}
+
 static void *rtio_api_setup(void)
 {
 #ifdef CONFIG_USERSPACE
