@@ -140,8 +140,14 @@ if("${IAR_TOOLCHAIN_VARIANT}" STREQUAL "iccarm")
   if(CONFIG_IAR_LIBC)
     # Zephyr requires AEABI portability to ensure correct functioning of the C
     # library, for example error numbers, errno.h.
-    list(APPEND IAR_COMMON_FLAGS -D__AEABI_PORTABILITY_LEVEL=1)
+    list(APPEND IAR_C_ONLY_FLAGS -D__AEABI_PORTABILITY_LEVEL=1)
   endif()
+  # The C++ standard library headers (both the IAR DLIB C++ library and
+  # libc++) require errno values and MB_LEN_MAX to be integer constant
+  # expressions, which they are not in AEABI portability mode where they
+  # are turned into external constants. Note that --aeabi makes the
+  # portability level default to 1, so it must be disabled explicitly.
+  list(APPEND IAR_CXX_ONLY_FLAGS -D__AEABI_PORTABILITY_LEVEL=0)
 endif()
 
 if(CONFIG_IAR_LIBC)
@@ -149,11 +155,27 @@ if(CONFIG_IAR_LIBC)
   # Zephyr uses the type FILE for normal LIBC while IAR
   # only has it for full LIBC support, so always choose
   # full libc when using IAR C libraries.
-  list(APPEND IAR_COMMON_FLAGS --dlib_config full)
+  list(APPEND IAR_C_ONLY_FLAGS --dlib_config full)
+  if(CONFIG_IAR_LIBCPP)
+    message(STATUS "IAR C++ library (libc++) used")
+    # --libc++ selects the IAR libc++ C++ standard library. It implies the
+    # full DLIB configuration and cannot be combined with --dlib_config.
+    list(APPEND IAR_CXX_ONLY_FLAGS --libc++)
+  else()
+    list(APPEND IAR_CXX_ONLY_FLAGS --dlib_config full)
+  endif()
 endif()
 
 foreach(F ${IAR_COMMON_FLAGS})
   list(APPEND TOOLCHAIN_C_FLAGS $<$<COMPILE_LANGUAGE:C>:${F}>)
+  list(APPEND TOOLCHAIN_C_FLAGS $<$<COMPILE_LANGUAGE:CXX>:${F}>)
+endforeach()
+
+foreach(F ${IAR_C_ONLY_FLAGS})
+  list(APPEND TOOLCHAIN_C_FLAGS $<$<COMPILE_LANGUAGE:C>:${F}>)
+endforeach()
+
+foreach(F ${IAR_CXX_ONLY_FLAGS})
   list(APPEND TOOLCHAIN_C_FLAGS $<$<COMPILE_LANGUAGE:CXX>:${F}>)
 endforeach()
 
