@@ -399,7 +399,8 @@ static inline bool net_ipv6_nbr_rm(struct net_if *iface, struct net_in6_addr *ad
  * address, letting peers relearn this node. This is the IPv6 counterpart of
  * clearing the ARP cache on link down.
  *
- * @param iface Network interface.
+ * @param iface Network interface, or NULL to clear the cache of every
+ *              interface.
  */
 #if defined(CONFIG_NET_IPV6_NBR_CACHE) && defined(CONFIG_NET_NATIVE_IPV6)
 void net_ipv6_nbr_clear_cache(struct net_if *iface);

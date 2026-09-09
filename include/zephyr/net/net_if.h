@@ -1383,6 +1383,50 @@ static inline void net_if_nbr_reachability_hint(struct net_if *iface,
 }
 #endif
 
+/**
+ * @brief Flush the IPv6 neighbor cache of a network interface.
+ *
+ * Remove every dynamically learned neighbor so that the link layer address
+ * of each of those peers is resolved again when it is next needed. Entries
+ * that were added statically are kept; use net_if_ipv6_nbr_rm() to remove
+ * one of those.
+ *
+ * @param iface Network interface, or NULL to flush every interface.
+ */
+#if defined(CONFIG_NET_IPV6)
+void net_if_ipv6_nbr_flush(struct net_if *iface);
+#else
+static inline void net_if_ipv6_nbr_flush(struct net_if *iface)
+{
+	ARG_UNUSED(iface);
+}
+#endif
+
+/**
+ * @brief Remove one neighbor from the IPv6 neighbor cache.
+ *
+ * Unlike net_if_ipv6_nbr_flush() this also removes a neighbor that was added
+ * statically, so it is the way to take one of those back. Any packets waiting
+ * for the address to be resolved are dropped.
+ *
+ * @param iface Network interface, or NULL to match any interface.
+ * @param addr IPv6 address of the neighbor.
+ *
+ * @return True if a neighbor was removed, false if there was none.
+ */
+#if defined(CONFIG_NET_IPV6)
+bool net_if_ipv6_nbr_rm(struct net_if *iface, const struct net_in6_addr *addr);
+#else
+static inline bool net_if_ipv6_nbr_rm(struct net_if *iface,
+				      const struct net_in6_addr *addr)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(addr);
+
+	return false;
+}
+#endif
+
 /** @cond INTERNAL_HIDDEN */
 
 static inline int net_if_set_link_addr_unlocked(struct net_if *iface,
@@ -2757,6 +2801,51 @@ static inline bool net_if_ipv4_maddr_is_joined(struct net_if_mcast_addr *addr)
  */
 void net_if_ipv4_maddr_leave(struct net_if *iface,
 			     struct net_if_mcast_addr *addr);
+
+/**
+ * @brief Flush the IPv4 neighbor cache of a network interface.
+ *
+ * Remove every dynamically learned neighbor so that the link layer address
+ * of each of those peers is resolved again when it is next needed. Entries
+ * that were added statically are kept; use net_if_ipv4_nbr_rm() to remove
+ * one of those. On Ethernet links this cache is the ARP cache; a link layer
+ * that does not resolve IPv4 addresses has nothing to flush.
+ *
+ * @param iface Network interface, or NULL to flush every interface.
+ */
+#if defined(CONFIG_NET_IPV4)
+void net_if_ipv4_nbr_flush(struct net_if *iface);
+#else
+static inline void net_if_ipv4_nbr_flush(struct net_if *iface)
+{
+	ARG_UNUSED(iface);
+}
+#endif
+
+/**
+ * @brief Remove one neighbor from the IPv4 neighbor cache.
+ *
+ * Unlike net_if_ipv4_nbr_flush() this also removes a neighbor that was added
+ * statically, so it is the way to take one of those back. Any packets waiting
+ * for the address to be resolved are dropped.
+ *
+ * @param iface Network interface, or NULL to match any interface.
+ * @param addr IPv4 address of the neighbor.
+ *
+ * @return True if a neighbor was removed, false if there was none.
+ */
+#if defined(CONFIG_NET_IPV4)
+bool net_if_ipv4_nbr_rm(struct net_if *iface, const struct net_in_addr *addr);
+#else
+static inline bool net_if_ipv4_nbr_rm(struct net_if *iface,
+				      const struct net_in_addr *addr)
+{
+	ARG_UNUSED(iface);
+	ARG_UNUSED(addr);
+
+	return false;
+}
+#endif
 
 /**
  * @brief Get the IPv4 address of the given router
