@@ -32,6 +32,16 @@ tests:
       - CONFIG_MPIPE_VID=y
       - CONFIG_MPIPE_VID_CONVERT=y
 
+  mpipe.disp.build:
+    tags:
+      - subsys
+      - mpipe
+    build_only: true
+    platform_allow:
+      - native_sim/native/64
+    extra_args:
+      - CONFIG_MPIPE_DISP=y
+
   mpipe.img.build:
     tags:
       - subsys
