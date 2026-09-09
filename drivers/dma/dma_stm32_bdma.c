@@ -597,6 +597,23 @@ static int bdma_stm32_hal_config_increments(uint32_t direction, DMA_InitTypeDef 
 					   DMA_MINC_DISABLE);
 }
 
+/*
+ * Default BDMA driver configuration relies on these values,
+ * in case the fields have not been initialized in the @p zephyr_config.
+ *
+ * hal_config->Request			= DMA_REQUEST_MEM2MEM;
+ * hal_config->Direction		= DMA_PERIPH_TO_MEMORY;
+ * hal_config->PeriphInc		= DMA_PINC_DISABLE;
+ * hal_config->MemInc			= DMA_MINC_DISABLE;
+ * hal_config->PeriphDataAlignment	= DMA_PDATAALIGN_BYTE;
+ * hal_config->MemDataAlignment		= DMA_MDATAALIGN_BYTE;
+ * hal_config->Mode			= DMA_NORMAL;
+ * hal_config->Priority			= DMA_PRIORITY_LOW;
+ * hal_config->FIFOMode			= DMA_FIFOMODE_DISABLE;
+ * hal_config->FIFOThreshold		= DMA_FIFO_THRESHOLD_1QUARTERFULL;
+ * hal_config->MemBurst			= DMA_MBURST_SINGLE;
+ * hal_config->PeriphBurst		= DMA_PBURST_SINGLE;
+ */
 int dma_stm32_zcfg_to_halcfg(const struct device *dma, const struct dma_config *zephyr_config,
 			     DMA_InitTypeDef *hal_config, uint16_t source_addr_adj,
 			     uint16_t dest_addr_adj)
@@ -629,14 +646,13 @@ int dma_stm32_zcfg_to_halcfg(const struct device *dma, const struct dma_config *
 	}
 
 	ret = bdma_stm32_hal_config_increments(zephyr_config->channel_direction, hal_config,
-					       uint16_t source_addr_adj, uint16_t dest_addr_adj);
+					       source_addr_adj, dest_addr_adj);
 	if (ret < 0) {
 		return ret;
 	}
 
 	hal_config->SrcBurstLength = zephyr_config->source_burst_length;
 	hal_config->DestBurstLength = zephyr_config->dest_burst_length;
-
 	hal_config->Request = zephyr_config->dma_slot;
 
 #ifdef DMA_FIFOMODE_DISABLE
