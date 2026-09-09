@@ -862,6 +862,68 @@ Only ``sensor@79`` can have a ``use-clock-stretching`` property. The
 bus-sensitive logic ignores :file:`manufacturer,sensor-i2c.yaml` when searching
 for a binding for ``sensor@0``.
 
+.. _dt-bindings-class:
+
+Class
+*****
+
+If nodes matching the binding can be used as devices of one or more Zephyr
+device classes, use ``class:`` to declare those classes:
+
+.. code-block:: YAML
+
+   compatible: "manufacturer,adc"
+   class: adc
+
+The value is a device class name or a list of names. Names use lowercase
+letters, digits, ``-`` and ``_``; malformed or duplicate names are rejected.
+Each name should match a device API class registered with
+:c:macro:`DEVICE_API` (like ``adc``); lowercase-and-hyphens names are
+converted to lowercase-and-underscores C tokens the same way compatibles are.
+
+The key declares which device API class(es) the node's drivers *can*
+implement; which driver and API are actually built for a node remains a
+Kconfig decision. A list value covers hardware whose drivers can implement
+more than one API depending on configuration:
+
+.. code-block:: YAML
+
+   compatible: "manufacturer,rtc"
+   class: [rtc, counter]
+
+``class:`` is normally declared once in a device class base binding (for
+example :zephyr_file:`dts/bindings/adc/adc-controller.yaml`) so that every
+binding including it inherits the class. When a binding and its included
+files declare classes, the values are unioned: a binding that includes
+several class base bindings belongs to all of their classes.
+
+Class membership can be queried at build time with
+:c:macro:`DT_NODE_HAS_CLASS`, iterated with
+:c:macro:`DT_FOREACH_CLASS_STATUS_OKAY`, counted with
+:c:macro:`DT_NUM_CLASS_STATUS_OKAY`, and tested from Kconfig with
+``$(dt_class_enabled,<class name>)``.
+
+To add a class to a device whose binding cannot be changed, for example to
+classify an upstream device from a downstream module, define a more specific
+compatible whose binding includes the original binding and declares the
+class, and list both compatibles on the node:
+
+.. code-block:: YAML
+
+   # vnd,foo-classed.yaml
+   compatible: "vnd,foo-classed"
+   include: vnd,foo.yaml
+   class: xyz
+
+.. code-block:: devicetree
+
+   compatible = "vnd,foo-classed", "vnd,foo";
+
+The node's binding, and with it its classes, comes from the first compatible
+that has a binding; drivers match on any of the node's compatibles, so the
+original driver still binds. Two bindings for the same compatible are an
+error, so an existing binding cannot be shadowed.
+
 .. _dt-bindings-examples:
 
 Examples
@@ -978,10 +1040,12 @@ like this:
      include: bar.yaml
 
 It is an error if a key appears with a different value in a binding and in a
-file it includes, with one exception: a binding can have ``required: true`` for
-a :ref:`property definition <dt-bindings-properties>` for which the included
-file has ``required: false``. The ``required: true`` takes precedence, allowing
-bindings to strengthen requirements from included files.
+file it includes, with two exceptions: a binding can have ``required: true``
+for a :ref:`property definition <dt-bindings-properties>` for which the
+included file has ``required: false`` (the ``required: true`` takes
+precedence, allowing bindings to strengthen requirements from included
+files), and ``class:`` values are unioned as described in
+:ref:`dt-bindings-class`.
 
 Note that weakening requirements by having ``required: false`` where the
 included file has ``required: true`` is an error. This is meant to keep the
