@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2026 Mario Paja
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c4 {
+	audio_codec: wm8904@1a {
+		compatible = "wolfson,wm8904";
+		reg = <0x1a>;
+		status = "okay";
+
+		wolfson,mic-bias-voltage = "avdd-9-10";
+		input-pga-select = <1>;
+	};
+};

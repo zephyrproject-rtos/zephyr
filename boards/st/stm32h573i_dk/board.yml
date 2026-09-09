@@ -2,6 +2,11 @@ board:
   name: stm32h573i_dk
   full_name: STM32H573I-DK Discovery
   vendor: st
+  revision:
+    format: "custom"
+    revisions:
+      - name: "C2"
+      - name: "D1"
   socs:
     - name: stm32h573xx
       variants:
