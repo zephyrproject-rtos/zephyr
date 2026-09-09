@@ -63,13 +63,15 @@ psa_status_t psa_its_set(psa_storage_uid_t uid, size_t data_length,
  *                           Must be at least `data_size` bytes long.
  * @param[out] p_data_length On success, the number of bytes placed in `p_data`.
  *
- * @retval PSA_SUCCESS                The operation completed successfully.
- * @retval PSA_ERROR_GENERIC_ERROR    An unspecified internal failure happened.
- * @retval PSA_ERROR_INVALID_ARGUMENT One or more arguments are invalid. This can also happen
- *                                    if `data_offset` is larger than the size of the data
- *                                    associated with `uid`.
- * @retval PSA_ERROR_DOES_NOT_EXIST   The provided `uid` was not found in the storage.
- * @retval PSA_ERROR_STORAGE_FAILURE  The physical storage has failed (fatal error).
+ * @retval PSA_SUCCESS                 The operation completed successfully.
+ * @retval PSA_ERROR_GENERIC_ERROR     An unspecified internal failure happened.
+ * @retval PSA_ERROR_INVALID_ARGUMENT  One or more arguments are invalid. This can also happen
+ *                                     if `data_offset` is larger than the size of the data
+ *                                     associated with `uid`.
+ * @retval PSA_ERROR_DOES_NOT_EXIST    The provided `uid` was not found in the storage.
+ * @retval PSA_ERROR_STORAGE_FAILURE   The physical storage has failed (fatal error).
+ * @retval PSA_ERROR_INVALID_SIGNATURE The data associated with `uid` failed authentication.
+ * @retval PSA_ERROR_DATA_CORRUPT      The data associated with `uid` is corrupt.
  */
 /** @cond INTERNAL_HIDDEN */
 static ALWAYS_INLINE
@@ -88,11 +90,13 @@ psa_status_t psa_its_get(psa_storage_uid_t uid, size_t data_offset,
  * @param[out] p_info A pointer to a `psa_storage_info_t` struct that will
  *                    be populated with the metadata on success.
  *
- * @retval PSA_SUCCESS                The operation completed successfully.
- * @retval PSA_ERROR_GENERIC_ERROR    An unspecified internal failure happened.
- * @retval PSA_ERROR_INVALID_ARGUMENT `uid` is invalid.
- * @retval PSA_ERROR_DOES_NOT_EXIST   The provided `uid` was not found in the storage.
- * @retval PSA_ERROR_STORAGE_FAILURE  The physical storage has failed (fatal error).
+ * @retval PSA_SUCCESS                 The operation completed successfully.
+ * @retval PSA_ERROR_GENERIC_ERROR     An unspecified internal failure happened.
+ * @retval PSA_ERROR_INVALID_ARGUMENT  `uid` is invalid.
+ * @retval PSA_ERROR_DOES_NOT_EXIST    The provided `uid` was not found in the storage.
+ * @retval PSA_ERROR_STORAGE_FAILURE   The physical storage has failed (fatal error).
+ * @retval PSA_ERROR_INVALID_SIGNATURE The data associated with `uid` failed authentication.
+ * @retval PSA_ERROR_DATA_CORRUPT      The data associated with `uid` is corrupt.
  */
 /** @cond INTERNAL_HIDDEN */
 static ALWAYS_INLINE
