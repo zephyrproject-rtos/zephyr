@@ -146,6 +146,12 @@ manifest:
       path: modules/fs/fatfs
       groups:
         - fs
+    - name: hal_abov
+      url: git@github.com:abovsemiconductor/zephyr_hal.git
+      revision: main
+      path: modules/hal/abov32
+      groups:
+        - hal
     - name: hal_adi
       revision: 1a5d9748b680adf0669739f37d05cb985f39b7b8
       path: modules/hal/adi

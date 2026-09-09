@@ -1,0 +1,10 @@
+# Copyright (c) 2026 ABOV Semiconductor Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_ABOV32
+	bool
+
+config SOC_FAMILY
+	default "abov32" if SOC_FAMILY_ABOV32
+
+rsource "*/Kconfig.soc"

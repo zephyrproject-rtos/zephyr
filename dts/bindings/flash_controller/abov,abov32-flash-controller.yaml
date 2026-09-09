@@ -1,0 +1,8 @@
+# Copyright (c) 2026 ABOV Semiconductor Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ABOV32 code flash memory controller (CFMC)
+
+compatible: "abov,abov32-flash-controller"
+
+include: flash-controller.yaml
