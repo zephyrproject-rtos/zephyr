@@ -16,16 +16,24 @@ LOG_MODULE_REGISTER(SHA);
 
 static struct sha_session sha_sessions[SHA_MAX_SESSIONS];
 
+/* Serializes the allocation and the release of the session slots above. */
+static K_MUTEX_DEFINE(sha_sessions_lock);
+
 static int intel_sha_get_unused_session_idx(void)
 {
 	int i;
 
+	k_mutex_lock(&sha_sessions_lock, K_FOREVER);
+
 	for (i = 0; i < SHA_MAX_SESSIONS; i++) {
 		if (!sha_sessions[i].in_use) {
 			sha_sessions[i].in_use = true;
+			k_mutex_unlock(&sha_sessions_lock);
 			return i;
 		}
 	}
+
+	k_mutex_unlock(&sha_sessions_lock);
 	return -1;
 }
 
@@ -305,8 +313,11 @@ static int intel_sha_device_free(const struct device *dev, struct hash_ctx *ctx)
 	(void)memset((void *)self->dfsha, 0, sizeof(struct sha_hw_regs));
 	(void)memset(&session->sha_ctx, 0, sizeof(struct sha_context));
 	(void)memset(&session->state, 0, sizeof(union sha_state));
-	session->in_use = false;
 	session->algo = 0;
+
+	k_mutex_lock(&sha_sessions_lock, K_FOREVER);
+	session->in_use = false;
+	k_mutex_unlock(&sha_sessions_lock);
 	return 0;
 }
 
