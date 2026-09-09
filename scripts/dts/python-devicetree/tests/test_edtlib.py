@@ -396,6 +396,41 @@ def test_include():
                  ['int', 'int', 'int', 'int'],
                  [0, 1, 2, 3])
 
+def test_class_merge():
+    '''Test the union merge of the 'class:' key across includes.'''
+    fname2path = {'class-base-1.yaml': 'test-bindings-include/class-base-1.yaml',
+                  'class-base-2.yaml': 'test-bindings-include/class-base-2.yaml'}
+
+    with from_here():
+        binding = edtlib.Binding('test-bindings-include/class-base-1.yaml', {})
+    assert binding.classes == ['class-a']
+
+    with from_here():
+        binding = edtlib.Binding('test-bindings-include/class-base-2.yaml', {})
+    assert binding.classes == ['class-b', 'class-a']
+
+    # The including binding's own 'class:' comes first, then the included
+    # bindings' classes in include order, without duplicates.
+    with from_here():
+        binding = edtlib.Binding('test-bindings-include/class-union.yaml',
+                                 fname2path)
+    assert binding.classes == ['class-c', 'class-a', 'class-b']
+
+    # The union also applies at child-binding roots.
+    with from_here():
+        binding = edtlib.Binding(
+            'test-bindings-include/class-child-union.yaml',
+            {'class-child-base.yaml':
+             'test-bindings-include/class-child-base.yaml'})
+    assert binding.classes == []
+    assert binding.child_binding.classes == ['class-child-b', 'class-child-a']
+
+    # Malformed names and duplicates are rejected.
+    for fname in ('class-bad-name.yaml', 'class-dup.yaml'):
+        with from_here():
+            with pytest.raises(edtlib.EDTError):
+                edtlib.Binding(f'test-bindings-include/{fname}', {})
+
 def test_include_filters():
     '''Test property-allowlist and property-blocklist in an include.'''
 
