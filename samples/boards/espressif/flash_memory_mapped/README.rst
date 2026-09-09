@@ -2,7 +2,7 @@
    :name: Memory-Mapped Flash
    :relevant-api: flash_interface
 
-   Write data into scratch area and read it using flash API and memory-mapped pointer.
+   Write data into the storage partition and read it using flash API and memory-mapped pointer.
 
 Overview
 ********
@@ -42,7 +42,7 @@ port at ``/dev/ttyUSB0``:
 
    $ west espressif monitor
 
-The sample code erases the scratch area defined in DTS file and writes a 32-bytes data buffer in it.
+The sample code erases the storage partition defined in the DTS file and writes a 32-bytes data buffer in it.
 Next, it prints that region content using flash API read and also using memory-mapped pointer.
 Both readings should return the same value. Important to notice that writing using memory-mapped pointer
 is not allowed.
