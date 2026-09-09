@@ -1,6 +1,6 @@
 ---
 name: zephyr-pr-review
-description: Use when reviewing Zephyr RTOS pull requests or patches. Spawns parallel subagents that scrutinize code under different lenses: documented conventions, unwritten conventions, CI compliance checks, upstream reference leaks in commit messages and PR metadata, and (for ATMEL code) maintainer impersonation. Trigger on commands like "review this PR", "review patch", "check my Zephyr code", or when a PR URL or diff is provided.
+description: Use when reviewing Zephyr RTOS pull requests or patches. Spawns parallel subagents that scrutinize code under different lenses: documented conventions, unwritten conventions, CI compliance checks, upstream reference leaks in commit messages and PR metadata, and maintainer impersonation for the areas the diff touches (ATMEL, STM32, tracing, audio). Trigger on commands like "review this PR", "review patch", "check my Zephyr code", or when a PR URL or diff is provided.
 ---
 
 # Zephyr PR Review Skill
@@ -23,11 +23,11 @@ If no specific input is given, default to `git diff origin/main...HEAD`.
 
 Read the diff and determine:
 1. **Which subsystems are touched?** (drivers, subsys, arch, boards, dts, etc.)
-2. **Is this ATMEL/Microchip SAM code?** Check for:
-   - Files matching `drivers/*/*sam*`, `boards/atmel/`, `dts/arm/atmel/`, `soc/atmel/`
-   - Devicetree nodes with `atmel,` compatible strings
-   - Kconfig symbols starting with `SOC_ATMEL` or referencing SAM chips
-   - Any file in the `hal_atmel` module
+2. **Which vendor or subsystem personas apply?** Check for:
+   - **ATMEL/Microchip SAM**: `drivers/*/*sam*`, `boards/atmel/`, `dts/arm/atmel/`, `soc/atmel/`, `atmel,` compatibles, `SOC_ATMEL*` Kconfig, the `hal_atmel` module
+   - **STM32**: `boards/st/`, `dts/arm/st/`, `soc/st/stm32/`, `drivers/*/*stm32*`, `st,stm32` compatibles
+   - **Tracing**: `subsys/tracing/`, `include/zephyr/tracing/`, `scripts/tracing/`, `doc/services/tracing/`
+   - **Audio**: `drivers/audio/`, `include/zephyr/audio/`, `dts/bindings/audio/`, `samples/drivers/audio/`, `tests/drivers/audio/`, `tests/drivers/build_all/audio/`
 
 ### Step 3: Apply the review lenses
 
@@ -50,9 +50,15 @@ The lens instructions live in this same folder. Read each lens file and review t
 10. `mathieuchopstm-impersonator.md` — only if the diff touches STM32 SoC-level DTSI, SoC Kconfig, or HAL integration
 11. `GeorgeCGV-impersonator.md` — only if the diff touches STM32 drivers (USB, flash, SDHC, SPI, I2C, video, Ethernet)
 
-**Conditionally apply (Tracing only):**
+**Conditionally apply (tracing only):**
 12. `nashif-impersonator.md` — only if the diff touches tracing code (scripts/tracing, subsys/tracing, include/zephyr/tracing, samples/subsys/tracing, tests/subsys/tracing, doc/services/tracing, or the CI wiring for them)
 13. `teburd-impersonator.md` — only if the diff touches tracing code or tracing tests/scripts (same paths as above plus scripts/tests/tracing)
+
+**Conditionally apply (audio only):**
+14. `rriveramcrus-impersonator.md` — only if the diff touches audio code (drivers/audio/, include/zephyr/audio/, dts/bindings/audio/, samples/drivers/audio/, tests/drivers/audio/, tests/drivers/build_all/audio/)
+15. `rgallaispou-impersonator.md` — only if the diff touches audio codec or DMIC drivers, their bindings, or the audio API headers
+16. `TomasBarakNXP-impersonator.md` — only if the diff touches audio code, or any NXP board/driver that carries an audio codec node
+17. `kartben-impersonator.md` — advisory, whenever the diff touches DT bindings, Kconfig help text, doc/, samples/, boards/, or any new driver; he reviews across the whole tree
 
 For each lens, review the full diff, the file paths changed, the subsystem context, and any PR metadata (title, description, author).
 
@@ -64,7 +70,7 @@ Combine the findings from every lens into a single review with:
 2. **Compliance Failures** — CI check failures that will block merge (from `compliance-check`)
 3. **Upstream Reference Leaks** — `#NNNNN` autolinks that will notify an unrelated upstream thread (from `upstream-reference-check`); blocking before push, unfixable after
 4. **Convention Issues** — documented and unwritten convention violations (should fix)
-5. **Maintainer Notes** — if ATMEL, include nandojve's perspective; if STM32, include the applicable reviewer personas' perspectives; if tracing, include nashif's and teburd's perspectives (advisory)
+5. **Maintainer Notes** — include the perspective of every impersonator lens that fired: nandojve for ATMEL, the ST reviewers for STM32, nashif and teburd for tracing, the audio reviewers for drivers/audio, kartben where he applies (advisory)
 6. **Positive Notes** — things done well
 7. **Summary** — overall assessment and recommendation
 
@@ -103,9 +109,9 @@ Present the review in this format:
 
 ### Maintainer Notes
 > [!NOTE]
-> Feedback from the ATMEL/Microchip SAM maintainer perspective.
+> Feedback from the reviewer personas that fired for this diff. Name each one.
 
-- [comment in nandojve's style]
+- **@<reviewer>** [comment in that reviewer's style]
 
 ### Positive Notes
 - Things done well
@@ -130,3 +136,7 @@ The review lenses live next to this skill, in the same folder (peer sub-skills, 
 - `djiatsaf-st-impersonator.md` — STM32 board/test reviewer lens (board DTS, test overlays)
 - `mathieuchopstm-impersonator.md` — STM32 SoC-level reviewer lens (DTSI, SoC Kconfig, HAL)
 - `GeorgeCGV-impersonator.md` — STM32 driver correctness lens (USB, flash, SDHC, SPI, I2C)
+- `rriveramcrus-impersonator.md` — audio collaborator lens (drivers/audio)
+- `rgallaispou-impersonator.md` — audio codec/DMIC reviewer lens (drivers/audio)
+- `TomasBarakNXP-impersonator.md` — NXP audio reviewer lens (drivers/audio, NXP boards)
+- `kartben-impersonator.md` — tree-wide style/DT/doc reviewer lens (advisory)
