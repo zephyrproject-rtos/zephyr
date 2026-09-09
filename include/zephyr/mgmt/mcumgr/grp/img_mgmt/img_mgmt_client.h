@@ -30,6 +30,17 @@ extern "C" {
 #endif
 
 /**
+ * @brief Maximum supported image digest length.
+ *
+ * An image list response can contain a SHA-256 (32-byte) or SHA-512 (64-byte)
+ * digest, depending on the target's MCUboot configuration.
+ *
+ * @note Unlike IMG_MGMT_DATA_SHA_LEN, this value does not specify the fixed
+ * SHA-256 digest length used for image uploads.
+ */
+#define IMG_MGMT_CLIENT_HASH_MAX_LEN 64
+
+/**
  * @brief Image list flags.
  */
 struct mcumgr_image_list_flags {
@@ -53,8 +64,10 @@ struct mcumgr_image_data {
 	uint32_t slot_num;
 	/** Image number */
 	uint32_t img_num;
-	/** Image SHA256 checksum */
-	char hash[IMG_MGMT_DATA_SHA_LEN];
+	/** Image digest (SHA-256 or SHA-512). */
+	char hash[IMG_MGMT_CLIENT_HASH_MAX_LEN];
+	/** Length of the digest in bytes. */
+	size_t hash_len;
 	/** Image Version */
 	char version[IMG_MGMT_VER_MAX_STR_LEN + 1];
 	/** Image Flags */
@@ -163,19 +176,38 @@ int img_mgmt_client_upload(struct img_mgmt_client *client, const uint8_t *data, 
 			   struct mcumgr_image_upload *res_buf);
 
 /**
- * @brief Write image state.
+ * @brief Write the state of an image.
  *
- * @param client	IMG mgmt client object
- * @param hash		Pointer to Hash (Needed for test).
- * @param confirm	Set false for test and true for confirmation.
- * @param res_buf	Pointer for command response structure.
+ * Sends an image state write request to the target. The image is selected by its
+ * digest, which must match the @c hash reported by @ref img_mgmt_client_state_read.
+ * The digest can use SHA-256 or SHA-512, depending on the target configuration.
  *
- * @return 0 on success.
- * @return @ref mcumgr_err_t code on failure.
+ * The requested operation depends on @p hash and @p confirm:
+ *
+ * - If @p hash is not @c NULL and @p confirm is false, the selected image is marked
+ *   for test. Depending on the MCUboot mode, the image is swapped in or selected on
+ *   the next boot and can be reverted unless it is later confirmed.
+ * - If @p hash is not @c NULL and @p confirm is true, the selected image is requested
+ *   for confirmation. The target can reject confirmation of a non-active image.
+ * - If @p hash is @c NULL and @p confirm is true, the currently active image is
+ *   confirmed.
+ * - If @p hash is @c NULL and @p confirm is false, the request is invalid.
+ *
+ * @param client	IMG mgmt client object.
+ * @param hash		Image digest used to select the target image. Set to @c NULL
+ *			to select the currently active image. This is valid only when
+ *			@p confirm is true.
+ * @param hash_len	Length of @p hash in bytes: 32 for SHA-256 or 64 for SHA-512.
+ *			Set to 0 when @p hash is @c NULL.
+ * @param confirm	Set to false to test the image or true to confirm it.
+ * @param res_buf	Command response structure. The image state returned by the target
+ *			is stored here when the request succeeds.
+ *
+ * @retval 0 The request completed successfully.
+ * @return A @ref mcumgr_err_t error code on failure.
  */
-
-int img_mgmt_client_state_write(struct img_mgmt_client *client, char *hash, bool confirm,
-				struct mcumgr_image_state *res_buf);
+int img_mgmt_client_state_write(struct img_mgmt_client *client, const char *hash, size_t hash_len,
+				bool confirm, struct mcumgr_image_state *res_buf);
 
 /**
  * @brief Read image state.

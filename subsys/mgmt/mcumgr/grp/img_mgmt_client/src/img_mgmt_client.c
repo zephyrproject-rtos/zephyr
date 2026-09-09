@@ -44,6 +44,11 @@ static K_MUTEX_DEFINE(mcumgr_img_client_grp_mutex);
 static const char smp_images_str[] = "images";
 #define IMAGES_STR_LEN (sizeof(smp_images_str) - 1)
 
+static bool image_digest_len_valid(size_t hash_len)
+{
+	return hash_len == IMG_MGMT_DATA_SHA_LEN || hash_len == IMG_MGMT_CLIENT_HASH_MAX_LEN;
+}
+
 static int image_state_res_fn(struct net_buf *nb, void *user_data)
 {
 	zcbor_state_t zsd[CONFIG_MCUMGR_SMP_CBOR_MAX_DECODING_LEVELS + 2];
@@ -126,7 +131,7 @@ static int image_state_res_fn(struct net_buf *nb, void *user_data)
 			goto out;
 		}
 		/* Check that mandatory parameters have decoded */
-		if (hash.len != IMG_MGMT_DATA_SHA_LEN || !version.len ||
+		if (!image_digest_len_valid(hash.len) || !version.len ||
 		    !zcbor_map_decode_bulk_key_found(list_res_decode, ARRAY_SIZE(list_res_decode),
 						     "slot")) {
 			LOG_ERR("Missing mandatory parameters");
@@ -138,7 +143,8 @@ static int image_state_res_fn(struct net_buf *nb, void *user_data)
 			image_info->image_list[image_info->image_list_length].img_num = img_num;
 			image_info->image_list[image_info->image_list_length].slot_num = slot_num;
 			memcpy(image_info->image_list[image_info->image_list_length].hash,
-			       hash.value, IMG_MGMT_DATA_SHA_LEN);
+			       hash.value, hash.len);
+			image_info->image_list[image_info->image_list_length].hash_len = hash.len;
 			if (version.len > IMG_MGMT_VER_MAX_STR_LEN) {
 				LOG_WRN("Version truncated len %d -> %d", version.len,
 					IMG_MGMT_VER_MAX_STR_LEN);
@@ -449,14 +455,19 @@ end:
 	return rc;
 }
 
-int img_mgmt_client_state_write(struct img_mgmt_client *client, char *hash, bool confirm,
-				struct mcumgr_image_state *res_buf)
+int img_mgmt_client_state_write(struct img_mgmt_client *client, const char *hash, size_t hash_len,
+				bool confirm, struct mcumgr_image_state *res_buf)
 {
 	struct net_buf *nb;
 	int rc;
 	uint32_t map_count;
 	zcbor_state_t zse[CONFIG_MCUMGR_SMP_CBOR_MAX_DECODING_LEVELS];
 	bool ok;
+
+	if ((hash == NULL && hash_len != 0) ||
+	    (hash != NULL && !image_digest_len_valid(hash_len))) {
+		return MGMT_ERR_EINVAL;
+	}
 
 	k_mutex_lock(&mcumgr_img_client_grp_mutex, K_FOREVER);
 	active_client = client;
@@ -484,8 +495,7 @@ int img_mgmt_client_state_write(struct img_mgmt_client *client, char *hash, bool
 	     zcbor_bool_put(zse, confirm);
 	/* Write hash data */
 	if (ok && hash) {
-		ok = zcbor_tstr_put_lit(zse, "hash") &&
-		     zcbor_bstr_encode_ptr(zse, hash, IMG_MGMT_DATA_SHA_LEN);
+		ok = zcbor_tstr_put_lit(zse, "hash") && zcbor_bstr_encode_ptr(zse, hash, hash_len);
 	}
 	/* Close map */
 	if (ok) {
