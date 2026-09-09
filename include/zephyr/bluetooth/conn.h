@@ -1781,7 +1781,7 @@ int bt_conn_le_set_default_phy(uint8_t pref_tx_phy, uint8_t pref_rx_phy);
  *   - @ref BT_HCI_ERR_REMOTE_LOW_RESOURCES
  *   - @ref BT_HCI_ERR_REMOTE_POWER_OFF
  *   - @ref BT_HCI_ERR_UNSUPP_REMOTE_FEATURE
- *   - @ref BT_HCI_ERR_PAIRING_NOT_SUPPORTED
+ *   - @ref BT_HCI_ERR_PAIRING_NOT_SUPPORTED (BR/EDR connections only)
  *   - @ref BT_HCI_ERR_UNACCEPT_CONN_PARAM
  *
  *  @param conn Connection to disconnect.
