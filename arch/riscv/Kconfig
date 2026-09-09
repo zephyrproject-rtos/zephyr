@@ -347,6 +347,19 @@ config RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET
 	  properly sized to take into account this offset. This is a hidden
 	  option which needs to be set per architecture and left alone.
 
+config RISCV_CUSTOM_VECTOR_TABLE_IRQ_LEVEL
+	int
+	depends on GEN_IRQ_VECTOR_TABLE
+	depends on MULTI_LEVEL_INTERRUPTS
+	range 1 3
+	help
+	  Specifies the interrupt controller level used when generating the
+	  hardware vector table.
+	  For example, some RISC-V platforms implement vectored interrupts in a
+	  second-level interrupt controller, such as the Andes NCEPLIC100,
+	  while the first-level CPU interrupt controller handles machine
+	  external, software, and timer interrupts through a common IRQ entry.
+
 config NUM_IRQS
 	int
 

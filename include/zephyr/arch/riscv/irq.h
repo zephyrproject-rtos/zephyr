@@ -74,6 +74,16 @@ extern void z_riscv_irq_vector_set(unsigned int irq);
 #define z_riscv_irq_vector_set(i) /* Nothing */
 #endif /* CONFIG_RISCV_HAS_CLIC */
 
+#if CONFIG_RISCV_CUSTOM_VECTOR_TABLE_IRQ_LEVEL == 2
+#define IRQN_LEVEL_SHIFT CONFIG_1ST_LEVEL_INTERRUPT_BITS
+#elif CONFIG_RISCV_CUSTOM_VECTOR_TABLE_IRQ_LEVEL == 3
+#define IRQN_LEVEL_SHIFT (CONFIG_2ND_LEVEL_INTERRUPT_BITS + CONFIG_1ST_LEVEL_INTERRUPT_BITS)
+#else
+#define IRQN_LEVEL_SHIFT 0
+#endif
+
+#define LOCAL_IRQN(irq_p) COND_CODE_0(IRQN_LEVEL_SHIFT, (irq_p), ((irq_p >> IRQN_LEVEL_SHIFT) - 1))
+
 #define ARCH_IRQ_CONNECT(irq_p, priority_p, isr_p, isr_param_p, flags_p) \
 { \
 	Z_ISR_DECLARE(irq_p + CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET, \
@@ -83,7 +93,7 @@ extern void z_riscv_irq_vector_set(unsigned int irq);
 
 #define ARCH_IRQ_DIRECT_CONNECT(irq_p, priority_p, isr_p, flags_p) \
 { \
-	Z_ISR_DECLARE_DIRECT(irq_p + CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET, \
+	Z_ISR_DECLARE_DIRECT(LOCAL_IRQN(irq_p) + CONFIG_RISCV_RESERVED_IRQ_ISR_TABLES_OFFSET, \
 		      ISR_FLAG_DIRECT, isr_p); \
 	z_riscv_irq_priority_set(irq_p, priority_p, flags_p); \
 	z_riscv_irq_vector_set(irq_p); \
