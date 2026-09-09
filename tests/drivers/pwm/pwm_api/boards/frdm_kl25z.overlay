@@ -1,0 +1,11 @@
+/*
+ * Copyright (c) 2026 Gabriel Ivo <gabriel.bozi@usp.br>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		pwm-test = &tpm0;
+	};
+};
