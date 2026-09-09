@@ -256,7 +256,9 @@ static int ifx_cat1_rtc_init(const struct device *dev)
 	uint16_t state;
 	int ret = 0;
 
+#ifndef CONFIG_RTC_INFINEON_SKIP_SECURE_ACCESS
 	Cy_SysClk_ClkBakSetSource(CY_SYSCLK_BAK_IN_CLKLF);
+#endif
 
 	/* The state and century fields share one backup register, so the whole
 	 * read-decide-write sequence has to be atomic.
@@ -265,9 +267,14 @@ static int ifx_cat1_rtc_init(const struct device *dev)
 	state = ifx_cat1_rtc_get_state();
 
 	if (state == IFX_CAT1_RTC_STATE_UNINITIALIZED) {
+
+#ifndef CONFIG_RTC_INFINEON_SKIP_SECURE_ACCESS
 		if (Cy_RTC_IsExternalResetOccurred()) {
 			ifx_cat1_rtc_set_century(IFX_CAT1_RTC_INIT_CENTURY);
 		}
+#else
+		ifx_cat1_rtc_set_century(IFX_CAT1_RTC_INIT_CENTURY);
+#endif
 
 #ifdef CONFIG_PM
 		rslt = Cy_SysPm_RegisterCallback(&ifx_cat1_rtc_pm_cb);
