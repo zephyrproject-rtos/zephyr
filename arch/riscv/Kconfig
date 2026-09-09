@@ -181,6 +181,13 @@ config RISCV_SOC_HAS_CUSTOM_IRQ_HANDLING
 	  function __soc_handle_all_irqs has to be implemented. It shall service
 	  and clear all pending interrupts.
 
+config RISCV_SOC_HAS_CUSTOM_MCAUSE
+	bool
+	help
+	  Hidden option to allow SoC to overwrite the handling of the mcause register.
+	  If enabled, the SoC must provide __soc_read_mcause(), which should return
+	  a RISC-V compliant mcause value in the a0 register.
+
 config RISCV_SOC_HAS_CUSTOM_IRQ_LOCK_OPS
 	bool
 	help

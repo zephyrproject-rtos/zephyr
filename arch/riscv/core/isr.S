@@ -107,6 +107,15 @@
 #endif
 	.endm
 
+	.macro read_mcause dst
+#if defined(CONFIG_RISCV_SOC_HAS_CUSTOM_MCAUSE)
+	jal ra, __soc_read_mcause
+	mv \dst, a0
+#else
+	csrr \dst, RV_CAUSE
+#endif
+	.endm
+
 /* imports */
 GDATA(_sw_isr_table)
 GDATA(_kernel)
@@ -117,6 +126,9 @@ GTEXT(z_irq_spurious)
 GTEXT(__soc_save_context)
 GTEXT(__soc_restore_context)
 #endif /* CONFIG_RISCV_SOC_CONTEXT_SAVE */
+#ifdef CONFIG_RISCV_SOC_HAS_CUSTOM_MCAUSE
+GTEXT(__soc_read_mcause)
+#endif
 
 GTEXT(z_riscv_fatal_error)
 GTEXT(z_get_next_switch_handle)
@@ -238,7 +250,7 @@ SECTION_FUNC(exception.entry, _isr_wrapper)
 
 #ifdef CONFIG_CLIC_SUPPORT_INTERRUPT_LEVEL
 	/* Save RV_CAUSE register */
-	csrr t0, RV_CAUSE
+	read_mcause t0
 	sr t0, __struct_arch_esf_mcause_OFFSET(sp)
 #endif /* CONFIG_CLIC_SUPPORT_INTERRUPT_LEVEL */
 
@@ -256,7 +268,7 @@ SECTION_FUNC(exception.entry, _isr_wrapper)
 	and t1, t1, t2
 	bnez t1, no_fp
 	/* determine if this is an Illegal Instruction exception */
-	csrr t2, RV_CAUSE
+	read_mcause t2
 	li t1, CONFIG_RISCV_MCAUSE_EXCEPTION_MASK
 	and t2, t2, t1
 	li t1, 2		/* 2 = illegal instruction */
@@ -401,7 +413,7 @@ no_fp:	/* increment _current->arch.exception_depth */
 	 * of the RV_CAUSE register is used to indicate whether an exception
 	 * is the result of an interrupt or an exception/fault.
 	 */
-	csrr t0, RV_CAUSE
+	read_mcause t0
 	bltz t0, is_interrupt
 
 	/*
@@ -747,7 +759,7 @@ on_irq_stack:
 #endif
 
 	/* Get IRQ causing interrupt */
-	csrr a0, RV_CAUSE
+	read_mcause a0
 	li t0, CONFIG_RISCV_MCAUSE_EXCEPTION_MASK
 	and a0, a0, t0
 
