@@ -13,6 +13,7 @@
 #include <stdint.h>
 #include <zephyr/llext/symbol.h>
 #include <zephyr/device.h>
+#include <zephyr/drivers/uart.h>
 #include <zephyr/kernel.h>
 #include <zephyr/ztest_assert.h>
 
@@ -45,6 +46,15 @@ void test_thread(void *arg0, void *arg1, void *arg2)
 
 	/* Verify device API functionality, console must be ready in CI tests */
 	zassert_true(device_is_ready(console_dev));
+
+	/* Verify DEVICE_API exports: DEVICE_API_GET/DEVICE_API_IS must resolve
+	 * symbols properly from extension code, and the API pointer must match
+	 * the one in the device structure.
+	 */
+	const struct uart_driver_api *api = DEVICE_API_GET(uart, console_dev);
+
+	zassert_true(DEVICE_API_IS(uart, console_dev));
+	zassert_equal_ptr(api, console_dev->api);
 #endif
 }
 
