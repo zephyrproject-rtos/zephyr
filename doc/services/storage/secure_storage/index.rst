@@ -81,6 +81,14 @@ and an explanation why. This is not an exhaustive list.
   It is only secured at rest. Protecting it at runtime as well
   requires specific hardware mechanisms to support this.
 
+* The ``psa_its_get*()`` functions can return ``PSA_ERROR_INVALID_SIGNATURE`` and
+  ``PSA_ERROR_DATA_CORRUPT``.
+
+  The specification doesn't define these for the ITS API because it assumes that the storage
+  underlying it is protected by hardware, and thus that data read back from it is always intact.
+  As it's not the case here, these error codes are passed on to let callers tell an entry that has
+  been tampered with apart from an internal failure.
+
 Configuration
 *************
 

@@ -32,7 +32,9 @@ psa_status_t secure_storage_its_store_set(secure_storage_its_uid_t uid,
  * @param[out] data_length On success, the number of bytes written to `data`.
  *                         May be less than `data_size`.
  *
- * @return One of the return values of `psa_its_get()`.
+ * @retval PSA_SUCCESS               The read succeeded.
+ * @retval PSA_ERROR_DOES_NOT_EXIST  The entry was not found from the storage.
+ * @retval PSA_ERROR_STORAGE_FAILURE Some storage failure happened.
  */
 psa_status_t secure_storage_its_store_get(secure_storage_its_uid_t uid, size_t data_size,
 					  void *data, size_t *data_length);

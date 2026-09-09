@@ -72,6 +72,12 @@ static psa_status_t transform_stored_data(
 						      data_size, data, data_len, create_flags);
 	if (ret != PSA_SUCCESS) {
 		log_failed_operation("transform", "from", ret);
+		/* Not listed for the ITS API by the PSA specification, which assumes storage
+		 * that is protected by hardware. Passed on because that isn't the case here.
+		 */
+		if (ret == PSA_ERROR_INVALID_SIGNATURE || ret == PSA_ERROR_DATA_CORRUPT) {
+			return ret;
+		}
 		return PSA_ERROR_GENERIC_ERROR;
 	}
 	return PSA_SUCCESS;
@@ -259,7 +265,9 @@ psa_status_t secure_storage_its_remove(secure_storage_its_caller_id_t caller_id,
 	/* Allow overwriting corrupted entries as well to not be stuck with them forever. */
 	if (ret == PSA_SUCCESS ||
 	    ret == PSA_ERROR_STORAGE_FAILURE ||
-	    ret == PSA_ERROR_GENERIC_ERROR) {
+	    ret == PSA_ERROR_GENERIC_ERROR ||
+	    ret == PSA_ERROR_INVALID_SIGNATURE ||
+	    ret == PSA_ERROR_DATA_CORRUPT) {
 		ret = secure_storage_its_store_remove(its_uid);
 		if (ret != PSA_SUCCESS) {
 			log_failed_operation("remove", "from", ret);
