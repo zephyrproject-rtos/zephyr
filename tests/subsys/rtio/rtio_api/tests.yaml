@@ -53,3 +53,9 @@ tests:
       - CONFIG_RTIO_OP_DELAY=n
     integration_platforms:
       - native_sim
+  rtio.api.no_cqe_callback:
+    tags: rtio
+    extra_configs:
+      - CONFIG_RTIO_CQE_CALLBACK=n
+    integration_platforms:
+      - native_sim
