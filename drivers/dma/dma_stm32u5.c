@@ -451,6 +451,24 @@ static int dma_stm32_hal_config_increments(uint16_t source_addr_adj, uint16_t de
 					  DMA_DINC_INCREMENTED, DMA_DINC_FIXED);
 }
 
+/*
+ * Default DMA driver configuration relies on these values,
+ * in case the fields have not been initialized in the @p zephyr_config.
+ *
+ * hal_config->Request			= GPDMA1_REQUEST_ADC1;
+ * hal_config->BlkHWRequest		= DMA_BREQ_SINGLE_BURST;
+ * hal_config->Direction		= DMA_PERIPH_TO_MEMORY;
+ * hal_config->SrcInc			= DMA_SINC_FIXED;
+ * hal_config->DestInc			= DMA_DINC_FIXED;
+ * hal_config->SrcDataWidth		= DMA_SRC_DATAWIDTH_BYTE;
+ * hal_config->DestDataWidth		= DMA_DEST_DATAWIDTH_BYTE;
+ * hal_config->Priority			= DMA_LOW_PRIORITY_LOW_WEIGHT;
+ * hal_config->SrcBurstLength		= 0;
+ * hal_config->DestBurstLength		= 0;
+ * hal_config->TransferAllocatedPort	= DMA_SRC_ALLOCATED_PORT0;
+ * hal_config->TransferEventMode	= DMA_TCEM_BLOCK_TRANSFER;
+ * hal_config->Mode			= DMA_NORMAL;
+ */
 int dma_stm32_zcfg_to_halcfg(const struct device *dma, const struct dma_config *zephyr_config,
 			     DMA_InitTypeDef *hal_config, uint16_t source_addr_adj,
 			     uint16_t dest_addr_adj)
