@@ -639,6 +639,14 @@ static uint32_t calc_uart_xfer_time(uint32_t baudrate, uint32_t tx_len)
 	return (tx_len * 10000000U) / baudrate;
 }
 
+/* Calculate deadline for a transfer of the given length, compensated for possible rounding errors. */
+static uint32_t calc_uart_xfer_timeout(uint32_t baudrate, uint32_t tx_len)
+{
+	uint32_t xfer_us = calc_uart_xfer_time(baudrate, tx_len);
+
+	return xfer_us + (xfer_us / 20) + 1000;
+}
+
 ZTEST_USER(uart_async_read_abort, test_read_abort)
 {
 	struct uart_config cfg;
@@ -685,15 +693,16 @@ ZTEST_USER(uart_async_read_abort, test_read_abort)
 	k_sem_give(&rx_buf_coherency);
 
 	tx_len = 5;
-	tx_timeout_us = calc_uart_xfer_time(cfg.baudrate, tx_len) + 1000;
+	tx_timeout_us = calc_uart_xfer_timeout(cfg.baudrate, tx_len);
 	err = uart_tx(uart_dev, tx_buf, tx_len, SYS_FOREVER_US);
 	zassert_ok(err);
 	zassert_ok(k_sem_take(&tx_done, K_USEC(tx_timeout_us)), "TX_DONE timeout");
-	zassert_ok(k_sem_take(&rx_rdy, K_USEC(tx_timeout_us + rx_timeout_us)), "RX_RDY timeout");
+	zassert_ok(k_sem_take(&rx_rdy, K_USEC(2 * tx_timeout_us + rx_timeout_us)),
+		   "RX_RDY timeout");
 	zassert_equal(memcmp(tx_buf, rx_buf, tx_len), 0, "Buffers not equal");
 
 	tx_len = 95;
-	tx_timeout_us = calc_uart_xfer_time(cfg.baudrate, tx_len) + 1000;
+	tx_timeout_us = calc_uart_xfer_timeout(cfg.baudrate, tx_len);
 	err = uart_tx(uart_dev, tx_buf, tx_len, SYS_FOREVER_US);
 	zassert_ok(err);
 
