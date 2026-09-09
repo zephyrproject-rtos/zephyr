@@ -21,6 +21,7 @@
 #include <zephyr/dt-bindings/memory-attr/memory-attr.h>
 #include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
 #include <zephyr/dt-bindings/sensor/qdec_stm32.h>
+#include <zephyr/dt-bindings/video/video-interfaces.h>
 #include <freq.h>
 #include <mem.h>
 
@@ -1064,6 +1065,13 @@
 			interrupt-names = "event";
 			interrupts = <49 0>;
 			status = "disabled";
+
+			port {
+				dcmi_ep_in: endpoint {
+					remote-endpoint-label = "";
+					bus-type = <VIDEO_BUS_TYPE_PARALLEL>;
+				};
+			};
 		};
 
 		exti: interrupt-controller@58000000 {
