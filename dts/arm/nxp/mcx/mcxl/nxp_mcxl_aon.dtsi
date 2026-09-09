@@ -5,11 +5,17 @@
  */
 
 #include <freq.h>
+#include <zephyr/dt-bindings/clock/nxp_mcxl_aon_clock.h>
 #include <zephyr/dt-bindings/i2c/i2c.h>
 
 &aon_peripheral {
 	#address-cells = <1>;
 	#size-cells = <1>;
+
+	clk_aon: clock-controller {
+		compatible = "nxp,mcxl-aon-clock";
+		#clock-cells = <1>;
+	};
 
 	lpirc: lpirc {
 		compatible = "fixed-clock";
@@ -24,28 +30,13 @@
 		status = "disabled";
 	};
 
-	root_clock1: root_clock1 {
-		compatible = "fixed-clock";
-		#clock-cells = <0>;
-		clock-frequency = <DT_FREQ_M(10)>;
-	};
-
-	root_clock2: root_clock2 {
-		compatible = "fixed-clock";
-		#clock-cells = <0>;
-		clock-frequency = <DT_FREQ_M(5)>;
-	};
-
-	root_clock3: root_clock3 {
-		compatible = "fixed-clock";
-		#clock-cells = <0>;
-		clock-frequency = <DT_FREQ_K(2500)>;
-	};
-
 	porta: pinmux@85000 {
 		compatible = "nxp,port-pinmux";
 		reg = <0x85000 0x1000>;
-		clocks = <&root_clock1>;
+		clocks = <&clk_aon MCXL_AON_CLOCK(MCXL_AON_GATE_PORT,
+						  MCXL_AON_SEL_NONE, MCXL_AON_CLK_ROOT_SRC_NONE,
+						  MCXL_AON_DIV_NONE, MCXL_CLOCK_DIV_BY_1,
+						  MCXL_AON_CLK_FLAG_NONE)>;
 	};
 
 	gpio0: gpio@9f000 {
@@ -63,7 +54,10 @@
 		status = "disabled";
 		reg = <0x82000 0x1000>;
 		interrupts = <3 0>;
-		clocks = <&root_clock1>;
+		clocks = <&clk_aon MCXL_AON_CLOCK(MCXL_AON_GATE_UART,
+						  MCXL_AON_SEL_NONE, MCXL_AON_CLK_ROOT_SRC_NONE,
+						  MCXL_AON_DIV_NONE, MCXL_CLOCK_DIV_BY_1,
+						  MCXL_AON_CLK_FLAG_NONE)>;
 	};
 
 	rtc: rtc@9a000 {
@@ -84,17 +78,14 @@
 		status = "disabled";
 	};
 
-	aon_qtmr_clock: aon-qtmr-clock {
-		compatible = "fixed-clock";
-		#clock-cells = <0>;
-		clock-frequency = <2500000>;
-	};
-
 	aon_qtmr0: qtmr@8e000 {
 		compatible = "nxp,imx-qtmr";
 		reg = <0x8e000 0x1000>;
 		interrupts = <24 0>;
-		clocks = <&aon_qtmr_clock>;
+		clocks = <&clk_aon MCXL_AON_CLOCK(MCXL_AON_GATE_QTMR0,
+						  MCXL_AON_SEL_NONE, MCXL_AON_CLK_ROOT_SRC_NONE,
+						  MCXL_AON_DIV_NONE, MCXL_CLOCK_DIV_BY_1,
+						  MCXL_AON_CLK_FLAG_NONE)>;
 		status = "disabled";
 
 		aon_qtmr0_timer0: timer0 {
@@ -126,7 +117,10 @@
 		compatible = "nxp,imx-qtmr";
 		reg = <0x8f000 0x1000>;
 		interrupts = <25 0>;
-		clocks = <&aon_qtmr_clock>;
+		clocks = <&clk_aon MCXL_AON_CLOCK(MCXL_AON_GATE_QTMR1,
+						  MCXL_AON_SEL_NONE, MCXL_AON_CLK_ROOT_SRC_NONE,
+						  MCXL_AON_DIV_NONE, MCXL_CLOCK_DIV_BY_1,
+						  MCXL_AON_CLK_FLAG_NONE)>;
 		status = "disabled";
 
 		aon_qtmr1_timer0: timer0 {
@@ -159,7 +153,10 @@
 		status = "disabled";
 		reg = <0x80000 0x1000>;
 		interrupts = <1 0>;
-		clocks = <&root_clock1>;
+		clocks = <&clk_aon MCXL_AON_CLOCK(MCXL_AON_GATE_I2C,
+						  MCXL_AON_SEL_NONE, MCXL_AON_CLK_ROOT_SRC_NONE,
+						  MCXL_AON_DIV_NONE, MCXL_CLOCK_DIV_BY_1,
+						  MCXL_AON_CLK_FLAG_NONE)>;
 		clock-frequency = <I2C_BITRATE_STANDARD>;
 		#address-cells = <1>;
 		#size-cells = <0>;

@@ -8,6 +8,7 @@
 #include <freq.h>
 #include <arm/armv8-m.dtsi>
 #include <zephyr/dt-bindings/clock/mcux_lpc_syscon_clock.h>
+#include <zephyr/dt-bindings/clock/nxp_mcxl_main_clock.h>
 #include <zephyr/dt-bindings/clock-monitor/nxp-freqme.h>
 #include <zephyr/dt-bindings/reset/nxp_syscon_reset_common.h>
 #include <zephyr/dt-bindings/gpio/gpio.h>
@@ -78,6 +79,18 @@
 			compatible = "nxp,mrcc-reset";
 			#reset-cells = <1>;
 		};
+	};
+
+	clk_main: clock-controller {
+		compatible = "nxp,mcxl-main-clock";
+		#clock-cells = <1>;
+		firc-mode = <MCXL_MAIN_CLK_FIRC_ENABLE>;
+		sys-clk-src = <MCXL_MAIN_CLK_SYS_SRC_FIRC>;
+		frohf-frequency = <DT_FREQ_M(96)>;
+		frohf-div = <1>;
+		ahb-div = <1>;
+		slow-clk-div = <4>;
+		core-clock-frequency = <DT_FREQ_M(96)>;
 	};
 
 	inputmux0: inputmux@1000 {
@@ -172,19 +185,31 @@
 	portb: pinmux@bc000 {
 		compatible = "nxp,port-pinmux";
 		reg = <0xbc000 0x1000>;
-		clocks = <&syscon MCUX_PORT1_CLK>;
+		clocks = <&clk_main MCXL_MAIN_CLOCK(MCXL_MAIN_GATE_PORT1,
+						    MCXL_MAIN_SEL_NONE, MCXL_MAIN_CLK_SRC_NONE,
+						    MCXL_MAIN_DIV_NONE, MCXL_CLOCK_DIV_BY_1,
+						    MCXL_MAIN_CLK_FLAG_NONE)>;
+		resets = <&reset NXP_SYSCON_RESET(1, 1)>;
 	};
 
 	portc: pinmux@bd000 {
 		compatible = "nxp,port-pinmux";
 		reg = <0xbd000 0x1000>;
-		clocks = <&syscon MCUX_PORT2_CLK>;
+		clocks = <&clk_main MCXL_MAIN_CLOCK(MCXL_MAIN_GATE_PORT2,
+						    MCXL_MAIN_SEL_NONE, MCXL_MAIN_CLK_SRC_NONE,
+						    MCXL_MAIN_DIV_NONE, MCXL_CLOCK_DIV_BY_1,
+						    MCXL_MAIN_CLK_FLAG_NONE)>;
+		resets = <&reset NXP_SYSCON_RESET(1, 2)>;
 	};
 
 	portd: pinmux@be000 {
 		compatible = "nxp,port-pinmux";
 		reg = <0xbe000 0x1000>;
-		clocks = <&syscon MCUX_PORT3_CLK>;
+		clocks = <&clk_main MCXL_MAIN_CLOCK(MCXL_MAIN_GATE_PORT3,
+						    MCXL_MAIN_SEL_NONE, MCXL_MAIN_CLK_SRC_NONE,
+						    MCXL_MAIN_DIV_NONE, MCXL_CLOCK_DIV_BY_1,
+						    MCXL_MAIN_CLK_FLAG_NONE)>;
+		resets = <&reset NXP_SYSCON_RESET(1, 3)>;
 	};
 
 	gpio1: gpio@102000 {
@@ -195,6 +220,7 @@
 		gpio-controller;
 		#gpio-cells = <2>;
 		nxp,kinetis-port = <&portb>;
+		resets = <&reset NXP_SYSCON_RESET(0, 24)>;
 	};
 
 	gpio2: gpio@103000 {
@@ -205,6 +231,7 @@
 		gpio-controller;
 		#gpio-cells = <2>;
 		nxp,kinetis-port = <&portc>;
+		resets = <&reset NXP_SYSCON_RESET(0, 25)>;
 	};
 
 	gpio3: gpio@104000 {
@@ -215,6 +242,7 @@
 		gpio-controller;
 		#gpio-cells = <2>;
 		nxp,kinetis-port = <&portd>;
+		resets = <&reset NXP_SYSCON_RESET(0, 26)>;
 	};
 
 	lpuart0: lpuart@9f000 {
@@ -222,7 +250,11 @@
 		status = "disabled";
 		reg = <0x9f000 0x1000>;
 		interrupts = <31 0>;
-		clocks = <&syscon MCUX_LPUART0_CLK>;
+		clocks = <&clk_main MCXL_MAIN_CLOCK(MCXL_MAIN_GATE_LPUART0,
+						    MCXL_MAIN_SEL_NONE, MCXL_MAIN_CLK_SRC_NONE,
+						    MCXL_MAIN_DIV_NONE, MCXL_CLOCK_DIV_BY_1,
+						    MCXL_MAIN_CLK_FLAG_NONE)>;
+		resets = <&reset NXP_SYSCON_RESET(0, 18)>;
 		/* DMA channels 0 and 1 muxed to LPUART0 RX and TX */
 		dmas = <&edma0 0 21>, <&edma0 1 22>;
 		dma-names = "rx", "tx";
@@ -233,7 +265,11 @@
 		status = "disabled";
 		reg = <0xa0000 0x1000>;
 		interrupts = <32 0>;
-		clocks = <&syscon MCUX_LPUART1_CLK>;
+		clocks = <&clk_main MCXL_MAIN_CLOCK(MCXL_MAIN_GATE_LPUART1,
+						    MCXL_MAIN_SEL_NONE, MCXL_MAIN_CLK_SRC_NONE,
+						    MCXL_MAIN_DIV_NONE, MCXL_CLOCK_DIV_BY_1,
+						    MCXL_MAIN_CLK_FLAG_NONE)>;
+		resets = <&reset NXP_SYSCON_RESET(0, 27)>;
 		/* DMA channels 2 and 3 muxed to LPUART1 RX and TX */
 		dmas = <&edma0 2 23>, <&edma0 3 24>;
 		dma-names = "rx", "tx";
@@ -287,7 +323,10 @@
 	crc: crc@8a000 {
 		compatible = "nxp,crc";
 		reg = <0x8a000 0x1000>;
-		clocks = <&syscon MCUX_CRC_CLK>;
+		clocks = <&clk_main MCXL_MAIN_CLOCK(MCXL_MAIN_GATE_CRC,
+						    MCXL_MAIN_SEL_NONE, MCXL_MAIN_CLK_SRC_NONE,
+						    MCXL_MAIN_DIV_NONE, MCXL_CLOCK_DIV_BY_1,
+						    MCXL_MAIN_CLK_FLAG_NONE)>;
 		resets = <&reset NXP_SYSCON_RESET(0, 9)>;
 		status = "disabled";
 	};
