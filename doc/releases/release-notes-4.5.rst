@@ -1656,6 +1656,7 @@ New Drivers
   * :dtcompatible:`hamamatsu,s9706` (:github:`107607`)
   * :dtcompatible:`invensense,icm56622` (:github:`112362`)
   * :dtcompatible:`invensense,icm56686` (:github:`112362`)
+  * :dtcompatible:`invensense,iim42652` (:github:`115278`)
   * :dtcompatible:`invensense,tad2144` (:github:`107994`)
   * :dtcompatible:`maxim,max30102` (:github:`108697`)
   * :dtcompatible:`maxim,max31826` (:github:`112398`)
