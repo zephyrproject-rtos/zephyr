@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_MCUX_LPC_RIT
+	bool "NXP LPC Repetitive Interrupt Timer driver"
+	default y
+	depends on DT_HAS_NXP_LPC_RIT_ENABLED
+	help
+	  Enable the Repetitive Interrupt Timer found on NXP LPC parts such as
+	  the LPC546xx. The single compare register backs the counter top value,
+	  so the device has no alarm channels.
