@@ -1909,6 +1909,10 @@ Devicetree
   build time instead of scanning the device list at runtime. The
   ``CONFIG_SPI_SHELL_MAX_DEVICE_SLOTS`` Kconfig option has been removed.
 
+* The I3C shell now enumerates I3C controllers through the ``i3c`` device
+  class instead of a hardcoded list of compatibles, so it also covers
+  out-of-tree I3C drivers.
+
 Other notable changes
 *********************
 
