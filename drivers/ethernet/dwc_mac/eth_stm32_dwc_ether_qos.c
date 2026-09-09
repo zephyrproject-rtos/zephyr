@@ -138,9 +138,9 @@ int dwmac_bus_init(const struct device *dev)
 
 #define DESCRIPTOR_ALIGNMENT ((DATA_BUS_WIDTH) / (BITS_PER_BYTE))
 #if defined(CONFIG_NOCACHE_MEMORY)
-#define __desc_mem __nocache __aligned(DESCRIPTOR_ALIGNMENT)
+#define __desc_mem __nocache_noinit __aligned(DESCRIPTOR_ALIGNMENT)
 #else
-#define __desc_mem __aligned(DESCRIPTOR_ALIGNMENT)
+#define __desc_mem __noinit __aligned(DESCRIPTOR_ALIGNMENT)
 #endif
 
 /* Descriptor rings in uncached memory */
