@@ -105,16 +105,23 @@
 			reg = <0x40020000 0x14>;
 			interrupts = <5 0>;
 			status = "okay";
+			ranges;
 			#address-cells = <1>;
 			#size-cells = <1>;
 			fsec = <0xfe>;
 			fopt = <0x3d>;
 			config-field-offset = <0x400>;
 
+			/*
+			 * reg and the matching ranges are set by the
+			 * per-variant dtsi, which knows the flash size.
+			 */
 			flash0: flash@0 {
 				compatible = "soc-nv-flash";
 				erase-block-size = <DT_SIZE_K(1)>;
 				write-block-size = <4>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 			};
 		};
 
