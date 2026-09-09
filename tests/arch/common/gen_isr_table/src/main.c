@@ -105,6 +105,10 @@ extern const uintptr_t _irq_vector_table[];
 #define TABLE_INDEX(offset)     offset
 #endif
 
+#if !defined(VECTOR_TABLE_INDEX)
+#define VECTOR_TABLE_INDEX(offset) TABLE_INDEX(offset)
+#endif
+
 #else
 #define ISR1_OFFSET	0
 #define ISR2_OFFSET	1
@@ -152,6 +156,7 @@ extern const uintptr_t _irq_vector_table[];
 				 (CONFIG_NUM_IRQS - TEST_NUM_IRQS))
 #define IRQ_LINE(offset)	(TEST_NUM_IRQS - ((offset) + 1))
 #define TABLE_INDEX(offset)	(TEST_IRQ_TABLE_SIZE - ((offset) + 1))
+#define VECTOR_TABLE_INDEX(offset) TABLE_INDEX(offset)
 #define TRIG_CHECK_SIZE		6
 #endif
 
@@ -265,11 +270,11 @@ static int check_vector(void *isr, int offset)
  * dependent). For the sake of simplicity just skip the checks.
  */
 #ifndef CONFIG_IRQ_VECTOR_TABLE_JUMP_BY_CODE
-	TC_PRINT("Checking _irq_vector_table entry %d for irq %d\n",
-		 TABLE_INDEX(offset), IRQ_LINE(offset));
+	TC_PRINT("Checking _irq_vector_table entry %d for irq %d\n", VECTOR_TABLE_INDEX(offset),
+		 IRQ_LINE(offset));
 
-	if (_irq_vector_table[TABLE_INDEX(offset)] != (uintptr_t)isr) {
-		TC_PRINT("bad entry %d in vector table\n", TABLE_INDEX(offset));
+	if (_irq_vector_table[VECTOR_TABLE_INDEX(offset)] != (uintptr_t)isr) {
+		TC_PRINT("bad entry %d in vector table\n", VECTOR_TABLE_INDEX(offset));
 		return -1;
 	}
 #endif /* !CONFIG_IRQ_VECTOR_TABLE_JUMP_BY_CODE */
