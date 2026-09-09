@@ -27,6 +27,10 @@ static const struct z_exc_handle exceptions[] = {
  #define NO_REG "                "
 #endif
 
+#ifdef CONFIG_RISCV_SOC_HAS_CUSTOM_MCAUSE
+extern unsigned long __soc_read_mcause(void);
+#endif
+
 /* Stack trace function */
 void z_riscv_unwind_stack(const struct arch_esf *esf, const _callee_saved_t *csf);
 
@@ -82,7 +86,9 @@ void z_riscv_fatal_error(unsigned int reason,
 	__maybe_unused _callee_saved_t *csf = NULL;
 	unsigned long mcause;
 
-#ifdef CONFIG_RISCV_S_MODE
+#if defined(CONFIG_RISCV_SOC_HAS_CUSTOM_MCAUSE)
+	mcause = __soc_read_mcause();
+#elif defined(CONFIG_RISCV_S_MODE)
 	__asm__ volatile("csrr %0, scause" : "=r" (mcause));
 #else
 	__asm__ volatile("csrr %0, mcause" : "=r" (mcause));

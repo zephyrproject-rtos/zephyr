@@ -53,6 +53,15 @@
 /* S-mode ecall exception cause */
 #define CAUSE_ECALL_SMODE  9
 
+	.macro read_mcause dst
+#if defined(CONFIG_RISCV_SOC_HAS_CUSTOM_MCAUSE)
+	jal ra, __soc_read_mcause
+	mv \dst, a0
+#else
+	csrr \dst, mcause
+#endif
+	.endm
+
 #include <zephyr/arch/riscv/sbi.h>
 
 /*
@@ -81,7 +90,7 @@ SECTION_FUNC(TEXT, __m_mode_sbi_handler)
     addi sp, sp, -8 * REGBYTES
     DO_STACK_GPRS(sr)
 
-    csrr t0, mcause
+    read_mcause t0
 
     /* Bit 63 set means interrupt, clear means exception */
     bltz t0, m_mode_handle_interrupt

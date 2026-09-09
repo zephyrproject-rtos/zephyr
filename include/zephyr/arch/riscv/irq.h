@@ -55,6 +55,10 @@ extern "C" {
 
 #ifndef _ASMLANGUAGE
 
+#ifdef CONFIG_RISCV_SOC_HAS_CUSTOM_MCAUSE
+extern unsigned long __soc_read_mcause(void);
+#endif
+
 extern void arch_irq_enable(unsigned int irq);
 extern void arch_irq_disable(unsigned int irq);
 extern int arch_irq_is_enabled(unsigned int irq);
@@ -122,7 +126,9 @@ static inline void arch_isr_direct_footer(int swap)
 	ARG_UNUSED(swap);
 	unsigned long cause;
 
-#ifdef CONFIG_RISCV_S_MODE
+#if defined(CONFIG_RISCV_SOC_HAS_CUSTOM_MCAUSE)
+	cause = __soc_read_mcause();
+#elif defined(CONFIG_RISCV_S_MODE)
 	__asm__ volatile("csrr %0, scause" : "=r" (cause));
 #else
 	__asm__ volatile("csrr %0, mcause" : "=r" (cause));
