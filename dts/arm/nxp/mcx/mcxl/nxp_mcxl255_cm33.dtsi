@@ -80,17 +80,6 @@
 	};
 };
 
-&aon_peripheral {
-	aon_lpadc0: adc@92000 {
-		compatible = "nxp,aon-lpadc";
-		reg = <0x92000 0x1000>;
-		interrupts = <149 0>;
-		clocks = <&syscon MCUX_AON_LPADC_CLK>;
-		#io-channel-cells = <1>;
-		status = "disabled";
-	};
-};
-
 &fmu {
 	flash: flash@0 {
 		compatible = "soc-nv-flash";
@@ -125,7 +114,10 @@
 		reg = <0x4000 0x1000>;
 		interrupts = <39 0>;
 		clk-source = <1>;
-		clocks = <&syscon MCUX_CTIMER0_CLK>;
+		clocks = <&clk_main MCXL_MAIN_CLOCK(MCXL_MAIN_GATE_CTIMER0,
+						    MCXL_MAIN_SEL_NONE, MCXL_MAIN_CLK_SRC_NONE,
+						    MCXL_MAIN_DIV_NONE, MCXL_CLOCK_DIV_BY_1,
+						    MCXL_MAIN_CLK_FLAG_NONE)>;
 		mode = <0>;
 		input = <0>;
 		prescale = <0>;
@@ -137,7 +129,10 @@
 		reg = <0x5000 0x1000>;
 		interrupts = <40 0>;
 		clk-source = <1>;
-		clocks = <&syscon MCUX_CTIMER1_CLK>;
+		clocks = <&clk_main MCXL_MAIN_CLOCK(MCXL_MAIN_GATE_CTIMER1,
+						    MCXL_MAIN_SEL_NONE, MCXL_MAIN_CLK_SRC_NONE,
+						    MCXL_MAIN_DIV_NONE, MCXL_CLOCK_DIV_BY_1,
+						    MCXL_MAIN_CLK_FLAG_NONE)>;
 		mode = <0>;
 		input = <0>;
 		prescale = <0>;
@@ -149,7 +144,10 @@
 		reg = <0x6000 0x1000>;
 		interrupts = <41 0>;
 		clk-source = <1>;
-		clocks = <&syscon MCUX_CTIMER2_CLK>;
+		clocks = <&clk_main MCXL_MAIN_CLOCK(MCXL_MAIN_GATE_CTIMER2,
+						    MCXL_MAIN_SEL_NONE, MCXL_MAIN_CLK_SRC_NONE,
+						    MCXL_MAIN_DIV_NONE, MCXL_CLOCK_DIV_BY_1,
+						    MCXL_MAIN_CLK_FLAG_NONE)>;
 		mode = <0>;
 		input = <0>;
 		prescale = <0>;
@@ -201,10 +199,12 @@
 	interrupts = <155 0>;
 };
 
+&aon_lpadc0 {
+	interrupts = <149 0>;
+};
+
 &lpacmp {
 	interrupts = <139 0>;
-	/* AON_CLK for the sampling rate, plus the CGU gate via syscon. */
-	clocks = <&root_clock1>, <&syscon MCUX_LPACMP_CLK>;
 };
 
 &aon_gpio0 {
