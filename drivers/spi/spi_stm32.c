@@ -696,37 +696,43 @@ static int spi_stm32_shift_fifo(SPI_TypeDef *spi, struct spi_stm32_data *data)
 {
 	uint32_t transfer_dir = ll_get_transfer_direction(spi);
 
-	if (transfer_dir == STM32_SPI_FULL_DUPLEX && LL_SPI_IsActiveFlag_DXP(spi) &&
-	    data->tx_len != 0U && data->rx_len != 0U) {
-		/* Complete data packet is available and complete data packet can be sent.
-		 * Fill the TxFIFO until threshold is reached or all data for the transfer are sent.
-		 * Read the RxFIFO until threshold is reached or all data for the transfer are read.
-		 */
-		spi_stm32_send_fifo(spi, data);
-		spi_stm32_read_fifo(spi, data);
-	} else if (transfer_dir != STM32_SPI_HALF_DUPLEX_TX && ll_rx_is_not_empty(spi) &&
-		   data->rx_len != 0U) {
-		/* Complete data packet is available.
-		 * Read the RxFIFO until threshold is reached or all data for the transfer are read.
-		 */
-		spi_stm32_read_fifo(spi, data);
-	} else if (transfer_dir != STM32_SPI_HALF_DUPLEX_RX && ll_tx_is_not_full(spi) &&
-		   data->tx_len != 0U &&
-		   (data->tx_len == data->rx_len || transfer_dir == STM32_SPI_HALF_DUPLEX_TX)) {
-		/* In full-duplex, first complete data packet can be sent (Tx len == Rx len),
-		 * after that, use DXP.
-		 * In half-duplex, send data if FIFO space is available.
-		 * Fill the TxFIFO until threshold is reached or all data for the transfer are sent.
-		 */
-		spi_stm32_send_fifo(spi, data);
+	if (transfer_dir == STM32_SPI_FULL_DUPLEX) {
+		if (LL_SPI_IsActiveFlag_DXP(spi) && data->tx_len != 0U && data->rx_len != 0U) {
+			/* Complete data packet is available and complete data packet can be sent.
+			 * First read the RxFIFO until threshold is reached then fill the TxFIFO
+			 * until threshold is reached or all data for the transfer are sent.
+			 * The order is important to prevent overruns. This allows using the FIFOs
+			 * to their full capacity.
+			 */
+			spi_stm32_read_fifo(spi, data);
+			spi_stm32_send_fifo(spi, data);
+		}
+	} else if (transfer_dir == STM32_SPI_HALF_DUPLEX_RX) {
+		if (ll_rx_is_not_empty(spi) && data->rx_len != 0U) {
+			/* Complete data packet is available.
+			 * Read the RxFIFO until threshold is reached.
+			 */
+			spi_stm32_read_fifo(spi, data);
+		}
+	} else if (transfer_dir == STM32_SPI_HALF_DUPLEX_TX) {
+		if (ll_tx_is_not_full(spi) && data->tx_len != 0U) {
+			/* Complete data packet can be sent.
+			 * Fill the TxFIFO until threshold is reached or all data for the transfer
+			 * are sent.
+			 */
+			spi_stm32_send_fifo(spi, data);
+		}
 	}
 
 	if (transfer_dir != STM32_SPI_HALF_DUPLEX_TX && LL_SPI_IsActiveFlag_EOT(spi)) {
-		while (data->rx_len != 0U) {
-			/* Some data may remain in the RxFIFO at the end of transfer if transfer
-			 * size is not a multiple of FIFO threshold. Read them here.
-			 */
-			data->rx_len -= spi_stm32_read_next_frame(spi, data, 0U);
+		/* Full-Duplex or Half-Duplex RX cases */
+		/* At the end of transfer, if transfer size is not a multiple of the FIFO
+		 * threshold, some data may remain in the RxFIFO and neither the DXP nor
+		 * the RXP flags are set (because the RxFIFO is not full).
+		 * Read the remaining bytes here.
+		 */
+		if (data->rx_len > 0U) {
+			spi_stm32_read_fifo(spi, data);
 		}
 	}
 	return 0;
