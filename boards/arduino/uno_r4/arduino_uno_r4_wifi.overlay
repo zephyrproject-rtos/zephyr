@@ -13,6 +13,15 @@
 / {
 	model = "Arduino Uno R4 WiFi";
 
+	chosen {
+		/*
+		 * Reach the console over the USB-C connector, through the
+		 * ESP32-S3 bridge. SCI2 remains available on the D0/D1 header.
+		 */
+		zephyr,console = &uart9;
+		zephyr,shell-uart = &uart9;
+	};
+
 	leds {
 		compatible = "gpio-leds";
 
