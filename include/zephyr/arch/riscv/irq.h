@@ -108,8 +108,22 @@ extern void arch_isr_direct_pm(void);
 	} while (false)
 #endif
 
+#ifdef CONFIG_RISCV_SOC_CONTEXT_SAVE
+extern void __soc_save_context(struct soc_esf *context);
+extern void __soc_restore_context(struct soc_esf *context);
+
+/* Store the soc_esf context at exception entry and exit */
+#define ARCH_ISR_DIRECT_HEADER()                                               \
+	struct soc_esf soc_context;                                                \
+	__soc_save_context(&soc_context);                                          \
+	arch_isr_direct_header();
+#define ARCH_ISR_DIRECT_FOOTER(swap)                                           \
+	arch_isr_direct_footer(swap);                                              \
+	__soc_restore_context(&soc_context);
+#else /* !CONFIG_RISCV_SOC_CONTEXT_SAVE */
 #define ARCH_ISR_DIRECT_HEADER() arch_isr_direct_header()
 #define ARCH_ISR_DIRECT_FOOTER(swap) arch_isr_direct_footer(swap)
+#endif /* CONFIG_RISCV_SOC_CONTEXT_SAVE */
 
 #ifdef CONFIG_TRACING_ISR
 extern void sys_trace_isr_enter(void);
