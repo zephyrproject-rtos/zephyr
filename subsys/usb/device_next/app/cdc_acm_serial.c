@@ -9,6 +9,9 @@
 #include <zephyr/init.h>
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
+#include <zephyr/drivers/uart.h>
+#include <zephyr/retention/bootmode.h>
+#include <zephyr/sys/reboot.h>
 #include <zephyr/usb/usbd.h>
 
 #include <zephyr/logging/log.h>
@@ -72,6 +75,60 @@ static int register_cdc_acm_0(struct usbd_context *const uds_ctx,
 					   USB_BCC_MISCELLANEOUS, 0x02, 0x01);
 }
 
+#if defined(CONFIG_CDC_ACM_SERIAL_REBOOT_TO_BOOTLOADER)
+static void cdc_acm_serial_reboot(struct k_work *work)
+{
+	int err;
+
+	ARG_UNUSED(work);
+
+	err = bootmode_set(BOOT_MODE_TYPE_BOOTLOADER);
+	if (err) {
+		LOG_ERR("Failed to set the bootloader boot mode (%d)", err);
+		return;
+	}
+
+	/* Detach from the bus so that the host does not see an unresponsive
+	 * device while the bootloader starts.
+	 */
+	(void)usbd_disable(&cdc_acm_serial);
+
+	sys_reboot(SYS_REBOOT_WARM);
+}
+
+static K_WORK_DEFINE(cdc_acm_serial_reboot_work, cdc_acm_serial_reboot);
+
+static void cdc_acm_serial_msg_cb(struct usbd_context *const ctx,
+				  const struct usbd_msg *const msg)
+{
+	struct uart_config cfg;
+
+	ARG_UNUSED(ctx);
+
+	if (msg->type != USBD_MSG_CDC_ACM_LINE_CODING) {
+		return;
+	}
+
+	if (uart_config_get(msg->dev, &cfg) == 0 &&
+	    cfg.baudrate == CONFIG_CDC_ACM_SERIAL_REBOOT_DTE_RATE) {
+		/* Without USBD_MSG_DEFERRED_MODE this runs in the device stack
+		 * context, where usbd_disable() must not be called.
+		 */
+		(void)k_work_submit(&cdc_acm_serial_reboot_work);
+	}
+}
+
+static int cdc_acm_serial_register_reboot_cb(void)
+{
+	return usbd_msg_register_cb(&cdc_acm_serial, cdc_acm_serial_msg_cb);
+}
+#else
+static int cdc_acm_serial_register_reboot_cb(void)
+{
+	return 0;
+}
+#endif /* CONFIG_CDC_ACM_SERIAL_REBOOT_TO_BOOTLOADER */
+
 
 static int cdc_acm_serial_init_device(void)
 {
@@ -113,6 +170,12 @@ static int cdc_acm_serial_init_device(void)
 
 	err = register_cdc_acm_0(&cdc_acm_serial, USBD_SPEED_FS);
 	if (err) {
+		return err;
+	}
+
+	err = cdc_acm_serial_register_reboot_cb();
+	if (err) {
+		LOG_ERR("Failed to register %s (%d)", "message callback", err);
 		return err;
 	}
 

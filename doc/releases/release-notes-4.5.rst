@@ -266,6 +266,10 @@ Removed APIs and options
 
     * ``stream_flash_erase_page()``
 
+* USB
+
+  * ``CONFIG_BOOTLOADER_BOSSA_DEVICE_NAME``
+
 * ZTest
 
     * ``CONFIG_ZTEST_SHUFFLE_SUITE_REPEAT_COUNT``
@@ -663,9 +667,19 @@ New APIs and options
     API for hardware that generates and captures timed digital edges on a
     GPIO line.
 
+* Retention
+
+  * The :ref:`boot mode interface <boot_mode_api>` supports prefix-only retention areas,
+    whose prefix is the magic value a bootloader looks for.
+
 * Ring buffer
 
   * :c:struct:`sys_ringq` (see :ref:`fixed_size_ringq_api`)
+
+* USB
+
+  * :kconfig:option:`CONFIG_CDC_ACM_SERIAL_REBOOT_TO_BOOTLOADER` and
+    :kconfig:option:`CONFIG_CDC_ACM_SERIAL_REBOOT_DTE_RATE`
 
 * USB Type-C
 

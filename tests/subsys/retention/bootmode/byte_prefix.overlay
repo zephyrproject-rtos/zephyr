@@ -1,0 +1,10 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Boot mode byte behind a 4-byte prefix */
+&boot_mode {
+	reg = <0x0 0x5>;
+	prefix = [ef 69 16 f0];
+};

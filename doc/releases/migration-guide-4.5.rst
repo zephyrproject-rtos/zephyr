@@ -293,6 +293,18 @@ Boards
   ``SOC_STM32MP15_M4`` must select :kconfig:option:`CONFIG_SOC_STM32MP157CXX_M4` instead.
   (:github:`118151`)
 
+* The SAM0 boards shipping an Arduino or Adafruit UF2 bootloader (``adafruit_feather_m4_express``,
+  ``adafruit_grand_central_m4_express``, ``adafruit_itsybitsy_m4_express``, ``adafruit_trinket_m0``,
+  ``adafruit_trrs_trinkey``, ``arduino_mkrzero``, ``arduino_nano_33_iot``, ``seeeduino_xiao``,
+  ``serpente``, ``sparkfun_samd21_breakout`` and ``wio_terminal``) now describe the last word of
+  SRAM, where these bootloaders look for their magic value, as a ``zephyr,boot-mode`` retention
+  area, so that the :ref:`boot mode interface <boot_mode_api>` can request the bootloader.
+  ``sram0`` is 4 bytes smaller and :kconfig:option:`CONFIG_SRAM_SIZE` reports one KiB less.
+  Out-of-tree boards can include the ``<atmel/samx2xx18-boot-mode-retention.dtsi>``,
+  ``<atmel/samd5xx19-boot-mode-retention.dtsi>`` or
+  ``<atmel/samd5xx20-boot-mode-retention.dtsi>`` file matching their SRAM size and set the
+  bootloader magic value as the ``prefix`` of the ``boot_mode`` node. (:github:`118144`)
+
 Device Drivers and Devicetree
 *****************************
 
@@ -1543,6 +1555,15 @@ USB
   It now also uses :c:macro:`DEVICE_API`. Out-of-tree USB host controller drivers must rename
   their API struct definitions and switch their API instances to ``DEVICE_API(uhc, ...)``.
   (:github:`108414`)
+
+* The reboot into a BOSSA compatible bootloader when the host sets a magic DTE rate is now
+  implemented on top of the new USB device support and the :ref:`boot mode interface
+  <boot_mode_api>`. The ``CONFIG_BOOTLOADER_BOSSA_DEVICE_NAME`` Kconfig option has been
+  removed, and the reboot is handled by the CDC ACM serial backend, see
+  :kconfig:option:`CONFIG_CDC_ACM_SERIAL_REBOOT_TO_BOOTLOADER`. Boards that relied on this
+  feature with the legacy USB device support must enable
+  :kconfig:option:`CONFIG_CDC_ACM_SERIAL_INITIALIZE_AT_BOOT` and describe the bootloader
+  magic value as a prefix-only ``zephyr,boot-mode`` retention area. (:github:`118144`)
 
 Video
 =====

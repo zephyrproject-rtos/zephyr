@@ -7,6 +7,7 @@
 /dts-v1/;
 #include <atmel/samd21.dtsi>
 #include <atmel/samx2xx18.dtsi>
+#include <atmel/samx2xx18-boot-mode-retention.dtsi>
 #include "sparkfun_samd21_breakout-pinctrl.dtsi"
 #include "sparkfun_samd21_breakout_connector.dtsi"
 
@@ -131,4 +132,9 @@ zephyr_udc0: &usb0 {
 			reg = <0x0003c000 DT_SIZE_K(16)>;
 		};
 	};
+};
+
+/* Adafruit UF2 bootloader magic value 0xf01669ef */
+&boot_mode {
+	prefix = [ef 69 16 f0];
 };

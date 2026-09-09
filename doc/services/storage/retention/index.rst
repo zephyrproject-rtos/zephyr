@@ -198,6 +198,57 @@ which will allow rebooting directly into the serial recovery mode by using:
 	bootmode_set(BOOT_MODE_TYPE_BOOTLOADER);
 	sys_reboot(0);
 
+Prefix-only boot mode areas
+===========================
+
+Some bootloaders do not read a boot mode value but look for a magic value at a
+fixed location in RAM, for example in the last word of SRAM, and stay in the
+bootloader when it is present after a reset. Such a bootloader can be entered
+with the boot mode interface by describing the magic value as the ``prefix`` of
+a retention area whose size is exactly the size of the prefix, leaving no user
+data and no room for a checksum. With such an area,
+``bootmode_set(BOOT_MODE_TYPE_BOOTLOADER)`` writes the prefix,
+``bootmode_set(BOOT_MODE_TYPE_NORMAL)`` and ``bootmode_clear()`` clear the area,
+other boot modes are rejected with ``-ENOTSUP``, and ``bootmode_check()``
+reports the bootloader boot mode when the prefix is present and the normal boot
+mode otherwise. The following example describes the last word of a 32 KiB SRAM
+for a bootloader looking for the value ``0xf01669ef``:
+
+.. code-block:: devicetree
+
+	/ {
+		sram@20007ffc {
+			compatible = "zephyr,memory-region", "mmio-sram";
+			reg = <0x20007ffc 0x4>;
+			zephyr,memory-region = "RetainedMem";
+			status = "okay";
+
+			retainedmem {
+				compatible = "zephyr,retained-ram";
+				status = "okay";
+				#address-cells = <1>;
+				#size-cells = <1>;
+
+				boot_mode: retention@0 {
+					compatible = "zephyr,retention";
+					status = "okay";
+					reg = <0x0 0x4>;
+					/* 0xf01669ef, little-endian */
+					prefix = [ef 69 16 f0];
+				};
+			};
+		};
+
+		chosen {
+			zephyr,boot-mode = &boot_mode;
+		};
+	};
+
+	/* Reduce SRAM0 usage by 4 bytes to account for non-init area */
+	&sram0 {
+		reg = <0x20000000 (DT_SIZE_K(32) - 4)>;
+	};
+
 Retention system modules
 ************************
 
