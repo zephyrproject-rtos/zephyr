@@ -754,7 +754,7 @@ void *z_get_next_switch_handle(void *interrupted)
 			 * confused when the "wrong" thread tries to
 			 * release the lock.
 			 */
-			z_sched_spinlock_transfer_owner();
+			z_sched_spinlock_transfer_owner(new_thread);
 
 			/* A queued (runnable) old/current thread
 			 * needs to be added back to the run queue
