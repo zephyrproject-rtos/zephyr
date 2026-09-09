@@ -1,0 +1,61 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP MCXL main-domain (CM33) clock controller.
+
+compatible: "nxp,mcxl-main-clock"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+
+  firc-mode:
+    type: int
+    required: true
+    description: |
+      FIRC oscillator mode: 0 = disabled, 1 = active, 2 = active in low-power mode.
+    enum:
+      - 0
+      - 1
+      - 2
+
+  sys-clk-src:
+    type: int
+    required: true
+    description: System clock mux source index.
+
+  frohf-frequency:
+    type: int
+    required: true
+    description: Requested high-frequency FRO output in Hz.
+
+  frohf-div:
+    type: int
+    required: true
+    description: High-frequency FRO post-divider value.
+
+  ahb-div:
+    type: int
+    required: true
+    description: Core bus clock prescaler value.
+
+  slow-clk-div:
+    type: int
+    required: true
+    description: Slow peripheral clock prescaler value.
+
+  core-clock-frequency:
+    type: int
+    required: true
+    description: Expected core clock frequency in Hz after initialization.
+
+  rosc-enable:
+    type: boolean
+    description: Initialize the 32 kHz ring oscillator during bring-up.
+
+  "#clock-cells":
+    type: int
+    const: 1
+
+clock-cells:
+  - name
