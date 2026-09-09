@@ -45,6 +45,13 @@ enum {
 	/* Bit 2 and 3 might accidentally exist in old stored keys */
 	BT_KEYS_SC = BIT(4),
 	BT_KEYS_OOB = BIT(5),
+	/* Whether the value of the peer's Central Address Resolution
+	 * characteristic is known, and if so, whether address resolution is
+	 * supported. Keys stored before these flags were introduced load
+	 * with both bits cleared, i.e. as unknown.
+	 */
+	BT_KEYS_CENTRAL_ADDR_RES_KNOWN = BIT(6),
+	BT_KEYS_CENTRAL_ADDR_RES_SUPPORT = BIT(7),
 };
 
 enum bt_keys_cfg_flags {
