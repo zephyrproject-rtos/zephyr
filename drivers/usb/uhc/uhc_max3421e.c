@@ -1018,6 +1018,42 @@ static int max3421e_enable_int_output(const struct device *dev)
 	return 0;
 }
 
+static int max3421e_bus_sample(const struct device *dev)
+{
+	struct max3421e_data *priv = uhc_get_private(dev);
+	int ret;
+
+	ret = max3421e_write_byte(dev, MAX3421E_REG_HCTL, MAX3421E_SAMPLEBUS);
+	if (ret) {
+		return ret;
+	}
+
+	return max3421e_read(dev, MAX3421E_REG_HRSL, &priv->hrsl, sizeof(priv->hrsl));
+}
+
+static int max3421e_bus_probe(const struct device *dev)
+{
+	struct max3421e_data *priv = uhc_get_private(dev);
+	uint8_t jk;
+	int ret;
+
+	ret = max3421e_bus_sample(dev);
+	if (ret) {
+		return ret;
+	}
+
+	jk = priv->hrsl & MAX3421E_JKSTATUS_MASK;
+	if (jk == 0) {
+		/* Do not report lack of root device as a new event */
+		return 0;
+	}
+
+	max3421e_handle_condet(dev);
+
+	return 0;
+}
+
+
 static int uhc_max3421e_init(const struct device *dev)
 {
 	struct max3421e_data *priv = uhc_get_private(dev);
@@ -1065,8 +1101,7 @@ static int uhc_max3421e_init(const struct device *dev)
 
 	priv->addr = 0;
 
-	/* Sample bus if device is already connected */
-	return max3421e_write_byte(dev, MAX3421E_REG_HCTL, MAX3421E_SAMPLEBUS);
+	return max3421e_bus_probe(dev);
 }
 
 static int uhc_max3421e_enable(const struct device *dev)
