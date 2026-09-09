@@ -1,0 +1,119 @@
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+mainmenu "USB host MSC sample options"
+
+menu "USB MSC FatFs (disk_access)"
+
+config USB_HOST_MSC_SAMPLE_FAT_FILE_DEMO
+	bool "USB MSC disk_access backend for FatFs"
+	default n
+	depends on FAT_FILESYSTEM_ELM
+	select USBH_MSC_DISK
+	help
+	  After MSC storage bring-up, a disk_access volume is registered by the
+	  USB host stack (CONFIG_USBH_MSC_DISK). Use FAT_AUTO_DEMO for an
+	  automatic smoke test, or FS_SHELL for the interactive fs shell.
+
+config USB_HOST_MSC_SAMPLE_FAT_AUTO_DEMO
+	bool "Run automatic FS demo after MSC storage bringup"
+	default y if !USB_HOST_MSC_SAMPLE_FS_SHELL
+	default n
+	depends on USB_HOST_MSC_SAMPLE_FAT_FILE_DEMO
+	help
+	  When y: call usb_host_msc_sample_fat_file_demo() after LUN0 disk bind.
+	  When n: only bind disk_access (shell or app mounts FatFs).
+
+config USB_HOST_MSC_SAMPLE_FS_SHELL
+	bool "Interactive Zephyr fs shell on UART (mount/ls/cat/write/...)"
+	default n
+	depends on USB_HOST_MSC_SAMPLE_FAT_FILE_DEMO
+	select SHELL
+	select SHELL_BACKEND_SERIAL
+	select FILE_SYSTEM_SHELL
+	select USBH_SHELL
+	help
+	  Typical sequence:
+	    fs mount fat /USB:
+	    fs ls /USB:
+	    fs write -s -p /USB:/hello.txt hello
+
+config USB_HOST_MSC_SAMPLE_TIMER_SELFTEST
+	bool "Run k_timer/k_poll self-test at boot"
+	default n
+	help
+	  Exercises k_sleep, k_poll, and k_timer before USB host bring-up.
+
+config USB_HOST_MSC_SAMPLE_QUIET
+	bool "Quiet USB host (no trace logs or redundant descriptor dump)"
+	default y if USB_HOST_MSC_SAMPLE_FS_SHELL
+	default n
+	help
+	  Skips main() trace logs after enumeration. Pair with USBH/UHC log
+	  level WRN in board conf.
+
+config USB_HOST_MSC_SAMPLE_FAT_MKFS_ON_FAIL
+	bool "Format stick with mkfs when mount fails (destructive)"
+	default n
+	depends on USB_HOST_MSC_SAMPLE_FAT_FILE_DEMO
+	select FS_FATFS_MKFS
+	help
+	  When n (default): mount failure is fatal — safe for PC-formatted sticks.
+
+config USB_HOST_MSC_SAMPLE_FAT_READBACK_VERIFY
+	bool "After write, fs_read demo file and memcmp expected content"
+	default y
+	depends on USB_HOST_MSC_SAMPLE_FAT_FILE_DEMO
+
+config USB_HOST_MSC_SAMPLE_FAT_RELIST_AFTER_WRITE
+	bool "List root directory again after writing demo file"
+	default y
+	depends on USB_HOST_MSC_SAMPLE_FAT_FILE_DEMO
+
+config USB_HOST_MSC_SAMPLE_FAT_FILE_CONTENT
+	string "Text written to the demo file for FS validation"
+	default "NAVA KISHORE"
+	depends on USB_HOST_MSC_SAMPLE_FAT_FILE_DEMO
+
+config USB_HOST_MSC_SAMPLE_DISK_NAME
+	string "disk_access / FatFs volume name (legacy, use USBH_MSC_DISK_NAME)"
+	default "USB"
+	depends on USB_HOST_MSC_SAMPLE_FAT_FILE_DEMO && !USBH_MSC_DISK
+	help
+	  Used only when CONFIG_USBH_MSC_DISK is disabled. When USBH_MSC_DISK is
+	  enabled, CONFIG_USBH_MSC_DISK_NAME is used instead.
+
+config USB_HOST_MSC_SAMPLE_LARGE_FILE_WRITE
+	bool "Write a large text file to USB MSC after bring-up"
+	default n
+	depends on USB_HOST_MSC_SAMPLE_FAT_FILE_DEMO
+	help
+	  After MSC storage bring-up, mount FAT and write a multi-megabyte
+	  text file to stress bulk READ/WRITE and FatFs. Incompatible with
+	  USB_HOST_MSC_SAMPLE_FAT_AUTO_DEMO (enable one automatic demo).
+
+config USB_HOST_MSC_SAMPLE_LARGE_FILE_SIZE_MB
+	int "Large text file size (MiB)"
+	default 10
+	range 1 128
+	depends on USB_HOST_MSC_SAMPLE_LARGE_FILE_WRITE
+	help
+	  Size of the generated text file in mebibytes (default 10 MiB).
+
+config USB_HOST_MSC_SAMPLE_LARGE_FILE_CHUNK_SIZE
+	int "Large file write chunk size (bytes)"
+	default 4096
+	range 512 65536
+	depends on USB_HOST_MSC_SAMPLE_LARGE_FILE_WRITE
+	help
+	  Buffer size for each fs_write() call while generating the file.
+
+config USB_HOST_MSC_SAMPLE_LARGE_FILE_NAME
+	string "Large text file name on the FAT volume"
+	default "large10m.txt"
+	depends on USB_HOST_MSC_SAMPLE_LARGE_FILE_WRITE
+
+endmenu
+
+source "Kconfig.zephyr"

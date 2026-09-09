@@ -1,0 +1,15 @@
+tests:
+  drivers.usb.uhc_xhci_bulk:
+    tags:
+      - drivers
+      - usb
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+  drivers.usb.uhc_xhci_bulk.build:
+    build_only: true
+    tags:
+      - drivers
+      - usb
+    platform_allow:
+      - versal_apu

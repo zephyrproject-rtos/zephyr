@@ -135,14 +135,14 @@ struct uhc_transfer {
 	/** Start frame, used for periodic transfers only */
 	uint16_t start_frame;
 	/** Flag marks request buffer is queued */
-	unsigned int queued : 1;
+	unsigned int queued: 1;
 	/** Control stage status, up to the driver to use it or not */
-	unsigned int stage : 2;
+	unsigned int stage: 2;
 	/**
 	 * The status stage of the control transfer will be omitted.
 	 * This flag is optional and is mainly used for testing.
 	 */
-	unsigned int no_status : 1;
+	unsigned int no_status: 1;
 	/** Pointer to USB device */
 	struct usb_device *udev;
 	/** Pointer to transfer completion callback (opaque for the UHC) */
@@ -163,6 +163,8 @@ enum uhc_event_type {
 	UHC_EVT_DEV_CONNECTED_FS,
 	/** High speed device connected */
 	UHC_EVT_DEV_CONNECTED_HS,
+	/** SuperSpeed device connected */
+	UHC_EVT_DEV_CONNECTED_SS,
 	/** Device (peripheral) removed */
 	UHC_EVT_DEV_REMOVED,
 	/** Bus reset operation finished */
@@ -215,8 +217,7 @@ struct uhc_event {
  *
  * @return 0 on success, all other values should be treated as error.
  */
-typedef int (*uhc_event_cb_t)(const struct device *dev,
-			      const struct uhc_event *const event);
+typedef int (*uhc_event_cb_t)(const struct device *dev, const struct uhc_event *const event);
 
 /**
  * USB host controller capabilities
@@ -225,17 +226,17 @@ typedef int (*uhc_event_cb_t)(const struct device *dev,
  */
 struct uhc_device_caps {
 	/** USB high speed capable controller */
-	uint32_t hs : 1;
+	uint32_t hs: 1;
 };
 
 /**
  * Controller is initialized by uhc_init()
  */
-#define UHC_STATUS_INITIALIZED		0
+#define UHC_STATUS_INITIALIZED 0
 /**
  * Controller is enabled and all API functions are available
  */
-#define UHC_STATUS_ENABLED		1
+#define UHC_STATUS_ENABLED     1
 
 /**
  * Common UHC driver data structure
@@ -307,10 +308,34 @@ __subsystem struct uhc_driver_api {
 	int (*bus_suspend)(const struct device *dev);
 	int (*bus_resume)(const struct device *dev);
 
-	int (*ep_enqueue)(const struct device *dev,
-			  struct uhc_transfer *const xfer);
-	int (*ep_dequeue)(const struct device *dev,
-			  struct uhc_transfer *const xfer);
+	int (*ep_enqueue)(const struct device *dev, struct uhc_transfer *const xfer);
+	int (*ep_dequeue)(const struct device *dev, struct uhc_transfer *const xfer);
+	/**
+	 * Optional: program endpoint contexts after SET_CONFIGURATION (hc_driver
+	 * bandwidth / endpoint setup). NULL is a no-op success.
+	 */
+	int (*add_endpoints)(const struct device *dev, struct usb_device *udev);
+
+	/*
+	 * Optional endpoint recovery and diagnostics (integrated xHCI HCDs).
+	 * NULL ⇒ no-op / success where documented on the wrappers below.
+	 */
+	int (*eps_verify_steady)(const struct device *dev, struct usb_device *udev);
+	int (*ep_sync_after_clear_feature)(const struct device *dev, struct usb_device *udev);
+	bool (*post_configure_steady)(const struct device *dev);
+	/**
+	 * Optional: assign a USB device address (xHCI Address Device BSR=0).
+	 *
+	 * Integrated xHCI host controllers select the wire address; the chosen
+	 * value is written to @a addr_out. NULL means the host stack must use
+	 * CH9 SET_ADDRESS (@c -ENOTSUP from @ref uhc_assign_address).
+	 */
+	int (*assign_address)(const struct device *dev, struct usb_device *udev, uint8_t *addr_out);
+	/**
+	 * Optional: tear down active device slot/context on disconnect (hc_driver
+	 * free_dev). Called from the host bus thread, not the UHC ISR.
+	 */
+	void (*free_dev)(const struct device *dev);
 };
 /**
  * @endcond
@@ -422,10 +447,8 @@ static inline int uhc_bus_resume(const struct device *dev)
  *
  * @return pointer to allocated transfer or NULL on error.
  */
-struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
-				    const uint8_t ep,
-				    struct usb_device *const udev,
-				    void *const cb,
+struct uhc_transfer *uhc_xfer_alloc(const struct device *dev, const uint8_t ep,
+				    struct usb_device *const udev, void *const cb,
 				    void *const cb_priv);
 
 /**
@@ -442,12 +465,9 @@ struct uhc_transfer *uhc_xfer_alloc(const struct device *dev,
  *
  * @return pointer to allocated transfer or NULL on error.
  */
-struct uhc_transfer *uhc_xfer_alloc_with_buf(const struct device *dev,
-					     const uint8_t ep,
-					     struct usb_device *const udev,
-					     void *const cb,
-					     void *const cb_priv,
-					     size_t size);
+struct uhc_transfer *uhc_xfer_alloc_with_buf(const struct device *dev, const uint8_t ep,
+					     struct usb_device *const udev, void *const cb,
+					     void *const cb_priv, size_t size);
 
 /**
  * @brief Free UHC transfer and any buffers
@@ -459,8 +479,7 @@ struct uhc_transfer *uhc_xfer_alloc_with_buf(const struct device *dev,
  *
  * @return 0 on success, all other values should be treated as error.
  */
-int uhc_xfer_free(const struct device *dev,
-		  struct uhc_transfer *const xfer);
+int uhc_xfer_free(const struct device *dev, struct uhc_transfer *const xfer);
 
 /**
  * @brief Add UHC transfer buffer
@@ -473,8 +492,7 @@ int uhc_xfer_free(const struct device *dev,
  *
  * @return pointer to allocated request or NULL on error.
  */
-int uhc_xfer_buf_add(const struct device *dev,
-		     struct uhc_transfer *const xfer,
+int uhc_xfer_buf_add(const struct device *dev, struct uhc_transfer *const xfer,
 		     struct net_buf *buf);
 /**
  * @brief Allocate UHC transfer buffer
@@ -487,8 +505,7 @@ int uhc_xfer_buf_add(const struct device *dev,
  *
  * @return pointer to allocated request or NULL on error.
  */
-struct net_buf *uhc_xfer_buf_alloc(const struct device *dev,
-				   const size_t size);
+struct net_buf *uhc_xfer_buf_alloc(const struct device *dev, const size_t size);
 
 /**
  * @brief Free UHC request buffer
@@ -515,15 +532,16 @@ void uhc_xfer_buf_free(const struct device *dev, struct net_buf *const buf);
 int uhc_ep_enqueue(const struct device *dev, struct uhc_transfer *const xfer);
 
 /**
- * @brief Remove a USB host controller transfers from queue
+ * @brief Remove a USB host controller transfer from the queue
  *
- * Not implemented yet.
+ * Stop Endpoint and wake waiter with -ECONNRESET.
  *
  * @param[in] dev    Pointer to device struct of the driver instance
  * @param[in] xfer   Pointer to UHC transfer
  *
  * @return 0 on success, all other values should be treated as error.
  * @retval -EPERM controller is not initialized
+ * @retval -ENOENT transfer is not active on the endpoint
  */
 int uhc_ep_dequeue(const struct device *dev, struct uhc_transfer *const xfer);
 
@@ -540,8 +558,7 @@ int uhc_ep_dequeue(const struct device *dev, struct uhc_transfer *const xfer);
  * @retval -EINVAL on parameter error (no callback is passed)
  * @retval -EALREADY already initialized
  */
-int uhc_init(const struct device *dev,
-	     uhc_event_cb_t event_cb, const void *const event_ctx);
+int uhc_init(const struct device *dev, uhc_event_cb_t event_cb, const void *const event_ctx);
 
 /**
  * @brief Enable USB host controller
@@ -581,6 +598,79 @@ int uhc_disable(const struct device *dev);
  * @retval -EALREADY controller is already uninitialized
  */
 int uhc_shutdown(const struct device *dev);
+
+/**
+ * @brief Notify UHC after SET_CONFIGURATION (descriptor tree parsed)
+ *
+ * Invoked when the host stack has read the full configuration descriptor and
+ * walked interfaces and endpoint descriptors. HCDs program non-EP0 endpoint
+ * contexts here (xHCI Configure Endpoint — hc_driver add_endpoints).
+ *
+ * @param dev  UHC device
+ * @param udev USB device with ep_in/ep_out and ifaces populated
+ *
+ * @return 0 on success or if the driver has no optional hook; negative errno on failure.
+ * @retval -EINVAL @a udev is NULL
+ * @retval -EPERM controller is not initialized
+ */
+int uhc_add_endpoints(const struct device *dev, struct usb_device *udev);
+
+/**
+ * @brief Optional: verify configured endpoint contexts appear steady (HCD-defined).
+ *
+ * @param dev UHC device
+ * @param udev USB device with configured endpoints
+ *
+ * @retval 0 Endpoints steady, or hook not implemented
+ * @retval negative errno when verification detects mismatch
+ */
+int uhc_eps_verify_steady(const struct device *dev, struct usb_device *udev);
+
+/**
+ * @brief Optional: resync HCD endpoint state after CLEAR_FEATURE(ENDPOINT_HALT).
+ *
+ * @param dev UHC device
+ * @param udev USB device
+ *
+ * @retval 0 Sync completed, or hook not implemented
+ * @retval negative errno on programming failure
+ */
+int uhc_ep_sync_after_clear_feature(const struct device *dev, struct usb_device *udev);
+
+/**
+ * @brief Optional: query whether the HCD is steady since add_endpoints().
+ *
+ * @param dev UHC device
+ *
+ * @return true when the hook is unset or reports steady state
+ */
+bool uhc_post_configure_steady(const struct device *dev);
+
+/**
+ * @brief Optional: HCD cleanup after device disconnect (free_dev).
+ *
+ * @param dev UHC device
+ */
+void uhc_free_dev(const struct device *dev);
+
+/**
+ * @brief Optional: assign USB device address via HCD (xHCI Address Device).
+ *
+ * When implemented, the HCD runs address assignment (xHCI Address Device with
+ * BSR=0) and returns the wire address in @a addr_out. When the hook is unset,
+ * returns @c -ENOTSUP so the host stack may use CH9 SET_ADDRESS instead.
+ *
+ * @param dev UHC device
+ * @param udev USB device
+ * @param addr_out On success, USB address selected by the HCD (1–127)
+ *
+ * @retval 0 Address assigned; @a addr_out is valid
+ * @retval -ENOTSUP Hook not implemented (use CH9 SET_ADDRESS)
+ * @retval -EINVAL Invalid parameters
+ * @retval -EBUSY Requested address already in use (HCD-specific)
+ * @retval negative errno Other HCD failure
+ */
+int uhc_assign_address(const struct device *dev, struct usb_device *udev, uint8_t *addr_out);
 
 /**
  * @brief Get USB host controller capabilities

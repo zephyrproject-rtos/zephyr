@@ -122,7 +122,7 @@ int uhc_mcux_dequeue(const struct device *dev, struct uhc_transfer *const xfer)
 	}
 
 	cancel_param.pipeHandle = mcux_ep;
-	cancel_param.transfer   = NULL; /* cancel all the transfers on the pipe */
+	cancel_param.transfer = NULL; /* cancel all the transfers on the pipe */
 	return uhc_mcux_control(dev, kUSB_HostCancelTransfer, &cancel_param);
 }
 
@@ -288,10 +288,11 @@ usb_host_pipe_t *uhc_mcux_init_hal_ep(const struct device *dev, struct uhc_trans
 	pipe_init.nakCount = USB_HOST_CONFIG_MAX_NAK;
 	pipe_init.maxPacketSize = USB_MPS_EP_SIZE(xfer->mps);
 	pipe_init.endpointAddress = USB_EP_GET_IDX(xfer->ep);
-	pipe_init.direction = USB_EP_GET_IDX(xfer->ep) == 0 ? USB_OUT :
-			      USB_EP_GET_DIR(xfer->ep) ? USB_IN : USB_OUT;
-	/* Current Zephyr Host stack is experimental, the endpoint's interval,
-	 * 'number per uframe' and the endpoint type cannot be got yet.
+	pipe_init.direction = USB_EP_GET_IDX(xfer->ep) == 0 ? USB_OUT
+			      : USB_EP_GET_DIR(xfer->ep)    ? USB_IN
+							    : USB_OUT;
+	/* Zephyr host stack does not yet expose endpoint interval,
+	 * 'number per uframe', or endpoint type through the UHC API.
 	 */
 	pipe_init.numberPerUframe = USB_MPS_ADDITIONAL_TRANSACTIONS(xfer->mps);
 	pipe_init.interval = xfer->interval;

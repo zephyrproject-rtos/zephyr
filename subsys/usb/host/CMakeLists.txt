@@ -11,12 +11,20 @@ zephyr_library_sources(
   usbh_api.c
   usbh_device.c
   usbh_desc.c
-  usbh_class.c
+  usbh_hcd.c
 )
 
 zephyr_library_sources_ifdef(
   CONFIG_USBH_SHELL
   usbh_shell.c
+)
+
+zephyr_library_sources_ifdef(
+  CONFIG_USBH_MSC
+  usbh_msc.c
+  usbh_msc_bot.c
+  usbh_msc_scsi.c
+  msc/usb_msc_lun.c
 )
 
 zephyr_library_sources_ifdef(

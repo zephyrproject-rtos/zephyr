@@ -1,0 +1,10 @@
+tests:
+  drivers.usb.uhc_dwc3:
+    build_only: true
+    platform_allow:
+      - versal_apu
+    extra_args:
+      - EXTRA_DTC_OVERLAY_FILE=versal_apu.overlay
+    tags:
+      - drivers
+      - usb

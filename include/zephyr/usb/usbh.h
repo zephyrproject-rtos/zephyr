@@ -6,15 +6,17 @@
 
 /**
  * @file
- * @brief New experimental USB device stack APIs and structures
+ * @brief USB host stack APIs and structures
  *
- * This file contains the USB device stack APIs and structures.
+ * Host-mode USB support in Zephyr (enumeration, class drivers, MSC helpers).
+ * Enable with ``CONFIG_USB_HOST_STACK``.
  */
 
 #ifndef ZEPHYR_INCLUDE_USBH_H_
 #define ZEPHYR_INCLUDE_USBH_H_
 
 #include <stdint.h>
+#include <stdbool.h>
 #include <zephyr/device.h>
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/util.h>
@@ -41,9 +43,9 @@ extern "C" {
  */
 struct usbh_status {
 	/** USB host support is initialized */
-	unsigned int initialized : 1;
+	unsigned int initialized: 1;
 	/** USB host support is enabled */
-	unsigned int enabled : 1;
+	unsigned int enabled: 1;
 };
 
 /**
@@ -66,13 +68,13 @@ struct usbh_context {
 	struct sys_bitarray *addr_ba;
 };
 
-#define USBH_CONTROLLER_DEFINE(device_name, uhc_dev)			\
-	SYS_BITARRAY_DEFINE_STATIC(ba_##device_name, 128);		\
-	static STRUCT_SECTION_ITERABLE(usbh_context, device_name) = {	\
-		.name = STRINGIFY(device_name),				\
-		.mutex = Z_MUTEX_INITIALIZER(device_name.mutex),	\
-		.dev = uhc_dev,						\
-		.addr_ba = &ba_##device_name,				\
+#define USBH_CONTROLLER_DEFINE(device_name, uhc_dev)                                               \
+	SYS_BITARRAY_DEFINE_STATIC(ba_##device_name, 128);                                         \
+	static STRUCT_SECTION_ITERABLE(usbh_context, device_name) = {                              \
+		.name = STRINGIFY(device_name), .mutex = Z_MUTEX_INITIALIZER(device_name.mutex),   \
+				  .dev = uhc_dev,                                                  \
+				  .udevs = SYS_DLIST_STATIC_INIT(&device_name.udevs),              \
+				  .addr_ba = &ba_##device_name,                                    \
 	}
 
 struct usbh_class_data;
@@ -102,11 +104,9 @@ struct usbh_class_api {
 	/** Host initialization handler, before any device is connected */
 	int (*init)(struct usbh_class_data *const c_data);
 	/** Request completion handler */
-	int (*completion_cb)(struct usbh_class_data *const c_data,
-			     struct uhc_transfer *const xfer);
+	int (*completion_cb)(struct usbh_class_data *const c_data, struct uhc_transfer *const xfer);
 	/** Device connection handler */
-	int (*probe)(struct usbh_class_data *const c_data,
-		     struct usb_device *const udev,
+	int (*probe)(struct usbh_class_data *const c_data, struct usb_device *const udev,
 		     const uint8_t iface);
 	/** Device removal handler */
 	int (*removed)(struct usbh_class_data *const c_data);
@@ -176,15 +176,13 @@ struct usbh_class_node {
  * @param[in] filt Array of @ref usbh_class_filter to match this class or NULL to match everything.
  *                 When non-NULL, then it has to be terminated by an entry with @c flags set to 0.
  */
-#define USBH_DEFINE_CLASS(class_name, class_api, class_priv, filt)		\
-	static struct usbh_class_data UTIL_CAT(class_data_, class_name) = {	\
-		.name = STRINGIFY(class_name),					\
-		.api = class_api,						\
-		.priv = class_priv,						\
-	};									\
-	static STRUCT_SECTION_ITERABLE(usbh_class_node, class_name) = {		\
-		.c_data = &UTIL_CAT(class_data_, class_name),			\
-		.filters = filt,						\
+#define USBH_DEFINE_CLASS(class_name, class_api, class_priv, filt)                                 \
+	static struct usbh_class_data UTIL_CAT(class_data_, class_name) = {                        \
+		.name = STRINGIFY(class_name), .api = class_api, .priv = class_priv,               \
+	};                                                                                         \
+	static STRUCT_SECTION_ITERABLE(usbh_class_node, class_name) = {                            \
+		.c_data = &UTIL_CAT(class_data_, class_name),                                      \
+		.filters = filt,                                                                   \
 	};
 
 /**
@@ -228,6 +226,44 @@ int usbh_disable(struct usbh_context *uhs_ctx);
  * @return 0 on success, other values on fail.
  */
 int usbh_shutdown(struct usbh_context *const uhs_ctx);
+
+/**
+ * @brief Select configuration and enable non-EP0 endpoints in the HCD.
+ */
+int usbh_device_set_configuration(struct usb_device *udev, uint8_t num);
+
+/**
+ * @brief Weak hook invoked when enumeration reaches @ref USB_STATE_CONFIGURED.
+ *
+ * Called from the USB host bus thread after SET_CONFIGURATION, descriptor parse,
+ * and the optional HCD configure hook complete. Override in the application to
+ * e.g. signal a semaphore instead of polling device state from @c main().
+ *
+ * @param udev Newly configured USB device
+ */
+void usbh_device_configured_notify(struct usb_device *udev);
+
+/**
+ * @brief Weak hook invoked when a USB device is disconnected.
+ *
+ * Called from the USB host bus thread after disconnect is detected and before
+ * class drivers are torn down or the device object is freed. Override to
+ * unmount file systems while disk volumes are still registered.
+ *
+ * @param udev Device being removed (valid only for the duration of this call)
+ */
+void usbh_device_removed_notify(struct usb_device *udev);
+
+/**
+ * @brief Return whether @a udev is still the connected root device in CONFIGURED state.
+ *
+ * Safe to call from application threads while the bus thread may disconnect the device.
+ *
+ * @param udev USB device pointer from host stack callbacks
+ *
+ * @return true when @a udev matches the host root device and is configured
+ */
+bool usbh_device_still_connected(const struct usb_device *udev);
 
 /**
  * @}
