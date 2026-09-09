@@ -1851,6 +1851,14 @@ Libraries / Subsystems
     the Semtech LoRaMac-node dependency.  Currently supports the EU868 region.
   * :c:member:`lora_modem_config.sync_word`
 
+* Management
+
+  * MCUmgr
+
+    * The image management client now supports SHA-512 image digests. It can
+      list and select images for testing or confirmation on targets built with
+      :kconfig:option:`CONFIG_MCUBOOT_BOOTLOADER_USES_SHA512`.
+
 * Video
 
   * Introducing a video subsystem that inherits all the function names previously in
