@@ -84,8 +84,30 @@ config CLOCK_CONTROL_NXP_S32_CLOCK_CONFIG_IDX
 endif # CLOCK_CONTROL_NXP_S32
 
 config CLOCK_CONTROL_NXP_MCXW7X
-		bool "NXP MCXW7X clock control driver"
-		default y
-		depends on DT_HAS_NXP_MCXW7X_CLOCK_ENABLED
-		help
-			Enable support for NXP MCXW7X clock control driver.
+	bool "NXP MCXW7X clock control driver"
+	default y
+	depends on DT_HAS_NXP_MCXW7X_CLOCK_ENABLED
+	help
+	  Enable support for NXP MCXW7X clock control driver.
+
+config CLOCK_CONTROL_NXP_MCXL_MAIN
+	bool "NXP MCXL main-domain clock controller"
+	default y
+	depends on DT_HAS_NXP_MCXL_MAIN_CLOCK_ENABLED
+	help
+	  Enable support for NXP MCXL main-domain (CM33) clock controller driver.
+
+config CLOCK_CONTROL_NXP_MCXL_MAIN_INIT
+	bool "Perform MCXL main-domain clock bring-up in the driver"
+	depends on CLOCK_CONTROL_NXP_MCXL_MAIN
+	help
+	  When enabled, the driver runs the full system-clock bring-up sequence
+	  during init. Disable on boards that perform their own clock setup in
+	  board.c to avoid double-initialization.
+
+config CLOCK_CONTROL_NXP_MCXL_AON
+	bool "NXP MCXL always-on (AON) clock controller"
+	default y
+	depends on DT_HAS_NXP_MCXL_AON_CLOCK_ENABLED
+	help
+	  Enable support for NXP MCXL always-on (AON) clock controller driver.
