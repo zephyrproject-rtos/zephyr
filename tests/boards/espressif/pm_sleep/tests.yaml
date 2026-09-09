@@ -1,0 +1,33 @@
+common:
+  tags:
+    - pm
+  harness: ztest
+  extra_args:
+    - SNIPPET=espressif-pm
+tests:
+  boards.espressif.pm_sleep:
+    extra_configs:
+      - CONFIG_ESP32_SLEEP_POWER_DOWN_FLASH=y
+      - CONFIG_ESP32_PM_SLP_IRAM_OPT=y
+    platform_allow:
+      - esp32_devkitc/esp32/procpu
+      - esp32c3_devkitc
+      - esp32s2_devkitc
+      - esp32s3_devkitc/esp32s3/procpu
+      - esp8684_devkitm
+      - esp32c6_devkitc/esp32c6/hpcore
+      - esp32h2_devkitm
+  boards.espressif.pm_sleep.periph_pd:
+    extra_configs:
+      - CONFIG_ESP32_SLEEP_POWER_DOWN_FLASH=y
+      - CONFIG_ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP=y
+      - CONFIG_ESP32_PM_SLP_IRAM_OPT=y
+    platform_allow:
+      - esp32c6_devkitc/esp32c6/hpcore
+      - esp32h2_devkitm
+  boards.espressif.pm_sleep.periph_pd.noflash:
+    extra_configs:
+      - CONFIG_ESP32_PM_POWER_DOWN_PERIPHERAL_IN_LIGHT_SLEEP=y
+      - CONFIG_ESP32_PM_SLP_IRAM_OPT=y
+    platform_allow:
+      - esp32c5_devkitc/esp32c5/hpcore
