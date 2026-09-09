@@ -705,6 +705,14 @@ config GEN_IRQ_START_VECTOR
 	  This is a hidden option which needs to be set per architecture and
 	  left alone.
 
+config SW_ISR_TABLE_ENTRY_FUNCTION
+	string
+	depends on GEN_SW_ISR_TABLE
+	help
+	  Specify the function to be used for entries in the software ISR table.
+	  This can be used by systems that require custom interrupt handling
+	  to wrap or replace the default architecture _isr_wrapper function.
+
 config IRQ_OFFLOAD
 	bool "IRQ offload"
 	depends on TEST

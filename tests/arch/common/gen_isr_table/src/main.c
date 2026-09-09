@@ -302,14 +302,16 @@ static int check_sw_isr(void *isr, uintptr_t arg, int offset)
 		TC_PRINT("expected %p got %p\n", (void *)isr, e->isr);
 		return -1;
 	}
+#ifndef CONFIG_SW_ISR_TABLE_ENTRY_FUNCTION
 #if defined(CONFIG_GEN_IRQ_VECTOR_TABLE) && !defined(CONFIG_IRQ_VECTOR_TABLE_JUMP_BY_CODE)
-	void *v = (void *)_irq_vector_table[TABLE_INDEX(offset)];
+	void *v = (void *)_irq_vector_table[VECTOR_TABLE_INDEX(offset)];
 	if (v != _isr_wrapper) {
 		TC_PRINT("Vector does not point to _isr_wrapper\n");
 		TC_PRINT("expected %p got %p\n", _isr_wrapper, v);
 		return -1;
 	}
 #endif /* CONFIG_GEN_IRQ_VECTOR_TABLE && !CONFIG_IRQ_VECTOR_TABLE_JUMP_BY_CODE */
+#endif /* !CONFIG_SW_ISR_TABLE_ENTRY_FUNCTION */
 
 	if (test_irq(offset)) {
 		return -1;
