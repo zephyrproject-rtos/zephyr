@@ -1,0 +1,10 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config TEST_DT_CLASS_ENABLED
+	def_bool $(dt_class_enabled,vnd-class-a)
+
+config TEST_DT_CLASS_ENABLED_MISSING
+	def_bool $(dt_class_enabled,vnd-no-such-class)
+
+source "Kconfig.zephyr"
