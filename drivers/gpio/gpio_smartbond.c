@@ -425,7 +425,7 @@ static DEVICE_API(gpio, gpio_smartbond_drv_api_funcs) = {
 			    gpio_smartbond_isr,						\
 			    DEVICE_DT_INST_GET(id), 0);					\
 		irq_enable(DT_INST_IRQN(id));						\
-		return 0;								\
+		return gpio_common_init(dev);						\
 	}										\
 											\
 	PM_DEVICE_DT_INST_DEFINE(id, gpio_smartbond_pm_action);				\

@@ -424,7 +424,7 @@ static int gpio_rpi_bank_init(const struct device *dev)
 		config->bank_config_func();
 	}
 
-	return 0;
+	return gpio_common_init(dev);
 }
 
 #define GPIO_REG_0U            1

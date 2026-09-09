@@ -375,7 +375,7 @@ static int gpio_atcgpio100_init(const struct device *port)
 	/* Enable PLIC interrupt GPIO source */
 	irq_enable(dev_cfg->irq_num);
 
-	return 0;
+	return gpio_common_init(port);
 }
 
 #define GPIO_ATCGPIO100_INIT(n)						\

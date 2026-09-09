@@ -199,7 +199,10 @@ static int gpio_xmc4xxx_toggle_bits(const struct device *dev, gpio_port_pins_t p
 	return 0;
 }
 
-static int gpio_xmc4xxx_init(const struct device *dev) { return 0; }
+static int gpio_xmc4xxx_init(const struct device *dev)
+{
+	return gpio_common_init(dev);
+}
 
 static DEVICE_API(gpio, gpio_xmc4xxx_driver_api) = {
 	.pin_configure = gpio_xmc4xxx_pin_configure,

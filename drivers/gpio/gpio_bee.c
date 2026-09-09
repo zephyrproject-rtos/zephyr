@@ -520,7 +520,7 @@ static int gpio_bee_init(const struct device *dev)
 		data->array[pin_num].pad_num = pad_num;
 	}
 
-	return ret;
+	return gpio_common_init(dev);
 }
 
 static DEVICE_API(gpio, gpio_bee_driver_api) = {
@@ -568,10 +568,7 @@ static DEVICE_API(gpio, gpio_bee_driver_api) = {
 	GPIO_BEE_ARRAY_DEFINE(index)                                                               \
 	GPIO_BEE_SET_IRQ_INFO(index)                                                               \
 	static const struct gpio_bee_config gpio_bee_port##index##_cfg = {                         \
-		.common =                                                                          \
-			{                                                                          \
-				.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(index),           \
-			},                                                                         \
+		.common = GPIO_COMMON_CONFIG_FROM_DT_INST(index),                                  \
 		.port_base = (GPIO_TypeDef *)DT_INST_REG_ADDR(index),                              \
 		.clkid = DT_INST_CLOCKS_CELL(index, id),                                           \
 		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(index),                                     \

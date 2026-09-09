@@ -561,7 +561,7 @@ static int gpio_max14906_init(const struct device *dev)
 
 	LOG_DBG(" --- GPIO MAX14906 init OUT ---");
 
-	return ret;
+	return gpio_common_init(dev);
 }
 
 static DEVICE_API(gpio, gpio_max14906_api) = {

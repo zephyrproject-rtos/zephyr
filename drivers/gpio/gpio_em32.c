@@ -484,7 +484,8 @@ static int gpio_em32_init(const struct device *dev)
 #endif
 
 	LOG_INF("EM32 GPIO port %d initialized successfully", config->port);
-	return 0;
+
+	return gpio_common_init(dev);
 }
 
 /**

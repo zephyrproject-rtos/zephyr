@@ -231,8 +231,11 @@ static int gpio_max14917_init(const struct device *dev)
 	data->gpios_fault = 0;
 
 	err = max14917_fault_check(dev);
+	if (err < 0) {
+		return err;
+	}
 
-	return err;
+	return gpio_common_init(dev);
 }
 
 static int gpio_max14917_config(const struct device *dev, gpio_pin_t pin, gpio_flags_t flags)

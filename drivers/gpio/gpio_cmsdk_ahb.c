@@ -274,7 +274,7 @@ static int gpio_cmsdk_ahb_init(const struct device *dev)
 
 	cfg->gpio_config_func(dev);
 
-	return 0;
+	return gpio_common_init(dev);
 }
 
 #define CMSDK_AHB_GPIO_DEVICE(n)						\

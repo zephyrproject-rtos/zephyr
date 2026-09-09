@@ -328,7 +328,7 @@ static void gpio_allwinner_init(const struct device *port)
 		IRQ_CONNECT(DT_INST_IRQN(n), DT_INST_IRQ(n, priority),                             \
 			    gpio_allwinner_isr, DEVICE_DT_INST_GET(n), 0);                         \
 		irq_enable(DT_INST_IRQN(n));                                                       \
-		return 0;                                                                          \
+		return gpio_common_init(port);                                                     \
 	}                                                                                          \
 	DEVICE_DT_INST_DEFINE(n, gpio_allwinner_init_##n, NULL, &gpio_allwinner_data_##n,          \
 			      &gpio_allwinner_config_##n, PRE_KERNEL_1, CONFIG_GPIO_INIT_PRIORITY, \

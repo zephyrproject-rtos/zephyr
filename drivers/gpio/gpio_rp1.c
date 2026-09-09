@@ -201,7 +201,7 @@ static int gpio_rp1_init(const struct device *port)
 	data->rio_base = DEVICE_MMIO_NAMED_GET(port, reg_base) + config->rio_offset;
 	data->pads_base = DEVICE_MMIO_NAMED_GET(port, reg_base) + config->pads_offset;
 
-	return 0;
+	return gpio_common_init(port);
 }
 
 #define GPIO_RP1_INIT(n)                                                                           \

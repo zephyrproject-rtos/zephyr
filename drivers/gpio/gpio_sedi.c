@@ -305,7 +305,7 @@ static int gpio_sedi_init(const struct device *dev)
 
 	config->irq_config();
 
-	return 0;
+	return gpio_common_init(dev);
 }
 
 #define GPIO_SEDI_IRQ_FLAGS0(n) 0

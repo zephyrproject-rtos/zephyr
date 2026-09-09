@@ -331,7 +331,7 @@ static int gpio_sf32lb_init(const struct device *dev)
 		shared_initialized = true;
 	}
 
-	return 0;
+	return gpio_common_init(dev);
 }
 
 #define GPIO_SF32LB_DEFINE(n)                                                                      \

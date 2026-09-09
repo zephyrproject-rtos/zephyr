@@ -233,7 +233,7 @@ static int gpio_stellaris_init(const struct device *dev)
 	const struct gpio_stellaris_config *cfg = dev->config;
 
 	cfg->config_func(dev);
-	return 0;
+	return gpio_common_init(dev);
 }
 
 static int gpio_stellaris_manage_callback(const struct device *dev,

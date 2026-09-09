@@ -162,7 +162,7 @@ static int gpio_npm2100_init(const struct device *dev)
 		return -ENODEV;
 	}
 
-	return 0;
+	return gpio_common_init(dev);
 }
 
 #define GPIO_NPM2100_DEFINE(n)                                                                     \

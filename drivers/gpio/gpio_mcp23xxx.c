@@ -567,5 +567,5 @@ int gpio_mcp23xxx_init(const struct device *dev)
 
 	k_sem_give(&drv_data->lock);
 
-	return 0;
+	return gpio_common_init(dev);
 }

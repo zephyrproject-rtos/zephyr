@@ -223,7 +223,7 @@ static int tle9104_gpio_init(const struct device *dev)
 		return result;
 	}
 
-	return 0;
+	return gpio_common_init(dev);
 }
 
 #define TLE9104_GPIO_INIT(inst)                                                                    \

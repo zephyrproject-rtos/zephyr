@@ -157,6 +157,11 @@ static DEVICE_API(gpio, api_table) = {
 	.port_toggle_bits = port_toggle_bits,
 };
 
+static int creg_gpio_init(const struct device *dev)
+{
+	return gpio_common_init(dev);
+}
+
 static const struct creg_gpio_config creg_gpio_cfg = {
 	.common = GPIO_COMMON_CONFIG_FROM_DT_INST(0),
 	.ngpios = DT_INST_PROP(0, ngpios),
@@ -169,6 +174,6 @@ static struct creg_gpio_drv_data creg_gpio_drvdata = {
 	.base_addr = DT_INST_REG_ADDR(0),
 };
 
-DEVICE_DT_INST_DEFINE(0, NULL, NULL, &creg_gpio_drvdata, &creg_gpio_cfg,
+DEVICE_DT_INST_DEFINE(0, creg_gpio_init, NULL, &creg_gpio_drvdata, &creg_gpio_cfg,
 		      POST_KERNEL, CONFIG_GPIO_INIT_PRIORITY,
 		      &api_table);

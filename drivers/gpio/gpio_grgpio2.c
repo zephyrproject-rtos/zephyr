@@ -266,7 +266,7 @@ static int grgpio_init(const struct device *dev)
 	/* Read what I/O lines have IRQ support */
 	data->imask = regs->ipol;
 
-	return 0;
+	return gpio_common_init(dev);
 }
 
 static DEVICE_API(gpio, driver_api) = {

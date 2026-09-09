@@ -390,7 +390,7 @@ int gpio_fxl6408_init(const struct device *dev)
 
 	k_sem_init(&drv_data->lock, 1, 1);
 
-	return 0;
+	return gpio_common_init(dev);
 }
 
 static DEVICE_API(gpio, gpio_fxl_driver) = {

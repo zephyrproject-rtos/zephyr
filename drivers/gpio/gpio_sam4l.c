@@ -238,7 +238,7 @@ int gpio_sam_init(const struct device *dev)
 
 	cfg->config_func(dev);
 
-	return 0;
+	return gpio_common_init(dev);
 }
 
 #define GPIO_SAM_IRQ_CONNECT(n, m)					\

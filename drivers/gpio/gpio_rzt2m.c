@@ -151,7 +151,7 @@ static int rzt2m_gpio_init(const struct device *dev)
 
 	rzt2m_gpio_lock();
 
-	return 0;
+	return gpio_common_init(dev);
 }
 
 static int rzt2m_gpio_get_raw(const struct device *dev, gpio_port_value_t *value)

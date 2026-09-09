@@ -506,7 +506,7 @@ static int gpio_nct38xx_port_init(const struct device *dev)
 	data->lock = mfd_nct38xx_get_lock_reference(config->mfd);
 	data->i2c_dev = mfd_nct38xx_get_i2c_dt_spec(config->mfd);
 
-	return 0;
+	return gpio_common_init(dev);
 }
 
 /* NCT38XX GPIO port driver must be initialized after NCT38XX GPIO driver */
@@ -515,7 +515,9 @@ BUILD_ASSERT(CONFIG_GPIO_NCT38XX_PORT_INIT_PRIORITY > CONFIG_GPIO_NCT38XX_INIT_P
 #define GPIO_NCT38XX_PORT_DEVICE_INSTANCE(inst)                                                    \
 	static const struct gpio_nct38xx_port_config gpio_nct38xx_port_cfg_##inst = {              \
 		.common = {.port_pin_mask = GPIO_PORT_PIN_MASK_FROM_DT_INST(inst) &                \
-					    DT_INST_PROP(inst, pin_mask)},                         \
+					    DT_INST_PROP(inst, pin_mask),                          \
+			GPIO_HOGS_COND_INIT_GPIO_CTLR(DT_DRV_INST(inst))                           \
+		},                                                                                 \
 		.mfd = DEVICE_DT_GET(DT_INST_GPARENT(inst)),                                       \
 		.gpio_port = DT_INST_REG_ADDR(inst),                                               \
 		.pinmux_mask = COND_CODE_1(DT_INST_NODE_HAS_PROP(inst, pinmux_mask),               \

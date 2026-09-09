@@ -266,7 +266,7 @@ static int neorv32_gpio_init(const struct device *dev)
 
 	config->irq_config_func();
 
-	return 0;
+	return gpio_common_init(dev);
 }
 
 static DEVICE_API(gpio, neorv32_gpio_driver_api) = {

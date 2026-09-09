@@ -352,7 +352,7 @@ int gpio_psoc6_init(const struct device *dev)
 
 	cfg->config_func(dev);
 
-	return 0;
+	return gpio_common_init(dev);
 }
 
 #define GPIO_PSOC6_INIT(n)						\

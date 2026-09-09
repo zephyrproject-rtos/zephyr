@@ -269,7 +269,7 @@ static DEVICE_API(gpio, gpio_ameba_driver_api) = {
 			    DEVICE_DT_INST_GET(n), 0);                                             \
 		irq_enable(DT_INST_IRQN(n));                                                       \
                                                                                                    \
-		return 0;                                                                          \
+		return gpio_common_init(dev);                                                      \
 	}                                                                                          \
 	static struct gpio_ameba_data gpio_ameba_port##n##_data;                                   \
                                                                                                    \
