@@ -114,6 +114,14 @@
 #define SIP_SSIP	MIP_SSIP
 #define SIP_STIP	MIP_STIP
 
+/*
+ * Counter-enable bits. mcounteren, scounteren and hcounteren share this
+ * layout. Each one controls access from the privilege mode below it.
+ */
+#define COUNTEREN_CY	(1 << 0)	/* cycle counter */
+#define COUNTEREN_TM	(1 << 1)	/* time counter */
+#define COUNTEREN_IR	(1 << 2)	/* instret counter */
+
 #define PRV_U	0
 #define PRV_S	1
 #define PRV_H	2
