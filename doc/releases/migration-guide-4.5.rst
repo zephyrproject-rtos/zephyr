@@ -1566,6 +1566,10 @@ USB
   and should be removed from DTS files; the underlying driver will compute the correct value
   automatically if the property doesn't exist (and honor it otherwise). (:github:`117882`)
 
+* The ``get_desc`` callback in :c:struct:`usbd_class_api` now returns ``const void *`` instead of
+  ``void *``, so that a class can keep its array of descriptor pointers in ROM. Out-of-tree
+  classes must update the return type of their handler. (:github:`118251`)
+
 Video
 =====
 

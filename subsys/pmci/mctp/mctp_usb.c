@@ -411,8 +411,8 @@ static int mctp_usb_class_request(struct usbd_class_data *const c_data,
 	return 0;
 }
 
-static void *mctp_usb_class_get_desc(struct usbd_class_data *const c_data,
-				     const enum usbd_speed speed)
+static const void *mctp_usb_class_get_desc(struct usbd_class_data *const c_data,
+					   const enum usbd_speed speed)
 {
 	struct mctp_usb_class_ctx *ctx = usbd_class_get_private(c_data);
 

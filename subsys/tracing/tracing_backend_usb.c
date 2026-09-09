@@ -123,8 +123,8 @@ static int tracing_func_request_handler(struct usbd_class_data *const c_data,
 	return 0;
 }
 
-static void *tracing_func_get_desc(struct usbd_class_data *const c_data,
-				   const enum usbd_speed speed)
+static const void *tracing_func_get_desc(struct usbd_class_data *const c_data,
+					 const enum usbd_speed speed)
 {
 	struct tracing_func_data *data = usbd_class_get_private(c_data);
 
