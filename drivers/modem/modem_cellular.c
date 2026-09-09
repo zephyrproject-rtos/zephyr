@@ -315,10 +315,10 @@ static void modem_cellular_enter_state_network_or_dial(struct modem_cellular_dat
 {
 	const struct modem_cellular_config *config = data->dev->config;
 
-	if (modem_cellular_has_network_script(config)) {
-		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RUN_NETWORK_SCRIPT);
-	} else if (IS_ENABLED(CONFIG_MODEM_CELLULAR_ON_DEMAND_CONNECT)) {
+	if (IS_ENABLED(CONFIG_MODEM_CELLULAR_ON_DEMAND_CONNECT)) {
 		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_AWAIT_DIAL);
+	} else if (modem_cellular_has_network_script(config)) {
+		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RUN_NETWORK_SCRIPT);
 	} else {
 		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT);
 	}
@@ -1641,10 +1641,16 @@ static void modem_cellular_run_network_script_event_handler(struct modem_cellula
 {
 	const struct modem_cellular_config *config =
 		(const struct modem_cellular_config *)data->dev->config;
+	int ret;
 
 	switch (evt) {
 	case MODEM_CELLULAR_EVENT_TIMEOUT:
-		modem_cellular_run_script(data, config->vendor->scripts.network);
+		ret = modem_cellular_run_script(data, config->vendor->scripts.network);
+		if (ret < 0) {
+			LOG_WRN("network script %s, rearming timer",
+				ret == -EBUSY ? "busy" : "failed");
+			modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
+		}
 		break;
 	case MODEM_CELLULAR_EVENT_SCRIPT_FAILED:
 		modem_cellular_script_failed(data);
@@ -1695,7 +1701,11 @@ static void modem_cellular_await_dial_event_handler(struct modem_cellular_data *
 
 	switch (evt) {
 	case MODEM_CELLULAR_EVENT_DIAL:
-		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT);
+		if (modem_cellular_has_network_script(config)) {
+			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RUN_NETWORK_SCRIPT);
+		} else {
+			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT);
+		}
 		break;
 
 	case MODEM_CELLULAR_EVENT_SCRIPT_SUCCESS:
@@ -2052,12 +2062,12 @@ static void modem_cellular_await_ppp_dead_event_handler(struct modem_cellular_da
 		modem_cellular_start_timer(data, K_MSEC(config->vendor->reset_pulse_duration_ms));
 		break;
 	case MODEM_CELLULAR_EVENT_TIMEOUT:
-		if (modem_cellular_has_network_script(config) &&
-		    !modem_cellular_is_registered(data)) {
-			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_AWAIT_REGISTERED);
-		} else if (IS_ENABLED(CONFIG_MODEM_CELLULAR_ON_DEMAND_CONNECT) &&
-			   !net_if_is_admin_up(modem_ppp_get_iface(config->ppp))) {
+		if (IS_ENABLED(CONFIG_MODEM_CELLULAR_ON_DEMAND_CONNECT) &&
+		    !net_if_is_admin_up(modem_ppp_get_iface(config->ppp))) {
 			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_AWAIT_DIAL);
+		} else if (modem_cellular_has_network_script(config) &&
+			   !modem_cellular_is_registered(data)) {
+			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_AWAIT_REGISTERED);
 		} else {
 			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT);
 		}
@@ -3009,18 +3019,6 @@ int modem_cellular_init(const struct device *dev)
 
 	__ASSERT_NO_MSG(config->vendor->scripts.init != NULL);
 	__ASSERT_NO_MSG(config->vendor->scripts.dial != NULL);
-
-	/* On-demand connect drives the dial off the PPP interface admin state. A
-	 * modem whose vendor configuration provides a network chat script instead
-	 * waits for registration and dials as soon as it registers, ignoring that
-	 * state, so the data call would come up unprompted regardless of the
-	 * option. Reject the combination here rather than dial unexpectedly.
-	 */
-	if (IS_ENABLED(CONFIG_MODEM_CELLULAR_ON_DEMAND_CONNECT) &&
-	    modem_cellular_has_network_script(config)) {
-		LOG_ERR("on-demand connect is unsupported by modems with a network chat script");
-		return -ENOTSUP;
-	}
 
 	k_mutex_init(&data->api_lock);
 	k_work_init_delayable(&data->timeout_work, modem_cellular_timeout_handler);

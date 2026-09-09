@@ -82,11 +82,16 @@ MODEM_CHAT_SCRIPT_DEFINE(quectel_eg2x_g_set_baudrate_chat_script,
 			 modem_cellular_chat_callback_handler, 10);
 #endif
 
+MODEM_CHAT_SCRIPT_CMDS_DEFINE(quectel_eg2x_g_network_chat_script_cmds,
+			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=1", ok_match));
+MODEM_CHAT_SCRIPT_DEFINE(quectel_eg2x_g_network_chat_script,
+			 quectel_eg2x_g_network_chat_script_cmds, abort_matches,
+			 modem_cellular_chat_callback_handler, 10);
+
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(quectel_eg2x_g_dial_chat_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP_MULT(
 				"AT+CGACT=0," STRINGIFY(CONFIG_MODEM_CELLULAR_PDP_CONTEXT_ID),
 				allow_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=1", ok_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP(
 				"ATD*99***" STRINGIFY(CONFIG_MODEM_CELLULAR_PDP_CONTEXT_ID) "#",
 				connect_match));
@@ -168,6 +173,7 @@ static const struct modem_cellular_vendor_config quectel_eg2x_g_vendor = {
 		.set_baudrate = &quectel_eg2x_g_set_baudrate_chat_script,
 #endif
 		.init = &quectel_eg2x_g_init_chat_script,
+		.network = &quectel_eg2x_g_network_chat_script,
 		.dial = &quectel_eg2x_g_dial_chat_script,
 		.periodic = &quectel_eg2x_g_periodic_chat_script,
 	},

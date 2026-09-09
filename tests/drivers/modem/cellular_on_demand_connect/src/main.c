@@ -521,6 +521,11 @@ static void *common_setup(void)
 	k_mutex_init(&pump_lock);
 	k_event_init(&emu_events);
 
+	/* The driver dials only once registered, so the emulated modem reports
+	 * registration unless a test withholds it.
+	 */
+	atomic_set(&emu_registered, 1);
+
 	zassert_true(device_is_ready(modem), "modem device not ready");
 	zassert_true(device_is_ready(modem_uart), "emulated UART not ready");
 
