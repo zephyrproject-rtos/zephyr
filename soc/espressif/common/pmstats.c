@@ -12,10 +12,8 @@
  * them by deadline and report one summary line per window instead of one line
  * per fragment.
  *
- * A window is reported only when it completes: a fragment sleeps to within the
- * sleep floor of its deadline, so no room is left for another fragment and the
- * wait is effectively over. This prints at the window's own end. The tiny residue
- * before the deadline is discarded, which does not matter for a sleep check.
+ * An RTC timer wake completes the window. Event wakes keep it open for another
+ * fragment. A skipped wait closes when less than the sleep floor remains.
  */
 
 #include <stdio.h>
@@ -115,10 +113,14 @@ void esp32_sleep_stats_after(void)
 		ls_window.err = hal_err;
 	}
 
-	/* If less than the sleep floor remains until the absolute deadline, no
-	 * further fragment can sleep, so the wait is done: print and close.
+	/* The timer wake means the deadline was reached, so the wait is over.
+	 * A real sleep can wake earlier than the floor, so the time left to the
+	 * deadline only closes a wait that never slept.
 	 */
-	if ((int64_t)ls_deadline_abs_us - now < (int64_t)ls_floor_us) {
+	bool woke_on_timer =
+		(hal_err == 0) && (esp_sleep_get_wakeup_causes() & BIT(ESP_SLEEP_WAKEUP_TIMER));
+
+	if (woke_on_timer || ((int64_t)ls_deadline_abs_us - now < (int64_t)ls_floor_us)) {
 		sleep_stats_print();
 	}
 }
