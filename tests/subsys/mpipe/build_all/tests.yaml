@@ -31,3 +31,13 @@ tests:
     extra_args:
       - CONFIG_MPIPE_VID=y
       - CONFIG_MPIPE_VID_CONVERT=y
+
+  mpipe.img.build:
+    tags:
+      - subsys
+      - mpipe
+    build_only: true
+    platform_allow:
+      - native_sim/native/64
+    extra_args:
+      - CONFIG_MPIPE_IMG=y
