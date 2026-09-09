@@ -79,6 +79,17 @@ struct bt_attr_data {
 /* Pool for incoming ATT packets */
 NET_BUF_POOL_DEFINE(prep_pool, CONFIG_BT_ATT_PREPARE_COUNT, BT_ATT_BUF_SIZE,
 		    sizeof(struct bt_attr_data), NULL);
+
+/* Maximum number of prep_pool buffers a single connection may hold in its
+ * prepare queue. The pool is shared by all connections, so without this limit
+ * a peer that never executes or cancels its queued writes would block the
+ * prepare writes of every other peer for as long as it stays connected.
+ */
+#if CONFIG_BT_ATT_PREPARE_COUNT_PER_CONN > 0
+#define PREP_QUEUE_MAX CONFIG_BT_ATT_PREPARE_COUNT_PER_CONN
+#else
+#define PREP_QUEUE_MAX MAX(1, CONFIG_BT_ATT_PREPARE_COUNT / CONFIG_BT_MAX_CONN)
+#endif
 #endif /* CONFIG_BT_ATT_PREPARE_COUNT */
 
 K_MEM_SLAB_DEFINE_STATIC_TYPE(req_slab, struct bt_att_req,
@@ -2227,6 +2238,7 @@ static uint8_t att_write_req(struct bt_att_chan *chan, struct net_buf *buf)
 
 #if CONFIG_BT_ATT_PREPARE_COUNT > 0
 struct prep_data {
+	struct bt_att *att;
 	struct bt_conn *conn;
 	struct net_buf *buf;
 	const void *value;
@@ -2271,6 +2283,12 @@ static uint8_t prep_write_cb(const struct bt_gatt_attr *attr, uint16_t handle,
 	}
 
 append:
+	if (sys_slist_len(&data->att->prep_queue) >= PREP_QUEUE_MAX) {
+		LOG_WRN("Per-connection prepare queue limit (%d) reached", PREP_QUEUE_MAX);
+		data->err = BT_ATT_ERR_PREPARE_QUEUE_FULL;
+		return BT_GATT_ITER_STOP;
+	}
+
 	/* Copy data into the outstanding queue */
 	data->buf = net_buf_alloc(&prep_pool, K_NO_WAIT);
 	if (!data->buf) {
@@ -2309,6 +2327,7 @@ static uint8_t att_prep_write_rsp(struct bt_att_chan *chan, uint16_t handle,
 
 	(void)memset(&data, 0, sizeof(data));
 
+	data.att = chan->att;
 	data.conn = chan->att->conn;
 	data.offset = offset;
 	data.value = value;
