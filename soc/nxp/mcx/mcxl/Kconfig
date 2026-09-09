@@ -25,7 +25,7 @@ config SOC_MCXL255_CPU1
 
 config ADVC_DRIVER_USED
 	bool "NXP ADVC (Adaptive Voltage Control) driver support"
-	depends on SOC_MCXL255_CPU0 || SOC_MCXL255_CPU1
+	depends on (SOC_MCXL255_CPU0 || SOC_MCXL255_CPU1) && ZEPHYR_HAL_NXP_MODULE_BLOBS
 	help
 	  Link the precompiled NXP ADVC library (fetched via west blobs)
 	  and enable the ADVC-aware code paths in the NXP power/clock
