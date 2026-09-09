@@ -266,10 +266,12 @@ static void modem_cellular_emit_modem_info(struct modem_cellular_data *data,
 }
 
 static void modem_cellular_emit_reg_state(struct modem_cellular_data *data,
-					   enum cellular_registration_status status)
+					   enum cellular_registration_status status,
+					   enum cellular_access_technology technology)
 {
 	struct cellular_evt_registration_status evt = {
 		.status = status,
+		.technology = technology,
 	};
 
 	modem_cellular_emit_event(data, CELLULAR_EVENT_REGISTRATION_STATUS_CHANGED, &evt);
@@ -529,19 +531,15 @@ void modem_cellular_chat_on_imsi(struct modem_chat *chat, char **argv, uint16_t 
 
 static bool modem_cellular_is_registered(struct modem_cellular_data *data)
 {
-	return (data->registration_status_gsm == CELLULAR_REGISTRATION_REGISTERED_HOME)
-		|| (data->registration_status_gsm == CELLULAR_REGISTRATION_REGISTERED_ROAMING)
-		|| (data->registration_status_gprs == CELLULAR_REGISTRATION_REGISTERED_HOME)
-		|| (data->registration_status_gprs == CELLULAR_REGISTRATION_REGISTERED_ROAMING)
-		|| (data->registration_status_lte == CELLULAR_REGISTRATION_REGISTERED_HOME)
-		|| (data->registration_status_lte == CELLULAR_REGISTRATION_REGISTERED_ROAMING);
+	return (data->registration_status == CELLULAR_REGISTRATION_REGISTERED_HOME)
+		|| (data->registration_status == CELLULAR_REGISTRATION_REGISTERED_ROAMING);
 }
 
 static void modem_cellular_clear_registration_status(struct modem_cellular_data *data)
 {
-	data->registration_status_gsm = CELLULAR_REGISTRATION_NOT_REGISTERED;
-	data->registration_status_gprs = CELLULAR_REGISTRATION_NOT_REGISTERED;
-	data->registration_status_lte = CELLULAR_REGISTRATION_NOT_REGISTERED;
+	k_mutex_lock(&data->api_lock, K_FOREVER);
+	data->registration_status = CELLULAR_REGISTRATION_NOT_REGISTERED;
+	k_mutex_unlock(&data->api_lock);
 }
 
 #if defined(CONFIG_MODEM_CELLULAR_STATS)
@@ -572,78 +570,116 @@ void modem_cellular_chat_on_cxreg(struct modem_chat *chat, char **argv, uint16_t
 				  void *user_data)
 {
 	struct modem_cellular_data *data = (struct modem_cellular_data *)user_data;
-	enum cellular_registration_status registration_status = CELLULAR_REGISTRATION_UNKNOWN;
+	enum cellular_registration_status registration_status = 0;
 	enum cellular_registration_status registration_prev;
-	uint8_t num_args;
-	uint8_t base;
+	enum cellular_access_technology tech;
 
 	/* This receives both +C*REG? read command answers and unsolicited notifications.
 	 * Their syntax differs in that the former has one more parameter, <n>, which is first.
 	 */
 	if (argc >= 3 && argv[2][0] != '"') {
-		/* +CEREG: <n>,<stat>[,<tac>[...]] */
-		base = 2;
+		/* +C*REG: <n>,<stat>[,...] — read command response */
+		registration_status = atoi(argv[2]);
 	} else if (argc >= 2) {
-		/* +CEREG: <stat>[,<tac>[...]] */
-		base = 1;
+		/* +C*REG: <stat>[,...] — unsolicited notification */
+		registration_status = atoi(argv[1]);
 	} else {
 		return;
 	}
-	/* Long form of the various CXREG options:
-	 *   +CREG: <stat>[,<lac>,<ci>[,<AcT>]]
-	 *   +CGREG:<stat>[,<lac>,<ci>[,<AcT>,<rac>]]
-	 *   +CEREG: <stat>[,[<tac>],[<ci>],[<AcT>]]
+
+	/* Determine the access technology from the command and optional AcT field.
+	 * With AT+CEREG=2, CEREG responses include an AcT field:
+	 *   query: +CEREG: <n>,<stat>,<tac>,<ci>,<AcT>  → AcT at argv[5]
+	 *   URC:   +CEREG: <stat>,<tac>,<ci>,<AcT>      → AcT at argv[4]
+	 * AcT 7 = E-UTRAN (LTE), AcT 9 = E-UTRAN NB-S1 (NB-IoT), AcT 8 = EC-GSM-IoT
 	 */
-	num_args = argc - base;
-	registration_status = atoi(argv[base]);
-	if (num_args >= 4) {
-		data->access_tech = strtol(argv[base + 3], NULL, 10);
-	}
-	LOG_DBG("REG %d AcT %d", registration_status, data->access_tech);
-
-	IF_ENABLED(CONFIG_MODEM_CELLULAR_STATS,
-		   (const bool was_registered = modem_cellular_is_registered(data)));
-
 	if (strcmp(argv[0], "+CREG: ") == 0) {
-		registration_prev = data->registration_status_gsm;
-		data->registration_status_gsm = registration_status;
+		tech = CELLULAR_ACCESS_TECHNOLOGY_GSM;
 	} else if (strcmp(argv[0], "+CGREG: ") == 0) {
-		registration_prev = data->registration_status_gprs;
-		data->registration_status_gprs = registration_status;
-	} else { /* CEREG */
-		registration_prev = data->registration_status_lte;
-		data->registration_status_lte = registration_status;
+		tech = CELLULAR_ACCESS_TECHNOLOGY_UTRAN;
+	} else { /* +CEREG */
+		int act = -1;
+
+		if (argc >= 3 && argv[2][0] != '"') {
+			/* query response format */
+			if (argc >= 6) {
+				act = atoi(argv[5]);
+			}
+		} else {
+			/* URC format */
+			if (argc >= 5) {
+				act = atoi(argv[4]);
+			}
+		}
+
+		if (act == 9) {
+			tech = CELLULAR_ACCESS_TECHNOLOGY_E_UTRAN_NB_S1;
+		} else if (act == 7) {
+			tech = CELLULAR_ACCESS_TECHNOLOGY_E_UTRAN;
+		} else if (act == 8) {
+			tech = CELLULAR_ACCESS_TECHNOLOGY_EC_GSM_IOT;
+		} else {
+			/* No AcT field — CEREG always implies E-UTRAN class */
+			tech = CELLULAR_ACCESS_TECHNOLOGY_E_UTRAN;
+		}
 	}
 
-	IF_ENABLED(CONFIG_MODEM_CELLULAR_STATS,
-		   (modem_cellular_stats_on_reg_transition(data, was_registered,
-							   modem_cellular_is_registered(data))));
+	bool is_registered = (registration_status == CELLULAR_REGISTRATION_REGISTERED_HOME ||
+			      registration_status == CELLULAR_REGISTRATION_REGISTERED_ROAMING);
+	bool is_registered_now;
 
-	if (modem_cellular_is_registered(data)) {
+	/* api_lock serialises this cache against get_registration_status(); take it
+	 * around the update so a concurrent getter never observes a status/tech pair
+	 * that belongs to two different URCs.
+	 */
+	k_mutex_lock(&data->api_lock, K_FOREVER);
+
+	registration_prev = data->registration_status;
+
+	if (is_registered) {
+		/* Always track the most recently registered technology and its status. */
+		data->access_tech = tech;
+		data->registration_status = registration_status;
+	} else if (tech == data->access_tech ||
+		   data->access_tech == CELLULAR_ACCESS_TECHNOLOGY_UNKNOWN) {
+		/*
+		 * Only accept a NOT_REGISTERED status from the technology we are currently
+		 * tracking (or when no technology has been seen yet).  This prevents a
+		 * +CGREG: NOT_REGISTERED response — normal on LTE-only modems — from
+		 * overwriting a valid +CEREG: REGISTERED that arrived earlier in the same
+		 * script run.
+		 */
+		data->registration_status = registration_status;
+	}
+
+	registration_status = data->registration_status;
+	tech = data->access_tech;
+	is_registered_now = modem_cellular_is_registered(data);
+
+	k_mutex_unlock(&data->api_lock);
+
+	IF_ENABLED(CONFIG_MODEM_CELLULAR_STATS,
+		   (modem_cellular_stats_on_reg_transition(
+			   data,
+			   registration_prev == CELLULAR_REGISTRATION_REGISTERED_HOME ||
+				   registration_prev == CELLULAR_REGISTRATION_REGISTERED_ROAMING,
+			   is_registered_now)));
+
+	if (registration_prev != registration_status) {
 		/* Drop any cached serving cell on a registration change; it is stale
 		 * until the next periodic poll, so get_network_status() reports no
 		 * data rather than the previous (deregistered) snapshot.
 		 */
-		if (registration_prev != registration_status) {
-			modem_cellular_invalidate_network_status(data);
-		}
+		modem_cellular_invalidate_network_status(data);
 
-		modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_REGISTERED);
-	} else {
-		modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_DEREGISTERED);
-		/* On deregistration report the status, as periodic network status AT
-		 * commands are not guaranteed to respond normally.
-		 */
-		if (registration_prev != registration_status) {
-			struct cellular_evt_network_status evt = {
-				.status = registration_status,
-				.access_tech = data->access_tech,
-			};
-
-			modem_cellular_emit_network_status(data, &evt);
+		if (is_registered_now) {
+			modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_REGISTERED);
+		} else {
+			modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_DEREGISTERED);
 		}
 	}
-	modem_cellular_emit_reg_state(data, registration_status);
+
+	modem_cellular_emit_reg_state(data, registration_status, tech);
 }
 
 void modem_cellular_chat_on_cgev(struct modem_chat *chat, char **argv, uint16_t argc,
@@ -2673,44 +2709,19 @@ static int modem_cellular_get_modem_info(const struct device *dev,
 
 	return ret;
 }
+
 static int modem_cellular_get_registration_status(const struct device *dev,
-						  enum cellular_access_technology tech,
+						  enum cellular_access_technology *tech,
 						  enum cellular_registration_status *status)
 {
-	int ret = 0;
 	struct modem_cellular_data *data = (struct modem_cellular_data *)dev->data;
 
-	/* Techs explicitly not handled as N/A to CREG, CGREG, CEREG:
-	 *   CELLULAR_ACCESS_TECHNOLOGY_NR_5G_CN
-	 *   CELLULAR_ACCESS_TECHNOLOGY_NG_RAN
-	 */
-	switch (tech) {
-	case CELLULAR_ACCESS_TECHNOLOGY_GSM:
-	case CELLULAR_ACCESS_TECHNOLOGY_GSM_COMPACT:
-		*status = data->registration_status_gsm;
-		break;
-	case CELLULAR_ACCESS_TECHNOLOGY_GSM_EGPRS:
-	case CELLULAR_ACCESS_TECHNOLOGY_EC_GSM_IOT:
-	case CELLULAR_ACCESS_TECHNOLOGY_UTRAN:
-	case CELLULAR_ACCESS_TECHNOLOGY_UTRAN_HSDPA:
-	case CELLULAR_ACCESS_TECHNOLOGY_UTRAN_HSUPA:
-	case CELLULAR_ACCESS_TECHNOLOGY_UTRAN_HSDPA_HSUPA:
-		*status = data->registration_status_gprs;
-		break;
-	case CELLULAR_ACCESS_TECHNOLOGY_E_UTRAN:
-	case CELLULAR_ACCESS_TECHNOLOGY_E_UTRAN_NB_S1:
-	case CELLULAR_ACCESS_TECHNOLOGY_E_UTRA_NR_DUAL:
-	case CELLULAR_ACCESS_TECHNOLOGY_E_UTRAN_NB_S1_SAT:
-	case CELLULAR_ACCESS_TECHNOLOGY_E_UTRAN_WB_S1_SAT:
-	case CELLULAR_ACCESS_TECHNOLOGY_NG_RAN_SAT:
-		*status = data->registration_status_lte;
-		break;
-	default:
-		ret = -ENODATA;
-		break;
-	}
+	k_mutex_lock(&data->api_lock, K_FOREVER);
+	*status = data->registration_status;
+	*tech = data->access_tech;
+	k_mutex_unlock(&data->api_lock);
 
-	return ret;
+	return 0;
 }
 
 static int modem_cellular_get_network_status(const struct device *dev,

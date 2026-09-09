@@ -96,7 +96,7 @@ static void nrf93m1_on_bcinfosc(struct modem_chat *chat, char **argv, uint16_t a
 {
 	struct modem_cellular_data *data = (struct modem_cellular_data *)user_data;
 	struct cellular_evt_network_status evt = {
-		.status = data->registration_status_lte,
+		.status = data->registration_status,
 		.access_tech = data->access_tech,
 	};
 

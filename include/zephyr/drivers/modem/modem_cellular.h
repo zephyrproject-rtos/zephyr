@@ -152,9 +152,7 @@ struct modem_cellular_data {
 	uint8_t recovery_count;
 
 	/* Status */
-	enum cellular_registration_status registration_status_gsm;
-	enum cellular_registration_status registration_status_gprs;
-	enum cellular_registration_status registration_status_lte;
+	enum cellular_registration_status registration_status;
 	enum cellular_access_technology access_tech;
 	uint8_t rssi;
 	uint8_t rsrp;
