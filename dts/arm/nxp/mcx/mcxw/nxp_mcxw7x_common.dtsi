@@ -76,6 +76,10 @@
 			interrupts = <27 0>;
 			status = "disabled";
 
+			/*
+			 * reg and the matching ranges are set by the
+			 * per-variant dtsi, which knows the flash size.
+			 */
 			flash: flash@0 {
 				compatible = "soc-nv-flash";
 				write-block-size = <16>;
