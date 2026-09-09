@@ -21,6 +21,13 @@
 #define ISR0_TOKEN	0xDEADBEEF
 #define ISR1_TOKEN	0xCAFEBABE
 
+#if defined(CONFIG_RISCV_CORE_NORDIC_VPR)
+/* Software-triggerable VEVIF task lines of a Nordic VPR core, see below. */
+#define VPR_VEVIF_NODE		DT_INST(0, nordic_nrf_vevif_task_rx)
+#define VPR_VEVIF_IRQ(idx)	DT_IRQ_BY_IDX(VPR_VEVIF_NODE, idx, irq)
+#define VPR_VEVIF_LAST_IDX	UTIL_DEC(DT_NUM_IRQS(VPR_VEVIF_NODE))
+#endif
+
 /*
  * This test uses two IRQ lines selected within the range of available IRQs on
  * the target SoC.  These IRQs are platform and interrupt controller-specific,
@@ -62,23 +69,14 @@
  */
 #define IRQ0_PRIO	IRQ_DEFAULT_PRIORITY
 #define IRQ1_PRIO	0x0
-#elif (defined(CONFIG_SOC_SERIES_NRF54L) || defined(CONFIG_SOC_NRF54H20_CPUFLPR)) && \
-	defined(CONFIG_RISCV_CORE_NORDIC_VPR)
-#define IRQ0_LINE	16
-#define IRQ1_LINE	17
-
-#define IRQ0_PRIO	1
-#define IRQ1_PRIO	2
-#elif (defined(CONFIG_SOC_SERIES_NRF54H) || defined(CONFIG_SOC_SERIES_NRF92)) && \
-	defined(CONFIG_RISCV_CORE_NORDIC_VPR)
-#define IRQ0_LINE	14
-#define IRQ1_LINE	15
-
-#define IRQ0_PRIO	1
-#define IRQ1_PRIO	2
-#elif defined(CONFIG_SOC_SERIES_NRF71) && defined(CONFIG_RISCV_CORE_NORDIC_VPR)
-#define IRQ0_LINE	19
-#define IRQ1_LINE	20
+#elif defined(CONFIG_RISCV_CORE_NORDIC_VPR) && DT_NODE_EXISTS(VPR_VEVIF_NODE)
+/*
+ * On Nordic VPR cores, the VEVIF task lines are the only CLIC lines that are not
+ * wired to a peripheral, so use the two highest ones.  The VEVIF mailbox is not
+ * enabled in this test, meaning its driver does not claim these lines.
+ */
+#define IRQ0_LINE	VPR_VEVIF_IRQ(VPR_VEVIF_LAST_IDX)
+#define IRQ1_LINE	VPR_VEVIF_IRQ(UTIL_DEC(VPR_VEVIF_LAST_IDX))
 
 #define IRQ0_PRIO	1
 #define IRQ1_PRIO	2

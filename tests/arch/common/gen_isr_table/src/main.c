@@ -31,23 +31,21 @@ extern const uintptr_t _irq_vector_table[];
 
 #if defined(CONFIG_NRFX_CLIC)
 
-#if (defined(CONFIG_SOC_SERIES_NRF54L) || defined(CONFIG_SOC_NRF54H20_CPUFLPR)) && \
-	defined(CONFIG_RISCV_CORE_NORDIC_VPR)
-#define ISR1_OFFSET	16
-#define ISR3_OFFSET	17
-#define ISR5_OFFSET	18
-#define TRIG_CHECK_SIZE	19
-#elif (defined(CONFIG_SOC_SERIES_NRF54H) || defined(CONFIG_SOC_SERIES_NRF92)) && \
-	defined(CONFIG_RISCV_CORE_NORDIC_VPR)
-#define ISR1_OFFSET	14
-#define ISR3_OFFSET	15
-#define ISR5_OFFSET	16
-#define TRIG_CHECK_SIZE	17
-#elif defined(CONFIG_SOC_SERIES_NRF71) && defined(CONFIG_RISCV_CORE_NORDIC_VPR)
-#define ISR1_OFFSET	16
-#define ISR3_OFFSET	21
-#define ISR5_OFFSET	22
-#define TRIG_CHECK_SIZE	23
+/* Software-triggerable VEVIF task lines of a Nordic VPR core. */
+#define VPR_VEVIF_NODE		DT_INST(0, nordic_nrf_vevif_task_rx)
+#define VPR_VEVIF_IRQ(idx)	DT_IRQ_BY_IDX(VPR_VEVIF_NODE, idx, irq)
+#define VPR_VEVIF_LAST_IDX	UTIL_DEC(DT_NUM_IRQS(VPR_VEVIF_NODE))
+
+#if defined(CONFIG_RISCV_CORE_NORDIC_VPR) && DT_NODE_EXISTS(VPR_VEVIF_NODE)
+/*
+ * On Nordic VPR cores, the VEVIF task lines are the only CLIC lines that are not
+ * wired to a peripheral, so use the three highest ones.  The VEVIF mailbox is not
+ * enabled in this test, meaning its driver does not claim these lines.
+ */
+#define ISR1_OFFSET	VPR_VEVIF_IRQ(UTIL_DEC(UTIL_DEC(VPR_VEVIF_LAST_IDX)))
+#define ISR3_OFFSET	VPR_VEVIF_IRQ(UTIL_DEC(VPR_VEVIF_LAST_IDX))
+#define ISR5_OFFSET	VPR_VEVIF_IRQ(VPR_VEVIF_LAST_IDX)
+#define TRIG_CHECK_SIZE	(ISR5_OFFSET + 1)
 #else
 #error "Target not supported"
 #endif
