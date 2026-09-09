@@ -183,7 +183,9 @@ static int ifx_cat1_rtc_init(const struct device *dev)
 {
 	cy_rslt_t rslt = CY_RSLT_SUCCESS;
 
+#ifndef CONFIG_RTC_INFINEON_SKIP_SECURE_ACCESS
 	Cy_SysClk_ClkBakSetSource(CY_SYSCLK_BAK_IN_CLKLF);
+#endif
 
 	if (_ifx_cat1_rtc_get_state() == _IFX_CAT1_RTC_STATE_UNINITIALIZED) {
 		if (Cy_RTC_IsExternalResetOccurred()) {
