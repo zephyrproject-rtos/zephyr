@@ -1,5 +1,6 @@
 /*
  * Copyright (c) 2022 Nordic Semiconductor ASA
+ * Copyright (c) 2026 Antmicro <www.antmicro.com>
  *
  * SPDX-License-Identifier: Apache-2.0
  */
@@ -31,8 +32,10 @@ LOG_MODULE_REGISTER(max3421e, CONFIG_UHC_DRIVER_LOG_LEVEL);
 #define MAX3421E_STATE_BUS_RESUME	1
 
 struct max3421e_data {
+	const struct device *dev;
 	struct gpio_callback gpio_cb;
 	struct uhc_transfer *last_xfer;
+	struct k_work_delayable condet_work;
 	struct k_sem irq_sem;
 	atomic_t state;
 	uint16_t tog_in;
@@ -43,6 +46,7 @@ struct max3421e_data {
 	uint8_t mode;
 	uint8_t hxfr;
 	uint8_t hrsl;
+	enum uhc_event_type condet_event;
 };
 
 struct max3421e_config {
@@ -557,29 +561,67 @@ static void max3421e_handle_condet(const struct device *dev)
 {
 	struct max3421e_data *priv = uhc_get_private(dev);
 	const uint8_t jk = priv->hrsl & MAX3421E_JKSTATUS_MASK;
+	uint8_t new_mode = priv->mode;
 	enum uhc_event_type type = UHC_EVT_ERROR;
+	bool is_low_speed;
+	int ret;
+
+	if (atomic_test_bit(&priv->state, MAX3421E_STATE_BUS_RESET)) {
+		/* NOTE: Resetting the bus triggers a spurious condet event */
+		return;
+	}
 
 	/*
-	 * JSTATUS:KSTATUS 0:0 - SE0
-	 * JSTATUS:KSTATUS 0:1 - K   (Resume)
-	 * JSTATUS:KSTATUS 1:0 - J   (Idle)
+	 * JSTATUS:KSTATUS 0:0 = SE0 = No device present
+	 * JSTATUS:KSTATUS 1:1 = SE1 = illegal state
+	 * JSTATUS:KSTATUS 0:1 =  K  = Device connected at a different speed than the current one
+	 * JSTATUS:KSTATUS 1:0 =  J  = Device connected at the same speed
 	 */
-	if (jk == 0) {
-		/* Device disconnected */
+	switch (jk) {
+	case 0:
+		LOG_INF("Device disconnected");
 		type = UHC_EVT_DEV_REMOVED;
+		new_mode &= ~MAX3421E_SOFKAENAB;
+		break;
+	case MAX3421E_KSTATUS:
+		/* Need to switch speed */
+		new_mode ^= MAX3421E_LOWSPEED;
+	case MAX3421E_JSTATUS:
+		new_mode |= MAX3421E_SOFKAENAB;
+
+		is_low_speed = new_mode & MAX3421E_LOWSPEED;
+		type = is_low_speed ? UHC_EVT_DEV_CONNECTED_LS : UHC_EVT_DEV_CONNECTED_FS;
+		LOG_INF("%s Device connected", is_low_speed ? "LS" : "FS");
+		break;
+	case (MAX3421E_JSTATUS | MAX3421E_KSTATUS):
+		LOG_ERR("Illegal USB Bus state");
+		type = UHC_EVT_ERROR;
+		break;
 	}
 
-	if (jk == MAX3421E_JSTATUS) {
-		/* Device connected */
-		type = UHC_EVT_DEV_CONNECTED_FS;
+	if (priv->mode != new_mode) {
+		LOG_DBG("Changing mode. New Mode: %02x; Old Mode:%02x ", new_mode, priv->mode);
+		max3421e_write_byte(dev, MAX3421E_REG_MODE, new_mode);
+		priv->mode = new_mode;
 	}
 
-	if (jk == MAX3421E_KSTATUS) {
-		/* Device connected */
-		type = UHC_EVT_DEV_CONNECTED_LS;
-	}
+	priv->condet_event = type;
 
-	uhc_submit_event(dev, type, 0);
+	ret = k_work_reschedule(&priv->condet_work, K_MSEC(CONFIG_UHC_MAX3421E_DEBOUNCE_DELAY_MS));
+	if (ret < 0) {
+		uhc_submit_event(dev, UHC_EVT_ERROR, 0);
+	}
+}
+
+static void max3421e_condet_work(struct k_work *work)
+{
+	struct k_work_delayable *dwork = k_work_delayable_from_work(work);
+	struct max3421e_data *priv = CONTAINER_OF(dwork, struct max3421e_data, condet_work);
+	const struct device *dev = priv->dev;
+
+	max3421e_lock(dev);
+	uhc_submit_event(dev, priv->condet_event, 0);
+	max3421e_unlock(dev);
 }
 
 static void max3421e_bus_event(const struct device *dev)
@@ -1052,6 +1094,8 @@ static int max3421e_driver_init(const struct device *dev)
 	struct max3421e_data *priv = data->priv;
 	int ret;
 
+	priv->dev = dev;
+
 	if (config->dt_rst.port) {
 		if (!gpio_is_ready_dt(&config->dt_rst)) {
 			LOG_ERR("GPIO device %s not ready",
@@ -1098,6 +1142,7 @@ static int max3421e_driver_init(const struct device *dev)
 	}
 
 	k_mutex_init(&data->mutex);
+	k_work_init_delayable(&priv->condet_work, max3421e_condet_work);
 	config->make_thread(dev);
 
 	LOG_DBG("MAX3421E CPU interface initialized");
