@@ -125,3 +125,8 @@ uart4: &scb4 {
 &mxcrypto_crypto {
 	status = "okay";
 };
+
+&rram0 {
+	reg = <0x02000000 DT_SIZE_K(512)>;
+	ranges = <0x0 0x02000000 DT_SIZE_K(512)>;
+};
