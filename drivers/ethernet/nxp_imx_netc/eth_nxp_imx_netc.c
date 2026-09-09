@@ -577,8 +577,7 @@ int netc_eth_tx(const struct device *dev, struct net_pkt *pkt)
 #endif
 
 #ifdef CONFIG_PTP_CLOCK_NXP_NETC
-	if (net_pkt_is_tx_timestamping(pkt) &&
-	    (netc_eth_get_ptp_clock(dev, data->iface) != NULL)) {
+	if (net_pkt_is_tx_timestamping(pkt)) {
 		opt.flags |= kEP_TX_OPT_REQ_TS;
 	}
 #endif
