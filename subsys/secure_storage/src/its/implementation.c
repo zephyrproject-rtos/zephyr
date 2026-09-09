@@ -17,6 +17,15 @@ BUILD_ASSERT(1 << SECURE_STORAGE_ITS_CALLER_ID_BIT_SIZE >= SECURE_STORAGE_ITS_CA
 BUILD_ASSERT(SECURE_STORAGE_ITS_CALLER_ID_BIT_SIZE + SECURE_STORAGE_ITS_UID_BIT_SIZE == 32);
 #endif
 
+/* For logging a `secure_storage_its_uid_t`, whose width depends on the configuration. */
+#ifdef CONFIG_SECURE_STORAGE_64_BIT_UID
+#define UID_FMT           "%u/%#llx"
+#define UID_ARGS(its_uid) (its_uid).caller_id, (unsigned long long)(its_uid).uid
+#else
+#define UID_FMT           "%u/%#lx"
+#define UID_ARGS(its_uid) (its_uid).caller_id, (unsigned long)(its_uid).uid
+#endif
+
 static psa_status_t make_its_uid(secure_storage_its_caller_id_t caller_id, psa_storage_uid_t uid,
 				 secure_storage_its_uid_t *its_uid)
 {
@@ -109,8 +118,13 @@ static bool keep_stored_entry(secure_storage_its_uid_t uid, size_t data_length, 
 	*ret = get_entry(uid, sizeof(existing_data), existing_data, &existing_data_len,
 			 &existing_create_flags);
 	if (*ret != PSA_SUCCESS) {
-		/* The entry either doesn't exist or is corrupted. */
-		/* Allow overwriting corrupted entries to not be stuck with them forever. */
+		/* Allow overwriting entries that can't be read back to not be stuck with them
+		 * forever, but make it visible as it may be a sign of corruption or tampering.
+		 */
+		if (*ret != PSA_ERROR_DOES_NOT_EXIST) {
+			LOG_WRN("%s entry " UID_FMT " that failed to be read back. (%d)",
+				"Overwriting", UID_ARGS(uid), *ret);
+		}
 		return false;
 	}
 	if (existing_create_flags & PSA_STORAGE_FLAG_WRITE_ONCE) {
@@ -120,15 +134,8 @@ static bool keep_stored_entry(secure_storage_its_uid_t uid, size_t data_length, 
 	if (existing_data_len == data_length &&
 	    existing_create_flags == create_flags &&
 	    !memcmp(existing_data, p_data, data_length)) {
-#ifdef CONFIG_SECURE_STORAGE_64_BIT_UID
-		LOG_DBG("Not writing entry %u/%#llx to storage because its stored data"
-			" (of length %zu) is identical.", uid.caller_id,
-			(unsigned long long)uid.uid, data_length);
-#else
-		LOG_DBG("Not writing entry %u/%#lx to storage because its stored data"
-			" (of length %zu) is identical.", uid.caller_id,
-			(unsigned long)uid.uid, data_length);
-#endif
+		LOG_DBG("Not writing entry " UID_FMT " to storage because its stored data"
+			" (of length %zu) is identical.", UID_ARGS(uid), data_length);
 		*ret = PSA_SUCCESS;
 		return true;
 	}
@@ -268,6 +275,10 @@ psa_status_t secure_storage_its_remove(secure_storage_its_caller_id_t caller_id,
 	    ret == PSA_ERROR_GENERIC_ERROR ||
 	    ret == PSA_ERROR_INVALID_SIGNATURE ||
 	    ret == PSA_ERROR_DATA_CORRUPT) {
+		if (ret != PSA_SUCCESS) {
+			LOG_WRN("%s entry " UID_FMT " that failed to be read back. (%d)",
+				"Removing", UID_ARGS(its_uid), ret);
+		}
 		ret = secure_storage_its_store_remove(its_uid);
 		if (ret != PSA_SUCCESS) {
 			log_failed_operation("remove", "from", ret);
