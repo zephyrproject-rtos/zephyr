@@ -239,6 +239,10 @@
 	interrupts = <34 4>;
 };
 
+&rtc0 {
+	interrupts = <35 4>;
+};
+
 &can0 {
 	interrupts = <84 4>, <85 4>;
 };
