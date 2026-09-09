@@ -96,4 +96,8 @@ examples:
         compatible = "nordic,npm10xx-adc";
         /* ... */
       };
+
+      uicr {
+        compatible = "nordic,npm10xx-uicr";
+      };
     };

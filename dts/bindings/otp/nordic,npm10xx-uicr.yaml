@@ -1,0 +1,43 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Nordic nPM10xx UICR (User information configuration registers).
+
+  UICR is the User OTP memory of the nPM10xx PMIC. It holds non-volatile bits that set the
+  reset/default values for various PMIC configuration registers. Consult the datasheet for the
+  complete UICR reference.
+
+  The memory is exposed as a packed bit-array: UICR bit address N is bit (N % 8) of byte (N / 8).
+
+compatible: "nordic,npm10xx-uicr"
+
+include: base.yaml
+
+properties:
+  margin-mode:
+    type: string
+    enum:
+      - "default"
+      - "ref+"
+      - "ref-"
+    default: "default"
+    description: |
+      Configure margin mode for UICR read-back. The available values are:
+        - "default": no change to the read reference
+        - "ref+": increase the read reference to detect weak 1's; useful to detect the bits that
+          were programmed less reliably and might require re-programming
+        - "ref-": decrease the read reference to detect weak 0's; those would indicate manufacturing
+          defects, normally they should not appear
+
+examples:
+  - |
+    pmic@6a {
+      reg = <0x6a>;
+      compatible = "nordic,npm10xx";
+
+      uicr {
+        compatible = "nordic,npm10xx-uicr";
+        margin-mode = "ref+";
+      };
+    };
