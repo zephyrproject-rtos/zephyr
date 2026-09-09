@@ -379,8 +379,8 @@
 			compatible = "microchip,xec-ps2";
 			reg = <0x40009000 0x40>;
 			interrupts = <100 1>;
-			girqs = <18 10>, <21 18>;
-			pcrs = <3 5>;
+			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(18, 10) MCHP_XEC_ECIA_GIRQ_ENC(21, 18)>;
+			pcr-scr = <MCHP_XEC_SCR_ENCODE(3, 5)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
@@ -390,8 +390,8 @@
 			compatible = "microchip,xec-ps2";
 			reg = <0x40009040 0x40>;
 			interrupts = <101 1>;
-			girqs = <18 11>, <21 21>;
-			pcrs = <3 6>;
+			girqs = <MCHP_XEC_ECIA_GIRQ_ENC(18, 11) MCHP_XEC_ECIA_GIRQ_ENC(21, 21)>;
+			pcr-scr = <MCHP_XEC_SCR_ENCODE(3, 6)>;
 			#address-cells = <1>;
 			#size-cells = <0>;
 			status = "disabled";
