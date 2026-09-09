@@ -5,6 +5,9 @@
 
 #include "../../common/dvp_stm32_dcmi.overlay"
 
-&ov2640 {
-	supply-gpios = <&dcmi_camera_connector 8 GPIO_ACTIVE_HIGH>;
+&dvp_24pin_ep_in {
+	/* This is a bug, this should be both hsync/vsync-active high, see notes on ov2640 dts */
+	hsync-active = <0>;
+	vsync-active = <0>;
+	pclk-sample = <0>;
 };
