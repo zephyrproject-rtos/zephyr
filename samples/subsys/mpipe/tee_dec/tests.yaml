@@ -1,0 +1,21 @@
+sample:
+  name: Multimedia Pipeline tee_dec sample
+
+tests:
+  sample.mpipe.tee_dec:
+    tags:
+      - mpipe
+      - tee_dec
+    platform_allow:
+      - native_sim/native/64
+      - mimxrt1170_evk@B/mimxrt1176/cm7
+    integration_platforms:
+      - native_sim/native/64
+      - mimxrt1170_evk@B/mimxrt1176/cm7
+    extra_args:
+      - platform:mimxrt1170_evk@B/mimxrt1176/cm7:SHIELD="rk055hdmipi4ma0"
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "End of stream"
