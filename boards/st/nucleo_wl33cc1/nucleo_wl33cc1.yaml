@@ -13,6 +13,7 @@ supported:
   - dma
   - gpio
   - i2c
+  - rtc
   - serial
   - spi
 vendor: st
