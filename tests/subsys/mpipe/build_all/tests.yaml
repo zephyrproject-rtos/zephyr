@@ -20,3 +20,14 @@ tests:
       - CONFIG_MPIPE_BASE_CAPS_FILTER=y
       - CONFIG_MPIPE_BASE_QUEUE=y
       - CONFIG_MPIPE_BASE_TEE=y
+
+  mpipe.vid.build:
+    tags:
+      - subsys
+      - mpipe
+    build_only: true
+    platform_allow:
+      - native_sim/native/64
+    extra_args:
+      - CONFIG_MPIPE_VID=y
+      - CONFIG_MPIPE_VID_CONVERT=y
