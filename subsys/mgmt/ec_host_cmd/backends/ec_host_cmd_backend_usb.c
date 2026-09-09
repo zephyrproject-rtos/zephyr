@@ -349,7 +349,8 @@ static int ec_host_cmd_request(struct usbd_class_data *const c_data, struct net_
 	return 0;
 }
 
-static void *ec_host_cmd_get_desc(struct usbd_class_data *const c_data, const enum usbd_speed speed)
+static const void *ec_host_cmd_get_desc(struct usbd_class_data *const c_data,
+					const enum usbd_speed speed)
 {
 	const struct ec_host_cmd_usb_ctx *ctx = usbd_class_get_private(c_data);
 
