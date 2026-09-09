@@ -1154,6 +1154,7 @@ static void modem_cellular_await_power_on_event_handler(struct modem_cellular_da
 	case MODEM_CELLULAR_EVENT_MODEM_READY:
 		/* disable the timer and fall through, as we are ready to proceed */
 		modem_cellular_stop_timer(data);
+		__fallthrough;
 	case MODEM_CELLULAR_EVENT_TIMEOUT:
 		if (config->vendor->scripts.set_baudrate != NULL) {
 			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_SET_BAUDRATE);
@@ -2074,6 +2075,7 @@ static void modem_cellular_await_ppp_dead_event_handler(struct modem_cellular_da
 	case MODEM_CELLULAR_EVENT_RING:
 		LOG_DBG("RING received!");
 		modem_pipe_open_async(data->uart_pipe);
+		break;
 	case MODEM_CELLULAR_EVENT_PPP_DEAD:
 		/* Wait for the channel to return to AT mode after PPP termination */
 		modem_cellular_start_timer(data, K_MSEC(config->vendor->reset_pulse_duration_ms));
