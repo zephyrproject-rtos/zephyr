@@ -261,26 +261,48 @@ extern atomic_t _cpus_active;
 bool z_smp_cpu_mobile(void);
 #define _current_cpu ({ __ASSERT_NO_MSG(!z_smp_cpu_mobile()); \
 			arch_curr_cpu(); })
-
-__attribute_const__ struct k_thread *z_smp_current_get(void);
-#define _current z_smp_current_get()
-
 #else
 #define _current_cpu (&_kernel.cpus[0])
-#define _current _kernel.cpus[0].current
+#endif
+
+/* The current thread, in the per-CPU structure where the kernel records it.
+ *
+ * This is the definitive location: z_current_thread_set() always writes here
+ * and nothing caches it, so it reports the incoming thread as soon as that
+ * call has been made.  Reading it requires a context that cannot migrate,
+ * which is what _current_cpu asserts: an ISR, or interrupts locked.
+ *
+ * Use _current instead unless the value must be up to date and the caller
+ * already meets that requirement.
+ */
+#define _raw_current (_current_cpu->current)
+
+#ifdef CONFIG_SMP
+__attribute_const__ struct k_thread *z_smp_current_get(void);
+#define _current z_smp_current_get()
+#else
+#define _current _raw_current
 #endif
 
 #define CPU_ID ((CONFIG_MP_MAX_NUM_CPUS == 1) ? 0 : _current_cpu->id)
 
-/* This is always invoked from a context where preemption is disabled */
-#define z_current_thread_set(thread) ({ _current_cpu->current = (thread); })
+/* This is always invoked from a context where preemption is disabled.
+ *
+ * Callers must not assume that _current reflects the new thread before the
+ * switch actually happens.  An architecture may cache the current thread in
+ * a register (CONFIG_ARCH_HAS_CUSTOM_CURRENT_IMPL), and the compiler is then
+ * free to reuse a value it read earlier in the same function.  Code running
+ * between this call and the switch must therefore use the new thread pointer
+ * it already has, or _raw_current where it has none.
+ */
+#define z_current_thread_set(thread) ({ _raw_current = (thread); })
 
 #ifdef CONFIG_ARCH_HAS_CUSTOM_CURRENT_IMPL
 #undef _current
 #define _current arch_current_thread()
 #undef z_current_thread_set
 #define z_current_thread_set(thread) \
-	arch_current_thread_set(({ _current_cpu->current = (thread); }))
+	arch_current_thread_set(({ _raw_current = (thread); }))
 #endif
 
 /* kernel wait queue record */
