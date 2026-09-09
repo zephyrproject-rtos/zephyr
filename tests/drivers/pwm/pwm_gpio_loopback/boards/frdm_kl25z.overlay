@@ -1,0 +1,18 @@
+/*
+ * Copyright (c) 2026 Gabriel Ivo <gabriel.bozi@usp.br>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+/* To test this sample, connect:
+ * TPM0 CHANNEL0 (J2-6, PTD0) --> PTD1 (J2-12, PTD1)
+ */
+
+/ {
+	zephyr,user {
+		pwms = <&tpm0 0 160000 PWM_POLARITY_NORMAL>;
+		gpios = <&gpiod 1 GPIO_ACTIVE_HIGH>;
+	};
+};
