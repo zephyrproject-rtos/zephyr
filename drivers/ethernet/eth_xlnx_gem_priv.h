@@ -480,6 +480,11 @@ struct eth_xlnx_gem##port##_bd_rings_layout {\
 #define ETH_XLNX_GEM_BD_RINGS_INST(port) \
 __nocache static struct eth_xlnx_gem##port##_bd_rings_layout eth_xlnx_gem##port##_bd_rings;
 
+/* Per-BD net_pkt slot arrays for in-flight TX packets */
+#define ETH_XLNX_GEM_TX_PKT_SLOTS_DECL(port) \
+static struct net_pkt \
+	*eth_xlnx_gem##port##_tx_pkts[DT_INST_PROP(port, tx_buffer_descriptors)];
+
 /* DMA memory area declaration macro */
 #define ETH_XLNX_GEM_DMA_AREA_DECL(port) \
 struct eth_xlnx_gem##port##_dma_area_layout {\
@@ -525,6 +530,7 @@ if (dev == DEVICE_DT_INST_GET(port)) {\
 	dev_data->tx_bd_ring.tie_off_bd = &eth_xlnx_gem##port##_bd_rings.tie_off_tx_bd;\
 	dev_data->first_rx_buffer = (uint8_t *)eth_xlnx_gem##port##_dma_area.rx_buffer;\
 	dev_data->first_tx_buffer = (uint8_t *)eth_xlnx_gem##port##_dma_area.tx_buffer;\
+	dev_data->tx_pkts = eth_xlnx_gem##port##_tx_pkts;\
 	dev_data->rx_tie_off_buffer = eth_xlnx_gem##port##_dma_area.rx_tie_off_buffer;\
 	dev_data->tx_tie_off_buffer = eth_xlnx_gem##port##_dma_area.tx_tie_off_buffer;\
 }
@@ -536,6 +542,7 @@ ETH_XLNX_GEM_DEV_CONFIG(port);\
 ETH_XLNX_GEM_DEV_DATA(port);\
 ETH_XLNX_GEM_BD_RINGS_DECL(port);\
 ETH_XLNX_GEM_BD_RINGS_INST(port);\
+ETH_XLNX_GEM_TX_PKT_SLOTS_DECL(port);\
 ETH_XLNX_GEM_DMA_AREA_DECL(port);\
 ETH_XLNX_GEM_DMA_AREA_INST(port);\
 ETH_XLNX_GEM_NET_DEV_INIT(port);
@@ -696,7 +703,8 @@ struct eth_xlnx_gem_dev_data {
 
 	struct k_work			tx_done_work;
 	struct k_work			rx_pend_work;
-	struct k_sem			tx_done_sem;
+
+	struct net_pkt			**tx_pkts;
 
 	uint8_t				*first_rx_buffer;
 	uint8_t				*first_tx_buffer;

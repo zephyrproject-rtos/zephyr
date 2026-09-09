@@ -11,7 +11,7 @@
  * - Hardware timestamps not considered.
  * - VLAN tags not considered.
  * - Wake-on-LAN interrupt not supported.
- * - Send function is not SMP-capable (due to single TX done semaphore).
+ * - Send function is not SMP-capable.
  * - No detailed error handling when evaluating the Interrupt Status,
  *   RX Status and TX Status registers.
  */
@@ -68,6 +68,7 @@ static void eth_xlnx_gem_set_initial_nwcfg(const struct device *dev);
 static void eth_xlnx_gem_set_mac_address(const struct device *dev);
 static void eth_xlnx_gem_set_initial_dmacr(const struct device *dev);
 static void eth_xlnx_gem_configure_buffers(const struct device *dev);
+static void eth_xlnx_gem_tx_release_pkt(const struct device *dev, uint8_t first_bd_idx);
 static void eth_xlnx_gem_rx_pending_work(struct k_work *item);
 static void eth_xlnx_gem_handle_rx_pending(const struct device *dev);
 static void eth_xlnx_gem_tx_done_work(struct k_work *item);
@@ -118,6 +119,30 @@ BUILD_ASSERT((DT_INST_PROP(port, tx_buffer_size) % CONFIG_DCACHE_LINE_SIZE) == 0
 DT_INST_FOREACH_STATUS_OKAY(ETH_XLNX_GEM_BUFFER_SIZE_CHECK)
 
 #endif /* CONFIG_DCACHE */
+
+/**
+ * @brief Release the net_pkt held for a completed TX frame
+ * Drops the extra reference taken in eth_xlnx_gem_send() for the frame
+ * that started at first_bd_idx. Called from eth_xlnx_gem_handle_tx_done()
+ * when the last BD of that transmission is processed after a TX-complete
+ * interrupt. Clears the tx_pkts[] slot so the driver no longer tracks
+ * this in-flight frame.
+ *
+ * @param dev Pointer to the device data
+ * @param first_bd_idx Index of the first TX BD used for the completed frame
+ */
+static void eth_xlnx_gem_tx_release_pkt(const struct device *dev, uint8_t first_bd_idx)
+{
+	struct eth_xlnx_gem_dev_data *dev_data = DEV_DATA(dev);
+	struct net_pkt *pkt = dev_data->tx_pkts[first_bd_idx];
+
+	if (pkt != NULL) {
+		LOG_DBG("%s TX done, release pkt %p (first BD %u)", dev->name, pkt,
+			first_bd_idx);
+		net_pkt_unref(pkt);
+		dev_data->tx_pkts[first_bd_idx] = NULL;
+	}
+}
 
 /**
  * @brief GEM device initialization function
@@ -221,7 +246,6 @@ static void eth_xlnx_gem_iface_init(struct net_if *iface)
 	k_work_init(&dev_data->rx_pend_work, eth_xlnx_gem_rx_pending_work);
 
 	/* Initialize TX-related semaphores */
-	k_sem_init(&dev_data->tx_done_sem, 0, 1);
 	k_sem_init(&dev_data->tx_bd_ring.ring_sem, 1, 1);
 
 	/* Initialize the device's interrupt */
@@ -311,19 +335,17 @@ static void eth_xlnx_gem_isr(const struct device *dev)
 
 /**
  * @brief GEM data send function
- * GEM data send function. Blocks until a TX complete notification has been
- * received & processed.
+ * Queues a frame for transmission without blocking for TX complete.
+ * Packet data is copied into the static DMA buffer pool; the driver
+ * holds a net_pkt reference until the TX-complete handler runs.
  *
  * @param dev Pointer to the device data
  * @param pkt Pointer to the data packet to be sent
  * @retval -EINVAL in case of invalid parameters, e.g. zero data length
  * @retval -EIO in case of:
- *         (1) the attempt to TX data while the device is stopped,
- *             the interface is down or the link is down,
- *         (2) the attempt to TX data while no free buffers are available
- *             in the DMA memory area,
- *         (3) the transmission completion notification timing out
- * @retval 0 if the packet was transmitted successfully
+ *         (1) the attempt to TX data while no free BDs are available
+ *             in the DMA memory area
+ * @retval 0 if the packet was queued for transmission successfully
  */
 static int eth_xlnx_gem_send(const struct device *dev, struct net_pkt *pkt)
 {
@@ -340,7 +362,6 @@ static int eth_xlnx_gem_send(const struct device *dev, struct net_pkt *pkt)
 
 	mem_addr_t reg_ctrl;
 	uint32_t reg_val;
-	int sem_status;
 
 	tx_data_length = tx_data_remaining = net_pkt_get_len(pkt);
 	if (tx_data_length == 0) {
@@ -396,6 +417,9 @@ static int eth_xlnx_gem_send(const struct device *dev, struct net_pkt *pkt)
 	dev_data->tx_bd_ring.next_to_use = (first_bd_idx + bds_reqd) %
 					  dev_conf->tx_bd_count;
 	dev_data->tx_bd_ring.free_bds -= bds_reqd;
+
+	net_pkt_ref(pkt);
+	dev_data->tx_pkts[first_bd_idx] = pkt;
 
 	if (dev_conf->defer_txd_to_queue) {
 		k_sem_give(&(dev_data->tx_bd_ring.ring_sem));
@@ -481,15 +505,7 @@ static int eth_xlnx_gem_send(const struct device *dev, struct net_pkt *pkt)
 	dev_data->stats.pkts.tx++;
 #endif
 
-	/* Block until TX has completed */
-	sem_status = k_sem_take(&dev_data->tx_done_sem, K_MSEC(100));
-	if (sem_status < 0) {
-		LOG_ERR("%s TX confirmation timed out", dev->name);
-#ifdef CONFIG_NET_STATISTICS_ETHERNET
-		dev_data->stats.tx_timeout_count++;
-#endif
-		return -EIO;
-	}
+	LOG_DBG("%s TX started pkt %p", dev->name, pkt);
 
 	return 0;
 }
@@ -1215,12 +1231,14 @@ static void eth_xlnx_gem_configure_buffers(const struct device *dev)
 		bdptr->addr = (uint32_t)POINTER_TO_UINT(dev_data->first_tx_buffer) +
 			      (buf_iter * dev_conf->tx_buffer_size);
 		bdptr->ctrl = ETH_XLNX_GEM_TX_BD_USED_BIT;
+		dev_data->tx_pkts[buf_iter] = NULL;
 		++bdptr;
 	}
 
 	bdptr->addr = (uint32_t)POINTER_TO_UINT(dev_data->first_tx_buffer) +
 		      (buf_iter * (uint32_t)dev_conf->tx_buffer_size);
 	bdptr->ctrl = (ETH_XLNX_GEM_TX_BD_WRAP_BIT | ETH_XLNX_GEM_TX_BD_USED_BIT);
+	dev_data->tx_pkts[buf_iter] = NULL;
 
 #ifdef CONFIG_SOC_XILINX_ZYNQMP
 	/*
@@ -1484,10 +1502,8 @@ static void eth_xlnx_gem_tx_done_work(struct k_work *item)
  * in the controller's interrupt status register (gem.intr_status).
  * No further TX done interrupts will be triggered until this handler
  * has been executed, which eventually clears the corresponding
- * interrupt status bit. Once this handler reaches the end of its
- * execution, the eth_xlnx_gem_send call which effectively triggered
- * it is unblocked by posting to the current GEM's TX done semaphore
- * on which the send function is blocking.
+ * interrupt status bit. Releases net_pkt references held for completed
+ * TX frames.
  *
  * @param dev Pointer to the device data
  */
@@ -1539,6 +1555,7 @@ static void eth_xlnx_gem_handle_tx_done(const struct device *dev)
 
 		/* Move on to the next BD or break out of the loop */
 		if (bd_is_last == 1) {
+			eth_xlnx_gem_tx_release_pkt(dev, first_bd_idx);
 			break;
 		}
 		curr_bd_idx = (curr_bd_idx + 1) % dev_conf->tx_bd_count;
@@ -1565,9 +1582,6 @@ static void eth_xlnx_gem_handle_tx_done(const struct device *dev)
 	/* Re-enable the TX complete interrupt source */
 	sys_write32(ETH_XLNX_GEM_IXR_TX_COMPLETE_BIT,
 		    DEVICE_MMIO_NAMED_GET(dev, mac) + ETH_XLNX_GEM_IER_OFFSET);
-
-	/* Indicate completion to a blocking eth_xlnx_gem_send() call */
-	k_sem_give(&dev_data->tx_done_sem);
 }
 
 /**
