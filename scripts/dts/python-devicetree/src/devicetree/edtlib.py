@@ -198,6 +198,11 @@ class Binding:
       for example, ["i2c"] or ["i3c", "i2c"]. Or an empty list if there is
       no 'bus:' in this binding.
 
+    classes:
+      A list of the device class names declared by the binding's 'class:'
+      key, or an empty list if there is no 'class:'. 'class:' values from
+      included bindings are unioned into this list.
+
     on_bus:
       If nodes with this binding's 'compatible' appear on a bus, a string
       describing the bus type (like "i2c"). None otherwise.
@@ -344,6 +349,14 @@ class Binding:
             return []
 
     @property
+    def classes(self) -> list[str]:
+        "See the class docstring"
+        if self.raw.get('class') is not None:
+            return self._classes
+        else:
+            return []
+
+    @property
     def on_bus(self) -> Optional[str]:
         "See the class docstring"
         return self.raw.get('on-bus')
@@ -472,7 +485,8 @@ class Binding:
         # Allowed top-level keys. The 'include' key should have been
         # removed by _load_raw() already.
         ok_top = {"title", "description", "compatible", "bus",
-                  "on-bus", "properties", "child-binding", "examples"}
+                  "on-bus", "class", "properties", "child-binding",
+                  "examples"}
 
         # Descriptive errors for legacy bindings.
         legacy_errors = {
@@ -510,6 +524,27 @@ class Binding:
             and not isinstance(raw["on-bus"], str)):
             _err(f"malformed 'on-bus:' value in {self.path}, "
                  "expected string")
+
+        if "class" in raw:
+            cls = raw["class"]
+            if isinstance(cls, str):
+                classes = [cls]
+            elif (isinstance(cls, list)
+                  and all(isinstance(elem, str) for elem in cls)):
+                classes = cls
+            else:
+                _err(f"malformed 'class:' value in {self.path}, "
+                     "expected string or list of strings")
+            for elem in classes:
+                if not re.fullmatch(r"[a-z0-9][a-z0-9_-]*", elem):
+                    _err(f"malformed device class name '{elem}' in "
+                         f"{self.path}, expected lowercase letters, "
+                         "digits, '-' and '_', starting with a letter "
+                         "or digit")
+            if len(set(classes)) != len(classes):
+                _err(f"duplicate device class names in 'class:' in "
+                     f"{self.path}")
+            self._classes = classes
 
         self._check_properties()
 
@@ -1198,6 +1233,10 @@ class Node:
       returning the value of the first 'bus:' key found. If none of the node's
       parents has a 'bus:' key, this attribute is an empty list.
 
+    classes:
+      A list of the device class names declared by the node's binding
+      (including the binding's included files), or an empty list.
+
     on_bus:
       Resolved bus type for this node, or None if the node is not on a bus.
       If the binding sets 'on-bus', that value is validated against the parent
@@ -1425,6 +1464,13 @@ class Node:
         "See the class docstring"
         bus_node = self.bus_node
         return bus_node.buses if bus_node else []
+
+    @property
+    def classes(self) -> list[str]:
+        "See the class docstring"
+        if self._binding:
+            return self._binding.classes
+        return []
 
     @property
     def on_bus(self) -> Optional[str]:
@@ -3143,6 +3189,11 @@ def _merge_props(to_dict: dict,
     # If 'from_dict' and 'to_dict' contain a 'required:' key for the same
     # property, then the values are ORed together.
     #
+    # 'class:' values at a binding root (top level or a child-binding
+    # level) are unioned instead of overwritten, so that a binding which
+    # includes several class base bindings is a member of all of their
+    # classes.
+    #
     # If 'check_required' is True, then an error is raised if 'from_dict' has
     # 'required: true' while 'to_dict' has 'required: false'. This prevents
     # bindings from "downgrading" requirements from bindings they include,
@@ -3163,6 +3214,8 @@ def _merge_props(to_dict: dict,
                          check_required)
         elif prop not in to_dict:
             to_dict[prop] = from_dict[prop]
+        elif prop == "class" and parent in (None, "child-binding"):
+            to_dict[prop] = _merge_class(to_dict[prop], from_dict[prop])
         elif _bad_overwrite(to_dict, from_dict, prop, check_required):
             _err(f"'{binding_path}' (in '{parent}'): '{prop}' "
                  f"from included file overwritten ('{from_dict[prop]}' "
@@ -3177,6 +3230,18 @@ def _merge_props(to_dict: dict,
 
             # 'required: true' takes precedence
             to_dict["required"] = to_dict["required"] or from_dict["required"]
+
+
+def _merge_class(to_val: Union[str, list], from_val: Union[str, list]) -> list:
+    # _merge_props() helper. Returns the union of two top-level 'class:'
+    # values, each a string or a list of strings, preserving order and
+    # dropping duplicates. Values in 'to_val' come first.
+
+    res = list(to_val) if isinstance(to_val, list) else [to_val]
+    for elem in (from_val if isinstance(from_val, list) else [from_val]):
+        if elem not in res:
+            res.append(elem)
+    return res
 
 
 def _bad_overwrite(to_dict: dict, from_dict: dict, prop: str,
