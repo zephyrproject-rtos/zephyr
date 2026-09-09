@@ -525,13 +525,22 @@ def main():
     emit_list = []
     exported = []
 
+    # IDs of syscalls declared in a registered header. A syscall also declared
+    # in a scanned header must not get a second ID above K_SYSCALL_LIMIT.
+    emitted_ids = {
+        "K_SYSCALL_" + typename_split(mg[0])[1].upper() for mg, _f, emit in syscalls if emit
+    }
+
     for match_group, fn, to_emit in syscalls:
         handler, inv, mrsh, sys_id, entry = analyze_fn(match_group, fn, args.userspace_only)
 
         if fn not in invocations:
             invocations[fn] = []
 
-        invocations[fn].append(inv)
+        # Only append `inv` if not already present.
+        if inv not in invocations[fn]:
+            invocations[fn].append(inv)
+
         handlers.append(handler)
 
         if to_emit:
@@ -539,7 +548,7 @@ def main():
             table_entries.append(entry)
             emit_list.append(handler)
             exported.append(handler.replace("z_mrsh_", "z_impl_"))
-        else:
+        elif sys_id not in emitted_ids and sys_id not in ids_not_emit:
             ids_not_emit.append(sys_id)
 
         if mrsh and to_emit:
