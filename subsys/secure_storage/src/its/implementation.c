@@ -4,6 +4,7 @@
 #include <zephyr/secure_storage/its.h>
 #include <zephyr/secure_storage/its/store.h>
 #include <zephyr/secure_storage/its/transform.h>
+#include <zephyr/kernel.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/sys/util.h>
 #include <zephyr/toolchain.h>
@@ -163,9 +164,9 @@ static psa_status_t store_entry(secure_storage_its_uid_t uid, size_t data_length
 	return ret;
 }
 
-psa_status_t secure_storage_its_set(secure_storage_its_caller_id_t caller_id, psa_storage_uid_t uid,
-				    size_t data_length, const void *p_data,
-				    psa_storage_create_flags_t create_flags)
+static psa_status_t its_set(secure_storage_its_caller_id_t caller_id, psa_storage_uid_t uid,
+			    size_t data_length, const void *p_data,
+			    psa_storage_create_flags_t create_flags)
 {
 	psa_status_t ret;
 	secure_storage_its_uid_t its_uid;
@@ -252,8 +253,7 @@ psa_status_t secure_storage_its_get_info(secure_storage_its_caller_id_t caller_i
 	return ret;
 }
 
-psa_status_t secure_storage_its_remove(secure_storage_its_caller_id_t caller_id,
-				       psa_storage_uid_t uid)
+static psa_status_t its_remove(secure_storage_its_caller_id_t caller_id, psa_storage_uid_t uid)
 {
 	psa_status_t ret;
 	secure_storage_its_uid_t its_uid;
@@ -285,5 +285,36 @@ psa_status_t secure_storage_its_remove(secure_storage_its_caller_id_t caller_id,
 			return PSA_ERROR_STORAGE_FAILURE;
 		}
 	}
+	return ret;
+}
+
+/* Serializes the operations that modify an entry, which read it back before deciding what
+ * to write or remove. Retrieving an entry doesn't need it, as it makes a single call to the
+ * store module and then works on its own copy of the data.
+ */
+static K_MUTEX_DEFINE(s_write_mutex);
+
+psa_status_t secure_storage_its_set(secure_storage_its_caller_id_t caller_id, psa_storage_uid_t uid,
+				    size_t data_length, const void *p_data,
+				    psa_storage_create_flags_t create_flags)
+{
+	psa_status_t ret;
+
+	k_mutex_lock(&s_write_mutex, K_FOREVER);
+	ret = its_set(caller_id, uid, data_length, p_data, create_flags);
+	k_mutex_unlock(&s_write_mutex);
+
+	return ret;
+}
+
+psa_status_t secure_storage_its_remove(secure_storage_its_caller_id_t caller_id,
+				       psa_storage_uid_t uid)
+{
+	psa_status_t ret;
+
+	k_mutex_lock(&s_write_mutex, K_FOREVER);
+	ret = its_remove(caller_id, uid);
+	k_mutex_unlock(&s_write_mutex);
+
 	return ret;
 }
