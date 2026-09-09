@@ -13,6 +13,7 @@
 #include <zephyr/dt-bindings/i2c/i2c.h>
 #include <zephyr/dt-bindings/adc/adc.h>
 #include <zephyr/dt-bindings/pwm/pwm.h>
+#include <zephyr/dt-bindings/led/led.h>
 
 / {
 	cpus {
@@ -124,6 +125,23 @@
 				#address-cells = <1>;
 				#size-cells = <1>;
 			};
+		};
+
+		ledc: ledc@41008000 {
+			compatible = "realtek,ameba-ledc";
+			reg = <0x41008000 0x100>;
+			interrupts = <62 0>;
+			clocks = <&rcc AMEBA_LEDC_CLK>;
+			chain-length = <16>;
+			color-mapping = <LED_COLOR_ID_GREEN
+					 LED_COLOR_ID_RED
+					 LED_COLOR_ID_BLUE>;
+			time-t0h = <300>;
+			time-t0l = <600>;
+			time-t1h = <600>;
+			time-t1l = <300>;
+			reset-delay = <409>;
+			status = "disabled";
 		};
 
 		trng: trng@41008200 {
