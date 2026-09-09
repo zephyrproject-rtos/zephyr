@@ -13,3 +13,26 @@ properties:
 
   interrupts:
     required: true
+
+  clocks:
+    type: phandle-array
+    description: |
+      Optional AXI input clock (s_axi_aclk). If present, the driver
+      programs SCL timing for the configured bus speed using the input
+      clock rate. The referenced clock provider node must expose a
+      "clock-frequency" property (for example a fixed-clock), as the
+      driver reads the input rate from it. If omitted, the FPGA-defined
+      SCL frequency is used.
+
+  serial-clk-delay:
+    type: int
+    min: 0
+    default: 0
+    description: |
+      Additional SCL half-period compensation in AXI input-clock cycles,
+      subtracted from the SCL half-period that the driver derives from
+      the AXI input clock rate and the bus speed. The value must leave
+      a positive half-period, otherwise configuring the bus speed fails
+      with -EINVAL. It only has an effect when "clocks" is present;
+      otherwise the SCL timing registers are not programmed and the
+      FPGA-defined SCL frequency is used.
