@@ -24,25 +24,14 @@ LOG_MODULE_REGISTER(i3c_shell, CONFIG_LOG_DEFAULT_LEVEL);
 #define MAX_I3C_BYTES 16
 
 struct i3c_ctrl {
-	const struct device *dev;
+	const char *name;
 #ifdef CONFIG_I3C_CONTROLLER
 	const union shell_cmd_entry *i3c_attached_dev_subcmd;
 	const union shell_cmd_entry *i3c_list_dev_subcmd;
 #endif
 };
-/* Apply fn to every known I3C controller compatible. */
-#define I3C_FOREACH_STATUS_OKAY(fn)                         \
-	/* zephyr-keep-sorted-start */                      \
-	DT_FOREACH_STATUS_OKAY(adi_max32_i3c, fn)           \
-	DT_FOREACH_STATUS_OKAY(cdns_i3c, fn)                \
-	DT_FOREACH_STATUS_OKAY(ite_it51xxx_i3cm, fn)        \
-	DT_FOREACH_STATUS_OKAY(ite_it51xxx_i3cs, fn)        \
-	DT_FOREACH_STATUS_OKAY(nuvoton_npcx_i3c, fn)        \
-	DT_FOREACH_STATUS_OKAY(nxp_mcux_i3c, fn)            \
-	DT_FOREACH_STATUS_OKAY(renesas_ra_i3c, fn)          \
-	DT_FOREACH_STATUS_OKAY(snps_designware_i3c, fn)     \
-	DT_FOREACH_STATUS_OKAY(st_stm32_i3c, fn)            \
-	/* zephyr-keep-sorted-stop */
+/* Apply fn to every status "okay" I3C controller. */
+#define I3C_FOREACH_STATUS_OKAY(fn) DT_FOREACH_CLASS_STATUS_OKAY(i3c, fn)
 #ifdef CONFIG_I3C_CONTROLLER
 #define I3C_ATTACHED_DEV_GET_FN(node_id)                                                           \
 	static void node_id##cmd_i3c_attached_get(size_t idx, struct shell_static_entry *entry);   \
@@ -51,7 +40,7 @@ struct i3c_ctrl {
                                                                                                    \
 	static void node_id##cmd_i3c_attached_get(size_t idx, struct shell_static_entry *entry)    \
 	{                                                                                          \
-		const struct device *dev = DEVICE_DT_GET(node_id);                                 \
+		const struct device *dev = device_get_binding(DEVICE_DT_NAME(node_id));           \
 		struct i3c_device_desc *i3c_desc;                                                  \
 		size_t cnt = 0;                                                                    \
                                                                                                    \
@@ -59,6 +48,10 @@ struct i3c_ctrl {
 		entry->handler = NULL;                                                             \
 		entry->subcmd = NULL;                                                              \
 		entry->help = NULL;                                                                \
+                                                                                                   \
+		if (dev == NULL || !DEVICE_API_IS(i3c, dev)) {                                     \
+			return;                                                                    \
+		}                                                                                  \
                                                                                                    \
 		I3C_BUS_FOR_EACH_I3CDEV(dev, i3c_desc) {                                           \
 			if (cnt == idx) {                                                          \
@@ -76,13 +69,17 @@ struct i3c_ctrl {
                                                                                                    \
 	static void node_id##cmd_i3c_list_get(size_t idx, struct shell_static_entry *entry)        \
 	{                                                                                          \
-		const struct device *dev = DEVICE_DT_GET(node_id);                                 \
+		const struct device *dev = device_get_binding(DEVICE_DT_NAME(node_id));           \
 		struct i3c_driver_config *config;                                                  \
                                                                                                    \
 		entry->syntax = NULL;                                                              \
 		entry->handler = NULL;                                                             \
 		entry->subcmd = NULL;                                                              \
 		entry->help = NULL;                                                                \
+                                                                                                   \
+		if (dev == NULL || !DEVICE_API_IS(i3c, dev)) {                                     \
+			return;                                                                    \
+		}                                                                                  \
                                                                                                    \
 		config = (struct i3c_driver_config *)dev->config;                                  \
 		if (idx < config->dev_list.num_i3c) {                                              \
@@ -98,7 +95,7 @@ I3C_FOREACH_STATUS_OKAY(I3C_CTRL_FN)
 #endif /* CONFIG_I3C_CONTROLLER */
 #define I3C_CTRL_LIST_ENTRY(node_id)                                                               \
 	{                                                                                          \
-		.dev = DEVICE_DT_GET(node_id),                                                     \
+		.name = DEVICE_DT_NAME(node_id),                                                   \
 		IF_ENABLED(CONFIG_I3C_CONTROLLER,                                                  \
 			   (.i3c_attached_dev_subcmd = &node_id##sub_i3c_attached,                 \
 			    .i3c_list_dev_subcmd = &node_id##sub_i3c_list,))                       \
@@ -2132,7 +2129,7 @@ static int cmd_i3c_ibi_disable(const struct shell *sh, size_t argc, char **argv)
 static void i3c_device_list_target_name_get(size_t idx, struct shell_static_entry *entry)
 {
 	if (idx < ARRAY_SIZE(i3c_list)) {
-		entry->syntax = i3c_list[idx].dev->name;
+		entry->syntax = i3c_list[idx].name;
 		entry->handler = NULL;
 		entry->help = NULL;
 		entry->subcmd = i3c_list[idx].i3c_list_dev_subcmd;
@@ -2146,7 +2143,7 @@ SHELL_DYNAMIC_CMD_CREATE(dsub_i3c_device_list_name, i3c_device_list_target_name_
 static void i3c_device_attached_target_name_get(size_t idx, struct shell_static_entry *entry)
 {
 	if (idx < ARRAY_SIZE(i3c_list)) {
-		entry->syntax = i3c_list[idx].dev->name;
+		entry->syntax = i3c_list[idx].name;
 		entry->handler = NULL;
 		entry->help = NULL;
 		entry->subcmd = i3c_list[idx].i3c_attached_dev_subcmd;
@@ -2161,7 +2158,7 @@ SHELL_DYNAMIC_CMD_CREATE(dsub_i3c_device_attached_name, i3c_device_attached_targ
 static void i3c_device_name_get(size_t idx, struct shell_static_entry *entry)
 {
 	if (idx < ARRAY_SIZE(i3c_list)) {
-		entry->syntax = i3c_list[idx].dev->name;
+		entry->syntax = i3c_list[idx].name;
 		entry->handler = NULL;
 		entry->help = NULL;
 		entry->subcmd = NULL;
