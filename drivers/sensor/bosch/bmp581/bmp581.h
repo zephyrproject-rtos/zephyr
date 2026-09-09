@@ -374,8 +374,6 @@ struct bmp581_data {
 
 struct bmp581_config {
 	struct bmp581_bus bus;
-	/** Parent I2C device (PM resume before soft reset); NULL on SPI/I3C. */
-	const struct device *i2c_controller;
 	struct gpio_dt_spec int_gpio;
 	bool int_polarity;
 	bool int_open_drain;
