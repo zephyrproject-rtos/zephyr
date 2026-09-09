@@ -175,6 +175,17 @@
 	status = "okay";
 };
 
+&pll3 {
+	/* 44.1 kHz (0.0064% error): 25MHz / 2 * 28 / 31 = 11.290323 MHz */
+	div-m = <2>;
+	mul-n = <28>;
+	div-q = <2>;
+	div-r = <2>;
+	div-p = <31>;
+	clocks = <&clk_hse>;
+	status = "okay";
+};
+
 &rcc {
 	clocks = <&pll>;
 	clock-frequency = <DT_FREQ_M(240)>;
@@ -435,4 +446,30 @@ zephyr_udc0: &usb {
 
 &crc {
 	status = "okay";
+};
+
+&sai2 {
+	status = "okay";
+	clocks = <&rcc STM32_CLOCK(APB2, 22)>,
+		 <&rcc STM32_SRC_PLL3_P SAI2_SEL(2)>;
+};
+
+&sai2_a {
+	pinctrl-0 = <&sai2_mclk_a_pi4 &sai2_sd_a_pi6
+		     &sai2_fs_a_pi7 &sai2_sck_a_pi5>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	mclk-enable;
+	mclk-divider = "div-256";
+	dma-names = "tx";
+};
+
+&sai2_b {
+	pinctrl-0 = <&sai2_sd_b_pg10>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	synchronous;
+	dma-names = "rx";
 };

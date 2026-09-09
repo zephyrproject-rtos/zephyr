@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2026 Mario Paja
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&i2c4 {
+	audio_codec: cs42l51@4a {
+		compatible = "cirrus,cs42l51";
+		reg = <0x4a>;
+		status = "okay";
+
+		reset-gpios = <&gpioi 11 GPIO_ACTIVE_LOW>;
+		input-channel = <3>;
+	};
+};
