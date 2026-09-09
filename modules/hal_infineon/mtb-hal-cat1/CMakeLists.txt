@@ -92,7 +92,6 @@ zephyr_library_sources_ifdef(CONFIG_SOC_DIE_PSOC6_04
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_FLASH   ${hal_dir}/source/cyhal_nvm.c)
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_I2C     ${hal_dir}/source/cyhal_i2c.c)
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_LPTIMER ${hal_dir}/source/cyhal_lptimer.c)
-zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_RTC     ${hal_dir}/source/cyhal_rtc.c)
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_SDIO    ${hal_dir}/source/cyhal_sdhc.c)
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_SPI     ${hal_dir}/source/cyhal_spi.c)
 zephyr_library_sources_ifdef(CONFIG_USE_INFINEON_TIMER   ${hal_dir}/source/cyhal_timer.c)
