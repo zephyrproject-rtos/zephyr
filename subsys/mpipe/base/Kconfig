@@ -1,0 +1,63 @@
+#
+# Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+config MPIPE_BASE
+	bool "Base optional elements (e.g. caps_filter, queue, tee, etc.)"
+	help
+	  Media-agnostic elements that shape a graph rather than its data: a caps
+	  filter that constrains what a link may carry, a tee that splits a graph
+	  into branches, and a queue that splits it across threads.
+
+	  They never look at what a buffer contains, so they belong to no media
+	  domain. Every domain needs them, which is why they live together here
+	  rather than being duplicated per plugin.
+
+if MPIPE_BASE
+
+config MPIPE_BASE_CAPS_FILTER
+	bool "Caps filter element"
+	help
+	  Enable the caps_filter element. Caps filter restricts the media
+	  format flowing between two elements by filtering on capabilities
+	  such as sample rate, pixel format, etc. This allows forcing a
+	  specific format at a given point in the pipeline.
+
+config MPIPE_BASE_QUEUE
+	bool "Queue element (for pipeline-level threading)"
+	help
+	  Enable the queue element which decouples pipeline segments
+	  into separate threads for parallel processing. The queue
+	  deposits buffers into a FIFO and spawns a dedicated thread
+	  to drive the downstream segment.
+
+config MPIPE_BASE_QUEUE_MAX_SIZE
+	int "Max size of a queue element"
+	range 1 255
+	default 2
+	depends on MPIPE_BASE_QUEUE
+	help
+	  Maximum number of buffers that can be queued into a queue element.
+
+config MPIPE_BASE_TEE
+	bool "Tee element"
+	help
+	  Enable the tee element which splits a single input branch
+	  into multiple output branches.
+
+config MPIPE_BASE_TEE_MAX_SRC_PADS_NUM
+	int "Maximum number of source pads of a tee element"
+	range 2 8
+	default 2
+	depends on MPIPE_BASE_TEE
+	help
+	  Number of output branches a tee element provides. The pads are part of
+	  the element, so this is reserved whether or not every branch is linked;
+	  a branch left unlinked is simply skipped.
+
+	  Note that every branch must accept a format the single input can
+	  supply, since one negotiation has to satisfy them all.
+
+endif # MPIPE_BASE
