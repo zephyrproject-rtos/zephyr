@@ -127,6 +127,7 @@ static void pcie_generic_ctrl_enumerate_bars(const struct device *ctrl_dev, pcie
 		if (!PCIE_CONF_BAR_ADDR(size)) {
 			if (found_mem64) {
 				reg++;
+				bar++;
 			}
 			continue;
 		}
@@ -169,6 +170,7 @@ static void pcie_generic_ctrl_enumerate_bars(const struct device *ctrl_dev, pcie
 
 		if (found_mem64) {
 			reg++;
+			bar++;
 		}
 	}
 }
