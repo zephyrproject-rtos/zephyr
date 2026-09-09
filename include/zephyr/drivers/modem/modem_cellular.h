@@ -385,10 +385,13 @@ void modem_cellular_chat_on_modem_ready(struct modem_chat *chat, char **argv, ui
  *
  * @param chat Chat instance that completed the script. Must not be NULL.
  * @param result Script completion result.
+ * @param info Extra script completion information. Must not be NULL.
  * @param user_data Pointer to the associated @ref modem_cellular_data object. Must not be NULL.
  */
 void modem_cellular_chat_callback_handler(struct modem_chat *chat,
-					  enum modem_chat_script_result result, void *user_data);
+					  enum modem_chat_script_result result,
+					  const struct modem_chat_script_completion_info *info,
+					  void *user_data);
 
 /**
  * @defgroup modem_driver_macros Cellular modem driver definition macros

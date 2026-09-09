@@ -404,6 +404,7 @@ static void modem_cellular_dlci2_pipe_handler(struct modem_pipe *pipe,
 
 void modem_cellular_chat_callback_handler(struct modem_chat *chat,
 					  enum modem_chat_script_result result,
+					  const struct modem_chat_script_completion_info *info,
 					  void *user_data)
 {
 	struct modem_cellular_data *data = (struct modem_cellular_data *)user_data;
