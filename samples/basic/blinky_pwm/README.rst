@@ -63,6 +63,8 @@ In these other cases, however, manual wiring is necessary:
      - connect PWM6 (J47-6) to an LED
    * - :zephyr:board:`imx95_evk`
      - connect PWM2 (R881) to an LED
+   * - :zephyr:board:`imx8mm_evk`
+     - connect PWM3 (J1001-47) to an LED
 
 Building and Running
 ********************
