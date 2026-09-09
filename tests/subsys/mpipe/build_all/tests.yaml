@@ -1,0 +1,9 @@
+tests:
+
+  mpipe.core.build:
+    tags:
+      - subsys
+      - mpipe
+    build_only: true
+    platform_allow:
+      - native_sim/native/64
