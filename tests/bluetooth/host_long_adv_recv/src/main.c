@@ -219,9 +219,9 @@ static const struct cmd_handler cmds[] = {
 	{ BT_HCI_OP_LE_RAND, sizeof(struct bt_hci_rp_le_rand), generic_success },
 	{ BT_HCI_OP_LE_SET_RANDOM_ADDRESS, sizeof(struct bt_hci_cp_le_set_random_address),
 	  generic_success },
-	{ BT_HCI_OP_LE_SET_EXT_SCAN_PARAM, 0, generic_success },
-	{ BT_HCI_OP_LE_SET_EXT_SCAN_ENABLE, 0, generic_success },
-	{ BT_HCI_OP_RESET, 0, generic_success },
+	{ BT_HCI_OP_LE_SET_EXT_SCAN_PARAM, sizeof(struct bt_hci_evt_cc_status), generic_success },
+	{ BT_HCI_OP_LE_SET_EXT_SCAN_ENABLE, sizeof(struct bt_hci_evt_cc_status), generic_success },
+	{ BT_HCI_OP_RESET, sizeof(struct bt_hci_evt_cc_status), generic_success },
 };
 
 /* HCI driver open. */

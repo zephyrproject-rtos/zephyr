@@ -16,3 +16,4 @@ supported:
   - dma
   - entropy
   - pwm
+  - netif:wifi

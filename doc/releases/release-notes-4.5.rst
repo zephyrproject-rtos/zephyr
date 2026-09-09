@@ -227,6 +227,7 @@ Removed APIs and options
     * ``struct openthread_state_changed_cb``
     * ``TLS_CREDENTIAL_SERVER_CERTIFICATE``
     * ``start_11r_roaming``
+    * ``IEEE802154_HW_SLEEP_TO_TX``
 
 * Nordic
 
@@ -486,6 +487,9 @@ New APIs and options
     * :c:func:`bt_rfcomm_dlc_recv_complete` to return RX credits to the peer. Applications can
       return ``-EINPROGRESS`` from the :c:member:`bt_rfcomm_dlc_ops.recv` callback to defer buffer
       release and flow-control credit refill until processing is complete.
+    * HCI packet helpers (:c:macro:`BT_HCI_PKT_CMD_DEFINE`, :c:func:`bt_hci_pkt_push_cmd_hdr`,
+      :c:func:`bt_hci_pkt_parse_cmd_rsp` and friends) for framing HCI command packets and
+      parsing command responses independently of the Host.
 
   * Mesh
 
@@ -1948,6 +1952,11 @@ Other notable changes
     production-signed images, while production bootloaders embed only the production
     key. The first entry is the key the application is signed with and the rest are
     verification-only public keys. See :ref:`build-signing`.
+
+  * Espressif boards no longer force overwrite-only mode and unsigned images under sysbuild.
+    They now build a swap-using-offset MCUboot with rollback and an RSA-2048 signed
+    application, and the shared Espressif partition tables no longer reserve a scratch
+    partition. See the :ref:`migration guide <migration_4.5>`.
 
 * NXP
 

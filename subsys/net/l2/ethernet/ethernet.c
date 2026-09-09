@@ -1280,14 +1280,6 @@ const struct device *z_impl_net_eth_get_ptp_clock_by_index(int index)
 
 	return net_eth_get_ptp_clock(iface);
 }
-
-#ifdef CONFIG_USERSPACE
-static inline const struct device *z_vrfy_net_eth_get_ptp_clock_by_index(int index)
-{
-	return z_impl_net_eth_get_ptp_clock_by_index(index);
-}
-#include <zephyr/syscalls/net_eth_get_ptp_clock_by_index_mrsh.c>
-#endif /* CONFIG_USERSPACE */
 #else /* CONFIG_PTP_CLOCK */
 const struct device *z_impl_net_eth_get_ptp_clock_by_index(int index)
 {
@@ -1296,6 +1288,14 @@ const struct device *z_impl_net_eth_get_ptp_clock_by_index(int index)
 	return NULL;
 }
 #endif /* CONFIG_PTP_CLOCK */
+
+#ifdef CONFIG_USERSPACE
+static inline const struct device *z_vrfy_net_eth_get_ptp_clock_by_index(int index)
+{
+	return z_impl_net_eth_get_ptp_clock_by_index(index);
+}
+#include <zephyr/syscalls/net_eth_get_ptp_clock_by_index_mrsh.c>
+#endif /* CONFIG_USERSPACE */
 
 #if defined(CONFIG_NET_PROMISCUOUS_MODE)
 int net_eth_promisc_mode(struct net_if *iface, bool enable)

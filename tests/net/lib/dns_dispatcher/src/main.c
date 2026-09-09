@@ -30,6 +30,7 @@ LOG_MODULE_REGISTER(net_test, CONFIG_DNS_RESOLVER_LOG_LEVEL);
 
 #define NET_LOG_ENABLED 1
 #include "net_private.h"
+#include "dns_dispatcher_test.h"
 
 #if defined(CONFIG_DNS_RESOLVER_LOG_LEVEL_DBG)
 #define DBG(fmt, ...) printk(fmt, ##__VA_ARGS__)
@@ -66,18 +67,22 @@ static int test_dispatch_cb(struct dns_socket_dispatcher *ctx, int sock,
 
 #define DNS_TIMEOUT 500 /* ms */
 
-#if defined(CONFIG_NET_IPV6)
+#if defined(CONFIG_NET_IPV6) && !DNS_DISPATCHER_MULTI_IFACE_TEST
 /* Interface 1 addresses */
 static struct net_in6_addr my_addr1 = { { { 0x20, 0x01, 0x0d, 0xb8, 1, 0, 0, 0,
 					    0, 0, 0, 0, 0, 0, 0, 0x1 } } };
 #endif
 
-#if defined(CONFIG_NET_IPV4)
+#if defined(CONFIG_NET_IPV4) && !DNS_DISPATCHER_MULTI_IFACE_TEST
 /* Interface 1 addresses */
 static struct net_in_addr my_addr2 = { { { 192, 0, 2, 1 } } };
 #endif
 
+#if !DNS_DISPATCHER_MULTI_IFACE_TEST
+
 static struct net_if *iface1;
+
+#endif
 
 /* this must be higher that the DNS_TIMEOUT */
 #define WAIT_TIME K_MSEC((DNS_TIMEOUT + 300) * 3)
@@ -86,6 +91,8 @@ struct net_if_test {
 	uint8_t idx;
 	uint8_t mac_addr[sizeof(struct net_eth_addr)];
 };
+
+#if !DNS_DISPATCHER_MULTI_IFACE_TEST
 
 static uint8_t *net_iface_get_mac(const struct device *dev)
 {
@@ -145,8 +152,13 @@ NET_DEVICE_INIT_INSTANCE(net_iface1_test,
 			 _ETH_L2_CTX_TYPE,
 			 127);
 
+#endif /* !DNS_DISPATCHER_MULTI_IFACE_TEST */
+
 static void *test_init(void)
 {
+#if DNS_DISPATCHER_MULTI_IFACE_TEST
+	return NULL;
+#else
 	struct net_if_addr *ifaddr;
 
 	iface1 = net_if_get_by_index(0);
@@ -189,12 +201,21 @@ static void *test_init(void)
 	net_if_up(iface1);
 
 	return NULL;
+#endif
 }
 
 ZTEST(dns_dispatcher, test_dns_dispatcher)
 {
 	struct dns_resolve_context *ctx;
 	int ret, sock1, sock2 = -1;
+
+#if DNS_DISPATCHER_MULTI_IFACE_TEST
+	ztest_test_skip();
+#endif
+
+#if IS_ENABLED(CONFIG_MDNS_RESOLVER)
+	ztest_test_skip();
+#endif
 
 	ctx = dns_resolve_get_default();
 
@@ -345,4 +366,120 @@ ZTEST(dns_dispatcher, test_dns_dispatcher_ephemeral_ports)
 	dns_resolve_close(ctx);
 }
 
+#if !DNS_DISPATCHER_MULTI_IFACE_TEST
+
+/* Single-interface host: an unscoped (ifindex 0) resolver must pair with a
+ * scoped responder on that interface.
+ */
+
+#define TEST_DNS_PAIR_PORT 5353
+
+NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(pair_svc, dns_dispatcher_svc_handler, 2);
+
+static struct dns_socket_dispatcher pair_resp;
+static struct dns_socket_dispatcher pair_resv;
+static struct zsock_pollfd pair_resp_fd;
+static struct zsock_pollfd pair_resv_fd;
+
+static int pair_mock_cb(struct dns_socket_dispatcher *ctx, int sock,
+			struct net_sockaddr *addr, size_t addrlen,
+			struct net_buf *buf, size_t len)
+{
+	ARG_UNUSED(ctx); ARG_UNUSED(sock); ARG_UNUSED(addr);
+	ARG_UNUSED(addrlen); ARG_UNUSED(buf); ARG_UNUSED(len);
+	return 0;
+}
+
+static int pair_create_socket(void)
+{
+	struct net_ifreq ifreq = { 0 };
+	const struct device *dev = net_if_get_device(iface1);
+	int reuse = 1;
+	int sock;
+
+	sock = zsock_socket(NET_AF_INET6, NET_SOCK_DGRAM, NET_IPPROTO_UDP);
+	zassert_true(sock >= 0, "socket failed");
+
+	if (IS_ENABLED(CONFIG_NET_CONTEXT_REUSEPORT)) {
+		(void)zsock_setsockopt(sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_REUSEPORT,
+				       &reuse, sizeof(reuse));
+	}
+
+	strncpy(ifreq.ifr_name, dev->name, sizeof(ifreq.ifr_name) - 1);
+	(void)zsock_setsockopt(sock, ZSOCK_SOL_SOCKET, ZSOCK_SO_BINDTODEVICE,
+			       &ifreq, sizeof(ifreq));
+	return sock;
+}
+
+static void pair_setup(struct dns_socket_dispatcher *disp, enum dns_socket_type type,
+		       int ifindex, int sock, struct zsock_pollfd *pfd)
+{
+	struct net_sockaddr_in6 *local = net_sin6(&disp->local_addr);
+
+	memset(disp, 0, sizeof(*disp));
+	disp->type = type;
+	disp->ifindex = ifindex;
+	disp->sock = sock;
+	disp->cb = pair_mock_cb;
+	disp->fds = pfd;
+	disp->fds_len = 1;
+	disp->svc = &pair_svc;
+	pfd->fd = sock;
+	pfd->events = ZSOCK_POLLIN;
+
+	local->sin6_family = NET_AF_INET6;
+	local->sin6_port = net_htons(TEST_DNS_PAIR_PORT);
+}
+
+static void pair_teardown(struct dns_socket_dispatcher *disp, struct zsock_pollfd *pfd)
+{
+	int fd = disp->sock;
+
+	if (disp->pair != NULL) {
+		struct dns_socket_dispatcher *p = disp->pair;
+
+		if (p->sock >= 0) {
+			(void)zsock_close(p->sock);
+		}
+		p->sock = -1;
+		p->pair = NULL;
+		if (p->fds != NULL && p->fds_len > 0) {
+			p->fds[0].fd = -1;
+		}
+		disp->pair = NULL;
+	}
+
+	if (fd >= 0) {
+		(void)dns_dispatcher_unregister(disp);
+		(void)zsock_close(fd);
+	}
+	memset(disp, 0, sizeof(*disp));
+	disp->sock = -1;
+	pfd->fd = -1;
+}
+
+ZTEST(dns_dispatcher, test_dispatcher_unscoped_pairs_single_iface)
+{
+	int iface_idx = net_if_get_by_iface(iface1);
+	int ret;
+
+	pair_setup(&pair_resp, DNS_SOCKET_RESPONDER, iface_idx,
+		   pair_create_socket(), &pair_resp_fd);
+	ret = dns_dispatcher_register(&pair_resp);
+	zassert_ok(ret, "scoped responder register failed (%d)", ret);
+
+	pair_setup(&pair_resv, DNS_SOCKET_RESOLVER, 0,
+		   pair_create_socket(), &pair_resv_fd);
+	ret = dns_dispatcher_register(&pair_resv);
+	zassert_ok(ret, "unscoped resolver register failed (%d)", ret);
+	zassert_equal(pair_resp.pair, &pair_resv,
+		      "unscoped resolver must pair with scoped responder on single-iface host");
+
+	pair_teardown(&pair_resp, &pair_resp_fd);
+	pair_resv_fd.fd = -1;
+	memset(&pair_resv, 0, sizeof(pair_resv));
+	pair_resv.sock = -1;
+}
+
+#endif /* !DNS_DISPATCHER_MULTI_IFACE_TEST */
 ZTEST_SUITE(dns_dispatcher, NULL, test_init, NULL, NULL, NULL);

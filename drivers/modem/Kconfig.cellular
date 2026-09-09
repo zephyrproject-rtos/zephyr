@@ -40,6 +40,14 @@ config MODEM_CELLULAR
 
 if MODEM_CELLULAR
 
+config MODEM_CELLULAR_PDP_CONTEXT_ID
+	int "PDP context identifier used for the data call"
+	default 1
+	range 1 24
+	help
+	  Identifier of the PDP context the driver defines, deactivates and
+	  dials.
+
 config MODEM_CELLULAR_STATS
 	bool "Operational statistics"
 	help

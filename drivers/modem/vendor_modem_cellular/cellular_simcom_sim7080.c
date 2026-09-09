@@ -32,9 +32,13 @@ MODEM_CHAT_SCRIPT_DEFINE(simcom_sim7080_init_chat_script, simcom_sim7080_init_ch
 			 abort_matches, modem_cellular_chat_callback_handler, 10);
 
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(simcom_sim7080_dial_chat_script_cmds,
-			      MODEM_CHAT_SCRIPT_CMD_RESP_MULT("AT+CGACT=0,1", allow_match),
+			      MODEM_CHAT_SCRIPT_CMD_RESP_MULT(
+				"AT+CGACT=0," STRINGIFY(CONFIG_MODEM_CELLULAR_PDP_CONTEXT_ID),
+				allow_match),
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT+CFUN=1", ok_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP_NONE("ATD*99***1#", 0));
+			      MODEM_CHAT_SCRIPT_CMD_RESP_NONE(
+				"ATD*99***" STRINGIFY(CONFIG_MODEM_CELLULAR_PDP_CONTEXT_ID) "#",
+				0));
 
 MODEM_CHAT_SCRIPT_DEFINE(simcom_sim7080_dial_chat_script, simcom_sim7080_dial_chat_script_cmds,
 			 dial_abort_matches, modem_cellular_chat_callback_handler, 10);

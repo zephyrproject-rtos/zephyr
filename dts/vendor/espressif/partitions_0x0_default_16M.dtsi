@@ -52,12 +52,6 @@
 			reg = <0xfb0000 DT_SIZE_K(192)>;
 		};
 
-		scratch_partition: partition@fe0000 {
-			compatible = "zephyr,mapped-partition";
-			label = "image-scratch";
-			reg = <0xfe0000 DT_SIZE_K(124)>;
-		};
-
 		coredump_partition: partition@fff000 {
 			compatible = "zephyr,mapped-partition";
 			label = "coredump";

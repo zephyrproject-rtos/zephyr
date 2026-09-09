@@ -74,3 +74,7 @@
 &wdt0 {
 	status = "okay";
 };
+
+&wifi {
+	status = "okay";
+};

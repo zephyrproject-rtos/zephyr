@@ -51,6 +51,13 @@ for _name, _mod in [
 import set_assignees as sut  # noqa: E402, I001  (import after sys.modules manipulation)
 
 
+@pytest.fixture(autouse=True)
+def _no_api_sleep():
+    """The courtesy sleeps between API calls only slow the tests down."""
+    with patch.object(sut.time, "sleep"):
+        yield
+
+
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
@@ -563,7 +570,8 @@ def _make_process_pr_harness(areas_per_file, pr_user="someone"):
     # _add_reviewers which stores them in a set).
     user_cache = {}
 
-    def _get_user(login):
+    def _get_user(login=None):
+        login = "copilot-bot" if login is None else login
         if login not in user_cache:
             u = MagicMock()
             u.login = login
@@ -1225,7 +1233,8 @@ def _make_add_reviewers_stubs(author="author"):
 
     cache = {}
 
-    def _get_user(login):
+    def _get_user(login=None):
+        login = "copilot-bot" if login is None else login
         if login not in cache:
             user = MagicMock()
             user.login = login
@@ -1290,36 +1299,114 @@ class TestNoReviewerCap:
         pr.create_review_request.assert_not_called()
 
 
-class TestReviewRequestRetry:
-    """A rejected bulk request must not cost the PR all of its reviewers."""
+class TestReviewRequestBatching:
+    """A single review request accepts at most REVIEWER_REQUEST_BATCH users,
+    so a long candidate list must be split across several calls rather than
+    losing everyone past the first batch until a later run."""
 
-    def test_rejection_retries_with_highest_ranked_candidates(self):
+    def test_long_list_is_split_into_batches(self):
         gh, gh_repo, pr, args = _make_add_reviewers_stubs()
         candidates = [f"u{i}" for i in range(25)]
-        pr.create_review_request.side_effect = [sut.GithubException("too many"), None]
 
         sut._add_reviewers(gh, gh_repo, pr, args, candidates)
 
-        assert pr.create_review_request.call_count == 2
-        retried = pr.create_review_request.call_args_list[1].kwargs["reviewers"]
-        assert retried == candidates[: sut.REVIEWER_RETRY_BATCH]
+        batches = [call.kwargs["reviewers"] for call in pr.create_review_request.call_args_list]
+        assert batches == [
+            candidates[: sut.REVIEWER_REQUEST_BATCH],
+            candidates[sut.REVIEWER_REQUEST_BATCH :],
+        ]
+        assert _reviewers_requested(pr) == candidates
 
-    def test_small_request_is_not_retried(self):
+    def test_short_list_is_requested_in_one_call(self):
         gh, gh_repo, pr, args = _make_add_reviewers_stubs()
-        pr.create_review_request.side_effect = sut.GithubException("nope")
 
         sut._add_reviewers(gh, gh_repo, pr, args, ["a", "b"])
 
-        # Nothing to trim, so a retry would just repeat the failing call.
         assert pr.create_review_request.call_count == 1
 
-    def test_failing_retry_does_not_raise(self):
+    def test_nobody_is_left_for_the_next_run_to_pick_up(self):
+        """The bug this guards against: the first run requested only a subset,
+        and a second run of the script added the rest."""
+        gh, gh_repo, pr, args = _make_add_reviewers_stubs()
+        candidates = [f"u{i}" for i in range(40)]
+
+        sut._add_reviewers(gh, gh_repo, pr, args, candidates)
+
+        assert _reviewers_requested(pr) == candidates
+        pr.create_issue_comment.assert_not_called()
+
+    def test_rejected_batch_is_retried_one_user_at_a_time(self):
+        gh, gh_repo, pr, args = _make_add_reviewers_stubs()
+
+        def _reject_bulk(reviewers):
+            if len(reviewers) > 1:
+                exc = sut.GithubException("nope")
+                exc.status = 422
+                raise exc
+
+        pr.create_review_request.side_effect = _reject_bulk
+
+        sut._add_reviewers(gh, gh_repo, pr, args, ["a", "b", "c"])
+
+        assert _reviewers_requested(pr) == ["a", "b", "c", "a", "b", "c"]
+        pr.create_issue_comment.assert_not_called()
+
+    def test_only_the_bad_candidate_is_mentioned(self):
+        gh, gh_repo, pr, args = _make_add_reviewers_stubs()
+
+        def _reject(reviewers):
+            if len(reviewers) > 1 or reviewers == ["bad"]:
+                exc = sut.GithubException("nope")
+                exc.status = 422
+                raise exc
+
+        pr.create_review_request.side_effect = _reject
+
+        sut._add_reviewers(gh, gh_repo, pr, args, ["good", "bad"])
+
+        assert _mentioned(pr) == ["bad"]
+
+    def test_validation_failure_does_not_stop_the_others(self):
+        gh, gh_repo, pr, args = _make_add_reviewers_stubs()
+        candidates = [f"u{i}" for i in range(25)]
+        first = set(candidates[: sut.REVIEWER_REQUEST_BATCH])
+
+        def _reject_first_batch(reviewers):
+            if set(reviewers) <= first:
+                exc = sut.GithubException("nope")
+                exc.status = 422
+                raise exc
+
+        pr.create_review_request.side_effect = _reject_first_batch
+
+        sut._add_reviewers(gh, gh_repo, pr, args, candidates)
+
+        assert candidates[sut.REVIEWER_REQUEST_BATCH :] == [
+            login for login in _reviewers_requested(pr) if login not in first
+        ]
+        assert _mentioned(pr) == candidates[: sut.REVIEWER_REQUEST_BATCH]
+
+    def test_systemic_failure_stops_following_batches(self):
+        gh, gh_repo, pr, args = _make_add_reviewers_stubs()
+        candidates = [f"u{i}" for i in range(25)]
+
+        def _always_fail(_reviewers):
+            exc = sut.GithubException("nope")
+            exc.status = 500
+            raise exc
+
+        pr.create_review_request.side_effect = _always_fail
+
+        sut._add_reviewers(gh, gh_repo, pr, args, candidates)
+
+        assert pr.create_review_request.call_count == 1
+        assert _mentioned(pr) == candidates
+
+    def test_failing_request_does_not_raise(self):
         gh, gh_repo, pr, args = _make_add_reviewers_stubs()
         pr.create_review_request.side_effect = sut.GithubException("nope")
 
         sut._add_reviewers(gh, gh_repo, pr, args, [f"u{i}" for i in range(25)])
-
-        assert pr.create_review_request.call_count == 2
 
 
 # ---------------------------------------------------------------------------
@@ -1686,6 +1773,7 @@ def _mentioned(pr):
 def _existing_comment(body):
     comment = MagicMock()
     comment.body = body
+    comment.user = SimpleNamespace(login="copilot-bot")
     return comment
 
 
@@ -1702,14 +1790,20 @@ class TestMentionFallback:
         assert _reviewers_requested(pr) == ["insider"]
         assert _mentioned(pr) == ["outsider"]
 
-    def test_candidates_dropped_by_retry_are_mentioned(self):
+    def test_candidates_a_failing_batch_could_not_take_are_mentioned(self):
         gh, gh_repo, pr, args = _make_add_reviewers_stubs()
         candidates = [f"u{i}" for i in range(25)]
-        pr.create_review_request.side_effect = [sut.GithubException("too many"), None]
+        tail = set(candidates[sut.REVIEWER_REQUEST_BATCH :])
+
+        def _reject_last_batch(reviewers):
+            if set(reviewers) <= tail:
+                raise sut.GithubException("nope")
+
+        pr.create_review_request.side_effect = _reject_last_batch
 
         sut._add_reviewers(gh, gh_repo, pr, args, candidates)
 
-        assert _mentioned(pr) == candidates[sut.REVIEWER_RETRY_BATCH :]
+        assert _mentioned(pr) == candidates[sut.REVIEWER_REQUEST_BATCH :]
 
     def test_everyone_is_mentioned_when_the_request_fails_outright(self):
         gh, gh_repo, pr, args = _make_add_reviewers_stubs()
@@ -1813,6 +1907,34 @@ class TestMentionCommentIsIdempotent:
         pr, _ = self._run("just a normal review comment, no marker")
 
         assert len(_posted_comments(pr)) == 1
+
+    def test_obsolete_comment_is_deleted_when_nobody_is_left(self):
+        """Everyone it named has since been requested, so the comment is wrong."""
+        gh, gh_repo, pr, args = _make_add_reviewers_stubs()
+        existing = _existing_comment(f"{sut.MENTION_MARKER}\n@outsider\n\nold text")
+        pr.get_issue_comments.return_value = [existing]
+
+        sut._add_reviewers(gh, gh_repo, pr, args, ["insider"])
+
+        existing.delete.assert_called_once()
+
+    def test_nothing_is_deleted_in_dry_run(self):
+        gh, gh_repo, pr, args = _make_add_reviewers_stubs()
+        args.dry_run = True
+        existing = _existing_comment(f"{sut.MENTION_MARKER}\n@outsider\n\nold text")
+        pr.get_issue_comments.return_value = [existing]
+
+        sut._add_reviewers(gh, gh_repo, pr, args, ["insider"])
+
+        existing.delete.assert_not_called()
+
+    def test_comment_deletion_failure_does_not_raise(self):
+        gh, gh_repo, pr, args = _make_add_reviewers_stubs()
+        existing = _existing_comment(f"{sut.MENTION_MARKER}\n@outsider\n\nold text")
+        existing.delete.side_effect = sut.GithubException("no write access")
+        pr.get_issue_comments.return_value = [existing]
+
+        sut._add_reviewers(gh, gh_repo, pr, args, ["insider"])
 
     def test_maintainer_outside_the_org_reaches_the_comment(self):
         """End-to-end: an area maintainer without push access is still asked."""

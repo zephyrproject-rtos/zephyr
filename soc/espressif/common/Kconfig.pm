@@ -171,6 +171,20 @@ config ESP32_SLEEP_SPI_FLASH_EXIT_DPD_MODE_DELAY
 	help
 	  Time CS must stay high after the exit-DPD command (tRES1 in datasheets).
 
+config SOC_ESP32_SLEEP_DEBUG
+	bool
+
+config SOC_ESP32_PM_SLEEP_STATS
+	bool "Log light sleep statistics"
+	depends on LOG
+	select SOC_ESP32_SLEEP_DEBUG
+	help
+	  Log one line per light sleep window with requested and executed time,
+	  fragment count, power down flags and error code. Useful to check on
+	  target, without an ammeter, whether peripheral power down happened.
+	  Adds a small overhead to the sleep path. The line is LOG_DBG on
+	  soc_pm, so CONFIG_SOC_LOG_LEVEL_DBG is required for it to print.
+
 endmenu # Espressif PM Config
 
 config HEAP_MEM_POOL_ADD_SIZE_ESP32_PM

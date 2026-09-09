@@ -763,6 +763,10 @@ Flash
   of each plane in the flash device. For devices with a single plane, this should be set to the
   same value as ``size-bytes``.
 
+* The :dtcompatible:`st,stm32-nv-flash` property ``bank2-flash-size`` has been deprecated in favor
+  of determining flash bank sizes using ``reg`` size cells. No changes need be made to the
+  devicetree save for removing the aforementioned property. (:github:`114971`)
+
 Fuel Gauge
 ==========
 
@@ -844,6 +848,16 @@ I2S
   on the unbounded wait can set ``timeout`` to ``SYS_FOREVER_MS``, but the same field also
   bounds the driver's enqueue wait, so no single value reproduces the old combination of an
   unbounded allocation and a bounded enqueue.
+
+IEEE 802.15.4
+=============
+
+* The ``IEEE802154_HW_SLEEP_TO_TX`` radio capability, deprecated since Zephyr 3.6, has been
+  removed and the capability bits above it renumbered. Every in-tree driver supports
+  transmitting directly from a low-power state, so the capability conveyed no information;
+  the OpenThread platform now always advertises ``OT_RADIO_CAPS_SLEEP_TO_TX`` and allows
+  transmission from the sleep state. Out-of-tree drivers advertising the capability simply
+  drop it.
 
 Input
 =====
@@ -2123,6 +2137,21 @@ MCUboot
 
 * ``CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_WITHOUT_SCRATCH`` has been removed. Use
   :kconfig:option:`CONFIG_MCUBOOT_BOOTLOADER_MODE_SWAP_USING_MOVE` instead.
+
+* Sysbuild no longer forces the MCUboot overwrite-only mode and unsigned images on Espressif
+  SoCs. Boards using them now get the generic defaults: swap using offset, which keeps the
+  previous image for a revert, and RSA-2048 signatures with the MCUboot development key.
+  Projects with their own key must set :kconfig:option:`SB_CONFIG_BOOT_SIGNATURE_KEY_FILE`,
+  and projects that relied on the previous behavior can select
+  :kconfig:option:`SB_CONFIG_MCUBOOT_MODE_OVERWRITE_ONLY` and
+  :kconfig:option:`SB_CONFIG_BOOT_SIGNATURE_TYPE_NONE` explicitly. A bootloader built after
+  this change rejects unsigned images, so the bootloader and the application must be
+  reflashed together when a device is moved to the new defaults.
+
+* The shared Espressif partition tables no longer define a ``scratch_partition``, so
+  :kconfig:option:`SB_CONFIG_MCUBOOT_MODE_SWAP_SCRATCH` is no longer available on boards using
+  them. The other partitions keep their offsets. Projects that need it can add the partition
+  back in a board overlay.
 
 MCUmgr
 ======

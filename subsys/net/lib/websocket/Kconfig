@@ -9,7 +9,7 @@ config WEBSOCKET_CLIENT
 	select HTTP_CLIENT
 	select BASE64
 	select PSA_CRYPTO
-	select PSA_WANT_ALG_SHA_256
+	select PSA_WANT_ALG_SHA_1
 	select EXPERIMENTAL
 	help
 	  Enable Websocket client library.

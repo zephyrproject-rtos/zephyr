@@ -168,7 +168,7 @@ manifest:
         - hal
     - name: hal_bouffalolab
       path: modules/hal/bouffalolab
-      revision: de0ef89150684ebbdbf17aa1219dac3790bbfd49
+      revision: 15b8a5f64cea87dcd247a2a5edd8b2ed51fa8ff4
       groups:
         - hal
     - name: hal_espressif
@@ -198,7 +198,7 @@ manifest:
       groups:
         - hal
     - name: hal_microchip
-      revision: 550371954d33f7f5f17b3eb2f7ecc46ca3fa1b62
+      revision: eb7765f7399129198f669394fcf2b430e38929c9
       path: modules/hal/microchip
       groups:
         - hal
@@ -330,7 +330,7 @@ manifest:
       groups:
         - crypto
     - name: mcuboot
-      revision: 7ad67106c3253d03ae4bd8ab48e6bdf7bc46f43e
+      revision: aa32eaaad41cc345e6f6e6633368a4766fe23c25
       path: bootloader/mcuboot
       groups:
         - bootloader

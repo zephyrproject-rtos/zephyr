@@ -9,6 +9,7 @@ compatible: "st,stm32-ethernet"
 include:
   - name: snps,dwmac.yaml
   - name: pinctrl-device.yaml
+  - name: reset-device.yaml
 
 properties:
   reg:
@@ -16,6 +17,8 @@ properties:
   clocks:
     required: true
   clock-names:
+    required: true
+  resets:
     required: true
   interrupts:
     required: true

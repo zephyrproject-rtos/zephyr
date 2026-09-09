@@ -586,9 +586,13 @@ static int sys_clock_driver_init(void)
 				       sys_clock_timeout_handler, NULL);
 
 	int_mask = NRFX_GRTC_CONFIG_ALLOWED_CC_CHANNELS_MASK;
-	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
-		system_timeout_set_relative(CYC_PER_TICK);
-	}
+	/*
+	 * Always arm a first compare. Tickless used to skip this and wait for
+	 * sys_clock_set_timeout(), but the kernel only calls that when insert
+	 * reports a new soon-list head. An empty soon side never does, so
+	 * announce never started (SysTick enables TICKINT at init instead).
+	 */
+	system_timeout_set_relative(CYC_PER_TICK);
 
 	return 0;
 }

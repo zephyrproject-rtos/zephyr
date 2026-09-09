@@ -500,7 +500,7 @@ static void test_local_ipv4_tx_unicast(void)
 	/* Seed the bridge ARP cache as if the peer had already been resolved
 	 * (this is what an incoming SYN/ARP from the peer would have done).
 	 */
-	net_arp_update(bridge, &peer_ip, &peer_mac, false, true);
+	net_arp_update(bridge, &peer_ip, &peer_mac, true);
 
 	send_local_ipv4(&peer_ip);
 
@@ -542,7 +542,7 @@ static void test_local_ipv4_tx_unicast_arp_miss(void)
 	/* Simulate the peer's ARP reply arriving: this resolves the entry and
 	 * flushes the queued packet back through the bridge TX path.
 	 */
-	net_arp_update(bridge, &peer_ip, &peer_mac, false, false);
+	net_arp_update(bridge, &peer_ip, &peer_mac, false);
 
 	/* give time to the processing threads to run */
 	k_sleep(K_MSEC(100));

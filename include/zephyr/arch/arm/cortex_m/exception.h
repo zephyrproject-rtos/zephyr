@@ -98,6 +98,20 @@ struct __extra_esf_info {
 	_callee_saved_t *callee;
 	uint32_t msp;
 	uint32_t exc_return;
+#if defined(CONFIG_ARMV7_M_ARMV8_M_MAINLINE)
+	/* System control registers inspected and/or modified during fault handling */
+	uint32_t cfsr;
+	uint32_t hfsr;
+	uint32_t dfsr;
+	uint32_t mmfar;
+	uint32_t bfar;
+#if defined(CONFIG_ARM_SECURE_FIRMWARE)
+	uint32_t sfsr;
+	uint32_t sfar;
+	/* Exception entry occurred in Non-Secure stack */
+	bool non_secure;
+#endif /* CONFIG_ARM_SECURE_FIRMWARE*/
+#endif /* CONFIG_ARMV7_M_ARMV8_M_MAINLINE */
 };
 #endif /* CONFIG_EXTRA_EXCEPTION_INFO */
 

@@ -313,6 +313,7 @@ colorama==0.4.6 \
     # via
     #   awscli
     #   click
+    #   colorlog
     #   halo
     #   log-symbols
     #   pylint
@@ -320,6 +321,10 @@ colorama==0.4.6 \
     #   tox
     #   tqdm
     #   west
+colorlog==6.12.0 \
+    --hash=sha256:2a7924c1dadf18b22a0eb8b06d1c7b01d5341707ec1641eb6fcc4fde0c3e8e5f \
+    --hash=sha256:30d392604e9110045a2c2aeefc27d7a017abbab63f3a8aee594eac0801df784e
+    # via gcovr
 cryptography==50.0.0 \
     --hash=sha256:031e2d5dd4bb9caa3ca9c82e5a197fd8ae680232cee62603d1a813f3f07e3d03 \
     --hash=sha256:06a32a980526a6ab9a4b9bf8f7385800791e2bb960903cb6b530e4817509a3b7 \
@@ -402,9 +407,9 @@ filelock==3.32.2 \
     #   python-discovery
     #   tox
     #   virtualenv
-gcovr==6.0 \
-    --hash=sha256:2e52019fdb76c6e327f48c2a2d8555fb5e362570b79cc74c5498804d1ce54a60 \
-    --hash=sha256:8638d5f44def10e38e3166c8a33bef6643ec204687e0ac7d345ce41a98c5750b
+gcovr==8.6 \
+    --hash=sha256:b2e7042abca9321cadbab8a06eb34d19f801b831557b28cdc30a029313de8b9e \
+    --hash=sha256:dbf9d87c38042752ad6f530aa8210427e22b526611bb7b7bfed0e81977d1f1ef
     # via -r requirements-actions.in
 gitdb==4.0.12 \
     --hash=sha256:5ef71f855d191a3326fcfbc0d5da835f26b13fbcba60c32c21091c349ffdb571 \

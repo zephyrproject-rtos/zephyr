@@ -2826,6 +2826,9 @@ __syscall uint32_t k_event_clear(struct k_event *event, uint32_t events);
  * @param timeout Waiting period for the desired set of events or one of the
  *                special values K_NO_WAIT and K_FOREVER.
  *
+ * @note If @p events is zero, this function returns 0 immediately. If @p reset is true,
+ *       the events currently tracked by the event object are reset before returning.
+ *
  * @retval non-zero set of matching events upon success
  * @retval 0 if matching events were not received within the specified time
  */
@@ -2853,6 +2856,9 @@ __syscall uint32_t k_event_wait(struct k_event *event, uint32_t events,
  * @param timeout Waiting period for the desired set of events or one of the
  *                special values K_NO_WAIT and K_FOREVER.
  *
+ * @note If @p events is zero, this function returns 0 immediately. If @p reset is true,
+ *       the events currently tracked by the event object are reset before returning.
+ *
  * @retval non-zero set of matching events upon success
  * @retval 0 if matching events were not received within the specified time
  */
@@ -2875,6 +2881,9 @@ __syscall uint32_t k_event_wait_all(struct k_event *event, uint32_t events,
  * @param timeout Waiting period for the desired set of events or one of the
  *                special values K_NO_WAIT and K_FOREVER.
  *
+ * @note If @p events is zero, this function returns 0 immediately. If @p reset is true,
+ *       the events currently tracked by the event object are reset before returning.
+ *
  * @retval non-zero set of matching events upon success
  * @retval 0 if no matching event was received within the specified time
  */
@@ -2896,6 +2905,9 @@ __syscall uint32_t k_event_wait_safe(struct k_event *event, uint32_t events,
  *              before waiting. If false, do not clear the events.
  * @param timeout Waiting period for the desired set of events or one of the
  *                special values K_NO_WAIT and K_FOREVER.
+ *
+ * @note If @p events is zero, this function returns 0 immediately. If @p reset is true,
+ *       the events currently tracked by the event object are reset before returning.
  *
  * @retval non-zero set of matching events upon success
  * @retval 0 if all matching events were not received within the specified time

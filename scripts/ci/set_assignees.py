@@ -147,11 +147,11 @@ change.  What keeps the request meaningful is the tier ordering above, not a
 count: if a PR is broad enough to need thirty reviewers, all thirty own part of
 it.
 
-Should GitHub refuse the full set anyway (some undocumented limit, or a
-candidate who lost collaborator status between the check and the request), the
-call is retried once with the first REVIEWER_RETRY_BATCH (15) candidates.
-Because the list is ordered highest-signal first, that retry keeps the area
-maintainers and drops only the tail.
+A single review request call does cap out at REVIEWER_REQUEST_BATCH (15) users,
+so the candidates are requested in batches of that size.  Should GitHub refuse a
+batch anyway (a candidate who lost collaborator status between the check and the
+request, say), that batch is retried one user at a time so a single bad
+candidate does not cost the others their review request.
 
 Mention fallback
 ----------------
@@ -162,7 +162,8 @@ for their review, which notifies them regardless of their permissions.
 
 The comment carries a hidden MENTION_MARKER so that repeated runs over the same
 PR find their own previous comment and edit it in place, instead of posting a
-duplicate every time the PR is updated.  Users who removed themselves from the
+duplicate every time the PR is updated.  It is deleted once a later run has
+nobody left to mention.  Users who removed themselves from the
 review request are never mentioned, since a mention would route around an
 explicit opt-out.
 
@@ -306,10 +307,10 @@ MAX_FILES = 500
 
 # GitHub does not document a cap on how many reviewers a pull request may have,
 # and PRs carrying more than 15 are observable in the wild, so no cap is imposed
-# here: every eligible candidate is requested.  Should GitHub reject the full
-# set anyway, the request is retried with this many of the highest-ranked
-# candidates so that a rejection cannot cost the review request entirely.
-REVIEWER_RETRY_BATCH = 15
+# here: every eligible candidate is requested.  A single review request call,
+# however, accepts at most 15 users, so the candidates are requested in batches
+# of this size rather than in one call.
+REVIEWER_REQUEST_BATCH = 15
 
 # Hidden marker identifying the comment used to mention reviewers who could not
 # be added to the review request.  It lets a re-run find and update its own
@@ -899,39 +900,71 @@ def _add_reviewers(gh, gh_repo, pr, args, collab: list):
     # Anyone the review request could not accommodate still gets asked, by
     # name, in a comment.  Users who removed themselves are deliberately not
     # mentioned: they opted out, and a mention would route around that.
-    _mention_reviewers(pr, args, non_collaborators + unrequested)
+    _mention_reviewers(gh, pr, args, non_collaborators + unrequested)
 
 
 def _request_reviews(pr, args, reviewers: list) -> list:
     """Request reviews from *reviewers*; return those that could not be added.
 
-    A rejected bulk request is retried once with the highest-ranked
-    REVIEWER_RETRY_BATCH candidates, so that hitting an undocumented per-PR
-    reviewer limit cannot leave the PR with no reviewers at all.  Whoever is
-    left out is returned for the caller to mention instead.
+    A single review request accepts at most REVIEWER_REQUEST_BATCH users, so
+    the candidates are requested in batches of that size instead of in one
+    call.  Requesting them all at once made GitHub reject the request, which
+    used to leave everyone past the first batch unrequested until a later run
+    of this script picked them up -- the reason a PR ended up with only a
+    subset of its reviewers on the first run.
+
+    A validation-rejected batch (HTTP 422) is retried one user at a time, so
+    that a single bad candidate (a deleted account, or someone who lost
+    collaborator status between the check and the request) cannot cost the
+    whole batch its reviewers.  Systemic failures are not fanned out: the
+    failed batch and any remaining batches are returned for mention fallback.
     """
     if args.dry_run:
         return []
 
-    try:
-        pr.create_review_request(reviewers=reviewers)
-        return []
-    except GithubException as exc:
-        logger.error("Failed to add reviewers %s: %s", reviewers, exc)
-
-    if len(reviewers) > REVIEWER_RETRY_BATCH:
-        retry = reviewers[:REVIEWER_RETRY_BATCH]
-        logger.info("Retrying with the first %d: %s", len(retry), retry)
+    unrequested = []
+    batches = [
+        reviewers[i : i + REVIEWER_REQUEST_BATCH]
+        for i in range(0, len(reviewers), REVIEWER_REQUEST_BATCH)
+    ]
+    for index, batch in enumerate(batches):
+        if index:
+            # Courtesy sleep: consecutive write calls risk a secondary rate limit.
+            time.sleep(API_SLEEP_SECONDS)
         try:
-            pr.create_review_request(reviewers=retry)
-            return reviewers[REVIEWER_RETRY_BATCH:]
-        except GithubException as retry_exc:
-            logger.error("Retry failed for reviewers %s: %s", retry, retry_exc)
+            pr.create_review_request(reviewers=batch)
+            continue
+        except GithubException as exc:
+            logger.error("Failed to add reviewers %s: %s", batch, exc)
+            status = getattr(exc, "status", None)
 
-    return list(reviewers)
+            if status != 422:
+                logger.error(
+                    "Stopping reviewer requests after systemic API failure (HTTP %s)",
+                    status,
+                )
+                unrequested += batch
+                for remaining in batches[index + 1 :]:
+                    unrequested += remaining
+                break
+
+        if len(batch) == 1:
+            unrequested += batch
+            continue
+
+        logger.info("Retrying %d reviewer(s) individually", len(batch))
+        for reviewer in batch:
+            time.sleep(API_SLEEP_SECONDS)
+            try:
+                pr.create_review_request(reviewers=[reviewer])
+            except GithubException as retry_exc:
+                logger.error("Failed to add reviewer '%s': %s", reviewer, retry_exc)
+                unrequested.append(reviewer)
+
+    return unrequested
 
 
-def _mention_reviewers(pr, args, logins: list):
+def _mention_reviewers(gh, pr, args, logins: list):
     """Ask *logins* for a review in a PR comment.
 
     Used for people who cannot receive a formal review request: those who are
@@ -942,10 +975,15 @@ def _mention_reviewers(pr, args, logins: list):
 
     The comment is maintained in place: one is created the first time and
     edited afterwards, keyed on MENTION_MARKER, so that re-running over the
-    same PR does not spam it with duplicates.
+    same PR does not spam it with duplicates.  Once there is nobody left to
+    mention -- everyone it named has since been added to the review request --
+    a comment left by an earlier run is deleted, so the PR does not keep
+    claiming that people could not be requested when they were.
     """
     logins = list(dict.fromkeys(logins))
     if not logins:
+        if not args.dry_run:
+            _delete_mention_comment(gh, pr)
         return
 
     mentions = " ".join(f"@{login}" for login in logins)
@@ -975,6 +1013,19 @@ def _mention_reviewers(pr, args, logins: list):
         pr.create_issue_comment(body)
     except GithubException as exc:
         logger.error("Failed to mention reviewers %s: %s", logins, exc)
+
+
+def _delete_mention_comment(gh, pr):
+    """Delete the reviewer-mention comment left by an earlier run, if any."""
+    try:
+        bot_login = gh.get_user().login
+        for comment in pr.get_issue_comments():
+            if MENTION_MARKER in comment.body and getattr(comment.user, 'login', None) == bot_login:
+                logger.info("Deleting obsolete reviewer-mention comment")
+                comment.delete()
+                return
+    except GithubException as exc:
+        logger.error("Failed to delete the reviewer-mention comment: %s", exc)
 
 
 def _assign_maintainers(gh, pr, args, assignees: list):

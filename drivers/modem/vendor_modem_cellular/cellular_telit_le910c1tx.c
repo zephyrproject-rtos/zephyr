@@ -40,7 +40,9 @@ MODEM_CHAT_SCRIPT_DEFINE(telit_le910c1tx_init_chat_script, telit_le910c1tx_init_
 
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(telit_le910c1tx_dial_chat_script_cmds,
 			      MODEM_CHAT_SCRIPT_CMD_RESP("AT", ok_match),
-			      MODEM_CHAT_SCRIPT_CMD_RESP_NONE("ATD*99***1#", 0));
+			      MODEM_CHAT_SCRIPT_CMD_RESP_NONE(
+				"ATD*99***" STRINGIFY(CONFIG_MODEM_CELLULAR_PDP_CONTEXT_ID) "#",
+				0));
 
 MODEM_CHAT_SCRIPT_DEFINE(telit_le910c1tx_dial_chat_script, telit_le910c1tx_dial_chat_script_cmds,
 			 dial_abort_matches, modem_cellular_chat_callback_handler, 10);

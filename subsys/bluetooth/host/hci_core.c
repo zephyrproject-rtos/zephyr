@@ -23,6 +23,7 @@
 #include <zephyr/bluetooth/gap.h>
 #include <zephyr/bluetooth/l2cap.h>
 #include <zephyr/bluetooth/hci.h>
+#include <zephyr/bluetooth/hci_pkt.h>
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/hci_vs.h>
 #include <zephyr/bluetooth/testing.h>
@@ -391,8 +392,8 @@ struct net_buf *bt_hci_cmd_alloc(k_timeout_t timeout)
 
 	LOG_DBG("buf %p", buf);
 
-	/* Reserve H:4 header and HCI command header */
-	net_buf_reserve(buf, sizeof(uint8_t) + sizeof(struct bt_hci_cmd_hdr));
+	/* Reserve room for the packet indicator and HCI command header */
+	net_buf_reserve(buf, BT_HCI_PKT_CMD_HDR_SIZE);
 
 	cmd(buf)->opcode = 0;
 	cmd(buf)->sync = NULL;
@@ -427,7 +428,7 @@ static void hci_cmd_queue_purge(void)
 
 int bt_hci_cmd_send(uint16_t opcode, struct net_buf *buf)
 {
-	struct bt_hci_cmd_hdr *hdr;
+	int err;
 
 	/* Make sure the HCI transport is open before attempting anything else */
 	if (!atomic_test_bit(bt_dev.flags, BT_DEV_OPEN)) {
@@ -438,15 +439,7 @@ int bt_hci_cmd_send(uint16_t opcode, struct net_buf *buf)
 		return -EHOSTDOWN;
 	}
 
-	if (buf != NULL) {
-		/* Check for sufficient headeroom, which can only happen if the user passes a
-		 * buffer that was allocated incorrectly, i.e. through some other means than
-		 * bt_hci_cmd_alloc().
-		 */
-		if (net_buf_headroom(buf) < sizeof(uint8_t) + sizeof(*hdr)) {
-			return -EINVAL;
-		}
-	} else {
+	if (buf == NULL) {
 		buf = bt_hci_cmd_alloc(K_FOREVER);
 		if (!buf) {
 			return -ENOBUFS;
@@ -455,20 +448,22 @@ int bt_hci_cmd_send(uint16_t opcode, struct net_buf *buf)
 
 	LOG_DBG("opcode 0x%04x param_len %u", opcode, buf->len);
 
+	/* Insufficient headroom or too many parameter bytes can only happen
+	 * with a buffer that was not allocated with bt_hci_cmd_alloc(). Like
+	 * the other failure paths, this one owns the buffer.
+	 */
+	err = bt_hci_pkt_push_cmd_hdr(&buf->b, opcode);
+	if (err != 0) {
+		net_buf_unref(buf);
+		return err;
+	}
+
 	cmd(buf)->opcode = opcode;
-
-	hdr = net_buf_push(buf, sizeof(*hdr));
-	hdr->opcode = sys_cpu_to_le16(opcode);
-	hdr->param_len = buf->len - sizeof(*hdr);
-
-	net_buf_push_u8(buf, BT_HCI_H4_CMD);
 
 	/* Host Number of Completed Packets can ignore the ncmd value
 	 * and does not generate any cmd complete/status events.
 	 */
 	if (opcode == BT_HCI_OP_HOST_NUM_COMPLETED_PACKETS) {
-		int err;
-
 		err = bt_send(buf);
 		if (err) {
 			LOG_ERR("Unable to send to driver (err %d)", err);
@@ -2735,34 +2730,37 @@ exit:
 
 static void hci_cmd_complete(struct net_buf *buf)
 {
-	struct bt_hci_evt_cmd_complete *evt;
-	uint8_t status, ncmd;
-	uint16_t opcode;
+	struct bt_hci_pkt_cmd_rsp rsp;
+	int err;
 
-	evt = net_buf_pull_mem(buf, sizeof(*evt));
-	ncmd = evt->ncmd;
-	opcode = sys_le16_to_cpu(evt->opcode);
+	err = bt_hci_pkt_pull_cmd_complete(&buf->b, &rsp);
+	if (err == -ENODATA) {
+		/* The return parameters lack the status they start with, so
+		 * rsp carries BT_HCI_ERR_UNSPECIFIED: the command fails below
+		 * instead of leaving its sender waiting for the command timeout,
+		 * and the command flow control keeps going.
+		 */
+		LOG_WRN("Command Complete for opcode 0x%04x without status", rsp.opcode);
+	} else if (err != 0) {
+		LOG_WRN("Malformed Command Complete event (err %d)", err);
+		return;
+	}
 
-	LOG_DBG("opcode 0x%04x", opcode);
-
-	/* All command return parameters have a 1-byte status in the
-	 * beginning, so we can safely make this generalization.
-	 */
-	status = buf->data[0];
+	LOG_DBG("opcode 0x%04x", rsp.opcode);
 
 	/* HOST_NUM_COMPLETED_PACKETS should not generate a response under normal operation.
 	 * The generation of this command ignores `ncmd_sem`, so should not be given here.
 	 */
-	if (opcode == BT_HCI_OP_HOST_NUM_COMPLETED_PACKETS) {
+	if (rsp.opcode == BT_HCI_OP_HOST_NUM_COMPLETED_PACKETS) {
 		LOG_WRN("Unexpected HOST_NUM_COMPLETED_PACKETS, status 0x%02x %s",
-			status, bt_hci_err_to_str(status));
+			rsp.status, bt_hci_err_to_str(rsp.status));
 		return;
 	}
 
-	hci_cmd_done(opcode, status, buf);
+	hci_cmd_done(rsp.opcode, rsp.status, buf);
 
 	/* Allow next command to be sent */
-	if (ncmd) {
+	if (rsp.ncmd != 0) {
 		k_sem_give(&bt_dev.ncmd_sem);
 		bt_tx_irq_raise();
 	}
@@ -2770,20 +2768,25 @@ static void hci_cmd_complete(struct net_buf *buf)
 
 static void hci_cmd_status(struct net_buf *buf)
 {
-	struct bt_hci_evt_cmd_status *evt;
-	uint16_t opcode;
-	uint8_t ncmd;
+	struct bt_hci_pkt_cmd_rsp rsp;
+	int err;
 
-	evt = net_buf_pull_mem(buf, sizeof(*evt));
-	opcode = sys_le16_to_cpu(evt->opcode);
-	ncmd = evt->ncmd;
+	err = bt_hci_pkt_pull_cmd_status(&buf->b, &rsp);
+	if (err != 0) {
+		/* Not reachable: the event dispatch guarantees the parameters
+		 * a Command Status event consists of, so there is nothing to
+		 * recover here.
+		 */
+		LOG_WRN("Malformed Command Status event (err %d)", err);
+		return;
+	}
 
-	LOG_DBG("opcode 0x%04x", opcode);
+	LOG_DBG("opcode 0x%04x", rsp.opcode);
 
-	hci_cmd_done(opcode, evt->status, buf);
+	hci_cmd_done(rsp.opcode, rsp.status, buf);
 
 	/* Allow next command to be sent */
-	if (ncmd) {
+	if (rsp.ncmd != 0) {
 		k_sem_give(&bt_dev.ncmd_sem);
 		bt_tx_irq_raise();
 	}

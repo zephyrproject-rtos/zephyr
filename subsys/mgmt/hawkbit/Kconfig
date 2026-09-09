@@ -12,7 +12,7 @@ menuconfig HAWKBIT
 	depends on NETWORKING
 	depends on HTTP_CLIENT
 	depends on JSON_LIBRARY
-	depends on BOOTLOADER_MCUBOOT
+	depends on BOOTLOADER_MCUBOOT || TFM_BL2
 	depends on SMF
 	depends on SMF_ANCESTOR_SUPPORT
 	depends on !MCUBOOT_BOOTLOADER_MODE_DIRECT_XIP

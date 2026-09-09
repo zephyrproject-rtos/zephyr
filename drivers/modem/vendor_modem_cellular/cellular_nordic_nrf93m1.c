@@ -76,7 +76,9 @@ MODEM_CHAT_SCRIPT_DEFINE(nordic_nrf93m1_network_chat_script,
 			 modem_cellular_chat_callback_handler, 10);
 
 MODEM_CHAT_SCRIPT_CMDS_DEFINE(nordic_nrf93m1_dial_chat_script_cmds,
-			      MODEM_CHAT_SCRIPT_CMD_RESP("ATD*99***1#", connect_match));
+			      MODEM_CHAT_SCRIPT_CMD_RESP(
+				"ATD*99***" STRINGIFY(CONFIG_MODEM_CELLULAR_PDP_CONTEXT_ID) "#",
+				connect_match));
 
 MODEM_CHAT_SCRIPT_DEFINE(nordic_nrf93m1_dial_chat_script, nordic_nrf93m1_dial_chat_script_cmds,
 			 dial_abort_matches, modem_cellular_chat_callback_handler, 60);

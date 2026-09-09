@@ -472,6 +472,8 @@ Arduino Platforms:
     - boards/shields/arduino_*/
     - drivers/*/*modulino*
     - dts/vendor/arduino/
+  labels:
+    - "platform: Arduino"
 
 Authentication:
   status: maintained
@@ -3255,6 +3257,8 @@ Espressif Platforms:
   files:
     - drivers/*/*esp32*.c
     - boards/espressif/
+    - cmake/emu/espressif_qemu.cmake
+    - cmake/emu/espressif_qemu/
     - soc/espressif/
     - dts/*/espressif/
     - dts/bindings/*/*esp32*
@@ -6419,6 +6423,7 @@ Tracing:
   files:
     - subsys/tracing/
     - scripts/tracing/
+    - scripts/tests/tracing/
     - include/zephyr/tracing/
     - subsys/timing/
     - samples/subsys/tracing/

@@ -172,6 +172,12 @@
 			gclkperiph-src = "gclk1";
 			gclkperiph-en = <0>;
 		};
+
+		sercom2 {
+			subsystem = <CLOCK_MCHP_GCLKPERIPH_ID_SERCOM2_CORE>;
+			gclkperiph-src = "gclk0";
+			gclkperiph-en = <1>;
+		};
 	};
 
 	mclkdomain: mclkdomain {
@@ -194,6 +200,11 @@
 
 		sercom1 {
 			subsystem = <CLOCK_MCHP_MCLKPERIPH_ID_SERCOM1>;
+			mclk-en = <1>;
+		};
+
+		sercom2 {
+			subsystem = <CLOCK_MCHP_MCLKPERIPH_ID_SERCOM2>;
 			mclk-en = <1>;
 		};
 	};
@@ -245,4 +256,18 @@ i2c0: &sercom9 {
 		address-width = <8>;
 		timeout = <5>;
 	};
+};
+
+&sercom2 {
+	compatible = "microchip,sercom-g1-spi";
+	dipo = <3>;
+	dopo = <0>;
+	#address-cells = <1>;
+	#size-cells = <0>;
+	pinctrl-0 = <&sercom2_spi_default>;
+	pinctrl-names = "default";
+	cs-gpios = <&portc 10 GPIO_ACTIVE_LOW>;
+	dmas = <&dmac 3 10>, <&dmac 4 9>;
+	dma-names = "tx", "rx";
+	status = "okay";
 };

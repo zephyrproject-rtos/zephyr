@@ -876,6 +876,19 @@ static int handle_http_request(struct http_client_ctx *client)
 	}
 
 	if (client->data_len > 0) {
+		if (client->cursor < client->buffer ||
+		    client->cursor > client->buffer + sizeof(client->buffer) ||
+		    client->data_len >
+			    (size_t)(client->buffer + sizeof(client->buffer) - client->cursor)) {
+			/* The RX length no longer describes client->buffer, so
+			 * drop the connection before it is used.
+			 */
+			LOG_ERR("Invalid RX state: cursor %p, data_len %zu, buffer %p/%zu",
+				(void *)client->cursor, client->data_len,
+				(void *)client->buffer, sizeof(client->buffer));
+			return -EINVAL;
+		}
+
 		/* Move any remaining data in the buffer. */
 		memmove(client->buffer, client->cursor, client->data_len);
 	}
@@ -1280,7 +1293,7 @@ static void handle_http_data(struct http_server_ctx *ctx, int i)
 		}
 
 		close_client_connection(client);
-	} else if (client->data_len == sizeof(client->buffer)) {
+	} else if (client->data_len >= sizeof(client->buffer)) {
 		LOG_ERR("RX buffer too small to handle request");
 		close_client_connection(client);
 	}
@@ -1440,7 +1453,7 @@ static void handle_h3_bidi_stream(struct http_server_ctx *ctx, int i,
 		LOG_DBG("[%p] H3: stream fd %d closed after complete response",
 			client, closed_fd);
 
-	} else if (client->data_len == sizeof(client->buffer)) {
+	} else if (client->data_len >= sizeof(client->buffer)) {
 		LOG_ERR("RX buffer too small to handle request");
 		close_h3_or_plain_client(client, ctx->fds, ARRAY_SIZE(ctx->fds));
 	} else {
