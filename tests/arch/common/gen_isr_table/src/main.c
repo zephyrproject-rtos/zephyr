@@ -340,7 +340,7 @@ ZTEST(gen_isr_table, test_build_time_direct_interrupt)
 #else
 
 #ifdef ISR1_OFFSET
-	IRQ_DIRECT_CONNECT(IRQ_LINE(ISR1_OFFSET), 0, isr1, IRQ_FLAGS);
+	IRQ_DIRECT_CONNECT(IRQ_LINE(ISR1_OFFSET), 1, isr1, IRQ_FLAGS);
 	irq_enable(IRQ_LINE(ISR1_OFFSET));
 	TC_PRINT("isr1 isr=%p irq=%d\n", isr1, IRQ_LINE(ISR1_OFFSET));
 	zassert_ok(check_vector(isr1, ISR1_OFFSET),
@@ -348,7 +348,7 @@ ZTEST(gen_isr_table, test_build_time_direct_interrupt)
 #endif
 
 #ifdef ISR2_OFFSET
-	IRQ_DIRECT_CONNECT(IRQ_LINE(ISR2_OFFSET), 0, isr2, IRQ_FLAGS);
+	IRQ_DIRECT_CONNECT(IRQ_LINE(ISR2_OFFSET), 1, isr2, IRQ_FLAGS);
 	irq_enable(IRQ_LINE(ISR2_OFFSET));
 	TC_PRINT("isr2 isr=%p irq=%d\n", isr2, IRQ_LINE(ISR2_OFFSET));
 
