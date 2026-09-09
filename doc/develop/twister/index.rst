@@ -361,6 +361,11 @@ Test Scenario, Test Suite, and Test Case names must follow to these basic rules:
      a Ztest suite name, and a Ztest test name:
      ``<Test Scenario identifier>.<Ztest suite name>.<Ztest test name>``
 
+     Each invocation of a value-parameterized test (``ZTEST_P``) is recorded
+     as a subcase of that identifier, suffixed with the instantiation name
+     and the parameter label as printed by Ztest, for example
+     ``drivers.dma.loop_transfer.dma_m2m_loop.dma_m2m_loop[devs/dma0]``.
+
    * **Standalone tests and samples**:
      a Test Scenario identifier from the corresponding ``tests.yaml`` file where
      the last section signifies the standalone

@@ -80,7 +80,8 @@ def scan_file(inf_name):
         br"^\s*ZTEST_SUITE\(\s*(?P<suite_name>[a-zA-Z0-9_]+)\s*,",
         re.MULTILINE)
     testcase_regex = re.compile(
-        br"^\s*(?:ZTEST|ZTEST_F|ZTEST_USER|ZTEST_USER_F)\(\s*(?P<suite_name>[a-zA-Z0-9_]+)\s*,"
+        br"^\s*(?:ZTEST|ZTEST_F|ZTEST_P|ZTEST_USER|ZTEST_USER_F|ZTEST_USER_P)"
+        br"\(\s*(?P<suite_name>[a-zA-Z0-9_]+)\s*,"
         br"\s*(?P<testcase_name>[a-zA-Z0-9_]+)\s*",
         re.MULTILINE)
     # Checks if the file contains a definition of "void test_main(void)"
@@ -244,8 +245,12 @@ def _find_new_ztest_testcases(search_area):
     Find regular ztest testcases like "ZTEST", "ZTEST_F" etc. Return
     testcases' names and eventually found warnings.
     """
+    # A ZTEST_P / ZTEST_USER_P body is registered once, under its own name;
+    # the per-value invocations it produces at runtime are reported by the
+    # harness as subcases of it.
     testcase_regex = re.compile(
-        br"^\s*(?:ZTEST|ZTEST_F|ZTEST_USER|ZTEST_USER_F)\(\s*(?P<suite_name>[a-zA-Z0-9_]+)\s*,"
+        br"^\s*(?:ZTEST|ZTEST_F|ZTEST_P|ZTEST_USER|ZTEST_USER_F|ZTEST_USER_P)"
+        br"\(\s*(?P<suite_name>[a-zA-Z0-9_]+)\s*,"
         br"\s*(?P<testcase_name>[a-zA-Z0-9_]+)\s*",
         re.MULTILINE)
 
