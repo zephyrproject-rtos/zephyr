@@ -44,6 +44,14 @@ NET_BUF_POOL_FIXED_DEFINE(hf_pool, CONFIG_BT_MAX_CONN + 1,
 
 static struct bt_hfp_hf bt_hfp_hf_pool[CONFIG_BT_MAX_CONN];
 
+static int bt_hfp_hf_sco_accept(const struct bt_sco_accept_info *info,
+				struct bt_sco_chan **chan);
+
+static struct bt_sco_server sco_server = {
+	.sec_level = BT_SECURITY_L0,
+	.accept = bt_hfp_hf_sco_accept,
+};
+
 #define HF_ENHANCED_CALL_STATUS_TIMEOUT 50 /* ms */
 
 struct at_callback_set {
@@ -4248,8 +4256,15 @@ int bt_hfp_hf_ready_to_accept_audio(struct bt_hfp_hf *hf)
 static void hfp_hf_connected(struct bt_rfcomm_dlc *dlc)
 {
 	struct bt_hfp_hf *hf = CONTAINER_OF(dlc, struct bt_hfp_hf, rfcomm_dlc);
+	int err;
 
 	LOG_DBG("hf connected");
+
+	/* Route incoming SCO requests on this ACL to the HF server. */
+	err = bt_sco_server_bind(hf->acl, &sco_server);
+	if (err != 0) {
+		LOG_WRN("Bind SCO server failed: %d", err);
+	}
 
 	atomic_set_bit(hf->flags, BT_HFP_HF_FLAG_DLC_CONNECTED);
 	k_work_submit(&hf->slc_work);
@@ -4259,6 +4274,7 @@ static void hfp_hf_disconnected(struct bt_rfcomm_dlc *dlc)
 {
 	struct bt_hfp_hf *hf = CONTAINER_OF(dlc, struct bt_hfp_hf, rfcomm_dlc);
 	struct net_buf *buf;
+	int err;
 
 	LOG_DBG("hf disconnected!");
 	if (bt_hf->disconnected) {
@@ -4286,6 +4302,12 @@ static void hfp_hf_disconnected(struct bt_rfcomm_dlc *dlc)
 	while (buf != NULL) {
 		net_buf_unref(buf);
 		buf = k_fifo_get(&hf->tx_pending, K_NO_WAIT);
+	}
+
+	/* Stop routing incoming SCO requests on this ACL to the HF server. */
+	err = bt_sco_server_unbind(hf->acl, &sco_server);
+	if (err != 0) {
+		LOG_WRN("Unbind SCO server failed: %d", err);
 	}
 
 	hf->acl = NULL;
@@ -4597,13 +4619,6 @@ static void hfp_hf_init(void)
 	};
 
 	bt_rfcomm_server_register(&chan);
-
-	static struct bt_sco_server sco_server = {
-		.sec_level = BT_SECURITY_L0,
-		.accept = bt_hfp_hf_sco_accept,
-	};
-
-	bt_sco_server_register(&sco_server);
 
 	bt_sdp_register_service(&hfp_rec);
 

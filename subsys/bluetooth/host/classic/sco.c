@@ -29,22 +29,21 @@
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(bt_sco);
 
-struct bt_sco_server *sco_server;
-
 #define SCO_CHAN(_sco) ((_sco)->sco.chan);
 
 static sys_slist_t sco_conn_cbs = SYS_SLIST_STATIC_INIT(&sco_conn_cbs);
 static sys_slist_t sco_hci_cbs = SYS_SLIST_STATIC_INIT(&sco_hci_cbs);
 
-int bt_sco_server_register(struct bt_sco_server *server)
+int bt_sco_server_bind(struct bt_conn *acl, struct bt_sco_server *server)
 {
-	if (!server) {
-		LOG_DBG("Invalid parameter: server %p", server);
+	if (acl == NULL || server == NULL) {
+		LOG_DBG("Invalid parameter: acl %p server %p", acl, server);
 		return -EINVAL;
 	}
 
-	if (sco_server) {
-		return -EADDRINUSE;
+	if (!bt_conn_is_br(acl)) {
+		LOG_DBG("acl %p is not a BR/EDR connection", acl);
+		return -EINVAL;
 	}
 
 	if (!server->accept) {
@@ -55,25 +54,38 @@ int bt_sco_server_register(struct bt_sco_server *server)
 		return -EINVAL;
 	}
 
-	LOG_DBG("%p", server);
+	/* Only one server can be bound to an ACL at a time; fail loudly
+	 * instead of silently replacing an existing binding.
+	 */
+	if (acl->br.sco_server != NULL) {
+		LOG_WRN("acl %p already has SCO server %p bound", acl, acl->br.sco_server);
+		return -EADDRINUSE;
+	}
 
-	sco_server = server;
+	acl->br.sco_server = server;
+
+	LOG_DBG("acl %p server %p", acl, server);
 
 	return 0;
 }
 
-int bt_sco_server_unregister(struct bt_sco_server *server)
+int bt_sco_server_unbind(struct bt_conn *acl, struct bt_sco_server *server)
 {
-	if (!server) {
-		LOG_DBG("Invalid parameter: server %p", server);
+	if (acl == NULL || server == NULL || !bt_conn_is_br(acl)) {
 		return -EINVAL;
 	}
 
-	if (sco_server != server) {
+	/* Only the profile that bound the server may unbind it, so that one
+	 * profile cannot clear another profile's binding on the same ACL.
+	 */
+	if (acl->br.sco_server != server) {
+		LOG_WRN("acl %p bound to %p, not %p", acl, acl->br.sco_server, server);
 		return -EINVAL;
 	}
 
-	sco_server = NULL;
+	acl->br.sco_server = NULL;
+
+	LOG_DBG("acl %p", acl);
 
 	return 0;
 }
@@ -201,13 +213,14 @@ void bt_sco_disconnected(struct bt_conn *sco)
 	chan->sco = NULL;
 }
 
-static uint8_t sco_server_check_security(struct bt_conn *conn)
+static uint8_t sco_server_check_security(const struct bt_sco_server *server,
+					 struct bt_conn *acl)
 {
 	if (IS_ENABLED(CONFIG_BT_CONN_DISABLE_SECURITY)) {
 		return BT_HCI_ERR_SUCCESS;
 	}
 
-	if (conn->sec_level >= sco_server->sec_level) {
+	if (acl->sec_level >= server->sec_level) {
 		return BT_HCI_ERR_SUCCESS;
 	}
 
@@ -287,10 +300,11 @@ static void bt_sco_chan_add(struct bt_conn *sco, struct bt_sco_chan *chan)
 	LOG_DBG("sco %p chan %p", sco, chan);
 }
 
-static int sco_accept(struct bt_conn *acl, struct bt_conn *sco)
+static int sco_accept(struct bt_sco_server *server,
+		      const struct bt_sco_accept_info *accept_info,
+		      struct bt_conn *sco)
 {
-	struct bt_sco_accept_info accept_info;
-	struct bt_sco_chan *chan;
+	struct bt_sco_chan *chan = NULL;
 	int err;
 
 	if (!sco || sco->type != BT_CONN_TYPE_SCO) {
@@ -300,18 +314,15 @@ static int sco_accept(struct bt_conn *acl, struct bt_conn *sco)
 
 	LOG_DBG("%p", sco);
 
-	accept_info.acl = acl;
-	memcpy(accept_info.dev_class, sco->sco.dev_class, sizeof(accept_info.dev_class));
-	accept_info.link_type = sco->sco.link_type;
-
-	err = sco_server->accept(&accept_info, &chan);
+	err = server->accept(accept_info, &chan);
 	if (err < 0) {
 		LOG_ERR("Server failed to accept: %d", err);
 		return err;
 	}
 
-	if (chan->ops == NULL) {
-		LOG_ERR("invalid parameter: chan %p chan->ops %p", chan, chan->ops);
+	if (chan == NULL || chan->ops == NULL) {
+		LOG_ERR("invalid parameter: chan %p chan->ops %p", chan,
+			chan ? chan->ops : NULL);
 		return -EINVAL;
 	}
 
@@ -321,13 +332,15 @@ static int sco_accept(struct bt_conn *acl, struct bt_conn *sco)
 	return 0;
 }
 
-static int accept_sco_conn(const bt_addr_t *bdaddr, struct bt_conn *sco_conn)
+static int accept_sco_conn(struct bt_sco_server *server, const bt_addr_t *bdaddr,
+			   const struct bt_sco_accept_info *accept_info,
+			   struct bt_conn *sco_conn)
 {
 	struct bt_hci_cp_accept_sync_conn_req *cp;
 	struct net_buf *buf;
 	int err;
 
-	err = sco_accept(sco_conn->sco.acl, sco_conn);
+	err = sco_accept(server, accept_info, sco_conn);
 	if (err) {
 		return err;
 	}
@@ -358,30 +371,43 @@ static int accept_sco_conn(const bt_addr_t *bdaddr, struct bt_conn *sco_conn)
 
 uint8_t bt_esco_conn_req(struct bt_hci_evt_conn_request *evt)
 {
+	struct bt_sco_accept_info accept_info;
+	struct bt_sco_server *server;
 	struct bt_conn *sco_conn;
 	uint8_t sec_err;
-
-	if (sco_server == NULL) {
-		LOG_ERR("No SCO server registered");
-		return BT_HCI_ERR_UNSPECIFIED;
-	}
+	int err;
 
 	sco_conn = bt_conn_add_sco(&evt->bdaddr, evt->link_type);
 	if (!sco_conn) {
 		return BT_HCI_ERR_INSUFFICIENT_RESOURCES;
 	}
 
-	sec_err = sco_server_check_security(sco_conn->sco.acl);
+	memcpy(sco_conn->sco.dev_class, evt->dev_class, sizeof(sco_conn->sco.dev_class));
+	sco_conn->sco.link_type = evt->link_type;
+
+	accept_info.acl = sco_conn->sco.acl;
+	memcpy(accept_info.dev_class, sco_conn->sco.dev_class, sizeof(accept_info.dev_class));
+	accept_info.link_type = sco_conn->sco.link_type;
+
+	/* The server is bound to the ACL connection that owns the SCO link,
+	 * so the request is routed directly to it.
+	 */
+	server = sco_conn->sco.acl->br.sco_server;
+	if (server == NULL) {
+		LOG_ERR("No SCO server bound to ACL %p", sco_conn->sco.acl);
+		bt_sco_cleanup(sco_conn);
+		return BT_HCI_ERR_UNSPECIFIED;
+	}
+
+	sec_err = sco_server_check_security(server, sco_conn->sco.acl);
 	if (BT_HCI_ERR_SUCCESS != sec_err) {
 		LOG_DBG("Insufficient security %u", sec_err);
 		bt_sco_cleanup(sco_conn);
 		return sec_err;
 	}
 
-	memcpy(sco_conn->sco.dev_class, evt->dev_class, sizeof(sco_conn->sco.dev_class));
-	sco_conn->sco.link_type = evt->link_type;
-
-	if (accept_sco_conn(&evt->bdaddr, sco_conn)) {
+	err = accept_sco_conn(server, &evt->bdaddr, &accept_info, sco_conn);
+	if (err != 0) {
 		struct bt_sco_chan *chan = sco_conn->sco.chan;
 
 		LOG_ERR("Error accepting connection from %s", bt_addr_str(&evt->bdaddr));

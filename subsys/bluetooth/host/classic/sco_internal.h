@@ -7,6 +7,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <stdint.h>
+
+#include <zephyr/sys/slist.h>
+
 /** @brief Life-span states of SCO channel. Used only by internal APIs
  *  dealing with setting channel to proper state depending on operational
  *  context.
@@ -104,27 +108,42 @@ struct bt_sco_server {
 			  struct bt_sco_chan **chan);
 };
 
-/** @brief Register SCO server.
+/** @brief Bind a SCO server to an ACL connection.
  *
- *  Register SCO server, each new connection is authorized using the accept()
- *  callback which in case of success shall allocate the channel structure
- *  to be used by the new connection.
+ *  Bind a SCO server to the given ACL connection. All incoming SCO
+ *  requests on this ACL are routed to the server's accept() callback.
+ *  Only one server can be bound to an ACL at a time.
  *
+ *  The server structure must remain valid until it is unbound with
+ *  bt_sco_server_unbind().
+ *
+ *  @param acl   ACL connection that owns the SCO link.
  *  @param server Server structure.
  *
- *  @return 0 in case of success or negative value in case of error.
+ *  @retval 0           Success.
+ *  @retval -EINVAL     Invalid parameters, or the ACL is not a BR/EDR
+ *                      connection.
+ *  @retval -EADDRINUSE The ACL already has a SCO server bound.
  */
-int bt_sco_server_register(struct bt_sco_server *server);
+int bt_sco_server_bind(struct bt_conn *acl, struct bt_sco_server *server);
 
-/** @brief Unregister SCO server.
+/** @brief Unbind a SCO server from an ACL connection.
  *
- *  Unregister previously registered SCO server.
+ *  Unbind the SCO server previously bound to the ACL connection with
+ *  bt_sco_server_bind(). Incoming SCO requests on this ACL are rejected
+ *  until a server is bound again.
  *
- *  @param server Server structure.
+ *  The ACL is only unbound if @p server is the server currently bound to
+ *  it; this prevents one profile from clearing another profile's binding.
  *
- *  @return 0 in case of success or negative value in case of error.
+ *  @param acl   ACL connection to unbind the server from.
+ *  @param server Server structure previously bound to the ACL.
+ *
+ *  @retval 0       Success.
+ *  @retval -EINVAL Invalid parameters, the ACL is not a BR/EDR connection,
+ *                  or @p server is not the server bound to the ACL.
  */
-int bt_sco_server_unregister(struct bt_sco_server *server);
+int bt_sco_server_unbind(struct bt_conn *acl, struct bt_sco_server *server);
 
 /** @brief sco channel connected.
  *

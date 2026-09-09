@@ -146,6 +146,8 @@ struct bt_conn_le {
 /* For now reserve space for 2 pages of LMP remote features */
 #define LMP_MAX_PAGES 2
 
+struct bt_sco_server;
+
 struct bt_conn_br {
 	bt_addr_t		dst;
 	uint8_t			remote_io_capa;
@@ -154,6 +156,11 @@ struct bt_conn_br {
 	uint8_t			pairing_method;
 	/* remote LMP features pages per 8 bytes each */
 	uint8_t			features[LMP_MAX_PAGES][8];
+
+	/* SCO server bound to this ACL. Incoming SCO requests on this ACL are
+	 * routed to this server, see bt_sco_server_bind().
+	 */
+	struct bt_sco_server	*sco_server;
 
 	struct bt_keys_link_key	*link_key;
 

@@ -71,6 +71,14 @@ NET_BUF_POOL_FIXED_DEFINE(ag_pool, CONFIG_BT_HFP_AG_TX_BUF_COUNT,
 
 static struct bt_hfp_ag bt_hfp_ag_pool[CONFIG_BT_MAX_CONN];
 
+static int bt_hfp_ag_sco_accept(const struct bt_sco_accept_info *info,
+				struct bt_sco_chan **chan);
+
+static struct bt_sco_server sco_server = {
+	.sec_level = BT_SECURITY_L0,
+	.accept = bt_hfp_ag_sco_accept,
+};
+
 static struct bt_hfp_ag_cb *bt_ag;
 
 #define AG_SUPT_FEAT(ag, _feature) ((ag->ag_features & (_feature)) != 0)
@@ -3639,6 +3647,13 @@ static struct bt_hfp_ag_at_cmd_handler cmd_handlers[] = {
 static void hfp_ag_connected(struct bt_rfcomm_dlc *dlc)
 {
 	struct bt_hfp_ag *ag = CONTAINER_OF(dlc, struct bt_hfp_ag, rfcomm_dlc);
+	int err;
+
+	/* Route incoming SCO requests on this ACL to the AG server. */
+	err = bt_sco_server_bind(ag->acl_conn, &sco_server);
+	if (err != 0) {
+		LOG_WRN("Bind SCO server failed: %d", err);
+	}
 
 	bt_hfp_ag_set_state(ag, BT_HFP_CONFIG);
 
@@ -3664,6 +3679,7 @@ static void hfp_ag_disconnected(struct bt_rfcomm_dlc *dlc)
 	struct bt_hfp_ag *ag = CONTAINER_OF(dlc, struct bt_hfp_ag, rfcomm_dlc);
 	struct bt_ag_tx *tx;
 	struct bt_hfp_ag_call *call;
+	int err;
 
 	k_work_cancel_delayable(&ag->tx_work);
 	k_work_cancel_delayable(&ag->ongoing_call_work);
@@ -3703,6 +3719,12 @@ static void hfp_ag_disconnected(struct bt_rfcomm_dlc *dlc)
 	}
 
 	hfp_ag_close_sco(ag);
+
+	/* Stop routing incoming SCO requests on this ACL to the AG server. */
+	err = bt_sco_server_unbind(ag->acl_conn, &sco_server);
+	if (err != 0) {
+		LOG_WRN("Unbind SCO server failed: %d", err);
+	}
 
 	ag->acl_conn = NULL;
 
@@ -4396,13 +4418,6 @@ static void hfp_ag_init(void)
 	};
 
 	bt_rfcomm_server_register(&chan);
-
-	static struct bt_sco_server sco_server = {
-		.sec_level = BT_SECURITY_L0,
-		.accept = bt_hfp_ag_sco_accept,
-	};
-
-	bt_sco_server_register(&sco_server);
 
 	bt_sdp_register_service(&hfp_ag_rec);
 
