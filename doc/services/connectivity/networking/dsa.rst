@@ -103,8 +103,8 @@ of i.MX NETC.
 Common pitfalls using DSA setups
 ********************************
 
-This is copied from Linux DSA documentation. It applies to zephyr too. Although conduit port and
-cpu port exposed as ethernet device in zephyr, they are not able to be used.
+This is partially copied from Linux DSA documentation. It applies to zephyr too. Although conduit
+port and cpu port exposed as ethernet device in zephyr, they are not able to be used.
 
 .. note::
 
@@ -113,6 +113,16 @@ cpu port exposed as ethernet device in zephyr, they are not able to be used.
   be used as a conduit interface. Sending packets directly through this interface (e.g.: opening
   a socket using this interface) will not make us go through the switch tagging protocol transmit
   function, so the Ethernet switch on the other end, expecting a tag will typically drop this frame.
+
+VLAN configuration
+==================
+
+When configuring a switch's VLAN tables by implementing the ``vlan_setup`` member of a
+``struct dsa_api``, drivers should typically enable VLAN entries for not only the user port
+identified by the device passed to ``net_eth_vlan_enable()`` but also on the switch's CPU port.
+Failing to do so would --- assuming the filtering is applied strictly to ingress frames --- result
+in the switch passing VLAN frames from the user port from the conduit but not in the opposite
+direction.
 
 TODO work
 *********
