@@ -107,11 +107,25 @@ static int mpipe_aud_dmic_src_acquire_buffer(struct mpipe_buffer_pool *pool,
 	size_t bytes_used = pool->config.size;
 	int err = -1;
 
+	/* Resume capture from the consumer thread, after the pipeline thread has
+	 * itself resumed. Releasing it in the PAUSED_TO_PLAYING state transition
+	 * lets a producer run while this consumer is still suspended and can
+	 * exhaust the shared slab before the transition returns.
+	 */
+	if (aud_dmic_src->capture_paused) {
+		err = dmic_trigger(aud_pool->aud_dev, DMIC_TRIGGER_RELEASE);
+		if (err != 0) {
+			LOG_ERR("Unable to resume DMIC capture");
+			return err;
+		}
+		aud_dmic_src->capture_paused = false;
+	}
+
 	err = dmic_read(aud_pool->aud_dev, 0, &mem_block, &bytes_used,
 			aud_dmic_src->read_timeout_ms);
 	if (err < 0) {
-		if (!pool->started) {
-			/* Capture drained after a stop: a flush, not an error. */
+		if (!pool->started || aud_dmic_src->capture_paused) {
+			/* Capture interrupted by pause or drained after stop: a flush. */
 			return -EPIPE;
 		}
 		LOG_ERR("Unable to read a DMIC buffer: %d", err);
@@ -196,6 +210,34 @@ static int mpipe_aud_dmic_src_stop(struct mpipe_buffer_pool *pool)
 	return 0;
 }
 
+static enum mpipe_state_change_return
+mpipe_aud_dmic_src_change_state(struct mpipe_element *self, enum mpipe_state_change transition)
+{
+	struct mpipe_aud_dmic_src *aud_dmic_src =
+		CONTAINER_OF(self, struct mpipe_aud_dmic_src, aud_src.src.element);
+	struct mpipe_aud_buffer_pool *aud_pool = &aud_dmic_src->pool;
+	enum mpipe_state_change_return ret;
+
+	if (transition == MPIPE_STATE_CHANGE_PLAYING_TO_PAUSED) {
+		if (dmic_trigger(aud_pool->aud_dev, DMIC_TRIGGER_PAUSE) != 0) {
+			LOG_ERR("Unable to pause DMIC capture");
+			return MPIPE_STATE_CHANGE_FAILURE;
+		}
+		aud_dmic_src->capture_paused = true;
+	}
+
+	ret = mpipe_src_change_state(self, transition);
+	if (ret != MPIPE_STATE_CHANGE_SUCCESS) {
+		return ret;
+	}
+
+	if (transition == MPIPE_STATE_CHANGE_PAUSED_TO_READY) {
+		aud_dmic_src->capture_paused = false;
+	}
+
+	return MPIPE_STATE_CHANGE_SUCCESS;
+}
+
 int mpipe_aud_dmic_src_init(struct mpipe_aud_dmic_src *aud_dmic_src, uint8_t id)
 {
 	__ASSERT_NO_MSG(aud_dmic_src != NULL);
@@ -215,12 +257,14 @@ int mpipe_aud_dmic_src_init(struct mpipe_aud_dmic_src *aud_dmic_src, uint8_t id)
 	mpipe_aud_buffer_pool_init(src->pool);
 
 	aud_dmic_src->pool.aud_dev = DEVICE_DT_GET_OR_NULL(DT_NODELABEL(dmic_dev));
+	aud_dmic_src->capture_paused = false;
 
 	aud_dmic_src->aud_src.get_audio_caps = dmic_get_caps;
 
 	src->set_caps = mpipe_aud_dmic_src_set_caps;
 	src->pool->acquire_buffer = mpipe_aud_dmic_src_acquire_buffer;
 	src->pool->start = mpipe_aud_dmic_src_start;
+	self->change_state = mpipe_aud_dmic_src_change_state;
 
 	aud_dmic_src->pool.pool_parent_stop = src->pool->stop;
 	src->pool->stop = mpipe_aud_dmic_src_stop;
