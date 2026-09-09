@@ -1768,10 +1768,16 @@ static void modem_cellular_run_dial_script_event_handler(struct modem_cellular_d
 							 enum modem_cellular_event evt)
 {
 	const struct modem_cellular_config *config = data->dev->config;
+	int ret;
 
 	switch (evt) {
 	case MODEM_CELLULAR_EVENT_TIMEOUT:
-		modem_cellular_run_script(data, config->vendor->scripts.dial);
+		ret = modem_cellular_run_script(data, config->vendor->scripts.dial);
+		if (ret < 0) {
+			LOG_WRN("dial script %s, rearming timer",
+				ret == -EBUSY ? "busy" : "failed");
+			modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
+		}
 		break;
 	case MODEM_CELLULAR_EVENT_SCRIPT_FAILED:
 		modem_cellular_script_failed(data);
