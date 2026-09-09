@@ -10,9 +10,6 @@ config NUM_IRQS
 	default 16384 if GIC_V3_ITS
 	default 128 if !GIC_V3_ITS
 
-# Workaround for not being able to have commas in macro arguments
-DT_CHOSEN_Z_FLASH := zephyr,flash
-
 config FLASH_SIZE
 	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_FLASH),0,K)
 

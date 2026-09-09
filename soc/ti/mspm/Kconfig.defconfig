@@ -6,8 +6,6 @@ if SOC_FAMILY_TI_MSPM
 
 rsource "*/Kconfig.defconfig"
 
-DT_CHOSEN_Z_FLASH := zephyr,flash
-
 config FLASH_SIZE
 	default $(dt_chosen_reg_size_int,$(DT_CHOSEN_Z_FLASH),0,K)
 

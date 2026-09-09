@@ -4,9 +4,6 @@
 
 menu "Input device settings"
 
-DT_CHOSEN_Z_TOUCH := zephyr,touch
-DT_CHOSEN_Z_DISPLAY := zephyr,display
-
 config LV_Z_POINTER_FROM_CHOSEN_TOUCH
 	bool "Create LVGL pointer from DT 'zephyr,touch' chosen device"
 	depends on INPUT

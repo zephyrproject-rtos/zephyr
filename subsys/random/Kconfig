@@ -103,7 +103,6 @@ config ARM64_RANDOM_GENERATOR_RETRY_WAIT_USEC
 
 endif # ARM64_RANDOM_GENERATOR
 
-DT_CHOSEN_Z_ENTROPY := zephyr,entropy
 config ENTROPY_NODE_ENABLED
 	bool
 	default y if $(dt_chosen_enabled,$(DT_CHOSEN_Z_ENTROPY))

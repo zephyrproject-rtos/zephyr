@@ -1,7 +1,6 @@
 # Copyright (c) 2026 NXP
 # SPDX-License-Identifier: Apache-2.0
 
-DT_CHOSEN_SYSTEM_TIMER_COMPANION := zephyr,system-timer-companion
 DT_CHOSEN_SYSTEM_TIMER_COMPANION_LEGACY := zephyr,cortex-m-idle-timer
 
 config SYSTEM_TIMER_HAS_LPM_COMPANION_SUPPORT
@@ -53,8 +52,8 @@ if TICKLESS_KERNEL && PM
 
 config SYSTEM_TIMER_LPM_COMPANION_COUNTER
 	bool "Counter API timer"
-	depends on $(dt_chosen_enabled,$(DT_CHOSEN_SYSTEM_TIMER_COMPANION)) || \
-		   $(dt_chosen_enabled,$(DT_CHOSEN_SYSTEM_TIMER_COMPANION_LEGACY))
+	depends on $(dt_chosen_enabled,$(DT_CHOSEN_Z_SYSTEM_TIMER_COMPANION)) || \
+		$(dt_chosen_enabled,$(DT_CHOSEN_SYSTEM_TIMER_COMPANION_LEGACY))
 	depends on COUNTER
 	help
 	  Use a device that implements the Counter API as the system timer

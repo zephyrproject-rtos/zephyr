@@ -4,8 +4,6 @@
 # SPDX-License-Identifier: Apache-2.0
 
 DT_CHOSEN_STDBY_TIMER := st,lptim-stdby-timer
-DT_CHOSEN_Z_SYSTEM_TIMER := zephyr,system-timer
-DT_CHOSEN_Z_SYSTEM_TIMER_PATH := $(dt_chosen_path,$(DT_CHOSEN_Z_SYSTEM_TIMER))
 
 # Selecting an LPTIM as system timer by using the `stm32_lp_tick_source` nodelabel
 # is no longer supported since Zephyr v4.5; instead, the selection should be done

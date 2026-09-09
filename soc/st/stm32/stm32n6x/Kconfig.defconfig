@@ -8,9 +8,7 @@ if SOC_SERIES_STM32N6X
 DT_STM32_CPU_CLOCK_PATH := $(dt_nodelabel_path,cpusw)
 DT_STM32_CPU_CLOCK_FREQ := $(dt_node_int_prop_int,$(DT_STM32_CPU_CLOCK_PATH),clock-frequency)
 
-DT_CHOSEN_Z_FLASH := zephyr,flash
-DT_CHOSEN_FLASH_NODE := $(dt_chosen_path,$(DT_CHOSEN_Z_FLASH))
-DT_FLASH_HAS_SIZE_PROP := $(dt_node_has_prop,$(DT_CHOSEN_FLASH_NODE),size)
+DT_FLASH_HAS_SIZE_PROP := $(dt_node_has_prop,$(DT_CHOSEN_Z_FLASH_PATH),size)
 
 # When XiP in Ext Flash, get FLASH size from size property of XSPI device node
 config FLASH_SIZE
