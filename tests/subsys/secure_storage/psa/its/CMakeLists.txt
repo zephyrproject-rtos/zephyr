@@ -7,5 +7,8 @@ target_sources(app PRIVATE src/main.c)
 zephyr_sources_ifdef(CONFIG_SECURE_STORAGE_ITS_TRANSFORM_IMPLEMENTATION_CUSTOM
   src/custom_transform.c)
 
+zephyr_sources_ifdef(CONFIG_SECURE_STORAGE_ITS_TRANSFORM_AEAD_CRYPT_CUSTOM
+  src/custom_aead_crypt.c)
+
 zephyr_sources_ifdef(CONFIG_SECURE_STORAGE_ITS_STORE_IMPLEMENTATION_CUSTOM
   src/custom_store.c)
