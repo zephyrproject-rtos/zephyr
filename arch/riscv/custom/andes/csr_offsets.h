@@ -27,6 +27,9 @@
 	#define GEN_CUSTOM_CSR_OFFSET_SYMS()		\
 		GEN_OFFSET_SYM(soc_esf_t, ucode)
 
+#else
+	#define GEN_CUSTOM_CSR_OFFSET_SYMS()
+
 #endif
 
 #endif /* CONFIG_RISCV_SOC_OFFSETS */

@@ -36,6 +36,10 @@
 
 	#define CUSTOM_CSR_ESF_INIT			\
 		0
+#else
+	#define CUSTOM_CSR_ESF_MEMBERS
+
+	#define CUSTOM_CSR_ESF_INIT
 
 #endif
 
