@@ -4112,6 +4112,46 @@
 		    ())
 
 /**
+ * @brief Invokes @p fn for each status `okay` node of a device class
+ *
+ * A node belongs to a device class when its binding (or a binding it
+ * includes) declares the class in its `class:` key. Unlike
+ * DT_FOREACH_STATUS_OKAY(), which takes a single compatible, this
+ * iterates over every enabled node whose binding declares the given
+ * class, regardless of compatible.
+ *
+ * There are no guarantees about the order in which nodes appear in the
+ * expansion, and @p fn is responsible for adding commas, semicolons,
+ * or other terminators as needed.
+ *
+ * @param _class lowercase-and-underscores device class name
+ * @param fn Macro to call for each enabled node. Must accept a
+ *           node_id as its only parameter.
+ */
+#define DT_FOREACH_CLASS_STATUS_OKAY(_class, fn)			\
+	COND_CODE_1(DT_HAS_CLASS_STATUS_OKAY(_class),			\
+		    (UTIL_CAT(DT_FOREACH_OKAY_CLASS_, _class)(fn)),	\
+		    ())
+
+/**
+ * @brief Invokes @p fn for each status `okay` node of a device class
+ *        with multiple arguments
+ *
+ * This is like DT_FOREACH_CLASS_STATUS_OKAY() except you can also
+ * pass additional arguments to @p fn.
+ *
+ * @param _class lowercase-and-underscores device class name
+ * @param fn Macro to call for each enabled node. Must accept a
+ *           node_id as its first parameter.
+ * @param ... Additional arguments to pass to @p fn
+ */
+#define DT_FOREACH_CLASS_STATUS_OKAY_VARGS(_class, fn, ...)		\
+	COND_CODE_1(DT_HAS_CLASS_STATUS_OKAY(_class),			\
+		    (DT_CAT(DT_FOREACH_OKAY_VARGS_CLASS_,		\
+			      _class)(fn, __VA_ARGS__)),		\
+		    ())
+
+/**
  * @brief Call @p fn on all nodes with compatible `compat`
  *        and status `okay` with multiple arguments
  *
@@ -4315,6 +4355,29 @@
 		 UTIL_CAT(DT_N_INST, DT_DASH(compat, NUM_OKAY)))
 
 /**
+ * @brief Does the devicetree have a status `okay` node of a device class?
+ *
+ * A node belongs to a device class when its binding (or a binding it
+ * includes) declares the class in its `class:` key. This is true if
+ * and only if at least one enabled node belongs to the class.
+ *
+ * @param _class lowercase-and-underscores device class name
+ * @return 1 if any enabled node belongs to the device class,
+ *         0 otherwise
+ */
+#define DT_HAS_CLASS_STATUS_OKAY(_class) \
+	IS_ENABLED(DT_CAT(DT_CLASS_HAS_OKAY_, _class))
+
+/**
+ * @brief Get the number of status `okay` nodes of a device class
+ * @param _class lowercase-and-underscores device class name
+ * @return Number of enabled nodes whose binding declares the class
+ */
+#define DT_NUM_CLASS_STATUS_OKAY(_class)			\
+	UTIL_AND(DT_HAS_CLASS_STATUS_OKAY(_class),		\
+		 UTIL_CAT(DT_N_CLASS, DT_DASH(_class, NUM_OKAY)))
+
+/**
  * @brief Does a devicetree node match a compatible?
  *
  * Example devicetree fragment:
@@ -4343,6 +4406,25 @@
  */
 #define DT_NODE_HAS_COMPAT(node_id, compat) \
 	IS_ENABLED(DT_CAT3(node_id, _COMPAT_MATCHES_, compat))
+
+/**
+ * @brief Does a devicetree node belong to a device class?
+ *
+ * A node belongs to a device class when its binding (or a binding it
+ * includes) declares the class in its `class:` key. The class names
+ * which device API class(es) the node's drivers can implement; which
+ * driver is actually built for the node is a Kconfig decision this
+ * macro knows nothing about.
+ *
+ * The node's status has no effect on the value.
+ *
+ * @param node_id node identifier
+ * @param _class lowercase-and-underscores device class name
+ * @return 1 if the node's binding declares the device class,
+ *         0 otherwise
+ */
+#define DT_NODE_HAS_CLASS(node_id, _class) \
+	IS_ENABLED(DT_CAT3(node_id, _CLASS_, _class))
 
 /**
  * @brief Get a node's binding compatible as a token.
