@@ -1905,6 +1905,10 @@ Devicetree
   class instead of a hardcoded list of compatibles, so it also covers
   out-of-tree ADC drivers.
 
+* The SPI shell now enumerates SPI buses through the ``spi`` device class at
+  build time instead of scanning the device list at runtime. The
+  ``CONFIG_SPI_SHELL_MAX_DEVICE_SLOTS`` Kconfig option has been removed.
+
 Other notable changes
 *********************
 
