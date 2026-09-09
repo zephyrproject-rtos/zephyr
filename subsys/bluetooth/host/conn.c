@@ -1927,13 +1927,34 @@ void bt_conn_br_packet_type_changed(struct bt_conn *conn, uint8_t status, uint16
 }
 #endif
 
+static void disconnect_encode(struct net_buf *buf, void *user_data)
+{
+	struct bt_conn *conn = user_data;
+	struct bt_hci_cp_disconnect *cp;
+
+	cp = net_buf_add(buf, sizeof(*cp));
+	cp->handle = sys_cpu_to_le16(conn->handle);
+	cp->reason = conn->disconnect_reason;
+}
+
 static int conn_disconnect(struct bt_conn *conn, uint8_t reason)
 {
-	int err;
+	/* Fire-and-forget: the Disconnect response carries nothing to act on,
+	 * the outcome arrives as a Disconnection Complete event. The operation
+	 * lives in the connection, which outlives the command: the command
+	 * completes before the event that releases the connection.
+	 */
+	if (!bt_hci_cmd_op_is_pending(&conn->disconnect_op)) {
+		int err;
 
-	err = bt_hci_disconnect(conn->handle, reason);
-	if (err) {
-		return err;
+		conn->disconnect_reason = reason;
+		bt_hci_cmd_op_init(&conn->disconnect_op, BT_HCI_OP_DISCONNECT,
+				   disconnect_encode, conn);
+
+		err = bt_hci_cmd_send_async(&conn->disconnect_op, NULL);
+		if (err != 0) {
+			return err;
+		}
 	}
 
 	if (conn->state == BT_CONN_CONNECTED) {

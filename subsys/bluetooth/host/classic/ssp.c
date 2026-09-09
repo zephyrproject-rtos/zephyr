@@ -547,7 +547,7 @@ void link_key_neg_reply(const bt_addr_t *bdaddr)
 
 	cp = net_buf_add(buf, sizeof(*cp));
 	bt_addr_copy(&cp->bdaddr, bdaddr);
-	bt_hci_cmd_send_sync(BT_HCI_OP_LINK_KEY_NEG_REPLY, buf, NULL);
+	bt_hci_cmd_send(BT_HCI_OP_LINK_KEY_NEG_REPLY, buf);
 }
 
 void link_key_reply(const bt_addr_t *bdaddr, const uint8_t *lk)
@@ -566,7 +566,7 @@ void link_key_reply(const bt_addr_t *bdaddr, const uint8_t *lk)
 	cp = net_buf_add(buf, sizeof(*cp));
 	bt_addr_copy(&cp->bdaddr, bdaddr);
 	memcpy(cp->link_key, lk, 16);
-	bt_hci_cmd_send_sync(BT_HCI_OP_LINK_KEY_REPLY, buf, NULL);
+	bt_hci_cmd_send(BT_HCI_OP_LINK_KEY_REPLY, buf);
 }
 
 void bt_hci_link_key_req(struct net_buf *buf)
@@ -622,7 +622,7 @@ void io_capa_neg_reply(const bt_addr_t *bdaddr, const uint8_t reason)
 	cp = net_buf_add(resp_buf, sizeof(*cp));
 	bt_addr_copy(&cp->bdaddr, bdaddr);
 	cp->reason = reason;
-	bt_hci_cmd_send_sync(BT_HCI_OP_IO_CAPABILITY_NEG_REPLY, resp_buf, NULL);
+	bt_hci_cmd_send(BT_HCI_OP_IO_CAPABILITY_NEG_REPLY, resp_buf);
 }
 
 void bt_hci_io_capa_resp(struct net_buf *buf)
@@ -780,7 +780,7 @@ void bt_hci_io_capa_req(struct net_buf *buf)
 	cp->capability = get_io_capa();
 	cp->authentication = auth;
 	cp->oob_data = 0U;
-	bt_hci_cmd_send_sync(BT_HCI_OP_IO_CAPABILITY_REPLY, resp_buf, NULL);
+	bt_hci_cmd_send(BT_HCI_OP_IO_CAPABILITY_REPLY, resp_buf);
 	bt_conn_unref(conn);
 }
 
@@ -874,7 +874,7 @@ static void link_encr(const uint16_t handle)
 	encr->handle = sys_cpu_to_le16(handle);
 	encr->encrypt = 0x01;
 
-	bt_hci_cmd_send_sync(BT_HCI_OP_SET_CONN_ENCRYPT, buf, NULL);
+	bt_hci_cmd_send(BT_HCI_OP_SET_CONN_ENCRYPT, buf);
 }
 
 void bt_hci_auth_complete(struct net_buf *buf)

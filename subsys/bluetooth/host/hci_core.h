@@ -21,6 +21,9 @@
 #include <zephyr/sys/slist.h>
 #include <zephyr/sys/util_macro.h>
 
+#include "future.h"
+#include "hci_cmd_op.h"
+
 /* LL connection parameters */
 #define LE_CONN_LATENCY		0x0000
 #define LE_CONN_TIMEOUT		0x002a
@@ -448,6 +451,10 @@ struct bt_dev {
 	/* Queue for outgoing HCI commands */
 	struct k_fifo		cmd_tx_queue;
 
+	/* Asynchronous commands waiting for a command buffer */
+	sys_slist_t		cmd_op_queue;
+	struct k_spinlock	cmd_op_lock;
+
 	const struct device *hci;
 
 #if defined(CONFIG_BT_PRIVACY)
@@ -540,6 +547,7 @@ void bt_hci_cmd_state_set_init(struct net_buf *buf,
 			       atomic_t *target, int bit, bool val);
 
 int bt_hci_disconnect(uint16_t handle, uint8_t reason);
+
 
 bool bt_le_conn_params_valid(const struct bt_le_conn_param *param);
 int bt_le_set_data_len(struct bt_conn *conn, uint16_t tx_octets, uint16_t tx_time);

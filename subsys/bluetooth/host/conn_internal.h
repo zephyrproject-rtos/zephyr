@@ -21,6 +21,8 @@
 #include <zephyr/net_buf.h>
 #include <zephyr/sys/atomic.h>
 #include <zephyr/sys/slist.h>
+
+#include "hci_cmd_op.h"
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/sys/clock.h>
 #include <zephyr/toolchain.h>
@@ -245,6 +247,9 @@ struct bt_conn {
 	/* Connection error or reason for disconnect */
 	uint8_t			err;
 
+	/* Reason carried by disconnect_op */
+	uint8_t			disconnect_reason;
+
 	bt_conn_state_t state;
 	struct net_buf		*rx;
 
@@ -266,6 +271,9 @@ struct bt_conn {
 	 * - Connection cleanup.
 	 */
 	struct k_work_delayable	deferred_work;
+
+	/* HCI Disconnect command of this connection, sent asynchronously */
+	struct bt_hci_cmd_op	disconnect_op;
 
 	union {
 		struct bt_conn_le	le;
