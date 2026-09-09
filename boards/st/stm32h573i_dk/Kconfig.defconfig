@@ -24,4 +24,8 @@ configdefault I2C_STM32_V2_TIMING
 
 endif # DISPLAY
 
+# Revisions C2/D1: the codec MCLK is described by a fixed-clock node
+configdefault CLOCK_CONTROL_FIXED_RATE_CLOCK
+	default y if AUDIO_CODEC_WM8904 || AUDIO_CODEC_CS42L51
+
 endif # BOARD_STM32H573I_DK
