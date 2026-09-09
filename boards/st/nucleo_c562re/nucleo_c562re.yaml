@@ -13,6 +13,7 @@ supported:
   - arduino_spi
   - can
   - crc
+  - crypto
   - dac
   - entropy
   - gpio
