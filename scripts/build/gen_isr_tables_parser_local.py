@@ -327,6 +327,8 @@ BUILD_ASSERT(offsetof(struct _isr_table_entry, isr)
         fp.write(self.source_header)
 
         if self.__vt:
+            if self.__config.args.isr_function:
+                fp.write(f"extern void {self.__config.args.isr_function}(void);\n")
             self.__write_irq_handlers(fp)
 
         if not self.__swt:
