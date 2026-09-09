@@ -21,7 +21,6 @@ comment "Available modules."
 osource "$(KCONFIG_BINARY_DIR)/Kconfig.modules"
 
 source "modules/Kconfig.atmel"
-source "modules/Kconfig.chre"
 source "modules/Kconfig.cypress"
 source "modules/Kconfig.eos_s3"
 source "modules/Kconfig.esp32"
@@ -103,9 +102,6 @@ comment "LoRa Basics Modem module not available."
 
 comment "zcbor module not available."
 	depends on !ZEPHYR_ZCBOR_MODULE
-
-comment "CHRE module not available."
-	depends on !ZEPHYR_CHRE_MODULE
 
 comment "Segger module not available."
 	depends on !ZEPHYR_SEGGER_MODULE
