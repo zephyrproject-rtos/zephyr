@@ -17,6 +17,7 @@
 
 /* Andes V5 specific registers. */
 #define GEN_SOC_OFFSET_SYMS()			\
+	ANDES_PLIC_GEN_SOC_OFFSET_SYMS();   \
 	GEN_CUSTOM_CSR_OFFSET_SYMS()
 
 #endif /* CONFIG_RISCV_SOC_OFFSETS */
