@@ -36,6 +36,11 @@ config LINKER_USE_NO_RELAX
 config REQUIRES_STD_C17
 	default y
 
+# ICCARM keeps constructors in .init_array but the IAR runtime is used to run
+# them, see STATIC_INIT_IAR
+config TOOLCHAIN_SUPPORTS_STATIC_INIT_GNU
+	default n
+
 config CODING_GUIDELINE_CHECK
 	default n
 	help
