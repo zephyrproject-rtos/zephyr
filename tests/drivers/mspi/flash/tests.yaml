@@ -22,6 +22,24 @@ tests:
       - native_sim
       - apollo3p_evb
       - apollo510_evb
+      - b_u585i_iot02a
+      - stm32h573i_dk
+  drivers.mspi.flash.stm32.dma:
+    platform_allow:
+      - b_u585i_iot02a
+      - stm32h573i_dk
+    integration_platforms:
+      - stm32h573i_dk
+    extra_configs:
+      - CONFIG_MSPI_DMA=y
+  drivers.mspi.flash.stm32.memmap:
+    platform_allow:
+      - b_u585i_iot02a
+      - stm32h573i_dk
+    integration_platforms:
+      - stm32h573i_dk
+    extra_configs:
+      - CONFIG_MSPI_MEMMAP=y
   drivers.mspi.flash.xip_read:
     filter: dt_compat_enabled("is25xX0xx")
     platform_allow:

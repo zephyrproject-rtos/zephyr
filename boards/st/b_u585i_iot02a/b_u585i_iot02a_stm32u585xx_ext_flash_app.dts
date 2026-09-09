@@ -1,17 +1,20 @@
 /*
- * Copyright (c) 2023 STMicroelectronics
+ * Copyright (c) 2026 STMicroelectronics
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 /dts-v1/;
-#include "stm32h573i_dk-common.dtsi"
+#include "b_u585i_iot02a-common.dtsi"
 
 / {
-	model = "STMicroelectronics STM32H573I DISCOVERY KIT board";
-	compatible = "st,stm32h573i-dk";
+	model = "STMicroelectronics B-U585I-IOT02A discovery kit";
+	compatible = "st,b-u585i-iot02a";
 
 	chosen {
+		zephyr,console = &usart1;
+		zephyr,shell-uart = &usart1;
+		zephyr,sram = &sram0;
 		zephyr,flash = &ext_flash;
 		zephyr,flash-controller = &ext_flash_ctrl;
 		zephyr,code-partition = &slot0_partition;
@@ -62,8 +65,4 @@
 			reg = <0x02000000 DT_SIZE_M(32)>;
 		};
 	};
-};
-
-&rng {
-	status = "okay";
 };

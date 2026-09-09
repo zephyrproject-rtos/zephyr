@@ -13,6 +13,10 @@
  */
 #define DT_DRV_COMPAT st_stm32_xspi_nor
 
+#if defined(CONFIG_SOC_SERIES_STM32H5X)
+#warning "It is highly recommended to move to the MSPI stm32 xspi driver"
+#endif /* CONFIG_SOC_SERIES_STM32H5X */
+
 #include <errno.h>
 #include <zephyr/kernel.h>
 #include <soc.h>
