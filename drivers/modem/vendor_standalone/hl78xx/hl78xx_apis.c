@@ -584,23 +584,23 @@ enum hl78xx_cell_rat_mode hl78xx_access_tech_to_rat(enum cellular_access_technol
 }
 
 int hl78xx_api_func_get_registration_status(const struct device *dev,
-					    enum cellular_access_technology tech,
+					    enum cellular_access_technology *tech,
 					    enum cellular_registration_status *status)
 {
 	struct hl78xx_data *data = (struct hl78xx_data *)dev->data;
 
-	if (status == NULL) {
+	if (tech == NULL || status == NULL) {
 		return -EINVAL;
 	}
-	LOG_DBG("Requested tech: %d, current rat mode: %d REG: %d %d", tech,
-		data->status.registration.rat_mode, data->status.registration.network_state_current,
-		hl78xx_rat_to_access_tech(data->status.registration.rat_mode));
-	if (tech != hl78xx_rat_to_access_tech(data->status.registration.rat_mode)) {
-		return -ENODATA;
-	}
+
 	k_mutex_lock(&data->api_lock, K_FOREVER);
+	*tech = hl78xx_rat_to_access_tech(data->status.registration.rat_mode);
 	*status = data->status.registration.network_state_current;
 	k_mutex_unlock(&data->api_lock);
+
+	LOG_DBG("current rat mode: %d REG: %d %d", data->status.registration.rat_mode, *status,
+		*tech);
+
 	return 0;
 }
 
