@@ -210,7 +210,7 @@ BUILD_ASSERT(TIMER_CORE_CYC_PER_TICK != 0, "timer counter rate is below the tick
  * 64-bit mask on a 32-bit counter underflows once the baseline passes 2^32.
  */
 #if !defined(TIMER_CORE_COUNTER_WIDTH)
-#define TIMER_CORE_COUNTER_WIDTH __LONG_WIDTH__
+#define TIMER_CORE_COUNTER_WIDTH (__SIZEOF_LONG__ * 8)
 #endif
 
 /* Wrap mask for the counter. */
