@@ -1,0 +1,6 @@
+board:
+  name: stk_a31c156_rln_a
+  full_name: STK-A31C156-RLN-A
+  vendor: ABOV
+  socs:
+    - name: a31c156
