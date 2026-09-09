@@ -1,0 +1,7 @@
+tests:
+  mpipe.aud.i2s_src:
+    tags:
+      - mpipe
+      - audio
+    platform_allow:
+      - native_sim/native/64
