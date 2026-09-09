@@ -138,6 +138,8 @@
 #include <zephyr/sys/clock.h>
 #include <zephyr/sys/util.h>
 
+#include "timer_core_convert.h"
+
 #if (defined(TIMER_CORE_BACKEND_COMPARE_ORDERED) + \
 	defined(TIMER_CORE_BACKEND_COMPARE_EXACT) + \
 	defined(TIMER_CORE_BACKEND_RELOAD)) != 1
@@ -155,18 +157,8 @@
 #define TIMER_CORE_DRIVER_CYCLES_PER_SEC
 #endif
 
-#if !defined(TIMER_CORE_CYCLES_PER_SEC)
-#if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME) || \
-	defined(CONFIG_SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE)
-#define TIMER_CORE_CYCLES_PER_SEC sys_clock_hw_cycles_per_sec()
-#else
-/* The Kconfig symbol rather than sys_clock_hw_cycles_per_sec(), whose expansion
- * carries a cast: both operands here are Kconfig integers, which keeps
- * TIMER_CORE_CYC_PER_TICK usable in a preprocessor test.
- */
-#define TIMER_CORE_CYCLES_PER_SEC CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC
+#if defined(TIMER_CORE_RATE_IS_CONSTANT)
 #define TIMER_CORE_CYC_PER_TICK_IS_CONSTANT
-#endif
 #endif
 
 /*
@@ -493,7 +485,7 @@ static inline timer_core_ticks_t timer_core_delta_ticks(void)
 	}
 #endif
 
-	return delta / TIMER_CORE_CYC_PER_TICK;
+	return (timer_core_ticks_t)timer_core_cycles_to_ticks(delta);
 }
 
 /* Program the timer for a tick-aligned deadline `ticks` out from the last
@@ -533,7 +525,8 @@ static void timer_core_arm(uint32_t ticks)
 		span = timer_core_last_elapsed + ticks;
 	}
 
-	timer_core_cycles_t want = (timer_core_cycles_t)span * TIMER_CORE_CYC_PER_TICK;
+	uint64_t want = timer_core_ticks_to_cycles(timer_core_last_tick + span) -
+			timer_core_last_cycle;
 	timer_core_cycles_t done = timer_core_cycles_since(timer_core_last_cycle);
 
 	/*
@@ -542,7 +535,7 @@ static void timer_core_arm(uint32_t ticks)
 	 * lands on the floor below whether the difference is zero or hugely
 	 * negative, so zero stands in for every negative value.
 	 */
-	timer_core_cycles_t rel = (want > done) ? (want - done) : 0;
+	timer_core_cycles_t rel = (want > done) ? (timer_core_cycles_t)(want - done) : 0;
 
 	/* Only where the alarm binds before the counter does; the span clamp
 	 * above already holds `rel` inside the counter's reach, so this folds
@@ -594,7 +587,8 @@ static void timer_core_arm(uint32_t ticks)
 	if ((ticks <= span) && (timer_core_last_elapsed <= (span - ticks))) {
 		span = timer_core_last_elapsed + ticks;
 	}
-	timer_core_cycles_t offset = (timer_core_cycles_t)span * TIMER_CORE_CYC_PER_TICK;
+	uint64_t offset = timer_core_ticks_to_cycles(timer_core_last_tick + span) -
+			  timer_core_last_cycle;
 
 	if ((TIMER_CORE_MAX_ARM_CYCLES < TIMER_CORE_MAX_UNANNOUNCED_CYCLES) &&
 	    (offset > TIMER_CORE_MAX_ARM_CYCLES)) {
@@ -605,8 +599,8 @@ static void timer_core_arm(uint32_t ticks)
 	/* Nothing to narrow to: the span and the baseline are the same width, so
 	 * form the deadline directly and let the clamp subtract the baseline off.
 	 */
-	uint64_t deadline =
-		(timer_core_last_tick + timer_core_last_elapsed + ticks) * TIMER_CORE_CYC_PER_TICK;
+	uint64_t deadline = timer_core_ticks_to_cycles(timer_core_last_tick +
+						       timer_core_last_elapsed + ticks);
 
 	if ((deadline - timer_core_last_cycle) > TIMER_CORE_MAX_ARM_CYCLES) {
 		deadline = timer_core_last_cycle + TIMER_CORE_MAX_ARM_CYCLES;
@@ -652,8 +646,8 @@ static void timer_core_announce_from(k_spinlock_key_t key)
 {
 	timer_core_ticks_t dticks = timer_core_delta_ticks();
 
-	timer_core_last_cycle += (timer_core_cycles_t)dticks * TIMER_CORE_CYC_PER_TICK;
 	timer_core_last_tick += dticks;
+	timer_core_last_cycle = timer_core_ticks_to_cycles(timer_core_last_tick);
 	timer_core_last_elapsed = 0;
 #if defined(TIMER_CORE_BACKEND_RELOAD)
 	/* The programmed deadline is consumed (or obsolete): the kernel decides
@@ -702,10 +696,10 @@ static void timer_core_announce_from(k_spinlock_key_t key)
  */
 static inline void timer_core_announce_cycles64_from(k_spinlock_key_t key, uint64_t cycles)
 {
-	uint64_t dticks = cycles / TIMER_CORE_CYC_PER_TICK;
+	uint64_t dticks = timer_core_cycles_to_ticks(cycles);
 
-	timer_core_last_cycle += dticks * TIMER_CORE_CYC_PER_TICK;
 	timer_core_last_tick += dticks;
+	timer_core_last_cycle = timer_core_ticks_to_cycles(timer_core_last_tick);
 	timer_core_last_elapsed = 0;
 #if defined(TIMER_CORE_BACKEND_RELOAD)
 	timer_core_armed_deadline = UINT64_MAX;
@@ -834,7 +828,7 @@ static inline void timer_core_rescale(uint32_t to_hz, uint32_t from_hz)
 	 * tick off and, on the COMPARE arm, could make (deadline - last_cycle)
 	 * underflow. The caller has already rescaled its own cycle counter.
 	 */
-	timer_core_last_cycle = timer_core_last_tick * TIMER_CORE_CYC_PER_TICK;
+	timer_core_last_cycle = timer_core_ticks_to_cycles(timer_core_last_tick);
 }
 
 /* Prime the calling CPU's timer one tick ahead of the shared baseline. An SMP
@@ -846,7 +840,7 @@ static inline void timer_core_smp_prime(void)
 #if defined(TIMER_CORE_BACKEND_RELOAD)
 	timer_driver_set_reload(TIMER_CORE_CYC_PER_TICK);
 #else
-	timer_core_set_compare(timer_core_last_cycle + TIMER_CORE_CYC_PER_TICK);
+	timer_core_set_compare(timer_core_ticks_to_cycles(timer_core_last_tick + 1));
 #endif
 }
 
@@ -861,7 +855,8 @@ static inline void timer_core_init(void)
 	 * fix the cycles-per-tick the tick math will divide by.
 	 */
 	timer_core_cyc_per_tick = TIMER_CORE_CYCLES_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
-	timer_core_max_span_ticks = TIMER_CORE_MAX_UNANNOUNCED_CYCLES / TIMER_CORE_CYC_PER_TICK;
+	timer_core_max_span_ticks = (timer_core_ticks_t)timer_core_cycles_to_ticks(
+		TIMER_CORE_MAX_UNANNOUNCED_CYCLES);
 #endif
 #if defined(TIMER_CORE_PRECOMPUTE_CYC_PER_TICK) || defined(TIMER_CORE_CHECK_CYC_PER_TICK_AT_INIT)
 	/* Runtime-rate cases: TIMER_CORE_CYC_PER_TICK is not a constant expression, so the
@@ -874,10 +869,8 @@ static inline void timer_core_init(void)
 	/* The counter read is inside the counter's width, so the tick count it
 	 * divides down to and the cycle count that multiplies back up both are too.
 	 */
-	timer_core_cycles_t seed = timer_driver_cycle_get() / TIMER_CORE_CYC_PER_TICK;
-
-	timer_core_last_tick = seed;
-	timer_core_last_cycle = seed * TIMER_CORE_CYC_PER_TICK;
+	timer_core_last_tick = timer_core_cycles_to_ticks(timer_driver_cycle_get());
+	timer_core_last_cycle = timer_core_ticks_to_cycles(timer_core_last_tick);
 	timer_core_last_elapsed = 0;
 
 #if defined(TIMER_CORE_BACKEND_RELOAD)
