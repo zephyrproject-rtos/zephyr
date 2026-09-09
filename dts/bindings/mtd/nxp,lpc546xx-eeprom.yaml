@@ -1,0 +1,39 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  NXP LPC546xx on-chip EEPROM.
+
+  The controller registers and the storage array live in separate regions, so
+  the node needs both. The last page of the array holds the controller's
+  initialization data and cannot be written, so size excludes it:
+
+      eeprom0: eeprom@40014000 {
+              compatible = "nxp,lpc546xx-eeprom";
+              reg = <0x40014000 0x1000>, <0x40108000 DT_SIZE_K(16)>;
+              reg-names = "control", "memory";
+              interrupts = <52 0>;
+              clocks = <&syscon MCUX_BUS_CLK>;
+              resets = <&reset NXP_SYSCON_RESET(0, 9)>;
+              size = <(DT_SIZE_K(16) - 128)>;
+      };
+
+compatible: "nxp,lpc546xx-eeprom"
+
+include: [eeprom-base.yaml, reset-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  reg-names:
+    required: true
+
+  clocks:
+    required: true
+
+  resets:
+    required: true
+
+  size:
+    required: true
