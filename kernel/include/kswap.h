@@ -130,7 +130,7 @@ static ALWAYS_INLINE unsigned int do_swap(unsigned int key,
 		z_time_slice_reset(new_thread);
 #endif /* CONFIG_TIMESLICING */
 
-		z_sched_spinlock_transfer_owner();
+		z_sched_spinlock_transfer_owner(new_thread);
 
 		arch_cohere_stacks(old_thread, NULL, new_thread);
 

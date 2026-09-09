@@ -78,12 +78,16 @@ void z_spin_lock_set_owner(struct k_spinlock *l)
 }
 EXPORT_SYMBOL(z_spin_lock_set_owner);
 
-/* Called from do_swap() after z_current_thread_set() to transfer ownership
- * of an inherited lock.  Does NOT update the tracking arrays.
+/* Called from the switch paths after z_current_thread_set() to transfer
+ * ownership of an inherited lock.  Does NOT update the tracking arrays.
+ *
+ * @a thread is passed in rather than read from _current: the caller has just
+ * made it current, and _current is not required to report it until the switch
+ * completes (see z_current_thread_set()).
  */
-void z_spin_lock_transfer_owner(struct k_spinlock *l)
+void z_spin_lock_transfer_owner(struct k_spinlock *l, struct k_thread *thread)
 {
-	l->thread_cpu = _current_cpu->id | (uintptr_t)_current;
+	l->thread_cpu = _current_cpu->id | (uintptr_t)thread;
 }
 EXPORT_SYMBOL(z_spin_lock_transfer_owner);
 
