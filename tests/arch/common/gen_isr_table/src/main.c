@@ -159,9 +159,14 @@ extern const uintptr_t _irq_vector_table[];
 #define ISR6_ARG	0xba5eba11
 
 #if defined(CONFIG_RISCV_HAS_CLIC)
+#define MIN_IRQ_PRIO 1 /* CLIC software triggering needs to be edge based */
 #define IRQ_FLAGS 1 /* rising edge */
 #else
 #define IRQ_FLAGS 0
+#endif
+
+#ifndef MIN_IRQ_PRIO
+#define MIN_IRQ_PRIO 0
 #endif
 
 static volatile int trigger_check[TRIG_CHECK_SIZE];
@@ -340,7 +345,7 @@ ZTEST(gen_isr_table, test_build_time_direct_interrupt)
 #else
 
 #ifdef ISR1_OFFSET
-	IRQ_DIRECT_CONNECT(IRQ_LINE(ISR1_OFFSET), 0, isr1, IRQ_FLAGS);
+	IRQ_DIRECT_CONNECT(IRQ_LINE(ISR1_OFFSET), MIN_IRQ_PRIO, isr1, IRQ_FLAGS);
 	irq_enable(IRQ_LINE(ISR1_OFFSET));
 	TC_PRINT("isr1 isr=%p irq=%d\n", isr1, IRQ_LINE(ISR1_OFFSET));
 	zassert_ok(check_vector(isr1, ISR1_OFFSET),
@@ -348,7 +353,7 @@ ZTEST(gen_isr_table, test_build_time_direct_interrupt)
 #endif
 
 #ifdef ISR2_OFFSET
-	IRQ_DIRECT_CONNECT(IRQ_LINE(ISR2_OFFSET), 0, isr2, IRQ_FLAGS);
+	IRQ_DIRECT_CONNECT(IRQ_LINE(ISR2_OFFSET), MIN_IRQ_PRIO, isr2, IRQ_FLAGS);
 	irq_enable(IRQ_LINE(ISR2_OFFSET));
 	TC_PRINT("isr2 isr=%p irq=%d\n", isr2, IRQ_LINE(ISR2_OFFSET));
 
@@ -383,7 +388,7 @@ ZTEST(gen_isr_table, test_build_time_interrupt)
 	TC_PRINT("_sw_isr_table at location %p\n", _sw_isr_table);
 
 #ifdef ISR3_OFFSET
-	IRQ_CONNECT(IRQ_LINE(ISR3_OFFSET), 1, isr3, ISR3_ARG, IRQ_FLAGS);
+	IRQ_CONNECT(IRQ_LINE(ISR3_OFFSET), MIN_IRQ_PRIO, isr3, ISR3_ARG, IRQ_FLAGS);
 	irq_enable(IRQ_LINE(ISR3_OFFSET));
 	TC_PRINT("isr3 isr=%p irq=%d param=%p\n", isr3, IRQ_LINE(ISR3_OFFSET),
 		 (void *)ISR3_ARG);
@@ -393,7 +398,7 @@ ZTEST(gen_isr_table, test_build_time_interrupt)
 #endif
 
 #ifdef ISR4_OFFSET
-	IRQ_CONNECT(IRQ_LINE(ISR4_OFFSET), 1, isr4, ISR4_ARG, IRQ_FLAGS);
+	IRQ_CONNECT(IRQ_LINE(ISR4_OFFSET), MIN_IRQ_PRIO, isr4, ISR4_ARG, IRQ_FLAGS);
 	irq_enable(IRQ_LINE(ISR4_OFFSET));
 	TC_PRINT("isr4 isr=%p irq=%d param=%p\n", isr4, IRQ_LINE(ISR4_OFFSET),
 		 (void *)ISR4_ARG);
@@ -428,7 +433,7 @@ ZTEST(gen_isr_table, test_run_time_interrupt)
 #else
 
 #ifdef ISR5_OFFSET
-	irq_connect_dynamic(IRQ_LINE(ISR5_OFFSET), 1, isr5,
+	irq_connect_dynamic(IRQ_LINE(ISR5_OFFSET), MIN_IRQ_PRIO, isr5,
 			    (const void *)ISR5_ARG, IRQ_FLAGS);
 	irq_enable(IRQ_LINE(ISR5_OFFSET));
 	TC_PRINT("isr5 isr=%p irq=%d param=%p\n", isr5, IRQ_LINE(ISR5_OFFSET),
@@ -438,7 +443,7 @@ ZTEST(gen_isr_table, test_run_time_interrupt)
 #endif
 
 #ifdef ISR6_OFFSET
-	irq_connect_dynamic(IRQ_LINE(ISR6_OFFSET), 1, isr6,
+	irq_connect_dynamic(IRQ_LINE(ISR6_OFFSET), MIN_IRQ_PRIO, isr6,
 			    (const void *)ISR6_ARG, IRQ_FLAGS);
 	irq_enable(IRQ_LINE(ISR6_OFFSET));
 	TC_PRINT("isr6 isr=%p irq=%d param=%p\n", isr6, IRQ_LINE(ISR6_OFFSET),
