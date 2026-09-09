@@ -590,6 +590,7 @@ class Gcovr(CoverageTool):
 
         cmd = ["gcovr", "-r", self.base_dir] + self.options
         cmd += ["--gcov-executable", self.gcov_tool,
+                "--gcov-ignore-errors=all",
                 "-f", "tests/ztest", "-e", "tests/ztest/test/*",
                 "--json", "-o", ztest_file, outdir]
         if self.version >= version.parse("7.0"):
