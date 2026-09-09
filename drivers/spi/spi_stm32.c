@@ -743,7 +743,7 @@ static int spi_stm32_shift_fifo(SPI_TypeDef *spi, struct spi_stm32_data *data)
 static int spi_stm32_shift_m(SPI_TypeDef *spi, struct spi_stm32_data *data)
 {
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
-	if (LL_SPI_GetTransferSize(spi) > 0U) {
+	if (ll_get_transfer_size(spi) > 0U) {
 		/* Transfer size is set, use FIFO mode. */
 		return spi_stm32_shift_fifo(spi, data);
 	}
@@ -808,7 +808,7 @@ static int spi_stm32_shift_m(SPI_TypeDef *spi, struct spi_stm32_data *data)
 static void spi_stm32_shift_s(SPI_TypeDef *spi, struct spi_stm32_data *data)
 {
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) && !defined(CONFIG_SPI_RTIO)
-	if (LL_SPI_GetTransferSize(spi) > 0U) {
+	if (ll_get_transfer_size(spi) > 0U) {
 		/* Transfer size is set, use FIFO mode. */
 		spi_stm32_shift_fifo(spi, data);
 		return;
@@ -909,28 +909,26 @@ static void spi_stm32_msg_start(const struct device *dev, bool is_rx_empty)
 	spi_stm32_cs_control(dev, true);
 
 	if (IS_ENABLED(CONFIG_SPI_STM32_INTERRUPT)) {
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
-		if (LL_SPI_GetTransferSize(spi) != 0U) {
-			LL_SPI_EnableIT_EOT(spi);
+		if (ll_get_transfer_size(spi) != 0U) {
+			ll_enable_int_eot(spi);
 		}
-#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
 
 		ll_enable_int_errors(spi);
 
 		if (transfer_dir == STM32_SPI_FULL_DUPLEX) {
 			struct spi_stm32_data *data = dev->data;
 
+			if (ll_get_transfer_size(spi) != 0U) {
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
-			if (LL_SPI_GetTransferSize(spi) != 0U) {
 				/* H7 with FIFO full-duplex:
 				 * Fill the TX FIFO with as many frames as possible,
 				 * up to the FIFO threshold. The DXP ISR will keep the
 				 * FIFO full until all data is sent.
 				 */
 				spi_stm32_send_fifo(spi, data);
-				LL_SPI_EnableIT_DXP(spi);
-			} else {
+				ll_enable_int_dxp(spi);
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
+			} else {
 				/* Non-H7 or H7 without FIFO full-duplex:
 				 * Seed the TX pipeline with the first frame and enable RXNE only.
 				 * Each RXNE ISR reads one received frame then sends the next,
@@ -939,9 +937,7 @@ static void spi_stm32_msg_start(const struct device *dev, bool is_rx_empty)
 				 */
 				data->tx_len -= spi_stm32_send_next_frame(spi, data, 0U);
 				ll_enable_int_rx_not_empty(spi);
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 			}
-#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
 		} else {
 			if (transfer_dir != STM32_SPI_HALF_DUPLEX_TX) {
 				ll_enable_int_rx_not_empty(spi);
@@ -959,7 +955,7 @@ static void spi_stm32_msg_start(const struct device *dev, bool is_rx_empty)
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 		if (transfer_dir == STM32_SPI_FULL_DUPLEX &&
 		    LL_SPI_GetMode(spi) == LL_SPI_MODE_MASTER &&
-		    LL_SPI_GetTransferSize(spi) != 0U) {
+		    ll_get_transfer_size(spi) != 0U) {
 			/* Polling mode: send the first frame so that only DXP and EOT are
 			 * checked next.
 			 */
@@ -1181,11 +1177,7 @@ static int spi_stm32_half_duplex_switch_direction(const struct device *dev)
 	if (LL_SPI_GetMode(spi) == LL_SPI_MODE_MASTER &&
 	    !spi_context_tx_on(&data->ctx) && spi_context_rx_on(&data->ctx)) {
 		LL_SPI_Disable(spi);
-
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
-		LL_SPI_SetTransferSize(spi, data->rx_len);
-#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
-
+		ll_set_transfer_size(spi, data->rx_len);
 		ll_set_transfer_direction(spi, STM32_SPI_HALF_DUPLEX_RX);
 		LL_SPI_Enable(spi);
 		spi_stm32_cs_control(dev, true);
@@ -1195,9 +1187,7 @@ static int spi_stm32_half_duplex_switch_direction(const struct device *dev)
 #endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
 
 		if (IS_ENABLED(CONFIG_SPI_STM32_INTERRUPT)) {
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
-			LL_SPI_EnableIT_EOT(spi);
-#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
+			ll_enable_int_eot(spi);
 			ll_enable_int_errors(spi);
 			ll_enable_int_rx_not_empty(spi);
 		}
@@ -1205,21 +1195,17 @@ static int spi_stm32_half_duplex_switch_direction(const struct device *dev)
 		   spi_context_tx_on(&data->ctx) && !spi_context_rx_on(&data->ctx)) {
 		LL_SPI_Disable(spi);
 
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 		if (!IS_ENABLED(CONFIG_SPI_RTIO)) {
-			LL_SPI_SetTransferSize(spi, data->tx_len);
+			ll_set_transfer_size(spi, data->tx_len);
 		}
-#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
 
 		ll_set_transfer_direction(spi, STM32_SPI_HALF_DUPLEX_TX);
 		LL_SPI_Enable(spi);
 
 		if (IS_ENABLED(CONFIG_SPI_STM32_INTERRUPT)) {
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
 			if (!IS_ENABLED(CONFIG_SPI_RTIO)) {
-				LL_SPI_EnableIT_EOT(spi);
+				ll_enable_int_eot(spi);
 			}
-#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
 			ll_enable_int_errors(spi);
 			ll_enable_int_tx_empty(spi);
 		}
@@ -1246,12 +1232,10 @@ static void spi_stm32_complete(const struct device *dev, int status)
 	if (data->rtio_ctx->txn_head != NULL &&
 	    ((ll_get_transfer_direction(spi) == STM32_SPI_FULL_DUPLEX) ||
 	     !spi_stm32_transfer_ongoing(data))) {
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
-		LL_SPI_ClearFlag_TXTF(spi);
 		LL_SPI_ClearFlag_OVR(spi);
-		LL_SPI_ClearFlag_EOT(spi);
-		LL_SPI_DisableIT_EOT(spi);
-#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
+		ll_clear_txtf_flag(spi);
+		ll_clear_eot_flag(spi);
+		ll_disable_int_eot(spi);
 		spi_stm32_iodev_complete(dev, status);
 		return;
 	}
@@ -1261,11 +1245,8 @@ static void spi_stm32_complete(const struct device *dev, int status)
 		ll_disable_int_tx_empty(spi);
 		ll_disable_int_rx_not_empty(spi);
 		ll_disable_int_errors(spi);
-
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
-		LL_SPI_DisableIT_EOT(spi);
-		LL_SPI_DisableIT_DXP(spi);
-#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
+		ll_disable_int_eot(spi);
+		ll_disable_int_dxp(spi);
 	}
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_spi_fifo)
@@ -1283,7 +1264,7 @@ static void spi_stm32_complete(const struct device *dev, int status)
 			 * of 9, 17 or 25 bit transfer, so disable the SPI in these cases to
 			 * avoid being stuck.
 			 */
-			if (LL_SPI_GetTransferSize(spi) == 0 &&
+			if (ll_get_transfer_size(spi) == 0 &&
 			    ((width == 9U) || (width == 17U) || (width == 25U))) {
 				ll_disable_spi(spi);
 			}
@@ -1301,12 +1282,10 @@ static void spi_stm32_complete(const struct device *dev, int status)
 		LL_SPI_ClearFlag_MODF(spi);
 	}
 
-#if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
-	LL_SPI_ClearFlag_TXTF(spi);
 	LL_SPI_ClearFlag_OVR(spi);
-	LL_SPI_ClearFlag_EOT(spi);
-	LL_SPI_SetTransferSize(spi, 0);
-#endif /* DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi) */
+	ll_clear_txtf_flag(spi);
+	ll_clear_eot_flag(spi);
+	ll_set_transfer_size(spi, 0);
 
 #ifdef CONFIG_SPI_PERIPHERAL
 	bool peripheral_hd_tx = spi_context_is_peripheral(&data->ctx) &&
@@ -1720,20 +1699,20 @@ static int32_t spi_stm32_set_transfer_size(const struct device *dev,
 				ll_disable_spi(spi);
 			}
 
-			LL_SPI_SetTransferSize(spi, (uint32_t)frames);
+			ll_set_transfer_size(spi, (uint32_t)frames);
 		} else {
 			LOG_INF("Buffer size exceeds maximal supported value. "
 				"Falling back to non-FIFO mode. "
 				"This may result in performance degradation.");
 
-			if (LL_SPI_GetTransferSize(spi) != 0U || data->fifo_threshold != 1) {
+			if (ll_get_transfer_size(spi) != 0U || data->fifo_threshold != 1) {
 				if (LL_SPI_IsEnabled(spi)) {
 					/* SPI needs to be disabled to set the transfer size */
 					ll_disable_spi(spi);
 				}
 
 				/* Set transfer size to 0 and set the FIFO threshold to 1 frame */
-				LL_SPI_SetTransferSize(spi, 0U);
+				ll_set_transfer_size(spi, 0U);
 				data->fifo_threshold = 1;
 				LL_SPI_SetFIFOThreshold(spi, table_fifo_threshold[0]);
 			}
