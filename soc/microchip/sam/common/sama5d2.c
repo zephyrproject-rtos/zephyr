@@ -45,6 +45,10 @@ void sam_pmc_setup(const struct device *dev)
 	void *const regmap = cfg->reg;
 
 	struct pmc_data *sama5d2_pmc;
+	struct device *clk, *main_rc, *main_osc;
+	const struct device *parents[2];
+	uint32_t rate;
+	int ret;
 
 	if (!td_slck || !md_slck || !main_xtal || !regmap) {
 		LOG_ERR("Incorrect parameters");
@@ -62,4 +66,31 @@ void sam_pmc_setup(const struct device *dev)
 	data->pmc = sama5d2_pmc;
 
 	sama5d2_pmc->chws[PMC_SLOW] = (struct device *)td_slck;
+
+	ret = clk_register_main_rc_osc(regmap, "main_rc_osc", MHZ(12), &main_rc);
+	if (ret) {
+		LOG_ERR("Register main_rc_osc failed");
+		return;
+	}
+
+	if (clock_control_get_rate(main_xtal, NULL, &rate)) {
+		LOG_ERR("Get main_xtal rate failed");
+		return;
+	}
+
+	ret = clk_register_main_osc(regmap, "main_osc", 0, rate, &main_osc);
+	if (ret) {
+		LOG_ERR("Register main_osc failed");
+		return;
+	}
+
+	parents[0] = main_rc;
+	parents[1] = main_osc;
+	ret = clk_register_main(regmap, "mainck", parents, 2, &clk);
+	if (ret) {
+		LOG_ERR("Register mainck failed");
+		return;
+	}
+
+	sama5d2_pmc->chws[PMC_MAIN] = clk;
 }
