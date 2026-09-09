@@ -21,7 +21,6 @@
 #include <zephyr/init.h>
 #include <zephyr/logging/log.h>
 #include <zephyr/pm/device.h>
-#include <zephyr/pm/device_runtime.h>
 #include <zephyr/sys/check.h>
 #include <zephyr/sys/util.h>
 
@@ -401,18 +400,6 @@ static int soft_reset(const struct device *dev)
 
 	if (conf->bus.rtio.type == BMP581_BUS_TYPE_I2C) {
 		/* Soft reset: one blocking write (reg + cmd); avoid multi-SQE RTIO here. */
-		if (conf->i2c_controller == NULL || !device_is_ready(conf->i2c_controller)) {
-			return -ENODEV;
-		}
-
-		/* Parent I2C can be runtime-suspended while this sensor node is already probed. */
-#if IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)
-		(void)pm_device_runtime_get(conf->i2c_controller);
-#endif
-#if IS_ENABLED(CONFIG_PM_DEVICE)
-		(void)pm_device_action_run(conf->i2c_controller, PM_DEVICE_ACTION_RESUME);
-#endif
-
 		ret = bmp581_bus_i2c_burst_write(&conf->bus, reset_wr, sizeof(reset_wr));
 	} else {
 		ret = bmp581_reg_write_rtio(&conf->bus, BMP5_REG_CMD, &reset_cmd, 1);
@@ -875,14 +862,9 @@ static DEVICE_API(sensor, bmp581_driver_api) = {
 #define BMP581_BUS_I2C_SPEC(i)                                                                     \
 	COND_CODE_1(DT_INST_ON_BUS(i, i2c),                                                        \
 		    (.i2c_spec = &bmp581_i2c_spec_##i,), (.i2c_spec = NULL,))
-#define BMP581_I2C_CONTROLLER(i)                                                                   \
-	COND_CODE_1(DT_INST_ON_BUS(i, i2c),                                                        \
-		    (.i2c_controller = DEVICE_DT_GET(DT_INST_BUS(i)),),                           \
-		    (.i2c_controller = NULL,))
 #else
 #define BMP581_I2C_SPEC_DEFINE(i)
 #define BMP581_BUS_I2C_SPEC(i)   .i2c_spec = NULL,
-#define BMP581_I2C_CONTROLLER(i) .i2c_controller = NULL,
 #endif
 
 /* clang-format off */
@@ -918,7 +900,6 @@ static DEVICE_API(sensor, bmp581_driver_api) = {
 				BMP581_BUS_I3C_ID(i)                                               \
 			},                                                                         \
 		},                                                                                 \
-		BMP581_I2C_CONTROLLER(i)                                                           \
 		.int_gpio = GPIO_DT_SPEC_INST_GET_OR(i, int_gpios, {0}),                           \
 		.int_polarity = !DT_INST_PROP(i, int_active_low),                                  \
 		.int_open_drain = DT_INST_PROP(i, int_open_drain),                                 \
