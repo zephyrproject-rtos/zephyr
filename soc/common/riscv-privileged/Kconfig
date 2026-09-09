@@ -7,5 +7,6 @@
 config RISCV_VECTORED_MODE
 	bool "Should the SOC use vectored mode"
 	depends on RISCV_PRIVILEGED
+	default y if GEN_IRQ_VECTOR_TABLE
 	help
 	  Should the SOC use vectored mode.
