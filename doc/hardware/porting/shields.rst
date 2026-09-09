@@ -145,7 +145,7 @@ These describe connections to cameras and displays (strictly speaking not shield
 - :dtcompatible:`raspberrypi,csi-connector`
 - :dtcompatible:`st,dsi-lcd-qsh-030-connector`
 - :dtcompatible:`st,dvp-cam-zif-30-connector`
-- :dtcompatible:`weact,dcmi-camera-connector`
+- :dtcompatible:`dvp-24pin-connector`
 
 
 ESP-01
