@@ -79,6 +79,9 @@
 				erase-block-size = <DT_SIZE_K(8)>;  /* 8 KiB sectors */
 				write-block-size = <8>;             /* 8-byte min program unit */
 				status = "disabled";
+				ranges;
+				#address-cells = <1>;
+				#size-cells = <1>;
 			};
 		};
 
