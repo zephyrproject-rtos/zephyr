@@ -1,0 +1,119 @@
+# Copyright (c) 2026 ABOV Semiconductor Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+title: ABOV32 System Control Clock Unit (CCTL)
+
+description: |
+  ABOV 32-bit SoC System Control Unit (SCU) clock sub-system. Configures the
+  HSE/HSI/LSE/LSI oscillators, the PLL, and the MCLK/HCLK/PCLK dividers via
+  the ABOV HAL SCU_CLK API (hal_scu_clk.h).
+
+  To specify a clock in a peripheral node, use the standard clocks property
+  with one of the ABOV32_CLOCK_* identifiers from
+  include/zephyr/dt-bindings/clock/abov32-clock.h, e.g.:
+
+    uart0: uart@xxx {
+        ...
+        clocks = <&cctl ABOV32_CLOCK_PCLK>;
+        ...
+    };
+
+  The PLL output frequency is not derived from the divider fields, since
+  their register-level scaling is chip-specific; it must be supplied
+  directly via pll-output-frequency, computed from the datasheet by the
+  board integrator.
+
+compatible: "abov,abov32-cctl"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#clock-cells":
+    const: 1
+
+  hse-frequency:
+    type: int
+    description: HSE (high-speed external) crystal frequency in Hz. Enables HSE if present.
+
+  lse-frequency:
+    type: int
+    description: LSE (low-speed external) crystal frequency in Hz. Enables LSE if present.
+
+  hsi-frequency:
+    type: int
+    default: 8000000
+    description: HSI (high-speed internal) oscillator frequency in Hz. Fixed by the SoC.
+
+  lsi-frequency:
+    type: int
+    default: 0
+    description: |
+      LSI (low-speed internal) oscillator frequency in Hz. Must be set to
+      the value from the SoC datasheet before any LSI-derived clock is
+      used; the default of 0 is a placeholder, not a valid oscillator
+      frequency.
+
+  pll-source-hse:
+    type: boolean
+    description: Use HSE as the PLL input source. Defaults to HSI if not set.
+
+  pll-source-div:
+    type: int
+    default: 0
+    description: PLL input source divider, as a SCUCLK_DIV_e index (0 = /1, 1 = /2, 2 = /4, ...).
+
+  pll-pre-div:
+    type: int
+    default: 0
+    description: PLL input pre-divider register field (un8PreDiv).
+
+  pll-out-div:
+    type: int
+    default: 0
+    description: PLL feedback/output divider register field (un8OutDiv).
+
+  pll-post-div1:
+    type: int
+    default: 0
+    description: PLL post-divider 1 register field (un8PostDiv1).
+
+  pll-post-div2:
+    type: int
+    default: 0
+    description: PLL post-divider 2 register field (un8PostDiv2).
+
+  pll-vco2x:
+    type: boolean
+    description: Run the PLL VCO at twice the output frequency. Defaults to matching FOUT.
+
+  pll-output-frequency:
+    type: int
+    description: |
+      Resulting PLL output frequency in Hz, computed from the datasheet by
+      the board integrator. Presence of this property enables the PLL.
+
+  mclk-source:
+    type: int
+    default: 1
+    description: Main clock source, one of the ABOV32_CLOCK_* identifiers (default ABOV32_CLOCK_HSI).
+
+  mclk-pre-div:
+    type: int
+    default: 0
+    description: Main clock pre-divider, as a SCUCLK_DIV_e index.
+
+  mclk-post-div:
+    type: int
+    default: 0
+    description: Main clock post-divider (yields HCLK/FCLK), as a SCUCLK_DIV_e index.
+
+  pclk-div:
+    type: int
+    default: 0
+    description: Peripheral clock (PCLK) divider, as a SCUCLK_DIV_e index.
+
+clock-cells:
+  - id
