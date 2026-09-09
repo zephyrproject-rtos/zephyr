@@ -17,6 +17,7 @@
 #include <zephyr/sys/__assert.h>
 #include <zephyr/pm/device.h>
 #include <zephyr/pm/device_runtime.h>
+
 LOG_MODULE_REGISTER(log_uart);
 
 struct lbu_data {
@@ -34,18 +35,15 @@ struct lbu_cb_ctx {
 	struct lbu_data *data;
 };
 
-#define LBU_UART_DEV(ctx)                                                                          \
-	COND_CODE_1(DT_HAS_CHOSEN(zephyr_log_uart), (ctx->uart_dev),                               \
-		    (DEVICE_DT_GET(DT_CHOSEN(zephyr_console))))
+#define LBU_UART_DEV(ctx) \
+	COND_CODE_1(DT_HAS_CHOSEN(zephyr_log_uart), (ctx->uart_dev), \
+		(DEVICE_DT_GET(DT_CHOSEN(zephyr_console))))
 
-/* Fixed size to avoid auto-added trailing '\0'.
- * Used if CONFIG_LOG_BACKEND_UART_OUTPUT_DICTIONARY_HEX.
- */
 static const char LOG_HEX_SEP[10] = "##ZLOGV1##";
 
 static void uart_callback(const struct device *dev,
-			  struct uart_event *evt,
-			  void *user_data)
+			 struct uart_event *evt,
+			 void *user_data)
 {
 	const struct lbu_cb_ctx *ctx = user_data;
 	struct lbu_data *data = ctx->data;
@@ -67,12 +65,10 @@ static void dict_char_out_hex(const struct device *uart_dev, uint8_t *data, size
 		char c;
 		uint8_t x;
 
-		/* upper 8-bit */
 		x = data[i] >> 4;
 		(void)hex2char(x, &c);
 		uart_poll_out(uart_dev, c);
 
-		/* lower 8-bit */
 		x = data[i] & 0x0FU;
 		(void)hex2char(x, &c);
 		uart_poll_out(uart_dev, c);
@@ -86,10 +82,11 @@ static int char_out(uint8_t *data, size_t length, void *ctx)
 	struct lbu_data *lb_data = cb_ctx->data;
 	const struct device *uart_dev = LBU_UART_DEV(cb_ctx);
 
+#ifdef CONFIG_LOG_BACKEND_UART_SUSPEND_ON_IDLE
+	(void)pm_device_action_run(uart_dev, PM_DEVICE_ACTION_RESUME);
+#endif /* CONFIG_LOG_BACKEND_UART_SUSPEND_ON_IDLE */
+
 	if (pm_device_runtime_get(uart_dev) < 0) {
-		/* Enabling the UART instance has failed but this
-		 * function MUST return the number of bytes consumed.
-		 */
 		return length;
 	}
 
@@ -114,17 +111,13 @@ static int char_out(uint8_t *data, size_t length, void *ctx)
 
 	(void)err;
 cleanup:
-	/* Use async put to avoid useless device suspension/resumption
-	 * when tranmiting chain of chars.
-	 * As errors cannot be returned, ignore the return value
-	 */
 	(void)pm_device_runtime_put_async(uart_dev, K_MSEC(1));
 
 	return length;
 }
 
 static void process(const struct log_backend *const backend,
-		union log_msg_generic *msg)
+		   union log_msg_generic *msg)
 {
 	const struct lbu_cb_ctx *ctx = backend->cb->ctx;
 	struct lbu_data *data = ctx->data;
@@ -155,11 +148,6 @@ static void log_backend_uart_init(struct log_backend const *const backend)
 	log_output_ctx_set(ctx->output, (void *)ctx);
 
 	if (IS_ENABLED(CONFIG_LOG_BACKEND_UART_OUTPUT_DICTIONARY_HEX)) {
-		/* Print a separator so the output can be fed into
-		 * log parser directly. This is useful when capturing
-		 * from UART directly where there might be other output
-		 * (e.g. bootloader).
-		 */
 		for (int i = 0; i < sizeof(LOG_HEX_SEP); i++) {
 			uart_poll_out(uart_dev, LOG_HEX_SEP[i]);
 		}
@@ -187,8 +175,7 @@ static void panic(struct log_backend const *const backend)
 	struct lbu_data *data = ctx->data;
 	const struct device *uart_dev = LBU_UART_DEV(ctx);
 
-	/* Ensure that the UART device is in active mode */
-#if defined(CONFIG_PM_DEVICE_RUNTIME)
+#ifdef CONFIG_PM_DEVICE_RUNTIME
 	(void)pm_device_runtime_get(uart_dev);
 #elif defined(CONFIG_PM_DEVICE)
 	enum pm_device_state pm_state;
@@ -217,40 +204,61 @@ static void dropped(const struct log_backend *const backend, uint32_t cnt)
 	}
 }
 
+#ifdef CONFIG_LOG_BACKEND_UART_SUSPEND_ON_IDLE
+static void notify(const struct log_backend *const backend,
+		  enum log_backend_evt event,
+		  union log_backend_evt_arg *arg)
+{
+	ARG_UNUSED(arg);
+
+	if (event != LOG_BACKEND_EVT_PROCESS_THREAD_DONE) {
+		return;
+	}
+
+	const struct lbu_cb_ctx *ctx = backend->cb->ctx;
+	const struct device *uart_dev = LBU_UART_DEV(ctx);
+
+	(void)pm_device_action_run(uart_dev, PM_DEVICE_ACTION_SUSPEND);
+}
+#endif /* CONFIG_LOG_BACKEND_UART_SUSPEND_ON_IDLE */
+
 const struct log_backend_api log_backend_uart_api = {
 	.process = process,
 	.panic = panic,
 	.init = log_backend_uart_init,
 	.dropped = IS_ENABLED(CONFIG_LOG_MODE_IMMEDIATE) ? NULL : dropped,
 	.format_set = format_set,
+#ifdef CONFIG_LOG_BACKEND_UART_SUSPEND_ON_IDLE
+	.notify = notify,
+#endif
 };
 
-#if defined(CONFIG_LOG_BACKEND_UART_ASYNC) && defined(CONFIG_SOC_FAMILY_STM32) &&                  \
+#if defined(CONFIG_LOG_BACKEND_UART_ASYNC) && defined(CONFIG_SOC_FAMILY_STM32) && \
 	defined(CONFIG_ARCH_HAS_NOCACHE_MEMORY_SUPPORT)
 #define NOCACHE_ATTR __nocache
 #else
 #define NOCACHE_ATTR
 #endif
 
-#define LBU_DEFINE(node_id, ...)                                                                   \
-	static uint8_t lbu_buffer##__VA_ARGS__[CONFIG_LOG_BACKEND_UART_BUFFER_SIZE] NOCACHE_ATTR;  \
-	LOG_OUTPUT_DEFINE(lbu_output##__VA_ARGS__, char_out, lbu_buffer##__VA_ARGS__,              \
-			  CONFIG_LOG_BACKEND_UART_BUFFER_SIZE);                                    \
-                                                                                                   \
-	static struct lbu_data lbu_data##__VA_ARGS__ = {                                           \
-		.log_format_current = CONFIG_LOG_BACKEND_UART_OUTPUT_DEFAULT,                      \
-	};                                                                                         \
-                                                                                                   \
-	static const struct lbu_cb_ctx lbu_cb_ctx##__VA_ARGS__ = {                                 \
-		.output = &lbu_output##__VA_ARGS__,                                                \
-		COND_CODE_0(NUM_VA_ARGS_LESS_1(_, ##__VA_ARGS__), (),                              \
-				(.uart_dev = DEVICE_DT_GET(node_id),))                             \
-		.data = &lbu_data##__VA_ARGS__,                                                    \
-	};                                                                                         \
-                                                                                                   \
-	LOG_BACKEND_DEFINE(log_backend_uart##__VA_ARGS__, log_backend_uart_api,                    \
-			   IS_ENABLED(CONFIG_LOG_BACKEND_UART_AUTOSTART),                          \
-			   (void *)&lbu_cb_ctx##__VA_ARGS__);
+#define LBU_DEFINE(node_id, ...) \
+	static uint8_t lbu_buffer##_VA_ARGS_[CONFIG_LOG_BACKEND_UART_BUFFER_SIZE] NOCACHE_ATTR; \
+	LOG_OUTPUT_DEFINE(lbu_output##_VA_ARGS, char_out, lbu_buffer##VA_ARGS_, \
+		CONFIG_LOG_BACKEND_UART_BUFFER_SIZE); \
+	\
+	static struct lbu_data lbu_data##_VA_ARGS_ = { \
+		.log_format_current = CONFIG_LOG_BACKEND_UART_OUTPUT_DEFAULT, \
+	}; \
+	\
+	static const struct lbu_cb_ctx lbu_cb_ctx##_VA_ARGS_ = { \
+		.output = &lbu_output##_VA_ARGS_, \
+		COND_CODE_0(NUM_VA_ARGS_LESS_1(, ##VA_ARGS_), (), \
+			(.uart_dev = DEVICE_DT_GET(node_id),)) \
+		.data = &lbu_data##_VA_ARGS_, \
+	}; \
+	\
+	LOG_BACKEND_DEFINE(log_backend_uart##_VA_ARGS_, log_backend_uart_api, \
+		IS_ENABLED(CONFIG_LOG_BACKEND_UART_AUTOSTART), \
+		(void *)&lbu_cb_ctx##_VA_ARGS_);
 
 #if DT_HAS_CHOSEN(zephyr_log_uart)
 #define LBU_PHA_FN(node_id, prop, idx) LBU_DEFINE(DT_PHANDLE_BY_IDX(node_id, prop, idx), idx)
