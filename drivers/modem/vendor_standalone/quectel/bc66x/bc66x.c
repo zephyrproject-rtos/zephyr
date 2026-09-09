@@ -978,6 +978,8 @@ static void bc66x_init_work_handler(struct k_work *work)
 	atomic_set(&data->modem_state, BC66X_INIT_STATE);
 	memset(&data->connection_info, 0, sizeof(data->connection_info));
 
+	data->connection_info.access_technology = CELLULAR_ACCESS_TECHNOLOGY_UNKNOWN;
+
 	ret = bc66x_do_init(data->dev);
 	if (ret == 0) {
 		atomic_set(&data->is_initialized, 1);
@@ -1102,11 +1104,9 @@ static int bc66x_get_signal(const struct device *dev, const enum cellular_signal
 }
 
 static int bc66x_get_registration_status(const struct device *dev,
-					 enum cellular_access_technology tech,
+					 enum cellular_access_technology *tech,
 					 enum cellular_registration_status *status)
 {
-
-	const struct bc66x_config *cfg = dev->config;
 	struct bc66x_data *data = dev->data;
 	int ret;
 
@@ -1115,19 +1115,10 @@ static int bc66x_get_registration_status(const struct device *dev,
 		LOG_WRN("Cannot update registration info");
 	}
 
-	if (tech == CELLULAR_ACCESS_TECHNOLOGY_E_UTRAN_NB_S1 ||
-	    (cfg->is_bc66 && tech == CELLULAR_ACCESS_TECHNOLOGY_E_UTRAN)) {
+	*tech = data->connection_info.access_technology;
+	*status = data->connection_info.registration_status;
 
-		if (data->connection_info.access_technology == tech) {
-			*status = data->connection_info.registration_status;
-		} else {
-			*status = CELLULAR_REGISTRATION_NOT_REGISTERED;
-		}
-		return 0;
-
-	} else {
-		return -ENOTSUP;
-	}
+	return ret;
 }
 
 static int bc66x_set_apn(const struct device *dev, const char *new_apn)
