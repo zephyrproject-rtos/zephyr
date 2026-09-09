@@ -21,7 +21,7 @@ extern "C" {
 void img_upload_stub_init(void);
 void img_upload_response(size_t offset, int status);
 void img_fail_response(int status);
-void img_read_response(int count);
+void img_read_response(int count, size_t hash_len);
 void img_erase_response(int status);
 void img_upload_init_verify(struct net_buf *nb);
 void img_state_write_verify(struct net_buf *nb);
