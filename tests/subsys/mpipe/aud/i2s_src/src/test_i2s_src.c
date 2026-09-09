@@ -27,6 +27,78 @@ static struct mpipe_aud_i2s_src src;
 static struct mpipe_aud_i2s_codec_sink sink;
 static struct mpipe_caps_filter caps_filter;
 
+#define PREPARE_TEST_BLOCK_SIZE  1920
+#define PREPARE_TEST_BLOCK_COUNT 5
+
+K_MEM_SLAB_DEFINE_STATIC(prepare_test_slab, PREPARE_TEST_BLOCK_SIZE, PREPARE_TEST_BLOCK_COUNT, 4);
+
+struct prepare_probe_i2s_data {
+	struct i2s_config config;
+	uint32_t configure_count;
+	uint32_t prepare_count;
+};
+
+static int prepare_probe_i2s_configure(const struct device *dev, enum i2s_dir dir,
+				       const struct i2s_config *config)
+{
+	struct prepare_probe_i2s_data *data = dev->data;
+
+	ARG_UNUSED(dir);
+	data->config = *config;
+	data->configure_count++;
+	return 0;
+}
+
+static const struct i2s_config *prepare_probe_i2s_config_get(const struct device *dev,
+							     enum i2s_dir dir)
+{
+	struct prepare_probe_i2s_data *data = dev->data;
+
+	ARG_UNUSED(dir);
+	return &data->config;
+}
+
+static int prepare_probe_i2s_read(const struct device *dev, void **mem_block, size_t *size)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(mem_block);
+	ARG_UNUSED(size);
+	return -ENOSYS;
+}
+
+static int prepare_probe_i2s_write(const struct device *dev, void *mem_block, size_t size)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(mem_block);
+	ARG_UNUSED(size);
+	return -ENOSYS;
+}
+
+static int prepare_probe_i2s_trigger(const struct device *dev, enum i2s_dir dir,
+				     enum i2s_trigger_cmd cmd)
+{
+	struct prepare_probe_i2s_data *data = dev->data;
+
+	ARG_UNUSED(dir);
+	if (cmd == I2S_TRIGGER_PREPARE) {
+		data->prepare_count++;
+	}
+	return 0;
+}
+
+static DEVICE_API(i2s, prepare_probe_i2s_api) = {
+	.configure = prepare_probe_i2s_configure,
+	.config_get = prepare_probe_i2s_config_get,
+	.read = prepare_probe_i2s_read,
+	.write = prepare_probe_i2s_write,
+	.trigger = prepare_probe_i2s_trigger,
+};
+
+static struct prepare_probe_i2s_data prepare_probe_i2s_data;
+
+DEVICE_DEFINE(prepare_probe_i2s, "prepare_probe_i2s", NULL, NULL, &prepare_probe_i2s_data, NULL,
+	      POST_KERNEL, CONFIG_KERNEL_INIT_PRIORITY_DEVICE, &prepare_probe_i2s_api);
+
 ZTEST(mpipe_aud_i2s_src, test_enum_caps_nonempty)
 {
 	struct mpipe_aud_i2s_src local;
@@ -39,6 +111,29 @@ ZTEST(mpipe_aud_i2s_src, test_enum_caps_nonempty)
 	zassert_ok(ret, "enum_caps index 0 returned %d", ret);
 
 	mpipe_structure_clear(&out);
+}
+
+ZTEST(mpipe_aud_i2s_src, test_sink_does_not_prepare_a_healthy_stream)
+{
+	struct mpipe_aud_i2s_codec_sink local_sink;
+	struct mpipe_structure caps;
+
+	memset(&prepare_probe_i2s_data, 0, sizeof(prepare_probe_i2s_data));
+	zassert_ok(mpipe_aud_i2s_codec_sink_init(&local_sink, 1));
+	local_sink.i2s_dev = DEVICE_GET(prepare_probe_i2s);
+	zassert_ok(mpipe_object_set_properties((struct mpipe_object *)&local_sink,
+					       MPIPE_PROP_AUD_SINK_SLAB_PTR, &prepare_test_slab,
+					       MPIPE_PROP_LIST_END));
+	zassert_ok(mpipe_structure_init_fields(
+		&caps, MPIPE_MEDIA_AUDIO_PCM, MPIPE_CAPS_SAMPLE_RATE, MPIPE_TYPE_UINT, 48000,
+		MPIPE_CAPS_BITWIDTH, MPIPE_TYPE_UINT, 16, MPIPE_CAPS_NUM_OF_CHANNEL,
+		MPIPE_TYPE_UINT, 2, MPIPE_CAPS_FRAME_INTERVAL, MPIPE_TYPE_UINT, 10000,
+		MPIPE_CAPS_INTERLEAVED, MPIPE_TYPE_BOOLEAN, true, MPIPE_CAPS_END));
+
+	zassert_ok(local_sink.sink.set_caps(&local_sink.sink, &caps));
+	zassert_equal(prepare_probe_i2s_data.configure_count, 1U);
+	zassert_equal(prepare_probe_i2s_data.prepare_count, 0U,
+		      "a normal configure issued PREPARE outside I2S_STATE_ERROR");
 }
 
 /* READY->PAUSED prepares I2S; only PLAYING may start the hardware streams. */
@@ -85,8 +180,7 @@ ZTEST(mpipe_aud_i2s_src, test_pipeline_starts_i2s_only_while_playing)
 	zassert_equal(mpipe_element_set_state((struct mpipe_element *)&pipe, MPIPE_STATE_PAUSED),
 		      MPIPE_STATE_CHANGE_SUCCESS);
 	zassert_equal(mpipe_element_set_state((struct mpipe_element *)&pipe, MPIPE_STATE_PLAYING),
-		      MPIPE_STATE_CHANGE_SUCCESS,
-		      "RX was not stopped and restarted across pause");
+		      MPIPE_STATE_CHANGE_SUCCESS, "RX was not stopped and restarted across pause");
 
 	(void)mpipe_element_set_state((struct mpipe_element *)&pipe, MPIPE_STATE_READY);
 }

@@ -284,14 +284,6 @@ static int mpipe_aud_i2s_codec_sink_set_caps(struct mpipe_sink *sink,
 	/* timeout is ms, frame_interval us: ~10 frame periods, 100 ms floor. */
 	config.timeout = MAX(100U, (frame_interval / 1000U) * 10U);
 
-	/*
-	 * A TX underrun latches the device in an error state that i2s_configure()
-	 * refuses, so a restart would fail for as long as the board stays powered.
-	 * PREPARE is the only transition back to READY; it reports -EIO when there
-	 * was nothing to clear, which is the ordinary path.
-	 */
-	(void)i2s_trigger(aud_i2s_codec_sink->i2s_dev, I2S_DIR_TX, I2S_TRIGGER_PREPARE);
-
 	ret = i2s_configure(aud_i2s_codec_sink->i2s_dev, I2S_DIR_TX, &config);
 	if (ret < 0) {
 		LOG_ERR("Failed to configure I2S stream: %d", ret);
