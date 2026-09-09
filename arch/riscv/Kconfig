@@ -616,9 +616,6 @@ config RISCV_TRAP_HANDLER_ALIGNMENT
 	  the format of MTVEC register which is RISC-V platform-specific.
 	  The minimum alignment is 4 bytes according to the Spec.
 
-config GEN_IRQ_VECTOR_TABLE
-	select RISCV_VECTORED_MODE if RISCV_PRIVILEGED
-
 config ARCH_HAS_SINGLE_THREAD_SUPPORT
 	default y if !SMP
 
