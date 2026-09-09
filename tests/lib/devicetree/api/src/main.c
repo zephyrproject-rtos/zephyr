@@ -5097,4 +5097,11 @@ ZTEST(devicetree_api, test_device_class)
 #undef ADD_ARG_CLASS_OKAY
 }
 
+ZTEST(devicetree_api, test_device_class_kconfig)
+{
+	/* $(dt_class_enabled,...) sees classes declared in bindings */
+	zassert_true(IS_ENABLED(CONFIG_TEST_DT_CLASS_ENABLED));
+	zassert_false(IS_ENABLED(CONFIG_TEST_DT_CLASS_ENABLED_MISSING));
+}
+
 ZTEST_SUITE(devicetree_api, NULL, NULL, NULL, NULL, NULL);
