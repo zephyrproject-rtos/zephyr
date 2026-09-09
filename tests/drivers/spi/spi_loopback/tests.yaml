@@ -102,6 +102,7 @@ tests:
       - nucleo_h745zi_q/stm32h745xx/m7
       - nucleo_h755zi_q/stm32h755xx/m7
       - nucleo_h753zi
+      - nucleo_h7s3l8/stm32h7s3xx/ext_flash_app
       - nucleo_l152re
       - nucleo_u083rc
       - nucleo_u385rg_q
