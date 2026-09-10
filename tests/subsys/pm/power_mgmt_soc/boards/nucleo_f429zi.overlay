@@ -9,3 +9,8 @@
 		zephyr,system-timer-companion = &rtc;
 	};
 };
+
+&rtc {
+	wakeup-source;
+	status = "okay";
+};

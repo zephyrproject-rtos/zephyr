@@ -2,6 +2,7 @@
 
 zephyr_library()
 zephyr_library_sources(sys_clock_init.c)
+zephyr_library_sources_ifndef(CONFIG_SYSTEM_TIMER_LPM_COMPANION_NONE sys_lpm_hooks_stubs.c)
 
 zephyr_library_include_directories(${ZEPHYR_BASE}/drivers/counter)
 # zephyr-keep-sorted-start
