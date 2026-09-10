@@ -564,6 +564,11 @@ New APIs and options
   * :c:macro:`DT_IRQN_BY_NAME`
   * :c:macro:`DT_INST_IRQN_BY_NAME`
 
+* Display
+
+  * :c:enumerator:`PIXEL_FORMAT_YUYV`
+  * :c:macro:`PANEL_PIXEL_FORMAT_YUYV`
+
 * Haptics
 
   * :c:enum:`haptics_monitor`
