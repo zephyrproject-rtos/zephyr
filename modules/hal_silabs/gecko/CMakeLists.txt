@@ -34,7 +34,7 @@ function(add_prebuilt_library lib_name prebuilt_path)
   zephyr_link_libraries(${lib_name})
 endfunction()
 
-if(${CONFIG_SOC_GECKO_HAS_RADIO})
+if(${CONFIG_SOC_VENDOR_SILABS_HAS_RADIO})
   if(${CONFIG_SOC_FAMILY_SILABS_S1})
     zephyr_include_directories(
       ${RADIO_DIR}/rail_lib/plugin/pa-conversions/efr32xg1x/config
