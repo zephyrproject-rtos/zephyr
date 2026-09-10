@@ -108,6 +108,10 @@ void HAL_MDF_ErrorCallback(MDF_HandleTypeDef *hmdf)
 	data->state = DMIC_STATE_ERROR;
 }
 
+/* A 24-bit sample has no limit macros of its own, and BIT() is unsigned */
+#define MDF_SAMPLE24_MIN (-(INT32_C(1) << 23))
+#define MDF_SAMPLE24_MAX ((INT32_C(1) << 23) - 1)
+
 static void dmic_stm32_mdf_write_sample(uint8_t *dst, uint8_t size, int32_t sample)
 {
 	switch (size) {
@@ -118,7 +122,7 @@ static void dmic_stm32_mdf_write_sample(uint8_t *dst, uint8_t size, int32_t samp
 		sys_put_le16((uint16_t)CLAMP(sample, INT16_MIN, INT16_MAX), dst);
 		break;
 	case 3:
-		sys_put_le24((uint32_t)CLAMP(sample, -BIT(23), BIT(23) - 1), dst);
+		sys_put_le24((uint32_t)CLAMP(sample, MDF_SAMPLE24_MIN, MDF_SAMPLE24_MAX), dst);
 		break;
 	default:
 		CODE_UNREACHABLE;
