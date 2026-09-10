@@ -90,11 +90,14 @@ static int lis2dh_sample_fetch_temp(const struct device *dev)
 	return ret;
 }
 
-static int lis2dh_channel_get(const struct device *dev,
-			      enum sensor_channel chan,
-			      struct sensor_value *val)
+static int lis2dh_channel_get_locked(const struct device *dev, enum sensor_channel chan,
+				     struct sensor_value *val)
 {
 	struct lis2dh_data *lis2dh = dev->data;
+#ifdef CONFIG_LIS2DH_FIFO
+	union lis2dh_sample fifo_sample;
+#endif
+	const union lis2dh_sample *sample = &lis2dh->sample;
 	int ofs_start;
 	int ofs_end;
 	int i;
@@ -122,11 +125,33 @@ static int lis2dh_channel_get(const struct device *dev,
 		return -ENOTSUP;
 	}
 
+#ifdef CONFIG_LIS2DH_FIFO
+	if (lis2dh_fifo_is_active(dev)) {
+		int status = lis2dh_fifo_cache_copy(dev, &fifo_sample);
+
+		if (status < 0) {
+			return status;
+		}
+		sample = &fifo_sample;
+	}
+#endif
+
 	for (i = ofs_start; i <= ofs_end; i++, val++) {
-		lis2dh_convert(lis2dh->sample.xyz[i], lis2dh->scale, val);
+		lis2dh_convert(sample->xyz[i], lis2dh->scale, val);
 	}
 
 	return 0;
+}
+
+static int lis2dh_channel_get(const struct device *dev, enum sensor_channel chan,
+			      struct sensor_value *val)
+{
+	int status;
+
+	lis2dh_lock(dev);
+	status = lis2dh_channel_get_locked(dev, chan, val);
+	lis2dh_unlock(dev);
+	return status;
 }
 
 static int lis2dh_fetch_xyz(const struct device *dev,
@@ -160,10 +185,22 @@ static int lis2dh_fetch_xyz(const struct device *dev,
 	return 0;
 }
 
-static int lis2dh_sample_fetch(const struct device *dev,
-			       enum sensor_channel chan)
+static int lis2dh_sample_fetch_locked(const struct device *dev, enum sensor_channel chan)
 {
 	int status = -ENODATA;
+
+#ifdef CONFIG_LIS2DH_FIFO
+	if ((chan == SENSOR_CHAN_ALL || chan == SENSOR_CHAN_ACCEL_XYZ) &&
+	    lis2dh_fifo_is_active(dev)) {
+		status = lis2dh_fifo_sample_fetch(dev);
+#ifdef CONFIG_LIS2DH_MEASURE_TEMPERATURE
+		if (status == 0 && chan == SENSOR_CHAN_ALL) {
+			status = lis2dh_sample_fetch_temp(dev);
+		}
+#endif
+		return status;
+	}
+#endif
 
 	if (chan == SENSOR_CHAN_ALL) {
 		status = lis2dh_fetch_xyz(dev, chan);
@@ -183,50 +220,68 @@ static int lis2dh_sample_fetch(const struct device *dev,
 	return status;
 }
 
-#ifdef CONFIG_LIS2DH_ODR_RUNTIME
-/* 1620 & 5376 are low power only */
-static const uint16_t lis2dh_odr_map[] = {0, 1, 10, 25, 50, 100, 200, 400, 1620,
-				       1344, 5376};
-
-static int lis2dh_freq_to_odr_val(uint16_t freq)
+static int lis2dh_sample_fetch(const struct device *dev, enum sensor_channel chan)
 {
-	size_t i;
+	int status;
 
-	for (i = 0; i < ARRAY_SIZE(lis2dh_odr_map); i++) {
-		if (freq == lis2dh_odr_map[i]) {
-			return i;
-		}
+	lis2dh_lock(dev);
+#ifdef CONFIG_LIS2DH_FIFO
+	if (((struct lis2dh_data *)dev->data)->fifo_faulted) {
+		lis2dh_unlock(dev);
+		return -EIO;
 	}
-
-	return -EINVAL;
+#endif
+	status = lis2dh_sample_fetch_locked(dev, chan);
+	lis2dh_unlock(dev);
+	return status;
 }
 
-static int lis2dh_acc_odr_set(const struct device *dev, uint16_t freq)
+#ifdef CONFIG_LIS2DH_ODR_RUNTIME
+static int lis2dh_freq_to_odr_val(int32_t freq, bool low_power)
+{
+	switch (freq) {
+	case 0:
+		return 0;
+	case 1:
+		return LIS2DH_ODR_1;
+	case 10:
+		return LIS2DH_ODR_2;
+	case 25:
+		return LIS2DH_ODR_3;
+	case 50:
+		return LIS2DH_ODR_4;
+	case 100:
+		return LIS2DH_ODR_5;
+	case 200:
+		return LIS2DH_ODR_6;
+	case 400:
+		return LIS2DH_ODR_7;
+	case 1620:
+		return low_power ? LIS2DH_ODR_8 : -ENOTSUP;
+	case 1344:
+		return low_power ? -ENOTSUP : LIS2DH_ODR_9;
+	case 5376:
+		return low_power ? LIS2DH_ODR_9 : -ENOTSUP;
+	default:
+		return -EINVAL;
+	}
+}
+
+static int lis2dh_acc_odr_set(const struct device *dev, int32_t freq)
 {
 	int odr;
 	int status;
 	uint8_t value;
 	struct lis2dh_data *data = dev->data;
 
-	odr = lis2dh_freq_to_odr_val(freq);
-	if (odr < 0) {
-		return odr;
-	}
-
 	status = data->hw_tf->read_reg(dev, LIS2DH_REG_CTRL1, &value);
 	if (status < 0) {
 		return status;
 	}
 
-	/* some odr values cannot be set in certain power modes */
-	if ((value & LIS2DH_LP_EN_BIT_MASK) == 0U && odr == LIS2DH_ODR_8) {
-		return -ENOTSUP;
-	}
-
-	/* adjust odr index for LP enabled mode, see table above */
-	if (((value & LIS2DH_LP_EN_BIT_MASK) == LIS2DH_LP_EN_BIT_MASK) &&
-		(odr == LIS2DH_ODR_9 + 1)) {
-		odr--;
+	odr = lis2dh_freq_to_odr_val(freq, (value & LIS2DH_LP_EN_BIT_MASK) != 0U);
+	if (odr < 0) {
+		return odr;
 	}
 
 	return data->hw_tf->write_reg(dev, LIS2DH_REG_CTRL1,
@@ -257,17 +312,19 @@ static int lis2dh_acc_range_set(const struct device *dev, int32_t range)
 {
 	struct lis2dh_data *lis2dh = dev->data;
 	int fs;
+	int status;
 
 	fs = lis2dh_range_to_reg_val(range);
 	if (fs < 0) {
 		return fs;
 	}
 
-	lis2dh->scale = lis2dh_reg_val_to_scale[fs];
-
-	return lis2dh->hw_tf->update_reg(dev, LIS2DH_REG_CTRL4,
-					 LIS2DH_FS_MASK,
-					 (fs << LIS2DH_FS_SHIFT));
+	status = lis2dh->hw_tf->update_reg(dev, LIS2DH_REG_CTRL4, LIS2DH_FS_MASK,
+					   (fs << LIS2DH_FS_SHIFT));
+	if (status == 0) {
+		lis2dh->scale = lis2dh_reg_val_to_scale[fs];
+	}
+	return status;
 }
 #endif
 
@@ -301,6 +358,12 @@ static int lis2dh_acc_config(const struct device *dev,
 			     enum sensor_attribute attr,
 			     const struct sensor_value *val)
 {
+#ifdef CONFIG_LIS2DH_FIFO
+	if (lis2dh_fifo_is_busy(dev)) {
+		return -EBUSY;
+	}
+#endif
+
 	switch (attr) {
 #ifdef CONFIG_LIS2DH_ACCEL_RANGE_RUNTIME
 	case SENSOR_ATTR_FULL_SCALE:
@@ -308,6 +371,9 @@ static int lis2dh_acc_config(const struct device *dev,
 #endif
 #ifdef CONFIG_LIS2DH_ODR_RUNTIME
 	case SENSOR_ATTR_SAMPLING_FREQUENCY:
+		if (val->val2 != 0) {
+			return -EINVAL;
+		}
 		return lis2dh_acc_odr_set(dev, val->val1);
 #endif
 #if defined(CONFIG_LIS2DH_TRIGGER)
@@ -331,9 +397,8 @@ static int lis2dh_acc_config(const struct device *dev,
 	return 0;
 }
 
-static int lis2dh_attr_set(const struct device *dev, enum sensor_channel chan,
-			   enum sensor_attribute attr,
-			   const struct sensor_value *val)
+static int lis2dh_attr_set_locked(const struct device *dev, enum sensor_channel chan,
+				  enum sensor_attribute attr, const struct sensor_value *val)
 {
 	switch (chan) {
 	case SENSOR_CHAN_ACCEL_X:
@@ -349,13 +414,53 @@ static int lis2dh_attr_set(const struct device *dev, enum sensor_channel chan,
 	return 0;
 }
 
+static int lis2dh_attr_set(const struct device *dev, enum sensor_channel chan,
+			   enum sensor_attribute attr, const struct sensor_value *val)
+{
+	int status;
+
+	lis2dh_lock(dev);
+	status = lis2dh_attr_set_locked(dev, chan, attr, val);
+	lis2dh_unlock(dev);
+	return status;
+}
+
+#ifdef CONFIG_LIS2DH_FIFO_STATS
+static int lis2dh_attr_get(const struct device *dev, enum sensor_channel chan,
+			   enum sensor_attribute attr, struct sensor_value *val)
+{
+	const struct lis2dh_data *lis2dh = dev->data;
+
+	if (chan != SENSOR_CHAN_ACCEL_XYZ ||
+	    attr != (enum sensor_attribute)SENSOR_ATTR_LIS2DH_FIFO_DROPPED || val == NULL) {
+		return -ENOTSUP;
+	}
+
+	lis2dh_lock(dev);
+	val->val1 = lis2dh->fifo_dropped_samples > INT32_MAX
+			    ? INT32_MAX
+			    : (int32_t)lis2dh->fifo_dropped_samples;
+	val->val2 = 0;
+	lis2dh_unlock(dev);
+
+	return 0;
+}
+#endif
+
 static DEVICE_API(sensor, lis2dh_driver_api) = {
 	.attr_set = lis2dh_attr_set,
+#ifdef CONFIG_LIS2DH_FIFO_STATS
+	.attr_get = lis2dh_attr_get,
+#endif
 #if CONFIG_LIS2DH_TRIGGER
 	.trigger_set = lis2dh_trigger_set,
 #endif
 	.sample_fetch = lis2dh_sample_fetch,
 	.channel_get = lis2dh_channel_get,
+#ifdef CONFIG_SENSOR_ASYNC_API
+	.get_decoder = lis2dh_get_decoder,
+	.submit = lis2dh_submit,
+#endif
 };
 
 int lis2dh_init_chip(const struct device *dev)
@@ -371,14 +476,15 @@ int lis2dh_init_chip(const struct device *dev)
 
 	status = lis2dh->hw_tf->read_reg(dev, LIS2DH_REG_WAI, &id);
 	if (status < 0) {
-		LOG_ERR("Failed to read chip id.");
+		LOG_ERR("%s: WHO_AM_I read failed: %d", dev->name, status);
 		return status;
 	}
 
 	if (id != LIS2DH_CHIP_ID) {
-		LOG_ERR("Invalid chip ID: %02x\n", id);
+		LOG_ERR("%s: Invalid chip ID: %02x (expected %02x)", dev->name, id, LIS2DH_CHIP_ID);
 		return -EINVAL;
 	}
+	LOG_DBG("%s: chip ID OK: WHO_AM_I[0x%02x]=0x%02x", dev->name, LIS2DH_REG_WAI, id);
 
 	/* Fix LSM303AGR_ACCEL device scale values */
 	if (cfg->hw.is_lsm303agr_dev) {
@@ -457,8 +563,7 @@ int lis2dh_init_chip(const struct device *dev)
 	return lis2dh->hw_tf->write_reg(dev, LIS2DH_REG_CTRL1, lis2dh->reg_ctrl1_active_val);
 }
 
-static int lis2dh_pm_action(const struct device *dev,
-			    enum pm_device_action action)
+static int lis2dh_pm_action_locked(const struct device *dev, enum pm_device_action action)
 {
 	int status = 0;
 	struct lis2dh_data *lis2dh = dev->data;
@@ -508,16 +613,45 @@ static int lis2dh_pm_action(const struct device *dev,
 	return status;
 }
 
+static int lis2dh_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	int status;
+
+	lis2dh_lock(dev);
+#ifdef CONFIG_LIS2DH_FIFO
+	if (lis2dh_fifo_is_busy(dev)) {
+		lis2dh_unlock(dev);
+		return -EBUSY;
+	}
+#endif
+	status = lis2dh_pm_action_locked(dev, action);
+	lis2dh_unlock(dev);
+	return status;
+}
+
 static int lis2dh_init(const struct device *dev)
 {
 	const struct lis2dh_config *cfg = dev->config;
 	int status;
 
+#if defined(CONFIG_LIS2DH_FIFO) || defined(CONFIG_SENSOR_ASYNC_API)
+	struct lis2dh_data *data = dev->data;
+
+	k_mutex_init(&data->lock);
+#endif
 	status = cfg->bus_init(dev);
 	if (status < 0) {
 		LOG_ERR("Failed to initialize the bus.");
 		return status;
 	}
+
+#ifdef CONFIG_LIS2DH_FIFO
+	status = lis2dh_fifo_init(dev);
+	if (status < 0) {
+		LOG_ERR("Failed to initialize FIFO state.");
+		return status;
+	}
+#endif
 
 	return pm_device_driver_init(dev, lis2dh_pm_action);
 }
@@ -578,6 +712,12 @@ static int lis2dh_init(const struct device *dev)
 #define LIS2DH_CFG_INT(inst)
 #endif /* CONFIG_LIS2DH_TRIGGER */
 
+#ifdef CONFIG_LIS2DH_FIFO
+#define LIS2DH_CFG_FIFO(inst) .fifo_watermark = DT_INST_PROP(inst, fifo_watermark),
+#else
+#define LIS2DH_CFG_FIFO(inst)
+#endif
+
 #ifdef CONFIG_LIS2DH_MEASURE_TEMPERATURE
 /* The first 8 bits are the integer portion of the temperature.
  * The result is left justified.  The remainder of the bits are
@@ -616,6 +756,7 @@ static int lis2dh_init(const struct device *dev)
 			.anym_latch = ANYM_LATCH(inst),			\
 			.anym_mode = ANYM_MODE(inst), },		\
 		LIS2DH_CFG_TEMPERATURE(inst)				\
+		LIS2DH_CFG_FIFO(inst)					\
 		LIS2DH_CFG_INT(inst)					\
 	}
 
@@ -639,6 +780,7 @@ static int lis2dh_init(const struct device *dev)
 			.anym_latch = ANYM_LATCH(inst),			\
 			.anym_mode = ANYM_MODE(inst), },		\
 		LIS2DH_CFG_TEMPERATURE(inst)				\
+		LIS2DH_CFG_FIFO(inst)					\
 		LIS2DH_CFG_INT(inst)					\
 	}
 

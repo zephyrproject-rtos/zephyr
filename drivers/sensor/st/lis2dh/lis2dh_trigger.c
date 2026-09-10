@@ -26,15 +26,26 @@ static const gpio_flags_t gpio_int_cfg[5] = {
 			GPIO_INT_LEVEL_LOW,
 			};
 
-static inline void setup_int1(const struct device *dev,
-			      bool enable)
+int lis2dh_trigger_int1_set(const struct device *dev, bool enable)
 {
 	const struct lis2dh_config *cfg = dev->config;
 
-	gpio_pin_interrupt_configure_dt(&cfg->gpio_drdy,
-					enable
-					? gpio_int_cfg[cfg->int1_mode]
-					: GPIO_INT_DISABLE);
+	return gpio_pin_interrupt_configure_dt(
+		&cfg->gpio_drdy, enable ? gpio_int_cfg[cfg->int1_mode] : GPIO_INT_DISABLE);
+}
+
+int lis2dh_trigger_fifo_int1_set(const struct device *dev, bool enable)
+{
+	const struct lis2dh_config *cfg = dev->config;
+
+	/* FIFO stays asserted above the threshold, including while GPIO is masked. */
+	return gpio_pin_interrupt_configure_dt(&cfg->gpio_drdy,
+					       enable ? GPIO_INT_LEVEL_ACTIVE : GPIO_INT_DISABLE);
+}
+
+static inline void setup_int1(const struct device *dev, bool enable)
+{
+	(void)lis2dh_trigger_int1_set(dev, enable);
 }
 
 static int lis2dh_trigger_drdy_set(const struct device *dev,
@@ -46,6 +57,12 @@ static int lis2dh_trigger_drdy_set(const struct device *dev,
 	struct lis2dh_data *lis2dh = dev->data;
 	int status;
 
+#ifdef CONFIG_LIS2DH_FIFO
+	if (lis2dh_fifo_is_busy(dev)) {
+		return -EBUSY;
+	}
+#endif
+
 	if (cfg->gpio_drdy.port == NULL) {
 		LOG_ERR("trigger_set DRDY int not supported");
 		return -ENOTSUP;
@@ -55,6 +72,7 @@ static int lis2dh_trigger_drdy_set(const struct device *dev,
 
 	/* cancel potentially pending trigger */
 	atomic_clear_bit(&lis2dh->trig_flags, TRIGGED_INT1);
+	atomic_clear_bit(&lis2dh->trig_flags, START_TRIG_INT1);
 
 	status = lis2dh->hw_tf->update_reg(dev, LIS2DH_REG_CTRL3,
 					   LIS2DH_EN_DRDY1_INT1, 0);
@@ -86,6 +104,15 @@ static int lis2dh_start_trigger_int1(const struct device *dev)
 	uint8_t raw[LIS2DH_BUF_SZ];
 	uint8_t ctrl1 = 0U;
 	struct lis2dh_data *lis2dh = dev->data;
+
+	if (lis2dh->handler_drdy == NULL) {
+		return 0;
+	}
+#ifdef CONFIG_LIS2DH_FIFO
+	if (lis2dh_fifo_is_busy(dev)) {
+		return -EBUSY;
+	}
+#endif
 
 	/* power down temporarily to align interrupt & data output sampling */
 	status = lis2dh->hw_tf->read_reg(dev, LIS2DH_REG_CTRL1, &ctrl1);
@@ -273,9 +300,8 @@ static int lis2dh_start_trigger_int2(const struct device *dev)
 	return 0;
 }
 
-int lis2dh_trigger_set(const struct device *dev,
-		       const struct sensor_trigger *trig,
-		       sensor_trigger_handler_t handler)
+static int lis2dh_trigger_set_locked(const struct device *dev, const struct sensor_trigger *trig,
+				     sensor_trigger_handler_t handler)
 {
 	if (trig->type == SENSOR_TRIG_DATA_READY &&
 	    trig->chan == SENSOR_CHAN_ACCEL_XYZ) {
@@ -284,9 +310,27 @@ int lis2dh_trigger_set(const struct device *dev,
 		return lis2dh_trigger_anym_set(dev, handler, trig);
 	} else if (trig->type == SENSOR_TRIG_TAP) {
 		return lis2dh_trigger_tap_set(dev, handler, trig);
+	} else if (trig->type == SENSOR_TRIG_FIFO_WATERMARK ||
+		   trig->type == SENSOR_TRIG_FIFO_FULL) {
+#ifdef CONFIG_LIS2DH_FIFO
+		return lis2dh_fifo_trigger_set(dev, trig, handler);
+#else
+		return -ENOTSUP;
+#endif
 	}
 
 	return -ENOTSUP;
+}
+
+int lis2dh_trigger_set(const struct device *dev, const struct sensor_trigger *trig,
+		       sensor_trigger_handler_t handler)
+{
+	int status;
+
+	lis2dh_lock(dev);
+	status = lis2dh_trigger_set_locked(dev, trig, handler);
+	lis2dh_unlock(dev);
+	return status;
 }
 
 int lis2dh_acc_slope_config(const struct device *dev,
@@ -402,7 +446,7 @@ static void lis2dh_gpio_int2_callback(const struct device *dev,
 #endif
 }
 
-static void lis2dh_thread_cb(const struct device *dev)
+static void lis2dh_thread_cb_locked(const struct device *dev)
 {
 	struct lis2dh_data *lis2dh = dev->data;
 	const struct lis2dh_config *cfg = dev->config;
@@ -433,6 +477,15 @@ static void lis2dh_thread_cb(const struct device *dev)
 	if (cfg->gpio_drdy.port &&
 			atomic_test_and_clear_bit(&lis2dh->trig_flags,
 			TRIGGED_INT1)) {
+#ifdef CONFIG_LIS2DH_FIFO
+		if (lis2dh_fifo_is_busy(dev)) {
+			status = lis2dh_fifo_handle_irq(dev);
+			if (status < 0) {
+				LOG_ERR("FIFO interrupt handling failed: %d", status);
+			}
+			return;
+		}
+#endif
 		if (likely(lis2dh->handler_drdy != NULL)) {
 			lis2dh->handler_drdy(dev, lis2dh->trig_drdy);
 		}
@@ -494,6 +547,13 @@ static void lis2dh_thread_cb(const struct device *dev)
 
 		return;
 	}
+}
+
+static void lis2dh_thread_cb(const struct device *dev)
+{
+	lis2dh_lock(dev);
+	lis2dh_thread_cb_locked(dev);
+	lis2dh_unlock(dev);
 }
 
 #ifdef CONFIG_LIS2DH_TRIGGER_OWN_THREAD

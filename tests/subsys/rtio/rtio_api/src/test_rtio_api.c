@@ -520,8 +520,9 @@ static inline void test_rtio_simple_multishot_(struct rtio *r, int idx)
 	rtio_sqe_cancel(handle);
 	/* Flush any pending CQEs */
 	while (rtio_cqe_copy_out(r, &cqe, 1, K_MSEC(15)) != 0) {
-		rtio_cqe_get_mempool_buffer(r, &cqe, &buffer, &buffer_len);
-		rtio_release_buffer(r, buffer, buffer_len);
+		if (rtio_cqe_get_mempool_buffer(r, &cqe, &buffer, &buffer_len) == 0) {
+			rtio_release_buffer(r, buffer, buffer_len);
+		}
 	}
 }
 
@@ -558,6 +559,7 @@ ZTEST(rtio_api, test_rtio_multishot_are_not_resubmitted_when_failed)
 	/** The multi-shot SQE should fail, transmit the result and stop resubmitting. */
 	zassert_equal(1, rtio_cqe_copy_out(r, &cqe, 1, K_MSEC(100)));
 	zassert_equal(cqe.result, -EIO, "Result should be %d but got %d", -EIO, cqe.result);
+	zassert_equal(cqe.flags, 0U, "Released memory must not be advertised");
 
 	/* No more CQE's coming as it should be aborted */
 	zassert_equal(0, rtio_cqe_copy_out(r, &cqe, 1, K_MSEC(100)),
@@ -569,6 +571,40 @@ ZTEST(rtio_api, test_rtio_multishot_are_not_resubmitted_when_failed)
 	while (rtio_cqe_copy_out(r, &cqe, 1, K_MSEC(1000)) != 0) {
 		rtio_cqe_get_mempool_buffer(r, &cqe, &buffer, &buffer_len);
 		rtio_release_buffer(r, buffer, buffer_len);
+	}
+}
+
+/* Cancellation may arrive after a driver checks its flag but before completion. */
+static void late_cancel_submit(struct rtio_iodev_sqe *sqe)
+{
+	uint8_t *buffer;
+	uint32_t len;
+
+	zassert_ok(rtio_sqe_rx_buf(sqe, 16, 16, &buffer, &len));
+	zassert_ok(rtio_sqe_cancel(&sqe->sqe));
+	rtio_iodev_sqe_ok(sqe, 0);
+}
+
+static const struct rtio_iodev_api late_cancel_api = {.submit = late_cancel_submit};
+
+RTIO_IODEV_DEFINE(late_cancel_iodev, &late_cancel_api, NULL);
+RTIO_DEFINE_WITH_MEMPOOL(late_cancel_ctx, 1, 1, 1, 16, 8);
+
+ZTEST(rtio_api, test_multishot_late_cancel_releases_buffer)
+{
+	for (int i = 0; i < 3; i++) {
+		struct rtio_sqe *sqe = rtio_sqe_acquire(&late_cancel_ctx);
+		struct rtio_cqe *cqe;
+
+		zassert_not_null(sqe);
+		rtio_sqe_prep_read_multishot(sqe, &late_cancel_iodev, 0, NULL);
+		zassert_ok(rtio_submit(&late_cancel_ctx, 0));
+		cqe = rtio_cqe_consume(&late_cancel_ctx);
+		zassert_not_null(cqe);
+		zassert_equal(cqe->result, -ECANCELED);
+		zassert_equal(cqe->flags, 0U);
+		rtio_cqe_release(&late_cancel_ctx, cqe);
+		zassert_is_null(rtio_cqe_consume(&late_cancel_ctx));
 	}
 }
 

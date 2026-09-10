@@ -14,6 +14,15 @@ properties:
       The INT1 and (optional) INT2 signal connections.  These signals
       are active-high as produced by the sensor.
 
+  fifo-watermark:
+    type: int
+    default: 16
+    description: |
+      Number of XYZ samples stored in the FIFO before a watermark
+      interrupt is generated.
+    min: 1
+    max: 32
+
   int1-gpio-config:
     type: int
     default: 0

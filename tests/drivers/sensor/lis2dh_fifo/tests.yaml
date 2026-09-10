@@ -1,0 +1,26 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  platform_allow:
+    - native_sim/native/64
+  tags:
+    - sensor
+    - rtio
+    - fifo
+  integration_platforms:
+    - native_sim/native/64
+tests:
+  drivers.sensor.lis2dh_fifo: {}
+  drivers.sensor.lis2dh_fifo.no_log:
+    extra_configs:
+      - CONFIG_LOG=n
+  drivers.sensor.lis2dh_fifo.own_thread:
+    extra_configs:
+      - CONFIG_LIS2DH_TRIGGER_OWN_THREAD=y
+      - CONFIG_LIS2DH_THREAD_STACK_SIZE=4096
+  drivers.sensor.lis2dh_fifo.debug:
+    extra_configs:
+      - CONFIG_LOG=y
+      - CONFIG_SENSOR_LOG_LEVEL_DBG=y
+      - CONFIG_LOG_BUFFER_SIZE=8192
