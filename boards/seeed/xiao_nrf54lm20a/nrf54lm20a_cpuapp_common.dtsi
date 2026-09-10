@@ -107,6 +107,16 @@
 	status = "okay";
 };
 
+/* The temperature sensor gets its high-frequency clock from the XO. */
+&xo {
+	status = "okay";
+};
+
+/* The GRTC system timer references the LFCLK when it is disabled. */
+&lfclk {
+	status = "okay";
+};
+
 &bt_hci_controller {
 	status = "okay";
 };
