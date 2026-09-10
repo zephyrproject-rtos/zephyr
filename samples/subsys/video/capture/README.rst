@@ -33,6 +33,9 @@ Supported boards and camera modules include:
 - :zephyr:board:`stm32n6570_dk`
   with the :ref:`st_b_cams_imx_mb1854` camera module.
 
+- :zephyr:board:`xiao_esp32s3` ("sense" variant)
+  with the :ref:`seeed_xiao_round_display` shield.
+
 Also :zephyr:board:`arduino_nicla_vision` can be used in this sample as capture device, in that case
 The user can transfer the captured frames through on board USB.
 
@@ -54,6 +57,9 @@ connector in order to get console output.
 On :zephyr:board:`stm32n6570_dk`, connect the :ref:`st_b_cams_imx_mb1854` camera module
 to the J4 CSI connector. A USB cable should be connected from a host to both USB-C ports for
 power, flashing and console output.
+
+On the :zephyr:board:`xiao_esp32s3`, connect the "sense" camera module and the
+:ref:`seeed_xiao_round_display` to their respective connectors.
 
 For :zephyr:board:`arduino_nicla_vision` there is no extra wiring required.
 
@@ -114,6 +120,16 @@ using the :ref:`st_b_cams_imx_mb1854` camera module:
    :zephyr-app: samples/subsys/video/capture
    :board: stm32n6570_dk
    :shield: st_b_cams_imx_mb1854
+   :goals: build
+   :compact:
+
+For :zephyr:board:`xiao_esp32s3`, build this sample application with the following commands,
+using the :ref:`seeed_xiao_round_display` shield:
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/video/capture
+   :board: xiao_esp32s3/esp32s3/procpu/sense
+   :shield: seeed_xiao_round_display
    :goals: build
    :compact:
 
