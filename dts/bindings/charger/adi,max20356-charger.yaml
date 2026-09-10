@@ -1,0 +1,296 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Analog Devices MAX20356/MAX20358 PMIC battery charger.
+
+  Child node of the MAX20356 MFD parent. Exposes the standard Zephyr charger API
+  (enable/disable, fast-charge current, battery regulation voltage, status,
+  health and online reporting). JEITA thermal configuration is applied at init
+  from the properties below; runtime zone changes are hardware-managed and
+  reported through the charger health/status properties.
+
+  Status/online reporting works poll-only and uses no interrupt. The optional
+  status and online notifier callbacks are interrupt-driven: installing one makes
+  the charger claim its INTB event groups on the parent, and clearing it releases
+  them.
+
+compatible: "adi,max20356-charger"
+
+include: battery.yaml
+
+properties:
+  constant-charge-current-microamp:
+    type: int
+    min: 4000
+    max: 500000
+    description: |
+      Fast-charge (CC) current in microamps (ChgCur0.CC1IFChg), 4000..500000.
+
+  constant-charge-voltage-microvolt:
+    type: int
+    min: 0
+    description: |
+      Battery regulation (charge-termination) voltage in microvolts
+      (ChgCntl1.ChgBatReg).
+
+  adi,cc2-charge-current-microamp:
+    type: int
+    min: 4000
+    max: 500000
+    description: |
+      Fast-charge constant-current zone 2 (CC2) current in microamps
+      (ChgCur1.CC2IFChg), 4000..500000. Same encoding as the CC1 current.
+
+  adi,charge-autostop:
+    type: boolean
+    description: Enable charger autostop (ChgCntl0.ChgAutoStop).
+
+  adi,charge-auto-restart:
+    type: boolean
+    description: |
+      Automatically restart charging when VBAT drops below the recharge
+      threshold (ChgCntl0.ChgAutoReSta).
+
+  adi,force-recharge-monitor:
+    type: boolean
+    description: |
+      Keep the recharge-battery monitor comparator enabled even when the
+      charger is disabled (ChgCntl0.FrcRchgMonEn).
+
+  adi,cc1-room-only:
+    type: boolean
+    description: Run CC1 fast charge in the room temperature zone only
+      (ChgCntl0.CC1RoomOnly).
+
+  adi,cc1-timer-limit:
+    type: boolean
+    description: |
+      Run the CC1 fast-charge phase with the CC1FChgTmr limit
+      (ChgCntl0.CC1TmoLimit).
+
+  adi,cc1-enable:
+    type: boolean
+    description: |
+      Enable the CC1 (step) charging phase (ChgCntl0.CC1Enable). When unset the
+      charger runs in CC2 only and step charging is disabled.
+
+  adi,recharge-threshold-microvolt:
+    type: int
+    enum: [50000, 100000, 150000, 220000]
+    description: |
+      Recharge threshold below the battery regulation voltage
+      (ChgCntl1.BatReChg), expressed as the offset in microvolts.
+
+  adi,precharge-voltage-microvolt:
+    type: int
+    enum: [2700000, 2800000, 2900000, 3000000, 3100000, 3200000, 3300000, 3400000]
+    description: Precharge voltage rising threshold (ChgCntl2.VPChg).
+
+  adi,precharge-current-percent:
+    type: int
+    enum: [5, 10, 20, 30]
+    description: |
+      Precharge current as a percentage of the fast-charge current IFCHG
+      (ChgCntl2.IPChg): 0.05/0.10/0.20/0.30 x IFCHG.
+
+  adi,charge-done-current-percent:
+    type: int
+    enum: [2, 5, 10, 20]
+    description: |
+      Charge-done current threshold as a percentage of IFCHG
+      (ChgCntl2.IChgDone). The 2 value corresponds to 0.025 x IFCHG; the
+      remaining values are 0.05/0.10/0.20 x IFCHG.
+
+  adi,maintain-charge-timer-minutes:
+    type: int
+    enum: [0, 15, 30, 60]
+    description: Maintain-charge timer (ChgTmr.MtChgTmr). 0 disables the timer.
+
+  adi,precharge-timer-minutes:
+    type: int
+    enum: [30, 60, 120, 240]
+    description: Precharge safety timer (ChgTmr.PChgTmr).
+
+  adi,cc1-fastcharge-timer-minutes:
+    type: int
+    enum: [30, 60, 120, 240]
+    description: CC1 fast-charge timer (ChgTmr.CC1FChgTmr).
+
+  adi,safety-timer-minutes:
+    type: int
+    enum: [75, 150, 300, 600]
+    description: Charger safety timer covering all charging states (ChgTmr.ChgTmr).
+
+  adi,step-charge-hysteresis-microvolt:
+    type: int
+    enum: [100000, 200000, 300000, 400000, 500000, 600000]
+    description: Step-charge voltage falling hysteresis (ChgCfg0.ChgStepHyst).
+
+  adi,step-charge-rise-microvolt:
+    type: int
+    enum: [3800000, 3850000, 3900000, 3950000, 4000000, 4050000, 4100000, 4150000,
+           4200000, 4250000, 4300000, 4350000, 4400000, 4450000, 4500000, 4550000]
+    description: Step-charge voltage rising threshold (ChgCfg0.ChgStepRise).
+
+  adi,cool-cc1-current-percent:
+    type: int
+    enum: [20, 30, 40, 50, 60, 70, 80, 100]
+    description: |
+      Cool-zone CC1 fast-charge current as a percentage of IFCHG
+      (ThmCfg0.ChgCoolCC1IFChg).
+
+  adi,cool-batreg-offset-microvolt:
+    type: int
+    enum: [150000, 100000, 50000, 0]
+    description: |
+      Cool-zone battery regulation voltage reduction below ChgBatReg
+      (ThmCfg0.ChgCoolBatReg), expressed as the offset in microvolts. 0 means
+      no reduction. Listed in register-code order.
+
+  adi,cool-cc2-current-percent:
+    type: int
+    enum: [20, 30, 40, 50, 60, 70, 80, 100]
+    description: |
+      Cool-zone CC2 fast-charge current as a percentage of IFCHG
+      (ThmCfg0.ChgCoolCC2IFChg).
+
+  adi,room-cc1-current-percent:
+    type: int
+    enum: [20, 30, 40, 50, 60, 70, 80, 100]
+    description: Room-zone CC1 current as a percentage of IFCHG
+      (ThmCfg1.ChgRoomCC1IFChg).
+
+  adi,room-batreg-offset-microvolt:
+    type: int
+    enum: [150000, 100000, 50000, 0]
+    description: |
+      Room-zone battery regulation voltage reduction below ChgBatReg
+      (ThmCfg1.ChgRoomBatReg). 0 means no reduction.
+      Listed in register-code order.
+
+  adi,room-cc2-current-percent:
+    type: int
+    enum: [20, 30, 40, 50, 60, 70, 80, 100]
+    description: Room-zone CC2 current as a percentage of IFCHG
+      (ThmCfg1.ChgRoomCC2IFChg).
+
+  adi,warm-cc1-current-percent:
+    type: int
+    enum: [20, 30, 40, 50, 60, 70, 80, 100]
+    description: Warm-zone CC1 current as a percentage of IFCHG
+      (ThmCfg2.ChgWarmCC1IFChg).
+
+  adi,warm-batreg-offset-microvolt:
+    type: int
+    enum: [150000, 100000, 50000, 0]
+    description: |
+      Warm-zone battery regulation voltage reduction below ChgBatReg
+      (ThmCfg2.ChgWarmBatReg). 0 means no reduction.
+      Listed in register-code order.
+
+  adi,warm-cc2-current-percent:
+    type: int
+    enum: [20, 30, 40, 50, 60, 70, 80, 100]
+    description: Warm-zone CC2 current as a percentage of IFCHG
+      (ThmCfg2.ChgWarmCC2IFChg).
+
+  adi,jeita-t1-def-celsius:
+    type: int
+    enum: [-20, -15, -10, -5, 0, 5, 10, 15]
+    description: JEITA T1 default threshold (ThmCfg3.ChgT1ThrDef).
+
+  adi,jeita-t1-cc1-celsius:
+    type: int
+    enum: [-20, -15, -10, -5, 0, 5, 10, 15]
+    description: JEITA T1 CC1 threshold (ThmCfg3.ChgT1ThrCC1).
+
+  adi,jeita-t2-def-celsius:
+    type: int
+    enum: [-10, -5, 0, 5, 10, 15, 20, 25]
+    description: JEITA T2 default threshold (ThmCfg4.ChgT2ThrDef).
+
+  adi,jeita-t2-cc1-celsius:
+    type: int
+    enum: [-10, -5, 0, 5, 10, 15, 20, 25]
+    description: JEITA T2 CC1 threshold (ThmCfg4.ChgT2ThrCC1).
+
+  adi,jeita-t3-def-celsius:
+    type: int
+    enum: [20, 25, 30, 35, 40, 45, 50, 55]
+    description: JEITA T3 default threshold (ThmCfg5.ChgT3ThrDef).
+
+  adi,jeita-t3-cc1-celsius:
+    type: int
+    enum: [20, 25, 30, 35, 40, 45, 50, 55]
+    description: JEITA T3 CC1 threshold (ThmCfg5.ChgT3ThrCC1).
+
+  adi,jeita-t4-def-celsius:
+    type: int
+    enum: [35, 40, 45, 50, 55, 60, 65, 70]
+    description: JEITA T4 default threshold (ThmCfg6.ChgT4ThrDef).
+
+  adi,jeita-t4-cc1-celsius:
+    type: int
+    enum: [35, 40, 45, 50, 55, 60, 65, 70]
+    description: JEITA T4 CC1 threshold (ThmCfg6.ChgT4ThrCC1).
+
+  adi,thermal-limit-celsius:
+    type: int
+    enum: [40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 105, 110, 115]
+    description: Charger die thermal limit (ThmCfg7.ChgThrmLim).
+
+  adi,thermistor-pullup-ohms:
+    type: int
+    enum: [10000, 100000]
+    description: THM internal pull-up selection (ThmCfg7.ThmPUSel).
+
+  adi,thermistor-monitoring-mode:
+    type: int
+    enum: [0, 1, 2, 3, 4, 5, 6, 7]
+    description: |
+      Thermistor monitoring / JEITA control (ThmCfg7.ThmEn). Raw field value:
+      0/4 disable monitoring; 1/2/3 enable JEITA-limited charging in
+      cool+room / room+warm / cool+room+warm zones; 5/6/7 enable monitoring
+      without JEITA charger effect.
+
+  adi,charge-fresh:
+    type: boolean
+    description: |
+      On CHGIN insertion, force the device into the charger boot state even if
+      VBAT is above the recharge threshold (ChgCtr1.ChgFresh).
+
+  adi,battery-pulldown:
+    type: boolean
+    description: Enable the BAT node pull-down resistor for battery-presence
+      detection (ChgCtr2.BattPullDown).
+
+  adi,force-precharge:
+    type: boolean
+    description: |
+      Force the charger current to the precharge value; valid only when the
+      charger is enabled (ChgCtr2.FrcPChg).
+
+  adi,harvester-mode:
+    type: int
+    enum: [0, 1, 2, 3]
+    description: Harvester CHGOUT-to-SYS direct-path mode (HrvBatCfg0.HrvModCfg).
+
+  adi,harvester-thermistor-mode:
+    type: int
+    enum: [0, 1, 2, 3]
+    description: |
+      Harvester periodic thermistor monitoring / charging zones
+      (HrvBatCfg0.HrvThmEn).
+
+  adi,harvester-thermistor-diode:
+    type: boolean
+    description: |
+      Force the ideal CHGOUT-to-SYS diode active when charging from the
+      harvester is inhibited by temperature (HrvBatCfg0.HrvThmDio).
+
+  adi,harvester-free-mpc:
+    type: boolean
+    description: |
+      Free MPC6/MPC7 from the harvester disable/wake functions so they can be
+      used for other purposes (HrvBatCfg0.HrvFreeMPC).
