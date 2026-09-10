@@ -24,4 +24,12 @@ config BOARD_QUALIFIERS
 	  For example, if building for ``nrf5340dk/nrf5340/cpuapp`` then this will contain the
 	  value ``nrf5340/cpuapp``.
 
+config BOARD_SELECTOR
+	bool
+	default y
+	help
+	  This is a common Kconfig to all boards that allows board directories containing multiple
+	  boards to select Kconfigs from a common base Kconfig. This Kconfig is for usage inside
+	  of board folders only and must not be used outside of it.
+
 osource "$(KCONFIG_BOARD_DIR)/Kconfig.$(BOARD)"
