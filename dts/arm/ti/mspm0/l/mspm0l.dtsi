@@ -7,6 +7,26 @@
 
 #include <ti/mspm0/mspm0.dtsi>
 
+/ {
+	soc {
+		tima0: tima0@40860000 {
+			compatible = "ti,mspm0-timer";
+			reg = <0x40860000 0x2000>;
+			clocks = <&ckm MSPM0_CLOCK_MCLK>;
+			interrupts = <18 0>;
+			ti,clk-prescaler = <0>;
+			ti,clk-div = <1>;
+			status = "disabled";
+
+			pwma0: pwma0 {
+				compatible = "ti,mspm0-timer-pwm";
+				#pwm-cells = <3>;
+				status = "disabled";
+			};
+		};
+	};
+};
+
 &pinctrl {
 	gpioc: gpio@400a4000 {
 		compatible = "ti,mspm0-gpio";
