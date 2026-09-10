@@ -101,8 +101,11 @@ uint64_t npcx_clock_get_sleep_ticks(void);
  * @param is_deep A boolean indicating ec enters deep sleep or sleep state
  * @param is_instant A boolean indicating 'Instant Wake-up' from deep idle is
  *                   enabled
+ * @param is_unlimited A boolean indicating 'Instant Wake-up' is not restricted
+ *                     to a deep sleep residency shorter than 200 ms. Only the
+ *                     NPCX4 and later series implement this control bit
  */
-void npcx_clock_control_turn_on_system_sleep(bool is_deep, bool is_instant);
+void npcx_clock_control_turn_on_system_sleep(bool is_deep, bool is_instant, bool is_unlimited);
 
 /**
  * @brief Function to turn off system sleep mode.
