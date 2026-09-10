@@ -881,6 +881,10 @@ static void spi_stm32_msg_start(const struct device *dev, bool is_rx_empty)
 	irq_disable(cfg->irq_line);
 #endif /* CONFIG_SPI_STM32_INTERRUPT && CONFIG_SOC_SERIES_STM32H7X */
 
+	/* Make sure DXP and EOT interrupts are disabled before starting the transfer */
+	ll_disable_int_dxp(spi);
+	ll_disable_int_eot(spi);
+
 	LL_SPI_Enable(spi);
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32h7_spi)
@@ -909,10 +913,6 @@ static void spi_stm32_msg_start(const struct device *dev, bool is_rx_empty)
 	spi_stm32_cs_control(dev, true);
 
 	if (IS_ENABLED(CONFIG_SPI_STM32_INTERRUPT)) {
-		if (ll_get_transfer_size(spi) != 0U) {
-			ll_enable_int_eot(spi);
-		}
-
 		ll_enable_int_errors(spi);
 
 		if (transfer_dir == STM32_SPI_FULL_DUPLEX) {
@@ -946,6 +946,10 @@ static void spi_stm32_msg_start(const struct device *dev, bool is_rx_empty)
 			if (transfer_dir != STM32_SPI_HALF_DUPLEX_RX) {
 				ll_enable_int_tx_empty(spi);
 			}
+		}
+
+		if (ll_get_transfer_size(spi) != 0U) {
+			ll_enable_int_eot(spi);
 		}
 
 #if defined(CONFIG_SPI_STM32_INTERRUPT) && defined(CONFIG_SOC_SERIES_STM32H7X)
@@ -1235,6 +1239,7 @@ static void spi_stm32_complete(const struct device *dev, int status)
 		LL_SPI_ClearFlag_OVR(spi);
 		ll_clear_txtf_flag(spi);
 		ll_clear_eot_flag(spi);
+		ll_disable_int_dxp(spi);
 		ll_disable_int_eot(spi);
 		spi_stm32_iodev_complete(dev, status);
 		return;
