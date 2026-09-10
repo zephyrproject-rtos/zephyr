@@ -54,6 +54,9 @@
 				jedec-id = [c2 85 3a];
 				status = "okay";
 
+				/* Allow Rd and Wr in MemoryMapped mode (permission = 0) */
+				memmap-config = <1 0 DT_SIZE_M(64) 0>;
+
 				partitions {
 					compatible = "fixed-partitions";
 					#address-cells = <1>;
