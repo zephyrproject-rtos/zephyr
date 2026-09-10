@@ -382,10 +382,21 @@ static int pa_sync_with_past(struct bt_conn *conn,
 static int pa_sync_without_past(const bt_addr_le_t *addr, uint8_t adv_sid, uint16_t pa_interval)
 {
 	struct bt_le_per_adv_sync_param param = {0};
+	struct bt_le_local_features feature;
 	int err;
 
+	err = bt_le_get_local_features(&feature);
+	if (err != 0) {
+		LOG_ERR("Failed to get local features: %d", err);
+		return err;
+	}
+
 	bt_addr_le_copy(&param.addr, addr);
-	param.options = BT_LE_PER_ADV_SYNC_OPT_FILTER_DUPLICATE;
+	if (BT_FEAT_LE_PER_ADV_ADI_SUPP(feature.features)) {
+		param.options = BT_LE_PER_ADV_SYNC_OPT_FILTER_DUPLICATE;
+	} else {
+		param.options = BT_LE_PER_ADV_SYNC_OPT_NONE;
+	}
 	param.sid = adv_sid;
 	param.skip = PA_SYNC_SKIP;
 	param.timeout = interval_to_sync_timeout(pa_interval);
@@ -626,6 +637,7 @@ static bool scan_check_and_sync_broadcast(struct bt_data *data, void *user_data)
 {
 	const struct bt_le_scan_recv_info *info = user_data;
 	struct bt_le_per_adv_sync_param param = {0};
+	struct bt_le_local_features feature;
 	struct bt_uuid_16 adv_uuid;
 	uint32_t broadcast_id;
 	int err;
@@ -651,8 +663,18 @@ static bool scan_check_and_sync_broadcast(struct bt_data *data, void *user_data)
 	LOG_INF("Found broadcaster with ID 0x%06X and addr %s and sid 0x%02X\n", broadcast_id,
 		bt_addr_le_str(info->addr), info->sid);
 
+	err = bt_le_get_local_features(&feature);
+	if (err != 0) {
+		LOG_ERR("Failed to get local features: %d", err);
+		return false;
+	}
+
 	bt_addr_le_copy(&param.addr, info->addr);
-	param.options = BT_LE_PER_ADV_SYNC_OPT_FILTER_DUPLICATE;
+	if (BT_FEAT_LE_PER_ADV_ADI_SUPP(feature.features)) {
+		param.options = BT_LE_PER_ADV_SYNC_OPT_FILTER_DUPLICATE;
+	} else {
+		param.options = BT_LE_PER_ADV_SYNC_OPT_NONE;
+	}
 	param.sid = info->sid;
 	param.skip = PA_SYNC_SKIP;
 	param.timeout = interval_to_sync_timeout(info->interval);
