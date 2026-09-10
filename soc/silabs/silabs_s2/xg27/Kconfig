@@ -1,7 +1,7 @@
 # Copyright (c) 2023 Antmicro <www.antmicro.com>
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_SILABS_XG27
+config SOC_FAMILY_SILABS_S2_XG27
 	select ARM
 	select ARM_TRUSTZONE_M
 	select ARMV8_M_DSP

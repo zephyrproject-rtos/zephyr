@@ -1,7 +1,7 @@
 # Copyright (c) 2020 TriaGnoSys GmbH
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_SILABS_XG21
+config SOC_FAMILY_SILABS_S2_XG21
 	bool
 	select SOC_FAMILY_SILABS_S2
 	help
@@ -9,13 +9,13 @@ config SOC_SILABS_XG21
 
 config SOC_SERIES_EFR32BG21
 	bool
-	select SOC_SILABS_XG21
+	select SOC_FAMILY_SILABS_S2_XG21
 	help
 	  Silicon Labs EFR32BG21 (Blue Gecko) Series MCU
 
 config SOC_SERIES_EFR32MG21
 	bool
-	select SOC_SILABS_XG21
+	select SOC_FAMILY_SILABS_S2_XG21
 	help
 	  Silicon Labs EFR32MG21 (Mighty Gecko) Series MCU
 

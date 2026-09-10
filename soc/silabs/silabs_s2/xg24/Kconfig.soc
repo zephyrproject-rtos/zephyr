@@ -3,7 +3,7 @@
 # Copyright (c) 2025 Ephraim Westenberger
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_SILABS_XG24
+config SOC_FAMILY_SILABS_S2_XG24
 	bool
 	select SOC_FAMILY_SILABS_S2
 	help
@@ -11,25 +11,25 @@ config SOC_SILABS_XG24
 
 config SOC_SERIES_EFR32BG24
 	bool
-	select SOC_SILABS_XG24
+	select SOC_FAMILY_SILABS_S2_XG24
 	help
 	  Silicon Labs EFR32BG24 (Blue Gecko) Series MCU
 
 config SOC_SERIES_EFR32MG24
 	bool
-	select SOC_SILABS_XG24
+	select SOC_FAMILY_SILABS_S2_XG24
 	help
 	  Silicon Labs EFR32MG24 (Mighty Gecko) Series MCU
 
 config SOC_SERIES_MGM24
 	bool
-	select SOC_SILABS_XG24
+	select SOC_FAMILY_SILABS_S2_XG24
 	help
 	  Silicon Labs MGM240 (Mighty Gecko) Series MCU modules
 
 config SOC_SERIES_BGM24
 	bool
-	select SOC_SILABS_XG24
+	select SOC_FAMILY_SILABS_S2_XG24
 	help
 	  Silicon Labs BGM240 Series MCU modules
 

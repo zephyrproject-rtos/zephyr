@@ -1,7 +1,7 @@
 # Copyright (c) 2025 Christoph Jans
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_SILABS_XG28
+config SOC_FAMILY_SILABS_S2_XG28
 	select ARM
 	select ARM_TRUSTZONE_M
 	select ARMV8_M_DSP
