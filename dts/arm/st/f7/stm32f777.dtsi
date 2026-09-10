@@ -18,5 +18,16 @@
 			interrupts = <79 0>;
 			status = "disabled";
 		};
+
+		hash: crypto@50060400 {
+			compatible = "st,stm32-hash";
+			reg = <0x50060400 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB2, 5)>;
+			resets = <&rctl STM32_RESET(AHB2, 5)>;
+			/* HASH interrupt is shared with RNG, but not yet supported.
+			 * interrupts = <80 0>;
+			 */
+			status = "disabled";
+		};
 	};
 };
