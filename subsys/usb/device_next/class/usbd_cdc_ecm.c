@@ -477,7 +477,9 @@ static void usbd_cdc_ecm_shutdown(struct usbd_class_data *const c_data)
 	struct usbd_cdc_ecm_desc *desc = data->desc;
 
 	desc->if0_ecm.iMACAddress = 0;
-	sys_dlist_remove(&data->mac_desc_data->node);
+	if (sys_dnode_is_linked(&data->mac_desc_data->node)) {
+		sys_dlist_remove(&data->mac_desc_data->node);
+	}
 }
 
 static void *usbd_cdc_ecm_get_desc(struct usbd_class_data *const c_data,

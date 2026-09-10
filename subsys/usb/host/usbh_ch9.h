@@ -41,6 +41,10 @@ int usbh_req_desc_cfg(struct usb_device *const udev,
 		      const uint16_t len,
 		      struct usb_cfg_descriptor *const desc);
 
+int usbh_req_desc_str(struct usb_device *const udev,
+		      const uint8_t index, const uint16_t lang_id,
+		      struct net_buf *const desc_buf);
+
 int usbh_req_set_alt(struct usb_device *const udev,
 		     const uint8_t iface,
 		     const uint8_t alt);
@@ -61,6 +65,20 @@ int usbh_req_clear_sfs_rwup(struct usb_device *const udev);
 int usbh_req_set_sfs_halt(struct usb_device *const udev, const uint8_t ep);
 
 int usbh_req_clear_sfs_halt(struct usb_device *const udev, const uint8_t ep);
+
+/* Get hub descriptor, the buffer holds the descriptor and the variable size bitmaps */
+int usbh_req_desc_hub(struct usb_device *const udev,
+		      const uint16_t len,
+		      struct net_buf *const buf);
+
+/* Get hub (port 0) or hub port status */
+int usbh_req_get_hcs(struct usb_device *const udev,
+		     const uint8_t port,
+		     uint16_t *const status, uint16_t *const change);
+
+/* Clear hub (port 0) or hub port feature */
+int usbh_req_clear_hcfs(struct usb_device *const udev,
+			const uint8_t port, const uint16_t feature);
 
 int usbh_req_set_hcfs_ppwr(const struct usb_device *udev,
 			   const uint8_t port);

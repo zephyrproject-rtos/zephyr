@@ -52,4 +52,19 @@ source "subsys/logging/Kconfig.template.log_config"
 
 endif # STM32_USB_COMMON
 
+config STM32_USBPHYC_MP1
+	bool "STM32MP1 USBPHYC USB HS PHY controller driver"
+	default y
+	depends on DT_HAS_ST_STM32MP1_USBPHYC_ENABLED
+	select USE_STM32_LL_RCC
+	help
+	  Driver for the USBPHYC USB HS PHY controller of the STM32MP1
+	  series. It configures the PHY PLL, the port tuning and the
+	  routing of PHY port 1 to the USB host block or the OTG
+	  controller.
+
+module = STM32_USBPHYC_MP1
+module-str = STM32MP1 USBPHYC
+source "subsys/logging/Kconfig.template.log_config"
+
 endif # SOC_FAMILY_STM32

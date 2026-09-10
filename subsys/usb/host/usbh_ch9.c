@@ -24,6 +24,11 @@ LOG_MODULE_REGISTER(usbh_ch9, CONFIG_USBH_LOG_LEVEL);
  */
 #define SETUP_REQ_TIMEOUT	5000U
 
+/*
+ * Synchronous requests may be issued from different threads, e.g. the bus
+ * thread and the hub class work queue, serialize them.
+ */
+K_MUTEX_DEFINE(ch9_req_lock);
 K_SEM_DEFINE(ch9_req_sync, 0, 1);
 static bool ctrl_req_no_status;
 
@@ -66,8 +71,12 @@ int usbh_req_setup(struct usb_device *const udev,
 	uint8_t ep = usb_reqtype_is_to_device(&req) ? 0x00 : 0x80;
 	int ret;
 
+	k_mutex_lock(&ch9_req_lock, K_FOREVER);
+	k_sem_reset(&ch9_req_sync);
+
 	xfer = usbh_xfer_alloc(udev, ep, ch9_req_cb, NULL);
 	if (!xfer) {
+		k_mutex_unlock(&ch9_req_lock);
 		return -ENOMEM;
 	}
 
@@ -96,10 +105,12 @@ int usbh_req_setup(struct usb_device *const udev,
 		ret = usbh_xfer_dequeue(udev, xfer);
 		if (ret != 0) {
 			LOG_ERR("Failed to cancel transfer");
+			k_mutex_unlock(&ch9_req_lock);
 			return ret;
 		}
 
 		LOG_ERR("Timeout");
+		k_mutex_unlock(&ch9_req_lock);
 		return -ETIMEDOUT;
 	}
 
@@ -107,6 +118,7 @@ int usbh_req_setup(struct usb_device *const udev,
 
 buf_alloc_err:
 	usbh_xfer_free(udev, xfer);
+	k_mutex_unlock(&ch9_req_lock);
 
 	return ret;
 }
@@ -178,6 +190,15 @@ int usbh_req_desc_cfg(struct usb_device *const udev,
 	usbh_xfer_buf_free(udev, buf);
 
 	return ret;
+}
+
+int usbh_req_desc_str(struct usb_device *const udev,
+		      const uint8_t index, const uint16_t lang_id,
+		      struct net_buf *const desc_buf)
+{
+	uint16_t len = MIN(net_buf_tailroom(desc_buf), UINT8_MAX);
+
+	return usbh_req_desc(udev, USB_DESC_STRING, index, lang_id, len, desc_buf);
 }
 
 int usbh_req_set_address(struct usb_device *const udev,
@@ -279,6 +300,68 @@ int usbh_req_clear_sfs_halt(struct usb_device *const udev, const uint8_t ep)
 
 	return usbh_req_setup(udev,
 			      bmRequestType, bRequest, wValue, wIndex, 0,
+			      NULL);
+}
+
+int usbh_req_desc_hub(struct usb_device *const udev,
+		      const uint16_t len,
+		      struct net_buf *const buf)
+{
+	const uint8_t bmRequestType = USB_REQTYPE_DIR_TO_HOST << 7 |
+				      USB_REQTYPE_TYPE_CLASS << 5 |
+				      USB_REQTYPE_RECIPIENT_DEVICE << 0;
+	const uint8_t bRequest = USB_HCREQ_GET_DESCRIPTOR;
+	const uint16_t wValue = USB_DESC_HUB << 8;
+
+	return usbh_req_setup(udev,
+			      bmRequestType, bRequest, wValue, 0, len,
+			      buf);
+}
+
+int usbh_req_get_hcs(struct usb_device *const udev,
+		     const uint8_t port,
+		     uint16_t *const status, uint16_t *const change)
+{
+	const uint8_t bmRequestType = USB_REQTYPE_DIR_TO_HOST << 7 |
+				      USB_REQTYPE_TYPE_CLASS << 5 |
+				      ((port != 0U) ? USB_REQTYPE_RECIPIENT_OTHER
+						    : USB_REQTYPE_RECIPIENT_DEVICE) << 0;
+	const uint8_t bRequest = USB_HCREQ_GET_STATUS;
+	const uint16_t wLength = 4;
+	struct net_buf *buf;
+	int ret;
+
+	buf = usbh_xfer_buf_alloc(udev, wLength);
+	if (buf == NULL) {
+		return -ENOMEM;
+	}
+
+	ret = usbh_req_setup(udev, bmRequestType, bRequest, 0, port, wLength, buf);
+	if (ret == 0 && buf->len != wLength) {
+		ret = -EIO;
+	}
+
+	if (ret == 0) {
+		*status = sys_get_le16(&buf->data[0]);
+		*change = sys_get_le16(&buf->data[2]);
+	}
+
+	usbh_xfer_buf_free(udev, buf);
+
+	return ret;
+}
+
+int usbh_req_clear_hcfs(struct usb_device *const udev,
+			const uint8_t port, const uint16_t feature)
+{
+	const uint8_t bmRequestType = USB_REQTYPE_DIR_TO_DEVICE << 7 |
+				      USB_REQTYPE_TYPE_CLASS << 5 |
+				      ((port != 0U) ? USB_REQTYPE_RECIPIENT_OTHER
+						    : USB_REQTYPE_RECIPIENT_DEVICE) << 0;
+	const uint8_t bRequest = USB_HCREQ_CLEAR_FEATURE;
+
+	return usbh_req_setup(udev,
+			      bmRequestType, bRequest, feature, port, 0,
 			      NULL);
 }
 
