@@ -1480,10 +1480,24 @@ nexthop_found:
 
 	/* Do DAD */
 	if (net_ipv6_is_addr_unspecified(&ns_src)) {
+		struct net_linkaddr *iface_lladdr =
+			net_if_get_link_addr(net_pkt_iface(pkt));
+		struct net_linkaddr *pkt_lladdr = net_pkt_lladdr_src(pkt);
 
 		if (!net_ipv6_is_addr_solicited_node(&ns_dst)) {
 			NET_DBG("DROP: Not solicited node addr %s",
 				net_sprint_ipv6_addr(&ns_dst));
+			goto silent_drop;
+		}
+
+		/* Ignore looped-back DAD probes from this same interface. */
+		if (iface_lladdr && pkt_lladdr &&
+		    iface_lladdr->len > 0U &&
+		    net_linkaddr_cmp(pkt_lladdr, iface_lladdr)) {
+			NET_DBG("DROP: Ignore self DAD probe for %s iface %p/%d",
+				net_sprint_ipv6_addr(&ifaddr->address.in6_addr),
+				net_pkt_iface(pkt),
+				net_if_get_by_iface(net_pkt_iface(pkt)));
 			goto silent_drop;
 		}
 
