@@ -16,6 +16,7 @@ tests:
       - mcx_n5xx_evk/mcxn547/cpu0
       - lpcxpresso55s69/lpc55s69/cpu0
       - rd_rw612_bga
+      - m5stack_cores3/esp32s3/procpu
     harness: console
     harness_config:
       type: one_line
