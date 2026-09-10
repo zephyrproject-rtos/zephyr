@@ -1,0 +1,10 @@
+# Copyright (c) 2026 RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+title: WIZnet W5100S Ethernet Controller
+
+description: W5100S standalone 10/100BASE-T Ethernet controller with SPI interface
+
+compatible: "wiznet,w5100s"
+
+include: wiznet,ethernet-common.yaml

@@ -103,7 +103,7 @@ struct w6300_runtime {
 	struct net_if *iface;
 
 	K_KERNEL_STACK_MEMBER(thread_stack,
-			      CONFIG_ETH_W6300_RX_THREAD_STACK_SIZE);
+			      CONFIG_ETH_WIZNET_RX_THREAD_STACK_SIZE);
 	struct k_thread thread;
 	uint8_t mac_addr[NET_ETH_ADDR_LEN];
 	struct gpio_callback gpio_cb;
