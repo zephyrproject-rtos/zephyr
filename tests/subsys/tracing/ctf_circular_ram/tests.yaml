@@ -1,0 +1,15 @@
+# Copyright (c) Qualcomm Technologies, Inc. and/or its subsidiaries.
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  tracing.ctf_circular_ram:
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+      - qemu_riscv32
+    integration_platforms:
+      - native_sim
+      - qemu_riscv32
+    tags:
+      - tracing
+      - ctf
