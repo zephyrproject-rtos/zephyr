@@ -961,7 +961,7 @@ int i3c_bus_rstdaa_all(const struct device *dev)
 		LOG_DBG("%s: Reset dynamic address for device %s", dev->name,
 			desc->dev->name);
 		dret = i3c_detach_i3c_device(desc);
-		if (dret != 0) {
+		if ((dret != 0) && (dret != -EALREADY)) {
 			LOG_ERR("%s: failed to detach %s (%d)", dev->name,
 				desc->dev->name, dret);
 		}
