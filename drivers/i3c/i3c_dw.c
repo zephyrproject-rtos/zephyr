@@ -431,6 +431,8 @@ LOG_MODULE_REGISTER(i3c_dw, CONFIG_I3C_DW_LOG_LEVEL);
 #define DW_I3C_FLUSH_TIMEOUT_US      2000U
 /* RESET_CTRL readback faults while the flush is held off, so wait it out blind. */
 #define DW_I3C_FLUSH_SETTLE_US       50U
+/* Longest a halt is allowed to clear on its own before recovery runs. */
+#define DW_I3C_HALT_SETTLE_US        1000U
 
 /* Snps I3C/I2C Device Private Data */
 struct dw_i3c_i2c_dev_data {
@@ -633,6 +635,27 @@ static int dw_i3c_clock_on(const struct device *dev)
 }
 
 /**
+ * @brief Ask the platform hook how to retry after a transfer or DAA timeout.
+ */
+static __maybe_unused enum dw_i3c_retry_action
+dw_i3c_timeout_retry_action(const struct device *dev, enum dw_i3c_timeout_op op,
+			    bool retried_after_recover, bool first_cmd_addr_nack)
+{
+	const struct dw_i3c_config *config = dev->config;
+	enum dw_i3c_retry_action action = DW_I3C_RETRY_NONE;
+
+	if (DW_I3C_OPS(config) && config->ops->should_retry_timeout) {
+		if (config->ops->should_retry_timeout(dev, op, retried_after_recover,
+						      first_cmd_addr_nack,
+						      &action) == 0) {
+			return action;
+		}
+	}
+
+	return DW_I3C_RETRY_NONE;
+}
+
+/**
  * @brief Ask the platform hook whether the ISR may recover in place.
  */
 static enum dw_i3c_isr_error_action
@@ -647,6 +670,46 @@ dw_i3c_isr_error_recovery_action(const struct device *dev, int xfer_error)
 	return DW_I3C_ISR_ERROR_RECOVER_NOW;
 }
 
+/**
+ * @brief Ask the platform hook how to retry after a CCC timeout.
+ */
+static inline __maybe_unused enum dw_i3c_retry_action
+dw_i3c_ccc_timeout_retry_action(const struct device *dev,
+					bool retried_after_recover,
+					bool first_cmd_error_none,
+					bool is_setdasa_direct,
+					bool is_enec_broadcast)
+{
+	const struct dw_i3c_config *config = dev->config;
+	enum dw_i3c_retry_action action = DW_I3C_RETRY_NONE;
+
+	if (DW_I3C_OPS(config) && config->ops->should_retry_ccc_timeout) {
+		if (config->ops->should_retry_ccc_timeout(dev, retried_after_recover,
+							  first_cmd_error_none,
+							  is_setdasa_direct,
+							  is_enec_broadcast,
+							  &action) == 0) {
+			return action;
+		}
+	}
+
+	return DW_I3C_RETRY_NONE;
+}
+
+/**
+ * @brief Get the DW core clock rate, using vendor glue when needed.
+ */
+static int dw_i3c_get_core_rate(const struct device *dev, uint32_t *core_rate)
+{
+	const struct dw_i3c_config *config = dev->config;
+
+	if (DW_I3C_OPS(config) && config->ops->get_clock_rate) {
+		return config->ops->get_clock_rate(dev, core_rate);
+	}
+
+	return clock_control_get_rate(config->clock, config->clock_subsys, core_rate);
+}
+
 static inline bool dw_i3c_is_current_controller(const struct device *dev)
 {
 	return !!(sys_read32(dw_i3c_regs(dev) + PRESENT_STATE) & PRESENT_STATE_CURRENT_MASTER);
@@ -655,6 +718,7 @@ static inline bool dw_i3c_is_current_controller(const struct device *dev)
 #ifdef CONFIG_I3C_CONTROLLER
 
 static int dw_i3c_recover_bus(const struct device *dev);
+static int dw_i3c_recover_bus_locked_light(const struct device *dev);
 
 /*
  * Returns the index of the first free slot, or -1 when the table is full.
@@ -1383,6 +1447,11 @@ static int dw_i3c_xfers(const struct device *dev, struct i3c_device_desc *target
 {
 	struct dw_i3c_data *data = dev->data;
 	struct dw_i3c_xfer *xfer = &data->xfer;
+	enum dw_i3c_retry_action retry_action;
+	int64_t timeout_ms;
+	int64_t deadline;
+	bool first_cmd_addr_nack;
+	bool retried_after_recover = false;
 	int32_t ret, i, pos, nrxwords = 0, ntxwords = 0;
 
 	if (!dw_i3c_is_current_controller(dev)) {
@@ -1427,6 +1496,7 @@ static int dw_i3c_xfers(const struct device *dev, struct i3c_device_desc *target
 	}
 
 	pm_device_busy_set(dev);
+	timeout_ms = CONFIG_I3C_DW_RW_TIMEOUT_MS;
 
 	memset(xfer, 0, sizeof(struct dw_i3c_xfer));
 
@@ -1540,10 +1610,54 @@ static int dw_i3c_xfers(const struct device *dev, struct i3c_device_desc *target
 		}
 	}
 
-	start_xfer(dev);
+	while (true) {
+		k_sem_reset(&data->sem_xfer);
+		start_xfer(dev);
 
-	ret = dw_i3c_wait_for_xfer(dev);
-	if (ret) {
+		deadline = k_uptime_get() + timeout_ms;
+		ret = -EAGAIN;
+
+		while (k_uptime_get() < deadline) {
+			ret = k_sem_take(&data->sem_xfer, K_MSEC(1));
+			if (ret == 0) {
+				break;
+			}
+		}
+
+		if (ret == 0) {
+			break;
+		}
+
+		LOG_ERR("%s: Semaphore err (%d)", dev->name, ret);
+
+		first_cmd_addr_nack = xfer->ncmds > 0 &&
+				      xfer->cmds[0].error == RESPONSE_ERROR_ADDRESS_NACK;
+
+		retry_action = dw_i3c_timeout_retry_action(dev, DW_I3C_TIMEOUT_OP_XFERS,
+							   retried_after_recover,
+							   first_cmd_addr_nack);
+
+		if (!retried_after_recover && retry_action == DW_I3C_RETRY_LIGHT_RECOVER) {
+			ret = dw_i3c_recover_bus_locked_light(dev);
+			if (ret != 0) {
+				goto error;
+			}
+			retried_after_recover = true;
+			continue;
+		}
+
+		if (!retried_after_recover && retry_action == DW_I3C_RETRY_FULL_RECOVER) {
+			ret = dw_i3c_recover_bus(dev);
+			if (ret != 0) {
+				goto error;
+			}
+			retried_after_recover = true;
+			continue;
+		}
+
+		/* Final timeout path: sanitize local controller state before exit. */
+		(void)dw_i3c_recover_bus_locked_light(dev);
+
 		goto error;
 	}
 
@@ -2371,14 +2485,22 @@ static uint32_t dw_i3c_scl_cnt_sub(uint32_t total, uint32_t sub)
 
 static int dw_i3c_init_scl_timing(const struct device *dev, struct i3c_config_controller *ctrl_cfg)
 {
-	const struct dw_i3c_config *config = dev->config;
+	const struct dw_i3c_config *config __maybe_unused = dev->config;
 	struct dw_i3c_data *data = dev->data;
 	uint32_t core_rate, scl_timing, bus_free;
 #ifdef CONFIG_I3C_CONTROLLER
 	uint32_t hcnt, lcnt, fmlcnt, fmplcnt, free_cnt, i2c_scl_hz, tlow_min_ns;
 #endif /* CONFIG_I3C_CONTROLLER */
 
-	if (clock_control_get_rate(config->clock, config->clock_subsys, &core_rate) != 0) {
+	if ((ctrl_cfg != NULL) && (ctrl_cfg->scl.i2c > I3C_BUS_I2C_FM_PLUS_SCL_RATE)) {
+		return -EINVAL;
+	}
+
+	if ((ctrl_cfg != NULL) && (ctrl_cfg->scl.i3c == 0U)) {
+		return -EINVAL;
+	}
+
+	if (dw_i3c_get_core_rate(dev, &core_rate) != 0) {
 		LOG_ERR("%s: get clock rate failed", dev->name);
 		return -EINVAL;
 	}
@@ -2679,6 +2801,17 @@ static int dw_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *paylo
 	struct dw_i3c_data *data = dev->data;
 	struct dw_i3c_xfer *xfer = &data->xfer;
 	struct dw_i3c_cmd *cmd;
+	enum dw_i3c_retry_action retry_action;
+	uint32_t pstate;
+	uint32_t settle_us;
+	int64_t timeout_ms;
+	int64_t deadline;
+	bool first_cmd_error_none;
+	bool retried_after_recover = false;
+	bool is_setdasa_direct = !i3c_ccc_is_payload_broadcast(payload) &&
+		(payload->ccc.id == I3C_CCC_SETDASA);
+	bool is_enec_broadcast = i3c_ccc_is_payload_broadcast(payload) &&
+		(payload->ccc.id == I3C_CCC_ENEC(true));
 	int ret, i, pos;
 
 	if (!dw_i3c_is_current_controller(dev)) {
@@ -2718,6 +2851,8 @@ static int dw_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *paylo
 		k_mutex_unlock(&data->mt);
 		return ret;
 	}
+
+	timeout_ms = CONFIG_I3C_DW_RW_TIMEOUT_MS;
 
 	pm_device_busy_set(dev);
 
@@ -2796,10 +2931,68 @@ static int dw_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *paylo
 		}
 	}
 
-	start_xfer(dev);
+	/* Pre-CCC sanity: if the controller is still halted from a previous
+	 * error, recover before attempting the next submission.
+	 */
+	settle_us = DW_I3C_HALT_SETTLE_US;
+	do {
+		pstate = sys_read32(dw_i3c_regs(dev) + PRESENT_STATE);
+		if (PRESENT_STATE_CM_TFR_STS(pstate) != CM_TFR_STS_CTRL_HALT) {
+			break;
+		}
+		k_busy_wait(1);
+	} while (--settle_us > 0U);
 
-	ret = dw_i3c_wait_for_xfer(dev);
-	if (ret) {
+	if (PRESENT_STATE_CM_TFR_STS(pstate) == CM_TFR_STS_CTRL_HALT) {
+		ret = dw_i3c_recover_bus(dev);
+		if (ret != 0) {
+			goto error;
+		}
+	}
+
+	while (true) {
+		k_sem_reset(&data->sem_xfer);
+		start_xfer(dev);
+		deadline = k_uptime_get() + timeout_ms;
+		ret = -EAGAIN;
+
+		while (k_uptime_get() < deadline) {
+			ret = k_sem_take(&data->sem_xfer, K_MSEC(1));
+			if (ret == 0) {
+				break;
+			}
+		}
+
+		if (ret == 0) {
+			break;
+		}
+
+		LOG_ERR("%s: Semaphore err (%d)", dev->name, ret);
+
+		first_cmd_error_none = xfer->ncmds > 0 &&
+				       xfer->cmds[0].error == RESPONSE_NO_ERROR;
+
+		retry_action = dw_i3c_ccc_timeout_retry_action(dev, retried_after_recover,
+							      first_cmd_error_none,
+							      is_setdasa_direct,
+							      is_enec_broadcast);
+
+		if (!retried_after_recover && retry_action == DW_I3C_RETRY_FULL_RECOVER) {
+			ret = dw_i3c_recover_bus(dev);
+			if (ret != 0) {
+				goto error;
+			}
+			ret = dw_i3c_prepare_bus_init(dev);
+			if (ret != 0) {
+				goto error;
+			}
+			retried_after_recover = true;
+			continue;
+		}
+
+		/* Ensure next submission does not inherit a silently halted state. */
+		(void)dw_i3c_recover_bus(dev);
+
 		goto error;
 	}
 
@@ -2818,6 +3011,42 @@ static int dw_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *paylo
 	}
 
 	ret = xfer->ret;
+
+	/* Post-RSTDAA cleanup: all targets dropped their DAs, so clear
+	 * controller-side bookkeeping (DAT, addr_slots, free_pos,
+	 * controller_priv).  Without this the next ENTDAA allocates new
+	 * slots while stale DAT entries persist, causing directed CCCs
+	 * to NACK.  Targets with a static_addr keep their DAT slot
+	 * reserved for potential SETDASA re-assignment.
+	 */
+	if (ret == 0 && i3c_ccc_is_payload_broadcast(payload) &&
+	    payload->ccc.id == I3C_CCC_RSTDAA) {
+		struct i3c_device_desc *desc;
+
+		I3C_BUS_FOR_EACH_I3CDEV(dev, desc) {
+			struct dw_i3c_i2c_dev_data *priv = desc->controller_priv;
+
+			if (priv == NULL) {
+				continue;
+			}
+
+			if (desc->dynamic_addr != 0U) {
+				i3c_addr_slots_mark_free(&data->common.attached_dev.addr_slots,
+							 desc->dynamic_addr);
+				desc->dynamic_addr = 0U;
+			}
+
+			if (desc->static_addr == 0U) {
+				uint32_t dat =
+					DEV_ADDR_TABLE_LOC(data->datstartaddr, priv->id);
+
+				sys_write32(0, dw_i3c_regs(dev) + dat);
+				data->free_pos |= BIT(priv->id);
+				desc->controller_priv = NULL;
+			}
+		}
+	}
+
 error:
 	pm_device_busy_clear(dev);
 	k_mutex_unlock(&data->mt);
@@ -2839,7 +3068,8 @@ error:
  *
  * @return 0 on success, or a negative error code on failure.
  */
-static int add_slave_from_daa(const struct device *dev, int32_t pos)
+static int add_slave_from_daa(const struct device *dev, int32_t pos,
+			      struct i3c_device_desc **desc_out)
 {
 	struct dw_i3c_data *data = dev->data;
 	uint32_t dat_word;
@@ -2851,6 +3081,8 @@ static int add_slave_from_daa(const struct device *dev, int32_t pos)
 	uint64_t pid;
 	uint8_t dyn_addr;
 	uint8_t dyn_addr_parity;
+
+	*desc_out = NULL;
 
 	/* The IP records the DA it assigned in DCT.LOC4[7:0] (databook figure 2-14).
 	 * Read it from there rather than from the DAT entry the driver programmed.
@@ -2965,6 +3197,7 @@ static int add_slave_from_daa(const struct device *dev, int32_t pos)
 		}
 	}
 	i3c_addr_slots_mark_i3c(&data->common.attached_dev.addr_slots, dyn_addr);
+	*desc_out = target;
 
 	return 0;
 }
@@ -2984,8 +3217,12 @@ static int dw_i3c_do_daa(const struct device *dev)
 	struct dw_i3c_xfer *xfer = &data->xfer;
 	struct dw_i3c_cmd *cmd;
 	struct i3c_device_desc *desc;
+	enum dw_i3c_retry_action retry_action;
 	uint32_t olddevs, newdevs;
 	uint8_t p, idx, last_addr = 0;
+	int64_t timeout_ms;
+	int64_t deadline;
+	bool retried_after_recover = false;
 	int32_t pos, addr, ret;
 
 	if (!dw_i3c_is_current_controller(dev)) {
@@ -3041,6 +3278,7 @@ static int dw_i3c_do_daa(const struct device *dev)
 	}
 
 	pm_device_busy_set(dev);
+	timeout_ms = CONFIG_I3C_DW_RW_TIMEOUT_MS;
 
 	memset(xfer, 0, sizeof(struct dw_i3c_xfer));
 
@@ -3052,8 +3290,42 @@ static int dw_i3c_do_daa(const struct device *dev)
 		      COMMAND_PORT_DEV_COUNT(data->maxdevs - pos) | COMMAND_PORT_DEV_INDEX(pos) |
 		      COMMAND_PORT_CMD(I3C_CCC_ENTDAA) | COMMAND_PORT_ADDR_ASSGN_CMD;
 
-	start_xfer(dev);
-	ret = dw_i3c_wait_for_xfer(dev);
+	while (true) {
+		k_sem_reset(&data->sem_xfer);
+		start_xfer(dev);
+		deadline = k_uptime_get() + timeout_ms;
+		ret = -EAGAIN;
+
+		while (k_uptime_get() < deadline) {
+			ret = k_sem_take(&data->sem_xfer, K_MSEC(1));
+			if (ret == 0) {
+				break;
+			}
+		}
+
+		if (ret == 0) {
+			break;
+		}
+
+		LOG_ERR("%s: Semaphore err (%d)", dev->name, ret);
+
+		retry_action = dw_i3c_timeout_retry_action(dev, DW_I3C_TIMEOUT_OP_DAA,
+							   retried_after_recover, false);
+
+		if (!retried_after_recover && retry_action == DW_I3C_RETRY_FULL_RECOVER) {
+			ret = dw_i3c_recover_bus(dev);
+			if (ret != 0) {
+				break;
+			}
+			retried_after_recover = true;
+			continue;
+		}
+
+		/* Final timeout path: sanitize local controller state before exit. */
+		(void)dw_i3c_recover_bus_locked_light(dev);
+
+		break;
+	}
 
 	pm_device_busy_clear(dev);
 	k_mutex_unlock(&data->mt);
@@ -3072,7 +3344,32 @@ static int dw_i3c_do_daa(const struct device *dev)
 	for (pos = find_lsb_set(newdevs); pos <= find_msb_set(newdevs); pos++) {
 		idx = pos - 1;
 		if (newdevs & BIT(idx)) {
-			add_slave_from_daa(dev, idx);
+			struct i3c_device_desc *added = NULL;
+
+			add_slave_from_daa(dev, idx, &added);
+
+			/* Silence this target only: DAA also runs at runtime for a
+			 * hot join, where a broadcast would clear these events on
+			 * every target enabled earlier while the driver still
+			 * believes they are enabled. An untracked device (descriptor
+			 * pool exhausted) keeps the HW reset defaults.
+			 *
+			 * HJ is deliberately not cleared: DISEC state outlives the
+			 * dynamic address, so disabling it here would stop the device
+			 * rejoining after a later RSTDAA.
+			 */
+			if (added != NULL) {
+				struct i3c_ccc_events disec_events = {
+					.events = I3C_CCC_EVT_INTR | I3C_CCC_EVT_CR,
+				};
+				int disec_ret = i3c_ccc_do_events_set(added, false, &disec_events);
+
+				if (disec_ret != 0) {
+					LOG_WRN("%s: post-DAA DISEC to 0x%02x failed (%d); "
+						"target may assert IBI/MR before it is expected",
+						dev->name, added->dynamic_addr, disec_ret);
+				}
+			}
 		}
 	}
 
@@ -3317,6 +3614,45 @@ static struct i3c_device_desc *dw_i3c_device_find(const struct device *dev,
 	}
 
 	return NULL;
+}
+
+/**
+ * @brief Flush and resume the controller without touching the DAT or DCT
+ *
+ * Caller must already hold the transfer mutex
+ *
+ * @retval 0 on success.
+ * @retval -errno Propagated from the pre-resume platform hook
+ */
+static int dw_i3c_recover_bus_locked_light(const struct device *dev)
+{
+	uint32_t level;
+	uint32_t nibis;
+	int ret;
+
+	/* IBI_STATUS_CNT is reserved (reads 0) when IC_HAS_IBI_DATA=0, and
+	 * IBI_BUF_BLR is the status count in that case.
+	 */
+	level = sys_read32(dw_i3c_regs(dev) + QUEUE_STATUS_LEVEL);
+	nibis = QUEUE_STATUS_IBI_STATUS_CNT(level);
+	if (nibis == 0U) {
+		nibis = QUEUE_STATUS_IBI_BUF_BLR(level);
+	}
+	while (nibis--) {
+		(void)sys_read32(dw_i3c_regs(dev) + IBI_QUEUE_STATUS);
+	}
+
+	dw_i3c_flush_queues(dev);
+
+	ret = dw_i3c_pre_resume_ctrl(dev);
+	if (ret != 0) {
+		return ret;
+	}
+
+	sys_write32(INTR_TRANSFER_ERR_STAT, dw_i3c_regs(dev) + INTR_STATUS);
+	(void)dw_i3c_pulse_resume(dev);
+
+	return 0;
 }
 
 /**
