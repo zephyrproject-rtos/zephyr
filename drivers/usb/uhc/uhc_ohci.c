@@ -19,6 +19,8 @@
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/drivers/reset.h>
 #include <zephyr/drivers/usb/uhc.h>
+#include <zephyr/usb/usb_ch9.h>
+#include <zephyr/usb/class/usb_hub.h>
 #include <zephyr/drivers/pcie/pcie.h>
 
 #if DT_HAS_COMPAT_STATUS_OKAY(st_stm32_rcc)
@@ -96,12 +98,20 @@ BUILD_ASSERT(!IS_ENABLED(CONFIG_DCACHE) || IS_ENABLED(CONFIG_NOCACHE_MEMORY),
 #define OHCI_RHDA_NDP_MASK             GENMASK(7, 0)
 #define OHCI_RHDA_PSM                  BIT(8)
 #define OHCI_RHDA_NPS                  BIT(9)
+#define OHCI_RHDA_OCPM                 BIT(11)
+#define OHCI_RHDA_NOCP                 BIT(12)
 #define OHCI_RHDA_POTPGT_MASK          GENMASK(31, 24)
+#define OHCI_RHDB_DR_MASK              GENMASK(15, 0)
 #define OHCI_RHDB_PPCM_MASK            GENMASK(31, 16)
+#define OHCI_RHS_OCI                   BIT(1)
 #define OHCI_RHS_LPSC                  BIT(16)
+#define OHCI_RHS_OCIC                  BIT(17)
 
 /* 7.4.4 HcRhPortStatus Bit Definitions and Write-1-to-Clear Change Bits */
 #define OHCI_RHPS_CCS                  BIT(0)
+#define OHCI_RHPS_PES                  BIT(1)
+#define OHCI_RHPS_PSS                  BIT(2)
+#define OHCI_RHPS_POCI                 BIT(3)
 #define OHCI_RHPS_PRS                  BIT(4)
 #define OHCI_RHPS_PPS                  BIT(8)
 #define OHCI_RHPS_LSDA                 BIT(9)
@@ -112,6 +122,8 @@ BUILD_ASSERT(!IS_ENABLED(CONFIG_DCACHE) || IS_ENABLED(CONFIG_NOCACHE_MEMORY),
 #define OHCI_RHPS_PRSC                 BIT(20)
 #define OHCI_RHPS_W1C_MASK             (OHCI_RHPS_CSC | OHCI_RHPS_PESC | OHCI_RHPS_PSSC | \
 					OHCI_RHPS_OCIC | OHCI_RHPS_PRSC)
+#define OHCI_RHPS_STATUS_MASK  GENMASK(15, 0)
+#define OHCI_RHPS_CHANGE_SHIFT 16U
 
 /* 4.2.2 Endpoint Descriptor Field Definitions */
 #define OHCI_ED_FA_MASK                GENMASK(6, 0)
@@ -244,14 +256,20 @@ struct ohci_data {
 	struct ohci_xfer_slot *slots;
 	uint8_t               bulk_toggle[128][32];
 	uint8_t               port_count;
-	bool                  port_connected;
 	bool                  bus_suspended;
+	/* Root hub emulation, see below */
+	struct usb_device *rh_udev;
+	struct uhc_transfer *rh_int_xfer;
+	bool rh_connected;
 };
 
 static inline uintptr_t ohci_base(const struct device *dev)
 {
 	return DEVICE_MMIO_NAMED_GET(dev, reg_base);
 }
+
+static inline bool ohci_rh_is_xfer(const struct ohci_data *data,
+				   const struct uhc_transfer *const xfer);
 
 static inline uint32_t ohci_td_cc(const struct ohci_hw_td *td)
 {
@@ -772,6 +790,11 @@ static int ohci_try_schedule_next(const struct device *dev)
 	SYS_DLIST_FOR_EACH_CONTAINER_SAFE(&data->uhc_data.ctrl_xfers, xfer, tmp, node) {
 		bool is_ctrl = (xfer->type == USB_EP_TYPE_CONTROL);
 
+		/* The root hub transfers are handled in software. */
+		if (ohci_rh_is_xfer(data, xfer)) {
+			continue;
+		}
+
 		/* Skip transfers already being processed in a slot. */
 		if (ohci_xfer_is_active(data, xfer)) {
 			continue;
@@ -865,46 +888,373 @@ static int ohci_try_schedule_next(const struct device *dev)
 	return 0;
 }
 
-static void ohci_handle_root_hub_change(const struct device *dev)
+/*
+ * Root hub emulation
+ *
+ * The host stack handles a single device behind a controller, so the root
+ * hub of the controller is presented to it as a full-speed hub device, like
+ * Linux does. The hub class then owns the root hub ports: it powers, resets
+ * and polls them through the hub requests, which are answered from the root
+ * hub registers here, so every port can carry a device at the same time.
+ */
+#define OHCI_RH_EP_IN_ADDR 0x81U
+#define OHCI_RH_EP_IN_MPS  2U
+#define OHCI_RH_MAX_PORTS  15U
+
+BUILD_ASSERT(DIV_ROUND_UP(OHCI_RH_MAX_PORTS + 1U, 8U) <= OHCI_RH_EP_IN_MPS,
+	     "Status change bitmap does not fit the endpoint");
+
+static const uint8_t ohci_rh_device_desc[] = {
+	18U,         USB_DESC_DEVICE,
+	0x10U,       0x01U, /* bcdUSB 1.10 */
+	USB_BCC_HUB, 0x00U,
+	0x00U,       64U,   /* bMaxPacketSize0 */
+	0x00U,       0x00U, /* idVendor */
+	0x00U,       0x00U, /* idProduct */
+	0x00U,       0x01U, /* bcdDevice */
+	0U,          0U,
+	0U, /* no strings */
+	1U, /* bNumConfigurations */
+};
+
+static const uint8_t ohci_rh_config_desc[] = {
+	/* Configuration */
+	9U, USB_DESC_CONFIGURATION, 25U, 0x00U, /* wTotalLength */
+	1U, 1U, 0U, 0xc0U,                      /* self powered */
+	0U,
+	/* Interface */
+	9U, USB_DESC_INTERFACE, 0U, 0U, 1U, USB_BCC_HUB, 0x00U, 0x00U, 0U,
+	/* Status change endpoint */
+	7U, USB_DESC_ENDPOINT, OHCI_RH_EP_IN_ADDR, USB_EP_TYPE_INTERRUPT, OHCI_RH_EP_IN_MPS, 0x00U,
+	255U, /* bInterval */
+};
+
+BUILD_ASSERT(sizeof(ohci_rh_config_desc) == 25U, "wTotalLength mismatch");
+
+static size_t ohci_rh_hub_desc(const struct device *dev, uint8_t *const buf, const size_t size)
 {
 	struct ohci_data *data = dev->data;
-	bool connected_now = false;
-	bool low_speed = false;
-	enum uhc_event_type evt;
+	uint32_t rh_desc_a = sys_read32(ohci_base(dev) + OHCI_RH_DESC_A);
+	uint32_t removable = sys_read32(ohci_base(dev) + OHCI_RH_DESC_B) & OHCI_RHDB_DR_MASK;
+	size_t bitmap_len = (data->port_count / 8U) + 1U;
+	size_t len = 7U + 2U * bitmap_len;
+	uint16_t chars;
 
-	if (data->port_count == 0U) {
-		return;
+	if (size < len) {
+		return 0U;
+	}
+
+	if ((rh_desc_a & OHCI_RHDA_NPS) != 0U) {
+		chars = FIELD_PREP(USB_HUB_CHAR_LPSM_MASK, 2U);
+	} else {
+		chars = FIELD_PREP(USB_HUB_CHAR_LPSM_MASK,
+				   (rh_desc_a & OHCI_RHDA_PSM) != 0U ? 1U : 0U);
+	}
+
+	if ((rh_desc_a & OHCI_RHDA_NOCP) != 0U) {
+		chars |= FIELD_PREP(USB_HUB_CHAR_OCPM_MASK, 2U);
+	} else {
+		chars |= FIELD_PREP(USB_HUB_CHAR_OCPM_MASK,
+				    (rh_desc_a & OHCI_RHDA_OCPM) != 0U ? 1U : 0U);
+	}
+
+	buf[0] = (uint8_t)len;
+	buf[1] = USB_DESC_HUB;
+	buf[2] = data->port_count;
+	sys_put_le16(chars, &buf[3]);
+	buf[5] = (uint8_t)FIELD_GET(OHCI_RHDA_POTPGT_MASK, rh_desc_a);
+	buf[6] = 0U;
+
+	for (size_t i = 0U; i < bitmap_len; i++) {
+		/* DeviceRemovable, bit 0 is reserved, followed by PortPwrCtrlMask */
+		buf[7U + i] = (uint8_t)(removable >> (8U * i));
+		buf[7U + bitmap_len + i] = 0xffU;
+	}
+
+	return len;
+}
+
+/* Status change bitmap: bit 0 for the hub, bit n for port n */
+static uint16_t ohci_rh_changes(const struct device *dev)
+{
+	struct ohci_data *data = dev->data;
+	uint16_t bitmap = 0U;
+
+	if ((sys_read32(ohci_base(dev) + OHCI_RH_STATUS) & OHCI_RHS_OCIC) != 0U) {
+		bitmap |= BIT(0);
 	}
 
 	for (uint8_t port = 0U; port < data->port_count; port++) {
 		uint32_t status = sys_read32(ohci_base(dev) + OHCI_RH_PORT_STATUS(port));
-		uint32_t clear = status & OHCI_RHPS_W1C_MASK;
 
-		LOG_DBG("RH port%u status 0x%08x (connected=%u)", port, status,
-			data->port_connected);
-
-		if ((status & OHCI_RHPS_CCS) != 0U) {
-			connected_now = true;
-			if ((status & OHCI_RHPS_LSDA) != 0U) {
-				low_speed = true;
-			}
-		}
-
-		if (clear != 0U) {
-			sys_write32(clear, ohci_base(dev) + OHCI_RH_PORT_STATUS(port));
+		if ((status & OHCI_RHPS_W1C_MASK) != 0U) {
+			bitmap |= BIT(port + 1U);
 		}
 	}
 
-	if (connected_now && !data->port_connected) {
-		data->port_connected = true;
-		evt = low_speed ? UHC_EVT_DEV_CONNECTED_LS : UHC_EVT_DEV_CONNECTED_FS;
-		LOG_DBG("Submit connect event %d from RH scan", evt);
-		(void)uhc_submit_event(dev, evt, 0);
-	} else if (!connected_now && data->port_connected) {
-		data->port_connected = false;
-		(void)uhc_submit_event(dev, UHC_EVT_DEV_REMOVED, 0);
+	return bitmap;
+}
+
+static void ohci_rh_complete(const struct device *dev, struct uhc_transfer *const xfer,
+			     const void *const src, size_t len, const int err)
+{
+	if ((err == 0) && (src != NULL) && (xfer->buf != NULL)) {
+		len = MIN(len, net_buf_tailroom(xfer->buf));
+		net_buf_add_mem(xfer->buf, src, len);
+	}
+
+	uhc_xfer_return(dev, xfer, err);
+}
+
+/*
+ * Complete the parked status change transfer if there is anything to report,
+ * otherwise wait for the next root hub status change interrupt. The
+ * interrupt is disabled when it fires, as the change bits keep it asserted
+ * until the hub class clears them.
+ */
+static void ohci_rh_status_changed(const struct device *dev)
+{
+	struct ohci_data *data = dev->data;
+	struct uhc_transfer *xfer = data->rh_int_xfer;
+	uint8_t bytes[OHCI_RH_EP_IN_MPS];
+	uint16_t bitmap;
+
+	if (xfer == NULL) {
+		return;
+	}
+
+	bitmap = ohci_rh_changes(dev);
+	if (bitmap == 0U) {
+		sys_write32(OHCI_INTR_RHSC, ohci_base(dev) + OHCI_INTRENABLE);
+		return;
+	}
+
+	LOG_DBG("Root hub status change 0x%04x", bitmap);
+	data->rh_int_xfer = NULL;
+	sys_put_le16(bitmap, bytes);
+	ohci_rh_complete(dev, xfer, bytes, DIV_ROUND_UP(data->port_count + 1U, 8U), 0);
+}
+
+static int ohci_rh_port_feature(const struct device *dev, const uint8_t port,
+				const uint16_t feature, const bool set)
+{
+	uint32_t val;
+
+	if (set) {
+		switch (feature) {
+		case USB_HCFS_PORT_ENABLE:
+			val = OHCI_RHPS_PES;
+			break;
+		case USB_HCFS_PORT_SUSPEND:
+			val = OHCI_RHPS_PSS;
+			break;
+		case USB_HCFS_PORT_RESET:
+			val = OHCI_RHPS_PRS;
+			break;
+		case USB_HCFS_PORT_POWER:
+			val = OHCI_RHPS_PPS;
+			break;
+		default:
+			return -EPIPE;
+		}
 	} else {
-		/* No connection change */
+		switch (feature) {
+		case USB_HCFS_PORT_ENABLE:
+			val = OHCI_RHPS_CCS;
+			break;
+		case USB_HCFS_PORT_SUSPEND:
+			val = OHCI_RHPS_POCI;
+			break;
+		case USB_HCFS_PORT_POWER:
+			val = OHCI_RHPS_LSDA;
+			break;
+		case USB_HCFS_C_PORT_CONNECTION:
+			val = OHCI_RHPS_CSC;
+			break;
+		case USB_HCFS_C_PORT_ENABLE:
+			val = OHCI_RHPS_PESC;
+			break;
+		case USB_HCFS_C_PORT_SUSPEND:
+			val = OHCI_RHPS_PSSC;
+			break;
+		case USB_HCFS_C_PORT_OVER_CURRENT:
+			val = OHCI_RHPS_OCIC;
+			break;
+		case USB_HCFS_C_PORT_RESET:
+			val = OHCI_RHPS_PRSC;
+			break;
+		default:
+			return -EPIPE;
+		}
+	}
+
+	/* The port status register is a set/clear register, only write the bit */
+	sys_write32(val, ohci_base(dev) + OHCI_RH_PORT_STATUS(port));
+
+	return 0;
+}
+
+static void ohci_rh_control(const struct device *dev, struct uhc_transfer *const xfer)
+{
+	struct ohci_data *data = dev->data;
+	const struct usb_setup_packet *setup = (const struct usb_setup_packet *)xfer->setup_pkt;
+	uint16_t value = sys_le16_to_cpu(setup->wValue);
+	uint16_t index = sys_le16_to_cpu(setup->wIndex);
+	uint16_t length = sys_le16_to_cpu(setup->wLength);
+	uint8_t type = (setup->bmRequestType >> 5) & 0x3U;
+	uint8_t recipient = setup->bmRequestType & 0x1fU;
+	uint8_t port = (uint8_t)index;
+	uint8_t buf[7U + 2U * (OHCI_RH_MAX_PORTS / 8U + 1U)];
+	const void *src = NULL;
+	size_t len = 0U;
+	uint32_t status;
+	int err = 0;
+
+	if (type == USB_REQTYPE_TYPE_STANDARD) {
+		switch (setup->bRequest) {
+		case USB_SREQ_GET_DESCRIPTOR:
+			if ((value >> 8) == USB_DESC_DEVICE) {
+				src = ohci_rh_device_desc;
+				len = sizeof(ohci_rh_device_desc);
+			} else if ((value >> 8) == USB_DESC_CONFIGURATION) {
+				src = ohci_rh_config_desc;
+				len = sizeof(ohci_rh_config_desc);
+			} else {
+				err = -EPIPE;
+			}
+			break;
+		case USB_SREQ_GET_STATUS:
+			/* Self powered, nothing else to report */
+			sys_put_le16((recipient == USB_REQTYPE_RECIPIENT_DEVICE) ? 1U : 0U, buf);
+			src = buf;
+			len = 2U;
+			break;
+		case USB_SREQ_GET_CONFIGURATION:
+			buf[0] = 1U;
+			src = buf;
+			len = 1U;
+			break;
+		case USB_SREQ_SET_ADDRESS:
+			LOG_DBG("Root hub address %u", value);
+			break;
+		case USB_SREQ_SET_CONFIGURATION:
+		case USB_SREQ_SET_INTERFACE:
+		case USB_SREQ_SET_FEATURE:
+		case USB_SREQ_CLEAR_FEATURE:
+			break;
+		default:
+			err = -EPIPE;
+			break;
+		}
+	} else if ((type == USB_REQTYPE_TYPE_CLASS) &&
+		   ((recipient == USB_REQTYPE_RECIPIENT_DEVICE) || (port == 0U))) {
+		switch (setup->bRequest) {
+		case USB_HCREQ_GET_DESCRIPTOR:
+			len = ohci_rh_hub_desc(dev, buf, sizeof(buf));
+			src = buf;
+			break;
+		case USB_HCREQ_GET_STATUS:
+			status = sys_read32(ohci_base(dev) + OHCI_RH_STATUS);
+			sys_put_le16((status & OHCI_RHS_OCI) != 0U ? USB_HUB_STAT_OVER_CURRENT : 0U,
+				     &buf[0]);
+			sys_put_le16((status & OHCI_RHS_OCIC) != 0U ? USB_HUB_CHANGE_OVER_CURRENT
+								    : 0U,
+				     &buf[2]);
+			src = buf;
+			len = 4U;
+			break;
+		case USB_HCREQ_CLEAR_FEATURE:
+			if (value == USB_HCFS_C_HUB_OVER_CURRENT) {
+				sys_write32(OHCI_RHS_OCIC, ohci_base(dev) + OHCI_RH_STATUS);
+			} else if (value != USB_HCFS_C_HUB_LOCAL_POWER) {
+				err = -EPIPE;
+			}
+			break;
+		default:
+			err = -EPIPE;
+			break;
+		}
+	} else if ((type == USB_REQTYPE_TYPE_CLASS) && (port <= data->port_count)) {
+		switch (setup->bRequest) {
+		case USB_HCREQ_GET_STATUS:
+			status = sys_read32(ohci_base(dev) + OHCI_RH_PORT_STATUS(port - 1U));
+			/* The port status and change bits match the hub class layout */
+			sys_put_le16((uint16_t)(status & OHCI_RHPS_STATUS_MASK), &buf[0]);
+			sys_put_le16((uint16_t)(status >> OHCI_RHPS_CHANGE_SHIFT), &buf[2]);
+			src = buf;
+			len = 4U;
+			break;
+		case USB_HCREQ_SET_FEATURE:
+			err = ohci_rh_port_feature(dev, port - 1U, value, true);
+			break;
+		case USB_HCREQ_CLEAR_FEATURE:
+			err = ohci_rh_port_feature(dev, port - 1U, value, false);
+			break;
+		default:
+			err = -EPIPE;
+			break;
+		}
+	} else {
+		err = -EPIPE;
+	}
+
+	if (err != 0) {
+		LOG_WRN("Root hub request 0x%02x 0x%02x not supported", setup->bmRequestType,
+			setup->bRequest);
+	}
+
+	ohci_rh_complete(dev, xfer, src, MIN(len, length), err);
+}
+
+static void ohci_rh_enqueue(const struct device *dev, struct uhc_transfer *const xfer)
+{
+	struct ohci_data *data = dev->data;
+
+	if (xfer->type == USB_EP_TYPE_CONTROL) {
+		ohci_rh_control(dev, xfer);
+	} else if (xfer->ep == OHCI_RH_EP_IN_ADDR) {
+		if (data->rh_int_xfer != NULL) {
+			uhc_xfer_return(dev, xfer, -EBUSY);
+			return;
+		}
+
+		/* Report pending changes right away, otherwise wait for one */
+		data->rh_int_xfer = xfer;
+		ohci_rh_status_changed(dev);
+	} else {
+		uhc_xfer_return(dev, xfer, -EPIPE);
+	}
+}
+
+static inline bool ohci_rh_is_xfer(const struct ohci_data *data,
+				   const struct uhc_transfer *const xfer)
+{
+	return (data->rh_udev != NULL) && (xfer->udev == data->rh_udev);
+}
+
+/*
+ * The ports are only enabled by the hub class once the root hub is
+ * enumerated, so the first device at the default address is the root hub.
+ */
+static bool ohci_rh_adopt_xfer(struct ohci_data *data, const struct uhc_transfer *const xfer)
+{
+	if ((data->rh_udev == NULL) && data->rh_connected && (xfer->udev->addr == 0U)) {
+		data->rh_udev = xfer->udev;
+	}
+
+	return ohci_rh_is_xfer(data, xfer);
+}
+
+static void ohci_rh_reset(const struct device *dev)
+{
+	struct ohci_data *data = dev->data;
+
+	data->rh_udev = NULL;
+	if (data->rh_int_xfer != NULL) {
+		struct uhc_transfer *xfer = data->rh_int_xfer;
+
+		data->rh_int_xfer = NULL;
+		uhc_xfer_return(dev, xfer, -ECONNRESET);
 	}
 }
 
@@ -913,7 +1263,8 @@ static void ohci_irq_handler(const struct device *dev, uint32_t irqs)
 	struct ohci_data *data = dev->data;
 
 	if ((irqs & OHCI_INTR_RHSC) != 0U) {
-		ohci_handle_root_hub_change(dev);
+		sys_write32(OHCI_INTR_RHSC, ohci_base(dev) + OHCI_INTRDISABLE);
+		ohci_rh_status_changed(dev);
 	}
 
 	if ((irqs & OHCI_INTR_WDH) != 0U) {
@@ -978,8 +1329,10 @@ static int ohci_init(const struct device *dev)
 
 	memset(data->hcca, 0, sizeof(*data->hcca));
 	ohci_clear_all_slots(data);
-	data->port_connected = false;
 	data->bus_suspended = false;
+	data->rh_udev = NULL;
+	data->rh_int_xfer = NULL;
+	data->rh_connected = false;
 
 	return 0;
 }
@@ -1047,15 +1400,10 @@ static int ohci_enable(const struct device *dev)
 	sys_write32(OHCI_INTR_MIE | OHCI_INTR_WDH | OHCI_INTR_RD | OHCI_INTR_RHSC | OHCI_INTR_UE,
 		    ohci_base(dev) + OHCI_INTRENABLE);
 
-	/*
-	 * Interrupts are now enabled; take the spinlock before touching
-	 * port_connected so we cannot race with the ISR.
-	 */
-	K_SPINLOCK(&data->lock) {
-		ohci_handle_root_hub_change(dev);
-	}
+	/* The root hub is presented to the host stack as a permanently connected hub */
+	data->rh_connected = true;
 
-	return 0;
+	return uhc_submit_event(dev, UHC_EVT_DEV_CONNECTED_FS, 0);
 }
 
 static int ohci_disable(const struct device *dev)
@@ -1081,7 +1429,13 @@ static int ohci_disable(const struct device *dev)
 			uhc_xfer_return(dev, xfer, -ECONNRESET);
 		}
 	}
+	ohci_rh_reset(dev);
 	k_spin_unlock(&data->lock, key);
+
+	if (data->rh_connected) {
+		data->rh_connected = false;
+		return uhc_submit_event(dev, UHC_EVT_DEV_REMOVED, 0);
+	}
 
 	return 0;
 }
@@ -1093,42 +1447,13 @@ static int ohci_shutdown(const struct device *dev)
 	return 0;
 }
 
+/*
+ * The host stack only resets the bus for the root device, which is the
+ * emulated root hub. The ports are reset by the hub class instead.
+ */
 static int ohci_bus_reset(const struct device *dev)
 {
-	struct ohci_data *data = dev->data;
-	int ret;
-
-	if (data->port_count == 0U) {
-		return -ENODEV;
-	}
-
-	for (uint8_t port = 0U; port < data->port_count; port++) {
-		uint32_t status = sys_read32(ohci_base(dev) + OHCI_RH_PORT_STATUS(port));
-
-		if ((status & OHCI_RHPS_CCS) != 0U) {
-			sys_write32(OHCI_RHPS_PRS, ohci_base(dev) + OHCI_RH_PORT_STATUS(port));
-		}
-	}
-
-	k_msleep(OHCI_BUS_RESET_TIME_MS);
-
-	for (uint8_t port = 0U; port < data->port_count; port++) {
-		sys_write32(OHCI_RHPS_PRSC, ohci_base(dev) + OHCI_RH_PORT_STATUS(port));
-	}
-
-	ret = uhc_submit_event(dev, UHC_EVT_RESETED, 0);
-	if (ret != 0) {
-		return ret;
-	}
-
-	K_SPINLOCK(&data->lock) {
-		/* A bus reset resets the data toggles of all device endpoints. */
-		memset(data->bulk_toggle, 0, sizeof(data->bulk_toggle));
-		/* Re-check port status after reset to catch delayed presence updates. */
-		ohci_handle_root_hub_change(dev);
-	}
-
-	return 0;
+	return uhc_submit_event(dev, UHC_EVT_RESETED, 0);
 }
 
 static int ohci_sof_enable(const struct device *dev)
@@ -1184,7 +1509,11 @@ static int ohci_ep_enqueue(const struct device *dev, struct uhc_transfer *const 
 	}
 
 	K_SPINLOCK(&data->lock) {
-		ret = ohci_try_schedule_next(dev);
+		if (ohci_rh_adopt_xfer(data, xfer)) {
+			ohci_rh_enqueue(dev, xfer);
+		} else {
+			ret = ohci_try_schedule_next(dev);
+		}
 	}
 	if (ret != 0) {
 		LOG_DBG("Schedule xfer ep 0x%02x failed %d", xfer->ep, ret);
@@ -1199,6 +1528,13 @@ static int ohci_ep_dequeue(const struct device *dev, struct uhc_transfer *const 
 	k_spinlock_key_t key;
 
 	key = k_spin_lock(&data->lock);
+
+	if (xfer == data->rh_int_xfer) {
+		data->rh_int_xfer = NULL;
+		uhc_xfer_return(dev, xfer, -ECONNRESET);
+		k_spin_unlock(&data->lock, key);
+		return 0;
+	}
 
 	for (size_t i = 0U; i < OHCI_MAX_SLOTS; i++) {
 		if (data->slots[i].xfer != xfer) {
