@@ -221,7 +221,7 @@ static void intc_rz_ext_irq_isr_handle(const struct device *dev)
 		.filter_enable = true,                                                             \
 		.clock_source_div = EXTERNAL_IRQ_CLOCK_SOURCE_DIV_1,                               \
 		.p_callback = intc_rz_ext_irq_callback,                                            \
-		.p_context = DEVICE_DT_INST_GET(index),                                            \
+		.p_context = (void *)DEVICE_DT_INST_GET(index),                                    \
 		.p_extend = NULL,                                                                  \
 		.ipl = DT_INST_IRQ_BY_IDX(index, 0, priority),                                     \
 		.irq = DT_INST_IRQ_BY_IDX(index, 0, irq),                                          \
