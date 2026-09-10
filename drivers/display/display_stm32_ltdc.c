@@ -58,6 +58,11 @@ LOG_MODULE_REGISTER(display_stm32_ltdc, CONFIG_DISPLAY_LOG_LEVEL);
 #error "Invalid LTDC pixel format chosen"
 #endif
 
+/* The YUV to RGB converter is described by the HAL of the series that carry it */
+#if defined(LTDC_YUV2RGBCONVERTOR_BT601_REDUCED_RANGE)
+#define STM32_LTDC_HAS_YUV 1
+#endif
+
 #define STM32_LTDC_INIT_PIXEL_SIZE	DISPLAY_BITS_PER_PIXEL(DISPLAY_INIT_PIXEL_FORMAT) \
 					/ BITS_PER_BYTE
 
@@ -179,12 +184,76 @@ static void stm32_ltdc_global_isr(const struct device *dev)
 	__HAL_LTDC_CLEAR_FLAG(&data->hltdc, LTDC_FLAG_LI);
 }
 
+/*
+ * The controller converts to RGB during scanout, which costs the processor
+ * nothing. Only the packed 4:2:2 order is offered: erratum ES0620, section
+ * 2.7.1, says the planar YUV420 modes do not work.
+ */
+static int stm32_ltdc_set_yuv(const struct device *dev)
+{
+#if defined(STM32_LTDC_HAS_YUV)
+	struct display_stm32_ltdc_data *data = dev->data;
+	LTDC_LayerFlexYUVCoPlanarTypeDef cfg = {0};
+	const struct display_stm32_ltdc_config *config = dev->config;
+
+	/* An odd width would split a pair of pixels across two lines */
+	if ((config->width % 2U) != 0U) {
+		return -EINVAL;
+	}
+
+	cfg.Layer.WindowX0 = data->hltdc.LayerCfg[0].WindowX0;
+	cfg.Layer.WindowX1 = data->hltdc.LayerCfg[0].WindowX1;
+	cfg.Layer.WindowY0 = data->hltdc.LayerCfg[0].WindowY0;
+	cfg.Layer.WindowY1 = data->hltdc.LayerCfg[0].WindowY1;
+	cfg.Layer.Alpha = data->hltdc.LayerCfg[0].Alpha;
+	cfg.Layer.Alpha0 = data->hltdc.LayerCfg[0].Alpha0;
+	cfg.Layer.BlendingFactor1 = data->hltdc.LayerCfg[0].BlendingFactor1;
+	cfg.Layer.BlendingFactor2 = data->hltdc.LayerCfg[0].BlendingFactor2;
+	cfg.Layer.ImageWidth = config->width;
+	cfg.Layer.ImageHeight = config->height;
+	cfg.FlexYUV.YUVOrder = LTDC_YUV_ORDER_LUMINANCE_FIRST;
+	cfg.FlexYUV.LuminanceOrder = LTDC_YUV_LUMINANCE_ORDER_EVEN_FIRST;
+	cfg.FlexYUV.ChrominanceOrder = LTDC_YUV_CHROMIANCE_ORDER_U_FIRST;
+	cfg.FlexYUV.LuminanceRescale = LTDC_YUV_LUMINANCE_RESCALE_ENABLE;
+	cfg.YUVAddress = (uint32_t)data->front_buf;
+	cfg.ColorConverter = LTDC_YUV2RGBCONVERTOR_BT601_REDUCED_RANGE;
+
+	/* The layer cannot be reconfigured while the controller is scanning */
+	__HAL_LTDC_DISABLE(&data->hltdc);
+	if (HAL_LTDC_ConfigLayerFlexYUVCoPlanar(&data->hltdc, &cfg, LTDC_LAYER_1) != HAL_OK) {
+		__HAL_LTDC_ENABLE(&data->hltdc);
+		return -EIO;
+	}
+	__HAL_LTDC_ENABLE(&data->hltdc);
+
+	return 0;
+#else
+	ARG_UNUSED(dev);
+
+	return -ENOTSUP;
+#endif /* STM32_LTDC_HAS_YUV */
+}
+
 static int stm32_ltdc_set_pixel_format(const struct device *dev,
 				const enum display_pixel_format format)
 {
 	struct display_stm32_ltdc_data *data = dev->data;
 	HAL_StatusTypeDef hal_ret;
 	uint32_t ltdc_pix_fmt;
+
+	if (IS_ENABLED(STM32_LTDC_HAS_YUV) && format == PIXEL_FORMAT_YUYV) {
+		int ret = stm32_ltdc_set_yuv(dev);
+
+		if (ret != 0) {
+			return ret;
+		}
+
+		data->current_pixel_format = format;
+		data->current_pixel_size =
+			DISPLAY_BITS_PER_PIXEL(format) / BITS_PER_BYTE;
+
+		return 0;
+	}
 
 	if (format == PIXEL_FORMAT_RGB_565) {
 		ltdc_pix_fmt = LTDC_PIXEL_FORMAT_RGB565;
@@ -233,7 +302,8 @@ static void stm32_ltdc_get_capabilities(const struct device *dev,
 				     data->hltdc.LayerCfg[0].WindowY0;
 	capabilities->supported_pixel_formats = PIXEL_FORMAT_ARGB_8888 |
 					PIXEL_FORMAT_RGB_888 |
-					PIXEL_FORMAT_RGB_565;
+					PIXEL_FORMAT_RGB_565 |
+					(IS_ENABLED(STM32_LTDC_HAS_YUV) ? PIXEL_FORMAT_YUYV : 0);
 	capabilities->screen_info = 0;
 
 	capabilities->current_pixel_format = data->current_pixel_format;
@@ -300,6 +370,17 @@ static int stm32_ltdc_write(const struct device *dev, const uint16_t x,
 	/* Validate the given parameters */
 	if (x + desc->width > config->width || y + desc->height > config->height) {
 		LOG_ERR("Rectangle does not fit into the display");
+		return -EINVAL;
+	}
+
+	/*
+	 * A pair of pixels shares its chrominance, so a rectangle that starts
+	 * or ends inside one would pair every luminance with the wrong half.
+	 */
+	if (IS_ENABLED(STM32_LTDC_HAS_YUV) &&
+	    data->current_pixel_format == PIXEL_FORMAT_YUYV &&
+	    ((x | desc->width) & 1U) != 0U) {
+		LOG_ERR("Packed YUV rectangles start and end on even columns");
 		return -EINVAL;
 	}
 
