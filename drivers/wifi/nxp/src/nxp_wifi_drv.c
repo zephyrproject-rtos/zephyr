@@ -1080,7 +1080,7 @@ static int nxp_wifi_scan(const struct device *dev,
 	if (params->bands & (1 << WIFI_FREQ_BAND_2_4_GHZ)) {
 		wlan_scan_params_v2.chan_list[0].radio_type = 0 | BAND_SPECIFIED;
 	}
-#ifdef CONFIG_5GHz_SUPPORT
+#ifdef CONFIG_NXP_WIFI_5GHz_SUPPORT
 	if (params->bands & (1 << WIFI_FREQ_BAND_5_GHZ)) {
 		if (wlan_scan_params_v2.chan_list[0].radio_type & BAND_SPECIFIED) {
 			wlan_scan_params_v2.chan_list[0].radio_type = 0;
