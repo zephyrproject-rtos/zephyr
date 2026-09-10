@@ -1,0 +1,31 @@
+common:
+  tags:
+    - bluetooth
+  platform_allow:
+    - native_sim
+  harness: script
+
+tests:
+  bluetooth.classic.sim.l2cap_connectionless.basic_send_recv:
+    timeout: 120
+    extra_configs:
+      - CONFIG_BT_L2CAP_CONNLESS=y
+    harness_config:
+      tests_scripts:
+        - tests_scripts/basic_send_recv.sh
+
+  bluetooth.classic.sim.l2cap_connectionless.multiple_psm:
+    timeout: 120
+    extra_configs:
+      - CONFIG_BT_L2CAP_CONNLESS=y
+    harness_config:
+      tests_scripts:
+        - tests_scripts/multiple_psm.sh
+
+  bluetooth.classic.sim.l2cap_connectionless.register_unregister_errors:
+    timeout: 120
+    extra_configs:
+      - CONFIG_BT_L2CAP_CONNLESS=y
+    harness_config:
+      tests_scripts:
+        - tests_scripts/register_unregister_errors.sh

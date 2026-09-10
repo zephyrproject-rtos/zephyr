@@ -1,0 +1,15 @@
+# Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# Only for use with the Bluetooth Classic GAP Discovery simulation test
+# Used to shorten test time by limiting discovery duration
+config BT_LIMITED_DISCOVERABLE_DURATION
+	default 3
+	range 1 60
+
+source "Kconfig.zephyr"
+
+module = TEST_GAP_DISCOVERY
+module-str = test_gap_discovery
+source "subsys/logging/Kconfig.template.log_config"

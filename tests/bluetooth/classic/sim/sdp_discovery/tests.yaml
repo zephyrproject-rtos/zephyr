@@ -1,0 +1,33 @@
+common:
+  tags:
+    - bluetooth
+  platform_allow:
+    - native_sim
+  harness: script
+
+tests:
+  bluetooth.classic.sim.sdp.discover.no_records:
+    timeout: 30
+    harness_config:
+      tests_scripts:
+        - tests_scripts/no_sdp_records.sh
+  bluetooth.classic.sim.sdp.discover.one_record:
+    timeout: 60
+    harness_config:
+      tests_scripts:
+        - tests_scripts/one_sdp_record.sh
+  bluetooth.classic.sim.sdp.discover.one_record_with_range:
+    timeout: 90
+    harness_config:
+      tests_scripts:
+        - tests_scripts/one_sdp_record_with_range.sh
+  bluetooth.classic.sim.sdp.discover.multiple_records:
+    timeout: 60
+    harness_config:
+      tests_scripts:
+        - tests_scripts/multiple_sdp_records.sh
+  bluetooth.classic.sim.sdp.discover.multiple_records_with_range:
+    timeout: 120
+    harness_config:
+      tests_scripts:
+        - tests_scripts/multiple_sdp_records_with_range.sh
