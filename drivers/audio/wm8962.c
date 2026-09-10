@@ -410,7 +410,8 @@ static int wm8962_route_output(const struct device *dev, audio_channel_t channel
 	return 0;
 }
 
-static void wm8962_set_master_clock(const struct device *dev, audio_dai_cfg_t *cfg, uint32_t sysclk)
+static void wm8962_set_controller_clock(const struct device *dev, audio_dai_cfg_t *cfg,
+					uint32_t sysclk)
 {
 	uint32_t sampleRate = cfg->i2s.frame_clk_freq;
 	uint32_t bitWidth = cfg->i2s.word_size;
@@ -507,7 +508,7 @@ static int wm8962_configure(const struct device *dev, struct audio_codec_cfg *cf
 	wm8962_write_reg(dev, WM8962_REG_POWER2, 0x1E0);
 
 	if ((cfg->dai_cfg.i2s.options & I2S_OPT_FRAME_CLK_TARGET) == 0) {
-		wm8962_set_master_clock(dev, &cfg->dai_cfg, cfg->mclk_freq);
+		wm8962_set_controller_clock(dev, &cfg->dai_cfg, cfg->mclk_freq);
 		wm8962_update_reg(dev, WM8962_REG_IFACE0, 1U << 6U, 1U << 6U);
 	}
 
