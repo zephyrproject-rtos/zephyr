@@ -1,0 +1,37 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Infineon Technologies AG,
+# SPDX-FileCopyrightText: or an affiliate of Infineon Technologies AG. All rights reserved.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+# CY8CPROTO-062S2-43439 PSOC™ 6 Wi-Fi BT Prototyping Kit configuration
+
+if BOARD_CY8CPROTO_062S2_43439
+
+if WIFI || BT
+
+# Select AIROC part and module
+choice AIROC_PART
+	default CYW43439
+endchoice
+
+choice CYW43439_MODULE
+	default CYW43439_MURATA_1YN
+endchoice
+
+endif # WIFI || BT
+
+if WIFI
+
+# Enable L2 Ethernet
+configdefault NET_L2_ETHERNET
+	default y
+
+endif # WIFI
+
+# Heap Pool Size
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	int
+	default 15000 if WIFI
+	default 4096
+
+endif # BOARD_CY8CPROTO_062S2_43439
