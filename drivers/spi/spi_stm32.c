@@ -909,10 +909,6 @@ static void spi_stm32_msg_start(const struct device *dev, bool is_rx_empty)
 	spi_stm32_cs_control(dev, true);
 
 	if (IS_ENABLED(CONFIG_SPI_STM32_INTERRUPT)) {
-		if (ll_get_transfer_size(spi) != 0U) {
-			ll_enable_int_eot(spi);
-		}
-
 		ll_enable_int_errors(spi);
 
 		if (transfer_dir == STM32_SPI_FULL_DUPLEX) {
@@ -946,6 +942,10 @@ static void spi_stm32_msg_start(const struct device *dev, bool is_rx_empty)
 			if (transfer_dir != STM32_SPI_HALF_DUPLEX_RX) {
 				ll_enable_int_tx_empty(spi);
 			}
+		}
+
+		if (ll_get_transfer_size(spi) != 0U) {
+			ll_enable_int_eot(spi);
 		}
 
 #if defined(CONFIG_SPI_STM32_INTERRUPT) && defined(CONFIG_SOC_SERIES_STM32H7X)
@@ -1235,6 +1235,7 @@ static void spi_stm32_complete(const struct device *dev, int status)
 		LL_SPI_ClearFlag_OVR(spi);
 		ll_clear_txtf_flag(spi);
 		ll_clear_eot_flag(spi);
+		ll_disable_int_dxp(spi);
 		ll_disable_int_eot(spi);
 		spi_stm32_iodev_complete(dev, status);
 		return;
@@ -2070,6 +2071,8 @@ static int transceive(const struct device *dev,
 	struct spi_stm32_data *data = dev->data;
 	int ret;
 	bool use_dma = false;
+	const struct spi_stm32_config *cfg = dev->config;
+	SPI_TypeDef *spi = cfg->spi;
 
 #if defined(CONFIG_SPI_STM32_DMA)
 	if ((SPI_OP_MODE_GET(config->operation) == SPI_OP_MODE_CONTROLLER) &&
@@ -2109,12 +2112,13 @@ static int transceive(const struct device *dev,
 
 	spi_stm32_pm_policy_state_lock_get(dev);
 
+	/* Make sure DXP and EOT interrupts are disabled before starting the transfer */
+	ll_disable_int_dxp(spi);
+	ll_disable_int_eot(spi);
+
 #ifdef CONFIG_SPI_RTIO
 	ret = spi_rtio_transceive(data->rtio_ctx, config, tx_bufs, rx_bufs);
 #else /* CONFIG_SPI_RTIO */
-	const struct spi_stm32_config *cfg = dev->config;
-	SPI_TypeDef *spi = cfg->spi;
-
 	ret = spi_stm32_configure(dev, config, tx_bufs != NULL, rx_bufs != NULL);
 	if (ret != 0) {
 		goto end;
