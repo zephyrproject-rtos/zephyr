@@ -7,6 +7,11 @@
 
 if SOC_SERIES_PSE84
 
+# The DW I3C core sits behind a wrapper whose RESUME bit can latch when pulsed
+# straight after a full IP reset, stalling the first CCC.
+config I3C_DW_FULL_RESET_SKIP_RESUME_PULSE
+	default y
+
 # PSE84 uses SysTick as the primary system timer by default.
 # When PM is enabled, the MCWDT serves as a low-power companion timer
 # via the SYSTEM_TIMER_LPM_COMPANION_HOOKS mechanism, providing
