@@ -95,6 +95,10 @@ New Drivers
   Same as above, this will also be recomputed at the time of the release.
   Just link the driver, further details go in the binding description
 
+* Audio
+
+  * :dtcompatible:`cirrus,cs47l63` (:github:`118752`)
+
 New Samples
 ***********
 
