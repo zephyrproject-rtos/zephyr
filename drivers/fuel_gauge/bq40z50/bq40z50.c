@@ -251,18 +251,18 @@ static int bq40z50_get_prop(const struct device *dev, fuel_gauge_prop_t prop,
 		val->cycle_count = tmp_val;
 		break;
 
-	case FUEL_GAUGE_FULL_CHARGE_CAPACITY_UAH:
+	case FUEL_GAUGE_FULL_CHARGE_CAPACITY:
 		ret = bq40z50_i2c_read(dev, BQ40Z50_FULLCHARGECAPACITY, (uint8_t *)&tmp_val,
 				       BQ40Z50_LEN_HALF_WORD);
 		/* convert mAh to uAh */
-		val->full_charge_capacity_uah = tmp_val * 1000;
+		val->full_charge_capacity = tmp_val * 1000;
 		break;
 
-	case FUEL_GAUGE_REMAINING_CAPACITY_UAH:
+	case FUEL_GAUGE_REMAINING_CAPACITY:
 		ret = bq40z50_i2c_read(dev, BQ40Z50_REMAININGCAPACITY, (uint8_t *)&tmp_val,
 				       BQ40Z50_LEN_HALF_WORD);
 		/* convert mAh to uAh */
-		val->remaining_capacity_uah = tmp_val * 1000;
+		val->remaining_capacity = tmp_val * 1000;
 		break;
 
 	case FUEL_GAUGE_RUNTIME_TO_EMPTY_MINS:
