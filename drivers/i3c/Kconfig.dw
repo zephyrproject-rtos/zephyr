@@ -39,4 +39,13 @@ config I3C_DW_FULL_RESET_SKIP_RESUME_PULSE
 	  has nothing to resume. On integrations where the pulse can latch and
 	  stall the first CCC, clear any stale RESUME bit instead of pulsing it.
 
+config I3C_DW_INFINEON
+	bool
+	default y if DT_HAS_INFINEON_I3C_ENABLED
+	select I3C_DW_PLATFORM_OPS
+	help
+	  Build the Infineon implementation of the DW I3C platform ops: the
+	  wrapper register gate, the peripheral clock path and the target
+	  re-arm sequence the PSE84 integration needs.
+
 endif # I3C_DW
