@@ -439,6 +439,86 @@ fail:
 	return -EINVAL;
 }
 
+/*
+ * Walk the option list of a received segment. Reports whether SACK permitted
+ * was offered, and the edges of the first SACK block if one is present.
+ */
+static int read_tcp_options(struct net_pkt *pkt, struct tcphdr *th,
+			    bool *sack_perm, uint32_t *left, uint32_t *right)
+{
+	uint8_t opts[40];
+	size_t len = (th->th_off - 5) * 4;
+	size_t i = 0;
+	int ret;
+
+	*sack_perm = false;
+	if (left != NULL) {
+		*left = 0;
+		*right = 0;
+	}
+
+	if (len == 0) {
+		return 0;
+	}
+
+	if (len > sizeof(opts)) {
+		return -EINVAL;
+	}
+
+	net_pkt_cursor_init(pkt);
+	net_pkt_set_overwrite(pkt, true);
+
+	ret = net_pkt_skip(pkt, net_pkt_ip_hdr_len(pkt) +
+			   net_pkt_ip_opts_len(pkt) + sizeof(struct tcphdr));
+	if (ret < 0) {
+		return ret;
+	}
+
+	ret = net_pkt_read(pkt, opts, len);
+	if (ret < 0) {
+		return ret;
+	}
+
+	net_pkt_cursor_init(pkt);
+
+	while (i < len) {
+		uint8_t kind = opts[i];
+		uint8_t opt_len;
+
+		if (kind == NET_TCP_END_OPT) {
+			break;
+		}
+
+		if (kind == NET_TCP_NOP_OPT) {
+			i++;
+			continue;
+		}
+
+		if (i + 1 >= len) {
+			return -EINVAL;
+		}
+
+		opt_len = opts[i + 1];
+		if (opt_len < 2 || i + opt_len > len) {
+			return -EINVAL;
+		}
+
+		if (kind == NET_TCP_SACK_PERM_OPT && opt_len == 2) {
+			*sack_perm = true;
+		} else if (kind == NET_TCP_SACK_OPT && left != NULL &&
+			   opt_len >= 2 + 8) {
+			*left = net_ntohl(UNALIGNED_GET(
+				(uint32_t *)&opts[i + 2]));
+			*right = net_ntohl(UNALIGNED_GET(
+				(uint32_t *)&opts[i + 6]));
+		}
+
+		i += opt_len;
+	}
+
+	return 0;
+}
+
 /* TX intercept hook used by test_contiguous_tx. It exercises the tcp_send_cb
  * branch of tcp_out_ext(), records how the data segment was assembled, and
  * then hands the packet to the normal send path. The hook takes ownership of
@@ -500,10 +580,40 @@ static int tester_send(const struct device *dev, struct net_pkt *pkt)
 	switch (test_case_no) {
 	case TEST_CLIENT_IPV4:
 	case TEST_CLIENT_IPV6:
+		if (th.th_flags & SYN) {
+			bool sack_perm;
+
+			zassert_ok(read_tcp_options(pkt, &th, &sack_perm,
+						    NULL, NULL),
+				   "Cannot read TCP options");
+			/* We only offer SACK when we can hold data out of
+			 * order to report.
+			 */
+			zassert_equal(sack_perm,
+				      CONFIG_NET_TCP_RECV_QUEUE_TIMEOUT > 0,
+				      "SACK permitted in the SYN does not "
+				      "match whether the receive queue is on");
+		}
 		handle_client_test(net_pkt_family(pkt), &th);
 		break;
-	case TEST_SERVER_IPV4:
 	case TEST_SERVER_WITH_OPTIONS_IPV4:
+		if ((th.th_flags & SYN) && (th.th_flags & ACK)) {
+			bool sack_perm;
+
+			zassert_ok(read_tcp_options(pkt, &th, &sack_perm,
+						    NULL, NULL),
+				   "Cannot read TCP options");
+			/* Without the receive queue there is never a block
+			 * to report, so SACK is not offered back.
+			 */
+			zassert_equal(sack_perm,
+				      CONFIG_NET_TCP_RECV_QUEUE_TIMEOUT > 0,
+				      "SACK permitted in the SYN-ACK does not "
+				      "match whether the receive queue is on");
+		}
+		handle_server_test(net_pkt_family(pkt), &th);
+		break;
+	case TEST_SERVER_IPV4:
 	case TEST_SERVER_IPV6:
 		handle_server_test(net_pkt_family(pkt), &th);
 		break;
@@ -2145,6 +2255,29 @@ static void handle_server_recv_out_of_order(struct net_pkt *pkt)
 		      "Not all pending data received. "
 		      "Expected ACK %u but got %u",
 		      expected_ack, net_ntohl(th.th_ack));
+
+	/* An ACK that leaves a hole behind carries a SACK block covering
+	 * the data held out of order; once the hole is filled it does not.
+	 */
+	if (th.th_off > 5) {
+		bool sack_perm;
+		uint32_t left, right;
+
+		zassert_ok(read_tcp_options(pkt, &th, &sack_perm,
+					    &left, &right),
+			   "Cannot read TCP options");
+
+		if (left != 0 || right != 0) {
+			zassert_true(net_tcp_seq_greater(left,
+							 net_ntohl(th.th_ack)),
+				     "SACK block starts at or below the ACK: "
+				     "left %u ack %u", left,
+				     net_ntohl(th.th_ack));
+			zassert_true(net_tcp_seq_greater(right, left),
+				     "SACK block is empty or reversed: "
+				     "left %u right %u", left, right);
+		}
+	}
 
 	test_sem_give();
 
