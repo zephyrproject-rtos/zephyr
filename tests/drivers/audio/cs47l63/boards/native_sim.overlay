@@ -1,0 +1,72 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * One codec per test suite. The suites drive the same driver into different
+ * states - a part that never boots, an amplifier that never comes up, a fault
+ * latched and left latched - and sharing one instance between them would make
+ * each case depend on what the previous one left behind.
+ *
+ * The unit address is the emulated chip select; spi_emul routes a transfer to
+ * the emulator whose chip select the driver's spi_dt_spec names.
+ */
+
+&spi0 {
+	status = "okay";
+
+	cs47l63_boot: cs47l63@0 {
+		compatible = "cirrus,cs47l63";
+		reg = <0>;
+		spi-max-frequency = <8000000>;
+		reset-gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
+		irq-gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
+		status = "okay";
+	};
+
+	cs47l63_clock: cs47l63@1 {
+		compatible = "cirrus,cs47l63";
+		reg = <1>;
+		spi-max-frequency = <8000000>;
+		reset-gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
+		irq-gpios = <&gpio0 3 GPIO_ACTIVE_LOW>;
+		status = "okay";
+	};
+
+	cs47l63_dai: cs47l63@2 {
+		compatible = "cirrus,cs47l63";
+		reg = <2>;
+		spi-max-frequency = <8000000>;
+		reset-gpios = <&gpio0 4 GPIO_ACTIVE_LOW>;
+		irq-gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
+		status = "okay";
+	};
+
+	cs47l63_out: cs47l63@3 {
+		compatible = "cirrus,cs47l63";
+		reg = <3>;
+		spi-max-frequency = <8000000>;
+		reset-gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
+		irq-gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
+		status = "okay";
+	};
+
+	cs47l63_in: cs47l63@4 {
+		compatible = "cirrus,cs47l63";
+		reg = <4>;
+		spi-max-frequency = <8000000>;
+		reset-gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
+		irq-gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
+		status = "okay";
+	};
+
+	cs47l63_fault: cs47l63@5 {
+		compatible = "cirrus,cs47l63";
+		reg = <5>;
+		spi-max-frequency = <8000000>;
+		reset-gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
+		irq-gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
+		status = "okay";
+	};
+};

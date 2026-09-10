@@ -1,0 +1,14 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config AUDIO_CODEC_CS47L63
+	bool "CS47L63 audio codec"
+	default y
+	depends on DT_HAS_CIRRUS_CS47L63_ENABLED
+	select SPI
+	select GPIO
+	help
+	  Cirrus Logic CS47L63 low-power audio codec. SPI control, I2S audio
+	  on ASP1, differential headphone output and an analog line input,
+	  through the audio_codec API. The on-chip DSP cores and their
+	  loadable firmware are not supported.
