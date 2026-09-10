@@ -357,6 +357,12 @@ static void reset_configuration(struct usb_device *const udev)
 	udev->state = USB_STATE_ADDRESSED;
 }
 
+/*
+ * usbh_device_set_configuration() does not attempt to restore the previous
+ * configuration. If something fails, the device state will be set to addressed
+ * and all resources will be released. We could increase resilience by reading
+ * all configuration descriptors at once, but that would increase memory usage.
+ */
 int usbh_device_set_configuration(struct usb_device *const udev, const uint8_t num)
 {
 	struct usb_cfg_descriptor cfg_desc;
@@ -374,8 +380,12 @@ int usbh_device_set_configuration(struct usb_device *const udev, const uint8_t n
 		goto error;
 	}
 
+	/* Free any allocated resources unconditionally */
+	k_heap_free(&usb_device_heap, udev->cfg_desc);
+	udev->cfg_desc = NULL;
+	reset_configuration(udev);
+
 	if (num == 0) {
-		reset_configuration(udev);
 		err = usbh_req_set_cfg(udev, num);
 		if (err) {
 			LOG_ERR("Set Configuration %u request failed", num);
@@ -426,10 +436,6 @@ int usbh_device_set_configuration(struct usb_device *const udev, const uint8_t n
 	}
 
 	memset(udev->cfg_desc, 0, cfg_desc.wTotalLength + sizeof(struct usb_desc_header));
-	if (udev->state == USB_STATE_CONFIGURED) {
-		reset_configuration(udev);
-	}
-
 	err = usbh_req_desc_cfg(udev, idx, cfg_desc.wTotalLength, udev->cfg_desc);
 	if (err) {
 		LOG_ERR("Failed to read configuration descriptor of %u bytes: %d",
