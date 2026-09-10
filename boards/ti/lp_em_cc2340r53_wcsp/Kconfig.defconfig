@@ -1,0 +1,16 @@
+# Copyright (c) 2026 Texas Instruments Incorporated
+#
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_LP_EM_CC2340R53_WCSP
+
+if PM
+
+# Power management requires an increased idle task stack size because of
+# the stack usage introduced by "pm_state_set".
+config IDLE_STACK_SIZE
+	default 320
+
+endif # PM
+
+endif # BOARD_LP_EM_CC2340R53_WCSP

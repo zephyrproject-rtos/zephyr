@@ -1,0 +1,6 @@
+board:
+  name: lp_em_cc2340r5moda
+  full_name: CC2340R5MODA LaunchPad
+  vendor: ti
+  socs:
+    - name: cc2340r53
