@@ -99,6 +99,7 @@ CMakeStyle.txt
 DeviceAPI.txt
 DeviceMmioCheck.txt
 DevicetreeBindings.txt
+DevicetreeClasses.txt
 DevicetreeLinting.txt
 GitDiffCheck.txt
 Gitlint.txt
