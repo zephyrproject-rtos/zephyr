@@ -13,6 +13,8 @@
 #include <zephyr/sys/util.h>
 #include <assert.h>
 
+#include "i3c_dw.h"
+
 #if defined(CONFIG_PINCTRL)
 #include <zephyr/drivers/pinctrl.h>
 #endif
@@ -402,6 +404,7 @@ struct dw_i3c_xfer {
 struct dw_i3c_config {
 	struct i3c_driver_config common;
 	const struct device *clock;
+	bool target_mode;
 
 	/* Clock control subsys related struct */
 	clock_control_subsys_t clock_subsys;
@@ -413,6 +416,9 @@ struct dw_i3c_config {
 	const struct pinctrl_dev_config *pcfg;
 #endif
 
+	/* Optional vendor platform hooks; NULL selects the no-op fallbacks. */
+	const struct dw_i3c_platform_ops *ops;
+
 #if DT_HAS_COMPAT_STATUS_OKAY(microchip_xec_i3c)
 	/* Microchip XEC-specific fields */
 	bool is_mchp;
@@ -422,6 +428,26 @@ struct dw_i3c_config {
 	uint8_t girq_pos; /* bit position within that GIRQ, from girqs[0] */
 #endif
 };
+
+/**
+ * @brief Return the MMIO base address of this DW I3C instance.
+ *
+ * Exported so vendor glue translation units can reach the registers without
+ * a copy of struct dw_i3c_config.
+ */
+uint32_t dw_i3c_get_regs(const struct device *dev)
+{
+	const struct dw_i3c_config *config = dev->config;
+
+	return config->regs;
+}
+
+bool dw_i3c_is_secondary_requested(const struct device *dev)
+{
+	const struct dw_i3c_config *config = dev->config;
+
+	return config->target_mode;
+}
 
 struct dw_i3c_data {
 	struct i3c_driver_data common;
