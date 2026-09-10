@@ -1008,6 +1008,11 @@ static int adxl367_probe(const struct device *dev)
 	data->act_proc_mode = ADXL367_LOOPED;
 #endif
 
+	ret = adxl367_set_output_rate(dev, cfg->odr);
+	if (ret != 0) {
+		return ret;
+	}
+
 	ret = adxl367_self_test(dev);
 	if (ret != 0) {
 		return ret;
@@ -1044,11 +1049,6 @@ static int adxl367_probe(const struct device *dev)
 	}
 
 	ret = adxl367_set_inactivity_time(dev, cfg->inactivity_time);
-	if (ret != 0) {
-		return ret;
-	}
-
-	ret = adxl367_set_output_rate(dev, cfg->odr);
 	if (ret != 0) {
 		return ret;
 	}
