@@ -729,6 +729,30 @@ static int eth_nxp_enet_init(const struct device *dev)
 	enet_config.callback = eth_callback;
 	enet_config.userData = (void *)dev;
 
+#if defined(CONFIG_ETH_NXP_ENET_RX_INT_COALESCE) &&					\
+	defined(FSL_FEATURE_ENET_HAS_INTERRUPT_COALESCE) &&				\
+	FSL_FEATURE_ENET_HAS_INTERRUPT_COALESCE
+	/* Program hardware RX/TX interrupt coalescing so the MAC raises an
+	 * interrupt only after a batch of frames (or a hardware timer) rather
+	 * than once per frame. This amortizes the fixed per-interrupt and
+	 * RX-thread wake cost across many standard frames on the 1G path. Ring 0
+	 * only; the other rings (AVB-classified) are left uncoalesced.
+	 */
+	{
+		static enet_intcoalesce_config_t intcoalesce_cfg;
+
+		intcoalesce_cfg.rxCoalesceFrameCount[0] =
+			CONFIG_ETH_NXP_ENET_RX_COALESCE_FRAMES;
+		intcoalesce_cfg.rxCoalesceTimeCount[0] =
+			CONFIG_ETH_NXP_ENET_RX_COALESCE_TICKS;
+		intcoalesce_cfg.txCoalesceFrameCount[0] =
+			CONFIG_ETH_NXP_ENET_TX_COALESCE_FRAMES;
+		intcoalesce_cfg.txCoalesceTimeCount[0] =
+			CONFIG_ETH_NXP_ENET_TX_COALESCE_TICKS;
+		enet_config.intCoalesceCfg = &intcoalesce_cfg;
+	}
+#endif
+
 	ENET_Up(data->base,
 		  &data->enet_handle,
 		  &enet_config,
