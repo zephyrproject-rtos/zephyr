@@ -140,6 +140,28 @@ config SHELL_REMOTE_MULTI_CLI
 
 endif # SHELL_REMOTE
 
+if LOG_LINK_IPC
+
+config LOG_LINK_IPC_PPR
+	bool "Log link IPC for PPR"
+	depends on $(dt_nodelabel_enabled,cpuppr_vpr)
+
+config LOG_LINK_IPC_FLPR
+	bool "Log link IPC for FLPR"
+	depends on $(dt_nodelabel_enabled,cpuflpr_vpr)
+
+config LOG_LINK_IPC_RADIO
+	bool "Log link IPC for Radio"
+	depends on SOC_NRF54H20_CPURAD_ENABLE
+
+config LOG_LINK_IPC_MULTI_CLI
+	# If more than one log link IPC is enabled, enable multiple remote clients.
+	default y if LOG_LINK_IPC_PPR && LOG_LINK_IPC_FLPR
+	default y if LOG_LINK_IPC_PPR && LOG_LINK_IPC_RADIO
+	default y if LOG_LINK_IPC_FLPR && LOG_LINK_IPC_RADIO
+
+endif # LOG_LINK_IPC
+
 config GPPI_EXT_ALLOCATOR
 	bool "GPPI external allocator"
 	depends on IPC_SERVICE
