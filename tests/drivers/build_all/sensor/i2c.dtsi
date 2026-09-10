@@ -1699,3 +1699,9 @@ test_i2c_pmsa003i: pmsa003i@dc {
 	reset-gpios = <&test_gpio 0 GPIO_ACTIVE_LOW>;
 	set-gpios = <&test_gpio 0 GPIO_ACTIVE_HIGH>;
 };
+
+test_i2c_lps33hw: lps33hw@dd {
+	compatible = "st,lps33hw";
+	reg = <0xdd>;
+	odr = <75>;
+};

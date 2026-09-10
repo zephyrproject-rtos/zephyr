@@ -1685,6 +1685,7 @@ New Drivers
   * :dtcompatible:`realtek,bee-basic-qdec` (:github:`105129`)
   * :dtcompatible:`realtek,bee-qdec` (:github:`105129`)
   * :dtcompatible:`sensylink,cht8315` (:github:`106391`)
+  * :dtcompatible:`st,lps33hw` (:github:`113640`)
   * :dtcompatible:`st,stm32-vddcore` (:github:`108053`)
   * :dtcompatible:`ti,fdc1004` (:github:`107233`)
   * :dtcompatible:`ti,tmp451` (:github:`108384`)
