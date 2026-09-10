@@ -32,6 +32,7 @@
 #include <zephyr/dt-bindings/sensor/tmp11x.h>
 #include <zephyr/dt-bindings/sensor/tmp114.h>
 #include <zephyr/dt-bindings/sensor/icm566xx.h>
+#include <zephyr/dt-bindings/sensor/mlx90640.h>
 
 /****************************************
  * PLEASE KEEP REG ADDRESSES SEQUENTIAL *
@@ -1698,4 +1699,10 @@ test_i2c_pmsa003i: pmsa003i@dc {
 	reg = <0xdc>;
 	reset-gpios = <&test_gpio 0 GPIO_ACTIVE_LOW>;
 	set-gpios = <&test_gpio 0 GPIO_ACTIVE_HIGH>;
+};
+
+test_i2c_mlx90640: mlx90640@dd {
+	compatible = "melexis,mlx90640";
+	reg = <0xdd>;
+	refresh-rate = <MLX90640_REFRESH_2_HZ>;
 };

@@ -1676,6 +1676,7 @@ New Drivers
   * :dtcompatible:`meas,htu21d` (:github:`106318`)
   * :dtcompatible:`meas,htu31d` (:github:`107532`)
   * :dtcompatible:`meas,ms5637` (:github:`106344`)
+  * :dtcompatible:`melexis,mlx90640` (:github:`118664`)
   * :dtcompatible:`microchip,pac194x` (:github:`105902`)
   * :dtcompatible:`nordic,nrf-vbat` (:github:`106102`)
   * :dtcompatible:`nxp,mcux-eqdc` (:github:`111927`)
