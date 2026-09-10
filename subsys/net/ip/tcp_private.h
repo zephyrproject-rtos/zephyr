@@ -229,6 +229,12 @@ union tcp_endpoint {
 #define NET_TCP_NOP_OPT          1
 #define NET_TCP_MSS_OPT          2
 #define NET_TCP_WINDOW_SCALE_OPT 3
+#define NET_TCP_SACK_PERM_OPT    4
+#define NET_TCP_SACK_OPT         5
+
+/* SACK permitted, and one block: kind, len, left edge, right edge. */
+#define NET_TCP_SACK_PERM_SIZE   2
+#define NET_TCP_SACK_BLOCK_SIZE  8
 
 /* TCP Option sizes */
 #define NET_TCP_END_SIZE          1
@@ -241,6 +247,7 @@ struct tcp_options {
 	uint16_t window;
 	bool mss_found : 1;
 	bool wnd_found : 1;
+	bool sack_perm_found : 1;
 };
 
 #ifdef CONFIG_NET_TCP_CONGESTION_AVOIDANCE
@@ -354,6 +361,8 @@ struct tcp { /* TCP connection */
 	bool tcp_nodelay : 1;
 	bool addr_ref_done : 1;
 	bool rst_received : 1;
+	/* Both ends offered SACK during the handshake. */
+	bool sack_perm : 1;
 };
 
 #define _flags(_fl, _op, _mask, _cond)					\
