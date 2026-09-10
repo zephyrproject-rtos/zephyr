@@ -7,6 +7,7 @@ config ADC_MSPM0_ADC12
 	default y
 	depends on DT_HAS_TI_MSPM0_ADC12_ENABLED
 	select PINCTRL
+	select PM_DEVICE_RUNTIME_ASYNC if PM_DEVICE_RUNTIME && ADC_ASYNC
 	help
 	  Enable support for ADC12 on the TI MSPM0 series.
 

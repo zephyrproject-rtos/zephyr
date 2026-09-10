@@ -21,11 +21,16 @@ LOG_MODULE_REGISTER(adc_mspm0);
 #include <zephyr/drivers/clock_control.h>
 #include <zephyr/dt-bindings/clock/mspm0_clock.h>
 #include <zephyr/drivers/clock_control/mspm0_clock_control.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 #ifdef CONFIG_ADC_MSPM0_ADC12_DMA
 #include <zephyr/drivers/dma.h>
 #endif
 
 #define ADC_CONTEXT_USES_KERNEL_TIMER
+#ifdef CONFIG_ADC_ASYNC
+#define ADC_CONTEXT_ENABLE_ON_COMPLETE
+#endif
 #include "adc_context.h"
 
 #define ADC_MSPM0_CHANNEL_MAX       (32)
@@ -442,6 +447,19 @@ static int adc_mspm0_acq_time_to_ticks(uint16_t acq_time, uint32_t period_ns, ui
 	return 0;
 }
 
+#ifdef CONFIG_ADC_ASYNC
+static void adc_context_on_complete(struct adc_context *ctx, int status)
+{
+	struct adc_mspm0_data *data = CONTAINER_OF(ctx, struct adc_mspm0_data, ctx);
+
+	ARG_UNUSED(status);
+
+	if (ctx->asynchronous) {
+		(void)pm_device_runtime_put_async(data->dev, K_NO_WAIT);
+	}
+}
+#endif
+
 static int adc_mspm0_validate_sampling_time(const struct adc_mspm0_cfg *config, uint16_t acq_time)
 {
 	uint32_t clock_rate;
@@ -516,6 +534,11 @@ static int adc_mspm0_channel_setup(const struct device *dev,
 
 	adc_context_lock(&data->ctx, false, NULL);
 
+	ret = pm_device_runtime_get(dev);
+	if (ret < 0) {
+		goto unlock;
+	}
+
 	if (data->sample_time[ADC_MSPM0_SCOMP0] == UINT16_MAX) {
 		regs->scomp0 = sampling_time;
 		data->sample_time[ADC_MSPM0_SCOMP0] = sampling_time;
@@ -530,7 +553,7 @@ static int adc_mspm0_channel_setup(const struct device *dev,
 		data->channel_cfg[ch].stime = ADC_MSPM0_SCOMP1;
 	} else {
 		ret = -EINVAL;
-		goto unlock;
+		goto put;
 	}
 
 	switch (channel_cfg->reference) {
@@ -543,13 +566,13 @@ static int adc_mspm0_channel_setup(const struct device *dev,
 
 		if ((data->vref_flags & EXT_VREF) || !(config->vref_config)) {
 			ret = -EINVAL;
-			goto unlock;
+			goto put;
 		}
 
 		if (!(data->vref_flags & INT_VREF)) {
 			if (regulator_enable(config->vref_config) < 0) {
 				ret = -ENODEV;
-				goto unlock;
+				goto put;
 			}
 			data->vref_flags |= INT_VREF;
 		}
@@ -559,13 +582,13 @@ static int adc_mspm0_channel_setup(const struct device *dev,
 
 		if ((data->vref_flags & INT_VREF) || !(config->vref_config)) {
 			ret = -EINVAL;
-			goto unlock;
+			goto put;
 		}
 
 		if (regulator_is_enabled(config->vref_config)) {
 			LOG_ERR("Cannot use external vref: regulator is already in use");
 			ret = -EBUSY;
-			goto unlock;
+			goto put;
 		}
 
 		if (!(data->vref_flags & EXT_VREF)) {
@@ -575,10 +598,13 @@ static int adc_mspm0_channel_setup(const struct device *dev,
 #endif
 	default:
 		ret = -EINVAL;
-		goto unlock;
+		goto put;
 	}
 
 	data->channel_cfg[ch].configured = true;
+
+put:
+	(void)pm_device_runtime_put(dev);
 
 unlock:
 	adc_context_release(&data->ctx, 0);
@@ -765,7 +791,16 @@ static int adc_mspm0_read(const struct device *dev, const struct adc_sequence *s
 	int ret;
 
 	adc_context_lock(&data->ctx, false, NULL);
+
+	ret = pm_device_runtime_get(dev);
+	if (ret < 0) {
+		goto release;
+	}
+
 	ret = adc_mspm0_read_internal(dev, sequence);
+	(void)pm_device_runtime_put(dev);
+
+release:
 	adc_context_release(&data->ctx, ret);
 
 	return ret;
@@ -779,10 +814,82 @@ static int adc_mspm0_read_async(const struct device *dev, const struct adc_seque
 	int ret;
 
 	adc_context_lock(&data->ctx, true, async);
+
+	ret = pm_device_runtime_get(dev);
+	if (ret < 0) {
+		goto release;
+	}
+
 	ret = adc_mspm0_read_internal(dev, sequence);
+	if (ret < 0) {
+		(void)pm_device_runtime_put(dev);
+	}
+
+release:
 	adc_context_release(&data->ctx, ret);
 
 	return ret;
+}
+#endif
+
+static uint32_t adc_mspm0_power_down_mode(const struct adc_mspm0_cfg *config)
+{
+	return config->auto_pwdn ? ADC12_CTL0_PWRDN_VAL_AUTO : ADC12_CTL0_PWRDN_VAL_MANUAL;
+}
+
+#ifdef CONFIG_PM_DEVICE
+static int adc_mspm0_pm_action(const struct device *dev, enum pm_device_action action)
+{
+	const struct adc_mspm0_cfg *config = dev->config;
+#ifdef CONFIG_REGULATOR_MSPM0_VREF
+	struct adc_mspm0_data *data = dev->data;
+#endif
+	int ret;
+
+	switch (action) {
+	case PM_DEVICE_ACTION_RESUME:
+		ret = pinctrl_apply_state(config->pinctrl, PINCTRL_STATE_DEFAULT);
+		if (ret < 0) {
+			return ret;
+		}
+
+#ifdef CONFIG_REGULATOR_MSPM0_VREF
+		if ((data->vref_flags & INT_VREF) != 0U) {
+			ret = regulator_enable(config->vref_config);
+			if (ret < 0) {
+				(void)pinctrl_apply_state(config->pinctrl, PINCTRL_STATE_SLEEP);
+				return ret;
+			}
+		}
+#endif
+
+		config->regs->ctl0 = (config->regs->ctl0 & ~ADC12_CTL0_PWRDN) |
+				     adc_mspm0_power_down_mode(config);
+		return 0;
+
+	case PM_DEVICE_ACTION_SUSPEND:
+		ret = pinctrl_apply_state(config->pinctrl, PINCTRL_STATE_SLEEP);
+		if ((ret < 0) && (ret != -ENOENT)) {
+			return ret;
+		}
+
+#ifdef CONFIG_REGULATOR_MSPM0_VREF
+		if ((data->vref_flags & INT_VREF) != 0U) {
+			ret = regulator_disable(config->vref_config);
+			if (ret < 0) {
+				(void)pinctrl_apply_state(config->pinctrl, PINCTRL_STATE_DEFAULT);
+				return ret;
+			}
+		}
+#endif
+
+		config->regs->ctl0 =
+			(config->regs->ctl0 & ~ADC12_CTL0_PWRDN) | ADC12_CTL0_PWRDN_VAL_AUTO;
+		return 0;
+
+	default:
+		return -ENOTSUP;
+	}
 }
 #endif
 
@@ -823,11 +930,7 @@ static int adc_mspm0_init(const struct device *dev)
 	}
 	regs->clkfreq = frange;
 
-	if (config->auto_pwdn) {
-		regs->ctl0 = (regs->ctl0 & ~ADC12_CTL0_PWRDN) | ADC12_CTL0_PWRDN_VAL_AUTO;
-	} else {
-		regs->ctl0 = (regs->ctl0 & ~ADC12_CTL0_PWRDN) | ADC12_CTL0_PWRDN_VAL_MANUAL;
-	}
+	regs->ctl0 = (regs->ctl0 & ~ADC12_CTL0_PWRDN) | adc_mspm0_power_down_mode(config);
 
 	data->sample_time[ADC_MSPM0_SCOMP0] = UINT16_MAX;
 	data->sample_time[ADC_MSPM0_SCOMP1] = UINT16_MAX;
@@ -868,7 +971,16 @@ static int adc_mspm0_init(const struct device *dev)
 
 	adc_context_unlock_unconditionally(&data->ctx);
 
+#ifdef CONFIG_PM_DEVICE
+	ret = adc_mspm0_pm_action(dev, PM_DEVICE_ACTION_SUSPEND);
+	if (ret < 0) {
+		return ret;
+	}
+
+	return pm_device_driver_init(dev, adc_mspm0_pm_action);
+#else
 	return 0;
+#endif
 }
 
 #define MSPM0_ADC_VREF_MV(index)                                                                   \
@@ -901,6 +1013,7 @@ static DEVICE_API(adc, mspm0_driver_api) = {
 #define MSPM0_ADC_INIT(index)                                                                      \
                                                                                                    \
 	PINCTRL_DT_INST_DEFINE(index);                                                             \
+	PM_DEVICE_DT_INST_DEFINE(index, adc_mspm0_pm_action);                                      \
                                                                                                    \
 	BUILD_ASSERT(ADC_DT_SAMPCLK(index) != -1,                                                  \
 		     "unsupported ADC sample clock source: must be ULPCLK, SYSOSC or HFCLK");      \
@@ -946,9 +1059,9 @@ static DEVICE_API(adc, mspm0_driver_api) = {
 		ADC_CONTEXT_INIT_SYNC(adc_mspm0_data_##index, ctx),                                \
 		.channel_cfg = adc_mspm0_channel_cfg_##index,                                      \
 	};                                                                                         \
-	DEVICE_DT_INST_DEFINE(index, &adc_mspm0_init, NULL, &adc_mspm0_data_##index,               \
-			      &adc_mspm0_cfg_##index, POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,       \
-			      &mspm0_driver_api);
+	DEVICE_DT_INST_DEFINE(index, &adc_mspm0_init, PM_DEVICE_DT_INST_GET(index),                \
+			      &adc_mspm0_data_##index, &adc_mspm0_cfg_##index, POST_KERNEL,        \
+			      CONFIG_ADC_INIT_PRIORITY, &mspm0_driver_api);
 /* clang-format on */
 
 DT_INST_FOREACH_STATUS_OKAY(MSPM0_ADC_INIT)
