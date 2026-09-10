@@ -42,8 +42,14 @@ void z_shell_log_backend_enable(const struct shell_log_backend *backend,
 		fifo_reset(backend);
 		log_backend_enable(backend->backend, ctx, init_log_level);
 		log_output_ctx_set(backend->log_output, ctx);
-		backend->control_block->dropped_cnt = 0;
 		backend->control_block->state = SHELL_LOG_BACKEND_ENABLED;
+		/*
+		 * Do not reset dropped_cnt here: messages processed while the
+		 * backend was disabled are now also counted (see process()),
+		 * and z_shell_log_backend_process() already atomically reads
+		 * and clears dropped_cnt the next time it runs, right after
+		 * this call, so they get reported instead of silently lost.
+		 */
 	}
 }
 
@@ -274,7 +280,15 @@ static void process(const struct log_backend *const backend,
 		break;
 
 	case SHELL_LOG_BACKEND_DISABLED:
-		__fallthrough;
+		/*
+		 * Count messages lost while the backend is disabled (e.g.
+		 * not yet started, or toggled off) the same way buffer-full
+		 * drops are counted above, so they get reported via
+		 * log_output_dropped_process() once the backend is enabled
+		 * instead of disappearing with no trace.
+		 */
+		dropped(backend, 1);
+		break;
 	default:
 		break;
 	}
