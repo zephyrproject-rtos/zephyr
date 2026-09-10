@@ -395,7 +395,7 @@ csi_interface: &dcmipp {
 	st,no-lsfs-sc;
 };
 
-/* PHY port 1: USB Type-C connector (CN7), OTG controller */
+/* PHY port 1: USB Type-C connector (CN7), routed to the USB host block */
 &usbphyc_port1 {
 	st,current-boost-microamp = <1000>;
 	st,decrease-hs-slew-rate;
@@ -410,5 +410,6 @@ csi_interface: &dcmipp {
 };
 
 zephyr_uhc0: &usbh_ohci {
+	phys = <&usbphyc_port0>, <&usbphyc_port1>;
 	status = "okay";
 };
