@@ -151,3 +151,11 @@ zephyr_udc0: &usbhs {
 &ctimer4 {
 	status = "okay";
 };
+
+&mrt0 {
+	status = "okay";
+};
+
+&mrt0_channel0 {
+	status = "okay";
+};
