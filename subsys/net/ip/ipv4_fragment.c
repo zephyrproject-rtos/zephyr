@@ -165,7 +165,9 @@ static void reassemble_packet(struct net_ipv4_reassembly *reass)
 		/* Get rid of IPv4 header which is at the beginning of the fragment. */
 		ipv4_hdr = (struct net_ipv4_hdr *)net_pkt_get_data(pkt, &ipv4_access);
 		if (!ipv4_hdr) {
-			goto error;
+			LOG_ERR("Failed to get IPv4 header");
+			reassembly_cancel(reass->id, &reass->src, &reass->dst);
+			return;
 		}
 
 		LOG_DBG("Removing %d bytes from start of pkt %p", net_pkt_ip_hdr_len(pkt),
