@@ -41,6 +41,10 @@
 	status = "okay";
 };
 
+&hash {
+	status = "okay";
+};
+
 &flash0 {
 	partitions {
 		#address-cells = <1>;
