@@ -179,6 +179,11 @@
 	status = "okay";
 };
 
+&pka {
+	interrupts = <62 7>;
+	status = "okay";
+};
+
 &aes {
 	status = "okay";
 };

@@ -213,6 +213,11 @@
 	};
 };
 
+&pka {
+	interrupts = <56 7>;
+	status = "okay";
+};
+
 &flash0 {
 	partitions {
 		#address-cells = <1>;
