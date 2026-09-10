@@ -13,14 +13,14 @@ config SILABS_SHELL
 
 if SOC_FAMILY_SILABS_S1 || SOC_FAMILY_SILABS_S2
 
-config SOC_GECKO_HAS_RADIO
+config SOC_VENDOR_SILABS_HAS_RADIO
 	bool
 	help
 	  If enabled, indicates that the SoC has a Radio PHY.
 
 config SOC_GECKO_USE_RAIL
 	bool "Use RAIL (Radio Abstraction Interface Layer)"
-	depends on SOC_GECKO_HAS_RADIO
+	depends on SOC_VENDOR_SILABS_HAS_RADIO
 	select SILABS_SISDK_LDMA
 	select SILABS_SISDK_TIMER if BT_CHANNEL_SOUNDING
 	help
@@ -30,7 +30,7 @@ config SOC_GECKO_USE_RAIL
 
 config SOC_GECKO_CUSTOM_RADIO_PHY
 	bool "Use RAIL for custom radio phy packet sending and receiving"
-	depends on SOC_GECKO_HAS_RADIO
+	depends on SOC_VENDOR_SILABS_HAS_RADIO
 	select SOC_GECKO_USE_RAIL
 	help
 	  If enabled, RAIL can be used for user generated custom radio phy
