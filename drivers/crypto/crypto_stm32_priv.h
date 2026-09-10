@@ -14,6 +14,8 @@
 #define crypt_config_t CRYP_ConfigTypeDef
 #endif
 
+typedef CRYP_HandleTypeDef	hal_crypt_handle_t;
+
 /* Maximum supported key length is 256 bits */
 #define CRYPTO_STM32_AES_MAX_KEY_LEN (256 / 8)
 
@@ -23,7 +25,7 @@ struct crypto_stm32_config {
 };
 
 struct crypto_stm32_data {
-	CRYP_HandleTypeDef hcryp;
+	hal_crypt_handle_t hcryp;
 	struct k_sem device_sem;
 	struct k_sem session_sem;
 };
