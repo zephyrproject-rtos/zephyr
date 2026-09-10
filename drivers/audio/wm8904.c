@@ -331,7 +331,8 @@ static int wm8904_route_input(const struct device *dev, audio_channel_t channel,
 	return 0;
 }
 
-static void wm8904_set_master_clock(const struct device *dev, audio_dai_cfg_t *cfg, uint32_t sysclk)
+static void wm8904_set_controller_clock(const struct device *dev, audio_dai_cfg_t *cfg,
+					uint32_t sysclk)
 {
 	uint32_t sampleRate = cfg->i2s.frame_clk_freq;
 	uint32_t bitWidth = cfg->i2s.word_size;
@@ -556,7 +557,7 @@ static int wm8904_configure(const struct device *dev, struct audio_codec_cfg *cf
 	wm8904_audio_fmt_config(dev, &cfg->dai_cfg, cfg->mclk_freq);
 
 	if ((cfg->dai_cfg.i2s.options & I2S_OPT_FRAME_CLK_TARGET) == 0) {
-		wm8904_set_master_clock(dev, &cfg->dai_cfg, cfg->mclk_freq);
+		wm8904_set_controller_clock(dev, &cfg->dai_cfg, cfg->mclk_freq);
 	} else {
 		/* BCLK/LRCLK default direction input */
 		wm8904_update_reg(dev, WM8904_REG_AUDIO_IF_1, 1U << 6U, 0U);
