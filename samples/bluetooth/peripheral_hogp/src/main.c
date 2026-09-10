@@ -88,10 +88,14 @@ static const struct bt_data sd[] = {
 };
 
 /* All HID Service characteristics require an encrypted link, so the Device asks
- * the Host for security instead of waiting for a failing read.
+ * the Host for security instead of waiting for a failing read. HOGP requires the
+ * link to be encrypted and says nothing about Man-In-The-Middle protection, so
+ * Level 2 is what the profile asks for and Level 3 is available as an option.
  */
 static void request_security(struct bt_conn *conn)
 {
+	bt_security_t level = IS_ENABLED(CONFIG_SAMPLE_BT_USE_AUTHENTICATION) ? BT_SECURITY_L3
+									     : BT_SECURITY_L2;
 	struct bt_conn_info info;
 	int err;
 
@@ -106,11 +110,11 @@ static void request_security(struct bt_conn *conn)
 		return;
 	}
 
-	if (bt_conn_get_security(conn) >= BT_SECURITY_L2) {
+	if (bt_conn_get_security(conn) >= level) {
 		return;
 	}
 
-	err = bt_conn_set_security(conn, BT_SECURITY_L2);
+	err = bt_conn_set_security(conn, level);
 	if (err != 0) {
 		LOG_WRN("Failed to request security (err %d)", err);
 	}
@@ -175,6 +179,21 @@ BT_CONN_CB_DEFINE(conn_callbacks) = {
 	.disconnected = disconnected,
 	.recycled = recycled,
 	.security_changed = security_changed,
+};
+
+static void auth_passkey_display(struct bt_conn *conn, unsigned int passkey)
+{
+	LOG_INF("Passkey for %s: %06u", bt_conn_dst_str(conn), passkey);
+}
+
+static void auth_cancel(struct bt_conn *conn)
+{
+	LOG_INF("Pairing cancelled by %s", bt_conn_dst_str(conn));
+}
+
+static struct bt_conn_auth_cb auth_cb_display = {
+	.passkey_display = auth_passkey_display,
+	.cancel = auth_cancel,
 };
 
 static void ctrl_point(struct bt_conn *conn, enum bt_hids_ctrl_point cmd)
@@ -310,6 +329,14 @@ int main(void)
 	if (err != 0) {
 		LOG_ERR("Failed to enable Bluetooth (err %d)", err);
 		return 0;
+	}
+
+	if (IS_ENABLED(CONFIG_SAMPLE_BT_USE_AUTHENTICATION)) {
+		err = bt_conn_auth_cb_register(&auth_cb_display);
+		if (err != 0) {
+			LOG_ERR("Failed to register authentication callbacks (err %d)", err);
+			return 0;
+		}
 	}
 
 	if (IS_ENABLED(CONFIG_SETTINGS)) {
