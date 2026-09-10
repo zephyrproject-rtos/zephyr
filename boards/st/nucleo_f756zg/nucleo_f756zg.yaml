@@ -19,6 +19,7 @@ supported:
   - usb_device
   - i2c
   - pwm
+  - rng
   - spi
   - usbd
 vendor: st
