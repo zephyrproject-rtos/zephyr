@@ -347,6 +347,49 @@ static void inject_na_message(struct net_if *iface, struct net_in6_addr *src,
 	zassert_ok((net_recv_data(iface, pkt)), "Data receive for NA failed.");
 }
 
+static void inject_dad_ns_loopback(struct net_if *iface,
+				   const struct net_in6_addr *target)
+{
+	struct net_eth_hdr hdr;
+	struct net_pkt *pkt;
+	struct net_in6_addr dst;
+	const struct net_in6_addr *src;
+	uint32_t reserved = 0U;
+
+	pkt = net_pkt_alloc_with_buffer(iface, TEST_MSG_SIZE, NET_AF_INET6,
+					NET_IPPROTO_ICMPV6, K_NO_WAIT);
+	zassert_not_null(pkt, "Failed to allocate loopback NS packet");
+
+	src = net_ipv6_unspecified_address();
+	net_ipv6_addr_create_solicited_node(target, &dst);
+	net_pkt_set_ipv6_hop_limit(pkt, NET_IPV6_ND_HOP_LIMIT);
+
+	hdr.type = net_htons(NET_ETH_PTYPE_IPV6);
+	memcpy(&hdr.src, net_if_get_link_addr(iface)->addr, sizeof(struct net_eth_addr));
+	hdr.dst.addr[0] = 0x33;
+	hdr.dst.addr[1] = 0x33;
+	hdr.dst.addr[2] = 0xff;
+	hdr.dst.addr[3] = target->s6_addr[13];
+	hdr.dst.addr[4] = target->s6_addr[14];
+	hdr.dst.addr[5] = target->s6_addr[15];
+
+	net_buf_reserve(pkt->frags, sizeof(struct net_eth_hdr));
+	net_pkt_cursor_init(pkt);
+	net_pkt_set_overwrite(pkt, false);
+
+	zassert_ok(net_ipv6_create(pkt, src, &dst));
+	zassert_ok(net_icmpv6_create(pkt, NET_ICMPV6_NS, 0));
+	zassert_ok(net_pkt_write_be32(pkt, reserved));
+	zassert_ok(net_pkt_write(pkt, target, sizeof(struct net_in6_addr)));
+
+	net_pkt_cursor_init(pkt);
+	net_ipv6_finalize(pkt, NET_IPPROTO_ICMPV6);
+
+	net_buf_push_mem(pkt->frags, &hdr, sizeof(struct net_eth_hdr));
+	net_pkt_cursor_init(pkt);
+	zassert_ok(net_recv_data(iface, pkt), "Data receive for reflected NS failed.");
+}
+
 static void skip_headers(struct net_pkt *pkt)
 {
 	net_pkt_cursor_init(pkt);
@@ -1154,6 +1197,11 @@ struct test_dad_context {
 	bool reply;
 };
 
+struct test_dad_loop_context {
+	struct k_sem wait_dad;
+	struct net_in6_addr *exp_dad_addr;
+};
+
 static void expect_dad_ns(struct net_pkt *pkt, void *user_data)
 {
 	uint32_t res_bytes;
@@ -1173,6 +1221,25 @@ static void expect_dad_ns(struct net_pkt *pkt, void *user_data)
 					  &all_nodes_mcast, &target, 0);
 		}
 
+		k_sem_give(&ctx->wait_dad);
+	}
+}
+
+static void expect_dad_ns_loopback(struct net_pkt *pkt, void *user_data)
+{
+	uint32_t res_bytes;
+	struct net_in6_addr target;
+	struct test_dad_loop_context *ctx = user_data;
+
+	skip_headers(pkt);
+
+	zassert_ok(net_pkt_read_be32(pkt, &res_bytes), "Failed to read reserved bytes");
+	zassert_equal(0, res_bytes, "Reserved bytes must be zeroed");
+	zassert_ok(net_pkt_read(pkt, &target, sizeof(struct net_in6_addr)),
+		   "Failed to read target address");
+
+	if (net_ipv6_addr_cmp(ctx->exp_dad_addr, &target)) {
+		inject_dad_ns_loopback(net_pkt_iface(pkt), &target);
 		k_sem_give(&ctx->wait_dad);
 	}
 }
@@ -1801,6 +1868,39 @@ ZTEST(net_ipv6, test_dad_conflict)
 
 	ifaddr = net_if_ipv6_addr_lookup_by_iface(TEST_NET_IF, &addr);
 	zassert_is_null(ifaddr, "Address should not be present on the interface");
+}
+
+ZTEST(net_ipv6, test_dad_self_loop_mac_ignored)
+{
+#if defined(CONFIG_NET_IPV6_DAD)
+	static struct net_in6_addr addr = { { { 0x20, 0x01, 0x0d, 0xb8, 0, 0, 0, 0,
+				     0, 0, 0, 0, 0, 0, 0x99, 0x6 } } };
+	static struct test_dad_loop_context ctx = {
+		.exp_dad_addr = &addr
+	};
+	static struct test_ns_handler handler = {
+		.fn = expect_dad_ns_loopback,
+		.user_data = &ctx
+	};
+	struct net_if_addr *ifaddr;
+
+	k_sem_init(&ctx.wait_dad, 0, 1);
+	ns_handler = &handler;
+
+	ifaddr = net_if_ipv6_addr_add(TEST_NET_IF, &addr, NET_ADDR_AUTOCONF, 0xffff);
+	zassert_not_null(ifaddr, "Address cannot be added");
+
+	zassert_ok(k_sem_take(&ctx.wait_dad, K_MSEC(WAIT_TIME)),
+		   "Timeout while waiting for DAD NS");
+
+	k_sleep(K_MSEC(150));
+
+	ifaddr = net_if_ipv6_addr_lookup_by_iface(TEST_NET_IF, &addr);
+	zassert_not_null(ifaddr, "Address should remain after MAC self-loop");
+	zassert_equal(ifaddr->addr_state, NET_ADDR_PREFERRED,
+		      "Address should be preferred after DAD");
+	net_if_ipv6_addr_rm(TEST_NET_IF, &addr);
+#endif
 }
 
 #define NET_UDP_HDR(pkt)  ((struct net_udp_hdr *)(net_udp_get_hdr(pkt, NULL)))
