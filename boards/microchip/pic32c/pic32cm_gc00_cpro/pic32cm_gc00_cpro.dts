@@ -58,6 +58,127 @@
 			zephyr,code = <INPUT_KEY_1>;
 		};
 	};
+
+	/*
+	 * Expansion connectors, from the user guide tables 3-3, 3-4, 3-6 and
+	 * 3-7 to 3-10. Several pins appear on more than one connector: the I2C
+	 * pair PD01/PD00 is shared by both extension headers, the mikroBUS
+	 * socket and the Arduino header, and the SPI trio PA16/PA15/PA17 is
+	 * shared by both extension headers and the Arduino header.
+	 */
+	ext1_header: xplained-pro-connector1 {
+		compatible = "microchip,xpro-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+
+		/* dts-format off */
+					       /*                      Shared */
+		gpio-map = <0  0 &porta  3 0>, /* ADC(+)                      */
+			   <1  0 &porta  4 0>, /* ADC(-)                      */
+			   <2  0 &portc  0 0>, /* GPIO1                       */
+			   <3  0 &portc  1 0>, /* GPIO2                       */
+			   <4  0 &porta  1 0>, /* PWM(+)                 EXT2 */
+			   <5  0 &porta  2 0>, /* PWM(-)                 EXT2 */
+			   <6  0 &porta  0 0>, /* IRQ/GPIO                    */
+			   <7  0 &portc  9 0>, /* SS/GPIO                     */
+			   <8  0 &portd  1 0>, /* SERCOM1 PAD[0] I2C SDA EXTx */
+			   <9  0 &portd  0 0>, /* SERCOM1 PAD[1] I2C SCL EXTx */
+			   <10 0 &portb 16 0>, /* SERCOM0 PAD[1] UART RX EXT2 */
+			   <11 0 &portb 15 0>, /* SERCOM0 PAD[0] UART TX EXT2 */
+			   <12 0 &portc 10 0>, /* SPI SS                      */
+			   <13 0 &porta 16 0>, /* SERCOM5 PAD[0] SPI MOSI EXTx*/
+			   <14 0 &porta 15 0>, /* SERCOM5 PAD[3] SPI MISO EXTx*/
+			   <15 0 &porta 17 0>; /* SERCOM5 PAD[1] SPI SCK  EXTx*/
+					       /* GND                         */
+					       /* +3.3V                       */
+		/* dts-format on */
+	};
+
+	ext2_header: xplained-pro-connector2 {
+		compatible = "microchip,xpro-header";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+
+		/* dts-format off */
+					       /*                      Shared */
+		gpio-map = <0  0 &porta  5 0>, /* ADC(+)              Arduino */
+			   <1  0 &porta  6 0>, /* ADC(-)                      */
+			   <2  0 &porta 12 0>, /* GPIO1                       */
+			   <3  0 &porta 13 0>, /* GPIO2                       */
+			   <4  0 &porta  1 0>, /* PWM(+)                 EXT1 */
+			   <5  0 &porta  2 0>, /* PWM(-)                 EXT1 */
+			   <6  0 &portd  8 0>, /* IRQ/GPIO                    */
+			   <7  0 &portd  9 0>, /* SS/GPIO                     */
+			   <8  0 &portd  1 0>, /* SERCOM1 PAD[0] I2C SDA EXTx */
+			   <9  0 &portd  0 0>, /* SERCOM1 PAD[1] I2C SCL EXTx */
+			   <10 0 &portb 16 0>, /* SERCOM0 PAD[1] UART RX EXT1 */
+			   <11 0 &portb 15 0>, /* SERCOM0 PAD[0] UART TX EXT1 */
+			   <12 0 &porta 14 0>, /* SPI SS                      */
+			   <13 0 &porta 16 0>, /* SERCOM5 PAD[0] SPI MOSI EXTx*/
+			   <14 0 &porta 15 0>, /* SERCOM5 PAD[3] SPI MISO EXTx*/
+			   <15 0 &porta 17 0>; /* SERCOM5 PAD[1] SPI SCK  EXTx*/
+					       /* GND                         */
+					       /* +3.3V                       */
+		/* dts-format on */
+	};
+
+	mikrobus_header: mikrobus-connector {
+		compatible = "mikro-bus";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+
+		/* dts-format off */
+					       /*                      Shared */
+		gpio-map = <0  0 &porta  7 0>, /* AN                          */
+			   <1  0 &portb 17 0>, /* RST                         */
+			   <2  0 &portc 17 0>, /* CS                          */
+			   <3  0 &portc 18 0>, /* SCK                         */
+			   <4  0 &portc 16 0>, /* MISO                        */
+			   <5  0 &portc 19 0>, /* MOSI                        */
+			   <6  0 &portc  2 0>, /* PWM                         */
+			   <7  0 &portc  3 0>, /* INT                         */
+			   <8  0 &portd 15 0>, /* RX                          */
+			   <9  0 &portd 16 0>, /* TX                          */
+			   <10 0 &portd  0 0>, /* SERCOM1 PAD[1] I2C SCL EXTx */
+			   <11 0 &portd  1 0>; /* SERCOM1 PAD[0] I2C SDA EXTx */
+		/* dts-format on */
+	};
+
+	arduino_header: arduino-connector {
+		compatible = "arduino-header-r3";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+
+		/* dts-format off */
+					       /*                      Shared */
+		gpio-map = <0  0 &porta  8 0>, /* A0                          */
+			   <1  0 &portb  4 0>, /* A1                          */
+			   <2  0 &portb  3 0>, /* A2                          */
+			   <3  0 &portb  0 0>, /* A3                          */
+			   <4  0 &porta  5 0>, /* A4                     EXT2 */
+			   <5  0 &portb  5 0>, /* A5                          */
+			   <6  0 &portb 15 0>, /* D0                     EXTx */
+			   <7  0 &portb 16 0>, /* D1                     EXTx */
+			   <8  0 &portc 11 0>, /* D2                          */
+			   <9  0 &portb 13 0>, /* D3  TCC3/WO[0]              */
+			   <10 0 &portc 13 0>, /* D4                          */
+			   <11 0 &portb 12 0>, /* D5                          */
+			   <12 0 &portb 14 0>, /* D6  TCC3/WO[1]              */
+			   <13 0 &portc 12 0>, /* D7                          */
+			   <14 0 &portd 14 0>, /* D8                          */
+			   <15 0 &portd  7 0>, /* D9                          */
+			   <16 0 &porta 19 0>, /* D10 SPI SS                  */
+			   <17 0 &porta 16 0>, /* D11 SPI MOSI           EXTx */
+			   <18 0 &porta 15 0>, /* D12 SPI MISO           EXTx */
+			   <19 0 &porta 17 0>, /* D13 SPI SCK            EXTx */
+			   <20 0 &portd  1 0>, /* D14 I2C SDA            EXTx */
+			   <21 0 &portd  0 0>; /* D15 I2C SCL            EXTx */
+		/* dts-format on */
+	};
 };
 
 &boot_flash {
@@ -219,5 +340,13 @@ i2c0: &sercom1 {
 	pinctrl-names = "default";
 	dmas = <&dmac 2 6>, <&dmac 3 7>;
 	dma-names = "rx", "tx";
+	status = "okay";
+};
+
+&portc {
+	status = "okay";
+};
+
+&portd {
 	status = "okay";
 };
