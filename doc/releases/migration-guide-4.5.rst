@@ -344,6 +344,11 @@ Counter
   ``prescale-glitch-filter`` and ``prescale-glitch-filter-bypass`` instead. The new property is
   an exponent, not a divisor: the prescaler divides by ``2^(prescale-glitch-filter + 1)``.
 
+* :dtcompatible:`adi,max32-rtc-counter` and :dtcompatible:`adi,max32-wut` now use the shared
+  ``clk_32k`` node for 32 kHz clock source selection. The clock source is now configured through the
+  ``clocks`` property of the ``clk_32k`` node, instead of ``clock-source`` property in each
+  peripheral node (:github:`117709`).
+
 Devicetree
 ==========
 
