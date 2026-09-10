@@ -191,6 +191,18 @@
 			status = "disabled";
 		};
 
+		rtc: rtc@4002c000 {
+			compatible = "nxp,lpc-rtc";
+			reg = <0x4002c000 0x1000>;
+			interrupts = <29 0>;
+			status = "disabled";
+
+			rtc_highres: rtc_highres {
+				compatible = "nxp,lpc-rtc-highres";
+				status = "disabled";
+			};
+		};
+
 		iap: flash-controller@40034000 {
 			compatible = "nxp,iap-fmc54";
 			reg = <0x40034000 0x18>;
