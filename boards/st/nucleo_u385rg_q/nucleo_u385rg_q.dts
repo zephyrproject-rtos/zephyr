@@ -190,6 +190,14 @@
 	status = "okay";
 };
 
+&aes {
+	status = "okay";
+};
+
+&hash {
+	status = "okay";
+};
+
 &spi1 {
 	pinctrl-0 = <&spi1_sck_pa5 &spi1_miso_pa6
 		     &spi1_mosi_pa7>;
