@@ -34,6 +34,9 @@ LOG_MODULE_REGISTER(regulator_max20362, CONFIG_REGULATOR_LOG_LEVEL);
 #define MAX20362_REG_WRTE_LCK       0x50
 #define MAX20362_REG_BBST_LCK       0x51
 #define MAX20362_REG_DVS_CFG        0x54
+#define MAX20362_REG_RR_CFG1        0x55
+#define MAX20362_REG_RR_CFG2        0x56
+#define MAX20362_REG_RR_VSET_BASE   0x20
 
 /* Register bit masks */
 #define MAX20362_BBST_VSET_MASK  GENMASK(6, 0)
@@ -49,6 +52,18 @@ LOG_MODULE_REGISTER(regulator_max20362, CONFIG_REGULATOR_LOG_LEVEL);
 #define MAX20362_BBLDO_MASK      BIT(5)
 #define MAX20362_DVS_MASK        GENMASK(1, 0)
 #define MAX20362_BBVDROP_MASK    GENMASK(7, 6)
+
+/* Round-Robin register bit masks */
+#define MAX20362_RRWRAP_MASK   BIT(2)        /* DVS_CFG: wrap to first step */
+#define MAX20362_RREN_MASK     BIT(1)        /* DVS_CFG: Round-Robin enable */
+#define MAX20362_RRCLKPOL_MASK BIT(6)        /* RR_CFG1: clock polarity */
+#define MAX20362_RRTMORES_MASK BIT(5)        /* RR_CFG1: timeout pointer reset */
+#define MAX20362_RRSIZE_MASK   GENMASK(4, 0) /* RR_CFG1: number of steps (count - 1) */
+#define MAX20362_RRTMOLEN_MASK GENMASK(2, 0) /* RR_CFG2: timeout duration */
+#define MAX20362_RR_VSET_MASK  GENMASK(6, 0) /* RRVsetXX: 7-bit VSET (bit7 = RRLowPBxx) */
+
+/* Number of RRVsetXX registers (0x20..0x33) */
+#define MAX20362_RR_VSET_COUNT 20
 
 /* Lock/unlock values */
 #define MAX20362_LOCK_BB      0xAA
@@ -104,6 +119,13 @@ struct regulator_max20362_common_config {
 	uint8_t bbat_vdrop;
 	uint8_t dvs_source;
 	uint8_t ldo_source;
+	/* Round-Robin DVS configuration */
+	bool rr_wrap;
+	bool rr_clk_rising;
+	bool rr_timeout_reset;
+	uint8_t rr_timeout;
+	uint16_t rr_voltage_count;
+	uint32_t rr_voltages[MAX20362_RR_VSET_COUNT];
 };
 
 struct regulator_max20362_config {
@@ -115,6 +137,10 @@ struct regulator_max20362_config {
 
 struct regulator_max20362_data {
 	struct regulator_common_data common;
+};
+
+struct regulator_max20362_common_data {
+	uint8_t dvs_source;
 };
 
 static const struct regulator_max20362_desc __maybe_unused bboost_desc = {
@@ -499,32 +525,27 @@ int regulator_max20362_set_ldo_int_mask(const struct device *dev, uint8_t mask)
 	return regulator_max20362_reg_write(&config->bus, MAX20362_REG_LDO_INT_MASK, mask);
 }
 
-static int regulator_max20362_set_bat_bbin_vdrop(const struct device *dev, uint8_t vdrop)
+int regulator_max20362_set_bat_bbin_vdrop(const struct device *dev, uint8_t vdrop)
 {
 	const struct regulator_max20362_common_config *config = dev->config;
+
+	if (vdrop > MAX20362_BAT_BBIN_VDROP_200MV) {
+		LOG_ERR("Invalid BAT to BBIN voltage drop: %u", vdrop);
+		return -EINVAL;
+	}
 
 	return regulator_max20362_reg_update(&config->bus, MAX20362_REG_IGN_CFG,
 					     MAX20362_BBVDROP_MASK, vdrop);
 }
 
-static int regulator_max20362_set_dvs_interface_source(const struct device *dev, uint8_t source)
+int regulator_max20362_set_ldo_input_source(const struct device *dev, uint8_t source)
 {
 	const struct regulator_max20362_common_config *config = dev->config;
-	int ret;
 
-	ret = regulator_max20362_reg_update(&config->bus, MAX20362_REG_DVS_CFG, MAX20362_DVS_MASK,
-					    source);
-	if (ret < 0) {
-		return ret;
+	if (source > MAX20362_LDO_SRC_BATT) {
+		LOG_ERR("Invalid LDO input source: %u", source);
+		return -EINVAL;
 	}
-	k_usleep(MAX20362_DVS_SETTLE_TIME_US);
-
-	return 0;
-}
-
-static int regulator_max20362_set_ldo_input_source(const struct device *dev, uint8_t source)
-{
-	const struct regulator_max20362_common_config *config = dev->config;
 
 	if (source == MAX20362_LDO_SRC_BBOUT) {
 		return regulator_max20362_reg_update(&config->bus, MAX20362_REG_LDO_CFG,
@@ -534,6 +555,134 @@ static int regulator_max20362_set_ldo_input_source(const struct device *dev, uin
 						     MAX20362_BBLDO_MASK,
 						     MAX20362_LDO_NO_WAIT_FOR_BB);
 	}
+}
+
+int regulator_max20362_set_dvs_source(const struct device *dev, uint8_t source)
+{
+	const struct regulator_max20362_common_config *config = dev->config;
+	struct regulator_max20362_common_data *data = dev->data;
+	int ret;
+
+	if (source > MAX20362_DVS_SRC_ROUND_ROBIN) {
+		LOG_ERR("Invalid DVS source: %u", source);
+		return -EINVAL;
+	}
+
+	ret = regulator_max20362_reg_update(&config->bus, MAX20362_REG_DVS_CFG, MAX20362_DVS_MASK,
+					    source);
+	if (ret < 0) {
+		return ret;
+	}
+
+	data->dvs_source = source;
+
+	k_usleep(MAX20362_DVS_SETTLE_TIME_US);
+
+	return 0;
+}
+
+int regulator_max20362_set_dvs_rr_table(const struct device *dev, const uint32_t *voltages_uv,
+					uint8_t count)
+{
+	const struct regulator_max20362_common_config *config = dev->config;
+	struct regulator_max20362_common_data *data = dev->data;
+	uint16_t idx;
+	int ret;
+
+	if (data->dvs_source == MAX20362_DVS_SRC_ROUND_ROBIN) {
+		LOG_ERR("Round-Robin must be disabled to change its configuration");
+		return -EBUSY;
+	}
+
+	if (voltages_uv == NULL) {
+		return -EINVAL;
+	}
+
+	if (count == 0 || count > MAX20362_RR_VSET_COUNT) {
+		LOG_ERR("Invalid RR table size: %u", count);
+		return -EINVAL;
+	}
+
+	for (uint8_t i = 0; i < count; i++) {
+		ret = linear_range_get_win_index(&bbout_range[0], voltages_uv[i], voltages_uv[i],
+						 &idx);
+		if (ret < 0) {
+			LOG_ERR("RR voltage[%u]=%u uV out of range", i, voltages_uv[i]);
+			return ret;
+		}
+
+		/* 7-bit VSET; leaves RRLowPBxx (bit 7) at 0 */
+		ret = regulator_max20362_reg_update(&config->bus, MAX20362_REG_RR_VSET_BASE + i,
+						    MAX20362_RR_VSET_MASK, (uint8_t)idx);
+		if (ret < 0) {
+			return ret;
+		}
+	}
+
+	/* RRSize = number of steps = count - 1 */
+	return regulator_max20362_reg_update(&config->bus, MAX20362_REG_RR_CFG1,
+					     MAX20362_RRSIZE_MASK, count - 1);
+}
+
+int regulator_max20362_set_rr_wrap(const struct device *dev, bool enable)
+{
+	const struct regulator_max20362_common_config *config = dev->config;
+	const struct regulator_max20362_common_data *data = dev->data;
+
+	if (data->dvs_source == MAX20362_DVS_SRC_ROUND_ROBIN) {
+		LOG_ERR("Round-Robin must be disabled to change its configuration");
+		return -EBUSY;
+	}
+
+	return regulator_max20362_reg_update(&config->bus, MAX20362_REG_DVS_CFG,
+					     MAX20362_RRWRAP_MASK, enable);
+}
+
+int regulator_max20362_set_rr_clk_polarity(const struct device *dev, bool rising_edge)
+{
+	const struct regulator_max20362_common_config *config = dev->config;
+	const struct regulator_max20362_common_data *data = dev->data;
+
+	if (data->dvs_source == MAX20362_DVS_SRC_ROUND_ROBIN) {
+		LOG_ERR("Round-Robin must be disabled to change its configuration");
+		return -EBUSY;
+	}
+
+	return regulator_max20362_reg_update(&config->bus, MAX20362_REG_RR_CFG1,
+					     MAX20362_RRCLKPOL_MASK, rising_edge);
+}
+
+int regulator_max20362_set_rr_timeout_reset(const struct device *dev, bool enable)
+{
+	const struct regulator_max20362_common_config *config = dev->config;
+	const struct regulator_max20362_common_data *data = dev->data;
+
+	if (data->dvs_source == MAX20362_DVS_SRC_ROUND_ROBIN) {
+		LOG_ERR("Round-Robin must be disabled to change its configuration");
+		return -EBUSY;
+	}
+
+	return regulator_max20362_reg_update(&config->bus, MAX20362_REG_RR_CFG1,
+					     MAX20362_RRTMORES_MASK, enable);
+}
+
+int regulator_max20362_set_rr_timeout(const struct device *dev, uint8_t timeout)
+{
+	const struct regulator_max20362_common_config *config = dev->config;
+	const struct regulator_max20362_common_data *data = dev->data;
+
+	if (data->dvs_source == MAX20362_DVS_SRC_ROUND_ROBIN) {
+		LOG_ERR("Round-Robin must be disabled to change its configuration");
+		return -EBUSY;
+	}
+
+	if (timeout > MAX20362_RR_TIMEOUT_16MS) {
+		LOG_ERR("Invalid RR timeout: %u", timeout);
+		return -EINVAL;
+	}
+
+	return regulator_max20362_reg_update(&config->bus, MAX20362_REG_RR_CFG2,
+					     MAX20362_RRTMOLEN_MASK, timeout);
 }
 
 static int regulator_max20362_init(const struct device *dev)
@@ -578,9 +727,50 @@ static int regulator_max20362_common_init(const struct device *dev)
 		return ret;
 	}
 
-	ret = regulator_max20362_set_dvs_interface_source(dev, common_config->dvs_source);
+	if (common_config->dvs_source == MAX20362_DVS_SRC_ROUND_ROBIN) {
+		/* Reset to default DVS source before changing the round-robin configuration */
+		ret = regulator_max20362_set_dvs_source(dev, MAX20362_DVS_SRC_I2C);
+		if (ret < 0) {
+			LOG_ERR("Failed to disable round-robin before config");
+			return ret;
+		}
+
+		ret = regulator_max20362_set_dvs_rr_table(dev, common_config->rr_voltages,
+							  common_config->rr_voltage_count);
+		if (ret < 0) {
+			LOG_ERR("Failed to program RR voltage table");
+			return ret;
+		}
+
+		ret = regulator_max20362_set_rr_wrap(dev, common_config->rr_wrap);
+		if (ret < 0) {
+			LOG_ERR("Failed to set round-robin wrap");
+			return ret;
+		}
+
+		ret = regulator_max20362_set_rr_clk_polarity(dev, common_config->rr_clk_rising);
+		if (ret < 0) {
+			LOG_ERR("Failed to set round-robin clock polarity");
+			return ret;
+		}
+
+		ret = regulator_max20362_set_rr_timeout_reset(dev, common_config->rr_timeout_reset);
+		if (ret < 0) {
+			LOG_ERR("Failed to set round-robin timeout reset");
+			return ret;
+		}
+
+		ret = regulator_max20362_set_rr_timeout(dev, common_config->rr_timeout);
+		if (ret < 0) {
+			LOG_ERR("Failed to set round-robin timeout");
+			return ret;
+		}
+	}
+
+	/* Apply the default DVS source provided in the devicetree */
+	ret = regulator_max20362_set_dvs_source(dev, common_config->dvs_source);
 	if (ret < 0) {
-		LOG_ERR("Failed to set DVS source");
+		LOG_ERR("Failed to set initial DVS source");
 		return ret;
 	}
 
@@ -627,14 +817,23 @@ static DEVICE_API(regulator, api) = {
 		    ())
 
 #define REGULATOR_MAX20362_DEFINE_ALL(inst)                                                        \
+	BUILD_ASSERT(DT_INST_PROP_LEN_OR(inst, rr_microvolt, 0) <= MAX20362_RR_VSET_COUNT,         \
+		     "adi,max20362: rr-microvolt has more than 20 entries");                       \
 	static const struct regulator_max20362_common_config common_config_##inst = {              \
 		.bus = I2C_DT_SPEC_INST_GET(inst),                                                 \
 		.bbat_vdrop = DT_INST_PROP(inst, bat_bbin_vdrop),                                  \
 		.dvs_source = DT_INST_PROP(inst, dvs_src),                                         \
 		.ldo_source = DT_INST_PROP(inst, ldo_src),                                         \
+		.rr_wrap = DT_INST_PROP(inst, rr_wrap),                                            \
+		.rr_clk_rising = DT_INST_PROP(inst, rr_clk_rising),                                \
+		.rr_timeout_reset = DT_INST_PROP(inst, rr_timeout_reset),                          \
+		.rr_timeout = DT_INST_PROP(inst, rr_timeout),                                      \
+		.rr_voltage_count = DT_INST_PROP_LEN_OR(inst, rr_microvolt, 0),                    \
+		.rr_voltages = DT_INST_PROP_OR(inst, rr_microvolt, {0}),                           \
 	};                                                                                         \
                                                                                                    \
-	DEVICE_DT_INST_DEFINE(inst, regulator_max20362_common_init, NULL, NULL,                    \
+	static struct regulator_max20362_common_data common_data_##inst;                           \
+	DEVICE_DT_INST_DEFINE(inst, regulator_max20362_common_init, NULL, &common_data_##inst,     \
 			      &common_config_##inst, POST_KERNEL,                                  \
 			      CONFIG_REGULATOR_ADI_MAX20362_COMMON_INIT_PRIORITY, NULL);           \
                                                                                                    \

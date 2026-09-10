@@ -58,6 +58,26 @@
 #define MAX20362_LDO_SRC_BATT  2
 /** @} */
 
+/**
+ * @name MAX20362 Round-Robin timeout duration
+ * @{
+ */
+/** Timeout disabled */
+#define MAX20362_RR_TIMEOUT_DISABLED 0
+/** 500 us */
+#define MAX20362_RR_TIMEOUT_500US    1
+/** 1 ms */
+#define MAX20362_RR_TIMEOUT_1MS      2
+/** 2 ms */
+#define MAX20362_RR_TIMEOUT_2MS      3
+/** 4 ms */
+#define MAX20362_RR_TIMEOUT_4MS      4
+/** 8 ms */
+#define MAX20362_RR_TIMEOUT_8MS      5
+/** 16 ms */
+#define MAX20362_RR_TIMEOUT_16MS     6
+/** @} */
+
 /** @} */
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_REGULATOR_MAX20362_H_ */
