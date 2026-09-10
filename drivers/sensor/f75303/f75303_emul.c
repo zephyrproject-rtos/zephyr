@@ -22,9 +22,6 @@ struct f75303_emul_data {
 	uint8_t reg[NUM_REGS];
 };
 
-struct f75303_emul_cfg {
-};
-
 static void f75303_emul_set_reg(const struct emul *target, uint8_t reg, uint8_t val)
 {
 	struct f75303_emul_data *data = target->data;
@@ -166,11 +163,9 @@ static const struct emul_sensor_driver_api f75303_emul_api_sensor = {
 };
 
 
-#define F75303_EMUL(n)								\
-	const struct f75303_emul_cfg f75303_emul_cfg_##n;			\
-	struct f75303_emul_data f75303_emul_data_##n;				\
-	EMUL_DT_INST_DEFINE(n, f75303_emul_init, &f75303_emul_data_##n,		\
-			    &f75303_emul_cfg_##n, &f75303_emul_api_i2c,		\
-			    &f75303_emul_api_sensor);
+#define F75303_EMUL(n)                                                                             \
+	struct f75303_emul_data f75303_emul_data_##n;                                              \
+	EMUL_DT_INST_DEFINE(n, f75303_emul_init, &f75303_emul_data_##n, NULL,                      \
+			    &f75303_emul_api_i2c, &f75303_emul_api_sensor);
 
 DT_INST_FOREACH_STATUS_OKAY(F75303_EMUL)
