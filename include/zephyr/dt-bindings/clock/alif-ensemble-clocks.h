@@ -65,6 +65,14 @@
 /** UART7 clock sourced from system PCLK */
 #define ALIF_UART7_SYST_PCLK        \
 	ALIF_CLK_CFG(CLKCTL_PER_SLV, UART_CTRL, 7U, 1U, 1U, 1U, 15U, ALIF_PARENT_CLK_SYST_PCLK)
+
+/** @} */
+
+/**
+ * @name I2C peripheral clocks
+ * @{
+ */
+
 /** I2C0 clock sourced from system PCLK */
 #define ALIF_I2C0_SYST_PCLK         \
 	ALIF_CLK_CFG(CLKCTL_PER_SLV, I2C0_CTRL, 0U, 1U, 0U, 0U, 0U, ALIF_PARENT_CLK_SYST_PCLK)
@@ -77,6 +85,7 @@
 /** I2C3 clock sourced from system PCLK */
 #define ALIF_I2C3_SYST_PCLK         \
 	ALIF_CLK_CFG(CLKCTL_PER_SLV, I2C3_CTRL, 0U, 1U, 0U, 0U, 0U, ALIF_PARENT_CLK_SYST_PCLK)
+
 /** @} */
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_ALIF_ENSEMBLE_CLOCKS_H_ */

@@ -56,12 +56,20 @@
 #define ALIF_UART5_SYST_PCLK        \
 	ALIF_CLK_CFG(CLKCTL_PER_SLV, UART_CTRL, 5U, 1U, 1U, 1U, 13U, ALIF_PARENT_CLK_SYST_PCLK)
 
+/** @} */
+
+/**
+ * @name I2C peripheral clocks
+ * @{
+ */
+
 /** I2C0 clock sourced from system PCLK */
 #define ALIF_I2C0_SYST_PCLK         \
 	ALIF_CLK_CFG(CLKCTL_PER_SLV, I2C0_CTRL, 0U, 1U, 0U, 0U, 0U, ALIF_PARENT_CLK_SYST_PCLK)
 /** I2C1 clock sourced from system PCLK */
 #define ALIF_I2C1_SYST_PCLK         \
 	ALIF_CLK_CFG(CLKCTL_PER_SLV, I2C1_CTRL, 0U, 1U, 0U, 0U, 0U, ALIF_PARENT_CLK_SYST_PCLK)
+
 /** @} */
 
 #endif /* ZEPHYR_INCLUDE_DT_BINDINGS_CLOCK_ALIF_BALLETTO_CLOCKS_H_ */
