@@ -881,10 +881,27 @@ void device_supported_pkt_type(void)
 	}
 }
 
-static void read_buffer_size_complete(struct net_buf *buf)
+static int read_sco_buffer_size_complete(struct bt_hci_rp_read_buffer_size *rp)
+{
+	uint16_t sco_pkts;
+
+	bt_dev.br.sco_mtu = rp->sco_max_len;
+	sco_pkts = sys_le16_to_cpu(rp->sco_max_num);
+
+	LOG_DBG("SCO BR/EDR buffers: pkts %u mtu %u", sco_pkts, bt_dev.br.sco_mtu);
+
+	if (sco_pkts == 0) {
+		return -ENOTSUP;
+	}
+
+	retrun k_sem_init(&bt_dev.br.sco_pkts, sco_pkts, sco_pkts);
+}
+
+static int read_buffer_size_complete(struct net_buf *buf)
 {
 	struct bt_hci_rp_read_buffer_size *rp = (void *)buf->data;
 	uint16_t pkts;
+	int err;
 
 	LOG_DBG("status 0x%02x", rp->status);
 
@@ -893,7 +910,20 @@ static void read_buffer_size_complete(struct net_buf *buf)
 
 	LOG_DBG("ACL BR/EDR buffers: pkts %u mtu %u", pkts, bt_dev.br.mtu);
 
-	k_sem_init(&bt_dev.br.pkts, pkts, pkts);
+	if (pkts == 0) {
+		return -ENOTSUP;
+	}
+
+	err = k_sem_init(&bt_dev.br.pkts, pkts, pkts);
+	if (err != 0) {
+		return err;
+	}
+
+	if (IS_ENABLED(CONFIG_BT_VOICE_OVER_HCI)) {
+		err = read_sco_buffer_size_complete(rp);
+	}
+
+	return err;
 }
 
 int bt_br_init(void)
@@ -923,8 +953,12 @@ int bt_br_init(void)
 		return err;
 	}
 
-	read_buffer_size_complete(buf);
+	err = read_buffer_size_complete(buf);
 	net_buf_unref(buf);
+	if (err != 0) {
+		LOG_ERR("Failed to read buffer size (%d)", err);
+		return err;
+	}
 
 	/* Set SSP mode */
 	buf = bt_hci_cmd_alloc(K_FOREVER);

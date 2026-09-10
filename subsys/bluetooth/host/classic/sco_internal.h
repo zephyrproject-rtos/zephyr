@@ -34,3 +34,22 @@ void bt_sco_chan_set_state_debug(struct bt_sco_chan *chan,
 #else
 void bt_sco_chan_set_state(struct bt_sco_chan *chan, enum bt_sco_state state);
 #endif /* CONFIG_BT_CONN_LOG_LEVEL_DBG */
+
+/* Allocates RX buffer */
+struct net_buf *bt_sco_get_rx(k_timeout_t timeout);
+
+/* Process incoming SCO data from HCI controller */
+void hci_sco(struct net_buf *buf);
+
+/* Receive and process SCO data on a connection */
+void bt_sco_recv(struct bt_conn *sco, struct net_buf *buf, uint8_t flags);
+
+/* Pull HCI fragments from buffers intended for `conn` */
+struct net_buf *sco_data_pull(struct bt_conn *conn, size_t amount, size_t *length);
+
+/* Get callback and user data from the buffer */
+void sco_get_and_clear_cb(struct bt_conn *conn, struct net_buf *buf, bt_conn_tx_cb_t *cb,
+			  void **ud);
+
+/* Check if there is any data pending for sending. */
+bool sco_has_data(struct bt_conn *conn);

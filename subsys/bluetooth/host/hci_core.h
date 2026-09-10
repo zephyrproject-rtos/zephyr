@@ -358,7 +358,12 @@ struct bt_dev_le {
 struct bt_dev_br {
 	/* Max controller's acceptable ACL packet length */
 	uint16_t         mtu;
-	struct k_sem  pkts;
+	struct k_sem     pkts;
+
+	/* Max controller's acceptable SCO packet length */
+	uint8_t          sco_mtu;
+	struct k_sem     sco_pkts;
+
 	uint16_t         esco_pkt_type;
 };
 

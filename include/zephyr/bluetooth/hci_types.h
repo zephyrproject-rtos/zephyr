@@ -49,6 +49,42 @@ extern "C" {
 #define BT_HCI_SYNC_HANDLE_INVALID      0xffff
 #define BT_HCI_PAWR_SUBEVENT_MAX        128
 
+/** SCO Packet Status Flag values: Good data */
+#define BT_HCI_SCO_CORRECTLY_RECEIVED   0x00
+/** SCO Packet Status Flag values: Possible errors */
+#define BT_HCI_SCO_POSSIBLY_INVALID     0x01
+/** SCO Packet Status Flag values: Lost data */
+#define BT_HCI_SCO_NO_DATA_RECEIVED     0x02
+/** SCO Packet Status Flag values: Partially lost  */
+#define BT_HCI_SCO_DATA_PARTIALLY_LOST  0x03
+
+/**
+ * @brief Extract SCO connection handle from packed handle value
+ * @param h Packed handle value containing both handle and flags
+ * @return SCO connection handle (12-bit value)
+ */
+#define bt_sco_handle(h) FIELD_GET(GENMASK(11, 0), (h))
+/**
+ * @brief Extract packet status flag from packed handle value
+ * @param h Packed handle value containing both handle and flags
+ * @return Packet status flag (2-bit value)
+ */
+#define bt_sco_flag(h) FIELD_GET(GENMASK(13, 12), (h))
+/**
+ * @brief Extract packet status flag from packed handle value (alias)
+ * @param h Packed handle value containing both handle and flags
+ * @return Packet status flag (2-bit value)
+ */
+#define bt_sco_flag_ps(h) bt_sco_flag(h)
+/**
+ * @brief Pack SCO connection handle and packet status into single value
+ * @param h SCO connection handle (12-bit value)
+ * @param ps Packet status flag (2-bit value)
+ * @return Packed handle value with status flag in upper bits
+ */
+#define bt_sco_handle_pack(h, ps) (FIELD_PREP(GENMASK(11, 0), (h)) | \
+	FIELD_PREP(GENMASK(13, 12), (ps)))
+
 /* Bluetooth spec v5.4 Vol 4, Part E - 5.4.3 HCI Synchronous Data Packets */
 struct bt_hci_sco_hdr {
 	uint16_t handle; /* 12 bit handle, 2 bit Packet Status Flag, 1 bit RFU */

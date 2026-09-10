@@ -26,6 +26,7 @@
 #include <zephyr/bluetooth/hci_types.h>
 #include <zephyr/bluetooth/hci_vs.h>
 #include <zephyr/bluetooth/testing.h>
+#include <zephyr/bluetooth/classic/sco.h>
 #include <zephyr/debug/stack.h>
 #include <zephyr/device.h>
 #include <zephyr/devicetree.h>
@@ -66,6 +67,11 @@
 #include "scan.h"
 #include "settings.h"
 #include "smp.h"
+
+#if defined(CONFIG_BT_CLASSIC)
+#include "classic/br.h"
+#include "classic/sco_internal.h"
+#endif
 
 #if defined(CONFIG_BT_DF)
 #include "direction_internal.h"
@@ -2265,6 +2271,10 @@ static int set_flow_control(void)
 	(void)memset(hbs, 0, sizeof(*hbs));
 	hbs->acl_mtu = sys_cpu_to_le16(CONFIG_BT_BUF_ACL_RX_SIZE);
 	hbs->acl_pkts = sys_cpu_to_le16(BT_BUF_HCI_ACL_RX_COUNT);
+	if (IS_ENABLED(CONFIG_BT_VOICE_OVER_HCI)) {
+		hbs->sco_mtu = CONFIG_BT_SCO_RX_BUF_SIZE;
+		hbs->sco_pkts = sys_cpu_to_le16(CONFIG_BT_SCO_RX_BUF_COUNT);
+	}
 
 	err = bt_hci_cmd_send_sync(BT_HCI_OP_HOST_BUFFER_SIZE, buf, NULL);
 	if (err) {
@@ -4700,6 +4710,11 @@ static int bt_recv_unsafe(struct net_buf *buf)
 		rx_queue_put(buf);
 		return 0;
 #endif /* CONFIG_BT_ISO */
+#if defined(CONFIG_BT_VOICE_OVER_HCI)
+	case BT_HCI_H4_SCO:
+		rx_queue_put(buf);
+		return 0;
+#endif /* CONFIG_BT_VOICE_OVER_HCI */
 	default:
 		LOG_ERR("Invalid buf type %u", type);
 		return -EINVAL;
@@ -4832,6 +4847,11 @@ static void rx_work_handler(struct k_work *work)
 		hci_iso(buf);
 		break;
 #endif /* CONFIG_BT_ISO */
+#if defined(CONFIG_BT_VOICE_OVER_HCI)
+	case BT_HCI_H4_SCO:
+		hci_sco(buf);
+		break;
+#endif /* CONFIG_BT_VOICE_OVER_HCI */
 	case BT_HCI_H4_EVT:
 		hci_event(buf);
 		break;

@@ -14,7 +14,7 @@ if(CONFIG_MCUX_OPTIMIZED_MEMSET AND NOT CONFIG_ARM64)
   zephyr_library_sources(${ZEPHYR_CURRENT_MODULE_DIR}/mcux/mcux-sdk-ng/components/misc_utilities/fsl_memset.S)
 endif()
 
-if(CONFIG_BT_H4_NXP_CTLR AND CONFIG_BT_CLASSIC)
+if((CONFIG_BT_H4_NXP_CTLR AND CONFIG_BT_CLASSIC) AND (NOT DEFINED CONFIG_BT_NXP_VOICE_OVER_HCI))
   # Add SCO specific configuration source file if BT Classic is enabled
   zephyr_library_sources(middleware/bt_controller/hci_nxp_sco.c)
 endif()

@@ -47,11 +47,11 @@
 #include "att_internal.h"
 #include "buf_view.h"
 #include "classic/conn_br_internal.h"
-#include "classic/sco_internal.h"
 #include "classic/ssp.h"
 #include "common/assert.h"
 #include "common/bt_str.h"
 #include "conn_internal.h"
+#include "classic/sco_internal.h"
 #include "direction_internal.h"
 #include "gatt_gap_svc_validate.h"
 #include "hci_core.h"
@@ -218,6 +218,12 @@ int bt_conn_iso_init(void)
 struct k_sem *bt_conn_get_pkts(struct bt_conn *conn)
 {
 #if defined(CONFIG_BT_CLASSIC)
+#if defined(CONFIG_BT_VOICE_OVER_HCI)
+	if (bt_conn_is_sco(conn)) {
+		return &bt_dev.br.sco_pkts;
+	}
+#endif /* CONFIG_BT_VOICE_OVER_HCI */
+
 	if (bt_conn_is_br(conn) || !bt_dev.le.acl_mtu) {
 		return &bt_dev.br.pkts;
 	}
@@ -507,6 +513,9 @@ void bt_conn_recv(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 	if (IS_ENABLED(CONFIG_BT_ISO_RX) && bt_conn_is_iso(conn)) {
 		bt_iso_recv(conn, buf, flags);
 		return;
+	} else if (IS_ENABLED(CONFIG_BT_VOICE_OVER_HCI) && bt_conn_is_sco(conn)) {
+		bt_sco_recv(conn, buf, flags);
+		return;
 	} else if (IS_ENABLED(CONFIG_BT_CONN)) {
 		bt_acl_recv(conn, buf, flags);
 	} else {
@@ -619,9 +628,36 @@ static int send_iso(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
 	return bt_send(buf);
 }
 
+static int send_sco(struct bt_conn *conn, struct net_buf *buf, uint8_t flags)
+{
+	struct bt_hci_sco_hdr *hdr;
+
+	switch (flags) {
+	case FRAG_SINGLE:
+		break;
+	default:
+		LOG_ERR("Partial packet is unsupported");
+		return -EINVAL;
+	}
+
+	hdr = net_buf_push(buf, sizeof(*hdr));
+	hdr->handle = sys_cpu_to_le16(bt_sco_handle_pack(conn->handle, 0));
+	hdr->len = buf->len - sizeof(*hdr);
+
+	net_buf_push_u8(buf, BT_HCI_H4_SCO);
+
+	return bt_send(buf);
+}
+
 static inline uint16_t conn_mtu(struct bt_conn *conn)
 {
 #if defined(CONFIG_BT_CLASSIC)
+#if defined(CONFIG_BT_VOICE_OVER_HCI)
+	if (bt_conn_is_sco(conn)) {
+		return bt_dev.br.sco_mtu;
+	}
+#endif /* CONFIG_BT_VOICE_OVER_HCI */
+
 	if (bt_conn_is_br(conn) || (!bt_conn_is_iso(conn) && !bt_dev.le.acl_mtu)) {
 		return bt_dev.br.mtu;
 	}
@@ -641,6 +677,11 @@ static inline uint16_t conn_mtu(struct bt_conn *conn)
 static bool is_iso_tx_conn(struct bt_conn *conn)
 {
 	return IS_ENABLED(CONFIG_BT_ISO_TX) && bt_conn_is_iso(conn);
+}
+
+static bool is_sco_conn(struct bt_conn *conn)
+{
+	return IS_ENABLED(CONFIG_BT_VOICE_OVER_HCI) && bt_conn_is_sco(conn);
 }
 
 static bool is_acl_conn(struct bt_conn *conn)
@@ -757,6 +798,8 @@ static int send_buf(struct bt_conn *conn, struct net_buf *buf,
 		err = send_iso(conn, frag, flags);
 	} else if (is_acl_conn(conn)) {
 		err = send_acl(conn, frag, flags);
+	} else if (IS_ENABLED(CONFIG_BT_VOICE_OVER_HCI) && is_sco_conn(conn)) {
+		err = send_sco(conn, frag, flags);
 	} else {
 		err = -EINVAL; /* asserts may be disabled */
 		__ASSERT(false, "Invalid connection type %u", conn->type);
@@ -2466,6 +2509,13 @@ struct bt_conn *bt_conn_add_sco(const bt_addr_t *peer, int link_type)
 	}
 
 	sco_conn->type = BT_CONN_TYPE_SCO;
+
+#if defined(CONFIG_BT_VOICE_OVER_HCI)
+	sco_conn->tx_data_pull = sco_data_pull;
+	sco_conn->get_and_clear_cb = sco_get_and_clear_cb;
+	sco_conn->has_data = sco_has_data;
+	k_fifo_init(&sco_conn->sco.tx_queue);
+#endif /* CONFIG_BT_VOICE_OVER_HCI */
 
 	if (link_type == BT_HCI_SCO) {
 		if (BT_FEAT_LMP_ESCO_CAPABLE(bt_dev.features)) {
