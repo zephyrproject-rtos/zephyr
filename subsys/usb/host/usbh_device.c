@@ -600,9 +600,24 @@ void usbh_device_connect(struct usbh_context *const ctx,
 		return;
 	}
 
-	err = usbh_device_set_configuration(udev, 1);
-	if (err) {
-		LOG_ERR("Failed to configure new device with address %u", udev->addr);
+	/*
+	 * For now, choosing the configuration is quite simple. If a current
+	 * configuration is not used by any driver, try the next one. There is
+	 * no reason to revert to first configuration if no driver uses
+	 * anything.
+	 */
+	for (int n = 1; n < udev->dev_desc.bNumConfigurations + 1; n++) {
+		err = usbh_device_set_configuration(udev, n);
+		if (err) {
+			LOG_ERR("Failed to set device %u configuration to %u",
+				udev->addr, n);
+			break;
+		}
+
+		LOG_DBG("Set device %u configuration to %u", udev->addr, n);
+		if (usbh_class_is_any_iface_bound(udev)) {
+			break;
+		}
 	}
 }
 
