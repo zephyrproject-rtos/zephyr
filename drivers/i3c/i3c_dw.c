@@ -968,6 +968,23 @@ static int get_i3c_addr_pos(const struct device *dev, uint8_t addr, bool sa)
 	return dw_i3c_device_data->id;
 }
 
+static int dw_i3c_ensure_xfer_ready(const struct device *dev)
+{
+	const struct dw_i3c_config *config = dev->config;
+	uint32_t present_state = sys_read32(config->regs + PRESENT_STATE);
+	uint32_t cm_tfr_sts = PRESENT_STATE_CM_TFR_STS(present_state);
+
+	if (cm_tfr_sts == CM_TFR_STS_IDLE) {
+		/* Only the transfer state machine matters here: CONTROLLER_IDLE
+		 * additionally requires the queues and data buffers to be empty,
+		 * so it can read 0 with an idle FSM and nothing to recover.
+		 */
+		return 0;
+	}
+
+	return dw_i3c_recover_bus(dev);
+}
+
 /**
  * @brief Transfer messages in I3C mode.
  *
@@ -1012,6 +1029,11 @@ static int dw_i3c_xfers(const struct device *dev, struct i3c_device_desc *target
 
 	if (ntxwords > data->txfifodepth || nrxwords > data->rxfifodepth) {
 		return -ENOTSUP;
+	}
+
+	ret = dw_i3c_ensure_xfer_ready(dev);
+	if (ret != 0) {
+		return ret;
 	}
 
 	ret = k_mutex_lock(&data->mt, K_MSEC(1000));
@@ -2206,6 +2228,11 @@ static int dw_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *paylo
 
 	if (!dw_i3c_is_current_controller(dev)) {
 		return -EACCES;
+	}
+
+	ret = dw_i3c_ensure_xfer_ready(dev);
+	if (ret != 0) {
+		return ret;
 	}
 
 	ret = k_mutex_lock(&data->mt, K_MSEC(1000));
