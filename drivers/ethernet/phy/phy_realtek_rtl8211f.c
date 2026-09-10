@@ -39,6 +39,25 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 #define PHY_RT_RTL8211F_PHYSR_LINKSPEED_100M  (1U)
 #define PHY_RT_RTL8211F_PHYSR_LINKSPEED_1000M (2U)
 
+/* 1000BASE-T control register (MII reg 0x9) manual master/slave bits. */
+#define PHY_RT_RTL8211F_1KTCR_MS_MANUAL_EN_MASK BIT(12)
+#define PHY_RT_RTL8211F_1KTCR_MS_VALUE_MASK     BIT(11)
+
+/*
+ * Values of the "timing-role" devicetree enum, as emitted by
+ * DT_INST_ENUM_IDX in the binding order:
+ * 0: "forced-master", 1: "forced-slave",
+ * 2: "preferred-master", 3: "preferred-slave".
+ * RT_RTL8211F_TIMING_ROLE_AUTO is the "property absent" sentinel.
+ */
+enum rt_rtl8211f_timing_role {
+	RT_RTL8211F_TIMING_ROLE_FORCED_MASTER,
+	RT_RTL8211F_TIMING_ROLE_FORCED_SLAVE,
+	RT_RTL8211F_TIMING_ROLE_PREFERRED_MASTER,
+	RT_RTL8211F_TIMING_ROLE_PREFERRED_SLAVE,
+	RT_RTL8211F_TIMING_ROLE_AUTO = 0xFF,
+};
+
 #define PHY_RT_RTL8211F_PAGSR_REG (0x1F)
 
 #define PHY_RT_RTL8211F_PAGE_MIICR_ADDR   (0xD08)
@@ -70,6 +89,8 @@ struct rt_rtl8211f_config {
 	const struct device *mdio_dev;
 	enum phy_link_speed default_speeds;
 	enum rt_rtl8211f_rgmii_delay rgmii_delay;
+	enum rt_rtl8211f_timing_role timing_role;
+
 #if DT_ANY_INST_HAS_PROP_STATUS_OKAY(reset_gpios)
 	const struct gpio_dt_spec reset_gpio;
 #endif
@@ -386,6 +407,50 @@ static int phy_rt_rtl8211f_cfg_link(const struct device *dev, enum phy_link_spee
 		goto done;
 	}
 
+	/* Clear any previously programmed manual master/slave selection */
+	{
+		uint32_t c1kt = 0;
+
+		ret = phy_rt_rtl8211f_read(dev, MII_1KTCR, &c1kt);
+		if (ret) {
+			LOG_ERR("Error reading phy (%d) 1000BASE-T control register",
+				config->addr);
+			goto done;
+		}
+
+		c1kt &= ~(PHY_RT_RTL8211F_1KTCR_MS_MANUAL_EN_MASK |
+			  PHY_RT_RTL8211F_1KTCR_MS_VALUE_MASK);
+
+		/* Apply the DT "timing-role" only when 1000BASE-T is being advertised */
+		if (PHY_LINK_IS_SPEED_1000M(speeds)) {
+			switch (config->timing_role) {
+			case RT_RTL8211F_TIMING_ROLE_FORCED_MASTER:
+				c1kt |= PHY_RT_RTL8211F_1KTCR_MS_MANUAL_EN_MASK |
+					PHY_RT_RTL8211F_1KTCR_MS_VALUE_MASK;
+				break;
+			case RT_RTL8211F_TIMING_ROLE_FORCED_SLAVE:
+				c1kt |= PHY_RT_RTL8211F_1KTCR_MS_MANUAL_EN_MASK;
+				break;
+			case RT_RTL8211F_TIMING_ROLE_PREFERRED_MASTER:
+				c1kt |= PHY_RT_RTL8211F_1KTCR_MS_VALUE_MASK;
+				break;
+			case RT_RTL8211F_TIMING_ROLE_PREFERRED_SLAVE:
+				/* MANUAL_EN=0, MS=0: prefer slave in auto res */
+				break;
+			case RT_RTL8211F_TIMING_ROLE_AUTO:
+			default:
+				break;
+			}
+		}
+
+		ret = phy_rt_rtl8211f_write(dev, MII_1KTCR, c1kt);
+		if (ret) {
+			LOG_ERR("Error writing phy (%d) 1000BASE-T control register",
+				config->addr);
+			goto done;
+		}
+	}
+
 	/* (Re)start autonegotiation */
 	ret = phy_rt_rtl8211f_restart_autonegotiation(dev);
 	if (ret) {
@@ -662,7 +727,9 @@ static DEVICE_API(ethphy, rt_rtl8211f_phy_api) = {
 		.addr = DT_INST_REG_ADDR(n),					\
 		.mdio_dev = DEVICE_DT_GET(DT_INST_PARENT(n)),			\
 		.default_speeds = PHY_INST_GENERATE_DEFAULT_SPEEDS(n),		\
-		.rgmii_delay = DT_INST_ENUM_IDX(n, realtek_rgmii_delay),		\
+		.rgmii_delay = DT_INST_ENUM_IDX(n, realtek_rgmii_delay),	\
+		.timing_role = DT_INST_ENUM_IDX_OR(n, timing_role,		\
+						   RT_RTL8211F_TIMING_ROLE_AUTO),\
 		RESET_GPIO(n)							\
 		INTERRUPT_GPIO(n)						\
 	};									\
