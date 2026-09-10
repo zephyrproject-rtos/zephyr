@@ -253,6 +253,20 @@
 			clock-names = "mclk", "gclk";
 			status = "disabled";
 		};
+
+		rtc: rtc@45006000 {
+			compatible = "microchip,rtc-g1";
+			reg = <0x45006000 0x70>;
+			interrupts = <12 0>, <13 0>, <14 0>, <15 0>;
+			interrupt-names = "tamper", "ovf", "per0-7", "cmp0-3";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_RTC>,
+				 <&rtcclock CLOCK_MCHP_RTC_ID>;
+			clock-names = "mclk", "rtcclk";
+			prescaler = <1024>;
+			alarms-count = <2>;
+			cal-constant = <1048576>;
+			status = "disabled";
+		};
 	};
 };
 
