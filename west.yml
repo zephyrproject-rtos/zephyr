@@ -403,7 +403,7 @@ manifest:
       groups:
         - tee
     - name: trusted-firmware-m
-      revision: ef35073337e66e3117a6ef33fc60f69596d2afbc
+      revision: a33c88e2f71e1fee08b07775e49fd8f53ede635c
       path: modules/tee/tf-m/trusted-firmware-m
       groups:
         - tee
