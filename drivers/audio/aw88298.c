@@ -263,13 +263,13 @@ static int aw88298_get_i2sctrl_cfg(const struct audio_codec_cfg *cfg, uint16_t *
 		return -ENOTSUP;
 	}
 
-	if ((options & I2S_OPT_BIT_CLK_SLAVE) == 0U) {
-		LOG_INF("AW88298 requires external LRCLK/BCLK (slave mode)");
+	if ((options & I2S_OPT_BIT_CLK_TARGET) == 0U) {
+		LOG_INF("AW88298 requires external LRCLK/BCLK (clock target mode)");
 		return -ENOTSUP;
 	}
 
-	if (!!((options & I2S_OPT_BIT_CLK_SLAVE)) != !!((options & I2S_OPT_FRAME_CLK_SLAVE))) {
-		LOG_INF("Inconsistent clock master/slave options 0x%x", options);
+	if (!!((options & I2S_OPT_BIT_CLK_TARGET)) != !!((options & I2S_OPT_FRAME_CLK_TARGET))) {
+		LOG_INF("Inconsistent clock controller/target options 0x%x", options);
 		return -ENOTSUP;
 	}
 
