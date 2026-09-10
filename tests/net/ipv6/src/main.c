@@ -212,6 +212,31 @@ static const unsigned char ipv6_ext_hdr_err_3[] = {
 	0x00, 0x00, 0x00, 0x00,
 };
 
+/* Scenario 4: Option length bounds-check underflow.
+ * An 8-byte extension header with five Pad1 options brings "length" to 7, so
+ * the final option's opt_len is read from just past the header boundary. The
+ * opt_len byte is kept at 0 so net_pkt_skip() still succeeds, isolating the
+ * bounds-check bypass itself.
+ */
+static const unsigned char ipv6_ext_hdr_err_4[] = {
+	/* IPv6 header */
+	0x60, 0x00, 0x00, 0x00, 0x00, 0x10, 0x00, 0x40,
+	/* Src IP (peer_addr 2001:db8::2, not one of our own) */
+	0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
+	/* Dst IP (my_addr 2001:db8::1, delivered locally) */
+	0x20, 0x01, 0x0d, 0xb8, 0x00, 0x00, 0x00, 0x00,
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01,
+	/* Hop-by-hop option, No Next Header, hdr_ext_len = 0 -> 8 bytes */
+	0x3b, 0x00,
+	/* Five Pad1 options, advancing length to 7 */
+	0x00, 0x00, 0x00, 0x00, 0x00,
+	/* Non-Pad1 option type at the last byte of the header */
+	0x01,
+	/* Bytes past the header; first is read as opt_len (0) */
+	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+};
+
 /* clang-format on */
 
 static int send_msg(struct net_in6_addr *src, struct net_in6_addr *dst);
@@ -857,6 +882,47 @@ ZTEST(net_ipv6, test_ipv6_ext_hdr_len_bounds_3)
 	net_pkt_lladdr_clear(pkt);
 
 	zassert_ok(net_recv_data(iface, pkt), "Data receive failed.");
+}
+
+/* Regression test for the extension header option bounds-check underflow.
+ * The packet is fed directly to net_ipv6_input() so the verdict and drop
+ * statistic can be checked synchronously. The malformed option must be
+ * rejected, so the packet is dropped and the IPv6 drop count increases by one.
+ */
+ZTEST(net_ipv6, test_ipv6_ext_hdr_len_bounds_4)
+{
+	struct net_stats_ip ipv6_stats_before = { 0 };
+	struct net_stats_ip ipv6_stats_after = { 0 };
+	enum net_verdict verdict;
+	struct net_pkt *pkt;
+	struct net_if *iface;
+
+	iface = TEST_NET_IF;
+
+	pkt = net_pkt_alloc_with_buffer(iface, sizeof(ipv6_ext_hdr_err_4), NET_AF_INET6, 0,
+					K_FOREVER);
+
+	NET_ASSERT(pkt, "Out of TX packets");
+
+	zassert_ok(net_pkt_write(pkt, ipv6_ext_hdr_err_4, sizeof(ipv6_ext_hdr_err_4)),
+		   "Failed to write packet");
+	net_pkt_cursor_init(pkt);
+	net_pkt_lladdr_clear(pkt);
+
+	zassert_ok(net_mgmt(NET_REQUEST_STATS_GET_IPV6, NULL, &ipv6_stats_before,
+			    sizeof(ipv6_stats_before)),
+		   "Failed to retrieve stats");
+
+	/* By-pass the asynchronous receive flow to check the result directly. */
+	verdict = net_ipv6_input(pkt);
+
+	zassert_ok(net_mgmt(NET_REQUEST_STATS_GET_IPV6, NULL, &ipv6_stats_after,
+			    sizeof(ipv6_stats_after)),
+		   "Failed to retrieve stats");
+
+	zassert_equal(verdict, NET_DROP, "Malformed extension header packet was not dropped");
+	zassert_equal(ipv6_stats_before.drop + 1, ipv6_stats_after.drop,
+		      "Malformed extension header packet was not counted as an IPv6 drop");
 }
 
 struct test_nd_context {
