@@ -259,6 +259,7 @@ int regset_target_lib_init(const struct device *dev)
 
 	data->dev = dev;
 	data->config.address = cfg->bus.addr;
+	data->config.flags = cfg->target_flags;
 	data->config.callbacks = &regset_target_lib_callbacks;
 
 	return 0;

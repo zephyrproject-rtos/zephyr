@@ -57,6 +57,8 @@ static void i2c_xilinx_axi_reinit(const struct device *dev)
 	(ISR_ADDR_TARGET | ISR_NOT_ADDR_TARGET | ISR_RX_FIFO_FULL | ISR_TX_FIFO_EMPTY |            \
 	 ISR_TX_ERR_TARGET_COMP)
 
+#define I2C_XILINX_AXI_10BIT_ADDR_MAX 0x3FFU
+
 static void i2c_xilinx_axi_target_setup(const struct device *dev, struct i2c_target_config *cfg)
 {
 	mm_reg_t base = DEVICE_MMIO_GET(dev);
@@ -64,7 +66,18 @@ static void i2c_xilinx_axi_target_setup(const struct device *dev, struct i2c_tar
 	i2c_xilinx_axi_reinit(dev);
 
 	sys_write32(ISR_ADDR_TARGET, base + REG_IER);
-	sys_write32(cfg->address << 1, base + REG_ADR);
+	if (cfg->flags & I2C_TARGET_FLAGS_ADDR_10_BITS) {
+		/*
+		 * The AXI IIC splits a 10-bit target address across two
+		 * registers: ADR[7:1] holds the lower 7 bits (A6..A0) and
+		 * TEN_ADR[2:0] holds the upper 3 bits (A9..A7).
+		 */
+		sys_write32((cfg->address & 0x7FU) << 1U, base + REG_ADR);
+		sys_write32((cfg->address >> 7U) & 0x07U, base + REG_TEN_ADR);
+	} else {
+		sys_write32(cfg->address << 1U, base + REG_ADR);
+		sys_write32(0U, base + REG_TEN_ADR);
+	}
 	sys_write32(0, base + REG_RX_FIFO_PIRQ);
 }
 
@@ -75,8 +88,11 @@ static int i2c_xilinx_axi_target_register(const struct device *dev, struct i2c_t
 	int ret;
 
 	if (cfg->flags & I2C_TARGET_FLAGS_ADDR_10_BITS) {
-		/* Optionally supported in core, but not implemented in driver yet */
-		return -EOPNOTSUPP;
+		if (cfg->address > I2C_XILINX_AXI_10BIT_ADDR_MAX) {
+			return -EINVAL;
+		}
+	} else if (cfg->address > I2C_ADDR_7BIT_MAX) {
+		return -EINVAL;
 	}
 
 	k_mutex_lock(&data->mutex, K_FOREVER);
@@ -120,7 +136,8 @@ static int i2c_xilinx_axi_target_unregister(const struct device *dev, struct i2c
 	}
 
 	data->target_cfg = NULL;
-	sys_write32(0, base + REG_ADR);
+	sys_write32(0U, base + REG_ADR);
+	sys_write32(0U, base + REG_TEN_ADR);
 
 	sys_write32(CR_EN, base + REG_CR);
 	int_enable = sys_read32(base + REG_IER);
@@ -264,6 +281,7 @@ static int i2c_xilinx_axi_configure(const struct device *dev, uint32_t dev_confi
 	return 0;
 }
 
+
 static uint32_t i2c_xilinx_axi_wait_interrupt(const struct device *dev, uint32_t int_mask)
 {
 	struct i2c_xilinx_axi_data *data = dev->data;
@@ -331,6 +349,69 @@ static int i2c_xilinx_axi_wait_rx_full(const struct device *dev, uint32_t read_b
 	return 0;
 }
 
+static int i2c_xilinx_axi_wait_tx_done(const struct device *dev)
+{
+	const uint32_t finish_bits = ISR_BUS_NOT_BUSY | ISR_TX_FIFO_EMPTY;
+
+	uint32_t events = i2c_xilinx_axi_wait_interrupt(dev, finish_bits | ISR_TX_ERR_TARGET_COMP |
+								     ISR_ARB_LOST);
+	if (!(events & finish_bits) || (events & ~finish_bits)) {
+		if (!events) {
+			return -ETIMEDOUT;
+		}
+		if (events & ISR_ARB_LOST) {
+			LOG_ERR("Arbitration lost on TX");
+			return -EAGAIN;
+		}
+		LOG_ERR("TX received NAK");
+		return -ENXIO;
+	}
+	return 0;
+}
+
+static inline uint8_t i2c_xilinx_axi_addr1_10bit(uint16_t addr, bool is_read)
+{
+	/* First byte of a 10-bit address */
+	return 0xF0U | (uint8_t)((addr >> 7U) & 0x06U) | (is_read ? 1U : 0U);
+}
+
+static inline uint8_t i2c_xilinx_axi_addr2_10bit(uint16_t addr)
+{
+	/* Second byte of a 10-bit address */
+	return (uint8_t)(addr & 0xFFU);
+}
+
+static int i2c_xilinx_axi_send_10bit_read_addr(const struct device *dev,
+					       const struct i2c_msg *msg, uint16_t addr)
+{
+	struct i2c_xilinx_axi_data *data = dev->data;
+	mm_reg_t base = DEVICE_MMIO_GET(dev);
+	uint32_t cr = CR_EN | CR_TX;
+	k_spinlock_key_t key;
+
+	/*
+	 * 10-bit read, phase 1: address the target in the *write* direction by
+	 * sending both address bytes so it latches its full address. The bus is
+	 * left held (no STOP) so the caller can issue a repeated START in read
+	 * direction. Dynamic mode is 7-bit only, so this is always non-dynamic.
+	 */
+	if (msg->flags & I2C_MSG_RESTART) {
+		cr |= CR_MSMS | CR_RSTA;
+	}
+
+	i2c_xilinx_axi_clear_interrupt(dev, ISR_TX_ERR_TARGET_COMP | ISR_ARB_LOST);
+	sys_write32(cr, base + REG_CR);
+
+	key = k_spin_lock(&data->lock);
+	sys_write32(i2c_xilinx_axi_addr1_10bit(addr, false) | TX_FIFO_START, base + REG_TX_FIFO);
+	sys_write32(i2c_xilinx_axi_addr2_10bit(addr), base + REG_TX_FIFO);
+	i2c_xilinx_axi_clear_interrupt_no_lock(dev, ISR_TX_FIFO_EMPTY | ISR_BUS_NOT_BUSY);
+	k_spin_unlock(&data->lock, key);
+
+	/* Wait for both address bytes to be shifted out (and ACKed). */
+	return i2c_xilinx_axi_wait_tx_done(dev);
+}
+
 static int i2c_xilinx_axi_read_nondyn(const struct device *dev, struct i2c_msg *msg, uint16_t addr)
 {
 	mm_reg_t base = DEVICE_MMIO_GET(dev);
@@ -366,7 +447,29 @@ static int i2c_xilinx_axi_read_nondyn(const struct device *dev, struct i2c_msg *
 	 */
 	sys_write32(0, base + REG_RX_FIFO_PIRQ);
 
-	if (msg->flags & I2C_MSG_RESTART) {
+	if (msg->flags & I2C_MSG_ADDR_10_BITS) {
+		/*
+		 * 10-bit read. The target must already know its full address
+		 * before it will respond to a read-direction first byte. When
+		 * this read is NOT preceded by a write to the same target (no
+		 * repeated START), select it first with both address bytes in
+		 * write direction. When it IS a repeated START (e.g. the read
+		 * half of i2c_write_read), the target was just addressed by the
+		 * preceding write, so re-sending the address bytes would confuse
+		 * its slave state machine and cause arbitration loss - issue the
+		 * repeated START in read direction directly.
+		 */
+		if (!(msg->flags & I2C_MSG_RESTART)) {
+			int ret = i2c_xilinx_axi_send_10bit_read_addr(dev, msg, addr);
+
+			if (ret) {
+				return ret;
+			}
+		}
+		cr |= CR_RSTA;
+		sys_write32(cr, base + REG_CR);
+		sys_write32(i2c_xilinx_axi_addr1_10bit(addr, true), base + REG_TX_FIFO);
+	} else if (msg->flags & I2C_MSG_RESTART) {
 		cr |= CR_RSTA;
 
 		sys_write32(cr, base + REG_CR);
@@ -450,26 +553,6 @@ static int i2c_xilinx_axi_read_dyn(const struct device *dev, struct i2c_msg *msg
 	return 0;
 }
 
-static int i2c_xilinx_axi_wait_tx_done(const struct device *dev)
-{
-	const uint32_t finish_bits = ISR_BUS_NOT_BUSY | ISR_TX_FIFO_EMPTY;
-
-	uint32_t events = i2c_xilinx_axi_wait_interrupt(dev, finish_bits | ISR_TX_ERR_TARGET_COMP |
-								     ISR_ARB_LOST);
-	if (!(events & finish_bits) || (events & ~finish_bits)) {
-		if (!events) {
-			return -ETIMEDOUT;
-		}
-		if (events & ISR_ARB_LOST) {
-			LOG_ERR("Arbitration lost on TX");
-			return -EAGAIN;
-		}
-		LOG_ERR("TX received NAK");
-		return -ENXIO;
-	}
-	return 0;
-}
-
 static int i2c_xilinx_axi_wait_not_busy(const struct device *dev)
 {
 	mm_reg_t base = DEVICE_MMIO_GET(dev);
@@ -486,6 +569,99 @@ static int i2c_xilinx_axi_wait_not_busy(const struct device *dev)
 	return 0;
 }
 
+static int i2c_xilinx_axi_write_10bit(const struct device *dev, const struct i2c_msg *msg,
+				      uint16_t addr)
+{
+	struct i2c_xilinx_axi_data *data = dev->data;
+	mm_reg_t base = DEVICE_MMIO_GET(dev);
+	uint32_t cr = sys_read32(base + REG_CR);
+	const uint8_t *write_ptr = msg->buf;
+	uint32_t fifo_space = FIFO_SIZE;
+	uint32_t bytes_left = msg->len;
+	bool send_addr;
+	int ret;
+
+	/*
+	 * Send the 10-bit address only when starting or restarting a
+	 * transaction. A message with no repeated START that arrives while we
+	 * are already bus master (CR_MSMS held from a previous no-STOP message)
+	 * is a continuation of the same write, so its data is appended without
+	 * re-addressing.
+	 */
+	send_addr = (msg->flags & I2C_MSG_RESTART) || !(cr & CR_MSMS);
+
+	i2c_xilinx_axi_clear_interrupt(dev, ISR_TX_ERR_TARGET_COMP | ISR_ARB_LOST);
+
+	if (send_addr) {
+		/*
+		 * Dynamic mode (TX_FIFO_START/STOP) is 7-bit only, so 10-bit
+		 * writes use non-dynamic mode: CR_MSMS makes the (repeated)
+		 * START and both address bytes plus data go into the TX FIFO
+		 * without the dynamic flags. This keeps a 10-bit write and a
+		 * following repeated-START read (e.g. the read half of
+		 * i2c_write_read) in the same mode, so the repeated START is
+		 * clean and the controller does not lose arbitration.
+		 */
+		cr = CR_EN | CR_TX | CR_MSMS;
+		if (msg->flags & I2C_MSG_RESTART) {
+			cr |= CR_RSTA;
+		}
+		sys_write32(cr, base + REG_CR);
+		sys_write32(i2c_xilinx_axi_addr1_10bit(addr, false), base + REG_TX_FIFO);
+		sys_write32(i2c_xilinx_axi_addr2_10bit(addr), base + REG_TX_FIFO);
+		fifo_space = FIFO_SIZE - 2; /* two address bytes occupy the FIFO */
+	}
+
+	/*
+	 * In non-dynamic mode a STOP is generated by clearing CR_MSMS, and this
+	 * only takes effect while a byte is still being transmitted; clearing it
+	 * after the FIFO has drained leaves the bus stuck busy. The final byte is
+	 * therefore reserved and queued together with the CR_MSMS clear so the STOP
+	 * follows it, as done on the read path. When no STOP is requested, CR_MSMS
+	 * is left set to hold the bus for a following repeated START.
+	 */
+	while (bytes_left > ((msg->flags & I2C_MSG_STOP) ? 1U : 0U)) {
+		uint32_t reserve = (msg->flags & I2C_MSG_STOP) ? 1U : 0U;
+		uint32_t bytes_to_send = bytes_left - reserve;
+		const k_spinlock_key_t key = k_spin_lock(&data->lock);
+
+		if (bytes_to_send > fifo_space) {
+			bytes_to_send = fifo_space;
+		}
+		while (bytes_to_send) {
+			sys_write32(*write_ptr++, base + REG_TX_FIFO);
+			bytes_to_send--;
+			bytes_left--;
+		}
+		i2c_xilinx_axi_clear_interrupt_no_lock(dev, ISR_TX_FIFO_EMPTY | ISR_BUS_NOT_BUSY);
+		k_spin_unlock(&data->lock, key);
+
+		ret = i2c_xilinx_axi_wait_tx_done(dev);
+		if (ret) {
+			return ret;
+		}
+		fifo_space = FIFO_SIZE;
+	}
+
+	if (msg->flags & I2C_MSG_STOP) {
+		const k_spinlock_key_t key = k_spin_lock(&data->lock);
+
+		if (bytes_left) {
+			sys_write32(*write_ptr++, base + REG_TX_FIFO);
+			bytes_left--;
+		}
+		sys_write32(sys_read32(base + REG_CR) & ~CR_MSMS, base + REG_CR);
+		i2c_xilinx_axi_clear_interrupt_no_lock(dev, ISR_TX_FIFO_EMPTY | ISR_BUS_NOT_BUSY);
+		k_spin_unlock(&data->lock, key);
+
+		ret = i2c_xilinx_axi_wait_tx_done(dev);
+		if (ret) {
+			return ret;
+		}
+	}
+	return 0;
+}
+
 static int i2c_xilinx_axi_write(const struct device *dev, const struct i2c_msg *msg, uint16_t addr)
 {
 	struct i2c_xilinx_axi_data *data = dev->data;
@@ -494,6 +670,10 @@ static int i2c_xilinx_axi_write(const struct device *dev, const struct i2c_msg *
 	uint32_t bytes_left = msg->len;
 	uint32_t cr = CR_EN | CR_TX;
 	uint32_t fifo_space = FIFO_SIZE - 1; /* account for address being written */
+
+	if (msg->flags & I2C_MSG_ADDR_10_BITS) {
+		return i2c_xilinx_axi_write_10bit(dev, msg, addr);
+	}
 
 	if (msg->flags & I2C_MSG_RESTART) {
 		cr |= CR_MSMS | CR_RSTA;
@@ -564,13 +744,14 @@ static int i2c_xilinx_axi_transfer(const struct device *dev, struct i2c_msg *msg
 	i2c_xilinx_axi_reinit(dev);
 
 	do {
-		if (msgs->flags & I2C_MSG_ADDR_10_BITS) {
-			/* Optionally supported in core, but not implemented in driver yet */
-			ret = -EOPNOTSUPP;
-			goto out_check_target;
-		}
 		if (msgs->flags & I2C_MSG_READ) {
-			if (config->dyn_read_working && msgs->len <= MAX_DYNAMIC_READ_LEN) {
+			/*
+			 * Dynamic mode only supports 7-bit addressing, so 10-bit
+			 * reads must go through the non-dynamic path.
+			 */
+			if (config->dyn_read_working &&
+			    !(msgs->flags & I2C_MSG_ADDR_10_BITS) &&
+			    msgs->len <= MAX_DYNAMIC_READ_LEN) {
 				ret = i2c_xilinx_axi_read_dyn(dev, msgs, addr);
 			} else {
 				ret = i2c_xilinx_axi_read_nondyn(dev, msgs, addr);
