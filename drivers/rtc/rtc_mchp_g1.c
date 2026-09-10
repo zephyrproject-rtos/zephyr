@@ -17,6 +17,7 @@ LOG_MODULE_REGISTER(rtc_mchp_g1, CONFIG_RTC_LOG_LEVEL);
 
 #define RTC_MCHP_ALARM_1            (0)
 #define RTC_MCHP_ALARM_2            (1)
+#define RTC_MCHP_ALARM_NONE         (UINT16_MAX)
 #define RTC_TM_REFERENCE_YEAR       (1900U)
 #define RTC_REFERENCE_YEAR          (1996U)
 #define RTC_ADJUST_MONTH(month)     (month + 1U)
@@ -523,23 +524,22 @@ static void rtc_mchp_isr(const struct device *dev)
 {
 	struct rtc_mchp_dev_data *data = dev->data;
 	const struct rtc_mchp_dev_config *const cfg = dev->config;
-	uint16_t alarm_id = -1;
+	uint16_t alarm_id = RTC_MCHP_ALARM_NONE;
 
-	/* Get the interrupt flags and the alarm ID and clear the interrupt flags */
-	uint16_t rtc_int_flag = rtc_get_interrupt_flags(cfg->regs, &alarm_id);
+	(void)rtc_get_interrupt_flags(cfg->regs, &alarm_id);
+
+	if (alarm_id >= cfg->alarms_count) {
+		return;
+	}
 
 	rtc_clear_interrupt_flags(cfg->regs, alarm_id);
 
-	for (uint8_t alarm = 0; alarm <= alarm_id; alarm++) {
-		if ((rtc_int_flag & RTC_SUPPORTED_ALARM_INT_FLAGS) != 0) {
-			if (data->alarms[alarm].alarm_cb != NULL) {
-				data->alarms[alarm].alarm_cb(dev, alarm,
-							     data->alarms[alarm].alarm_user_data);
-				data->alarms[alarm].is_alarm_pending = false;
-			} else {
-				data->alarms[alarm].is_alarm_pending = true;
-			}
-		}
+	if (data->alarms[alarm_id].alarm_cb != NULL) {
+		data->alarms[alarm_id].alarm_cb(dev, alarm_id,
+						data->alarms[alarm_id].alarm_user_data);
+		data->alarms[alarm_id].is_alarm_pending = false;
+	} else {
+		data->alarms[alarm_id].is_alarm_pending = true;
 	}
 }
 
