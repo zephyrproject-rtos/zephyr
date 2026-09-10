@@ -801,6 +801,10 @@ static int handle_http2_dynamic_resource(
 		return -ESRCH;
 	}
 
+	if (client->current_stream == NULL) {
+		return -ENOENT;
+	}
+
 	user_method = dynamic_detail->common.bitmask_of_supported_http_methods;
 
 	if (!(BIT(client->method) & user_method)) {
@@ -969,6 +973,17 @@ static int enter_http_frame_continuation_state(struct http_client_ctx *client)
 {
 	struct http2_frame *frame = &client->current_frame;
 
+	/* Current_stream is only preserved for an expected
+	 * continuation, so a NULL pointer here means the peer sent a
+	 * stray CONTINUATION frame.
+	 */
+	if (client->current_stream == NULL ||
+	    client->current_stream->stream_id != frame->stream_identifier) {
+		LOG_DBG("Unexpected CONTINUATION frame for stream ID %d",
+			frame->stream_identifier);
+		return -ENOENT;
+	}
+
 	if (!is_header_flag_set(frame->flags, HTTP2_FLAG_END_HEADERS)) {
 		client->expect_continuation = true;
 	} else {
@@ -1030,7 +1045,14 @@ int handle_http_frame_header(struct http_client_ctx *client)
 		return -EBADMSG;
 	}
 
-	client->current_stream = NULL;
+	/* The stream context is bound when the header block starts and has to
+	 * stay valid until that block is complete, i. e. across the
+	 * CONTINUATION frames that carry the rest of it. Only release it when
+	 * the previous frame actually ended a block.
+	 */
+	if (!client->expect_continuation) {
+		client->current_stream = NULL;
+	}
 
 	switch (client->current_frame.type) {
 	case HTTP2_DATA_FRAME:
