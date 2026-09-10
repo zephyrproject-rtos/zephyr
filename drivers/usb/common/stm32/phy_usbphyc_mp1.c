@@ -293,9 +293,12 @@ static int usbphyc_init(const struct device *dev)
 #define USBPHYC_NODE_IS_HOST(node)                                                                 \
 	(DT_NODE_HAS_COMPAT(node, generic_ohci) || DT_NODE_HAS_COMPAT(node, generic_ehci))
 
+#define USBPHYC_PORT1_PHY_REF(node, prop, idx)                                                    \
+	DT_SAME_NODE(DT_PHANDLE_BY_IDX(node, prop, idx), USBPHYC_PORT1_NODE) ||
+
 #define USBPHYC_PORT1_HOST_USER(node)                                                              \
 	COND_CODE_1(DT_NODE_HAS_PROP(node, phys),                                                  \
-		    ((DT_SAME_NODE(DT_PHANDLE_BY_IDX(node, phys, 0), USBPHYC_PORT1_NODE) &&        \
+		    (((DT_FOREACH_PROP_ELEM(node, phys, USBPHYC_PORT1_PHY_REF) false) &&           \
 		      USBPHYC_NODE_IS_HOST(node)) ||), (false ||))
 
 #define USBPHYC_PORT1_HOST                                                                         \
