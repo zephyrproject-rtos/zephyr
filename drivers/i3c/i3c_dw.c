@@ -4194,7 +4194,12 @@ static DEVICE_API(i3c, dw_i3c_api) = {
 #endif
 
 /* Per-vendor platform-ops selection; vendors redefine this alongside their table. */
+#ifdef CONFIG_I3C_DW_INFINEON
+extern const struct dw_i3c_platform_ops dw_i3c_infineon_ops;
+#define DW_I3C_PLATFORM_OPS_INIT(n) .ops = &dw_i3c_infineon_ops,
+#else
 #define DW_I3C_PLATFORM_OPS_INIT(n)
+#endif
 
 #if defined(CONFIG_PM_DEVICE)
 #define I3C_DW_PM_DEFINE(n) PM_DEVICE_DT_INST_DEFINE(n, dw_i3c_pm_ctrl)
