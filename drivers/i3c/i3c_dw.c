@@ -1512,6 +1512,11 @@ static int dw_i3c_target_ibi_raise_tir(const struct device *dev, struct i3c_ibi 
 			return -EINVAL;
 		}
 
+		/* Clear stale MDB/SIR_DATA_LENGTH: the IP does not auto-clear
+		 * between IBIs.
+		 */
+		slv_intr_req &= ~(GENMASK(23, 16) | GENMASK(15, 8));
+
 		/* MDB should be the first byte of the payload */
 		slv_intr_req |= SLV_INTR_REQ_MDB(request->payload[0]) |
 				SLV_INTR_REQ_SIR_DATA_LENGTH(request->payload_len - 1);
