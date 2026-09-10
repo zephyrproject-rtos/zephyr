@@ -100,12 +100,36 @@ config ETH_NXP_ENET_RX_BUFFERS
 	  window: a burst that overruns it costs frames at the MAC, and those
 	  take the sending window down with them.
 
+config ETH_NXP_ENET_TX_SEND_ZERO_COPY
+	bool "Send straight out of the net buffers"
+	depends on NET_BUF_FIXED_DATA_SIZE
+	# The net buffers are not in the DTCM the static DMA buffers go to, so
+	# the transmit path needs cache maintenance, which that option turns off
+	depends on !ETH_NXP_ENET_USE_DTCM_FOR_DMA_BUFFER
+	help
+	  Hand the fragments of an outgoing packet to the transmit DMA as they
+	  are, instead of copying every frame into a driver buffer first. That
+	  takes one copy of every sent frame off the CPU.
+
+	  A descriptor takes one fragment, so a frame spreads over as many as
+	  the stack split it into, and ETH_NXP_ENET_TX_BUFFERS has to hold a
+	  whole frame's worth, which the driver checks at build time. The
+	  packet is held until the DMA is done with it, which needs the SDK's
+	  transmit reclaim, so a frame costs an interrupt either way.
+
 config ETH_NXP_ENET_TX_BUFFERS
 	int "Number of TX buffers for ethernet driver"
+	default 16 if ETH_NXP_ENET_TX_SEND_ZERO_COPY
 	default 1
+	range 2 128 if ETH_NXP_ENET_TX_SEND_ZERO_COPY
 	range 1 128
 	help
 	  Depth of the transmit DMA buffer-descriptor ring.
+
+	  With ETH_NXP_ENET_TX_SEND_ZERO_COPY each one takes a net buffer
+	  fragment rather than a whole frame, so the ring has to hold
+	  ceil(frame / NET_BUF_DATA_SIZE) + 1 of them for a single frame, and
+	  that many again for every frame in flight at once.
 
 config ETH_NXP_ENET_RX_THREAD_STACK_SIZE
 	int "NXP ENET RX thread stack size"
