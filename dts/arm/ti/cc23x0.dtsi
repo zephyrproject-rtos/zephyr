@@ -66,12 +66,15 @@
 			reg = <0x40021000 0x408>;
 			#address-cells = <1>;
 			#size-cells = <1>;
+			ranges;
 
 			/* Main flash sector */
 			flash0: flash@0 {
 				compatible = "soc-nv-flash";
 				erase-block-size = <DT_SIZE_K(2)>;
 				write-block-size = <0x10>;
+				#address-cells = <1>;
+				#size-cells = <1>;
 			};
 
 			/* CCFG flash sector */
