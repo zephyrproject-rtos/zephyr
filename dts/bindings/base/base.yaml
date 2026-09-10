@@ -233,7 +233,10 @@ properties:
   power-domains:
     type: phandle-array
     description: |
-      Power domain specifiers relevant to the device.
+      Power domains the device depends on. More than one domain may be listed:
+      the power management subsystem keeps every listed domain powered while the
+      device is in use and releases them all once it is suspended. Disabled
+      domains in the list are skipped.
 
   power-domain-names:
     type: string-array

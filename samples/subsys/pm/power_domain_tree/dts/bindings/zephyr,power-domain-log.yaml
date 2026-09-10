@@ -1,0 +1,12 @@
+# Copyright (c) 2026 Rodrigo Peixoto <rodrigopex@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Software power domain used by the power_domain_tree sample. It logs each of
+  its power transitions and notifies the devices that depend on it. The same
+  compatible is used for the leaf devices of the sample, which simply have no
+  dependents to notify.
+
+compatible: "zephyr,power-domain-log"
+
+include: base.yaml
