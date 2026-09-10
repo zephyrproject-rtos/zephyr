@@ -23,4 +23,7 @@ config SYS_CLOCK_HW_CYCLES_PER_SEC
 config SYSCON_INIT_PRIORITY
 	default 20 if CLOCK_CONTROL_MSPM0
 
+config SYSCON
+	default y if PM
+
 endif # SOC_FAMILY_TI_MSPM
