@@ -169,3 +169,7 @@ zephyr_udc0: &usbhs {
 &rtc {
 	status = "okay";
 };
+
+&crc {
+	status = "okay";
+};
