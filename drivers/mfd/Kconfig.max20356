@@ -1,0 +1,73 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config MFD_MAX20356
+	bool "MAX20356/MAX20358 PMIC multi-function device driver"
+	default y
+	depends on DT_HAS_ADI_MAX20356_ENABLED || DT_HAS_ADI_MAX20358_ENABLED
+	select I2C
+	help
+	  Enable the Analog Devices MAX20356/MAX20358 wearable PMIC
+	  multi-function device driver.
+
+	  SPI dynamic voltage scaling (a buck child with adi,dvs-mode = "spi" and
+	  the parent's spi-dvs phandle) additionally requires CONFIG_SPI; when it
+	  is not set, mfd_max20356_dvs_spi_write() returns -ENOTSUP.
+
+config MFD_MAX20356_TRIGGER
+	bool "MAX20356/MAX20358 INTB trigger support"
+	default y
+	depends on MFD_MAX20356
+	depends on GPIO
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ADI_MAX20356),int-gpios) || \
+		$(dt_compat_any_has_prop,$(DT_COMPAT_ADI_MAX20358),int-gpios) || \
+		$(dt_compat_any_has_prop,$(DT_COMPAT_ADI_MAX20356),adi_buck1_pgood_int_gpios) || \
+		$(dt_compat_any_has_prop,$(DT_COMPAT_ADI_MAX20358),adi_buck1_pgood_int_gpios) || \
+		$(dt_compat_any_has_prop,$(DT_COMPAT_ADI_MAX20356),adi_buck2_pgood_int_gpios) || \
+		$(dt_compat_any_has_prop,$(DT_COMPAT_ADI_MAX20358),adi_buck2_pgood_int_gpios) || \
+		$(dt_compat_any_has_prop,$(DT_COMPAT_ADI_MAX20356),adi_buck3_pgood_int_gpios) || \
+		$(dt_compat_any_has_prop,$(DT_COMPAT_ADI_MAX20358),adi_buck3_pgood_int_gpios) || \
+		$(dt_compat_any_has_prop,$(DT_COMPAT_ADI_MAX20356),adi_usbok_int_gpios) || \
+		$(dt_compat_any_has_prop,$(DT_COMPAT_ADI_MAX20358),adi_usbok_int_gpios)
+	help
+	  Enable INTB interrupt handling for the MAX20356/MAX20358 PMIC. The
+	  parent installs a GPIO callback on the INTB line, decodes the pending
+	  Int0-5 sources in a workqueue, and dispatches them to consumers that
+	  registered through mfd_max20356_add_callback().
+
+if MFD_MAX20356_TRIGGER
+
+choice MAX20356_TRIGGER_MODE
+	prompt "MAX20356/MAX20358 INTB trigger mode"
+	default MAX20356_TRIGGER_GLOBAL_THREAD
+	help
+	  Select the context in which INTB source decode runs.
+
+config MAX20356_TRIGGER_GLOBAL_THREAD
+	bool "Use global thread"
+	help
+	  Dispatch INTB handling to the system workqueue.
+
+config MAX20356_TRIGGER_OWN_THREAD
+	bool "Use own thread"
+	help
+	  Dispatch INTB handling to a dedicated driver thread.
+
+endchoice # MAX20356_TRIGGER_MODE
+
+config MAX20356_THREAD_PRIORITY
+	int "INTB own-thread priority"
+	depends on MAX20356_TRIGGER_OWN_THREAD
+	default 10
+	help
+	  Cooperative priority of the dedicated INTB handling thread.
+
+config MAX20356_THREAD_STACK_SIZE
+	int "INTB own-thread stack size"
+	depends on MAX20356_TRIGGER_OWN_THREAD
+	default 1024
+	help
+	  Stack size (bytes) of the dedicated INTB handling thread. Size it for
+	  the registered callbacks, which run in this thread's context.
+
+endif # MFD_MAX20356_TRIGGER
