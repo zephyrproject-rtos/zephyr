@@ -14,6 +14,23 @@
  * a hypervisor environment.
  * VHost backends handle guest VIRTIO requests and respond to them.
  *
+ * This is the VHost device class for VIRTIO backends. It is the boundary
+ * between transport or hypervisor-specific code and a VIRTIO device backend.
+ * It deliberately does not prescribe buffer allocation, locking, callback
+ * dispatch, or request scheduling.
+ * Implementations may process requests in parallel when they preserve the
+ * lifetime and completion rules described by each operation below.
+ *
+ * A buffer returned by vhost_prepare_iovec() remains valid until the matching
+ * vhost_release_iovec() has completed. A queue reset invalidates outstanding
+ * queue references; users must stop accessing them before reset reclamation
+ * starts. Callback execution context and queue-to-queue concurrency are
+ * controller-specific.
+ *
+ * This class does not require the vringh helper. A backend may use vringh or
+ * another ring-processing implementation while using this controller API for
+ * transport-specific operations.
+ *
  * @defgroup vhost_apis VHost Controller APIs
  * @ingroup io_interfaces
  * @{
@@ -24,6 +41,10 @@
 
 /**
  * Represents a memory buffer segment for VHost operations.
+ *
+ * The address is valid only for the lifetime of the mapping returned by
+ * vhost_prepare_iovec(). The controller may map or copy the guest buffer;
+ * this type does not require either strategy.
  */
 struct vhost_iovec {
 	void *iov_base;
@@ -34,13 +55,19 @@ struct vhost_iovec {
  * Represents a guest physical address and length pair for VHost operations.
  */
 struct vhost_buf {
-	uint64_t gpa;
-	size_t len;
-	bool is_write;
+	uint64_t gpa;    /**< Guest physical address. */
+	size_t len;      /**< Buffer length in bytes. */
+	bool is_write;   /**< True when the backend writes to the guest buffer. */
 };
 
 /**
- * VHost controller API structure
+ * VHost controller API structure.
+ *
+ * A controller owns transport-specific state and may support multiple
+ * outstanding requests. Operations referring to different queue/head pairs
+ * may be executed concurrently when the controller supports it. Callers must
+ * provide any additional synchronization required for concurrent operations
+ * on the same queue.
  */
 __subsystem struct vhost_controller_api {
 	int (*prepare_iovec)(const struct device *dev, uint16_t queue_id, uint16_t head,
@@ -73,7 +100,7 @@ __subsystem struct vhost_controller_api {
  *
  * @param dev              VHost device
  * @param queue_id         Queue identifier
- * @param slot_id          Slot identifier
+ * @param slot_id          Descriptor head identifying the request
  * @param bufs             Array of GPA/length pairs
  * @param bufs_count       Number of bufs in the array
  * @param read_iovec       Array to fill with read iovecs
@@ -87,6 +114,12 @@ __subsystem struct vhost_controller_api {
  * @retval -EINVAL       Invalid parameters
  * @retval -ENOMEM       Insufficient memory
  * @retval -E2BIG        Buffer too large (in other word, iovecs are too small)
+ *
+ * @note On success, the returned iovecs and their backing mappings remain
+ *       valid until vhost_release_iovec() is called for the same queue and
+ *       descriptor head. The caller must release the mapping exactly once
+ *       after the last access. On failure, the controller releases any
+ *       partial mapping it created.
  */
 static inline int vhost_prepare_iovec(const struct device *dev, uint16_t queue_id, uint16_t slot_id,
 				      const struct vhost_buf *bufs, size_t bufs_count,
@@ -104,11 +137,15 @@ static inline int vhost_prepare_iovec(const struct device *dev, uint16_t queue_i
 /**
  * @brief Release all iovecs
  *
- * Release iovecs that prepared by vhost_prepare_iovec.
+ * Release iovecs that were prepared by vhost_prepare_iovec.
+ *
+ * The caller must not access the corresponding iovecs after this function
+ * returns. A release is associated with one successful prepare operation and
+ * must not be repeated for the same queue and descriptor head.
  *
  * @param dev       VHost controller device
  * @param queue_id  Queue ID
- * @param slot_id   Slot ID.
+ * @param slot_id   Descriptor head identifying the request.
  *
  * @retval 0        Success
  * @retval -EINVAL  Invalid parameters
@@ -131,6 +168,9 @@ static inline int vhost_release_iovec(const struct device *dev, uint16_t queue_i
  * @retval 0          Success
  * @retval -EINVAL    Invalid parameters
  * @retval -ENODEV    Queue not ready
+ *
+ * @note The returned ring pointers remain valid only while the queue remains
+ *       configured. A queue reset or reconfiguration invalidates them.
  */
 static inline int vhost_get_virtq(const struct device *dev, uint16_t queue_id, void **parts,
 				  size_t *queue_size)
@@ -175,7 +215,9 @@ static inline bool vhost_queue_ready(const struct device *dev, uint16_t queue_id
 /**
  * @brief Register device-wide queue ready callback
  *
- * This callback will unregister on device reset.
+ * The controller may unregister this callback when the device or a queue is
+ * reset. The callback can be delivered asynchronously and may be coalesced;
+ * its execution context is controller-specific.
  *
  * @param dev         VHost controller device
  * @param callback    Function to call when any queue becomes ready
@@ -183,6 +225,9 @@ static inline bool vhost_queue_ready(const struct device *dev, uint16_t queue_id
  *
  * @retval 0          Success
  * @retval -EINVAL    Invalid parameters
+ *
+ * @note The callback must not retain queue pointers across reset. The API does
+ *       not require a particular worker, interrupt, or thread context.
  */
 static inline int vhost_register_virtq_ready_cb(const struct device *dev,
 						void (*callback)(const struct device *dev,
@@ -197,7 +242,9 @@ static inline int vhost_register_virtq_ready_cb(const struct device *dev,
 /**
  * @brief Register per-queue guest notification callback
  *
- * This callback will unregister on queue reset.
+ * The controller may unregister this callback when the queue is reset. The
+ * callback can be delivered asynchronously and may be coalesced; its
+ * execution context is controller-specific.
  *
  * @param dev         VHost controller device
  * @param queue_id    Queue ID (0-based)
@@ -207,6 +254,9 @@ static inline int vhost_register_virtq_ready_cb(const struct device *dev,
  * @retval 0          Success
  * @retval -EINVAL    Invalid parameters
  * @retval -ENODEV    Queue not found
+ *
+ * @note The callback must not retain queue pointers across reset. The API does
+ *       not require a particular worker, interrupt, or thread context.
  */
 static inline int vhost_register_virtq_notify_cb(const struct device *dev, uint16_t queue_id,
 						 void (*callback)(const struct device *dev,
