@@ -1403,6 +1403,7 @@ New Drivers
   * :dtcompatible:`nxp,lpc-pmc-hwinfo` (:github:`114693`)
   * :dtcompatible:`nxp,mc-rgm` (:github:`111359`)
   * :dtcompatible:`nxp,otp-uid` (:github:`111493`)
+  * :dtcompatible:`zephyr,hwinfo-nvmem` (:github:`118693`)
 
 * :abbr:`I2C (Inter-Integrated Circuit)`
 
