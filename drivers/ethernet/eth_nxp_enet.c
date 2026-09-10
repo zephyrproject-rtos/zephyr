@@ -116,6 +116,18 @@ struct nxp_enet_mac_data {
 static K_THREAD_STACK_DEFINE(enet_rx_stack, CONFIG_ETH_NXP_ENET_RX_THREAD_STACK_SIZE);
 static struct k_work_q rx_work_queue;
 
+/* Priority of the dedicated ENET RX drain thread. Cooperative by default;
+ * on a sustained 1G receive path that can be delayed long enough for the RX
+ * DMA to overrun its descriptors (kStatus_ENET_RxFrameError). Selecting
+ * ETH_NXP_ENET_RX_THREAD_PREEMPTIVE runs it preemptibly so it recycles
+ * descriptors promptly.
+ */
+#if defined(CONFIG_ETH_NXP_ENET_RX_THREAD_PREEMPTIVE)
+#define ENET_RX_THREAD_PRIO K_PRIO_PREEMPT(CONFIG_ETH_NXP_ENET_RX_THREAD_PRIORITY)
+#else
+#define ENET_RX_THREAD_PRIO K_PRIO_COOP(CONFIG_ETH_NXP_ENET_RX_THREAD_PRIORITY)
+#endif
+
 static int rx_queue_init(void)
 {
 	struct k_work_queue_config cfg = {.name = "ENET_RX"};
@@ -123,7 +135,7 @@ static int rx_queue_init(void)
 	k_work_queue_init(&rx_work_queue);
 	k_work_queue_start(&rx_work_queue, enet_rx_stack,
 			   K_THREAD_STACK_SIZEOF(enet_rx_stack),
-			   K_PRIO_COOP(CONFIG_ETH_NXP_ENET_RX_THREAD_PRIORITY),
+			   ENET_RX_THREAD_PRIO,
 			   &cfg);
 
 	return 0;
