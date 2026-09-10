@@ -90,6 +90,7 @@ tests:
       - pic32cm_sg00_cpro
       - pic32cx_sg41_cult
       - pic32cz_ca80_cult
+      - pic32cz_ca90_cult
       - sam_e54_xpro
       - s32k5xxcvb/s32k566/m7
       - s32k5xxcvb/s32k566/r52
