@@ -902,6 +902,24 @@ int stm32_clock_control_init(const struct device *dev)
 		LL_RCC_SetTIMPrescaler(LL_RCC_TIM_PRESCALER_TWICE);
 	}
 
+	/* Set programming delay for the read latency */
+	switch (LL_FLASH_GetLatency()) {
+	case LL_FLASH_LATENCY_0:
+	case LL_FLASH_LATENCY_1:
+		MODIFY_REG(FLASH->ACR, FLASH_ACR_WRHIGHFREQ, 0U);
+		break;
+
+	case LL_FLASH_LATENCY_2:
+	case LL_FLASH_LATENCY_3:
+		MODIFY_REG(FLASH->ACR, FLASH_ACR_WRHIGHFREQ, FLASH_ACR_WRHIGHFREQ_0);
+		break;
+
+	case LL_FLASH_LATENCY_4:
+	case LL_FLASH_LATENCY_5:
+		MODIFY_REG(FLASH->ACR, FLASH_ACR_WRHIGHFREQ, FLASH_ACR_WRHIGHFREQ_1);
+		break;
+	}
+
 	/* Update CMSIS variable */
 	SystemCoreClock = CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC;
 
