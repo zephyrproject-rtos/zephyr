@@ -1,0 +1,113 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* One codec per suite, so no case depends on state another suite left. */
+
+&spi0 {
+	status = "okay";
+
+	cs47l63_boot: cs47l63@0 {
+		compatible = "cirrus,cs47l63";
+		reg = <0>;
+		spi-max-frequency = <8000000>;
+		reset-gpios = <&gpio0 0 GPIO_ACTIVE_LOW>;
+		irq-gpios = <&gpio0 1 GPIO_ACTIVE_LOW>;
+		status = "okay";
+	};
+
+	cs47l63_clock: cs47l63@1 {
+		compatible = "cirrus,cs47l63";
+		reg = <1>;
+		spi-max-frequency = <8000000>;
+		reset-gpios = <&gpio0 2 GPIO_ACTIVE_LOW>;
+		irq-gpios = <&gpio0 3 GPIO_ACTIVE_LOW>;
+		status = "okay";
+	};
+
+	cs47l63_dai: cs47l63@2 {
+		compatible = "cirrus,cs47l63";
+		reg = <2>;
+		spi-max-frequency = <8000000>;
+		reset-gpios = <&gpio0 4 GPIO_ACTIVE_LOW>;
+		irq-gpios = <&gpio0 5 GPIO_ACTIVE_LOW>;
+		status = "okay";
+	};
+
+	cs47l63_out: cs47l63@3 {
+		compatible = "cirrus,cs47l63";
+		reg = <3>;
+		spi-max-frequency = <8000000>;
+		reset-gpios = <&gpio0 6 GPIO_ACTIVE_LOW>;
+		irq-gpios = <&gpio0 7 GPIO_ACTIVE_LOW>;
+		status = "okay";
+	};
+
+	cs47l63_in: cs47l63@4 {
+		compatible = "cirrus,cs47l63";
+		reg = <4>;
+		spi-max-frequency = <8000000>;
+		reset-gpios = <&gpio0 8 GPIO_ACTIVE_LOW>;
+		irq-gpios = <&gpio0 9 GPIO_ACTIVE_LOW>;
+		status = "okay";
+	};
+
+	cs47l63_fault: cs47l63@5 {
+		compatible = "cirrus,cs47l63";
+		reg = <5>;
+		spi-max-frequency = <8000000>;
+		reset-gpios = <&gpio0 10 GPIO_ACTIVE_LOW>;
+		irq-gpios = <&gpio0 11 GPIO_ACTIVE_LOW>;
+		status = "okay";
+	};
+
+	/* The one instance on ASP2, for test_asp2.c. */
+	cs47l63_asp2: cs47l63@6 {
+		compatible = "cirrus,cs47l63";
+		reg = <6>;
+		spi-max-frequency = <8000000>;
+		reset-gpios = <&gpio0 12 GPIO_ACTIVE_LOW>;
+		irq-gpios = <&gpio0 13 GPIO_ACTIVE_LOW>;
+		cirrus,asp = <2>;
+		status = "okay";
+	};
+
+	/* No irq-gpios, and a reset line gpio_emul refuses to configure. */
+	cs47l63_reset_fail: cs47l63@7 {
+		compatible = "cirrus,cs47l63";
+		reg = <7>;
+		spi-max-frequency = <8000000>;
+		reset-gpios = <&gpio0 14 (GPIO_ACTIVE_LOW | GPIO_OPEN_DRAIN)>;
+		status = "okay";
+	};
+
+	/* Both serial ports of one part: the parent on ASP1, its child on ASP2. */
+	cs47l63_dual: cs47l63@8 {
+		compatible = "cirrus,cs47l63";
+		reg = <8>;
+		spi-max-frequency = <8000000>;
+		reset-gpios = <&gpio0 15 GPIO_ACTIVE_LOW>;
+		irq-gpios = <&gpio0 16 GPIO_ACTIVE_LOW>;
+		status = "okay";
+
+		cs47l63_dual_asp2: asp2 {
+			cirrus,asp = <2>;
+		};
+	};
+
+	/* The same pair with the ports swapped: the parent on ASP2. */
+	cs47l63_swap: cs47l63@9 {
+		compatible = "cirrus,cs47l63";
+		reg = <9>;
+		spi-max-frequency = <8000000>;
+		reset-gpios = <&gpio0 17 GPIO_ACTIVE_LOW>;
+		irq-gpios = <&gpio0 18 GPIO_ACTIVE_LOW>;
+		cirrus,asp = <2>;
+		status = "okay";
+
+		cs47l63_swap_asp1: asp1 {
+			cirrus,asp = <1>;
+		};
+	};
+};
