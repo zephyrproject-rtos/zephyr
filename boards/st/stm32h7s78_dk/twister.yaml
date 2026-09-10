@@ -15,6 +15,7 @@ supported:
   - octospi
   - ptp_clock
   - rtc
+  - sdhc
   - uart
   - usbd
   - watchdog
