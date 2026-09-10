@@ -630,7 +630,7 @@ static int ads1x4s0x_channel_setup(const struct device *dev,
 	uint16_t acquisition_time_value = ADC_ACQ_TIME_VALUE(channel_cfg->acquisition_time);
 	uint16_t acquisition_time_unit = ADC_ACQ_TIME_UNIT(channel_cfg->acquisition_time);
 
-	ADS1X4S0X_REGISTER_INPMUX_SET_DEFAULTS(gain);
+	ADS1X4S0X_REGISTER_INPMUX_SET_DEFAULTS(input_mux);
 	ADS1X4S0X_REGISTER_REF_SET_DEFAULTS(reference_control);
 	ADS1X4S0X_REGISTER_DATARATE_SET_DEFAULTS(data_rate);
 	ADS1X4S0X_REGISTER_PGA_SET_DEFAULTS(gain);
