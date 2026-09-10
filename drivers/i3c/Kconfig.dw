@@ -32,4 +32,13 @@ config I3C_DW_PLATFORM_OPS
 	  vendor glue is built the hook pointer is a compile-time NULL, so the
 	  dispatch and every hook call fold away.
 
+config I3C_DW_INFINEON
+	bool
+	default y if DT_HAS_INFINEON_I3C_ENABLED
+	select I3C_DW_PLATFORM_OPS
+	help
+	  Build the Infineon implementation of the DW I3C platform ops: the
+	  wrapper register gate, the peripheral clock path and the target
+	  re-arm sequence the PSE84 integration needs.
+
 endif # I3C_DW
