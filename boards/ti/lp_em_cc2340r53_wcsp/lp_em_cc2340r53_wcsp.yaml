@@ -1,0 +1,21 @@
+identifier: lp_em_cc2340r53_wcsp
+name: TI SimpleLink CC2340R53 WCSP LaunchPad
+type: mcu
+arch: arm
+ram: 64
+flash: 512
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - counter
+  - crypto
+  - dma
+  - flash
+  - gpio
+  - nvs
+  - pinctrl
+  - pwm
+  - uart
+  - watchdog
+vendor: ti

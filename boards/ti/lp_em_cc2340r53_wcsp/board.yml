@@ -1,0 +1,6 @@
+board:
+  name: lp_em_cc2340r53_wcsp
+  full_name: CC2340R53 WCSP LaunchPad
+  vendor: ti
+  socs:
+    - name: cc2340r53
