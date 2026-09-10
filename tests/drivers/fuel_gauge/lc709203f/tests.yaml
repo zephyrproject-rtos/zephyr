@@ -1,0 +1,7 @@
+tests:
+  drivers.fuel_gauge.lc709203f:
+    tags:
+      - fuel_gauge
+    filter: dt_compat_enabled("onnn,lc709203f")
+    platform_allow:
+      - native_sim

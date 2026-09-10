@@ -1,0 +1,10 @@
+/*
+ * Copyright (c) 2026 Muhammad Waleed Badar
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include <zephyr/dt-bindings/display/panel.h>
+
+&sdl_dc {
+	pixel-format = <PANEL_PIXEL_FORMAT_BGRA_8888>;
+};

@@ -1,0 +1,8 @@
+board:
+  name: rock_3b
+  full_name: Radxa ROCK 3B
+  vendor: radxa
+  socs:
+  - name: rk3568
+    variants:
+    - name: smp

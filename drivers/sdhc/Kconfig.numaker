@@ -1,0 +1,31 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Nuvoton Technology Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SDHC_NUMAKER
+	bool "Nuvoton NuMaker SDHC driver"
+	default y
+	depends on DT_HAS_NUVOTON_NUMAKER_SDHC_ENABLED
+	select PINCTRL
+	select SDHC_SUPPORTS_NATIVE_MODE
+	help
+	  Enable SDHC driver for Nuvoton NuMaker family of processors
+
+if SDHC_NUMAKER
+
+config SDHC_BUFFER_ALIGNMENT
+	default DCACHE_LINE_SIZE if CACHE_MANAGEMENT
+	default 4
+
+config SDHC_NUMAKER_CMD_TIMEOUT
+	int "Timeout for SD commands (in ms)"
+	default 200
+	help
+	  Default timeout in milliseconds for SD commands
+
+config SDHC_NUMAKER_CMD_RETRIES
+	int "Number of times to retry sending command to card"
+	default 0
+	help
+	  Number of times to retry sending command to SD card in case of failure
+
+endif # SDHC_NUMAKER

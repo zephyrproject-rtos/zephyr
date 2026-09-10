@@ -1,0 +1,15 @@
+# Copyright (c) 2021 ITE Corporation. All Rights Reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+description: ITE watchdog timer
+
+include: base.yaml
+
+compatible: "ite,it8xxx2-watchdog"
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true

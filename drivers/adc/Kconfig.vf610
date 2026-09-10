@@ -1,0 +1,11 @@
+# ADC configuration options
+
+# Copyright (c) 2021 Antonio Tessarolo
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_VF610
+	bool "VF610 ADC driver"
+	depends on DT_HAS_NXP_VF610_ADC_ENABLED
+	default y
+	help
+	  Enable the VF610 ADC driver.

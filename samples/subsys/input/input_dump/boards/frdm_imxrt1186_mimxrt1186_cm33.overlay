@@ -1,0 +1,37 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * External 2x2 keypad wiring on FRDM-IMXRT1186 Arduino headers:
+ *
+ *   Keypad term    SoC pin         Arduino socket    KPP signal
+ *   -----------    -------------   --------------    ----------
+ *   R1             GPIO_EMC_B1_14  J1-10             KPP_ROW0
+ *   R2             GPIO_AD_16      J51-4             KPP_ROW5
+ *   C1             GPIO_EMC_B1_15  J1-12             KPP_COL0
+ *   C2             GPIO_AD_17      J51-6             KPP_COL5
+ *
+ * Required jumper settings (default is ECAT route, switch to Arduino):
+ *   J28 = 2-3  (route GPIO_AD_16 to Arduino J51-4)
+ *   J32 = 2-3  (route GPIO_AD_17 to Arduino J51-6)
+ */
+
+&pinctrl {
+	kpp_default: kpp_default {
+		group0 {
+			pinmux = <&iomuxc_gpio_ad_16_kpp_row5>,
+				 <&iomuxc_gpio_emc_b1_14_kpp_row0>,
+				 <&iomuxc_gpio_ad_17_kpp_col5>,
+				 <&iomuxc_gpio_emc_b1_15_kpp_col0>;
+			drive-strength = "high";
+			bias-pull-up;
+			slew-rate = "fast";
+		};
+	};
+};
+
+&kpp {
+	pinctrl-0 = <&kpp_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};

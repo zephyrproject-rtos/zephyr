@@ -1,0 +1,10 @@
+# Copyright (c) 2025 Andreas Klinger
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Vishay VEML6031 High Accuracy Ambient Light Sensor With I2C Interface.
+    See: https://www.vishay.com/docs/80007/veml6031x00.pdf
+
+compatible: "vishay,veml6031"
+
+include: [sensor-device.yaml, i2c-device.yaml]

@@ -1,0 +1,11 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config RTC_NXP_RTC_ANALOG
+	bool "NXP RTC Analog driver"
+	default y
+	depends on DT_HAS_NXP_RTC_ANALOG_ENABLED
+	help
+	  Enable the NXP RTC Analog driver.
+	  This RTC module supports 3 independent alarms,
+	  BCD time/date mode, and hundredths-of-second resolution.

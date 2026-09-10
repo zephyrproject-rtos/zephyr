@@ -1,0 +1,9 @@
+# Copyright 2022 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  ARMv8 instrumentation trace macrocell. Used for single wire output (SWO)
+
+compatible: "arm,armv8m-itm"
+
+include: arm,itm.yaml

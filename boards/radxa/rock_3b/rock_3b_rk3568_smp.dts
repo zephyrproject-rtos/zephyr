@@ -1,0 +1,9 @@
+/*
+ * SPDX-FileCopyrightText: 2022 HNU-ESNL
+ * SPDX-FileCopyrightText: 2022 openEuler SIG-Zephyr
+ * SPDX-FileCopyrightText: 2026 TOKITA Hiroshi
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "rock_3b.dts"

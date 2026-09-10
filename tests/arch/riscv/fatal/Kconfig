@@ -1,0 +1,20 @@
+# Copyright (c) 2024 Meta Platforms
+# SPDX-License-Identifier: Apache-2.0
+
+choice
+	prompt "Fatal type"
+	default TEST_RISCV_FATAL_PANIC
+
+config TEST_RISCV_FATAL_PANIC
+	bool "Panic induced fault"
+	help
+	  Tests the error handling via `z_riscv_fatal_error()`
+
+config TEST_RISCV_FATAL_ILLEGAL_INSTRUCTION
+	bool "Illegal instruction induced fault"
+	help
+	  Tests the error handling via `_Fault()`
+
+endchoice
+
+source "Kconfig.zephyr"

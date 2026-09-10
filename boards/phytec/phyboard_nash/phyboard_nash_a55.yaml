@@ -1,0 +1,18 @@
+# Copyright 2024 PHYTEC Messtechnik GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: phyboard_nash/mimx9352/a55
+name: PHYTEC phyBOARD-Nash i.MX93 A55
+type: mcu
+arch: arm64
+toolchain:
+  - zephyr
+  - cross-compile
+ram: 1024
+supported:
+  - uart
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: phytec

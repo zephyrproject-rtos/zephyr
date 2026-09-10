@@ -1,0 +1,13 @@
+# PCIe controller configuration options
+
+# Copyright 2024 TSN Lab, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+if PCIE_CONTROLLER
+
+# zephyr-keep-sorted-start
+source "drivers/pcie/controller/Kconfig.brcmstb"
+source "drivers/pcie/controller/Kconfig.ecam"
+# zephyr-keep-sorted-stop
+
+endif # PCIE_CONTROLLER

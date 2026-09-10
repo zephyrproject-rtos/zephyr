@@ -1,0 +1,59 @@
+/*
+ * Copyright (c) 2026 Andrei-Edward Popa
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include "mps3_an536.dtsi"
+
+/ {
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+	};
+
+	atcm: memory@0 {
+		compatible = "mmio-sram";
+		reg = <0x00000000 0x8000>;
+		status = "disabled";
+	};
+};
+
+&soc {
+	uart0: uart@e7c00000 {
+		compatible = "arm,cmsdk-uart";
+		reg = <0xe7c00000 0x1000>;
+		interrupt-parent = <&gic>;
+		interrupts = <GIC_PPI 2 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+		current-speed = <115200>;
+		clocks = <&sysclk>;
+		status = "disabled";
+	};
+};
+
+&cpu1 {
+	status = "disabled";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio2 {
+	status = "okay";
+};
+
+&gpio3 {
+	status = "okay";
+};
+
+&uart0 {
+	status = "okay";
+};

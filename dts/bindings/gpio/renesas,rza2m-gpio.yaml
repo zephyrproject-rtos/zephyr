@@ -1,0 +1,19 @@
+description: Renesas RZ/A2M GPIO Controller
+
+compatible: "renesas,rza2m-gpio"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+    description: |
+      GPIO port number. RZ/A2M board has a number of ports that
+      are used to calculate correct pin number.
+
+  "#gpio-cells":
+    const: 2
+
+gpio-cells:
+  - pin
+  - flags

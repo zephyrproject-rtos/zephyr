@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2026 NotioNext Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "esp32s3_common.dtsi"
+
+/* 16MB flash */
+&flash0 {
+	reg = <0x0 DT_SIZE_M(16)>;
+	#address-cells = <1>;
+	#size-cells = <1>;
+	ranges = <0x0 0x0 DT_SIZE_M(16)>;
+};
+
+/* 16MB psram */
+&psram0 {
+	size = <DT_SIZE_M(16)>;
+};

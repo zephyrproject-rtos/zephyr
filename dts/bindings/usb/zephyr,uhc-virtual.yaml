@@ -1,0 +1,8 @@
+# Copyright (c) 2022 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Virtual USB host controller
+
+compatible: "zephyr,uhc-virtual"
+
+include: usb-controller.yaml

@@ -1,0 +1,10 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  pm.power_domain_soc_state_change:
+    platform_allow:
+      - native_sim
+    integration_platforms:
+      - native_sim
+    tags: pm

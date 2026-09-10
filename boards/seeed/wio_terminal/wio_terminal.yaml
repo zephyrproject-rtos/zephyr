@@ -1,0 +1,20 @@
+identifier: wio_terminal
+name: Wio Terminal
+type: mcu
+arch: arm
+ram: 192
+flash: 512
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - adc
+  - counter
+  - dma
+  - gpio
+  - i2c
+  - pwm
+  - spi
+  - usbd
+  - watchdog
+vendor: seeed

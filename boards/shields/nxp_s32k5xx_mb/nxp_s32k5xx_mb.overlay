@@ -1,0 +1,36 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "nxp_s32k5xx_mb_pinctrl.dtsi"
+
+/ {
+	chosen {
+		zephyr,console = &lpuart3;
+		zephyr,shell-uart = &lpuart3;
+		zephyr,canbus = &canxl;
+	};
+
+	can_phy0: can-phy0 {
+		compatible = "nxp,tja1463", "can-transceiver-gpio";
+		enable-gpios = <&gpiop 2 GPIO_ACTIVE_HIGH>;
+		standby-gpios = <&gpiop 6 GPIO_ACTIVE_LOW>;
+		max-bitrate = <8000000>;
+		#phy-cells = <0>;
+	};
+};
+
+&lpuart3 {
+	pinctrl-0 = <&lpuart3_default>;
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	status = "okay";
+};
+
+&canxl {
+	pinctrl-0 = <&canxl_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};

@@ -1,0 +1,12 @@
+common:
+  depends_on: netif
+  min_ram: 60
+  tags:
+    - http
+    - net
+    - server
+  integration_platforms:
+    - native_sim
+    - qemu_x86
+tests:
+  net.http.server.http2_hpack: {}

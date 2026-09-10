@@ -1,0 +1,24 @@
+# Copyright (c) 2022 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas SmartBond(tm) family flash controller
+
+compatible: "renesas,smartbond-flash-controller"
+
+include: flash-controller.yaml
+
+properties:
+  read-cs-idle-delay:
+    type: int
+    description: |
+      Between the transmissions of two different
+      instructions to the flash memory, the SPI bus stays
+      in idle state (QSPI_CS high) for at least this number
+      of ns. See the QSPIC_ERS_CS_HI register for some exceptions.
+
+  erase-cs-idle-delay:
+    type: int
+    description: |
+      After the execution of instructions: write enable,
+      erase, erase suspend and erase resume, the  QSPI_CS
+      remains high for at least this number of ns.

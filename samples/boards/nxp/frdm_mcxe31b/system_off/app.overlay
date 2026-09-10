@@ -1,0 +1,21 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Run the RTC on undivided SIRC. The prescaler/divider clock does not keep
+ * running in standby, so a divided counter freezes and its alarm never fires;
+ * the undivided counter is in the always-on domain and keeps advancing, so the
+ * alarm can wake the SoC from standby.
+ */
+&rtc {
+	prescaler = <1>;
+};
+
+&stdby_ram {
+	compatible = "zephyr,memory-region", "mmio-sram";
+	zephyr,memory-region = "STDBY_RAM";
+	status = "okay";
+};

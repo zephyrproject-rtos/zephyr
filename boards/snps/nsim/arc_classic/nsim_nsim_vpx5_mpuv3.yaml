@@ -1,0 +1,14 @@
+identifier: nsim/nsim_vpx5/mpuv3
+name: VPX5 nSIM simulator (with MPUv3)
+type: sim
+simulation:
+  - name: nsim
+    exec: nsimdrv
+arch: arc
+toolchain:
+  - arcmwdt
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: snps

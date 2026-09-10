@@ -1,0 +1,9 @@
+# Copyright (c) 2026 Aerlync Labs Inc
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_LPC84X
+	bool "LPC84X clock control driver"
+	default y
+	depends on DT_HAS_NXP_LPC84X_CLOCK_ENABLED
+	help
+	  Enable the LPC84x clock control driver.

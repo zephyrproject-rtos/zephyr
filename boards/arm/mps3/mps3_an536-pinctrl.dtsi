@@ -1,0 +1,75 @@
+/*
+ * Copyright (c) 2026 Andrei-Edward Popa
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/arm-mps3-pinctrl.h>
+
+&pinctrl {
+	/*
+	 * The AN536 expansion connector pinmux naming uses UART3, while the
+	 * corresponding software-visible UART instance is UART4.
+	 */
+	/omit-if-no-ref/ uart_shield0_default: uart_shield0_default {
+		group1 {
+			pinmux = <UART3_TXD_EXP>;
+		};
+
+		group2 {
+			pinmux = <UART3_RXD_EXP>;
+			input-enable;
+		};
+	};
+
+	/*
+	 * The AN536 expansion connector pinmux naming uses UART4, while the
+	 * corresponding software-visible UART instance is UART5.
+	 */
+	/omit-if-no-ref/ uart_shield1_default: uart_shield1_default {
+		group1 {
+			pinmux = <UART4_TXD_EXP>;
+		};
+
+		group2 {
+			pinmux = <UART4_RXD_EXP>;
+			input-enable;
+		};
+	};
+
+	/omit-if-no-ref/ spi_shield0_default: spi_shield0_default {
+		group1 {
+			pinmux = <SPI3_SS_EXP>, <SPI3_MOSI_EXP>, <SPI3_SCK_EXP>;
+		};
+
+		group2 {
+			pinmux = <SPI3_MISO_EXP>;
+			input-enable;
+		};
+	};
+
+	/omit-if-no-ref/ spi_shield1_default: spi_shield1_default {
+		group1 {
+			pinmux = <SPI4_SS_EXP>, <SPI4_MOSI_EXP>, <SPI4_SCK_EXP>;
+		};
+
+		group2 {
+			pinmux = <SPI4_MISO_EXP>;
+			input-enable;
+		};
+	};
+
+	/omit-if-no-ref/ i2c_shield0_default: i2c_shield0_default {
+		group1 {
+			pinmux = <SBCON2_SDA_EXP>, <SBCON2_SCL_EXP>;
+			input-enable;
+		};
+	};
+
+	/omit-if-no-ref/ i2c_shield1_default: i2c_shield1_default {
+		group1 {
+			pinmux = <SBCON3_SDA_EXP>, <SBCON3_SCL_EXP>;
+			input-enable;
+		};
+	};
+};

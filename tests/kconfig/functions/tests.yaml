@@ -1,0 +1,6 @@
+tests:
+  kconfig.functions:
+    tags: kconfig
+    integration_platforms:
+      - native_sim
+      - native_sim/native/64

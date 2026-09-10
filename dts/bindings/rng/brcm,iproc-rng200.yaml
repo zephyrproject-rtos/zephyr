@@ -1,0 +1,12 @@
+# Copyright (c) 2025 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+description: Broadcom iProc RNG200 Random Number Generator
+
+compatible: "brcm,iproc-rng200"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

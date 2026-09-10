@@ -1,0 +1,25 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	aliases {
+		test-comp = &cmp0;
+	};
+
+	zephyr,user {
+		/* PTA1 output connect to PTA0. */
+		test-gpios = <&gpioa 1 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&cmp0 {
+	positive-mux-input = "IN0"; /* PTA0, FRDM-MCXE247 J4-10 */
+	negative-mux-input = "IN7"; /* DAC output => 1.65V */
+	dac-vref-source = "VIN2";
+	dac-value = <31>;
+};

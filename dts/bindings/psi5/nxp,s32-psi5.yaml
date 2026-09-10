@@ -1,0 +1,32 @@
+# Copyright 2025 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP S32 PSI5 (Peripheral Sensor Interface) Controller
+
+compatible: "nxp,s32-psi5"
+
+include: [psi5-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+child-binding:
+
+  properties:
+    interrupts:
+      type: array
+      required: true
+      description: Information about the channel interrupts.
+
+    num-rx-buf:
+      type: int
+      required: true
+      description: |
+        Specifies the maximum number of receive buffers used for storing PSI5 messages.
+        The value can range from 1 to 32, determining how many messages can be stored in
+        the buffer at any given time.

@@ -1,0 +1,9 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config NATIVE_EXTRA_CMDLINE_ARGS
+	depends on ARCH_POSIX
+	string "Extra command line arguments"
+	help
+	  Extra command line options/arguments which will be handled like if they were passed to the
+	  program from the shell. These will be parsed just before the shell provided ones.

@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+# NXP MCUX XBAR MUX driver
+
+config MUX_NXP_XBAR
+	bool "NXP MCUX XBAR MUX driver"
+	default y
+	depends on DT_HAS_NXP_MCUX_XBAR_ENABLED
+	help
+	  Enable the NXP MCUX XBAR (cross-bar switch) multiplexer driver.

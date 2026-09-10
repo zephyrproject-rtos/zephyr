@@ -1,0 +1,37 @@
+/*
+ * Copyright (c) 2025, Qingsong Gou <gouqs@hotmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	lcdc_8080_default: lcdc_8080_default {
+		group1 {
+			pinmux = <PA03_LCDC1_8080_CS>,
+				 <PA04_LCDC1_8080_WR>,
+				 <PA05_LCDC1_8080_RD>,
+				 <PA06_LCDC1_8080_DC>,
+				 <PA07_LCDC1_8080_DIO0>,
+				 <PA08_LCDC1_8080_DIO1>,
+				 <PA37_LCDC1_8080_DIO2>,
+				 <PA39_LCDC1_8080_DIO3>,
+				 <PA40_LCDC1_8080_DIO4>,
+				 <PA41_LCDC1_8080_DIO5>,
+				 <PA42_LCDC1_8080_DIO6>,
+				 <PA43_LCDC1_8080_DIO7>,
+				 <PA02_LCDC1_8080_TE>;
+			input-enable;
+		};
+	};
+};
+
+&lcdc {
+	status = "okay";
+
+	mipi_dbi: mipi-dbi {
+		status = "okay";
+		#address-cells = <1>;
+		#size-cells = <0>;
+		pinctrl-0 = <&lcdc_8080_default>;
+		pinctrl-names = "default";
+	};
+};

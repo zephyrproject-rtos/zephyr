@@ -1,0 +1,149 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  RPMsg-Lite IPC Service backend using mailbox-based signaling.
+
+  This binding represents one RPMsg-Lite link (instance). Multiple links
+  share a single physical MBOX channel for inter-processor notifications.
+  The signaling topology is modelled explicitly:
+
+  - The instance with link-id = <0> owns the physical MBOX channel and
+    declares the standard ``mboxes`` / ``mbox-names`` properties.
+  - All other instances declare ``notification-parent`` pointing to the
+    owning instance, and omit ``mboxes`` / ``mbox-names``.
+
+  Host ipc[0,1] links with Remote ipc[0,1] via the matching link-id values.
+  Both sides share a single physical MBOX channel owned by the instance
+  that does not have ``notification-parent`` (link-id = <0> in this example).
+
+compatible: "nxp,ipc-rpmsg-lite"
+
+include: base.yaml
+
+properties:
+  role:
+    description: RPMSG-Lite role of this instance
+    required: true
+    type: string
+    enum:
+      - host
+      - remote
+
+  link-id:
+    required: true
+    type: int
+    description: |
+      Link ID of this instance. Must match the corresponding instance on
+      the remote side. Allowed values: [0 .. (DT_NUM_INST_STATUS_OKAY() - 1)].
+
+      The instance with link-id = <0> must own the shared MBOX channel
+      (via ``mboxes`` / ``mbox-names``). All other instances must set
+      ``notification-parent`` pointing to it.
+
+  memory-region:
+    description: phandle to the shared memory region for this link
+    required: true
+    type: phandle
+
+  notification-parent:
+    description: |
+      phandle to the sibling nxp,ipc-rpmsg-lite instance that owns the
+      shared MBOX notification channel (i.e., the instance with
+      link-id = <0>).
+
+      Set this property on every instance except the one that declares
+      ``mboxes`` / ``mbox-names`` directly. The driver uses this to
+      avoid registering duplicate MBOX callbacks and to route all
+      notifications through a single physical channel.
+    type: phandle
+
+  mboxes:
+    description: |
+      phandle to the MBOX controller channels used for inter-processor
+      notification. Provide exactly two entries: TX and RX.
+
+      Only the instance with link-id = <0> (the notification owner)
+      declares this property. All other instances use
+      ``notification-parent`` instead.
+
+  mbox-names:
+    description: |
+      MBOX channel names. Must be "tx" and "rx", matching the order of
+      the ``mboxes`` entries.
+
+  priority:
+    type: array
+    description: |
+      Work-queue priority for the per-instance RX thread. This is an
+      array of [priority, type] where type is PRIO_COOP or PRIO_PREEMPT.
+
+      Examples:
+        priority = <1 PRIO_COOP>;    /* K_PRIO_COOP(1)    */
+        priority = <2 PRIO_PREEMPT>; /* K_PRIO_PREEMPT(2) */
+
+      Defaults to <0 PRIO_PREEMPT> when omitted.
+
+  buffer-size:
+    type: int
+    description: |
+      Total message buffer size in bytes (including the 16-byte
+      RPMSG-Lite header). The payload available to the application is
+      (buffer-size - 16) bytes.
+
+      Both host and remote must use the same value. Must be > 16 bytes.
+
+      Common values:
+        256  -> 240 bytes payload
+        512  -> 496 bytes payload  (default)
+        1024 -> 1008 bytes payload
+    default: 512
+
+  buffer-count:
+    type: int
+    description: |
+      Number of TX/RX buffers for this link. Must be a power of 2.
+      Both host and remote must use the same value.
+    default: 2
+
+examples:
+  - |
+    /* Host side */
+    ipc0: ipc0 {
+        compatible = "nxp,ipc-rpmsg-lite";
+        memory-region = <&shm_ipc0>;
+        mboxes = <&mbox 2>, <&mbox 3>;
+        mbox-names = "tx", "rx";
+        link-id = <0>;
+        role = "host";
+        status = "okay";
+    };
+
+    ipc1: ipc1 {
+        compatible = "nxp,ipc-rpmsg-lite";
+        memory-region = <&shm_ipc1>;
+        notification-parent = <&ipc0>;
+        link-id = <1>;
+        role = "host";
+        status = "okay";
+    };
+  - |
+    /* Remote side -- link-id values must match the host */
+    ipc0: ipc0 {
+        compatible = "nxp,ipc-rpmsg-lite";
+        memory-region = <&shm_ipc0>;
+        mboxes = <&mbox 3>, <&mbox 2>;
+        mbox-names = "tx", "rx";
+        link-id = <0>;
+        role = "remote";
+        status = "okay";
+    };
+
+    ipc1: ipc1 {
+        compatible = "nxp,ipc-rpmsg-lite";
+        memory-region = <&shm_ipc1>;
+        notification-parent = <&ipc0>;
+        link-id = <1>;
+        role = "remote";
+        status = "okay";
+    };

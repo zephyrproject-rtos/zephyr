@@ -1,0 +1,21 @@
+# Copyright (c) 2022, Kumar Gala <galak@kernel.org>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Native_sim Counter
+
+compatible: "zephyr,native-sim-counter"
+
+include: base.yaml
+
+properties:
+  rising-edge:
+    type: boolean
+    description: Emulated counter supports rising-edge capture detection
+
+  falling-edge:
+    type: boolean
+    description: Emulated counter supports falling-edge capture detection
+
+counter-capture-cells:
+  - channel
+  - flags

@@ -1,0 +1,12 @@
+# SPDX-FileCopyrightText: 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Consumer fixture for the mux_api test suite. Carries mux-controls and
+  mux-states properties pointing at the MUX controller under test. The
+  controller (and addressing-cell layout) is chosen per board overlay, so
+  the same binding serves XBAR, TRGMUX, etc.
+
+compatible: "vnd,mux-consumer-test"
+
+include: [base.yaml, mux-consumer.yaml]

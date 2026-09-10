@@ -1,0 +1,12 @@
+/*
+ * Copyright (c) 2025 TOKITA Hiroshi
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/rp1-pinctrl.h>
+
+&pinctrl {
+	/* Not yet implemented BCM2712 side pinctrl. Put a stub definition at this time. */
+	uart10_default: uart10_default {};
+};

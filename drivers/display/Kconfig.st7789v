@@ -1,0 +1,12 @@
+# ST7789V display driver configuration options
+
+# Copyright (c) 2019 Marc Reilly <marc@cpdesign.com.au>
+# SPDX-License-Identifier: Apache-2.0
+
+config ST7789V
+	bool "ST7789V display driver"
+	default y
+	depends on DT_HAS_SITRONIX_ST7789V_ENABLED
+	select MIPI_DBI
+	help
+	  Enable driver for ST7789V display driver.

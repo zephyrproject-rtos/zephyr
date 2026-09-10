@@ -1,0 +1,9 @@
+description: ARMv7-M Memory Protection Unit (MPU)
+
+compatible: "arm,armv7m-mpu"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

@@ -1,0 +1,54 @@
+/*
+ * Copyright (c) 2024-2026 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/renesas/ra/ra6/r7fa6m3ax.dtsi>
+
+/ {
+	soc {
+		code_flash_ctrl: code-flash-ctrl {
+			compatible = "renesas,ra-flash-hp-controller";
+			command-interface = <&faci>;
+			ranges;
+			programming-enable;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			code_flash: code-flash@0 {
+				compatible = "soc-nv-flash";
+				reg = <0x0 DT_SIZE_M(1)>;
+				ranges = <0x0 0x0 DT_SIZE_M(1)>;
+				write-block-size = <128>;
+				erase-block-size = <32768>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+			};
+		};
+
+		data_flash_ctrl: data-flash-ctrl {
+			compatible = "renesas,ra-flash-hp-controller";
+			command-interface = <&faci>;
+			ranges;
+			programming-enable;
+			erase-value-undefined;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			data_flash: data-flash@40100000 {
+				compatible = "soc-nv-flash";
+				reg = <0x40100000 DT_SIZE_K(64)>;
+				ranges = <0x0 0x40100000 DT_SIZE_K(64)>;
+				write-block-size = <4>;
+				erase-block-size = <64>;
+				#address-cells = <1>;
+				#size-cells = <1>;
+			};
+		};
+
+		trng: trng {
+			compatible = "renesas,ra-sce7-rng";
+			status = "disabled";
+		};
+	};
+};

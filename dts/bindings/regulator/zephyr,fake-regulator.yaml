@@ -1,0 +1,19 @@
+# Copyright (c) 2022 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Fake regulator, to be used as a mock or stub in tests.
+
+  An arbitrary number of children can be defined.
+
+compatible: "zephyr,fake-regulator"
+
+child-binding:
+  include: regulator.yaml
+
+  properties:
+    fake-is-enabled-in-hardware:
+      type: boolean
+      description: |
+        Sets the is_enabled flag passed to regulator_common_init.
+        Allows test cases where the regulator is enabled in hardware.

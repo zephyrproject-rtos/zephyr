@@ -1,0 +1,10 @@
+# Copyright (c) 2026 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_S400
+	bool
+	select SOC_FAMILY_CDNS_SWERV
+
+config SOC
+	default "s400" if SOC_S400

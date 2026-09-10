@@ -1,0 +1,11 @@
+# Copyright (c) 2021 Innoseis B.V.
+# SPDX-License-Identifier: Apache-2.0
+
+config EEPROM_TMP11X
+	bool "TMP116, TMP117 and TMP119 EEPROM driver"
+	default y
+	depends on DT_HAS_TI_TMP11X_EEPROM_ENABLED
+	depends on TMP11X
+	help
+	  Enable support for the on-chip EEPROM found on
+	  Texas instrument TMP116, TMP117 and TMP119 temperature sensor

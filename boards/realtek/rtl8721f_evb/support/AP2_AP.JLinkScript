@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2026 Realtek Semiconductor Corp.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+void InitTarget(void) {
+  /* Set AP info for all APs in the device */
+
+  CORESIGHT_AddAP(0, CORESIGHT_APB_AP);
+  CORESIGHT_AddAP(1, CORESIGHT_AHB_AP);
+  CORESIGHT_AddAP(2, CORESIGHT_AHB_AP);
+
+  CORESIGHT_IndexAHBAPToUse = 2;
+  JTAG_WriteClocks(1); /* Make sure that JTAG buffers are empty */
+  JTAG_Speed = 1000;
+
+  JLINK_MemRegion("0xEFFF0000-0xFFFFFFFF X");
+}

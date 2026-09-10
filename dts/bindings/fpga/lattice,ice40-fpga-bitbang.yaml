@@ -1,0 +1,52 @@
+# Copyright (c) 2022 Meta
+# Copyright (c) 2024 SILA Embedded Solutions GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+description: Lattice iCE40 FPGA GPIO bitbang based driver
+
+compatible: "lattice,ice40-fpga-bitbang"
+
+include: lattice,ice40-fpga-base.yaml
+
+properties:
+  clk-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      SPI Clock GPIO input on iCE40.
+      Example usage:
+      clk-gpios = <&gpio0 5 GPIO_PUSH_PULL>;
+  pico-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Peripheral-In Controller-Out GPIO input on iCE40.
+      Example usage:
+      pico-gpios = <&gpio0 7 GPIO_PUSH_PULL>;
+  gpios-set-reg:
+    type: int
+    required: true
+    description: |
+      Register address for setting a GPIO.
+      Example usage:
+      gpios-set-reg = <0x60004008>;
+  gpios-clear-reg:
+    type: int
+    required: true
+    description: |
+      Register address for clearing a GPIO.
+      Example usage:
+      gpios-clear-reg = <0x6000400c>;
+  mhz-delay-count:
+    type: int
+    default: 0
+    description: |
+      in order to create a 1 MHz square wave in the following
+      process.
+      while(true) {
+        *gpios_set_reg |= BIT(n);
+        for(int i = mhz_delay_count; i > 0; --i);
+        *gpios_clear_reg |= BIT(n);
+        for(int i = mhz_delay_count; i > 0; --i);
+      }
+      The default disables the delay.

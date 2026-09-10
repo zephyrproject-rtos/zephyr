@@ -1,0 +1,19 @@
+# Copyright (c) 2021, Tokita, Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+description: Nuclei ECLIC interrupt controller
+
+compatible: "nuclei,eclic"
+
+include: [interrupt-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  "#interrupt-cells":
+    const: 2
+
+interrupt-cells:
+  - irq
+  - priority

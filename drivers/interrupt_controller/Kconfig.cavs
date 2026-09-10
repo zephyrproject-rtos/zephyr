@@ -1,0 +1,45 @@
+# CAVS interrupt controller configuration
+
+# Copyright (c) 2017 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config CAVS_ICTL
+	bool "CAVS Interrupt Logic"
+	default y
+	depends on DT_HAS_INTEL_CAVS_INTC_ENABLED
+	depends on MULTI_LEVEL_INTERRUPTS
+	help
+	  These are 4 in number supporting a max of 32 interrupts each.
+
+if CAVS_ICTL
+
+config CAVS_ISR_TBL_OFFSET
+	int "Offset in the SW ISR Table"
+	default 0
+	help
+	  This indicates the offset in the SW_ISR_TABLE beginning from where
+	  the ISRs for CAVS Interrupt Controller are assigned.
+
+config CAVS_ICTL_0_OFFSET
+	int "Parent interrupt number to which CAVS_0 maps"
+	default 0
+
+config CAVS_ICTL_1_OFFSET
+	int "Parent interrupt number to which CAVS_1 maps"
+	default 0
+
+config CAVS_ICTL_2_OFFSET
+	int "Parent interrupt number to which CAVS_2 maps"
+	default 0
+
+config CAVS_ICTL_3_OFFSET
+	int "Parent interrupt number to which CAVS_3 maps"
+	default 0
+
+config CAVS_ICTL_INIT_PRIORITY
+	int "CAVS ICTL Init priority"
+	default 45
+	help
+	  Cavs Interrupt Logic initialization priority.
+
+endif # CAVS_ICTL

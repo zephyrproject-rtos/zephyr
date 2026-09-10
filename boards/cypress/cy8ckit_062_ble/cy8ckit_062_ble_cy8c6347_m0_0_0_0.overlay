@@ -1,0 +1,29 @@
+/*
+ * Copyright (c) 2021, ATL Electronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+#include "cy8ckit_062_ble_cy8c6347-pinctrl.dtsi"
+
+/ {
+	aliases {
+		uart-5 = &uart5;
+	};
+
+	chosen {
+		zephyr,console = &uart5;
+		zephyr,shell-uart = &uart5;
+	};
+};
+
+&uart5 {
+	status = "okay";
+	current-speed = <115200>;
+
+	interrupt-parent = <&intmux_ch21>;
+
+	pinctrl-0 = <&p5_0_scb5_uart_rx &p5_1_scb5_uart_tx>;
+	pinctrl-names = "default";
+};
+
+arduino_serial: &uart5 {};

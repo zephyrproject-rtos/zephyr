@@ -1,0 +1,28 @@
+# Copyright (c) 2014-2015 Wind River Systems, Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+menu "Atomic Operations"
+
+config ATOMIC_OPERATIONS_BUILTIN
+	bool
+	help
+	  Use the compiler builtin functions for atomic operations. This is
+	  the preferred method. However, support for all arches in GCC is
+	  incomplete.
+
+config ATOMIC_OPERATIONS_ARCH
+	bool
+	help
+	  Use when there isn't support for compiler built-ins, but you have
+	  written optimized assembly code under arch/ which implements these.
+
+config ATOMIC_OPERATIONS_C
+	bool
+	help
+	  Use atomic operations routines that are implemented entirely
+	  in C by locking interrupts. Selected by architectures which either
+	  do not have support for atomic operations in their instruction
+	  set, or haven't been implemented yet during bring-up, and also
+	  the compiler does not have support for the atomic __sync_* builtins.
+endmenu

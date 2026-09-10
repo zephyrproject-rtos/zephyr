@@ -1,0 +1,3 @@
+# Search paths(s) for tests which will be run in the nrf52bsim
+# This file is deprecated and will be removed in a future release. Please use twister directly
+tests/bsim/bluetooth/

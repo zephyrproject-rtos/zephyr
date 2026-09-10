@@ -1,0 +1,37 @@
+/*
+ * Copyright (c) 2026 Advanced Micro Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <arm64/xilinx/zynqmp_a53.dtsi>
+
+/ {
+	model = "AMD ZynqMP APU";
+	compatible = "xlnx,zynqmp";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+	};
+};
+
+&soc {
+	sram0: memory@0 {
+		compatible = "mmio-sram";
+		reg = <0x0 0x0 0x0 0x80000000>;
+	};
+};
+
+/* UART reference clock (Hz) */
+&cpu0 {
+	clock-frequency = <1200000000>;
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+	clock-frequency = <100000000>;
+};

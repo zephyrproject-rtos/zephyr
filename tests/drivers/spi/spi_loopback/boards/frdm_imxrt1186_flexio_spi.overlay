@@ -1,0 +1,52 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Move J32 and J31 to 2-3, then short J51-6 <-> J51-12 for the loopback. */
+
+&lpi2c3 {
+	status = "disabled";
+};
+
+&pinctrl {
+	pinmux_flexio2_spi: pinmux_flexio2_spi {
+		group0 {
+			pinmux = <&iomuxc_gpio_ad_16_gpio4_io16>,  /* cs  */
+				 <&iomuxc_gpio_ad_17_flexio2_d17>, /* sdo */
+				 <&iomuxc_gpio_ad_18_flexio2_d18>, /* sdi */
+				 <&iomuxc_gpio_ad_19_flexio2_d19>; /* sck */
+			drive-strength = "high";
+			slew-rate = "slow";
+		};
+	};
+};
+
+&flexio2 {
+	status = "okay";
+
+	flexio2_spi: flexio2_spi {
+		compatible = "nxp,flexio-spi";
+		cs-gpios = <&gpio4 16 GPIO_ACTIVE_LOW>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		sdo-pin = <17>;
+		sdi-pin = <18>;
+		sck-pin = <19>;
+		pinctrl-0 = <&pinmux_flexio2_spi>;
+		pinctrl-names = "default";
+		status = "okay";
+
+		slow@0 {
+			compatible = "test-spi-loopback-slow";
+			reg = <0>;
+			spi-max-frequency = <500000>;
+		};
+
+		fast@0 {
+			compatible = "test-spi-loopback-fast";
+			reg = <0>;
+			spi-max-frequency = <16000000>;
+		};
+	};
+};

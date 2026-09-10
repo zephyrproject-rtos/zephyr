@@ -1,0 +1,33 @@
+# Copyright (c) 2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_RA0E1
+	select ARM
+	select CPU_CORTEX_M23
+	select CPU_CORTEX_M_HAS_VTOR
+	select CPU_CORTEX_M_HAS_SYSTICK
+	select XIP
+	select HAS_RENESAS_RA_FSP
+	select SOC_EARLY_INIT_HOOK
+
+if SOC_SERIES_RA0E1
+
+config RENESAS_PN_PACKAGE_TYPE
+	int
+	range 1 6
+	default 1 if SOC_R7FA0E1073CFJ || SOC_R7FA0E1053CFJ
+	default 2 if SOC_R7FA0E1073CNH || SOC_R7FA0E1053CNH
+	default 3 if SOC_R7FA0E1073CNK || SOC_R7FA0E1053CNK
+	default 4 if SOC_R7FA0E1073CSC || SOC_R7FA0E1053CSC
+	default 5 if SOC_R7FA0E1073CSD
+	default 6 if SOC_R7FA0E1073CNL || SOC_R7FA0E1053CNL
+	help
+	  Package type:
+	  1 -> FJ: LQFP 32 pins
+	  2 -> NH: HWQFN 32 pins
+	  3 -> NK: HWQFN 24 pins
+	  4 -> SC: LSSOP 20 pins
+	  5 -> SD: TSSOP 20 pins
+	  6 -> NL: HWQFN 16 pins
+
+endif # SOC_SERIES_RA0E1

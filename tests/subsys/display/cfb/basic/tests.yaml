@@ -1,0 +1,71 @@
+# Copyright (c) 2024 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - display
+    - drivers
+    - cfb
+  harness: ztest
+  harness_config:
+    fixture: display
+  platform_allow:
+    - native_sim
+    - native_sim/native/64
+tests:
+  display.cfb.basic.mono01.vtiled.msbfirst:
+    extra_args:
+      - DTC_OVERLAY_FILE=native_sim_mono01.overlay
+    extra_configs:
+      - CONFIG_SDL_DISPLAY_USE_HARDWARE_ACCELERATOR=n
+      - CONFIG_SDL_DISPLAY_MONO_VTILED=y
+      - CONFIG_SDL_DISPLAY_MONO_MSB_FIRST=y
+  display.cfb.basic.mono01.vtiled.lsbfirst:
+    extra_args:
+      - DTC_OVERLAY_FILE=native_sim_mono01.overlay
+    extra_configs:
+      - CONFIG_SDL_DISPLAY_USE_HARDWARE_ACCELERATOR=n
+      - CONFIG_SDL_DISPLAY_MONO_VTILED=y
+      - CONFIG_SDL_DISPLAY_MONO_MSB_FIRST=n
+  display.cfb.basic.mono01.htiled.msbfirst:
+    extra_args:
+      - DTC_OVERLAY_FILE=native_sim_mono01.overlay
+    extra_configs:
+      - CONFIG_SDL_DISPLAY_USE_HARDWARE_ACCELERATOR=n
+      - CONFIG_SDL_DISPLAY_MONO_VTILED=n
+      - CONFIG_SDL_DISPLAY_MONO_MSB_FIRST=y
+  display.cfb.basic.mono01.htiled.lsbfirst:
+    extra_args:
+      - DTC_OVERLAY_FILE=native_sim_mono01.overlay
+    extra_configs:
+      - CONFIG_SDL_DISPLAY_USE_HARDWARE_ACCELERATOR=n
+      - CONFIG_SDL_DISPLAY_MONO_VTILED=n
+      - CONFIG_SDL_DISPLAY_MONO_MSB_FIRST=n
+  display.cfb.basic.mono10.vtiled.msbfirst:
+    extra_args:
+      - DTC_OVERLAY_FILE=native_sim_mono10.overlay
+    extra_configs:
+      - CONFIG_SDL_DISPLAY_USE_HARDWARE_ACCELERATOR=n
+      - CONFIG_SDL_DISPLAY_MONO_VTILED=y
+      - CONFIG_SDL_DISPLAY_MONO_MSB_FIRST=y
+  display.cfb.basic.mono10.vtiled.lsbfirst:
+    extra_args:
+      - DTC_OVERLAY_FILE=native_sim_mono10.overlay
+    extra_configs:
+      - CONFIG_SDL_DISPLAY_USE_HARDWARE_ACCELERATOR=n
+      - CONFIG_SDL_DISPLAY_MONO_VTILED=y
+      - CONFIG_SDL_DISPLAY_MONO_MSB_FIRST=n
+  display.cfb.basic.mono10.htiled.msbfirst:
+    extra_args:
+      - DTC_OVERLAY_FILE=native_sim_mono10.overlay
+    extra_configs:
+      - CONFIG_SDL_DISPLAY_USE_HARDWARE_ACCELERATOR=n
+      - CONFIG_SDL_DISPLAY_MONO_VTILED=n
+      - CONFIG_SDL_DISPLAY_MONO_MSB_FIRST=y
+  display.cfb.basic.mono10.htiled.lsbfirst:
+    extra_args:
+      - DTC_OVERLAY_FILE=native_sim_mono10.overlay
+    extra_configs:
+      - CONFIG_SDL_DISPLAY_USE_HARDWARE_ACCELERATOR=n
+      - CONFIG_SDL_DISPLAY_MONO_VTILED=n
+      - CONFIG_SDL_DISPLAY_MONO_MSB_FIRST=n

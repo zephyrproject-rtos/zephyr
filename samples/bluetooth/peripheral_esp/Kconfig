@@ -1,0 +1,17 @@
+# Copyright (c) 2026 Infineon Technologies AG,
+# or an affiliate of Infineon Technologies AG.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config ESP_USE_HARDWARE_SENSOR
+	bool "Use hardware sensor for Environmental Sensing"
+	default y if $(dt_alias_enabled,ambient-temp0) || \
+		$(dt_alias_enabled,dht0) || \
+		$(dt_alias_enabled,die-temp0)
+	select SENSOR
+	help
+	  Enable this to use a physical sensor (via Devicetree aliases)
+	  to provide real physical data over the BLE ESP profile instead
+	  of simulating dummy values.
+
+source "Kconfig.zephyr"

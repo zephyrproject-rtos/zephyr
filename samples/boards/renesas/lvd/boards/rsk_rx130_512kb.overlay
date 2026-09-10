@@ -1,0 +1,26 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pinctrl {
+	lvd1_default: lvd1_default {
+		group1 {
+			/* CMPA2 */
+			psels = <RX_PSEL(RX_PSEL_LVD, 14, 4)>;
+			renesas,analog-enable;
+			input-enable;
+		};
+	};
+};
+
+&lvd1 {
+	pinctrl-0 = <&lvd1_default>;
+	pinctrl-names = "default";
+	lvd-action = "maskable-interrupt";
+	voltage-level = <384>;
+	vdet-target = "cmpa";
+	lvd-trigger = "rising";
+	lvd-stabilization = <0>;
+	status = "okay";
+};

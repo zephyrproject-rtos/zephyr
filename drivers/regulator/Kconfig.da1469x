@@ -1,0 +1,16 @@
+# Copyright 2023 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config REGULATOR_DA1469X
+	bool "DA1469X regulators driver"
+	default y
+	depends on DT_HAS_RENESAS_SMARTBOND_REGULATOR_ENABLED
+	help
+	  Enable support for the Smartbond DA1469x regulators.
+
+config REGULATOR_DA1469X_INIT_PRIORITY
+	int "Renesas DA1469x regulators driver init priority"
+	default 20
+	depends on REGULATOR_DA1469X
+	help
+	  Init priority for the Renesas DA1469x regulators driver.

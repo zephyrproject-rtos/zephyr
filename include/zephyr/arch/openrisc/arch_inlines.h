@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2025 NVIDIA Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/**
+ * @file
+ * @brief OpenRISC arch-specific inline function implementations.
+ */
+
+#ifndef ZEPHYR_INCLUDE_ARCH_OPENRISC_ARCH_INLINES_H
+#define ZEPHYR_INCLUDE_ARCH_OPENRISC_ARCH_INLINES_H
+
+#include <zephyr/kernel_structs.h>
+
+static ALWAYS_INLINE unsigned int arch_num_cpus(void)
+{
+	return CONFIG_MP_MAX_NUM_CPUS;
+}
+
+#endif /* ZEPHYR_INCLUDE_ARCH_OPENRISC_ARCH_INLINES_H */

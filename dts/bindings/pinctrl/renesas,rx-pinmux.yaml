@@ -1,0 +1,25 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Rensas RX Pinmux (Multi Function Pin Controller, MPC)
+
+compatible: "renesas,rx-pinmux"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  "#pinmux-cells":
+    type: int
+    required: true
+    const: 2
+    description: number of items in a pinmux specifier
+
+pinmux-cells:
+  - pin
+  - function
+
+child-binding:
+  include: pincfg-node.yaml

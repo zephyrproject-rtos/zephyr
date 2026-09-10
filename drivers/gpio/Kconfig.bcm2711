@@ -1,0 +1,9 @@
+# Copyright (c) 2023 Chen Xingyu <hi@xingrz.me>
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_BCM2711
+	bool "BCM2711 GPIO driver"
+	default y
+	depends on DT_HAS_BRCM_BCM2711_GPIO_ENABLED
+	help
+	  Enable BCM2711 GPIO driver.

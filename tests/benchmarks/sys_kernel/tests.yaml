@@ -1,0 +1,11 @@
+tests:
+  benchmark.kernel.core:
+    platform_key:
+      - arch
+    tags:
+      - kernel
+      - benchmark
+    arch_exclude:
+      - xtensa
+    min_ram: 32
+    timeout: 120

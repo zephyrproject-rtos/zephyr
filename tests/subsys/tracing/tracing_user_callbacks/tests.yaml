@@ -1,0 +1,8 @@
+tests:
+  tracing.user.callbacks:
+    tags: tracing
+    platform_allow:
+      - native_sim
+      - qemu_x86
+    integration_platforms:
+      - native_sim

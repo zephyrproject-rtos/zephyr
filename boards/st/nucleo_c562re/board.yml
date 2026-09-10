@@ -1,0 +1,6 @@
+board:
+  name: nucleo_c562re
+  full_name: Nucleo C562RE
+  vendor: st
+  socs:
+    - name: stm32c562xx

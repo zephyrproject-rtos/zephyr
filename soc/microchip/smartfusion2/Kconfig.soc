@@ -1,0 +1,26 @@
+## SPDX-FileCopyrightText: Copyright Bavariamatic GmbH
+## SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_MICROCHIP
+	bool
+
+config SOC_FAMILY
+	default "microchip" if SOC_FAMILY_MICROCHIP
+
+config SOC_SERIES_SMARTFUSION2
+	bool
+	select SOC_FAMILY_MICROCHIP
+	help
+	  Microchip SmartFusion2 series.
+
+config SOC_M2S010
+	bool
+	select SOC_SERIES_SMARTFUSION2
+	help
+	  Microchip SmartFusion2 M2S010.
+
+config SOC_SERIES
+	default "smartfusion2" if SOC_SERIES_SMARTFUSION2
+
+config SOC
+	default "m2s010" if SOC_M2S010

@@ -1,0 +1,12 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config AUXDISPLAY_NXP_SLCD
+	bool "NXP MCUX SLCD display driver"
+	default y
+	depends on DT_HAS_NXP_SLCD_ENABLED
+	help
+	  Enable NXP MCUX SLCD (Segmented LCD) auxdisplay driver.
+	  Provides the standard auxdisplay API for NXP MCX SLCD hardware,
+	  handling both hardware initialization and the display panel layer
+	  in a single unified driver.

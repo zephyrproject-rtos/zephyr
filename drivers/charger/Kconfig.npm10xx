@@ -1,0 +1,10 @@
+# Copyright (c) 2026 Nordic Semiconductor
+# SPDX-License-Identifier: Apache-2.0
+
+config CHARGER_NPM10XX
+	bool "nPM10xx battery charger driver"
+	default y
+	depends on DT_HAS_NORDIC_NPM10XX_CHARGER_ENABLED
+	select I2C
+	help
+	  Enable the nPM10xx charger driver.

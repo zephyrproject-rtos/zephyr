@@ -1,0 +1,51 @@
+# Copyright (c) 2018, Google LLC.
+# Copyright (c) 2021, Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip XEC QMSPI controller with local DMA
+
+compatible: "microchip,xec-qmspi-ldma"
+
+include: ["spi-controller.yaml", "pinctrl-device.yaml", "microchip,dmec-ecia-girq.yaml"]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  pcr:
+    type: int
+    required: true
+    description: |
+      Integer encoding the PCR register index and bit position
+      of this I2C controller.
+
+  dcsda:
+    type: int
+    description: |
+      Delay in units of 10 ns from CS# de-assertion to CS# assertion.
+      If not present use hardware default value of 6.
+
+  ctrl-taps:
+    type: array
+    description: |
+      An array of integers representing the control tap points for
+      each of the two chip selects. Each value is in [0, 255]. 0 is HW default.
+      This property may only be required for 96 MHz operation and is
+      board layout dependent. Refer to the data sheet for control tap description.
+
+  clock-taps:
+    type: array
+    description: |
+      An array of integers representing the clock tap points for
+      each of the two chip selects. Each value is in [0, 255]. 0 is HW default.
+      This property may only be required for 96 MHz operation and is
+      board layout dependent. Refer to data sheet for details.

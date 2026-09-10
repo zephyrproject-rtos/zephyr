@@ -1,0 +1,46 @@
+description: ns16550 UART
+
+compatible: "ns16550"
+
+include: [uart-controller.yaml, pcie-device.yaml, pinctrl-device.yaml, reset-device.yaml]
+
+properties:
+  reg-shift:
+    type: int
+    required: true
+    description: quantity to shift the register offsets by
+
+  pcp:
+    type: int
+    description: custom clock (PRV_CLOCK_PARAMS, if supported)
+
+  dlf:
+    type: int
+    description: divisor latch fraction (DLF, if supported)
+
+  dlf-auto:
+    type: boolean
+    description: |
+      Automatically compute the fractional divisor (DLF) alongside the
+      integer baud rate divisor (DLL/DLH), instead of pairing a static 'dlf'
+      value with a plain integer divisor.
+
+      This reduces baud rate error compared to an integer-only divisor,
+      particularly when clock-frequency is relatively low (e.g., tens of MHz)
+      relative to the target baud rate. Only applicable to DW_apb_uart-compatible
+      implementations where the DLF register has a 1/64 resolution; do not set
+      this for other 'dlf'-capable hardware with a different fractional scale.
+
+      When set, this takes precedence over a static 'dlf' property: the 'dlf'
+      property is ignored, and the fractional divisor is recomputed dynamically
+      on every baud rate change.
+
+  io-mapped:
+    type: boolean
+    description: specify registers are IO mapped or memory mapped
+
+  loopback:
+    type: boolean
+    description: |
+      Connects TX to RX internally creating a loop back connection. Useful
+      for testing.

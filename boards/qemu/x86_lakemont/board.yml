@@ -1,0 +1,6 @@
+board:
+  name: qemu_x86_lakemont
+  full_name: QEMU Emulation for X86 / Lakemont CPU
+  vendor: intel
+  socs:
+    - name: lakemont

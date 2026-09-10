@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2022, Synopsys, Inc. All rights reserved.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "skeleton.dtsi"
+#include <mem.h>
+
+#ifndef DDR_ADDR
+#define DDR_ADDR 80000000
+#endif
+
+#ifndef DDR_SIZE
+#define DDR_SIZE DT_SIZE_M(1)
+#endif
+
+/ {
+	ddr0: memory@DDR_ADDR {
+		device_type = "memory";
+		reg = <DT_ADDR(DDR_ADDR) DDR_SIZE>;
+	};
+
+	chosen {
+		zephyr,sram = &ddr0;
+	};
+};

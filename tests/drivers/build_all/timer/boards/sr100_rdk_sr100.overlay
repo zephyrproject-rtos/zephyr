@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2026 Antmicro <www.antmicro.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,system-timer = &test_timer0;
+	};
+
+	test {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		test_timer0: timer@deadbeef {
+			compatible = "arm,cmsdk-timer";
+			reg = <0x0 0xdeadbeef>;
+			interrupts = <1 1>;
+			interrupt-parent = <&nvic>;
+		};
+	};
+};

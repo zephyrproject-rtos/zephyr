@@ -1,0 +1,10 @@
+# Copyright (c) 2023-2024 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config PWM_MAX32
+	bool "MAX32 PWM driver"
+	default y
+	depends on DT_HAS_ADI_MAX32_PWM_ENABLED
+	select PINCTRL
+	help
+	  Enable the MAX32 PWM driver.

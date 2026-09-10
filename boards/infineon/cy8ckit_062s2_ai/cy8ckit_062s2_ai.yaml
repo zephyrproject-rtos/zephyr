@@ -1,0 +1,13 @@
+identifier: cy8ckit_062s2_ai
+name: CY8CKIT-062S2-AI PSOC 6 AI Evaluation Kit
+type: mcu
+arch: arm
+ram: 1024
+flash: 2048
+toolchain:
+  - zephyr
+supported:
+  - gpio
+  - uart
+  - watchdog
+vendor: infineon

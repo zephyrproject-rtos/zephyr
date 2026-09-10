@@ -1,0 +1,28 @@
+# Copyright (c) 2025 Analog Devices Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config REGULATOR_MAX20362
+	bool "MAX20362 PMIC regulator device driver"
+	default y
+	depends on DT_HAS_ADI_MAX20362_REGULATOR_ENABLED
+	select I2C
+	help
+	  Enable the Analog Devices MAX20362 PMIC regulator device driver
+
+if REGULATOR_MAX20362
+
+config REGULATOR_ADI_MAX20362_COMMON_INIT_PRIORITY
+	int "MAX20362 regulator driver init priority (common part)"
+	default 86
+	help
+	  Init priority for the ADI MAX20362 regulator driver
+	  (common part). It must be greater than I2C init priority.
+
+config REGULATOR_ADI_MAX20362_INIT_PRIORITY
+	int "MAX20362 regulator driver init priority"
+	default 87
+	help
+	  Init priority for the ADI MAX20362 regulator driver. It must be
+	  greater than REGULATOR_ADI_MAX20362_COMMON_INIT_PRIORITY
+
+endif

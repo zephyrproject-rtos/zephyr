@@ -1,0 +1,14 @@
+# Copyright (c) 2019, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Bosch BMC150 Magnetometer.  See more info at:
+    https://www.bosch-sensortec.com/bst/products/all_products/bmc150
+
+compatible: "bosch,bmc150_magn"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  drdy-gpios:
+    type: phandle-array

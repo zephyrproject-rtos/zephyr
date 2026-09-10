@@ -1,0 +1,15 @@
+identifier: qemu_cortex_a53/qemu_cortex_a53/xip
+name: QEMU Emulation for Cortex-A53 (XIP)
+type: qemu
+simulation:
+  - name: qemu
+arch: arm64
+toolchain:
+  - zephyr
+  - cross-compile
+ram: 128
+testing:
+  default: true
+  only_tags:
+    - xip
+vendor: qemu

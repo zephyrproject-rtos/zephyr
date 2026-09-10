@@ -1,0 +1,8 @@
+# Copyright (c) 2025 SiFli Technologies(Nanjing) Co., Ltd
+# SPDX-License-Identifier: Apache-2.0
+
+config AUDIO_CODEC_SF32LB
+	bool "sf32lb audio codec"
+	select DMA
+	default y
+	depends on DT_HAS_SIFLI_SF32LB_AUDCODEC_ENABLED

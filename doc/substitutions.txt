@@ -1,0 +1,7 @@
+.. |br|     raw:: html        .. force a line break in HTML output (blank lines needed here)
+
+   <br />
+
+.. |p|     raw:: html        .. force a blank line in HTML output (blank lines needed here)
+
+   <p></p>

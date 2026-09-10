@@ -1,0 +1,22 @@
+#
+# Copyright (c) 2026 STMicroelectronics.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+title: STM32 Chrom-ART Accelerator (DMA2D)
+
+description: |
+    The Chrom-ART Accelerator (DMA2D) is a specialized DMA dedicated to
+    image manipulation such as fill, copy, format conversion, blending.
+
+compatible: "st,stm32-dma2d"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true

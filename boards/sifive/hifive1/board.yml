@@ -1,0 +1,11 @@
+boards:
+  - name: hifive1
+    full_name: HiFive1
+    vendor: sifive
+    socs:
+      - name: fe310_g000
+  - name: hifive1_revb
+    full_name: HiFive1 Rev B
+    vendor: sifive
+    socs:
+      - name: fe310_g002

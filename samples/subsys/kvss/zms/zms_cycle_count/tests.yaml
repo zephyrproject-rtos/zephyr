@@ -1,0 +1,15 @@
+sample:
+  name: ZMS Cycle Count Verification
+
+tests:
+  sample.zms.cycle_count:
+    tags: zms
+    platform_allow:
+      - nrf7002dk/nrf5340/cpuapp
+      - qemu_x86
+      - native_sim
+    harness: console
+    harness_config:
+      type: one_line
+      regex:
+        - "PASS: cycle count verification succeeded"

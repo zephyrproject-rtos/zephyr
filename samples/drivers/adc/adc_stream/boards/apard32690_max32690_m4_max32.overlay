@@ -1,0 +1,44 @@
+/*
+ * Copyright (c) 2025 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		adc0 = &adc;
+	};
+
+	zephyr,user {
+		io-channels = <&adc 0>;
+	};
+};
+
+&adc_clk_ext_p0_9 {
+	power-source = <MAX32_VSEL_VDDIOH>;
+};
+
+&adc {
+	reg = <0x40034000 0x1000>;
+	pinctrl-0 = <&adc_clk_ext_p0_9>;
+	pinctrl-names = "default";
+
+	/* ADC parameters set up 25KSPS sampling rate */
+	track-count = <96>;
+	idle-count = <183>;
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+	#io-channel-cells = <1>;
+	status = "okay";
+	compatible = "adi,max32-adc-b-me18", "adi,max32-adc";
+
+	channel@0 {
+		reg = <0>;
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+		zephyr,vref-mv = <1250>;
+	};
+};

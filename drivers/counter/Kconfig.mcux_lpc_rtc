@@ -1,0 +1,24 @@
+# Copyright (c) 2021-23, NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_MCUX_LPC_RTC
+	bool "MCUX LPC RTC driver"
+	default y
+	depends on DT_HAS_NXP_LPC_RTC_ENABLED || \
+		   DT_HAS_NXP_LPC_RTC_HIGHRES_ENABLED
+	help
+	  Enable the LPC rtc driver.
+
+config COUNTER_MCUX_LPC_RTC_1HZ
+	bool "MCUX LPC RTC 1Hz counter driver"
+	default y
+	depends on DT_HAS_NXP_LPC_RTC_ENABLED
+	help
+	  Enable support for LPC 1Hz counter.
+
+config COUNTER_MCUX_LPC_RTC_HIGHRES
+	bool "MCUX LPC RTC High Resolution counter driver"
+	default y
+	depends on DT_HAS_NXP_LPC_RTC_HIGHRES_ENABLED
+	help
+	  Enable support for LPC rtc high resolution counter.

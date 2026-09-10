@@ -1,0 +1,76 @@
+# Copyright (c) 2026 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: Silicon Labs CMU (Clock Management Unit) CLKOUT (Clock Output)
+
+description: |
+  The Silicon Labs Series 2/3 Clock Management Unit has up to three clock outputs that can be routed
+  to GPIO pins. Each output can be individually configured to output one of the on-chip oscillators,
+  HCLK (the high frequency bus clock) or EXPORTCLK (a divided version of SYSCLK).
+
+  Pin Control is used to configure GPIO routing for the CLKOUT signals.
+
+compatible: "silabs,series-clock-output"
+
+include:
+  - name: base.yaml
+  - name: clock-controller.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  clock-div:
+    type: int
+    description: Shared clock divider for clock outputs.
+    min: 1
+    max: 32
+
+  "#clock-cells":
+    const: 1
+
+clock-cells:
+  - output
+
+child-binding:
+  description: |
+    Output configuration.
+
+  include:
+    - name: base.yaml
+      property-allowlist:
+        - status
+        - reg
+        - clocks
+
+  properties:
+    reg:
+      required: true
+    clocks:
+      required: true
+
+examples:
+  - |
+    &pinctrl {
+      clkout_default: clkout_default {
+        group0 {
+          pins = <CMU_CLKOUT0_PC1>, <CMU_CLKOUT1_PC2>;
+          drive-push-pull;
+          output-low;
+        };
+      };
+    };
+
+    &clkout {
+      pinctrl-0 = <&clkout_default>;
+      pinctrl-names = "default";
+      status = "okay";
+
+      clock-output@0 {
+        clocks = <&exportclk>;
+        status = "okay";
+      };
+
+      clock-output@1 {
+        clocks = <&lfxo>;
+        status = "okay";
+      };
+    };

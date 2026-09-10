@@ -1,0 +1,8 @@
+# nRF52840 BLE Cell board configuration
+
+# Copyright (c) 2020 Bilal Wasim
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_CONTEXTUALELECTRONICS_ABC
+
+endif # BOARD_CONTEXTUALELECTRONICS_ABC

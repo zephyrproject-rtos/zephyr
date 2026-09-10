@@ -1,0 +1,5 @@
+# Copyright (c) 2022 Meta
+#
+# SPDX-License-Identifier: Apache-2.0
+rsource "Kconfig.hash_func"
+rsource "Kconfig.hash_map"

@@ -1,0 +1,21 @@
+# Copyright (c) 2022 Florin Stancu <niflostancu@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI CC13XX/CC26xx family ADC
+
+compatible: "ti,cc13xx-cc26xx-adc"
+
+include: [adc-controller.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  "#io-channel-cells":
+    const: 1
+
+io-channel-cells:
+  - input

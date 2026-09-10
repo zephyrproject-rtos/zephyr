@@ -1,0 +1,30 @@
+# Copyright (c) 2025 Lukas Gunnarsson <lukasgunnarsson@protonmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP PCF2123 RTC
+
+compatible: "nxp,pcf2123"
+
+include:
+  - name: rtc-device.yaml
+  - name: spi-device.yaml
+
+properties:
+  clkout-frequency:
+    type: int
+    default: 32768
+    enum:
+      - 32768
+      - 16384
+      - 8192
+      - 4096
+      - 2048
+      - 1024
+      - 1
+    description: |
+      Frequency of the CLKOUT signal in Hertz (Hz). Default is 32768 Hz.
+
+  int1-gpios:
+    type: phandle-array
+    description: |
+      GPIO connected to the PCF2123 INT output, interrupts are unused if none is provided.

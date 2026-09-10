@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2026 HubbleNetwork
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		test-gpio = &test_gpio_emul;
+	};
+
+	test_gpio_emul: test_gpio_emul {
+		status = "okay";
+		compatible = "zephyr,gpio-emul";
+		gpio-controller;
+		#gpio-cells = <0x2>;
+		ngpios = <8>;
+		rising-edge;
+		falling-edge;
+		high-level;
+		low-level;
+	};
+};

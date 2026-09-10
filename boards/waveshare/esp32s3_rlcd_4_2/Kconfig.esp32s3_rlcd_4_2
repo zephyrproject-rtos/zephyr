@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ESP32S3_RLCD_4_2
+	select SOC_ESP32S3_WROOM_N16R8
+	select SOC_ESP32S3_PROCPU if BOARD_ESP32S3_RLCD_4_2_ESP32S3_PROCPU
+	select SOC_ESP32S3_APPCPU if BOARD_ESP32S3_RLCD_4_2_ESP32S3_APPCPU

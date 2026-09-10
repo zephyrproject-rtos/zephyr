@@ -1,0 +1,21 @@
+# Copyright (c) 2026 Realtek Semiconductor Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FLASH_AMEBA
+	bool "AMEBA flash driver"
+	default y
+	depends on DT_HAS_REALTEK_AMEBA_FLASH_CONTROLLER_ENABLED
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_EXPLICIT_ERASE
+	help
+	  Enable AMEBA internal flash driver.
+
+config FLASH_AMEBA_BUF_SIZE
+	int "AMEBA flash RAM buffer size"
+	default 256
+	depends on SOC_FLASH_AMEBA
+	help
+	  If the source address of a flash write operation is also a flash address,
+	  the data needs to be copied to RAM first before writing to the flash.
+	  This configuration sets the size of this RAM buffer.

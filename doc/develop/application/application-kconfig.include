@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Your Application Name"
+
+# Your application configuration options go here
+
+# Sources Kconfig.zephyr in the Zephyr root directory.
+#
+# Note: All 'source' statements work relative to the Zephyr root directory (due
+# to the $srctree environment variable being set to $ZEPHYR_BASE). If you want
+# to 'source' relative to the current Kconfig file instead, use 'rsource' (or a
+# path relative to the Zephyr root).
+source "Kconfig.zephyr"

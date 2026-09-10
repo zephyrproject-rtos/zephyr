@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2024 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&adin1110 {
+	mdio {
+		/* Enable link status LED */
+		ethernet-phy@1 {
+			led0-en;
+			led1-en;
+		};
+	};
+};

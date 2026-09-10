@@ -1,0 +1,6 @@
+board:
+  name: m0sense
+  full_name: Sipeed M0Sense
+  vendor: sipeed
+  socs:
+    - name: bl702sa0q2i

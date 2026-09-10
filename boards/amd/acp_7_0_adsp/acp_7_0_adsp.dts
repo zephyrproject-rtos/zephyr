@@ -1,0 +1,15 @@
+/* SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors */
+/*
+ * Copyright (c) 2026 AMD
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <amd/acp_7_0.dtsi>
+
+/ {
+	model = "AMD ACP_7_0 Audio DSP";
+	compatible = "acp_7_0";
+};

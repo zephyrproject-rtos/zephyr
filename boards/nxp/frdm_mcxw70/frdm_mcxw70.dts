@@ -1,0 +1,35 @@
+/*
+ * Copyright 2026 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nxp/mcx/mcxw/nxp_mcxw70.dtsi>
+#include "frdm_mcxw70_common.dtsi"
+
+&flash {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		storage_partition: partition@17a000 {
+			label = "storage";
+			reg = <0x17a000 DT_SIZE_K(24)>;
+		};
+	};
+};
+
+&flw {
+	partitions {
+		compatible = "fixed-partitions";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		code_partition: partition@0 {
+			label = "code";
+			reg = <0x0 DT_SIZE_K(1160)>;
+		};
+	};
+};

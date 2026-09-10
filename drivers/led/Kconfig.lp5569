@@ -1,0 +1,11 @@
+# Copyright (c) 2023 Phytec Messtechnik GmbH
+# SPDX-License-Identifier: Apache-2.0
+
+config LP5569
+	bool "LP5569 LED driver"
+	default y
+	depends on DT_HAS_TI_LP5569_ENABLED
+	select I2C
+	help
+	  Enable LED driver for LP5569. LP5569 LED driver has 9 channels.
+	  Each channel can drive up to 25.5 mA per LED.

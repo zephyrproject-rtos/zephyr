@@ -1,0 +1,9 @@
+# Copyright (c) 2018 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    STMicroelectronics IIS2DLPC accelerometer accessed through I2C bus
+
+compatible: "st,iis2dlpc"
+
+include: ["i2c-device.yaml", "st,iis2dlpc-common.yaml"]

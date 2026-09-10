@@ -1,0 +1,13 @@
+# Configuration options for NXP HDLC RCP communication Interface
+
+# Copyright (c) 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+#
+# HDLC communication Interface used by Zephyr running Openthread RCP host
+#
+
+config HDLC_RCP_IF_NXP
+	bool "NXP HDLC interface for Zephyr Openthread RCP host"
+	default y
+	depends on DT_HAS_NXP_HDLC_RCP_IF_ENABLED

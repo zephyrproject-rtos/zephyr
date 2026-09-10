@@ -1,0 +1,63 @@
+/*
+ * Copyright (c) 2026 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * Loopbacks required:
+ * MSPI01    MSPI00
+ * P2.6  <-> P2.1 SCK
+ * P2.11 <-> P2.5 CSN
+ * P2.7  <-> P2.0 DQ0
+ * P2.8  <-> P2.2 DQ1
+ * P2.9  <-> P2.3 DQ2
+ * P2.10 <-> P2.4 DQ3
+ */
+
+&pinctrl {
+	mspi01_default: mspi01_default {
+		group1 {
+			psels = <NRF_PSEL(MSPI_SCK, 2, 6)>,
+				<NRF_PSEL(MSPI_CSN, 2, 11)>,
+				<NRF_PSEL(MSPI_IO0, 2, 7)>,
+				<NRF_PSEL(MSPI_IO1, 2, 8)>,
+				<NRF_PSEL(MSPI_IO2, 2, 9)>,
+				<NRF_PSEL(MSPI_IO3, 2, 10)>;
+		};
+	};
+
+	mspi01_sleep: mspi01_sleep {
+		group1 {
+			low-power-enable;
+			psels = <NRF_PSEL(MSPI_SCK, 2, 6)>,
+				<NRF_PSEL(MSPI_CSN, 2, 11)>,
+				<NRF_PSEL(MSPI_IO0, 2, 7)>,
+				<NRF_PSEL(MSPI_IO1, 2, 8)>,
+				<NRF_PSEL(MSPI_IO2, 2, 9)>,
+				<NRF_PSEL(MSPI_IO3, 2, 10)>;
+		};
+	};
+};
+
+&uart00 {
+	status = "disabled";
+};
+
+&spi00 {
+	status = "disabled";
+};
+
+controller: &mspi00 {
+	status = "okay";
+	pinctrl-names = "default", "sleep";
+	op-mode = "MSPI_OP_MODE_CONTROLLER";
+};
+
+peripheral: &mspi01 {
+	status = "okay";
+	pinctrl-0 = <&mspi01_default>;
+	pinctrl-1 = <&mspi01_sleep>;
+	pinctrl-names = "default", "sleep";
+	op-mode = "MSPI_OP_MODE_PERIPHERAL";
+};

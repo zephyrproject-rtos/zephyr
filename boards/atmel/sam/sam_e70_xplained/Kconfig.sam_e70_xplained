@@ -1,0 +1,7 @@
+# Copyright (c) 2016 Piotr Mienkowski
+# Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_SAM_E70_XPLAINED
+	select SOC_SAME70Q21 if BOARD_SAM_E70_XPLAINED_SAME70Q21
+	select SOC_SAME70Q21B if BOARD_SAM_E70_XPLAINED_SAME70Q21B

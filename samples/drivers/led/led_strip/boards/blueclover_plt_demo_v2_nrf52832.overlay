@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2021 Blue Clover
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	led_pwr: led-pwr-ctrl {
+		compatible = "regulator-fixed";
+		regulator-name = "led-pwr-ctrl";
+		enable-gpios = <&gpio0 25 GPIO_ACTIVE_HIGH>;
+		regulator-boot-on;
+	};
+};

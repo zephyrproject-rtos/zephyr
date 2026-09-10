@@ -1,0 +1,21 @@
+/*
+ * Copyright 2025 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&fll16m {
+	status = "okay";
+};
+
+&hsfll120 {
+	status = "okay";
+};
+
+&lfclk {
+	status = "okay";
+};
+
+&canpll {
+	status = "okay";
+};

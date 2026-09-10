@@ -1,0 +1,35 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_ESP32S3_RLCD_4_2_ESP32S3_PROCPU
+
+if LVGL
+
+config LV_Z_BITS_PER_PIXEL
+	default 1
+
+choice LV_COLOR_DEPTH
+	default LV_COLOR_DEPTH_1
+endchoice
+
+config LV_Z_AREA_X_ALIGNMENT_WIDTH
+	default 12
+
+config LV_Z_AREA_Y_ALIGNMENT_WIDTH
+	default 2
+
+endif # LVGL
+
+if FUEL_GAUGE
+
+# Composite fuel gauge gets battery voltage from ADC-based voltage-divider sensor
+
+config ADC
+	default y
+
+config SENSOR
+	default y
+
+endif # FUEL_GAUGE
+
+endif # BOARD_ESP32S3_RLCD_4_2_ESP32S3_PROCPU

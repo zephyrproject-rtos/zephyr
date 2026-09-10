@@ -1,0 +1,23 @@
+# Copyright (c) 2018 Peter Bigot Consulting, LLC
+# Copyright (c) 2019 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Properties supporting Zephyr spi-nor flash driver (over the Zephyr SPI
+  API) control of serial flash memories using the standard M25P80-based
+  command set.
+
+compatible: "jedec,spi-nor"
+
+include: [spi-device.yaml, "jedec,spi-nor-common.yaml"]
+
+properties:
+  wp-gpios:
+    type: phandle-array
+    description: WPn pin
+  hold-gpios:
+    type: phandle-array
+    description: HOLDn pin
+  reset-gpios:
+    type: phandle-array
+    description: RESETn pin

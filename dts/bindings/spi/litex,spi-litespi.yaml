@@ -1,0 +1,9 @@
+description: LiteX SPI LiteSPI Controller
+
+compatible: "litex,spi-litespi"
+
+include: spi-controller.yaml
+
+properties:
+  reg:
+    required: true

@@ -1,0 +1,6 @@
+# Copyright 2022, 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_LPCXPRESSO55S36
+	select SOC_LPC55S36
+	select SOC_PART_NUMBER_LPC55S36JBD100

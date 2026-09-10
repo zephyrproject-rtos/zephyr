@@ -1,0 +1,18 @@
+shields:
+  - name: x_nucleo_iks4a1
+    full_name: X-NUCLEO-IKS4A1 (Mode 1)
+    vendor: st
+    supported_features:
+      - sensor
+
+  - name: x_nucleo_iks4a1_shub1
+    full_name: X-NUCLEO-IKS4A1 (Mode 3)
+    vendor: st
+    supported_features:
+      - sensor
+
+  - name: x_nucleo_iks4a1_shub2
+    full_name: X-NUCLEO-IKS4A1 (Mode 2)
+    vendor: st
+    supported_features:
+      - sensor

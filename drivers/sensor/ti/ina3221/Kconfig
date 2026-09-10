@@ -1,0 +1,12 @@
+# INA3221 Bidirectional Current/Power Monitor
+
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config INA3221
+	bool "INA3221 Triple-Channel Current/Power Monitor"
+	default y
+	depends on DT_HAS_TI_INA3221_ENABLED
+	select I2C
+	help
+	  Enable driver for INA3221 Triple-Channel Current/Power Monitor.

@@ -1,0 +1,41 @@
+# Copyright 2025 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  BFLB MIPI DBI controller
+  When used with devices that dont match MIPI DBI properly (eg commands are fully with DC set,
+  not DC then data, for example SSD1327), you MUST use cs-gpios and dc-gpio to allow holding the
+  lines for command via software and not use hardware DC and CS. Inversely when using devices that
+  support D/C properly, you MUST use the hw D/C, and may use hw CS.
+
+compatible: "bflb,dbi"
+
+include: ["mipi-dbi-controller.yaml", "pinctrl-device.yaml"]
+
+properties:
+  dmas:
+    required: true
+    description: |
+      TX dma specifier.  Each specifier will have a phandle
+      reference to the dma controller, the channel number, and peripheral
+      trigger source, which is 20 for DBI: dmas = <&dma0 0 0x14>;
+
+  dma-names:
+    required: true
+    description: |
+      This should be "tx"
+
+  reset-gpios:
+    type: phandle-array
+    description: |
+      SINGLE optional reset GPIO pin.
+
+  cs-gpios:
+    type: phandle-array
+    description: |
+      Optional CS GPIOs (same usage as SPI)
+
+  dc-gpios:
+    type: phandle-array
+    description: |
+      SINGLE optional data/command GPIO

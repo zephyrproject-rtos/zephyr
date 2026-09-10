@@ -1,0 +1,17 @@
+# Copyright (c) 2026 BayLibre SAS
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_FVP_CORSTONE1000
+
+config BUILD_OUTPUT_BIN
+	default y
+
+# Plain load-acquires and LSE atomics do not end an FVP execution quantum,
+# so a CPU spinning on a release from another CPU can burn its entire
+# quantum before the producing CPU runs. Use board-specific atomics with
+# explicit YIELD hints as a workaround; see atomic.c for details.
+config ATOMIC_OPERATIONS_ARCH
+	depends on SMP
+	default y
+
+endif # BOARD_FVP_CORSTONE1000

@@ -1,0 +1,10 @@
+# Copyright (c) 2025 Prevas A/S
+# SPDX-License-Identifier: Apache-2.0
+
+config TACH_GPIO
+	bool "Tachometer GPIO sensor"
+	default y
+	depends on DT_HAS_ZEPHYR_TACH_GPIO_ENABLED
+	depends on GPIO
+	help
+	  Enable tachometer sensor using GPIO interrupts.

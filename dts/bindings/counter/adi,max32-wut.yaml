@@ -1,0 +1,10 @@
+# Copyright (c) 2025 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  ADI MAX32 Wake-Up Timer is a unique instance of a 32-bit timer that can wake up the
+  device from sleep, standby and backup modes.
+
+compatible: "adi,max32-wut"
+
+include: [base.yaml]

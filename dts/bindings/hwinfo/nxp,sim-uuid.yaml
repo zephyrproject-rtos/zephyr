@@ -1,0 +1,12 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP SIM 128-bit Unique identifier
+
+compatible: "nxp,sim-uuid"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

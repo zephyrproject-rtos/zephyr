@@ -1,0 +1,12 @@
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+module = SAMPLE_MODULE
+module-str = Test logging API
+source "subsys/logging/Kconfig.template.log_config"
+
+config TEST_LOG_MSG_APPEND_RO_STRING_LOC
+	bool "Append read-only string locations to the package"
+	select LOG_MSG_APPEND_RO_STRING_LOC
+
+source "Kconfig.zephyr"

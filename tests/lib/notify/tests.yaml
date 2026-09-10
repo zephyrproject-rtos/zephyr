@@ -1,0 +1,5 @@
+tests:
+  libraries.data_structures:
+    tags: notify
+    integration_platforms:
+      - native_sim

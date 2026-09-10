@@ -1,0 +1,23 @@
+identifier: xiao_esp32c5/esp32c5/hpcore
+name: XIAO ESP32C5 HP Core
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+supported:
+  - adc
+  - gpio
+  - watchdog
+  - uart
+  - dma
+  - spi
+  - entropy
+  - i2c
+  - netif:openthread
+  - netif:wifi
+  - xiao_adc
+  - xiao_gpio
+  - xiao_i2c
+  - xiao_serial
+  - xiao_spi
+vendor: seeed

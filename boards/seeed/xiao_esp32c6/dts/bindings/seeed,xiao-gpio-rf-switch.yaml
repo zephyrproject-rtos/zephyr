@@ -1,0 +1,20 @@
+# Copyright (c) 2025 Mario Paja
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Group of GPIO-controlled relays used to enable an RF switch and select the active antenna.
+
+compatible: "seeed,xiao-gpio-rf-switch"
+
+properties:
+  enable-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIOs to enable the RF switch module.
+
+  select-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      GPIOs to select the active antenna

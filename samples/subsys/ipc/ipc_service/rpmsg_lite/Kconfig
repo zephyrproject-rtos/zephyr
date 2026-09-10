@@ -1,0 +1,18 @@
+# Copyright 2026 NXP
+#
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+config SAMPLE_IPC_RPMSG_LITE_STACK_SIZE
+	int "Stack size for the sample IPC worker threads"
+	default 4096
+	help
+	  Stack size in bytes for the per-instance demo threads in
+	  the host image.
+
+config SAMPLE_INCLUDE_REMOTE_DIR
+	bool "Include remote core header directory"
+	help
+	  Include remote build header files. Can be used if primary image
+	  needs to be aware of size or base address of secondary image

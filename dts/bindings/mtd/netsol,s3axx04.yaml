@@ -1,0 +1,25 @@
+# Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+description: Netsol S3Axx04 SPI MRAM
+
+compatible: "netsol,s3axx04"
+
+include: [spi-device.yaml]
+
+properties:
+  size:
+    type: int
+    required: true
+    description: Total MRAM size in bytes.
+
+  config-regs:
+    type: uint8-array
+    default: [0x00, 0x00, 0x20, 0x00]
+    description: Configuration Registers, see datasheet. 4 Registers, 1 byte per register.
+      These registers are non-volatile and need to be re-set in case there was a previous issue.
+      Defaults sets a safe working configuration with the lowest driving strength.
+
+  disable-wren:
+    type: boolean
+    description: Disable the need for WREN command before writing to memory, making it a bit faster.

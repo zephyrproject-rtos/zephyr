@@ -1,0 +1,38 @@
+/*
+ * Copyright (c) 2026 Mithilesh Konakanchi
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include "stm32f469i_disco_common.dtsi"
+
+&i2c1 {
+	ft5336: ft5336@38 {
+		compatible = "focaltech,ft5336";
+		reg = <0x38>;
+		int-gpios = <&gpioj 5 0>;
+		inverted-y;
+		screen-width = <800>;
+		screen-height = <480>;
+		status = "okay";
+	};
+};
+
+&mipi_dsi {
+	/delete-property/ vs-active-high;
+	/delete-property/ hs-active-high;
+
+	panel: panel@0 {
+		compatible = "frida,nt35510";
+	};
+};
+
+&ltdc {
+	/* frida, nt35510 */
+	display-timings {
+		vsync-len = <120>;
+		vback-porch = <150>;
+		vfront-porch = <150>;
+	};
+};

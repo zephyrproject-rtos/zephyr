@@ -1,0 +1,29 @@
+# Copyright (c) 2024 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config MBOX_NRF_VEVIF_EVENT_RX
+	bool "nRF VEVIF event RX driver"
+	depends on DT_HAS_NORDIC_NRF_VEVIF_EVENT_RX_ENABLED
+	default y
+	help
+	  Mailbox driver for receiving events triggered by VPR
+
+config MBOX_NRF_VEVIF_EVENT_TX
+	bool "nRF VEVIF event TX driver"
+	depends on DT_HAS_NORDIC_NRF_VEVIF_EVENT_TX_ENABLED
+	default y
+	help
+	  Mailbox driver for transmitting events from VPR to a remote core
+
+config MBOX_NRF_VEVIF_EVENT_EARLY_INT_HANDLE
+	bool "Early interrupt handling"
+	help
+	  Enable handling of early interrupts that arrive before
+	  VPR event is enabled. Pending interrupt will be handled after
+	  enabling corresponding event.
+
+config MBOX_NRF_VEVIF_EVENT_USE_54L_ERRATA_16
+	bool "Apply errata 16 for nRF54L series"
+	depends on SOC_NRF54L05 || SOC_NRF54L10 || SOC_NRF54L15
+	select MBOX_NRF_VEVIF_EVENT_EARLY_INT_HANDLE
+	default y

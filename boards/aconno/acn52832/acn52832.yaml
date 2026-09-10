@@ -1,0 +1,9 @@
+identifier: acn52832
+name: aconno acn52832
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 64
+flash: 512

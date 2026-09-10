@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2021 Nordic Semiconductor ASA
+
+config ARM_STORE_EXC_RETURN
+	bool
+	default y if ARM_NONSECURE_FIRMWARE
+	help
+	  Redefine this with looser requirements, so the EXC_RETURN value can
+	  be checked in the test. This essentially tests that the official
+	  requirements are sane.
+
+source "Kconfig.zephyr"

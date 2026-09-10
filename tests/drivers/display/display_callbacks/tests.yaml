@@ -1,0 +1,13 @@
+common:
+  tags:
+    - drivers
+    - display
+  harness: ztest
+tests:
+  # section.subsection
+  drivers.display.callbacks:
+    filter: dt_compat_enabled("st,stm32-ltdc")
+    platform_allow:
+      - stm32u5g9j_dk2
+      - stm32h7s78_dk
+      - stm32n6570_dk/stm32n657xx/sb

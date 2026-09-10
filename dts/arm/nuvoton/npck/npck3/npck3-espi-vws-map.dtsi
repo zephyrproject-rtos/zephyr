@@ -1,0 +1,10 @@
+/*
+ * Copyright (c) 2025 Nuvoton Technology Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Common eSPI Virtual Wire (VW) mapping configurations in npck */
+#include <nuvoton/npck/npck-espi-vws-map.dtsi>
+
+/* Specific eSPI Virtual Wire (VW) mapping configurations in npck3 series */

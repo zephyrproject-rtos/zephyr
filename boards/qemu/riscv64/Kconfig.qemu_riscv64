@@ -1,0 +1,5 @@
+# Copyright (c) 2024 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_QEMU_RISCV64
+	select SOC_QEMU_VIRT_RISCV64

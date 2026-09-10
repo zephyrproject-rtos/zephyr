@@ -1,0 +1,29 @@
+# Copyright (c) 2024 Würth Elektronik eiSos GmbH & Co. KG
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Würth Elektronik WSEN-PDUS-25131308XXXXX differential pressure sensor
+
+compatible: "we,wsen-pdus-25131308XXXXX"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  sensor-type:
+    type: int
+    required: true
+    enum:
+    - 0
+    - 1
+    - 2
+    - 3
+    - 4
+    - 5
+    description: |
+      PDUS sensor product variant (pressure measurement range).
+      0 - order code 2513130810001, range = -0.1 to +0.1 kPa
+      1 - order code 2513130810101 (5V VCC) + 2513130810102 (3.3V VCC), range = -1 to +1 kPa
+      2 - order code 2513130810201, range = -10 to +10 kPa
+      3 - order code 2513130810301, range =  0 to 100 kPa
+      4 - order code 2513130810401 (5V VCC) + 2513130810402 (3.3V VCC), range = -100 to +1000 kPa
+      5 - order code 2513130815401, range = 0 to +1500 kPa

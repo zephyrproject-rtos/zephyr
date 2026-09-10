@@ -1,0 +1,22 @@
+# Copyright (c) 2023 Meta
+# SPDX-License-Identifier: Apache-2.0
+
+source "Kconfig.zephyr"
+
+config TEST_NUM_LOGS
+	int "Number of log messages per test"
+	default 5000
+
+config TEST_INPUT_LOG_RATE
+	int "Maximal input log rate for the test (in msg/s)"
+	default 1000
+	help
+	  Specify the maximum rate at which messages will be logged from the
+	  application.
+
+config TEST_OUTPUT_LOG_RATE
+	int "Maximal output log rate for the test (in msg/s)"
+	default 1000
+	help
+	  Specify the maximum rate at which log messages will be handled by
+	  the log backend.

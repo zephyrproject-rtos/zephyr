@@ -1,0 +1,10 @@
+# Copyright (c) 2026 Muhammad Waleed Badar
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Ericsson F5521gw (HP HS2340) WWAN module with integrated GPS
+
+compatible: "ericsson,f5521gw"
+
+include:
+  - uart-device.yaml

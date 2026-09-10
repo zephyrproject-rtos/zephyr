@@ -1,0 +1,6 @@
+board:
+  name: numaker_m55m1
+  full_name: NUMAKER M55M1
+  vendor: nuvoton
+  socs:
+  - name: m55m1xxx

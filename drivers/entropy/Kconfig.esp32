@@ -1,0 +1,16 @@
+# esp32 entropy generator driver configuration
+
+# Copyright (c) 2017 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config ENTROPY_ESP32_RNG
+	bool "ESP32 entropy number generator driver"
+	default y
+	depends on DT_HAS_ESPRESSIF_ESP32_TRNG_ENABLED
+	select ENTROPY_HAS_DRIVER
+	help
+	  This option enables the entropy number generator for ESP32 SoCs.
+
+	  With Wi-Fi and Bluetooth disabled, this will produce pseudo-entropy
+	  numbers: noise from these radios are used to feed entropy in this
+	  generator.

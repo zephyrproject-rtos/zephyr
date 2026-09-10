@@ -1,0 +1,6 @@
+board:
+  name: qnxhv_vm
+  full_name: QNX Hypervisor Virtual Machine
+  vendor: blackberry
+  socs:
+  - name: qnxhv_vm

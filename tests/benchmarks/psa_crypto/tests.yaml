@@ -1,0 +1,12 @@
+common:
+  timeout: 30
+  tags:
+    - benchmark
+    - crypto
+  arch_exclude:
+    - posix
+tests:
+  benchmark.crypto.psa:
+    filter: CONFIG_TEST_RANDOM_GENERATOR
+    integration_platforms:
+      - qemu_x86

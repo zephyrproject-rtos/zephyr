@@ -1,0 +1,6 @@
+board:
+  name: rp2040_geek
+  full_name: RP2040-GEEK
+  vendor: waveshare
+  socs:
+  - name: rp2040

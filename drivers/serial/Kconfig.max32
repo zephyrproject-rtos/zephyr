@@ -1,0 +1,60 @@
+# MAX32 UART configuration
+
+# Copyright (c) 2023-2024 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config UART_MAX32
+	bool "MAX32 MCU serial driver"
+	default y
+	depends on DT_HAS_ADI_MAX32_UART_ENABLED
+	select SERIAL_HAS_DRIVER
+	select SERIAL_SUPPORT_INTERRUPT
+	select PINCTRL
+	select SERIAL_SUPPORT_ASYNC if DT_HAS_ADI_MAX32_DMA_ENABLED && !SOC_FAMILY_MAX32_RV32
+	select DMA if UART_ASYNC_API
+	help
+	  This option enables the UART driver for MAX32 family of
+	  processors.
+	  Say y if you wish to use serial port on MAX32 MCU.
+
+config UART_MAX32_TX_IRQ_WORKAROUND
+	bool
+	default y if SOC_MAX32690 || SOC_MAX32655 || SOC_MAX32657 || \
+		SOC_MAX32666 || SOC_MAX32670 || SOC_MAX32672 || SOC_MAX32675
+	depends on UART_MAX32 && UART_INTERRUPT_DRIVEN
+	help
+		Workaround for the subset of MAX32 MCUs that have errata regarding
+		failing to consistently raise interrupts for TX half/almost empty
+		flags.
+
+if UART_MAX32_TX_IRQ_WORKAROUND
+
+config UART_MAX32_TX_IRQ_WORKAROUND_POLL_US
+	int "Interval for checking for TX completion"
+	default 500
+	help
+		Timer interval for checking the TX FIFO status, for platforms where
+		the TX half/almost empty interrupts may sometimes fail to raise.
+
+endif
+
+config UART_MAX32_TX_AE_WORKAROUND
+	bool
+	select DEPRECATED
+	depends on UART_MAX32 && UART_INTERRUPT_DRIVEN
+	help
+		This option enables a small workaround for almost-empty interrupts
+		not firing on TX of small amounts. This option is deprecated, in favor
+		of more complete interrupt workaround for the necessary platforms.
+
+if UART_MAX32
+
+config UART_TX_CACHE_LEN
+	int "TX cache buffer size"
+	range 8 64
+	default 8
+	help
+	  Size of UART transmit buffer that is used when source buffer
+	  is not located in a DMA-able region.
+
+endif # UART_MAX32

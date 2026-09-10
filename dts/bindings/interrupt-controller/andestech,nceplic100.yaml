@@ -1,0 +1,11 @@
+#
+# Copyright (c) 2024 Meta Platforms
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: Andes Platform-Level Interrupt Controller (NCEPLIC100)
+
+compatible: "andestech,nceplic100"
+
+include: sifive,plic-1.0.0.yaml

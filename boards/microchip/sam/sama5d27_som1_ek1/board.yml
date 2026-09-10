@@ -1,0 +1,6 @@
+board:
+  name: sama5d27_som1_ek1
+  full_name: SAMA5D27 SOM1 Kit1
+  vendor: microchip
+  socs:
+    - name: sama5d27som1

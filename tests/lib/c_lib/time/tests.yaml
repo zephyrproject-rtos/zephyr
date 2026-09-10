@@ -1,0 +1,6 @@
+tests:
+  libraries.libc.time:
+    tags: libc
+    timeout: 180
+    integration_platforms:
+      - mps2/an385

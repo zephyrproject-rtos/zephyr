@@ -1,0 +1,16 @@
+identifier: tq_h503a
+name: TQ H503A
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+ram: 32
+flash: 128
+supported:
+  - backup_sram
+  - gpio
+  - uart
+  - i2c
+  - watchdog
+  - usb_device
+vendor: embedsky

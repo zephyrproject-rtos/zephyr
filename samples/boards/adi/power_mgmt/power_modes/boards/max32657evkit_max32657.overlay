@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2025 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * SRAM banks marked with the following property are retained in backup mode
+ *
+ * SRAM banks are listed in max32657_common.dtsi
+ */
+&sram0 {
+	adi,ram-bank-retained;
+};

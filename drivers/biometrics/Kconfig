@@ -1,0 +1,35 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2025 Siratul Islam
+
+menuconfig BIOMETRICS
+	bool "Biometrics drivers"
+	help
+	  Enable biometric sensor driver support.
+
+if BIOMETRICS
+
+module = BIOMETRICS
+module-str = biometrics
+source "subsys/logging/Kconfig.template.log_config"
+
+config BIOMETRICS_INIT_PRIORITY
+	int "Biometrics init priority"
+	default 90
+	help
+	  Biometric device driver initialization priority.
+
+config BIOMETRICS_SHELL
+	bool "Biometrics Shell"
+	depends on SHELL
+	help
+	  Enable biometric sensor shell commands for testing.
+	  This provides commands for enrollment, matching, template
+	  management, and device information queries.
+
+# zephyr-keep-sorted-start
+source "drivers/biometrics/Kconfig.emul"
+source "drivers/biometrics/Kconfig.gt5x"
+source "drivers/biometrics/Kconfig.zfm_x0"
+# zephyr-keep-sorted-stop
+
+endif # BIOMETRICS

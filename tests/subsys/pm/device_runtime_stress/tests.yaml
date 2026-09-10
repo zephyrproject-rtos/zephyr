@@ -1,0 +1,9 @@
+common:
+  tags: pm
+
+tests:
+  pm.device_runtime.stress:
+    timeout: 300
+    platform_allow:
+      - qemu_x86
+      - qemu_cortex_a53/qemu_cortex_a53/smp

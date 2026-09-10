@@ -1,0 +1,23 @@
+# STMicroelectronics stm32f2 MCU line
+
+# Copyright (c) 2018 qianfan Zhao <qianfanguijin@163.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_STM32F2X
+	bool
+	select SOC_FAMILY_STM32
+
+config SOC_SERIES
+	default "stm32f2x" if SOC_SERIES_STM32F2X
+
+config SOC_STM32F205XX
+	bool
+	select SOC_SERIES_STM32F2X
+
+config SOC_STM32F207XX
+	bool
+	select SOC_SERIES_STM32F2X
+
+config SOC
+	default "stm32f205xx" if SOC_STM32F205XX
+	default "stm32f207xx" if SOC_STM32F207XX

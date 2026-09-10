@@ -1,0 +1,14 @@
+board:
+  name: rpi_pico2
+  full_name: Raspberry Pi Pico 2
+  vendor: raspberrypi
+  socs:
+    - name: rp2350a
+      variants:
+        - name: w
+          cpucluster: m33
+          variants:
+            - name: mcuboot
+              cpucluster: m33
+        - name: mcuboot
+          cpucluster: m33

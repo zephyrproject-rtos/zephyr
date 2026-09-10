@@ -1,0 +1,38 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2023 Linumiz
+
+description: MMC56X3 3-axis magnetic and temperature sensor
+
+compatible: "memsic,mmc56x3"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+
+  magn-odr:
+    type: int
+    description: |
+      Specify the default magnetometer output data rate expressed in
+      samples per second (Hz) for continuous mode. Minimum is 0,
+      maximum is 1000, though any ODR above 255 will be set to 1000.
+      Setting ODR to 0 will turn off continuous mode. Temperature
+      cannot be read in continuous mode.
+
+  bandwidth-selection-bits-0:
+    type: boolean
+    description: |
+      Adjust length of decimation filter. Controls duration of each measurement.
+      Affects ODR; see datasheet for details.
+
+  bandwidth-selection-bits-1:
+    type: boolean
+    description: |
+      Adjust length of decimation filter. Controls duration of each measurement.
+      Affects ODR; see datasheet for details.
+
+  auto-self-reset:
+    type: boolean
+    description: |
+      Enable automatic self-reset function.
+      Recommended to be set.
+      Affects ODR; see datasheet for details.

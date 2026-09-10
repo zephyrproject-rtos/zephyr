@@ -1,0 +1,7 @@
+# TI CC1352P7 LaunchPad board
+
+# Copyright (c) 2024 Alexandre Bailon
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_CC1352P7_LP
+	select SOC_CC1352P7

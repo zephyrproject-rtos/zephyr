@@ -1,0 +1,19 @@
+# Copyright (c) 2021 BayLibre SAS
+# SPDX-License-Identifier: Apache-2.0
+
+# The GICv3 & ITS drivers allocation needs are:
+# - LPI prop table: global 1x64K aligned on 64K
+# - LPI pend table: for each redistributor/cpu 1x64K aligned on 64K
+# - Devices table: 128x4K aligned on 4K
+# - Interrupt Collections table: 1x4K aligned on 4K
+#
+# This makes 11x64K to permit all allocations to success.
+#
+# Note, will need 64K HEAP_MEM per CPUs added.
+#
+# This doesn't necessarily include the Interrupt Translation Table, which are
+# 256bytes aligned tables, for reference a 32 ITEs table needs 256bytes.
+# With 11x64K HEAP, up to 116 ITT tables of 32 ITEs can be allocated.
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	int
+	default 720896 if GIC_V3_ITS

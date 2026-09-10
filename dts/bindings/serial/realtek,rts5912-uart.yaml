@@ -1,0 +1,37 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2024 Realtek Semiconductor Corporation, SIBG-SD7
+#
+
+description: Realtek RTS5912 UART
+
+compatible: "realtek,rts5912-uart"
+
+include: [uart-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  port:
+    type: int
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  rx-gpios:
+    description: |
+      Select the wake up pin for uart rx,
+      please check include/zephyr/dt-bindings/gpio/realtek-gpio.h
+      For example:
+      rx-gpios = <RTS5912_GPIO113 GPIO_ACTIVE_HIGH>;
+    type: phandle-array
+
+  uart-dev:
+    type: phandle
+    description: |
+      Get the device of the UART device

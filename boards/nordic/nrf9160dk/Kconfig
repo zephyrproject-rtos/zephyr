@@ -1,0 +1,21 @@
+# nRF9160 DK NRF52840 board configuration
+
+# Copyright (c) 2018-2020 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_NRF9160DK
+	# The GPIO driver is required by this board's initialization code
+	# (board.c), so it is forced here to be enabled always, not only
+	# enabled by default (in defconfig).
+	select GPIO if BOARD_NRF9160DK_NRF52840
+	select BOARD_EARLY_INIT_HOOK if BOARD_NRF9160DK_NRF52840 && \
+					$(dt_nodelabel_exists,external_flash_pins_routing)
+	select BOARD_LATE_INIT_HOOK if BOARD_NRF9160DK_NRF52840
+
+if BOARD_NRF9160DK_NRF52840
+
+module = BOARD_NRF9160DK
+module-str = Board Control
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # BOARD_NRF9160DK_NRF52840

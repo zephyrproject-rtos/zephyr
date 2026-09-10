@@ -1,0 +1,15 @@
+# Ambiq CRC configuration options
+
+# Copyright (c) 2025 Ambiq
+# Author: Richard S Wheatley
+# SPDX-License-Identifier: Apache-2.0
+
+config CRC_AMBIQ
+	bool "Ambiq Apollo510 CRC support"
+	default y
+	depends on DT_HAS_AMBIQ_HW_CRC32_ENABLED
+	select CRC_DRIVER_HAS_CRC32_IEEE
+	help
+	  Enable hardware-accelerated CRC32 IEEE support for Ambiq
+	  Apollo510 SoCs. Uses the SECURITY CRC engine
+	  with boundary-crossing protection for TCM and SSRAM regions.

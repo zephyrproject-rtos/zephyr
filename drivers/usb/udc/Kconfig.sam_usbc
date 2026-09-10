@@ -1,0 +1,27 @@
+# Copyright (c) 2025-2026 Gerson Fernando Budke <nandojve@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config UDC_SAM_USBC
+	bool "SAM USBC family USB device controller driver"
+	default y
+	depends on DT_HAS_ATMEL_SAM_USBC_ENABLED
+	select PINCTRL
+	select EVENTS
+	help
+	  Driver for SAM USBC family USB device controller (SAM4L series).
+
+if UDC_SAM_USBC
+
+config UDC_SAM_USBC_STACK_SIZE
+	int "UDC controller driver internal thread stack size"
+	default 512
+	help
+	  Device controller driver internal thread stack size.
+
+config UDC_SAM_USBC_THREAD_PRIORITY
+	int "UDC controller driver thread priority"
+	default 8
+	help
+	  Device controller driver thread priority.
+
+endif # UDC_SAM_USBC

@@ -1,0 +1,16 @@
+/*
+ * Copyright 2024 Trackunit Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		gnss = &gnss;
+	};
+
+	gnss: gnss {
+		compatible = "zephyr,gnss-emul";
+		status = "okay";
+	};
+};

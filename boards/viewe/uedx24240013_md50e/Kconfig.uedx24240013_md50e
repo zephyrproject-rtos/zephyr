@@ -1,0 +1,6 @@
+# Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
+# Copyright (c) 2026 VIEWE Display Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_UEDX24240013_MD50E
+	select SOC_ESP32C3_WROOM_02_N4

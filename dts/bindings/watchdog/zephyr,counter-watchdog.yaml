@@ -1,0 +1,16 @@
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Counter based watchdog
+
+compatible: "zephyr,counter-watchdog"
+
+include: base.yaml
+
+properties:
+  counter:
+    type: phandle
+    required: true
+    description: |
+      Counter device used for watchdog.

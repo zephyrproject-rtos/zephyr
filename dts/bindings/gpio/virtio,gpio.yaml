@@ -1,0 +1,36 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  VIRTIO GPIO device (ID:41)
+
+compatible: "virtio,gpio"
+
+include: [gpio-controller.yaml, base.yaml]
+
+properties:
+  ngpios:
+    max: 32
+
+  "#gpio-cells":
+    const: 2
+
+gpio-cells:
+  - pin
+  - flags
+
+examples:
+  - |
+    virtio_mmio0: virtio_mmio@a000000 {
+            compatible = "virtio,mmio";
+            reg = <0xa000000 0x200>;
+            interrupts = <0 16 4>;
+            status = "okay";
+
+            virtio_gpio0: virtio-gpio {
+                    compatible = "virtio,gpio";
+                    gpio-controller;
+                    #gpio-cells = <2>;
+                    status = "okay";
+            };
+    };

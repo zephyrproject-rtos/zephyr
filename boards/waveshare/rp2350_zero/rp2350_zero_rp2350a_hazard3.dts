@@ -1,0 +1,11 @@
+/*
+ * Copyright (c) 2025 Stephano Cetola
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <raspberrypi/rpi_pico/rp2350a.dtsi>
+#include <riscv/raspberrypi/hazard3.dtsi>
+#include "rp2350_zero.dtsi"

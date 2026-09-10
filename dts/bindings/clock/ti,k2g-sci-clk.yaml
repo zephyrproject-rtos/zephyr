@@ -1,0 +1,22 @@
+# Copyright 2025 Texas Instruments Incorporated.
+# SPDX-License-Identifier: Apache-2.0
+
+description: TI-SCI clock controller
+
+compatible: "ti,k2g-sci-clk"
+
+include:
+  - clock-controller.yaml
+  - base.yaml
+
+properties:
+  "#clock-cells":
+    type: int
+    required: true
+    description: >
+      Number of cells required to specify a clock provided by this controller.
+    const: 2
+
+clock-cells:
+  - devid
+  - clkid

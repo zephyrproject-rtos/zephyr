@@ -1,0 +1,15 @@
+# Copyright (c) 2023 Enphase Energy
+# SPDX-License-Identifier: Apache-2.0
+
+description: IVSHMEM Ethernet
+
+compatible: "siemens,ivshmem-eth"
+
+include: ethernet-controller.yaml
+
+properties:
+
+  ivshmem-v2:
+    type: phandle
+    required: true
+    description: ivshmem-v2 driver node

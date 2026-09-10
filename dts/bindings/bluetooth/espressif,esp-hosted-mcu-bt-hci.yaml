@@ -1,0 +1,34 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) CO LTD
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Bluetooth HCI controller reached over the esp-hosted-mcu transport core. The
+  controller runs on an external Espressif coprocessor (for example an
+  ESP32-C6) and its HCI H4 traffic is multiplexed onto the same SPI or SDIO
+  link as Wi-Fi by the esp-hosted-mcu core.
+
+compatible: "espressif,esp-hosted-mcu-bt-hci"
+
+include: bt-hci.yaml
+
+properties:
+  bt-hci-name:
+    default: "ESP Hosted"
+  bt-hci-bus:
+    default: "virtual"
+  bt-hci-quirks:
+    # The coprocessor firmware advertises the controller to host flow
+    # control commands but rejects them.
+    default: ["no-flow-control"]
+
+examples:
+  - |
+    esp-hosted-mcu@0 {
+            compatible = "espressif,esp-hosted-mcu";
+            reg = <0>;
+
+            esp_hosted_mcu_hci: bt-hci {
+                    compatible = "espressif,esp-hosted-mcu-bt-hci";
+                    status = "okay";
+            };
+    };

@@ -1,0 +1,35 @@
+# Copyright (c) 2017, I-SENSE group of ICCS
+# SPDX-License-Identifier: Apache-2.0
+
+description: STM32 USB controller
+
+compatible: "st,stm32-usb"
+
+include: [usb-ep.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  ram-size:
+    type: int
+    required: true
+    description: |
+      Size of USB dedicated RAM. STM32 SOC's reference
+      manual defines USB packet SRAM size.
+
+  disconnect-gpios:
+    type: phandle-array
+    description: |
+      Some boards use a USB DISCONNECT pin to enable
+      the pull-up resistor on USB Data Positive signal.
+
+  phys:
+    type: phandle
+    description: PHY provider specifier
+
+  clocks:
+    required: true

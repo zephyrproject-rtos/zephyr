@@ -1,0 +1,16 @@
+/*
+ * Copyright (c) 2026 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		i2c-0 = &pmod1_i2c;
+		gy271 = &pmod1_i2c;
+	};
+};
+
+&pmod1_i2c {
+	status = "okay";
+};

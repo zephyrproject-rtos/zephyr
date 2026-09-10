@@ -1,0 +1,40 @@
+/*
+ * Copyright (c) 2026 Filip Stojanovic <filipembedded@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <zephyr/dt-bindings/i2c/i2c.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+#include <zephyr/dt-bindings/gpio/m2-memory-connector.h>
+
+/ {
+	m2mem_leds: m2mem-leds {
+		compatible = "gpio-leds";
+
+		m2mem_led_1: m2mem_led_1 {
+			gpios = <&m2mem_connector M2MEM_CONNECTOR_LED1 GPIO_ACTIVE_HIGH>;
+			label = "B-M2MEM-PACK1 LED1";
+		};
+
+		m2mem_led_2: m2mem_led_2 {
+			gpios = <&m2mem_connector M2MEM_CONNECTOR_LED2 GPIO_ACTIVE_HIGH>;
+			label = "B-M2MEM-PACK1 LED2";
+		};
+	};
+};
+
+&m2mem_i2c {
+	status = "okay";
+	clock-frequency = <I2C_BITRATE_FAST>;
+
+	m2mem_id_eeprom: eeprom@57 {
+		compatible = "st,m24xxx", "atmel,at24";
+		reg = <0x57>;
+		size = <DT_SIZE_K(16)>;
+		pagesize = <64>;
+		address-width = <16>;
+		timeout = <5>;
+		status = "okay";
+	};
+};

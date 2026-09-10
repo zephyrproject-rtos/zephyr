@@ -1,0 +1,15 @@
+description: |
+    Atmel SAM0 USB in device mode
+
+compatible: "atmel,sam0-usb"
+
+include:
+  - name: usb-ep.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true

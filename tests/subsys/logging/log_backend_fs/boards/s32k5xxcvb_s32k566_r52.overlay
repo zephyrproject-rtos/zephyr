@@ -1,0 +1,7 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include "s32k5xxcvb_s32k566_m7.overlay"

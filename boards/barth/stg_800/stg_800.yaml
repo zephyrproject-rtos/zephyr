@@ -1,0 +1,17 @@
+identifier: stg_800
+name: STG-800 lococube mini-PLC
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+ram: 32
+flash: 100
+supported:
+  - gpio
+  - watchdog
+  - adc
+  - dma
+  - pwm
+  - can
+vendor: barth

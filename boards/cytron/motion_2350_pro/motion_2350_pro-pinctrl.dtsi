@@ -1,0 +1,57 @@
+/*
+ * Copyright (c) 2025 Jonas Berg
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/rpi-pico-rp2350a-pinctrl.h>
+
+&pinctrl {
+	adc_default: adc_default {
+		group1 {
+			pinmux = <ADC_CH0_P26>, <ADC_CH1_P27>;
+			input-enable;
+		};
+	};
+
+	i2c0_default: i2c0_default {
+		group1 {
+			pinmux = <I2C0_SDA_P16>, <I2C0_SCL_P17>;
+			input-enable;
+		};
+	};
+
+	uart0_default: uart0_default {
+		group1 {
+			pinmux = <UART0_TX_P28>;
+		};
+
+		group2 {
+			pinmux = <UART0_RX_P29>;
+			input-enable;
+		};
+	};
+
+	pwm_default: pwm_default {
+		group1 {
+			pinmux = <PWM_0A_P0>, <PWM_0B_P1>, <PWM_1A_P2>, <PWM_1B_P3>,
+				 <PWM_2A_P4>, <PWM_2B_P5>;
+		};
+
+		group2 {
+			pinmux = <PWM_3A_P6>, <PWM_3B_P7>, <PWM_4A_P8>, <PWM_4B_P9>,
+				 <PWM_5A_P10>, <PWM_5B_P11>;
+		};
+
+		group3 {
+			pinmux = <PWM_6A_P12>, <PWM_6B_P13>, <PWM_7A_P14>, <PWM_7B_P15>,
+				 <PWM_3A_P22>;
+		};
+	};
+
+	ws2812_pio0_default: ws2812_pio0_default {
+		ws2812 {
+			pinmux = <PIO0_P23>;
+		};
+	};
+};

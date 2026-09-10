@@ -1,0 +1,29 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_EK_RA8D1
+
+if DISPLAY
+
+config MEMC
+	default y
+
+if LVGL
+
+config LV_Z_VDB_ZEPHYR_REGION
+	default y
+
+config LV_Z_VDB_ZEPHYR_REGION_NAME
+	default "SDRAM"
+
+config LV_ATTRIBUTE_MEM_ALIGN_SIZE
+	default 4 if LV_USE_DRAW_DAVE2D
+
+config LV_Z_VDB_ALIGN
+	default 64
+
+endif # LVGL
+
+endif # DISPLAY
+
+endif # BOARD_EK_RA8D1

@@ -1,0 +1,68 @@
+/*
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <renesas/ra/ra8/r7ka8p1kflcac_cm33.dtsi>
+#include "ra8p1_titan_mini.dtsi"
+
+/ {
+	model = "Ruiside RA8P1 Titan Mini";
+	compatible = "ruiside,ra8p1-titan-mini", "renesas,ra8p1", "renesas,ra8";
+
+	chosen {
+		zephyr,sram = &sram1;
+		zephyr,flash = &code_mram_cm33;
+		zephyr,flash-controller = &mram_ctrl;
+		zephyr,console = &uart2;
+		zephyr,shell-uart = &uart2;
+		zephyr,entropy = &trng;
+	};
+
+	aliases {
+		led0 = &led2;
+		sw0 = &button1;
+	};
+};
+
+&button1 {
+	status = "okay";
+};
+
+&sci2 {
+	pinctrl-0 = <&sci2_default>;
+	pinctrl-names = "default";
+	interrupts = <40 1>, <41 1>, <42 1>, <43 1>;
+	interrupt-names = "rxi", "txi", "tei", "eri";
+	status = "okay";
+
+	uart2: uart {
+		current-speed = <115200>;
+		status = "okay";
+	};
+};
+
+&port_irq12 {
+	interrupts = <44 12>;
+	status = "okay";
+};
+
+&ulpt0 {
+	interrupts = <45 1>;
+	interrupt-names = "ulpti";
+	status = "okay";
+
+	timer {
+		status = "okay";
+	};
+};
+
+&ulpt1 {
+	status = "okay";
+
+	timer {
+		status = "okay";
+	};
+};

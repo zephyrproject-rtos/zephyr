@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2023 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/delete-node/ &zephyr_udc0;
+
+/ {
+	zephyr_udc0: udc_skeleton0 {
+		compatible = "zephyr,udc-skeleton";
+		num-bidir-endpoints = <8>;
+		maximum-speed = "high-speed";
+	};
+};

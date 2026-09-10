@@ -1,0 +1,20 @@
+# Copyright (c) 2025-2026 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RA family flash low-power controller
+
+compatible: "renesas,ra-flash-lp-controller"
+
+include: base.yaml
+
+properties:
+  programming-enable:
+    type: boolean
+    description: |
+      Enable code flash programming configuration
+
+  command-interface:
+    type: phandle
+    required: true
+    description: |
+      Phandle to command interface node.

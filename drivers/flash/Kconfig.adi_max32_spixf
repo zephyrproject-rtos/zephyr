@@ -1,0 +1,34 @@
+# ADI MAX32 SPIXF Quad SPI flash driver configuration
+
+# Copyright (c) 2025 Analog Devices, Inc
+# SPDX-License-Identifier: Apache-2.0
+
+config FLASH_ADI_MAX32_SPIXF
+	bool "ADI MAX32 SPIXF Quad SPI Flash driver"
+	default y
+	depends on DT_HAS_ADI_MAX32_SPIXF_NOR_ENABLED
+	select FLASH_HAS_DRIVER_ENABLED
+	select FLASH_JESD216
+	select FLASH_HAS_PAGE_LAYOUT
+	select FLASH_HAS_EXPLICIT_ERASE
+	select PINCTRL
+	help
+	  Enable QSPI-NOR support on the MAX32 family of processors.
+
+if FLASH_ADI_MAX32_SPIXF
+
+config FLASH_ADI_MAX32_SPIXF_SFDP_RUNTIME
+	bool "Read flash parameters at runtime"
+	depends on FLASH_ADI_MAX32_SPIXF
+	help
+	  Read flash device characteristics from the device at runtime.
+	  This option should provide functionality for all supported
+	  JESD216-compatible devices, with the following notes:
+	  - Quad Enable Requirements bitfield (DW15) must be present in the SFDP
+	    tables to configure Quad mode. Otherwise it defaults to Dual or
+	    Single mode as supported by the device.
+
+	  If not selected, the driver uses a fixed configuration, and the device
+	  size, page size, and jedec-id properties must be set in devicetree node.
+
+endif

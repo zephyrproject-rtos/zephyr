@@ -1,0 +1,7 @@
+shield:
+  name: rk043fn66hs_ctg
+  full_name: RK043FN66HS-CTG 4.3" LCD Panel
+  vendor: nxp
+  supported_features:
+    - input
+    - display

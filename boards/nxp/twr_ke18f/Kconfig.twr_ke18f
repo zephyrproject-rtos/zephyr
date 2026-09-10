@@ -1,0 +1,6 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_TWR_KE18F
+	select SOC_MKE18F16
+	select SOC_PART_NUMBER_MKE18F512VLL16

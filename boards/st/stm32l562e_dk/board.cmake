@@ -1,0 +1,24 @@
+# SPDX-License-Identifier: Apache-2.0
+if(CONFIG_BUILD_WITH_TFM)
+  # Flash merged TF-M + Zephyr binary
+  set_property(TARGET runners_yaml_props_target PROPERTY hex_file tfm_merged.hex)
+
+  # Flash is set all secure (<build>/tfm/api_ns/regression.sh) before flash programming
+  # hence locate non-secure image from the secure flash base address in HEX file.
+  dt_chosen(chosen_part_path PROPERTY "zephyr,code-partition")
+  dt_reg_addr(chosen_part_addr PATH "${chosen_part_path}")
+  math(EXPR TFM_HEX_BASE_ADDRESS_NS
+    "${chosen_part_addr} - ${CONFIG_FLASH_BASE_ADDRESS} + ${CONFIG_STM32_INT_FLASH_SECURE_BASE_ADDRESS}"
+  )
+endif()
+
+# keep first
+board_runner_args(stm32cubeprogrammer "--port=swd" "--reset-mode=hw")
+board_runner_args(pyocd "--target=stm32l562qeixq")
+board_runner_args(jlink "--device=STM32L562QE" "--speed=4000")
+
+# keep first
+include(${ZEPHYR_BASE}/boards/common/stm32cubeprogrammer.board.cmake)
+include(${ZEPHYR_BASE}/boards/common/pyocd.board.cmake)
+include(${ZEPHYR_BASE}/boards/common/openocd-stm32.board.cmake)
+include(${ZEPHYR_BASE}/boards/common/jlink.board.cmake)

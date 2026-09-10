@@ -1,0 +1,12 @@
+/* Copyright (c) 2023 Renesas Electronics Corporation and/or its affiliates */
+/* SPDX-License-Identifier: Apache-2.0 */
+
+#include "da1469x.dtsi"
+
+&sram0 {
+	reg = <0x20000000 DT_SIZE_K(512)>;
+};
+
+&gpio1 {
+	ngpios = <12>;
+};

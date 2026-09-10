@@ -1,0 +1,15 @@
+/ {
+	test_latch: gpio@2000ff00 {
+		compatible = "gpio-mmio-latch";
+		reg = <0x2000ff00 0x4>;
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <8>;
+		initial-output = <0x5a>;
+		status = "okay";
+	};
+};
+
+&sram0 {
+	reg = <0x20000000 0xff00>;
+};

@@ -1,0 +1,63 @@
+# Copyright (c) 2026, Realtek Semiconductor Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_RTL87X2G
+	bool
+	select SOC_FAMILY_REALTEK_BEE
+	help
+	  Enable support for Realtek RTL87x2G series
+
+config SOC_RTL8762GC
+	bool
+	select SOC_SERIES_RTL87X2G
+
+config SOC_RTL8762GKU
+	bool
+	select SOC_SERIES_RTL87X2G
+
+config SOC_RTL8762GKH
+	bool
+	select SOC_SERIES_RTL87X2G
+
+config SOC_RTL8762GRU
+	bool
+	select SOC_SERIES_RTL87X2G
+
+config SOC_RTL8762GRH
+	bool
+	select SOC_SERIES_RTL87X2G
+
+config SOC_RTL8762GTP
+	bool
+	select SOC_SERIES_RTL87X2G
+
+config SOC_RTL8762GTU
+	bool
+	select SOC_SERIES_RTL87X2G
+
+config SOC_RTL8762GTH
+	bool
+	select SOC_SERIES_RTL87X2G
+
+config SOC_RTL8772GWF
+	bool
+	select SOC_SERIES_RTL87X2G
+
+config SOC_RTL8772GWP
+	bool
+	select SOC_SERIES_RTL87X2G
+
+config SOC_SERIES
+	default "rtl87x2g" if SOC_SERIES_RTL87X2G
+
+config SOC
+	default "rtl8762gc" if SOC_RTL8762GC
+	default "rtl8762gkh" if SOC_RTL8762GKH
+	default "rtl8762gku" if SOC_RTL8762GKU
+	default "rtl8762grh" if SOC_RTL8762GRH
+	default "rtl8762gru" if SOC_RTL8762GRU
+	default "rtl8762gth" if SOC_RTL8762GTH
+	default "rtl8762gtp" if SOC_RTL8762GTP
+	default "rtl8762gtu" if SOC_RTL8762GTU
+	default "rtl8772gwf" if SOC_RTL8772GWF
+	default "rtl8772gwp" if SOC_RTL8772GWP

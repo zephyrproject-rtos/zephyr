@@ -1,0 +1,108 @@
+# Copyright (c) 2026, Realtek Semiconductor Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Bee DMA controller.
+
+  channel: Select channel for data transmitting
+
+  slot: Handshake index.
+
+  config: A 32bit mask specifying the DMA channel configuration
+    - bit 0-1:     Direction  (see dma.h)
+                 - 0x0: MEMORY to MEMORY
+                 - 0x1: MEMORY to PERIPH
+                 - 0x2: PERIPH to MEMORY
+                 - 0x3: PERIPH to PERIPH(reserved)
+
+    - bit 2-3:     Source address increase
+                 - 0x0: increment address between transfers
+                 - 0x1: decrement address between transfers
+                 - 0x2: no address increment between transfers
+                 - 0x3: reserved
+
+    - bit 4-5:     Destination address increase
+                 - 0x0: increment address between transfers
+                 - 0x1: decrement address between transfers
+                 - 0x2: no address increment between transfers
+                 - 0x3: reserved
+
+    - bit 6-7:     Source data width
+                 - 0x0: 8 bits
+                 - 0x1: 16 bits
+                 - 0x2: 32 bits
+                 - 0x3: reserved
+
+    - bit 8-9:     Destination data width
+                 - 0x0: 8 bits
+                 - 0x1: 16 bits
+                 - 0x2: 32 bits
+                 - 0x3: reserved
+
+    - bit 10-12:   Source data msize
+                 - 0x0: msize 1
+                 - 0x1: msize 4
+                 - 0x2: msize 8
+                 - 0x3: msize 16
+                 - 0x4: msize 32
+                 - 0x5: msize 64
+                 - 0x6: msize 128
+                 - 0x7: msize 256
+
+    - bit 13-15:   Destination data width
+                 - 0x0: msize 1
+                 - 0x1: msize 4
+                 - 0x2: msize 8
+                 - 0x3: msize 16
+                 - 0x4: msize 32
+                 - 0x5: msize 64
+                 - 0x6: msize 128
+                 - 0x7: msize 256
+
+    - bit 16-20:   Priority
+                 - 0 ~ 9 can be configured
+
+  Example of devicetree configuration
+
+  &uart2 {
+        status = "okay";
+        dmas = <&dma0 2 4 0x10021>, <&dma0 3 5 0xa>;
+        dma-names = "tx", "rx";
+  };
+
+  "uart2" uses dma0 for transmitting and receiving in the example.
+  Each is named "tx" and "rx".
+  The channel cell assigns channel 2 to transmit and channel 3 to receive.
+  The slot cell configs specified handshake for different peripherals.
+  The config cell can take various configs.
+  But the setting used depends on each driver implementation.
+  Set the priority for the transmitting channel as HIGH, LOW(the default) for receive channel.
+
+compatible: "realtek,bee-dma"
+
+include: dma-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  dma-channels:
+    required: true
+
+  clocks:
+    required: true
+
+  dma-port:
+    type: int
+    required: true
+
+  "#dma-cells":
+    const: 3
+
+dma-cells:
+  - channel
+  - slot
+  - config

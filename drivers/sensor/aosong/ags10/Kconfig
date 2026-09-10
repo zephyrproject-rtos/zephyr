@@ -1,0 +1,12 @@
+# Copyright (c) 2023 Balthazar Deliers
+# SPDX-License-Identifier: Apache-2.0
+
+# AOSONG AGS10 TVOC sensor driver options.
+
+config AGS10
+	bool "AOSONG AGS10 TVOC sensor"
+	default y
+	depends on DT_HAS_AOSONG_AGS10_ENABLED
+	select I2C
+	help
+	  Enable AOSONG AGS10 TVOC sensor driver.

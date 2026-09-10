@@ -1,0 +1,55 @@
+# Copyright (c) 2026 Jonathan Elliot Peace <jep@alphabetiq.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  BCM2835 ARMC peripheral interrupt controller -- the "GPU IRQ" side
+  of the BCM283x family (Pi 1 / Pi 2 / Pi 3 / Pi Zero family).
+
+  Hangs off the BCM2836 ARM-local intc as a child. Aggregates 64 GPU
+  IRQs (PEND1 + PEND2 banks) plus 8 ARMC "basic" IRQs into the GPU
+  cascade line of its parent.
+
+  Zephyr exposes this controller's IRQs in a flat range offset by 32
+  (the L1 ARM-local intc occupies 0..31, only 0..9 used):
+    32..39   = basic bank   (IRQ_BASIC_PENDING bits 0..7)
+    64..95   = GPU PEND1    (PEND1 bits 0..31)
+    96..127  = GPU PEND2    (PEND2 bits 0..31)
+  (See <zephyr/dt-bindings/interrupt-controller/bcm2835-armctrl.h>
+  for the symbolic constants, and soc/brcm/bcm2710/soc_irq.c +
+  drivers/interrupt_controller/intc_bcm2835_armctrl.c for the
+  decode that maps these numbers to the bank-0 shortcut bits +
+  PEND1 / PEND2 registers.)
+
+compatible: "brcm,bcm2835-armctrl-ic"
+
+include: [interrupt-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    description: |
+      The single GPU-cascade IRQ on the parent BCM2836 ARM-local intc.
+      Present only when this controller is cascaded (BCM2836 / Pi 2+).
+      On the BCM2835 (Pi 1 / Zero / Zero W) the ARMC is the root
+      interrupt controller, wired directly to the ARM core IRQ line, so
+      it has no parent interrupt and this property is omitted.
+
+  interrupt-controller:
+    required: true
+
+  "#interrupt-cells":
+    const: 3
+    description: |
+      Cell 0: flat IRQ number from the offset-by-32 ARMC space
+              (32..39 basic / 64..95 PEND1 / 96..127 PEND2).
+      Cell 1: trigger-type flags (IRQ_TYPE_LEVEL / IRQ_TYPE_EDGE).
+      Cell 2: priority -- unused by this controller, kept as a
+              fixed third cell for parity with the parent
+              brcm,bcm2836-l1-intc binding (see its rationale).
+
+interrupt-cells:
+  - irq
+  - flags
+  - priority

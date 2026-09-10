@@ -1,0 +1,5 @@
+# Copyright (c) 2020 Trifork
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_MIKROE_CLICKER_2
+	select SOC_STM32F407XG

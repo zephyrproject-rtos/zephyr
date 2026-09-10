@@ -1,0 +1,14 @@
+#
+# Copyright (c) 2021 Linumiz.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+sample:
+  name: grow_r502a fingerprint sensor sample
+tests:
+  sample.sensor.grow_r502a:
+    tags: sensors
+    harness: sensor
+    build_only: true
+    depends_on: serial
+    filter: dt_compat_enabled("hzgrow,r502a")

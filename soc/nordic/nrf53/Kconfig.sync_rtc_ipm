@@ -1,0 +1,12 @@
+# nRF IPM driver configuration
+
+# Copyright (c) 2021 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config IPM_MSG_CH_$(ipm_num)_ENABLE
+	default y
+	depends on NRF53_SYNC_RTC_IPM_IN = $(ipm_num)
+
+config IPM_MSG_CH_$(ipm_num)_RX
+	default y
+	depends on NRF53_SYNC_RTC_IPM_IN = $(ipm_num)

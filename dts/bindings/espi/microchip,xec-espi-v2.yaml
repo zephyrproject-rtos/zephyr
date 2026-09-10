@@ -1,0 +1,48 @@
+# Copyright (c) 2019 Intel Corporation
+# Copyright (c) 2021 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip ESPI V2 controller
+
+compatible: "microchip,xec-espi-v2"
+
+include: [espi-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    description: mmio register space
+    required: true
+
+  reg-names:
+    required: true
+    description: Name of each register space
+
+  girqs:
+    type: array
+    required: true
+    description: |
+      Array of encoded interrupt information
+
+  pcr-scr:
+    type: int
+    required: true
+    description: |
+      Encoded PCR sleep, clock required, reset register index and bit position.
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  host-memmap-addr-high:
+    type: int
+    description: |
+      Contains bits [47:32] of the Host address range where all memory mapped
+      host (logical) devices are located in Host memory address space.
+
+  sram-bar-addr-high:
+    type: int
+    description: |
+      Contains Host address bits [47:32] where both SRAM BAR's are mapped
+      to Host memory address space.

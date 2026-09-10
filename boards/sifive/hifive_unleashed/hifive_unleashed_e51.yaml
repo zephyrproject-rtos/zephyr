@@ -1,0 +1,24 @@
+identifier: hifive_unleashed/fu540/e51
+name: SiFive HiFive Unleashed (E51)
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+ram: 3840
+simulation:
+  - name: renode
+    exec: renode
+testing:
+  timeout_multiplier: 6
+  ignore_tags:
+    - net
+    - bluetooth
+    - flash
+    - crypto
+  renode:
+    uart: sysbus.uart0
+    resc: boards/sifive/hifive_unleashed/support/hifive_unleashed.resc
+supported:
+  - gpio
+  - spi
+vendor: sifive

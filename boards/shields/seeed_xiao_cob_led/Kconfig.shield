@@ -1,0 +1,5 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config SHIELD_SEEED_XIAO_COB_LED
+	def_bool $(shields_list_contains,seeed_xiao_cob_led)

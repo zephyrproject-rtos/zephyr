@@ -1,0 +1,28 @@
+# Copyright (c) 2024 sensry.io
+# SPDX-License-Identifier: Apache-2.0
+
+compatible: "sensry,sy1xx-mac"
+
+include: [ethernet-controller.yaml, pinctrl-device.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  reg-names:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  phy-handle:
+    required: true
+
+  promiscuous-mode:
+    type: boolean
+    description: |
+      Optional feature flag - Enable promiscuous mode. When set, all valid
+      frames will be accepted.

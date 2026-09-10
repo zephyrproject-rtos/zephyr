@@ -1,0 +1,5 @@
+name: example_as_module
+
+build:
+  cmake: ./
+  kconfig: ./Kconfig

@@ -1,0 +1,14 @@
+# Copyright (c) 2021 Teslabs Engineering S.L.
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.pinctrl.gd32_af:
+    tags:
+      - drivers
+      - pinctrl
+    platform_allow: gd32f450i_eval
+  drivers.pinctrl.gd32_afio:
+    tags:
+      - drivers
+      - pinctrl
+    platform_allow: gd32f403z_eval

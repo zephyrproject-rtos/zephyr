@@ -1,0 +1,12 @@
+sample:
+  description: echo server using socket service API
+  name: socket_service_echo
+common:
+  harness: net
+  depends_on: netif
+  filter: CONFIG_FULL_LIBC_SUPPORTED and not CONFIG_NATIVE_LIBC
+tests:
+  sample.net.sockets.service.echo:
+    tags:
+      - net
+      - socket

@@ -1,0 +1,18 @@
+# Copyright (c) 2025 BayLibre, SAS
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_RV3032
+	bool "RV3032 Counter driver"
+	default y
+	depends on DT_HAS_MICROCRYSTAL_RV3032_COUNTER_ENABLED
+	depends on DT_HAS_MICROCRYSTAL_RV3032_MFD_ENABLED
+	select MFD
+	help
+	  Enable dummy counter driver
+
+config COUNTER_MICROCRYSTAL_RV3032_INIT_PRIORITY
+	int "Init priority of rc3032c7 Counter"
+	depends on COUNTER_RV3032
+	default 50
+	help
+	  Initialization priority for the Microcrystal rv3032c7 Counter driver.

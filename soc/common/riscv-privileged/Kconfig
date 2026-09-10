@@ -1,0 +1,11 @@
+# Configuration options for riscv SOCs supporting the riscv privileged
+# architecture specification
+
+# Copyright (c) 2017 Jean-Paul Etienne <fractalclone@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config RISCV_VECTORED_MODE
+	bool "Should the SOC use vectored mode"
+	depends on RISCV_PRIVILEGED
+	help
+	  Should the SOC use vectored mode.

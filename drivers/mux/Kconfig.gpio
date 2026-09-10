@@ -1,0 +1,14 @@
+# GPIO MUX driver
+
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config MUX_GPIO
+	bool "GPIO-based MUX driver"
+	default y
+	depends on DT_HAS_GPIO_MUX_ENABLED
+	depends on GPIO
+	help
+	  Enable the GPIO-based multiplexer driver. The state value is
+	  encoded as a binary pattern across the GPIO lines listed in
+	  the mux-gpios property.

@@ -1,0 +1,6 @@
+board:
+  name: ensemble_e1c_dk
+  full_name: Alif Ensemble E1C Development Kit
+  vendor: alif
+  socs:
+  - name: ae1c1f4051920ph0

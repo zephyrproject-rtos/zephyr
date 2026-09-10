@@ -1,0 +1,10 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&npu0 {
+	interrupts = <95 1>;
+	interrupt-names = "npu-irq";
+	status = "okay";
+};

@@ -1,0 +1,30 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	chosen {
+		zephyr,sram = &stcm_noecc;
+	};
+};
+
+&stcm {
+	ranges = <0x0 0x30000000 DT_SIZE_K(232)>;
+
+	stcm_noecc: system_memory@10000 {
+		compatible = "mmio-sram";
+		reg = <0x10000 DT_SIZE_K(160)>;
+	};
+
+	// VBAT retention SRAM with ECC
+	stcm_vbat: system_memory@38000 {
+		compatible = "mmio-sram";
+		reg = <0x38000 DT_SIZE_K(8)>;
+	};
+};
+
+&stcm0 {
+	reg = <0x0 DT_SIZE_K(64)>;
+};

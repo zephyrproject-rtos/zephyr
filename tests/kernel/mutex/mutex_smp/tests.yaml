@@ -1,0 +1,14 @@
+tests:
+  kernel.mutex.smp:
+    tags:
+      - kernel
+      - smp
+    filter: CONFIG_SMP and CONFIG_MP_MAX_NUM_CPUS > 1
+    depends_on:
+      - smp
+    platform_allow:
+      - qemu_riscv32/qemu_virt_riscv32/smp
+      - qemu_riscv64/qemu_virt_riscv64/smp
+    integration_platforms:
+      - qemu_riscv32/qemu_virt_riscv32/smp
+      - qemu_riscv64/qemu_virt_riscv64/smp

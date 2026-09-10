@@ -1,0 +1,84 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+title: Microchip PIC32CM_SG_GC SOC family clock
+
+description: |
+  Microchip PIC32CM_SG_GC SOC family clock support (OSCCTRL, OSC32KCTRL, GCLK, MCLK)
+
+include:
+  - name: base.yaml
+  - name: pinctrl-device.yaml
+
+compatible: "microchip,pic32cm-sg-gc-clock"
+
+properties:
+  on-timeout-ms:
+    type: int
+    default: 65
+    description: |
+      Timeout in milliseconds for clock to be on.
+
+      Driver waits in clock on API to check if the clock is actually on,
+      so that the waiting time is not indefinite. (XOSC32K startup 62.6ms)
+
+  flash-auto-wait-state-en:
+    type: int
+    enum:
+      - 0
+      - 1
+    default: 0
+    description: |
+      Automatic wait state enable
+      0: to disable, 1: to enable
+
+  flash-wait-states:
+    type: int
+    default: 0
+    description: |
+      Number of wait states for a flash read operation.
+
+      Change this value based on the NVM access time and system frequency
+      up to 15 wait states.
+
+examples:
+  - |
+    #Example showing the configuration for CPU to be clocked by PLL0, at 180MHz
+
+    &clock {
+      compatible = "microchip,pic32cm-sg-gc-clock";
+
+      xosc: xosc {
+        compatible = "microchip,pic32cm-sg-gc-xosc";
+        xosc-frequency = <12000000>;
+        xosc-en = <1>;
+        xosc-xtal-en = <1>;
+      };
+
+      dpll0: dpll0 {
+        compatible = "microchip,pic32cm-sg-gc-dpll";
+        dpll-bandwidth-sel = "4mhz-10mhz";
+        dpll-ref-division-factor = <2>;
+        dpll-feedback-divider-factor = <180>;
+        dpll-src = "xosc";
+        dpll-en = <1>;
+
+        dpll0out0: dpll0out0 {
+          subsystem = <CLOCK_MCHP_DPLL0_ID_OUT0>;
+          dpll-output-division-factor = <6>;
+          dpll-output-en = <1>;
+        };
+      };
+
+      gclkgen: gclkgen {
+        compatible = "microchip,pic32cm-sg-gc-gclkgen";
+
+        gclkgen0 {
+          subsystem = <CLOCK_MCHP_GCLKGEN_ID_GEN0>;
+          gclkgen-div-factor = <1>;
+          gclkgen-run-in-standby-en = <1>;
+          gclkgen-src = "pll0-clkout0";
+          gclkgen-en = <1>;
+        };
+      };
+    };

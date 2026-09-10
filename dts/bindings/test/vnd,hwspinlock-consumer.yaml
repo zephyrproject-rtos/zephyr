@@ -1,0 +1,15 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: VND HW spinlock consumer
+
+compatible: "vnd,hwspinlock-consumer"
+
+include: base.yaml
+
+properties:
+  hwlocks:
+    required: true
+
+  hwlock-names:
+    required: true

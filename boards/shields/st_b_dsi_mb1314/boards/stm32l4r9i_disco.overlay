@@ -1,0 +1,60 @@
+/*
+ * Copyright (c) 2025 STMicroelectronics
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&clk_hse {
+	clock-frequency = <DT_FREQ_M(16)>; /* 16MHz */
+	status = "okay";
+};
+
+&ltdc {
+	/* SRAM0 is too small to hold a framebuffer, use SRAM2 */
+	ext-sdram = <&sram2>;
+};
+
+&mfx {
+	dsi_3v3_pwron {
+		gpio-hog;
+		gpios = <8 GPIO_ACTIVE_LOW>;
+		output-high;
+		line-name = "DSI_3V3_PWRON";
+	};
+
+	dsi_1v8_pwron {
+		gpio-hog;
+		gpios = <18 GPIO_ACTIVE_HIGH>;
+		output-high;
+		line-name = "DSI_1V8_PWRON";
+	};
+};
+
+&pllsai2 {
+	/* PLLSAI2 is here to generate the PCLK to feed the DSI
+	 * We need to feed roughly 500Mbps. PCLK depends on format
+	 * For 24bit (RGB888) format, we need roughly 20.8 MHz.  (Actually target 15 MHz)
+	 *   div-m = 1, mul-n = 60, div-r = 4, post-div-r = 4
+	 *
+	 * PCLK = MSI (4MHz) * mul-n / (div-m * div-r * post-div-r)
+	 */
+	status = "okay";
+	div-m = <1>;
+	mul-n = <60>;
+	div-r = <4>;
+	post-div-r = <4>;
+	clocks = <&clk_msi>;
+};
+
+&zephyr_mipi_dsi {
+	/* DSI HOST dedicated PLL to generate 62.5 MHz from 16MHz
+	 * source clock, in order to generate 500Mbps on single lane
+	 *
+	 * F_VCO = CLK_IN / pll-idf * 2 * pll-ndiv
+	 * PHI = F_VCO / 2 / (1 << pll-odf) = lane_byte_clk
+	 *     = 25 MHz / 5 * 2 * 100 / 2 / (1<<0) / 8 = 62.5 MHz
+	 */
+	pll-ndiv = <125>;
+	pll-idf = <4>;
+	pll-odf = <0>;
+};

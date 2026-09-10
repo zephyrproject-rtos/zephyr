@@ -1,0 +1,119 @@
+/*
+ * Copyright (c) 2025-2026 MASSDRIVER EI (massdriver.space)
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <bflb/bl618.dtsi>
+#include <bflb/bl61x_em_32kb.dtsi>
+#include "ai_m61_32s-pinctrl.dtsi"
+
+/ {
+	model = "Ai-Thinker M61-32S Module";
+	compatible = "bflb,bl618";
+
+	chosen {
+		zephyr,flash = &flash0;
+		zephyr,flash-controller = &sf_bank1;
+		zephyr,code-partition = &slot0_partition;
+		zephyr,sram = &all_ram;
+		zephyr,console = &uart0;
+		zephyr,shell-uart = &uart0;
+		zephyr,entropy = &sec_eng_trng;
+		zephyr,bt-hci = &bt_hci_bflb;
+	};
+
+	aliases {
+		watchdog0 = &wdt0;
+	};
+};
+
+&cpu0 {
+	clock-frequency = <DT_FREQ_M(320)>;
+};
+
+&clk_flash {
+	divider = <1>;
+};
+
+&sf_ctrl {
+	override-bank1;
+};
+
+&sf_bank1 {
+	reg = <0xa0000000 0x800000>;
+	ranges = <0x0 0xa0000000 0x800000>;
+
+	flash0: flash@0 {
+		compatible = "bflb,sf-flash", "soc-nv-flash", "gd,gd25q64e";
+		reg = <0x0 0x800000>;
+		ranges = <0x0 0x0 0x800000>;
+		#address-cells = <1>;
+		#size-cells = <1>;
+		write-block-size = <4>;
+		erase-block-size = <DT_SIZE_K(4)>;
+
+		spi-bus-mode = <4>;
+		sf-pad = <2>;
+
+		/* The flash on the module of the AiPi Eyes S2 doesn't support useful SFDP,
+		 * and the flash header doesn't provide a working configuration.
+		 * Manually set configuration for best performance.
+		 */
+		read-command = <0xeb>;
+		read-dummy-cycles = <2>;
+		continuous-read-command = <0xa0>;
+		rx-clock-invert;
+
+		partitions {
+			ranges;
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			boot_header_partition: partition@0 {
+				compatible = "zephyr,mapped-partition";
+				label = "boot_header";
+				reg = <0x00000000 0x2000>;
+				read-only;
+			};
+
+			slot0_partition: partition@2000 {
+				compatible = "zephyr,mapped-partition";
+				label = "image-0";
+				reg = <0x00002000 (0x00200000 - 0x2000)>;
+				read-only;
+			};
+
+			storage_partition: partition@200000 {
+				compatible = "zephyr,mapped-partition";
+				label = "storage";
+				reg = <0x00200000 0x600000>;
+			};
+		};
+	};
+};
+
+&uart0 {
+	status = "okay";
+	current-speed = <115200>;
+
+	pinctrl-0 = <&uart0_default>;
+	pinctrl-1 = <&uart0_sleep>;
+	pinctrl-names = "default", "sleep";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&sec_eng_trng {
+	status = "okay";
+};
+
+&bt_hci_bflb {
+	status = "okay";
+};

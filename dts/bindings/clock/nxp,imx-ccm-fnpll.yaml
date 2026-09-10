@@ -1,0 +1,38 @@
+# Copyright 2024 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  i.MX CCM Fractional PLL. Output frequency is given by the following
+  formula: Fout = Fin * (loop-div + (numerator/denominator)
+
+compatible: "nxp,imx-ccm-fnpll"
+
+include: [clock-controller.yaml, base.yaml]
+
+properties:
+  "#clock-cells":
+    const: 0
+
+  loop-div:
+    type: int
+    required: true
+    description: |
+      Loop divider. Divides PLL feedback loop (effectively multiplying output
+      frequency)
+
+  numerator:
+    type: int
+    required: true
+    description: |
+      Numerator of PLL multiplier fraction
+
+  denominator:
+    type: int
+    required: true
+    description: |
+      Denominator of PLL multiplier fraction
+
+  src:
+    type: int
+    required: true
+    description: Sets source for PLL input. SOC specific.

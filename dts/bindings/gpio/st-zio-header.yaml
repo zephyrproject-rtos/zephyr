@@ -1,0 +1,17 @@
+# Copyright (c) 2026 Michele Vaccari
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  GPIO pins exposed on ST Zio connector.
+
+  The ST Zio connector extends the ARDUINO Uno V3 connectivity. It consists in
+  four female headers (CN7, CN8, CN9 and CN10) available on STM32 Nucleo-144
+  boards. They can be used to connect ARDUINO Uno V3 compatible shields, while
+  exposing additional STM32 signals compared to the ARDUINO Uno V3 connector.
+
+  Use ST_ZIO_* constants in <zephyr/dt-bindings/gpio/st-zio-header.h>
+  to refer to specific pins using convenient constant names.
+
+compatible: "st-zio-header"
+
+include: [gpio-nexus.yaml, base.yaml]

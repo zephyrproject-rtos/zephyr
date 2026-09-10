@@ -1,0 +1,28 @@
+# Copyright (c) 2024 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RZ SCIF UART controller
+
+compatible: "renesas,rz-scif-uart"
+
+include: [uart-controller.yaml, pinctrl-device.yaml]
+
+properties:
+  current-speed:
+    description: |
+      Initial baud rate setting for UART. Defaults to standard baudrate of 115200 if not specified.
+    default: 115200
+
+  stop-bits:
+    description: |
+      Sets the number of stop bits. Defaults to standard of 1 if not specified.
+    default: "1"
+
+  data-bits:
+    description: |
+      Sets the number of data bits. Defaults to standard of 8 if not specified.
+    default: 8
+
+  channel:
+    type: int
+    required: true

@@ -1,0 +1,31 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: Dialog DA7212 audio codec
+
+include: [i2c-device.yaml]
+
+compatible: "dlg,da7212"
+
+properties:
+  reg:
+    required: true
+  clock-source:
+    type: string
+    default: "MCLK"
+    description: |
+      Codec's internal clock (SYSCLK) source selection. Available options:
+      - "MCLK": external MCLK supplied by host
+    enum:
+      - "MCLK"
+
+  clocks:
+    type: phandle-array
+    required: true
+    description: Phandle to the clock providing the codec MCLK input
+  clock-names:
+    type: string-array
+    required: true
+    description: Must contain "mclk" matching the MCLK input
+    enum:
+      - mclk

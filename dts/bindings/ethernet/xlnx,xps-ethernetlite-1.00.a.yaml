@@ -1,0 +1,48 @@
+# Copyright (c) 2025 CISPA Helmholtz Center for Information Security
+# SPDX-License-Identifier: Apache-2.0
+
+title: Xilinx AXI Ethernet Lite subsystem (MAC and MDIO) bindings.
+examples:
+  - |
+
+    arty_ethernetlite_0:axi-ethernet-lite@40E00000{
+
+            /* shared between MAC and MDIO */
+            reg = <0x40E00000 0x10000>;
+
+            compatible = "xlnx,xps-ethernetlite-1.00.a";
+
+            status = "okay";
+
+            arty_ethernetlite_0_mac:axi-ethernet-lite-mac {
+                    compatible = "xlnx,xps-ethernetlite-1.00.a-mac";
+                    interrupt-parent = <&plic>;
+                    interrupts = <12 0x4>;
+                    clocks = <&clk_bus>;
+                    local-mac-address = [00 0a 35 00 00 01];
+                    xlnx,rx-ping-pong;
+                    xlnx,tx-ping-pong;
+                    phy-handle = <&arty_phy0>;
+
+                    status = "okay";
+            };
+            axi_ethernetlite_0_mdio: mdio {
+                    #address-cells = <1>;
+                    #size-cells = <0>;
+                    compatible = "xlnx,xps-ethernetlite-1.00.a-mdio";
+                    status = "okay";
+
+                    arty_phy0: phy@1 {
+                            #address-cells = <1>;
+                            #size-cells = <0>;
+                            compatible = "ethernet-phy";
+                            reg = <1>;
+                            status="okay";
+                    };
+            };
+    };
+
+# only "reg" property is used
+include: [base.yaml]
+
+compatible: "xlnx,xps-ethernetlite-1.00.a"

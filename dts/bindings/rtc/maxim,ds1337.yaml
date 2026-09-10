@@ -1,0 +1,30 @@
+# Copyright (c) 2025 Marcin Lyda <elektromarcin@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Maxim DS1337 RTC
+
+compatible: "maxim,ds1337"
+
+include:
+  - name: rtc-device.yaml
+  - name: i2c-device.yaml
+
+properties:
+  int-gpios:
+    type: phandle-array
+    description: |
+      INTA interrupt output
+      GPIO pin to handle chip's INTA interrupt output,
+      used to notify about alarm events.
+
+  sqw-frequency:
+    type: int
+    description: |
+      SQW/INTB frequency value [Hz]
+      This field enables to select output frequency at
+      SQW/INTB pin.
+    enum:
+      - 1
+      - 4096
+      - 8192
+      - 32768

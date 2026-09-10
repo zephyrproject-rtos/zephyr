@@ -1,0 +1,46 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * PTA1 looped back to PTA0 (Arduino J4-10 to J4-12 on FRDM-KE17Z).
+ */
+
+/ {
+	aliases {
+		test-comp = &cmp0;
+	};
+
+	zephyr,user {
+		test-gpios = <&gpioa 1 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&gpioa {
+	status = "okay";
+};
+
+&pinctrl {
+	cmp0_default: cmp0_default {
+		group0 {
+			pinmux = <ACMP0_IN0_PTA0>;
+			drive-strength = "high";
+		};
+	};
+};
+
+&cmp0 {
+	pinctrl-0 = <&cmp0_default>;
+	pinctrl-names = "default";
+	status = "okay";
+
+	positive-mux-input = "IN0";
+	positive-port-input = "MUX";
+	negative-mux-input = "IN0";
+	negative-port-input = "DAC";
+
+	dac-vref-source = "VIN1";
+	dac-value = <128>;
+	dac-enable;
+};

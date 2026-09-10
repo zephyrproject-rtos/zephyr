@@ -1,0 +1,10 @@
+common:
+  min_ram: 16
+  depends_on: netif
+tests:
+  net.conn_mgr.nsos:
+    platform_allow:
+      - native_sim
+    tags:
+      - net
+      - iface

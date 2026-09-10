@@ -1,0 +1,50 @@
+# Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip G3 series of Flash
+
+compatible: "microchip,flash-g3"
+
+include: soc-nv-flash.yaml
+
+examples:
+  - |
+    /*
+     * Multiple flash regions in g3 devices are considered as a single block
+     * of memory:
+     *
+     *   - 0x08000000--0x08020000, boot flash area
+     *   - 0x0C000000--0x0C800000, main flash area
+     *
+     * The region in between these flash are considered as
+     * unimplemented regions and driver would avoid accessing
+     * these regions
+     */
+
+    nvmctrl: flash-controller@44002000 {
+      compatible = "microchip,nvmctrl-g3";
+      reg = <0x44002000 0x200000>;
+      /* ... */
+
+      flash0: flash@8000000 {
+        reg = <0x08000000
+              (DT_SIZE_K(128) + DT_SIZE_K(65408) + DT_SIZE_M(8))>;
+        compatible = "microchip,flash-g3", "soc-nv-flash";
+        write-block-size = <8>;
+        write-block-size-quad-dw = <32>;
+        write-block-size-row = <1024>;
+        erase-block-size = <4096>;
+        unimplemented-region = <0x08020000 0x0bffffff>;
+      };
+    };
+
+properties:
+  write-block-size-quad-dw:
+    type: int
+    description: address alignment required by quad double word flash write operations
+  write-block-size-row:
+    type: int
+    description: address alignment required by row flash write operations
+  unimplemented-region:
+    type: array
+    description: array of unimplemented regions in the given flash area

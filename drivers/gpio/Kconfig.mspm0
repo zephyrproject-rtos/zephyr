@@ -1,0 +1,12 @@
+# TI MSPM0 GPIO configuration options
+
+# Copyright (c) 2025 Texas Instruments
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_MSPM0
+	bool "TI MSPM0 GPIO driver"
+	default y
+	depends on DT_HAS_TI_MSPM0_GPIO_ENABLED
+	select USE_MSPM0_DL_GPIO
+	help
+	  Enable the TI MSPM0 GPIO driver.

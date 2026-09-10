@@ -1,0 +1,26 @@
+#
+#  Copyright (c) 2026 Linumiz
+#
+#  SPDX-License-Identifier: Apache-2.0
+
+title: TI MSPM0 DMA
+
+description: Texas Instruments MSPM0 Series DMA
+
+compatible: "ti,mspm0-dma"
+
+include: dma-controller.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  "#dma-cells":
+    const: 2
+
+dma-cells:
+  - channel
+  - trigger

@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Silicon Laboratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  boards.silabs.siwx91x_shell:
+    build_only: true
+    tags:
+      - silabs
+      - shell
+    platform_allow:
+      - siwx917_rb4338a
+      - siwx917_rb4342a
+      - siwx917_dk2605a
+    integration_platforms:
+      - siwx917_rb4338a

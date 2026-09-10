@@ -1,0 +1,22 @@
+identifier: mps3/an536/cpu0
+name: Arm MPS3 Cortex-R52x2 AN536
+type: mcu
+arch: arm
+ram: 512
+simulation:
+  - name: qemu
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - uart
+  - gpio
+testing:
+  default: true
+  ignore_tags:
+    - drivers
+    - bluetooth
+    - llext
+    - net
+    - timer
+vendor: arm

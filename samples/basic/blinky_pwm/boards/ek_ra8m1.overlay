@@ -1,0 +1,37 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Mahad Faisal
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+&pinctrl {
+	pwm6_led1_default: pwm6_led1_default {
+		group1 {
+			/* LED1 is connected to P600; P600 can be GTIOC6B */
+			psels = <RA_PSEL(RA_PSEL_GPT1, 6, 0)>;
+		};
+	};
+};
+
+&pwm6 {
+	pinctrl-0 = <&pwm6_led1_default>;
+	pinctrl-names = "default";
+	interrupts = <38 1>, <39 1>;
+	interrupt-names = "gtioca", "overflow";
+	status = "okay";
+};
+
+/ {
+	pwmleds {
+		compatible = "pwm-leds";
+
+		pwm_led0: pwm_led_0 {
+			pwms = <&pwm6 1 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+		};
+	};
+
+	aliases {
+		pwm-led0 = &pwm_led0;
+	};
+};

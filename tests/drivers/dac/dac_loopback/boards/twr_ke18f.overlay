@@ -1,0 +1,13 @@
+/*
+ * Copyright 2020 Henrik Brix Andersen <henrik@brixandersen.dk>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&adc0 {
+	/*
+	 * Increase sample time to 5 microseconds since there is no
+	 * buffer between DAC and ADC.
+	 */
+	sample-time = <250>;
+};

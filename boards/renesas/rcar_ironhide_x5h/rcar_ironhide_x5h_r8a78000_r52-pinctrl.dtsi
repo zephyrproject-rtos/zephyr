@@ -1,0 +1,148 @@
+/*
+ * Copyright (c) 2026 BayLibre, SAS
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/renesas/pinctrl-r8a78000.h>
+
+&pfc {
+	hscif1_data_tx_default: hscif1_data_tx_default {
+		pin = <PIN_HTX1 FUNC_HTX1>;
+	};
+
+	hscif1_data_rx_default: hscif1_data_rx_default {
+		pin = <PIN_HRX1 FUNC_HRX1>;
+	};
+
+	gpio0_3_default: gpio0_3_default {
+		pin = <PIN_STPWT_EXTFXR>;
+		bias-disable;
+	};
+
+	gpio9_1_default: gpio9_1_default {
+		pin = <PIN_ETHES0_CAPTURE>;
+		bias-disable;
+	};
+
+	gpio9_2_default: gpio9_2_default {
+		pin = <PIN_ETHES0_MATCH>;
+		bias-disable;
+	};
+
+	gpio9_3_default: gpio9_3_default {
+		pin = <PIN_ETHES4_PPS>;
+		bias-disable;
+	};
+
+	gpio9_4_default: gpio9_4_default {
+		pin = <PIN_ETHES4_CAPTURE>;
+		bias-disable;
+	};
+
+	gpio9_5_default: gpio9_5_default {
+		pin = <PIN_ETHES4_MATCH>;
+		bias-disable;
+	};
+
+	gpio9_14_default: gpio9_14_default {
+		pin = <PIN_RSW3_PPS>;
+		bias-disable;
+	};
+
+	i2c5_scl_default: i2c5_scl_default {
+		pin = <PIN_SCL5 FUNC_SCL5>;
+	};
+
+	i2c5_sda_default: i2c5_sda_default {
+		pin = <PIN_SDA5 FUNC_SDA5>;
+	};
+
+	can0_rx_default: can0_rx_default {
+		pin = <PIN_CAN0RX_INTP0 FUNC_CAN0RX_INTP0>;
+	};
+
+	can0_tx_default: can0_tx_default {
+		pin = <PIN_CAN0TX FUNC_CAN0TX>;
+	};
+
+	can1_rx_default: can1_rx_default {
+		pin = <PIN_CAN1RX_INTP1 FUNC_CAN1RX_INTP1>;
+	};
+
+	can1_tx_default: can1_tx_default {
+		pin = <PIN_CAN1TX FUNC_CAN1TX>;
+	};
+
+	can2_rx_default: can2_rx_default {
+		pin = <PIN_CAN2RX_INTP2 FUNC_CAN2RX_INTP2>;
+	};
+
+	can2_tx_default: can2_tx_default {
+		pin = <PIN_CAN2TX FUNC_CAN2TX>;
+	};
+
+	can3_rx_default: can3_rx_default {
+		pin = <PIN_CAN3RX_INTP3 FUNC_CAN3RX_INTP3>;
+	};
+
+	can3_tx_default: can3_tx_default {
+		pin = <PIN_CAN3TX FUNC_CAN3TX>;
+	};
+
+	can4_rx_default: can4_rx_default {
+		pin = <PIN_CAN4RX_INTP4 FUNC_CAN4RX_INTP4>;
+	};
+
+	can4_tx_default: can4_tx_default {
+		pin = <PIN_CAN4TX FUNC_CAN4TX>;
+	};
+
+	can5_rx_default: can5_rx_default {
+		pin = <PIN_CAN5RX_INTP5 FUNC_CAN5RX_INTP5>;
+	};
+
+	can5_tx_default: can5_tx_default {
+		pin = <PIN_CAN5TX FUNC_CAN5TX>;
+	};
+
+	can6_rx_default: can6_rx_default {
+		pin = <PIN_CAN6RX_INTP6 FUNC_CAN6RX_INTP6>;
+	};
+
+	can6_tx_default: can6_tx_default {
+		pin = <PIN_CAN6TX FUNC_CAN6TX>;
+	};
+
+	can12_rx_default: can12_rx_default {
+		pin = <PIN_CAN12RX_INTP12 FUNC_CAN12RX_INTP12_B>;
+	};
+
+	can12_tx_default: can12_tx_default {
+		pin = <PIN_CAN12TX FUNC_CAN12TX_B>;
+	};
+
+	can13_rx_default: can13_rx_default {
+		pin = <PIN_CAN13RX_INTP13 FUNC_CAN13RX_INTP13_B>;
+	};
+
+	can13_tx_default: can13_tx_default {
+		pin = <PIN_CAN13TX FUNC_CAN13TX_B>;
+	};
+
+	can14_rx_default: can14_rx_default {
+		pin = <PIN_CAN14RX_INTP14 FUNC_CAN14RX_INTP14_B>;
+	};
+
+	can14_tx_default: can14_tx_default {
+		pin = <PIN_CAN14TX FUNC_CAN14TX_B>;
+	};
+
+	can15_rx_default: can15_rx_default {
+		pin = <PIN_CAN15RX_INTP15 FUNC_CAN15RX_INTP15_B>;
+	};
+
+	can15_tx_default: can15_tx_default {
+		pin = <PIN_CAN15TX FUNC_CAN15TX_B>;
+	};
+};

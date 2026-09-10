@@ -1,0 +1,5 @@
+# Copyright (c) 2020 Kalyan Sriram
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_BLACKPILL_F401CE
+	select SOC_STM32F401XE

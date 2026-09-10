@@ -1,0 +1,8 @@
+sample:
+  description: Demonstration of the is31fl3216a LED driver
+  name: is31fl3216a sample
+tests:
+  sample.drivers.led.is31fl3216a:
+    filter: dt_compat_enabled("issi,is31fl3216a")
+    tags: LED
+    depends_on: i2c

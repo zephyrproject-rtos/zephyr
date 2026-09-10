@@ -1,0 +1,24 @@
+/*
+ * Copyright (c) 2025 Thomas Stranger
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <st/c0/stm32c091.dtsi>
+
+/ {
+	soc {
+		compatible = "st,stm32c092", "st,stm32c0", "simple-bus";
+
+		fdcan1: can@40006400 {
+			compatible = "st,stm32-fdcan";
+			reg = <0x40006400 0x400>, <0x4000b400 0x350>;
+			reg-names = "m_can", "message_ram";
+			interrupts = <30 0>, <31 0>;
+			interrupt-names = "int0", "int1";
+			clocks = <&rcc STM32_CLOCK(APB1, 12)>;
+			bosch,mram-cfg = <0x0 28 8 3 3 0 3 3>;
+			status = "disabled";
+		};
+	};
+};

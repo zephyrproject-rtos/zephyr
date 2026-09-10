@@ -1,0 +1,647 @@
+/*
+ * Copyright (c) 2023, Bjarki Arge Andreasen
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/device.h>
+#include <zephyr/kernel.h>
+#include <zephyr/net/socket.h>
+#include <zephyr/net/net_if.h>
+#include <zephyr/net/dns_resolve.h>
+#include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
+#include <string.h>
+
+#include <zephyr/posix/netinet/in.h>
+#include <zephyr/posix/sys/socket.h>
+#include <zephyr/posix/arpa/inet.h>
+#include <zephyr/posix/unistd.h>
+#include <zephyr/posix/poll.h>
+
+#include <zephyr/drivers/cellular.h>
+
+#define L4_EVENT_MASK \
+	(NET_EVENT_L4_CONNECTED | NET_EVENT_L4_DISCONNECTED | NET_EVENT_DNS_SERVER_ADD)
+#define SAMPLE_TEST_ENDPOINT_HOSTNAME           CONFIG_SAMPLE_CELLULAR_MODEM_ENDPOINT_HOSTNAME
+#define SAMPLE_TEST_ENDPOINT_UDP_ECHO_PORT	(7780)
+#define SAMPLE_TEST_ENDPOINT_UDP_RECEIVE_PORT	(7781)
+#define SAMPLE_TEST_PACKET_SIZE			(1024)
+#define SAMPLE_TEST_ECHO_PACKETS		(16)
+#define SAMPLE_TEST_TRANSMIT_PACKETS		(128)
+#define L4_CONNECTED 1
+#define L4_DNS_ADDED 2
+
+const struct device *modem = DEVICE_DT_GET(DT_ALIAS(modem));
+
+static uint8_t sample_test_packet[SAMPLE_TEST_PACKET_SIZE];
+static uint8_t sample_recv_buffer[SAMPLE_TEST_PACKET_SIZE];
+static bool sample_test_dns_success;
+static struct dns_addrinfo sample_test_dns_addrinfo;
+struct net_if *ppp_iface;
+K_EVENT_DEFINE(l4_event);
+K_SEM_DEFINE(dns_query_sem, 0, 1);
+
+static uint8_t sample_prng_random(void)
+{
+	static uint32_t prng_state = 1234;
+
+	prng_state = ((1103515245 * prng_state) + 12345) % (1U << 31);
+	return (uint8_t)(prng_state & 0xFF);
+}
+
+static void init_sample_test_packet(void)
+{
+	for (size_t i = 0; i < sizeof(sample_test_packet); i++) {
+		sample_test_packet[i] = sample_prng_random();
+	}
+}
+
+static void print_cellular_info(void)
+{
+	int rc;
+	int16_t rssi;
+	char buffer[64];
+
+	rc = cellular_get_signal(modem, CELLULAR_SIGNAL_RSSI, &rssi);
+	if (!rc) {
+		printk("RSSI %d\n", rssi);
+	}
+
+	rc = cellular_get_modem_info(modem, CELLULAR_MODEM_INFO_IMEI, &buffer[0], sizeof(buffer));
+	if (!rc) {
+		printk("IMEI: %s\n", buffer);
+	}
+	rc = cellular_get_modem_info(modem, CELLULAR_MODEM_INFO_MODEL_ID, &buffer[0],
+				     sizeof(buffer));
+	if (!rc) {
+		printk("MODEL_ID: %s\n", buffer);
+	}
+	rc = cellular_get_modem_info(modem, CELLULAR_MODEM_INFO_MANUFACTURER, &buffer[0],
+				     sizeof(buffer));
+	if (!rc) {
+		printk("MANUFACTURER: %s\n", buffer);
+	}
+	rc = cellular_get_modem_info(modem, CELLULAR_MODEM_INFO_SIM_IMSI, &buffer[0],
+				     sizeof(buffer));
+	if (!rc) {
+		printk("SIM_IMSI: %s\n", buffer);
+	}
+	rc = cellular_get_modem_info(modem, CELLULAR_MODEM_INFO_SIM_ICCID, &buffer[0],
+				     sizeof(buffer));
+	if (!rc) {
+		printk("SIM_ICCID: %s\n", buffer);
+	}
+	rc = cellular_get_modem_info(modem, CELLULAR_MODEM_INFO_FW_VERSION, &buffer[0],
+				     sizeof(buffer));
+	if (!rc) {
+		printk("FW_VERSION: %s\n", buffer);
+	}
+}
+
+#ifdef CONFIG_SAMPLE_CELLULAR_MODEM_AUTO_APN
+
+struct apn_profile {
+	const char *apn;
+	const char *imsi_list;
+};
+
+/* Build the static table */
+static const struct apn_profile apn_profiles[] = {
+	{ CONFIG_SAMPLE_CELLULAR_APN_0, CONFIG_SAMPLE_CELLULAR_IMSI_LIST_0 },
+	{ CONFIG_SAMPLE_CELLULAR_APN_1, CONFIG_SAMPLE_CELLULAR_IMSI_LIST_1 },
+	{ CONFIG_SAMPLE_CELLULAR_APN_2, CONFIG_SAMPLE_CELLULAR_IMSI_LIST_2 },
+	{ CONFIG_SAMPLE_CELLULAR_APN_3, CONFIG_SAMPLE_CELLULAR_IMSI_LIST_3 },
+};
+
+
+/* Helper function to skip whitespace */
+static const char *skip_whitespace(const char *ptr)
+{
+	while (*ptr == ' ' || *ptr == '\t') {
+		++ptr;
+	}
+	return ptr;
+}
+
+/* Helper function to find the end of current profile entry */
+static bool list_matches_imsi(const char *list, const char *imsi)
+{
+	for (const char *p = list; *p; ) {
+		p = skip_whitespace(p);
+		if (!*p) {
+			break;
+		}
+
+		/* copy one token from the list */
+		char tok[7];
+		size_t len = 0;
+
+		while (*p && *p != ' ' && *p != '\t' && *p != ',' && len < sizeof(tok) - 1) {
+			tok[len++] = *p++;
+		}
+		tok[len] = '\0';
+
+		if (len >= 5 && len <= 6 && !strncmp(imsi, tok, len)) {
+			return true;    /* prefix matches */
+		}
+	}
+	return false;
+}
+
+static int modem_cellular_find_apn(char *dst, size_t dst_sz, const char *key)
+{
+	for (size_t i = 0; i < ARRAY_SIZE(apn_profiles); i++) {
+		const struct apn_profile *p = &apn_profiles[i];
+
+		if (p->apn[0] == '\0') {
+			continue;
+		}
+
+		if (p->apn[0] && list_matches_imsi(p->imsi_list, key)) {
+			strncpy(dst, p->apn, dst_sz - 1);
+			dst[dst_sz - 1] = '\0';
+			return 0;
+		}
+	}
+
+	return -ENOENT;
+}
+
+static void auto_apn_modem_info_cb(const struct device *dev,
+				   const struct cellular_evt_modem_info *mi)
+{
+	if (!mi || mi->field != CELLULAR_MODEM_INFO_SIM_IMSI) {
+		return; /* not the IMSI notification */
+	}
+
+	char imsi[32] = {0};
+
+	if (cellular_get_modem_info(dev, CELLULAR_MODEM_INFO_SIM_IMSI, imsi, sizeof(imsi)) != 0) {
+		return;
+	}
+
+	/* Buffer for the APN we may discover */
+	char apn[32] = {0};
+
+	/* Try MCC+MNC with 6 digits first, then 5 digits */
+	for (size_t len = 6; len >= 5; len--) {
+		if (strlen(imsi) < len) {
+			continue;
+		}
+
+		char key[7] = {0};
+
+		memcpy(key, imsi, len);
+
+		if (modem_cellular_find_apn(apn, sizeof(apn), key) == 0) {
+			int rc = cellular_set_apn(dev, apn);
+
+			switch (rc) {
+			case 0:
+				printk("Auto-selected APN: %s\n", apn);
+				break;
+			case -EALREADY:
+				printk("APN %s already active\n", apn);
+				break;
+			case -EBUSY:
+				printk("Driver busy, cannot change APN now\n");
+				break;
+			default:
+				printk("Driver rejected APN %s (err %d)\n", apn, rc);
+				break;
+			}
+			return;
+		}
+	}
+
+	printk("No APN profile matches IMSI %s - waiting for manual APN\n", imsi);
+}
+
+#endif
+
+static void modem_registration_changed(const struct device *dev,
+				       const struct cellular_evt_registration_status *rs)
+{
+	ARG_UNUSED(dev);
+
+	printk("Registration status: %d\n", rs->status);
+}
+
+static void comms_check_result(const struct device *dev,
+			       const struct cellular_evt_modem_comms_check_result *ccr)
+{
+	ARG_UNUSED(dev);
+
+	printk("Comms check %s\n", ccr->success ? "succeeded" : "failed");
+}
+
+static void network_status_changed(const struct device *dev,
+				   const struct cellular_evt_network_status *ns)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(ns);
+
+	printk("Network status changed\n");
+}
+
+static void modem_suspended(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	printk("Modem suspended\n");
+}
+
+static void modem_event_cb(const struct device *dev, enum cellular_event evt, const void *payload,
+			   void *user_data)
+{
+	ARG_UNUSED(user_data);
+
+	switch (evt) {
+	case CELLULAR_EVENT_MODEM_INFO_CHANGED:
+#ifdef CONFIG_SAMPLE_CELLULAR_MODEM_AUTO_APN
+		auto_apn_modem_info_cb(dev, payload);
+#endif
+		break;
+	case CELLULAR_EVENT_REGISTRATION_STATUS_CHANGED:
+		modem_registration_changed(dev, payload);
+		break;
+	case CELLULAR_EVENT_MODEM_COMMS_CHECK_RESULT:
+		comms_check_result(dev, payload);
+		break;
+	case CELLULAR_EVENT_NETWORK_STATUS_CHANGED:
+		network_status_changed(dev, payload);
+		break;
+	case CELLULAR_EVENT_MODEM_SUSPENDED:
+		modem_suspended(dev);
+		break;
+	default:
+		printk("Unhandled event: %d\n", evt);
+		break;
+	}
+}
+
+static void sample_dns_request_result(enum dns_resolve_status status, struct dns_addrinfo *info,
+				      void *user_data)
+{
+	switch (status) {
+	case DNS_EAI_INPROGRESS:
+		sample_test_dns_success = true;
+		sample_test_dns_addrinfo = *info;
+		break;
+	case DNS_EAI_ALLDONE:
+		k_sem_give(&dns_query_sem);
+		break;
+	case DNS_EAI_AGAIN:
+	case DNS_EAI_FAIL:
+	case DNS_EAI_NONAME:
+		printk("DNS query failed: %d\n", status);
+		k_sem_give(&dns_query_sem);
+		break;
+	default:
+		printk("Unhandled DNS status: %d\n", status);
+	}
+}
+
+static int sample_dns_request(void)
+{
+	static uint16_t dns_id;
+	int ret;
+
+	ret = dns_get_addr_info(SAMPLE_TEST_ENDPOINT_HOSTNAME,
+				DNS_QUERY_TYPE_A,
+				&dns_id,
+				sample_dns_request_result,
+				NULL,
+				19000);
+	if (ret < 0) {
+		return -EAGAIN;
+	}
+
+	/* Wait for DNS query to complete */
+	if (k_sem_take(&dns_query_sem, K_SECONDS(20)) < 0) {
+		printk("DNS query timed out\n");
+		return -EAGAIN;
+	}
+
+	/* Validate whether the query succeeded */
+	if (!sample_test_dns_success) {
+		return -EAGAIN;
+	}
+
+	return 0;
+}
+
+int sample_echo_packet(struct sockaddr *ai_addr, socklen_t ai_addrlen, uint16_t *port)
+{
+	int ret;
+	int socket_fd;
+	uint32_t packets_sent = 0;
+	uint32_t send_start_ms;
+	uint32_t echo_received_ms;
+	uint32_t accumulated_ms = 0;
+
+	printk("Opening UDP socket\n");
+
+	socket_fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+	if (socket_fd < 0) {
+		printk("Failed to open socket (%d)\n", errno);
+		return -1;
+	}
+
+	{
+		const struct timeval tv = { .tv_sec = 10 };
+
+		if (setsockopt(socket_fd, SOL_SOCKET, SO_RCVTIMEO, &tv, sizeof(tv)) < 0) {
+			printk("Failed to set socket receive timeout (%d)\n", errno);
+			return -1;
+		}
+	}
+
+	printk("Socket opened\n");
+
+	*port = htons(SAMPLE_TEST_ENDPOINT_UDP_ECHO_PORT);
+
+	for (uint32_t i = 0; i < SAMPLE_TEST_ECHO_PACKETS; i++) {
+		printk("Sending echo packet\n");
+		send_start_ms = k_uptime_get_32();
+
+		ret = sendto(socket_fd, sample_test_packet, sizeof(sample_test_packet), 0,
+			     ai_addr, ai_addrlen);
+
+		if (ret < sizeof(sample_test_packet)) {
+			printk("Failed to send sample test packet\n");
+			continue;
+		}
+
+		printk("Receiving echoed packet\n");
+		ret = recv(socket_fd, sample_recv_buffer, sizeof(sample_recv_buffer), 0);
+		if (ret != sizeof(sample_test_packet)) {
+			if (ret == -1) {
+				printk("Failed to receive echoed sample test packet (%d)\n", errno);
+			} else {
+				printk("Echoed sample test packet has incorrect size (%d)\n", ret);
+			}
+			continue;
+		}
+
+		echo_received_ms = k_uptime_get_32();
+
+		if (memcmp(sample_test_packet, sample_recv_buffer,
+			   sizeof(sample_recv_buffer)) != 0) {
+			printk("Echoed sample test packet data mismatch\n");
+			continue;
+		}
+
+		packets_sent++;
+		accumulated_ms += echo_received_ms - send_start_ms;
+
+		printk("Echo transmit time %ums\n", echo_received_ms - send_start_ms);
+	}
+
+	printk("Successfully sent and received %u of %u packets\n", packets_sent,
+	       SAMPLE_TEST_ECHO_PACKETS);
+
+	if (packets_sent > 0) {
+		printk("Average time per successful echo: %u ms\n",
+		accumulated_ms / packets_sent);
+	}
+
+	printk("Close UDP socket\n");
+
+	ret = close(socket_fd);
+	if (ret < 0) {
+		printk("Failed to close socket\n");
+		return -1;
+	}
+
+	return 0;
+}
+
+
+int sample_transmit_packets(struct sockaddr *ai_addr, socklen_t ai_addrlen, uint16_t *port)
+{
+	int ret;
+	int socket_fd;
+	uint32_t packets_sent = 0;
+	uint32_t packets_received;
+	uint32_t packets_dropped;
+	uint32_t send_start_ms;
+	uint32_t send_end_ms;
+
+	printk("Opening UDP socket\n");
+
+	socket_fd = socket(AF_INET, SOCK_DGRAM, IPPROTO_UDP);
+	if (socket_fd < 0) {
+		printk("Failed to open socket\n");
+		return -1;
+	}
+
+	printk("Socket opened\n");
+
+	*port = htons(SAMPLE_TEST_ENDPOINT_UDP_RECEIVE_PORT);
+
+	printk("Sending %u packets\n", SAMPLE_TEST_TRANSMIT_PACKETS);
+	send_start_ms = k_uptime_get_32();
+	for (uint32_t i = 0; i < SAMPLE_TEST_TRANSMIT_PACKETS; i++) {
+		ret = sendto(socket_fd, sample_test_packet, sizeof(sample_test_packet), 0,
+			     ai_addr, ai_addrlen);
+
+		if (ret < sizeof(sample_test_packet)) {
+			printk("Failed to send sample test packet\n");
+			break;
+		}
+
+		packets_sent++;
+	}
+	send_end_ms = k_uptime_get_32();
+
+	printk("Awaiting response from server\n");
+	ret = recv(socket_fd, sample_recv_buffer, sizeof(sample_recv_buffer), 0);
+	if (ret != 2) {
+		printk("Invalid response\n");
+		return -1;
+	}
+
+	packets_received = sample_recv_buffer[0];
+	packets_dropped = sample_recv_buffer[1];
+	printk("Server received %u/%u packets\n", packets_received, packets_sent);
+	printk("Server dropped %u packets\n", packets_dropped);
+	printk("Time elapsed sending packets %ums\n", send_end_ms - send_start_ms);
+	printk("Throughput %u bytes/s\n",
+	       ((SAMPLE_TEST_PACKET_SIZE * SAMPLE_TEST_TRANSMIT_PACKETS) * 1000) /
+	       (send_end_ms - send_start_ms));
+
+	printk("Close UDP socket\n");
+	ret = close(socket_fd);
+	if (ret < 0) {
+		printk("Failed to close socket\n");
+		return -1;
+	}
+
+	return 0;
+}
+
+static void l4_event_handler(uint64_t event, struct net_if *iface, void *info, size_t info_length,
+			     void *user_data)
+{
+	if (iface != ppp_iface) {
+		return;
+	}
+
+	switch (event) {
+	case NET_EVENT_L4_CONNECTED:
+		k_event_post(&l4_event, L4_CONNECTED);
+		break;
+	case NET_EVENT_DNS_SERVER_ADD:
+		k_event_post(&l4_event, L4_DNS_ADDED);
+		break;
+	case NET_EVENT_L4_DISCONNECTED:
+		k_event_set(&l4_event, 0);
+		break;
+	default:
+		break;
+	}
+}
+
+NET_MGMT_REGISTER_EVENT_HANDLER(l4_events, L4_EVENT_MASK, l4_event_handler, NULL);
+
+int main(void)
+{
+	const cellular_event_mask_t all_events =
+		CELLULAR_EVENT_MODEM_INFO_CHANGED | CELLULAR_EVENT_REGISTRATION_STATUS_CHANGED |
+		CELLULAR_EVENT_MODEM_COMMS_CHECK_RESULT | CELLULAR_EVENT_NETWORK_STATUS_CHANGED |
+		CELLULAR_EVENT_MODEM_SUSPENDED;
+	bool valid_dns = false;
+	uint16_t *port;
+	int ret;
+
+	/* Subscribe before powering the modem so we catch all events */
+	ret = cellular_set_callback(modem, all_events, modem_event_cb, NULL);
+	if (ret < 0) {
+		printk("Failed to subscribe to modem events (%d)\n", ret);
+	}
+
+	init_sample_test_packet();
+
+	ppp_iface = net_if_get_first_by_type(&NET_L2_GET_NAME(PPP));
+
+	printk("Bring up network interface\n");
+	ret = net_if_up(ppp_iface);
+	if (ret < 0) {
+		printk("Failed to bring up network interface\n");
+		return -1;
+	}
+
+	printk("Waiting for L4 connected\n");
+	ret = k_event_wait(&l4_event, L4_CONNECTED, false, K_SECONDS(120));
+
+	if (ret != L4_CONNECTED) {
+		printk("L4 was not connected in time\n");
+		return -1;
+	}
+
+	printk("Waiting for DNS server added\n");
+	ret = k_event_wait(&l4_event, L4_DNS_ADDED, false, K_SECONDS(10));
+	if (ret != L4_DNS_ADDED) {
+		printk("DNS server was not added in time\n");
+		return -1;
+	}
+
+	printk("Retrieving cellular info\n");
+	print_cellular_info();
+
+	printk("Performing DNS lookup of %s\n", SAMPLE_TEST_ENDPOINT_HOSTNAME);
+	ret = sample_dns_request();
+	if (ret < 0) {
+		goto power_cycle;
+	} else {
+		valid_dns = true;
+	}
+
+	{
+		struct sockaddr *ai_addr = net_sad(&sample_test_dns_addrinfo.ai_addr_storage);
+		char ip_str[INET6_ADDRSTRLEN];
+		const void *src;
+
+		switch (sample_test_dns_addrinfo.ai_addr_storage.ss_family) {
+		case AF_INET:
+			src = &net_sin(ai_addr)->sin_addr;
+			port = &net_sin(ai_addr)->sin_port;
+			break;
+		case AF_INET6:
+			src = &net_sin6(ai_addr)->sin6_addr;
+			port = &net_sin6(ai_addr)->sin6_port;
+			break;
+		default:
+			printk("Unsupported address family\n");
+			return -1;
+		}
+		inet_ntop(sample_test_dns_addrinfo.ai_addr_storage.ss_family, src, ip_str,
+			  sizeof(ip_str));
+		printk("Resolved to %s\n", ip_str);
+	}
+
+	ret = sample_echo_packet(net_sad(&sample_test_dns_addrinfo.ai_addr_storage),
+				 sample_test_dns_addrinfo.ai_addrlen, port);
+
+	if (ret < 0) {
+		printk("Failed to send echos\n");
+		return -1;
+	}
+
+	ret = sample_transmit_packets(net_sad(&sample_test_dns_addrinfo.ai_addr_storage),
+				      sample_test_dns_addrinfo.ai_addrlen, port);
+
+	if (ret < 0) {
+		printk("Failed to send packets\n");
+		return -1;
+	}
+
+power_cycle:
+	printk("Taking interface down\n");
+	ret = net_if_down(ppp_iface);
+	if (ret < 0) {
+		printk("Failed to take down network interface\n");
+		return -1;
+	}
+
+	printk("Requesting interface up\n");
+	ret = net_if_up(ppp_iface);
+	if (ret < 0) {
+		printk("Failed to request network interface back up\n");
+		return -1;
+	}
+
+	printk("Waiting for L4 connected\n");
+	ret = k_event_wait(&l4_event, L4_CONNECTED, false, K_SECONDS(120));
+	if (ret != L4_CONNECTED) {
+		printk("L4 was not connected in time\n");
+		return -1;
+	}
+	printk("L4 connected\n");
+
+	/* Wait a bit to avoid (unsuccessfully) trying to send the first echo packet too quickly */
+	k_sleep(K_SECONDS(5));
+
+	if (valid_dns) {
+		/* Only run the second echo if the original DNS succeeded */
+		ret = sample_echo_packet(net_sad(&sample_test_dns_addrinfo.ai_addr_storage),
+					sample_test_dns_addrinfo.ai_addrlen, port);
+	}
+
+	if (ret < 0) {
+		printk("Failed to send echos after restart\n");
+		return -1;
+	}
+
+	printk("Final interface down\n");
+	ret = net_if_down(ppp_iface);
+	if (ret < 0) {
+		printk("Failed to take down network interface\n");
+		return -1;
+	}
+
+	printk("Sample complete\n");
+	return 0;
+}

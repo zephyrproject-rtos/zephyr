@@ -1,0 +1,10 @@
+# glyph c6 board configuration
+
+# Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
+# Copyright (c) 2025 Muhammed Asif
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_GLYPH_C6
+	select SOC_ESP32_C6_WROOM_1U_N4
+	select SOC_ESP32C6_HPCORE if BOARD_GLYPH_C6_ESP32C6_HPCORE
+	select SOC_ESP32C6_LPCORE if BOARD_GLYPH_C6_ESP32C6_LPCORE

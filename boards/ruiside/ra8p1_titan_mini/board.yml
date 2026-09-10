@@ -1,0 +1,6 @@
+board:
+  name: ra8p1_titan_mini
+  full_name: RA8P1 Titan Mini
+  vendor: ruiside
+  socs:
+  - name: r7ka8p1kflcac

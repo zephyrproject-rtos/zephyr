@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2026 Anuj Deshpande
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&xiao_i2c {
+	status = "okay";
+
+	haptic: tm6605@2d {
+		compatible = "titanmec,tm6605";
+		reg = <0x2d>;
+		status = "okay";
+	};
+};

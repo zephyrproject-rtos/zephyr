@@ -1,0 +1,34 @@
+# Copyright (c) 2014 Wind River Systems, Inc.
+# Copyright (c) 2018 Synopsys, Inc. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_EMSK
+	bool
+	help
+	  Synopsys ARC EM Starter Kit SoC
+
+config SOC_EMSK_EM7D
+	bool
+	select SOC_EMSK
+	help
+	  Synopsys ARC EM7D of EMSK
+
+config SOC_EMSK_EM9D
+	bool
+	select SOC_EMSK
+	help
+	  Synopsys ARC EM9D of EMSK
+
+config SOC_EMSK_EM11D
+	bool
+	select SOC_EMSK
+	help
+	  Synopsys ARC EM11D of EMSK
+
+config SOC_SERIES
+	default "emsk" if SOC_EMSK
+
+config SOC
+	default "emsk_em7d" if SOC_EMSK_EM7D
+	default "emsk_em9d" if SOC_EMSK_EM9D
+	default "emsk_em11d" if SOC_EMSK_EM11D

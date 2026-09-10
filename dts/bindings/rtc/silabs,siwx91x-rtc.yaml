@@ -1,0 +1,12 @@
+# Copyright (c) 2025 Silicon Labatoratories Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Silabs Siwx91x RTC (Real-Time Counter)
+
+compatible: "silabs,siwx91x-rtc"
+
+include: rtc.yaml
+
+properties:
+  reg:
+    required: true

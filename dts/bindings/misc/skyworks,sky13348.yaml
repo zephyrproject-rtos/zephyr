@@ -1,0 +1,18 @@
+# Copyright (c) 2025 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+description: Output selectors on the SKY13348 GaAs SPDT FET I/C switch
+
+compatible: "skyworks,sky13348"
+
+include: base.yaml
+
+properties:
+  v1-gpios:
+    type: phandle-array
+    required: true
+    description: V1 pin
+  v2-gpios:
+    type: phandle-array
+    required: true
+    description: V2 pin

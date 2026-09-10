@@ -1,0 +1,41 @@
+# Copyright (c) 2026 James Walmsley <james@fullfat-fs.co.uk>
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+config ADC_ADS79XX
+	bool "TI ADS79xx-Q1 SPI ADC family"
+	select SPI
+	default y
+	depends on DT_HAS_TI_ADS7950_ENABLED || DT_HAS_TI_ADS7951_ENABLED \
+		  || DT_HAS_TI_ADS7952_ENABLED || DT_HAS_TI_ADS7953_ENABLED \
+		  || DT_HAS_TI_ADS7954_ENABLED || DT_HAS_TI_ADS7955_ENABLED \
+		  || DT_HAS_TI_ADS7956_ENABLED || DT_HAS_TI_ADS7957_ENABLED \
+		  || DT_HAS_TI_ADS7958_ENABLED || DT_HAS_TI_ADS7959_ENABLED \
+		  || DT_HAS_TI_ADS7960_ENABLED || DT_HAS_TI_ADS7961_ENABLED
+
+if ADC_ADS79XX
+
+config ADC_ADS79XX_INIT_PRIORITY
+	int "ADS79xxx init priority"
+	default 80
+	help
+	  ADS79xx device initialization priority must come
+	  after SPI initialization
+
+config ADC_ADS79XX_ACQUISITION_THREAD_STACK_SIZE
+	int "Stack size for the ADC data acquisition thread"
+	default 512
+	help
+	  Size of the stack used for the internal data acquisition
+	  thread.
+
+config ADC_ADS79XX_ACQUISITION_THREAD_PRIO
+	int "Priority for the ADC data acquisition thread"
+	default 0
+	help
+	  Priority level for the internal ADC data acquisition thread.
+
+config ADC_ADS79XX_DEBUG_SPI_TRANSFERS
+	bool "Extra debug of low-level SPI transfers"
+
+endif # ADC_ADS79XX

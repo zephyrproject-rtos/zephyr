@@ -1,0 +1,14 @@
+common:
+  depends_on: netif
+  filter: CONFIG_FULL_LIBC_SUPPORTED
+  min_ram: 31
+  tags:
+    - net
+    - socket
+tests:
+  net.socket.reuseaddr_reuseport:
+    extra_configs:
+      - CONFIG_TEST_USERSPACE=n
+  net.socket.reuseaddr_reuseport.userspace:
+    extra_configs:
+      - CONFIG_TEST_USERSPACE=y

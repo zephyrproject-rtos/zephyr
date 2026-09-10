@@ -1,0 +1,23 @@
+#
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: |
+  EK79007 MIPI DSI display panel controller
+
+compatible: "fitipower,ek79007"
+
+include: [mipi-dsi-device.yaml, display-controller.yaml]
+
+properties:
+  reset-gpios:
+    type: phandle-array
+    description: |
+      Reset GPIO pin (active low).
+
+  bl-gpios:
+    type: phandle-array
+    description: |
+      Backlight control GPIO pin (active high).

@@ -1,0 +1,19 @@
+sample:
+  name: STM32 Power Management Serial Wakeup
+tests:
+  sample.boards.stm32.power_mgmt.serial_wakeup:
+    tags:
+      - UART
+      - power
+    harness: console
+    harness_config:
+      type: multi_line
+      regex:
+        - "Device is wakeup capable"
+        - "Wakeup source enable ok"
+        - "Wakeup source enabled"
+    integration_platforms:
+      - nucleo_wb55rg
+    filter: dt_compat_enabled("zephyr,power-state")
+    extra_args: "CONFIG_DEBUG=y"
+    platform_allow: nucleo_wb55rg

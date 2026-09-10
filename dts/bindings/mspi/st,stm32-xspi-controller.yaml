@@ -1,0 +1,57 @@
+# Copyright (c) 2025 EXALT Technologies.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    STM32 XSPI controller.
+
+compatible: "st,stm32-xspi-controller"
+
+include: [base.yaml, pinctrl-device.yaml, mspi-controller.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  clocks:
+    required: true
+
+  clock-names:
+    required: true
+
+  dma-names:
+    description: DMA channel name.
+    enum:
+      - tx
+      - rx
+
+  st,ssht-enable:
+    type: boolean
+    description: |
+      Enables Sample Shifting half-cycle.
+
+      It is recommended to be enabled in STR mode and disabled in DTR mode.
+
+  clock-frequency:
+    required: true
+
+  st,csbound:
+    type: int
+    default: 3
+    description: |
+      Limit a transaction to a boundary of aligned addresses. The size of the
+      alignment is given by the value: 2^(csbound) bits.
+      A csbound value of 0 means the feature is disabled.
+      The default is the minimum recommended value in the Reference Manual. It
+      is recommended to set this value according to the length of the burst wrap
+      of the PSRAM device for the linear burst command.
+    min: 0
+    max: 31

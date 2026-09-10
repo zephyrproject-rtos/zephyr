@@ -1,0 +1,13 @@
+identifier: elemrv_flask_n
+name: ElemRV Flask-N (ElemRV-N)
+type: mcu
+arch: riscv
+toolchain:
+  - cross-compile
+  - zephyr
+ram: 32
+flash: 32
+vendor: aesc
+supported:
+  - gpio
+  - uart

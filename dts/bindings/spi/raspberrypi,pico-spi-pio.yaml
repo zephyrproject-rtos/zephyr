@@ -1,0 +1,47 @@
+# Copyright (c) 2023 Stephen Boylan <stephen.boylan@beechwoods.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Raspberry Pi Pico SPI via PIO
+
+compatible: "raspberrypi,pico-spi-pio"
+
+include: ["spi-controller.yaml", "raspberrypi,pico-pio-device.yaml", "reset-device.yaml"]
+
+properties:
+  clk-gpios:
+    type: phandle-array
+    required: true
+    description: |
+      Output pin for SPI clock
+
+  sdo-gpios:
+    type: phandle-array
+    description: |
+      Output pin for Serial Data Out.
+
+  sdi-gpios:
+    type: phandle-array
+    description: |
+      Input pin for Serial Data In.
+
+  mosi-gpios:
+    type: phandle-array
+    deprecated: true
+    description: |
+      Deprecated. Use sdo-gpios instead.
+
+  miso-gpios:
+    type: phandle-array
+    deprecated: true
+    description: |
+      Deprecated. Use sdi-gpios instead.
+
+  sio-gpios:
+    type: phandle-array
+    description: |
+      Single I/O gpio info
+
+      GPIO input/output pin for 3-wire mode.
+
+  clocks:
+    required: true

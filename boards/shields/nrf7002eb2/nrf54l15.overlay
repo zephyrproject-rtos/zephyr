@@ -1,0 +1,35 @@
+/*
+ * Copyright (c) 2026 Nordic Semiconductor
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * nRF7002 EB-II SoC overlay for nRF54L15 (cpuapp and cpuapp_ns).
+ * SPI and GPIOs come from root overlay via nordic_expansion_spi and
+ * nordic_expansion_header.
+ */
+
+/* Conflicts with nRF7002 EB-II SPI-CS pin */
+/delete-node/ &led1;
+
+/* UART20 conflicts with EB-II shield; use UART30 */
+/ {
+	chosen {
+		zephyr,console = &uart30;
+		zephyr,shell-uart = &uart30;
+		zephyr,uart-mcumgr = &uart30;
+		zephyr,bt-mon-uart = &uart30;
+		zephyr,bt-c2h-uart = &uart30;
+	};
+
+	aliases {
+		/delete-property/ led1;
+	};
+};
+
+&uart20 {
+	status = "disabled";
+};
+
+&uart30 {
+	status = "okay";
+};

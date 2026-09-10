@@ -1,0 +1,24 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_BFLB_TIMER
+	bool "Bouffalo Lab timer counter driver"
+	default y
+	depends on DT_HAS_BFLB_TIMER_CHANNEL_ENABLED
+	help
+	  Enable general-purpose timer counter for Bouffalo Lab SoCs.
+
+config COUNTER_BFLB_TIMER_HAS_CNT_CLR
+	bool
+	depends on COUNTER_BFLB_TIMER
+	help
+	  SoC has counter clear bits in the TCER register, enabling hardware
+	  counter reset. When not set, the driver tracks a software cycle
+	  offset to emulate counter reset in free-run mode.
+
+config COUNTER_BFLB_RTC
+	bool "Bouffalo Lab RTC counter driver"
+	default y
+	depends on DT_HAS_BFLB_RTC_ENABLED
+	help
+	  Enable RTC counter for Bouffalo Lab SoCs.

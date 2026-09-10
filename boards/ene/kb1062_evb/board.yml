@@ -1,0 +1,6 @@
+board:
+  name: kb1062_evb
+  full_name: ENE KB1062_EVB
+  vendor: ene
+  socs:
+  - name: kb1062

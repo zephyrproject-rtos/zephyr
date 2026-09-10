@@ -1,0 +1,11 @@
+# Fake PWM configuration options
+
+# Copyright (c) 2024 Kickmaker
+# SPDX-License-Identifier: Apache-2.0
+
+config PWM_FAKE
+	bool "Fake PWM driver"
+	default y
+	depends on DT_HAS_ZEPHYR_FAKE_PWM_ENABLED
+	help
+	  Enable support for the FFF-based fake PWM driver.

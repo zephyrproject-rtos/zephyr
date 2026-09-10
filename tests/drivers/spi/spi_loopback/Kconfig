@@ -1,0 +1,34 @@
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "SPI Loopback Test"
+
+source "Kconfig.zephyr"
+
+config SPI_LOOPBACK_MODE_LOOP
+	bool "Configure the SPI in LOOP mode, so that no extra wiring is needed"
+
+config SPI_LARGE_BUFFER_SIZE
+	int "Large buffer size"
+	default 8192
+
+config SPI_IDEAL_TRANSFER_DURATION_SCALING
+	int "Scaling factor to compare ideal and measured SPI transfer duration"
+	default 40 if SPI_NXP_LPSPI_DMA || SPI_MCUX_FLEXIO
+	default 8
+
+if SOC_SERIES_STM32H7X
+
+config SPI_LOOPBACK_16BITS_FRAMES
+	bool "Use 16 bits frames for tests"
+
+config DT_DEFINED_NOCACHE
+	bool "Enable this if nocache regions are defined in devicetree"
+
+if DT_DEFINED_NOCACHE
+
+config DT_DEFINED_NOCACHE_NAME
+	string "Name of the nocache region defined in devicetree (capitals)"
+
+endif # DT_DEFINED_NOCACHE
+
+endif # SOC_SERIES_STM32H7X

@@ -1,0 +1,12 @@
+# Copyright (c) 2026 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+title: STM32U5 LPTIM
+
+description: |
+  Low-Power Timer (LPTIM) with support for multiple channels and input capture mode.
+  First found in STM32U5 series, later used in STM32WBA, STM32H5, etc...
+
+compatible: "st,stm32u5-lptim"
+
+include: st,stm32-lptim.yaml

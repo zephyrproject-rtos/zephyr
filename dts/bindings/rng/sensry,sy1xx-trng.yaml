@@ -1,0 +1,12 @@
+# Copyright (c) 2025 sensry.io
+# SPDX-License-Identifier: Apache-2.0
+
+description: Sensry SY1XX TRNG
+
+compatible: "sensry,sy1xx-trng"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true

@@ -1,0 +1,12 @@
+# Copyright 2024 tinyVision.ai Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Emulated Imager for testing purpose
+
+compatible: "zephyr,video-emul-imager"
+
+include: i2c-device.yaml
+
+child-binding:
+  child-binding:
+    include: video-interfaces.yaml

@@ -1,0 +1,22 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pwm/pwm.h>
+
+/ {
+	aliases {
+		pwm-led0 = &pwm_led0;
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		/* Connect PWM2 (R881) to an LED */
+		pwm_led0: pwm_led_0 {
+			pwms = <&pwm2 2 PWM_MSEC(20) PWM_POLARITY_NORMAL>;
+		};
+	};
+};

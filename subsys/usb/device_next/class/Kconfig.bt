@@ -1,0 +1,35 @@
+# Copyright (c) 2023 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config USBD_BT_HCI
+	bool "Bluetooth HCI USB Transport Layer"
+	select BT
+	select BT_HCI_RAW
+	help
+	  Bluetooth HCI USB Transport Layer
+
+if USBD_BT_HCI
+
+config USBD_BT_HCI_TX_THREAD_PRIORITY
+	int "TX thread priority"
+	default 8
+	help
+	  Bluetooth HCI USB Transport Layer TX thread priority.
+
+config USBD_BT_HCI_TX_STACK_SIZE
+	int "TX thread stack size"
+	default 512
+	help
+	  Bluetooth HCI USB Transport Layer TX thread stack size.
+
+config USBD_BT_HCI_RX_THREAD_PRIORITY
+	int "RX thread priority"
+	default 8
+	help
+	  Bluetooth HCI USB Transport Layer RX thread priority.
+
+module = USBD_BT_HCI
+module-str = usbd bt hci
+source "subsys/logging/Kconfig.template.log_config"
+
+endif

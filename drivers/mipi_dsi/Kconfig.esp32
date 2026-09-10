@@ -1,0 +1,11 @@
+# Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+config MIPI_DSI_ESP32
+	bool "ESP32 MIPI DSI host controller"
+	default y
+	depends on DT_HAS_ESPRESSIF_ESP_MIPI_DSI_ENABLED
+	depends on SOC_SERIES_ESP32P4
+	depends on DISPLAY_ESP32_DSI
+	help
+	  Enable driver for the ESP32 MIPI DSI host controller.

@@ -1,0 +1,23 @@
+/*
+ * Copyright (c) 2025 Alexander Kozhinov <ak.alexander.kozhinov@gmail.com>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/**
+ * PB7 (GPIO.SPI3 SCK / GPIO11) and PB8 (GPIO.SPI3 MOSI / GPIO10)
+ * must be shorted by a wire.
+ */
+
+/ {
+	resources {
+		compatible = "test-gpio-basic-api";
+		status = "okay";
+		out-gpios = <&gpiob 7 (GPIO_ACTIVE_HIGH | GPIO_PUSH_PULL | GPIO_PULL_UP)>;
+		in-gpios = <&gpiob 8 (GPIO_ACTIVE_HIGH | GPIO_PUSH_PULL | GPIO_PULL_UP)>;
+	};
+};
+
+&gpiob {
+	status = "okay";
+};

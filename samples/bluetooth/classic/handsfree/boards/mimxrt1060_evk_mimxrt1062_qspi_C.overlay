@@ -1,0 +1,29 @@
+/*
+ * Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		i2s-codec-rx = &sai1;
+		pcm-rxtx = &sai2;
+	};
+};
+
+/* SAI1 already has pinctrl-0 set in board dtsi, just add our properties */
+&sai1 {
+	status = "okay";
+	mclk-output;
+	nxp,rx-sync-mode;
+};
+
+/*
+ * SAI2 has pinctrl set in baord dtsi, Enable SAI2 as duplex PCM interface
+ * for HFP SCO audio
+ */
+&sai2 {
+	status = "okay";
+	nxp,tx-channel = <1>;
+	nxp,rx-sync-mode;
+};

@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2025 Ambiq
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&pwmleds {
+	status = "okay";
+};
+
+&pwm2 {
+	status = "okay";
+};

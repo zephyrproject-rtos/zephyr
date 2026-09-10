@@ -1,0 +1,6 @@
+board:
+  name: apollo510_evb
+  full_name: Apollo510 SOC Evaluation Board
+  vendor: ambiq
+  socs:
+  - name: apollo510

@@ -1,0 +1,31 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <arm/renesas/ra/ra4/r7fa4t1bx.dtsi>
+
+&ioport0 {
+	gpio-reserved-ranges = <4 9>;
+};
+
+&ioport1 {
+	gpio-reserved-ranges = <5 3>, <13 1>;
+};
+
+&ioport2 {
+	gpio-reserved-ranges = <2 4>, <8 4>;
+};
+
+&ioport3 {
+	gpio-reserved-ranges = <3 2>;
+};
+
+&ioport4 {
+	gpio-reserved-ranges = <0 2>, <4 3>, <10 2>;
+};
+
+&adc0 {
+	channel-available-mask = <0x13887>;
+};

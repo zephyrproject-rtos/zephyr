@@ -1,0 +1,20 @@
+# nRF IPM driver channel configuration
+
+# Copyright (c) 2019 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+menu "IPM Message Channel [$(nrfx_ipc_num)] configuration"
+
+config IPM_MSG_CH_$(nrfx_ipc_num)_ENABLE
+	bool "IPM Message Channel $(nrfx_ipc_num)"
+
+config IPM_MSG_CH_$(nrfx_ipc_num)_RX
+	bool "IPM Message RX Channel"
+	depends on IPM_MSG_CH_$(nrfx_ipc_num)_ENABLE
+
+config IPM_MSG_CH_$(nrfx_ipc_num)_TX
+	bool "IPM Message TX Channel"
+	depends on IPM_MSG_CH_$(nrfx_ipc_num)_ENABLE
+	default ! IPM_MSG_CH_$(nrfx_ipc_num)_RX
+
+endmenu

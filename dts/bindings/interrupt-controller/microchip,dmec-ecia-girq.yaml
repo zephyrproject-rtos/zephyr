@@ -1,0 +1,23 @@
+description: Microchip DEC/MEC series External Interrupt Aggregator GIRQ
+
+compatible: "microchip,dmec-ecia-girq"
+
+include: base.yaml
+
+properties:
+  girqs:
+    type: array
+    required: true
+    description: |
+      Many DEC/MEC periperals interrupt signals are direct capable. The signals are
+      connected to bits in a GIRQ. Each GIRQ is composed of 5 32-bit registers:
+      status(latched or r/w1-c), set-enable, clr-enable, and result (read-only).
+      The read-only result register bits are the bitwise AND of status and enable.
+      Direct mode routes the individual result register bits to NVIC inputs. If
+      direct mode is disable by setting direct mode bit to 0 in the EC subsystem
+      interrupt control register then the result register outputs are OR'd together
+      and the OR'd result is connected to an NVIC input based on GIRQ number.
+      To enable an interrupt a driver must know:
+      a. NVIC input number and priority from the interrupts property
+      b. GIRQ number and bit position from the girqs property
+      The number of entries in interrupts and girqs should be the same in a DT node.

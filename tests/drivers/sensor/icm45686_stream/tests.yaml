@@ -1,0 +1,7 @@
+tests:
+  drivers.sensor.icm45686_stream.early_irq:
+    tags:
+      - drivers
+      - sensor
+    platform_allow:
+      - native_sim

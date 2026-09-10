@@ -1,0 +1,30 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas RA ULPT
+
+compatible: "renesas,ra-ulpt"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  channel:
+    type: int
+    required: true
+    description: |
+      ULPT channel number.
+
+  interrupts:
+    description: |
+      IRQ number and priority to use for ULPT.
+
+  interrupt-names:
+    enum:
+      - "ulpti"
+      - "ulptcmai"
+      - "ulptcmbi"
+    description: |
+      Interrupts must be given corresponding names so that the timer driver can recognize them.

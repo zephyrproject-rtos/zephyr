@@ -1,0 +1,8 @@
+# Copyright (c) 2025 STMicroelectronics
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_FAMILY_GD_GD32_HAS_BACKUP_DOMAIN_PROTECTION
+	bool
+	help
+	  Selected for SoCs that need to explicitly enable access to
+	  backup domain resources.

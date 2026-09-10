@@ -1,0 +1,16 @@
+identifier: ra8p1_titan_mini/r7ka8p1kflcac/cm85
+name: RA8P1 Titan Mini
+type: mcu
+arch: arm
+ram: 1664
+flash: 344
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - gpio
+  - uart
+  - spi
+  - sdhc
+  - netif:eth
+vendor: ruiside

@@ -1,0 +1,6 @@
+# Copyright The Zephyr Project Contributors
+# Copyright (c) 2026 Ezurio LLC
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_RM126X_DVK_RM1261
+	select SOC_EFR32BG22C224F512IM40

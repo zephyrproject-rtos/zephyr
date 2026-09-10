@@ -1,0 +1,28 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Perry Naseck, MIT Media Lab <pnaseck@media.mit.edu>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <espressif/esp32p4/esp32p4_lpcore_n32.dtsi>
+#include <espressif/partitions_0x2000_default_32M.dtsi>
+
+/ {
+	model = "Waveshare ESP32-P4-ETH LP Core";
+	compatible = "waveshare,esp32-p4-eth";
+
+	chosen {
+		zephyr,sram = &sramlp;
+		zephyr,console = &lp_uart;
+		zephyr,shell-uart = &lp_uart;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &slot0_lpcore_partition;
+	};
+};
+
+&lp_uart {
+	status = "okay";
+	current-speed = <115200>;
+};

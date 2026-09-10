@@ -1,0 +1,13 @@
+/*
+ * Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&dbi0 {
+	compatible = "bflb,dbi";
+	status = "okay";
+
+	dmas = <&dma0 0 0x14>;
+	dma-names = "tx";
+};

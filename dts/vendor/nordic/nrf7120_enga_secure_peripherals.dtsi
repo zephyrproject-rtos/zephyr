@@ -1,0 +1,50 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/*
+ * This file contains peripherals that are secure only in nRF7120
+ */
+
+spu00: spu@40000 {
+	compatible = "nordic,nrf-spu";
+	reg = <0x40000 0x1000>;
+	interrupts = <64 NRF_DEFAULT_IRQ_PRIORITY>;
+	status = "disabled";
+};
+
+kmu: kmu@49000 {
+	compatible = "nordic,nrf-kmu";
+	reg = <0x49000 0x1000>;
+	status = "disabled";
+};
+
+spu10: spu@80000 {
+	compatible = "nordic,nrf-spu";
+	reg = <0x80000 0x1000>;
+	interrupts = <128 NRF_DEFAULT_IRQ_PRIORITY>;
+	status = "disabled";
+};
+
+spu20: spu@c0000 {
+	compatible = "nordic,nrf-spu";
+	reg = <0xc0000 0x1000>;
+	interrupts = <192 NRF_DEFAULT_IRQ_PRIORITY>;
+	status = "disabled";
+};
+
+spu30: spu@100000 {
+	compatible = "nordic,nrf-spu";
+	reg = <0x100000 0x1000>;
+	interrupts = <256 NRF_DEFAULT_IRQ_PRIORITY>;
+	status = "disabled";
+};
+
+wdt30: wdt@108000 {
+	compatible = "nordic,nrf-wdt";
+	reg = <0x108000 0x1000>;
+	interrupts = <264 NRF_DEFAULT_IRQ_PRIORITY>;
+	status = "disabled";
+};

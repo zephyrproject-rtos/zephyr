@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2025 Nordic Semiconductor ASA
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <nordic/nrf7120_7120e_enga_cpuflpr.dtsi>
+#include "nrf7120_7120e_cpuflpr_common.dtsi"
+
+/ {
+	model = "Nordic nRF7120 DK nRF7120E FLPR MCU";
+	compatible = "nordic,nrf7120dk_nrf7120e-cpuflpr";
+};

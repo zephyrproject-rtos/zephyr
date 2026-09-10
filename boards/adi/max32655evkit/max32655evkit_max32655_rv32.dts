@@ -1,0 +1,56 @@
+/*
+ * Copyright (c) 2023-2026 Analog Devices, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <adi/max32/max32655-rv32.dtsi>
+#include "max32655evkit.dtsi"
+
+/ {
+	model = "Analog Devices MAX32655EVKIT";
+	compatible = "adi,max32655evkit";
+
+	chosen {
+		zephyr,console = &uart3;
+		zephyr,shell-uart = &uart3;
+		zephyr,sram = &rv32_sram;
+		zephyr,flash = &flash0;
+		zephyr,code-partition = &rv32_partition;
+	};
+};
+
+&rv32_sys_timer {
+	status = "okay";
+};
+
+&clk_iso {
+	status = "okay";
+};
+
+&gpio0 {
+	status = "okay";
+};
+
+&gpio1 {
+	status = "okay";
+};
+
+&gpio2 {
+	status = "okay";
+};
+
+&gpio3 {
+	status = "okay";
+};
+
+&uart3 {
+	pinctrl-0 = <&lpuartb_rx_p2_6 &lpuartb_tx_p2_7>;
+	status = "okay";
+	pinctrl-names = "default";
+	current-speed = <115200>;
+	data-bits = <8>;
+	parity = "none";
+};

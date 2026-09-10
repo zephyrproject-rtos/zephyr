@@ -1,0 +1,29 @@
+# Copyright (c) 2025 Ambiq Micro Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Ambiq SPI/I2C controller common properties
+
+compatible: "ambiq,iom"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  dma-mode:
+    description: Enables DMA over SPI/I2C.
+    type: boolean
+
+  cmdq-buffer-location:
+    type: string
+    description: |
+      Define the DMA command queue buffer location section
+
+  cmdq-buffer-size:
+    type: int
+    description: |
+      Define the DMA command queue buffer size in (4-byte) words

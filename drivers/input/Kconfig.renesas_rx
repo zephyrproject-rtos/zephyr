@@ -1,0 +1,92 @@
+# Copyright (c) 2025 Renesas Electronics Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config INPUT_RENESAS_RX_CTSU
+	bool "Renesas Capacitive Touch Sensing Unit"
+	default y
+	depends on DT_HAS_RENESAS_RX_CTSU_ENABLED
+	select USE_RX_RDP_CTSU
+	select PINCTRL
+	help
+	  Enable RX series CTSU driver
+
+if INPUT_RENESAS_RX_CTSU
+
+config INPUT_RENESAS_RX_QE_TOUCH_CFG
+	bool "Using QE Touch Workflow to config this driver"
+	help
+	  If this config was enabled, setting for CTSU and Cap
+	  Touch driver will be reflected the setting that generated
+	  from QE Touch Workflow.
+	  Please add the generated C source files into the app CMakeLists
+	  to make the driver can using it.
+
+config INPUT_RENESAS_RX_CTSU_SCAN_INTERVAL_MS
+	int "CTSU channels scan interval"
+	default 5
+	help
+	  Interval time (milliseconds) between two scans.
+
+if !INPUT_RENESAS_RX_QE_TOUCH_CFG
+
+config INPUT_RENESAS_RX_CTSU_ON_FREQ
+	int "CTSU On Frequency"
+	default 3
+	help
+	  Number of Debouncing count of touch-on filtering
+
+config INPUT_RENESAS_RX_CTSU_OFF_FREQ
+	int "CTSU Off Frequency"
+	default 3
+	help
+	  Number of Debouncing count of touch-off filtering
+
+config INPUT_RENESAS_RX_CTSU_DRIFT_FREQ
+	int "CTSU drift frequency"
+	default 255
+	help
+	  Sample count for drift correction (0 mean no use).
+
+config INPUT_RENESAS_RX_CTSU_CANCEL_FREQ
+	int "CTSU Cancel Frequency"
+	default 0
+	help
+	  Continuous Touch Cancel Count (0 mean no use).
+
+config INPUT_RENESAS_RX_CTSU_NUM_MOVING_AVERAGE
+	int "CTSU Moving average"
+	default 4
+	help
+	  Number of moving average for measurement data
+
+config INPUT_RENESAS_RX_CTSU_POWER_SUPPLY_CAPACITY
+	int "CTSU Power supply capacity"
+	default 0
+	range 0 1
+	help
+	  Power Supply Capacity Adjustment
+	  - 0: Normal (40uA)
+	  - 1: High-current output (80uA)
+
+config INPUT_RENESAS_RX_CTSU_TRANSMISSION_POWER_SUPPLY
+	int "CTSU transmission power supply"
+	default 0
+	range 0 1
+	help
+	  Transmission Power Supply Select
+	  - 0: VCC selected
+	  - 1: Internal logic power supply selected
+
+config INPUT_RENESAS_RX_CTSU_PCLK_DIVISION
+	int "CTSU: Division of PCLK"
+	default 0
+	range 0 2
+	help
+	  Division of PCLK
+	  - 0: PCLK/1
+	  - 1: PCLK/2
+	  - 2: PCLK/4
+
+endif #!INPUT_RENESAS_RX_QE_TOUCH_CFG
+
+endif #INPUT_CTSU

@@ -1,0 +1,6 @@
+shield:
+  name: nxp_btb44_ov5640
+  full_name: NXP BTB44 OV5640 Camera Module
+  vendor: nxp
+  supported_features:
+    - video

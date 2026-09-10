@@ -1,0 +1,28 @@
+# RISCV64 Microchip PIC64GX SOC configuration options
+
+# Copyright (c) 2025 Microchip Technology Inc
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_PIC64GX
+	bool
+	select SOC_FAMILY_MICROCHIP_PIC64
+	help
+	  Enable support for Microchip PIC64GX SoC.
+
+config SOC_PIC64GX1000
+	bool
+	select SOC_SERIES_PIC64GX
+
+config SOC_PIC64GX1000_U54
+	bool
+	select SOC_PIC64GX1000
+
+config SOC_PIC64GX1000_E51
+	bool
+	select SOC_PIC64GX1000
+
+config SOC_SERIES
+	default "pic64gx" if SOC_SERIES_PIC64GX
+
+config SOC
+	default "pic64gx1000" if SOC_PIC64GX1000

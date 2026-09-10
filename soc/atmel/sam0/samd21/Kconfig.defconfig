@@ -1,0 +1,15 @@
+# Atmel SAMD21 MCU series configuration options
+
+# Copyright (c) 2017 Google LLC.
+# Copyright (c) 2024 Gerson Fernando Budke <nandojve@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_SERIES_SAMD21
+
+config NUM_IRQS
+	default 28
+
+config BUILD_OUTPUT_UF2_FAMILY_ID
+	default "0x68ed2b88"
+
+endif # SOC_SERIES_SAMD21

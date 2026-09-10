@@ -1,0 +1,22 @@
+identifier: fk723m1_zgt6
+name: FK723M1-ZGT6
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+ram: 432
+flash: 1024
+supported:
+  - uart
+  - gpio
+  - counter
+  - i2c
+  - pwm
+  - spi
+  - backup_sram
+  - usb_device
+  - rtc
+  - can
+vendor: other

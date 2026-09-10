@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# Copyright (c) 2025, Jonas Berg
+
+shield:
+  name: adafruit_mcp4728
+  full_name: Adafruit MCP4728 DAC Shield
+  vendor: adafruit
+  supported_features:
+    - dac

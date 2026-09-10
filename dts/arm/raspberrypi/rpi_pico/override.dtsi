@@ -1,0 +1,7 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/*
+ * File intentionally left blank. Will be used when there is no other
+ * higher-priority override.dtsi file in use.
+ */

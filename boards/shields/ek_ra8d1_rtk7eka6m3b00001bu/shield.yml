@@ -1,0 +1,6 @@
+shield:
+  name: ek_ra8d1_rtk7eka6m3b00001bu
+  full_name: EK-RA8D1 to RTK7EKA6M3B00001BU Display Adapter
+  vendor: renesas
+  supported_features:
+    - display

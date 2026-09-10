@@ -1,0 +1,21 @@
+# Copyright (c) 2014-2015 Wind River Systems, Inc.
+# Copyright (c) 2016 Cadence Design Systems, Inc.
+# Copyright (c) 2019 Intel Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig ARCV2_TIMER
+	bool "ARC Timer"
+	default y
+	depends on ARC
+	select TICKLESS_CAPABLE
+	help
+	  This module implements a kernel device driver for the ARCv2 processor timer 0
+	  and provides the standard "system clock driver" interfaces.
+
+config ARCV2_TIMER_IRQ_PRIORITY
+	int "ARC timer interrupt priority"
+	default 0
+	depends on ARCV2_TIMER
+	help
+	  This option specifies the IRQ priority used by the ARC timer. Lower
+	  values have higher priority.

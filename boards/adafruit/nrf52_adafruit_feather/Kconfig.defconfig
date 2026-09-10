@@ -1,0 +1,8 @@
+# nRF52 ADAFRUIT FEATHER board configuration
+
+# Copyright (c) 2018 LEDCity AG
+# SPDX-License-Identifier: Apache-2.0
+
+if BOARD_NRF52_ADAFRUIT_FEATHER
+
+endif # BOARD_NRF52_ADAFRUIT_FEATHER

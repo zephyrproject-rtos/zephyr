@@ -1,0 +1,496 @@
+/*
+ * Copyright 2025 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <inttypes.h>
+#include <stdio.h>
+
+#include <zephyr/drivers/video.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/video/video.h>
+
+LOG_MODULE_REGISTER(video_controls, CONFIG_VIDEO_LOG_LEVEL);
+
+/* By definition, the cluster is in manual mode if the primary control value is 0 */
+static inline bool is_cluster_manual(const struct video_ctrl *primary)
+{
+	return primary->type == VIDEO_CTRL_TYPE_INTEGER64 ? primary->val64 == 0 : primary->val == 0;
+}
+
+int video_cluster_ctrl(struct video_ctrl *ctrls, uint8_t sz)
+{
+	bool has_volatiles = false;
+
+	if (sz == 0 || ctrls == NULL) {
+		return -EINVAL;
+	}
+
+	for (uint8_t i = 0; i < sz; i++) {
+		ctrls[i].cluster_sz = sz;
+		ctrls[i].cluster = ctrls;
+		if (ctrls[i].flags & VIDEO_CTRL_FLAG_VOLATILE) {
+			has_volatiles = true;
+		}
+	}
+
+	ctrls->has_volatiles = has_volatiles;
+
+	return 0;
+}
+
+int video_auto_cluster_ctrl(struct video_ctrl *ctrls, uint8_t sz, bool set_volatile)
+{
+	int ret;
+
+	if (sz <= 1 ||
+	    (set_volatile && !DEVICE_API_GET(video, ctrls->vdev->dev)->get_volatile_ctrl)) {
+		return -EINVAL;
+	}
+
+	ret = video_cluster_ctrl(ctrls, sz);
+	if (ret < 0) {
+		return ret;
+	}
+
+	ctrls->is_auto = true;
+	ctrls->has_volatiles = set_volatile;
+	ctrls->flags |= VIDEO_CTRL_FLAG_UPDATE;
+
+	/* If the cluster is in automatic mode, mark all manual controls inactive and volatile */
+	for (uint8_t i = 1; i < sz; i++) {
+		if (!is_cluster_manual(ctrls)) {
+			ctrls[i].flags |= VIDEO_CTRL_FLAG_INACTIVE |
+					  (set_volatile ? VIDEO_CTRL_FLAG_VOLATILE : 0);
+		}
+	}
+
+	return 0;
+}
+
+static int video_find_ctrl(const struct device *dev, uint32_t id, struct video_ctrl **ctrl)
+{
+	struct video_device *vdev = video_find_vdev(dev);
+
+	while (vdev) {
+		SYS_DLIST_FOR_EACH_CONTAINER(&vdev->ctrls, *ctrl, node) {
+			if ((*ctrl)->id == id) {
+				return 0;
+			}
+		}
+
+		vdev = video_find_vdev(vdev->src_dev);
+	}
+
+	return -ENOTSUP;
+}
+
+int video_get_ctrl(const struct device *dev, struct video_control *control)
+{
+	struct video_ctrl *ctrl = NULL;
+
+	if (dev == NULL || control == NULL) {
+		return -EINVAL;
+	}
+
+	int ret = video_find_ctrl(dev, control->id, &ctrl);
+
+	if (ret) {
+		return ret;
+	}
+
+	if (ctrl->flags & VIDEO_CTRL_FLAG_WRITE_ONLY) {
+		LOG_ERR("Control id 0x%x is write-only\n", control->id);
+		return -EACCES;
+	}
+
+	if (ctrl->flags & VIDEO_CTRL_FLAG_VOLATILE) {
+		/* Call driver's get_volatile_ctrl */
+		ret = video_driver_get_volatile_ctrl(ctrl->vdev->dev,
+				ctrl->cluster ? ctrl->cluster->id : ctrl->id);
+		if (ret) {
+			return ret;
+		}
+	}
+
+	/* Give the control's current value to user */
+	if (ctrl->type == VIDEO_CTRL_TYPE_INTEGER64) {
+		control->val64 = ctrl->val64;
+	} else {
+		control->val = ctrl->val;
+	}
+
+	return 0;
+}
+
+int video_set_ctrl(const struct device *dev, struct video_control *control)
+{
+	struct video_ctrl *ctrl = NULL;
+	int ret;
+	uint8_t i = 0;
+	int32_t val = 0;
+	int64_t val64 = 0;
+
+	if (dev == NULL || control == NULL) {
+		return -EINVAL;
+	}
+
+	ret = video_find_ctrl(dev, control->id, &ctrl);
+	if (ret) {
+		return ret;
+	}
+
+	if (ctrl->flags & VIDEO_CTRL_FLAG_READ_ONLY) {
+		LOG_ERR("Control id 0x%x is read-only\n", control->id);
+		return -EACCES;
+	}
+
+	if (ctrl->flags & VIDEO_CTRL_FLAG_INACTIVE) {
+		LOG_ERR("Control id 0x%x is inactive\n", control->id);
+		return -EACCES;
+	}
+
+	if (ctrl->type == VIDEO_CTRL_TYPE_INTEGER64
+		    ? !IN_RANGE(control->val64, ctrl->range.min64, ctrl->range.max64)
+		    : !IN_RANGE(control->val, ctrl->range.min, ctrl->range.max)) {
+		LOG_ERR("Control value is invalid\n");
+		return -EINVAL;
+	}
+
+	/* No new value */
+	if (ctrl->type == VIDEO_CTRL_TYPE_INTEGER64 ? ctrl->val64 == control->val64
+						    : ctrl->val == control->val) {
+		return 0;
+	}
+
+	/* Backup the control's value then set it to the new value */
+	if (ctrl->type == VIDEO_CTRL_TYPE_INTEGER64) {
+		val64 = ctrl->val64;
+		ctrl->val64 = control->val64;
+	} else {
+		val = ctrl->val;
+		ctrl->val = control->val;
+	}
+
+	/*
+	 * For auto-clusters having volatiles, before switching to manual mode, get the current
+	 * volatile values since those will become the initial manual values after this switch.
+	 */
+	if (ctrl == ctrl->cluster && ctrl->is_auto && ctrl->has_volatiles &&
+	    is_cluster_manual(ctrl)) {
+		ret = video_driver_get_volatile_ctrl(ctrl->vdev->dev, ctrl->id);
+		if (ret) {
+			goto restore;
+		}
+	}
+
+	/* Call driver's set_ctrl */
+	ret = video_driver_set_ctrl(ctrl->vdev->dev,
+				    ctrl->cluster ? ctrl->cluster->id : ctrl->id);
+	if (ret && ret != -ENOSYS) {
+		goto restore;
+	}
+
+	/* Update the manual controls' flags of the cluster */
+	if (ctrl->cluster && ctrl->cluster->is_auto) {
+		for (i = 1; i < ctrl->cluster_sz; i++) {
+			if (!is_cluster_manual(ctrl->cluster)) {
+				/* Automatic mode: set the inactive and volatile flags of the manual
+				 * controls
+				 */
+				ctrl->cluster[i].flags |=
+					VIDEO_CTRL_FLAG_INACTIVE |
+					(ctrl->cluster->has_volatiles ? VIDEO_CTRL_FLAG_VOLATILE
+								      : 0);
+			} else {
+				/* Manual mode: clear the inactive and volatile flags of the manual
+				 * controls
+				 */
+				ctrl->cluster[i].flags &=
+					~(VIDEO_CTRL_FLAG_INACTIVE | VIDEO_CTRL_FLAG_VOLATILE);
+			}
+		}
+	}
+
+	return 0;
+
+restore:
+	/* Restore the old control's value */
+	if (ctrl->type == VIDEO_CTRL_TYPE_INTEGER64) {
+		ctrl->val64 = val64;
+	} else {
+		ctrl->val = val;
+	}
+
+	return ret;
+}
+
+static inline const char *video_get_ctrl_name(uint32_t id)
+{
+	switch (id) {
+	/* User controls */
+	case VIDEO_CID_BRIGHTNESS:
+		return "Brightness";
+	case VIDEO_CID_CONTRAST:
+		return "Contrast";
+	case VIDEO_CID_SATURATION:
+		return "Saturation";
+	case VIDEO_CID_HUE:
+		return "Hue";
+	case VIDEO_CID_AUTO_WHITE_BALANCE:
+		return "White Balance, Automatic";
+	case VIDEO_CID_RED_BALANCE:
+		return "Red Balance";
+	case VIDEO_CID_BLUE_BALANCE:
+		return "Blue Balance";
+	case VIDEO_CID_GAMMA:
+		return "Gamma";
+	case VIDEO_CID_EXPOSURE:
+		return "Exposure";
+	case VIDEO_CID_AUTOGAIN:
+		return "Gain, Automatic";
+	case VIDEO_CID_GAIN:
+		return "Gain";
+	case VIDEO_CID_ANALOGUE_GAIN:
+		return "Analogue Gain";
+	case VIDEO_CID_HFLIP:
+		return "Horizontal Flip";
+	case VIDEO_CID_VFLIP:
+		return "Vertical Flip";
+	case VIDEO_CID_POWER_LINE_FREQUENCY:
+		return "Power Line Frequency";
+	case VIDEO_CID_HUE_AUTO:
+		return "Hue, Automatic";
+	case VIDEO_CID_WHITE_BALANCE_TEMPERATURE:
+		return "White Balance Temperature";
+	case VIDEO_CID_SHARPNESS:
+		return "Sharpness";
+	case VIDEO_CID_BACKLIGHT_COMPENSATION:
+		return "Backlight Compensation";
+	case VIDEO_CID_COLORFX:
+		return "Color Effects";
+	case VIDEO_CID_AUTOBRIGHTNESS:
+		return "Brightness, Automatic";
+	case VIDEO_CID_BAND_STOP_FILTER:
+		return "Band-Stop Filter";
+	case VIDEO_CID_ROTATE:
+		return "Rotate";
+	case VIDEO_CID_ALPHA_COMPONENT:
+		return "Alpha Component";
+
+	/* Camera controls */
+	case VIDEO_CID_EXPOSURE_AUTO:
+		return "Auto Exposure";
+	case VIDEO_CID_EXPOSURE_ABSOLUTE:
+		return "Exposure Time, Absolute";
+	case VIDEO_CID_EXPOSURE_AUTO_PRIORITY:
+		return "Exposure, Dynamic Framerate";
+	case VIDEO_CID_PAN_RELATIVE:
+		return "Pan, Relative";
+	case VIDEO_CID_TILT_RELATIVE:
+		return "Tilt, Reset";
+	case VIDEO_CID_PAN_ABSOLUTE:
+		return "Pan, Absolute";
+	case VIDEO_CID_TILT_ABSOLUTE:
+		return "Tilt, Absolute";
+	case VIDEO_CID_FOCUS_ABSOLUTE:
+		return "Focus, Absolute";
+	case VIDEO_CID_FOCUS_RELATIVE:
+		return "Focus, Relative";
+	case VIDEO_CID_FOCUS_AUTO:
+		return "Focus, Automatic Continuous";
+	case VIDEO_CID_ZOOM_ABSOLUTE:
+		return "Zoom, Absolute";
+	case VIDEO_CID_ZOOM_RELATIVE:
+		return "Zoom, Relative";
+	case VIDEO_CID_ZOOM_CONTINUOUS:
+		return "Zoom, Continuous";
+	case VIDEO_CID_IRIS_ABSOLUTE:
+		return "Iris, Absolute";
+	case VIDEO_CID_IRIS_RELATIVE:
+		return "Iris, Relative";
+	case VIDEO_CID_WIDE_DYNAMIC_RANGE:
+		return "Wide Dynamic Range";
+	case VIDEO_CID_PAN_SPEED:
+		return "Pan, Speed";
+	case VIDEO_CID_TILT_SPEED:
+		return "Tilt, Speed";
+	case VIDEO_CID_CAMERA_ORIENTATION:
+		return "Camera Orientation";
+	case VIDEO_CID_CAMERA_SENSOR_ROTATION:
+		return "Camera Sensor Rotation";
+
+	/* JPEG encoder controls */
+	case VIDEO_CID_JPEG_COMPRESSION_QUALITY:
+		return "Compression Quality";
+
+	/* Image processing controls */
+	case VIDEO_CID_PIXEL_RATE:
+		return "Pixel Rate";
+	case VIDEO_CID_TEST_PATTERN:
+		return "Test Pattern";
+	case VIDEO_CID_LINK_FREQ:
+		return "Link Frequency";
+	case VIDEO_CID_DIGITAL_GAIN:
+		return "Digital Gain";
+	default:
+		return NULL;
+	}
+}
+
+int video_query_ctrl(struct video_ctrl_query *cq)
+{
+	int ret;
+	struct video_device *vdev;
+	struct video_ctrl *ctrl = NULL;
+
+	if (cq == NULL || cq->dev == NULL) {
+		return -EINVAL;
+	}
+
+	if (cq->id & VIDEO_CTRL_FLAG_NEXT_CTRL) {
+		cq->id &= ~VIDEO_CTRL_FLAG_NEXT_CTRL;
+		vdev = video_find_vdev(cq->dev);
+		while (vdev != NULL) {
+			SYS_DLIST_FOR_EACH_CONTAINER(&vdev->ctrls, ctrl, node) {
+				if (ctrl->id > cq->id) {
+					goto fill_query;
+				}
+			}
+			cq->id = 0;
+			cq->dev = vdev->src_dev;
+			vdev = video_find_vdev(cq->dev);
+		}
+		return -ENOTSUP;
+	}
+
+	ret = video_find_ctrl(cq->dev, cq->id, &ctrl);
+	if (ret) {
+		return ret;
+	}
+
+fill_query:
+	cq->id = ctrl->id;
+	cq->type = ctrl->type;
+	cq->flags = ctrl->flags;
+	cq->range = ctrl->range;
+	if (cq->type == VIDEO_CTRL_TYPE_MENU) {
+		cq->menu = ctrl->menu;
+	} else if (cq->type == VIDEO_CTRL_TYPE_INTEGER_MENU) {
+		cq->int_menu = ctrl->int_menu;
+	}
+	cq->name = video_get_ctrl_name(cq->id);
+
+	return 0;
+}
+
+void video_print_ctrl(const struct video_ctrl_query *const cq)
+{
+	const char *type = NULL;
+	char buf[11];
+
+	if (cq == NULL || cq->dev == NULL) {
+		LOG_ERR("%s - Invalid parameter given", __func__);
+		return;
+	}
+
+	/* Get type of the control */
+	switch (cq->type) {
+	case VIDEO_CTRL_TYPE_BOOLEAN:
+		type = "bool";
+		break;
+	case VIDEO_CTRL_TYPE_INTEGER:
+		type = "int";
+		break;
+	case VIDEO_CTRL_TYPE_INTEGER64:
+		type = "int64";
+		break;
+	case VIDEO_CTRL_TYPE_MENU:
+		type = "menu";
+		break;
+	case VIDEO_CTRL_TYPE_INTEGER_MENU:
+		type = "int menu";
+		break;
+	case VIDEO_CTRL_TYPE_STRING:
+		type = "string";
+		break;
+	default:
+		break;
+	}
+	snprintf(buf, sizeof(buf), "(%s)", type);
+
+	/* Get current value of the control */
+	struct video_control vc = {.id = cq->id};
+
+	video_get_ctrl(cq->dev, &vc);
+
+	/* Print the control information */
+	if (cq->type == VIDEO_CTRL_TYPE_INTEGER64) {
+		LOG_INF("%32s 0x%08x %-10s (flags=0x%02x) : min=%lld max=%lld step=%lld "
+			"default=%lld value=%lld ",
+			cq->name, cq->id, buf, cq->flags, cq->range.min64, cq->range.max64,
+			cq->range.step64, cq->range.def64, vc.val64);
+	} else {
+		LOG_INF("%32s 0x%08x %-10s (flags=0x%02x) : min=%d max=%d step=%d default=%d "
+			"value=%d ",
+			cq->name, cq->id, buf, cq->flags, cq->range.min, cq->range.max,
+			cq->range.step, cq->range.def, vc.val);
+	}
+
+	if ((cq->type == VIDEO_CTRL_TYPE_MENU && cq->menu) ||
+	    (cq->type == VIDEO_CTRL_TYPE_INTEGER_MENU && cq->int_menu)) {
+		for (uint8_t i = 0; i <= cq->range.max; i++) {
+			if (cq->type == VIDEO_CTRL_TYPE_INTEGER_MENU) {
+				snprintf(buf, sizeof(buf), "%" PRId64, cq->int_menu[i]);
+			}
+
+			LOG_INF("%*s %u: %s", 32, "", i,
+				(cq->type == VIDEO_CTRL_TYPE_MENU) ? cq->menu[i] : buf);
+		}
+	}
+}
+
+int64_t video_get_csi_link_freq(const struct device *dev, uint8_t bpp, uint8_t lane_nb)
+{
+	struct video_control ctrl = {
+		.id = VIDEO_CID_LINK_FREQ,
+	};
+	struct video_ctrl_query ctrl_query = {
+		.dev = dev,
+		.id = VIDEO_CID_LINK_FREQ,
+	};
+	int ret;
+
+	/* Try to get the LINK_FREQ value from the source device */
+	ret = video_get_ctrl(dev, &ctrl);
+	if (ret < 0) {
+		goto fallback;
+	}
+
+	ret = video_query_ctrl(&ctrl_query);
+	if (ret < 0) {
+		return ret;
+	}
+
+	if (!IN_RANGE(ctrl.val, ctrl_query.range.min, ctrl_query.range.max)) {
+		return -ERANGE;
+	}
+
+	if (ctrl_query.int_menu == NULL) {
+		return -EINVAL;
+	}
+
+	return (int64_t)ctrl_query.int_menu[ctrl.val];
+
+fallback:
+	/* If VIDEO_CID_LINK_FREQ is not available, approximate from VIDEO_CID_PIXEL_RATE */
+	ctrl.id = VIDEO_CID_PIXEL_RATE;
+	ret = video_get_ctrl(dev, &ctrl);
+	if (ret < 0) {
+		return ret;
+	}
+
+	/* CSI D-PHY is using a DDR data bus so bitrate is twice the frequency */
+	return ctrl.val64 * bpp / (2 * lane_nb);
+}

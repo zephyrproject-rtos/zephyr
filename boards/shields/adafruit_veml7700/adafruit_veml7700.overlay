@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2025 Jonas Berg
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		light-sensor = &adafruit_veml7700;
+	};
+};
+
+&zephyr_i2c {
+	status = "okay";
+
+	adafruit_veml7700: veml7700@10 {
+		status = "okay";
+		compatible = "vishay,veml7700";
+		reg = <0x10>;
+	};
+};

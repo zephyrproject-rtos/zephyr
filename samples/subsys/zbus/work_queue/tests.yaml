@@ -1,0 +1,33 @@
+sample:
+  name: Work queue
+common:
+  tags: zbus
+  harness: console
+  integration_platforms:
+    - qemu_x86
+  harness_config:
+    type: multi_line
+    ordered: false
+    regex:
+      - "I: Sensor msg processed by CALLBACK fh1: temp = 10, press = 1, humidity = 100"
+      - "I: Sensor msg processed by CALLBACK fh2: temp = 10, press = 1, humidity = 100"
+      - "I: Sensor msg processed by CALLBACK fh3: temp = 10, press = 1, humidity = 100"
+      - "I: Sensor msg processed by WORK QUEUE handler dh1: temp = 10, press = 1, humidity = 100"
+      - "I: Sensor msg processed by WORK QUEUE handler dh2: temp = 10, press = 1, humidity = 100"
+      - "I: Sensor msg processed by WORK QUEUE handler dh3: temp = 10, press = 1, humidity = 100"
+      - "I: Sensor msg processed by THREAD handler 1: temp = 10, press = 1, humidity = 100"
+      - "I: Sensor msg processed by THREAD handler 2: temp = 10, press = 1, humidity = 100"
+      - "I: Sensor msg processed by THREAD handler 3: temp = 10, press = 1, humidity = 100"
+      - "I: Sensor msg processed by CALLBACK fh1: temp = 20, press = 2, humidity = 200"
+      - "I: Sensor msg processed by CALLBACK fh2: temp = 20, press = 2, humidity = 200"
+      - "I: Sensor msg processed by CALLBACK fh3: temp = 20, press = 2, humidity = 200"
+      - "I: Sensor msg processed by WORK QUEUE handler dh1: temp = 20, press = 2, humidity = 200"
+      - "I: Sensor msg processed by WORK QUEUE handler dh2: temp = 20, press = 2, humidity = 200"
+      - "I: Sensor msg processed by WORK QUEUE handler dh3: temp = 20, press = 2, humidity = 200"
+      - "I: Sensor msg processed by THREAD handler 1: temp = 20, press = 2, humidity = 200"
+      - "I: Sensor msg processed by THREAD handler 2: temp = 20, press = 2, humidity = 200"
+      - "I: Sensor msg processed by THREAD handler 3: temp = 20, press = 2, humidity = 200"
+
+tests:
+  sample.zbus.work_queue:
+    tags: zbus

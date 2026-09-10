@@ -1,0 +1,9 @@
+# Copyright (c) 2026 Texas Instruments Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config COUNTER_TI_K3_RTC
+	bool "RTC Counter Driver for TI K3 SoCs"
+	default y
+	depends on DT_HAS_TI_K3_RTC_COUNTER_ENABLED
+	help
+		Enable the RTC driver for TI K3 SoCs.

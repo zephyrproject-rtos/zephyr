@@ -1,0 +1,21 @@
+/*
+ * Copyright (c) 2026 Jonas Berg
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		fuel-gauge0 = &adafruit_max17048;
+	};
+};
+
+&zephyr_i2c {
+	status = "okay";
+
+	adafruit_max17048: max17048@36 {
+		status = "okay";
+		compatible = "maxim,max17048";
+		reg = <0x36>;
+	};
+};

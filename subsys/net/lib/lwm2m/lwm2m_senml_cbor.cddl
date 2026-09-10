@@ -1,0 +1,31 @@
+lwm2m_senml = [1* record]
+
+record = {
+	? bn => tstr,            ; Base Name
+	? bt => int .size 8,     ; Base Time
+	? n => tstr,             ; Name
+	? t => int .size 8,      ; Time
+	? ( vi => int .size 8 // ; Integer Value
+	    vf => float       // ; Float Value
+	    vs => tstr        // ; String Value
+	    vb => bool        // ; Boolean Value
+	    vd => bstr        // ; Data Value
+	    vlo => tstr ),       ; Object Link Value
+	0*5 key-value-pair       ; To handle unordered maps; length-first ordered map keys
+}
+
+; now define the generic versions
+key-value-pair = ( int => value )
+
+value = tstr / bstr / int .size 8 / float / bool
+
+n  = 0
+t = 6
+bn = -2
+bt = -3
+vi = 2
+vf = 2
+vs = 3
+vd = 8
+vb = 4
+vlo = "vlo"

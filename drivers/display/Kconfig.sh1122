@@ -1,0 +1,23 @@
+# SH1122 display controller configuration options
+# Copyright (c) 2025 MASSDRIVER EI (massdriver.space)
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig SH1122
+	bool "SH1122 display controller driver"
+	default y
+	depends on DT_HAS_SINOWEALTH_SH1122_ENABLED
+	select MIPI_DBI if $(dt_compat_on_bus,$(DT_COMPAT_SINOWEALTH_SH1122),mipi-dbi)
+	select I2C if $(dt_compat_on_bus,$(DT_COMPAT_SINOWEALTH_SH1122),i2c)
+	help
+	  Enable driver for SH1122 display controller.
+
+if SH1122
+
+config SH1122_DEFAULT_CONTRAST
+	int "SH1122 default contrast"
+	default 16
+	range 0 255
+	help
+	  SH1122 default contrast.
+
+endif # SH1122

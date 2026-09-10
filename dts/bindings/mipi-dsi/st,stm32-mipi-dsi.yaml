@@ -1,0 +1,114 @@
+#
+# Copyright (c) 2023 bytes at work AG
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+description: STM32 MIPI DSI host
+
+compatible: "st,stm32-mipi-dsi"
+
+include: [mipi-dsi-host.yaml, reset-device.yaml]
+
+properties:
+  clocks:
+    required: true
+
+  clock-names:
+    required: true
+    description: |
+      "dsiclk" DSI clock enable.
+      "refclk" External crystal or oscillator clock.
+      "pixelclk" LTDC pixel clock.
+      "refclk" and "pixelclk" are only used to retrieve the frequency for timing calculation.
+
+  resets:
+    required: true
+
+  hs-active-high:
+    type: boolean
+    description: |
+      DSI host horizontal synchronization is active high.
+
+  vs-active-high:
+    type: boolean
+    description: |
+      DSI host vertical synchronization is active high.
+
+  de-active-high:
+    type: boolean
+    description: |
+      DSI host data enable is active high.
+
+  loosely-packed:
+    type: boolean
+    description: |
+      Enable or disable loosely packed stream
+      (needed only when using 18-bit configuration).
+
+  largest-packet-size:
+    type: int
+    description: |
+      The size, in bytes, of the low power largest packet that
+      can fit in a line during VSA, VBP, VFP and VACT regions
+
+  bta-ack-disable:
+    type: boolean
+    description: |
+      Disable frame bus-turn-around acknowledge enable
+
+  non-continuous:
+    type: boolean
+    description: |
+      DSI host enable non continuous clock.
+
+  pll-ndiv:
+    required: true
+    type: int
+    description: |
+      DSI host dedicated PLL loop division factor.
+
+  pll-idf:
+    required: true
+    type: int
+    description: |
+      DSI host dedicated PLL input division factor.
+
+  pll-odf:
+    required: true
+    type: int
+    description: |
+      DSI HOST dedicated PLL output division factor.
+
+  active-errors:
+    type: int
+    description: |
+      Indicates which error interrupts will be enabled.
+      This parameter can be any combination of DSI_Error_Data_Type and
+      defaults to HAL_DSI_ERROR_NONE.
+
+  lp-rx-filter:
+    type: int
+    description: |
+      Use Low-Power Reception Filter. Cutoff frequency of low-pass filter at the input of LPRX.
+      Defaults to 0 which disables the filter.
+
+  host-timeouts:
+    type: array
+    description: |
+      DSI HOST timeout parameters.
+
+  phy-timings:
+    type: array
+    description: |
+      DSI HOST PHY timing parameters.
+
+  test-pattern:
+    type: int
+    enum:
+      - 0
+      - 1
+    description: |
+      Show DSI host color bars, select color bar orientation
+      0 : Vertical color bars
+      1 : Horizontal color bars

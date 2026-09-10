@@ -1,0 +1,17 @@
+# Copyright (c) 2019, Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    TMP007 Digital Temperature Sensor.  See datasheet at
+    https://cdn-shop.adafruit.com/datasheets/tmp007.pdf
+
+compatible: "ti,tmp007"
+
+include: [sensor-device.yaml, i2c-device.yaml]
+
+properties:
+  int-gpios:
+    type: phandle-array
+    description: |
+      Identifies the ALERT signal, which is active-low open drain when
+      produced by the sensor.

@@ -1,0 +1,13 @@
+# Copyright (c) 2026, Trasna.io
+# SPDX-License-Identifier: Apache-2.0
+
+description: Trasna LEXI-R10 modem
+
+compatible: "trasna,lexi-r10"
+
+include: zephyr,cellular-modem-device.yaml
+
+properties:
+  mdm-power-gpios:
+    type: phandle-array
+    required: true

@@ -1,0 +1,5 @@
+# Copyright (c) 2024 Arrel Neumiller
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_ESP32C3_SUPERMINI
+	select SOC_ESP32C3_FH4

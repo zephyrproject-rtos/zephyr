@@ -1,0 +1,32 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config CRYPTO_BFLB_SEC_ENG_AES
+	bool "Bouffalo Lab SEC Engine AES crypto driver"
+	default y
+	depends on DT_HAS_BFLB_SEC_ENG_AES_ENABLED
+	help
+	  Enable the Bouffalo Lab SEC Engine crypto driver providing
+	  hardware-accelerated AES (ECB/CBC/CTR).
+
+config CRYPTO_BFLB_SEC_ENG_AES_MAX_SESSION
+	int "Maximum concurrent AES cipher sessions"
+	default 4
+	depends on CRYPTO_BFLB_SEC_ENG_AES
+	help
+	  Maximum number of concurrent AES cipher sessions.
+
+config CRYPTO_BFLB_SEC_ENG_SHA
+	bool "Bouffalo Lab SEC Engine SHA hash driver"
+	default y
+	depends on DT_HAS_BFLB_SEC_ENG_SHA_ENABLED
+	help
+	  Enable the Bouffalo Lab SEC Engine SHA hash driver providing
+	  hardware-accelerated SHA-224 and SHA-256.
+
+config CRYPTO_BFLB_SEC_ENG_SHA_MAX_SESSION
+	int "Maximum concurrent SHA hash sessions"
+	default 4
+	depends on CRYPTO_BFLB_SEC_ENG_SHA
+	help
+	  Maximum number of concurrent SHA hash sessions.

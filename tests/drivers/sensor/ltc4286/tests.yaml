@@ -1,0 +1,20 @@
+# Copyright (c) 2026 Analog Devices Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - sensor
+    - ltc4286
+  platform_allow:
+    - native_sim
+
+tests:
+  drivers.sensor.ltc4286.attributes:
+    tags:
+      - drivers
+      - sensor
+  drivers.sensor.ltc4286.alert:
+    tags:
+      - drivers
+      - sensor

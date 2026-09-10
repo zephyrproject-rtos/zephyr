@@ -1,0 +1,19 @@
+# Copyright (c) 2026 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+title: Nordic nRF91 Serial Modem
+
+description: |
+  Nordic nRF91 series running the Serial Modem application v2.0.0 or later.
+  This includes the nRF91M1 module.
+
+compatible: "nordic,nrf91-sm-v2"
+
+include: zephyr,cellular-modem-device.yaml
+
+properties:
+  zephyr,use-default-pdp-ctx:
+    default: 1
+
+  zephyr,mdm-reset-behavior:
+    default: ["toggle_on_recovery"]

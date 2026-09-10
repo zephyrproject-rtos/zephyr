@@ -1,0 +1,12 @@
+shields:
+  - name: x_nucleo_wba25a1_spi
+    full_name: X-NUCLEO-WBA25A1 (SPI)
+    vendor: st
+    supported_features:
+      - bluetooth
+
+  - name: x_nucleo_wba25a1_uart
+    full_name: X-NUCLEO-WBA25A1 (UART)
+    vendor: st
+    supported_features:
+      - bluetooth

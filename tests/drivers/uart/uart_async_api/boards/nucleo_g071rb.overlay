@@ -1,0 +1,15 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+dut: &usart1 {
+	dmas = <&dmamux1 5 51 STM32_DMA_PERIPH_TX>,
+	       <&dmamux1 4 50 STM32_DMA_PERIPH_RX>;
+	dma-names = "tx", "rx";
+};
+
+&dma1 {
+	status = "okay";
+};
+
+&dmamux1 {
+	status = "okay";
+};

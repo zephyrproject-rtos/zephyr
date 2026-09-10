@@ -1,0 +1,10 @@
+# Copyright (c) 2026 Muhammad Waleed Badar
+# SPDX-License-Identifier: Apache-2.0
+
+config MDIO_BCMGENET
+	bool "Broadcom GENET MDIO driver"
+	default y
+	depends on DT_HAS_BRCM_GENET_MDIO_ENABLED
+	depends on ETH_BCMGENET
+	help
+	  Enable Broadcom GENET MDIO driver.

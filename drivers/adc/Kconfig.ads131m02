@@ -1,0 +1,13 @@
+# Copyright (c) 2024 Linumiz
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_ADS131M02
+	bool "Texas instruments ADS131M02"
+	default y
+	depends on DT_HAS_TI_ADS131M02_ENABLED
+	select ADC_CONFIGURABLE_INPUTS
+	select SPI
+	select GPIO
+	help
+	 Enable the driver for ADS131M02 ADC.

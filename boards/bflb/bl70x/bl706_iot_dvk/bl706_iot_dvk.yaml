@@ -1,0 +1,27 @@
+identifier: bl706_iot_dvk
+name: Bouffalo Lab BL706-IoT-DVK
+type: mcu
+arch: riscv
+ram: 88
+flash: 4064
+toolchain:
+  - zephyr
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+supported:
+  - gpio
+  - i2c
+  - spi
+  - uart
+  - pwm
+  - usbd
+  - watchdog
+  - entropy
+  - pinctrl
+  - dma
+  - flash
+  - crypto
+  - counter
+vendor: bflb

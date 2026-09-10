@@ -1,0 +1,14 @@
+# LiteX SoC Builder clock control driver
+
+# Copyright (c) 2020 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config CLOCK_CONTROL_LITEX
+	bool "LiteX MMCM clock control"
+	default y
+	depends on DT_HAS_LITEX_CLK_ENABLED
+	help
+	  This option enables LiteX clock control driver.
+	  It gives ability to change clock parameters
+	  such as phase, duty cycle, frequency for up to 7
+	  clock outputs

@@ -1,0 +1,11 @@
+# Copyright (c) 2026 Maximilian Zimmermann
+# SPDX-License-Identifier: Apache-2.0
+
+config QEMU_RAMFB_DISPLAY
+	bool "QEMU ramfb"
+	default y
+	depends on DT_HAS_QEMU_RAMFB_ENABLED
+	depends on DT_HAS_QEMU_FW_CFG_MMIO_ENABLED || DT_HAS_QEMU_FW_CFG_IOPORT_ENABLED
+	select QEMU_FWCFG
+	help
+	  Enable QEMU ramfb framebuffer-based display driver.

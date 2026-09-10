@@ -1,0 +1,6 @@
+family:
+- name: ti_tiva_c
+  series:
+  - name: tm4c123x
+    socs:
+    - name: ti_tm4c123gh6pm

@@ -1,0 +1,19 @@
+description: Nordic TAMPC (Tamper Controller)
+
+compatible: "nordic,nrf-tampc"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  swd-pins-as-gpios:
+    type: boolean
+    description: |
+      When enabled this property will configure pins dedicated to SWD
+      peripheral as regular GPIOs.
+
+      SWD pins in nRF54LS05B: P1.29 and P1.30
+
+      This setting, once applied, can only be unset by device reset.

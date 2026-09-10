@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2025 Navimatix GmbH
+# SPDX-FileCopyrightText: Copyright (c) 2025 TiaC Systems
+# SPDX-License-Identifier: Apache-2.0
+
+shield:
+  name: mikroe_can_fd_6_click
+  full_name: CAN FD 6 Click
+  vendor: mikroe
+  supported_features:
+    - can

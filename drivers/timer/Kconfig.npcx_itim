@@ -1,0 +1,15 @@
+# Copyright (c) 2014-2015 Wind River Systems, Inc.
+# Copyright (c) 2016 Cadence Design Systems, Inc.
+# Copyright (c) 2019 Intel Corp.
+# SPDX-License-Identifier: Apache-2.0
+
+config NPCX_ITIM_TIMER
+	bool "Nuvoton NPCX series internal 64/32-bit timers"
+	default y
+	depends on DT_HAS_NUVOTON_NPCX_ITIM_TIMER_ENABLED
+	select TICKLESS_CAPABLE
+	select TIMER_HAS_64BIT_CYCLE_COUNTER
+	help
+	  This module implements a kernel device driver for the Nuvoton NPCX
+	  series internal 64/32-bit timers and provides the standard "system
+	  clock driver" interfaces.

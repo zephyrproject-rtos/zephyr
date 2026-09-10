@@ -1,0 +1,19 @@
+# Copyright (c) 2023 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Binding providing resources required to build and run the
+  tests/kernel/timer/timer_behavior/kernel.timer.timer_behavior_external
+  test in Zephyr.
+
+compatible: "test-kernel-timer-behavior-external"
+
+properties:
+  timerout-gpios:
+    type: phandle-array
+    required: true
+    description:
+      GPIO pin that will toggle on each cycle of the test, to be
+      connected to an external tool (such as a logic analyzer)
+      that will collect timing information.

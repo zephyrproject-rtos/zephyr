@@ -1,0 +1,133 @@
+/*
+ * Copyright (c) 2022 Basalte bv
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#define DT_DRV_COMPAT atmel_sam_smc
+
+#include <zephyr/device.h>
+#include <zephyr/drivers/pinctrl.h>
+#include <zephyr/drivers/clock_control/atmel_sam_pmc.h>
+#include <soc.h>
+
+#include <zephyr/logging/log.h>
+LOG_MODULE_REGISTER(memc_sam, CONFIG_MEMC_LOG_LEVEL);
+
+struct memc_smc_bank_config {
+	uint32_t cs;
+	uint32_t mode;
+	uint32_t setup_timing;
+	uint32_t pulse_timing;
+	uint32_t cycle_timing;
+};
+
+struct memc_smc_config {
+	Smc *regs;
+	size_t banks_len;
+	const struct memc_smc_bank_config *banks;
+	const struct atmel_sam_pmc_config clock_cfg;
+	const struct pinctrl_dev_config *pcfg;
+};
+
+static int memc_smc_init(const struct device *dev)
+{
+	int ret;
+	const struct memc_smc_config *cfg = dev->config;
+	SmcCs_number *bank;
+
+	/* Enable SMC clock in PMC */
+	(void)clock_control_on(SAM_DT_PMC_CONTROLLER,
+			       (clock_control_subsys_t)&cfg->clock_cfg);
+
+	ret = pinctrl_apply_state(cfg->pcfg, PINCTRL_STATE_DEFAULT);
+	if (ret < 0) {
+		return ret;
+	}
+
+	for (size_t i = 0U; i < cfg->banks_len; i++) {
+		if (cfg->banks[i].cs >= SMCCS_NUMBER_NUMBER) {
+			return -EINVAL;
+		}
+
+		bank = &cfg->regs->SMC_CS_NUMBER[cfg->banks[i].cs];
+
+		bank->SMC_SETUP = cfg->banks[i].setup_timing;
+		bank->SMC_PULSE = cfg->banks[i].pulse_timing;
+		bank->SMC_CYCLE = cfg->banks[i].cycle_timing;
+		bank->SMC_MODE = cfg->banks[i].mode;
+	}
+
+	return 0;
+}
+
+#define SETUP_TIMING(node_id)								\
+	SMC_SETUP_NWE_SETUP(DT_PROP_BY_IDX(node_id, atmel_smc_setup_timing, 0))		\
+	| SMC_SETUP_NCS_WR_SETUP(DT_PROP_BY_IDX(node_id, atmel_smc_setup_timing, 1))	\
+	| SMC_SETUP_NRD_SETUP(DT_PROP_BY_IDX(node_id, atmel_smc_setup_timing, 2))	\
+	| SMC_SETUP_NCS_RD_SETUP(DT_PROP_BY_IDX(node_id, atmel_smc_setup_timing, 3))
+#define PULSE_TIMING(node_id)								\
+	SMC_PULSE_NWE_PULSE(DT_PROP_BY_IDX(node_id, atmel_smc_pulse_timing, 0))		\
+	| SMC_PULSE_NCS_WR_PULSE(DT_PROP_BY_IDX(node_id, atmel_smc_pulse_timing, 1))	\
+	| SMC_PULSE_NRD_PULSE(DT_PROP_BY_IDX(node_id, atmel_smc_pulse_timing, 2))	\
+	| SMC_PULSE_NCS_RD_PULSE(DT_PROP_BY_IDX(node_id, atmel_smc_pulse_timing, 3))
+#define CYCLE_TIMING(node_id)								\
+	SMC_CYCLE_NWE_CYCLE(DT_PROP_BY_IDX(node_id, atmel_smc_cycle_timing, 0))		\
+	| SMC_CYCLE_NRD_CYCLE(DT_PROP_BY_IDX(node_id, atmel_smc_cycle_timing, 1))
+
+#define SMC_DATA_BUS_WIDTH(node_id)                                                                \
+	COND_CODE_1(DT_NODE_HAS_PROP(node_id, atmel_smc_data_bus_width),                           \
+		((DT_PROP(node_id, atmel_smc_data_bus_width) == 16) ? SMC_MODE_DBW_16_BIT	   \
+		 : 0), (0))
+
+#define SMC_BYTE_ACCESS_TYPE(node_id)                                                              \
+	COND_CODE_1(DT_NODE_HAS_PROP(node_id, atmel_smc_byte_access_type),                         \
+		(DT_ENUM_IDX(node_id, atmel_smc_byte_access_type) ? SMC_MODE_BAT_BYTE_WRITE	   \
+		 : SMC_MODE_BAT_BYTE_SELECT), (0))
+
+#define SMC_PAGE_SIZE(node_id)                                                                     \
+	((DT_PROP_OR(node_id, atmel_smc_page_size, 4) == 32)                                       \
+		 ? SMC_MODE_PS_32_BYTE                                                             \
+		 : ((DT_PROP_OR(node_id, atmel_smc_page_size, 4) == 16)                            \
+			    ? SMC_MODE_PS_16_BYTE                                                  \
+			    : ((DT_PROP_OR(node_id, atmel_smc_page_size, 4) == 8)                  \
+				       ? SMC_MODE_PS_8_BYTE                                        \
+				       : SMC_MODE_PS_4_BYTE)))
+
+#define SMC_PAGE_MODE(node_id)                                                                     \
+	COND_CODE_1(DT_NODE_HAS_PROP(node_id, atmel_smc_page_mode),                                \
+		    (DT_PROP_OR(node_id, atmel_smc_page_mode, 0)				   \
+			? (SMC_MODE_PMEN | SMC_PAGE_SIZE(node_id)) : 0), (0))
+
+#define BANK_CONFIG(node_id)								\
+	{										\
+		.cs = DT_REG_ADDR(node_id),						\
+		.mode = COND_CODE_1(DT_ENUM_IDX(node_id, atmel_smc_write_mode),		\
+				    (SMC_MODE_WRITE_MODE), (0))				\
+			| COND_CODE_1(DT_ENUM_IDX(node_id, atmel_smc_read_mode),	\
+				      (SMC_MODE_READ_MODE), (0))			\
+			| SMC_DATA_BUS_WIDTH(node_id)					\
+			| SMC_BYTE_ACCESS_TYPE(node_id)					\
+			| SMC_PAGE_MODE(node_id),					\
+		.setup_timing = SETUP_TIMING(node_id),					\
+		.pulse_timing = PULSE_TIMING(node_id),					\
+		.cycle_timing = CYCLE_TIMING(node_id),					\
+	},
+
+#define MEMC_SMC_DEFINE(inst)								\
+	static const struct memc_smc_bank_config smc_bank_config_##inst[] = {		\
+		DT_INST_FOREACH_CHILD(inst, BANK_CONFIG)				\
+	};										\
+	PINCTRL_DT_INST_DEFINE(inst);							\
+	static const struct memc_smc_config smc_config_##inst = {			\
+		.regs = (Smc *)DT_INST_REG_ADDR(inst),					\
+		.clock_cfg = SAM_DT_INST_CLOCK_PMC_CFG(inst),				\
+		.banks_len = ARRAY_SIZE(smc_bank_config_##inst),			\
+		.banks = smc_bank_config_##inst,					\
+		.pcfg = PINCTRL_DT_INST_DEV_CONFIG_GET(inst),				\
+	};										\
+	DEVICE_DT_INST_DEFINE(inst, memc_smc_init, NULL, NULL,				\
+			      &smc_config_##inst, POST_KERNEL,				\
+			      CONFIG_MEMC_INIT_PRIORITY, NULL);
+
+DT_INST_FOREACH_STATUS_OKAY(MEMC_SMC_DEFINE)

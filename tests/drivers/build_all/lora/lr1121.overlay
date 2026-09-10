@@ -1,0 +1,53 @@
+/*
+ * Copyright (c) 2026 MASSDRIVER EI (massdriver.space)
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	test {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		test_gpio: gpio@deadbeef {
+			compatible = "vnd,gpio";
+			gpio-controller;
+			reg = <0xdeadbeef 0x1000>;
+			#gpio-cells = <0x2>;
+			status = "okay";
+		};
+
+		test_spi: spi@33334444 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "vnd,spi";
+			reg = <0x33334444 0x1000>;
+			status = "okay";
+
+			cs-gpios = <&test_gpio 0 0>,
+				   <&test_gpio 0 0>,
+				   <&test_gpio 0 0>;
+
+			test_semtech_lr1121: lr1121@0 {
+				compatible = "semtech,lr1121";
+				status = "okay";
+				reg = <0>;
+				spi-max-frequency = <1000000>;
+				reset-gpios = <&test_gpio 0 GPIO_ACTIVE_LOW>;
+				busy-gpios = <&test_gpio 3 GPIO_ACTIVE_HIGH>;
+				irq-gpios = <&test_gpio 1 (GPIO_PULL_DOWN | GPIO_ACTIVE_HIGH)>;
+				lf-clk = "RC";
+				rfsw-enable = <0x07>;
+				rfsw-standby = <0x00>;
+				rfsw-rx = <0x02>;
+				rfsw-tx = <0x03>;
+				rfsw-tx-hp = <0x01>;
+				rfsw-tx-hf = <0x00>;
+				rfsw-gnss = <0x04>;
+				rfsw-wifi = <0x00>;
+				tcxo-voltage = <1800>;
+				use-dcdc;
+				rx-boosted;
+			};
+		};
+	};
+};

@@ -1,0 +1,15 @@
+# Copyright (c) 2023 Bjarki Arge Andreasen
+# SPDX-License-Identifier: Apache-2.0
+
+description: Test Interrupt Controller with extended interrupts
+
+compatible: "vnd,interrupt-holder-extended"
+
+include: [base.yaml]
+
+properties:
+  interrupts-extended:
+    required: true
+
+  interrupt-names:
+    required: true

@@ -1,0 +1,11 @@
+# Copyright (c) 2022 Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config LOG_MULTIDOMAIN_BACKEND
+	bool
+	select LOG_TIMESTAMP_64BIT
+	select LOG_MSG_APPEND_RO_STRING_LOC
+
+config LOG_BACKEND_IPC_SERVICE
+	bool "IPC service backend"
+	select LOG_MULTIDOMAIN_BACKEND

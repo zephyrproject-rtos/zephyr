@@ -1,0 +1,11 @@
+# Copyright (c) 2025 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config ADC_MCHP_G1
+	bool "Microchip ADC support for G1 peripherals"
+	depends on DT_HAS_MICROCHIP_ADC_G1_ENABLED
+	default y
+	select PINCTRL
+	select ADC_CONFIGURABLE_INPUTS
+	help
+	  Enable support for the Microchip ADC driver on G1 ADC peripherals.

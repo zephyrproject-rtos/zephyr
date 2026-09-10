@@ -1,0 +1,26 @@
+# Copyright (c) 2024, STRIM, ALC
+# SPDX-License-Identifier: Apache-2.0
+
+config MCUX_FLEXIO
+	bool
+	depends on DT_HAS_NXP_FLEXIO_ENABLED
+	depends on CLOCK_CONTROL
+	help
+	  Enable the FlexIO controller driver.
+	  This driver is not user-selectable,
+	  and should be enabled by other FlexIO drivers so
+	  that they can use it to share the resources of the FlexIO device.
+
+if MCUX_FLEXIO
+
+config MCUX_FLEXIO_INIT_PRIORITY
+	int "FlexIO controller driver init priority"
+	default KERNEL_INIT_PRIORITY_DEVICE
+	help
+	  MCUX FlexIO device driver initialization priority.
+
+module = MCUX_FLEXIO
+module-str = mcux_flexio
+source "subsys/logging/Kconfig.template.log_config"
+
+endif # MCUX_FLEXIO

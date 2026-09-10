@@ -1,0 +1,105 @@
+/* SPDX-License-Identifier: MIT */
+/**
+
+Doxygen Awesome
+https://github.com/jothepro/doxygen-awesome-css
+
+Copyright (c) 2021 - 2025 jothepro
+
+ */
+
+html {
+    /* side nav width. MUST be = `TREEVIEW_WIDTH`.
+     * Make sure it is wide enough to contain the page title (logo + title + version)
+     */
+    --side-nav-fixed-width: 335px;
+    --menu-display: none;
+
+    --top-height: 120px;
+    --toc-sticky-top: -25px;
+    --toc-max-height: calc(100vh - 2 * var(--spacing-medium) - 25px);
+}
+
+#projectname {
+    white-space: nowrap;
+}
+
+
+@media screen and (min-width: 768px) {
+    html {
+        --searchbar-background: var(--page-background-color);
+    }
+
+    #side-nav {
+        min-width: var(--side-nav-fixed-width);
+        max-width: var(--side-nav-fixed-width);
+        top: var(--top-height);
+        overflow: visible;
+    }
+
+    #nav-tree, #side-nav {
+        height: calc(100vh - var(--top-height)) !important;
+    }
+
+    #top {
+        display: block;
+        border-bottom: none;
+        height: var(--top-height);
+        margin-bottom: calc(0px - var(--top-height));
+        max-width: var(--side-nav-fixed-width);
+        overflow: hidden;
+        background: var(--side-nav-background);
+    }
+
+    #main-nav {
+        float: left;
+        padding-right: 0;
+    }
+
+    .ui-resizable-handle {
+        display: none;
+    }
+
+    .ui-resizable-e {
+        width: 0;
+    }
+
+    #nav-path {
+        position: fixed;
+        right: 0;
+        left: calc(var(--side-nav-fixed-width) + 1px);
+        bottom: 0;
+        width: auto;
+    }
+
+    #doc-content {
+        height: calc(100vh - 31px) !important;
+        padding-bottom: calc(3 * var(--spacing-large));
+        padding-top: calc(var(--top-height) - 80px);
+        box-sizing: border-box;
+        margin-left: var(--side-nav-fixed-width) !important;
+    }
+
+    #MSearchBox {
+        width: calc(var(--side-nav-fixed-width) - calc(2 * var(--spacing-medium)));
+    }
+
+    #MSearchField {
+        width: calc(var(--side-nav-fixed-width) - calc(2 * var(--spacing-medium)) - 65px);
+    }
+
+    #MSearchResultsWindow {
+        left: var(--spacing-medium) !important;
+        right: auto;
+    }
+
+    #nav-sync {
+        bottom: 4px;
+        right: auto;
+        left: 300px;
+        width: 35px;
+        top: auto !important;
+        user-select: none;
+        position: fixed
+    }
+}

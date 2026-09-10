@@ -1,0 +1,6 @@
+board:
+  name: rak11160
+  full_name: RAK11160
+  vendor: rakwireless
+  socs:
+  - name: stm32wle5xx

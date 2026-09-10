@@ -1,0 +1,7 @@
+# SPDX-License-Identifier: Apache-2.0
+
+description: Synopsys DesignWare MAC PTP (Precision Time Protocol) Clock
+
+compatible: "snps,dwmac-ptp-clock"
+
+include: ["base.yaml"]

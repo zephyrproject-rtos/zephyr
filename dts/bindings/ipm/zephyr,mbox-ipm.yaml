@@ -1,0 +1,18 @@
+# Copyright (c) 2024 Texas Instruments Incorporated
+#      Andrew Davis <afd@ti.com>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Inter-Processor-Message to Mailbox adaptor driver
+
+compatible: "zephyr,mbox-ipm"
+
+include: base.yaml
+
+properties:
+  mboxes:
+    description: phandle to the MBOX controller (TX and RX are required)
+    required: true
+
+  mbox-names:
+    description: MBOX channel names (must be called "tx" and "rx")
+    required: true

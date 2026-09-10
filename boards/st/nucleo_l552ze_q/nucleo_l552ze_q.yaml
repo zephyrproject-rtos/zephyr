@@ -1,0 +1,19 @@
+identifier: nucleo_l552ze_q
+name: ST Nucleo L552ZE Q
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - gpio
+  - dac
+  - adc
+  - dma
+  - usart
+  - usb_device
+  - usbd
+  - spi
+ram: 192
+flash: 512
+vendor: st

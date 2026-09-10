@@ -1,0 +1,19 @@
+/*
+ * Copyright (c) 2026 Meta Platforms
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&counter0 {
+	rising-edge;
+	falling-edge;
+};
+
+/ {
+	counter_loopback_0: counter_loopback {
+		compatible = "test-counter-capture";
+		/* <controller channel flags>; runtime flags come from counter_capture_configure */
+		test-counter-captures = <&counter0 0 0>,
+					<&counter0 1 0>;
+	};
+};

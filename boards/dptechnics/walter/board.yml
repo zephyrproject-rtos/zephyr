@@ -1,0 +1,6 @@
+board:
+  name: walter
+  full_name: Walter
+  vendor: dptechnics
+  socs:
+  - name: esp32s3

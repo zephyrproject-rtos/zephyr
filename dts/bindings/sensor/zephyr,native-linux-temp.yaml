@@ -1,0 +1,14 @@
+# Copyright 2026 Bayrem Gharsellaoui
+# SPDX-License-Identifier: Apache-2.0
+
+description: Native Linux host temperature sensor.
+
+compatible: "zephyr,native-linux-temp"
+
+include: sensor-device.yaml
+
+properties:
+  path:
+    type: string
+    required: true
+    description: Path to the Linux temperature input file

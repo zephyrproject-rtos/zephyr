@@ -1,0 +1,6 @@
+board:
+  name: adafruit_trinkey_qt2040
+  full_name: Trinkey QT2040
+  vendor: adafruit
+  socs:
+  - name: rp2040

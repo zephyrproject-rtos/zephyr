@@ -1,0 +1,42 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Navimatix GmbH
+ * SPDX-FileCopyrightText: Copyright (c) 2026 TiaC Systems
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		fuel-gauge0 = &max17048;
+	};
+
+	zephyr,user {
+		/* Battery alerts must be handled by application code. */
+		batt-alert-gpios = <&gpio0 24 GPIO_ACTIVE_LOW>;
+	};
+};
+
+&i2c1 {
+	status = "okay";
+
+	max17048: max17048@36 {
+		compatible = "maxim,max17048";
+		status = "okay";
+		reg = <0x36>;
+
+		/*
+		 * Event handling is not yet supported by the Zephyr
+		 * Fuel Gauge API. Once this becomes possible and the
+		 * corresponding driver and its DTS binding have been
+		 * extended, the property batt-alert-gpios in zephyr,user
+		 * must be deleted and this device node property can be
+		 * commented out (if necessary, adjust the property to
+		 * the then existing DTS binding).
+		 *
+		 * alert-gpios = <&gpio0 24 GPIO_ACTIVE_LOW>;
+		 */
+	};
+};
+
+&gpio0 {
+	status = "okay";
+};

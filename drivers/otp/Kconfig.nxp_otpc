@@ -1,0 +1,9 @@
+# SPDX-FileCopyrightText: Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+config OTP_NXP_OTPC
+	bool "NXP OTPC eFuse driver"
+	default y
+	depends on DT_HAS_NXP_OTPC_ENABLED
+	help
+	  Enable NXP OTPC eFuse controller driver.

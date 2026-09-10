@@ -1,0 +1,16 @@
+shields:
+  - name: inventek_eswifi
+    full_name: Inventek es-WIFI Shield (generic)
+    vendor: inventek
+
+  - name: inventek_eswifi_arduino_spi
+    full_name: Inventek es-WIFI Shield (SPI)
+    vendor: inventek
+    supported_features:
+      - wifi
+
+  - name: inventek_eswifi_arduino_uart
+    full_name: Inventek es-WIFI Mini Shield (UART)
+    vendor: inventek
+    supported_features:
+      - wifi

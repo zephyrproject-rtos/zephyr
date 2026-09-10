@@ -1,0 +1,21 @@
+# Copyright (c) 2026 Leica Geosystems AG
+# SPDX-License-Identifier: Apache-2.0
+
+description: GPIO binding for the Texas Instruments 8 channel 12 bit I2C ADC with GPIOs
+
+compatible: "ti,tla2528-gpio"
+
+include: [gpio-controller.yaml, base.yaml]
+
+on-bus: tla2528
+
+properties:
+  "#gpio-cells":
+    const: 2
+
+  ngpios:
+    const: 8
+
+gpio-cells:
+  - pin
+  - flags

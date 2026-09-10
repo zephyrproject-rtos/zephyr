@@ -1,0 +1,20 @@
+# Copyright 2023 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+title: NXP S32 GMAC/EMAC driver
+
+compatible: "nxp,s32-gmac"
+
+include:
+  - name: snps,dwmac.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  interrupt-names:
+    required: true

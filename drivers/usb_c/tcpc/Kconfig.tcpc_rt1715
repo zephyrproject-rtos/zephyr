@@ -1,0 +1,28 @@
+# USB-C RT1715 TCPC configuration options
+
+# Copyright (c) 2024 Jianxiong Gu <jianxiong.gu@outlook.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config USBC_TCPC_RT1715
+	bool "USB-C TCPC device controller driver"
+	select USBC_TCPC_TCPCI
+	default y
+	depends on DT_HAS_RICHTEK_RT1715_ENABLED
+	help
+	  Enable USB-C TCPC support for the Richtek RT1715
+
+if USBC_TCPC_RT1715
+
+config USBC_TCPC_RT1715_INIT_DELAY
+	int "RT1715 init delay"
+	default 5
+	help
+	  Delay between each try of the TCPC initialization
+
+config USBC_TCPC_RT1715_INIT_RETRIES
+	int "RT1715 init retries"
+	default 10
+	help
+	  Number of initialization tries that will be performed
+
+endif

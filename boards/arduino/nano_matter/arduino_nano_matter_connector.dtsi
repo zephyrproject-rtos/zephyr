@@ -1,0 +1,43 @@
+/*
+ * Copyright (c) 2025 Peter Johanson
+ * Copyright (c) 2025 Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	arduino_nano_matter_d: connector {
+		compatible = "arduino,arduino_nano_matter-gpio";
+		#gpio-cells = <2>;
+		gpio-map-mask = <0xffffffff 0xffffffc0>;
+		gpio-map-pass-thru = <0 0x3f>;
+		gpio-map = <0 0 &gpioa 4 0>, /* D0 */
+			   <1 0 &gpioa 5 0>, /* D1 */
+			   <2 0 &gpioa 3 0>, /* D2 */
+			   <3 0 &gpioc 6 0>, /* D3 */
+			   <4 0 &gpioc 7 0>, /* D4 */
+			   <5 0 &gpioc 8 0>, /* D5 */
+			   <6 0 &gpioc 9 0>, /* D6 */
+			   <7 0 &gpiod 2 0>, /* D7 */
+			   <8 0 &gpiod 3 0>, /* D8 */
+			   <9 0 &gpiod 4 0>, /* D9 */
+			   <10 0 &gpiod 5 0>, /* D10 */
+			   <11 0 &gpioa 9 0>, /* D11 */
+			   <12 0 &gpioa 8 0>, /* D12 */
+			   <13 0 &gpiob 4 0>, /* D13 */
+			   <14 0 &gpiob 0 0>, /* A0 */
+			   <15 0 &gpiob 2 0>, /* A1 */
+			   <16 0 &gpiob 5 0>, /* A2 */
+			   <17 0 &gpioc 0 0>, /* A3 */
+			   <18 0 &gpioa 6 0>, /* A4 */
+			   <19 0 &gpioa 7 0>, /* A5 */
+			   <20 0 &gpiob 1 0>, /* A6 */
+			   <21 0 &gpiob 3 0>; /* A7 */
+	};
+};
+
+arduino_nano_matter_spi: &eusart1 {};
+
+arduino_nano_matter_serial: &eusart0 {};
+
+arduino_nano_matter_i2c: &i2c0 {};

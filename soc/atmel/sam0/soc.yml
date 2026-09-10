@@ -1,0 +1,138 @@
+family:
+- name: atmel_sam0
+  series:
+  - name: samc20
+    socs:
+    - name: samc20e15a
+    - name: samc20e16a
+    - name: samc20e17a
+    - name: samc20e18a
+    - name: samc20g15a
+    - name: samc20g16a
+    - name: samc20g17a
+    - name: samc20g18a
+    - name: samc20j15a
+    - name: samc20j16a
+    - name: samc20j17a
+    - name: samc20j18a
+    - name: samc20j17au
+    - name: samc20j18au
+    - name: samc20n17a
+    - name: samc20n18a
+  - name: samc21
+    socs:
+    - name: samc21e15a
+    - name: samc21e16a
+    - name: samc21e17a
+    - name: samc21e18a
+    - name: samc21g15a
+    - name: samc21g16a
+    - name: samc21g17a
+    - name: samc21g18a
+    - name: samc21j15a
+    - name: samc21j16a
+    - name: samc21j17a
+    - name: samc21j18a
+    - name: samc21j17au
+    - name: samc21j18au
+    - name: samc21n17a
+    - name: samc21n18a
+  - name: samd20
+    socs:
+    - name: samd20e14
+    - name: samd20e15
+    - name: samd20e16
+    - name: samd20e17
+    - name: samd20e18
+    - name: samd20g14
+    - name: samd20g15
+    - name: samd20g16
+    - name: samd20g17
+    - name: samd20g18
+    - name: samd20g17u
+    - name: samd20g18u
+    - name: samd20j14
+    - name: samd20j15
+    - name: samd20j16
+    - name: samd20j17
+    - name: samd20j18
+  - name: samd21
+    socs:
+    - name: samd21e15a
+    - name: samd21e16a
+    - name: samd21e17a
+    - name: samd21e18a
+    - name: samd21g15a
+    - name: samd21g16a
+    - name: samd21g17a
+    - name: samd21g18a
+    - name: samd21g17au
+    - name: samd21g18au
+    - name: samd21j15a
+    - name: samd21j16a
+    - name: samd21j17a
+    - name: samd21j18a
+  - name: samd51
+    socs:
+    - name: samd51g18a
+    - name: samd51g19a
+    - name: samd51j18a
+    - name: samd51j19a
+    - name: samd51j20a
+    - name: samd51n19a
+    - name: samd51n20a
+    - name: samd51p19a
+    - name: samd51p20a
+  - name: same51
+    socs:
+    - name: same51j18a
+    - name: same51j19a
+    - name: same51j20a
+    - name: same51n19a
+    - name: same51n20a
+  - name: same53
+    socs:
+    - name: same53j18a
+    - name: same53j19a
+    - name: same53j20a
+    - name: same53n19a
+    - name: same53n20a
+  - name: same54
+    socs:
+    - name: same54n19a
+    - name: same54n20a
+    - name: same54p19a
+    - name: same54p20a
+  - name: saml21
+    socs:
+    - name: saml21e15b
+    - name: saml21e16b
+    - name: saml21e17b
+    - name: saml21e18b
+    - name: saml21g16b
+    - name: saml21g17b
+    - name: saml21g18b
+    - name: saml21j16b
+    - name: saml21j17b
+    - name: saml21j18b
+    - name: saml21j17bu
+    - name: saml21j18bu
+  - name: samr21
+    socs:
+    - name: samr21e16a
+    - name: samr21e17a
+    - name: samr21e18a
+    - name: samr21e19a
+    - name: samr21g16a
+    - name: samr21g17a
+    - name: samr21g18a
+  - name: samr34
+    socs:
+    - name: samr34j16b
+    - name: samr34j17b
+    - name: samr34j18b
+  - name: samr35
+    socs:
+    - name: samr35j16b
+    - name: samr35j17b
+    - name: samr35j18b

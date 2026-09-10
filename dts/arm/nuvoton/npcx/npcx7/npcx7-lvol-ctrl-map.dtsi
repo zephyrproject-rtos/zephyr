@@ -1,0 +1,20 @@
+/*
+ * Copyright (c) 2021 Nuvoton Technology Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Common Low-Voltage level configurations in npcx family */
+#include <nuvoton/npcx/npcx-lvol-ctrl-map.dtsi>
+
+/* Specific Low-Voltage level configurations in npcx7 series */
+/ {
+	def-lvol-conf-list {
+		compatible = "nuvoton,npcx-lvolctrl-conf";
+
+		/* Low-Voltage IO Control 4 */
+		lvol_io86: lvol40 {
+			lvols = <&scfg 4 0>;
+		};
+	};
+};

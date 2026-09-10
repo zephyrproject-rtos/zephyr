@@ -1,0 +1,9 @@
+# Copyright (c) 2023 Antmicro <www.antmicro.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config PINCTRL_QUICKLOGIC_EOS_S3
+	bool "QuickLogic EOS S3 SoC pinctrl driver"
+	default y
+	depends on DT_HAS_QUICKLOGIC_EOS_S3_PINCTRL_ENABLED
+	help
+	  Enable driver for the QuickLogic EOS S3 SoC pinctrl driver

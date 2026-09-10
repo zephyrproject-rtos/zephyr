@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2025 Intel Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <xtensa/intel/intel_adsp_ace40.dtsi>
+
+/ {
+	sram0: memory@a0020000 {
+		device_type = "memory";
+		compatible = "mmio-sram";
+		reg = <0xa0020000 DT_SIZE_K(2048)>;
+	};
+};

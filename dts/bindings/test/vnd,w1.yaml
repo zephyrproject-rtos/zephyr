@@ -1,0 +1,8 @@
+# Copyright (c) 2022 Thomas Stranger
+# SPDX-License-Identifier: Apache-2.0
+
+description: Test W1 bus master node
+
+compatible: "vnd,w1"
+
+include: [w1-master.yaml]

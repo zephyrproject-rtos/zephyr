@@ -1,0 +1,6 @@
+board:
+  name: tiny2040
+  full_name: Pimoroni Tiny 2040
+  vendor: pimoroni
+  socs:
+  - name: rp2040

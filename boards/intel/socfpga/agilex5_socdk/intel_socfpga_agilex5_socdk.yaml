@@ -1,0 +1,8 @@
+identifier: intel_socfpga_agilex5_socdk
+name: Intel SoC FPGA Agilex5
+type: mcu
+arch: arm64
+toolchain:
+  - zephyr
+  - cross-compile
+vendor: intel

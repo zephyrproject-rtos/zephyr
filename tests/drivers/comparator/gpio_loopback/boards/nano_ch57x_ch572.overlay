@@ -1,0 +1,37 @@
+/*
+ * Copyright (c) 2026 SMILE (smile.eu)
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/pinctrl/ch570-pinctrl.h>
+
+/*
+ * PA.6 looped back to PA.7
+ */
+
+/ {
+	aliases {
+		test-comp = &cmp0;
+	};
+
+	zephyr,user {
+		test-gpios = <&gpioa 6 GPIO_ACTIVE_HIGH>;
+	};
+};
+
+&pinctrl {
+	cmp0_pins: cmp0_pins {
+		group {
+			pinmux = <CMP_P_PA7_1 CMP_N_CMP_VREF_1>;
+			input-disable;
+		};
+	};
+};
+
+&cmp0 {
+	status = "okay";
+	pinctrl-0 = <&cmp0_pins>;
+	pinctrl-names = "default";
+	nref-voltage = <800>;
+};

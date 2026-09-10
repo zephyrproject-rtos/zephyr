@@ -1,0 +1,46 @@
+/*
+ * Copyright 2025 NXP
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	power-states {
+		state0: state0 {
+			compatible = "zephyr,power-state";
+			power-state-name = "runtime-idle";
+			min-residency-us = <10000>;
+			exit-latency-us = <100>;
+		};
+
+		state1: state1 {
+			compatible = "zephyr,power-state";
+			power-state-name = "suspend-to-idle";
+			min-residency-us = <50000>;
+			exit-latency-us = <500>;
+		};
+
+		state2: state2 {
+			compatible = "zephyr,power-state";
+			power-state-name = "standby";
+			min-residency-us = <100000>;
+			exit-latency-us = <1000>;
+		};
+	};
+
+	test_soc_state_domain: test_soc_state_domain {
+		compatible = "power-domain-soc-state-change";
+		status = "okay";
+		onoff-power-states = <&state1 &state2>;
+		#power-domain-cells = <0>;
+	};
+
+	test_dev_soc_state_change: test_dev_soc_state_change {
+		compatible = "test-device-pm";
+		status = "okay";
+		power-domains = <&test_soc_state_domain>;
+	};
+};
+
+&cpu0 {
+	cpu-power-states = <&state0 &state1 &state2>;
+};

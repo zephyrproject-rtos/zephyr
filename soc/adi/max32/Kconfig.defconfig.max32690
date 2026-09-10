@@ -1,0 +1,22 @@
+# Analog Devices MAX32690 MCU
+
+# Copyright (c) 2023-2024 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+if SOC_MAX32690
+
+if SOC_MAX32690_M4
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/clocks/clk_ipo,clock-frequency)
+
+endif
+
+if SOC_MAX32690_RV32
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,/clocks/clk_iso,clock-frequency)
+
+endif
+
+endif # SOC_MAX32690

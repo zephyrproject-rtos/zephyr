@@ -1,0 +1,6 @@
+shield:
+  name: p3t1755dp_ard_i2c
+  full_name: P3T1755DP Arduino I2C Shield
+  vendor: nxp
+  supported_features:
+    - sensor

@@ -1,0 +1,22 @@
+/*
+ * Copyright (c) 2025 Renesas Electronics Corporation.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	resources {
+		compatible = "test-gpio-basic-api";
+		out-gpios = <&ioportd 1 0>; /* PD1 */
+		in-gpios = <&ioportd 2 0>; /* PD2 */
+	};
+};
+
+&port_irq2 {
+	status = "okay";
+	renesas,digital-filtering;
+};
+
+&ioportd {
+	status = "okay";
+};

@@ -1,0 +1,32 @@
+# Copyright (c) 2026, Aerlync Labs Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP LPC84x UART
+
+compatible: "nxp,lpc84x-uart"
+
+include:
+  - name: uart-controller.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  clock-source:
+    type: string
+    enum: ["fro", "mainclk", "frg0", "frg1", "frodiv"]
+    default: "fro"
+    description: |
+      UART clock source.
+        - "fro": FRO oscillator
+        - "mainclk": Main clock
+        - "frg0": Fractional rate generator 0
+        - "frg1": Fractional rate generator 1
+        - "frodiv": FRO divided clock

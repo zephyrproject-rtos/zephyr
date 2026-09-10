@@ -1,0 +1,6 @@
+board:
+  name: nucleo_c071rb
+  full_name: Nucleo C071RB
+  vendor: st
+  socs:
+    - name: stm32c071xx

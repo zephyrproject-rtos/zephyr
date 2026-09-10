@@ -1,0 +1,44 @@
+# Copyright (c) 2018, qianfan Zhao
+# SPDX-License-Identifier: Apache-2.0
+
+description: Atmel SAM SPI controller
+
+compatible: "atmel,sam-spi"
+
+include:
+  - name: spi-controller.yaml
+  - name: pinctrl-device.yaml
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  clocks:
+    required: true
+
+  loopback:
+    type: boolean
+    description: |
+      Connects TX to RX internally creating a loop back connection. Useful
+      for testing.
+
+  dmas:
+    description: |
+      TX & RX dma specifiers.  Each specifier will have a phandle
+      reference to the dma controller, the channel number, and peripheral
+      trigger source. The channel number is arbitrary but must not be
+      reused. The number of channels available is device dependent.
+
+      For example dmas for TX and RX may look like
+         dmas = <&xdmac 1 DMA_PERID_SPI0_TX>, <&xdmac 2 DMA_PERID_SPI0_RX>;
+
+  dma-names:
+    description: |
+      This should be "tx" and "rx" and should match the order given for
+      dmas.
+
+      For example using the example dmas, an example dma-names would be
+         dma-names = "tx", "rx";

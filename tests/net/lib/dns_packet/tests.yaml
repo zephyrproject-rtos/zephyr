@@ -1,0 +1,7 @@
+tests:
+  net.dns:
+    min_ram: 16
+    tags:
+      - dns
+      - net
+    depends_on: netif

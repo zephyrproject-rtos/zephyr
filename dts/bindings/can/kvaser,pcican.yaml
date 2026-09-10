@@ -1,0 +1,12 @@
+# Copyright (c) 2022 Henrik Brix Andersen <henrik@brixandersen.dk>
+# SPDX-License-Identifier: Apache-2.0
+
+description: Kvaser PCIcan
+
+compatible: "kvaser,pcican"
+
+include: [can-controller.yaml, pcie-device.yaml]
+
+properties:
+  interrupts:
+    required: true

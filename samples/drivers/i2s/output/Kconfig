@@ -1,0 +1,15 @@
+# Copyright (c) 2026 Mario Paja
+# SPDX-License-Identifier: Apache-2.0
+
+config SAMPLE_I2S_OPT_BIT_CLK_GATED
+	bool "Run I2S bit clock only while sending data"
+	default y if SOC_FAMILY_STM32
+	help
+	  Enable I2S bit clock (BCLK) so that it runs
+	  only while audio data is actively being transmitted.
+
+config HEAP_MEM_POOL_ADD_SIZE_SAMPLE
+	int
+	default 256 if SOC_FAMILY_STM32 && I2S_STM32_SAI
+
+source "Kconfig.zephyr"

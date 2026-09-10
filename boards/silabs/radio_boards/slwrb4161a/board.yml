@@ -1,0 +1,6 @@
+board:
+  name: slwrb4161a
+  full_name: EFR32MG12 2.4 GHz 19 dBm (SLWRB4161A)
+  vendor: silabs
+  socs:
+    - name: efr32mg12p432f1024gl125

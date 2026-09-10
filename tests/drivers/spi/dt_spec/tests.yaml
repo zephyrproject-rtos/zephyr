@@ -1,0 +1,10 @@
+tests:
+  drivers.spi.dt_spec:
+    tags:
+      - drivers
+      - spi
+      - devicetree
+    depends_on:
+      - spi
+      - gpio
+    harness: ztest

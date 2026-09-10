@@ -1,0 +1,69 @@
+/*
+ * Copyright The Zephyr Project Contributors
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <silabs/xg22/bgm220pc22hna.dtsi>
+#include <zephyr/dt-bindings/pwm/pwm.h>
+#include "xg22_common.dtsi"
+#include "slwrb4311a-pinctrl.dtsi"
+
+/ {
+	model = "Silicon Labs BRD4311A (BGM220 Radio Board)";
+	compatible = "silabs,slwrb4311a", "silabs,bgm220";
+
+	leds {
+		compatible = "gpio-leds";
+
+		led0: led_0 {
+			gpios = <&gpiob 0 GPIO_ACTIVE_LOW>;
+			label = "LED 0";
+		};
+
+		led1: led_1 {
+			gpios = <&gpiob 1 GPIO_ACTIVE_LOW>;
+			label = "LED 1";
+		};
+	};
+
+	pwmleds {
+		compatible = "pwm-leds";
+
+		pwm_led0: pwm_led_0 {
+			pwms = <&timer0_pwm 0 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+		};
+
+		pwm_led1: pwm_led_1 {
+			pwms = <&timer0_pwm 1 PWM_MSEC(20) PWM_POLARITY_INVERTED>;
+		};
+	};
+
+	sensor_enable: gpio_switch_0 {
+		compatible = "regulator-fixed";
+		enable-gpios = <&gpiod 2 GPIO_ACTIVE_HIGH>;
+		regulator-name = "sensor_enable";
+	};
+
+	exp_header: exp-header {
+		compatible = "silabs,exp-header";
+		#gpio-cells = <2>;
+		gpio-map = <4 0 &gpioc 0 0>,
+			   <6 0 &gpioc 1 0>,
+			   <7 0 &gpiob 0 0>,
+			   <8 0 &gpioc 2 0>,
+			   <9 0 &gpiob 1 0>,
+			   <10 0 &gpioc 3 0>,
+			   <12 0 &gpioa 5 0>,
+			   <14 0 &gpioa 6 0>,
+			   <15 0 &gpiob 2 0>,
+			   <16 0 &gpiob 3 0>;
+		gpio-map-mask = <0xffffffff 0x0>;
+		gpio-map-pass-thru = <0x0 GPIO_DT_FLAGS_MASK>;
+	};
+};
+
+&ls013b7dh03 {
+	disp-en-gpios = <&gpiod 3 GPIO_ACTIVE_HIGH>;
+};

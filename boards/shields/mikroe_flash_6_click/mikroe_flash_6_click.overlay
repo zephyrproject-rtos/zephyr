@@ -1,0 +1,32 @@
+/*
+ * SPDX-FileCopyrightText: Copyright (c) 2026 Navimatix GmbH
+ * SPDX-FileCopyrightText: Copyright (c) 2026 TiaC Systems
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <mem.h>
+#include <freq.h>
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+&mikrobus_spi {
+	status = "okay";
+	cs-gpios = <&mikrobus_header 2 GPIO_ACTIVE_LOW>;
+
+	spi_nor_mikroe_flash_6_click: spi-nor@0 {
+		compatible = "jedec,spi-nor";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(133)>;
+		status = "okay";
+
+		wp-gpios = <&mikrobus_header 6 GPIO_ACTIVE_LOW>;
+		hold-gpios = <&mikrobus_header 7 GPIO_ACTIVE_LOW>;
+
+		/* w25q128jv parameters */
+		jedec-id = [ef 40 18];
+		size = <DT_SIZE_M(128)>;
+		has-dpd;
+		t-enter-dpd = <3000>;
+		t-exit-dpd = <3000>;
+	};
+};

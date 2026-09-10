@@ -1,0 +1,6 @@
+shield:
+  name: mikroe_stepper_19_click
+  full_name: Stepper 19 Click
+  vendor: mikroe
+  supported_features:
+    - stepper

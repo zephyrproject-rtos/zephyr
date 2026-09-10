@@ -1,0 +1,9 @@
+description: Nuvoton NuMaker RRAM Memory Controller
+
+compatible: "nuvoton,numaker-rmc"
+
+include: flash-controller.yaml
+
+properties:
+  reg:
+    required: true

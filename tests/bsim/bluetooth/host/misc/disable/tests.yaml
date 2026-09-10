@@ -1,0 +1,13 @@
+tests:
+  bluetooth.host.mics.disable:
+    timeout: 600
+    tags:
+      - bluetooth
+    depends_on: bsim
+    platform_allow:
+      - nrf52_bsim/native
+      - nrf5340bsim/nrf5340/cpunet
+    harness: bsim
+    harness_config:
+      fixture: bsim_multi_test
+      bsim_exe_name: tests_bsim_bluetooth_host_misc_disable_prj_conf

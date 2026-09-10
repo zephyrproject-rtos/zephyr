@@ -1,0 +1,18 @@
+#
+# Copyright (c) 2018, Cypress
+#
+# SPDX-License-Identifier: Apache-2.0
+#
+
+identifier: cy8ckit_062_wifi_bt/cy8c6247/m0
+name: Cypress PSOC 6 WiFi-BT Pioneer Kit (M0)
+type: mcu
+arch: arm
+ram: 288
+flash: 1024
+toolchain:
+  - zephyr
+  - gnuarmemb
+supported:
+  - gpio
+vendor: cypress

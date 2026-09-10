@@ -1,0 +1,24 @@
+# Copyright The Zephyr Project Contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config SOC_SERIES_BL808
+	bool
+	select SOC_FAMILY_BFLB
+	help
+	  Enable support for BouffaloLab BL808 MCU series
+
+config SOC_SERIES
+	default "bl808" if SOC_SERIES_BL808
+
+config SOC_BL808C09Q2I
+	bool
+	select SOC_SERIES_BL808
+
+config SOC_BL808D09Q2I
+	bool
+	select SOC_SERIES_BL808
+
+config SOC
+	default "bl808c09q2i" if SOC_BL808C09Q2I
+	default "bl808d09q2i" if SOC_BL808D09Q2I

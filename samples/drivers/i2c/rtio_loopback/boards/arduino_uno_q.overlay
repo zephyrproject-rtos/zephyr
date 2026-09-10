@@ -1,0 +1,14 @@
+/* SPDX-License-Identifier: Apache-2.0 */
+
+/* One I2C interface (i2c2) is exposed on the SDA/SCL pins from JDIGITAL.
+ * The other (i2c4) is on the Qwiiic connector, pins 3 (SCL) and 4 (SDA).
+ *
+ * Short the same nets together for the test to pass.
+ */
+
+/ {
+	aliases {
+		i2c-controller = &i2c2;
+		i2c-controller-target = &i2c4;
+	};
+};

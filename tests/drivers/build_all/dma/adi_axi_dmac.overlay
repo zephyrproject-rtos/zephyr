@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2026 Analog Devices, Inc.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	dmac0: dmac@99999999 {
+		compatible = "adi,axi-dmac";
+		reg = <0x99999999 0x10000>;
+		interrupt-parent = <&nvic>;
+		interrupts = <1 0>;
+		#dma-cells = <1>;
+	};
+};

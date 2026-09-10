@@ -1,0 +1,27 @@
+/*
+ * Copyright (c) 2026 Texas Instruments
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+
+#include <ti/mspm33c/mspm33c321a.dtsi>
+
+/ {
+	model = "TI LP_MSPM33C321A/MSPM33C321A";
+	compatible = "ti,lp-mspm33c321a";
+
+	chosen {
+		zephyr,sram = &sram0;
+		zephyr,flash = &flash0;
+		zephyr,flash-controller = &flash_controller;
+	};
+};
+
+&flash0 {
+	status = "okay";
+};
+
+&sram0 {
+	status = "okay";
+};

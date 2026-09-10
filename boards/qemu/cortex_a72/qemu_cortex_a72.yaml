@@ -1,0 +1,9 @@
+identifier: qemu_cortex_a72
+name: QEMU Emulation for Cortex-A72
+type: qemu
+arch: arm64
+toolchain:
+  - zephyr
+  - cross-compile
+ram: 8192
+vendor: raspberrypi

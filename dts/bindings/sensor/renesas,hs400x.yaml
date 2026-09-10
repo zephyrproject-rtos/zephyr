@@ -1,0 +1,10 @@
+#
+# Copyright (c) 2024 Renesas Electronics Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Renesas HS400x humidity and temperature sensor
+
+compatible: "renesas,hs400x"
+
+include: [sensor-device.yaml, i2c-device.yaml]

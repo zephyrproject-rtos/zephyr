@@ -1,0 +1,8 @@
+# Copyright (c) 2022 Intel Corporation. All rights reserved.
+# SPDX-License-Identifier: Apache-2.0
+
+description: Intel ADSP HDA Link Out controller
+
+compatible: "intel,adsp-hda-link-out"
+
+include: intel,adsp-hda.yaml

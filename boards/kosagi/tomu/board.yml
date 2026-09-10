@@ -1,0 +1,6 @@
+board:
+  name: tomu
+  full_name: Tomu
+  vendor: kosagi
+  socs:
+  - name: efm32hg309f64

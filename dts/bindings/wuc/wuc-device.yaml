@@ -1,0 +1,11 @@
+# Copyright 2026 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    Common file for wake-up source devices referencing wake up controller(s).
+
+properties:
+  wakeup-ctrls:
+    type: phandle-array
+    description: |
+      Phandle and wakeup source identifier of the corresponding wakeup controller.

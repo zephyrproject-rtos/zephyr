@@ -1,0 +1,3 @@
+&st7789v_tft {
+	status = "okay";
+};

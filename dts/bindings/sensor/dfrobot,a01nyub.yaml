@@ -1,0 +1,8 @@
+# Copyright (c) 2023 Steadconnect
+# SPDX-License-Identifier: Apache-2.0
+
+description: DFRobot A01NYUB Distance Sensor
+
+compatible: "dfrobot,a01nyub"
+
+include: [sensor-device.yaml, uart-device.yaml]

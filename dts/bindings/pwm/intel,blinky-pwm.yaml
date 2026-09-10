@@ -1,0 +1,43 @@
+# Copyright (c) 2023 Intel Corporation
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: Intel blinky PWM
+
+compatible: "intel,blinky-pwm"
+
+include: [pwm-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  reg-offset:
+    type: int
+    required: true
+    description: PWM control register offset from base
+
+  clock-frequency:
+    type: int
+    required: true
+    description: PWM Peripheral Clock frequency in Hz
+
+  max-pins:
+    type: int
+    required: true
+    description: Maximum number of pins supported by platform
+
+  reg-upper32:
+    type: int
+    default: 0
+    description: |
+      Few platforms have 64 bit PWM register address,
+      this property will be used to share the higher
+      32 bits(63-32).
+
+  "#pwm-cells":
+    const: 2
+
+pwm-cells:
+  - channel
+  - period

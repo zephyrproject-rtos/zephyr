@@ -1,0 +1,58 @@
+/*
+ * Copyright (c) 2026, Realtek Semiconductor Corporation
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		qdec0 = &qdec;
+		qenca = &phase_a;
+		qencb = &phase_b;
+	};
+
+	encoder-emulate {
+		compatible = "gpio-leds";
+
+		phase_a: phase_a {
+			gpios = <&gpioa 11 GPIO_ACTIVE_HIGH>;
+		};
+
+		phase_b: phase_b {
+			gpios = <&gpioa 12 GPIO_ACTIVE_HIGH>;
+		};
+	};
+};
+
+&gpioa {
+	status = "okay";
+	pinctrl-0 = <&gpioa_default>;
+	pinctrl-names = "default";
+};
+
+&qdec {
+	y-enable;
+	y-counts-per-revolution = <4>;
+	y-debounce-time-ms = <5>;
+	pinctrl-0 = <&qdec_default>;
+	pinctrl-names = "default";
+	status = "okay";
+};
+
+&pinctrl {
+	qdec_default: qdec_default {
+		group1 {
+			psels = <BEE_PSEL(QDEC_PHASE_A_Y, P3_2)>,
+				<BEE_PSEL(QDEC_PHASE_B_Y, P3_3)>;
+			output-disable;
+			bias-pull-up;
+		};
+	};
+
+	gpioa_default: gpioa_default {
+		group1 {
+			psels = <BEE_PSEL_GPIOA_11_P5_1>,
+				<BEE_PSEL_GPIOA_12_P5_2>;
+		};
+	};
+};

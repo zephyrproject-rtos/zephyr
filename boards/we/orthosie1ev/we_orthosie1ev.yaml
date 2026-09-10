@@ -1,0 +1,19 @@
+identifier: we_orthosie1ev
+name: we_orthosie1ev
+type: mcu
+arch: riscv
+toolchain:
+  - zephyr
+supported:
+  - adc
+  - gpio
+  - i2c
+  - i2s
+  - watchdog
+  - uart
+  - dma
+  - pwm
+  - spi
+  - counter
+  - entropy
+vendor: we

@@ -1,0 +1,8 @@
+# Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config HEAP_MEM_POOL_ADD_SIZE_BOARD
+	int
+	default 4096 if BOARD_HELTEC_WIFI_LORA32_V3_ESP32S3_PROCPU
+	default 256 if BOARD_HELTEC_WIFI_LORA32_V3_ESP32S3_APPCPU

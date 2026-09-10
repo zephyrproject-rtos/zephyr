@@ -1,0 +1,54 @@
+/*
+ * Copyright (c) 2025 Alexander Kozhinov <ak.alexander.kozhinov@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	zephyr,user {
+		opamp = <&opamp2>;
+	};
+};
+
+&spi1 {
+	/* Disabled to avoid conflicts with opamp gpio allocation */
+	status = "disabled";
+};
+
+&spi2 {
+	/* Disabled to avoid conflicts with opamp gpio allocation */
+	status = "disabled";
+};
+
+&usart1 {
+	/* Disabled to avoid conflicts with opamp gpio allocation */
+	status = "disabled";
+};
+
+&adc2 {
+	st,adc-clock-source = "SYNC";
+	st,adc-prescaler = <4>;
+	status = "disabled";
+
+	#address-cells = <1>;
+	#size-cells = <0>;
+
+	channel@10 { /* channel number in hex */
+		reg = <16>; /* channel number in decimal */
+		zephyr,gain = "ADC_GAIN_1";
+		zephyr,reference = "ADC_REF_INTERNAL";
+		zephyr,acquisition-time = <ADC_ACQ_TIME_DEFAULT>;
+		zephyr,resolution = <12>;
+		zephyr,vref-mv = <3300>;
+	};
+};
+
+&opamp2 {
+	/* For sake of simplicity all the pins of OPAMP2 will be configured in analog
+	 * mode, which allows free choice of pins across the tests
+	 */
+	pinctrl-0 = <&opamp2_vinm_pa5 &opamp2_vinm_pc5
+		     &opamp2_vinp_pa7 &opamp2_vinp_pb14 &opamp2_vinp_pb0
+		     &opamp2_vout_pa6>;
+	pinctrl-names = "default";
+	status = "okay";
+};

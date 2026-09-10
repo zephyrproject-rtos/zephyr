@@ -1,0 +1,87 @@
+# Copyright (c) 2024 Espressif Systems (Shanghai) Co., Ltd.
+# SPDX-License-Identifier: Apache-2.0
+
+mainmenu "Video capture sample application"
+
+menu "Video capture configuration"
+
+config VIDEO_SOURCE_CROP_LEFT
+	int "Crop area left value"
+	default 0
+	help
+	   Left value of the crop area within the video source.
+
+config VIDEO_SOURCE_CROP_TOP
+	int "Crop area top value"
+	default 0
+	help
+	   Top value of the crop area within the video source.
+
+config VIDEO_SOURCE_CROP_WIDTH
+	int "Crop area width value"
+	default 0
+	help
+	   Width value of the crop area within the video source.
+	   If set to 0, the crop is not applied.
+
+config VIDEO_SOURCE_CROP_HEIGHT
+	int "Crop area height value"
+	default 0
+	help
+	   Height value of the crop area within the video source.
+	   If set to 0, the crop is not applied.
+
+config VIDEO_FRAME_HEIGHT
+	int "Height of the video frame"
+	default 0
+	help
+	  Height of the video frame. If set to 0, the default height is used.
+
+config VIDEO_FRAME_WIDTH
+	int "Width of the video frame"
+	default 0
+	help
+	  Width of the video frame. If set to 0, the default width is used.
+
+config VIDEO_PIXEL_FORMAT
+	string "Pixel format of the video frame"
+	help
+	  Pixel format of the video frame. If not set, the default pixel format is used.
+
+config VIDEO_CTRL_HFLIP
+	bool "Mirror the video frame horizontally"
+	help
+	  If set, mirror the video frame horizontally
+
+config VIDEO_CTRL_VFLIP
+	bool "Mirror the video frame vertically"
+	help
+	  If set, mirror the video frame vertically
+
+config VIDEO_SHELL_AND_CAPTURE
+	bool "Capture video even if the video shell is enabled"
+	depends on VIDEO_SHELL
+	default n
+	help
+	  If set, the video capture is enabled even if the video shell is also enabled.
+
+config VIDEO_CAM_NUM_BUFS
+	int "Number of video buffers used for the camera"
+	default 2
+	help
+	  Number of buffers in the video buffer pool used for the camera device.
+	  The rest of the buffer pool will be used for other purposes such as transformation.
+
+choice VIDEO_TRANSFORM
+	prompt "Video transform implementation"
+	bool
+	help
+	  The captured frame will go through m2m transforms defined in a separate .c file.
+	  The implementation could include "transform.h" which provides helper functions
+	  for setting up and executing the transformation.
+
+endchoice
+
+endmenu
+
+source "Kconfig.zephyr"

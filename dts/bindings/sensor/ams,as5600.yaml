@@ -1,0 +1,9 @@
+# Copyright (c) 2022, Felipe Neves
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+    AMS (Austria Mikro Systeme) AS5600 Angular position sensor
+
+compatible: "ams,as5600"
+
+include: [sensor-device.yaml, i2c-device.yaml]

@@ -1,0 +1,13 @@
+identifier: phyboard_lyra/am6234/a53
+name: PHYTEC phyBOARD-Lyra AM62x A53
+type: mcu
+arch: arm64
+toolchain:
+  - zephyr
+  - cross-compile
+ram: 1024
+testing:
+  ignore_tags:
+    - net
+    - bluetooth
+vendor: phytec

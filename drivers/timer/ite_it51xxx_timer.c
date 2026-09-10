@@ -1,0 +1,387 @@
+/*
+ * Copyright (c) 2025 ITE Corporation. All Rights Reserved.
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#define DT_DRV_COMPAT ite_it51xxx_timer
+
+#include <soc.h>
+#include <zephyr/drivers/timer/system_timer.h>
+#include <zephyr/irq.h>
+#include <zephyr/kernel.h>
+#include <zephyr/logging/log.h>
+#include <zephyr/sys/clock.h>
+
+LOG_MODULE_REGISTER(timer, LOG_LEVEL_ERR);
+
+BUILD_ASSERT(CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC == 32768,
+	     "Hardware timer frequency is fixed at 32768Hz");
+
+/* it51xxx timer registers definition */
+static mm_reg_t timer_base = DT_REG_ADDR(DT_NODELABEL(timer));
+
+/* 0x10, 0x18, 0x20, 0x28, 0x30, 0x38: External Timer 3-8 Control Register (n=0 to 5) */
+#define TIMER_ETNCTRL(n)   (0x10 + ((n) * 8))
+#define TIMER_ETCOMB       BIT(3)
+#define TIMER_ETNRST       BIT(1)
+#define TIMER_ETNEN        BIT(0)
+/* 0x11, 0x19, 0x21, 0x29, 0x31, 0x39: External Timer 3-8 Prescaler Register (n=0 to 5) */
+#define TIMER_ETNPSR(n)    (0x11 + ((n) * 8))
+/* 0x14, 0x1c, 0x24, 0x2c, 0x34, 0x3c: External Timer 3-8 Counter Register (n=0 to 5) */
+#define TIMER_ETNCNTLLR(n) (0x14 + ((n) * 8))
+/* 0x48, 0x4c, 0x50, 0x54, 0x58, 0x5c: External Timer 3-8 Counter Observation Register (n=0 to 5) */
+#define TIMER_ETNCNTOLR(n) (0x48 + ((n) * 4))
+
+/*
+ * 24-bit timers: external timer 3, 5, and 7
+ * 32-bit timers: external timer 4, 6, and 8
+ */
+enum ext_timer_idx {
+	EXT_TIMER_3 = 0, /* Event timer */
+	EXT_TIMER_4,     /* Free run timer */
+	EXT_TIMER_5,     /* Busy wait low timer */
+	EXT_TIMER_6,     /* Busy wait high timer */
+	EXT_TIMER_7,
+	EXT_TIMER_8,
+};
+
+enum ext_clk_src_sel {
+	EXT_PSR_32P768K = 0,
+	EXT_PSR_1P024K,
+	EXT_PSR_32,
+	EXT_PSR_EC_CLK,
+};
+
+enum ext_timer_raw_cnt {
+	EXT_NOT_RAW_CNT = 0,
+	EXT_RAW_CNT,
+};
+
+enum ext_timer_int {
+	EXT_WITHOUT_TIMER_INT = 0,
+	EXT_WITH_TIMER_INT,
+};
+
+enum ext_timer_start {
+	EXT_NOT_START_TIMER = 0,
+	EXT_START_TIMER,
+};
+
+/* Event timer configurations */
+#define EVENT_TIMER               EXT_TIMER_3
+#define EVENT_TIMER_IRQ           DT_IRQ_BY_IDX(DT_NODELABEL(timer), 0, irq)
+#define EVENT_TIMER_FLAG          DT_IRQ_BY_IDX(DT_NODELABEL(timer), 0, flags)
+/* Event timer max count is 512 sec (base on clock source 32768Hz) */
+#define EVENT_TIMER_MAX_CNT       0x00FFFFFFUL
+/* Free run timer configurations */
+#define FREE_RUN_TIMER            EXT_TIMER_4
+#define FREE_RUN_TIMER_IRQ        DT_IRQ_BY_IDX(DT_NODELABEL(timer), 1, irq)
+#define FREE_RUN_TIMER_FLAG       DT_IRQ_BY_IDX(DT_NODELABEL(timer), 1, flags)
+/* Free run timer max count is 36.4 hr (base on clock source 32768Hz) */
+#define FREE_RUN_TIMER_MAX_CNT    0xFFFFFFFFUL
+/* Busy wait low timer configurations */
+#define BUSY_WAIT_L_TIMER         EXT_TIMER_5
+#define BUSY_WAIT_L_TIMER_IRQ     DT_INST_IRQ_BY_IDX(0, 2, irq)
+#define BUSY_WAIT_L_TIMER_FLAG    DT_INST_IRQ_BY_IDX(0, 2, flags)
+/* Busy wait high timer configurations */
+#define BUSY_WAIT_H_TIMER         EXT_TIMER_6
+#define BUSY_WAIT_H_TIMER_IRQ     DT_INST_IRQ_BY_IDX(0, 3, irq)
+#define BUSY_WAIT_H_TIMER_FLAG    DT_INST_IRQ_BY_IDX(0, 3, flags)
+/* Busy wait high timer max count is 7.78min (base on EC clock source 9.2MHz) */
+#define BUSY_WAIT_TIMER_H_MAX_CNT 0xFFFFFFFFUL
+
+#define MS_TO_COUNT(hz, ms) ((hz) * (ms) / 1000)
+#define ETPSR_9200K         KHZ(9200)
+#define ETPSR_32768         32768
+#define ETPSR_1024          1024
+#define ETPSR_32            32
+#define EC_CLOCK            ETPSR_9200K
+#define COUNT_1US           (EC_CLOCK / USEC_PER_SEC)
+
+#if defined(CONFIG_TEST)
+const int32_t z_sys_timer_irq_for_test = DT_IRQ_BY_IDX(DT_NODELABEL(timer), 3, irq);
+#endif
+
+static uint32_t read_timer_obser(enum ext_timer_idx timer_idx)
+{
+	uint32_t obser;
+	__unused uint8_t etnpsr;
+
+	/* Critical section */
+	unsigned int key = irq_lock();
+
+	/* Workaround for observation register latch issue */
+	obser = sys_read32(timer_base + TIMER_ETNCNTOLR(timer_idx));
+	etnpsr = sys_read8(timer_base + TIMER_ETNPSR(timer_idx));
+	obser = sys_read32(timer_base + TIMER_ETNCNTOLR(timer_idx));
+
+	irq_unlock(key);
+
+	return obser;
+}
+
+static void ext_timer_disable(enum ext_timer_idx timer_idx)
+{
+	uint8_t etnctrl;
+
+	/* Disable event timer */
+	etnctrl = sys_read8(timer_base + TIMER_ETNCTRL(timer_idx));
+	sys_write8(etnctrl & ~TIMER_ETNEN, timer_base + TIMER_ETNCTRL(timer_idx));
+}
+
+static void ext_timer_enable(enum ext_timer_idx timer_idx)
+{
+	uint8_t etnctrl;
+
+	/* Enable and re-start event timer */
+	etnctrl = sys_read8(timer_base + TIMER_ETNCTRL(timer_idx));
+	sys_write8(etnctrl | TIMER_ETNRST | TIMER_ETNEN, timer_base + TIMER_ETNCTRL(timer_idx));
+}
+
+/*
+ * The counter and the alarm are two different timers here. The cycle domain is
+ * the free-running 32-bit timer, counting down and read back inverted, while
+ * the wakeup comes from a separate 24-bit event timer, a one-shot countdown.
+ * That makes it a RELOAD backend whose range is bounded by the event timer
+ * rather than by the counter. Both select the same clock, so the core's cycles
+ * are the event timer's without conversion.
+ */
+#define TIMER_CORE_BACKEND_RELOAD
+#define TIMER_CORE_COUNTER_WIDTH 32
+#define TIMER_CORE_ALARM_MAX_CYCLES EVENT_TIMER_MAX_CNT
+
+static inline uint32_t timer_driver_cycle_get(void)
+{
+	return ~read_timer_obser(FREE_RUN_TIMER);
+}
+
+static void timer_driver_set_reload(uint32_t cycles)
+{
+	ext_timer_disable(EVENT_TIMER);
+
+	/* Set event timer 24-bit count */
+	sys_write32(cycles, timer_base + TIMER_ETNCNTLLR(EVENT_TIMER));
+
+	/* W/C event timer interrupt status */
+	ite_intc_isr_clear(EVENT_TIMER_IRQ);
+
+	ext_timer_enable(EVENT_TIMER);
+}
+
+#include "system_timer_generic.h"
+
+static void evt_timer_isr(const void *unused)
+{
+	ARG_UNUSED(unused);
+
+	ext_timer_disable(EVENT_TIMER);
+	/* W/C event timer interrupt status */
+	ite_intc_isr_clear(EVENT_TIMER_IRQ);
+
+	if (!IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
+		/* The event timer is one-shot, so a ticked kernel re-arms it
+		 * here: the core leaves a reload backend alone, expecting
+		 * hardware that reloads itself.
+		 */
+		ext_timer_enable(EVENT_TIMER);
+	}
+
+	timer_core_announce();
+}
+
+static void free_run_timer_overflow_isr(const void *unused)
+{
+	ARG_UNUSED(unused);
+
+	/* Read to clear terminal count flag */
+	__unused uint8_t rc_tc = sys_read8(timer_base + TIMER_ETNCTRL(FREE_RUN_TIMER));
+	/* TODO: to increment 32-bit "top half" here for software 64-bit timer emulation. */
+}
+
+static int timer_init(enum ext_timer_idx ext_timer, enum ext_clk_src_sel clock_source_sel,
+		      enum ext_timer_raw_cnt raw, uint32_t ms, uint32_t irq_num, uint32_t irq_flag,
+		      enum ext_timer_int with_int, enum ext_timer_start start)
+{
+	uint32_t hw_cnt;
+
+	if (raw == EXT_RAW_CNT) {
+		hw_cnt = ms;
+	} else {
+		if (clock_source_sel == EXT_PSR_32P768K) {
+			hw_cnt = MS_TO_COUNT(ETPSR_32768, ms);
+		} else if (clock_source_sel == EXT_PSR_1P024K) {
+			hw_cnt = MS_TO_COUNT(ETPSR_1024, ms);
+		} else if (clock_source_sel == EXT_PSR_32) {
+			hw_cnt = MS_TO_COUNT(ETPSR_32, ms);
+		} else if (clock_source_sel == EXT_PSR_EC_CLK) {
+			hw_cnt = MS_TO_COUNT(ETPSR_9200K, ms);
+		} else {
+			LOG_ERR("Timer %d clock source error !", ext_timer);
+			return -EINVAL;
+		}
+	}
+
+	if (hw_cnt == 0) {
+		LOG_ERR("Timer %d count shouldn't be 0 !", ext_timer);
+		return -EINVAL;
+	}
+
+	/* First time enable */
+	ext_timer_enable(ext_timer);
+	ext_timer_disable(ext_timer);
+
+	/* Set rising edge triggered of external timer x */
+	ite_intc_irq_polarity_set(irq_num, irq_flag);
+
+	/* Clear interrupt status of external timer x */
+	ite_intc_isr_clear(irq_num);
+
+	/* Set clock source of external timer */
+	sys_write8(clock_source_sel, timer_base + TIMER_ETNPSR(ext_timer));
+
+	/* Set count of external timer */
+	sys_write32(hw_cnt, timer_base + TIMER_ETNCNTLLR(ext_timer));
+
+	ext_timer_disable(ext_timer);
+	if (start == EXT_START_TIMER) {
+		ext_timer_enable(ext_timer);
+	}
+
+	if (with_int == EXT_WITH_TIMER_INT) {
+		irq_enable(irq_num);
+	} else {
+		irq_disable(irq_num);
+	}
+
+	return 0;
+}
+
+#ifdef CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT
+void arch_busy_wait(uint32_t usec_to_wait)
+{
+	uint32_t start = read_timer_obser(BUSY_WAIT_H_TIMER);
+	uint32_t compensated_us;
+
+	if (!usec_to_wait) {
+		return;
+	}
+
+	/*
+	 * The EC runs at 9.2MHz, meaning each tick is approximately 108.6ns.
+	 * The number of ticks per microsecond is calculated as:
+	 * COUNT_1US = EC_CLOCK / USEC_PER_SEC = 9200000 / 1000000 = 9.2
+	 * Since the timer counts down from a preset value to 0, using a preload value of
+	 * 9 actually results in 10 ticks per cycle.
+	 * This overestimates 1us and introduces a small cumulative timing error over time.
+	 * To compensate for this, we scale the requested delay using (1000 / 1086).
+	 */
+	compensated_us = usec_to_wait * 1000 / 1086;
+	for (;;) {
+		if (IS_ENABLED(CONFIG_ITE_IT51XXX_TIMER_COUNTUP_IN_COMBINATION_MODE)) {
+			if ((read_timer_obser(BUSY_WAIT_H_TIMER) - start) >= compensated_us) {
+				break;
+			}
+		} else {
+			if ((start - read_timer_obser(BUSY_WAIT_H_TIMER)) >= compensated_us) {
+				break;
+			}
+		}
+	}
+}
+#endif
+
+#ifdef CONFIG_PM
+static uint64_t cyc_deep_sleep_total;
+static uint32_t cyc_enter_deep_sleep;
+
+void ite_ec_clock_capture_low_freq_timer(void)
+{
+	cyc_enter_deep_sleep = ~read_timer_obser(FREE_RUN_TIMER);
+}
+
+void ite_ec_clock_compensate_system_timer(void)
+{
+	uint32_t now = ~read_timer_obser(FREE_RUN_TIMER);
+	uint32_t cyc_elapsed_in_deep = now - cyc_enter_deep_sleep;
+
+	cyc_deep_sleep_total += cyc_elapsed_in_deep;
+}
+
+uint64_t ite_ec_clock_get_sleep_ticks(void)
+{
+	return k_cyc_to_ticks_floor64(cyc_deep_sleep_total);
+}
+#endif /* CONFIG_PM */
+
+static int sys_clock_driver_init(void)
+{
+	int ret;
+
+	/* Enable 32-bit free run timer overflow interrupt */
+	IRQ_CONNECT(FREE_RUN_TIMER_IRQ, 0, free_run_timer_overflow_isr, NULL, FREE_RUN_TIMER_FLAG);
+	/* Set 32-bit timer4 for free run*/
+	ret = timer_init(FREE_RUN_TIMER, EXT_PSR_32P768K, EXT_RAW_CNT, FREE_RUN_TIMER_MAX_CNT,
+			 FREE_RUN_TIMER_IRQ, FREE_RUN_TIMER_FLAG, EXT_WITH_TIMER_INT,
+			 EXT_START_TIMER);
+	if (ret < 0) {
+		LOG_ERR("Init free run timer failed");
+		return ret;
+	}
+
+	/* Set 24-bit timer3 for timeout event */
+	IRQ_CONNECT(EVENT_TIMER_IRQ, 0, evt_timer_isr, NULL, EVENT_TIMER_FLAG);
+	if (IS_ENABLED(CONFIG_TICKLESS_KERNEL)) {
+		ret = timer_init(EVENT_TIMER, EXT_PSR_32P768K, EXT_RAW_CNT, EVENT_TIMER_MAX_CNT,
+				 EVENT_TIMER_IRQ, EVENT_TIMER_FLAG, EXT_WITH_TIMER_INT,
+				 EXT_NOT_START_TIMER);
+	} else {
+		/* Start a event timer in one system tick */
+		ret = timer_init(EVENT_TIMER, EXT_PSR_32P768K, EXT_NOT_RAW_CNT,
+				 TIMER_CORE_CYC_PER_TICK, EVENT_TIMER_IRQ,
+				 EVENT_TIMER_FLAG, EXT_WITH_TIMER_INT, EXT_START_TIMER);
+	}
+	if (ret < 0) {
+		LOG_ERR("Init event timer failed");
+		return ret;
+	}
+
+	/* Seed the announce baseline and arm the first tick. */
+	timer_core_init();
+
+	if (IS_ENABLED(CONFIG_ARCH_HAS_CUSTOM_BUSY_WAIT)) {
+		/* Set timer5 and timer6 combinational mode for busy wait */
+		sys_write8(TIMER_ETCOMB, timer_base + TIMER_ETNCTRL(BUSY_WAIT_L_TIMER));
+
+		/*
+		 * Set 32-bit timer6 to count-- every 1us
+		 * NOTE: When the combinational mode. the counter observation value of timer 6 will
+		 *       in incremental order.
+		 */
+		ret = timer_init(BUSY_WAIT_H_TIMER, EXT_PSR_EC_CLK, EXT_RAW_CNT,
+				 BUSY_WAIT_TIMER_H_MAX_CNT, BUSY_WAIT_H_TIMER_IRQ,
+				 BUSY_WAIT_H_TIMER_FLAG, EXT_WITHOUT_TIMER_INT, EXT_START_TIMER);
+		if (ret < 0) {
+			LOG_ERR("Init busy wait high timer failed");
+			return ret;
+		}
+
+		/*
+		 * Set 24-bit timer5 to overflow every 1us
+		 * NOTE: When the timer5 count down to overflow in combinational mode, timer6
+		 *       counter will automatically decrease one count and timer5 will
+		 *       automatically re-start counting down from COUNT_1US. Timer5 clock
+		 *       source is EC_CLOCK, so the time period from COUNT_1US to overflow is
+		 *       (1 / EC_CLOCK) * (EC_CLOCK / USEC_PER_SEC) = 1us.
+		 */
+		ret = timer_init(BUSY_WAIT_L_TIMER, EXT_PSR_EC_CLK, EXT_RAW_CNT, COUNT_1US,
+				 BUSY_WAIT_L_TIMER_IRQ, BUSY_WAIT_L_TIMER_FLAG,
+				 EXT_WITHOUT_TIMER_INT, EXT_START_TIMER);
+		if (ret < 0) {
+			LOG_ERR("Init busy wait low timer failed");
+			return ret;
+		}
+	}
+
+	return 0;
+}
+SYS_INIT(sys_clock_driver_init, PRE_KERNEL_2, CONFIG_SYSTEM_CLOCK_INIT_PRIORITY);

@@ -1,0 +1,7 @@
+# Copyright (c) 2026 Embeint Inc
+# SPDX-License-Identifier: Apache-2.0
+
+config TEST_MODEM_MOCK_BACKEND_TRANSMIT_CHAIN
+	bool "Support the `transmit_chain` API variant"
+
+source "Kconfig.zephyr"

@@ -1,0 +1,19 @@
+# Copyright (c) 2017 Linaro Limited
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig LPS22HB
+	bool "LPS22HB pressure and temperature"
+	default y
+	depends on DT_HAS_ST_LPS22HB_PRESS_ENABLED
+	select I2C
+	help
+	  Enable driver for LPS22HB I2C-based pressure and temperature
+	  sensor.
+
+config LPS22HB_SAMPLING_RATE
+	int "Output data rate"
+	default 25
+	depends on LPS22HB
+	help
+	  Sensor output data rate expressed in samples per second.
+	  Data rates supported by the chip are 1, 10, 25, 50, 75.

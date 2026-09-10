@@ -1,0 +1,6 @@
+board:
+  name: rsk_rx140
+  full_name: Renesas Starter Kit for RX140
+  vendor: renesas
+  socs:
+    - name: r5f51406bdfn

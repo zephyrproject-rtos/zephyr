@@ -1,0 +1,11 @@
+# XMC4XXX GPIO configuration
+#
+# Copyright (c) 2022 Schlumberger
+# SPDX-License-Identifier: Apache-2.0
+
+config GPIO_XMC4XXX
+	bool "XMC4XXX GPIO driver"
+	default y
+	depends on DT_HAS_INFINEON_XMC4XXX_GPIO_ENABLED
+	help
+	  Enable GPIO driver for XMC4XXX line of MCUs

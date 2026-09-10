@@ -1,0 +1,15 @@
+/*
+ * Copyright (c) 2019 Linaro Limited.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/* Connect P07 to P08 to run this test */
+
+/ {
+	resources {
+		compatible = "test-gpio-basic-api";
+		out-gpios = <&gpioa2 1 0>;
+		in-gpios = <&gpioa2 0 0>;
+	};
+};

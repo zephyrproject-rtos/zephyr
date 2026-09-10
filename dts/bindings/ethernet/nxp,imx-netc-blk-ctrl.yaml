@@ -1,0 +1,12 @@
+# Copyright 2025 NXP
+# SPDX-License-Identifier: Apache-2.0
+
+description: NXP i.MX NETC Block Controller
+
+compatible: "nxp,imx-netc-blk-ctrl"
+
+include: [base.yaml]
+
+properties:
+  reg:
+    required: true

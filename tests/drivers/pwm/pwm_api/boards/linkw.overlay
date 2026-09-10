@@ -1,0 +1,26 @@
+/*
+ * SPDX-FileCopyrightText: Copyright Michael Hope <michaelh@juju.nz>
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		pwm-test = &pwm3;
+	};
+};
+
+&tim3 {
+	status = "okay";
+	/*
+	 * The test uses a 2 ms period, ceil(120 MHz / 65536 * 20 ms)
+	 * is 9952, and the prescaler property is one less than that.
+	 */
+	prescaler = <9951>;
+};
+
+&pwm3 {
+	status = "okay";
+	pinctrl-0 = <&blue_pwm_led_pinctrl>;
+	pinctrl-names = "default";
+};

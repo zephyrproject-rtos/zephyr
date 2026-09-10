@@ -1,0 +1,5 @@
+# Copyright (c) 2025, Liu Changjie <liucj1228@outlook.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config BOARD_SKYSTAR_GD32F407VET6
+	select SOC_GD32F407

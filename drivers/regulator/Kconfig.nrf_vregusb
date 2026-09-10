@@ -1,0 +1,16 @@
+# Copyright Nordic Semiconductor ASA
+# SPDX-License-Identifier: Apache-2.0
+
+config REGULATOR_NRF_VREGUSB
+	bool "Nordic USB VBUS regulator driver"
+	default y
+	depends on DT_HAS_NORDIC_VREGUSB_REGULATOR_ENABLED
+	help
+	  Enable Nordic USB VBUS regulator driver.
+
+config REGULATOR_NRF_VREGUSB_INIT_PRIORITY
+	int "Nordic VBUS regulator driver init priority"
+	default KERNEL_INIT_PRIORITY_DEVICE
+	depends on REGULATOR_NRF_VREGUSB
+	help
+	  Init priority for the Nordic USB VBUS regulator driver.

@@ -1,0 +1,16 @@
+sample:
+  name: USB DFU sample
+
+common:
+  build_only: true
+  arch_exclude: posix
+  depends_on: usb_device
+  platform_allow:
+    - nrf52840dk/nrf52840
+    - frdm_k64f
+tests:
+  sample.usb.legacy.dfu:
+    tags: usb
+  sample.usb.legacy.dfu.permanent.download:
+    tags: usb
+    extra_args: EXTRA_CONF_FILE=overlay-permanent-download.conf

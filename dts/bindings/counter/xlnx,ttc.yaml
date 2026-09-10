@@ -1,0 +1,39 @@
+# Copyright (c) 2026 Advanced Micro Devices, Inc.
+#
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  AMD/Xilinx Triple Timer Counter (TTC).
+
+  The TTC hardware block contains three independent timer/counter
+  instances. Each timer may be exposed as a child node using the
+  "xlnx,ttc-counter" compatible.
+
+compatible: "xlnx,ttc"
+
+include: base.yaml
+
+properties:
+  reg:
+    required: true
+
+  timer-width:
+    type: int
+    required: true
+    enum:
+      - 16
+      - 32
+    description: |
+      Width of the TTC counter in bits.
+
+  clock-frequency:
+    type: int
+    required: true
+    description: |
+      Input clock frequency in Hz shared by all timers in the TTC block.
+
+  "#address-cells":
+    const: 1
+
+  "#size-cells":
+    const: 0

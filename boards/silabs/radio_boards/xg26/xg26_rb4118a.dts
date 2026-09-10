@@ -1,0 +1,14 @@
+/*
+ * Copyright (c) 2025 Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/dts-v1/;
+#include <silabs/xg26/efr32mg26b510f3200il136.dtsi>
+#include "xg26_rb41xxa.dtsi"
+
+/ {
+	model = "Silicon Labs EFR32xG26 2.4 GHz +10 dBm BGA136 Radio Board (xG26-RB4118A)";
+	compatible = "silabs,xg26_rb4118a", "silabs,efr32mg26";
+};

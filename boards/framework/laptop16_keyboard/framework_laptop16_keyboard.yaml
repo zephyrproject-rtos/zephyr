@@ -1,0 +1,20 @@
+identifier: framework_laptop16_keyboard
+name: Framework Laptop 16 Keyboard
+type: mcu
+arch: arm
+flash: 1024
+ram: 264
+toolchain:
+  - zephyr
+supported:
+  - clock
+  - counter
+  - flash
+  - gpio
+  - hwinfo
+  - i2c
+  - pwm
+  - usb_device
+  - usbd
+  - watchdog
+vendor: framework

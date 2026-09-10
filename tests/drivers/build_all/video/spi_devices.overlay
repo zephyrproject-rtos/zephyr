@@ -1,0 +1,40 @@
+/*
+ * Copyright (c) 2026 Mario Paja
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ */
+
+/ {
+	test {
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		test_gpio: gpio@10001000 {
+			compatible = "vnd,gpio";
+			gpio-controller;
+			reg = <0x10001000 0x1000>;
+			#gpio-cells = <0x2>;
+			status = "okay";
+		};
+
+		test_spi: spi@10004000 {
+			#address-cells = <1>;
+			#size-cells = <0>;
+			compatible = "vnd,spi";
+			reg = <0x10004000 0x1000>;
+			status = "okay";
+			clock-frequency = <8000000>;
+
+			/* one entry for every device at spi.dtsi */
+			cs-gpios = <&test_gpio 0 0>;
+
+			test_spi_arducam_mega: arducam-mega@0 {
+				compatible = "arducam,mega";
+				reg = <0>;
+				spi-max-frequency = <5000000>;
+				status = "okay";
+			};
+		};
+	};
+};

@@ -1,0 +1,8 @@
+# Copyright (c) 2023 Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+config INTEL_HAL
+	bool
+	help
+	  Build the Intel HAL module during build process.
+	  This is selected by the ARCH kconfig automatically.

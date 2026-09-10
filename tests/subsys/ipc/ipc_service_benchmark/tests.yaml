@@ -1,0 +1,92 @@
+common:
+  timeout: 30
+  tags:
+    - ipc
+  sysbuild: true
+tests:
+  tests.ipc.ipc_service.benchmark.icmsg:
+    platform_allow:
+      - nrf5340dk/nrf5340/cpuapp
+      - nrf5340bsim/nrf5340/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54h20dk/nrf54h20/cpuapp
+    integration_platforms:
+      - nrf5340dk/nrf5340/cpuapp
+      - nrf5340bsim/nrf5340/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54h20dk/nrf54h20/cpuapp
+    extra_args:
+      - FILE_SUFFIX=icmsg
+      - remote_FILE_SUFFIX=icmsg
+      - remote_CONFIG_IPC_SERVICE_BACKEND_ICMSG=y
+      - remote_CONFIG_MBOX=y
+    extra_configs:
+      - CONFIG_IPC_SERVICE_BACKEND_ICMSG=y
+      - CONFIG_MBOX=y
+      # Test thread runs at Pre-emptive priority 10. IPC (icmsg RX workqueue) must use a
+      # higher priority so receive/bound processing can preempt the test thread.
+      - CONFIG_IPC_SERVICE_BACKEND_ICMSG_WQ_PRIORITY=-3
+      - CONFIG_SYSTEM_WORKQUEUE_PRIORITY=-3
+      - CONFIG_ZTEST_THREAD_PRIORITY=10
+  tests.ipc.ipc_service.benchmark.icbmsg:
+    platform_allow:
+      - nrf5340dk/nrf5340/cpuapp
+      - nrf5340bsim/nrf5340/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54h20dk/nrf54h20/cpuapp
+    integration_platforms:
+      - nrf5340dk/nrf5340/cpuapp
+      - nrf5340bsim/nrf5340/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp
+      - nrf54h20dk/nrf54h20/cpuapp
+    extra_args:
+      - FILE_SUFFIX=icbmsg
+      - remote_FILE_SUFFIX=icbmsg
+      - remote_CONFIG_MBOX=y
+    extra_configs:
+      - CONFIG_MBOX=y
+      - CONFIG_IPC_SERVICE_BACKEND_ICMSG_WQ_PRIORITY=-3
+      - CONFIG_ZTEST_THREAD_PRIORITY=10
+  tests.ipc.ipc_service.benchmark.icmsg.cpuppr:
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
+    integration_platforms:
+      - nrf54h20dk/nrf54h20/cpuapp
+    extra_args:
+      - FILE_SUFFIX=icmsg_cpuppr
+      - remote_FILE_SUFFIX=icmsg
+      - remote_CONFIG_IPC_SERVICE_BACKEND_ICMSG=y
+      - remote_CONFIG_MBOX=y
+      - ipc_service_benchmark_SNIPPET=nordic-ppr
+    extra_configs:
+      - CONFIG_IPC_SERVICE_BACKEND_ICMSG=y
+      - CONFIG_MBOX=y
+      - CONFIG_IPC_SERVICE_BACKEND_ICMSG_WQ_PRIORITY=-3
+      - CONFIG_SYSTEM_WORKQUEUE_PRIORITY=-3
+      - CONFIG_ZTEST_THREAD_PRIORITY=10
+  tests.ipc.ipc_service.benchmark.icbmsg.cpuppr:
+    platform_allow:
+      - nrf54h20dk/nrf54h20/cpuapp
+    integration_platforms:
+      - nrf54h20dk/nrf54h20/cpuapp
+    extra_args:
+      - FILE_SUFFIX=icbmsg_cpuppr
+      - remote_FILE_SUFFIX=icbmsg
+      - remote_CONFIG_MBOX=y
+      - ipc_service_benchmark_SNIPPET=nordic-ppr
+    extra_configs:
+      - CONFIG_MBOX=y
+      - CONFIG_ZTEST_THREAD_PRIORITY=10
+  tests.ipc.ipc_service.benchmark.static_vrings:
+    platform_allow:
+      - nrf5340dk/nrf5340/cpuapp
+      - nrf5340bsim/nrf5340/cpuapp
+    integration_platforms:
+      - nrf5340dk/nrf5340/cpuapp
+      - nrf5340bsim/nrf5340/cpuapp
+    extra_args:
+      - FILE_SUFFIX=static_vrings
+      - remote_FILE_SUFFIX=static_vrings
+      - remote_CONFIG_HEAP_MEM_POOL_SIZE=4096
+    extra_configs:
+      - CONFIG_HEAP_MEM_POOL_SIZE=4096

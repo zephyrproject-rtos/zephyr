@@ -1,0 +1,13 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2023 Scott Chao
+ */
+
+&pwmleds {
+	status = "okay";
+};
+
+&pwm3 {
+	status = "okay";
+};

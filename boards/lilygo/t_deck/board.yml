@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+board:
+  name: t_deck
+  full_name: LilyGO T-Deck / T-Deck Plus
+  vendor: lilygo
+  revision:
+    format: custom
+    default: standard
+    revisions:
+    - name: standard
+    - name: plus
+  socs:
+  - name: esp32s3

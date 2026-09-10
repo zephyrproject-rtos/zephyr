@@ -1,0 +1,74 @@
+/*
+ * Copyright (c) 2026 Espressif Systems (Shanghai) Co., Ltd.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * SPI controller/target loopback on a single ESP32-S3 using the GPIO matrix.
+ * No external wiring is required: each of the four SPI lines is routed to one
+ * shared GPIO that carries the controller (spi2, SPIM2_*) signal and the
+ * target (spi3, SPIS3_*) signal at the same time.
+ *
+ *   line  shared GPIO  spi2 controller   spi3 target
+ *   SCLK  GPIO7        SPIM2_SCLK (out)  SPIS3_SCLK (in)
+ *   MOSI  GPIO9        SPIM2_MOSI (out)  SPIS3_MOSI (in)
+ *   MISO  GPIO14       SPIM2_MISO (in)   SPIS3_MISO (out)
+ *   CS    GPIO8        SPIM2_CSEL (out)  SPIS3_CSEL (in)
+ *
+ * The shared pins are kept both input- and output-enabled so applying one
+ * role's pinctrl does not tear down the path the other role needs.
+ */
+
+#include <dt-bindings/pinctrl/esp32s3-pinctrl.h>
+
+/ {
+	zephyr,user {
+		peripheral-cs = <0>;
+	};
+};
+
+&pinctrl {
+	spim2_loopback: spim2_loopback {
+		group1 {
+			pinmux = <SPIM2_SCLK_GPIO7>,
+				 <SPIM2_MOSI_GPIO9>,
+				 <SPIM2_CSEL_GPIO8>;
+			input-enable; /* preserve controller pad sense for loopback test */
+		};
+
+		group2 {
+			pinmux = <SPIM2_MISO_GPIO14>;
+			output-enable; /* preserve controller pad drive for loopback test */
+		};
+	};
+
+	spis3_loopback: spis3_loopback {
+		group1 {
+			pinmux = <SPIS3_SCLK_GPIO7>,
+				 <SPIS3_MOSI_GPIO9>,
+				 <SPIS3_CSEL_GPIO8>;
+		};
+
+		group2 {
+			pinmux = <SPIS3_MISO_GPIO14>;
+			input-enable; /* preserve controller pad sense for loopback test */
+		};
+	};
+};
+
+&spi2 {
+	status = "okay";
+	pinctrl-0 = <&spim2_loopback>;
+	pinctrl-names = "default";
+
+	dut_spi_dt: test-spi-dev@0 {
+		compatible = "vnd,spi-device";
+		reg = <0>;
+		spi-max-frequency = <DT_FREQ_M(4)>;
+	};
+};
+
+dut_spis: &spi3 {
+	status = "okay";
+	pinctrl-0 = <&spis3_loopback>;
+	pinctrl-names = "default";
+};

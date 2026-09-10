@@ -1,0 +1,7 @@
+/dts-v1/;
+#include "beaglev_fire_polarfire_u54.dts"
+
+/ {
+	model = "beagle,beaglev-fire";
+	compatible = "beagle,beaglev-fire", "microchip,mpfs";
+};

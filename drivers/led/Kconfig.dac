@@ -1,0 +1,18 @@
+# Copyright (c) 2025 Prevas A/S
+# SPDX-License-Identifier: Apache-2.0
+
+config LED_DAC
+	bool "DAC LED driver"
+	default y
+	depends on DT_HAS_DAC_LEDS_ENABLED
+	select DAC
+	help
+	  Enable DAC LED driver.
+
+	  The driver is normally used with a VCCS (Voltage Controlled Current
+	  Source) between the DAC and the LED.
+
+	  It might be possible to use this driver to supply an LED directly
+	  from a DAC, but LED_PWM is most likely more suited for this purpose.
+	  If the DAC is used without a VCCS, its capabilities should be checked
+	  carefully, and the output buffer should be enabled.

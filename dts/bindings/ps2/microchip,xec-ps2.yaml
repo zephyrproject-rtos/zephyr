@@ -1,0 +1,31 @@
+# Copyright (c) 2019, Intel Corporation
+# SPDX-License-Identifier: Apache-2.0
+
+description: Microchip XEC PS/2 controller
+
+compatible: "microchip,xec-ps2"
+
+include: [ps2.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupts:
+    required: true
+
+  girqs:
+    type: array
+    required: true
+    description: |
+      Array of GIRQ and bit position pairs for each interrupt
+      signal the block generates.
+
+  pcrs:
+    type: array
+    required: true
+    description: PS2 PCR register index and bit position
+
+  wakerx-gpios:
+    type: phandle-array
+    description: GPIO configured as PS2 DAT wake source

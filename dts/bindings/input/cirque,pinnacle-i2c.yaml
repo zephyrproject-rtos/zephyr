@@ -1,0 +1,8 @@
+# Copyright (c) 2024 Ilia Kharin
+# SPDX-License-Identifier: Apache-2.0
+
+description: Cirque Pinnacle 1CA027 ASIC trackpad connected through I2C
+
+compatible: "cirque,pinnacle"
+
+include: ["i2c-device.yaml", "cirque,pinnacle-common.yaml"]
