@@ -2121,6 +2121,12 @@ SIMCOM SIM7080
 LoRaWAN
 *******
 
+* With :kconfig:option:`CONFIG_LORAWAN_NVM_SETTINGS`, the LoRaMAC-node backend now
+  propagates storage initialization and context restore errors from
+  :c:func:`lorawan_start`. Applications must handle these errors before joining.
+  Absent records retain the backend's initial state. Existing record names and
+  serialized context formats are unchanged.
+
 * The native LoRaWAN backend
   (:kconfig:option:`CONFIG_LORA_MODULE_BACKEND_NATIVE`) now requires
   :c:func:`lorawan_start` before the following runtime configuration APIs are

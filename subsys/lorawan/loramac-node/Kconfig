@@ -9,6 +9,7 @@ config LORAWAN_LORAMAC_NODE
 	bool
 	default y
 	select HAS_SEMTECH_LORAMAC
+	select LORAWAN_NVM_SETTINGS_SUPPORTED
 	imply HAS_SEMTECH_SOFT_SE
 	help
 	  Hidden config to enable loramac-node backend specific options.
