@@ -74,6 +74,24 @@ tests:
     filter: dt_compat_enabled("zephyr,sdmmc-disk")
     integration_platforms:
       - frdm_k64f
+  sample.filesystem.fat_fs.usb_msc:
+    depends_on: usbh
+    harness: console
+    harness_config:
+      fixture: fixture_usb_msc
+      type: multi_line
+      regex:
+        - "Block count"
+        - "Sector size"
+        - "Memory Size"
+        - "Disk mounted"
+    extra_args:
+      - EXTRA_CONF_FILE=usb_msc.conf
+      - DTC_OVERLAY_FILE=usb_msc.overlay
+    platform_allow:
+      - esp32p4x_function_ev_board/esp32p4/hpcore
+    integration_platforms:
+      - esp32p4x_function_ev_board/esp32p4/hpcore
   sample.filesystem.ext2:
     simulation_exclude:
       - renode
