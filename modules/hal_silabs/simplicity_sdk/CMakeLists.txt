@@ -63,10 +63,10 @@ if(CONFIG_SOC_VENDOR_SILABS_HAS_RADIO)
     ${BLUETOOTH_DIR}/bgstack/ll/inc
   )
 
-  zephyr_include_directories_ifdef(CONFIG_SILABS_DEVICE_IS_MODULE
+  zephyr_include_directories_ifdef(CONFIG_SOC_VENDOR_SILABS_DEVICE_IS_MODULE
     ${RADIO_DIR}/rail_lib/plugin/pa-conversions
   )
-  zephyr_include_directories_ifndef(CONFIG_SILABS_DEVICE_IS_MODULE
+  zephyr_include_directories_ifndef(CONFIG_SOC_VENDOR_SILABS_DEVICE_IS_MODULE
     ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_pa_conversions
     ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_pa_tables
     ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_pa_tables/efr32xg${SILABS_DEVICE_FAMILY_NUMBER}
@@ -109,7 +109,7 @@ if(CONFIG_SOC_VENDOR_SILABS_HAS_RADIO)
       ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_sequencer/sl_rail_util_sequencer.c
     )
 
-    if(NOT CONFIG_SILABS_DEVICE_IS_MODULE)
+    if(NOT CONFIG_SOC_VENDOR_SILABS_DEVICE_IS_MODULE)
       zephyr_library_sources(
         ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_built_in_phys/sl_rail_util_built_in_phys.c
       )
@@ -143,10 +143,10 @@ if(CONFIG_SOC_VENDOR_SILABS_HAS_RADIO)
     endif()
 
     # PA curve for the modules comes from their config archive - omit the compilation of the SoC curves on modules
-    zephyr_library_sources_ifdef(CONFIG_SILABS_DEVICE_IS_MODULE
+    zephyr_library_sources_ifdef(CONFIG_SOC_VENDOR_SILABS_DEVICE_IS_MODULE
       ${RADIO_DIR}/rail_lib/plugin/pa-conversions/pa_conversions_efr32.c
     )
-    zephyr_library_sources_ifndef(CONFIG_SILABS_DEVICE_IS_MODULE
+    zephyr_library_sources_ifndef(CONFIG_SOC_VENDOR_SILABS_DEVICE_IS_MODULE
       ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_pa_conversions/sl_rail_util_pa_conversions.c
       ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_pa_conversions/sl_rail_util_pa_tables.c
     )
@@ -157,7 +157,7 @@ if(CONFIG_SOC_VENDOR_SILABS_HAS_RADIO)
       zephyr_compile_definitions(SL_RAIL_LIB_MULTIPROTOCOL_SUPPORT=0)
     endif()
 
-    if(CONFIG_SILABS_DEVICE_IS_MODULE)
+    if(CONFIG_SOC_VENDOR_SILABS_DEVICE_IS_MODULE)
       # RAIL lib and config for modules
       if(CONFIG_SILABS_SISDK_RAIL_MULTIPROTOCOL)
         add_prebuilt_library(librail platform/radio/rail_lib/autogen/librail_release/librail_multiprotocol_module_efr32xg${SILABS_DEVICE_FAMILY_NUMBER}_gcc_release.a)
@@ -455,7 +455,7 @@ zephyr_library_sources_ifdef(
   CONFIG_BUILD_ONLY_NO_BLOBS
   src/blob_stubs.c
 )
-if(CONFIG_SILABS_DEVICE_IS_MODULE)
+if(CONFIG_SOC_VENDOR_SILABS_DEVICE_IS_MODULE)
   zephyr_library_sources_ifdef(
     CONFIG_BUILD_ONLY_NO_BLOBS
     src/blob_stubs_module.c
