@@ -1,2 +1,6 @@
+# The OSD32MP15x is an Octavo Systems System-in-Package built on an STMicroelectronics STM32MP15x
+# die. The package adds components such as EEPROM and a PMIC, which are described in the
+# devicetree of the boards using it, so it needs no SoC configuration of its own.
 socs:
   - name: osd32mp15x
+    base: stm32mp157cxx
