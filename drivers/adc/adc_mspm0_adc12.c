@@ -28,20 +28,20 @@ LOG_MODULE_REGISTER(adc_mspm0);
 #define ADC_CONTEXT_USES_KERNEL_TIMER
 #include "adc_context.h"
 
-#define ADC_MSPM0_CHANNEL_MAX            (32)
-#define ADC_MSPM0_NUM_SAMPLE_TIMERS      2
-#define ADC_MSPM0_MAX_OVERSAMPLING       7
-#define ADC_MSPM0_RESOLUTION_14          14
-#define ADC_MSPM0_RESOLUTION_12          12
-#define ADC_MSPM0_RESOLUTION_10          10
-#define ADC_MSPM0_RESOLUTION_8           8
-#define ADC_MSPM0_VREF_MULTIPLIER        1000
-#define ADC_MSPM0_SCOMP0                 0
-#define ADC_MSPM0_SCOMP1                 1
-#define ADC_MSPM0_WAKEUP_TIME_NS         5000
-#define ADC_MSPM0_NS_PER_SEC             1000000000
-#define INT_VREF                         BIT(0)
-#define EXT_VREF                         BIT(1)
+#define ADC_MSPM0_CHANNEL_MAX       (32)
+#define ADC_MSPM0_NUM_SAMPLE_TIMERS 2
+#define ADC_MSPM0_MAX_OVERSAMPLING  7
+#define ADC_MSPM0_RESOLUTION_14     14
+#define ADC_MSPM0_RESOLUTION_12     12
+#define ADC_MSPM0_RESOLUTION_10     10
+#define ADC_MSPM0_RESOLUTION_8      8
+#define ADC_MSPM0_VREF_MULTIPLIER   1000
+#define ADC_MSPM0_SCOMP0            0
+#define ADC_MSPM0_SCOMP1            1
+#define ADC_MSPM0_WAKEUP_TIME_NS    5000
+#define ADC_MSPM0_NS_PER_SEC        1000000000
+#define INT_VREF                    BIT(0)
+#define EXT_VREF                    BIT(1)
 
 /*
  * CPU_INT, GEN_EVENT and DMA_TRIG share this interrupt-controller register
@@ -389,8 +389,8 @@ static void adc_context_start_sampling(struct adc_context *ctx)
 		regs->dma_trig.imask |= memresifg;
 
 		ret = dma_reload(config->dma_dev, config->dma_channel,
-				  data->dma_blk_cfg.source_address, (uintptr_t)data->buffer,
-				  data->dma_blk_cfg.block_size);
+				 data->dma_blk_cfg.source_address, (uintptr_t)data->buffer,
+				 data->dma_blk_cfg.block_size);
 		if (ret == 0) {
 			ret = dma_start(config->dma_dev, config->dma_channel);
 		}
@@ -503,14 +503,13 @@ static int adc_mspm0_channel_setup(const struct device *dev,
 	int sampling_time;
 	int ret = 0;
 
-	if ((ch >= config->num_channels) ||
-	    (channel_cfg->differential) ||
+	if ((ch >= config->num_channels) || (channel_cfg->differential) ||
 	    (channel_cfg->gain != ADC_GAIN_1)) {
 		return -EINVAL;
 	}
 
-	sampling_time = adc_mspm0_validate_sampling_time(dev->config,
-							 channel_cfg->acquisition_time);
+	sampling_time =
+		adc_mspm0_validate_sampling_time(dev->config, channel_cfg->acquisition_time);
 	if (sampling_time < 0) {
 		return sampling_time;
 	}
@@ -692,9 +691,8 @@ static int adc_mspm0_config_sequence(const struct device *dev, const struct adc_
 		ADC12_CTL1_CONSEQ_VAL_SEQUENCE | ADC12_CTL1_SAMPMODE_VAL_AUTO |
 		ADC12_CTL1_TRIGSRC_VAL_SOFTWARE;
 
-	regs->ctl2 = (regs->ctl2 &
-		      ~(ADC12_CTL2_ENDADD | ADC12_CTL2_STARTADD | ADC12_CTL2_RES | ADC12_CTL2_DF |
-			ADC12_CTL2_SAMPCNT | ADC12_CTL2_DMAEN)) |
+	regs->ctl2 = (regs->ctl2 & ~(ADC12_CTL2_ENDADD | ADC12_CTL2_STARTADD | ADC12_CTL2_RES |
+				     ADC12_CTL2_DF | ADC12_CTL2_SAMPCNT | ADC12_CTL2_DMAEN)) |
 		     ADC12_CTL2_STARTADD_VAL_ADDR_00 |
 		     FIELD_PREP(ADC12_CTL2_ENDADD, data->channel_eoc) | resolution |
 		     ADC12_CTL2_DF_VAL_UNSIGNED;
@@ -702,8 +700,8 @@ static int adc_mspm0_config_sequence(const struct device *dev, const struct adc_
 #ifdef CONFIG_ADC_MSPM0_ADC12_DMA
 	if (data->dma_ready) {
 		data->dma_blk_cfg.block_size = (data->channel_eoc + 1) * sizeof(uint32_t);
-		regs->ctl2 |= FIELD_PREP(ADC12_CTL2_SAMPCNT, data->channel_eoc + 1) |
-			      ADC12_CTL2_DMAEN;
+		regs->ctl2 |=
+			FIELD_PREP(ADC12_CTL2_SAMPCNT, data->channel_eoc + 1) | ADC12_CTL2_DMAEN;
 	}
 #endif
 
@@ -854,7 +852,7 @@ static int adc_mspm0_init(const struct device *dev)
 			.head_block = &data->dma_blk_cfg,
 		};
 		data->dma_blk_cfg.source_address = (uintptr_t)regs + ADC12_ALIAS_OFFSET +
-						    offsetof(struct adc_mspm0_regs, memres);
+						   offsetof(struct adc_mspm0_regs, memres);
 		data->dma_blk_cfg.dest_address = data->dma_blk_cfg.source_address;
 		data->dma_blk_cfg.source_addr_adj = DMA_ADDR_ADJ_INCREMENT;
 		data->dma_blk_cfg.dest_addr_adj = DMA_ADDR_ADJ_INCREMENT;
@@ -873,9 +871,9 @@ static int adc_mspm0_init(const struct device *dev)
 	return 0;
 }
 
-#define MSPM0_ADC_VREF_MV(index)								   \
+#define MSPM0_ADC_VREF_MV(index)                                                                   \
 	COND_CODE_1(DT_INST_NODE_HAS_PROP(index, vref),						   \
-		    (DT_PROP(DT_PHANDLE(DT_DRV_INST(index), vref), regulator_uv) / 1000), (0))	   \
+		    (DT_PROP(DT_PHANDLE(DT_DRV_INST(index), vref), regulator_uv) / 1000), (0))
 
 #define MSPM0_ADC_VREF(index) | MSPM0_ADC_VREF_MV(index)
 
@@ -883,8 +881,7 @@ static DEVICE_API(adc, mspm0_driver_api) = {
 	.channel_setup = adc_mspm0_channel_setup,
 	.read = adc_mspm0_read,
 	.ref_internal = (0 DT_INST_FOREACH_STATUS_OKAY(MSPM0_ADC_VREF)),
-	IF_ENABLED(CONFIG_ADC_ASYNC, (.read_async = adc_mspm0_read_async,))
-};
+	IF_ENABLED(CONFIG_ADC_ASYNC, (.read_async = adc_mspm0_read_async,)) };
 
 #define ADC_CLOCK_DIV(x)    DT_INST_PROP(x, ti_clk_divider)
 #define ADC_DT_CLOCK_DIV(x) _CONCAT(ADC12_CTL0_SCLKDIV_VAL_DIV_BY_, ADC_CLOCK_DIV(x))
@@ -900,6 +897,7 @@ static DEVICE_API(adc, mspm0_driver_api) = {
 	 : (DT_INST_CLOCKS_CELL(x, clk) == MSPM0_CLOCK_HFCLK)  ? ADC12_CLKCFG_SAMPCLK_VAL_HFCLK    \
 							       : -1)
 
+/* clang-format off */
 #define MSPM0_ADC_INIT(index)                                                                      \
                                                                                                    \
 	PINCTRL_DT_INST_DEFINE(index);                                                             \
@@ -915,11 +913,11 @@ static DEVICE_API(adc, mspm0_driver_api) = {
 		IRQ_CONNECT(DT_INST_IRQN(index), DT_INST_IRQ(index, priority), adc_mspm0_isr,      \
 			    DEVICE_DT_INST_GET(index), 0);                                         \
 		irq_enable(DT_INST_IRQN(index));                                                   \
-	}											   \
+	}                                                                                          \
 	static const struct mspm0_sys_clock mspm0_adc_sys_clock##index =                           \
-						MSPM0_CLOCK_SUBSYS_FN(index);			   \
+		MSPM0_CLOCK_SUBSYS_FN(index);                                                      \
                                                                                                    \
-	struct adc_mspm0_channel_cfg								   \
+	struct adc_mspm0_channel_cfg                                                               \
 		adc_mspm0_channel_cfg_##index[DT_INST_PROP(index, ti_num_channels)];               \
                                                                                                    \
 	static const struct adc_mspm0_cfg adc_mspm0_cfg_##index = {                                \
@@ -935,14 +933,13 @@ static DEVICE_API(adc, mspm0_driver_api) = {
 		.auto_pwdn = DT_INST_PROP_OR(index, auto_powerdown, false),                        \
 		COND_CODE_1(DT_INST_NODE_HAS_PROP(index, vref),					   \
 		(.vref_config = DEVICE_DT_GET(DT_PHANDLE(DT_DRV_INST(index), vref)),),		   \
-		(.vref_config = NULL,))							   \
-		IF_ENABLED(CONFIG_ADC_MSPM0_ADC12_DMA,						   \
+		(.vref_config = NULL,))								   \
+				 IF_ENABLED(CONFIG_ADC_MSPM0_ADC12_DMA,				   \
 		(COND_CODE_1(DT_INST_NODE_HAS_PROP(index, dmas),				   \
 		(.dma_dev = DEVICE_DT_GET(DT_INST_DMAS_CTLR_BY_IDX(index, 0)),			   \
 		 .dma_channel = DT_INST_DMAS_CELL_BY_IDX(index, 0, channel),			   \
 		 .dma_slot = DT_INST_DMAS_CELL_BY_IDX(index, 0, trigger),),			   \
-		(.dma_dev = NULL,))))								   \
-	};											   \
+		(.dma_dev = NULL,)))) };							   \
 	static struct adc_mspm0_data adc_mspm0_data_##index = {                                    \
 		ADC_CONTEXT_INIT_TIMER(adc_mspm0_data_##index, ctx),                               \
 		ADC_CONTEXT_INIT_LOCK(adc_mspm0_data_##index, ctx),                                \
@@ -951,6 +948,7 @@ static DEVICE_API(adc, mspm0_driver_api) = {
 	};                                                                                         \
 	DEVICE_DT_INST_DEFINE(index, &adc_mspm0_init, NULL, &adc_mspm0_data_##index,               \
 			      &adc_mspm0_cfg_##index, POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,       \
-			      &mspm0_driver_api);						   \
+			      &mspm0_driver_api);
+/* clang-format on */
 
 DT_INST_FOREACH_STATUS_OKAY(MSPM0_ADC_INIT)
