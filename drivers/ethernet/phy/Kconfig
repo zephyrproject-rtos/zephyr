@@ -135,6 +135,16 @@ config PHY_REALTEK_RTL8211F
 	help
 	  Enable Realtek RTL8211F Ethernet PHY Driver
 
+config PHY_REALTEK_RTL8211F_FORCE_MASTER
+	bool "Force 1000BASE-T master role"
+	depends on PHY_REALTEK_RTL8211F
+	help
+	  Force a fixed 1000BASE-T master role instead of automatic
+	  master/slave resolution. Only for a fixed point-to-point link
+	  where auto-negotiation fails to converge and the link flaps. Do
+	  NOT enable it when the link partner may also be forced to master,
+	  as that prevents the gigabit link from coming up.
+
 config PHY_QUALCOMM_AR8031
 	bool "Qualcomm Atheros AR8031 Ethernet PHY Driver"
 	default y
