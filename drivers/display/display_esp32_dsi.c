@@ -27,6 +27,18 @@ LOG_MODULE_REGISTER(display_esp32_dsi, CONFIG_DISPLAY_LOG_LEVEL);
 
 #define DISPLAY_ESP32_DSI_GDMA_CLK_TIMEOUT_US 1000
 
+/* A caller that renders into its own frames alternates between them, so each
+ * one needs a link list item of its own. Rewriting a single shared item points
+ * the scanout at the next frame while the panel is still reading the previous
+ * one, which tears the picture across the seam.
+ */
+#define DISPLAY_ESP32_DSI_EXT_FB_NUM 2
+
+/* How long a write waits for the frame it is about to reuse to leave the
+ * screen. A frame takes about 17 ms at 60 Hz, so this covers several.
+ */
+#define DISPLAY_ESP32_DSI_FRAME_WAIT_MS 100
+
 struct display_esp32_dsi_config {
 	const struct device *panel;
 	uint8_t dma_channel;
@@ -41,7 +53,10 @@ struct display_esp32_dsi_config {
 struct display_esp32_dsi_data {
 	const struct device *dev;
 	uint8_t dma_channel;
-	uint8_t *fb[CONFIG_DISPLAY_ESP32_DSI_FB_NUM];
+	/* Sized to at least one because a zero length array is not portable.
+	 * The slot is unused when the driver owns no framebuffer.
+	 */
+	uint8_t *fb[MAX(CONFIG_DISPLAY_ESP32_DSI_FB_NUM, 1)];
 	uint32_t fb_size;
 	uint8_t fb_count;
 	uint8_t bytes_per_pixel;
@@ -58,12 +73,13 @@ struct display_esp32_dsi_data {
 	atomic_t frame_count;
 	uint8_t active_fb;
 	int8_t pending_fb;
-	uint8_t *ext_fb;
+	uint8_t *ext_fb[DISPLAY_ESP32_DSI_EXT_FB_NUM];
+	bool scanout_armed;
 	struct k_sem frame_sem;
 	display_event_cb_t event_cb;
 	void *event_user_data;
 	uint32_t event_mask;
-	dw_gdma_link_list_item_t lli[CONFIG_DISPLAY_ESP32_DSI_FB_NUM + 1]
+	dw_gdma_link_list_item_t lli[CONFIG_DISPLAY_ESP32_DSI_FB_NUM + DISPLAY_ESP32_DSI_EXT_FB_NUM]
 		__aligned(DW_GDMA_LL_LINK_LIST_ALIGNMENT);
 };
 
@@ -118,11 +134,59 @@ static int8_t display_esp32_dsi_index_of(struct display_esp32_dsi_data *data, co
 	return -1;
 }
 
+static int8_t display_esp32_dsi_ext_index_of(struct display_esp32_dsi_data *data, const void *buf)
+{
+	for (uint8_t i = 0; i < DISPLAY_ESP32_DSI_EXT_FB_NUM; i++) {
+		if (buf == data->ext_fb[i]) {
+			return (int8_t)(data->fb_count + i);
+		}
+	}
+
+	return -1;
+}
+
+static int8_t display_esp32_dsi_ext_claim(struct display_esp32_dsi_data *data, const void *buf)
+{
+	int8_t index = display_esp32_dsi_ext_index_of(data, buf);
+
+	if (index >= 0) {
+		return index;
+	}
+
+	for (uint8_t i = 0; i < DISPLAY_ESP32_DSI_EXT_FB_NUM; i++) {
+		if (data->ext_fb[i] == NULL) {
+			data->ext_fb[i] = (uint8_t *)buf;
+			return (int8_t)(data->fb_count + i);
+		}
+	}
+
+	return -1;
+}
+
 static void display_esp32_dsi_present(struct display_esp32_dsi_data *data, int8_t index)
 {
 	k_spinlock_key_t key = k_spin_lock(&data->lock);
+	bool arm = (data->fb_count == 0U) && !data->scanout_armed;
 
-	data->pending_fb = index;
+	if (arm) {
+		data->scanout_armed = true;
+		data->active_fb = (uint8_t)index;
+		data->pending_fb = -1;
+
+		/* First frame with no framebuffer of its own: the completion
+		 * interrupt chains every later one, but this transfer has to
+		 * be started here. Starting it under the lock keeps a stop
+		 * that aborts the channel from landing in between.
+		 */
+		dw_gdma_dev_t *dma = DW_GDMA_LL_GET_HW(0);
+		uint8_t ch = data->dma_channel;
+
+		dw_gdma_ll_channel_set_link_list_head_addr(dma, ch, (uint32_t)&data->lli[index]);
+		dw_gdma_ll_channel_enable(dma, ch, true);
+	} else {
+		data->pending_fb = index;
+	}
+
 	k_spin_unlock(&data->lock, key);
 }
 
@@ -138,8 +202,8 @@ static int display_esp32_dsi_wait_buffer_free(struct display_esp32_dsi_data *dat
 		}
 	}
 
-	if (index < 0 && buf == data->ext_fb) {
-		index = (int8_t)data->fb_count;
+	if (index < 0) {
+		index = display_esp32_dsi_ext_index_of(data, buf);
 	}
 
 	if (index < 0) {
@@ -239,6 +303,30 @@ static void display_esp32_dsi_dma_isr(void *arg)
 	}
 }
 
+static void display_esp32_dsi_describe_lli(struct display_esp32_dsi_data *data,
+					   dw_gdma_link_list_item_t *lli)
+{
+	memset(lli, 0, sizeof(*lli));
+
+	dw_gdma_ll_lli_set_src_burst_mode(lli, DW_GDMA_BURST_MODE_INCREMENT);
+	dw_gdma_ll_lli_set_src_trans_width(lli, DW_GDMA_TRANS_WIDTH_64);
+	dw_gdma_ll_lli_set_src_burst_items(lli, DW_GDMA_BURST_ITEMS_512);
+	dw_gdma_ll_lli_set_src_burst_len(lli, 16);
+
+	dw_gdma_ll_lli_set_dst_addr(lli, MIPI_DSI_BRG_MEM_BASE);
+	dw_gdma_ll_lli_set_dst_master_port(lli, MIPI_DSI_BRG_MEM_BASE);
+	dw_gdma_ll_lli_set_dst_burst_mode(lli, DW_GDMA_BURST_MODE_FIXED);
+	dw_gdma_ll_lli_set_dst_trans_width(lli, DW_GDMA_TRANS_WIDTH_64);
+	dw_gdma_ll_lli_set_dst_burst_items(lli, DW_GDMA_BURST_ITEMS_256);
+	dw_gdma_ll_lli_set_dst_burst_len(lli, 16);
+
+	dw_gdma_ll_lli_set_trans_block_size(lli, data->fb_size / 8);
+
+	dw_gdma_ll_lli_set_block_markers(lli, true, true, true);
+	dw_gdma_ll_lli_set_next_item_addr(lli, 0);
+	dw_gdma_ll_lli_set_link_list_master_port(lli, DW_GDMA_LL_MASTER_PORT_MEMORY);
+}
+
 static int display_esp32_dsi_dma_setup(const struct device *dev)
 {
 	const struct display_esp32_dsi_config *config = dev->config;
@@ -277,39 +365,29 @@ static int display_esp32_dsi_dma_setup(const struct device *dev)
 	for (uint8_t i = 0; i < data->fb_count; i++) {
 		dw_gdma_link_list_item_t *lli = &data->lli[i];
 
-		memset(lli, 0, sizeof(*lli));
+		display_esp32_dsi_describe_lli(data, lli);
 
 		dw_gdma_ll_lli_set_src_addr(lli, (uint32_t)data->fb[i]);
 		dw_gdma_ll_lli_set_src_master_port(lli, (intptr_t)data->fb[i]);
-		dw_gdma_ll_lli_set_src_burst_mode(lli, DW_GDMA_BURST_MODE_INCREMENT);
-		dw_gdma_ll_lli_set_src_trans_width(lli, DW_GDMA_TRANS_WIDTH_64);
-		dw_gdma_ll_lli_set_src_burst_items(lli, DW_GDMA_BURST_ITEMS_512);
-		dw_gdma_ll_lli_set_src_burst_len(lli, 16);
-
-		dw_gdma_ll_lli_set_dst_addr(lli, MIPI_DSI_BRG_MEM_BASE);
-		dw_gdma_ll_lli_set_dst_master_port(lli, MIPI_DSI_BRG_MEM_BASE);
-		dw_gdma_ll_lli_set_dst_burst_mode(lli, DW_GDMA_BURST_MODE_FIXED);
-		dw_gdma_ll_lli_set_dst_trans_width(lli, DW_GDMA_TRANS_WIDTH_64);
-		dw_gdma_ll_lli_set_dst_burst_items(lli, DW_GDMA_BURST_ITEMS_256);
-		dw_gdma_ll_lli_set_dst_burst_len(lli, 16);
-
-		dw_gdma_ll_lli_set_trans_block_size(lli, data->fb_size / 8);
-
-		dw_gdma_ll_lli_set_block_markers(lli, true, true, true);
-		dw_gdma_ll_lli_set_next_item_addr(lli, 0);
-		dw_gdma_ll_lli_set_link_list_master_port(lli, DW_GDMA_LL_MASTER_PORT_MEMORY);
 	}
 
-	/* The spare item is re-pointed at a caller-owned frame when one is
-	 * presented, so it starts as a copy of the first framebuffer's item.
+	/* Each spare item is re-pointed at one caller owned frame when it is
+	 * presented, so they start as copies of a framebuffer item. Owning no
+	 * framebuffer there is nothing to copy, and nothing to scan out either
+	 * until the first frame arrives.
 	 */
-	memcpy(&data->lli[data->fb_count], &data->lli[0], sizeof(data->lli[0]));
+	for (uint8_t i = 0; i < DISPLAY_ESP32_DSI_EXT_FB_NUM; i++) {
+		if (data->fb_count > 0U) {
+			memcpy(&data->lli[data->fb_count + i], &data->lli[0], sizeof(data->lli[0]));
+		}
+		data->ext_fb[i] = NULL;
+	}
 
-	sys_cache_data_flush_range(data->lli, sizeof(data->lli[0]) * (data->fb_count + 1));
+	sys_cache_data_flush_range(data->lli, sizeof(data->lli));
 
 	data->active_fb = 0;
 	data->pending_fb = -1;
-	data->ext_fb = NULL;
+	data->scanout_armed = false;
 
 	dw_gdma_ll_channel_enable_intr_generation(dma, ch, UINT32_MAX, true);
 	dw_gdma_ll_channel_enable_intr_propagation(
@@ -333,9 +411,16 @@ static int display_esp32_dsi_dma_setup(const struct device *dev)
 		}
 	}
 
-	dw_gdma_ll_channel_set_link_list_head_addr(dma, ch, (uint32_t)&data->lli[data->active_fb]);
 	dw_gdma_ll_channel_set_link_list_master_port(dma, ch, DW_GDMA_LL_MASTER_PORT_MEMORY);
-	dw_gdma_ll_channel_enable(dma, ch, true);
+
+	/* Owning no framebuffer there is nothing to scan out yet, so the
+	 * channel is armed by the first frame the caller presents.
+	 */
+	if (data->fb_count > 0U) {
+		dw_gdma_ll_channel_set_link_list_head_addr(dma, ch,
+							   (uint32_t)&data->lli[data->active_fb]);
+		dw_gdma_ll_channel_enable(dma, ch, true);
+	}
 
 	LOG_INF("DMA streaming started: %u fb(s), size=%u", data->fb_count, data->fb_size);
 
@@ -513,24 +598,41 @@ static int display_esp32_dsi_write_locked(const struct device *dev, const uint16
 
 	if (x == 0 && y == 0 && write_w == config->width && write_h == config->height &&
 	    desc->pitch == config->width) {
+		dw_gdma_link_list_item_t *lli;
 		int8_t index = display_esp32_dsi_index_of(data, buf);
 
 		/* A caller that renders into its own full-size frame can have it
-		 * scanned out directly, by pointing the spare link list item at
-		 * it instead of copying it into a driver framebuffer.
+		 * scanned out directly, by giving it a link list item of its
+		 * own instead of copying it into a driver framebuffer.
 		 */
 		if (index < 0 && desc->buf_size >= data->fb_size &&
 		    ((uintptr_t)buf % CONFIG_ESP32_CACHE_L2_LINE_SIZE) == 0) {
-			dw_gdma_link_list_item_t *lli = &data->lli[data->fb_count];
+			int8_t ext = display_esp32_dsi_ext_claim(data, buf);
+
+			if (ext < 0) {
+				LOG_ERR("No link list item left for frame %p, at most "
+					"%u caller owned frames are scanned out",
+					buf, DISPLAY_ESP32_DSI_EXT_FB_NUM);
+				return -ENOBUFS;
+			}
+
+			lli = &data->lli[ext];
 
 			sys_cache_data_flush_range((void *)buf, data->fb_size);
 
+			if (data->fb_count == 0U) {
+				display_esp32_dsi_describe_lli(data, lli);
+			}
+
+			/* The item belongs to this frame alone, so the scanout
+			 * keeps reading the frame it is on until the flip moves
+			 * it to this one.
+			 */
 			dw_gdma_ll_lli_set_src_addr(lli, (uint32_t)buf);
 			dw_gdma_ll_lli_set_src_master_port(lli, (intptr_t)buf);
 			sys_cache_data_flush_range(lli, sizeof(*lli));
 
-			data->ext_fb = (uint8_t *)buf;
-			index = (int8_t)data->fb_count;
+			index = ext;
 		}
 
 		if (index >= 0) {
@@ -541,15 +643,24 @@ static int display_esp32_dsi_write_locked(const struct device *dev, const uint16
 			sys_cache_data_flush_range((void *)buf, data->fb_size);
 			display_esp32_dsi_present(data, index);
 
-			if (multi && data->prev_buf != NULL && data->prev_buf != buf) {
-				int err = display_esp32_dsi_wait_buffer_free(data, data->prev_buf,
-									     K_MSEC(100));
+			/* The caller draws the next frame as soon as this call
+			 * returns, and with only its own frames to rotate
+			 * through it comes back to the one before this. Hold it
+			 * here until the panel has finished with that frame,
+			 * otherwise it is drawn into while still being scanned
+			 * out and the picture tears across the seam.
+			 */
+			if (data->prev_buf != NULL && data->prev_buf != buf) {
+				int err = display_esp32_dsi_wait_buffer_free(
+					data, data->prev_buf,
+					K_MSEC(DISPLAY_ESP32_DSI_FRAME_WAIT_MS));
 
 				if (err != 0) {
 					LOG_DBG("Timed out waiting for buffer %p", data->prev_buf);
 					return err;
 				}
 			}
+
 			data->prev_buf = (void *)buf;
 
 			return 0;
@@ -563,6 +674,19 @@ static int display_esp32_dsi_write_locked(const struct device *dev, const uint16
 	}
 
 	if (multi && !data->fb_seeded) {
+		/* The frame before this one may still be on its way out, and
+		 * this one is about to be written into the buffer it left
+		 * behind. Let it finish, otherwise the panel scans a buffer
+		 * that is being redrawn under it.
+		 */
+		int err = display_esp32_dsi_wait_buffer_free(
+			data, fb, K_MSEC(DISPLAY_ESP32_DSI_FRAME_WAIT_MS));
+
+		if (err != 0) {
+			LOG_DBG("Timed out waiting for framebuffer %u", data->draw_fb);
+			return err;
+		}
+
 		if (data->have_last_fb && data->last_fb != data->draw_fb) {
 			memcpy(fb, data->fb[data->last_fb], data->fb_size);
 			sys_cache_data_flush_range(fb, data->fb_size);
@@ -646,7 +770,8 @@ static int display_esp32_dsi_read_locked(const struct device *dev, const uint16_
 	 * driver's framebuffer array.
 	 */
 	key = k_spin_lock(&data->lock);
-	fb = (data->active_fb < data->fb_count) ? data->fb[data->active_fb] : data->ext_fb;
+	fb = (data->active_fb < data->fb_count) ? data->fb[data->active_fb]
+						: data->ext_fb[data->active_fb - data->fb_count];
 	k_spin_unlock(&data->lock, key);
 
 	if (fb == NULL) {
