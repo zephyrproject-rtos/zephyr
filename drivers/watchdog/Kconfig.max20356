@@ -1,0 +1,21 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config WDT_MAX20356
+	bool "MAX20356/MAX20358 watchdog driver"
+	default y
+	depends on DT_HAS_ADI_MAX20356_WATCHDOG_ENABLED
+	depends on MFD_MAX20356_TRIGGER
+	help
+	  Enable the Analog Devices MAX20356/MAX20358 watchdog child driver.
+
+if WDT_MAX20356
+
+config WDT_MAX20356_INIT_PRIORITY
+	int "MAX20356 watchdog init priority"
+	default 90
+	help
+	  Init priority for the MAX20356/MAX20358 watchdog child. Must be greater
+	  than CONFIG_MFD_INIT_PRIORITY so the parent is initialized first.
+
+endif # WDT_MAX20356
