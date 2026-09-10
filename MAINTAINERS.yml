@@ -7667,7 +7667,9 @@ West:
     - libraries.uoscore.oscore_tests
 
 "West project: zcbor":
-  status: odd fixes
+  status: maintained
+  maintainers:
+    - oyvindronningstad
   collaborators:
     - de-nordic
   files:
