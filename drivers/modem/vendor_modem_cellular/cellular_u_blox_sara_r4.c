@@ -93,7 +93,7 @@ static const struct modem_cellular_vendor_config u_blox_sara_r4_vendor = {
                                                                                                    \
 	static struct modem_cellular_data MODEM_CELLULAR_INST_NAME(data, inst);                    \
                                                                                                    \
-	MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst, (gnss_pipe, 3), (user_pipe_0, 4))          \
+	MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst, (gnss_pipe, 3))                            \
                                                                                                    \
 	MODEM_CELLULAR_DEFINE_INSTANCE(inst, &u_blox_sara_r4_vendor)
 
