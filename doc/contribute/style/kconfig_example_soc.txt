@@ -6,13 +6,16 @@
 
 # start-after-here
 
-# This assumes the following soc.yml file:
+# This assumes the following soc.yml file for the vendor "hotel":
 # family:
 #   - name: alpha
 #     series:
 #       - name: foxtrot
 #         socs:
 #           - name: charlie
+
+config SOC_VENDOR_HOTEL_FLASH_PREFETCH
+	bool "Enable flash prefetch"
 
 config SOC_FAMILY_ALPHA_JTAG_LOCK
 	bool "Lock JTAG access"
