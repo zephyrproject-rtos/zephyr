@@ -2168,6 +2168,15 @@ MCUmgr
   :ref:`mcumgr_os_application_info` command now always reports the board target as hardware
   platform; the pre-4.3 board and board revision output is no longer available.
 
+Network Buffers
+===============
+
+* :kconfig:option:`CONFIG_NET_BUF_ALIGNMENT` now only aligns the :c:struct:`net_buf` structures
+  themselves. Configurations that used it to align the data buffers, for example for DMA or cache
+  line requirements, must switch to the new :kconfig:option:`CONFIG_NET_BUF_DATA_ALIGNMENT`, which
+  defaults to :kconfig:option:`CONFIG_DCACHE_LINE_SIZE` when that value is non-zero.
+  (:github:`113026`)
+
 POSIX
 =====
 
