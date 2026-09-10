@@ -1,0 +1,280 @@
+# SPDX-License-Identifier: Apache-2.0
+#
+# AD9523-1 -- 14-output, dual-PLL, SPI-programmed clock generator, modelled as a
+# Zephyr clock controller.
+#
+# The subset of properties here is what the PLL1/PLL2/VCO/output-divider
+# programming path actually consumes.
+#
+# Output clocks are addressed as clock-controller subsystems. The subsystem
+# handle is the output number biased by one -- see AD9523_CLK_OUT() in
+# <zephyr/drivers/clock_control/ad9523.h> -- because output 0 exists and a raw
+# 0 handle would collide with CLOCK_CONTROL_SUBSYS_ALL.
+#
+# PLL2 dividers: set EITHER adi,pll2-m1-freq (the driver derives r2/ndiv/m1 to
+# hit that VCO1 output -- unverified) OR the explicit
+# adi,pll2-{r2-div,ndiv-a-cnt,ndiv-b-cnt,vco-div-m1,vco-div-m2}. A BUILD_ASSERT
+# in the driver rejects setting both, or neither, on one node. The explicit
+# props therefore carry NO binding default -- a default would make
+# DT_NODE_HAS_PROP report them present and defeat that check.
+#
+# INIT LEVEL: unlike most clock providers this driver cannot be PRE_KERNEL_1.
+# It is SPI-attached, and Zephyr SPI controllers initialise at POST_KERNEL
+# (CONFIG_SPI_INIT_PRIORITY). It runs at POST_KERNEL after SPI, and *every
+# consumer of its rates must also be POST_KERNEL or later*.
+#
+# NOT IMPLEMENTED: set_rate, async_on and configure are deliberately absent
+# (left NULL, so the public wrappers return -ENOSYS). Retuning an output divider
+# under a live JESD204 link would break the link, so rates are programmed once.
+
+description: |
+  Analog Devices AD9523-1 dual-PLL clock generator / SYSREF distributor.
+
+  Each used output is described by a child node. Outputs without a child node
+  are parked tristate and powered down by the driver.
+
+compatible: "adi,ad9523-1"
+
+include:
+  - name: spi-device.yaml
+  - name: clock-controller.yaml
+
+properties:
+  "#clock-cells":
+    const: 1
+
+  sync-gpios:
+    type: phandle-array
+    description: |
+      SYNC pin; held asserted it freezes all output dividers. Driver parks it
+      high at init. Optional.
+
+  adi,vcxo-freq:
+    type: int
+    required: true
+    description: VCXO / OSCIN frequency in Hz (the PLL2 reference).
+
+  adi,spi-3wire-enable:
+    type: boolean
+    description: |
+      The SPI bus is 3-wire (bidirectional SDIO, no separate SDO). The driver
+      leaves SDO_ACTIVE clear so the chip returns readback data on SDIO. Must
+      match the board wiring: on a 3-wire board a 4-wire config makes every
+      register readback return zero.
+
+  # ---- PLL1 -------------------------------------------------------------
+
+  adi,pll1-bypass-enable:
+    type: boolean
+    description: |
+      Bypass PLL1 (single-loop mode): the VCXO drives PLL2 directly. PLL1 lock
+      has no meaning in this mode and the driver does not evaluate it.
+
+  adi,refa-r-divider:
+    type: int
+    default: 0
+    description: PLL1 REFA R divider.
+
+  adi,refb-r-divider:
+    type: int
+    default: 0
+    description: PLL1 REFB R divider.
+
+  adi,pll1-feedback-divider:
+    type: int
+    default: 0
+    description: PLL1 feedback (N) divider.
+
+  adi,pll1-charge-pump-current-na:
+    type: int
+    default: 0
+    description: PLL1 charge pump current in nA (quantised to 500 nA steps).
+
+  adi,pll1-loopfilter-rzero:
+    type: int
+    default: 0
+    description: PLL1 loop filter R-zero setting (0-15).
+
+  adi,ref-mode:
+    type: int
+    default: 0
+    description: Raw PLL1 reference-mode selector (register 0x1C bits [6:2]).
+
+  adi,zero-delay-mode-internal-enable:
+    type: boolean
+    description: Enable PLL1 internal zero-delay mode.
+
+  adi,osc-in-feedback-enable:
+    type: boolean
+    description: Route OSCIN into the PLL1 feedback path.
+
+  adi,refa-diff-rcv-enable:
+    type: boolean
+    description: Enable the PLL1 REFA differential receiver.
+
+  adi,refb-diff-rcv-enable:
+    type: boolean
+    description: Enable the PLL1 REFB differential receiver.
+
+  adi,zd-in-diff-enable:
+    type: boolean
+    description: Enable the zero-delay input differential receiver.
+
+  adi,osc-in-diff-enable:
+    type: boolean
+    description: Enable the OSCIN differential receiver.
+
+  adi,refa-cmos-neg-inp-enable:
+    type: boolean
+    description: Enable the REFA CMOS negative-input receiver.
+
+  adi,refb-cmos-neg-inp-enable:
+    type: boolean
+    description: Enable the REFB CMOS negative-input receiver.
+
+  adi,zd-in-cmos-neg-inp-enable:
+    type: boolean
+    description: Enable the zero-delay-input CMOS negative-input receiver.
+
+  adi,osc-in-cmos-neg-inp-enable:
+    type: boolean
+    description: Enable the OSCIN CMOS negative-input receiver.
+
+  # ---- PLL2 -------------------------------------------------------------
+
+  adi,pll2-charge-pump-current-na:
+    type: int
+    default: 0
+    description: PLL2 charge pump current in nA (quantised to 3500 nA steps).
+
+  adi,pll2-freq-doubler-enable:
+    type: boolean
+    description: |
+      Enable the PLL2 reference frequency doubler. Only valid on the explicit
+      divider path; the derive path forces it off.
+
+  adi,pll2-m1-freq:
+    type: int
+    description: |
+      DERIVE PATH. Target VCO1 output frequency in Hz. When set, the driver
+      solves r2/ndiv(a,b)/m1 (doubler off, M2 off) to reach VCO1 = this value
+      with the VCO inside the AD9523-1 2.94-3.1 GHz band, and the explicit
+      adi,pll2-* dividers below must be absent. UNVERIFIED: no reference exists
+      for this solver. No default -- see the header comment.
+
+  adi,pll2-r2-div:
+    type: int
+    description: |
+      EXPLICIT PATH. PLL2 R2 divider (1-31). Set this and the other explicit
+      adi,pll2-* dividers, or set adi,pll2-m1-freq instead -- never both. No
+      default -- see the header comment.
+
+  adi,pll2-ndiv-a-cnt:
+    type: int
+    description: |
+      EXPLICIT PATH. PLL2 feedback N-divider A counter (0-3). NDIV = 4*B + A.
+      No default -- see the header comment.
+
+  adi,pll2-ndiv-b-cnt:
+    type: int
+    description: |
+      EXPLICIT PATH. PLL2 feedback N-divider B counter (0-63). No default --
+      see the header comment.
+
+  adi,pll2-vco-div-m1:
+    type: int
+    description: |
+      EXPLICIT PATH. PLL2 VCO output M1 divider (3-5), feeding VCO1. No default
+      -- see the header comment.
+
+  adi,pll2-vco-div-m2:
+    type: int
+    description: |
+      EXPLICIT PATH. PLL2 VCO output M2 divider (3-5), feeding VCO2. 0 leaves
+      M2 (VCO2) powered down. No default -- see the header comment.
+
+  # ---- PLL2 loop filter -------------------------------------------------
+
+  adi,rpole2:
+    type: int
+    default: 0
+    description: PLL2 loop filter Rpole2 setting (0-7).
+
+  adi,rzero:
+    type: int
+    default: 0
+    description: PLL2 loop filter Rzero setting (0-7).
+
+  adi,cpole1:
+    type: int
+    default: 0
+    description: PLL2 loop filter Cpole1 setting (0-7).
+
+  adi,rzero-bypass-enable:
+    type: boolean
+    description: Bypass the PLL2 loop filter Rzero.
+
+child-binding:
+  description: |
+    One AD9523 clock output. Outputs with no child node are parked tristate and
+    powered down.
+
+  properties:
+    reg:
+      type: array
+      required: true
+      description: Output number, 0-13.
+
+    adi,channel-divider:
+      type: int
+      required: true
+      description: |
+        Output divide ratio (1-1024) applied to this output's VCO source
+        frequency.
+
+    adi,driver-mode:
+      type: int
+      default: 0
+      description: |
+        Output driver mode (register field DRIVER_MODE, 0-15). 0 tristates the
+        output; non-zero selects a logic-level family.
+
+    adi,divider-phase:
+      type: int
+      default: 0
+      description: Output divider phase offset in VCO cycles (0-63).
+
+    adi,extended-name:
+      type: string
+      description: |
+        Descriptive name for this output, used in the driver's log lines.
+        Prefer the net name from the board schematic, e.g. "ADC_CLK".
+
+    adi,use-alt-clock-src:
+      type: boolean
+      description: |
+        Route this output from the alternate VCO source (VCXO for outputs 0-3,
+        VCO2/M2 for outputs 4-9) rather than the default VCO1/M1.
+
+    adi,output-dis:
+      type: boolean
+      description: Program this output but leave its distribution stage powered down.
+
+    adi,sync-ignore-enable:
+      type: boolean
+      description: This output ignores chip-level SYNC events.
+
+    adi,low-power-mode-enable:
+      type: boolean
+      description: Run this output's distribution stage in low-power mode.
+
+    adi,divider-output-invert-enable:
+      type: boolean
+      description: Invert this output's divider output.
+
+# Consumers name an output as `clocks = <&ad9523 N>`. N is the raw output
+# number 0-13, not the clock_control subsystem handle -- see AD9523_CLK_OUT()
+# in <zephyr/drivers/clock_control/ad9523.h>, which biases it by one because
+# output 0 exists and a raw 0 handle would collide with CLOCK_CONTROL_SUBSYS_ALL.
+clock-cells:
+  - output
