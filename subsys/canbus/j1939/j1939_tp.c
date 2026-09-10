@@ -50,10 +50,6 @@ K_MEM_SLAB_DEFINE_STATIC(j1939_tp_max_slab, CONFIG_J1939TP_BUFFER_MAX_SIZE,
 			 CONFIG_J1939TP_NUM_MAX_BUFFERS, 4);
 #endif
 
-#define J1939TP_NUM_ALL_BUFFERS                                                      \
-	(CONFIG_J1939TP_NUM_SMALL_BUFFERS + CONFIG_J1939TP_NUM_MEDIUM_BUFFERS +          \
-	 CONFIG_J1939TP_NUM_LARGE_BUFFERS + CONFIG_J1939TP_NUM_MAX_BUFFERS)
-
 /* Maps active allocations to their owning slab so
  * j1939_tp_free_buffer() can find the right slab.
  */
