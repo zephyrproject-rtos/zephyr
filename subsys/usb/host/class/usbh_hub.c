@@ -423,9 +423,11 @@ static int usbh_hub_probe(struct usbh_class_data *const c_data,
 	struct net_buf *buf;
 	int ret;
 
-	ARG_UNUSED(iface);
-
-	if (udev->dev_desc.bDeviceClass != USB_BCC_HUB) {
+	/*
+	 * A hub is a single function device, bind at the device level only so
+	 * that a second instance does not bind to its interface as well.
+	 */
+	if ((iface != USBH_CLASS_IFNUM_DEVICE) || (udev->dev_desc.bDeviceClass != USB_BCC_HUB)) {
 		return -ENOTSUP;
 	}
 
