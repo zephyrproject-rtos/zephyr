@@ -204,6 +204,9 @@ typedef union {
 
 /**
  * @brief Codec error type
+ *
+ * A driver may also set bits above @ref AUDIO_CODEC_ERROR_DC for errors specific to its
+ * device, documented in its own header.
  */
 enum audio_codec_error_type {
 	/** Output over-current */
@@ -227,7 +230,8 @@ enum audio_codec_error_type {
  * @brief Callback for error interrupt
  *
  * @param dev Pointer to the codec device
- * @param errors Device errors (bitmask of @ref audio_codec_error_type values)
+ * @param errors Device errors (bitmask of @ref audio_codec_error_type values, plus any
+ *               device-specific bits above them; ignore the bits you do not know)
  */
 typedef void (*audio_codec_error_callback_t)(const struct device *dev, uint32_t errors);
 
