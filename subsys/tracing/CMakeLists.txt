@@ -37,10 +37,9 @@ if(CONFIG_TRACING_CORE)
     target_sources(native_simulator INTERFACE tracing_backend_posix_bottom.c)
   endif()
 
-  zephyr_sources_ifdef(
-    CONFIG_TRACING_BACKEND_RAM
-    tracing_backend_ram.c
-    )
+  if(CONFIG_TRACING_BACKEND_RAM AND NOT CONFIG_TRACING_CTF_CIRCULAR_RAM)
+    zephyr_sources(tracing_backend_ram.c)
+  endif()
 
   zephyr_sources_ifdef(
     CONFIG_TRACING_BACKEND_ADSP_MEMORY_WINDOW
