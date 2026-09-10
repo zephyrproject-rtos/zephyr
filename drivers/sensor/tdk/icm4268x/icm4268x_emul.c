@@ -23,17 +23,6 @@ struct icm4268x_emul_data {
 	uint8_t reg[NUM_REGS];
 };
 
-struct icm4268x_emul_cfg {
-#if defined(CONFIG_CPP)
-       /* Empty struct has size 0 in C, size 1 in C++. Force them to be the same. */
-	uint8_t unused_cpp_size_compatibility;
-#endif
-};
-
-#if defined(CONFIG_CPP)
-BUILD_ASSERT(sizeof(struct icm4268x_emul_cfg) >= 1);
-#endif
-
 void icm4268x_emul_set_reg(const struct emul *target, uint8_t reg_addr, const uint8_t *val,
 			   size_t count)
 {
@@ -417,12 +406,11 @@ static const struct emul_sensor_driver_api icm4268x_emul_sensor_driver_api = {
 };
 
 #define ICM4268X_EMUL_DEFINE(n, api)                                                               \
-	EMUL_DT_INST_DEFINE(n, icm4268x_emul_init, &icm4268x_emul_data_##n,                        \
-			    &icm4268x_emul_cfg_##n, &api, &icm4268x_emul_sensor_driver_api)
+	EMUL_DT_INST_DEFINE(n, icm4268x_emul_init, &icm4268x_emul_data_##n, NULL, &api,            \
+			    &icm4268x_emul_sensor_driver_api)
 
 #define ICM4268X_EMUL_SPI(n)                                                                       \
 	static struct icm4268x_emul_data icm4268x_emul_data_##n;                                   \
-	static const struct icm4268x_emul_cfg icm4268x_emul_cfg_##n;                               \
 	ICM4268X_EMUL_DEFINE(n, icm4268x_emul_spi_api)
 
 DT_INST_FOREACH_STATUS_OKAY(ICM4268X_EMUL_SPI)

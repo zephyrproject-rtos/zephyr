@@ -30,9 +30,6 @@ struct bmm350_emul_data {
 	uint8_t reg[BMM350_EMUL_NUM_REGS];
 };
 
-struct bmm350_emul_cfg {
-};
-
 static void bmm350_emul_reset(const struct emul *target)
 {
 	struct bmm350_emul_data *data = target->data;
@@ -190,9 +187,8 @@ static const struct i2c_emul_api bmm350_emul_api_i2c = {
 };
 
 #define BMM350_EMUL_DEFINE(n)                                                                      \
-	static const struct bmm350_emul_cfg bmm350_emul_cfg_##n;                                   \
 	static struct bmm350_emul_data bmm350_emul_data_##n;                                       \
-	EMUL_DT_INST_DEFINE(n, bmm350_emul_init, &bmm350_emul_data_##n, &bmm350_emul_cfg_##n,      \
+	EMUL_DT_INST_DEFINE(n, bmm350_emul_init, &bmm350_emul_data_##n, NULL,                      \
 			    &bmm350_emul_api_i2c, NULL)
 
 /*
