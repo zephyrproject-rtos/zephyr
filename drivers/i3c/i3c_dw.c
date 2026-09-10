@@ -1011,6 +1011,29 @@ static int get_i3c_addr_pos(const struct device *dev, uint8_t addr, bool sa)
 }
 
 /**
+ * @brief Recover the controller when it is not idle before a submission
+ *
+ * @retval 0 Controller was already idle, or recovery succeeded
+ * @retval -errno Propagated from @ref dw_i3c_recover_bus
+ */
+static int dw_i3c_ensure_xfer_ready(const struct device *dev)
+{
+	const struct dw_i3c_config *config = dev->config;
+	uint32_t present_state = sys_read32(config->regs + PRESENT_STATE);
+	uint32_t cm_tfr_sts = PRESENT_STATE_CM_TFR_STS(present_state);
+
+	if (cm_tfr_sts == CM_TFR_STS_IDLE) {
+		/* Only the transfer state machine matters here: CONTROLLER_IDLE
+		 * additionally requires the queues and data buffers to be empty,
+		 * so it can read 0 with an idle FSM and nothing to recover.
+		 */
+		return 0;
+	}
+
+	return dw_i3c_recover_bus(dev);
+}
+
+/**
  * @brief Transfer messages in I3C mode.
  *
  * @param dev Pointer to device driver instance.
@@ -1059,6 +1082,15 @@ static int dw_i3c_xfers(const struct device *dev, struct i3c_device_desc *target
 	ret = k_mutex_lock(&data->mt, K_MSEC(1000));
 	if (ret) {
 		LOG_ERR("%s: Mutex err (%d)", dev->name, ret);
+		return ret;
+	}
+
+	/* Under the mutex: a concurrent transfer cannot halt the controller
+	 * between this check and the submission below.
+	 */
+	ret = dw_i3c_ensure_xfer_ready(dev);
+	if (ret != 0) {
+		k_mutex_unlock(&data->mt);
 		return ret;
 	}
 
@@ -2262,6 +2294,15 @@ static int dw_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *paylo
 	ret = k_mutex_lock(&data->mt, K_MSEC(1000));
 	if (ret) {
 		LOG_DBG("%s: Mutex err (%d)", dev->name, ret);
+		return ret;
+	}
+
+	/* Under the mutex: a concurrent transfer cannot halt the controller
+	 * between this check and the submission below.
+	 */
+	ret = dw_i3c_ensure_xfer_ready(dev);
+	if (ret != 0) {
+		k_mutex_unlock(&data->mt);
 		return ret;
 	}
 
