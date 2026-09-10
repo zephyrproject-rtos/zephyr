@@ -315,10 +315,10 @@ static void modem_cellular_enter_state_network_or_dial(struct modem_cellular_dat
 {
 	const struct modem_cellular_config *config = data->dev->config;
 
-	if (modem_cellular_has_network_script(config)) {
-		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RUN_NETWORK_SCRIPT);
-	} else if (IS_ENABLED(CONFIG_MODEM_CELLULAR_ON_DEMAND_CONNECT)) {
+	if (IS_ENABLED(CONFIG_MODEM_CELLULAR_ON_DEMAND_CONNECT)) {
 		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_AWAIT_DIAL);
+	} else if (modem_cellular_has_network_script(config)) {
+		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RUN_NETWORK_SCRIPT);
 	} else {
 		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT);
 	}
@@ -804,6 +804,24 @@ static void modem_cellular_stop_timer(struct modem_cellular_data *data)
 	k_work_cancel_delayable(&data->timeout_work);
 }
 
+/* A script result reaches the state machine as a bare event, so a state that
+ * transitions while a script is still running would otherwise consume the
+ * previous state's result as its own. Remember which state started the script
+ * so the dispatcher can tell them apart.
+ */
+static int modem_cellular_run_script(struct modem_cellular_data *data,
+				     const struct modem_chat_script *script)
+{
+	int ret;
+
+	ret = modem_chat_run_script_async(&data->chat, script);
+	if (ret == 0) {
+		data->script_state = data->state;
+	}
+
+	return ret;
+}
+
 static void modem_cellular_timeout_handler(struct k_work *item)
 {
 	struct k_work_delayable *dwork = k_work_delayable_from_work(item);
@@ -1140,7 +1158,7 @@ static void modem_cellular_set_baudrate_event_handler(struct modem_cellular_data
 	switch (evt) {
 	case MODEM_CELLULAR_EVENT_BUS_OPENED:
 		modem_chat_attach(&data->chat, data->uart_pipe);
-		modem_chat_run_script_async(&data->chat, config->vendor->scripts.set_baudrate);
+		modem_cellular_run_script(data, config->vendor->scripts.set_baudrate);
 		break;
 
 	case MODEM_CELLULAR_EVENT_SCRIPT_FAILED:
@@ -1271,7 +1289,7 @@ static void modem_cellular_run_init_script_event_handler(struct modem_cellular_d
 	switch (evt) {
 	case MODEM_CELLULAR_EVENT_BUS_OPENED:
 		modem_chat_attach(&data->chat, data->uart_pipe);
-		modem_chat_run_script_async(&data->chat, config->vendor->scripts.init);
+		modem_cellular_run_script(data, config->vendor->scripts.init);
 		break;
 
 	case MODEM_CELLULAR_EVENT_SCRIPT_SUCCESS:
@@ -1383,7 +1401,7 @@ static void modem_cellular_open_dlci1_event_handler(struct modem_cellular_data *
 	case MODEM_CELLULAR_EVENT_DLCI1_OPENED:
 		if (dlci_script) {
 			modem_chat_attach(&data->chat, data->dlci1_pipe);
-			modem_chat_run_script_async(&data->chat, dlci_script);
+			modem_cellular_run_script(data, dlci_script);
 		} else {
 			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_OPEN_DLCI2);
 		}
@@ -1463,7 +1481,7 @@ static void modem_cellular_open_dlci2_event_handler(struct modem_cellular_data *
 	case MODEM_CELLULAR_EVENT_DLCI2_OPENED:
 		if (dlci_script) {
 			modem_chat_attach(&data->chat, data->dlci2_pipe);
-			modem_chat_run_script_async(&data->chat, dlci_script);
+			modem_cellular_run_script(data, dlci_script);
 		} else {
 			modem_cellular_open_dlci2_next(data);
 		}
@@ -1550,7 +1568,7 @@ static void modem_cellular_run_board_init_script_event_handler(struct modem_cell
 {
 	switch (evt) {
 	case MODEM_CELLULAR_EVENT_TIMEOUT:
-		modem_chat_run_script_async(&data->chat, &data->board_init_script);
+		modem_cellular_run_script(data, &data->board_init_script);
 		break;
 	case MODEM_CELLULAR_EVENT_SCRIPT_SUCCESS:
 		modem_cellular_script_success(data);
@@ -1586,7 +1604,7 @@ static void modem_cellular_run_apn_script_event_handler(struct modem_cellular_da
 	switch (evt) {
 	case MODEM_CELLULAR_EVENT_TIMEOUT:
 		modem_chat_attach(&data->chat, data->dlci1_pipe);
-		modem_chat_run_script_async(&data->chat, &data->apn_script);
+		modem_cellular_run_script(data, &data->apn_script);
 		break;
 	case MODEM_CELLULAR_EVENT_SCRIPT_SUCCESS:
 		modem_cellular_script_success(data);
@@ -1623,10 +1641,16 @@ static void modem_cellular_run_network_script_event_handler(struct modem_cellula
 {
 	const struct modem_cellular_config *config =
 		(const struct modem_cellular_config *)data->dev->config;
+	int ret;
 
 	switch (evt) {
 	case MODEM_CELLULAR_EVENT_TIMEOUT:
-		modem_chat_run_script_async(&data->chat, config->vendor->scripts.network);
+		ret = modem_cellular_run_script(data, config->vendor->scripts.network);
+		if (ret < 0) {
+			LOG_WRN("network script %s, rearming timer",
+				ret == -EBUSY ? "busy" : "failed");
+			modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
+		}
 		break;
 	case MODEM_CELLULAR_EVENT_SCRIPT_FAILED:
 		modem_cellular_script_failed(data);
@@ -1677,7 +1701,11 @@ static void modem_cellular_await_dial_event_handler(struct modem_cellular_data *
 
 	switch (evt) {
 	case MODEM_CELLULAR_EVENT_DIAL:
-		modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT);
+		if (modem_cellular_has_network_script(config)) {
+			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RUN_NETWORK_SCRIPT);
+		} else {
+			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT);
+		}
 		break;
 
 	case MODEM_CELLULAR_EVENT_SCRIPT_SUCCESS:
@@ -1703,7 +1731,7 @@ static void modem_cellular_await_dial_event_handler(struct modem_cellular_data *
 			data->periodic_timeout_skipped = true;
 			break;
 		}
-		modem_chat_run_script_async(&data->chat, config->vendor->scripts.periodic);
+		modem_cellular_run_script(data, config->vendor->scripts.periodic);
 		break;
 
 	case MODEM_CELLULAR_EVENT_PERIODIC_KICK:
@@ -1715,7 +1743,7 @@ static void modem_cellular_await_dial_event_handler(struct modem_cellular_data *
 			break;
 		}
 		data->periodic_timeout_skipped = false;
-		if (modem_chat_run_script_async(&data->chat, config->vendor->scripts.periodic) <
+		if (modem_cellular_run_script(data, config->vendor->scripts.periodic) <
 		    0) {
 			LOG_WRN("periodic kick busy, rearming timer");
 			modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
@@ -1750,10 +1778,16 @@ static void modem_cellular_run_dial_script_event_handler(struct modem_cellular_d
 							 enum modem_cellular_event evt)
 {
 	const struct modem_cellular_config *config = data->dev->config;
+	int ret;
 
 	switch (evt) {
 	case MODEM_CELLULAR_EVENT_TIMEOUT:
-		modem_chat_run_script_async(&data->chat, config->vendor->scripts.dial);
+		ret = modem_cellular_run_script(data, config->vendor->scripts.dial);
+		if (ret < 0) {
+			LOG_WRN("dial script %s, rearming timer",
+				ret == -EBUSY ? "busy" : "failed");
+			modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
+		}
 		break;
 	case MODEM_CELLULAR_EVENT_SCRIPT_FAILED:
 		modem_cellular_script_failed(data);
@@ -1795,7 +1829,7 @@ static void modem_cellular_run_dial_script_event_handler(struct modem_cellular_d
 		/* Restart immediately, if we are waiting to retry the dial-script */
 		if (!modem_chat_is_running(&data->chat)) {
 			modem_cellular_stop_timer(data);
-			modem_chat_run_script_async(&data->chat, config->vendor->scripts.dial);
+			modem_cellular_run_script(data, config->vendor->scripts.dial);
 		}
 		break;
 	case MODEM_CELLULAR_EVENT_HANGUP:
@@ -1851,7 +1885,7 @@ static void modem_cellular_await_registered_event_handler(struct modem_cellular_
 			data->periodic_timeout_skipped = true;
 			break;
 		}
-		modem_chat_run_script_async(&data->chat, config->vendor->scripts.periodic);
+		modem_cellular_run_script(data, config->vendor->scripts.periodic);
 		break;
 
 	case MODEM_CELLULAR_EVENT_PERIODIC_KICK:
@@ -1863,7 +1897,7 @@ static void modem_cellular_await_registered_event_handler(struct modem_cellular_
 			break;
 		}
 		data->periodic_timeout_skipped = false;
-		if (modem_chat_run_script_async(&data->chat, config->vendor->scripts.periodic) <
+		if (modem_cellular_run_script(data, config->vendor->scripts.periodic) <
 		    0) {
 			LOG_WRN("periodic kick busy, rearming timer");
 			modem_cellular_start_timer(data, MODEM_CELLULAR_PERIODIC_SCRIPT_TIMEOUT);
@@ -1945,7 +1979,7 @@ static void modem_cellular_registered_event_handler(struct modem_cellular_data *
 			data->periodic_timeout_skipped = true;
 			break;
 		}
-		ret = modem_chat_run_script_async(&data->chat, config->vendor->scripts.periodic);
+		ret = modem_cellular_run_script(data, config->vendor->scripts.periodic);
 		if (ret < 0) {
 			LOG_WRN("periodic %s %s, rearming timer", "timer",
 				ret == -EBUSY ? "busy" : "failed");
@@ -1962,7 +1996,7 @@ static void modem_cellular_registered_event_handler(struct modem_cellular_data *
 			break;
 		}
 		data->periodic_timeout_skipped = false;
-		ret = modem_chat_run_script_async(&data->chat, config->vendor->scripts.periodic);
+		ret = modem_cellular_run_script(data, config->vendor->scripts.periodic);
 		if (ret < 0) {
 			LOG_WRN("periodic %s %s, rearming timer", "kick",
 				ret == -EBUSY ? "busy" : "failed");
@@ -2028,12 +2062,12 @@ static void modem_cellular_await_ppp_dead_event_handler(struct modem_cellular_da
 		modem_cellular_start_timer(data, K_MSEC(config->vendor->reset_pulse_duration_ms));
 		break;
 	case MODEM_CELLULAR_EVENT_TIMEOUT:
-		if (modem_cellular_has_network_script(config) &&
-		    !modem_cellular_is_registered(data)) {
-			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_AWAIT_REGISTERED);
-		} else if (IS_ENABLED(CONFIG_MODEM_CELLULAR_ON_DEMAND_CONNECT) &&
-			   !net_if_is_admin_up(modem_ppp_get_iface(config->ppp))) {
+		if (IS_ENABLED(CONFIG_MODEM_CELLULAR_ON_DEMAND_CONNECT) &&
+		    !net_if_is_admin_up(modem_ppp_get_iface(config->ppp))) {
 			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_AWAIT_DIAL);
+		} else if (modem_cellular_has_network_script(config) &&
+			   !modem_cellular_is_registered(data)) {
+			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_AWAIT_REGISTERED);
 		} else {
 			modem_cellular_enter_state(data, MODEM_CELLULAR_STATE_RUN_DIAL_SCRIPT);
 		}
@@ -2127,7 +2161,7 @@ static int modem_cellular_on_run_shutdown_script_state_enter(struct modem_cellul
 	const struct modem_cellular_config *config = data->dev->config;
 
 	modem_chat_attach(&data->chat, data->cmd_pipe);
-	return modem_chat_run_script_async(&data->chat, config->vendor->scripts.shutdown);
+	return modem_cellular_run_script(data, config->vendor->scripts.shutdown);
 }
 
 static void modem_cellular_run_shutdown_script_event_handler(struct modem_cellular_data *data,
@@ -2415,6 +2449,15 @@ static void modem_cellular_event_handler(struct modem_cellular_data *data,
 	state = data->state;
 
 	modem_cellular_log_event(evt);
+
+	if ((evt == MODEM_CELLULAR_EVENT_SCRIPT_SUCCESS ||
+	     evt == MODEM_CELLULAR_EVENT_SCRIPT_FAILED) &&
+	    data->script_state != data->state) {
+		LOG_DBG("script result from %s dropped in %s",
+			modem_cellular_state_str(data->script_state),
+			modem_cellular_state_str(data->state));
+		return;
+	}
 
 	switch (data->state) {
 	case MODEM_CELLULAR_STATE_IDLE:
@@ -2976,18 +3019,6 @@ int modem_cellular_init(const struct device *dev)
 
 	__ASSERT_NO_MSG(config->vendor->scripts.init != NULL);
 	__ASSERT_NO_MSG(config->vendor->scripts.dial != NULL);
-
-	/* On-demand connect drives the dial off the PPP interface admin state. A
-	 * modem whose vendor configuration provides a network chat script instead
-	 * waits for registration and dials as soon as it registers, ignoring that
-	 * state, so the data call would come up unprompted regardless of the
-	 * option. Reject the combination here rather than dial unexpectedly.
-	 */
-	if (IS_ENABLED(CONFIG_MODEM_CELLULAR_ON_DEMAND_CONNECT) &&
-	    modem_cellular_has_network_script(config)) {
-		LOG_ERR("on-demand connect is unsupported by modems with a network chat script");
-		return -ENOTSUP;
-	}
 
 	k_mutex_init(&data->api_lock);
 	k_work_init_delayable(&data->timeout_work, modem_cellular_timeout_handler);

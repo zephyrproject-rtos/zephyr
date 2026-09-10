@@ -150,14 +150,15 @@ static void dlci1_respond(const char *line)
 	} else if (strcmp(line, "AT+CSQ") == 0) {
 		atomic_inc(&csq_count);
 		dce_send(dce_dlci1_pipe, "+CSQ: 20,99\r\nOK\r\n");
-	} else if (strcmp(line, "AT+CEREG?") == 0 && atomic_get(&emu_registered)) {
-		/* <n>,<stat> with stat 1: registered, home LTE network. The driver
-		 * picks this up through its unsolicited +CEREG match and raises
-		 * MODEM_CELLULAR_EVENT_REGISTERED.
-		 */
-		dce_send(dce_dlci1_pipe, "+CEREG: 1,1\r\nOK\r\n");
+	} else if (strcmp(line, "AT+CEREG?") == 0) {
+		/* <n>,<stat>: stat 1 registered on the home LTE network, stat 0 not. */
+		if (atomic_get(&emu_registered)) {
+			dce_send(dce_dlci1_pipe, "+CEREG: 1,1\r\nOK\r\n");
+		} else {
+			dce_send(dce_dlci1_pipe, "+CEREG: 1,0\r\nOK\r\n");
+		}
 	} else {
-		/* AT+CREG?, AT+CEREG?, AT+CGREG?, AT+QENG="servingcell" */
+		/* AT+CREG?, AT+CGREG?, AT+QENG="servingcell" */
 		dce_send(dce_dlci1_pipe, "OK\r\n");
 	}
 }
@@ -521,6 +522,11 @@ static void *common_setup(void)
 	k_mutex_init(&pump_lock);
 	k_event_init(&emu_events);
 
+	/* The driver dials only once registered, so the emulated modem reports
+	 * registration unless a test withholds it.
+	 */
+	atomic_set(&emu_registered, 1);
+
 	zassert_true(device_is_ready(modem), "modem device not ready");
 	zassert_true(device_is_ready(modem_uart), "emulated UART not ready");
 
@@ -842,6 +848,29 @@ ZTEST(cellular_on_demand_connect, test_08_periodic_survives_pause_resume_while_p
 	zassert_equal(MODEM_CELLULAR_STATE_AWAIT_DIAL, modem_fsm_state(),
 		      "periodic activity moved the FSM out of AWAIT_DIAL, state is %d",
 		      modem_fsm_state());
+}
+
+/* Admitting the interface must not dial until the module reports registration. */
+ZTEST(cellular_on_demand_connect, test_09_dial_waits_for_registration)
+{
+	int dials;
+	int csq;
+
+	park_in_await_dial();
+	atomic_set(&emu_registered, 0);
+	csq = atomic_get(&csq_count);
+	zassert_true(wait_for_csq(csq + 1, 4 * CONFIG_MODEM_CELLULAR_PERIODIC_SCRIPT_MS),
+		     "periodic script did not poll while parked");
+	dials = atomic_get(&atd_count);
+
+	admit_iface();
+	k_msleep(3 * CONFIG_MODEM_CELLULAR_PERIODIC_SCRIPT_MS);
+	zassert_equal(dials, atomic_get(&atd_count),
+		      "modem dialled before registering, state is %d", modem_fsm_state());
+
+	atomic_set(&emu_registered, 1);
+	zassert_true(wait_for_atd(dials + 1, 20000),
+		     "registration did not release the dial, state is %d", modem_fsm_state());
 }
 
 static void *suite_setup(void)

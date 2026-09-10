@@ -181,6 +181,8 @@ struct modem_cellular_data {
 #endif
 
 	enum modem_cellular_state state;
+	/** State that started the currently running chat script */
+	enum modem_cellular_state script_state;
 	const struct device *dev;
 	struct k_work_delayable timeout_work;
 
