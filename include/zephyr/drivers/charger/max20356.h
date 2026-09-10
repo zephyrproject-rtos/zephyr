@@ -7,6 +7,12 @@
 #ifndef ZEPHYR_INCLUDE_DRIVERS_CHARGER_MAX20356_H_
 #define ZEPHYR_INCLUDE_DRIVERS_CHARGER_MAX20356_H_
 
+/**
+ * @file
+ * @ingroup charger_interface_max20356
+ * @brief ADI MAX20356 PMIC charger driver custom properties.
+ */
+
 #include <zephyr/drivers/charger.h>
 
 #ifdef __cplusplus
@@ -14,10 +20,9 @@ extern "C" {
 #endif
 
 /**
- * @file max20356.h
- * @brief ADI MAX20356 PMIC charger driver custom properties
  * @defgroup charger_interface_max20356 MAX20356 Charger interface
  * @ingroup charger_interface_ext
+ * @brief Custom charger properties for the ADI MAX20356 PMIC.
  * @{
  */
 
