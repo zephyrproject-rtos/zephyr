@@ -2127,6 +2127,17 @@ LoRaWAN
   Absent records retain the backend's initial state. Existing record names and
   serialized context formats are unchanged.
 
+* The native LoRaWAN backend now supports :kconfig:option:`CONFIG_LORAWAN_NVM_SETTINGS`
+  with :kconfig:option:`CONFIG_SETTINGS_NVS`. The existing NVM choice defaults to
+  Settings when available, so native applications enabling Settings with NVS now
+  use stack-managed DevNonce and ignore ``otaa.dev_nonce``. Select
+  :kconfig:option:`CONFIG_LORAWAN_NVM_NONE` explicitly to retain application-managed
+  nonces. Before switching an existing device to managed nonces, migrate its next
+  unused nonce to ``lorawan/native/dev_nonce`` as a four-byte little-endian value,
+  or provision a new device identity and key. Native NVM persists DevNonce only,
+  not the session.
+
+
 * The native LoRaWAN backend
   (:kconfig:option:`CONFIG_LORA_MODULE_BACKEND_NATIVE`) now requires
   :c:func:`lorawan_start` before the following runtime configuration APIs are

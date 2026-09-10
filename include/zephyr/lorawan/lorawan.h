@@ -130,8 +130,10 @@ struct lorawan_join_otaa {
 	 * Device Nonce
 	 *
 	 * Starting with LoRaWAN 1.0.4 the DevNonce must be monotonically
-	 * increasing for each OTAA join with the same EUI. The DevNonce
-	 * should be stored in non-volatile memory by the application.
+	 * increasing for each OTAA join with the same EUI. With
+	 * CONFIG_LORAWAN_NVM_NONE, the application must persist this value
+	 * before each join attempt. With CONFIG_LORAWAN_NVM_SETTINGS, the
+	 * stack manages DevNonce and ignores this field.
 	 */
 	uint16_t dev_nonce;
 };
