@@ -1,0 +1,29 @@
+# Copyright (c) 2026 Analog Devices, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Analog Devices MAX20356/MAX20358 PMIC watchdog.
+
+  Child node of the MAX20356 MFD parent. Exposes the standard Zephyr watchdog
+  API.
+
+  The watchdog is fed by reading the shared Int5 register, so it must own the
+  parent's INTB path exclusively: it cannot be armed while any INTB event consumer
+  is active, and no consumer can register an interrupt callback while it is armed.
+  Registration is refused with -EBUSY in either direction.
+
+compatible: "adi,max20356-watchdog"
+
+include: base.yaml
+
+properties:
+  adi,lock-enable:
+    type: boolean
+    description: |
+      Password-lock handling for the WDCntl register (guarded by LockMsk3.WDLck).
+      When set the driver wraps every WDCntl write in the LockMsk/LockUnlock
+      password sequence, so a watchdog left in its OTP-locked state stays writable
+      through that sequence. When unset (default) WDCntl is written directly,
+      skipping the password sequence; this requires the register to already be
+      unlocked in hardware (the driver does not issue an unlock), otherwise the
+      writes are dropped by the chip.
