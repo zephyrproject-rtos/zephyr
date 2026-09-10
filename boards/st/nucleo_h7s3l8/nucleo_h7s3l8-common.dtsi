@@ -260,3 +260,11 @@ zephyr_udc0: &usbotg_hs {
 	 */
 	status = "okay";
 };
+
+&cryp {
+	status = "okay";
+};
+
+&hash {
+	status = "okay";
+};
