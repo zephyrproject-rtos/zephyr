@@ -491,46 +491,6 @@ struct usb_device *usbh_device_get_root(struct usbh_context *const ctx)
 	return ctx->root;
 }
 
-void usbh_device_connect(struct usbh_context *const ctx,
-			 struct usb_device *const udev)
-{
-	int err;
-
-	LOG_DBG("Device connected event");
-
-	udev->state = USB_STATE_DEFAULT;
-
-	if (ctx->root == NULL) {
-		ctx->root = udev;
-	}
-
-	err = usbh_device_init(udev);
-	if (err != 0) {
-		LOG_ERR("Failed to init new USB device");
-		if (usbh_device_is_root(ctx, udev)) {
-			ctx->root = NULL;
-		}
-
-		usbh_device_free(udev);
-		return;
-	}
-
-	usbh_class_probe_device(udev);
-}
-
-void usbh_device_disconnect(struct usbh_context *ctx, struct usb_device *udev)
-{
-	usbh_class_remove_all(udev);
-
-	if (usbh_device_is_root(ctx, udev)) {
-		ctx->root = NULL;
-	}
-
-	usbh_device_free(udev);
-
-	LOG_DBG("Device removed");
-}
-
 int usbh_device_init(struct usb_device *const udev)
 {
 	struct usbh_context *const uhs_ctx = udev->ctx;
@@ -607,4 +567,44 @@ error:
 	k_mutex_unlock(&udev->mutex);
 
 	return err;
+}
+
+void usbh_device_connect(struct usbh_context *const ctx,
+			 struct usb_device *const udev)
+{
+	int err;
+
+	LOG_DBG("Device connected event");
+
+	udev->state = USB_STATE_DEFAULT;
+
+	if (ctx->root == NULL) {
+		ctx->root = udev;
+	}
+
+	err = usbh_device_init(udev);
+	if (err != 0) {
+		LOG_ERR("Failed to init new USB device");
+		if (usbh_device_is_root(ctx, udev)) {
+			ctx->root = NULL;
+		}
+
+		usbh_device_free(udev);
+		return;
+	}
+
+	usbh_class_probe_device(udev);
+}
+
+void usbh_device_disconnect(struct usbh_context *ctx, struct usb_device *udev)
+{
+	usbh_class_remove_all(udev);
+
+	if (usbh_device_is_root(ctx, udev)) {
+		ctx->root = NULL;
+	}
+
+	usbh_device_free(udev);
+
+	LOG_DBG("Device removed");
 }
