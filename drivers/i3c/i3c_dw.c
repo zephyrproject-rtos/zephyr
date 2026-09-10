@@ -1749,6 +1749,16 @@ static bool i3c_any_i2c_fast_mode(const struct i3c_dev_list *dev_list)
 }
 #endif
 
+#ifdef CONFIG_I3C_CONTROLLER
+/* Floor the SCL count so we don't underflow and get a very high value (ergo a
+ * very slow bus rate)
+ */
+static uint32_t dw_i3c_scl_cnt_sub(uint32_t total, uint32_t sub)
+{
+	return (total > sub) ? (total - sub) : 0U;
+}
+#endif /* CONFIG_I3C_CONTROLLER */
+
 static int dw_i3c_init_scl_timing(const struct device *dev, struct i3c_config_controller *ctrl_cfg)
 {
 	const struct dw_i3c_config *config = dev->config;
@@ -1786,26 +1796,36 @@ static int dw_i3c_init_scl_timing(const struct device *dev, struct i3c_config_co
 	hcnt = DIV_ROUND_UP(I3C_BUS_THIGH_MAX_NS * (uint64_t)core_rate, I3C_PERIOD_NS) - 1;
 	hcnt = CLAMP(hcnt, SCL_I3C_TIMING_CNT_MIN, SCL_I3C_TIMING_CNT_MAX);
 
-	lcnt = DIV_ROUND_UP(core_rate, ctrl_cfg->scl.i3c) - hcnt;
+	lcnt = DIV_ROUND_UP(core_rate, ctrl_cfg->scl.i3c);
+	if (lcnt <= hcnt) {
+		LOG_WRN("%s: %u Hz I3C SCL is unreachable from a %u Hz core clock, "
+			"using the fastest achievable rate",
+			dev->name, ctrl_cfg->scl.i3c, core_rate);
+	}
+	lcnt = dw_i3c_scl_cnt_sub(lcnt, hcnt);
 	lcnt = CLAMP(lcnt, SCL_I3C_TIMING_CNT_MIN, SCL_I3C_TIMING_CNT_MAX);
 
 	scl_timing = SCL_I3C_TIMING_HCNT(hcnt) | SCL_I3C_TIMING_LCNT(lcnt);
 	sys_write32(scl_timing, config->regs + SCL_I3C_PP_TIMING);
 
 	/* I3C */
-	lcnt = DIV_ROUND_UP(core_rate, I3C_BUS_SDR1_SCL_RATE) - hcnt;
+	lcnt = dw_i3c_scl_cnt_sub(DIV_ROUND_UP(core_rate, I3C_BUS_SDR1_SCL_RATE), hcnt);
+	lcnt = CLAMP(lcnt, SCL_I3C_TIMING_CNT_MIN, SCL_I3C_TIMING_CNT_MAX);
 	scl_timing = SCL_EXT_LCNT_1(lcnt);
-	lcnt = DIV_ROUND_UP(core_rate, I3C_BUS_SDR2_SCL_RATE) - hcnt;
+	lcnt = dw_i3c_scl_cnt_sub(DIV_ROUND_UP(core_rate, I3C_BUS_SDR2_SCL_RATE), hcnt);
+	lcnt = CLAMP(lcnt, SCL_I3C_TIMING_CNT_MIN, SCL_I3C_TIMING_CNT_MAX);
 	scl_timing |= SCL_EXT_LCNT_2(lcnt);
-	lcnt = DIV_ROUND_UP(core_rate, I3C_BUS_SDR3_SCL_RATE) - hcnt;
+	lcnt = dw_i3c_scl_cnt_sub(DIV_ROUND_UP(core_rate, I3C_BUS_SDR3_SCL_RATE), hcnt);
+	lcnt = CLAMP(lcnt, SCL_I3C_TIMING_CNT_MIN, SCL_I3C_TIMING_CNT_MAX);
 	scl_timing |= SCL_EXT_LCNT_3(lcnt);
-	lcnt = DIV_ROUND_UP(core_rate, I3C_BUS_SDR4_SCL_RATE) - hcnt;
+	lcnt = dw_i3c_scl_cnt_sub(DIV_ROUND_UP(core_rate, I3C_BUS_SDR4_SCL_RATE), hcnt);
+	lcnt = CLAMP(lcnt, SCL_I3C_TIMING_CNT_MIN, SCL_I3C_TIMING_CNT_MAX);
 	scl_timing |= SCL_EXT_LCNT_4(lcnt);
 	sys_write32(scl_timing, config->regs + SCL_EXT_LCNT_TIMING);
 
 	/* I2C FM+ */
 	fmplcnt = DIV_ROUND_UP(I3C_BUS_I2C_FMP_TLOW_MIN_NS * (uint64_t)core_rate, I3C_PERIOD_NS);
-	hcnt = DIV_ROUND_UP(core_rate, I3C_BUS_I2C_FM_PLUS_SCL_RATE) - fmplcnt;
+	hcnt = dw_i3c_scl_cnt_sub(DIV_ROUND_UP(core_rate, I3C_BUS_I2C_FM_PLUS_SCL_RATE), fmplcnt);
 	scl_timing = SCL_I2C_FMP_TIMING_HCNT(hcnt) | SCL_I2C_FMP_TIMING_LCNT(fmplcnt);
 	sys_write32(scl_timing, config->regs + SCL_I2C_FMP_TIMING);
 
@@ -1827,7 +1847,8 @@ static int dw_i3c_init_scl_timing(const struct device *dev, struct i3c_config_co
 
 	fmlcnt = DIV_ROUND_UP(tlow_min_ns * (uint64_t)core_rate, I3C_PERIOD_NS);
 	fmlcnt = MIN(fmlcnt, SCL_I2C_FM_TIMING_CNT_MAX);
-	hcnt = MIN(DIV_ROUND_UP(core_rate, i2c_scl_hz) - fmlcnt, SCL_I2C_FM_TIMING_CNT_MAX);
+	hcnt = MIN(dw_i3c_scl_cnt_sub(DIV_ROUND_UP(core_rate, i2c_scl_hz), fmlcnt),
+		   SCL_I2C_FM_TIMING_CNT_MAX);
 	scl_timing = SCL_I2C_FM_TIMING_HCNT(hcnt) | SCL_I2C_FM_TIMING_LCNT(fmlcnt);
 	sys_write32(scl_timing, config->regs + SCL_I2C_FM_TIMING);
 
