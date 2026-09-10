@@ -23,14 +23,45 @@
 / {
 	cpus {
 		cpu0: cpu@0 {
-			cpu-power-states = <&suspend_to_idle0>;
+			cpu-power-states = <&suspend_to_idle1>;
 		};
 
+		/*
+		 * Sub-states of PM_STATE_SUSPEND_TO_IDLE. Only the ones listed in
+		 * cpu-power-states are candidates for the PM policy, so a board opts into
+		 * the others by overriding that property.
+		 */
 		power-states {
+			/*
+			 * Deep Sleep, HFCLK stopped, with 'Unlimited-Instant' wake-up. NPCX4 drops
+			 * the 200 ms residency limit, but erratum 2.21 can corrupt an eSPI
+			 * transaction issued right after entering it, so a board using * eSPI has
+			 * to stay on suspend_to_idle1 or suspend_to_idle2.
+			 */
 			suspend_to_idle0: suspend-to-idle0 {
-				compatible = "zephyr,power-state";
+				compatible = "nuvoton,npcx-power-state";
 				power-state-name = "suspend-to-idle";
 				substate-id = <0>;
+				min-residency-us = <1000>;
+				unlimited-instant-wakeup;
+			};
+
+			/* Deep Sleep, HFCLK stopped, with 'Standard' wake-up */
+			suspend_to_idle1: suspend-to-idle1 {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				substate-id = <1>;
+				min-residency-us = <1000>;
+			};
+
+			/*
+			 * Sleep, a higher current consumption and faster wakeup vs. Deep
+			 * Sleep mode
+			 */
+			suspend_to_idle2: suspend-to-idle2 {
+				compatible = "zephyr,power-state";
+				power-state-name = "suspend-to-idle";
+				substate-id = <2>;
 				min-residency-us = <1000>;
 			};
 		};
