@@ -375,6 +375,8 @@ LOG_MODULE_REGISTER(i3c_dw, CONFIG_I3C_DW_LOG_LEVEL);
 
 #define DW_I3C_MAX_DEVS         32
 #define DW_I3C_MAX_CMD_BUF_SIZE 16
+/* Databook Table 2-4: TIDs 0x8-0xf are reserved for controller-generated commands. */
+#define DW_I3C_MAX_TID          8
 
 /* Snps I3C/I2C Device Private Data */
 struct dw_i3c_i2c_dev_data {
@@ -647,6 +649,7 @@ static void dw_i3c_end_xfer(const struct device *dev)
 	struct dw_i3c_xfer *xfer = &data->xfer;
 	struct dw_i3c_cmd *cmd;
 	uint32_t nresp, resp;
+	uint32_t seen_tids = 0U;
 	int i, ret = 0;
 #ifdef CONFIG_I3C_TARGET
 	uint32_t rx_data;
@@ -667,9 +670,14 @@ static void dw_i3c_end_xfer(const struct device *dev)
 			continue;
 		}
 
+		if (tid >= xfer->ncmds) {
+			continue;
+		}
+
 		cmd = &xfer->cmds[tid];
 		cmd->rx_len = RESPONSE_PORT_DATA_LEN(resp);
 		cmd->error = RESPONSE_PORT_ERR_STATUS(resp);
+		seen_tids |= BIT(tid);
 #ifdef CONFIG_I3C_TARGET
 		/* if we are in target mode */
 		if (!dw_i3c_is_current_controller(dev)) {
@@ -698,7 +706,11 @@ static void dw_i3c_end_xfer(const struct device *dev)
 #endif /* CONFIG_I3C_TARGET */
 	}
 
-	for (i = 0; i < nresp; i++) {
+	for (i = 0; i < xfer->ncmds; i++) {
+		if ((seen_tids & BIT(i)) == 0U) {
+			continue;
+		}
+
 		switch (xfer->cmds[i].error) {
 		case RESPONSE_NO_ERROR:
 			break;
@@ -2044,6 +2056,12 @@ static int dw_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *paylo
 		return -EACCES;
 	}
 
+	if (payload->targets.num_targets > DW_I3C_MAX_TID) {
+		LOG_ERR("%s: CCC 0x%02x has %zu targets, only %u can be tagged", dev->name,
+			payload->ccc.id, payload->targets.num_targets, DW_I3C_MAX_TID);
+		return -ENOTSUP;
+	}
+
 	ret = k_mutex_lock(&data->mt, K_MSEC(1000));
 	if (ret) {
 		LOG_DBG("%s: Mutex err (%d)", dev->name, ret);
@@ -2096,7 +2114,8 @@ static int dw_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *paylo
 			cmd->cmd_hi =
 				COMMAND_PORT_ARG_DATA_LEN(payload->targets.payloads[i].data_len) |
 				COMMAND_PORT_TRANSFER_ARG;
-			cmd->cmd_lo = COMMAND_PORT_CP | COMMAND_PORT_DEV_INDEX(pos) |
+			cmd->cmd_lo = COMMAND_PORT_CP | COMMAND_PORT_TID(i) |
+				      COMMAND_PORT_DEV_INDEX(pos) |
 				      COMMAND_PORT_ROC | COMMAND_PORT_CMD(payload->ccc.id);
 			/* last command queue with multiple targets must have TOC set */
 			if (i == (payload->targets.num_targets - 1)) {
