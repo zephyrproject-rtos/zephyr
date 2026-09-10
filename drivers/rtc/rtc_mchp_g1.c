@@ -196,19 +196,33 @@ static void rtc_get_clock_time(const rtc_registers_t *regs, struct rtc_mchp_time
 }
 
 #ifdef CONFIG_RTC_ALARM
+#ifdef RTC_MODE2_ALARM_NUMBER
+#define RTC_MCHP_ALARM_REG(regs, n) ((regs)->MODE2.MODE2_ALARM[n].RTC_ALARM)
+#define RTC_MCHP_MASK_REG(regs, n)  ((regs)->MODE2.MODE2_ALARM[n].RTC_MASK)
+#define RTC_MCHP_MASK_MSK(n)        RTC_MODE2_MASK_Msk
+#define RTC_MCHP_MASK_SEL(n, value) RTC_MODE2_MASK_SEL(value)
+#else
+#define RTC_MCHP_ALARM_REG(regs, n) ((regs)->MODE2.RTC_ALARM##n)
+#define RTC_MCHP_MASK_REG(regs, n)  ((regs)->MODE2.RTC_MASK##n)
+#define RTC_MCHP_MASK_MSK(n)        RTC_MODE2_MASK##n##_Msk
+#define RTC_MCHP_MASK_SEL(n, value) RTC_MODE2_MASK##n##_SEL(value)
+#endif /* RTC_MODE2_ALARM_NUMBER */
+
 static void rtc_set_alarm_mask(rtc_registers_t *regs, uint16_t alarm_id, uint16_t alarm_mask)
 {
 	uint16_t set_mask = alarm_mask;
 
 	if (alarm_id == RTC_MCHP_ALARM_1) {
-		regs->MODE2.RTC_MASK0 = (uint8_t)((regs->MODE2.RTC_MASK0 & ~RTC_MODE2_MASK0_Msk) |
-						  RTC_MODE2_MASK0_SEL(set_mask));
+		RTC_MCHP_MASK_REG(regs, 0) =
+			(uint8_t)((RTC_MCHP_MASK_REG(regs, 0) & ~RTC_MCHP_MASK_MSK(0)) |
+				  RTC_MCHP_MASK_SEL(0, set_mask));
 		rtc_sync_busy(regs, RTC_MODE2_SYNCBUSY_MASK0_Msk);
 	}
 #ifdef CONFIG_RTC_MCHP_SUPPORTS_DUAL_ALARM
 	else if (alarm_id == RTC_MCHP_ALARM_2) {
-		regs->MODE2.RTC_MASK1 = (uint8_t)((regs->MODE2.RTC_MASK1 & ~RTC_MODE2_MASK1_Msk) |
-						  RTC_MODE2_MASK1_SEL(set_mask));
+		RTC_MCHP_MASK_REG(regs, 1) =
+			(uint8_t)((RTC_MCHP_MASK_REG(regs, 1) & ~RTC_MCHP_MASK_MSK(1)) |
+				  RTC_MCHP_MASK_SEL(1, set_mask));
 		rtc_sync_busy(regs, RTC_MODE2_SYNCBUSY_MASK1_Msk);
 	}
 #endif /* CONFIG_RTC_MCHP_SUPPORTS_DUAL_ALARM */
@@ -222,12 +236,12 @@ static uint16_t rtc_get_alarm_mask(const rtc_registers_t *regs, uint16_t alarm_i
 	uint16_t get_mask = 0;
 
 	if (alarm_id == RTC_MCHP_ALARM_1) {
-		get_mask = (uint16_t)regs->MODE2.RTC_MASK0;
+		get_mask = (uint16_t)RTC_MCHP_MASK_REG(regs, 0);
 		rtc_sync_busy(regs, RTC_MODE2_SYNCBUSY_MASK0_Msk);
 	}
 #ifdef CONFIG_RTC_MCHP_SUPPORTS_DUAL_ALARM
 	else if (alarm_id == RTC_MCHP_ALARM_2) {
-		get_mask = (uint16_t)regs->MODE2.RTC_MASK1;
+		get_mask = (uint16_t)RTC_MCHP_MASK_REG(regs, 1);
 		rtc_sync_busy(regs, RTC_MODE2_SYNCBUSY_MASK1_Msk);
 	}
 #endif /* CONFIG_RTC_MCHP_SUPPORTS_DUAL_ALARM */
@@ -251,11 +265,11 @@ static void rtc_set_alarm_time(rtc_registers_t *regs, uint16_t alarm_id,
 			   (rtc_set_alarm->second << RTC_MODE2_CLOCK_SECOND_Pos));
 
 	if (alarm_id == RTC_MCHP_ALARM_1) {
-		regs->MODE2.RTC_ALARM0 = alarm_val;
+		RTC_MCHP_ALARM_REG(regs, 0) = alarm_val;
 	}
 #ifdef CONFIG_RTC_MCHP_SUPPORTS_DUAL_ALARM
 	else if (alarm_id == RTC_MCHP_ALARM_2) {
-		regs->MODE2.RTC_ALARM1 = alarm_val;
+		RTC_MCHP_ALARM_REG(regs, 1) = alarm_val;
 	}
 #endif /* CONFIG_RTC_MCHP_SUPPORTS_DUAL_ALARM */
 	else {
@@ -274,11 +288,11 @@ static void rtc_get_alarm_time(const rtc_registers_t *regs, uint16_t alarm_id,
 	rtc_sync_busy(regs, RTC_MODE2_SYNCBUSY_CLOCKSYNC_Msk);
 
 	if (alarm_id == RTC_MCHP_ALARM_1) {
-		dataClockCalendar = regs->MODE2.RTC_ALARM0;
+		dataClockCalendar = RTC_MCHP_ALARM_REG(regs, 0);
 	}
 #ifdef CONFIG_RTC_MCHP_SUPPORTS_DUAL_ALARM
 	else if (alarm_id == RTC_MCHP_ALARM_2) {
-		dataClockCalendar = regs->MODE2.RTC_ALARM1;
+		dataClockCalendar = RTC_MCHP_ALARM_REG(regs, 1);
 	}
 #endif /* CONFIG_RTC_MCHP_SUPPORTS_DUAL_ALARM */
 	else {
