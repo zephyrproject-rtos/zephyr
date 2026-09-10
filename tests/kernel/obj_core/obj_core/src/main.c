@@ -47,7 +47,9 @@ static K_MUTEX_DEFINE(mutex1);
 static struct k_mutex mutex2;
 
 static K_SEM_DEFINE(sem1, 0, 1);
+#if defined(CONFIG_OBJ_CORE_SEM)
 static struct k_sem sem2;
+#endif
 
 static void thread_entry(void *, void *, void *);
 K_THREAD_DEFINE(thread1, 512 + CONFIG_TEST_EXTRA_STACK_SIZE,
