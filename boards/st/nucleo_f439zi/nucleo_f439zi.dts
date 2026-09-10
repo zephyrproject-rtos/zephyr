@@ -179,6 +179,14 @@ zephyr_udc0: &usbotg_fs {
 	status = "okay";
 };
 
+&cryp {
+	status = "okay";
+};
+
+&hash {
+	status = "okay";
+};
+
 &dma2 {
 	status = "okay";
 };
