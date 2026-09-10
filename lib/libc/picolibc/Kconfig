@@ -67,43 +67,6 @@ endchoice
 
 if PICOLIBC_USE_MODULE
 
-choice PICOLIBC_OPTIMIZATIONS
-	prompt "Optimization level"
-	default PICOLIBC_SIZE_OPTIMIZATIONS if SIZE_OPTIMIZATIONS
-	default PICOLIBC_SPEED_OPTIMIZATIONS if SPEED_OPTIMIZATIONS
-	default PICOLIBC_DEBUG_OPTIMIZATIONS if DEBUG_OPTIMIZATIONS
-	default PICOLIBC_NO_OPTIMIZATIONS if NO_OPTIMIZATIONS
-	help
-	  Note that these flags shall only control the compiler
-	  optimization level for picolibc, not the level for the
-	  rest of Zephyr
-
-config PICOLIBC_SIZE_OPTIMIZATIONS
-	bool "Optimize for size"
-	help
-	  Compiler optimizations will be set to -Os independently of other
-	  options.
-
-config PICOLIBC_SPEED_OPTIMIZATIONS
-	bool "Optimize for speed"
-	help
-	  Compiler optimizations will be set to -O2 independently of other
-	  options.
-
-config PICOLIBC_DEBUG_OPTIMIZATIONS
-	bool "Optimize debugging experience"
-	help
-	  Compiler optimizations will be set to -Og independently of other
-	  options.
-
-config PICOLIBC_NO_OPTIMIZATIONS
-	bool "Optimize nothing"
-	help
-	  Compiler optimizations will be set to -O0 independently of other
-	  options.
-
-endchoice
-
 config PICOLIBC_FAST_STRCMP
 	bool "always use fast strcmp paths"
 	default y
