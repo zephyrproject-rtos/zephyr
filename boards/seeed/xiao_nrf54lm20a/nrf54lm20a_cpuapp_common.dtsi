@@ -11,13 +11,6 @@
 #include <vendor/nordic/nrf54lm20a_cpuapp_partition.dtsi>
 
 / {
-	power_en: power_en {
-		compatible = "regulator-fixed";
-		regulator-name = "power_en";
-		enable-gpios = <&gpio1 12 GPIO_ACTIVE_HIGH>;
-		regulator-boot-on;
-	};
-
 	chosen {
 		zephyr,console = &uart20;
 		zephyr,shell-uart = &uart20;
