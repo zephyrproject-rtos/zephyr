@@ -74,6 +74,11 @@ New APIs and options
     * :c:func:`bt_hids_report_get`
     * :c:func:`bt_hids_send_report`
 
+* Sensors
+
+  * Added :c:macro:`EMUL_SENSOR_REGMAP_DEFINE` for I2C sensor emulators described by register
+    and channel tables. See :ref:`sensor-emulators`.
+
 .. zephyr-keep-sorted-stop
 
 .. _boards_added_in_zephyr_4_6:
