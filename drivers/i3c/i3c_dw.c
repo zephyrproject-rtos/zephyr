@@ -477,7 +477,13 @@ static inline bool dw_i3c_is_current_controller(const struct device *dev)
 }
 
 #ifdef CONFIG_I3C_CONTROLLER
-static uint8_t get_free_pos(uint32_t free_pos)
+
+/*
+ * Returns the index of the first free slot, or -1 when the table is full.
+ * The return type must stay signed: truncating to uint8_t turns the
+ * exhaustion result into 255 and defeats every caller's bounds check.
+ */
+static int get_free_pos(uint32_t free_pos)
 {
 	return find_lsb_set(free_pos) - 1;
 }
@@ -1003,7 +1009,7 @@ static int dw_i3c_i2c_attach_device(const struct device *dev, struct i3c_i2c_dev
 {
 	const struct dw_i3c_config *config = dev->config;
 	struct dw_i3c_data *data = dev->data;
-	uint8_t pos;
+	int pos;
 
 	pos = get_free_pos(data->free_pos);
 	if (pos < 0) {
@@ -1881,7 +1887,7 @@ static int dw_i3c_attach_device(const struct device *dev, struct i3c_device_desc
 {
 	const struct dw_i3c_config *config = dev->config;
 	struct dw_i3c_data *data = dev->data;
-	uint8_t pos = get_free_pos(data->free_pos);
+	int pos = get_free_pos(data->free_pos);
 	uint8_t addr = desc->dynamic_addr ? desc->dynamic_addr : desc->static_addr;
 
 	if (pos < 0) {
