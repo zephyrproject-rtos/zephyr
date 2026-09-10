@@ -158,7 +158,7 @@
 	pinctrl-0 = <&adc1_in0_pa0 &adc1_in1_pa1>;
 	pinctrl-names = "default";
 	st,adc-clock-source = "ASYNC";
-	st,adc-prescaler = <4>;
+	st,adc-prescaler = <8>;
 	status = "okay";
 	vref-mv = <3300>;
 };
