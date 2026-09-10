@@ -11,6 +11,7 @@
 #endif
 #include <soc.h>
 #include <fsl_glikey.h>
+#include <power/power_cross_domain.h>
 #include <sram_banks.h>
 
 /*!< System oscillator settling time in us */
@@ -709,6 +710,16 @@ static void second_core_boot(void)
 	/* Power up sense_main_clk, the bus clock of CPU1 and its private peripherals */
 	POWER_DisablePD(kPDRUNCFG_SHUT_SENSEP_MAINCLK);
 	POWER_ApplyPD();
+
+	/*
+	 * CPU1 clocks XSPI2 from COMMON_BASE, which the branch above points at
+	 * FRO1_DIV1. FRO1 has no field in SLEEPCON1, so CPU1 cannot hold it up over
+	 * a CPU0 low-power window and CPU0 has no way to detect the dependency:
+	 * COMNBASECLKSEL says what feeds COMMON_BASE, not who consumes it, and the
+	 * Sense-side selects are in CLKCTL1, which this build cannot address. Say it
+	 * here, where both cores' clock trees are set up.
+	 */
+	power_cross_domain_request(PWR_RES_FRO1);
 
 	/* RT700 specific CPU1 boot sequence */
 	/* Glikey write enable, GLIKEY4 */
