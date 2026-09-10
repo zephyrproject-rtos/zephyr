@@ -32,4 +32,11 @@ config I3C_DW_PLATFORM_OPS
 	  vendor glue is built the hook pointer is a compile-time NULL, so the
 	  dispatch and every hook call fold away.
 
+config I3C_DW_FULL_RESET_SKIP_RESUME_PULSE
+	bool "Skip the DEV_CTRL.RESUME pulse when re-priming after a full reset"
+	help
+	  After a full IP reset the controller is not halted, so the RESUME pulse
+	  has nothing to resume. On integrations where the pulse can latch and
+	  stall the first CCC, clear any stale RESUME bit instead of pulsing it.
+
 endif # I3C_DW
