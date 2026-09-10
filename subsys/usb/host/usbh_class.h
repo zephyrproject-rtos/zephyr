@@ -35,6 +35,16 @@ bool usbh_class_is_matching(const struct usbh_class_filter *const filter_rules,
 			    const struct usbh_class_filter *const filtered_data);
 
 /**
+ * @brief Check if any drivers are bound to a device interface.
+ *
+ * @param[in] udev USB device to probe.
+ *
+ * @retval true if a driver is bound to an interface
+ * @retval false if no drivers are bound to an interface
+ */
+bool usbh_class_is_any_iface_bound(struct usb_device *const udev);
+
+/**
  * @brief Initialize all available host class instances.
  */
 void usbh_class_init_all(void);
