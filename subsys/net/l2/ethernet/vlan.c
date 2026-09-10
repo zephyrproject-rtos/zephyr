@@ -54,6 +54,15 @@ struct vlan_context {
 	uint16_t tag;
 	bool status;    /* Is the interface enabled or not */
 	bool is_used;   /* Is there active config on this context */
+#if defined(NET_ETH_MCAST_FILTER_SUPPORTED)
+	/** L2 multicast addresses this interface listens to. Kept here so
+	 * that groups can be joined and left also while the interface is
+	 * detached, and pushed to the attached Ethernet interface by
+	 * net_eth_vlan_mcast_sync(). Protected by the mcast_lock of the
+	 * Ethernet L2, not by the mutex of this file.
+	 */
+	struct net_eth_mcast_addr mcast_addrs[NET_ETH_MCAST_FILTER_COUNT];
+#endif
 };
 
 static const struct virtual_interface_api vlan_iface_api = {
@@ -636,6 +645,89 @@ int vlan_alloc_buffer(struct net_if *iface, struct net_pkt *pkt, size_t size,
 	return net_pkt_alloc_buffer_with_reserve(pkt, size, reserve, proto, timeout);
 }
 
+#if defined(NET_ETH_MCAST_FILTER_SUPPORTED)
+struct net_eth_mcast_addr *net_eth_vlan_mcast_addrs(struct net_if *iface)
+{
+	const struct device *dev;
+	struct vlan_context *ctx;
+
+	if (!net_eth_is_vlan_interface(iface)) {
+		return NULL;
+	}
+
+	dev = net_if_get_device(iface);
+
+	NET_ASSERT(dev != NULL);
+
+	ctx = dev->data;
+
+	NET_ASSERT(ctx != NULL);
+
+	return ctx->mcast_addrs;
+}
+
+static void vlan_mcast_push_cb(struct net_if *iface,
+			       const struct net_eth_mcast_addr *addr,
+			       void *user_data)
+{
+	struct net_if *main_iface = user_data;
+	int ret;
+
+	ARG_UNUSED(iface);
+
+	ret = net_eth_mcast_addr_add(main_iface, &addr->addr);
+	if (ret < 0) {
+		NET_DBG("Cannot push address %s to iface %d (%d)",
+			net_sprint_ll_addr(addr->addr.addr,
+					   sizeof(struct net_eth_addr)),
+			net_if_get_by_iface(main_iface), ret);
+	}
+}
+
+static void vlan_mcast_remove_cb(struct net_if *iface,
+				 const struct net_eth_mcast_addr *addr,
+				 void *user_data)
+{
+	struct net_if *main_iface = user_data;
+	int ret;
+
+	ARG_UNUSED(iface);
+
+	ret = net_eth_mcast_addr_rm(main_iface, &addr->addr);
+
+	/* -ENOENT means that pushing the group failed when it was joined,
+	 * which was reported back then, so there is nothing to leave now.
+	 */
+	if (ret < 0 && ret != -ENOENT) {
+		NET_DBG("Cannot remove address %s from iface %d (%d)",
+			net_sprint_ll_addr(addr->addr.addr,
+					   sizeof(struct net_eth_addr)),
+			net_if_get_by_iface(main_iface), ret);
+	}
+}
+
+/* Push or remove the multicast groups joined on the VLAN interface to or
+ * from the receive filter of the Ethernet interface when the attachment
+ * changes. The groups of the Ethernet interface may be changed from the
+ * callback, only those of the iterated VLAN interface may not. A group
+ * that cannot be pushed on attach is not lost, it stays tracked on the
+ * VLAN interface and is pushed again on the next attach.
+ */
+static void vlan_mcast_sync(struct net_if *vlan_iface,
+			    struct net_if *main_iface,
+			    bool attached)
+{
+	if (main_iface == NULL) {
+		return;
+	}
+
+	net_eth_mcast_addr_foreach(vlan_iface,
+				   attached ? vlan_mcast_push_cb
+					    : vlan_mcast_remove_cb,
+				   main_iface);
+}
+#endif
+
 static int vlan_interface_attach(struct net_if *vlan_iface,
 				 struct net_if *iface)
 {
@@ -657,6 +749,17 @@ static int vlan_interface_attach(struct net_if *vlan_iface,
 			net_if_get_by_iface(vlan_iface), vlan_iface,
 			net_if_get_by_iface(iface), iface);
 	}
+
+#if defined(NET_ETH_MCAST_FILTER_SUPPORTED)
+	/* The multicast groups joined on the VLAN interface follow it to the
+	 * Ethernet interface it is attached to.
+	 */
+	if (iface == NULL) {
+		vlan_mcast_sync(vlan_iface, ctx->attached_to, false);
+	} else {
+		vlan_mcast_sync(vlan_iface, iface, true);
+	}
+#endif
 
 	ctx->attached_to = iface;
 
