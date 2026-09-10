@@ -10,6 +10,7 @@ flash: 2048
 supported:
   - arduino_gpio
   - arduino_i2c
+  - crypto
   - i2c
   - hts221
   - lps22hb
