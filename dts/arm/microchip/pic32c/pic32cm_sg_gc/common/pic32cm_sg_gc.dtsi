@@ -253,6 +253,111 @@
 			clock-names = "mclk", "gclk";
 			status = "disabled";
 		};
+
+		rtc: rtc@45006000 {
+			compatible = "microchip,rtc-g1";
+			reg = <0x45006000 0x70>;
+			interrupts = <15 0>, <12 0>, <13 0>, <14 0>;
+			interrupt-names = "cmp0-3", "tamper", "ovf", "per0-7";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_RTC>,
+				 <&rtcclock CLOCK_MCHP_RTC_ID>;
+			clock-names = "mclk", "rtcclk";
+			prescaler = <1024>;
+			alarms-count = <2>;
+			cal-constant = <1048576>;
+			status = "disabled";
+		};
+
+		tcc0: tcc@44810000 {
+			compatible = "microchip,tcc-g1";
+			reg = <0x44810000 0x78>;
+			interrupts = <88 0>, <90 0>, <91 0>;
+			interrupt-names = "other", "mc0", "mc1";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_TCC0>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_TCC0>;
+			clock-names = "mclk", "gclk";
+			channels = <2>;
+			max-bit-width = <16>;
+			status = "disabled";
+		};
+
+		tcc1: tcc@44812000 {
+			compatible = "microchip,tcc-g1";
+			reg = <0x44812000 0x78>;
+			interrupts = <92 0>, <94 0>, <95 0>;
+			interrupt-names = "other", "mc0", "mc1";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_TCC1>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_TCC1>;
+			clock-names = "mclk", "gclk";
+			channels = <2>;
+			max-bit-width = <16>;
+			status = "disabled";
+		};
+
+		tcc2: tcc@44814000 {
+			compatible = "microchip,tcc-g1";
+			reg = <0x44814000 0x78>;
+			interrupts = <96 0>, <98 0>, <99 0>;
+			interrupt-names = "other", "mc0", "mc1";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_TCC2>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_TCC2>;
+			clock-names = "mclk", "gclk";
+			channels = <2>;
+			max-bit-width = <16>;
+			status = "disabled";
+		};
+
+		tcc3: tcc@44816000 {
+			compatible = "microchip,tcc-g1";
+			reg = <0x44816000 0x78>;
+			interrupts = <100 0>, <102 0>, <103 0>;
+			interrupt-names = "other", "mc0", "mc1";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_TCC3>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_TCC3>;
+			clock-names = "mclk", "gclk";
+			channels = <2>;
+			max-bit-width = <16>;
+			status = "disabled";
+		};
+
+		tcc4: tcc@44824000 {
+			compatible = "microchip,tcc-g1";
+			reg = <0x44824000 0x78>;
+			interrupts = <118 0>, <120 0>, <121 0>;
+			interrupt-names = "other", "mc0", "mc1";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_TCC4>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_TCC4>;
+			clock-names = "mclk", "gclk";
+			channels = <2>;
+			max-bit-width = <16>;
+			status = "disabled";
+		};
+
+		tcc5: tcc@44826000 {
+			compatible = "microchip,tcc-g1";
+			reg = <0x44826000 0x78>;
+			interrupts = <122 0>, <124 0>, <125 0>;
+			interrupt-names = "other", "mc0", "mc1";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_TCC5>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_TCC5>;
+			clock-names = "mclk", "gclk";
+			channels = <2>;
+			max-bit-width = <16>;
+			status = "disabled";
+		};
+
+		tcc6: tcc@44828000 {
+			compatible = "microchip,tcc-g1";
+			reg = <0x44828000 0x78>;
+			interrupts = <126 0>, <128 0>, <129 0>;
+			interrupt-names = "other", "mc0", "mc1";
+			clocks = <&mclkperiph CLOCK_MCHP_MCLKPERIPH_ID_TCC6>,
+				 <&gclkperiph CLOCK_MCHP_GCLKPERIPH_ID_TCC6>;
+			clock-names = "mclk", "gclk";
+			channels = <2>;
+			max-bit-width = <16>;
+			status = "disabled";
+		};
 	};
 };
 
