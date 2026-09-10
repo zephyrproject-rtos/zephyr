@@ -640,6 +640,11 @@ New APIs and options
     Memberships still held when the socket is closed are dropped automatically,
     and :kconfig:option:`CONFIG_NET_SOCKETS_PACKET_MCAST_MEMBERSHIP_COUNT` sets
     how many memberships can be active at the same time.
+  * Add TCP selective acknowledgment of received data (:rfc:`2018`,
+    :kconfig:option:`CONFIG_NET_TCP_SACK`, enabled by default). Zephyr now
+    offers SACK in the handshake and reports out-of-order data held in the
+    receive queue, so that a sender which supports SACK can resend only the
+    missing data. Incoming SACK blocks are not yet used when retransmitting.
   * :kconfig:option:`CONFIG_PTP_NETWORK_MODE_HYBRID`
 
 * Power Management

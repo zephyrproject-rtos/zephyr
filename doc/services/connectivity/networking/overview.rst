@@ -57,6 +57,8 @@ can be disabled if not needed.
 * **TCP** Transmission Control Protocol (:rfc:`793`) is supported. Both server
   and client roles can be used the application. The amount of TCP sockets
   that are available to applications can be configured at build time.
+  Selective acknowledgment (:rfc:`2018`) is supported for received data
+  (:kconfig:option:`CONFIG_NET_TCP_SACK`).
 
 * **BSD Sockets API** Support for a subset of a
   :ref:`BSD sockets compatible API <bsd_sockets_interface>` is
