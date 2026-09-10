@@ -8,7 +8,7 @@ Overview
 ********
 
 This sample app demonstrates use of the file system API and uses the FAT or Ext2 file
-system driver with SDHC card, SoC flash or external flash chip.
+system driver with SDHC card, SoC flash, external flash chip or USB mass storage device.
 
 To access device the sample uses :ref:`disk_access_api`.
 
@@ -20,6 +20,30 @@ This project requires SD card support and microSD card formatted with proper fil
 Boards that by default use SD card for storage: ``arduino_mkrzero``, ``esp_wrover_kit``,
 ``mimxrt1050_evk``, ``nrf52840_blip`` and  ``olimexino_stm32``. The sample should be able
 to run with any other board that has "zephyr,sdmmc-disk" DT node enabled.
+
+Requirements for USB mass storage support
+*****************************************
+
+This type of configuration accesses a USB mass storage device, such as a flash
+drive or a card reader, through the USB host Mass Storage class driver. It
+requires a board with a USB host controller and a port able to supply VBUS to
+the attached device. The board devicetree has to label its host controller node
+``zephyr_uhc0``. The ``usb_msc.overlay`` file adds the "zephyr,usb-msc-disk"
+node under that controller and ``usb_msc.conf`` enables the FAT file system on
+it. The disk driver brings up the host controller at boot, so the sample has no
+USB specific code.
+
+The sample waits up to 30 seconds for a device with a ready medium. The medium must already hold a FAT file system. A
+medium that does not mount is reported, not formatted. With
+:kconfig:option:`CONFIG_FS_SAMPLE_CREATE_SOME_ENTRIES` enabled, the default, the
+sample creates a file and a directory on an empty medium.
+
+.. zephyr-app-commands::
+   :zephyr-app: samples/subsys/fs/fs_sample
+   :board: esp32p4x_function_ev_board/esp32p4/hpcore
+   :gen-args: -DEXTRA_CONF_FILE=usb_msc.conf -DEXTRA_DTC_OVERLAY_FILE=usb_msc.overlay
+   :goals: build flash
+   :compact:
 
 Requirements for setting up FAT FS on SoC flash
 ***********************************************

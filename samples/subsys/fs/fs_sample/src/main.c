@@ -22,7 +22,9 @@
  *  Note the fatfs library is able to mount only strings inside _VOLUME_STRS
  *  in ffconf.h
  */
-#if defined(CONFIG_DISK_DRIVER_MMC)
+#if defined(CONFIG_USB_MSC_DISK)
+#define DISK_DRIVE_NAME DT_PROP(DT_COMPAT_GET_ANY_STATUS_OKAY(zephyr_usb_msc_disk), disk_name)
+#elif defined(CONFIG_DISK_DRIVER_MMC)
 #define DISK_DRIVE_NAME "SD2"
 #else
 #define DISK_DRIVE_NAME "SD"
@@ -34,6 +36,9 @@ static FATFS fat_fs;
 /* mounting info */
 static struct fs_mount_t mp = {
 	.type = FS_FATFS,
+#if defined(CONFIG_USB_MSC_DISK)
+	.flags = FS_MOUNT_FLAG_NO_FORMAT,
+#endif
 	.fs_data = &fat_fs,
 };
 
@@ -109,8 +114,38 @@ static bool create_some_entries(const char *base_path)
 
 static const char *disk_mount_pt = DISK_MOUNT_PT;
 
+#if defined(CONFIG_USB_MSC_DISK)
+#define MEDIUM_TIMEOUT       K_SECONDS(30)
+#define MEDIUM_POLL_INTERVAL K_MSEC(100)
+
+static int wait_for_medium(void)
+{
+	k_timepoint_t deadline;
+
+	printk("Waiting for a mass storage device\n");
+
+	deadline = sys_timepoint_calc(MEDIUM_TIMEOUT);
+	while (!sys_timepoint_expired(deadline)) {
+		if (disk_access_status(DISK_DRIVE_NAME) != DISK_STATUS_NOMEDIA) {
+			return 0;
+		}
+
+		k_sleep(MEDIUM_POLL_INTERVAL);
+	}
+
+	LOG_ERR("No mass storage device became ready");
+	return -ENODEV;
+}
+#endif /* CONFIG_USB_MSC_DISK */
+
 int main(void)
 {
+#if defined(CONFIG_USB_MSC_DISK)
+	if (wait_for_medium() != 0) {
+		return 0;
+	}
+#endif
+
 	/* raw disk i/o */
 	do {
 		static const char *disk_pdrv = DISK_DRIVE_NAME;
