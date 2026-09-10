@@ -2341,7 +2341,14 @@ static bool scan_check_and_get_broadcast_values(struct bt_data *data, void *user
 static void pa_sync_broadcast_sink(const struct bt_le_scan_recv_info *info)
 {
 	struct bt_le_per_adv_sync_param create_params = {0};
+	struct bt_le_local_features feature;
 	int err;
+
+	err = bt_le_get_local_features(&feature);
+	if (err != 0) {
+		bt_shell_error("Failed to get local features: %d", err);
+		return;
+	}
 
 	err = bt_le_scan_stop();
 	if (err != 0) {
@@ -2349,7 +2356,11 @@ static void pa_sync_broadcast_sink(const struct bt_le_scan_recv_info *info)
 	}
 
 	bt_addr_le_copy(&create_params.addr, info->addr);
-	create_params.options = BT_LE_PER_ADV_SYNC_OPT_FILTER_DUPLICATE;
+	if (BT_FEAT_LE_PER_ADV_ADI_SUPP(feature.features)) {
+		create_params.options = BT_LE_PER_ADV_SYNC_OPT_FILTER_DUPLICATE;
+	} else {
+		create_params.options = BT_LE_PER_ADV_SYNC_OPT_NONE;
+	}
 	create_params.sid = info->sid;
 	create_params.skip = PA_SYNC_SKIP;
 	create_params.timeout = interval_to_sync_timeout(info->interval);
