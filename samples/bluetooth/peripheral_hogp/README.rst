@@ -22,7 +22,11 @@ which HOGP makes mandatory for the role.
 All HID Service characteristics require an encrypted link and the Device has to
 be bondable (:kconfig:option:`CONFIG_BT_BONDABLE`), so the sample requests
 security as soon as a Host connects and stores the bond in settings. The Host
-pairs with the device before any report can be exchanged.
+pairs with the device before any report can be exchanged. HOGP asks for an
+encrypted link and says nothing about Man-In-The-Middle protection, so the
+sample requests Security Level 2. Build with
+``CONFIG_SAMPLE_BT_USE_AUTHENTICATION=y`` to request Level 3 instead and display
+a passkey during pairing.
 
 Once a Host subscribes to the Input Report, board button presses are notified as
 mouse Input Reports through the Zephyr :ref:`input <input>` subsystem, the same
