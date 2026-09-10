@@ -259,6 +259,7 @@ static void IRAM_ATTR i2s_esp32_rx_callback(void *arg, int status)
 		if (err < 0) {
 			LOG_DBG("Failed to reload DMA channel: %" PRIu32,
 				stream->conf->dma_channel);
+			dev_data->state = I2S_STATE_ERROR;
 			goto rx_disable;
 		}
 
@@ -267,6 +268,7 @@ static void IRAM_ATTR i2s_esp32_rx_callback(void *arg, int status)
 		err = dma_start(stream->conf->dma_dev, stream->conf->dma_channel);
 		if (err < 0) {
 			LOG_DBG("Failed to start DMA channel: %" PRIu32, stream->conf->dma_channel);
+			dev_data->state = I2S_STATE_ERROR;
 			goto rx_disable;
 		}
 
