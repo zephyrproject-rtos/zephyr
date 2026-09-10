@@ -92,7 +92,7 @@ int pinctrl_configure_pins(const pinctrl_soc_pin_t *pins, uint8_t pin_cnt, uintp
 static int pinctrl_clock_init(void)
 {
 	const struct device *clock_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(0));
-	uint8_t clock_id = DT_INST_CLOCKS_CELL(0, id);
+	uint32_t clock_id = DT_INST_CLOCKS_CELL(0, id);
 
 	return clock_control_on(clock_dev, (clock_control_subsys_t *)(uintptr_t)clock_id);
 }
