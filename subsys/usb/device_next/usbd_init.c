@@ -61,6 +61,60 @@ static int assign_ep_addr(const struct device *dev,
 	return ret;
 }
 
+/* Iterate over the interface alternate settings and try to reuse endpoints */
+static int reuse_ep_addr(const struct device *dev,
+			 struct usb_desc_header **const start,
+			 struct usb_desc_header **const end,
+			 struct usb_ep_descriptor *const ed,
+			 uint32_t *const iface_ep_bm,
+			 uint32_t *const class_ep_bm)
+{
+	int ret = -ENODEV;
+
+	for (struct usb_desc_header **dhp = start; dhp != end; dhp++) {
+		struct usb_ep_descriptor *tmp_ed;
+		uint16_t mps;
+
+		if ((*dhp)->bDescriptorType != USB_DESC_ENDPOINT) {
+			continue;
+		}
+
+		tmp_ed = (struct usb_ep_descriptor *)(*dhp);
+
+		if (!usbd_ep_bm_is_set(iface_ep_bm, tmp_ed->bEndpointAddress)) {
+			/* Endpoint not reserved or already reused */
+			continue;
+		}
+
+		if (USB_EP_GET_DIR(tmp_ed->bEndpointAddress) !=
+		    USB_EP_GET_DIR(ed->bEndpointAddress) ||
+		    tmp_ed->bmAttributes != ed->bmAttributes) {
+			/*
+			 * Only reuse an endpoint with identical bmAttributes
+			 * and direction.
+			 */
+			continue;
+		}
+
+		mps = sys_le16_to_cpu(ed->wMaxPacketSize);
+		ret = udc_ep_try_config(dev, tmp_ed->bEndpointAddress,
+					ed->bmAttributes, &mps, ed->bInterval);
+		if (ret == 0) {
+			LOG_DBG("ep 0x%02x -> 0x%02x (reserved)",
+				ed->bEndpointAddress, tmp_ed->bEndpointAddress);
+
+			ed->bEndpointAddress = tmp_ed->bEndpointAddress;
+			ed->wMaxPacketSize = sys_cpu_to_le16(mps);
+			usbd_ep_bm_set(class_ep_bm, ed->bEndpointAddress);
+			usbd_ep_bm_clear(iface_ep_bm, ed->bEndpointAddress);
+
+			return 0;
+		}
+	}
+
+	return ret;
+}
+
 /* Unassign all endpoint of a class instance based on class_ep_bm */
 static int unassign_eps(struct usbd_context *const uds_ctx,
 			uint32_t *const config_ep_bm,
@@ -116,9 +170,11 @@ static int init_configuration_inst(struct usbd_context *const uds_ctx,
 {
 	struct usb_desc_header **dhp;
 	struct usb_association_descriptor *iad = NULL;
+	struct usb_desc_header **first_ifd = NULL;
 	struct usb_if_descriptor *ifd = NULL;
 	struct usb_ep_descriptor *ed;
 	uint32_t class_ep_bm = 0;
+	uint32_t iface_ep_bm = 0;
 	uint8_t tmp_nif;
 	int ret;
 
@@ -151,15 +207,17 @@ static int init_configuration_inst(struct usbd_context *const uds_ctx,
 				ifd->bInterfaceNumber = tmp_nif;
 				c_nd->iface_bm |= BIT(tmp_nif);
 				tmp_nif++;
+				/* Endpoints of a new interface get new addresses */
+				first_ifd = dhp;
+				iface_ep_bm = 0;
 			} else {
-				ifd->bInterfaceNumber = tmp_nif - 1;
 				/*
-				 * Unassign endpoints from last alternate,
-				 * to work properly it requires that the
-				 * characteristics of endpoints in alternate
-				 * interfaces are ascending.
+				 * The endpoints assigned to the previous settings of
+				 * this interface stay reserved and may be reused by
+				 * the following alternate settings.
 				 */
-				unassign_eps(uds_ctx, config_ep_bm, &class_ep_bm);
+				iface_ep_bm |= class_ep_bm;
+				ifd->bInterfaceNumber = tmp_nif - 1;
 			}
 
 			class_ep_bm = 0;
@@ -169,10 +227,20 @@ static int init_configuration_inst(struct usbd_context *const uds_ctx,
 
 		if ((*dhp)->bDescriptorType == USB_DESC_ENDPOINT) {
 			ed = (struct usb_ep_descriptor *)(*dhp);
-			ret = assign_ep_addr(uds_ctx->dev, ed,
-					     config_ep_bm, &class_ep_bm);
-			if (ret) {
-				return ret;
+
+			if (iface_ep_bm != 0) {
+				ret = reuse_ep_addr(uds_ctx->dev, first_ifd, dhp,
+						    ed, &iface_ep_bm, &class_ep_bm);
+			} else {
+				ret = -ENODEV;
+			}
+
+			if (ret != 0) {
+				ret = assign_ep_addr(uds_ctx->dev, ed,
+						     config_ep_bm, &class_ep_bm);
+				if (ret != 0) {
+					return ret;
+				}
 			}
 
 			LOG_DBG("\tep 0x%02x mps 0x%04x interface ep-bm 0x%08x",
