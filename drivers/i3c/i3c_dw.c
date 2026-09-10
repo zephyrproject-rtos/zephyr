@@ -215,8 +215,15 @@ LOG_MODULE_REGISTER(i3c_dw, CONFIG_I3C_DW_LOG_LEVEL);
 #define DATA_BUFFER_STATUS_LEVEL_RX(x) (((x) & GENMASK(23, 16)) >> 16)
 #define DATA_BUFFER_STATUS_LEVEL_TX(x) ((x) & GENMASK(7, 0))
 
-#define PRESENT_STATE                0x54
-#define PRESENT_STATE_CURRENT_MASTER BIT(2)
+#define PRESENT_STATE                   0x54
+#define PRESENT_STATE_CURRENT_MASTER    BIT(2)
+#define PRESENT_STATE_CONTROLLER_IDLE   BIT(28)
+#define PRESENT_STATE_CM_TFR_STS_MASK   GENMASK(13, 8)
+#define PRESENT_STATE_CM_TFR_STS(x)     (((x) & PRESENT_STATE_CM_TFR_STS_MASK) >> 8)
+/* Sub-state within the transfer CM_TFR_STS reports; logged for diagnostics. */
+#define PRESENT_STATE_CM_TFR_ST_STS(x)  (((x) & GENMASK(21, 16)) >> 16)
+#define CM_TFR_STS_IDLE                 0x0
+#define CM_TFR_STS_CTRL_HALT            0xF
 
 #define CCC_DEVICE_STATUS          0x58
 #define DEVICE_ADDR_TABLE_POINTER  0x5c
@@ -408,6 +415,13 @@ LOG_MODULE_REGISTER(i3c_dw, CONFIG_I3C_DW_LOG_LEVEL);
 
 #define DW_I3C_MAX_CMDS (DW_I3C_TID_USER_MAX + 1)
 
+/* Recovery timings. */
+#define DW_I3C_RESUME_TIMEOUT_US     2000U
+#define DW_I3C_CTRL_IDLE_TIMEOUT_US  2000U
+#define DW_I3C_FLUSH_TIMEOUT_US      2000U
+/* RESET_CTRL readback faults while the flush is held off, so wait it out blind. */
+#define DW_I3C_FLUSH_SETTLE_US       50U
+
 /* Snps I3C/I2C Device Private Data */
 struct dw_i3c_i2c_dev_data {
 	/* Device id within the retaining registers. This is set after bus initialization by the
@@ -539,12 +553,32 @@ mm_reg_t dw_i3c_get_regs(const struct device *dev)
 	return dw_i3c_regs(dev);
 }
 
+#ifdef CONFIG_I3C_CONTROLLER
+/**
+ * @brief Pre-resume-ctrl hook: re-open wrapper gate before writing RESUME.
+ *
+ * Called unconditionally from dw_i3c_recover_bus().  No-op when no ops.
+ */
+static int dw_i3c_pre_resume_ctrl(const struct device *dev)
+{
+	const struct dw_i3c_config *config = dev->config;
+
+	if (DW_I3C_OPS(config) && config->ops->pre_resume_ctrl) {
+		return config->ops->pre_resume_ctrl(dev);
+	}
+
+	return 0;
+}
+#endif /* CONFIG_I3C_CONTROLLER */
+
 static inline bool dw_i3c_is_current_controller(const struct device *dev)
 {
 	return !!(sys_read32(dw_i3c_regs(dev) + PRESENT_STATE) & PRESENT_STATE_CURRENT_MASTER);
 }
 
 #ifdef CONFIG_I3C_CONTROLLER
+
+static int dw_i3c_recover_bus(const struct device *dev);
 
 /*
  * Returns the index of the first free slot, or -1 when the table is full.
@@ -1019,6 +1053,84 @@ static void start_xfer(const struct device *dev)
 
 	k_spin_unlock(&data->lock, key);
 }
+
+#ifdef CONFIG_I3C_CONTROLLER
+/**
+ * @brief Wait for a written RESUME to be consumed.
+ *
+ * RESUME reads back set until the controller has acted on it
+ *
+ * @retval 0 RESUME cleared.
+ * @retval -ETIMEDOUT Still set when the timeout expired.
+ */
+static int dw_i3c_wait_resume_clear(const struct device *dev, uint32_t timeout_us)
+{
+	while (timeout_us--) {
+		if ((sys_read32(dw_i3c_regs(dev) + DEVICE_CTRL) & DEV_CTRL_RESUME) == 0U) {
+			return 0;
+		}
+		k_busy_wait(1);
+	}
+
+	return -ETIMEDOUT;
+}
+
+/**
+ * @brief Drop a RESUME request the controller has not consumed
+ */
+static void dw_i3c_clear_resume(const struct device *dev)
+{
+	uint32_t dev_ctrl = sys_read32(dw_i3c_regs(dev) + DEVICE_CTRL);
+
+	if ((dev_ctrl & DEV_CTRL_RESUME) != 0U) {
+		sys_write32(dev_ctrl & ~DEV_CTRL_RESUME, dw_i3c_regs(dev) + DEVICE_CTRL);
+	}
+}
+
+/**
+ * @brief Pulse RESUME and wait for the controller to take it.
+ *
+ * Leaves RESUME clear whether or not the controller consumed the pulse
+ *
+ * @retval 0 Pulse consumed.
+ * @retval -ETIMEDOUT Pulse was not consumed before the timeout.
+ */
+static int dw_i3c_pulse_resume(const struct device *dev)
+{
+	int ret;
+
+	sys_write32(sys_read32(dw_i3c_regs(dev) + DEVICE_CTRL) | DEV_CTRL_RESUME,
+		    dw_i3c_regs(dev) + DEVICE_CTRL);
+
+	ret = dw_i3c_wait_resume_clear(dev, DW_I3C_RESUME_TIMEOUT_US);
+	if (ret != 0) {
+		dw_i3c_clear_resume(dev);
+	}
+
+	return ret;
+}
+
+/**
+ * @brief Flush the FIFOs and queues
+ *
+ * Signalling is masked across the flush so it cannot raise an ISR
+ */
+static void dw_i3c_flush_queues(const struct device *dev)
+{
+	unsigned int irq_key = irq_lock();
+	uint32_t saved_intr = sys_read32(dw_i3c_regs(dev) + INTR_SIGNAL_EN);
+
+	sys_write32(0U, dw_i3c_regs(dev) + INTR_SIGNAL_EN);
+	sys_write32(0xFFFFFFFFU, dw_i3c_regs(dev) + INTR_STATUS);
+	sys_write32(RESET_CTRL_RX_FIFO | RESET_CTRL_TX_FIFO | RESET_CTRL_RESP_QUEUE |
+			    RESET_CTRL_CMD_QUEUE | RESET_CTRL_IBI_QUEUE,
+		    dw_i3c_regs(dev) + RESET_CTRL);
+	k_busy_wait(DW_I3C_FLUSH_SETTLE_US);
+	sys_write32(saved_intr, dw_i3c_regs(dev) + INTR_SIGNAL_EN);
+	irq_unlock(irq_key);
+}
+
+#endif
 #ifdef CONFIG_I3C_CONTROLLER
 /**
  * @brief Wait for the running transfer to complete.
@@ -2950,8 +3062,9 @@ static int dw_i3c_recover_bus(const struct device *dev)
 {
 	struct dw_i3c_data *data = dev->data;
 	uint32_t nibis;
+	uint32_t pstate;
+	bool halted;
 	int ret;
-
 
 	if (!dw_i3c_is_current_controller(dev)) {
 		return -EACCES;
@@ -2971,16 +3084,46 @@ static int dw_i3c_recover_bus(const struct device *dev)
 		(void)sys_read32(dw_i3c_regs(dev) + IBI_QUEUE_STATUS);
 	}
 
-	/* Flush command / response / data FIFOs and the IBI queue.
-	 * Crucially, SOFT reset is NOT asserted here — DAT/DCT survive.
-	 */
-	ret = dw_i3c_reset(dev, RESET_CTRL_FIFO_QUEUE | RESET_CTRL_IBI_QUEUE);
-	if (ret == 0) {
-		/* Resume controller from any halt state caused by a prior error. */
-		sys_write32(sys_read32(dw_i3c_regs(dev) + DEVICE_CTRL) | DEV_CTRL_RESUME,
-			    dw_i3c_regs(dev) + DEVICE_CTRL);
-	} else {
-		ret = -EBUSY;
+	pstate = sys_read32(dw_i3c_regs(dev) + PRESENT_STATE);
+	halted = (PRESENT_STATE_CM_TFR_STS(pstate) == CM_TFR_STS_CTRL_HALT);
+
+	LOG_DBG("%s: recover_bus pstate 0x%08x (tfr_sts 0x%02x st_sts 0x%02x)", dev->name, pstate,
+		(unsigned int)PRESENT_STATE_CM_TFR_STS(pstate),
+		(unsigned int)PRESENT_STATE_CM_TFR_ST_STS(pstate));
+
+	/* SOFT reset is NOT asserted here, so DAT/DCT survive. */
+	dw_i3c_flush_queues(dev);
+
+	if (halted) {
+		/* Without pre_resume_ctrl and the INTR_STATUS clear, RESUME does not
+		 * take effect on wrappered variants.
+		 */
+		ret = dw_i3c_pre_resume_ctrl(dev);
+		if (ret != 0) {
+			k_mutex_unlock(&data->mt);
+			return ret;
+		}
+
+		sys_write32(INTR_TRANSFER_ERR_STAT, dw_i3c_regs(dev) + INTR_STATUS);
+
+		/* A RESUME still set from an earlier attempt swallows the next pulse. */
+		if ((sys_read32(dw_i3c_regs(dev) + DEVICE_CTRL) & DEV_CTRL_RESUME) != 0U) {
+			dw_i3c_clear_resume(dev);
+
+			if ((sys_read32(dw_i3c_regs(dev) + DEVICE_CTRL) & DEV_CTRL_RESUME) != 0U) {
+				dw_i3c_enable_controller(dev, false);
+				k_busy_wait(10);
+				dw_i3c_enable_controller(dev, true);
+				dw_i3c_clear_resume(dev);
+			}
+
+			(void)dw_i3c_wait_resume_clear(dev, DW_I3C_RESUME_TIMEOUT_US);
+		}
+
+		if (dw_i3c_pulse_resume(dev) != 0) {
+			k_mutex_unlock(&data->mt);
+			return -EBUSY;
+		}
 	}
 
 	k_mutex_unlock(&data->mt);
