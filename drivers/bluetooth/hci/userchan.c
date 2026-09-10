@@ -48,6 +48,12 @@ static unsigned short bt_dev_index;
 
 #define TCP_ADDR_BUFF_SIZE 16
 #define UNIX_ADDR_BUFF_SIZE 4096
+
+/* Fit the largest packet the host can receive (H4 type + ACL header + ACL RX
+ * payload), with the historical 512-byte buffer as a floor.
+ */
+#define RX_FRAME_ACL_SIZE (1U + BT_HCI_ACL_HDR_SIZE + CONFIG_BT_BUF_ACL_RX_SIZE)
+#define RX_FRAME_SIZE     MAX(512, RX_FRAME_ACL_SIZE)
 enum hci_connection_type {
 	HCI_USERCHAN,
 	HCI_TCP,
@@ -256,7 +262,7 @@ static void rx_thread(void *p1, void *p2, void *p3)
 	long frame_size = 0;
 
 	while (1) {
-		static uint8_t frame[512];
+		static uint8_t frame[RX_FRAME_SIZE];
 		struct net_buf *buf;
 		size_t buf_tailroom;
 		size_t buf_add_len;
