@@ -21,21 +21,21 @@
  * @{
  */
 
-#if defined(CONFIG_SOC_SILABS_XG21)
+#if defined(CONFIG_SOC_FAMILY_SILABS_S2_XG21)
 #include <zephyr/dt-bindings/clock/silabs/xg21-clock.h>
-#elif defined(CONFIG_SOC_SILABS_XG22)
+#elif defined(CONFIG_SOC_FAMILY_SILABS_S2_XG22)
 #include <zephyr/dt-bindings/clock/silabs/xg22-clock.h>
-#elif defined(CONFIG_SOC_SILABS_XG23)
+#elif defined(CONFIG_SOC_FAMILY_SILABS_S2_XG23)
 #include <zephyr/dt-bindings/clock/silabs/xg23-clock.h>
-#elif defined(CONFIG_SOC_SILABS_XG24)
+#elif defined(CONFIG_SOC_FAMILY_SILABS_S2_XG24)
 #include <zephyr/dt-bindings/clock/silabs/xg24-clock.h>
-#elif defined(CONFIG_SOC_SILABS_XG26)
+#elif defined(CONFIG_SOC_FAMILY_SILABS_S2_XG26)
 #include <zephyr/dt-bindings/clock/silabs/xg26-clock.h>
-#elif defined(CONFIG_SOC_SILABS_XG27)
+#elif defined(CONFIG_SOC_FAMILY_SILABS_S2_XG27)
 #include <zephyr/dt-bindings/clock/silabs/xg27-clock.h>
-#elif defined(CONFIG_SOC_SILABS_XG28)
+#elif defined(CONFIG_SOC_FAMILY_SILABS_S2_XG28)
 #include <zephyr/dt-bindings/clock/silabs/xg28-clock.h>
-#elif defined(CONFIG_SOC_SILABS_XG29)
+#elif defined(CONFIG_SOC_FAMILY_SILABS_S2_XG29)
 #include <zephyr/dt-bindings/clock/silabs/xg29-clock.h>
 #endif
 

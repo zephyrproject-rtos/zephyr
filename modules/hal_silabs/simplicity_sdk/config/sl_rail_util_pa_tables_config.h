@@ -13,7 +13,7 @@
 
 #include <zephyr/devicetree.h>
 
-#ifdef CONFIG_SOC_SILABS_XG21
+#ifdef CONFIG_SOC_FAMILY_SILABS_S2_XG21
 
 #if DT_ENUM_HAS_VALUE(DT_NODELABEL(radio), pa_2p4ghz, hp)
 #include <sl_rail_util_pa_dbm_powersetting_mapping_table_20dbm.h>
@@ -37,9 +37,9 @@
 #error "Unknown 2.4 GHz PA configuration"
 #endif
 
-#endif /* CONFIG_SOC_SILABS_XG21 */
+#endif /* CONFIG_SOC_FAMILY_SILABS_S2_XG21 */
 
-#ifdef CONFIG_SOC_SILABS_XG22
+#ifdef CONFIG_SOC_FAMILY_SILABS_S2_XG22
 
 #if DT_ENUM_HAS_VALUE(DT_NODELABEL(radio), pa_2p4ghz, hp) ||                                       \
 	DT_ENUM_HAS_VALUE(DT_NODELABEL(radio), pa_2p4ghz, highest)
@@ -52,9 +52,9 @@
 #error "Unknown 2.4 GHz PA configuration"
 #endif
 
-#endif /* CONFIG_SOC_SILABS_XG22 */
+#endif /* CONFIG_SOC_FAMILY_SILABS_S2_XG22 */
 
-#ifdef CONFIG_SOC_SILABS_XG23
+#ifdef CONFIG_SOC_FAMILY_SILABS_S2_XG23
 
 #if DT_ENUM_HAS_VALUE(DT_NODELABEL(radio), pa_subghz, hp) ||                                       \
 	DT_ENUM_HAS_VALUE(DT_NODELABEL(radio), pa_subghz, highest)
@@ -73,9 +73,9 @@
 #error "Unknown Sub-GHz PA configuration"
 #endif
 
-#endif /* CONFIG_SOC_SILABS_XG23 */
+#endif /* CONFIG_SOC_FAMILY_SILABS_S2_XG23 */
 
-#ifdef CONFIG_SOC_SILABS_XG24
+#ifdef CONFIG_SOC_FAMILY_SILABS_S2_XG24
 
 #if DT_ENUM_HAS_VALUE(DT_NODELABEL(radio), pa_2p4ghz, hp)
 #include <sl_rail_util_pa_dbm_powersetting_mapping_table_20dbm.h>
@@ -99,9 +99,9 @@
 #error "Unknown 2.4 GHz PA configuration"
 #endif
 
-#endif /* CONFIG_SOC_SILABS_XG24 */
+#endif /* CONFIG_SOC_FAMILY_SILABS_S2_XG24 */
 
-#ifdef CONFIG_SOC_SILABS_XG26
+#ifdef CONFIG_SOC_FAMILY_SILABS_S2_XG26
 
 #ifdef CONFIG_SOC_EFR32MG26B510F3200IL136
 
@@ -142,9 +142,9 @@
 
 #endif /* CONFIG_SOC_EFR32MG26B510F3200IL136 */
 
-#endif /* CONFIG_SOC_SILABS_XG26 */
+#endif /* CONFIG_SOC_FAMILY_SILABS_S2_XG26 */
 
-#ifdef CONFIG_SOC_SILABS_XG27
+#ifdef CONFIG_SOC_FAMILY_SILABS_S2_XG27
 
 #if DT_PROP(DT_NODELABEL(radio), pa_max_power_dbm) > 4
 
@@ -174,9 +174,9 @@
 
 #endif
 
-#endif /* CONFIG_SOC_SILABS_XG27 */
+#endif /* CONFIG_SOC_FAMILY_SILABS_S2_XG27 */
 
-#ifdef CONFIG_SOC_SILABS_XG28
+#ifdef CONFIG_SOC_FAMILY_SILABS_S2_XG28
 
 #if DT_ENUM_HAS_VALUE(DT_NODELABEL(radio), pa_subghz, hp) ||                                       \
 	DT_ENUM_HAS_VALUE(DT_NODELABEL(radio), pa_subghz, highest)
@@ -195,9 +195,9 @@
 #error "Unknown Sub-GHz PA configuration"
 #endif
 
-#endif /* CONFIG_SOC_SILABS_XG28 */
+#endif /* CONFIG_SOC_FAMILY_SILABS_S2_XG28 */
 
-#ifdef CONFIG_SOC_SILABS_XG29
+#ifdef CONFIG_SOC_FAMILY_SILABS_S2_XG29
 
 #if DT_PROP(DT_NODELABEL(radio), pa_max_power_dbm) > 4
 
@@ -227,6 +227,6 @@
 
 #endif
 
-#endif /* CONFIG_SOC_SILABS_XG29 */
+#endif /* CONFIG_SOC_FAMILY_SILABS_S2_XG29 */
 
 #endif /* SL_RAIL_UTIL_PA_TABLES_CONFIG_H */

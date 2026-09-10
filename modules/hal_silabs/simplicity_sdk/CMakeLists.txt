@@ -114,7 +114,7 @@ if(CONFIG_SOC_VENDOR_SILABS_HAS_RADIO)
         ${RADIO_DIR}/rail_lib/plugin/sl_rail_util_built_in_phys/sl_rail_util_built_in_phys.c
       )
 
-      if(CONFIG_SOC_SILABS_XG24 OR CONFIG_SOC_SILABS_XG26)
+      if(CONFIG_SOC_FAMILY_SILABS_S2_XG24 OR CONFIG_SOC_FAMILY_SILABS_S2_XG26)
         dt_nodelabel(hfxo_node NODELABEL "hfxo" REQUIRED)
         dt_prop(hfxo_freq PATH "${hfxo_node}" PROPERTY "clock-frequency")
         if(hfxo_freq EQUAL "38400000")
