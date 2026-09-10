@@ -21,6 +21,7 @@ supported:
   - usb_device
   - watchdog
   - adc
+  - crypto
   - dac
   - dma
   - rtc
