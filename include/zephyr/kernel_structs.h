@@ -144,6 +144,13 @@ struct _ready_q {
 
 typedef struct _ready_q _ready_q_t;
 
+/* CPU records in coherent memory do not need padding to avoid false sharing. */
+#ifndef CONFIG_KERNEL_COHERENCE
+#define Z_DCACHE_ALIGN_SMP_CPU Z_DCACHE_ALIGN_SMP
+#else
+#define Z_DCACHE_ALIGN_SMP_CPU
+#endif
+
 struct _cpu {
 	/* nested interrupt count */
 	uint32_t nested;
@@ -201,7 +208,7 @@ struct _cpu {
 
 	/* Per CPU architecture specifics */
 	struct _cpu_arch arch;
-};
+} Z_DCACHE_ALIGN_SMP_CPU;
 
 typedef struct _cpu _cpu_t;
 
