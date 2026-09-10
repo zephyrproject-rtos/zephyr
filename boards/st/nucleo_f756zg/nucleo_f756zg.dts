@@ -170,6 +170,14 @@ zephyr_udc0: &usbotg_fs {
 	};
 };
 
+&rng {
+	status = "okay";
+};
+
+&cryp {
+	status = "okay";
+};
+
 &flash0 {
 	partitions {
 		#address-cells = <1>;
