@@ -1901,6 +1901,7 @@ static int dw_i3c_attach_device(const struct device *dev, struct i3c_device_desc
 	if (desc->static_addr != 0U) {
 		dat |= DEV_ADDR_TABLE_STATIC_ADDR(desc->static_addr);
 	}
+	dat |= DEV_ADDR_TABLE_SIR_REJECT;
 
 	sys_write32(dat, config->regs + DEV_ADDR_TABLE_LOC(data->datstartaddr, pos));
 
@@ -2326,7 +2327,7 @@ static int dw_i3c_do_daa(const struct device *dev)
 		p = odd_parity(addr);
 		last_addr = addr;
 		addr |= (p << 7);
-		sys_write32(DEV_ADDR_TABLE_DYNAMIC_ADDR(addr),
+		sys_write32(DEV_ADDR_TABLE_DYNAMIC_ADDR(addr) | DEV_ADDR_TABLE_SIR_REJECT,
 			    config->regs + DEV_ADDR_TABLE_LOC(data->datstartaddr, pos));
 	}
 
