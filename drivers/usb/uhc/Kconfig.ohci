@@ -14,6 +14,8 @@ config UHC_OHCI
 	depends on !64BIT
 	select NOCACHE_MEMORY if !UHC_OHCI_DMA_COHERENT && DCACHE && ARCH_HAS_NOCACHE_MEMORY_SUPPORT
 	select CACHE_MANAGEMENT if !UHC_OHCI_DMA_COHERENT && DCACHE
+	# The root hub is presented to the host stack as a hub device
+	select USBH_HUB_CLASS if USB_HOST_STACK
 	help
 	  Generic OHCI USB host controller driver for any OHCI
 	  controller (OpenHCI 1.0a compatible). Only supported on
