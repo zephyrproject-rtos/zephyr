@@ -2526,7 +2526,7 @@ static int dw_i3c_configure(const struct device *dev, enum i3c_config_type type,
 		 * written to in bcr
 		 */
 		val |= SLV_CHAR_CTRL_BCR(target_cfg->bcr);
-		val |= SLV_CHAR_CTRL_DCR(target_cfg->dcr) << 8;
+		val |= ((uint32_t)target_cfg->dcr << 8) & SLV_CHAR_CTRL_DCR_MASK;
 		/* HDR CAPs is not settable */
 		sys_write32(val, dev_config->regs + SLV_CHAR_CTRL);
 
