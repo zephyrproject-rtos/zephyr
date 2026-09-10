@@ -178,6 +178,10 @@ zephyr_udc0: &usbotg_fs {
 	status = "okay";
 };
 
+&rng {
+	status = "okay";
+};
+
 &flash0 {
 	partitions {
 		#address-cells = <1>;
