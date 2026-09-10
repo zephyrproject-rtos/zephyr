@@ -2950,6 +2950,112 @@ class DeviceAPICheck(ComplianceTest):
                         )
 
 
+class DevicetreeClassCheck(ComplianceTest):
+    """
+    Checks that device class names declared with the "class" binding key
+    match device API classes registered with DEVICE_API(), and that, for
+    classes whose rollout is complete, every devicetree-based driver
+    registering the class API declares membership in its binding.
+    """
+
+    name = "DevicetreeClasses"
+    doc = zephyr_doc_detail_builder("/build/dts/bindings-syntax.html#class")
+
+    # Classes for which every in-tree devicetree-based driver registering
+    # the device API is expected to declare class membership in its
+    # binding. Grows as subsystems adopt the "class" binding key.
+    ENFORCED_CLASSES = {"adc", "spi", "i3c"}
+
+    SOURCE_DIRS = ("drivers/", "subsys/", "modules/")
+
+    DEVICE_API_RE = re.compile(r"\bDEVICE_API\((\w+),")
+    DT_DRV_COMPAT_RE = re.compile(r"^\s*#define\s+DT_DRV_COMPAT\s+(\w+)", re.M)
+
+    @staticmethod
+    def to_ident(name):
+        return re.sub("[-,.@/+]", "_", name.lower())
+
+    def run(self):
+        from glob import glob
+
+        relevant = [
+            f
+            for f in get_files(filter="d")
+            if f.startswith("dts/bindings/")
+            or (f.startswith(self.SOURCE_DIRS) and f.endswith(".c"))
+        ]
+        if not relevant:
+            self.skip("no changes to bindings or driver sources were made")
+
+        # Registered device API classes and per-file registrations.
+        registered = set()
+        sources = []
+        for source_dir in self.SOURCE_DIRS:
+            sources += glob(f"{os.fspath(GIT_TOP / source_dir)}/**/*.c", recursive=True)
+        file2info = {}
+        for fname in sources:
+            with open(fname, encoding="utf-8", errors="replace") as f:
+                content = f.read()
+            classes = {c for c in self.DEVICE_API_RE.findall(content) if not c.startswith("_")}
+            if classes:
+                registered |= classes
+                compats = set(self.DT_DRV_COMPAT_RE.findall(content))
+                file2info[fname] = (classes, compats)
+
+        # All bindings, with their include-merged class declarations.
+        yamls = glob(f"{os.fspath(GIT_TOP)}/dts/bindings/**/*.yaml", recursive=True)
+        bindings = edtlib.bindings_from_paths(yamls, ignore_errors=True)
+        compat2classes = {}
+        unknown = {}
+        for binding in bindings:
+            while binding is not None:
+                if binding.compatible:
+                    ident = self.to_ident(binding.compatible)
+                    compat2classes.setdefault(ident, set()).update(
+                        self.to_ident(cls) for cls in binding.classes
+                    )
+                self.collect_unknown_classes(binding, registered, unknown)
+                binding = binding.child_binding
+
+        for cls, paths in sorted(unknown.items()):
+            shown = ", ".join(sorted(paths)[:3])
+            more = f" and {len(paths) - 3} more" if len(paths) > 3 else ""
+            self.fmtd_failure(
+                "error",
+                "DevicetreeClasses",
+                shown.split(",")[0],
+                desc=f"unknown device class '{cls}': no DEVICE_API(...) "
+                f"registration exists in the tree. Declared or inherited "
+                f"by: {shown}{more}.",
+            )
+
+        # Every devicetree-based driver registering an enforced class API
+        # must belong to the class through its binding.
+        for fname, (classes, compats) in file2info.items():
+            for cls in classes & self.ENFORCED_CLASSES:
+                for compat in compats:
+                    if compat not in compat2classes:
+                        continue
+                    if cls not in compat2classes[compat]:
+                        rel = os.path.relpath(fname, GIT_TOP)
+                        self.fmtd_failure(
+                            "error",
+                            "DevicetreeClasses",
+                            rel,
+                            desc=f"registers DEVICE_API({cls}, ...) for "
+                            f"compatible '{compat}', but no binding for it "
+                            f"declares 'class: {cls}'.",
+                        )
+
+    def collect_unknown_classes(self, binding, registered, unknown):
+        if not binding.path or "dts/bindings/test/" in binding.path:
+            return
+        for cls in binding.classes:
+            if self.to_ident(cls) not in registered:
+                rel = os.path.relpath(binding.path, GIT_TOP)
+                unknown.setdefault(cls, set()).add(rel)
+
+
 def init_logs(cli_arg):
     # Initializes logging
 
