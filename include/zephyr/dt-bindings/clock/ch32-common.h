@@ -28,6 +28,8 @@
  * encoded with @c CH32_CLOCK() by combining a bus constant with the bit position of the
  * peripheral's clock enable bit within that bus clock register.
  *
+ * @note There are also special values for e.g. MCO as an clock ID.
+ *
  * @code{.dts}
  * #include <zephyr/dt-bindings/clock/ch32v20x_30x-clocks.h>
  *
@@ -44,12 +46,23 @@
  * Packs an RCC bus register offset and a bit position into one 32-bit reset clock cell value.
  *
  * Bits [4:0] hold the clock bit position within the 32-bit RCC bus register;
- * bits [16:5] hold the RCC register byte offset relative to the RCC base address.
+ * bits [16:5] hold the RCC register byte offset relative to the RCC base address;
+ * bits [31:23] hold the special function IDs (e.g. MCO).
  *
  * @param bus RCC bus name.
  * @param bit Bit position of the peripheral's clock enable bit within the bus clock register.
  */
 #define CH32_CLOCK(bus, bit) (((CH32_CLOCK_PCENR_##bus) << 5U) | (bit))
+
+/**
+ * @brief special MCO clock ID
+ *
+ * Clock cell id for the MCO clock function. This is used for the <tt>wch,rcc</tt> binding to select
+ * the MCO function.
+ *
+ * See @ref CH32_CLOCK for bit field documentation.
+ */
+#define CH32_CLOCK_MCO BIT(24)
 
 /** @} */
 
