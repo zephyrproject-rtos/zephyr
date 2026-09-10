@@ -1,0 +1,7 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+DT_AE350_MTIMER_PATH := $(dt_nodelabel_path,mtimer)
+
+config XIP
+	default y
