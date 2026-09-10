@@ -144,27 +144,74 @@
 #endif
 
 /*
- * Cycles per tick: a constant if the rate is, or computed once in
- * timer_core_init() otherwise.
+ * Whether the rate is a build constant. Unlike
+ * TIMER_CORE_CYC_PER_TICK_IS_CONSTANT, this includes a driver rate that is a C
+ * constant but not a preprocessor number.
  */
-#if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME) || \
+#if defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME) ||                                        \
+	defined(CONFIG_SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE) ||                           \
 	defined(TIMER_CORE_CYCLES_PER_SEC_RUNTIME)
-static uint32_t timer_core_cyc_per_tick;
-#define TIMER_CORE_CYC_PER_TICK timer_core_cyc_per_tick
-#define TIMER_CORE_PRECOMPUTE_CYC_PER_TICK
-#else
+#define TIMER_CORE_RATE_IS_CONSTANT 0
+#else /* rate is a build constant */
+#define TIMER_CORE_RATE_IS_CONSTANT 1
+#endif /* rate read at run time */
+
+/*
+ * Whether a tick is a whole number of cycles. If so, the conversions multiply
+ * or divide by TIMER_CORE_CYC_PER_TICK. If not, they go through
+ * timer_core_last_rem. Only one form is compiled. A rate read at run time
+ * always gets the second.
+ */
+#if defined(TIMER_CORE_CYC_PER_TICK_IS_CONSTANT)
+/* Nested, not &&: the preprocessor parses both operands, and a run-time rate
+ * is a function call it cannot parse.
+ */
+#if (TIMER_CORE_CYCLES_PER_SEC % CONFIG_SYS_CLOCK_TICKS_PER_SEC) == 0
+#define TIMER_CORE_TICK_IS_WHOLE 1
+#else /* tick is not a whole number of cycles */
+#define TIMER_CORE_TICK_IS_WHOLE 0
+#endif /* tick is a whole number of cycles */
+#else  /* !TIMER_CORE_CYC_PER_TICK_IS_CONSTANT */
+/* The preprocessor cannot tell. */
+#define TIMER_CORE_TICK_IS_WHOLE 0
+#endif /* TIMER_CORE_CYC_PER_TICK_IS_CONSTANT */
+
+/*
+ * Cycles per kernel tick, truncated. It is the tick period only when
+ * TIMER_CORE_TICK_IS_WHOLE, and the other conversions do not use it. A rate
+ * read at run time has it computed in timer_core_init().
+ */
+#if TIMER_CORE_RATE_IS_CONSTANT
 #define TIMER_CORE_CYC_PER_TICK (TIMER_CORE_CYCLES_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 /*
  * This is zero if the counter runs slower than the tick rate, and we divide
  * by it. Catch that at build time if constant, or in timer_core_init()
  * otherwise.
  */
-#if defined(CONFIG_SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE)
-#define TIMER_CORE_CHECK_CYC_PER_TICK_AT_INIT
-#else
 BUILD_ASSERT(TIMER_CORE_CYC_PER_TICK != 0, "timer counter rate is below the tick rate");
+#else /* !TIMER_CORE_RATE_IS_CONSTANT */
+#if defined(CONFIG_SYSTEM_CLOCK_HW_CYCLES_PER_SEC_RUNTIME_UPDATE) &&                               \
+	!defined(CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME) &&                                   \
+	!defined(TIMER_CORE_DRIVER_CYCLES_PER_SEC)
+/* The rate starts at the Kconfig value, and any change before
+ * timer_core_init() goes through timer_core_rescale(). So the value is right
+ * even before timer_core_init(), and a ticking driver can set its period
+ * from it first. A rate read from the hardware is only known from
+ * timer_core_init() on.
+ */
+static uint32_t timer_core_cyc_per_tick =
+	CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
+#else
+static uint32_t timer_core_cyc_per_tick;
 #endif
-#endif
+#define TIMER_CORE_CYC_PER_TICK timer_core_cyc_per_tick
+#define TIMER_CORE_PRECOMPUTE_CYC_PER_TICK
+#endif /* TIMER_CORE_RATE_IS_CONSTANT */
+
+/* Longest tick, in cycles. A tick that is not a whole number of cycles is
+ * sometimes one cycle longer than TIMER_CORE_CYC_PER_TICK.
+ */
+#define TIMER_CORE_TICK_MAX_CYCLES (TIMER_CORE_CYC_PER_TICK + (TIMER_CORE_TICK_IS_WHOLE ? 0U : 1U))
 
 #if !defined(TIMER_CORE_COUNTER_WIDTH)
 #define TIMER_CORE_COUNTER_WIDTH (__SIZEOF_LONG__ * 8)
@@ -203,10 +250,26 @@ typedef uint64_t timer_core_cycles_t;
  * quarter as slack.
  */
 #ifdef TIMER_CORE_COUNTER_NONMONOTONIC
-#define TIMER_CORE_COUNTER_SAFE_SPAN (TIMER_CORE_COUNTER_MASK >> 2)
+#define TIMER_CORE_COUNTER_WIDTH_SPAN (TIMER_CORE_COUNTER_MASK >> 2)
 #else
-#define TIMER_CORE_COUNTER_SAFE_SPAN (TIMER_CORE_COUNTER_MASK >> 1)
+#define TIMER_CORE_COUNTER_WIDTH_SPAN (TIMER_CORE_COUNTER_MASK >> 1)
 #endif
+
+#if TIMER_CORE_TICK_IS_WHOLE
+#define TIMER_CORE_COUNTER_SAFE_SPAN TIMER_CORE_COUNTER_WIDTH_SPAN
+#else /* !TIMER_CORE_TICK_IS_WHOLE */
+/*
+ * Widest cycle span an inexact tick conversion can take: it multiplies the span
+ * by the tick rate, and the product must fit in 64 bits. Only a counter wider
+ * than 32 bits gets there: 107 days at 2 GHz with a 1000 Hz tick, 24 years at
+ * 24 MHz.
+ */
+#define TIMER_CORE_MAX_CONVERTIBLE_CYCLES ((UINT64_MAX / CONFIG_SYS_CLOCK_TICKS_PER_SEC) - 1U)
+
+/* The span the counter resolves, capped by the conversion limit above. */
+#define TIMER_CORE_COUNTER_SAFE_SPAN                                                               \
+	MIN((uint64_t)TIMER_CORE_COUNTER_WIDTH_SPAN, TIMER_CORE_MAX_CONVERTIBLE_CYCLES)
+#endif /* TIMER_CORE_TICK_IS_WHOLE */
 
 /*
  * Longest time allowed between two announces, in cycles. Only the counter
@@ -240,14 +303,22 @@ typedef uint64_t timer_core_cycles_t;
 /*
  * Where the last announce left us.
  *
- * last_cycle: counter value at the last announce, always on a tick boundary
- *             (last_tick * TIMER_CORE_CYC_PER_TICK). Its low bits follow the
+ * last_cycle: counter value at the last announce: the first whole cycle at
+ *             or after the exact start of last_tick. Its low bits follow the
  *             hardware counter, so differences against it survive a wrap.
  * last_tick:  ticks announced so far.
+ * last_rem:   when a tick is not a whole number of cycles, how far
+ *             last_cycle is past that exact start, times TICKS_PER_SEC so
+ *             it stays an integer:
+ *               last_rem = last_cycle * TICKS_PER_SEC - last_tick * CYCLES_PER_SEC
+ *             This avoids rounding again at each announce.
  * last_elapsed (below): the last tick count sys_clock_elapsed() returned.
  */
 static uint64_t timer_core_last_cycle;
 static uint64_t timer_core_last_tick;
+#if !TIMER_CORE_TICK_IS_WHOLE
+static uint32_t timer_core_last_rem;
+#endif /* !TIMER_CORE_TICK_IS_WHOLE */
 
 /* Cycles from @p from to now, correct even if the counter wrapped in between. */
 static inline timer_core_cycles_t timer_core_cycles_since(uint64_t from)
@@ -265,6 +336,9 @@ static inline timer_core_cycles_t timer_core_cycles_since(uint64_t from)
  * otherwise.
  */
 #if defined(TIMER_CORE_CYC_PER_TICK_IS_CONSTANT)
+/* Truncated: this only picks the tick type, and the real count is never
+ * larger.
+ */
 #define TIMER_CORE_MAX_TICKS (TIMER_CORE_COUNTER_MASK / TIMER_CORE_CYC_PER_TICK)
 #else
 #define TIMER_CORE_MAX_TICKS TIMER_CORE_COUNTER_MASK
@@ -288,27 +362,191 @@ static inline uint32_t timer_core_ticks_clamp(timer_core_ticks_t ticks)
 	return ticks;
 }
 #endif
+/* Tick count last returned by sys_clock_elapsed(). */
 static timer_core_ticks_t timer_core_last_elapsed;
+
+#if TIMER_CORE_TICK_IS_WHOLE
+
+/* Cycle position of tick @p t, counted from tick zero. */
+static inline uint64_t timer_core_cyc_at_tick(uint64_t t)
+{
+	return t * TIMER_CORE_CYC_PER_TICK;
+}
+
+/* Whole ticks in @p c cycles counted from tick zero. */
+static inline timer_core_ticks_t timer_core_ticks_at_cyc(uint64_t c)
+{
+	return (timer_core_ticks_t)(c / TIMER_CORE_CYC_PER_TICK);
+}
+
+/* Cycles from the announce baseline to the tick @p span ticks past it. The
+ * baseline always sits on a tick here, so this is a plain multiply.
+ */
+static inline timer_core_cycles_t timer_core_span_cycles(timer_core_ticks_t span)
+{
+	return (timer_core_cycles_t)span * TIMER_CORE_CYC_PER_TICK;
+}
+
+/* Whole ticks spanned by @p c cycles measured from the announce baseline. The
+ * baseline always sits on a tick here, so this is a plain division.
+ */
+static inline timer_core_ticks_t timer_core_ticks_in(timer_core_cycles_t c)
+{
+	return (timer_core_ticks_t)(c / TIMER_CORE_CYC_PER_TICK);
+}
+
+/* timer_core_ticks_in() for a span wider than the counter, which only the
+ * recovery announce deals in.
+ */
+static inline uint64_t timer_core_ticks_in64(uint64_t c)
+{
+	return c / TIMER_CORE_CYC_PER_TICK;
+}
+
+/* Move the announce baseline on by @p dticks, keeping it on a tick position. */
+static inline void timer_core_advance_baseline64(uint64_t dticks)
+{
+	timer_core_last_cycle += dticks * TIMER_CORE_CYC_PER_TICK;
+	timer_core_last_tick += dticks;
+}
+
+static inline void timer_core_advance_baseline(timer_core_ticks_t dticks)
+{
+	/* In the counter's width, which can be wider than timer_core_ticks_t. */
+	timer_core_last_cycle += (timer_core_cycles_t)dticks * TIMER_CORE_CYC_PER_TICK;
+	timer_core_last_tick += dticks;
+}
+
+#else /* a tick is not a whole number of cycles */
+
+/*
+ * Tick n starts on cycle ceil(n * CYCLES_PER_SEC / TICKS_PER_SEC). Rounding
+ * down would arm every deadline a cycle short of its tick.
+ *
+ * c cycles past timer_core_last_cycle are c * TICKS_PER_SEC / CYCLES_PER_SEC
+ * ticks, and the baseline cycle is already last_rem / CYCLES_PER_SEC of a tick
+ * into its own. So c cycles later the tick count is
+ * last_tick + (c * TICKS_PER_SEC + last_rem) / CYCLES_PER_SEC.
+ *
+ * Two idioms recur. (x + TICKS_PER_SEC - 1) / TICKS_PER_SEC is x divided by
+ * TICKS_PER_SEC and rounded up, and
+ * (TICKS_PER_SEC - 1) - (x + TICKS_PER_SEC - 1) % TICKS_PER_SEC is how much
+ * that rounding added.
+ */
+
+/* Cycle tick @p t starts on. Whole seconds convert exactly, so only the rest
+ * is rounded up. The split also keeps t * CYCLES_PER_SEC from overflowing.
+ */
+static inline uint64_t timer_core_cyc_at_tick(uint64_t t)
+{
+	uint64_t whole = t / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
+	uint64_t part = t % CONFIG_SYS_CLOCK_TICKS_PER_SEC;
+
+	return (whole * TIMER_CORE_CYCLES_PER_SEC) +
+	       DIV_ROUND_UP(part * TIMER_CORE_CYCLES_PER_SEC, CONFIG_SYS_CLOCK_TICKS_PER_SEC);
+}
+
+/* last_rem for a baseline at tick @p t: what rounding its start up added.
+ * Whole seconds add nothing, so only the rest counts.
+ */
+static inline uint32_t timer_core_rem_at_tick(uint64_t t)
+{
+	uint64_t part = ((t % CONFIG_SYS_CLOCK_TICKS_PER_SEC) * TIMER_CORE_CYCLES_PER_SEC) +
+			(CONFIG_SYS_CLOCK_TICKS_PER_SEC - 1U);
+
+	return (CONFIG_SYS_CLOCK_TICKS_PER_SEC - 1U) -
+	       (uint32_t)(part % CONFIG_SYS_CLOCK_TICKS_PER_SEC);
+}
+
+/* Ticks started by cycle @p c, counted from tick zero. */
+static inline timer_core_ticks_t timer_core_ticks_at_cyc(uint64_t c)
+{
+	return (timer_core_ticks_t)(c * CONFIG_SYS_CLOCK_TICKS_PER_SEC / TIMER_CORE_CYCLES_PER_SEC);
+}
+
+/* Cycles from the baseline to the start of tick last_tick + @p span:
+ * ceil((span * CYCLES_PER_SEC - last_rem) / TICKS_PER_SEC). last_rem comes off
+ * the round-up term rather than the product, so nothing underflows at span 0.
+ */
+static inline timer_core_cycles_t timer_core_span_cycles(timer_core_ticks_t span)
+{
+	uint64_t n = ((uint64_t)span * TIMER_CORE_CYCLES_PER_SEC) +
+		     ((CONFIG_SYS_CLOCK_TICKS_PER_SEC - 1U) - timer_core_last_rem);
+
+	return (timer_core_cycles_t)(n / CONFIG_SYS_CLOCK_TICKS_PER_SEC);
+}
+
+/* Ticks started @p c cycles past the baseline. */
+static inline timer_core_ticks_t timer_core_ticks_in(timer_core_cycles_t c)
+{
+	c = (timer_core_cycles_t)MIN((uint64_t)c, TIMER_CORE_MAX_CONVERTIBLE_CYCLES);
+
+	return (timer_core_ticks_t)((((uint64_t)c * CONFIG_SYS_CLOCK_TICKS_PER_SEC) +
+				     timer_core_last_rem) /
+				    TIMER_CORE_CYCLES_PER_SEC);
+}
+
+/* Move the baseline to the start of tick last_tick + @p dticks, n as in
+ * timer_core_span_cycles(). The new last_rem is what the round-up added.
+ */
+static inline void timer_core_advance_baseline(timer_core_ticks_t dticks)
+{
+	uint64_t n = ((uint64_t)dticks * TIMER_CORE_CYCLES_PER_SEC) +
+		     ((CONFIG_SYS_CLOCK_TICKS_PER_SEC - 1U) - timer_core_last_rem);
+
+	timer_core_last_cycle += n / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
+	timer_core_last_rem = (CONFIG_SYS_CLOCK_TICKS_PER_SEC - 1U) -
+			      (uint32_t)(n % CONFIG_SYS_CLOCK_TICKS_PER_SEC);
+	timer_core_last_tick += dticks;
+}
+
+/* timer_core_ticks_in() and timer_core_advance_baseline() for a span wider
+ * than the counter, which only the recovery announce deals in.
+ */
+static inline uint64_t timer_core_ticks_in64(uint64_t c)
+{
+	c = MIN(c, TIMER_CORE_MAX_CONVERTIBLE_CYCLES);
+
+	return ((c * CONFIG_SYS_CLOCK_TICKS_PER_SEC) + timer_core_last_rem) /
+	       TIMER_CORE_CYCLES_PER_SEC;
+}
+
+static inline void timer_core_advance_baseline64(uint64_t dticks)
+{
+	uint64_t n = (dticks * TIMER_CORE_CYCLES_PER_SEC) +
+		     ((CONFIG_SYS_CLOCK_TICKS_PER_SEC - 1U) - timer_core_last_rem);
+
+	timer_core_last_cycle += n / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
+	timer_core_last_rem = (CONFIG_SYS_CLOCK_TICKS_PER_SEC - 1U) -
+			      (uint32_t)(n % CONFIG_SYS_CLOCK_TICKS_PER_SEC);
+	timer_core_last_tick += dticks;
+}
+
+#endif /* TIMER_CORE_TICK_IS_WHOLE */
 
 /*
  * TIMER_CORE_MAX_UNANNOUNCED_CYCLES in ticks, for clamping before multiplying
  * so the cycle count can't overflow. A constant if the rate is, or computed
  * once in timer_core_init() otherwise.
+ *
+ * It rounds down: rounding up would let the arm reach past what the counter
+ * resolves. It is taken from tick zero so it does not depend on the baseline's
+ * remainder. That can make it a tick short, never long.
  */
+#define TIMER_CORE_SPAN_TICKS_OF(c) timer_core_ticks_at_cyc((c))
+
 #if defined(TIMER_CORE_PRECOMPUTE_CYC_PER_TICK)
 static timer_core_ticks_t timer_core_max_span_ticks;
 #define TIMER_CORE_MAX_SPAN_TICKS timer_core_max_span_ticks
 #else
-#define TIMER_CORE_MAX_SPAN_TICKS (TIMER_CORE_MAX_UNANNOUNCED_CYCLES / TIMER_CORE_CYC_PER_TICK)
-#if !defined(TIMER_CORE_CHECK_CYC_PER_TICK_AT_INIT)
+#define TIMER_CORE_MAX_SPAN_TICKS TIMER_CORE_SPAN_TICKS_OF(TIMER_CORE_MAX_UNANNOUNCED_CYCLES)
 /* A tick must fit in what the counter can measure. Checked here if constant,
  * or in timer_core_init() otherwise. Only the counter matters: if the alarm
  * can't cover a whole tick in one arm, the core just arms it several times.
  */
-BUILD_ASSERT(TIMER_CORE_COUNTER_SAFE_SPAN >= TIMER_CORE_CYC_PER_TICK,
+BUILD_ASSERT(TIMER_CORE_COUNTER_SAFE_SPAN >= TIMER_CORE_TICK_MAX_CYCLES,
 	     "a tick is longer than the counter can span: raise "
 	     "CONFIG_SYS_CLOCK_TICKS_PER_SEC, or slow the counter");
-#endif
 #endif
 
 #if defined(TIMER_CORE_BACKEND_RELOAD)
@@ -399,7 +637,7 @@ static inline timer_core_ticks_t timer_core_delta_ticks(void)
 	}
 #endif
 
-	return delta / TIMER_CORE_CYC_PER_TICK;
+	return timer_core_ticks_in(delta);
 }
 
 /* Arm the timer for `ticks` past the last elapsed count the kernel got, on a
@@ -434,7 +672,7 @@ static void timer_core_arm(uint32_t ticks)
 		span = timer_core_last_elapsed + ticks;
 	}
 
-	timer_core_cycles_t want = (timer_core_cycles_t)span * TIMER_CORE_CYC_PER_TICK;
+	timer_core_cycles_t want = timer_core_span_cycles(span);
 	timer_core_cycles_t done = timer_core_cycles_since(timer_core_last_cycle);
 
 	/* Deadline already passed: 0, and the minimum reload below takes over. */
@@ -467,40 +705,29 @@ static void timer_core_arm(uint32_t ticks)
 #else /* compare backends */
 	/*
 	 * The deadline is (last_tick + last_elapsed + ticks) ticks, in cycles.
-	 * Since last_cycle == last_tick * CYC exactly (CYC being
-	 * TIMER_CORE_CYC_PER_TICK), that is
+	 * last_cycle is the cycle last_tick starts on, so that is
 	 *
-	 *   last_cycle + (last_elapsed + ticks) * CYC
+	 *   last_cycle + the cycles in (last_elapsed + ticks) ticks
 	 *
 	 * Computing the span part on its own keeps it in the counter's width, so
-	 * a 32-bit counter on a 32-bit CPU needs no 64-bit math. Clamp the span
-	 * in ticks, before multiplying, so it can't overflow.
+	 * a 32-bit counter on a 32-bit CPU needs no 64-bit math. An inexact tick
+	 * needs it at any width, since the baseline carries the rounding. Clamp
+	 * the span in ticks, before converting, so it can't overflow. This clamp
+	 * never cuts below the alarm's reach, which is at most
+	 * TIMER_CORE_MAX_UNANNOUNCED_CYCLES.
 	 */
-#if TIMER_CORE_COUNTER_WIDTH <= 32
 	timer_core_ticks_t span = TIMER_CORE_MAX_SPAN_TICKS;
 
 	if ((ticks <= span) && (timer_core_last_elapsed <= (span - ticks))) {
 		span = timer_core_last_elapsed + ticks;
 	}
-	timer_core_cycles_t offset = (timer_core_cycles_t)span * TIMER_CORE_CYC_PER_TICK;
+	timer_core_cycles_t offset = timer_core_span_cycles(span);
 
 	if ((TIMER_CORE_MAX_ARM_CYCLES < TIMER_CORE_MAX_UNANNOUNCED_CYCLES) &&
 	    (offset > TIMER_CORE_MAX_ARM_CYCLES)) {
 		offset = TIMER_CORE_MAX_ARM_CYCLES;
 	}
 	timer_core_set_compare(timer_core_last_cycle + offset);
-#else
-	/* 64-bit counter: the math is 64-bit anyway, so compute the deadline
-	 * directly and clamp it.
-	 */
-	uint64_t deadline =
-		(timer_core_last_tick + timer_core_last_elapsed + ticks) * TIMER_CORE_CYC_PER_TICK;
-
-	if ((deadline - timer_core_last_cycle) > TIMER_CORE_MAX_ARM_CYCLES) {
-		deadline = timer_core_last_cycle + TIMER_CORE_MAX_ARM_CYCLES;
-	}
-	timer_core_set_compare(deadline);
-#endif
 #endif
 }
 
@@ -538,8 +765,7 @@ static void timer_core_announce_from(k_spinlock_key_t key)
 {
 	timer_core_ticks_t dticks = timer_core_delta_ticks();
 
-	timer_core_last_cycle += (timer_core_cycles_t)dticks * TIMER_CORE_CYC_PER_TICK;
-	timer_core_last_tick += dticks;
+	timer_core_advance_baseline(dticks);
 	timer_core_last_elapsed = 0;
 #if defined(TIMER_CORE_BACKEND_RELOAD)
 	/* The armed deadline is used up. The kernel sets the next one, and it
@@ -581,10 +807,9 @@ static void timer_core_announce_from(k_spinlock_key_t key)
  */
 static inline void timer_core_announce_cycles64_from(k_spinlock_key_t key, uint64_t cycles)
 {
-	uint64_t dticks = cycles / TIMER_CORE_CYC_PER_TICK;
+	uint64_t dticks = timer_core_ticks_in64(cycles);
 
-	timer_core_last_cycle += dticks * TIMER_CORE_CYC_PER_TICK;
-	timer_core_last_tick += dticks;
+	timer_core_advance_baseline64(dticks);
 	timer_core_last_elapsed = 0;
 #if defined(TIMER_CORE_BACKEND_RELOAD)
 	timer_core_armed_deadline = UINT64_MAX;
@@ -687,17 +912,25 @@ static inline void timer_core_rescale(uint32_t to_hz, uint32_t from_hz)
 {
 	ARG_UNUSED(from_hz);
 #ifdef TIMER_CORE_PRECOMPUTE_CYC_PER_TICK
+	/* The rate changed: recompute what derives from it. The arm ceiling would
+	 * otherwise overstate the counter's span once the rate goes up.
+	 * TIMER_CORE_CYCLES_PER_SEC already returns the new rate.
+	 */
 	timer_core_cyc_per_tick = to_hz / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
+	timer_core_max_span_ticks = TIMER_CORE_SPAN_TICKS_OF(TIMER_CORE_MAX_UNANNOUNCED_CYCLES);
 #else
 	ARG_UNUSED(to_hz);
 #endif
 	/*
 	 * Recompute last_cycle from last_tick, which doesn't depend on the rate,
-	 * so it stays on a tick boundary. Scaling the old value instead could
-	 * leave it a fraction of a tick off, and the compare arm path could then
-	 * underflow.
+	 * so it stays on a tick boundary, and last_rem with it. Scaling the old
+	 * value instead could leave it a fraction of a tick off, and the compare
+	 * arm path could then underflow.
 	 */
-	timer_core_last_cycle = timer_core_last_tick * TIMER_CORE_CYC_PER_TICK;
+	timer_core_last_cycle = timer_core_cyc_at_tick(timer_core_last_tick);
+#if !TIMER_CORE_TICK_IS_WHOLE
+	timer_core_last_rem = timer_core_rem_at_tick(timer_core_last_tick);
+#endif /* !TIMER_CORE_TICK_IS_WHOLE */
 }
 
 /* Arm this CPU's timer one tick past the last announce. An SMP driver calls
@@ -706,9 +939,9 @@ static inline void timer_core_rescale(uint32_t to_hz, uint32_t from_hz)
 static inline void timer_core_smp_prime(void)
 {
 #if defined(TIMER_CORE_BACKEND_RELOAD)
-	timer_driver_set_reload(TIMER_CORE_CYC_PER_TICK);
+	timer_driver_set_reload(timer_core_span_cycles(1));
 #else
-	timer_core_set_compare(timer_core_last_cycle + TIMER_CORE_CYC_PER_TICK);
+	timer_core_set_compare(timer_core_last_cycle + timer_core_span_cycles(1));
 #endif
 }
 
@@ -724,24 +957,27 @@ static inline void timer_core_init(void)
 #ifdef TIMER_CORE_PRECOMPUTE_CYC_PER_TICK
 	/* The rate is known now that the driver has set up the counter. */
 	timer_core_cyc_per_tick = TIMER_CORE_CYCLES_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
-	timer_core_max_span_ticks = TIMER_CORE_MAX_UNANNOUNCED_CYCLES / TIMER_CORE_CYC_PER_TICK;
-#endif
-#if defined(TIMER_CORE_PRECOMPUTE_CYC_PER_TICK) || defined(TIMER_CORE_CHECK_CYC_PER_TICK_AT_INIT)
+	timer_core_max_span_ticks = TIMER_CORE_SPAN_TICKS_OF(TIMER_CORE_MAX_UNANNOUNCED_CYCLES);
 	/* The checks a constant rate gets at build time. */
 	__ASSERT(TIMER_CORE_CYC_PER_TICK != 0, "timer counter rate is below the tick rate");
 	/* Cast both sides to uint64_t: otherwise, with a 64-bit counter, the
 	 * compiler warns the comparison is always true.
 	 */
-	__ASSERT((uint64_t)TIMER_CORE_COUNTER_SAFE_SPAN >= (uint64_t)TIMER_CORE_CYC_PER_TICK,
+	__ASSERT((uint64_t)TIMER_CORE_COUNTER_SAFE_SPAN >= (uint64_t)TIMER_CORE_TICK_MAX_CYCLES,
 		 "a tick is longer than the counter can span");
 #endif
-	/* seed and seed * TIMER_CORE_CYC_PER_TICK are both no larger than the
-	 * counter value, so both fit in timer_core_cycles_t.
+	/* Start the baseline at the counter. The baseline is still zero, so this
+	 * converts from tick zero, and the results are no larger than the counter
+	 * value, so they fit in timer_core_cycles_t.
 	 */
-	timer_core_cycles_t seed = timer_driver_cycle_get() / TIMER_CORE_CYC_PER_TICK;
-
-	timer_core_last_tick = seed;
-	timer_core_last_cycle = seed * TIMER_CORE_CYC_PER_TICK;
+#if TIMER_CORE_TICK_IS_WHOLE
+	timer_core_last_tick = timer_core_ticks_in(timer_driver_cycle_get());
+	/* In the counter's width: no 64-bit multiply. */
+	timer_core_last_cycle = (timer_core_cycles_t)timer_core_last_tick * TIMER_CORE_CYC_PER_TICK;
+#else  /* !TIMER_CORE_TICK_IS_WHOLE */
+	/* Advanced from zero, which also sets timer_core_last_rem. */
+	timer_core_advance_baseline(timer_core_ticks_in(timer_driver_cycle_get()));
+#endif /* TIMER_CORE_TICK_IS_WHOLE */
 	timer_core_last_elapsed = 0;
 
 #if defined(TIMER_CORE_BACKEND_RELOAD)
