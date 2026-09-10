@@ -362,6 +362,9 @@ static void reset_configuration(struct usb_device *const udev)
  * configuration. If something fails, the device state will be set to addressed
  * and all resources will be released. We could increase resilience by reading
  * all configuration descriptors at once, but that would increase memory usage.
+ *
+ * TODO: Although almost everything is in place, there should be tests covering
+ * it before it is made a public interface for users and applications.
  */
 int usbh_device_set_configuration(struct usb_device *const udev, const uint8_t num)
 {
@@ -381,6 +384,7 @@ int usbh_device_set_configuration(struct usb_device *const udev, const uint8_t n
 	}
 
 	/* Free any allocated resources unconditionally */
+	usbh_class_remove_all(udev);
 	k_heap_free(&usb_device_heap, udev->cfg_desc);
 	udev->cfg_desc = NULL;
 	reset_configuration(udev);
@@ -464,6 +468,8 @@ int usbh_device_set_configuration(struct usb_device *const udev, const uint8_t n
 
 	udev->actual_cfg = num;
 	udev->state = USB_STATE_CONFIGURED;
+
+	usbh_class_probe_device(udev);
 
 error:
 	k_mutex_unlock(&udev->mutex);
@@ -564,11 +570,6 @@ int usbh_device_init(struct usb_device *const udev)
 		goto error;
 	}
 
-	err = usbh_device_set_configuration(udev, 1);
-	if (err) {
-		LOG_ERR("Failed to configure new device with address %u", udev->addr);
-	}
-
 error:
 	k_mutex_unlock(&udev->mutex);
 
@@ -599,7 +600,10 @@ void usbh_device_connect(struct usbh_context *const ctx,
 		return;
 	}
 
-	usbh_class_probe_device(udev);
+	err = usbh_device_set_configuration(udev, 1);
+	if (err) {
+		LOG_ERR("Failed to configure new device with address %u", udev->addr);
+	}
 }
 
 void usbh_device_disconnect(struct usbh_context *ctx, struct usb_device *udev)
