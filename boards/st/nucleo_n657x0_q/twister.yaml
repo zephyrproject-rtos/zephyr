@@ -10,6 +10,7 @@ supported:
   - adc
   - backup_sram
   - can
+  - crypto
   - dma
   - i2c
   - gpio
