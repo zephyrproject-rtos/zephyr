@@ -1,7 +1,7 @@
 # Copyright (c) 2025 Silicon Laboratories Inc.
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_SILABS_XG26
+config SOC_FAMILY_SILABS_S2_XG26
 	bool
 	select SOC_FAMILY_SILABS_S2
 	help
@@ -9,31 +9,31 @@ config SOC_SILABS_XG26
 
 config SOC_SERIES_EFM32PG26
 	bool
-	select SOC_SILABS_XG26
+	select SOC_FAMILY_SILABS_S2_XG26
 	help
 	  Silicon Labs EFM32PG26 (Pearl Gecko) Series MCU
 
 config SOC_SERIES_EFR32BG26
 	bool
-	select SOC_SILABS_XG26
+	select SOC_FAMILY_SILABS_S2_XG26
 	help
 	  Silicon Labs EFR32BG26 (Blue Gecko) Series MCU
 
 config SOC_SERIES_BGM26
 	bool
-	select SOC_SILABS_XG26
+	select SOC_FAMILY_SILABS_S2_XG26
 	help
 	  Silicon Labs BGM260 (Blue Gecko) Series MCU modules
 
 config SOC_SERIES_EFR32MG26
 	bool
-	select SOC_SILABS_XG26
+	select SOC_FAMILY_SILABS_S2_XG26
 	help
 	  Silicon Labs EFR32MG26 (Mighty Gecko) Series MCU
 
 config SOC_SERIES_MGM26
 	bool
-	select SOC_SILABS_XG26
+	select SOC_FAMILY_SILABS_S2_XG26
 	help
 	  Silicon Labs MGM260 (Mighty Gecko) Series MCU modules
 
