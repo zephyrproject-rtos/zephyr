@@ -19,6 +19,7 @@ static const char *const record_names[] = {
 	[LORAWAN_NVM_REGION_GROUP1] = "lorawan/nvm/RegionGroup1",
 	[LORAWAN_NVM_REGION_GROUP2] = "lorawan/nvm/RegionGroup2",
 	[LORAWAN_NVM_CLASS_B] = "lorawan/nvm/ClassB",
+	[LORAWAN_NVM_DEV_NONCE] = "lorawan/nvm/DevNonce",
 };
 
 struct nvm_read_ctx {
