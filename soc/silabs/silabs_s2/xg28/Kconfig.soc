@@ -2,7 +2,7 @@
 # Copyright (c) 2025 Shontal Biton
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_SILABS_XG28
+config SOC_FAMILY_SILABS_S2_XG28
 	bool
 	select SOC_FAMILY_SILABS_S2
 	help
@@ -10,19 +10,19 @@ config SOC_SILABS_XG28
 
 config SOC_SERIES_EFM32PG28
 	bool
-	select SOC_SILABS_XG28
+	select SOC_FAMILY_SILABS_S2_XG28
 	help
 	  Silicon Labs EFM32PG28 Series MCU
 
 config SOC_SERIES_EFR32FG28
 	bool
-	select SOC_SILABS_XG28
+	select SOC_FAMILY_SILABS_S2_XG28
 	help
 	  Silicon Labs EFR32FG28 Series MCU
 
 config SOC_SERIES_EFR32ZG28
 	bool
-	select SOC_SILABS_XG28
+	select SOC_FAMILY_SILABS_S2_XG28
 	help
 	  Silicon Labs EFR32ZG28 Series MCU
 
