@@ -133,6 +133,25 @@ config NET_TCP_RECV_QUEUE_TIMEOUT
 	  SEQ 2. But if we receive SEQs 5,4,3,7 then the SEQ 7 is discarded
 	  because the list would not be sequential as number 6 is be missing.
 
+config NET_TCP_SACK
+	bool "Selective acknowledgment (SACK) of received data"
+	default y
+	depends on NET_TCP_RECV_QUEUE_TIMEOUT > 0
+	help
+	  Offer SACK permitted in the handshake (RFC 2018) and, when the peer
+	  agrees, report out-of-order data held in the receive queue with a
+	  SACK block, so that the sender can resend only what is missing.
+	  Only the receiving side is implemented: SACK blocks sent by the
+	  peer are not used when retransmitting.
+
+	  Queued data is still discarded after NET_TCP_RECV_QUEUE_TIMEOUT
+	  milliseconds, even if it has already been reported in a SACK block.
+	  RFC 2018 section 8 permits this and senders have to cope, but it is
+	  worth knowing when debugging a stall against this stack.
+
+	  Disable to stop offering SACK, for example when chasing an
+	  interoperability problem.
+
 config NET_TCP_ACK_DELAY
 	int "TCP delayed ACK timeout (in ms)"
 	default 100

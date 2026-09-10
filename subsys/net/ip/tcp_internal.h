@@ -372,7 +372,7 @@ static inline int net_tcp_put(struct net_context *context, bool force_close)
 }
 #endif
 
-#define NET_TCP_MAX_OPT_SIZE  8
+#define NET_TCP_MAX_OPT_SIZE  12
 
 #if defined(CONFIG_NET_TEST) && defined(CONFIG_NET_NATIVE_TCP)
 /** @brief Test hook to intercept TCP TX packets. Only for unit tests. */
