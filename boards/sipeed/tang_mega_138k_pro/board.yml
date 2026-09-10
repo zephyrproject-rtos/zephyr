@@ -1,0 +1,8 @@
+board:
+  name: tang_mega_138k_pro
+  full_name: Tang Mega 138K Pro Dock
+  vendor: sipeed
+  socs:
+    - name: ae350
+      variants:
+        - name: demo

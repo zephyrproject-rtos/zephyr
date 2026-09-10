@@ -1,0 +1,10 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 TOKITA Hiroshi
+# SPDX-License-Identifier: Apache-2.0
+
+DT_AE350_MTIMER_PATH := $(dt_nodelabel_path,mtimer)
+
+config SYS_CLOCK_HW_CYCLES_PER_SEC
+	default $(dt_node_int_prop_int,$(DT_AE350_MTIMER_PATH),clock-frequency)
+
+config XIP
+	default y
