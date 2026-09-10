@@ -234,6 +234,28 @@ config ARM_VECTOR_TABLE_ITCM
 
 endchoice
 
+config ARM_STACKS_IN_DTCM
+	bool "Place all kernel stacks in DTCM"
+	depends on $(dt_chosen_enabled,$(DT_CHOSEN_Z_DTCM))
+	help
+	  When enabled, all kernel stacks (ISR stack, main thread stack, idle
+	  stacks, work-queue stacks, and application K_THREAD_STACK_DEFINE
+	  stacks) are placed in the DTCM region defined by the 'zephyr,dtcm'
+	  chosen node.  DTCM provides single-cycle, deterministic data access
+	  via the CPU data bus, which reduces stack-access latency compared to
+	  external or cached RAM.
+
+	  Note that the TCMs are core-local: on most Arm parts they cannot be
+	  reached by other bus masters, so a driver that starts a DMA transfer
+	  straight out of a stack-local buffer stops working once the calling
+	  thread's stack lives here.  Check the SoC reference manual before
+	  combining this with DMA-driven drivers.
+
+	  The DTCM also has to hold every stack in the image, so enabling
+	  subsystems that bring their own threads can overflow it.  That shows
+	  up as a linker "region DTCM overflowed" error rather than a runtime
+	  failure.
+
 config ARCH_HAS_LLEXT_VENEERS
 	bool
 

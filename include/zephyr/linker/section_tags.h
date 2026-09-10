@@ -74,7 +74,14 @@
 #else
 #define __incoherent
 #define __stackmem Z_GENERIC_SECTION(.user_stacks)
+/* ARM_STACKS_IN_DTCM is declared in arch/arm/Kconfig, so reaching this branch
+ * implies CONFIG_ARM and therefore a defined __dtcm_noinit_section.
+ */
+#if defined(CONFIG_ARM_STACKS_IN_DTCM)
+#define __kstackmem __dtcm_noinit_section
+#else
 #define __kstackmem __noinit
+#endif
 #endif /* CONFIG_KERNEL_COHERENCE */
 
 #if defined(CONFIG_LINKER_USE_BOOT_SECTION)
