@@ -33,14 +33,18 @@
  * - A delay of 'Standard' wake-up from 'Deep Sleep' is 3.43 ms.
  * - Max residency time in Deep Sleep for 'Instant' wake-up is 200 ms
  * - Min Residency time in Deep Sleep for 'Instant' wake-up is 61 us
+ * - The NPCX4 series and later can drop the 200 ms max residency limit of
+ *   'Instant' wake-up. Enable it with the 'unlimited-instant-wakeup' property
+ *   of the 'nuvoton,npcx-power-state' devicetree node.
  * - The unit to determine power state residency policy is tick.
  *
  * this driver implements one power state, PM_STATE_SUSPEND_TO_IDLE, with
- * two sub-states for power management system.
+ * three sub-states for power management system.
  * Sub-state 0 - "Deep Sleep" mode with “Instant” wake-up if residency time
  *               is greater or equal to 1 ms
  * Sub-state 1 - "Deep Sleep" mode with "Standard" wake-up if residency time
  *               is greater or equal to 201 ms
+ * Sub-state 2 - "Sleep" mode, which keeps HFCLK running
  *
  * INCLUDE FILES: soc_clock.h
  */
@@ -73,6 +77,7 @@ LOG_MODULE_DECLARE(soc, CONFIG_SOC_LOG_LEVEL);
 /* Variables for tracing */
 static uint32_t cnt_sleep0;
 static uint32_t cnt_sleep1;
+static uint32_t cnt_sleep2;
 
 /* Supported sleep mode in npcx series */
 enum {
@@ -85,6 +90,10 @@ enum {
 	NPCX_INSTANT_WAKE_UP,
 	NPCX_STANDARD_WAKE_UP,
 };
+
+/* Only the instant wake-up sub-state can lift the 200 ms deep sleep restriction */
+#define NPCX_INSTW_UNLIMITED \
+	DT_PROP_OR(DT_NODELABEL(suspend_to_idle0), unlimited_instant_wakeup, false)
 
 #define NODE_LEAKAGE_IO DT_INST(0, nuvoton_npcx_leakage_io)
 #if DT_NODE_HAS_PROP(NODE_LEAKAGE_IO, leak_gpios)
@@ -150,7 +159,8 @@ static void npcx_power_enter_system_sleep(int slp_mode, int wk_mode)
 
 	/* Configure sleep/deep sleep settings in clock control module. */
 	npcx_clock_control_turn_on_system_sleep(slp_mode == NPCX_DEEP_SLEEP,
-					wk_mode == NPCX_INSTANT_WAKE_UP);
+					wk_mode == NPCX_INSTANT_WAKE_UP,
+					NPCX_INSTW_UNLIMITED);
 
 	/*
 	 * Disable the connection between io pads that have leakage current and
@@ -219,6 +229,14 @@ __weak void pm_state_set(enum pm_state state, uint8_t substate_id)
 				cnt_sleep1++;
 			}
 			break;
+		case 2:	/* Sub-state 2: Sleep */
+			/* The wake-up mode argument is irrelevant in this sub-state */
+			npcx_power_enter_system_sleep(NPCX_SLEEP,
+							NPCX_STANDARD_WAKE_UP);
+			if (IS_ENABLED(CONFIG_NPCX_PM_TRACE)) {
+				cnt_sleep2++;
+			}
+			break;
 		default:
 			LOG_DBG("Unsupported power substate-id %u",
 				substate_id);
@@ -250,7 +268,8 @@ __weak void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
 	}
 
 	if (IS_ENABLED(CONFIG_NPCX_PM_TRACE)) {
-		LOG_DBG("sleep: %d, deep sleep: %d", cnt_sleep0, cnt_sleep1);
+		LOG_DBG("deep sleep(inst): %d, deep sleep(std): %d, sleep: %d", cnt_sleep0,
+			cnt_sleep1, cnt_sleep2);
 		LOG_INF("total ticks in sleep: %lld",
 			npcx_clock_get_sleep_ticks());
 	}
