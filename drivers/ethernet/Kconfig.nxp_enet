@@ -44,16 +44,16 @@ config ETH_NXP_ENET_HW_ACCELERATION
 config ETH_NXP_ENET_RX_BUFFERS
 	int "Number of RX buffers for ethernet driver"
 	default 6
-	range 6 16
+	range 6 128
 	help
-	  Set the number of RX buffers provided to the NXP ENET driver.
+	  Depth of the receive DMA buffer-descriptor ring.
 
 config ETH_NXP_ENET_TX_BUFFERS
 	int "Number of TX buffers for ethernet driver"
 	default 1
-	range 1 16
+	range 1 128
 	help
-	  Set the number of TX buffers provided to the NXP ENET driver.
+	  Depth of the transmit DMA buffer-descriptor ring.
 
 config ETH_NXP_ENET_RX_THREAD_STACK_SIZE
 	int "NXP ENET RX thread stack size"
