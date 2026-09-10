@@ -518,6 +518,15 @@ device.
      - See description of ``zephyr,ipc_rx``.
    * - zephyr,itcm
      - Instruction Tightly Coupled Memory node on some Arm SoCs
+   * - zephyr,kernel-stacks
+     - Memory region node that holds the kernel stacks: the ISR, main, idle and
+       system work queue stacks and every :c:macro:`K_KERNEL_STACK_DEFINE`
+       stack, which without :kconfig:option:`CONFIG_USERSPACE` includes the
+       :c:macro:`K_THREAD_STACK_DEFINE` stacks too. The node needs a
+       ``zephyr,memory-region`` property. Defaults to the ``zephyr,sram``
+       region, and overflowing the region fails the link. Note that a
+       core-local memory such as a TCM cannot be reached by other bus masters,
+       which breaks a driver that DMAs out of a stack buffer
    * - zephyr,led-strip
      - A LED-strip node which is used to determine the timings of the
        WS2812 GPIO driver
