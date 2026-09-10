@@ -1,7 +1,7 @@
 # Copyright (c) 2024 Yishai Jaffe
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_SILABS_XG23
+config SOC_FAMILY_SILABS_S2_XG23
 	select ARM
 	select ARM_TRUSTZONE_M
 	select ARMV8_M_DSP
