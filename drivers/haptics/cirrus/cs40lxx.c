@@ -86,3 +86,26 @@ int cs40lxx_raw_multi_write(const struct cs40lxx_io_bus *const io_bus,
 
 	return 0;
 }
+
+int cs40lxx_poll(const struct cs40lxx_io_bus *const io_bus, const uint32_t addr, const uint32_t val,
+		 const k_timeout_t timeout)
+{
+	const k_timepoint_t end = sys_timepoint_calc(timeout);
+	uint32_t reg_val;
+	int ret;
+
+	do {
+		ret = cs40lxx_read(io_bus, addr, &reg_val);
+		if (ret < 0) {
+			return ret;
+		}
+
+		if (reg_val == val) {
+			return 0;
+		}
+
+		(void)k_msleep(1);
+	} while (!sys_timepoint_expired(end));
+
+	return -ETIMEDOUT;
+}
