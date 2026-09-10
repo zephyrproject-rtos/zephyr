@@ -119,6 +119,17 @@ static void set_mode_standby(uint8_t state)
 	}
 }
 
+static void enter_wfi(void)
+{
+#ifdef CONFIG_PM_STATE_SET_IRQ_UNLOCKED
+	__WFI();
+#else
+	unsigned int key = arch_pm_state_set_prepare();
+	__WFI();
+	arch_pm_state_set_finish(key);
+#endif /* CONFIG_PM_STATE_SET_IRQ_UNLOCKED */
+}
+
 void pm_state_set(enum pm_state state, uint8_t substate_id)
 {
 	switch (state) {
@@ -136,7 +147,7 @@ void pm_state_set(enum pm_state state, uint8_t substate_id)
 		return;
 	}
 
-	__WFI();
+	enter_wfi();
 }
 
 void pm_state_exit_post_ops(enum pm_state state, uint8_t substate_id)
