@@ -380,7 +380,7 @@ static int codec_configure_clocks(const struct device *dev,
 				cfg->mclk_freq);
 			return -EINVAL;
 		}
-		LOG_DBG("I2S Master BCLKDIV: %u", bclk_div);
+		LOG_DBG("I2S controller BCLKDIV: %u", bclk_div);
 		codec_write_reg(dev, BCLK_DIV_ADDR,
 				BCLK_DIV_POWER_UP | BCLK_DIV(bclk_div));
 	}
