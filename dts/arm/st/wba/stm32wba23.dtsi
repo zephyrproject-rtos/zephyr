@@ -58,6 +58,10 @@
 			interrupts = <52 0>;
 		};
 
+		hash: crypto@420c0400 {
+			interrupts = <55 0>;
+		};
+
 		pka: pka@420c2000 {
 			interrupts = <56 0>;
 		};

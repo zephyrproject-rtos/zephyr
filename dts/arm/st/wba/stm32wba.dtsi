@@ -562,6 +562,15 @@
 			status = "disabled";
 		};
 
+		hash: crypto@420c0400 {
+			compatible = "st,stm32-hash";
+			reg = <0x420c0400 0x400>;
+			clocks = <&rcc STM32_CLOCK(AHB2, 17)>;
+			resets = <&rctl STM32_RESET(AHB2, 17)>;
+			interrupts = <61 0>;
+			status = "disabled";
+		};
+
 		pka: pka@420c2000 {
 			compatible = "st,stm32wba-pka";
 			reg = <0x420c2000 0x400>;
