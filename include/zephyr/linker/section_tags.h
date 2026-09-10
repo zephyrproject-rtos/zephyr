@@ -14,6 +14,7 @@
 #if !defined(_ASMLANGUAGE)
 
 #include <zephyr/linker/sections.h>
+#include <zephyr/linker/devicetree_regions.h>
 
 #define __noinit		__in_section_unique(_NOINIT_SECTION_NAME)
 #define __noinit_named(name)	__in_section_unique_named(_NOINIT_SECTION_NAME, name)
@@ -63,6 +64,24 @@
 #define __nocache_noinit __noinit
 #endif /* CONFIG_NOCACHE_MEMORY */
 
+/* The kernel's own stacks land in .noinit, and so in the RAMABLE_REGION the
+ * linker builds from the 'zephyr,sram' chosen node. A part whose zephyr,sram is
+ * external memory therefore takes every push and pop over that bus, and nothing
+ * below the kernel can redirect it: the tag is applied where the stack object is
+ * declared, not where the linker places it.
+ *
+ * A board retargets them by pointing 'zephyr,kernel-stacks' at a memory region
+ * node. The section that node names is already generated wherever
+ * LINKER_DT_SECTIONS() is emitted: it is NOLOAD, which is the noinit semantics
+ * stacks need, and it lives in a region of fixed length, so a region too small
+ * for every stack fails the link rather than the boot. No memory type is
+ * hardcoded -- a board points the chosen at a TCM, an internal SRAM bank or any
+ * other region node -- and without the chosen the tag keeps the definition it
+ * had.
+ */
+#define Z_DT_CHOSEN_REGION_SECTION(chosen)                                                         \
+	Z_GENERIC_SECTION(LINKER_DT_NODE_REGION_NAME_TOKEN(DT_CHOSEN(chosen)))
+
 #if defined(CONFIG_KERNEL_COHERENCE)
 #define __incoherent __in_section_unique(cached)
 #if defined(CONFIG_USERSPACE)
@@ -70,11 +89,26 @@
 #else
 #define __stackmem __incoherent
 #endif /* CONFIG_USERSPACE */
+/* A coherence build owes the stacks a cached mapping, which a region node does
+ * not describe, so 'zephyr,kernel-stacks' does not apply here.
+ */
 #define __kstackmem __incoherent
 #else
 #define __incoherent
 #define __stackmem Z_GENERIC_SECTION(.user_stacks)
+/* Kernel stacks: the ISR, main, idle and system work queue stacks, and every
+ * K_KERNEL_STACK_DEFINE() -- which is what K_THREAD_STACK_DEFINE() becomes
+ * without CONFIG_USERSPACE, so an application's own thread stacks come along.
+ * A core-local region such as a TCM is out of reach of every other bus master,
+ * which breaks a driver that DMAs out of a stack buffer.
+ */
+#if defined(DT_CHOSEN_zephyr_kernel_stacks_EXISTS)
+BUILD_ASSERT(DT_NODE_HAS_PROP(DT_CHOSEN(zephyr_kernel_stacks), zephyr_memory_region),
+	     "The 'zephyr,kernel-stacks' chosen node must have a 'zephyr,memory-region' property");
+#define __kstackmem Z_DT_CHOSEN_REGION_SECTION(zephyr_kernel_stacks)
+#else
 #define __kstackmem __noinit
+#endif
 #endif /* CONFIG_KERNEL_COHERENCE */
 
 #if defined(CONFIG_LINKER_USE_BOOT_SECTION)
