@@ -421,6 +421,8 @@ LOG_MODULE_REGISTER(i3c_dw, CONFIG_I3C_DW_LOG_LEVEL);
 #define DW_I3C_FLUSH_TIMEOUT_US      2000U
 /* RESET_CTRL readback faults while the flush is held off, so wait it out blind. */
 #define DW_I3C_FLUSH_SETTLE_US       50U
+/* Longest a halt is allowed to clear on its own before recovery runs. */
+#define DW_I3C_HALT_SETTLE_US        1000U
 
 /* Snps I3C/I2C Device Private Data */
 struct dw_i3c_i2c_dev_data {
@@ -1183,6 +1185,31 @@ static int get_i3c_addr_pos(const struct device *dev, uint8_t addr, bool sa)
 }
 
 /**
+ * @brief Recover the controller when a halt persists before a submission
+ *
+ * @retval 0 Controller is not halted, or recovery succeeded
+ * @retval -errno Propagated from @ref dw_i3c_recover_bus
+ */
+static int dw_i3c_ensure_xfer_ready(const struct device *dev)
+{
+	uint32_t settle_us = DW_I3C_HALT_SETTLE_US;
+	uint32_t present_state;
+
+	/* A busy transfer state machine is normal - an IBI in flight reads as
+	 * busy - so only a halt that does not clear on its own needs recovery.
+	 */
+	do {
+		present_state = sys_read32(dw_i3c_regs(dev) + PRESENT_STATE);
+		if (PRESENT_STATE_CM_TFR_STS(present_state) != CM_TFR_STS_CTRL_HALT) {
+			return 0;
+		}
+		k_busy_wait(1);
+	} while (--settle_us > 0U);
+
+	return dw_i3c_recover_bus(dev);
+}
+
+/**
  * @brief Transfer messages in I3C mode.
  *
  * @param dev Pointer to device driver instance.
@@ -1230,6 +1257,15 @@ static int dw_i3c_xfers(const struct device *dev, struct i3c_device_desc *target
 	ret = k_mutex_lock(&data->mt, K_MSEC(1000));
 	if (ret) {
 		LOG_ERR("%s: Mutex err (%d)", dev->name, ret);
+		return ret;
+	}
+
+	/* Under the mutex: a concurrent transfer cannot halt the controller
+	 * between this check and the submission below.
+	 */
+	ret = dw_i3c_ensure_xfer_ready(dev);
+	if (ret != 0) {
+		k_mutex_unlock(&data->mt);
 		return ret;
 	}
 
@@ -2468,6 +2504,15 @@ static int dw_i3c_do_ccc(const struct device *dev, struct i3c_ccc_payload *paylo
 	ret = k_mutex_lock(&data->mt, K_MSEC(1000));
 	if (ret) {
 		LOG_DBG("%s: Mutex err (%d)", dev->name, ret);
+		return ret;
+	}
+
+	/* Under the mutex: a concurrent transfer cannot halt the controller
+	 * between this check and the submission below.
+	 */
+	ret = dw_i3c_ensure_xfer_ready(dev);
+	if (ret != 0) {
+		k_mutex_unlock(&data->mt);
 		return ret;
 	}
 
