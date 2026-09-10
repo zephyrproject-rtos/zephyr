@@ -1073,8 +1073,10 @@ Status
        - Refer to `I2C Specification`_ for new terminology.
 
      * - :ref:`i2s_api`
-       - * ``master / slave`` => TBD
-       -
+       - * ``master / slave`` => ``controller / target``
+       - Refer to `I2S Specification`_ for new terminology. The Zephyr I2S API
+         was migrated to these terms in Zephyr 4.4; the former macro names are
+         retained as deprecated aliases and will be removed in Zephyr 5.0.
 
      * - SMP/AMP
        - * ``master / slave`` => TBD
@@ -1096,6 +1098,7 @@ Status
 
   .. _Inclusive Language Label: https://github.com/zephyrproject-rtos/zephyr/issues?q=label%3A%22Inclusive+Language%22
   .. _I2C Specification: https://www.nxp.com/docs/en/user-guide/UM10204.pdf
+  .. _I2S Specification: https://www.nxp.com/docs/en/user-manual/UM11732.pdf
   .. _Bluetooth Appropriate Language Mapping Tables: https://specificationrefs.bluetooth.com/language-mapping/Appropriate_Language_Mapping_Table.pdf
   .. _OSHWA Resolution to Redefine SPI Signal Names: https://oshwa.org/resources/a-resolution-to-redefine-spi-signal-names/
   .. _CAN in Automation Inclusive Language news post: https://www.can-cia.org/news/archive/view/?tx_news_pi1%5Bnews%5D=699&tx_news_pi1%5Bday%5D=6&tx_news_pi1%5Bmonth%5D=12&tx_news_pi1%5Byear%5D=2020&cHash=784e79eb438141179386cf7c29ed9438
