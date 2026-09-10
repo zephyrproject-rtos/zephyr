@@ -10,9 +10,6 @@ config ETH_BCMGENET
 
 if ETH_BCMGENET
 
-configdefault NET_BUF_ALIGNMENT
-	default DCACHE_LINE_SIZE if DCACHE
-
 config ETH_BCMGENET_RX_POLLING_INTERVAL_US
 	int "Receive Polling interval in us"
 	default 500
