@@ -15,8 +15,11 @@ LOG_MODULE_REGISTER(clock_control_npcx, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
 #if defined(CONFIG_NPCX_SOC_VARIANT_NPCXN)
 #define NPCX_PWDWN_CTL_START_OFFSET NPCX_PWDWN_CTL1
+#define NPCX_PMCSR_UNLIMIT_INSTW_MASK BIT(NPCX_PMCSR_UNLIMIT_INSTW)
 #elif defined(CONFIG_NPCX_SOC_VARIANT_NPCKN)
 #define NPCX_PWDWN_CTL_START_OFFSET NPCX_PWDWN_CTL0
+/* NPCKN has no 'Unlimited Instant Wake-up' bit */
+#define NPCX_PMCSR_UNLIMIT_INSTW_MASK 0U
 #endif
 
 /* Driver config */
@@ -125,7 +128,7 @@ static int npcx_clock_control_get_subsys_rate(const struct device *dev,
 
 /* Platform specific clock controller functions */
 #if defined(CONFIG_PM)
-void npcx_clock_control_turn_on_system_sleep(bool is_deep, bool is_instant)
+void npcx_clock_control_turn_on_system_sleep(bool is_deep, bool is_instant, bool is_unlimited)
 {
 	const struct device *const clk_dev = DEVICE_DT_GET(NPCX_CLK_CTRL_NODE);
 	struct pmc_reg *const inst_pmc = HAL_PMC_INST(clk_dev);
@@ -138,6 +141,9 @@ void npcx_clock_control_turn_on_system_sleep(bool is_deep, bool is_instant)
 		/* Add 'Instant Wake-up' flag if sleep time is within 200 ms */
 		if (is_instant) {
 			pm_flags |= BIT(NPCX_PMCSR_DI_INSTW);
+			if (is_unlimited) {
+				pm_flags |= NPCX_PMCSR_UNLIMIT_INSTW_MASK;
+			}
 		}
 	}
 
