@@ -106,6 +106,7 @@ struct wkup_pin_desc {
 	uint8_t src_select;
 };
 
+#if !DT_NODE_HAS_COMPAT(WKUP_CTLR, st_stm32f1_pwr_wkupctrl)
 static void ll_pwr_set_wake_up_line_polarity_low(uint32_t ll_wkup_line)
 {
 #if defined(CONFIG_SOC_SERIES_STM32U3X)
@@ -123,6 +124,7 @@ static void ll_pwr_set_wake_up_line_polarity_high(uint32_t ll_wkup_line)
 	LL_PWR_SetWakeUpPinPolarityHigh(ll_wkup_line);
 #endif
 }
+#endif /* !DT_NODE_HAS_COMPAT(WKUP_CTLR, st_stm32f1_pwr_wkupctrl) */
 
 static void ll_pwr_enable_wake_up_line(uint32_t ll_wkup_line)
 {
