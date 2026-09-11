@@ -48,6 +48,15 @@ LOG_MODULE_REGISTER(nxp_mcux_lpadc);
 #define ADC_CONTEXT_ENABLE_ON_COMPLETE
 #endif
 #define ADC_CONTEXT_USES_KERNEL_TIMER
+/*
+ * Bound the wait for sequence completion. The default in adc_context.h is
+ * K_FOREVER, which turns any sequence that can never complete into a permanent
+ * block of the calling thread -- for instance a trigger issued while the
+ * converter is disabled, so the watermark interrupt that would release the
+ * semaphore never fires.
+ */
+#define ADC_CONTEXT_WAIT_FOR_COMPLETION_TIMEOUT \
+	K_MSEC(CONFIG_ADC_MCUX_LPADC_ACQUISITION_TIMEOUT_MS)
 #include "adc_context.h"
 
 struct mcux_lpadc_config {
@@ -337,6 +346,43 @@ static int mcux_lpadc_channel_setup(const struct device *dev,
 	return 0;
 }
 
+static void mcux_lpadc_stop_sequence(const struct device *dev)
+{
+	const struct mcux_lpadc_config *config = dev->config;
+	struct mcux_lpadc_data *data = dev->data;
+
+#ifdef CONFIG_ADC_MCUX_LPADC_DMA_DRIVEN
+	if (data->use_dma) {
+		(void)dma_stop(config->dma_dev, config->dma_channel);
+#if (defined(FSL_FEATURE_LPADC_FIFO_COUNT) && (FSL_FEATURE_LPADC_FIFO_COUNT == 2U))
+		LPADC_EnableFIFO0WatermarkDMA(config->base, false);
+#else
+		LPADC_EnableFIFOWatermarkDMA(config->base, false);
+#endif
+	}
+#endif /* CONFIG_ADC_MCUX_LPADC_DMA_DRIVEN */
+
+	/* Drop whatever the aborted sequence left behind: an ADC disable/enable
+	 * cycle clears the command state machine, and the FIFO reset discards any
+	 * result that arrived too late to be consumed. Without this the next read
+	 * would return a stale conversion.
+	 */
+	LPADC_Enable(config->base, false);
+
+#if (defined(FSL_FEATURE_LPADC_FIFO_COUNT) && (FSL_FEATURE_LPADC_FIFO_COUNT == 2U))
+	LPADC_DoResetFIFO0(config->base);
+	LPADC_DoResetFIFO1(config->base);
+#else
+	LPADC_DoResetFIFO(config->base);
+#endif
+
+	LPADC_Enable(config->base, true);
+
+	data->buffer = NULL;
+	data->repeat_buffer = NULL;
+	data->channels = 0U;
+}
+
 static int mcux_lpadc_start_read(const struct device *dev,
 		 const struct adc_sequence *sequence)
 {
@@ -465,6 +511,12 @@ static int mcux_lpadc_start_read(const struct device *dev,
 
 	adc_context_start_read(&data->ctx, sequence);
 	int error = adc_context_wait_for_completion(&data->ctx);
+
+	if (error == -EAGAIN) {
+		LOG_ERR("Conversion sequence timed out after %d ms",
+			CONFIG_ADC_MCUX_LPADC_ACQUISITION_TIMEOUT_MS);
+		mcux_lpadc_stop_sequence(dev);
+	}
 
 	return error;
 }
