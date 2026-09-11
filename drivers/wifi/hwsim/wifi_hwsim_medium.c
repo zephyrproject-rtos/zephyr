@@ -8,6 +8,7 @@
 #include <zephyr/logging/log.h>
 #include <zephyr/random/random.h>
 #include <zephyr/sys/util.h>
+#include <zephyr/net/wifi_utils.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -17,8 +18,6 @@
 #include <zephyr/shell/shell.h>
 #include <zephyr/shell/shell_uart.h>
 #endif
-
-#define HWSIM_CHANNEL_TO_MHZ(ch) (2407 + ((ch) * 5))
 
 LOG_MODULE_DECLARE(wifi_hwsim, CONFIG_WIFI_HWSIM_LOG_LEVEL);
 
@@ -45,7 +44,8 @@ int hwsim_medium_register(struct hwsim_radio *radio, uint8_t idx)
 	}
 	medium.radios[idx] = radio;
 	radio->idx = idx;
-	radio->freq_mhz = HWSIM_CHANNEL_TO_MHZ(CONFIG_WIFI_HWSIM_DEFAULT_CHANNEL);
+	radio->freq_mhz =
+		wifi_utils_chan_to_freq(WIFI_FREQ_BAND_2_4_GHZ, CONFIG_WIFI_HWSIM_DEFAULT_CHANNEL);
 	radio->tx_power_dbm = CONFIG_WIFI_HWSIM_DEFAULT_SIGNAL_DBM;
 	radio->loss_pct = 0U;
 	k_fifo_init(&radio->rx_queue);
