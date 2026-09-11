@@ -52,6 +52,32 @@
 			reg = <0x00100000 DT_SIZE_K(128)>;
 		};
 
+		udphsa: usbd@200000 {
+			compatible = "microchip,udphs-g1-udc";
+			reg = <0x00200000 0x100000
+			       0xe0814000 0x400>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 99 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 99>, <&pmc PMC_TYPE_CORE PMC_UTMI>;
+			clock-names = "pclk", "hclk";
+			maximum-speed = "high-speed";
+			num-bidir-endpoints = <16>;
+			status = "disabled";
+		};
+
+		udphsb: usbd@300000 {
+			compatible = "microchip,udphs-g1-udc";
+			reg = <0x00300000 0x100000
+			       0xe0818000 0x400>;
+			interrupt-parent = <&gic>;
+			interrupts = <GIC_SPI 100 IRQ_TYPE_LEVEL IRQ_DEFAULT_PRIORITY>;
+			clocks = <&pmc PMC_TYPE_PERIPHERAL 100>, <&pmc PMC_TYPE_CORE PMC_UTMI>;
+			clock-names = "pclk", "hclk";
+			maximum-speed = "high-speed";
+			num-bidir-endpoints = <16>;
+			status = "disabled";
+		};
+
 		pinctrl: pinctrl@e0014000 {
 			compatible = "microchip,sama7g5-pinctrl";
 			reg = <0xe0014000 0x800>;
