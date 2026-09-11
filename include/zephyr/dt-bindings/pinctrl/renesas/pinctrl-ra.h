@@ -108,6 +108,7 @@
 #define RA_PSEL_ETH_RMII     0x17 /**< ETH RMII function. */
 #define RA_PSEL_ETH_RGMII    0x18 /**< ETH RGMII function. */
 #define RA_PSEL_GLCDC        0x19 /** GLCDC function. */
+#define RA_PSEL_PDM          0x1b /** PDM function. */
 #define RA_PSEL_OSPI         0x1c /** OSPI function. */
 #define RA_PSEL_CTSU         0x0c /** CTSU function. */
 #define RA_PSEL_CEU          0xf  /** CEU function. */

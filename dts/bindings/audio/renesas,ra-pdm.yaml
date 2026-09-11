@@ -1,0 +1,112 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Renesas RA PDM (Pulse Density Modulation) interface channel.
+
+  One node describes a single PDM-IF channel driving one PDM microphone. The
+  interface converts the 1-bit PDM stream into PCM samples through a sinc
+  decimation filter followed by high-pass, compensation and half-band
+  decimation filters.
+
+  The decimation properties below select the PCM sample rate:
+
+    pcm-rate = PDM source clock / (renesas,clock-divider * 2 * renesas,sinc-decimation)
+
+  Renesas' RA Configuration tool computes them from a target sampling
+  frequency; take the values it emits, or the ones in the PDM-IF chapter of
+  the MCU hardware manual, rather than deriving them by hand.
+
+compatible: "renesas,ra-pdm"
+
+include: [base.yaml, pinctrl-device.yaml]
+
+properties:
+  reg:
+    required: true
+
+  channel:
+    type: int
+    required: true
+    enum: [0, 1, 2]
+    description: PDM-IF channel this node describes.
+
+  clocks:
+    required: true
+
+  clock-names:
+    required: true
+    enum:
+      - "pclk"
+
+  pinctrl-0:
+    required: true
+
+  pinctrl-names:
+    required: true
+
+  interrupts:
+    required: true
+
+  interrupt-names:
+    required: true
+    description: |
+      Interrupt identifiers matching the lines given in "interrupts", in the
+      same order:
+
+      - "dat": data reception interrupt (required)
+      - "err": error detection interrupt (optional)
+
+  clock-frequency:
+    type: int
+    required: true
+    description: |
+      Nominal PCM sample rate in Hz produced by this channel, as targeted when
+      the decimation properties were computed. The rate the hardware actually
+      produces is the PDM source clock divided by the decimation chain, which
+      can differ slightly when the target is not an exact divisor of it.
+
+  renesas,clock-divider:
+    type: int
+    required: true
+    enum: [2, 4, 6, 8, 10, 12, 14, 16, 18, 20, 22, 24, 26, 28, 30, 32]
+    description: |
+      Divider from the PDM source clock to PDM_CLK, the clock output to the
+      microphone. Must keep PDM_CLK within the microphone's rated range.
+
+  renesas,sinc-decimation:
+    type: int
+    required: true
+    description: Sinc filter decimation ratio (PDSFCR.SINCDEC), 1 to 255.
+
+  renesas,sinc-range:
+    type: int
+    required: true
+    description: Sinc filter output valid range (PDSFCR.SINCRNG), 0 to 31.
+
+  renesas,sinc-order:
+    type: int
+    default: 4
+    enum: [1, 2, 3, 4]
+    description: Sinc filter order (PDSFCR.SFMD).
+
+  renesas,fall-edge-data:
+    type: boolean
+    description: |
+      Sample the falling-edge data of the previous channel instead of the
+      rising-edge data of this channel. Two microphones sharing one data line
+      and distinguished by their SELECT pin are read as two channels this way,
+      one per edge. Channel 0 takes the falling-edge data of channel 2.
+
+  renesas,filter-settling-time-us:
+    type: int
+    default: 5000
+    description: |
+      Time the filter chain needs to settle after the channel is enabled.
+      Capture is held off for this long, plus the microphone startup time, so
+      that the first block does not carry the filter transient.
+
+  renesas,mic-startup-time-us:
+    type: int
+    default: 0
+    description: Startup time of the attached microphone, from its datasheet.

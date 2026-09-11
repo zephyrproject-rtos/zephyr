@@ -1,0 +1,31 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+config AUDIO_DMIC_RENESAS_RA
+	bool "Renesas RA PDM driver"
+	default y
+	depends on DT_HAS_RENESAS_RA_PDM_ENABLED
+	select PINCTRL
+	select USE_RA_FSP_PDM
+	help
+	  Enable the digital microphone driver for the Renesas RA PDM interface.
+
+if AUDIO_DMIC_RENESAS_RA
+
+config AUDIO_DMIC_RENESAS_RA_FIFO_BUFFER_SAMPLES
+	int "Samples in the per-channel FIFO buffer"
+	default 1024
+	range 32 65536
+	help
+	  Size, in 32-bit samples, of the buffer the PDM interface fills for each channel. It
+	  has to hold at least two PCM blocks, since one is copied out while the next fills, so
+	  the largest usable block is half of this.
+
+config AUDIO_DMIC_RENESAS_RA_QUEUE_SIZE
+	int "Number of queued PCM blocks"
+	default 4
+	range 2 16
+	help
+	  Number of captured blocks the driver queues before dmic_read() has to consume them.
+
+endif # AUDIO_DMIC_RENESAS_RA
