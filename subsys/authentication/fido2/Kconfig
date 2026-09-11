@@ -27,7 +27,7 @@ source "subsys/logging/Kconfig.template.log_config"
 
 config FIDO2_THREAD_STACK_SIZE
 	int "FIDO2 processing thread stack size"
-	default 4096
+	default 6144
 
 config FIDO2_THREAD_PRIORITY
 	int "FIDO2 processing thread priority"
