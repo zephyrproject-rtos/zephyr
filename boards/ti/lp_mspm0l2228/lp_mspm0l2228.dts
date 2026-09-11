@@ -28,6 +28,7 @@
 		zephyr,shell-uart = &uart0;
 		zephyr,code-partition = &slot0_partition;
 		zephyr,entropy = &trng;
+		zephyr,crc = &crc;
 	};
 
 	leds {
@@ -129,5 +130,9 @@
 };
 
 &trng {
+	status = "okay";
+};
+
+&crc {
 	status = "okay";
 };
