@@ -78,6 +78,23 @@ if(CONFIG_LLEXT_VENEERS)
   generate_inc_file_for_target(app ${ext_bin} ${ext_inc})
 endif()
 
+# C++ extension exercising virtual dispatch through a weak vtable
+if(CONFIG_CPP)
+  add_llext_target(weak_vtable_ext
+    OUTPUT  ${PROJECT_BINARY_DIR}/llext/weak_vtable.llext
+    SOURCES ${PROJECT_SOURCE_DIR}/src/weak_vtable_ext.cpp
+  )
+  get_target_property(weak_vtable_lib weak_vtable_ext lib_target)
+  target_compile_options(${weak_vtable_lib} PRIVATE
+    $<$<COMPILE_LANGUAGE:CXX>:-std=c++17>
+    -fno-rtti
+    -fno-exceptions
+  )
+  generate_inc_file_for_target(app ${PROJECT_BINARY_DIR}/llext/weak_vtable.llext
+    ${ZEPHYR_BINARY_DIR}/include/generated/weak_vtable.inc
+  )
+endif()
+
 # An extension referencing the thread-local errno, exercising the AArch64
 # local-exec TLS relocations (R_AARCH64_TLSLE_ADD_TPREL_*). Only arm64
 # implements these in arch_elf_relocate(); a libc whose errno is genuinely
