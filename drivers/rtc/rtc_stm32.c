@@ -549,12 +549,7 @@ static int rtc_stm32_init(const struct device *dev)
 #if !defined(CONFIG_SOC_SERIES_STM32WBAX)
 	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
 
-#ifdef CONFIG_SOC_SERIES_STM32U3X
-	/* STM32U3 series uses LL_RCC_RTC_ClockEnable instead of LL_RCC_EnableRTC */
-	LL_RCC_RTC_ClockEnable();
-#else
 	LL_RCC_EnableRTC();
-#endif /* CONFIG_SOC_SERIES_STM32U3X */
 
 	z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
 #endif /* !CONFIG_SOC_SERIES_STM32WBAX */
