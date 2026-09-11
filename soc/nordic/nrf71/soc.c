@@ -217,6 +217,16 @@ int nordicsemi_nrf71_init(void)
 	*(volatile uint32_t *)PWR_ANTSWC_REG |= PWR_ANTSWC_ENABLE;
 #endif
 
+	/* Power P4 on or off explicitly, as the boards disagree on its initial state.
+	 * This should be turned off when not using P4 as it can draw roughly 40 uA of
+	 * current, even in System OFF.
+	 */
+#if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(gpio4))
+	*(volatile uint32_t *)P4_PWRCTRL_REG = P4_PWRCTRL_ON;
+#else
+	*(volatile uint32_t *)P4_PWRCTRL_REG = P4_PWRCTRL_OFF;
+#endif
+
 	/* Configure LFXO capacitive load if internal load capacitors are used */
 #if DT_ENUM_HAS_VALUE(LFXO_NODE, load_capacitors, internal)
 	nrf_lfxo_cload_set(NRF_LFXO,
