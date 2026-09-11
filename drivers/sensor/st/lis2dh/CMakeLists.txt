@@ -10,3 +10,7 @@ zephyr_library_sources_ifdef(CONFIG_SENSOR_ASYNC_API
   lis2dh_rtio.c
   lis2dh_decoder.c
 )
+zephyr_library_sources_ifdef(CONFIG_LIS2DH_STREAM
+  lis2dh_fifo.c
+  lis2dh_stream.c
+)

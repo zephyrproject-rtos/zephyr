@@ -41,6 +41,17 @@ endchoice
 config LIS2DH_TRIGGER
 	bool
 
+config LIS2DH_STREAM
+	bool "Use hardware FIFO to stream data"
+	depends on SENSOR_ASYNC_API
+	depends on LIS2DH_TRIGGER
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ST_LIS2DH),fifo-watermark)
+	select RTIO
+	help
+	  Enable sensor_stream() support for FIFO watermark and full events.
+	  Samples are delivered through RTIO and decoded with the Sensor Async
+	  API decoder.
+
 config LIS2DH_THREAD_PRIORITY
 	int "Thread priority"
 	depends on LIS2DH_TRIGGER_OWN_THREAD
@@ -104,7 +115,7 @@ choice LIS2DH_ODR
 	  Supported values:
 	  1Hz, 10Hz, 25Hz, 50Hz, 100Hz, 200Hz, 400Hz in all power modes
 	  1620Hz, 5376Hz in low power mode only
-	  1344Hz in normal power mode
+	  1344Hz in normal and high resolution modes
 
 config LIS2DH_ODR_RUNTIME
 	bool "Set at runtime"
@@ -131,15 +142,15 @@ config LIS2DH_ODR_7
 	bool "400Hz"
 
 config LIS2DH_ODR_8
-	bool "1.6KHz"
+	bool "1620 Hz"
 	depends on LIS2DH_OPER_MODE_LOW_POWER
 
 config LIS2DH_ODR_9_NORMAL
-	bool "1.25KHz"
+	bool "1344 Hz"
 	depends on LIS2DH_OPER_MODE_NORMAL || LIS2DH_OPER_MODE_HIGH_RES
 
 config LIS2DH_ODR_9_LOW
-	bool "5KHz"
+	bool "5376 Hz"
 	depends on LIS2DH_OPER_MODE_LOW_POWER
 
 endchoice

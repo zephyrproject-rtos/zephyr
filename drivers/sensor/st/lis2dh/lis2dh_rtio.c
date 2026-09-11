@@ -45,6 +45,12 @@ static void lis2dh_submit_one_shot(struct rtio_iodev_sqe *iodev_sqe)
 	}
 
 	lis2dh_lock(dev);
+#ifdef CONFIG_LIS2DH_STREAM
+	if (lis2dh_fifo_is_busy(dev)) {
+		status = -EBUSY;
+		goto finish;
+	}
+#endif
 
 	status =
 		rtio_sqe_rx_buf(iodev_sqe, sizeof(*header) + LIS2DH_ENCODED_SAMPLE_SIZE,

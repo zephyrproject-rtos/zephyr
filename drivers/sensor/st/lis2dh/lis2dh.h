@@ -266,6 +266,9 @@ struct lis2dh_config {
 #ifdef CONFIG_LIS2DH_MEASURE_TEMPERATURE
 	const struct temperature temperature;
 #endif
+#ifdef CONFIG_LIS2DH_STREAM
+	const uint8_t fifo_watermark;
+#endif
 };
 
 struct lis2dh_transfer_function {
@@ -296,8 +299,23 @@ struct lis2dh_data {
 	uint8_t reg_ctrl1_active_val;
 
 #ifdef CONFIG_SENSOR_ASYNC_API
-	/* Serializes register accesses, including RTIO submissions. */
+	/* Serializes register accesses and state transitions, including RTIO. */
 	struct k_mutex lock;
+#endif
+#ifdef CONFIG_LIS2DH_STREAM
+	uint64_t fifo_period_ns;
+	atomic_t fifo_active;
+	bool fifo_faulted;
+	bool fifo_restore_pending;
+	uint8_t fifo_saved[3];
+	struct rtio_iodev_sqe *streaming_sqe;
+	bool stream_active;
+	const struct rtio_iodev *stream_iodev;
+	atomic_ptr_t stream_handoff;
+	atomic_ptr_t stream_pending;
+	uint8_t stream_routes;
+	uint8_t stream_nop_events;
+	struct k_work_delayable stream_work;
 #endif
 
 #ifdef CONFIG_LIS2DH_TRIGGER
@@ -372,6 +390,22 @@ int lis2dh_init_interrupt(const struct device *dev);
 int lis2dh_acc_slope_config(const struct device *dev,
 			    enum sensor_attribute attr,
 			    const struct sensor_value *val);
+
+int lis2dh_trigger_int1_set(const struct device *dev, bool enable);
+int lis2dh_trigger_fifo_int1_set(const struct device *dev, bool enable);
+#endif
+
+#ifdef CONFIG_LIS2DH_STREAM
+int lis2dh_fifo_init(const struct device *dev);
+bool lis2dh_fifo_is_active(const struct device *dev);
+bool lis2dh_fifo_is_busy(const struct device *dev);
+int lis2dh_fifo_start(const struct device *dev);
+int lis2dh_fifo_stop(const struct device *dev);
+int lis2dh_fifo_handle_irq(const struct device *dev);
+int lis2dh_fifo_drop(const struct device *dev);
+void lis2dh_stream_init(const struct device *dev);
+int lis2dh_stream_handle_irq(const struct device *dev);
+void lis2dh_stream_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe);
 #endif
 
 #ifdef CONFIG_SENSOR_ASYNC_API
