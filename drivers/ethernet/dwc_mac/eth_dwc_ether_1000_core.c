@@ -25,6 +25,9 @@ LOG_MODULE_REGISTER(dwmac_core, CONFIG_ETHERNET_LOG_LEVEL);
 #define RX_FRAG_SIZE  CONFIG_NET_BUF_DATA_SIZE
 #define TX_AVAIL_WAIT K_MSEC(1)
 
+/* time a full-size frame takes at 10 mbps, rounded up */
+#define MAX_FRAME_TIME_MS 2
+
 #define INC_WRAP(idx, size) ((idx) = ((idx) + 1) % (size))
 
 #define TDES0_OWN BIT(31)
@@ -474,9 +477,11 @@ static void phy_link_state_changed(const struct device *phy_dev __unused,
 	const struct device *dev = user_data;
 	struct dwmac_priv *p = dev->data;
 	uint32_t reg;
+	uint32_t cur_reg;
 
 	if (state->is_up) {
 		reg = DWMAC_REG_READ(DWMAC_MACCR);
+		cur_reg = reg;
 
 		reg &= ~(DWMAC_MACCR_PS | DWMAC_MACCR_FES | DWMAC_MACCR_DM);
 
@@ -492,7 +497,27 @@ static void phy_link_state_changed(const struct device *phy_dev __unused,
 			reg |= DWMAC_MACCR_DM;
 		}
 
-		DWMAC_REG_WRITE(DWMAC_MACCR, reg);
+		reg |= DWMAC_MACCR_TE | DWMAC_MACCR_RE;
+
+		/*
+		 * The MAC is enabled on the first link up. Afterwards the PHY may
+		 * report a new speed or duplex mode without a link down in
+		 * between, and the MAC must neither transmit nor receive while
+		 * they change. As the MAC state cannot be read back on all SoCs,
+		 * disable it and give it the time of a full-size frame to
+		 * complete the one in progress. Speed, duplex mode and enable go
+		 * in one write, as some SoCs drop a write that closely follows
+		 * another one to the same register.
+		 */
+		if (reg != cur_reg) {
+			if ((cur_reg & (DWMAC_MACCR_TE | DWMAC_MACCR_RE)) != 0U) {
+				DWMAC_REG_WRITE(DWMAC_MACCR,
+						cur_reg & ~(DWMAC_MACCR_TE | DWMAC_MACCR_RE));
+				k_msleep(MAX_FRAME_TIME_MS);
+			}
+
+			DWMAC_REG_WRITE(DWMAC_MACCR, reg);
+		}
 	}
 
 	net_eth_carrier_set(p->iface, state->is_up);
@@ -532,11 +557,6 @@ static void dwmac_iface_init(struct net_if *iface)
 		 */
 	}
 
-	net_if_carrier_off(iface);
-	if (device_is_ready(cfg->phy_dev)) {
-		phy_link_callback_set(cfg->phy_dev, phy_link_state_changed, (void *)dev);
-	}
-
 	k_thread_create(&p->rx_refill_thread, p->rx_refill_thread_stack,
 			K_KERNEL_STACK_SIZEOF(p->rx_refill_thread_stack), dwmac_rx_refill_thread,
 			(void *)dev, NULL, NULL, CONFIG_ETH_DWMAC_RX_REFILL_THREAD_PRIORITY,
@@ -554,12 +574,15 @@ static void dwmac_iface_init(struct net_if *iface)
 			DWMAC_DMAOMR_SR |
 			DWMAC_DMAOMR_ST);
 
-	DWMAC_REG_WRITE(DWMAC_MACCR,
-			DWMAC_REG_READ(DWMAC_MACCR) |
-			DWMAC_MACCR_APCS |
-			DWMAC_MACCR_CSTF |
-			DWMAC_MACCR_TE |
-			DWMAC_MACCR_RE);
+	net_if_carrier_off(iface);
+
+	/*
+	 * The MAC is enabled by the link callback, which may already run from
+	 * here, so everything else has to be set up by now.
+	 */
+	if (device_is_ready(cfg->phy_dev)) {
+		phy_link_callback_set(cfg->phy_dev, phy_link_state_changed, (void *)dev);
+	}
 }
 
 int dwmac_probe(const struct device *dev)
@@ -642,9 +665,11 @@ int dwmac_probe(const struct device *dev)
 	DWMAC_REG_WRITE(DWMAC_DMATDLAR, TXDESC_PHYS_L(0));
 	DWMAC_REG_WRITE(DWMAC_DMARDLAR, RXDESC_PHYS_L(0));
 
+	reg_val = DWMAC_MACCR_APCS | DWMAC_MACCR_CSTF;
 	if (IS_ENABLED(CONFIG_ETH_DWC_ETHER_RX_HW_CHECKSUM_EN)) {
-		DWMAC_REG_WRITE(DWMAC_MACCR, DWMAC_REG_READ(DWMAC_MACCR) | DWMAC_MACCR_IPCO);
+		reg_val |= DWMAC_MACCR_IPCO;
 	}
+	DWMAC_REG_WRITE(DWMAC_MACCR, DWMAC_REG_READ(DWMAC_MACCR) | reg_val);
 
 	return 0;
 }
