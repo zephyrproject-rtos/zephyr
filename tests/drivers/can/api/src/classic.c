@@ -11,6 +11,11 @@
 
 #include "common.h"
 
+/* Message queue with a deliberately wrong element size, see
+ * test_add_rx_filter_msgq_wrong_msg_size().
+ */
+K_MSGQ_DEFINE(wide_msgq, sizeof(struct can_frame) + 16, 5, 4);
+
 /**
  * @addtogroup t_can_driver
  * @{
@@ -762,6 +767,23 @@ ZTEST_USER(can_classic, test_add_rx_filter_msgq_dynamic)
 }
 
 /**
+ * @brief Test that a message queue with a wrong message size is rejected.
+ *
+ * The RX callback passes a pointer to a single struct can_frame to k_msgq_put(),
+ * which copies the number of bytes the message queue was initialized with. A
+ * message queue with a larger message size makes the copy read past the end of
+ * the frame, into whatever the driver happens to have on its stack next to it.
+ */
+ZTEST_USER(can_classic, test_add_rx_filter_msgq_wrong_msg_size)
+{
+	int err;
+
+	err = can_add_rx_filter_msgq(can_dev, &wide_msgq, &test_std_filter_1);
+	zassert_equal(err, -EINVAL, "message queue with wrong message size accepted (err %d)",
+		      err);
+}
+
+/**
  * @brief Test that no message is received when nothing was sent.
  */
 ZTEST_USER(can_classic, test_receive_timeout)
@@ -1399,6 +1421,8 @@ ZTEST_USER(can_classic, test_set_mode_while_started)
 
 void *can_classic_setup(void)
 {
+	k_object_access_grant(&wide_msgq, k_current_get());
+
 	can_common_test_setup(CAN_MODE_LOOPBACK);
 
 	return NULL;
