@@ -113,13 +113,9 @@ struct cdce9xx_data {
 static int cdce9xx_read(const struct device *dev, uint8_t reg_addr, uint8_t *reg_data)
 {
 	const struct cdce9xx_dts_config *cfg = dev->config;
-	uint8_t rx_buf[2];
+	uint8_t cmd = CDCE9XX_CMD_BYTE | reg_addr;
 
-	int rc = i2c_write_read_dt(&cfg->bus, &reg_addr, sizeof(reg_addr), rx_buf, sizeof(rx_buf));
-
-	*reg_data = sys_get_be16(rx_buf);
-
-	return rc;
+	return i2c_write_read_dt(&cfg->bus, &cmd, sizeof(cmd), reg_data, sizeof(*reg_data));
 }
 
 static int cdce9xx_write(const struct device *dev, uint8_t addr, uint8_t reg_data)
