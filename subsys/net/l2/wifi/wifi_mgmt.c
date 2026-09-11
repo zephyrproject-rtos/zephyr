@@ -672,7 +672,8 @@ static int wifi_start_roaming(uint64_t mgmt_request, struct net_if *iface,
 		return -ENETDOWN;
 	}
 
-	if (wifi_mgmt_api->bss_support_neighbor_rep(dev, iface) &&
+	if (wifi_mgmt_api->bss_support_neighbor_rep != NULL &&
+	    wifi_mgmt_api->bss_support_neighbor_rep(dev, iface) &&
 	    wifi_mgmt_api->send_11k_neighbor_request != NULL &&
 	    roaming_params.roaming_cnt_11k < CONFIG_WIFI_NM_WPA_SUPPLICANT_ROAMING_RETRY) {
 		memset(&roaming_params.neighbor_rep, 0x0, sizeof(roaming_params.neighbor_rep));
