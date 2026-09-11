@@ -26,6 +26,8 @@ LOG_MODULE_REGISTER(net_test, CONFIG_DNS_RESOLVER_LOG_LEVEL);
 #include <zephyr/net/hostname.h>
 #include <zephyr/net/socket.h>
 #include <zephyr/net/udp.h>
+#include <zephyr/net/socket.h>
+#include <zephyr/net/socket_service.h>
 
 #define NET_LOG_ENABLED 1
 #include "net_private.h"
@@ -2550,5 +2552,222 @@ ZTEST(dns_resolve, test_dns_query_all_servers_llmnr_enabled_dns_fanout)
 }
 
 #endif /* CONFIG_DNS_RESOLVER_QUERY_ALL_AVAILABLE_SERVERS */
+
+/* Poll slot regression tests for
+ * https://github.com/zephyrproject-rtos/zephyr/issues/117951
+ *
+ * These run on a private resolver context so that the default context, and
+ * therefore every other test in this suite, is left untouched. The context
+ * needs its own socket service because resolve_svc is sized for exactly one
+ * full context.
+ */
+extern void dns_dispatcher_svc_handler(struct net_socket_service_event *pev);
+
+NET_SOCKET_SERVICE_SYNC_DEFINE_STATIC(test_resolve_svc, dns_dispatcher_svc_handler,
+				      DNS_RESOLVER_MAX_POLL);
+
+static struct dns_resolve_context test_ctx;
+
+/* Enough servers to fill the poll array in any config this test is built for.
+ * IPv4 only so that the no-IPv6 variant works too.
+ */
+static const char *const server_pool[] = {
+	"192.0.2.10:5310", "192.0.2.11:5311", "192.0.2.12:5312", "192.0.2.13:5313",
+	"192.0.2.14:5314", "192.0.2.15:5315", "192.0.2.16:5316", "192.0.2.17:5317",
+};
+
+BUILD_ASSERT(ARRAY_SIZE(server_pool) >= DNS_RESOLVER_MAX_POLL,
+	     "Not enough test servers to fill the poll array");
+
+#define REPLACEMENT_SERVER "192.0.2.20:5320"
+#define NAME_OTHER "other.zephyr.test"
+
+static struct net_sockaddr test_servers[DNS_RESOLVER_MAX_POLL];
+static const struct net_sockaddr *test_servers_sa[DNS_RESOLVER_MAX_POLL + 1];
+static int test_server_ifaces[DNS_RESOLVER_MAX_POLL];
+
+static void check_no_duplicate_poll_slots(struct dns_resolve_context *ctx,
+					  const char *when)
+{
+	ARRAY_FOR_EACH(ctx->fds, i) {
+		if (ctx->fds[i].fd < 0) {
+			continue;
+		}
+
+		for (size_t j = i + 1; j < ARRAY_SIZE(ctx->fds); j++) {
+			zassert_not_equal(ctx->fds[i].fd, ctx->fds[j].fd,
+					  "%s: socket %d is in poll slots %zu and %zu",
+					  when, ctx->fds[i].fd, i, j);
+		}
+	}
+}
+
+static void check_all_servers_polled(struct dns_resolve_context *ctx,
+				     const char *when)
+{
+	ARRAY_FOR_EACH(ctx->servers, i) {
+		bool polled = false;
+
+		if (ctx->servers[i].sock < 0) {
+			continue;
+		}
+
+		ARRAY_FOR_EACH(ctx->fds, j) {
+			if (ctx->fds[j].fd == ctx->servers[i].sock) {
+				polled = true;
+				break;
+			}
+		}
+
+		zassert_true(polled, "%s: server %zu socket %d has no poll slot",
+			     when, i, ctx->servers[i].sock);
+	}
+}
+
+/* Fill every poll slot, the state the resolver is in once all configured
+ * servers are up. The servers are bound to an interface so that they can be
+ * closed individually later on.
+ */
+static void setup_full_poll_array(void)
+{
+	int if_index = net_if_get_by_iface(iface1);
+	int ret;
+
+	/* A previous test may have left the context active if it failed. */
+	if (test_ctx.state == DNS_RESOLVE_CONTEXT_ACTIVE) {
+		(void)dns_resolve_close(&test_ctx);
+	}
+
+	ARRAY_FOR_EACH(test_ctx.fds, i) {
+		zassert_true(net_ipaddr_parse(server_pool[i],
+					      strlen(server_pool[i]),
+					      &test_servers[i]),
+			     "Cannot parse server %s", server_pool[i]);
+
+		test_servers_sa[i] = &test_servers[i];
+		test_server_ifaces[i] = if_index;
+	}
+
+	test_servers_sa[ARRAY_SIZE(test_ctx.fds)] = NULL;
+
+	ret = dns_resolve_init_with_svc(&test_ctx, NULL, test_servers_sa,
+					&test_resolve_svc, 0, test_server_ifaces);
+	zassert_equal(ret, 0, "Cannot init test resolver context (%d)", ret);
+
+	check_no_duplicate_poll_slots(&test_ctx, "after init");
+	check_all_servers_polled(&test_ctx, "after init");
+}
+
+/* Close one server only, as dns_server_close() does when a single interface
+ * goes down. The slot it releases is the hole the scan can trip over.
+ */
+static void close_server(int idx)
+{
+	const struct net_sockaddr *remove_list[2] = { &test_servers[idx], NULL };
+	int interfaces[1] = { test_server_ifaces[idx] };
+	int ret;
+
+	ret = dns_resolve_remove_server_addresses(&test_ctx, remove_list,
+						  interfaces);
+	zassert_equal(ret, 0, "Cannot remove DNS server %d (%d)", idx, ret);
+
+	zassert_equal(test_ctx.fds[idx].fd, -1, "Poll slot %d was not released",
+		      idx);
+}
+
+/* The scenario needs a query already outstanding on a server further along the
+ * poll array, so that the source port renewal leaves that server's socket
+ * alone and a hole can be opened in front of it.
+ */
+static bool poll_slot_scenario_supported(void)
+{
+	return IS_ENABLED(CONFIG_DNS_RESOLVER_QUERY_ALL_AVAILABLE_SERVERS) &&
+	       CONFIG_DNS_NUM_CONCUR_QUERIES >= 2 &&
+	       DNS_RESOLVER_MAX_POLL >= 3;
+}
+
+static int start_query(uint16_t *dns_id, const char *name)
+{
+	return dns_resolve_name(&test_ctx, name, DNS_QUERY_TYPE_A, dns_id,
+				dns_result_cb_dummy, NULL, DNS_TIMEOUT);
+}
+
+ZTEST(dns_resolve, test_dns_poll_slot_not_duplicated)
+{
+	uint16_t dns_id_pending = 0;
+	uint16_t dns_id = 0;
+	int ret;
+
+	if (!poll_slot_scenario_supported()) {
+		ztest_test_skip();
+	}
+
+	setup_full_poll_array();
+
+	/* Nothing answers these queries, so they stay outstanding. */
+	timeout_query = true;
+
+	/* Leave every server waiting for a reply. A server with a query
+	 * outstanding keeps its socket when the next query is sent.
+	 */
+	ret = start_query(&dns_id_pending, NAME4);
+	zassert_equal(ret, 0, "Cannot send first DNS query (%d)", ret);
+
+	/* An interface goes down while that query is in flight: one server is
+	 * closed and its poll slot is released, in front of the others.
+	 */
+	close_server(1);
+
+	ret = start_query(&dns_id, NAME_OTHER);
+	zassert_equal(ret, 0, "Cannot send second DNS query (%d)", ret);
+
+	check_no_duplicate_poll_slots(&test_ctx, "after second query");
+
+	(void)dns_resolve_cancel(&test_ctx, dns_id);
+	(void)dns_resolve_cancel(&test_ctx, dns_id_pending);
+	timeout_query = false;
+
+	(void)dns_resolve_close(&test_ctx);
+}
+
+ZTEST(dns_resolve, test_dns_poll_slot_free_for_new_server)
+{
+	const char *new_servers[] = { REPLACEMENT_SERVER, NULL };
+	uint16_t dns_id_pending = 0;
+	uint16_t dns_id = 0;
+	int ret;
+
+	if (!poll_slot_scenario_supported()) {
+		ztest_test_skip();
+	}
+
+	setup_full_poll_array();
+
+	timeout_query = true;
+
+	ret = start_query(&dns_id_pending, NAME4);
+	zassert_equal(ret, 0, "Cannot send first DNS query (%d)", ret);
+
+	close_server(1);
+
+	ret = start_query(&dns_id, NAME_OTHER);
+	zassert_equal(ret, 0, "Cannot send second DNS query (%d)", ret);
+
+	(void)dns_resolve_cancel(&test_ctx, dns_id);
+	(void)dns_resolve_cancel(&test_ctx, dns_id_pending);
+	timeout_query = false;
+
+	/* A replacement server arrives, as it does when the interface comes
+	 * back up. It must get the poll slot the closed server released.
+	 */
+	ret = dns_resolve_reconfigure(&test_ctx, new_servers, NULL,
+				      DNS_SOURCE_MANUAL);
+	zassert_equal(ret, 0, "Cannot add replacement DNS server (%d)", ret);
+
+	check_all_servers_polled(&test_ctx, "after reconfigure");
+	check_no_duplicate_poll_slots(&test_ctx, "after reconfigure");
+
+	(void)dns_resolve_close(&test_ctx);
+}
 
 ZTEST_SUITE(dns_resolve, NULL, test_init, NULL, NULL, NULL);
