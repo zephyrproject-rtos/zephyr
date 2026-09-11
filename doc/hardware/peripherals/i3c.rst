@@ -225,6 +225,12 @@ For I3C devices, the ``reg`` property has 3 elements:
   which contains the manufacturer ID left-shifted by 1. This is
   the bits 33-47 (zero-based) of the 48-bit Provisioned ID.
 
+  * Must be non-zero. A zero second element marks the node as an
+    I\ :sup:`2`\ C device, as described below, so the helper macros
+    create a legacy I\ :sup:`2`\ C descriptor for it instead of an
+    I3C one. Specify the PID even when the device is addressed by
+    SETDASA and the PID is otherwise unused.
+
 * Third element contains the lower 32-bit of the Provisioned ID
   which is a combination of the part ID (left-shifted by 16,
   bits 16-31 of the PID) and the instance ID (left-shifted by 12,
