@@ -1,0 +1,2096 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+menu "System Configuration"
+
+# FUSERID
+
+menu "FUSERID"
+
+config FUSES_FUSERID
+	hex "User unique ID, readable using the SWD USER_ID instruction (USER_ID)"
+	default 0x0000FFFF
+	help
+	  Assignment of value for USER_ID in the FUSES_FUSERID register
+
+endmenu
+
+# DEVCFG4
+
+menu "DEVCFG4"
+
+config FUSES_DEVCFG4_SOSCCFG
+	hex "SOSC Configuration (SOSCCFG)"
+	default 0x0
+	help
+	  Assignment of value for SOSCCFG in the FUSES_DEVCFG4 register
+
+choice FUSES_DEVCFG4_RTCEVENT_SEL
+	prompt "RTC Event Selection (RTCEVENT_SEL)"
+	default FUSES_DEVCFG4_RTCEVENT_SEL_ONE_SEC
+	help
+	  Assignment of value for RTCEVENT_SEL in the FUSES_DEVCFG4 register
+	  - ALARM_PULSE: Alarm pulse
+	  - ONE_SEC: 1-Second clock
+	  - 32_KHZ: 32 KHz clock
+
+config FUSES_DEVCFG4_RTCEVENT_SEL_ALARM_PULSE
+	bool "ALARM_PULSE"
+
+config FUSES_DEVCFG4_RTCEVENT_SEL_ONE_SEC
+	bool "ONE_SEC"
+
+config FUSES_DEVCFG4_RTCEVENT_SEL_32_KHZ
+	bool "32_KHZ"
+endchoice
+
+config FUSES_DEVCFG4_RTCEVENT_SEL
+	int
+	default 0 if FUSES_DEVCFG4_RTCEVENT_SEL_ONE_SEC
+	default 1 if FUSES_DEVCFG4_RTCEVENT_SEL_ALARM_PULSE
+	default 2 if FUSES_DEVCFG4_RTCEVENT_SEL_32_KHZ
+
+choice FUSES_DEVCFG4_RTCEVENT_EN
+	prompt "Pad Output Enable for MCHP legacy RTC event output (RTCEVENT_EN)"
+	default FUSES_DEVCFG4_RTCEVENT_EN_OFF
+	help
+	  Assignment of value for RTCEVENT_EN in the FUSES_DEVCFG4 register
+	  - ON: Enable RTC Event
+	  - OFF: Disable RTC Event
+
+config FUSES_DEVCFG4_RTCEVENT_EN_ON
+	bool "ON"
+
+config FUSES_DEVCFG4_RTCEVENT_EN_OFF
+	bool "OFF"
+endchoice
+
+config FUSES_DEVCFG4_RTCEVENT_EN
+	int
+	default 1 if FUSES_DEVCFG4_RTCEVENT_EN_ON
+	default 0 if FUSES_DEVCFG4_RTCEVENT_EN_OFF
+
+choice FUSES_DEVCFG4_VBKP_1KCSEL
+	prompt "VDDBUKPCORE LPCLK Clock Selection (VBKP_1KCSEL)"
+	default FUSES_DEVCFG4_VBKP_1KCSEL_32K
+	help
+	  Assignment of value for VBKP_1KCSEL in the FUSES_DEVCFG4 register
+	  - _1K: Divide by 32 or 31.25 clock depending on VBKP_DIVSEL Position
+	  - _32K: 32kHz low power clock Position
+
+config FUSES_DEVCFG4_VBKP_1KCSEL_1K
+	bool "_1K"
+
+config FUSES_DEVCFG4_VBKP_1KCSEL_32K
+	bool "_32K"
+endchoice
+
+config FUSES_DEVCFG4_VBKP_1KCSEL
+	int
+	default 1 if FUSES_DEVCFG4_VBKP_1KCSEL_1K
+	default 0 if FUSES_DEVCFG4_VBKP_1KCSEL_32K
+
+choice FUSES_DEVCFG4_VBKP_32KCSEL
+	prompt "VDDBUKPCORE 32kHz clock source selection (VBKP_32KCSEL)"
+	default FUSES_DEVCFG4_VBKP_32KCSEL_FRC
+	help
+	  Assignment of value for VBKP_32KCSEL in the FUSES_DEVCFG4 register
+	  - FRC: FRC
+	  - POSC: POSC
+	  - SOSC: SOSC
+	  - LPRC: LPRC
+
+config FUSES_DEVCFG4_VBKP_32KCSEL_FRC
+	bool "FRC"
+
+config FUSES_DEVCFG4_VBKP_32KCSEL_POSC
+	bool "POSC"
+
+config FUSES_DEVCFG4_VBKP_32KCSEL_SOSC
+	bool "SOSC"
+
+config FUSES_DEVCFG4_VBKP_32KCSEL_LPRC
+	bool "LPRC"
+endchoice
+
+config FUSES_DEVCFG4_VBKP_32KCSEL
+	int
+	default 0 if FUSES_DEVCFG4_VBKP_32KCSEL_FRC
+	default 1 if FUSES_DEVCFG4_VBKP_32KCSEL_POSC
+	default 2 if FUSES_DEVCFG4_VBKP_32KCSEL_SOSC
+	default 3 if FUSES_DEVCFG4_VBKP_32KCSEL_LPRC
+
+choice FUSES_DEVCFG4_VBKP_DIVSEL
+	prompt "VDDBUKPCORE LPCLK Clock Divider Selection (VBKP_DIVSEL)"
+	default FUSES_DEVCFG4_VBKP_DIVSEL_DIV_31_25
+	help
+	  Assignment of value for VBKP_DIVSEL in the FUSES_DEVCFG4 register
+	  - DIV_31_25: Divide by 31.25 (Recommended when LPCLK=32kHz)
+	  - DIV_32: Divide-by 32 (Recommended when LPCLK=32.768kHz)
+
+config FUSES_DEVCFG4_VBKP_DIVSEL_DIV_31_25
+	bool "DIV_31_25"
+
+config FUSES_DEVCFG4_VBKP_DIVSEL_DIV_32
+	bool "DIV_32"
+endchoice
+
+config FUSES_DEVCFG4_VBKP_DIVSEL
+	int
+	default 1 if FUSES_DEVCFG4_VBKP_DIVSEL_DIV_31_25
+	default 0 if FUSES_DEVCFG4_VBKP_DIVSEL_DIV_32
+
+choice FUSES_DEVCFG4_LPCLK_MOD
+	prompt "LPCLK modifier in counter/delay mode (LPCLK_MOD)"
+	default FUSES_DEVCFG4_LPCLK_MOD_DIV_1
+	help
+	  Assignment of value for LPCLK_MOD in the FUSES_DEVCFG4 register
+	  - DIV_1: Divide-by 1 (Recommended when LPCLK=32kHz)
+	  - DIV_1_024: Divide-by 1.024 (Recommended when LPCLK=32.768kHz)
+
+config FUSES_DEVCFG4_LPCLK_MOD_DIV_1
+	bool "DIV_1"
+
+config FUSES_DEVCFG4_LPCLK_MOD_DIV_1_024
+	bool "DIV_1_024"
+endchoice
+
+config FUSES_DEVCFG4_LPCLK_MOD
+	int
+	default 0 if FUSES_DEVCFG4_LPCLK_MOD_DIV_1
+	default 1 if FUSES_DEVCFG4_LPCLK_MOD_DIV_1_024
+
+choice FUSES_DEVCFG4_RTCEVTYPE
+	prompt "RTC Event Type (RTCEVTYPE)"
+	default FUSES_DEVCFG4_RTCEVTYPE_OUT
+	help
+	  Assignment of value for RTCEVTYPE in the FUSES_DEVCFG4 register
+	  - EVENT: RTC_EVENT
+	  - OUT: RTC_OUT
+
+config FUSES_DEVCFG4_RTCEVTYPE_EVENT
+	bool "EVENT"
+
+config FUSES_DEVCFG4_RTCEVTYPE_OUT
+	bool "OUT"
+endchoice
+
+config FUSES_DEVCFG4_RTCEVTYPE
+	int
+	default 1 if FUSES_DEVCFG4_RTCEVTYPE_EVENT
+	default 0 if FUSES_DEVCFG4_RTCEVTYPE_OUT
+
+choice FUSES_DEVCFG4_CPEN_DLY
+	prompt "Charge-pump ready digital delay (CPEN_DLY)"
+	default FUSES_DEVCFG4_CPEN_DLY_8_LPRC
+	help
+	  Assignment of value for CPEN_DLY in the FUSES_DEVCFG4 register
+	  - _1_LPRC: 1 LPRC Clock Cycle Delay
+	  - _2_LPRC: 2 LPRC Clock Cycle Delay
+	  - _3_LPRC: 3 LPRC Clock Cycle Delay
+	  - _4_LPRC: 4 LPRC Clock Cycle Delay
+	  - _5_LPRC: 5 LPRC Clock Cycle Delay
+	  - _6_LPRC: 6 LPRC Clock Cycle Delay
+	  - _7_LPRC: 7 LPRC Clock Cycle Delay
+	  - _8_LPRC: 8 LPRC Clock Cycle Delay
+
+config FUSES_DEVCFG4_CPEN_DLY_1_LPRC
+	bool "_1_LPRC"
+
+config FUSES_DEVCFG4_CPEN_DLY_2_LPRC
+	bool "_2_LPRC"
+
+config FUSES_DEVCFG4_CPEN_DLY_3_LPRC
+	bool "_3_LPRC"
+
+config FUSES_DEVCFG4_CPEN_DLY_4_LPRC
+	bool "_4_LPRC"
+
+config FUSES_DEVCFG4_CPEN_DLY_5_LPRC
+	bool "_5_LPRC"
+
+config FUSES_DEVCFG4_CPEN_DLY_6_LPRC
+	bool "_6_LPRC"
+
+config FUSES_DEVCFG4_CPEN_DLY_7_LPRC
+	bool "_7_LPRC"
+
+config FUSES_DEVCFG4_CPEN_DLY_8_LPRC
+	bool "_8_LPRC"
+endchoice
+
+config FUSES_DEVCFG4_CPEN_DLY
+	int
+	default 0 if FUSES_DEVCFG4_CPEN_DLY_1_LPRC
+	default 1 if FUSES_DEVCFG4_CPEN_DLY_2_LPRC
+	default 2 if FUSES_DEVCFG4_CPEN_DLY_3_LPRC
+	default 3 if FUSES_DEVCFG4_CPEN_DLY_4_LPRC
+	default 4 if FUSES_DEVCFG4_CPEN_DLY_5_LPRC
+	default 5 if FUSES_DEVCFG4_CPEN_DLY_6_LPRC
+	default 6 if FUSES_DEVCFG4_CPEN_DLY_7_LPRC
+	default 7 if FUSES_DEVCFG4_CPEN_DLY_8_LPRC
+
+choice FUSES_DEVCFG4_DSZPBOREN
+	prompt "Deep Sleep Zero-Power BOR Enable (DSZPBOREN)"
+	default FUSES_DEVCFG4_DSZPBOREN_OFF
+	help
+	  Assignment of value for DSZPBOREN in the FUSES_DEVCFG4 register
+	  - ON: ZPBOR during deep sleep is enabled
+	  - OFF: ZPBOR during deep sleep is disabled
+
+config FUSES_DEVCFG4_DSZPBOREN_ON
+	bool "ON"
+
+config FUSES_DEVCFG4_DSZPBOREN_OFF
+	bool "OFF"
+endchoice
+
+config FUSES_DEVCFG4_DSZPBOREN
+	int
+	default 1 if FUSES_DEVCFG4_DSZPBOREN_ON
+	default 0 if FUSES_DEVCFG4_DSZPBOREN_OFF
+
+choice FUSES_DEVCFG4_DSWDTPS
+	prompt "Deep Sleep Watchdog Timer Postscale Select (DSWDTPS)"
+	default FUSES_DEVCFG4_DSWDTPS_DSPS5
+	help
+	  Assignment of value for DSWDTPS in the FUSES_DEVCFG4 register
+	  - DSPS5: 1:32(1ms)
+	  - DSPS6: 1:64(2.1ms)
+	  - DSPS7: 1:128(4.1ms)
+	  - DSPS8: 1:256(8.3ms)
+	  - DSPS9: 1:512(16.5ms)
+	  - DSPS10: 1:1024(33ms)
+	  - DSPS11: 1:2048(66.1ms)
+	  - DSPS12: 1:4096(132.1ms)
+	  - DSPS13: 1:8192(264.3ms)
+	  - DSPS14: 1:16384(528.5ms)
+	  - DSPS15: 1:32768(1.057s)
+	  - DSPS16: 1:65536(2.114s)
+	  - DSPS17: 1:2^17(4.288s)
+	  - DSPS18: 1:2^18(8.456s)
+	  - DSPS19: 1:2^19(16.912s)
+	  - DSPS20: 1:2^20(33.825s)
+	  - DSPS21: 1:2^21(67.7s)
+	  - DSPS22: 1:2^22(135.3s)
+	  - DSPS23: 1:2^23(4.5 minutes)
+	  - DSPS24: 1:2^24(9.0 minutes)
+	  - DSPS25: 1:2^25(18.0 minutes)
+	  - DSPS26: 1:2^26(36.1 minutes)
+	  - DSPS27: 1:2^27(72.2 minutes)
+	  - DSPS28: 1:2^28(2.4 hours)
+	  - DSPS29: 1:2^29(4.8 hours)
+	  - DSPS30: 1:2^30(9.6 hours)
+	  - DSPS31: 1:2^31(19.2 hours)
+	  - DSPS32: 1:2^32(38.5 hours)
+	  - DSPS33: 1:2^33(77.0 hours)
+	  - DSPS34: 1:2^34(6.4 days)
+	  - DSPS35: 1:2^35(12.8 days)
+	  - DSPS36: 1:2^36(25.7 days)
+
+config FUSES_DEVCFG4_DSWDTPS_DSPS5
+	bool "DSPS5"
+
+config FUSES_DEVCFG4_DSWDTPS_DSPS6
+	bool "DSPS6"
+
+config FUSES_DEVCFG4_DSWDTPS_DSPS7
+	bool "DSPS7"
+
+config FUSES_DEVCFG4_DSWDTPS_DSPS8
+	bool "DSPS8"
+
+config FUSES_DEVCFG4_DSWDTPS_DSPS9
+	bool "DSPS9"
+
+config FUSES_DEVCFG4_DSWDTPS_DSPS10
+	bool "DSPS10"
+
+config FUSES_DEVCFG4_DSWDTPS_DSPS11
+	bool "DSPS11"
+
+config FUSES_DEVCFG4_DSWDTPS_DSPS12
+	bool "DSPS12"
+
+config FUSES_DEVCFG4_DSWDTPS_DSPS13
+	bool "DSPS13"
+
+config FUSES_DEVCFG4_DSWDTPS_DSPS14
+	bool "DSPS14"
+
+config FUSES_DEVCFG4_DSWDTPS_DSPS15
+	bool "DSPS15"
+
+config FUSES_DEVCFG4_DSWDTPS_DSPS16
+	bool "DSPS16"
+
+config FUSES_DEVCFG4_DSWDTPS_DSPS17
+	bool "DSPS17"
+
+config FUSES_DEVCFG4_DSWDTPS_DSPS18
+	bool "DSPS18"
+
+config FUSES_DEVCFG4_DSWDTPS_DSPS19
+	bool "DSPS19"
+
+config FUSES_DEVCFG4_DSWDTPS_DSPS20
+	bool "DSPS20"
+
+config FUSES_DEVCFG4_DSWDTPS_DSPS21
+	bool "DSPS21"
+
+config FUSES_DEVCFG4_DSWDTPS_DSPS22
+	bool "DSPS22"
+
+config FUSES_DEVCFG4_DSWDTPS_DSPS23
+	bool "DSPS23"
+
+config FUSES_DEVCFG4_DSWDTPS_DSPS24
+	bool "DSPS24"
+
+config FUSES_DEVCFG4_DSWDTPS_DSPS25
+	bool "DSPS25"
+
+config FUSES_DEVCFG4_DSWDTPS_DSPS26
+	bool "DSPS26"
+
+config FUSES_DEVCFG4_DSWDTPS_DSPS27
+	bool "DSPS27"
+
+config FUSES_DEVCFG4_DSWDTPS_DSPS28
+	bool "DSPS28"
+
+config FUSES_DEVCFG4_DSWDTPS_DSPS29
+	bool "DSPS29"
+
+config FUSES_DEVCFG4_DSWDTPS_DSPS30
+	bool "DSPS30"
+
+config FUSES_DEVCFG4_DSWDTPS_DSPS31
+	bool "DSPS31"
+
+config FUSES_DEVCFG4_DSWDTPS_DSPS32
+	bool "DSPS32"
+
+config FUSES_DEVCFG4_DSWDTPS_DSPS33
+	bool "DSPS33"
+
+config FUSES_DEVCFG4_DSWDTPS_DSPS34
+	bool "DSPS34"
+
+config FUSES_DEVCFG4_DSWDTPS_DSPS35
+	bool "DSPS35"
+
+config FUSES_DEVCFG4_DSWDTPS_DSPS36
+	bool "DSPS36"
+endchoice
+
+config FUSES_DEVCFG4_DSWDTPS
+	int
+	default 0 if FUSES_DEVCFG4_DSWDTPS_DSPS5
+	default 1 if FUSES_DEVCFG4_DSWDTPS_DSPS6
+	default 2 if FUSES_DEVCFG4_DSWDTPS_DSPS7
+	default 3 if FUSES_DEVCFG4_DSWDTPS_DSPS8
+	default 4 if FUSES_DEVCFG4_DSWDTPS_DSPS9
+	default 5 if FUSES_DEVCFG4_DSWDTPS_DSPS10
+	default 6 if FUSES_DEVCFG4_DSWDTPS_DSPS11
+	default 7 if FUSES_DEVCFG4_DSWDTPS_DSPS12
+	default 8 if FUSES_DEVCFG4_DSWDTPS_DSPS13
+	default 9 if FUSES_DEVCFG4_DSWDTPS_DSPS14
+	default 10 if FUSES_DEVCFG4_DSWDTPS_DSPS15
+	default 11 if FUSES_DEVCFG4_DSWDTPS_DSPS16
+	default 12 if FUSES_DEVCFG4_DSWDTPS_DSPS17
+	default 13 if FUSES_DEVCFG4_DSWDTPS_DSPS18
+	default 14 if FUSES_DEVCFG4_DSWDTPS_DSPS19
+	default 15 if FUSES_DEVCFG4_DSWDTPS_DSPS20
+	default 16 if FUSES_DEVCFG4_DSWDTPS_DSPS21
+	default 17 if FUSES_DEVCFG4_DSWDTPS_DSPS22
+	default 18 if FUSES_DEVCFG4_DSWDTPS_DSPS23
+	default 19 if FUSES_DEVCFG4_DSWDTPS_DSPS24
+	default 20 if FUSES_DEVCFG4_DSWDTPS_DSPS25
+	default 21 if FUSES_DEVCFG4_DSWDTPS_DSPS26
+	default 22 if FUSES_DEVCFG4_DSWDTPS_DSPS27
+	default 23 if FUSES_DEVCFG4_DSWDTPS_DSPS28
+	default 24 if FUSES_DEVCFG4_DSWDTPS_DSPS29
+	default 25 if FUSES_DEVCFG4_DSWDTPS_DSPS30
+	default 26 if FUSES_DEVCFG4_DSWDTPS_DSPS31
+	default 27 if FUSES_DEVCFG4_DSWDTPS_DSPS32
+	default 28 if FUSES_DEVCFG4_DSWDTPS_DSPS33
+	default 29 if FUSES_DEVCFG4_DSWDTPS_DSPS34
+	default 30 if FUSES_DEVCFG4_DSWDTPS_DSPS35
+	default 31 if FUSES_DEVCFG4_DSWDTPS_DSPS36
+
+choice FUSES_DEVCFG4_DSWDTOSC
+	prompt "Deep Sleep Watchdog Timer Reference Clock Select (DSWDTOSC)"
+	default FUSES_DEVCFG4_DSWDTOSC_LPRC
+	help
+	  Assignment of value for DSWDTOSC in the FUSES_DEVCFG4 register
+	  - SOSC: Select SOSC as DSWDT Reference Clock
+	  - LPRC: Select LPRC as DSWDT Reference Clock
+
+config FUSES_DEVCFG4_DSWDTOSC_SOSC
+	bool "SOSC"
+
+config FUSES_DEVCFG4_DSWDTOSC_LPRC
+	bool "LPRC"
+endchoice
+
+config FUSES_DEVCFG4_DSWDTOSC
+	int
+	default 0 if FUSES_DEVCFG4_DSWDTOSC_SOSC
+	default 1 if FUSES_DEVCFG4_DSWDTOSC_LPRC
+
+choice FUSES_DEVCFG4_DSWDTEN
+	prompt "Deep Sleep Watchdog Timer Enable (DSWDTEN)"
+	default FUSES_DEVCFG4_DSWDTEN_OFF
+	help
+	  Assignment of value for DSWDTEN in the FUSES_DEVCFG4 register
+	  - ON: Enabled
+	  - OFF: Disabled
+
+config FUSES_DEVCFG4_DSWDTEN_ON
+	bool "ON"
+
+config FUSES_DEVCFG4_DSWDTEN_OFF
+	bool "OFF"
+endchoice
+
+config FUSES_DEVCFG4_DSWDTEN
+	int
+	default 1 if FUSES_DEVCFG4_DSWDTEN_ON
+	default 0 if FUSES_DEVCFG4_DSWDTEN_OFF
+
+choice FUSES_DEVCFG4_DSEN
+	prompt "Deep Sleep Bit Enable (DSEN)"
+	default FUSES_DEVCFG4_DSEN_OFF
+	help
+	  Assignment of value for DSEN in the FUSES_DEVCFG4 register
+	  - ON: Enable DS Bit in DSCON
+	  - OFF: Disable DS Bit in DSCON
+
+config FUSES_DEVCFG4_DSEN_ON
+	bool "ON"
+
+config FUSES_DEVCFG4_DSEN_OFF
+	bool "OFF"
+endchoice
+
+config FUSES_DEVCFG4_DSEN
+	int
+	default 1 if FUSES_DEVCFG4_DSEN_ON
+	default 0 if FUSES_DEVCFG4_DSEN_OFF
+
+choice FUSES_DEVCFG4_UVREGROVR
+	prompt "ULPVREG Retention Mode Override (UVREGROVR)"
+	default FUSES_DEVCFG4_UVREGROVR_CONTROLLED
+	help
+	  Assignment of value for UVREGROVR in the FUSES_DEVCFG4 register
+	  - FORCED: ULPVREG forced in retention mode
+	  - CONTROLLED: ULPVREG controlled by XDS/DS FSM
+
+config FUSES_DEVCFG4_UVREGROVR_FORCED
+	bool "FORCED"
+
+config FUSES_DEVCFG4_UVREGROVR_CONTROLLED
+	bool "CONTROLLED"
+endchoice
+
+config FUSES_DEVCFG4_UVREGROVR
+	int
+	default 1 if FUSES_DEVCFG4_UVREGROVR_FORCED
+	default 0 if FUSES_DEVCFG4_UVREGROVR_CONTROLLED
+
+if SOC_FAMILY_MICROCHIP_PIC32CX_BZ6
+
+choice FUSES_DEVCFG4_LPOSCEN
+	prompt "Low Power (Secondary) Oscillator Enable (LPOSCEN)"
+	default FUSES_DEVCFG4_LPOSCEN_OFF
+	help
+	  Assignment of value for LPOSCEN in the FUSES_DEVCFG4 register
+	  - ON: Enabled
+	  - OFF: Disable
+
+config FUSES_DEVCFG4_LPOSCEN_ON
+	bool "ON"
+
+config FUSES_DEVCFG4_LPOSCEN_OFF
+	bool "OFF"
+endchoice
+
+config FUSES_DEVCFG4_LPOSCEN
+	int
+	default 1 if FUSES_DEVCFG4_LPOSCEN_ON
+	default 0 if FUSES_DEVCFG4_LPOSCEN_OFF
+
+endif # SOC_FAMILY_MICROCHIP_PIC32CX_BZ3 || SOC_FAMILY_MICROCHIP_PIC32CX_BZ6
+
+choice FUSES_DEVCFG4_RTCNTM_CSEL
+	prompt "RTC Counter Mode Clock Select (RTCNTM_CSEL)"
+	default FUSES_DEVCFG4_RTCNTM_CSEL_RAW
+	help
+	  Assignment of value for RTCNTM_CSEL in the FUSES_DEVCFG4 register
+	  - RAW: Raw 32kHz clock
+	  - PROCESSED: Processed 32kHz clock
+
+config FUSES_DEVCFG4_RTCNTM_CSEL_RAW
+	bool "RAW"
+
+config FUSES_DEVCFG4_RTCNTM_CSEL_PROCESSED
+	bool "PROCESSED"
+endchoice
+
+config FUSES_DEVCFG4_RTCNTM_CSEL
+	int
+	default 1 if FUSES_DEVCFG4_RTCNTM_CSEL_RAW
+	default 0 if FUSES_DEVCFG4_RTCNTM_CSEL_PROCESSED
+
+endmenu
+
+############################### DEVCFG2 ###############################
+
+menu "DEVCFG2"
+
+choice FUSES_DEVCFG2_ACMP_CYCLE
+	prompt "AC Comparator Result Wait Cycles (ACMP_CYCLE)"
+	default FUSES_DEVCFG2_ACMP_CYCLE_32US
+	help
+	  Assignment of value for ACMP_CYCLE in the FUSES_DEVCFG2 register
+	  - _32US: 32us
+	  - _64US: 64us
+	  - _96US: 96us
+	  - _128US: 128us
+	  - _160US: 160us
+	  - _196US: 196us
+	  - _224US: 224us
+	  - _256US: 256us
+
+config FUSES_DEVCFG2_ACMP_CYCLE_32US
+	bool "_32US"
+
+config FUSES_DEVCFG2_ACMP_CYCLE_64US
+	bool "_64US"
+
+config FUSES_DEVCFG2_ACMP_CYCLE_96US
+	bool "_96US"
+
+config FUSES_DEVCFG2_ACMP_CYCLE_128US
+	bool "_128US"
+
+config FUSES_DEVCFG2_ACMP_CYCLE_160US
+	bool "_160US"
+
+config FUSES_DEVCFG2_ACMP_CYCLE_196US
+	bool "_196US"
+
+config FUSES_DEVCFG2_ACMP_CYCLE_224US
+	bool "_224US"
+
+config FUSES_DEVCFG2_ACMP_CYCLE_256US
+	bool "_256US"
+endchoice
+
+config FUSES_DEVCFG2_ACMP_CYCLE
+	int
+	default 0 if FUSES_DEVCFG2_ACMP_CYCLE_32US
+	default 1 if FUSES_DEVCFG2_ACMP_CYCLE_64US
+	default 2 if FUSES_DEVCFG2_ACMP_CYCLE_96US
+	default 3 if FUSES_DEVCFG2_ACMP_CYCLE_128US
+	default 4 if FUSES_DEVCFG2_ACMP_CYCLE_160US
+	default 5 if FUSES_DEVCFG2_ACMP_CYCLE_196US
+	default 6 if FUSES_DEVCFG2_ACMP_CYCLE_224US
+	default 7 if FUSES_DEVCFG2_ACMP_CYCLE_256US
+
+choice FUSES_DEVCFG2_DMTINTV
+	prompt "Dead Man Timer Count Window Interval (DMTINTV)"
+	default FUSES_DEVCFG2_DMTINTV_WIN_127_128
+	help
+	  Assignment of value for DMTINTV in the FUSES_DEVCFG2 register
+	  - WIN_0: Window/Interval value is zero
+	  - WIN_1_2: Window/Interval value is 1/2 counter value
+	  - WIN_3_4: Window/Interval value is 3/4 counter value
+	  - WIN_7_8: Window/Interval value is 7/8 counter value
+	  - WIN_15_16: Window/Interval value is 15/16 counter value
+	  - WIN_31_32: Window/Interval value is 31/32 counter value
+	  - WIN_63_64: Window/Interval value is 63/64 counter value
+	  - WIN_127_128: Window/Interval value is 127/128 counter value
+
+config FUSES_DEVCFG2_DMTINTV_WIN_0
+	bool "WIN_0"
+
+config FUSES_DEVCFG2_DMTINTV_WIN_1_2
+	bool "WIN_1_2"
+
+config FUSES_DEVCFG2_DMTINTV_WIN_3_4
+	bool "WIN_3_4"
+
+config FUSES_DEVCFG2_DMTINTV_WIN_7_8
+	bool "WIN_7_8"
+
+config FUSES_DEVCFG2_DMTINTV_WIN_15_16
+	bool "WIN_15_16"
+
+config FUSES_DEVCFG2_DMTINTV_WIN_31_32
+	bool "WIN_31_32"
+
+config FUSES_DEVCFG2_DMTINTV_WIN_63_64
+	bool "WIN_63_64"
+
+config FUSES_DEVCFG2_DMTINTV_WIN_127_128
+	bool "WIN_127_128"
+endchoice
+
+config FUSES_DEVCFG2_DMTINTV
+	int
+	default 0 if FUSES_DEVCFG2_DMTINTV_WIN_0
+	default 1 if FUSES_DEVCFG2_DMTINTV_WIN_1_2
+	default 2 if FUSES_DEVCFG2_DMTINTV_WIN_3_4
+	default 3 if FUSES_DEVCFG2_DMTINTV_WIN_7_8
+	default 4 if FUSES_DEVCFG2_DMTINTV_WIN_15_16
+	default 5 if FUSES_DEVCFG2_DMTINTV_WIN_31_32
+	default 6 if FUSES_DEVCFG2_DMTINTV_WIN_63_64
+	default 7 if FUSES_DEVCFG2_DMTINTV_WIN_127_128
+
+choice FUSES_DEVCFG2_PMUTEST_VDD_EN
+	prompt "PMU Test Output or VDD/2 Enable via ADC IE12 (PMUTEST_VDD_EN)"
+	default FUSES_DEVCFG2_PMUTEST_VDD_EN_VDD_DIV_2
+	help
+	  Assignment of value for PMUTEST_VDD_EN in the FUSES_DEVCFG2 register
+	  - PMU: PMU Test Output Monitor
+	  - VDD_DIV_2: VDD_div_2 Monitor
+
+config FUSES_DEVCFG2_PMUTEST_VDD_EN_PMU
+	bool "PMU"
+
+config FUSES_DEVCFG2_PMUTEST_VDD_EN_VDD_DIV_2
+	bool "VDD_DIV_2"
+endchoice
+
+config FUSES_DEVCFG2_PMUTEST_VDD_EN
+	int
+	default 1 if FUSES_DEVCFG2_PMUTEST_VDD_EN_PMU
+	default 0 if FUSES_DEVCFG2_PMUTEST_VDD_EN_VDD_DIV_2
+
+choice FUSES_DEVCFG2_POSCMOD
+	prompt "Primary Oscillator Configuration (POSCMOD)"
+	default FUSES_DEVCFG2_POSCMOD_HS
+	help
+	  Assignment of value for POSCMOD in the FUSES_DEVCFG2 register
+	  - OFF: Primary oscillator is disabled
+	  - HS: HS oscillator mode is selected
+
+config FUSES_DEVCFG2_POSCMOD_OFF
+	bool "OFF"
+
+config FUSES_DEVCFG2_POSCMOD_HS
+	bool "HS"
+endchoice
+
+config FUSES_DEVCFG2_POSCMOD
+	int
+	default 3 if FUSES_DEVCFG2_POSCMOD_OFF
+	default 0 if FUSES_DEVCFG2_POSCMOD_HS
+
+choice FUSES_DEVCFG2_WDTRMCS
+	prompt "WDT RUN Mode Clock Select (WDTRMCS)"
+	default FUSES_DEVCFG2_WDTRMCS_LPRC
+	help
+	  Assignment of value for WDTRMCS in the FUSES_DEVCFG2 register
+	  - LPRC: LPRC
+	  - SYSCLK: SYSCLK
+
+config FUSES_DEVCFG2_WDTRMCS_LPRC
+	bool "LPRC"
+
+config FUSES_DEVCFG2_WDTRMCS_SYSCLK
+	bool "SYSCLK"
+endchoice
+
+config FUSES_DEVCFG2_WDTRMCS
+	int
+	default 3 if FUSES_DEVCFG2_WDTRMCS_LPRC
+	default 0 if FUSES_DEVCFG2_WDTRMCS_SYSCLK
+
+choice FUSES_DEVCFG2_SOSCSEL
+	prompt "SOSC Selection Configuration (SOSCSEL)"
+	default FUSES_DEVCFG2_SOSCSEL_XTAL
+	help
+	  Assignment of value for SOSCSEL in the FUSES_DEVCFG2 register
+	  - XTAL: Crystal (SOSCI/SOSCO) mode
+	  - SCLKI: Digital (SCLKI) mode
+
+config FUSES_DEVCFG2_SOSCSEL_XTAL
+	bool "XTAL"
+
+config FUSES_DEVCFG2_SOSCSEL_SCLKI
+	bool "SCLKI"
+endchoice
+
+config FUSES_DEVCFG2_SOSCSEL
+	int
+	default 1 if FUSES_DEVCFG2_SOSCSEL_XTAL
+	default 0 if FUSES_DEVCFG2_SOSCSEL_SCLKI
+
+choice FUSES_DEVCFG2_WAKE2SPD
+	prompt "2-Speed startup enabled in Sleep mode (WAKE2SPD)"
+	default FUSES_DEVCFG2_WAKE2SPD_ON
+	help
+	  Assignment of value for WAKE2SPD in the FUSES_DEVCFG2 register
+	  - ON: When the device exits the Sleep Mode, the SYS_CLK
+	    will be from FRC until the selected clock is ready.
+	  - OFF: When the device exits Sleep Mode, the SYS_CLK will be from the selected clock.
+
+config FUSES_DEVCFG2_WAKE2SPD_ON
+	bool "ON"
+
+config FUSES_DEVCFG2_WAKE2SPD_OFF
+	bool "OFF"
+endchoice
+
+config FUSES_DEVCFG2_WAKE2SPD
+	int
+	default 1 if FUSES_DEVCFG2_WAKE2SPD_ON
+	default 0 if FUSES_DEVCFG2_WAKE2SPD_OFF
+
+choice FUSES_DEVCFG2_CKSWEN
+	prompt "Software Clock Switching Enable (CKSWEN)"
+	default FUSES_DEVCFG2_CKSWEN_ON
+	help
+	  Assignment of value for CKSWEN in the FUSES_DEVCFG2 register
+	  - ON: Software clock switching is enabled
+	  - OFF: Software clock switching is disabled
+
+config FUSES_DEVCFG2_CKSWEN_ON
+	bool "ON"
+
+config FUSES_DEVCFG2_CKSWEN_OFF
+	bool "OFF"
+endchoice
+
+config FUSES_DEVCFG2_CKSWEN
+	int
+	default 1 if FUSES_DEVCFG2_CKSWEN_ON
+	default 0 if FUSES_DEVCFG2_CKSWEN_OFF
+
+choice FUSES_DEVCFG2_FSCMEN
+	prompt "Fail-Safe Clock Monitor Enable (FSCMEN)"
+	default FUSES_DEVCFG2_FSCMEN_ON
+	help
+	  Assignment of value for FSCMEN in the FUSES_DEVCFG2 register
+	  - ON: FSCM enabled
+	  - OFF: FSCM disabled
+
+config FUSES_DEVCFG2_FSCMEN_ON
+	bool "ON"
+
+config FUSES_DEVCFG2_FSCMEN_OFF
+	bool "OFF"
+endchoice
+
+config FUSES_DEVCFG2_FSCMEN
+	int
+	default 1 if FUSES_DEVCFG2_FSCMEN_ON
+	default 0 if FUSES_DEVCFG2_FSCMEN_OFF
+
+choice FUSES_DEVCFG2_WDTPSR
+	prompt "Watchdog Timer Post-scale Select Run (WDTPSR)"
+	default FUSES_DEVCFG2_WDTPSR_PS1048576
+	help
+	  Assignment of value for WDTPSR in the FUSES_DEVCFG2 register
+	  - PS1: 1:1
+	  - PS2: 1:2
+	  - PS4: 1:4
+	  - PS8: 1:8
+	  - PS16: 1:16
+	  - PS32: 1:32
+	  - PS64: 1:64
+	  - PS128: 1:128
+	  - PS256: 1:256
+	  - PS512: 1:512
+	  - PS1024: 1:1024
+	  - PS2048: 1:2048
+	  - PS4096: 1:4096
+	  - PS8192: 1:8192
+	  - PS16384: 1:16384
+	  - PS32768: 1:32768
+	  - PS65536: 1:65536
+	  - PS131072: 1:131072
+	  - PS262144: 1:262144
+	  - PS524288: 1:524288
+	  - PS1048576: 1:1048576
+
+config FUSES_DEVCFG2_WDTPSR_PS1
+	bool "PS1"
+
+config FUSES_DEVCFG2_WDTPSR_PS2
+	bool "PS2"
+
+config FUSES_DEVCFG2_WDTPSR_PS4
+	bool "PS4"
+
+config FUSES_DEVCFG2_WDTPSR_PS8
+	bool "PS8"
+
+config FUSES_DEVCFG2_WDTPSR_PS16
+	bool "PS16"
+
+config FUSES_DEVCFG2_WDTPSR_PS32
+	bool "PS32"
+
+config FUSES_DEVCFG2_WDTPSR_PS64
+	bool "PS64"
+
+config FUSES_DEVCFG2_WDTPSR_PS128
+	bool "PS128"
+
+config FUSES_DEVCFG2_WDTPSR_PS256
+	bool "PS256"
+
+config FUSES_DEVCFG2_WDTPSR_PS512
+	bool "PS512"
+
+config FUSES_DEVCFG2_WDTPSR_PS1024
+	bool "PS1024"
+
+config FUSES_DEVCFG2_WDTPSR_PS2048
+	bool "PS2048"
+
+config FUSES_DEVCFG2_WDTPSR_PS4096
+	bool "PS4096"
+
+config FUSES_DEVCFG2_WDTPSR_PS8192
+	bool "PS8192"
+
+config FUSES_DEVCFG2_WDTPSR_PS16384
+	bool "PS16384"
+
+config FUSES_DEVCFG2_WDTPSR_PS32768
+	bool "PS32768"
+
+config FUSES_DEVCFG2_WDTPSR_PS65536
+	bool "PS65536"
+
+config FUSES_DEVCFG2_WDTPSR_PS131072
+	bool "PS131072"
+
+config FUSES_DEVCFG2_WDTPSR_PS262144
+	bool "PS262144"
+
+config FUSES_DEVCFG2_WDTPSR_PS524288
+	bool "PS524288"
+
+config FUSES_DEVCFG2_WDTPSR_PS1048576
+	bool "PS1048576"
+endchoice
+
+config FUSES_DEVCFG2_WDTPSR
+	int
+	default 0 if FUSES_DEVCFG2_WDTPSR_PS1
+	default 1 if FUSES_DEVCFG2_WDTPSR_PS2
+	default 2 if FUSES_DEVCFG2_WDTPSR_PS4
+	default 3 if FUSES_DEVCFG2_WDTPSR_PS8
+	default 4 if FUSES_DEVCFG2_WDTPSR_PS16
+	default 5 if FUSES_DEVCFG2_WDTPSR_PS32
+	default 6 if FUSES_DEVCFG2_WDTPSR_PS64
+	default 7 if FUSES_DEVCFG2_WDTPSR_PS128
+	default 8 if FUSES_DEVCFG2_WDTPSR_PS256
+	default 9 if FUSES_DEVCFG2_WDTPSR_PS512
+	default 10 if FUSES_DEVCFG2_WDTPSR_PS1024
+	default 11 if FUSES_DEVCFG2_WDTPSR_PS2048
+	default 12 if FUSES_DEVCFG2_WDTPSR_PS4096
+	default 13 if FUSES_DEVCFG2_WDTPSR_PS8192
+	default 14 if FUSES_DEVCFG2_WDTPSR_PS16384
+	default 15 if FUSES_DEVCFG2_WDTPSR_PS32768
+	default 16 if FUSES_DEVCFG2_WDTPSR_PS65536
+	default 17 if FUSES_DEVCFG2_WDTPSR_PS131072
+	default 18 if FUSES_DEVCFG2_WDTPSR_PS262144
+	default 19 if FUSES_DEVCFG2_WDTPSR_PS524288
+	default 20 if FUSES_DEVCFG2_WDTPSR_PS1048576
+
+choice FUSES_DEVCFG2_WDTSPGM
+	prompt "Watchdog Timer Stop during Flash Programming (WDTSPGM)"
+	default FUSES_DEVCFG2_WDTSPGM_STOPS
+	help
+	  Assignment of value for WDTSPGM in the FUSES_DEVCFG2 register
+	  - STOPS: The WDT stops during NVR programming (legacy)
+	  - RUNS: The WDT runs during NVR programming
+	    (for read/execute while programming flash systems)
+
+config FUSES_DEVCFG2_WDTSPGM_STOPS
+	bool "STOPS"
+
+config FUSES_DEVCFG2_WDTSPGM_RUNS
+	bool "RUNS"
+endchoice
+
+config FUSES_DEVCFG2_WDTSPGM
+	int
+	default 1 if FUSES_DEVCFG2_WDTSPGM_STOPS
+	default 0 if FUSES_DEVCFG2_WDTSPGM_RUNS
+
+choice FUSES_DEVCFG2_WINDIS
+	prompt "Windowed Watchdog Timer Disable (WINDIS)"
+	default FUSES_DEVCFG2_WINDIS_NORMAL
+	help
+	  Assignment of value for WINDIS in the FUSES_DEVCFG2 register
+	  - NORMAL: Standard WDT is selected; windowed WDT disabled
+	  - WINDOW: Windowed WDT is enabled
+
+config FUSES_DEVCFG2_WINDIS_NORMAL
+	bool "NORMAL"
+
+config FUSES_DEVCFG2_WINDIS_WINDOW
+	bool "WINDOW"
+endchoice
+
+config FUSES_DEVCFG2_WINDIS
+	int
+	default 1 if FUSES_DEVCFG2_WINDIS_NORMAL
+	default 0 if FUSES_DEVCFG2_WINDIS_WINDOW
+
+choice FUSES_DEVCFG2_WDTEN
+	prompt "Watchdog Timer Enable (WDTEN)"
+	default FUSES_DEVCFG2_WDTEN_OFF
+	help
+	  Assignment of value for WDTEN in the FUSES_DEVCFG2 register
+	  - ON: WDT is enabled
+	  - OFF: WDT is disabled (control is placed on the SWDTEN bit)
+
+config FUSES_DEVCFG2_WDTEN_ON
+	bool "ON"
+
+config FUSES_DEVCFG2_WDTEN_OFF
+	bool "OFF"
+endchoice
+
+config FUSES_DEVCFG2_WDTEN
+	int
+	default 1 if FUSES_DEVCFG2_WDTEN_ON
+	default 0 if FUSES_DEVCFG2_WDTEN_OFF
+
+choice FUSES_DEVCFG2_WDTWINSZ
+	prompt "Watchdog Timer Window Size (WDTWINSZ)"
+	default FUSES_DEVCFG2_WDTWINSZ_WINSZ_25
+	help
+	  Assignment of value for WDTWINSZ in the FUSES_DEVCFG2 register
+	  - WINSZ_25: Window size is 25%
+	  - WINSZ_37: Window size is 37.5%
+	  - WINSZ_50: Window size is 50%
+	  - WINSZ_75: Window size is 75%
+
+config FUSES_DEVCFG2_WDTWINSZ_WINSZ_25
+	bool "WINSZ_25"
+
+config FUSES_DEVCFG2_WDTWINSZ_WINSZ_37
+	bool "WINSZ_37"
+
+config FUSES_DEVCFG2_WDTWINSZ_WINSZ_50
+	bool "WINSZ_50"
+
+config FUSES_DEVCFG2_WDTWINSZ_WINSZ_75
+	bool "WINSZ_75"
+endchoice
+
+config FUSES_DEVCFG2_WDTWINSZ
+	int
+	default 3 if FUSES_DEVCFG2_WDTWINSZ_WINSZ_25
+	default 2 if FUSES_DEVCFG2_WDTWINSZ_WINSZ_37
+	default 1 if FUSES_DEVCFG2_WDTWINSZ_WINSZ_50
+	default 0 if FUSES_DEVCFG2_WDTWINSZ_WINSZ_75
+
+choice FUSES_DEVCFG2_DMTCNT
+	prompt "Dead Man Timer Count Select (DMTCNT)"
+	default FUSES_DEVCFG2_DMTCNT_DMT31
+	help
+	  Assignment of value for DMTCNT in the FUSES_DEVCFG2 register
+	  - DMT8: 2^8 (256)
+	  - DMT9: 2^9 (512)
+	  - DMT10: 2^10 (1024)
+	  - DMT11: 2^11 (2048)
+	  - DMT12: 2^12 (4096)
+	  - DMT13: 2^13 (8192)
+	  - DMT14: 2^14 (16384)
+	  - DMT15: 2^15 (32768)
+	  - DMT16: 2^16 (65536)
+	  - DMT17: 2^17 (131072)
+	  - DMT18: 2^18 (262144)
+	  - DMT19: 2^19 (524288)
+	  - DMT20: 2^20 (1048576)
+	  - DMT21: 2^21 (2097152)
+	  - DMT22: 2^22 (4194304)
+	  - DMT23: 2^23 (8388608)
+	  - DMT24: 2^24 (16777216)
+	  - DMT25: 2^25 (33554432)
+	  - DMT26: 2^26 (67108864)
+	  - DMT27: 2^27 (134217728)
+	  - DMT28: 2^28 (268435456)
+	  - DMT29: 2^29 (536870912)
+	  - DMT30: 2^30 (1073741824)
+	  - DMT31: 2^31 (2147483648)
+
+config FUSES_DEVCFG2_DMTCNT_DMT8
+	bool "DMT8"
+
+config FUSES_DEVCFG2_DMTCNT_DMT9
+	bool "DMT9"
+
+config FUSES_DEVCFG2_DMTCNT_DMT10
+	bool "DMT10"
+
+config FUSES_DEVCFG2_DMTCNT_DMT11
+	bool "DMT11"
+
+config FUSES_DEVCFG2_DMTCNT_DMT12
+	bool "DMT12"
+
+config FUSES_DEVCFG2_DMTCNT_DMT13
+	bool "DMT13"
+
+config FUSES_DEVCFG2_DMTCNT_DMT14
+	bool "DMT14"
+
+config FUSES_DEVCFG2_DMTCNT_DMT15
+	bool "DMT15"
+
+config FUSES_DEVCFG2_DMTCNT_DMT16
+	bool "DMT16"
+
+config FUSES_DEVCFG2_DMTCNT_DMT17
+	bool "DMT17"
+
+config FUSES_DEVCFG2_DMTCNT_DMT18
+	bool "DMT18"
+
+config FUSES_DEVCFG2_DMTCNT_DMT19
+	bool "DMT19"
+
+config FUSES_DEVCFG2_DMTCNT_DMT20
+	bool "DMT20"
+
+config FUSES_DEVCFG2_DMTCNT_DMT21
+	bool "DMT21"
+
+config FUSES_DEVCFG2_DMTCNT_DMT22
+	bool "DMT22"
+
+config FUSES_DEVCFG2_DMTCNT_DMT23
+	bool "DMT23"
+
+config FUSES_DEVCFG2_DMTCNT_DMT24
+	bool "DMT24"
+
+config FUSES_DEVCFG2_DMTCNT_DMT25
+	bool "DMT25"
+
+config FUSES_DEVCFG2_DMTCNT_DMT26
+	bool "DMT26"
+
+config FUSES_DEVCFG2_DMTCNT_DMT27
+	bool "DMT27"
+
+config FUSES_DEVCFG2_DMTCNT_DMT28
+	bool "DMT28"
+
+config FUSES_DEVCFG2_DMTCNT_DMT29
+	bool "DMT29"
+
+config FUSES_DEVCFG2_DMTCNT_DMT30
+	bool "DMT30"
+
+config FUSES_DEVCFG2_DMTCNT_DMT31
+	bool "DMT31"
+endchoice
+
+config FUSES_DEVCFG2_DMTCNT
+	int
+	default 0 if FUSES_DEVCFG2_DMTCNT_DMT8
+	default 1 if FUSES_DEVCFG2_DMTCNT_DMT9
+	default 2 if FUSES_DEVCFG2_DMTCNT_DMT10
+	default 3 if FUSES_DEVCFG2_DMTCNT_DMT11
+	default 4 if FUSES_DEVCFG2_DMTCNT_DMT12
+	default 5 if FUSES_DEVCFG2_DMTCNT_DMT13
+	default 6 if FUSES_DEVCFG2_DMTCNT_DMT14
+	default 7 if FUSES_DEVCFG2_DMTCNT_DMT15
+	default 8 if FUSES_DEVCFG2_DMTCNT_DMT16
+	default 9 if FUSES_DEVCFG2_DMTCNT_DMT17
+	default 10 if FUSES_DEVCFG2_DMTCNT_DMT18
+	default 11 if FUSES_DEVCFG2_DMTCNT_DMT19
+	default 12 if FUSES_DEVCFG2_DMTCNT_DMT20
+	default 13 if FUSES_DEVCFG2_DMTCNT_DMT21
+	default 14 if FUSES_DEVCFG2_DMTCNT_DMT22
+	default 15 if FUSES_DEVCFG2_DMTCNT_DMT23
+	default 16 if FUSES_DEVCFG2_DMTCNT_DMT24
+	default 17 if FUSES_DEVCFG2_DMTCNT_DMT25
+	default 18 if FUSES_DEVCFG2_DMTCNT_DMT26
+	default 19 if FUSES_DEVCFG2_DMTCNT_DMT27
+	default 20 if FUSES_DEVCFG2_DMTCNT_DMT28
+	default 21 if FUSES_DEVCFG2_DMTCNT_DMT29
+	default 22 if FUSES_DEVCFG2_DMTCNT_DMT30
+	default 23 if FUSES_DEVCFG2_DMTCNT_DMT31
+
+choice FUSES_DEVCFG2_DMTEN
+	prompt "Dead Man Timer Enable (DMTEN)"
+	default FUSES_DEVCFG2_DMTEN_OFF
+	help
+	  Assignment of value for DMTEN in the FUSES_DEVCFG2 register
+	  - ON: DMT is enabled
+	  - OFF: DMT is disabled (control is placed on the DMTCON.ON bit)
+
+config FUSES_DEVCFG2_DMTEN_ON
+	bool "ON"
+
+config FUSES_DEVCFG2_DMTEN_OFF
+	bool "OFF"
+endchoice
+
+config FUSES_DEVCFG2_DMTEN
+	int
+	default 1 if FUSES_DEVCFG2_DMTEN_ON
+	default 0 if FUSES_DEVCFG2_DMTEN_OFF
+
+endmenu
+
+############################### DEVCFG1 ###############################
+
+menu "DEVCFG1"
+
+if SOC_FAMILY_MICROCHIP_PIC32CX_BZ6
+
+config FUSES_DEVCFG1_CAN0_PIN_EN
+	hex "CAN0 Pin Enable (CAN0_PIN_EN)"
+	default 0x0
+	help
+	  Assignment of value for CAN0_PIN_EN in the FUSES_DEVCFG1 register
+
+endif # SOC_FAMILY_MICROCHIP_PIC32CX_BZ6
+
+choice FUSES_DEVCFG1_TRCEN
+	prompt "Trace Enable (TRCEN)"
+	default FUSES_DEVCFG1_TRCEN_ON
+	help
+	  Assignment of value for TRCEN in the FUSES_DEVCFG1 register
+	  - ON: Trace features in the CPU are enabled
+	  - OFF: Trace features in the CPU are disabled
+
+config FUSES_DEVCFG1_TRCEN_OFF
+	bool "OFF"
+
+config FUSES_DEVCFG1_TRCEN_ON
+	bool "ON"
+endchoice
+
+config FUSES_DEVCFG1_TRCEN
+	int
+	default 0 if FUSES_DEVCFG1_TRCEN_OFF
+	default 1 if FUSES_DEVCFG1_TRCEN_ON
+
+choice FUSES_DEVCFG1_ZBTWKSYS
+	prompt "ZBT Subsystem External Wake-up source (ZBTWKSYS)"
+	default FUSES_DEVCFG1_ZBTWKSYS_OFF
+	help
+	  Assignment of value for ZBTWKSYS in the FUSES_DEVCFG1 register
+	  - ON: Wake-up BT Subsystem
+	  - OFF: No effect
+
+config FUSES_DEVCFG1_ZBTWKSYS_OFF
+	bool "OFF"
+
+config FUSES_DEVCFG1_ZBTWKSYS_ON
+	bool "ON"
+endchoice
+
+config FUSES_DEVCFG1_ZBTWKSYS
+	int
+	default 0 if FUSES_DEVCFG1_ZBTWKSYS_OFF
+	default 1 if FUSES_DEVCFG1_ZBTWKSYS_ON
+
+choice FUSES_DEVCFG1_CMP0_OE
+	prompt "Analog Comparator-0 Output Enable (CMP0_OE)"
+	default FUSES_DEVCFG1_CMP0_OE_OFF
+	help
+	  Assignment of value for CMP0_OE in the FUSES_DEVCFG1 register
+	  - ON: AC0 Output is enabled
+	  - OFF: AC0 Output is disabled
+
+config FUSES_DEVCFG1_CMP0_OE_OFF
+	bool "OFF"
+
+config FUSES_DEVCFG1_CMP0_OE_ON
+	bool "ON"
+endchoice
+
+config FUSES_DEVCFG1_CMP0_OE
+	int
+	default 0 if FUSES_DEVCFG1_CMP0_OE_OFF
+	default 1 if FUSES_DEVCFG1_CMP0_OE_ON
+
+choice FUSES_DEVCFG1_CMP1_OE
+	prompt "Analog Comparator-1 Output Enable (CMP1_OE)"
+	default FUSES_DEVCFG1_CMP1_OE_OFF
+	help
+	  Assignment of value for CMP1_OE in the FUSES_DEVCFG1 register
+	  - ON: AC1 Output is enabled
+	  - OFF: AC1 Output is disabled
+
+config FUSES_DEVCFG1_CMP1_OE_OFF
+	bool "OFF"
+
+config FUSES_DEVCFG1_CMP1_OE_ON
+	bool "ON"
+endchoice
+
+config FUSES_DEVCFG1_CMP1_OE
+	int
+	default 0 if FUSES_DEVCFG1_CMP1_OE_OFF
+	default 1 if FUSES_DEVCFG1_CMP1_OE_ON
+
+choice FUSES_DEVCFG1_SMCLR
+	prompt "Selects CRU handling of MCLR Control (SMCLR)"
+	default FUSES_DEVCFG1_SMCLR_NO_POR
+	help
+	  Assignment of value for SMCLR in the FUSES_DEVCFG1 register
+	  - NO_POR: Legacy mode (system clear does not reset all state of device)
+	  - FAUX_POR: MCLR causes a faux POR
+
+config FUSES_DEVCFG1_SMCLR_NO_POR
+	bool "NO_POR"
+
+config FUSES_DEVCFG1_SMCLR_FAUX_POR
+	bool "FAUX_POR"
+endchoice
+
+config FUSES_DEVCFG1_SMCLR
+	int
+	default 1 if FUSES_DEVCFG1_SMCLR_NO_POR
+	default 0 if FUSES_DEVCFG1_SMCLR_FAUX_POR
+
+choice FUSES_DEVCFG1_QSCHE_EN
+	prompt "QSPI Address Space Cache Attribute (QSCHE_EN)"
+	default FUSES_DEVCFG1_QSCHE_EN_OFF
+	help
+	  Assignment of value for QSCHE_EN in the FUSES_DEVCFG1 register
+	  - ON: Cache attribute is enabled
+	  - OFF: Caching is disabled
+
+config FUSES_DEVCFG1_QSCHE_EN_OFF
+	bool "OFF"
+
+config FUSES_DEVCFG1_QSCHE_EN_ON
+	bool "ON"
+endchoice
+
+config FUSES_DEVCFG1_QSCHE_EN
+	int
+	default 0 if FUSES_DEVCFG1_QSCHE_EN_OFF
+	default 1 if FUSES_DEVCFG1_QSCHE_EN_ON
+
+choice FUSES_DEVCFG1_QSPI_HSEN
+	prompt "QSPI Direct (High Speed) Pin Enable (QSPI_HSEN)"
+	default FUSES_DEVCFG1_QSPI_HSEN_PPS
+	help
+	  Assignment of value for QSPI_HSEN in the FUSES_DEVCFG1 register
+	  - PPS: Via PPS is enabled
+	  - DIRECT: Direct Mode (High-Speed) is enabled
+
+config FUSES_DEVCFG1_QSPI_HSEN_PPS
+	bool "PPS"
+
+config FUSES_DEVCFG1_QSPI_HSEN_DIRECT
+	bool "DIRECT"
+endchoice
+
+config FUSES_DEVCFG1_QSPI_HSEN
+	int
+	default 0 if FUSES_DEVCFG1_QSPI_HSEN_PPS
+	default 1 if FUSES_DEVCFG1_QSPI_HSEN_DIRECT
+
+choice FUSES_DEVCFG1_SCOM0_HSEN
+	prompt "SERCOM0 Direct (High Speed) Pin Enable (SCOM0_HSEN)"
+	default FUSES_DEVCFG1_SCOM0_HSEN_PPS
+	help
+	  Assignment of value for SCOM0_HSEN in the FUSES_DEVCFG1 register
+	  - PPS: Via PPS is enabled
+	  - DIRECT: Direct Mode (High-Speed) is enabled
+
+config FUSES_DEVCFG1_SCOM0_HSEN_PPS
+	bool "PPS"
+
+config FUSES_DEVCFG1_SCOM0_HSEN_DIRECT
+	bool "DIRECT"
+endchoice
+
+config FUSES_DEVCFG1_SCOM0_HSEN
+	int
+	default 0 if FUSES_DEVCFG1_SCOM0_HSEN_PPS
+	default 1 if FUSES_DEVCFG1_SCOM0_HSEN_DIRECT
+
+choice FUSES_DEVCFG1_SCOM1_HSEN
+	prompt "SERCOM1 Direct (High Speed) Pin Enable (SCOM1_HSEN)"
+	default FUSES_DEVCFG1_SCOM1_HSEN_PPS
+	help
+	  Assignment of value for SCOM1_HSEN in the FUSES_DEVCFG1 register
+	  - PPS: Via PPS is enabled
+	  - DIRECT: Direct Mode (High-Speed) is enabled
+
+config FUSES_DEVCFG1_SCOM1_HSEN_PPS
+	bool "PPS"
+
+config FUSES_DEVCFG1_SCOM1_HSEN_DIRECT
+	bool "DIRECT"
+endchoice
+
+config FUSES_DEVCFG1_SCOM1_HSEN
+	int
+	default 0 if FUSES_DEVCFG1_SCOM1_HSEN_PPS
+	default 1 if FUSES_DEVCFG1_SCOM1_HSEN_DIRECT
+
+if SOC_FAMILY_MICROCHIP_PIC32CX_BZ6
+
+choice FUSES_DEVCFG1_SCOM2_HSEN
+	prompt "SERCOM2 Direct (High Speed) Pin Enable (SCOM2_HSEN)"
+	default FUSES_DEVCFG1_SCOM2_HSEN_PPS
+	help
+	  Assignment of value for SCOM2_HSEN in the FUSES_DEVCFG1 register
+	  - PPS: Via PPS is enabled
+	  - DIRECT: Direct Mode (High-Speed) is enabled
+
+config FUSES_DEVCFG1_SCOM2_HSEN_PPS
+	bool "PPS"
+
+config FUSES_DEVCFG1_SCOM2_HSEN_DIRECT
+	bool "DIRECT"
+endchoice
+
+config FUSES_DEVCFG1_SCOM2_HSEN
+	int
+	default 0 if FUSES_DEVCFG1_SCOM2_HSEN_PPS
+	default 1 if FUSES_DEVCFG1_SCOM2_HSEN_DIRECT
+
+endif # SOC_FAMILY_MICROCHIP_PIC32CX_BZ6
+
+choice FUSES_DEVCFG1_CCL_OE
+	prompt "CCL Pads (via PPS) Output Enable (CCL_OE)"
+	default FUSES_DEVCFG1_CCL_OE_OFF if SOC_FAMILY_MICROCHIP_PIC32CX_BZ6
+	default FUSES_DEVCFG1_CCL_OE_ON
+	help
+	  Assignment of value for CCL_OE in the FUSES_DEVCFG1 register
+	  - OFF: CCL pads (via PPS) output is disabled
+	  - ON: CCL pads (via PPS) output is enabled
+
+config FUSES_DEVCFG1_CCL_OE_OFF
+	bool "OFF"
+
+config FUSES_DEVCFG1_CCL_OE_ON
+	bool "ON"
+endchoice
+
+config FUSES_DEVCFG1_CCL_OE
+	int
+	default 0 if FUSES_DEVCFG1_CCL_OE_OFF
+	default 1 if FUSES_DEVCFG1_CCL_OE_ON
+
+if SOC_SERIES_PIC32CX_BZ62
+
+choice FUSES_DEVCFG1_USBDMFTRIM
+	prompt "USB DM Fall Trim fuse bits (USBDMFTRIM)"
+	default FUSES_DEVCFG1_USBDMFTRIM_DEFAULT
+	help
+	  Assignment of value for USBDMFTRIM in the FUSES_DEVCFG1 register
+	  - DEFAULT: DEFAULT
+	  - SLOWER: SLOWER
+	  - SLIGH_FASTER: SLIGH_FASTER
+	  - SLIGH_SLOWER: SLIGH_SLOWER
+
+config FUSES_DEVCFG1_USBDMFTRIM_DEFAULT
+	bool "DEFAULT"
+
+config FUSES_DEVCFG1_USBDMFTRIM_SLOWER
+	bool "SLOWER"
+
+config FUSES_DEVCFG1_USBDMFTRIM_SLIGH_FASTER
+	bool "SLIGH_FASTER"
+
+config FUSES_DEVCFG1_USBDMFTRIM_SLIGH_SLOWER
+	bool "SLIGH_SLOWER"
+endchoice
+
+config FUSES_DEVCFG1_USBDMFTRIM
+	int
+	default 0 if FUSES_DEVCFG1_USBDMFTRIM_DEFAULT
+	default 1 if FUSES_DEVCFG1_USBDMFTRIM_SLOWER
+	default 2 if FUSES_DEVCFG1_USBDMFTRIM_SLIGH_FASTER
+	default 3 if FUSES_DEVCFG1_USBDMFTRIM_SLIGH_SLOWER
+
+choice FUSES_DEVCFG1_USBDMRTRIM
+	prompt "USB DM Rise Trim fuse bits (USBDMRTRIM)"
+	default FUSES_DEVCFG1_USBDMRTRIM_DEFAULT
+	help
+	  Assignment of value for USBDMRTRIM in the FUSES_DEVCFG1 register
+	  - DEFAULT: DEFAULT
+	  - SLOWER: SLOWER
+	  - SLIGH_FASTER: SLIGH_FASTER
+	  - SLIGH_SLOWER: SLIGH_SLOWER
+
+config FUSES_DEVCFG1_USBDMRTRIM_DEFAULT
+	bool "DEFAULT"
+
+config FUSES_DEVCFG1_USBDMRTRIM_SLIGH_FASTER
+	bool "SLOWER"
+
+config FUSES_DEVCFG1_USBDMRTRIM_FASTER
+	bool "SLIGH_FASTER"
+
+config FUSES_DEVCFG1_USBDMRTRIM_SLOWER
+	bool "SLIGH_SLOWER"
+endchoice
+
+config FUSES_DEVCFG1_USBDMRTRIM
+	int
+	default 0 if FUSES_DEVCFG1_USBDMRTRIM_DEFAULT
+	default 1 if FUSES_DEVCFG1_USBDMRTRIM_SLIGH_FASTER
+	default 2 if FUSES_DEVCFG1_USBDMRTRIM_FASTER
+	default 3 if FUSES_DEVCFG1_USBDMRTRIM_SLOWER
+
+choice FUSES_DEVCFG1_USBDPFTRIM
+	prompt "USB DP Fall Trim fuse bits (USBDPFTRIM)"
+	default FUSES_DEVCFG1_USBDPFTRIM_DEFAULT
+	help
+	  Assignment of value for USBDPFTRIM in the FUSES_DEVCFG1 register
+	  - DEFAULT: DEFAULT
+	  - SLOWER: SLOWER
+	  - SLIGH_FASTER: SLIGH_FASTER
+	  - SLIGH_SLOWER: SLIGH_SLOWER
+
+config FUSES_DEVCFG1_USBDPFTRIM_DEFAULT
+	bool "DEFAULT"
+
+config FUSES_DEVCFG1_USBDPFTRIM_SLOWER
+	bool "SLOWER"
+
+config FUSES_DEVCFG1_USBDPFTRIM_SLIGH_FASTER
+	bool "SLIGH_FASTER"
+
+config FUSES_DEVCFG1_USBDPFTRIM_SLIGH_SLOWER
+	bool "SLIGH_SLOWER"
+endchoice
+
+config FUSES_DEVCFG1_USBDPFTRIM
+	int
+	default 0 if FUSES_DEVCFG1_USBDPFTRIM_DEFAULT
+	default 1 if FUSES_DEVCFG1_USBDPFTRIM_SLOWER
+	default 2 if FUSES_DEVCFG1_USBDPFTRIM_SLIGH_FASTER
+	default 3 if FUSES_DEVCFG1_USBDPFTRIM_SLIGH_SLOWER
+
+choice FUSES_DEVCFG1_USBDPRTRIM
+	prompt "USB DP Rise Trim fuse bits (USBDPRTRIM)"
+	default FUSES_DEVCFG1_USBDPRTRIM_DEFAULT
+	help
+	  Assignment of value for USBDPRTRIM in the FUSES_DEVCFG1 register
+	  - DEFAULT: DEFAULT
+	  - SLOWER: SLOWER
+	  - SLIGH_FASTER: SLIGH_FASTER
+	  - SLIGH_SLOWER: SLIGH_SLOWER
+
+config FUSES_DEVCFG1_USBDPRTRIM_DEFAULT
+	bool "DEFAULT"
+
+config FUSES_DEVCFG1_USBDPRTRIM_SLIGH_FASTER
+	bool "SLOWER"
+
+config FUSES_DEVCFG1_USBDPRTRIM_FASTER
+	bool "SLIGH_FASTER"
+
+config FUSES_DEVCFG1_USBDPRTRIM_SLOWER
+	bool "SLIGH_SLOWER"
+endchoice
+
+config FUSES_DEVCFG1_USBDPRTRIM
+	int
+	default 0 if FUSES_DEVCFG1_USBDPRTRIM_DEFAULT
+	default 1 if FUSES_DEVCFG1_USBDPRTRIM_SLIGH_FASTER
+	default 2 if FUSES_DEVCFG1_USBDPRTRIM_FASTER
+	default 3 if FUSES_DEVCFG1_USBDPRTRIM_SLOWER
+
+endif # SOC_SERIES_PIC32CX_BZ62
+
+choice FUSES_DEVCFG1_WDTPSS
+	prompt "Watchdog Timer Post-scale Select Sleep (WDTPSS)"
+	default FUSES_DEVCFG1_WDTPSS_PSS1048576
+	help
+	  Assignment of value for WDTPSS in the FUSES_DEVCFG1 register
+	  - PSS1: 1:1
+	  - PSS2: 1:2
+	  - PSS4: 1:4
+	  - PSS8: 1:8
+	  - PSS16: 1:16
+	  - PSS32: 1:32
+	  - PSS64: 1:64
+	  - PSS128: 1:128
+	  - PSS256: 1:256
+	  - PSS512: 1:512
+	  - PSS1024: 1:1024
+	  - PSS2048: 1:2048
+	  - PSS4096: 1:4096
+	  - PSS8192: 1:8192
+	  - PSS16384: 1:16384
+	  - PSS32768: 1:32768
+	  - PSS65536: 1:65536
+	  - PSS131072: 1:131072
+	  - PSS262144: 1:262144
+	  - PSS524288: 1:524288
+	  - PSS1048576: 1:1048576
+
+config FUSES_DEVCFG1_WDTPSS_PSS1
+	bool "PSS1"
+
+config FUSES_DEVCFG1_WDTPSS_PSS2
+	bool "PSS2"
+
+config FUSES_DEVCFG1_WDTPSS_PSS4
+	bool "PSS4"
+
+config FUSES_DEVCFG1_WDTPSS_PSS8
+	bool "PSS8"
+
+config FUSES_DEVCFG1_WDTPSS_PSS16
+	bool "PSS16"
+
+config FUSES_DEVCFG1_WDTPSS_PSS32
+	bool "PSS32"
+
+config FUSES_DEVCFG1_WDTPSS_PSS64
+	bool "PSS64"
+
+config FUSES_DEVCFG1_WDTPSS_PSS128
+	bool "PSS128"
+
+config FUSES_DEVCFG1_WDTPSS_PSS256
+	bool "PSS256"
+
+config FUSES_DEVCFG1_WDTPSS_PSS512
+	bool "PSS512"
+
+config FUSES_DEVCFG1_WDTPSS_PSS1024
+	bool "PSS1024"
+
+config FUSES_DEVCFG1_WDTPSS_PSS2048
+	bool "PSS2048"
+
+config FUSES_DEVCFG1_WDTPSS_PSS4096
+	bool "PSS4096"
+
+config FUSES_DEVCFG1_WDTPSS_PSS8192
+	bool "PSS8192"
+
+config FUSES_DEVCFG1_WDTPSS_PSS16384
+	bool "PSS16384"
+
+config FUSES_DEVCFG1_WDTPSS_PSS32768
+	bool "PSS32768"
+
+config FUSES_DEVCFG1_WDTPSS_PSS65536
+	bool "PSS65536"
+
+config FUSES_DEVCFG1_WDTPSS_PSS131072
+	bool "PSS131072"
+
+config FUSES_DEVCFG1_WDTPSS_PSS262144
+	bool "PSS262144"
+
+config FUSES_DEVCFG1_WDTPSS_PSS524288
+	bool "PSS524288"
+
+config FUSES_DEVCFG1_WDTPSS_PSS1048576
+	bool "PSS1048576"
+endchoice
+
+config FUSES_DEVCFG1_WDTPSS
+	int
+	default 0 if FUSES_DEVCFG1_WDTPSS_PSS1
+	default 1 if FUSES_DEVCFG1_WDTPSS_PSS2
+	default 2 if FUSES_DEVCFG1_WDTPSS_PSS4
+	default 3 if FUSES_DEVCFG1_WDTPSS_PSS8
+	default 4 if FUSES_DEVCFG1_WDTPSS_PSS16
+	default 5 if FUSES_DEVCFG1_WDTPSS_PSS32
+	default 6 if FUSES_DEVCFG1_WDTPSS_PSS64
+	default 7 if FUSES_DEVCFG1_WDTPSS_PSS128
+	default 8 if FUSES_DEVCFG1_WDTPSS_PSS256
+	default 9 if FUSES_DEVCFG1_WDTPSS_PSS512
+	default 10 if FUSES_DEVCFG1_WDTPSS_PSS1024
+	default 11 if FUSES_DEVCFG1_WDTPSS_PSS2048
+	default 12 if FUSES_DEVCFG1_WDTPSS_PSS4096
+	default 13 if FUSES_DEVCFG1_WDTPSS_PSS8192
+	default 14 if FUSES_DEVCFG1_WDTPSS_PSS16384
+	default 15 if FUSES_DEVCFG1_WDTPSS_PSS32768
+	default 16 if FUSES_DEVCFG1_WDTPSS_PSS65536
+	default 17 if FUSES_DEVCFG1_WDTPSS_PSS131072
+	default 18 if FUSES_DEVCFG1_WDTPSS_PSS262144
+	default 19 if FUSES_DEVCFG1_WDTPSS_PSS524288
+	default 20 if FUSES_DEVCFG1_WDTPSS_PSS1048576
+
+choice FUSES_DEVCFG1_QSPIDDRM
+	prompt "QSPI DDR Mode Clock Enable (QSPIDDRM)"
+	default FUSES_DEVCFG1_QSPIDDRM_OFF
+	help
+	  Assignment of value for QSPIDDRM in the FUSES_DEVCFG1 register
+	  - ON: QSPI DDR mode clock is enabled
+	  - OFF: Disabled
+
+config FUSES_DEVCFG1_QSPIDDRM_ON
+	bool "ON"
+
+config FUSES_DEVCFG1_QSPIDDRM_OFF
+	bool "OFF"
+endchoice
+
+config FUSES_DEVCFG1_QSPIDDRM
+	int
+	default 1 if FUSES_DEVCFG1_QSPIDDRM_ON
+	default 0 if FUSES_DEVCFG1_QSPIDDRM_OFF
+
+choice FUSES_DEVCFG1_CLKZBREF
+	prompt "External Reference Clock ZB Enable (CLKZBREF)"
+	default FUSES_DEVCFG1_CLKZBREF_OFF
+	help
+	  Assignment of value for CLKZBREF in the FUSES_DEVCFG1 register
+	  - ON: Enable clk_zb_to_ext on PPS.REFO1
+	  - OFF: No clk_zb_to_ext on PPS.REFO1, PPS.REFO1 is unchanged
+
+config FUSES_DEVCFG1_CLKZBREF_ON
+	bool "ON"
+
+config FUSES_DEVCFG1_CLKZBREF_OFF
+	bool "OFF"
+endchoice
+
+config FUSES_DEVCFG1_CLKZBREF
+	int
+	default 1 if FUSES_DEVCFG1_CLKZBREF_ON
+	default 0 if FUSES_DEVCFG1_CLKZBREF_OFF
+
+if SOC_FAMILY_MICROCHIP_PIC32CX_BZ6
+
+config FUSES_DEVCFG1_CAN1_PIN_EN
+	hex "CAN1 Pin Enable (CAN1_PIN_EN)"
+	default 0x0
+	help
+	  Assignment of value for CAN1_PIN_EN in the FUSES_DEVCFG1 register
+
+endif # SOC_FAMILY_MICROCHIP_PIC32CX_BZ6
+
+endmenu
+
+# DEVCFG0
+
+menu "DEVCFG0"
+
+choice FUSES_DEVCFG0_SWOEN
+	prompt "SWO enable on 2-wire debug interface (SWOEN)"
+	default FUSES_DEVCFG0_SWOEN_ON
+	help
+	  Assignment of value for SWOEN in the FUSES_DEVCFG0 register
+	  - ON: SWO is enabled
+	  - OFF: SWO is disabled
+
+config FUSES_DEVCFG0_SWOEN_OFF
+	bool "OFF"
+
+config FUSES_DEVCFG0_SWOEN_ON
+	bool "ON"
+endchoice
+
+config FUSES_DEVCFG0_SWOEN
+	int
+	default 0 if FUSES_DEVCFG0_SWOEN_OFF
+	default 1 if FUSES_DEVCFG0_SWOEN_ON
+
+choice FUSES_DEVCFG0_TROEN
+	prompt "Trace Output Enable (TROEN)"
+	default FUSES_DEVCFG0_TROEN_OFF
+	help
+	  Assignment of value for TROEN in the FUSES_DEVCFG0 register
+	  - ON: Starts Trace Clock and enables Trace Outputs (Trace probe must be present)
+	  - OFF: Stops Trace Clock and disables Trace Outputs
+
+config FUSES_DEVCFG0_TROEN_OFF
+	bool "OFF"
+
+config FUSES_DEVCFG0_TROEN_ON
+	bool "ON"
+endchoice
+
+config FUSES_DEVCFG0_TROEN
+	int
+	default 0 if FUSES_DEVCFG0_TROEN_OFF
+	default 1 if FUSES_DEVCFG0_TROEN_ON
+
+choice FUSES_DEVCFG0_ADCPOVR
+	prompt "ADC Charge Pump Override (ADCPOVR)"
+	default FUSES_DEVCFG0_ADCPOVR_HW
+	help
+	  Assignment of value for ADCPOVR in the FUSES_DEVCFG0 register
+	  - HW: Hardware controlled
+	  - SW: Overridden (software controlled)
+
+config FUSES_DEVCFG0_ADCPOVR_HW
+	bool "HW"
+
+config FUSES_DEVCFG0_ADCPOVR_SW
+	bool "SW"
+endchoice
+
+config FUSES_DEVCFG0_ADCPOVR
+	int
+	default 0 if FUSES_DEVCFG0_ADCPOVR_HW
+	default 1 if FUSES_DEVCFG0_ADCPOVR_SW
+
+choice FUSES_DEVCFG0_CPENFILT
+	prompt "ADC CP Filter Enable (CPENFILT)"
+	default FUSES_DEVCFG0_CPENFILT_OFF
+	help
+	  Assignment of value for CPENFILT in the FUSES_DEVCFG0 register
+	  - ON: ADC CP Filter Enabled
+	  - OFF: ADC CP Filter Disabled
+
+config FUSES_DEVCFG0_CPENFILT_OFF
+	bool "OFF"
+
+config FUSES_DEVCFG0_CPENFILT_ON
+	bool "ON"
+endchoice
+
+config FUSES_DEVCFG0_CPENFILT
+	int
+	default 0 if FUSES_DEVCFG0_CPENFILT_OFF
+	default 1 if FUSES_DEVCFG0_CPENFILT_ON
+
+choice FUSES_DEVCFG0_RTCIN0_ALTEN
+	prompt "RTCIN0 Alternate Enable (RTCIN0_ALTEN)"
+	default FUSES_DEVCFG0_RTCIN0_ALTEN_PA3
+	help
+	  Assignment of value for RTCIN0_ALTEN in the FUSES_DEVCFG0 register
+	  - PA3: RTC/IN0 is available on PA3
+	  - PA9: RTC/IN0 is available on PA9
+
+config FUSES_DEVCFG0_RTCIN0_ALTEN_PA3
+	bool "PA3"
+
+config FUSES_DEVCFG0_RTCIN0_ALTEN_PA9
+	bool "PA9"
+endchoice
+
+config FUSES_DEVCFG0_RTCIN0_ALTEN
+	int
+	default 0 if FUSES_DEVCFG0_RTCIN0_ALTEN_PA3
+	default 1 if FUSES_DEVCFG0_RTCIN0_ALTEN_PA9
+
+choice FUSES_DEVCFG0_RTCOUT_ALTEN
+	prompt "RTCOUT Alternate Enable (RTCOUT_ALTEN)"
+	default FUSES_DEVCFG0_RTCOUT_ALTEN_PA4
+	help
+	  Assignment of value for RTCOUT_ALTEN in the FUSES_DEVCFG0 register
+	  - PA4: RTC/OUT is available on PA4
+	  - PA10: RTC/OUT is available on PA10
+
+config FUSES_DEVCFG0_RTCOUT_ALTEN_PA4
+	bool "PA4"
+
+config FUSES_DEVCFG0_RTCOUT_ALTEN_PA10
+	bool "PA10"
+endchoice
+
+config FUSES_DEVCFG0_RTCOUT_ALTEN
+	int
+	default 0 if FUSES_DEVCFG0_RTCOUT_ALTEN_PA4
+	default 1 if FUSES_DEVCFG0_RTCOUT_ALTEN_PA10
+
+if SOC_SERIES_PIC32CX_BZ62
+
+config FUSES_DEVCFG0_USBSSEN
+	hex "USB Suspend Sleep Enable (USBSSEN)"
+	default 0x0
+	help
+	  Assignment of value for USBSSEN in the FUSES_DEVCFG0 register
+
+choice FUSES_DEVCFG0_EPLLHWMD
+	prompt "EWPLL HW Control Mode for PWDN and RESET (EPLLHWMD)"
+	default FUSES_DEVCFG0_EPLLHWMD_OFF
+	help
+	  Assignment of value for EPLLHWMD in the FUSES_DEVCFG0 register
+	  - ON: PWDN and RESET are generated by HW
+	  - OFF: PWDN and RESET are generated by SW using corresponding PLLCON register bits
+
+config FUSES_DEVCFG0_EPLLHWMD_OFF
+	bool "OFF"
+
+config FUSES_DEVCFG0_EPLLHWMD_ON
+	bool "ON"
+endchoice
+
+config FUSES_DEVCFG0_EPLLHWMD
+	int
+	default 0 if FUSES_DEVCFG0_EPLLHWMD_OFF
+	default 1 if FUSES_DEVCFG0_EPLLHWMD_ON
+
+choice FUSES_DEVCFG0_UPLLHWMD
+	prompt "UWPLL HW Control Mode for PWDN and RESET (UPLLHWMD)"
+	default FUSES_DEVCFG0_UPLLHWMD_OFF
+	help
+	  Assignment of value for UPLLHWMD in the FUSES_DEVCFG0 register
+	  - ON: PWDN and RESET are generated by HW
+	  - OFF: PWDN and RESET are generated by SW using corresponding PLLCON register bits
+
+config FUSES_DEVCFG0_UPLLHWMD_OFF
+	bool "OFF"
+
+config FUSES_DEVCFG0_UPLLHWMD_ON
+	bool "ON"
+endchoice
+
+config FUSES_DEVCFG0_UPLLHWMD
+	int
+	default 0 if FUSES_DEVCFG0_UPLLHWMD_OFF
+	default 1 if FUSES_DEVCFG0_UPLLHWMD_ON
+
+endif # SOC_SERIES_PIC32CX_BZ62
+
+choice FUSES_DEVCFG0_HPLUGDIS
+	prompt "Hot Plugging Disable (HPLUGDIS)"
+	default FUSES_DEVCFG0_HPLUGDIS_OFF
+	help
+	  Assignment of value for HPLUGDIS in the FUSES_DEVCFG0 register
+	  - ON: Hot Plugging is disabled
+	  - OFF: Hot Plugging is enabled
+
+config FUSES_DEVCFG0_HPLUGDIS_OFF
+	bool "OFF"
+
+config FUSES_DEVCFG0_HPLUGDIS_ON
+	bool "ON"
+endchoice
+
+config FUSES_DEVCFG0_HPLUGDIS
+	int
+	default 0 if FUSES_DEVCFG0_HPLUGDIS_OFF
+	default 1 if FUSES_DEVCFG0_HPLUGDIS_ON
+
+if SOC_SERIES_PIC32CX_BZ62
+
+config FUSES_DEVCFG0_USBIDIO
+	hex "USB USBID Selection bit (USBIDIO)"
+	default 0x1
+	help
+	  Assignment of value for USBIDIO in the FUSES_DEVCFG0 register
+
+config FUSES_DEVCFG0_VBUSONIO
+	hex "USB VBUS_ON Selection bit (VBUSONIO)"
+	default 0x1
+	help
+	  Assignment of value for VBUSONIO in the FUSES_DEVCFG0 register
+
+endif # SOC_SERIES_PIC32CX_BZ62
+
+if SOC_FAMILY_MICROCHIP_PIC32CX_BZ6
+
+config FUSES_DEVCFG0_SMBUS3EN2
+	hex "SMBus3 Enable for SERCOM2 (SMBUS3EN2)"
+	default 0x0
+	help
+	  Assignment of value for SMBUS3EN2 in the FUSES_DEVCFG0 register
+
+endif # SOC_FAMILY_MICROCHIP_PIC32CX_BZ6
+
+choice FUSES_DEVCFG0_PCM
+	prompt "PCHE I/D Cacheable Mode (PCM)"
+	default FUSES_DEVCFG0_PCM_SFR
+	help
+	  Assignment of value for PCM in the FUSES_DEVCFG0 register
+	  - CPU: The cache-ability is controlled by the CPU via HPROT[3].
+	    This feature is not available on all the ARM cores.
+	  - SFR: Always enabled from outside. Can be further enabled/disabled by PCHE SFR registers.
+
+config FUSES_DEVCFG0_PCM_CPU
+	bool "CPU"
+
+config FUSES_DEVCFG0_PCM_SFR
+	bool "SFR"
+endchoice
+
+config FUSES_DEVCFG0_PCM
+	int
+	default 0 if FUSES_DEVCFG0_PCM_CPU
+	default 1 if FUSES_DEVCFG0_PCM_SFR
+
+choice FUSES_DEVCFG0_INT0E
+	prompt "INT0 Enable (INT0E)"
+	default FUSES_DEVCFG0_INT0E_OFF
+	help
+	  Assignment of value for INT0E in the FUSES_DEVCFG0 register
+	  - OFF: INT0 is disabled
+	  - ON: INT0 is enabled
+
+config FUSES_DEVCFG0_INT0E_OFF
+	bool "OFF"
+
+config FUSES_DEVCFG0_INT0E_ON
+	bool "ON"
+endchoice
+
+config FUSES_DEVCFG0_INT0E
+	int
+	default 0 if FUSES_DEVCFG0_INT0E_OFF
+	default 1 if FUSES_DEVCFG0_INT0E_ON
+
+choice FUSES_DEVCFG0_INT0P
+	prompt "INT0P Polarity (INT0P)"
+	default FUSES_DEVCFG0_INT0P_NEG
+	help
+	  Assignment of value for INT0P in the FUSES_DEVCFG0 register
+	  - NEG: INT0 Polarity (Negative)
+	  - POS: INT0 Polarity (Positive)
+
+config FUSES_DEVCFG0_INT0P_NEG
+	bool "NEG"
+
+config FUSES_DEVCFG0_INT0P_POS
+	bool "POS"
+endchoice
+
+config FUSES_DEVCFG0_INT0P
+	int
+	default 0 if FUSES_DEVCFG0_INT0P_NEG
+	default 1 if FUSES_DEVCFG0_INT0P_POS
+
+if SOC_FAMILY_MICROCHIP_PIC32CX_BZ6
+
+config FUSES_DEVCFG0_CMEN
+	hex "SPA/DPA Countermeasures Enable (CMEN)"
+	default 0x1
+	help
+	  Assignment of value for CMEN in the FUSES_DEVCFG0 register
+
+endif # SOC_FAMILY_MICROCHIP_PIC32CX_BZ6
+
+choice FUSES_DEVCFG0_FECCCON
+	prompt "Flash ECC Control (FECCCON)"
+	default FUSES_DEVCFG0_FECCCON_OFF
+	help
+	  Assignment of value for FECCCON in the FUSES_DEVCFG0 register
+	  - ON: ECC is enabled (NVMOP = Word Programming disabled)
+	  - DYNAMIC: Dynamically ECC is enabled
+	  - OFF: ECC and dynamically ECC are disabled
+
+config FUSES_DEVCFG0_FECCCON_ON
+	bool "ON"
+
+config FUSES_DEVCFG0_FECCCON_DYNAMIC
+	bool "DYNAMIC"
+
+config FUSES_DEVCFG0_FECCCON_OFF
+	bool "OFF"
+endchoice
+
+config FUSES_DEVCFG0_FECCCON
+	int
+	default 0 if FUSES_DEVCFG0_FECCCON_ON
+	default 1 if FUSES_DEVCFG0_FECCCON_DYNAMIC
+	default 3 if FUSES_DEVCFG0_FECCCON_OFF
+
+choice FUSES_DEVCFG0_FRECCDIS
+	prompt "Flex RAM ECC Control (FRECCDIS)"
+	default FUSES_DEVCFG0_FRECCDIS_OFF
+	help
+	  Assignment of value for FRECCDIS in the FUSES_DEVCFG0 register
+	  - OFF: ECC is enabled
+	  - ON: ECC is disabled
+
+config FUSES_DEVCFG0_FRECCDIS_OFF
+	bool "OFF"
+
+config FUSES_DEVCFG0_FRECCDIS_ON
+	bool "ON"
+endchoice
+
+config FUSES_DEVCFG0_FRECCDIS
+	int
+	default 1 if FUSES_DEVCFG0_FRECCDIS_OFF
+	default 0 if FUSES_DEVCFG0_FRECCDIS_ON
+
+endmenu
+
+# FBCFG0
+
+menu "FBCFG0"
+
+if SOC_FAMILY_MICROCHIP_PIC32CX_BZ6
+
+choice FUSES_FBCFG0_BINFOVALID
+	prompt "BCFG info valid (BINFOVALID)"
+	default FUSES_FBCFG0_BINFOVALID_VALID
+	help
+	  Assignment of value for BINFOVALID in the FUSES_FBCFG0 register
+	  - NOT_VALID: BCFG0 to BCFG7 is not valid
+	  - VALID: BCFG0 to BCFG7 is valid
+
+config FUSES_FBCFG0_BINFOVALID_NOT_VALID
+	bool "NOT_VALID"
+
+config FUSES_FBCFG0_BINFOVALID_VALID
+	bool "VALID"
+endchoice
+
+endif # SOC_FAMILY_MICROCHIP_PIC32CX_BZ6
+
+config FUSES_FBCFG0_BINFOVALID
+	int
+	default 1 if FUSES_FBCFG0_BINFOVALID_NOT_VALID
+	default 0 if FUSES_FBCFG0_BINFOVALID_VALID
+
+choice FUSES_FBCFG0_PCSCMODE
+	prompt "PCache Single cache Mode (PCSCMODE)"
+	default FUSES_FBCFG0_PCSCMODE_DUAL
+	help
+	  Assignment of value for PCSCMODE in the FUSES_FBCFG0 register
+	  - SINGLE: PCHE ICache Only.CPU Instructions (code, data) go to PCHE ONLY.
+	  - DUAL: PCHE ICache and DCache. CPU opcodes go to PCEHE ICache port and data goes to PCHE.
+
+config FUSES_FBCFG0_PCSCMODE_SINGLE
+	bool "SINGLE"
+
+config FUSES_FBCFG0_PCSCMODE_DUAL
+	bool "DUAL"
+endchoice
+
+config FUSES_FBCFG0_PCSCMODE
+	int
+	default 1 if FUSES_FBCFG0_PCSCMODE_SINGLE
+	default 0 if FUSES_FBCFG0_PCSCMODE_DUAL
+
+endmenu
+
+# FCPN0
+
+menu "FCPN0"
+
+choice FUSES_FCPN0_CP
+	prompt "Boot Code Protect (CP)"
+	default FUSES_FCPN0_CP_DISABLED
+	help
+	  Assignment of value for CP in the FUSES_FCPN0 register
+	  - DISABLED: Protection Disabled
+	  - ENABLED: Protection Enabled
+
+config FUSES_FCPN0_CP_DISABLED
+	bool "DISABLED"
+
+config FUSES_FCPN0_CP_ENABLED
+	bool "ENABLED"
+endchoice
+
+config FUSES_FCPN0_CP
+	int
+	default 1 if FUSES_FCPN0_CP_DISABLED
+	default 0 if FUSES_FCPN0_CP_ENABLED
+
+endmenu
+
+endmenu
