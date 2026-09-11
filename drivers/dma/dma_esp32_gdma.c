@@ -172,6 +172,14 @@ static inline intptr_t dma_ll_tx_get_prefetched_desc(struct dma_esp32_data *data
 	return ahb_dma_ll_tx_get_prefetched_desc_addr(data->hal.ahb_dma_dev, ch);
 }
 
+static inline intptr_t dma_ll_rx_get_suc_eof_desc(struct dma_esp32_data *data, int ch)
+{
+	if (data->is_axi) {
+		return axi_dma_ll_rx_get_success_eof_desc_addr(data->hal.axi_dma_dev, ch);
+	}
+	return ahb_dma_ll_rx_get_success_eof_desc_addr(data->hal.ahb_dma_dev, ch);
+}
+
 static inline void dma_ll_force_reg_clock(struct dma_esp32_data *data, bool en)
 {
 	if (data->is_axi) {
@@ -201,6 +209,11 @@ static inline intptr_t dma_ll_rx_get_prefetched_desc(struct dma_esp32_data *data
 static inline intptr_t dma_ll_tx_get_prefetched_desc(struct dma_esp32_data *data, int ch)
 {
 	return gdma_ll_tx_get_prefetched_desc_addr(data->hal.dev, ch);
+}
+
+static inline intptr_t dma_ll_rx_get_suc_eof_desc(struct dma_esp32_data *data, int ch)
+{
+	return gdma_ll_rx_get_success_eof_desc_addr(data->hal.dev, ch);
 }
 
 static inline void dma_ll_force_reg_clock(struct dma_esp32_data *data, bool en)
@@ -235,6 +248,17 @@ static void IRAM_ATTR dma_esp32_pm_policy_state_lock_put(struct dma_esp32_channe
 	irq_unlock(key);
 }
 #endif
+
+/* The successful-EOF register is a latch and keeps its value until the next
+ * EOF, so it can still name a descriptor from an earlier configuration. Only
+ * trust it inside this channel's own list.
+ */
+static inline bool dma_esp32_desc_in_list(struct dma_esp32_channel *dma_channel,
+					  esp_dma_desc_t *desc)
+{
+	return desc >= dma_channel->desc_list &&
+	       desc < &dma_channel->desc_list[ARRAY_SIZE(dma_channel->desc_list)];
+}
 
 /*
  * The descriptor list is owned by the CPU except for dw0.length and dw0.owner,
@@ -766,7 +790,28 @@ static int dma_esp32_get_status(const struct device *dev, uint32_t channel,
 		status->dir = PERIPHERAL_TO_MEMORY;
 		desc = (esp_dma_desc_t *)dma_ll_rx_get_prefetched_desc(data,
 								       dma_channel->channel_id);
-		if (desc >= dma_channel->desc_list) {
+		if (desc == NULL) {
+			/* Not every controller keeps the prefetched descriptor
+			 * readable once the transfer has ended; the AHB
+			 * instance on esp32p4 reports zero there. The
+			 * successful-EOF register still points at the last
+			 * descriptor written back, so use it instead.
+			 *
+			 * That register is a latch and survives a rearm, so
+			 * only take it while the descriptor it names has been
+			 * handed back by the controller.
+			 */
+			desc = (esp_dma_desc_t *)dma_ll_rx_get_suc_eof_desc(
+				data, dma_channel->channel_id);
+
+			if (dma_esp32_desc_in_list(dma_channel, desc) &&
+			    dma_esp32_desc_uncached(desc)->dw0.owner ==
+				    DMA_DESCRIPTOR_BUFFER_OWNER_DMA) {
+				desc = NULL;
+			}
+		}
+
+		if (dma_esp32_desc_in_list(dma_channel, desc)) {
 			/*
 			 * The GDMA writes the received length back into the
 			 * descriptor in memory. On SoCs with a data cache the CPU
@@ -784,7 +829,7 @@ static int dma_esp32_get_status(const struct device *dev, uint32_t channel,
 		status->dir = MEMORY_TO_PERIPHERAL;
 		desc = (esp_dma_desc_t *)dma_ll_tx_get_prefetched_desc(data,
 								       dma_channel->channel_id);
-		if (desc >= dma_channel->desc_list) {
+		if (dma_esp32_desc_in_list(dma_channel, desc)) {
 			status->write_position = desc - dma_channel->desc_list;
 		}
 	}
