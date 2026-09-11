@@ -726,6 +726,45 @@ static void test_bass_broadcast_code(const uint8_t broadcast_code[BT_ISO_BROADCA
 	LOG_INF("Broadcast code added");
 }
 
+/* Request BIS sync again after the server reported a bad broadcast code, without providing a
+ * new broadcast code first. The server shall request the broadcast code again rather than
+ * staying in the Bad_Code state, after which the correct code completes the sync.
+ */
+static void test_bass_retry_after_bad_code(void)
+{
+	struct bt_bap_broadcast_assistant_mod_src_param mod_src_param = { 0 };
+	struct bt_bap_bass_subgroup subgroup = { 0 };
+	int err;
+
+	LOG_INF("Modifying source to retry streaming after bad broadcast code");
+	UNSET_FLAG(flag_broadcast_code_requested);
+	UNSET_FLAG(flag_incorrect_broadcast_code);
+	UNSET_FLAG(flag_recv_state_updated_with_bis_sync);
+
+	mod_src_param.src_id = recv_state.src_id;
+	mod_src_param.num_subgroups = 1U;
+	mod_src_param.pa_sync = true;
+	mod_src_param.subgroups = &subgroup;
+	mod_src_param.pa_interval = g_broadcaster_info.interval;
+	subgroup.bis_sync = BT_ISO_BIS_INDEX_BIT(1U);
+	subgroup.metadata_len = recv_state.subgroups[0].metadata_len;
+	(void)memcpy(subgroup.metadata, recv_state.subgroups[0].metadata, sizeof(metadata));
+
+	err = bt_bap_broadcast_assistant_mod_src(default_conn, &mod_src_param);
+	if (err != 0) {
+		FAIL("Could not modify source (err %d)\n", err);
+		return;
+	}
+
+	LOG_INF("Waiting for the broadcast code to be requested again");
+	WAIT_FOR_FLAG(flag_broadcast_code_requested);
+
+	test_bass_broadcast_code(BROADCAST_CODE);
+
+	LOG_INF("Waiting for receive state with BIS sync");
+	WAIT_FOR_FLAG(flag_recv_state_updated_with_bis_sync);
+}
+
 static void test_bass_remove_source(void)
 {
 	int err;
@@ -867,6 +906,8 @@ static void test_main_client_sync_incorrect_code(void)
 	WAIT_FOR_FLAG(flag_broadcast_code_requested);
 	test_bass_broadcast_code(INCORRECT_BROADCAST_CODE);
 	WAIT_FOR_FLAG(flag_incorrect_broadcast_code);
+
+	test_bass_retry_after_bad_code();
 
 	test_bass_mod_source(false, 0);
 	test_bass_remove_source();
