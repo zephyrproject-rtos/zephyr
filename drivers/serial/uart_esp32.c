@@ -173,6 +173,7 @@ struct uart_esp32_data {
 #define UART_FIFO_LIMIT	    (UART_LL_FIFO_DEF_LEN)
 #define UART_TX_FIFO_THRESH (CONFIG_UART_ESP32_TX_FIFO_THRESH)
 #define UART_RX_FIFO_THRESH (CONFIG_UART_ESP32_RX_FIFO_THRESH)
+#define UART_ESP32_CACHE_LINE_MAX 128
 
 #if CONFIG_UART_INTERRUPT_DRIVEN || CONFIG_UART_ASYNC_API || CONFIG_PM
 static void uart_esp32_isr(void *arg);
@@ -657,6 +658,56 @@ static void uart_esp32_irq_callback_set(const struct device *dev, uart_irq_callb
 
 #ifdef CONFIG_UART_ASYNC_API
 
+/*
+ * The DMA writes the receive buffer without going through the cache, so any
+ * dirty line covering it must be dropped before the transfer starts. The
+ * buffer comes from the caller and is rarely cache-line aligned, and dropping
+ * a line it only partly covers would discard the neighbouring bytes with it.
+ * Preserve the partial edge lines around the invalidate.
+ */
+static void uart_esp32_rx_cache_invd(uint8_t *buf, size_t len)
+{
+	const size_t line = sys_cache_data_line_size_get();
+	uint8_t head[UART_ESP32_CACHE_LINE_MAX];
+	uint8_t tail[UART_ESP32_CACHE_LINE_MAX];
+	uintptr_t start, end, head_base;
+	size_t head_len = 0, tail_len = 0;
+
+	if (buf == NULL || len == 0 || line == 0) {
+		return;
+	}
+
+	if (line > UART_ESP32_CACHE_LINE_MAX) {
+		sys_cache_data_invd_range(buf, len);
+		return;
+	}
+
+	start = (uintptr_t)buf;
+	end = start + len;
+	head_base = ROUND_DOWN(start, line);
+
+	head_len = start - head_base;
+	if (head_len > 0) {
+		memcpy(head, (void *)head_base, head_len);
+	}
+
+	tail_len = ROUND_UP(end, line) - end;
+	if (tail_len > 0) {
+		memcpy(tail, (void *)end, tail_len);
+	}
+
+	sys_cache_data_invd_range((void *)head_base, ROUND_UP(end, line) - head_base);
+
+	if (head_len > 0) {
+		memcpy((void *)head_base, head, head_len);
+		sys_cache_data_flush_range((void *)head_base, head_len);
+	}
+	if (tail_len > 0) {
+		memcpy((void *)end, tail, tail_len);
+		sys_cache_data_flush_range((void *)end, tail_len);
+	}
+}
+
 static inline void uart_esp32_async_timer_start(struct k_work_delayable *work, size_t timeout)
 {
 	if ((timeout != SYS_FOREVER_US) && (timeout != 0)) {
@@ -1128,14 +1179,7 @@ static int uart_esp32_async_rx_enable(const struct device *dev, uint8_t *buf, si
 	uart_hal_set_rxfifo_full_thr(&data->hal, 1);
 	uart_esp32_irq_rx_enable(dev);
 
-	err = dma_start(config->dma_dev, config->rx_dma_channel);
-	if (err) {
-		LOG_ERR("Error starting Rx DMA (%d)", err);
-#ifdef CONFIG_PM
-		uart_esp32_pm_policy_state_lock_put(dev, RX_INT);
-#endif
-		goto unlock;
-	}
+	uart_esp32_rx_cache_invd(data->async.rx_buf, len);
 
 	uhci_ll_rx_set_packet_threshold(data->uhci_dev, len);
 
@@ -1153,6 +1197,15 @@ static int uart_esp32_async_rx_enable(const struct device *dev, uint8_t *buf, si
 	} else {
 		data->uhci_dev->conf0.len_eof_en = 1;
 		data->uhci_dev->conf0.uart_idle_eof_en = 1;
+	}
+
+	err = dma_start(config->dma_dev, config->rx_dma_channel);
+	if (err) {
+		LOG_ERR("Error starting Rx DMA (%d)", err);
+#ifdef CONFIG_PM
+		uart_esp32_pm_policy_state_lock_put(dev, RX_INT);
+#endif
+		goto unlock;
 	}
 
 	/**
