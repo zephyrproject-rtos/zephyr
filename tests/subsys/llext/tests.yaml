@@ -298,3 +298,25 @@ tests:
     extra_configs:
       - CONFIG_SEMIHOST=y
       - CONFIG_LLEXT_SEMIHOST_LOADER=y
+
+  # Regression test for C++ virtual dispatch. GCC emits vtables and inline
+  # virtual methods as weak (STB_WEAK) COMDAT symbols, whether or not the
+  # class has a key function, so any C++ module using virtual calls hits this.
+  #
+  # xtensa only: this also exercises the xtensa-specific GLOB_DAT/JMP_SLOT
+  # weak-binding + addend fix. ARM is intentionally excluded here: with
+  # CONFIG_LLEXT_TYPE_ELF_OBJECT (ARM's default llext binary type), a C++
+  # TU with multiple vague-linkage (COMDAT) text/rodata sections - which this
+  # test needs in order to reproduce the bug - lays out interleaved in the
+  # raw compiled object, which the llext loader's region-overlap check
+  # (rightly) rejects. This is a separate, pre-existing llext limitation,
+  # unrelated to the weak-vtable relocation fix under test here.
+  llext.weak_vtable_cpp:
+    filter: CONFIG_XTENSA
+    integration_platforms:
+      - qemu_xtensa/dc233c      # Xtensa ISA
+    extra_conf_files: ['no_mem_protection.conf']
+    extra_configs:
+      - CONFIG_LLEXT_STORAGE_WRITABLE=y
+      - CONFIG_CPP=y
+      - CONFIG_STD_CPP17=y
