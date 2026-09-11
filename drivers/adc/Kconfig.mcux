@@ -87,6 +87,7 @@ endchoice
 
 config ADC_MCUX_ADC16_ENABLE_EDMA
 	bool "EDMA for adc driver"
+	default y if ADC_DMA
 	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_NXP_KINETIS_ADC16),dmas)
 	select DMA
 	help
@@ -126,6 +127,7 @@ config LPADC_CHANNEL_COUNT
 
 config ADC_MCUX_LPADC_DMA_DRIVEN
 	bool "Use DMA to transfer data"
+	default y if ADC_DMA
 	select DMA
 	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_NXP_LPC_LPADC),dmas) && \
 		   $(dt_compat_any_has_prop,$(DT_COMPAT_NXP_LPC_LPADC),dma-names)
