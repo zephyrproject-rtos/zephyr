@@ -5,6 +5,18 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/*
+ * **************************************************************************
+ * OSPI flash controller driver for stm32 series with octospi periherals
+ * This driver is based on the stm32Cube HAL OSPI driver
+ * with one octospi DTS NODE
+ *
+ * WARNING :
+ *  This driver will be deprecated in favor of its MSPI alternative following v4.5.0
+ *
+ * **************************************************************************
+ */
+
 #define DT_DRV_COMPAT st_stm32_ospi_nor
 
 #include <errno.h>
