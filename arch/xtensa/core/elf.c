@@ -143,8 +143,8 @@ static int xtensa_elf_relocate(struct llext_loader *ldr, struct llext *ext,
 		break;
 	case R_XTENSA_GLOB_DAT:
 	case R_XTENSA_JMP_SLOT:
-		if (stb == STB_GLOBAL) {
-			update_got_entry(got_entry, addr);
+		if (stb == STB_GLOBAL || stb == STB_WEAK) {
+			update_got_entry(got_entry, addr + rel->r_addend);
 		}
 		break;
 	case R_XTENSA_32:
