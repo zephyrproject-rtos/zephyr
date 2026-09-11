@@ -109,6 +109,78 @@
 			status = "disabled";
 		};
 
+		lpspi3: spi@42550000 {
+			compatible = "nxp,lpspi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x42550000 0x4000>;
+			interrupts = <65 0>;
+			clocks = <&ccm IMX_CCM_LPSPI3_CLK 0x6c 4>;
+			tx-fifo-size = <8>;
+			rx-fifo-size = <8>;
+			status = "disabled";
+		};
+
+		lpspi4: spi@42560000 {
+			compatible = "nxp,lpspi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x42560000 0x4000>;
+			interrupts = <66 0>;
+			clocks = <&ccm IMX_CCM_LPSPI4_CLK 0x6c 6>;
+			tx-fifo-size = <8>;
+			rx-fifo-size = <8>;
+			status = "disabled";
+		};
+
+		lpspi5: spi@426f0000 {
+			compatible = "nxp,lpspi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x426f0000 0x4000>;
+			interrupts = <191 0>;
+			clocks = <&ccm IMX_CCM_LPSPI5_CLK 0x6c 6>;
+			tx-fifo-size = <8>;
+			rx-fifo-size = <8>;
+			status = "disabled";
+		};
+
+		lpspi6: spi@42700000 {
+			compatible = "nxp,lpspi";
+			#address-cells = <1>;
+			reg = <0x42700000 0x4000>;
+			#size-cells = <0>;
+			interrupts = <192 0>;
+			clocks = <&ccm IMX_CCM_LPSPI6_CLK 0x6c 6>;
+			tx-fifo-size = <8>;
+			rx-fifo-size = <8>;
+			status = "disabled";
+		};
+
+		lpspi7: spi@42710000 {
+			compatible = "nxp,lpspi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x42710000 0x4000>;
+			interrupts = <193 0>;
+			clocks = <&ccm IMX_CCM_LPSPI7_CLK 0x6c 0>;
+			tx-fifo-size = <8>;
+			rx-fifo-size = <8>;
+			status = "disabled";
+		};
+
+		lpspi8: spi@42720000 {
+			compatible = "nxp,lpspi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x42720000 0x4000>;
+			interrupts = <194 0>;
+			clocks = <&ccm IMX_CCM_LPSPI8_CLK 0x6c 2>;
+			tx-fifo-size = <8>;
+			rx-fifo-size = <8>;
+			status = "disabled";
+		};
+
 		mu1: mailbox@44220000 {
 			compatible = "nxp,mbox-imx-mu";
 			reg = <0x44220000 DT_SIZE_K(4)>;
@@ -136,6 +208,30 @@
 			reg = <0x44350000 0x4000>;
 			interrupts = <14 0>;
 			clocks = <&ccm IMX_CCM_LPI2C2_CLK 0x70 8>;
+			status = "disabled";
+		};
+
+		lpspi1: spi@44360000 {
+			compatible = "nxp,lpspi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x44360000 0x4000>;
+			interrupts = <16 0>;
+			clocks = <&ccm IMX_CCM_LPSPI1_CLK 0x6c 0>;
+			tx-fifo-size = <8>;
+			rx-fifo-size = <8>;
+			status = "disabled";
+		};
+
+		lpspi2: spi@44370000 {
+			compatible = "nxp,lpspi";
+			#address-cells = <1>;
+			#size-cells = <0>;
+			reg = <0x44370000 0x4000>;
+			interrupts = <17 0>;
+			clocks = <&ccm IMX_CCM_LPSPI2_CLK 0x6c 2>;
+			tx-fifo-size = <8>;
+			rx-fifo-size = <8>;
 			status = "disabled";
 		};
 
