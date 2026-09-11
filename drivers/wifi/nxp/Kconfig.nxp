@@ -419,6 +419,7 @@ menu "Wi-Fi driver Stack configurations"
 config NXP_WIFI_MON_TASK_STACK_SIZE
 	int "Mon thread stack size"
 	depends on NXP_RW610 || NXP_IW610 || NXP_IW61X || NXP_IW416
+	default 5120 if NXP_WIFI_RECOVERY
 	default 3072
 	help
 	  This option specifies the size of the stack used by the mon task.
