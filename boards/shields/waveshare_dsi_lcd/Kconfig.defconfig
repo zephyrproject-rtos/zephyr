@@ -17,8 +17,8 @@ choice LV_Z_RENDERING_MODE
 	default LV_Z_FULL_REFRESH
 endchoice
 
-choice LV_COLOR_DEPTH
-	default LV_COLOR_DEPTH_32
+choice LV_COLOR_FORMAT_DEFAULT
+	default LV_COLOR_FORMAT_XRGB8888
 endchoice
 
 endif # LVGL

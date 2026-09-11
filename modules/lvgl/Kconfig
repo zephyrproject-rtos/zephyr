@@ -54,7 +54,11 @@ config LV_LOG_LEVEL_TRACE
 	bool
 
 config LV_ATTRIBUTE_MEM_ALIGN_SIZE
-	int
+	int "Memory alignment size (bytes)"
+	default 4
+	range 1 256
+	help
+	  Alignment in bytes for LVGL buffers and constant data.
 
 config LV_Z_LOG_LEVEL
 	int
@@ -84,29 +88,13 @@ config LV_Z_USE_FILESYSTEM
 	help
 	  Enable LittlevGL file system
 
-choice LV_COLOR_DEPTH
-	default LV_COLOR_DEPTH_16
-	prompt "Color depth (bits per pixel)"
-
-	config LV_COLOR_DEPTH_32
-		bool "32: ARGB8888"
-	config LV_COLOR_DEPTH_24
-		bool "24: RGB888"
-	config LV_COLOR_DEPTH_16
-		bool "16: RGB565"
-	config LV_COLOR_DEPTH_8
-		bool "8: RGB232"
-	config LV_COLOR_DEPTH_1
-		bool "1: monochrome"
-endchoice
-
 config LV_COLOR_16_SWAP
 	bool "Swap the 2 bytes of RGB565 color."
-	depends on LV_COLOR_DEPTH_16
+	depends on LV_COLOR_FORMAT_RGB565 || LV_COLOR_FORMAT_RGB565_SWAPPED
 
 config LV_Z_COLOR_MONO_HW_INVERSION
 	bool "Hardware pixel inversion (disables software pixel inversion)."
-	depends on LV_COLOR_DEPTH_1
+		depends on LV_COLOR_FORMAT_I1
 
 config LV_Z_FLUSH_THREAD
 	bool "Flush LVGL frames in a separate thread"

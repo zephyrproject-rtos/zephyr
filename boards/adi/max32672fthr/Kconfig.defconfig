@@ -22,8 +22,8 @@ config LV_DPI_DEF
 config LV_Z_FLUSH_THREAD
 	default y
 
-choice LV_COLOR_DEPTH
-	default LV_COLOR_DEPTH_1  # 1 byte per pixel
+choice LV_COLOR_FORMAT_DEFAULT
+	default LV_COLOR_FORMAT_I1  # 1 byte per pixel
 endchoice
 
 endif # LVGL
