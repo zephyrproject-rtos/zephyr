@@ -6,6 +6,7 @@
 '''
 This test file contains testsuites for testsuite.py module of twister
 '''
+import json
 import os
 import sys
 import textwrap
@@ -14,6 +15,7 @@ from pathlib import Path
 from unittest import mock
 
 import pytest
+import vanes
 from twisterlib.error import TwisterRuntimeError
 from twisterlib.platform import Platform
 from twisterlib.quarantine import Quarantine
@@ -559,6 +561,253 @@ def test_required_snippets_short(
             assert d.reason == expected_filtered_reason
 
 
+def test_testplan_resolve_requires(class_testplan, all_testsuites_dict, tmp_path):
+    """ Testing the resolution of a scenario's requires list """
+    plan = class_testplan
+    testsuite = all_testsuites_dict.get('test_d.check_1')
+    testsuite.requires = [{'api': 'gpio'}, {'setup': 'gpio.loopback'}]
+
+    setup = vanes.Setup(name='gpio.loopback', description='', path=tmp_path,
+                        compatible='test-gpio-basic-api')
+    plan._setups = {'gpio.loopback': setup}
+    testsuite.filter = 'CONFIG_ZTEST'
+    plan.resolve_requires(testsuite)
+
+    assert 'gpio' in testsuite.depends_on
+    assert testsuite.setups == ['gpio.loopback']
+    assert testsuite.filter == 'CONFIG_ZTEST'
+
+    # resolved once: a second resolution, as when a plan is loaded, is a no-op
+    testsuite.requires.append({'setup': 'no.such.setup'})
+    plan.resolve_requires(testsuite)
+    assert testsuite.setups == ['gpio.loopback']
+
+    testsuite.setups = None
+    with pytest.raises(TwisterRuntimeError):
+        plan.resolve_requires(testsuite)
+
+
+def test_vanes_setup_load(tmp_path):
+    """ A setup names at most one thing the devicetree shows when it is provided """
+    path = tmp_path / 'can.loopback.yml'
+    path.write_text('description: a loopback\nchosen: zephyr,canbus\n')
+    assert vanes.Setup.load(path).evidence == 'chosen zephyr,canbus'
+    path.write_text('description: a loopback\nnode: /zephyr,user\nproperty: io-channel-names\n')
+    assert vanes.Setup.load(path).evidence == 'node /zephyr,user with io-channel-names'
+    path.write_text('description: a loopback\n')
+    assert vanes.Setup.load(path).evidence is None
+    path.write_text('description: a loopback\nchosen: zephyr,canbus\nnode: /zephyr,user\n')
+    with pytest.raises(ValueError):
+        vanes.Setup.load(path)
+    path.write_text('description: a loopback\nproperty: io-channel-names\n')
+    with pytest.raises(ValueError):
+        vanes.Setup.load(path)
+
+
+def test_testplan_apply_vanes(class_testplan, all_testsuites_dict, tmp_path):
+    """ Testing the check of a platform's vanes for the setups a scenario needs """
+    plan = class_testplan
+    testsuite = all_testsuites_dict.get('test_d.check_1')
+    testsuite.setups = ['gpio.loopback']
+    testsuite.harness_config = mock.Mock(fixture=['gpio_loopback'])
+    setup = vanes.Setup(name='gpio.loopback', description='', path=tmp_path)
+    plan._setups = {'gpio.loopback': setup}
+
+    board_dir = tmp_path / 'boards' / 'vendor' / 'board'
+    vane_dir = board_dir / 'vanes' / 'gpio.loopback'
+    vane_dir.mkdir(parents=True)
+    (vane_dir / 'board_soc.overlay').write_text('/ {};')
+
+    platform = mock.Mock()
+    platform.name = 'board/soc'
+    platform.normalized_name = 'board_soc'
+    platform.single_soc = True
+    platform.board_dirs = [str(board_dir)]
+    platform.soc_dirs = []
+
+    instance = TestInstance(testsuite, platform, 'zephyr', 'outdir')
+    plan.apply_vanes(instance)
+    assert instance.filters == []
+    assert instance.vanes == ['gpio.loopback']
+    assert instance.harness_config.fixture == ['gpio_loopback']
+
+    (vane_dir / 'vane.yml').write_text('fixture:\n  gpio_loopback: none\n')
+    instance = TestInstance(testsuite, platform, 'zephyr', 'outdir')
+    plan.apply_vanes(instance)
+    assert instance.harness_config.fixture == []
+
+    (vane_dir / 'vane.yml').write_text('fixture:\n  gpio_loopback: wired\n')
+    instance = TestInstance(testsuite, platform, 'zephyr', 'outdir')
+    plan.apply_vanes(instance)
+    assert instance.harness_config.fixture == ['wired']
+
+    (vane_dir / 'vane.yml').write_text('fixture: extra\n')
+    instance = TestInstance(testsuite, platform, 'zephyr', 'outdir')
+    plan.apply_vanes(instance)
+    assert instance.harness_config.fixture == ['gpio_loopback', 'extra']
+
+    # a bare 'none' names no fixture to waive
+    (vane_dir / 'vane.yml').write_text('fixture: none\n')
+    instance = TestInstance(testsuite, platform, 'zephyr', 'outdir')
+    with pytest.raises(ValueError):
+        plan.apply_vanes(instance)
+    (vane_dir / 'vane.yml').unlink()
+
+    platform.name = 'board/other'
+    instance = TestInstance(testsuite, platform, 'zephyr', 'outdir')
+    plan.apply_vanes(instance)
+    assert instance.filters[0]['reason'] == 'Setup gpio.loopback not provided by the board'
+
+    # a setup the board's own devicetree can show is left to the scenario's
+    # filter, and the build then has nothing to apply
+    setup.compatible = 'test-gpio-basic-api'
+    instance = TestInstance(testsuite, platform, 'zephyr', 'outdir')
+    plan.apply_vanes(instance)
+    assert instance.filters == []
+    assert instance.vanes == []
+    assert instance.harness_config.fixture == ['gpio_loopback']
+
+
+def test_testplan_apply_vanes_soc_realization(class_testplan, all_testsuites_dict, tmp_path):
+    """ A board's vane.yml applies to a realization whose files come from the SoC """
+    plan = class_testplan
+    testsuite = all_testsuites_dict.get('test_d.check_1')
+    testsuite.setups = ['gpio.loopback']
+    testsuite.harness_config = mock.Mock(fixture=['gpio_loopback'])
+    plan._setups = {'gpio.loopback': vanes.Setup(name='gpio.loopback', description='',
+                                                 path=tmp_path)}
+
+    soc_dir = tmp_path / 'soc' / 'vendor'
+    (soc_dir / 'vanes' / 'gpio.loopback').mkdir(parents=True)
+    (soc_dir / 'vanes' / 'gpio.loopback' / 'soc.overlay').write_text('/ {};')
+    board_dir = tmp_path / 'boards' / 'vendor' / 'board'
+    (board_dir / 'vanes' / 'gpio.loopback').mkdir(parents=True)
+    (board_dir / 'vanes' / 'gpio.loopback' / 'vane.yml').write_text(
+        'fixture:\n  gpio_loopback: wired\n')
+
+    platform = mock.Mock()
+    platform.name = 'board/soc'
+    platform.normalized_name = 'board_soc'
+    platform.single_soc = True
+    platform.board_dirs = [str(board_dir)]
+    platform.soc_dirs = [str(soc_dir)]
+
+    instance = TestInstance(testsuite, platform, 'zephyr', 'outdir')
+    plan.apply_vanes(instance)
+    assert instance.filters == []
+    assert instance.harness_config.fixture == ['wired']
+
+    # a vane.yml alone realizes nothing
+    (soc_dir / 'vanes' / 'gpio.loopback' / 'soc.overlay').unlink()
+    instance = TestInstance(testsuite, platform, 'zephyr', 'outdir')
+    plan.apply_vanes(instance)
+    assert instance.filters[0]['reason'] == 'Setup gpio.loopback not provided by the board'
+
+
+def test_testplan_apply_vanes_several_setups(class_testplan, all_testsuites_dict, tmp_path):
+    """ The vanes of several setups each own the fixtures they name """
+    plan = class_testplan
+    testsuite = all_testsuites_dict.get('test_d.check_1')
+    testsuite.setups = ['gpio.loopback', 'spi.loopback']
+    testsuite.harness_config = mock.Mock(fixture=['gpio_loopback', 'spi_loopback'])
+    plan._setups = {name: vanes.Setup(name=name, description='', path=tmp_path)
+                    for name in testsuite.setups}
+
+    board_dir = tmp_path / 'boards' / 'vendor' / 'board'
+    for name in testsuite.setups:
+        (board_dir / 'vanes' / name).mkdir(parents=True)
+        (board_dir / 'vanes' / name / 'board_soc.overlay').write_text('/ {};')
+    (board_dir / 'vanes' / 'gpio.loopback' / 'vane.yml').write_text(
+        'fixture:\n  gpio_loopback: none\n')
+    (board_dir / 'vanes' / 'spi.loopback' / 'vane.yml').write_text('fixture: spi_dma_wire\n')
+
+    platform = mock.Mock()
+    platform.name = 'board/soc'
+    platform.normalized_name = 'board_soc'
+    platform.single_soc = True
+    platform.board_dirs = [str(board_dir)]
+    platform.soc_dirs = []
+
+    instance = TestInstance(testsuite, platform, 'zephyr', 'outdir')
+    plan.apply_vanes(instance)
+    assert instance.harness_config.fixture == ['spi_loopback', 'spi_dma_wire']
+
+
+def test_testplan_load_from_file_vanes(class_testplan, all_testsuites_dict, tmp_path):
+    """ A plan loaded from a file resolves the setups a scenario requires and
+    applies the board's vane, as the filter stage does """
+    plan = class_testplan
+    plan.testsuites = all_testsuites_dict
+    testsuite = all_testsuites_dict.get('test_d.check_1')
+    testsuite.requires = [{'setup': 'gpio.loopback'}]
+    testsuite.setups = None
+    testsuite.harness_config = mock.Mock(fixture=None, required_devices=[])
+    setup = vanes.Setup(name='gpio.loopback', description='', path=tmp_path)
+    plan._setups = {'gpio.loopback': setup}
+
+    board_dir = tmp_path / 'boards' / 'vendor' / 'board'
+    vane_dir = board_dir / 'vanes' / 'gpio.loopback'
+    vane_dir.mkdir(parents=True)
+    (vane_dir / 'board_soc.overlay').write_text('/ {};')
+    (vane_dir / 'vane.yml').write_text('fixture: wired\n')
+
+    platform = mock.Mock()
+    platform.name = 'board/soc'
+    platform.normalized_name = 'board_soc'
+    platform.single_soc = True
+    platform.board_dirs = [str(board_dir)]
+    platform.soc_dirs = []
+    plan.get_platform = mock.Mock(return_value=platform)
+
+    plan_file = tmp_path / 'plan.json'
+    plan_file.write_text(json.dumps({'testsuites': [
+        {'name': 'test_d.check_1', 'platform': 'board/soc', 'toolchain': 'zephyr'}
+    ]}))
+    with mock.patch('twisterlib.testinstance.TestInstance.check_runnable',
+                    mock.Mock(return_value=True)), \
+         mock.patch('twisterlib.testinstance.TestInstance.create_overlay', mock.Mock()):
+        plan.load_from_file(str(plan_file))
+
+    assert testsuite.setups == ['gpio.loopback']
+    instance = next(iter(plan.instances.values()))
+    assert instance.harness_config.fixture == ['wired']
+
+
+def test_testplan_apply_filters_vane_fixture(class_testplan, all_testsuites_dict, platforms_list,
+                                              tmp_path):
+    """ The fixture a vane names is on the instance when its runnability is checked """
+    plan = class_testplan
+    plan.platforms = platforms_list
+    plan.platform_names = [p.name for p in platforms_list]
+    testsuite = all_testsuites_dict.get('test_d.check_1')
+    testsuite.requires = [{'setup': 'gpio.loopback'}]
+    plan.testsuites = {'test_d.check_1': testsuite}
+    plan._setups = {'gpio.loopback': vanes.Setup(name='gpio.loopback', description='',
+                                                 path=tmp_path, compatible='test-gpio-basic-api')}
+
+    board_dir = tmp_path / 'boards' / 'vendor' / 'demo_board_2'
+    vane_dir = board_dir / 'vanes' / 'gpio.loopback'
+    vane_dir.mkdir(parents=True)
+    (vane_dir / 'demo_board_2.overlay').write_text('/ {};')
+    (vane_dir / 'vane.yml').write_text('fixture: wired\n')
+    for plat in plan.platforms:
+        plat.board_dirs = [str(board_dir)] if plat.name.startswith('demo_board_2') else []
+        plat.soc_dirs = []
+        plat.single_soc = True
+
+    seen = {}
+    def check_runnable(self, options, hardware_map):
+        seen[self.platform.name] = self.harness_config.fixture
+        return True
+    plan.options.platform = ['demo_board_2/unit_testing']
+    with mock.patch.object(TestInstance, 'check_runnable', check_runnable):
+        plan.apply_filters()
+
+    assert seen['demo_board_2/unit_testing'] == ['wired']
+    instance = next(i for i in plan.instances.values() if i.platform.name == 'demo_board_2/unit_testing')
+    assert instance.harness_config.fixture == ['wired']
+
+
 def test_testplan_get_level():
     testplan = TestPlan(env=mock_twister_env())
     lvl1 = mock.Mock()
@@ -942,8 +1191,8 @@ def test_testplan_load(
     env.outdir = tmp_path
     testplan = TestPlan(env=env)
     testplan.testsuites = {
-        'ts1': mock.Mock(testcases=[], extra_configs=[]),
-        'ts2': mock.Mock(testcases=[], extra_configs=[]),
+        'ts1': mock.Mock(testcases=[], extra_configs=[], setups=[]),
+        'ts2': mock.Mock(testcases=[], extra_configs=[], setups=[]),
     }
     testplan.testsuites['ts1'].name = 'ts1'
     testplan.testsuites['ts2'].name = 'ts2'
@@ -1706,10 +1955,12 @@ def test_testplan_load_from_file(caplog, device_testing, expected_tfilter):
     ts1.name = 'TestSuite 1'
     ts1.toolchain = 'zephyr'
     ts1.required_applications = []
+    ts1.setups = []
     ts2 = mock.Mock(testcases=[])
     ts2.name = 'TestSuite 2'
     ts2.toolchain = 'zephyr'
     ts2.required_applications = []
+    ts2.setups = []
     ts3tc1 = mock.Mock()
     ts3tc1.name = 'TS3.tc1'
     ts3tc2 = mock.Mock()
@@ -1718,16 +1969,19 @@ def test_testplan_load_from_file(caplog, device_testing, expected_tfilter):
     ts3.name = 'TestSuite 3'
     ts3.toolchain = 'zephyr'
     ts3.required_applications = []
+    ts3.setups = []
     ts4tc1 = mock.Mock()
     ts4tc1.name = 'TS4.tc1'
     ts4 = mock.Mock(testcases=[ts4tc1])
     ts4.name = 'TestSuite 4'
     ts4.toolchain = 'zephyr'
     ts4.required_applications = []
+    ts4.setups = []
     ts5 = mock.Mock(testcases=[])
     ts5.name = 'TestSuite 5'
     ts5.toolchain = 'zephyr'
     ts5.required_applications = []
+    ts5.setups = []
 
     env = mock_twister_env()
     env.outdir = os.path.join('out', 'dir')

@@ -454,6 +454,9 @@ class TestSuite(StatusMixin):
         self._status = TwisterStatus.NONE
 
         self.harness_config: HarnessConfig | None = None
+        # the test setups the scenario requires, None until the requires list
+        # is resolved
+        self.setups: list[str] | None = None
         self.sidecar: str | None = None
         # Per-sidecar configuration, namespaced by sidecar name (see the
         # `sidecar_config` schema key). Left as a raw dict here; each sidecar
