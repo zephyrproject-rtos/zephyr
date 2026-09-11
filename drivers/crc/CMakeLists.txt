@@ -14,4 +14,5 @@ zephyr_library_sources_ifdef(CONFIG_CRC_DRIVER_RENESAS_RA crc_renesas_ra.c)
 zephyr_library_sources_ifdef(CONFIG_CRC_DRIVER_SF32LB crc_sf32lb.c)
 zephyr_library_sources_ifdef(CONFIG_CRC_DRIVER_SILABS_GPCRC crc_silabs_gpcrc.c)
 zephyr_library_sources_ifdef(CONFIG_CRC_STM32 crc_stm32.c)
+zephyr_library_sources_ifdef(CONFIG_CRC_TI_MSP crc_ti_msp.c)
 # zephyr-keep-sorted-stop

@@ -1,0 +1,12 @@
+# Copyright (c) 2026 Texas Instruments Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+config CRC_TI_MSP
+	bool "TI MSP CRC driver"
+	default y
+	depends on DT_HAS_TI_MSP_CRC_ENABLED
+	select CRC_DRIVER_HAS_CRC16_CCITT
+	select CRC_DRIVER_HAS_CRC32_IEEE
+	help
+	  Enable CRC hardware driver for Texas Instruments MSP
+	  microcontrollers.
