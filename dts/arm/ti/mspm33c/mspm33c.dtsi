@@ -73,6 +73,12 @@
 				status = "disabled";
 			};
 		};
+
+		crc: crc@401b2000 {
+			compatible = "ti,mspm0-crcp";
+			reg = <0x401b2000 0x2000>;
+			status = "disabled";
+		};
 	};
 };
 
