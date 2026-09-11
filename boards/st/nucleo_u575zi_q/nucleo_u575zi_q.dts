@@ -91,10 +91,14 @@
 		     &octospim_p1_io2_pe14 &octospim_p1_io3_pe15>;
 	pinctrl-names = "default";
 
-	mx_flash: flash@0 {
-		compatible = "st,stm32-ospi-nor";
+	mx_flash: nor-flash-controller@0 {
+		compatible = "st,nor", "mxicy,mx25u", "jedec,nor";
 		reg = <0>;
+		mspi-max-frequency = <DT_FREQ_M(50)>;
+		ranges = <0x0 0x90000000 DT_SIZE_M(64)>;
+
 		status = "disabled";
+
 	};
 };
 
