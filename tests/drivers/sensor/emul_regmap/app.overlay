@@ -1,0 +1,17 @@
+/* SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ * SPDX-License-Identifier: Apache-2.0
+ */
+/ {
+	sensor_bus: sensor-i2c@100 {
+		compatible = "zephyr,i2c-emul-controller";
+		reg = <0x100 0x4>;
+		#address-cells = <1>;
+		#size-cells = <0>;
+		clock-frequency = <100000>;
+
+		regmap_test: regmap-test@10 {
+			compatible = "vnd,i2c-device";
+			reg = <0x10>;
+		};
+	};
+};
