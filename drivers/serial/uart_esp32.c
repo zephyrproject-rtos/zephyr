@@ -834,8 +834,8 @@ static void IRAM_ATTR uart_esp32_dma_rx_done(const struct device *dma_dev, void 
 
 	/* Notify RX_RDY */
 	if (data->async.rx_buf != NULL) {
-		sys_cache_data_flush_and_invd_range(data->async.rx_buf + data->async.rx_offset,
-						    data->async.rx_counter - data->async.rx_offset);
+		uart_esp32_rx_cache_invd(data->async.rx_buf + data->async.rx_offset,
+					 data->async.rx_counter - data->async.rx_offset);
 	}
 
 	evt.type = UART_RX_RDY;
