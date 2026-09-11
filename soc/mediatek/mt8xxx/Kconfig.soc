@@ -1,30 +1,33 @@
 # Copyright 2024 The ChromiumOS Authors
 # SPDX-License-Identifier: Apache-2.0
 
-config SOC_FAMILY_MTK
+config SOC_FAMILY_MT8XXX
 	bool
+
+config SOC_FAMILY
+	default "mt8xxx" if SOC_FAMILY_MT8XXX
 
 config SOC_SERIES_MT8195
 	bool
-	select SOC_FAMILY_MTK
+	select SOC_FAMILY_MT8XXX
 	help
 	  Mediatek MT8195 Audio DSP
 
 config SOC_SERIES_MT818X
 	bool
-	select SOC_FAMILY_MTK
+	select SOC_FAMILY_MT8XXX
 	help
 	  Mediatek MT818x Audio DSPs
 
 config SOC_SERIES_MT8196
 	bool
-	select SOC_FAMILY_MTK
+	select SOC_FAMILY_MT8XXX
 	help
 	  Mediatek MT8196 Audio DSPs
 
 config SOC_SERIES_MT8365
 	bool
-	select SOC_FAMILY_MTK
+	select SOC_FAMILY_MT8XXX
 	help
 	  Mediatek MT8365 Audio DSP
 
