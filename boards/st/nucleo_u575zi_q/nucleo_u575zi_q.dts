@@ -86,14 +86,19 @@
 };
 
 &octospi1 {
+	compatible = "st,stm32-ospi-controller";
+	op-mode = "MSPI_OP_MODE_CONTROLLER";
 	pinctrl-0 = <&octospim_p1_clk_pb10 &octospim_p1_ncs_pa2
 		     &octospim_p1_io0_pe12 &octospim_p1_io1_pb0
 		     &octospim_p1_io2_pe14 &octospim_p1_io3_pe15>;
 	pinctrl-names = "default";
+	clock-frequency = <DT_FREQ_M(50)>;
 
-	mx_flash: flash@0 {
-		compatible = "st,stm32-ospi-nor";
+	mx_flash: nor-flash-controller@0 {
+		compatible = "st,nor", "mxicy,mx25u", "jedec,nor";
 		reg = <0>;
+		mspi-max-frequency = <DT_FREQ_M(50)>;
+
 		status = "disabled";
 	};
 };
