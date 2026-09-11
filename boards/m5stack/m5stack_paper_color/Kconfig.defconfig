@@ -29,8 +29,8 @@ endif # FUEL_GAUGE
 
 if LVGL
 
-choice LV_COLOR_DEPTH
-	default LV_COLOR_DEPTH_24
+choice LV_COLOR_FORMAT_DEFAULT
+	default LV_COLOR_FORMAT_RGB888
 endchoice
 
 choice LV_Z_RENDERING_MODE
