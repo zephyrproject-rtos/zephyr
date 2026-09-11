@@ -67,6 +67,14 @@ static int pio_uart_tx_init(PIO pio, uint32_t sm, uint32_t tx_pin, float div)
 
 	sm_config_set_sideset(&sm_config, SIDESET_BIT_COUNT, true, false);
 	sm_config_set_out_shift(&sm_config, true, false, 0);
+	/*
+	 * These take ABSOLUTE GPIO numbers; the PIO's GPIOBASE must not be
+	 * subtracted here. sm_config_set_*_pins() splits the pin itself, into
+	 * (pin & 31) in pinctrl and (pin >> 4) in pinhi, and
+	 * pio_sm_set_config() reconciles pinhi against the instance's GPIOBASE
+	 * when the config is applied. Subtracting the base first applies it
+	 * twice and silently drives the wrong pin.
+	 */
 	sm_config_set_out_pins(&sm_config, tx_pin, 1);
 	sm_config_set_sideset_pins(&sm_config, tx_pin);
 	sm_config_set_fifo_join(&sm_config, PIO_FIFO_JOIN_TX);
@@ -75,8 +83,14 @@ static int pio_uart_tx_init(PIO pio, uint32_t sm, uint32_t tx_pin, float div)
 			   offset + RPI_PICO_PIO_GET_WRAP_TARGET(uart_tx),
 			   offset + RPI_PICO_PIO_GET_WRAP(uart_tx));
 
-	pio_sm_set_pins_with_mask(pio, sm, BIT(tx_pin), BIT(tx_pin));
-	pio_sm_set_pindirs_with_mask(pio, sm, BIT(tx_pin), BIT(tx_pin));
+	/*
+	 * The 64-bit mask variants are required for pins above GP31: BIT() on
+	 * such a pin overflows a uint32_t, so the 32-bit forms cannot express
+	 * them at all. Both forms shift the mask by the instance's GPIOBASE
+	 * internally, so this is equivalent below GP32.
+	 */
+	pio_sm_set_pins_with_mask64(pio, sm, BIT64(tx_pin), BIT64(tx_pin));
+	pio_sm_set_pindirs_with_mask64(pio, sm, BIT64(tx_pin), BIT64(tx_pin));
 	pio_sm_init(pio, sm, offset, &sm_config);
 	pio_sm_set_enabled(pio, sm, true);
 
@@ -96,6 +110,7 @@ static int pio_uart_rx_init(PIO pio, uint32_t sm, uint32_t rx_pin, float div)
 	sm_config = pio_get_default_sm_config();
 
 	pio_sm_set_consecutive_pindirs(pio, sm, rx_pin, 1, false);
+	/* Absolute, as in pio_uart_tx_init(). */
 	sm_config_set_in_pins(&sm_config, rx_pin);
 	sm_config_set_jmp_pin(&sm_config, rx_pin);
 	sm_config_set_in_shift(&sm_config, true, false, 0);
