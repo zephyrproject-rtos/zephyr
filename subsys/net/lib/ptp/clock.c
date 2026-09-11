@@ -44,6 +44,7 @@ struct ptp_clock {
 	struct ptp_foreign_tt_clock *best;
 	sys_slist_t		    ports_list;
 	struct zsock_pollfd	    pollfd[1 + 2 * CONFIG_PTP_NUM_PORTS];
+	struct k_work timeout_work;
 	bool			    pollfd_valid;
 	bool			    state_decision_event;
 	uint8_t			    time_src;
@@ -242,6 +243,22 @@ static void clock_check_pollfd(void)
 	ptp_clk.pollfd_valid = true;
 }
 
+static void clock_notify_worker(void)
+{
+	if (ptp_clk.pollfd[0].events != ZSOCK_POLLIN) {
+		return;
+	}
+
+	eventfd_write(ptp_clk.pollfd[0].fd, 1);
+}
+
+static void clock_timeout_work_handler(struct k_work *work)
+{
+	ARG_UNUSED(work);
+
+	clock_notify_worker();
+}
+
 const struct ptp_clock *ptp_clock_init(void)
 {
 	struct ptp_default_ds *dds = &ptp_clk.default_ds;
@@ -287,6 +304,7 @@ const struct ptp_clock *ptp_clock_init(void)
 
 	ptp_clk.pollfd[0].fd = eventfd(0, EFD_NONBLOCK);
 	ptp_clk.pollfd[0].events = ZSOCK_POLLIN;
+	k_work_init(&ptp_clk.timeout_work, clock_timeout_work_handler);
 
 	sys_slist_init(&ptp_clk.ports_list);
 	LOG_DBG("PTP Clock %s initialized", clock_id_str(&dds->clk_id));
@@ -637,7 +655,7 @@ void ptp_clock_pollfd_invalidate(void)
 
 void ptp_clock_signal_timeout(void)
 {
-	eventfd_write(ptp_clk.pollfd[0].fd, 1);
+	k_work_submit(&ptp_clk.timeout_work);
 }
 
 void ptp_clock_state_decision_req(void)
