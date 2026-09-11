@@ -6,7 +6,7 @@
 DT_STM32_OCTOSPI_HAS_DMA := $(dt_compat_any_has_prop,$(DT_COMPAT_ST_STM32_OSPI),dmas)
 
 config FLASH_STM32_OSPI
-	bool "STM32 Octo SPI Flash driver"
+	bool "[DEPRECATED] STM32 Octo SPI Flash driver"
 	default y
 	depends on DT_HAS_ST_STM32_OSPI_NOR_ENABLED
 	select USE_STM32_HAL_OSPI
@@ -22,5 +22,6 @@ config FLASH_STM32_OSPI
 	select USE_STM32_HAL_DMA if $(DT_STM32_OCTOSPI_HAS_DMA)
 	select USE_STM32_HAL_DMA_EX if SOC_SERIES_STM32U5X && \
 					$(DT_STM32_OCTOSPI_HAS_DMA)
+	select DEPRECATED if SOC_SERIES_STM32U5X
 	help
 	  Enable OSPI-NOR support on the STM32 family of processors.
