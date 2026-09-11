@@ -27,6 +27,7 @@
 		led0 = &led1;
 		sw0 = &button0;
 		mipi-dsi = &mipi_dsi;
+		dmic0 = &pdm2;
 	};
 
 	renesas_mipi_connector: mipi-connector {
@@ -202,6 +203,20 @@
 &drw {
 	interrupt-names = "drw";
 	interrupts = <31 12>;
+	status = "okay";
+};
+
+/* MIC1 of the on-board SPH0690LM4H-1 pair, on the rising edge of PDM_CLK2. */
+&pdm2 {
+	pinctrl-0 = <&pdm2_default>;
+	pinctrl-names = "default";
+	interrupts = <32 12>, <33 12>;
+	interrupt-names = "dat", "err";
+	clock-frequency = <32000>;
+	renesas,clock-divider = <2>;
+	renesas,sinc-decimation = <62>;
+	renesas,sinc-range = <9>;
+	renesas,mic-startup-time-us = <35000>;
 	status = "okay";
 };
 

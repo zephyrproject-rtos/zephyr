@@ -13,4 +13,5 @@ supported:
   - spi
   - sdhc
   - netif:eth
+  - dmic
 vendor: renesas

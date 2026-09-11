@@ -71,6 +71,7 @@ Cortex®-M33 core running up to 250 MHz with the following features:
 - Ethernet (RJ45 RGMII interface)
 - USB High Speed Host and Device (USB-C connector)
 - 512 Mb (64 MB) External Octo-SPI Flash (present in the MCU Native Pin Access area of the EK-RA8P1 board)
+- Two SPH0690LM4H-1 PDM MEMS microphones (present on the underside of the EK-RA8P1 board)
 
 Hardware
 ********
@@ -94,6 +95,28 @@ Supported Features
      +-------------+-------------+----------------+---------------+-----------+------------+-------------+-------------+
      |     OFF     |     OFF     |      OFF       |     OFF       |     OFF   |     ON     |     OFF     |    OFF      |
      +-------------+-------------+----------------+---------------+-----------+------------+-------------+-------------+
+
+PDM Microphones
+===============
+
+The two SPH0690LM4H-1 MEMS microphones share one data line (P502) and one clock line (P812),
+both wired to PDM-IF channel 2. MIC1 has its SELECT pin tied low and drives the rising edge of
+the clock; MIC2 has it tied high and drives the falling edge. The ``pdm2`` node captures MIC1
+and is exported as the ``dmic0`` alias. MIC2 needs a second node on channel 0 with
+``renesas,fall-edge-data``, which reads the falling-edge data of channel 2. The two channels
+are not sample-synchronized, so they do not form a stereo pair.
+
+The decimation chain is fixed by devicetree and produces a nominal 32 kHz, mono PCM stream;
+:c:func:`dmic_configure` rejects other rates. Deriving a different rate means recomputing
+``renesas,clock-divider``, ``renesas,sinc-decimation`` and ``renesas,sinc-range`` with the
+Renesas RA Configuration tool.
+
+To capture from the shell, build with :kconfig:option:`CONFIG_AUDIO_DMIC_SHELL` and pass the
+rate explicitly:
+
+.. code-block:: console
+
+   dmic read pdm@40256300 4 32000
 
 Dual Core Operation
 *******************

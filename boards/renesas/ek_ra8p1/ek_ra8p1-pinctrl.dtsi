@@ -95,6 +95,14 @@
 		};
 	};
 
+	pdm2_default: pdm2_default {
+		group1 {
+			psels = <RA_PSEL(RA_PSEL_PDM, 5, 2)>, /* MIC_DAT */
+				<RA_PSEL(RA_PSEL_PDM, 8, 12)>; /* MIC_CLK */
+			drive-strength = "medium";
+		};
+	};
+
 	usbhs_default: usbhs_default {
 		group1 {
 			psels = <RA_PSEL(RA_PSEL_USBHS, 4, 8)>; /* VBUS */
