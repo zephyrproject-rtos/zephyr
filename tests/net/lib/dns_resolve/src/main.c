@@ -25,9 +25,8 @@ LOG_MODULE_REGISTER(net_test, CONFIG_DNS_RESOLVER_LOG_LEVEL);
 #include <zephyr/net/dns_resolve.h>
 #include <zephyr/net/hostname.h>
 #include <zephyr/net/socket.h>
-#include <zephyr/net/udp.h>
-#include <zephyr/net/socket.h>
 #include <zephyr/net/socket_service.h>
+#include <zephyr/net/udp.h>
 
 #define NET_LOG_ENABLED 1
 #include "net_private.h"
@@ -580,6 +579,17 @@ ZTEST(dns_resolve, test_dns_query_too_many)
 				INT_TO_POINTER(expected_status),
 				DNS_TIMEOUT);
 	zassert_equal(ret, 0, "Cannot create IPv4 query");
+
+	/* Fill whatever query slots are left before expecting a rejection. */
+	for (int i = 1; i < CONFIG_DNS_NUM_CONCUR_QUERIES; i++) {
+		ret = dns_get_addr_info(NAME4,
+					DNS_QUERY_TYPE_A,
+					NULL,
+					dns_result_cb_dummy,
+					INT_TO_POINTER(expected_status),
+					DNS_TIMEOUT);
+		zassert_equal(ret, 0, "Cannot create IPv4 query %d", i);
+	}
 
 	ret = dns_get_addr_info(NAME4,
 				DNS_QUERY_TYPE_A,
@@ -2553,10 +2563,14 @@ ZTEST(dns_resolve, test_dns_query_all_servers_llmnr_enabled_dns_fanout)
 
 #endif /* CONFIG_DNS_RESOLVER_QUERY_ALL_AVAILABLE_SERVERS */
 
-/* Poll slot regression tests for
- * https://github.com/zephyrproject-rtos/zephyr/issues/117951
+/* Regression tests for the poll slots the resolver keeps in ctx->fds.
  *
- * These run on a private resolver context so that the default context, and
+ * A server that is closed on its own releases its slot and leaves a hole in
+ * the array. These check that the hole does not end up holding a copy of a
+ * socket that is already polled further along, and that the next server to
+ * come up can still be given a slot.
+ *
+ * They run on a private resolver context so that the default context, and
  * therefore every other test in this suite, is left untouched. The context
  * needs its own socket service because resolve_svc is sized for exactly one
  * full context.
@@ -2585,6 +2599,7 @@ BUILD_ASSERT(ARRAY_SIZE(server_pool) >= DNS_RESOLVER_MAX_POLL,
 static struct net_sockaddr test_servers[DNS_RESOLVER_MAX_POLL];
 static const struct net_sockaddr *test_servers_sa[DNS_RESOLVER_MAX_POLL + 1];
 static int test_server_ifaces[DNS_RESOLVER_MAX_POLL];
+static struct net_sockaddr replacement_server;
 
 static void check_no_duplicate_poll_slots(struct dns_resolve_context *ctx,
 					  const char *when)
@@ -2732,7 +2747,7 @@ ZTEST(dns_resolve, test_dns_poll_slot_not_duplicated)
 
 ZTEST(dns_resolve, test_dns_poll_slot_free_for_new_server)
 {
-	const char *new_servers[] = { REPLACEMENT_SERVER, NULL };
+	const struct net_sockaddr *new_servers[2] = { &replacement_server, NULL };
 	uint16_t dns_id_pending = 0;
 	uint16_t dns_id = 0;
 	int ret;
@@ -2760,7 +2775,12 @@ ZTEST(dns_resolve, test_dns_poll_slot_free_for_new_server)
 	/* A replacement server arrives, as it does when the interface comes
 	 * back up. It must get the poll slot the closed server released.
 	 */
-	ret = dns_resolve_reconfigure(&test_ctx, new_servers, NULL,
+	zassert_true(net_ipaddr_parse(REPLACEMENT_SERVER,
+				      strlen(REPLACEMENT_SERVER),
+				      &replacement_server),
+		     "Cannot parse server %s", REPLACEMENT_SERVER);
+
+	ret = dns_resolve_reconfigure(&test_ctx, NULL, new_servers,
 				      DNS_SOURCE_MANUAL);
 	zassert_equal(ret, 0, "Cannot add replacement DNS server (%d)", ret);
 
