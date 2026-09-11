@@ -87,9 +87,11 @@ endchoice
 
 config ADC_MCUX_ADC16_ENABLE_EDMA
 	bool "EDMA for adc driver"
-	depends on DMA_MCUX_EDMA
+	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_NXP_KINETIS_ADC16),dmas)
+	select DMA
 	help
-	  Enable the MCUX ADC16 driver.
+	  Transfer the samples through the EDMA channel the devicetree wires
+	  to the controller.
 
 if ADC_MCUX_ADC16_ENABLE_EDMA
 
