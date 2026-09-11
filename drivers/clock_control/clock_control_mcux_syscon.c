@@ -348,7 +348,6 @@ static int mcux_lpc_syscon_clock_control_on(const struct device *dev,
 #if DT_NODE_HAS_STATUS_OKAY(DT_NODELABEL(tsi0))
 	if ((uint32_t)sub_system == MCUX_TSI_CLK) {
 #if defined(CONFIG_SOC_FAMILY_MCXA)
-#if defined(CONFIG_SOC_FAMILY_MCXA)
 		/* TSI0's clock mux resets to "NONE" on MCXA; without an explicit
 		 * attach, TSI_SelfCapCalibrate() hangs forever waiting for a
 		 * scan-complete flag that never comes.
