@@ -57,7 +57,6 @@ static int regulator_nxp_vref_set_mode(const struct device *dev, regulator_mode_
 {
 	const struct regulator_nxp_vref_config *config = dev->config;
 	VREF_Type *const base = config->base;
-
 	uint32_t csr = base->CSR;
 	struct regulator_nxp_vref_data *data = dev->data;
 
@@ -92,7 +91,6 @@ static int regulator_nxp_vref_get_mode(const struct device *dev, regulator_mode_
 {
 	const struct regulator_nxp_vref_config *config = dev->config;
 	VREF_Type *const base = config->base;
-
 	uint32_t csr = base->CSR;
 
 	/* Check bits to determine mode */
@@ -112,8 +110,9 @@ static int regulator_nxp_vref_enable(const struct device *dev)
 	const struct regulator_nxp_vref_config *config = dev->config;
 	VREF_Type *const base = config->base;
 	struct regulator_nxp_vref_data *data = dev->data;
+#if CONFIG_PM_DEVICE
 	int ret;
-
+#endif
 	volatile uint32_t *const csr = &base->CSR;
 
 /* Gating the clock is only needed in low power modes */
@@ -151,7 +150,10 @@ static int regulator_nxp_vref_disable(const struct device *dev)
 {
 	const struct regulator_nxp_vref_config *config = dev->config;
 	VREF_Type *const base = config->base;
+#if CONFIG_PM_DEVICE
 	int ret;
+#endif
+
 	/*
 	 * Disable HC Bandgap, LP Bandgap, Buf21, and Lp Bandgap Buffer
 	 * to achieve "Off" mode of VREF
