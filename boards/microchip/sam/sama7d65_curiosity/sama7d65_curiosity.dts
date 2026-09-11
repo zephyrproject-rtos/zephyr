@@ -272,6 +272,11 @@
 			bias-disable;
 		};
 	};
+
+	pinctrl_usba_vbus_det: usba_vbus_det {
+		pinmux = <PIN_PC8__GPIO>;
+		bias-disable;
+	};
 };
 
 &pit64b0 {
@@ -291,5 +296,12 @@
 };
 
 &trng {
+	status = "okay";
+};
+
+zephyr_udc0: &udphsa {
+	vbus-gpios = <&pioc 8 GPIO_ACTIVE_HIGH>;
+	pinctrl-names = "default";
+	pinctrl-0 = <&pinctrl_usba_vbus_det>;
 	status = "okay";
 };
