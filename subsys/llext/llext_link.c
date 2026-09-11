@@ -398,6 +398,7 @@ static int llext_link_plt(struct llext_loader *ldr, struct llext *ext, elf_shdr_
 		const void *link_addr;
 
 		switch (stb) {
+		case STB_WEAK:
 		case STB_GLOBAL:
 			/* First try the global symbol table */
 			link_addr = llext_find_sym(NULL,
