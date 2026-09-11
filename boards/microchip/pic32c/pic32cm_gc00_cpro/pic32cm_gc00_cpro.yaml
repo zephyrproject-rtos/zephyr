@@ -18,6 +18,7 @@ supported:
   - i2c
   - pinctrl
   - reset
+  - rtc
   - spi
   - uart
   - watchdog
