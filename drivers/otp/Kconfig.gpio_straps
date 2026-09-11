@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: Apache-2.0
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+
+config OTP_GPIO_STRAPS
+	bool "GPIO strap identity (read-only OTP)"
+	default y
+	depends on DT_HAS_ZEPHYR_GPIO_STRAPS_ENABLED
+	select GPIO
+	help
+	  Enable the read-only OTP driver for an identity value encoded on GPIO
+	  strap pins, such as a board revision. The pins are sampled once at
+	  init and the value is presented through the standard OTP API.
