@@ -69,6 +69,19 @@ $defs:
         type: array
         items:
           type: string
+      requires:
+        type: array
+        items:
+          type: object
+          properties:
+            api:
+              type: string
+            setup:
+              type: string
+          oneOf:
+            - required: [api]
+            - required: [setup]
+          additionalProperties: false
       filter:
         type: string
       levels:

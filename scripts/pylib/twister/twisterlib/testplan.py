@@ -21,6 +21,7 @@ from collections import OrderedDict
 from itertools import islice
 from pathlib import Path
 
+import vanes
 from twisterlib import ZEPHYR_BASE
 from twisterlib.testsuitedata import RequiredApplication
 
@@ -196,6 +197,7 @@ class TestPlan:
         self.run_individual_testsuite = []
         self.levels = []
         self.test_config =  None
+        self._setups = None
 
         self.name = "unnamed"
 
@@ -786,9 +788,14 @@ class TestPlan:
                     if filter_platform and platform.name not in filter_platform:
                         continue
                     testsuite_id = testsuite.rsplit('/', 1)[-1]
-                    instance = TestInstance(
-                        self.testsuites[testsuite_id], platform, toolchain, self.env.outdir
-                    )
+                    suite = self.testsuites[testsuite_id]
+                    # A plan carries neither the setups a scenario requires
+                    # nor the fixture a vane names: resolve both as the filter
+                    # stage did, the vanes before the runnable check.
+                    self.resolve_requires(suite)
+                    instance = TestInstance(suite, platform, toolchain, self.env.outdir)
+                    if suite.setups:
+                        self.apply_vanes(instance)
                     if ts.get("run_id"):
                         instance.run_id = ts.get("run_id")
 
@@ -879,6 +886,69 @@ class TestPlan:
         if plat.preferred_toolchain:
             return [plat.preferred_toolchain]
         return [self.env.toolchain if self.env.toolchain else "zephyr"]
+
+    def resolve_requires(self, ts):
+        """Turn the requirements of a test scenario into what twister checks.
+
+        An ``api`` requirement is a feature the platform has to support. A
+        ``setup`` requirement names a test setup, defined under tests/vanes,
+        that a platform realizes with a vane of its own; the setups are
+        collected in ``ts.setups`` and checked per platform by apply_vanes,
+        and the filter a setup states is added to the scenario's. Resolving
+        a scenario twice changes nothing.
+        """
+        if ts.setups is not None:
+            return
+        ts.setups = []
+        if not ts.requires:
+            return
+
+        for req in ts.requires:
+            if 'api' in req:
+                ts.depends_on = set(ts.depends_on or ()) | {req['api']}
+                continue
+
+            setup = req['setup']
+            if setup not in self.setups:
+                raise TwisterRuntimeError(
+                    f"No test setup named '{setup}' under tests/vanes, "
+                    f"required by '{ts.name}'"
+                )
+            if setup not in ts.setups:
+                ts.setups.append(setup)
+            clause = self.setups[setup].filter
+            if clause:
+                ts.filter = f"({ts.filter}) and ({clause})" if ts.filter else clause
+
+    @property
+    def setups(self):
+        """The test setups defined in the tree, by name."""
+        if self._setups is None:
+            self._setups = vanes.find_setups()
+        return self._setups
+
+    def apply_vanes(self, instance):
+        """Check that the platform realizes the setups the scenario needs.
+
+        Filters the instance when a setup has no vane for the platform,
+        unless the setup states a filter: the board's own devicetree may
+        satisfy it, which the filter decides. A run needs the fixtures the
+        scenario names, each replaced or waived by a vane naming it, plus
+        those the vanes name on their own.
+        """
+        plat = instance.platform
+        target = vanes.Target.parse(plat.name, plat.single_soc)
+        found = []
+        for setup in instance.testsuite.setups:
+            vane = vanes.find_vane(setup, target, plat.board_dirs, plat.soc_dirs)
+            if vane is None and not self.setups[setup].filter:
+                instance.add_filter(f"Setup {setup} not provided by the board", Filters.PLATFORM)
+                return
+            found.append(vane)
+        fixtures = vanes.fixtures_for(instance.testsuite.harness_config.fixture, found)
+        if fixtures is not None:
+            instance.harness_config = copy.copy(instance.testsuite.harness_config)
+            instance.harness_config.fixture = fixtures
 
     def apply_filters(self, **kwargs):
 
@@ -1006,6 +1076,8 @@ class TestPlan:
                         filter(lambda item: item.name in ts.platform_allow, self.platforms)
                     )
 
+            self.resolve_requires(ts)
+
             # Discover required snippet YAML files and load them once per testsuite
             found_snippets = None
             snippet_args = None
@@ -1039,6 +1111,10 @@ class TestPlan:
                     continue
 
                 instance = TestInstance(ts, plat, toolchain, self.env.outdir)
+                # Before the runnable check: the fixture a vane names has to
+                # count against the hardware map like one the scenario names.
+                if ts.setups:
+                    self.apply_vanes(instance)
                 instance.run = instance.check_runnable(
                     self.options,
                     self.hwm

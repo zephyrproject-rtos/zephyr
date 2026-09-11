@@ -491,7 +491,8 @@ board:
     for platform in platforms:
         expected_platform_data = expected_data[platform.name]
         for attr, default in vars(init_platform).items():
-            if attr in {'name', 'normalized_name', 'supported_toolchains'}:
+            if attr in {'name', 'normalized_name', 'supported_toolchains',
+                        'board_dirs', 'soc_dirs', 'board_name', 'single_soc'}:
                 continue
             expected = expected_platform_data.get(attr, default)
             actual = getattr(platform, attr, None)

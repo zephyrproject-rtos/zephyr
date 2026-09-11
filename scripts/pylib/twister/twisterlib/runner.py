@@ -462,6 +462,9 @@ class CMake:
             ]
             cmake_args.extend(cmake_opts)
 
+        if self.instance.testsuite.setups:
+            cmake_args.append('-DVANES={}'.format(';'.join(self.instance.testsuite.setups)))
+
         cmake = shutil.which('cmake')
         cmd = [cmake] + cmake_args
 
@@ -1861,7 +1864,7 @@ class ProjectBuilder(FilterBuilder):
         """
         if self.instance.handler.type_str == "device":
             hwmgr = HardwareReservationManager(
-                self.env.hwm, self.instance.platform.name, self.testsuite.harness_config
+                self.env.hwm, self.instance.platform.name, self.instance.harness_config
             )
             try:
                 hwmgr.reserve_duts()
