@@ -18,7 +18,7 @@ config PM_RUNTIME_IN_TEST
 
 config TEST_CHOPPED_TX
 	bool "Test chopped TX data"
-	default y
+	default y if !SOC_SERIES_BSIM_NRFXX
 	help
 	  When enabled then test cases that transmits TX packets in random chunks are
 	  performed. Some driver implementation do not support case when new TX data
