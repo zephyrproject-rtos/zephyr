@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+# JSON Schema for a test setup definition, tests/vanes/<setup>.yml
+$schema: "https://json-schema.org/draft/2020-12/schema"
+type: object
+properties:
+  name:
+    type: string
+  description:
+    type: string
+  compatible:
+    # The devicetree node a realization has to enable
+    type: string
+  filter:
+    # A twister filter expression a realization has to satisfy, for a setup
+    # with no node of its own to check
+    type: string
+required:
+  - description
+additionalProperties: false
