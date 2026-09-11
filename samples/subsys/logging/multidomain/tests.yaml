@@ -9,13 +9,12 @@ common:
     ordered: false
     regex:
       - "Hello World!"
-      - "app: Multidomain logging HOST demo started"
-      - "app: loop: 0"
-      - "app: wait for bound"
-      - "app: bounded"
-      - "app: REMOTE \\[1\\]: 0"
-      - "app: HOST \\[1\\]: 1"
-      - "app: Multidomain logging HOST demo ended."
+      - "cpu0/app: Multidomain logging HOST demo started"
+      - "cpu1/.*: loop: 0"
+      - "cpu1/.*: wait for bound"
+      - "cpu1/.*: REMOTE \\[1\\]: 0"
+      - "cpu0/app: HOST \\[1\\]: 1"
+      - "cpu0/app: Multidomain logging HOST demo ended."
 tests:
   sample.logging.multidomain.rx_hold:
     platform_allow:
@@ -37,3 +36,32 @@ tests:
       - nrf54l15dk/nrf54l15/cpuapp
     extra_configs:
       - CONFIG_LOG_LINK_IPC_SERVICE_RX_HOLD=n
+  sample.logging.multidomain.frontend.rx_hold:
+    platform_allow:
+      - nrf5340dk/nrf5340/cpuapp
+      - nrf5340bsim/nrf5340/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp
+    integration_platforms:
+      - nrf5340dk/nrf5340/cpuapp
+      - nrf5340bsim/nrf5340/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp
+    extra_args:
+      - remote_CONFIG_LOG_BACKEND_IPC_SERVICE=n
+      - remote_CONFIG_LOG_FRONTEND=y
+      - remote_CONFIG_LOG_FRONTEND_ONLY=y
+      - remote_CONFIG_LOG_FRONTEND_IPC=y
+  sample.logging.multidomain.frontend.rx_hold.no_mt:
+    platform_allow:
+      - nrf5340dk/nrf5340/cpuapp
+      - nrf5340bsim/nrf5340/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp
+    integration_platforms:
+      - nrf5340dk/nrf5340/cpuapp
+      - nrf5340bsim/nrf5340/cpuapp
+      - nrf54l15dk/nrf54l15/cpuapp
+    extra_args:
+      - remote_CONFIG_LOG_BACKEND_IPC_SERVICE=n
+      - remote_CONFIG_LOG_FRONTEND=y
+      - remote_CONFIG_LOG_FRONTEND_ONLY=y
+      - remote_CONFIG_LOG_FRONTEND_IPC=y
+      - remote_CONFIG_MULTITHREADING=n

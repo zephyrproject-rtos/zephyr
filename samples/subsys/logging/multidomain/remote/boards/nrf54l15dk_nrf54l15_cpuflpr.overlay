@@ -23,11 +23,10 @@
 	ipc {
 		ipc0: ipc0 {
 			compatible = "zephyr,ipc-icbmsg";
-			dcache-alignment = <32>;
 			tx-region = <&sram_tx>;
 			rx-region = <&sram_rx>;
-			tx-blocks = <16>;
-			rx-blocks = <16>;
+			tx-blocks = <31>;
+			rx-blocks = <31>;
 			mboxes = <&cpuflpr_vevif_rx 21>, <&cpuflpr_vevif_tx 20>;
 			mbox-names = "rx", "tx";
 			status = "okay";
