@@ -85,6 +85,7 @@ struct mcux_lpadc_config {
 	 * (from that channel node's zephyr,vref-mv)
 	 */
 	uint16_t opamp_vref_mv;
+	bool stop_in_low_power;
 #if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
 	bool pm_device_constraints;
 #endif
@@ -1044,6 +1045,7 @@ static int mcux_lpadc_init(const struct device *dev)
 
 	adc_config.enableAnalogPreliminary = true;
 	adc_config.referenceVoltageSource = config->voltage_ref;
+	adc_config.enableInDozeMode = !config->stop_in_low_power;
 
 #if defined(FSL_FEATURE_LPADC_HAS_CTRL_CAL_AVGS) && FSL_FEATURE_LPADC_HAS_CTRL_CAL_AVGS
 	adc_config.conversionAverageMode = config->calibration_average;
@@ -1229,6 +1231,7 @@ static DEVICE_API(adc, mcux_lpadc_driver_api) = {
 		.sample_max = COND_CODE_1(DT_INST_NODE_HAS_PROP(n, ideal_sample_range),		\
 			(DT_PROP_BY_IDX(DT_DRV_INST(n), ideal_sample_range, 1)), (UINT32_MAX)),	\
 			OPAMP_GAINS_INIT(n)							\
+		.stop_in_low_power = DT_INST_PROP(n, stop_in_low_power_mode),			\
 		DMA_INIT(n)									\
 	};											\
 												\
