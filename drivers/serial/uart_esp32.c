@@ -54,9 +54,6 @@
 #if defined(CONFIG_SOC_SERIES_ESP32C5)
 #define UHCI0 UHCI
 #endif
-#include <hal/gdma_ll.h>
-#include <hal/gdma_hal.h>
-#include <hal/dma_types.h>
 #include <esp_memory_utils.h>
 #include <soc/soc_caps.h>
 #endif
@@ -738,26 +735,31 @@ static void IRAM_ATTR uart_esp32_dma_rx_done(const struct device *dma_dev, void 
 	const struct device *uart_dev = user_data;
 	const struct uart_esp32_config *config = uart_dev->config;
 	struct uart_esp32_data *data = uart_dev->data;
-	gdma_hal_context_t *dma_hal = dma_dev->data;
+	struct dma_status stat;
 	struct uart_event evt = {0};
-	dma_descriptor_t *desc;
 	size_t rx_bytes;
 	unsigned int key = irq_lock();
 
-	/*
-	 * Read actual transferred bytes from DMA descriptor.
-	 * Direct LL calls used because this ISR context requires IRAM-safe code.
-	 * Note: We SET rx_counter (not add) because the UART ISR also increments
-	 * rx_counter on RXFIFO_FULL interrupts, and the DMA descriptor contains
-	 * the authoritative byte count.
+	/* Read the transferred byte count back from the DMA descriptor. The
+	 * driver reports it through dma_get_status(), which resolves the
+	 * descriptor for both the AHB and AXI controllers and reads the
+	 * hardware-written fields through the uncached alias.
+	 * The counter is SET rather than incremented because the UART ISR also
+	 * bumps rx_counter on RXFIFO_FULL interrupts, and the descriptor holds
+	 * the authoritative count.
 	 */
-	desc = (dma_descriptor_t *)gdma_ll_rx_get_success_eof_desc_addr(dma_hal->dev,
-									config->rx_dma_channel / 2);
-	if (desc) {
-		rx_bytes = desc->dw0.length;
+	if (dma_get_status(config->dma_dev, config->rx_dma_channel, &stat) == 0) {
+		rx_bytes = stat.total_copied;
 	} else {
-		/* Fallback to full buffer if descriptor unavailable */
+		/* The channel is not configured; assume the buffer filled */
 		rx_bytes = data->async.rx_len;
+	}
+
+	/* total_copied accumulates across the descriptor list, so clamp it to
+	 * what is left of the buffer before it becomes an event length.
+	 */
+	if (rx_bytes > data->async.rx_len - data->async.rx_offset) {
+		rx_bytes = data->async.rx_len - data->async.rx_offset;
 	}
 
 	data->async.rx_counter = data->async.rx_offset + rx_bytes;

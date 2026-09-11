@@ -719,8 +719,11 @@ static int dma_esp32_stop(const struct device *dev, uint32_t channel)
 	return 0;
 }
 
-static int dma_esp32_get_status(const struct device *dev, uint32_t channel,
-				struct dma_status *status)
+/* Callable from a DMA callback, so it has to stay reachable with flash
+ * unmapped: no logging here.
+ */
+static int IRAM_ATTR dma_esp32_get_status(const struct device *dev, uint32_t channel,
+					  struct dma_status *status)
 {
 	struct dma_esp32_config *config = (struct dma_esp32_config *)dev->config;
 	struct dma_esp32_data *data = (struct dma_esp32_data *const)(dev)->data;
@@ -728,13 +731,12 @@ static int dma_esp32_get_status(const struct device *dev, uint32_t channel,
 	esp_dma_desc_t *desc;
 
 	if (channel >= config->dma_channel_max) {
-		LOG_ERR("Unsupported channel");
 		return -EINVAL;
 	}
 
 	dma_channel = &config->dma_channel[channel];
 
-	if (!status) {
+	if (status == NULL) {
 		return -EINVAL;
 	}
 
