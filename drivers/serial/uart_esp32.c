@@ -1157,6 +1157,11 @@ static int uart_esp32_async_rx_enable(const struct device *dev, uint8_t *buf, si
 	data->async.rx_buf = buf;
 	data->async.rx_len = len;
 	data->async.rx_timeout = timeout;
+	/* A previous transfer may have left the window part way through the
+	 * buffer, which would make this one report the wrong offset.
+	 */
+	data->async.rx_counter = 0;
+	data->async.rx_offset = 0;
 
 	dma_cfg.channel_direction = PERIPHERAL_TO_MEMORY;
 	dma_cfg.dma_callback = uart_esp32_dma_rx_done;
