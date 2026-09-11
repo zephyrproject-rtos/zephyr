@@ -51,6 +51,7 @@ struct regset_target_lib_config {
 	uint32_t buffer_size;
 	uint8_t *buffer;
 	uint8_t address_width;
+	uint8_t target_flags;
 	/** @endcond */
 };
 
@@ -161,6 +162,8 @@ int regset_target_lib_init(const struct device *dev);
 	.buffer_size = DT_PROP(node_id, size),			\
 	.buffer = (uint8_t[DT_PROP(node_id, size)]) {},		\
 	.address_width = DT_PROP_OR(node_id, address_width, 8),	\
+	.target_flags = DT_PROP_OR(node_id, i2c_10_bit_address, 0)	\
+			? I2C_TARGET_FLAGS_ADDR_10_BITS : 0,		\
 }
 
 /**
