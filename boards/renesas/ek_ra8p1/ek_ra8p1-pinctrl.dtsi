@@ -95,6 +95,24 @@
 		};
 	};
 
+	ssie0_default: ssie0_default {
+		group1 {
+			psels = <RA_PSEL(RA_PSEL_SSIE, 4, 3)>, /* AUDIO_BCLK */
+				<RA_PSEL(RA_PSEL_SSIE, 4, 4)>, /* AUDIO_WCLK */
+				<RA_PSEL(RA_PSEL_SSIE, 4, 5)>, /* AUDIO_SSITX */
+				<RA_PSEL(RA_PSEL_SSIE, 4, 6)>; /* AUDIO_SSIRX */
+			drive-strength = "medium";
+		};
+	};
+
+	pwm2_default: pwm2_default {
+		group1 {
+			/* GTIOC2A, AUDIO_MCLK */
+			psels = <RA_PSEL(RA_PSEL_GPT1, 13, 6)>;
+			drive-strength = "medium";
+		};
+	};
+
 	usbhs_default: usbhs_default {
 		group1 {
 			psels = <RA_PSEL(RA_PSEL_USBHS, 4, 8)>; /* VBUS */

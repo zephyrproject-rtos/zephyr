@@ -71,6 +71,7 @@ Cortex®-M33 core running up to 250 MHz with the following features:
 - Ethernet (RJ45 RGMII interface)
 - USB High Speed Host and Device (USB-C connector)
 - 512 Mb (64 MB) External Octo-SPI Flash (present in the MCU Native Pin Access area of the EK-RA8P1 board)
+- DA7212 audio CODEC with a speaker connector (J33)
 
 Hardware
 ********
@@ -94,6 +95,28 @@ Supported Features
      +-------------+-------------+----------------+---------------+-----------+------------+-------------+-------------+
      |     OFF     |     OFF     |      OFF       |     OFF       |     OFF   |     ON     |     OFF     |    OFF      |
      +-------------+-------------+----------------+---------------+-----------+------------+-------------+-------------+
+
+Audio CODEC
+===========
+
+The DA7212 CODEC is controlled over ``iic1`` at address 0x1a and carries audio over SSIE0:
+BCLK on P403, WCLK on P404, data to the CODEC on P405 and data from it on P406. Its speaker
+output is on connector J33; the headphone and line pin header J38 is not populated.
+
+P405 and P406 are shared with the parallel camera, so the CODEC and the camera cannot be used
+at the same time. The links on J41 connect them to the CODEC and are fitted by default; remove
+them to use the parallel camera.
+
+GPT2 drives AUDIO_MCLK on PD06, which is both the CODEC's master clock and, over the internal
+GPT route, the SSIE audio clock from which the bit clock is divided.
+
+.. note::
+
+   The DA7212 expects a 12.288 MHz SYSCLK for the 48 kHz sample rate family, and the Zephyr
+   driver runs the CODEC with its PLL bypassed, so SYSCLK is whatever MCLK is. 12.288 MHz is
+   not an integer division of this board's 300 MHz GPTCLK, so ``audio_clock`` runs at
+   12.5 MHz and every sample rate lands 1.7% high. Using the CODEC's PLL would remove the
+   constraint but the driver does not support it yet.
 
 Dual Core Operation
 *******************
