@@ -1,0 +1,12 @@
+# SPDX-License-Identifier: Apache-2.0
+
+cmake_minimum_required(VERSION 3.28.0)
+
+find_package(Zephyr COMPONENTS unittest REQUIRED HINTS $ENV{ZEPHYR_BASE})
+
+project(timer_core)
+
+target_sources(testbinary PRIVATE src/main.c ${ZEPHYR_BASE}/lib/os/div64.c)
+# The reciprocal of a constant divisor is only derived when the optimizer folds it.
+set_source_files_properties(src/main.c PROPERTIES COMPILE_OPTIONS -Os)
+target_include_directories(testbinary PRIVATE ${ZEPHYR_BASE}/drivers/timer)
