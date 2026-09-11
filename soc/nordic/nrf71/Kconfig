@@ -80,4 +80,11 @@ config SOC_NRF7120_TFM_MRAMC_SERVICE
 	  This service allows the non-secure application to request
 	  the system to configure MRAMC using a secure service call.
 
+config SOC_NRF7120_DEVELOP_IN_NRF7120E
+	bool
+	help
+	  The nrf7120dk board can be used to develop the nRF7120 or nRF7120E SoCs
+	  onto the nRF7120E DK. This symbol needs to be considered by certain system
+	  initialization functionality residing in SoC erratas.
+
 endif # SOC_SERIES_NRF71
