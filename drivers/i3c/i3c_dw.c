@@ -1374,6 +1374,8 @@ static int dw_i3c_xfers(const struct device *dev, struct i3c_device_desc *target
 {
 	struct dw_i3c_data *data = dev->data;
 	struct dw_i3c_xfer *xfer = &data->xfer;
+	uint32_t dev_ctrl;
+	uint32_t desired_ctrl;
 	int32_t ret, i, pos, nrxwords = 0, ntxwords = 0;
 
 	if (!dw_i3c_is_current_controller(dev)) {
@@ -1430,16 +1432,6 @@ static int dw_i3c_xfers(const struct device *dev, struct i3c_device_desc *target
 		cmd->cmd_lo = COMMAND_PORT_TID(i) | COMMAND_PORT_DEV_INDEX(pos) | COMMAND_PORT_ROC;
 
 		cmd->buf = msgs[i].buf;
-
-		if (msgs[i].flags & I3C_MSG_NBCH) {
-			sys_write32(sys_read32(dw_i3c_regs(dev) + DEVICE_CTRL) &
-					    ~DEV_CTRL_IBA_INCLUDE,
-				    dw_i3c_regs(dev) + DEVICE_CTRL);
-		} else {
-			sys_write32(sys_read32(dw_i3c_regs(dev) + DEVICE_CTRL) |
-					    DEV_CTRL_IBA_INCLUDE,
-				    dw_i3c_regs(dev) + DEVICE_CTRL);
-		}
 
 		if (msgs[i].flags & I3C_MSG_READ) {
 			uint8_t rd_speed;
@@ -1529,6 +1521,19 @@ static int dw_i3c_xfers(const struct device *dev, struct i3c_device_desc *target
 		if (i == (num_msgs - 1)) {
 			cmd->cmd_lo |= COMMAND_PORT_TOC;
 		}
+	}
+
+	/* IBA_INCLUDE is a single controller-wide bit, so a per-message NBCH flag
+	 * cannot be honoured: the whole submission takes the first message's.
+	 */
+	dev_ctrl = sys_read32(dw_i3c_regs(dev) + DEVICE_CTRL);
+	if ((msgs[0].flags & I3C_MSG_NBCH) != 0U) {
+		desired_ctrl = dev_ctrl & ~DEV_CTRL_IBA_INCLUDE;
+	} else {
+		desired_ctrl = dev_ctrl | DEV_CTRL_IBA_INCLUDE;
+	}
+	if (desired_ctrl != dev_ctrl) {
+		sys_write32(desired_ctrl, dw_i3c_regs(dev) + DEVICE_CTRL);
 	}
 
 	start_xfer(dev);
