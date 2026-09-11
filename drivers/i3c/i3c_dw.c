@@ -183,12 +183,15 @@ LOG_MODULE_REGISTER(i3c_dw, CONFIG_I3C_DW_LOG_LEVEL);
 
 #ifdef CONFIG_I3C_USE_IBI
 #define INTR_MASTER_MASK (INTR_TRANSFER_ERR_STAT | INTR_RESP_READY_STAT | INTR_IBI_THLD_STAT)
-#else
-#define INTR_MASTER_MASK (INTR_TRANSFER_ERR_STAT | INTR_RESP_READY_STAT)
-#endif
 #define INTR_SLAVE_MASK                                                                            \
 	(INTR_TRANSFER_ERR_STAT | INTR_IBI_UPDATED_STAT | INTR_READ_REQ_RECV_STAT |                \
 	 INTR_DYN_ADDR_ASSGN_STAT | INTR_RESP_READY_STAT)
+#else
+#define INTR_MASTER_MASK (INTR_TRANSFER_ERR_STAT | INTR_RESP_READY_STAT)
+#define INTR_SLAVE_MASK                                                                            \
+	(INTR_TRANSFER_ERR_STAT | INTR_READ_REQ_RECV_STAT | INTR_DYN_ADDR_ASSGN_STAT |             \
+	 INTR_RESP_READY_STAT)
+#endif
 
 #define QUEUE_STATUS_LEVEL             0x4c
 #define QUEUE_STATUS_IBI_STATUS_CNT(x) (((x) & GENMASK(28, 24)) >> 24)
@@ -1689,12 +1692,14 @@ static int i3c_dw_irq(const struct device *dev)
 			k_sem_give(&data->ibi_sts_sem);
 			sys_write32(INTR_IBI_UPDATED_STAT, config->regs + INTR_STATUS);
 		}
+#endif /* CONFIG_I3C_USE_IBI */
 		/* DA has been assigned, could happen after a IBI HJ request */
 		if (status & INTR_DYN_ADDR_ASSGN_STAT) {
+#ifdef CONFIG_I3C_USE_IBI
 			k_sem_give(&data->sem_hj);
+#endif /* CONFIG_I3C_USE_IBI */
 			sys_write32(INTR_DYN_ADDR_ASSGN_STAT, config->regs + INTR_STATUS);
 		}
-#endif /* CONFIG_I3C_USE_IBI */
 	}
 #endif /* CONFIG_I3C_TARGET */
 
