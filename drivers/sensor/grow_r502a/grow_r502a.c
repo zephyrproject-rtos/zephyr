@@ -182,6 +182,16 @@ static void uart_cb_handler(const struct device *dev, void *user_data)
 				drv_data->pkt_len = sys_get_be16(
 							&drv_data->rx_buf.data[R502A_PKG_LEN_IDX]
 							);
+
+				/* Body must fit in the caller's packet buffer */
+				if (drv_data->pkt_len < R502A_CHECKSUM_LEN ||
+				    drv_data->pkt_len > CONFIG_R502A_DATA_PKT_SIZE) {
+					LOG_ERR("Invalid packet length %u", drv_data->pkt_len);
+					uart_irq_rx_disable(dev);
+					k_sem_give(&drv_data->uart_rx_sem);
+					break;
+				}
+
 				continue;
 			}
 
