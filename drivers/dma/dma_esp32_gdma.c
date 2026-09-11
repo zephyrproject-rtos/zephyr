@@ -249,6 +249,33 @@ static void IRAM_ATTR dma_esp32_pm_policy_state_lock_put(struct dma_esp32_channe
 }
 #endif
 
+/* The GDMA writes dw0.length and dw0.owner back, so the cached copy goes
+ * stale. Read them through the non-cacheable alias where the SoC has one,
+ * which leaves the CPU-owned fields in the same line alone, and invalidate
+ * where it does not.
+ */
+#if defined(SOC_NON_CACHEABLE_OFFSET_SRAM)
+static inline esp_dma_desc_t *dma_esp32_desc_uncached(esp_dma_desc_t *desc)
+{
+	uintptr_t addr = (uintptr_t)desc;
+
+	if (desc == NULL || addr < SOC_DRAM_LOW || addr >= SOC_DRAM_HIGH) {
+		return desc;
+	}
+
+	return (esp_dma_desc_t *)(addr + SOC_NON_CACHEABLE_OFFSET_SRAM);
+}
+#else
+static inline esp_dma_desc_t *dma_esp32_desc_uncached(esp_dma_desc_t *desc)
+{
+	if (desc != NULL) {
+		sys_cache_data_invd_range(desc, sizeof(*desc));
+	}
+
+	return desc;
+}
+#endif
+
 /* The successful-EOF register is a latch and keeps its value until the next
  * EOF, so it can still name a descriptor from an earlier configuration. Only
  * trust it inside this channel's own list.
@@ -814,17 +841,12 @@ static int IRAM_ATTR dma_esp32_get_status(const struct device *dev, uint32_t cha
 		}
 
 		if (dma_esp32_desc_in_list(dma_channel, desc)) {
-			/*
-			 * The GDMA writes the received length back into the
-			 * descriptor in memory. On SoCs with a data cache the CPU
-			 * copy is stale, so invalidate just the prefetched
-			 * descriptor before reading dw0.length.
-			 */
-			sys_cache_data_invd_range(desc, sizeof(*desc));
+			esp_dma_desc_t *desc_nc = dma_esp32_desc_uncached(desc);
+
 			status->read_position = desc - dma_channel->desc_list;
-			status->total_copied = desc->dw0.length
-						+ dma_channel->desc_list[0].dw0.size
-						* status->read_position;
+			status->total_copied =
+				desc_nc->dw0.length +
+				dma_channel->desc_list[0].dw0.size * status->read_position;
 		}
 	} else if (dma_channel->dir == DMA_TX) {
 		status->busy = !dma_ll_tx_is_fsm_idle(data, dma_channel->channel_id);
