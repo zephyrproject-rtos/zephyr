@@ -455,6 +455,11 @@ if(CONFIG_GEN_UICR_SECONDARY_GENERATE_PERIPHCONF AND IRONSIDE_SE_PERIPHCONF_REGI
   )
 endif()
 
+if(NOT CONFIG_GEN_UICR_VALIDATE_PERIPHCONF)
+  set(periphconf_validate_build_command)
+  set(secondary_periphconf_validate_build_command)
+endif()
+
 add_custom_command(
   OUTPUT ${gen_uicr_outputs}
   COMMAND ${PYTHON_EXECUTABLE} ${IRONSIDE_SUPPORT_DIR}/se/tool/ironside/__main__.py
