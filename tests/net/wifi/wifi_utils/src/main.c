@@ -75,4 +75,72 @@ ZTEST(net_wifi_utils, test_chan_to_band_agrees_with_validators)
 	}
 }
 
+struct chan_to_freq_test {
+	enum wifi_frequency_bands band;
+	uint16_t chan;
+	uint16_t freq;
+};
+
+static const struct chan_to_freq_test chan_to_freq_tests[] = {
+	/* 2.4 GHz, including channel 14 which breaks the 5 MHz spacing. */
+	{WIFI_FREQ_BAND_2_4_GHZ, 1, 2412},
+	{WIFI_FREQ_BAND_2_4_GHZ, 13, 2472},
+	{WIFI_FREQ_BAND_2_4_GHZ, 14, 2484},
+
+	/* 5 GHz, spanning the low and high parts of the band. */
+	{WIFI_FREQ_BAND_5_GHZ, 36, 5180},
+	{WIFI_FREQ_BAND_5_GHZ, 108, 5540},
+	{WIFI_FREQ_BAND_5_GHZ, 165, 5825},
+
+	/* 6 GHz, where channel 2 is the odd one out and 233 is the top. */
+	{WIFI_FREQ_BAND_6_GHZ, 1, 5955},
+	{WIFI_FREQ_BAND_6_GHZ, 2, 5935},
+	{WIFI_FREQ_BAND_6_GHZ, 233, 7115},
+
+	/* Channels that are not valid in the band asked for. */
+	{WIFI_FREQ_BAND_2_4_GHZ, 0, 0},
+	{WIFI_FREQ_BAND_2_4_GHZ, 15, 0},
+	{WIFI_FREQ_BAND_5_GHZ, 14, 0},
+	{WIFI_FREQ_BAND_5_GHZ, 37, 0},
+	{WIFI_FREQ_BAND_6_GHZ, 234, 0},
+	{WIFI_FREQ_BAND_UNKNOWN, 1, 0},
+	{WIFI_FREQ_BAND_SUB_1_GHZ, 1, 0},
+};
+
+ZTEST(net_wifi_utils, test_chan_to_freq)
+{
+	for (int i = 0; i < ARRAY_SIZE(chan_to_freq_tests); i++) {
+		const struct chan_to_freq_test *t = &chan_to_freq_tests[i];
+
+		zexpect_equal(wifi_utils_chan_to_freq(t->band, t->chan), t->freq,
+			      "Channel %u in band %d is not %u MHz", t->chan, t->band, t->freq);
+	}
+}
+
+ZTEST(net_wifi_utils, test_chan_to_freq_agrees_with_validators)
+{
+	/* A channel that is valid in a band must produce a frequency, and one
+	 * that is not must produce none.
+	 */
+	static const enum wifi_frequency_bands bands[] = {
+		WIFI_FREQ_BAND_2_4_GHZ,
+		WIFI_FREQ_BAND_5_GHZ,
+		WIFI_FREQ_BAND_6_GHZ,
+	};
+
+	for (int i = 0; i < ARRAY_SIZE(bands); i++) {
+		for (uint16_t chan = 0; chan <= 300; chan++) {
+			uint16_t freq = wifi_utils_chan_to_freq(bands[i], chan);
+
+			if (wifi_utils_validate_chan(bands[i], chan)) {
+				zexpect_not_equal(freq, 0, "Channel %u in band %d has no frequency",
+						  chan, bands[i]);
+			} else {
+				zexpect_equal(freq, 0, "Channel %u in band %d has a frequency",
+					      chan, bands[i]);
+			}
+		}
+	}
+}
+
 ZTEST_SUITE(net_wifi_utils, NULL, NULL, NULL, NULL, NULL);
