@@ -1,0 +1,19 @@
+/*
+ * SPDX-FileCopyrightText: Copyright 2026 NXP
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	aliases {
+		sdhc0 = &usdhc1;
+	};
+};
+
+&usdhc1 {
+	status = "okay";
+
+	mmc {
+		status = "okay";
+	};
+};
