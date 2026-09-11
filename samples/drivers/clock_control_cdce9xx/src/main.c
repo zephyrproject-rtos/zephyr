@@ -49,7 +49,7 @@ static int cmd_get_rate(const struct shell *p_shell_ctx, size_t argc, char **p_a
 {
 	if (argc == 2) {
 		int which = strtol(p_argv[1], NULL, 10);
-		int rate;
+		uint32_t rate;
 		int rc = clock_control_get_rate(clock_dev, (clock_control_subsys_t)which, &rate);
 
 		if (rc == 0) {
