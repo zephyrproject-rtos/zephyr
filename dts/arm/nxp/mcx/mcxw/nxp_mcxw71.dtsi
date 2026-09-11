@@ -32,6 +32,7 @@
 
 &flash {
 	reg = <0x0 DT_SIZE_M(1)>;
+	ranges = <0x0 0x0 DT_SIZE_M(1)>;
 };
 
 &ctcm {
