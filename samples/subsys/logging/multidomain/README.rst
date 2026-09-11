@@ -18,8 +18,7 @@ The following targets are supported:
 * ``nrf5340bsim/nrf5340/cpuapp``
 * ``nrf54l15dk/nrf54l15/cpuapp``
 
-On the nRF5340 the IPC service uses the OpenAMP static vrings backend, while on the nRF54L15
-the HOST (application core) and the REMOTE (FLPR core) communicate over the ICBMsg backend.
+On the nRF5340 and nRF54L15 the HOST and REMOTE cores communicate over the ICBMsg IPC backend.
 
 Building and Running
 ********************
