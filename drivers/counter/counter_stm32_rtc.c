@@ -389,12 +389,7 @@ static int rtc_stm32_start(const struct device *dev)
 
 	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
 	stm32_backup_domain_enable_access();
-#ifdef CONFIG_SOC_SERIES_STM32U3X
-	/* STM32U3 series uses LL_RCC_RTC_ClockEnable instead of LL_RCC_EnableRTC */
-	LL_RCC_RTC_ClockEnable();
-#else
 	LL_RCC_EnableRTC();
-#endif /* CONFIG_SOC_SERIES_STM32U3X */
 	stm32_backup_domain_disable_access();
 	z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
 #endif /* CONFIG_SOC_SERIES_STM32WBAX || CONFIG_SOC_SERIES_STM32U5X */
@@ -419,12 +414,7 @@ static int rtc_stm32_stop(const struct device *dev)
 
 	z_stm32_hsem_lock(CFG_HW_RCC_SEMID, HSEM_LOCK_DEFAULT_RETRY);
 	stm32_backup_domain_enable_access();
-#ifdef CONFIG_SOC_SERIES_STM32U3X
-	/* STM32U3 series uses LL_RCC_RTC_ClockDisable instead of LL_RCC_DisableRTC */
-	LL_RCC_RTC_ClockDisable();
-#else
 	LL_RCC_DisableRTC();
-#endif /* CONFIG_SOC_SERIES_STM32U3X */
 	stm32_backup_domain_disable_access();
 	z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
 #endif /* CONFIG_SOC_SERIES_STM32WBAX || CONFIG_SOC_SERIES_STM32U5X */
@@ -783,12 +773,7 @@ static int rtc_stm32_init(const struct device *dev)
 	}
 
 #if !defined(CONFIG_SOC_SERIES_STM32WBAX)
-#ifdef CONFIG_SOC_SERIES_STM32U3X
-	/* STM32U3 series uses LL_RCC_RTC_ClockEnable instead of LL_RCC_EnableRTC */
-	LL_RCC_RTC_ClockEnable();
-#else
 	LL_RCC_EnableRTC();
-#endif /* CONFIG_SOC_SERIES_STM32U3X */
 #endif /* !CONFIG_SOC_SERIES_STM32WBAX */
 
 	z_stm32_hsem_unlock(CFG_HW_RCC_SEMID);
