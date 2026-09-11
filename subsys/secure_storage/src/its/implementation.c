@@ -190,6 +190,7 @@ static psa_status_t its_set(secure_storage_its_caller_id_t caller_id, psa_storag
 	ret = store_entry(its_uid, data_length, p_data, create_flags);
 	return ret;
 }
+
 psa_status_t secure_storage_its_get(secure_storage_its_caller_id_t caller_id, psa_storage_uid_t uid,
 				    size_t data_offset, size_t data_size,
 				    void *p_data, size_t *p_data_length)
@@ -202,10 +203,6 @@ psa_status_t secure_storage_its_get(secure_storage_its_caller_id_t caller_id, ps
 
 	if (make_its_uid(caller_id, uid, &its_uid) != PSA_SUCCESS) {
 		return PSA_ERROR_INVALID_ARGUMENT;
-	}
-	if (data_size == 0) {
-		*p_data_length = 0;
-		return PSA_SUCCESS;
 	}
 
 	ret = get_stored_data(its_uid, stored_data, &stored_data_len);
