@@ -800,6 +800,90 @@ static void hfclkaudio_init(void)
 #endif
 }
 
+#if NRF_CLOCK_FEATURE_HFCLK_DIVIDE_PRESENT
+
+#define HFCLK_CLOCK_FREQUENCIES                                                                    \
+	DT_PROP(DT_COMPAT_GET_ANY_STATUS_OKAY(nordic_nrf_clock_hfclk), supported_clock_frequencies)
+#define HFCLK_CLOCK_FREQUENCIES_SIZE                                                               \
+	DT_PROP_LEN(DT_COMPAT_GET_ANY_STATUS_OKAY(nordic_nrf_clock_hfclk),                         \
+		    supported_clock_frequencies)
+
+#define HFCLK192M_CLOCK_FREQUENCIES                                                                \
+	DT_PROP(DT_COMPAT_GET_ANY_STATUS_OKAY(nordic_nrf_clock_hfclk192m),                         \
+		supported_clock_frequencies)
+#define HFCLK192M_CLOCK_FREQUENCIES_SIZE                                                           \
+	DT_PROP_LEN(DT_COMPAT_GET_ANY_STATUS_OKAY(nordic_nrf_clock_hfclk192m),                     \
+		    supported_clock_frequencies)
+
+static const uint32_t supported_frequencies_hfclk[HFCLK_CLOCK_FREQUENCIES_SIZE] =
+	HFCLK_CLOCK_FREQUENCIES;
+static const uint32_t supported_frequencies_hfclk192m[HFCLK192M_CLOCK_FREQUENCIES_SIZE] =
+	HFCLK192M_CLOCK_FREQUENCIES;
+
+static int api_set_rate(const struct device *dev, clock_control_subsys_t sys,
+			  clock_control_subsys_rate_t rate)
+{
+	uint32_t freq_hz = (uint32_t)(uintptr_t)rate;
+	nrf_clock_hfclk_div_t div = UINT8_MAX;
+	const uint32_t *supported_frequencies = NULL;
+	uint32_t supported_frequencies_size = 0;
+
+	if ((enum clock_control_nrf_type)(size_t)sys == CLOCK_CONTROL_NRF_TYPE_HFCLK) {
+		supported_frequencies = supported_frequencies_hfclk;
+		supported_frequencies_size = HFCLK_CLOCK_FREQUENCIES_SIZE;
+	} else if ((enum clock_control_nrf_type)(size_t)sys == CLOCK_CONTROL_NRF_TYPE_HFCLK192M) {
+		supported_frequencies = supported_frequencies_hfclk192m;
+		supported_frequencies_size = HFCLK192M_CLOCK_FREQUENCIES_SIZE;
+	} else {
+		return -ENOSYS;
+	}
+
+	for (uint32_t i = 0; i < supported_frequencies_size; i++) {
+		if (supported_frequencies[i] == freq_hz) {
+			div = i;
+			break;
+		}
+	}
+
+	if (div == UINT8_MAX) {
+		return -ENOTSUP;
+	}
+
+	if (sys == CLOCK_CONTROL_NRF_TYPE_HFCLK) {
+		if (nrfx_clock_hfclk_divider_get() == div) {
+			return -EALREADY;
+		}
+
+		nrfx_clock_hfclk_divider_set(div);
+	} else {
+		if (nrfx_clock_hfclk192m_divider_get() == div) {
+			return -EALREADY;
+		}
+
+		nrfx_clock_hfclk192m_divider_set(div);
+	}
+
+	return 0;
+}
+
+static int api_get_rate(const struct device *dev, clock_control_subsys_t sys,
+			  uint32_t *rate)
+{
+	ARG_UNUSED(dev);
+
+	if ((enum clock_control_nrf_type)(size_t)sys == CLOCK_CONTROL_NRF_TYPE_HFCLK) {
+		*rate = supported_frequencies_hfclk[nrfx_clock_hfclk_divider_get()];
+	} else if ((enum clock_control_nrf_type)(size_t)sys == CLOCK_CONTROL_NRF_TYPE_HFCLK192M) {
+		*rate = supported_frequencies_hfclk192m[nrfx_clock_hfclk192m_divider_get()];
+	} else {
+		return -ENOSYS;
+	}
+
+	return 0;
+}
+
+#endif /* NRF_CLOCK_FEATURE_HFCLK_DIVIDE_PRESENT */
+
 static int clk_init(const struct device *dev)
 {
 	int err;
@@ -851,6 +935,10 @@ static DEVICE_API(clock_control, clock_control_api) = {
 	.off = api_stop,
 	.async_on = api_start,
 	.get_status = get_status,
+#if NRF_CLOCK_FEATURE_HFCLK_DIVIDE_PRESENT
+	.set_rate = api_set_rate,
+	.get_rate = api_get_rate,
+#endif
 };
 
 static struct nrf_clock_control_data data;
