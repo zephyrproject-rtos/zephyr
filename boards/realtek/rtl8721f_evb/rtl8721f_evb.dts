@@ -23,6 +23,10 @@
 		zephyr,code-partition = &slot0_partition;
 		zephyr,bt-hci = &bt;
 	};
+
+	aliases {
+		die-temp0 = &coretemp;
+	};
 };
 
 &flash0 {
@@ -56,6 +60,10 @@
 };
 
 &loguart {
+	status = "okay";
+};
+
+temp_sensor: &coretemp {
 	status = "okay";
 };
 
