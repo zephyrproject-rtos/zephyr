@@ -525,7 +525,7 @@ static int sw_set_clock(const struct device *dev, const uint32_t clock)
 
 	sw_data->clock_delay = delay;
 
-	LOG_WRN("cpu_clock %d, delay %d", CPU_CLOCK, sw_data->clock_delay);
+	LOG_DBG("cpu_clock %d, delay %d", CPU_CLOCK, sw_data->clock_delay);
 
 	return 0;
 }
