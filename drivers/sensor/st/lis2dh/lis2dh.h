@@ -15,6 +15,10 @@
 #include <zephyr/drivers/sensor.h>
 #include <string.h>
 
+#ifdef CONFIG_SENSOR_ASYNC_API
+#include <zephyr/rtio/rtio.h>
+#endif
+
 #define LIS2DH_REG_WAI			0x0f
 #define LIS2DH_CHIP_ID			0x33
 #define LIS2DH_POR_WAIT_MS		5
@@ -291,6 +295,11 @@ struct lis2dh_data {
 
 	uint8_t reg_ctrl1_active_val;
 
+#ifdef CONFIG_SENSOR_ASYNC_API
+	/* Serializes register accesses, including RTIO submissions. */
+	struct k_mutex lock;
+#endif
+
 #ifdef CONFIG_LIS2DH_TRIGGER
 	const struct device *dev;
 	struct gpio_callback gpio_int1_cb;
@@ -316,6 +325,38 @@ struct lis2dh_data {
 #endif /* CONFIG_LIS2DH_TRIGGER */
 };
 
+static inline void lis2dh_lock(const struct device *dev)
+{
+#ifdef CONFIG_SENSOR_ASYNC_API
+	struct lis2dh_data *data = dev->data;
+
+	(void)k_mutex_lock(&data->lock, K_FOREVER);
+#else
+	ARG_UNUSED(dev);
+#endif
+}
+
+static inline void lis2dh_unlock(const struct device *dev)
+{
+#ifdef CONFIG_SENSOR_ASYNC_API
+	struct lis2dh_data *data = dev->data;
+
+	(void)k_mutex_unlock(&data->lock);
+#else
+	ARG_UNUSED(dev);
+#endif
+}
+
+static inline uint64_t lis2dh_timestamp_ns(void)
+{
+#ifdef CONFIG_TIMER_HAS_64BIT_CYCLE_COUNTER
+	return k_cyc_to_ns_floor64(k_cycle_get_64());
+#else
+	/* Uptime extends narrow hardware counters across wraps. */
+	return k_ticks_to_ns_floor64(k_uptime_ticks());
+#endif
+}
+
 #if DT_ANY_INST_ON_BUS_STATUS_OKAY(spi)
 int lis2dh_spi_access(struct lis2dh_data *ctx, uint8_t cmd,
 		      void *data, size_t length);
@@ -331,6 +372,11 @@ int lis2dh_init_interrupt(const struct device *dev);
 int lis2dh_acc_slope_config(const struct device *dev,
 			    enum sensor_attribute attr,
 			    const struct sensor_value *val);
+#endif
+
+#ifdef CONFIG_SENSOR_ASYNC_API
+void lis2dh_submit(const struct device *dev, struct rtio_iodev_sqe *iodev_sqe);
+int lis2dh_get_decoder(const struct device *dev, const struct sensor_decoder_api **decoder);
 #endif
 
 int lis2dh_spi_init(const struct device *dev);
