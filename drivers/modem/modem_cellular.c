@@ -1862,6 +1862,7 @@ static void modem_cellular_run_dial_script_event_handler(struct modem_cellular_d
 
 static int modem_cellular_on_run_dial_script_state_leave(struct modem_cellular_data *data)
 {
+	data->cmd_pipe = data->dlci1_pipe;
 	return modem_chat_attach(&data->chat, data->dlci1_pipe);
 }
 
