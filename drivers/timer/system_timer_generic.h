@@ -203,6 +203,25 @@
 #define TIMER_CORE_TICK_IS_WHOLE 1
 #else /* tick is not a whole number of cycles */
 #define TIMER_CORE_TICK_IS_WHOLE 0
+/*
+ * The conversions carry a remainder here, which costs a little code and time
+ * on the announce and arm paths. A tick rate that divides the hardware cycle
+ * rate avoids it: against 32768 Hz, 1024 ticks/s instead of 1000 takes
+ * nrf_rtc_timer from 2074 bytes to 1758.
+ *
+ * Kept a warning even with warnings as errors, as twister builds by default:
+ * the configuration works. A toolchain without the GCC diagnostic pragma uses
+ * its default severity.
+ */
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic warning "-Wcpp"
+#endif /* __GNUC__ || __clang__ */
+#warning "CONFIG_SYS_CLOCK_TICKS_PER_SEC does not divide the hardware cycle rate, so the tick \
+conversions cost a little more; pick a rate that divides it if possible"
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
+#endif /* __GNUC__ || __clang__ */
 #endif /* tick is a whole number of cycles */
 #else  /* !TIMER_CORE_CYC_PER_TICK_IS_CONSTANT */
 /* The ratio may be exact in the end; nothing readable here can say so. */
