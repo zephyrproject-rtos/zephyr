@@ -18,6 +18,7 @@ struct pio_rpi_pico_config {
 	const struct device *clk_dev;
 	clock_control_subsys_t clk_id;
 	const struct reset_dt_spec reset;
+	uint8_t gpio_base;
 };
 
 int pio_rpi_pico_allocate_sm(const struct device *dev, size_t *sm)
@@ -49,6 +50,25 @@ static int pio_rpi_pico_init(const struct device *dev)
 		return ret;
 	}
 
+	/*
+	 * Select the 32-pin window this instance addresses. Only 0 and 16 are
+	 * valid: 0 gives GP0-GP31, 16 gives GP16-GP47. On packages with more
+	 * than 32 GPIOs this is the only way to reach pins above GP31.
+	 *
+	 * It must be applied before any program is loaded, which is why it is
+	 * done here rather than left to a consumer -- every PIO consumer
+	 * initialises later than this driver.
+	 */
+#if PICO_PIO_USE_GPIO_BASE
+	if (pio_set_gpio_base(config->pio, config->gpio_base) != PICO_OK) {
+		return -EINVAL;
+	}
+#else
+	if (config->gpio_base != 0) {
+		return -ENOTSUP;
+	}
+#endif
+
 	return 0;
 }
 
@@ -58,6 +78,7 @@ static int pio_rpi_pico_init(const struct device *dev)
 		.clk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR(idx)),                                \
 		.clk_id = (clock_control_subsys_t)DT_INST_PHA_BY_IDX(0, clocks, 0, clk_id),        \
 		.reset = RESET_DT_SPEC_INST_GET(idx),                                              \
+		.gpio_base = DT_INST_PROP_OR(idx, gpio_base, 0),                                   \
 	};                                                                                         \
                                                                                                    \
 	DEVICE_DT_INST_DEFINE(idx, &pio_rpi_pico_init, NULL, NULL, &pio_rpi_pico_config_##idx,     \
