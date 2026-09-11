@@ -256,3 +256,28 @@ tests:
     extra_configs:
       - CONFIG_PICOLIBC=y
       - CONFIG_THREAD_LOCAL_STORAGE=y
+
+  # Regression test for virtual dispatch through a C++ class whose vtable
+  # has weak (STB_WEAK), not global, ELF binding - i.e. a class with no key
+  # function per the Itanium C++ ABI. Any class whose virtual methods are
+  # all defined inline in the class body hits this; it is the common case,
+  # not an exotic one.
+  #
+  # xtensa only: this also exercises the xtensa-specific GLOB_DAT/JMP_SLOT
+  # weak-binding + addend fix. ARM is intentionally excluded here: with
+  # CONFIG_LLEXT_TYPE_ELF_OBJECT (ARM's default llext binary type), a C++
+  # TU with multiple vague-linkage (COMDAT) text/rodata sections - which this
+  # test needs in order to reproduce the bug - lays out interleaved in the
+  # raw compiled object, which the llext loader's region-overlap check
+  # (rightly) rejects. This is a separate, pre-existing llext limitation,
+  # unrelated to the weak-vtable relocation fix under test here.
+  llext.weak_vtable_cpp:
+    arch_allow:
+      - xtensa
+    integration_platforms:
+      - qemu_xtensa/dc233c      # Xtensa ISA
+    extra_conf_files: ['no_mem_protection.conf']
+    extra_configs:
+      - CONFIG_LLEXT_STORAGE_WRITABLE=y
+      - CONFIG_CPP=y
+      - CONFIG_STD_CPP17=y

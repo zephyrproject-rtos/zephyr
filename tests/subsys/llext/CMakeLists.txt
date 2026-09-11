@@ -82,6 +82,27 @@ endif()
 # implements these in arch_elf_relocate(); a libc whose errno is genuinely
 # __thread (toolchain picolibc with thread-local storage) is enabled by the
 # llext.tls scenario.
+# A C++ extension exercising virtual dispatch through a vtable with weak
+# (STB_WEAK) ELF binding, i.e. a class with no key function per the Itanium
+# C++ ABI (see weak_vtable_ext.cpp for details). Reproduces a real llext bug
+# where such symbols were silently skipped by the relocation dispatch and/or
+# missing from the extension symbol table.
+if(CONFIG_CPP)
+  add_llext_target(weak_vtable_ext
+    OUTPUT  ${PROJECT_BINARY_DIR}/llext/weak_vtable.llext
+    SOURCES ${PROJECT_SOURCE_DIR}/src/weak_vtable_ext.cpp
+  )
+  get_target_property(weak_vtable_lib weak_vtable_ext lib_target)
+  target_compile_options(${weak_vtable_lib} PRIVATE
+    $<$<COMPILE_LANGUAGE:CXX>:-std=c++17>
+    -fno-rtti
+    -fno-exceptions
+  )
+  generate_inc_file_for_target(app ${PROJECT_BINARY_DIR}/llext/weak_vtable.llext
+    ${ZEPHYR_BINARY_DIR}/include/generated/weak_vtable.inc
+  )
+endif()
+
 if(CONFIG_ARM64 AND CONFIG_THREAD_LOCAL_STORAGE)
   add_llext_target(tls_ext
     OUTPUT  ${PROJECT_BINARY_DIR}/llext/tls.llext
