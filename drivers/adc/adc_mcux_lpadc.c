@@ -1097,11 +1097,11 @@ static DEVICE_API(adc, mcux_lpadc_driver_api) = {
 #endif
 
 #if CONFIG_PM_DEVICE
-#define LPADC_PM_DEVICE_DEFINE		PM_DEVICE_DT_INST_DEFINE(n, mcux_lpadc_pm_callback);
-#define LPADC_PM_DEVICE_GET		PM_DEVICE_DT_INST_GET(n)
+#define LPADC_PM_DEVICE_DEFINE(n)	PM_DEVICE_DT_INST_DEFINE(n, mcux_lpadc_pm_callback);
+#define LPADC_PM_DEVICE_GET(n)		PM_DEVICE_DT_INST_GET(n)
 #else
-#define LPADC_PM_DEVICE_DEFINE
-#define LPADC_PM_DEVICE_GET		NULL
+#define LPADC_PM_DEVICE_DEFINE(n)
+#define LPADC_PM_DEVICE_GET(n)		NULL
 #endif
 
 #define LPADC_BANDGAP_SUPPLY_INIT(node_id)							\
@@ -1156,9 +1156,9 @@ static DEVICE_API(adc, mcux_lpadc_driver_api) = {
 		ADC_CONTEXT_INIT_SYNC(mcux_lpadc_data_##n, ctx),				\
 	};											\
 												\
-	LPADC_PM_DEVICE_DEFINE									\
+	LPADC_PM_DEVICE_DEFINE(n)								\
 												\
-	DEVICE_DT_INST_DEFINE(n, mcux_lpadc_init, LPADC_PM_DEVICE_GET, &mcux_lpadc_data_##n,	\
+	DEVICE_DT_INST_DEFINE(n, mcux_lpadc_init, LPADC_PM_DEVICE_GET(n), &mcux_lpadc_data_##n,	\
 			      &mcux_lpadc_config_##n, POST_KERNEL, CONFIG_ADC_INIT_PRIORITY,	\
 			      &mcux_lpadc_driver_api);						\
 												\
