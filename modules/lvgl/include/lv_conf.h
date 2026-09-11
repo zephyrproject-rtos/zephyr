@@ -8,6 +8,7 @@
 #ifndef ZEPHYR_MODULES_LVGL_LV_CONF_H_
 #define ZEPHYR_MODULES_LVGL_LV_CONF_H_
 
+#include <zephyr/sys/__assert.h>
 #include <zephyr/toolchain.h>
 #include <string.h>
 #include <stdint.h>
@@ -30,8 +31,7 @@
 #define lv_free_core      lvgl_free
 #endif
 
-#define LV_ASSERT_HANDLER         __ASSERT_NO_MSG(false);
-#define LV_ASSERT_HANDLER_INCLUDE "zephyr/sys/__assert.h"
+#define LV_ASSERT_HANDLER __ASSERT_NO_MSG(false);
 
 /* Kconfig based settings */
 #include "lvgl_zephyr_kconfig.h"
