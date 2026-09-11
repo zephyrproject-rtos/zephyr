@@ -13,7 +13,7 @@
 &usdhc1 {
 	status = "okay";
 
-	sdmmc {
+	mmc {
 		status = "okay";
 	};
 };
