@@ -1332,6 +1332,13 @@ void ull_conn_done(struct node_rx_event_done *done)
 
 #if defined(CONFIG_BT_CTLR_SLOT_RESERVATION_UPDATE)
 #if defined(CONFIG_BT_CTLR_DATA_LENGTH) || defined(CONFIG_BT_CTLR_PHY)
+	/* Low latency connection intervals reserve only the event overhead,
+	 * refer to ull_conn_update_apply(), hence no event length update.
+	 */
+	if (lll->interval < BT_HCI_LE_INTERVAL_MIN) {
+		lll->evt_len_upd = 0U;
+	}
+
 	if (lll->evt_len_upd) {
 		uint32_t ready_delay, rx_time, tx_time, ticks_slot, slot_us;
 
