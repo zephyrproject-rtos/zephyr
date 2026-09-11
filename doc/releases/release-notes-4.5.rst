@@ -1322,6 +1322,10 @@ New Drivers
   * :dtcompatible:`ti,mspm0-dma` (:github:`91502`)
   * :dtcompatible:`xlnx,zynqmp-dma-1.0` (:github:`101685`)
 
+* :abbr:`DSA (Distributed Switch Architecture)`
+
+  * :dtcompatible:`microchip,ksz8463` (:github:`116253`)
+
 * :abbr:`DSP (Digital Signal Processor)`
 
   * :dtcompatible:`nxp,powerquad` (:github:`110745`)
