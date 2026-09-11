@@ -224,8 +224,9 @@
  * TIMER_CORE_CYC_REM is below the tick rate by construction, which is what
  * keeps the fractional arithmetic inside 32 bits. TIMER_CORE_CYC_RECIP is
  * floor(ticks_per_sec * 2^32 / rate), below 2^32 because the counter is faster
- * than the tick.
+ * than the tick. Neither is wanted where the hardware divides 64 bits itself.
  */
+#if !defined(CONFIG_64BIT)
 #define TIMER_CORE_CYC_REM_OF(rate) ((uint32_t)((rate) % CONFIG_SYS_CLOCK_TICKS_PER_SEC))
 #define TIMER_CORE_CYC_RECIP_OF(rate)                                                              \
 	((uint32_t)(((uint64_t)CONFIG_SYS_CLOCK_TICKS_PER_SEC << 32) / (rate)))
@@ -234,11 +235,14 @@
  * stay inside 32 bits, and CYC_REM is below the tick rate.
  */
 #define TIMER_CORE_MAX_FRAC_SPAN_TICKS (UINT32_MAX / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
+#endif /* !CONFIG_64BIT */
 
 #if TIMER_CORE_RATE_IS_CONSTANT
 #define TIMER_CORE_CYC_PER_TICK (TIMER_CORE_CYCLES_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
-#define TIMER_CORE_CYC_REM      TIMER_CORE_CYC_REM_OF(TIMER_CORE_CYCLES_PER_SEC)
-#define TIMER_CORE_CYC_RECIP    TIMER_CORE_CYC_RECIP_OF(TIMER_CORE_CYCLES_PER_SEC)
+#if !defined(CONFIG_64BIT)
+#define TIMER_CORE_CYC_REM   TIMER_CORE_CYC_REM_OF(TIMER_CORE_CYCLES_PER_SEC)
+#define TIMER_CORE_CYC_RECIP TIMER_CORE_CYC_RECIP_OF(TIMER_CORE_CYCLES_PER_SEC)
+#endif
 /*
  * A counter rate below the tick rate (or a mis-set TIMER_CORE_CYCLES_PER_SEC)
  * rounds this to zero, which the tick math cannot work with. The rate being a
@@ -248,11 +252,13 @@
 BUILD_ASSERT(TIMER_CORE_CYC_PER_TICK != 0, "timer counter rate is below the tick rate");
 #else
 static uint32_t timer_core_cyc_per_tick;
+#define TIMER_CORE_CYC_PER_TICK timer_core_cyc_per_tick
+#if !defined(CONFIG_64BIT)
 static uint32_t timer_core_cyc_rem;
 static uint32_t timer_core_cyc_recip;
-#define TIMER_CORE_CYC_PER_TICK timer_core_cyc_per_tick
-#define TIMER_CORE_CYC_REM      timer_core_cyc_rem
-#define TIMER_CORE_CYC_RECIP    timer_core_cyc_recip
+#define TIMER_CORE_CYC_REM   timer_core_cyc_rem
+#define TIMER_CORE_CYC_RECIP timer_core_cyc_recip
+#endif
 #define TIMER_CORE_PRECOMPUTE_CYC_PER_TICK
 #endif
 
@@ -536,10 +542,45 @@ static inline timer_core_ticks_t timer_core_ticks_at_cyc(uint64_t c)
  * term folded in so the numerator cannot go negative at span zero. Whole ticks
  * spanned by @p c cycles is the same relation inverted.
  *
- * Neither divides by the counter rate. A target without a 64-bit divide has to
- * call into libgcc for one, from the scheduler on whatever thread arms a
- * timeout and paying a stack frame there.
+ * Both divide, and on a 64-bit target that is what the hardware does anyway. A
+ * 32-bit target has no 64-bit divide, so the same code there is a call into
+ * libgcc, taken from the scheduler on whatever thread arms a timeout and paying
+ * a stack frame for it. That target gets the split forms further down instead.
  */
+#if defined(CONFIG_64BIT)
+
+static inline timer_core_cycles_t timer_core_span_cycles(timer_core_ticks_t span)
+{
+	uint64_t n = ((uint64_t)span * TIMER_CORE_CYCLES_PER_SEC) +
+		     ((CONFIG_SYS_CLOCK_TICKS_PER_SEC - 1U) - timer_core_last_rem);
+
+	return (timer_core_cycles_t)(n / CONFIG_SYS_CLOCK_TICKS_PER_SEC);
+}
+
+static inline timer_core_ticks_t timer_core_ticks_in(timer_core_cycles_t c)
+{
+	c = (timer_core_cycles_t)MIN((uint64_t)c, TIMER_CORE_MAX_CONVERTIBLE_CYCLES);
+
+	return (timer_core_ticks_t)((((uint64_t)c * CONFIG_SYS_CLOCK_TICKS_PER_SEC) +
+				     timer_core_last_rem) /
+				    TIMER_CORE_CYCLES_PER_SEC);
+}
+
+/* Move the announce baseline on by @p dticks, keeping it on a tick position and
+ * its remainder with it.
+ */
+static inline void timer_core_advance_baseline(timer_core_ticks_t dticks)
+{
+	uint64_t n = ((uint64_t)dticks * TIMER_CORE_CYCLES_PER_SEC) +
+		     ((CONFIG_SYS_CLOCK_TICKS_PER_SEC - 1U) - timer_core_last_rem);
+
+	timer_core_last_cycle += n / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
+	timer_core_last_rem = (CONFIG_SYS_CLOCK_TICKS_PER_SEC - 1U) -
+			      (uint32_t)(n % CONFIG_SYS_CLOCK_TICKS_PER_SEC);
+	timer_core_last_tick += dticks;
+}
+
+#else /* no 64-bit divide */
 
 /*
  * Scaled numerator shared by the two tick-to-cycle helpers: the fractional
@@ -597,6 +638,8 @@ static inline void timer_core_advance_baseline(timer_core_ticks_t dticks)
 	timer_core_last_tick += dticks;
 }
 
+#endif /* CONFIG_64BIT */
+
 /*
  * The same two directions for a span the counter's width cannot express, which
  * only the recovery announce deals in. It is not on the arm path, so it pays
@@ -642,7 +685,7 @@ static inline void timer_core_advance_baseline64(uint64_t dticks)
  * inside 32 bits. Only a counter both wide and slow reaches that, and the ticks
  * it gives up are ones the arm walks to in more than one step anyway.
  */
-#if TIMER_CORE_TICK_IS_WHOLE
+#if TIMER_CORE_TICK_IS_WHOLE || defined(CONFIG_64BIT)
 #define TIMER_CORE_SPAN_TICKS_OF(c) timer_core_ticks_at_cyc(c)
 #else
 #define TIMER_CORE_SPAN_TICKS_OF(c)                                                                \
@@ -1106,8 +1149,10 @@ static inline void timer_core_rescale(uint32_t to_hz, uint32_t from_hz)
 	 * the baseline below does.
 	 */
 	timer_core_cyc_per_tick = to_hz / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
+#if !defined(CONFIG_64BIT)
 	timer_core_cyc_rem = TIMER_CORE_CYC_REM_OF(to_hz);
 	timer_core_cyc_recip = TIMER_CORE_CYC_RECIP_OF(to_hz);
+#endif
 	timer_core_max_span_ticks = TIMER_CORE_SPAN_TICKS_OF(TIMER_CORE_MAX_UNANNOUNCED_CYCLES);
 #else
 	ARG_UNUSED(to_hz);
@@ -1150,8 +1195,10 @@ static inline void timer_core_init(void)
 	 * fix the cycles-per-tick the tick math will divide by.
 	 */
 	timer_core_cyc_per_tick = TIMER_CORE_CYCLES_PER_SEC / CONFIG_SYS_CLOCK_TICKS_PER_SEC;
+#if !defined(CONFIG_64BIT)
 	timer_core_cyc_rem = TIMER_CORE_CYC_REM_OF(TIMER_CORE_CYCLES_PER_SEC);
 	timer_core_cyc_recip = TIMER_CORE_CYC_RECIP_OF(TIMER_CORE_CYCLES_PER_SEC);
+#endif
 	timer_core_max_span_ticks = TIMER_CORE_SPAN_TICKS_OF(TIMER_CORE_MAX_UNANNOUNCED_CYCLES);
 	/* The rate not being a constant expression, the non-zero check the
 	 * constant case gets at build time happens here instead.
