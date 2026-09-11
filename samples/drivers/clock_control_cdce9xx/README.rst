@@ -71,7 +71,7 @@ Building
 
 .. code-block:: none
 
-  west build -b <board> zephyr/samples/drivers/clock_control -- -DDTC_OVERLAY_FILE=<your overlay>
+  west build -b <board> zephyr/samples/drivers/clock_control_cdce9xx -- -DDTC_OVERLAY_FILE=<your overlay>
 
 Drivers prints useful debugging information to the log. With setting the debug level to DBG results of vco frequency calculation a logged.
 
