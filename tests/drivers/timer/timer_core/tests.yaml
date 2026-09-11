@@ -1,0 +1,128 @@
+common:
+  tags:
+    - drivers
+    - timer
+  type: unit
+tests:
+  # Ratios. The counter rate divides the tick rate in the first, and does not in
+  # the second, which is the nRF LFCLK at 32768Hz asked for a 1000Hz tick.
+  drivers.timer.core.tick_exact:
+    extra_configs:
+      - CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=32768
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=1024
+    extra_args: EXTRA_CPPFLAGS=-DTC_WIDTH=24
+  drivers.timer.core.tick_inexact:
+    extra_configs:
+      - CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=32768
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=1000
+    extra_args: EXTRA_CPPFLAGS=-DTC_WIDTH=24
+  # The whole-cycle tick again, on the counter width the drivers that have it
+  # actually use: nrf_rtc_timer, arm_arch_timer and riscv_machine_timer are all
+  # 64-bit counters at a rate their tick rate divides.
+  drivers.timer.core.tick_exact_64bit:
+    extra_configs:
+      - CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=10000000
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=100
+    extra_args: EXTRA_CPPFLAGS=-DTC_WIDTH=64
+  # The same ratios again on a target that divides 64 bits in hardware, which
+  # takes the plain form rather than the reciprocal the 32-bit one needs. The
+  # unit_testing platform builds 32-bit, so both the flag and the wider build
+  # have to be asked for.
+  drivers.timer.core.tick_inexact_hwdiv:
+    extra_configs:
+      - CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=32768
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=1000
+    extra_args:
+      - M64_MODE=y
+      - EXTRA_CPPFLAGS=-DTC_WIDTH=64;-DCONFIG_64BIT=1
+  drivers.timer.core.rate_at_runtime_hwdiv:
+    extra_configs:
+      - CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME=y
+      - CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=14318180
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=1000
+    extra_args:
+      - M64_MODE=y
+      - EXTRA_CPPFLAGS=-DTC_WIDTH=64;-DCONFIG_64BIT=1
+  # A counter wider than the tick arithmetic, at a rate no tick rate divides.
+  drivers.timer.core.tick_inexact_64bit:
+    extra_configs:
+      - CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=14318180
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=1000
+    extra_args: EXTRA_CPPFLAGS=-DTC_WIDTH=64
+  # A rate the build cannot see, which takes the general form whatever it turns
+  # out to be. Once as a rate the kernel reads at run time, once as a rate the
+  # driver states for itself: two declarations onto the same arithmetic.
+  drivers.timer.core.rate_at_runtime:
+    extra_configs:
+      - CONFIG_TIMER_READS_ITS_FREQUENCY_AT_RUNTIME=y
+      - CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=14318180
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=1000
+    extra_args: EXTRA_CPPFLAGS=-DTC_WIDTH=64
+  drivers.timer.core.rate_from_driver:
+    extra_configs:
+      - CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=14318180
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=1000
+    extra_args: EXTRA_CPPFLAGS=-DTC_WIDTH=32;-DTC_RUNTIME_RATE
+  # Backends. COMPARE_EXACT misses a comparator written for a cycle already
+  # passed, so it exercises the verify loop.
+  drivers.timer.core.compare_exact:
+    extra_configs:
+      - CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=14318180
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=1000
+    extra_args: EXTRA_CPPFLAGS=-DTC_WIDTH=32;-DTC_BACKEND_COMPARE_EXACT
+  drivers.timer.core.reload:
+    extra_configs:
+      - CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=32768
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=1000
+    extra_args: EXTRA_CPPFLAGS=-DTC_WIDTH=32;-DTC_BACKEND_RELOAD
+  # A reload register that cannot express a whole tick: systick's 24-bit LOAD
+  # against a 2Hz tick on an 84MHz core. Crossing one tick then takes three
+  # arms, the first two announcing nothing, and it is the only scenario where
+  # the alarm binds before the counter does.
+  drivers.timer.core.reload_short_alarm:
+    extra_configs:
+      - CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=84000000
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=2
+    extra_args: EXTRA_CPPFLAGS=-DTC_WIDTH=32;-DTC_BACKEND_RELOAD;-DTC_ALARM_MAX=0xffffff
+  # A comparator narrower than the counter, so a long timeout is walked to
+  # over several arms. Still wide enough to express a tick: below that the
+  # compare arm does not advance (see the note in the test).
+  drivers.timer.core.compare_short_alarm:
+    extra_configs:
+      - CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=14318180
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=1000
+    extra_args: EXTRA_CPPFLAGS=-DTC_WIDTH=32;-DTC_BACKEND_COMPARE_EXACT;-DTC_ALARM_MAX=0xffffff
+  # Hardware that will not be armed nearer than a floor well past a tick, so
+  # every arm is bumped up to it and each interrupt carries several ticks.
+  drivers.timer.core.reload_min_arm:
+    extra_configs:
+      - CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=32768
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=1000
+    extra_args: EXTRA_CPPFLAGS=-DTC_WIDTH=32;-DTC_BACKEND_RELOAD;-DTC_ALARM_MIN=100
+  # A reload timer left to free-run, the shape a tickful kernel gets.
+  drivers.timer.core.tickful:
+    extra_configs:
+      - CONFIG_TICKLESS_KERNEL=n
+      - CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=32768
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=1000
+    extra_args: EXTRA_CPPFLAGS=-DTC_WIDTH=32;-DTC_BACKEND_RELOAD
+  # A count the driver synthesizes rather than reads in one go, so the core
+  # takes it under the clock lock. That displaces the lock-free extension the
+  # 32-bit getter uses on a narrow counter, and is the only way the 64-bit
+  # getter takes the locked path on a counter that needs no extending at all.
+  drivers.timer.core.nonatomic_narrow:
+    extra_configs:
+      - CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=32768
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=1000
+    extra_args: EXTRA_CPPFLAGS=-DTC_WIDTH=24;-DTC_NONATOMIC
+  drivers.timer.core.nonatomic_wide:
+    extra_configs:
+      - CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=14318180
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=1000
+    extra_args: EXTRA_CPPFLAGS=-DTC_WIDTH=64;-DTC_NONATOMIC
+  # A counter that can read behind a value already seen.
+  drivers.timer.core.nonmonotonic:
+    extra_configs:
+      - CONFIG_SYS_CLOCK_HW_CYCLES_PER_SEC=32768
+      - CONFIG_SYS_CLOCK_TICKS_PER_SEC=1000
+    extra_args: EXTRA_CPPFLAGS=-DTC_WIDTH=32;-DTC_NONMONOTONIC
