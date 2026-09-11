@@ -1,0 +1,30 @@
+# Copyright (c) 2026 RAKwireless Technology Limited
+# SPDX-License-Identifier: Apache-2.0
+
+menuconfig RAK12035
+	bool "RAK12035 soil moisture sensor driver"
+	default y
+	depends on DT_HAS_RAKWIRELESS_RAK12035_ENABLED
+	select I2C
+	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_RAKWIRELESS_RAK12035),reset-gpios)
+	select REGULATOR if $(dt_compat_any_has_prop,$(DT_COMPAT_RAKWIRELESS_RAK12035),vin-supply)
+	help
+	  Enable the I2C driver for the RAKwireless RAK12035 capacitive
+	  soil moisture probe. Reports probe temperature on
+	  SENSOR_CHAN_AMBIENT_TEMP, a two-point calibrated soil moisture
+	  percentage on SENSOR_CHAN_HUMIDITY, and the raw capacitance
+	  count on SENSOR_CHAN_RAK12035_CAPACITANCE_RAW.
+
+if RAK12035
+
+config RAK12035_COMMAND_DELAY_MS
+	int "Delay after I2C command before read (ms)"
+	default 20
+	range 20 200
+	help
+	  Delay after the command STOP before the host may read. Matches the
+	  Arduino RAK12035 library (20 ms). Capacitance conversion finishes
+	  between sample_fetch calls; do not shorten the application sampling
+	  period below ~200 ms.
+
+endif # RAK12035
