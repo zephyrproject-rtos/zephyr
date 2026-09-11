@@ -39,7 +39,7 @@ struct lvgl_disp_data disp_data[DT_ZEPHYR_DISPLAYS_COUNT] = {{
 #endif
 
 #define IS_MONOCHROME_DISPLAY                                                                      \
-	UTIL_OR(IS_EQ(CONFIG_LV_Z_BITS_PER_PIXEL, 1), IS_EQ(CONFIG_LV_COLOR_DEPTH_1, 1))
+	UTIL_OR(IS_EQ(CONFIG_LV_Z_BITS_PER_PIXEL, 1), IS_EQ(CONFIG_LV_COLOR_FORMAT_I1, 1))
 
 #define ALLOC_MONOCHROME_CONV_BUFFER                                                               \
 	UTIL_AND(IS_EQ(IS_MONOCHROME_DISPLAY, 1),                                                  \

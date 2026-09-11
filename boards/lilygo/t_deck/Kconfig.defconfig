@@ -3,6 +3,14 @@
 
 if BOARD_T_DECK_ESP32S3_PROCPU
 
+if LVGL
+
+choice LV_COLOR_FORMAT_DEFAULT
+	default LV_COLOR_FORMAT_RGB565
+endchoice
+
+endif # LVGL
+
 if FUEL_GAUGE && BOARD_REVISION = "plus"
 
 # Composite fuel gauge gets battery voltage from ADC-based voltage-divider sensor
