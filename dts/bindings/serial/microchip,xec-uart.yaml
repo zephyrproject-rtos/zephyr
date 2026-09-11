@@ -19,6 +19,12 @@ properties:
     required: true
     description: logical device number
 
+  host_io:
+    type: int
+    description: |
+      eSPI host I/O base address the UART is exposed at. When omitted the
+      driver falls back to its default host I/O address (0x3F0).
+
   pcr-scr:
     type: int
     required: true
