@@ -260,6 +260,7 @@ struct adc_stm32_data {
 #ifdef CONFIG_ADC_STM32_DMA
 	volatile int dma_error;
 	struct stream dma;
+	size_t buffer_size;
 #endif
 #ifdef CONFIG_ADC_STREAM
 	struct rtio_iodev_sqe *sqe;
@@ -278,6 +279,7 @@ struct adc_stm32_rtio_data {
 struct adc_stm32_cfg {
 	ADC_TypeDef *base;
 	void (*irq_cfg_func)(void);
+	uint16_t ext_trigger;
 	const struct stm32_pclken pclken;
 	const struct stm32_pclken pclken_ker;
 	const struct stm32_pclken pclken_pre;
@@ -340,7 +342,7 @@ static int adc_stm32_dma_start(const struct device *dev,
 	blk_cfg = &dma->dma_blk_cfg;
 
 	/* prepare the block */
-	blk_cfg->block_size = channel_count * sizeof(adc_data_size_t);
+	blk_cfg->block_size = channel_count * data->buffer_size;
 
 	/* Source and destination */
 	blk_cfg->source_address = (uint32_t)LL_ADC_DMA_GetRegAddr(adc, LL_ADC_DMA_REG_REGULAR_DATA);
@@ -1205,6 +1207,9 @@ static int start_read(const struct device *dev,
 	data->channel_count = POPCOUNT(data->channels);
 	data->samples_count = 0;
 	data->resolution = sequence->resolution;
+#ifdef CONFIG_ADC_STM32_DMA
+	data->buffer_size = sequence->buffer_size;
+#endif
 
 	if (data->channel_count == 0) {
 		LOG_ERR("No channels selected");
@@ -2036,8 +2041,9 @@ static int adc_stm32_init(const struct device *dev)
 
 #if defined(HAS_CALIBRATION)
 	adc_stm32_calibrate(dev, true);
-	LL_ADC_REG_SetTriggerSource(adc, LL_ADC_REG_TRIG_SOFTWARE);
 #endif /* HAS_CALIBRATION */
+
+	LL_ADC_REG_SetTriggerSource(adc, config->ext_trigger);
 
 	/* If several ADCs are used and share a common clock property (for example ADC1/2 prescaler
 	 * value on STM32U5), none of them should be enabled when the clock is set.
@@ -2406,6 +2412,12 @@ DT_INST_FOREACH_STATUS_OKAY(GENERATE_ISR)
 			(ADC_DMA_CHANNEL_INIT(id, src, dest)),				\
 			(/* Required for other adc instances without dma */))
 
+#define EXT_TRIGGER(id)										\
+	.ext_trigger = COND_CODE_1(								\
+		DT_INST_NODE_HAS_PROP(id, st_adc_ext_trigger),					\
+		(CONCAT(LL_ADC_REG_TRIG_EXT_, DT_INST_STRING_TOKEN(id, st_adc_ext_trigger))),	\
+		(LL_ADC_REG_TRIG_SOFTWARE)),
+
 #define LIST_RESOLUTION(i, index)								\
 	CONCAT(LL_ADC_RESOLUTION_, DT_INST_PROP_BY_IDX(index, st_adc_resolutions, i), B)
 
@@ -2426,6 +2438,7 @@ DT_INST_FOREACH_STATUS_OKAY(GENERATE_ISR)
 	static const struct adc_stm32_cfg adc_stm32_cfg_##index = {				\
 		.base = (ADC_TypeDef *)DT_INST_REG_ADDR(index),					\
 		ADC_STM32_IRQ_FUNC(index)							\
+		EXT_TRIGGER(index)								\
 		.pclken = STM32_DT_INST_CLOCK_INFO_BY_NAME(index, adcx),			\
 		IF_ENABLED(DT_INST_CLOCKS_HAS_NAME(index, adc_ker),				\
 			   (.pclken_ker = STM32_DT_INST_CLOCK_INFO_BY_NAME(index, adc_ker),	\
