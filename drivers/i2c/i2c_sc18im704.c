@@ -158,7 +158,7 @@ static int i2c_sc18im_transfer_msg(const struct device *dev,
 		return -EINVAL;
 	}
 
-	start[1] = addr | (msg->flags & I2C_MSG_RW_MASK);
+	start[1] = (addr << 1) | (msg->flags & I2C_MSG_RW_MASK);
 	start[2] = msg->len;
 
 	ret = sc18im704_transfer(dev, start, sizeof(start), NULL, 0);
