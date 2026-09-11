@@ -77,9 +77,11 @@ static uint8_t num_services;
 
 static struct bt_sdp bt_sdp_pool[CONFIG_BT_MAX_CONN];
 
+static void sdp_destroy(struct net_buf *buf);
+
 /* Pool for outgoing SDP packets */
 NET_BUF_POOL_FIXED_DEFINE(sdp_pool, CONFIG_BT_MAX_CONN, BT_L2CAP_BUF_SIZE(SDP_MTU),
-			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, NULL);
+			  CONFIG_BT_CONN_TX_USER_DATA_SIZE, sdp_destroy);
 
 #define SDP_CLIENT_CHAN(_ch) CONTAINER_OF(_ch, struct bt_sdp_client, chan.chan)
 
@@ -116,6 +118,11 @@ enum sdp_client_state {
 	SDP_CLIENT_DISCONNECTING,
 };
 
+/* SDP client flags */
+enum {
+	SDP_CLIENT_FLAG_WAIT_FOR_TX_BUF = 0, /* Wait for TX buffer availability */
+};
+
 struct bt_sdp_client {
 	/* L2CAP channel for SDP client */
 	struct bt_l2cap_br_chan              chan;
@@ -135,6 +142,8 @@ struct bt_sdp_client {
 	uint32_t                             recv_len;
 	/* client state */
 	enum sdp_client_state                state;
+	/* flags */
+	atomic_t                             flags[1];
 };
 
 static struct bt_sdp_client bt_sdp_client_pool[CONFIG_BT_MAX_CONN];
@@ -242,6 +251,19 @@ static void bt_sdp_disconnected(struct bt_l2cap_chan *chan)
 static struct net_buf *bt_sdp_create_pdu(void)
 {
 	return bt_l2cap_create_pdu(&sdp_pool, sizeof(struct bt_sdp_hdr));
+}
+
+/* @brief Allocates a net buffer for SDP Client
+ *
+ *  Allocates a net buffer without waiting for SDP Client and returns the buffer
+ *
+ *  @param None
+ *
+ *  @return Pointer to the net_buf buffer
+ */
+static struct net_buf *sdp_client_create_pdu(void)
+{
+	return bt_l2cap_create_pdu_timeout(&sdp_pool, sizeof(struct bt_sdp_hdr), K_NO_WAIT);
 }
 
 /* @brief Sends out an SDP PDU
@@ -1763,6 +1785,8 @@ static void sdp_client_req_cleanup(struct bt_sdp_client *session)
 	session->total_len = 0U;
 	/* Clear received length */
 	session->recv_len = 0U;
+	/* Clear flags */
+	atomic_clear(session->flags);
 }
 
 static void sdp_client_cleanup(struct bt_sdp_client *session)
@@ -2138,6 +2162,14 @@ static void sdp_client_work_handler(struct k_work *work)
 			continue;
 		}
 
+		/* Retry the SDP discovery request */
+		if (session->state == SDP_CLIENT_CONNECTED &&
+		    atomic_test_and_clear_bit(session->flags, SDP_CLIENT_FLAG_WAIT_FOR_TX_BUF)) {
+			sdp_client_discover(session);
+			bt_conn_unref(conn);
+			continue;
+		}
+
 		if (k_queue_peek_head(&session->reqs_pending) == NULL) {
 			bt_conn_unref(conn);
 			continue;
@@ -2163,6 +2195,13 @@ failed:
 }
 
 static K_WORK_DEFINE(sdp_client_worker, sdp_client_work_handler);
+
+static void sdp_destroy(struct net_buf *buf)
+{
+	net_buf_destroy(buf);
+
+	bt_work_submit(&sdp_client_worker);
+}
 
 static void disconnected(struct bt_conn *conn, uint8_t reason)
 {
@@ -2190,7 +2229,11 @@ static int sdp_client_ss_search(struct bt_sdp_client *session,
 	struct net_buf *buf;
 	uint8_t uuid128[BT_UUID_SIZE_128];
 
-	buf = bt_sdp_create_pdu();
+	buf = sdp_client_create_pdu();
+	if (buf == NULL) {
+		LOG_ERR("No net buffers available");
+		return -ENOBUFS;
+	}
 
 	/* BT_SDP_SEQ8 means length of sequence is on additional next byte */
 	net_buf_add_u8(buf, BT_SDP_SEQ8);
@@ -2336,7 +2379,11 @@ static int sdp_client_sa_search(struct bt_sdp_client *session,
 		return -ENOMEM;
 	}
 
-	buf = bt_sdp_create_pdu();
+	buf = sdp_client_create_pdu();
+	if (buf == NULL) {
+		LOG_ERR("No net buffers available");
+		return -ENOBUFS;
+	}
 
 	/* Add service record handle  */
 	net_buf_add_be32(buf, param->handle);
@@ -2406,7 +2453,11 @@ static int sdp_client_ssa_search(struct bt_sdp_client *session,
 		}
 	}
 
-	buf = bt_sdp_create_pdu();
+	buf = sdp_client_create_pdu();
+	if (buf == NULL) {
+		LOG_ERR("No net buffers available");
+		return -ENOBUFS;
+	}
 
 	/* BT_SDP_SEQ8 means length of sequence is on additional next byte */
 	net_buf_add_u8(buf, BT_SDP_SEQ8);
@@ -2538,7 +2589,12 @@ static int sdp_client_discover(struct bt_sdp_client *session)
 		break;
 	}
 
-	if (err) {
+	if (err == -ENOBUFS) {
+		atomic_set_bit(session->flags, SDP_CLIENT_FLAG_WAIT_FOR_TX_BUF);
+		return 0;
+	}
+
+	if (err != 0) {
 		/* Notify the result */
 		sdp_client_req_not_resolved(session->chan.chan.conn, session);
 		/* Cleanup current SDP discovery state */
