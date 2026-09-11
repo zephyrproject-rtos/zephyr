@@ -23,6 +23,7 @@ tests:
       - apollo3p_evb
       - apollo510_evb
       - stm32h573i_dk
+      - stm32h5f5j_dk
   drivers.mspi.flash.stm32.dma:
     platform_allow:
       - stm32h573i_dk
