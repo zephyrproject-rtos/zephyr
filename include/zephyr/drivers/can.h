@@ -1457,7 +1457,9 @@ int can_add_rx_filter(const struct device *dev, can_rx_callback_t callback,
  * The same message queue can be used for multiple filters.
  *
  * @note The message queue must be initialized before calling this function and
- * the caller must have appropriate permissions on it.
+ * the caller must have appropriate permissions on it. Its message size must
+ * equal @c sizeof(struct can_frame); use @a CAN_MSGQ_DEFINE() to get this
+ * right.
  *
  * @warning The CAN controller driver retains the message queue pointer for as
  * long as the filter is installed. The message queue must therefore remain
@@ -1478,7 +1480,8 @@ int can_add_rx_filter(const struct device *dev, can_rx_callback_t callback,
  *
  * @retval filter_id on success.
  * @retval -ENOSPC if there are no free filters.
- * @retval -EINVAL if the requested filter type is invalid.
+ * @retval -EINVAL if the requested filter type is invalid or if the message
+ *                 queue message size differs from @c sizeof(struct can_frame).
  * @retval -ENOTSUP if the requested filter type is not supported.
  * @retval -EIO General input/output error, failed to add filter.
  */
