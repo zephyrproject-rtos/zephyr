@@ -68,7 +68,11 @@ extern "C" {
 /** @brief Flag core/processor id prefix. */
 #define LOG_OUTPUT_FLAG_CORE			BIT(9)
 
+/** @brief Flag indicating that the message is unordered. */
+#define LOG_OUTPUT_UNORDERED			BIT(10)
+
 /** Keep log_backend_std_get_flags() updated when adding new flags in this section */
+
 
 /**@} */
 
