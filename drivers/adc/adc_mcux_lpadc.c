@@ -961,17 +961,12 @@ static int mcux_lpadc_pm_callback(const struct device *dev, enum pm_device_actio
 				return err;
 			}
 		}
-    
-    		if (bandgap_supply != NULL && data->bandgap_channels != 0U) {
+
+		if (bandgap_supply != NULL && data->bandgap_channels != 0U) {
 			err = regulator_disable(bandgap_supply);
 			if (err < 0) {
 				return err;
 			}
-		}
-
-		err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_SLEEP);
-		if (err < 0 && err != -ENOENT) {
-			return err;
 		}
 
 		err = pinctrl_apply_state(config->pincfg, PINCTRL_STATE_SLEEP);
@@ -1105,8 +1100,6 @@ static int mcux_lpadc_init(const struct device *dev)
 	LPADC_Enable(config->base, false);
 
 	return pm_device_driver_init(dev, mcux_lpadc_pm_callback);
-#else
-	return 0;
 #endif
 
 	return 0;
