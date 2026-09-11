@@ -30,11 +30,10 @@
 #define lv_free_core      lvgl_free
 #endif
 
-#define LV_ASSERT_HANDLER         __ASSERT_NO_MSG(false);
-#define LV_ASSERT_HANDLER_INCLUDE "zephyr/sys/__assert.h"
+#define LV_ASSERT_CUSTOM_INCLUDE "lvgl_zephyr_config.h"
 
-/* Provide definition to align LVGL buffers */
-#define LV_ATTRIBUTE_MEM_ALIGN __aligned(CONFIG_LV_ATTRIBUTE_MEM_ALIGN_SIZE)
+#define LV_ATTRIBUTE_USE_CUSTOM_INCLUDE 1
+#define LV_ATTRIBUTE_CUSTOM_INCLUDE "lvgl_zephyr_config.h"
 
 #ifdef CONFIG_LV_COLOR_16_SWAP
 #define LV_COLOR_16_SWAP 1
