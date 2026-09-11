@@ -1,0 +1,34 @@
+# Copyright (c) 2026 Muhammad Waleed Badar
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  Chipone CO5300 display controller on SPI bus.
+
+  The CO5300's SPI protocol uses opcode/address framing: a fixed
+  instruction byte (0x02) followed by a 3-byte address encoding the DCS
+  command ({8'h00, CMD[7:0], 8'h00}), followed by the command's
+  parameters or pixel data, all shifted out over a single data line.
+
+compatible: "chipone,co5300"
+
+include: ["spi-device.yaml", "chipone,co5300-common.yaml"]
+
+properties:
+  pixel-format:
+    type: int
+    required: true
+    description: |
+      Initial Pixel format of this controller's output data.
+    enum:
+      - 1 # PANEL_PIXEL_FORMAT_RGB_888
+      - 16 # PANEL_PIXEL_FORMAT_RGB_565
+
+examples:
+  - |
+    #include <zephyr/dt-bindings/display/panel.h>
+
+    co5300_display: co5300-display@0 {
+      /* ... */
+
+      pixel-format = <PANEL_PIXEL_FORMAT_RGB_565>;
+    };
