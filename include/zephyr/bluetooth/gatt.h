@@ -2282,6 +2282,16 @@ enum bt_gatt_sub_flag {
 	 */
 	BT_GATT_SUBSCRIBE_FLAG_SENT,
 
+	/** @brief Deferred unsubscribe flag
+	 *
+	 *  Set when bt_gatt_unsubscribe() is called while the subscribe CCC write
+	 *  is still pending; the unsubscribe then runs once that write completes,
+	 *  so one params never drives two concurrent CCC writes.
+	 *
+	 *  @note Internal use only.
+	 */
+	BT_GATT_SUBSCRIBE_FLAG_UNSUBSCRIBE,
+
 	BT_GATT_SUBSCRIBE_NUM_FLAGS
 };
 

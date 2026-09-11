@@ -5344,10 +5344,17 @@ static void gatt_write_ccc_rsp(struct bt_conn *conn, int err,
 {
 	struct bt_gatt_subscribe_params *params = user_data;
 	uint8_t att_err;
+	bool unsub_pending;
 
 	LOG_DBG("err %d", err);
 
 	atomic_clear_bit(params->flags, BT_GATT_SUBSCRIBE_FLAG_WRITE_PENDING);
+
+	/* Clear before the error split below: the error path already
+	 * unsubscribes, so the flag must not leak into a later params reuse.
+	 */
+	unsub_pending = atomic_test_and_clear_bit(params->flags,
+						  BT_GATT_SUBSCRIBE_FLAG_UNSUBSCRIBE);
 
 	/* if write to CCC failed we remove subscription and notify app */
 	if (err) {
@@ -5377,6 +5384,14 @@ static void gatt_write_ccc_rsp(struct bt_conn *conn, int err,
 	} else {
 		if (params->subscribe) {
 			params->subscribe(conn, BT_ATT_ERR_SUCCESS, params);
+		}
+
+		if (unsub_pending) {
+			/* Subscribe done and its callback delivered; run the
+			 * unsubscribe that was deferred while it was pending.
+			 */
+			bt_gatt_unsubscribe(conn, params);
+			return;
 		}
 
 		if (!params->value) {
@@ -5616,10 +5631,20 @@ int bt_gatt_unsubscribe(struct bt_conn *conn,
 		return -EINVAL;
 	}
 
-	/* Attempt to cancel if write is pending */
+	/* A params can only carry one CCC write at a time (single value,
+	 * node and flags word), so defer the unsubscribe instead of
+	 * cancelling: flag it and let the pending write's completion run it.
+	 *
+	 * The completion clears WRITE_PENDING concurrently; take the
+	 * scheduler lock so it can't run between the test and set below.
+	 */
+	k_sched_lock();
 	if (atomic_test_bit(params->flags, BT_GATT_SUBSCRIBE_FLAG_WRITE_PENDING)) {
-		bt_gatt_cancel(conn, params);
+		atomic_set_bit(params->flags, BT_GATT_SUBSCRIBE_FLAG_UNSUBSCRIBE);
+		k_sched_unlock();
+		return 0;
 	}
+	k_sched_unlock();
 
 	if (!has_subscription) {
 		int err;
