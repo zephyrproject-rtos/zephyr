@@ -1149,23 +1149,6 @@ static int flash_stm32_xspi_erase(const struct device *dev, off_t addr,
 #if defined(CONFIG_FLASH_STM32_NOR_MEMMAP) || defined(CONFIG_FLASH_STM32_XSPI_RAM_RELOCATION)
 	bool was_memmap = false;
 	unsigned int irq_key = 0;
-
-	if (stm32_xspi_is_memorymap(dev_data)) {
-		was_memmap = true;
-
-		if (IS_ENABLED(CONFIG_FLASH_STM32_XSPI_RAM_RELOCATION)) {
-			/* Lock IRQs for entire operation - ISR handlers are in flash */
-			irq_key = irq_lock();
-		}
-
-		/* Abort ongoing transfer to force CS high/BUSY deasserted */
-		ret = stm32_xspi_abort(dev);
-
-		if (ret != 0) {
-			XSPI_LOG_ERR("Failed to abort memory-mapped access before erase");
-			goto erase_end;
-		}
-	}
 #endif /* CONFIG_FLASH_STM32_NOR_MEMMAP || CONFIG_FLASH_STM32_XSPI_RAM_RELOCATION */
 
 	cmd_erase.OperationType = HAL_XSPI_OPTYPE_COMMON_CFG;
@@ -1176,11 +1159,6 @@ static int flash_stm32_xspi_erase(const struct device *dev, off_t addr,
 #ifdef XSPI_CCR_SIOO
 	cmd_erase.SIOOMode = HAL_XSPI_SIOO_INST_EVERY_CMD;
 #endif /* XSPI_CCR_SIOO */
-
-	if (stm32_xspi_mem_ready(dev_data, data_mode, data_rate) != 0) {
-		XSPI_LOG_ERR("Erase failed : flash busy");
-		goto erase_end;
-	}
 
 	cmd_erase.InstructionMode    = (data_mode == XSPI_OCTO_MODE)
 					? HAL_XSPI_INSTRUCTION_8_LINES
@@ -1194,10 +1172,34 @@ static int flash_stm32_xspi_erase(const struct device *dev, off_t addr,
 
 	while ((size > 0) && (ret == 0)) {
 
+#if defined(CONFIG_FLASH_STM32_NOR_MEMMAP) || defined(CONFIG_FLASH_STM32_XSPI_RAM_RELOCATION)
+		if (stm32_xspi_is_memorymap(dev_data)) {
+			was_memmap = true;
+
+			if (IS_ENABLED(CONFIG_FLASH_STM32_XSPI_RAM_RELOCATION)) {
+				/* Lock IRQs for one erase operation */
+				irq_key = irq_lock();
+			}
+
+			/* Abort ongoing transfer to force CS high/BUSY deasserted */
+			ret = stm32_xspi_abort(dev);
+			if (ret != 0) {
+				XSPI_LOG_ERR("Failed to abort memory-mapped access before erase");
+				goto erase_chunk_end;
+			}
+		}
+#endif /* CONFIG_FLASH_STM32_NOR_MEMMAP || CONFIG_FLASH_STM32_XSPI_RAM_RELOCATION */
+
+		if (stm32_xspi_mem_ready(dev_data, data_mode, data_rate) != 0) {
+			XSPI_LOG_ERR("Erase failed : flash busy");
+			ret = -EIO;
+			goto erase_chunk_end;
+		}
+
 		ret = stm32_xspi_write_enable(dev_data, data_mode, data_rate);
 		if (ret != 0) {
 			XSPI_LOG_ERR("Erase failed : write enable");
-			break;
+			goto erase_chunk_end;
 		}
 
 		if (size == flash_size) {
@@ -1217,7 +1219,7 @@ static int flash_stm32_xspi_erase(const struct device *dev, off_t addr,
 			ret = stm32_xspi_mem_erased(dev_data, data_mode, data_rate);
 			if (ret != 0) {
 				XSPI_LOG_ERR("Chip Erase failed");
-				break;
+				goto erase_chunk_end;
 			}
 		} else {
 			/* Sector or Block erase depending on the size */
@@ -1285,24 +1287,25 @@ static int flash_stm32_xspi_erase(const struct device *dev, off_t addr,
 			ret = stm32_xspi_mem_ready(dev_data, data_mode, data_rate);
 		}
 
-	}
-	/* Ends the erase operation */
-
-erase_end:
+erase_chunk_end:
 #if defined(CONFIG_FLASH_STM32_NOR_MEMMAP) || defined(CONFIG_FLASH_STM32_XSPI_RAM_RELOCATION)
-	if (was_memmap) {
-		if (stm32_xspi_set_memorymap(dev_data, data_mode, data_rate) != 0) {
-			/* Failed to restore memory map mode */
-			while (1) {
-				/* Infinite loop to prevent further execution */
+		if (was_memmap) {
+			if (stm32_xspi_set_memorymap(dev_data, data_mode, data_rate) != 0) {
+				/* Failed to restore memory map mode */
+				while (1) {
+					/* Infinite loop to prevent further execution */
+				}
+			}
+
+			was_memmap = false;
+
+			if (IS_ENABLED(CONFIG_FLASH_STM32_XSPI_RAM_RELOCATION)) {
+				irq_unlock(irq_key);
 			}
 		}
-		if (IS_ENABLED(CONFIG_FLASH_STM32_XSPI_RAM_RELOCATION)) {
-			/* Unlock IRQs only after memmap is restored */
-			irq_unlock(irq_key);
-		}
-	}
 #endif /* CONFIG_FLASH_STM32_NOR_MEMMAP || CONFIG_FLASH_STM32_XSPI_RAM_RELOCATION */
+		continue;
+	}
 
 	stm32_xspi_invalidate_mmap_cache(dev, erase_addr, erase_size);
 
@@ -1478,23 +1481,6 @@ static int flash_stm32_xspi_write(const struct device *dev, off_t addr,
 #if defined(CONFIG_FLASH_STM32_NOR_MEMMAP) || defined(CONFIG_FLASH_STM32_XSPI_RAM_RELOCATION)
 	bool was_memmap = false;
 	unsigned int irq_key = 0;
-
-	if (stm32_xspi_is_memorymap(dev_data)) {
-		/* Abort ongoing transfer to force CS high/BUSY deasserted */
-		was_memmap = true;
-
-		if (IS_ENABLED(CONFIG_FLASH_STM32_XSPI_RAM_RELOCATION)) {
-			/* Lock IRQs for entire operation - ISR handlers are in flash */
-			irq_key = irq_lock();
-		}
-
-		ret = stm32_xspi_abort(dev);
-
-		if (ret != 0) {
-			XSPI_LOG_ERR("Failed to abort memory-mapped access before write");
-			goto write_end;
-		}
-	}
 #endif /* CONFIG_FLASH_STM32_NOR_MEMMAP || CONFIG_FLASH_STM32_XSPI_RAM_RELOCATION */
 
 	/* using 32bits address also in SPI/STR mode */
@@ -1544,18 +1530,37 @@ static int flash_stm32_xspi_write(const struct device *dev, off_t addr,
 		size,
 		(long)(dev_cfg->mem_map_based_address + addr));
 
-	ret = stm32_xspi_mem_ready(dev_data, data_mode, data_rate);
-	if (ret != 0) {
-		XSPI_LOG_ERR("XSPI: write not ready");
-		goto write_end;
-	}
-
 	while ((size > 0) && (ret == 0)) {
+
+#if defined(CONFIG_FLASH_STM32_NOR_MEMMAP) || defined(CONFIG_FLASH_STM32_XSPI_RAM_RELOCATION)
+		if (stm32_xspi_is_memorymap(dev_data)) {
+			was_memmap = true;
+
+			if (IS_ENABLED(CONFIG_FLASH_STM32_XSPI_RAM_RELOCATION)) {
+				/* Lock IRQs for one page-program operation. */
+				irq_key = irq_lock();
+			}
+
+			/* Abort ongoing transfer to force CS high/BUSY deasserted. */
+			ret = stm32_xspi_abort(dev);
+			if (ret != 0) {
+				XSPI_LOG_ERR("Failed to abort memory-mapped access before write");
+				goto write_chunk_end;
+			}
+		}
+#endif /* CONFIG_FLASH_STM32_NOR_MEMMAP || CONFIG_FLASH_STM32_XSPI_RAM_RELOCATION */
+
+		ret = stm32_xspi_mem_ready(dev_data, data_mode, data_rate);
+		if (ret != 0) {
+			XSPI_LOG_ERR("XSPI: write not ready");
+			goto write_chunk_end;
+		}
+
 		to_write = size;
 		ret = stm32_xspi_write_enable(dev_data, data_mode, data_rate);
 		if (ret != 0) {
 			XSPI_LOG_ERR("XSPI: write not enabled");
-			break;
+			goto write_chunk_end;
 		}
 		/* Don't write more than a page. */
 		if (to_write >= SPI_NOR_PAGE_SIZE) {
@@ -1573,7 +1578,7 @@ static int flash_stm32_xspi_write(const struct device *dev, off_t addr,
 		ret = xspi_write_access(dev_data, data_mode, &cmd_pp, data, to_write);
 		if (ret != 0) {
 			XSPI_LOG_ERR("XSPI: write not access");
-			break;
+			goto write_chunk_end;
 		}
 
 		size -= to_write;
@@ -1584,26 +1589,29 @@ static int flash_stm32_xspi_write(const struct device *dev, off_t addr,
 		ret = stm32_xspi_mem_ready(dev_data, data_mode, data_rate);
 		if (ret != 0) {
 			XSPI_LOG_ERR("XSPI: write PP not ready");
-			break;
+			goto write_chunk_end;
 		}
-	}
-	/* Ends the write operation */
 
-write_end:
+write_chunk_end:
 #if defined(CONFIG_FLASH_STM32_NOR_MEMMAP) || defined(CONFIG_FLASH_STM32_XSPI_RAM_RELOCATION)
-	if (was_memmap) {
-		if (stm32_xspi_set_memorymap(dev_data, data_mode, data_rate) != 0) {
-			/* Failed to restore memory map mode */
-			while (1) {
-				/* Infinite loop to prevent further execution */
+		if (was_memmap) {
+			if (stm32_xspi_set_memorymap(dev_data, data_mode, data_rate) != 0) {
+				/* Failed to restore memory map mode */
+				while (1) {
+					/* Infinite loop to prevent further execution */
+				}
+			}
+
+			was_memmap = false;
+
+			if (IS_ENABLED(CONFIG_FLASH_STM32_XSPI_RAM_RELOCATION)) {
+				irq_unlock(irq_key);
 			}
 		}
-		if (IS_ENABLED(CONFIG_FLASH_STM32_XSPI_RAM_RELOCATION)) {
-			/* Unlock IRQs only after memmap is restored */
-			irq_unlock(irq_key);
-		}
-	}
 #endif /* CONFIG_FLASH_STM32_NOR_MEMMAP || CONFIG_FLASH_STM32_XSPI_RAM_RELOCATION */
+		continue;
+	}
+
 	stm32_xspi_invalidate_mmap_cache(dev, write_addr, write_size);
 
 	xspi_unlock_thread(dev);
