@@ -130,8 +130,8 @@
 };
 
 &sdhc0 {
-	interrupt-names = "accs", "card", "dma-req";
-	interrupts = <13 12>, <14 12>, <15 12>;
+	interrupt-names = "accs", "card", "dma-req", "sdio-int";
+	interrupts = <13 12>, <14 12>, <15 12>, <16 12>;
 	pinctrl-0 = <&sdhc0_default>;
 	pinctrl-names = "default";
 	status = "okay";
@@ -144,7 +144,7 @@
 };
 
 &eswm {
-	interrupts = <16 1>;
+	interrupts = <17 1>;
 	interrupt-names = "gwdi";
 	status = "okay";
 };
