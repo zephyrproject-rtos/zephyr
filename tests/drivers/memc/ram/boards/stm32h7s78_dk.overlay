@@ -4,9 +4,20 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+/ {
+	aliases {
+		psram0 = &memc;
+	};
+};
+
 &sram2 {
 	zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
 	status = "okay";
+};
+
+&sram1 {
+	zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM)>;
+	status = "disabled";
 };
 
 &mac {
