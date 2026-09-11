@@ -212,3 +212,7 @@ Here are the conventions:
 - Do not set ``EXECUTE_TIMEOUT`` to a value lower than the default.
 - Tests should not be overly verbose: less than a hundred lines are expected on the outputs. Do make
   use of ``LOG_DBG()`` extensively, but don't enable the ``DBG`` log level by default.
+- Test scripts that use the Physical layer simulation are expected to pass any extra parameters
+  passed to the test script directly to the Phy executable. This is used, for example, to run the
+  Phy in check mode (``-c``), in which the Phy verifies that the last simulation and this one have
+  produced the exact same radio traffic.
