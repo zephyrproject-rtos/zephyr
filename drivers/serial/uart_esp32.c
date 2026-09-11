@@ -833,8 +833,10 @@ static void IRAM_ATTR uart_esp32_dma_rx_done(const struct device *dma_dev, void 
 	}
 
 	/* Notify RX_RDY */
-	sys_cache_data_flush_and_invd_range(data->async.rx_buf + data->async.rx_offset,
-					    data->async.rx_counter - data->async.rx_offset);
+	if (data->async.rx_buf != NULL) {
+		sys_cache_data_flush_and_invd_range(data->async.rx_buf + data->async.rx_offset,
+						    data->async.rx_counter - data->async.rx_offset);
+	}
 
 	evt.type = UART_RX_RDY;
 	evt.data.rx.buf = data->async.rx_buf;
@@ -994,6 +996,14 @@ static void uart_esp32_async_rx_timeout(struct k_work *work)
 	}
 
 	key = irq_lock();
+
+	/* The transfer can be torn down between the work item being scheduled
+	 * and it running, leaving no buffer to report against.
+	 */
+	if (data->async.rx_buf == NULL) {
+		irq_unlock(key);
+		return;
+	}
 
 	/* Update rx_counter with actual DMA progress */
 	data->async.rx_counter = rx_count;
