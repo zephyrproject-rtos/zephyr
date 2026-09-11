@@ -203,6 +203,27 @@
 #define TIMER_CORE_TICK_IS_WHOLE 1
 #else
 #define TIMER_CORE_TICK_IS_WHOLE 0
+/*
+ * Say so: the conversions then carry a remainder, which costs a little code and
+ * time on both the announce and the arm path. The tick rate is the one term in
+ * the ratio a configuration picks, and a divisor is often free: against a
+ * 32768Hz counter, 1024 rather than 1000 takes nrf_rtc_timer from 2074 bytes
+ * to 1758.
+ *
+ * Held at warning severity, since the configuration works: building with
+ * warnings as errors, which is what twister does by default, must not fail on
+ * it. A toolchain without the GCC diagnostic pragma gets the warning at its own
+ * default severity.
+ */
+#if defined(__GNUC__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic warning "-Wcpp"
+#endif
+#warning "CONFIG_SYS_CLOCK_TICKS_PER_SEC does not divide the counter rate, so the tick \
+conversions cost a little more; pick a rate that divides it if possible"
+#if defined(__GNUC__)
+#pragma GCC diagnostic pop
+#endif
 #endif
 #else
 #define TIMER_CORE_TICK_IS_WHOLE 0
