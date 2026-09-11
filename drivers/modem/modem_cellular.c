@@ -2922,6 +2922,28 @@ DEVICE_API(cellular, modem_cellular_api) = {
 	IF_ENABLED(CONFIG_MODEM_CELLULAR_STATS, (.get_stats = modem_cellular_get_stats,))
 };
 
+#if defined(CONFIG_DEVICE_DEPS)
+static int modem_cellular_pm_check_child_device(const struct device *child, void *context)
+{
+	ARG_UNUSED(context);
+	enum pm_device_state state;
+
+	/* A child with no PM support of its own can't be "still active" in a way that
+	 * should block the modem: nothing will ever suspend it, so treat it as clear.
+	 */
+	if (pm_device_state_get(child, &state) != 0) {
+		return 0;
+	}
+
+	if (state == PM_DEVICE_STATE_ACTIVE) {
+		LOG_WRN("Refusing to suspend: child device %s is still active", child->name);
+		return -EBUSY;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_DEVICE_DEPS */
+
 int modem_cellular_pm_action(const struct device *dev, enum pm_device_action action)
 {
 	struct modem_cellular_data *data = (struct modem_cellular_data *)dev->data;
@@ -2946,6 +2968,19 @@ int modem_cellular_pm_action(const struct device *dev, enum pm_device_action act
 			LOG_ERR("Cannot suspend from system workqueue");
 			return -EDEADLK;
 		}
+		/* The modem must not power down a child device (e.g. an integrated GNSS
+		 * receiver) on the caller's behalf: only the request to suspend the modem
+		 * was made. If a child is still active, refuse to suspend instead of
+		 * cutting power out from under it; the caller is responsible for
+		 * suspending its children first. Requires CONFIG_DEVICE_DEPS to enumerate
+		 * children at all; without it there is nothing to check.
+		 */
+#if defined(CONFIG_DEVICE_DEPS)
+		ret = device_supported_foreach(dev, modem_cellular_pm_check_child_device, NULL);
+		if (ret < 0) {
+			return ret;
+		}
+#endif /* CONFIG_DEVICE_DEPS */
 		modem_cellular_delegate_event(data, MODEM_CELLULAR_EVENT_SUSPEND);
 		ret = k_sem_take(&data->suspended_sem, K_SECONDS(30));
 		break;
