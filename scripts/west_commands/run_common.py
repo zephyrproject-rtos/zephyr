@@ -71,6 +71,15 @@ class SocBoardFilesProcessing:
     priority: int = IGNORED_RUN_ONCE_PRIORITY
     yaml: object = None
 
+
+def soc_board_config_path(directory, filename):
+    """Return a SoC or board runner-policy path from a CMake cache entry."""
+    directory_path = Path(directory)
+    if not directory_path.is_absolute():
+        directory_path = ZEPHYR_BASE / directory_path
+    return directory_path / filename
+
+
 def import_from_path(module_name, file_path):
     spec = importlib.util.spec_from_file_location(module_name, file_path)
     module = importlib.util.module_from_spec(spec)
@@ -241,12 +250,14 @@ def do_run_common(command, user_args, user_runner_args, domain_file=None):
             # once per unique board name.
             for directory in cache.get_list('SOC_DIRECTORIES'):
                 if directory not in processed_boards:
-                    check_files.append(SocBoardFilesProcessing(Path(directory) / 'soc.yml'))
+                    check_files.append(SocBoardFilesProcessing(
+                        soc_board_config_path(directory, 'soc.yml')))
                     processed_boards.add(directory)
 
             for directory in cache.get_list('BOARD_DIRECTORIES'):
                 if directory not in processed_boards:
-                    check_files.append(SocBoardFilesProcessing(Path(directory) / 'board.yml', True))
+                    check_files.append(SocBoardFilesProcessing(
+                        soc_board_config_path(directory, 'board.yml'), True))
                     processed_boards.add(directory)
 
         for check in check_files:
