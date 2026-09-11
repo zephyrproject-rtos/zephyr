@@ -437,28 +437,30 @@ static int map_sdk_region_to_zephyr_channel_info(const sli_wifi_set_region_ap_re
 						 size_t *num_channels)
 {
 	uint8_t first_channel = sdk_reg->channel_info[0].first_channel;
+	size_t written = 0;
 	uint8_t channel;
 	uint16_t freq;
 
-	*num_channels = sdk_reg->channel_info[0].no_of_channels;
-	if (*num_channels > MAX_24GHZ_CHANNELS) {
+	if (sdk_reg->channel_info[0].no_of_channels > MAX_24GHZ_CHANNELS) {
 		return -EOVERFLOW;
 	}
 
-	for (int idx = 0; idx < *num_channels; idx++) {
+	for (int idx = 0; idx < sdk_reg->channel_info[0].no_of_channels; idx++) {
 		channel = first_channel + idx;
-		freq = 2407 + channel * 5;
-
-		if (freq > 2472) {
-			freq = 2484; /* channel 14 */
+		freq = wifi_utils_chan_to_freq(WIFI_FREQ_BAND_2_4_GHZ, channel);
+		if (freq == 0) {
+			continue;
 		}
 
-		z_chan_info[idx].center_frequency = freq;
-		z_chan_info[idx].max_power = sdk_reg->channel_info[0].max_tx_power;
-		z_chan_info[idx].supported = 1;
-		z_chan_info[idx].passive_only = 0;
-		z_chan_info[idx].dfs = 0;
+		z_chan_info[written].center_frequency = freq;
+		z_chan_info[written].max_power = sdk_reg->channel_info[0].max_tx_power;
+		z_chan_info[written].supported = 1;
+		z_chan_info[written].passive_only = 0;
+		z_chan_info[written].dfs = 0;
+		written++;
 	}
+
+	*num_channels = written;
 
 	return 0;
 }
