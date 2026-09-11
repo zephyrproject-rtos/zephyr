@@ -100,12 +100,13 @@ void i2c_rtio_init(struct i2c_rtio *ctx, const struct device *dev)
 	mpsc_priority_init(&ctx->io_pq, &ctx->io_queues, CONFIG_I2C_RTIO_PRIORITY_LEVELS);
 #else
 	mpsc_init(&ctx->io_q);
+#endif
 	ctx->txn_curr = NULL;
 	ctx->txn_head = NULL;
 	ctx->dt_spec.bus = dev;
 	ctx->iodev.data = &ctx->dt_spec;
 	ctx->iodev.api = &i2c_iodev_api;
-#endif
+
 }
 
 /**
