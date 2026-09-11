@@ -34,6 +34,12 @@ LOG_MODULE_REGISTER(esp32_wifi, CONFIG_WIFI_LOG_LEVEL);
 #if defined(CONFIG_ESP32_WIFI_ENTERPRISE)
 #include <esp_eap_client.h>
 #endif
+#if defined(CONFIG_ESP32_WIFI_RRM_SUPPORT)
+#include <esp_rrm.h>
+#endif
+#if defined(CONFIG_ESP32_WIFI_WNM_SUPPORT)
+#include <esp_wnm.h>
+#endif
 #include <esp_mac.h>
 #include <wifi/wifi_event.h>
 
@@ -100,10 +106,30 @@ struct esp32_wifi_runtime {
 #if defined(CONFIG_ESP32_WIFI_ENTERPRISE)
 	struct wifi_enterprise_creds_params enterprise_creds;
 #endif
+#if defined(CONFIG_ESP32_WIFI_RRM_SUPPORT)
+	/* RRM is a capability bit carried in the association request, so it
+	 * can only change on the next connect. Remembered here so cfg_11k can
+	 * report back what was asked for.
+	 */
+	bool enable_11k;
+#endif
+#if defined(CONFIG_ESP32_WIFI_SIGNAL_CHANGE_EVENT)
+	/* Threshold currently armed with esp_wifi_set_rssi_threshold(). The
+	 * library arms it one-shot, so it is re-armed a step lower after every
+	 * event and reset to the configured value on each connect.
+	 */
+	int8_t rssi_threshold;
+#endif
+#if defined(CONFIG_ESP32_WIFI_WNM_SUPPORT)
+	/* Set while a BSS transition is in flight, between the disconnect from
+	 * the old AP and the association with the new one, so the connect that
+	 * ends it is not mistaken for a fresh one.
+	 */
+	bool roaming;
+#endif
 };
 
-/*
- * Sized for every event the driver and the mesh stack handle, with a little
+/* Sized for every event the driver and the mesh stack handle, with a little
  * headroom: the largest of those payloads is 48 bytes (station connected). The
  * buffer is copied into every queue entry, so the cost is this size plus the
  * entry header times ESP32_WIFI_EVENT_QUEUE_SIZE; the BUILD_ASSERT below keeps
@@ -123,6 +149,11 @@ BUILD_ASSERT(sizeof(wifi_event_sta_connected_t) <= ESP32_WIFI_EVENT_DATA_MAX &&
 		     sizeof(wifi_event_ap_stadisconnected_t) <= ESP32_WIFI_EVENT_DATA_MAX,
 	     "ESP32_WIFI_EVENT_DATA_MAX is too small for a handled Wi-Fi event payload");
 
+#if defined(CONFIG_ESP32_WIFI_SIGNAL_CHANGE_EVENT)
+BUILD_ASSERT(sizeof(wifi_event_bss_rssi_low_t) <= ESP32_WIFI_EVENT_DATA_MAX,
+	     "ESP32_WIFI_EVENT_DATA_MAX is too small for the low RSSI event payload");
+#endif
+
 #if defined(CONFIG_WIFI_ESP32_MESH)
 BUILD_ASSERT(sizeof(mesh_event_disconnected_t) <= ESP32_WIFI_EVENT_DATA_MAX &&
 		     sizeof(mesh_event_toDS_state_t) <= ESP32_WIFI_EVENT_DATA_MAX,
@@ -139,8 +170,7 @@ struct esp32_wifi_event {
 K_MSGQ_DEFINE(esp32_wifi_event_msgq, sizeof(struct esp32_wifi_event),
 	      CONFIG_ESP32_WIFI_EVENT_QUEUE_SIZE, 4);
 
-/*
- * Set the station IPv4 address in the Wi-Fi stack. The address is only reported
+/* Set the station IPv4 address in the Wi-Fi stack. The address is only reported
  * when it is usable and the station is associated. A static address is usually
  * set before the connection, so the connect handler calls this as well.
  */
@@ -501,12 +531,71 @@ static void scan_done_handler(void)
 	esp32_data.scan_cb = NULL;
 }
 
+#if defined(CONFIG_ESP32_WIFI_SIGNAL_CHANGE_EVENT)
+/* Weakest signal worth watching for; below this the link is gone anyway. */
+#define ESP32_WIFI_RSSI_THRESHOLD_MIN (-99)
+
+/* Arm the library's low RSSI watch. It fires once and then has to be re-armed,
+ * so callers pass the threshold to use next: the configured value on connect,
+ * and a step lower after each event so a link that stays weak reports a
+ * worsening signal instead of repeating the same one.
+ */
+static void esp32_wifi_arm_rssi_threshold(int8_t threshold)
+{
+	esp_err_t ret;
+
+	if (threshold < ESP32_WIFI_RSSI_THRESHOLD_MIN) {
+		LOG_DBG("Low RSSI watch exhausted at %d dBm", threshold);
+		return;
+	}
+
+	esp32_data.rssi_threshold = threshold;
+
+	ret = esp_wifi_set_rssi_threshold(threshold);
+	if (ret != ESP_OK) {
+		LOG_WRN("Failed to arm low RSSI watch at %d dBm (%d)", threshold, ret);
+	}
+}
+
+static void esp_wifi_handle_sta_bss_rssi_low_event(void *event_data)
+{
+	wifi_event_bss_rssi_low_t *event = (wifi_event_bss_rssi_low_t *)event_data;
+
+	LOG_DBG("AP RSSI dropped to %d dBm", (int)event->rssi);
+
+	/* Report the change and leave the decision to the application. It can
+	 * ask for a neighbor report or send a BTM query over the Wi-Fi
+	 * management API; the driver never picks an AP on its own.
+	 */
+	net_mgmt_event_notify_with_info(NET_EVENT_WIFI_SIGNAL_CHANGE, esp32_wifi_iface, NULL, 0);
+
+	esp32_wifi_arm_rssi_threshold(esp32_data.rssi_threshold -
+				      CONFIG_ESP32_WIFI_LOW_RSSI_THRESHOLD_STEP);
+}
+#endif /* CONFIG_ESP32_WIFI_SIGNAL_CHANGE_EVENT */
+
 static void esp_wifi_handle_sta_connect_event(void *event_data)
 {
 	ARG_UNUSED(event_data);
 	esp32_data.state = ESP32_STA_CONNECTED;
 	net_if_dormant_off(esp32_wifi_iface);
 	esp32_wifi_set_sta_ip();
+#if defined(CONFIG_ESP32_WIFI_SIGNAL_CHANGE_EVENT)
+	esp32_wifi_arm_rssi_threshold(CONFIG_ESP32_WIFI_LOW_RSSI_THRESHOLD);
+#endif
+
+#if defined(CONFIG_ESP32_WIFI_WNM_SUPPORT)
+	/* Completing a BSS transition. The application was never told the link
+	 * went down and the address was kept, so leave both alone: renewing it
+	 * here is exactly what keeping it was meant to avoid.
+	 */
+	if (esp32_data.roaming) {
+		esp32_data.roaming = false;
+		LOG_DBG("Roaming complete");
+		return;
+	}
+#endif
+
 #if defined(CONFIG_WIFI_STA_AUTO_DHCPV4)
 	net_dhcpv4_start(esp32_wifi_iface);
 #else
@@ -514,16 +603,50 @@ static void esp_wifi_handle_sta_connect_event(void *event_data)
 #endif
 }
 
+/* True when the supplicant is moving the station to another AP of the same
+ * network rather than losing the link. It disconnects with this reason and
+ * reconnects to the AP named in the BSS transition management request on its
+ * own, so the driver must not start a reconnect of its own.
+ */
+static inline bool esp32_wifi_is_roaming_reason(uint16_t reason)
+{
+#if defined(CONFIG_ESP32_WIFI_WNM_SUPPORT)
+	return reason == WIFI_REASON_BSS_TRANSITION_DISASSOC || reason == WIFI_REASON_ROAMING;
+#else
+	ARG_UNUSED(reason);
+	return false;
+#endif
+}
+
 static void esp_wifi_handle_sta_disconnect_event(void *event_data)
 {
 	wifi_event_sta_disconnected_t *event = (wifi_event_sta_disconnected_t *)event_data;
 	struct wifi_status result;
+	bool roaming = esp32_wifi_is_roaming_reason(event->reason);
 
 #if defined(CONFIG_WIFI_ESP32_MESH)
 	/* The mesh stack owns the station link and reconnects on its own. */
 	if (esp_wifi_mesh_is_active()) {
 		return;
 	}
+#endif
+
+#if defined(CONFIG_ESP32_WIFI_SKIP_DHCP_ON_ROAMING)
+	if (roaming) {
+		/* Both APs are in the same subnet, so the address stays valid.
+		 * Keep the interface up over the transition: no dormant state,
+		 * no DHCP restart, no disconnect reported to the application.
+		 */
+		LOG_DBG("Roaming to another AP, keeping the IP configuration");
+		esp32_data.roaming = true;
+		esp32_data.state = ESP32_STA_CONNECTING;
+		return;
+	}
+#endif
+
+#if defined(CONFIG_ESP32_WIFI_WNM_SUPPORT)
+	/* Any other disconnect ends a transition that was in flight. */
+	esp32_data.roaming = false;
 #endif
 
 	if (esp32_data.state == ESP32_STA_CONNECTED) {
@@ -571,8 +694,11 @@ static void esp_wifi_handle_sta_disconnect_event(void *event_data)
 	}
 	LOG_DBG("Disconnect reason: %d", event->reason);
 
-	if (IS_ENABLED(CONFIG_ESP32_WIFI_STA_RECONNECT) &&
-	    (event->reason != WIFI_REASON_ASSOC_LEAVE)) {
+	if (roaming) {
+		/* The supplicant is already connecting to the AP it picked. */
+		esp32_data.state = ESP32_STA_CONNECTING;
+	} else if (IS_ENABLED(CONFIG_ESP32_WIFI_STA_RECONNECT) &&
+		   (event->reason != WIFI_REASON_ASSOC_LEAVE)) {
 		esp32_data.state = ESP32_STA_CONNECTING;
 		esp_wifi_connect();
 	} else {
@@ -1001,6 +1127,11 @@ void esp_wifi_event_handler(const char *event_base, int32_t event_id, void *even
 	case WIFI_EVENT_STA_DISCONNECTED:
 		esp_wifi_handle_sta_disconnect_event(event_data);
 		break;
+#if defined(CONFIG_ESP32_WIFI_SIGNAL_CHANGE_EVENT)
+	case WIFI_EVENT_STA_BSS_RSSI_LOW:
+		esp_wifi_handle_sta_bss_rssi_low_event(event_data);
+		break;
+#endif
 	case WIFI_EVENT_SCAN_DONE:
 		scan_done_handler();
 		break;
@@ -1094,6 +1225,19 @@ esp_err_t esp_event_post(esp_event_base_t event_base, int32_t event_id, const vo
 		.data_size = 0,
 	};
 	k_timeout_t timeout = K_NO_WAIT;
+
+#if defined(CONFIG_ESP32_WIFI_RRM_SUPPORT)
+	/*
+	 * A neighbor report is larger than the payload buffer and there is
+	 * nowhere to deliver it: the supplicant has already taken the APs it
+	 * names into its candidate list by the time this is posted. Drop it
+	 * here so it does not look like a queue problem.
+	 */
+	if (event_base == WIFI_EVENT && event_id == WIFI_EVENT_STA_NEIGHBOR_REP) {
+		LOG_DBG("Neighbor report received (%zu bytes)", event_data_size);
+		return ESP_OK;
+	}
+#endif
 
 	/*
 	 * Honor the timeout the caller asked for: the libraries post either
@@ -1356,6 +1500,25 @@ static int esp32_wifi_connect(const struct device *dev __unused, struct net_if *
 #if defined(CONFIG_ESP32_WIFI_STA_SCAN_ALL)
 	wifi_config.sta.scan_method = WIFI_ALL_CHANNEL_SCAN;
 	wifi_config.sta.sort_method = WIFI_CONNECT_AP_BY_SIGNAL;
+#endif
+
+	/*
+	 * The 802.11k/v capabilities are carried in the association request,
+	 * so they have to be set before connecting. An AP checks these bits
+	 * before it will answer a neighbor report request or send a BSS
+	 * transition management request.
+	 */
+#if defined(CONFIG_ESP32_WIFI_RRM_SUPPORT)
+	wifi_config.sta.rm_enabled = data->enable_11k;
+#endif
+#if defined(CONFIG_ESP32_WIFI_WNM_SUPPORT)
+	wifi_config.sta.btm_enabled = 1;
+#endif
+#if defined(CONFIG_ESP32_WIFI_MBO_SUPPORT)
+	wifi_config.sta.mbo_enabled = 1;
+#endif
+#if defined(CONFIG_ESP32_WIFI_11R_SUPPORT)
+	wifi_config.sta.ft_enabled = params->ft_used;
 #endif
 
 	esp32_wifi_set_bssid(&wifi_config, params);
@@ -1918,6 +2081,121 @@ static int esp32_wifi_pm_action(const struct device *dev, enum pm_device_action 
 	return 0;
 }
 
+#if defined(CONFIG_ESP32_WIFI_RRM_SUPPORT)
+static int esp32_wifi_11k_cfg(const struct device *dev __unused,
+			      struct net_if *iface __unused,
+			      struct wifi_11k_params *params)
+{
+	if (params->oper == WIFI_MGMT_GET) {
+		params->enable_11k = esp32_data.enable_11k;
+		return 0;
+	}
+
+	if (esp32_data.enable_11k != params->enable_11k) {
+		esp32_data.enable_11k = params->enable_11k;
+		/*
+		 * RRM capability is advertised in the association request, so
+		 * the AP only learns about the change at the next connect.
+		 */
+		LOG_INF("802.11k %s, takes effect on the next connection",
+			params->enable_11k ? "enabled" : "disabled");
+	}
+
+	return 0;
+}
+
+/*
+ * The supplicant consumes the neighbor report itself, adding the APs it names
+ * to the candidate list it attaches to a later BSS transition query, so the
+ * request is all the driver has to issue. The report is not passed on to the
+ * application: it arrives as a raw sequence of neighbor report elements, and
+ * the generic Wi-Fi management layer only accepts these in the text form the
+ * Zephyr supplicant produces.
+ */
+static int esp32_wifi_11k_neighbor_request(const struct device *dev __unused,
+					   struct net_if *iface __unused,
+					   struct wifi_11k_params *params)
+{
+	int ret;
+
+	if (esp32_data.state != ESP32_STA_CONNECTED) {
+		LOG_ERR("Neighbor report requires an active connection");
+		return -ENOTCONN;
+	}
+
+	if (params != NULL && params->ssid[0] != '\0') {
+		/* The library always reports on the current ESS. */
+		LOG_WRN("Ignoring SSID filter, not supported by the Wi-Fi library");
+	}
+
+	ret = esp_rrm_send_neighbor_report_request();
+	if (ret < 0) {
+		LOG_ERR("Failed to send neighbor report request (%d)", ret);
+		return ret == -2 ? -ENOTCONN : -ENOTSUP;
+	}
+
+	return 0;
+}
+
+static bool esp32_wifi_bss_support_neighbor_rep(const struct device *dev __unused,
+						struct net_if *iface __unused)
+{
+	return esp_rrm_is_rrm_supported_connection();
+}
+#endif /* CONFIG_ESP32_WIFI_RRM_SUPPORT */
+
+#if defined(CONFIG_ESP32_WIFI_WNM_SUPPORT)
+static int esp32_wifi_bss_ext_capab(const struct device *dev __unused,
+				    struct net_if *iface __unused, int capab)
+{
+	if (capab != WIFI_EXT_CAPAB_BSS_TRANSITION) {
+		return 0;
+	}
+
+	return esp_wnm_is_btm_supported_connection() ? 1 : 0;
+}
+
+/*
+ * Zephyr passes the reason codes of IEEE 802.11v Table 7-43x, while the Wi-Fi
+ * library takes its own shorter enumeration, so the two do not share values and
+ * cannot simply be cast into each other.
+ */
+static enum btm_query_reason esp32_wifi_btm_reason(uint8_t reason)
+{
+	switch (reason) {
+	case WIFI_BTM_QUERY_REASON_LOW_RSSI:
+		return REASON_RSSI;
+	case WIFI_BTM_QUERY_REASON_LEAVING_ESS:
+	case WIFI_BTM_QUERY_REASON_UNSPECIFIED:
+	default:
+		return REASON_UNSPECIFIED;
+	}
+}
+
+static int esp32_wifi_btm_query(const struct device *dev __unused,
+				struct net_if *iface __unused, uint8_t reason)
+{
+	int ret;
+
+	if (esp32_data.state != ESP32_STA_CONNECTED) {
+		LOG_ERR("BTM query requires an active connection");
+		return -ENOTCONN;
+	}
+
+	/*
+	 * Pass no candidate list of our own and let the supplicant attach the
+	 * candidates it has cached from earlier scans and neighbor reports.
+	 */
+	ret = esp_wnm_send_bss_transition_mgmt_query(esp32_wifi_btm_reason(reason), NULL, 1);
+	if (ret < 0) {
+		LOG_ERR("Failed to send BTM query (%d)", ret);
+		return ret == -2 ? -ENOTCONN : -ENOTSUP;
+	}
+
+	return 0;
+}
+#endif /* CONFIG_ESP32_WIFI_WNM_SUPPORT */
+
 static int esp32_wifi_dev_init(const struct device *dev)
 {
 #if CONFIG_SOC_SERIES_ESP32S2 || CONFIG_SOC_SERIES_ESP32C3
@@ -1929,6 +2207,9 @@ static int esp32_wifi_dev_init(const struct device *dev)
 
 	k_mutex_init(&esp32_data.send_lock);
 	k_sem_init(&esp32_data.tx_done_sem, 0, 1);
+#if defined(CONFIG_ESP32_WIFI_RRM_SUPPORT)
+	esp32_data.enable_11k = true;
+#endif
 #if defined(CONFIG_ESP32_WIFI_AP_STA_MODE)
 	k_mutex_init(&esp32_ap_sta_data.send_lock);
 	k_sem_init(&esp32_ap_sta_data.tx_done_sem, 0, 1);
@@ -2005,6 +2286,15 @@ static const struct wifi_mgmt_ops esp32_wifi_mgmt = {
 	.ap_disable = esp32_wifi_ap_disable,
 	.iface_status = esp32_wifi_status,
 	.set_power_save = esp32_wifi_set_power_save,
+#if defined(CONFIG_ESP32_WIFI_RRM_SUPPORT)
+	.cfg_11k = esp32_wifi_11k_cfg,
+	.send_11k_neighbor_request = esp32_wifi_11k_neighbor_request,
+	.bss_support_neighbor_rep = esp32_wifi_bss_support_neighbor_rep,
+#endif
+#if defined(CONFIG_ESP32_WIFI_WNM_SUPPORT)
+	.bss_ext_capab = esp32_wifi_bss_ext_capab,
+	.btm_query = esp32_wifi_btm_query,
+#endif
 #if defined(CONFIG_ESP32_WIFI_ENTERPRISE)
 	.enterprise_creds = esp32_wifi_enterprise_creds,
 #endif
