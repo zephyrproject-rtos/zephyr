@@ -1,0 +1,6 @@
+board:
+  name: elite_dnf103
+  full_name: STM32F103 Elite Development Board
+  vendor: alientek
+  socs:
+    - name: stm32f103xe
