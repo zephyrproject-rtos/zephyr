@@ -7,6 +7,13 @@ config SOC_FAMILY_MT8XXX
 config SOC_FAMILY
 	default "mt8xxx" if SOC_FAMILY_MT8XXX
 
+# Set by every Xtensa audio DSP cluster in the family.  The family also hosts
+# Arm application processor clusters, so anything specific to the audio DSPs
+# hangs off this rather than off the family symbol.  It is deliberately not
+# named SOC_*: that namespace belongs to the SoCs listed in soc.yml.
+config MTK_ADSP
+	bool
+
 config SOC_SERIES_MT8195
 	bool
 	select SOC_FAMILY_MT8XXX

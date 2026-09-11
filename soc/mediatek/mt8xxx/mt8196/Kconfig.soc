@@ -8,6 +8,7 @@ config SOC_MT8196
 config SOC_MT8196_ADSP
 	bool
 	select SOC_MT8196
+	select MTK_ADSP
 	help
 	  Mediatek MT8196 audio DSP
 

@@ -8,6 +8,7 @@ config SOC_MT8188
 config SOC_MT8188_ADSP
 	bool
 	select SOC_MT8188
+	select MTK_ADSP
 	help
 	  Mediatek MT8188 audio DSP
 
