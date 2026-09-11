@@ -263,7 +263,7 @@ manifest:
       path: modules/lib/hostap
       revision: a90df86d7c596a5367ff70c2b50c7f599e6636f3
     - name: libmetal
-      revision: a6851ba6dba8c9e87d00c42f171a822f7a29639b
+      revision: 14f519529a1e4a46aaea6826f5a41d99a3347276
       path: modules/hal/libmetal
       groups:
         - hal
@@ -303,7 +303,7 @@ manifest:
       revision: 6c389b9b5fa0a079cd4502e69d375da4c0c289b7
       path: modules/bsim_hw_models/nrf_hw_models
     - name: open-amp
-      revision: 76d2168bcdfcd23a9a7dce8c21f2083b90a1e60a
+      revision: f7f4d083c7909a39d86e217376c69b416ec4faf3
       path: modules/lib/open-amp
     - name: openthread
       revision: 3873c6fcd5a8a9dd01b71e8efe32ef5dc7923bb1
