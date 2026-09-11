@@ -54,6 +54,7 @@ _names = [
     'nrfutil',
     'nsim',
     'nxp_s32dbg',
+    'openfpgaloader',
     'openocd',
     'probe_rs',
     'pyocd',
