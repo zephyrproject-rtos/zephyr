@@ -1451,6 +1451,17 @@ static enum udc_bus_speed udc_stm32_device_speed(const struct device *dev)
 	struct udc_stm32_data *priv = udc_get_private(dev);
 
 #ifdef CONFIG_STM32_HAL2
+	/*
+	 * Note use of hal_pcd_device_spped_t here with values
+	 * named HAL_PCD_DEVICE_SPEED_xxx, differing from the
+	 * hal_pcd_speed_t part of the configuration consumed
+	 * by HAL_PCD_SetConfig() and which has values named
+	 * HAL_PCD_SPEED_xxx (no device!).
+	 *
+	 * For simplicity, use the raw HAL_PCD_DEVICE_SPEED_xxx
+	 * with a gate here instead of definition compatibility
+	 * aliases that would be useless on HAL1.
+	 */
 	hal_pcd_device_speed_t speed = HAL_PCD_GetDeviceSpeed(&priv->pcd);
 
 #ifdef USB_OTG_HS
@@ -1467,14 +1478,20 @@ static enum udc_bus_speed udc_stm32_device_speed(const struct device *dev)
 	 * N.B.: pcd.Init.speed is used here on purpose instead
 	 * of udc_stm32_config::selected_speed because HAL updates
 	 * this field after USB enumeration to reflect actual bus speed.
+	 *
+	 * N.B. 2: we use the STM32_PCD_SPEED_xxx aliases here because
+	 * they smooth out the inconsistent presence of the underlying
+	 * PCD_SPEED_xxx macros across series. On HAL1, the same macros
+	 * are used for values that ought to be hal_pcd_device_t and
+	 * hal_pcd_device_speed_t in HAL2.
 	 */
 
-	if (priv->pcd.Init.speed == PCD_SPEED_HIGH) {
+	if (priv->pcd.Init.speed == STM32_PCD_SPEED_HS) {
 		return UDC_BUS_SPEED_HS;
 	}
 
-	if (priv->pcd.Init.speed == PCD_SPEED_HIGH_IN_FULL ||
-	    priv->pcd.Init.speed == PCD_SPEED_FULL) {
+	if (priv->pcd.Init.speed == STM32_PCD_SPEED_HS_IN_FS ||
+	    priv->pcd.Init.speed == STM32_PCD_SPEED_FS) {
 		return UDC_BUS_SPEED_FS;
 	}
 #endif /* CONFIG_STM32_HAL2 */
