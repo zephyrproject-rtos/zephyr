@@ -770,6 +770,71 @@ static int wait_tx_ready(const struct device *dev)
 	return key;
 }
 
+/** @brief Pend until TX is stopped.
+ *
+ * There are 2 configurations that must be handled:
+ * - ENDTX->TXSTOPPED shortcut/PPI enabled - just pend until TXSTOPPED event is set
+ * - disable ENDTX interrupt and manually trigger STOPTX, pend for TXSTOPPED
+ */
+static void wait_for_tx_stopped(const struct device *dev)
+{
+	const struct uarte_nrfx_config *config = dev->config;
+	bool ppi_endtx = (config->flags & UARTE_CFG_FLAG_PPI_ENDTX) ||
+			 IS_ENABLED(UARTE_HAS_ENDTX_STOPTX_SHORT);
+	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
+	bool can_yield = k_can_yield();
+	bool res;
+
+	if (!ppi_endtx) {
+		/* i am assuming here that it can be called from any context,
+		 * including the one that uarte interrupt will not preempt.
+		 */
+		if (can_yield) {
+			do {
+				NRFX_WAIT_FOR(is_tx_ready(dev), 100, 1, res);
+				if (res) {
+					break;
+				}
+				if (IS_ENABLED(CONFIG_MULTITHREADING)) {
+					k_msleep(1);
+				}
+			} while (1);
+		} else {
+			while (!is_tx_ready(dev)) {
+				Z_SPIN_DELAY(3);
+			}
+		}
+
+		if (!nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_TXSTOPPED)) {
+			if (!IS_ENABLED(UARTE_HAS_ENDTX_STOPTX_SHORT)) {
+				nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_ENDTX);
+			}
+			nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STOPTX);
+		}
+	}
+
+	if (can_yield) {
+		do {
+			NRFX_WAIT_FOR(nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_TXSTOPPED),
+				      100, 1, res);
+			if (res) {
+				break;
+			}
+			if (IS_ENABLED(CONFIG_MULTITHREADING)) {
+				k_msleep(1);
+			}
+		} while (1);
+	} else {
+		while (!nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_TXSTOPPED)) {
+			Z_SPIN_DELAY(3);
+		}
+	}
+
+	if (!ppi_endtx && !IS_ENABLED(CONFIG_UART_NRFX_UARTE_NO_IRQ)) {
+		nrf_uarte_int_enable(uarte, NRF_UARTE_INT_ENDTX_MASK);
+	}
+}
+
 static void uarte_periph_enable(const struct device *dev)
 {
 	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
@@ -2710,7 +2775,7 @@ static void uarte_nrfx_poll_out(const struct device *dev, unsigned char c)
 	const struct uarte_nrfx_config *config = dev->config;
 	bool isr_mode = k_is_in_isr() || k_is_pre_kernel();
 	struct uarte_nrfx_data *data = dev->data;
-	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
+	__maybe_unused NRF_UARTE_Type *uarte = get_uarte_instance(dev);
 	unsigned int key;
 
 	if (isr_mode) {
@@ -2743,33 +2808,22 @@ static void uarte_nrfx_poll_out(const struct device *dev, unsigned char c)
 	*config->poll_out_byte = c;
 	tx_start(dev, config->poll_out_byte, 1);
 
-	if (!IS_ENABLED(CONFIG_UART_NRFX_UARTE_NO_IRQ) &&
-	    (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME) || LOW_POWER_ENABLED(config))) {
-		nrf_uarte_int_enable(uarte, NRF_UARTE_INT_TXSTOPPED_MASK);
+	irq_unlock(key);
+
+	wait_for_tx_stopped(dev);
+
+	key = irq_lock();
+
+	if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
+		if (data->flags & UARTE_FLAG_POLL_OUT) {
+			data->flags &= ~UARTE_FLAG_POLL_OUT;
+			pm_device_runtime_put(dev);
+		}
+	} else if (LOW_POWER_ENABLED(config)) {
+		uarte_disable_locked(dev, UARTE_FLAG_LOW_POWER_TX);
 	}
 
 	irq_unlock(key);
-
-	if (IS_ENABLED(CONFIG_UART_NRFX_UARTE_NO_IRQ)) {
-		key = wait_tx_ready(dev);
-		if (!IS_ENABLED(UARTE_HAS_ENDTX_STOPTX_SHORT) &&
-		    !(config->flags & UARTE_CFG_FLAG_PPI_ENDTX)) {
-			nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STOPTX);
-			nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_TXSTOPPED);
-			while (!nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_TXSTOPPED)) {
-			}
-		}
-
-		if (IS_ENABLED(CONFIG_PM_DEVICE_RUNTIME)) {
-			if (!(data->flags & UARTE_FLAG_POLL_OUT)) {
-				data->flags &= ~UARTE_FLAG_POLL_OUT;
-				pm_device_runtime_put(dev);
-			}
-		} else if (LOW_POWER_ENABLED(config)) {
-			uarte_disable_locked(dev, UARTE_FLAG_LOW_POWER_TX);
-		}
-		irq_unlock(key);
-	}
 }
 
 
@@ -3016,44 +3070,6 @@ static int endtx_stoptx_ppi_init(NRF_UARTE_Type *uarte,
 	return 0;
 }
 #endif /* UARTE_ENHANCED_POLL_OUT */
-
-/** @brief Pend until TX is stopped.
- *
- * There are 2 configurations that must be handled:
- * - ENDTX->TXSTOPPED PPI enabled - just pend until TXSTOPPED event is set
- * - disable ENDTX interrupt and manually trigger STOPTX, pend for TXSTOPPED
- */
-static void wait_for_tx_stopped(const struct device *dev)
-{
-	const struct uarte_nrfx_config *config = dev->config;
-	bool ppi_endtx = (config->flags & UARTE_CFG_FLAG_PPI_ENDTX) ||
-			 IS_ENABLED(UARTE_HAS_ENDTX_STOPTX_SHORT);
-	NRF_UARTE_Type *uarte = get_uarte_instance(dev);
-	bool res;
-
-	if (!ppi_endtx) {
-		/* We assume here that it can be called from any context,
-		 * including the one that uarte interrupt will not preempt.
-		 * Disable endtx interrupt to ensure that it will not be triggered
-		 * (if in lower priority context) and stop TX if necessary.
-		 */
-		nrf_uarte_int_disable(uarte, NRF_UARTE_INT_ENDTX_MASK);
-		NRFX_WAIT_FOR(is_tx_ready(dev), 1000, 1, res);
-		if (!nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_TXSTOPPED)) {
-			if (!IS_ENABLED(UARTE_HAS_ENDTX_STOPTX_SHORT)) {
-				nrf_uarte_event_clear(uarte, NRF_UARTE_EVENT_ENDTX);
-			}
-			nrf_uarte_task_trigger(uarte, NRF_UARTE_TASK_STOPTX);
-		}
-	}
-
-	NRFX_WAIT_FOR(nrf_uarte_event_check(uarte, NRF_UARTE_EVENT_TXSTOPPED),
-		      1000, 1, res);
-
-	if (!ppi_endtx && !IS_ENABLED(CONFIG_UART_NRFX_UARTE_NO_IRQ)) {
-		nrf_uarte_int_enable(uarte, NRF_UARTE_INT_ENDTX_MASK);
-	}
-}
 
 #ifdef CONFIG_UART_NRFX_UARTE_HFXO_ON_ACTIVE
 static void uarte_hfxo_active(struct onoff_manager *mgr,
