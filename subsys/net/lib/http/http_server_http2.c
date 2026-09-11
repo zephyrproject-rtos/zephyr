@@ -469,6 +469,7 @@ static int handle_http2_static_fs_resource(struct http_resource_detail_static_fs
 	enum http_compression chosen_compression = 0;
 	int len;
 	int remaining;
+	size_t file_size;
 	char tmp[64];
 
 	if (client->method != HTTP_GET) {
@@ -493,10 +494,10 @@ static int handle_http2_static_fs_resource(struct http_resource_detail_static_fs
 
 	/* open file, if it exists */
 #ifdef CONFIG_HTTP_SERVER_COMPRESSION
-	ret = http_server_find_file(fname, sizeof(fname), &client->data_len,
+	ret = http_server_find_file(fname, sizeof(fname), &file_size,
 					client->supported_compression, &chosen_compression);
 #else
-	ret = http_server_find_file(fname, sizeof(fname), &client->data_len, 0, NULL);
+	ret = http_server_find_file(fname, sizeof(fname), &file_size, 0, NULL);
 #endif /* CONFIG_HTTP_SERVER_COMPRESSION */
 	if (ret < 0) {
 		LOG_ERR("fs_stat %s: %d", fname, ret);
@@ -531,7 +532,7 @@ static int handle_http2_static_fs_resource(struct http_resource_detail_static_fs
 	}
 
 	/* read and send file */
-	remaining = client->data_len;
+	remaining = file_size;
 	while (remaining > 0) {
 		len = fs_read(&file, tmp, sizeof(tmp));
 		if (len < 0) {
