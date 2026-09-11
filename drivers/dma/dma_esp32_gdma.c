@@ -753,6 +753,17 @@ static int dma_esp32_config(const struct device *dev, uint32_t channel,
 	return ret;
 }
 
+/* An EOF leaves the channel running, and stopping it does not discard the
+ * descriptors it has already prefetched or the events it latched. Clear all
+ * of it before handing the channel a new list, so a transfer never inherits
+ * the previous one.
+ */
+static void dma_esp32_rx_rearm(struct dma_esp32_data *data, int channel_id)
+{
+	gdma_hal_stop(&data->hal, channel_id, GDMA_CHANNEL_DIRECTION_RX);
+	dma_esp32_stop_barrier(data, channel_id, GDMA_CHANNEL_DIRECTION_RX);
+}
+
 static int dma_esp32_start(const struct device *dev, uint32_t channel)
 {
 	struct dma_esp32_config *config = (struct dma_esp32_config *)dev->config;
@@ -775,6 +786,7 @@ static int dma_esp32_start(const struct device *dev, uint32_t channel)
 #if CONFIG_PM
 		dma_esp32_pm_policy_state_lock_get(dma_channel_rx);
 #endif
+		dma_esp32_rx_rearm(data, dma_channel->channel_id);
 		gdma_hal_enable_intr(&data->hal, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_RX,
 				     GDMA_LL_EVENT_RX_SUC_EOF | GDMA_LL_EVENT_RX_DONE, true);
 		gdma_hal_enable_intr(&data->hal, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_TX,
@@ -788,6 +800,7 @@ static int dma_esp32_start(const struct device *dev, uint32_t channel)
 					 (intptr_t)dma_channel_tx->desc_list);
 	} else {
 		if (dma_channel->dir == DMA_RX) {
+			dma_esp32_rx_rearm(data, dma_channel->channel_id);
 			gdma_hal_enable_intr(
 				&data->hal, dma_channel->channel_id, GDMA_CHANNEL_DIRECTION_RX,
 				GDMA_LL_EVENT_RX_SUC_EOF | GDMA_LL_EVENT_RX_DONE, true);
