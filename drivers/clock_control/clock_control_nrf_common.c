@@ -16,7 +16,7 @@
 
 LOG_MODULE_REGISTER(clock_control_nrf_common, CONFIG_CLOCK_CONTROL_LOG_LEVEL);
 
-#if (IS_ENABLED(CONFIG_SOC_SERIES_NRF54H) || IS_ENABLED(CONFIG_SOC_SERIES_NRF92))
+#if IS_ENABLED(CONFIG_HAS_MULTI_OPTION_CLOCKS)
 
 #define FLAG_UPDATE_IN_PROGRESS BIT(FLAGS_COMMON_BITS - 1)
 #define FLAG_UPDATE_NEEDED      BIT(FLAGS_COMMON_BITS - 2)
@@ -39,9 +39,9 @@ STRUCT_CLOCK_CONFIG(generic, ONOFF_CNT_MAX);
 
 static bool irq_connected;
 
-#endif /* (IS_ENABLED(CONFIG_SOC_SERIES_NRF54H) || IS_ENABLED(CONFIG_SOC_SERIES_NRF92)) */
+#endif /* IS_ENABLED(CONFIG_HAS_MULTI_OPTION_CLOCKS) */
 
-#if CONFIG_CLOCK_CONTROL_NRF_ONOFF || CONFIG_SOC_SERIES_NRF54H || CONFIG_SOC_SERIES_NRF92
+#if CONFIG_CLOCK_CONTROL_NRF_ONOFF || IS_ENABLED(CONFIG_HAS_MULTI_OPTION_CLOCKS)
 /* Structure used for synchronous clock request. */
 struct sync_req {
 	struct onoff_client cli;
@@ -50,7 +50,7 @@ struct sync_req {
 };
 #endif
 
-#if (IS_ENABLED(CONFIG_SOC_SERIES_NRF54H) || IS_ENABLED(CONFIG_SOC_SERIES_NRF92))
+#if IS_ENABLED(CONFIG_HAS_MULTI_OPTION_CLOCKS)
 
 static void update_config(struct clock_config_generic *cfg)
 {
@@ -203,7 +203,7 @@ int api_nosys_on_off(const struct device *dev, clock_control_subsys_t sys)
 	return -ENOSYS;
 }
 
-#else /* IS_ENABLED(CONFIG_SOC_SERIES_NRF54H) || IS_ENABLED(CONFIG_SOC_SERIES_NRF92)) */
+#else /* IS_ENABLED(CONFIG_HAS_MULTI_OPTION_CLOCKS) */
 
 /* This function should be treated as static.
  * static keyword is not used so that it can be accessed by interrupt oriented tests.
@@ -486,9 +486,9 @@ DEVICE_API(nrf_clock_control, common_clock_control_api) = {
 #endif
 };
 
-#endif /* (IS_ENABLED(CONFIG_SOC_SERIES_NRF54H) || IS_ENABLED(CONFIG_SOC_SERIES_NRF92)) */
+#endif /* IS_ENABLED(CONFIG_HAS_MULTI_OPTION_CLOCKS) */
 
-#if CONFIG_CLOCK_CONTROL_NRF_ONOFF || CONFIG_SOC_SERIES_NRF54H || CONFIG_SOC_SERIES_NRF92
+#if CONFIG_CLOCK_CONTROL_NRF_ONOFF || IS_ENABLED(CONFIG_HAS_MULTI_OPTION_CLOCKS)
 
 static void sync_cb(struct onoff_manager *mgr, struct onoff_client *cli, uint32_t state, int res)
 {

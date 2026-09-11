@@ -7,6 +7,10 @@ config HAS_NORDIC_DMM
 config HAS_NORDIC_RAM_CTRL
 	bool
 
+config HAS_MULTI_OPTION_CLOCKS
+	bool
+	default n
+
 config NRF_FORCE_RAM_ON_REBOOT
 	bool "Force all RAM blocks to be powered on before rebooting"
 	depends on HAS_NORDIC_RAM_CTRL

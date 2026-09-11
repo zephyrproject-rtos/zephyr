@@ -27,7 +27,7 @@
 extern "C" {
 #endif
 
-#if !(defined(CONFIG_SOC_SERIES_NRF54H) || defined(CONFIG_SOC_SERIES_NRF92))
+#if !IS_ENABLED(CONFIG_HAS_MULTI_OPTION_CLOCKS)
 
 #include <hal/nrf_clock.h>
 
@@ -206,7 +206,7 @@ uint32_t z_nrf_clock_bt_ctlr_hf_get_startup_time_us(void);
 
 /** @endcond */
 
-#endif /* !(defined(CONFIG_SOC_SERIES_NRF54H) || defined(CONFIG_SOC_SERIES_NRF92)) */
+#endif /* !IS_ENABLED(CONFIG_HAS_MULTI_OPTION_CLOCKS) */
 
 /** @brief Specifies to use the maximum available frequency for a given clock. */
 #define NRF_CLOCK_CONTROL_FREQUENCY_MAX UINT32_MAX
