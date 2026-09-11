@@ -73,6 +73,12 @@
 				#gpio-cells = <2>;
 			};
 		};
+
+		crc: crc@401b2000 {
+			compatible = "ti,mspm0-crc";
+			reg = <0x401b2000 0x2000>;
+			status = "disabled";
+		};
 	};
 };
 
