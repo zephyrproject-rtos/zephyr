@@ -85,12 +85,16 @@ child-binding:
 
     first-divider:
       type: int
+      min: 1
+      max: 127
       description: |
         Output divider for the first output (Pdiv2, Pdiv4,...).
 
     second-divider:
       type: int
+      min: 1
+      max: 127
       description: |
-        Output divider for the first output (Pdiv3, Pdiv5,...).
+        Output divider for the second output (Pdiv3, Pdiv5,...).
 
 on-bus: i2c
