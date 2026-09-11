@@ -4,6 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
+#include <freq.h>
+
+/ {
+	aliases {
+		eeprom-9bit = &eeprom9;
+	};
+};
+
 &spi0 {
 	eeprom9: eeprom@0 {
 		compatible = "atmel,at25";

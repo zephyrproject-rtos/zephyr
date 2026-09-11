@@ -15,7 +15,7 @@
  * above 256 ("high bank") are therefore only distinguished by that opcode
  * bit, not by the address bytes themselves.
  */
-#define EEPROM_NODE       DT_NODELABEL(eeprom9)
+#define EEPROM_NODE       DT_ALIAS(eeprom_9bit)
 #define LOW_BANK_SIZE     256
 #define HIGH_BANK_OFFSET  LOW_BANK_SIZE
 
