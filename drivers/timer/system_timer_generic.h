@@ -232,7 +232,15 @@ typedef uint32_t timer_core_cycles_t;
 typedef uint64_t timer_core_cycles_t;
 #endif
 
-/* The alarm is usually part of the same counter. */
+/*
+ * The alarm is usually part of the same counter.
+ *
+ * A deadline further out is reached over several arms. On a compare backend,
+ * each arm must reach a whole tick: the deadline is clamped relative to the
+ * announce baseline, which only moves when a tick is announced, so a shorter
+ * reach re-arms the same point forever. A reload is relative to the counter
+ * and has no such limit. Asserted below.
+ */
 #ifndef TIMER_CORE_ALARM_MAX_CYCLES
 #define TIMER_CORE_ALARM_MAX_CYCLES TIMER_CORE_COUNTER_MASK
 #endif
@@ -536,13 +544,17 @@ static timer_core_ticks_t timer_core_max_span_ticks;
 #define TIMER_CORE_MAX_SPAN_TICKS timer_core_max_span_ticks
 #else
 #define TIMER_CORE_MAX_SPAN_TICKS TIMER_CORE_SPAN_TICKS_OF(TIMER_CORE_MAX_UNANNOUNCED_CYCLES)
-/* A tick must fit in what the counter can measure. Checked here if constant,
- * or in timer_core_init() otherwise. Only the counter matters: if the alarm
- * can't cover a whole tick in one arm, the core just arms it several times.
+/* A tick must fit in what the counter can measure, and in what a compare
+ * alarm reaches. Checked here if constant, or in timer_core_init() otherwise.
  */
 BUILD_ASSERT(TIMER_CORE_COUNTER_SAFE_SPAN >= TIMER_CORE_TICK_MAX_CYCLES,
 	     "a tick is longer than the counter can span: raise "
 	     "CONFIG_SYS_CLOCK_TICKS_PER_SEC, or slow the counter");
+#if !defined(TIMER_CORE_BACKEND_RELOAD)
+BUILD_ASSERT(TIMER_CORE_MAX_ARM_CYCLES >= TIMER_CORE_TICK_MAX_CYCLES,
+	     "a tick is longer than the compare alarm reaches: raise "
+	     "CONFIG_SYS_CLOCK_TICKS_PER_SEC, or slow the counter");
+#endif /* !TIMER_CORE_BACKEND_RELOAD */
 #endif
 
 #if defined(TIMER_CORE_BACKEND_RELOAD)
@@ -987,11 +999,15 @@ static inline void timer_core_init(void)
 	timer_core_max_span_ticks = TIMER_CORE_SPAN_TICKS_OF(TIMER_CORE_MAX_UNANNOUNCED_CYCLES);
 	/* The checks a constant rate gets at build time. */
 	__ASSERT(TIMER_CORE_CYC_PER_TICK != 0, "timer counter rate is below the tick rate");
-	/* Cast both sides to uint64_t: otherwise, with a 64-bit counter, the
-	 * compiler warns the comparison is always true.
+	/* Cast both sides of each comparison to uint64_t: otherwise, with a
+	 * 64-bit counter, the compiler warns the comparison is always true.
 	 */
 	__ASSERT((uint64_t)TIMER_CORE_COUNTER_SAFE_SPAN >= (uint64_t)TIMER_CORE_TICK_MAX_CYCLES,
 		 "a tick is longer than the counter can span");
+#if !defined(TIMER_CORE_BACKEND_RELOAD)
+	__ASSERT((uint64_t)TIMER_CORE_MAX_ARM_CYCLES >= (uint64_t)TIMER_CORE_TICK_MAX_CYCLES,
+		 "a tick is longer than the compare alarm reaches");
+#endif  /* !TIMER_CORE_BACKEND_RELOAD */
 #endif
 	/* Start the baseline at the counter. The baseline is still zero, so this
 	 * converts from tick zero, and the results are no larger than the counter
