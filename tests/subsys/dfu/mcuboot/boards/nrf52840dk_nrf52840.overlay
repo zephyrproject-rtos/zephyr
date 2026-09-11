@@ -1,0 +1,36 @@
+/delete-node/ &boot_partition;
+/delete-node/ &slot0_partition;
+/delete-node/ &slot1_partition;
+
+&flash0 {
+	partitions {
+		boot_partition: partition@0 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x0 DT_SIZE_K(56)>;
+		};
+
+		slot0_partition: partition@e000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0xe000 DT_SIZE_K(468)>;
+		};
+
+		slot1_partition: partition@83000 {
+			compatible = "zephyr,mapped-partition";
+			reg = <0x83000 DT_SIZE_K(468)>;
+		};
+	};
+};
+
+/ {
+	chosen {
+		/*
+		 * Set the slot0_partition as the active slot.
+		 * The code will not be linked to slot1_partition, because the
+		 * USE_DT_CODE_PARTITION Kconfig option is not set.
+		 * The code will in fact use the boot_partition, but the build
+		 * will not check if the code fits inside it.
+		 * This check needs to be performed manually.
+		 */
+		zephyr,code-partition = &slot0_partition;
+	};
+};
