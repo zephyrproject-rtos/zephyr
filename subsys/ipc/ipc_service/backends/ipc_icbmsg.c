@@ -631,7 +631,7 @@ static int msg_q_produce(const struct device *instance, uint8_t block_index, int
 		active_count = data->msg_q.tx_active_count;
 		if (active_count == MAX_ACTIVE_COUNT) {
 			rv = -ENOMEM;
-			break;
+			K_SPINLOCK_BREAK;
 		}
 
 		idx = config->tx_msg_q.prod_shmq->hdr.block_idx % MAX_ACTIVE_COUNT;
@@ -1173,7 +1173,7 @@ static int deregister_ept(const struct device *instance, void *token)
 				data->ept[i].name_hash = NAME_HASH_EMPTY;
 				data->ept[i].state = EPT_UNBOUND;
 				data->ep_cnt--;
-				break;
+				K_SPINLOCK_BREAK;
 			}
 		}
 	}
