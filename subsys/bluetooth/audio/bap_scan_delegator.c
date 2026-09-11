@@ -1191,6 +1191,18 @@ static int scan_delegator_mod_src(struct bt_conn *conn,
 	(void)memcpy(&backup_state, state, sizeof(backup_state));
 	backup_pa_sync_requested = internal_state->pa_sync_requested;
 
+	/* BAP_v1.0.1, 3.1.1.4: If the server has synchronized to a BIS and the server has
+	 * detected that the BIS is encrypted, and if the server does not have an encryption
+	 * key to decrypt the BIS, the server shall write a value of 0x01 (Broadcast_Code
+	 * required) to the BIG_Encryption field. If the client requests to sync to a BIS again
+	 * after a previous sync attempt failed due to a bad broadcast code, we shall therefore
+	 * request the broadcast code again instead of leaving the receive state at Bad_Code.
+	 */
+	if (aggregated_bis_syncs != 0U && state->encrypt_state == BT_BAP_BIG_ENC_STATE_BAD_CODE) {
+		state->encrypt_state = BT_BAP_BIG_ENC_STATE_BCODE_REQ;
+		state_changed = true;
+	}
+
 	if (state->num_subgroups != num_subgroups) {
 		state->num_subgroups = num_subgroups;
 		state_changed = true;
