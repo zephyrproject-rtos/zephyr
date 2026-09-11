@@ -294,10 +294,7 @@ class Patch(WestCommand):
         elif not args.patch_yml.is_absolute():
             args.patch_yml = manifest_dir / args.patch_yml
 
-        if args.west_workspace is None:
-            args.west_workspace = topdir
-        elif not args.west_workspace.is_absolute():
-            args.west_workspace = topdir / args.west_workspace
+        self.resolve_west_workspace(args)
 
         if args.dst_modules is not None:
             args.dst_modules = [self.get_module_path(m) for m in args.dst_modules]
@@ -321,10 +318,6 @@ class Patch(WestCommand):
     def do_run(self, args, _):
         self.filter_args(args)
 
-        west_config = Path(args.west_workspace) / ".west" / "config"
-        if not os.path.isfile(west_config):
-            self.die(f"{args.west_workspace} is not a valid west workspace")
-
         yml = self.load_yml(args, args.subcommand in ["gh-fetch"])
         if yml is None:
             return
@@ -345,6 +338,25 @@ class Patch(WestCommand):
         patches = yml.get("patches", [])
         if not patches:
             return
+
+        patch_count, failed_patch, patched_mods = self.apply_patches(args, yml, dst_mods)
+
+        if not failed_patch:
+            self.inf(f"{patch_count} patches applied successfully \\o/")
+            return
+
+        if args.roll_back:
+            self.clean(args, yml, patched_mods)
+
+        self.die(f"failed to apply patch {failed_patch}")
+
+    def apply_patches(self, args, yml, dst_mods=None):
+        """Apply the patches of a single patches.yml.
+
+        Returns a (patch_count, failed_patch, patched_mods) tuple, where failed_patch is None if
+        all patches were applied successfully.
+        """
+        patches = yml.get("patches", [])
 
         patch_count = 0
         failed_patch = None
@@ -401,14 +413,17 @@ class Patch(WestCommand):
                 break
             self.dbg("OK")
 
-        if not failed_patch:
-            self.inf(f"{patch_count} patches applied successfully \\o/")
-            return
+        return patch_count, failed_patch, patched_mods
 
-        if args.roll_back:
-            self.clean(args, yml, patched_mods)
+    def resolve_west_workspace(self, args):
+        if args.west_workspace is None:
+            args.west_workspace = Path(self.topdir)
+        elif not args.west_workspace.is_absolute():
+            args.west_workspace = Path(self.topdir) / args.west_workspace
 
-        self.die(f"failed to apply patch {failed_patch}")
+        west_config = Path(args.west_workspace) / ".west" / "config"
+        if not west_config.is_file():
+            self.die(f"{args.west_workspace} is not a valid west workspace")
 
     def clean(self, args, yml, dst_mods=None):
         clean_cmd = yml["clean-command"]
