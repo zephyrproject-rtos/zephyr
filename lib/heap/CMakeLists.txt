@@ -18,6 +18,8 @@ zephyr_sources_ifdef(CONFIG_SHARED_MULTI_HEAP shared_multi_heap.c)
 zephyr_sources_ifdef(CONFIG_MULTI_HEAP multi_heap.c)
 zephyr_sources_ifdef(CONFIG_HEAP_LISTENER heap_listener.c)
 zephyr_sources_ifdef(CONFIG_SYS_HEAP_ARRAY_SIZE heap_array.c)
+zephyr_sources_ifdef(CONFIG_HEAPTRACE heaptrace.c)
+zephyr_sources_ifdef(CONFIG_HEAPTRACE_SHELL heaptrace_shell.c)
 zephyr_sources_ifdef(CONFIG_SYS_HEAP_SANITIZER_ASAN heap_sanitizer_asan.c)
 zephyr_sources_ifdef(CONFIG_SYS_HEAP_KASAN heap_kasan.c)
 

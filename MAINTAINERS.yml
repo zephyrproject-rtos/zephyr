@@ -3428,11 +3428,13 @@ Heap Management:
     - lib/heap/
     - tests/lib/heap/
     - tests/lib/heap_align/
+    - tests/lib/heaptrace/
     - tests/lib/multi_heap/
     - include/zephyr/multi_heap/
   tests:
     - libraries.heap
     - libraries.heap_align
+    - libraries.heaptrace
     - libraries.multi_heap
     - libraries.shared_multi_heap
 
