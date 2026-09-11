@@ -280,6 +280,10 @@ static uint8_t sl_802154_serialize_mhr(uint8_t *buffer, uint8_t buffer_len,
 
 /* IEEE 802.15.4 security level: encryption only = 4, enc+MIC-32 = 5, etc. */
 #define SEC_LEVEL_ENC 4
+/* CCM* for 802.15.4 always encodes the message length in two octets. */
+#define SL_802154_CCM_L_FIELD_BYTES 2
+/* B0 flags bit set when the message carries additional authenticated data. */
+#define SL_802154_CCM_FLAG_ADATA BIT(6)
 /* MIC sizes by security level (level 0-3 and 4-7); index is AuxHdr security_level (3 bits). */
 static const uint8_t mic_size_table[] = {0, 4, 8, 16, 0, 4, 8, 16};
 
@@ -296,12 +300,96 @@ static void sl_802154_generate_nonce(const uint8_t ext_address[IEEE802154_EXT_AD
 	nonce[0] = security_level;
 }
 
+/* CCM* encodes the AAD length as a 2-byte prefix ahead of the AAD itself. */
+static uint8_t sl_802154_ccm_aad_byte(const uint8_t *aad, uint16_t aad_len, uint16_t index)
+{
+	if (index == 0) {
+		return (uint8_t)(aad_len >> 8);
+	}
+	if (index == 1) {
+		return (uint8_t)aad_len;
+	}
+	return aad[index - 2];
+}
+
+/* CCM* MIC for an authenticate-only frame (zero-length encrypted payload).
+ *
+ * sli_crypto_ccm_zigbee() is not used: a zero-length message is replaced by a
+ * 16-byte 0xFF filler, and DMA_SG_TAG_SETINVALIDBYTES(16) wraps a 4-bit field
+ * to zero, so the filler is authenticated and the tag is wrong. Build CCM*
+ * from single-block AES (CBC-MAC over B0 and the AAD, then A0 keystream).
+ */
+static int sl_802154_ccm_tag_auth_only(const uint8_t *aad, uint16_t aad_len, const uint8_t *nonce,
+				       uint8_t tag_length, const uint8_t *key, uint8_t *tag)
+{
+	sli_crypto_descriptor_t key_desc =
+		SLI_CRYPTO_DESCRIPTOR_INIT_PLAINTEXT_KEY((uint8_t *)key, OT_MAC_KEY_SIZE);
+	uint8_t block[SLI_CRYPTO_AES_BLOCK_SIZE];
+	uint8_t mac[SLI_CRYPTO_AES_BLOCK_SIZE];
+	uint8_t keystream[SLI_CRYPTO_AES_BLOCK_SIZE];
+	uint16_t encoded_len;
+	uint16_t pos;
+	uint8_t i;
+	sl_status_t ret;
+
+	/* B0: flags || nonce || l(m). l(m) is 0 and occupies the last two bytes. */
+	block[0] = SL_802154_CCM_L_FIELD_BYTES - 1;
+	if (aad_len > 0) {
+		block[0] |= SL_802154_CCM_FLAG_ADATA;
+	}
+	if (tag_length >= 4) {
+		block[0] |= (uint8_t)(((tag_length - 2) / 2) << 3);
+	}
+	memcpy(&block[1], nonce, SL_802154_CCM_NONCE_BYTES);
+	block[14] = 0;
+	block[15] = 0;
+
+	ret = sli_crypto_aes_ecb_radio(true, &key_desc, OT_MAC_KEY_SIZE * 8, block, mac);
+	if (ret != SL_STATUS_OK) {
+		return -EIO;
+	}
+
+	/* CBC-MAC over the length-prefixed AAD, zero padded to a whole block. */
+	encoded_len = aad_len + sizeof(uint16_t);
+	for (pos = 0; pos < encoded_len; pos += SLI_CRYPTO_AES_BLOCK_SIZE) {
+		memset(block, 0, sizeof(block));
+		for (i = 0; i < SLI_CRYPTO_AES_BLOCK_SIZE && pos + i < encoded_len; i++) {
+			block[i] = sl_802154_ccm_aad_byte(aad, aad_len, pos + i);
+		}
+		for (i = 0; i < SLI_CRYPTO_AES_BLOCK_SIZE; i++) {
+			block[i] ^= mac[i];
+		}
+		ret = sli_crypto_aes_ecb_radio(true, &key_desc, OT_MAC_KEY_SIZE * 8, block, mac);
+		if (ret != SL_STATUS_OK) {
+			return -EIO;
+		}
+	}
+
+	/* A0: flags || nonce || counter 0. Its keystream masks the tag. */
+	block[0] = SL_802154_CCM_L_FIELD_BYTES - 1;
+	memcpy(&block[1], nonce, SL_802154_CCM_NONCE_BYTES);
+	block[14] = 0;
+	block[15] = 0;
+
+	ret = sli_crypto_aes_ecb_radio(true, &key_desc, OT_MAC_KEY_SIZE * 8, block, keystream);
+	if (ret != SL_STATUS_OK) {
+		return -EIO;
+	}
+
+	for (i = 0; i < tag_length; i++) {
+		tag[i] = mac[i] ^ keystream[i];
+	}
+	return 0;
+}
+
 static int sl_802154_tx_ccm(uint8_t *mpdu, uint16_t mpdu_len, uint8_t header_length,
 			    uint8_t security_level, const uint8_t *key, const uint8_t *nonce)
 {
 	uint8_t tag_length;
 	uint16_t min_mpdu;
 	uint16_t payload_length;
+	uint16_t aad_length;
+	uint16_t cipher_length;
 	uint8_t *payload;
 	uint8_t *footer;
 	sli_crypto_descriptor_t key_desc =
@@ -323,11 +411,63 @@ static int sl_802154_tx_ccm(uint8_t *mpdu, uint16_t mpdu_len, uint8_t header_len
 	payload = mpdu + header_length;
 	footer = mpdu + mpdu_len - IEEE802154_FCS_LENGTH - tag_length;
 
-	ret = sli_crypto_ccm_zigbee(&key_desc, true,
-				    (security_level >= SEC_LEVEL_ENC) ? payload : NULL, payload,
-				    (security_level >= SEC_LEVEL_ENC) ? payload_length : 0, nonce,
-				    mpdu, header_length, footer, tag_length);
+	/* Below SEC_LEVEL_ENC nothing is encrypted, so the payload is authenticated
+	 * as part of the AAD rather than passed as the CCM* message.
+	 */
+	if (security_level >= SEC_LEVEL_ENC) {
+		aad_length = header_length;
+		cipher_length = payload_length;
+	} else {
+		aad_length = (uint16_t)header_length + payload_length;
+		cipher_length = 0;
+	}
+
+	if (cipher_length == 0) {
+		return sl_802154_ccm_tag_auth_only(mpdu, aad_length, nonce, tag_length, key,
+						   footer);
+	}
+
+	ret = sli_crypto_ccm_zigbee(&key_desc, true, payload, payload, cipher_length, nonce, mpdu,
+				    aad_length, footer, tag_length);
 	return (ret == SL_STATUS_OK) ? 0 : -EIO;
+}
+
+/* CCM* AAD length: MHR plus header IEs, matching OpenThread GetHeaderLength().
+ * Header IEs (for example CSL) are authenticated and sent in the clear. Using
+ * only the MHR encrypts them and the peer fails to parse the IE list.
+ */
+static size_t sl_802154_get_header_length(struct ieee802154_mhr *mhr, uint8_t *mpdu,
+					  uint16_t mpdu_len, uint8_t tag_length)
+{
+	size_t footer_length = (size_t)tag_length + IEEE802154_FCS_LENGTH;
+	size_t offset = sl_802154_get_mhr_length(mhr);
+	size_t payload_end;
+
+	if (!mhr->fs->fc.ie_list || mpdu_len < footer_length) {
+		return offset;
+	}
+
+	payload_end = mpdu_len - footer_length;
+
+	while (offset + IEEE802154_HEADER_IE_HEADER_LENGTH <= payload_end) {
+		struct ieee802154_header_ie *ie =
+			(struct ieee802154_header_ie *)(mpdu + offset);
+		size_t ie_len = IEEE802154_HEADER_IE_HEADER_LENGTH + ie->length;
+
+		if (offset + ie_len > payload_end) {
+			break;
+		}
+
+		/* A termination IE is the last header IE and belongs to the AAD. */
+		offset += ie_len;
+
+		if (ieee802154_header_ie_get_element_id(ie) ==
+		    IEEE802154_HEADER_IE_ELEMENT_ID_HEADER_TERMINATION_2) {
+			break;
+		}
+	}
+
+	return offset;
 }
 
 static void sl_802154_security_init(struct sl_802154_mac_data *mac_data)
@@ -391,8 +531,12 @@ static int sl_802154_security_get_non_ack_key(struct sl_802154_data *data, const
 	return 0;
 }
 
+/* @p pkt and @p ot_psdu are the OpenThread frame that @p buffer was copied from,
+ * and are NULL for an enhanced ACK, which the driver originates itself.
+ */
 static int sl_802154_security_process_tx(struct sl_802154_data *data, uint8_t *buffer, uint8_t len,
-					 struct ieee802154_mhr *mhr, bool mac_hdr_rdy)
+					 struct ieee802154_mhr *mhr, bool mac_hdr_rdy,
+					 struct net_pkt *pkt, uint8_t *ot_psdu)
 {
 	struct ieee802154_aux_security_hdr *aux;
 	const uint8_t *key = NULL;
@@ -425,7 +569,6 @@ static int sl_802154_security_process_tx(struct sl_802154_data *data, uint8_t *b
 	}
 
 	aux = mhr->aux_sec;
-	header_length = sl_802154_get_mhr_length(mhr);
 	security_level = mhr->aux_sec->control.security_level;
 
 	if (security_level >= ARRAY_SIZE(mic_size_table)) {
@@ -433,7 +576,12 @@ static int sl_802154_security_process_tx(struct sl_802154_data *data, uint8_t *b
 		return -EINVAL;
 	}
 
+	header_length = (uint8_t)sl_802154_get_header_length(mhr, buffer, len,
+							     mic_size_table[security_level]);
+
 	if (!mac_hdr_rdy) {
+		bool stamp_key_id = key_id != 0 && aux->control.key_id_mode ==
+						   IEEE802154_KEY_ID_MODE_INDEX;
 		uint32_t fc;
 		unsigned int irq_key;
 
@@ -448,9 +596,26 @@ static int sl_802154_security_process_tx(struct sl_802154_data *data, uint8_t *b
 
 		aux->frame_counter = fc;
 
-		if (key_id != 0 &&
-		    mhr->aux_sec->control.key_id_mode == IEEE802154_KEY_ID_MODE_INDEX) {
-			mhr->aux_sec->kif.mode_1.key_index = key_id;
+		if (stamp_key_id) {
+			aux->kif.mode_1.key_index = key_id;
+		}
+
+		/* Keep the MAC header in the caller's PSDU so a retransmission
+		 * reuses the same frame counter and key index.
+		 */
+		if (ot_psdu != NULL) {
+			struct ieee802154_aux_security_hdr *ot_aux;
+
+			ot_aux = (struct ieee802154_aux_security_hdr *)(ot_psdu +
+				 (size_t)((uint8_t *)aux - buffer));
+			ot_aux->frame_counter = aux->frame_counter;
+			if (stamp_key_id) {
+				ot_aux->kif.mode_1.key_index = aux->kif.mode_1.key_index;
+			}
+		}
+
+		if (pkt != NULL) {
+			net_pkt_set_ieee802154_mac_hdr_rdy(pkt, true);
 		}
 	}
 
@@ -836,7 +1001,7 @@ static inline uint32_t sl_802154_get_ack_mhr_time(struct sl_802154_data *data,
 }
 
 static bool sl_802154_update_tx_csl_ie(struct sl_802154_data *data, uint8_t frame_len,
-				       uint32_t tx_mhr_time_us)
+				       uint32_t tx_mhr_time_us, uint8_t *ot_psdu)
 {
 	size_t offset;
 
@@ -867,6 +1032,10 @@ static bool sl_802154_update_tx_csl_ie(struct sl_802154_data *data, uint8_t fram
 				sys_cpu_to_le16(sl_802154_get_csl_phase(data, tx_mhr_time_us));
 			ie->content.csl.reduced.csl_period =
 				sys_cpu_to_le16((uint16_t)data->csl_period);
+			/* Keep the IE in the caller's PSDU for retransmission. */
+			if (ot_psdu != NULL) {
+				memcpy(ot_psdu + offset, data->tx_buffer + offset, ie_len);
+			}
 			return true;
 		}
 
@@ -1256,7 +1425,7 @@ static int sl_802154_write_enhanced_ack(struct sl_802154_data *data,
 		if (sl_802154_security_process_tx(data,
 						  data->enh_ack_buffer + SL_802154_PHR_BYTES,
 						  (uint8_t)mpdu_len, &data->enh_ack_mhr,
-						  false) < 0) {
+						  false, NULL, NULL) < 0) {
 			sl_802154_reset_ack_metadata(data);
 			/* Skip writing a malformed ACK; peer will retransmit. */
 			return 1;
@@ -2307,7 +2476,8 @@ static int sl_802154_prepare_tx_frame(struct sl_802154_data *data, struct net_pk
 	if (SL_802154_HAS_CSL_SUPPORT && data->csl_period > 0 &&
 	    !net_pkt_ieee802154_mac_hdr_rdy(pkt) && tx_time_ns != 0) {
 		(void)sl_802154_update_tx_csl_ie(data, frag->len,
-						 (uint32_t)(tx_time_ns / NSEC_PER_USEC));
+						 (uint32_t)(tx_time_ns / NSEC_PER_USEC),
+						 frag->data);
 	}
 
 	if (net_pkt_ieee802154_frame_secured(pkt)) {
@@ -2315,7 +2485,8 @@ static int sl_802154_prepare_tx_frame(struct sl_802154_data *data, struct net_pk
 	}
 
 	return sl_802154_security_process_tx(data, data->tx_buffer, len, &data->tx_mhr,
-					     net_pkt_ieee802154_mac_hdr_rdy(pkt));
+					     net_pkt_ieee802154_mac_hdr_rdy(pkt), pkt,
+					     frag->data);
 }
 
 static int sl_802154_write_tx_fifo(struct sl_802154_data *data, struct net_buf *frag, uint8_t len)
@@ -2491,7 +2662,15 @@ static int silabs_efr32_tx(const struct device *dev, enum ieee802154_tx_mode mod
 		.transaction_time = 0 /* will be calculated later if DMP is used */
 	};
 	int ret;
-	net_time_t tx_time_ns = net_pkt_timestamp_ns(pkt);
+	net_time_t tx_time_ns;
+
+	/* OpenThread reuses one net_pkt and does not clear its timestamp. Ignore
+	 * a leftover value unless this transmit is actually scheduled.
+	 */
+	tx_time_ns = (mode == IEEE802154_TX_MODE_TXTIME ||
+		      mode == IEEE802154_TX_MODE_TXTIME_CCA)
+			     ? net_pkt_timestamp_ns(pkt)
+			     : 0;
 
 	if (!data->radio_data.rail_initialized) {
 		return -ENOTSUP;
