@@ -457,6 +457,9 @@ sitemap_url_scheme = "{link}"
 mermaid_version = "11.14.0"
 d3_version = "7.9.0"
 
+# Without this, every diagram is drawn in a box of a fixed height and centered in it.
+mermaid_height = "auto"
+
 if tags.has("no-external-deps"): # pylint: disable=undefined-variable  # noqa: F821
     mermaid_use_local = "js/mermaid/mermaid.esm.mjs"
     d3_use_local = "js/d3/d3.min.js"
