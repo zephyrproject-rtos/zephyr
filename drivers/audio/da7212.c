@@ -657,8 +657,8 @@ static DEVICE_API(audio_codec, da7212_driver_api) = {
 		.i2c = I2C_DT_SPEC_INST_GET(n),						\
 		.clock_source = DT_INST_ENUM_IDX(n, clock_source),			\
 		.mclk_dev = DEVICE_DT_GET(DT_INST_CLOCKS_CTLR_BY_NAME(n, mclk)),	\
-		.mclk_name = (clock_control_subsys_t)DT_INST_CLOCKS_CELL_BY_NAME(n,	\
-								 mclk, name)};		\
+		.mclk_name = (clock_control_subsys_t)DT_INST_PHA_BY_NAME_OR(n,		\
+								 clocks, mclk, name, 0)};	\
 											\
 	DEVICE_DT_INST_DEFINE(n, NULL, NULL, NULL, &da7212_device_config_##n,		\
 		POST_KERNEL, CONFIG_AUDIO_CODEC_INIT_PRIORITY, &da7212_driver_api);
