@@ -27,6 +27,7 @@
 		led1 = &led1;
 		sw0 = &button0;
 		sw1 = &button1;
+		rtc = &rtc;
 	};
 
 	leds {
@@ -138,6 +139,18 @@
 		xosc32k-en = <1>;
 	};
 
+	/*
+	 * Run the RTC off the crystal rather than the internal ULP oscillator.
+	 * OSC32KCTRL derives the 1 kHz outputs internally from whichever source
+	 * RTCSEL names, so xosc1k costs nothing beyond this line and turns a
+	 * percent-level drift into a crystal-level one.
+	 */
+	rtcclock: rtcclock {
+		compatible = "microchip,pic32cm-sg-gc-rtc";
+		#clock-cells = <1>;
+		rtc-src = <3>;	/* 1.024 kHz from the 32.768 kHz crystal */
+	};
+
 	gclkgen: gclkgen {
 		compatible = "microchip,pic32cm-sg-gc-gclkgen";
 
@@ -178,6 +191,11 @@
 			subsystem = <CLOCK_MCHP_MCLKPERIPH_ID_SERCOM1>;
 			mclk-en = <1>;
 		};
+
+		rtc {
+			subsystem = <CLOCK_MCHP_MCLKPERIPH_ID_RTC>;
+			mclk-en = <1>;
+		};
 	};
 };
 
@@ -207,6 +225,10 @@
 };
 
 &dmac {
+	status = "okay";
+};
+
+&rtc {
 	status = "okay";
 };
 
