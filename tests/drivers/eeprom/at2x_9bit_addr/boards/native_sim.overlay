@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2026 Axon Enterprise, Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+&spi0 {
+	eeprom9: eeprom@0 {
+		compatible = "atmel,at25";
+		reg = <0x0>;
+		size = <512>;
+		pagesize = <16>;
+		address-width = <9>;
+		spi-max-frequency = <DT_FREQ_M(20)>;
+		timeout = <5>;
+	};
+};

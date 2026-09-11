@@ -1,0 +1,13 @@
+# Copyright (c) 2026 Axon Enterprise, Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+tests:
+  drivers.eeprom.at2x_9bit_addr:
+    tags:
+      - drivers
+      - eeprom
+    platform_allow:
+      - native_sim
+      - native_sim/native/64
+    integration_platforms:
+      - native_sim
