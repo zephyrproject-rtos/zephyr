@@ -182,6 +182,12 @@
 			};
 		};
 
+		crc: crc@401b2000 {
+			compatible = "ti,mspm0-crcp";
+			reg = <0x401b2000 0x2000>;
+			status = "disabled";
+		};
+
 		factoryregion: syscon@80111000 {
 			compatible = "syscon";
 			reg = <0x80111000 0x80>;
