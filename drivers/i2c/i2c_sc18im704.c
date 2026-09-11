@@ -302,7 +302,7 @@ static int i2c_sc18im_init(const struct device *dev)
 		}
 
 		/* Make sure UART buffer is sent */
-		k_msleep(1);
+		k_msleep(2);
 
 		/* Re-configure the UART controller with the new baudrate */
 		uart_cfg.baudrate = cfg->bus_speed;
