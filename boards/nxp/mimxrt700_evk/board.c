@@ -184,6 +184,41 @@ void board_early_init_hook(void)
 	CLOCK_AttachClk(kSENSE_BASE_to_SENSE_MAIN);
 
 	CLOCK_EnableClock(kCLOCK_SenseAccessRamArbiter0);
+
+	/*
+	 * Claim the resources this core runs from, in this core's own run-vote banks.
+	 *
+	 * Every one of them has a control field in both SLEEPCONs or in both PMCs, and
+	 * the PMC aggregates the two cores by selecting each core's run or sleep bank
+	 * according to that core's state and then ANDing the two power-down votes (RM
+	 * 27.3.2.2). A keep vote from either side is therefore enough, and the core that
+	 * uses a resource is the core that has to cast it: CPU0's low-power modes vote
+	 * the whole Sense side down, as RM 12.5.2 Table 167 requires of a core that does
+	 * not use a common resource, and rely on these bits to hold this core up.
+	 *
+	 * XTAL and FRO2 are claimed above, where they are configured. What is left is the
+	 * rest of the clock tree this core executes from -- the private and the shared
+	 * part of sense_main_clk, the RAM arbiter 0 clock just enabled, and the VDDN_COM
+	 * main clock its path to the VDD2 peripherals runs through -- plus the VDDN_COM
+	 * rail itself. VDD2_COM needs no vote: CPU0 cannot drop it in a mode it returns
+	 * from, and the modes that do drop it power this core off with it.
+	 */
+	POWER_DisablePD(kPDRUNCFG_SHUT_SENSEP_MAINCLK);
+	POWER_DisablePD(kPDRUNCFG_SHUT_SENSES_MAINCLK);
+	POWER_DisablePD(kPDRUNCFG_SHUT_RAM0_CLK);
+	POWER_DisablePD(kPDRUNCFG_SHUT_COMNN_MAINCLK);
+	POWER_DisablePD(kPDRUNCFG_DSR_VDDN_COM);
+
+	/*
+	 * And the SRAM partitions this image is linked into, text included -- this core
+	 * executes from RAM. CPU0 powered them up before releasing this core, but it
+	 * hands that vote back once the boot flag goes out, so from then on these bits
+	 * are what keeps them.
+	 */
+	PMC1->PDRUNCFG2 &= ~POWER_SRAM_KEEPALIVE;
+	PMC1->PDRUNCFG3 &= ~POWER_SRAM_KEEPALIVE;
+
+	POWER_ApplyPD();
 #endif /* CONFIG_SOC_MIMXRT798S_CM33_CPU0 */
 
 	BOARD_InitAHBSC();
@@ -660,6 +695,9 @@ static void second_core_boot(void)
 	 * nodes rather than node labels, so the mask follows whatever memory CPU1
 	 * is pointed at instead of hard-coding this board's current choice, and it
 	 * replaces a hand-maintained constant.
+	 *
+	 * These are votes on CPU1's behalf, needed only because CPU1 cannot cast its
+	 * own before it runs. They are handed back below.
 	 */
 	uint32_t cpu1_sram_pu =
 		POWER_SRAM_MASK_FOR_NODE(DT_CHOSEN(zephyr_code_cpu1_partition)) |
@@ -697,6 +735,23 @@ static void second_core_boot(void)
 
 	while (MU_GetFlags(MU1_MUA) != IMXRT7XX_CPU1_BOOT_FLAG) {
 	}
+
+	/*
+	 * CPU1 is up, so hand the proxy votes back. CPU1's board_early_init_hook()
+	 * runs before its PRE_KERNEL_2 boot flag goes out, so by the time the wait
+	 * above returns CPU1 has claimed all of this in PMC1/SLEEPCON1 itself.
+	 *
+	 * Keeping them would leave CPU0's run bank voting keep for resources CPU0 does
+	 * not use, and a keep vote from either core wins the aggregation (RM 27.3.2.2).
+	 * That costs nothing today -- CPU1 is running and voting the same way -- but it
+	 * would override CPU1's own decision the moment CPU1 gains a low-power state of
+	 * its own, which is exactly the case RM 12.5.2 Table 167 forbids. The bits CPU1
+	 * is holding up stay up; only CPU0's redundant vote goes away.
+	 */
+	PMC0->PDRUNCFG2 |= cpu1_sram_pu & ~POWER_SRAM_KEEPALIVE;
+	PMC0->PDRUNCFG3 |= cpu1_sram_pu & ~POWER_SRAM_KEEPALIVE;
+	POWER_EnablePD(kPDRUNCFG_SHUT_SENSEP_MAINCLK);
+	POWER_ApplyPD();
 }
 
 void board_late_init_hook(void)
