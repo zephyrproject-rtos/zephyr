@@ -198,6 +198,21 @@
 #define TIMER_CORE_TICK_IS_WHOLE 1
 #else /* tick is not a whole number of cycles */
 #define TIMER_CORE_TICK_IS_WHOLE 0
+/*
+ * The conversions then carry a remainder, which costs some code and time on the
+ * announce and arm paths. Kept a warning under warnings as errors, which
+ * twister sets: the configuration works. A toolchain without the GCC
+ * diagnostic pragma uses its default severity.
+ */
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic push
+#pragma GCC diagnostic warning "-Wcpp"
+#endif /* __GNUC__ || __clang__ */
+#warning "CONFIG_SYS_CLOCK_TICKS_PER_SEC does not divide the hardware cycle rate, so the tick \
+conversions cost a little more; pick a rate that divides it if possible"
+#if defined(__GNUC__) || defined(__clang__)
+#pragma GCC diagnostic pop
+#endif /* __GNUC__ || __clang__ */
 #endif /* tick is a whole number of cycles */
 #else  /* !TIMER_CORE_CYC_PER_TICK_IS_CONSTANT */
 /* The preprocessor cannot tell. */
