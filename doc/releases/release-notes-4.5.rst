@@ -2082,6 +2082,34 @@ Other notable changes
     behind the failure. The supplicant fills these in, and the Wi-Fi shell prints
     them with the connection and disconnection results. (:github:`116704`)
 
+  * The ESP32 Wi-Fi driver gained 802.11k/v/r and MBO support, all off by
+    default. :kconfig:option:`CONFIG_ESP32_WIFI_11KV_SUPPORT` turns on 802.11k
+    and 802.11v, :kconfig:option:`CONFIG_ESP32_WIFI_MBO_SUPPORT` turns on MBO
+    on top of them, and :kconfig:option:`CONFIG_ESP32_WIFI_11R_SUPPORT` turns
+    on 802.11r, and defaults on where
+    :kconfig:option:`CONFIG_ESP32_WIFI_ENTERPRISE` is set, which honoured
+    ``ft_used`` before the option existed. The station advertises the matching
+    capabilities when it associates, and the driver implements the
+    ``cfg_11k``, ``send_11k_neighbor_request``, ``bss_support_neighbor_rep``,
+    ``bss_ext_capab`` and ``btm_query`` Wi-Fi management operations, so the
+    ``wifi 11k``, ``wifi 11k_neighbor_request`` and ``wifi 11v_btm_query``
+    shell commands now work on ESP32 while the station is associated. With
+    :kconfig:option:`CONFIG_ESP32_WIFI_SIGNAL_CHANGE_EVENT` the driver also
+    raises :c:macro:`NET_EVENT_WIFI_SIGNAL_CHANGE` once the signal of the
+    connected access point drops below
+    :kconfig:option:`CONFIG_ESP32_WIFI_LOW_RSSI_THRESHOLD`. That event only
+    reports and does not start a transition, so the application supplies the
+    handler and decides whether to act on it. A transition the access point
+    asks for with a BSS transition request is separate and is carried out
+    whenever BSS transition management is enabled. A connection that pins a
+    BSSID or a channel is associated without the BSS transition capability,
+    since the Wi-Fi library would
+    otherwise drop the pinned value to be free to roam. A BSS transition that
+    does not reach another access point within
+    :kconfig:option:`CONFIG_ESP32_WIFI_ROAM_TIMEOUT_MS` is reported as a lost
+    link, so a transition that stalls no longer leaves the interface up with no
+    connection behind it.
+
   * The transmit power ceiling properties in ``wifi-tx-power-2g.yaml`` and
     ``wifi-tx-power-5g.yaml`` are no longer ``required`` and now carry
     conservative defaults, so a board that has not been characterised errs on
