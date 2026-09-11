@@ -1,0 +1,91 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ * SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+ */
+
+#include <zephyr/dt-bindings/gpio/gpio.h>
+
+/ {
+	strap_gpio: strap-gpio-emul {
+		compatible = "zephyr,gpio-emul";
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <32>;
+		status = "okay";
+	};
+
+	wide_gpio: wide-gpio-emul {
+		compatible = "zephyr,gpio-emul";
+		gpio-controller;
+		#gpio-cells = <2>;
+		ngpios = <32>;
+		status = "okay";
+	};
+
+	/* Three straps, no bias: every pin reads low. */
+	straps_low: straps-low {
+		compatible = "zephyr,gpio-straps";
+		gpios = <&strap_gpio 0 GPIO_ACTIVE_HIGH>,
+			<&strap_gpio 1 GPIO_ACTIVE_HIGH>,
+			<&strap_gpio 2 GPIO_ACTIVE_HIGH>;
+	};
+
+	/* Three straps pulled up: value 0x07. */
+	straps_high: straps-high {
+		compatible = "zephyr,gpio-straps";
+		gpios = <&strap_gpio 3 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>,
+			<&strap_gpio 4 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>,
+			<&strap_gpio 5 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+	};
+
+	/* Active low: a pulled-up strap reads 0 and an unbiased one reads 1. */
+	straps_active_low: straps-active-low {
+		compatible = "zephyr,gpio-straps";
+		gpios = <&strap_gpio 6 (GPIO_ACTIVE_LOW | GPIO_PULL_UP)>,
+			<&strap_gpio 7 GPIO_ACTIVE_LOW>;
+	};
+
+	/*
+	 * 16 straps, only the first and last pulled up: this pins the packing
+	 * order, bit 0 in byte 0 and bit 15 in byte 1.
+	 */
+	straps_pattern: straps-pattern {
+		compatible = "zephyr,gpio-straps";
+		gpios = <&wide_gpio 0 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>,
+			<&wide_gpio 1 GPIO_ACTIVE_HIGH>,
+			<&wide_gpio 2 GPIO_ACTIVE_HIGH>,
+			<&wide_gpio 3 GPIO_ACTIVE_HIGH>,
+			<&wide_gpio 4 GPIO_ACTIVE_HIGH>,
+			<&wide_gpio 5 GPIO_ACTIVE_HIGH>,
+			<&wide_gpio 6 GPIO_ACTIVE_HIGH>,
+			<&wide_gpio 7 GPIO_ACTIVE_HIGH>,
+			<&wide_gpio 8 GPIO_ACTIVE_HIGH>,
+			<&wide_gpio 9 GPIO_ACTIVE_HIGH>,
+			<&wide_gpio 10 GPIO_ACTIVE_HIGH>,
+			<&wide_gpio 11 GPIO_ACTIVE_HIGH>,
+			<&wide_gpio 12 GPIO_ACTIVE_HIGH>,
+			<&wide_gpio 13 GPIO_ACTIVE_HIGH>,
+			<&wide_gpio 14 GPIO_ACTIVE_HIGH>,
+			<&wide_gpio 15 (GPIO_ACTIVE_HIGH | GPIO_PULL_UP)>;
+	};
+
+	nvmem_consumer: nvmem-consumer {
+		compatible = "vnd,nvmem-consumer";
+		nvmem-cells = <&revision_cell>;
+		nvmem-cell-names = "revision";
+	};
+};
+
+&straps_high {
+	nvmem-layout {
+		compatible = "fixed-layout";
+		#address-cells = <1>;
+		#size-cells = <1>;
+
+		revision_cell: revision@0 {
+			reg = <0x0 0x1>;
+			read-only;
+			#nvmem-cell-cells = <0>;
+		};
+	};
+};
