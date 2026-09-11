@@ -62,6 +62,13 @@ legend,
     max-width: 480px;
 }
 
+/* sphinxcontrib-mermaid stretches every diagram to the width of the page. Keep the size Mermaid
+   computed for a diagram that turns off "useMaxWidth". */
+pre.mermaid > svg,
+.mermaid-container > pre > svg {
+    width: auto !important;
+}
+
 p,
 article ul,
 article ol,
