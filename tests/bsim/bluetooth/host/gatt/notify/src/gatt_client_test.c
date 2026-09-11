@@ -24,10 +24,15 @@ DEFINE_FLAG_STATIC(flag_is_encrypted);
 DEFINE_FLAG_STATIC(flag_discover_complete);
 DEFINE_FLAG_STATIC(flag_short_subscribed);
 DEFINE_FLAG_STATIC(flag_long_subscribed);
+DEFINE_FLAG_STATIC(flag_short_unsubscribed);
+DEFINE_FLAG_STATIC(flag_read_complete);
+DEFINE_FLAG_STATIC(flag_write_complete);
+DEFINE_FLAG_STATIC(flag_write_cmd_complete);
 
 static struct bt_conn *g_conn;
 static uint16_t chrc_handle;
 static uint16_t long_chrc_handle;
+static uint16_t write_chrc_handle;
 static const struct bt_uuid *test_svc_uuid = TEST_SERVICE_UUID;
 
 static void connected(struct bt_conn *conn, uint8_t err)
@@ -142,6 +147,9 @@ static uint8_t discover_func(struct bt_conn *conn, const struct bt_gatt_attr *at
 		} else if (bt_uuid_cmp(chrc->uuid, TEST_LONG_CHRC_UUID) == 0) {
 			printk("Found long_chrc\n");
 			long_chrc_handle = chrc->value_handle;
+		} else if (bt_uuid_cmp(chrc->uuid, TEST_WRITE_CHRC_UUID) == 0) {
+			printk("Found write_chrc\n");
+			write_chrc_handle = chrc->value_handle;
 		}
 	}
 
@@ -217,6 +225,17 @@ static volatile size_t num_notifications;
 uint8_t test_notify(struct bt_conn *conn, struct bt_gatt_subscribe_params *params, const void *data,
 		    uint16_t length)
 {
+	if (data == NULL) {
+		/* NULL notification signals the unsubscribe has completed. */
+		printk("Subscription removed for handle %u\n", params->value_handle);
+
+		if (params->value_handle == chrc_handle) {
+			SET_FLAG(flag_short_unsubscribed);
+		}
+
+		return BT_GATT_ITER_CONTINUE;
+	}
+
 	printk("Received notification #%u with length %d\n", num_notifications++, length);
 
 	return BT_GATT_ITER_CONTINUE;
@@ -245,6 +264,8 @@ static void gatt_subscribe_short(enum bt_att_chan_opt opt)
 {
 	int err;
 
+	/* A previous unsubscribe cleared params->value; restore it for reuse. */
+	sub_params_short.value = BT_GATT_CCC_NOTIFY;
 	sub_params_short.value_handle = chrc_handle;
 	sub_params_short.chan_opt = opt;
 	err = bt_gatt_subscribe(g_conn, &sub_params_short);
@@ -296,6 +317,100 @@ static void gatt_unsubscribe_long(enum bt_att_chan_opt opt)
 		TEST_FAIL("Failed to unsubscribe");
 	} else {
 		printk("Unsubscribe request sent\n");
+	}
+}
+
+/* Like gatt_unsubscribe_short() but returns the error code instead of failing
+ * the test, so callers can assert on the exact return value.
+ */
+static int try_unsubscribe_short(enum bt_att_chan_opt opt)
+{
+	sub_params_short.value_handle = chrc_handle;
+	sub_params_short.chan_opt = opt;
+
+	return bt_gatt_unsubscribe(g_conn, &sub_params_short);
+}
+
+static const uint8_t write_data[] = { 0x01, 0x02, 0x03, 0x04 };
+
+static uint8_t read_func(struct bt_conn *conn, uint8_t err, struct bt_gatt_read_params *params,
+			 const void *data, uint16_t length)
+{
+	if (err) {
+		TEST_FAIL("Read failed (err %u)", err);
+	}
+
+	if (data == NULL) {
+		/* Read complete. */
+		SET_FLAG(flag_read_complete);
+		return BT_GATT_ITER_STOP;
+	}
+
+	return BT_GATT_ITER_CONTINUE;
+}
+
+static struct bt_gatt_read_params read_params;
+
+static void gatt_read(enum bt_att_chan_opt opt)
+{
+	int err;
+
+	read_params.func = read_func;
+	read_params.handle_count = 1;
+	read_params.single.handle = chrc_handle;
+	read_params.single.offset = 0;
+	read_params.chan_opt = opt;
+
+	UNSET_FLAG(flag_read_complete);
+	err = bt_gatt_read(g_conn, &read_params);
+	if (err) {
+		TEST_FAIL("bt_gatt_read failed (err %d)", err);
+	}
+}
+
+static void write_func(struct bt_conn *conn, uint8_t err, struct bt_gatt_write_params *params)
+{
+	if (err) {
+		TEST_FAIL("Write failed (err %u)", err);
+	}
+
+	SET_FLAG(flag_write_complete);
+}
+
+static struct bt_gatt_write_params write_params;
+
+static void gatt_write(enum bt_att_chan_opt opt)
+{
+	int err;
+
+	write_params.func = write_func;
+	write_params.handle = write_chrc_handle;
+	write_params.offset = 0;
+	write_params.data = write_data;
+	write_params.length = sizeof(write_data);
+	write_params.chan_opt = opt;
+
+	UNSET_FLAG(flag_write_complete);
+	err = bt_gatt_write(g_conn, &write_params);
+	if (err) {
+		TEST_FAIL("bt_gatt_write failed (err %d)", err);
+	}
+}
+
+static void write_cmd_cb(struct bt_conn *conn, void *user_data)
+{
+	SET_FLAG(flag_write_cmd_complete);
+}
+
+static void gatt_write_cmd(void)
+{
+	int err;
+
+	UNSET_FLAG(flag_write_cmd_complete);
+	err = bt_gatt_write_without_response_cb(g_conn, write_chrc_handle, write_data,
+						sizeof(write_data), false, write_cmd_cb, NULL);
+	if (err) {
+		TEST_FAIL("bt_gatt_write_without_response_cb failed (err %d)", err);
 	}
 }
 
@@ -434,6 +549,271 @@ static void test_main_mixed(void)
 	TEST_PASS("GATT client Passed");
 }
 
+/* Reuse one params to unsubscribe while its subscribe CCC write is still in
+ * flight: the unsubscribe must wait for that write, not cancel it.
+ */
+static void test_main_racy(void)
+{
+	setup();
+
+	gatt_discover(BT_ATT_CHAN_OPT_NONE);
+
+	/* Subscribe once so CCC auto-discovery caches the ccc_handle; a later
+	 * subscribe on the same params then writes the CCC synchronously (setting
+	 * WRITE_PENDING).
+	 */
+	gatt_subscribe_short(BT_ATT_CHAN_OPT_NONE);
+	WAIT_FOR_FLAG(flag_short_subscribed);
+
+	/* Clean unsubscribe, so the params leaves the subscription list and its
+	 * value is reset before it is reused below.
+	 */
+	UNSET_FLAG(flag_short_subscribed);
+	gatt_unsubscribe_short(BT_ATT_CHAN_OPT_NONE);
+	WAIT_FOR_FLAG(flag_short_unsubscribed);
+
+	/* Racy reuse: subscribe then unsubscribe with no scheduling point between,
+	 * so the subscribe CCC write is still in flight (WRITE_PENDING set) when the
+	 * unsubscribe runs. The race is deterministic in bsim.
+	 */
+	UNSET_FLAG(flag_short_subscribed);
+	UNSET_FLAG(flag_short_unsubscribed);
+	gatt_subscribe_short(BT_ATT_CHAN_OPT_NONE);
+	gatt_unsubscribe_short(BT_ATT_CHAN_OPT_NONE);
+
+	/* The subscribe callback must arrive exactly once with success (the buggy
+	 * cancel path delivers an error here and fails the test), then the
+	 * deferred unsubscribe completes with a NULL notification.
+	 */
+	WAIT_FOR_FLAG(flag_short_subscribed);
+	WAIT_FOR_FLAG(flag_short_unsubscribed);
+	printk("Racy subscribe/unsubscribe handled\n");
+
+	/* Normal notification exchange so the server side also completes. */
+	UNSET_FLAG(flag_short_subscribed);
+	gatt_subscribe_short(BT_ATT_CHAN_OPT_NONE);
+	gatt_subscribe_long(BT_ATT_CHAN_OPT_NONE);
+	WAIT_FOR_FLAG(flag_short_subscribed);
+	WAIT_FOR_FLAG(flag_long_subscribed);
+	printk("Subscribed\n");
+
+	while (num_notifications < NOTIFICATION_COUNT) {
+		k_sleep(K_MSEC(100));
+	}
+
+	gatt_unsubscribe_short(BT_ATT_CHAN_OPT_NONE);
+	gatt_unsubscribe_long(BT_ATT_CHAN_OPT_NONE);
+	WAIT_FOR_FLAG(flag_short_subscribed);
+	WAIT_FOR_FLAG(flag_long_subscribed);
+
+	printk("Unsubscribed\n");
+
+	TEST_PASS("GATT client Passed");
+}
+
+/* Stress the subscribe/unsubscribe CCC interface: repeated settled and racy
+ * enable/disable cycles and repeated/double unsubscribe, all on one params.
+ */
+static void test_main_reentrant(void)
+{
+	int err;
+
+	setup();
+
+	gatt_discover(BT_ATT_CHAN_OPT_NONE);
+
+	/* Prime CCC auto-discovery so later subscribes write the CCC synchronously. */
+	gatt_subscribe_short(BT_ATT_CHAN_OPT_NONE);
+	WAIT_FOR_FLAG(flag_short_subscribed);
+	UNSET_FLAG(flag_short_subscribed);
+	gatt_unsubscribe_short(BT_ATT_CHAN_OPT_NONE);
+	WAIT_FOR_FLAG(flag_short_unsubscribed);
+
+	/* Repeated settled enable/disable cycles: each subscribe and each
+	 * unsubscribe is allowed to complete before the next one starts.
+	 */
+	for (int i = 0; i < 20; i++) {
+		UNSET_FLAG(flag_short_subscribed);
+		gatt_subscribe_short(BT_ATT_CHAN_OPT_NONE);
+		WAIT_FOR_FLAG(flag_short_subscribed);
+
+		UNSET_FLAG(flag_short_subscribed);
+		UNSET_FLAG(flag_short_unsubscribed);
+		gatt_unsubscribe_short(BT_ATT_CHAN_OPT_NONE);
+		WAIT_FOR_FLAG(flag_short_unsubscribed);
+	}
+	printk("Settled enable/disable cycles done\n");
+
+	/* Repeated racy enable/disable cycles: subscribe and unsubscribe with
+	 * no scheduling point in between, so each unsubscribe is deferred until its
+	 * subscribe CCC write completes.
+	 */
+	for (int i = 0; i < 20; i++) {
+		UNSET_FLAG(flag_short_subscribed);
+		UNSET_FLAG(flag_short_unsubscribed);
+		gatt_subscribe_short(BT_ATT_CHAN_OPT_NONE);
+		gatt_unsubscribe_short(BT_ATT_CHAN_OPT_NONE);
+		WAIT_FOR_FLAG(flag_short_subscribed);
+		WAIT_FOR_FLAG(flag_short_unsubscribed);
+	}
+	printk("Racy enable/disable cycles done\n");
+
+	/* Unsubscribe with no active subscription must return -EINVAL. */
+	err = try_unsubscribe_short(BT_ATT_CHAN_OPT_NONE);
+	if (err != -EINVAL) {
+		TEST_FAIL("Unsubscribe with no subscription: expected -EINVAL, got %d", err);
+	}
+	printk("Repeated unsubscribe returned -EINVAL as expected\n");
+
+	/* Double deferred unsubscribe while the subscribe CCC write is still
+	 * in flight: the first unsubscribe is deferred (returns 0) and the second
+	 * must also return 0 without starting a second CCC write.
+	 */
+	UNSET_FLAG(flag_short_subscribed);
+	UNSET_FLAG(flag_short_unsubscribed);
+	gatt_subscribe_short(BT_ATT_CHAN_OPT_NONE);
+	err = try_unsubscribe_short(BT_ATT_CHAN_OPT_NONE);
+	if (err != 0) {
+		TEST_FAIL("First deferred unsubscribe: expected 0, got %d", err);
+	}
+	err = try_unsubscribe_short(BT_ATT_CHAN_OPT_NONE);
+	if (err != 0) {
+		TEST_FAIL("Second deferred unsubscribe: expected 0, got %d", err);
+	}
+	WAIT_FOR_FLAG(flag_short_subscribed);
+	WAIT_FOR_FLAG(flag_short_unsubscribed);
+	printk("Double deferred unsubscribe handled\n");
+
+	/* Double settled unsubscribe: after a subscribe completes, the first
+	 * unsubscribe returns 0 and drives the disable CCC write; a second
+	 * unsubscribe on the now-unsubscribed params must return -EINVAL.
+	 */
+	UNSET_FLAG(flag_short_subscribed);
+	gatt_subscribe_short(BT_ATT_CHAN_OPT_NONE);
+	WAIT_FOR_FLAG(flag_short_subscribed);
+
+	UNSET_FLAG(flag_short_subscribed);
+	UNSET_FLAG(flag_short_unsubscribed);
+	err = try_unsubscribe_short(BT_ATT_CHAN_OPT_NONE);
+	if (err != 0) {
+		TEST_FAIL("Settled unsubscribe: expected 0, got %d", err);
+	}
+	WAIT_FOR_FLAG(flag_short_unsubscribed);
+	err = try_unsubscribe_short(BT_ATT_CHAN_OPT_NONE);
+	if (err != -EINVAL) {
+		TEST_FAIL("Repeated settled unsubscribe: expected -EINVAL, got %d", err);
+	}
+	printk("Double settled unsubscribe handled\n");
+
+	/* Normal notification exchange so the server side also completes. */
+	UNSET_FLAG(flag_short_subscribed);
+	gatt_subscribe_short(BT_ATT_CHAN_OPT_NONE);
+	gatt_subscribe_long(BT_ATT_CHAN_OPT_NONE);
+	WAIT_FOR_FLAG(flag_short_subscribed);
+	WAIT_FOR_FLAG(flag_long_subscribed);
+	printk("Subscribed\n");
+
+	while (num_notifications < NOTIFICATION_COUNT) {
+		k_sleep(K_MSEC(100));
+	}
+
+	gatt_unsubscribe_short(BT_ATT_CHAN_OPT_NONE);
+	gatt_unsubscribe_long(BT_ATT_CHAN_OPT_NONE);
+	WAIT_FOR_FLAG(flag_short_subscribed);
+	WAIT_FOR_FLAG(flag_long_subscribed);
+
+	printk("Unsubscribed\n");
+
+	TEST_PASS("GATT client Passed");
+}
+
+/* Cross-traffic stress: mix CCC enable/disable writes with ordinary reads and
+ * writes on one ATT bearer, with the unsubscribe both settled and deferred.
+ */
+static void test_main_crosstraffic(void)
+{
+	setup();
+
+	gatt_discover(BT_ATT_CHAN_OPT_NONE);
+
+	/* Prime CCC auto-discovery. */
+	gatt_subscribe_short(BT_ATT_CHAN_OPT_NONE);
+	WAIT_FOR_FLAG(flag_short_subscribed);
+	UNSET_FLAG(flag_short_subscribed);
+	gatt_unsubscribe_short(BT_ATT_CHAN_OPT_NONE);
+	WAIT_FOR_FLAG(flag_short_unsubscribed);
+
+	/* Phase 1: settled subscribe/unsubscribe, each interleaved with a read
+	 * request, a write request and a write command issued right after the CCC
+	 * write without waiting, so they share the ATT bearer with the CCC traffic.
+	 */
+	for (int i = 0; i < 10; i++) {
+		UNSET_FLAG(flag_short_subscribed);
+		gatt_subscribe_short(BT_ATT_CHAN_OPT_NONE);
+		gatt_read(BT_ATT_CHAN_OPT_NONE);
+		gatt_write(BT_ATT_CHAN_OPT_NONE);
+		gatt_write_cmd();
+		WAIT_FOR_FLAG(flag_short_subscribed);
+		WAIT_FOR_FLAG(flag_read_complete);
+		WAIT_FOR_FLAG(flag_write_complete);
+		WAIT_FOR_FLAG(flag_write_cmd_complete);
+
+		UNSET_FLAG(flag_short_subscribed);
+		UNSET_FLAG(flag_short_unsubscribed);
+		gatt_unsubscribe_short(BT_ATT_CHAN_OPT_NONE);
+		gatt_read(BT_ATT_CHAN_OPT_NONE);
+		gatt_write(BT_ATT_CHAN_OPT_NONE);
+		gatt_write_cmd();
+		WAIT_FOR_FLAG(flag_short_unsubscribed);
+		WAIT_FOR_FLAG(flag_read_complete);
+		WAIT_FOR_FLAG(flag_write_complete);
+		WAIT_FOR_FLAG(flag_write_cmd_complete);
+	}
+	printk("Settled cross-traffic done\n");
+
+	/* Phase 2: racy deferred subscribe/unsubscribe with the same cross-traffic.
+	 * The unsubscribe is deferred while a read, a write and a write command are
+	 * also outstanding, so its eventual CCC write must allocate a request while
+	 * others are queued.
+	 */
+	for (int i = 0; i < 10; i++) {
+		UNSET_FLAG(flag_short_subscribed);
+		UNSET_FLAG(flag_short_unsubscribed);
+		gatt_subscribe_short(BT_ATT_CHAN_OPT_NONE);
+		gatt_unsubscribe_short(BT_ATT_CHAN_OPT_NONE);
+		gatt_read(BT_ATT_CHAN_OPT_NONE);
+		gatt_write(BT_ATT_CHAN_OPT_NONE);
+		gatt_write_cmd();
+		WAIT_FOR_FLAG(flag_short_subscribed);
+		WAIT_FOR_FLAG(flag_short_unsubscribed);
+		WAIT_FOR_FLAG(flag_read_complete);
+		WAIT_FOR_FLAG(flag_write_complete);
+		WAIT_FOR_FLAG(flag_write_cmd_complete);
+	}
+	printk("Racy cross-traffic done\n");
+
+	/* Normal notification exchange so the server side also completes. */
+	UNSET_FLAG(flag_short_subscribed);
+	gatt_subscribe_short(BT_ATT_CHAN_OPT_NONE);
+	gatt_subscribe_long(BT_ATT_CHAN_OPT_NONE);
+	WAIT_FOR_FLAG(flag_short_subscribed);
+	WAIT_FOR_FLAG(flag_long_subscribed);
+	printk("Subscribed\n");
+
+	while (num_notifications < NOTIFICATION_COUNT) {
+		k_sleep(K_MSEC(100));
+	}
+
+	gatt_unsubscribe_short(BT_ATT_CHAN_OPT_NONE);
+	gatt_unsubscribe_long(BT_ATT_CHAN_OPT_NONE);
+	WAIT_FOR_FLAG(flag_short_subscribed);
+	WAIT_FOR_FLAG(flag_long_subscribed);
+
+	printk("Unsubscribed\n");
+
+	TEST_PASS("GATT client Passed");
+}
+
 static const struct bst_test_instance test_vcs[] = {
 	{
 		.test_id = "gatt_client_none",
@@ -450,6 +830,18 @@ static const struct bst_test_instance test_vcs[] = {
 	{
 		.test_id = "gatt_client_mixed",
 		.test_main_f = test_main_mixed,
+	},
+	{
+		.test_id = "gatt_client_racy",
+		.test_main_f = test_main_racy,
+	},
+	{
+		.test_id = "gatt_client_reentrant",
+		.test_main_f = test_main_reentrant,
+	},
+	{
+		.test_id = "gatt_client_crosstraffic",
+		.test_main_f = test_main_crosstraffic,
 	},
 	BSTEST_END_MARKER,
 };
