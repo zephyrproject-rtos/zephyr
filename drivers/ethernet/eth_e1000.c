@@ -326,7 +326,8 @@ static const struct ethernet_api e1000_api = {
 									\
 		irq_enable(DT_INST_IRQN(inst));				\
 		iow32(dev, CTRL, CTRL_SLU); /* Set link up */		\
-		iow32(dev, RCTL, RCTL_EN | RCTL_MPE | DT_INST_PROP(inst, rdmts) << RDMTS_OFFSET); \
+		iow32(dev, RCTL, RCTL_EN | RCTL_MPE | RCTL_BAM |		\
+		      DT_INST_PROP(inst, rdmts) << RDMTS_OFFSET);	\
 		iow32(dev, ITR, DT_INST_PROP(inst, itr) & (uint32_t)GENMASK(15, 0)); \
 	}								\
 									\

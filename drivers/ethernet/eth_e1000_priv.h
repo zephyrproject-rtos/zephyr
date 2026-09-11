@@ -15,6 +15,7 @@ extern "C" {
 
 #define TCTL_EN		(1 << 1)
 #define RCTL_EN		(1 << 1)
+#define RCTL_BAM	(1 << 15) /* Broadcast Accept Mode */
 
 #define ICR_TXDW	     (1) /* Transmit Descriptor Written Back */
 #define ICR_TXQE	(1 << 1) /* Transmit Queue Empty */
