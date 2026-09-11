@@ -193,7 +193,7 @@ manifest:
       groups:
         - hal
     - name: hal_intel
-      revision: 7c8942c1ecb38b53dae0a02aeb4ab08371f4d4bf
+      revision: 71e18c0f225e5941cc1fc84f0ae35d61d9c654d0
       path: modules/hal/intel
       groups:
         - hal
