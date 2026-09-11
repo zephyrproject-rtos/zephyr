@@ -689,6 +689,8 @@ static int uarte_nrfx_configure(const struct device *dev,
 
 #ifdef UARTE_HAS_FRAME_TIMEOUT
 	uarte_cfg.frame_timeout = NRF_UARTE_FRAME_TIMEOUT_EN;
+#elif NRF_UARTE_HAS_FRAME_TIMEOUT
+	uarte_cfg.frame_timeout = NRF_UARTE_FRAME_TIMEOUT_DIS;
 #endif
 
 #if NRF_UARTE_HAS_FRAME_SIZE
