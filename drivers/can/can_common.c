@@ -110,6 +110,8 @@ static void can_msgq_put(const struct device *dev, struct can_frame *frame, void
 	ARG_UNUSED(dev);
 
 	__ASSERT_NO_MSG(msgq);
+	/* k_msgq_put() copies msgq->msg_size bytes from the frame */
+	__ASSERT_NO_MSG(msgq->msg_size == sizeof(struct can_frame));
 
 	ret = k_msgq_put(msgq, frame, K_NO_WAIT);
 	if (ret) {
@@ -120,6 +122,11 @@ static void can_msgq_put(const struct device *dev, struct can_frame *frame, void
 int z_impl_can_add_rx_filter_msgq(const struct device *dev, struct k_msgq *msgq,
 				  const struct can_filter *filter)
 {
+	if (msgq->msg_size != sizeof(struct can_frame)) {
+		LOG_ERR("msgq %p message size %zu, expected %zu", msgq, msgq->msg_size,
+			sizeof(struct can_frame));
+		return -EINVAL;
+	}
 
 	return DEVICE_API_GET(can, dev)->add_rx_filter(dev, can_msgq_put, msgq, filter);
 }
