@@ -20,6 +20,8 @@ tests:
       - nrf7120dk/nrf7120/cpuapp
       - frdm_mcxe247@w25q64
       - frdm_mcxe31b@w25q64
+      - stm32h573i_dk
+      - stm32h5f5j_dk
     integration_platforms:
       - native_sim
       - apollo3p_evb
@@ -27,6 +29,7 @@ tests:
   drivers.mspi.flash.stm32.dma:
     platform_allow:
       - stm32h573i_dk
+      - stm32h5f5j_dk
     integration_platforms:
       - stm32h573i_dk
     extra_configs:
@@ -34,6 +37,7 @@ tests:
   drivers.mspi.flash.stm32.memmap:
     platform_allow:
       - stm32h573i_dk
+      - stm32h5f5j_dk
     integration_platforms:
       - stm32h573i_dk
     extra_configs:
