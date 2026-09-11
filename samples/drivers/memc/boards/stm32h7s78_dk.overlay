@@ -1,11 +1,17 @@
 /*
  * Copyright The Zephyr Project Contributors
+ * Copyright (c) 2026 STMicroelectronics
  *
  * SPDX-License-Identifier: Apache-2.0
  */
 
 / {
 	aliases {
+		psram0 = &memc;
 		sram-ext = &psram;
 	};
+};
+
+&xspi2 {
+	status = "disabled";
 };
