@@ -5,7 +5,6 @@ config UART_ASYNC_DUAL_TEST_TIMEOUT
 	int "Single test case length (in milliseconds)"
 	# For the simulated devices, which are run by default in CI, we set it to less to not spend too
 	# much CI time
-	default 500 if SOC_SERIES_BSIM_NRFXX
 	default 3000
 	help
 	  For how many loops will the stress test run. The higher this number the longer the
