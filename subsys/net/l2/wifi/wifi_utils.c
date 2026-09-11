@@ -126,6 +126,38 @@ enum wifi_frequency_bands wifi_utils_chan_to_band(uint16_t chan)
 	return WIFI_FREQ_BAND_UNKNOWN;
 }
 
+uint16_t wifi_utils_chan_to_freq(enum wifi_frequency_bands band, uint16_t chan)
+{
+	switch (band) {
+	case WIFI_FREQ_BAND_2_4_GHZ:
+		if (!wifi_utils_validate_chan_2g(chan)) {
+			return 0;
+		}
+
+		/* Channel 14 is the exception to the 5 MHz spacing, it sits
+		 * 12 MHz above channel 13.
+		 */
+		return (chan == 14) ? 2484 : (2407 + chan * 5);
+	case WIFI_FREQ_BAND_5_GHZ:
+		if (!wifi_utils_validate_chan_5g(chan)) {
+			return 0;
+		}
+
+		return 5000 + chan * 5;
+	case WIFI_FREQ_BAND_6_GHZ:
+		if (!wifi_utils_validate_chan_6g(chan)) {
+			return 0;
+		}
+
+		/* Channel 2 does not follow the 5950 MHz base, it sits at
+		 * 5935 MHz on its own operating class.
+		 */
+		return (chan == 2) ? 5935 : (5950 + chan * 5);
+	default:
+		return 0;
+	}
+}
+
 /**
  * @brief Get the next Wi-Fi 6GHz channel based on the given (valid) channel.
  * The function handles the initial edge cases (1 -> 2, 2 -> 5) and then increments by 4.
