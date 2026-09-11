@@ -1,0 +1,17 @@
+# SPDX-FileCopyrightText: Copyright (c) 2026 Microchip Technology Inc.
+# SPDX-License-Identifier: Apache-2.0
+
+identifier: pic32wm_bz6204_curiosity
+name: PIC32WM_BZ6204 Curiosity
+type: mcu
+arch: arm
+toolchain:
+  - zephyr
+  - gnuarmemb
+  - xtools
+flash: 2048
+ram: 512
+supported:
+  - gpio
+  - pinctrl
+vendor: microchip
