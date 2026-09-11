@@ -454,7 +454,7 @@ sitemap_url_scheme = "{link}"
 
 #-- Options for sphinxcontrib-mermaid -------------------------------------
 
-mermaid_version = "11.14.0"
+mermaid_version = "11.16.1"
 d3_version = "7.9.0"
 
 # Without this, every diagram is drawn in a box of a fixed height and centered in it.
