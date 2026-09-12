@@ -97,3 +97,9 @@ set(xiao_rp2350/rp2350a/m33_DEPRECATED
 set(xiao_rp2350/rp2350a/hazard3_DEPRECATED
     xiao_rp2350/rp2350a/hazard3_0
 )
+set(rp2350_zero/rp2350a/m33_DEPRECATED
+    rp2350_zero/rp2350a/m33_0
+)
+set(rp2350_zero/rp2350a/hazard3_DEPRECATED
+    rp2350_zero/rp2350a/hazard3_0
+)
