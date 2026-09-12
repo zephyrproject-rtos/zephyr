@@ -150,8 +150,6 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 		k_sem_give(&wait_data);
 	}
 
-	net_pkt_unref(pkt);
-
 	return 0;
 }
 
