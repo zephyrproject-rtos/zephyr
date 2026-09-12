@@ -1,0 +1,40 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) Dhruv Menon <dhruvmenon1104@gmail.com>
+
+description: Texas Instruments K3 Interrupt Router
+
+compatible: "ti,k3-intr-router"
+
+include: [interrupt-controller.yaml, base.yaml]
+
+properties:
+  reg:
+    required: true
+
+  interrupt-controller:
+    required: true
+
+  "#interrupt-cells":
+    const: 1
+
+  ti,num-inputs:
+    type: int
+    required: true
+    description: Total number of input interrupt lines
+
+  ti,num-outputs:
+    type: int
+    required: true
+    description: Total number of output interrupt lines
+
+  ti,output-offset:
+    type: int
+    default: 0
+    description: Starting output line index managed by this core/instance
+
+  ti,preroutes:
+    type: array
+    description: |
+      Array of <output_idx input_idx> pairs pre-configured at boot time.
+      For example, <20 162 21 190> pre-routes TIMER0 (162) to output 20,
+      and RPMsg/IPC (190) to output 21.

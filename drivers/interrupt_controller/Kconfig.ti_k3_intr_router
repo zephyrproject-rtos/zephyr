@@ -1,0 +1,10 @@
+# Copyright (c) Dhruv Menon <dhruvmenon1104@gmail.com>
+# SPDX-License-Identifier: Apache-2.0
+
+config TI_K3_INTR_ROUTER
+	bool "Texas Instruments K3 Interrupt Router"
+	default y
+	depends on DT_HAS_TI_K3_INTR_ROUTER_ENABLED
+	help
+	  Enable support for Texas Instruments K3 Interrupt Router hardware block
+	  found on TI K3 SoCs (e.g. J722S / AM67A, AM62x, AM64x).
