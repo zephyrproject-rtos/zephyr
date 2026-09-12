@@ -1466,7 +1466,17 @@ extern const struct ethernet_api dwmac_api;
 
 /* DMA bus mode bits */
 #define DWMAC_DMABMR_SR    BIT(0)
+#define DWMAC_DMABMR_DA    BIT(1)
+#define DWMAC_DMABMR_DSL   GENMASK(6, 2)
 #define DWMAC_DMABMR_EDFE  BIT(7)
+#define DWMAC_DMABMR_PBL   GENMASK(13, 8)
+#define DWMAC_DMABMR_PR    GENMASK(15, 14)
+#define DWMAC_DMABMR_FB    BIT(16)
+#define DWMAC_DMABMR_RPBL  GENMASK(22, 17)
+#define DWMAC_DMABMR_USP   BIT(23)
+#define DWMAC_DMABMR_PBLx8 BIT(24)
+#define DWMAC_DMABMR_AAL   BIT(25)
+#define DWMAC_DMABMR_MB    BIT(26)
 
 /* DMA interrupt enable bits */
 #define DWMAC_DMAIER_TIE   BIT(0)

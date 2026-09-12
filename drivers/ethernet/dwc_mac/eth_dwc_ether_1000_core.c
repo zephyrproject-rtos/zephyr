@@ -635,9 +635,14 @@ int dwmac_probe(const struct device *dev)
 	memset(p->tx_descs, 0, NB_TX_DESCS * sizeof(struct dwmac_dma_desc));
 	memset(p->rx_descs, 0, NB_RX_DESCS * sizeof(struct dwmac_dma_desc));
 
+	reg_val = DWMAC_REG_READ(DWMAC_DMABMR) & ~DWMAC_DMABMR_PBL;
+	reg_val |= FIELD_PREP(DWMAC_DMABMR_PBL, 32);
+
 	if (IS_ENABLED(CONFIG_ETH_DWC_ETHER_1000_CORE_EDFE)) {
-		DWMAC_REG_WRITE(DWMAC_DMABMR, DWMAC_REG_READ(DWMAC_DMABMR) | DWMAC_DMABMR_EDFE);
+		reg_val |= DWMAC_DMABMR_EDFE;
 	}
+
+	DWMAC_REG_WRITE(DWMAC_DMABMR, reg_val);
 
 	DWMAC_REG_WRITE(DWMAC_DMATDLAR, TXDESC_PHYS_L(0));
 	DWMAC_REG_WRITE(DWMAC_DMARDLAR, RXDESC_PHYS_L(0));
