@@ -28,6 +28,7 @@
 	};
 
 	chosen {
+		zephyr,system-timer = &rtc1;
 		zephyr,flash-controller = &flash_controller;
 	};
 

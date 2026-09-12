@@ -1124,3 +1124,9 @@
 		};
 	};
 };
+
+/ {
+	chosen {
+		zephyr,system-timer = &grtc;
+	};
+};

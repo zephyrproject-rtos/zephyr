@@ -12,3 +12,9 @@
 		interrupt-parent = <&intc>;
 	};
 };
+
+/ {
+	chosen {
+		zephyr,system-timer = &sectimer0;
+	};
+};

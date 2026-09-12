@@ -1355,3 +1355,9 @@
 		status = "disabled";
 	};
 };
+
+/ {
+	chosen {
+		zephyr,system-timer = &grtc;
+	};
+};

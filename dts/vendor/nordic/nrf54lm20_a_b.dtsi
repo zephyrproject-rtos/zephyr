@@ -1006,3 +1006,9 @@
 	};
 };
 #endif
+
+/ {
+	chosen {
+		zephyr,system-timer = &grtc;
+	};
+};

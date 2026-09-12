@@ -9,6 +9,7 @@
 
 / {
 	chosen {
+		zephyr,system-timer = &rtc1;
 		zephyr,bt-hci = &bt_hci_controller;
 		zephyr,entropy = &rng;
 		zephyr,flash-controller = &flash_controller;

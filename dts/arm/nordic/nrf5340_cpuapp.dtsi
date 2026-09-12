@@ -34,6 +34,7 @@
 	};
 
 	chosen {
+		zephyr,system-timer = &rtc1;
 		zephyr,entropy = &rng_hci;
 		zephyr,flash-controller = &flash_controller;
 	};
