@@ -1,0 +1,13 @@
+# SPDX-License-Identifier: Apache-2.0
+
+common:
+  tags:
+    - drivers
+    - interrupt_controller
+    - ti_k3
+
+tests:
+  drivers.interrupt_controller.ti_k3_intr_router:
+    platform_allow:
+      - mps2/an385
+      - beagley_ai/j722s/main_r5f0_0
