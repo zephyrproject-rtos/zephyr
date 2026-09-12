@@ -66,7 +66,7 @@ Here is an example of building the sample for driving the built-in RGB led.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/drivers/led/led_strip
-   :board: rp2350_zero/rp2350a/m33
+   :board: rp2350_zero/rp2350a/m33_0
    :goals: build
    :compact:
 
