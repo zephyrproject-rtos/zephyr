@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2023 Intel Corporation
+ *
+ * Author: Tomasz Leman <tomasz.m.leman@intel.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	dma_test_lpgpdma0: dma-test-lpgpdma0 {
+		compatible = "test-dma-memory-to-memory";
+		dma = <&lpgpdma0>;
+	};
+};
+
+&lpgpdma0 {
+	status = "okay";
+};
