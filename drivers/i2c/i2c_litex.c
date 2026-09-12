@@ -8,14 +8,13 @@
 
 #include <zephyr/device.h>
 #include <zephyr/drivers/i2c.h>
+#include <zephyr/drivers/misc/litex/litex_csr.h>
 
 #include <zephyr/logging/log.h>
 LOG_MODULE_REGISTER(i2c_litex, CONFIG_I2C_LOG_LEVEL);
 
 #include "i2c-priv.h"
 #include "i2c_bitbang.h"
-
-#include <soc.h>
 
 #define SCL_BIT_POS                0
 #define SDA_DIR_BIT_POS            1

@@ -15,7 +15,7 @@ LOG_MODULE_REGISTER(LOG_MODULE_NAME);
 
 #include <zephyr/kernel.h>
 #include <zephyr/device.h>
-#include <soc.h>
+#include <zephyr/drivers/misc/litex/litex_csr.h>
 #include <stdbool.h>
 #include <zephyr/net/ethernet.h>
 #include <zephyr/net/net_if.h>

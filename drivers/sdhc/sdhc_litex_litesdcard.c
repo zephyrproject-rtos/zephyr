@@ -7,6 +7,8 @@
 #define DT_DRV_COMPAT litex_mmc
 
 #include <errno.h>
+#include <zephyr/drivers/misc/litex/litex_csr.h>
+
 #include <zephyr/drivers/sdhc.h>
 #include <zephyr/sys/util_macro.h>
 #include <zephyr/logging/log.h>
@@ -14,10 +16,7 @@
 #include <zephyr/cache.h>
 #include <zephyr/sys/byteorder.h>
 
-
 LOG_MODULE_REGISTER(sdhc_litex, CONFIG_SDHC_LOG_LEVEL);
-
-#include <soc.h>
 
 #define SDCARD_CTRL_DATA_TRANSFER_NONE  0
 #define SDCARD_CTRL_DATA_TRANSFER_READ  1

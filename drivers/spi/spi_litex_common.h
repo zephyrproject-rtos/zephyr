@@ -5,13 +5,13 @@
  */
 
 #include <zephyr/kernel.h>
+#include <zephyr/drivers/misc/litex/litex_csr.h>
 #include <zephyr/drivers/spi.h>
 #include "spi_rtio.h"
 #include <zephyr/sys/byteorder.h>
 #include <zephyr/sys/clock.h>
 
 #include "spi_context.h"
-#include <soc.h>
 
 static inline uint8_t get_dfs_value(const struct spi_config *config)
 {
