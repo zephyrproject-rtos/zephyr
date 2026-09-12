@@ -74,7 +74,7 @@ struct net_sockaddr peer_addr;
 #define MTU 1024
 
 /* Keep track of all virtual interfaces */
-static struct net_if *virtual_interfaces[1];
+static struct net_if *virtual_interfaces[2];
 static struct net_if *eth_interfaces[2];
 static struct net_if *dummy_interfaces[2];
 
@@ -156,13 +156,24 @@ static int eth_tx(const struct device *dev, struct net_pkt *pkt)
 static enum ethernet_hw_caps eth_capabilities(const struct device *dev __unused,
 					      struct net_if *iface __unused)
 {
-	return 0;
+	return ETHERNET_HW_VLAN;
+}
+
+static struct net_stats_eth eth_stats;
+
+static struct net_stats_eth *eth_get_stats(const struct device *dev, struct net_if *iface)
+{
+	ARG_UNUSED(dev);
+	ARG_UNUSED(iface);
+
+	return &eth_stats;
 }
 
 static struct ethernet_api api_funcs = {
 	.iface_api.init = eth_iface_init,
 
 	.get_capabilities = eth_capabilities,
+	.get_stats = eth_get_stats,
 	.send = eth_tx,
 };
 
@@ -1094,8 +1105,98 @@ ZTEST(net_virtual, test_virtual_10_recv_data_from_tunnel_fail)
 	test_virtual_recv_data_from_tunnel(3, false);
 }
 
+ZTEST(net_virtual, test_virtual_10_recv_data_on_non_virtual_iface)
+{
+	/* R-APS PDU as defined in ITU-T G.8032/Y.1344 */
+	struct r_aps_frame {
+		struct net_eth_vlan_hdr hdr;
+		struct {
+			uint8_t mel_ver;
+			uint8_t opcode;
+			uint8_t flags;
+			uint8_t tlv_off;
+		} cfm_hdr;
+		struct {
+			uint8_t reqstate_subcode;
+			uint8_t status;
+			struct net_eth_addr node_id;
+			uint8_t rfu[24u];
+			uint8_t tlv_end;
+		} r_aps;
+
+		/* Pad to NET_ETH_MINIMAL_FRAME_SIZE */
+		uint8_t pad[5u];
+	};
+
+	struct net_if *vlan_iface, *iface = net_if_lookup_by_dev(DEVICE_GET(eth_test));
+	struct net_linkaddr *linkaddr = net_if_get_link_addr(iface);
+	struct r_aps_frame *frame;
+	const uint16_t vid = 4000;
+	struct net_pkt *pkt;
+	net_stats_t rx_err;
+	int ret;
+
+	NET_PKT_DATA_ACCESS_DEFINE(r_aps_access, struct r_aps_frame);
+
+	ret = net_eth_vlan_enable(iface, vid);
+	zassert_equal(ret, 0, "Error enabling VLAN: %d", ret);
+
+	vlan_iface = net_eth_get_vlan_iface(iface, vid);
+	zassert_not_null(vlan_iface, "Could not get VLAN interface");
+
+	ret = net_if_down(vlan_iface);
+	zassert_equal(ret, -EALREADY, "VLAN interface not down, ret %d", ret);
+
+	pkt = net_pkt_alloc_with_buffer(iface, sizeof(*frame), NET_AF_UNSPEC, 0, PKT_ALLOC_TIME);
+	zassert_not_null(pkt, "Could not allocate net_pkt");
+
+	frame = net_pkt_get_data(pkt, &r_aps_access);
+	zassert_not_null(frame, "Error getting net_pkt data");
+
+	/* ERPS multicast address, ring ID 1 in addr[5u] */
+	frame->hdr.dst.addr[0u] = 0x01;
+	frame->hdr.dst.addr[1u] = 0x19;
+	frame->hdr.dst.addr[2u] = 0xa7;
+	frame->hdr.dst.addr[3u] = 0x00;
+	frame->hdr.dst.addr[4u] = 0x00;
+	frame->hdr.dst.addr[5u] = 0x01;
+
+	zassert_equal(linkaddr->type, NET_LINK_ETHERNET);
+	memcpy(&frame->hdr.src, linkaddr->addr, sizeof(frame->hdr.src));
+
+	frame->hdr.vlan.tpid = net_htons(NET_ETH_PTYPE_VLAN);
+	frame->hdr.vlan.tci = net_eth_vlan_set_vid(0, vid);
+	frame->hdr.type = net_htons(NET_ETH_PTYPE_OAM);
+
+	/* MEL 7, version 1 */
+	frame->cfm_hdr.mel_ver = (7 << 5) | 1;
+	frame->cfm_hdr.opcode = 0x28;
+	frame->cfm_hdr.flags = 0;
+	frame->cfm_hdr.tlv_off = sizeof(frame->r_aps);
+
+	/* R-APS(NR,RB,DNF) */
+	frame->r_aps.reqstate_subcode = (0x00 << 4) | 0;
+	frame->r_aps.status = BIT(7) | BIT(6);
+	memcpy(&frame->r_aps.node_id, &frame->hdr.src, sizeof(frame->hdr.src));
+	memset(frame->r_aps.rfu, 0, sizeof(frame->r_aps.rfu));
+	frame->r_aps.tlv_end = 0;
+
+	memset(frame->pad, 0, sizeof(frame->pad));
+
+	ret = net_pkt_set_data(pkt, &r_aps_access);
+	zassert_equal(ret, 0, "Error writing R-APS PDU to net_pkt: %d", ret);
+
+	rx_err = eth_stats.errors.rx;
+	net_pkt_set_iface(pkt, iface);
+	net_process_rx_packet(pkt);
+
+	/* Frame should have been dropped */
+	zassert_equal(eth_stats.errors.rx, rx_err + 1, "VLAN frame not dropped as expected");
+}
+
 static void *setup(void)
 {
+	memset(&eth_stats, 0, sizeof(eth_stats));
 	test_virtual_setup();
 	test_address_setup();
 	return NULL;
