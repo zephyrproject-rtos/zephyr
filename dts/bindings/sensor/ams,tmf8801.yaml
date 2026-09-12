@@ -1,0 +1,8 @@
+# Copyright (c) 2026 Dotcom IoT LLP
+# SPDX-License-Identifier: Apache-2.0
+
+description: AMS TMF8801 ToF sensor
+
+compatible: "ams,tmf8801"
+
+include: [sensor-device.yaml, i2c-device.yaml]
