@@ -1,11 +1,12 @@
+common:
+  tags:
+    - drivers
+    - dma
+  # The board describes the controllers to test in its vane for the setup,
+  # and which of them do cyclic transfers.
+  requires:
+    - api: dma
+    - setup: dma.memory-to-memory
+  filter: dt_compat_any_prop_enabled("test-dma-memory-to-memory", "cyclic")
 tests:
-  drivers.dma.cyclic:
-    depends_on: dma
-    tags:
-      - drivers
-      - dma
-    platform_allow:
-      - xmc47_relax_kit
-      - xmc45_relax_kit
-      - pic32cz_ca80_cult
-    filter: dt_nodelabel_enabled("tst_dma0")
+  drivers.dma.cyclic: {}

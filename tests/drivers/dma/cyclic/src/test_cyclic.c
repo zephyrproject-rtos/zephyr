@@ -18,15 +18,21 @@
  *   -# Stop transfer and check tx/rx contents match
  */
 
+#include <string.h>
+
 #include <zephyr/kernel.h>
 #include <zephyr/drivers/dma.h>
 #include <zephyr/ztest.h>
 
-#define DMA_DATA_ALIGNMENT DT_PROP_OR(DT_NODELABEL(tst_dma0), dma_buf_addr_alignment, 32)
+#include "dma_test.h"
+
 #define GUARD_BUF_SIZE (16)
 
-static __aligned(DMA_DATA_ALIGNMENT) uint8_t tx_data[CONFIG_DMA_CYCLIC_XFER_SIZE];
-static __aligned(DMA_DATA_ALIGNMENT) uint8_t rx_data[CONFIG_DMA_CYCLIC_XFER_SIZE + GUARD_BUF_SIZE];
+/* Whole words, the transfer moves 4 bytes at a time. */
+#define XFER_SIZE ROUND_DOWN(MIN(DMA_TEST_TRANSFER_SIZE, 4096), 4)
+
+static DMA_TEST_BUF uint8_t tx_data[XFER_SIZE];
+static DMA_TEST_BUF uint8_t rx_data[XFER_SIZE + GUARD_BUF_SIZE];
 
 K_SEM_DEFINE(xfer_sem, 0, 1);
 
@@ -51,19 +57,20 @@ static void dma_callback(const struct device *dma_dev, void *user_data,
 }
 
 
-static int test_cyclic(void)
+static int test_cyclic(const struct dma_test_dev *td)
 {
-	const struct device *dma;
-	int chan_id;
+	const struct device *dma = td->dev;
+	struct dma_test_channels chans;
+	uint32_t chan_id;
 
 	TC_PRINT("Preparing DMA Controller\n");
 
-	for (int i = 0; i < CONFIG_DMA_CYCLIC_XFER_SIZE; i++) {
+	for (int i = 0; i < XFER_SIZE; i++) {
 		tx_data[i] = i;
 	}
-	(void)memset(rx_data + CONFIG_DMA_CYCLIC_XFER_SIZE, 0xA5, GUARD_BUF_SIZE);
+	(void)memset(rx_data, 0, XFER_SIZE);
+	(void)memset(rx_data + XFER_SIZE, 0xA5, GUARD_BUF_SIZE);
 
-	dma = DEVICE_DT_GET(DT_NODELABEL(tst_dma0));
 	if (!device_is_ready(dma)) {
 		TC_PRINT("dma controller device is not ready\n");
 		return TC_FAIL;
@@ -81,14 +88,10 @@ static int test_cyclic(void)
 	dma_cfg.complete_callback_en = true; /* per block completion */
 	dma_cfg.cyclic = 1;
 
-	chan_id = dma_request_channel(dma, NULL);
-	if (chan_id < 0) {
-		TC_PRINT("Platform does not support dma request channel,"
-			 " using Kconfig DMA_SG_CHANNEL_NR\n");
-		chan_id = CONFIG_DMA_CYCLIC_CHANNEL_NR;
-	}
+	zassert_ok(dma_test_channels_get(td, 1, &chans));
+	chan_id = chans.id[0];
 
-	dma_block_cfgs.block_size = CONFIG_DMA_CYCLIC_XFER_SIZE;
+	dma_block_cfgs.block_size = XFER_SIZE;
 
 	dma_block_cfgs.source_address = (uint32_t)(tx_data);
 	dma_block_cfgs.dest_address = (uint32_t)(rx_data);
@@ -118,11 +121,11 @@ static int test_cyclic(void)
 		return TC_FAIL;
 	}
 
-	if (memcmp(tx_data, rx_data, CONFIG_DMA_CYCLIC_XFER_SIZE)) {
+	if (memcmp(tx_data, rx_data, XFER_SIZE)) {
 		TC_PRINT("Failed to verify tx/rx in the first cycle.\n");
 		return TC_FAIL;
 	}
-	if (check_overflow_buffer(rx_data + CONFIG_DMA_CYCLIC_XFER_SIZE, GUARD_BUF_SIZE)) {
+	if (check_overflow_buffer(rx_data + XFER_SIZE, GUARD_BUF_SIZE)) {
 		TC_PRINT("rx_data guard pattern has been overwritten.");
 		return TC_FAIL;
 	}
@@ -131,7 +134,7 @@ static int test_cyclic(void)
 
 	/* reset rx_data to validate that transfer cycles */
 	memset(rx_data, 0, sizeof(rx_data));
-	(void)memset(rx_data + CONFIG_DMA_CYCLIC_XFER_SIZE, 0xA5, GUARD_BUF_SIZE);
+	(void)memset(rx_data + XFER_SIZE, 0xA5, GUARD_BUF_SIZE);
 
 	if (dma_resume(dma, chan_id) != 0) {
 		TC_PRINT("Failed to resume transfer\n");
@@ -148,21 +151,32 @@ static int test_cyclic(void)
 		return TC_FAIL;
 	}
 
-	if (memcmp(tx_data, rx_data, CONFIG_DMA_CYCLIC_XFER_SIZE)) {
+	if (memcmp(tx_data, rx_data, XFER_SIZE)) {
 		TC_PRINT("Failed to verify tx/rx in the second cycle.\n");
 		return TC_FAIL;
 	}
-	if (check_overflow_buffer(rx_data + CONFIG_DMA_CYCLIC_XFER_SIZE, GUARD_BUF_SIZE)) {
+	if (check_overflow_buffer(rx_data + XFER_SIZE, GUARD_BUF_SIZE)) {
 		TC_PRINT("rx_data guard pattern has been overwritten.");
 		return TC_FAIL;
 	}
+
+	dma_test_channels_put(td, &chans);
 
 	TC_PRINT("Finished: DMA Cyclic test\n");
 	return TC_PASS;
 }
 
-/* export test cases */
-ZTEST(dma_m2m_cyclic, test_dma_m2m_cyclic)
-{
-	zassert_true((test_cyclic() == TC_PASS));
-}
+/* One test case per DMA controller the board says does cyclic transfers. */
+#define DEFINE_DMA_M2M_CYCLIC_TESTS(idx, _)                                                        \
+	COND_CODE_1(DMA_TEST_INST_HAS(idx, cyclic), (DMA_M2M_CYCLIC_TEST(idx)), ())
+
+#define DMA_M2M_CYCLIC_TEST(idx)                                                                   \
+	ZTEST(dma_m2m_cyclic, test_dma##idx##_m2m_cyclic)                                          \
+	{                                                                                          \
+		zassert_true(test_cyclic(&dma_test_devs[idx]) == TC_PASS,                          \
+			     "%s failed cyclic transfer", dma_test_devs[idx].dev->name);           \
+	}
+
+LISTIFY(DMA_TEST_DEV_COUNT, DEFINE_DMA_M2M_CYCLIC_TESTS, ())
+
+ZTEST_SUITE(dma_m2m_cyclic, NULL, NULL, NULL, NULL, NULL);
