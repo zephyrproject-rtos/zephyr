@@ -30,3 +30,4 @@ supported:
   - comparator
   - dmic
   - i2c
+  - i3c
