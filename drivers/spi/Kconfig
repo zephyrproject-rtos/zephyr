@@ -48,6 +48,27 @@ config SPI_INTERRUPT_DRIVEN
 	  when this is left disabled. To force a driver out of interrupt mode,
 	  clear its own SPI_*_INTERRUPT symbol instead.
 
+config SPI_HAS_DMA
+	bool
+	help
+	  Selected by the DMA transfer mode of a driver: the enabled driver
+	  moves its data by DMA, in response to SPI_DMA or by default. A test
+	  of DMA-driven transfers filters on it.
+
+config SPI_HAS_INTERRUPT_DRIVEN
+	bool
+	help
+	  Selected by the interrupt-driven transfer mode of a driver: the
+	  enabled driver completes its transfers from interrupts, in response
+	  to SPI_INTERRUPT_DRIVEN or by default.
+
+config SPI_HAS_RTIO
+	bool
+	help
+	  Selected by a driver implementing the RTIO API itself, with
+	  SPI_RTIO, rather than through the generic fallback on top of the
+	  transceive call.
+
 config SPI_ASYNC
 	bool "Asynchronous call support"
 	depends on MULTITHREADING

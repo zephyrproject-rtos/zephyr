@@ -16,6 +16,7 @@ config SPI_GD32_INTERRUPT
 	default y if SPI_INTERRUPT_DRIVEN
 	default y if SPI_ASYNC
 	default y if SPI_GD32_DMA
+	select SPI_HAS_INTERRUPT_DRIVEN
 	help
 	  Enable the interrupt driven mode for SPI instances
 
@@ -24,6 +25,7 @@ config SPI_GD32_DMA
 	default y if SPI_DMA
 	select DMA
 	select SPI_GD32_INTERRUPT
+	select SPI_HAS_DMA
 	help
 	  Use the DMA for SPI transfer
 	  that enable dma channels in their device tree node.

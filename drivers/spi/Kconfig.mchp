@@ -16,6 +16,7 @@ config SPI_MCHP_FLEXCOM_DMA_DRIVEN
 	depends on SPI_MCHP_FLEXCOM_G1
 	depends on $(dt_compat_all_has_prop,$(DT_COMPAT_MICROCHIP_FLEXCOM_G1_SPI),dmas)
 	select DMA
+	select SPI_HAS_DMA
 	help
 	  This enables DMA driven transfers for the SPI peripheral.
 	  Requires DMA controller and dmas property in device tree.
@@ -51,6 +52,7 @@ config SPI_MCHP_DMA_DRIVEN
 	default y
 	depends on DMA
 	depends on $(dt_compat_all_has_prop,$(DT_COMPAT_MICROCHIP_SERCOM_G1_SPI),dmas)
+	select SPI_HAS_DMA
 	help
 	  This enables DMA driven transfers for the SPI peripheral.
 	  Requires DMA controller and dmas property in device tree.

@@ -14,6 +14,7 @@ config SPI_SMARTBOND_DMA
 	default y if SPI_DMA
 	depends on SPI_SMARTBOND
 	select DMA
+	select SPI_HAS_DMA
 	help
 	  Enables using the DMA engine instead of interrupt-driven
 	  approach. This acceleration is available only for

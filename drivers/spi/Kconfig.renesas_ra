@@ -17,6 +17,7 @@ if SPI_RENESAS_RA
 config SPI_INTERRUPT
 	bool "RA MCU SPI Interrupt Support"
 	default y if SPI_INTERRUPT_DRIVEN
+	select SPI_HAS_INTERRUPT_DRIVEN
 	help
 	  Enable Interrupt support for the SPI Driver of RA family.
 
@@ -24,6 +25,7 @@ config SPI_RA_DTC
 	bool "RA MCU SPI DTC Support"
 	default y if SPI_DMA
 	select USE_RA_FSP_DTC
+	select SPI_HAS_DMA
 	help
 	  Enable the SPI DTC mode for SPI instances
 
@@ -52,6 +54,7 @@ config SPI_RENESAS_RA_SCI_INTERRUPT
 	bool "RENESAS RA SCI SPI Interrupt Support"
 	default y if SPI_INTERRUPT_DRIVEN
 	depends on SPI_ASYNC
+	select SPI_HAS_INTERRUPT_DRIVEN
 	help
 	  Enable Interrupt support for the SCI SPI Driver of RA family.
 
@@ -60,6 +63,7 @@ config SPI_RENESAS_RA_SCI_DTC
 	default y if SPI_DMA
 	depends on SPI_RENESAS_RA_SCI_INTERRUPT
 	select USE_RA_FSP_DTC
+	select SPI_HAS_DMA
 	help
 	  Enable DTC support for the SCI SPI Driver of RA family.
 
@@ -80,6 +84,7 @@ config SPI_RENESAS_RA_SCI_B_INTERRUPT
 	bool
 	depends on SPI_ASYNC
 	default y
+	select SPI_HAS_INTERRUPT_DRIVEN
 	help
 	  Enable Interrupt support for the SCI B SPI Driver of RA family.
 
@@ -98,6 +103,7 @@ config SPI_RENESAS_RA_SCI_B_DTC
 		$(dt_compat_any_has_prop,$(DT_COMPAT_RENESAS_RA_SPI_SCI_B),tx-dtc,True))
 	depends on SPI_RENESAS_RA_SCI_B_INTERRUPT
 	select USE_RA_FSP_DTC
+	select SPI_HAS_DMA
 	help
 	  Enable DTC (Data Transfer Control) support for the SCI B SPI Driver of RA family.
 

@@ -17,6 +17,7 @@ if SPI_RENESAS_RA8
 config SPI_B_INTERRUPT
 	bool "RA MCU SPI B Interrupt Support"
 	default y if SPI_INTERRUPT_DRIVEN
+	select SPI_HAS_INTERRUPT_DRIVEN
 	help
 	  Enable Interrupt support for the SPI B Driver of RA family.
 
@@ -36,6 +37,7 @@ config SPI_B_RA_DTC
 		$(dt_compat_any_has_prop,$(DT_COMPAT_RENESAS_RA8_SPI_B),tx-dtc,True)
 	select SPI_B_INTERRUPT
 	select USE_RA_FSP_DTC
+	select SPI_HAS_DMA
 	help
 	  Enable the SPI DTC mode for SPI instances
 

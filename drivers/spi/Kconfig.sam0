@@ -17,5 +17,6 @@ config SPI_SAM0_DMA
 	depends on SPI_SAM0
 	depends on $(dt_compat_any_has_prop,$(DT_COMPAT_ATMEL_SAM0_SPI),dmas)
 	depends on DMA
+	select SPI_HAS_DMA
 	help
 	  Enable DMA-based data transfers for the Atmel SAM0 SPI driver.
