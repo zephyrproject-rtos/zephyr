@@ -525,6 +525,16 @@ Serial
   removed; the baud rate is now computed from ``clock-frequency`` and ``current-speed``.
   (:github:`114729`)
 
+SPI
+===
+
+* The Silicon Labs SiWx91x GSPI driver moves data by DMA only when
+  :kconfig:option:`CONFIG_SPI_SILABS_SIWX91X_GSPI_DMA` is enabled. The option defaults on with the
+  generic :kconfig:option:`CONFIG_SPI_DMA` request and with :kconfig:option:`CONFIG_SPI_ASYNC`,
+  and enables the DMA subsystem itself. Configurations that relied on :kconfig:option:`CONFIG_DMA`
+  alone for DMA-driven GSPI transfers must enable one of these options, as they otherwise fall
+  back to polled transfers.
+
 Timers
 ======
 
