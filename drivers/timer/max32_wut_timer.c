@@ -16,6 +16,14 @@
 #include <wut.h>
 #include <wrap_max32_lp.h>
 
+/* The system timer is a singleton function: when a system timer is selected explicitly, it has to
+ * be the node this driver drives. Device trees predating the chosen keep working.
+ */
+#if DT_HAS_CHOSEN(zephyr_system_timer)
+BUILD_ASSERT(DT_SAME_NODE(DT_DRV_INST(0), DT_CHOSEN(zephyr_system_timer)),
+	     "zephyr,system-timer does not select the node this driver drives");
+#endif
+
 #define WUT_NODE       DT_INST_PARENT(0)
 #define WUT_REGS       ((mxc_wut_regs_t *)DT_REG_ADDR(WUT_NODE))
 #define WUT_PRESCALER  DT_PROP(WUT_NODE, prescaler)

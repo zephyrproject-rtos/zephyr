@@ -20,6 +20,16 @@ BUILD_ASSERT(DT_NUM_INST_STATUS_OKAY(DT_DRV_COMPAT) == 2,
 	     "Requires two instances of the ULPT timer to be enabled.");
 
 /* ULPT instance 0: Used to announce ticks to the kernel. */
+/* The system timer is a singleton function: when a system timer is selected explicitly, it has to
+ * be one of the nodes this driver drives. Device trees predating the chosen keep working.
+ */
+#define SYS_TIMER_IS_CHOSEN_INST(n) DT_SAME_NODE(DT_DRV_INST(n), DT_CHOSEN(zephyr_system_timer)) ||
+
+#if DT_HAS_CHOSEN(zephyr_system_timer)
+BUILD_ASSERT((DT_INST_FOREACH_STATUS_OKAY(SYS_TIMER_IS_CHOSEN_INST) 0),
+	     "zephyr,system-timer does not select a node this driver drives");
+#endif
+
 #define RA_ULPT_INST0_NODE    DT_INST_PARENT(0)
 #define RA_ULPT_INST0_REG     ((R_ULPT0_Type *)DT_REG_ADDR(RA_ULPT_INST0_NODE))
 #define RA_ULPT_INST0_IRQN    DT_IRQ_BY_NAME(RA_ULPT_INST0_NODE, ulpti, irq)

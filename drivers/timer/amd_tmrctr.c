@@ -31,6 +31,14 @@ LOG_MODULE_REGISTER(amd_axi_timer);
 
 #define DT_DRV_COMPAT amd_xps_timer_1_00_a
 
+/* The system timer is a singleton function: when a system timer is selected explicitly, it has to
+ * be the node this driver drives. Device trees predating the chosen keep working.
+ */
+#if DT_HAS_CHOSEN(zephyr_system_timer)
+BUILD_ASSERT(DT_SAME_NODE(DT_DRV_INST(0), DT_CHOSEN(zephyr_system_timer)),
+	     "zephyr,system-timer does not select the node this driver drives");
+#endif
+
 /* Use the first enabled AXI Timer node as the Zephyr system clock. */
 #define TIMER_NODE DT_INST(0, DT_DRV_COMPAT)
 #define TIMER_BASE ((mem_addr_t)DT_REG_ADDR(TIMER_NODE))

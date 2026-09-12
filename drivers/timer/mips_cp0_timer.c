@@ -14,6 +14,14 @@
 #include <soc.h>
 #include <mips/mipsregs.h>
 
+/* The system timer is a singleton function. This driver's hardware has no devicetree node, so it
+ * can never be the node an explicit selection points at.
+ */
+#if DT_HAS_CHOSEN(zephyr_system_timer)
+BUILD_ASSERT(0,
+	     "zephyr,system-timer selects a node, but this driver's timer has no node to match");
+#endif
+
 static ALWAYS_INLINE void set_cp0_compare(uint32_t time)
 {
 	_mips_write_32bit_c0_register(CP0_COMPARE, time);

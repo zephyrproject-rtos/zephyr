@@ -20,6 +20,14 @@
 #include <nrf_sys_event.h>
 
 #define GRTC_NODE DT_NODELABEL(grtc)
+
+/* The system timer is a singleton function: when a system timer is selected explicitly, it has to
+ * be the node this driver drives. Device trees predating the chosen keep working.
+ */
+#if DT_HAS_CHOSEN(zephyr_system_timer)
+BUILD_ASSERT(DT_SAME_NODE(GRTC_NODE, DT_CHOSEN(zephyr_system_timer)),
+	     "zephyr,system-timer does not select the node this driver drives");
+#endif
 #define HFCLK_NODE DT_PHANDLE_BY_NAME(GRTC_NODE, clocks, hfclock)
 #define LFCLK_NODE DT_PHANDLE_BY_NAME(GRTC_NODE, clocks, lfclock)
 

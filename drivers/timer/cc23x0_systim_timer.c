@@ -26,6 +26,14 @@
 #include <inc/hw_systim.h>
 #include <inc/hw_evtsvt.h>
 
+/* The system timer is a singleton function: when a system timer is selected explicitly, it has to
+ * be the node this driver drives. Device trees predating the chosen keep working.
+ */
+#if DT_HAS_CHOSEN(zephyr_system_timer)
+BUILD_ASSERT(DT_SAME_NODE(DT_DRV_INST(0), DT_CHOSEN(zephyr_system_timer)),
+	     "zephyr,system-timer does not select the node this driver drives");
+#endif
+
 /* Kernel tick period in microseconds (same timebase as systim) */
 #define TICK_PERIOD_MICRO_SEC (1000000 / CONFIG_SYS_CLOCK_TICKS_PER_SEC)
 

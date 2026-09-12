@@ -18,6 +18,14 @@
 #include <zephyr/sys/clock.h>
 
 #include <zephyr/logging/log.h>
+
+/* The system timer is a singleton function: when a system timer is selected explicitly, it has to
+ * be the node this driver drives. Device trees predating the chosen keep working.
+ */
+#if DT_HAS_CHOSEN(zephyr_system_timer)
+BUILD_ASSERT(DT_SAME_NODE(DT_DRV_INST(0), DT_CHOSEN(zephyr_system_timer)),
+	     "zephyr,system-timer does not select the node this driver drives");
+#endif
 LOG_MODULE_REGISTER(ifx_cat1_lp_timer_pdl, CONFIG_KERNEL_LOG_LEVEL);
 
 /* The application only needs one lptimer. Report an error if more than one is selected. */

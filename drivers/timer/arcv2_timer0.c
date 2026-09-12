@@ -27,10 +27,20 @@
 #define _ARC_V2_TMR0_COUNT _ARC_V2_S_TMR0_COUNT
 #define _ARC_V2_TMR0_CONTROL _ARC_V2_S_TMR0_CONTROL
 #define _ARC_V2_TMR0_LIMIT _ARC_V2_S_TMR0_LIMIT
-#define IRQ_TIMER0 DT_IRQN(DT_NODELABEL(sectimer0))
+#define TIMER0_NODE DT_NODELABEL(sectimer0)
+#define IRQ_TIMER0 DT_IRQN(TIMER0_NODE)
 
 #else
-#define IRQ_TIMER0 DT_IRQN(DT_NODELABEL(timer0))
+#define TIMER0_NODE DT_NODELABEL(timer0)
+#define IRQ_TIMER0 DT_IRQN(TIMER0_NODE)
+#endif
+
+/* The system timer is a singleton function: when a system timer is selected explicitly, it has to
+ * be the node this driver drives. Device trees predating the chosen keep working.
+ */
+#if DT_HAS_CHOSEN(zephyr_system_timer)
+BUILD_ASSERT(DT_SAME_NODE(TIMER0_NODE, DT_CHOSEN(zephyr_system_timer)),
+	     "zephyr,system-timer does not select the node this driver drives");
 #endif
 
 #define _ARC_V2_TMR_CTRL_IE 0x1 /* interrupt enable */

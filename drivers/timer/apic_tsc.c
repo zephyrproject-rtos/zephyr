@@ -12,6 +12,14 @@
 #include <zephyr/drivers/interrupt_controller/loapic.h>
 #include <zephyr/irq.h>
 
+/* The system timer is a singleton function. This driver's hardware has no devicetree node, so it
+ * can never be the node an explicit selection points at.
+ */
+#if DT_HAS_CHOSEN(zephyr_system_timer)
+BUILD_ASSERT(0,
+	     "zephyr,system-timer selects a node, but this driver's timer has no node to match");
+#endif
+
 /*
  * This driver is selected when either CONFIG_APIC_TIMER_TSC or
  * CONFIG_APIC_TSC_DEADLINE_TIMER is selected. The later is preferred over

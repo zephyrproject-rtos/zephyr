@@ -19,6 +19,14 @@ LOG_MODULE_REGISTER(radio_timer_driver, CONFIG_KERNEL_LOG_LEVEL);
 
 /* Max HS startup time expressed in system time (1953 us / 2.4414 us) */
 #define MAX_HS_STARTUP_TIME	DT_PROP(DT_NODELABEL(radio_timer), max_hs_startup_time)
+
+/* The system timer is a singleton function: when a system timer is selected explicitly, it has to
+ * be the node this driver drives. Device trees predating the chosen keep working.
+ */
+#if DT_HAS_CHOSEN(zephyr_system_timer)
+BUILD_ASSERT(DT_SAME_NODE(DT_NODELABEL(radio_timer), DT_CHOSEN(zephyr_system_timer)),
+	     "zephyr,system-timer does not select the node this driver drives");
+#endif
 #define BLE_WKUP_PRIO		0
 #define CPU_WKUP_PRIO		1
 #define RADIO_TIMER_ERROR_PRIO	3

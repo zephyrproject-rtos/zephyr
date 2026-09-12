@@ -12,6 +12,14 @@
 #include <soc.h>
 #include <zephyr/irq.h>
 
+/* The system timer is a singleton function: when a system timer is selected explicitly, it has to
+ * be the node this driver drives. Device trees predating the chosen keep working.
+ */
+#if DT_HAS_CHOSEN(zephyr_system_timer)
+BUILD_ASSERT(DT_SAME_NODE(DT_DRV_INST(0), DT_CHOSEN(zephyr_system_timer)),
+	     "zephyr,system-timer does not select the node this driver drives");
+#endif
+
 #define SY1XX_SYS_TIMER_NODE      DT_NODELABEL(systick)
 #define SY1XX_SYS_TIMER_BASE_ADDR DT_REG_ADDR(SY1XX_SYS_TIMER_NODE)
 

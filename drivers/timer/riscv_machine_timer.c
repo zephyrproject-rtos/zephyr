@@ -13,6 +13,14 @@
 
 #define DT_DRV_COMPAT riscv_machine_timer
 
+/* The system timer is a singleton function: when a system timer is selected explicitly, it has to
+ * be the node this driver drives. Device trees predating the chosen keep working.
+ */
+#if DT_HAS_CHOSEN(zephyr_system_timer)
+BUILD_ASSERT(DT_SAME_NODE(DT_DRV_INST(0), DT_CHOSEN(zephyr_system_timer)),
+	     "zephyr,system-timer does not select the node this driver drives");
+#endif
+
 #define MTIME_REG    DT_INST_REG_ADDR_BY_NAME(0, mtime)
 #define MTIMECMP_REG DT_INST_REG_ADDR_BY_NAME(0, mtimecmp)
 #define TIMER_IRQN   DT_INST_IRQN(0)

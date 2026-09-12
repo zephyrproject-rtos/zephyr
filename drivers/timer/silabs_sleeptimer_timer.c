@@ -17,6 +17,14 @@
 
 #include <sl_sleeptimer.h>
 
+/* The system timer is a singleton function. This driver's hardware has no devicetree node, so it
+ * can never be the node an explicit selection points at.
+ */
+#if DT_HAS_CHOSEN(zephyr_system_timer)
+BUILD_ASSERT(0,
+	     "zephyr,system-timer selects a node, but this driver's timer has no node to match");
+#endif
+
 LOG_MODULE_REGISTER(silabs_sleeptimer_timer);
 
 /* Maximum time interval between timer interrupts (in hw_cycles) */

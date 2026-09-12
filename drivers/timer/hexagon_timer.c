@@ -13,6 +13,14 @@
 #include "hexagon_timer.h"
 #include <hexagon_vm.h>
 
+/* The system timer is a singleton function. This driver's hardware has no devicetree node, so it
+ * can never be the node an explicit selection points at.
+ */
+#if DT_HAS_CHOSEN(zephyr_system_timer)
+BUILD_ASSERT(0,
+	     "zephyr,system-timer selects a node, but this driver's timer has no node to match");
+#endif
+
 #if defined(CONFIG_TEST)
 const int32_t z_sys_timer_irq_for_test = HEXAGON_TIMER_IRQ;
 #endif

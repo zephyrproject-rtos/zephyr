@@ -42,6 +42,14 @@
 
 BUILD_ASSERT(CHAN_COUNT <= CHAN_COUNT_MAX, "Not enough compare channels");
 /* Ensure that counter driver for RTC1 is not enabled. */
+/* The system timer is a singleton function: when a system timer is selected explicitly, it has to
+ * be the node this driver drives. Device trees predating the chosen keep working.
+ */
+#if DT_HAS_CHOSEN(zephyr_system_timer)
+BUILD_ASSERT(DT_SAME_NODE(DT_NODELABEL(RTC_LABEL), DT_CHOSEN(zephyr_system_timer)),
+	     "zephyr,system-timer does not select the node this driver drives");
+#endif
+
 BUILD_ASSERT(DT_NODE_HAS_STATUS(DT_NODELABEL(RTC_LABEL), disabled),
 	     "Counter for RTC1 must be disabled");
 

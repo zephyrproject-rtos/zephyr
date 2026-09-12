@@ -26,6 +26,14 @@
 #include <zephyr/irq.h>
 #include <zephyr/sys/clock.h>
 
+/* The system timer is a singleton function: when a system timer is selected explicitly, it has to
+ * be the node this driver drives. Device trees predating the chosen keep working.
+ */
+#if DT_HAS_CHOSEN(zephyr_system_timer)
+BUILD_ASSERT(DT_SAME_NODE(DT_DRV_INST(0), DT_CHOSEN(zephyr_system_timer)),
+	     "zephyr,system-timer does not select the node this driver drives");
+#endif
+
 /* Shared prescaler division factor. The GPTIMER subtimers share a single
  * decrementer, so the minimum valid division factor is ntimers + 1 (GRLIB IP
  * Core User's Manual, GPTIMER section). A core has at most 7 timers, so 8 is

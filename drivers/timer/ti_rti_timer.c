@@ -41,6 +41,16 @@ struct ti_rti_timer_data {
 
 static const struct device *systick_timer_dev;
 
+/* The system timer is a singleton function: when a system timer is selected explicitly, it has to
+ * be one of the nodes this driver drives. Device trees predating the chosen keep working.
+ */
+#define SYS_TIMER_IS_CHOSEN_INST(n) DT_SAME_NODE(DT_DRV_INST(n), DT_CHOSEN(zephyr_system_timer)) ||
+
+#if DT_HAS_CHOSEN(zephyr_system_timer)
+BUILD_ASSERT((DT_INST_FOREACH_STATUS_OKAY(SYS_TIMER_IS_CHOSEN_INST) 0),
+	     "zephyr,system-timer does not select a node this driver drives");
+#endif
+
 #define TI_RTI_TIMER_MASK(reg)  TI_RTI_TIMER_##reg##_MASK
 #define TI_RTI_TIMER_SHIFT(reg) TI_RTI_TIMER_##reg##_SHIFT
 

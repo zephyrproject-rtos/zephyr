@@ -7,6 +7,14 @@
 
 #if defined(CONFIG_TEST)
 const int32_t z_sys_timer_irq_for_test = DT_IRQN(DT_NODELABEL(ostimer0));
+
+/* The system timer is a singleton function: when a system timer is selected explicitly, it has to
+ * be the node this driver drives. Device trees predating the chosen keep working.
+ */
+#if DT_HAS_CHOSEN(zephyr_system_timer)
+BUILD_ASSERT(DT_SAME_NODE(DT_NODELABEL(ostimer0), DT_CHOSEN(zephyr_system_timer)),
+	     "zephyr,system-timer does not select the node this driver drives");
+#endif
 #endif
 
 #define OSTIMER64_BASE DT_REG_ADDR(DT_NODELABEL(ostimer64))

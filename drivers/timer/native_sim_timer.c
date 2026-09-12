@@ -17,6 +17,14 @@
 #include "nsi_timer_model.h"
 #include "soc.h"
 
+/* The system timer is a singleton function. This driver's hardware has no devicetree node, so it
+ * can never be the node an explicit selection points at.
+ */
+#if DT_HAS_CHOSEN(zephyr_system_timer)
+BUILD_ASSERT(0,
+	     "zephyr,system-timer selects a node, but this driver's timer has no node to match");
+#endif
+
 /**
  * Return the current HW cycle counter. This corresponds to the number of
  * microseconds since boot, in 64 bits.

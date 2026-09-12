@@ -13,6 +13,14 @@
 #include <zephyr/irq.h>
 #include <da1469x_pdc.h>
 
+/* The system timer is a singleton function. This driver's hardware has no devicetree node, so it
+ * can never be the node an explicit selection points at.
+ */
+#if DT_HAS_CHOSEN(zephyr_system_timer)
+BUILD_ASSERT(0,
+	     "zephyr,system-timer selects a node, but this driver's timer has no node to match");
+#endif
+
 #define COUNTER_SPAN BIT(24)
 #define CYC_PER_TICK k_ticks_to_cyc_ceil32(1)
 #define TICK_TO_CYC(tick) k_ticks_to_cyc_ceil32(tick)

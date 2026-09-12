@@ -14,6 +14,14 @@
 LOG_MODULE_REGISTER(renesas_rz_gtm_timer);
 
 #define DT_DRV_COMPAT renesas_rz_gtm_os_timer
+
+/* The system timer is a singleton function: when a system timer is selected explicitly, it has to
+ * be the node this driver drives. Device trees predating the chosen keep working.
+ */
+#if DT_HAS_CHOSEN(zephyr_system_timer)
+BUILD_ASSERT(DT_SAME_NODE(DT_DRV_INST(0), DT_CHOSEN(zephyr_system_timer)),
+	     "zephyr,system-timer does not select the node this driver drives");
+#endif
 #define TIMER_NODE    DT_INST_PARENT(0)
 
 #define cycle_diff_t   uint32_t

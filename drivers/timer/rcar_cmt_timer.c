@@ -14,6 +14,14 @@
 
 #define DT_DRV_COMPAT renesas_rcar_cmt
 
+/* The system timer is a singleton function: when a system timer is selected explicitly, it has to
+ * be the node this driver drives. Device trees predating the chosen keep working.
+ */
+#if DT_HAS_CHOSEN(zephyr_system_timer)
+BUILD_ASSERT(DT_SAME_NODE(DT_DRV_INST(0), DT_CHOSEN(zephyr_system_timer)),
+	     "zephyr,system-timer does not select the node this driver drives");
+#endif
+
 #define TIMER_IRQ              DT_INST_IRQN(0)
 #define TIMER_BASE_ADDR        DT_INST_REG_ADDR(0)
 #define TIMER_CLOCK_FREQUENCY  DT_INST_PROP(0, clock_frequency)

@@ -21,6 +21,14 @@
 #include <inc/hw_evtsvt.h>
 #include <inc/hw_memmap.h>
 
+/* The system timer is a singleton function: when a system timer is selected explicitly, it has to
+ * be the node this driver drives. Device trees predating the chosen keep working.
+ */
+#if DT_HAS_CHOSEN(zephyr_system_timer)
+BUILD_ASSERT(DT_SAME_NODE(DT_DRV_INST(0), DT_CHOSEN(zephyr_system_timer)),
+	     "zephyr,system-timer does not select the node this driver drives");
+#endif
+
 #define RTC_TIMEOUT_MAX 0xFFBFFFFFU
 
 /* Set rtc interrupt to lowest priority */

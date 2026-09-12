@@ -15,6 +15,16 @@
 
 #include <soc.h>
 
+/* The system timer is a singleton function: when a system timer is selected explicitly, it has to
+ * be hardware this driver can operate. Device trees predating the chosen keep working, and so does
+ * any board that has no other system timer to compete with.
+ */
+#if DT_HAS_CHOSEN(zephyr_system_timer)
+BUILD_ASSERT(DT_SAME_NODE(DT_DRV_INST(0), DT_CHOSEN(zephyr_system_timer)),
+	     "zephyr,system-timer does not select the node this driver drives; "
+	     "disable CONFIG_LITEX_TIMER or point the chosen at that node");
+#endif
+
 #define TIMER_LOAD_ADDR			DT_INST_REG_ADDR_BY_NAME(0, load)
 #define TIMER_RELOAD_ADDR		DT_INST_REG_ADDR_BY_NAME(0, reload)
 #define TIMER_EN_ADDR			DT_INST_REG_ADDR_BY_NAME(0, en)
