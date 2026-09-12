@@ -75,7 +75,7 @@ application.
 
 .. zephyr-app-commands::
    :zephyr-app: samples/basic/blinky
-   :board: w6300_evb_pico2/rp2350a/m33
+   :board: w6300_evb_pico2/rp2350a/m33_0
    :goals: build flash
    :flash-args: --openocd /usr/local/bin/openocd
 
