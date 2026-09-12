@@ -1,0 +1,75 @@
+# Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  A DMA controller a board makes available for memory-to-memory transfer
+  tests, with the channels and the memory the tests may use on it.
+
+  Example:
+
+    / {
+            dma_test_dma1: dma-test-dma1 {
+                    compatible = "test-dma-memory-to-memory";
+                    dma = <&dma1>;
+                    channels = <4 6>;
+                    max-transfer-size = <4094>;
+                    memory-region = <&sram4>;
+            };
+    };
+
+compatible: "test-dma-memory-to-memory"
+
+properties:
+  dma:
+    type: phandle
+    required: true
+    description: The DMA controller under test.
+
+  channels:
+    type: array
+    description: |
+      Channels the tests may use on the controller, in the order they take
+      them. Tests first ask the driver for a channel and use this list only
+      when the driver does not allocate channels; without the list they use
+      channels 0 and 1.
+
+  max-transfer-size:
+    type: int
+    description: |
+      Largest block the tests transfer on this controller, in bytes. Lower it
+      for controllers with a block size limit or boards with little RAM. The
+      tests use the smallest value of all controllers under test, 8192 bytes
+      when no controller sets it.
+
+  channel-link:
+    type: boolean
+    description: |
+      The controller links channels, a transfer on one triggering the next,
+      which the chan_link_transfer test exercises.
+
+  scatter-gather:
+    type: boolean
+    description: |
+      The controller runs scatter-gather transfers, which the scatter_gather
+      test exercises.
+
+  cyclic:
+    type: boolean
+    description: |
+      The controller runs cyclic transfers, which the cyclic test exercises.
+
+  max-burst-length:
+    type: int
+    description: |
+      Longest burst the controller transfers, in bytes. The chan_blen_transfer
+      test skips its 16-byte bursts on a controller limited below that.
+
+  memory-region:
+    type: phandle
+    description: |
+      Memory region node (compatible zephyr,memory-region) the transfer
+      buffers are placed in, for controllers that only reach part of the
+      memory or need it uncached. The buffers are shared by every controller
+      under test, so the first controller naming a region decides. Without it
+      the buffers are in the nocache section when CONFIG_NOCACHE_MEMORY is
+      enabled, otherwise in ordinary RAM.
