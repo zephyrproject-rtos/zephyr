@@ -21,6 +21,7 @@ supported:
   - i2c
   - i3c
   - netif:eth
+  - ptp_clock
   - pwm
   - rtc
   - spi
