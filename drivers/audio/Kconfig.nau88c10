@@ -1,0 +1,13 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+#
+# SPDX-License-Identifier: Apache-2.0
+
+config AUDIO_CODEC_NAU88C10
+	bool "Nuvoton NAU88C10 driver"
+	default y
+	depends on DT_HAS_NUVOTON_NAU88C10_ENABLED
+	select I2C
+	help
+	  Enable the driver for the Nuvoton NAU88C10 mono audio codec, a wideband
+	  voice codec with a microphone preamplifier, a speaker driver and a mono
+	  line output.
