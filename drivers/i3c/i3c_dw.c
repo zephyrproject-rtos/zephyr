@@ -979,7 +979,70 @@ static void dw_i3c_flush_queues(const struct device *dev)
 	irq_unlock(irq_key);
 }
 
-#endif
+/**
+ * @brief Settle the controller before bus initialization
+ *
+ * Leaves the controller idle with no RESUME pending, so the first CCC of bus
+ * initialization does not inherit state from whatever ran before reset
+ *
+ * @retval 0 Controller is idle
+ * @retval -errno Propagated from a platform hook or from the full reset
+ */
+static int dw_i3c_prepare_bus_init(const struct device *dev)
+{
+	const struct dw_i3c_config *config = dev->config;
+	const uint32_t flush_mask = RESET_CTRL_RX_FIFO | RESET_CTRL_TX_FIFO |
+					 RESET_CTRL_RESP_QUEUE | RESET_CTRL_CMD_QUEUE;
+	uint32_t timeout;
+	int ret;
+
+	ret = dw_i3c_wait_ctrl_idle(dev, DW_I3C_CTRL_IDLE_TIMEOUT_US);
+	if (ret == 0) {
+		if ((sys_read32(config->regs + DEVICE_CTRL) & DEV_CTRL_RESUME) == 0U) {
+			return 0;
+		}
+
+		dw_i3c_clear_resume(dev);
+		if (dw_i3c_wait_resume_clear(dev, DW_I3C_RESUME_TIMEOUT_US) == 0) {
+			return 0;
+		}
+	}
+
+	/* Flush stale state so first CCC does not inherit old queue contents. */
+	sys_write32(flush_mask, config->regs + RESET_CTRL);
+
+	ret = dw_i3c_pre_resume_ctrl(dev);
+	if (ret != 0) {
+		return ret;
+	}
+
+	timeout = DW_I3C_FLUSH_TIMEOUT_US;
+	while ((sys_read32(config->regs + RESET_CTRL) & flush_mask) && --timeout) {
+		k_busy_wait(1);
+	}
+	if (timeout == 0U) {
+		LOG_WRN("%s: FIFO/queue flush did not self-clear; continuing init", dev->name);
+	}
+
+	/* Clear any stale sticky interrupt status from pre-init sequencing. */
+	sys_write32(INTR_ALL, config->regs + INTR_STATUS);
+
+	if (DW_I3C_OPS(config) && config->ops->pre_resume_ctrl) {
+		dw_i3c_clear_resume(dev);
+	} else {
+		(void)dw_i3c_pulse_resume(dev);
+	}
+
+	ret = dw_i3c_wait_ctrl_idle(dev, DW_I3C_CTRL_IDLE_TIMEOUT_US);
+	if (ret != 0) {
+		return dw_i3c_full_reset(dev);
+	}
+
+	return 0;
+}
+
+#endif /* CONFIG_I3C_CONTROLLER */
+
 #ifdef CONFIG_I3C_CONTROLLER
 /**
  * @brief Get the position of an I3C device with the specified address.
@@ -3503,10 +3566,23 @@ static int dw_i3c_init(const struct device *dev)
 
 #ifdef CONFIG_I3C_CONTROLLER
 	if (!(ctrl_config->is_secondary)) {
+		ret = dw_i3c_prepare_bus_init(dev);
+		if (ret != 0) {
+			return ret;
+		}
+	}
+#endif /* CONFIG_I3C_CONTROLLER */
+
+#ifdef CONFIG_I3C_CONTROLLER
+	if (!(ctrl_config->is_secondary)) {
 		/* Perform bus initialization - skip if no I3C devices are known. */
 		if (config->common.dev_list.num_i3c > 0 &&
 		    !(config->common.flags & I3C_CONTROLLER_FLAG_DISABLE_BUS_INIT)) {
 			ret = i3c_bus_init(dev, &config->common.dev_list);
+			if (ret != 0) {
+				/* Not fatal: targets that missed enumeration can hot-join. */
+				LOG_WRN("%s: bus initialization failed (%d)", dev->name, ret);
+			}
 		}
 		/* Bus Initialization Complete, allow HJ ACKs if not disabled */
 		if (!(config->common.flags & I3C_CONTROLLER_FLAG_DISABLE_HJ_AT_INIT)) {
