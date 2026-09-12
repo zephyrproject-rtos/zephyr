@@ -103,3 +103,9 @@ set(rp2350_zero/rp2350a/m33_DEPRECATED
 set(rp2350_zero/rp2350a/hazard3_DEPRECATED
     rp2350_zero/rp2350a/hazard3_0
 )
+set(rp2350b_core/rp2350b/m33_DEPRECATED
+    rp2350b_core/rp2350b/m33_0
+)
+set(rp2350b_core/rp2350b/hazard3_DEPRECATED
+    rp2350b_core/rp2350b/hazard3_0
+)
