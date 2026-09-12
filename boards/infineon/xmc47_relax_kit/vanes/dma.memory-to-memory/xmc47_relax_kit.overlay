@@ -1,0 +1,20 @@
+/*
+ * Copyright 2023 Schlumberger
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	dma_test_dma0: dma-test-dma0 {
+		compatible = "test-dma-memory-to-memory";
+		dma = <&dma0>;
+		max-burst-length = <8>;
+		scatter-gather;
+		cyclic;
+		max-transfer-size = <4095>;
+	};
+};
+
+&dma0 {
+	status = "okay";
+};
