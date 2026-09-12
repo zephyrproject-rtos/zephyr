@@ -519,12 +519,12 @@ static inline void ctf_top_thread_priority_set(uint32_t thread_id, int8_t prio,
 	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_THREAD_PRIORITY_SET), thread_id, name, prio);
 }
 
-static inline void ctf_top_thread_sleep_ticks_enter(uint32_t timeout)
+static inline void ctf_top_thread_sleep_ticks_enter(int32_t timeout)
 {
 	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_THREAD_SLEEP_TICKS_ENTER), timeout);
 }
 
-static inline void ctf_top_thread_sleep_ticks_exit(uint32_t timeout, int32_t ret)
+static inline void ctf_top_thread_sleep_ticks_exit(int32_t timeout, int32_t ret)
 {
 	CTF_EVENT(CTF_LITERAL(uint16_t, CTF_EVENT_THREAD_SLEEP_TICKS_EXIT), timeout, ret);
 }
