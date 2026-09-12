@@ -1075,6 +1075,23 @@ static void start_xfer(const struct device *dev)
 
 #ifdef CONFIG_I3C_CONTROLLER
 /**
+ * @brief Poll until the controller transfer state machine reports idle.
+ *
+ * @retval 0 Controller is idle.
+ * @retval -EBUSY Still busy when the timeout expired.
+ */
+static int dw_i3c_wait_ctrl_idle(const struct device *dev, uint32_t timeout_us)
+{
+	if (!WAIT_FOR(PRESENT_STATE_CM_TFR_STS(sys_read32(dw_i3c_regs(dev) + PRESENT_STATE)) ==
+			      CM_TFR_STS_IDLE,
+		      timeout_us, k_busy_wait(1))) {
+		return -EBUSY;
+	}
+
+	return 0;
+}
+
+/**
  * @brief Wait for a written RESUME to be consumed.
  *
  * RESUME reads back set until the controller has acted on it
@@ -1127,7 +1144,51 @@ static int dw_i3c_pulse_resume(const struct device *dev)
 	return ret;
 }
 
-#endif
+/**
+ * @brief Settle the controller before bus initialization
+ *
+ * Leaves the controller idle with no RESUME pending, so the first CCC of bus
+ * initialization does not inherit state from whatever ran before reset
+ *
+ * @retval 0 Controller is idle
+ * @retval -errno Propagated from a platform hook, or -EBUSY if the transfer
+ *                state machine never reports idle
+ */
+static int dw_i3c_prepare_bus_init(const struct device *dev)
+{
+	const struct dw_i3c_config *config = dev->config;
+	const uint32_t flush_mask = RESET_CTRL_FIFO_QUEUE;
+	int ret;
+
+	ret = dw_i3c_wait_ctrl_idle(dev, DW_I3C_CTRL_IDLE_TIMEOUT_US);
+	if (ret == 0) {
+		if ((sys_read32(dw_i3c_regs(dev) + DEVICE_CTRL) & DEV_CTRL_RESUME) == 0U) {
+			return 0;
+		}
+
+		dw_i3c_clear_resume(dev);
+		if (dw_i3c_wait_resume_clear(dev, DW_I3C_RESUME_TIMEOUT_US) == 0) {
+			return 0;
+		}
+	}
+
+	/* Flush stale state so first CCC does not inherit old queue contents. */
+	ret = dw_i3c_flush_queues(dev, flush_mask);
+	if ((ret != 0) && (ret != -ETIMEDOUT)) {
+		return ret;
+	}
+
+	if (DW_I3C_OPS(config) && config->ops->pre_resume_ctrl) {
+		dw_i3c_clear_resume(dev);
+	} else {
+		(void)dw_i3c_pulse_resume(dev);
+	}
+
+	return dw_i3c_wait_ctrl_idle(dev, DW_I3C_CTRL_IDLE_TIMEOUT_US);
+}
+
+#endif /* CONFIG_I3C_CONTROLLER */
+
 #ifdef CONFIG_I3C_CONTROLLER
 /**
  * @brief Wait for the running transfer to complete.
@@ -3508,10 +3569,23 @@ static int dw_i3c_init(const struct device *dev)
 
 #ifdef CONFIG_I3C_CONTROLLER
 	if (!(ctrl_config->is_secondary)) {
+		ret = dw_i3c_prepare_bus_init(dev);
+		if (ret != 0) {
+			return ret;
+		}
+	}
+#endif /* CONFIG_I3C_CONTROLLER */
+
+#ifdef CONFIG_I3C_CONTROLLER
+	if (!(ctrl_config->is_secondary)) {
 		/* Perform bus initialization - skip if no I3C devices are known. */
 		if (config->common.dev_list.num_i3c > 0 &&
 		    !(config->common.flags & I3C_CONTROLLER_FLAG_DISABLE_BUS_INIT)) {
 			ret = i3c_bus_init(dev, &config->common.dev_list);
+			if (ret != 0) {
+				/* Not fatal: targets that missed enumeration can hot-join. */
+				LOG_WRN("%s: bus initialization failed (%d)", dev->name, ret);
+			}
 		}
 		/* Bus Initialization Complete, allow HJ ACKs if not disabled */
 		if (!(config->common.flags & I3C_CONTROLLER_FLAG_DISABLE_HJ_AT_INIT)) {
