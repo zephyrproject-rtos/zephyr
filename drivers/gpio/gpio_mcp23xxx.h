@@ -34,7 +34,15 @@
 #define REG_GPIO 0x09
 #define REG_OLAT 0x0A
 
+#define REG_IOCON_BANK   BIT(7)
 #define REG_IOCON_MIRROR BIT(6)
+#define REG_IOCON_SEQOP  BIT(5)
+#define REG_IOCON_DISSLW BIT(4)
+#define REG_IOCON_HAEN   BIT(3)
+#define REG_IOCON_ODR    BIT(2)
+#define REG_IOCON_INTPOL BIT(1)
+/* MCP23x09 and MCP23x18 only: interrupt cleared by reading INTCAP (1) or GPIO (0) */
+#define REG_IOCON_INTCC  BIT(0)
 
 #define MCP23SXX_ADDR 0x40
 #define MCP23SXX_READBIT 0x01

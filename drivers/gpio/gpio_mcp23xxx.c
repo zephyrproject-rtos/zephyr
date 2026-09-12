@@ -614,14 +614,24 @@ int gpio_mcp23xxx_init(const struct device *dev)
 
 	/* If the INT line is available, configure the callback for it. */
 	if (config->gpio_int.port) {
+		uint8_t iocon = 0;
+
 		if (config->ngpios == 16) {
 			/* send both ports' interrupts through one IRQ pin */
-			err = write_iocon(dev, REG_IOCON_MIRROR);
+			iocon |= REG_IOCON_MIRROR;
+		}
 
-			if (err != 0) {
-				LOG_ERR("Failed to enable mirrored IRQ pins: %d", err);
-				return -EIO;
-			}
+		if (config->is_open_drain) {
+			/* The MCP23x09/x18 default to clearing the interrupt on a GPIO
+			 * read; this driver acknowledges by reading INTCAP.
+			 */
+			iocon |= REG_IOCON_INTCC;
+		}
+
+		err = write_iocon(dev, iocon);
+		if (err != 0) {
+			LOG_ERR("Failed to configure IOCON: %d", err);
+			return -EIO;
 		}
 
 		if (!gpio_is_ready_dt(&config->gpio_int)) {
