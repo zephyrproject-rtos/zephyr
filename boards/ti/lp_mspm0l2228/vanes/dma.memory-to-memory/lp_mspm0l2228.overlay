@@ -1,0 +1,17 @@
+/*
+ * Copyright (c) 2026 Linumiz
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	dma_test_dma: dma-test-dma {
+		compatible = "test-dma-memory-to-memory";
+		dma = <&dma>;
+		max-transfer-size = <2048>;
+	};
+};
+
+&dma {
+	status = "okay";
+};
