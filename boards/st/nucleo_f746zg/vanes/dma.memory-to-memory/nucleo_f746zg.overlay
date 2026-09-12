@@ -1,0 +1,22 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) Benjamin Björnsson <benjamin.bjornsson@gmail.com>
+ */
+
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+
+/ {
+	dma_test_dma2: dma-test-dma2 {
+		compatible = "test-dma-memory-to-memory";
+		dma = <&dma2>;
+	};
+};
+
+&dma2 {
+	status = "okay";
+};
+
+&sram0 {
+	zephyr,memory-attr = <DT_MEM_ARM(ATTR_MPU_RAM_NOCACHE)>;
+};

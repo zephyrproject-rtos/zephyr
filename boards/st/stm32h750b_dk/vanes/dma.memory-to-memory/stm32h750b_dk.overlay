@@ -1,0 +1,47 @@
+/*
+ * Copyright (c) 2024 Abderrahmane JARMOUNI
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+#include <zephyr/dt-bindings/memory-attr/memory-attr-arm.h>
+
+/ {
+	dma_test_dmamux1: dma-test-dmamux1 {
+		compatible = "test-dma-memory-to-memory";
+		dma = <&dmamux1>;
+		channels = <3>;
+	};
+
+	dma_test_dmamux2: dma-test-dmamux2 {
+		compatible = "test-dma-memory-to-memory";
+		dma = <&dmamux2>;
+		channels = <3>;
+	};
+};
+
+&sram4 {
+	zephyr,memory-attr = <DT_MEM_ARM_MPU_RAM_NOCACHE>;
+	zephyr,memory-region = "SRAM4";
+	status = "okay";
+};
+
+&dma1 {
+	status = "okay";
+};
+
+&dma2 {
+	status = "okay";
+};
+
+&dmamux1 {
+	status = "okay";
+};
+
+&bdma1 {
+	status = "okay";
+};
+
+&dmamux2 {
+	status = "okay";
+};
