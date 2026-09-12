@@ -34,3 +34,4 @@ supported:
   - pwm
   - dac
   - opamp
+  - i3c

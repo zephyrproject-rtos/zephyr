@@ -30,3 +30,4 @@ supported:
   - i2c
   - counter
   - pwm
+  - i3c
