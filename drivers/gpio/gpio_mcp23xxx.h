@@ -96,6 +96,8 @@ struct mcp23xxx_drv_data {
 
 	uint16_t rising_edge_ints;
 	uint16_t falling_edge_ints;
+	/* Interrupts consumed by a port read, still to be delivered by the work handler */
+	uint16_t pending_ints;
 
 	struct {
 		uint16_t iodir;
