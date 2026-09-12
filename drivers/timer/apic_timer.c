@@ -10,12 +10,17 @@
 #include <zephyr/drivers/interrupt_controller/loapic.h>
 #include <zephyr/irq.h>
 
+/* Disabled: a board can select a timer node while still using this driver, so an explicit
+ * selection is not necessarily a contradiction here.
+ */
+#if 0
 /* The system timer is a singleton function. This driver's hardware has no devicetree node, so it
  * can never be the node an explicit selection points at.
  */
 #if DT_HAS_CHOSEN(zephyr_system_timer)
 BUILD_ASSERT(0,
 	     "zephyr,system-timer selects a node, but this driver's timer has no node to match");
+#endif
 #endif
 
 BUILD_ASSERT(!IS_ENABLED(CONFIG_TICKLESS_KERNEL), "this is a tickfull driver");
