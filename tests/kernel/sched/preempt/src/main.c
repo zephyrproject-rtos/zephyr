@@ -59,8 +59,6 @@ struct k_thread worker_threads[NUM_THREADS];
 
 K_THREAD_STACK_ARRAY_DEFINE(worker_stacks, NUM_THREADS, STACK_SIZE);
 
-struct k_thread manager_thread;
-
 struct k_sem worker_sems[NUM_THREADS];
 
 /* Command to worker: who to wake up */
