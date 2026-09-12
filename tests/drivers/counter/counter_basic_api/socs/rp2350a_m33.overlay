@@ -1,7 +1,0 @@
-&timer0 {
-	status = "okay";
-};
-
-&timer1 {
-	status = "okay";
-};
