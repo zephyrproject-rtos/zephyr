@@ -28,3 +28,9 @@
 		};
 	};
 };
+
+/ {
+	chosen {
+		zephyr,system-timer = &systick;
+	};
+};
