@@ -22,6 +22,7 @@
 #include <zephyr/drivers/opamp.h>
 #include <zephyr/pm/policy.h>
 #include <zephyr/pm/device.h>
+#include <zephyr/pm/device_runtime.h>
 #ifdef CONFIG_ADC_MCUX_LPADC_DMA_DRIVEN
 #include <zephyr/drivers/dma.h>
 #endif
@@ -35,7 +36,14 @@
 #include <fsl_lpadc.h>
 LOG_MODULE_REGISTER(nxp_mcux_lpadc);
 
-#if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
+/*
+ * A sequence needs the converter from the moment it is armed until the
+ * watermark interrupt fires: the SoC must not enter a power state that stops
+ * it, and it must not be suspended. One hold/release pair covers both, and the
+ * release runs from adc_context_on_complete().
+ */
+#if defined(CONFIG_PM_DEVICE) || defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
+#define LPADC_PM_HOLD
 #define ADC_CONTEXT_ENABLE_ON_COMPLETE
 #endif
 #define ADC_CONTEXT_USES_KERNEL_TIMER
@@ -111,8 +119,8 @@ struct mcux_lpadc_data {
 	bool use_dma;
 	uint32_t bandgap_channels;
 	atomic_t bandgap_held;
-#if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
-	bool pm_lock_active;
+#if defined(LPADC_PM_HOLD)
+	atomic_t pm_hold;
 #endif
 #ifdef CONFIG_ADC_MCUX_LPADC_DMA_DRIVEN
 	struct dma_config dma_cfg;
@@ -562,30 +570,67 @@ static int mcux_lpadc_start_read(const struct device *dev,
 	return error;
 }
 
-static void mcux_lpadc_pm_policy_device_power_lock_get(const struct device *dev)
-{
-#if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
-	struct mcux_lpadc_data *data = dev->data;
-	const struct mcux_lpadc_config *config = dev->config;
+#if defined(LPADC_PM_HOLD)
+/* Bit 0 of mcux_lpadc_data.pm_hold. */
+#define LPADC_PM_HOLD_BIT 0
 
-	if (config->pm_device_constraints && !data->pm_lock_active) {
+static int mcux_lpadc_pm_hold(const struct device *dev)
+{
+	struct mcux_lpadc_data *data = dev->data;
+	int err;
+
+	if (atomic_test_and_set_bit(&data->pm_hold, LPADC_PM_HOLD_BIT)) {
+		return 0;
+	}
+
+	err = pm_device_runtime_get(dev);
+	if (err < 0) {
+		atomic_clear_bit(&data->pm_hold, LPADC_PM_HOLD_BIT);
+		return err;
+	}
+
+#if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
+	if (((const struct mcux_lpadc_config *)dev->config)->pm_device_constraints) {
 		pm_policy_device_power_lock_get(dev);
-		data->pm_lock_active = true;
 	}
 #endif
+
+	return 0;
 }
 
-static void mcux_lpadc_pm_policy_device_power_lock_put(const struct device *dev)
+static void mcux_lpadc_pm_release(const struct device *dev)
 {
-#if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
 	struct mcux_lpadc_data *data = dev->data;
 
-	if (data->pm_lock_active) {
+	if (!atomic_test_and_clear_bit(&data->pm_hold, LPADC_PM_HOLD_BIT)) {
+		return;
+	}
+
+#if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
+	if (((const struct mcux_lpadc_config *)dev->config)->pm_device_constraints) {
 		pm_policy_device_power_lock_put(dev);
-		data->pm_lock_active = false;
 	}
 #endif
+
+	/*
+	 * This can run from the watermark interrupt or the DMA callback, so the
+	 * suspend must not be performed inline.
+	 */
+	(void)pm_device_runtime_put_async(dev, K_NO_WAIT);
 }
+#else
+static inline int mcux_lpadc_pm_hold(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+
+	return 0;
+}
+
+static inline void mcux_lpadc_pm_release(const struct device *dev)
+{
+	ARG_UNUSED(dev);
+}
+#endif /* LPADC_PM_HOLD */
 
 static int mcux_lpadc_read_async(const struct device *dev,
 			const struct adc_sequence *sequence,
@@ -609,12 +654,26 @@ static int mcux_lpadc_read_async(const struct device *dev,
 
 	adc_context_lock(&data->ctx, async ? true : false, async);
 
-	mcux_lpadc_pm_policy_device_power_lock_get(dev);
+	/*
+	 * Taken with the context locked, so a reader that had to wait for the
+	 * lock takes its own hold once it gets in.
+	 */
+	error = mcux_lpadc_pm_hold(dev);
+	if (error != 0) {
+		adc_context_release(&data->ctx, error);
+		return error;
+	}
 
 	error = mcux_lpadc_start_read(dev, sequence);
 
+	/*
+	 * A sequence that ran has already dropped the hold from
+	 * adc_context_on_complete(), an error status included; this drops the
+	 * hold of a sequence that never started, and the flag inside makes it a
+	 * no-op otherwise.
+	 */
 	if (error != 0) {
-		mcux_lpadc_pm_policy_device_power_lock_put(dev);
+		mcux_lpadc_pm_release(dev);
 	}
 
 	adc_context_release(&data->ctx, error);
@@ -628,14 +687,14 @@ static int mcux_lpadc_read(const struct device *dev,
 	return mcux_lpadc_read_async(dev, sequence, NULL);
 }
 
-#if defined(CONFIG_PM_POLICY_DEVICE_CONSTRAINTS)
+#if defined(ADC_CONTEXT_ENABLE_ON_COMPLETE)
 static void adc_context_on_complete(struct adc_context *ctx, int status)
 {
 	ARG_UNUSED(status);
 
 	struct mcux_lpadc_data *data = CONTAINER_OF(ctx, struct mcux_lpadc_data, ctx);
 
-	mcux_lpadc_pm_policy_device_power_lock_put(data->dev);
+	mcux_lpadc_pm_release(data->dev);
 }
 #endif
 
