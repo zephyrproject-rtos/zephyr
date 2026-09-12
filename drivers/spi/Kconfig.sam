@@ -10,6 +10,7 @@ config SPI_SAM
 	depends on DT_HAS_ATMEL_SAM_SPI_ENABLED
 	select PINCTRL
 	select GPIO
+	select SPI_HAS_RTIO if SPI_RTIO
 	help
 	  Enable support for the SAM SPI driver.
 
@@ -19,6 +20,7 @@ config SPI_SAM_DMA
 	default y if SPI_DMA
 	default y if SPI_RTIO
 	select DMA
+	select SPI_HAS_DMA
 	help
 	  Enable using DMA with SPI for SPI instances that enable dma channels in
 	  their device tree node.

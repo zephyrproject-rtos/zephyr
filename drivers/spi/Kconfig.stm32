@@ -9,6 +9,7 @@ menuconfig SPI_STM32
 	depends on DT_HAS_ST_STM32_SPI_ENABLED
 	select PINCTRL
 	select GPIO if $(dt_compat_any_has_prop,$(DT_COMPAT_ST_STM32_SPI),cs-gpios)
+	select SPI_HAS_RTIO if SPI_RTIO
 	help
 	  Enable SPI support on the STM32 family of processors.
 
@@ -18,6 +19,7 @@ config SPI_STM32_INTERRUPT
 	bool "STM32 MCU SPI Interrupt Support"
 	default y if SPI_INTERRUPT_DRIVEN
 	default y if SPI_RTIO
+	select SPI_HAS_INTERRUPT_DRIVEN
 	help
 	  Enable Interrupt support for the SPI Driver of STM32 family.
 
@@ -27,6 +29,7 @@ config SPI_STM32_DMA
 	default y if SPI_DMA
 	select DMA
 	select CACHE_MANAGEMENT if DCACHE
+	select SPI_HAS_DMA
 	help
 	  Enable the SPI DMA mode for SPI instances
 	  that enable dma channels in their device tree node.

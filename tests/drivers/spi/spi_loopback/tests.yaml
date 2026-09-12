@@ -60,6 +60,7 @@ tests:
       - pic32cz_ca80_cult
 
   drivers.spi.loopback.dma:
+    filter: CONFIG_SPI_HAS_DMA
     extra_configs:
       - CONFIG_SPI_DMA=y
     platform_allow:
@@ -117,6 +118,7 @@ tests:
       - nucleo_h753zi
 
   drivers.spi.loopback.interrupt:
+    filter: CONFIG_SPI_HAS_INTERRUPT_DRIVEN
     extra_configs:
       - CONFIG_SPI_INTERRUPT_DRIVEN=y
     platform_allow:

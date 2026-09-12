@@ -15,6 +15,7 @@ config SPI_CC23X0_DMA_DRIVEN
 	bool "DMA support for TI CC23X0 SPI devices"
 	depends on SPI_CC23X0
 	select DMA
+	select SPI_HAS_DMA
 	help
 	  DMA driven transactions for the SPI.
 	  DMA driven mode offloads data transfer tasks from the CPU

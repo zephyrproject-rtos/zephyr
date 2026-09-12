@@ -18,5 +18,6 @@ config ANDES_SPI_DMA_MODE
 	bool "Using DMA mode for spi"
 	default y
 	depends on DMA
+	select SPI_HAS_DMA
 
 endif # SPI_ANDES_ATCSPI200
