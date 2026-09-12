@@ -832,12 +832,9 @@ static void IRAM_ATTR uart_esp32_dma_rx_done(const struct device *dma_dev, void 
 		return;
 	}
 
-	/* Notify RX_RDY */
-	if (data->async.rx_buf != NULL) {
-		uart_esp32_rx_cache_invd(data->async.rx_buf + data->async.rx_offset,
-					 data->async.rx_counter - data->async.rx_offset);
-	}
-
+	/* Notify RX_RDY. The DMA driver already dropped the cache over the
+	 * buffer before raising the completion.
+	 */
 	evt.type = UART_RX_RDY;
 	evt.data.rx.buf = data->async.rx_buf;
 	evt.data.rx.len = data->async.rx_counter - data->async.rx_offset;
