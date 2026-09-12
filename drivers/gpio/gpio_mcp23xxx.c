@@ -546,7 +546,8 @@ static void mcp23xxx_work_handler(struct k_work *work)
 	 * during a level interrupt. Submitting instead of looping lets other work
 	 * items run in between.
 	 */
-	if (gpio_pin_get_dt(&config->gpio_int) > 0) {
+	if (gpio_pin_get_dt(&config->gpio_int) > 0 ||
+	    (config->gpio_intb.port && gpio_pin_get_dt(&config->gpio_intb) > 0)) {
 		k_work_submit(work);
 	}
 }
@@ -558,6 +559,50 @@ static void mcp23xxx_int_gpio_handler(const struct device *port, struct gpio_cal
 		CONTAINER_OF(cb, struct mcp23xxx_drv_data, int_gpio_cb);
 
 	k_work_submit(&drv_data->work);
+}
+
+static void mcp23xxx_intb_gpio_handler(const struct device *port, struct gpio_callback *cb,
+				       gpio_port_pins_t pins)
+{
+	struct mcp23xxx_drv_data *drv_data =
+		CONTAINER_OF(cb, struct mcp23xxx_drv_data, intb_gpio_cb);
+
+	k_work_submit(&drv_data->work);
+}
+
+/**
+ * @brief Connect one INT line to the given callback.
+ */
+static int setup_int_line(const struct gpio_dt_spec *spec, struct gpio_callback *cb,
+			  gpio_callback_handler_t handler)
+{
+	int err;
+
+	if (!gpio_is_ready_dt(spec)) {
+		LOG_ERR("INT port is not ready");
+		return -ENODEV;
+	}
+
+	err = gpio_pin_configure_dt(spec, GPIO_INPUT);
+	if (err != 0) {
+		LOG_ERR("Failed to configure INT line: %d", err);
+		return -EIO;
+	}
+
+	gpio_init_callback(cb, handler, BIT(spec->pin));
+	err = gpio_add_callback(spec->port, cb);
+	if (err != 0) {
+		LOG_ERR("Failed to add INT callback: %d", err);
+		return -EIO;
+	}
+
+	err = gpio_pin_interrupt_configure_dt(spec, GPIO_INT_EDGE_TO_ACTIVE);
+	if (err != 0) {
+		LOG_ERR("Failed to configure INT interrupt: %d", err);
+		return -EIO;
+	}
+
+	return 0;
 }
 
 DEVICE_API(gpio, gpio_mcp23xxx_api_table) = {
@@ -616,7 +661,17 @@ int gpio_mcp23xxx_init(const struct device *dev)
 	if (config->gpio_int.port) {
 		uint8_t iocon = 0;
 
-		if (config->ngpios == 16) {
+		if (config->gpio_intb.port) {
+			if (config->ngpios != 16) {
+				LOG_ERR("Only the 16 pin parts have two INT lines");
+				return -EINVAL;
+			}
+			if ((config->gpio_int.dt_flags & GPIO_ACTIVE_LOW) !=
+			    (config->gpio_intb.dt_flags & GPIO_ACTIVE_LOW)) {
+				LOG_ERR("INTA and INTB must have the same polarity");
+				return -EINVAL;
+			}
+		} else if (config->ngpios == 16) {
 			/* send both ports' interrupts through one IRQ pin */
 			iocon |= REG_IOCON_MIRROR;
 		}
@@ -640,32 +695,21 @@ int gpio_mcp23xxx_init(const struct device *dev)
 			return -EIO;
 		}
 
-		if (!gpio_is_ready_dt(&config->gpio_int)) {
-			LOG_ERR("INT port is not ready");
-			return -ENODEV;
-		}
-
 		drv_data->dev = dev;
 		k_work_init(&drv_data->work, mcp23xxx_work_handler);
 
-		err = gpio_pin_configure_dt(&config->gpio_int, GPIO_INPUT);
+		err = setup_int_line(&config->gpio_int, &drv_data->int_gpio_cb,
+				     mcp23xxx_int_gpio_handler);
 		if (err != 0) {
-			LOG_ERR("Failed to configure INT line: %d", err);
-			return -EIO;
+			return err;
 		}
 
-		gpio_init_callback(&drv_data->int_gpio_cb, mcp23xxx_int_gpio_handler,
-				   BIT(config->gpio_int.pin));
-		err = gpio_add_callback(config->gpio_int.port, &drv_data->int_gpio_cb);
-		if (err != 0) {
-			LOG_ERR("Failed to add INT callback: %d", err);
-			return -EIO;
-		}
-
-		err = gpio_pin_interrupt_configure_dt(&config->gpio_int, GPIO_INT_EDGE_TO_ACTIVE);
-		if (err != 0) {
-			LOG_ERR("Failed to configure INT interrupt: %d", err);
-			return -EIO;
+		if (config->gpio_intb.port) {
+			err = setup_int_line(&config->gpio_intb, &drv_data->intb_gpio_cb,
+					     mcp23xxx_intb_gpio_handler);
+			if (err != 0) {
+				return err;
+			}
 		}
 	}
 

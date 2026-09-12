@@ -123,6 +123,7 @@ static int mcp23sxx_bus_is_ready(const struct device *dev)
 				SPI_MODE_CPHA | SPI_WORD_SET(8))                              \
 		},                                                                            \
 		.gpio_int = GPIO_DT_SPEC_INST_GET_OR(inst, int_gpios, {0}),                   \
+		.gpio_intb = MCP23XXX_INTB_DT_SPEC_INST_GET(inst),                            \
 		.gpio_reset = GPIO_DT_SPEC_INST_GET_OR(inst, reset_gpios, {0}),               \
 		.ngpios =  num_gpios,				                              \
 		.is_open_drain = open_drain,                                                  \

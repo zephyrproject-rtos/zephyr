@@ -15,11 +15,18 @@ properties:
   int-gpios:
     type: phandle-array
     description: |
-        GPIO connected to the controller INT pin.
+        GPIOs connected to the controller INT pin(s).
 
-        The INT pin is push-pull by default and its polarity follows the
-        GPIO_ACTIVE_LOW / GPIO_ACTIVE_HIGH flag given here (IOCON.INTPOL).
-        Set int-open-drain to make it open-drain active-low instead.
+        With a single entry, the 16 pin parts mirror the interrupts of both
+        ports onto that line (IOCON.MIRROR) and only one of INTA/INTB needs
+        to be wired. With two entries, the first is INTA (port A, pins 0-7)
+        and the second INTB (port B, pins 8-15), and the ports interrupt
+        independently. Two entries are only valid on the 16 pin parts.
+
+        The INT pins are push-pull by default and their polarity follows the
+        GPIO_ACTIVE_LOW / GPIO_ACTIVE_HIGH flag given here (IOCON.INTPOL);
+        both entries must use the same polarity. Set int-open-drain to make
+        them open-drain active-low instead.
 
   int-open-drain:
     type: boolean

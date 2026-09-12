@@ -66,6 +66,11 @@ typedef int (*mcp23xxx_read_regs)(const struct device *dev, uint8_t reg, uint8_t
 typedef int (*mcp23xxx_write_regs)(const struct device *dev, uint8_t reg, const uint8_t *buf,
 				   size_t len);
 typedef int (*mcp23xxx_bus_is_ready)(const struct device *dev);
+
+/* Optional second int-gpios entry (INTB) of a driver instance */
+#define MCP23XXX_INTB_DT_SPEC_INST_GET(inst)                                                       \
+	GPIO_DT_SPEC_INST_GET_BY_IDX_OR(inst, int_gpios, 1, {0})
+
 /** Configuration data */
 struct mcp23xxx_config {
 	/* gpio_driver_config needs to be first */
@@ -81,7 +86,10 @@ struct mcp23xxx_config {
 #endif /* CONFIG_GPIO_MCP23SXX */
 	} bus;
 
+	/* INTA, or the single mirrored INT line */
 	struct gpio_dt_spec gpio_int;
+	/* INTB, only set when the two ports use separate lines */
+	struct gpio_dt_spec gpio_intb;
 	struct gpio_dt_spec gpio_reset;
 
 	uint8_t ngpios;
@@ -101,6 +109,7 @@ struct mcp23xxx_drv_data {
 	sys_slist_t callbacks;
 	const struct device *dev;
 	struct gpio_callback int_gpio_cb;
+	struct gpio_callback intb_gpio_cb;
 	struct k_work work;
 
 	uint16_t rising_edge_ints;
