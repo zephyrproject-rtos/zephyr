@@ -509,6 +509,7 @@ static void mcp23xxx_work_handler(struct k_work *work)
 {
 	struct mcp23xxx_drv_data *drv_data = CONTAINER_OF(work, struct mcp23xxx_drv_data, work);
 	const struct device *dev = drv_data->dev;
+	const struct mcp23xxx_config *config = dev->config;
 	uint16_t intf;
 	uint16_t intcap;
 	uint16_t pins;
@@ -536,6 +537,17 @@ static void mcp23xxx_work_handler(struct k_work *work)
 		 * edge interrupt filtered out for the other edge, ends up here.
 		 */
 		LOG_DBG("No interrupt pending");
+	}
+
+	/* The host side interrupt is edge triggered, but a DEFVAL compare (level)
+	 * interrupt keeps INT asserted for as long as the mismatch exists, so no
+	 * new edge is ever produced. Re-run while the line is still active rather
+	 * than relying on the brief INT pulse the chip emits when INTCAP is read
+	 * during a level interrupt. Submitting instead of looping lets other work
+	 * items run in between.
+	 */
+	if (gpio_pin_get_dt(&config->gpio_int) > 0) {
+		k_work_submit(work);
 	}
 }
 
