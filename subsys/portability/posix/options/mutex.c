@@ -105,6 +105,7 @@ struct k_mutex *to_posix_mutex(pthread_mutex_t *mu)
 
 		/* Record the associated posix_mutex in mu and mark as initialized */
 		*mu = mark_pthread_obj_initialized(bit);
+		posix_mutex_type[bit] = def_attr.type;
 		m = &posix_mutex_pool[bit];
 	}
 
@@ -315,6 +316,7 @@ int pthread_mutex_destroy(pthread_mutex_t *mu)
 	__ASSERT_NO_MSG(err == 0);
 
 	bit = to_posix_mutex_idx(*mu);
+	posix_mutex_type[bit] = def_attr.type;
 	err = sys_bitarray_free(&posix_mutex_bitarray, 1, bit);
 	__ASSERT_NO_MSG(err == 0);
 
