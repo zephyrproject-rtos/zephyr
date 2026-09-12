@@ -18,18 +18,7 @@ LOG_MODULE_REGISTER(b_m2mem_pack1, LOG_LEVEL_INF);
 #define FLASH_TEST_REGION_OFFSET 0xff000
 #define FLASH_TEST_SECTOR_SIZE   4096U
 
-/*
- * The jedec-id property is optional. Without it there is nothing to compare the
- * runtime JEDEC ID against, so TEST 1 is left out of the run.
- */
-#define HAS_DT_JEDEC_ID DT_NODE_HAS_PROP(DT_NODELABEL(m2mem_flash), jedec_id)
-
-#if HAS_DT_JEDEC_ID
 #define TEST_COUNT 3U
-#else
-#define TEST_COUNT 2U
-#endif
-
 #define TEST_BANNER    "=============================================="
 #define TEST_SEPARATOR "----------------------------------------------"
 
@@ -182,9 +171,18 @@ static void indicate_test_status(enum test_led_status_t test_led_status)
 	k_msleep(500);
 }
 
-#if HAS_DT_JEDEC_ID
+
 /**
- * @brief Compare JEDEC ID's from identification EEPROM and from the devicetree
+ *  TODO: This step should be reconsidered. Let's say that obvious rule for every flash
+ * 		  driver is to check if JEDEC ID from the devicetree matches the one red from the
+ *        flash device itself (It checks this only if JEDEC ID is explicitly specified in
+ *        the devicetree, if it's not, it just skips this check I think.) It is better to
+ *        check the JEDEC ID red from the device itself against one written in ID EEPROM.
+ *        This should be refactored.
+ */
+
+/**
+ * @brief Compare JEDEC ID stored in ID EEPROM against one red from the FLASH device
  *
  * @param flash_dev: Pointer to the flash device
  * @param eeprom_info: Pointer to the m2mem_info_t struct
@@ -194,8 +192,7 @@ static void indicate_test_status(enum test_led_status_t test_led_status)
  */
 int compare_jedec_test(const struct device *flash_dev, const struct m2mem_info_t *eeprom_info)
 {
-	static const uint8_t dt_jedec_id[] = DT_PROP(DT_NODELABEL(m2mem_flash), jedec_id);
-	uint8_t hw_jedec_id[sizeof(dt_jedec_id)];
+	uint8_t hw_jedec_id[3];
 	int ret;
 
 	if (flash_dev == NULL || eeprom_info == NULL) {
@@ -208,10 +205,15 @@ int compare_jedec_test(const struct device *flash_dev, const struct m2mem_info_t
 		return -1;
 	}
 
-	print_hex("JEDEC ID - devicetree:      ", dt_jedec_id, sizeof(dt_jedec_id));
-	print_hex("JEDEC ID - eeprom:          ", eeprom_info->JEDEC_MemA, sizeof(dt_jedec_id));
+	print_hex("JEDEC ID - flash:           ", hw_jedec_id, sizeof(hw_jedec_id));
+	print_hex("JEDEC ID - eeprom:          ", eeprom_info->JEDEC_MemA, sizeof(hw_jedec_id));
 
-	ret = memcmp(dt_jedec_id, eeprom_info->JEDEC_MemA, sizeof(dt_jedec_id));
+	/**
+	 * TODO: Consider checking only first and third byte of JEDEC ID, because
+	 * we have found that ST assembled wrong Winbond memory. We should issue
+	 * a warning, but not FAIL a test because of it.
+	 */
+	ret = memcmp(hw_jedec_id, eeprom_info->JEDEC_MemA, sizeof(hw_jedec_id));
 	if (ret == 0) {
 		printf("jedec id stored in eeprom matches one in devicetree.\n");
 	} else {
@@ -221,7 +223,6 @@ int compare_jedec_test(const struct device *flash_dev, const struct m2mem_info_t
 
 	return ret;
 }
-#endif /* HAS_DT_JEDEC_ID */
 
 /**
  * @brief Erase flash region starting from FLASH_TEST_REGION_OFFSET, and
@@ -345,7 +346,6 @@ int main(void)
 	printf("Board: %s\n", CONFIG_BOARD_TARGET);
 	print_m2mem_info(&m2mem_info);
 
-#if HAS_DT_JEDEC_ID
 	/*
 	 * TEST1: Read JEDEC ID in the runtime and check if it matches with
 	 * one written in the devicetree.
@@ -360,9 +360,6 @@ int main(void)
 		passed++;
 		indicate_test_status(TEST_PASS);
 	}
-#else
-	printf("\nTEST 1 skipped: the devicetree carries no jedec-id\n");
-#endif
 
 	/*
 	 * TEST2: Erase test - erase some section and check if it succeeded.
