@@ -1,0 +1,30 @@
+/*
+ * Copyright (c) 2025 Silicon Laboratories Inc.
+ *
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+/ {
+	dma_test_dma0: dma-test-dma0 {
+		compatible = "test-dma-memory-to-memory";
+		dma = <&dma0>;
+		scatter-gather;
+		channels = <0 7>;
+		max-transfer-size = <4096>;
+	};
+
+	dma_test_gpdma: dma-test-gpdma {
+		compatible = "test-dma-memory-to-memory";
+		dma = <&gpdma>;
+		channels = <0 7>;
+		max-transfer-size = <4096>;
+	};
+};
+
+&dma0 {
+	status = "okay";
+};
+
+&gpdma {
+	status = "okay";
+};

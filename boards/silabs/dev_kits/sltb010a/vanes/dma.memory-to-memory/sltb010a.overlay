@@ -1,0 +1,19 @@
+/*
+ * SPDX-License-Identifier: Apache-2.0
+ *
+ * Copyright (c) 2023 Antmicro <www.antmicro.com>
+ * Copyright (c) 2025 Silicon Laboratories Inc.
+ *
+ */
+
+/ {
+	dma_test_dma0: dma-test-dma0 {
+		compatible = "test-dma-memory-to-memory";
+		dma = <&dma0>;
+		max-transfer-size = <2048>;
+	};
+};
+
+&dma0 {
+	status = "okay";
+};
