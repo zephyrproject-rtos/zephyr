@@ -179,7 +179,7 @@ struct st87mxx_data {
 
 	int current_sock_written;
 
-	struct mdm_receiver_context *mctx;
+	struct modem_context *mctx;
 	struct gpio_dt_spec *reset_gpio;
 	struct gpio_dt_spec *ring_gpio;
 
