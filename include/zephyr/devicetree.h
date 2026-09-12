@@ -6430,4 +6430,11 @@
 #include <zephyr/devicetree/sram.h>
 #include <zephyr/devicetree/cpu.h>
 
+/* TEMPORARY: survey which device trees still lack an explicit system timer selection.
+ * Remove before submitting.
+ */
+#if !DT_HAS_CHOSEN(zephyr_system_timer)
+#warning "/chosen/zephyr,system-timer is not set"
+#endif
+
 #endif /* ZEPHYR_INCLUDE_DEVICETREE_H_ */
