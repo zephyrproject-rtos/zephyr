@@ -9,5 +9,6 @@ config UART_LITEX
 	depends on DT_HAS_LITEX_UART_ENABLED
 	select SERIAL_HAS_DRIVER
 	select SERIAL_SUPPORT_INTERRUPT
+	select USE_LITEX_CSR
 	help
 	  This option enables LiteX UART serial driver.
