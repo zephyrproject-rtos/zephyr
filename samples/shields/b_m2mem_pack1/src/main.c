@@ -171,16 +171,6 @@ static void indicate_test_status(enum test_led_status_t test_led_status)
 	k_msleep(500);
 }
 
-
-/**
- *  TODO: This step should be reconsidered. Let's say that obvious rule for every flash
- * 		  driver is to check if JEDEC ID from the devicetree matches the one red from the
- *        flash device itself (It checks this only if JEDEC ID is explicitly specified in
- *        the devicetree, if it's not, it just skips this check I think.) It is better to
- *        check the JEDEC ID red from the device itself against one written in ID EEPROM.
- *        This should be refactored.
- */
-
 /**
  * @brief Compare JEDEC ID stored in ID EEPROM against one red from the FLASH device
  *
@@ -190,7 +180,7 @@ static void indicate_test_status(enum test_led_status_t test_led_status)
  * @return - 0 if JEDEC ID's match
  *         - -1 if incorrect params passed, or if JEDEC ID's mismatch
  */
-int compare_jedec_test(const struct device *flash_dev, const struct m2mem_info_t *eeprom_info)
+int compare_jedec_test(const struct device *flash_dev, const struct device *eeprom_dev, const struct m2mem_info_t *eeprom_info)
 {
 	uint8_t hw_jedec_id[3];
 	int ret;
@@ -205,19 +195,17 @@ int compare_jedec_test(const struct device *flash_dev, const struct m2mem_info_t
 		return -1;
 	}
 
+	printf("                  | Manufacturer | Memory Type | Density |\n");
 	print_hex("JEDEC ID - flash:           ", hw_jedec_id, sizeof(hw_jedec_id));
 	print_hex("JEDEC ID - eeprom:          ", eeprom_info->JEDEC_MemA, sizeof(hw_jedec_id));
 
-	/**
-	 * TODO: Consider checking only first and third byte of JEDEC ID, because
-	 * we have found that ST assembled wrong Winbond memory. We should issue
-	 * a warning, but not FAIL a test because of it.
-	 */
-	ret = memcmp(hw_jedec_id, eeprom_info->JEDEC_MemA, sizeof(hw_jedec_id));
-	if (ret == 0) {
-		printf("jedec id stored in eeprom matches one in devicetree.\n");
-	} else {
-		printf("jedec id stored in eeprom doesn't match one in devicetree.\n");
+	if (memcmp(hw_jedec_id, eeprom_info->JEDEC_MemA, sizeof(hw_jedec_id)) == 0)
+	{
+		printf("JEDEC ID in id eeprom match\n");
+		ret = 0;	
+	}
+	else
+	{
 		ret = -1;
 	}
 
@@ -235,6 +223,7 @@ int compare_jedec_test(const struct device *flash_dev, const struct m2mem_info_t
 int erase_flash_test(const struct device *flash_dev)
 {
 	int ret;
+	uint8_t read_buf = 0;
 
 	if (flash_dev == NULL) {
 		return -1;
@@ -243,8 +232,27 @@ int erase_flash_test(const struct device *flash_dev)
 	ret = flash_erase(flash_dev, FLASH_TEST_REGION_OFFSET, FLASH_TEST_SECTOR_SIZE);
 	if (ret != 0) {
 		printf("flash_erase failed, error: %d\n", ret);
-	} else {
-		printf("flash_erase success.\n");
+	}
+
+	for (size_t i = 0; i < FLASH_TEST_SECTOR_SIZE; i++)
+	{
+		ret = flash_read(flash_dev, FLASH_TEST_REGION_OFFSET+i, &read_buf, 1);
+		if (ret != 0)
+		{
+			printf("flash_read failed in flash_erase verification step, error: %d\n", ret);
+			break;
+		}
+		else if (read_buf == 0xFF)
+		{
+			ret = 0;
+			i++;
+		}
+		else
+		{
+			printf("flash_erase verification failed, bad value at address %d\n", FLASH_TEST_REGION_OFFSET+i);
+			ret = -1;
+			break;
+		}
 	}
 
 	return ret;
@@ -352,7 +360,7 @@ int main(void)
 	 */
 	print_test_header(1, "Compare JEDEC ID's");
 	indicate_test_status(TEST_NEXT);
-	ret = compare_jedec_test(flash, &m2mem_info);
+	ret = compare_jedec_test(flash, id_eeprom, &m2mem_info);
 	print_test_result(1, ret);
 	if (ret != 0) {
 		indicate_test_status(TEST_FAIL);
