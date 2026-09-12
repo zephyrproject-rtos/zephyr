@@ -281,6 +281,15 @@ SECTIONS
     #include <zephyr/linker/debug-sections.ld>
     /DISCARD/ : { *(.note.GNU-stack) *(.hexagon.attributes) }
 
+/* Output section descriptions are needed for these sections to suppress
+ * warnings when "--orphan-handling=warn" is set for lld.
+ */
+#if defined(CONFIG_LLVM_USE_LLD)
+    SECTION_PROLOGUE(.symtab, 0,) { *(.symtab) }
+    SECTION_PROLOGUE(.strtab, 0,) { *(.strtab) }
+    SECTION_PROLOGUE(.shstrtab, 0,) { *(.shstrtab) }
+#endif
+
     /* Final section for deterministic sizing */
     SECTION_PROLOGUE(.last_section,,)
     {
