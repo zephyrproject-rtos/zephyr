@@ -14,6 +14,7 @@ if SPI_RENESAS_RX
 config SPI_RENESAS_RX_INTERRUPT
 	bool "RX MCU RSPI Interrupt Support"
 	default y
+	select SPI_HAS_INTERRUPT_DRIVEN
 	help
 	  Enable Interrupt Support for the RSPI Driver of RX family.
 
@@ -34,6 +35,7 @@ config SPI_RENESAS_RX_DTC
 	default y
 	depends on DT_HAS_RENESAS_RX_DTC_ENABLED
 	select RENESAS_RX_DTC
+	select SPI_HAS_DMA
 	help
 	  Use DTC in RX RSPI transfer
 

@@ -19,6 +19,7 @@ config DSPI_MCUX_EDMA
 	bool "ENABLE EDMA for DSPI driver"
 	default y if SPI_DMA
 	depends on HAS_MCUX && DMA_MCUX_EDMA
+	select SPI_HAS_DMA
 	help
 	  Enable DMA support for the MCUX DSPI driver.
 

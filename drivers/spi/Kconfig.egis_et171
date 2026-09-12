@@ -19,5 +19,6 @@ config EGIS_SPI_DMA_MODE
 	bool "Using DMA mode for SPI driver"
 	default y
 	depends on DMA
+	select SPI_HAS_DMA
 
 endif # SPI_EGIS_ET171
