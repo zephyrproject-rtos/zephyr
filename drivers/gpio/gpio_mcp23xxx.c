@@ -458,6 +458,26 @@ static int mcp23xxx_pin_interrupt_configure(const struct device *dev, gpio_pin_t
 		break;
 	}
 
+	if ((gpinten & ~drv_data->reg_cache.gpinten) != 0) {
+		/* Interrupt-on-change compares against the pin value seen at the
+		 * last GPIO or INTCAP read, which may be long stale. Refresh it so
+		 * that enabling does not fire for a change that predates the
+		 * enable, keeping any interrupt the read consumes for the handler.
+		 */
+		uint16_t intf;
+		uint16_t intcap;
+		uint16_t gpio;
+
+		ret = read_int_regs(dev, &intf, &intcap, &gpio);
+		if (ret != 0) {
+			goto done;
+		}
+		if (intf != 0) {
+			drv_data->pending_ints |= filter_int_pins(dev, intf, intcap);
+			k_work_submit(&drv_data->work);
+		}
+	}
+
 	ret = write_port_regs(dev, REG_GPINTEN, gpinten);
 	if (ret != 0) {
 		goto done;
