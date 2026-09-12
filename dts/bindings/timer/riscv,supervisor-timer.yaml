@@ -1,0 +1,21 @@
+# SPDX-FileCopyrightText: Copyright The Zephyr Project Contributors
+# SPDX-License-Identifier: Apache-2.0
+
+description: |
+  RISC-V supervisor mode timer.
+
+  The timer is a CPU or architecture feature rather than a memory mapped
+  peripheral, so the node carries neither reg nor interrupts. It exists so that
+  the timer can be named by /chosen/zephyr,system-timer and so that its
+  frequency can be described alongside the hardware.
+
+compatible: "riscv,supervisor-timer"
+
+include: base.yaml
+
+properties:
+  clock-frequency:
+    type: int
+    description: |
+      The clock source frequency for this timer, in Hz. This value can be used as
+      the default setting for SYS_CLOCK_HW_CYCLES_PER_SEC at the SoC level.
