@@ -3404,7 +3404,10 @@ static int dw_i3c_init(const struct device *dev)
 	k_work_init(&data->deftgts_work, dw_i3c_deftgts_work_fn);
 #endif /* CONFIG_I3C_CONTROLLER && CONFIG_I3C_TARGET */
 
-	dw_i3c_pinctrl_enable(dev, true);
+	ret = dw_i3c_pinctrl_enable(dev, true);
+	if (ret != 0) {
+		return ret;
+	}
 #ifdef CONFIG_I3C_CONTROLLER
 	data->mode = i3c_bus_mode(&config->common.dev_list);
 #endif /* CONFIG_I3C_CONTROLLER */
@@ -3538,16 +3541,20 @@ static int dw_i3c_init(const struct device *dev)
 #if defined(CONFIG_PM_DEVICE)
 static int dw_i3c_pm_ctrl(const struct device *dev, enum pm_device_action action)
 {
+	int ret;
+
 	LOG_DBG("PM action: %d", (int)action);
 
 	switch (action) {
 	case PM_DEVICE_ACTION_SUSPEND:
 		dw_i3c_enable_controller(dev, false);
-		dw_i3c_pinctrl_enable(dev, false);
-		break;
+		return dw_i3c_pinctrl_enable(dev, false);
 
 	case PM_DEVICE_ACTION_RESUME:
-		dw_i3c_pinctrl_enable(dev, true);
+		ret = dw_i3c_pinctrl_enable(dev, true);
+		if (ret != 0) {
+			return ret;
+		}
 		dw_i3c_enable_controller(dev, true);
 		break;
 
