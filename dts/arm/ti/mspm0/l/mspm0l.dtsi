@@ -127,6 +127,7 @@
 			clocks = <&ckm MSPM0_CLOCK_ULPCLK>;
 			max-result-reg = <12>;
 			interrupts = <4 0>;
+			zephyr,disabling-power-states = <&stop2 &stdby0 &stdby1>;
 			status = "disabled";
 			ti,num-channels = <32>;
 			#io-channel-cells = <1>;
