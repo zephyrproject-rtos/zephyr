@@ -196,7 +196,7 @@ static const struct modem_cellular_vendor_config nrf93m1_vendor = {
                                                                                                    \
 	static struct nrf93m1_modem_cellular_data MODEM_CELLULAR_INST_NAME(data, inst);            \
                                                                                                    \
-	MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst, (user_pipe_0, 3), (user_pipe_1, 4))        \
+	MODEM_CELLULAR_DEFINE_AND_INIT_USER_PIPES(inst, (user_pipe_0, 3))                          \
                                                                                                    \
 	MODEM_CELLULAR_DEFINE_INSTANCE(inst, &nrf93m1_vendor, &nrf93m1_vendor_cfg##inst)
 
